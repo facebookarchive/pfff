@@ -1,0 +1,76 @@
+<html><head>
+<link rel="stylesheet" href="style.css" type="text/css">
+<meta content="text/html; charset=utf-8" http-equiv="Content-Type">
+<link rel="Start" href="index.html">
+<link title="Index of types" rel=Appendix href="index_types.html">
+<link title="Index of exceptions" rel=Appendix href="index_exceptions.html">
+<link title="Index of values" rel=Appendix href="index_values.html">
+<link title="Index of modules" rel=Appendix href="index_modules.html">
+<link title="Index of module types" rel=Appendix href="index_module_types.html">
+<link title="JBasics" rel="Chapter" href="JBasics.html">
+<link title="JBasicsLow" rel="Chapter" href="JBasicsLow.html">
+<link title="JCode" rel="Chapter" href="JCode.html">
+<link title="JClassLow" rel="Chapter" href="JClassLow.html">
+<link title="JSignature" rel="Chapter" href="JSignature.html">
+<link title="JClass" rel="Chapter" href="JClass.html">
+<link title="JDumpBasics" rel="Chapter" href="JDumpBasics.html">
+<link title="JUnparseSignature" rel="Chapter" href="JUnparseSignature.html">
+<link title="JDumpLow" rel="Chapter" href="JDumpLow.html">
+<link title="JDumpJasmin" rel="Chapter" href="JDumpJasmin.html">
+<link title="JParseCode" rel="Chapter" href="JParseCode.html">
+<link title="JInstruction" rel="Chapter" href="JInstruction.html">
+<link title="JUnparse" rel="Chapter" href="JUnparse.html">
+<link title="JParseSignature" rel="Chapter" href="JParseSignature.html">
+<link title="JParse" rel="Chapter" href="JParse.html">
+<link title="JLow2High" rel="Chapter" href="JLow2High.html">
+<link title="JHigh2Low" rel="Chapter" href="JHigh2Low.html">
+<link title="JFile" rel="Chapter" href="JFile.html">
+<link title="JManifest" rel="Chapter" href="JManifest.html">
+<link title="Javalib" rel="Chapter" href="Javalib.html">
+<link title="Ptmap" rel="Chapter" href="Ptmap.html">
+<link title="Ptset" rel="Chapter" href="Ptset.html"><title>Javalib : JSignature</title>
+</head>
+<body>
+<code class="code"><span class="keyword">sig</span><br>
+&nbsp;&nbsp;<span class="keyword">type</span>&nbsp;typeVariable&nbsp;=&nbsp;<span class="constructor">TypeVariable</span>&nbsp;<span class="keyword">of</span>&nbsp;string<br>
+&nbsp;&nbsp;<span class="keyword">type</span>&nbsp;typeArgument&nbsp;=<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="constructor">ArgumentExtends</span>&nbsp;<span class="keyword">of</span>&nbsp;<span class="constructor">JSignature</span>.fieldTypeSignature<br>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="keywordsign">|</span>&nbsp;<span class="constructor">ArgumentInherits</span>&nbsp;<span class="keyword">of</span>&nbsp;<span class="constructor">JSignature</span>.fieldTypeSignature<br>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="keywordsign">|</span>&nbsp;<span class="constructor">ArgumentIs</span>&nbsp;<span class="keyword">of</span>&nbsp;<span class="constructor">JSignature</span>.fieldTypeSignature<br>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="keywordsign">|</span>&nbsp;<span class="constructor">ArgumentIsAny</span><br>
+&nbsp;&nbsp;<span class="keyword">and</span>&nbsp;simpleClassTypeSignature&nbsp;=&nbsp;{<br>
+&nbsp;&nbsp;&nbsp;&nbsp;scts_name&nbsp;:&nbsp;string;<br>
+&nbsp;&nbsp;&nbsp;&nbsp;scts_type_arguments&nbsp;:&nbsp;<span class="constructor">JSignature</span>.typeArgument&nbsp;list;<br>
+&nbsp;&nbsp;}<br>
+&nbsp;&nbsp;<span class="keyword">and</span>&nbsp;classTypeSignature&nbsp;=&nbsp;{<br>
+&nbsp;&nbsp;&nbsp;&nbsp;cts_package&nbsp;:&nbsp;string&nbsp;list;<br>
+&nbsp;&nbsp;&nbsp;&nbsp;cts_enclosing_classes&nbsp;:&nbsp;<span class="constructor">JSignature</span>.simpleClassTypeSignature&nbsp;list;<br>
+&nbsp;&nbsp;&nbsp;&nbsp;cts_simple_class_type_signature&nbsp;:&nbsp;<span class="constructor">JSignature</span>.simpleClassTypeSignature;<br>
+&nbsp;&nbsp;}<br>
+&nbsp;&nbsp;<span class="keyword">and</span>&nbsp;formalTypeParameter&nbsp;=&nbsp;{<br>
+&nbsp;&nbsp;&nbsp;&nbsp;ftp_name&nbsp;:&nbsp;string;<br>
+&nbsp;&nbsp;&nbsp;&nbsp;ftp_class_bound&nbsp;:&nbsp;<span class="constructor">JSignature</span>.fieldTypeSignature&nbsp;option;<br>
+&nbsp;&nbsp;&nbsp;&nbsp;ftp_interface_bounds&nbsp;:&nbsp;<span class="constructor">JSignature</span>.fieldTypeSignature&nbsp;list;<br>
+&nbsp;&nbsp;}<br>
+&nbsp;&nbsp;<span class="keyword">and</span>&nbsp;throwsSignature&nbsp;=<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="constructor">ThrowsClass</span>&nbsp;<span class="keyword">of</span>&nbsp;<span class="constructor">JSignature</span>.classTypeSignature<br>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="keywordsign">|</span>&nbsp;<span class="constructor">ThrowsTypeVariable</span>&nbsp;<span class="keyword">of</span>&nbsp;<span class="constructor">JSignature</span>.typeVariable<br>
+&nbsp;&nbsp;<span class="keyword">and</span>&nbsp;typeSignature&nbsp;=<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="constructor">GBasic</span>&nbsp;<span class="keyword">of</span>&nbsp;<span class="constructor">JBasics</span>.java_basic_type<br>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="keywordsign">|</span>&nbsp;<span class="constructor">GObject</span>&nbsp;<span class="keyword">of</span>&nbsp;<span class="constructor">JSignature</span>.fieldTypeSignature<br>
+&nbsp;&nbsp;<span class="keyword">and</span>&nbsp;classSignature&nbsp;=&nbsp;{<br>
+&nbsp;&nbsp;&nbsp;&nbsp;cs_formal_type_parameters&nbsp;:&nbsp;<span class="constructor">JSignature</span>.formalTypeParameter&nbsp;list;<br>
+&nbsp;&nbsp;&nbsp;&nbsp;cs_super_class&nbsp;:&nbsp;<span class="constructor">JSignature</span>.classTypeSignature;<br>
+&nbsp;&nbsp;&nbsp;&nbsp;cs_super_interfaces&nbsp;:&nbsp;<span class="constructor">JSignature</span>.classTypeSignature&nbsp;list;<br>
+&nbsp;&nbsp;}<br>
+&nbsp;&nbsp;<span class="keyword">and</span>&nbsp;fieldTypeSignature&nbsp;=<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="constructor">GClass</span>&nbsp;<span class="keyword">of</span>&nbsp;<span class="constructor">JSignature</span>.classTypeSignature<br>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="keywordsign">|</span>&nbsp;<span class="constructor">GArray</span>&nbsp;<span class="keyword">of</span>&nbsp;<span class="constructor">JSignature</span>.typeSignature<br>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="keywordsign">|</span>&nbsp;<span class="constructor">GVariable</span>&nbsp;<span class="keyword">of</span>&nbsp;<span class="constructor">JSignature</span>.typeVariable<br>
+&nbsp;&nbsp;<span class="keyword">type</span>&nbsp;methodTypeSignature&nbsp;=&nbsp;{<br>
+&nbsp;&nbsp;&nbsp;&nbsp;mts_formal_type_parameters&nbsp;:&nbsp;<span class="constructor">JSignature</span>.formalTypeParameter&nbsp;list;<br>
+&nbsp;&nbsp;&nbsp;&nbsp;mts_type_signature&nbsp;:&nbsp;<span class="constructor">JSignature</span>.typeSignature&nbsp;list;<br>
+&nbsp;&nbsp;&nbsp;&nbsp;mts_return_type&nbsp;:&nbsp;<span class="constructor">JSignature</span>.typeSignature&nbsp;option;<br>
+&nbsp;&nbsp;&nbsp;&nbsp;mts_throws&nbsp;:&nbsp;<span class="constructor">JSignature</span>.throwsSignature&nbsp;list;<br>
+&nbsp;&nbsp;}<br>
+<span class="keyword">end</span></code></body></html>

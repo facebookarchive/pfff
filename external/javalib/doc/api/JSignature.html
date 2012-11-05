@@ -1,0 +1,292 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html>
+<head>
+<link rel="stylesheet" href="style.css" type="text/css">
+<meta content="text/html; charset=utf-8" http-equiv="Content-Type">
+<link rel="Start" href="index.html">
+<link rel="previous" href="JClassLow.html">
+<link rel="next" href="JClass.html">
+<link rel="Up" href="index.html">
+<link title="Index of types" rel=Appendix href="index_types.html">
+<link title="Index of exceptions" rel=Appendix href="index_exceptions.html">
+<link title="Index of values" rel=Appendix href="index_values.html">
+<link title="Index of modules" rel=Appendix href="index_modules.html">
+<link title="Index of module types" rel=Appendix href="index_module_types.html">
+<link title="JBasics" rel="Chapter" href="JBasics.html">
+<link title="JBasicsLow" rel="Chapter" href="JBasicsLow.html">
+<link title="JCode" rel="Chapter" href="JCode.html">
+<link title="JClassLow" rel="Chapter" href="JClassLow.html">
+<link title="JSignature" rel="Chapter" href="JSignature.html">
+<link title="JClass" rel="Chapter" href="JClass.html">
+<link title="JDumpBasics" rel="Chapter" href="JDumpBasics.html">
+<link title="JUnparseSignature" rel="Chapter" href="JUnparseSignature.html">
+<link title="JDumpLow" rel="Chapter" href="JDumpLow.html">
+<link title="JDumpJasmin" rel="Chapter" href="JDumpJasmin.html">
+<link title="JParseCode" rel="Chapter" href="JParseCode.html">
+<link title="JInstruction" rel="Chapter" href="JInstruction.html">
+<link title="JUnparse" rel="Chapter" href="JUnparse.html">
+<link title="JParseSignature" rel="Chapter" href="JParseSignature.html">
+<link title="JParse" rel="Chapter" href="JParse.html">
+<link title="JLow2High" rel="Chapter" href="JLow2High.html">
+<link title="JHigh2Low" rel="Chapter" href="JHigh2Low.html">
+<link title="JFile" rel="Chapter" href="JFile.html">
+<link title="JManifest" rel="Chapter" href="JManifest.html">
+<link title="Javalib" rel="Chapter" href="Javalib.html">
+<link title="Ptmap" rel="Chapter" href="Ptmap.html">
+<link title="Ptset" rel="Chapter" href="Ptset.html"><link title="Types used in type declarations of generic signatures" rel="Section" href="#2_Typesusedintypedeclarationsofgenericsignatures">
+<link title="Types of generic signatures" rel="Section" href="#2_Typesofgenericsignatures">
+<title>Javalib : JSignature</title>
+</head>
+<body>
+<div class="navbar"><a href="JClassLow.html">Previous</a>
+&nbsp;<a href="index.html">Up</a>
+&nbsp;<a href="JClass.html">Next</a>
+</div>
+<center><h1>Module <a href="type_JSignature.html">JSignature</a></h1></center>
+<br>
+<pre><span class="keyword">module</span> JSignature: <code class="code"><span class="keyword">sig</span></code> <a href="JSignature.html">..</a> <code class="code"><span class="keyword">end</span></code></pre>This module describe the signatures used with generics. It defines
+    the data types used to represent information extracted from the
+    Signature attribute defined in Java 5 (chapter 4.4.4).<br>
+<hr width="100%">
+<br>
+<span id="2_Typesusedintypedeclarationsofgenericsignatures"><h2>Types used in type declarations of generic signatures</h2></span><br>
+<br><code><span id="TYPEtypeVariable"><span class="keyword">type</span> <code class="type"></code>typeVariable</span> = </code><table class="typetable">
+<tr>
+<td align="left" valign="top" >
+<code><span class="keyword">|</span></code></td>
+<td align="left" valign="top" >
+<code><span class="constructor">TypeVariable</span> <span class="keyword">of</span> <code class="type">string</code></code></td>
+
+</tr></table>
+
+<div class="info">
+This is the type used for type variables as P in Collection&lt;P&gt;.<br>
+</div>
+
+<br><code><span id="TYPEtypeArgument"><span class="keyword">type</span> <code class="type"></code>typeArgument</span> = </code><table class="typetable">
+<tr>
+<td align="left" valign="top" >
+<code><span class="keyword">|</span></code></td>
+<td align="left" valign="top" >
+<code><span class="constructor">ArgumentExtends</span> <span class="keyword">of</span> <code class="type"><a href="JSignature.html#TYPEfieldTypeSignature">fieldTypeSignature</a></code></code></td>
+<td class="typefieldcomment" align="left" valign="top" ><code>(*</code></td><td class="typefieldcomment" align="left" valign="top" >e.g. &lt;?+Object&gt;</td><td class="typefieldcomment" align="left" valign="bottom" ><code>*)</code></td>
+</tr>
+<tr>
+<td align="left" valign="top" >
+<code><span class="keyword">|</span></code></td>
+<td align="left" valign="top" >
+<code><span class="constructor">ArgumentInherits</span> <span class="keyword">of</span> <code class="type"><a href="JSignature.html#TYPEfieldTypeSignature">fieldTypeSignature</a></code></code></td>
+<td class="typefieldcomment" align="left" valign="top" ><code>(*</code></td><td class="typefieldcomment" align="left" valign="top" >e.g. &lt;?-Object&gt;</td><td class="typefieldcomment" align="left" valign="bottom" ><code>*)</code></td>
+</tr>
+<tr>
+<td align="left" valign="top" >
+<code><span class="keyword">|</span></code></td>
+<td align="left" valign="top" >
+<code><span class="constructor">ArgumentIs</span> <span class="keyword">of</span> <code class="type"><a href="JSignature.html#TYPEfieldTypeSignature">fieldTypeSignature</a></code></code></td>
+<td class="typefieldcomment" align="left" valign="top" ><code>(*</code></td><td class="typefieldcomment" align="left" valign="top" >e.g. &lt;Object&gt;</td><td class="typefieldcomment" align="left" valign="bottom" ><code>*)</code></td>
+</tr>
+<tr>
+<td align="left" valign="top" >
+<code><span class="keyword">|</span></code></td>
+<td align="left" valign="top" >
+<code><span class="constructor">ArgumentIsAny</span></code></td>
+<td class="typefieldcomment" align="left" valign="top" ><code>(*</code></td><td class="typefieldcomment" align="left" valign="top" >&lt;*&gt;</td><td class="typefieldcomment" align="left" valign="bottom" ><code>*)</code></td>
+</tr></table>
+
+
+<br><code><span id="TYPEsimpleClassTypeSignature"><span class="keyword">type</span> <code class="type"></code>simpleClassTypeSignature</span> = {</code><table class="typetable">
+<tr>
+<td align="left" valign="top" >
+<code>&nbsp;&nbsp;</code></td>
+<td align="left" valign="top" >
+<code>scts_name&nbsp;: <code class="type">string</code>;</code></td>
+
+</tr>
+<tr>
+<td align="left" valign="top" >
+<code>&nbsp;&nbsp;</code></td>
+<td align="left" valign="top" >
+<code>scts_type_arguments&nbsp;: <code class="type"><a href="JSignature.html#TYPEtypeArgument">typeArgument</a> list</code>;</code></td>
+
+</tr></table>
+}
+
+
+<br><code><span id="TYPEclassTypeSignature"><span class="keyword">type</span> <code class="type"></code>classTypeSignature</span> = {</code><table class="typetable">
+<tr>
+<td align="left" valign="top" >
+<code>&nbsp;&nbsp;</code></td>
+<td align="left" valign="top" >
+<code>cts_package&nbsp;: <code class="type">string list</code>;</code></td>
+
+</tr>
+<tr>
+<td align="left" valign="top" >
+<code>&nbsp;&nbsp;</code></td>
+<td align="left" valign="top" >
+<code>cts_enclosing_classes&nbsp;: <code class="type"><a href="JSignature.html#TYPEsimpleClassTypeSignature">simpleClassTypeSignature</a> list</code>;</code></td>
+
+</tr>
+<tr>
+<td align="left" valign="top" >
+<code>&nbsp;&nbsp;</code></td>
+<td align="left" valign="top" >
+<code>cts_simple_class_type_signature&nbsp;: <code class="type"><a href="JSignature.html#TYPEsimpleClassTypeSignature">simpleClassTypeSignature</a></code>;</code></td>
+
+</tr></table>
+}
+
+
+<br><code><span id="TYPEformalTypeParameter"><span class="keyword">type</span> <code class="type"></code>formalTypeParameter</span> = {</code><table class="typetable">
+<tr>
+<td align="left" valign="top" >
+<code>&nbsp;&nbsp;</code></td>
+<td align="left" valign="top" >
+<code>ftp_name&nbsp;: <code class="type">string</code>;</code></td>
+
+</tr>
+<tr>
+<td align="left" valign="top" >
+<code>&nbsp;&nbsp;</code></td>
+<td align="left" valign="top" >
+<code>ftp_class_bound&nbsp;: <code class="type"><a href="JSignature.html#TYPEfieldTypeSignature">fieldTypeSignature</a> option</code>;</code></td>
+
+</tr>
+<tr>
+<td align="left" valign="top" >
+<code>&nbsp;&nbsp;</code></td>
+<td align="left" valign="top" >
+<code>ftp_interface_bounds&nbsp;: <code class="type"><a href="JSignature.html#TYPEfieldTypeSignature">fieldTypeSignature</a> list</code>;</code></td>
+
+</tr></table>
+}
+
+
+<br><code><span id="TYPEthrowsSignature"><span class="keyword">type</span> <code class="type"></code>throwsSignature</span> = </code><table class="typetable">
+<tr>
+<td align="left" valign="top" >
+<code><span class="keyword">|</span></code></td>
+<td align="left" valign="top" >
+<code><span class="constructor">ThrowsClass</span> <span class="keyword">of</span> <code class="type"><a href="JSignature.html#TYPEclassTypeSignature">classTypeSignature</a></code></code></td>
+
+</tr>
+<tr>
+<td align="left" valign="top" >
+<code><span class="keyword">|</span></code></td>
+<td align="left" valign="top" >
+<code><span class="constructor">ThrowsTypeVariable</span> <span class="keyword">of</span> <code class="type"><a href="JSignature.html#TYPEtypeVariable">typeVariable</a></code></code></td>
+
+</tr></table>
+
+
+<br><code><span id="TYPEtypeSignature"><span class="keyword">type</span> <code class="type"></code>typeSignature</span> = </code><table class="typetable">
+<tr>
+<td align="left" valign="top" >
+<code><span class="keyword">|</span></code></td>
+<td align="left" valign="top" >
+<code><span class="constructor">GBasic</span> <span class="keyword">of</span> <code class="type"><a href="JBasics.html#TYPEjava_basic_type">JBasics.java_basic_type</a></code></code></td>
+
+</tr>
+<tr>
+<td align="left" valign="top" >
+<code><span class="keyword">|</span></code></td>
+<td align="left" valign="top" >
+<code><span class="constructor">GObject</span> <span class="keyword">of</span> <code class="type"><a href="JSignature.html#TYPEfieldTypeSignature">fieldTypeSignature</a></code></code></td>
+
+</tr></table>
+
+<div class="info">
+<code class="code">typeSignature</code> is used for method parameters and return values of
+    generic methods.<br>
+</div>
+
+<br>
+<span id="2_Typesofgenericsignatures"><h2>Types of generic signatures</h2></span><br>
+<br><code><span id="TYPEclassSignature"><span class="keyword">type</span> <code class="type"></code>classSignature</span> = {</code><table class="typetable">
+<tr>
+<td align="left" valign="top" >
+<code>&nbsp;&nbsp;</code></td>
+<td align="left" valign="top" >
+<code>cs_formal_type_parameters&nbsp;: <code class="type"><a href="JSignature.html#TYPEformalTypeParameter">formalTypeParameter</a> list</code>;</code></td>
+
+</tr>
+<tr>
+<td align="left" valign="top" >
+<code>&nbsp;&nbsp;</code></td>
+<td align="left" valign="top" >
+<code>cs_super_class&nbsp;: <code class="type"><a href="JSignature.html#TYPEclassTypeSignature">classTypeSignature</a></code>;</code></td>
+
+</tr>
+<tr>
+<td align="left" valign="top" >
+<code>&nbsp;&nbsp;</code></td>
+<td align="left" valign="top" >
+<code>cs_super_interfaces&nbsp;: <code class="type"><a href="JSignature.html#TYPEclassTypeSignature">classTypeSignature</a> list</code>;</code></td>
+
+</tr></table>
+}
+
+
+<br><code><span id="TYPEfieldTypeSignature"><span class="keyword">type</span> <code class="type"></code>fieldTypeSignature</span> = </code><table class="typetable">
+<tr>
+<td align="left" valign="top" >
+<code><span class="keyword">|</span></code></td>
+<td align="left" valign="top" >
+<code><span class="constructor">GClass</span> <span class="keyword">of</span> <code class="type"><a href="JSignature.html#TYPEclassTypeSignature">classTypeSignature</a></code></code></td>
+
+</tr>
+<tr>
+<td align="left" valign="top" >
+<code><span class="keyword">|</span></code></td>
+<td align="left" valign="top" >
+<code><span class="constructor">GArray</span> <span class="keyword">of</span> <code class="type"><a href="JSignature.html#TYPEtypeSignature">typeSignature</a></code></code></td>
+
+</tr>
+<tr>
+<td align="left" valign="top" >
+<code><span class="keyword">|</span></code></td>
+<td align="left" valign="top" >
+<code><span class="constructor">GVariable</span> <span class="keyword">of</span> <code class="type"><a href="JSignature.html#TYPEtypeVariable">typeVariable</a></code></code></td>
+
+</tr></table>
+
+<div class="info">
+This type is for references. Generic fields are of this type (it
+    cannot be of a basic type as it would not be generic anymore) but
+    method arguments or even generic parameters are also of this
+    type.<br>
+</div>
+
+<br><code><span id="TYPEmethodTypeSignature"><span class="keyword">type</span> <code class="type"></code>methodTypeSignature</span> = {</code><table class="typetable">
+<tr>
+<td align="left" valign="top" >
+<code>&nbsp;&nbsp;</code></td>
+<td align="left" valign="top" >
+<code>mts_formal_type_parameters&nbsp;: <code class="type"><a href="JSignature.html#TYPEformalTypeParameter">formalTypeParameter</a> list</code>;</code></td>
+
+</tr>
+<tr>
+<td align="left" valign="top" >
+<code>&nbsp;&nbsp;</code></td>
+<td align="left" valign="top" >
+<code>mts_type_signature&nbsp;: <code class="type"><a href="JSignature.html#TYPEtypeSignature">typeSignature</a> list</code>;</code></td>
+
+</tr>
+<tr>
+<td align="left" valign="top" >
+<code>&nbsp;&nbsp;</code></td>
+<td align="left" valign="top" >
+<code>mts_return_type&nbsp;: <code class="type"><a href="JSignature.html#TYPEtypeSignature">typeSignature</a> option</code>;</code></td>
+
+</tr>
+<tr>
+<td align="left" valign="top" >
+<code>&nbsp;&nbsp;</code></td>
+<td align="left" valign="top" >
+<code>mts_throws&nbsp;: <code class="type"><a href="JSignature.html#TYPEthrowsSignature">throwsSignature</a> list</code>;</code></td>
+
+</tr></table>
+}
+
+
+</body></html>

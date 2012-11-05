@@ -1,0 +1,4 @@
+To generate the documentation you need:
+  - texlive and latex tools
+  - pandoc >= 1.9.2
+  - tidy

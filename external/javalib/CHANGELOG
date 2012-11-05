@@ -1,0 +1,359 @@
+From 2.2.1 to 2.2.2
+-----------------
+Minor changes:
+* Ptmap:
+  - add find_element and findi_element functions
+  - add inter_map2 function
+
+* Camlzip: add zlib interfaces in camlzip findlib installation
+
+* JBasics: 
+  - add of_list and of_array functions in Maps
+
+* Javalib: 
+  - add functions map_*_with_native* which provide a way to transform
+    the implementation type
+  - add Java method printing functions using a formatter in JPrint
+    module
+  
+* configure script:
+  - add check of versions for camlzip, ptrees, extlib to configure.sh
+  - add a check on presence of zlib C library necessary for camlzip
+  - remove option '-l default'.
+
+Bug fixes: 
+* JClass/Javalib: is_final_field was returning always false for fields
+of interface but it is the opposite (w.r.t. JVM specification and the
+ocamldoc of interface_field)
+
+* JUnparse/Javalib: several bugfixes in unparse_class function
+ regarding Java annotations (if present):
+  - unparsing was failing when annotations were present on an abstract
+    method
+  - unparsing of annotations was not correct (annotation type index
+    was referencing a wrong element in the constant pool)
+  - runtime visible annotations were not unparsed if no runtime
+    invisible annotation was present (on a method parameters only)
+
+From 2.2 to 2.2.1
+-----------------
+Minor changes:
+* Javalib: 
+  - add several iterators for methods and fields
+  - add the is_final function to test if a class is final
+* JCode: add the [get_source_line_number'] function which operates on
+  the LineNumberTable instead of on the code
+
+Bug fixes:
+* The Java string constants were not escaped before manipulation. We
+  now have an abstract datatype JBasics.jstr, and the corresponding
+  setter and getter functions.
+* Fix some checks in configure script
+* Fix some broken links in documentation
+
+From 2.1.1 to 2.2
+-----------------
+New feature:
+* adding support for the attribute LocalVariableTypeTable which is the
+  LocalVariableTable for generics added in Java 5
+
+Bug fixes:
+* JPrint: the function [class_name ~jvm:true cn] was returning the
+  type of an object of class cn (e.g. "Ljava/lang/Object;") instead of
+  the name of class cn (e.g. "java/lang/Object") in the JVM
+  representation. Now it returns the class's name format, to obtain
+  the type of an object use the [value_type ~jvm:true] function.
+* JDumpJasmin: the Jasmin output has been corrected, see bug report #11314
+
+Minor change: 
+* JCode: modifying function [get_local_variable_info] that uses the
+local_variable_table: JVM specification has been corrected and
+indicates that variable name scope is [start,start+length) instead of
+[start,start+length]
+
+From 2.1 to 2.1.1
+-----------------
+Minor changes:
+* removing some debugging messages from JFile.iter (display number of classes)
+* Version number of Sawja in FindLib was indicated 2.0.1 for version 2.1, 
+  now it is the correct number (2.1.1)
+
+From 2.0.1 to 2.1
+-----------------
+Compilation & Installation changes: 
+* installation process now rely on ocamlfind (more homogeneous installation,
+  easier to use as dependencies are automatically linked in)
+* add a configure script into the compilation routine that automatically
+  generate the appropriate Makefile.config file. Local installation is now an
+  easy option.
+
+New features:
+* parsing and unparsing of Java 5 annotations
+* new function Javalib.extract_class_name_from_file to recover a class name and
+  a class path from a .class file
+
+Minor changes:
+* add ~force in Javalib.map_* functions to force the evaluation of lazy values
+* now using indexed method_signature and field_signature in the constant pool
+  (time and memory footprint improved)
+* improving internal comparison on class_field_signature_data and
+  class_method_signature_data
+* zip files can be given when jar files are excepted
+
+Bug fixes:
+* bugfix in JCode.get_local_variable_info: local variable spreading over 0
+  instruction (written at one point, never read) were causing problems
+* bugfix in JCode.get_source_line_number.
+* bugfix in classname checking: '-' (minus) is used in some class names
+* bugfix in JLow2High: some correct classes were rejected during checking.
+* others bugfixes (in JFile)
+
+
+From 2.0 to 2.0.1
+-----------------
+Minor fixes:
+* bugfix in JCode.get_local_variable_info
+* minor correction in the tutorial
+* installation procedure should run more smoothly
+
+From 1.8.1 to 2.0
+-----------------
+Main changes:
+* the library has been refocused on the class representation: everything dealing
+  with the program representation has been removed (and put into Sawja).
+
+New features:
+* adding maps and sets for all indexed types: their implementation is based on
+  Patricia trees which are must more efficient that the balanced trees of OCaml
+* Ptrees library optimized
+* adding printing function to Jasmin format
+* adding support for Java 6 stackmaps
+
+
+Changes in the interfaces:
+* adding a user interface: the standard user should now only need 3 files
+  (javalib.mli, jCode.mli and jBasics.mli)
+* class names, method signatures and field signatures are now abstract and
+  indexed: impoved efficiency and memory footprint
+* the bytecode representation can be changed by the user: methods and classes
+  are now polymorphic
+* module interfaces have been partly re-written and more documented
+
+Minor changes:
+* javaLib renamed in javalib
+* improving error messages and exception handling
+* adding some printing functions to more easily print data in a JVM or Java
+  representation
+* various bugfixes
+
+
+From 1.8 to 1.8.1
+-----------------
+New features:
+* new HTML printer function for programs (cleaner and easier to
+  navigate through)
+* stub generator for native methods for RTA (only for Linux)
+
+Changes in the interface:
+  There should be no change in the interface
+
+Minor changes in the code:
+* Printing a warnings when parsing native methods in RTA and no stub
+  is found
+* Removing some dead code in JRTA
+* Improving some error messages (in JLow2High)
+
+Bugfixes:
+* bugfix (under windows): class path separator is now a semi-colon on
+  windows
+* bugfix (RTA): load java.lang.Class when encountering ldc instruction
+* bugfix: when (un)parsing some code, the bytecode representation
+  could change if the first was not optimal in terms of size (eg. an
+  iload_1 coded as an iload 1)
+* bugfix (get_local_variable_info): a heuristic was used to determined
+  the length of the store instruction, it is now the proper length
+* bugfix (jDumpLow): jsr and ret were printed as goto
+* bugfix: retw(209) not documented => removed
+
+From 1.7.1 to 1.8
+-----------------
+The licence has been changed from the GPL to the LGPL.
+
+New features:
+* efficient RTA implementation for program loading and callgraph
+  computation
+* much more efficient (and precise, and simpler to use) static lookup
+  functions (in JControlFlow) (based on JRTA)
+* JPrint can now output the local variable names in the bytecode output
+* a Patricia Tree library has been added and can be used by the client
+  code
+
+Changes in the interface:
+* numbering of class names, field signature and method signature in
+  the program representation (which implies changes in loads of
+  function signatures)
+* JProgram has been splited in 2 : JProgram and JCRA. JRTA (a
+  replacement for JCRA) has been added.
+* adding a function to retrieve the name and signature of a local
+  variable
+* adding a function to retrieve the source line number corresponding
+  to a bytecode instruction
+* adding JDumpBasics.arraytype2shortstring
+* JProgram.get_fields now returns the list of fields instead of the
+  list of indexes (same price, more information)
+
+Minor changes in the code:
+* adding a way to tune javalib to be either more or less
+  permissive (some consistency checks are only done in permissive
+  mode)
+* pprint_*_to_html_file now takes the introduction string instead
+  of a file as first argument.  It is more flexible as the user
+  can also load the string from a file.
+* very small optimizations (avoid recomputing some operations, use a
+  unsafe_get instead of get, order some tests based on their costs)
+* using Patricia Trees instead of Sets or Maps when applicable
+* adding the method called by SUN's VM at startup in the list of entry
+  points
+
+Bugfixes:
+* several bugfix in JControlFlow
+
+From 1.7 to 1.7.1
+-----------------
+Bugfixes:
+* the JFile.mkdir function could produce a stack overflow if the
+  directory passed as argument is not a sub-directory of the current
+  directory. Bug reported by Samuel Hym. This bug is present in
+  JavaLib 1.5, 1.6 and 1.7.
+* the JHigh2Low.h2l_code2attribute function was using lazy functions
+  that were evaluated after that the constant pool were modified,
+  which could cause bugs if the constant pool was emptied before
+  unparsing the class. Bug reported by Samuel Hym. This bug is present
+  in JavaLib 1.7.
+
+From 1.6 to 1.7
+---------------
+New features:
+* add lazy code parsing: the compiled code attribute is copied into
+  the memory but not parsed before it is actually needed.  Copying the
+  code attribute allows not to refer to the .class file anymore so
+  they can be garbage collected.  Tests that load classes without
+  looking at the actual code attributes shows an improvement of 22%
+  and 23% of time and memory consumption, respectively.
+* it is now possible for JFile.class_path to load the .jar files that
+  the given directories contain (so the CLASSPATH environment variable
+  can be used as the argument of the function)
+
+Changes in the interface:
+* adding version numbers to class file representations (so JUnparse
+  output the right version number).  (Note: the current implementation
+  does not check that the features actually used match the declared
+  version number)
+* merge Parse_error, Illegal_value and Class_structure_error
+  exception into Class_structure_error exception.
+* handling Java 5 signatures for generics (some old signature or
+  name_and_type have been renamed to descriptor when appropriate) to
+  jProgram, jClass and jClassLow and update handling code (jPrint,
+  jDumpLow, jParse, jUnparse, jH2L, jL2H)
+* adding attribute EnclosingMethod (introduced with Java 5 for local
+  classes) (jProgram, jClass, jClassLow) and update handling code
+  (jPrint, jDumpLow, jParse, jUnparse, jH2L, jL2H)
+* adding attribute SourceDebugExtension (jProgram, jClass, jClassLow)
+  and corresponding handling code (jPrint, jDumpLow, jParse, jUnparse,
+  jH2L, jL2H)
+
+Minor changes in the code:
+* closing the class_path when the program is loaded (should free some
+  memory)
+* tableswitch and lookupswitch instructions are now printed
+  with all the details (instead of just <...>)
+* adding a constraint check on the maximum size of the code attribute
+  (65536)
+* when an error occurs in low2high_class, it now gives the class name
+  in the error message
+* improving the documentation
+
+Bugfixes:
+* bugfix: replace IO.nread with IO.really_nread as it would be an
+  error to read less bytes than what is excepted.
+* bugfix: it is now be possible to have more than one
+  LocalVariableTable per code attribute (there can be one per local
+  variable)
+
+
+From 1.5 to 1.6
+---------------
+New features :
+* adding a representation for complete programs
+* adding a printing module for programs that can output text and html
+  code, along with user information
+* adding a JPrintHierarchy to print information about the class
+  hierarchy, inheritance, overloading, etc.
+* adding a ControlFlow module to have some control flow information
+  more easily
+* adding a lookup function for (loading and writing) individual
+  classes in .jar files
+* add support for Java 5 flags (enum, synthetic, annotation, bridge,
+  varargs, etc.) and improve handling of those flags in general.
+* enriching dumping modules to print classes in high or low level
+  representation
+
+Changes in the interface :
+* classes and interfaces have now different type
+* renamed jConsts to jBasics
+* moved the definitions of jClassLow also used in jClass to jBasics
+* merging OpConst and OpLdc (JDump/JClass/JInstruction) in high level
+  class representation
+* signatures added to fields and classes in JClass
+* the return type has been included in the signature (useful for
+  bridge methods)
+* method_signature renamed to method_descriptor as it includes the
+  return type wich is not part of the signature
+* more accurate (and cumbersome) typing for access flags in JClassLow
+* some renaming so names should be more 'logic'
+
+Minor changes in the code :
+* add more access functions to classes and interfaces
+* more consistent treatment of exceptions in all the library
+* adding some checks on bytecode generation (JCode)
+* adding some checks on conversion (JLow2High)
+* some code factorizing (is_dir/is_file) in JFile, for the constant
+  pool accesses and in the representation of abstract and concrete
+  classes
+
+Bug fix :
+* bugfix : in unparsing line number tables
+* bugfix : in JDumpBasics.object_value_signature
+* bugfix : in JFile, correct a bug when trying to open an nonexistent
+  file
+* bugfix : in (un-)parsing of BIPush
+* bugfix : a ConstantValue attribute was expected for non-static
+  fields
+* bugfix : in JLow2High : unexpected attributes were causing the
+  conversion to fail (it now works and prints a warning)
+* bugfix : in JLow2High
+* bugfix : in JHigh2Low : correcting some bugs with abstract classes
+  and methods
+* fix encoding problems in documentation 
+* Removed the extlib patch (included in extlib 1.5.1)
+
+
+From 1.4 to 1.5
+---------------
+* new type for bytecode instructions (more generic opcodes)
+* the low level instructions are still available, and even more low
+  level
+* change many base types to reflect more accurately the constraints of
+  the specification
+* fix bugs and change some small other stuff
+
+From 1.0 to 1.4
+---------------
+This version adds a lot of features (and fixes some bugs) to the latest
+version (1.0) distributed by Nicolas Cannasse while keeping an almost
+compatible interface.  The differences in the compatible interfaces
+includes :
+- a few changes in the instruction set
+- the AttributeStackMap constructor
+- the AccRFU constructor
+- an additional parameter in the function JCode.parse_opcode

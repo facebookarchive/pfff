@@ -1,0 +1,54 @@
+<html><head>
+<link rel="stylesheet" href="style.css" type="text/css">
+<meta content="text/html; charset=utf-8" http-equiv="Content-Type">
+<link rel="Start" href="index.html">
+<link title="Index of types" rel=Appendix href="index_types.html">
+<link title="Index of exceptions" rel=Appendix href="index_exceptions.html">
+<link title="Index of values" rel=Appendix href="index_values.html">
+<link title="Index of modules" rel=Appendix href="index_modules.html">
+<link title="Index of module types" rel=Appendix href="index_module_types.html">
+<link title="JBasics" rel="Chapter" href="JBasics.html">
+<link title="JBasicsLow" rel="Chapter" href="JBasicsLow.html">
+<link title="JCode" rel="Chapter" href="JCode.html">
+<link title="JClassLow" rel="Chapter" href="JClassLow.html">
+<link title="JSignature" rel="Chapter" href="JSignature.html">
+<link title="JClass" rel="Chapter" href="JClass.html">
+<link title="JDumpBasics" rel="Chapter" href="JDumpBasics.html">
+<link title="JUnparseSignature" rel="Chapter" href="JUnparseSignature.html">
+<link title="JDumpLow" rel="Chapter" href="JDumpLow.html">
+<link title="JDumpJasmin" rel="Chapter" href="JDumpJasmin.html">
+<link title="JParseCode" rel="Chapter" href="JParseCode.html">
+<link title="JInstruction" rel="Chapter" href="JInstruction.html">
+<link title="JUnparse" rel="Chapter" href="JUnparse.html">
+<link title="JParseSignature" rel="Chapter" href="JParseSignature.html">
+<link title="JParse" rel="Chapter" href="JParse.html">
+<link title="JLow2High" rel="Chapter" href="JLow2High.html">
+<link title="JHigh2Low" rel="Chapter" href="JHigh2Low.html">
+<link title="JFile" rel="Chapter" href="JFile.html">
+<link title="JManifest" rel="Chapter" href="JManifest.html">
+<link title="Javalib" rel="Chapter" href="Javalib.html">
+<link title="Ptmap" rel="Chapter" href="Ptmap.html">
+<link title="Ptset" rel="Chapter" href="Ptset.html"><title>Javalib : JDumpBasics</title>
+</head>
+<body>
+<code class="code"><span class="keyword">sig</span><br>
+&nbsp;&nbsp;<span class="keyword">val</span>&nbsp;class_name&nbsp;:&nbsp;?jvm:bool&nbsp;<span class="keywordsign">-&gt;</span>&nbsp;<span class="constructor">JBasics</span>.class_name&nbsp;<span class="keywordsign">-&gt;</span>&nbsp;string<br>
+&nbsp;&nbsp;<span class="keyword">val</span>&nbsp;basic_type&nbsp;:&nbsp;?jvm:bool&nbsp;<span class="keywordsign">-&gt;</span>&nbsp;<span class="constructor">JBasics</span>.java_basic_type&nbsp;<span class="keywordsign">-&gt;</span>&nbsp;string<br>
+&nbsp;&nbsp;<span class="keyword">val</span>&nbsp;object_value_signature&nbsp;:&nbsp;?jvm:bool&nbsp;<span class="keywordsign">-&gt;</span>&nbsp;<span class="constructor">JBasics</span>.object_type&nbsp;<span class="keywordsign">-&gt;</span>&nbsp;string<br>
+&nbsp;&nbsp;<span class="keyword">val</span>&nbsp;value_signature&nbsp;:&nbsp;?jvm:bool&nbsp;<span class="keywordsign">-&gt;</span>&nbsp;<span class="constructor">JBasics</span>.value_type&nbsp;<span class="keywordsign">-&gt;</span>&nbsp;string<br>
+&nbsp;&nbsp;<span class="keyword">val</span>&nbsp;type2shortstring&nbsp;:&nbsp;<span class="constructor">JBasics</span>.value_type&nbsp;<span class="keywordsign">-&gt;</span>&nbsp;string<br>
+&nbsp;&nbsp;<span class="keyword">val</span>&nbsp;rettype2shortstring&nbsp;:&nbsp;?jvm:bool&nbsp;<span class="keywordsign">-&gt;</span>&nbsp;<span class="constructor">JBasics</span>.value_type&nbsp;option&nbsp;<span class="keywordsign">-&gt;</span>&nbsp;string<br>
+&nbsp;&nbsp;<span class="keyword">val</span>&nbsp;arraytype2shortstring&nbsp;:&nbsp;<span class="constructor">JBasics</span>.jvm_array_type&nbsp;<span class="keywordsign">-&gt;</span>&nbsp;string<br>
+&nbsp;&nbsp;<span class="keyword">val</span>&nbsp;method_signature&nbsp;:&nbsp;string&nbsp;<span class="keywordsign">-&gt;</span>&nbsp;<span class="constructor">JBasics</span>.method_descriptor&nbsp;<span class="keywordsign">-&gt;</span>&nbsp;string<br>
+&nbsp;&nbsp;<span class="keyword">val</span>&nbsp;signature&nbsp;:&nbsp;string&nbsp;<span class="keywordsign">-&gt;</span>&nbsp;<span class="constructor">JBasics</span>.descriptor&nbsp;<span class="keywordsign">-&gt;</span>&nbsp;string<br>
+&nbsp;&nbsp;<span class="keyword">val</span>&nbsp;jvm_basic_type&nbsp;:<br>
+&nbsp;&nbsp;&nbsp;&nbsp;[&lt;&nbsp;<span class="keywordsign">`</span><span class="constructor">Double</span>&nbsp;<span class="keywordsign">|</span>&nbsp;<span class="keywordsign">`</span><span class="constructor">Float</span>&nbsp;<span class="keywordsign">|</span>&nbsp;<span class="keywordsign">`</span><span class="constructor">Int</span>&nbsp;<span class="keywordsign">|</span>&nbsp;<span class="keywordsign">`</span><span class="constructor">Int2Bool</span>&nbsp;<span class="keywordsign">|</span>&nbsp;<span class="keywordsign">`</span><span class="constructor">Long</span>&nbsp;]&nbsp;<span class="keywordsign">-&gt;</span>&nbsp;char<br>
+&nbsp;&nbsp;<span class="keyword">val</span>&nbsp;jvm_array_type&nbsp;:&nbsp;<span class="constructor">JBasics</span>.jvm_array_type&nbsp;<span class="keywordsign">-&gt;</span>&nbsp;char<br>
+&nbsp;&nbsp;<span class="keyword">val</span>&nbsp;java_basic_type&nbsp;:&nbsp;<span class="constructor">JBasics</span>.java_basic_type&nbsp;<span class="keywordsign">-&gt;</span>&nbsp;char<br>
+&nbsp;&nbsp;<span class="keyword">val</span>&nbsp;dump_constant_value&nbsp;:&nbsp;<span class="keywordsign">'</span>a&nbsp;<span class="constructor">IO</span>.output&nbsp;<span class="keywordsign">-&gt;</span>&nbsp;<span class="constructor">JBasics</span>.constant_value&nbsp;<span class="keywordsign">-&gt;</span>&nbsp;unit<br>
+&nbsp;&nbsp;<span class="keyword">val</span>&nbsp;dump_constant&nbsp;:&nbsp;<span class="keywordsign">'</span>a&nbsp;<span class="constructor">IO</span>.output&nbsp;<span class="keywordsign">-&gt;</span>&nbsp;<span class="constructor">JBasics</span>.constant&nbsp;<span class="keywordsign">-&gt;</span>&nbsp;unit<br>
+&nbsp;&nbsp;<span class="keyword">val</span>&nbsp;dump_constantpool&nbsp;:&nbsp;<span class="keywordsign">'</span>a&nbsp;<span class="constructor">IO</span>.output&nbsp;<span class="keywordsign">-&gt;</span>&nbsp;<span class="constructor">JBasics</span>.constant&nbsp;array&nbsp;<span class="keywordsign">-&gt;</span>&nbsp;unit<br>
+&nbsp;&nbsp;<span class="keyword">val</span>&nbsp;dump_verification_type&nbsp;:&nbsp;<span class="constructor">JBasics</span>.verification_type&nbsp;<span class="keywordsign">-&gt;</span>&nbsp;string<br>
+&nbsp;&nbsp;<span class="keyword">val</span>&nbsp;dump_stackmap&nbsp;:&nbsp;<span class="keywordsign">'</span>a&nbsp;<span class="constructor">IO</span>.output&nbsp;<span class="keywordsign">-&gt;</span>&nbsp;<span class="constructor">JBasics</span>.stackmap&nbsp;<span class="keywordsign">-&gt;</span>&nbsp;unit<br>
+&nbsp;&nbsp;<span class="keyword">val</span>&nbsp;dump_exc&nbsp;:&nbsp;<span class="keywordsign">'</span>a&nbsp;<span class="constructor">IO</span>.output&nbsp;<span class="keywordsign">-&gt;</span>&nbsp;<span class="keywordsign">'</span>b&nbsp;<span class="keywordsign">-&gt;</span>&nbsp;<span class="constructor">JCode</span>.exception_handler&nbsp;<span class="keywordsign">-&gt;</span>&nbsp;unit<br>
+<span class="keyword">end</span></code></body></html>

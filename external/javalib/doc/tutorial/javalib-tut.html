@@ -1,0 +1,539 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN"
+    "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+<meta name="generator" content=
+"HTML Tidy for Linux (vers 25 March 2009), see www.w3.org" />
+<meta http-equiv="Content-Type" content=
+"text/html; charset=utf-8" />
+<meta http-equiv="Content-Style-Type" content="text/css" />
+<meta name="generator" content="pandoc" />
+<title>Javalib tutorial -</title>
+
+<style type="text/css">
+/*<![CDATA[*/
+table.sourceCode, tr.sourceCode, td.lineNumbers, td.sourceCode {
+  margin: 0; padding: 0; vertical-align: baseline; border: none; }
+table.sourceCode { width: 100%; }
+td.lineNumbers { text-align: right; padding-right: 4px; padding-left: 4px; color: #aaaaaa; border-right: 1px solid #aaaaaa; }
+td.sourceCode { padding-left: 5px; }
+code > span.kw { color: #007020; font-weight: bold; }
+code > span.dt { color: #902000; }
+code > span.dv { color: #40a070; }
+code > span.bn { color: #40a070; }
+code > span.fl { color: #40a070; }
+code > span.ch { color: #4070a0; }
+code > span.st { color: #4070a0; }
+code > span.co { color: #60a0b0; font-style: italic; }
+code > span.ot { color: #007020; }
+code > span.al { color: #ff0000; font-weight: bold; }
+code > span.fu { color: #06287e; }
+code > span.er { color: #ff0000; font-weight: bold; }
+/*]]>*/
+</style>
+<link rel="stylesheet" href="style.css" type="text/css" />
+</head>
+<body>
+<div class="content">
+<h1 class="tutorial-title">Javalib tutorial</h1>
+<div id="TOC">
+<ul>
+<li><a href="#introduction">Introduction</a></li>
+<li><a href="#global-architecture">Global architecture</a>
+<ul>
+<li><a href="#jbasics-module"><em>JBasics</em> module</a></li>
+<li><a href="#jcode-module"><em>JCode</em> module</a></li>
+<li><a href="#javalib-module"><em>Javalib</em> module</a></li>
+</ul>
+</li>
+<li><a href="#tutorial">Tutorial</a>
+<ul>
+<li><a href=
+"#making-class-names-field-signatures-and-method-signatures">Making
+class names, field signatures and method signatures</a></li>
+<li><a href=
+"#getting-a-class-representation-from-a-binary-file">Getting a
+class representation from a binary file</a></li>
+<li><a href="#getting-fields-and-methods-from-a-class">Getting
+fields and methods from a class</a></li>
+<li><a href="#a-more-sophisticated-example">A more sophisticated
+example</a></li>
+<li><a href="#another-use-case">Another use case</a></li>
+</ul>
+</li>
+</ul>
+</div>
+<h2 id="introduction"><a href="#TOC">Introduction</a></h2>
+<p><em>Javalib</em> is a library written in <em>OCaml</em> with the
+aim to provide a high level representation of <em>Java</em>
+<strong>.class</strong> files. Thus it stands for a good starting
+point for people who want to develop static analysis for
+<em>Java</em> byte-code programs, benefiting from the strength of
+<em>OCaml</em> language.</p>
+<p>This document briefly presents the API provided by
+<em>Javalib</em> and gives some samples of code in
+<em>OCaml</em>.</p>
+<h2 id="global-architecture"><a href="#TOC">Global
+architecture</a></h2>
+<p>All modules of <em>Javalib</em> are sub-modules of the package
+module <em>Javalib_pack</em> in order to avoid possible namespace
+conflicts. The user interface consists of three modules,
+<em>JBasics</em>, <em>JCode</em> and <em>Javalib</em>. These
+modules are the only ones someone should need to write static
+analysis. The other ones provide lower level functions and should
+not be used.</p>
+<h3 id="jbasics-module"><a href="#TOC"><em>JBasics</em>
+module</a></h3>
+<p>This module gives a representation of all the basic types that
+appear at the byte-code level.</p>
+<p>These types are:</p>
+<ul>
+<li>JVM very basic types (such as int, float, double, ...)</li>
+<li>JVM more elaborated types (arrays, objects)</li>
+<li>class names, method signatures and field signatures</li>
+<li>others: constant pool types and stackmaps types</li>
+</ul>
+<p>The types representing class names, method signatures and field
+signatures are abstract. The directives to build them are in
+<em>JBasics</em> and are respectively <strong>make_cn</strong>,
+<strong>make_ms</strong> and <strong>make_fs</strong>.</p>
+<p>This module also provides some sets and maps containers relative
+to the abstract class names, field signatures and method
+signatures. These maps and sets are very efficient because they
+rely on the hidden indexation of each abstract type, thereby
+reducing the cost of comparison operations between types. Moreover
+the maps are based on <em>Patricia Trees</em> implementation, that
+is known to be really fast.</p>
+<h3 id="jcode-module"><a href="#TOC"><em>JCode</em> module</a></h3>
+<p>This module provides a representation of the JVM opcodes and of
+the code structure at the byte-code level.</p>
+<p>It is important to notice that the code is represented by an
+array of opcodes, and that the position of an opcode in this array
+corresponds to its relative address in the original binary file
+(this is the same numbering as <strong>javap</strong>). In
+<em>Javalib</em> representation, an opcode includes an instruction
+and its arguments. That's why we needed to introduce a dummy opcode
+<strong>OpInvalid</strong> to keep the correct numbering.</p>
+<h3 id="javalib-module"><a href="#TOC"><em>Javalib</em>
+module</a></h3>
+<p>This is the main module of <em>Javalib</em> which contains the
+definition of classes, fields and methods types, some methods to
+get a high level representation from binary classes and an internal
+module <em>JPrint</em> to pretty-print or dump every type defined
+in the three user modules.</p>
+<h2 id="tutorial"><a href="#TOC">Tutorial</a></h2>
+<p>To begin this tutorial, open an <em>OCaml</em> toplevel, for
+instance using the <em>Emacs</em> <strong>tuareg-mode</strong>, and
+load the following libraries in the given order:</p>
+<pre class="sourceCode ocaml" id="load">
+<code class="sourceCode ocaml"><span class=
+"ot">#load "str.cma"</span>
+<span class="ot">#load "unix.cma"</span>
+<span class="ot">#load "extLib.cma"</span>
+<span class="ot">#load "zip.cma"</span>
+<span class="ot">#load "ptrees.cma"</span>
+<span class="ot">#load "javalib.cma"</span></code>
+</pre>
+<p>Don't forget the associated <strong>#directory</strong>
+directives that allow you to specify the paths where to find these
+libraries. If you installed javalib with FindLib you should do:</p>
+<pre class="sourceCode ocaml" id="asso_dir">
+<code class="sourceCode ocaml"><span class=
+"ot">#directory "&lt;package_install_path&gt;extlib"</span>
+<span class=
+"ot">#directory "&lt;package_install_path&gt;camlzip"</span>
+<span class=
+"ot">#directory "&lt;package_install_path&gt;ptrees"</span>
+<span class=
+"ot">#directory "&lt;package_install_path&gt;javalib"</span>
+<span class=
+"co">(*&lt;package_install_path&gt; is given by command 'ocamlfind printconf'. </span>
+<span class=
+"co">If it is the same path than standard ocaml library just replace by '+'.*)</span></code>
+</pre>
+<p>You can also build a toplevel including all these libraries
+using the command <strong>make ocaml</strong> in the sources
+repository of <em>Javalib</em>. This command builds an executable
+named <strong>ocaml</strong> which is the result of the
+<strong>ocamlmktop</strong> command.</p>
+<h3 id="making-class-names-field-signatures-and-method-signatures">
+<a href="#TOC">Making class names, field signatures and method
+signatures</a></h3>
+<p>Imagine you want to access the method
+<strong>m:(Ljava.lang.String;)V</strong> and the field
+<strong>f:I</strong> of the class <strong>A</strong>.</p>
+<p>You first need to build the signatures associated to each
+entity. According to the <em>Javalib</em> API you will write:</p>
+<pre class="sourceCode ocaml" id="make_cn_ms_fs">
+<code class="sourceCode ocaml"><span class=
+"ot">open</span> Javalib_pack
+<span class="ot">open</span> JBasics
+<span class="kw">let</span> aname = make_cn <span class=
+"st">"A"</span>
+<span class="kw">let</span> java_lang_string = make_cn <span class=
+"st">"java.lang.String"</span>
+<span class="kw">let</span> ms =
+make_ms <span class="st">"m"</span> [<span class=
+"dt">TObject</span> (<span class=
+"dt">TClass</span> java_lang_string)] <span class="dt">None</span>
+<span class="kw">let</span> fs = make_fs <span class=
+"st">"f"</span> (<span class="dt">TBasic</span> <span class=
+"dt">`Int</span>)</code>
+</pre>
+<h3 id="getting-a-class-representation-from-a-binary-file"><a href=
+"#TOC">Getting a class representation from a binary file</a></h3>
+<p>The methods you need are in the <em>Javalib</em> module. You can
+open this module cause you will need it very often.</p>
+<pre class="sourceCode ocaml" id="op_javalib">
+<code class="sourceCode ocaml"><span class=
+"ot">open</span> Javalib</code>
+</pre>
+<p>Then, you need to build a <strong>class_path</strong> to specify
+where the classes you want to load have to be found:</p>
+<pre class="sourceCode ocaml" id="cp">
+<code class="sourceCode ocaml"><span class=
+"kw">let</span> class_path = class_path <span class=
+"st">"./"</span> <span class="co">(* for instance *)</span></code>
+</pre>
+<p>You can now load the class <strong>./A.class</strong>
+corresponding to <strong>aname</strong>.</p>
+<pre class="sourceCode ocaml" id="load_a">
+<code class="sourceCode ocaml"><span class=
+"kw">let</span> a = get_class class_path aname</code>
+</pre>
+<p>When you don't need a classpath any more, close it with
+<strong>close_class_path</strong> if you don't want to get file
+descriptors exceptions in a near futur.</p>
+<h3 id="getting-fields-and-methods-from-a-class"><a href=
+"#TOC">Getting fields and methods from a class</a></h3>
+<p>You now have the class <strong>a</strong> of type
+<em>Javalib.interface_or_class</em>. You might want to recover its
+method <strong>m</strong> of type <em>Javalib.jmethod</em> and
+field <strong>f</strong> of type <em>Javalib.any_field</em>.</p>
+<p>Simply do:</p>
+<pre class="sourceCode ocaml" id="load_m_f">
+<code class="sourceCode ocaml"><span class=
+"kw">let</span> m = get_method a ms
+<span class="kw">let</span> f = get_field a fs</code>
+</pre>
+<dl>
+<dt>Note:</dt>
+<dd>The methods <strong>get_method</strong> and
+<strong>get_field</strong> raise the exception
+<strong>Not_found</strong> if the method or field asked for can't
+be found.</dd>
+</dl>
+<p>It's important to notice that <strong>a</strong> can be a
+<em>Class of jclass</em> or an <em>Interface of jinterface</em>
+(see type <em>interface_or_class</em>), but that the methods
+<strong>get_method</strong> and <strong>get_field</strong> work
+equaly on it. That's why <strong>get_field</strong> returns a value
+of type <em>any_field</em> which can be <em>ClassField of
+class_field</em> or <em>Interface_field of interface_field</em>.
+Indeed, according to the JVM specification, we need to make the
+distinction between interface fields and class fields.</p>
+<h3 id="a-more-sophisticated-example"><a href="#TOC">A more
+sophisticated example</a></h3>
+<p>Now we would like to write a function that takes a
+<strong>classpath</strong> and a <strong>classname</strong> as
+parameters and that returns, for each method of this class, a set
+of the fields accessed for reading (instructions
+<strong>getstatic</strong> and <strong>getfield</strong>).</p>
+<p>Here is the code:</p>
+<pre class="sourceCode ocaml" id="exemple1">
+<code class="sourceCode ocaml"><span class=
+"ot">open</span> Javalib_pack
+<span class="ot">open</span> Javalib
+<span class="ot">open</span> JBasics
+<span class="ot">open</span> JCode
+
+<span class=
+"kw">let</span> get_accessed_fields (class_path : class_path)
+ (cn : class_name) =
+ <span class=
+"co">(* We first recover the interface or class associated to the</span>
+<span class="co">    class name cn. *)</span>
+ <span class=
+"kw">let</span> c = get_class class_path cn <span class=
+"kw">in</span>
+ <span class="co">(* Then, we get all the methods of c. *)</span>
+ <span class=
+"kw">let</span> methods : jcode jmethod MethodMap<span class=
+"kw">.</span>t = get_methods c <span class="kw">in</span>
+ <span class=
+"co">(* For each method of c, we associate a field set containing</span>
+<span class="co">    all the accessed fields. *)</span>
+   MethodMap<span class="kw">.</span>map
+    (<span class="kw">fun</span> m -&gt;
+      <span class="kw">match</span> m <span class="kw">with</span>
+      <span class=
+"co">(* A method can be abstract or concrete. *)</span>
+       | <span class="dt">AbstractMethod</span> _ -&gt;
+         <span class=
+"co">(* An abstract method has no code to parse. *)</span>
+          FieldSet<span class="kw">.</span>empty
+       | <span class="dt">ConcreteMethod</span> cm -&gt;
+          (<span class=
+"kw">match</span> cm.cm_implementation <span class="kw">with</span>
+          <span class=
+"co">(* A concrete method can be native so that we don't</span>
+<span class=
+"co">             know its behaviour. In this case we suppose that</span>
+<span class=
+"co">             no fields have been accessed which is not safe. *)</span>
+            | <span class=
+"dt">Native</span> -&gt; FieldSet<span class="kw">.</span>empty
+            | <span class="dt">Java</span> code -&gt;
+              <span class=
+"co">(* The code is stored in a lazy structure, for</span>
+<span class=
+"co">                 performance purposes. Indeed when loading a</span>
+<span class=
+"co">                 class the Javalib does not parse its methods. *)</span>
+               <span class="kw">let</span> jcode = Lazy<span class=
+"kw">.</span>force code <span class="kw">in</span>
+               <span class=
+"co">(* We iter on the array of opcodes, building our</span>
+<span class=
+"co">                  field set at the same time. *)</span>
+                 Array<span class="kw">.</span>fold_left
+                  (<span class="kw">fun</span> s op -&gt;
+                    <span class="kw">match</span> op <span class=
+"kw">with</span>
+                     | <span class="dt">OpGetField</span> (_, fs)
+                     | <span class=
+"dt">OpGetStatic</span> (_, fs) -&gt;
+                  <span class=
+"co">(* We add the field signature in our field set.</span>
+<span class=
+"co">                     In this example, we ignore the classes in</span>
+<span class=
+"co">                     which the fields are defined. *)</span>
+                        FieldSet<span class="kw">.</span>add fs s
+                     | _ -&gt; s
+                  ) FieldSet<span class=
+"kw">.</span>empty jcode.c_code
+          )
+    ) methods</code>
+</pre>
+<p>This method has the signature</p>
+<pre class="sourceCode ocaml" id="cp_sig">
+<code class="sourceCode ocaml">Javalib<span class=
+"kw">.</span>class_path -&gt;
+  JBasics<span class=
+"kw">.</span>class_name -&gt; JBasics<span class=
+"kw">.</span>FieldSet<span class="kw">.</span>t JBasics<span class=
+"kw">.</span>MethodMap<span class="kw">.</span>t</code>
+</pre>
+<h3 id="another-use-case"><a href="#TOC">Another use case</a></h3>
+<p>Consider the following class written in java:</p>
+<pre class="sourceCode java" id="TestString">
+<code class="sourceCode java"><span class=
+"kw">public</span> <span class="kw">class</span> TestString{
+   <span class="kw">public</span> <span class=
+"dt">boolean</span> <span class="fu">m</span>(String s){
+      <span class="kw">if</span> (s.<span class=
+"fu">equals</span>(<span class="st">"str"</span>)){
+         <span class="kw">return</span> <span class=
+"kw">true</span>;
+      } <span class="kw">else</span>{
+         <span class="kw">return</span> <span class=
+"kw">false</span>;
+      }
+   }
+}</code>
+</pre>
+<p>We see that the method <em>m</em> might raise an
+<em>NullPointer</em> exception if we call the method
+<em>equals</em> on an uninitialized string <em>s</em>. To avoid
+this, a good practice is to replace the test
+<strong>s.equals("str")</strong> by the expression
+<strong>"str".equals(s)</strong> which will return false rather
+than raising an exception.</p>
+<p>Let's see the bytecode associated to the method <em>m</em>,
+given by <strong>javap</strong>:</p>
+<pre>
+<code>public boolean m(java.lang.String);
+  Code:
+   0:   aload_1
+   1:   ldc     #2; //String str
+   3:   invokevirtual   #3; //Method
+           java/lang/String.equals:(Ljava/lang/Object;)Z</code>
+</pre>
+<p>We will now write a sample of code that detects instructions of
+type <strong>ldc 'string'</strong> followed by an
+<strong>invokevirtual</strong> on <em>java.lang.String.equals</em>
+method.</p>
+<p>We first need to write a function that returns the next
+instruction and its program point in a code, given this code and a
+current program point:</p>
+<pre class="sourceCode ocaml" id="next_instr">
+<code class="sourceCode ocaml"><span class=
+"kw">let</span> <span class=
+"kw">rec</span> next_instruction (code : jopcodes) (pp : <span class="dt">int</span>)
+  : (jopcode * <span class="dt">int</span>) <span class=
+"dt">option</span> =
+ <span class="kw">try</span>
+   <span class="kw">match</span> code.(pp+1) <span class=
+"kw">with</span>
+    | <span class=
+"dt">OpInvalid</span> -&gt; next_instruction code (pp+1)
+    | op -&gt; <span class="dt">Some</span> (op,pp+1)
+ <span class="kw">with</span> _ -&gt; <span class=
+"dt">None</span></code>
+</pre>
+<p>Now we define a function that takes a <em>classpath</em> and a
+<em>classname</em> as parameters and that returns a map associating
+each concrete method signature to a list of
+(<strong>int</strong>,<strong>string</strong>) couples representing
+the program points and the strings on which the
+<em>java.lang.String.equals</em> method is called.</p>
+<pre class="sourceCode ocaml" id="get_equals">
+<code class="sourceCode ocaml"><span class=
+"kw">let</span> get_equals_calls (class_path : class_path)
+  (cn : class_name) =
+ <span class=
+"co">(* We first recover the interface or class associated to the</span>
+<span class="co">    class name cn. *)</span>
+ <span class=
+"kw">let</span> java_lang_string = make_cn <span class="st">"java.lang.String"</span> <span class="kw">in</span>
+ <span class="kw">let</span> equals_ms =
+   make_ms <span class="st">"equals"</span> [<span class=
+"dt">TObject</span> (<span class=
+"dt">TClass</span> java_lang_object)]
+    (<span class="dt">Some</span> (<span class=
+"dt">TBasic</span> <span class="dt">`Bool</span>)) <span class=
+"kw">in</span>
+ <span class=
+"kw">let</span> c = get_class class_path cn <span class=
+"kw">in</span>
+ <span class=
+"co">(* Then, we get all the concrete methods of c. *)</span>
+ <span class=
+"kw">let</span> methods : jcode concrete_method MethodMap<span class="kw">.</span>t =
+   get_concrete_methods c <span class="kw">in</span>
+ <span class=
+"co">(* For each concrete method of c, we associate a (int*string) list</span>
+<span class=
+"co">    containing all the strings passed as parameters to</span>
+<span class=
+"co">    String.equals method, associated to the program point where the</span>
+<span class="co">    call occurs. *)</span>
+   MethodMap<span class="kw">.</span>map
+    (<span class="kw">fun</span> m -&gt;
+     (<span class=
+"kw">match</span> m.cm_implementation <span class="kw">with</span>
+       <span class=
+"co">(* A concrete method can be native so that we don't</span>
+<span class=
+"co">          know its behaviour. In this case we suppose that</span>
+<span class=
+"co">          no call to String.equals which is not safe. *)</span>
+       | <span class="dt">Native</span> -&gt; []
+       | <span class="dt">Java</span> code -&gt;
+         <span class=
+"co">(* The code is stored in a lazy structure, for</span>
+<span class=
+"co">            performance purposes. Indeed when loading a</span>
+<span class=
+"co">            class the Javalib does not parse its methods. *)</span>
+          <span class="kw">let</span> jcode = Lazy<span class=
+"kw">.</span>force code <span class="kw">in</span>
+          <span class=
+"kw">let</span> code = jcode.c_code <span class="kw">in</span>
+          <span class="kw">let</span> l = <span class=
+"dt">ref</span> [] <span class="kw">in</span>
+          <span class=
+"co">(* We iter on the array of opcodes, building</span>
+<span class=
+"co">              our list of (int*string) at the same time. *)</span>
+            Array<span class="kw">.</span>iteri
+             (<span class="kw">fun</span> pp op -&gt;
+               <span class="kw">match</span> op <span class=
+"kw">with</span>
+                | <span class="dt">OpConst</span> (<span class=
+"dt">`String</span> s) -&gt;
+                  <span class=
+"co">(* We detect that a string s is pushed on the</span>
+<span class=
+"co">                     stack. The next instruction might be an</span>
+<span class=
+"co">                     invokevirtual on String.equals. *)</span>
+                   (<span class=
+"kw">match</span> (next_instruction code pp) <span class=
+"kw">with</span>
+                     | <span class=
+"dt">Some</span> (inst,ppi) -&gt;
+                        (<span class=
+"kw">match</span> inst <span class="kw">with</span>
+                          | <span class=
+"dt">OpInvoke</span> (<span class=
+"dt">`Virtual</span> (<span class="dt">TClass</span> cn), ms)
+                             <span class=
+"kw">when</span> cn = java_lang_string
+                               &amp;&amp; ms = equals_ms -&gt;
+                            <span class=
+"co">(* We add the program point of the</span>
+<span class=
+"co">                               invokevirtual and the pushed string</span>
+<span class=
+"co">                               in our list. *)</span>
+                             l := (ppi, s) :: !l
+                          | _ -&gt; ()
+                        )
+                     | <span class="dt">None</span> -&gt; ()
+                   )
+                | _ -&gt; ()
+             ) code;
+          <span class=
+"co">(* We simply return our list, in the reverse order so that</span>
+<span class=
+"co">             the program points appear in ascending order. *)</span>
+            List<span class="kw">.</span>rev !l
+     )
+    ) methods</code>
+</pre>
+<p>This method has the signature</p>
+<pre class="sourceCode ocaml" id="cp_sig2">
+<code class="sourceCode ocaml">    Javalib<span class=
+"kw">.</span>class_path -&gt;
+      JBasics<span class=
+"kw">.</span>class_name -&gt; (<span class="dt">int</span> * <span class="dt">string</span>) <span class="dt">list</span> JBasics<span class="kw">.</span>MethodMap<span class="kw">.</span>t</code>
+</pre>
+<p>We obtain the expected result on the previous class
+<em>TestString</em>:</p>
+<pre class="sourceCode ocaml" id="run_cp">
+<code class="sourceCode ocaml"># <span class=
+"kw">let</span> cp = class_path <span class="st">"."</span>;;
+<span class="kw">val</span> cp : Javalib<span class=
+"kw">.</span>class_path = &lt;abstr&gt;
+
+# <span class="kw">let</span> cn = make_cn <span class=
+"st">"TestString"</span>;;
+<span class="kw">val</span> cn : JBasics<span class=
+"kw">.</span>class_name = &lt;abstr&gt;
+
+# <span class="kw">let</span> mmap = get_equals_calls cp cn;;
+<span class="kw">val</span> mmap : (<span class=
+"dt">int</span> * <span class="dt">string</span>) <span class=
+"dt">list</span> JBasics<span class=
+"kw">.</span>MethodMap<span class="kw">.</span>t = &lt;abstr&gt;
+
+# <span class="kw">let</span> l = 
+    <span class="kw">let</span> sk = List<span class=
+"kw">.</span>map (ms_name) (MethodMap<span class=
+"kw">.</span>key_elements mmap)
+    <span class="kw">and</span> sv = MethodMap<span class=
+"kw">.</span>value_elements mmap <span class="kw">in</span>
+      List<span class="kw">.</span>combine sk sv;;
+<span class="kw">val</span> l : (<span class=
+"dt">string</span> * (<span class="dt">int</span> * <span class=
+"dt">string</span>) <span class="dt">list</span>) <span class=
+"dt">list</span> =
+  [(<span class="st">"m"</span>, [(3, <span class=
+"st">"str"</span>)]); (<span class="st">"&lt;init&gt;"</span>, [])]
+
+# <span class="kw">let</span> () = close_class_path cp;;</code>
+</pre></div>
+</body>
+</html>

@@ -1,0 +1,19 @@
+From version 2008-07-21 to 2.0
+----------------------------------
+New features:
+* physical equality test to avoid useless operations
+* returns physically the same data structure when possible so
+  - it consume less memory and
+  - physical equality tests work more often
+* add a merge (optional) argument to add to improve "modifications" of maps
+  (avoid find/add)
+* add choose_and_remove in Ptmap and Ptset
+* add merge in Ptmap which merges to maps
+* add merge_first in Ptmap which is more efficient but less generic than merge
+* add inter in Ptmap which restricts the domain of the first map to the domain
+  of the second map
+* add cardinal, elements, partition and the exists predicate in Ptmap
+
+Version 2008-07-21
+----------------------
+From Jean-Christophe Filliatre

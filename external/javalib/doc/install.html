@@ -1,0 +1,151 @@
+<a id="installation" />
+<h2>Installation Procedure for Javalib</h2>
+
+
+<h3>For the impatient, familiar, or audacious</h3>
+
+<ol>
+  <li><span class="code">tar xf javalib-2.2.1.tar.bz2</span></li>
+  <li><span class="code">cd javalib-2.2.1</span></li>
+  <li><span class="code">./configure.sh</span></li>
+  <li>if there are missing dependencies,
+  <ul> 
+    <li>if ptrees was not found,<br />
+    <span class="code">make ptrees &amp;&amp; make installptrees</span>
+    </li>
+    <li>if camlzip was not found,<br />
+    <span class="code">make camlzip &amp;&amp; make installcamlzip</span>
+    </li>
+    <li>if extlib was not found,<br />
+    <span class="code">make extlib &amp;&amp; make installextlib</span>
+    </li>
+    <li>once all dependencies have been installed,<br />
+      <span class="code">./configure.sh</span>
+    </li>
+  </ul></li>
+  <li><span class="code">make &amp;&amp; make install</span></li>
+</ol>
+
+<p>You may need superuser rights for the installation phases. </p>
+
+
+<h3>Detailed instructions</h3>
+
+<ol class="detailedinstructions">
+
+<li> Javalib makes extensive use of
+the <a href="http://projects.camlcity.org/projects/findlib.html">Findlib</a>
+package manager (&gt;=1.2.3) and its Ocamlfind front-end, which provide seamless
+management of OCaml libraries. Make sure you have an Objective Caml compiler
+(&gt;=3.10.0) installed, as well as the findlib/ocamlfind tools.
+</li>
+
+<li> Javalib depends on three unrelated libraries: ExtLib (&gt;=1.5.1), CamlZip
+(&gt;=1.04), and PTrees.  Some or all of these libraries might be provided as
+precompiled packages or ports in your operating system. E.g., for CamlZip, one
+can use:
+<ul>
+  <li>the 'libextlib-ocaml-dev' package in Debian, Ubuntu &amp; Co.,</li>
+  <li>the 'ocaml-extlib' package in Fedora or in Mac/Darwin Ports.</li>
+</ul>
+If your operating system provides none (or only part of) these libraries, fret
+not: all three are included in the Javalib distribution, and the installation
+procedure will guide you through compiling and installing them.
+<ul></ul><!--Allow to get a space in ../INSTALL -->
+<em>Note: If you are using OCaml 4.0 or higher, you need at least ExtLib 1.5.3
+  while only the version 1.5.1 is included in Javalib. So you need to install
+  it separatly.</em>
+</li>
+
+<li> First you need to configure the system. It is done automatically with the
+command:
+<dl class="code">
+  <dd>./configure.sh [options]</dd>
+</dl>
+For a list of options accepted by the configuration script,
+run <span class="code">./configure.sh -h</span>. The main options are:
+<dl>
+  <dt>
+    <span class="code">-l &lt;dir&gt;</span>
+  </dt>
+  <dd>Proceed to install in the local directory <span
+    class="code">&lt;dir&gt;</span>. Note that if you use Ocamlfind to
+  compile an analysis later on, you will need to set the shell variable
+  OCAMLPATH to <span class="code">&lt;dir&gt;</span> to be able to use the
+  Javalib libraries (see <em>man findlib</em> for more info on OCAMLPATH).
+  </dd>
+  <!--<dt><span class="code">-l default</span></dt>
+  <dd>Proceed to install in the default local directory ('./lib').</dd>-->
+  <dt>
+    <span class="code">-d yes|no|prof</span> (default:
+    <span class="code">yes</span>)
+  </dt>
+  <dd>
+    Set to <span class="code">yes</span> to keep debugging information in native
+    library or to <span class="code">prof</span> to profile (with gprof) your
+    program.
+  </dd>
+</dl>
+
+<em>Note: The configure script assumes that, if the ptrees and camlzip
+installations are local, then the Javalib installation will also be
+local.  Moreover, it assumes that all of them will reside in the same
+./lib folder.</em>  <br /><br />
+
+The configuration script generates a file called "Makefile.config". You are
+welcome to review and edit it, but keep in mind it will be overwritten with
+each execution of configure.sh.
+</li>
+
+<li> Step 3 will have stated which of the libraries CamlZip, PTrees, or ExtLib
+needed to be compiled and installed. For each of those required, run the
+following commands:
+<dl>
+  <dd><span class="code">make LIBRARYNAME</span></dd>
+  <dd><span class="code">make installLIBRARYNAME</span> (if configure was run with the --local option)</dd>
+  <dd><span class="code">sudo make installLIBRARYNAME</span> (else)</dd>
+</dl>
+<em>Note: CamlZip is a binding to the <a href="http://zlib.net/">Zlib
+library</a>, as a consequence it requires that the Zlib library was
+installed precedently (the development package is necessary if you use
+your OS package manager).
+</em>
+</li>
+
+<li> Now we can check if the dependencies are correctly found---remember to run
+  the script with the same options as in step 3.
+  <dl class="code">
+    <dd>./configure.sh [options]</dd>
+  </dl>
+</li>
+
+<li> We can now proceed to the Javalib compilation. In the toplevel directory,
+enter:
+<dl>
+  <dd><span class="code">make</span></dd>
+  <dd><span class="code">make install</span> (if configure was run with the --local option)</dd>
+  <dd><span class="code">sudo make install</span> (otherwise)</dd>
+</dl>
+</li>
+
+<li> If you want the documentation, run:
+<dl class="code">
+  <dd>make doc</dd>
+</dl>
+</li>
+
+<li> Finally, you can clean the sources with:
+<dl class="code">
+  <dd>make clean</dd>
+</dl>
+</li>
+
+<li> If you want to verify that Javalib is correctly installed and 
+found by ocaml, this command should find the library path:
+  <dl class = "code">
+    <dd>ocamlfind query javalib</dd>
+  </dl>
+</li>
+
+</ol>
+

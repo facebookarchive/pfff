@@ -1,0 +1,80 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html>
+<head>
+<link rel="stylesheet" href="style.css" type="text/css">
+<meta content="text/html; charset=utf-8" http-equiv="Content-Type">
+<link rel="Start" href="index.html">
+<link rel="previous" href="JParseCode.html">
+<link rel="next" href="JUnparse.html">
+<link rel="Up" href="index.html">
+<link title="Index of types" rel=Appendix href="index_types.html">
+<link title="Index of exceptions" rel=Appendix href="index_exceptions.html">
+<link title="Index of values" rel=Appendix href="index_values.html">
+<link title="Index of modules" rel=Appendix href="index_modules.html">
+<link title="Index of module types" rel=Appendix href="index_module_types.html">
+<link title="JBasics" rel="Chapter" href="JBasics.html">
+<link title="JBasicsLow" rel="Chapter" href="JBasicsLow.html">
+<link title="JCode" rel="Chapter" href="JCode.html">
+<link title="JClassLow" rel="Chapter" href="JClassLow.html">
+<link title="JSignature" rel="Chapter" href="JSignature.html">
+<link title="JClass" rel="Chapter" href="JClass.html">
+<link title="JDumpBasics" rel="Chapter" href="JDumpBasics.html">
+<link title="JUnparseSignature" rel="Chapter" href="JUnparseSignature.html">
+<link title="JDumpLow" rel="Chapter" href="JDumpLow.html">
+<link title="JDumpJasmin" rel="Chapter" href="JDumpJasmin.html">
+<link title="JParseCode" rel="Chapter" href="JParseCode.html">
+<link title="JInstruction" rel="Chapter" href="JInstruction.html">
+<link title="JUnparse" rel="Chapter" href="JUnparse.html">
+<link title="JParseSignature" rel="Chapter" href="JParseSignature.html">
+<link title="JParse" rel="Chapter" href="JParse.html">
+<link title="JLow2High" rel="Chapter" href="JLow2High.html">
+<link title="JHigh2Low" rel="Chapter" href="JHigh2Low.html">
+<link title="JFile" rel="Chapter" href="JFile.html">
+<link title="JManifest" rel="Chapter" href="JManifest.html">
+<link title="Javalib" rel="Chapter" href="Javalib.html">
+<link title="Ptmap" rel="Chapter" href="Ptmap.html">
+<link title="Ptset" rel="Chapter" href="Ptset.html"><title>Javalib : JInstruction</title>
+</head>
+<body>
+<div class="navbar"><a href="JParseCode.html">Previous</a>
+&nbsp;<a href="index.html">Up</a>
+&nbsp;<a href="JUnparse.html">Next</a>
+</div>
+<center><h1>Module <a href="type_JInstruction.html">JInstruction</a></h1></center>
+<br>
+<pre><span class="keyword">module</span> JInstruction: <code class="code"><span class="keyword">sig</span></code> <a href="JInstruction.html">..</a> <code class="code"><span class="keyword">end</span></code></pre>Conversion between low and high level representations of instructions.<br>
+<hr width="100%">
+<pre><span id="VALopcodes2code"><span class="keyword">val</span> opcodes2code</span> : <code class="type"><a href="JBasics.html#TYPEconstant">JBasics.constant</a> array -> <a href="JClassLow.html#TYPEopcode">JClassLow.opcode</a> array -> <a href="JCode.html#TYPEjopcodes">JCode.jopcodes</a></code></pre><div class="info">
+Maps an arrray of low level bytecode to a high level code.
+    Each instruction is at the index
+    corresponding to its absolute offset. The array is padded with the
+    OpInvalid instruction. The absolute and relative offset that appear
+    in the instructions are therefore valid positions in the array.
+    OpInvalid may be interpreted as nop, or the direct successor of
+    an instruction can alternatively by defined as the first following
+    non-OpInvalid instruction.<br>
+</div>
+<pre><span id="VALcode2opcodes"><span class="keyword">val</span> code2opcodes</span> : <code class="type"><a href="JBasics.html#TYPEconstant">JBasics.constant</a> DynArray.t -> <a href="JCode.html#TYPEjopcodes">JCode.jopcodes</a> -> <a href="JClassLow.html#TYPEopcode">JClassLow.opcode</a> array</code></pre><div class="info">
+Maps a high level code to a valid arrray of low level bytecode
+    instructions. The distance between the offset of two successive
+    non-OpInvalid instructions is assumed to be at least the length of the
+    optimal coding for the first instruction (for example, iload_0 vs iload
+    0). The opcode may be encoded with the non-optimal form to fill the
+    available space.<br>
+<b>Raises</b> <code>Class_structure_error</code> if the length of an opcode produced is greater
+    than the available space (number of OpInvalid + 1) except if
+    <a href="JBasics.html#VALset_permissive"><code class="code"><span class="constructor">JBasics</span>.set_permissive</code></a> has been called with <code class="code"><span class="keyword">true</span></code>.  Note that this
+    will only be an issue when dumping the code to a class file.<br>
+</div>
+<pre><span id="VALopcode2instruction"><span class="keyword">val</span> opcode2instruction</span> : <code class="type"><a href="JBasics.html#TYPEconstant">JBasics.constant</a> array -> <a href="JClassLow.html#TYPEopcode">JClassLow.opcode</a> -> <a href="JCode.html#TYPEjopcode">JCode.jopcode</a></code></pre><div class="info">
+Low level to high level bytecode instruction.<br>
+</div>
+<pre><span id="VALinstruction2opcode"><span class="keyword">val</span> instruction2opcode</span> : <code class="type"><a href="JBasics.html#TYPEconstant">JBasics.constant</a> DynArray.t -> int -> <a href="JCode.html#TYPEjopcode">JCode.jopcode</a> -> <a href="JClassLow.html#TYPEopcode">JClassLow.opcode</a></code></pre><div class="info">
+High level to low level bytecode instruction.
+<p>
+
+    <code class="code">instruction2opcode consts length instr</code> tries to produce an
+    opcode which could be unparsed in <code class="code">length</code> byte(s).<br>
+<b>Raises</b> <code>JBasics.Class_structure_error</code> if the class has not a valid structure.<br>
+</div>
+</body></html>

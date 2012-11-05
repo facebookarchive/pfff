@@ -1,0 +1,349 @@
+<html><head>
+<link rel="stylesheet" href="style.css" type="text/css">
+<meta content="text/html; charset=utf-8" http-equiv="Content-Type">
+<link rel="Start" href="index.html">
+<link title="Index of types" rel=Appendix href="index_types.html">
+<link title="Index of exceptions" rel=Appendix href="index_exceptions.html">
+<link title="Index of values" rel=Appendix href="index_values.html">
+<link title="Index of modules" rel=Appendix href="index_modules.html">
+<link title="Index of module types" rel=Appendix href="index_module_types.html">
+<link title="JBasics" rel="Chapter" href="JBasics.html">
+<link title="JBasicsLow" rel="Chapter" href="JBasicsLow.html">
+<link title="JCode" rel="Chapter" href="JCode.html">
+<link title="JClassLow" rel="Chapter" href="JClassLow.html">
+<link title="JSignature" rel="Chapter" href="JSignature.html">
+<link title="JClass" rel="Chapter" href="JClass.html">
+<link title="JDumpBasics" rel="Chapter" href="JDumpBasics.html">
+<link title="JUnparseSignature" rel="Chapter" href="JUnparseSignature.html">
+<link title="JDumpLow" rel="Chapter" href="JDumpLow.html">
+<link title="JDumpJasmin" rel="Chapter" href="JDumpJasmin.html">
+<link title="JParseCode" rel="Chapter" href="JParseCode.html">
+<link title="JInstruction" rel="Chapter" href="JInstruction.html">
+<link title="JUnparse" rel="Chapter" href="JUnparse.html">
+<link title="JParseSignature" rel="Chapter" href="JParseSignature.html">
+<link title="JParse" rel="Chapter" href="JParse.html">
+<link title="JLow2High" rel="Chapter" href="JLow2High.html">
+<link title="JHigh2Low" rel="Chapter" href="JHigh2Low.html">
+<link title="JFile" rel="Chapter" href="JFile.html">
+<link title="JManifest" rel="Chapter" href="JManifest.html">
+<link title="Javalib" rel="Chapter" href="Javalib.html">
+<link title="Ptmap" rel="Chapter" href="Ptmap.html">
+<link title="Ptset" rel="Chapter" href="Ptset.html"><title>Javalib : Javalib</title>
+</head>
+<body>
+<code class="code"><span class="keyword">sig</span><br>
+&nbsp;&nbsp;<span class="keyword">type</span>&nbsp;access&nbsp;=&nbsp;[&nbsp;<span class="keywordsign">`</span><span class="constructor">Default</span>&nbsp;<span class="keywordsign">|</span>&nbsp;<span class="keywordsign">`</span><span class="constructor">Private</span>&nbsp;<span class="keywordsign">|</span>&nbsp;<span class="keywordsign">`</span><span class="constructor">Protected</span>&nbsp;<span class="keywordsign">|</span>&nbsp;<span class="keywordsign">`</span><span class="constructor">Public</span>&nbsp;]<br>
+&nbsp;&nbsp;<span class="keyword">type</span>&nbsp;attributes&nbsp;=&nbsp;{<br>
+&nbsp;&nbsp;&nbsp;&nbsp;synthetic&nbsp;:&nbsp;bool;<br>
+&nbsp;&nbsp;&nbsp;&nbsp;deprecated&nbsp;:&nbsp;bool;<br>
+&nbsp;&nbsp;&nbsp;&nbsp;other&nbsp;:&nbsp;(string&nbsp;*&nbsp;string)&nbsp;list;<br>
+&nbsp;&nbsp;}<br>
+&nbsp;&nbsp;<span class="keyword">type</span>&nbsp;visibility&nbsp;=&nbsp;<span class="constructor">RTVisible</span>&nbsp;<span class="keywordsign">|</span>&nbsp;<span class="constructor">RTInvisible</span><br>
+&nbsp;&nbsp;<span class="keyword">type</span>&nbsp;field_kind&nbsp;=&nbsp;<span class="constructor">NotFinal</span>&nbsp;<span class="keywordsign">|</span>&nbsp;<span class="constructor">Final</span>&nbsp;<span class="keywordsign">|</span>&nbsp;<span class="constructor">Volatile</span><br>
+&nbsp;&nbsp;<span class="keyword">type</span>&nbsp;class_field&nbsp;=&nbsp;{<br>
+&nbsp;&nbsp;&nbsp;&nbsp;cf_signature&nbsp;:&nbsp;<span class="constructor">JBasics</span>.field_signature;<br>
+&nbsp;&nbsp;&nbsp;&nbsp;cf_class_signature&nbsp;:&nbsp;<span class="constructor">JBasics</span>.class_field_signature;<br>
+&nbsp;&nbsp;&nbsp;&nbsp;cf_generic_signature&nbsp;:&nbsp;<span class="constructor">JSignature</span>.fieldTypeSignature&nbsp;option;<br>
+&nbsp;&nbsp;&nbsp;&nbsp;cf_access&nbsp;:&nbsp;<span class="constructor">Javalib</span>.access;<br>
+&nbsp;&nbsp;&nbsp;&nbsp;cf_static&nbsp;:&nbsp;bool;<br>
+&nbsp;&nbsp;&nbsp;&nbsp;cf_synthetic&nbsp;:&nbsp;bool;<br>
+&nbsp;&nbsp;&nbsp;&nbsp;cf_enum&nbsp;:&nbsp;bool;<br>
+&nbsp;&nbsp;&nbsp;&nbsp;cf_kind&nbsp;:&nbsp;<span class="constructor">Javalib</span>.field_kind;<br>
+&nbsp;&nbsp;&nbsp;&nbsp;cf_value&nbsp;:&nbsp;<span class="constructor">JBasics</span>.constant_value&nbsp;option;<br>
+&nbsp;&nbsp;&nbsp;&nbsp;cf_transient&nbsp;:&nbsp;bool;<br>
+&nbsp;&nbsp;&nbsp;&nbsp;cf_annotations&nbsp;:&nbsp;(<span class="constructor">JBasics</span>.annotation&nbsp;*&nbsp;<span class="constructor">Javalib</span>.visibility)&nbsp;list;<br>
+&nbsp;&nbsp;&nbsp;&nbsp;cf_other_flags&nbsp;:&nbsp;int&nbsp;list;<br>
+&nbsp;&nbsp;&nbsp;&nbsp;cf_attributes&nbsp;:&nbsp;<span class="constructor">Javalib</span>.attributes;<br>
+&nbsp;&nbsp;}<br>
+&nbsp;&nbsp;<span class="keyword">type</span>&nbsp;interface_field&nbsp;=&nbsp;{<br>
+&nbsp;&nbsp;&nbsp;&nbsp;if_signature&nbsp;:&nbsp;<span class="constructor">JBasics</span>.field_signature;<br>
+&nbsp;&nbsp;&nbsp;&nbsp;if_class_signature&nbsp;:&nbsp;<span class="constructor">JBasics</span>.class_field_signature;<br>
+&nbsp;&nbsp;&nbsp;&nbsp;if_generic_signature&nbsp;:&nbsp;<span class="constructor">JSignature</span>.fieldTypeSignature&nbsp;option;<br>
+&nbsp;&nbsp;&nbsp;&nbsp;if_synthetic&nbsp;:&nbsp;bool;<br>
+&nbsp;&nbsp;&nbsp;&nbsp;if_value&nbsp;:&nbsp;<span class="constructor">JBasics</span>.constant_value&nbsp;option;<br>
+&nbsp;&nbsp;&nbsp;&nbsp;if_annotations&nbsp;:&nbsp;(<span class="constructor">JBasics</span>.annotation&nbsp;*&nbsp;<span class="constructor">Javalib</span>.visibility)&nbsp;list;<br>
+&nbsp;&nbsp;&nbsp;&nbsp;if_other_flags&nbsp;:&nbsp;int&nbsp;list;<br>
+&nbsp;&nbsp;&nbsp;&nbsp;if_attributes&nbsp;:&nbsp;<span class="constructor">Javalib</span>.attributes;<br>
+&nbsp;&nbsp;}<br>
+&nbsp;&nbsp;<span class="keyword">type</span>&nbsp;any_field&nbsp;=<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="constructor">InterfaceField</span>&nbsp;<span class="keyword">of</span>&nbsp;<span class="constructor">Javalib</span>.interface_field<br>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="keywordsign">|</span>&nbsp;<span class="constructor">ClassField</span>&nbsp;<span class="keyword">of</span>&nbsp;<span class="constructor">Javalib</span>.class_field<br>
+&nbsp;&nbsp;<span class="keyword">val</span>&nbsp;get_field_signature&nbsp;:&nbsp;<span class="constructor">Javalib</span>.any_field&nbsp;<span class="keywordsign">-&gt;</span>&nbsp;<span class="constructor">JBasics</span>.field_signature<br>
+&nbsp;&nbsp;<span class="keyword">val</span>&nbsp;get_class_field_signature&nbsp;:<br>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="constructor">Javalib</span>.any_field&nbsp;<span class="keywordsign">-&gt;</span>&nbsp;<span class="constructor">JBasics</span>.class_field_signature<br>
+&nbsp;&nbsp;<span class="keyword">val</span>&nbsp;get_field_visibility&nbsp;:&nbsp;<span class="constructor">Javalib</span>.any_field&nbsp;<span class="keywordsign">-&gt;</span>&nbsp;<span class="constructor">Javalib</span>.access<br>
+&nbsp;&nbsp;<span class="keyword">val</span>&nbsp;is_static_field&nbsp;:&nbsp;<span class="constructor">Javalib</span>.any_field&nbsp;<span class="keywordsign">-&gt;</span>&nbsp;bool<br>
+&nbsp;&nbsp;<span class="keyword">val</span>&nbsp;is_final_field&nbsp;:&nbsp;<span class="constructor">Javalib</span>.any_field&nbsp;<span class="keywordsign">-&gt;</span>&nbsp;bool<br>
+&nbsp;&nbsp;<span class="keyword">type</span>&nbsp;<span class="keywordsign">'</span>a&nbsp;implementation&nbsp;=&nbsp;<span class="constructor">Native</span>&nbsp;<span class="keywordsign">|</span>&nbsp;<span class="constructor">Java</span>&nbsp;<span class="keyword">of</span>&nbsp;<span class="keywordsign">'</span>a&nbsp;<span class="constructor">Lazy</span>.t<br>
+&nbsp;&nbsp;<span class="keyword">type</span>&nbsp;method_annotations&nbsp;=&nbsp;{<br>
+&nbsp;&nbsp;&nbsp;&nbsp;ma_global&nbsp;:&nbsp;(<span class="constructor">JBasics</span>.annotation&nbsp;*&nbsp;<span class="constructor">Javalib</span>.visibility)&nbsp;list;<br>
+&nbsp;&nbsp;&nbsp;&nbsp;ma_parameters&nbsp;:&nbsp;(<span class="constructor">JBasics</span>.annotation&nbsp;*&nbsp;<span class="constructor">Javalib</span>.visibility)&nbsp;list&nbsp;list;<br>
+&nbsp;&nbsp;}<br>
+&nbsp;&nbsp;<span class="keyword">type</span>&nbsp;<span class="keywordsign">'</span>a&nbsp;concrete_method&nbsp;=&nbsp;{<br>
+&nbsp;&nbsp;&nbsp;&nbsp;cm_signature&nbsp;:&nbsp;<span class="constructor">JBasics</span>.method_signature;<br>
+&nbsp;&nbsp;&nbsp;&nbsp;cm_class_method_signature&nbsp;:&nbsp;<span class="constructor">JBasics</span>.class_method_signature;<br>
+&nbsp;&nbsp;&nbsp;&nbsp;cm_static&nbsp;:&nbsp;bool;<br>
+&nbsp;&nbsp;&nbsp;&nbsp;cm_final&nbsp;:&nbsp;bool;<br>
+&nbsp;&nbsp;&nbsp;&nbsp;cm_synchronized&nbsp;:&nbsp;bool;<br>
+&nbsp;&nbsp;&nbsp;&nbsp;cm_strict&nbsp;:&nbsp;bool;<br>
+&nbsp;&nbsp;&nbsp;&nbsp;cm_access&nbsp;:&nbsp;<span class="constructor">Javalib</span>.access;<br>
+&nbsp;&nbsp;&nbsp;&nbsp;cm_generic_signature&nbsp;:&nbsp;<span class="constructor">JSignature</span>.methodTypeSignature&nbsp;option;<br>
+&nbsp;&nbsp;&nbsp;&nbsp;cm_bridge&nbsp;:&nbsp;bool;<br>
+&nbsp;&nbsp;&nbsp;&nbsp;cm_varargs&nbsp;:&nbsp;bool;<br>
+&nbsp;&nbsp;&nbsp;&nbsp;cm_synthetic&nbsp;:&nbsp;bool;<br>
+&nbsp;&nbsp;&nbsp;&nbsp;cm_other_flags&nbsp;:&nbsp;int&nbsp;list;<br>
+&nbsp;&nbsp;&nbsp;&nbsp;cm_exceptions&nbsp;:&nbsp;<span class="constructor">JBasics</span>.class_name&nbsp;list;<br>
+&nbsp;&nbsp;&nbsp;&nbsp;cm_attributes&nbsp;:&nbsp;<span class="constructor">Javalib</span>.attributes;<br>
+&nbsp;&nbsp;&nbsp;&nbsp;cm_annotations&nbsp;:&nbsp;<span class="constructor">Javalib</span>.method_annotations;<br>
+&nbsp;&nbsp;&nbsp;&nbsp;cm_implementation&nbsp;:&nbsp;<span class="keywordsign">'</span>a&nbsp;<span class="constructor">Javalib</span>.implementation;<br>
+&nbsp;&nbsp;}<br>
+&nbsp;&nbsp;<span class="keyword">type</span>&nbsp;abstract_method&nbsp;=&nbsp;{<br>
+&nbsp;&nbsp;&nbsp;&nbsp;am_signature&nbsp;:&nbsp;<span class="constructor">JBasics</span>.method_signature;<br>
+&nbsp;&nbsp;&nbsp;&nbsp;am_class_method_signature&nbsp;:&nbsp;<span class="constructor">JBasics</span>.class_method_signature;<br>
+&nbsp;&nbsp;&nbsp;&nbsp;am_access&nbsp;:&nbsp;[&nbsp;<span class="keywordsign">`</span><span class="constructor">Default</span>&nbsp;<span class="keywordsign">|</span>&nbsp;<span class="keywordsign">`</span><span class="constructor">Protected</span>&nbsp;<span class="keywordsign">|</span>&nbsp;<span class="keywordsign">`</span><span class="constructor">Public</span>&nbsp;];<br>
+&nbsp;&nbsp;&nbsp;&nbsp;am_generic_signature&nbsp;:&nbsp;<span class="constructor">JSignature</span>.methodTypeSignature&nbsp;option;<br>
+&nbsp;&nbsp;&nbsp;&nbsp;am_bridge&nbsp;:&nbsp;bool;<br>
+&nbsp;&nbsp;&nbsp;&nbsp;am_varargs&nbsp;:&nbsp;bool;<br>
+&nbsp;&nbsp;&nbsp;&nbsp;am_synthetic&nbsp;:&nbsp;bool;<br>
+&nbsp;&nbsp;&nbsp;&nbsp;am_other_flags&nbsp;:&nbsp;int&nbsp;list;<br>
+&nbsp;&nbsp;&nbsp;&nbsp;am_exceptions&nbsp;:&nbsp;<span class="constructor">JBasics</span>.class_name&nbsp;list;<br>
+&nbsp;&nbsp;&nbsp;&nbsp;am_attributes&nbsp;:&nbsp;<span class="constructor">Javalib</span>.attributes;<br>
+&nbsp;&nbsp;&nbsp;&nbsp;am_annotations&nbsp;:&nbsp;<span class="constructor">Javalib</span>.method_annotations;<br>
+&nbsp;&nbsp;&nbsp;&nbsp;am_annotation_default&nbsp;:&nbsp;<span class="constructor">JBasics</span>.element_value&nbsp;option;<br>
+&nbsp;&nbsp;}<br>
+&nbsp;&nbsp;<span class="keyword">type</span>&nbsp;<span class="keywordsign">'</span>a&nbsp;jmethod&nbsp;=<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="constructor">AbstractMethod</span>&nbsp;<span class="keyword">of</span>&nbsp;<span class="constructor">Javalib</span>.abstract_method<br>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="keywordsign">|</span>&nbsp;<span class="constructor">ConcreteMethod</span>&nbsp;<span class="keyword">of</span>&nbsp;<span class="keywordsign">'</span>a&nbsp;<span class="constructor">Javalib</span>.concrete_method<br>
+&nbsp;&nbsp;<span class="keyword">val</span>&nbsp;get_method_signature&nbsp;:&nbsp;<span class="keywordsign">'</span>a&nbsp;<span class="constructor">Javalib</span>.jmethod&nbsp;<span class="keywordsign">-&gt;</span>&nbsp;<span class="constructor">JBasics</span>.method_signature<br>
+&nbsp;&nbsp;<span class="keyword">val</span>&nbsp;get_class_method_signature&nbsp;:<br>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="keywordsign">'</span>a&nbsp;<span class="constructor">Javalib</span>.jmethod&nbsp;<span class="keywordsign">-&gt;</span>&nbsp;<span class="constructor">JBasics</span>.class_method_signature<br>
+&nbsp;&nbsp;<span class="keyword">val</span>&nbsp;get_method_visibility&nbsp;:&nbsp;<span class="keywordsign">'</span>a&nbsp;<span class="constructor">Javalib</span>.jmethod&nbsp;<span class="keywordsign">-&gt;</span>&nbsp;<span class="constructor">Javalib</span>.access<br>
+&nbsp;&nbsp;<span class="keyword">val</span>&nbsp;is_static_method&nbsp;:&nbsp;<span class="keywordsign">'</span>a&nbsp;<span class="constructor">Javalib</span>.jmethod&nbsp;<span class="keywordsign">-&gt;</span>&nbsp;bool<br>
+&nbsp;&nbsp;<span class="keyword">val</span>&nbsp;is_final_method&nbsp;:&nbsp;<span class="keywordsign">'</span>a&nbsp;<span class="constructor">Javalib</span>.jmethod&nbsp;<span class="keywordsign">-&gt;</span>&nbsp;bool<br>
+&nbsp;&nbsp;<span class="keyword">val</span>&nbsp;is_synchronized_method&nbsp;:&nbsp;<span class="keywordsign">'</span>a&nbsp;<span class="constructor">Javalib</span>.jmethod&nbsp;<span class="keywordsign">-&gt;</span>&nbsp;bool<br>
+&nbsp;&nbsp;<span class="keyword">type</span>&nbsp;inner_class&nbsp;=&nbsp;{<br>
+&nbsp;&nbsp;&nbsp;&nbsp;ic_class_name&nbsp;:&nbsp;<span class="constructor">JBasics</span>.class_name&nbsp;option;<br>
+&nbsp;&nbsp;&nbsp;&nbsp;ic_outer_class_name&nbsp;:&nbsp;<span class="constructor">JBasics</span>.class_name&nbsp;option;<br>
+&nbsp;&nbsp;&nbsp;&nbsp;ic_source_name&nbsp;:&nbsp;string&nbsp;option;<br>
+&nbsp;&nbsp;&nbsp;&nbsp;ic_access&nbsp;:&nbsp;<span class="constructor">Javalib</span>.access;<br>
+&nbsp;&nbsp;&nbsp;&nbsp;ic_static&nbsp;:&nbsp;bool;<br>
+&nbsp;&nbsp;&nbsp;&nbsp;ic_final&nbsp;:&nbsp;bool;<br>
+&nbsp;&nbsp;&nbsp;&nbsp;ic_synthetic&nbsp;:&nbsp;bool;<br>
+&nbsp;&nbsp;&nbsp;&nbsp;ic_annotation&nbsp;:&nbsp;bool;<br>
+&nbsp;&nbsp;&nbsp;&nbsp;ic_enum&nbsp;:&nbsp;bool;<br>
+&nbsp;&nbsp;&nbsp;&nbsp;ic_other_flags&nbsp;:&nbsp;int&nbsp;list;<br>
+&nbsp;&nbsp;&nbsp;&nbsp;ic_type&nbsp;:&nbsp;[&nbsp;<span class="keywordsign">`</span><span class="constructor">Abstract</span>&nbsp;<span class="keywordsign">|</span>&nbsp;<span class="keywordsign">`</span><span class="constructor">ConcreteClass</span>&nbsp;<span class="keywordsign">|</span>&nbsp;<span class="keywordsign">`</span><span class="constructor">Interface</span>&nbsp;];<br>
+&nbsp;&nbsp;}<br>
+&nbsp;&nbsp;<span class="keyword">type</span>&nbsp;<span class="keywordsign">'</span>a&nbsp;jclass&nbsp;=&nbsp;{<br>
+&nbsp;&nbsp;&nbsp;&nbsp;c_name&nbsp;:&nbsp;<span class="constructor">JBasics</span>.class_name;<br>
+&nbsp;&nbsp;&nbsp;&nbsp;c_version&nbsp;:&nbsp;<span class="constructor">JBasics</span>.version;<br>
+&nbsp;&nbsp;&nbsp;&nbsp;c_access&nbsp;:&nbsp;[&nbsp;<span class="keywordsign">`</span><span class="constructor">Default</span>&nbsp;<span class="keywordsign">|</span>&nbsp;<span class="keywordsign">`</span><span class="constructor">Public</span>&nbsp;];<br>
+&nbsp;&nbsp;&nbsp;&nbsp;c_final&nbsp;:&nbsp;bool;<br>
+&nbsp;&nbsp;&nbsp;&nbsp;c_abstract&nbsp;:&nbsp;bool;<br>
+&nbsp;&nbsp;&nbsp;&nbsp;c_super_class&nbsp;:&nbsp;<span class="constructor">JBasics</span>.class_name&nbsp;option;<br>
+&nbsp;&nbsp;&nbsp;&nbsp;c_generic_signature&nbsp;:&nbsp;<span class="constructor">JSignature</span>.classSignature&nbsp;option;<br>
+&nbsp;&nbsp;&nbsp;&nbsp;c_fields&nbsp;:&nbsp;<span class="constructor">Javalib</span>.class_field&nbsp;<span class="constructor">JBasics</span>.<span class="constructor">FieldMap</span>.t;<br>
+&nbsp;&nbsp;&nbsp;&nbsp;c_interfaces&nbsp;:&nbsp;<span class="constructor">JBasics</span>.class_name&nbsp;list;<br>
+&nbsp;&nbsp;&nbsp;&nbsp;c_consts&nbsp;:&nbsp;<span class="constructor">JBasics</span>.constant&nbsp;array;<br>
+&nbsp;&nbsp;&nbsp;&nbsp;c_sourcefile&nbsp;:&nbsp;string&nbsp;option;<br>
+&nbsp;&nbsp;&nbsp;&nbsp;c_deprecated&nbsp;:&nbsp;bool;<br>
+&nbsp;&nbsp;&nbsp;&nbsp;c_enclosing_method&nbsp;:<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;(<span class="constructor">JBasics</span>.class_name&nbsp;*&nbsp;<span class="constructor">JBasics</span>.method_signature&nbsp;option)&nbsp;option;<br>
+&nbsp;&nbsp;&nbsp;&nbsp;c_source_debug_extention&nbsp;:&nbsp;string&nbsp;option;<br>
+&nbsp;&nbsp;&nbsp;&nbsp;c_inner_classes&nbsp;:&nbsp;<span class="constructor">Javalib</span>.inner_class&nbsp;list;<br>
+&nbsp;&nbsp;&nbsp;&nbsp;c_synthetic&nbsp;:&nbsp;bool;<br>
+&nbsp;&nbsp;&nbsp;&nbsp;c_enum&nbsp;:&nbsp;bool;<br>
+&nbsp;&nbsp;&nbsp;&nbsp;c_annotations&nbsp;:&nbsp;(<span class="constructor">JBasics</span>.annotation&nbsp;*&nbsp;<span class="constructor">Javalib</span>.visibility)&nbsp;list;<br>
+&nbsp;&nbsp;&nbsp;&nbsp;c_other_flags&nbsp;:&nbsp;int&nbsp;list;<br>
+&nbsp;&nbsp;&nbsp;&nbsp;c_other_attributes&nbsp;:&nbsp;(string&nbsp;*&nbsp;string)&nbsp;list;<br>
+&nbsp;&nbsp;&nbsp;&nbsp;c_methods&nbsp;:&nbsp;<span class="keywordsign">'</span>a&nbsp;<span class="constructor">Javalib</span>.jmethod&nbsp;<span class="constructor">JBasics</span>.<span class="constructor">MethodMap</span>.t;<br>
+&nbsp;&nbsp;}<br>
+&nbsp;&nbsp;<span class="keyword">type</span>&nbsp;<span class="keywordsign">'</span>a&nbsp;jinterface&nbsp;=&nbsp;{<br>
+&nbsp;&nbsp;&nbsp;&nbsp;i_name&nbsp;:&nbsp;<span class="constructor">JBasics</span>.class_name;<br>
+&nbsp;&nbsp;&nbsp;&nbsp;i_version&nbsp;:&nbsp;<span class="constructor">JBasics</span>.version;<br>
+&nbsp;&nbsp;&nbsp;&nbsp;i_access&nbsp;:&nbsp;[&nbsp;<span class="keywordsign">`</span><span class="constructor">Default</span>&nbsp;<span class="keywordsign">|</span>&nbsp;<span class="keywordsign">`</span><span class="constructor">Public</span>&nbsp;];<br>
+&nbsp;&nbsp;&nbsp;&nbsp;i_interfaces&nbsp;:&nbsp;<span class="constructor">JBasics</span>.class_name&nbsp;list;<br>
+&nbsp;&nbsp;&nbsp;&nbsp;i_generic_signature&nbsp;:&nbsp;<span class="constructor">JSignature</span>.classSignature&nbsp;option;<br>
+&nbsp;&nbsp;&nbsp;&nbsp;i_consts&nbsp;:&nbsp;<span class="constructor">JBasics</span>.constant&nbsp;array;<br>
+&nbsp;&nbsp;&nbsp;&nbsp;i_sourcefile&nbsp;:&nbsp;string&nbsp;option;<br>
+&nbsp;&nbsp;&nbsp;&nbsp;i_deprecated&nbsp;:&nbsp;bool;<br>
+&nbsp;&nbsp;&nbsp;&nbsp;i_source_debug_extention&nbsp;:&nbsp;string&nbsp;option;<br>
+&nbsp;&nbsp;&nbsp;&nbsp;i_inner_classes&nbsp;:&nbsp;<span class="constructor">Javalib</span>.inner_class&nbsp;list;<br>
+&nbsp;&nbsp;&nbsp;&nbsp;i_initializer&nbsp;:&nbsp;<span class="keywordsign">'</span>a&nbsp;<span class="constructor">Javalib</span>.concrete_method&nbsp;option;<br>
+&nbsp;&nbsp;&nbsp;&nbsp;i_annotation&nbsp;:&nbsp;bool;<br>
+&nbsp;&nbsp;&nbsp;&nbsp;i_annotations&nbsp;:&nbsp;(<span class="constructor">JBasics</span>.annotation&nbsp;*&nbsp;<span class="constructor">Javalib</span>.visibility)&nbsp;list;<br>
+&nbsp;&nbsp;&nbsp;&nbsp;i_other_attributes&nbsp;:&nbsp;(string&nbsp;*&nbsp;string)&nbsp;list;<br>
+&nbsp;&nbsp;&nbsp;&nbsp;i_other_flags&nbsp;:&nbsp;int&nbsp;list;<br>
+&nbsp;&nbsp;&nbsp;&nbsp;i_fields&nbsp;:&nbsp;<span class="constructor">Javalib</span>.interface_field&nbsp;<span class="constructor">JBasics</span>.<span class="constructor">FieldMap</span>.t;<br>
+&nbsp;&nbsp;&nbsp;&nbsp;i_methods&nbsp;:&nbsp;<span class="constructor">Javalib</span>.abstract_method&nbsp;<span class="constructor">JBasics</span>.<span class="constructor">MethodMap</span>.t;<br>
+&nbsp;&nbsp;}<br>
+&nbsp;&nbsp;<span class="keyword">type</span>&nbsp;<span class="keywordsign">'</span>a&nbsp;interface_or_class&nbsp;=<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="constructor">JInterface</span>&nbsp;<span class="keyword">of</span>&nbsp;<span class="keywordsign">'</span>a&nbsp;<span class="constructor">Javalib</span>.jinterface<br>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="keywordsign">|</span>&nbsp;<span class="constructor">JClass</span>&nbsp;<span class="keyword">of</span>&nbsp;<span class="keywordsign">'</span>a&nbsp;<span class="constructor">Javalib</span>.jclass<br>
+&nbsp;&nbsp;<span class="keyword">val</span>&nbsp;get_name&nbsp;:&nbsp;<span class="keywordsign">'</span>a&nbsp;<span class="constructor">Javalib</span>.interface_or_class&nbsp;<span class="keywordsign">-&gt;</span>&nbsp;<span class="constructor">JBasics</span>.class_name<br>
+&nbsp;&nbsp;<span class="keyword">val</span>&nbsp;get_consts&nbsp;:&nbsp;<span class="keywordsign">'</span>a&nbsp;<span class="constructor">Javalib</span>.interface_or_class&nbsp;<span class="keywordsign">-&gt;</span>&nbsp;<span class="constructor">JBasics</span>.constant&nbsp;array<br>
+&nbsp;&nbsp;<span class="keyword">val</span>&nbsp;get_access&nbsp;:&nbsp;<span class="keywordsign">'</span>a&nbsp;<span class="constructor">Javalib</span>.interface_or_class&nbsp;<span class="keywordsign">-&gt;</span>&nbsp;[&nbsp;<span class="keywordsign">`</span><span class="constructor">Default</span>&nbsp;<span class="keywordsign">|</span>&nbsp;<span class="keywordsign">`</span><span class="constructor">Public</span>&nbsp;]<br>
+&nbsp;&nbsp;<span class="keyword">val</span>&nbsp;get_sourcefile&nbsp;:&nbsp;<span class="keywordsign">'</span>a&nbsp;<span class="constructor">Javalib</span>.interface_or_class&nbsp;<span class="keywordsign">-&gt;</span>&nbsp;string&nbsp;option<br>
+&nbsp;&nbsp;<span class="keyword">val</span>&nbsp;is_deprecated&nbsp;:&nbsp;<span class="keywordsign">'</span>a&nbsp;<span class="constructor">Javalib</span>.interface_or_class&nbsp;<span class="keywordsign">-&gt;</span>&nbsp;bool<br>
+&nbsp;&nbsp;<span class="keyword">val</span>&nbsp;is_final&nbsp;:&nbsp;<span class="keywordsign">'</span>a&nbsp;<span class="constructor">Javalib</span>.interface_or_class&nbsp;<span class="keywordsign">-&gt;</span>&nbsp;bool<br>
+&nbsp;&nbsp;<span class="keyword">val</span>&nbsp;get_inner_classes&nbsp;:<br>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="keywordsign">'</span>a&nbsp;<span class="constructor">Javalib</span>.interface_or_class&nbsp;<span class="keywordsign">-&gt;</span>&nbsp;<span class="constructor">Javalib</span>.inner_class&nbsp;list<br>
+&nbsp;&nbsp;<span class="keyword">val</span>&nbsp;get_initializer&nbsp;:<br>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="keywordsign">'</span>a&nbsp;<span class="constructor">Javalib</span>.interface_or_class&nbsp;<span class="keywordsign">-&gt;</span>&nbsp;<span class="keywordsign">'</span>a&nbsp;<span class="constructor">Javalib</span>.concrete_method&nbsp;option<br>
+&nbsp;&nbsp;<span class="keyword">val</span>&nbsp;get_other_attributes&nbsp;:<br>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="keywordsign">'</span>a&nbsp;<span class="constructor">Javalib</span>.interface_or_class&nbsp;<span class="keywordsign">-&gt;</span>&nbsp;(string&nbsp;*&nbsp;string)&nbsp;list<br>
+&nbsp;&nbsp;<span class="keyword">val</span>&nbsp;get_other_flags&nbsp;:&nbsp;<span class="keywordsign">'</span>a&nbsp;<span class="constructor">Javalib</span>.interface_or_class&nbsp;<span class="keywordsign">-&gt;</span>&nbsp;int&nbsp;list<br>
+&nbsp;&nbsp;<span class="keyword">val</span>&nbsp;defines_method&nbsp;:<br>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="keywordsign">'</span>a&nbsp;<span class="constructor">Javalib</span>.interface_or_class&nbsp;<span class="keywordsign">-&gt;</span>&nbsp;<span class="constructor">JBasics</span>.method_signature&nbsp;<span class="keywordsign">-&gt;</span>&nbsp;bool<br>
+&nbsp;&nbsp;<span class="keyword">val</span>&nbsp;get_method&nbsp;:<br>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="keywordsign">'</span>a&nbsp;<span class="constructor">Javalib</span>.interface_or_class&nbsp;<span class="keywordsign">-&gt;</span><br>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="constructor">JBasics</span>.method_signature&nbsp;<span class="keywordsign">-&gt;</span>&nbsp;<span class="keywordsign">'</span>a&nbsp;<span class="constructor">Javalib</span>.jmethod<br>
+&nbsp;&nbsp;<span class="keyword">val</span>&nbsp;get_concrete_method&nbsp;:<br>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="keywordsign">'</span>a&nbsp;<span class="constructor">Javalib</span>.interface_or_class&nbsp;<span class="keywordsign">-&gt;</span><br>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="constructor">JBasics</span>.method_signature&nbsp;<span class="keywordsign">-&gt;</span>&nbsp;<span class="keywordsign">'</span>a&nbsp;<span class="constructor">Javalib</span>.concrete_method<br>
+&nbsp;&nbsp;<span class="keyword">val</span>&nbsp;get_methods&nbsp;:<br>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="keywordsign">'</span>a&nbsp;<span class="constructor">Javalib</span>.interface_or_class&nbsp;<span class="keywordsign">-&gt;</span>&nbsp;<span class="keywordsign">'</span>a&nbsp;<span class="constructor">Javalib</span>.jmethod&nbsp;<span class="constructor">JBasics</span>.<span class="constructor">MethodMap</span>.t<br>
+&nbsp;&nbsp;<span class="keyword">val</span>&nbsp;get_concrete_methods&nbsp;:<br>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="keywordsign">'</span>a&nbsp;<span class="constructor">Javalib</span>.interface_or_class&nbsp;<span class="keywordsign">-&gt;</span><br>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="keywordsign">'</span>a&nbsp;<span class="constructor">Javalib</span>.concrete_method&nbsp;<span class="constructor">JBasics</span>.<span class="constructor">MethodMap</span>.t<br>
+&nbsp;&nbsp;<span class="keyword">val</span>&nbsp;defines_field&nbsp;:<br>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="keywordsign">'</span>a&nbsp;<span class="constructor">Javalib</span>.interface_or_class&nbsp;<span class="keywordsign">-&gt;</span>&nbsp;<span class="constructor">JBasics</span>.field_signature&nbsp;<span class="keywordsign">-&gt;</span>&nbsp;bool<br>
+&nbsp;&nbsp;<span class="keyword">val</span>&nbsp;get_field&nbsp;:<br>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="keywordsign">'</span>a&nbsp;<span class="constructor">Javalib</span>.interface_or_class&nbsp;<span class="keywordsign">-&gt;</span><br>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="constructor">JBasics</span>.field_signature&nbsp;<span class="keywordsign">-&gt;</span>&nbsp;<span class="constructor">Javalib</span>.any_field<br>
+&nbsp;&nbsp;<span class="keyword">val</span>&nbsp;get_fields&nbsp;:<br>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="keywordsign">'</span>a&nbsp;<span class="constructor">Javalib</span>.interface_or_class&nbsp;<span class="keywordsign">-&gt;</span>&nbsp;<span class="constructor">Javalib</span>.any_field&nbsp;<span class="constructor">JBasics</span>.<span class="constructor">FieldMap</span>.t<br>
+&nbsp;&nbsp;<span class="keyword">val</span>&nbsp;cf_iter&nbsp;:<br>
+&nbsp;&nbsp;&nbsp;&nbsp;(<span class="constructor">Javalib</span>.class_field&nbsp;<span class="keywordsign">-&gt;</span>&nbsp;unit)&nbsp;<span class="keywordsign">-&gt;</span>&nbsp;<span class="keywordsign">'</span>a&nbsp;<span class="constructor">Javalib</span>.interface_or_class&nbsp;<span class="keywordsign">-&gt;</span>&nbsp;unit<br>
+&nbsp;&nbsp;<span class="keyword">val</span>&nbsp;if_iter&nbsp;:<br>
+&nbsp;&nbsp;&nbsp;&nbsp;(<span class="constructor">Javalib</span>.interface_field&nbsp;<span class="keywordsign">-&gt;</span>&nbsp;unit)&nbsp;<span class="keywordsign">-&gt;</span><br>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="keywordsign">'</span>a&nbsp;<span class="constructor">Javalib</span>.interface_or_class&nbsp;<span class="keywordsign">-&gt;</span>&nbsp;unit<br>
+&nbsp;&nbsp;<span class="keyword">val</span>&nbsp;f_iter&nbsp;:<br>
+&nbsp;&nbsp;&nbsp;&nbsp;(<span class="constructor">Javalib</span>.any_field&nbsp;<span class="keywordsign">-&gt;</span>&nbsp;unit)&nbsp;<span class="keywordsign">-&gt;</span>&nbsp;<span class="keywordsign">'</span>a&nbsp;<span class="constructor">Javalib</span>.interface_or_class&nbsp;<span class="keywordsign">-&gt;</span>&nbsp;unit<br>
+&nbsp;&nbsp;<span class="keyword">val</span>&nbsp;cf_fold&nbsp;:<br>
+&nbsp;&nbsp;&nbsp;&nbsp;(<span class="constructor">Javalib</span>.class_field&nbsp;<span class="keywordsign">-&gt;</span>&nbsp;<span class="keywordsign">'</span>a&nbsp;<span class="keywordsign">-&gt;</span>&nbsp;<span class="keywordsign">'</span>a)&nbsp;<span class="keywordsign">-&gt;</span><br>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="keywordsign">'</span>b&nbsp;<span class="constructor">Javalib</span>.interface_or_class&nbsp;<span class="keywordsign">-&gt;</span>&nbsp;<span class="keywordsign">'</span>a&nbsp;<span class="keywordsign">-&gt;</span>&nbsp;<span class="keywordsign">'</span>a<br>
+&nbsp;&nbsp;<span class="keyword">val</span>&nbsp;if_fold&nbsp;:<br>
+&nbsp;&nbsp;&nbsp;&nbsp;(<span class="constructor">Javalib</span>.interface_field&nbsp;<span class="keywordsign">-&gt;</span>&nbsp;<span class="keywordsign">'</span>a&nbsp;<span class="keywordsign">-&gt;</span>&nbsp;<span class="keywordsign">'</span>a)&nbsp;<span class="keywordsign">-&gt;</span><br>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="keywordsign">'</span>b&nbsp;<span class="constructor">Javalib</span>.interface_or_class&nbsp;<span class="keywordsign">-&gt;</span>&nbsp;<span class="keywordsign">'</span>a&nbsp;<span class="keywordsign">-&gt;</span>&nbsp;<span class="keywordsign">'</span>a<br>
+&nbsp;&nbsp;<span class="keyword">val</span>&nbsp;f_fold&nbsp;:<br>
+&nbsp;&nbsp;&nbsp;&nbsp;(<span class="constructor">Javalib</span>.any_field&nbsp;<span class="keywordsign">-&gt;</span>&nbsp;<span class="keywordsign">'</span>a&nbsp;<span class="keywordsign">-&gt;</span>&nbsp;<span class="keywordsign">'</span>a)&nbsp;<span class="keywordsign">-&gt;</span><br>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="keywordsign">'</span>b&nbsp;<span class="constructor">Javalib</span>.interface_or_class&nbsp;<span class="keywordsign">-&gt;</span>&nbsp;<span class="keywordsign">'</span>a&nbsp;<span class="keywordsign">-&gt;</span>&nbsp;<span class="keywordsign">'</span>a<br>
+&nbsp;&nbsp;<span class="keyword">val</span>&nbsp;cm_iter&nbsp;:<br>
+&nbsp;&nbsp;&nbsp;&nbsp;(<span class="keywordsign">'</span>a&nbsp;<span class="constructor">Javalib</span>.concrete_method&nbsp;<span class="keywordsign">-&gt;</span>&nbsp;unit)&nbsp;<span class="keywordsign">-&gt;</span><br>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="keywordsign">'</span>a&nbsp;<span class="constructor">Javalib</span>.interface_or_class&nbsp;<span class="keywordsign">-&gt;</span>&nbsp;unit<br>
+&nbsp;&nbsp;<span class="keyword">val</span>&nbsp;am_iter&nbsp;:<br>
+&nbsp;&nbsp;&nbsp;&nbsp;(<span class="constructor">Javalib</span>.abstract_method&nbsp;<span class="keywordsign">-&gt;</span>&nbsp;unit)&nbsp;<span class="keywordsign">-&gt;</span><br>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="keywordsign">'</span>a&nbsp;<span class="constructor">Javalib</span>.interface_or_class&nbsp;<span class="keywordsign">-&gt;</span>&nbsp;unit<br>
+&nbsp;&nbsp;<span class="keyword">val</span>&nbsp;m_iter&nbsp;:<br>
+&nbsp;&nbsp;&nbsp;&nbsp;(<span class="keywordsign">'</span>a&nbsp;<span class="constructor">Javalib</span>.jmethod&nbsp;<span class="keywordsign">-&gt;</span>&nbsp;unit)&nbsp;<span class="keywordsign">-&gt;</span>&nbsp;<span class="keywordsign">'</span>a&nbsp;<span class="constructor">Javalib</span>.interface_or_class&nbsp;<span class="keywordsign">-&gt;</span>&nbsp;unit<br>
+&nbsp;&nbsp;<span class="keyword">val</span>&nbsp;cm_fold&nbsp;:<br>
+&nbsp;&nbsp;&nbsp;&nbsp;(<span class="keywordsign">'</span>a&nbsp;<span class="constructor">Javalib</span>.concrete_method&nbsp;<span class="keywordsign">-&gt;</span>&nbsp;<span class="keywordsign">'</span>b&nbsp;<span class="keywordsign">-&gt;</span>&nbsp;<span class="keywordsign">'</span>b)&nbsp;<span class="keywordsign">-&gt;</span><br>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="keywordsign">'</span>a&nbsp;<span class="constructor">Javalib</span>.interface_or_class&nbsp;<span class="keywordsign">-&gt;</span>&nbsp;<span class="keywordsign">'</span>b&nbsp;<span class="keywordsign">-&gt;</span>&nbsp;<span class="keywordsign">'</span>b<br>
+&nbsp;&nbsp;<span class="keyword">val</span>&nbsp;am_fold&nbsp;:<br>
+&nbsp;&nbsp;&nbsp;&nbsp;(<span class="constructor">Javalib</span>.abstract_method&nbsp;<span class="keywordsign">-&gt;</span>&nbsp;<span class="keywordsign">'</span>a&nbsp;<span class="keywordsign">-&gt;</span>&nbsp;<span class="keywordsign">'</span>a)&nbsp;<span class="keywordsign">-&gt;</span><br>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="keywordsign">'</span>b&nbsp;<span class="constructor">Javalib</span>.interface_or_class&nbsp;<span class="keywordsign">-&gt;</span>&nbsp;<span class="keywordsign">'</span>a&nbsp;<span class="keywordsign">-&gt;</span>&nbsp;<span class="keywordsign">'</span>a<br>
+&nbsp;&nbsp;<span class="keyword">val</span>&nbsp;m_fold&nbsp;:<br>
+&nbsp;&nbsp;&nbsp;&nbsp;(<span class="keywordsign">'</span>a&nbsp;<span class="constructor">Javalib</span>.jmethod&nbsp;<span class="keywordsign">-&gt;</span>&nbsp;<span class="keywordsign">'</span>b&nbsp;<span class="keywordsign">-&gt;</span>&nbsp;<span class="keywordsign">'</span>b)&nbsp;<span class="keywordsign">-&gt;</span><br>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="keywordsign">'</span>a&nbsp;<span class="constructor">Javalib</span>.interface_or_class&nbsp;<span class="keywordsign">-&gt;</span>&nbsp;<span class="keywordsign">'</span>b&nbsp;<span class="keywordsign">-&gt;</span>&nbsp;<span class="keywordsign">'</span>b<br>
+&nbsp;&nbsp;<span class="keyword">val</span>&nbsp;map_concrete_method&nbsp;:<br>
+&nbsp;&nbsp;&nbsp;&nbsp;?force:bool&nbsp;<span class="keywordsign">-&gt;</span><br>
+&nbsp;&nbsp;&nbsp;&nbsp;(<span class="keywordsign">'</span>a&nbsp;<span class="keywordsign">-&gt;</span>&nbsp;<span class="keywordsign">'</span>b)&nbsp;<span class="keywordsign">-&gt;</span>&nbsp;<span class="keywordsign">'</span>a&nbsp;<span class="constructor">Javalib</span>.concrete_method&nbsp;<span class="keywordsign">-&gt;</span>&nbsp;<span class="keywordsign">'</span>b&nbsp;<span class="constructor">Javalib</span>.concrete_method<br>
+&nbsp;&nbsp;<span class="keyword">val</span>&nbsp;map_interface_or_class&nbsp;:<br>
+&nbsp;&nbsp;&nbsp;&nbsp;?force:bool&nbsp;<span class="keywordsign">-&gt;</span><br>
+&nbsp;&nbsp;&nbsp;&nbsp;(<span class="keywordsign">'</span>a&nbsp;<span class="keywordsign">-&gt;</span>&nbsp;<span class="keywordsign">'</span>b)&nbsp;<span class="keywordsign">-&gt;</span><br>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="keywordsign">'</span>a&nbsp;<span class="constructor">Javalib</span>.interface_or_class&nbsp;<span class="keywordsign">-&gt;</span>&nbsp;<span class="keywordsign">'</span>b&nbsp;<span class="constructor">Javalib</span>.interface_or_class<br>
+&nbsp;&nbsp;<span class="keyword">val</span>&nbsp;map_interface_or_class_context&nbsp;:<br>
+&nbsp;&nbsp;&nbsp;&nbsp;?force:bool&nbsp;<span class="keywordsign">-&gt;</span><br>
+&nbsp;&nbsp;&nbsp;&nbsp;(<span class="keywordsign">'</span>a&nbsp;<span class="constructor">Javalib</span>.concrete_method&nbsp;<span class="keywordsign">-&gt;</span>&nbsp;<span class="keywordsign">'</span>a&nbsp;<span class="keywordsign">-&gt;</span>&nbsp;<span class="keywordsign">'</span>b)&nbsp;<span class="keywordsign">-&gt;</span><br>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="keywordsign">'</span>a&nbsp;<span class="constructor">Javalib</span>.interface_or_class&nbsp;<span class="keywordsign">-&gt;</span>&nbsp;<span class="keywordsign">'</span>b&nbsp;<span class="constructor">Javalib</span>.interface_or_class<br>
+&nbsp;&nbsp;<span class="keyword">val</span>&nbsp;map_concrete_method_with_native&nbsp;:<br>
+&nbsp;&nbsp;&nbsp;&nbsp;(<span class="keywordsign">'</span>a&nbsp;<span class="constructor">Javalib</span>.implementation&nbsp;<span class="keywordsign">-&gt;</span>&nbsp;<span class="keywordsign">'</span>b&nbsp;<span class="constructor">Javalib</span>.implementation)&nbsp;<span class="keywordsign">-&gt;</span><br>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="keywordsign">'</span>a&nbsp;<span class="constructor">Javalib</span>.concrete_method&nbsp;<span class="keywordsign">-&gt;</span>&nbsp;<span class="keywordsign">'</span>b&nbsp;<span class="constructor">Javalib</span>.concrete_method<br>
+&nbsp;&nbsp;<span class="keyword">val</span>&nbsp;map_interface_or_class_with_native&nbsp;:<br>
+&nbsp;&nbsp;&nbsp;&nbsp;(<span class="keywordsign">'</span>a&nbsp;<span class="constructor">Javalib</span>.implementation&nbsp;<span class="keywordsign">-&gt;</span>&nbsp;<span class="keywordsign">'</span>b&nbsp;<span class="constructor">Javalib</span>.implementation)&nbsp;<span class="keywordsign">-&gt;</span><br>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="keywordsign">'</span>a&nbsp;<span class="constructor">Javalib</span>.interface_or_class&nbsp;<span class="keywordsign">-&gt;</span>&nbsp;<span class="keywordsign">'</span>b&nbsp;<span class="constructor">Javalib</span>.interface_or_class<br>
+&nbsp;&nbsp;<span class="keyword">val</span>&nbsp;map_interface_or_class_with_native_context&nbsp;:<br>
+&nbsp;&nbsp;&nbsp;&nbsp;(<span class="keywordsign">'</span>a&nbsp;<span class="constructor">Javalib</span>.concrete_method&nbsp;<span class="keywordsign">-&gt;</span><br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="keywordsign">'</span>a&nbsp;<span class="constructor">Javalib</span>.implementation&nbsp;<span class="keywordsign">-&gt;</span>&nbsp;<span class="keywordsign">'</span>b&nbsp;<span class="constructor">Javalib</span>.implementation)&nbsp;<span class="keywordsign">-&gt;</span><br>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="keywordsign">'</span>a&nbsp;<span class="constructor">Javalib</span>.interface_or_class&nbsp;<span class="keywordsign">-&gt;</span>&nbsp;<span class="keywordsign">'</span>b&nbsp;<span class="constructor">Javalib</span>.interface_or_class<br>
+&nbsp;&nbsp;<span class="keyword">type</span>&nbsp;class_path<br>
+&nbsp;&nbsp;<span class="keyword">val</span>&nbsp;class_path&nbsp;:&nbsp;string&nbsp;<span class="keywordsign">-&gt;</span>&nbsp;<span class="constructor">Javalib</span>.class_path<br>
+&nbsp;&nbsp;<span class="keyword">val</span>&nbsp;close_class_path&nbsp;:&nbsp;<span class="constructor">Javalib</span>.class_path&nbsp;<span class="keywordsign">-&gt;</span>&nbsp;unit<br>
+&nbsp;&nbsp;<span class="keyword">val</span>&nbsp;get_class&nbsp;:<br>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="constructor">Javalib</span>.class_path&nbsp;<span class="keywordsign">-&gt;</span><br>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="constructor">JBasics</span>.class_name&nbsp;<span class="keywordsign">-&gt;</span>&nbsp;<span class="constructor">JCode</span>.jcode&nbsp;<span class="constructor">Javalib</span>.interface_or_class<br>
+&nbsp;&nbsp;<span class="keyword">val</span>&nbsp;write_class&nbsp;:&nbsp;string&nbsp;<span class="keywordsign">-&gt;</span>&nbsp;<span class="constructor">JCode</span>.jcode&nbsp;<span class="constructor">Javalib</span>.interface_or_class&nbsp;<span class="keywordsign">-&gt;</span>&nbsp;unit<br>
+&nbsp;&nbsp;<span class="keyword">val</span>&nbsp;extract_class_name_from_file&nbsp;:&nbsp;string&nbsp;<span class="keywordsign">-&gt;</span>&nbsp;<span class="constructor">JBasics</span>.class_name&nbsp;*&nbsp;string<br>
+&nbsp;&nbsp;<span class="keyword">val</span>&nbsp;iter&nbsp;:<br>
+&nbsp;&nbsp;&nbsp;&nbsp;?debug:bool&nbsp;<span class="keywordsign">-&gt;</span><br>
+&nbsp;&nbsp;&nbsp;&nbsp;(<span class="constructor">JCode</span>.jcode&nbsp;<span class="constructor">Javalib</span>.interface_or_class&nbsp;<span class="keywordsign">-&gt;</span>&nbsp;unit)&nbsp;<span class="keywordsign">-&gt;</span>&nbsp;string&nbsp;<span class="keywordsign">-&gt;</span>&nbsp;unit<br>
+&nbsp;&nbsp;<span class="keyword">type</span>&nbsp;directories<br>
+&nbsp;&nbsp;<span class="keyword">val</span>&nbsp;make_directories&nbsp;:&nbsp;string&nbsp;<span class="keywordsign">-&gt;</span>&nbsp;<span class="constructor">Javalib</span>.directories<br>
+&nbsp;&nbsp;<span class="keyword">val</span>&nbsp;read&nbsp;:<br>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="constructor">Javalib</span>.directories&nbsp;<span class="keywordsign">-&gt;</span><br>
+&nbsp;&nbsp;&nbsp;&nbsp;(<span class="keywordsign">'</span>a&nbsp;<span class="keywordsign">-&gt;</span>&nbsp;<span class="constructor">JCode</span>.jcode&nbsp;<span class="constructor">Javalib</span>.interface_or_class&nbsp;<span class="keywordsign">-&gt;</span>&nbsp;<span class="keywordsign">'</span>a)&nbsp;<span class="keywordsign">-&gt;</span><br>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="keywordsign">'</span>a&nbsp;<span class="keywordsign">-&gt;</span>&nbsp;string&nbsp;list&nbsp;<span class="keywordsign">-&gt;</span>&nbsp;<span class="keywordsign">'</span>a<br>
+&nbsp;&nbsp;<span class="keyword">val</span>&nbsp;transform&nbsp;:<br>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="constructor">Javalib</span>.directories&nbsp;<span class="keywordsign">-&gt;</span><br>
+&nbsp;&nbsp;&nbsp;&nbsp;string&nbsp;<span class="keywordsign">-&gt;</span><br>
+&nbsp;&nbsp;&nbsp;&nbsp;(<span class="constructor">JCode</span>.jcode&nbsp;<span class="constructor">Javalib</span>.interface_or_class&nbsp;<span class="keywordsign">-&gt;</span><br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="constructor">JCode</span>.jcode&nbsp;<span class="constructor">Javalib</span>.interface_or_class)&nbsp;<span class="keywordsign">-&gt;</span><br>
+&nbsp;&nbsp;&nbsp;&nbsp;string&nbsp;list&nbsp;<span class="keywordsign">-&gt;</span>&nbsp;unit<br>
+&nbsp;&nbsp;<span class="keyword">val</span>&nbsp;unparse_class&nbsp;:<br>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="constructor">JCode</span>.jcode&nbsp;<span class="constructor">Javalib</span>.interface_or_class&nbsp;<span class="keywordsign">-&gt;</span>&nbsp;<span class="constructor">Pervasives</span>.out_channel&nbsp;<span class="keywordsign">-&gt;</span>&nbsp;unit<br>
+&nbsp;&nbsp;<span class="keyword">module</span>&nbsp;<span class="constructor">JPrint</span>&nbsp;:<br>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="keyword">sig</span><br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="keyword">val</span>&nbsp;class_name&nbsp;:&nbsp;?jvm:bool&nbsp;<span class="keywordsign">-&gt;</span>&nbsp;<span class="constructor">JBasics</span>.class_name&nbsp;<span class="keywordsign">-&gt;</span>&nbsp;string<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="keyword">val</span>&nbsp;cn_package&nbsp;:&nbsp;<span class="constructor">JBasics</span>.class_name&nbsp;<span class="keywordsign">-&gt;</span>&nbsp;string<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="keyword">val</span>&nbsp;cn_simple_name&nbsp;:&nbsp;<span class="constructor">JBasics</span>.class_name&nbsp;<span class="keywordsign">-&gt;</span>&nbsp;string<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="keyword">val</span>&nbsp;method_signature&nbsp;:<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;?jvm:bool&nbsp;<span class="keywordsign">-&gt;</span><br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;?callee:<span class="constructor">JBasics</span>.object_type&nbsp;<span class="keywordsign">-&gt;</span><br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;?param_names:string&nbsp;list&nbsp;<span class="keywordsign">-&gt;</span>&nbsp;<span class="constructor">JBasics</span>.method_signature&nbsp;<span class="keywordsign">-&gt;</span>&nbsp;string<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="keyword">val</span>&nbsp;class_method_signature&nbsp;:<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;?jvm:bool&nbsp;<span class="keywordsign">-&gt;</span><br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;?param_names:string&nbsp;list&nbsp;<span class="keywordsign">-&gt;</span>&nbsp;<span class="constructor">JBasics</span>.class_method_signature&nbsp;<span class="keywordsign">-&gt;</span>&nbsp;string<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="keyword">val</span>&nbsp;field_signature&nbsp;:<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;?jvm:bool&nbsp;<span class="keywordsign">-&gt;</span><br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;?declared_in:<span class="constructor">JBasics</span>.class_name&nbsp;<span class="keywordsign">-&gt;</span>&nbsp;<span class="constructor">JBasics</span>.field_signature&nbsp;<span class="keywordsign">-&gt;</span>&nbsp;string<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="keyword">val</span>&nbsp;class_field_signature&nbsp;:<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;?jvm:bool&nbsp;<span class="keywordsign">-&gt;</span>&nbsp;<span class="constructor">JBasics</span>.class_field_signature&nbsp;<span class="keywordsign">-&gt;</span>&nbsp;string<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="keyword">val</span>&nbsp;signature&nbsp;:&nbsp;?jvm:bool&nbsp;<span class="keywordsign">-&gt;</span>&nbsp;string&nbsp;<span class="keywordsign">-&gt;</span>&nbsp;<span class="constructor">JBasics</span>.descriptor&nbsp;<span class="keywordsign">-&gt;</span>&nbsp;string<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="keyword">val</span>&nbsp;java_basic_type&nbsp;:&nbsp;?jvm:bool&nbsp;<span class="keywordsign">-&gt;</span>&nbsp;<span class="constructor">JBasics</span>.java_basic_type&nbsp;<span class="keywordsign">-&gt;</span>&nbsp;string<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="keyword">val</span>&nbsp;object_type&nbsp;:&nbsp;?jvm:bool&nbsp;<span class="keywordsign">-&gt;</span>&nbsp;<span class="constructor">JBasics</span>.object_type&nbsp;<span class="keywordsign">-&gt;</span>&nbsp;string<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="keyword">val</span>&nbsp;value_type&nbsp;:&nbsp;?jvm:bool&nbsp;<span class="keywordsign">-&gt;</span>&nbsp;<span class="constructor">JBasics</span>.value_type&nbsp;<span class="keywordsign">-&gt;</span>&nbsp;string<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="keyword">val</span>&nbsp;return_type&nbsp;:&nbsp;?jvm:bool&nbsp;<span class="keywordsign">-&gt;</span>&nbsp;<span class="constructor">JBasics</span>.value_type&nbsp;option&nbsp;<span class="keywordsign">-&gt;</span>&nbsp;string<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="keyword">val</span>&nbsp;value_type_list&nbsp;:<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;?jvm:bool&nbsp;<span class="keywordsign">-&gt;</span>&nbsp;?names:string&nbsp;list&nbsp;<span class="keywordsign">-&gt;</span>&nbsp;<span class="constructor">JBasics</span>.value_type&nbsp;list&nbsp;<span class="keywordsign">-&gt;</span>&nbsp;string<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="keyword">val</span>&nbsp;field_descriptor&nbsp;:&nbsp;?jvm:bool&nbsp;<span class="keywordsign">-&gt;</span>&nbsp;<span class="constructor">JBasics</span>.value_type&nbsp;<span class="keywordsign">-&gt;</span>&nbsp;string<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="keyword">val</span>&nbsp;method_descriptor&nbsp;:<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;?jvm:bool&nbsp;<span class="keywordsign">-&gt;</span><br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="constructor">JBasics</span>.value_type&nbsp;list&nbsp;<span class="keywordsign">-&gt;</span>&nbsp;<span class="constructor">JBasics</span>.value_type&nbsp;option&nbsp;<span class="keywordsign">-&gt;</span>&nbsp;string<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="keyword">val</span>&nbsp;stack_map&nbsp;:&nbsp;<span class="constructor">JBasics</span>.stackmap&nbsp;<span class="keywordsign">-&gt;</span>&nbsp;string<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="keyword">val</span>&nbsp;constant&nbsp;:&nbsp;<span class="constructor">JBasics</span>.constant&nbsp;<span class="keywordsign">-&gt;</span>&nbsp;string<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="keyword">val</span>&nbsp;constant_pool&nbsp;:&nbsp;<span class="constructor">JBasics</span>.constant&nbsp;array&nbsp;<span class="keywordsign">-&gt;</span>&nbsp;string<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="keyword">val</span>&nbsp;exception_handler&nbsp;:&nbsp;<span class="constructor">JCode</span>.exception_handler&nbsp;<span class="keywordsign">-&gt;</span>&nbsp;string<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="keyword">val</span>&nbsp;jopcode&nbsp;:&nbsp;?jvm:bool&nbsp;<span class="keywordsign">-&gt;</span>&nbsp;<span class="constructor">JCode</span>.jopcode&nbsp;<span class="keywordsign">-&gt;</span>&nbsp;string<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="keyword">val</span>&nbsp;jcode&nbsp;:&nbsp;?jvm:bool&nbsp;<span class="keywordsign">-&gt;</span>&nbsp;<span class="constructor">JCode</span>.jcode&nbsp;<span class="keywordsign">-&gt;</span>&nbsp;string&nbsp;list<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="keyword">val</span>&nbsp;print_method&nbsp;:<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;?jvm:bool&nbsp;<span class="keywordsign">-&gt;</span><br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="keywordsign">'</span>a&nbsp;<span class="constructor">Javalib</span>.jmethod&nbsp;<span class="keywordsign">-&gt;</span><br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;(<span class="keywordsign">'</span>a&nbsp;<span class="keywordsign">-&gt;</span>&nbsp;string&nbsp;list)&nbsp;<span class="keywordsign">-&gt;</span>&nbsp;<span class="constructor">Pervasives</span>.out_channel&nbsp;<span class="keywordsign">-&gt;</span>&nbsp;unit<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="keyword">val</span>&nbsp;print_method'&nbsp;:<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;?jvm:bool&nbsp;<span class="keywordsign">-&gt;</span><br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="keywordsign">'</span>a&nbsp;<span class="constructor">Javalib</span>.jmethod&nbsp;<span class="keywordsign">-&gt;</span><br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;(<span class="keywordsign">'</span>a&nbsp;<span class="keywordsign">-&gt;</span>&nbsp;<span class="constructor">Format</span>.formatter&nbsp;<span class="keywordsign">-&gt;</span>&nbsp;unit)&nbsp;<span class="keywordsign">-&gt;</span>&nbsp;<span class="constructor">Format</span>.formatter&nbsp;<span class="keywordsign">-&gt;</span>&nbsp;unit<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="keyword">val</span>&nbsp;print_class&nbsp;:<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;?jvm:bool&nbsp;<span class="keywordsign">-&gt;</span><br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="keywordsign">'</span>a&nbsp;<span class="constructor">Javalib</span>.interface_or_class&nbsp;<span class="keywordsign">-&gt;</span><br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;(<span class="keywordsign">'</span>a&nbsp;<span class="keywordsign">-&gt;</span>&nbsp;string&nbsp;list)&nbsp;<span class="keywordsign">-&gt;</span>&nbsp;<span class="constructor">Pervasives</span>.out_channel&nbsp;<span class="keywordsign">-&gt;</span>&nbsp;unit<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="keyword">val</span>&nbsp;print_class'&nbsp;:<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;?jvm:bool&nbsp;<span class="keywordsign">-&gt;</span><br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="keywordsign">'</span>a&nbsp;<span class="constructor">Javalib</span>.interface_or_class&nbsp;<span class="keywordsign">-&gt;</span><br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;(<span class="keywordsign">'</span>a&nbsp;<span class="keywordsign">-&gt;</span>&nbsp;<span class="constructor">Format</span>.formatter&nbsp;<span class="keywordsign">-&gt;</span>&nbsp;unit)&nbsp;<span class="keywordsign">-&gt;</span>&nbsp;<span class="constructor">Format</span>.formatter&nbsp;<span class="keywordsign">-&gt;</span>&nbsp;unit<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="keyword">val</span>&nbsp;print_jasmin&nbsp;:<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="constructor">JCode</span>.jcode&nbsp;<span class="constructor">Javalib</span>.interface_or_class&nbsp;<span class="keywordsign">-&gt;</span><br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="constructor">Pervasives</span>.out_channel&nbsp;<span class="keywordsign">-&gt;</span>&nbsp;unit<br>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="keyword">end</span><br>
+<span class="keyword">end</span></code></body></html>

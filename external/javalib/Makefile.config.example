@@ -1,0 +1,19 @@
+export OCAMLFIND_DESTDIR=$(LOCALDEST)
+export OCAMLPATH=$(LOCALDEST)
+
+OCAMLC = $(FINDER) ocamlc $(FLAGS)
+OCAMLOPT = $(FINDER) ocamlopt $(OPT_FLAGS)
+OCAMLDOC = $(FINDER) ocamldoc
+OCAMLDEP = $(FINDER) ocamldep
+OCAMLMKTOP = $(FINDER) ocamlmktop
+OCAMLMKLIB = ocamlmklib
+OCAMLLEX = ocamllex
+
+RECODE=-charset utf-8
+DOCDIR := doc/api
+
+INCLUDE := -package unix,str,extlib,zip,ptrees
+PP := -package camlp4 -syntax camlp4o
+
+INSTALL = $(FINDER) install
+

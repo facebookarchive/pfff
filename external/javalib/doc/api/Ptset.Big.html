@@ -1,0 +1,67 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html>
+<head>
+<link rel="stylesheet" href="style.css" type="text/css">
+<meta content="text/html; charset=utf-8" http-equiv="Content-Type">
+<link rel="Start" href="index.html">
+<link rel="next" href="Ptset.BigPos.html">
+<link rel="Up" href="Ptset.html">
+<link title="Index of types" rel=Appendix href="index_types.html">
+<link title="Index of exceptions" rel=Appendix href="index_exceptions.html">
+<link title="Index of values" rel=Appendix href="index_values.html">
+<link title="Index of modules" rel=Appendix href="index_modules.html">
+<link title="Index of module types" rel=Appendix href="index_module_types.html">
+<link title="JBasics" rel="Chapter" href="JBasics.html">
+<link title="JBasicsLow" rel="Chapter" href="JBasicsLow.html">
+<link title="JCode" rel="Chapter" href="JCode.html">
+<link title="JClassLow" rel="Chapter" href="JClassLow.html">
+<link title="JSignature" rel="Chapter" href="JSignature.html">
+<link title="JClass" rel="Chapter" href="JClass.html">
+<link title="JDumpBasics" rel="Chapter" href="JDumpBasics.html">
+<link title="JUnparseSignature" rel="Chapter" href="JUnparseSignature.html">
+<link title="JDumpLow" rel="Chapter" href="JDumpLow.html">
+<link title="JDumpJasmin" rel="Chapter" href="JDumpJasmin.html">
+<link title="JParseCode" rel="Chapter" href="JParseCode.html">
+<link title="JInstruction" rel="Chapter" href="JInstruction.html">
+<link title="JUnparse" rel="Chapter" href="JUnparse.html">
+<link title="JParseSignature" rel="Chapter" href="JParseSignature.html">
+<link title="JParse" rel="Chapter" href="JParse.html">
+<link title="JLow2High" rel="Chapter" href="JLow2High.html">
+<link title="JHigh2Low" rel="Chapter" href="JHigh2Low.html">
+<link title="JFile" rel="Chapter" href="JFile.html">
+<link title="JManifest" rel="Chapter" href="JManifest.html">
+<link title="Javalib" rel="Chapter" href="Javalib.html">
+<link title="Ptmap" rel="Chapter" href="Ptmap.html">
+<link title="Ptset" rel="Chapter" href="Ptset.html"><title>Javalib : Ptset.Big</title>
+</head>
+<body>
+<div class="navbar">&nbsp;<a href="Ptset.html">Up</a>
+&nbsp;<a href="Ptset.BigPos.html">Next</a>
+</div>
+<center><h1>Module <a href="type_Ptset.Big.html">Ptset.Big</a></h1></center>
+<br>
+<pre><span class="keyword">module</span> Big: <code class="type"><a href="Ptset.S.html">S</a></code><code class="type"> </code></pre><hr width="100%">
+<pre><span id="TYPEt"><span class="keyword">type</span> <code class="type"></code>t</span> </pre>
+
+<pre><span id="TYPEelt"><span class="keyword">type</span> <code class="type"></code>elt</span> = <code class="type">int</code> </pre>
+
+<pre><span id="VALempty"><span class="keyword">val</span> empty</span> : <code class="type"><a href="Ptset.S.html#TYPEt">t</a></code></pre><pre><span id="VALis_empty"><span class="keyword">val</span> is_empty</span> : <code class="type"><a href="Ptset.S.html#TYPEt">t</a> -> bool</code></pre><pre><span id="VALmem"><span class="keyword">val</span> mem</span> : <code class="type">int -> <a href="Ptset.S.html#TYPEt">t</a> -> bool</code></pre><pre><span id="VALadd"><span class="keyword">val</span> add</span> : <code class="type">int -> <a href="Ptset.S.html#TYPEt">t</a> -> <a href="Ptset.S.html#TYPEt">t</a></code></pre><pre><span id="VALsingleton"><span class="keyword">val</span> singleton</span> : <code class="type">int -> <a href="Ptset.S.html#TYPEt">t</a></code></pre><pre><span id="VALremove"><span class="keyword">val</span> remove</span> : <code class="type">int -> <a href="Ptset.S.html#TYPEt">t</a> -> <a href="Ptset.S.html#TYPEt">t</a></code></pre><pre><span id="VALunion"><span class="keyword">val</span> union</span> : <code class="type"><a href="Ptset.S.html#TYPEt">t</a> -> <a href="Ptset.S.html#TYPEt">t</a> -> <a href="Ptset.S.html#TYPEt">t</a></code></pre><pre><span id="VALsubset"><span class="keyword">val</span> subset</span> : <code class="type"><a href="Ptset.S.html#TYPEt">t</a> -> <a href="Ptset.S.html#TYPEt">t</a> -> bool</code></pre><pre><span id="VALinter"><span class="keyword">val</span> inter</span> : <code class="type"><a href="Ptset.S.html#TYPEt">t</a> -> <a href="Ptset.S.html#TYPEt">t</a> -> <a href="Ptset.S.html#TYPEt">t</a></code></pre><pre><span id="VALdiff"><span class="keyword">val</span> diff</span> : <code class="type"><a href="Ptset.S.html#TYPEt">t</a> -> <a href="Ptset.S.html#TYPEt">t</a> -> <a href="Ptset.S.html#TYPEt">t</a></code></pre><pre><span id="VALequal"><span class="keyword">val</span> equal</span> : <code class="type"><a href="Ptset.S.html#TYPEt">t</a> -> <a href="Ptset.S.html#TYPEt">t</a> -> bool</code></pre><pre><span id="VALcompare"><span class="keyword">val</span> compare</span> : <code class="type"><a href="Ptset.S.html#TYPEt">t</a> -> <a href="Ptset.S.html#TYPEt">t</a> -> int</code></pre><pre><span id="VALelements"><span class="keyword">val</span> elements</span> : <code class="type"><a href="Ptset.S.html#TYPEt">t</a> -> int list</code></pre><pre><span id="VALchoose"><span class="keyword">val</span> choose</span> : <code class="type"><a href="Ptset.S.html#TYPEt">t</a> -> int</code></pre><pre><span id="VALcardinal"><span class="keyword">val</span> cardinal</span> : <code class="type"><a href="Ptset.S.html#TYPEt">t</a> -> int</code></pre><pre><span id="VALiter"><span class="keyword">val</span> iter</span> : <code class="type">(int -> unit) -> <a href="Ptset.S.html#TYPEt">t</a> -> unit</code></pre><pre><span id="VALfold"><span class="keyword">val</span> fold</span> : <code class="type">(int -> 'a -> 'a) -> <a href="Ptset.S.html#TYPEt">t</a> -> 'a -> 'a</code></pre><pre><span id="VALfor_all"><span class="keyword">val</span> for_all</span> : <code class="type">(int -> bool) -> <a href="Ptset.S.html#TYPEt">t</a> -> bool</code></pre><pre><span id="VALexists"><span class="keyword">val</span> exists</span> : <code class="type">(int -> bool) -> <a href="Ptset.S.html#TYPEt">t</a> -> bool</code></pre><pre><span id="VALfilter"><span class="keyword">val</span> filter</span> : <code class="type">(int -> bool) -> <a href="Ptset.S.html#TYPEt">t</a> -> <a href="Ptset.S.html#TYPEt">t</a></code></pre><pre><span id="VALpartition"><span class="keyword">val</span> partition</span> : <code class="type">(int -> bool) -> <a href="Ptset.S.html#TYPEt">t</a> -> <a href="Ptset.S.html#TYPEt">t</a> * <a href="Ptset.S.html#TYPEt">t</a></code></pre><pre><span id="VALsplit"><span class="keyword">val</span> split</span> : <code class="type">int -> <a href="Ptset.S.html#TYPEt">t</a> -> <a href="Ptset.S.html#TYPEt">t</a> * bool * <a href="Ptset.S.html#TYPEt">t</a></code></pre><br>
+Warning: <code class="code">min_elt</code> and <code class="code">max_elt</code> are linear w.r.t. the size of the
+      set. In other words, <code class="code">min_elt t</code> is barely more efficient than <code class="code">fold
+      min t (choose t)</code>.<br>
+<pre><span id="VALmin_elt"><span class="keyword">val</span> min_elt</span> : <code class="type"><a href="Ptset.S.html#TYPEt">t</a> -> int</code></pre><pre><span id="VALmax_elt"><span class="keyword">val</span> max_elt</span> : <code class="type"><a href="Ptset.S.html#TYPEt">t</a> -> int</code></pre><br>
+Additional functions not appearing in the signature <code class="code"><span class="constructor">Set</span>.<span class="constructor">S</span></code> from
+      ocaml standard library.<br>
+<br>
+<code class="code">intersect u v</code> determines if sets <code class="code">u</code> and <code class="code">v</code> have a non-empty
+      intersection.<br>
+<pre><span id="VALintersect"><span class="keyword">val</span> intersect</span> : <code class="type"><a href="Ptset.S.html#TYPEt">t</a> -> <a href="Ptset.S.html#TYPEt">t</a> -> bool</code></pre><pre><span id="VALchoose_and_remove"><span class="keyword">val</span> choose_and_remove</span> : <code class="type"><a href="Ptset.S.html#TYPEt">t</a> -> int * <a href="Ptset.S.html#TYPEt">t</a></code></pre><div class="info">
+<code class="code">choose_and_remove t</code> is equivalent (but more efficient) to
+      <code class="code">(<span class="keyword">fun</span> t <span class="keywordsign">-&gt;</span> <span class="keyword">let</span> i = choose t <span class="keyword">in</span> (i,remove i t)) t</code><br>
+<b>Author(s):</b> Laurent Hubert<br>
+</div>
+<pre><span id="VALto_string"><span class="keyword">val</span> to_string</span> : <code class="type"><a href="Ptset.S.html#TYPEt">t</a> -> string</code></pre><div class="info">
+<code class="code">to_string s</code> return a string representation of <code class="code">s</code><br>
+<b>Author(s):</b> David Pichardie<br>
+</div>
+</body></html>

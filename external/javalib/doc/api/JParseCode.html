@@ -1,0 +1,68 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html>
+<head>
+<link rel="stylesheet" href="style.css" type="text/css">
+<meta content="text/html; charset=utf-8" http-equiv="Content-Type">
+<link rel="Start" href="index.html">
+<link rel="previous" href="JDumpJasmin.html">
+<link rel="next" href="JInstruction.html">
+<link rel="Up" href="index.html">
+<link title="Index of types" rel=Appendix href="index_types.html">
+<link title="Index of exceptions" rel=Appendix href="index_exceptions.html">
+<link title="Index of values" rel=Appendix href="index_values.html">
+<link title="Index of modules" rel=Appendix href="index_modules.html">
+<link title="Index of module types" rel=Appendix href="index_module_types.html">
+<link title="JBasics" rel="Chapter" href="JBasics.html">
+<link title="JBasicsLow" rel="Chapter" href="JBasicsLow.html">
+<link title="JCode" rel="Chapter" href="JCode.html">
+<link title="JClassLow" rel="Chapter" href="JClassLow.html">
+<link title="JSignature" rel="Chapter" href="JSignature.html">
+<link title="JClass" rel="Chapter" href="JClass.html">
+<link title="JDumpBasics" rel="Chapter" href="JDumpBasics.html">
+<link title="JUnparseSignature" rel="Chapter" href="JUnparseSignature.html">
+<link title="JDumpLow" rel="Chapter" href="JDumpLow.html">
+<link title="JDumpJasmin" rel="Chapter" href="JDumpJasmin.html">
+<link title="JParseCode" rel="Chapter" href="JParseCode.html">
+<link title="JInstruction" rel="Chapter" href="JInstruction.html">
+<link title="JUnparse" rel="Chapter" href="JUnparse.html">
+<link title="JParseSignature" rel="Chapter" href="JParseSignature.html">
+<link title="JParse" rel="Chapter" href="JParse.html">
+<link title="JLow2High" rel="Chapter" href="JLow2High.html">
+<link title="JHigh2Low" rel="Chapter" href="JHigh2Low.html">
+<link title="JFile" rel="Chapter" href="JFile.html">
+<link title="JManifest" rel="Chapter" href="JManifest.html">
+<link title="Javalib" rel="Chapter" href="Javalib.html">
+<link title="Ptmap" rel="Chapter" href="Ptmap.html">
+<link title="Ptset" rel="Chapter" href="Ptset.html"><title>Javalib : JParseCode</title>
+</head>
+<body>
+<div class="navbar"><a href="JDumpJasmin.html">Previous</a>
+&nbsp;<a href="index.html">Up</a>
+&nbsp;<a href="JInstruction.html">Next</a>
+</div>
+<center><h1>Module <a href="type_JParseCode.html">JParseCode</a></h1></center>
+<br>
+<pre><span class="keyword">module</span> JParseCode: <code class="code"><span class="keyword">sig</span></code> <a href="JParseCode.html">..</a> <code class="code"><span class="keyword">end</span></code></pre>Low level (un)parsing of bytecode instructions.<br>
+<hr width="100%">
+<pre><span id="VALparse_code"><span class="keyword">val</span> parse_code</span> : <code class="type">IO.input -> int -> <a href="JClassLow.html#TYPEopcode">JClassLow.opcode</a> array</code></pre><div class="info">
+Parse a sequence of instructions of given size (in bytes) and
+    returns an array of instructions.<br>
+</div>
+<pre><span id="VALunparse_code"><span class="keyword">val</span> unparse_code</span> : <code class="type">'a IO.output -> <a href="JClassLow.html#TYPEopcode">JClassLow.opcode</a> array -> unit</code></pre><div class="info">
+Unparse a sequence of instructions.<br>
+<b>Raises</b> <code>OpcodeLengthError</code> if an opcode cannot be encoded in the allocated
+    place.<br>
+</div>
+<pre><span id="EXCEPTIONOpcodeLengthError"><span class="keyword">exception</span> OpcodeLengthError</span> <span class="keyword">of</span> <code class="type">int * <a href="JClassLow.html#TYPEopcode">JClassLow.opcode</a></code></pre>
+<div class="info">
+<code class="code"><span class="constructor">OpcodeLengthError</span></code> takes as argument the opcode and the excepted
+    length that cannot be matched by unparsing the opcode.<br>
+</div>
+<pre><span id="VALparse_full_opcode"><span class="keyword">val</span> parse_full_opcode</span> : <code class="type">IO.input -> (unit -> int) -> <a href="JClassLow.html#TYPEopcode">JClassLow.opcode</a></code></pre><pre><span id="VALunparse_instruction"><span class="keyword">val</span> unparse_instruction</span> : <code class="type">'a IO.output -> (unit -> int) -> int -> <a href="JClassLow.html#TYPEopcode">JClassLow.opcode</a> -> unit</code></pre><div class="info">
+<code class="code">unparse_instruction ch count length opcode</code> output on <code class="code">ch</code> the
+    opcode <code class="code">opcode</code> in the <code class="code">length</code> byte(s) format. E.g <code class="code"><span class="constructor">OpLoad</span>
+    (<span class="keywordsign">`</span><span class="constructor">Int</span>,1)</code> can be encoded on 4 bytes (<code class="code">wide iload 0x0001</code>), 2 bytes
+    (<code class="code">iload 0x01</code>) or 1 byte (<code class="code">iload_1</code>).<br>
+<b>Raises</b> <code>OpcodeLengthError</code> if the length provided cannot be matched.<br>
+</div>
+</body></html>

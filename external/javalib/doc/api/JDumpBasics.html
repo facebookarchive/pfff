@@ -1,0 +1,126 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html>
+<head>
+<link rel="stylesheet" href="style.css" type="text/css">
+<meta content="text/html; charset=utf-8" http-equiv="Content-Type">
+<link rel="Start" href="index.html">
+<link rel="previous" href="JClass.html">
+<link rel="next" href="JUnparseSignature.html">
+<link rel="Up" href="index.html">
+<link title="Index of types" rel=Appendix href="index_types.html">
+<link title="Index of exceptions" rel=Appendix href="index_exceptions.html">
+<link title="Index of values" rel=Appendix href="index_values.html">
+<link title="Index of modules" rel=Appendix href="index_modules.html">
+<link title="Index of module types" rel=Appendix href="index_module_types.html">
+<link title="JBasics" rel="Chapter" href="JBasics.html">
+<link title="JBasicsLow" rel="Chapter" href="JBasicsLow.html">
+<link title="JCode" rel="Chapter" href="JCode.html">
+<link title="JClassLow" rel="Chapter" href="JClassLow.html">
+<link title="JSignature" rel="Chapter" href="JSignature.html">
+<link title="JClass" rel="Chapter" href="JClass.html">
+<link title="JDumpBasics" rel="Chapter" href="JDumpBasics.html">
+<link title="JUnparseSignature" rel="Chapter" href="JUnparseSignature.html">
+<link title="JDumpLow" rel="Chapter" href="JDumpLow.html">
+<link title="JDumpJasmin" rel="Chapter" href="JDumpJasmin.html">
+<link title="JParseCode" rel="Chapter" href="JParseCode.html">
+<link title="JInstruction" rel="Chapter" href="JInstruction.html">
+<link title="JUnparse" rel="Chapter" href="JUnparse.html">
+<link title="JParseSignature" rel="Chapter" href="JParseSignature.html">
+<link title="JParse" rel="Chapter" href="JParse.html">
+<link title="JLow2High" rel="Chapter" href="JLow2High.html">
+<link title="JHigh2Low" rel="Chapter" href="JHigh2Low.html">
+<link title="JFile" rel="Chapter" href="JFile.html">
+<link title="JManifest" rel="Chapter" href="JManifest.html">
+<link title="Javalib" rel="Chapter" href="Javalib.html">
+<link title="Ptmap" rel="Chapter" href="Ptmap.html">
+<link title="Ptset" rel="Chapter" href="Ptset.html"><title>Javalib : JDumpBasics</title>
+</head>
+<body>
+<div class="navbar"><a href="JClass.html">Previous</a>
+&nbsp;<a href="index.html">Up</a>
+&nbsp;<a href="JUnparseSignature.html">Next</a>
+</div>
+<center><h1>Module <a href="type_JDumpBasics.html">JDumpBasics</a></h1></center>
+<br>
+<pre><span class="keyword">module</span> JDumpBasics: <code class="code"><span class="keyword">sig</span></code> <a href="JDumpBasics.html">..</a> <code class="code"><span class="keyword">end</span></code></pre>Convert some data from <a href="JBasics.html"><code class="code"><span class="constructor">JBasics</span></code></a> to strings or print them on the
+    provided output.<br>
+<hr width="100%">
+<pre><span id="VALclass_name"><span class="keyword">val</span> class_name</span> : <code class="type">?jvm:bool -> <a href="JBasics.html#TYPEclass_name">JBasics.class_name</a> -> string</code></pre><div class="info">
+<code class="code">class_name ~jvm cn</code> returns the fully qualified class name as a
+      string. If <code class="code">jvm</code> is false (default value): with dots between
+      packages and between package name and class name. If <code class="code">jvm</code> is
+      true returns the JVM representation.<br>
+</div>
+<pre><span id="VALbasic_type"><span class="keyword">val</span> basic_type</span> : <code class="type">?jvm:bool -> <a href="JBasics.html#TYPEjava_basic_type">JBasics.java_basic_type</a> -> string</code></pre><div class="info">
+<code class="code">basic_type ~jvm t</code>, if <code class="code">jvm</code> is false (default value), returns the
+      Java representation of the type <code class="code">t</code> (<i>e.g.</i> <code class="code">basic_type <span class="keywordsign">`</span><span class="constructor">Int</span></code>
+      returns "int"). If <code class="code">jvm</code> is true: returns the JVM
+      representation of type <code class="code">t</code> (<i>e.g.</i> <code class="code">type2shortstring <span class="keywordsign">`</span><span class="constructor">Int</span></code>
+      returns "I").<br>
+</div>
+<pre><span id="VALobject_value_signature"><span class="keyword">val</span> object_value_signature</span> : <code class="type">?jvm:bool -> <a href="JBasics.html#TYPEobject_type">JBasics.object_type</a> -> string</code></pre><div class="info">
+<code class="code">object_value_signature ~jvm s</code>, if <code class="code">jvm</code> is false (by
+      default), returns the Java representation of type <code class="code">s</code>. If <code class="code">jvm</code>
+      is true returns the JVM representation of type <code class="code">s</code>.<br>
+</div>
+<pre><span id="VALvalue_signature"><span class="keyword">val</span> value_signature</span> : <code class="type">?jvm:bool -> <a href="JBasics.html#TYPEvalue_type">JBasics.value_type</a> -> string</code></pre><div class="info">
+<code class="code">value_signature ~jvm s</code>, if <code class="code">jvm</code> is false (default value),
+      returns the Java representation of the type <code class="code">t</code>. If <code class="code">jvm</code> is
+      true: returns the JVM representation of type <code class="code">t</code><br>
+</div>
+<pre><span id="VALtype2shortstring"><span class="keyword">val</span> type2shortstring</span> : <code class="type"><a href="JBasics.html#TYPEvalue_type">JBasics.value_type</a> -> string</code></pre><div class="info">
+<span class="warning">Deprecated.</span><a href="JDumpBasics.html#VALtype2shortstring"><code class="code"><span class="constructor">JDumpBasics</span>.type2shortstring</code></a> is an alias for <a href="JDumpBasics.html#VALvalue_signature"><code class="code"><span class="constructor">JDumpBasics</span>.value_signature</code></a> <code class="code">~jvm:<span class="keyword">true</span></code>.<br>
+</div>
+<pre><span id="VALrettype2shortstring"><span class="keyword">val</span> rettype2shortstring</span> : <code class="type">?jvm:bool -> <a href="JBasics.html#TYPEvalue_type">JBasics.value_type</a> option -> string</code></pre><div class="info">
+<code class="code">rettype2shortstring t</code>, if <code class="code">jvm</code> is true (default value),
+      returns the JVM representation of the return type <code class="code">t</code> (<i>e.g.</i>
+      <code class="code">rettype2shortstring <span class="constructor">None</span></code> returns "V"). If <code class="code">jvm</code> is false
+      returns the Java representation of type <code class="code">t</code> (<i>e.g.</i>
+      <code class="code">rettype2shortstring <span class="constructor">None</span></code> returns "void").<br>
+</div>
+<pre><span id="VALarraytype2shortstring"><span class="keyword">val</span> arraytype2shortstring</span> : <code class="type"><a href="JBasics.html#TYPEjvm_array_type">JBasics.jvm_array_type</a> -> string</code></pre><div class="info">
+<code class="code">arraytype2shortstring t</code> return the JVM representation of the
+      array type <code class="code">t</code> (<i>e.g.</i> <code class="code">arraytype2shortstring <span class="keywordsign">`</span><span class="constructor">Object</span></code> returns
+      "A").<br>
+</div>
+<pre><span id="VALmethod_signature"><span class="keyword">val</span> method_signature</span> : <code class="type">string -> <a href="JBasics.html#TYPEmethod_descriptor">JBasics.method_descriptor</a> -> string</code></pre><div class="info">
+<code class="code">method_signature mn md</code>, where <code class="code">mn</code> is a method name and <code class="code">md</code> a
+      method descriptor, returns the method signature as in Java (<i>      e.g.</i> "bool equals(java.lang.Object)").<br>
+</div>
+<pre><span id="VALsignature"><span class="keyword">val</span> signature</span> : <code class="type">string -> <a href="JBasics.html#TYPEdescriptor">JBasics.descriptor</a> -> string</code></pre><div class="info">
+<code class="code">signature name des</code> returns a string corresponding to the field
+      or method <code class="code">name</code> with the descriptor <code class="code">des</code>.  (See
+      <a href="JDumpBasics.html#VALmethod_signature"><code class="code"><span class="constructor">JDumpBasics</span>.method_signature</code></a>)<br>
+</div>
+<pre><span id="VALjvm_basic_type"><span class="keyword">val</span> jvm_basic_type</span> : <code class="type">[< `Double | `Float | `Int | `Int2Bool | `Long ] -> char</code></pre><div class="info">
+<code class="code">jvm_basic_type t</code> returns the lowercase character that
+      corresponds to the type <code class="code">t</code>.<br>
+</div>
+<pre><span id="VALjvm_array_type"><span class="keyword">val</span> jvm_array_type</span> : <code class="type"><a href="JBasics.html#TYPEjvm_array_type">JBasics.jvm_array_type</a> -> char</code></pre><div class="info">
+<code class="code">jvm_array_type t</code> returns the lowercase character that
+      corresponds to the type <code class="code">t</code>.<br>
+</div>
+<pre><span id="VALjava_basic_type"><span class="keyword">val</span> java_basic_type</span> : <code class="type"><a href="JBasics.html#TYPEjava_basic_type">JBasics.java_basic_type</a> -> char</code></pre><div class="info">
+<code class="code">java_basic_type t</code> returns the lowercase character that
+      corresponds to the type <code class="code">t</code>.<br>
+</div>
+<pre><span id="VALdump_constant_value"><span class="keyword">val</span> dump_constant_value</span> : <code class="type">'a IO.output -> <a href="JBasics.html#TYPEconstant_value">JBasics.constant_value</a> -> unit</code></pre><div class="info">
+<code class="code">dump_constant_value ch cst</code> prints on <code class="code">ch</code> the constant value
+      <code class="code">ch</code> preceded by its type (<i>e.g</i> "int 3").<br>
+</div>
+<pre><span id="VALdump_constant"><span class="keyword">val</span> dump_constant</span> : <code class="type">'a IO.output -> <a href="JBasics.html#TYPEconstant">JBasics.constant</a> -> unit</code></pre><div class="info">
+<code class="code">dump_constant ch cst</code> prints on <code class="code">ch</code> the constant pool constant
+      <code class="code">cst</code> of the.<br>
+</div>
+<pre><span id="VALdump_constantpool"><span class="keyword">val</span> dump_constantpool</span> : <code class="type">'a IO.output -> <a href="JBasics.html#TYPEconstant">JBasics.constant</a> array -> unit</code></pre><div class="info">
+<code class="code">dump_constantpool ch pool</code> print on <code class="code">ch</code> the constant pool
+      <code class="code">pool</code>.<br>
+</div>
+<pre><span id="VALdump_verification_type"><span class="keyword">val</span> dump_verification_type</span> : <code class="type"><a href="JBasics.html#TYPEverification_type">JBasics.verification_type</a> -> string</code></pre><pre><span id="VALdump_stackmap"><span class="keyword">val</span> dump_stackmap</span> : <code class="type">'a IO.output -> <a href="JBasics.html#TYPEstackmap">JBasics.stackmap</a> -> unit</code></pre><div class="info">
+<code class="code">dump_stackmap ch sm</code> prints on <code class="code">ch</code> the stackmap <code class="code">sm</code>.<br>
+</div>
+<pre><span id="VALdump_exc"><span class="keyword">val</span> dump_exc</span> : <code class="type">'a IO.output -> 'b -> <a href="JCode.html#TYPEexception_handler">JCode.exception_handler</a> -> unit</code></pre><div class="info">
+<code class="code">dump_exc ch _ ex</code> prints on <code class="code">ch</code> the exception handler
+      declaration <code class="code">ex</code>.<br>
+</div>
+</body></html>

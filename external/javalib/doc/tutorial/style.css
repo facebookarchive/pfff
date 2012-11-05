@@ -1,0 +1,274 @@
+
+h1 {
+    font-family:"Century Gothic", "Trebuchet MS", "Arial Narrow", Arial, sans-serif;
+    font-size:2em;
+    font-weight:normal;
+    border-bottom:1px solid #eeeeee;
+    padding-top:0.5em;
+    padding-bottom:0.5em;
+    color:#434343;
+    text-align:center;
+}
+
+h1.logo {
+    font-family:"Century Gothic", "Trebuchet MS", "Arial Narrow", Arial, sans-serif;
+    font-size:2em;
+    font-weight:normal;
+    border-bottom:1px solid #eeeeee;
+    padding-bottom:0.5em;
+    padding-top:0em;
+    color:#434343;
+    text-align:center;
+}
+
+h3 {
+  text-align: left;
+  vertical-align: top;
+  background-color: #ffffff;
+  color: #0080e0;
+  font-family: sans-serif;
+  font-weight: bold;
+  margin-top: 5px;
+  margin-bottom:3px;
+}
+
+div.title{
+display:inline-block
+vertical-align:middle;
+line-height: 2em;
+}
+
+img.logo{
+    vertical-align:middle;
+    margin-left: 1em;
+    margin-right: 1em;
+    height:2em;
+}
+
+
+p.code {
+    width:60em;
+    margin: 5px;
+    padding: 5px;
+    border: solid 1px black;
+    background-color: #E0E0E0;
+}
+.code {
+    font: 11px Monaco,monospace;
+}
+pre {
+    background: #EBEBEB;
+    border: solid 1px black;
+    font: 11px monospace;
+    width: 60em;
+    padding: 1em;
+    margin:5px;
+    overflow: hidden
+}
+
+
+/**********************************************************************
+ Links
+*/
+
+a:link { 
+  color: #0080c0; 
+  text-decoration : underline;
+}
+
+a:visited { 
+  color: #0080c0; 
+  text-decoration : underline;
+}
+
+a:active {
+  background-color: #0080c0;
+}
+
+a:hover { 
+  color:#555555;
+  text-decoration: underline;
+}
+
+
+h1 a:link {
+    color:#555555;
+    text-decoration: none;
+}
+
+h1 a:visited {
+    color:#555555;
+    text-decoration: none;
+}
+
+h2 a:link {
+    color:#555555;
+    text-decoration: none;
+}
+
+h2 a:visited {
+    color:#555555;
+    text-decoration: none;
+}
+
+h3 a:link {
+    color:#555555;
+    text-decoration: none;
+}
+
+h3 a:visited {
+    color:#555555;
+    text-decoration: none;
+}
+
+div.title_links { text-align: left }
+
+/**********************************************************************
+ Body text
+*/
+
+body {
+  font-family:"Trebuchet MS", Arial, Verdana;
+  margin-left: 1em;
+  margin-right: 1em;
+  color:#555555;
+  background-color:#FFFFFF;
+  text-align:justify;
+  font-size:1em;
+  margin:auto;
+}
+
+.code{
+  font-family:courier;
+  font-size:small;
+}
+
+.detailedinstructions li, .detailedinstructions dl {
+  margin-top: 1em;
+  margin-bottom: 1em;
+}
+
+img {
+  border: 0em;
+}
+
+div.modified { 
+  margin-top: 3em ;
+  color : #999999 ; 
+  font-style: italic ;
+  text-align: left ;
+  font-size: 12px ;
+  padding-left:192px;
+  }
+
+
+/* Menu */
+table.menu {
+  margin-top: 7em;
+  margin-bottom:1em;
+  margin-right: 2em;
+  position:fixed;
+  background-color: #0080c0;
+  color: #ffffff;
+  -moz-box-shadow: #333 3px 0px 0.3em;
+  -webkit-box-shadow: #333 3px 0px 0.3em;
+  box-shadow: #333 3px 0px 0.3em;
+  text-align: left;
+  vertical-align: top;
+  font-family: sans-serif;
+  font-weight: bold;
+  font-size: 16px;
+}
+
+td {
+    padding-left: 4px;
+    padding-top: 2px;
+    padding-bottom: 2px;
+}
+
+* td.menu_first {
+}
+
+* td.menu {
+  
+  border-top:0.10em groove #eeeeee;
+}
+
+div.content {
+  width:62em;
+  vertical-align:top;
+  padding-left:192px;
+}
+
+* td.menu a:link { 
+  color: White; 
+  text-decoration : underline;
+}
+
+* td.menu a:visited { 
+  color: White; 
+  text-decoration : underline;
+}
+
+* td.menu a:active {
+  color: white;
+  background-color: #f0a04a;
+}
+
+* td.menu a:hover { 
+  text-decoration: underline;
+  color: white;
+  background-color: #f0a04a;
+}
+
+
+* td.menu_first a:link { 
+  color: White; 
+  text-decoration : underline;
+}
+
+* td.menu_first a:visited { 
+  color: White; 
+  text-decoration : underline;
+}
+
+* td.menu_first a:active {
+  color: White;
+  background-color: #f0a04a;
+}
+
+* td.menu_first a:hover { 
+  text-decoration: underline;
+  color: White;
+  background-color: #f0a04a;
+}
+
+.grey {
+    color: Gainsboro;
+}
+
+/*  */
+img {border: 0}
+
+
+/* Dates. */
+.date {color : #666666 ; font-size: 10px}
+
+/* Tutorials */
+
+.tutorial-title {
+    text-align: center;
+    margin-top: 0em;
+    margin-bottom: 0em;
+    text-color: #736451;
+    font-size:2em;
+}
+
+#TOC {
+    margin-bottom: 3em;
+}
+
+ol.footnote {
+    font-size:smaller;
+}
+

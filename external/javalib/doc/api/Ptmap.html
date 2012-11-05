@@ -1,0 +1,59 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html>
+<head>
+<link rel="stylesheet" href="style.css" type="text/css">
+<meta content="text/html; charset=utf-8" http-equiv="Content-Type">
+<link rel="Start" href="index.html">
+<link rel="previous" href="Javalib.html">
+<link rel="next" href="Ptset.html">
+<link rel="Up" href="index.html">
+<link title="Index of types" rel=Appendix href="index_types.html">
+<link title="Index of exceptions" rel=Appendix href="index_exceptions.html">
+<link title="Index of values" rel=Appendix href="index_values.html">
+<link title="Index of modules" rel=Appendix href="index_modules.html">
+<link title="Index of module types" rel=Appendix href="index_module_types.html">
+<link title="JBasics" rel="Chapter" href="JBasics.html">
+<link title="JBasicsLow" rel="Chapter" href="JBasicsLow.html">
+<link title="JCode" rel="Chapter" href="JCode.html">
+<link title="JClassLow" rel="Chapter" href="JClassLow.html">
+<link title="JSignature" rel="Chapter" href="JSignature.html">
+<link title="JClass" rel="Chapter" href="JClass.html">
+<link title="JDumpBasics" rel="Chapter" href="JDumpBasics.html">
+<link title="JUnparseSignature" rel="Chapter" href="JUnparseSignature.html">
+<link title="JDumpLow" rel="Chapter" href="JDumpLow.html">
+<link title="JDumpJasmin" rel="Chapter" href="JDumpJasmin.html">
+<link title="JParseCode" rel="Chapter" href="JParseCode.html">
+<link title="JInstruction" rel="Chapter" href="JInstruction.html">
+<link title="JUnparse" rel="Chapter" href="JUnparse.html">
+<link title="JParseSignature" rel="Chapter" href="JParseSignature.html">
+<link title="JParse" rel="Chapter" href="JParse.html">
+<link title="JLow2High" rel="Chapter" href="JLow2High.html">
+<link title="JHigh2Low" rel="Chapter" href="JHigh2Low.html">
+<link title="JFile" rel="Chapter" href="JFile.html">
+<link title="JManifest" rel="Chapter" href="JManifest.html">
+<link title="Javalib" rel="Chapter" href="Javalib.html">
+<link title="Ptmap" rel="Chapter" href="Ptmap.html">
+<link title="Ptset" rel="Chapter" href="Ptset.html"><title>Javalib : Ptmap</title>
+</head>
+<body>
+<div class="navbar"><a href="Javalib.html">Previous</a>
+&nbsp;<a href="index.html">Up</a>
+&nbsp;<a href="Ptset.html">Next</a>
+</div>
+<center><h1>Module <a href="type_Ptmap.html">Ptmap</a></h1></center>
+<br>
+<pre><span class="keyword">module</span> Ptmap: <code class="code"><span class="keyword">sig</span></code> <a href="Ptmap.html">..</a> <code class="code"><span class="keyword">end</span></code></pre>Maps over integers implemented as Patricia trees.
+<p>
+
+    This implementation follows Chris Okasaki and Andrew Gill's paper
+    <em>Fast Mergeable Integer Maps</em>.<br>
+<hr width="100%">
+<br>
+The following signature is similar to <code class="code"><span class="constructor">Map</span>.<span class="constructor">S</span> <span class="keyword">with</span> <span class="keyword">type</span> key = int</code>.
+    The documentation is only given for function that differs from
+    <code class="code"><span class="constructor">Map</span>.<span class="constructor">S</span> <span class="keyword">with</span> <span class="keyword">type</span> key = int</code>.
+<p>
+
+    The module <a href="Ptset.html"><code class="code"><span class="constructor">Ptset</span></code></a> is based on the same data-structure.<br>
+<pre><span class="keyword">module type</span> <a href="Ptmap.S.html">S</a> = <code class="code"><span class="keyword">sig</span></code> <a href="Ptmap.S.html">..</a> <code class="code"><span class="keyword">end</span></code></pre><pre><span class="keyword">include</span> <a href="Ptmap.S.html">Ptmap.S</a></pre>
+</body></html>

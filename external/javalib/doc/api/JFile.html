@@ -1,0 +1,162 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html>
+<head>
+<link rel="stylesheet" href="style.css" type="text/css">
+<meta content="text/html; charset=utf-8" http-equiv="Content-Type">
+<link rel="Start" href="index.html">
+<link rel="previous" href="JHigh2Low.html">
+<link rel="next" href="JManifest.html">
+<link rel="Up" href="index.html">
+<link title="Index of types" rel=Appendix href="index_types.html">
+<link title="Index of exceptions" rel=Appendix href="index_exceptions.html">
+<link title="Index of values" rel=Appendix href="index_values.html">
+<link title="Index of modules" rel=Appendix href="index_modules.html">
+<link title="Index of module types" rel=Appendix href="index_module_types.html">
+<link title="JBasics" rel="Chapter" href="JBasics.html">
+<link title="JBasicsLow" rel="Chapter" href="JBasicsLow.html">
+<link title="JCode" rel="Chapter" href="JCode.html">
+<link title="JClassLow" rel="Chapter" href="JClassLow.html">
+<link title="JSignature" rel="Chapter" href="JSignature.html">
+<link title="JClass" rel="Chapter" href="JClass.html">
+<link title="JDumpBasics" rel="Chapter" href="JDumpBasics.html">
+<link title="JUnparseSignature" rel="Chapter" href="JUnparseSignature.html">
+<link title="JDumpLow" rel="Chapter" href="JDumpLow.html">
+<link title="JDumpJasmin" rel="Chapter" href="JDumpJasmin.html">
+<link title="JParseCode" rel="Chapter" href="JParseCode.html">
+<link title="JInstruction" rel="Chapter" href="JInstruction.html">
+<link title="JUnparse" rel="Chapter" href="JUnparse.html">
+<link title="JParseSignature" rel="Chapter" href="JParseSignature.html">
+<link title="JParse" rel="Chapter" href="JParse.html">
+<link title="JLow2High" rel="Chapter" href="JLow2High.html">
+<link title="JHigh2Low" rel="Chapter" href="JHigh2Low.html">
+<link title="JFile" rel="Chapter" href="JFile.html">
+<link title="JManifest" rel="Chapter" href="JManifest.html">
+<link title="Javalib" rel="Chapter" href="Javalib.html">
+<link title="Ptmap" rel="Chapter" href="Ptmap.html">
+<link title="Ptset" rel="Chapter" href="Ptset.html"><link title="Loading a single class." rel="Section" href="#2_Loadingasingleclass">
+<link title="Reading/transforming a set of classes." rel="Section" href="#2_Readingtransformingasetofclasses">
+<title>Javalib : JFile</title>
+</head>
+<body>
+<div class="navbar"><a href="JHigh2Low.html">Previous</a>
+&nbsp;<a href="index.html">Up</a>
+&nbsp;<a href="JManifest.html">Next</a>
+</div>
+<center><h1>Module <a href="type_JFile.html">JFile</a></h1></center>
+<br>
+<pre><span class="keyword">module</span> JFile: <code class="code"><span class="keyword">sig</span></code> <a href="JFile.html">..</a> <code class="code"><span class="keyword">end</span></code></pre>Accessing classes in files, directories and jar (or zip) files.<br>
+<hr width="100%">
+<br>
+<span id="2_Loadingasingleclass"><h2>Loading a single class.</h2></span><br>
+<pre><span id="TYPEclass_path"><span class="keyword">type</span> <code class="type"></code>class_path</span> </pre>
+<div class="info">
+The type of "compiled" class paths (jar (or zip) files are opened for efficiency).<br>
+</div>
+
+<pre><span id="VALsep"><span class="keyword">val</span> sep</span> : <code class="type">string</code></pre><div class="info">
+<code class="code">sep</code> is the class path separator. It contains a colon (:) under
+    Unix and Cygwin and a semi-colon (;) under Windows (or MinGW).<br>
+</div>
+<pre><span id="VALclass_path"><span class="keyword">val</span> class_path</span> : <code class="type">string -> <a href="JFile.html#TYPEclass_path">class_path</a></code></pre><div class="info">
+<code class="code">class_path cp</code> opens a class path from the list <code class="code">cp</code> of
+    directories and jar (or zip) files separated by <a href="JFile.html#VALsep"><code class="code"><span class="constructor">JFile</span>.sep</code></a>.  jar
+    (or zip) files in the given directories are also considered, but
+    they are not looked for recursively.  If <code class="code">cp</code> is empty(<code class="code"><span class="string">""</span></code>), then
+    the current directory is used.  Note: the order matters: the
+    search stops when a class file is found. Directories and jar (or
+    zip) files are read in the given order. When several directories
+    are given, the order of the jar (or zip) file inside those
+    directory are unspecified, but the jar (or zip) file of the first
+    directory will be read before the others.
+<p>
+
+    Note : the following works :
+    <pre></pre><code class="code"><span class="keyword">try</span>&nbsp;class_path&nbsp;(<span class="constructor">Sys</span>.getenv&nbsp;<span class="string">"CLASSPATH"</span>)<br>
+<span class="keyword">with</span>&nbsp;<span class="constructor">Not_found</span><span class="keywordsign">-&gt;</span>&nbsp;class_path&nbsp;<span class="string">""</span></code><pre></pre><br>
+</div>
+<pre><span id="VALclose_class_path"><span class="keyword">val</span> close_class_path</span> : <code class="type"><a href="JFile.html#TYPEclass_path">class_path</a> -> unit</code></pre><div class="info">
+Closes a class path.<br>
+</div>
+<pre><span id="VALget_class"><span class="keyword">val</span> get_class</span> : <code class="type"><a href="JFile.html#TYPEclass_path">class_path</a> -><br>       <a href="JBasics.html#TYPEclass_name">JBasics.class_name</a> -> <a href="JCode.html#TYPEjcode">JCode.jcode</a> <a href="JClass.html#TYPEinterface_or_class">JClass.interface_or_class</a></code></pre><div class="info">
+Parses a single class. It takes as argument the class name built
+    with <a href="JBasics.html#VALmake_cn"><code class="code"><span class="constructor">JBasics</span>.make_cn</code></a>.
+    This function does not check that the name of the parsed class is the
+    same as the argument xclass name.<br>
+<b>Raises</b><ul><li><code>JBasics.No_class_found</code> if the class <code class="code">class_name</code> has not been found
+    in <code class="code">class_path</code>.</li>
+<li><code>JBasics.Class_structure_error</code> if the class file does not match the
+    official specification (although it does not check the class file
+    entirely).</li>
+</ul>
+</div>
+<pre><span id="VALget_class_low"><span class="keyword">val</span> get_class_low</span> : <code class="type"><a href="JFile.html#TYPEclass_path">class_path</a> -> <a href="JBasics.html#TYPEclass_name">JBasics.class_name</a> -> <a href="JClassLow.html#TYPEjclass">JClassLow.jclass</a></code></pre><div class="info">
+Same as <a href="JFile.html#VALget_class"><code class="code"><span class="constructor">JFile</span>.get_class</code></a> with low level class files.<br>
+</div>
+<pre><span id="VALwrite_class"><span class="keyword">val</span> write_class</span> : <code class="type">string -> <a href="JCode.html#TYPEjcode">JCode.jcode</a> <a href="JClass.html#TYPEinterface_or_class">JClass.interface_or_class</a> -> unit</code></pre><div class="info">
+<code class="code">write_class outputdir c</code> writes the class <code class="code">c</code> in the subdirectory of
+    <code class="code">outputdir</code> that correspond to the package name of <code class="code">c</code>.<br>
+<b>Raises</b> <code>Class_structure_error</code> if an opcode cannot be encoded in the available
+    place.<br>
+</div>
+<pre><span id="VALwrite_class_low"><span class="keyword">val</span> write_class_low</span> : <code class="type">string -> <a href="JClassLow.html#TYPEjclass">JClassLow.jclass</a> -> unit</code></pre><div class="info">
+Same as <a href="JFile.html#VALwrite_class"><code class="code"><span class="constructor">JFile</span>.write_class</code></a> with low level class files.<br>
+</div>
+<pre><span id="VALextract_class_name_from_file"><span class="keyword">val</span> extract_class_name_from_file</span> : <code class="type">string -> <a href="JBasics.html#TYPEclass_name">JBasics.class_name</a> * string</code></pre><div class="info">
+<code class="code">extract_class_name_from_file f</code> recovers a class name and a class
+    path from the file <code class="code">f</code>.<br>
+<b>Raises</b> <code>Sys_error</code> if <code class="code">f</code> is not a file. <code class="code">f</code>
+    must contain the <code class="code">.<span class="keyword">class</span></code> extension.<br>
+</div>
+<br>
+<span id="2_Readingtransformingasetofclasses"><h2>Reading/transforming a set of classes.</h2></span><br>
+<pre><span id="VALiter"><span class="keyword">val</span> iter</span> : <code class="type">?debug:bool -><br>       (<a href="JCode.html#TYPEjcode">JCode.jcode</a> <a href="JClass.html#TYPEinterface_or_class">JClass.interface_or_class</a> -> unit) -> string -> unit</code></pre><div class="info">
+<code class="code">iter ~debug:<span class="keyword">false</span> f filename</code> applies the function successively the
+    function <code class="code">f</code> on each classes specified by <code class="code">filename</code>. <code class="code">filename</code> is either a
+    valid class file, a valid jar (or zip) file, or a valid directory with jar
+    (or zip) files inside.  The dirname of <code class="code">filename</code> is used as classpath.  If
+    <code class="code">debug</code> is <code class="code"><span class="keyword">true</span></code> then the number of classes parsed when given a .jar file or
+    a directory is printed on the standard error output.<br>
+</div>
+<pre><span id="TYPEdirectories"><span class="keyword">type</span> <code class="type"></code>directories</span> </pre>
+<div class="info">
+Abstract type representing a list of directories.<br>
+</div>
+
+<pre><span id="VALmake_directories"><span class="keyword">val</span> make_directories</span> : <code class="type">string -> <a href="JFile.html#TYPEdirectories">directories</a></code></pre><div class="info">
+<code class="code">make_directories directories</code> returns an abstract <code class="code">directories</code> type.  The
+    string <code class="code">directories</code> must be a list of files separated by <a href="JFile.html#VALsep"><code class="code"><span class="constructor">JFile</span>.sep</code></a>. Only
+    directories are filtered.<br>
+</div>
+<br>
+The following functions search for class files in the following order :<ul>
+<li>If a name can be found in some directory, subsequent directories are
+    ignored.</li>
+<li>If a name is the name of an existing directory, then every
+    .class file inside this directory is read, and the search is over
+    (even if the directory is empty).</li>
+<li>Otherwise, if the name refers to an existing .class file
+    (without the extension) then this file is read.</li>
+<li>Otherwise, if the name ends in .jar (or .zip) and the file exists, it is
+    assumed to be jar (or zip) file and the class files inside are read.</li>
+</ul>
+
+    Dots in class names are interpreted as / (but not for jar (or zip)
+    files).<br>
+<pre><span id="VALread"><span class="keyword">val</span> read</span> : <code class="type"><a href="JFile.html#TYPEdirectories">directories</a> -><br>       ('a -> <a href="JCode.html#TYPEjcode">JCode.jcode</a> <a href="JClass.html#TYPEinterface_or_class">JClass.interface_or_class</a> -> 'a) -><br>       'a -> string list -> 'a</code></pre><div class="info">
+<code class="code">read directories f acc names</code> iterates <code class="code">f</code> over all classes specified by
+    <code class="code">names</code>. <code class="code">acc</code> is the initial accumulator value.<br>
+</div>
+<pre><span id="VALtransform"><span class="keyword">val</span> transform</span> : <code class="type"><a href="JFile.html#TYPEdirectories">directories</a> -><br>       string -><br>       (<a href="JCode.html#TYPEjcode">JCode.jcode</a> <a href="JClass.html#TYPEinterface_or_class">JClass.interface_or_class</a> -><br>        <a href="JCode.html#TYPEjcode">JCode.jcode</a> <a href="JClass.html#TYPEinterface_or_class">JClass.interface_or_class</a>) -><br>       string list -> unit</code></pre><div class="info">
+<code class="code">transform directories outputdir f names</code> applies <code class="code">f</code> to all
+    classes specified by <code class="code">names</code>, writing the resulting classes in
+    <code class="code">outputdir</code>. Jar (Or Zip) files are mapped to jar (or zip) files,
+    and the non-class files are kept unchanged in the resulting
+    archive.<br>
+</div>
+<pre><span id="VALread_low"><span class="keyword">val</span> read_low</span> : <code class="type"><a href="JFile.html#TYPEdirectories">directories</a> -><br>       ('a -> <a href="JClassLow.html#TYPEjclass">JClassLow.jclass</a> -> 'a) -> 'a -> string list -> 'a</code></pre><div class="info">
+Same as <a href="JFile.html#VALread"><code class="code"><span class="constructor">JFile</span>.read</code></a> with low level class files.<br>
+</div>
+<pre><span id="VALtransform_low"><span class="keyword">val</span> transform_low</span> : <code class="type"><a href="JFile.html#TYPEdirectories">directories</a> -><br>       string -> (<a href="JClassLow.html#TYPEjclass">JClassLow.jclass</a> -> <a href="JClassLow.html#TYPEjclass">JClassLow.jclass</a>) -> string list -> unit</code></pre><div class="info">
+Same as <a href="JFile.html#VALtransform"><code class="code"><span class="constructor">JFile</span>.transform</code></a> with low level class files.<br>
+</div>
+</body></html>

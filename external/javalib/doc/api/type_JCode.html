@@ -1,0 +1,150 @@
+<html><head>
+<link rel="stylesheet" href="style.css" type="text/css">
+<meta content="text/html; charset=utf-8" http-equiv="Content-Type">
+<link rel="Start" href="index.html">
+<link title="Index of types" rel=Appendix href="index_types.html">
+<link title="Index of exceptions" rel=Appendix href="index_exceptions.html">
+<link title="Index of values" rel=Appendix href="index_values.html">
+<link title="Index of modules" rel=Appendix href="index_modules.html">
+<link title="Index of module types" rel=Appendix href="index_module_types.html">
+<link title="JBasics" rel="Chapter" href="JBasics.html">
+<link title="JBasicsLow" rel="Chapter" href="JBasicsLow.html">
+<link title="JCode" rel="Chapter" href="JCode.html">
+<link title="JClassLow" rel="Chapter" href="JClassLow.html">
+<link title="JSignature" rel="Chapter" href="JSignature.html">
+<link title="JClass" rel="Chapter" href="JClass.html">
+<link title="JDumpBasics" rel="Chapter" href="JDumpBasics.html">
+<link title="JUnparseSignature" rel="Chapter" href="JUnparseSignature.html">
+<link title="JDumpLow" rel="Chapter" href="JDumpLow.html">
+<link title="JDumpJasmin" rel="Chapter" href="JDumpJasmin.html">
+<link title="JParseCode" rel="Chapter" href="JParseCode.html">
+<link title="JInstruction" rel="Chapter" href="JInstruction.html">
+<link title="JUnparse" rel="Chapter" href="JUnparse.html">
+<link title="JParseSignature" rel="Chapter" href="JParseSignature.html">
+<link title="JParse" rel="Chapter" href="JParse.html">
+<link title="JLow2High" rel="Chapter" href="JLow2High.html">
+<link title="JHigh2Low" rel="Chapter" href="JHigh2Low.html">
+<link title="JFile" rel="Chapter" href="JFile.html">
+<link title="JManifest" rel="Chapter" href="JManifest.html">
+<link title="Javalib" rel="Chapter" href="Javalib.html">
+<link title="Ptmap" rel="Chapter" href="Ptmap.html">
+<link title="Ptset" rel="Chapter" href="Ptset.html"><title>Javalib : JCode</title>
+</head>
+<body>
+<code class="code"><span class="keyword">sig</span><br>
+&nbsp;&nbsp;<span class="keyword">type</span>&nbsp;jconst&nbsp;=<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;[&nbsp;<span class="keywordsign">`</span><span class="constructor">ANull</span><br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="keywordsign">|</span>&nbsp;<span class="keywordsign">`</span><span class="constructor">Byte</span>&nbsp;<span class="keyword">of</span>&nbsp;int<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="keywordsign">|</span>&nbsp;<span class="keywordsign">`</span><span class="constructor">Class</span>&nbsp;<span class="keyword">of</span>&nbsp;<span class="constructor">JBasics</span>.object_type<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="keywordsign">|</span>&nbsp;<span class="keywordsign">`</span><span class="constructor">Double</span>&nbsp;<span class="keyword">of</span>&nbsp;float<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="keywordsign">|</span>&nbsp;<span class="keywordsign">`</span><span class="constructor">Float</span>&nbsp;<span class="keyword">of</span>&nbsp;float<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="keywordsign">|</span>&nbsp;<span class="keywordsign">`</span><span class="constructor">Int</span>&nbsp;<span class="keyword">of</span>&nbsp;int32<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="keywordsign">|</span>&nbsp;<span class="keywordsign">`</span><span class="constructor">Long</span>&nbsp;<span class="keyword">of</span>&nbsp;int64<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="keywordsign">|</span>&nbsp;<span class="keywordsign">`</span><span class="constructor">Short</span>&nbsp;<span class="keyword">of</span>&nbsp;int<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="keywordsign">|</span>&nbsp;<span class="keywordsign">`</span><span class="constructor">String</span>&nbsp;<span class="keyword">of</span>&nbsp;<span class="constructor">JBasics</span>.jstr&nbsp;]<br>
+&nbsp;&nbsp;<span class="keyword">type</span>&nbsp;jopcode&nbsp;=<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="constructor">OpLoad</span>&nbsp;<span class="keyword">of</span>&nbsp;<span class="constructor">JBasics</span>.jvm_type&nbsp;*&nbsp;int<br>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="keywordsign">|</span>&nbsp;<span class="constructor">OpStore</span>&nbsp;<span class="keyword">of</span>&nbsp;<span class="constructor">JBasics</span>.jvm_type&nbsp;*&nbsp;int<br>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="keywordsign">|</span>&nbsp;<span class="constructor">OpIInc</span>&nbsp;<span class="keyword">of</span>&nbsp;int&nbsp;*&nbsp;int<br>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="keywordsign">|</span>&nbsp;<span class="constructor">OpPop</span><br>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="keywordsign">|</span>&nbsp;<span class="constructor">OpPop2</span><br>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="keywordsign">|</span>&nbsp;<span class="constructor">OpDup</span><br>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="keywordsign">|</span>&nbsp;<span class="constructor">OpDupX1</span><br>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="keywordsign">|</span>&nbsp;<span class="constructor">OpDupX2</span><br>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="keywordsign">|</span>&nbsp;<span class="constructor">OpDup2</span><br>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="keywordsign">|</span>&nbsp;<span class="constructor">OpDup2X1</span><br>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="keywordsign">|</span>&nbsp;<span class="constructor">OpDup2X2</span><br>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="keywordsign">|</span>&nbsp;<span class="constructor">OpSwap</span><br>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="keywordsign">|</span>&nbsp;<span class="constructor">OpConst</span>&nbsp;<span class="keyword">of</span>&nbsp;<span class="constructor">JCode</span>.jconst<br>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="keywordsign">|</span>&nbsp;<span class="constructor">OpAdd</span>&nbsp;<span class="keyword">of</span>&nbsp;<span class="constructor">JBasics</span>.jvm_basic_type<br>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="keywordsign">|</span>&nbsp;<span class="constructor">OpSub</span>&nbsp;<span class="keyword">of</span>&nbsp;<span class="constructor">JBasics</span>.jvm_basic_type<br>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="keywordsign">|</span>&nbsp;<span class="constructor">OpMult</span>&nbsp;<span class="keyword">of</span>&nbsp;<span class="constructor">JBasics</span>.jvm_basic_type<br>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="keywordsign">|</span>&nbsp;<span class="constructor">OpDiv</span>&nbsp;<span class="keyword">of</span>&nbsp;<span class="constructor">JBasics</span>.jvm_basic_type<br>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="keywordsign">|</span>&nbsp;<span class="constructor">OpRem</span>&nbsp;<span class="keyword">of</span>&nbsp;<span class="constructor">JBasics</span>.jvm_basic_type<br>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="keywordsign">|</span>&nbsp;<span class="constructor">OpNeg</span>&nbsp;<span class="keyword">of</span>&nbsp;<span class="constructor">JBasics</span>.jvm_basic_type<br>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="keywordsign">|</span>&nbsp;<span class="constructor">OpIShl</span><br>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="keywordsign">|</span>&nbsp;<span class="constructor">OpLShl</span><br>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="keywordsign">|</span>&nbsp;<span class="constructor">OpIShr</span><br>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="keywordsign">|</span>&nbsp;<span class="constructor">OpLShr</span><br>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="keywordsign">|</span>&nbsp;<span class="constructor">OpIUShr</span><br>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="keywordsign">|</span>&nbsp;<span class="constructor">OpLUShr</span><br>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="keywordsign">|</span>&nbsp;<span class="constructor">OpIAnd</span><br>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="keywordsign">|</span>&nbsp;<span class="constructor">OpLAnd</span><br>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="keywordsign">|</span>&nbsp;<span class="constructor">OpIOr</span><br>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="keywordsign">|</span>&nbsp;<span class="constructor">OpLOr</span><br>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="keywordsign">|</span>&nbsp;<span class="constructor">OpIXor</span><br>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="keywordsign">|</span>&nbsp;<span class="constructor">OpLXor</span><br>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="keywordsign">|</span>&nbsp;<span class="constructor">OpI2L</span><br>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="keywordsign">|</span>&nbsp;<span class="constructor">OpI2F</span><br>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="keywordsign">|</span>&nbsp;<span class="constructor">OpI2D</span><br>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="keywordsign">|</span>&nbsp;<span class="constructor">OpL2I</span><br>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="keywordsign">|</span>&nbsp;<span class="constructor">OpL2F</span><br>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="keywordsign">|</span>&nbsp;<span class="constructor">OpL2D</span><br>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="keywordsign">|</span>&nbsp;<span class="constructor">OpF2I</span><br>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="keywordsign">|</span>&nbsp;<span class="constructor">OpF2L</span><br>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="keywordsign">|</span>&nbsp;<span class="constructor">OpF2D</span><br>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="keywordsign">|</span>&nbsp;<span class="constructor">OpD2I</span><br>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="keywordsign">|</span>&nbsp;<span class="constructor">OpD2L</span><br>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="keywordsign">|</span>&nbsp;<span class="constructor">OpD2F</span><br>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="keywordsign">|</span>&nbsp;<span class="constructor">OpI2B</span><br>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="keywordsign">|</span>&nbsp;<span class="constructor">OpI2C</span><br>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="keywordsign">|</span>&nbsp;<span class="constructor">OpI2S</span><br>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="keywordsign">|</span>&nbsp;<span class="constructor">OpCmp</span>&nbsp;<span class="keyword">of</span>&nbsp;[&nbsp;<span class="keywordsign">`</span><span class="constructor">DG</span>&nbsp;<span class="keywordsign">|</span>&nbsp;<span class="keywordsign">`</span><span class="constructor">DL</span>&nbsp;<span class="keywordsign">|</span>&nbsp;<span class="keywordsign">`</span><span class="constructor">FG</span>&nbsp;<span class="keywordsign">|</span>&nbsp;<span class="keywordsign">`</span><span class="constructor">FL</span>&nbsp;<span class="keywordsign">|</span>&nbsp;<span class="keywordsign">`</span><span class="constructor">L</span>&nbsp;]<br>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="keywordsign">|</span>&nbsp;<span class="constructor">OpIf</span>&nbsp;<span class="keyword">of</span>&nbsp;[&nbsp;<span class="keywordsign">`</span><span class="constructor">Eq</span>&nbsp;<span class="keywordsign">|</span>&nbsp;<span class="keywordsign">`</span><span class="constructor">Ge</span>&nbsp;<span class="keywordsign">|</span>&nbsp;<span class="keywordsign">`</span><span class="constructor">Gt</span>&nbsp;<span class="keywordsign">|</span>&nbsp;<span class="keywordsign">`</span><span class="constructor">Le</span>&nbsp;<span class="keywordsign">|</span>&nbsp;<span class="keywordsign">`</span><span class="constructor">Lt</span>&nbsp;<span class="keywordsign">|</span>&nbsp;<span class="keywordsign">`</span><span class="constructor">Ne</span>&nbsp;<span class="keywordsign">|</span>&nbsp;<span class="keywordsign">`</span><span class="constructor">NonNull</span>&nbsp;<span class="keywordsign">|</span>&nbsp;<span class="keywordsign">`</span><span class="constructor">Null</span>&nbsp;]&nbsp;*&nbsp;int<br>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="keywordsign">|</span>&nbsp;<span class="constructor">OpIfCmp</span>&nbsp;<span class="keyword">of</span>&nbsp;[&nbsp;<span class="keywordsign">`</span><span class="constructor">AEq</span>&nbsp;<span class="keywordsign">|</span>&nbsp;<span class="keywordsign">`</span><span class="constructor">ANe</span>&nbsp;<span class="keywordsign">|</span>&nbsp;<span class="keywordsign">`</span><span class="constructor">IEq</span>&nbsp;<span class="keywordsign">|</span>&nbsp;<span class="keywordsign">`</span><span class="constructor">IGe</span>&nbsp;<span class="keywordsign">|</span>&nbsp;<span class="keywordsign">`</span><span class="constructor">IGt</span>&nbsp;<span class="keywordsign">|</span>&nbsp;<span class="keywordsign">`</span><span class="constructor">ILe</span>&nbsp;<span class="keywordsign">|</span>&nbsp;<span class="keywordsign">`</span><span class="constructor">ILt</span>&nbsp;<span class="keywordsign">|</span>&nbsp;<span class="keywordsign">`</span><span class="constructor">INe</span>&nbsp;]&nbsp;*<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;int<br>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="keywordsign">|</span>&nbsp;<span class="constructor">OpGoto</span>&nbsp;<span class="keyword">of</span>&nbsp;int<br>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="keywordsign">|</span>&nbsp;<span class="constructor">OpJsr</span>&nbsp;<span class="keyword">of</span>&nbsp;int<br>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="keywordsign">|</span>&nbsp;<span class="constructor">OpRet</span>&nbsp;<span class="keyword">of</span>&nbsp;int<br>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="keywordsign">|</span>&nbsp;<span class="constructor">OpTableSwitch</span>&nbsp;<span class="keyword">of</span>&nbsp;int&nbsp;*&nbsp;int32&nbsp;*&nbsp;int32&nbsp;*&nbsp;int&nbsp;array<br>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="keywordsign">|</span>&nbsp;<span class="constructor">OpLookupSwitch</span>&nbsp;<span class="keyword">of</span>&nbsp;int&nbsp;*&nbsp;(int32&nbsp;*&nbsp;int)&nbsp;list<br>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="keywordsign">|</span>&nbsp;<span class="constructor">OpNew</span>&nbsp;<span class="keyword">of</span>&nbsp;<span class="constructor">JBasics</span>.class_name<br>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="keywordsign">|</span>&nbsp;<span class="constructor">OpNewArray</span>&nbsp;<span class="keyword">of</span>&nbsp;<span class="constructor">JBasics</span>.value_type<br>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="keywordsign">|</span>&nbsp;<span class="constructor">OpAMultiNewArray</span>&nbsp;<span class="keyword">of</span>&nbsp;<span class="constructor">JBasics</span>.object_type&nbsp;*&nbsp;int<br>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="keywordsign">|</span>&nbsp;<span class="constructor">OpCheckCast</span>&nbsp;<span class="keyword">of</span>&nbsp;<span class="constructor">JBasics</span>.object_type<br>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="keywordsign">|</span>&nbsp;<span class="constructor">OpInstanceOf</span>&nbsp;<span class="keyword">of</span>&nbsp;<span class="constructor">JBasics</span>.object_type<br>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="keywordsign">|</span>&nbsp;<span class="constructor">OpGetStatic</span>&nbsp;<span class="keyword">of</span>&nbsp;<span class="constructor">JBasics</span>.class_name&nbsp;*&nbsp;<span class="constructor">JBasics</span>.field_signature<br>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="keywordsign">|</span>&nbsp;<span class="constructor">OpPutStatic</span>&nbsp;<span class="keyword">of</span>&nbsp;<span class="constructor">JBasics</span>.class_name&nbsp;*&nbsp;<span class="constructor">JBasics</span>.field_signature<br>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="keywordsign">|</span>&nbsp;<span class="constructor">OpGetField</span>&nbsp;<span class="keyword">of</span>&nbsp;<span class="constructor">JBasics</span>.class_name&nbsp;*&nbsp;<span class="constructor">JBasics</span>.field_signature<br>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="keywordsign">|</span>&nbsp;<span class="constructor">OpPutField</span>&nbsp;<span class="keyword">of</span>&nbsp;<span class="constructor">JBasics</span>.class_name&nbsp;*&nbsp;<span class="constructor">JBasics</span>.field_signature<br>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="keywordsign">|</span>&nbsp;<span class="constructor">OpArrayLength</span><br>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="keywordsign">|</span>&nbsp;<span class="constructor">OpArrayLoad</span>&nbsp;<span class="keyword">of</span>&nbsp;<span class="constructor">JBasics</span>.jvm_array_type<br>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="keywordsign">|</span>&nbsp;<span class="constructor">OpArrayStore</span>&nbsp;<span class="keyword">of</span>&nbsp;<span class="constructor">JBasics</span>.jvm_array_type<br>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="keywordsign">|</span>&nbsp;<span class="constructor">OpInvoke</span>&nbsp;<span class="keyword">of</span><br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;[&nbsp;<span class="keywordsign">`</span><span class="constructor">Interface</span>&nbsp;<span class="keyword">of</span>&nbsp;<span class="constructor">JBasics</span>.class_name<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="keywordsign">|</span>&nbsp;<span class="keywordsign">`</span><span class="constructor">Special</span>&nbsp;<span class="keyword">of</span>&nbsp;<span class="constructor">JBasics</span>.class_name<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="keywordsign">|</span>&nbsp;<span class="keywordsign">`</span><span class="constructor">Static</span>&nbsp;<span class="keyword">of</span>&nbsp;<span class="constructor">JBasics</span>.class_name<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="keywordsign">|</span>&nbsp;<span class="keywordsign">`</span><span class="constructor">Virtual</span>&nbsp;<span class="keyword">of</span>&nbsp;<span class="constructor">JBasics</span>.object_type&nbsp;]&nbsp;*&nbsp;<span class="constructor">JBasics</span>.method_signature<br>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="keywordsign">|</span>&nbsp;<span class="constructor">OpReturn</span>&nbsp;<span class="keyword">of</span>&nbsp;<span class="constructor">JBasics</span>.jvm_return_type<br>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="keywordsign">|</span>&nbsp;<span class="constructor">OpThrow</span><br>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="keywordsign">|</span>&nbsp;<span class="constructor">OpMonitorEnter</span><br>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="keywordsign">|</span>&nbsp;<span class="constructor">OpMonitorExit</span><br>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="keywordsign">|</span>&nbsp;<span class="constructor">OpNop</span><br>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="keywordsign">|</span>&nbsp;<span class="constructor">OpBreakpoint</span><br>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="keywordsign">|</span>&nbsp;<span class="constructor">OpInvalid</span><br>
+&nbsp;&nbsp;<span class="keyword">type</span>&nbsp;jopcodes&nbsp;=&nbsp;<span class="constructor">JCode</span>.jopcode&nbsp;array<br>
+&nbsp;&nbsp;<span class="keyword">type</span>&nbsp;exception_handler&nbsp;=&nbsp;{<br>
+&nbsp;&nbsp;&nbsp;&nbsp;e_start&nbsp;:&nbsp;int;<br>
+&nbsp;&nbsp;&nbsp;&nbsp;e_end&nbsp;:&nbsp;int;<br>
+&nbsp;&nbsp;&nbsp;&nbsp;e_handler&nbsp;:&nbsp;int;<br>
+&nbsp;&nbsp;&nbsp;&nbsp;e_catch_type&nbsp;:&nbsp;<span class="constructor">JBasics</span>.class_name&nbsp;option;<br>
+&nbsp;&nbsp;}<br>
+&nbsp;&nbsp;<span class="keyword">type</span>&nbsp;jcode&nbsp;=&nbsp;{<br>
+&nbsp;&nbsp;&nbsp;&nbsp;c_max_stack&nbsp;:&nbsp;int;<br>
+&nbsp;&nbsp;&nbsp;&nbsp;c_max_locals&nbsp;:&nbsp;int;<br>
+&nbsp;&nbsp;&nbsp;&nbsp;c_code&nbsp;:&nbsp;<span class="constructor">JCode</span>.jopcodes;<br>
+&nbsp;&nbsp;&nbsp;&nbsp;c_exc_tbl&nbsp;:&nbsp;<span class="constructor">JCode</span>.exception_handler&nbsp;list;<br>
+&nbsp;&nbsp;&nbsp;&nbsp;c_line_number_table&nbsp;:&nbsp;(int&nbsp;*&nbsp;int)&nbsp;list&nbsp;option;<br>
+&nbsp;&nbsp;&nbsp;&nbsp;c_local_variable_table&nbsp;:<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;(int&nbsp;*&nbsp;int&nbsp;*&nbsp;string&nbsp;*&nbsp;<span class="constructor">JBasics</span>.value_type&nbsp;*&nbsp;int)&nbsp;list&nbsp;option;<br>
+&nbsp;&nbsp;&nbsp;&nbsp;c_local_variable_type_table&nbsp;:<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;(int&nbsp;*&nbsp;int&nbsp;*&nbsp;string&nbsp;*&nbsp;<span class="constructor">JSignature</span>.fieldTypeSignature&nbsp;*&nbsp;int)&nbsp;list&nbsp;option;<br>
+&nbsp;&nbsp;&nbsp;&nbsp;c_stack_map_midp&nbsp;:&nbsp;<span class="constructor">JBasics</span>.stackmap&nbsp;list&nbsp;option;<br>
+&nbsp;&nbsp;&nbsp;&nbsp;c_stack_map_java6&nbsp;:&nbsp;<span class="constructor">JBasics</span>.stackmap&nbsp;list&nbsp;option;<br>
+&nbsp;&nbsp;&nbsp;&nbsp;c_attributes&nbsp;:&nbsp;(string&nbsp;*&nbsp;string)&nbsp;list;<br>
+&nbsp;&nbsp;}<br>
+&nbsp;&nbsp;<span class="keyword">val</span>&nbsp;get_source_line_number&nbsp;:&nbsp;int&nbsp;<span class="keywordsign">-&gt;</span>&nbsp;<span class="constructor">JCode</span>.jcode&nbsp;<span class="keywordsign">-&gt;</span>&nbsp;int&nbsp;option<br>
+&nbsp;&nbsp;<span class="keyword">val</span>&nbsp;get_source_line_number'&nbsp;:&nbsp;int&nbsp;<span class="keywordsign">-&gt;</span>&nbsp;(int&nbsp;*&nbsp;int)&nbsp;list&nbsp;<span class="keywordsign">-&gt;</span>&nbsp;int&nbsp;option<br>
+&nbsp;&nbsp;<span class="keyword">val</span>&nbsp;get_local_variable_info&nbsp;:<br>
+&nbsp;&nbsp;&nbsp;&nbsp;int&nbsp;<span class="keywordsign">-&gt;</span>&nbsp;int&nbsp;<span class="keywordsign">-&gt;</span>&nbsp;<span class="constructor">JCode</span>.jcode&nbsp;<span class="keywordsign">-&gt;</span>&nbsp;(string&nbsp;*&nbsp;<span class="constructor">JBasics</span>.value_type)&nbsp;option<br>
+<span class="keyword">end</span></code></body></html>

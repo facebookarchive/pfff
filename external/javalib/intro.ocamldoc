@@ -1,0 +1,39 @@
+{b {C 2.2.2}}
+
+{i {C Nicolas Barré, Nicolas Cannasse, Laurent Hubert and Vincent Monfort}}
+
+{i {C August 2012}}
+
+{2 {L Documentation}}
+
+{b {L User interface}}
+
+The following modules consitute the user interface of Javalib. They are the only
+modules you should need.
+
+{!modules: Javalib JBasics JCode}
+
+{b {L Patricia Tree library}}
+
+The Patricia Tree library has been developed by
+{{:http://www.lri.fr/~filliatr/software.en.html}Filliatre} and extended by
+ourselves to add some features and to improve its efficiency in our context.
+
+{!modules: Ptmap Ptset}
+
+{b {L Other internal modules}}
+
+Those are the internal modules of Javalib.  You should not need to look into
+those files unless you do rely advanced stuff (and in this case we would love to
+have some feedback).
+
+{!JDumpBasics}, {!JSignature}, {!JClass}, {!JFile}, {!JManifest},
+{!JParseCode}, {!JParse}, {!JParseSignature}, {!JUnparse}, {!JUnparseSignature},
+{!JInstruction}, {!JLow2High}, {!JHigh2Low}, {!JBasicsLow}, {!JClassLow} and
+{!JDumpLow}.
+
+{b {L Indexes}}
+
+{!indexlist}
+
+{i {C Others contributors: Florent Kirchner and Tiphaine Turpin}}

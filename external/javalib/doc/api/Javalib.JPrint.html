@@ -1,0 +1,139 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html>
+<head>
+<link rel="stylesheet" href="style.css" type="text/css">
+<meta content="text/html; charset=utf-8" http-equiv="Content-Type">
+<link rel="Start" href="index.html">
+<link rel="Up" href="Javalib.html">
+<link title="Index of types" rel=Appendix href="index_types.html">
+<link title="Index of exceptions" rel=Appendix href="index_exceptions.html">
+<link title="Index of values" rel=Appendix href="index_values.html">
+<link title="Index of modules" rel=Appendix href="index_modules.html">
+<link title="Index of module types" rel=Appendix href="index_module_types.html">
+<link title="JBasics" rel="Chapter" href="JBasics.html">
+<link title="JBasicsLow" rel="Chapter" href="JBasicsLow.html">
+<link title="JCode" rel="Chapter" href="JCode.html">
+<link title="JClassLow" rel="Chapter" href="JClassLow.html">
+<link title="JSignature" rel="Chapter" href="JSignature.html">
+<link title="JClass" rel="Chapter" href="JClass.html">
+<link title="JDumpBasics" rel="Chapter" href="JDumpBasics.html">
+<link title="JUnparseSignature" rel="Chapter" href="JUnparseSignature.html">
+<link title="JDumpLow" rel="Chapter" href="JDumpLow.html">
+<link title="JDumpJasmin" rel="Chapter" href="JDumpJasmin.html">
+<link title="JParseCode" rel="Chapter" href="JParseCode.html">
+<link title="JInstruction" rel="Chapter" href="JInstruction.html">
+<link title="JUnparse" rel="Chapter" href="JUnparse.html">
+<link title="JParseSignature" rel="Chapter" href="JParseSignature.html">
+<link title="JParse" rel="Chapter" href="JParse.html">
+<link title="JLow2High" rel="Chapter" href="JLow2High.html">
+<link title="JHigh2Low" rel="Chapter" href="JHigh2Low.html">
+<link title="JFile" rel="Chapter" href="JFile.html">
+<link title="JManifest" rel="Chapter" href="JManifest.html">
+<link title="Javalib" rel="Chapter" href="Javalib.html">
+<link title="Ptmap" rel="Chapter" href="Ptmap.html">
+<link title="Ptset" rel="Chapter" href="Ptset.html"><link title="Printing basic signatures and descriptors." rel="Section" href="#2_Printingbasicsignaturesanddescriptors">
+<link title="Printing stackmaps, constant pool values and exception handlers." rel="Section" href="#2_Printingstackmapsconstantpoolvaluesandexceptionhandlers">
+<link title="Printing JVM opcodes." rel="Section" href="#2_PrintingJVMopcodes">
+<link title="Outputting methods and classes." rel="Section" href="#2_Outputtingmethodsandclasses">
+<link title="Outputting classes in Jasmin format." rel="Section" href="#2_OutputtingclassesinJasminformat">
+<title>Javalib : Javalib.JPrint</title>
+</head>
+<body>
+<div class="navbar">&nbsp;<a href="Javalib.html">Up</a>
+&nbsp;</div>
+<center><h1>Module <a href="type_Javalib.JPrint.html">Javalib.JPrint</a></h1></center>
+<br>
+<pre><span class="keyword">module</span> JPrint: <code class="code"><span class="keyword">sig</span></code> <a href="Javalib.JPrint.html">..</a> <code class="code"><span class="keyword">end</span></code></pre>Module gathering useful printing functions for basic types.<br>
+<hr width="100%">
+<br>
+<span id="2_Printingbasicsignaturesanddescriptors"><h2>Printing basic signatures and descriptors.</h2></span><br>
+<br>
+Each of these functions gives a string representation of
+      a type which has the corresponding name in JBasics.
+      When set to true, the optional parameter <code class="code">~jvm</code> allows to get a
+      string representation following the JVM specification. Otherwise,
+      a Java like representation (more readable) is given.<br>
+<pre><span id="VALclass_name"><span class="keyword">val</span> class_name</span> : <code class="type">?jvm:bool -> <a href="JBasics.html#TYPEclass_name">JBasics.class_name</a> -> string</code></pre><div class="info">
+<code class="code">class_name ~jvm class_name</code> gives a string representation of a <code class="code">class_name</code>.<br>
+</div>
+<pre><span id="VALcn_package"><span class="keyword">val</span> cn_package</span> : <code class="type"><a href="JBasics.html#TYPEclass_name">JBasics.class_name</a> -> string</code></pre><div class="info">
+Prints the package of the given <code class="code">class_name</code>.<br>
+</div>
+<pre><span id="VALcn_simple_name"><span class="keyword">val</span> cn_simple_name</span> : <code class="type"><a href="JBasics.html#TYPEclass_name">JBasics.class_name</a> -> string</code></pre><div class="info">
+Prints the name of the given <code class="code">class_name</code>, omitting the package name.<br>
+</div>
+<pre><span id="VALmethod_signature"><span class="keyword">val</span> method_signature</span> : <code class="type">?jvm:bool -><br>       ?callee:<a href="JBasics.html#TYPEobject_type">JBasics.object_type</a> -><br>       ?param_names:string list -> <a href="JBasics.html#TYPEmethod_signature">JBasics.method_signature</a> -> string</code></pre><div class="info">
+<code class="code">method_signature ~jvm ~param_names method_signature</code> gives a
+      string representation of a <code class="code">method_signature</code>. The optional
+      parameter <code class="code">~param_name</code> can contain a list of the same length as
+      the parameters.  In this case, when <code class="code">~jvm</code> is set to false (or
+      by default), the names of the parameters appear in the string
+      representation of the method signature (like in Java).  The
+      optional parameter <code class="code">~callee</code> can contain an <code class="code">object_type</code> which
+      will be displayed in the signature as in the following example.
+      <pre>void Object.toString()</pre><br>
+<b>Raises</b> <code>Invalid_argument</code> if the length of <code class="code">param_names</code> (if given) is not
+      the same as the number of arguments.<br>
+</div>
+<pre><span id="VALclass_method_signature"><span class="keyword">val</span> class_method_signature</span> : <code class="type">?jvm:bool -><br>       ?param_names:string list -> <a href="JBasics.html#TYPEclass_method_signature">JBasics.class_method_signature</a> -> string</code></pre><div class="info">
+<code class="code">class_method_signature ~jvm ~param_names cms</code> gives a string
+      representation of a <code class="code">class_method_signature</code> using
+      <a href="Javalib.JPrint.html#VALmethod_signature"><code class="code"><span class="constructor">Javalib</span>.<span class="constructor">JPrint</span>.method_signature</code></a> with the class name of <code class="code">cms</code> as
+      <code class="code">callee</code>.<br>
+<b>Raises</b> <code>Invalid_argument</code> if the length of <code class="code">param_names</code> (if given) is not
+      the same as the number of arguments of the method..<br>
+</div>
+<pre><span id="VALfield_signature"><span class="keyword">val</span> field_signature</span> : <code class="type">?jvm:bool -><br>       ?declared_in:<a href="JBasics.html#TYPEclass_name">JBasics.class_name</a> -> <a href="JBasics.html#TYPEfield_signature">JBasics.field_signature</a> -> string</code></pre><div class="info">
+<code class="code">field_signature ~jvm ~declared_in field_signature</code> gives a string
+      representation of a <code class="code">field_signature</code> where a class name may be given.<br>
+</div>
+<pre><span id="VALclass_field_signature"><span class="keyword">val</span> class_field_signature</span> : <code class="type">?jvm:bool -> <a href="JBasics.html#TYPEclass_field_signature">JBasics.class_field_signature</a> -> string</code></pre><div class="info">
+<code class="code">class_field_signature ~jvm cfs</code> gives a string representation of a class
+      field signature using <a href="Javalib.JPrint.html#VALfield_signature"><code class="code"><span class="constructor">Javalib</span>.<span class="constructor">JPrint</span>.field_signature</code></a>.<br>
+</div>
+<pre><span id="VALsignature"><span class="keyword">val</span> signature</span> : <code class="type">?jvm:bool -> string -> <a href="JBasics.html#TYPEdescriptor">JBasics.descriptor</a> -> string</code></pre><div class="info">
+<code class="code">signature ~jvm name descriptor</code> gives a string representation of a
+      <code class="code">descriptor</code> which can either contain a <code class="code">field_descriptor</code> or a
+      <code class="code">method_descriptor</code>, associated to the name <code class="code">name</code>.<br>
+</div>
+<pre><span id="VALjava_basic_type"><span class="keyword">val</span> java_basic_type</span> : <code class="type">?jvm:bool -> <a href="JBasics.html#TYPEjava_basic_type">JBasics.java_basic_type</a> -> string</code></pre><div class="info">
+<code class="code">java_basic_type ~jvm java_basic_type</code> gives a string
+      representation of a <code class="code">java_basic_type</code>.<br>
+</div>
+<pre><span id="VALobject_type"><span class="keyword">val</span> object_type</span> : <code class="type">?jvm:bool -> <a href="JBasics.html#TYPEobject_type">JBasics.object_type</a> -> string</code></pre><div class="info">
+<code class="code">object_type ~jvm object_type</code> gives a string representation of an
+      <code class="code">object_type</code>.<br>
+</div>
+<pre><span id="VALvalue_type"><span class="keyword">val</span> value_type</span> : <code class="type">?jvm:bool -> <a href="JBasics.html#TYPEvalue_type">JBasics.value_type</a> -> string</code></pre><div class="info">
+<code class="code">value_type ~jvm value_type</code> gives a string representation of a
+      <code class="code">value_type</code>.<br>
+</div>
+<pre><span id="VALreturn_type"><span class="keyword">val</span> return_type</span> : <code class="type">?jvm:bool -> <a href="JBasics.html#TYPEvalue_type">JBasics.value_type</a> option -> string</code></pre><div class="info">
+<code class="code">return_type ~jvm rt</code> gives a string representation of the
+      return type <code class="code">rt</code>. The difference with <code class="code">value_type</code> is that the added value
+      <code class="code"><span class="constructor">None</span></code> allows to represent the <code class="code">void</code> value.<br>
+</div>
+<pre><span id="VALvalue_type_list"><span class="keyword">val</span> value_type_list</span> : <code class="type">?jvm:bool -> ?names:string list -> <a href="JBasics.html#TYPEvalue_type">JBasics.value_type</a> list -> string</code></pre><div class="info">
+<code class="code">value_type_list ~names l</code> gives a string representation of the
+     <code class="code">value_type</code> list <code class="code">l</code> with possibly associated <code class="code">names</code>.<br>
+<b>Raises</b> <code>Invalid_argument</code> if the length of <code class="code">names</code> is not the same as
+     <code class="code">l</code>.<br>
+</div>
+<pre><span id="VALfield_descriptor"><span class="keyword">val</span> field_descriptor</span> : <code class="type">?jvm:bool -> <a href="JBasics.html#TYPEvalue_type">JBasics.value_type</a> -> string</code></pre><div class="info">
+<code class="code">field_descriptor ~jvm field_descriptor</code> gives a string representation of a
+      <code class="code">field_descriptor</code>.<br>
+</div>
+<pre><span id="VALmethod_descriptor"><span class="keyword">val</span> method_descriptor</span> : <code class="type">?jvm:bool -> <a href="JBasics.html#TYPEvalue_type">JBasics.value_type</a> list -> <a href="JBasics.html#TYPEvalue_type">JBasics.value_type</a> option -> string</code></pre><div class="info">
+<code class="code">method_descriptor ~jvm method_descriptor</code> gives a string representation of a
+      method descriptor, composed of the parameters types and the return type of a
+      method.<br>
+</div>
+<br>
+<span id="2_Printingstackmapsconstantpoolvaluesandexceptionhandlers"><h2>Printing stackmaps, constant pool values and exception handlers.</h2></span><br>
+<pre><span id="VALstack_map"><span class="keyword">val</span> stack_map</span> : <code class="type"><a href="JBasics.html#TYPEstackmap">JBasics.stackmap</a> -> string</code></pre><pre><span id="VALconstant"><span class="keyword">val</span> constant</span> : <code class="type"><a href="JBasics.html#TYPEconstant">JBasics.constant</a> -> string</code></pre><pre><span id="VALconstant_pool"><span class="keyword">val</span> constant_pool</span> : <code class="type"><a href="JBasics.html#TYPEconstant">JBasics.constant</a> array -> string</code></pre><pre><span id="VALexception_handler"><span class="keyword">val</span> exception_handler</span> : <code class="type"><a href="JCode.html#TYPEexception_handler">JCode.exception_handler</a> -> string</code></pre><br>
+<span id="2_PrintingJVMopcodes"><h2>Printing JVM opcodes.</h2></span><br>
+<pre><span id="VALjopcode"><span class="keyword">val</span> jopcode</span> : <code class="type">?jvm:bool -> <a href="JCode.html#TYPEjopcode">JCode.jopcode</a> -> string</code></pre><pre><span id="VALjcode"><span class="keyword">val</span> jcode</span> : <code class="type">?jvm:bool -> <a href="JCode.html#TYPEjcode">JCode.jcode</a> -> string list</code></pre><br>
+<span id="2_Outputtingmethodsandclasses"><h2>Outputting methods and classes.</h2></span><br>
+<pre><span id="VALprint_method"><span class="keyword">val</span> print_method</span> : <code class="type">?jvm:bool -><br>       'a <a href="Javalib.html#TYPEjmethod">Javalib.jmethod</a> -> ('a -> string list) -> Pervasives.out_channel -> unit</code></pre><pre><span id="VALprint_method'"><span class="keyword">val</span> print_method'</span> : <code class="type">?jvm:bool -><br>       'a <a href="Javalib.html#TYPEjmethod">Javalib.jmethod</a> -><br>       ('a -> Format.formatter -> unit) -> Format.formatter -> unit</code></pre><pre><span id="VALprint_class"><span class="keyword">val</span> print_class</span> : <code class="type">?jvm:bool -><br>       'a <a href="Javalib.html#TYPEinterface_or_class">Javalib.interface_or_class</a> -><br>       ('a -> string list) -> Pervasives.out_channel -> unit</code></pre><pre><span id="VALprint_class'"><span class="keyword">val</span> print_class'</span> : <code class="type">?jvm:bool -><br>       'a <a href="Javalib.html#TYPEinterface_or_class">Javalib.interface_or_class</a> -><br>       ('a -> Format.formatter -> unit) -> Format.formatter -> unit</code></pre><br>
+<span id="2_OutputtingclassesinJasminformat"><h2>Outputting classes in Jasmin format.</h2></span><br>
+<pre><span id="VALprint_jasmin"><span class="keyword">val</span> print_jasmin</span> : <code class="type"><a href="JCode.html#TYPEjcode">JCode.jcode</a> <a href="Javalib.html#TYPEinterface_or_class">Javalib.interface_or_class</a> -> Pervasives.out_channel -> unit</code></pre></body></html>
