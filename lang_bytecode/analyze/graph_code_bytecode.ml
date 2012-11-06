@@ -28,7 +28,10 @@ open JClassLow
  * 
  * As opposed to lang_java/analyze/graph_code_java.ml, no need for:
  *  - package/class lookup (all names are resolved already)
- *  - ???
+ *  - nested classes are compiled in another class with a $
+ *  - generics?
+ * 
+ * todo: put back nested classes inside the other?
  *)
 
 (*****************************************************************************)
@@ -47,6 +50,17 @@ type env = {
 
 let parse file =
   Parse_bytecode.parse file
+
+let package_and_name_of_str name =
+  let xs = Common.split "\\." name in
+  let package = List.rev (List.tl (List.rev xs)) in
+  (package, name)
+
+let package_and_name_of_cname class_name =
+  let name = JBasics.cn_name class_name in
+  package_and_name_of_str name
+
+
 
 (* quite similar to create_intermediate_directories_if_not_present *)
 let create_intermediate_packages_if_not_present g root xs =
@@ -75,16 +89,45 @@ let create_intermediate_packages_if_not_present g root xs =
   in
   aux root dirs
 
+let add_use_edge g (src, dst) =
+  match () with
+  | _ when not (G.has_node src g) ->
+      pr2 (spf "LOOKUP SRC FAIL %s --> %s, src does not exist???"
+              (G.string_of_node src) (G.string_of_node dst));
+
+  | _ when G.has_node dst g -> 
+      G.add_edge (src, dst) G.Use g
+
+  | _ -> 
+    let (name, kind) = dst in
+    let fake_name = 
+      (Common.split "\\." name) 
+      +> List.map (fun s -> s^"2") 
+      +> Common.join "."
+    in
+    let dst = (fake_name, kind) in
+    let parent_target = G.not_found in
+    if not (G.has_node dst g)
+    then begin 
+      let (fake_package, _name) = package_and_name_of_str fake_name in
+      let parent = create_intermediate_packages_if_not_present 
+        g parent_target fake_package in
+      pr2 (spf "PB: lookup fail on %s (in %s)" 
+             (G.string_of_node dst) (G.string_of_node src));
+      g +> G.add_node dst;
+      g +> G.add_edge (parent, dst) G.Has;
+    end;
+    g +> G.add_edge (src, dst) G.Use;
+    ()
+              
+
 (*****************************************************************************)
 (* Defs *)
 (*****************************************************************************)
 let extract_defs ~g ast =
   let jclass = ast in
-  let name = JBasics.cn_name jclass.j_name in
 
-  let xs = Common.split "\\." name in
-  let package = List.rev (List.tl (List.rev xs)) in
-  
+  let (package, name) = package_and_name_of_cname jclass.j_name in
   let current = create_intermediate_packages_if_not_present g G.root package in
 
   let node = (name, E.Class E.RegularClass) in
@@ -118,7 +161,18 @@ let extract_defs ~g ast =
 (*****************************************************************************)
 
 let extract_uses ~g ast =
-  raise Todo
+  let jclass = ast in
+  let name = JBasics.cn_name jclass.j_name in
+  let current = (name, E.Class E.RegularClass) in
+
+  let parents = Common.option_to_list jclass.j_super ++ jclass.j_interfaces in
+
+  parents +> List.iter (fun cname ->
+    let node = (JBasics.cn_name cname, E.Class E.RegularClass) in
+    
+    add_use_edge g (current, node);
+  );
+  ()
 
 (*****************************************************************************)
 (* Main entry point *)
@@ -151,8 +205,8 @@ let build ?(verbose=true) dir_or_file skip_list =
   files +> Common_extra.progress ~show:verbose (fun k -> 
    List.iter (fun file ->
      k();
-     let _readable = Common.filename_without_leading_path root file in
-     let _ast = parse file in
+     let ast = parse file in
+     extract_uses ~g ast;
      ()
    ));
 
