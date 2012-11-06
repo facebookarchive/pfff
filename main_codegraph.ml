@@ -319,6 +319,7 @@ let main_action xs =
 (* Phylomel *)
 (* ---------------------------------------------------------------------- *)
 
+(*
 open Vec2
 open BarnesHut
 
@@ -404,6 +405,7 @@ let test_phylomel geno_file =
   Phylogram.write_svg_file nodeinfo fig svg_file;
   ()
 
+*)
 (* ---------------------------------------------------------------------- *)
 let extra_actions () = [
 
@@ -412,8 +414,10 @@ let extra_actions () = [
   "-build_stdlib", " <src> <dst>",
   Common.mk_action_2_arg (fun dir dst -> build_stdlib !lang dir dst);
 
+(*
   "-test_phylomel", " <geno file>",
   Common.mk_action_1_arg test_phylomel;
+*)
 ]
 
 (*****************************************************************************)
