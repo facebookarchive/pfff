@@ -998,6 +998,8 @@ simple_core_type2:
  /*(* name tag extension *)*/
  | TOBracket row_field TPipe row_field_list TCBracket
       { TyTodo }
+ | TOBracket TPipe row_field_list TCBracket
+      { TyTodo }
  | TOBracket tag_field TCBracket
       { TyTodo }
 
