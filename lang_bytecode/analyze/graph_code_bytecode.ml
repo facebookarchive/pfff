@@ -213,7 +213,7 @@ let build ?(verbose=true) dir_or_file skip_list =
      k();
      let ast = parse ~show_parse_error:false  file in
      let readable = Common.filename_without_leading_path root file in
-     if readable =~ "^external" 
+     if readable =~ "^external" || readable =~ "^EXTERNAL"
      then ()
      else 
        extract_uses ~g ast;
