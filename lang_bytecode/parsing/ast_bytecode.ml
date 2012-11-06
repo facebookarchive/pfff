@@ -29,6 +29,6 @@
 (* The AST related types *)
 (*****************************************************************************)
 
-type ast = unit
+type ast = JClassLow.jclass
 
 

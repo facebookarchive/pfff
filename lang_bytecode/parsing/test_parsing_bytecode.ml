@@ -17,13 +17,19 @@ module PI = Parse_info
 (* Subsystem testing *)
 (*****************************************************************************)
 
-let test_parse xs =
+let test_parse_bytecode xs =
   let fullxs = Lib_parsing_bytecode.find_source_files_of_dir_or_files xs in
   fullxs +> List.iter (fun file -> 
     pr2 ("PARSING: " ^ file);
     let _ast = Parse_bytecode.parse file in
     ()
   )
+
+let test_dump_bytecode file =
+  let ast = Parse_bytecode.parse file in
+  let ch = IO.output_channel stdout in
+  JDumpLow.dump ch ast;
+  ()
 
 (*****************************************************************************)
 (* Main entry for Arg *)
@@ -32,6 +38,9 @@ let test_parse xs =
 
 let actions () = [
   "-parse_bytecode", "   <file or dir>", 
-  Common.mk_action_n_arg test_parse;
+  Common.mk_action_n_arg test_parse_bytecode;
+
+  "-dump_bytecode", "   <file>", 
+  Common.mk_action_1_arg test_dump_bytecode;
 
 ]

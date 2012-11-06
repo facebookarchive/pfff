@@ -25,7 +25,7 @@ open Common
 let parse file = 
   let ch = open_in file in
   let io = IO.input_channel ch in
-  let _c = JParse.parse_class_low_level io in
-  ()
+  let c = JParse.parse_class_low_level io in
+  c
 
 
