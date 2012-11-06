@@ -2,3 +2,5 @@ taken from http://sawja.inria.fr/, version 2.2.2
 
 Renamed uppercase files like README, INSTALL, COPYRIGHT etc.
 configure now checks for camlzip 1.05 (not 1.04).
+Removed for-pack. 
+The 'make clean' now also removed javalib.*
