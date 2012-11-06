@@ -132,9 +132,18 @@ OCAMLNETCMA= \
 
 #  external/ocamlnet/netstring/netaccel.cma \
 
-PHYLOMELDIR=external/phylomel/src
-PHYLOMELINCLUDE=external/phylomel/src
-PHYLOMELCMA=external/phylomel/src/lib.cma
+#PHYLOMELDIR=external/phylomel/src
+#PHYLOMELINCLUDE=external/phylomel/src
+#PHYLOMELCMA=external/phylomel/src/lib.cma
+
+EXTLIBDIR=external/extlib
+EXTLIBCMA=external/extlib/extLib.cma
+
+PTDIR=external/ptrees
+PTCMA=external/ptrees/ptrees.cma
+
+JAVALIBDIR=external/javalib/src
+JAVALIBCMA=external/javalib/src/lib.cma
 
 ifeq ($(FEATURE_GRAPHICS), 1)
 #GRAPHICSCMXA=graphics.cmxa
@@ -180,6 +189,8 @@ LIBS= commons/commons.cma \
        $(MPICMA) \
        $(OCAMLNETCMA) \
        $(GRAPHCMA) $(PHYLOMELCMA) \
+       $(EXTLIBCMA) $(PTCMA) \
+       $(JAVALIBCMA) \
        commons/commons_features.cma \
     h_version-control/lib.cma \
     h_visualization/lib.cma \
@@ -291,7 +302,8 @@ INCLUDEDIRS=$(MAKESUBDIRS) \
  commons/ocamlextra commons/ocollection \
  commons/lib-json commons/lib-xml commons/lib-sexp \
  $(GTKINCLUDE) $(CAIROINCLUDE) $(PCREINCLUDE) $(OCAMLNETINCLUDE) \
- $(PHYLOMELINCLUDE)
+ $(PHYLOMELINCLUDE) \
+ $(EXTLIBDIR) $(PTDIR) $(JAVALIBDIR)
 
 ##############################################################################
 # Generic
