@@ -28,6 +28,7 @@ let test_parse_bytecode xs =
 let test_dump_bytecode file =
   let ast = Parse_bytecode.parse file in
   let ch = IO.output_channel stdout in
+  (* vs javap? *)
   JDumpLow.dump ch ast;
   ()
 
