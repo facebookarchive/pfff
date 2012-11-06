@@ -48,6 +48,7 @@ type file_type =
   | Haxe | Opa
   | Web of webpl_type
   | R of string
+  | Bytecode of string
   | Asm
   | Thrift
   | MiscPL of string
@@ -240,7 +241,11 @@ let file_type_of_file2 file =
 
   | "tar" -> Archive e
   | "tgz" -> Archive e
-  | "jar" -> Archive e
+
+  | "class" -> PL (Bytecode e)
+
+  (* was Archive *)
+  | "jar" -> PL (Bytecode e)
 
   | "bz2" -> Archive e
   | "gz" -> Archive e

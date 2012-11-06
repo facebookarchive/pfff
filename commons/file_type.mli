@@ -22,6 +22,7 @@ type file_type =
   | Haxe | Opa
   | Web of webpl_type
   | R of string
+  | Bytecode of string
   | Asm
   | Thrift
   | MiscPL of string
