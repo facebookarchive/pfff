@@ -48,8 +48,14 @@ type env = {
 (* Helpers *)
 (*****************************************************************************)
 
-let parse file =
-  Parse_bytecode.parse file
+let parse ~show_parse_error file =
+  try 
+    Parse_bytecode.parse file
+  with exn ->
+    pr2_once (spf "PARSE ERROR with %s, exn = %s" file 
+                  (Common.exn_to_s exn));
+    raise exn
+
 
 let package_and_name_of_str name =
   let xs = Common.split "\\." name in
@@ -195,7 +201,7 @@ let build ?(verbose=true) dir_or_file skip_list =
   files +> Common_extra.progress ~show:verbose (fun k -> 
     List.iter (fun file ->
       k();
-      let ast = parse file in
+      let ast = parse ~show_parse_error:true file in
       extract_defs ~g ast;
       ()
     ));
@@ -205,8 +211,12 @@ let build ?(verbose=true) dir_or_file skip_list =
   files +> Common_extra.progress ~show:verbose (fun k -> 
    List.iter (fun file ->
      k();
-     let ast = parse file in
-     extract_uses ~g ast;
+     let ast = parse ~show_parse_error:false  file in
+     let readable = Common.filename_without_leading_path root file in
+     if readable =~ "^external" 
+     then ()
+     else 
+       extract_uses ~g ast;
      ()
    ));
 
