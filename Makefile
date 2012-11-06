@@ -136,6 +136,9 @@ OCAMLNETCMA= \
 #PHYLOMELINCLUDE=external/phylomel/src
 #PHYLOMELCMA=external/phylomel/src/lib.cma
 
+ZIPDIR=external/ocamlzip
+ZIPCMA=external/ocamlzip/zip.cma
+
 EXTLIBDIR=external/extlib
 EXTLIBCMA=external/extlib/extLib.cma
 
@@ -189,7 +192,7 @@ LIBS= commons/commons.cma \
        $(MPICMA) \
        $(OCAMLNETCMA) \
        $(GRAPHCMA) $(PHYLOMELCMA) \
-       $(EXTLIBCMA) $(PTCMA) \
+       $(EXTLIBCMA) $(PTCMA) $(ZIPCMA) \
        $(JAVALIBCMA) \
        commons/commons_features.cma \
     h_version-control/lib.cma \
@@ -303,7 +306,7 @@ INCLUDEDIRS=$(MAKESUBDIRS) \
  commons/lib-json commons/lib-xml commons/lib-sexp \
  $(GTKINCLUDE) $(CAIROINCLUDE) $(PCREINCLUDE) $(OCAMLNETINCLUDE) \
  $(PHYLOMELINCLUDE) \
- $(EXTLIBDIR) $(PTDIR) $(JAVALIBDIR)
+ $(EXTLIBDIR) $(PTDIR) $(ZIPDIR) $(JAVALIBDIR)
 
 ##############################################################################
 # Generic
