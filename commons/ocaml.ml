@@ -20,7 +20,6 @@
  * ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF
  * OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  *)
-
 open Common
 
 module S = Sexp
@@ -36,7 +35,7 @@ module J = Json_type
  * OCaml does not support reflection, and it's a good thing: we love
  * strong type-checking that forbids too clever hacks like 'eval', or
  * run-time reflection; it's too much power for you, you will misuse
- * it. At the same time it's sometime useful. So at least we could make
+ * it. At the same time it's sometimes useful. So at least we could make
  * it possible to still reflect on the type definitions or values in
  * OCaml source code. We can do it by processing ML source code and
  * emitting ML source code containing under the form of regular ML
@@ -124,7 +123,7 @@ module J = Json_type
  *  - Thought about it when wanting to do the ast_php.ml to be
  *    transformed into a .adsl declaration to be able to generate
  *    corresponding python classes using astgen.py.
- *  - Though about a miniMLType and miniMLValue, and then realize
+ *  - Thought about a miniMLType and miniMLValue, and then realize
  *    that that was maybe what code in the ocaml-orm-sqlite
  *    was doing (type-of et value-of), except I wanted the 
  *    ocamltarzan style of meta-programming instead of the camlp4 one.
@@ -158,10 +157,8 @@ module J = Json_type
  *  - F# ?
  *  - Lisp/Scheme ?
  *  - .Net interoperability
- *
  * 
  *)
-
 
 (*****************************************************************************)
 (* Types *)
@@ -185,7 +182,6 @@ module J = Json_type
  *  - Introduced List, Apply, Poly
  *  - debugging support (using sexp :) )
  *)
-
 
 (* OCaml type definitions *)
 type t =
@@ -691,8 +687,6 @@ let rec v_of_sexp__ =
 and v_of_sexp sexp = v_of_sexp__ sexp
 
 
-
-
 let (string_sexp_of_t: t -> string) = fun x ->
   Sexp.to_string_hum (sexp_of_t x)
 let (string_sexp_of_v: v -> string) = fun x ->
@@ -702,8 +696,6 @@ let (t_of_string_sexp: string -> t) = fun x ->
   t_of_sexp (Sexp.of_string x)
 let (v_of_string_sexp: string -> v) = fun x ->
   v_of_sexp (Sexp.of_string x)
-
-
 
 (*****************************************************************************)
 (* Json converter *)
@@ -788,7 +780,6 @@ let load_json file =
 (*****************************************************************************)
 let add_sep xs = 
   xs +> List.map (fun x -> Right x) +> Common.join_gen (Left ())
-
 
 (* 
  * OCaml value pretty printer. A similar functionnality is provided by
