@@ -78,4 +78,4 @@ depend:
 	gcc -MM -I$(ZLIB_INCLUDE) *.c > .depend
 	ocamldep *.mli *.ml >> .depend
 
-include .depend
+-include .depend

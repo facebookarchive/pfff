@@ -378,7 +378,7 @@ clean::
 	rm -f *.opt
 
 depend::
-	set -e; for i in $(MAKESUBDIRS); do $(MAKE) -C $$i depend; done
+	set -e; for i in $(MAKESUBDIRS); do echo $$i; $(MAKE) -C $$i depend; done
 
 Makefile.config:    
 	@echo "Makefile.config is missing. Have you run ./configure?"

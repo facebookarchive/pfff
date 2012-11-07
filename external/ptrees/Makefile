@@ -25,6 +25,9 @@ OCAMLMKTOP =  ocamlmktop
 OCAMLMKLIB = ocamlmklib
 OCAMLLEX = ocamllex
 
+FINDER=ocamlfind
+INSTALL = $(FINDER) install
+
 MODULES=ptmap.ml ptset.ml
 MODULE_INTERFACES=ptmap.mli ptset.mli
 
