@@ -190,19 +190,11 @@ external/ocamlbdb/libcamlbdb.a
 /demos/send_mail_pattern.php
 /h_visualization/Treemap.brf
 /h_visualization/Treemap.out
-/phpext/Makefile
 
 /lang_php/parsing/template_visitor
 /lang_php/parsing/readme.txt
 
 /parsing-web/readme.txt
-
-/h_program-analysis/Makefile
-/h_program-analysis/test_program_analysis.ml
-/h_program-analysis/test_program_analysis.mli
-
-/h_visualization/dot.ml
-/h_visualization/dot.mli
 
 /meta/python/ast_php.py
 /meta/python/examples/Python.asdl
