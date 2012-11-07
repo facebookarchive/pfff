@@ -180,11 +180,11 @@ let lookup g n s =
 (*****************************************************************************)
 (* Defs *)
 (*****************************************************************************)
-let extract_defs ~g root ast =
+let extract_defs ~g ast =
   let jclass = ast in
 
   let (package, name) = package_and_name_of_cname jclass.j_name in
-  let current = create_intermediate_packages_if_not_present g root package in
+  let current = create_intermediate_packages_if_not_present g G.root package in
 
   let node = (name, E.Class E.RegularClass) in
   g +> G.add_node node;
@@ -337,13 +337,12 @@ let build ?(verbose=true) dir_or_file skip_list =
     List.iter (fun file ->
       k();
       let ast = parse ~show_parse_error:true file in
-      let readable = Common.filename_without_leading_path root file in
-      let root = 
-        if readable =~ "^external" || readable =~ "^EXTERNAL"
-        then G.stdlib
-        else G.root
-      in
-      extract_defs ~g root ast;
+      (* it's tempting to put stuff under EXTERNAL under a special E.Dir
+       * but then the toplevel com. will be created there and every
+       * folloing creation of classes under com will then finish 
+       * under EXTERNAL too
+       *)
+      extract_defs ~g ast;
       ()
     ));
 
