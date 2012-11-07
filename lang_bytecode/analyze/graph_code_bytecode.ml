@@ -143,8 +143,7 @@ let add_use_edge env dst =
     g +> G.add_edge (src, dst) G.Use;
     ()
 
-(* todo: memoize *)              
-let (lookup: 
+let (lookup2: 
   Graph_code.graph -> Graph_code.node -> string -> Graph_code.node option) =
  fun g start fld ->
 
@@ -164,24 +163,28 @@ let (lookup:
       match res with
       | Some x -> Some x
       | None -> 
-          let _parents_inheritance = G.succ current G.Use g in
-          None
-  and _breath = function
-    | [] -> None
-    | x::xs ->
-        (* TODO *)
-        None
+          let parents_inheritance = G.succ current G.Use g in
+          breath parents_inheritance
+  and breath xs = xs +> Common.find_some_opt depth
   in
   depth start
+
+let _hmemo = Hashtbl.create 101 
+let lookup g n s =
+  Common.profile_code "Graph_bytecode.lookup" (fun () ->
+    Common.memoized _hmemo (n,s) (fun () ->
+        lookup2 g n s
+    )
+  )
 
 (*****************************************************************************)
 (* Defs *)
 (*****************************************************************************)
-let extract_defs ~g ast =
+let extract_defs ~g root ast =
   let jclass = ast in
 
   let (package, name) = package_and_name_of_cname jclass.j_name in
-  let current = create_intermediate_packages_if_not_present g G.root package in
+  let current = create_intermediate_packages_if_not_present g root package in
 
   let node = (name, E.Class E.RegularClass) in
   g +> G.add_node node;
@@ -334,7 +337,13 @@ let build ?(verbose=true) dir_or_file skip_list =
     List.iter (fun file ->
       k();
       let ast = parse ~show_parse_error:true file in
-      extract_defs ~g ast;
+      let readable = Common.filename_without_leading_path root file in
+      let root = 
+        if readable =~ "^external" || readable =~ "^EXTERNAL"
+        then G.stdlib
+        else G.root
+      in
+      extract_defs ~g root ast;
       ()
     ));
 
@@ -355,10 +364,11 @@ let build ?(verbose=true) dir_or_file skip_list =
   files +> Common_extra.progress ~show:verbose (fun k -> 
    List.iter (fun file ->
      k();
-     let ast = parse ~show_parse_error:false  file in
      let readable = Common.filename_without_leading_path root file in
      if readable =~ "^external" || readable =~ "^EXTERNAL"
      then ()
-     else extract_uses ~g ast
+     else 
+       let ast = parse ~show_parse_error:false  file in
+       extract_uses ~g ast
    ));
   g
