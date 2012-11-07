@@ -17,6 +17,7 @@ open Common
 module E = Database_code
 module G = Graph_code
 
+open JBasics
 open JClassLow
 
 (*****************************************************************************)
@@ -40,9 +41,8 @@ open JClassLow
 
 type env = {
   g: Graph_code.graph;
-  phase: phase;
+  current: Graph_code.node;
 }
-  and phase = Defs | Uses
 
 (*****************************************************************************)
 (* Helpers *)
@@ -95,7 +95,9 @@ let create_intermediate_packages_if_not_present g root xs =
   in
   aux root dirs
 
-let add_use_edge g (src, dst) =
+let add_use_edge env dst =
+  let src = env.current in
+  let g = env.g in
   match () with
   | _ when not (G.has_node src g) ->
       pr2 (spf "LOOKUP SRC FAIL %s --> %s, src does not exist???"
@@ -158,27 +160,44 @@ let extract_defs ~g ast =
       g +> G.add_edge (current, node) G.Has;
     end
   );
-
   ()
-
 
 (*****************************************************************************)
 (* Uses *)
 (*****************************************************************************)
 
-let extract_uses ~g ast =
+let rec extract_uses ~g ast =
   let jclass = ast in
   let name = JBasics.cn_name jclass.j_name in
   let current = (name, E.Class E.RegularClass) in
+  let env = { g; current; } in
 
   let parents = Common.option_to_list jclass.j_super ++ jclass.j_interfaces in
-
   parents +> List.iter (fun cname ->
     let node = (JBasics.cn_name cname, E.Class E.RegularClass) in
-    
-    add_use_edge g (current, node);
+    add_use_edge env node;
+  );
+  jclass.j_fields +> List.iter (fun fld ->
+    let node = (name ^ "." ^ fld.f_name, E.Field) in
+    let env = { env with current = node } in
+    value_type env fld.f_descriptor;
+  );
+  jclass.j_methods +> List.iter (fun def ->
+    let node = (name ^ "." ^ def.m_name, E.Method E.RegularMethod) in
+    let env = { env with current = node } in
+    ignore(env);
   );
   ()
+
+and value_type env = function
+  | TBasic _ -> ()
+  | TObject obj -> object_type env obj
+
+and object_type env = function
+  | TArray x -> value_type env x
+  | TClass cname ->
+      let node = (JBasics.cn_name cname, E.Class E.RegularClass) in
+      add_use_edge env node
 
 (*****************************************************************************)
 (* Main entry point *)
@@ -219,6 +238,5 @@ let build ?(verbose=true) dir_or_file skip_list =
        extract_uses ~g ast;
      ()
    ));
-
   g
 
