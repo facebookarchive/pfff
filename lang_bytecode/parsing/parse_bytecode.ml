@@ -22,10 +22,11 @@ open Common
 (* Main entry point *)
 (*****************************************************************************)
 
-let parse file = 
+let parse2 file = 
   let ch = open_in file in
   let io = IO.input_channel ch in
   let c = JParse.parse_class_low_level io in
   c
 
-
+let parse a = 
+  Common.profile_code "Parse_bytecode.parse" (fun () -> parse2 a)
