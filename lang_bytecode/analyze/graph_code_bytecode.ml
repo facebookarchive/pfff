@@ -42,6 +42,8 @@ open JClassLow
 type env = {
   g: Graph_code.graph;
   current: Graph_code.node;
+
+  consts: JBasics.constant array;
 }
 
 (*****************************************************************************)
@@ -170,22 +172,39 @@ let rec extract_uses ~g ast =
   let jclass = ast in
   let name = JBasics.cn_name jclass.j_name in
   let current = (name, E.Class E.RegularClass) in
-  let env = { g; current; } in
+  let env = { g; current; consts = jclass.j_consts } in
 
   let parents = Common.option_to_list jclass.j_super ++ jclass.j_interfaces in
   parents +> List.iter (fun cname ->
     let node = (JBasics.cn_name cname, E.Class E.RegularClass) in
     add_use_edge env node;
   );
+  jclass.j_attributes +> List.iter (function
+  | AttributeCode _ -> failwith "code in j_attributes?"
+  | _ -> ()
+  );
+
   jclass.j_fields +> List.iter (fun fld ->
     let node = (name ^ "." ^ fld.f_name, E.Field) in
     let env = { env with current = node } in
     value_type env fld.f_descriptor;
+
+    fld.f_attributes +> List.iter (function
+    | AttributeCode _ -> failwith "code in f_attributes?"
+    | _ -> ()
+    );
   );
   jclass.j_methods +> List.iter (fun def ->
     let node = (name ^ "." ^ def.m_name, E.Method E.RegularMethod) in
     let env = { env with current = node } in
-    ignore(env);
+    (* less: dependencies for parameters? ok cmf spirit? and skip? *)
+
+    def.m_attributes +> List.iter (function
+    | AttributeCode x -> 
+        code env x
+    | _ -> ()
+    );
+
   );
   ()
 
@@ -199,6 +218,24 @@ and object_type env = function
       let node = (JBasics.cn_name cname, E.Class E.RegularClass) in
       add_use_edge env node
 
+and code env x = 
+  let x = Lazy.force x in
+  x.c_attributes +> List.iter (function
+  | AttributeCode _ -> failwith "code in c_attributes?"
+  | _ -> ()
+  );
+  x.c_code +> Array.iteri (fun i op ->
+    match op with
+    | OpNew i ->
+        (match env.consts.(i) with
+        | ConstValue (ConstClass obj) ->
+            object_type env obj
+        | x -> pr2_gen x;
+        );
+    | _ -> ()
+  );
+  ()
+  
 (*****************************************************************************)
 (* Main entry point *)
 (*****************************************************************************)
