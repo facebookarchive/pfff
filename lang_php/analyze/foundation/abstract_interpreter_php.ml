@@ -162,7 +162,7 @@ let extract_paths = ref true
  * regarding the callgraph. The size of the callgraph does not grow that
  * much when goes from 6 to 7.
  *)
-let max_depth = ref 6
+let max_depth = ref 4
 
 (* throw exn instead of passing-over silently unhandled constructs *)
 let strict = ref true
