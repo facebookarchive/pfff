@@ -226,12 +226,26 @@ and code env x =
   );
   x.c_code +> Array.iteri (fun i op ->
     match op with
-    | OpNew i ->
+    | OpNew i | OpANewArray i ->
         (match env.consts.(i) with
         | ConstValue (ConstClass obj) ->
             object_type env obj
         | x -> pr2_gen x;
         );
+    | OpNewArray _java_basic_type -> ()
+
+    | OpGetStatic i | OpPutStatic i
+    | OpGetField i | OpPutField i
+        ->
+        (match env.consts.(i) with
+        | ConstField (cname, descr) ->
+            let name = JBasics.cn_name cname in
+            let fldname = JBasics.fs_name descr in
+            let node = (name ^ "." ^ fldname, E.Field) in
+            add_use_edge env node
+        | x -> pr2_gen x;
+        );
+        
     | _ -> ()
   );
   ()
