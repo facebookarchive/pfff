@@ -28,11 +28,13 @@ open JClassLow
  * for more information.
  * 
  * As opposed to lang_java/analyze/graph_code_java.ml, no need for:
- *  - package/class lookup (all names are resolved already)
- *  - nested classes are compiled in another class with a $
+ *  - package lookup (all names are resolved already)
+ *  - nested classes are compiled in another class with a $ suffix
  *  - generics?
  * 
- * todo: put back nested classes inside the other?
+ * Still need a class lookup for fields/methods though ...
+ * 
+ * less: put back nested classes inside the other
  *)
 
 (*****************************************************************************)
@@ -43,8 +45,19 @@ type env = {
   g: Graph_code.graph;
   current: Graph_code.node;
 
+  (* opcodes like getfield, invokevirtual are taking integer parameters
+   * that are reference in a constant table containing the full
+   * name of the classes/methods/fields.
+   *)
   consts: JBasics.constant array;
 }
+
+(* We need 3 phases, one to get all the definitions, one to
+ * get the inheritance information, and one to get all the Uses.
+ * The inheritance is a kind of use, but certain uses like using
+ * a field needs the full inheritance tree to already be computed
+ * as we may need to lookup entities up in the parents.
+ *)
 
 (*****************************************************************************)
 (* Helpers *)
@@ -129,7 +142,37 @@ let add_use_edge env dst =
     end;
     g +> G.add_edge (src, dst) G.Use;
     ()
-              
+
+(* todo: memoize *)              
+let (lookup: 
+  Graph_code.graph -> Graph_code.node -> string -> Graph_code.node option) =
+ fun g start fld ->
+
+  let rec depth current =
+    if not (G.has_node current g)
+    then None
+    else 
+      let children = G.children current g in
+      let res =
+        children +> Common.find_some_opt (fun (s2, kind) ->
+          let full_name = (fst current ^ "." ^ fld) in
+          if full_name =$= s2
+          then Some (s2, kind)
+          else None
+        )
+      in
+      match res with
+      | Some x -> Some x
+      | None -> 
+          let _parents_inheritance = G.succ current G.Use g in
+          None
+  and _breath = function
+    | [] -> None
+    | x::xs ->
+        (* TODO *)
+        None
+  in
+  depth start
 
 (*****************************************************************************)
 (* Defs *)
@@ -165,10 +208,10 @@ let extract_defs ~g ast =
   ()
 
 (*****************************************************************************)
-(* Uses *)
+(* Inheritance *)
 (*****************************************************************************)
 
-let rec extract_uses ~g ast =
+let extract_uses_inheritance ~g ast =
   let jclass = ast in
   let name = JBasics.cn_name jclass.j_name in
   let current = (name, E.Class E.RegularClass) in
@@ -179,6 +222,18 @@ let rec extract_uses ~g ast =
     let node = (JBasics.cn_name cname, E.Class E.RegularClass) in
     add_use_edge env node;
   );
+  ()
+
+(*****************************************************************************)
+(* Uses *)
+(*****************************************************************************)
+
+let rec extract_uses ~g ast =
+  let jclass = ast in
+  let name = JBasics.cn_name jclass.j_name in
+  let current = (name, E.Class E.RegularClass) in
+  let env = { g; current; consts = jclass.j_consts } in
+
   jclass.j_attributes +> List.iter (function
   | AttributeCode _ -> failwith "code in j_attributes?"
   | _ -> ()
@@ -241,8 +296,15 @@ and code env x =
         | ConstField (cname, descr) ->
             let name = JBasics.cn_name cname in
             let fldname = JBasics.fs_name descr in
+
             let node = (name ^ "." ^ fldname, E.Field) in
-            add_use_edge env node
+
+            (match lookup env.g (name, E.Class E.RegularClass) fldname with
+            | None ->
+                add_use_edge env node
+            | Some n ->
+                add_use_edge env n
+            )
         | x -> pr2_gen x;
         );
         
@@ -276,8 +338,8 @@ let build ?(verbose=true) dir_or_file skip_list =
       ()
     ));
 
-  (* step2: creating the 'Use' edges *)
-  if verbose then pr2 "\nstep2: extract uses";
+  (* step2: creating the 'Use' edges for inheritance *)
+  if verbose then pr2 "\nstep2: extract inheritance information";
   files +> Common_extra.progress ~show:verbose (fun k -> 
    List.iter (fun file ->
      k();
@@ -285,9 +347,18 @@ let build ?(verbose=true) dir_or_file skip_list =
      let readable = Common.filename_without_leading_path root file in
      if readable =~ "^external" || readable =~ "^EXTERNAL"
      then ()
-     else 
-       extract_uses ~g ast;
-     ()
+     else extract_uses_inheritance ~g ast
+   ));
+
+  (* step3: creating the 'Use' edges *)
+  if verbose then pr2 "\nstep3: extract uses";
+  files +> Common_extra.progress ~show:verbose (fun k -> 
+   List.iter (fun file ->
+     k();
+     let ast = parse ~show_parse_error:false  file in
+     let readable = Common.filename_without_leading_path root file in
+     if readable =~ "^external" || readable =~ "^EXTERNAL"
+     then ()
+     else extract_uses ~g ast
    ));
   g
-
