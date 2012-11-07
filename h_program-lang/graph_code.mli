@@ -15,9 +15,10 @@ val save: graph -> Common.filename -> unit
 val load: Common.filename -> graph
 
 val root: node
-val pb: node
-val not_found: node
-val dupe: node
+ val pb: node
+  val not_found: node
+  val dupe: node
+ val stdlib: node
 
 val create_initial_hierarchy: graph -> unit
 
