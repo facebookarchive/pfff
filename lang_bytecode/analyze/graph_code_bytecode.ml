@@ -34,6 +34,7 @@ open JClassLow
  * 
  * Still need a class lookup for fields/methods though ...
  * 
+ * todo: StaticMethod, StaticField, the bytecode has this information
  * less: put back nested classes inside the other
  *)
 
@@ -265,7 +266,6 @@ let rec extract_uses ~g ast =
         code env x
     | _ -> ()
     );
-
   );
   ()
 
@@ -296,6 +296,9 @@ and code env x =
           pr2_gen x;
         );
     | OpNewArray _java_basic_type -> ()
+    | OpAMultiNewArray (i, _) ->
+      pr2_once "TODO OpAMultiNewArray"
+
 
     | OpGetStatic i | OpPutStatic i
     | OpGetField i | OpPutField i
@@ -318,6 +321,8 @@ and code env x =
           pr2_gen x;
         );
     | OpInvokeVirtual i
+    | OpInvokeNonVirtual i
+    | OpInvokeStatic i
         ->
         (match env.consts.(i) with
         | ConstMethod (TClass cname, descr) ->
@@ -345,7 +350,11 @@ and code env x =
           pr2 ("Unexpected constant for OpInvokeVirtual");
           JDumpBasics.dump_constant ch x;
         );
-        
+
+    | OpInvokeInterface (i1, i2) ->
+      pr2_once "TODO OpInvokeInterface";
+    | OpCheckCast i | OpInstanceOf i ->
+      ()
     | _ -> ()
   );
   ()
