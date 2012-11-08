@@ -63,9 +63,12 @@ type env = {
 (* Helpers *)
 (*****************************************************************************)
 
+let _hmemo = Hashtbl.create 101
 let parse ~show_parse_error file =
   try 
-    Parse_bytecode.parse file
+    Common.memoized _hmemo file (fun () ->
+      Parse_bytecode.parse file
+    )
   with exn ->
     pr2_once (spf "PARSE ERROR with %s, exn = %s" file 
                   (Common.exn_to_s exn));
