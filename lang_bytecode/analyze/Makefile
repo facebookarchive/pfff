@@ -21,6 +21,7 @@ INCLUDEDIRS= $(TOP)/commons \
    $(TOP)/commons/ocollection $(TOP)/commons/ocamlextra \
    $(TOP)/commons/lib-json \
    $(TOP)/external/ocamlpcre/lib \
+   $(TOP)/external/extlib \
    $(TOP)/h_program-lang $(TOP)/h_version-control  \
    $(TOP)/globals \
    $(TOP)/external/javalib/src \

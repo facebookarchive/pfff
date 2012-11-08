@@ -291,7 +291,9 @@ and code env x =
         (match env.consts.(i) with
         | ConstValue (ConstClass obj) ->
             object_type env obj
-        | x -> pr2_gen x;
+        | x -> 
+          pr2 ("Unexpected constant for OpNew");
+          pr2_gen x;
         );
     | OpNewArray _java_basic_type -> ()
 
@@ -311,7 +313,37 @@ and code env x =
             | Some n ->
                 add_use_edge env n
             )
-        | x -> pr2_gen x;
+        | x -> 
+          pr2 ("Unexpected constant for OpGetField");
+          pr2_gen x;
+        );
+    | OpInvokeVirtual i
+        ->
+        (match env.consts.(i) with
+        | ConstMethod (TClass cname, descr) ->
+            let name = JBasics.cn_name cname in
+            let fldname = JBasics.ms_name descr in
+
+            let node = (name ^ "." ^ fldname, E.Method E.RegularMethod) in
+
+            (match lookup env.g (name, E.Class E.RegularClass) fldname with
+            | None -> add_use_edge env node
+            | Some n -> add_use_edge env n
+            )
+        | ConstMethod (TArray _, descr) as x -> 
+          let fldname = JBasics.ms_name descr in
+          (match fldname with
+          | "clone" -> ()
+          | _ ->
+            let ch = IO.output_channel stderr in
+            pr2 ("Unexpected constant for OpInvokeVirtual");
+            JDumpBasics.dump_constant ch x;
+          )
+
+        | x ->
+          let ch = IO.output_channel stderr in
+          pr2 ("Unexpected constant for OpInvokeVirtual");
+          JDumpBasics.dump_constant ch x;
         );
         
     | _ -> ()
@@ -355,10 +387,8 @@ let build ?(verbose=true) dir_or_file skip_list =
    List.iter (fun file ->
      k();
      let ast = parse ~show_parse_error:false  file in
-     let readable = Common.filename_without_leading_path root file in
-     if readable =~ "^external" || readable =~ "^EXTERNAL"
-     then ()
-     else extract_uses_inheritance ~g ast
+     (* we need to extract inheritance information for the builtins too *)
+     extract_uses_inheritance ~g ast
    ));
 
   (* step3: creating the 'Use' edges *)
