@@ -444,7 +444,7 @@ let top_nodes_of_graph_until_threshold g =
 
   let res = ref [] in
   let remaining = ref threshold_nodes_full_matrix in
-  (* bfs like *)
+  (* bfs-like algorithm *)
   let rec aux xs =
     if null xs 
     then ()
