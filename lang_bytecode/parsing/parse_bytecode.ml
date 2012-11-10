@@ -26,6 +26,7 @@ let parse2 file =
   let ch = open_in file in
   let io = IO.input_channel ch in
   let c = JParse.parse_class_low_level io in
+  IO.close_in io;
   c
 
 let parse a = 
