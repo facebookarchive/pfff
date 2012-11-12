@@ -17,8 +17,8 @@ open Common
 module E = Database_code
 module G = Graph_code
 
-open Ast_php_simple
 module Ast = Ast_php_simple
+open Ast_php_simple
 
 (*****************************************************************************)
 (* Prelude *)
@@ -32,7 +32,9 @@ module Ast = Ast_php_simple
  * 
  * schema:
  *  Root -> Dir -> File (.php) -> Class (interface or traits too)
- *                                 #TODO methods, fields, etc
+ *                                 -> Method
+ *                                 -> Field
+ *                                 -> Constant
  *                             -> Function
  *                             -> Constant
  *       -> Dir -> SubDir -> Module? -> ...
@@ -49,8 +51,10 @@ module Ast = Ast_php_simple
 
 (* for the extract_uses visitor *)
 type env = {
-  current: Graph_code.node;
   g: Graph_code.graph;
+
+  phase: phase;
+  current: Graph_code.node;
 
   (* we use the Hashtbl.find_all property *)
   skip_edges: (string, string) Hashtbl.t;
@@ -61,19 +65,31 @@ type env = {
    *)
   dupes: (Graph_code.node) Common.hashset;
 }
+  (* We need 3 phases, one to get all the definitions, one to
+   * get the inheritance information, and one to get all the Uses.
+   * The inheritance is a kind of use, but certain uses like using
+   * a field or method need the full inheritance tree to already be
+   * computed as we may need to lookup entities up in the parents.
+   *)
+  and phase = Defs | Inheritance | Uses
 
 (*****************************************************************************)
 (* Helpers *)
 (*****************************************************************************)
 
-let parse file = 
+let _hmemo = Hashtbl.create 101
+let parse2 file = 
   try 
     let cst = Parse_php.parse_program file in
     let ast = Ast_php_simple_build.program cst in
     ast
-  with exn ->
+  with
+  | Timeout -> raise Timeout
+  | exn ->
     pr2_once (spf "PARSE ERROR with %s, exn = %s" file (Common.exn_to_s exn));
     []
+let parse a = Common.memoized _hmemo a (fun () -> parse2 a)
+
 
 (* todo: add some point this will need to do some lookup when kind
  * is a Field or Method.
@@ -144,43 +160,27 @@ let node_of_toplevel_opt x =
   | Throw _ | Try _
     -> None
 
-
 (*****************************************************************************)
-(* Defs *)
+(* Defs/Uses *)
 (*****************************************************************************)
+let rec extract_defs_uses ~phase ~g ~ast ~dupes ~readable ~skip_edges =
 
-let extract_defs ~g ~dupes ~ast ~readable =
-  let dir = Common.dirname readable in
-  G.create_intermediate_directories_if_not_present g dir;
-  g +> G.add_node (readable, E.File);
-  g +> G.add_edge ((dir, E.Dir), (readable, E.File))  G.Has;
-
-  (* less? what about nested classes/functions/defines? *)
-  ast +> List.iter (fun x ->
-    let node_opt = node_of_toplevel_opt x in
-    node_opt +> Common.do_option (fun node ->
-      (* for ClassDef can have nested Has links to add *)
-
-      if G.has_node node g then Hashtbl.replace dupes node true
-      else begin
-        g +> G.add_node node;
-        g +> G.add_edge ((readable, E.File), node) G.Has;
-      end
-    )
-  );
-  ()
-
-(*****************************************************************************)
-(* Uses *)
-(*****************************************************************************)
-let rec extract_uses ~g ~ast ~dupes ~readable ~skip_edges =
   let env = {
+    g; phase;
     current = (readable, E.File);
-    g;
     dupes;
     skip_edges;
   } 
   in
+
+  if phase = Defs then begin
+    let dir = Common.dirname readable in
+    G.create_intermediate_directories_if_not_present g dir;
+
+    g +> G.add_node (readable, E.File);
+    g +> G.add_edge ((dir, E.Dir), (readable, E.File))  G.Has;
+  end;
+
   stmtl env ast;
 
 (* ---------------------------------------------------------------------- *)
@@ -188,27 +188,32 @@ let rec extract_uses ~g ~ast ~dupes ~readable ~skip_edges =
 (* ---------------------------------------------------------------------- *)
 and stmt env x =
 
-  let node_opt = node_of_toplevel_opt x in
   let env = 
-    match node_opt with
+    match node_of_toplevel_opt x with
     | None -> env
-    | Some n ->
+    | Some node ->
+        if env.phase = Defs then begin
+          if G.has_node node env.g 
+          then Hashtbl.replace env.dupes node true
+          else begin
+            env.g +> G.add_node node;
+            env.g +> G.add_edge (env.current, node) G.Has;
+          end
+        end;
+
         (* can happen for main() which will be dupes in which case
          * it's better to keep current as the current File so
          * at least we will avoid some fail lookup.
          *)
-        if Hashtbl.mem env.dupes n
+        if Hashtbl.mem env.dupes node
         then env
-        else { env with current = n }
+        else { env with current = node }
   in
   match x with
   (* boilerplate *)
-  | FuncDef def -> 
-      func_def env def
-  | ClassDef def -> 
-      class_def env def
-  | ConstantDef def -> 
-      constant_def env def
+  | FuncDef def -> func_def env def
+  | ClassDef def -> class_def env def
+  | ConstantDef def -> constant_def env def
 
   | Expr e -> expr env e
   | Block xs -> stmtl env xs
@@ -265,15 +270,19 @@ and func_def env def =
   stmtl env def.f_body
 
 and class_def env def =
-  def.c_extends +> Common.do_option (fun c2 ->
-    add_use_edge env (c2, E.Class E.RegularClass);
-  );
-  def.c_implements +> List.iter (fun c2 ->
-    add_use_edge env (c2, E.Class E.Interface);
-  );
-  def.c_uses +> List.iter (fun c2 ->
-    add_use_edge env (c2, E.Class E.Trait);
-  );
+
+  (* opti: could also just push those edges in a _todo ref during Defs *)
+  if env.phase = Inheritance then begin
+    def.c_extends +> Common.do_option (fun c2 ->
+      add_use_edge env (c2, E.Class E.RegularClass);
+    );
+    def.c_implements +> List.iter (fun c2 ->
+      add_use_edge env (c2, E.Class E.Interface);
+    );
+    def.c_uses +> List.iter (fun c2 ->
+      add_use_edge env (c2, E.Class E.Trait);
+    );
+  end;
 
   def.c_constants +> List.iter (fun def ->
     expr env def.cst_body;
@@ -291,7 +300,9 @@ and constant_def env def =
 (* ---------------------------------------------------------------------- *)
 (* Expr *)
 (* ---------------------------------------------------------------------- *)
-and expr env = function
+and expr env x = 
+  if env.phase = Uses then
+  (match x with
   | Int _ | Double _  -> ()
 
   (* todo: this can hide actually name of functions or classes ... *)
@@ -390,6 +401,7 @@ and expr env = function
   (* less: again, add deps for type? *)
   | Cast (_, e) -> expr env e
   | Lambda def -> func_def env def
+  )
 
 and array_value env = function
   | Aval e -> expr env e
@@ -421,16 +433,21 @@ let build ?(verbose=true) dir skip_list =
   let g = G.create () in
   G.create_initial_hierarchy g;
 
-  (* step1: creating the nodes and 'Has' edges, the defs *)
   let dupes = Hashtbl.create 101 in
+  let skip_edges = skip_list +> Common.map_filter (function
+    | Skip_code.Edge (s1, s2) -> Some (s1, s2)
+    | _ -> None
+  ) +> Common.hash_of_list 
+  in
 
+  (* step1: creating the nodes and 'Has' edges, the defs *)
   if verbose then pr2 "\nstep1: extract defs";
   files +> Common_extra.progress ~show:verbose (fun k -> 
     List.iter (fun file ->
       k();
       let readable = Common.filename_without_leading_path root file in
       let ast = parse file in
-      extract_defs ~g ~dupes ~ast ~readable;
+      extract_defs_uses ~phase:Defs ~g ~dupes ~ast ~readable ~skip_edges;
       ()
    ));
   dupes +> Common.hashset_to_list +> List.iter (fun n ->
@@ -439,20 +456,24 @@ let build ?(verbose=true) dir skip_list =
     g +> G.add_edge (G.dupe, n) G.Has;
   );
 
-  (* step2: creating the 'Use' edges, the uses *)
-  let skip_edges = skip_list +> Common.map_filter (function
-    | Skip_code.Edge (s1, s2) -> Some (s1, s2)
-    | _ -> None
-  ) +> Common.hash_of_list 
-  in
-  
-  if verbose then pr2 "\nstep2: extract uses";
+  (* step2: creating the 'Use' edges for inheritance *)
+  if verbose then pr2 "\nstep2: extract inheritance";
   files +> Common_extra.progress ~show:verbose (fun k -> 
    List.iter (fun file ->
      k();
      let readable = Common.filename_without_leading_path root file in
      let ast = parse file in
-     extract_uses ~g ~dupes ~ast ~readable ~skip_edges;
+     extract_defs_uses ~phase:Inheritance ~g ~dupes ~ast ~readable ~skip_edges;
+   ));
+
+  (* step3: creating the 'Use' edges, the uses *)
+  if verbose then pr2 "\nstep3: extract uses";
+  files +> Common_extra.progress ~show:verbose (fun k -> 
+   List.iter (fun file ->
+     k();
+     let readable = Common.filename_without_leading_path root file in
+     let ast = parse file in
+     extract_defs_uses ~phase:Uses ~g ~dupes ~ast ~readable ~skip_edges;
    ));
   
   g
