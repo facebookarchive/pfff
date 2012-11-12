@@ -58,6 +58,13 @@ type env = {
  * The inheritance is a kind of use, but certain uses like using
  * a field needs the full inheritance tree to already be computed
  * as we may need to lookup entities up in the parents.
+ * 
+ * Note that if you don't include the java stdlib in the analysis,
+ * then you will get not only Not_found lookup for java.xxx classes/methods,
+ * but also probably method lookup failures on classes from the program
+ * under analysis. Indeed many classes could derive from standard classes
+ * and inherits those methods, and without inheritance information, the
+ * lookup on those methods will fail.
  *)
 
 (*****************************************************************************)
