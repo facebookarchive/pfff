@@ -31,7 +31,7 @@ open Ast_php_simple
  * facebook/check_module/graph_module.ml
  * 
  * schema:
- *  Root -> Dir -> File (.php) -> Class (interface or traits too)
+ *  Root -> Dir -> File (.php) -> Class (interfaces and traits too)
  *                                 -> Method
  *                                 -> Field
  *                                 -> Constant
@@ -40,6 +40,7 @@ open Ast_php_simple
  *       -> Dir -> SubDir -> Module? -> ...
  * 
  * todo: 
+ *  - handle Interface and Traits, do not translate then in RegularClass?
  *  - reuse env, most of of build() and put it in graph_code.ml
  *    and just pass the PHP specificities.
  *  - add tests
@@ -58,12 +59,12 @@ type env = {
 
   (* we use the Hashtbl.find_all property *)
   skip_edges: (string, string) Hashtbl.t;
-  (* todo: dynamic_fails stats *)
 
   (* right now used in extract_uses phase to transform a src like main()
    * into its File.
    *)
   dupes: (Graph_code.node) Common.hashset;
+  (* todo: dynamic_fails stats *)
 }
   (* We need 3 phases, one to get all the definitions, one to
    * get the inheritance information, and one to get all the Uses.
@@ -91,7 +92,7 @@ let parse2 file =
 let parse a = Common.memoized _hmemo a (fun () -> parse2 a)
 
 
-(* todo: add some point this will need to do some lookup when kind
+(* todo: at some point this will need to do some lookup when kind
  * is a Field or Method.
  *)
 let rec add_use_edge env (name, kind) =
@@ -111,10 +112,12 @@ let rec add_use_edge env (name, kind) =
       then pr2 (spf "SKIPPING: %s --> %s" s1 s2)
       else G.add_edge (src, dst) G.Use env.g
   | _ -> 
-      (* if dst is a Class, then try Interface *)
       (match kind with
+      (* if dst is a Class, then try Interface *)
+      (*
       | E.Class E.RegularClass -> 
           add_use_edge env (name, E.Class E.Interface)
+      *)
       | _ ->
           let kind_original = kind in
           let dst = (Ast.str_of_name name, kind_original) in
@@ -140,12 +143,15 @@ let node_of_toplevel_opt x =
       Some (s, E.Constant)
 
   | ClassDef def ->
-      let kind = 
+    (*
+      let _kind = 
         match def.c_kind with
         | ClassRegular | ClassFinal | ClassAbstract -> E.RegularClass
         | Interface -> E.Interface
         | Trait -> E.Trait
       in
+    *)
+      let kind = E.RegularClass in
       Some (Ast.str_of_name def.c_name, E.Class kind)
 
   (* could add entity for that? *)
@@ -244,7 +250,7 @@ and stmt env x =
       xs +> List.iter (fun (name, eopt) -> Common.opt (expr env) eopt;)
   | Global xs -> exprl env xs
 
-(* todo: deps to class name? *)
+(* less: add deps to type hint? *)
 and catch env (_hint_type, _name, xs) =
   stmtl env xs
 
@@ -264,7 +270,7 @@ and catches env xs = List.iter (catch env) xs
 (* ---------------------------------------------------------------------- *)
 and func_def env def =
   def.f_params +> List.iter (fun p ->
-    (* todo: add deps to type hint? *)
+    (* less: add deps to type hint? *)
     Common.opt (expr env) p.p_default;
   );
   stmtl env def.f_body
@@ -276,11 +282,12 @@ and class_def env def =
     def.c_extends +> Common.do_option (fun c2 ->
       add_use_edge env (c2, E.Class E.RegularClass);
     );
+    (* todo: use Interface and Traits at some point *)
     def.c_implements +> List.iter (fun c2 ->
-      add_use_edge env (c2, E.Class E.Interface);
+      add_use_edge env (c2, E.Class E.RegularClass);
     );
     def.c_uses +> List.iter (fun c2 ->
-      add_use_edge env (c2, E.Class E.Trait);
+      add_use_edge env (c2, E.Class E.RegularClass);
     );
   end;
 
@@ -328,6 +335,7 @@ and expr env x =
       (* static method call *)
       | Class_get (Id name1, Id name2) 
           when not (Ast.is_variable name1) && not (Ast.is_variable name2) ->
+          (* todo: handle self, parent (and in traits??) *)
           let _aclass = Ast.str_of_name name1 in
           let _amethod = Ast.str_of_name name2 in
           add_use_edge env (name1, E.Class E.RegularClass)
@@ -335,6 +343,7 @@ and expr env x =
       (* object call *)
       | Obj_get (e1, Id name2) 
           when not (Ast.is_variable name2) ->
+         (* handle easy case, $this-> *)
           expr env e1
 
       (* todo: increment dynamic_fails stats *)
@@ -365,6 +374,7 @@ and expr env x =
   | Obj_get (e1, e2) ->
       (match e1, e2 with
       | _, Id name2 when not (Ast.is_variable name2) ->
+          (* handle easy case, $this-> *)
           expr env e1;
       | _ ->
           exprl env [e1; e2]
@@ -379,7 +389,7 @@ and expr env x =
   | InstanceOf (e1, e2) -> 
       expr env e1;
       (match e2 with
-      (* todo? add deps? *)
+      (* less: add deps? *)
       | Id name when not (Ast.is_variable name) -> 
           ()
       | _ -> 
