@@ -222,7 +222,6 @@ let rec add_use_edge env (name, kind) =
 (* Class/Package Lookup *)
 (*****************************************************************************)
 
-
 let _hmemo = Hashtbl.create 101 
 
 let lookup_fully_qualified_memoized env x = 
@@ -499,7 +498,6 @@ and method_decl env def =
   (* todo: m_throws *)
   stmt env def.m_body
 
-
 and field_decl env def =
   let full_ident = env.current_qualifier ++ [def.f_var.v_name] in
   let full_str = str_of_qualified_ident full_ident in
@@ -572,8 +570,6 @@ and enum_decl env def =
         decls env (xs +> List.map (fun x -> Method x))
     )
   )
-
-
 
 (* ---------------------------------------------------------------------- *)
 (* Stmt *)
@@ -783,9 +779,6 @@ and expr env = function
   | InstanceOf (e, tref) ->
       expr env e;
       typ env (tref);
-      
-      
-      
 
 
 and exprs env xs = List.iter (expr env) xs
@@ -840,7 +833,6 @@ and typ env = function
         )
       end
       
-
 (* ---------------------------------------------------------------------- *)
 (* Misc *)
 (* ---------------------------------------------------------------------- *)
