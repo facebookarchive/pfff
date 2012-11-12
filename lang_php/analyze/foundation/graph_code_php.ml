@@ -34,9 +34,10 @@ open Ast_php_simple
  *  Root -> Dir -> File (.php) -> Class (interfaces and traits too)
  *                                 -> Method
  *                                 -> Field
- *                                 -> Constant
+ *                                 -> ClassConstant
  *                             -> Function
  *                             -> Constant
+ *       -> Dir -> SubDir -> File -> ...
  *       -> Dir -> SubDir -> Module? -> ...
  * 
  * todo: 
@@ -51,14 +52,15 @@ open Ast_php_simple
 (* Types *)
 (*****************************************************************************)
 
-(* for the extract_uses visitor *)
 type env = {
   g: Graph_code.graph;
 
   phase: phase;
   current: Graph_code.node;
   (* empty when outside a class *)
-  current_classname: string;
+  self: string;
+  (* empty when no parent *)
+  parent: string;
 
   (* we use the Hashtbl.find_all property *)
   skip_edges: (string, string) Hashtbl.t;
@@ -95,9 +97,7 @@ let parse2 file =
 let parse a = Common.memoized _hmemo a (fun () -> parse2 a)
 
 
-(* todo: at some point this will need to do some lookup when kind
- * is a Field or Method.
- *)
+(* assumes name has already been resolved by a lookup() *)
 let rec add_use_edge env (name, kind) =
   let src = env.current in
   let dst = (Ast.str_of_name name, kind) in
@@ -181,7 +181,7 @@ let rec extract_defs_uses ~phase ~g ~ast ~dupes ~readable ~skip_edges =
   let env = {
     g; phase;
     current = (readable, E.File);
-    current_classname = "";
+    self = ""; parent = "";
     dupes;
     skip_edges;
   } 
@@ -298,12 +298,16 @@ and class_def env def =
       add_use_edge env (c2, E.Class E.RegularClass);
     );
   end;
-  let classname = Ast.str_of_name def.c_name in
-  let env = { env with current_classname = classname } in
+  let self = Ast.str_of_name def.c_name in
+  let parent = 
+    match def.c_extends with 
+    | None -> "" 
+    | Some c2 -> Ast.str_of_name c2
+  in
+  let env = { env with self; parent } in
 
   def.c_constants +> List.iter (fun def ->
-    let node = 
-      (classname ^ "." ^ Ast.str_of_name def.cst_name, E.ClassConstant) in
+    let node = (self ^ "." ^ Ast.str_of_name def.cst_name, E.ClassConstant) in
     if env.phase = Defs then begin
       env.g +> G.add_node node;
       env.g +> G.add_edge (env.current, node) G.Has;
@@ -311,7 +315,7 @@ and class_def env def =
     expr { env with current = node } def.cst_body;
   );
   def.c_variables +> List.iter (fun def ->
-    let node = (classname ^ "." ^ Ast.str_of_name def.cv_name, E.Field) in
+    let node = (self ^ "." ^ Ast.str_of_name def.cv_name, E.Field) in
     if env.phase = Defs then begin
       env.g +> G.add_node node;
       env.g +> G.add_edge (env.current, node) G.Has;
@@ -321,7 +325,7 @@ and class_def env def =
   def.c_methods +> List.iter (fun def ->
     (* less: be more precise at some point *)
     let kind = E.RegularMethod in
-    let node = (classname ^ "." ^ Ast.str_of_name def.f_name, E.Method kind) in
+    let node = (self ^ "." ^ Ast.str_of_name def.f_name, E.Method kind) in
     if env.phase = Defs then begin
       env.g +> G.add_node node;
       env.g +> G.add_edge (env.current, node) G.Has;
