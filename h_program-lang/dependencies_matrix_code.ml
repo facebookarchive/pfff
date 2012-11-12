@@ -79,7 +79,7 @@ type partition_constraints =
  *)
 type projection_cache = (Graph_code.node, Graph_code.node option) Hashtbl.t
 
-let tasks = ref 4
+let tasks = ref 16
 
 (*****************************************************************************)
 (* Globals *)
@@ -517,15 +517,11 @@ let build_full_matrix2 g =
 
   let n = G.nb_use_edges g in
   pr2 (spf "iterating %d edges" n);
-(*
-  Common_extra.execute_and_show_progress2 ~show:!verbose n (fun k ->
-   g +> G.iter_use_edges (fun n1 n2 ->
-    k();
-*)
   let xs = G.all_use_edges g in
   let jobs = 
+  Common_extra.execute_and_show_progress2 ~show:!verbose n (fun k ->
     xs +> List.map (fun (n1, n2) -> 
-    fun () ->
+    k();
     let n1 = projection_index hmemo_proj n1 dm g in
     let n2 = projection_index hmemo_proj n2 dm g in
     match n1, n2 with
@@ -539,9 +535,10 @@ let build_full_matrix2 g =
         (* update_matrix parents_n1 parents_n2 dm; *)
     | _ -> []
     
-  )
+  ))
   in
-  let res = Parallel.map_batch_jobs ~tasks:!tasks jobs +> List.flatten in
+  (*let res = Parallel.map_batch_jobs ~tasks:!tasks jobs +> List.flatten in*)
+  let res = jobs +> List.flatten in
   res +> List.iter (fun (parents_n1, parents_n2) ->
     update_matrix parents_n1 parents_n2 dm
   );
