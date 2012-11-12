@@ -40,6 +40,7 @@ module DM = Dependencies_matrix_code
 let color_of_node (_, kind) =
   match kind with
   | E.Function -> "gold"
+  (* less: different color for interfaces and traits? *)
   | E.Class _ -> "coral"
   | E.Module -> "chocolate"
   | E.Package -> "chocolate"
@@ -51,7 +52,7 @@ let color_of_node (_, kind) =
 
   | E.Method _ -> "gold3"
   | E.Field -> "MediumPurple1"
-  | E.ClassConstant -> raise Todo
+  | E.ClassConstant -> "pink3"
 
   | E.Other s -> raise Todo
 
@@ -61,7 +62,7 @@ let color_of_node (_, kind) =
 let txt_of_node (s, kind) = 
   match kind with
   | E.Dir | E.File -> Common.basename s
-  | E.Method _ | E.Field | E.Package | E.Class _ ->
+  | E.Method _ | E.Field | E.Package | E.Class _ | E.ClassConstant ->
       let xs = Common.split "[.]" s in
       Common.list_last xs
   | _ -> s
