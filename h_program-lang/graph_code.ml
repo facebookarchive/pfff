@@ -227,6 +227,10 @@ let iter_use_edges f g =
 let iter_nodes f g =
   G.iter_nodes f g.has
 
+let all_use_edges g =
+  let res = ref [] in
+  G.iter_edges (fun n1 n2 -> Common.push2 (n1, n2) res) g.use;
+  !res
 
 (*****************************************************************************)
 (* Helpers *)

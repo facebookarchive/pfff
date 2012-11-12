@@ -47,6 +47,7 @@ val all_children: node -> graph -> node list
 
 val iter_use_edges: (node -> node -> unit) -> graph -> unit
 val iter_nodes: (node -> unit) -> graph -> unit
+val all_use_edges: graph -> (node * node) list
 
 val nb_nodes: graph -> int
 val nb_use_edges: graph -> int
