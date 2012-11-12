@@ -40,6 +40,7 @@ open Ast_php_simple
  *       -> Dir -> SubDir -> Module? -> ...
  * 
  * todo: 
+ *  - add pos info in nodeinfo
  *  - handle Interface and Traits, do not translate then in RegularClass?
  *  - reuse env, most of of build() and put it in graph_code.ml
  *    and just pass the PHP specificities.
@@ -56,6 +57,8 @@ type env = {
 
   phase: phase;
   current: Graph_code.node;
+  (* empty when outside a class *)
+  current_classname: string;
 
   (* we use the Hashtbl.find_all property *)
   skip_edges: (string, string) Hashtbl.t;
@@ -167,6 +170,10 @@ let node_of_toplevel_opt x =
     -> None
 
 (*****************************************************************************)
+(* Lookup *)
+(*****************************************************************************)
+
+(*****************************************************************************)
 (* Defs/Uses *)
 (*****************************************************************************)
 let rec extract_defs_uses ~phase ~g ~ast ~dupes ~readable ~skip_edges =
@@ -174,6 +181,7 @@ let rec extract_defs_uses ~phase ~g ~ast ~dupes ~readable ~skip_edges =
   let env = {
     g; phase;
     current = (readable, E.File);
+    current_classname = "";
     dupes;
     skip_edges;
   } 
@@ -290,15 +298,35 @@ and class_def env def =
       add_use_edge env (c2, E.Class E.RegularClass);
     );
   end;
+  let classname = Ast.str_of_name def.c_name in
+  let env = { env with current_classname = classname } in
 
   def.c_constants +> List.iter (fun def ->
-    expr env def.cst_body;
+    let node = 
+      (classname ^ "." ^ Ast.str_of_name def.cst_name, E.ClassConstant) in
+    if env.phase = Defs then begin
+      env.g +> G.add_node node;
+      env.g +> G.add_edge (env.current, node) G.Has;
+    end;
+    expr { env with current = node } def.cst_body;
   );
   def.c_variables +> List.iter (fun def ->
-    Common.opt (expr env) def.cv_value
+    let node = (classname ^ "." ^ Ast.str_of_name def.cv_name, E.Field) in
+    if env.phase = Defs then begin
+      env.g +> G.add_node node;
+      env.g +> G.add_edge (env.current, node) G.Has;
+    end;
+    Common.opt (expr {env with current = node}) def.cv_value
   );
   def.c_methods +> List.iter (fun def ->
-    stmtl env def.f_body
+    (* less: be more precise at some point *)
+    let kind = E.RegularMethod in
+    let node = (classname ^ "." ^ Ast.str_of_name def.f_name, E.Method kind) in
+    if env.phase = Defs then begin
+      env.g +> G.add_node node;
+      env.g +> G.add_edge (env.current, node) G.Has;
+    end;
+    stmtl { env with current = node } def.f_body
   )
 
 and constant_def env def =
