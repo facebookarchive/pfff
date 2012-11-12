@@ -74,8 +74,12 @@ type config_path = config_path_elem list
 type partition_constraints = 
   (string, string list) Hashtbl.t
 
-(* optimization *)
+(* optimization, given a deep node, what is the node present in the
+ * matrix that "represents" this deep node.
+ *)
 type projection_cache = (Graph_code.node, Graph_code.node option) Hashtbl.t
+
+let tasks = ref 4
 
 (*****************************************************************************)
 (* Globals *)
@@ -90,9 +94,9 @@ let verbose = ref false
  * displayed in the matrix. The 'hmemo' passed should be related
  * to the 'dm' because two different matrices should lead to different
  * projections.
+ * todo: profile this? optimize?
  *)
 let rec projection2 hmemo n dm g =
-  (* todo: profile this? optimize? *)
   Common.memoized hmemo n (fun () ->
     match () with
     | _ when Hashtbl.mem dm.name_to_i n -> Some n
@@ -513,22 +517,34 @@ let build_full_matrix2 g =
 
   let n = G.nb_use_edges g in
   pr2 (spf "iterating %d edges" n);
+(*
   Common_extra.execute_and_show_progress2 ~show:!verbose n (fun k ->
    g +> G.iter_use_edges (fun n1 n2 ->
     k();
+*)
+  let xs = G.all_use_edges g in
+  let jobs = 
+    xs +> List.map (fun (n1, n2) -> 
+    fun () ->
     let n1 = projection_index hmemo_proj n1 dm g in
     let n2 = projection_index hmemo_proj n2 dm g in
-    (match n1, n2 with
+    match n1, n2 with
     | Some n1, Some n2 ->
         let n1 = Hashtbl.find dm.i_to_name n1 in
         let n2 = Hashtbl.find dm.i_to_name n2 in
         let parents_n1 = parents hmemo_parents n1 g dm in
         let parents_n2 = parents hmemo_parents n2 g dm in
         (* cross product *)
-        update_matrix parents_n1 parents_n2 dm;
-    | _ -> ()
-    )
-  ));
+        [(parents_n1, parents_n2)]
+        (* update_matrix parents_n1 parents_n2 dm; *)
+    | _ -> []
+    
+  )
+  in
+  let res = Parallel.map_batch_jobs ~tasks:!tasks jobs +> List.flatten in
+  res +> List.iter (fun (parents_n1, parents_n2) ->
+    update_matrix parents_n1 parents_n2 dm
+  );
   dm
 
 let build_full_matrix a = 
