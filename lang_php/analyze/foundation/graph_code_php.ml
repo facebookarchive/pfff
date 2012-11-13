@@ -43,6 +43,9 @@ open Ast_php_simple
  * todo: 
  *  - add pos info in nodeinfo
  *  - handle Interface and Traits, do not translate then in RegularClass?
+ *  - handle static vs non static methods/fields (but at the same time
+ *    lots of our code abuse $this-> where they should use self::, so
+ *    maybe simpler not make difference between static and non static)
  *  - reuse env, most of of build() and put it in graph_code.ml
  *    and just pass the PHP specificities.
  *  - add tests
@@ -384,6 +387,7 @@ and expr env x =
       then ()
       else add_use_edge env (Ast.str_of_name name, E.Constant)
 
+  (* -------------------------------------------------- *)
   | Call (e, es) ->
     (match e with
     (* simple function call *)
@@ -431,6 +435,7 @@ and expr env x =
       exprl env es
     )
 
+  (* -------------------------------------------------- *)
   (* This should be executed only for field access. Calls should have
    * been catched in the Call pattern above.
    *)
@@ -468,6 +473,7 @@ and expr env x =
   | New (e, es) ->
       expr env (Call (Class_get(e, Id ("__construct", None)), es))
 
+  (* -------------------------------------------------- *)
   (* boilerplate *)
   | List xs -> exprl env xs
   | Assign (_, e1, e2) -> exprl env [e1;e2]
