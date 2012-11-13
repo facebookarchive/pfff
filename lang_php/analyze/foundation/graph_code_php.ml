@@ -354,9 +354,9 @@ and expr env x =
    * there is the use of a constant.
    *)
   | Id name -> 
-      if Ast.is_variable name 
-      then ()
-      else add_use_edge env (name, E.Constant)
+    if Ast.is_variable name 
+    then ()
+    else add_use_edge env (name, E.Constant)
 
   | Call (e, es) ->
     (match e with
@@ -385,9 +385,11 @@ and expr env x =
           expr env e1;
           exprl env es
 
-      (* todo: increment dynamic_fails stats *)
-      | _ -> expr env e; exprl env es
-      )
+    (* todo: increment dynamic_fails stats *)
+    | _ -> 
+      expr env e; 
+      exprl env es
+    )
 
   (* This should be executed only for field access. Calls should have
    * been catched in the Call pattern above.
@@ -479,10 +481,10 @@ and array_valuel env xs = List.iter (array_value env) xs
 let build ?(verbose=true) dir skip_list =
   let root = Common.realpath dir in
   let all_files = Lib_parsing_php.find_php_files_of_dir_or_files [root] in
-
+  
   (* step0: filter noisy modules/files *)
   let files = Skip_code.filter_files ~verbose skip_list root all_files in
-
+  
   let g = G.create () in
   G.create_initial_hierarchy g;
 
