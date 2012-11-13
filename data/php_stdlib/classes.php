@@ -59,6 +59,8 @@ class  BadFunctionCallException extends LogicException { }
 //http://php.net/manual/en/class.badmethodcallexception.php
 class BadMethodCallException extends  BadFunctionCallException { }
 
+class DomainException extends LogicException  { }
+
 // ***************************************************************************
 // Reflection
 // ***************************************************************************
@@ -91,11 +93,21 @@ class RecursiveIteratorIterator { }
 //http://php.net/manual/en/class.recursivedirectoryiterator.php
 class RecursiveDirectoryIterator { }
 
+class FilterIterator { }
+// extends IteratorIterator implements OuterIterator , Traversable , Iterator {
+
 // ***************************************************************************
-// Iterators
+// Used by phabricator
+// ***************************************************************************
+
+// http://www.php.net/manual/en/class.com.php
+class COM { }
+
+
+// ***************************************************************************
+// Now in HPHP idl files
 // ***************************************************************************
 // ------------------------------------------
-// Now in HPHP idl files
 // ------------------------------------------
 
 // http://us2.php.net/DOMDocument
