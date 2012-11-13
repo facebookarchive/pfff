@@ -184,6 +184,9 @@ and expr =
    * So can have Id "foo" and Id "$foo". Can also contain "self/parent".
    * Can also be "true", "false", "null" and many other builtin constants.
    * See builtin() and special() below.
+   * 
+   * todo: For field name, if in the code they are referenced like $this->fld,
+   * we should prepend a $ to fld to match their definition.
    *
    * todo? Introduce a Var of name? can be good to differentiate
    * them no? We do lots of ... when Ast.is_variable name.
@@ -341,6 +344,7 @@ and class_def = {
     | Trait
 
   and class_var = {
+    (* note that the name will contain a $ *)
     cv_name: name;
     cv_type: hint_type option;
     cv_value: expr option;
