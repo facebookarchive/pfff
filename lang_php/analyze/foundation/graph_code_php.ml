@@ -57,9 +57,9 @@ type env = {
 
   phase: phase;
   current: Graph_code.node;
-  (* empty when outside a class *)
+  (* "NOSELF" when outside a class *)
   self: string;
-  (* empty when no parent *)
+  (* "NOPARENT" when no parent *)
   parent: string;
 
   (* we use the Hashtbl.find_all property *)
@@ -181,7 +181,7 @@ let rec extract_defs_uses ~phase ~g ~ast ~dupes ~readable ~skip_edges =
   let env = {
     g; phase;
     current = (readable, E.File);
-    self = ""; parent = "";
+    self = "NOSELF"; parent = "NOPARENT";
     dupes;
     skip_edges;
   } 
