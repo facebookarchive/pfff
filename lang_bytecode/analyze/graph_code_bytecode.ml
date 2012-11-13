@@ -163,9 +163,9 @@ let (lookup2:
     then None
     else 
       let children = G.children current g in
+      let full_name = (fst current ^ "." ^ fld) in
       let res =
         children +> Common.find_some_opt (fun (s2, kind) ->
-          let full_name = (fst current ^ "." ^ fld) in
           if full_name =$= s2
           then Some (s2, kind)
           else None
