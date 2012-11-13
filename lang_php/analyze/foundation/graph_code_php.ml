@@ -359,35 +359,46 @@ and expr env x =
       else add_use_edge env (name, E.Constant)
 
   | Call (e, es) ->
-      (match e with
-      (* simple function call *)
-      | Id name when not (Ast.is_variable name) ->
-          add_use_edge env (name, E.Function)
+    (match e with
+    (* simple function call *)
+    | Id name when not (Ast.is_variable name) ->
+      add_use_edge env (name, E.Function);
+      exprl env es
 
-      (* static method call *)
-      | Class_get (Id name1, Id name2) 
-          when not (Ast.is_variable name1) && not (Ast.is_variable name2) ->
-          (* todo: handle self, parent (and in traits??) *)
-          let _aclass = Ast.str_of_name name1 in
-          let _amethod = Ast.str_of_name name2 in
-          add_use_edge env (name1, E.Class E.RegularClass)
+    (* static method call *)
+    | Class_get (Id ("__special__self", tok), e2) ->
+      expr env (Call (Class_get (Id (env.self, tok), e2), es))
+    | Class_get (Id ("__special__parent", tok), e2) ->
+      expr env (Call (Class_get (Id (env.parent, tok), e2), es))
 
-      (* object call *)
-      | Obj_get (e1, Id name2) 
-          when not (Ast.is_variable name2) ->
-         (* handle easy case, $this-> *)
-          expr env e1
+    | Class_get (Id name1, Id name2) 
+        when not (Ast.is_variable name1) && not (Ast.is_variable name2) ->
+         let _aclass = Ast.str_of_name name1 in
+         let _amethod = Ast.str_of_name name2 in
+         add_use_edge env (name1, E.Class E.RegularClass);
+         exprl env es
+
+    (* object call *)
+    | Obj_get (e1, Id name2) 
+        when not (Ast.is_variable name2) ->
+          (* handle easy case, $this-> *)
+          expr env e1;
+          exprl env es
 
       (* todo: increment dynamic_fails stats *)
-      | _ -> expr env e
-      );
-      exprl env es
+      | _ -> expr env e; exprl env es
+      )
 
   (* This should be executed only for field access. Calls should have
    * been catched in the Call pattern above.
    *)
   | Class_get (e1, e2) ->
       (match e1, e2 with
+      | Id ("__special__self", tok), _ ->
+        expr env (Class_get (Id (env.self, tok), e2))
+      | Id ("__special__parent", tok), _ ->
+        expr env (Class_get (Id (env.parent, tok), e2))
+
       | Id name1, Id name2
         when not (Ast.is_variable name1) && not (Ast.is_variable name2) ->
           add_use_edge env (name1, E.Class E.RegularClass)
