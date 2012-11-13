@@ -412,7 +412,6 @@ and expr env x =
            | "__construct" -> ()
            | _ -> add_use_edge env node
            )
-         (* old: add_use_edge env (name1, E.Class E.RegularClass); *)
          | Some n -> add_use_edge env n
          );
          exprl env es
@@ -420,15 +419,15 @@ and expr env x =
     (* object call *)
     | Obj_get (e1, Id name2)  when not (Ast.is_variable name2) ->
         (match e1 with
-        (* handle easy case, $this-> *)
+        (* handle easy case *)
         | This (_,tok) ->
           expr env (Call (Class_get (Id (env.self, tok), Id name2), es))
+        (* need class analysis ... *)
         | _ -> 
           (* todo: increment dynamic_fails stats *)
           expr env e1;
           exprl env es
         )
-
     (* todo: increment dynamic_fails stats *)
     | _ -> 
       expr env e; 
