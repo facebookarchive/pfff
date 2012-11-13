@@ -89,9 +89,11 @@ type env = {
 let _hmemo = Hashtbl.create 101
 let parse2 file = 
   try 
+    Common.save_excursion Ast_php_simple_build.store_position true (fun () ->
     let cst = Parse_php.parse_program file in
     let ast = Ast_php_simple_build.program cst in
     ast
+    )
   with
   | Timeout -> raise Timeout
   | exn ->
@@ -115,7 +117,9 @@ let rec add_use_edge env ((str, kind) as dst) =
       if Hashtbl.mem env.skip_edges s1 &&
          List.mem s2 (Hashtbl.find_all env.skip_edges s1)
       then pr2 (spf "SKIPPING: %s --> %s" s1 s2)
-      else G.add_edge (src, dst) G.Use env.g
+      else 
+        G.add_edge (src, dst) G.Use env.g
+
   | _ -> 
       (match kind with
       (* if dst is a Class, then try Interface *)
@@ -330,7 +334,7 @@ and class_def env def =
   let self = Ast.str_of_name def.c_name in
   let parent = 
     match def.c_extends with 
-    | None -> "" 
+    | None -> "NOPARENT" 
     | Some c2 -> Ast.str_of_name c2
   in
   let env = { env with self; parent } in

@@ -408,7 +408,11 @@ let tok_of_name (s, x) =
   | Some tok -> tok
 
 (* todo: probably better to have different Id and Var constructors *)
-let is_variable (s, _) =
+let is_variable (s, tok) =
+  if s = "" then begin 
+    Common.pr2_gen tok;
+    failwith "empty variable???"
+  end;
   s.[0] = '$'
 
 (* we sometimes need to remove the '$' prefix *)
