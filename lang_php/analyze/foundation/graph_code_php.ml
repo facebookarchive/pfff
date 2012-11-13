@@ -42,10 +42,10 @@ open Ast_php_simple
  * 
  * todo: 
  *  - add pos info in nodeinfo
- *  - handle Interface and Traits, do not translate then in RegularClass?
- *  - handle static vs non static methods/fields (but at the same time
+ *  - handle Interface and Traits, do not translate them in RegularClass?
+ *  - handle static vs non static methods/fields? but at the same time
  *    lots of our code abuse $this-> where they should use self::, so
- *    maybe simpler not make difference between static and non static)
+ *    maybe simpler not make difference between static and non static
  *  - reuse env, most of of build() and put it in graph_code.ml
  *    and just pass the PHP specificities.
  *  - add tests
@@ -383,6 +383,7 @@ and expr env x =
    * there is the use of a constant.
    *)
   | Id name -> 
+      (* a parameter or local variable *)
       if Ast.is_variable name 
       then ()
       else add_use_edge env (Ast.str_of_name name, E.Constant)
@@ -432,11 +433,12 @@ and expr env x =
     | _ -> 
       expr env e; 
       exprl env es
+    (* todo: increment dynamic_fails stats also when use func_call_args() *)
     )
 
   (* -------------------------------------------------- *)
-  (* This should be executed only for field access. Calls should have
-   * been catched in the Call pattern above.
+  (* This should be executed only for access to class constants or static
+   * class variable; calls should have been catched in the Call pattern above.
    *)
   | Class_get (e1, e2) ->
       (match e1, e2 with
@@ -447,27 +449,48 @@ and expr env x =
 
       | Id name1, Id name2
         when not (Ast.is_variable name1) && not (Ast.is_variable name2) ->
-          add_use_edge env (Ast.str_of_name name1, E.Class E.RegularClass)
+          let aclass = Ast.str_of_name name1 in
+          let aconstant = Ast.str_of_name name2 in
+          let node = (aclass ^ "." ^ aconstant, E.ClassConstant) in
+          (match lookup env.g (aclass, aconstant) with
+          | None -> add_use_edge env node
+          (* less: assert kind = ClassConstant? *)
+          | Some n -> add_use_edge env n
+          )
 
-      | Id name1, e2 when not (Ast.is_variable name1) ->
+      | Id name1, Id name2
+        when not (Ast.is_variable name1) && (Ast.is_variable name2) ->
+          let aclass = Ast.str_of_name name1 in
+          let astatic_var = Ast.str_of_name name2 in
+          let node = (aclass ^ "." ^ astatic_var, E.Field) in
+          (match lookup env.g (aclass, astatic_var) with
+          | None -> add_use_edge env node
+          (* less: assert kind = Static variable *)
+          | Some n -> add_use_edge env n
+          )
+ 
+     (* todo: update dynamic stats *)
+     | Id name1, e2 when not (Ast.is_variable name1) ->
           add_use_edge env (Ast.str_of_name name1, E.Class E.RegularClass);
           expr env e2;
+     | e1, Id name2 when not (Ast.is_variable name2) ->
+       expr env e1;
+     | _ -> 
+       exprl env [e1; e2]
+      )
 
-      (* todo: update dynamic stats *)
-      | e1, Id name2 when not (Ast.is_variable name2) ->
-          expr env e1;
-      | _ -> 
-          exprl env [e1; e2]
-      );
-  (* Same, should be executed only for field access *)
+  (* same, should be executed only for field access *)
   | Obj_get (e1, e2) ->
       (match e1, e2 with
+      (* handle easy case *)
+      | This (_, tok), Id name2 when not (Ast.is_variable name2) ->
+          let (s2, tok2) = name2 in
+          expr env (Class_get (Id (env.self, tok), Id ("$" ^ s2, tok2)))
       | _, Id name2 when not (Ast.is_variable name2) ->
-          (* handle easy case, $this-> *)
           expr env e1;
       | _ ->
           exprl env [e1; e2]
-      );
+      )
 
   | New (e, es) ->
       expr env (Call (Class_get(e, Id ("__construct", None)), es))
