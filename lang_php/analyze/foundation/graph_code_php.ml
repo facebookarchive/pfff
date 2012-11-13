@@ -98,9 +98,8 @@ let parse a = Common.memoized _hmemo a (fun () -> parse2 a)
 
 
 (* assumes name has already been resolved by a lookup() *)
-let rec add_use_edge env (name, kind) =
+let rec add_use_edge env ((str, kind) as dst) =
   let src = env.current in
-  let dst = (Ast.str_of_name name, kind) in
   (match () with
   (* maybe nested function, in which case we dont have the def *)
   | _ when not (G.has_node src env.g) ->
@@ -123,7 +122,7 @@ let rec add_use_edge env (name, kind) =
       *)
       | _ ->
           let kind_original = kind in
-          let dst = (Ast.str_of_name name, kind_original) in
+          let dst = (str, kind_original) in
 
           G.add_node dst env.g;
           let parent_target = G.not_found in
@@ -173,6 +172,33 @@ let node_of_toplevel_opt x =
 (* Lookup *)
 (*****************************************************************************)
 
+let lookup2 g (aclass, amethod_or_field_or_constant) =
+  let rec depth current =
+    if not (G.has_node current g)
+    then None
+    else 
+      let children = G.children current g in
+      let full_name = (fst current ^ "." ^ amethod_or_field_or_constant) in
+      let res = 
+        children +> Common.find_some_opt (fun (s2, kind) ->
+          if full_name =$= s2
+          then Some (s2, kind)
+          else None
+        )
+      in
+      match res with
+      | Some x -> Some x
+      | None ->
+        let parents_inheritance = G.succ current G.Use g in
+        breath parents_inheritance
+  and breath xs = xs +> Common.find_some_opt depth
+  in
+  depth (aclass, E.Class E.RegularClass)
+
+let lookup g a = 
+  Common.profile_code "Graph_php.lookup" (fun () ->
+    lookup2 g a
+  )
 (*****************************************************************************)
 (* Defs/Uses *)
 (*****************************************************************************)
@@ -288,14 +314,14 @@ and class_def env def =
   (* opti: could also just push those edges in a _todo ref during Defs *)
   if env.phase = Inheritance then begin
     def.c_extends +> Common.do_option (fun c2 ->
-      add_use_edge env (c2, E.Class E.RegularClass);
+      add_use_edge env (Ast.str_of_name c2, E.Class E.RegularClass);
     );
     (* todo: use Interface and Traits at some point *)
     def.c_implements +> List.iter (fun c2 ->
-      add_use_edge env (c2, E.Class E.RegularClass);
+      add_use_edge env (Ast.str_of_name c2, E.Class E.RegularClass);
     );
     def.c_uses +> List.iter (fun c2 ->
-      add_use_edge env (c2, E.Class E.RegularClass);
+      add_use_edge env (Ast.str_of_name c2, E.Class E.RegularClass);
     );
   end;
   let self = Ast.str_of_name def.c_name in
@@ -354,36 +380,50 @@ and expr env x =
    * there is the use of a constant.
    *)
   | Id name -> 
-    if Ast.is_variable name 
-    then ()
-    else add_use_edge env (name, E.Constant)
+      if Ast.is_variable name 
+      then ()
+      else add_use_edge env (Ast.str_of_name name, E.Constant)
 
   | Call (e, es) ->
     (match e with
     (* simple function call *)
     | Id name when not (Ast.is_variable name) ->
-      add_use_edge env (name, E.Function);
-      exprl env es
+        add_use_edge env (Ast.str_of_name name, E.Function);
+        exprl env es
 
     (* static method call *)
     | Class_get (Id ("__special__self", tok), e2) ->
-      expr env (Call (Class_get (Id (env.self, tok), e2), es))
+        expr env (Call (Class_get (Id (env.self, tok), e2), es))
     | Class_get (Id ("__special__parent", tok), e2) ->
-      expr env (Call (Class_get (Id (env.parent, tok), e2), es))
+        expr env (Call (Class_get (Id (env.parent, tok), e2), es))
 
     | Class_get (Id name1, Id name2) 
         when not (Ast.is_variable name1) && not (Ast.is_variable name2) ->
-         let _aclass = Ast.str_of_name name1 in
-         let _amethod = Ast.str_of_name name2 in
-         add_use_edge env (name1, E.Class E.RegularClass);
+         let aclass = Ast.str_of_name name1 in
+         let amethod = Ast.str_of_name name2 in
+         let node = (aclass ^ "." ^ amethod, E.Method E.RegularMethod) in
+         (match lookup env.g (aclass, amethod) with
+         | None -> 
+           (match amethod with
+           | "__construct" -> ()
+           | _ -> add_use_edge env node
+           )
+         (* old: add_use_edge env (name1, E.Class E.RegularClass); *)
+         | Some n -> add_use_edge env n
+         );
          exprl env es
 
     (* object call *)
-    | Obj_get (e1, Id name2) 
-        when not (Ast.is_variable name2) ->
-          (* handle easy case, $this-> *)
+    | Obj_get (e1, Id name2)  when not (Ast.is_variable name2) ->
+        (match e1 with
+        (* handle easy case, $this-> *)
+        | This (_,tok) ->
+          expr env (Call (Class_get (Id (env.self, tok), Id name2), es))
+        | _ -> 
+          (* todo: increment dynamic_fails stats *)
           expr env e1;
           exprl env es
+        )
 
     (* todo: increment dynamic_fails stats *)
     | _ -> 
@@ -403,10 +443,10 @@ and expr env x =
 
       | Id name1, Id name2
         when not (Ast.is_variable name1) && not (Ast.is_variable name2) ->
-          add_use_edge env (name1, E.Class E.RegularClass)
+          add_use_edge env (Ast.str_of_name name1, E.Class E.RegularClass)
 
       | Id name1, e2 when not (Ast.is_variable name1) ->
-          add_use_edge env (name1, E.Class E.RegularClass);
+          add_use_edge env (Ast.str_of_name name1, E.Class E.RegularClass);
           expr env e2;
 
       (* todo: update dynamic stats *)
