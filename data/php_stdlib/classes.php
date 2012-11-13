@@ -19,7 +19,8 @@ class Exception {
   public function __construct($message = "", $code = 0, $previous = NULL) { }
   //([ string $message = "" [, int $code = 0 [, Exception $previous = NULL ]]] )
 
-//final public string getMessage ( void )
+  final public function /*string*/ getMessage() { }
+
 //final public Exception getPrevious ( void )
 //final public int getCode ( void )
 //final public string getFile ( void )
