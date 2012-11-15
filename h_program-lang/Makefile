@@ -13,7 +13,7 @@ SRC= programming_language.ml \
      skip_code.ml \
      refactoring_code.ml \
      layer_code.ml database_code.ml \
-     graph_code.ml dependencies_matrix_code.ml \
+     graph_code.ml graph_code_opti.ml dependencies_matrix_code.ml \
      tags_file.ml \
      statistics_code.ml statistics_parsing.ml layer_parse_errors.ml \
      coverage_code.ml layer_coverage.ml \

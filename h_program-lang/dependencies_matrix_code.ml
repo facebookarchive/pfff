@@ -544,6 +544,63 @@ let build_full_matrix2 g =
   );
   dm
 
+(*****************************************************************************)
+(* Building optimized matrix 2 *)
+(*****************************************************************************)
+
+let build_full_matrix3 g =
+  let h = Graph_code_opti.convert g in
+  let nodes = top_nodes_of_graph_until_threshold g in
+
+  let n = List.length nodes in
+  let n_all = G.nb_nodes g in
+  pr2 (spf "Building full matrix, n = %d (%d)" n n_all);
+
+  let name_to_iprime = Hashtbl.create (n / 2) in
+  let iprime_to_name = Array.create n ("", E.Dir) in
+  let i_to_iprime = Array.create n_all (-1) in
+
+  let i = ref 0 in
+  pr2 (spf "Building nodes hashes");
+  nodes +> List.iter (fun node ->
+    Hashtbl.add name_to_iprime node !i;
+    iprime_to_name.(!i) <- node;
+    i_to_iprime.(Hashtbl.find h.G2.name_to_i node) <- !i;
+    incr i;
+  );
+  let dm = {
+    matrix = Common.make_matrix_init ~nrow:n ~ncolumn:n (fun i j -> 0);
+    name_to_i = name_to_iprime;
+    i_to_name = iprime_to_name;
+    config = Node (G.root, []);
+  }
+  in
+  
+  let projected_parents_of_i = Array.create n_all [] in
+  let iroot = Hashtbl.find h.G2.name_to_i G.root in
+  let rec depth parents i =
+    let children = h.G2.has_children.(i) in
+    let iprime = i_to_iprime.(i) in
+    let parents = 
+      if iprime = -1 
+      then parents
+      else iprime::parents
+    in
+    projected_parents_of_i.(i) <- parents;
+    children +> List.iter (depth parents);
+  in
+  depth [] iroot;
+
+  h.G2.use +> Array.iteri (fun i xs ->
+    let parents_i = projected_parents_of_i.(i) in
+    xs +> List.iter (fun j ->
+      let parents_j = projected_parents_of_i.(j) in
+      (* cross product *)
+      update_matrix parents_i parents_j dm;
+    );
+  );
+  dm
+
 let build_full_matrix a = 
   Common.profile_code "DM.build_full_matrix" (fun () -> build_full_matrix2 a)
 
