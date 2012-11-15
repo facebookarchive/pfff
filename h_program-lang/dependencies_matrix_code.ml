@@ -16,6 +16,7 @@ open Common
 
 module E = Database_code
 module G = Graph_code
+module G2 = Graph_code_opti
 
 (*****************************************************************************)
 (* Prelude *)
@@ -35,7 +36,7 @@ module G = Graph_code
 type dm = {
   matrix: int array array;
   name_to_i: (Graph_code.node, int) Hashtbl.t;
-  i_to_name: (int, Graph_code.node) Hashtbl.t;
+  i_to_name: Graph_code.node array;
   (* which nodes are currently expanded *)
   config: config;
 }
@@ -310,8 +311,7 @@ let build_with_tree2 tree hmemo full_matrix_opt g =
     matrix = Common.make_matrix_init ~nrow:n ~ncolumn:n (fun i j -> 0);
     name_to_i = 
       Common.index_list_0 nodes +> Common.hash_of_list;
-    i_to_name = 
-      Common.index_list_0 nodes +> List.map Common.swap +> Common.hash_of_list;
+    i_to_name = Array.of_list nodes;
     config = tree;
   }
   in
@@ -332,8 +332,8 @@ let build_with_tree2 tree hmemo full_matrix_opt g =
       let hdone = Hashtbl.create 101 in
       for i = 0 to n - 1 do
         for j = 0 to n - 1 do
-          let n1 = Hashtbl.find dm.i_to_name i in
-          let n2 = Hashtbl.find dm.i_to_name j in
+          let n1 = dm.i_to_name.(i) in
+          let n2 = dm.i_to_name.(j) in
 
           try 
             let i' = Hashtbl.find fulldm.name_to_i n1 in
@@ -497,12 +497,12 @@ let build_full_matrix2 g =
   pr2 (spf "Building full matrix, n = %d (%d)" n n_all);
 
   let name_to_i = Hashtbl.create (n / 2) in
-  let i_to_name = Hashtbl.create (n / 2) in
+  let i_to_name = Array.create n ("", E.Dir) in
   let i = ref 0 in
   pr2 (spf "Building nodes hashes");
   nodes +> List.iter (fun node ->
     Hashtbl.add name_to_i node !i;
-    Hashtbl.add i_to_name !i node;
+    i_to_name.(!i) <- node;
     incr i;
   );
   let dm = {
@@ -526,8 +526,8 @@ let build_full_matrix2 g =
     let n2 = projection_index hmemo_proj n2 dm g in
     match n1, n2 with
     | Some n1, Some n2 ->
-        let n1 = Hashtbl.find dm.i_to_name n1 in
-        let n2 = Hashtbl.find dm.i_to_name n2 in
+        let n1 = dm.i_to_name.(n1) in
+        let n2 = dm.i_to_name.(n2) in
         let parents_n1 = parents hmemo_parents n1 g dm in
         let parents_n2 = parents hmemo_parents n2 g dm in
         (* cross product *)
@@ -555,7 +555,7 @@ let explain_cell_list_use_edges2 hmemo (i, j) dm g =
   let res = ref [] in
 
   (* old: g +> G.iter_use_edges (fun n1 n2 -> *)
-  let src = Hashtbl.find dm.i_to_name i in
+  let src = dm.i_to_name.(i) in
   let children = G.all_children src g in
   children +> List.iter (fun n1 ->
     let uses = G.succ n1 G.Use g in
