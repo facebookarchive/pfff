@@ -142,22 +142,22 @@ let motion_notify da w ev =
           draw_green_yellow_dependent_rows ~cr w i;
           draw_row_column ~color:color_used_by ~cr w i;
           let txt = spf "Row: %s" 
-            (G.string_of_node (Hashtbl.find w.m.DM.i_to_name i)) in
+            (G.string_of_node (w.m.DM.i_to_name.(i))) in
           !Ctl._statusbar_addtext txt;
       | Cell (i, j) ->
           draw_green_yellow_dependent_rows ~cr w i;
           draw_row_column ~color:color_used_by ~cr w i;
           draw_row_column ~color:color_using ~cr w j;
           let txt = spf "Cell: %s x %s" 
-            (G.string_of_node (Hashtbl.find w.m.DM.i_to_name i))
-            (G.string_of_node (Hashtbl.find w.m.DM.i_to_name j))
+            (G.string_of_node (w.m.DM.i_to_name.(i)))
+            (G.string_of_node (w.m.DM.i_to_name.(j)))
           in
           !Ctl._statusbar_addtext txt;
       | Column j ->
           draw_green_yellow_dependent_rows ~cr w j;
           draw_row_column ~color:color_using ~cr w j;
           let txt = spf "Col: %s" 
-            (G.string_of_node (Hashtbl.find w.m.DM.i_to_name j)) in
+            (G.string_of_node (w.m.DM.i_to_name.(j))) in
           !Ctl._statusbar_addtext txt;
 
       )

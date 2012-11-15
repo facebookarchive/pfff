@@ -287,7 +287,7 @@ let draw_up_columns cr w ~interactive_regions =
     Cairo.stroke cr;
 
     if j < l.nb_elts then begin
-      let node = Hashtbl.find w.m.DM.i_to_name j in
+      let node = w.m.DM.i_to_name.(j) in
       Cairo.move_to cr (x + (l.width_cell / 2.0) + (th / 2.0)) (y - 0.001);
       let angle = -. (pi / 4.) in
       Cairo.rotate cr ~angle:angle;
@@ -406,14 +406,14 @@ let button_action da w ev =
             (match GdkEvent.get_type ev, GdkEvent.Button.button ev with
             | `TWO_BUTTON_PRESS, 1 ->
                 pr2 (spf "double clicking on row i");
-                let node = Hashtbl.find w.m.DM.i_to_name i in
+                let node = w.m.DM.i_to_name.(i) in
                 w.path <- add_path (DM.Expand node) 
                   w.path w.model.g;
                 recompute_matrix w;
                 true
             | `BUTTON_PRESS, 3 ->
                 pr2 (spf "right clicking on row i");
-                let node = Hashtbl.find w.m.DM.i_to_name i in
+                let node = w.m.DM.i_to_name.(i) in
                 w.path <- add_path (DM.Focus (node, DM.DepsOut)) 
                   w.path w.model.g;
                 recompute_matrix w;
@@ -445,7 +445,7 @@ let button_action da w ev =
                 pr2 (spf "right clicking on cell (%d, %d)" i j);
                 if i = j
                 then begin
-                  let node = Hashtbl.find w.m.DM.i_to_name j in
+                  let node = w.m.DM.i_to_name.(j) in
                   w.path <- add_path (DM.Focus (node, DM.DepsInOut)) 
                     w.path w.model.g;
                   recompute_matrix w;
@@ -461,7 +461,7 @@ let button_action da w ev =
             (match GdkEvent.get_type ev, GdkEvent.Button.button ev with
             | `BUTTON_PRESS, 3 ->
                 pr2 (spf "right clicking on column j");
-                let node = Hashtbl.find w.m.DM.i_to_name j in
+                let node = w.m.DM.i_to_name.(j) in
                 w.path <- add_path (DM.Focus (node, DM.DepsIn)) 
                   w.path w.model.g;
                 recompute_matrix w;
