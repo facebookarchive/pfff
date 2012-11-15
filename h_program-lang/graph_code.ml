@@ -85,7 +85,9 @@ type nodeinfo = {
   pos: Parse_info.parse_info;
   props: property list;
 }
- (* related: Database_code.property type *)
+ (* related: Database_code.property type 
+  * todo: IsInlinedMethod, ...
+  *)
  and property =
    | IsEnum
 
