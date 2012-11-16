@@ -3243,10 +3243,15 @@ let y_or_no msg =
   pr2 (msg ^ " [y/n] ?");
   if !_batch_mode then true
   else begin
-    match read_line () with
-    | "y" | "yes" | "Y" -> true
-    | "n" | "no"  | "N" -> false
-    | _ -> failwith "answer by yes or no"
+    let rec aux () =
+      match read_line () with
+      | "y" | "yes" | "Y" -> true
+      | "n" | "no"  | "N" -> false
+      | _ -> 
+        pr2 "answer by 'y' or 'n'";
+        aux ()
+    in
+    aux ()
   end
 
 let command2_y_or_no cmd =
