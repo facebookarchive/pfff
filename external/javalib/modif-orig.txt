@@ -4,3 +4,7 @@ Renamed uppercase files like README, INSTALL, COPYRIGHT etc.
 configure now checks for camlzip 1.05 (not 1.04).
 Removed for-pack. 
 The 'make clean' now also removed javalib.*
+
+Created src/jClassLow.ml
+Created from scratch src/MAkefile
+Added some ;_ in record patterns.

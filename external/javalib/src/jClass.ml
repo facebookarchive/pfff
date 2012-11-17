@@ -255,7 +255,7 @@ let get_other_flags = function
 
 let get_method ioc ms =
   match ioc with
-    | JInterface {i_initializer = Some cm}
+    | JInterface {i_initializer = Some cm; _}
 	when (ms_equal cm.cm_signature ms) ->
 	ConcreteMethod cm
     | JInterface i ->
@@ -265,7 +265,7 @@ let get_method ioc ms =
 
 let get_concrete_method ioc ms =
   match ioc with
-    | JInterface {i_initializer = Some cm}
+    | JInterface {i_initializer = Some cm; _}
 	when (ms_equal cm.cm_signature ms) -> cm
     | JInterface _ -> raise Not_found
     | JClass c -> 
@@ -281,7 +281,7 @@ let get_methods = function
 	   | None -> mmap
 	   | Some cm -> MethodMap.add clinit_signature (ConcreteMethod cm) mmap
 	)
-  | JClass {c_methods = mmap} -> mmap
+  | JClass {c_methods = mmap; _} -> mmap
 
 let get_concrete_methods = function
   | JInterface i ->
@@ -289,7 +289,7 @@ let get_concrete_methods = function
 	 | None -> MethodMap.empty
 	 | Some cm -> MethodMap.add clinit_signature cm MethodMap.empty
       )
-  | JClass {c_methods = mmap} ->
+  | JClass {c_methods = mmap;_} ->
       MethodMap.fold
 	(fun ms m mmap ->
 	   match m with
@@ -319,9 +319,9 @@ let defines_method ioc ms =
 
 let defines_field ioc fs =
   match ioc with
-    | JInterface {i_fields = fm} ->
+    | JInterface {i_fields = fm;_} ->
 	FieldMap.mem fs fm
-    | JClass {c_fields = fm} ->
+    | JClass {c_fields = fm;_} ->
 	FieldMap.mem fs fm
 
 let is_static_method = function
@@ -349,8 +349,8 @@ let get_class_method_signature = function
   | ConcreteMethod m -> m.cm_class_method_signature
 
 let get_field_signature = function
-  | InterfaceField {if_signature = fs}
-  | ClassField {cf_signature = fs}
+  | InterfaceField {if_signature = fs;_}
+  | ClassField {cf_signature = fs;_}
     -> fs
 
 let is_final_field = function
@@ -366,8 +366,8 @@ let get_field_visibility = function
   | InterfaceField _ -> `Public
 
 let get_class_field_signature = function
-  | InterfaceField {if_class_signature = cfs}
-  | ClassField {cf_class_signature = cfs}
+  | InterfaceField {if_class_signature = cfs;_}
+  | ClassField {cf_class_signature = cfs;_}
     -> cfs
 
 (* let iter_methods f = function *)
@@ -464,7 +464,7 @@ let am_fold f = function
         c.c_methods
 
 let cm_fold f = function
-  | JInterface {i_initializer = Some m} -> f m
+  | JInterface {i_initializer = Some m;_} -> f m
   | JInterface _ -> identity
   | JClass c ->
       MethodMap.fold
