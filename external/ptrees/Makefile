@@ -61,6 +61,9 @@ clean:
 cleanall:clean
 	$(RM) *.cma *.cmxa
 
+depend:
+	$(OCAMLDEP) $(MODULE_INTERFACES) $(MODULES) > .depend
+
 # Dependencies
 .depend: $(MODULE_INTERFACES) $(MODULES)
 	$(OCAMLDEP) $(MODULE_INTERFACES) $(MODULES) > $@
