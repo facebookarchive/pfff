@@ -251,6 +251,8 @@ MAKESUBDIRS=commons \
   $(THRIFTDIR) \
   $(OCAMLNETDIR) \
   $(GUIDIR) $(CAIRODIR) \
+  $(ZIPDIR) \
+  $(EXTLIBDIR) $(PTDIR) \
   h_version-control \
   h_visualization \
   h_program-lang \
