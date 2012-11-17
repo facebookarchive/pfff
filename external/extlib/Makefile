@@ -19,6 +19,7 @@ extLib.cma: $(SRC)
 	ocamlc -a -o extLib.cma $(SRC)
 
 opt: extLib.cmxa
+all.opt: extLib.cmxa
 
 extLib.cmxa: $(SRC)
 	ocamlopt -a -o extLib.cmxa $(SRC)

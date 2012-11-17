@@ -34,7 +34,8 @@ MODULE_INTERFACES=ptmap.mli ptset.mli
 .PHONY : all clean cleanall cleandoc doc install remove
 .DELETE_ON_ERROR:.depend
 
-all:ptrees.cma ptrees.cmxa
+all:ptrees.cma
+all.opt: ptrees.cmxa
 
 install: META ptrees.cma ptrees.cmxa $(MODULE_INTERFACES) $(MODULE_INTERFACES:.mli=.cmi)
 	$(INSTALL) ptrees $^ ptrees.a
@@ -60,6 +61,9 @@ clean:
 	$(RM) *.o *.a *.cm[iox] *~ *.annot .depend
 cleanall:clean
 	$(RM) *.cma *.cmxa
+
+depend:
+	$(OCAMLDEP) $(MODULE_INTERFACES) $(MODULES) > .depend
 
 # Dependencies
 .depend: $(MODULE_INTERFACES) $(MODULES)
