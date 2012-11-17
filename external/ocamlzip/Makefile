@@ -28,6 +28,7 @@ all: libcamlzip.a zip.cma
 allopt: libcamlzip.a zip.cmxa
 
 opt: allopt
+all.opt: allopt
 
 zip.cma: $(OBJS)
 	$(OCAMLMKLIB) -o zip -oc camlzip $(OBJS) \
