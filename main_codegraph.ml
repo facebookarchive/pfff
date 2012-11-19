@@ -47,15 +47,15 @@ module DM = Dependencies_matrix_code
  * old: $ pm_depend [-lang X] [-with-extern] [-depth n] -o filename /path/dir
  * 
  * related work: 
- * - lattix.com, the startup where the original paper on DSM at OOPSLA'05
+ * - Lattix, the startup where the original paper on DSM at OOPSLA'05
  *   comes from.
- * - ndepend.com, 
+ * - Ndepend, 
  *   http://www.ndepend.com/Doc_VS_Arch.aspx
  *   http://codebetter.com/patricksmacchia/2009/08/24/identify-code-structure-patterns-at-a-glance/
- * - structure101
+ * - Structure101
  *   http://www.headwaysoftware.com/products/index.php#page-top
- * - dsm tool inside intellij idea
- * http://blogs.jetbrains.com/idea/2008/01/intellij-idea-dependency-analysis-with-dsm/
+ * - Intellij IDEA dsm tool
+ *   http://blogs.jetbrains.com/idea/2008/01/intellij-idea-dependency-analysis-with-dsm/
  *   http://www.jetbrains.com/idea/features/dependency_analysis.html
  * 
  * - http://depfind.sourceforge.net/, a dependency extraction tool for
@@ -109,8 +109,8 @@ module DM = Dependencies_matrix_code
  *  - discover DSM of ndepend.com while doing a google search images on
  *    "dependency+graph+visualization"
  * 
- *  - gradually realize the importance of layered structures,
- *    which are actually enforced in OCaml by the linker.
+ *  - gradually realize the importance of layered structures
+ *    (which are actually enforced in OCaml by the linker)
  *  - gradually realize the importance of dependencies and how
  *    they are at the essence of software architecture. Code is
  *    a tree when looked locally (AST), but it's really a graph
@@ -149,7 +149,6 @@ module DM = Dependencies_matrix_code
  *    you lose space because the high-level stuff is at the top but alone.
  *    With gephi/fatlas, by putting high-level stuff at the center, 
  *    you lose less space? Also graphviz does not scale very well.
- * 
  *)
 
 (*****************************************************************************)
@@ -158,9 +157,8 @@ module DM = Dependencies_matrix_code
 
 let verbose = ref false
 
-let deps_style = ref DM.DepsInOut
-
 let lang = ref "ml"
+let deps_style = ref DM.DepsInOut
 
 (* action mode *)
 let action = ref ""
