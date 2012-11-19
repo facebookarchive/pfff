@@ -86,7 +86,8 @@ let test_graph_code () =
 let test_dsm file =
   let g = Graph_code.load file in
   let config = Dependencies_matrix_code.basic_config g in
-  let dm = Dependencies_matrix_code.build config None None g in
+  let gopti = Graph_code_opti.convert g in
+  let dm = Dependencies_matrix_code.build config None None gopti in
   Dependencies_matrix_code.display dm;
   ()
 

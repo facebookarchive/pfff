@@ -355,12 +355,11 @@ let recompute_matrix w =
   let m = 
     Common.profile_code2 "Model.building matrix" (fun () -> 
       Dependencies_matrix_code.build config 
-        (Some w.model.constraints) (Some w.model.full_matrix) w.model.g 
+        (Some w.model.constraints) (Some w.model.full_matrix) w.model.gopti
     )
   in
   !Ctl._set_title (DM.string_of_config_path w.path);
   w.m <- m;
-  w.projection_cache <- Hashtbl.create 101;
   paint w;
   ()
 
@@ -427,8 +426,7 @@ let button_action da w ev =
             | `BUTTON_PRESS, 1 ->
                 pr2 (spf "clicking on cell (%d, %d)" i j);
                 let deps = 
-                  DM.explain_cell_list_use_edges 
-                    w.projection_cache (i, j) w.m w.model.g in
+                  DM.explain_cell_list_use_edges  (i, j) w.m w.model.g in
                 let str = 
                   deps +> List.map (fun (n1, n2) ->
                     spf "%s --> %s"

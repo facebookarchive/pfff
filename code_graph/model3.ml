@@ -32,6 +32,7 @@ type model = {
   root: Common.dirname;
 
   g: Graph_code.graph;
+  gopti: Graph_code_opti.graph;
   full_matrix: Dependencies_matrix_code.dm;
   constraints: Dependencies_matrix_code.partition_constraints;
 }
@@ -49,8 +50,6 @@ type world = {
   mutable path: Dependencies_matrix_code.config_path;
   (* cache of Dependencies_matrix_code.build (config_of_path path) g *)
   mutable m: Dependencies_matrix_code.dm;
-  (* to memoize DM.projection on this particular matrix/path *)
-  mutable projection_cache: Dependencies_matrix_code.projection_cache;
   
   (* set each time in View_matrix.draw_matrix.
    * opti: use a quad tree?
@@ -99,7 +98,7 @@ let config_of_path (path: DM.config_path) m =
         DM.expand_node node config m.g
     | DM.Focus (node, kind) ->
         let dm = 
-          DM.build config None (Some m.full_matrix) m.g
+          DM.build config None (Some m.full_matrix) m.gopti
         in
         DM.focus_on_node node kind config dm
   ) initial_config
@@ -113,12 +112,11 @@ let init_world ?(width = 600) ?(height = 600) path model =
   let m = 
     Common.profile_code2 "Model.building matrix" (fun () -> 
       Dependencies_matrix_code.build config 
-        (Some model.constraints) (Some model.full_matrix) model.g
+        (Some model.constraints) (Some model.full_matrix) model.gopti
     )
   in
   {
     model; 
-    projection_cache = Hashtbl.create 101;
     path;
     interactive_regions = [];
     m;

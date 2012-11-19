@@ -180,15 +180,16 @@ let constraints_of_info_txt info_txt =
 let dep_file dir = 
   Filename.concat dir "graph_code.marshall"
 
-let full_matrix dir = 
-  dep_file dir ^ ".matrix"
-
 let skip_file dir = 
   Filename.concat dir "skip_list.txt"
 
 let build_model root =
   let file = dep_file root in
   let g = Graph_code.load file in
+  let gopti = 
+    Common.cache_computation ~verbose:!verbose file ".opti"
+      (fun () -> Graph_code_opti.convert g)
+  in
   let full_matrix =
     Common.cache_computation ~verbose:!verbose file ".matrix"
       (fun () -> DM.build_full_matrix g)
@@ -201,7 +202,7 @@ let build_model root =
       constraints_of_info_txt info_txt
     else Hashtbl.create 0
   in
-  { Model.g = g; root; full_matrix; constraints }
+  { Model.g = g; gopti; root; full_matrix; constraints }
 
 let dir_node xs =     
   (Common.join "/" xs, Database_code.Dir)
