@@ -494,7 +494,7 @@ let build_full_matrix2 g =
   depth [] iroot;
 
   let n_edges = G.nb_use_edges g in
-  pr2 (spf "Iterating %d edged" n_edges);
+  pr2 (spf "Iterating %d edges" n_edges);
   gopti.G2.use +> Array.iteri (fun i xs ->
     let parents_i = projected_parents_of_igopti.(i) in
     xs +> List.iter (fun j ->
