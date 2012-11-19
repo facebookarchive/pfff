@@ -87,6 +87,7 @@ type nodeinfo = {
 }
  (* related: Database_code.property type 
   * todo: IsInlinedMethod, ...
+  * todo: IsOverriding, IsOverriden
   *)
  and property =
    | IsEnum
@@ -102,13 +103,13 @@ type nodeinfo = {
  * nodes.
  *)
 type graph = {
-  (* Actually the has graph should really be a tree, but we need convenient
+  (* Actually the Has graph should really be a tree, but we need convenient
    * access to the children or parent of a node, which are provided
    * by the graph API so let's reuse that.
    *)
   has: node G.graph;
   (* The source and target should be enough information to understand
-   * the kind of use. For instance a class referencing another class
+   * the kind of Use. For instance a class referencing another class
    * has to be an 'extends'. A class referencing an Interface has to
    * be an 'implements'.
    *)
@@ -122,8 +123,8 @@ type graph = {
 (*****************************************************************************)
 let root = ".", E.Dir
 let pb = "PB", E.Dir
-let not_found = "NOT_FOUND", E.Dir
-let dupe = "DUPE", E.Dir
+ let not_found = "NOT_FOUND", E.Dir
+ let dupe = "DUPE", E.Dir
 let _stdlib = "STDLIB", E.Dir
 
 (*****************************************************************************)
@@ -166,7 +167,6 @@ let add_nodeinfo n info g =
   then failwith "unknown node";
 
   Hashtbl.replace g.info n info
-
 
 (*****************************************************************************)
 (* IO *)
@@ -212,6 +212,7 @@ let rec all_children n g =
   else 
     n::(xs +> List.map (fun n -> all_children n g) +> List.flatten)
 
+
 let nb_nodes g = 
   G.nb_nodes g.has
 let nb_use_edges g =
@@ -256,6 +257,7 @@ let create_intermediate_directories_if_not_present g dir =
   in
   aux root dirs
 
+
 let create_initial_hierarchy g =
   g +> add_node root;
   g +> add_node pb;
@@ -274,7 +276,7 @@ let create_initial_hierarchy g =
 
 let string_of_node (s, kind) =
   E.string_of_entity_kind kind ^ ":" ^ s
-  
+
 
 let display_with_gv g =
   (* TODO? use different colors for the different kind of edges? *)
