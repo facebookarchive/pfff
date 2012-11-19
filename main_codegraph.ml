@@ -203,6 +203,12 @@ let build_model root =
   in
   { Model.g = g; root; full_matrix; constraints }
 
+let dir_node xs =     
+  (Common.join "/" xs, Database_code.Dir)
+let package_node xs = 
+  (Common.join "." xs, Database_code.Package)
+
+
 (*****************************************************************************)
 (* Language specific, building the graph *)
 (*****************************************************************************)
@@ -289,21 +295,31 @@ let main_action xs =
         assert (xs =*= a);
         b
       in
-      pr2 (spf "focusing on on Dir %s" (Common.join "/" readable_subdir));
-      
+      let dir_or_package, start =
+        if GC.has_node (dir_node readable_subdir) model.Model.g
+        then dir_node, readable_subdir
+        else package_node, 
+              try
+               Common.tails readable_subdir +> List.find (fun xs ->
+                 GC.has_node (package_node xs) model.Model.g
+               )
+              with Not_found ->
+                failwith "could not find a Dir or Package"
+      in
+      let (str, kind) = dir_or_package start in
+      pr2 (spf "focusing on %s %s" 
+              (Database_code.string_of_entity_kind kind) str);
       let rec aux before xs =
         match xs with
         | [] -> raise Impossible
         | [x] ->
-            let dir = List.rev (x::before) +> Common.join "/" in
-            let node = dir, Database_code.Dir in
+            let node = dir_or_package (List.rev (x::before)) in
             [DM.Focus (node, !deps_style); DM.Expand node;]
         | x::xs ->
-            let dir = List.rev (x::before) +> Common.join "/" in
-            let node = dir, Database_code.Dir in
+            let node = dir_or_package (List.rev (x::before)) in
             (DM.Expand node)::aux (x::before) xs
       in
-      (aux [] readable_subdir)
+      (aux [] start)
     end
   in
 
