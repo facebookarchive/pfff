@@ -534,7 +534,9 @@ and array_value env = function
   | Aval e -> expr env e
   | Akval (e1, e2) -> exprl env [e1; e2]  
 
+(* todo: dependency to :x:y class? *)
 and xml env x =
+(* todo: dependency on field? *)
   x.xml_attrs +> List.iter (fun (name, xhp_attr) -> expr env xhp_attr);
   x.xml_body +> List.iter (xhp env)
 
