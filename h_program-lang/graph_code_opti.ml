@@ -29,7 +29,6 @@ type graph = {
   i_to_name: Graph_code.node array;
 
   has_children: (int list) array;
-  (* use the multi key property of the hash *)
   use: (int list) array;
 }
 
@@ -65,7 +64,6 @@ let (convert2: Graph_code.graph -> graph) = fun g ->
     );
   );
   h
-
 
 let convert a = 
   Common.profile_code "Graph_code_opti.convert" (fun () -> convert2 a)
