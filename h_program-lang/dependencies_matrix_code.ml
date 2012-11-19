@@ -26,13 +26,42 @@ module G2 = Graph_code_opti
  * a code graph.
  * See http://en.wikipedia.org/wiki/Design_structure_matrix
  * See also main_codegraph.ml
+ * 
+ * history:
+ *  - naive version
+ *  - projection cache, memoize the projection of a node: given a deep node, 
+ *    what is the node present in the matrix that "represents" this deep node
+ *  - full matrix pre-computation optimisation
+ *  - compute lazily deep rows using only a subset of the edges
+ *  - graph code opti, because using arrays is far more efficient than
+ *    hashtbl and/or memoized hashtbl
  *)
 
 (*****************************************************************************)
 (* Types *)
 (*****************************************************************************)
 
-(* Dependency Structure Matrix *)
+(* Dependency Structure Matrix.
+ *  
+ * If A depends on B, e.g. visual/ depends on commons/,
+ * then we will increment 'row of visual' x 'column of commons',
+ * that way one can easily see all the modules that visual/ depends
+ * on by looking at the 'row of visual'.
+ * 
+ * todo: I think Ndepend does the reverse. Also I think Ndepends uses
+ * a symetric matrix model where one can get more information by looking
+ * at both directions. In one direction one can know how many entities A is
+ * using in B, and in the other by how many entities in A some stuff in B
+ * are used. For instance one can see that A is using many different functions
+ * in B, and then can see that actually all those functions are used by
+ * only one thing in A, in which case it's a sign that maybe this function
+ * should be moved in B. This is done I think only when there is a clean
+ * layered archi. When there are cycles then NDepend uses another color
+ * for the cell.
+ * 
+ * todo: coupling/cohesion metrics! the dsm can be helpful to visualize
+ * this? see patterns? use more colors?
+ *)
 type dm = {
   matrix: int array array;
   name_to_i: (Graph_code.node, int) Hashtbl.t;
@@ -57,10 +86,12 @@ let basic_config g =
 type config_path_elem = 
   | Expand of Graph_code.node
   | Focus of Graph_code.node * deps_style
- and deps_style = 
-  | DepsIn
-  | DepsOut
-  | DepsInOut
+
+  and deps_style = 
+   | DepsIn
+   | DepsOut
+   | DepsInOut
+
 type config_path = config_path_elem list
 
 (* We sometimes want to manually order certain entries in the matrix,
@@ -75,12 +106,15 @@ type config_path = config_path_elem list
 type partition_constraints = 
   (string, string list) Hashtbl.t
 
-(* optimization, given a deep node, what is the node present in the
- * matrix that "represents" this deep node.
- *)
-type projection_cache = (Graph_code.node, Graph_code.node option) Hashtbl.t
-
 let tasks = ref 16
+
+(* Phantom types for safer array access between the graph_opti, dm, and
+ * the full matrix dm. Not really used, but could one day.
+ *)
+type 'a idx = int
+type idm
+type igopti
+type ifull
 
 (*****************************************************************************)
 (* Globals *)
@@ -90,30 +124,6 @@ let verbose = ref false
 (*****************************************************************************)
 (* Helpers *)
 (*****************************************************************************)
-
-(* get the parent node of the node under consideration that is
- * displayed in the matrix. The 'hmemo' passed should be related
- * to the 'dm' because two different matrices should lead to different
- * projections.
- * todo: profile this? optimize?
- *)
-let rec projection2 hmemo n dm g =
-  Common.memoized hmemo n (fun () ->
-    match () with
-    | _ when Hashtbl.mem dm.name_to_i n -> Some n
-    (* It's possible we operate on a slice of the original dsm, for instance
-     * when we focus on a node, in which case
-     * the projection of an edge can not project on anything
-     * in the current name_to_i hash.
-     *)
-    | _ when n = G.root -> None
-    | _ -> projection2 hmemo (G.parent n g) dm g
-  )
-let projection a b c d =
-  Common.profile_code "DM.projection" (fun () -> projection2 a b c d)
-
-let projection_index a b dm d = 
-  projection a b dm d +> Common.fmap (fun n -> Hashtbl.find dm.name_to_i n)
 
 let rec final_nodes_of_tree tree =
   match tree with
@@ -291,107 +301,79 @@ let optional_manual_reordering (s, node_kind) nodes constraints_opt =
 (* Building the matrix *)
 (*****************************************************************************)
 
-let build_with_tree2 tree hmemo full_matrix_opt g =
+let build_with_tree2 tree full_matrix_opt gopti =
 
-  (* todo? if expand do we create a line for the expanded? if no
+  (* todo? when we expand do we create a line for the expanded? if no
    * then it will have no projection so the test below is not enough.
    * but may make sense to create a line for it which corresponds to
    * the difference with the children so for all edges that link
    * directly to this one?
    * 
-   * note that if A depends on B, e.g. visual/ depends on commons/,
-   * then we will increment 'row of visual' x 'column of commons',
-   * that way one can easily see all the modules that visual/ depends
-   * on by looking at the 'row of visual'.
    *)
   let nodes = final_nodes_of_tree tree in
   let n = List.length nodes in
+  let n_nodes = G2.nb_nodes gopti in
+
+  let name_to_idm = Hashtbl.create (n / 2) in
+  let idm_to_name = Array.create n ("", E.Dir) in
+  let igopti_to_idm = Array.create n_nodes (-1) in
+
+  let (i: idm idx ref) = ref 0 in
+  nodes +> List.iter (fun node ->
+    Hashtbl.add name_to_idm node !i;
+    idm_to_name.(!i) <- node;
+    igopti_to_idm.(Hashtbl.find gopti.G2.name_to_i node) <- !i;
+    incr i;
+  );
 
   let dm = {
     matrix = Common.make_matrix_init ~nrow:n ~ncolumn:n (fun i j -> 0);
-    name_to_i = 
-      Common.index_list_0 nodes +> Common.hash_of_list;
-    i_to_name = Array.of_list nodes;
+    name_to_i = name_to_idm;
+    i_to_name = idm_to_name;
     config = tree;
   }
   in
-  (match full_matrix_opt with
-  | None ->
-      g +> G.iter_use_edges (fun n1 n2 ->
-        if n1 <> G.root then begin
-          let i = projection_index hmemo n1 dm g in
-          let j = projection_index hmemo n2 dm g in
-          (match i, j with
-          | Some i, Some j ->
-              dm.matrix.(i).(j) <- dm.matrix.(i).(j) + 1
-          | _ -> ()
-          )
-        end
-      );
-  | Some fulldm ->
-      let hdone = Hashtbl.create 101 in
-      for i = 0 to n - 1 do
-        for j = 0 to n - 1 do
-          let n1 = dm.i_to_name.(i) in
-          let n2 = dm.i_to_name.(j) in
+  let (projected_parent_of_igopti: idm idx array) = Array.create n_nodes (-1) in
+  let (iroot: igopti idx) = Hashtbl.find gopti.G2.name_to_i G.root in
+  let rec depth parent igopti =
+    let children = gopti.G2.has_children.(igopti) in
+    let idm = igopti_to_idm.(igopti) in
+    let project = 
+      if idm = -1 
+      then parent
+      else idm
+    in
+    projected_parent_of_igopti.(igopti) <- project;
+    children +> List.iter (depth project);
+  in
+  depth (-1) iroot;
 
-          try 
-            let i' = Hashtbl.find fulldm.name_to_i n1 in
-            let j' = Hashtbl.find fulldm.name_to_i n2 in
-            dm.matrix.(i).(j) <- fulldm.matrix.(i').(j')
-          (* the full matrix contains only the top k nodes,
-           * so the name_to_i may fail ablove. In that case we
-           * need to compute and go through all the edges under
-           * and reproject.
+  (match full_matrix_opt with
+  | _ (* None *) ->
+      gopti.G2.use +> Array.iteri (fun i xs ->
+        let parent_i = projected_parent_of_igopti.(i) in
+        xs +> List.iter (fun j ->
+          let parent_j = projected_parent_of_igopti.(j) in
+          (* It's possible we operate on a slice of the original dsm, 
+           * for instance when we focus on a node, in which case
+           * the projection of an edge can not project on anything
+           * in the current matrix.
            *)
-          with Not_found ->
-            if Hashtbl.mem hdone (i, j) then ()
-            else begin
-              (* let's compute the whole line for n1 *)
-              if not (Hashtbl.mem fulldm.name_to_i n1) then begin
-                (* similar to the opti we do in explain_cell *)
-                pr2 ("computing row without full matrix help");
-                let children = G.all_children n1 g in
-                children +> List.iter (fun n1 ->
-                  let uses = G.succ n1 G.Use g in
-                  uses +> List.iter (fun n2 ->
-                    let j2 = projection_index hmemo n2 dm g in
-                    match j2 with
-                    | Some j2 ->
-                        if not (Hashtbl.mem hdone (i, j2)) then 
-                          dm.matrix.(i).(j2) <- dm.matrix.(i).(j2) + 1;
-                    | None -> 
-                        (* if in Focus mode, the edge might not project
-                         * on anything.
-                         *)
-                        ()
-                  )
-                );
-                for j = 0 to n-1 do
-                  Hashtbl.add hdone (i, j) true;
-                done
-              end;
-              (* let's compute the whole row for n2 *)
-              if not (Hashtbl.mem fulldm.name_to_i n2) then begin
-                (* pr2 ("computing column without full matrix help");*)
-              end;
-            end
-        done
-      done
+          if parent_i <> -1 && parent_j <> -1
+          then 
+            dm.matrix.(parent_i).(parent_j) <- 
+              dm.matrix.(parent_i).(parent_j) + 1
+        )
+      )
+(*  | Some fulldm -> *)
   );
   dm
 
-let build_with_tree a b c d = 
-  Common.profile_code "DM.build_with_tree" (fun () -> build_with_tree2 a b c d)
+let build_with_tree a b c = 
+  Common.profile_code "DM.build_with_tree" (fun () -> build_with_tree2 a b c)
 
 
 let build tree constraints_opt full_matrix_opt g =
-
-  (* we call build_with_tree two times, with different order of nodes,
-   * which does some redundant computation, but the projection at
-   * least can be factorized by using the same projection_cache
-   *)
-  let (hmemo: projection_cache) = Hashtbl.create 101 in
 
   (* let's compute a better reordered tree *)  
   let rec aux tree =
@@ -413,7 +395,7 @@ let build tree constraints_opt full_matrix_opt g =
           in
         
           (* first draft *)
-          let dm = build_with_tree config_depth1 hmemo full_matrix_opt g in
+          let dm = build_with_tree config_depth1 full_matrix_opt g in
           
           (* Now we need to reorder to minimize the number of dependencies in
            * the top right corner of the matrix.
@@ -427,13 +409,11 @@ let build tree constraints_opt full_matrix_opt g =
                  let xs = Hashtbl.find h_children_of_children_nodes n2 in
                  (* recurse *)
                  aux (Node (n2, xs))
-               )
-          )
+               ))
         end
   in
-  
   let ordered_config = aux tree in
-  build_with_tree ordered_config hmemo full_matrix_opt g
+  build_with_tree ordered_config full_matrix_opt g
 
 (*****************************************************************************)
 (* Building optimized matrix *)
@@ -465,155 +445,84 @@ let top_nodes_of_graph_until_threshold g =
   (* old: g +> G.iter_nodes (fun n -> Common.push2 n res); *)
   !res
 
-(* return the list of parents indexes (not nodes) *)
-let rec parents2 hmemo n g dm =
-  Common.memoized hmemo n (fun () ->
-    if n = G.root 
-    then []
-    else
-      let parent = G.parent n g in
-      let i = Hashtbl.find dm.name_to_i n in
-      i::parents2 hmemo parent g dm
-  )
 
-let parents a b c d =
-  Common.profile_code "DM.parents" (fun () -> parents2 a b c d)
-
-let update_matrix2 xs ys dm =
-  xs +> List.iter (fun i ->
-    ys +> List.iter (fun j ->
-      dm.matrix.(i).(j) <- dm.matrix.(i).(j) + 1;
-    )
-  )
-
-let update_matrix a b c =
-  Common.profile_code "DM.update_matrix" (fun () -> update_matrix2 a b c)
-
+(* less: factorize with build_with_tree, the only difference here
+ * is that we update the full list of parents.
+ *)
 let build_full_matrix2 g =
-  let nodes = top_nodes_of_graph_until_threshold g in
-
-  let n = List.length nodes in
-  let n_all = G.nb_nodes g in
-  pr2 (spf "Building full matrix, n = %d (%d)" n n_all);
-
-  let name_to_i = Hashtbl.create (n / 2) in
-  let i_to_name = Array.create n ("", E.Dir) in
-  let i = ref 0 in
-  pr2 (spf "Building nodes hashes");
-  nodes +> List.iter (fun node ->
-    Hashtbl.add name_to_i node !i;
-    i_to_name.(!i) <- node;
-    incr i;
-  );
-  let dm = {
-    matrix = Common.make_matrix_init ~nrow:n ~ncolumn:n (fun i j -> 0);
-    name_to_i;
-    i_to_name;
-    config = Node (G.root, []);
-  }
-  in
-  let hmemo_parents = Hashtbl.create (n / 2) in
-  let hmemo_proj = Hashtbl.create (n / 2) in
-
-  let n = G.nb_use_edges g in
-  pr2 (spf "iterating %d edges" n);
-  let xs = G.all_use_edges g in
-  let jobs = 
-  Common_extra.execute_and_show_progress2 ~show:!verbose n (fun k ->
-    xs +> List.map (fun (n1, n2) -> 
-    k();
-    let n1 = projection_index hmemo_proj n1 dm g in
-    let n2 = projection_index hmemo_proj n2 dm g in
-    match n1, n2 with
-    | Some n1, Some n2 ->
-        let n1 = dm.i_to_name.(n1) in
-        let n2 = dm.i_to_name.(n2) in
-        let parents_n1 = parents hmemo_parents n1 g dm in
-        let parents_n2 = parents hmemo_parents n2 g dm in
-        (* cross product *)
-        [(parents_n1, parents_n2)]
-        (* update_matrix parents_n1 parents_n2 dm; *)
-    | _ -> []
-    
-  ))
-  in
-  (*let res = Parallel.map_batch_jobs ~tasks:!tasks jobs +> List.flatten in*)
-  let res = jobs +> List.flatten in
-  res +> List.iter (fun (parents_n1, parents_n2) ->
-    update_matrix parents_n1 parents_n2 dm
-  );
-  dm
-
-(*****************************************************************************)
-(* Building optimized matrix 2 *)
-(*****************************************************************************)
-
-let build_full_matrix3 g =
-  let h = Graph_code_opti.convert g in
+  let gopti = Graph_code_opti.convert g in
   let nodes = top_nodes_of_graph_until_threshold g in
 
   let n = List.length nodes in
   let n_nodes = G.nb_nodes g in
   pr2 (spf "Building full matrix, n = %d (%d)" n n_nodes);
 
-  let name_to_iprime = Hashtbl.create (n / 2) in
-  let iprime_to_name = Array.create n ("", E.Dir) in
-  let i_to_iprime = Array.create n_nodes (-1) in
+  let name_to_idm = Hashtbl.create (n / 2) in
+  let idm_to_name = Array.create n ("", E.Dir) in
+  let igopti_to_idm = Array.create n_nodes (-1) in
 
-  let i = ref 0 in
+  let (i: idm idx ref) = ref 0 in
   pr2 (spf "Building nodes hashes");
   nodes +> List.iter (fun node ->
-    Hashtbl.add name_to_iprime node !i;
-    iprime_to_name.(!i) <- node;
-    i_to_iprime.(Hashtbl.find h.G2.name_to_i node) <- !i;
+    Hashtbl.add name_to_idm node !i;
+    idm_to_name.(!i) <- node;
+    igopti_to_idm.(Hashtbl.find gopti.G2.name_to_i node) <- !i;
     incr i;
   );
   let dm = {
     matrix = Common.make_matrix_init ~nrow:n ~ncolumn:n (fun i j -> 0);
-    name_to_i = name_to_iprime;
-    i_to_name = iprime_to_name;
+    name_to_i = name_to_idm;
+    i_to_name = idm_to_name;
     config = Node (G.root, []);
   }
   in
   
-  let projected_parents_of_i = Array.create n_nodes [] in
-  let iroot = Hashtbl.find h.G2.name_to_i G.root in
-  let rec depth parents i =
-    let children = h.G2.has_children.(i) in
-    let iprime = i_to_iprime.(i) in
+  let (projected_parents_of_igopti: idm idx list array) = 
+    Array.create n_nodes [] in
+  let iroot = Hashtbl.find gopti.G2.name_to_i G.root in
+  let rec depth parents igopti =
+    let children = gopti.G2.has_children.(igopti) in
+    let idm = igopti_to_idm.(igopti) in
     let parents = 
-      if iprime = -1 
+      if idm = -1 
       then parents
-      else iprime::parents
+      else idm::parents
     in
-    projected_parents_of_i.(i) <- parents;
+    projected_parents_of_igopti.(igopti) <- parents;
     children +> List.iter (depth parents);
   in
   depth [] iroot;
 
   let n_edges = G.nb_use_edges g in
   pr2 (spf "Iterating %d edged" n_edges);
-  h.G2.use +> Array.iteri (fun i xs ->
-    let parents_i = projected_parents_of_i.(i) in
+  gopti.G2.use +> Array.iteri (fun i xs ->
+    let parents_i = projected_parents_of_igopti.(i) in
     xs +> List.iter (fun j ->
-      let parents_j = projected_parents_of_i.(j) in
+      let parents_j = projected_parents_of_igopti.(j) in
       (* cross product *)
-      update_matrix parents_i parents_j dm;
-    );
+      parents_i +> List.iter (fun i ->
+        parents_j +> List.iter (fun j ->
+          dm.matrix.(i).(j) <- dm.matrix.(i).(j) + 1;
+        )
+      )
+    )
   );
   dm
 
 let build_full_matrix a = 
-  Common.profile_code "DM.build_full_matrix" (fun () -> build_full_matrix3 a)
+  Common.profile_code "DM.build_full_matrix" (fun () -> build_full_matrix2 a)
 
 (*****************************************************************************)
 (* Explain the matrix *)
 (*****************************************************************************)
 
-let explain_cell_list_use_edges2 hmemo (i, j) dm g =
-  let res = ref [] in
+let explain_cell_list_use_edges2 (i, j) dm g =
+  let _res = ref [] in
+
+  raise Todo
 
   (* old: g +> G.iter_use_edges (fun n1 n2 -> *)
+(*
   let src = dm.i_to_name.(i) in
   let children = G.all_children src g in
   children +> List.iter (fun n1 ->
@@ -633,10 +542,11 @@ let explain_cell_list_use_edges2 hmemo (i, j) dm g =
     );
   );
   !res
+*)
 
-let explain_cell_list_use_edges a b c d =
+let explain_cell_list_use_edges a b c =
   Common.profile_code "DM.explain_cell" (fun () -> 
-    explain_cell_list_use_edges2 a b c d)
+    explain_cell_list_use_edges2 a b c)
 
 (*****************************************************************************)
 (* tree config manipulation *)

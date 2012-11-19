@@ -20,15 +20,12 @@ val basic_config: Graph_code.graph -> config
 
 val build:
   config -> partition_constraints option -> dm option (* full matrix *) -> 
-  Graph_code.graph -> dm
+  Graph_code_opti.graph -> dm
 
 val build_full_matrix:
   Graph_code.graph -> dm
 
-type projection_cache = (Graph_code.node, Graph_code.node option) Hashtbl.t
-
 val explain_cell_list_use_edges: 
-  projection_cache ->
   (int * int) -> dm -> Graph_code.graph ->
   (Graph_code.node * Graph_code.node) list
 
