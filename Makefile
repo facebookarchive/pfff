@@ -251,8 +251,7 @@ MAKESUBDIRS=commons \
   $(THRIFTDIR) \
   $(OCAMLNETDIR) \
   $(GUIDIR) $(CAIRODIR) \
-  $(ZIPDIR) \
-  $(EXTLIBDIR) $(PTDIR) \
+  $(ZIPDIR)    $(EXTLIBDIR) $(PTDIR) $(JAVALIBDIR) \
   h_version-control \
   h_visualization \
   h_program-lang \
