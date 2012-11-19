@@ -10,3 +10,5 @@ type graph = {
 }
 
 val convert: Graph_code.graph -> graph
+
+val nb_nodes: graph -> int
