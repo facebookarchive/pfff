@@ -553,12 +553,12 @@ let build_full_matrix3 g =
   let nodes = top_nodes_of_graph_until_threshold g in
 
   let n = List.length nodes in
-  let n_all = G.nb_nodes g in
-  pr2 (spf "Building full matrix, n = %d (%d)" n n_all);
+  let n_nodes = G.nb_nodes g in
+  pr2 (spf "Building full matrix, n = %d (%d)" n n_nodes);
 
   let name_to_iprime = Hashtbl.create (n / 2) in
   let iprime_to_name = Array.create n ("", E.Dir) in
-  let i_to_iprime = Array.create n_all (-1) in
+  let i_to_iprime = Array.create n_nodes (-1) in
 
   let i = ref 0 in
   pr2 (spf "Building nodes hashes");
@@ -576,7 +576,7 @@ let build_full_matrix3 g =
   }
   in
   
-  let projected_parents_of_i = Array.create n_all [] in
+  let projected_parents_of_i = Array.create n_nodes [] in
   let iroot = Hashtbl.find h.G2.name_to_i G.root in
   let rec depth parents i =
     let children = h.G2.has_children.(i) in
@@ -591,6 +591,8 @@ let build_full_matrix3 g =
   in
   depth [] iroot;
 
+  let n_edges = G.nb_use_edges g in
+  pr2 (spf "Iterating %d edged" n_edges);
   h.G2.use +> Array.iteri (fun i xs ->
     let parents_i = projected_parents_of_i.(i) in
     xs +> List.iter (fun j ->
@@ -602,7 +604,7 @@ let build_full_matrix3 g =
   dm
 
 let build_full_matrix a = 
-  Common.profile_code "DM.build_full_matrix" (fun () -> build_full_matrix2 a)
+  Common.profile_code "DM.build_full_matrix" (fun () -> build_full_matrix3 a)
 
 (*****************************************************************************)
 (* Explain the matrix *)
