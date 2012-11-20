@@ -724,17 +724,10 @@ variable_modifiers:
  | non_empty_member_modifiers		{ VModifiers $1 }
 
 
-/*(* can not factorize, otherwise shift/reduce conflict *)*/
-class_variable_declaration:
- | T_VARIABLE			{ [Left (DName $1, None)] }
- | T_VARIABLE TEQ static_scalar	{ [Left (DName $1, Some ($2, $3))] }
+class_variable:
+ | T_VARIABLE			{ (DName $1, None) }
+ | T_VARIABLE TEQ static_scalar	{ (DName $1, Some ($2, $3)) }
 
- /*(*s: repetitive class_variable_declaration with comma *)*/
-  | class_variable_declaration TCOMMA T_VARIABLE
-      { $1 ++ [Right $2; Left (DName $3, None)] }
-  | class_variable_declaration TCOMMA T_VARIABLE TEQ static_scalar
-      { $1 ++ [Right $2; Left (DName $3, Some ($4, $5))] }
- /*(*e: repetitive class_variable_declaration with comma *)*/
 /*(*x: GRAMMAR class declaration *)*/
 member_modifier:
  | T_PUBLIC    { Public,($1) } | T_PROTECTED { Protected,($1) }
@@ -1791,6 +1784,14 @@ attribute_argument_list:
 static_var_list:
  | static_var                        { [Left $1] }
  | static_var_list TCOMMA static_var { $1 ++ [Right $2; Left $3] }
+
+class_variable_declaration:
+ | class_variable 
+   { [Left $1] }
+ /*(*s: repetitive class_variable_declaration with comma *)*/
+ | class_variable_declaration TCOMMA class_variable
+      { $1 ++ [Right $2; Left $3] }
+ /*(*e: repetitive class_variable_declaration with comma *)*/
 
 /*(*e: repetitive xxx_list with TCOMMA *)*/
 possible_comma:
