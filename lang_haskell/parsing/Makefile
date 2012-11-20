@@ -23,7 +23,6 @@ SYSLIBS= str.cma unix.cma
 
 # globals.cma is used only for Config.patch in test_parse_nw
 LIBS=$(TOP)/commons/commons.cma \
- $(TOP)/globals/globals.cma \
  $(TOP)/h_program-lang/lib.cma \
 
 INCLUDEDIRS= $(TOP)/commons $(TOP)/commons/ocamlextra \

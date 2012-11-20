@@ -13,9 +13,7 @@ SRC= ast_c.ml \
 
 SYSLIBS= str.cma unix.cma 
 
-# globals.cma is used only for Config. in unit_parse_cpp
 LIBS=$(TOP)/commons/commons.cma \
- $(TOP)/globals/globals.cma \
  $(TOP)/h_program-lang/lib.cma \
  $(TOP)/lang_cpp/parsing/lib.cma
 
