@@ -194,7 +194,7 @@ my $arch = `uname`;
 # as well as the '_' pattern in records (in my code but also in lib-sexp/)
 $error += 
     check_config("echo \"1;;\\n\" | ocaml |",
-                 "Objective(.*) 3.12",
+                 "(Objective|OCaml)(.*) (3\.12|4\.*)",
                  "OCaml (the wonderful language) is present.",
                  "The program ocaml is missing or is not a good version. We need at least 3.12",
                  );
