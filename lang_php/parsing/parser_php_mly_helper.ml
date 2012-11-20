@@ -260,6 +260,7 @@ let sgrep_guard v =
 (*s: AST builder *)
 let mk_param s = 
   { p_type = None;
+    p_attrs = None;
     p_ref = None;
     p_name = DName s;
     p_default = None;

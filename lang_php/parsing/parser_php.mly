@@ -540,8 +540,9 @@ non_empty_parameter_list:
 parameter:
   |               parameter_bis   { $1 }
   | ext_type_hint parameter_bis   { { $2 with p_type = $1 } }
-  | attributes    parameter_bis   { $2 }
-  | attributes ext_type_hint parameter_bis { { $3 with p_type = $2 } }
+  | attributes    parameter_bis   { { $2 with p_attrs = Some $1 } }
+  | attributes ext_type_hint parameter_bis 
+      { { $3 with p_attrs = Some $1; p_type = $2; } }
 
 parameter_bis:
  | T_VARIABLE      

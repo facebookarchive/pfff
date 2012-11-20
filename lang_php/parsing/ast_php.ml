@@ -623,6 +623,7 @@ and func_def = {
 
   (*s: AST function definition rest *)
     and parameter = {
+      p_attrs: attributes option;
       p_type: hint_type option;
       p_ref: is_ref;
       p_name: dname;

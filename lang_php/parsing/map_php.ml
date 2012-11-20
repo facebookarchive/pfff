@@ -815,6 +815,7 @@ and map_function_type =
   | MethodAbstract -> MethodAbstract
 and
   map_parameter {
+                  p_attrs = v_p_attrs;
                   p_type = v_p_type;
                   p_ref = v_p_ref;
                   p_name = v_p_name;
@@ -824,7 +825,9 @@ and
   let v_p_name = map_dname v_p_name in
   let v_p_ref = map_is_ref v_p_ref in
   let v_p_type = map_of_option map_hint_type v_p_type in
+  let v_p_attrs = map_of_option map_attributes v_p_attrs in
   {
+    p_attrs = v_p_attrs;
     p_type = v_p_type;
     p_ref = v_p_ref;
     p_name = v_p_name;

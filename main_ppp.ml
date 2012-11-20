@@ -132,6 +132,7 @@ let mk_param s = {
   p_ref = Some (fkt "&"); (* we want passed by ref *)
   p_name = fkdname s;
   p_default = None;
+  p_attrs = None;
 }
   
 
