@@ -205,7 +205,7 @@ let file_type_of_file2 file =
   | "rtf" -> Text e
 
   | "cmi" | "cmo" | "cmx" | "cma" | "cmxa" 
-  | "annot"
+  | "annot" | "cmt" | "cmti"
   | "o" | "a"
   | "pyc" 
   | "log"

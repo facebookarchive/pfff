@@ -1,5 +1,5 @@
 
-type file_type = 
+type file_type =
   | PL of pl_type
   | Obj of string
   | Binary of string
