@@ -22,3 +22,7 @@ function f() { /* .. */ }
 // in attribute expressions are not allowed to contain user defined constants.
 // User attributes can be applied to classes and functions and methods, but
 // they cannot be applied to closures.
+
+// you can also have attribute on parameters
+function g(<<Data>> $a, <<Data>> String $b, $c) {
+}
