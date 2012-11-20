@@ -56,7 +56,7 @@ let find_source_files_of_dir_or_files xs =
   Common.files_of_dir_or_files_no_vcs_nofilter xs 
   +> List.filter (fun filename ->
     match File_type.file_type_of_file filename with
-    | FT.Obj "cmt" -> true
+    | File_type.Obj "cmt" -> true
     | _ -> false
   ) +> Common.sort
 
@@ -65,4 +65,5 @@ let find_source_files_of_dir_or_files xs =
 (*****************************************************************************)
 
 let build ?(verbose=true) dir_or_file skip_list =
-  let root = Common.realpath dir_or_file in
+  let _root = Common.realpath dir_or_file in
+  raise Todo
