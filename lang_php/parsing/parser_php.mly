@@ -525,36 +525,26 @@ parameter_list:
  | non_empty_parameter_list   { $1 }
  | /*(*empty*)*/              { [] }
 
-/*(* can not factorize, otherwise shift/reduce conflict *)*/
-non_empty_parameter_list:
+parameter:
  | type_hint_opt T_VARIABLE
-     { let p = mk_param $1 $2 in [Left3 p] }
+     { let p = mk_param $1 $2 in Left3 p }
  | type_hint_opt TAND T_VARIABLE
-     { let p = mk_param $1 $3 in [Left3 {p with p_ref = Some $2}] }
+     { let p = mk_param $1 $3 in Left3 {p with p_ref = Some $2} }
  | type_hint_opt T_VARIABLE         TEQ static_scalar
-     { let p = mk_param $1 $2 in [Left3 {p with p_default = Some ($3,$4)}] }
+     { let p = mk_param $1 $2 in Left3 {p with p_default = Some ($3,$4)} }
  | type_hint_opt TAND T_VARIABLE    TEQ static_scalar
      { let p = mk_param $1 $3 in
-       [Left3 {p with p_ref = Some $2; p_default = Some ($4, $5)}]
+       Left3 {p with p_ref = Some $2; p_default = Some ($4, $5)}
      }
+non_empty_parameter_list:
+ | parameter { [$1] }
  /*(* varargs extension *)*/
- | TDOTS
-     { [Middle3 $1] }
+ | TDOTS { [Middle3 $1] }
  | non_empty_parameter_list TCOMMA TDOTS
      { $1 ++ [Right3 $2; Middle3 $3] }
-
  /*(*s: repetitive non_empty_parameter_list *)*/
-  | non_empty_parameter_list TCOMMA  type_hint_opt T_VARIABLE
-      { let p = mk_param $3 $4 in $1 ++ [Right3 $2; Left3 p] }
-  | non_empty_parameter_list TCOMMA  type_hint_opt TAND T_VARIABLE
-      { let p = mk_param $3 $5 in $1 ++ [Right3 $2; Left3 {p with p_ref = Some $4}] }
-  | non_empty_parameter_list TCOMMA  type_hint_opt T_VARIABLE TEQ static_scalar
-      { let p = mk_param $3 $4 in $1 ++ [Right3 $2; Left3 {p with p_default = Some ($5,$6)}] }
-  | non_empty_parameter_list TCOMMA  type_hint_opt TAND T_VARIABLE	 TEQ static_scalar
-      { let p = mk_param $3 $5 in
-        $1 ++ [Right3 $2; Left3 {p with p_ref = Some $4; p_default = Some ($6, $7)}]
-      }
-
+  | non_empty_parameter_list TCOMMA  parameter 
+      { $1 ++ [Right3 $2; $3] }
  /*(*e: repetitive non_empty_parameter_list *)*/
 /*(*x: GRAMMAR function declaration *)*/
 
