@@ -473,15 +473,9 @@ global_var:
  | TDOLLAR r_variable		{ GlobalDollar ($1, $2) }
  | TDOLLAR TOBRACE expr TCBRACE	{ GlobalDollarExpr ($1, ($2, $3, $4)) }
 
-/*(* can not factorize, otherwise shift/reduce conflict *)*/
-static_var_list: static_var_list_rev { List.rev $1 }
-static_var_list_rev:
- | T_VARIABLE                   { [Left (DName $1, None)] }
- | T_VARIABLE TEQ static_scalar { [Left (DName $1, Some ($2, $3)) ] }
- | static_var_list_rev TCOMMA   T_VARIABLE
-     { Left (DName $3, None)::Right $2::$1 }
- | static_var_list_rev TCOMMA   T_VARIABLE TEQ static_scalar
-     { Left (DName $3, Some ($4, $5))::Right $2::$1 }
+static_var:
+ | T_VARIABLE                   { (DName $1, None) }
+ | T_VARIABLE TEQ static_scalar { (DName $1, Some ($2, $3)) }
 
 unset_variable: variable	{ $1 }
 
@@ -527,6 +521,10 @@ unticked_function_declaration_statement:
    }
 
 /*(*x: GRAMMAR function declaration *)*/
+parameter_list:
+ | non_empty_parameter_list   { $1 }
+ | /*(*empty*)*/              { [] }
+
 /*(* can not factorize, otherwise shift/reduce conflict *)*/
 non_empty_parameter_list:
  | type_hint_opt T_VARIABLE
@@ -1734,10 +1732,6 @@ non_empty_member_modifiers:
  | non_empty_member_modifiers member_modifier	{ $1 ++ [$2] }
 
 
-parameter_list:
- | non_empty_parameter_list   { $1 }
- | /*(*empty*)*/              { [] }
-
 function_call_argument_list:
  | non_empty_function_call_argument_list      { $1 }
  | /*(*empty*)*/			       { [] }
@@ -1794,6 +1788,9 @@ attribute_argument_list:
  | attribute_argument { [Left $1] }
  | attribute_argument_list TCOMMA attribute_argument { $1++[Right $2; Left $3]}
 
+static_var_list:
+ | static_var                        { [Left $1] }
+ | static_var_list TCOMMA static_var { $1 ++ [Right $2; Left $3] }
 
 /*(*e: repetitive xxx_list with TCOMMA *)*/
 possible_comma:
