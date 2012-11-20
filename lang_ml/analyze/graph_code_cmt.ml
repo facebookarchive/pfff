@@ -17,6 +17,8 @@ open Common
 module E = Database_code
 module G = Graph_code
 
+open Cmt_format
+
 (*****************************************************************************)
 (* Prelude *)
 (*****************************************************************************)
@@ -26,6 +28,9 @@ module G = Graph_code
  * 
  * As opposed to lang_ml/analyze/graph_code_ml.ml, no need for:
  *  ???
+ * 
+ * schema:
+ *  Root -> Dir -> Module -> ...
  *)
 
 (*****************************************************************************)
@@ -35,22 +40,19 @@ module G = Graph_code
 type env = {
   g: Graph_code.graph;
   current: Graph_code.node;
+  phase: phase;
 }
+ and phase = Defs | Uses
 
 (*****************************************************************************)
 (* Helpers *)
 (*****************************************************************************)
 
 let _hmemo = Hashtbl.create 101
-let parse ~show_parse_error file =
-  try 
-    Common.memoized _hmemo file (fun () ->
-      Cmt_format.read_cmt file
-    )
-  with exn ->
-    pr2_once (spf "PARSE ERROR with %s, exn = %s" file 
-                  (Common.exn_to_s exn));
-    raise exn
+let parse file =
+  Common.memoized _hmemo file (fun () ->
+    Cmt_format.read_cmt file
+  )
 
 let find_source_files_of_dir_or_files xs = 
   Common.files_of_dir_or_files_no_vcs_nofilter xs 
@@ -61,9 +63,51 @@ let find_source_files_of_dir_or_files xs =
   ) +> Common.sort
 
 (*****************************************************************************)
+(* Defs/Uses *)
+(*****************************************************************************)
+let extract_defs_uses ~phase ~g ~ast ~readable =
+  let env = {
+    g; phase;
+    current = (ast.cmt_modname, E.Module);
+  }
+  in
+  if phase = Defs then begin
+    let dir = Common.dirname readable in
+    G.create_intermediate_directories_if_not_present g dir;
+    g +> G.add_node env.current;
+    g +> G.add_edge ((dir, E.Dir), env.current) G.Has;
+  end;
+  
+  ()
+
+
+(*****************************************************************************)
 (* Main entry point *)
 (*****************************************************************************)
 
 let build ?(verbose=true) dir_or_file skip_list =
-  let _root = Common.realpath dir_or_file in
-  raise Todo
+  let root = Common.realpath dir_or_file in
+  let all_files = 
+    find_source_files_of_dir_or_files [root] in
+
+  (* step0: filter noisy modules/files *)
+  let files = Skip_code.filter_files ~verbose skip_list root all_files in
+
+  let g = G.create () in
+  G.create_initial_hierarchy g;
+
+  (* step1: creating the nodes and 'Has' edges, the defs *)
+  if verbose then pr2 "\nstep1: extract defs";
+  files +> Common_extra.progress ~show:verbose (fun k -> 
+    List.iter (fun file ->
+      k();
+      let ast = parse file in
+      let readable = Common.filename_without_leading_path root file in
+      extract_defs_uses ~g ~ast ~phase:Defs ~readable;
+      ()
+    ));
+
+  (* step2: creating the 'Use' edges *)
+  if verbose then pr2 "\nstep2: extract uses";
+  pr2 "TODO";
+  g

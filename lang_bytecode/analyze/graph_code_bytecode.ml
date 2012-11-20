@@ -382,7 +382,6 @@ let build ?(verbose=true) dir_or_file skip_list =
   G.create_initial_hierarchy g;
 
   (* step1: creating the nodes and 'Has' edges, the defs *)
-
   if verbose then pr2 "\nstep1: extract defs";
   files +> Common_extra.progress ~show:verbose (fun k -> 
     List.iter (fun file ->
