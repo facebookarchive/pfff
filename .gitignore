@@ -342,3 +342,4 @@ external/ocamlbdb/libcamlbdb.a
 /tests/data/codegraph/graph_code.marshall.matrix
 /codequery
 /external/javalib/src/jManifest.ml
+/graph_code.marshall.opti
