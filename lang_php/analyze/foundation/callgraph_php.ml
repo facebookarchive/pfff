@@ -427,7 +427,7 @@ let find_caller_instances_with_name
       end
   | MethodCallToOpt _ ->
       ()
-  | IndirectFuncPtCallToOptTodo _ -> 
+  | IndirectFuncPtCallToOptTodo -> 
       ()
   );
   (* Can we have the same id in multiple things and List.length !res > 1 ?
@@ -664,7 +664,7 @@ let is_good_confidence (Call (id1,id2, kind)) confidence =
       confidence >= 20
   | MethodCall _ ->
       confidence > 10 
-  | IndirectTodo _ -> 
+  | IndirectTodo -> 
       confidence > 10
 
 

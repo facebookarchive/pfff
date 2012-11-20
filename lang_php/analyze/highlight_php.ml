@@ -160,7 +160,7 @@ let highlight_funcall_simple ~tag ~hentities f args info =
                 pr2_once ("highlight_php: pb with TakeArgNByRef for " ^ f);
               )
                 
-          | Db.ContainDynamicCall _ -> ()
+          | Db.ContainDynamicCall -> ()
           | _ -> raise Todo
           );
           ()

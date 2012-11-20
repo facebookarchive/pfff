@@ -189,7 +189,7 @@ let unparse buf (_chunk, toks) =
       | Parse_info.OriginTok _ -> pp (TH.str_of_tok tok)
       | Parse_info.ExpandedTok _ -> ()
       | Parse_info.FakeTokStr ("fake_token", _) -> ()
-      | Parse_info.Ab _ | Parse_info.FakeTokStr _ -> raise Impossible
+      | Parse_info.Ab | Parse_info.FakeTokStr _ -> raise Impossible
     in
   toks +> List.iter pp_tok;
   ()

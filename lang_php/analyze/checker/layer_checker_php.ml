@@ -136,9 +136,9 @@ let info_of_error_and_kind err =
       "eUnusedVariable-" ^ Scope_code.string_of_scope scope
 
   | UseOfUndefinedMember _ ->"eUseOfUndefinedMember"
-  | UglyGlobalDynamic _ -> "eUglyGlobalDynamic"
-  | DynamicCode _ -> "eUglyGlobalDynamic"
-  | WeirdForeachNoIteratorVar _ -> "eWeirdForeachNoIteratorVar"
+  | UglyGlobalDynamic -> "eUglyGlobalDynamic"
+  | DynamicCode -> "eUglyGlobalDynamic"
+  | WeirdForeachNoIteratorVar -> "eWeirdForeachNoIteratorVar"
 
   | CfgError (Controlflow_build_php.DeadCode node_kind) ->
       (match node_kind with

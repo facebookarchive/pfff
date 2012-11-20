@@ -286,8 +286,8 @@ let draw_content2 ~cr ~layout ~context ~file rect =
   let use_fancy_highlighting =
   match FT.file_type_of_file file with
   | ( FT.PL (FT.Web (FT.Php _))
-    | FT.PL (FT.Web (FT.Js _))
-    | FT.PL (FT.Web (FT.Html _))
+    | FT.PL (FT.Web (FT.Js))
+    | FT.PL (FT.Web (FT.Html))
     | FT.PL (FT.ML _)
     | FT.PL (FT.Cplusplus _ | FT.C _)
     | FT.PL (FT.Thrift)

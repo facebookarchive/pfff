@@ -290,7 +290,7 @@ let visit_toplevel
       | TyTuple _
       | TyTuple2 _
       | TyFunction _
-      | TyTodo _
+      | TyTodo
           -> k t
     );
 

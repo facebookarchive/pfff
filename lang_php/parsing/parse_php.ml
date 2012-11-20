@@ -77,7 +77,7 @@ let mk_info_item2 filename toks =
         | Parse_info.ExpandedTok _ ->
             Buffer.add_string buf (TH.str_of_tok tok)
 
-        | Parse_info.Ab _ | Parse_info.FakeTokStr _ -> raise Impossible
+        | Parse_info.Ab | Parse_info.FakeTokStr _ -> raise Impossible
       );
       Buffer.contents buf
     end

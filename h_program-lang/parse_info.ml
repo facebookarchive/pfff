@@ -380,7 +380,7 @@ let mk_info_item2 ~info_of_tok toks  =
         (* the virtual semicolon *)
         | FakeTokStr _ -> 
             ()
-        | Ab _  -> raise Impossible
+        | Ab  -> raise Impossible
       );
       Buffer.contents buf
     end

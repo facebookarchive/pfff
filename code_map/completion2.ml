@@ -100,7 +100,7 @@ let icon_of_kind kind has_test =
   | Db.Field -> `CONNECT
   | Db.Macro -> `CONNECT
 
-  | (Db.TopStmts | Db.Other _ | Db.ClassConstant _) -> raise Todo
+  | (Db.TopStmts | Db.Other _ | Db.ClassConstant) -> raise Todo
 
 
 module L=struct

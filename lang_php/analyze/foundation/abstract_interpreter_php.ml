@@ -680,7 +680,7 @@ and binaryOp env heap bop v1 v2 =
       | _ -> Vsum [Vnull; Vabstr Tint]
       )
   | Ast_php.Logical lop -> Vabstr Tbool
-  | Ast_php.BinaryConcat _ -> 
+  | Ast_php.BinaryConcat -> 
       (* Vabstr Tstring by default *)
       Taint.binary_concat env heap v1 v2 !(env.path)
 

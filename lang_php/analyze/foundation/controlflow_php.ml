@@ -147,15 +147,15 @@ let short_string_of_node_kind nkind =
 
   | SimpleStmt _ -> "<simplestmt>"
 
-  | WhileHeader _ -> "while(...)"
+  | WhileHeader -> "while(...)"
 
   | TrueNode -> "TRUE path"
   | FalseNode -> "FALSE path"
 
-  | IfHeader _ -> "if(...)"
-  | Join _ -> "<join>"
+  | IfHeader -> "if(...)"
+  | Join -> "<join>"
 
-  | Return _ -> "return ...;"
+  | Return -> "return ...;"
 
   | DoHeader -> "do"
   | DoWhileTail -> "while(...);"

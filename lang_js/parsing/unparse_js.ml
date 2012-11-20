@@ -42,13 +42,13 @@ let is_in_ast tok = not (is_not_in_ast tok)
 let is_in_between_some_remove prev_tok cur_tok = 
   match (TH.info_of_tok prev_tok).transfo, 
         (TH.info_of_tok cur_tok).transfo with
-  | Remove _, Remove _ -> true
+  | Remove, Remove -> true
   | _ -> false
 
 let is_behind_a_remove_or_replace prev_tok cur_tok = 
   match (TH.info_of_tok prev_tok).transfo, 
         (TH.info_of_tok cur_tok).transfo with
-  | (Remove _ | Replace _), _ -> true
+  | (Remove | Replace _), _ -> true
   | _ -> false
 
 let (string_of_program2_using_tokens: Parse_js.program2 -> string) = 
@@ -90,7 +90,7 @@ let (string_of_program2_using_tokens: Parse_js.program2 -> string) =
       | Parse_info.ExpandedTok _ -> 
           ()
 
-      | Parse_info.Ab _ | Parse_info.FakeTokStr _ -> raise Impossible
+      | Parse_info.Ab | Parse_info.FakeTokStr _ -> raise Impossible
     in
     let pp_add toadd = 
       match toadd with

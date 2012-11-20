@@ -34,10 +34,9 @@ PMAP = netmappings_iso.pmap netmappings_other.pmap
 # netconversion.cmx, netbuffer.cmx: 
 # Allow cross-library inlining for these modules
 
-#pad: netmappings_jp netmappings_kr
+#pad: netmappings_jp netmappings_kr, netstring_top 
 INSTALL_EXTRA_CMO = netmappings_iso  \
 		    netmappings_other netmappings_min \
-		    netstring_top \
 		    netaccel_link
 #pad: netmappings_jp netmappings_kr
 INSTALL_EXTRA_CMX = netmappings_iso \
@@ -66,7 +65,8 @@ PACKLIST = netdb-packlist
 
 BUILD_EXTRA = $(PMAP:.pmap=.cmo) netmappings_min.cmo
 
-ALL_EXTRA = $(BUILD_EXTRA) netstring_top.cmo netaccel.cma netaccel_link.cmo
+#pad: netstring_top.cmo
+ALL_EXTRA = $(BUILD_EXTRA) netaccel.cma netaccel_link.cmo
 OPT_EXTRA = $(BUILD_EXTRA:.cmo=.cmx)
 
 all::

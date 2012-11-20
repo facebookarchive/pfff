@@ -405,7 +405,7 @@ and func_def env def =
      * less: one day we will have an @override annotation in which
      *  case we can reconsider the above design decision.
      *)
-    | Method _ -> 1 
+    | Method -> 1 
   in
   let oldvars = !(env.vars) in
 

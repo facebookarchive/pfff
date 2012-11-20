@@ -69,7 +69,7 @@ let mk_info_item2 filename toks =
         | Parse_info.FakeTokStr _ -> 
             ()
 
-        | Parse_info.Ab _  -> raise Impossible
+        | Parse_info.Ab  -> raise Impossible
       );
       Buffer.contents buf
     end

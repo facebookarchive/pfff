@@ -73,12 +73,12 @@ let is_newline_or_comment = function
 let is_in_between_some_remove prev_tok cur_tok = 
   match (TH.info_of_tok prev_tok).transfo, 
         (TH.info_of_tok cur_tok).transfo with
-  | Remove _, Remove _ -> true
+  | Remove, Remove -> true
   | _ -> false
 
 let is_a_remove_or_replace tok = 
   match (TH.info_of_tok tok).transfo with
-  | (Remove _ | Replace _) -> true
+  | (Remove | Replace _) -> true
   | _ -> false
 
 (*****************************************************************************)
@@ -214,7 +214,7 @@ let string_of_program2_using_transfo ast2 =
           pp (TH.str_of_tok tok);
       | Parse_info.ExpandedTok _ -> ()
       | Parse_info.FakeTokStr ("fake_token", _) -> ()
-      | Parse_info.Ab _ | Parse_info.FakeTokStr _ -> raise Impossible
+      | Parse_info.Ab | Parse_info.FakeTokStr _ -> raise Impossible
     in
     let pp_add toadd = 
       match toadd with

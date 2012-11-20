@@ -324,7 +324,7 @@ let tokens_with_categ_of_file file hentities =
         ~str_of_tok:Token_helpers_cpp.str_of_tok
         file prefs hentities
 
-  | FT.PL (FT.Web (FT.Js _)) ->
+  | FT.PL (FT.Web (FT.Js)) ->
       tokens_with_categ_of_file_helper 
         ~parse:(parse_cache
           (fun file -> 

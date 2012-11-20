@@ -52,6 +52,9 @@ PP=-pp camlp4o
 jParseSignature.cmo: jParseSignature.ml
 	$(OCAMLC) $(PP) -c $<
 
+jParseSignature.cmx: jParseSignature.ml
+	$(OCAMLOPT) $(PP) -c $<
+
 #php_serialize.cmx: php_serialize.ml
 #	$(OCAMLOPT) $(PP) -c $<
 

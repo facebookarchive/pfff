@@ -205,7 +205,7 @@ and onedecl env d =
           v_storage = storage env sto;
           v_init = init_opt;
         }
-    | Some (n, None), StoTypedef _ ->
+    | Some (n, None), StoTypedef ->
         let def = (name env n, full_type env ft) in
         env.typedefs_toadd <- def :: env.typedefs_toadd;
         None
@@ -486,7 +486,7 @@ and constant env toks x =
   | String (s, _) -> A.String (s, List.hd toks)
 
   | Bool _ -> raise CplusplusConstruct
-  | MultiString _ -> raise Todo
+  | MultiString -> raise Todo
 
 and argument env x =
   match x with

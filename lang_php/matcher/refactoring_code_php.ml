@@ -66,7 +66,7 @@ let refactor refactorings ast_with_tokens =
               (* lambda f_name are an abstract token and so don't have
                * any line/col position information for now
                *)
-              | FunctionLambda _ ->
+              | FunctionLambda ->
                   k def
               )
             );
