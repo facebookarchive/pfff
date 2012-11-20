@@ -14,7 +14,7 @@ let unittest =
   "parsing_ml" >::: [
 
     "regression files" >:: (fun () ->
-      let dir = Filename.concat Config.path "/tests/ml/parsing" in
+      let dir = Filename.concat Config_pfff.path "/tests/ml/parsing" in
       let files = Common.glob (spf "%s/*.ml" dir) in
       files +> List.iter (fun file ->
         try

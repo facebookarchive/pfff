@@ -28,7 +28,7 @@ let database_unittest =
   "database_ml" >::: [
 
     "building light database" >:: (fun () ->
-      let data_dir = Config.path ^ "/tests/ml/db/" in
+      let data_dir = Config_pfff.path ^ "/tests/ml/db/" in
       let _db = Db.compute_database ~verbose [data_dir] in
       ()
     )

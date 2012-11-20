@@ -29,6 +29,7 @@
 open Format
 
 include Type
+module Lexer = Lexer_sexp
 
 (* Default indentation level for human-readable conversions *)
 

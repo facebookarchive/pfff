@@ -9,6 +9,7 @@ SRC= module_ml.ml \
      highlight_ml.ml \
      tags_ml.ml \
      database_light_ml.ml \
+     ast_cmt.ml \
      test_analyze_ml.ml unit_analyze_ml.ml
 
 -include $(TOP)/Makefile.config
@@ -24,7 +25,10 @@ MAKESUBDIRS=
 # dynamic_analysis static_analysis \
 # qa_test qa_code \
 
+OCAMLCOMPILERDIR=$(shell ocamlc -where)/compiler-libs
+
 INCLUDEDIRS= $(TOP)/commons \
+   $(OCAMLCOMPILERDIR) \
    $(TOP)/commons/ocollection $(TOP)/commons/ocamlextra \
    $(TOP)/commons/lib-json \
    $(TOP)/external/ocamlpcre/lib \

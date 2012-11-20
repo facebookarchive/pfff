@@ -140,7 +140,7 @@ let main_action xs =
         Sgrep_php.parse s, s
     | _ -> raise Impossible
   in
-  Logger.log Config.logger "sgrep" (Some query_string);
+  Logger.log Config_pfff.logger "sgrep" (Some query_string);
 
   let files = Lib_parsing_php.find_php_files_of_dir_or_files xs in
 

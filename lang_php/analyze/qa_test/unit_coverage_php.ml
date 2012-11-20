@@ -35,7 +35,7 @@ open OUnit
  *)
 
 (* shortcut *)
-let p f = realpath (Config.path ^ "/tests/php/coverage/" ^ f)
+let p f = realpath (Config_pfff.path ^ "/tests/php/coverage/" ^ f)
 
 (* mocking *)
 let fake_phpunit_parse_trace file _output = {

@@ -156,15 +156,21 @@ ifeq ($(FEATURE_VISUAL),1)
 VISUALDIRS=code_map code_graph
 endif
 
+OCAMLCOMPILERDIR=$(shell ocamlc -where)/compiler-libs
+OCAMLCOMPILERCMA=ocamlcommon.cma
+
 #------------------------------------------------------------------------------
 # Main variables
 #------------------------------------------------------------------------------
 SYSLIBS=nums.cma bigarray.cma str.cma unix.cma
 
+SYSLIBS+=$(OCAMLCOMPILERCMA)
+
+
 # used for sgrep and other small utilities which I dont want to depend
 # on too much things
 BASICLIBS=commons/commons.cma \
- globals/globals.cma \
+ globals/lib.cma \
  h_program-lang/lib.cma \
  lang_ml/parsing/lib.cma \
  lang_nw/parsing/lib.cma \
@@ -199,7 +205,7 @@ LIBS= commons/commons.cma \
     h_visualization/lib.cma \
     h_program-lang/lib.cma \
     h_program-visual/lib.cma \
-    globals/globals.cma \
+    globals/lib.cma \
     lang_ml/parsing/lib.cma \
      lang_ml/analyze/lib.cma \
     lang_nw/parsing/lib.cma \
@@ -307,7 +313,8 @@ INCLUDEDIRS=$(MAKESUBDIRS) \
  commons/lib-json commons/lib-xml commons/lib-sexp \
  $(GTKINCLUDE) $(CAIROINCLUDE) $(PCREINCLUDE) $(OCAMLNETINCLUDE) \
  $(PHYLOMELINCLUDE) \
- $(EXTLIBDIR) $(PTDIR) $(ZIPDIR) $(JAVALIBDIR)
+ $(EXTLIBDIR) $(PTDIR) $(ZIPDIR) $(JAVALIBDIR) \
+ $(OCAMLCOMPILERDIR)
 
 ##############################################################################
 # Generic
@@ -390,7 +397,7 @@ distclean:: clean
 	set -e; for i in $(MAKESUBDIRS); do $(MAKE) -C $$i $@; done
 	rm -f .depend
 	rm -f Makefile.config
-	rm -f globals/config.ml
+	rm -f globals/config_pfff.ml
 	rm -f TAGS
 #	find -name ".#*1.*" | xargs rm -f
 
@@ -617,7 +624,7 @@ clean::
 # Install
 ##############################################################################
 
-VERSION=$(shell cat globals/config.ml.in |grep version |perl -p -e 's/.*"(.*)".*/$$1/;')
+VERSION=$(shell cat globals/config_pfff.ml.in |grep version |perl -p -e 's/.*"(.*)".*/$$1/;')
 
 # note: don't remove DESTDIR, it can be set by package build system like ebuild
 install: all

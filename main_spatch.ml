@@ -164,7 +164,7 @@ let main_action xs =
         failwith "Can't use -f and -e at the same time"
   in
 
-  Logger.log Config.logger "spatch" (Some (Common.read_file spatch_file));
+  Logger.log Config_pfff.logger "spatch" (Some (Common.read_file spatch_file));
 
   (* old: let pattern = dumb_spatch_pattern in *)
   let pattern = 

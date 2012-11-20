@@ -199,7 +199,7 @@ let sgrep_unittest = [
 let spatch_unittest = [
   "spatch regressions files" >:: (fun () ->
 
-    let testdir = Filename.concat Config.path "tests/php/spatch/" in
+    let testdir = Filename.concat Config_pfff.path "tests/php/spatch/" in
     let expfiles = Common.glob (testdir ^ "*.exp") in
   
     expfiles +> List.iter (fun expfile ->

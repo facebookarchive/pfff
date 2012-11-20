@@ -18,7 +18,7 @@ module Ast = Ast_php
 let unittest =
  "checkers_php" >::: [
   "basic checkers" >:: (fun () ->
-  let p path = Filename.concat Config.path path in
+  let p path = Filename.concat Config_pfff.path path in
 
   let test_files = [
     p "tests/php/scheck/common.php";

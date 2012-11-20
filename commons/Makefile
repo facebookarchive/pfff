@@ -56,7 +56,7 @@ ifeq ($(FEATURE_SEXP_BUILTIN_COMMONS),1)
 SRC+= \
   lib-sexp/type.ml \
   lib-sexp/parser.ml \
-  lib-sexp/lexer.ml \
+  lib-sexp/lexer_sexp.ml \
   lib-sexp/pre_sexp.ml \
   lib-sexp/sexp_intf.ml \
   lib-sexp/sexp.ml \
@@ -203,7 +203,8 @@ OPTFLAGS=-thread
 # or setenv it to ".opt" in your startup script.
 OPTBIN ?= #.opt
 
-OCAMLCFLAGS ?= -g -dtypes -thread -w +9
+# coupling: ../Makefile.common, but want independent commons/
+OCAMLCFLAGS ?= -g -dtypes -bin-annot -thread -w +9
 
 # The OCaml tools.
 OCAMLC =ocamlc$(OPTBIN) $(OCAMLCFLAGS) $(INCLUDES)

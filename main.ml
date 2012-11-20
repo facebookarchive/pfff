@@ -83,6 +83,7 @@ let all_actions () =
 
   Test_analyze_cpp.actions () ++
   Test_analyze_php.actions () ++
+  Test_analyze_ml.actions () ++
   []
 
 let options () = [

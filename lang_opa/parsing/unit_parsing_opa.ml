@@ -31,7 +31,7 @@ let unittest =
     (*-----------------------------------------------------------------------*)
 
     "regression files" >:: (fun () ->
-      let dir = Filename.concat Config.path "/tests/opa/parsing" in
+      let dir = Filename.concat Config_pfff.path "/tests/opa/parsing" in
       let files = Common.glob (spf "%s/*.opa" dir) in
       files +> List.iter (fun file ->
         try

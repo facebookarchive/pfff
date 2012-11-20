@@ -126,7 +126,7 @@ let heavy = ref false
 let depth_limit = ref (Some 5: int option)
 
 let php_stdlib = 
-  ref (Filename.concat Config.path "/data/php_stdlib")
+  ref (Filename.concat Config_pfff.path "/data/php_stdlib")
 
 let cache_parse = ref true
 
@@ -194,7 +194,7 @@ let pr2_dbg s =
 (*****************************************************************************)
 
 let main_action xs =
-  Logger.log Config.logger "scheck" None;
+  Logger.log Config_pfff.logger "scheck" None;
 
   let files = Lib_parsing_php.find_php_files_of_dir_or_files xs in
   let errors = ref [] in
@@ -352,7 +352,7 @@ let options () =
   Common.cmdline_flags_other () ++
   [
   "-version",   Arg.Unit (fun () ->
-    pr2 (spf "scheck version: %s" Config.version);
+    pr2 (spf "scheck version: %s" Config_pfff.version);
     exit 0;
   ),
     "  guess what";

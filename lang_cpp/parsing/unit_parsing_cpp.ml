@@ -34,7 +34,7 @@ let unittest =
    (* Parsing *)
    (*-----------------------------------------------------------------------*)
    "regression files" >:: (fun () ->
-     let dir = Filename.concat Config.path "/tests/cpp/parsing" in
+     let dir = Filename.concat Config_pfff.path "/tests/cpp/parsing" in
      let files = 
        Common.glob (spf "%s/*.cpp" dir) ++ Common.glob (spf "%s/*.h" dir) in
      files +> List.iter (fun file ->
@@ -47,7 +47,7 @@ let unittest =
    );
    
    "rejecting bad code" >:: (fun () ->
-     let dir = Filename.concat Config.path "/tests/cpp/parsing_errors" in
+     let dir = Filename.concat Config_pfff.path "/tests/cpp/parsing_errors" in
      let files = 
        Common.glob (spf "%s/*.cpp" dir) in
      files +> List.iter (fun file ->

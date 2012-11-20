@@ -263,7 +263,7 @@ let build_stdlib lang root dst =
  * same for the dependency matrix that we can cache too.
  *)
 let main_action xs =
-  Logger.log Config.logger "codegraph" None;
+  Logger.log Config_pfff.logger "codegraph" None;
 
   let dir = 
     match xs with 

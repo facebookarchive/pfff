@@ -12,8 +12,8 @@ SRC=cairo_helpers3.ml \
 SYSLIBS=str.cma unix.cma dbm.cma threads.cma  lablgtk.cma
 
 LIBS=$(TOP)/commons/commons.cma $(TOP)/commons/commons_gui.cma \
-     $(TOP)/commons/commons_features.cma \
-     $(TOP)/globals/globals.cma \
+     $(TOP)/commons/commons_features.cma
+
 
 INCLUDEDIRS=$(TOP)/commons $(TOP)/globals \
 	$(TOP)/h_program-lang \

@@ -14,7 +14,7 @@ SRC= \
 LIBS= \
   $(TOP)/commons/commons.cma \
   $(TOP)/h_program-lang/lib.cma \
-  $(TOP)/globals/globals.cma \
+  $(TOP)/globals/lib.cma \
   $(TOP)/lang_php/parsing/lib.cma \
 
 SYSLIBS=bigarray.cma nums.cma str.cma unix.cma

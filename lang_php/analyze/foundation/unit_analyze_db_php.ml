@@ -92,7 +92,7 @@ let database_unittest =
   "database_php" >::: [
 
     "simple database" >:: (fun () ->
-      let data_dir = Config.path ^ "/tests/php/parsing/" in
+      let data_dir = Config_pfff.path ^ "/tests/php/parsing/" in
       (* less: should put true here and fix tests/php/parsing *)
       Common.save_excursion Flag_analyze_php.show_errors false (fun () ->
       let _db = Database_php_build.db_of_files_or_dirs [data_dir] in
@@ -100,7 +100,7 @@ let database_unittest =
       )
     );
     "accept files with parse error" >:: (fun () ->
-      let data_dir = Config.path ^ "/tests/php/parsing_errors/" in
+      let data_dir = Config_pfff.path ^ "/tests/php/parsing_errors/" in
       Common.save_excursion Flag_analyze_php.show_errors false (fun () ->
       Common.save_excursion Flag_analyze_php.verbose_database false (fun () ->
       Common.save_excursion Flag_parsing_php.verbose_lexing false (fun () ->
@@ -111,7 +111,7 @@ let database_unittest =
       )))))
     );
     "light database" >:: (fun () ->
-      let data_dir = Config.path ^ "/tests/php/db/" in
+      let data_dir = Config_pfff.path ^ "/tests/php/db/" in
       let db = Database_php_build.db_of_files_or_dirs [data_dir] in
       let _dbcode = 
         Database_light_php.database_code_from_php_database

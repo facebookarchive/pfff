@@ -4,9 +4,9 @@ TOP=..
 ##############################################################################
 # Variables
 ##############################################################################
-TARGET=globals
+TARGET=lib
 
-SRC= flag.ml config.ml
+SRC= flag.ml config_pfff.ml
 
 LIBS=
 INCLUDEDIRS=../commons
@@ -30,9 +30,9 @@ $(TARGET).cmxa: $(OPTOBJS) $(LIBS:.cma=.cmxa)
 	$(OCAMLOPT) -a -o $(TARGET).cmxa $(OPTOBJS)
 
 
-config.ml:
-	@echo "config.ml is missing. Have you run ./configure?"
+config_pfff.ml:
+	@echo "config_pfff.ml is missing. Have you run ./configure?"
 	@exit 1
 
 distclean::
-	rm -f config.ml
+	rm -f config_pfff.ml

@@ -194,7 +194,7 @@ let layers_in_dir dir =
 (*s: main_action() *)
 let main_action xs = 
   set_gc ();
-  Logger.log Config.logger "codemap" None;
+  Logger.log Config_pfff.logger "codemap" None;
 
   let root = Common.common_prefix_of_files_or_dirs xs in
   pr2 (spf "Using root = %s" root);

@@ -30,8 +30,9 @@ OPTOBJS?= $(SRC:.ml=.cmx)
 
 #dont use -custom, it makes the bytecode unportable.
 
-#-w +9 is for better warning on recorcs, needs ocaml 3.12
-OCAMLCFLAGS?=-g -dtypes -thread -w +9 -w -21 -warn-error +a
+#-w +9 is for better warning on records, needs ocaml 3.12
+# -bin-annot is for codegraph, needs ocaml 4.00
+OCAMLCFLAGS?=-g -dtypes -bin-annot -thread -w +9 -w -21 -warn-error +a
 
 # This flag is also used in subdirectories so don't change its name here.
 OPTFLAGS?=-thread
@@ -118,7 +119,7 @@ doti:
 	$(OCAMLC) -i $<
 
 clean::
-	rm -f *.cm[ioxa] *.o *.a *.cmxa *.annot
+	rm -f *.cm[ioxa] *.cmt* *.o *.a *.cmxa *.annot
 	rm -f *~ .*~ *.exe gmon.out #*#
 
 clean::

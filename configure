@@ -454,17 +454,17 @@ pr2 "Generating commons/features.ml";
 
 #pr2 "Generating appropriate links in yyy/ (python=$python)";
 
-pr2 "Generating globals/config.ml";
+pr2 "Generating globals/config_pfff.ml";
 #old: my $command = "perl -p -i -e 's#Not_found.\*#Not_found->\\\"$src\\\"#' globals/config.ml";
-my $command = "perl -p -e 's#Not_found1.\*#Not_found->\\\"$src\\\"#' globals/config.ml.in > globals/config.ml";
+my $command = "perl -p -e 's#Not_found1.\*#Not_found->\\\"$src\\\"#' globals/config_pfff.ml.in > globals/config_pfff.ml";
 `$command`;
 
 if($facebook) {
     my ($server) = `cat facebook/pfff_logger.config`;
-    `perl -p -i -e 's#Not_found2.\*#Not_found-> Some \\\"$server\\\"#' globals/config.ml`;
+    `perl -p -i -e 's#Not_found2.\*#Not_found-> Some \\\"$server\\\"#' globals/config_pfff.ml`;
 }
 
-`perl -p -i -e 's#Not_found[0-9]#Not_found#' globals/config.ml`;
+`perl -p -i -e 's#Not_found[0-9]#Not_found#' globals/config_pfff.ml`;
 
 #`touch test.ml`;
 

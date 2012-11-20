@@ -99,7 +99,7 @@ let build_prolog_db lang root =
 (*****************************************************************************)
 
 let main_action xs =
-  Logger.log Config.logger "codequery" None;
+  Logger.log Config_pfff.logger "codequery" None;
   raise Todo
 
 (*****************************************************************************)

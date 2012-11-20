@@ -21,8 +21,8 @@ SRC=cairo_helpers.ml custom_list_generic.ml async.ml \
 SYSLIBS=str.cma unix.cma dbm.cma threads.cma  lablgtk.cma
 
 LIBS=$(TOP)/commons/commons.cma $(TOP)/commons/commons_gui.cma \
-     $(TOP)/commons/commons_features.cma \
-     $(TOP)/globals/globals.cma \
+     $(TOP)/commons/commons_features.cma 
+
 
 INCLUDEDIRS=$(TOP)/commons $(TOP)/globals \
 	$(TOP)/h_program-lang \

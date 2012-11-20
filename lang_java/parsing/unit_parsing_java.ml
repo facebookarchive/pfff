@@ -13,7 +13,7 @@ let unittest =
   "parsing_java" >::: [
 
     "regression files" >:: (fun () ->
-      let dir = Filename.concat Config.path "/tests/java/parsing" in
+      let dir = Filename.concat Config_pfff.path "/tests/java/parsing" in
       let files = Common.glob (spf "%s/*.java" dir) in
       files +> List.iter (fun file ->
         try
