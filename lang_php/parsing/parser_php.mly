@@ -1272,23 +1272,11 @@ class_constant:
 
 static_class_constant: class_constant { $1 }
 /*(*x: GRAMMAR scalar *)*/
-/*(* can not factorize, otherwise shift/reduce conflict *)*/
 static_array_pair_list: static_array_pair_list_rev { List.rev $1 }
 
-non_empty_static_array_pair_list_rev:
- | static_scalar
-     { [Left (ArrayExpr $1)] }
- | static_scalar T_DOUBLE_ARROW static_scalar
-     { [Left (ArrayArrowExpr ($1,$2,$3))]}
-
- /*(*s: repetitive non_empty_static_array_pair_list *)*/
-  | non_empty_static_array_pair_list_rev TCOMMA
-      static_scalar
-      { Left (ArrayExpr $3)::Right $2::$1 }
-  | non_empty_static_array_pair_list_rev TCOMMA
-      static_scalar T_DOUBLE_ARROW static_scalar
-      { Left (ArrayArrowExpr ($3,$4,$5))::Right $2::$1 }
- /*(*e: repetitive non_empty_static_array_pair_list *)*/
+static_array_pair:
+ | static_scalar                               { (ArrayExpr $1) }
+ | static_scalar T_DOUBLE_ARROW static_scalar  { (ArrayArrowExpr ($1,$2,$3)) }
 /*(*e: GRAMMAR scalar *)*/
 
 /*(*----------------------------*)*/
@@ -1792,6 +1780,14 @@ class_variable_declaration:
  | class_variable_declaration TCOMMA class_variable
       { $1 ++ [Right $2; Left $3] }
  /*(*e: repetitive class_variable_declaration with comma *)*/
+
+non_empty_static_array_pair_list_rev:
+ | static_array_pair 
+     { [Left $1] }
+ /*(*s: repetitive non_empty_static_array_pair_list *)*/
+ | non_empty_static_array_pair_list_rev TCOMMA static_array_pair 
+     { Left $3::Right $2::$1 }
+ /*(*e: repetitive non_empty_static_array_pair_list *)*/
 
 /*(*e: repetitive xxx_list with TCOMMA *)*/
 possible_comma:
