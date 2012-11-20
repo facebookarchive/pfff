@@ -1358,20 +1358,10 @@ function_head:
  | variable_class_name TCOLCOL variable_without_objects { StaticObjVar ($1, $2, $3) }
 
 /*(*x: GRAMMAR variable *)*/
-/*(* can not factorize, otherwise shift/reduce conflict *)*/
-non_empty_function_call_argument_list:
- | variable			{ [Left (Arg (mk_e (Lv $1)))] }
- | expr_without_variable	{ [Left (Arg ($1))] }
- | TAND w_variable 		{ [Left (ArgRef($1,$2))] }
-
- /*(*s: repetitive non_empty_function_call_parameter_list *)*/
-  | non_empty_function_call_argument_list TCOMMA    variable
-      { $1 ++ [Right $2; Left (Arg (mk_e (Lv $3)))] }
-  | non_empty_function_call_argument_list TCOMMA    expr_without_variable
-      { $1 ++ [Right $2; Left (Arg ($3))] }
-  | non_empty_function_call_argument_list TCOMMA    TAND w_variable
-      { $1 ++ [Right $2; Left (ArgRef($3,$4))] }
- /*(*e: repetitive non_empty_function_call_parameter_list *)*/
+function_call_argument:
+ | variable			{ (Arg (mk_e (Lv $1))) }
+ | expr_without_variable	{ (Arg ($1)) }
+ | TAND w_variable 		{ (ArgRef($1,$2)) }
 
 /*(*x: GRAMMAR variable *)*/
 /*(*----------------------------*)*/
@@ -1708,6 +1698,14 @@ function_call_argument_list:
  | /*(*empty*)*/			       { [] }
 /*(*e: repetitive xxx and non_empty_xxx *)*/
 
+non_empty_function_call_argument_list:
+ | function_call_argument { [Left $1] }
+ /*(*s: repetitive non_empty_function_call_parameter_list *)*/
+ | non_empty_function_call_argument_list TCOMMA function_call_argument
+      { $1 ++ [Right $2; Left $3] }
+ /*(*e: repetitive non_empty_function_call_parameter_list *)*/
+
+
 unset_variables:
  | unset_variable { [Left $1] }
  | unset_variables TCOMMA unset_variable { $1 ++ [Right $2; Left $3] }
@@ -1764,26 +1762,21 @@ static_var_list:
  | static_var_list TCOMMA static_var { $1 ++ [Right $2; Left $3] }
 
 class_variable_declaration:
- | class_variable 
-   { [Left $1] }
+ | class_variable    { [Left $1] }
  /*(*s: repetitive class_variable_declaration with comma *)*/
- | class_variable_declaration TCOMMA class_variable
-      { $1 ++ [Right $2; Left $3] }
+ | class_variable_declaration TCOMMA class_variable { $1++[Right $2;Left $3] }
  /*(*e: repetitive class_variable_declaration with comma *)*/
 
 non_empty_static_array_pair_list_rev:
- | static_array_pair 
-     { [Left $1] }
+ | static_array_pair   { [Left $1] }
  /*(*s: repetitive non_empty_static_array_pair_list *)*/
- | non_empty_static_array_pair_list_rev TCOMMA static_array_pair 
-     { Left $3::Right $2::$1 }
+ | non_empty_static_array_pair_list_rev TCOMMA static_array_pair { Left $3::Right $2::$1 }
  /*(*e: repetitive non_empty_static_array_pair_list *)*/
 
 non_empty_array_pair_list_rev:
  | array_pair { [Left $1] }
  /*(*s: repetitive non_empty_array_pair_list *)*/
- | non_empty_array_pair_list_rev TCOMMA array_pair
-      { Left $3::Right $2::$1 }
+ | non_empty_array_pair_list_rev TCOMMA array_pair  { Left $3::Right $2::$1 }
  /*(*e: repetitive non_empty_array_pair_list *)*/
 
 /*(*e: repetitive xxx_list with TCOMMA *)*/
