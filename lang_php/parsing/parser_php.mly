@@ -1383,24 +1383,14 @@ assignment_list_element:
  | T_LIST TOPAR assignment_list TCPAR	{ ListList ($1, ($2, $3, $4)) }
  | /*(*empty*)*/			{ ListEmpty }
 /*(*x: GRAMMAR variable *)*/
-/*(* can not factorize, otherwise shift/reduce conflict *)*/
 array_pair_list: array_pair_list_rev { List.rev $1 }
-non_empty_array_pair_list_rev:
- | expr 				{ [Left (ArrayExpr $1)] }
- | TAND w_variable 			{ [Left (ArrayRef ($1,$2))] }
- | expr T_DOUBLE_ARROW   expr	        { [Left (ArrayArrowExpr($1,$2,$3))] }
- | expr T_DOUBLE_ARROW   TAND w_variable  { [Left (ArrayArrowRef($1,$2,$3,$4))] }
 
- /*(*s: repetitive non_empty_array_pair_list *)*/
-  | non_empty_array_pair_list_rev TCOMMA   expr
-      { Left (ArrayExpr $3)::Right $2::$1 }
-  | non_empty_array_pair_list_rev TCOMMA   TAND w_variable
-      { Left (ArrayRef ($3,$4))::Right $2::$1 }
-  | non_empty_array_pair_list_rev TCOMMA   expr T_DOUBLE_ARROW expr
-      { Left (ArrayArrowExpr($3,$4,$5))::Right $2::$1 }
-  | non_empty_array_pair_list_rev TCOMMA   expr T_DOUBLE_ARROW TAND w_variable
-      { Left (ArrayArrowRef($3,$4,$5,$6))::Right $2::$1 }
- /*(*e: repetitive non_empty_array_pair_list *)*/
+array_pair:
+ | expr 			       { (ArrayExpr $1) }
+ | TAND w_variable 		       { (ArrayRef ($1,$2)) }
+ | expr T_DOUBLE_ARROW expr	       { (ArrayArrowExpr($1,$2,$3)) }
+ | expr T_DOUBLE_ARROW TAND w_variable { (ArrayArrowRef($1,$2,$3,$4)) }
+
 /*(*x: GRAMMAR variable *)*/
 
 /*(*----------------------------*)*/
@@ -1788,6 +1778,13 @@ non_empty_static_array_pair_list_rev:
  | non_empty_static_array_pair_list_rev TCOMMA static_array_pair 
      { Left $3::Right $2::$1 }
  /*(*e: repetitive non_empty_static_array_pair_list *)*/
+
+non_empty_array_pair_list_rev:
+ | array_pair { [Left $1] }
+ /*(*s: repetitive non_empty_array_pair_list *)*/
+ | non_empty_array_pair_list_rev TCOMMA array_pair
+      { Left $3::Right $2::$1 }
+ /*(*e: repetitive non_empty_array_pair_list *)*/
 
 /*(*e: repetitive xxx_list with TCOMMA *)*/
 possible_comma:
