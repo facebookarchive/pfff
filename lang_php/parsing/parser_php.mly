@@ -525,27 +525,27 @@ parameter_list:
  | non_empty_parameter_list   { $1 }
  | /*(*empty*)*/              { [] }
 
-parameter:
- | type_hint_opt T_VARIABLE
-     { let p = mk_param $1 $2 in Left3 p }
- | type_hint_opt TAND T_VARIABLE
-     { let p = mk_param $1 $3 in Left3 {p with p_ref = Some $2} }
- | type_hint_opt T_VARIABLE         TEQ static_scalar
-     { let p = mk_param $1 $2 in Left3 {p with p_default = Some ($3,$4)} }
- | type_hint_opt TAND T_VARIABLE    TEQ static_scalar
-     { let p = mk_param $1 $3 in
-       Left3 {p with p_ref = Some $2; p_default = Some ($4, $5)}
-     }
 non_empty_parameter_list:
- | parameter { [$1] }
+ | parameter { [Left3 $1] }
  /*(* varargs extension *)*/
  | TDOTS { [Middle3 $1] }
  | non_empty_parameter_list TCOMMA TDOTS
      { $1 ++ [Right3 $2; Middle3 $3] }
  /*(*s: repetitive non_empty_parameter_list *)*/
   | non_empty_parameter_list TCOMMA  parameter 
-      { $1 ++ [Right3 $2; $3] }
+      { $1 ++ [Right3 $2; Left3 $3] }
  /*(*e: repetitive non_empty_parameter_list *)*/
+
+parameter:
+ | type_hint_opt T_VARIABLE
+     { mk_param $1 $2 }
+ | type_hint_opt TAND T_VARIABLE
+     { let p = mk_param $1 $3 in {p with p_ref=Some $2} }
+ | type_hint_opt T_VARIABLE         TEQ static_scalar
+     { let p = mk_param $1 $2 in {p with p_default=Some($3,$4)} }
+ | type_hint_opt TAND T_VARIABLE    TEQ static_scalar
+     { let p = mk_param $1 $3 in {p with p_ref=Some $2;p_default=Some($4,$5)}}
+
 /*(*x: GRAMMAR function declaration *)*/
 
 is_reference:
