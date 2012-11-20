@@ -27,6 +27,7 @@
  *  - added support for a few PHP 5.4 extensions (e.g. traits, short array).
  *  - added support for generics (another facebook extensions).
  *  - added support for attributes (a.k.a annotations)
+ *  - factorized some rules (e.g. parameters, arguments)
  *
  /*(*s: Zend copyright *)*/
   * +----------------------------------------------------------------------+
