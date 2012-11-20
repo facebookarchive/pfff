@@ -538,14 +538,18 @@ non_empty_parameter_list:
  /*(*e: repetitive non_empty_parameter_list *)*/
 
 parameter:
- | type_hint_opt T_VARIABLE
-     { mk_param $1 $2 }
- | type_hint_opt TAND T_VARIABLE
-     { let p = mk_param $1 $3 in {p with p_ref=Some $2} }
- | type_hint_opt T_VARIABLE         TEQ static_scalar
-     { let p = mk_param $1 $2 in {p with p_default=Some($3,$4)} }
- | type_hint_opt TAND T_VARIABLE    TEQ static_scalar
-     { let p = mk_param $1 $3 in {p with p_ref=Some $2;p_default=Some($4,$5)}}
+  |               parameter_bis { $1 }
+  | ext_type_hint parameter_bis { { $2 with p_type = $1 } }
+
+parameter_bis:
+ | T_VARIABLE      
+     { mk_param $1 }
+ | TAND T_VARIABLE 
+     { let p = mk_param $2 in {p with p_ref=Some $1} }
+ | T_VARIABLE TEQ static_scalar  
+     { let p = mk_param $1 in {p with p_default=Some($2,$3)} }
+ | TAND T_VARIABLE TEQ static_scalar
+     { let p = mk_param $2 in {p with p_ref=Some $1; p_default=Some($3,$4)}}
 
 /*(*x: GRAMMAR function declaration *)*/
 
@@ -904,11 +908,6 @@ type_hint:
  | T_PARENT { Hint (Parent $1) }
  | T_ARRAY		                { HintArray $1 }
 /*(* TODO inline type_hint_extensions here and remove ext_type_hint *)*/
-
-type_hint_opt:
- | /*(*empty*)*/	{ None }
- | type_hint            { Some $1 }
- | type_hint_extensions { None }
 
 /*(* extended type hint includes the new type extensions ?.. (a, b) etc ...*)*/
 ext_type_hint:

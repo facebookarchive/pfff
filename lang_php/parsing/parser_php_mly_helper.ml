@@ -258,8 +258,8 @@ let sgrep_guard v =
 (* shortcuts *)
 (*****************************************************************************)
 (*s: AST builder *)
-let mk_param typ s = 
-  { p_type = typ;
+let mk_param s = 
+  { p_type = None;
     p_ref = None;
     p_name = DName s;
     p_default = None;
