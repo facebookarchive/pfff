@@ -258,6 +258,7 @@ and vof_function_type =
   | Method -> Ocaml.VSum (("Method", []))
 and
   vof_parameter {
+                  p_attrs = v_p_attrs;
                   p_type = v_p_type;
                   p_ref = v_p_ref;
                   p_name = v_p_name;
@@ -267,14 +268,19 @@ and
   let arg = Ocaml.vof_option vof_expr v_p_default in
   let bnd = ("p_default", arg) in
   let bnds = bnd :: bnds in
-  let arg = vof_wrapped_string v_p_name in
-  let bnd = ("p_name", arg) in
-  let bnds = bnd :: bnds in
   let arg = Ocaml.vof_bool v_p_ref in
   let bnd = ("p_ref", arg) in
   let bnds = bnd :: bnds in
+  let arg = Ocaml.vof_list vof_attribute v_p_attrs in
+  let bnd = ("p_attrs", arg) in 
+  let bnds = bnd :: bnds in 
   let arg = Ocaml.vof_option vof_hint_type v_p_type in
-  let bnd = ("p_type", arg) in let bnds = bnd :: bnds in Ocaml.VDict bnds
+  let bnd = ("p_type", arg) in 
+  let bnds = bnd :: bnds in 
+  let arg = vof_wrapped_string v_p_name in
+  let bnd = ("p_name", arg) in
+  let bnds = bnd :: bnds in
+  Ocaml.VDict bnds
 and vof_hint_type =
   function
   | Hint v1 -> let v1 = vof_name v1 in Ocaml.VSum (("Hint", [ v1 ]))

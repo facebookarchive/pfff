@@ -299,6 +299,7 @@ and func_def = {
      p_ref: bool;
      p_name: name;
      p_default: expr option;
+     p_attrs: attribute list;
    }
 
    (* todo: add the generics of sphp? *)

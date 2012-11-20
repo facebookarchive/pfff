@@ -585,11 +585,13 @@ and method_def env m =
 and method_body env (_, stl, _) =
   List.fold_right (stmt_and_def env) stl []
 
-and parameter env p =
-  { A.p_type = opt hint_type env p.p_type;
-    A.p_ref = p.p_ref <> None;
-    A.p_name = dname p.p_name;
-    A.p_default = opt static_scalar_affect env p.p_default;
+and parameter env 
+ { p_type = t; p_ref = r; p_name = name; p_default = d; p_attrs = a} =
+  { A.p_type = opt hint_type env t;
+    A.p_ref = r <> None;
+    A.p_name = dname name;
+    A.p_default = opt static_scalar_affect env d;
+    A.p_attrs = attributes env a;
   }
 
 and func_def env f =
