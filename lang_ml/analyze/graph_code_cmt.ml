@@ -24,7 +24,7 @@ open Typedtree
 (* Prelude *)
 (*****************************************************************************)
 (*
- * Graph of dependencies for ML compiled objects. See graph_code.ml
+ * Graph of dependencies for OCaml typed AST files (.cmt). See graph_code.ml
  * and main_codegraph.ml for more information.
  * 
  * As opposed to lang_ml/analyze/graph_code_ml.ml, no need for:
@@ -43,6 +43,7 @@ type env = {
   g: Graph_code.graph;
   current: Graph_code.node;
   phase: phase;
+  file: Common.filename;
 
   current_qualifier: string;
 }
@@ -160,6 +161,7 @@ let rec extract_defs_uses ~phase ~g ~ast ~readable =
     g; phase;
     current = (ast.cmt_modname, E.Module);
     current_qualifier = ast.cmt_modname;
+    file = readable;
   }
   in
   if phase = Defs then begin
@@ -197,17 +199,13 @@ and structure_item env { str_desc = v_str_desc; str_loc = _; str_env = _ } =
   ()
 and structure_item_desc env =
   function
-  | (Tstr_class _|Tstr_class_type _) -> 
-    pr2 "TODO: str_class"
-
-  | Tstr_eval v1 -> let _ = expression env v1 in ()
-  | Tstr_value ((_rec_flag, v2)) ->
-      let _ =
-        List.iter
-          (fun (v1, v2) ->
-             let _ = pattern env v1 and _ = expression env v2 in ())
-          v2
-      in ()
+  | Tstr_eval v1 -> 
+    expression env v1
+  | Tstr_value ((_rec_flag, xs)) ->
+      List.iter (fun (v1, v2) ->
+        let _ = pattern env v1 in
+        let _ = expression env v2 in ()
+      ) xs
   | Tstr_primitive ((id, _loc, vd)) ->
     let full_ident = env.current_qualifier ^ "." ^ Ident.name id in
     let node = (full_ident, kind_of_value_descr vd) in
@@ -241,9 +239,15 @@ and structure_item_desc env =
       and _ = Path.t env v3
       and _ = loc env (Longident.t env) v4
       in ()
-  | Tstr_module ((v1, v2, v3)) ->
-      let _ = Ident.t env v1
-      and _ = loc env v_string v2
+  | Tstr_module ((id, v2, v3)) ->
+      let full_ident = env.current_qualifier ^ "." ^ Ident.name id in
+      let node = (full_ident, E.Module) in
+      if env.phase = Defs then begin
+        env.g +> G.add_node node;
+        env.g +> G.add_edge (env.current, node) G.Has;
+      end;
+      let env = { env with  current = node; current_qualifier = full_ident; }in
+      let _ = loc env v_string v2
       and _ = module_expr env v3
       in ()
   | Tstr_recmodule v1 ->
@@ -262,10 +266,71 @@ and structure_item_desc env =
       and _ = loc env v_string v2
       and _ = module_type env v3
       in ()
+
   | Tstr_open ((v1, v2)) ->
       let _ = Path.t env v1 and _ = loc env (Longident.t env) v2 in ()
   | Tstr_include ((v1, v2)) ->
       let _ = module_expr env v1 and _ = List.iter (Ident.t env) v2 in ()
+
+  | (Tstr_class _|Tstr_class_type _) -> 
+    pr2_once (spf "TODO: str_class, %s" env.file)
+
+
+and type_declaration env
+                   {
+                     typ_params = v_typ_params;
+                     typ_type = v_typ_type;
+                     typ_cstrs = v_typ_cstrs;
+                     typ_kind = v_typ_kind;
+                     typ_private = _v_typ_private;
+                     typ_manifest = v_typ_manifest;
+                     typ_variance = v_typ_variance;
+                     typ_loc = v_typ_loc
+                   } =
+  let _ = List.iter (v_option (loc env v_string)) v_typ_params in
+  let _ = Types.type_declaration env v_typ_type in
+  let _ =
+    List.iter
+      (fun (v1, v2, _loc) ->
+         let _ = core_type env v1
+         and _ = core_type env v2
+         in ())
+      v_typ_cstrs in
+  let _ = type_kind env v_typ_kind in
+  let _ = v_option (core_type env) v_typ_manifest in
+  let _ =
+    List.iter (fun (v1, v2) -> let _ = v_bool v1 and _ = v_bool v2 in ())
+      v_typ_variance in
+  ()
+and type_kind env =
+  function
+  | Ttype_abstract -> ()
+  | Ttype_variant v1 ->
+      let _ =
+        List.iter
+          (fun (v1, v2, v3, _loc) ->
+             let _ = Ident.t env v1
+             and _ = loc env v_string v2
+             and _ = List.iter (core_type env) v3
+             in ())
+          v1
+      in ()
+  | Ttype_record v1 ->
+      let _ =
+        List.iter
+          (fun (v1, v2, _mutable_flag, v4, _loc) ->
+             let _ = Ident.t env v1
+             and _ = loc env v_string v2
+             and _ = core_type env v4
+             in ())
+          v1
+      in ()
+
+and exception_declaration env 
+ { exn_params = v_exn_params; exn_exn = v_exn_exn; exn_loc = _v_exn_loc } =
+  let _ = List.iter (core_type env) v_exn_params in
+  let _ = Types.exception_declaration env v_exn_exn in
+  ()
 
 (* ---------------------------------------------------------------------- *)
 (* Pattern *)
@@ -638,66 +703,6 @@ and
   let _ = core_type env v_val_desc in
   let _ = Types.value_description env v_val_val in
   let _ = List.iter v_string v_val_prim in
-  ()
-and
-  type_declaration env
-                   {
-                     typ_params = v_typ_params;
-                     typ_type = v_typ_type;
-                     typ_cstrs = v_typ_cstrs;
-                     typ_kind = v_typ_kind;
-                     typ_private = _v_typ_private;
-                     typ_manifest = v_typ_manifest;
-                     typ_variance = v_typ_variance;
-                     typ_loc = v_typ_loc
-                   } =
-  let _ = List.iter (v_option (loc env v_string)) v_typ_params in
-  let _ = Types.type_declaration env v_typ_type in
-  let _ =
-    List.iter
-      (fun (v1, v2, _loc) ->
-         let _ = core_type env v1
-         and _ = core_type env v2
-         in ())
-      v_typ_cstrs in
-  let _ = type_kind env v_typ_kind in
-  let _ = v_option (core_type env) v_typ_manifest in
-  let _ =
-    List.iter (fun (v1, v2) -> let _ = v_bool v1 and _ = v_bool v2 in ())
-      v_typ_variance in
-  ()
-and type_kind env =
-  function
-  | Ttype_abstract -> ()
-  | Ttype_variant v1 ->
-      let _ =
-        List.iter
-          (fun (v1, v2, v3, _loc) ->
-             let _ = Ident.t env v1
-             and _ = loc env v_string v2
-             and _ = List.iter (core_type env) v3
-             in ())
-          v1
-      in ()
-  | Ttype_record v1 ->
-      let _ =
-        List.iter
-          (fun (v1, v2, _mutable_flag, v4, _loc) ->
-             let _ = Ident.t env v1
-             and _ = loc env v_string v2
-             and _ = core_type env v4
-             in ())
-          v1
-      in ()
-and
-  exception_declaration env
-                        {
-                          exn_params = v_exn_params;
-                          exn_exn = v_exn_exn;
-                          exn_loc = v_exn_loc
-                        } =
-  let _ = List.iter (core_type env) v_exn_params in
-  let _ = Types.exception_declaration env v_exn_exn in
   ()
 
 (*****************************************************************************)
