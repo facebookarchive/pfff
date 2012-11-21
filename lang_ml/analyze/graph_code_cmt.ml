@@ -120,16 +120,6 @@ module Path = struct
       
 end
 
-module Env = struct
-    let t env x = ()
-end
-
-module Concr = struct
-    let t env x = ()
-end
-module Meths = struct
-    let t env f x = ()
-end
 module Primitive = struct
     let description env x = ()
 end
@@ -214,7 +204,7 @@ and structure env
  { str_items = v_str_items;  str_type = v_str_type; str_final_env = v_str_final_env } =
   let _ = List.iter (structure_item env) v_str_items in
   let _ = Types.signature env v_str_type in
-  let _ = Env.t env v_str_final_env in ()
+  ()
 and structure_item env
                  {
                    str_desc = v_str_desc;
@@ -222,7 +212,7 @@ and structure_item env
                    str_env = v_str_env
                  } =
   let _ = structure_item_desc env v_str_desc in
-  let _ = Env.t env v_str_env in ()
+  ()
 and structure_item_desc env =
   function
   | (Tstr_class _|Tstr_class_type _) -> todo()
@@ -311,7 +301,7 @@ and  pattern env
       (fun (v1, _loc) ->
          let _ = pat_extra env v1 in ())
       v_pat_extra in
-  let _ = type_expr env v_pat_type in let _ = Env.t env v_pat_env in ()
+  let _ = type_expr env v_pat_type in  ()
 and pat_extra env =
   function
   | Tpat_constraint v1 -> let _ = core_type env v1 in ()
@@ -378,17 +368,16 @@ and expression env
       (fun (v1, _loc) ->
          let _ = exp_extra env v1 in ())
       v_exp_extra in
-  let _ = type_expr env v_exp_type in let _ = Env.t env v_exp_env in ()
+  let _ = type_expr env v_exp_type in ()
 and exp_extra env =
   function
   | Texp_constraint ((v1, v2)) ->
       let _ = v_option (core_type env) v1
       and _ = v_option (core_type env) v2
       in ()
-  | Texp_open ((v1, v2, v3)) ->
+  | Texp_open ((v1, v2, _env)) ->
       let _ = Path.t env v1
       and _ = loc env (Longident.t env) v2
-      and _ = Env.t env v3
       in ()
   | Texp_poly v1 -> let _ = v_option (core_type env) v1 in ()
   | Texp_newtype v1 -> let _ = v_string v1 in ()
@@ -557,7 +546,7 @@ and module_expr env
               } =
   let _ = module_expr_desc env v_mod_desc in
   let _ = Types.module_type env v_mod_type in
-  let _ = Env.t env v_mod_env in ()
+  ()
 and module_expr_desc env =
   function
   | Tmod_ident ((v1, v2)) ->
@@ -594,7 +583,6 @@ and core_type env
             } =
   let _ = core_type_desc env v_ctyp_desc in
   let _ = type_expr env v_ctyp_type in
-  let _ = Env.t env v_ctyp_env in 
   ()
 and core_type_desc env =
   function

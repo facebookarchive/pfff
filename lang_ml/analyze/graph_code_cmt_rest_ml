@@ -1,3 +1,11 @@
+module Concr = struct
+    let t env x = ()
+end
+module Meths = struct
+    let t env f x = ()
+end
+
+
   | Tstr_class v1 ->
       let _ =
         v_list
