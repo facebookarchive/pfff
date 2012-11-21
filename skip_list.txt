@@ -21,6 +21,7 @@ file: commons/ocamlextra/dynArray.cmt
 # depends on compiler libs
 # -------------------------------------------------------------------------
 file: lang_ml/analyze/ast_cmt.cmt
+file: lang_ml/analyze/meta_ast_cmt.cmt
 file: lang_ml/analyze/graph_code_cmt.cmt
 file: lang_ml/analyze/test_analyze_ml.cmt
 
