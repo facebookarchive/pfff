@@ -92,8 +92,6 @@ let add_use_edge env dst =
       env.g +> G.add_edge (src, dst) G.Use;
     )
 
-let todo () = pr2_once "TODO"
-
 let rec kind_of_core_type x =
   match x.ctyp_desc with
   | Ttyp_any  | Ttyp_var _
@@ -199,7 +197,9 @@ and structure_item env { str_desc = v_str_desc; str_loc = _; str_env = _ } =
   ()
 and structure_item_desc env =
   function
-  | (Tstr_class _|Tstr_class_type _) -> todo()
+  | (Tstr_class _|Tstr_class_type _) -> 
+    pr2 "TODO: str_class"
+
   | Tstr_eval v1 -> let _ = expression env v1 in ()
   | Tstr_value ((_rec_flag, v2)) ->
       let _ =
