@@ -28,7 +28,7 @@ open Typedtree
  * and main_codegraph.ml for more information.
  * 
  * As opposed to lang_ml/analyze/graph_code_ml.ml, no need for:
- *  ???
+ *  - module lookup (all names are resolved)
  * 
  * schema:
  *  Root -> Dir -> Module -> ...

@@ -399,6 +399,7 @@ and
                    cl_type = v_cl_type;
                    cl_env = v_cl_env
                  } =
+(*
   let bnds = [] in
   let arg = Env.vof_t v_cl_env in
   let bnd = ("cl_env", arg) in
@@ -411,6 +412,9 @@ and
   let bnds = bnd :: bnds in
   let arg = vof_class_expr_desc v_cl_desc in
   let bnd = ("cl_desc", arg) in let bnds = bnd :: bnds in Ocaml.VDict bnds
+*)
+  vof_class_expr_desc v_cl_desc
+
 and vof_class_expr_desc =
   function
   | Tcl_ident ((v1, v2, v3)) ->
@@ -492,12 +496,16 @@ and
   let arg = vof_pattern v_cstr_pat in
   let bnd = ("cstr_pat", arg) in let bnds = bnd :: bnds in Ocaml.VDict bnds
 and vof_class_field { cf_desc = v_cf_desc; cf_loc = v_cf_loc } =
+(*
   let bnds = [] in
   let arg = Location.vof_t v_cf_loc in
   let bnd = ("cf_loc", arg) in
   let bnds = bnd :: bnds in
   let arg = vof_class_field_desc v_cf_desc in
   let bnd = ("cf_desc", arg) in let bnds = bnd :: bnds in Ocaml.VDict bnds
+*)
+  vof_class_field_desc v_cf_desc
+
 and vof_class_field_kind =
   function
   | Tcfk_virtual v1 ->
@@ -553,6 +561,7 @@ and
                     mod_type = v_mod_type;
                     mod_env = v_mod_env
                   } =
+(*
   let bnds = [] in
   let arg = Env.vof_t v_mod_env in
   let bnd = ("mod_env", arg) in
@@ -565,6 +574,9 @@ and
   let bnds = bnd :: bnds in
   let arg = vof_module_expr_desc v_mod_desc in
   let bnd = ("mod_desc", arg) in let bnds = bnd :: bnds in Ocaml.VDict bnds
+*)
+  vof_module_expr_desc v_mod_desc
+
 and vof_module_type_constraint =
   function
   | Tmodtype_implicit -> Ocaml.VSum (("Tmodtype_implicit", []))
@@ -752,6 +764,7 @@ and
                     mty_env = v_mty_env;
                     mty_loc = v_mty_loc
                   } =
+(*
   let bnds = [] in
   let arg = Location.vof_t v_mty_loc in
   let bnd = ("mty_loc", arg) in
@@ -764,6 +777,9 @@ and
   let bnds = bnd :: bnds in
   let arg = vof_module_type_desc v_mty_desc in
   let bnd = ("mty_desc", arg) in let bnds = bnd :: bnds in Ocaml.VDict bnds
+*)
+  vof_module_type_desc v_mty_desc
+
 and vof_module_type_desc =
   function
   | Tmty_ident ((v1, v2)) ->
@@ -812,6 +828,7 @@ and
                        sig_env = v_sig_env;
                        sig_loc = v_sig_loc
                      } =
+(*
   let bnds = [] in
   let arg = Location.vof_t v_sig_loc in
   let bnd = ("sig_loc", arg) in
@@ -821,6 +838,9 @@ and
   let bnds = bnd :: bnds in
   let arg = vof_signature_item_desc v_sig_desc in
   let bnd = ("sig_desc", arg) in let bnds = bnd :: bnds in Ocaml.VDict bnds
+*)
+  vof_signature_item_desc v_sig_desc
+
 and vof_signature_item_desc =
   function
   | Tsig_value ((v1, v2, v3)) ->
@@ -905,6 +925,7 @@ and
                   ctyp_env = v_ctyp_env;
                   ctyp_loc = v_ctyp_loc
                 } =
+(*
   let bnds = [] in
   let arg = Location.vof_t v_ctyp_loc in
   let bnd = ("ctyp_loc", arg) in
@@ -917,6 +938,9 @@ and
   let bnds = bnd :: bnds in
   let arg = vof_core_type_desc v_ctyp_desc in
   let bnd = ("ctyp_desc", arg) in let bnds = bnd :: bnds in Ocaml.VDict bnds
+*)
+  vof_core_type_desc v_ctyp_desc
+
 and vof_core_type_desc =
   function
   | Ttyp_any -> Ocaml.VSum (("Ttyp_any", []))
@@ -987,12 +1011,16 @@ and
 and
   vof_core_field_type { field_desc = v_field_desc; field_loc = v_field_loc }
                       =
+(*
   let bnds = [] in
   let arg = Location.vof_t v_field_loc in
   let bnd = ("field_loc", arg) in
   let bnds = bnd :: bnds in
   let arg = vof_core_field_desc v_field_desc in
   let bnd = ("field_desc", arg) in let bnds = bnd :: bnds in Ocaml.VDict bnds
+*)
+  vof_core_field_desc v_field_desc
+
 and vof_core_field_desc =
   function
   | Tcfield ((v1, v2)) ->
@@ -1016,6 +1044,7 @@ and
                           val_prim = v_val_prim;
                           val_loc = v_val_loc
                         } =
+(*
   let bnds = [] in
   let arg = Location.vof_t v_val_loc in
   let bnd = ("val_loc", arg) in
@@ -1028,6 +1057,8 @@ and
   let bnds = bnd :: bnds in
   let arg = vof_core_type v_val_desc in
   let bnd = ("val_desc", arg) in let bnds = bnd :: bnds in Ocaml.VDict bnds
+*)
+  vof_core_type v_val_desc
 and
   vof_type_declaration {
                          typ_params = v_typ_params;
@@ -1125,6 +1156,7 @@ and
                    cltyp_env = v_cltyp_env;
                    cltyp_loc = v_cltyp_loc
                  } =
+(*
   let bnds = [] in
   let arg = Location.vof_t v_cltyp_loc in
   let bnd = ("cltyp_loc", arg) in
@@ -1137,6 +1169,9 @@ and
   let bnds = bnd :: bnds in
   let arg = vof_class_type_desc v_cltyp_desc in
   let bnd = ("cltyp_desc", arg) in let bnds = bnd :: bnds in Ocaml.VDict bnds
+*)
+  vof_class_type_desc v_cltyp_desc
+
 and vof_class_type_desc =
   function
   | Tcty_constr ((v1, v2, v3)) ->
@@ -1172,12 +1207,16 @@ and
   let arg = vof_core_type v_csig_self in
   let bnd = ("csig_self", arg) in let bnds = bnd :: bnds in Ocaml.VDict bnds
 and vof_class_type_field { ctf_desc = v_ctf_desc; ctf_loc = v_ctf_loc } =
+(*
   let bnds = [] in
   let arg = Location.vof_t v_ctf_loc in
   let bnd = ("ctf_loc", arg) in
   let bnds = bnd :: bnds in
   let arg = vof_class_type_field_desc v_ctf_desc in
   let bnd = ("ctf_desc", arg) in let bnds = bnd :: bnds in Ocaml.VDict bnds
+*)
+  vof_class_type_field_desc v_ctf_desc
+
 and vof_class_type_field_desc =
   function
   | Tctf_inher v1 ->
