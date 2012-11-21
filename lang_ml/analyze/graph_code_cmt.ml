@@ -143,7 +143,7 @@ and structure_item env x =
   | Tstr_eval e -> expr env e
   | Tstr_value (_rec_flag, xs) -> List.iter (pat_expr env) xs
   | Tstr_primitive (id, _loc, vd) ->
-    let full_ident = Ident.name id ^ "." ^ env.current_qualifier in
+    let full_ident = env.current_qualifier ^ "." ^ Ident.name id in
     let node = (full_ident, kind_of_value_descr vd) in
     if env.phase = Defs then begin
       env.g +> G.add_node node;
@@ -151,6 +151,17 @@ and structure_item env x =
     end;
     let env = { env with  current = node; current_qualifier = full_ident; } in
     value_description env vd
+  | Tstr_type xs ->
+    xs +> List.iter (fun (id, _loc, td) ->
+      let full_ident = env.current_qualifier ^ "." ^ Ident.name id in
+      let node = (full_ident, E.Type) in
+      if env.phase = Defs then begin
+        env.g +> G.add_node node;
+        env.g +> G.add_edge (env.current, node) G.Has;
+      end;
+      let env = { env with  current = node; current_qualifier = full_ident; } in
+      type_declaration env td
+    )
   | _ -> todo()
 
 and expr env x =
@@ -160,6 +171,9 @@ and pat_expr env (p, e) =
   todo()
 
 and value_description env vd =
+  todo()
+
+and type_declaration env td =
   todo()
 
 (*****************************************************************************)

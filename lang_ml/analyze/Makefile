@@ -9,7 +9,7 @@ SRC= module_ml.ml \
      highlight_ml.ml \
      tags_ml.ml \
      database_light_ml.ml \
-     ast_cmt.ml graph_code_cmt.ml \
+     ast_cmt.ml meta_ast_cmt.ml graph_code_cmt.ml \
      test_analyze_ml.ml unit_analyze_ml.ml
 
 -include $(TOP)/Makefile.config

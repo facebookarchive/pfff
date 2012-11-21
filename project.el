@@ -61,6 +61,7 @@
      external/phylomel/src
      facebook/thrift
      facebook/thrift/gen-ocaml
+/home/pad/packages/Linux/stow/ocaml-4.00.1/lib/ocaml/compiler-libs
     ")
    pad-ocaml-project-toplevel "pfff.top"
    )
@@ -94,7 +95,7 @@
    (join-string 
     (list 
      "-debugger"
-     (case 0
+     (case 400
 
        (0 "-tokens_php /home/pad/pfff/tests/php/parsing/heredoc4.php")
 
@@ -128,6 +129,7 @@
        (201 "-parse_cpp /tmp/test.cpp")
 
        (300 "-pfff_gephi_dependencies /home/pad/pfff /tmp/pfff.gexf")
+       (400 "-dump_cmt2 /home/pad/pfff/tests/ml/cmt/foo.cmt")
 
        )
      )
