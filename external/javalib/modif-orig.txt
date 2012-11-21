@@ -6,5 +6,5 @@ Removed for-pack.
 The 'make clean' now also removed javalib.*
 
 Created src/jClassLow.ml
-Created from scratch src/MAkefile
+Created from scratch src/Makefile
 Added some ;_ in record patterns.

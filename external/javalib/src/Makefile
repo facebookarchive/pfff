@@ -7,7 +7,7 @@ TARGET=lib
 -include $(TOP)/Makefile.config
 
 SRC=jBasics.ml jBasicsLow.ml jCode.ml jSignature.ml \
- jClass.ml jDumpBasics.ml jParseCode.ml	\
+ jClass.ml jClassLow.ml jDumpBasics.ml jParseCode.ml	\
  jInstruction.ml jUnparseSignature.ml jDumpLow.ml jHigh2Low.ml jUnparse.ml \
  jParseSignature.ml jLow2High.ml jParse.ml
 

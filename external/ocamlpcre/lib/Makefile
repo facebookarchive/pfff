@@ -1,3 +1,5 @@
+ANNOTATE=1
+
 OCAMLMAKEFILE = ../OCamlMakefile
 
 SOURCES := pcre.mli pcre.ml pcre_stubs.c

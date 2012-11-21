@@ -62,6 +62,31 @@ let find_source_files_of_dir_or_files xs =
     | _ -> false
   ) +> Common.sort
 
+let add_use_edge env dst =
+  let src = env.current in
+  match () with
+  (* maybe nested function, in which case we dont have the def *)
+  | _ when not (G.has_node src env.g) ->
+    pr2 (spf "LOOKUP SRC FAIL %s --> %s, src does not exist (nested func?)"
+           (G.string_of_node src) (G.string_of_node dst));
+
+  | _ when G.has_node dst env.g -> 
+    G.add_edge (src, dst) G.Use env.g
+  | _ -> 
+    let (str, kind) = dst in
+      (match kind with
+      | _ ->
+          let kind_original = kind in
+          let dst = (str, kind_original) in
+
+          G.add_node dst env.g;
+          let parent_target = G.not_found in
+          pr2 (spf "PB: lookup fail on %s (in %s)" 
+                       (G.string_of_node dst) (G.string_of_node src));
+          
+          env.g +> G.add_edge (parent_target, dst) G.Has;
+          env.g +> G.add_edge (src, dst) G.Use;
+      )
 (*****************************************************************************)
 (* Defs/Uses *)
 (*****************************************************************************)
@@ -76,6 +101,12 @@ let extract_defs_uses ~phase ~g ~ast ~readable =
     G.create_intermediate_directories_if_not_present g dir;
     g +> G.add_node env.current;
     g +> G.add_edge ((dir, E.Dir), env.current) G.Has;
+  end;
+  if phase = Uses then begin
+    ast.cmt_imports +> List.iter (fun (s, digest) ->
+      let node = (s, E.Module) in
+      add_use_edge env node
+    );
   end;
   
   ()
@@ -109,5 +140,15 @@ let build ?(verbose=true) dir_or_file skip_list =
 
   (* step2: creating the 'Use' edges *)
   if verbose then pr2 "\nstep2: extract uses";
-  pr2 "TODO";
+  files +> Common_extra.progress ~show:verbose (fun k -> 
+    List.iter (fun file ->
+      k();
+      let ast = parse file in
+      let readable = Common.filename_without_leading_path root file in
+      if readable =~ "^external" || readable =~ "^EXTERNAL"
+      then ()
+      else extract_defs_uses ~g ~ast ~phase:Uses ~readable;
+      ()
+    ));
+
   g

@@ -185,7 +185,7 @@ let options () = [
   Common.cmdline_flags_other () ++
   [
     "-version",   Arg.Unit (fun () -> 
-      pr2 (spf "pfff (test) version: %s" Config.version);
+      pr2 (spf "pfff (test) version: %s" Config_pfff.version);
       exit 0;
     ), 
     "  guess what";

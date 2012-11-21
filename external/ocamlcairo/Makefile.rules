@@ -1,5 +1,5 @@
 %.cmo : %.ml
-	$(OCAMLC) -c $(INCFLAGS) $<
+	$(OCAMLC) -c -bin-annot $(INCFLAGS) $<
 %.cmx : %.ml
 	$(OCAMLOPT) -c $(INCFLAGS) $<
 %.cmi : %.mli

@@ -654,7 +654,7 @@ let options () =
   Common.cmdline_flags_other () ++
   [
   "-version",   Arg.Unit (fun () -> 
-    Common.pr2 (spf "XXX version: %s" Config.version);
+    Common.pr2 (spf "XXX version: %s" Config_pfff.version);
     exit 0;
   ), 
     "  guess what";

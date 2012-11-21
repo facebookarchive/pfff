@@ -1,2 +1,4 @@
 Just disable the default lablgtk check which requires a compiled
 version of lablgtk which is not there yet at pfff configure time.
+
+added -bin-annot

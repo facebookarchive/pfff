@@ -33,7 +33,7 @@ bdb_stubs.o: bdb_stubs.c
 	gcc $(CFLAGS) -I$(BDB_INCLUDE) -I$(OCAML_LIBS) -c bdb_stubs.c
 
 bdb.cmo: bdb.ml
-	ocamlc -c bdb.ml
+	ocamlc -bin-annot -c bdb.ml
 
 bdb.cmx: bdb.ml
 	ocamlopt -c bdb.ml

@@ -725,7 +725,7 @@ endif
 export MAKE_DEPS
 
 ifdef ANNOTATE
-  ANNOT_FLAG := -dtypes
+  ANNOT_FLAG := -dtypes -bin-annot
 else
 endif
 

@@ -1,6 +1,7 @@
 I have some segmentation fault when I link with gtk and this small change below
 fixed it. Not sure it was the real reason though.
 
+last: added bin-annot
 
 diff --git a/external/ocamlpcre/lib/Makefile b/external/ocamlpcre/lib/Makefile
 index 678e656..b76c084 100644

@@ -5,5 +5,7 @@ update:
  patch it more to be able to handle very big databases (big bug to find).
  Just add set_lg_max_xxx call in Bdb API.
 
+added -bin-annot
+
 uncomment the #define DEBUG 1  in bdb.src to get more information when
 stuff does not work

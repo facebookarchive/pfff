@@ -4,4 +4,4 @@ accordingly. I also un-findlibize it.
 
 I've also moved a few files around (e.g. the src/*/*.txt to docs/)
 
-
+added -bin-annot

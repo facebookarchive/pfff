@@ -28,7 +28,7 @@ SYSLIBS= unix.cma threads.cma
 ##############################################################################
 
 #dont use -custom, it makes the bytecode unportable.
-OCAMLCFLAGS= -g -dtypes $(PP) -thread
+OCAMLCFLAGS= -g -bin-annot -dtypes $(PP) -thread
 
 # This flag is also used in subdirectories so don't change its name here.
 OPTFLAGS=

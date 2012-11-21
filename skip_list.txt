@@ -5,10 +5,25 @@
 # -------------------------------------------------------------------------
 # dupes cmt
 # -------------------------------------------------------------------------
+
 #file: facebook/check_module/main_checker.cmt
 file: facebook/qa_code/main_checker.cmt
 file: facebook/check_cpp/main_checker.cmt
+
+#file: main.cmt
 file: lang_php/pretty/main.cmt
+
+# dupes with external/extlib/
+file: commons/ocamlextra/enum.cmt
+file: commons/ocamlextra/dynArray.cmt
+
+# -------------------------------------------------------------------------
+# depends on compiler libs
+# -------------------------------------------------------------------------
+file: lang_ml/analyze/ast_cmt.cmt
+file: lang_ml/analyze/graph_code_cmt.cmt
+file: lang_ml/analyze/test_analyze_ml.cmt
+
 
 # -------------------------------------------------------------------------
 # dupes

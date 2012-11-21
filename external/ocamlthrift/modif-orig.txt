@@ -7,6 +7,8 @@ information.
 I have also extended the server interface to accept socket options
 (such as SO_REUSEADDR).
 
+added -bin-annot.
+
 --------------
 archi:
 Thrift.ml: interfaces

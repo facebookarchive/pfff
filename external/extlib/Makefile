@@ -16,7 +16,7 @@ SRC = $(MLI) $(MODULES:=.ml) extLib.ml
 all: extLib.cma
 
 extLib.cma: $(SRC)
-	ocamlc -a -o extLib.cma $(SRC)
+	ocamlc -bin-annot -a -o extLib.cma $(SRC)
 
 opt: extLib.cmxa
 all.opt: extLib.cmxa
