@@ -18,6 +18,7 @@ module E = Database_code
 module G = Graph_code
 
 open Cmt_format
+open Typedtree
 
 (*****************************************************************************)
 (* Prelude *)
@@ -41,6 +42,8 @@ type env = {
   g: Graph_code.graph;
   current: Graph_code.node;
   phase: phase;
+
+  current_qualifier: string;
 }
  and phase = Defs | Uses
 
@@ -74,26 +77,40 @@ let add_use_edge env dst =
     G.add_edge (src, dst) G.Use env.g
   | _ -> 
     let (str, kind) = dst in
-      (match kind with
-      | _ ->
-          let kind_original = kind in
-          let dst = (str, kind_original) in
-
-          G.add_node dst env.g;
-          let parent_target = G.not_found in
-          pr2 (spf "PB: lookup fail on %s (in %s)" 
-                       (G.string_of_node dst) (G.string_of_node src));
+    (match kind with
+    | _ ->
+      let kind_original = kind in
+      let dst = (str, kind_original) in
+      
+      G.add_node dst env.g;
+      let parent_target = G.not_found in
+      pr2 (spf "PB: lookup fail on %s (in %s)" 
+             (G.string_of_node dst) (G.string_of_node src));
           
-          env.g +> G.add_edge (parent_target, dst) G.Has;
-          env.g +> G.add_edge (src, dst) G.Use;
-      )
+      env.g +> G.add_edge (parent_target, dst) G.Has;
+      env.g +> G.add_edge (src, dst) G.Use;
+    )
+
+let todo () = pr2_once "TODO"
+
+let rec kind_of_core_type x =
+  match x.ctyp_desc with
+  | Ttyp_any  | Ttyp_var _
+      -> raise Todo
+  | Ttyp_arrow _ -> E.Function
+  | _ -> raise Todo
+
+let kind_of_value_descr vd =
+  kind_of_core_type vd.val_desc
+  
 (*****************************************************************************)
 (* Defs/Uses *)
 (*****************************************************************************)
-let extract_defs_uses ~phase ~g ~ast ~readable =
+let rec extract_defs_uses ~phase ~g ~ast ~readable =
   let env = {
     g; phase;
     current = (ast.cmt_modname, E.Module);
+    current_qualifier = ast.cmt_modname;
   }
   in
   if phase = Defs then begin
@@ -108,9 +125,42 @@ let extract_defs_uses ~phase ~g ~ast ~readable =
       add_use_edge env node
     );
   end;
-  
-  ()
+  binary_annots env ast.cmt_annots
 
+and binary_annots env = function
+  | Implementation s -> structure env s
+  | Interface _
+  | Packed _ 
+  | Partial_implementation _ | Partial_interface _ ->
+    pr2_gen env.current;
+    raise Todo
+
+and structure env x =
+  List.iter (structure_item env) x.str_items
+
+and structure_item env x =
+  match x.str_desc with
+  | Tstr_eval e -> expr env e
+  | Tstr_value (_rec_flag, xs) -> List.iter (pat_expr env) xs
+  | Tstr_primitive (id, _loc, vd) ->
+    let full_ident = Ident.name id ^ "." ^ env.current_qualifier in
+    let node = (full_ident, kind_of_value_descr vd) in
+    if env.phase = Defs then begin
+      env.g +> G.add_node node;
+      env.g +> G.add_edge (env.current, node) G.Has;
+    end;
+    let env = { env with  current = node; current_qualifier = full_ident; } in
+    value_description env vd
+  | _ -> todo()
+
+and expr env x =
+  todo()
+
+and pat_expr env (p, e) =
+  todo()
+
+and value_description env vd =
+  todo()
 
 (*****************************************************************************)
 (* Main entry point *)
