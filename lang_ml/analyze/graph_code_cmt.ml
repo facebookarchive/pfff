@@ -106,7 +106,6 @@ let kind_of_value_descr vd =
 
 
 
-
 module Ident = struct
     let t env x = 
       ()
@@ -117,12 +116,8 @@ module Longident = struct
 end
 module Path = struct
     let t env x = ()
-      
 end
 
-module Primitive = struct
-    let description env x = ()
-end
 module Types = struct
     let value_description env x = ()
     let class_declaration env x = ()

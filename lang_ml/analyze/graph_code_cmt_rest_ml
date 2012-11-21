@@ -5,6 +5,9 @@ module Meths = struct
     let t env f x = ()
 end
 
+module Primitive = struct
+    let description env x = ()
+end
 
   | Tstr_class v1 ->
       let _ =
