@@ -120,10 +120,6 @@ module Path = struct
       
 end
 
-module Location = struct
-    let t env x = ()
-end
-
 module Env = struct
     let t env x = ()
 end
@@ -226,7 +222,7 @@ and structure_item env
                    str_env = v_str_env
                  } =
   let _ = structure_item_desc env v_str_desc in
-  let _ = Location.t env v_str_loc in let _ = Env.t env v_str_env in ()
+  let _ = Env.t env v_str_env in ()
 and structure_item_desc env =
   function
   | (Tstr_class _|Tstr_class_type _) -> todo()
@@ -310,11 +306,10 @@ and  pattern env
             pat_env = v_pat_env
           } =
   let _ = pattern_desc env v_pat_desc in
-  let _ = Location.t env v_pat_loc in
   let _ =
     List.iter
-      (fun (v1, v2) ->
-         let _ = pat_extra env v1 and _ = Location.t env v2 in ())
+      (fun (v1, _loc) ->
+         let _ = pat_extra env v1 in ())
       v_pat_extra in
   let _ = type_expr env v_pat_type in let _ = Env.t env v_pat_env in ()
 and pat_extra env =
@@ -378,11 +373,10 @@ and expression env
                exp_env = v_exp_env
              } =
   let _ = expression_desc env v_exp_desc in
-  let _ = Location.t env v_exp_loc in
   let _ =
     List.iter
-      (fun (v1, v2) ->
-         let _ = exp_extra env v1 and _ = Location.t env v2 in ())
+      (fun (v1, _loc) ->
+         let _ = exp_extra env v1 in ())
       v_exp_extra in
   let _ = type_expr env v_exp_type in let _ = Env.t env v_exp_env in ()
 and exp_extra env =
@@ -562,7 +556,6 @@ and module_expr env
                 mod_env = v_mod_env
               } =
   let _ = module_expr_desc env v_mod_desc in
-  let _ = Location.t env v_mod_loc in
   let _ = Types.module_type env v_mod_type in
   let _ = Env.t env v_mod_env in ()
 and module_expr_desc env =
@@ -601,7 +594,8 @@ and core_type env
             } =
   let _ = core_type_desc env v_ctyp_desc in
   let _ = type_expr env v_ctyp_type in
-  let _ = Env.t env v_ctyp_env in let _ = Location.t env v_ctyp_loc in ()
+  let _ = Env.t env v_ctyp_env in 
+  ()
 and core_type_desc env =
   function
   | Ttyp_any -> ()
@@ -650,11 +644,9 @@ and
       v_pack_fields in
   let _ = Types.module_type env v_pack_type in
   let _ = loc env (Longident.t env) v_pack_txt in ()
-and
-  core_field_type env { field_desc = v_field_desc; field_loc = v_field_loc }
-                  =
-  let _ = core_field_desc env v_field_desc in
-  let _ = Location.t env v_field_loc in ()
+and core_field_type env { field_desc = v_field_desc; field_loc = v_field_loc }=
+  let _ = core_field_desc env v_field_desc in ()
+  
 and core_field_desc env =
   function
   | Tcfield ((v1, v2)) -> let _ = v_string v1 and _ = core_type env v2 in ()
@@ -678,7 +670,7 @@ and
   let _ = core_type env v_val_desc in
   let _ = Types.value_description env v_val_val in
   let _ = List.iter v_string v_val_prim in
-  let _ = Location.t env v_val_loc in ()
+  ()
 and
   type_declaration env
                    {
@@ -695,10 +687,9 @@ and
   let _ = Types.type_declaration env v_typ_type in
   let _ =
     List.iter
-      (fun (v1, v2, v3) ->
+      (fun (v1, v2, _loc) ->
          let _ = core_type env v1
          and _ = core_type env v2
-         and _ = Location.t env v3
          in ())
       v_typ_cstrs in
   let _ = type_kind env v_typ_kind in
@@ -707,30 +698,28 @@ and
   let _ =
     List.iter (fun (v1, v2) -> let _ = v_bool v1 and _ = v_bool v2 in ())
       v_typ_variance in
-  let _ = Location.t env v_typ_loc in ()
+  ()
 and type_kind env =
   function
   | Ttype_abstract -> ()
   | Ttype_variant v1 ->
       let _ =
         List.iter
-          (fun (v1, v2, v3, v4) ->
+          (fun (v1, v2, v3, _loc) ->
              let _ = Ident.t env v1
              and _ = loc env v_string v2
              and _ = List.iter (core_type env) v3
-             and _ = Location.t env v4
              in ())
           v1
       in ()
   | Ttype_record v1 ->
       let _ =
         List.iter
-          (fun (v1, v2, v3, v4, v5) ->
+          (fun (v1, v2, v3, v4, _loc) ->
              let _ = Ident.t env v1
              and _ = loc env v_string v2
              and _ = mutable_flag env v3
              and _ = core_type env v4
-             and _ = Location.t env v5
              in ())
           v1
       in ()
@@ -743,7 +732,7 @@ and
                         } =
   let _ = List.iter (core_type env) v_exn_params in
   let _ = Types.exception_declaration env v_exn_exn in
-  let _ = Location.t env v_exn_loc in ()
+  ()
 
 (*****************************************************************************)
 (* Main entry point *)
