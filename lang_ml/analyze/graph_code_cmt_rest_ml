@@ -1,0 +1,403 @@
+  | Tstr_class v1 ->
+      let _ =
+        v_list
+          (fun (v1, v2, v3) ->
+             let _ = class_declaration env v1
+             and _ = v_list v_string v2
+             and _ = virtual_flag env v3
+             in ())
+          v1
+      in ()
+  | Tstr_class_type v1 ->
+      let _ =
+        v_list
+          (fun (v1, v2, v3) ->
+             let _ = Ident.t env v1
+             and _ = loc env v_string v2
+             and _ = class_type_declaration env v3
+             in ())
+          v1
+      in ()
+
+
+and meth env =
+  function
+  | Tmeth_name v1 -> let _ = v_string v1 in ()
+  | Tmeth_val v1 -> let _ = Ident.t env v1 in ()
+and
+  class_expr env
+             {
+               cl_desc = v_cl_desc;
+               cl_loc = v_cl_loc;
+               cl_type = v_cl_type;
+               cl_env = v_cl_env
+             } =
+  let _ = class_expr_desc env v_cl_desc in
+  let _ = Location.t env v_cl_loc in
+  let _ = Types.class_type env v_cl_type in let _ = Env.t env v_cl_env in ()
+and class_expr_desc env =
+  function
+  | Tcl_ident ((v1, v2, v3)) ->
+      let _ = Path.t env v1
+      and _ = loc env (Longident.t env) v2
+      and _ = v_list (core_type env) v3
+      in ()
+  | Tcl_structure v1 -> let _ = class_structure env v1 in ()
+  | Tcl_fun ((v1, v2, v3, v4, v5)) ->
+      let _ = label env v1
+      and _ = pattern env v2
+      and _ =
+        v_list
+          (fun (v1, v2, v3) ->
+             let _ = Ident.t env v1
+             and _ = loc env v_string v2
+             and _ = expression env v3
+             in ())
+          v3
+      and _ = class_expr env v4
+      and _ = partial env v5
+      in ()
+  | Tcl_apply ((v1, v2)) ->
+      let _ = class_expr env v1
+      and _ =
+        v_list
+          (fun (v1, v2, v3) ->
+             let _ = label env v1
+             and _ = v_option (expression env) v2
+             and _ = optional env v3
+             in ())
+          v2
+      in ()
+  | Tcl_let ((v1, v2, v3, v4)) ->
+      let _ = rec_flag env v1
+      and _ =
+        v_list
+          (fun (v1, v2) ->
+             let _ = pattern env v1 and _ = expression env v2 in ())
+          v2
+      and _ =
+        v_list
+          (fun (v1, v2, v3) ->
+             let _ = Ident.t env v1
+             and _ = loc env v_string v2
+             and _ = expression env v3
+             in ())
+          v3
+      and _ = class_expr env v4
+      in ()
+  | Tcl_constraint ((v1, v2, v3, v4, v5)) ->
+      let _ = class_expr env v1
+      and _ = v_option (class_type env) v2
+      and _ = v_list v_string v3
+      and _ = v_list v_string v4
+      and _ = Concr.t env v5
+      in ()
+and
+  class_structure env
+                  {
+                    cstr_pat = v_cstr_pat;
+                    cstr_fields = v_cstr_fields;
+                    cstr_type = v_cstr_type;
+                    cstr_meths = v_cstr_meths
+                  } =
+  let _ = pattern env v_cstr_pat in
+  let _ = v_list (class_field env) v_cstr_fields in
+  let _ = Types.class_signature env v_cstr_type in
+  let _ = Meths.t env (Ident.t env) v_cstr_meths in ()
+and class_field env { cf_desc = v_cf_desc; cf_loc = v_cf_loc } =
+  let _ = class_field_desc env v_cf_desc in
+  let _ = Location.t env v_cf_loc in ()
+and class_field_kind env =
+  function
+  | Tcfk_virtual v1 -> let _ = core_type env v1 in ()
+  | Tcfk_concrete v1 -> let _ = expression env v1 in ()
+and class_field_desc env =
+  function
+  | Tcf_inher ((v1, v2, v3, v4, v5)) ->
+      let _ = override_flag env v1
+      and _ = class_expr env v2
+      and _ = v_option v_string v3
+      and _ =
+        v_list
+          (fun (v1, v2) -> let _ = v_string v1 and _ = Ident.t env v2 in ())
+          v4
+      and _ =
+        v_list
+          (fun (v1, v2) -> let _ = v_string v1 and _ = Ident.t env v2 in ())
+          v5
+      in ()
+  | Tcf_val ((v1, v2, v3, v4, v5, v6)) ->
+      let _ = v_string v1
+      and _ = loc env v_string v2
+      and _ = mutable_flag env v3
+      and _ = Ident.t env v4
+      and _ = class_field_kind env v5
+      and _ = v_bool v6
+      in ()
+  | Tcf_meth ((v1, v2, v3, v4, v5)) ->
+      let _ = v_string v1
+      and _ = loc env v_string v2
+      and _ = private_flag env v3
+      and _ = class_field_kind env v4
+      and _ = v_bool v5
+      in ()
+  | Tcf_constr ((v1, v2)) ->
+      let _ = core_type env v1 and _ = core_type env v2 in ()
+  | Tcf_init v1 -> let _ = expression env v1 in ()
+
+
+
+and
+  class_type env
+             {
+               cltyp_desc = v_cltyp_desc;
+               cltyp_type = v_cltyp_type;
+               cltyp_env = v_cltyp_env;
+               cltyp_loc = v_cltyp_loc
+             } =
+  let _ = class_type_desc env v_cltyp_desc in
+  let _ = Types.class_type env v_cltyp_type in
+  let _ = Env.t env v_cltyp_env in let _ = Location.t env v_cltyp_loc in ()
+and class_type_desc env =
+  function
+  | Tcty_constr ((v1, v2, v3)) ->
+      let _ = Path.t env v1
+      and _ = loc env (Longident.t env) v2
+      and _ = v_list (core_type env) v3
+      in ()
+  | Tcty_signature v1 -> let _ = class_signature env v1 in ()
+  | Tcty_fun ((v1, v2, v3)) ->
+      let _ = label env v1
+      and _ = core_type env v2
+      and _ = class_type env v3
+      in ()
+and
+  class_signature env
+                  {
+                    csig_self = v_csig_self;
+                    csig_fields = v_csig_fields;
+                    csig_type = v_csig_type;
+                    csig_loc = v_csig_loc
+                  } =
+  let _ = core_type env v_csig_self in
+  let _ = v_list (class_type_field env) v_csig_fields in
+  let _ = Types.class_signature env v_csig_type in
+  let _ = Location.t env v_csig_loc in ()
+and class_type_field env { ctf_desc = v_ctf_desc; ctf_loc = v_ctf_loc } =
+  let _ = class_type_field_desc env v_ctf_desc in
+  let _ = Location.t env v_ctf_loc in ()
+and class_type_field_desc env =
+  function
+  | Tctf_inher v1 -> let _ = class_type env v1 in ()
+  | Tctf_val v1 ->
+      let _ =
+        (match v1 with
+         | (v1, v2, v3, v4) ->
+             let _ = v_string v1
+             and _ = mutable_flag env v2
+             and _ = virtual_flag env v3
+             and _ = core_type env v4
+             in ())
+      in ()
+  | Tctf_virt v1 ->
+      let _ =
+        (match v1 with
+         | (v1, v2, v3) ->
+             let _ = v_string v1
+             and _ = private_flag env v2
+             and _ = core_type env v3
+             in ())
+      in ()
+  | Tctf_meth v1 ->
+      let _ =
+        (match v1 with
+         | (v1, v2, v3) ->
+             let _ = v_string v1
+             and _ = private_flag env v2
+             and _ = core_type env v3
+             in ())
+      in ()
+  | Tctf_cstr v1 ->
+      let _ =
+        (match v1 with
+         | (v1, v2) ->
+             let _ = core_type env v1 and _ = core_type env v2 in ())
+      in ()
+
+
+and class_declaration env v = class_infos env (class_expr env) v
+and class_description env v = class_infos env (class_type env) v
+and class_type_declaration env v = class_infos env (class_type env) v
+and  class_infos: 'a. env -> ('a -> unit) -> 'a class_infos -> unit = fun
+ env _of_a x ->
+   match x with
+              {
+                ci_virt = v_ci_virt;
+                ci_params = v_ci_params;
+                ci_id_name = v_ci_id_name;
+                ci_id_class = v_ci_id_class;
+                ci_id_class_type = v_ci_id_class_type;
+                ci_id_object = v_ci_id_object;
+                ci_id_typesharp = v_ci_id_typesharp;
+                ci_expr = v_ci_expr;
+                ci_decl = v_ci_decl;
+                ci_type_decl = v_ci_type_decl;
+                ci_variance = v_ci_variance;
+                ci_loc = v_ci_loc
+              } ->
+  let _ = virtual_flag env v_ci_virt in
+  let _ =
+    match v_ci_params with
+    | (v1, v2) ->
+        let _ = v_list (loc env v_string) v1 and _ = Location.t env v2 in () in
+  let _ = loc env v_string v_ci_id_name in
+  let _ = Ident.t env v_ci_id_class in
+  let _ = Ident.t env v_ci_id_class_type in
+  let _ = Ident.t env v_ci_id_object in
+  let _ = Ident.t env v_ci_id_typesharp in
+  let _ = _of_a v_ci_expr in
+  let _ = Types.class_declaration env v_ci_decl in
+  let _ = Types.class_type_declaration env v_ci_type_decl in
+  let _ =
+    v_list (fun (v1, v2) -> let _ = v_bool v1 and _ = v_bool v2 in ())
+      v_ci_variance in
+  let _ = Location.t env v_ci_loc in ()
+
+
+and module_coercion env =
+  function
+  | Tcoerce_none -> ()
+  | Tcoerce_structure v1 ->
+      let _ =
+        v_list
+          (fun (v1, v2) ->
+             let _ = v_int v1 and _ = module_coercion env v2 in ())
+          v1
+      in ()
+  | Tcoerce_functor ((v1, v2)) ->
+      let _ = module_coercion env v1 and _ = module_coercion env v2 in ()
+  | Tcoerce_primitive v1 -> let _ = Primitive.description env v1 in ()
+and
+  module_type env
+              {
+                mty_desc = v_mty_desc;
+                mty_type = v_mty_type;
+                mty_env = v_mty_env;
+                mty_loc = v_mty_loc
+              } =
+  let _ = module_type_desc env v_mty_desc in
+  let _ = Types.module_type env v_mty_type in
+  let _ = Env.t env v_mty_env in let _ = Location.t env v_mty_loc in ()
+and module_type_desc env =
+  function
+  | Tmty_ident ((v1, v2)) ->
+      let _ = Path.t env v1 and _ = loc env (Longident.t env) v2 in ()
+  | Tmty_signature v1 -> let _ = signature env v1 in ()
+  | Tmty_functor ((v1, v2, v3, v4)) ->
+      let _ = Ident.t env v1
+      and _ = loc env v_string v2
+      and _ = module_type env v3
+      and _ = module_type env v4
+      in ()
+  | Tmty_with ((v1, v2)) ->
+      let _ = module_type env v1
+      and _ =
+        v_list
+          (fun (v1, v2, v3) ->
+             let _ = Path.t env v1
+             and _ = loc env (Longident.t env) v2
+             and _ = with_constraint env v3
+             in ())
+          v2
+      in ()
+  | Tmty_typeof v1 -> let _ = module_expr env v1 in ()
+and
+  signature env
+            {
+              sig_items = v_sig_items;
+              sig_type = v_sig_type;
+              sig_final_env = v_sig_final_env
+            } =
+  let _ = v_list (signature_item env) v_sig_items in
+  let _ = Types.signature env v_sig_type in
+  let _ = Env.t env v_sig_final_env in ()
+and
+  signature_item env
+                 {
+                   sig_desc = v_sig_desc;
+                   sig_env = v_sig_env;
+                   sig_loc = v_sig_loc
+                 } =
+  let _ = signature_item_desc env v_sig_desc in
+  let _ = Env.t env v_sig_env in let _ = Location.t env v_sig_loc in ()
+and signature_item_desc env =
+  function
+  | Tsig_value ((v1, v2, v3)) ->
+      let _ = Ident.t env v1
+      and _ = loc env v_string v2
+      and _ = value_description env v3
+      in ()
+  | Tsig_type v1 ->
+      let _ =
+        v_list
+          (fun (v1, v2, v3) ->
+             let _ = Ident.t env v1
+             and _ = loc env v_string v2
+             and _ = type_declaration env v3
+             in ())
+          v1
+      in ()
+  | Tsig_exception ((v1, v2, v3)) ->
+      let _ = Ident.t env v1
+      and _ = loc env v_string v2
+      and _ = exception_declaration env v3
+      in ()
+  | Tsig_module ((v1, v2, v3)) ->
+      let _ = Ident.t env v1
+      and _ = loc env v_string v2
+      and _ = module_type env v3
+      in ()
+  | Tsig_recmodule v1 ->
+      let _ =
+        v_list
+          (fun (v1, v2, v3) ->
+             let _ = Ident.t env v1
+             and _ = loc env v_string v2
+             and _ = module_type env v3
+             in ())
+          v1
+      in ()
+  | Tsig_modtype ((v1, v2, v3)) ->
+      let _ = Ident.t env v1
+      and _ = loc env v_string v2
+      and _ = modtype_declaration env v3
+      in ()
+  | Tsig_open ((v1, v2)) ->
+      let _ = Path.t env v1 and _ = loc env (Longident.t env) v2 in ()
+  | Tsig_include ((v1, v2)) ->
+      let _ = module_type env v1 and _ = Types.signature env v2 in ()
+  | Tsig_class v1 -> let _ = v_list (class_description env) v1 in ()
+  | Tsig_class_type v1 ->
+      let _ = v_list (class_type_declaration env) v1 in ()
+and modtype_declaration env =
+  function
+  | Tmodtype_abstract -> ()
+  | Tmodtype_manifest v1 -> let _ = module_type env v1 in ()
+and with_constraint env =
+  function
+  | Twith_type v1 -> let _ = type_declaration env v1 in ()
+  | Twith_module ((v1, v2)) ->
+      let _ = Path.t env v1 and _ = loc env (Longident.t env) v2 in ()
+  | Twith_typesubst v1 -> let _ = type_declaration env v1 in ()
+  | Twith_modsubst ((v1, v2)) ->
+      let _ = Path.t env v1 and _ = loc env (Longident.t env) v2 in ()
+
+
+and module_type_constraint env =
+  function
+  | Tmodtype_implicit -> ()
+  | Tmodtype_explicit v1 -> let _ = module_type env v1 in ()
+
+
+let override_flag env x = ()
+let virtual_flag env x = ()
