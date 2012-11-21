@@ -159,12 +159,6 @@ let label_description env x = ()
 let partial env x =  ()
 let optional env x = ()
 
-let closed_flag env x = ()
-let rec_flag env x = ()
-let direction_flag env x = ()
-let private_flag env x = ()
-let mutable_flag env x = ()
-  
 (*****************************************************************************)
 (* Defs/Uses *)
 (*****************************************************************************)
@@ -205,21 +199,15 @@ and structure env
   let _ = List.iter (structure_item env) v_str_items in
   let _ = Types.signature env v_str_type in
   ()
-and structure_item env
-                 {
-                   str_desc = v_str_desc;
-                   str_loc = v_str_loc;
-                   str_env = v_str_env
-                 } =
+and structure_item env { str_desc = v_str_desc; str_loc = _; str_env = _ } =
   let _ = structure_item_desc env v_str_desc in
   ()
 and structure_item_desc env =
   function
   | (Tstr_class _|Tstr_class_type _) -> todo()
   | Tstr_eval v1 -> let _ = expression env v1 in ()
-  | Tstr_value ((v1, v2)) ->
-      let _ = rec_flag env v1
-      and _ =
+  | Tstr_value ((_rec_flag, v2)) ->
+      let _ =
         List.iter
           (fun (v1, v2) ->
              let _ = pattern env v1 and _ = expression env v2 in ())
@@ -332,7 +320,7 @@ and pattern_desc env =
       and _ = v_option (pattern env) v2
       and _ = v_ref (row_desc env) v3
       in ()
-  | Tpat_record ((v1, v2)) ->
+  | Tpat_record ((v1, _closed_flag)) ->
       let _ =
         List.iter
           (fun (v1, v2, v3, v4) ->
@@ -342,7 +330,6 @@ and pattern_desc env =
              and _ = pattern env v4
              in ())
           v1
-      and _ = closed_flag env v2
       in ()
   | Tpat_array v1 -> let _ = List.iter (pattern env) v1 in ()
   | Tpat_or ((v1, v2, v3)) ->
@@ -389,9 +376,8 @@ and expression_desc env =
       and _ = Types.value_description env v3
       in ()
   | Texp_constant v1 -> let _ = constant env v1 in ()
-  | Texp_let ((v1, v2, v3)) ->
-      let _ = rec_flag env v1
-      and _ =
+  | Texp_let ((_rec_flag, v2, v3)) ->
+      let _ =
         List.iter
           (fun (v1, v2) ->
              let _ = pattern env v1 and _ = expression env v2 in ())
@@ -480,12 +466,11 @@ and expression_desc env =
       let _ = expression env v1 and _ = expression env v2 in ()
   | Texp_while ((v1, v2)) ->
       let _ = expression env v1 and _ = expression env v2 in ()
-  | Texp_for ((v1, v2, v3, v4, v5, v6)) ->
+  | Texp_for ((v1, v2, v3, v4, _direction_flag, v6)) ->
       let _ = Ident.t env v1
       and _ = loc env v_string v2
       and _ = expression env v3
       and _ = expression env v4
-      and _ = direction_flag env v5
       and _ = expression env v6
       in ()
   | Texp_when ((v1, v2)) ->
@@ -666,7 +651,7 @@ and
                      typ_type = v_typ_type;
                      typ_cstrs = v_typ_cstrs;
                      typ_kind = v_typ_kind;
-                     typ_private = v_typ_private;
+                     typ_private = _v_typ_private;
                      typ_manifest = v_typ_manifest;
                      typ_variance = v_typ_variance;
                      typ_loc = v_typ_loc
@@ -681,7 +666,6 @@ and
          in ())
       v_typ_cstrs in
   let _ = type_kind env v_typ_kind in
-  let _ = private_flag env v_typ_private in
   let _ = v_option (core_type env) v_typ_manifest in
   let _ =
     List.iter (fun (v1, v2) -> let _ = v_bool v1 and _ = v_bool v2 in ())
@@ -703,10 +687,9 @@ and type_kind env =
   | Ttype_record v1 ->
       let _ =
         List.iter
-          (fun (v1, v2, v3, v4, _loc) ->
+          (fun (v1, v2, _mutable_flag, v4, _loc) ->
              let _ = Ident.t env v1
              and _ = loc env v_string v2
-             and _ = mutable_flag env v3
              and _ = core_type env v4
              in ())
           v1
