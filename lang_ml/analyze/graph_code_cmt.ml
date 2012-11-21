@@ -29,6 +29,7 @@ open Typedtree
  * 
  * As opposed to lang_ml/analyze/graph_code_ml.ml, no need for:
  *  - module lookup (all names are resolved)
+ *  - multiple parameters, everything is curried (fun x y --> fun x -> fun y)
  * 
  * schema:
  *  Root -> Dir -> Module -> ...
