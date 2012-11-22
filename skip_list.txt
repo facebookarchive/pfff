@@ -31,6 +31,14 @@ file: lang_ml/analyze/test_analyze_ml.cmt
 file: external/core/dynlinkaux.cmt
 
 # -------------------------------------------------------------------------
+# dupe nodes inside the file
+# -------------------------------------------------------------------------
+#file: commons/lib-sexp/pre_sexp.cmt
+#file: commons/ocamlextra/dumper.cmt
+#file: external/core/dynlink.cmt
+#file: external/core/graphicsX11.cmt
+
+# -------------------------------------------------------------------------
 # dupes
 # -------------------------------------------------------------------------
 
