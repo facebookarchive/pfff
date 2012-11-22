@@ -281,7 +281,7 @@ let reset_pr_indent () =
 open Printf
 open Obj
 
-let rec dump r =
+let rec dump2 r =
   if is_int r then
     string_of_int (magic r : int)
   else (				(* Block. *)
@@ -315,11 +315,11 @@ let rec dump r =
     (* From the tag, determine the type of block. *)
     if is_list r then ( (* List. *)
       let fields = get_list r in
-      "[" ^ String.concat "; " (List.map dump fields) ^ "]"
+      "[" ^ String.concat "; " (List.map dump2 fields) ^ "]"
     )
     else if t = 0 then (		(* Tuple, array, record. *)
       let fields = get_fields [] s in
-      "(" ^ String.concat ", " (List.map dump fields) ^ ")"
+      "(" ^ String.concat ", " (List.map dump2 fields) ^ ")"
     )
 
     (* Note that [lazy_tag .. forward_tag] are < no_scan_tag.  Not
@@ -334,8 +334,8 @@ let rec dump r =
       (* No information on decoding the class (first field).  So just print
        * out the ID and the slots.
        *)
-      "Object #" ^ dump id ^
-        " (" ^ String.concat ", " (List.map dump slots) ^ ")"
+      "Object #" ^ dump2 id ^
+        " (" ^ String.concat ", " (List.map dump2 slots) ^ ")"
     )
     else if t = infix_tag then opaque "infix"
     else if t = forward_tag then opaque "forward"
@@ -343,7 +343,7 @@ let rec dump r =
     else if t < no_scan_tag then (	(* Constructed value. *)
       let fields = get_fields [] s in
       "Tag" ^ string_of_int t ^
-        " (" ^ String.concat ", " (List.map dump fields) ^ ")"
+        " (" ^ String.concat ", " (List.map dump2 fields) ^ ")"
     )
     else if t = string_tag then (
       "\"" ^ String.escaped (magic r : string) ^ "\""
@@ -357,7 +357,7 @@ let rec dump r =
     else failwith ("dump: impossible tag (" ^ string_of_int t ^ ")")
   )
 
-let dump v = dump (repr v)
+let dump v = dump2 (repr v)
 
 (* end of dumper.ml *)
 
@@ -2346,7 +2346,7 @@ let edit_distance s1 s2 =
   (matrix_distance s1 s2).(String.length s1).(String.length s2)
 
 
-let test = edit_distance "vintner" "writers"
+let test_edit = edit_distance "vintner" "writers"
 let _ = assert (edit_distance "winter" "winter" =|= 0)
 let _ = assert (edit_distance "vintner" "writers" =|= 5)
 
@@ -4460,7 +4460,7 @@ let pack_sorted same xs =
           if same (List.hd cur) y then pack_s_aux (y::cur, rest) ys
           else pack_s_aux ([y], cur::rest) ys
   in pack_s_aux ([List.hd xs],[]) (List.tl xs) +> List.rev
-let test = pack_sorted (=*=) [1;1;1;2;2;3;4]
+let test_pack = pack_sorted (=*=) [1;1;1;2;2;3;4]
 
 
 let rec keep_best f =
