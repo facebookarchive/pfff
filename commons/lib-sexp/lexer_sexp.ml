@@ -193,23 +193,23 @@ let __ocaml_lex_tables = {
    "";
 }
 
-let rec main buf lexbuf =
+let rec main2 buf lexbuf =
     __ocaml_lex_main_rec buf lexbuf 0
 and __ocaml_lex_main_rec buf lexbuf __ocaml_lex_state =
   match Lexing.engine __ocaml_lex_tables __ocaml_lex_state lexbuf with
       | 0 ->
 # 75 "lexer.mll"
-            ( found_newline lexbuf 1; main buf lexbuf )
+            ( found_newline lexbuf 1; main2 buf lexbuf )
 # 204 "lexer.ml"
 
   | 1 ->
 # 76 "lexer.mll"
-           ( main buf lexbuf )
+           ( main2 buf lexbuf )
 # 209 "lexer.ml"
 
   | 2 ->
 # 77 "lexer.mll"
-                       ( main buf lexbuf )
+                       ( main2 buf lexbuf )
 # 214 "lexer.ml"
 
   | 3 ->
@@ -414,6 +414,6 @@ let
       | None -> Buffer.create 64
       | Some buf -> Buffer.clear buf; buf
     in
-    main buf
+    main2 buf
 
 # 420 "lexer.ml"
