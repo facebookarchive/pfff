@@ -1,3 +1,17 @@
+  let _ =
+    List.iter
+      (fun (v1, _loc) ->
+         let _ = pat_extra env v1 in ())
+      v_pat_extra in
+
+
+and pat_extra env =
+  function
+  | Tpat_constraint v1 -> let _ = core_type env v1 in ()
+  | Tpat_type ((v1, v2)) ->
+      let _ = Path.t env v1 and _ = loc env (Longident.t env) v2 in ()
+  | Tpat_unpack -> ()
+
 module Concr = struct
     let t env x = ()
 end

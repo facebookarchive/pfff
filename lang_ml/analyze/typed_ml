@@ -1,3 +1,4 @@
+(* -*- tuareg -*- *)
 type pattern =
   { pat_desc: pattern_desc;
     pat_loc: Location.t;

@@ -93,12 +93,32 @@ let add_use_edge env dst =
       env.g +> G.add_edge (src, dst) G.Use;
     )
 
+let add_node_edge_if_defs_mode ?(dupe_ok=false) env node =
+  let (full_ident, _kind) = node in
+  if env.phase = Defs then begin
+    if G.has_node node env.g && dupe_ok
+    then () (* pr2 "already present entity" *)
+    else begin
+      env.g +> G.add_node node;
+      env.g +> G.add_edge (env.current, node) G.Has;
+    end
+  end;
+  { env with  current = node; current_qualifier = full_ident; }
+
 let rec kind_of_core_type x =
   match x.ctyp_desc with
   | Ttyp_any  | Ttyp_var _
       -> raise Todo
   | Ttyp_arrow _ -> E.Function
   | _ -> raise Todo
+
+let kind_of_type_desc x =
+  match x with
+  | Types.Tarrow _ -> E.Function
+  | _ -> E.Constant
+
+let kind_of_type_expr x =
+  kind_of_type_desc x.Types.desc
 
 let kind_of_value_descr vd =
   kind_of_core_type vd.val_desc
@@ -195,36 +215,34 @@ and structure env
   let _ = Types.signature env v_str_type in
   ()
 and structure_item env { str_desc = v_str_desc; str_loc = _; str_env = _ } =
-  let _ = structure_item_desc env v_str_desc in
-  ()
+  structure_item_desc env v_str_desc
 and structure_item_desc env =
   function
   | Tstr_eval v1 -> 
     expression env v1
   | Tstr_value ((_rec_flag, xs)) ->
       List.iter (fun (v1, v2) ->
-        let _ = pattern env v1 in
-        let _ = expression env v2 in ()
+        match v1.pat_desc with
+        | Tpat_var(id, _loc) ->
+            let full_ident = env.current_qualifier ^ "." ^ Ident.name id in
+            let node = (full_ident, kind_of_type_expr v2.exp_type) in
+            let env = add_node_edge_if_defs_mode ~dupe_ok:true env node in
+            expression env v2
+        | _ ->
+            pattern env v1;
+            expression env v2 
       ) xs
   | Tstr_primitive ((id, _loc, vd)) ->
     let full_ident = env.current_qualifier ^ "." ^ Ident.name id in
     let node = (full_ident, kind_of_value_descr vd) in
-    if env.phase = Defs then begin
-      env.g +> G.add_node node;
-      env.g +> G.add_edge (env.current, node) G.Has;
-    end;
-    let env = { env with  current = node; current_qualifier = full_ident; } in
+    let env = add_node_edge_if_defs_mode env node in
     value_description env vd
 
   | Tstr_type v1 ->
       List.iter (fun (id, _loc, v3) ->
        let full_ident = env.current_qualifier ^ "." ^ Ident.name id in
        let node = (full_ident, E.Type) in
-       if env.phase = Defs then begin
-         env.g +> G.add_node node;
-         env.g +> G.add_edge (env.current, node) G.Has;
-       end;
-       let env = { env with  current = node; current_qualifier = full_ident; }in
+       let env = add_node_edge_if_defs_mode env node in
        type_declaration env v3
       ) v1
 
@@ -242,11 +260,7 @@ and structure_item_desc env =
   | Tstr_module ((id, v2, v3)) ->
       let full_ident = env.current_qualifier ^ "." ^ Ident.name id in
       let node = (full_ident, E.Module) in
-      if env.phase = Defs then begin
-        env.g +> G.add_node node;
-        env.g +> G.add_edge (env.current, node) G.Has;
-      end;
-      let env = { env with  current = node; current_qualifier = full_ident; }in
+      let env = add_node_edge_if_defs_mode env node in
       let _ = loc env v_string v2
       and _ = module_expr env v3
       in ()
@@ -273,7 +287,8 @@ and structure_item_desc env =
       let _ = module_expr env v1 and _ = List.iter (Ident.t env) v2 in ()
 
   | (Tstr_class _|Tstr_class_type _) -> 
-    pr2_once (spf "TODO: str_class, %s" env.file)
+    (*pr2_once (spf "TODO: str_class, %s" env.file) *)
+    ()
 
 
 and type_declaration env
@@ -339,23 +354,12 @@ and  pattern env
           {
             pat_desc = v_pat_desc;
             pat_loc = v_pat_loc;
-            pat_extra = v_pat_extra;
+            pat_extra = _v_pat_extra;
             pat_type = v_pat_type;
             pat_env = v_pat_env
           } =
   let _ = pattern_desc env v_pat_desc in
-  let _ =
-    List.iter
-      (fun (v1, _loc) ->
-         let _ = pat_extra env v1 in ())
-      v_pat_extra in
   let _ = type_expr env v_pat_type in  ()
-and pat_extra env =
-  function
-  | Tpat_constraint v1 -> let _ = core_type env v1 in ()
-  | Tpat_type ((v1, v2)) ->
-      let _ = Path.t env v1 and _ = loc env (Longident.t env) v2 in ()
-  | Tpat_unpack -> ()
 and pattern_desc env =
   function
   | Tpat_any -> ()
