@@ -65,6 +65,9 @@ let txt_of_node (s, kind) =
   | E.Method _ | E.Field | E.Package | E.Class _ | E.ClassConstant ->
       let xs = Common.split "[.]" s in
       Common.list_last xs
+  | E.Function | E.Type ->
+      let xs = Common.split "[.]" s in
+      Common.list_last xs
   | _ -> s
 
 (* todo: style/font_of_node_kind? so put in bold directories *)
