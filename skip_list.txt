@@ -6,10 +6,10 @@
 # dupes cmt
 # -------------------------------------------------------------------------
 
+#TODO: mark main_checker as a dupe module and generate a File instead?
 #file: facebook/check_module/main_checker.cmt
 file: facebook/qa_code/main_checker.cmt
 file: facebook/check_cpp/main_checker.cmt
-
 #file: main.cmt
 file: lang_php/pretty/main.cmt
 

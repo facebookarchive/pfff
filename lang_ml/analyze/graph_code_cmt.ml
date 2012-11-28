@@ -93,7 +93,7 @@ let add_use_edge env dst =
       env.g +> G.add_edge (src, dst) G.Use;
     )
 
-let add_node_edge_if_defs_mode ?(dupe_ok=false) env node =
+let add_node_and_edge_if_defs_mode ?(dupe_ok=false) env node =
   let (full_ident, _kind) = node in
   if env.phase = Defs then begin
     if G.has_node node env.g && dupe_ok
@@ -105,23 +105,28 @@ let add_node_edge_if_defs_mode ?(dupe_ok=false) env node =
   end;
   { env with  current = node; current_qualifier = full_ident; }
 
+(* used for primitives *)
 let rec kind_of_core_type x =
   match x.ctyp_desc with
   | Ttyp_any  | Ttyp_var _
       -> raise Todo
   | Ttyp_arrow _ -> E.Function
   | _ -> raise Todo
+let kind_of_value_descr vd =
+  kind_of_core_type vd.val_desc
 
 let kind_of_type_desc x =
+  (* pr2 (Ocaml.string_of_v (Meta_ast_cmt.vof_type_desc x)); *)
   match x with
-  | Types.Tarrow _ -> E.Function
+  | Types.Tarrow _ -> 
+    E.Function
+  | Types.Tconstr (path, xs, aref) when Path.name path =$= "Pervasives.ref" ->
+    E.Global
   | _ -> E.Constant
 
 let kind_of_type_expr x =
   kind_of_type_desc x.Types.desc
 
-let kind_of_value_descr vd =
-  kind_of_core_type vd.val_desc
 
 
 
@@ -226,7 +231,7 @@ and structure_item_desc env =
         | Tpat_var(id, _loc) ->
             let full_ident = env.current_qualifier ^ "." ^ Ident.name id in
             let node = (full_ident, kind_of_type_expr v2.exp_type) in
-            let env = add_node_edge_if_defs_mode ~dupe_ok:true env node in
+            let env = add_node_and_edge_if_defs_mode ~dupe_ok:true env node in
             expression env v2
         | _ ->
             pattern env v1;
@@ -235,14 +240,14 @@ and structure_item_desc env =
   | Tstr_primitive ((id, _loc, vd)) ->
     let full_ident = env.current_qualifier ^ "." ^ Ident.name id in
     let node = (full_ident, kind_of_value_descr vd) in
-    let env = add_node_edge_if_defs_mode env node in
+    let env = add_node_and_edge_if_defs_mode env node in
     value_description env vd
 
   | Tstr_type v1 ->
       List.iter (fun (id, _loc, v3) ->
        let full_ident = env.current_qualifier ^ "." ^ Ident.name id in
        let node = (full_ident, E.Type) in
-       let env = add_node_edge_if_defs_mode env node in
+       let env = add_node_and_edge_if_defs_mode env node in
        type_declaration env v3
       ) v1
 
@@ -260,7 +265,7 @@ and structure_item_desc env =
   | Tstr_module ((id, v2, v3)) ->
       let full_ident = env.current_qualifier ^ "." ^ Ident.name id in
       let node = (full_ident, E.Module) in
-      let env = add_node_edge_if_defs_mode env node in
+      let env = add_node_and_edge_if_defs_mode env node in
       let _ = loc env v_string v2
       and _ = module_expr env v3
       in ()

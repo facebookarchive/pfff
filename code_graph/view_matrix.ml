@@ -62,10 +62,9 @@ let color_of_node (_, kind) =
 let txt_of_node (s, kind) = 
   match kind with
   | E.Dir | E.File -> Common.basename s
-  | E.Method _ | E.Field | E.Package | E.Class _ | E.ClassConstant ->
-      let xs = Common.split "[.]" s in
-      Common.list_last xs
-  | E.Function | E.Type ->
+  | E.Package | E.Class _ 
+  | E.Method _ | E.Field | E.ClassConstant
+  | E.Function | E.Type | E.Constant | E.Global ->
       let xs = Common.split "[.]" s in
       Common.list_last xs
   | _ -> s
