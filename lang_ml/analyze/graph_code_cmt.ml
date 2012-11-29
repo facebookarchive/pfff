@@ -317,19 +317,19 @@ and type_kind env =
   function
   | Ttype_abstract -> ()
   | Ttype_variant v1 ->
-      List.iter
-        (fun (v1, _loc, v3, _loc2) ->
-          let _ = Ident.t env v1
-          and _ = List.iter (core_type env) v3
-          in ())
-        v1
+      List.iter (fun (id, _loc, v3, _loc2) ->
+        let full_ident = env.current_qualifier ^ "." ^ Ident.name id in
+        let node = (full_ident, E.Constructor) in
+        let env = add_node_and_edge_if_defs_mode env node in
+        List.iter (core_type env) v3;
+      ) v1
   | Ttype_record v1 ->
-      List.iter
-        (fun (v1, _loc, _mutable_flag, v4, _loc2) ->
-          let _ = Ident.t env v1
-          and _ = core_type env v4
-          in ())
-        v1
+      List.iter  (fun (id, _loc, _mutable_flag, v4, _loc2) ->
+        let full_ident = env.current_qualifier ^ "." ^ Ident.name id in
+        let node = (full_ident, E.Field) in
+        let env = add_node_and_edge_if_defs_mode env node in
+        core_type env v4;
+      ) v1
 
 and exception_declaration env 
  { exn_params = v_exn_params; exn_exn = v_exn_exn; exn_loc = _v_exn_loc } =

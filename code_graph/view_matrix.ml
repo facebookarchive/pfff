@@ -66,8 +66,8 @@ let txt_of_node (s, kind) =
   | E.Dir | E.File -> Common.basename s
   | E.Package | E.Module
   | E.Class _ 
-  | E.Method _ | E.Field | E.ClassConstant
-  | E.Function | E.Type | E.Constant | E.Global 
+  | E.Field | E.Constructor | E.Method _  | E.ClassConstant
+  | E.Function | E.Type | E.Constant | E.Global
   | E.Exception 
     ->
       let xs = Common.split "[.]" s in

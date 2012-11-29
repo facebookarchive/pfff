@@ -23,6 +23,10 @@ let use_variant = function
   | Constructor1 -> 1
   | Constructor2WithArg _ -> 2
 
+type record = { fld1: int; fld2: float }
+let use_record = function
+  { fld1 = i; _} -> i
+
 exception Error1
 
 module X = struct
