@@ -15,6 +15,8 @@ let use_global () =
 let use_hglobal () = 
   Hashtbl.add hglobal 1 true
 
+exception Error1
+
 module X = struct
   type t = A | B
   module Y = struct

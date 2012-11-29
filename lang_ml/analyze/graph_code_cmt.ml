@@ -253,17 +253,18 @@ and structure_item_desc env =
        type_declaration env v3
       ) v1
 
-  | Tstr_exception ((v1, v2, v3)) ->
-      let _ = Ident.t env v1
-      and _ = loc env v_string v2
-      and _ = exception_declaration env v3
-      in ()
-  | Tstr_exn_rebind ((v1, v2, v3, v4)) ->
-      let _ = Ident.t env v1
-      and _ = loc env v_string v2
-      and _ = Path.t env v3
-      and _ = loc env (Longident.t env) v4
-      in ()
+  | Tstr_exception ((id, _loc, v3)) ->
+       let full_ident = env.current_qualifier ^ "." ^ Ident.name id in
+       let node = (full_ident, E.Exception) in
+       let env = add_node_and_edge_if_defs_mode env node in
+       exception_declaration env v3
+  | Tstr_exn_rebind ((id, _loc, v3, v4)) ->
+       let full_ident = env.current_qualifier ^ "." ^ Ident.name id in
+       let node = (full_ident, E.Exception) in
+       let env = add_node_and_edge_if_defs_mode env node in
+       let _ = Path.t env v3
+       and _ = loc env (Longident.t env) v4
+       in ()
   | Tstr_module ((id, v2, v3)) ->
       let full_ident = env.current_qualifier ^ "." ^ Ident.name id in
       let node = (full_ident, E.Module) in
