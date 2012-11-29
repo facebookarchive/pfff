@@ -51,13 +51,13 @@ type env = {
   file: Common.filename;
   
   current_qualifier: string;
+  current_module: string;
 }
  and phase = Defs | Uses
 
 (*****************************************************************************)
-(* Helpers *)
+(* Parsing *)
 (*****************************************************************************)
-
 let _hmemo = Hashtbl.create 101
 let parse file =
   Common.memoized _hmemo file (fun () ->
@@ -71,6 +71,10 @@ let find_source_files_of_dir_or_files xs =
     | File_type.Obj "cmt" -> true
     | _ -> false
   ) +> Common.sort
+
+(*****************************************************************************)
+(* Add edges *)
+(*****************************************************************************)
 
 let add_use_edge env dst =
   let src = env.current in
@@ -109,6 +113,15 @@ let add_node_and_edge_if_defs_mode ?(dupe_ok=false) env node =
     end
   end;
   { env with  current = node; current_qualifier = full_ident; }
+
+let add_use_edge_lid env lid texpr kind =
+  let _str = Path.name lid in
+  pr2 (Ocaml.string_of_v (Meta_ast_cmt.vof_type_expr_show_all texpr));
+  raise Todo
+
+(*****************************************************************************)
+(* Kind of entity *)
+(*****************************************************************************)
     
 let kind_of_type_desc x =
   (* pr2 (Ocaml.string_of_v (Meta_ast_cmt.vof_type_desc x)); *)
@@ -134,8 +147,9 @@ let rec kind_of_core_type x =
 let kind_of_value_descr vd =
   kind_of_core_type vd.val_desc
 
-
-
+(*****************************************************************************)
+(* Empty wrappers *)
+(*****************************************************************************)
 
 module Ident = struct
     let t env x =  ()
@@ -163,8 +177,6 @@ end
 let v_option f xs = Common.do_option f xs
 
 let v_string x = ()
-let v_bool x = ()
-let v_int x = ()
 let v_ref f x = ()
 
 let meth env x = ()
@@ -190,6 +202,7 @@ let rec extract_defs_uses ~phase ~g ~ast ~readable =
     g; phase;
     current = (ast.cmt_modname, E.Module);
     current_qualifier = ast.cmt_modname;
+    current_module = ast.cmt_modname;
     file = readable;
   }
   in
@@ -223,9 +236,9 @@ and structure_item env
  { str_desc = v_str_desc; str_loc = _; str_env = _ } =
   structure_item_desc env v_str_desc
 and  pattern env
-  { pat_desc = v_pat_desc; pat_loc = v_pat_loc;
-    pat_extra = _v_pat_extra; pat_type = _v_pat_type; pat_env = v_pat_env } =
-  pattern_desc env v_pat_desc
+  { pat_desc = v_pat_desc; pat_type = v_pat_type; 
+    pat_loc = v_pat_loc; pat_extra = _v_pat_extra; pat_env = v_pat_env } =
+  pattern_desc v_pat_type env v_pat_desc
 and expression env
     { exp_desc = v_exp_desc; exp_loc = v_exp_loc;  exp_extra = __v_exp_extra;
       exp_type = __v_exp_type; exp_env = v_exp_env } =
@@ -320,9 +333,7 @@ and type_declaration env
       v_typ_cstrs in
   let _ = type_kind env v_typ_kind in
   let _ = v_option (core_type env) v_typ_manifest in
-  let _ =
-    List.iter (fun (v1, v2) -> let _ = v_bool v1 and _ = v_bool v2 in ())
-      v_typ_variance in
+  List.iter (fun (_bool, _bool2) -> ()) v_typ_variance;
   ()
 and type_kind env = function
   | Ttype_abstract -> ()
@@ -350,7 +361,7 @@ and exception_declaration env
 (* ---------------------------------------------------------------------- *)
 (* Pattern *)
 (* ---------------------------------------------------------------------- *)
-and pattern_desc env = function
+and pattern_desc t env = function
   | Tpat_any -> ()
   | Tpat_var ((v1, _loc)) ->
       Ident.t env v1
@@ -362,11 +373,10 @@ and pattern_desc env = function
       constant env v1
   | Tpat_tuple xs -> 
       List.iter (pattern env) xs
-  | Tpat_construct ((v1, _loc_longident, v3, v4, v5)) ->
-      let _ = Path.t env v1
-      and _ = constructor_description env v3
+  | Tpat_construct ((lid, _loc_longident, v3, v4, v5)) ->
+      add_use_edge_lid env lid t E.Constructor;
+      let _ = constructor_description env v3
       and _ = List.iter (pattern env) v4
-      and _ = v_bool v5
       in ()
   | Tpat_variant ((v1, v2, v3)) ->
       let _ = label env v1
@@ -374,9 +384,9 @@ and pattern_desc env = function
       and _ = v_ref (row_desc env) v3
       in ()
   | Tpat_record ((xs, _closed_flag)) ->
-      List.iter (fun (v1, _loc_longident, v3, v4) ->
-        let _ = Path.t env v1
-        and _ = label_description env v3
+      List.iter (fun (lid, _loc_longident, v3, v4) ->
+        add_use_edge_lid env lid t E.Field;
+        let _ = label_description env v3
         and _ = pattern env v4
         in ()
       ) xs
@@ -446,11 +456,10 @@ and expression_desc env =
           v2
       in ()
   | Texp_tuple v1 -> let _ = List.iter (expression env) v1 in ()
-  | Texp_construct ((v1, _loc_longident, v3, v4, v5)) ->
+  | Texp_construct ((v1, _loc_longident, v3, v4, _bool)) ->
       let _ = Path.t env v1
       and _ = constructor_description env v3
       and _ = List.iter (expression env) v4
-      and _ = v_bool v5
       in ()
   | Texp_variant ((v1, v2)) ->
       let _ = label env v1 and _ = v_option (expression env) v2 in ()
@@ -599,9 +608,8 @@ and core_type_desc env =
       in ()
   | Ttyp_alias ((v1, v2)) ->
       let _ = core_type env v1 and _ = v_string v2 in ()
-  | Ttyp_variant ((v1, v2, v3)) ->
+  | Ttyp_variant ((v1, _bool, v3)) ->
       let _ = List.iter (row_field env) v1
-      and _ = v_bool v2
       and _ = v_option (List.iter (label env)) v3
       in ()
   | Ttyp_poly ((v1, v2)) ->
@@ -619,9 +627,8 @@ and core_field_desc env =
   | Tcfield_var -> ()
 and row_field env =
   function
-  | Ttag ((v1, v2, v3)) ->
+  | Ttag ((v1, _bool, v3)) ->
       let _ = label env v1
-      and _ = v_bool v2
       and _ = List.iter (core_type env) v3
       in ()
   | Tinherit v1 -> let _ = core_type env v1 in ()

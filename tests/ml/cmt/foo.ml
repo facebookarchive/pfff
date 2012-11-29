@@ -27,6 +27,10 @@ type record = { fld1: int; fld2: float }
 let use_record = function
   { fld1 = i; _} -> i
 
+let use_ref = function
+ { contents = x} -> x
+
+
 exception Error1
 
 module X = struct
