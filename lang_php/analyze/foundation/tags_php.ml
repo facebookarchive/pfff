@@ -104,6 +104,7 @@ let tags_of_ast ast filelines =
     | (   Db.Field | Db.ClassConstant | Db.Other _
         | Db.Type | Db.Module | Db.Package | Db.TopStmts | Db.Macro | Db.Global
         | Db.MultiDirs | Db.Dir | Db.File
+        | Db.Exception
       ) ->
         (* see defs_of_any *)
         raise Impossible

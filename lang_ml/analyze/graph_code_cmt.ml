@@ -120,7 +120,9 @@ let kind_of_type_desc x =
   match x with
   | Types.Tarrow _ -> 
     E.Function
-  | Types.Tconstr (path, xs, aref) when Path.name path =$= "Pervasives.ref" ->
+  | Types.Tconstr (path, xs, aref) 
+      (* less: potentially anything with a mutable field *)
+      when List.mem (Path.name path) ["Pervasives.ref";"Hashtbl.t"] ->
     E.Global
   | _ -> E.Constant
 

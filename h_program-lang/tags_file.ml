@@ -120,6 +120,7 @@ let vim_tag_kind_str tag_kind =
   | Db.File
   | Db.Dir
   | Db.MultiDirs
+  | Db.Exception
       -> ""
 
 (* For methods, in addition to the tag for the precise 'class::method'

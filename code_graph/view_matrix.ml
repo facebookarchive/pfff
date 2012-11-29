@@ -48,6 +48,7 @@ let color_of_node (_, kind) =
   | E.Constant -> "pink"
   | E.Global -> "cyan"
   | E.Macro -> "pink1"
+  | E.Exception -> "orchid"
   | E.TopStmts -> raise Todo
 
   | E.Method _ -> "gold3"

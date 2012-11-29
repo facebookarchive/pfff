@@ -55,7 +55,7 @@ let gen_package_file_with_class_defs pr xs g =
       |E.TopStmts|E.Macro|E.Global
       |E.Type
       |E.Package|E.Module
-      |E.Function
+      |E.Function|E.Exception
       ) -> ()
   in
   List.iter (aux 0) xs

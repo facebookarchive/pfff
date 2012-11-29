@@ -90,6 +90,7 @@ let name_id id db =
 
     | (E.MultiDirs|E.Dir|E.File | E.Macro|E.Global|E.Type
       |E.Module|E.Package
+      |E.Exception
       ) ->
         (* not in db for now *)
         raise Impossible
@@ -124,6 +125,7 @@ let string_of_id_kind = function
 
   | E.TopStmts  -> "stmtlist"
   | E.Other _ -> "idmisc"
+  | E.Exception -> "exception"
   | (E.MultiDirs|E.Dir|E.File|E.Macro|E.Global|E.Type|E.Module|E.Package) ->
       raise Impossible
 

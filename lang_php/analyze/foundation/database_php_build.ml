@@ -100,6 +100,7 @@ let (build_entity_finder: database -> Entity_php.entity_finder) = fun db ->
       |E.TopStmts
       |E.MultiDirs|E.Dir|E.File
       |E.Other _
+      |E.Exception
       )
       -> raise Todo
    ) with 

@@ -105,6 +105,7 @@ type entity_kind =
   | Type
   | Constant | Global
   | Macro
+  | Exception
   | TopStmts
 
   (* nested entities *)
@@ -279,6 +280,7 @@ let string_of_entity_kind e =
   | File -> "File"
   | Dir -> "Dir"
   | MultiDirs -> "MultiDirs"
+  | Exception -> "Exception"
 
 let entity_kind_of_string s =
   match s with

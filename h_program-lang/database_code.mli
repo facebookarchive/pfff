@@ -6,6 +6,7 @@ type entity_kind =
   | Type 
   | Constant | Global
   | Macro
+  | Exception
   | TopStmts
 
   | Method of method_type 

@@ -99,6 +99,7 @@ let icon_of_kind kind has_test =
   (* todo *)
   | Db.Field -> `CONNECT
   | Db.Macro -> `CONNECT
+  | Db.Exception -> `CONNECT
 
   | (Db.TopStmts | Db.Other _ | Db.ClassConstant) -> raise Todo
 

@@ -7,9 +7,13 @@ open List
 let list2_call_unqualified = map (fun x -> x) [3;4]
 
 let global = ref 0
+let hglobal = Hashtbl.create 101
 
 let use_global () = 
   incr global
+
+let use_hglobal () = 
+  Hashtbl.add hglobal 1 true
 
 module X = struct
   type t = A | B
