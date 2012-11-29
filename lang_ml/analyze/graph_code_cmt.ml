@@ -222,6 +222,14 @@ and structure env
 and structure_item env 
  { str_desc = v_str_desc; str_loc = _; str_env = _ } =
   structure_item_desc env v_str_desc
+and  pattern env
+  { pat_desc = v_pat_desc; pat_loc = v_pat_loc;
+    pat_extra = _v_pat_extra; pat_type = _v_pat_type; pat_env = v_pat_env } =
+  pattern_desc env v_pat_desc
+and expression env
+    { exp_desc = v_exp_desc; exp_loc = v_exp_loc;  exp_extra = __v_exp_extra;
+      exp_type = __v_exp_type; exp_env = v_exp_env } =
+  expression_desc env v_exp_desc
 
 (* ---------------------------------------------------------------------- *)
 (* Structure *)
@@ -337,11 +345,6 @@ and exception_declaration env
 (* ---------------------------------------------------------------------- *)
 (* Pattern *)
 (* ---------------------------------------------------------------------- *)
-and  pattern env
-  { pat_desc = v_pat_desc; pat_loc = v_pat_loc;
-    pat_extra = _v_pat_extra; pat_type = _v_pat_type; pat_env = v_pat_env } =
-  pattern_desc env v_pat_desc
-
 and pattern_desc env = function
   | Tpat_any -> ()
   | Tpat_var ((v1, _loc)) ->
@@ -350,8 +353,10 @@ and pattern_desc env = function
       let _ = pattern env v1
       and _ = Ident.t env v2
       in ()
-  | Tpat_constant v1 -> let _ = constant env v1 in ()
-  | Tpat_tuple v1 -> let _ = List.iter (pattern env) v1 in ()
+  | Tpat_constant v1 -> 
+      constant env v1
+  | Tpat_tuple xs -> 
+      List.iter (pattern env) xs
   | Tpat_construct ((v1, _loc_longident, v3, v4, v5)) ->
       let _ = Path.t env v1
       and _ = constructor_description env v3
@@ -363,40 +368,26 @@ and pattern_desc env = function
       and _ = v_option (pattern env) v2
       and _ = v_ref (row_desc env) v3
       in ()
-  | Tpat_record ((v1, _closed_flag)) ->
-      let _ =
-        List.iter
-          (fun (v1, _loc_longident, v3, v4) ->
-             let _ = Path.t env v1
-             and _ = label_description env v3
-             and _ = pattern env v4
-             in ())
-          v1
-      in ()
-  | Tpat_array v1 -> let _ = List.iter (pattern env) v1 in ()
+  | Tpat_record ((xs, _closed_flag)) ->
+      List.iter (fun (v1, _loc_longident, v3, v4) ->
+        let _ = Path.t env v1
+        and _ = label_description env v3
+        and _ = pattern env v4
+        in ()
+      ) xs
+  | Tpat_array xs -> 
+      List.iter (pattern env) xs
   | Tpat_or ((v1, v2, v3)) ->
       let _ = pattern env v1
       and _ = pattern env v2
       and _ = v_option (row_desc env) v3
       in ()
-  | Tpat_lazy v1 -> let _ = pattern env v1 in ()
+  | Tpat_lazy v1 -> 
+      pattern env v1
+
 (* ---------------------------------------------------------------------- *)
 (* Expression *)
 (* ---------------------------------------------------------------------- *)
-and expression env
-    { exp_desc = v_exp_desc; exp_loc = v_exp_loc;  exp_extra = __v_exp_extra;
-      exp_type = __v_exp_type; exp_env = v_exp_env } =
-  expression_desc env v_exp_desc
-and exp_extra env =
-  function
-  | Texp_constraint ((v1, v2)) ->
-      let _ = v_option (core_type env) v1
-      and _ = v_option (core_type env) v2
-      in ()
-  | Texp_open ((v1, _loc_longident, _env)) ->
-      Path.t env v1
-  | Texp_poly v1 -> let _ = v_option (core_type env) v1 in ()
-  | Texp_newtype v1 -> let _ = v_string v1 in ()
 and expression_desc env =
   function
   | Texp_ident ((v1, _loc_longident, v3)) ->
@@ -537,6 +528,17 @@ and expression_desc env =
   | Texp_object ((v1, v2)) ->
       let _ = class_structure env v1 and _ = List.iter v_string v2 in ()
   | Texp_pack v1 -> let _ = module_expr env v1 in ()
+
+and exp_extra env = function
+  | Texp_constraint ((v1, v2)) ->
+      let _ = v_option (core_type env) v1
+      and _ = v_option (core_type env) v2
+      in ()
+  | Texp_open ((v1, _loc_longident, _env)) ->
+      Path.t env v1
+  | Texp_poly v1 -> let _ = v_option (core_type env) v1 in ()
+  | Texp_newtype v1 -> let _ = v_string v1 in ()
+
 (* ---------------------------------------------------------------------- *)
 (* Module *)
 (* ---------------------------------------------------------------------- *)
