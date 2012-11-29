@@ -317,23 +317,19 @@ and type_kind env =
   function
   | Ttype_abstract -> ()
   | Ttype_variant v1 ->
-      let _ =
-        List.iter
-          (fun (v1, _loc, v3, _loc2) ->
-             let _ = Ident.t env v1
-             and _ = List.iter (core_type env) v3
-             in ())
-          v1
-      in ()
+      List.iter
+        (fun (v1, _loc, v3, _loc2) ->
+          let _ = Ident.t env v1
+          and _ = List.iter (core_type env) v3
+          in ())
+        v1
   | Ttype_record v1 ->
-      let _ =
-        List.iter
-          (fun (v1, _loc, _mutable_flag, v4, _loc2) ->
-             let _ = Ident.t env v1
-             and _ = core_type env v4
-             in ())
-          v1
-      in ()
+      List.iter
+        (fun (v1, _loc, _mutable_flag, v4, _loc2) ->
+          let _ = Ident.t env v1
+          and _ = core_type env v4
+          in ())
+        v1
 
 and exception_declaration env 
  { exn_params = v_exn_params; exn_exn = v_exn_exn; exn_loc = _v_exn_loc } =
