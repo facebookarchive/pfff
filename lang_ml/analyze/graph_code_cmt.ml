@@ -32,7 +32,12 @@ open Typedtree
  *  - multiple parameters, everything is curried (fun x y --> fun x -> fun y)
  * 
  * schema:
- *  Root -> Dir -> Module -> ...
+ *  Root -> Dir -> Module -> Function
+ *                        -> SubModule
+ *                        -> Type
+ *                        -> Exception
+ *                        -> Constant
+ *                        -> Global
  *)
 
 (*****************************************************************************)
@@ -105,16 +110,6 @@ let add_node_and_edge_if_defs_mode ?(dupe_ok=false) env node =
   end;
   { env with  current = node; current_qualifier = full_ident; }
 
-(* used for primitives *)
-let rec kind_of_core_type x =
-  match x.ctyp_desc with
-  | Ttyp_any  | Ttyp_var _
-      -> raise Todo
-  | Ttyp_arrow _ -> E.Function
-  | _ -> raise Todo
-let kind_of_value_descr vd =
-  kind_of_core_type vd.val_desc
-
 let kind_of_type_desc x =
   (* pr2 (Ocaml.string_of_v (Meta_ast_cmt.vof_type_desc x)); *)
   match x with
@@ -128,6 +123,16 @@ let kind_of_type_desc x =
 
 let kind_of_type_expr x =
   kind_of_type_desc x.Types.desc
+
+(* used only for primitives *)
+let rec kind_of_core_type x =
+  match x.ctyp_desc with
+  | Ttyp_any  | Ttyp_var _
+      -> raise Todo
+  | Ttyp_arrow _ -> E.Function
+  | _ -> raise Todo
+let kind_of_value_descr vd =
+  kind_of_core_type vd.val_desc
 
 
 
@@ -265,17 +270,20 @@ and structure_item_desc env =
       let node = (full_ident, E.Module) in
       let env = add_node_and_edge_if_defs_mode env node in
       module_expr env v3
-  | Tstr_recmodule v1 ->
-      List.iter (fun (v1, _loc, v3, v4) ->
-        let _ = Ident.t env v1
-        and _ = module_type env v3
-        and _ = module_expr env v4
-        in ()) v1
+  | Tstr_recmodule xs ->
+      List.iter (fun (id, _loc, v3, v4) ->
+        let full_ident = env.current_qualifier ^ "." ^ Ident.name id in
+        let node = (full_ident, E.Module) in
+        let env = add_node_and_edge_if_defs_mode env node in
+        module_type env v3;
+        module_expr env v4;
+      ) xs
   | Tstr_modtype ((v1, _loc, v3)) ->
       let _ = Ident.t env v1
       and _ = module_type env v3
       in ()
 
+  (* names are resolved, no need to handle that I think *)
   | Tstr_open ((v1, _loc)) ->
       Path.t env v1 
   | Tstr_include ((v1, v2)) ->
@@ -285,18 +293,12 @@ and structure_item_desc env =
     (*pr2_once (spf "TODO: str_class, %s" env.file) *)
     ()
 
-
 and type_declaration env
-                   {
-                     typ_params = __v_typ_params;
-                     typ_type = v_typ_type;
-                     typ_cstrs = v_typ_cstrs;
-                     typ_kind = v_typ_kind;
-                     typ_private = _v_typ_private;
-                     typ_manifest = v_typ_manifest;
-                     typ_variance = v_typ_variance;
-                     typ_loc = v_typ_loc
-                   } =
+    { typ_params = __v_typ_params; typ_type = v_typ_type;
+      typ_cstrs = v_typ_cstrs; typ_kind = v_typ_kind;
+      typ_private = _v_typ_private; typ_manifest = v_typ_manifest;
+      typ_variance = v_typ_variance; typ_loc = v_typ_loc
+    } =
   let _ = Types.type_declaration env v_typ_type in
   let _ =
     List.iter
@@ -620,23 +622,10 @@ and core_type_desc env =
       in ()
   | Ttyp_poly ((v1, v2)) ->
       let _ = List.iter v_string v1 and _ = core_type env v2 in ()
-  | Ttyp_package v1 -> let _ = package_type env v1 in ()
-and
-  package_type env
-               {
-                 pack_name = v_pack_name;
-                 pack_fields = v_pack_fields;
-                 pack_type = v_pack_type;
-                 pack_txt = _v_pack_txt_loc;
-               } =
-  let _ = Path.t env v_pack_name in
-  let _ =
-    List.iter
-      (fun (_loc_longident, v2) ->
-         core_type env v2)
-      v_pack_fields in
-  let _ = Types.module_type env v_pack_type in
-  ()
+  | Ttyp_package v1 -> 
+    pr2_once (spf "TODO: Ttyp_package, %s" env.file);
+    ()
+
 and core_field_type env { field_desc = v_field_desc; field_loc = v_field_loc }=
   let _ = core_field_desc env v_field_desc in ()
   

@@ -1,3 +1,20 @@
+and
+  package_type env
+               {
+                 pack_name = v_pack_name;
+                 pack_fields = v_pack_fields;
+                 pack_type = v_pack_type;
+                 pack_txt = _v_pack_txt_loc;
+               } =
+  let _ = Path.t env v_pack_name in
+  let _ =
+    List.iter
+      (fun (_loc_longident, v2) ->
+         core_type env v2)
+      v_pack_fields in
+  let _ = Types.module_type env v_pack_type in
+  ()
+
   let _ =
     List.iter
       (fun (v1, _loc) ->
