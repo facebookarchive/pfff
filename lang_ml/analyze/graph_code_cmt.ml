@@ -33,11 +33,11 @@ open Typedtree
  * 
  * schema:
  *  Root -> Dir -> Module -> Function
- *                        -> SubModule
  *                        -> Type
  *                        -> Exception
  *                        -> Constant
  *                        -> Global
+ *                        -> SubModule
  *)
 
 (*****************************************************************************)
@@ -230,6 +230,11 @@ and expression env
     { exp_desc = v_exp_desc; exp_loc = v_exp_loc;  exp_extra = __v_exp_extra;
       exp_type = __v_exp_type; exp_env = v_exp_env } =
   expression_desc env v_exp_desc
+and module_expr env
+    { mod_desc = v_mod_desc; mod_loc = v_mod_loc;
+      mod_type = v_mod_type; mod_env = v_mod_env  } =
+  module_expr_desc env v_mod_desc;
+  Types.module_type env v_mod_type
 
 (* ---------------------------------------------------------------------- *)
 (* Structure *)
@@ -542,16 +547,6 @@ and exp_extra env = function
 (* ---------------------------------------------------------------------- *)
 (* Module *)
 (* ---------------------------------------------------------------------- *)
-and module_expr env
-              {
-                mod_desc = v_mod_desc;
-                mod_loc = v_mod_loc;
-                mod_type = v_mod_type;
-                mod_env = v_mod_env
-              } =
-  let _ = module_expr_desc env v_mod_desc in
-  let _ = Types.module_type env v_mod_type in
-  ()
 and module_expr_desc env =
   function
   | Tmod_ident ((v1, _loc_longident)) ->
