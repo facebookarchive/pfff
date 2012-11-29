@@ -170,8 +170,6 @@ let module_type env x = ()
 let module_coercion env x = ()
 let module_type_constraint env x = ()
 
-let type_expr env x = ()
-let loc f env x = ()
 let constant env x = ()
 let constructor_description env x = ()
 let label env x = ()
@@ -217,10 +215,8 @@ and binary_annots env = function
 (* Structure *)
 (* ---------------------------------------------------------------------- *)
 and structure env 
- { str_items = v_str_items;  str_type = v_str_type; str_final_env = v_str_final_env } =
-  let _ = List.iter (structure_item env) v_str_items in
-  let _ = Types.signature env v_str_type in
-  ()
+ { str_items = v_str_items;  str_type = _v_str_type; str_final_env = _env } =
+    List.iter (structure_item env) v_str_items
 and structure_item env { str_desc = v_str_desc; str_loc = _; str_env = _ } =
   structure_item_desc env v_str_desc
 and structure_item_desc env =
@@ -258,39 +254,34 @@ and structure_item_desc env =
        let node = (full_ident, E.Exception) in
        let env = add_node_and_edge_if_defs_mode env node in
        exception_declaration env v3
-  | Tstr_exn_rebind ((id, _loc, v3, v4)) ->
+  | Tstr_exn_rebind ((id, _loc, v3, _loc2)) ->
        let full_ident = env.current_qualifier ^ "." ^ Ident.name id in
        let node = (full_ident, E.Exception) in
        let env = add_node_and_edge_if_defs_mode env node in
        let _ = Path.t env v3
-       and _ = loc env (Longident.t env) v4
        in ()
-  | Tstr_module ((id, v2, v3)) ->
+  | Tstr_module ((id, _loc, v3)) ->
       let full_ident = env.current_qualifier ^ "." ^ Ident.name id in
       let node = (full_ident, E.Module) in
       let env = add_node_and_edge_if_defs_mode env node in
-      let _ = loc env v_string v2
-      and _ = module_expr env v3
-      in ()
+      module_expr env v3
   | Tstr_recmodule v1 ->
       let _ =
         List.iter
-          (fun (v1, v2, v3, v4) ->
+          (fun (v1, _loc, v3, v4) ->
              let _ = Ident.t env v1
-             and _ = loc env v_string v2
              and _ = module_type env v3
              and _ = module_expr env v4
              in ())
           v1
       in ()
-  | Tstr_modtype ((v1, v2, v3)) ->
+  | Tstr_modtype ((v1, _loc, v3)) ->
       let _ = Ident.t env v1
-      and _ = loc env v_string v2
       and _ = module_type env v3
       in ()
 
-  | Tstr_open ((v1, v2)) ->
-      let _ = Path.t env v1 and _ = loc env (Longident.t env) v2 in ()
+  | Tstr_open ((v1, _loc)) ->
+      Path.t env v1 
   | Tstr_include ((v1, v2)) ->
       let _ = module_expr env v1 and _ = List.iter (Ident.t env) v2 in ()
 
@@ -301,7 +292,7 @@ and structure_item_desc env =
 
 and type_declaration env
                    {
-                     typ_params = v_typ_params;
+                     typ_params = __v_typ_params;
                      typ_type = v_typ_type;
                      typ_cstrs = v_typ_cstrs;
                      typ_kind = v_typ_kind;
@@ -310,7 +301,6 @@ and type_declaration env
                      typ_variance = v_typ_variance;
                      typ_loc = v_typ_loc
                    } =
-  let _ = List.iter (v_option (loc env v_string)) v_typ_params in
   let _ = Types.type_declaration env v_typ_type in
   let _ =
     List.iter
@@ -331,9 +321,8 @@ and type_kind env =
   | Ttype_variant v1 ->
       let _ =
         List.iter
-          (fun (v1, v2, v3, _loc) ->
+          (fun (v1, _loc, v3, _loc2) ->
              let _ = Ident.t env v1
-             and _ = loc env v_string v2
              and _ = List.iter (core_type env) v3
              in ())
           v1
@@ -341,9 +330,8 @@ and type_kind env =
   | Ttype_record v1 ->
       let _ =
         List.iter
-          (fun (v1, v2, _mutable_flag, v4, _loc) ->
+          (fun (v1, _loc, _mutable_flag, v4, _loc2) ->
              let _ = Ident.t env v1
-             and _ = loc env v_string v2
              and _ = core_type env v4
              in ())
           v1
@@ -363,26 +351,24 @@ and  pattern env
             pat_desc = v_pat_desc;
             pat_loc = v_pat_loc;
             pat_extra = _v_pat_extra;
-            pat_type = v_pat_type;
+            pat_type = _v_pat_type;
             pat_env = v_pat_env
           } =
-  let _ = pattern_desc env v_pat_desc in
-  let _ = type_expr env v_pat_type in  ()
+  pattern_desc env v_pat_desc
+
 and pattern_desc env =
   function
   | Tpat_any -> ()
-  | Tpat_var ((v1, v2)) ->
-      let _ = Ident.t env v1 and _ = loc env v_string v2 in ()
-  | Tpat_alias ((v1, v2, v3)) ->
+  | Tpat_var ((v1, _loc)) ->
+      Ident.t env v1
+  | Tpat_alias ((v1, v2, _loc)) ->
       let _ = pattern env v1
       and _ = Ident.t env v2
-      and _ = loc env v_string v3
       in ()
   | Tpat_constant v1 -> let _ = constant env v1 in ()
   | Tpat_tuple v1 -> let _ = List.iter (pattern env) v1 in ()
-  | Tpat_construct ((v1, v2, v3, v4, v5)) ->
+  | Tpat_construct ((v1, _loc_longident, v3, v4, v5)) ->
       let _ = Path.t env v1
-      and _ = loc env (Longident.t env) v2
       and _ = constructor_description env v3
       and _ = List.iter (pattern env) v4
       and _ = v_bool v5
@@ -395,9 +381,8 @@ and pattern_desc env =
   | Tpat_record ((v1, _closed_flag)) ->
       let _ =
         List.iter
-          (fun (v1, v2, v3, v4) ->
+          (fun (v1, _loc_longident, v3, v4) ->
              let _ = Path.t env v1
-             and _ = loc env (Longident.t env) v2
              and _ = label_description env v3
              and _ = pattern env v4
              in ())
@@ -414,37 +399,23 @@ and pattern_desc env =
 (* Expression *)
 (* ---------------------------------------------------------------------- *)
 and expression env
-             {
-               exp_desc = v_exp_desc;
-               exp_loc = v_exp_loc;
-               exp_extra = v_exp_extra;
-               exp_type = v_exp_type;
-               exp_env = v_exp_env
-             } =
-  let _ = expression_desc env v_exp_desc in
-  let _ =
-    List.iter
-      (fun (v1, _loc) ->
-         let _ = exp_extra env v1 in ())
-      v_exp_extra in
-  let _ = type_expr env v_exp_type in ()
+    { exp_desc = v_exp_desc; exp_loc = v_exp_loc;  exp_extra = __v_exp_extra;
+      exp_type = __v_exp_type; exp_env = v_exp_env } =
+  expression_desc env v_exp_desc
 and exp_extra env =
   function
   | Texp_constraint ((v1, v2)) ->
       let _ = v_option (core_type env) v1
       and _ = v_option (core_type env) v2
       in ()
-  | Texp_open ((v1, v2, _env)) ->
-      let _ = Path.t env v1
-      and _ = loc env (Longident.t env) v2
-      in ()
+  | Texp_open ((v1, _loc_longident, _env)) ->
+      Path.t env v1
   | Texp_poly v1 -> let _ = v_option (core_type env) v1 in ()
   | Texp_newtype v1 -> let _ = v_string v1 in ()
 and expression_desc env =
   function
-  | Texp_ident ((v1, v2, v3)) ->
+  | Texp_ident ((v1, _loc_longident, v3)) ->
       let _ = Path.t env v1
-      and _ = loc env (Longident.t env) v2
       and _ = Types.value_description env v3
       in ()
   | Texp_constant v1 -> let _ = constant env v1 in ()
@@ -494,9 +465,8 @@ and expression_desc env =
           v2
       in ()
   | Texp_tuple v1 -> let _ = List.iter (expression env) v1 in ()
-  | Texp_construct ((v1, v2, v3, v4, v5)) ->
+  | Texp_construct ((v1, _loc_longident, v3, v4, v5)) ->
       let _ = Path.t env v1
-      and _ = loc env (Longident.t env) v2
       and _ = constructor_description env v3
       and _ = List.iter (expression env) v4
       and _ = v_bool v5
@@ -506,25 +476,22 @@ and expression_desc env =
   | Texp_record ((v1, v2)) ->
       let _ =
         List.iter
-          (fun (v1, v2, v3, v4) ->
+          (fun (v1, _loc_longident, v3, v4) ->
              let _ = Path.t env v1
-             and _ = loc env (Longident.t env) v2
              and _ = label_description env v3
              and _ = expression env v4
              in ())
           v1
       and _ = v_option (expression env) v2
       in ()
-  | Texp_field ((v1, v2, v3, v4)) ->
+  | Texp_field ((v1, v2, _loc_longident, v4)) ->
       let _ = expression env v1
       and _ = Path.t env v2
-      and _ = loc env (Longident.t env) v3
       and _ = label_description env v4
       in ()
-  | Texp_setfield ((v1, v2, v3, v4, v5)) ->
+  | Texp_setfield ((v1, v2, _loc_longident, v4, v5)) ->
       let _ = expression env v1
       and _ = Path.t env v2
-      and _ = loc env (Longident.t env) v3
       and _ = label_description env v4
       and _ = expression env v5
       in ()
@@ -538,9 +505,8 @@ and expression_desc env =
       let _ = expression env v1 and _ = expression env v2 in ()
   | Texp_while ((v1, v2)) ->
       let _ = expression env v1 and _ = expression env v2 in ()
-  | Texp_for ((v1, v2, v3, v4, _direction_flag, v6)) ->
+  | Texp_for ((v1, _loc_string, v3, v4, _direction_flag, v6)) ->
       let _ = Ident.t env v1
-      and _ = loc env v_string v2
       and _ = expression env v3
       and _ = expression env v4
       and _ = expression env v6
@@ -552,36 +518,31 @@ and expression_desc env =
       and _ = meth env v2
       and _ = v_option (expression env) v3
       in ()
-  | Texp_new ((v1, v2, v3)) ->
+  | Texp_new ((v1, _loc_longident, v3)) ->
       let _ = Path.t env v1
-      and _ = loc env (Longident.t env) v2
       and _ = Types.class_declaration env v3
       in ()
-  | Texp_instvar ((v1, v2, v3)) ->
+  | Texp_instvar ((v1, v2, _loc)) ->
       let _ = Path.t env v1
       and _ = Path.t env v2
-      and _ = loc env v_string v3
       in ()
-  | Texp_setinstvar ((v1, v2, v3, v4)) ->
+  | Texp_setinstvar ((v1, v2, _loc, v4)) ->
       let _ = Path.t env v1
       and _ = Path.t env v2
-      and _ = loc env v_string v3
       and _ = expression env v4
       in ()
   | Texp_override ((v1, v2)) ->
       let _ = Path.t env v1
       and _ =
         List.iter
-          (fun (v1, v2, v3) ->
+          (fun (v1, _loc, v3) ->
              let _ = Path.t env v1
-             and _ = loc env v_string v2
              and _ = expression env v3
              in ())
           v2
       in ()
-  | Texp_letmodule ((v1, v2, v3, v4)) ->
+  | Texp_letmodule ((v1, _loc, v3, v4)) ->
       let _ = Ident.t env v1
-      and _ = loc env v_string v2
       and _ = module_expr env v3
       and _ = expression env v4
       in ()
@@ -606,12 +567,11 @@ and module_expr env
   ()
 and module_expr_desc env =
   function
-  | Tmod_ident ((v1, v2)) ->
-      let _ = Path.t env v1 and _ = loc env (Longident.t env) v2 in ()
+  | Tmod_ident ((v1, _loc_longident)) ->
+      Path.t env v1
   | Tmod_structure v1 -> let _ = structure env v1 in ()
-  | Tmod_functor ((v1, v2, v3, v4)) ->
+  | Tmod_functor ((v1, _loc, v3, v4)) ->
       let _ = Ident.t env v1
-      and _ = loc env v_string v2
       and _ = module_type env v3
       and _ = module_expr env v4
       in ()
@@ -632,15 +592,9 @@ and module_expr_desc env =
 (* Type *)
 (* ---------------------------------------------------------------------- *)
 and core_type env
-            {
-              ctyp_desc = v_ctyp_desc;
-              ctyp_type = v_ctyp_type;
-              ctyp_env = v_ctyp_env;
-              ctyp_loc = v_ctyp_loc
-            } =
-  let _ = core_type_desc env v_ctyp_desc in
-  let _ = type_expr env v_ctyp_type in
-  ()
+    { ctyp_desc = v_ctyp_desc; ctyp_type = __v_ctyp_type;
+      ctyp_env = v_ctyp_env; ctyp_loc = v_ctyp_loc } =
+  core_type_desc env v_ctyp_desc
 and core_type_desc env =
   function
   | Ttyp_any -> ()
@@ -651,15 +605,13 @@ and core_type_desc env =
       and _ = core_type env v3
       in ()
   | Ttyp_tuple v1 -> let _ = List.iter (core_type env) v1 in ()
-  | Ttyp_constr ((v1, v2, v3)) ->
+  | Ttyp_constr ((v1, _loc_longident, v3)) ->
       let _ = Path.t env v1
-      and _ = loc env (Longident.t env) v2
       and _ = List.iter (core_type env) v3
       in ()
   | Ttyp_object v1 -> let _ = List.iter (core_field_type env) v1 in ()
-  | Ttyp_class ((v1, v2, v3, v4)) ->
+  | Ttyp_class ((v1, _loc_longident, v3, v4)) ->
       let _ = Path.t env v1
-      and _ = loc env (Longident.t env) v2
       and _ = List.iter (core_type env) v3
       and _ = List.iter (label env) v4
       in ()
@@ -679,16 +631,16 @@ and
                  pack_name = v_pack_name;
                  pack_fields = v_pack_fields;
                  pack_type = v_pack_type;
-                 pack_txt = v_pack_txt
+                 pack_txt = _v_pack_txt_loc;
                } =
   let _ = Path.t env v_pack_name in
   let _ =
     List.iter
-      (fun (v1, v2) ->
-         let _ = loc env (Longident.t env) v1 and _ = core_type env v2 in ())
+      (fun (_loc_longident, v2) ->
+         core_type env v2)
       v_pack_fields in
   let _ = Types.module_type env v_pack_type in
-  let _ = loc env (Longident.t env) v_pack_txt in ()
+  ()
 and core_field_type env { field_desc = v_field_desc; field_loc = v_field_loc }=
   let _ = core_field_desc env v_field_desc in ()
   
