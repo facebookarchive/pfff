@@ -49,7 +49,7 @@ type env = {
   current: Graph_code.node;
   phase: phase;
   file: Common.filename;
-
+  
   current_qualifier: string;
 }
  and phase = Defs | Uses
@@ -81,22 +81,22 @@ let add_use_edge env dst =
            (G.string_of_node src) (G.string_of_node dst));
 
   | _ when G.has_node dst env.g -> 
-    G.add_edge (src, dst) G.Use env.g
+      G.add_edge (src, dst) G.Use env.g
   | _ -> 
-    let (str, kind) = dst in
-    (match kind with
-    | _ ->
-      let kind_original = kind in
-      let dst = (str, kind_original) in
-      
-      G.add_node dst env.g;
-      let parent_target = G.not_found in
-      pr2 (spf "PB: lookup fail on %s (in %s)" 
-             (G.string_of_node dst) (G.string_of_node src));
+      let (str, kind) = dst in
+      (match kind with
+      | _ ->
+          let kind_original = kind in
+          let dst = (str, kind_original) in
           
-      env.g +> G.add_edge (parent_target, dst) G.Has;
-      env.g +> G.add_edge (src, dst) G.Use;
-    )
+          G.add_node dst env.g;
+          let parent_target = G.not_found in
+          pr2 (spf "PB: lookup fail on %s (in %s)" 
+                  (G.string_of_node dst) (G.string_of_node src));
+          
+          env.g +> G.add_edge (parent_target, dst) G.Has;
+          env.g +> G.add_edge (src, dst) G.Use;
+      )
 
 let add_node_and_edge_if_defs_mode ?(dupe_ok=false) env node =
   let (full_ident, _kind) = node in
@@ -109,21 +109,21 @@ let add_node_and_edge_if_defs_mode ?(dupe_ok=false) env node =
     end
   end;
   { env with  current = node; current_qualifier = full_ident; }
-
+    
 let kind_of_type_desc x =
   (* pr2 (Ocaml.string_of_v (Meta_ast_cmt.vof_type_desc x)); *)
   match x with
   | Types.Tarrow _ -> 
-    E.Function
+      E.Function
   | Types.Tconstr (path, xs, aref) 
       (* less: potentially anything with a mutable field *)
       when List.mem (Path.name path) ["Pervasives.ref";"Hashtbl.t"] ->
-    E.Global
+      E.Global
   | _ -> E.Constant
-
+      
 let kind_of_type_expr x =
   kind_of_type_desc x.Types.desc
-
+    
 (* used only for primitives *)
 let rec kind_of_core_type x =
   match x.ctyp_desc with
@@ -138,8 +138,7 @@ let kind_of_value_descr vd =
 
 
 module Ident = struct
-    let t env x = 
-      ()
+    let t env x =  ()
     let name = Ident.name
 end
 module Longident = struct
@@ -209,25 +208,27 @@ let rec extract_defs_uses ~phase ~g ~ast ~readable =
   binary_annots env ast.cmt_annots
 
 and binary_annots env = function
-  | Implementation s -> structure env s
+  | Implementation s -> 
+      structure env s
   | Interface _
   | Packed _ 
   | Partial_implementation _ | Partial_interface _ ->
-    pr2_gen env.current;
-    raise Todo
+      pr2_gen env.current;
+      raise Todo
+
+and structure env 
+ { str_items = v_str_items;  str_type = _v_str_type; str_final_env = _env } =
+  List.iter (structure_item env) v_str_items
+and structure_item env 
+ { str_desc = v_str_desc; str_loc = _; str_env = _ } =
+  structure_item_desc env v_str_desc
 
 (* ---------------------------------------------------------------------- *)
 (* Structure *)
 (* ---------------------------------------------------------------------- *)
-and structure env 
- { str_items = v_str_items;  str_type = _v_str_type; str_final_env = _env } =
-    List.iter (structure_item env) v_str_items
-and structure_item env { str_desc = v_str_desc; str_loc = _; str_env = _ } =
-  structure_item_desc env v_str_desc
-and structure_item_desc env =
-  function
+and structure_item_desc env = function
   | Tstr_eval v1 -> 
-    expression env v1
+      expression env v1
   | Tstr_value ((_rec_flag, xs)) ->
       List.iter (fun (v1, v2) ->
         match v1.pat_desc with
@@ -241,30 +242,27 @@ and structure_item_desc env =
             expression env v2 
       ) xs
   | Tstr_primitive ((id, _loc, vd)) ->
-    let full_ident = env.current_qualifier ^ "." ^ Ident.name id in
-    let node = (full_ident, kind_of_value_descr vd) in
-    let env = add_node_and_edge_if_defs_mode env node in
-    value_description env vd
-
-  | Tstr_type v1 ->
+      let full_ident = env.current_qualifier ^ "." ^ Ident.name id in
+      let node = (full_ident, kind_of_value_descr vd) in
+      let env = add_node_and_edge_if_defs_mode env node in
+      value_description env vd
+  | Tstr_type xs ->
       List.iter (fun (id, _loc, v3) ->
-       let full_ident = env.current_qualifier ^ "." ^ Ident.name id in
-       let node = (full_ident, E.Type) in
-       let env = add_node_and_edge_if_defs_mode env node in
-       type_declaration env v3
-      ) v1
-
+        let full_ident = env.current_qualifier ^ "." ^ Ident.name id in
+        let node = (full_ident, E.Type) in
+        let env = add_node_and_edge_if_defs_mode env node in
+        type_declaration env v3
+      ) xs
   | Tstr_exception ((id, _loc, v3)) ->
-       let full_ident = env.current_qualifier ^ "." ^ Ident.name id in
-       let node = (full_ident, E.Exception) in
-       let env = add_node_and_edge_if_defs_mode env node in
-       exception_declaration env v3
+      let full_ident = env.current_qualifier ^ "." ^ Ident.name id in
+      let node = (full_ident, E.Exception) in
+      let env = add_node_and_edge_if_defs_mode env node in
+      exception_declaration env v3
   | Tstr_exn_rebind ((id, _loc, v3, _loc2)) ->
-       let full_ident = env.current_qualifier ^ "." ^ Ident.name id in
-       let node = (full_ident, E.Exception) in
-       let env = add_node_and_edge_if_defs_mode env node in
-       let _ = Path.t env v3
-       in ()
+      let full_ident = env.current_qualifier ^ "." ^ Ident.name id in
+      let node = (full_ident, E.Exception) in
+      let env = add_node_and_edge_if_defs_mode env node in
+      Path.t env v3
   | Tstr_module ((id, _loc, v3)) ->
       let full_ident = env.current_qualifier ^ "." ^ Ident.name id in
       let node = (full_ident, E.Module) in
@@ -313,23 +311,22 @@ and type_declaration env
     List.iter (fun (v1, v2) -> let _ = v_bool v1 and _ = v_bool v2 in ())
       v_typ_variance in
   ()
-and type_kind env =
-  function
+and type_kind env = function
   | Ttype_abstract -> ()
-  | Ttype_variant v1 ->
+  | Ttype_variant xs ->
       List.iter (fun (id, _loc, v3, _loc2) ->
         let full_ident = env.current_qualifier ^ "." ^ Ident.name id in
         let node = (full_ident, E.Constructor) in
         let env = add_node_and_edge_if_defs_mode env node in
         List.iter (core_type env) v3;
-      ) v1
-  | Ttype_record v1 ->
+      ) xs
+  | Ttype_record xs ->
       List.iter  (fun (id, _loc, _mutable_flag, v4, _loc2) ->
         let full_ident = env.current_qualifier ^ "." ^ Ident.name id in
         let node = (full_ident, E.Field) in
         let env = add_node_and_edge_if_defs_mode env node in
         core_type env v4;
-      ) v1
+      ) xs
 
 and exception_declaration env 
  { exn_params = v_exn_params; exn_exn = v_exn_exn; exn_loc = _v_exn_loc } =
@@ -341,17 +338,11 @@ and exception_declaration env
 (* Pattern *)
 (* ---------------------------------------------------------------------- *)
 and  pattern env
-          {
-            pat_desc = v_pat_desc;
-            pat_loc = v_pat_loc;
-            pat_extra = _v_pat_extra;
-            pat_type = _v_pat_type;
-            pat_env = v_pat_env
-          } =
+  { pat_desc = v_pat_desc; pat_loc = v_pat_loc;
+    pat_extra = _v_pat_extra; pat_type = _v_pat_type; pat_env = v_pat_env } =
   pattern_desc env v_pat_desc
 
-and pattern_desc env =
-  function
+and pattern_desc env = function
   | Tpat_any -> ()
   | Tpat_var ((v1, _loc)) ->
       Ident.t env v1

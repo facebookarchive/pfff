@@ -1,6 +1,10 @@
 
+# perevasives.ml list.ml hashtbl.ml
+
 SRC=foo.ml nested_module.ml
-OBJS=$(SRC:.ml=.cmt)
+STDLIB=pervasives.cmt list.cmt hashtbl.cmt
+
+OBJS=$(SRC:.ml=.cmt) $(STDLIB)
 
 all: graph_code.marshall
 
@@ -8,9 +12,12 @@ all: graph_code.marshall
 
 
 graph_code.marshall: $(OBJS)
-	cg -lang cmt -build .
+	cg -symlinks -lang cmt -build .
 
 .SUFFIXES: .ml .cmt
 
 .ml.cmt:
 	ocamlc -bin-annot $<
+
+clean:
+	rm -f *.cm* graph_code.*
