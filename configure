@@ -16,7 +16,7 @@ use Pod::Usage;
 # - diffutils, fileutils, findutils, grep, patchutils, sh-utils
 # - diff?, patch?
 # 
-# - TODO realpath?? only for facebook stuff
+# - TODO realpath?? only for facebook stuff? and only for runtine?
 # - TODO findutils ?? need good gnu find, not macos find
 #   which adds some extra '//' in paths which bother pfff
 # - STILL? sharutils, for obrowser/ocsigen  use of uuencode
