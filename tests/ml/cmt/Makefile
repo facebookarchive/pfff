@@ -1,8 +1,16 @@
+
+SRC=foo.ml nested_module.ml
+OBJS=$(SRC:.ml=.cmt)
+
 all: graph_code.marshall
 
 .PHONY: graph_code.marshall
-#foo.ml nested_module.ml
-graph_code.marshall: 
-	ocamlc -c -bin-annot foo.ml	
-	ocamlc -c -bin-annot nested_module.ml
+
+
+graph_code.marshall: $(OBJS)
 	cg -lang cmt -build .
+
+.SUFFIXES: .ml .cmt
+
+.ml.cmt:
+	ocamlc -bin-annot $<
