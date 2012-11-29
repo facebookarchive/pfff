@@ -266,15 +266,11 @@ and structure_item_desc env =
       let env = add_node_and_edge_if_defs_mode env node in
       module_expr env v3
   | Tstr_recmodule v1 ->
-      let _ =
-        List.iter
-          (fun (v1, _loc, v3, v4) ->
-             let _ = Ident.t env v1
-             and _ = module_type env v3
-             and _ = module_expr env v4
-             in ())
-          v1
-      in ()
+      List.iter (fun (v1, _loc, v3, v4) ->
+        let _ = Ident.t env v1
+        and _ = module_type env v3
+        and _ = module_expr env v4
+        in ()) v1
   | Tstr_modtype ((v1, _loc, v3)) ->
       let _ = Ident.t env v1
       and _ = module_type env v3
