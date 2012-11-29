@@ -109,8 +109,9 @@ type entity_kind =
   | TopStmts
 
   (* nested entities *)
-  | Method of method_type
   | Field (* todo? could also be static or not *)
+  | Constructor (* for ml *)
+  | Method of method_type
   | ClassConstant
 
   (* todo: constructor *)
@@ -281,6 +282,7 @@ let string_of_entity_kind e =
   | Dir -> "Dir"
   | MultiDirs -> "MultiDirs"
   | Exception -> "Exception"
+  | Constructor -> "Constructor"
 
 let entity_kind_of_string s =
   match s with

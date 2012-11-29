@@ -9,8 +9,9 @@ type entity_kind =
   | Exception
   | TopStmts
 
-  | Method of method_type 
   | Field
+  | Constructor
+  | Method of method_type 
   | ClassConstant
 
   | Other of string

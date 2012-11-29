@@ -54,6 +54,7 @@ let color_of_node (_, kind) =
   | E.Method _ -> "gold3"
   | E.Field -> "MediumPurple1"
   | E.ClassConstant -> "pink3"
+  | E.Constructor -> "pink3"
 
   | E.Other s -> raise Todo
 

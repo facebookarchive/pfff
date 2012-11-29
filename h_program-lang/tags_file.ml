@@ -109,17 +109,14 @@ let vim_tag_kind_str tag_kind =
   | Db.Type -> "t"
   | Db.Field -> "m"
 
-  | Db.Module
-  | Db.Package
-  | Db.Global
-  | Db.Macro
+  | Db.Module | Db.Package
+  | Db.Global | Db.Macro
   | Db.TopStmts
   | Db.Other _
   | Db.ClassConstant
+  | Db.Constructor
 
-  | Db.File
-  | Db.Dir
-  | Db.MultiDirs
+  | Db.File | Db.Dir | Db.MultiDirs
   | Db.Exception
       -> ""
 
