@@ -131,6 +131,10 @@ let rec kind_of_type_desc x =
       when List.mem (Path.name path) ["Pervasives.ref";"Hashtbl.t"] ->
       E.Global
   | Types.Tconstr (path, xs, aref) -> E.Constant
+  | Types.Ttuple _ | Types.Tvariant _ -> 
+      E.Constant
+  (* ? *)
+  | Types.Tvar _ -> E.Constant
   | Types.Tlink x -> kind_of_type_expr x
   | _ -> 
       pr2 (Ocaml.string_of_v (Meta_ast_cmt.vof_type_desc x));
@@ -195,8 +199,10 @@ let add_use_edge_lid env lid texpr kind =
   let rec aux = function
     | [] ->
         if List.length candidates > 1
-        then 
+        then begin
+          pr2 (Ocaml.string_of_v (Meta_ast_cmt.vof_type_expr_show_all texpr));
           pr2_gen candidates
+        end
     | x::xs ->
         if G.has_node x env.g
         then add_use_edge env x

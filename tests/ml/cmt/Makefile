@@ -1,7 +1,8 @@
 
 SRC=pervasives.ml list.ml hashtbl.ml \
   bar.ml foo.ml \
-  variant.ml record.ml exn.ml ref.ml nested_module.ml 
+  variant.ml record.ml exn.ml ref.ml tuple.ml \
+  nested_module.ml alias_module.ml
 
 #STDLIB=pervasives.cmt list.cmt hashtbl.cmt
 
