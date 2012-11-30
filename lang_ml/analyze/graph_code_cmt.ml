@@ -118,6 +118,11 @@ let add_node_and_edge_if_defs_mode ?(dupe_ok=false) env node =
   { env with  current = node; current_qualifier = full_ident; }
 
 (*****************************************************************************)
+(* Modules aliases *)
+(*****************************************************************************)
+let path_name x = Path.name x
+
+(*****************************************************************************)
 (* Kind of entity *)
 (*****************************************************************************)
     
@@ -128,7 +133,7 @@ let rec kind_of_type_desc x =
       E.Function
   | Types.Tconstr (path, xs, aref) 
       (* less: potentially anything with a mutable field *)
-      when List.mem (Path.name path) ["Pervasives.ref";"Hashtbl.t"] ->
+      when List.mem (path_name path) ["Pervasives.ref";"Hashtbl.t"] ->
       E.Global
   | Types.Tconstr (path, xs, aref) -> E.Constant
   | Types.Ttuple _ | Types.Tvariant _ -> 
@@ -156,7 +161,7 @@ let kind_of_value_descr vd =
 let rec typename_of_texpr x =
   (* pr2 (Ocaml.string_of_v (Meta_ast_cmt.vof_type_expr_show_all x)); *)
   match x.Types.desc with
-  | Types.Tconstr(path, xs, aref) -> Path.name path
+  | Types.Tconstr(path, xs, aref) -> path_name path
   | Types.Tlink t -> typename_of_texpr t
   | _ ->
       pr2 (Ocaml.string_of_v (Meta_ast_cmt.vof_type_expr_show_all x));
@@ -169,7 +174,7 @@ let last_in_qualified s =
 let add_use_edge_lid env lid texpr kind =
  if env.phase = Uses then begin
   (* the typename already contains the qualifier *)
-  let str = Path.name lid +> last_in_qualified in
+  let str = path_name lid +> last_in_qualified in
   let str_typ = typename_of_texpr texpr in
 
   let candidates = 
@@ -184,7 +189,7 @@ let add_use_edge_lid env lid texpr kind =
     | "exn", "Not_found" -> ["stdlib.exn.Not_found", kind]
     (* for exn, the typename does not contain the qualifier *)
     | "exn", _ -> 
-        let xs = Common.split "\\." (Path.name lid) +> List.rev in
+        let xs = Common.split "\\." (path_name lid) +> List.rev in
         let ys = (List.hd xs :: "exn" :: List.tl xs) +> List.rev in
         let str = Common.join "." ys in
         [
@@ -214,7 +219,7 @@ let add_use_edge_lid env lid texpr kind =
 let add_use_edge_lid_bis env lid kind =
  if env.phase = Uses then begin
 
-  let str = Path.name lid in
+  let str = path_name lid in
   let candidates = 
     match str with
     | _ -> [
@@ -246,7 +251,7 @@ end
 module Longident = struct
     let t env x = ()
 end
-let path_name = Path.name
+
 module Path = struct
     let t env x = ()
 end
