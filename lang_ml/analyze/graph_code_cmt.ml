@@ -365,7 +365,7 @@ and structure_item_desc env = function
   | Tstr_value ((_rec_flag, xs)) ->
       List.iter (fun (v1, v2) ->
         match v1.pat_desc with
-        | Tpat_var(id, _loc) ->
+        | Tpat_var(id, _loc) | Tpat_alias (_, id, _loc) ->
             let full_ident = env.current_qualifier ^ "." ^ Ident.name id in
             let node = (full_ident, kind_of_type_expr v2.exp_type) in
             let env = add_node_and_edge_if_defs_mode ~dupe_ok:true env node in
@@ -374,7 +374,7 @@ and structure_item_desc env = function
             let xdone = ref false in
             xs +> List.iter (fun p ->
               match p.pat_desc with
-              | Tpat_var(id, _loc) ->
+              | Tpat_var(id, _loc) | Tpat_alias (_, id, _loc) ->
                   let full_ident = env.current_qualifier ^ "." ^ Ident.name id in
                   let node = (full_ident, kind_of_type_expr p.pat_type) in
                   let env = add_node_and_edge_if_defs_mode ~dupe_ok:true env node in
