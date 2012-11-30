@@ -34,8 +34,9 @@ open Typedtree
  * 
  * schema:
  *  Root -> Dir -> Module -> Function
- *                        -> Type
- *                        -> Exception
+ *                        -> Type -> Constructor
+ *                                -> Field
+ *                        -> Exception (with .exn as prefix)
  *                        -> Constant
  *                        -> Global
  *                        -> SubModule
