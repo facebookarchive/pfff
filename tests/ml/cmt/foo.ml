@@ -1,3 +1,5 @@
+open Pervasives
+
 let constant = 1
 let func x y = x + y
 
@@ -37,6 +39,11 @@ let raise_exn () =
   try 
     raise Error1
   with Error1 -> ()
+
+let raise_exn2 () =
+  try 
+    raise Bar.BarExn
+  with Bar.BarExn -> ()
 
 module X = struct
   type t = A | B
