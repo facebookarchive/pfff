@@ -370,6 +370,25 @@ and structure_item_desc env = function
             let node = (full_ident, kind_of_type_expr v2.exp_type) in
             let env = add_node_and_edge_if_defs_mode ~dupe_ok:true env node in
             expression env v2
+        | Tpat_tuple xs ->
+            let xdone = ref false in
+            xs +> List.iter (fun p ->
+              match p.pat_desc with
+              | Tpat_var(id, _loc) ->
+                  let full_ident = env.current_qualifier ^ "." ^ Ident.name id in
+                  let node = (full_ident, kind_of_type_expr p.pat_type) in
+                  let env = add_node_and_edge_if_defs_mode ~dupe_ok:true env node in
+
+                  (* arbitrarily choose the first one as the source for v2 *)
+                  if not !xdone then begin
+                    xdone := true;
+                    expression env v2
+                  end
+              | _ -> 
+                  pattern env p
+            );
+            if not !xdone then expression env v2
+      
         | _ ->
             let env = {env with locals = env.locals } in
             pattern env v1;
