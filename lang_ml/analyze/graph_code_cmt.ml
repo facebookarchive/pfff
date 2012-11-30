@@ -28,7 +28,8 @@ open Typedtree
  * and main_codegraph.ml for more information.
  * 
  * As opposed to lang_ml/analyze/graph_code_ml.ml, no need for:
- *  - module lookup (all names are resolved)
+ *  - module lookup (all names are resolved), but apparently
+ *    have still to resolve module aliases :(
  *  - multiple parameters, everything is curried (fun x y --> fun x -> fun y)
  * 
  * schema:
@@ -159,6 +160,7 @@ let add_use_edge_lid env lid texpr kind =
   (* the typename already contains the qualifier *)
   let str = Path.name lid +> last_in_qualified in
   let str_typ = typename_of_texpr texpr in
+
   let candidates = 
     match str_typ, str with
     | "unit", "()" -> ["stdlib.unit.()", kind]
@@ -169,9 +171,14 @@ let add_use_edge_lid env lid texpr kind =
     | "option", "None" -> ["stdlib.option.None", kind]
     | "option", "Some" -> ["stdlib.option.Some", kind]
     | "exn", "Not_found" -> ["stdlib.exn.Not_found", kind]
-    | "exn", _ -> [
-        (str_typ ^ "." ^ str, E.Exception);
-        (env.current_module ^ "." ^ str_typ ^ "." ^ str, E.Exception);
+    (* for exn, the typename does not contain the qualifier *)
+    | "exn", _ -> 
+        let xs = Common.split "\\." (Path.name lid) +> List.rev in
+        let ys = (List.hd xs :: "exn" :: List.tl xs) +> List.rev in
+        let str = Common.join "." ys in
+        [
+        (str, E.Exception);
+        (env.current_module ^ "." ^ str, E.Exception);
       ]
     | _ -> [
         (str_typ ^ "." ^ str, kind);
