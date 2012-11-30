@@ -121,7 +121,7 @@ let add_node_and_edge_if_defs_mode ?(dupe_ok=false) env node =
 (* Kind of entity *)
 (*****************************************************************************)
     
-let kind_of_type_desc x =
+let rec kind_of_type_desc x =
   (* pr2 (Ocaml.string_of_v (Meta_ast_cmt.vof_type_desc x)); *)
   match x with
   | Types.Tarrow _ -> 
@@ -130,9 +130,13 @@ let kind_of_type_desc x =
       (* less: potentially anything with a mutable field *)
       when List.mem (Path.name path) ["Pervasives.ref";"Hashtbl.t"] ->
       E.Global
-  | _ -> E.Constant
+  | Types.Tconstr (path, xs, aref) -> E.Constant
+  | Types.Tlink x -> kind_of_type_expr x
+  | _ -> 
+      pr2 (Ocaml.string_of_v (Meta_ast_cmt.vof_type_desc x));
+      raise Todo
       
-let kind_of_type_expr x =
+and kind_of_type_expr x =
   kind_of_type_desc x.Types.desc
     
 (* used only for primitives *)
