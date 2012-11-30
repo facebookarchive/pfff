@@ -17,7 +17,6 @@ open Common
 open Common.ArithFloatInfix
 
 open Figures
-module CairoH = Cairo_helpers3
 
 open Model3
 module M = Model3
@@ -25,6 +24,8 @@ module Ctl = Controller3
 
 module E = Database_code
 module DM = Dependencies_matrix_code
+
+module CairoH = Cairo_helpers3
 
 (*****************************************************************************)
 (* Prelude *)
