@@ -54,6 +54,7 @@ type env = {
   
   current_qualifier: string;
   current_module: string;
+  mutable locals: string list;
 }
  and phase = Defs | Uses
 
@@ -158,6 +159,7 @@ let last_in_qualified s =
   Common.list_last xs
   
 let add_use_edge_lid env lid texpr kind =
+ if env.phase = Uses then begin
   (* the typename already contains the qualifier *)
   let str = Path.name lid +> last_in_qualified in
   let str_typ = typename_of_texpr texpr in
@@ -197,6 +199,31 @@ let add_use_edge_lid env lid texpr kind =
         else aux xs
   in
   aux candidates
+ end
+
+let add_use_edge_lid_bis env lid kind =
+ if env.phase = Uses then begin
+
+  let str = Path.name lid in
+  let candidates = 
+    match str with
+    | _ -> [
+        (str, kind);
+        (env.current_module ^ "." ^ str, kind);
+      ] 
+  in
+  let rec aux = function
+    | [] ->
+        if List.length candidates > 1
+        then 
+          pr2_gen candidates
+    | x::xs ->
+        if G.has_node x env.g
+        then add_use_edge env x
+        else aux xs
+  in
+  aux candidates
+ end
 
 (*****************************************************************************)
 (* Empty wrappers *)
@@ -209,10 +236,12 @@ end
 module Longident = struct
     let t env x = ()
 end
+let path_name = Path.name
 module Path = struct
     let t env x = ()
 end
 
+module TypesOld = Types
 module Types = struct
     let value_description env x = ()
     let class_declaration env x = ()
@@ -255,6 +284,7 @@ let rec extract_defs_uses ~phase ~g ~ast ~readable =
     current_qualifier = ast.cmt_modname;
     current_module = ast.cmt_modname;
     file = readable;
+    locals = [];
   }
   in
   if phase = Defs then begin
@@ -315,6 +345,7 @@ and structure_item_desc env = function
             let env = add_node_and_edge_if_defs_mode ~dupe_ok:true env node in
             expression env v2
         | _ ->
+            let env = {env with locals = env.locals } in
             pattern env v1;
             expression env v2 
       ) xs
@@ -414,12 +445,11 @@ and exception_declaration env
 (* ---------------------------------------------------------------------- *)
 and pattern_desc t env = function
   | Tpat_any -> ()
-  | Tpat_var ((v1, _loc)) ->
-      Ident.t env v1
-  | Tpat_alias ((v1, v2, _loc)) ->
-      let _ = pattern env v1
-      and _ = Ident.t env v2
-      in ()
+  | Tpat_var ((id, _loc)) ->
+      env.locals <- Ident.name id :: env.locals
+  | Tpat_alias ((v1, id, _loc)) ->
+      pattern env v1;
+      env.locals <- Ident.name id :: env.locals
   | Tpat_constant v1 -> 
       constant env v1
   | Tpat_tuple xs -> 
@@ -456,11 +486,13 @@ and pattern_desc t env = function
 (* ---------------------------------------------------------------------- *)
 and expression_desc env =
   function
-  | Texp_ident ((v1, _loc_longident, v3)) ->
-      let _ = Path.t env v1
-      and _ = Types.value_description env v3
-      in ()
-  | Texp_constant v1 -> let _ = constant env v1 in ()
+  | Texp_ident ((lid, _loc_longident, vd)) ->
+      let str = path_name lid in
+      if List.mem str env.locals
+      then ()
+      else add_use_edge_lid_bis env lid (kind_of_type_expr vd.TypesOld.val_type)
+
+  | Texp_constant v1 -> constant env v1
   | Texp_let ((_rec_flag, v2, v3)) ->
       let _ =
         List.iter
