@@ -610,12 +610,12 @@ and expression_desc env =
       let _ = expression env v1 and _ = expression env v2 in ()
   | Texp_while ((v1, v2)) ->
       let _ = expression env v1 and _ = expression env v2 in ()
-  | Texp_for ((v1, _loc_string, v3, v4, _direction_flag, v6)) ->
-      let _ = Ident.t env v1
-      and _ = expression env v3
-      and _ = expression env v4
-      and _ = expression env v6
-      in ()
+  | Texp_for ((id, _loc_string, v3, v4, _direction_flag, v6)) ->
+      expression env v3;
+      expression env v4;
+      let env = { env with locals = Ident.name id::env.locals } in
+      expression env v6
+
   | Texp_when ((v1, v2)) ->
       let _ = expression env v1 and _ = expression env v2 in ()
   | Texp_send ((v1, v2, v3)) ->
