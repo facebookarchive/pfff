@@ -188,6 +188,9 @@ let add_use_edge_lid env lid texpr kind =
   let str = path_name env.aliases lid +> last_in_qualified in
   let str_typ = typename_of_texpr env.aliases texpr in
 
+  pr2_gen (path_name env.aliases lid);
+  pr2_gen (str_typ);
+
   let candidates = 
     match str_typ, str with
     | "unit", "()" -> ["stdlib.unit.()", kind]
