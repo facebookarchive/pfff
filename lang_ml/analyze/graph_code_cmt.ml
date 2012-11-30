@@ -216,7 +216,7 @@ let add_use_edge_lid env lid texpr kind =
     | [] ->
         if List.length candidates > 1
         then begin
-          pr2 (Ocaml.string_of_v (Meta_ast_cmt.vof_type_expr_show_all texpr));
+          (*pr2 (Ocaml.string_of_v (Meta_ast_cmt.vof_type_expr_show_all texpr));*)
           pr2_gen candidates
         end
     | x::xs ->
