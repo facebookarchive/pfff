@@ -114,11 +114,6 @@ let add_node_and_edge_if_defs_mode ?(dupe_ok=false) env node =
   end;
   { env with  current = node; current_qualifier = full_ident; }
 
-let add_use_edge_lid env lid texpr kind =
-  let _str = Path.name lid in
-  pr2 (Ocaml.string_of_v (Meta_ast_cmt.vof_type_expr_show_all texpr));
-  raise Todo
-
 (*****************************************************************************)
 (* Kind of entity *)
 (*****************************************************************************)
@@ -146,6 +141,53 @@ let rec kind_of_core_type x =
   | _ -> raise Todo
 let kind_of_value_descr vd =
   kind_of_core_type vd.val_desc
+
+let rec typename_of_texpr x =
+  (* pr2 (Ocaml.string_of_v (Meta_ast_cmt.vof_type_expr_show_all x)); *)
+  match x.Types.desc with
+  | Types.Tconstr(path, xs, aref) -> Path.name path
+  | Types.Tlink t -> typename_of_texpr t
+  | _ ->
+      pr2 (Ocaml.string_of_v (Meta_ast_cmt.vof_type_expr_show_all x));
+      raise Todo
+
+let last_in_qualified s =
+  let xs = Common.split "\\." s in
+  Common.list_last xs
+  
+let add_use_edge_lid env lid texpr kind =
+  (* the typename already contains the qualifier *)
+  let str = Path.name lid +> last_in_qualified in
+  let str_typ = typename_of_texpr texpr in
+  let candidates = 
+    match str_typ, str with
+    | "unit", "()" -> ["stdlib.unit.()", kind]
+    | "bool", "true" -> ["stdlib.bool.true", kind]
+    | "bool", "false" -> ["stdlib.bool.true", kind]
+    | "list", "[]" -> ["stdlib.list.[]", kind]
+    | "list", "::" -> ["stdlib.list.::", kind]
+    | "option", "None" -> ["stdlib.option.None", kind]
+    | "option", "Some" -> ["stdlib.option.Some", kind]
+    | "exn", "Not_found" -> ["stdlib.exn.Not_found", kind]
+    | "exn", _ -> [
+        (str_typ ^ "." ^ str, E.Exception);
+        (env.current_module ^ "." ^ str_typ ^ "." ^ str, E.Exception);
+      ]
+    | _ -> [
+        (str_typ ^ "." ^ str, kind);
+        (env.current_module ^ "." ^ str_typ ^ "." ^ str, kind);
+      ] 
+  in
+  let rec aux = function
+    | [] ->
+        if List.length candidates > 1
+        then pr2_gen candidates
+    | x::xs ->
+        if G.has_node x env.g
+        then add_use_edge env x
+        else aux xs
+  in
+  aux candidates
 
 (*****************************************************************************)
 (* Empty wrappers *)
@@ -280,12 +322,12 @@ and structure_item_desc env = function
         type_declaration env v3
       ) xs
   | Tstr_exception ((id, _loc, v3)) ->
-      let full_ident = env.current_qualifier ^ "." ^ Ident.name id in
+      let full_ident = env.current_qualifier ^ ".exn." ^ Ident.name id in
       let node = (full_ident, E.Exception) in
       let env = add_node_and_edge_if_defs_mode env node in
       exception_declaration env v3
   | Tstr_exn_rebind ((id, _loc, v3, _loc2)) ->
-      let full_ident = env.current_qualifier ^ "." ^ Ident.name id in
+      let full_ident = env.current_qualifier ^ ".exn." ^ Ident.name id in
       let node = (full_ident, E.Exception) in
       let env = add_node_and_edge_if_defs_mode env node in
       Path.t env v3

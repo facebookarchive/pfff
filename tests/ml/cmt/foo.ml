@@ -33,6 +33,11 @@ let use_ref = function
 
 exception Error1
 
+let raise_exn () =
+  try 
+    raise Error1
+  with Error1 -> ()
+
 module X = struct
   type t = A | B
   module Y = struct
