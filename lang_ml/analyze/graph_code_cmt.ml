@@ -55,6 +55,8 @@ type env = {
   current_qualifier: string;
   current_module: string;
   mutable locals: string list;
+  (* module aliases *)
+  mutable aliases: (string * string) list;
 }
  and phase = Defs | Uses
 
@@ -120,7 +122,16 @@ let add_node_and_edge_if_defs_mode ?(dupe_ok=false) env node =
 (*****************************************************************************)
 (* Modules aliases *)
 (*****************************************************************************)
-let path_name x = Path.name x
+let path_name aliases lid = 
+  let s = Path.name lid in
+  let xs = Common.split "\\." s in
+  (match xs with
+  | [] -> raise Impossible
+  | x::xs -> 
+      if List.mem_assoc x aliases
+      then List.assoc x aliases ^ "." ^ (Common.join "." xs)
+      else s
+  )
 
 (*****************************************************************************)
 (* Kind of entity *)
@@ -133,7 +144,7 @@ let rec kind_of_type_desc x =
       E.Function
   | Types.Tconstr (path, xs, aref) 
       (* less: potentially anything with a mutable field *)
-      when List.mem (path_name path) ["Pervasives.ref";"Hashtbl.t"] ->
+      when List.mem (path_name [] path) ["Pervasives.ref";"Hashtbl.t"] ->
       E.Global
   | Types.Tconstr (path, xs, aref) -> E.Constant
   | Types.Ttuple _ | Types.Tvariant _ -> 
@@ -158,11 +169,11 @@ let rec kind_of_core_type x =
 let kind_of_value_descr vd =
   kind_of_core_type vd.val_desc
 
-let rec typename_of_texpr x =
+let rec typename_of_texpr env x =
   (* pr2 (Ocaml.string_of_v (Meta_ast_cmt.vof_type_expr_show_all x)); *)
   match x.Types.desc with
-  | Types.Tconstr(path, xs, aref) -> path_name path
-  | Types.Tlink t -> typename_of_texpr t
+  | Types.Tconstr(path, xs, aref) -> path_name env path
+  | Types.Tlink t -> typename_of_texpr env t
   | _ ->
       pr2 (Ocaml.string_of_v (Meta_ast_cmt.vof_type_expr_show_all x));
       raise Todo
@@ -174,8 +185,8 @@ let last_in_qualified s =
 let add_use_edge_lid env lid texpr kind =
  if env.phase = Uses then begin
   (* the typename already contains the qualifier *)
-  let str = path_name lid +> last_in_qualified in
-  let str_typ = typename_of_texpr texpr in
+  let str = path_name env.aliases lid +> last_in_qualified in
+  let str_typ = typename_of_texpr env.aliases texpr in
 
   let candidates = 
     match str_typ, str with
@@ -189,7 +200,7 @@ let add_use_edge_lid env lid texpr kind =
     | "exn", "Not_found" -> ["stdlib.exn.Not_found", kind]
     (* for exn, the typename does not contain the qualifier *)
     | "exn", _ -> 
-        let xs = Common.split "\\." (path_name lid) +> List.rev in
+        let xs = Common.split "\\." (path_name env.aliases lid) +> List.rev in
         let ys = (List.hd xs :: "exn" :: List.tl xs) +> List.rev in
         let str = Common.join "." ys in
         [
@@ -218,8 +229,7 @@ let add_use_edge_lid env lid texpr kind =
 
 let add_use_edge_lid_bis env lid kind =
  if env.phase = Uses then begin
-
-  let str = path_name lid in
+  let str = path_name env.aliases lid in
   let candidates = 
     match str with
     | _ -> [
@@ -300,6 +310,7 @@ let rec extract_defs_uses ~phase ~g ~ast ~readable =
     current_module = ast.cmt_modname;
     file = readable;
     locals = [];
+    aliases = [];
   }
   in
   if phase = Defs then begin
@@ -386,11 +397,17 @@ and structure_item_desc env = function
       let node = (full_ident, E.Exception) in
       let env = add_node_and_edge_if_defs_mode env node in
       Path.t env v3
-  | Tstr_module ((id, _loc, v3)) ->
-      let full_ident = env.current_qualifier ^ "." ^ Ident.name id in
-      let node = (full_ident, E.Module) in
-      let env = add_node_and_edge_if_defs_mode env node in
-      module_expr env v3
+  | Tstr_module ((id, _loc, modexpr)) ->
+      (match modexpr.mod_desc with
+      | Tmod_ident (path, _loc) ->
+          env.aliases <- 
+            (Ident.name id, path_name env.aliases path)::env.aliases;
+      | _ -> 
+          let full_ident = env.current_qualifier ^ "." ^ Ident.name id in
+          let node = (full_ident, E.Module) in
+          let env = add_node_and_edge_if_defs_mode env node in
+          module_expr env modexpr
+      )
   | Tstr_recmodule xs ->
       List.iter (fun (id, _loc, v3, v4) ->
         let full_ident = env.current_qualifier ^ "." ^ Ident.name id in
@@ -502,7 +519,7 @@ and pattern_desc t env = function
 and expression_desc env =
   function
   | Texp_ident ((lid, _loc_longident, vd)) ->
-      let str = path_name lid in
+      let str = path_name env.aliases lid in
       if List.mem str env.locals
       then ()
       else add_use_edge_lid_bis env lid (kind_of_type_expr vd.TypesOld.val_type)
