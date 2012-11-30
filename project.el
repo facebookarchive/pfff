@@ -62,6 +62,7 @@
      facebook/thrift
      facebook/thrift/gen-ocaml
 /home/pad/packages/Linux/stow/ocaml-4.00.1/lib/ocaml/compiler-libs
+/home/pad/packages/MacOS/stow/ocaml-4.00.1/lib/ocaml/compiler-libs
     ")
    pad-ocaml-project-toplevel "pfff.top"
    )
@@ -294,9 +295,10 @@
    (join-string 
     (list 
      "-debugger"
-     (case 0
+     (case 1
 
        (0 "-lang java -build /home/pad/pfff/tests/java/codegraph")
+       (1 "-lang cmt -build /home/pad/pfff/tests/ml/cmt")
        )
      )
     )

@@ -188,7 +188,8 @@ let add_use_edge_lid env lid texpr kind =
   let rec aux = function
     | [] ->
         if List.length candidates > 1
-        then pr2_gen candidates
+        then 
+          pr2_gen candidates
     | x::xs ->
         if G.has_node x env.g
         then add_use_edge env x

@@ -17,21 +17,9 @@ let use_global () =
 let use_hglobal () = 
   Hashtbl.add hglobal 1 true
 
-type variant =
-  | Constructor1
-  | Constructor2WithArg of int
-
-let use_variant = function
-  | Constructor1 -> 1
-  | Constructor2WithArg _ -> 2
-
-type record = { fld1: int; fld2: float }
-let use_record = function
-  { fld1 = i; _} -> i
 
 let use_ref = function
  { contents = x} -> x
-
 
 exception Error1
 

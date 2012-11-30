@@ -12,3 +12,9 @@ let raise_exn2 () =
     raise Bar.BarExn
   with Bar.BarExn -> ()
 
+open Bar
+let raise_exn3 () =
+  try 
+    raise BarExn
+  with BarExn -> ()
+

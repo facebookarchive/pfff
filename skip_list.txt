@@ -17,6 +17,9 @@ file: lang_php/pretty/main.cmt
 file: commons/ocamlextra/enum.cmt
 file: commons/ocamlextra/dynArray.cmt
 
+# dupes with external/core
+dir: tests/ml/cmt
+
 # -------------------------------------------------------------------------
 # depends on compiler libs
 # -------------------------------------------------------------------------
