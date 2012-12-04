@@ -63,14 +63,17 @@ type env = {
   current_qualifier: name;
   current_module: name;
   mutable locals: string list;
-  (* module aliases *)
-  mutable aliases: (string * string) list;
+
+  module_aliases: (name * name) list ref;
+  type_aliases: (name * name) list ref;
 }
  and name = string list
  and phase = Defs | Uses
 
 let n_of_s s = Common.split "\\." s
 let s_of_n xs = Common.join "." xs
+
+let n_of_pn x = n_of_s (Path.name x)
 
 (*****************************************************************************)
 (* Parsing *)
@@ -198,8 +201,8 @@ let last_in_qualified s =
 let add_use_edge_lid env lid texpr kind =
  if env.phase = Uses then begin
   (* the typename already contains the qualifier *)
-  let str = path_name env.aliases lid +> last_in_qualified in
-  let str_typ = typename_of_texpr env.aliases texpr in
+  let str = path_name [] lid +> last_in_qualified in
+  let str_typ = typename_of_texpr [] texpr in
 (*
   pr2_gen (path_name env.aliases lid);
   pr2_gen (str_typ);
@@ -324,7 +327,9 @@ let optional env x = ()
 (*****************************************************************************)
 (* Defs/Uses *)
 (*****************************************************************************)
-let rec extract_defs_uses ~phase ~g ~ast ~readable =
+let rec extract_defs_uses 
+   ~phase ~g ~ast ~readable
+   ~module_aliases ~type_aliases =
   let env = {
     g; phase;
     current = (ast.cmt_modname, E.Module);
@@ -332,7 +337,7 @@ let rec extract_defs_uses ~phase ~g ~ast ~readable =
     current_module = [ast.cmt_modname];
     file = readable;
     locals = [];
-    aliases = [];
+    module_aliases; type_aliases;
   }
   in
   if phase = Defs then begin
@@ -441,17 +446,20 @@ and structure_item_desc env = function
       let env = add_node_and_edge_if_defs_mode env node in
       Path.t env v3
   | Tstr_module ((id, _loc, modexpr)) ->
+      let full_ident = env.current_qualifier ++ [Ident.name id] in
+      let node = (full_ident, E.Module) in
+      let env = add_node_and_edge_if_defs_mode env node in
+      let env = { env with current_module = full_ident } in
       (match modexpr.mod_desc with
       | Tmod_ident (path, _loc) ->
-          env.aliases <- 
-            (Ident.name id, path_name env.aliases path)::env.aliases;
-      | _ -> 
-          let full_ident = env.current_qualifier ++ [Ident.name id] in
-          let node = (full_ident, E.Module) in
-          let env = add_node_and_edge_if_defs_mode env node in
-          let env = { env with current_module = full_ident } in
-          module_expr env modexpr
-      )
+          (* todo: resolve path! *)
+          if env.phase = Defs then
+            Common.push2 (full_ident, n_of_pn path) env.module_aliases
+             
+      | _ -> ()
+      );
+      module_expr env modexpr
+
   | Tstr_recmodule xs ->
       List.iter (fun (id, _loc, v3, v4) ->
         let full_ident = env.current_qualifier ++ [Ident.name id] in
@@ -563,7 +571,7 @@ and pattern_desc t env = function
 and expression_desc env =
   function
   | Texp_ident ((lid, _loc_longident, vd)) ->
-      let str = path_name env.aliases lid in
+      let str = path_name [] lid in
       if List.mem str env.locals
       then ()
       else () (*add_use_edge_lid_bis env lid (kind_of_type_expr vd.TypesOld.val_type) *)
@@ -820,6 +828,9 @@ let build ?(verbose=true) dir_or_file skip_list =
   let g = G.create () in
   G.create_initial_hierarchy g;
 
+  let module_aliases = ref [] in
+  let type_aliases = ref [] in
+
   (* step1: creating the nodes and 'Has' edges, the defs *)
   if verbose then pr2 "\nstep1: extract defs";
   files +> Common_extra.progress ~show:verbose (fun k -> 
@@ -827,7 +838,8 @@ let build ?(verbose=true) dir_or_file skip_list =
       k();
       let ast = parse file in
       let readable = Common.filename_without_leading_path root file in
-      extract_defs_uses ~g ~ast ~phase:Defs ~readable;
+      extract_defs_uses ~g ~ast ~phase:Defs ~readable 
+        ~module_aliases ~type_aliases;
       ()
     ));
 
@@ -840,8 +852,15 @@ let build ?(verbose=true) dir_or_file skip_list =
       let readable = Common.filename_without_leading_path root file in
       if readable =~ "^external" || readable =~ "^EXTERNAL"
       then ()
-      else extract_defs_uses ~g ~ast ~phase:Uses ~readable;
-      ()
+      else extract_defs_uses ~g ~ast ~phase:Uses ~readable
+             ~module_aliases ~type_aliases
     ));
+  if verbose then begin
+    pr2 "";
+    pr2 "module aliases";
+    !module_aliases +> List.iter pr2_gen;
+    pr2 "type aliases";
+    !type_aliases +> List.iter pr2_gen;
+  end;
 
   g
