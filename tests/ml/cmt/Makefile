@@ -20,7 +20,7 @@ graph_code.marshall: $(OBJS)
 .SUFFIXES: .ml .cmt
 
 .ml.cmt:
-	ocamlc -c -nostdlib -nopervasives -bin-annot $<
+	ocamlc -c -nostdlib -nopervasives -dtypes -bin-annot $<
 
 clean:
 	rm -f *.cm* graph_code.*
