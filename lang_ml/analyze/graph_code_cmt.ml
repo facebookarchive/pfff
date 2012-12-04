@@ -40,6 +40,11 @@ open Typedtree
  *                        -> Constant
  *                        -> Global
  *                        -> SubModule
+ * 
+ * related: 
+ *  - typerex
+ *  - ocamlspotter
+ *  - oug/odb http://odb-serv.forge.ocamlcore.org/
  *)
 
 (*****************************************************************************)
