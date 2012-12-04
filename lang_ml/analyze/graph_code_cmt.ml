@@ -84,11 +84,6 @@ let find_source_files_of_dir_or_files xs =
 let add_use_edge env dst =
   let src = env.current in
   match () with
-  (* maybe nested function, in which case we dont have the def *)
-  | _ when not (G.has_node src env.g) ->
-    pr2 (spf "LOOKUP SRC FAIL %s --> %s, src does not exist (nested func?)"
-           (G.string_of_node src) (G.string_of_node dst));
-
   | _ when G.has_node dst env.g -> 
       G.add_edge (src, dst) G.Use env.g
   | _ -> 
@@ -187,9 +182,10 @@ let add_use_edge_lid env lid texpr kind =
   (* the typename already contains the qualifier *)
   let str = path_name env.aliases lid +> last_in_qualified in
   let str_typ = typename_of_texpr env.aliases texpr in
-
+(*
   pr2_gen (path_name env.aliases lid);
   pr2_gen (str_typ);
+*)
 
   let candidates = 
     match str_typ, str with
@@ -322,6 +318,7 @@ let rec extract_defs_uses ~phase ~g ~ast ~readable =
     g +> G.add_node env.current;
     g +> G.add_edge ((dir, E.Dir), env.current) G.Has;
   end;
+  (* less: could detect useless imports *)
   if phase = Uses then begin
     ast.cmt_imports +> List.iter (fun (s, digest) ->
       let node = (s, E.Module) in
@@ -371,6 +368,7 @@ and structure_item_desc env = function
         | Tpat_var(id, _loc) | Tpat_alias (_, id, _loc) ->
             let full_ident = env.current_qualifier ^ "." ^ Ident.name id in
             let node = (full_ident, kind_of_type_expr v2.exp_type) in
+            (* some people do let foo = ... let foo = ... in the same file *)
             let env = add_node_and_edge_if_defs_mode ~dupe_ok:true env node in
             expression env v2
         | Tpat_tuple xs ->
@@ -450,8 +448,7 @@ and structure_item_desc env = function
       let _ = module_expr env v1 and _ = List.iter (Ident.t env) v2 in ()
 
   | (Tstr_class _|Tstr_class_type _) -> 
-    (*pr2_once (spf "TODO: str_class, %s" env.file) *)
-    ()
+    pr2_once (spf "TODO: str_class, %s" env.file)
 
 and type_declaration env
     { typ_params = __v_typ_params; typ_type = v_typ_type;
@@ -697,7 +694,7 @@ and module_expr_desc env =
   function
   | Tmod_ident ((v1, _loc_longident)) ->
       Path.t env v1
-  | Tmod_structure v1 -> let _ = structure env v1 in ()
+  | Tmod_structure v1 -> structure env v1
   | Tmod_functor ((v1, _loc, v3, v4)) ->
       let _ = Ident.t env v1
       and _ = module_type env v3
@@ -715,7 +712,9 @@ and module_expr_desc env =
       and _ = module_coercion env v4
       in ()
   | Tmod_unpack ((v1, v2)) ->
-      let _ = expression env v1 and _ = Types.module_type env v2 in ()
+      let _ = expression env v1 
+      and _ = Types.module_type env v2 
+      in ()
 (* ---------------------------------------------------------------------- *)
 (* Type *)
 (* ---------------------------------------------------------------------- *)
@@ -752,8 +751,7 @@ and core_type_desc env =
   | Ttyp_poly ((v1, v2)) ->
       let _ = List.iter v_string v1 and _ = core_type env v2 in ()
   | Ttyp_package v1 -> 
-    pr2_once (spf "TODO: Ttyp_package, %s" env.file);
-    ()
+    pr2_once (spf "TODO: Ttyp_package, %s" env.file)
 
 and core_field_type env { field_desc = v_field_desc; field_loc = v_field_loc }=
   let _ = core_field_desc env v_field_desc in ()
