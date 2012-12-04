@@ -199,23 +199,26 @@ let add_use_edge_lid env lid texpr kind =
     | "exn", "Not_found" -> ["stdlib.exn.Not_found", kind]
     (* for exn, the typename does not contain the qualifier *)
     | "exn", _ -> 
+        (* todo *)
+        ["stdlib.exn.Not_found", kind]
+        (*
         let xs = Common.split "\\." (path_name env.aliases lid) +> List.rev in
         let ys = (List.hd xs :: "exn" :: List.tl xs) +> List.rev in
         let str = Common.join "." ys in
         [
         (str, E.Exception);
         (env.current_module ^ "." ^ str, E.Exception);
-      ]
-    | _ -> [
-        (str_typ ^ "." ^ str, kind);
-        (env.current_module ^ "." ^ str_typ ^ "." ^ str, kind);
-      ] 
+        *)
+    | _ -> 
+        let xs = Common.split "\\." env.current_module in
+        inits xs +> List.rev +> List.map (fun xs ->
+          Common.join "." (xs ++ [str_typ;str]), kind
+        )
   in
   let rec aux = function
-    | [] ->
+    | [] -> 
         if List.length candidates > 1
         then begin
-          (*pr2 (Ocaml.string_of_v (Meta_ast_cmt.vof_type_expr_show_all texpr));*)
           pr2_gen candidates
         end
     | x::xs ->
@@ -226,6 +229,7 @@ let add_use_edge_lid env lid texpr kind =
   aux candidates
  end
 
+(*
 let add_use_edge_lid_bis env lid kind =
  if env.phase = Uses then begin
   let str = path_name env.aliases lid in
@@ -248,6 +252,7 @@ let add_use_edge_lid_bis env lid kind =
   in
   aux candidates
  end
+*)
 
 (*****************************************************************************)
 (* Empty wrappers *)
@@ -426,6 +431,7 @@ and structure_item_desc env = function
           let full_ident = env.current_qualifier ^ "." ^ Ident.name id in
           let node = (full_ident, E.Module) in
           let env = add_node_and_edge_if_defs_mode env node in
+          let env = { env with current_module = full_ident } in
           module_expr env modexpr
       )
   | Tstr_recmodule xs ->
@@ -433,6 +439,7 @@ and structure_item_desc env = function
         let full_ident = env.current_qualifier ^ "." ^ Ident.name id in
         let node = (full_ident, E.Module) in
         let env = add_node_and_edge_if_defs_mode env node in
+        let env = { env with current_module = full_ident } in
         module_type env v3;
         module_expr env v4;
       ) xs
@@ -541,7 +548,7 @@ and expression_desc env =
       let str = path_name env.aliases lid in
       if List.mem str env.locals
       then ()
-      else add_use_edge_lid_bis env lid (kind_of_type_expr vd.TypesOld.val_type)
+      else () (*add_use_edge_lid_bis env lid (kind_of_type_expr vd.TypesOld.val_type) *)
 
   | Texp_constant v1 -> constant env v1
   | Texp_let ((_rec_flag, v2, v3)) ->
