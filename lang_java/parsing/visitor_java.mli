@@ -1,52 +1,33 @@
+(* Copyright (C) 2012 Facebook
+ *
+ * This library is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU Lesser General Public License
+ * version 2.1 as published by the Free Software Foundation, with the
+ * special exception on linking described in file license.txt.
+ *
+ * This library is distributed in the hope that it will be useful, but
+ * WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the file
+ * license.txt for more details.
+ *)
+
 open Ast_java
 
-type 'a inout = 'a -> 'a
-
-type visitor_s = {
-
-  ktype_s      : typ  inout * visitor_s -> typ  inout;
-  kexpr_s      : expr inout * visitor_s -> expr inout;
-  kstatement_s : stmt inout * visitor_s -> stmt inout;
-
-  kini_s       : init inout * visitor_s -> init inout;
-  kcase_s      : case inout * visitor_s -> case inout;
-
-  kname_s      : name inout * visitor_s -> name inout;
-
-  kdecl_s: (decl inout * visitor_s) -> decl inout;
-  kprogram_s: (compilation_unit inout * visitor_s) -> compilation_unit inout;
-
-  kinfo_s      : info inout * visitor_s -> info inout;
+type visitor_in = {
+  kexpr:    (expr        -> unit) * visitor_out -> expr        -> unit;
+  kstmt:    (stmt        -> unit) * visitor_out -> stmt        -> unit;
+  ktype:    (typ         -> unit) * visitor_out -> typ         -> unit;
+  kvar:     (var         -> unit) * visitor_out -> var         -> unit;
+  kinit:    (init        -> unit) * visitor_out -> init        -> unit;
+  kmethod:  (method_decl -> unit) * visitor_out -> method_decl -> unit;
+  kfield:   (field       -> unit) * visitor_out -> field       -> unit;
+  kclass:   (class_decl  -> unit) * visitor_out -> class_decl  -> unit;
+  kdecl:    (decl        -> unit) * visitor_out -> decl        -> unit;
+  kprogram: (program     -> unit) * visitor_out -> program     -> unit;
 }
 
-val default_visitor_s : visitor_s
+and visitor_out = any -> unit
 
-val compilation_unit : visitor_s -> compilation_unit -> compilation_unit
-val decl             : visitor_s -> decl             -> decl            
-val class_decl       : visitor_s -> class_decl       -> class_decl      
-val method_decl      : visitor_s -> method_decl      -> method_decl     
-val init             : visitor_s -> init             -> init            
-val stmt             : visitor_s -> stmt             -> stmt            
-val expr             : visitor_s -> expr             -> expr            
-val typ              : visitor_s -> typ              -> typ             
-val name             : visitor_s -> name            -> name
-val info             : visitor_s -> info            -> info
-val infoii           : visitor_s -> info list -> info list
+val default_visitor : visitor_in
 
-val decls             : visitor_s -> decls             -> decls            
-val modifiers         : visitor_s -> modifiers -> modifiers 
-
-(* val toplevel: visitor_s -> toplevel -> toplevel *)
-
-type 'a effect = 'a -> unit
-
-type visitor = { 
-   ktype      : (typ   effect  * visitor_s) -> typ   effect;
-   kexpr      : (expr  effect  * visitor_s) -> expr  effect;
-   kstatement : (stmt  effect  * visitor_s) -> stmt  effect;
-
-   kini       : (init effect   * visitor_s) -> init  effect; 
-
-   kname      : (name effect   * visitor_s) -> name  effect;
-   kinfo      : (info effect   * visitor_s) -> info  effect;
- } 
+val mk_visitor : visitor_in -> visitor_out

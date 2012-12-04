@@ -2,6 +2,7 @@ open Common
 
 open Ast_java
 module Ast = Ast_java
+module Vis = Visitor_java
 
 open OUnit
 
@@ -22,6 +23,46 @@ let unittest =
         with Parse_java.Parse_error _ ->
           assert_failure (spf "it should correctly parse %s" file)
       )
+    );
+
+    "basic_expr_visitor" >:: (fun () ->
+      let count = ref 0 in
+
+      let vis = Vis.mk_visitor
+        { Vis.default_visitor with
+          Vis.kexpr = (fun (k,_) e -> match e with
+          | NewClass _ -> incr count; k e
+          | _ -> k e)
+        } in
+
+      let thecode = "
+        class TestClass {
+
+          public static final void main(string[] args) {
+            Object x = new Runnable() {
+                public void run() {
+                  Object y = new Runnable() {
+                      public void run() {
+                        System.out.println(\"magic\");
+                      }
+                    };
+                }
+              };
+          }
+
+        }"
+      in
+
+      let ast = Common.with_tmp_file
+                  ~str:thecode
+                  ~ext:"java"
+                  Parse_java.parse_program in
+
+      vis (Program ast);
+
+      OUnit.assert_equal ~msg:"Expecting two anonymous class definitions"
+        2 !count;
+
     );
   ]
 

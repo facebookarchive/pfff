@@ -1,10 +1,10 @@
 (* Joust: a Java lexer, parser, and pretty-printer written in OCaml.
  * Copyright (C) 2001  Eric C. Cooper <ecc@cmu.edu>
- * Released under the GNU General Public License 
- * 
- * Yoann Padioleau: 
+ * Released under the GNU General Public License
+ *
+ * Yoann Padioleau:
  * 2010, port to the pfff infrastructure.
- * 2012, heavily modified to support annotations, generics, enum, 
+ * 2012, heavily modified to support annotations, generics, enum,
  *       foreach, etc
  *)
 
@@ -15,15 +15,15 @@ module PI = Parse_info
 (*****************************************************************************)
 (*
  * A simple AST for Java.
- * 
+ *
  * For Java we directly do a simple AST, as opposed to a CST (Concrete
  * Syntax Tree) as in lang_php/. This should be enough for higlight_java.ml
  * I think (we just need the full list of tokens + the AST with position
  * for the identifiers).
- * 
- * TODO: 
+ *
+ * TODO:
  *  - support annotations
- *  - support generic methods
+ *  - suppoert generic methods (there is support for generic classes though)
  *  - etc.
  *)
 
@@ -35,7 +35,8 @@ module PI = Parse_info
 (* Token/info *)
 (* ------------------------------------------------------------------------- *)
 type info = Parse_info.info
-type 'a wrap  = 'a * info
+and 'a wrap  = 'a * info
+  (* with tarzan *)
 
 (* ------------------------------------------------------------------------- *)
 (* Ident, qualifier *)
@@ -59,12 +60,12 @@ type typ =
   | TArray of typ
 
   (* class or interface or enum type actually *)
- and class_type = 
+ and class_type =
    (ident * type_argument list) list1
 
   and type_argument =
     | TArgument of ref_type
-    | TQuestion of (bool (* extends|super, true = super *) * ref_type) option 
+    | TQuestion of (bool (* extends|super, true = super *) * ref_type) option
 
    and 'a list1 = 'a list (* really should be 'a * 'a list *)
 
@@ -86,7 +87,7 @@ type type_parameter =
 type modifier =
   | Public   | Protected   | Private
   | Abstract
-  | Static 
+  | Static
   | Final
   | StrictFP
   | Transient   | Volatile
@@ -122,7 +123,7 @@ type expr =
    * of field y of local variable x or the static field z of class y
    * in package x. See the note on Dot below.
    *)
-  | Name of name 
+  | Name of name
 
   (* less: split in constant type with Int | Float | String | Char | Bool *)
   | Literal of string wrap
@@ -141,13 +142,13 @@ type expr =
    * The static part should be a Name and the more dynamic part a Dot.
    * So variable.field and variable.method should be parsed as
    * Dot (Name [variable], field|method). Unfortunately
-   * variable.field1.field2 is currently parsed as 
+   * variable.field1.field2 is currently parsed as
    * Dot (Name [variable;field1], field2). You need semantic information
    * about variable to disambiguate.
-   * 
+   *
    * Why the ambiguity? Names and packages are not
    * first class citizens, so one cant pass a class/package name as an
-   * argument to a function, so when have X.Y.z in an expression, the 
+   * argument to a function, so when have X.Y.z in an expression, the
    * last element has to be a field or a method (if it's a class,
    * people should use X.Y.class), so it's safe to transform such
    * a Name at parsing time in a Dot.
@@ -228,7 +229,7 @@ and catches = catch list
 (* variable (local var, parameter) declaration *)
 (* ------------------------------------------------------------------------- *)
 
-and var = { 
+and var = {
   v_name: ident;
   v_mods: modifiers;
   v_type: typ;
@@ -236,9 +237,9 @@ and var = {
 
 and vars = var list
 
-and var_with_init = { 
+and var_with_init = {
   f_var: var;
-  f_init: init option 
+  f_init: init option
 }
 
   (* less: could merge with expr *)
@@ -251,7 +252,7 @@ and var_with_init = {
 (* ------------------------------------------------------------------------- *)
 
 (* method or constructor *)
-and method_decl = { 
+and method_decl = {
   (* v_typ is a (TBasic void) for a constructor *)
   m_var: var;
   (* the v_mod can only be Final or Annotation *)
@@ -260,11 +261,11 @@ and method_decl = {
 
   (* todo: m_tparams *)
 
-  (* Empty for methods in interfaces. 
-   * For constructor the first stmts can contain 
+  (* Empty for methods in interfaces.
+   * For constructor the first stmts can contain
    * explicit_constructor_invocations.
    *)
-  m_body: stmt 
+  m_body: stmt
 }
 
 and field = var_with_init
@@ -279,7 +280,7 @@ and enum_decl = {
   en_impls: ref_type list;
   en_body: enum_constant list * decls;
 }
- and enum_constant = 
+ and enum_constant =
    | EnumSimple of ident
    (* http://docs.oracle.com/javase/1.5.0/docs/guide/language/enums.html *)
    | EnumConstructor of ident * arguments
@@ -289,7 +290,7 @@ and enum_decl = {
 (* Class/Interface *)
 (* ------------------------------------------------------------------------- *)
 
-and class_decl = { 
+and class_decl = {
   cl_name: ident;
   cl_kind: class_kind;
 
@@ -303,7 +304,7 @@ and class_decl = {
   cl_impls: ref_type list;
 
   (* the methods body are always empty for interface *)
-  cl_body: decls 
+  cl_body: decls
 }
   and class_kind = ClassRegular | Interface
 
@@ -326,7 +327,7 @@ and decls = decl list
 (* The toplevel elements *)
 (* ------------------------------------------------------------------------- *)
 
-type compilation_unit = { 
+type compilation_unit = {
   package: qualified_ident option;
   (* The qualified ident can also contain "*" at the very end.
    * The bool is for static import (javaext:)
@@ -355,7 +356,6 @@ type any =
   | Class2 of class_decl
   | Decl of decl
   | Program of program
-
  (* with tarzan *)
 
 (*****************************************************************************)

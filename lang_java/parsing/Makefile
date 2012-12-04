@@ -11,11 +11,12 @@ SRC= flag_parsing_java.ml \
      token_helpers_java.ml \
      parsing_hacks_java.ml \
      parse_java.ml \
+     visitor_java.ml \
      test_parsing_java.ml unit_parsing_java.ml
 
-#visitor_java.ml 
 
-SYSLIBS= str.cma unix.cma 
+
+SYSLIBS= str.cma unix.cma
 
 LIBS= $(TOP)/commons/commons.cma \
  $(TOP)/h_program-lang/lib.cma \
@@ -63,6 +64,8 @@ clean::
 	rm -f parser_java.ml parser_java.mli parser_java.output
 beforedepend:: parser_java.ml parser_java.mli
 
+visitor_java.cmo: visitor_java.ml
+	$(OCAMLC) -w y -c $<
 
 ##############################################################################
 # Generic rules
