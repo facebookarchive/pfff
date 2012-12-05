@@ -98,14 +98,6 @@ let parse file =
     Cmt_format.read_cmt file
   )
 
-let find_source_files_of_dir_or_files xs = 
-  Common.files_of_dir_or_files_no_vcs_nofilter xs 
-   +> List.filter (fun filename->
-    match File_type.file_type_of_file filename with
-    | File_type.Obj "cmt" -> true
-    | _ -> false
-  ) +> Common.sort
-
 (*****************************************************************************)
 (* Add edges *)
 (*****************************************************************************)
@@ -548,16 +540,19 @@ and structure_item_desc env = function
   | Tstr_module ((id, _loc, modexpr)) ->
       let full_ident = env.current_entity ++ [Ident.name id] in
       let node = (full_ident, E.Module) in
-      let env = add_node_and_edge_if_defs_mode env node in
-      let env = { env with current_module = full_ident } in
       (match modexpr.mod_desc with
       | Tmod_ident (path, _loc) ->
-          if env.phase = Defs then
+          (* do not add nodes for module aliases in the graph, just *)
+          if env.phase = Defs then begin
             Common.push2 (full_ident, path_resolve_locals env path E.Module) 
               env.module_aliases
-      | _ -> ()
-      );
-      module_expr env modexpr
+          end;
+          add_full_path_local env (Ident.name id, full_ident) E.Module
+      | _ -> 
+          let env = add_node_and_edge_if_defs_mode env node in
+          let env = { env with current_module = full_ident } in
+          module_expr env modexpr
+      )
   | Tstr_recmodule xs ->
       List.iter (fun (id, _loc, v3, v4) ->
         let full_ident = env.current_entity ++ [Ident.name id] in
@@ -926,8 +921,7 @@ and
 
 let build ?(verbose=true) dir_or_file skip_list =
   let root = Common.realpath dir_or_file in
-  let all_files = 
-    find_source_files_of_dir_or_files [root] in
+  let all_files = Lib_parsing_ml.find_cmt_files_of_dir_or_files [root] in
 
   (* step0: filter noisy modules/files *)
   let files = Skip_code.filter_files ~verbose skip_list root all_files in
