@@ -8,18 +8,18 @@
 # -------------------------------------------------------------------------
 
 #todo: mark main_checker as a dupe module and generate a File instead?
-# or have heuristic with file called main.*?
-#file: facebook/check_module/main_checker.cmt
+# or simpler have heuristic with file called main.* ?
+#file orig kept: facebook/check_module/main_checker.cmt
 file: facebook/qa_code/main_checker.cmt
 file: facebook/check_cpp/main_checker.cmt
-#file: main.cmt
+#file orig kept: main.cmt
 file: lang_php/pretty/main.cmt
 
 #less: dupes with external/extlib/, remove them
 file: commons/ocamlextra/enum.cmt
 file: commons/ocamlextra/dynArray.cmt
 
-#dupes with external/core
+#dupes with external/core and ok to skip cos test files
 dir: tests/ml/cmt
 
 # -------------------------------------------------------------------------
@@ -39,6 +39,9 @@ file: external/core/dynlinkaux.cmt
 #dir: commons/lib-sexp
 #todo: have namespace conflict between values and types
 #dir: commons/lib-json
+
+#todo: have some 'include'
+file: commons/lib-sexp/pre_sexp.cmt
 
 # -------------------------------------------------------------------------
 # dupe nodes inside the file
