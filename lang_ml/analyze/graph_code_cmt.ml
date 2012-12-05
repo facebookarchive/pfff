@@ -442,7 +442,20 @@ and module_expr env
 and structure_item_desc env = function
   | Tstr_eval v1 -> 
       expression env v1
-  | Tstr_value ((_rec_flag, xs)) ->
+  | Tstr_value ((rec_flag, xs)) ->
+      (* first pass *)
+      if rec_flag = Asttypes.Recursive then begin
+        List.iter (fun (v1, v2) ->
+          match v1.pat_desc with
+          | Tpat_var(id, _loc) | Tpat_alias (_, id, _loc) ->
+              let full_ident = env.current_entity ++ [Ident.name id] in
+              add_full_path_local env (Ident.name id, full_ident) 
+                (kind_of_type_expr v2.exp_type)
+          | _ -> ()
+        ) xs;
+      end;
+
+      (* second pass *)
       List.iter (fun (v1, v2) ->
         match v1.pat_desc with
         | Tpat_var(id, _loc) | Tpat_alias (_, id, _loc) ->
@@ -634,16 +647,24 @@ and expression_desc t env =
       if List.mem str env.locals
       then ()
       else add_use_edge_lid_bis env lid t
-
-  | Texp_constant v1 -> constant env v1
-  | Texp_let ((_rec_flag, v2, v3)) ->
-      let _ =
-        List.iter
-          (fun (v1, v2) ->
-             let _ = pattern env v1 and _ = expression env v2 in ())
-          v2
-      and _ = expression env v3
-      in ()
+  | Texp_constant v1 -> 
+      constant env v1
+  | Texp_let ((rec_flag, xs, v3)) ->
+      (* first pass *)
+      if rec_flag = Asttypes.Recursive then begin
+        xs +> List.iter (fun (v1, v2) ->
+          match v1.pat_desc with
+          | Tpat_var (id, _loc) | Tpat_alias (_, id, _loc) ->
+              env.locals <- Ident.name id:: env.locals
+          | _ -> ()
+        );
+      end;
+      (* second pass *)
+      xs +> List.iter (fun (v1, v2) ->
+        pattern env v1;
+        expression env v2;
+      );
+      expression env v3
   | Texp_function ((v1, v2, v3)) ->
       let _ = label env v1
       and _ =

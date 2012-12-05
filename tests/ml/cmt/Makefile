@@ -5,8 +5,12 @@ SRC=pervasives.ml list.ml hashtbl.ml \
   for.ml let_tuple_defs.ml let_typed_def.ml \
   open_module.ml nested_module.ml \
   alias_module.ml alias_type.ml alias_module_type.ml \
-  functor.ml \
-  namespace_type_value.ml namespace_type_field.ml
+  namespace_type_value.ml namespace_type_field.ml \
+  letrec.ml typerec.ml letrec_nested.ml
+
+# not handled well
+#  functor.ml \
+# include_module.ml
 
 
 #STDLIB=pervasives.cmt list.cmt hashtbl.cmt
@@ -27,4 +31,4 @@ graph_code.marshall: $(OBJS)
 	ocamlc -c -nostdlib -nopervasives -dtypes -bin-annot $<
 
 clean:
-	rm -f *.cm* graph_code.*
+	rm -f *.cm* *.annot graph_code.*
