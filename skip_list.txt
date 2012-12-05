@@ -7,8 +7,8 @@
 # dupes cmt
 # -------------------------------------------------------------------------
 
-#todo: mark main_checker as a dupe module and generate a File instead?
-# or simpler have heuristic with file called main.* ?
+#todo: have heuristic with file called main.* ?
+# or mark main_checker as a dupe module and generate a File instead?
 #file orig kept: facebook/check_module/main_checker.cmt
 file: facebook/qa_code/main_checker.cmt
 file: facebook/check_cpp/main_checker.cmt
@@ -44,27 +44,12 @@ file: external/core/dynlinkaux.cmt
 file: commons/lib-sexp/pre_sexp.cmt
 
 # -------------------------------------------------------------------------
-# dupe nodes inside the file
-# -------------------------------------------------------------------------
-#file: commons/lib-sexp/pre_sexp.cmt
-#file: commons/ocamlextra/dumper.cmt
-#file: external/core/dynlink.cmt
-#file: external/core/graphicsX11.cmt
-
-# -------------------------------------------------------------------------
 # dupes
 # -------------------------------------------------------------------------
 
 # contain dupes
 dir: external/ocamlgtk/examples
 dir: external/ocamlgtk/applications
-
-# use symlinks to existing file, bad technique
-dir: facebook/fbstrict/src/jscompiler
-
-# contain dupes with symbol_service
-dir: facebook/typelog
-
 #someone use parmap?
 dir: facebook/external/parmap/tests/
 
@@ -72,8 +57,14 @@ file: facebook/external/archimedes/src/utils.ml
 file: external/ocamlgraph/src/util.ml
 file: external/ocamlgraph/src/util.mli
 
+# use symlinks to existing file, bad technique
+dir: facebook/fbstrict/src/jscompiler
+
+# contain dupes with symbol_service
+dir: facebook/typelog
+
 # -------------------------------------------------------------------------
-# old/_build
+# old/
 # -------------------------------------------------------------------------
 
 # todo: factorize in a 'dir_element: old ?
@@ -93,11 +84,10 @@ dir: facebook/external/archimedes/_build
 dir: opa/_build
 dir: tests/opa/parsing/todo/_build
 
-
 # -------------------------------------------------------------------------
 # parse errors
 # -------------------------------------------------------------------------
 
-# normal
+# ok to skip
 dir: tests/ml/parsing_errors
 dir: tests/ml/db/parsing_errors

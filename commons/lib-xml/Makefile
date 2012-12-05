@@ -5,8 +5,7 @@
 # you may have to duplicate this list in ../Makefile under the 
 # ifeq ($(FEATURE_JSON_BUILTIN_COMMONS),1)
 
-SRC= \
-     xml_types.ml \
+SRC= xml_types.ml \
      dtd_types.ml \
      xml_parser.ml \
      xml_lexer.ml \
@@ -14,7 +13,6 @@ SRC= \
      dtd.ml \
      xml_parse.ml \
      xml_utils.ml \
-
 
 TARGET=lib
 

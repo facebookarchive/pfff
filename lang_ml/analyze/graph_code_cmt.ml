@@ -304,7 +304,7 @@ let add_use_edge_lid env lid texpr kind =
     | ("unit" | "bool" | "list" | "option" | "exn")::_ -> ()
       (* todo: pfff specific, tofix *)
     | _ when tname +> List.exists (function 
-      "LIST"|"Array_id" -> true |_->false) -> ()
+      "LIST" | "Array_id" | "dbty" -> true |_->false) -> ()
     | _ -> pr2 (spf "%s in %s" (Common.dump node) env.file)
     )
   end
@@ -324,14 +324,12 @@ let add_use_edge_lid_bis env lid texpr =
       (* todo: need better n_of_s, or avoid n_of_s and have n_of_path *)
       | "ArithFloatInfix"
       (* todo: need handle functor *)
-      | "StringSetOrig" | "IntMap" | "IntIntMap" | "StringSet"
-      | "Elt_Set"
-      | "SMap" | "IMap" | "ISet" | "SSet"
-      | "AMap"
+      | "StringSetOrig" | "IntMap" | "IntIntMap" | "StringSet" | "StrMap"
+      | "SMap" | "IMap" | "ISet" | "SSet" 
+      | "Elt_Set"  | "AMap"
       (* todo: need handle argument to functor *)
       | "MODEL" | "column_list"
-      | "Taint"
-      | "MATCH" | "X" | "PHP_VS_PHP"
+      | "Taint"  | "MATCH" | "X" | "PHP_VS_PHP"
       (* todo: handle pack *)
       | "Digraph"
       (* todo: misc *)
