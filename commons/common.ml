@@ -479,7 +479,7 @@ include Printf
  * for padding
  *)
 
-let spf = sprintf
+let spf = Printf.sprintf
 
 (* ---------------------------------------------------------------------- *)
 
@@ -679,7 +679,7 @@ let profile_diagnostic () =
       pr "profiling result";
       pr "---------------------";
       xs +> List.iter (fun (k, (t,n)) ->
-        pr (sprintf "%-40s : %10.3f sec %10d count" k !t !n)
+        pr (Printf.sprintf "%-40s : %10.3f sec %10d count" k !t !n)
       )
     )
 
@@ -690,7 +690,7 @@ let report_if_take_time timethreshold s f =
   let res = f () in
   let t' = Unix.gettimeofday () in
   if (t' -. t  > float_of_int timethreshold)
-  then pr2 (sprintf "Note: processing took %7.1fs: %s" (t' -. t) s);
+  then pr2 (Printf.sprintf "Note: processing took %7.1fs: %s" (t' -. t) s);
   res
 
 let profile_code2 category f =
@@ -1490,8 +1490,8 @@ let parse_options options usage_msg argv =
     args := List.rev !args;
     !args
   with
-  | Arg.Bad msg -> eprintf "%s" msg; exit 2
-  | Arg.Help msg -> printf "%s" msg; exit 0
+  | Arg.Bad msg -> Printf.eprintf "%s" msg; exit 2
+  | Arg.Help msg -> Printf.printf "%s" msg; exit 0
   )
 
 
@@ -2263,7 +2263,7 @@ let plural i s =
   then Printf.sprintf "%d %s" i s
   else Printf.sprintf "%d %ss" i s
 
-let showCodeHex xs = List.iter (fun i -> printf "%02x" i) xs
+let showCodeHex xs = List.iter (fun i -> Printf.printf "%02x" i) xs
 
 let take_string n s =
   String.sub s 0 (n-1)
@@ -2280,13 +2280,13 @@ let size_mo_ko i =
   let ko = (i / 1024) mod 1024 in
   let mo = (i / 1024) / 1024 in
   (if mo > 0
-  then sprintf "%dMo%dKo" mo ko
-  else sprintf "%dKo" ko
+  then Printf.sprintf "%dMo%dKo" mo ko
+  else Printf.sprintf "%dKo" ko
   )
 
 let size_ko i =
   let ko = i / 1024 in
-  sprintf "%dKo" ko
+  Printf.sprintf "%dKo" ko
 
 
 
@@ -3162,7 +3162,7 @@ let interpolate str =
   end
 
 (* could do a print_string but printf dont like print_string *)
-let echo s = printf "%s" s; flush stdout; s
+let echo s = Printf.printf "%s" s; flush stdout; s
 
 let usleep s = for i = 1 to s do () done
 
@@ -5925,11 +5925,11 @@ let print_total_score score =
   pr2 "total score";
   pr2 "--------------------------------";
   let (good, total) = total_scores score in
-  pr2 (sprintf "good = %d/%d" good total)
+  pr2 (Printf.sprintf "good = %d/%d" good total)
 
 let print_score score =
   score +> hash_to_list +> List.iter (fun (k, v) ->
-    pr2 (sprintf "% s --> %s" k (string_of_score_result v))
+    pr2 (Printf.sprintf "% s --> %s" k (string_of_score_result v))
   );
   print_total_score score;
   ()
