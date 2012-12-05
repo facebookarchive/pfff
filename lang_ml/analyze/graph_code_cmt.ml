@@ -491,7 +491,7 @@ and structure_item_desc env = function
       and _ = module_type env v3
       in ()
 
-  (* names are resolved, no need to handle that I think *)
+  (* opened names are resolved, no need to handle that I think *)
   | Tstr_open ((v1, _loc)) ->
       Path.t env v1 
   | Tstr_include ((v1, v2)) ->
@@ -641,11 +641,11 @@ and expression_desc t env =
           v2
       in ()
   | Texp_tuple v1 -> let _ = List.iter (expression env) v1 in ()
-  | Texp_construct ((v1, _loc_longident, v3, v4, _bool)) ->
-      let _ = Path.t env v1
-      and _ = constructor_description env v3
-      and _ = List.iter (expression env) v4
-      in ()
+  | Texp_construct ((lid, _loc_longident, v3, v4, _bool)) ->
+      add_use_edge_lid env lid t E.Constructor;
+      constructor_description env v3;
+      List.iter (expression env) v4;
+
   | Texp_variant ((v1, v2)) ->
       let _ = label env v1 and _ = v_option (expression env) v2 in ()
   | Texp_record ((v1, v2)) ->

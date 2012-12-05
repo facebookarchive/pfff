@@ -3,10 +3,13 @@ type variant =
   | Constructor2WithArg of int
   | ConstructorUnused
 
-let use_variant = function
+let use_variant_in_pattern = function
   | Constructor1 -> 1
   | Constructor2WithArg _ -> 2
   | _ -> 3
+
+let use_variant () = 
+  Constructor1
 
 module Nested = struct
   type variantbis =
@@ -19,3 +22,4 @@ module Nested = struct
     | Constructor1 -> 1
     | _ -> 2
 end
+
