@@ -54,19 +54,21 @@ open Typedtree
 
 type env = {
   g: Graph_code.graph;
-  current: Graph_code.node;
+
   phase: phase;
   file: Common.filename;
   
+  current: Graph_code.node;
   current_entity: name;
   current_module: name;
-  mutable locals: string list;
 
+  mutable locals: string list;
   (* see notes_cmt.txt, the cmt files do not contain the full path
    * for locally referenced functions, types, or modules, so have to resolve
-   * them.
+   * them. Each time you add an Ident.t, add it there, and each
+   * time you use a Path.t, use path_resolve_locals().
    *)
-  mutable full_path_local_entities: (string * name) list;
+  full_path_local_entities: (string * name) list ref;
 
   module_aliases: (name * name) list ref;
   type_aliases: (name * name) list ref;
@@ -76,8 +78,6 @@ type env = {
 
 let n_of_s s = Common.split "\\." s
 let s_of_n xs = Common.join "." xs
-
-let n_of_pn x = n_of_s (Path.name x)
 
 (*****************************************************************************)
 (* Parsing *)
@@ -132,10 +132,27 @@ let add_node_and_edge_if_defs_mode ?(dupe_ok=false) env name_node =
       env.g +> G.add_edge (env.current, node) G.Has;
     end
   end;
-  { env with  current = node; current_entity = name; }
+  Common.push2 (Common.list_last name, name) env.full_path_local_entities;
+  { env with  current = node; current_entity = name;
+  }
 
 (*****************************************************************************)
-(* Modules aliases *)
+(* Path resolution, locals *)
+(*****************************************************************************)
+let rec path_resolve_locals env p =
+
+  let s = Path.name p in
+  let xs = n_of_s s in
+  
+  match xs with
+  | [] -> raise Impossible
+  | x::xs ->
+      if List.mem_assoc x !(env.full_path_local_entities)
+      then List.assoc x !(env.full_path_local_entities) ++ xs
+      else x::xs
+
+(*****************************************************************************)
+(* Path resolution, aliases *)
 (*****************************************************************************)
 
 let path_name aliases lid = 
@@ -341,7 +358,7 @@ let rec extract_defs_uses
     current_module = [ast.cmt_modname];
     file = readable;
     locals = [];
-    full_path_local_entities = [];
+    full_path_local_entities = ref [];
     module_aliases; type_aliases;
   }
   in
@@ -443,7 +460,8 @@ and structure_item_desc env = function
         | Ttype_abstract, Some ({ctyp_desc=Ttyp_constr (path, _loc, _xs); _}) ->
           (* todo: resolve path! *)
           if env.phase = Defs then
-            Common.push2 (full_ident, n_of_pn path) env.type_aliases
+            Common.push2 (full_ident, path_resolve_locals env path)
+              env.type_aliases
         | _ -> ()
         );
         type_declaration env td
@@ -467,7 +485,8 @@ and structure_item_desc env = function
       | Tmod_ident (path, _loc) ->
           (* todo: resolve path! *)
           if env.phase = Defs then
-            Common.push2 (full_ident, n_of_pn path) env.module_aliases
+            Common.push2 (full_ident, path_resolve_locals env path) 
+              env.module_aliases
       | _ -> ()
       );
       module_expr env modexpr
