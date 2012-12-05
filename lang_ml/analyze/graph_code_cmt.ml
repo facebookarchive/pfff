@@ -298,7 +298,7 @@ let add_use_edge_lid env lid texpr kind =
   else begin
     (match tname with
     | ("unit" | "bool" | "list" | "option" | "exn")::_ -> ()
-    | _ -> pr2_gen node
+    | _ -> pr2 (spf "%s in %s" (Common.dump node) env.file)
     )
   end
  end
@@ -311,7 +311,7 @@ let add_use_edge_lid_bis env lid texpr =
     let node = (s_of_n name, kind) in
     if G.has_node node env.g
     then add_use_edge env node
-    else pr2_gen node
+    else pr2 (spf "%s IN %s" (Common.dump node) env.file)
   end
 
 (*****************************************************************************)
