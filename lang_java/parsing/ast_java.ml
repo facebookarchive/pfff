@@ -346,6 +346,7 @@ type program = compilation_unit
 (*****************************************************************************)
 
 type any =
+  | Ident of ident
   | Expr2 of expr
   | Stmt of stmt
   | Typ of typ
