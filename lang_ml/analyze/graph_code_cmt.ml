@@ -422,11 +422,14 @@ let rec extract_defs_uses
     g +> G.add_node env.current;
     g +> G.add_edge ((dir, E.Dir), env.current) G.Has;
   end;
-  (* less: could detect useless imports *)
   if phase = Uses then begin
     ast.cmt_imports +> List.iter (fun (s, digest) ->
-      let node = (s, E.Module) in
-      add_use_edge env node
+      (* old: add_use_edge env (s, E.Module)
+       * actually ocaml list as dependencies many things which are not.
+       * Most modules will have in their import for instance Sexp,
+       * even though they don't use anything from Sexp, not sure why ...
+       *)
+      ()
     );
   end;
   binary_annots env ast.cmt_annots
