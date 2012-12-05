@@ -182,7 +182,6 @@ let rec path_resolve_locals env p kind =
  * opti: ?
  *)
 let rec path_type_resolve_aliases env pt =
-
   let rec aux module_aliases_candidates acc pt =
   match pt with
   | [] -> raise Impossible
@@ -209,6 +208,32 @@ let rec path_type_resolve_aliases env pt =
   if List.mem_assoc pt !(env.type_aliases)
   then path_type_resolve_aliases env (List.assoc pt !(env.type_aliases))
   else pt
+
+let rec path_resolve_aliases env p =
+  let rec aux module_aliases_candidates acc pt =
+  match pt with
+  | [] -> raise Impossible
+  (* didn't found any module alias => canonical name *)
+  | [x] -> List.rev (x::acc)
+  | x::xs ->
+      let reduced_candidates = 
+        module_aliases_candidates +> Common.map_filter (function
+        | (y::ys, v) when x =$= y -> Some (ys, v)
+        | _ -> None
+        )
+      in
+      (match reduced_candidates with
+      | [] -> aux [] (x::acc) xs
+      (* found a unique alias *)
+      | [[], v] -> 
+          (* restart from the top *)
+          aux !(env.module_aliases) [] (v ++ xs)
+      | _ ->
+          aux reduced_candidates (x::acc) xs
+      )
+  in
+  let p = aux !(env.module_aliases) [] p in
+  p
 
 (*****************************************************************************)
 (* Kind of entity *)
@@ -277,6 +302,17 @@ let add_use_edge_lid env lid texpr kind =
     )
   end
  end
+
+let add_use_edge_lid_bis env lid texpr =
+  if env.phase = Uses then begin
+    let kind = kind_of_type_expr texpr in
+    let name = path_resolve_locals env lid kind in
+    let name = path_resolve_aliases env name in
+    let node = (s_of_n name, kind) in
+    if G.has_node node env.g
+    then add_use_edge env node
+    else pr2_gen node
+  end
 
 (*****************************************************************************)
 (* Empty wrappers *)
@@ -585,7 +621,7 @@ and expression_desc t env =
       let str = Path.name lid in
       if List.mem str env.locals
       then ()
-      else () (*add_use_edge_lid_bis env lid (kind_of_type_expr vd.TypesOld.val_type) *)
+      else add_use_edge_lid_bis env lid t
 
   | Texp_constant v1 -> constant env v1
   | Texp_let ((_rec_flag, v2, v3)) ->
