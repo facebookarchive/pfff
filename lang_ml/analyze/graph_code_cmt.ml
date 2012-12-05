@@ -161,8 +161,38 @@ let path_name aliases lid =
   let s = Path.name lid in
   s
 
-let path_resolve_aliases env p =
-  raise Todo
+(* algo: first resolve module aliases, then once have a full path for
+ * a type, look for a type alias, and recurse.
+ * opti: ?
+ *)
+let rec path_type_resolve_aliases env pt =
+
+  let rec aux module_aliases_candidates acc pt =
+  match pt with
+  | [] -> raise Impossible
+  (* didn't found any module alias => canonical name module-wise *)
+  | [t] -> List.rev (t::acc)
+  | x::xs ->
+      let reduced_candidates = 
+        module_aliases_candidates +> Common.map_filter (function
+        | (y::ys, v) when x =$= y -> Some (ys, v)
+        | _ -> None
+        )
+      in
+      (match reduced_candidates with
+      | [] -> aux [] (x::acc) xs
+      (* found a unique alias *)
+      | [[], v] -> 
+          (* restart from the top *)
+          aux !(env.module_aliases) [] (v ++ xs)
+      | _ ->
+          aux reduced_candidates (x::acc) xs
+      )
+  in
+  let pt = aux !(env.module_aliases) [] pt in
+  if List.mem_assoc pt !(env.type_aliases)
+  then path_type_resolve_aliases env (List.assoc pt !(env.type_aliases))
+  else pt
 
 (*****************************************************************************)
 (* Kind of entity *)
@@ -219,8 +249,9 @@ let add_use_edge_lid env lid texpr kind =
   (* the typename already contains the qualifier *)
   let str = Common.list_last (path_resolve_locals env lid) in
   let tname = path_resolve_locals env (typename_of_texpr texpr) in
-
-  let node = (s_of_n (tname ++ [str]), kind) in
+  let tname = path_type_resolve_aliases env tname in
+  let full_ident = tname ++ [str] in
+  let node = (s_of_n full_ident, kind) in
   if G.has_node node env.g
   then add_use_edge env node
   else begin

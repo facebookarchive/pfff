@@ -18,7 +18,7 @@ all: graph_code.marshall
 
 
 graph_code.marshall: $(OBJS)
-	cg -symlinks -lang cmt -build .
+	cg -verbose -symlinks -lang cmt -build .
 
 .SUFFIXES: .ml .cmt
 
