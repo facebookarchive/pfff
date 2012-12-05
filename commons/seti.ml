@@ -21,7 +21,7 @@ let invariant xs =
     xs +> List.fold_left (fun min e -> 
       match e with 
       | Exact i -> 
-          if i <= min then pr2 (sprintf "i = %d, min = %d" i min);
+          if i <= min then pr2 (spf "i = %d, min = %d" i min);
           (* todo: should be even stronger, shoud be i > min+1 *)
           assert (i > min);
           i
@@ -330,7 +330,7 @@ let patch1 xs = List.map exactize xs
 let patch2 xs = xs +> List.map (fun e -> 
   match e with
   | Interv (i,j) when i > j && i =|= j+1 -> 
-      let _ = pr2 (sprintf "i = %d, j = %d" i j) in
+      let _ = pr2 (spf "i = %d, j = %d" i j) in
       Exact i
   | e -> e
 )

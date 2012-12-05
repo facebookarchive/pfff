@@ -70,7 +70,7 @@ cia_pci_tbi_try2(struct pci_controller *hose,);
   let re3 = ("\\b" ^ s ^ "\\b") in
   let tmpfile = "/tmp/for_egrep" in
   write_file ~file:tmpfile str_ast;
-  let com = sprintf "egrep -q '(%s)' %s" re3 tmpfile in
+  let com = spf "egrep -q '(%s)' %s" re3 tmpfile in
   (match Sys.command com with
   | 0 (* success *) -> pr2 "found egrep"
   | _ (* failure *) -> pr2 "no match egrep here"

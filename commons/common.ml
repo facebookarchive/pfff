@@ -466,8 +466,7 @@ let with_pr2_to_string f =
 
 (* ---------------------------------------------------------------------- *)
 
-include Printf
-
+(* old: include Printf, include are evil and graph_code_cmt does not like them*)
 (* cf common.mli, fprintf, printf, eprintf, sprintf.
  * also what is this ?
  *  val bprintf : Buffer.t -> ('a, Buffer.t, unit) format -> 'a

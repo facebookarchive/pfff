@@ -33,7 +33,7 @@ let test_parse_cpp ?c xs  =
 
     Common.push2 stat stat_list;
 
-    let s = sprintf "bad = %d" stat.Stat.bad in
+    let s = spf "bad = %d" stat.Stat.bad in
     if stat.Stat.bad = 0
     then Hashtbl.add newscore file (Common.Ok)
     else Hashtbl.add newscore file (Common.Pb s)

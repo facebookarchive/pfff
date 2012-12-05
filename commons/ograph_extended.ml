@@ -258,13 +258,13 @@ let generate_ograph_generic g label fnode filename =
 	      None -> Printf.sprintf ", style=\"setlinewidth(3),filled\", fillcolor = %s" x 
 	    | Some x' -> Printf.sprintf ", style=\"setlinewidth(3),filled\", fillcolor = %s, color = %s" x x') in
      (* so can see if nodes without arcs were created *) 
-      pr (sprintf "%d [label=\"%s   [%d]\"%s];\n" k str k color)
+      pr (spf "%d [label=\"%s   [%d]\"%s];\n" k str k color)
     );
 
     nodes#iter (fun (k,node) -> 
       let succ = g#successors k in
       succ#iter (fun (j,edge) ->
-        pr (sprintf "%d -> %d;\n" k j);
+        pr (spf "%d -> %d;\n" k j);
       );
     );
     pr "}\n" ;
@@ -280,13 +280,13 @@ let generate_ograph_xxx g filename =
     let nodes = g#nodes in
     nodes#iter (fun (k,(node, s)) -> 
      (* so can see if nodes without arcs were created *) 
-      pr (sprintf "%d [label=\"%s   [%d]\"];\n" k s k)
+      pr (spf "%d [label=\"%s   [%d]\"];\n" k s k)
     );
 
     nodes#iter (fun (k,node) -> 
       let succ = g#successors k in
       succ#iter (fun (j,edge) ->
-        pr (sprintf "%d -> %d;\n" k j);
+        pr (spf "%d -> %d;\n" k j);
       );
     );
     pr "}\n" ;

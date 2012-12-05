@@ -53,7 +53,7 @@ let test_parse_php xs  =
     in
     Common.push2 stat stat_list;
     (*s: add stat for regression testing in hash *)
-        let s = sprintf "bad = %d" stat.Parse_info.bad in
+        let s = spf "bad = %d" stat.Parse_info.bad in
         if stat.Parse_info.bad = 0
         then Hashtbl.add newscore file (Common.Ok)
         else Hashtbl.add newscore file (Common.Pb s)

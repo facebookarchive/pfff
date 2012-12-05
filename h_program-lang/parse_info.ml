@@ -862,7 +862,7 @@ let (error_messagebis: filename -> (string * int) -> int -> string)=
   let charpos = lexstart      + decalage in
   let tok = lexeme in 
   let (line, pos, linecontent) =  info_from_charpos charpos filename in
-  sprintf "File \"%s\", line %d, column %d,  charpos = %d
+  spf "File \"%s\", line %d, column %d,  charpos = %d
     around = '%s', whole content = %s"
     filename line pos charpos tok (chop linecontent)
 
@@ -892,7 +892,7 @@ let error_message_short = fun filename (lexeme, lexstart) ->
   try 
   let charpos = lexstart in
   let (line, pos, linecontent) =  info_from_charpos charpos filename in
-  sprintf "File \"%s\", line %d"  filename line
+  spf "File \"%s\", line %d"  filename line
 
   with End_of_file -> 
     begin
