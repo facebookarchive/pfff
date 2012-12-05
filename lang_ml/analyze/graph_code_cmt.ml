@@ -173,14 +173,9 @@ let rec path_resolve_locals env p kind =
       then List.assoc x !table ++ xs
       else x::xs
 
-
 (*****************************************************************************)
 (* Path resolution, aliases *)
 (*****************************************************************************)
-
-let path_name aliases lid = 
-  let s = Path.name lid in
-  s
 
 (* algo: first resolve module aliases, then once have a full path for
  * a type, look for a type alias, and recurse.
@@ -226,7 +221,7 @@ let rec kind_of_type_desc x =
       E.Function
   | Types.Tconstr (path, xs, aref) 
       (* less: potentially anything with a mutable field *)
-      when List.mem (path_name [] path) ["Pervasives.ref";"Hashtbl.t"] ->
+      when List.mem (Path.name path) ["Pervasives.ref";"Hashtbl.t"] ->
       E.Global
   | Types.Tconstr (path, xs, aref) -> E.Constant
   | Types.Ttuple _ | Types.Tvariant _ -> 
@@ -295,9 +290,7 @@ module Longident = struct
     let t env x = ()
 end
 
-module Path = struct
-    let t env x = ()
-end
+let path_t env x = ()
 
 module TypesOld = Types
 module Types = struct
@@ -463,7 +456,7 @@ and structure_item_desc env = function
       let full_ident = env.current_entity ++ ["exn";Ident.name id] in
       let node = (full_ident, E.Exception) in
       let env = add_node_and_edge_if_defs_mode env node in
-      Path.t env v3
+      path_t env v3
   | Tstr_module ((id, _loc, modexpr)) ->
       let full_ident = env.current_entity ++ [Ident.name id] in
       let node = (full_ident, E.Module) in
@@ -493,7 +486,7 @@ and structure_item_desc env = function
 
   (* opened names are resolved, no need to handle that I think *)
   | Tstr_open ((v1, _loc)) ->
-      Path.t env v1 
+      path_t env v1 
   | Tstr_include ((v1, v2)) ->
       let _ = module_expr env v1 and _ = List.iter (Ident.t env) v2 in ()
 
@@ -589,7 +582,7 @@ and pattern_desc t env = function
 and expression_desc t env =
   function
   | Texp_ident ((lid, _loc_longident, vd)) ->
-      let str = path_name [] lid in
+      let str = Path.name lid in
       if List.mem str env.locals
       then ()
       else () (*add_use_edge_lid_bis env lid (kind_of_type_expr vd.TypesOld.val_type) *)
@@ -648,9 +641,10 @@ and expression_desc t env =
 
   | Texp_variant ((v1, v2)) ->
       let _ = label env v1 and _ = v_option (expression env) v2 in ()
+  (* ?? *)
   | Texp_record ((v1, v2)) ->
       List.iter (fun (lid, _loc_longident, v3, v4) ->
-        Path.t env lid;
+        path_t env lid;
         let _ = label_description env v3
         and _ = expression env v4
         in ()
@@ -693,24 +687,24 @@ and expression_desc t env =
       and _ = v_option (expression env) v3
       in ()
   | Texp_new ((v1, _loc_longident, v3)) ->
-      let _ = Path.t env v1
+      let _ = path_t env v1
       and _ = Types.class_declaration env v3
       in ()
   | Texp_instvar ((v1, v2, _loc)) ->
-      let _ = Path.t env v1
-      and _ = Path.t env v2
+      let _ = path_t env v1
+      and _ = path_t env v2
       in ()
   | Texp_setinstvar ((v1, v2, _loc, v4)) ->
-      let _ = Path.t env v1
-      and _ = Path.t env v2
+      let _ = path_t env v1
+      and _ = path_t env v2
       and _ = expression env v4
       in ()
   | Texp_override ((v1, v2)) ->
-      let _ = Path.t env v1
+      let _ = path_t env v1
       and _ =
         List.iter
           (fun (v1, _loc, v3) ->
-             let _ = Path.t env v1
+             let _ = path_t env v1
              and _ = expression env v3
              in ())
           v2
@@ -733,7 +727,7 @@ and exp_extra env = function
       and _ = v_option (core_type env) v2
       in ()
   | Texp_open ((v1, _loc_longident, _env)) ->
-      Path.t env v1
+      path_t env v1
   | Texp_poly v1 -> let _ = v_option (core_type env) v1 in ()
   | Texp_newtype v1 -> let _ = v_string v1 in ()
 
@@ -743,7 +737,7 @@ and exp_extra env = function
 and module_expr_desc env =
   function
   | Tmod_ident ((v1, _loc_longident)) ->
-      Path.t env v1
+      path_t env v1
   | Tmod_structure v1 -> structure env v1
   | Tmod_functor ((v1, _loc, v3, v4)) ->
       let _ = Ident.t env v1
@@ -783,12 +777,12 @@ and core_type_desc env =
       in ()
   | Ttyp_tuple v1 -> let _ = List.iter (core_type env) v1 in ()
   | Ttyp_constr ((v1, _loc_longident, v3)) ->
-      let _ = Path.t env v1
+      let _ = path_t env v1
       and _ = List.iter (core_type env) v3
       in ()
   | Ttyp_object v1 -> let _ = List.iter (core_field_type env) v1 in ()
   | Ttyp_class ((v1, _loc_longident, v3, v4)) ->
-      let _ = Path.t env v1
+      let _ = path_t env v1
       and _ = List.iter (core_type env) v3
       and _ = List.iter (label env) v4
       in ()
