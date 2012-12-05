@@ -498,7 +498,8 @@ and structure_item_desc env = function
       let _ = module_expr env v1 and _ = List.iter (Ident.t env) v2 in ()
 
   | (Tstr_class _|Tstr_class_type _) -> 
-    pr2_once (spf "TODO: str_class, %s" env.file)
+    (*pr2_once (spf "TODO: str_class, %s" env.file)*)
+    ()
 
 and type_declaration env
     { typ_params = __v_typ_params; typ_type = v_typ_type;
