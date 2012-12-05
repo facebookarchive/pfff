@@ -661,13 +661,15 @@ and expression_desc t env =
       add_use_edge_lid env lid v1.exp_type E.Field;
       label_description env v4
 
-  | Texp_setfield ((v1, v2, _loc_longident, v4, v5)) ->
-      let _ = expression env v1
-      and _ = Path.t env v2
-      and _ = label_description env v4
-      and _ = expression env v5
-      in ()
-  | Texp_array v1 -> let _ = List.iter (expression env) v1 in ()
+  | Texp_setfield ((v1, lid, _loc_longident, v4, v5)) ->
+      expression env v1;
+      add_use_edge_lid env lid v1.exp_type E.Field;
+      label_description env v4;
+      expression env v5;
+
+  | Texp_array xs -> 
+      List.iter (expression env) xs
+
   | Texp_ifthenelse ((v1, v2, v3)) ->
       let _ = expression env v1
       and _ = expression env v2
@@ -682,9 +684,9 @@ and expression_desc t env =
       expression env v4;
       let env = { env with locals = Ident.name id::env.locals } in
       expression env v6
-
   | Texp_when ((v1, v2)) ->
       let _ = expression env v1 and _ = expression env v2 in ()
+
   | Texp_send ((v1, v2, v3)) ->
       let _ = expression env v1
       and _ = meth env v2
