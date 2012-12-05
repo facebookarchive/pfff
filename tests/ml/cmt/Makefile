@@ -5,7 +5,8 @@ SRC=pervasives.ml list.ml hashtbl.ml \
   for.ml let_tuple_defs.ml let_typed_def.ml \
   open_module.ml nested_module.ml \
   alias_module.ml alias_type.ml alias_module_type.ml \
-  functor.ml
+  functor.ml \
+  namespace_type_value.ml
 
 
 #STDLIB=pervasives.cmt list.cmt hashtbl.cmt
@@ -18,7 +19,7 @@ all: graph_code.marshall
 
 
 graph_code.marshall: $(OBJS)
-	cg -verbose -symlinks -lang cmt -build .
+	cg -symlinks -lang cmt -build .
 
 .SUFFIXES: .ml .cmt
 

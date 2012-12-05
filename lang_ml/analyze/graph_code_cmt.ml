@@ -27,7 +27,7 @@ open Typedtree
  * Graph of dependencies for OCaml typed AST files (.cmt). See graph_code.ml
  * and main_codegraph.ml for more information.
  * 
- * See also notes_cmt.txt
+ * See also notes_cmt.txt.
  * 
  * schema:
  *  Root -> Dir -> Module -> Function
@@ -38,9 +38,9 @@ open Typedtree
  *                        -> Global
  *                        -> SubModule -> ...
  * 
- * note that ocaml allow to have multiple entities with the same name
- * inside the same module, so we have to merge them, see the 'dupe_ok'
- * parameter.
+ * note that ocaml allows to have multiple entities with the same name
+ * inside the same module, so we have to merge them; see the 'dupe_ok'
+ * parameter below.
  * 
  * related:
  *  - typerex
@@ -67,8 +67,15 @@ type env = {
    * for locally referenced functions, types, or modules, so have to resolve
    * them. Each time you add an Ident.t, add it there, and each
    * time you use a Path.t, use path_resolve_locals().
+   * We use 3 different fields because those are different namespaces; we
+   * don't want a value to shadow a type.
    *)
-  full_path_local_entities: (string * name) list ref;
+  full_path_local_type: (string * name) list ref;
+  full_path_local_value: (string * name) list ref;
+  (* this is less necessary as by convention module use uppercase and
+   * value/types only lowercase and so there is no shadowing risk.
+   *)
+  full_path_local_module: (string * name) list ref;
 
   (* global to the whole project, populated in Defs and used in Uses,
    * see path_resolve_aliases().
@@ -124,6 +131,18 @@ let add_use_edge env dst =
           env.g +> G.add_edge (src, dst) G.Use;
       )
 
+let full_path_local_of_kind env kind =
+  match kind with
+  | E.Function | E.Global | E.Constant -> env.full_path_local_value
+  | E.Type | E.Exception | E.Field | E.Constructor -> env.full_path_local_type
+  | E.Module -> 
+      (* todo: why cant put env.full_path_local_module ? *)
+      env.full_path_local_type
+  | _ -> raise Impossible
+
+let add_full_path_local env (s, name) kind =
+  Common.push2 (s, name) (full_path_local_of_kind env kind)
+
 let add_node_and_edge_if_defs_mode ?(dupe_ok=false) env name_node =
   let (name, kind) = name_node in
   let node = (s_of_n name, kind) in
@@ -135,21 +154,22 @@ let add_node_and_edge_if_defs_mode ?(dupe_ok=false) env name_node =
       env.g +> G.add_edge (env.current, node) G.Has;
     end
   end;
-  Common.push2 (Common.list_last name, name) env.full_path_local_entities;
+  add_full_path_local env (Common.list_last name, name) kind;
   { env with  current = node; current_entity = name;
   }
 
 (*****************************************************************************)
 (* Path resolution, locals *)
 (*****************************************************************************)
-let rec path_resolve_locals env p =
+let rec path_resolve_locals env p kind =
   let s = Path.name p in
   let xs = n_of_s s in
+  let table = full_path_local_of_kind env kind in
   match xs with
   | [] -> raise Impossible
   | x::xs ->
-      if List.mem_assoc x !(env.full_path_local_entities)
-      then List.assoc x !(env.full_path_local_entities) ++ xs
+      if List.mem_assoc x !table
+      then List.assoc x !table ++ xs
       else x::xs
 
 
@@ -247,8 +267,8 @@ let rec typename_of_texpr x =
 let add_use_edge_lid env lid texpr kind =
  if env.phase = Uses then begin
   (* the typename already contains the qualifier *)
-  let str = Common.list_last (path_resolve_locals env lid) in
-  let tname = path_resolve_locals env (typename_of_texpr texpr) in
+  let str = Common.list_last (path_resolve_locals env lid kind) in
+  let tname = path_resolve_locals env (typename_of_texpr texpr) E.Type in
   let tname = path_type_resolve_aliases env tname in
   let full_ident = tname ++ [str] in
   let node = (s_of_n full_ident, kind) in
@@ -324,7 +344,9 @@ let rec extract_defs_uses
     current_module = [ast.cmt_modname];
     file = readable;
     locals = [];
-    full_path_local_entities = ref [];
+    full_path_local_value = ref [];
+    full_path_local_type = ref [];
+    full_path_local_module = ref [];
     module_aliases; type_aliases;
   }
   in
@@ -424,9 +446,8 @@ and structure_item_desc env = function
 
         (match td.typ_kind, td.typ_manifest with
         | Ttype_abstract, Some ({ctyp_desc=Ttyp_constr (path, _loc, _xs); _}) ->
-          (* todo: resolve path! *)
           if env.phase = Defs then
-            Common.push2 (full_ident, path_resolve_locals env path)
+            Common.push2 (full_ident, path_resolve_locals env path E.Type)
               env.type_aliases
         | _ -> ()
         );
@@ -449,9 +470,8 @@ and structure_item_desc env = function
       let env = { env with current_module = full_ident } in
       (match modexpr.mod_desc with
       | Tmod_ident (path, _loc) ->
-          (* todo: resolve path! *)
           if env.phase = Defs then
-            Common.push2 (full_ident, path_resolve_locals env path) 
+            Common.push2 (full_ident, path_resolve_locals env path E.Module) 
               env.module_aliases
       | _ -> ()
       );
