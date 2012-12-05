@@ -14,6 +14,7 @@
 open Ast_java
 
 type visitor_in = {
+  kident:   (ident       -> unit) * visitor_out -> ident       -> unit;
   kexpr:    (expr        -> unit) * visitor_out -> expr        -> unit;
   kstmt:    (stmt        -> unit) * visitor_out -> stmt        -> unit;
   ktype:    (typ         -> unit) * visitor_out -> typ         -> unit;

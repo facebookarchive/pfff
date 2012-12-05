@@ -5,17 +5,17 @@ open Ast_java
 let vof_info x = Parse_info.vof_info x
 let vof_tok v = vof_info v
 let vof_wrap _of_a (v1, v2) =
-  let v1 = _of_a v1 
-  and _v2TODO = vof_info v2 
-  in 
+  let v1 = _of_a v1
+  and _v2TODO = vof_info v2
+  in
   Ocaml.VTuple [ v1 (* ; v2 *) ]
 
 let vof_ident v = vof_wrap Ocaml.vof_string v
-  
+
 let vof_qualified_ident v = Ocaml.vof_list vof_ident v
 
 let vof_list1 _of_a = Ocaml.vof_list _of_a
-  
+
 let rec vof_typ =
   function
   | TBasic v1 ->
@@ -45,14 +45,14 @@ and vof_type_argument =
           v1
       in Ocaml.VSum (("TQuestion", [ v1 ]))
 
-  
+
 let vof_type_parameter =
   function
   | TParam ((v1, v2)) ->
       let v1 = vof_ident v1
       and v2 = Ocaml.vof_list vof_ref_type v2
       in Ocaml.VSum (("TParam", [ v1; v2 ]))
-  
+
 let vof_name v =
   vof_list1
     (fun (v1, v2) ->
@@ -60,7 +60,7 @@ let vof_name v =
        and v2 = vof_ident v2
        in Ocaml.VTuple [ v1; v2 ])
     v
-  
+
 let rec vof_expr =
   function
   | Name v1 -> let v1 = vof_name v1 in Ocaml.VSum (("Name", [ v1 ]))
@@ -207,8 +207,8 @@ and vof_for_control =
       and v3 = Ocaml.vof_list vof_expr v3
       in Ocaml.VSum (("ForClassic", [ v1; v2; v3 ]))
   | Foreach (v1, v2) ->
-      let v1 = vof_var v1 in 
-      let v2 = vof_expr v2 in 
+      let v1 = vof_var v1 in
+      let v2 = vof_expr v2 in
       Ocaml.VSum (("Foreach", [ v1; v2]))
 and vof_for_init =
   function
@@ -325,7 +325,7 @@ and vof_decl =
       and v2 = vof_stmt v2
       in Ocaml.VSum (("Init", [ v1; v2 ]))
   | Enum v1 -> let v1 = vof_enum_decl v1 in Ocaml.VSum (("Enum", [ v1 ]))
-      
+
 
 and  vof_enum_decl {
                   en_name = v_en_name;
@@ -366,7 +366,7 @@ and vof_enum_constant =
 and vof_method_decls x = Ocaml.vof_list vof_method_decl x
 
 and vof_decls v = Ocaml.vof_list vof_decl v
-  
+
 let vof_compilation_unit {
                            package = v_package;
                            imports = v_imports;
@@ -387,11 +387,12 @@ let vof_compilation_unit {
   let bnds = bnd :: bnds in
   let arg = Ocaml.vof_option vof_qualified_ident v_package in
   let bnd = ("package", arg) in let bnds = bnd :: bnds in Ocaml.VDict bnds
-  
+
 let vof_program v = vof_compilation_unit v
-  
+
 let vof_any =
   function
+  | Ident i -> let v1 = vof_ident i in Ocaml.VSum (("Ident", [ v1 ]))
   | Expr2 v1 -> let v1 = vof_expr v1 in Ocaml.VSum (("Expr2", [ v1 ]))
   | Stmt v1 -> let v1 = vof_stmt v1 in Ocaml.VSum (("Stmt", [ v1 ]))
   | Typ v1 -> let v1 = vof_typ v1 in Ocaml.VSum (("Typ", [ v1 ]))
@@ -404,4 +405,4 @@ let vof_any =
       let v1 = vof_class_decl v1 in Ocaml.VSum (("Class2", [ v1 ]))
   | Decl v1 -> let v1 = vof_decl v1 in Ocaml.VSum (("Decl", [ v1 ]))
   | Program v1 -> let v1 = vof_program v1 in Ocaml.VSum (("Program", [ v1 ]))
-  
+
