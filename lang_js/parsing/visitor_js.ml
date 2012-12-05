@@ -24,7 +24,7 @@ open Ast_js
 (* Prelude *)
 (*****************************************************************************)
 
-module Common = struct
+module CommonX = struct
     let v_parse_info x = ()
     let v_either of_a of_b x = 
       match x with
@@ -125,7 +125,7 @@ and v_bracket2 _of_a (v1, v2, v3) =
 
 and v_comma x = v_tok x
 
-and v_comma_list _of_a = v_list (Common.v_either _of_a v_tok)
+and v_comma_list _of_a = v_list (CommonX.v_either _of_a v_tok)
 and v_comma_list2 _of_a xs = 
   xs +> List.iter (function | Left x -> _of_a x | Right info -> v_comma info)
 
