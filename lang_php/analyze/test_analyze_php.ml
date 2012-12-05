@@ -38,7 +38,6 @@ let test_dump_simple file =
  *)
 let test_scope_php file =
   let ast = Parse_php.parse_program file in
-
   (* Annotating variables requires a code database because
    * functions can take variables by reference without any
    * annotation at the call site (ugly language). Here
@@ -46,9 +45,7 @@ let test_scope_php file =
    *)
   let entity_finder = None in
   Check_variables_php.check_and_annotate_program entity_finder ast;
-  Export_ast_php.show_expr_info := true;
-  pr (Export_ast_php.sexp_string_of_program ast);
-  ()
+  raise Todo
 
 (*****************************************************************************)
 (* Typing *)

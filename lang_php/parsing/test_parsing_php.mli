@@ -11,9 +11,6 @@ val test_parse_php  : Common.path list -> unit
 (* Print the set of tokens in a PHP file *)
 val test_tokens_php : Common.filename -> unit
 
-(* Print the AST of a PHP file using a sexp format *)
-val test_sexp_php   : Common.filename -> unit
-
 (* Print the AST of a PHP file using a JSON format *)
 val test_json_php   : Common.filename -> unit
 

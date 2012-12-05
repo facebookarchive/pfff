@@ -81,24 +81,7 @@ let test_parse_php xs  =
 (*****************************************************************************)
 
 (*s: test_sexp_php *)
-let test_sexp_php file = 
-  let (ast2,_stat) = Parse_php.parse file in
-  let ast = Parse_php.program_of_program2 ast2 in
-  (* let _ast = Type_annoter.annotate_program !Type_annoter.initial_env ast *) 
-
-  Export_ast_php.show_info := false;
-  let s = Export_ast_php.sexp_string_of_program ast in
-  pr2 s;
-  ()
 (*x: test_sexp_php *)
-let test_sexp_full_php file = 
-  let (ast2,_stat) = Parse_php.parse file in
-  let ast = Parse_php.program_of_program2 ast2 in
-
-  Export_ast_php.show_info := true;
-  let s = Export_ast_php.sexp_string_of_program ast in
-  pr2 s;
-  ()
 (*e: test_sexp_php *)
 (*s: test_json_php *)
 let test_json_php file = 
@@ -168,20 +151,12 @@ let test_pretty_print_php file =
 let test_parse_xhp_with_xhpize file = 
   let pp_cmd = "xhpize" in
   let (ast2, stat) = Parse_php.parse ~pp:(Some pp_cmd) file in
-  let ast = Parse_php.program_of_program2 ast2 in
-  Export_ast_php.show_info := false;
-  let s = Export_ast_php.sexp_string_of_program ast in
-  pr2 s;
-  let s = Unparse_php.string_of_program2_using_transfo ast2 in
-  pr2 s;
-  ()
+  let _ast = Parse_php.program_of_program2 ast2 in
+  raise Todo
 
 let test_parse_xdebug_expr s = 
-  let e = Parse_php.xdebug_expr_of_string s in
-  Export_ast_php.show_info := false;
-  let s = Export_ast_php.sexp_string_of_expr e in
-  pr2 s;
-  ()
+  let _e = Parse_php.xdebug_expr_of_string s in
+  raise Todo
 
 (*****************************************************************************)
 (* Main entry for Arg *)
@@ -203,17 +178,10 @@ let actions () = [
     (* an alias for -sexp_php *)
     "-dump_php", "   <file>", 
     Common.mk_action_1_arg test_dump_php;
-    "-dump_php_sexp", "   <file>", 
-      Common.mk_action_1_arg test_sexp_php;
     "-dump_php_ml", "   <file>", 
     Common.mk_action_1_arg test_dump_php;
   (*x: test_parsing_php actions *)
-    "-sexp_php", "   <file>", 
-      Common.mk_action_1_arg test_sexp_php;
   (*x: test_parsing_php actions *)
-    (* an alias for -sexp_php *)
-    "-dump_full_ast", "   <file>", 
-      Common.mk_action_1_arg test_sexp_full_php;
   (*x: test_parsing_php actions *)
     "-tokens_php", "   <file>", 
     Common.mk_action_1_arg test_tokens_php;
