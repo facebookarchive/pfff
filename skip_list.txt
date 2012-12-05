@@ -7,18 +7,19 @@
 # dupes cmt
 # -------------------------------------------------------------------------
 
-#TODO: mark main_checker as a dupe module and generate a File instead?
+#todo: mark main_checker as a dupe module and generate a File instead?
+# or have heuristic with file called main.*?
 #file: facebook/check_module/main_checker.cmt
 file: facebook/qa_code/main_checker.cmt
 file: facebook/check_cpp/main_checker.cmt
 #file: main.cmt
 file: lang_php/pretty/main.cmt
 
-# dupes with external/extlib/
+#less: dupes with external/extlib/, remove them
 file: commons/ocamlextra/enum.cmt
 file: commons/ocamlextra/dynArray.cmt
 
-# dupes with external/core
+#dupes with external/core
 dir: tests/ml/cmt
 
 # -------------------------------------------------------------------------
@@ -33,6 +34,11 @@ file: lang_ml/analyze/test_analyze_ml.cmt
 # complex cmt
 # -------------------------------------------------------------------------
 file: external/core/dynlinkaux.cmt
+
+#todo: have some 'include'
+#dir: commons/lib-sexp
+#todo: have namespace conflict between values and types
+#dir: commons/lib-json
 
 # -------------------------------------------------------------------------
 # dupe nodes inside the file
