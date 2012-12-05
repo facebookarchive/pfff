@@ -151,6 +151,48 @@ let rec path_resolve_locals env p =
       then List.assoc x !(env.full_path_local_entities) ++ xs
       else x::xs
 
+(*
+  let candidates = 
+    match str_typ, str with
+    | "unit", "()" -> ["stdlib.unit.()", kind]
+    | "bool", "true" -> ["stdlib.bool.true", kind]
+    | "bool", "false" -> ["stdlib.bool.true", kind]
+    | "list", "[]" -> ["stdlib.list.[]", kind]
+    | "list", "::" -> ["stdlib.list.::", kind]
+    | "option", "None" -> ["stdlib.option.None", kind]
+    | "option", "Some" -> ["stdlib.option.Some", kind]
+    | "exn", "Not_found" -> ["stdlib.exn.Not_found", kind]
+    (* for exn, the typename does not contain the qualifier *)
+    | "exn", _ -> 
+        (* todo *)
+        ["stdlib.exn.Not_found", kind]
+        (*
+        let xs = Common.split "\\." (path_name env.aliases lid) +> List.rev in
+        let ys = (List.hd xs :: "exn" :: List.tl xs) +> List.rev in
+        let str = Common.join "." ys in
+        [
+        (str, E.Exception);
+        (env.current_module ^ "." ^ str, E.Exception);
+        *)
+    | _ -> 
+        let xs = env.current_module in
+        inits xs +> List.rev +> List.map (fun xs ->
+          Common.join "." (xs ++ [str_typ;str]), kind
+        )
+  in
+  let rec aux = function
+    | [] -> 
+        if List.length candidates > 1
+        then begin
+          pr2_gen candidates
+        end
+    | x::xs ->
+        if G.has_node x env.g
+        then add_use_edge env x
+        else aux xs
+  in
+  aux candidates
+  *)
 (*****************************************************************************)
 (* Path resolution, aliases *)
 (*****************************************************************************)
@@ -206,69 +248,30 @@ let rec kind_of_core_type x =
 let kind_of_value_descr vd =
   kind_of_core_type vd.val_desc
 
-let rec typename_of_texpr env x =
+let rec typename_of_texpr x =
   (* pr2 (Ocaml.string_of_v (Meta_ast_cmt.vof_type_expr_show_all x)); *)
   match x.Types.desc with
-  | Types.Tconstr(path, xs, aref) -> path_name env path
-  | Types.Tlink t -> typename_of_texpr env t
+  | Types.Tconstr(path, xs, aref) -> path
+  | Types.Tlink t -> typename_of_texpr t
   | _ ->
       pr2 (Ocaml.string_of_v (Meta_ast_cmt.vof_type_expr_show_all x));
       raise Todo
 
-let last_in_qualified s =
-  let xs = Common.split "\\." s in
-  Common.list_last xs
-  
 let add_use_edge_lid env lid texpr kind =
  if env.phase = Uses then begin
   (* the typename already contains the qualifier *)
-  let str = path_name [] lid +> last_in_qualified in
-  let str_typ = typename_of_texpr [] texpr in
-(*
-  pr2_gen (path_name env.aliases lid);
-  pr2_gen (str_typ);
-*)
+  let str = Common.list_last (path_resolve_locals env lid) in
+  let tname = path_resolve_locals env (typename_of_texpr texpr) in
 
-  let candidates = 
-    match str_typ, str with
-    | "unit", "()" -> ["stdlib.unit.()", kind]
-    | "bool", "true" -> ["stdlib.bool.true", kind]
-    | "bool", "false" -> ["stdlib.bool.true", kind]
-    | "list", "[]" -> ["stdlib.list.[]", kind]
-    | "list", "::" -> ["stdlib.list.::", kind]
-    | "option", "None" -> ["stdlib.option.None", kind]
-    | "option", "Some" -> ["stdlib.option.Some", kind]
-    | "exn", "Not_found" -> ["stdlib.exn.Not_found", kind]
-    (* for exn, the typename does not contain the qualifier *)
-    | "exn", _ -> 
-        (* todo *)
-        ["stdlib.exn.Not_found", kind]
-        (*
-        let xs = Common.split "\\." (path_name env.aliases lid) +> List.rev in
-        let ys = (List.hd xs :: "exn" :: List.tl xs) +> List.rev in
-        let str = Common.join "." ys in
-        [
-        (str, E.Exception);
-        (env.current_module ^ "." ^ str, E.Exception);
-        *)
-    | _ -> 
-        let xs = env.current_module in
-        inits xs +> List.rev +> List.map (fun xs ->
-          Common.join "." (xs ++ [str_typ;str]), kind
-        )
-  in
-  let rec aux = function
-    | [] -> 
-        if List.length candidates > 1
-        then begin
-          pr2_gen candidates
-        end
-    | x::xs ->
-        if G.has_node x env.g
-        then add_use_edge env x
-        else aux xs
-  in
-  aux candidates
+  let node = (s_of_n (tname ++ [str]), kind) in
+  if G.has_node node env.g
+  then add_use_edge env node
+  else begin
+    (match tname with
+    | ("unit" | "bool" | "list" | "option" | "exn")::_ -> ()
+    | _ -> pr2_gen node
+    )
+  end
  end
 
 (*
