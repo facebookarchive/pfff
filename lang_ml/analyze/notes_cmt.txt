@@ -1,0 +1,25 @@
+-*- org -*-
+
+* compared to Ast_ml?
+Comparing Graph_code_ml and Graph_code_cmt?
+
+- need module lookup? names are resolved? hmmm apparently not :(
+  Just some open are handled. have to resolve module aliases :( 
+  Also have to handle local modules.
+- need type lookup? again type aliases are not resolved.
+
+- multiple parameters? everything is curried (fun x y --> fun x -> fun y)
+    so this is good
+
+* about Path.t
+
+Path.t elements in the typed AST are actually not always full absolute
+paths (see open_module.cmt). For entities defined outside, you have
+the full path (but you still have to resolve aliases for those
+though). Moreover when you do open X, the typed AST contain a path
+mentionning X for entities coming from X, which is good, but when you
+refer to an entity from a local module, a local type, a local element,
+then you don't have the full path, just the path relative to the
+current module. So you want to prepend also the current module (and
+nested module) to get a complete full path before doing anything.
+

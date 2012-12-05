@@ -27,13 +27,7 @@ open Typedtree
  * Graph of dependencies for OCaml typed AST files (.cmt). See graph_code.ml
  * and main_codegraph.ml for more information.
  * 
- * compared to lang_ml/analyze/graph_code_ml.ml:
- *  - need module lookup? all names are resolved? hmmm apparently
- *    have still to resolve some module aliases :( Just the open
- *    is handled
- *  - need type lookup? again type aliases are not resolved
- *  - multiple parameters? everything is curried (fun x y --> fun x -> fun y)
- *    so this is good
+ * See also notes_cmt.txt
  * 
  * schema:
  *  Root -> Dir -> Module -> Function
@@ -42,7 +36,7 @@ open Typedtree
  *                        -> Exception (with .exn as prefix)
  *                        -> Constant
  *                        -> Global
- *                        -> SubModule
+ *                        -> SubModule -> ...
  * 
  * related:
  *  - typerex
@@ -429,11 +423,19 @@ and structure_item_desc env = function
       let env = add_node_and_edge_if_defs_mode env node in
       value_description env vd
   | Tstr_type xs ->
-      List.iter (fun (id, _loc, v3) ->
+      List.iter (fun (id, _loc, td) ->
         let full_ident = env.current_qualifier ++ [Ident.name id] in
         let node = (full_ident, E.Type) in
         let env = add_node_and_edge_if_defs_mode env node in
-        type_declaration env v3
+
+        (match td.typ_kind, td.typ_manifest with
+        | Ttype_abstract, Some ({ctyp_desc=Ttyp_constr (path, _loc, _xs); _}) ->
+          (* todo: resolve path! *)
+          if env.phase = Defs then
+            Common.push2 (full_ident, n_of_pn path) env.type_aliases
+        | _ -> ()
+        );
+        type_declaration env td
       ) xs
   | Tstr_exception ((id, _loc, v3)) ->
       let full_ident = env.current_qualifier ++ ["exn";Ident.name id] in
@@ -455,11 +457,9 @@ and structure_item_desc env = function
           (* todo: resolve path! *)
           if env.phase = Defs then
             Common.push2 (full_ident, n_of_pn path) env.module_aliases
-             
       | _ -> ()
       );
       module_expr env modexpr
-
   | Tstr_recmodule xs ->
       List.iter (fun (id, _loc, v3, v4) ->
         let full_ident = env.current_qualifier ++ [Ident.name id] in
