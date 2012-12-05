@@ -6,7 +6,7 @@ SRC=pervasives.ml list.ml hashtbl.ml \
   open_module.ml nested_module.ml \
   alias_module.ml alias_type.ml alias_module_type.ml \
   functor.ml \
-  namespace_type_value.ml
+  namespace_type_value.ml namespace_type_field.ml
 
 
 #STDLIB=pervasives.cmt list.cmt hashtbl.cmt

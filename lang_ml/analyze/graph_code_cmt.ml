@@ -134,10 +134,11 @@ let add_use_edge env dst =
 let full_path_local_of_kind env kind =
   match kind with
   | E.Function | E.Global | E.Constant -> env.full_path_local_value
-  | E.Type | E.Exception | E.Field | E.Constructor -> env.full_path_local_type
+  | E.Type | E.Exception -> env.full_path_local_type
   | E.Module -> 
       (* todo: why cant put env.full_path_local_module ? *)
       env.full_path_local_type
+  | E.Field | E.Constructor -> ref []
   | _ -> raise Impossible
 
 let add_full_path_local env (s, name) kind =
