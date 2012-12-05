@@ -70,6 +70,9 @@ type env = {
    *)
   full_path_local_entities: (string * name) list ref;
 
+  (* global to the whole project, populated in Defs and used in Uses,
+   * see path_resolve_aliases().
+   *)
   module_aliases: (name * name) list ref;
   type_aliases: (name * name) list ref;
 }
@@ -140,10 +143,8 @@ let add_node_and_edge_if_defs_mode ?(dupe_ok=false) env name_node =
 (* Path resolution, locals *)
 (*****************************************************************************)
 let rec path_resolve_locals env p =
-
   let s = Path.name p in
   let xs = n_of_s s in
-  
   match xs with
   | [] -> raise Impossible
   | x::xs ->
@@ -151,48 +152,7 @@ let rec path_resolve_locals env p =
       then List.assoc x !(env.full_path_local_entities) ++ xs
       else x::xs
 
-(*
-  let candidates = 
-    match str_typ, str with
-    | "unit", "()" -> ["stdlib.unit.()", kind]
-    | "bool", "true" -> ["stdlib.bool.true", kind]
-    | "bool", "false" -> ["stdlib.bool.true", kind]
-    | "list", "[]" -> ["stdlib.list.[]", kind]
-    | "list", "::" -> ["stdlib.list.::", kind]
-    | "option", "None" -> ["stdlib.option.None", kind]
-    | "option", "Some" -> ["stdlib.option.Some", kind]
-    | "exn", "Not_found" -> ["stdlib.exn.Not_found", kind]
-    (* for exn, the typename does not contain the qualifier *)
-    | "exn", _ -> 
-        (* todo *)
-        ["stdlib.exn.Not_found", kind]
-        (*
-        let xs = Common.split "\\." (path_name env.aliases lid) +> List.rev in
-        let ys = (List.hd xs :: "exn" :: List.tl xs) +> List.rev in
-        let str = Common.join "." ys in
-        [
-        (str, E.Exception);
-        (env.current_module ^ "." ^ str, E.Exception);
-        *)
-    | _ -> 
-        let xs = env.current_module in
-        inits xs +> List.rev +> List.map (fun xs ->
-          Common.join "." (xs ++ [str_typ;str]), kind
-        )
-  in
-  let rec aux = function
-    | [] -> 
-        if List.length candidates > 1
-        then begin
-          pr2_gen candidates
-        end
-    | x::xs ->
-        if G.has_node x env.g
-        then add_use_edge env x
-        else aux xs
-  in
-  aux candidates
-  *)
+
 (*****************************************************************************)
 (* Path resolution, aliases *)
 (*****************************************************************************)
@@ -201,16 +161,8 @@ let path_name aliases lid =
   let s = Path.name lid in
   s
 
-(*
-  let xs = Common.split "\\." s in
-  (match xs with
-  | [] -> raise Impossible
-  | x::xs -> 
-      if List.mem_assoc x aliases
-      then List.assoc x aliases ^ "." ^ (Common.join "." xs)
-      else s
-  )
-*)
+let path_resolve_aliases env p =
+  raise Todo
 
 (*****************************************************************************)
 (* Kind of entity *)
@@ -278,31 +230,6 @@ let add_use_edge_lid env lid texpr kind =
     )
   end
  end
-
-(*
-let add_use_edge_lid_bis env lid kind =
- if env.phase = Uses then begin
-  let str = path_name env.aliases lid in
-  let candidates = 
-    match str with
-    | _ -> [
-        (str, kind);
-        (env.current_module ^ "." ^ str, kind);
-      ] 
-  in
-  let rec aux = function
-    | [] ->
-        if List.length candidates > 1
-        then 
-          pr2_gen candidates
-    | x::xs ->
-        if G.has_node x env.g
-        then add_use_edge env x
-        else aux xs
-  in
-  aux candidates
- end
-*)
 
 (*****************************************************************************)
 (* Empty wrappers *)
