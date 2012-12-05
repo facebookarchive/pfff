@@ -387,8 +387,8 @@ and  pattern env
   pattern_desc v_pat_type env v_pat_desc
 and expression env
     { exp_desc = v_exp_desc; exp_loc = v_exp_loc;  exp_extra = __v_exp_extra;
-      exp_type = __v_exp_type; exp_env = v_exp_env } =
-  expression_desc env v_exp_desc
+      exp_type = v_exp_type; exp_env = v_exp_env } =
+  expression_desc v_exp_type env v_exp_desc
 and module_expr env
     { mod_desc = v_mod_desc; mod_loc = v_mod_loc;
       mod_type = v_mod_type; mod_env = v_mod_env  } =
@@ -586,7 +586,7 @@ and pattern_desc t env = function
 (* ---------------------------------------------------------------------- *)
 (* Expression *)
 (* ---------------------------------------------------------------------- *)
-and expression_desc env =
+and expression_desc t env =
   function
   | Texp_ident ((lid, _loc_longident, vd)) ->
       let str = path_name [] lid in
@@ -649,21 +649,18 @@ and expression_desc env =
   | Texp_variant ((v1, v2)) ->
       let _ = label env v1 and _ = v_option (expression env) v2 in ()
   | Texp_record ((v1, v2)) ->
-      let _ =
-        List.iter
-          (fun (v1, _loc_longident, v3, v4) ->
-             let _ = Path.t env v1
-             and _ = label_description env v3
-             and _ = expression env v4
-             in ())
-          v1
-      and _ = v_option (expression env) v2
-      in ()
-  | Texp_field ((v1, v2, _loc_longident, v4)) ->
-      let _ = expression env v1
-      and _ = Path.t env v2
-      and _ = label_description env v4
-      in ()
+      List.iter (fun (lid, _loc_longident, v3, v4) ->
+        Path.t env lid;
+        let _ = label_description env v3
+        and _ = expression env v4
+        in ()
+      ) v1;
+      v_option (expression env) v2
+  | Texp_field ((v1, lid, _loc_longident, v4)) ->
+      expression env v1;
+      add_use_edge_lid env lid v1.exp_type E.Field;
+      label_description env v4
+
   | Texp_setfield ((v1, v2, _loc_longident, v4, v5)) ->
       let _ = expression env v1
       and _ = Path.t env v2
