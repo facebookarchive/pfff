@@ -245,8 +245,13 @@ let rec kind_of_core_type x =
       -> raise Todo
   | Ttyp_arrow _ -> E.Function
   | _ -> raise Todo
+
 let kind_of_value_descr vd =
   kind_of_core_type vd.val_desc
+
+(*****************************************************************************)
+(* Uses with name resolution *)
+(*****************************************************************************)
 
 let rec typename_of_texpr x =
   (* pr2 (Ocaml.string_of_v (Meta_ast_cmt.vof_type_expr_show_all x)); *)
