@@ -162,16 +162,28 @@ let add_node_and_edge_if_defs_mode ?(dupe_ok=false) env name_node =
 (*****************************************************************************)
 (* Path resolution, locals *)
 (*****************************************************************************)
+
+(* f --> A.f,  and Nested.f -> A.Nested.f *)
 let rec path_resolve_locals env p kind =
   let s = Path.name p in
   let xs = n_of_s s in
-  let table = full_path_local_of_kind env kind in
-  match xs with
-  | [] -> raise Impossible
-  | x::xs ->
-      if List.mem_assoc x !table
-      then List.assoc x !table ++ xs
-      else x::xs
+
+  let rec aux xs =
+    match xs with
+    | [] -> raise Impossible
+    | [x] -> 
+        let table = full_path_local_of_kind env kind in
+        if List.mem_assoc x !table
+        then List.assoc x !table
+        else [x]
+    | x::xs ->
+        let kind = E.Module in
+        let table = full_path_local_of_kind env kind in
+        if List.mem_assoc x !table
+        then List.assoc x !table ++ xs
+        else x::xs
+  in
+  aux xs
 
 (*****************************************************************************)
 (* Path resolution, aliases *)
