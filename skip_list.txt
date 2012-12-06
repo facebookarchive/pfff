@@ -11,32 +11,30 @@
 file: commons/ocamlextra/enum.cmt
 file: commons/ocamlextra/dynArray.cmt
 
-#dupes with external/core and ok to skip cos test files
+#dupes with external/core and ok to skip because they are test files
 dir: tests/ml/cmt
 
 # -------------------------------------------------------------------------
 # depends on compiler libs
 # -------------------------------------------------------------------------
-file: lang_ml/analyze/ast_cmt.cmt
 file: lang_ml/analyze/meta_ast_cmt.cmt
 file: lang_ml/analyze/graph_code_cmt.cmt
-file: lang_ml/analyze/test_analyze_ml.cmt
+#file: lang_ml/analyze/ast_cmt.cmt
+#file: lang_ml/analyze/test_analyze_ml.cmt
 
 # -------------------------------------------------------------------------
 # complex cmt
 # -------------------------------------------------------------------------
 file: external/core/dynlinkaux.cmt
 
-#todo: have some 'include'
+#have some 'include', but got de-includized
 #dir: commons/lib-sexp
 #todo: have namespace conflict between values and types
 #dir: commons/lib-json
-
 #todo: have some 'include'
-file: commons/lib-sexp/pre_sexp.cmt
 
 # -------------------------------------------------------------------------
-# dupes
+# dupes .ml
 # -------------------------------------------------------------------------
 
 # contain dupes
