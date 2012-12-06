@@ -28,7 +28,9 @@
 
 open Format
 
-include Type
+(* include Type *)
+type t = Type.t = Atom of string | List of t list
+
 module Lexer = Lexer_sexp
 
 (* Default indentation level for human-readable conversions *)
