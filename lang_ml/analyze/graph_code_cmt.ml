@@ -60,6 +60,7 @@ type env = {
   
   current: Graph_code.node;
   current_entity: name;
+  (* todo: used? *)
   current_module: name;
 
   mutable locals: string list;
@@ -401,10 +402,24 @@ let optional env x = ()
 let rec extract_defs_uses 
    ~phase ~g ~ast ~readable
    ~module_aliases ~type_aliases =
+  let current =
+    (* Module names are supposed to be unique for the ocaml linker,
+     * but it's common to have multiple main.ml files that are linked
+     * separately. But for codegraph we want to have a graph of all
+     * those files, and so to avoid conflicts we use the filename
+     * instead of the module. Anyway there should be no external
+     * reference to those modules so we should be safe to not use
+     * a E.Module.
+     * less: could also mark those as a dupe module and generate a File 
+     *)
+    if ast.cmt_modname =~ "Main.*"
+    then (readable, E.File)
+    else (ast.cmt_modname, E.Module)
+  in
   let env = {
     g; phase;
-    current = (ast.cmt_modname, E.Module);
-    current_entity = [ast.cmt_modname];
+    current;
+    current_entity = [fst current];
     current_module = [ast.cmt_modname];
     file = readable;
     locals = [];

@@ -7,14 +7,6 @@
 # dupes cmt
 # -------------------------------------------------------------------------
 
-#todo: have heuristic with file called main.* ?
-# or mark main_checker as a dupe module and generate a File instead?
-#file orig kept: facebook/check_module/main_checker.cmt
-file: facebook/qa_code/main_checker.cmt
-file: facebook/check_cpp/main_checker.cmt
-#file orig kept: main.cmt
-file: lang_php/pretty/main.cmt
-
 #less: dupes with external/extlib/, remove them
 file: commons/ocamlextra/enum.cmt
 file: commons/ocamlextra/dynArray.cmt
