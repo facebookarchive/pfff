@@ -6,7 +6,8 @@ SRC=pervasives.ml list.ml hashtbl.ml \
   open_module.ml nested_module.ml \
   alias_module.ml alias_type.ml alias_module_type.ml \
   namespace_type_value.ml namespace_type_field.ml \
-  letrec.ml typerec.ml letrec_nested.ml
+  letrec.ml typerec.ml letrec_nested.ml \
+  alias_type_function.ml
 
 # not handled well
 #  functor.ml \

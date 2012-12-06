@@ -248,11 +248,13 @@ let rec kind_of_type_desc x =
   match x with
   | Types.Tarrow _ -> 
       E.Function
-  | Types.Tconstr (path, xs, aref) 
+  | Types.Tconstr (path, _, _) when 
+        List.mem (Path.name path) ["Pervasives.ref";"Hashtbl.t"] ->
       (* less: potentially anything with a mutable field *)
-      when List.mem (Path.name path) ["Pervasives.ref";"Hashtbl.t"] ->
       E.Global
-  | Types.Tconstr (path, xs, aref) -> E.Constant
+  (* todo: what if it is an alias to a function type? need resolve here? *)
+  | Types.Tconstr (path, xs, aref) -> 
+      E.Constant
   | Types.Ttuple _ | Types.Tvariant _ -> 
       E.Constant
   (* ? *)
@@ -268,9 +270,9 @@ and kind_of_type_expr x =
 (* used only for primitives *)
 let rec kind_of_core_type x =
   match x.ctyp_desc with
+  | Ttyp_arrow _ -> E.Function
   | Ttyp_any  | Ttyp_var _
       -> raise Todo
-  | Ttyp_arrow _ -> E.Function
   | _ -> raise Todo
 
 let kind_of_value_descr vd =
@@ -319,25 +321,31 @@ let add_use_edge_lid_bis env lid texpr =
     if G.has_node node env.g
     then add_use_edge env node
     else 
-      (* pfff specific *)
-      if name +> List.exists (function
-      (* todo: need better n_of_s, or avoid n_of_s and have n_of_path *)
-      | "ArithFloatInfix"
-      (* todo: need handle functor *)
-      | "StringSetOrig" | "IntMap" | "IntIntMap" | "StringSet" | "StrMap"
-      | "SMap" | "IMap" | "ISet" | "SSet" 
-      | "Elt_Set"  | "AMap"
-      (* todo: need handle argument to functor *)
-      | "MODEL" | "column_list"
-      | "Taint"  | "MATCH" | "X" | "PHP_VS_PHP"
-      (* todo: handle pack *)
-      | "Digraph"
-      (* todo: misc *)
-      | "LIST" | "M_01_01"
-       -> true
-      | _ -> false
-      ) then ()
-        else pr2 (spf "%s IN %s" (Common.dump node) env.file)
+      (match kind with
+      (* ugly: the right fix is to resolve texpr *)
+      | E.Constant when G.has_node (s_of_n name, E.Function) env.g ->
+          add_use_edge env (s_of_n name, E.Function)
+      | _ ->
+          (* pfff specific *)
+          if name +> List.exists (function
+          (* todo: need better n_of_s, or avoid n_of_s and have n_of_path *)
+          | "ArithFloatInfix"
+              (* todo: need handle functor *)
+          | "StringSetOrig" | "IntMap" | "IntIntMap" | "StringSet" | "StrMap"
+          | "SMap" | "IMap" | "ISet" | "SSet" 
+          | "Elt_Set"  | "AMap"
+                (* todo: need handle argument to functor *)
+          | "MODEL" | "column_list"
+          | "Taint"  | "MATCH" | "X" | "PHP_VS_PHP"
+                (* todo: handle pack *)
+          | "Digraph"
+              (* todo: misc *)
+          | "LIST" | "M_01_01"
+              -> true
+          | _ -> false
+          ) then ()
+          else pr2 (spf "%s IN %s" (Common.dump node) env.file)
+      )
   end
 
 (*****************************************************************************)
