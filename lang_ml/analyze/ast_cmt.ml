@@ -17,8 +17,10 @@
 (* Prelude *)
 (*****************************************************************************)
 (* 
- * This is mostly a wrapper around the ocaml compiler lib and its
- * typed ocaml tree.
+ * This is mostly a wrapper around the ocaml compiler libs and its
+ * typed ocaml tree. See the typed_ml file in this directory for
+ * a copy paste of what is in the ocaml compiler source (and
+ * was used to generate via ocamltarzan meta_ast_cmt.ml).
  *)
 
 (*****************************************************************************)
