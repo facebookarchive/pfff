@@ -329,14 +329,14 @@ let add_use_edge_lid_bis env lid texpr =
           (* pfff specific *)
           if name +> List.exists (function
           (* todo: need better n_of_s, or avoid n_of_s and have n_of_path *)
-          | "ArithFloatInfix"
+          | "ArithFloatInfix" | "|"
               (* todo: need handle functor *)
           | "SMap" | "IMap" | "ISet" | "SSet" 
           | "StringSetOrig" | "IntMap" | "IntIntMap" | "StringSet" | "StrMap"
           | "SetTestPath" | "Elt_Set"  | "AMap"
                 (* todo: need handle argument to functor *)
           | "MODEL" | "column_list"
-          | "Taint"  | "MATCH" | "X" | "PHP_VS_PHP"
+          | "Taint"  | "MATCH" | "X" | "PHP_VS_PHP" | "Interp"
                 (* todo: handle pack *)
           | "Digraph"
               (* todo: misc *)
