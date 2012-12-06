@@ -61,13 +61,13 @@ module Ast = Ast_php
 type id = Id of int
 
 (* also primary key, more readable, but less optimial spacewise *)
-type fullid = filepos
- and filepos = {
+type filepos = {
   file: filename;
   line: int;
   column: int;
 }
  (* with tarzan *)
+type fullid = filepos
 
 (* id_kind is now just an alias. Indeed it was copy-paste/redundant with
  * Datbase_code.ml.
