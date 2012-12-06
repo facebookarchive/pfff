@@ -15,7 +15,6 @@
  * license.txt for more details.
  *)
 (*e: Facebook copyright *)
-
 open Common 
 
 open Ast_php 
@@ -30,7 +29,6 @@ module TH = Token_helpers_php
 (*****************************************************************************)
 (* Prelude *)
 (*****************************************************************************)
-
 (*
  * There are multiple ways to unparse PHP code:
  *  - one can iterate over the AST, and print its leaves, but 
