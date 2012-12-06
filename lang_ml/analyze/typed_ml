@@ -415,4 +415,5 @@ and 'a class_infos =
     ci_type_decl : Types.class_type_declaration;
     ci_variance: (bool * bool) list;
     ci_loc: Location.t }
+
 (* with tarzan *)
