@@ -21,9 +21,8 @@ open Ast_php
 open Parser_php (* the tokens *)
 open Parse_info
 
-module V = Visitor_php
 module Ast = Ast_php
-
+module V = Visitor_php
 module TH = Token_helpers_php
 
 (*****************************************************************************)
@@ -36,15 +35,18 @@ module TH = Token_helpers_php
  *    some extra code that also visit the tokens and try to "sync" the
  *    visit of the AST with the tokens
  *  - one can iterate over the tokens, where comments and spaces are normal
- *    citizens, but this can be too low level.
+ *    citizens, but this can be too low level
  *  - one can use a real pretty printer with a boxing or backtracking model
- *    working on a AST extended with comments (see juline's ast_pretty_print/).
- *    
- * The token-based unparser handles transfo annotations (Add/Remove).
+ *    working on a AST extended with comments (see juline's ast_pretty_print/)
+ * 
+ * Right now the preferred method for spatch is the second one. The pretty
+ * printer currently is too different from our coding conventions
+ * (also because we don't have precise coding conventions).
+ * This token-based unparser handles transfo annotations (Add/Remove).
  * 
  * related: the sexp/json "exporters".
  * 
- * this module could be in analyze_php/ instead of parsing_php/, 
+ * note: this module could be in analyze_php/ instead of parsing_php/, 
  * but it's maybe good to have the basic parser/unparser together.
  *)
 
@@ -84,8 +86,8 @@ let is_a_remove_or_replace tok =
 (*****************************************************************************)
 
 (* This will not preserve space and comments but it's useful
- * and good enough for printing small chunk of PHP code for debugging purpose.
- * We try to preserve the line number.
+ * and good enough for printing small chunk of PHP code for debugging
+ * purpose. We try to preserve the line numbers.
  *)
 let string_of_program2 ast2 = 
   let ast = Parse_php.program_of_program2 ast2 in
@@ -137,10 +139,6 @@ let mk_unparser_visitor pp =
       | Parse_info.OriginTok p ->
           let s =  p.Parse_info.str in
           (match s with
-          (* certain tokens need a space after because they can be 
-           * followed by another identifier.
-           * todo: need the pretty printer of julien ... not this hack
-           *)
           | "new" ->
               pp s; pp " "
           | _ -> 
