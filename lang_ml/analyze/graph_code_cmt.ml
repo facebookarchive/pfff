@@ -331,9 +331,9 @@ let add_use_edge_lid_bis env lid texpr =
           (* todo: need better n_of_s, or avoid n_of_s and have n_of_path *)
           | "ArithFloatInfix"
               (* todo: need handle functor *)
-          | "StringSetOrig" | "IntMap" | "IntIntMap" | "StringSet" | "StrMap"
           | "SMap" | "IMap" | "ISet" | "SSet" 
-          | "Elt_Set"  | "AMap"
+          | "StringSetOrig" | "IntMap" | "IntIntMap" | "StringSet" | "StrMap"
+          | "SetTestPath" | "Elt_Set"  | "AMap"
                 (* todo: need handle argument to functor *)
           | "MODEL" | "column_list"
           | "Taint"  | "MATCH" | "X" | "PHP_VS_PHP"
