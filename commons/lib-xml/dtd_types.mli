@@ -69,11 +69,11 @@ type dtd_item =
 
 type dtd = dtd_item list
 
-type ('a, 'b) hash = ('a, 'b) Hashtbl.t
+(* type ('a, 'b) hash = ('a, 'b) Hashtbl.t *)
 
 type checked = {
-  c_elements : (string, dtd_element_type) hash;
-  c_attribs : (string, (string, dtd_attr_type * dtd_attr_default) hash) hash;
+  c_elements : (string, dtd_element_type) Hashtbl.t;
+  c_attribs : (string, (string, dtd_attr_type * dtd_attr_default) Hashtbl.t) Hashtbl.t;
 }
 
 (** {6 The DTD Exceptions} *)
@@ -143,14 +143,14 @@ type dtd_result =
   | DTDMatchedResult of dtd_child
 
 type dtd_state = {
-  elements : (string, dtd_element_type) hash;
-  attribs : (string, (string, dtd_attr_type * dtd_attr_default) hash) hash;
+  elements : (string, dtd_element_type) Hashtbl.t;
+  attribs : (string, (string, dtd_attr_type * dtd_attr_default) Hashtbl.t) Hashtbl.t;
   mutable current : dtd_element_type;
   mutable curtag : string;
   state : (string * dtd_element_type) Stack.t;
 }
 
-val empty_hash : (string, dtd_attr_type * dtd_attr_default) Hashtbl.t
+val empty_Hashtbl.t : (string, dtd_attr_type * dtd_attr_default) Hashtbl.Ttbl.t
 val start_prove : checked -> string -> dtd_state
 
 
