@@ -23,7 +23,7 @@ module PI = Parse_info
  *
  * TODO:
  *  - support annotations
- *  - suppoert generic methods (there is support for generic classes though)
+ *  - support generic methods (there is support for generic classes though)
  *  - etc.
  *)
 
@@ -134,7 +134,7 @@ type expr =
   (* the decls option is for anon classes *)
   | NewClass of typ * arguments * decls option
   | NewArray of typ * arguments * int * init option
-  (* ?? *)
+  (* see tests/java/parsing/NewQualified.java *)
   | NewQualifiedClass of expr * ident * arguments * decls option
 
   | Call of expr * arguments
