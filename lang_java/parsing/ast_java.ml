@@ -38,6 +38,8 @@ type info = Parse_info.info
 and 'a wrap  = 'a * info
   (* with tarzan *)
 
+type 'a list1 = 'a list (* really should be 'a * 'a list *)
+
 (* ------------------------------------------------------------------------- *)
 (* Ident, qualifier *)
 (* ------------------------------------------------------------------------- *)
@@ -66,8 +68,6 @@ type typ =
   and type_argument =
     | TArgument of ref_type
     | TQuestion of (bool (* extends|super, true = super *) * ref_type) option
-
-   and 'a list1 = 'a list (* really should be 'a * 'a list *)
 
    (* A ref type should be a class type or an array of whatever, but not a
     * primitive type. We don't enforce this invariant in the AST to simplify
