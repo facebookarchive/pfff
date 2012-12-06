@@ -1,4 +1,4 @@
-type t = ()
+type ('a,'b) t = ()
 
 let create i = 
   ()
