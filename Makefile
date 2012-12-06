@@ -19,8 +19,7 @@ TARGET=pfff
 
 PROGS=pfff
 
-PROGS+=sgrep
-PROGS+=spatch
+PROGS+=sgrep spatch
 PROGS+=stags
 
 PROGS+=ppp
@@ -34,6 +33,7 @@ PROGS+=pfff_test
 ifeq ($(FEATURE_BDB), 1)
 PROGS+=pfff_db_heavy
 PROGS+=scheck_heavy
+#TODO: make independent of BDB
 PROGS+=codequery
 endif
 
@@ -63,16 +63,6 @@ OPTPROGS= $(PROGS:=.opt)
 #  endif
 
 
-# cf also below for target pfff_db_heavy
-ifeq ($(FEATURE_BDB), 1)
-BDBDIR=external/ocamlbdb
-BDBCMD= $(MAKE) all -C $(BDBDIR) && $(MAKE) bdb -C commons
-BDBCMDOPT= $(MAKE) all.opt -C $(BDBDIR) && $(MAKE) bdb.opt -C commons
-BDBCMA=external/ocamlbdb/bdb.cma commons/commons_bdb.cma
-BDBSYSCMA=
-else
-endif
-
 # cf also below the target for pfff_browser
 ifeq ($(FEATURE_GUI),1)
 GUIDIR=external/ocamlgtk
@@ -87,12 +77,6 @@ CAIRODIR=external/ocamlcairo
 CAIROINCLUDE=external/ocamlcairo/src
 endif
 
-ifeq ($(FEATURE_BACKTRACE), 1)
-BTCMD= $(MAKE) backtrace -C commons
-BTCMDOPT= $(MAKE) backtrace.opt -C commons
-BTCMA=commons/commons_backtrace.cma
-else
-endif
 
 ifeq ($(FEATURE_PCRE), 1)
 REGEXPDIR=external/ocamlpcre
@@ -103,11 +87,30 @@ PCREINCLUDE=external/ocamlpcre/lib
 else
 endif
 
+# cf also below for target pfff_db_heavy
+ifeq ($(FEATURE_BDB), 1)
+BDBDIR=external/ocamlbdb
+BDBCMD= $(MAKE) all -C $(BDBDIR) && $(MAKE) bdb -C commons
+BDBCMDOPT= $(MAKE) all.opt -C $(BDBDIR) && $(MAKE) bdb.opt -C commons
+BDBCMA=external/ocamlbdb/bdb.cma commons/commons_bdb.cma
+BDBSYSCMA=
+else
+endif
+
+#todo: remove?
 ifeq ($(FEATURE_MPI),1)
 MPIDIR=external/ocamlmpi
 MPICMD=    $(MAKE) all -C $(MPIDIR) && $(MAKE) distribution -C commons
 MPICMDOPT= $(MAKE) all.opt -C $(MPIDIR) && $(MAKE) distribution.opt -C commons
 MPICMA=external/ocamlmpi/mpi.cma commons/commons_mpi.cma
+endif
+
+#todo: remove?
+ifeq ($(FEATURE_BACKTRACE), 1)
+BTCMD= $(MAKE) backtrace -C commons
+BTCMDOPT= $(MAKE) backtrace.opt -C commons
+BTCMA=commons/commons_backtrace.cma
+else
 endif
 
 #------------------------------------------------------------------------------
@@ -128,13 +131,8 @@ OCAMLNETINCLUDE=external/ocamlnet/netsys external/ocamlnet/netstring
 OCAMLNETCMA= \
   external/ocamlnet/netsys/netsys_oothr.cma \
   external/ocamlnet/netsys/netsys.cma \
-  external/ocamlnet/netstring/netstring.cma \
-
+  external/ocamlnet/netstring/netstring.cma
 #  external/ocamlnet/netstring/netaccel.cma \
-
-#PHYLOMELDIR=external/phylomel/src
-#PHYLOMELINCLUDE=external/phylomel/src
-#PHYLOMELCMA=external/phylomel/src/lib.cma
 
 ZIPDIR=external/ocamlzip
 ZIPCMA=external/ocamlzip/zip.cma
@@ -147,6 +145,12 @@ PTCMA=external/ptrees/ptrees.cma
 
 JAVALIBDIR=external/javalib/src
 JAVALIBCMA=external/javalib/src/lib.cma
+
+#todo: remove
+#PHYLOMELDIR=external/phylomel/src
+#PHYLOMELINCLUDE=external/phylomel/src
+#PHYLOMELCMA=external/phylomel/src/lib.cma
+
 
 ifeq ($(FEATURE_GRAPHICS), 1)
 #GRAPHICSCMXA=graphics.cmxa
@@ -250,7 +254,6 @@ LIBS= commons/commons.cma \
     lang_css/parsing/lib.cma \
     lang_web/parsing/lib.cma \
 
-
 MAKESUBDIRS=commons \
   $(BDBDIR) $(REGEXPDIR) $(MPIDIR) \
   $(GRAPHDIR) $(PHYLOMELDIR) \
@@ -332,7 +335,7 @@ INCLUDEDIRS=$(MAKESUBDIRS) \
 
 all:: Makefile.config
 	$(MAKE) rec 
-	$(MAKE) $(PROGS) 
+	$(MAKE) $(PROGS)
 opt:
 	$(MAKE) rec.opt 
 	$(MAKE) $(OPTPROGS) 
@@ -420,37 +423,27 @@ purebytecode:
 
 stags: $(LIBS) main_stags.cmo 
 	$(OCAMLC) $(CUSTOM) -o $@ $(SYSLIBS) $^
-
 stags.opt: $(LIBS:.cma=.cmxa) main_stags.cmx
 	$(OCAMLOPT) $(STATIC) -o $@ $(BASICSYSLIBS:.cma=.cmxa) $^
-
 clean::
 	rm -f stags
 
 #------------------------------------------------------------------------------
-# sgrep targets
+# sgrep/spatch targets
 #------------------------------------------------------------------------------
 
 sgrep: $(LIBS) main_sgrep.cmo 
 	$(OCAMLC) $(CUSTOM) -o $@ $(SYSLIBS) $(REGEXPCMA) $^
-
 sgrep.opt: $(BASICLIBS:.cma=.cmxa) main_sgrep.cmx
 	$(OCAMLOPT) $(STATIC) -o $@ $(BASICSYSLIBS:.cma=.cmxa) \
 	  $(REGEXPCMA:.cma=.cmxa) $^
-
 clean::
 	rm -f sgrep
 
-#------------------------------------------------------------------------------
-# spatch targets
-#------------------------------------------------------------------------------
-
 spatch: $(LIBS) main_spatch.cmo 
 	$(OCAMLC) $(CUSTOM) -o $@ $(SYSLIBS) $^
-
 spatch.opt: $(LIBS:.cma=.cmxa) main_spatch.cmx
 	$(OCAMLOPT) $(STATIC) -o $@ $(SYSLIBS:.cma=.cmxa) $^
-
 clean::
 	rm -f spatch
 
@@ -460,10 +453,8 @@ clean::
 
 scheck: $(LIBS) main_scheck.cmo 
 	$(OCAMLC) $(CUSTOM) -o $@ $(SYSLIBS) $^
-
 scheck.opt: $(LIBS:.cma=.cmxa) main_scheck.cmx
 	$(OCAMLOPT) $(STATIC) -o $@ $(SYSLIBS:.cma=.cmxa) $^
-
 clean::
 	rm -f scheck
 
@@ -473,10 +464,8 @@ clean::
 
 scheck_heavy: $(LIBS) main_scheck_heavy.cmo 
 	$(OCAMLC) $(CUSTOM) -o $@ $(SYSLIBS) $^
-
 scheck_heavy.opt: $(LIBS:.cma=.cmxa) $(LIBS2:.cma=.cmxa) $(OBJS2:.cmo=.cmx) main_scheck_heavy.cmx
 	$(OCAMLOPT) $(STATIC) -o $@ $(SYSLIBS:.cma=.cmxa)   $^ 
-
 clean:: 
 	rm -f scheck_heavy
 
@@ -486,10 +475,8 @@ clean::
 
 codequery: $(LIBS) main_codequery.cmo 
 	$(OCAMLC) $(CUSTOM) -o $@ $(SYSLIBS) $^
-
 codequery.opt: $(LIBS:.cma=.cmxa) $(LIBS2:.cma=.cmxa) $(OBJS2:.cmo=.cmx) main_codequery.cmx
 	$(OCAMLOPT) $(STATIC) -o $@ $(SYSLIBS:.cma=.cmxa)   $^ 
-
 clean:: 
 	rm -f codequery
 
@@ -499,10 +486,8 @@ clean::
 
 ppp: $(LIBS) main_ppp.cmo 
 	$(OCAMLC) $(CUSTOM) -o $@ $(SYSLIBS) $^
-
 ppp.opt: $(LIBS:.cma=.cmxa) main_ppp.cmx
 	$(OCAMLOPT) $(STATIC) -o $@ $(SYSLIBS:.cma=.cmxa) $^
-
 clean::
 	rm -f ppp
 
@@ -512,10 +497,8 @@ clean::
 
 pfff_db: $(LIBS) main_db.cmo 
 	$(OCAMLC) $(CUSTOM) -o $@ $(SYSLIBS) $^
-
 pfff_db.opt: $(LIBS:.cma=.cmxa) $(LIBS2:.cma=.cmxa) $(OBJS2:.cmo=.cmx) main_db.cmx
 	$(OCAMLOPT) $(STATIC) -o $@ $(SYSLIBS:.cma=.cmxa)   $^ 
-
 clean:: 
 	rm -f pfff_db
 
@@ -525,32 +508,10 @@ clean::
 
 pfff_db_heavy: $(LIBS) main_db_heavy.cmo 
 	$(OCAMLC) $(CUSTOM) -o $@ $(SYSLIBS) $^
-
 pfff_db_heavy.opt: $(LIBS:.cma=.cmxa) $(LIBS2:.cma=.cmxa) $(OBJS2:.cmo=.cmx) main_db_heavy.cmx
 	$(OCAMLOPT) $(STATIC) -o $@ $(SYSLIBS:.cma=.cmxa)   $^ 
-
 clean:: 
 	rm -f pfff_db_heavy
-
-#------------------------------------------------------------------------------
-# OBSOLETE: pfff_browser target
-#------------------------------------------------------------------------------
-SYSLIBS2=external/ocamlgtk/src/lablgtk.cma 
-LIBS2=commons/commons_gui.cma gui/gui.cma
-OBJS2=
-
-#need linker to find dlllabltk2.so so need adjust LD_LIBRARY_PATH if
-# use ocamlgtk/src instead of the standard -I +lablgtk2
-# cf env.sh
-
-pfff_browser: $(LIBS) $(LIBS2) $(OBJS2) main_gui.cmo 
-	$(OCAMLC) $(CUSTOM) -o $@ $(SYSLIBS)  $(SYSLIBS2)  $^
-
-pfff_browser.opt: $(LIBS:.cma=.cmxa) $(LIBS2:.cma=.cmxa) $(OBJS2:.cmo=.cmx) main_gui.cmx
-	$(OCAMLOPT) $(STATIC) -o $@ $(SYSLIBS:.cma=.cmxa)  $(SYSLIBS2:.cma=.cmxa)   $^ 
-
-clean::
-	rm -f pfff_browser
 
 #------------------------------------------------------------------------------
 # codemap target (was pfff_visual)
@@ -594,10 +555,8 @@ clean::
 #------------------------------------------------------------------------------
 pfff_misc: $(LIBS) main_misc.cmo 
 	$(OCAMLC) $(CUSTOM) -o $@ $(SYSLIBS) $(SYSLIBS4) $^
-
 pfff_misc.opt: $(LIBS:.cma=.cmxa) main_misc.cmx
 	$(OCAMLOPT) $(STATIC) -o $@ $(SYSLIBS:.cma=.cmxa)  $(SYSLIBS4:.cma=.cmxa)   $^ 
-
 clean:: 
 	rm -f pfff_misc
 
@@ -607,10 +566,8 @@ clean::
 
 pfff_test: $(LIBS) main_test.cmo 
 	$(OCAMLC) $(CUSTOM) -o $@ $(SYSLIBS) $^
-
 pfff_test.opt: $(LIBS:.cma=.cmxa) main_test.cmx
 	$(OCAMLOPT) $(STATIC) -o $@ $(SYSLIBS:.cma=.cmxa) $^
-
 clean::
 	rm -f pfff_test
 
@@ -678,28 +635,22 @@ website:
 # Developer rules
 ##############################################################################
 
-.PHONY:: tags db layers   tests test
+.PHONY:: tags db graph visual layers   tests test
 
 tags:
 	./stags -verbose -lang ml .
 db:
 	./pfff_db -verbose  -lang ml -o DB_LIGHT.marshall .
 graph:
-	./codegraph.opt -lang ml -build .
+	./codegraph.opt -lang cmt -build .
 layers:
 	./pfff_db_heavy -gen_age_layer /home/pad/local/pfff-for-layers \
           layer_age.marshall
 	./pfff_db_heavy -gen_age_layer /home/pad/local/pfff-for-layers \
           layer_age.json
-
 visual:
 	./codemap -no_legend -profile -ss 2 \
 	   -with_info DB_LIGHT.marshall -with_layers . -filter pfff .
-visual2:
-	./codemap -no_legend -profile -ss 2 \
-	   -with_info DB_LIGHT.marshall -with_layers . .
-visualhead:
-	./codemap -ss 1 -ft 0.5 -commitid HEAD
 
 tests:
 	$(MAKE) rec && $(MAKE) pfff_test
@@ -723,6 +674,19 @@ fb.opt:
 fbdepend:
 	$(MAKE) depend
 	$(MAKE) depend -C facebook
+
+
+
+
+visual2:
+	./codemap -no_legend -profile -ss 2 \
+	   -with_info DB_LIGHT.marshall -with_layers . .
+visualhead:
+	./codemap -ss 1 -ft 0.5 -commitid HEAD
+
+graph2:
+	./codegraph.opt -lang ml -build .
+
 
 #refactoring:
 # git grep -l Source_high | xargs perl -p -i -e 's/Source_highlight/Highlight_code/g'
