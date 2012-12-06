@@ -106,7 +106,7 @@ doti:
 # Generic ocaml rules
 ##############################################################################
 
-.SUFFIXES: .ml .mli .cmo .cmi .cmx
+.SUFFIXES: .ml .mli .cmo .cmi .cmx .cmt
 
 .ml.cmo:
 	$(OCAMLC)  -c $<
