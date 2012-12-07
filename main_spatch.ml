@@ -153,7 +153,8 @@ let main_action xs =
           let tmpfile = Common.new_temp_file "spatch" ".spatch" in
           Common.with_open_outfile tmpfile (fun (pr, _chan) ->
             pr (spf "- %s\n" before);
-            pr (spf "+ %s\n" after);
+            if after <> "" 
+            then pr (spf "+ %s\n" after);
           );
           tmpfile
         end 
