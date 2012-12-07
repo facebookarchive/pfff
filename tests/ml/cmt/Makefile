@@ -8,7 +8,7 @@ SRC=pervasives.ml list.ml hashtbl.ml \
   namespace_type_value.ml namespace_type_field.ml \
   letrec.ml typerec.ml letrec_nested.ml \
   alias_type_function.ml use_hashtbl.ml \
-  dupe_exn.ml
+  dupe_exn.ml let_scope.ml
 
 # not handled well
 #  functor.ml \
