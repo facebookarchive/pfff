@@ -642,7 +642,7 @@ tags:
 db:
 	./pfff_db -verbose  -lang ml -o DB_LIGHT.marshall .
 graph:
-	./codegraph.opt -lang cmt -build .
+	./codegraph -lang cmt -build .
 layers:
 	./pfff_db_heavy -gen_age_layer /home/pad/local/pfff-for-layers \
           layer_age.marshall
