@@ -243,6 +243,9 @@ let drop_esthet_between_removed xs =
   in
   outside_remove xs
 
+(* note that it will also remove comments in the line if everthing else
+ * was removed, which is what we want most of the time
+ *)
 let drop_whole_line_if_only_removed xs =
   let (before_first_newline, xxs) = xs +> Common.group_by_pre (function
     | Esthet Newline -> true | _ -> false)
@@ -251,13 +254,13 @@ let drop_whole_line_if_only_removed xs =
     let has_a_remove = 
       elts_after_newline +> List.exists (function 
       | Removed _ -> true | _ -> false) in
-    let only_remove_or_space = 
+    let only_remove_or_esthet = 
       elts_after_newline +> List.for_all (function
       | Esthet _ | Removed _ -> true
       | Added _ | OrigElt _ -> false
       )
     in
-    has_a_remove && only_remove_or_space
+    has_a_remove && only_remove_or_esthet
   )
   in
   before_first_newline ++ 
