@@ -226,20 +226,42 @@ let rec ast2_to_elts ast2 =
     ) |> List.flatten
   ) |> List.flatten
 
-let drop_esthet_between_remove xs =
+(* but needs to keep the Removed, otherwise drop_whole_line_if_only_removed()
+ * can not know which new empty lines it has to remove
+ *)
+let drop_esthet_between_removed xs =
   let rec outside_remove = function
     | [] -> []
-    | Removed _::xs -> in_remove [] xs
+    | Removed s::xs -> Removed s:: in_remove [] xs
     | x::xs -> x::outside_remove xs
   and in_remove acc = function
     | [] -> List.rev acc
-    | Removed _::xs -> in_remove [] xs
+    | Removed s::xs -> Removed s::in_remove [] xs
     | Esthet x::xs -> in_remove (Esthet x::acc) xs
     | Added s::xs -> List.rev (Added s::acc) ++ outside_remove xs
     | OrigElt s::xs -> List.rev (OrigElt s::acc) ++ outside_remove xs 
   in
   outside_remove xs
 
+let drop_whole_line_if_only_removed xs =
+  let (before_first_newline, xxs) = xs +> Common.group_by_pre (function
+    | Esthet Newline -> true | _ -> false)
+  in
+  let xxs = xxs +> Common.exclude (fun (newline, elts_after_newline) ->
+    let has_a_remove = 
+      elts_after_newline +> List.exists (function 
+      | Removed _ -> true | _ -> false) in
+    let only_remove_or_space = 
+      elts_after_newline +> List.for_all (function
+      | Esthet _ | Removed _ -> true
+      | Added _ | OrigElt _ -> false
+      )
+    in
+    has_a_remove && only_remove_or_space
+  )
+  in
+  before_first_newline ++ 
+    (xxs +> List.map (fun (elt, elts) -> elt::elts) +> List.flatten)
 
 let string_of_program2_using_transfo ast2 =
 
@@ -249,7 +271,8 @@ let string_of_program2_using_transfo ast2 =
     let xs = ast2_to_elts ast2 in
     if debug 
     then xs +> List.iter (fun x -> (pr2 (Ocaml.string_of_v (vof_elt x))));
-    let xs = drop_esthet_between_remove xs in
+    let xs = drop_esthet_between_removed xs in
+    let xs = drop_whole_line_if_only_removed xs in
     
     xs +> List.iter (function
     | OrigElt s | Added s | Esthet (Comment s | Space s) -> pp s
