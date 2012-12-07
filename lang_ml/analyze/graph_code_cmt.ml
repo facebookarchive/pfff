@@ -551,7 +551,7 @@ and structure_item_desc env = function
   | Tstr_exception ((id, _loc, v3)) ->
       let full_ident = env.current_entity ++ ["exn";Ident.name id] in
       let node = (full_ident, E.Exception) in
-      let env = add_node_and_edge_if_defs_mode env node in
+      let env = add_node_and_edge_if_defs_mode ~dupe_ok:true env node in
       exception_declaration env v3
   | Tstr_exn_rebind ((id, _loc, v3, _loc2)) ->
       let full_ident = env.current_entity ++ ["exn";Ident.name id] in
