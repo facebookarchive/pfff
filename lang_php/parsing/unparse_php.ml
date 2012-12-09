@@ -209,6 +209,11 @@ let s_of_add = function
   | AddStr s -> s
   | AddNewlineAndIdent -> raise Todo
 
+(* less:
+ * - use a AddedBefore where should use a AddedAfter on bar.spatch
+ * - put some newline in the Added of a spatch, add_statement.spatch
+ *   too many places where we do ugly hack around newline
+ *)
 let rec ast2_to_elts ast2 =
   ast2 |> List.map (fun (_ast, (_s, toks)) ->
     toks |> List.map (fun tok ->
