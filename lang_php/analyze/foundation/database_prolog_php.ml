@@ -104,31 +104,8 @@ let name_of_node = function
   | CG.Method (s1, s2) -> spf "('%s','%s')" s1 s2
   | CG.FakeRoot -> "'__FAKE_ROOT__'"
 
-(* quite similar to database_code.string_of_id_kind *)
-let string_of_id_kind = function
-  | E.Function -> "function"
-  | E.Constant -> "constant"
-  | E.Class x ->
-      (match x with
-      | E.RegularClass -> "class"
-      | E.Interface -> "interface"
-      | E.Trait -> "trait"
-      )
-  (* the static/1 predicate will say if static method (or class var) *)
-  | E.Method _ -> "method"
-
-  (* could also put 'constant' here as the pair of (class,cst) will already
-   * differentiate it from regular constants.
-   *)
-  | E.ClassConstant -> "constant"
-  | E.Field -> "field"
-
-  | E.TopStmts  -> "stmtlist"
-  | E.Other _ -> "idmisc"
-  | E.Exception -> "exception"
-  | E.Constructor -> "constructor"
-  | (E.MultiDirs|E.Dir|E.File|E.Macro|E.Global|E.Type|E.Module|E.Package) ->
-      raise Impossible
+let string_of_id_kind x = 
+  Graph_code_prolog.string_of_entity_kind x
 
 let string_of_modifier = function
   | Public    -> "is_public"

@@ -27,11 +27,14 @@ let verbose = ref false
 
 let lang = ref "php"
 
-(* todo: should remove that at some point and be able to do everything in RAM *)
-let metapath = ref "/tmp/pfff_db"
+let skip_file dir = 
+  Filename.concat dir "skip_list.txt"
 (* todo: swipl (SWI-Prolog) is not in PATH by default on our machines *)
 let swipl = "/home/pad/packages/Linux/bin/swipl"
 let predicates_file = "/home/engshare/pfff/database_code.pl"
+
+(* todo: should remove that at some point and be able to do everything in RAM *)
+let metapath = ref "/tmp/pfff_db"
 
 (* action mode *)
 let action = ref ""
@@ -44,6 +47,11 @@ let action = ref ""
 (* Language specific, building the prolog db *)
 (*****************************************************************************)
 let build_prolog_db lang root =
+  let skip_list =
+    if Sys.file_exists (skip_file root)
+    then Skip_code.load (skip_file root)
+    else []
+  in
   match lang with
   | "php" ->
       (* 
@@ -91,6 +99,20 @@ let build_prolog_db lang root =
        pr2 "";
        pr2 (spf "Your compiled prolog DB is ready. Run %s/%s"
                !metapath prolog_compiled_db);
+
+  | "cmt" ->
+      let g = Graph_code_cmt.build ~verbose:!verbose root skip_list in
+      let facts = Graph_code_prolog.build root g in
+      let facts_pl_file = Filename.concat root "facts.pl" in
+      Common.with_open_outfile facts_pl_file (fun (pr_no_nl, _chan) ->
+        let pr s = pr_no_nl (s ^ "\n") in
+        facts +> List.iter (fun x -> pr (Graph_code_prolog.string_of_fact x))
+      );
+      let prolog_compiled_db = Filename.concat root "prolog_compiled_db" in
+      Common.command2 (spf "%s -c %s %s" swipl facts_pl_file predicates_file);
+      Common.command2 (spf "mv a.out %s" prolog_compiled_db);
+      pr2 (spf "Your compiled proog DB is ready. Run %s" prolog_compiled_db);
+      ()
 
   | _ -> failwith ("language not yet supported: " ^ lang)
 
