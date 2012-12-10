@@ -149,14 +149,14 @@ let add_node_and_edge_if_defs_mode ?(dupe_ok=false) env name_node loc =
     else begin
       env.g +> G.add_node node;
       env.g +> G.add_edge (env.current, node) G.Has;
-      let (_file, line, char) = Location.get_pos_info 
-        loc.Asttypes.loc.Location.loc_start in
+      let lexing_pos = loc.Asttypes.loc.Location.loc_start in
       let file = env.source_file in
       let nodeinfo = { Graph_code.
          pos = { Parse_info.
             str ="";
-            charpos = char;
-            line; column = 0;
+            line = lexing_pos.Lexing.pos_lnum; 
+            charpos = lexing_pos.Lexing.pos_cnum;
+            column = lexing_pos.Lexing.pos_cnum - lexing_pos.Lexing.pos_bol;
             file;
          };
          props = [];
@@ -964,7 +964,7 @@ and
 (* Main entry point *)
 (*****************************************************************************)
 
-let build ?(verbose=true) dir_or_file skip_list =
+let build ?(verbose=false) dir_or_file skip_list =
   let root = Common.realpath dir_or_file in
   let all_files = Lib_parsing_ml.find_cmt_files_of_dir_or_files [root] in
 

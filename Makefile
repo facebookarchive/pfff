@@ -638,7 +638,7 @@ website:
 .PHONY:: tags db graph visual layers   tests test
 
 tags:
-	./stags -verbose -lang ml .
+	./stags -lang cmt .
 db:
 	./pfff_db -verbose  -lang ml -o DB_LIGHT.marshall .
 graph:

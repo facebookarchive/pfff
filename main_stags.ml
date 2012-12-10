@@ -91,6 +91,14 @@ let rec defs_of_files_or_dirs lang xs =
       | [x] -> Tags_java.defs_of_dir_or_file ~verbose x skip_list
       | _ -> failwith "the java option accept only a single dir or file"
       )
+  | "cmt" ->
+      (match xs with
+      | [root] -> 
+          let g = Graph_code_cmt.build root skip_list in
+          Graph_code_tags.defs_of_graph_code ~verbose g
+
+      | _ -> failwith "the cmt option accept only a single dir or file"
+      )
 
   | _ -> failwith ("language not supported: " ^ lang)
       
