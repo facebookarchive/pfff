@@ -48,6 +48,9 @@ type fact =
 (*****************************************************************************)
 (* IO *)
 (*****************************************************************************)
+(* todo: hmm need to escape x no? In OCaml toplevel values can have a quote
+ * in their name, like foo'', which will not work well with Prolog atoms.
+ *)
 let string_of_entity (xs, x) =
   match xs with
   | [] -> spf "'%s'" x
