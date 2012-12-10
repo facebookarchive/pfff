@@ -424,7 +424,7 @@ purebytecode:
 stags: $(LIBS) main_stags.cmo 
 	$(OCAMLC) $(CUSTOM) -o $@ $(SYSLIBS) $^
 stags.opt: $(LIBS:.cma=.cmxa) main_stags.cmx
-	$(OCAMLOPT) $(STATIC) -o $@ $(BASICSYSLIBS:.cma=.cmxa) $^
+	$(OCAMLOPT) $(STATIC) -o $@ $(SYSLIBS:.cma=.cmxa) $^
 clean::
 	rm -f stags
 
