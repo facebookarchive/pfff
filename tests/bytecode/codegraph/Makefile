@@ -1,0 +1,18 @@
+SRC=Clone.java TestException.java
+
+OBJS=$(SRC:.java=.class)
+
+all: graph_code.marshall
+
+.PHONY: graph_code.marshall
+
+graph_code.marshall: $(OBJS)
+	~/pfff/codegraph -symlinks -lang bytecode -build .
+
+.SUFFIXES: .java .class
+
+.java.class:
+	javac $<
+
+clean:
+	rm -f *.class graph_code.*
