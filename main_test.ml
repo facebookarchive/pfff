@@ -71,6 +71,7 @@ let test regexp =
 
       Unit_parsing_java.unittest;
       Unit_analyze_java.unittest;
+      Unit_analyze_bytecode.unittest;
 
       Unit_parsing_js.unittest;
       Unit_analyze_js.unittest;

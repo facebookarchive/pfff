@@ -100,8 +100,15 @@ let build_prolog_db lang root =
        pr2 (spf "Your compiled prolog DB is ready. Run %s/%s"
                !metapath prolog_compiled_db);
 
-  | "cmt" ->
-      let g = Graph_code_cmt.build ~verbose:!verbose root skip_list in
+  | "cmt" | "bytecode" ->
+      let g = 
+        match lang with
+        | "cmt" -> 
+          Graph_code_cmt.build ~verbose:!verbose root skip_list 
+        | "bytecode" -> 
+          Graph_code_bytecode.build ~verbose:!verbose root skip_list 
+        | _ -> raise Impossible
+      in
       let facts = Graph_code_prolog.build root g in
       let facts_pl_file = Filename.concat root "facts.pl" in
       Common.with_open_outfile facts_pl_file (fun (pr_no_nl, _chan) ->

@@ -92,10 +92,9 @@ let string_of_entity_kind = function
   | E.Global -> "global"
   | E.Type -> "type"
   | E.Module -> "module"
+  | E.Package -> "package"
 
-  | (E.MultiDirs|E.Dir|E.File
-    |E.Macro|E.Package
-     ) ->
+  | (E.MultiDirs|E.Dir|E.File|E.Macro) ->
       raise Impossible
 
 let string_of_fact fact =
@@ -136,18 +135,17 @@ let build root g =
     let (str, kind) = n in
     (match kind with
     | E.Function | E.Global | E.Constant | E.Type
-    | E.Module
-        -> add (Kind (entity_of_str str, kind))
+    | E.Package | E.Module
     (* todo? field and constructor have a X.Y.type.fld so should
      * we generate for the entity a ([X;Y;type], fld) or ([X;Y], "type.fld")
      *)
     | E.Field | E.Constructor
-        -> add (Kind (entity_of_str str, kind))
+    | E.Method _ | E.Class _ | E.ClassConstant
     | E.Exception
         -> add (Kind (entity_of_str str, kind))
     | E.File -> ()
     | E.Dir -> ()
-    | _ -> 
+    | (E.Macro|E.TopStmts|E.Other _|E.MultiDirs) ->
         pr2_gen n;
         raise Todo
     );

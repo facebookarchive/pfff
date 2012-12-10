@@ -22,7 +22,7 @@ let prolog_query ~files query =
   Unix.mkdir tmp_dir 0o755;
   Common.finalize (fun () ->
 
-    (* generating cmt files *)
+    (* generating .cmt files *)
     files +> List.iter (fun (filename, content) ->
       Common.write_file ~file:(Filename.concat tmp_dir filename) content
     );
