@@ -36,6 +36,7 @@ module E = Database_code
 type fact =
   | At of entity * Common.filename (* readable path *) * int (* line *)
   | Kind of entity * Database_code.entity_kind
+  | Misc of string
 
   (* todo? could use a record with 
    *  namespace: string list; 
@@ -51,10 +52,19 @@ type fact =
 (* todo: hmm need to escape x no? In OCaml toplevel values can have a quote
  * in their name, like foo'', which will not work well with Prolog atoms.
  *)
+
+(* http://pleac.sourceforge.net/pleac_ocaml/strings.html *)
+let escape charlist str =
+  let rx = Str.regexp ("\\([" ^ charlist ^ "]\\)") in
+  Str.global_replace rx "\\\\\\1" str
+
+let escape_quote_and_double_quote s = escape "'\"" s
+
 let string_of_entity (xs, x) =
   match xs with
-  | [] -> spf "'%s'" x
-  | xs -> spf "('%s', '%s')" (Common.join "." xs) x
+  | [] -> spf "'%s'" (escape_quote_and_double_quote x)
+  | xs -> spf "('%s', '%s')" (Common.join "." xs) 
+    (escape_quote_and_double_quote x)
   
 (* Quite similar to database_code.string_of_id_kind, but with lowercase
  * because of prolog atom convention. See also database_code.pl comment
@@ -95,7 +105,8 @@ let string_of_fact fact =
         spf "kind(%s, %s)" (string_of_entity entity) 
           (string_of_entity_kind kind)
     | At (entity, file, line) ->
-      raise Todo
+        spf "at(%s, '%s', %d)" (string_of_entity entity) file line
+    | Misc s -> s
   in
   s ^ "."
 
@@ -118,10 +129,12 @@ let build root g =
 
   let res = ref [] in
   let add x = Common.push2 x res in
+
+  add (Misc ":- discontiguous kind/2, at/3");
   (* defs *)
   g +> G.iter_nodes (fun n ->
     let (str, kind) = n in
-    match kind with
+    (match kind with
     | E.Function | E.Global | E.Constant | E.Type
     | E.Module
         -> add (Kind (entity_of_str str, kind))
@@ -132,9 +145,19 @@ let build root g =
         -> add (Kind (entity_of_str str, kind))
     | E.Exception
         -> add (Kind (entity_of_str str, kind))
+    | E.File -> ()
     | E.Dir -> ()
     | _ -> 
         pr2_gen n;
         raise Todo
+    );
+    (try 
+      let nodeinfo = G.nodeinfo n g in
+      add (At (entity_of_str str, 
+               nodeinfo.G.pos.Parse_info.file,
+               nodeinfo.G.pos.Parse_info.line))
+    with Not_found -> ()
+    );
+     
   );
-  !res
+  List.rev !res

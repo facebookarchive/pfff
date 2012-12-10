@@ -92,6 +92,16 @@ let g = Pervasives.ref 0
        ["global"]  (prolog_query ~files "kind(('Foo','g'), X), writeln(X)");
    );
 
+   "at" >:: (fun () ->
+     let files = [
+"foo.ml", " (* line 1 *)
+let f x = x (* line 2 *)
+let c = 1   (* line 3 *)
+";] in
+     assert_equal 
+       ["3"]  (prolog_query ~files "at(('Foo','c'), _, X), writeln(X)");
+   );
+
  ])
 
 (*****************************************************************************)
