@@ -57,6 +57,9 @@ Fig_graph_ml.pdf
 /data/php_stdlib.defs_marshalled
 *.marshall
 *.matrix
+*.opti
+*facts.pl
+*prolog_compiled_db
 
 web/var/dbs
 
