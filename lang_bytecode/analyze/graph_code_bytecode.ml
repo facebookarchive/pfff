@@ -201,6 +201,20 @@ let lookup g n s =
     )
   )
 
+let unmangle graph_java (full_str_bytecode_name, kind) =
+  let xs = Common.split "\\." full_str_bytecode_name in
+  let (package, bytecode_name_entity) =
+    (match List.rev xs with
+    | [] -> raise Impossible
+    | x::xs -> List.rev xs, x
+    )
+  in
+  let ys = Common.split "\\$" bytecode_name_entity in
+  
+  let full_name = package ++ ys in
+  Common.join "." full_name, kind
+  
+
 (*****************************************************************************)
 (* Defs *)
 (*****************************************************************************)
@@ -214,12 +228,13 @@ let extract_defs ~g ~file ~graph_code_java ast =
   g +> G.add_node node;
   g +> G.add_edge (current, node) G.Has;
   graph_code_java +> Common.do_option (fun g2 ->
+    let node' = unmangle g2 node in
     try 
-      let nodeinfo = G.nodeinfo node g2 in
+      let nodeinfo = G.nodeinfo node' g2 in
       g +> G.add_nodeinfo node nodeinfo
     with Not_found ->
-      pr2 (spf "could not find the corresponding nodeinfo in the java graph: %s"
-             (G.string_of_node node))
+      pr2 (spf "could not find nodeinfo in the java graph of %s (guess was %s)"
+             (G.string_of_node node) (G.string_of_node node'))
   );
 
   let current = node in

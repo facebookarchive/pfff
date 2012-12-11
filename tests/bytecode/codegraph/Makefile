@@ -1,4 +1,4 @@
-SRC=Clone.java TestException.java
+SRC=Clone.java TestException.java NestedClass.java GenericClass.java
 
 OBJS=$(SRC:.java=.class)
 

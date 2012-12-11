@@ -96,10 +96,17 @@ class Bar {
 "Foo.java", " // line 1
               // line 2
 class Foo {   // line 3
+  class NestedFoo { // line 4
+  }
 }
 ";] in
      assert_equal
-       ["3"] (prolog_query ~files "at('Foo', _, X), writeln(X)")
+       ["3"] (prolog_query ~files "at('Foo', _, X), writeln(X)");
+     (* todo: at some point we need to also expose the original java entity
+      * name in the bytecode codegraph.
+      *)
+     assert_equal
+       ["4"] (prolog_query ~files "at('Foo\\$NestedFoo', _, X), writeln(X)");
    );
  ])
 
