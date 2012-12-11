@@ -106,7 +106,12 @@ let build_prolog_db lang root =
         | "cmt" -> 
           Graph_code_cmt.build ~verbose:!verbose root skip_list 
         | "bytecode" -> 
-          Graph_code_bytecode.build ~verbose:!verbose root skip_list 
+          let graph_code_java = 
+            Some (Graph_code_java.build ~verbose:!verbose ~only_defs:true
+                    root skip_list) 
+          in
+          Graph_code_bytecode.build ~verbose:!verbose ~graph_code_java 
+            root skip_list 
         | _ -> raise Impossible
       in
       let facts = Graph_code_prolog.build root g in

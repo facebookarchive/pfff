@@ -236,10 +236,10 @@ LIBS= commons/commons.cma \
      lang_cpp/analyze/lib.cma \
     lang_c/parsing/lib.cma \
      lang_c/analyze/lib.cma \
-    lang_bytecode/parsing/lib.cma \
-     lang_bytecode/analyze/lib.cma \
     lang_java/parsing/lib.cma \
      lang_java/analyze/lib.cma \
+    lang_bytecode/parsing/lib.cma \
+     lang_bytecode/analyze/lib.cma \
     lang_python/parsing/lib.cma \
      lang_python/analyze/lib.cma \
     lang_csharp/parsing/lib.cma \
@@ -643,6 +643,9 @@ db:
 	./pfff_db -verbose  -lang ml -o DB_LIGHT.marshall .
 graph:
 	./codegraph -lang cmt -build .
+prolog:
+	./codequery -lang cmt -build .
+	rm -f facts.pl
 layers:
 	./pfff_db_heavy -gen_age_layer /home/pad/local/pfff-for-layers \
           layer_age.marshall

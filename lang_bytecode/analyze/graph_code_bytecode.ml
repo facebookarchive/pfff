@@ -28,11 +28,25 @@ open JClassLow
  * for more information.
  * 
  * As opposed to lang_java/analyze/graph_code_java.ml, no need for:
- *  - package lookup (all names are resolved already)
- *  - nested classes are compiled in another class with a $ suffix
- *  - generics?
+ *  - package lookup, all names are resolved in the bytecode
+ *    (still need a class lookup for fields/methods though ...)
+ *  - handling nested classes, they are compiled in another class
+ *    with a $ suffix
+ *  - handling generics?
+ *  - type checking to resolve certain method calls, the bytecode is fully
+ *    typed (a bit like TAL), one can get the type of each 'invoke' opcode
  * 
- * Still need a class lookup for fields/methods though ...
+ * I now pass a graph_code_java as a parameter to get the source code
+ * location for the entities. The bytecode has attributes
+ * such as AttributeSourceFile (and AttributeLineNumberTable) but:
+ *  - the filename there does not have any directory information, so
+ *    one would need to look for all java files with this name, parse
+ *    them, and extract the package name in it to disambiguate
+ *  - some opcodes have entries in a LineNumberTable, but what about
+ *    empty methods? and what about the LineNumberTable for the class?
+ * So for now I just abuse the graph_code for java and try to map a
+ * node in graph_code_bytecode to a node in graph_code_java (which by
+ * side effects help understand how things are translated).
  * 
  * todo: StaticMethod, StaticField, the bytecode has this information
  * less: put back nested classes inside the other
@@ -91,7 +105,6 @@ let package_and_name_of_str name =
 let package_and_name_of_cname class_name =
   let name = JBasics.cn_name class_name in
   package_and_name_of_str name
-
 
 
 (* quite similar to create_intermediate_directories_if_not_present *)
@@ -191,7 +204,7 @@ let lookup g n s =
 (*****************************************************************************)
 (* Defs *)
 (*****************************************************************************)
-let extract_defs ~g ast =
+let extract_defs ~g ~file ~graph_code_java ast =
   let jclass = ast in
 
   let (package, name) = package_and_name_of_cname jclass.j_name in
@@ -200,6 +213,14 @@ let extract_defs ~g ast =
   let node = (name, E.Class E.RegularClass) in
   g +> G.add_node node;
   g +> G.add_edge (current, node) G.Has;
+  graph_code_java +> Common.do_option (fun g2 ->
+    try 
+      let nodeinfo = G.nodeinfo node g2 in
+      g +> G.add_nodeinfo node nodeinfo
+    with Not_found ->
+      pr2 (spf "could not find the corresponding nodeinfo in the java graph: %s"
+             (G.string_of_node node))
+  );
 
   let current = node in
 
@@ -370,7 +391,7 @@ and code env x =
 (* Main entry point *)
 (*****************************************************************************)
 
-let build ?(verbose=true) dir_or_file skip_list =
+let build ?(verbose=true) ?(graph_code_java=None) dir_or_file skip_list =
   let root = Common.realpath dir_or_file in
   let all_files = 
     Lib_parsing_bytecode.find_source_files_of_dir_or_files [root] in
@@ -392,7 +413,7 @@ let build ?(verbose=true) dir_or_file skip_list =
        * folloing creation of classes under com will then finish 
        * under EXTERNAL too
        *)
-      extract_defs ~g ast;
+      extract_defs ~g ~file ~graph_code_java ast;
       ()
     ));
 

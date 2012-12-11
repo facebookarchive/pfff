@@ -227,7 +227,11 @@ let build_graph_code lang root =
     | "web" -> raise Todo
     | "c" -> Graph_code_c.build ~verbose:!verbose root skip_list
     | "java" -> Graph_code_java.build ~verbose:!verbose root skip_list
-    | "bytecode" -> Graph_code_bytecode.build ~verbose:!verbose root skip_list
+    | "bytecode" -> 
+      let graph_code_java = Some (Graph_code_java.build ~verbose:!verbose
+        ~only_defs:true root skip_list) in
+      Graph_code_bytecode.build ~verbose:!verbose ~graph_code_java
+        root skip_list
     | "cmt"  -> Graph_code_cmt.build ~verbose:!verbose root skip_list
     | _ -> failwith ("language not supported: " ^ lang)
   in

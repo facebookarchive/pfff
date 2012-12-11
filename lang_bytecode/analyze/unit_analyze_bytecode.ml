@@ -36,7 +36,13 @@ let prolog_query ~files query =
                         *)
                        (files +> List.map fst +> Common.join " "));
     let skip_list = [] in
-    let g = Graph_code_bytecode.build ~verbose:verbose tmp_dir skip_list in
+    let graph_code_java = 
+      Some (Graph_code_java.build ~verbose:verbose ~only_defs:true 
+              tmp_dir skip_list) 
+    in
+    let g = 
+      Graph_code_bytecode.build ~verbose:verbose ~graph_code_java 
+        tmp_dir skip_list in
     let facts = Graph_code_prolog.build tmp_dir g in
     let facts_pl_file = Filename.concat tmp_dir "facts.pl" in
     Common.with_open_outfile facts_pl_file (fun (pr_no_nl, _chan) ->
@@ -85,6 +91,16 @@ class Bar {
        ["method"]  (prolog_query ~files "kind(('Bar','g'), X), writeln(X)");
    );
 
+   "at" >:: (fun () ->
+     let files = [
+"Foo.java", " // line 1
+              // line 2
+class Foo {   // line 3
+}
+";] in
+     assert_equal
+       ["3"] (prolog_query ~files "at('Foo', _, X), writeln(X)")
+   );
  ])
 
 (*****************************************************************************)
