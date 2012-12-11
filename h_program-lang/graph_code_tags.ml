@@ -88,7 +88,11 @@ let defs_of_graph_code ?(verbose=false) g =
       Hashtbl.add hfile_to_tags file 
         { tag with Tags_file.tagname = reversed_tagname }
 
-    with Not_found -> ()
+    with Not_found -> 
+      (match kind with
+      | E.Package | E.File | E.Dir | E.TopStmts -> ()
+      | _ -> pr2 (spf "PB, nodeinfo not found for %s" str);
+      )
     )
   );
   Common.hkeys hfile_to_tags +> List.map (fun file ->

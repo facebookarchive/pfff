@@ -86,18 +86,18 @@ let rec defs_of_files_or_dirs lang xs =
       let tag1 = defs_of_files_or_dirs "php" xs in
       let tag2 = defs_of_files_or_dirs "js" xs in
       tag1 ++ tag2
-  | "java" ->
-      (match xs with
-      | [x] -> Tags_java.defs_of_dir_or_file ~verbose x skip_list
-      | _ -> failwith "the java option accept only a single dir or file"
-      )
-  | "cmt" ->
+  | ("cmt" | "java") ->
       (match xs with
       | [root] -> 
-          let g = Graph_code_cmt.build root skip_list in
+          let g = 
+            match lang with
+            | "cmt" -> Graph_code_cmt.build root skip_list
+            | "java" -> Graph_code_java.build ~only_defs:true root skip_list
+            | _ -> raise Impossible
+          in
           Graph_code_tags.defs_of_graph_code ~verbose g
 
-      | _ -> failwith "the cmt option accept only a single dir or file"
+      | _ -> failwith "the cmt|java options accept only a single dir or file"
       )
 
   | _ -> failwith ("language not supported: " ^ lang)
