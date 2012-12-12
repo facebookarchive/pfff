@@ -228,16 +228,36 @@ let unmangle graph_java (full_str_bytecode_name, kind) =
   in  
   let full_name = package ++ ys in
   Common.join "." full_name, kind
-  
+
+let java_basename_of_jclass jclass =
+  jclass.j_attributes +> Common.find_some (function
+  | AttributeSourceFile f -> Some f
+  | _ -> None
+  )
+
+(* remove the trailing $ *)
+let java_basename_of_bytecode_classname classname =
+  let xs = Common.split "\\." classname in
+  let bytecode_name_entity = Common.list_last xs in
+  let ys = Common.split "\\$" bytecode_name_entity in
+  List.hd ys ^ ".java"
+
 
 (*****************************************************************************)
 (* Defs *)
 (*****************************************************************************)
-let extract_defs ~g ~file ~graph_code_java ast =
+let extract_defs ~g ~file ~graph_code_java ~java_files ast =
   let jclass = ast in
 
   let (package, name) = package_and_name_of_cname jclass.j_name in
   let current = create_intermediate_packages_if_not_present g G.root package in
+
+  let hjavabasename_to_fullpath =
+    java_files 
+    +> List.map (fun file -> Filename.basename file, file)
+    +> Common.group_assoc_bykey_eff
+    +> Common.hash_of_list
+  in
 
   let node = (name, E.Class E.RegularClass) in
   g +> G.add_node node;
@@ -248,7 +268,21 @@ let extract_defs ~g ~file ~graph_code_java ast =
       let nodeinfo = G.nodeinfo node' g2 in
       g +> G.add_nodeinfo node nodeinfo
     with Not_found ->
-      pr2 (spf "could not find nodeinfo in the java graph of %s (guess was %s)"
+      let java_filename =
+        try 
+          java_basename_of_jclass jclass 
+        with Not_found ->
+          pr2 (spf "no AttributeSourceFile for %s" (G.string_of_node node));
+          java_basename_of_bytecode_classname name
+      in
+      let java_possible_files =
+        try 
+          Hashtbl.find hjavabasename_to_fullpath java_filename
+        with Not_found -> []
+      in
+      if null java_possible_files
+      then pr2 (spf "no java source file for %s" (G.string_of_node node))
+      else pr2 (spf "no nodeinfo in the java graph for %s (guess was %s)"
              (G.string_of_node node) (G.string_of_node node'))
   );
 
@@ -425,9 +459,14 @@ let build ?(verbose=true) ?(graph_code_java=None) dir_or_file skip_list =
   let root = Common.realpath dir_or_file in
   let all_files = 
     Lib_parsing_bytecode.find_source_files_of_dir_or_files [root] in
+  let all_java_files =
+    Lib_parsing_java.find_source_files_of_dir_or_files [root] in
 
   (* step0: filter noisy modules/files *)
-  let files = Skip_code.filter_files ~verbose skip_list root all_files in
+  let files = 
+    Skip_code.filter_files ~verbose skip_list root all_files in
+  let java_files = 
+    Skip_code.filter_files ~verbose skip_list root all_java_files in
 
   let g = G.create () in
   G.create_initial_hierarchy g;
@@ -443,7 +482,7 @@ let build ?(verbose=true) ?(graph_code_java=None) dir_or_file skip_list =
        * folloing creation of classes under com will then finish 
        * under EXTERNAL too
        *)
-      extract_defs ~g ~file ~graph_code_java ast;
+      extract_defs ~g ~file ~graph_code_java ~java_files ast;
       ()
     ));
 
