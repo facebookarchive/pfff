@@ -31,7 +31,9 @@ open JClassLow
  *  - package lookup, all names are resolved in the bytecode
  *    (still need a class lookup for fields/methods though ...)
  *  - handling nested classes, they are compiled in another class
- *    with a $ suffix
+ *    with a '$' used as a separator instead of '.'
+ *  - handling anonymous classes, they are compiled in another class with
+ *    a '$N' suffix.
  *  - handling generics?
  *  - type checking to resolve certain method calls, the bytecode is fully
  *    typed (a bit like TAL), one can get the type of each 'invoke' opcode
@@ -167,6 +169,10 @@ let add_use_edge env dst =
     g +> G.add_edge (src, dst) G.Use;
     ()
 
+(*****************************************************************************)
+(* Lookup *)
+(*****************************************************************************)
+
 let (lookup2: 
   Graph_code.graph -> Graph_code.node -> string -> Graph_code.node option) =
  fun g start fld ->
@@ -201,6 +207,10 @@ let lookup g n s =
     )
   )
 
+(*****************************************************************************)
+(* Bytecode<->Java connection *)
+(*****************************************************************************)
+
 let unmangle graph_java (full_str_bytecode_name, kind) =
   let xs = Common.split "\\." full_str_bytecode_name in
   let (package, bytecode_name_entity) =
@@ -210,7 +220,12 @@ let unmangle graph_java (full_str_bytecode_name, kind) =
     )
   in
   let ys = Common.split "\\$" bytecode_name_entity in
-  
+  let ys = 
+    if ys +> List.exists (fun s -> s =~ "[0-9]+")
+    (* todo: look in graph_java for the corresponding anon_xxx *)
+    then [List.hd ys]
+    else ys
+  in  
   let full_name = package ++ ys in
   Common.join "." full_name, kind
   
