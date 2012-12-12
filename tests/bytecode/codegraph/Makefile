@@ -1,4 +1,5 @@
-SRC=Clone.java TestException.java NestedClass.java GenericClass.java
+SRC=Clone.java TestException.java NestedClass.java GenericClass.java \
+    AnonClass.java
 
 OBJS=$(SRC:.java=.class)
 
@@ -8,6 +9,9 @@ all: graph_code.marshall
 
 graph_code.marshall: $(OBJS)
 	~/pfff/codegraph -symlinks -lang bytecode -build .
+
+prolog:
+	~/pfff/codequery -lang bytecode -build .
 
 .SUFFIXES: .java .class
 
