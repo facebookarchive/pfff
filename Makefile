@@ -635,17 +635,18 @@ website:
 # Developer rules
 ##############################################################################
 
-.PHONY:: tags db graph visual layers   tests test
+.PHONY:: tags graph prolog  db layers visual   tests test
 
 tags:
 	./stags -lang cmt .
-db:
-	./pfff_db -verbose  -lang ml -o DB_LIGHT.marshall .
 graph:
 	./codegraph -lang cmt -build .
 prolog:
 	./codequery -lang cmt -build .
 	rm -f facts.pl
+
+db:
+	./pfff_db -verbose  -lang ml -o DB_LIGHT.marshall .
 layers:
 	./pfff_db_heavy -gen_age_layer /home/pad/local/pfff-for-layers \
           layer_age.marshall
