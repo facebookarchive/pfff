@@ -246,18 +246,11 @@ let java_basename_of_bytecode_classname classname =
 (*****************************************************************************)
 (* Defs *)
 (*****************************************************************************)
-let extract_defs ~g ~file ~graph_code_java ~java_files ast =
+let extract_defs ~g ~file ~graph_code_java ~hjavabasename_to_fullpath ast =
   let jclass = ast in
 
   let (package, name) = package_and_name_of_cname jclass.j_name in
   let current = create_intermediate_packages_if_not_present g G.root package in
-
-  let hjavabasename_to_fullpath =
-    java_files 
-    +> List.map (fun file -> Filename.basename file, file)
-    +> Common.group_assoc_bykey_eff
-    +> Common.hash_of_list
-  in
 
   let node = (name, E.Class E.RegularClass) in
   g +> G.add_node node;
@@ -467,6 +460,12 @@ let build ?(verbose=true) ?(graph_code_java=None) dir_or_file skip_list =
     Skip_code.filter_files ~verbose skip_list root all_files in
   let java_files = 
     Skip_code.filter_files ~verbose skip_list root all_java_files in
+  let hjavabasename_to_fullpath =
+    java_files 
+    +> List.map (fun file -> Filename.basename file, file)
+    +> Common.group_assoc_bykey_eff
+    +> Common.hash_of_list
+  in
 
   let g = G.create () in
   G.create_initial_hierarchy g;
@@ -482,7 +481,7 @@ let build ?(verbose=true) ?(graph_code_java=None) dir_or_file skip_list =
        * folloing creation of classes under com will then finish 
        * under EXTERNAL too
        *)
-      extract_defs ~g ~file ~graph_code_java ~java_files ast;
+      extract_defs ~g ~file ~graph_code_java ~hjavabasename_to_fullpath ast;
       ()
     ));
 
