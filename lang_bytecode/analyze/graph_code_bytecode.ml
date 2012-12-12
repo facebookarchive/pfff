@@ -83,6 +83,19 @@ type env = {
  * lookup on those methods will fail.
  *)
 
+(* So "Foo.Bar$FooBar$1" is translated into something more structured,
+ * that is: the first anonymous class inside the nested class FooBar
+ * of class Bar in the Foo package.
+ *)
+type bytecode_class_name = {
+  package: string list;
+  baseclass: string;
+  nested_or_anon: dollar_suffix list
+}
+  and dollar_suffix =
+  | DollarNestedClass of string
+  | DollarAnonClass of int
+
 (*****************************************************************************)
 (* Helpers *)
 (*****************************************************************************)
@@ -98,16 +111,35 @@ let parse ~show_parse_error file =
                   (Common.exn_to_s exn));
     raise exn
 
-
-let package_and_name_of_str name =
+let bytecode_class_name_of_string name = 
   let xs = Common.split "\\." name in
-  let package = List.rev (List.tl (List.rev xs)) in
-  (package, name)
-
-let package_and_name_of_cname class_name =
-  let name = JBasics.cn_name class_name in
-  package_and_name_of_str name
-
+  let package, bytecode_name_entity  = 
+    match List.rev xs with
+    | [] -> failwith ("wrong format for bytecode class name: " ^ name)
+    | [x] -> [], x
+    | x::xs -> List.rev xs, x
+  in
+  let ys = Common.split "\\$" bytecode_name_entity in
+  match ys with
+  | [] -> failwith ("wrong format for bytecode class name: " ^ name)
+  | y::ys ->
+    { package; baseclass = y;
+      nested_or_anon = ys +> List.map (fun y ->
+        if y =~ "[0-9]+" 
+        then DollarAnonClass (s_to_i y)
+        else DollarNestedClass y
+      );
+    }
+let java_class_name_of_bytecode_class_name x =
+  Common.join "." (x.package ++ [x.baseclass]) ^
+  (x.nested_or_anon +> List.map (function
+   (* todo: need look in original java file, or have a more compatible
+    * convention of how I name anon class entities in graph_code_java.ml
+    *)
+   | DollarAnonClass i -> raise Todo
+   | DollarNestedClass s -> "." ^ s
+   ) +> Common.join ""
+  )
 
 (* quite similar to create_intermediate_directories_if_not_present *)
 let create_intermediate_packages_if_not_present g root xs =
@@ -158,9 +190,10 @@ let add_use_edge env dst =
     let parent_target = G.not_found in
     if not (G.has_node dst g)
     then begin 
-      let (fake_package, _name) = package_and_name_of_str fake_name in
+      (* probably inaccurate for fields/methods *)
+      let fake = bytecode_class_name_of_string fake_name in
       let parent = create_intermediate_packages_if_not_present 
-        g parent_target fake_package in
+        g parent_target fake.package in
       pr2 (spf "PB: lookup fail on %s (in %s)" 
              (G.string_of_node dst) (G.string_of_node src));
       g +> G.add_node dst;
@@ -212,36 +245,30 @@ let lookup g n s =
 (*****************************************************************************)
 
 let unmangle graph_java (full_str_bytecode_name, kind) =
-  let xs = Common.split "\\." full_str_bytecode_name in
-  let (package, bytecode_name_entity) =
-    (match List.rev xs with
-    | [] -> raise Impossible
-    | x::xs -> List.rev xs, x
-    )
+
+  let class_ = bytecode_class_name_of_string full_str_bytecode_name in
+  
+  let class_ = { class_ with
+    (* todo: look in graph_java for the corresponding anon_xxx at some point *)
+    nested_or_anon = class_.nested_or_anon +> List.filter (function
+    | DollarAnonClass _ -> false
+    | DollarNestedClass _ -> true
+    );
+  }
   in
-  let ys = Common.split "\\$" bytecode_name_entity in
-  let ys = 
-    if ys +> List.exists (fun s -> s =~ "[0-9]+")
-    (* todo: look in graph_java for the corresponding anon_xxx *)
-    then [List.hd ys]
-    else ys
-  in  
-  let full_name = package ++ ys in
-  Common.join "." full_name, kind
+  java_class_name_of_bytecode_class_name class_, kind
 
 let java_basename_of_jclass jclass =
   jclass.j_attributes +> Common.find_some (function
+  (* note that this always contain just a basename, e.g. "Foo.java", never
+   * a full path like "fb4a/com/facebook/Foo.java"
+   *)
   | AttributeSourceFile f -> Some f
   | _ -> None
   )
 
-(* remove the trailing $ *)
-let java_basename_of_bytecode_classname classname =
-  let xs = Common.split "\\." classname in
-  let bytecode_name_entity = Common.list_last xs in
-  let ys = Common.split "\\$" bytecode_name_entity in
-  List.hd ys ^ ".java"
-
+let java_basename_of_bytecode_classname x =
+  x.baseclass ^ ".java"
 
 (*****************************************************************************)
 (* Defs *)
@@ -249,8 +276,10 @@ let java_basename_of_bytecode_classname classname =
 let extract_defs ~g ~file ~graph_code_java ~hjavabasename_to_fullpath ast =
   let jclass = ast in
 
-  let (package, name) = package_and_name_of_cname jclass.j_name in
-  let current = create_intermediate_packages_if_not_present g G.root package in
+  let name = JBasics.cn_name jclass.j_name in
+  let class_ = bytecode_class_name_of_string name in
+  let current = 
+    create_intermediate_packages_if_not_present g G.root class_.package in
 
   let node = (name, E.Class E.RegularClass) in
   g +> G.add_node node;
@@ -266,8 +295,11 @@ let extract_defs ~g ~file ~graph_code_java ~hjavabasename_to_fullpath ast =
           java_basename_of_jclass jclass 
         with Not_found ->
           pr2 (spf "no AttributeSourceFile for %s" (G.string_of_node node));
-          java_basename_of_bytecode_classname name
+          java_basename_of_bytecode_classname class_
       in
+      (* todo: could disambiguate those files by parsing them and looking
+       * at their .package field.
+       *)
       let java_possible_files =
         try 
           Hashtbl.find hjavabasename_to_fullpath java_filename
