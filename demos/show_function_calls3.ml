@@ -18,10 +18,9 @@ let show_function_calls file =
   (*e: initialize hfuncs *)
 
   (*s: iter on asts using visitor, updating hfuncs *)
-    let visitor = V.mk_visitor
-     { V.default_visitor with
+    let visitor = V.mk_visitor  { V.default_visitor with
        V.klvalue = (fun (k, _) var ->
-        match Ast_php.untype var with
+        match var with
         | FunCallSimple (funcname, args) ->
 
             (*s: print funcname and nbargs *)
@@ -43,7 +42,7 @@ let show_function_calls file =
       );
     }
     in
-    asts |> List.iter visitor.V.vtop;
+    visitor (Program asts);
   (*e: iter on asts using visitor, updating hfuncs *)
 
   (*s: display hfuncs to user *)

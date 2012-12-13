@@ -50,9 +50,11 @@ let check_is_static_scalar s =
   with exn ->
     false
 
+(*
 let _ = example (check_is_static_scalar "1")
 let _ = example (check_is_static_scalar "array('a' => 1)")
 let _ = example (not (check_is_static_scalar "foo()"))
+*)
 
 (*****************************************************************************)
 (* Entry point *)

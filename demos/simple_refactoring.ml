@@ -155,14 +155,13 @@ let main files_or_dirs =
                (i_left_paren,
                [Left(
                  Arg(
-                   (Lv((Var(DName((var_name, i_13)), _scope_info), tlval_14)),
-                   t_15))); 
+                   (Lv((Var(DName((var_name, i_13)), _scope_info)))))); 
                 Right(i_token_comma);
-                Left(Arg((Sc(C(String((a_string, i_token_string)))), t_18)))
+                Left(Arg((Sc(C(String((a_string, i_token_string)))))))
                ],
-               i_right_paren)),
-             tlval_20)),
-          t_21) ->
+               i_right_paren))
+             ))
+          ) ->
             i_token_comma.PI.transfo <- PI.Remove;
             i_token_string.PI.transfo <- PI.Remove;
 
@@ -176,14 +175,12 @@ let main files_or_dirs =
                (i_12,
                [Left(
                  Arg(
-                   (Lv((Var(DName((var_name, i_13)), _scope_info), tlval_14)),
-                   t_15))); 
+                   (Lv((Var(DName((var_name, i_13)), _scope_info)))))); 
                 Right(token_comma);
                 Left(Arg(an_expr))
                ],
-               i_19)),
-             tlval_20)),
-          t_21) ->
+               i_19))
+           ))) ->
 
             (* let's get all the tokens composing the expression *)
             let tokens_in_expression = 

@@ -62,12 +62,13 @@ let navigator_extract_functions file =
 
           let hooks = { V.default_visitor with
             V.kexpr = (fun (k,_) x ->
-              match Ast.untype x with
+              match x with
               | New       (_,          classref, _)
               | AssignNew (_, _, _, _, classref, _) ->
                   (match classref with
-                  | ClassNameRefStatic name ->
+                  | ClassNameRefStatic (ClassName name) ->
                       Common.push2 (Ast.name name) instances;
+                  | ClassNameRefStatic _ -> ()
                   | ClassNameRefDynamic (var, objs) ->
                       (* TODO ? *)
                       ()
@@ -76,7 +77,7 @@ let navigator_extract_functions file =
               | _ -> k x
             );
             V.klvalue = (fun (k,_) x ->
-              match Ast.untype x with
+              match x with
               | FunCallSimple (name, args) -> 
                   Common.push2 (Ast.name name) funcs;
                   k x
@@ -88,7 +89,7 @@ let navigator_extract_functions file =
           } 
           in
           let visitor = V.mk_visitor hooks in
-          visitor.V.vtop top;
+          visitor (Toplevel top);
 
           let stat = 
             (* {
@@ -108,9 +109,8 @@ let navigator_extract_functions file =
           in
           Some (Ast.name def.f_name, stat)
 
-      | ClassDef _ | InterfaceDef _ 
+      | ClassDef _ | ConstantDef _
       | StmtList _
-      | Halt _
       | NotParsedCorrectly _ | FinalDef _ ->
           (* TODO ? *)
           None

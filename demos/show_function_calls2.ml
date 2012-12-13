@@ -12,11 +12,10 @@ let show_function_calls file =
   let asts = Parse_php.program_of_program2 asts2 in
 
   (*s: create visitor *)
-    let visitor = V.mk_visitor 
-     { V.default_visitor with
+    let visitor = V.mk_visitor { V.default_visitor with
        V.klvalue = (fun (k, _) var ->
 
-        match Ast_php.untype var with
+        match var with
         | FunCallSimple (funcname, args) ->
             (*s: print funcname *)
             let s = Ast_php.name funcname in
@@ -34,7 +33,7 @@ let show_function_calls file =
     in
   (*e: create visitor *)
   (*s: iter on asts using visitor *)
-    asts |> List.iter visitor.V.vtop
+  visitor (Program  asts)
   (*e: iter on asts using visitor *)
 (*e: show_function_calls v2 *)
 

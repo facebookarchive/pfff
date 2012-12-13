@@ -11,7 +11,6 @@ let show_function_calls file =
 
   (*s: iter on asts manually *)
     asts |> List.iter (fun toplevel ->
-
       match toplevel with
       | StmtList stmts ->
           (*s: iter on stmts *)
@@ -19,10 +18,10 @@ let show_function_calls file =
             (match stmt with
             | ExprStmt (e, _ptvirg) ->
       
-                (match Ast_php.untype e with
+                (match e with
                 | Lv var ->
           
-                    (match Ast_php.untype var with
+                    (match var with
                     | FunCallSimple (funcname, args) ->
                         (*s: print funcname *)
                         let s = Ast_php.name funcname in
@@ -39,8 +38,9 @@ let show_function_calls file =
           )
           (*e: iter on stmts *)
 
-      | (FuncDef _|ClassDef _|InterfaceDef _|Halt _
-          |NotParsedCorrectly _| FinalDef _)
+      | (ConstantDef _|FuncDef _|ClassDef _
+        |NotParsedCorrectly _| FinalDef _
+        )
         -> ()
     )
   (*e: iter on asts manually *)

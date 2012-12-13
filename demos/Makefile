@@ -3,6 +3,8 @@
 # This is to show how to build a simple Makefile from scratch
 # to people who wants to use pfff in their own application.
 
+all: simple_refactoring check_is_static_literal find_methods_return_this
+
 ##############################################################################
 # Simple compilation
 ##############################################################################
@@ -18,7 +20,7 @@ simple_refactoring: simple_refactoring.ml
           simple_refactoring.ml
 
 clean::
-	rm simple_refactoring
+	rm -f simple_refactoring
 
 check_is_static_literal: check_is_static_literal.cmo
 	ocamlc -g -o $@ \
@@ -29,7 +31,18 @@ check_is_static_literal: check_is_static_literal.cmo
           $^
 
 clean::
-	rm check_is_static_literal
+	rm -f check_is_static_literal
+
+find_methods_return_this: find_methods_return_this.cmo
+	ocamlc -g -o $@ \
+         -I ../commons -I ../lang_php/parsing -I ../h_program-lang \
+          str.cma unix.cma nums.cma bigarray.cma \
+	  ../commons/commons.cma ../h_program-lang/lib.cma \
+          ../lang_php/parsing/lib.cma \
+          $^
+
+clean::
+	rm -f find_methods_return_this
 
 ##############################################################################
 # Variables

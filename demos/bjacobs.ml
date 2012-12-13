@@ -157,7 +157,7 @@ let (path_analysis: Ast_php.expr -> Ast_php.info -> Common.filename) =
                   (Ast.string_of_info tok)));
   in
     
-  match Ast.untype e with
+  match e with
 
   (* e.g.  $_SERVER['PHP_ROOT'] . '/lib/foo.php' *)
   | Binary (e1, 
@@ -165,15 +165,14 @@ let (path_analysis: Ast_php.expr -> Ast_php.info -> Common.filename) =
            e2) ->
 
       let base = 
-        match Ast.untype e1 with
+        match e1 with
         | Lv
             (VArrayAccess
-                ((Var (DName (varname, _), _scope), _t),
+                ((Var (DName (varname, _), _scope)),
                 (_tok,
                 Some
-                  (Sc (Ast.C (String (fieldname, _info))), _t2),
-                _info2)),
-            _t3)
+                  (Sc (Ast.C (String (fieldname, _info)))),
+                _info2)))
           ->
             (match varname, fieldname with
             | "_SERVER", "PHP_ROOT" -> 
@@ -193,7 +192,7 @@ let (path_analysis: Ast_php.expr -> Ast_php.info -> Common.filename) =
         | _ -> not_handled_include_format ()
       in
       let rest = 
-        match Ast.untype e2 with
+        match e2 with
         | Sc (Ast.C (String (str, _info))) ->
             str
         | _ ->  not_handled_include_format ()
@@ -261,7 +260,7 @@ let dependencies_file file =
 
     V.kexpr = (fun (k, bigf) x ->
 
-      match Ast.untype x with
+      match x with
 
       | Require (tok, e) | RequireOnce (tok, e)
       | Include (tok, e) | IncludeOnce (tok, e) 
@@ -281,7 +280,7 @@ let dependencies_file file =
       | New (tok, classname_ref, _) 
       | AssignNew (_, _, _, tok, classname_ref, _) ->
           (match classname_ref with
-          | ClassNameRefStatic classname -> 
+          | ClassNameRefStatic (ClassName classname) -> 
               let sclass = Ast.name classname in
               let info = Ast.info_of_name classname in
               Common.push2 ({
@@ -289,6 +288,7 @@ let dependencies_file file =
                 e_pos = pos_of_info info;
               }) depends;
   
+          | ClassNameRefStatic (_) -> ()
           | ClassNameRefDynamic _ -> ()
           );
           k x
@@ -300,14 +300,12 @@ let dependencies_file file =
 
       | Assign(
          (VArrayAccess(
-            (VArrayAccess((Var(DName(("GLOBALS", i_1)), t), tlval_2),
+            (VArrayAccess((Var(DName(("GLOBALS", i_1)), t)),
                (i_3,
-                Some((Sc(Ast.C(String(("THRIFT_AUTOLOAD", i_4)))), t_5)),
-                i_6)),
-             tlval_7),
-            (i_8, Some((Sc(Ast.C(String((sclass, i_9)))), t_10)), i_11)),
-          tlval_12), i_13,
-         (Sc(Ast.C(String((sfile, info_file)))), t_15))
+                Some((Sc(Ast.C(String(("THRIFT_AUTOLOAD", i_4)))))),
+                i_6))),
+            (i_8, Some((Sc(Ast.C(String((sclass, i_9)))))), i_11))), i_13,
+         (Sc(Ast.C(String((sfile, info_file))))))
 
         -> 
           Common.push2 ({
@@ -323,11 +321,10 @@ let dependencies_file file =
           
 
     V.klvalue = (fun (k, _) v ->
-      match Ast.untype v with
+      match v with
       | FunCallSimple (name, args) ->
           (* recurse *)
           k v;
-
 
           let sfunc = Ast.name name in
           let info = Ast.info_of_name name in
@@ -338,7 +335,7 @@ let dependencies_file file =
           (match sfunc, args +> Ast.unparen +> Ast.uncomma  with
 
           | "define",
-              (Arg ((Sc (Ast.C (String (s,info)))), _t))::xs ->
+              (Arg ((Sc (Ast.C (String (s,info))))))::xs ->
 
               Common.push2 {
                 e_kind = Constant s;
@@ -350,13 +347,13 @@ let dependencies_file file =
            * and to which include directive they expand to.
            *)
           | ("require_module" | "require_module_lazy") ,
-            [(Arg ((Sc (Ast.C (String (str,_))), _t1)))] ->
+            [(Arg ((Sc (Ast.C (String (str,_))))))] ->
               Common.push2 (
                 "/flib/" ^ str ^ "/__init__.php", pos_of_info info
               ) includes;
 
           | "require_source",
-            [(Arg ((Sc (Ast.C (String (str,_))), _t1)))] ->
+            [(Arg ((Sc (Ast.C (String (str,_))))))] ->
 
               (* dir, base, extension *)
               let (d,b,e) = 
@@ -370,14 +367,14 @@ let dependencies_file file =
 
 
           | "require_conf",
-            [(Arg ((Sc (Ast.C (String (str,_))), _t1)))] ->
+            [(Arg ((Sc (Ast.C (String (str,_))))))] ->
               Common.push2 (
                 "/conf/" ^ str, pos_of_info info
               ) includes;
 
           | "require_thrift_package",
-            [(Arg ((Sc (Ast.C (String (str,_))), _)));
-             (Arg ((Sc (Ast.C (String (str2,_))), _)))
+            [(Arg ((Sc (Ast.C (String (str,_))))));
+             (Arg ((Sc (Ast.C (String (str2,_))))))
             ] ->
               Common.push2 (
                 spf "/lib/thrift/packages/%s/%s.php" str str2, 
@@ -434,7 +431,7 @@ let dependencies_file file =
   }
   in
   let visitor = V.mk_visitor hooks in
-  visitor.V.vprogram ast;
+  visitor (Program ast);
 
   { 
     includes = List.rev !includes;

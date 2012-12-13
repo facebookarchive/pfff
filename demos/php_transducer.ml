@@ -34,20 +34,17 @@ module V = Visitor_php
 let visit asts = 
   let props = ref [] in 
 
-  let hooks = { V.default_visitor with
+  let visitor = V.mk_visitor { V.default_visitor with
     V.ktop = (fun (k, bigf) top -> 
       match top with
-
       | FuncDef (def) -> 
           let name = Ast.name def.f_name in
           Common.push2 ("function:" ^name) props;
-
       | _ -> 
           ()
     );
   } in
-  asts +> List.iter (V.mk_visitor hooks).V.vtop;
-
+  visitor (Program asts);
   List.rev !props
 
 
