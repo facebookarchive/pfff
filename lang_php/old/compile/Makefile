@@ -11,7 +11,7 @@ SRC= \
   compile_php.ml \
 
 
-LIBS=../commons/commons.cma \
+LIBS=../commons/lib.cma \
      ../parsing/lib.cma \
      ../mini/lib.cma \
 

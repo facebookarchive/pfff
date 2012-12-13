@@ -13,7 +13,7 @@ SRC= ast_c.ml \
 
 SYSLIBS= str.cma unix.cma 
 
-LIBS=$(TOP)/commons/commons.cma \
+LIBS=$(TOP)/commons/lib.cma \
  $(TOP)/h_program-lang/lib.cma \
  $(TOP)/lang_cpp/parsing/lib.cma
 

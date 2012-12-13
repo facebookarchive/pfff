@@ -10,7 +10,7 @@ SRC= \
   unit_coverage_php.ml \
 
 SYSLIBS= str.cma unix.cma 
-LIBS=$(TOP)/commons/commons.cma \
+LIBS=$(TOP)/commons/lib.cma \
 
 INCLUDEDIRS= $(TOP)/commons \
   $(TOP)/commons/ocollection $(TOP)/commons/ocamlextra \

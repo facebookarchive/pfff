@@ -12,7 +12,7 @@ SRC= \
   unit_pretty_print_php.ml
 
 LIBS= \
-  $(TOP)/commons/commons.cma \
+  $(TOP)/commons/lib.cma \
   $(TOP)/h_program-lang/lib.cma \
   $(TOP)/globals/lib.cma \
   $(TOP)/lang_php/parsing/lib.cma \

@@ -53,7 +53,7 @@ test_mandel: test_mandel.ml mpi.cmxa libcamlmpi.a
 	ocamlopt -o test_mandel graphics.cmxa mpi.cmxa test_mandel.ml -ccopt -L.
 
 test_pad: test_pad.ml mpi.cma
-	ocamlc -o test_pad -I ../../commons bigarray.cma str.cma unix.cma nums.cma ../../commons/commons.cma mpi.cma test_pad.ml -ccopt -L.
+	ocamlc -o test_pad -I ../../commons bigarray.cma str.cma unix.cma nums.cma ../../commons/lib.cma mpi.cma test_pad.ml -ccopt -L.
 
 test2:
 	mpirun -np 3 ./test_pad arg1 arg2

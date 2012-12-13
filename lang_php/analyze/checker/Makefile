@@ -19,7 +19,7 @@ SRC+= check_all_php.ml layer_checker_php.ml
 SRC+= unit_checker_php.ml
 
 SYSLIBS= str.cma unix.cma 
-LIBS=$(TOP)/commons/commons.cma \
+LIBS=$(TOP)/commons/lib.cma \
 
 INCLUDEDIRS= $(TOP)/commons \
   $(TOP)/commons/ocollection $(TOP)/commons/ocamlextra \

@@ -19,7 +19,7 @@ SRC= figures.ml \
 SRC+=gnuplot.ml html.ml latex.ml 
 #dot.ml
 
-LIBS=$(TOP)/commons/commons.cma
+LIBS=$(TOP)/commons/lib.cma
 INCLUDEDIRS= $(TOP)/commons $(TOP)/commons/lib-json $(TOP)/commons/lib-xml
 
 

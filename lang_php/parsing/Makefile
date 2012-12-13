@@ -19,7 +19,7 @@ SRC= flag_parsing_php.ml \
      test_parsing_php.ml unit_parsing_php.ml
 
 SYSLIBS= str.cma unix.cma 
-LIBS=$(TOP)/commons/commons.cma \
+LIBS=$(TOP)/commons/lib.cma \
  $(TOP)/h_program-lang/lib.cma \
 
 INCLUDEDIRS= $(TOP)/commons $(TOP)/commons/ocamlextra \
@@ -140,15 +140,15 @@ CMD=
 compile2:
 	ocamlc -I ../commons/ -I ../parsing_php/ \
 	  unix.cma str.cma bigarray.cma nums.cma \
-	  ../commons/commons.cma ../parsing_php/parsing_php.cma \
+	  ../commons/lib.cma ../parsing_php/parsing_php.cma \
 	  show_function_calls1.ml -o show_function_calls1
 	ocamlc -I ../commons/ -I ../parsing_php/ \
 	  unix.cma str.cma bigarray.cma nums.cma \
-	  ../commons/commons.cma ../parsing_php/parsing_php.cma \
+	  ../commons/lib.cma ../parsing_php/parsing_php.cma \
 	  show_function_calls2.ml -o show_function_calls2
 	ocamlc -I ../commons/ -I ../parsing_php/ \
 	  unix.cma str.cma bigarray.cma nums.cma \
-	  ../commons/commons.cma ../parsing_php/parsing_php.cma \
+	  ../commons/lib.cma ../parsing_php/parsing_php.cma \
 	  show_function_calls3.ml -o show_function_calls3
 
 

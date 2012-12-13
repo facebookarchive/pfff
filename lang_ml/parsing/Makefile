@@ -20,7 +20,7 @@ SRC= flag_parsing_ml.ml \
 SYSLIBS= str.cma unix.cma 
 
 # globals.cma is used only for Config.patch in test_parse_ml
-LIBS=$(TOP)/commons/commons.cma \
+LIBS=$(TOP)/commons/lib.cma \
  $(TOP)/h_program-lang/lib.cma \
 
 INCLUDEDIRS= $(TOP)/commons $(TOP)/commons/ocamlextra \

@@ -11,7 +11,7 @@ SRC= \
 -include $(TOP)/Makefile.config
 
 SYSLIBS= str.cma unix.cma $(PCRECMA)
-LIBS=$(TOP)/commons/commons.cma \
+LIBS=$(TOP)/commons/lib.cma \
      $(TOP)/h_program-lang/lib.cma \
      ../parsing/lib.cma \
 

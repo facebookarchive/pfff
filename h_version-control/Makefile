@@ -13,7 +13,7 @@ SRC= patch.ml lib_vcs.ml  \
 SRC+=subversion.ml
 
 
-LIBS=../commons/commons.cma
+LIBS=../commons/lib.cma
 INCLUDEDIRS= ../commons ../commons/lib-sexp ../commons/ocamlextra
 
 TARGET1=vcs

@@ -52,7 +52,7 @@ SRC+= tags_php.ml normalize_php.ml \
 # aliasing_function_php.ml bottomup_analysis_php.ml
 
 SYSLIBS= str.cma unix.cma
-LIBS=$(TOP)/commons/commons.cma \
+LIBS=$(TOP)/commons/lib.cma \
 
 INCLUDEDIRS= $(TOP)/commons \
   $(TOP)/commons/ocollection $(TOP)/commons/ocamlextra \

@@ -47,7 +47,7 @@ OBJS_CLIENT= \
  _client/codemap.cmo \
  _client/home.cmo \
 
-LIBS_CLIENT2= $(TOP)/commons/commons.cma \
+LIBS_CLIENT2= $(TOP)/commons/lib.cma \
   $(TOP)/h_visualization/lib.cma
 
 SYSLIBS_CLIENT=str.cma unix.cma

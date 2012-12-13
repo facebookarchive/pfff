@@ -23,7 +23,7 @@ SRC= flag_parsing_csharp.ml \
 
 SYSLIBS= str.cma unix.cma 
 
-LIBS=$(TOP)/commons/commons.cma \
+LIBS=$(TOP)/commons/lib.cma \
  $(TOP)/h_program-lang/lib.cma \
 
 INCLUDEDIRS= $(TOP)/commons $(TOP)/commons/ocamlextra \

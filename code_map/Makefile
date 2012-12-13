@@ -20,7 +20,7 @@ SRC=cairo_helpers.ml custom_list_generic.ml async.ml \
 
 SYSLIBS=str.cma unix.cma dbm.cma threads.cma  lablgtk.cma
 
-LIBS=$(TOP)/commons/commons.cma $(TOP)/commons/commons_gui.cma \
+LIBS=$(TOP)/commons/lib.cma $(TOP)/commons/commons_gui.cma \
      $(TOP)/commons/commons_features.cma 
 
 

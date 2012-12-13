@@ -27,14 +27,14 @@ let main =
   show_function_calls Sys.argv.(1)
 @ 
 %(* to compile: 
-%ocamlc -I ../commons/ -I ../parsing_php/ ../commons/commons.cma ../parsing_php/parsing_php.cma show_function_calls.ml -o show_function_calls
+%ocamlc -I ../commons/ -I ../parsing_php/ ../commons/lib.cma ../parsing_php/parsing_php.cma show_function_calls.ml -o show_function_calls
 %*)
 
 To compile and test do:
 \begin{verbatim}
 $ cd demos/
 $ ocamlc -I ../commons/ -I ../parsing_php/ \ 
-    ../commons/commons.cma ../parsing_php/parsing_php.cma \
+    ../commons/lib.cma ../parsing_php/parsing_php.cma \
     show_function_calls1.ml -o show_function_calls 
 $ ./show_function_calls foo.php
 \end{verbatim}

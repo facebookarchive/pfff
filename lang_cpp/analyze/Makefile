@@ -21,7 +21,7 @@ SRC= flag_analyze_cpp.ml \
 #endif
 
 SYSLIBS= str.cma unix.cma $(PCRECMA)
-LIBS=$(TOP)/commons/commons.cma \
+LIBS=$(TOP)/commons/lib.cma \
      $(TOP)/h_program-lang/lib.cma \
      $(TOP)/h_version-control/lib.cma \
      ../parsing/lib.cma \

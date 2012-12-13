@@ -14,7 +14,7 @@ SRC= \
 #hphpi_trace.ml is in facebook/qa_test/ for now (more convenient)
 
 SYSLIBS= str.cma unix.cma 
-LIBS=$(TOP)/commons/commons.cma \
+LIBS=$(TOP)/commons/lib.cma \
      $(TOP)/h_program-lang/lib.cma \
      $(TOP)/h_version-control/lib.cma \
      ../../parsing/lib.cma \

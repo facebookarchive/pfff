@@ -4,7 +4,7 @@
 
 -include ../Makefile.config
 
-TARGET=commons
+TARGET=lib
 
 # Here are the sources without any external dependencies. The core of commons!
 

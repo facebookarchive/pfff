@@ -13,7 +13,7 @@ SRC= flag_program_visual.ml \
      test_program_visual.ml
 
 
-LIBS=../commons/commons.cma \
+LIBS=../commons/lib.cma \
    ../h_visualization/lib.cma \
    ../h_version-control/lib.cma \
    ../h_program-lang/lib.cma \

@@ -17,7 +17,7 @@ SRC=model.ml controller.ml \
 
 SYSLIBS=str.cma unix.cma dbm.cma threads.cma  lablgtk.cma lablgtksourceview.cma
 
-LIBS=$(TOP)/commons/commons.cma $(TOP)/commons/commons_gui.cma \
+LIBS=$(TOP)/commons/lib.cma $(TOP)/commons/commons_gui.cma \
      $(TOP)/commons/commons_features.cma \
      $(TOP)/globals/globals.cma \
      $(TOP)/parsing_php/parsing_php.cma 

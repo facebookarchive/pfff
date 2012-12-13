@@ -22,7 +22,7 @@ module PI = Parse_info
  *    $ ocamlc -g -o simple_refactoring \
  *      -I ../commons -I ../lang_php/parsing \
  *      str.cma unix.cma nums.cma bigarray.cma \
- *      ../commons/commons.cma ../h_program-lang/lib.cma \
+ *      ../commons/lib.cma ../h_program-lang/lib.cma \
  *      ../lang_php/parsing/lib.cma \
  *      simple_refactoring.ml
  * 

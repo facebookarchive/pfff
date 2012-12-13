@@ -16,7 +16,7 @@ SRC= extArray.ml extList.ml extString.ml std.ml IO.ml \
      barnesHut.ml forceDirectedLayout.ml \
 
 LIBS=
-#../commons/commons.cma
+#../commons/lib.cma
 INCLUDEDIRS=$(TOP)/commons/ocamlextra
 
 SYSLIBS= 

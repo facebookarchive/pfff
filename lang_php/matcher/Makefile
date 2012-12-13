@@ -15,7 +15,7 @@ SRC= flag_matcher_php.ml   \
      unit_matcher_php.ml \
 
 SYSLIBS= str.cma unix.cma
-LIBS=$(TOP)/commons/commons.cma \
+LIBS=$(TOP)/commons/lib.cma \
      $(TOP)/h_program-lang/lib.cma \
      ../parsing/lib.cma \
 

@@ -15,7 +15,7 @@ SRC= module_ml.ml \
 -include $(TOP)/Makefile.config
 
 SYSLIBS= str.cma unix.cma
-LIBS=$(TOP)/commons/commons.cma \
+LIBS=$(TOP)/commons/lib.cma \
      $(TOP)/h_program-lang/lib.cma \
      $(TOP)/h_version-control/lib.cma \
      ../parsing/lib.cma \

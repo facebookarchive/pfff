@@ -173,7 +173,7 @@ SYSLIBS+=$(OCAMLCOMPILERCMA)
 
 # used for sgrep and other small utilities which I dont want to depend
 # on too much things
-BASICLIBS=commons/commons.cma \
+BASICLIBS=commons/lib.cma \
  globals/lib.cma \
  h_program-lang/lib.cma \
  lang_ml/parsing/lib.cma \
@@ -195,7 +195,7 @@ BASICLIBS=commons/commons.cma \
 
 BASICSYSLIBS=nums.cma bigarray.cma str.cma unix.cma
 
-LIBS= commons/commons.cma \
+LIBS= commons/lib.cma \
        $(BTCMA) \
        $(BDBCMA) \
        $(REGEXPCMA) \
@@ -284,10 +284,10 @@ MAKESUBDIRS=commons \
    lang_cpp/analyze \
   lang_c/parsing \
    lang_c/analyze \
-  lang_bytecode/parsing \
-   lang_bytecode/analyze \
   lang_java/parsing \
    lang_java/analyze \
+  lang_bytecode/parsing \
+   lang_bytecode/analyze \
   lang_python/parsing \
    lang_python/analyze \
   lang_csharp/parsing \

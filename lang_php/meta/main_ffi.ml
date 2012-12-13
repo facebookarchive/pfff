@@ -21,7 +21,7 @@ open Common
 (*****************************************************************************)
 
 (*
-ocamlc -I ../commons unix.cma str.cma ../commons/commons.cma gen_boilerplate.ml 
+ocamlc -I ../commons unix.cma str.cma ../commons/lib.cma gen_boilerplate.ml 
  *)
 
 (*****************************************************************************)

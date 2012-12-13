@@ -15,7 +15,7 @@ SRC= meta_ast_php_tof.ml \
 
 # now in parsing_php/:     meta_ast_php_vof.ml
 
-LIBS=$(TOP)/commons/commons.cma \
+LIBS=$(TOP)/commons/lib.cma \
   $(TOP)/h_program-lang/lib.cma \
   ../parsing/lib.cma
 

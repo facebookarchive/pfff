@@ -213,7 +213,7 @@ you have just to copy the [[parsing_php/]] and
 in your own project directory, add a
 recursive make that goes in those directories, and then link
 your application with the [[parsing_php/parsing_php.cma]] and 
-[[commons/commons.cma]] library files (see also \f{pfff/demos/Makefile}).
+[[commons/lib.cma]] library files (see also \f{pfff/demos/Makefile}).
 
 
 \subsection{Quick example of use}
@@ -224,7 +224,7 @@ you can test \pfff with:
 \begin{verbatim}
 $ cd demos/
 $ ocamlc -I ../commons/ -I ../parsing_php/ \
-    ../commons/commons.cma ../parsing_php/parsing_php.cma \
+    ../commons/lib.cma ../parsing_php/parsing_php.cma \
     show_function_calls1.ml -o show_function_calls 
 $ ./show_function_calls foo.php
 \end{verbatim}
