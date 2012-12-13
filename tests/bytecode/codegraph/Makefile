@@ -1,5 +1,6 @@
-SRC=Clone.java TestException.java NestedClass.java GenericClass.java \
-    AnonClass.java
+SRC=Clone.java TestException.java \
+    NestedClass.java GenericClass.java AnonClass.java \
+    AnEnum.java AnAnnotation.java
 
 OBJS=$(SRC:.java=.class)
 
