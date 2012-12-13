@@ -63,7 +63,7 @@ ANALUZEINCLUDES= \
       ../lang_php/analyze
 endif
 
-LIBS= ../commons/commons.cma \
+LIBS= ../commons/lib.cma \
       ../h_version-control/lib.cma \
       ../h_program-lang/lib.cma \
       ../lang_php/parsing/lib.cma \
@@ -77,7 +77,7 @@ SYSLIBS= str.cma unix.cma nums.cma bigarray.cma
 # If you want to embed pfff in your own application, uncomment the following
 # instead of the previous settings
 #MAKESUBDIRS=commons parsing_php 
-#LIBS=commons/commons.cma parsing_php/parsing_php.cma
+#LIBS=commons/lib.cma parsing_php/parsing_php.cma
 #INCLUDEDIRS=commons/ parsing_php/
 #rec::
 #	set -e; for i in $(MAKESUBDIRS); do $(MAKE) -C $$i all || exit 1; done 
@@ -142,16 +142,9 @@ clean::
 	rm -f *.opt *.byte
 
 
-
 ##############################################################################
 # Developer rules
 ##############################################################################
-
-tags:
-	otags -no-mli-tags -r  .
-
-clean::
-	rm -f TAGS
 
 ##############################################################################
 # Generic ocaml rules
