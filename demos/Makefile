@@ -15,31 +15,33 @@ simple_refactoring: simple_refactoring.ml
 	ocamlc -g -o simple_refactoring \
          -I ../commons -I ../lang_php/parsing -I ../h_program-lang \
           str.cma unix.cma nums.cma bigarray.cma \
-	  ../commons/commons.cma ../h_program-lang/lib.cma \
+	  ../commons/lib.cma ../h_program-lang/lib.cma \
           ../lang_php/parsing/lib.cma \
           simple_refactoring.ml
-
 clean::
 	rm -f simple_refactoring
 
+# just using $@ and $^ to shorten the command a bit
 check_is_static_literal: check_is_static_literal.cmo
 	ocamlc -g -o $@ \
          -I ../commons -I ../lang_php/parsing -I ../h_program-lang \
           str.cma unix.cma nums.cma bigarray.cma \
-	  ../commons/commons.cma ../h_program-lang/lib.cma \
+	  ../commons/lib.cma ../h_program-lang/lib.cma \
           ../lang_php/parsing/lib.cma \
           $^
-
 clean::
 	rm -f check_is_static_literal
 
-find_methods_return_this: find_methods_return_this.cmo
-	ocamlc -g -o $@ \
-         -I ../commons -I ../lang_php/parsing -I ../h_program-lang \
-          str.cma unix.cma nums.cma bigarray.cma \
-	  ../commons/commons.cma ../h_program-lang/lib.cma \
-          ../lang_php/parsing/lib.cma \
-          $^
+
+DEPS1=../commons ../h_program-lang \
+  ../lang_php/parsing ../lang_php/analyze/foundation
+
+INCLUDES1=$(DEPS1:%=-I %)
+CMAS1=$(DEPS1:%=%/lib.cma)
+SYSCMAS1=str.cma unix.cma nums.cma bigarray.cma
+
+find_methods_return_this: find_methods_return_this.ml
+	ocamlc -g -o $@ $(INCLUDES1) $(SYSCMAS1) $(CMAS1) $^
 
 clean::
 	rm -f find_methods_return_this
