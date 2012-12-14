@@ -303,7 +303,7 @@ let rec (cfg_stmt: state -> nodei option -> stmt -> nodei option) =
        )
         
    | Return (t1, eopt, t2) ->
-       let newi = state.g#add_node { F.n = F.Return;i=i() } in
+       let newi = state.g#add_node { F.n = F.Return eopt;i=i() } in
        state.g +> add_arc_opt (previ, newi);
        state.g +> add_arc (newi, state.exiti);
 

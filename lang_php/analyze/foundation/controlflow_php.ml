@@ -80,7 +80,8 @@ type node = {
       | Case
       | Default
   (*x: node_kind constructors *)
-      | Return
+      | Return of Ast_php.expr option
+
   (*x: node_kind constructors *)
       | Break
       | Continue
@@ -155,7 +156,7 @@ let short_string_of_node_kind nkind =
   | IfHeader -> "if(...)"
   | Join -> "<join>"
 
-  | Return -> "return ...;"
+  | Return _ -> "return ...;"
 
   | DoHeader -> "do"
   | DoWhileTail -> "while(...);"
@@ -183,6 +184,15 @@ let short_string_of_node_kind nkind =
 (*****************************************************************************)
 (* Accessors *)
 (*****************************************************************************)
+
+let find_node f cfg =
+  cfg#nodes#tolist +> Common.find_some (fun (nodei, node) ->
+    if f node then Some nodei else None
+  )
+
+let find_exit cfg = find_node (fun node -> node.n = Exit) cfg
+let find_enter cfg = find_node (fun node -> node.n = Enter) cfg
+
 
 (*s: controlflow_php accessors *)
 let (first_node : flow -> Ograph_extended.nodei) = fun flow ->

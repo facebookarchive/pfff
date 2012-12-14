@@ -143,7 +143,7 @@ let info_of_error_and_kind err =
   | CfgError (Controlflow_build_php.DeadCode node_kind) ->
       (match node_kind with
       | Controlflow_php.Break -> "eDeadBreak"
-      | Controlflow_php.Return -> "eDeadReturn"
+      | Controlflow_php.Return _ -> "eDeadReturn"
       | _ -> "eDeadStatement"
       )
   | CfgError ( _) ->
