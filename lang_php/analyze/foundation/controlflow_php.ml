@@ -80,7 +80,8 @@ type node = {
       | Case
       | Default
   (*x: node_kind constructors *)
-      | Return
+      | Return of Ast_php.expr option
+
   (*x: node_kind constructors *)
       | Break
       | Continue
@@ -155,7 +156,7 @@ let short_string_of_node_kind nkind =
   | IfHeader -> "if(...)"
   | Join -> "<join>"
 
-  | Return -> "return ...;"
+  | Return _ -> "return ...;"
 
   | DoHeader -> "do"
   | DoWhileTail -> "while(...);"

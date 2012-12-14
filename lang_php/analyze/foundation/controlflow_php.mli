@@ -52,7 +52,7 @@ type node = {
       | Case
       | Default
   (*x: node_kind constructors *)
-      | Return
+      | Return of Ast_php.expr option
   (*x: node_kind constructors *)
       | Break
       | Continue

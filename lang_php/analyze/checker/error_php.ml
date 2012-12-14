@@ -268,7 +268,7 @@ let rank_errors errs =
     | CfgError (Controlflow_build_php.DeadCode node_kind) ->
         (match node_kind with
         | Controlflow_php.Break -> 3
-        | Controlflow_php.Return -> 3
+        | Controlflow_php.Return _ -> 3
         | _ -> 15
         )
     | CfgError _ -> 11

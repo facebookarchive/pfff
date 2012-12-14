@@ -41,7 +41,7 @@ CMAS1=$(DEPS1:%=%/lib.cma)
 SYSCMAS1=str.cma unix.cma nums.cma bigarray.cma
 
 find_methods_return_this: find_methods_return_this.ml
-	ocamlc -g -o $@ $(INCLUDES1) $(SYSCMAS1) $(CMAS1) $^
+	ocamlc -g -annot -o $@ $(INCLUDES1) $(SYSCMAS1) $(CMAS1) $^
 
 clean::
 	rm -f find_methods_return_this
