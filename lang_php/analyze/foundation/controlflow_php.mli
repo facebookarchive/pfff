@@ -107,6 +107,10 @@ type edge = Direct
 type flow = (node, edge) Ograph_extended.ograph_mutable
 (*e: type flow *)
 
+val find_node: (node -> bool) -> flow -> Ograph_extended.nodei
+val find_enter: flow -> Ograph_extended.nodei
+val find_exit: flow -> Ograph_extended.nodei
+
 (*s: controlflow helpers signatures *)
 val first_node : flow -> Ograph_extended.nodei
 val mk_node: node_kind -> node
