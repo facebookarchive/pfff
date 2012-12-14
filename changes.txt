@@ -1,5 +1,7 @@
 -*- org -*-
 
+* -----------------------------------------------------------
+
 * 0.22 (Q4 2012) (codegraph fine grained, cmt/class parsers)
 
 ** codegraph for more languages, at very fine grained level
@@ -10,7 +12,8 @@ PHP.
 in addition to PHP, support for java (via .class and .java files),
 ocaml (via .cmt files)
 
-** introduce lang_bytecode/
+** introduce lang_bytecode/ (mostly wrapper around javalib/),
+with graph_code support.
 
 ** added support for .cmt files for ocaml 4.00 allowing better analysis
 of ocaml code, including pfff code
@@ -136,13 +139,13 @@ update: staled
 
 ** sgrep: support for regexp when matching string constants
 
-* 0.16 (Q2 2011) (c++ parser)
+* 0.16 (Q2 2011) (c++ parser refactoring)
 
 ** better C++ parser
 complete refactoring of the parser. Far less heuristics techniques.
 Closer to what was described in the CC'09 paper.
 
-* 0.15 (Q1 2011) (html/css parsers, ocsigen)
+* 0.15 (Q1 2011) (html/css parsers, ocsigen try)
 
 ** introduce web-based source code navigator a la LXR using ocsigen
 first play with ocsigen.
