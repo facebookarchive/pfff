@@ -34,6 +34,9 @@ val ast_and_tokens:
 val parse_any:
   Common.filename -> Ast_php.any
 
+val parse_fast:
+  Common.filename -> Ast_php.program
+
 (*s: extra parse function signature *)
 val xdebug_expr_of_string: string -> Ast_php.expr 
 val class_def_of_string: string -> Ast_php.class_def

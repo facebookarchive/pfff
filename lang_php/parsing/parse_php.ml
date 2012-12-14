@@ -545,4 +545,71 @@ let (class_def_of_string: string -> Ast_php.class_def) = fun s ->
   let lexbuf = Lexing.from_string s in
   Parser_php.class_declaration_statement basic_lexer_skip_comments lexbuf
 
+(* The default PHP parser function stores position information for all tokens,
+ * build some Parse_php.info_items for each toplevel entities, and
+ * do other things which are most of the time useful for some analysis
+ * but starts to really slow down parsing for huge (generated) PHP files.
+ * Enters parse_fast() that disables most of those things.
+ * Note that it may not parse correctly all PHP code, so use with
+ * caution.
+ *)
+let parse_fast file =
+  let chan = open_in file in
+  let lexbuf = Lexing.from_channel chan in
+  Lexer_php.reset();
+  Lexer_php._mode_stack := [Lexer_php.INITIAL];
+
+  let rec php_next_token lexbuf = 
+    let tok =
+    (* for yyless emulation *)
+    match !Lexer_php._pending_tokens with
+    | x::xs -> 
+      Lexer_php._pending_tokens := xs; 
+      x
+    | [] ->
+      (match Lexer_php.current_mode () with
+      | Lexer_php.INITIAL -> 
+        Lexer_php.initial lexbuf
+      | Lexer_php.ST_IN_SCRIPTING -> 
+        Lexer_php.st_in_scripting lexbuf
+      | Lexer_php.ST_IN_SCRIPTING2 -> 
+        Lexer_php.st_in_scripting lexbuf
+      | Lexer_php.ST_DOUBLE_QUOTES -> 
+        Lexer_php.st_double_quotes lexbuf
+      | Lexer_php.ST_BACKQUOTE -> 
+        Lexer_php.st_backquote lexbuf
+      | Lexer_php.ST_LOOKING_FOR_PROPERTY -> 
+        Lexer_php.st_looking_for_property lexbuf
+      | Lexer_php.ST_LOOKING_FOR_VARNAME -> 
+        Lexer_php.st_looking_for_varname lexbuf
+      | Lexer_php.ST_VAR_OFFSET -> 
+        Lexer_php.st_var_offset lexbuf
+      | Lexer_php.ST_START_HEREDOC s ->
+        Lexer_php.st_start_heredoc s lexbuf
+      | Lexer_php.ST_START_NOWDOC s ->
+        Lexer_php.st_start_nowdoc s lexbuf
+      | Lexer_php.ST_IN_XHP_TAG current_tag ->
+        Lexer_php.st_in_xhp_tag current_tag lexbuf
+      | Lexer_php.ST_IN_XHP_TEXT current_tag ->
+        Lexer_php.st_in_xhp_text current_tag lexbuf
+      )
+    in
+    match tok with
+    | Parser_php.T_COMMENT _ | Parser_php.T_DOC_COMMENT _
+    | Parser_php.TSpaces _ | Parser_php.TNewline _
+    | Parser_php.TCommentPP _
+    | Parser_php.T_OPEN_TAG _
+    | Parser_php.T_CLOSE_TAG _ ->
+       php_next_token lexbuf
+    | _ -> tok
+  in
+  try 
+    let res = Parser_php.main php_next_token lexbuf in
+    close_in chan;
+    res
+  with Parsing.Parse_error ->
+    pr2 (spf "parsing error in php fast parser: %s" 
+           (Lexing.lexeme lexbuf));
+    raise Parsing.Parse_error
+
 (*e: parse_php.ml *)
