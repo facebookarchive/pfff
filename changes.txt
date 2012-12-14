@@ -1,19 +1,35 @@
 -*- org -*-
 
-* 0.21 (Q3 2012) (codegraph)
+* 0.22 (Q4 2012) (codegraph fine grained, cmt/class parsers)
+
+** codegraph for more languages, at very fine grained level
+added OCaml (.ml and .cmt), Java (.java and .class), and improved 
+PHP.
+
+** codequery for more languages
+in addition to PHP, support for java (via .class and .java files),
+ocaml (via .cmt files)
+
+** introduce lang_bytecode/
+
+** added support for .cmt files for ocaml 4.00 allowing better analysis
+of ocaml code, including pfff code
+
+** spatch: improved unparser, more flexible, easier to add heuristics
+regarding spacing issues
+
+* 0.21 (Q3 2012) (codegraph, java/c parser)
 
 ** introduce codegraph, a hierarchical matrix-based dependency visualizer
-with support for PHP, OCaml, C, Java, and Java bytecode.
+with support for PHP, C, 
 
 ** introduce lang_c/
-a simplified version of lang_cpp/ just focused on C.
+a simplified version of lang_cpp/ just focusing on C.
 Also added graph_code_c.ml.
 
 ** improve lang_java/, support for generics, annotations, and other recent
 Java features.
 Also added graph_code_java.ml.
-
-** introduce lang_bytecode/
 
 ** scheck
 
@@ -250,7 +266,7 @@ update: also useful for codegraph backend.
 
 first public release!
 
-* 0.12 (Q3 2010) (codemap, light db, tags, scheck, ocaml support)
+* 0.12 (Q3 2010) (codemap, light db, tags, scheck, ocaml/js parsers)
 
 Real start of multi-language support.
 
@@ -474,7 +490,7 @@ to scale (partially because use weak heuristic)
 
 * -----------------------------------------------------------
 
-* 0.3 (Q4 2009) (PHP parser, berkeley db, deadcode)
+* 0.3 (Q4 2009) (php parser, berkeley db, deadcode)
 
 ** analysis
 deadcode analysis v2, v3, v4
