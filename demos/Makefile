@@ -15,7 +15,7 @@ simple_refactoring: simple_refactoring.ml
 	ocamlc -g -o simple_refactoring \
          -I ../commons -I ../lang_php/parsing -I ../h_program-lang \
           str.cma unix.cma nums.cma bigarray.cma \
-	  ../commons/commons.cma ../h_program-lang/lib.cma \
+	  ../commons/lib.cma ../h_program-lang/lib.cma \
           ../lang_php/parsing/lib.cma \
           simple_refactoring.ml
 
@@ -26,7 +26,7 @@ check_is_static_literal: check_is_static_literal.cmo
 	ocamlc -g -o $@ \
          -I ../commons -I ../lang_php/parsing -I ../h_program-lang \
           str.cma unix.cma nums.cma bigarray.cma \
-	  ../commons/commons.cma ../h_program-lang/lib.cma \
+	  ../commons/lib.cma ../h_program-lang/lib.cma \
           ../lang_php/parsing/lib.cma \
           $^
 
@@ -37,7 +37,7 @@ find_methods_return_this: find_methods_return_this.cmo
 	ocamlc -g -o $@ \
          -I ../commons -I ../lang_php/parsing -I ../h_program-lang \
           str.cma unix.cma nums.cma bigarray.cma \
-	  ../commons/commons.cma ../h_program-lang/lib.cma \
+	  ../commons/lib.cma ../h_program-lang/lib.cma \
           ../lang_php/parsing/lib.cma \
           $^
 
