@@ -158,6 +158,9 @@ let test_parse_xdebug_expr s =
   let _e = Parse_php.xdebug_expr_of_string s in
   raise Todo
 
+let test_parse_php_fast file =
+  let _ = Parse_php.parse_fast file in
+  ()
 (*****************************************************************************)
 (* Main entry for Arg *)
 (*****************************************************************************)
@@ -187,6 +190,8 @@ let actions () = [
     Common.mk_action_1_arg test_tokens_php;
   (*e: test_parsing_php actions *)
 
+    "-parse_php_fast", "   <file>", 
+    Common.mk_action_1_arg test_parse_php_fast;
     "-unparse_php", "   <file>", 
     Common.mk_action_1_arg test_unparse_php;
     "-pretty_print_php", "   <file>", 
