@@ -33,15 +33,15 @@ module Ast = Ast_java
  *    name of the method with the type (a la C++ linker)
  * 
  * schema:
- *   Package -> SubPackage -> File -> Class (TODO | Interface )
+ *   Package -> SubPackage -> Class (TODO | Interface )
  *                                    -> Method
  *                                    -> Field
  *                                    -> Constant (static final)
  *                                    -> Constant (enum, inlined in parent)
- *                            File -> Class -> SubClass -> ...
+ *                            Class -> SubClass -> ...
  *                                          -> EnumSubClass (nothing)
  *   (when have no package)
- *   Dir -> Subdir -> File 
+ *   Dir -> Subdir -> File -> Class 
  * 
  *   PB -> Not_Found -> Package2 -> SubPackage2 -> ...
  * 
@@ -53,9 +53,11 @@ module Ast = Ast_java
  * If I go in the abstract interpreter path that julien took where he analyzed
  * code but had so many Not_found, Todo, exn, then I'll have no confidence
  * at all. So:
+ * 
  * - DONE lookup package correctly
  * - SEMI lookup classes correctly
  * - lookup field/methods correctly
+ * 
  * It also helps to find bug in the parser and better understand
  * Java and the AST :) e.g. Name -> Dot ambiguities.
  * It also helps to see which code is needed to fully analyze our code.
@@ -298,12 +300,11 @@ let rec extract_defs_uses ~phase ~g ~ast ~readable ~lookup_fails ~skip_edges =
   let env = {
     g; phase;
 
-    (* old: (str_of_qualified_ident long_ident, E.Package).
-     * We want a File node because it allows to easily find to which
-     * file an entity corresponds too and open this file in emacs/codemap
-     * when one click somewhere in codegraph.
-     *)
-    current = readable, E.File;
+    current =
+     (match ast.package with
+     | Some long_ident -> (str_of_qualified_ident long_ident, E.Package)
+     | None ->            (readable, E.File)
+     );
     current_qualifier =
       (match ast.package with
       | None -> []
@@ -343,16 +344,8 @@ let rec extract_defs_uses ~phase ~g ~ast ~readable ~lookup_fails ~skip_edges =
         G.create_intermediate_directories_if_not_present g dir;
         g +> G.add_node (readable, E.File);
         g +> G.add_edge ((dir, E.Dir), (readable, E.File))  G.Has;
-
     | Some long_ident ->
         create_intermediate_packages_if_not_present g G.root long_ident;
-        let str = str_of_qualified_ident long_ident in
-        (* we keep a File node because it allows from an entity
-         * to know where it's defined by going up the chain of parents
-         * until a File is found
-         *)
-        g +> G.add_node (readable, E.File);
-        g +> G.add_edge ((str, E.Package), (readable, E.File)) G.Has;
   end;
   (* double check if we can find some of the imports 
    * (especially useful when have a better java_stdlib/ to report
