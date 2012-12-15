@@ -62,7 +62,6 @@ let test_parse xs  =
   );
   ()
 
-(* ---------------------------------------------------------------------- *)
 let test_lexer file =
   let lexbuf = Lexing.from_channel (open_in file) in
   while true do
@@ -72,14 +71,11 @@ let test_lexer file =
       exit 0
   done
 
-(* ---------------------------------------------------------------------- *)
 let test_dump file =
   let ast = Parse_java.parse_program file in
   let v = Meta_ast_java.vof_any (Ast_java.Program ast) in
   let str = Ocaml.string_of_v v in
   pr str
-
-(* ---------------------------------------------------------------------- *)
 
 let test_visitor file = 
 (*
