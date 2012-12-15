@@ -10,13 +10,10 @@
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the file
  * license.txt for more details.
  *)
-
 open Common
-
 open Ocaml
 
 open Ast_java
-
 
 (* Continuation-style visitor for a subset of concepts; similar to
    visitor_php. The bulk of this file was generated with:
