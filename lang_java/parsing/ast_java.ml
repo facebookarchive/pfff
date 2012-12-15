@@ -8,8 +8,6 @@
  *       foreach, etc
  *)
 
-module PI = Parse_info
-
 (*****************************************************************************)
 (* Prelude *)
 (*****************************************************************************)
@@ -21,10 +19,9 @@ module PI = Parse_info
  * I think (we just need the full list of tokens + the AST with position
  * for the identifiers).
  *
- * TODO:
- *  - support annotations
+ * todo:
+ *  - support annotations in the AST (it's parsed, but dropped right now)
  *  - support generic methods (there is support for generic classes though)
- *  - etc.
  *)
 
 (*****************************************************************************)
@@ -237,6 +234,7 @@ and var = {
 
 and vars = var list
 
+(* less: could be merged with var *)
 and var_with_init = {
   f_var: var;
   f_init: init option
@@ -253,9 +251,9 @@ and var_with_init = {
 
 (* method or constructor *)
 and method_decl = {
-  (* v_typ is a (TBasic void) for a constructor *)
+  (* m_var.v_type is a (TBasic void) for a constructor *)
   m_var: var;
-  (* the v_mod can only be Final or Annotation *)
+  (* the var.v_mod in params can only be Final or Annotation *)
   m_formals: vars;
   m_throws: qualified_ident list;
 
@@ -364,10 +362,10 @@ type any =
 (*****************************************************************************)
 let unwrap = fst
 
-let fakeInfo ?(next_to=None) str = { PI.
-  token = PI.FakeTokStr (str, next_to);
+let fakeInfo ?(next_to=None) str = { Parse_info.
+  token = Parse_info.FakeTokStr (str, next_to);
   comments = ();
-  transfo = PI.NoTransfo;
+  transfo = Parse_info.NoTransfo;
 }
 
 let ast_todo = []
