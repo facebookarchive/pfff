@@ -11,8 +11,9 @@
  *)
 open Common
 
-open Parser_java
+open Ast_java
 module PI = Parse_info
+module V = Visitor_java
 
 (*****************************************************************************)
 (* Subsystem testing *)
@@ -78,28 +79,22 @@ let test_dump file =
   pr str
 
 let test_visitor file = 
-(*
-
-  let _bigf = { Visitor_java.default_visitor_s with
-    Visitor_java.kexpr_s = (fun (k, bigf) e -> 
-      match Ast_java.unwrap e with
-      | Ast_java.Literal s -> 
+  let visitor = V.mk_visitor { V.default_visitor with
+    V.kexpr = (fun (k, bigf) e -> 
+      match e with
+      | Ast_java.Literal (s,_) -> 
           pr2 ("lit:" ^ s);
           k e
-      | Ast_java.Dot (e, s) -> 
+      | Ast_java.Dot (e, (s,_)) -> 
           pr2 "dot: s";
           k e
       | _ -> k e
     );
   } in
-*)
-  (*
-  let ((xs,info_item), stat) = Parse_java.parse file in
-  match xs with
-  | Left cu -> Visitor_java.compilation_unit bigf cu +> ignore
-  | Right _ -> pr2 "error parsing"
-  *)
-  raise Todo
+
+  let ast = Parse_java.parse_program file in
+  visitor (Program ast);
+  ()
 
 (*****************************************************************************)
 (* Main entry for Arg *)

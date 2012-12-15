@@ -19,6 +19,7 @@ module G = Graph_code
 
 open Ast_java
 module Ast = Ast_java
+module PI = Parse_info
 
 (*****************************************************************************)
 (* Prelude *)
