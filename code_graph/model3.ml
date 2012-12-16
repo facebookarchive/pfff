@@ -56,7 +56,7 @@ type world = {
    *)
   mutable interactive_regions: (region * Figures.rectangle) list;
 
-  mutable base: [ `Any ] Cairo.surface;
+  mutable base:    [ `Any ] Cairo.surface;
   mutable overlay: [ `Any ] Cairo.surface;
 
   (* viewport, device coordinates *)
@@ -97,9 +97,7 @@ let config_of_path (path: DM.config_path) m =
     | DM.Expand node ->
         DM.expand_node node config m.g
     | DM.Focus (node, kind) ->
-        let dm = 
-          DM.build config None (Some m.full_matrix) m.gopti
-        in
+        let dm = DM.build config None (Some m.full_matrix) m.gopti in
         DM.focus_on_node node kind config dm
   ) initial_config
 
@@ -121,7 +119,7 @@ let init_world ?(width = 600) ?(height = 600) path model =
     interactive_regions = [];
     m;
     width; height;
-    base = new_surface ~alpha:false ~width ~height;
+    base    = new_surface ~alpha:false ~width ~height;
     overlay = new_surface ~alpha:false ~width ~height;
   }
 
@@ -197,7 +195,6 @@ let layout_of_w w =
 let find_region_at_user_point w ~x ~y =
   let regions = w.interactive_regions in
   let pt = { Figures. x = x; y = y } in
-  
   try 
     let (kind, rect) = regions +> List.find (fun (kind, rect) ->
       Figures.point_is_in_rectangle pt rect
