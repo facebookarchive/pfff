@@ -60,7 +60,7 @@ type world = {
   mutable overlay: [ `Any ] Cairo.surface;
 
   (* viewport, device coordinates *)
-  mutable width: int;
+  mutable width:  int;
   mutable height: int;
 }
   and region =
