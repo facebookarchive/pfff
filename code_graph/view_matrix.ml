@@ -331,21 +331,19 @@ let draw_matrix cr w =
 
   let interactive_regions = ref [] in
 
-
   draw_cells      cr w ~interactive_regions;
   draw_left_rows  cr w ~interactive_regions;
   draw_up_columns cr w ~interactive_regions;
 
   w.interactive_regions <- !interactive_regions;
-  
   ()
 
 (*****************************************************************************)
 (* Painting entry point *)
 (*****************************************************************************)
 
-(* 'Paint' creates the cairo context and adjust the scaling if needed
- * and then call 'draw' functions.
+(* paint() creates the cairo context and adjusts the scaling if needed
+ * and then calls the 'draw' functions.
  *)
 let paint w =
   let cr = Cairo.create w.base in
@@ -392,6 +390,7 @@ let add_path x path g =
   | DM.Focus _ -> path ++ [x]
   | DM.Expand (n) ->
       put_expand_just_before_last_focus_if_not_children n path g
+
 
 let button_action da w ev =
   let (x, y) = GdkEvent.Button.x ev, GdkEvent.Button.y ev in
@@ -477,4 +476,3 @@ let button_action da w ev =
             )
       )
   )
-
