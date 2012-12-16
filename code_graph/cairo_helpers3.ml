@@ -24,7 +24,7 @@ module Color = Simple_color
 (* Prelude *)
 (*****************************************************************************)
 
-(* todo: factorize with codemap/cairo_helpers.ml *)
+(* todo: factorize with code_map/cairo_helpers.ml *)
 
 (*****************************************************************************)
 (* Text related *)
@@ -34,7 +34,6 @@ module Color = Simple_color
 
 let re_space = Str.regexp "^[ ]+$"
 
-(*s: cairo helpers functions *)
 (* !does side effect on the (mutable) string! *)
 let prepare_string s = 
   if s ==~ re_space
