@@ -49,95 +49,97 @@ let lexer_based_tagger = true
  * to figure out what kind of ident it is.
  *)
 
-let visit_toplevel 
-    ~tag_hook
-    prefs 
-    (*db_opt *)
-    (toplevel, toks)
-  =
+let visit_toplevel ~tag_hook prefs (ast, toks) =
   let already_tagged = Hashtbl.create 101 in
   let tag = (fun ii categ ->
     tag_hook ii categ;
     Hashtbl.replace already_tagged ii true
   )
   in
-  let tag_ident id categ = 
+  let tag_ident (id: Ast_java.ident) categ = 
     let (_s, ii) = id in
-    (* should have only one normally *)
-    ii +> List.iter (fun ii -> tag ii categ);
-  in
-  let _tag_name name categ = 
-    match name with
-    | [] -> pr2 "tag_name: noii"
-    | _ -> 
-        let before, final = Common.list_init name, Common.list_last name
-        in
-        tag_ident final categ
+    tag ii categ
   in
 
   (* -------------------------------------------------------------------- *)
   (* ast phase 1 *) 
-(* TODO
   (* tagging the idents of the AST *)
-  let hook = { V.default_visitor_s with
+  let visitor = V.mk_visitor { V.default_visitor with
 
-    V.kdecl_s = (fun (k, _) d ->
+    (* defs *)
+    V.kdecl = (fun (k, _) d ->
       (match d with
       | Ast.Class x ->
           let ident = x.cl_name in
-          tag_ident ident (Class (Def2 fake_no_def2));
-      | Ast.Interface x ->
-          ()
+          tag_ident ident (Class (Def2 fake_no_def2))
       | Ast.Field x ->
           let var = x.f_var in
           let ident = var.v_name in
-          tag_ident ident (Field (Def2 fake_no_def2));
-
+          tag_ident ident (Field (Def2 fake_no_def2))
       | Ast.Method x ->
           let var = x.m_var in
           let ident = var.v_name in
           tag_ident ident (Method (Def2 fake_no_def2));
-
-      | Ast.Constructor x ->
-          let var = x.m_var in
-          let ident = var.v_name in
-          tag_ident ident (Method (Def2 fake_no_def2));
-
-      | Ast.InstanceInit x ->
-          ()
-      | Ast.StaticInit x ->
+          x.m_formals +> List.iter (fun v ->
+            let ident = v.v_name in
+            tag_ident ident (Parameter Def)
+          )
+      | Ast.Enum x ->
+          let ident = x.en_name in
+          tag_ident ident (Class (Def2 fake_no_def2))
+      | Ast.Init (_bool, stmt) ->
           ()
       );
       k d
     );
+    V.kstmt = (fun (k, _) x ->
+      (match x with
+      | LocalVar v ->
+        let ident = v.f_var.v_name in
+        tag_ident ident (Local Def)
+      | _ -> ()
+      );
+      k x
+    );
 
-    V.kexpr_s = (fun (k, _) e ->
-      (match Ast.unwrap e with
-      (* todo: could be also a MethodCall !! need access parent *)
+    (* uses *)
+    V.kexpr = (fun (k, _) e ->
+      (match e with
+      | Call (Dot (e, ident), args) ->
+          tag_ident ident (Method (Use2 fake_no_use2));
+          k e;
+          List.iter k args
+        
       | Dot (e, ident) ->
           tag_ident ident (Field (Use2 fake_no_use2));
           k e
       | _ -> k e
       );
-
     );
-    V.ktype_s = (fun (k, _) e ->
-      (match Ast.unwrap e with
-      | TypeName name ->
-          tag_name name TypeMisc
-      | ArrayType _ ->
-          ()
+
+    V.ktype = (fun (k, _) e ->
+      (match e with
+      (* done on PRIMITIVE_TYPE below *)
+      | TBasic (s, ii) -> ()
+      | TClass xs -> 
+          (match List.rev xs with
+          | [] -> raise Impossible
+          | (id, _targs)::xs -> 
+            tag_ident id TypeMisc;
+            xs +> List.iter (fun (id, _targs) ->
+              tag_ident id (Module Use)
+            )
+          )
+      | TArray _ -> ()
       );
       k e
     );
   }
   in
-  V.toplevel hook toplevel +> ignore;
-*)
+  visitor (Program ast);
 
   (* -------------------------------------------------------------------- *)
   (* toks phase 1 *)
-
   let rec aux_toks xs = 
     match xs with
     | [] -> ()
@@ -168,12 +170,9 @@ let visit_toplevel
         );
         aux_toks xs
 
-    (* poor's man identifier tagger *)
-
+    (* less: poor's man identifier tagger? *)
     (* defs *)
-
     (* uses *)
-
 
     | x::xs ->
         aux_toks xs
@@ -192,12 +191,9 @@ let visit_toplevel
     match tok with
 
     (* comments *)
-
     | T.TComment ii ->
         if not (Hashtbl.mem already_tagged ii)
-        then
-          tag ii Comment
-
+        then tag ii Comment
     | T.TCommentSpace ii ->
         if not (Hashtbl.mem already_tagged ii)
         then ()
@@ -217,12 +213,10 @@ let visit_toplevel
     | T.TFloat (s,ii) | T.TInt (s,ii) ->
         tag ii Number
 
-
     | T.LITERAL (s, ii) ->
         (match s with
         | "true" | "false" -> tag ii Boolean
         | "null" -> tag ii Null
-
         | _ -> ()
         )
 
@@ -238,7 +232,6 @@ let visit_toplevel
 
     | T.IDENTIFIER (s, ii) ->
         ()
-
 
     (* keywords  *)
     | T.BOOLEAN ii -> tag ii TypeMisc
@@ -297,7 +290,6 @@ let visit_toplevel
         -> tag ii Keyword
 
     (* java ext *)
-
     | T.ENUM ii
         -> tag ii Keyword
 
