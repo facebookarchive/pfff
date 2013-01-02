@@ -4,9 +4,13 @@ open Ast_php_simple
 
 let verbose = ref true
 
+let is_valid (path : string) : bool =
+  let autoload = Str.regexp ".*autoload_map.php" in
+  not (Str.string_match autoload path 0)
+
 let find_methods_return_this_version1 dir =
   let files = Lib_parsing_php.find_php_files_of_dir_or_files [dir] in
-  files +> Common_extra.progress ~show:!verbose (fun progress_callback -> 
+  files +> Common_extra.progress ~show:!verbose (fun progress_callback ->
     List.iter (fun file ->
       progress_callback();
       let cst = Parse_php.parse_program file in
@@ -21,7 +25,7 @@ let find_methods_return_this_version1 dir =
                 let last = Common.list_last xs in
                 (match last with
                 | Return(_, Some(This(_))) ->
-                    pr2 (spf "Found a match in %s %s" 
+                    pr2 (spf "Found a match in %s %s"
                            file (Ast_php_simple.str_of_name method_def.f_name))
                 | _ -> ()
                 )
@@ -38,16 +42,17 @@ module CFG = Controlflow_php
 
 let find_methods_return_this_version2 dir =
   let files = Lib_parsing_php.find_php_files_of_dir_or_files [dir] in
+  let files = List.filter is_valid files in
   files +> List.iter (fun file ->
     let cst = Parse_php.parse_program file in
-    let classes = cst +> Common.map_filter (function 
+    let classes = cst +> Common.map_filter (function
       | ClassDef def -> Some def
       | _ -> None
     ) in
-    classes +> List.iter (fun def ->
-      def.c_body +> Ast.unbrace +> List.iter (fun class_stmt ->
+    classes +> List.iter (fun cdef ->
+      cdef.c_body +> Ast.unbrace +> List.iter (fun class_stmt ->
         match class_stmt with
-        | Method def -> 
+        | Method def ->
           let cfg = Controlflow_build_php.cfg_of_func def in
           let exit_nodei = CFG.find_exit cfg in
           let pred = cfg#predecessors exit_nodei in
@@ -60,23 +65,25 @@ let find_methods_return_this_version2 dir =
               (* when have empty else branch, implicit return void *)
               | CFG.FalseNode -> false
               | _ -> false
-                
+
             )
           in
-          if has_only_return_this
-          then 
-            pr2 (spf "Found a match in %s %s" 
-                   file (Ast_php.str_of_name def.f_name))
+          Printf.printf
+            "Match in %s %s %s %b\n"
+                file
+                (Ast_php.str_of_name cdef.c_name)
+                (Ast_php.str_of_name def.f_name)
+                (has_only_return_this)
         | _ -> ()
       )
     )
   )
 
-let main = 
+let main =
   let func =
-    match Sys.argv.(1) with 
+    match Sys.argv.(1) with
     | "1" -> find_methods_return_this_version1
     | "2" -> find_methods_return_this_version2
-    | _ -> failwith "usage: find_methods_return_this 1|2 <phpfile>"
+    | _ -> failwith "usage: find_methods_return_this 1|2 <phpfile or dir>"
   in
   func Sys.argv.(2)
