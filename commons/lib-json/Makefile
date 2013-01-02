@@ -94,7 +94,7 @@ clean::
 	$(OCAMLC) -i $<
 
 clean::
-	rm -f *.cm[ioxa] *.o *.a *.cmxa *.annot
+	rm -f *.cm[ioxa] *.o *.a *.cmxa *.annot *.cmt *.cmti
 clean::
 	rm -f *~ .*~ gmon.out #*#
 

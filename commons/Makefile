@@ -505,7 +505,7 @@ dependencygraph2:
 	$(OCAMLOPT)  -c $<
 
 clean::
-	rm -f *.cm[iox] *.o *.a *.cma *.cmxa *.annot
+	rm -f *.cm[iox] *.o *.a *.cma *.cmxa *.annot *.cmt *.cmti
 	rm -f *~ .*~ #*#
 
 clean::
