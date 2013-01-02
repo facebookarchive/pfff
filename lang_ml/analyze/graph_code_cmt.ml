@@ -46,6 +46,8 @@ open Typedtree
  *  - typerex
  *  - ocamlspotter
  *  - oug/odb http://odb-serv.forge.ocamlcore.org/
+ * 
+ * todo: nested let module X = Y in, ocaml 4.00 feature
  *)
 
 (*****************************************************************************)

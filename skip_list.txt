@@ -19,15 +19,13 @@ dir: tests/ml/cmt
 # -------------------------------------------------------------------------
 file: lang_ml/analyze/meta_ast_cmt.cmt
 file: lang_ml/analyze/graph_code_cmt.cmt
-#file: lang_ml/analyze/ast_cmt.cmt
-#file: lang_ml/analyze/test_analyze_ml.cmt
 
 # -------------------------------------------------------------------------
 # complex cmt
 # -------------------------------------------------------------------------
 file: external/core/dynlinkaux.cmt
 
-#have some 'include', but got de-includized
+#had some 'include', but got de-includized
 #dir: commons/lib-sexp
 #todo: have namespace conflict between values and types
 #dir: commons/lib-json
@@ -49,9 +47,6 @@ file: external/ocamlgraph/src/util.mli
 
 # use symlinks to existing file, bad technique
 dir: facebook/fbstrict/src/jscompiler
-
-# contain dupes with symbol_service
-dir: facebook/typelog
 
 # -------------------------------------------------------------------------
 # old/
@@ -77,7 +72,6 @@ dir: tests/opa/parsing/todo/_build
 # -------------------------------------------------------------------------
 # parse errors
 # -------------------------------------------------------------------------
-
 # ok to skip
 dir: tests/ml/parsing_errors
 dir: tests/ml/db/parsing_errors
