@@ -2,15 +2,16 @@
 
 * -----------------------------------------------------------
 
-* 0.22 (Q4 2012) (codegraph fine grained, cmt/class parsers)
+* 0.22 (Q4 2012) (codegraph faster/finer, .cmt/.class parsers)
 
 ** codegraph for more languages, at very fine grained level
 added OCaml (.ml and .cmt), Java (.java and .class), and improved 
 PHP.
+Also improved speed a lot.
 
 ** codequery for more languages
 in addition to PHP, support for java (via .class and .java files),
-ocaml (via .cmt files)
+OCaml (via .cmt files)
 
 ** introduce lang_bytecode/ (mostly wrapper around javalib/),
 with graph_code support.
