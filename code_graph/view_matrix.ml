@@ -94,6 +94,25 @@ let line_color_of_depth d =
   | _ -> "grey30"
 
 (*****************************************************************************)
+(* Matrix Coord -> XY Coord  *)
+(*****************************************************************************)
+
+let rect_of_column j l =
+  let x = (float_of_int j) * l.width_cell + l.x_start_matrix_left in
+  let y = l.y_start_matrix_up in
+  { p = { x; y };
+    q = { x = x + l.width_cell; y = l.y_end_matrix_down }
+  }
+
+let rect_of_label_left i l =
+  let x = 0.0 in
+  let y = (float_of_int i) * l.height_cell + l.y_start_matrix_up in
+  { p = { x = x; y = y; };
+    q = { x = l.x_start_matrix_left; y = y + l.height_cell };
+  }
+  
+
+(*****************************************************************************)
 (* Drawing helpers *)
 (*****************************************************************************)
 
@@ -308,6 +327,42 @@ let draw_up_columns cr w ~interactive_regions =
   done;
   ()
 
+(*****************************************************************************)
+(* Semantic overlays *)
+(*****************************************************************************)
+let detect_dead_columns cr w =
+  let l = M.layout_of_w w in
+  let mat = w.m.DM.matrix in
+  for j = 0 to Array.length mat -.. 1 do
+    let has_user = ref false in
+    for i = 0 to Array.length mat -.. 1 do
+      if mat.(i).(j) > 0 && i <> j then has_user := true
+    done;
+    if not !has_user
+    then begin
+      CairoH.fill_rectangle ~cr ~alpha:0.3 ~color:"red" 
+        (rect_of_column j l);
+      CairoH.fill_rectangle ~cr ~alpha:0.3 ~color:"red" 
+        (rect_of_label_left j l)
+    end
+  done
+
+let detect_dead_lines cr w =
+  let l = M.layout_of_w w in
+  let mat = w.m.DM.matrix in
+  for i = 0 to Array.length mat -.. 1 do
+    let use_stuff = ref false in
+    for j = 0 to Array.length mat -.. 1 do
+      if mat.(i).(j) > 0 && i <> j then use_stuff := true
+    done;
+    if not !use_stuff
+    then begin
+      CairoH.fill_rectangle ~cr ~alpha:0.3 ~color:"red3" 
+        (rect_of_column i l);
+      CairoH.fill_rectangle ~cr ~alpha:0.3 ~color:"red3" 
+        (rect_of_label_left i l)
+    end
+  done
 
 (*****************************************************************************)
 (* Drawing entry point *)
@@ -334,6 +389,8 @@ let draw_matrix cr w =
   draw_cells      cr w ~interactive_regions;
   draw_left_rows  cr w ~interactive_regions;
   draw_up_columns cr w ~interactive_regions;
+
+  detect_dead_columns cr w;
 
   w.interactive_regions <- !interactive_regions;
   ()
