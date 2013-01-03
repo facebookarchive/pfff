@@ -70,7 +70,7 @@ let defs_of_graph_code ?(verbose=false) g =
           pr2 (spf "PB accessing line %d of %s" line file);
           ""
         | Sys_error _no_such_file ->
-          pr2 (spf "PB accessing file %s" file);
+          pr2_once (spf "PB accessing file %s" file);
           ""
       in
       let tag = { Tags_file.
@@ -90,7 +90,7 @@ let defs_of_graph_code ?(verbose=false) g =
 
     with Not_found -> 
       (match kind with
-      | E.Package | E.File | E.Dir | E.TopStmts -> ()
+      | E.Package | E.File | E.Dir | E.TopStmts | E.Module -> ()
       | _ -> pr2 (spf "PB, nodeinfo not found for %s" str);
       )
     )

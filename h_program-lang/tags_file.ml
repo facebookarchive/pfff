@@ -175,17 +175,13 @@ let add_method_tags_when_unambiguous files_and_defs =
 (*****************************************************************************)
 
 let generate_TAGS_file ~tags_file files_and_defs =
-
   Common.with_open_outfile tags_file (fun (pr_no_nl, _chan) ->
-
     pr_no_nl header;
-
     files_and_defs +> List.iter (fun (file, defs) ->
-
       let all_defs = defs +> Common.map_filter (fun tag ->
         if String.length tag.tag_definition_text > 300
         then begin 
-          pr2 (spf "WEIRD long string in %s, passing the tag" file);
+          pr2_once (spf "WEIRD long string in %s, passing the tag" file);
           None
         end 
         else Some (string_of_tag tag)

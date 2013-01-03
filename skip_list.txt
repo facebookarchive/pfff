@@ -4,25 +4,21 @@
 ##############################################################################
 
 # -------------------------------------------------------------------------
-# dupes cmt
+# cmt
 # -------------------------------------------------------------------------
+
+#dupes with external/core and ok to skip because they are test files
+dir: tests/ml/cmt
 
 #less: dupes with external/extlib/, remove them
 file: commons/ocamlextra/enum.cmt
 file: commons/ocamlextra/dynArray.cmt
 
-#dupes with external/core and ok to skip because they are test files
-dir: tests/ml/cmt
-
-# -------------------------------------------------------------------------
 # depends on compiler libs
-# -------------------------------------------------------------------------
 file: lang_ml/analyze/meta_ast_cmt.cmt
 file: lang_ml/analyze/graph_code_cmt.cmt
 
-# -------------------------------------------------------------------------
 # complex cmt
-# -------------------------------------------------------------------------
 file: external/core/dynlinkaux.cmt
 
 #had some 'include', but got de-includized
@@ -32,7 +28,7 @@ file: external/core/dynlinkaux.cmt
 #todo: have some 'include'
 
 # -------------------------------------------------------------------------
-# dupes .ml
+# ml
 # -------------------------------------------------------------------------
 
 # contain dupes
