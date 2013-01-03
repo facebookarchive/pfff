@@ -672,7 +672,8 @@ let distance_entity i j arr =
     match xs, ys with
     | [], [] -> 0
     | _, [] -> 1
-    | [], _ -> 1
+    (* if it's a subentity of a brother, then distance should still be 0 *)
+    | [], _ -> 0
 
     | x::xs, y::ys ->
       if x =*= y

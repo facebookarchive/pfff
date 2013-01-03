@@ -52,6 +52,7 @@ dir: facebook/fbstrict/src/jscompiler
 dir: lang_ml/old
 dir: lang_cpp/parsing/old
 dir: lang_php/old
+dir: h_program-lang/old
 dir: h_program-visual/graphics/old
 dir: facebook/old
 dir: facebook/check_module/old
