@@ -627,3 +627,73 @@ let string_of_config_path_elem = function
 
 let string_of_config_path xs = 
   xs +> List.map string_of_config_path_elem +> Common.join "/"
+
+(*****************************************************************************)
+(* Matrix analysis *)
+(*****************************************************************************)
+let is_dead_column j dm =
+  let mat = dm.matrix in
+  let has_user = ref false in
+  for i = 0 to Array.length mat - 1 do
+      if mat.(i).(j) > 0 && i <> j then has_user := true
+  done;
+  not !has_user
+
+let is_dead_line i dm =
+  let mat = dm.matrix in
+  let use_stuff = ref false in
+  for j = 0 to Array.length mat - 1 do
+    if mat.(i).(j) > 0 && i <> j then use_stuff := true
+  done;
+  not !use_stuff
+
+
+let parents_of_indexes dm =
+  let arr = Array.create (Array.length dm.matrix) [] in
+  let i = ref 0 in
+  let rec aux acc tree =
+    match tree with
+    (* a leaf *)
+    | Node (n, []) ->
+      arr.(!i) <- List.rev acc;
+      incr i
+    (* a node *)
+    | Node (n, xs) ->
+      xs +> List.iter (aux (n::acc))
+  in
+  aux [] dm.config;
+  arr
+
+(* ex: dist  a/b/c to a/b/d/e should be ? *)
+let distance_entity i j arr =
+  let xs = arr.(i) in
+  let ys = arr.(j) in
+  let rec aux xs ys =
+    match xs, ys with
+    | [], [] -> 0
+    | _, [] -> 1
+    | [], _ -> 1
+
+    | x::xs, y::ys ->
+      if x =*= y
+      then aux xs ys
+      else 1
+  in
+  aux xs ys
+
+let is_internal_helper i dm =
+  let mat = dm.matrix in
+  let arr = parents_of_indexes dm in
+
+   
+  let has_users_outside_parent = ref false in
+  let parents = arr.(i) in
+  for j = 0 to Array.length mat - 1 do
+      if mat.(i).(j) > 0 && i <> j && distance_entity i j arr > 0
+      then has_users_outside_parent := true
+  done;
+  not !has_users_outside_parent && 
+  (* the elements at the root can't have dependencies outside parents *)
+  List.length parents > 1
+  
+

@@ -104,13 +104,20 @@ let rect_of_column j l =
     q = { x = x + l.width_cell; y = l.y_end_matrix_down }
   }
 
+let rect_of_line i l =
+  let x = l.x_start_matrix_left in
+  let y = (float_of_int i) * l.height_cell + l.y_start_matrix_up in
+  { p = { x; y };
+    q = { x = l.x_end_matrix_right; y = y + l.height_cell }
+  }
+
 let rect_of_label_left i l =
   let x = 0.0 in
   let y = (float_of_int i) * l.height_cell + l.y_start_matrix_up in
   { p = { x = x; y = y; };
     q = { x = l.x_start_matrix_left; y = y + l.height_cell };
   }
-  
+ 
 
 (*****************************************************************************)
 (* Drawing helpers *)
@@ -330,15 +337,12 @@ let draw_up_columns cr w ~interactive_regions =
 (*****************************************************************************)
 (* Semantic overlays *)
 (*****************************************************************************)
+
 let detect_dead_columns cr w =
   let l = M.layout_of_w w in
   let mat = w.m.DM.matrix in
   for j = 0 to Array.length mat -.. 1 do
-    let has_user = ref false in
-    for i = 0 to Array.length mat -.. 1 do
-      if mat.(i).(j) > 0 && i <> j then has_user := true
-    done;
-    if not !has_user
+    if DM.is_dead_column j w.m
     then begin
       CairoH.fill_rectangle ~cr ~alpha:0.3 ~color:"red" 
         (rect_of_column j l);
@@ -351,15 +355,23 @@ let detect_dead_lines cr w =
   let l = M.layout_of_w w in
   let mat = w.m.DM.matrix in
   for i = 0 to Array.length mat -.. 1 do
-    let use_stuff = ref false in
-    for j = 0 to Array.length mat -.. 1 do
-      if mat.(i).(j) > 0 && i <> j then use_stuff := true
-    done;
-    if not !use_stuff
+    if DM.is_dead_line i w.m
     then begin
-      CairoH.fill_rectangle ~cr ~alpha:0.3 ~color:"red3" 
-        (rect_of_column i l);
-      CairoH.fill_rectangle ~cr ~alpha:0.3 ~color:"red3" 
+      CairoH.fill_rectangle ~cr ~alpha:0.3 ~color:"green" 
+        (rect_of_line i l);
+      CairoH.fill_rectangle ~cr ~alpha:0.3 ~color:"green" 
+        (rect_of_label_left i l)
+    end
+  done
+
+
+let detect_internal_helpers cr w =
+  let l = M.layout_of_w w in
+  let mat = w.m.DM.matrix in
+  for i = 0 to Array.length mat -.. 1 do
+    if DM.is_internal_helper i w.m
+    then begin
+      CairoH.fill_rectangle ~cr ~alpha:0.1 ~color:"blue" 
         (rect_of_label_left i l)
     end
   done
@@ -390,7 +402,9 @@ let draw_matrix cr w =
   draw_left_rows  cr w ~interactive_regions;
   draw_up_columns cr w ~interactive_regions;
 
+  detect_dead_lines cr w;
   detect_dead_columns cr w;
+  detect_internal_helpers cr w;
 
   w.interactive_regions <- !interactive_regions;
   ()

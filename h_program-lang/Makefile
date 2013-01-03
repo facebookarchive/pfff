@@ -19,11 +19,13 @@ SRC= programming_language.ml \
      coverage_code.ml layer_coverage.ml \
      overlay_code.ml big_grep.ml pleac.ml info_code.ml \
      pp2.ml \
-     test_program_lang.ml
+     test_program_lang.ml unit_program_lang.ml
 
 SYSLIBS= str.cma unix.cma
 LIBS=../commons/lib.cma
-INCLUDEDIRS= ../commons ../commons/lib-sexp ../commons/lib-json
+INCLUDEDIRS= ../commons \
+ ../commons/lib-sexp ../commons/lib-json \
+ ../commons/ocamlextra
 
 # other sources:
 #  database_code.pl, facts.pl, for the prolog-based code query engine

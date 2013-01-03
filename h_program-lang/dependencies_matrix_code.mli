@@ -46,8 +46,22 @@ val expand_node:
 val focus_on_node:
   Graph_code.node -> deps_style -> tree -> dm -> tree
 
+(* matrix analysis *)
+val is_dead_column: 
+  int -> dm -> bool
+val is_dead_line: 
+  int -> dm -> bool
+val is_internal_helper:
+  int -> dm -> bool
+
 (* APIs useful for other to use *)
 val final_nodes_of_tree: tree -> Graph_code.node list
+
+(* should be used only by test code *)
+val distance_entity:
+  int -> int -> Graph_code.node list array -> int
+val parents_of_indexes:
+  dm -> Graph_code.node list array
 
 (* poor's man DSM visualizer (use codegraph for real visualization) *)
 val display:

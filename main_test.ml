@@ -80,6 +80,7 @@ let test regexp =
       Unit_parsing_cpp.unittest;
 
       Unit_version_control.unittest;
+      Unit_program_lang.unittest;
     ]
   in
   let suite = 
