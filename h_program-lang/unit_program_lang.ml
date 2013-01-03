@@ -54,7 +54,7 @@ let unittest =
           assert_equal true (DM.is_dead_column 3 dm);
           ()
         );
-        "XXX internal helpers" >:: (fun () ->
+        "internal helpers" >:: (fun () ->
           let arr = DM.parents_of_indexes dm in
           assert_equal arr
             [| [(".", E.Dir)];
@@ -63,13 +63,21 @@ let unittest =
                [(".", E.Dir)];
             |];
           assert_equal
-            (DM.distance_entity 0 1 arr) 1;
+            ~msg:"It should not find distance between foo.ml and a/x.ml"
+            (DM.distance_entity 0 1 arr) 0;
           assert_equal
+            ~msg:"It should find distance between a/x.ml and foo.ml"
+            (DM.distance_entity 1 0 arr) 1;
+          assert_equal
+            ~msg:"It should not find distance between a/x.ml a/y.ml"
             (DM.distance_entity 1 2 arr) 0;
 
-          assert_equal false (DM.is_internal_helper 0 dm);
-          assert_equal true (DM.is_internal_helper 1 dm);
-          assert_equal false (DM.is_internal_helper 2 dm);
+          assert_equal 
+            false (DM.is_internal_helper 0 dm);
+          assert_equal 
+            true (DM.is_internal_helper 1 dm);
+          assert_equal 
+            false (DM.is_internal_helper 2 dm);
         );
       ]
     )
