@@ -643,7 +643,7 @@ graph:
 	./codegraph -lang cmt -build .
 prolog:
 	./codequery -lang cmt -build .
-	rm -f facts.pl
+	mv facts.pl facts_pl
 
 db:
 	./pfff_db -verbose  -lang ml -o DB_LIGHT.marshall .
