@@ -21,9 +21,9 @@ let unittest =
       let dm = {
           matrix = [|
             [| 0; 0; 0; 0|];
-            [| 0; 0; 0; 0|];
-            [| 0; 0; 0; 0|];
-            [| 0; 0; 0; 0|];
+            [| 1; 0; 0; 0|];
+            [| 1; 2; 0; 0|];
+            [| 1; 0; 3; 0|];
           |];
           name_to_i = Common.hash_of_list [
             ("foo.ml", E.File), 0;
@@ -50,10 +50,11 @@ let unittest =
       [
 
         "dead columns" >:: (fun () ->
-
+          assert_equal false (DM.is_dead_column 0 dm);
+          assert_equal true (DM.is_dead_column 3 dm);
           ()
         );
-        "internal helpers" >:: (fun () ->
+        "XXX internal helpers" >:: (fun () ->
           let arr = DM.parents_of_indexes dm in
           assert_equal arr
             [| [(".", E.Dir)];
@@ -61,10 +62,14 @@ let unittest =
                [(".", E.Dir); ("a", E.Dir); ];
                [(".", E.Dir)];
             |];
-          assert_equal 
+          assert_equal
             (DM.distance_entity 0 1 arr) 1;
-          assert_equal 
+          assert_equal
             (DM.distance_entity 1 2 arr) 0;
+
+          assert_equal false (DM.is_internal_helper 0 dm);
+          assert_equal true (DM.is_internal_helper 1 dm);
+          assert_equal false (DM.is_internal_helper 2 dm);
         );
       ]
     )

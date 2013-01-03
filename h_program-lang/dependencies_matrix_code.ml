@@ -681,15 +681,20 @@ let distance_entity i j arr =
   in
   aux xs ys
 
-let is_internal_helper i dm =
+(* less: more fine grained internal modules in package where can see what
+ * is the scope of the module. So can see stuff really important in
+ * a whole package because they are really used outside this package,
+ * so depth of escape > X. ===> remember max depth of escape
+ * 0 = same module, 1, brother, etc.
+ *)
+let is_internal_helper j dm =
   let mat = dm.matrix in
   let arr = parents_of_indexes dm in
 
-   
   let has_users_outside_parent = ref false in
-  let parents = arr.(i) in
-  for j = 0 to Array.length mat - 1 do
-      if mat.(i).(j) > 0 && i <> j && distance_entity i j arr > 0
+  let parents = arr.(j) in
+  for i = 0 to Array.length mat - 1 do
+      if mat.(i).(j) > 0 && i <> j && distance_entity j i arr > 0
       then has_users_outside_parent := true
   done;
   not !has_users_outside_parent && 

@@ -402,7 +402,7 @@ let draw_matrix cr w =
   draw_left_rows  cr w ~interactive_regions;
   draw_up_columns cr w ~interactive_regions;
 
-  detect_dead_lines cr w;
+  (* detect_dead_lines cr w; *)
   detect_dead_columns cr w;
   detect_internal_helpers cr w;
 
