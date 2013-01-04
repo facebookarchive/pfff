@@ -41,8 +41,8 @@ type model = {
 (* The drawing model *)
 (*****************************************************************************)
 
-(* All the 'float' below are to be intepreted as user coordinates except when
- * explicitely mentioned. All the 'int' are usually device coordinates.
+(* All the 'float's below are to be intepreted as user coordinates except when
+ * explicitely mentioned. All the 'int's are usually device coordinates.
  *)
 type world = {
   model: model;
@@ -86,10 +86,42 @@ let new_surface ~alpha ~width ~height =
     ) width height
 
 (*****************************************************************************)
-(* Main entry point *)
+(* Path manipulation *)
 (*****************************************************************************)
 
+(* less: could be put in dependencies_matrix_code.ml *)
+let put_expand_just_before_last_focus_if_not_children n xs g =
+  let rec aux xs =
+    match xs with
+    | [] -> [DM.Expand n]
+    | x::xs ->
+        (match x with
+        | DM.Expand _ -> x::aux xs
+        | DM.Focus (n2,style) ->
+            let children = Graph_code.all_children n2 g in
+            if not (List.mem n children)
+            then (DM.Expand n)::x::xs
+            else x::aux xs
+        )
+  in
+  aux xs
+
+let fix_path path g =
+  let rec aux acc xs =
+    match xs with
+    | [] -> acc
+    | x::xs ->
+        (match x with
+        | DM.Focus _ -> 
+            aux (acc ++ [x]) xs
+        | DM.Expand (n) ->
+            aux (put_expand_just_before_last_focus_if_not_children n acc g) xs
+        )
+  in
+  aux [] path
+
 let config_of_path (path: DM.config_path) m =
+  let path = fix_path path m.g in
   let initial_config = DM.basic_config m.g in
   pr2_gen path;
   path +> List.fold_left (fun config e ->
@@ -101,6 +133,9 @@ let config_of_path (path: DM.config_path) m =
         DM.focus_on_node node kind config dm
   ) initial_config
 
+(*****************************************************************************)
+(* Main entry point *)
+(*****************************************************************************)
 
 (* width/height are a first guess. The first configure ev will force a resize
  * coupling: with View_matrix.recompute_matrix

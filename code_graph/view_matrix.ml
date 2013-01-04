@@ -62,6 +62,11 @@ let color_of_node (_, kind) =
   | E.Dir | E.MultiDirs -> "SteelBlue2"
   | E.File -> "wheat"
 
+(* we often keep fully qualified names in the graph_code to avoid
+ * ambiguities between entities, but in code_graph we prefer to
+ * display short names as the parents already contain the
+ * information.
+ *)
 let txt_of_node (s, kind) = 
   match kind with
   | E.Dir | E.File -> Common.basename s
@@ -440,28 +445,7 @@ let recompute_matrix w =
   paint w;
   ()
 
-let put_expand_just_before_last_focus_if_not_children n xs g =
-  let rec aux xs =
-    match xs with
-    | [] -> [DM.Expand n]
-    | x::xs ->
-        (match x with
-        | DM.Expand _ -> x::aux xs
-        | DM.Focus (n2,style) ->
-            let children = Graph_code.all_children n2 g in
-            if not (List.mem n children)
-            then (DM.Expand n)::x::xs
-            else x::aux xs
-        )
-  in
-  aux xs
-
-let add_path x path g =
-  match x with
-  | DM.Focus _ -> path ++ [x]
-  | DM.Expand (n) ->
-      put_expand_just_before_last_focus_if_not_children n path g
-
+let add_path x path = path ++ [x]
 
 let button_action da w ev =
   let (x, y) = GdkEvent.Button.x ev, GdkEvent.Button.y ev in
@@ -484,15 +468,13 @@ let button_action da w ev =
             | `TWO_BUTTON_PRESS, 1 ->
                 pr2 (spf "double clicking on row i");
                 let node = w.m.DM.i_to_name.(i) in
-                w.path <- add_path (DM.Expand node) 
-                  w.path w.model.g;
+                w.path <- add_path (DM.Expand node) w.path;
                 recompute_matrix w;
                 true
             | `BUTTON_PRESS, 3 ->
                 pr2 (spf "right clicking on row i");
                 let node = w.m.DM.i_to_name.(i) in
-                w.path <- add_path (DM.Focus (node, DM.DepsOut)) 
-                  w.path w.model.g;
+                w.path <- add_path (DM.Focus (node, DM.DepsOut)) w.path;
                 recompute_matrix w;
                 true
 
@@ -522,8 +504,7 @@ let button_action da w ev =
                 if i = j
                 then begin
                   let node = w.m.DM.i_to_name.(j) in
-                  w.path <- add_path (DM.Focus (node, DM.DepsInOut)) 
-                    w.path w.model.g;
+                  w.path <- add_path (DM.Focus (node, DM.DepsInOut)) w.path;
                   recompute_matrix w;
                   true
                 end else
@@ -538,8 +519,7 @@ let button_action da w ev =
             | `BUTTON_PRESS, 3 ->
                 pr2 (spf "right clicking on column j");
                 let node = w.m.DM.i_to_name.(j) in
-                w.path <- add_path (DM.Focus (node, DM.DepsIn)) 
-                  w.path w.model.g;
+                w.path <- add_path (DM.Focus (node, DM.DepsIn)) w.path;
                 recompute_matrix w;
                 true
 
