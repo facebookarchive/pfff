@@ -14,3 +14,7 @@ val filter_files:
   ?verbose:bool ->
   skip list -> Common.dirname (* root *) -> Common.filename list -> 
   Common.filename list
+
+(* returns a hash leveraging the Hashtbl.find_all property *)
+val build_filter_edges:
+  skip list -> (string, string) Hashtbl.t

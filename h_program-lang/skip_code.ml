@@ -84,3 +84,11 @@ let filter_files ?(verbose=false) skip_list root xs =
     (Hashtbl.mem skip_files readable) ||
     (skip_dirs +> List.exists (fun dir -> readable =~ (dir ^ ".*")))
   )
+
+
+let build_filter_edges skip_list =
+  skip_list +> Common.map_filter (function
+  | Edge (s1, s2) -> Some (s1, s2)
+  | _ -> None
+  ) +> Common.hash_of_list 
+
