@@ -104,10 +104,23 @@ let parse a =
 
 let add_node_and_edge_if_defs_mode env node =
   if env.phase = Defs then begin
-    env.g +> G.add_node node;
-    env.g +> G.add_edge (env.current, node) G.Has;
+    if G.has_node node env.g 
+    then Hashtbl.replace env.dupes node true
+    else begin
+      env.g +> G.add_node node;
+      (* if we later find a duplicate for node, we will
+       * cancel this action in build() (see the use of remove_edge()).
+       *)
+      env.g +> G.add_edge (env.current, node) G.Has;
+    end
   end;
-  { env with current = node }
+  (* for nodes like main(), which will be dupes,
+   * it's better to keep 'current' as the current File so
+   * at least we will avoid some fail lookup
+   *)
+  if Hashtbl.mem env.dupes node
+  then env
+  else { env with current = node }
 
 
 
@@ -153,40 +166,6 @@ let rec add_use_edge env ((str, kind) as dst) =
           env.g +> G.add_edge (src, dst) G.Use;
       )
   )
-
-let node_of_toplevel_opt x =
-  match x with
-  | FuncDef def ->
-      Some (Ast.str_of_name def.f_name, E.Function)
-  | ConstantDef def ->
-      Some (Ast.str_of_name def.cst_name, E.Constant)
-  (* old style constant definition, before PHP 5.4 *)
-  | Expr(Call(Id("define", _), [String((s,_)); v])) ->
-      Some (s, E.Constant)
-
-  | ClassDef def ->
-    (*
-      let _kind = 
-        match def.c_kind with
-        | ClassRegular | ClassFinal | ClassAbstract -> E.RegularClass
-        | Interface -> E.Interface
-        | Trait -> E.Trait
-      in
-    *)
-      let kind = E.RegularClass in
-      Some (Ast.str_of_name def.c_name, E.Class kind)
-
-  (* could add entity for that? *)
-  | Global _ -> None
-
-  | StaticVars _ -> None
-
-  | Expr _ | Block _
-  | If _ | Switch _
-  | While _ | Do _ | For _ | Foreach _
-  | Return _ | Break _ | Continue _
-  | Throw _ | Try _
-    -> None
 
 (*****************************************************************************)
 (* Lookup *)
@@ -246,36 +225,17 @@ let rec extract_defs_uses ~phase ~g ~ast ~dupes ~readable ~skip_edges =
 (* Stmt/toplevel *)
 (* ---------------------------------------------------------------------- *)
 and stmt env x =
-
-  let env = 
-    match node_of_toplevel_opt x with
-    | None -> env
-    | Some node ->
-        if env.phase = Defs then begin
-          if G.has_node node env.g 
-          then Hashtbl.replace env.dupes node true
-          else begin
-            env.g +> G.add_node node;
-            (* if we later find a duplicate for node, we will
-             * cancel this action in build() (see the use of remove_edge()).
-             *)
-            env.g +> G.add_edge (env.current, node) G.Has;
-          end
-        end;
-
-        (* can happen for main() which will be dupes in which case
-         * it's better to keep current as the current File so
-         * at least we will avoid some fail lookup.
-         *)
-        if Hashtbl.mem env.dupes node
-        then env
-        else { env with current = node }
-  in
   match x with
   (* boilerplate *)
   | FuncDef def -> func_def env def
   | ClassDef def -> class_def env def
   | ConstantDef def -> constant_def env def
+
+  (* old style constant definition, before PHP 5.4 *)
+  | Expr(Call(Id("define", _), [String((s,_)); v])) ->
+     let node = (s, E.Constant) in
+     let env = add_node_and_edge_if_defs_mode env node in
+     expr env v
 
   | Expr e -> expr env e
   | Block xs -> stmtl env xs
@@ -304,6 +264,7 @@ and stmt env x =
 
   | StaticVars xs ->
       xs +> List.iter (fun (name, eopt) -> Common.opt (expr env) eopt;)
+  (* could add entity for that? *)
   | Global xs -> exprl env xs
 
 (* less: add deps to type hint? *)
@@ -325,6 +286,13 @@ and catches env xs = List.iter (catch env) xs
 (* Defs *)
 (* ---------------------------------------------------------------------- *)
 and func_def env def =
+  let node = (Ast.str_of_name def.f_name, E.Function) in
+  let env = 
+    match def.f_kind with
+    | AnonLambda -> env
+    | Function -> add_node_and_edge_if_defs_mode env node 
+    | Method -> raise Impossible
+  in
   def.f_params +> List.iter (fun p ->
     (* less: add deps to type hint? *)
     Common.opt (expr env) p.p_default;
@@ -332,7 +300,18 @@ and func_def env def =
   stmtl env def.f_body
 
 and class_def env def =
-  let node = Ast.str_of_name def.c_name, E.Class E.RegularClass in
+  let kind = E.RegularClass in
+  (*
+    let _kind = 
+    match def.c_kind with
+    | ClassRegular | ClassFinal | ClassAbstract -> E.RegularClass
+    | Interface -> E.Interface
+    | Trait -> E.Trait
+    in
+  *)
+  let node = (Ast.str_of_name def.c_name, E.Class kind) in
+  let env = add_node_and_edge_if_defs_mode env node in
+
   (* We kinda accept duplicated functions/classes/constants via env.dupes
    * because it's quite common in PHP. But we don't want to also
    * accept duplicated methods/fields, so in case of a duplicated class,
@@ -383,6 +362,8 @@ and class_def env def =
   end
 
 and constant_def env def =
+  let node = (Ast.str_of_name def.cst_name, E.Constant) in
+  let env = add_node_and_edge_if_defs_mode env node in
   expr env def.cst_body
 
 (* ---------------------------------------------------------------------- *)
