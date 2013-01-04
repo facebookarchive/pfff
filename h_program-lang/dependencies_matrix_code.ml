@@ -516,34 +516,68 @@ let build_full_matrix a =
 (* Explain the matrix *)
 (*****************************************************************************)
 
+(* history: 
+ * - iterate over all edges
+ * - iterate only on the children of i
+ * - use graph_opti instead of the memoized projection index
+ *)
 let explain_cell_list_use_edges2 (i, j) dm g =
-  let _res = ref [] in
+  let res = ref [] in
 
-  raise Todo
-
-  (* old: g +> G.iter_use_edges (fun n1 n2 -> *)
-(*
-  let src = dm.i_to_name.(i) in
-  let children = G.all_children src g in
-  children +> List.iter (fun n1 ->
-    let uses = G.succ n1 G.Use g in
-    uses +> List.iter (fun n2 ->
-
-      if n1 <> G.root then begin
-        let i2 = projection_index hmemo n1 dm g in
-        let j2 = projection_index hmemo n2 dm g in
-        (match i2, j2 with
-        | Some i2, Some j2 ->
-            if i2 = i && j2 = j 
-            then Common.push2 (n1, n2) res
-        | _ -> ()
-        )
-      end
-    );
+  (* todo: get passed this info from the caller? so factorize computation? *)
+  let gopti = Graph_code_opti.convert g in
+  let n_nodes = G2.nb_nodes gopti in
+  let igopti_to_idm = Array.create n_nodes (-1) in
+  dm.i_to_name +> Array.iteri (fun idm node ->
+    igopti_to_idm.(Hashtbl.find gopti.G2.name_to_i node) <- idm;
   );
-  !res
-*)
+  let (projected_parent_of_igopti: idm idx array) = Array.create n_nodes (-1) in
+  let (iroot: igopti idx) = Hashtbl.find gopti.G2.name_to_i G.root in
+  let rec depth parent igopti =
+    let children = gopti.G2.has_children.(igopti) in
+    let idm = igopti_to_idm.(igopti) in
+    let project = 
+      if idm = -1 
+      then parent
+      else idm
+    in
+    projected_parent_of_igopti.(igopti) <- project;
+    children +> List.iter (depth project);
+  in
+  depth (-1) iroot;
 
+  gopti.G2.use +> Array.iteri (fun i xs ->
+    let parent_i = projected_parent_of_igopti.(i) in
+    xs +> List.iter (fun j ->
+      let parent_j = projected_parent_of_igopti.(j) in
+      if parent_i = i && parent_j = j
+      then 
+       Common.push2 (
+         gopti.G2.i_to_name.(i), 
+         gopti.G2.i_to_name.(j)
+       ) res;
+    )
+  );
+(*
+  let (src: igopti idx) = Hashtbl.find gopti.G2.name_to_i dm.i_to_name.(i) in
+  let (dst: idm idx) = j in
+  
+  let rec aux n1 =
+    let uses = gopti.G2.use.(n1) in
+    uses +> List.iter (fun n2 ->
+      let idm = igopti_to_idm.(n2) in
+      if idm = dst
+      then Common.push2 (gopti.G2.i_to_name.(n1), gopti.G2.i_to_name.(n2)) res;
+    );
+    let children = gopti.G2.has_children.(n1) in
+    List.iter aux children
+  in
+  aux src;
+*)
+  pr2_gen !res;
+  !res
+                     
+   
 let explain_cell_list_use_edges a b c =
   Common.profile_code "DM.explain_cell" (fun () -> 
     explain_cell_list_use_edges2 a b c)
