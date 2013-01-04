@@ -151,6 +151,7 @@ let add_node_and_edge_if_defs_mode ?(dupe_ok=false) env name_node loc =
     else begin
       env.g +> G.add_node node;
       env.g +> G.add_edge (env.current, node) G.Has;
+
       let lexing_pos = loc.Asttypes.loc.Location.loc_start in
       let file = env.source_file in
       let nodeinfo = { Graph_code.
@@ -167,7 +168,9 @@ let add_node_and_edge_if_defs_mode ?(dupe_ok=false) env name_node loc =
     end
   end;
   add_full_path_local env (Common.list_last name, name) kind;
-  { env with  current = node; current_entity = name;
+  { env with 
+    current = node; 
+    current_entity = name; 
   }
 
 (*****************************************************************************)

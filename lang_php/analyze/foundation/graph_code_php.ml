@@ -102,6 +102,14 @@ let parse2 file =
 let parse a = 
   Common.memoized _hmemo a (fun () -> parse2 a)
 
+let add_node_and_edge_if_defs_mode env node =
+  if env.phase = Defs then begin
+    env.g +> G.add_node node;
+    env.g +> G.add_edge (env.current, node) G.Has;
+  end;
+  { env with current = node }
+
+
 
 let rec add_use_edge env ((str, kind) as dst) =
   let src = env.current in
@@ -357,29 +365,20 @@ and class_def env def =
    
    def.c_constants +> List.iter (fun def ->
      let node = (self ^ "." ^ Ast.str_of_name def.cst_name, E.ClassConstant) in
-     if env.phase = Defs then begin
-       env.g +> G.add_node node;
-       env.g +> G.add_edge (env.current, node) G.Has;
-     end;
-     expr { env with current = node } def.cst_body;
+     let env = add_node_and_edge_if_defs_mode env node in
+     expr env def.cst_body;
    );
    def.c_variables +> List.iter (fun def ->
      let node = (self ^ "." ^ Ast.str_of_name def.cv_name, E.Field) in
-     if env.phase = Defs then begin
-       env.g +> G.add_node node;
-       env.g +> G.add_edge (env.current, node) G.Has;
-     end;
-     Common.opt (expr {env with current = node}) def.cv_value
+     let env = add_node_and_edge_if_defs_mode env node in
+     Common.opt (expr env) def.cv_value
    );
    def.c_methods +> List.iter (fun def ->
      (* less: be more precise at some point *)
      let kind = E.RegularMethod in
      let node = (self ^ "." ^ Ast.str_of_name def.f_name, E.Method kind) in
-     if env.phase = Defs then begin
-       env.g +> G.add_node node;
-       env.g +> G.add_edge (env.current, node) G.Has;
-     end;
-     stmtl { env with current = node } def.f_body
+     let env = add_node_and_edge_if_defs_mode env node in
+     stmtl env def.f_body
    )
   end
 
