@@ -395,7 +395,7 @@ and func_def env def =
   
   let access_cnt = 
     match def.f_kind with
-    | Function -> 0
+    | Function  | AnonLambda -> 0
     (* Don't report UnusedParameter for parameters of methods;
      * people sometimes override a method and don't use all
      * the parameters, hence the 1 value below.
