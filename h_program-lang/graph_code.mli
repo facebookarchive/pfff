@@ -8,6 +8,11 @@ type nodeinfo = {
  and property =
    | IsEnum
 
+type error =
+ | NodeAlreadyPresent
+
+exception Error of error
+
 (* really an hypergraph actually *)
 type graph
 
@@ -26,6 +31,7 @@ val create_initial_hierarchy: graph -> unit
 
 (* graph construction *)
 val create: unit -> graph
+(* may raise NodeAlreadyPresent *)
 val add_node: node -> graph -> unit
 val add_nodeinfo: node -> nodeinfo -> graph -> unit
 val add_edge: (node * node) -> edge -> graph -> unit

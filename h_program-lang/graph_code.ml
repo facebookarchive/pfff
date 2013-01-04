@@ -66,8 +66,8 @@ module G = Graph
  *    add_edge_throw_exn_if_not_present for the cases where we
  *    want extra security.
  * 
- *  - maybe I can generate the light database and prolog database
- *    from this graph_code.ml.
+ *  - maybe I can generate the light database from this graph_code.ml
+ *    (I already do a bit for prolog with graph_code_prolog.ml)
  *)
 
 (*****************************************************************************)
@@ -118,6 +118,11 @@ type graph = {
   info: (node, nodeinfo) Hashtbl.t;
 }
 
+type error =
+ | NodeAlreadyPresent
+
+exception Error of error
+
 (*****************************************************************************)
 (* Globals *)
 (*****************************************************************************)
@@ -140,12 +145,12 @@ let add_node n g =
   if G.has_node n g.has
   then begin 
     pr2_gen n;
-    failwith "node already present";
+    raise (Error NodeAlreadyPresent)
   end;
   if G.has_node n g.use
   then begin 
     pr2_gen n;
-    failwith "node already present";
+    raise (Error NodeAlreadyPresent)
   end;
 
   G.add_vertex_if_not_present n g.has;
