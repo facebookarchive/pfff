@@ -521,11 +521,9 @@ let build_full_matrix a =
  * - iterate only on the children of i
  * - use graph_opti instead of the memoized projection index
  *)
-let explain_cell_list_use_edges2 (i, j) dm g =
+let explain_cell_list_use_edges2 (i, j) dm gopti =
   let res = ref [] in
 
-  (* todo: get passed this info from the caller? so factorize computation? *)
-  let gopti = Graph_code_opti.convert g in
   let n_nodes = G2.nb_nodes gopti in
   let igopti_to_idm = Array.create n_nodes (-1) in
   dm.i_to_name +> Array.iteri (fun idm node ->

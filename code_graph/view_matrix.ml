@@ -486,7 +486,7 @@ let button_action da w ev =
             | `BUTTON_PRESS, 1 ->
                 pr2 (spf "clicking on cell (%d, %d)" i j);
                 let deps = 
-                  DM.explain_cell_list_use_edges  (i, j) w.m w.model.g in
+                  DM.explain_cell_list_use_edges  (i, j) w.m w.model.gopti in
                 let str = 
                   deps +> List.map (fun (n1, n2) ->
                     spf "%s --> %s"

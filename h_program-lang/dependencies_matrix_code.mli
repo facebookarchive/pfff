@@ -26,7 +26,7 @@ val build_full_matrix:
   Graph_code.graph -> dm
 
 val explain_cell_list_use_edges: 
-  (int * int) -> dm -> Graph_code.graph ->
+  (int * int) -> dm -> Graph_code_opti.graph ->
   (Graph_code.node * Graph_code.node) list
 
 type config_path_elem = 

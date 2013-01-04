@@ -109,7 +109,8 @@ let unittest =
       );
       "explain cell" >:: (fun () ->
         let (g, dm) = build_g_and_dm () in
-        let xs = DM.explain_cell_list_use_edges (2, 1) dm g in
+        let gopti = Graph_code_opti.convert g in
+        let xs = DM.explain_cell_list_use_edges (2, 1) dm gopti in
         assert_equal xs [
           ("a/y.ml", E.File), ("a/x.ml", E.File);
         ];
