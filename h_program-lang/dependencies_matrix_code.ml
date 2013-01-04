@@ -373,7 +373,7 @@ let build_with_tree a b c =
   Common.profile_code "DM.build_with_tree" (fun () -> build_with_tree2 a b c)
 
 
-let build tree constraints_opt full_matrix_opt g =
+let build tree constraints_opt full_matrix_opt gopti =
 
   (* let's compute a better reordered tree *)  
   let rec aux tree =
@@ -395,7 +395,7 @@ let build tree constraints_opt full_matrix_opt g =
           in
         
           (* first draft *)
-          let dm = build_with_tree config_depth1 full_matrix_opt g in
+          let dm = build_with_tree config_depth1 full_matrix_opt gopti in
           
           (* Now we need to reorder to minimize the number of dependencies in
            * the top right corner of the matrix.
@@ -413,7 +413,7 @@ let build tree constraints_opt full_matrix_opt g =
         end
   in
   let ordered_config = aux tree in
-  build_with_tree ordered_config full_matrix_opt g
+  build_with_tree ordered_config full_matrix_opt gopti
 
 (*****************************************************************************)
 (* Building optimized matrix *)

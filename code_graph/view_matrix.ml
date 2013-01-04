@@ -35,7 +35,7 @@ module CairoH = Cairo_helpers3
 (* Helpers *)
 (*****************************************************************************)
 
-(* have a draw_labels.ml ? *) 
+(* less: have a draw_labels.ml ? *) 
 
 (* similar to highlight_code.ml *)
 let color_of_node (_, kind) =
@@ -177,7 +177,7 @@ let draw_cells cr w ~interactive_regions =
   done;
   ()
 
-let draw_left_rows cr w ~interactive_regions =
+let draw_left_tree cr w ~interactive_regions =
   let l = M.layout_of_w w in
   let font_size_default = min (l.height_cell/1.5) (l.x_start_matrix_left/10.) in
   CairoH.set_font_size cr font_size_default;
@@ -338,7 +338,7 @@ let draw_up_columns cr w ~interactive_regions =
 (* Semantic overlays *)
 (*****************************************************************************)
 
-let detect_dead_columns cr w =
+let highlight_dead_columns cr w =
   let l = M.layout_of_w w in
   let mat = w.m.DM.matrix in
   for j = 0 to Array.length mat -.. 1 do
@@ -351,7 +351,7 @@ let detect_dead_columns cr w =
     end
   done
 
-let detect_dead_lines cr w =
+let highlight_dead_lines cr w =
   let l = M.layout_of_w w in
   let mat = w.m.DM.matrix in
   for i = 0 to Array.length mat -.. 1 do
@@ -365,7 +365,7 @@ let detect_dead_lines cr w =
   done
 
 
-let detect_internal_helpers cr w =
+let highlight_internal_helpers cr w =
   let l = M.layout_of_w w in
   let mat = w.m.DM.matrix in
   for i = 0 to Array.length mat -.. 1 do
@@ -399,12 +399,12 @@ let draw_matrix cr w =
   let interactive_regions = ref [] in
 
   draw_cells      cr w ~interactive_regions;
-  draw_left_rows  cr w ~interactive_regions;
+  draw_left_tree  cr w ~interactive_regions;
   draw_up_columns cr w ~interactive_regions;
 
-  (* detect_dead_lines cr w; *)
-  detect_dead_columns cr w;
-  detect_internal_helpers cr w;
+  (* highlight_dead_lines cr w; *)
+  highlight_dead_columns cr w;
+  highlight_internal_helpers cr w;
 
   w.interactive_regions <- !interactive_regions;
   ()

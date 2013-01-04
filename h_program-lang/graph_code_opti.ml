@@ -20,7 +20,15 @@ module G = Graph_code
 (*****************************************************************************)
 (* Prelude *)
 (*****************************************************************************)
-
+(*
+ * Graph_code uses the 'node' type for keys into different hashtbl (see
+ * commons/graph.ml). This is convenient when building such a graph
+ * in the different graph_code_xxx.ml files. But it also leads to
+ * many hashtbl operations when working on a Graph_code. 
+ * This module introduces a new 'graph' type optimized to use arrays
+ * instead of hashtbl. Then certain operations like getting the list
+ * of children (Has) or list of dependent (Use) is very fast.
+ *)
 (*****************************************************************************)
 (* Types *)
 (*****************************************************************************)
