@@ -99,10 +99,10 @@ let parse2 file =
   | exn ->
     pr2_once (spf "PARSE ERROR with %s, exn = %s" file (Common.exn_to_s exn));
     []
-let parse a = Common.memoized _hmemo a (fun () -> parse2 a)
+let parse a = 
+  Common.memoized _hmemo a (fun () -> parse2 a)
 
 
-(* assumes name has already been resolved by a lookup() *)
 let rec add_use_edge env ((str, kind) as dst) =
   let src = env.current in
   (match () with
@@ -133,9 +133,14 @@ let rec add_use_edge env ((str, kind) as dst) =
 
           G.add_node dst env.g;
           let parent_target = G.not_found in
-          pr2 (spf "PB: lookup fail on %s (in %s)" 
-                       (G.string_of_node dst) (G.string_of_node src));
-          
+          (match kind with
+          (* TODO, fix those *)
+          | E.Method _ | E.Field | E.ClassConstant -> 
+            ()
+          | _ ->
+            pr2 (spf "PB: lookup fail on %s (in %s)" 
+                   (G.string_of_node dst) (G.string_of_node src));
+          );
           env.g +> G.add_edge (parent_target, dst) G.Has;
           env.g +> G.add_edge (src, dst) G.Use;
       )
@@ -203,9 +208,8 @@ let lookup2 g (aclass, amethod_or_field_or_constant) =
   depth (aclass, E.Class E.RegularClass)
 
 let lookup g a = 
-  Common.profile_code "Graph_php.lookup" (fun () ->
-    lookup2 g a
-  )
+  Common.profile_code "Graph_php.lookup" (fun () -> lookup2 g a)
+
 (*****************************************************************************)
 (* Defs/Uses *)
 (*****************************************************************************)
@@ -244,6 +248,9 @@ and stmt env x =
           then Hashtbl.replace env.dupes node true
           else begin
             env.g +> G.add_node node;
+            (* if we later find a duplicate for node, we will
+             * cancel this action in build() (see the use of remove_edge()).
+             *)
             env.g +> G.add_edge (env.current, node) G.Has;
           end
         end;
@@ -317,54 +324,64 @@ and func_def env def =
   stmtl env def.f_body
 
 and class_def env def =
+  let node = Ast.str_of_name def.c_name, E.Class E.RegularClass in
+  (* We kinda accept duplicated functions/classes/constants via env.dupes
+   * because it's quite common in PHP. But we don't want to also
+   * accept duplicated methods/fields, so in case of a duplicated class,
+   * then let's not do anything.
+   *)
+  if Hashtbl.mem env.dupes node 
+  then ()
+  else begin
 
-  (* opti: could also just push those edges in a _todo ref during Defs *)
-  if env.phase = Inheritance then begin
-    def.c_extends +> Common.do_option (fun c2 ->
-      add_use_edge env (Ast.str_of_name c2, E.Class E.RegularClass);
-    );
-    (* todo: use Interface and Traits at some point *)
-    def.c_implements +> List.iter (fun c2 ->
-      add_use_edge env (Ast.str_of_name c2, E.Class E.RegularClass);
-    );
-    def.c_uses +> List.iter (fun c2 ->
-      add_use_edge env (Ast.str_of_name c2, E.Class E.RegularClass);
-    );
-  end;
-  let self = Ast.str_of_name def.c_name in
-  let parent = 
-    match def.c_extends with 
-    | None -> "NOPARENT" 
-    | Some c2 -> Ast.str_of_name c2
-  in
-  let env = { env with self; parent } in
-
-  def.c_constants +> List.iter (fun def ->
-    let node = (self ^ "." ^ Ast.str_of_name def.cst_name, E.ClassConstant) in
-    if env.phase = Defs then begin
-      env.g +> G.add_node node;
-      env.g +> G.add_edge (env.current, node) G.Has;
-    end;
-    expr { env with current = node } def.cst_body;
-  );
-  def.c_variables +> List.iter (fun def ->
-    let node = (self ^ "." ^ Ast.str_of_name def.cv_name, E.Field) in
-    if env.phase = Defs then begin
-      env.g +> G.add_node node;
-      env.g +> G.add_edge (env.current, node) G.Has;
-    end;
-    Common.opt (expr {env with current = node}) def.cv_value
-  );
-  def.c_methods +> List.iter (fun def ->
-    (* less: be more precise at some point *)
-    let kind = E.RegularMethod in
-    let node = (self ^ "." ^ Ast.str_of_name def.f_name, E.Method kind) in
-    if env.phase = Defs then begin
-      env.g +> G.add_node node;
-      env.g +> G.add_edge (env.current, node) G.Has;
-    end;
-    stmtl { env with current = node } def.f_body
-  )
+   (* opti: could also just push those edges in a _todo ref during Defs *)
+   if env.phase = Inheritance then begin
+     def.c_extends +> Common.do_option (fun c2 ->
+       add_use_edge env (Ast.str_of_name c2, E.Class E.RegularClass);
+     );
+     (* todo: use Interface and Traits at some point *)
+     def.c_implements +> List.iter (fun c2 ->
+       add_use_edge env (Ast.str_of_name c2, E.Class E.RegularClass);
+     );
+     def.c_uses +> List.iter (fun c2 ->
+       add_use_edge env (Ast.str_of_name c2, E.Class E.RegularClass);
+     );
+   end;
+   let self = Ast.str_of_name def.c_name in
+   let parent = 
+     match def.c_extends with 
+     | None -> "NOPARENT" 
+     | Some c2 -> Ast.str_of_name c2
+   in
+   let env = { env with self; parent } in
+   
+   def.c_constants +> List.iter (fun def ->
+     let node = (self ^ "." ^ Ast.str_of_name def.cst_name, E.ClassConstant) in
+     if env.phase = Defs then begin
+       env.g +> G.add_node node;
+       env.g +> G.add_edge (env.current, node) G.Has;
+     end;
+     expr { env with current = node } def.cst_body;
+   );
+   def.c_variables +> List.iter (fun def ->
+     let node = (self ^ "." ^ Ast.str_of_name def.cv_name, E.Field) in
+     if env.phase = Defs then begin
+       env.g +> G.add_node node;
+       env.g +> G.add_edge (env.current, node) G.Has;
+     end;
+     Common.opt (expr {env with current = node}) def.cv_value
+   );
+   def.c_methods +> List.iter (fun def ->
+     (* less: be more precise at some point *)
+     let kind = E.RegularMethod in
+     let node = (self ^ "." ^ Ast.str_of_name def.f_name, E.Method kind) in
+     if env.phase = Defs then begin
+       env.g +> G.add_node node;
+       env.g +> G.add_edge (env.current, node) G.Has;
+     end;
+     stmtl { env with current = node } def.f_body
+   )
+  end
 
 and constant_def env def =
   expr env def.cst_body
@@ -563,11 +580,7 @@ let build ?(verbose=true) dir skip_list =
   G.create_initial_hierarchy g;
 
   let dupes = Hashtbl.create 101 in
-  let skip_edges = skip_list +> Common.map_filter (function
-    | Skip_code.Edge (s1, s2) -> Some (s1, s2)
-    | _ -> None
-  ) +> Common.hash_of_list 
-  in
+  let skip_edges = Skip_code.build_filter_edges skip_list in
 
   (* step1: creating the nodes and 'Has' edges, the defs *)
   if verbose then pr2 "\nstep1: extract defs";
@@ -576,8 +589,10 @@ let build ?(verbose=true) dir skip_list =
       k();
       let readable = Common.filename_without_leading_path root file in
       let ast = parse file in
-      extract_defs_uses ~phase:Defs ~g ~dupes ~ast ~readable ~skip_edges;
-      ()
+      try 
+        extract_defs_uses ~phase:Defs ~g ~dupes ~ast ~readable ~skip_edges;
+      with Graph_code.Error Graph_code.NodeAlreadyPresent ->
+        failwith (spf "Node already present in %s" file)
    ));
   dupes +> Common.hashset_to_list +> List.iter (fun n ->
     pr2 (spf "DUPE: %s" (G.string_of_node n));
