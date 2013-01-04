@@ -292,6 +292,7 @@ and func_def = {
 }
    and function_kind = 
      | Function 
+     | AnonLambda
      | Method
 
    and parameter = {

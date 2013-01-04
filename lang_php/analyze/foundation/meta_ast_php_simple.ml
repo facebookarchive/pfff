@@ -256,6 +256,7 @@ and vof_function_type =
   function
   | Function -> Ocaml.VSum (("Function", []))
   | Method -> Ocaml.VSum (("Method", []))
+  | AnonLambda -> Ocaml.VSum (("AnonLambda", []))
 and
   vof_parameter {
                   p_attrs = v_p_attrs;
