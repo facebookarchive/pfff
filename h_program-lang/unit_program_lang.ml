@@ -107,10 +107,12 @@ let unittest =
         assert_equal 
           false (DM.is_internal_helper 2 dm);
       );
-      "XXX explain cell" >:: (fun () ->
+      "explain cell" >:: (fun () ->
         let (g, dm) = build_g_and_dm () in
         let xs = DM.explain_cell_list_use_edges (2, 1) dm g in
-        assert_equal xs [];
+        assert_equal xs [
+          ("a/y.ml", E.File), ("a/x.ml", E.File);
+        ];
       );
     ]
   ]

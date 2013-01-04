@@ -546,15 +546,15 @@ let explain_cell_list_use_edges2 (i, j) dm g =
   in
   depth (-1) iroot;
 
-  gopti.G2.use +> Array.iteri (fun i xs ->
-    let parent_i = projected_parent_of_igopti.(i) in
-    xs +> List.iter (fun j ->
-      let parent_j = projected_parent_of_igopti.(j) in
-      if parent_i = i && parent_j = j
+  gopti.G2.use +> Array.iteri (fun i2 xs ->
+    let parent_i2 = projected_parent_of_igopti.(i2) in
+    xs +> List.iter (fun j2 ->
+      let parent_j2 = projected_parent_of_igopti.(j2) in
+      if parent_i2 = i && parent_j2 = j
       then 
        Common.push2 (
-         gopti.G2.i_to_name.(i), 
-         gopti.G2.i_to_name.(j)
+         gopti.G2.i_to_name.(i2), 
+         gopti.G2.i_to_name.(j2)
        ) res;
     )
   );
@@ -574,7 +574,6 @@ let explain_cell_list_use_edges2 (i, j) dm g =
   in
   aux src;
 *)
-  pr2_gen !res;
   !res
                      
    
