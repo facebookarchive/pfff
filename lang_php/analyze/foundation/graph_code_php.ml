@@ -100,7 +100,14 @@ let parse2 file =
     pr2_once (spf "PARSE ERROR with %s, exn = %s" file (Common.exn_to_s exn));
     []
 let parse a = 
-  Common.memoized _hmemo a (fun () -> parse2 a)
+  (* on huge codebase naive memoization stresses too much the GC.
+   * We marshall a la juju so the heap graph is smaller at least.
+   *)
+  Marshal.from_string
+    (Common.memoized _hmemo a (fun () -> 
+      Marshal.to_string (parse2 a) []
+     )) 0
+
 
 let add_node_and_edge_if_defs_mode env node =
   if env.phase = Defs then begin
