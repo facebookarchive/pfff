@@ -116,7 +116,7 @@ let add_node_and_edge_if_defs_mode env node =
     else begin
       env.g +> G.add_node node;
       (* if we later find a duplicate for node, we will
-       * cancel this action in build() (see the use of remove_edge()).
+       * redirect this edge in build() to G.dupe.
        *)
       env.g +> G.add_edge (env.current, node) G.Has;
     end
