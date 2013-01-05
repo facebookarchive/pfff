@@ -74,6 +74,11 @@ type env = {
    *)
   dupes: (Graph_code.node, Common.filename) Hashtbl.t;
   (* todo: dynamic_fails stats *)
+  (* PHP is case insensitive so certain lookup fails because people
+   * used the wrong case. Those errors are less important so
+   * we just automatically relookup the correct entity.
+   *)
+  case_insensitive: (Graph_code.node, Graph_code.node) Hashtbl.t;
 }
   (* We need 3 phases, one to get all the definitions, one to
    * get the inheritance information, and one to get all the Uses.
@@ -165,6 +170,10 @@ let rec add_use_edge env ((str, kind) as dst) =
       else 
         G.add_edge (src, dst) G.Use env.g
 
+  | _ when Hashtbl.mem env.case_insensitive (String.lowercase str, kind) ->
+      add_use_edge env (Hashtbl.find env.case_insensitive
+                          (String.lowercase str, kind))
+
   | _ -> 
       (match kind with
       (* if dst is a Class, then try Interface *)
@@ -224,7 +233,8 @@ let lookup g a =
 (*****************************************************************************)
 (* Defs/Uses *)
 (*****************************************************************************)
-let rec extract_defs_uses ~phase ~g ~ast ~dupes ~readable ~skip_edges =
+let rec extract_defs_uses ~phase ~g ~ast ~dupes ~readable ~skip_edges 
+    ~case_insensitive =
 
   let env = {
     g; phase;
@@ -232,6 +242,7 @@ let rec extract_defs_uses ~phase ~g ~ast ~dupes ~readable ~skip_edges =
     self = "NOSELF"; parent = "NOPARENT";
     dupes;
     skip_edges;
+    case_insensitive;
   } 
   in
 
@@ -575,6 +586,7 @@ let build ?(verbose=true) dir skip_list =
 
   let dupes = Hashtbl.create 101 in
   let skip_edges = Skip_code.build_filter_edges skip_list in
+  let case_insensitive = Hashtbl.create 101 in
 
   (* step1: creating the nodes and 'Has' edges, the defs *)
   if verbose then pr2 "\nstep1: extract defs";
@@ -584,7 +596,8 @@ let build ?(verbose=true) dir skip_list =
       let readable = Common.filename_without_leading_path root file in
       let ast = parse file in
       try 
-        extract_defs_uses ~phase:Defs ~g ~dupes ~ast ~readable ~skip_edges;
+        extract_defs_uses ~phase:Defs ~g ~ast ~readable 
+          ~skip_edges ~dupes ~case_insensitive;
       with Graph_code.Error Graph_code.NodeAlreadyPresent ->
         failwith (spf "Node already present in %s" file)
    ));
@@ -594,11 +607,17 @@ let build ?(verbose=true) dir skip_list =
     g +> G.remove_edge (G.parent n g, n) G.Has;
     g +> G.add_edge (G.dupe, n) G.Has;
     try 
+      (*
       let nodeinfo = G.nodeinfo n g in
       pr2 (spf " orig = %s" (nodeinfo.G.pos.Parse_info.file));
       pr2 (spf " dupe = %s" (List.hd files));
+      *)
+      ()
     with Not_found ->
       ()
+  );
+  g +> G.iter_nodes (fun (str, kind) ->
+    Hashtbl.replace case_insensitive (String.lowercase str, kind) (str, kind)
   );
 
   (* step2: creating the 'Use' edges for inheritance *)
@@ -608,7 +627,8 @@ let build ?(verbose=true) dir skip_list =
      k();
      let readable = Common.filename_without_leading_path root file in
      let ast = parse file in
-     extract_defs_uses ~phase:Inheritance ~g ~dupes ~ast ~readable ~skip_edges;
+     extract_defs_uses ~phase:Inheritance ~g ~ast ~readable 
+       ~skip_edges ~dupes ~case_insensitive;
    ));
 
   (* step3: creating the 'Use' edges, the uses *)
@@ -618,7 +638,8 @@ let build ?(verbose=true) dir skip_list =
      k();
      let readable = Common.filename_without_leading_path root file in
      let ast = parse file in
-     extract_defs_uses ~phase:Uses ~g ~dupes ~ast ~readable ~skip_edges;
+     extract_defs_uses ~phase:Uses ~g ~ast ~readable 
+       ~skip_edges ~dupes ~case_insensitive;
    ));
   
   g
