@@ -35,6 +35,7 @@ module G2 = Graph_code_opti
  *  - compute lazily deep rows using only a subset of the edges
  *  - graph code opti, because using arrays is far more efficient than
  *    hashtbl and/or memoized hashtbl
+ *  - remove full matrix, not anymore needed
  *)
 
 (*****************************************************************************)
@@ -301,7 +302,7 @@ let optional_manual_reordering (s, node_kind) nodes constraints_opt =
 (* Building the matrix *)
 (*****************************************************************************)
 
-let build_with_tree2 tree full_matrix_opt gopti =
+let build_with_tree2 tree gopti =
 
   (* todo? when we expand do we create a line for the expanded? if no
    * then it will have no projection so the test below is not enough.
@@ -348,32 +349,28 @@ let build_with_tree2 tree full_matrix_opt gopti =
   in
   depth (-1) iroot;
 
-  (match full_matrix_opt with
-  | _ (* None *) ->
-      gopti.G2.use +> Array.iteri (fun i xs ->
-        let parent_i = projected_parent_of_igopti.(i) in
-        xs +> List.iter (fun j ->
-          let parent_j = projected_parent_of_igopti.(j) in
-          (* It's possible we operate on a slice of the original dsm, 
-           * for instance when we focus on a node, in which case
-           * the projection of an edge can not project on anything
-           * in the current matrix.
-           *)
-          if parent_i <> -1 && parent_j <> -1
-          then 
-            dm.matrix.(parent_i).(parent_j) <- 
-              dm.matrix.(parent_i).(parent_j) + 1
-        )
-      )
-(*  | Some fulldm -> *)
+  gopti.G2.use +> Array.iteri (fun i xs ->
+    let parent_i = projected_parent_of_igopti.(i) in
+    xs +> List.iter (fun j ->
+      let parent_j = projected_parent_of_igopti.(j) in
+      (* It's possible we operate on a slice of the original dsm, 
+       * for instance when we focus on a node, in which case
+       * the projection of an edge can not project on anything
+       * in the current matrix.
+       *)
+      if parent_i <> -1 && parent_j <> -1
+      then 
+        dm.matrix.(parent_i).(parent_j) <- 
+          dm.matrix.(parent_i).(parent_j) + 1
+    )
   );
   dm
 
-let build_with_tree a b c = 
-  Common.profile_code "DM.build_with_tree" (fun () -> build_with_tree2 a b c)
+let build_with_tree a b = 
+  Common.profile_code "DM.build_with_tree" (fun () -> build_with_tree2 a b)
 
 
-let build tree constraints_opt full_matrix_opt gopti =
+let build tree constraints_opt gopti =
 
   (* let's compute a better reordered tree *)  
   let rec aux tree =
@@ -395,7 +392,7 @@ let build tree constraints_opt full_matrix_opt gopti =
           in
         
           (* first draft *)
-          let dm = build_with_tree config_depth1 full_matrix_opt gopti in
+          let dm = build_with_tree config_depth1 gopti in
           
           (* Now we need to reorder to minimize the number of dependencies in
            * the top right corner of the matrix.
@@ -413,104 +410,7 @@ let build tree constraints_opt full_matrix_opt gopti =
         end
   in
   let ordered_config = aux tree in
-  build_with_tree ordered_config full_matrix_opt gopti
-
-(*****************************************************************************)
-(* Building optimized matrix *)
-(*****************************************************************************)
-
-let threshold_nodes_full_matrix = 10000
-
-(* todo: intelligent split of the tree? to avoid outliers? 
- * have a quota per subtree?
- *)
-let top_nodes_of_graph_until_threshold g =
-
-  let res = ref [] in
-  let remaining = ref threshold_nodes_full_matrix in
-  (* bfs-like algorithm *)
-  let rec aux xs =
-    if null xs 
-    then ()
-    else 
-      if List.length xs > !remaining
-      then ()
-      else begin
-        remaining := !remaining - (List.length xs);
-        xs +> List.iter (fun x -> Common.push2 x res);
-        aux (xs +> List.map (fun n -> G.succ n G.Has g) +> List.flatten)
-      end
-  in
-  aux [G.root];
-  (* old: g +> G.iter_nodes (fun n -> Common.push2 n res); *)
-  !res
-
-
-(* less: factorize with build_with_tree, the only difference here
- * is that we update the full list of parents.
- *)
-let build_full_matrix2 g =
-  let gopti = Graph_code_opti.convert g in
-  let nodes = top_nodes_of_graph_until_threshold g in
-
-  let n = List.length nodes in
-  let n_nodes = G.nb_nodes g in
-  pr2 (spf "Building full matrix, n = %d (%d)" n n_nodes);
-
-  let name_to_idm = Hashtbl.create (n / 2) in
-  let idm_to_name = Array.create n ("", E.Dir) in
-  let igopti_to_idm = Array.create n_nodes (-1) in
-
-  let (i: idm idx ref) = ref 0 in
-  pr2 (spf "Building nodes hashes");
-  nodes +> List.iter (fun node ->
-    Hashtbl.add name_to_idm node !i;
-    idm_to_name.(!i) <- node;
-    igopti_to_idm.(Hashtbl.find gopti.G2.name_to_i node) <- !i;
-    incr i;
-  );
-  let dm = {
-    matrix = Common.make_matrix_init ~nrow:n ~ncolumn:n (fun i j -> 0);
-    name_to_i = name_to_idm;
-    i_to_name = idm_to_name;
-    config = Node (G.root, []);
-  }
-  in
-  
-  let (projected_parents_of_igopti: idm idx list array) = 
-    Array.create n_nodes [] in
-  let iroot = Hashtbl.find gopti.G2.name_to_i G.root in
-  let rec depth parents igopti =
-    let children = gopti.G2.has_children.(igopti) in
-    let idm = igopti_to_idm.(igopti) in
-    let parents = 
-      if idm = -1 
-      then parents
-      else idm::parents
-    in
-    projected_parents_of_igopti.(igopti) <- parents;
-    children +> List.iter (depth parents);
-  in
-  depth [] iroot;
-
-  let n_edges = G.nb_use_edges g in
-  pr2 (spf "Iterating %d edges" n_edges);
-  gopti.G2.use +> Array.iteri (fun i xs ->
-    let parents_i = projected_parents_of_igopti.(i) in
-    xs +> List.iter (fun j ->
-      let parents_j = projected_parents_of_igopti.(j) in
-      (* cross product *)
-      parents_i +> List.iter (fun i ->
-        parents_j +> List.iter (fun j ->
-          dm.matrix.(i).(j) <- dm.matrix.(i).(j) + 1;
-        )
-      )
-    )
-  );
-  dm
-
-let build_full_matrix a = 
-  Common.profile_code "DM.build_full_matrix" (fun () -> build_full_matrix2 a)
+  build_with_tree ordered_config gopti
 
 (*****************************************************************************)
 (* Explain the matrix *)

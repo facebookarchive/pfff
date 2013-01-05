@@ -437,7 +437,7 @@ let recompute_matrix w =
   let m = 
     Common.profile_code2 "Model.building matrix" (fun () -> 
       Dependencies_matrix_code.build config 
-        (Some w.model.constraints) (Some w.model.full_matrix) w.model.gopti
+        (Some w.model.constraints) w.model.gopti
     )
   in
   !Ctl._set_title (DM.string_of_config_path w.path);

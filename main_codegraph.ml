@@ -190,10 +190,6 @@ let build_model root =
     Common.cache_computation ~verbose:!verbose file ".opti"
       (fun () -> Graph_code_opti.convert g)
   in
-  let full_matrix =
-    Common.cache_computation ~verbose:!verbose file ".matrix"
-      (fun () -> DM.build_full_matrix g)
-  in
   (* todo: find -name "info.txt" *)
   let constraints =
     if Sys.file_exists (Filename.concat root "info.txt")
@@ -202,7 +198,7 @@ let build_model root =
       constraints_of_info_txt info_txt
     else Hashtbl.create 0
   in
-  { Model.g = g; gopti; root; full_matrix; constraints }
+  { Model.g = g; gopti; root; constraints }
 
 let dir_node xs =     
   (Common.join "/" xs, Database_code.Dir)

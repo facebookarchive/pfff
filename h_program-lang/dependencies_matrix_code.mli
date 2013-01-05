@@ -19,11 +19,7 @@ val verbose: bool ref
 val basic_config: Graph_code.graph -> config
 
 val build:
-  config -> partition_constraints option -> dm option (* full matrix *) -> 
-  Graph_code_opti.graph -> dm
-
-val build_full_matrix:
-  Graph_code.graph -> dm
+  config -> partition_constraints option -> Graph_code_opti.graph -> dm
 
 val explain_cell_list_use_edges: 
   (int * int) -> dm -> Graph_code_opti.graph ->
