@@ -109,7 +109,15 @@ let parse a =
      )) 0
 
 
-let add_node_and_edge_if_defs_mode env node =
+let add_node_and_edge_if_defs_mode env name_node =
+  let (name, kind) = name_node in
+  let str =
+    match kind with
+    | E.ClassConstant | E.Field | E.Method _ -> 
+      env.self ^ "." ^ Ast.str_of_name name
+    | _ -> Ast.str_of_name name
+  in
+  let node = (str, kind) in
   if env.phase = Defs then begin
     if G.has_node node env.g 
     then Hashtbl.replace env.dupes node true
@@ -239,8 +247,8 @@ and stmt env x =
   | ConstantDef def -> constant_def env def
 
   (* old style constant definition, before PHP 5.4 *)
-  | Expr(Call(Id("define", _), [String((s,_)); v])) ->
-     let node = (s, E.Constant) in
+  | Expr(Call(Id("define", _), [String((name)); v])) ->
+     let node = (name, E.Constant) in
      let env = add_node_and_edge_if_defs_mode env node in
      expr env v
 
@@ -293,7 +301,7 @@ and catches env xs = List.iter (catch env) xs
 (* Defs *)
 (* ---------------------------------------------------------------------- *)
 and func_def env def =
-  let node = (Ast.str_of_name def.f_name, E.Function) in
+  let node = (def.f_name, E.Function) in
   let env = 
     match def.f_kind with
     | AnonLambda -> env
@@ -316,60 +324,50 @@ and class_def env def =
     | Trait -> E.Trait
     in
   *)
-  let node = (Ast.str_of_name def.c_name, E.Class kind) in
+  let node = (def.c_name, E.Class kind) in
   let env = add_node_and_edge_if_defs_mode env node in
 
-  (* We kinda accept duplicated functions/classes/constants via env.dupes
-   * because it's quite common in PHP. But we don't want to also
-   * accept duplicated methods/fields, so in case of a duplicated class,
-   * then let's not do anything.
-   *)
-  if Hashtbl.mem env.dupes node 
-  then ()
-  else begin
-
-   (* opti: could also just push those edges in a _todo ref during Defs *)
-   if env.phase = Inheritance then begin
-     def.c_extends +> Common.do_option (fun c2 ->
-       add_use_edge env (Ast.str_of_name c2, E.Class E.RegularClass);
-     );
-     (* todo: use Interface and Traits at some point *)
-     def.c_implements +> List.iter (fun c2 ->
-       add_use_edge env (Ast.str_of_name c2, E.Class E.RegularClass);
-     );
-     def.c_uses +> List.iter (fun c2 ->
-       add_use_edge env (Ast.str_of_name c2, E.Class E.RegularClass);
-     );
-   end;
-   let self = Ast.str_of_name def.c_name in
-   let parent = 
-     match def.c_extends with 
-     | None -> "NOPARENT" 
-     | Some c2 -> Ast.str_of_name c2
-   in
-   let env = { env with self; parent } in
-   
-   def.c_constants +> List.iter (fun def ->
-     let node = (self ^ "." ^ Ast.str_of_name def.cst_name, E.ClassConstant) in
-     let env = add_node_and_edge_if_defs_mode env node in
-     expr env def.cst_body;
-   );
-   def.c_variables +> List.iter (fun def ->
-     let node = (self ^ "." ^ Ast.str_of_name def.cv_name, E.Field) in
-     let env = add_node_and_edge_if_defs_mode env node in
-     Common.opt (expr env) def.cv_value
-   );
-   def.c_methods +> List.iter (fun def ->
-     (* less: be more precise at some point *)
-     let kind = E.RegularMethod in
-     let node = (self ^ "." ^ Ast.str_of_name def.f_name, E.Method kind) in
-     let env = add_node_and_edge_if_defs_mode env node in
-     stmtl env def.f_body
-   )
-  end
+  (* opti: could also just push those edges in a _todo ref during Defs *)
+  if env.phase = Inheritance then begin
+    def.c_extends +> Common.do_option (fun c2 ->
+      add_use_edge env (Ast.str_of_name c2, E.Class E.RegularClass);
+    );
+    (* todo: use Interface and Traits at some point *)
+    def.c_implements +> List.iter (fun c2 ->
+      add_use_edge env (Ast.str_of_name c2, E.Class E.RegularClass);
+    );
+    def.c_uses +> List.iter (fun c2 ->
+      add_use_edge env (Ast.str_of_name c2, E.Class E.RegularClass);
+    );
+  end;
+  let self = Ast.str_of_name def.c_name in
+  let parent = 
+    match def.c_extends with 
+    | None -> "NOPARENT" 
+    | Some c2 -> Ast.str_of_name c2
+  in
+  let env = { env with self; parent } in
+  
+  def.c_constants +> List.iter (fun def ->
+    let node = (def.cst_name, E.ClassConstant) in
+    let env = add_node_and_edge_if_defs_mode env node in
+    expr env def.cst_body;
+  );
+  def.c_variables +> List.iter (fun def ->
+    let node = (def.cv_name, E.Field) in
+    let env = add_node_and_edge_if_defs_mode env node in
+    Common.opt (expr env) def.cv_value
+  );
+  def.c_methods +> List.iter (fun def ->
+    (* less: be more precise at some point *)
+    let kind = E.RegularMethod in
+    let node = (def.f_name, E.Method kind) in
+    let env = add_node_and_edge_if_defs_mode env node in
+    stmtl env def.f_body
+  )
 
 and constant_def env def =
-  let node = (Ast.str_of_name def.cst_name, E.Constant) in
+  let node = (def.cst_name, E.Constant) in
   let env = add_node_and_edge_if_defs_mode env node in
   expr env def.cst_body
 
