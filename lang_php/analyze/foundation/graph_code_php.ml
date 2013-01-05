@@ -69,9 +69,10 @@ type env = {
   skip_edges: (string, string) Hashtbl.t;
 
   (* right now used in extract_uses phase to transform a src like main()
-   * into its File.
+   * into its File, and also to give better error messages.
+   * We use the Hashtbl.find_all property.
    *)
-  dupes: (Graph_code.node) Common.hashset;
+  dupes: (Graph_code.node, Common.filename) Hashtbl.t;
   (* todo: dynamic_fails stats *)
 }
   (* We need 3 phases, one to get all the definitions, one to
@@ -120,13 +121,21 @@ let add_node_and_edge_if_defs_mode env name_node =
   let node = (str, kind) in
   if env.phase = Defs then begin
     if G.has_node node env.g 
-    then Hashtbl.replace env.dupes node true
+    then 
+      let file = Parse_info.file_of_info (Ast.tok_of_name name) in
+      Hashtbl.add env.dupes node file
     else begin
       env.g +> G.add_node node;
       (* if we later find a duplicate for node, we will
        * redirect this edge in build() to G.dupe.
        *)
       env.g +> G.add_edge (env.current, node) G.Has;
+
+      let nodeinfo = { Graph_code.
+        pos = Parse_info.parse_info_of_info (Ast.tok_of_name name);
+        props = [];
+      } in
+      env.g +> G.add_nodeinfo node nodeinfo;
     end
   end;
   (* for nodes like main(), which will be dupes,
@@ -579,10 +588,17 @@ let build ?(verbose=true) dir skip_list =
       with Graph_code.Error Graph_code.NodeAlreadyPresent ->
         failwith (spf "Node already present in %s" file)
    ));
-  dupes +> Common.hashset_to_list +> List.iter (fun n ->
-    pr2 (spf "DUPE: %s" (G.string_of_node n));
+  Common.hkeys dupes +>  List.iter (fun n ->
+    let files = Hashtbl.find_all dupes n in
+    pr2 (spf "DUPE: %s (%d)" (G.string_of_node n) (List.length files + 1));
     g +> G.remove_edge (G.parent n g, n) G.Has;
     g +> G.add_edge (G.dupe, n) G.Has;
+    try 
+      let nodeinfo = G.nodeinfo n g in
+      pr2 (spf " orig = %s" (nodeinfo.G.pos.Parse_info.file));
+      pr2 (spf " dupe = %s" (List.hd files));
+    with Not_found ->
+      ()
   );
 
   (* step2: creating the 'Use' edges for inheritance *)
