@@ -234,7 +234,7 @@ let lookup g a =
 (* Defs/Uses *)
 (*****************************************************************************)
 let rec extract_defs_uses ~phase ~g ~ast ~dupes ~readable ~skip_edges 
-    ~case_insensitive =
+    ~case_insensitive ~log =
 
   let env = {
     g; phase;
@@ -587,6 +587,8 @@ let build ?(verbose=true) dir skip_list =
   let dupes = Hashtbl.create 101 in
   let skip_edges = Skip_code.build_filter_edges skip_list in
   let case_insensitive = Hashtbl.create 101 in
+  let chan = open_out (Filename.concat dir "pfff.log") in
+  let log s = output_string chan (s ^ "\n") in
 
   (* step1: creating the nodes and 'Has' edges, the defs *)
   if verbose then pr2 "\nstep1: extract defs";
@@ -597,7 +599,7 @@ let build ?(verbose=true) dir skip_list =
       let ast = parse file in
       try 
         extract_defs_uses ~phase:Defs ~g ~ast ~readable 
-          ~skip_edges ~dupes ~case_insensitive;
+          ~skip_edges ~dupes ~case_insensitive ~log;
       with Graph_code.Error Graph_code.NodeAlreadyPresent ->
         failwith (spf "Node already present in %s" file)
    ));
@@ -607,11 +609,10 @@ let build ?(verbose=true) dir skip_list =
     g +> G.remove_edge (G.parent n g, n) G.Has;
     g +> G.add_edge (G.dupe, n) G.Has;
     try 
-      (*
       let nodeinfo = G.nodeinfo n g in
-      pr2 (spf " orig = %s" (nodeinfo.G.pos.Parse_info.file));
-      pr2 (spf " dupe = %s" (List.hd files));
-      *)
+      log (spf "DUPE: %s (%d)" (G.string_of_node n) (List.length files + 1));
+      log (spf " orig = %s" (nodeinfo.G.pos.Parse_info.file));
+      log (spf " dupe = %s" (List.hd files));
       ()
     with Not_found ->
       ()
@@ -628,7 +629,7 @@ let build ?(verbose=true) dir skip_list =
      let readable = Common.filename_without_leading_path root file in
      let ast = parse file in
      extract_defs_uses ~phase:Inheritance ~g ~ast ~readable 
-       ~skip_edges ~dupes ~case_insensitive;
+       ~skip_edges ~dupes ~case_insensitive ~log;
    ));
 
   (* step3: creating the 'Use' edges, the uses *)
@@ -639,7 +640,7 @@ let build ?(verbose=true) dir skip_list =
      let readable = Common.filename_without_leading_path root file in
      let ast = parse file in
      extract_defs_uses ~phase:Uses ~g ~ast ~readable 
-       ~skip_edges ~dupes ~case_insensitive;
+       ~skip_edges ~dupes ~case_insensitive ~log;
    ));
   
   g
