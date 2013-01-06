@@ -242,10 +242,11 @@ let file_type_of_file2 file =
   | "tar" -> Archive e
   | "tgz" -> Archive e
 
-  | "class" -> PL (Bytecode e)
+  (* was PL Bytecode, but more accurate as an Obj *)
+  | "class" -> Obj e
 
   (* was Archive *)
-  | "jar" -> PL (Bytecode e)
+  | "jar" -> Archive e
 
   | "bz2" -> Archive e
   | "gz" -> Archive e
