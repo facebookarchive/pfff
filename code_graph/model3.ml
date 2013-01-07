@@ -229,7 +229,7 @@ let layout_of_w w =
 (* Helpers *)
 (*****************************************************************************)
 
-let find_region_at_user_point w ~x ~y =
+let find_region_at_user_point2 w ~x ~y =
   let regions = w.interactive_regions in
   let pt = { Figures. x = x; y = y } in
   try 
@@ -239,3 +239,7 @@ let find_region_at_user_point w ~x ~y =
     in
     Some kind
   with Not_found -> None
+
+let find_region_at_user_point w ~x ~y =
+  Common.profile_code "model.find_region" (fun () ->
+    find_region_at_user_point2 w ~x ~y)
