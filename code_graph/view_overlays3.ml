@@ -117,7 +117,7 @@ let draw_green_yellow_dependent_rows ~cr w i =
 (* Assembling overlays *)
 (*****************************************************************************)
 
-let motion_notify da w ev =
+let motion_notify_refresher da w ev () =
 
   let (x, y) = GdkEvent.Motion.x ev, GdkEvent.Motion.y ev in
   let pt = { Cairo. x = x; y = y } in
@@ -164,3 +164,12 @@ let motion_notify da w ev =
   );
   !Ctl._refresh_drawing_area ();
   false
+
+let motion_notify da w ev =
+  !Ctl.current_motion_refresher +> Common.do_option (fun x ->
+    GMain.Idle.remove x;
+  );
+  Ctl.current_motion_refresher := 
+    Some (Gui.gmain_idle_add ~prio:100 (motion_notify_refresher da w ev));
+  true
+

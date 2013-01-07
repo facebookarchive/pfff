@@ -23,3 +23,5 @@ let _statusbar_addtext = ref (fun s ->
 let _refresh_drawing_area = ref (fun () ->
   failwith "_refresh_drawing_area not defined"
 )
+
+let current_motion_refresher = ref None
