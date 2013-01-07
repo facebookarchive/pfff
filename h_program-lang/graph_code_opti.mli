@@ -12,3 +12,9 @@ type graph = {
 val convert: Graph_code.graph -> graph
 
 val nb_nodes: graph -> int
+
+
+val children: Graph_code.node -> graph -> Graph_code.node list
+val all_children: Graph_code.node -> graph -> Graph_code.node list
+val has_node: Graph_code.node -> graph -> bool
+

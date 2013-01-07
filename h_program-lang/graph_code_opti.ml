@@ -82,3 +82,19 @@ let (convert2: Graph_code.graph -> graph) = fun g ->
 
 let convert a = 
   Common.profile_code "Graph_code_opti.convert" (fun () -> convert2 a)
+
+(*****************************************************************************)
+(* Adapters *)
+(*****************************************************************************)
+
+let all_children n gopti =
+  []
+
+let children n g =
+  g.has_children.(Hashtbl.find g.name_to_i n) 
+  +> List.map (fun i ->
+      g.i_to_name.(i)
+  )
+
+let has_node n g =
+  Hashtbl.mem g.name_to_i n

@@ -17,6 +17,7 @@ val verbose: bool ref
 
 (* just the expanded root *)
 val basic_config: Graph_code.graph -> config
+val basic_config_opti: Graph_code_opti.graph -> config
 
 val build:
   config -> partition_constraints option -> Graph_code_opti.graph -> dm
@@ -39,6 +40,8 @@ val string_of_config_path: config_path -> string
 (* tree config manipulation *)
 val expand_node: 
   Graph_code.node -> tree -> Graph_code.graph -> tree
+val expand_node_opti: 
+  Graph_code.node -> tree -> Graph_code_opti.graph -> tree
 val focus_on_node:
   Graph_code.node -> deps_style -> tree -> dm -> tree
 

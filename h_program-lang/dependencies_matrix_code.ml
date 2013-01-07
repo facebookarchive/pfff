@@ -83,6 +83,9 @@ type dm = {
 
 let basic_config g = 
   Node (G.root, G.succ G.root G.Has g +> List.map (fun n -> Node (n, [])))
+let basic_config_opti gopti = 
+  Node (G.root, Graph_code_opti.children G.root gopti
+   +> List.map (fun n -> Node (n, [])))
 
 type config_path_elem = 
   | Expand of Graph_code.node
@@ -494,6 +497,21 @@ let expand_node n tree g =
         else Node (n2, xs +> List.map aux)
   in
   aux tree
+
+let expand_node_opti n tree g =
+  let rec aux tree =
+    match tree with
+    | Node (n2, xs) ->
+        if n =*= n2
+        then 
+          (* less: assert null xs? *)
+          let succ = Graph_code_opti.children n g in
+          Node (n2, succ +> List.map (fun n -> Node (n, [])))
+        else Node (n2, xs +> List.map aux)
+  in
+  aux tree
+
+
 
 let focus_on_node n deps_style tree dm =
   let i = 
