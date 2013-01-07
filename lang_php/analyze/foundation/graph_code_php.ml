@@ -584,7 +584,7 @@ and array_valuel env xs = List.iter (array_value env) xs
 (* Main entry point *)
 (*****************************************************************************)
 
-let build ?(verbose=true) dir skip_list =
+let build ?(verbose=true) ?(only_defs=false) dir skip_list =
   let root = Common.realpath dir in
   let all_files = Lib_parsing_php.find_php_files_of_dir_or_files [root] in
   
@@ -627,30 +627,32 @@ let build ?(verbose=true) dir skip_list =
     with Not_found ->
       ()
   );
-  g +> G.iter_nodes (fun (str, kind) ->
-    Hashtbl.replace case_insensitive (String.lowercase str, kind) (str, kind)
-  );
+  if not only_defs then begin
+    g +> G.iter_nodes (fun (str, kind) ->
+      Hashtbl.replace case_insensitive (String.lowercase str, kind) (str, kind)
+    );
 
-  (* step2: creating the 'Use' edges for inheritance *)
-  if verbose then pr2 "\nstep2: extract inheritance";
-  files +> Common_extra.progress ~show:verbose (fun k -> 
-   List.iter (fun file ->
-     k();
-     let readable = Common.filename_without_leading_path root file in
-     let ast = parse file in
-     extract_defs_uses ~phase:Inheritance ~g ~ast ~readable 
-       ~skip_edges ~dupes ~case_insensitive ~log;
+    (* step2: creating the 'Use' edges for inheritance *)
+    if verbose then pr2 "\nstep2: extract inheritance";
+    files +> Common_extra.progress ~show:verbose (fun k -> 
+      List.iter (fun file ->
+        k();
+        let readable = Common.filename_without_leading_path root file in
+        let ast = parse file in
+        extract_defs_uses ~phase:Inheritance ~g ~ast ~readable 
+          ~skip_edges ~dupes ~case_insensitive ~log;
+      ));
+    
+    (* step3: creating the 'Use' edges, the uses *)
+    if verbose then pr2 "\nstep3: extract uses";
+    files +> Common_extra.progress ~show:verbose (fun k -> 
+      List.iter (fun file ->
+        k();
+        let readable = Common.filename_without_leading_path root file in
+        let ast = parse file in
+        extract_defs_uses ~phase:Uses ~g ~ast ~readable 
+          ~skip_edges ~dupes ~case_insensitive ~log;
    ));
-
-  (* step3: creating the 'Use' edges, the uses *)
-  if verbose then pr2 "\nstep3: extract uses";
-  files +> Common_extra.progress ~show:verbose (fun k -> 
-   List.iter (fun file ->
-     k();
-     let readable = Common.filename_without_leading_path root file in
-     let ast = parse file in
-     extract_defs_uses ~phase:Uses ~g ~ast ~readable 
-       ~skip_edges ~dupes ~case_insensitive ~log;
-   ));
+  end;
   
   g

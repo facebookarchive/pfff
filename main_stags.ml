@@ -86,13 +86,15 @@ let rec defs_of_files_or_dirs lang xs =
       let tag1 = defs_of_files_or_dirs "php" xs in
       let tag2 = defs_of_files_or_dirs "js" xs in
       tag1 ++ tag2
-  | ("cmt" | "java") ->
+  | ("cmt" | "java" | "php2") ->
       (match xs with
       | [root] -> 
           let g = 
             match lang with
             | "cmt" -> Graph_code_cmt.build root skip_list
             | "java" -> Graph_code_java.build ~only_defs:true root skip_list
+            | "php2" -> 
+              Graph_code_php.build ~verbose ~only_defs:true root skip_list
             | _ -> raise Impossible
           in
           Graph_code_tags.defs_of_graph_code ~verbose g
@@ -148,6 +150,9 @@ let options () =
     " ";
     "-emacs", Arg.Unit (fun () -> format := Emacs),
     " ";
+    "-symlinks", Arg.Unit (fun () -> 
+      Common.follow_symlinks := true;
+    ), " ";
     "-verbose", Arg.Set verbose, 
     " ";
     "-heavy_tagging", Arg.Set heavy_tagging, 
