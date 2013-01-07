@@ -199,7 +199,7 @@ let build_model root =
       constraints_of_info_txt info_txt
     else Hashtbl.create 0
   in
-  { Model.gopti = gopti; root; constraints }
+  { Model.g = g; gopti = gopti; root; constraints }
 
 let dir_node xs =     
   (Common.join "/" xs, Database_code.Dir)
@@ -299,12 +299,12 @@ let main_action xs =
         b
       in
       let dir_or_package, start =
-        if GC2.has_node (dir_node readable_subdir) model.Model.gopti
+        if GC.has_node (dir_node readable_subdir) model.Model.g
         then dir_node, readable_subdir
         else package_node, 
               try
                Common.tails readable_subdir +> List.find (fun xs ->
-                 GC2.has_node (package_node xs) model.Model.gopti
+                 GC.has_node (package_node xs) model.Model.g
                )
               with Not_found ->
                 failwith "could not find a Dir or Package"
