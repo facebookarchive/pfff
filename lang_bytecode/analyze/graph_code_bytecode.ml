@@ -282,7 +282,26 @@ let extract_defs ~g ~file ~graph_code_java ~hjavabasename_to_fullpath ast =
     create_intermediate_packages_if_not_present g G.root class_.package in
 
   let node = (name, E.Class E.RegularClass) in
-  g +> G.add_node node;
+  (try 
+      g +> G.add_node node;
+  with Graph_code.Error Graph_code.NodeAlreadyPresent ->
+    let nodeinfo = G.nodeinfo node g in
+    pr2 (spf "DUPE: %s" (G.string_of_node node));
+    pr2 (spf " orig = %s" (nodeinfo.G.pos.Parse_info.file));
+    pr2 (spf " dupe = %s" file);
+    raise (Graph_code.Error Graph_code.NodeAlreadyPresent)
+  );
+  let nodeinfo = { G.
+    pos = { Parse_info.
+      str = "";
+      line = -1;
+      charpos = -1;
+      column = -1;
+      file = file;
+    };
+    props = [];
+  } in
+  g +> G.add_nodeinfo node nodeinfo;
   g +> G.add_edge (current, node) G.Has;
   graph_code_java +> Common.do_option (fun g2 ->
     let node' = unmangle g2 node in
