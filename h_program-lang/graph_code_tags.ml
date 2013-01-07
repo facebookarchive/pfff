@@ -91,7 +91,10 @@ let defs_of_graph_code ?(verbose=false) g =
     with Not_found -> 
       (match kind with
       | E.Package | E.File | E.Dir | E.TopStmts | E.Module -> ()
-      | _ -> pr2 (spf "PB, nodeinfo not found for %s" str);
+      | _ -> 
+        if List.mem G.not_found (G.parents n g)
+        then ()
+        else pr2 (spf "PB, nodeinfo not found for %s" str);
       )
     )
   );
