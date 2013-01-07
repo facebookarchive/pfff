@@ -433,6 +433,16 @@ and expr env x =
          let aclass = Ast.str_of_name name1 in
          let amethod = Ast.str_of_name name2 in
          let node = (aclass ^ "." ^ amethod, E.Method E.RegularMethod) in
+         (* some classes may appear as dead because a 'new X()' is
+          * transformed into a 'Call (... "__construct")' and such a method
+          * may not exist, or may have been "lookup"ed in the parent.
+          * So for "__construct" we also create an edge to the class
+          * directly
+          *)
+         (match amethod with
+         | "__construct" -> add_use_edge env (aclass, E.Class E.RegularClass)
+         | _ -> ()
+         );
          (match lookup env.g (aclass, amethod) with
          | None -> 
            (match amethod with

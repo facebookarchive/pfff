@@ -1,8 +1,8 @@
 <?php
 
-class A {
+class DynA {
 }
 
 function test_dynamic_class() {
-  echo A::$fld;
+  echo dynA::$fld;
 }

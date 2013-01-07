@@ -21,7 +21,7 @@ function test_interface_lookup() {
 }
 
 
-class A {
+class AClass {
   public $fld;
   function testThis() {
     echo $this->fld;
