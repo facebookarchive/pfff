@@ -21,6 +21,10 @@ use Pod::Usage;
 #   which adds some extra '//' in paths which bother pfff
 # - STILL? sharutils, for obrowser/ocsigen  use of uuencode
 
+# If want to run the tests need also:
+# - swipl
+# - javac 
+
 my $project = 
     "pfff";
 my $projectcmdline = 
