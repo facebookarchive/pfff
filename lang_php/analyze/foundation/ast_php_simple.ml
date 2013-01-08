@@ -272,7 +272,7 @@ and expr =
  *  - __call, __callStatic
  *)
 and func_def = {
-  (* "_lambda" when used for lambda *)
+  (* "_lambda" when used for lambda, see also AnonLambda for f_kind below *)
   f_name: name;
   f_kind: function_kind;
 
