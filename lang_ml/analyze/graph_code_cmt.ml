@@ -160,11 +160,22 @@ let add_node_and_edge_if_defs_mode ?(dupe_ok=false) env name_node loc =
             line = lexing_pos.Lexing.pos_lnum; 
             charpos = lexing_pos.Lexing.pos_cnum;
             column = lexing_pos.Lexing.pos_cnum - lexing_pos.Lexing.pos_bol;
-            file;
+            file =
+             (* ugly: the ocaml distribution does not comes with .cmt for
+              * its standard library, so I had to generate them manually 
+              * and put them in pfff/external/core. The problem is that
+              * those cmt files have hardcoded paths to my ocaml installation
+              * for their source, hence this hack below to reconvert
+              * those paths.
+              *)
+             if file =~ ".*/ocaml-4.00.1"
+             then spf "%s/external/core/%s" Config_pfff.path
+                   (Filename.basename file)
+             else file;
          };
          props = [];
       } in
-      env.g +> G.add_nodeinfo node nodeinfo;
+      env.g +> G.add_nodeinfo node nodeinfo
     end
   end;
   add_full_path_local env (Common.list_last name, name) kind;

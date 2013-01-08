@@ -31,6 +31,7 @@ INCLUDEDIRS= $(TOP)/commons \
    $(OCAMLCOMPILERDIR) \
    $(TOP)/commons/ocollection $(TOP)/commons/ocamlextra \
    $(TOP)/commons/lib-json \
+   $(TOP)/globals \
    $(TOP)/external/ocamlpcre/lib \
    $(TOP)/h_program-lang \
    $(TOP)/h_version-control  \
