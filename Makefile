@@ -638,11 +638,11 @@ website:
 .PHONY:: tags graph prolog  db layers visual   tests test
 
 tags:
-	./stags -lang cmt .
+	./stags.opt -lang cmt .
 graph:
-	./codegraph -lang cmt -build .
+	./codegraph.opt -lang cmt -build .
 prolog:
-	./codequery -lang cmt -build .
+	./codequery.opt -lang cmt -build .
 	mv facts.pl facts_pl
 
 db:
