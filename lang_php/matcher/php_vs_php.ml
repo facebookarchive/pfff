@@ -76,6 +76,13 @@ let case_sensitive = ref false
 (* Helpers *)
 (*****************************************************************************)
 
+let rec is_concat_of_strings e =
+  match e with
+  | A.Sc (A.C (A.String _)) -> true
+  | A.Binary(e1, (A.BinaryConcat, _), e2) ->
+     is_concat_of_strings e1 && is_concat_of_strings e2
+  | _ -> false
+
 (*****************************************************************************)
 (* Functor parameter combinators *)
 (*****************************************************************************)
@@ -1189,6 +1196,14 @@ and m_expr a b =
        B.Lv(b1)
     )
     )
+  (* iso on concatenation of strings *)
+  | A.Sc(A.C(A.String("...", info_string))), e when is_concat_of_strings e ->
+     (* todo: propagate the transformation of info_string to e for spatch *)
+     return (
+       A.Sc(A.C(A.String("...", info_string))),
+       e
+     )
+
   | A.Sc(a1), B.Sc(b1) ->
     m_scalar a1 b1 >>= (fun (a1, b1) -> 
     return (
@@ -1393,9 +1408,7 @@ and m_expr a b =
     ))
 
   (* pad, iso on  ... *)
-  | A.BackQuote(a1,
-               [A.EncapsString(("...", a2))],
-               a3), 
+  | A.BackQuote(a1, [A.EncapsString(("...", a2))], a3), 
     B.BackQuote(b1, b2, b3) ->
     m_tok a1 b1 >>= (fun (a1, b1) -> 
     (* TODO? distribute info of a2? *)

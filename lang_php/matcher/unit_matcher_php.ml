@@ -62,6 +62,7 @@ let sgrep_unittest = [
 
       (* '...' in strings *)
       "foo(\"...\");", "foo(\"a string\");", true;
+      "foo(\"...\");", "foo(\"a string\" . \"another string\");", true;
 
       (* many arguments metavariables *)
       "foo(MANYARGS);", "foo(1,2,3);", true;
