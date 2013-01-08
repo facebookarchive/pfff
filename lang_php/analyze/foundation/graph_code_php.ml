@@ -162,8 +162,9 @@ let add_node_and_edge_if_defs_mode env name_node =
 
 
 
-let rec add_use_edge env ((str, kind) as dst) =
+let rec add_use_edge env (((str, tok) as name, kind)) =
   let src = env.current in
+  let dst = (str, kind) in
   (match () with
   (* maybe nested function, in which case we dont have the def *)
   | _ when not (G.has_node src env.g) ->
@@ -180,8 +181,9 @@ let rec add_use_edge env ((str, kind) as dst) =
         G.add_edge (src, dst) G.Use env.g
 
   | _ when Hashtbl.mem env.case_insensitive (String.lowercase str, kind) ->
-      add_use_edge env (Hashtbl.find env.case_insensitive
-                          (String.lowercase str, kind))
+      let (final_str, _) = 
+        Hashtbl.find env.case_insensitive (String.lowercase str, kind) in
+      add_use_edge env ((final_str, tok), kind)
 
   | _ -> 
       (match kind with
@@ -203,6 +205,9 @@ let rec add_use_edge env ((str, kind) as dst) =
           | _ ->
             pr2 (spf "PB: lookup fail on %s (in %s)" 
                    (G.string_of_node dst) (G.string_of_node src));
+            let file = name +> Ast.tok_of_name +> Parse_info.string_of_info in
+            env.log (spf "PB: lookup fail on %s (at %s)"
+                   (G.string_of_node dst) file);
           );
           env.g +> G.add_edge (parent_target, dst) G.Has;
           env.g +> G.add_edge (src, dst) G.Use;
@@ -213,7 +218,7 @@ let rec add_use_edge env ((str, kind) as dst) =
 (* Lookup *)
 (*****************************************************************************)
 
-let lookup2 g (aclass, amethod_or_field_or_constant) =
+let lookup2 g (aclass, amethod_or_field_or_constant) tok =
   let rec depth current =
     if not (G.has_node current g)
     then None
@@ -223,7 +228,7 @@ let lookup2 g (aclass, amethod_or_field_or_constant) =
       let res = 
         children +> Common.find_some_opt (fun (s2, kind) ->
           if full_name =$= s2
-          then Some (s2, kind)
+          then Some ((s2, tok), kind)
           else None
         )
       in
@@ -360,14 +365,14 @@ and class_def env def =
   (* opti: could also just push those edges in a _todo ref during Defs *)
   if env.phase = Inheritance then begin
     def.c_extends +> Common.do_option (fun c2 ->
-      add_use_edge env (Ast.str_of_name c2, E.Class E.RegularClass);
+      add_use_edge env (c2, E.Class E.RegularClass);
     );
     (* todo: use Interface and Traits at some point *)
     def.c_implements +> List.iter (fun c2 ->
-      add_use_edge env (Ast.str_of_name c2, E.Class E.RegularClass);
+      add_use_edge env (c2, E.Class E.RegularClass);
     );
     def.c_uses +> List.iter (fun c2 ->
-      add_use_edge env (Ast.str_of_name c2, E.Class E.RegularClass);
+      add_use_edge env (c2, E.Class E.RegularClass);
     );
   end;
   let self = Ast.str_of_name def.c_name in
@@ -422,14 +427,14 @@ and expr env x =
       (* a parameter or local variable *)
       if Ast.is_variable name 
       then ()
-      else add_use_edge env (Ast.str_of_name name, E.Constant)
+      else add_use_edge env (name, E.Constant)
 
   (* -------------------------------------------------- *)
   | Call (e, es) ->
     (match e with
     (* simple function call *)
     | Id name when not (Ast.is_variable name) ->
-        add_use_edge env (Ast.str_of_name name, E.Function);
+        add_use_edge env (name, E.Function);
         exprl env es
 
     (* static method call *)
@@ -442,7 +447,8 @@ and expr env x =
         when not (Ast.is_variable name1) && not (Ast.is_variable name2) ->
          let aclass = Ast.str_of_name name1 in
          let amethod = Ast.str_of_name name2 in
-         let node = (aclass ^ "." ^ amethod, E.Method E.RegularMethod) in
+         let tok = snd name2 in
+         let node = ((aclass ^ "." ^ amethod, tok), E.Method E.RegularMethod)in
          (* some classes may appear as dead because a 'new X()' is
           * transformed into a 'Call (... "__construct")' and such a method
           * may not exist, or may have been "lookup"ed in the parent.
@@ -450,10 +456,10 @@ and expr env x =
           * directly
           *)
          (match amethod with
-         | "__construct" -> add_use_edge env (aclass, E.Class E.RegularClass)
+         | "__construct" -> add_use_edge env (name1, E.Class E.RegularClass)
          | _ -> ()
          );
-         (match lookup env.g (aclass, amethod) with
+         (match lookup env.g (aclass, amethod) tok with
          | None -> 
            (match amethod with
            | "__construct" -> ()
@@ -497,8 +503,9 @@ and expr env x =
         when not (Ast.is_variable name1) && not (Ast.is_variable name2) ->
           let aclass = Ast.str_of_name name1 in
           let aconstant = Ast.str_of_name name2 in
-          let node = (aclass ^ "." ^ aconstant, E.ClassConstant) in
-          (match lookup env.g (aclass, aconstant) with
+          let tok = snd name2 in
+          let node = ((aclass ^ "." ^ aconstant, tok), E.ClassConstant) in
+          (match lookup env.g (aclass, aconstant) tok with
           | None -> add_use_edge env node
           (* less: assert kind = ClassConstant? *)
           | Some n -> add_use_edge env n
@@ -508,8 +515,9 @@ and expr env x =
         when not (Ast.is_variable name1) && (Ast.is_variable name2) ->
           let aclass = Ast.str_of_name name1 in
           let astatic_var = Ast.str_of_name name2 in
-          let node = (aclass ^ "." ^ astatic_var, E.Field) in
-          (match lookup env.g (aclass, astatic_var) with
+          let tok = snd name2 in
+          let node = ((aclass ^ "." ^ astatic_var, tok), E.Field) in
+          (match lookup env.g (aclass, astatic_var) tok with
           | None -> add_use_edge env node
           (* less: assert kind = Static variable *)
           | Some n -> add_use_edge env n
@@ -517,7 +525,7 @@ and expr env x =
  
      (* todo: update dynamic stats *)
      | Id name1, e2 when not (Ast.is_variable name1) ->
-          add_use_edge env (Ast.str_of_name name1, E.Class E.RegularClass);
+          add_use_edge env (name1, E.Class E.RegularClass);
           expr env e2;
      | e1, Id name2 when not (Ast.is_variable name2) ->
        expr env e1;
