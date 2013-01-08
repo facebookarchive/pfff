@@ -616,7 +616,10 @@ let build ?(verbose=true) ?(only_defs=false) dir skip_list =
   let skip_edges = Skip_code.build_filter_edges skip_list in
   let case_insensitive = Hashtbl.create 101 in
   let chan = open_out (Filename.concat dir "pfff.log") in
-  let log s = output_string chan (s ^ "\n") in
+  let log s = 
+    output_string chan (s ^ "\n"); 
+    flush chan; 
+  in
 
   (* step1: creating the nodes and 'Has' edges, the defs *)
   if verbose then pr2 "\nstep1: extract defs";
