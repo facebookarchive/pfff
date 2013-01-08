@@ -100,6 +100,12 @@ exception UnknownEntity of string
 (* Helpers *)
 (*****************************************************************************)
 
+(* stuff that is used by chiara's code, to remove. I think
+ * The AEnv stuff should be removed too.
+ *)
+let pi = Some (Ast_php.fakeInfo "todo")
+let pi_loc = Ast_php.fakeInfo "todo"
+
 (*****************************************************************************)
 (* Preparing work *)
 (*****************************************************************************)
@@ -264,14 +270,14 @@ and stmt env= function
       in
       let _ = Unify.unify env a a' in
       stmtl env stl
-  | Return (_, None) -> ()
-  | Return (pi, Some (ConsArray (id, p, avl))) ->
-      let e = ConsArray(id, p, avl) in
+  | Return (None) -> ()
+  | Return (Some (ConsArray (id, avl))) ->
+      let e = ConsArray(id, avl) in
       let id = AEnv.create_ai env e in
       let ti = (pi, Env_typing_php.ReturnValue) in
       let _ = AEnv.set env id ti in
       iexpr env (Assign (None, Id (wrap "$;return"), e))
-  | Return (pi, Some e) -> 
+  | Return (Some e) -> 
       let id = AEnv.create_ai env e in
       let ti = (pi, Env_typing_php.ReturnValue) in
       let _ = AEnv.set env id ti in
@@ -293,7 +299,7 @@ and stmt env= function
       List.iter (function
         | Id (x, tok) ->
             let gid = A.remove_first_char x in
-            let gl = Array_get (None, Id (wrap "$GLOBALS"), Some (String (gid,tok)))in
+            let gl = Array_get (Id (wrap "$GLOBALS"),Some(String (gid,tok)))in
             let assign = Assign (None, Id (x, tok), gl) in
             iexpr env assign
         | e -> iexpr env e
@@ -420,7 +426,7 @@ and expr_ env lv = function
 
   (*Array_get returns the type of the values of the array*)
   (* Array access without a key *)
-  | Array_get (pi, e, None) ->
+  | Array_get (e, None) ->
       let id = AEnv.create_ai env e in
       let t1 = expr env e in
       let v = Tvar (fresh()) in 
@@ -430,14 +436,14 @@ and expr_ env lv = function
       let _ = AEnv.set env id ti in
       v
   (* Array access with const as key *)
-  | Array_get (pi, e, Some (Id (s,tok))) when s.[0] <> '$' ->
+  | Array_get (e, Some (Id (s,tok))) when s.[0] <> '$' ->
       let id = AEnv.create_ai env e in
-      let v = expr env (Array_get (pi, e, Some (String (s,tok)))) in 
+      let v = expr env (Array_get (e, Some (String (s,tok)))) in 
       let ti = (pi, Env_typing_php.Const v) in 
       let _ = AEnv.set env id ti in
       v
 
-  | Array_get (pi, Id (s,y), Some (String (x, _)))
+  | Array_get (Id (s,y), Some (String (x, _)))
       when Hashtbl.mem Builtins_typed_php.super_globals s ->
       
       let id = AEnv.create_ai env (Id(s, y)) in
@@ -452,7 +458,7 @@ and expr_ env lv = function
       let v = Instantiate.approx env ISet.empty v in 
       v
 
-  | Array_get (pi, e, Some (String (s, _)))->
+  | Array_get (e, Some (String (s, _)))->
       let id = AEnv.create_ai env e in
       let marked = env.auto_complete && has_marker env s in
       let t1 = expr env e in
@@ -466,13 +472,13 @@ and expr_ env lv = function
 
   (* disguised array access *)
   | Call (Id (("idx" | "edx" | "adx" | "sdx"),_), (e :: k :: r)) ->
-      let e = expr env (Array_get (None, e, Some k)) in 
+      let e = expr env (Array_get (e, Some k)) in 
       (match r with
       | [] -> e
       | x :: _ -> Unify.unify env (expr env x) e
       )
   (* Array access with variable or constant integer *)
-  | Array_get (pi, e, Some k) ->
+  | Array_get (e, Some k) ->
       let id = AEnv.create_ai env e in
       let t1 = expr env e in
       let k = expr env k in
@@ -506,8 +512,8 @@ and expr_ env lv = function
       any
 
 
-  | Assign (None, Array_get(pi, e, a), e2) ->
-    let e1 = Array_get(pi, e, a) in
+  | Assign (None, Array_get(e, a), e2) ->
+    let e1 = Array_get(e, a) in
     let id = AEnv.create_ai env e in
     let t1 = expr env e1 in
     let t2 = expr env e2 in
@@ -516,15 +522,15 @@ and expr_ env lv = function
     let t = Unify.unify env t1 t2 in 
     t
 
-  | Assign (None, Id("$;return", tok), ConsArray(i, pi, avl))  -> (
+  | Assign (None, Id("$;return", tok), ConsArray(i, avl))  -> (
     let e1 = Id("$;return", tok) in
-    let e2 = ConsArray(Some(e1), pi, avl) in 
+    let e2 = ConsArray(Some(e1), avl) in 
       let t1 = expr env e1 in
       let t2 = expr env e2 in
       let t = Unify.unify env t1 t2 in
       match pi with 
       | Some(p) -> 
-          let e = ConsArray(i, pi, avl) in 
+          let e = ConsArray(i, avl) in 
           let id = AEnv.create_ai env e in
           let tl = List.map (array_declaration env id pi) avl in 
           let ti = (pi, Env_typing_php.Declaration(tl)) in 
@@ -533,8 +539,8 @@ and expr_ env lv = function
       | None -> t
   )
 
-  | Assign (None, e1, ConsArray(_, pi, avl)) -> 
-      let e2 = ConsArray (Some(e1), pi, avl) in
+  | Assign (None, e1, ConsArray(_, avl)) -> 
+      let e2 = ConsArray (Some(e1), avl) in
       let t1 = expr env e1 in
       let t2 = expr env e2 in
       let t = Unify.unify env t1 t2 in
@@ -549,14 +555,14 @@ and expr_ env lv = function
   | Assign (Some bop, e1, e2) ->
       expr env (Assign (None, e1, Binop (bop, e1, e2)))
 
-  | ConsArray (id, pi, avl) ->
+  | ConsArray (id, avl) ->
       let t = Tvar (fresh()) in
       let t = List.fold_left (array_value env) t avl in
       (match id with
       | None ->(
 	match pi with 
 	| Some(p) -> 
-          let e = ConsArray(id, pi, avl) in
+          let e = ConsArray(id, avl) in
           let id = AEnv.create_ai env e in
           let tl  = List.map (array_declaration env id pi) avl in
 	  let ti = (pi, Env_typing_php.Declaration(tl)) in
@@ -719,7 +725,7 @@ and func_def env fd =
   (* Set the function name in aenv_fun for the purpose of guessing arrays *)
   ignore(AEnv.set_fun env (A.unwrap fd.f_name));
   ignore(AEnv.create_ai_params env (fd.f_params));
-  ignore(AEnv.set_funs env ((AEnv.get_fun env), (AEnv.get_class env), fd.f_loc));
+  ignore(AEnv.set_funs env ((AEnv.get_fun env), (AEnv.get_class env),pi_loc));
   (* todo? do we need that? if the toplogical sort has been done
    * correctly we should not need that no?
    * We can have some cycles, so the topological sort is not
@@ -748,13 +754,13 @@ and parameter env p =
         with Not_found ->
           expr env (New (Id (x, tok), [])))
     | Some (HintArray) ->
-        expr env (ConsArray (None, None, []))
+        expr env (ConsArray (None, []))
   in
   (match p.p_default with
   | None -> ()
-  | Some (ConsArray(id, pi, avl)) -> 
+  | Some (ConsArray(id, avl)) -> 
       let id = Some(Id(p.p_name)) in
-      let e = ConsArray(id, pi, avl) in
+      let e = ConsArray(id, avl) in
       ignore (Unify.unify env pval (expr env e))
   | Some e -> ignore (Unify.unify env pval (expr env e))
   );
@@ -900,9 +906,9 @@ and class_vars static env acc c =
     let ((s, _tok), e) = (c.cv_name, c.cv_value) in
     let t = match e with 
       | None -> Tvar (fresh()) 
-      | Some (ConsArray(_, pi, avl)) -> 
+      | Some (ConsArray(_, avl)) -> 
           let ex = Id((s), _tok) in
-          expr env (ConsArray(Some(ex), pi, avl))
+          expr env (ConsArray(Some(ex), avl))
       | Some x -> expr env x 
     in
     let s = if static then s else A.remove_first_char s in

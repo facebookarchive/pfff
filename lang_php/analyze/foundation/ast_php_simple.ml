@@ -137,7 +137,7 @@ and stmt =
    *)
   | Foreach of expr * expr * expr option * stmt list
 
-  | Return of parse_info option * expr option
+  | Return of expr option
   | Break of expr option | Continue of expr option
 
   | Throw of expr
@@ -195,7 +195,7 @@ and expr =
   | Id of name
 
   (* when None it means add to the end when used in lvalue position *)
-  | Array_get of parse_info option * expr * expr option
+  | Array_get of expr * expr option
 
   (* often transformed in Id "$this" in the analysis *)
   | This of string wrap
@@ -231,7 +231,7 @@ and expr =
    *)
   | Ref of expr
 
-  | ConsArray of expr option * parse_info option * array_value list
+  | ConsArray of expr option * array_value list
   | Xhp of xml
 
   | CondExpr of expr * expr * expr
@@ -239,10 +239,6 @@ and expr =
 
   (* yeah! PHP 5.3 is becoming a real language *)
   | Lambda of func_def
-
-  (* pad: todo: remove, was chiara *)
-  and parse_info = Parse_info.info
-  and line = int
 
   and array_value = (*TODO: Add line number information *)
     | Aval of expr
@@ -287,8 +283,6 @@ and func_def = {
   f_attrs: attribute list;
 
   f_body: stmt list;
-  (* pad: todo: remove, was chiara? same info is in f_name *)
-  f_loc: Parse_info.info;
 }
    and function_kind = 
      | Function 

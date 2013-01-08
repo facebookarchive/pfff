@@ -524,7 +524,7 @@ and stmt env = function
       );
       stmtl env xs
 
-  | Return (_, eopt)   
+  | Return eopt   
   | Break eopt | Continue eopt ->
       Common.opt (expr env) eopt
 
@@ -629,7 +629,7 @@ and expr env = function
           in
           List.iter aux xs
 
-      | Array_get (_, e_arr, e_opt) ->
+      | Array_get (e_arr, e_opt) ->
           (* make sure the array is declared *)
           expr env e_arr;
           Common.opt (expr env) e_opt
@@ -672,7 +672,7 @@ and expr env = function
          * Unsetting a prop, not clear why you want that.
          * Unsetting a class var, not clear why you want that either 
          *)
-        | (Array_get (_, _, _) | Obj_get _ | Class_get _) as e -> 
+        | (Array_get (_, _) | Obj_get _ | Class_get _) as e -> 
             (* make sure that the array used is actually defined *)
             expr env e
         | e -> 
@@ -713,7 +713,7 @@ and expr env = function
 
       (* facebook specific? should be a hook instead to visit_prog? *)
   | Call(Id("param_post"|"param_get"|"param_request"|"param_cookie"as kind,tok),
-        (ConsArray (_, _, array_args))::rest_param_xxx_args) ->
+        (ConsArray (_, array_args))::rest_param_xxx_args) ->
 
       (* have passed a 'prefix' arg, or nothing *)
       if List.length rest_param_xxx_args <= 1
@@ -801,7 +801,7 @@ and expr env = function
       check_defined ~incr_count:true env name
 
   (* array used as an rvalue; the lvalue case should be handled in Assign. *)
-  | Array_get (_, e, eopt) ->
+  | Array_get (e, eopt) ->
       expr env e;
       Common.opt (expr env) eopt
 
@@ -826,7 +826,7 @@ and expr env = function
 
   | Ref e -> expr env e
 
-  | ConsArray (_, _, xs) -> array_valuel env xs
+  | ConsArray (_, xs) -> array_valuel env xs
   | Xhp x -> xml env x
 
   | CondExpr (e1, e2, e3) -> exprl env [e1; e2; e3]

@@ -305,7 +305,7 @@ and stmt env x =
       exprl env [e1;e2];
       Common.opt (expr env) e3opt;
       stmtl env xs;
-  | Return (_, eopt)  | Break eopt | Continue eopt ->
+  | Return eopt  | Break eopt | Continue eopt ->
       Common.opt (expr env) eopt
   | Throw e -> expr env e
   | Try (xs, c1, cs) ->
@@ -565,14 +565,14 @@ and expr env x =
       )
           
   | This _ -> ()
-  | Array_get (_, e, eopt) ->
+  | Array_get (e, eopt) ->
       expr env e;
       Common.opt (expr env) eopt
   | Infix (_, e) | Postfix (_, e) | Unop (_, e) -> expr env e
   | Binop (_, e1, e2) -> exprl env [e1; e2]
   | Guil xs -> exprl env xs
   | Ref e -> expr env e
-  | ConsArray (_, _, xs) -> array_valuel env xs
+  | ConsArray (_, xs) -> array_valuel env xs
   | Xhp x -> xml env x
   | CondExpr (e1, e2, e3) -> exprl env [e1; e2; e3]
   (* less: again, add deps for type? *)
