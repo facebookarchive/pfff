@@ -51,7 +51,6 @@ open JClassLow
  * side effects help understand how things are translated).
  * 
  * todo: StaticMethod, StaticField, the bytecode has this information
- * less: put back nested classes inside the other
  *)
 
 (*****************************************************************************)
@@ -273,7 +272,7 @@ let java_basename_of_bytecode_classname x =
 (*****************************************************************************)
 (* Defs *)
 (*****************************************************************************)
-let extract_defs ~g ~file ~graph_code_java ~hjavabasename_to_fullpath ast =
+let extract_defs2 ~g ~file ~graph_code_java ~hjavabasename_to_fullpath ast =
   let jclass = ast in
 
   let name = JBasics.cn_name jclass.j_name in
@@ -302,7 +301,11 @@ let extract_defs ~g ~file ~graph_code_java ~hjavabasename_to_fullpath ast =
     props = [];
   } in
   g +> G.add_nodeinfo node nodeinfo;
-  g +> G.add_edge (current, node) G.Has;
+  (match class_.nested_or_anon with
+  | [] -> g +> G.add_edge (current, node) G.Has;
+  (* this will be done later in adjust_parents_nested_anon2 *)
+  | _ -> ()
+  );
   graph_code_java +> Common.do_option (fun g2 ->
     let node' = unmangle g2 node in
     try 
@@ -349,12 +352,46 @@ let extract_defs ~g ~file ~graph_code_java ~hjavabasename_to_fullpath ast =
     end
   );
   ()
+let extract_defs ~g ~file ~graph_code_java ~hjavabasename_to_fullpath ast =
+  Common.profile_code "GC_bytecode.extract_defs" (fun () ->
+    extract_defs2 ~g ~file ~graph_code_java ~hjavabasename_to_fullpath ast
+  )
+
+
+(* this must be run after all the classes has been created as we
+ * need to lookup for classes.
+ *)
+let adjust_parents_nested_anon2 g =
+  g +> G.iter_nodes (fun n ->
+    let (str, kind) = n in
+    (match kind with
+    | E.Class _ ->
+       let class_ = bytecode_class_name_of_string str in
+       (match class_.nested_or_anon with
+       | [] -> ()
+       | _ ->
+         let new_parent = java_class_name_of_bytecode_class_name 
+           {class_ with nested_or_anon = [] }
+         in
+         (* old: not sure why but remove_edge seems extremly slow
+          * let _old_parent = G.parent n g in
+          * G.remove_edge (old_parent, n) G.Has g;
+          *)
+         G.add_edge ((new_parent, E.Class E.RegularClass), n) G.Has g;
+       )
+    | _ -> ()
+    )
+  )
+
+let adjust_parents_nested_anon a = 
+  Common.profile_code "GC_bytecode.adjust_parents" (fun () ->
+    adjust_parents_nested_anon2 a)
 
 (*****************************************************************************)
 (* Inheritance *)
 (*****************************************************************************)
 
-let extract_uses_inheritance ~g ast =
+let extract_uses_inheritance2 ~g ast =
   let jclass = ast in
   let name = JBasics.cn_name jclass.j_name in
   let current = (name, E.Class E.RegularClass) in
@@ -367,11 +404,15 @@ let extract_uses_inheritance ~g ast =
   );
   ()
 
+let extract_uses_inheritance ~g ast =
+  Common.profile_code "GC_bytecode.extract_inheritance" (fun () ->
+    extract_uses_inheritance2 ~g ast)
+
 (*****************************************************************************)
 (* Uses *)
 (*****************************************************************************)
 
-let rec extract_uses ~g ast =
+let rec extract_uses2 ~g ast =
   let jclass = ast in
   let name = JBasics.cn_name jclass.j_name in
   let current = (name, E.Class E.RegularClass) in
@@ -494,6 +535,10 @@ and code env x =
     | _ -> ()
   );
   ()
+
+let extract_uses ~g ast =
+  Common.profile_code "GC_bytecode.extract_uses" (fun () ->
+    extract_uses2 ~g ast)
   
 (*****************************************************************************)
 (* Main entry point *)
@@ -535,6 +580,8 @@ let build ?(verbose=true) ?(graph_code_java=None) dir_or_file skip_list =
       extract_defs ~g ~file ~graph_code_java ~hjavabasename_to_fullpath ast;
       ()
     ));
+  if verbose then pr2 "\nstep1 bis: adjust parents of nested/anon classes";
+  adjust_parents_nested_anon g;
 
   (* step2: creating the 'Use' edges for inheritance *)
   if verbose then pr2 "\nstep2: extract inheritance information";
