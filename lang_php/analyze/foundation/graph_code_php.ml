@@ -41,7 +41,6 @@ open Ast_php_simple
  *       -> Dir -> SubDir -> Module? -> ...
  * 
  * todo: 
- *  - add pos info in nodeinfo
  *  - handle Interface and Traits, do not translate them in RegularClass?
  *  - handle static vs non static methods/fields? but at the same time
  *    lots of our code abuse $this-> where they should use self::, so
@@ -79,6 +78,8 @@ type env = {
    * we just automatically relookup the correct entity.
    *)
   case_insensitive: (Graph_code.node, Graph_code.node) Hashtbl.t;
+
+  log: string -> unit;
 }
   (* We need 3 phases, one to get all the definitions, one to
    * get the inheritance information, and one to get all the Uses.
@@ -128,7 +129,15 @@ let add_node_and_edge_if_defs_mode env name_node =
     if G.has_node node env.g 
     then 
       let file = Parse_info.file_of_info (Ast.tok_of_name name) in
-      Hashtbl.add env.dupes node file
+      (match kind with
+      (* no need introduce more dupes than needed, if the class was dupe,
+       * of course all its members will also be duped.
+       *)
+      | E.ClassConstant | E.Field | E.Method _ 
+        when Hashtbl.mem env.dupes (env.self, E.Class E.RegularClass) ->
+        ()
+      | _ -> Hashtbl.add env.dupes node file
+      )
     else begin
       env.g +> G.add_node node;
       (* if we later find a duplicate for node, we will
@@ -243,6 +252,7 @@ let rec extract_defs_uses ~phase ~g ~ast ~dupes ~readable ~skip_edges
     dupes;
     skip_edges;
     case_insensitive;
+    log;
   } 
   in
 

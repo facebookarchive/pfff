@@ -1,6 +1,6 @@
 <?php
 
-trait Foo {
+trait UseParentButNotParent {
   final public function __construct() {
     parent::__construct();
   }
