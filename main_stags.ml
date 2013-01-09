@@ -91,8 +91,10 @@ let rec defs_of_files_or_dirs lang xs =
       | [root] -> 
           let g = 
             match lang with
-            | "cmt" -> Graph_code_cmt.build root skip_list
-            | "java" -> Graph_code_java.build ~only_defs:true root skip_list
+            | "cmt" -> 
+              Graph_code_cmt.build root skip_list
+            | "java" -> 
+              Graph_code_java.build ~verbose ~only_defs:true root skip_list
             | "php2" -> 
               Graph_code_php.build ~verbose ~only_defs:true root skip_list
             | _ -> raise Impossible
