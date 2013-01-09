@@ -3,6 +3,7 @@ type fact =
   | Kind of entity * Database_code.entity_kind
   | Extends of string * string
   | Call of entity * entity
+  | UseData of entity * entity
   | Misc of string
 
   and entity = 

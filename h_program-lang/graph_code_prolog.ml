@@ -38,6 +38,7 @@ type fact =
   | Kind of entity * Database_code.entity_kind
   | Extends of string * string
   | Call of entity * entity
+  | UseData of entity * entity
   | Misc of string
 
   (* todo? could use a record with 
@@ -112,6 +113,9 @@ let string_of_fact fact =
     | Call (e1, e2) ->
         spf "docall(%s, %s, method)" 
           (string_of_entity e1) (string_of_entity e2)
+    | UseData (e1, e2) ->
+        spf "use(%s, %s, field)" 
+          (string_of_entity e1) (string_of_entity e2)
     | Misc s -> s
   in
   s ^ "."
@@ -140,6 +144,7 @@ let build root g =
   add (Misc ":- discontiguous kind/2, at/3");
   add (Misc ":- discontiguous extends/2, implements/2");
   add (Misc ":- discontiguous docall/3");
+  add (Misc ":- discontiguous use/3");
 
   (* defs *)
   g +> G.iter_nodes (fun n ->
@@ -184,6 +189,9 @@ let build root g =
       add (Extends (s1, s2))
     | ((s1, E.Method _kind1), (s2, E.Method _kind2)) ->
       add (Call (entity_of_str s1, entity_of_str s2))
+    | ((s1, E.Method _kind1), (s2, (E.Field | E.ClassConstant) )) ->
+      add (UseData (entity_of_str s1, entity_of_str s2))
+
     | _ -> ()
   );
 

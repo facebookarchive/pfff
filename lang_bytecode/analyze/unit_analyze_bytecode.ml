@@ -121,7 +121,8 @@ class Foo {   // line 3
      assert_equal
        ["4"] (prolog_query ~files "at('Foo\\$NestedFoo', _, X), writeln(X)");
    );
-   "children" >:: (fun () ->
+
+   "inheritance tree" >:: (fun () ->
      let files = [
 "Foo.java", "class Foo { }";
 "Bar.java", "class Bar extends Foo { }";
@@ -149,6 +150,25 @@ class Foo {   // line 3
      assert_equal
        ["Bar,call_static_foo"]
        (prolog_query ~files "docall(X, ('Foo','static_foo'), _), writeln(X)");
+   );
+
+   "use graph" >:: (fun () ->
+     let files = [
+"Foo.java", "class Foo { 
+  public static int static_field;
+  public int field;
+}";
+"Bar.java", "class Bar { 
+  public void use_static_field() { int i = Foo.static_field; }
+  public void use_field() { Foo o = new Foo(); int i = o.field; }
+}";
+     ] in
+     assert_equal
+       ["Bar,use_field"]
+       (prolog_query ~files "use(X, ('Foo','field'), _), writeln(X)");
+     assert_equal
+       ["Bar,use_static_field"]
+       (prolog_query ~files "use(X, ('Foo','static_field'), _),writeln(X)");
    );
  ])
 
