@@ -624,14 +624,19 @@ let build ?(verbose=true) ?(only_defs=false) dir skip_list =
   let dupes = Hashtbl.create 101 in
   let skip_edges = Skip_code.build_filter_edges skip_list in
   let case_insensitive = Hashtbl.create 101 in
+
   let chan = open_out (Filename.concat dir "pfff.log") in
   let log s = 
     output_string chan (s ^ "\n"); 
     flush chan; 
   in
+  let pr2_and_log s = 
+    log s;
+    if verbose then pr2 s
+  in
 
   (* step1: creating the nodes and 'Has' edges, the defs *)
-  if verbose then pr2 "\nstep1: extract defs";
+  pr2_and_log "\nstep1: extract defs";
   files +> Common_extra.progress ~show:verbose (fun k -> 
     List.iter (fun file ->
       k();
@@ -645,12 +650,12 @@ let build ?(verbose=true) ?(only_defs=false) dir skip_list =
    ));
   Common.hkeys dupes +>  List.iter (fun n ->
     let files = Hashtbl.find_all dupes n in
-    pr2 (spf "DUPE: %s (%d)" (G.string_of_node n) (List.length files + 1));
+    pr2_and_log (spf "DUPE: %s (%d)" 
+                   (G.string_of_node n) (List.length files + 1));
     g +> G.remove_edge (G.parent n g, n) G.Has;
     g +> G.add_edge (G.dupe, n) G.Has;
     try 
       let nodeinfo = G.nodeinfo n g in
-      log (spf "DUPE: %s (%d)" (G.string_of_node n) (List.length files + 1));
       log (spf " orig = %s" (nodeinfo.G.pos.Parse_info.file));
       log (spf " dupe = %s" (List.hd files));
       ()
@@ -663,7 +668,7 @@ let build ?(verbose=true) ?(only_defs=false) dir skip_list =
     );
 
     (* step2: creating the 'Use' edges for inheritance *)
-    if verbose then pr2 "\nstep2: extract inheritance";
+    pr2_and_log "\nstep2: extract inheritance";
     files +> Common_extra.progress ~show:verbose (fun k -> 
       List.iter (fun file ->
         k();
@@ -674,7 +679,7 @@ let build ?(verbose=true) ?(only_defs=false) dir skip_list =
       ));
     
     (* step3: creating the 'Use' edges, the uses *)
-    if verbose then pr2 "\nstep3: extract uses";
+    pr2_and_log "\nstep3: extract uses";
     files +> Common_extra.progress ~show:verbose (fun k -> 
       List.iter (fun file ->
         k();
