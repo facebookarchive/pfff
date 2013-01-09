@@ -193,8 +193,14 @@ let add_use_edge env dst =
       let fake = bytecode_class_name_of_string fake_name in
       let parent = create_intermediate_packages_if_not_present 
         g parent_target fake.package in
-      pr2 (spf "PB: lookup fail on %s (in %s)" 
-             (G.string_of_node dst) (G.string_of_node src));
+      (match name with
+      (* on unit test code, we have this failure that we don't want show *)
+      | "java.lang.Object.<init>" -> ()
+      | "java.lang.Object" -> ()
+      | _ ->
+        pr2 (spf "PB: lookup fail on %s (in %s)" 
+               (G.string_of_node dst) (G.string_of_node src));
+      );
       g +> G.add_node dst;
       g +> G.add_edge (parent, dst) G.Has;
     end;
