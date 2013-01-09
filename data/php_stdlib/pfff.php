@@ -25,7 +25,8 @@ function __builtin__eval_var_field($fld) { }
 function __builtin__clone($expr) { }
 function __builtin__exit($exit_code) { }
 function __builtin__yield($expr) { }
-function __builtin__yield_break($expr) { }
+
+const __builtin__yield_break = 1;
 
 function __builtin__exec($cmd) { }
 

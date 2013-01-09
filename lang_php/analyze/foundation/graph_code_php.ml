@@ -79,6 +79,8 @@ type env = {
    *)
   case_insensitive: (Graph_code.node, Graph_code.node) Hashtbl.t;
 
+  at_toplevel: bool;
+
   log: string -> unit;
 }
   (* We need 3 phases, one to get all the definitions, one to
@@ -135,6 +137,8 @@ let add_node_and_edge_if_defs_mode env name_node =
        *)
       | E.ClassConstant | E.Field | E.Method _ 
         when Hashtbl.mem env.dupes (env.self, E.Class E.RegularClass) ->
+        ()
+      | E.Class _ | E.Function | E.Constant when not env.at_toplevel -> 
         ()
       | _ -> Hashtbl.add env.dupes node file
       )
@@ -258,6 +262,7 @@ let rec extract_defs_uses ~phase ~g ~ast ~dupes ~readable ~skip_edges
     skip_edges;
     case_insensitive;
     log;
+    at_toplevel = true;
   } 
   in
 
@@ -269,12 +274,16 @@ let rec extract_defs_uses ~phase ~g ~ast ~dupes ~readable ~skip_edges
     g +> G.add_edge ((dir, E.Dir), (readable, E.File))  G.Has;
   end;
 
-  stmtl env ast;
+  List.iter (stmt_toplevel env) ast;
 
 (* ---------------------------------------------------------------------- *)
 (* Stmt/toplevel *)
 (* ---------------------------------------------------------------------- *)
-and stmt env x =
+and stmt env x = 
+  stmt_bis { env with at_toplevel = false } x
+and stmt_toplevel env x =
+  stmt_bis env x
+and stmt_bis env x =
   match x with
   (* boilerplate *)
   | FuncDef def -> func_def env def
