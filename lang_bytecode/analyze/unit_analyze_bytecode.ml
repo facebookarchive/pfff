@@ -131,6 +131,25 @@ class Foo {   // line 3
        ["Bar"; "Bar2"]
        (prolog_query ~files "children(X, 'Foo'), writeln(X)");
    );
+
+   "call graph" >:: (fun () ->
+     let files = [
+"Foo.java", "class Foo { 
+  public static void static_foo() { }
+  public void foo() { }
+}";
+"Bar.java", "class Bar { 
+  public void call_static_foo() { Foo.static_foo(); }
+  public void call_foo() { Foo o = new Foo(); o.foo(); }
+}";
+     ] in
+     assert_equal
+       ["Bar,call_foo"]
+       (prolog_query ~files "docall(X, ('Foo','foo'), _), writeln(X)");
+     assert_equal
+       ["Bar,call_static_foo"]
+       (prolog_query ~files "docall(X, ('Foo','static_foo'), _), writeln(X)");
+   );
  ])
 
 (*****************************************************************************)

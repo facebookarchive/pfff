@@ -37,6 +37,7 @@ type fact =
   | At of entity * Common.filename (* readable path *) * int (* line *)
   | Kind of entity * Database_code.entity_kind
   | Extends of string * string
+  | Call of entity * entity
   | Misc of string
 
   (* todo? could use a record with 
@@ -108,6 +109,9 @@ let string_of_fact fact =
         spf "at(%s, '%s', %d)" (string_of_entity entity) file line
     | Extends (s1, s2) ->
         spf "extends('%s', '%s')" s1 s2
+    | Call (e1, e2) ->
+        spf "docall(%s, %s, method)" 
+          (string_of_entity e1) (string_of_entity e2)
     | Misc s -> s
   in
   s ^ "."
@@ -133,7 +137,9 @@ let build root g =
   let add x = Common.push2 x res in
 
   add (Misc "% -*- prolog -*-");
-  add (Misc ":- discontiguous kind/2, at/3, extends/2, implements/2");
+  add (Misc ":- discontiguous kind/2, at/3");
+  add (Misc ":- discontiguous extends/2, implements/2");
+  add (Misc ":- discontiguous docall/3");
 
   (* defs *)
   g +> G.iter_nodes (fun n ->
@@ -176,6 +182,8 @@ let build root g =
      *)
     | ((s1, E.Class _kind1), (s2, E.Class _kind2)) ->
       add (Extends (s1, s2))
+    | ((s1, E.Method _kind1), (s2, E.Method _kind2)) ->
+      add (Call (entity_of_str s1, entity_of_str s2))
     | _ -> ()
   );
 

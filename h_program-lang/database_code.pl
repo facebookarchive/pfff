@@ -20,8 +20,11 @@
 % This tool is inspired by a similar tool for Java called JQuery
 % (http://jquery.cs.ubc.ca/, nothing to do with the JS library), itself
 % inspired by CIA (C Information Abstractor). The code below is mostly
-% generic (programming language agnostic) but it was tested only
-% on PHP code for now (see lang_php/analyze/foundation/unit_prolog_php.ml)
+% generic (programming language agnostic) but it was tested mainly
+% on PHP, Java (and its bytecode), and OCaml code (see
+% lang_php/analyze/foundation/unit_prolog_php.ml,
+% lang_bytecode/analyze/unit_analyze_bytecode.ml, and
+% lang_ml/analyze/unit_analyze_ml.ml).
 %
 % This file assumes the presence of another file, facts.pl, containing
 % the actual "database" of facts about a codebase. There is potentially
