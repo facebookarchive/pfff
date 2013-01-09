@@ -121,6 +121,16 @@ class Foo {   // line 3
      assert_equal
        ["4"] (prolog_query ~files "at('Foo\\$NestedFoo', _, X), writeln(X)");
    );
+   "children" >:: (fun () ->
+     let files = [
+"Foo.java", "class Foo { }";
+"Bar.java", "class Bar extends Foo { }";
+"Bar2.java", "class Bar2 extends Bar { }";
+     ] in
+     assert_equal
+       ["Bar"; "Bar2"]
+       (prolog_query ~files "children(X, 'Foo'), writeln(X)");
+   );
  ])
 
 (*****************************************************************************)

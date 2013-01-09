@@ -36,6 +36,7 @@ module E = Database_code
 type fact =
   | At of entity * Common.filename (* readable path *) * int (* line *)
   | Kind of entity * Database_code.entity_kind
+  | Extends of string * string
   | Misc of string
 
   (* todo? could use a record with 
@@ -105,6 +106,8 @@ let string_of_fact fact =
           (string_of_entity_kind kind)
     | At (entity, file, line) ->
         spf "at(%s, '%s', %d)" (string_of_entity entity) file line
+    | Extends (s1, s2) ->
+        spf "extends('%s', '%s')" s1 s2
     | Misc s -> s
   in
   s ^ "."
@@ -130,7 +133,8 @@ let build root g =
   let add x = Common.push2 x res in
 
   add (Misc "% -*- prolog -*-");
-  add (Misc ":- discontiguous kind/2, at/3");
+  add (Misc ":- discontiguous kind/2, at/3, extends/2, implements/2");
+
   (* defs *)
   g +> G.iter_nodes (fun n ->
     let (str, kind) = n in
@@ -157,6 +161,22 @@ let build root g =
                nodeinfo.G.pos.Parse_info.line))
     with Not_found -> ()
     );
-     
   );
+
+  (* uses *)
+
+  (* we iter on the Use edges of the graph_code (see graph_code.ml), which
+   * contains the inheritance tree, call graph, and data graph information.
+   *)
+  g +> G.iter_use_edges (fun n1 n2 ->
+    match n1, n2 with
+    (* less: at some point have to differentiate Extends and Implements
+     * depending on the _kind, but for now let's simplify and convert
+     * everything in regular class inheritance
+     *)
+    | ((s1, E.Class _kind1), (s2, E.Class _kind2)) ->
+      add (Extends (s1, s2))
+    | _ -> ()
+  );
+
   List.rev !res

@@ -24,13 +24,14 @@ module G = Graph
  * A program can be seen as a hierarchy of entities
  * (directory/package/module/file/class/function/method/field/...)
  * linked to each other through different mechanisms
- * (import/reference/extend/implement/instantiate/call/access/...),
+ * (import/reference/extend/implement/instantiate/call/access/...).
  * This module is the basis for 'codegraph', a tool to help
  * visualize code dependencies or code relationships. 
  * It provides one of the core data structure of codegraph
  * an (hyper)graph of all the entities in a program linked
  * either via a 'has-a' relation, which represent the
- * hierarchies, or 'use-a', which represent the dependencies
+ * hierarchies (in the sense of containment, not inheritance), or
+ * 'use-a', which represent the dependencies
  * (the other core data structure of codegraph is in
  * dependencies_matrix_code.ml).
  * 
@@ -43,6 +44,7 @@ module G = Graph
  * I could have probably done the DSM using database_php.ml
  * but it was not made for that. Here the graph is
  * the core and simplest data structure that is needed.
+ * 
  * This graph also unifies many things. For instance there is no
  * special code to handle directories or files, they are
  * just considered regular entities like module or classes 
@@ -77,8 +79,12 @@ module G = Graph
 type node = string * E.entity_kind
 
 type edge =
+  (* a package Has subpackages, a subpackage Has classes, a class Has members,
+   * etc *)
   | Has
-  (* todo? refine by having different cases? Use of `Call|`Extend|...? *)
+  (* A class Use(extends) another class, a method Use(calls) another method,
+   * etc.
+   * todo? refine by having different cases? Use of `Call|`Extend|...? *)
   | Use
 
 type nodeinfo = { 
