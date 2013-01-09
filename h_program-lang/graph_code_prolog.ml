@@ -129,6 +129,7 @@ let build root g =
   let res = ref [] in
   let add x = Common.push2 x res in
 
+  add (Misc "% -*- prolog -*-");
   add (Misc ":- discontiguous kind/2, at/3");
   (* defs *)
   g +> G.iter_nodes (fun n ->
