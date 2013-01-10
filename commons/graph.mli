@@ -61,6 +61,8 @@ val display_strongly_connected_components :
 
 
 (* internals *)
+val stat: 
+  'a graph -> unit
 
 (*
 val vertex_of_key : 'a -> 'a graph -> OG.V.t

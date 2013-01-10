@@ -490,3 +490,10 @@ let display_strongly_connected_components ~str_of_key hscc g =
     spf "%s (scc=%d)" s (Hashtbl.find hscc k)
   ) tmpfile g
 
+
+(*****************************************************************************)
+(* stat *)
+(*****************************************************************************)
+let stat g =
+  pr2_gen ("cnt = ", g.cnt);
+  ()
