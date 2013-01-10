@@ -252,8 +252,8 @@ let lookup g a =
 (*****************************************************************************)
 (* Defs/Uses *)
 (*****************************************************************************)
-let rec extract_defs_uses env ast =
-  let env = { env with current = (env.readable, E.File) } in
+let rec extract_defs_uses env ast readable =
+  let env = { env with current = (readable, E.File); readable } in
   if env.phase = Defs then begin
     let dir = Common.dirname env.readable in
     G.create_intermediate_directories_if_not_present env.g dir;
@@ -622,7 +622,9 @@ let build ?(verbose=true) ?(only_defs=false) dir skip_list =
     readable = "filled_later";
     self = "NOSELF"; parent = "NOPARENT";
     dupes = Hashtbl.create 101;
+    (* todo: remove now that have the "rule" file *)
     skip_edges = Skip_code.build_filter_edges skip_list;
+    (* set after the defs phase *)
     case_insensitive = Hashtbl.create 101;
     log = (fun s ->
           output_string chan (s ^ "\n"); 
@@ -645,7 +647,7 @@ let build ?(verbose=true) ?(only_defs=false) dir skip_list =
       let readable = Common.filename_without_leading_path root file in
       let ast = parse file in
       try 
-        extract_defs_uses { env with phase = Defs; readable} ast;
+        extract_defs_uses { env with phase = Defs} ast readable;
       with Graph_code.Error Graph_code.NodeAlreadyPresent ->
         failwith (spf "Node already present in %s" file)
    ));
@@ -676,7 +678,7 @@ let build ?(verbose=true) ?(only_defs=false) dir skip_list =
         k();
         let readable = Common.filename_without_leading_path root file in
         let ast = parse file in
-        extract_defs_uses { env with phase = Inheritance; readable } ast
+        extract_defs_uses { env with phase = Inheritance} ast readable
       ));
     
     (* step3: creating the 'Use' edges, the uses *)
@@ -686,7 +688,7 @@ let build ?(verbose=true) ?(only_defs=false) dir skip_list =
         k();
         let readable = Common.filename_without_leading_path root file in
         let ast = parse file in
-        extract_defs_uses {env with phase = Uses; readable } ast
+        extract_defs_uses {env with phase = Uses} ast readable
    ));
   end;
   

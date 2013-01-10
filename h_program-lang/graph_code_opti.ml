@@ -73,7 +73,6 @@ let (convert2: Graph_code.graph -> graph) = fun g ->
   in
   let i = ref 0 in
   g +> G.iter_nodes (fun node ->
-    pr2_gen node;
     Hashtbl.add h.name_to_i node !i;
     h.i_to_name.(!i) <- node;
     incr i;
@@ -89,7 +88,6 @@ let (convert2: Graph_code.graph -> graph) = fun g ->
       h.use.(i) <- j :: h.use.(i);
     );
   );
-  assert(Hashtbl.mem h.name_to_i G.root);
   h
 
 let convert a = 
