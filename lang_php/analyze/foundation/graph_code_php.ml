@@ -64,6 +64,8 @@ type env = {
   (* "NOPARENT" when no parent *)
   parent: string;
 
+  readable: Common.filename;
+
   (* we use the Hashtbl.find_all property *)
   skip_edges: (string, string) Hashtbl.t;
 
@@ -212,9 +214,9 @@ let rec add_use_edge env (((str, tok) as name, kind)) =
             let file = name +> Ast.tok_of_name +> Parse_info.string_of_info in
             env.log (spf "PB: lookup fail on %s (at %s)"
                    (G.string_of_node dst) file);
+            env.g +> G.add_edge (parent_target, dst) G.Has;
+            env.g +> G.add_edge (src, dst) G.Use;
           );
-          env.g +> G.add_edge (parent_target, dst) G.Has;
-          env.g +> G.add_edge (src, dst) G.Use;
       )
   )
 
@@ -251,29 +253,14 @@ let lookup g a =
 (*****************************************************************************)
 (* Defs/Uses *)
 (*****************************************************************************)
-let rec extract_defs_uses ~phase ~g ~ast ~dupes ~readable ~skip_edges 
-    ~case_insensitive ~log =
-
-  let env = {
-    g; phase;
-    current = (readable, E.File);
-    self = "NOSELF"; parent = "NOPARENT";
-    dupes;
-    skip_edges;
-    case_insensitive;
-    log;
-    at_toplevel = true;
-  } 
-  in
-
-  if phase = Defs then begin
-    let dir = Common.dirname readable in
-    G.create_intermediate_directories_if_not_present g dir;
-
-    g +> G.add_node (readable, E.File);
-    g +> G.add_edge ((dir, E.Dir), (readable, E.File))  G.Has;
+let rec extract_defs_uses env ast =
+  let env = { env with current = (env.readable, E.File) } in
+  if env.phase = Defs then begin
+    let dir = Common.dirname env.readable in
+    G.create_intermediate_directories_if_not_present env.g dir;
+    env.g +> G.add_node (env.readable, E.File);
+    env.g +> G.add_edge ((dir, E.Dir), (env.readable, E.File))  G.Has;
   end;
-
   List.iter (stmt_toplevel env) ast;
 
 (* ---------------------------------------------------------------------- *)
@@ -621,17 +608,27 @@ let build ?(verbose=true) ?(only_defs=false) dir skip_list =
   let g = G.create () in
   G.create_initial_hierarchy g;
 
-  let dupes = Hashtbl.create 101 in
-  let skip_edges = Skip_code.build_filter_edges skip_list in
-  let case_insensitive = Hashtbl.create 101 in
-
   let chan = open_out (Filename.concat dir "pfff.log") in
-  let log s = 
-    output_string chan (s ^ "\n"); 
-    flush chan; 
+
+  let env = {
+    g; 
+    phase = Defs;
+    current = ("filled_later", E.File);
+    readable = "filled_later";
+    self = "NOSELF"; parent = "NOPARENT";
+    dupes = Hashtbl.create 101;
+    skip_edges = Skip_code.build_filter_edges skip_list;
+    case_insensitive = Hashtbl.create 101;
+    log = (fun s ->
+          output_string chan (s ^ "\n"); 
+          flush chan; 
+    );
+    at_toplevel = true;
+  } 
   in
+
   let pr2_and_log s = 
-    log s;
+    env.log s;
     if verbose then pr2 s
   in
 
@@ -643,28 +640,28 @@ let build ?(verbose=true) ?(only_defs=false) dir skip_list =
       let readable = Common.filename_without_leading_path root file in
       let ast = parse file in
       try 
-        extract_defs_uses ~phase:Defs ~g ~ast ~readable 
-          ~skip_edges ~dupes ~case_insensitive ~log;
+        extract_defs_uses { env with phase = Defs; readable} ast;
       with Graph_code.Error Graph_code.NodeAlreadyPresent ->
         failwith (spf "Node already present in %s" file)
    ));
-  Common.hkeys dupes +>  List.iter (fun n ->
-    let files = Hashtbl.find_all dupes n in
+  Common.hkeys env.dupes +>  List.iter (fun n ->
+    let files = Hashtbl.find_all env.dupes n in
     pr2_and_log (spf "DUPE: %s (%d)" 
                    (G.string_of_node n) (List.length files + 1));
     g +> G.remove_edge (G.parent n g, n) G.Has;
     g +> G.add_edge (G.dupe, n) G.Has;
     try 
       let nodeinfo = G.nodeinfo n g in
-      log (spf " orig = %s" (nodeinfo.G.pos.Parse_info.file));
-      log (spf " dupe = %s" (List.hd files));
+      env.log (spf " orig = %s" (nodeinfo.G.pos.Parse_info.file));
+      env.log (spf " dupe = %s" (List.hd files));
       ()
     with Not_found ->
       ()
   );
   if not only_defs then begin
     g +> G.iter_nodes (fun (str, kind) ->
-      Hashtbl.replace case_insensitive (String.lowercase str, kind) (str, kind)
+      Hashtbl.replace env.case_insensitive 
+        (String.lowercase str, kind) (str, kind)
     );
 
     (* step2: creating the 'Use' edges for inheritance *)
@@ -674,8 +671,7 @@ let build ?(verbose=true) ?(only_defs=false) dir skip_list =
         k();
         let readable = Common.filename_without_leading_path root file in
         let ast = parse file in
-        extract_defs_uses ~phase:Inheritance ~g ~ast ~readable 
-          ~skip_edges ~dupes ~case_insensitive ~log;
+        extract_defs_uses { env with phase = Inheritance; readable } ast
       ));
     
     (* step3: creating the 'Use' edges, the uses *)
@@ -685,8 +681,7 @@ let build ?(verbose=true) ?(only_defs=false) dir skip_list =
         k();
         let readable = Common.filename_without_leading_path root file in
         let ast = parse file in
-        extract_defs_uses ~phase:Uses ~g ~ast ~readable 
-          ~skip_edges ~dupes ~case_insensitive ~log;
+        extract_defs_uses {env with phase = Uses; readable } ast
    ));
   end;
   
