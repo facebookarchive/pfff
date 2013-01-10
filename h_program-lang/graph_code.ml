@@ -329,6 +329,10 @@ let load_adjust file =
     | _ -> failwith ("wrong line format in adjust file: " ^ s)
   )
 
+(* Used mainly to collapse many entries under a "..." intermediate fake
+ * parent. Maybe this could be done automatically in codegraph at some point,
+ * like ndepend does I think.
+ *)
 let adjust_graph g xs =
   let mapping = Hashtbl.create 101 in
   g +> iter_nodes (fun (s, kind) ->
