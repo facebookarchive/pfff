@@ -437,6 +437,9 @@ and expr env x =
         expr env (Call (Class_get (Id (env.self, tok), e2), es))
     | Class_get (Id ("__special__parent", tok), e2) ->
         expr env (Call (Class_get (Id (env.parent, tok), e2), es))
+    (* TODO: incorrect actually ... but good enough for now for codegraph *)
+    | Class_get (Id ("__special__static", tok), e2) ->
+        expr env (Call (Class_get (Id (env.self, tok), e2), es))
 
     | Class_get (Id name1, Id name2) 
         when not (Ast.is_variable name1) && not (Ast.is_variable name2) ->
@@ -493,6 +496,9 @@ and expr env x =
         expr env (Class_get (Id (env.self, tok), e2))
       | Id ("__special__parent", tok), _ ->
         expr env (Class_get (Id (env.parent, tok), e2))
+      (* TODO: incorrect actually ... but good enough for now for codegraph *)
+      | Id ("__special__static", tok), _ ->
+        expr env (Class_get (Id (env.self, tok), e2))
 
       | Id name1, Id name2
         when not (Ast.is_variable name1) && not (Ast.is_variable name2) ->
