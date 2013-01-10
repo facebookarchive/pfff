@@ -58,30 +58,29 @@ type env = {
   g: Graph_code.graph;
 
   phase: phase;
+  readable: Common.filename;
+
   current: Graph_code.node;
   (* "NOSELF" when outside a class *)
   self: string;
   (* "NOPARENT" when no parent *)
   parent: string;
+  at_toplevel: bool;
 
-  readable: Common.filename;
-
-  (* we use the Hashtbl.find_all property *)
+  (* we use the Hashtbl.find_all property of the hashtbl below *)
   skip_edges: (string, string) Hashtbl.t;
-
   (* right now used in extract_uses phase to transform a src like main()
    * into its File, and also to give better error messages.
-   * We use the Hashtbl.find_all property.
+   * We use the Hashtbl.find_all property of the hashtbl below.
    *)
   dupes: (Graph_code.node, Common.filename) Hashtbl.t;
-  (* todo: dynamic_fails stats *)
   (* PHP is case insensitive so certain lookup fails because people
    * used the wrong case. Those errors are less important so
-   * we just automatically relookup the correct entity.
+   * we just automatically relookup to the correct entity.
    *)
   case_insensitive: (Graph_code.node, Graph_code.node) Hashtbl.t;
 
-  at_toplevel: bool;
+  (* todo: dynamic_fails stats *)
 
   log: string -> unit;
 }
