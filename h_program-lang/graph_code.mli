@@ -1,16 +1,15 @@
 
 type node = string * Database_code.entity_kind
+ type nodeinfo = {
+   pos: Parse_info.parse_info;
+   props: property list;
+ }
+  and property =
+    | IsEnum
 type edge = Has | Use
-type nodeinfo = {
-  pos: Parse_info.parse_info;
-  props: property list;
-}
- and property =
-   | IsEnum
 
 type error =
  | NodeAlreadyPresent
-
 exception Error of error
 
 (* really an hypergraph actually *)
@@ -54,6 +53,7 @@ val all_children: node -> graph -> node list
 val iter_use_edges: (node -> node -> unit) -> graph -> unit
 val iter_nodes: (node -> unit) -> graph -> unit
 val all_use_edges: graph -> (node * node) list
+val all_nodes: graph -> node list
 
 val nb_nodes: graph -> int
 val nb_use_edges: graph -> int
@@ -63,5 +63,11 @@ val nb_use_edges: graph -> int
 (* debugging support *)
 val string_of_node: node -> string
 val display_with_gv: graph -> unit
+
+(* adjustments *)
+type adjust = (string * string)
+val load_adjust: Common.filename -> adjust list
+(* does side effect on the graph *)
+val adjust_graph: graph -> adjust list -> unit
 
 (* internals *)

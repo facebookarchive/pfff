@@ -251,7 +251,17 @@ let build_stdlib lang root dst =
   | "java" ->
       Builtins_java.extract_from_sources ~skip_list ~src:root ~dst
   | _ -> failwith ("language not supported: " ^ lang)
-  
+
+(*****************************************************************************)
+(* Graph adjuster (overlay-ish) *)
+(*****************************************************************************)
+let adjust_graph graph_file adjust_file =
+  let g = Graph_code.load graph_file in
+  let adjust = Graph_code.load_adjust adjust_file in
+  Graph_code.adjust_graph g adjust;
+  let _ = Graph_code_opti.convert g in
+  Graph_code.save g graph_file;
+  ()
 
 (*****************************************************************************)
 (* Main action, viewing the graph *)
@@ -435,7 +445,8 @@ let extra_actions () = [
   Common.mk_action_1_arg (fun dir -> build_graph_code !lang dir);
   "-build_stdlib", " <src> <dst>",
   Common.mk_action_2_arg (fun dir dst -> build_stdlib !lang dir dst);
-
+  "-adjust_graph", " <graph> <adjust_file>",
+  Common.mk_action_2_arg (fun graph file -> adjust_graph graph file);
 (*
   "-test_phylomel", " <geno file>",
   Common.mk_action_1_arg test_phylomel;

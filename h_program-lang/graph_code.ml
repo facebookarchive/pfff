@@ -129,6 +129,15 @@ type error =
 
 exception Error of error
 
+(* we sometimes want to collapse unimportant directories under a "..."
+ * fake intermediate directory. So one can create an adjust file with
+ * for instance:
+ *   api -> extra/
+ * and we will delete the current parent of 'api' and relink it to the
+ * extra/ entity (possibly newly created)
+ *)
+type adjust = (string * string)
+
 (*****************************************************************************)
 (* Globals *)
 (*****************************************************************************)
@@ -246,6 +255,11 @@ let all_use_edges g =
   G.iter_edges (fun n1 n2 -> Common.push2 (n1, n2) res) g.use;
   !res
 
+let all_nodes g =
+  let res = ref [] in
+  G.iter_nodes (fun n -> Common.push2 n res) g.has;
+  !res
+
 (*****************************************************************************)
 (* Helpers *)
 (*****************************************************************************)
@@ -292,3 +306,64 @@ let string_of_node (s, kind) =
 let display_with_gv g =
   (* TODO? use different colors for the different kind of edges? *)
   G.display_with_gv g.has
+
+(*****************************************************************************)
+(* Graph adjustments *)
+(*****************************************************************************)
+let load_adjust file =
+  Common.cat file 
+  +> Common.exclude (fun s -> 
+    s =~ "#.*" || s =~ "^[ \t]*$"
+  )
+  +> List.map (fun s ->
+    match s with
+    | _ when s =~ "\\([^ -]+\\)[ ]*->[ ]*\\([^ -]+\\)" ->
+      Common.matched2 s
+    | _ -> failwith ("wrong line format in adjust file: " ^ s)
+  )
+
+let adjust_graph g xs =
+(*
+  let g = create () in
+  let node = ("FOO", E.Dir) in
+  add_node node g;
+  assert (has_node node g);
+  assert (List.mem node (all_nodes g));
+  save g "/tmp/ex_graph.marshall";
+  let g = load "/tmp/ex_graph.marshall" in
+*)
+  let node = ("FOO2", E.Dir) in
+  add_node node g;
+  assert (has_node node g);
+  assert (List.mem node (all_nodes g));
+  ()
+
+
+let adjust_graph2 g xs =
+  Graph.stat g.has;
+  let mapping = Hashtbl.create 101 in
+  g +> iter_nodes (fun (s, kind) ->
+    Hashtbl.add mapping s (s, kind)
+  );
+  xs +> List.iter (fun (s1, s2) ->
+    let nodes = Hashtbl.find_all mapping s1 in
+
+    let new_parent = (s2, E.Dir) in
+    create_intermediate_directories_if_not_present g s2;
+    Graph.stat g.has;
+    assert (has_node new_parent g);
+    assert (List.mem new_parent (all_nodes g));
+    (match nodes with
+    | [n] ->
+      let old_parent = parent n g in
+      add_edge (new_parent, n) Has g;
+      remove_edge (old_parent, n) Has g;
+    | [] -> failwith (spf "could not find entity %s" s1)
+    | _ -> failwith (spf "multiple entities with %s as a name" s1)
+    )
+  );
+  assert (has_node root g);
+  assert (has_node ("PHP_STDLIB", E.Dir) g);
+  assert (List.mem ("PHP_STDLIB", E.Dir) (all_nodes g));
+  ()
+

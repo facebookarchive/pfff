@@ -42,6 +42,16 @@ type graph = {
 }
 
 (*****************************************************************************)
+(* Helpers *)
+(*****************************************************************************)
+
+let hashtbl_find h n =
+  try Hashtbl.find h n
+  with Not_found ->
+    pr2_gen ("PB:", n);
+    raise Not_found
+
+(*****************************************************************************)
 (* API *)
 (*****************************************************************************)
 let nb_nodes g = 
@@ -63,21 +73,23 @@ let (convert2: Graph_code.graph -> graph) = fun g ->
   in
   let i = ref 0 in
   g +> G.iter_nodes (fun node ->
+    pr2_gen node;
     Hashtbl.add h.name_to_i node !i;
     h.i_to_name.(!i) <- node;
     incr i;
   );
   g +> G.iter_nodes (fun node ->
-    let i = Hashtbl.find h.name_to_i node in
+    let i = hashtbl_find h.name_to_i node in
     g +> G.succ node G.Has +> List.iter (fun node2 ->
-      let j = Hashtbl.find h.name_to_i node2 in
+      let j = hashtbl_find h.name_to_i node2 in
       h.has_children.(i) <- j :: h.has_children.(i);
     );
     g +> G.succ node G.Use +> List.iter (fun node2 ->
-      let j = Hashtbl.find h.name_to_i node2 in
+      let j = hashtbl_find h.name_to_i node2 in
       h.use.(i) <- j :: h.use.(i);
     );
   );
+  assert(Hashtbl.mem h.name_to_i G.root);
   h
 
 let convert a = 
@@ -91,7 +103,7 @@ let all_children n gopti =
   []
 
 let children n g =
-  g.has_children.(Hashtbl.find g.name_to_i n) 
+  g.has_children.(hashtbl_find g.name_to_i n) 
   +> List.map (fun i ->
       g.i_to_name.(i)
   )
