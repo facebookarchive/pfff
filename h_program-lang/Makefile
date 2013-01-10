@@ -22,9 +22,10 @@ SRC= parse_info.ml \
 
 SYSLIBS= str.cma unix.cma
 LIBS=../commons/lib.cma
-INCLUDEDIRS= ../commons \
- ../commons/lib-sexp ../commons/lib-json \
- ../commons/ocamlextra
+INCLUDEDIRS= $(TOP)/commons \
+ $(TOP)/commons/lib-sexp $(TOP)/commons/lib-json \
+ $(TOP)/commons/ocamlextra \
+ $(TOP)/external/ocamlgraph $(TOP)/external/ocamlgraph/src
 
 # other sources:
 #  database_code.pl, facts.pl, for the prolog-based code query engine

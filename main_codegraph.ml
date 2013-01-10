@@ -259,7 +259,6 @@ let adjust_graph graph_file adjust_file =
   let g = Graph_code.load graph_file in
   let adjust = Graph_code.load_adjust adjust_file in
   Graph_code.adjust_graph g adjust;
-  let _ = Graph_code_opti.convert g in
   Graph_code.save g graph_file;
   ()
 

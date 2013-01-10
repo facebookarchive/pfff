@@ -191,11 +191,18 @@ let add_nodeinfo n info g =
 (*****************************************************************************)
 (* IO *)
 (*****************************************************************************)
+let version = 1
+
 let save g file =
-  Common.write_value g file
+  (* see ocamlgraph FAQ *)
+  Common.write_value (g, !Ocamlgraph.Blocks.cpt_vertex, version) file
 
 let load file =
-  Common.get_value file
+  let (g, serialized_cpt_vertex, version2) = Common.get_value file in
+  if version != version2
+  then failwith (spf "your marshalled file has an old version, delete it");
+  Ocamlgraph.Blocks.after_unserialization serialized_cpt_vertex;
+  g
 
 (*****************************************************************************)
 (* Graph access *)
@@ -323,24 +330,6 @@ let load_adjust file =
   )
 
 let adjust_graph g xs =
-(*
-  let g = create () in
-  let node = ("FOO", E.Dir) in
-  add_node node g;
-  assert (has_node node g);
-  assert (List.mem node (all_nodes g));
-  save g "/tmp/ex_graph.marshall";
-  let g = load "/tmp/ex_graph.marshall" in
-*)
-  let node = ("FOO2", E.Dir) in
-  add_node node g;
-  assert (has_node node g);
-  assert (List.mem node (all_nodes g));
-  ()
-
-
-let adjust_graph2 g xs =
-  Graph.stat g.has;
   let mapping = Hashtbl.create 101 in
   g +> iter_nodes (fun (s, kind) ->
     Hashtbl.add mapping s (s, kind)
@@ -350,20 +339,13 @@ let adjust_graph2 g xs =
 
     let new_parent = (s2, E.Dir) in
     create_intermediate_directories_if_not_present g s2;
-    Graph.stat g.has;
-    assert (has_node new_parent g);
-    assert (List.mem new_parent (all_nodes g));
     (match nodes with
     | [n] ->
       let old_parent = parent n g in
-      add_edge (new_parent, n) Has g;
       remove_edge (old_parent, n) Has g;
+      add_edge (new_parent, n) Has g;
     | [] -> failwith (spf "could not find entity %s" s1)
     | _ -> failwith (spf "multiple entities with %s as a name" s1)
     )
   );
-  assert (has_node root g);
-  assert (has_node ("PHP_STDLIB", E.Dir) g);
-  assert (List.mem ("PHP_STDLIB", E.Dir) (all_nodes g));
   ()
-
