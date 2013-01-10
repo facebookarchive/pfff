@@ -324,7 +324,7 @@ let load_adjust file =
   )
   +> List.map (fun s ->
     match s with
-    | _ when s =~ "\\([^ -]+\\)[ ]*->[ ]*\\([^ -]+\\)" ->
+    | _ when s =~ "\\([^ ]+\\)[ ]+->[ ]*\\([^ ]+\\)" ->
       Common.matched2 s
     | _ -> failwith ("wrong line format in adjust file: " ^ s)
   )
