@@ -197,6 +197,13 @@ let sort_by_count_columns_high_first xs m dm =
      +> Common.sort_by_val_highfirst
      +> List.map fst
 
+(* todo: alternatives while discussing with matthieu
+ * - find the first row, which should be the lines with the smallest
+ *   sum (as it will be part of the big sum of the upper triangular),
+ *   remove then this line, and iterate
+ * - find the first row by doing the sum of (cell line / sum cell column)
+ *   which is a bit equivalent to normalize, to do sum of percentage.
+ *)
 let sort_by_count_rows_low_columns_high_first xs m dm =
   xs +> List.map (fun n ->
     let idx = Hashtbl.find dm.name_to_i n in
