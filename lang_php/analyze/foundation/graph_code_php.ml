@@ -48,6 +48,12 @@ open Ast_php_simple
  *  - reuse env, most of of build() and put it in graph_code.ml
  *    and just pass the PHP specificities.
  *  - add tests
+ * 
+ * issues:
+ *  - nested functions, duped functions defined conditionnally
+ *    => use the at_toplevel
+ *  - duped functions
+ *  - duped local functions in scripts/
  *)
 
 (*****************************************************************************)
@@ -67,8 +73,6 @@ type env = {
   parent: string;
   at_toplevel: bool;
 
-  (* we use the Hashtbl.find_all property of the hashtbl below *)
-  skip_edges: (string, string) Hashtbl.t;
   (* right now used in extract_uses phase to transform a src like main()
    * into its File, and also to give better error messages.
    * We use the Hashtbl.find_all property of the hashtbl below.
@@ -178,13 +182,7 @@ let rec add_use_edge env (((str, tok) as name, kind)) =
               (G.string_of_node src) (G.string_of_node dst)) ~file:env.readable;
 
   | _ when G.has_node dst env.g -> 
-      let (s1, _) = src in
-      let (s2, _) = dst in
-      if Hashtbl.mem env.skip_edges s1 &&
-         List.mem s2 (Hashtbl.find_all env.skip_edges s1)
-      then pr2 (spf "SKIPPING: %s --> %s" s1 s2)
-      else 
-        G.add_edge (src, dst) G.Use env.g
+      G.add_edge (src, dst) G.Use env.g
 
   | _ when Hashtbl.mem env.case_insensitive (String.lowercase str, kind) ->
       let (final_str, _) = 
@@ -624,8 +622,6 @@ let build ?(verbose=true) ?(only_defs=false) dir skip_list =
     readable = "filled_later";
     self = "NOSELF"; parent = "NOPARENT";
     dupes = Hashtbl.create 101;
-    (* todo: remove now that have the "rule" file *)
-    skip_edges = Skip_code.build_filter_edges skip_list;
     (* set after the defs phase *)
     case_insensitive = Hashtbl.create 101;
     log = (fun s ~file ->

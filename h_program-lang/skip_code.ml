@@ -34,7 +34,10 @@ type skip =
   | Dir of Common.dirname
   | File of Common.filename
 
-  (* mostly for graph_code *)
+  (* todo: mostly for the graph_code builder, but it's better
+   * to have whitelist rule to operate after the graph_code has been
+   * built, in a "rule" file, so this Edge should not be used.
+   *)
   | Edge of string * string
 
   | SkipErrorsDir of Common.dirname
