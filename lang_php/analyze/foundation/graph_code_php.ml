@@ -61,6 +61,10 @@ open Ast_php_simple
  *  - lookup failure because use different software stack (e.g.
  *    html/intern/wiki/, lib/arcanist/, etc) 
  *    => skip list, dir:
+ * where to display the errors:
+ *  - terminal for the really important one
+ *  - pfff.log for less important and to have more details
+ *  - in the codegraph itself under the PB directory for all the rest
  *)
 
 (*****************************************************************************)
