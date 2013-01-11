@@ -27,26 +27,26 @@ open Common
 (* Types *)
 (*****************************************************************************)
 
-type info_txt = 
-  (string * string list) list
-
-(* todo: a tree! or graph when have tags! *)
-type info_txts = unit
+type info_txt = Outline.outline
+ (* old: (string * string list) list *)
 
 (*****************************************************************************)
 (* IO *)
 (*****************************************************************************)
 
 let load file =
+  Outline.parse_outline file
+
+(* old:
   let xs = 
     Common.cat file
     +> List.map (Str.global_replace (Str.regexp "#.*") "" )
-    +> List.map (Str.global_replace (Str.regexp "\\* -----.*") "" )
+    +> List.map (Str.global_replace (Str.regexp "\\*+ -----.*") "" )
     +> Common.exclude Common.is_blank_string 
   in
-  let xxs = Common.split_list_regexp "^\\* " xs in
+  let xxs = Common.split_list_regexp "^\\*+ " xs in
   xxs +> List.map (fun (s, body) ->
-    if s =~ "^\\* \\([^ ]+\\)[ \t]*$"
+    if s =~ "^\\*+ \\([^ ]+\\)[ \t]*$"
     then 
       let dir = Common.matched1 s in
       dir, body
@@ -54,3 +54,4 @@ let load file =
       failwith (spf "wrong format in %s, entry: %s" file s)
   )
 
+*)

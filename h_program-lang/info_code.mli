@@ -1,7 +1,4 @@
 
-type info_txt = 
-  (string * string list) list
-
-type info_txts = unit
+type info_txt = Outline.outline
   
 val load: Common.filename -> info_txt

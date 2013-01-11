@@ -168,10 +168,37 @@ let action = ref ""
 (* Helpers *)
 (*****************************************************************************)
 
-(* todo: constraints_of_info_txts *)
 let constraints_of_info_txt info_txt =
   let h = Hashtbl.create 101 in
-  Hashtbl.add h "." (info_txt +> List.map fst);
+  pr2_gen info_txt;
+  let rec aux current node =
+    match node with
+    | Common.Tree (node, xs) ->
+      let title = node.Outline.title in
+      let entry = 
+        match title with
+        | "__ROOT__" -> "."
+        | _ -> Filename.concat current title
+      in
+      let children = xs +> List.map (fun (Common.Tree (node, _)) ->
+        (match entry with
+        | "." -> node.Outline.title
+        | _ -> Filename.concat entry node.Outline.title
+        )
+      )
+      in
+      if not (null children) then begin
+        pr2_gen (entry, children);
+        Hashtbl.add h entry children;
+        let new_current =
+          match entry with
+          | "." -> ""
+          | _ -> entry
+        in
+        List.iter (aux new_current) xs
+      end
+  in
+  aux "" info_txt;
   h
 
 (*****************************************************************************)
