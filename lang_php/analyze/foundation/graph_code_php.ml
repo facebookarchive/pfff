@@ -72,8 +72,9 @@ type env = {
   (* right now used in extract_uses phase to transform a src like main()
    * into its File, and also to give better error messages.
    * We use the Hashtbl.find_all property of the hashtbl below.
+   * The pair of filenames is readable * fullpath
    *)
-  dupes: (Graph_code.node, Common.filename) Hashtbl.t;
+  dupes: (Graph_code.node, (Common.filename * Common.filename)) Hashtbl.t;
   (* PHP is case insensitive so certain lookup fails because people
    * used the wrong case. Those errors are less important so
    * we just automatically relookup to the correct entity.
@@ -82,7 +83,7 @@ type env = {
 
   (* todo: dynamic_fails stats *)
 
-  log: string -> unit;
+  log: string -> file:Common.filename -> unit;
 }
   (* We need 3 phases, one to get all the definitions, one to
    * get the inheritance information, and one to get all the Uses.
@@ -141,7 +142,7 @@ let add_node_and_edge_if_defs_mode env name_node =
         ()
       | E.Class _ | E.Function | E.Constant when not env.at_toplevel -> 
         ()
-      | _ -> Hashtbl.add env.dupes node file
+      | _ -> Hashtbl.add env.dupes node (env.readable, file)
       )
     else begin
       env.g +> G.add_node node;
@@ -173,8 +174,8 @@ let rec add_use_edge env (((str, tok) as name, kind)) =
   (match () with
   (* maybe nested function, in which case we dont have the def *)
   | _ when not (G.has_node src env.g) ->
-      pr2 (spf "LOOKUP SRC FAIL %s --> %s, src does not exist (nested func?)"
-              (G.string_of_node src) (G.string_of_node dst));
+      env.log (spf "LOOKUP SRC FAIL %s --> %s, src doesn't exist (nested func?)"
+              (G.string_of_node src) (G.string_of_node dst)) ~file:env.readable;
 
   | _ when G.has_node dst env.g -> 
       let (s1, _) = src in
@@ -208,11 +209,9 @@ let rec add_use_edge env (((str, tok) as name, kind)) =
           | E.Method _ | E.Field | E.ClassConstant -> 
             ()
           | _ ->
-            pr2 (spf "PB: lookup fail on %s (in %s)" 
-                   (G.string_of_node dst) (G.string_of_node src));
             let file = name +> Ast.tok_of_name +> Parse_info.string_of_info in
             env.log (spf "PB: lookup fail on %s (at %s)"
-                   (G.string_of_node dst) file);
+                   (G.string_of_node dst) file) ~file:env.readable;
             env.g +> G.add_edge (parent_target, dst) G.Has;
             env.g +> G.add_edge (src, dst) G.Use;
           );
@@ -614,6 +613,7 @@ let build ?(verbose=true) ?(only_defs=false) dir skip_list =
   G.create_initial_hierarchy g;
 
   let chan = open_out (Filename.concat dir "pfff.log") in
+  let filter_error = Skip_code.build_filter_errors_file skip_list in
 
   let env = {
     g; 
@@ -626,17 +626,21 @@ let build ?(verbose=true) ?(only_defs=false) dir skip_list =
     skip_edges = Skip_code.build_filter_edges skip_list;
     (* set after the defs phase *)
     case_insensitive = Hashtbl.create 101;
-    log = (fun s ->
-          output_string chan (s ^ "\n"); 
-          flush chan; 
+    log = (fun s ~file ->
+      match file with
+      | _ when filter_error file -> ()
+      | _ ->
+        output_string chan (s ^ "\n"); 
+        flush chan; 
     );
     at_toplevel = true;
   } 
   in
 
   let pr2_and_log s = 
-    env.log s;
-    if verbose then pr2 s
+    if verbose then pr2 s;
+    output_string chan (s ^ "\n"); 
+    flush chan; 
   in
 
   (* step1: creating the nodes and 'Has' edges, the defs *)
@@ -653,14 +657,16 @@ let build ?(verbose=true) ?(only_defs=false) dir skip_list =
    ));
   Common.hkeys env.dupes +>  List.iter (fun n ->
     let files = Hashtbl.find_all env.dupes n in
-    pr2_and_log (spf "DUPE: %s (%d)" 
-                   (G.string_of_node n) (List.length files + 1));
+    let (readable, file) = List.hd files in
+    env.log (spf "DUPE: %s (%d)" 
+               (G.string_of_node n) (List.length files + 1)) ~file:readable;
     g +> G.remove_edge (G.parent n g, n) G.Has;
     g +> G.add_edge (G.dupe, n) G.Has;
     try 
       let nodeinfo = G.nodeinfo n g in
-      env.log (spf " orig = %s" (nodeinfo.G.pos.Parse_info.file));
-      env.log (spf " dupe = %s" (List.hd files));
+      env.log (spf " orig = %s" (nodeinfo.G.pos.Parse_info.file)) 
+        ~file:readable;
+      env.log (spf " dupe = %s" file) ~file:readable;
       ()
     with Not_found ->
       ()

@@ -37,6 +37,8 @@ type skip =
   (* mostly for graph_code *)
   | Edge of string * string
 
+  | SkipErrorsDir of Common.dirname
+
 (*****************************************************************************)
 (* IO *)
 (*****************************************************************************)
@@ -47,9 +49,11 @@ let load file =
   )
   +> List.map (fun s ->
     match s with
-    | _ when s =~ "dir:[ ]*\\([^ ]+\\)" -> Dir (Common.matched1 s)
-    | _ when s =~ "file:[ ]*\\([^ ]+\\)" -> File (Common.matched1 s)
-    | _ when s =~ "edge:[ ]*\\([^ -]+\\)[ ]*-->[ ]*\\([^ -]+\\)" ->
+    | _ when s =~ "^dir:[ ]*\\([^ ]+\\)" -> Dir (Common.matched1 s)
+    | _ when s =~ "^skip_errors_dir:[ ]*\\([^ ]+\\)" -> 
+        SkipErrorsDir (Common.matched1 s)
+    | _ when s =~ "^file:[ ]*\\([^ ]+\\)" -> File (Common.matched1 s)
+    | _ when s =~ "^edge:[ ]*\\([^ -]+\\)[ ]*-->[ ]*\\([^ -]+\\)" ->
         let (s1, s2) = Common.matched2 s in
         Edge (s1, s2)
     | _ -> failwith ("wrong line format in skip file: " ^ s)
@@ -92,3 +96,14 @@ let build_filter_edges skip_list =
   | _ -> None
   ) +> Common.hash_of_list 
 
+
+let build_filter_errors_file skip_list =
+  let skip_dirs = 
+    skip_list +> Common.map_filter (function
+    | SkipErrorsDir dir -> Some dir
+    | _ -> None
+    )
+  in
+  (fun readable ->
+    skip_dirs +> List.exists (fun dir -> readable =~ ("^" ^ dir))
+  )
