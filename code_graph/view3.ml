@@ -179,6 +179,11 @@ let mk_gui w =
         fc#add_item "_Refresh" ~key:K._R ~callback:(fun () -> 
           raise Todo
         ) +> ignore;
+
+        fc#add_item "_Order" ~callback:(fun () ->
+          let dm = w.m in
+          Dependencies_matrix_code.info_orders dm;
+        ) +> ignore;
       );
 
       factory#add_submenu "_Help" +> (fun menu -> 

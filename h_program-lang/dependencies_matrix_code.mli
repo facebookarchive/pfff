@@ -52,6 +52,8 @@ val is_dead_line:
   int -> dm -> bool
 val is_internal_helper:
   int -> dm -> bool
+val info_orders:
+ dm -> unit
 
 (* APIs useful for other to use *)
 val final_nodes_of_tree: tree -> Graph_code.node list

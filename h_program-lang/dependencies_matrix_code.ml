@@ -150,34 +150,34 @@ let display dm =
 (*****************************************************************************)
 
 let formula x =
-  1 + (int_of_float (log10 (float_of_int x)))
+  assert(x > 0);
+  (* 1 + (int_of_float (log10 (float_of_int x))) *)
+  x
 
-let count_column n m dm =
-  let j = Hashtbl.find dm.name_to_i n in
+let count_column j m dm =
   let n = Array.length m in
   let cnt = ref 0 in
   for i = 0 to n - 1 do
-    if m.(i).(j) > 0 
+    if m.(i).(j) > 0 && i <> j
     then (* incr cnt *) 
       cnt := !cnt + formula (m.(i).(j))
   done;
   !cnt
 
 let is_empty_column n m dm =
-  count_column n m dm = 0
+  count_column (Hashtbl.find dm.name_to_i n) m dm = 0
 
-let count_row n m dm =
-  let i = Hashtbl.find dm.name_to_i n in
+let count_row i m dm =
   let n = Array.length m in
   let cnt = ref 0 in
   for j = 0 to n - 1 do
-    if m.(i).(j) > 0 
-    then (* incr cnt *) cnt := !cnt + m.(i).(j)
+    if m.(i).(j) > 0 && i <> j
+    then (* incr cnt *) cnt := !cnt + formula (m.(i).(j))
   done;
   !cnt
 
 let is_empty_row n m dm = 
-  count_row n m dm = 0
+  count_row (Hashtbl.find dm.name_to_i n) m dm = 0
 
 let empty_all_cells_relevant_to_node m dm n =
   let i = Hashtbl.find dm.name_to_i n in
@@ -188,18 +188,26 @@ let empty_all_cells_relevant_to_node m dm n =
   done
 
 let sort_by_count_rows_low_first xs m dm =
-  xs +> List.map (fun n -> n, count_row n m dm)
+  xs +> List.map (fun n -> n, count_row (Hashtbl.find dm.name_to_i n) m dm)
      +> Common.sort_by_val_lowfirst
      +> List.map fst
 
 let sort_by_count_columns_high_first xs m dm =
-  xs +> List.map (fun n -> n, count_column n m dm)
+  xs +> List.map (fun n -> n, count_column (Hashtbl.find dm.name_to_i n) m dm)
      +> Common.sort_by_val_highfirst
      +> List.map fst
 
-(* todo: do mix *)
 let sort_by_count_rows_low_columns_high_first xs m dm =
-  sort_by_count_columns_high_first xs m dm
+  xs +> List.map (fun n ->
+    let idx = Hashtbl.find dm.name_to_i n in
+    let h =
+      float_of_int (count_row idx m dm) 
+      /. 
+        (1. +. float_of_int (count_column idx m dm))
+    in
+    n, h
+  ) +> Common.sort_by_val_lowfirst
+    +> List.map fst
 
 (* 
  * See http://dsmweb.org/dsmweb/en/understand-dsm/technical-dsm-tutorial/partitioning.html
@@ -273,6 +281,24 @@ let partition_matrix nodes dm =
     !left ++ rest ++ !right
   end
 
+(* to debug the heuristics *)
+let info_orders dm =
+  dm.matrix +> Array.mapi  (fun i _ ->
+    let nrow = (count_row i dm.matrix dm) in
+    let ncol = (count_column i dm.matrix dm) in
+    let h = float_of_int nrow /. (1. +. float_of_int ncol) in
+    h,
+    (spf "%-20s: count lines = %d, count columns = %d, H = %.2f"
+      (fst (dm.i_to_name.(i)))
+      nrow
+      ncol
+      h)
+  ) +> Array.to_list 
+    +> Common.sort_by_key_lowfirst
+    +> List.iter (fun (_, s) ->
+       pr2 s
+    )
+
 (*****************************************************************************)
 (* Manual ordering *)
 (*****************************************************************************)
@@ -299,7 +325,10 @@ let optional_manual_reordering (s, node_kind) nodes constraints_opt =
         in
         Common.sort_by_val_lowfirst nodes_with_order +> List.map fst
       end
-      else nodes
+      else begin 
+        pr2 (spf "didn't find entry in constraints for %s" s);
+        nodes
+      end
 
 (*****************************************************************************)
 (* Building the matrix *)
