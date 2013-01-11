@@ -1,5 +1,9 @@
 <?php
 
+// defined in flib/third-party/tfpdf/font/unifont/ttfonts.php
+// which is included via a dynamic include_once :( so hardcode it here
+class TTFontFile { }
+
 // see also static $builtin_defines = ...
 // in www/flib/_bin/_checkModuleLib.php
 // now in hphp_constants.php

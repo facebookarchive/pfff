@@ -75,10 +75,6 @@ function fbobj_hphp_create(int $fbtype, int $profile, int $fbid, array
 
 define('_SYSTEM_TTFONTS', 0);
 
-// defined in flib/third-party/tfpdf/font/unifont/ttfonts.php
-// which is included via a dynamic include_once :( so hardcode it here
-class TTFontFile { }
-
 // defined ?? this flib/third-party/geojson/WKT/WKT.class.php defines
 // only class GeoJSONWKT. Maybe some magic done around class name
 class WKT { 
