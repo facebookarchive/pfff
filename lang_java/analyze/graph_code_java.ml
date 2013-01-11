@@ -848,7 +848,7 @@ let build ?(verbose=true) ?(only_defs=false) dir_or_file skip_list =
   let all_files = Lib_parsing_java.find_source_files_of_dir_or_files [root] in
 
   (* step0: filter noisy modules/files *)
-  let files = Skip_code.filter_files ~verbose skip_list root all_files in
+  let files = Skip_code.filter_files skip_list root all_files in
 
   let g = G.create () in
   G.create_initial_hierarchy g;

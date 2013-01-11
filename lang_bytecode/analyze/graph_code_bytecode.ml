@@ -559,9 +559,9 @@ let build ?(verbose=true) ?(graph_code_java=None) dir_or_file skip_list =
 
   (* step0: filter noisy modules/files *)
   let files = 
-    Skip_code.filter_files ~verbose skip_list root all_files in
+    Skip_code.filter_files skip_list root all_files in
   let java_files = 
-    Skip_code.filter_files ~verbose skip_list root all_java_files in
+    Skip_code.filter_files skip_list root all_java_files in
   let hjavabasename_to_fullpath =
     java_files 
     +> List.map (fun file -> Filename.basename file, file)

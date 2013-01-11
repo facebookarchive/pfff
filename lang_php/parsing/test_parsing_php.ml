@@ -32,7 +32,7 @@ let test_parse_php xs  =
         then Skip_code.load (x ^ "/skip_list.txt")
         else []
       in
-      Some x,  Skip_code.filter_files ~verbose:true skip_list x fullxs
+      Some x,  Skip_code.filter_files skip_list x fullxs
     | _ -> None, fullxs
   in
 
