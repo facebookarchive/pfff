@@ -12,7 +12,10 @@ type skip =
 val load: Common.filename -> skip list
 
 val filter_files: 
-  ?verbose:bool ->
+  skip list -> Common.dirname (* root *) -> Common.filename list -> 
+  Common.filename list
+
+val reorder_files_skip_errors_last:
   skip list -> Common.dirname (* root *) -> Common.filename list -> 
   Common.filename list
 
