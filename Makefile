@@ -175,6 +175,7 @@ SYSLIBS+=$(OCAMLCOMPILERCMA)
 # on too much things
 BASICLIBS=commons/lib.cma \
  globals/lib.cma \
+ h_files-format/lib.cma \
  h_program-lang/lib.cma \
  lang_ml/parsing/lib.cma \
  lang_nw/parsing/lib.cma \
@@ -207,6 +208,7 @@ LIBS= commons/lib.cma \
        commons/commons_features.cma \
     h_version-control/lib.cma \
     h_visualization/lib.cma \
+    h_files-format/lib.cma \
     h_program-lang/lib.cma \
     h_program-visual/lib.cma \
     globals/lib.cma \
@@ -263,6 +265,7 @@ MAKESUBDIRS=commons \
   $(ZIPDIR)    $(EXTLIBDIR) $(PTDIR) $(JAVALIBDIR) \
   h_version-control \
   h_visualization \
+  h_files-format \
   h_program-lang \
   h_program-visual \
   globals \
