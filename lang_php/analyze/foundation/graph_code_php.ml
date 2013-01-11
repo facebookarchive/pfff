@@ -94,7 +94,7 @@ type env = {
 
   (* todo: dynamic_fails stats *)
 
-  log: string -> file:Common.filename -> unit;
+  log: string -> unit;
 }
   (* We need 3 phases, one to get all the definitions, one to
    * get the inheritance information, and one to get all the Uses.
@@ -186,7 +186,7 @@ let rec add_use_edge env (((str, tok) as name, kind)) =
   (* maybe nested function, in which case we dont have the def *)
   | _ when not (G.has_node src env.g) ->
       env.log (spf "LOOKUP SRC FAIL %s --> %s, src doesn't exist (nested func?)"
-              (G.string_of_node src) (G.string_of_node dst)) ~file:env.readable;
+              (G.string_of_node src) (G.string_of_node dst));
 
   | _ when G.has_node dst env.g -> 
       G.add_edge (src, dst) G.Use env.g
@@ -216,7 +216,7 @@ let rec add_use_edge env (((str, tok) as name, kind)) =
           | _ ->
             let file = name +> Ast.tok_of_name +> Parse_info.string_of_info in
             env.log (spf "PB: lookup fail on %s (at %s)"
-                   (G.string_of_node dst) file) ~file:env.readable;
+                   (G.string_of_node dst) file);
             env.g +> G.add_edge (parent_target, dst) G.Has;
             env.g +> G.add_edge (src, dst) G.Use;
           );
@@ -620,7 +620,7 @@ let build ?(verbose=true) ?(only_defs=false) dir skip_list =
   G.create_initial_hierarchy g;
 
   let chan = open_out (Filename.concat dir "pfff.log") in
-  let filter_error = Skip_code.build_filter_errors_file skip_list in
+  let _is_skip_error_file = Skip_code.build_filter_errors_file skip_list in
 
   let env = {
     g; 
@@ -631,10 +631,7 @@ let build ?(verbose=true) ?(only_defs=false) dir skip_list =
     dupes = Hashtbl.create 101;
     (* set after the defs phase *)
     case_insensitive = Hashtbl.create 101;
-    log = (fun s ~file ->
-      match file with
-      | _ when filter_error file -> ()
-      | _ ->
+    log = (fun s ->
         output_string chan (s ^ "\n"); 
         flush chan; 
     );
@@ -644,8 +641,7 @@ let build ?(verbose=true) ?(only_defs=false) dir skip_list =
 
   let pr2_and_log s = 
     if verbose then pr2 s;
-    output_string chan (s ^ "\n"); 
-    flush chan; 
+    env.log s
   in
 
   (* step1: creating the nodes and 'Has' edges, the defs *)
@@ -664,14 +660,13 @@ let build ?(verbose=true) ?(only_defs=false) dir skip_list =
     let files = Hashtbl.find_all env.dupes n in
     let (readable, file) = List.hd files in
     env.log (spf "DUPE: %s (%d)" 
-               (G.string_of_node n) (List.length files + 1)) ~file:readable;
+               (G.string_of_node n) (List.length files + 1));
     g +> G.remove_edge (G.parent n g, n) G.Has;
     g +> G.add_edge (G.dupe, n) G.Has;
     try 
       let nodeinfo = G.nodeinfo n g in
-      env.log (spf " orig = %s" (nodeinfo.G.pos.Parse_info.file)) 
-        ~file:readable;
-      env.log (spf " dupe = %s" file) ~file:readable;
+      env.log (spf " orig = %s" (nodeinfo.G.pos.Parse_info.file)) ;
+      env.log (spf " dupe = %s" file);
       ()
     with Not_found ->
       ()
