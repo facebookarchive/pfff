@@ -7,7 +7,7 @@ fi
 
 # To compile the source, using pad installation.
 echo setting PATH
-export PATH=/home/pad/packages/Linux/bin:/home/pad/packages/bin:$PATH
+export PATH=/home/pad/packages/Linux/bin:$PATH
 echo setting LD_LIBRARY_PATH
 export LD_LIBRARY_PATH=/home/pad/packages/Linux/lib:$LD_LIBRARY_PATH
 
