@@ -49,11 +49,18 @@ open Ast_php_simple
  *    and just pass the PHP specificities.
  *  - add tests
  * 
- * issues:
+ * issues regarding errors in a codebase:
+ *  - parse errors, test code
+ *    => skip list, file: or dir:
  *  - nested functions, duped functions defined conditionnally
  *    => use the at_toplevel
- *  - duped functions
+ *  - duped functions 
+ *    => skip list (or remove the offending code), file: or dir:
  *  - duped local functions in scripts/
+ *    => skip list, skip_errors_dir:
+ *  - lookup failure because use different software stack (e.g.
+ *    html/intern/wiki/, lib/arcanist/, etc) 
+ *    => skip list, dir:
  *)
 
 (*****************************************************************************)
