@@ -92,6 +92,14 @@ type env = {
    * The pair of filenames is readable * fullpath
    *)
   dupes: (Graph_code.node, (Common.filename * Common.filename)) Hashtbl.t;
+
+  (* in many files like scripts/ people reuse the same function name. This
+   * is annoying for global analysis, so when we detect such files, 
+   * because right now they are listed in the skip file as skip_errors_dir:,
+   * then we dynamically and locally rename this function.
+   *)
+  (* TODO: dupe_renaming *)
+
   (* PHP is case insensitive so certain lookup fails because people
    * used the wrong case. Those errors are less important so
    * we just automatically relookup to the correct entity.
