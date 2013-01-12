@@ -624,7 +624,7 @@ let build ?(verbose=true) ?(only_defs=false) dir skip_list =
   G.create_initial_hierarchy g;
 
   let chan = open_out (Filename.concat dir "pfff.log") in
-  let _is_skip_error_file = Skip_code.build_filter_errors_file skip_list in
+  let is_skip_error_file = Skip_code.build_filter_errors_file skip_list in
 
   let env = {
     g; 
@@ -660,20 +660,39 @@ let build ?(verbose=true) ?(only_defs=false) dir skip_list =
       with Graph_code.Error Graph_code.NodeAlreadyPresent ->
         failwith (spf "Node already present in %s" file)
    ));
-  Common.hkeys env.dupes +>  List.iter (fun n ->
-    let files = Hashtbl.find_all env.dupes n in
-    let (readable, file) = List.hd files in
-    env.log (spf "DUPE: %s (%d)" 
-               (G.string_of_node n) (List.length files + 1));
-    g +> G.remove_edge (G.parent n g, n) G.Has;
-    g +> G.add_edge (G.dupe, n) G.Has;
-    try 
-      let nodeinfo = G.nodeinfo n g in
-      env.log (spf " orig = %s" (nodeinfo.G.pos.Parse_info.file)) ;
-      env.log (spf " dupe = %s" file);
-      ()
-    with Not_found ->
-      ()
+  Common.hkeys env.dupes +>  List.iter (fun node ->
+    let nodeinfo = G.nodeinfo node g in
+    let orig_file = nodeinfo.G.pos.Parse_info.file in
+    let orig_readable = Common.filename_without_leading_path root orig_file in
+
+    let files = Hashtbl.find_all env.dupes node in
+    let (ex_readable, ex_file) = List.hd files in
+
+    let dupes = orig_readable::List.map fst files in
+    let cnt = List.length dupes in
+
+    let (in_skip_errors, other) = List.partition is_skip_error_file dupes in
+
+    (match List.length in_skip_errors, List.length other with
+    (* dupe in regular codebase, bad *)
+    | _, n when n >= 2 ->
+      pr2_and_log  (spf "DUPE: %s (%d)" (G.string_of_node node) cnt);
+      g +> G.remove_edge (G.parent node g, node) G.Has;
+      g +> G.add_edge (G.dupe, node) G.Has;
+      env.log (spf " orig = %s" orig_file) ;
+      env.log (spf " dupe = %s" ex_file);
+    (* duplicating a regular function, bad, but ok, should have renamed it in
+     * our analysis, see env.dupe_renaming
+     *)
+    | n, 1 when n > 0 -> 
+      env.log (spf "DUPE BAD STYLE: %s (%d)" (G.string_of_node node) cnt);
+      env.log (spf " orig = %s" orig_file) ;
+      env.log (spf " dupe = %s" ex_file);
+    (* probably local functions to a script duplicated in independent files,
+     * most should have also been renamed, see env.dupe_renaming *)
+    | n, 0 -> ()
+    | _ -> raise Impossible
+    )
   );
   if not only_defs then begin
     g +> G.iter_nodes (fun (str, kind) ->
