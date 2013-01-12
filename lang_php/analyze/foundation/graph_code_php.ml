@@ -660,10 +660,8 @@ let build ?(verbose=true) ?(only_defs=false) dir skip_list =
       k();
       let readable = Common.filename_without_leading_path root file in
       let ast = parse file in
-      try 
-        extract_defs_uses { env with phase = Defs} ast readable;
-      with Graph_code.Error Graph_code.NodeAlreadyPresent ->
-        failwith (spf "Node already present in %s" file)
+      (* will modify env.dupes instead of raise Graph_code.NodeAlreadyPresent *)
+      extract_defs_uses { env with phase = Defs} ast readable;
    ));
   Common.hkeys env.dupes +>  List.iter (fun node ->
     let nodeinfo = G.nodeinfo node g in
