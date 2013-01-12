@@ -75,6 +75,7 @@ type env = {
   g: Graph_code.graph;
 
   phase: phase;
+
   readable: Common.filename;
 
   current: Graph_code.node;
@@ -82,6 +83,7 @@ type env = {
   self: string;
   (* "NOPARENT" when no parent *)
   parent: string;
+
   at_toplevel: bool;
 
   (* right now used in extract_uses phase to transform a src like main()
@@ -99,6 +101,8 @@ type env = {
   (* todo: dynamic_fails stats *)
 
   log: string -> unit;
+  pr2_and_log: string -> unit;
+  is_skip_error_file: Common.filename (* readable *) -> bool;
 }
   (* We need 3 phases, one to get all the definitions, one to
    * get the inheritance information, and one to get all the Uses.
@@ -155,6 +159,7 @@ let add_node_and_edge_if_defs_mode env name_node =
       | E.ClassConstant | E.Field | E.Method _ 
         when Hashtbl.mem env.dupes (env.self, E.Class E.RegularClass) ->
         ()
+      (* todo: log at least? *)
       | E.Class _ | E.Function | E.Constant when not env.at_toplevel -> 
         ()
       | _ -> Hashtbl.add env.dupes node (env.readable, file)
@@ -624,7 +629,6 @@ let build ?(verbose=true) ?(only_defs=false) dir skip_list =
   G.create_initial_hierarchy g;
 
   let chan = open_out (Filename.concat dir "pfff.log") in
-  let is_skip_error_file = Skip_code.build_filter_errors_file skip_list in
 
   let env = {
     g; 
@@ -639,17 +643,18 @@ let build ?(verbose=true) ?(only_defs=false) dir skip_list =
         output_string chan (s ^ "\n"); 
         flush chan; 
     );
+    pr2_and_log = (fun s ->
+      if verbose then pr2 s;
+      output_string chan (s ^ "\n"); 
+      flush chan; 
+    );
+    is_skip_error_file = Skip_code.build_filter_errors_file skip_list;
     at_toplevel = true;
   } 
   in
 
-  let pr2_and_log s = 
-    if verbose then pr2 s;
-    env.log s
-  in
-
   (* step1: creating the nodes and 'Has' edges, the defs *)
-  pr2_and_log "\nstep1: extract defs";
+  env.pr2_and_log "\nstep1: extract defs";
   files +> Common_extra.progress ~show:verbose (fun k -> 
     List.iter (fun file ->
       k();
@@ -671,12 +676,13 @@ let build ?(verbose=true) ?(only_defs=false) dir skip_list =
     let dupes = orig_readable::List.map fst files in
     let cnt = List.length dupes in
 
-    let (in_skip_errors, other) = List.partition is_skip_error_file dupes in
+    let (in_skip_errors, other) = 
+      List.partition env.is_skip_error_file dupes in
 
     (match List.length in_skip_errors, List.length other with
     (* dupe in regular codebase, bad *)
     | _, n when n >= 2 ->
-      pr2_and_log  (spf "DUPE: %s (%d)" (G.string_of_node node) cnt);
+      env.pr2_and_log  (spf "DUPE: %s (%d)" (G.string_of_node node) cnt);
       g +> G.remove_edge (G.parent node g, node) G.Has;
       g +> G.add_edge (G.dupe, node) G.Has;
       env.log (spf " orig = %s" orig_file) ;
@@ -701,7 +707,7 @@ let build ?(verbose=true) ?(only_defs=false) dir skip_list =
     );
 
     (* step2: creating the 'Use' edges for inheritance *)
-    pr2_and_log "\nstep2: extract inheritance";
+    env.pr2_and_log "\nstep2: extract inheritance";
     files +> Common_extra.progress ~show:verbose (fun k -> 
       List.iter (fun file ->
         k();
@@ -711,7 +717,7 @@ let build ?(verbose=true) ?(only_defs=false) dir skip_list =
       ));
     
     (* step3: creating the 'Use' edges, the uses *)
-    pr2_and_log "\nstep3: extract uses";
+    env.pr2_and_log "\nstep3: extract uses";
     files +> Common_extra.progress ~show:verbose (fun k -> 
       List.iter (fun file ->
         k();
