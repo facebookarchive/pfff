@@ -1138,9 +1138,8 @@ expr_without_variable_bis:
    TOBRACE inner_statement_list TCBRACE
      { let params = ($3, $4, $5) in
        let body = ($8, $9, $10) in
-       (* less: could also reuse $1 instead of generating a fakeInfo for name*)
        Lambda ($7, { f_tok = $1;f_ref = $2;f_params = params; f_body = body;
-                     f_name = Name("__lambda__", Ast.fakeInfo "");
+                     f_name = Name("__lambda__", $1);
                      f_return_type = None; f_type = FunctionLambda;
                      f_modifiers = [];
                      f_attrs = None;

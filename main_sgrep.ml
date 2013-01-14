@@ -66,6 +66,10 @@ let print_match mvars mvar_binding tokens_matched_code =
   | xs ->
       (* similar to the code of Lib_parsing_php.print_match, maybe could
        * factorize code a bit.
+       * This assumes there is no FakeTok in tokens_matched_code.
+       * Currently the only fake tokens generated in parser_php.mly are
+       * for abstract methods and sgrep/spatch do not have metavariables
+       * to match such construct so we should be safe.
        *)
       let (mini, maxi) = 
         Lib_parsing_php.min_max_ii_by_pos tokens_matched_code in

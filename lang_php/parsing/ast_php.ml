@@ -605,7 +605,7 @@ and func_def = {
   (* only valid for methods *)
   f_modifiers: modifier wrap list;
   f_ref: is_ref;
-  (* can be a Name("__lambda", fakeInfo()) when used for lambdas *)
+  (* can be a Name("__lambda", f_tok) when used for lambdas *)
   f_name: name;
   f_params: parameter comma_list_dots paren; (* TODO: handle ... *)
   (* static-php-ext: *)
