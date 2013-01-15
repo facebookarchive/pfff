@@ -414,6 +414,48 @@ let build_with_tree2 tree gopti =
 let build_with_tree a b = 
   Common.profile_code "DM.build_with_tree" (fun () -> build_with_tree2 a b)
 
+(*****************************************************************************)
+(* Create fake "a/b/..." directories *)
+(*****************************************************************************)
+let threshold_pack = 30
+
+(* todo:
+ *  - return modified dm?
+ *  - return modified gopti?
+ *  - how does this interact with Focus? Can we do unnecessary packing
+ *    because when Focus some of the entries would have been removed anyway?
+ *)
+let optional_pack_in_dotdotdot_entry parent xs dm gopti =
+  if List.length xs <= threshold_pack
+  then xs, dm, gopti
+  else begin
+    let score = xs +> List.map (fun n ->
+      let idx = hashtbl_find dm.name_to_i n in
+      let m = dm.matrix in
+      n, count_column idx m dm + count_row idx m dm
+         + m.(idx).(idx) / 10
+    ) +> Common.sort_by_val_highfirst
+      +> List.map fst
+    in
+    (* minus one because after the packing we will have 
+     * threshold_pack - 1 + the new entry = threshold_pack
+     * and so we will not loop again and again.
+     *)
+    let (ok, to_pack) = Common.splitAt (threshold_pack - 1) score in
+    let gopti, dotdotdot_entry = 
+      Graph_code_opti.adjust_graph_pack_child_under_dotdotdot parent to_pack 
+        gopti
+    in
+    let config = (Node(parent, 
+                       (ok++[dotdotdot_entry]) +> List.map 
+                         (fun n -> Node(n,[])))) 
+    in
+    (ok++[dotdotdot_entry], build_with_tree config gopti, gopti)
+  end
+
+(*****************************************************************************)
+(* Building the matrix *)
+(*****************************************************************************)
 
 let build tree constraints_opt gopti =
 
@@ -438,6 +480,9 @@ let build tree constraints_opt gopti =
         
           (* first draft *)
           let dm = build_with_tree config_depth1 gopti in
+
+          let children_nodes, dm, gopti = 
+            optional_pack_in_dotdotdot_entry n children_nodes dm gopti in
           
           (* Now we need to reorder to minimize the number of dependencies in
            * the top right corner of the matrix.

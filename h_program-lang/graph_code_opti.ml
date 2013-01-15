@@ -108,3 +108,25 @@ let children n g =
 
 let has_node n g =
   Hashtbl.mem g.name_to_i n
+
+(*****************************************************************************)
+(* Adjust *)
+(*****************************************************************************)
+
+
+(* put polluting entries under an intermediate "parent/..." entry 
+ * less: use extensible array so faster?
+ *)
+let adjust_graph_pack_child_under_dotdotdot parent to_pack g =
+  let new_node = (fst parent ^ "/...", E.Dir) in
+  let _new_idx = Array.length g.i_to_name in
+  assert (not (has_node new_node g));
+(*
+  let new_g = 
+    { 
+      name_to_i = Hashtbl.copy g.name_to_i;
+      i_to_name = Array.concat g.i_to_name [|new_idx, new_node|];
+      has_
+  g, new_node
+*)
+  raise Todo
