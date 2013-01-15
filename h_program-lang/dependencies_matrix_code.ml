@@ -136,6 +136,12 @@ let rec final_nodes_of_tree tree =
       then [n]
       else List.map final_nodes_of_tree xs +> List.flatten
 
+let hashtbl_find h n =
+  try Hashtbl.find h n
+  with Not_found ->
+    pr2_gen ("PB:", n);
+    raise Not_found
+
 (*****************************************************************************)
 (* Display *)
 (*****************************************************************************)
@@ -165,7 +171,7 @@ let count_column j m dm =
   !cnt
 
 let is_empty_column n m dm =
-  count_column (Hashtbl.find dm.name_to_i n) m dm = 0
+  count_column (hashtbl_find dm.name_to_i n) m dm = 0
 
 let count_row i m dm =
   let n = Array.length m in
@@ -177,10 +183,10 @@ let count_row i m dm =
   !cnt
 
 let is_empty_row n m dm = 
-  count_row (Hashtbl.find dm.name_to_i n) m dm = 0
+  count_row (hashtbl_find dm.name_to_i n) m dm = 0
 
 let empty_all_cells_relevant_to_node m dm n =
-  let i = Hashtbl.find dm.name_to_i n in
+  let i = hashtbl_find dm.name_to_i n in
   let n = Array.length m in
   for x = 0 to n - 1 do
     m.(i).(x) <- 0;
@@ -188,12 +194,12 @@ let empty_all_cells_relevant_to_node m dm n =
   done
 
 let sort_by_count_rows_low_first xs m dm =
-  xs +> List.map (fun n -> n, count_row (Hashtbl.find dm.name_to_i n) m dm)
+  xs +> List.map (fun n -> n, count_row (hashtbl_find dm.name_to_i n) m dm)
      +> Common.sort_by_val_lowfirst
      +> List.map fst
 
 let sort_by_count_columns_high_first xs m dm =
-  xs +> List.map (fun n -> n, count_column (Hashtbl.find dm.name_to_i n) m dm)
+  xs +> List.map (fun n -> n, count_column (hashtbl_find dm.name_to_i n) m dm)
      +> Common.sort_by_val_highfirst
      +> List.map fst
 
@@ -206,7 +212,7 @@ let sort_by_count_columns_high_first xs m dm =
  *)
 let sort_by_count_rows_low_columns_high_first xs m dm =
   xs +> List.map (fun n ->
-    let idx = Hashtbl.find dm.name_to_i n in
+    let idx = hashtbl_find dm.name_to_i n in
     let h =
       float_of_int (count_row idx m dm) 
       /. 
@@ -316,7 +322,7 @@ let optional_manual_reordering (s, node_kind) nodes constraints_opt =
   | Some h ->
       if Hashtbl.mem h s
       then begin
-        let xs = Hashtbl.find h s in
+        let xs = hashtbl_find h s in
         let horder = xs +> Common.index_list_1 +> Common.hash_of_list in
         let current = ref 0 in
         let nodes_with_order = 
@@ -338,7 +344,7 @@ let optional_manual_reordering (s, node_kind) nodes constraints_opt =
       end
 
 (*****************************************************************************)
-(* Building the matrix *)
+(* Building a matrix *)
 (*****************************************************************************)
 
 let build_with_tree2 tree gopti =
@@ -362,7 +368,7 @@ let build_with_tree2 tree gopti =
   nodes +> List.iter (fun node ->
     Hashtbl.add name_to_idm node !i;
     idm_to_name.(!i) <- node;
-    igopti_to_idm.(Hashtbl.find gopti.G2.name_to_i node) <- !i;
+    igopti_to_idm.(hashtbl_find gopti.G2.name_to_i node) <- !i;
     incr i;
   );
 
@@ -374,7 +380,7 @@ let build_with_tree2 tree gopti =
   }
   in
   let (projected_parent_of_igopti: idm idx array) = Array.create n_nodes (-1) in
-  let (iroot: igopti idx) = Hashtbl.find gopti.G2.name_to_i G.root in
+  let (iroot: igopti idx) = hashtbl_find gopti.G2.name_to_i G.root in
   let rec depth parent igopti =
     let children = gopti.G2.has_children.(igopti) in
     let idm = igopti_to_idm.(igopti) in
@@ -442,7 +448,7 @@ let build tree constraints_opt gopti =
             optional_manual_reordering n nodes_reordered constraints_opt in
           Node (n,
                nodes_reordered +> List.map (fun n2 ->
-                 let xs = Hashtbl.find h_children_of_children_nodes n2 in
+                 let xs = hashtbl_find h_children_of_children_nodes n2 in
                  (* recurse *)
                  aux (Node (n2, xs))
                ))
@@ -466,10 +472,10 @@ let explain_cell_list_use_edges2 (i, j) dm gopti =
   let n_nodes = G2.nb_nodes gopti in
   let igopti_to_idm = Array.create n_nodes (-1) in
   dm.i_to_name +> Array.iteri (fun idm node ->
-    igopti_to_idm.(Hashtbl.find gopti.G2.name_to_i node) <- idm;
+    igopti_to_idm.(hashtbl_find gopti.G2.name_to_i node) <- idm;
   );
   let (projected_parent_of_igopti: idm idx array) = Array.create n_nodes (-1) in
-  let (iroot: igopti idx) = Hashtbl.find gopti.G2.name_to_i G.root in
+  let (iroot: igopti idx) = hashtbl_find gopti.G2.name_to_i G.root in
   let rec depth parent igopti =
     let children = gopti.G2.has_children.(igopti) in
     let idm = igopti_to_idm.(igopti) in
@@ -496,7 +502,7 @@ let explain_cell_list_use_edges2 (i, j) dm gopti =
     )
   );
 (*
-  let (src: igopti idx) = Hashtbl.find gopti.G2.name_to_i dm.i_to_name.(i) in
+  let (src: igopti idx) = hashtbl_find gopti.G2.name_to_i dm.i_to_name.(i) in
   let (dst: idm idx) = j in
   
   let rec aux n1 =
@@ -551,7 +557,7 @@ let expand_node_opti n tree g =
 
 let focus_on_node n deps_style tree dm =
   let i = 
-    try Hashtbl.find dm.name_to_i n 
+    try hashtbl_find dm.name_to_i n 
     with Not_found ->
       pr2_gen (n);
       pr2_gen dm;
@@ -574,13 +580,13 @@ let focus_on_node n deps_style tree dm =
   done;
   (* old: this was not keeping the hierarchy (which can be a feature)
    *  Node (G.root, !deps +> List.rev +> List.map (fun i ->
-   *    Node (Hashtbl.find dm.i_to_name i, []))
+   *    Node (hashtbl_find dm.i_to_name i, []))
    *  )
    *)
   let rec aux tree = 
     match tree with
     | Node (n2, []) ->
-        let j = Hashtbl.find dm.name_to_i n2 in
+        let j = hashtbl_find dm.name_to_i n2 in
         if i = j || List.mem j !deps
         then Some (Node (n2, []))
         else None
