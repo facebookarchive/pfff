@@ -434,12 +434,13 @@ let paint w =
 
 let recompute_matrix w =
   let config = M.config_of_path w.path w.model in
-  let m = 
+  let m, gopti = 
     Common.profile_code2 "Model.building matrix" (fun () -> 
       Dependencies_matrix_code.build config 
         (Some w.model.constraints) w.model.gopti
     )
   in
+  w.model.gopti <- gopti;
   !Ctl._set_title (DM.string_of_config_path w.path);
   w.m <- m;
   paint w;

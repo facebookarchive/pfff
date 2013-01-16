@@ -34,9 +34,14 @@ type model = {
   (* less: this graph may be really huge and may stress the GC
    * during interactions, so for now just use gopti ? I tried
    * and didn't see much difference :(
+   * Moreover we now tend to modify gopti and so having a g
+   * out of sync with the gopti is bad.
    *)
-  g: Graph_code.graph; 
-  gopti: Graph_code_opti.graph;
+  g_deprecated: Graph_code.graph; 
+  (* we dynamically modify the optimized graph to add some intermediate
+   * 'a/b/...' directories
+   *)
+  mutable gopti: Graph_code_opti.graph;
   constraints: Dependencies_matrix_code.partition_constraints;
 }
 
@@ -101,7 +106,7 @@ let put_expand_just_before_last_focus_if_not_children n xs g =
         (match x with
         | DM.Expand _ -> x::aux xs
         | DM.Focus (n2,style) ->
-            let children = Graph_code.all_children n2 g in
+            let children = Graph_code_opti.all_children n2 g in
             if not (List.mem n children)
             then (DM.Expand n)::x::xs
             else x::aux xs
@@ -124,15 +129,16 @@ let fix_path path g =
   aux [] path
 
 let config_of_path (path: DM.config_path) m =
-  let path = fix_path path m.g in
-  let initial_config = DM.basic_config m.g in
+  let path = fix_path path m.gopti in
+  let initial_config = DM.basic_config_opti m.gopti in
   pr2_gen path;
   path +> List.fold_left (fun config e ->
     match e with
     | DM.Expand node ->
-        DM.expand_node node config m.g
+        DM.expand_node_opti node config m.gopti
     | DM.Focus (node, kind) ->
-        let dm = DM.build config None m.gopti in
+        let dm, gopti = DM.build config None m.gopti in
+        m.gopti <- gopti;
         DM.focus_on_node node kind config dm
   ) initial_config
 
@@ -145,12 +151,13 @@ let config_of_path (path: DM.config_path) m =
  *)
 let init_world ?(width = 600) ?(height = 600) path model =
   let config = config_of_path path model in
-  let m = 
+  let m, gopti = 
     Common.profile_code2 "Model.building matrix" (fun () -> 
       Dependencies_matrix_code.build config 
         (Some model.constraints) model.gopti
     )
   in
+  model.gopti <- gopti;
   {
     model; 
     path;
