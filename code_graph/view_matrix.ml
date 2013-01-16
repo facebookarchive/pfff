@@ -526,6 +526,12 @@ let button_action da w ev =
 
       | Column j ->
             (match GdkEvent.get_type ev, GdkEvent.Button.button ev with
+            | `TWO_BUTTON_PRESS, 1 ->
+                pr2 (spf "double clicking on column j");
+                let node = w.m.DM.i_to_name.(j) in
+                w.path <- add_path (DM.Expand node) w.path;
+                recompute_matrix w;
+                true
             | `BUTTON_PRESS, 3 ->
                 pr2 (spf "right clicking on column j");
                 let node = w.m.DM.i_to_name.(j) in
