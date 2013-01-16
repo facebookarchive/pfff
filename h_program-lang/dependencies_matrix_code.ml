@@ -36,6 +36,9 @@ module G2 = Graph_code_opti
  *  - graph code opti, because using arrays is far more efficient than
  *    hashtbl and/or memoized hashtbl
  *  - remove full matrix, not anymore needed
+ *  - better layout algorithm, minimize more backward dependencies
+ *  - packing in "..." intermediate directories
+ * 
  *)
 
 (*****************************************************************************)
@@ -82,10 +85,11 @@ type dm = {
 
 
 let basic_config g = 
-  Node (G.root, G.succ G.root G.Has g +> List.map (fun n -> Node (n, [])))
+  Node (G.root, Graph_code.children G.root g 
+    +> List.map (fun n -> Node (n, [])))
 let basic_config_opti gopti = 
   Node (G.root, Graph_code_opti.children G.root gopti
-   +> List.map (fun n -> Node (n, [])))
+    +> List.map (fun n -> Node (n, [])))
 
 type config_path_elem = 
   | Expand of Graph_code.node
@@ -419,11 +423,20 @@ let build_with_tree a b =
 (*****************************************************************************)
 let threshold_pack = ref 30
 
-(* todo:
- *  - return modified dm?
- *  - return modified gopti?
- *  - how does this interact with Focus? Can we do unnecessary packing
- *    because when Focus some of the entries would have been removed anyway?
+(* design decisions, when should we pack?
+ *  - in an adhoc manner in adjust_graph.txt
+ *  - in the graph lazily while building the final config
+ *  - in the graph lazily as a preprocessing phase on a full config
+ *  - in an offline phase that packs everything? 
+ *  - in the UI?
+ * 
+ * Packing lazily is good but it does not necessaraly work well with
+ * the Focus because depending on our focus, we may have want different
+ * packings. Also it makes it a bit hard to use cg from the command line
+ * in a subdirectory. Packing in the UI would be more flexible for the Focus, 
+ * but we need lots of extra logic whereas just abusing the Has and
+ * reorganize the graph makes things (at first) easier.
+ * 
  *)
 let optional_pack_in_dotdotdot_entry parent xs dm gopti =
   if List.length xs <= !threshold_pack
@@ -460,6 +473,10 @@ let optional_pack_in_dotdotdot_entry parent xs dm gopti =
 (* Building the matrix *)
 (*****************************************************************************)
 
+(* The tree passed is a configuration one would like to explore. Note
+ * that after a focus, the children of a node in this tree may not contain
+ * all the original children of this node.
+ *)
 let build tree constraints_opt gopti =
 
   let gopti = ref gopti in
@@ -610,6 +627,12 @@ let expand_node_opti n tree g =
 
 
 
+(* To focus on a node we need to know its dependencies to filter
+ * the irrelevant one and so we need a dm passed as a parameter.
+ * This function is mainly used in a Model.config_of_path
+ * where we fold over an initial dm and given a path element
+ * expand or focus to get a new dm and so on.
+ *)
 let focus_on_node n deps_style tree dm =
   let i = hashtbl_find dm.name_to_i n in
   let (deps: int list ref) = ref [] in
