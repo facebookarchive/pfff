@@ -297,10 +297,11 @@
    (join-string 
     (list 
      "-debugger"
-     (case 1
+     (case 2
 
        (0 "-lang java -build /home/pad/pfff/tests/java/codegraph")
        (1 "-lang cmt -build /home/pad/pfff/tests/ml/cmt")
+       (2 ".")
        )
      )
     )
@@ -683,7 +684,7 @@
    (join-string 
     (list 
      "-debugger"
-     (case 1
+     (case 11
        (0 "all")
        (1 "XXX")
        (2 "sgrep")
@@ -695,6 +696,7 @@
        (8 "-ia_php /home/pad/pfff/tests/php/ia/foo.php 6")
        (9 "-type_php /home/pad/pfff/tests/php/typing/test.php")
        (10 "-test_graph_code_ml /home/pad/pfff/commons")
+       (11 "dotdotdot")
        )
      ))
    )
