@@ -18,5 +18,5 @@ val children: Graph_code.node -> graph -> Graph_code.node list
 val all_children: Graph_code.node -> graph -> Graph_code.node list
 val has_node: Graph_code.node -> graph -> bool
 
-val adjust_graph_pack_child_under_dotdotdot: 
+val adjust_graph_pack_some_children_under_dotdotdot: 
   Graph_code.node -> Graph_code.node list -> graph -> graph * Graph_code.node

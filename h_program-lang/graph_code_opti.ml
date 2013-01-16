@@ -97,14 +97,22 @@ let convert a =
 (* Adapters *)
 (*****************************************************************************)
 
-let all_children n gopti =
-  []
-
 let children n g =
   g.has_children.(hashtbl_find g.name_to_i n) 
   +> List.map (fun i ->
       g.i_to_name.(i)
   )
+
+let rec all_children n g =
+
+  let rec aux i =
+    let xs = g.has_children.(i) in
+    if null xs 
+    then [i]
+    else i::(xs +> List.map (fun i -> aux i) +> List.flatten)
+  in
+  aux (hashtbl_find g.name_to_i n) +> List.map (fun i -> g.i_to_name.(i))
+
 
 let has_node n g =
   Hashtbl.mem g.name_to_i n
@@ -117,16 +125,27 @@ let has_node n g =
 (* put polluting entries under an intermediate "parent/..." entry 
  * less: use extensible array so faster?
  *)
-let adjust_graph_pack_child_under_dotdotdot parent to_pack g =
-  let new_node = (fst parent ^ "/...", E.Dir) in
-  let _new_idx = Array.length g.i_to_name in
-  assert (not (has_node new_node g));
-(*
-  let new_g = 
-    { 
-      name_to_i = Hashtbl.copy g.name_to_i;
-      i_to_name = Array.concat g.i_to_name [|new_idx, new_node|];
-      has_
-  g, new_node
-*)
-  raise Todo
+let adjust_graph_pack_some_children_under_dotdotdot parent to_pack g =
+  let dotdotdot = fst parent ^ "/..." in
+  let new_node = (dotdotdot, E.Dir) in
+  if (has_node new_node g)
+  then failwith (spf "already a node with '%s' for a name" dotdotdot);
+
+  let new_idx = Array.length g.i_to_name in
+  let to_pack_idx = to_pack +> List.map (fun n -> hashtbl_find g.name_to_i n)in
+  let new_g = { 
+    name_to_i = Hashtbl.copy g.name_to_i;
+    i_to_name = Array.append g.i_to_name [|new_node|];
+    has_children = Array.append g.has_children [|to_pack_idx|];
+    use = Array.append g.use [| [] |];
+  } in
+  Hashtbl.add new_g.name_to_i new_node new_idx;
+  let idx_parent = hashtbl_find new_g.name_to_i parent in
+  let idx_packs = to_pack_idx +> Common.hashset_of_list in
+  new_g.has_children.(idx_parent) <-
+    (* bugfix: don't forget to add new_idx *)
+    new_idx ::
+     new_g.has_children.(idx_parent) +> Common.exclude (fun i ->
+      Hashtbl.mem idx_packs i
+     );
+  new_g, new_node
