@@ -84,6 +84,22 @@ let unittest =
         let _dm = DM.build config None gopti in
         ()
       );
+
+      "create fake dotdotdot entries" >:: (fun () ->
+        let (g, _dm) = build_g_and_dm () in
+        let gopti = Graph_code_opti.convert g in
+        Common.save_excursion DM.threshold_pack 2 (fun () ->
+          let config = DM.basic_config_opti gopti in
+          let dm, gopti = DM.build config None gopti in
+          let config2 = 
+            DM.expand_node_opti ("./...", E.Dir) dm.config gopti in
+          let dm, gopti = DM.build config2 None gopti in
+          pr2_gen dm;
+          let xs = DM.explain_cell_list_use_edges (1, 0) dm gopti in
+          pr2_gen xs
+        )
+      );
+
     ];
 
     "dm" >::: [
