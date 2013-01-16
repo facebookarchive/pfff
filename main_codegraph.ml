@@ -499,6 +499,9 @@ let options () = [
   "-deps_inout", Arg.Unit (fun () -> deps_style := DM.DepsInOut), 
   " ";
 
+  "-dots_threshold", Arg.Int (fun i -> DM.threshold_pack := i),
+  " ";
+
   "-symlinks", Arg.Unit (fun () -> 
       Common.follow_symlinks := true;
     ), " ";
