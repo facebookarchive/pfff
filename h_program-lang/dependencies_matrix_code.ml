@@ -742,11 +742,16 @@ let is_internal_helper j dm =
   (* the elements at the root can't have dependencies outside parents *)
   List.length parents > 1
   
-let score_upper_triangle dm =
+let score_upper_triangle dm exclude_nodes =
   let score = ref 0 in
+  let exclude_idx = exclude_nodes +> List.map (fun n -> 
+    hashtbl_find dm.name_to_i n) in
+
   for i = 0 to Array.length dm.matrix -1 do
     for j = i + 1 to Array.length dm.matrix -1 do
-      score := !score + dm.matrix.(i).(j)
+      if (List.mem i exclude_idx) || (List.mem j exclude_idx)
+      then ()
+      else score := !score + dm.matrix.(i).(j)
     done
   done;
   !score

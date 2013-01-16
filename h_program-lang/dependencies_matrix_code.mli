@@ -60,7 +60,7 @@ val is_internal_helper:
 val info_orders:
  dm -> unit
 val score_upper_triangle:
-  dm -> int
+  dm -> Graph_code.node list (* exclude list *) -> int
 
 (* APIs useful for other to use *)
 val final_nodes_of_tree: tree -> Graph_code.node list

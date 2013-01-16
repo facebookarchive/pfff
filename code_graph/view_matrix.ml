@@ -411,8 +411,14 @@ let draw_matrix cr w =
   highlight_dead_columns cr w;
   highlight_internal_helpers cr w;
 
-  let score = DM.score_upper_triangle w.m in
-  !Ctl._label_settext (spf "#backwared deps = %d" score);
+  (* todo: could start from the config and mark all children of PB too *)
+  let nodes_pb = w.m.DM.i_to_name +> Array.to_list +> List.filter (fun n ->
+    fst n = "PB"
+  ) in
+    
+  !Ctl._label_settext (spf "#backwared deps = %d (no PB = %d)" 
+                         (DM.score_upper_triangle w.m [])
+                         (DM.score_upper_triangle w.m nodes_pb));
 
   w.interactive_regions <- !interactive_regions;
   ()
