@@ -282,11 +282,11 @@ let build_stdlib lang root dst =
 (*****************************************************************************)
 (* Graph adjuster (overlay-ish) *)
 (*****************************************************************************)
-let adjust_graph graph_file adjust_file =
+let adjust_graph graph_file adjust_file dest_file =
   let g = Graph_code.load graph_file in
   let adjust = Graph_code.load_adjust adjust_file in
   Graph_code.adjust_graph g adjust;
-  Graph_code.save g graph_file;
+  Graph_code.save g dest_file;
   ()
 
 (*****************************************************************************)
@@ -471,8 +471,8 @@ let extra_actions () = [
   Common.mk_action_1_arg (fun dir -> build_graph_code !lang dir);
   "-build_stdlib", " <src> <dst>",
   Common.mk_action_2_arg (fun dir dst -> build_stdlib !lang dir dst);
-  "-adjust_graph", " <graph> <adjust_file>",
-  Common.mk_action_2_arg (fun graph file -> adjust_graph graph file);
+  "-adjust_graph", " <graph> <adjust_file> <dstfile>",
+  Common.mk_action_3_arg (fun graph file dst -> adjust_graph graph file dst);
 (*
   "-test_phylomel", " <geno file>",
   Common.mk_action_1_arg test_phylomel;
