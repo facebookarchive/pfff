@@ -97,6 +97,17 @@ class RecursiveDirectoryIterator { }
 class FilterIterator { }
 // extends IteratorIterator implements OuterIterator , Traversable , Iterator {
 
+// used by phpunit extensions
+
+//http://php.net/manual/en/class.outeriterator.php
+class OuterIterator { }
+
+//http://php.net/manual/en/class.recursiveiterator.php
+class RecursiveIterator { }
+
+//http://php.net/manual/en/class.seekableiterator.php
+class SeekableIterator { }
+
 // ***************************************************************************
 // Used by phabricator
 // ***************************************************************************

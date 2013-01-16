@@ -6,3 +6,4 @@ function hphp_service_thread_stopped($timeout) { }
 function hphp_thread_is_warmup_enabled() { }
 function hphp_thread_set_warmup_enabled() { }
 function hphp_get_thread_id() { }
+function hphp_gettid() { }
