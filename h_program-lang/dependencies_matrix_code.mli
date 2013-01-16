@@ -20,7 +20,6 @@ val basic_config: Graph_code.graph -> config
 val basic_config_opti: Graph_code_opti.graph -> config
 
 val threshold_pack: int ref
-
 (* we now return also a new graph because we may have modified the
  * input graph to add some extra "..." nodes
  *)
@@ -60,6 +59,8 @@ val is_internal_helper:
   int -> dm -> bool
 val info_orders:
  dm -> unit
+val score_upper_triangle:
+  dm -> int
 
 (* APIs useful for other to use *)
 val final_nodes_of_tree: tree -> Graph_code.node list

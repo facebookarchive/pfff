@@ -20,6 +20,10 @@ let _statusbar_addtext = ref (fun s ->
   failwith "_statusbar_addtext not defined"
 )
 
+let _label_settext = ref (fun s ->
+  failwith "_label_settext not defined"
+)
+
 let _refresh_drawing_area = ref (fun () ->
   failwith "_refresh_drawing_area not defined"
 )

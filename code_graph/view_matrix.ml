@@ -411,6 +411,9 @@ let draw_matrix cr w =
   highlight_dead_columns cr w;
   highlight_internal_helpers cr w;
 
+  let score = DM.score_upper_triangle w.m in
+  !Ctl._label_settext (spf "#backwared deps = %d" score);
+
   w.interactive_regions <- !interactive_regions;
   ()
 

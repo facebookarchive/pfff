@@ -208,6 +208,11 @@ let mk_gui w =
           View_matrix.recompute_matrix w;
         )
       ));
+      tb#insert_widget (G.mk (GMisc.label ~text:"#backward deps = 0") (fun lbl->
+        Controller._label_settext := (fun s ->
+          lbl#set_text s
+        );
+      ));
     ));
 
     (*-------------------------------------------------------------------*)

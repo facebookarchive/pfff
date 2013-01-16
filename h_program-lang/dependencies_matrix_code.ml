@@ -742,4 +742,11 @@ let is_internal_helper j dm =
   (* the elements at the root can't have dependencies outside parents *)
   List.length parents > 1
   
-
+let score_upper_triangle dm =
+  let score = ref 0 in
+  for i = 0 to Array.length dm.matrix -1 do
+    for j = i + 1 to Array.length dm.matrix -1 do
+      score := !score + dm.matrix.(i).(j)
+    done
+  done;
+  !score
