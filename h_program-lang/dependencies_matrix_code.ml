@@ -417,7 +417,7 @@ let build_with_tree a b =
 (*****************************************************************************)
 (* Create fake "a/b/..." directories *)
 (*****************************************************************************)
-let threshold_pack = 30
+let threshold_pack = ref 30
 
 (* todo:
  *  - return modified dm?
@@ -426,14 +426,15 @@ let threshold_pack = 30
  *    because when Focus some of the entries would have been removed anyway?
  *)
 let optional_pack_in_dotdotdot_entry parent xs dm gopti =
-  if List.length xs <= threshold_pack
+  if List.length xs <= !threshold_pack
   then xs, dm, gopti
   else begin
     let score = xs +> List.map (fun n ->
       let idx = hashtbl_find dm.name_to_i n in
       let m = dm.matrix in
-      n, count_column idx m dm + count_row idx m dm
-         + m.(idx).(idx) / 10
+      n, count_column idx m dm 
+         (* + count_row idx m dm *)
+         (* + m.(idx).(idx) / 3 *)
     ) +> Common.sort_by_val_highfirst
       +> List.map fst
     in
@@ -441,10 +442,12 @@ let optional_pack_in_dotdotdot_entry parent xs dm gopti =
      * threshold_pack - 1 + the new entry = threshold_pack
      * and so we will not loop again and again.
      *)
-    let (ok, to_pack) = Common.splitAt (threshold_pack - 1) score in
+    let (ok, to_pack) = Common.splitAt (!threshold_pack - 1) score in
+    pr2 (spf "REPACKING: TO_PACK = %s, TO_KEEP = %s" 
+           (Common.dump to_pack) (Common.dump ok));
     let gopti, dotdotdot_entry = 
-      Graph_code_opti.adjust_graph_pack_child_under_dotdotdot parent to_pack 
-        gopti
+      Graph_code_opti.adjust_graph_pack_some_children_under_dotdotdot 
+        parent to_pack gopti
     in
     let config = (Node(parent, 
                        (ok++[dotdotdot_entry]) +> List.map 
@@ -459,6 +462,8 @@ let optional_pack_in_dotdotdot_entry parent xs dm gopti =
 
 let build tree constraints_opt gopti =
 
+  let gopti = ref gopti in
+
   (* let's compute a better reordered tree *)  
   let rec aux tree =
     match tree with
@@ -466,23 +471,18 @@ let build tree constraints_opt gopti =
         if null xs 
         then Node (n, [])
         else begin
-          let children_nodes = 
-            xs +> List.map (function (Node (n2, _)) -> n2) 
-          in
-          let h_children_of_children_nodes = 
-            xs +> List.map (function (Node (n2, xs)) -> n2, xs) +> 
-              Common.hash_of_list
-          in
-          
           let config_depth1 = 
-            Node (n,xs +> List.map (function (Node (n2, _)) -> (Node (n2, []))))
+            Node (n,xs +> List.map (function (Node (n2,_)) -> (Node (n2, []))))
           in
-        
           (* first draft *)
-          let dm = build_with_tree config_depth1 gopti in
+          let dm = build_with_tree config_depth1 !gopti in
 
-          let children_nodes, dm, gopti = 
-            optional_pack_in_dotdotdot_entry n children_nodes dm gopti in
+          let children_nodes = 
+            xs +> List.map (function (Node (n2, _)) -> n2) in
+          (* optionaly put less relevant entries under an extra "..." dir *)
+          let children_nodes, dm, new_gopti = 
+            optional_pack_in_dotdotdot_entry n children_nodes dm !gopti in
+          gopti := new_gopti;
           
           (* Now we need to reorder to minimize the number of dependencies in
            * the top right corner of the matrix.
@@ -491,16 +491,26 @@ let build tree constraints_opt gopti =
             partition_matrix children_nodes dm in
           let nodes_reordered = 
             optional_manual_reordering n nodes_reordered constraints_opt in
+
+          let h_children_of_children_nodes = 
+            xs +> List.map (function (Node (n2, xs)) -> n2, xs) +> 
+              Common.hash_of_list
+          in
+          
           Node (n,
                nodes_reordered +> List.map (fun n2 ->
-                 let xs = hashtbl_find h_children_of_children_nodes n2 in
+                 let xs = 
+                   try Hashtbl.find h_children_of_children_nodes n2 
+                   (* probably one of the newly created "..." child *)
+                   with Not_found -> []
+                 in
                  (* recurse *)
                  aux (Node (n2, xs))
                ))
         end
   in
   let ordered_config = aux tree in
-  build_with_tree ordered_config gopti
+  build_with_tree ordered_config !gopti, !gopti
 
 (*****************************************************************************)
 (* Explain the matrix *)
@@ -601,13 +611,7 @@ let expand_node_opti n tree g =
 
 
 let focus_on_node n deps_style tree dm =
-  let i = 
-    try hashtbl_find dm.name_to_i n 
-    with Not_found ->
-      pr2_gen (n);
-      pr2_gen dm;
-      raise Not_found
-  in
+  let i = hashtbl_find dm.name_to_i n in
   let (deps: int list ref) = ref [] in
   let nb_elts = Array.length dm.matrix in
   for j = 0 to nb_elts - 1 do

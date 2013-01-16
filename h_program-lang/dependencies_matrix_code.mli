@@ -19,8 +19,14 @@ val verbose: bool ref
 val basic_config: Graph_code.graph -> config
 val basic_config_opti: Graph_code_opti.graph -> config
 
+val threshold_pack: int ref
+
+(* we now return also a new graph because we may have modified the
+ * input graph to add some extra "..." nodes
+ *)
 val build:
-  config -> partition_constraints option -> Graph_code_opti.graph -> dm
+  config -> partition_constraints option -> Graph_code_opti.graph -> 
+  dm * Graph_code_opti.graph
 
 val explain_cell_list_use_edges: 
   (int * int) -> dm -> Graph_code_opti.graph ->
