@@ -423,7 +423,7 @@ let draw_matrix cr w =
   let score_down = DM.score_downer_triangle w.m [] in
     
   !Ctl._label_settext 
-    (spf "#backward deps = %d (%2f%%), no PB = %d, no PB|... = %d" 
+    (spf "#backward deps = %d (%.2f%%), no PB = %d, no PB|... = %d" 
        score_up
        (Common.pourcent_float score_up (score_up +.. score_down))
        (DM.score_upper_triangle w.m nodes_pb)
@@ -507,13 +507,27 @@ let button_action da w ev =
                 pr2 (spf "clicking on cell (%d, %d)" i j);
                 let deps = 
                   DM.explain_cell_list_use_edges  (i, j) w.m w.model.gopti in
+                let xs = Common.take_safe 1000 deps in
+                let grouped_deps = 
+                  Graph_code.group_edges_by_files_edges xs 
+                    w.model.g_deprecated in
                 let str = 
-                  deps +> List.map (fun (n1, n2) ->
-                    spf "%s --> %s"
+                  grouped_deps +> List.map (fun ((f1, f2), deps) ->
+                    let final_file f =
+                      try 
+                        Common.filename_without_leading_path w.model.root f
+                      with Failure _ -> f
+                    in
+                    let f1 = final_file f1 in
+                    let f2 = final_file f2 in
+                    spf "%s --> %s (%d)\n" f1 f2 (List.length deps) ^
+                    (Common.take_safe 2 deps +> List.map (fun (n1, n2) ->
+                      spf "            %s --> %s" 
                       (Graph_code.string_of_node n1)  
                       (Graph_code.string_of_node n2)
-                  )
-                  +> Common.join "\n"
+                     ) +> Common.join "\n"
+                    )
+                  ) +> Common.join "\n"
                 in
                 pr2 str;
                 Gui.dialog_text ~text:str ~title:"Cell explaination";

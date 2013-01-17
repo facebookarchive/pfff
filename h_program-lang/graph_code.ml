@@ -315,6 +315,29 @@ let display_with_gv g =
   G.display_with_gv g.has
 
 (*****************************************************************************)
+(* Misc *)
+(*****************************************************************************)
+
+
+let group_edges_by_files_edges xs g =
+  let file_of_node n =
+    try 
+      let info = nodeinfo n g in
+      info.pos.Parse_info.file
+    with Not_found ->
+      (match n with
+      | str, (E.Dir | E.File) -> str
+      | _ -> "NOT_FOUND_FILE"
+      )
+  in
+  xs +> Common.group_by_mapped_key (fun (n1, n2) ->
+    (file_of_node n1, file_of_node n2)
+  ) +> List.map (fun (x, deps) -> List.length deps, (x, deps))
+    +> Common.sort_by_key_highfirst
+    +> List.map snd
+
+
+(*****************************************************************************)
 (* Graph adjustments *)
 (*****************************************************************************)
 let load_adjust file =

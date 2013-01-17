@@ -226,7 +226,10 @@ let build_model root =
       constraints_of_info_txt info_txt
     else Hashtbl.create 0
   in
-  { Model.g_deprecated = g; gopti = gopti; root; constraints }
+  { Model.g_deprecated = g; gopti = gopti; 
+    root = Common.realpath root;
+    constraints 
+  }
 
 let dir_node xs =     
   (Common.join "/" xs, Database_code.Dir)
