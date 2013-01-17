@@ -416,10 +416,15 @@ let draw_matrix cr w =
   let nodes_pb = w.m.DM.i_to_name +> Array.to_list +> List.filter (fun n ->
     fst n = "PB"
   ) in
+  let nodes_dots = w.m.DM.i_to_name +> Array.to_list +> List.filter (fun n ->
+    snd n = E.MultiDirs
+  ) in
     
-  !Ctl._label_settext (spf "#backwared deps = %d (no PB = %d)" 
+  !Ctl._label_settext (spf "#backwared deps = %d (no PB = %d, no PB|... = %d)" 
                          (DM.score_upper_triangle w.m [])
-                         (DM.score_upper_triangle w.m nodes_pb));
+                         (DM.score_upper_triangle w.m nodes_pb)
+                         (DM.score_upper_triangle w.m (nodes_pb ++ nodes_dots))
+  );
 
   w.interactive_regions <- !interactive_regions;
   ()
