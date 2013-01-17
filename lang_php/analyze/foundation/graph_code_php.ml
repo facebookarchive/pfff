@@ -153,29 +153,38 @@ let add_node_and_edge_if_defs_mode env name_node =
     match kind with
     | E.ClassConstant | E.Field | E.Method _ -> 
       env.self ^ "." ^ Ast.str_of_name name
-    | _ -> Ast.str_of_name name
+    | _ -> 
+      Ast.str_of_name name
   in
   let node = (str, kind) in
+
   if env.phase = Defs then begin
     if G.has_node node env.g 
     then 
       let file = Parse_info.file_of_info (Ast.tok_of_name name) in
       (match kind with
-      (* no need introduce more dupes than needed, if the class was dupe,
-       * of course all its members will also be duped.
+      (* less: log at least? *)
+      | E.Class _ | E.Function | E.Constant when not env.at_toplevel -> 
+        ()
+
+      (* If the class was dupe, of course all its members are also duped.
+       * But actually we also need to add it to env.dupes, so below,
+       * we dont set env.current to this node, otherwise we may
+       * pollute the callees of the original node.
        *)
       | E.ClassConstant | E.Field | E.Method _ 
         when Hashtbl.mem env.dupes (env.self, E.Class E.RegularClass) ->
-        ()
-      (* todo: log at least? *)
-      | E.Class _ | E.Function | E.Constant when not env.at_toplevel -> 
-        ()
-      | _ -> Hashtbl.add env.dupes node (env.readable, file)
+        Hashtbl.add env.dupes node (env.readable, file)
+      | E.ClassConstant | E.Field | E.Method _ ->
+        env.pr2_and_log (spf "DUPE METHOD: %s" (G.string_of_node node));
+      | _ -> 
+        Hashtbl.add env.dupes node (env.readable, file)
       )
     else begin
       env.g +> G.add_node node;
       (* if we later find a duplicate for node, we will
-       * redirect this edge in build() to G.dupe.
+       * redirect this edge in build() to G.dupe (unless
+       * the duplicate are all in a skip_errors dir).
        *)
       env.g +> G.add_edge (env.current, node) G.Has;
 
@@ -186,9 +195,10 @@ let add_node_and_edge_if_defs_mode env name_node =
       env.g +> G.add_nodeinfo node nodeinfo;
     end
   end;
-  (* for nodes like main(), which will be dupes,
-   * it's better to keep 'current' as the current File so
-   * at least we will avoid some fail lookup
+  (* for dupes like main(), but also dupe classes, or methods of dupe 
+   * classe, it's better to keep 'current' as the current File so
+   * at least we will avoid to add in the wrong node some relations
+   * that should not exist.
    *)
   if Hashtbl.mem env.dupes node
   then env
@@ -633,6 +643,8 @@ let build ?(verbose=true) ?(only_defs=false) dir skip_list =
   let files = Skip_code.filter_files skip_list root all_files in
   (* step0: reorder files *)
   let files = Skip_code.reorder_files_skip_errors_last skip_list root files in
+  (* TODO: to remove, generalize via a skip_multi_dir? *)
+  let files = files +> Common.exclude (fun f -> f =~ ".*__tests__") in
   
   let g = G.create () in
   G.create_initial_hierarchy g;
@@ -672,7 +684,13 @@ let build ?(verbose=true) ?(only_defs=false) dir skip_list =
       (* will modify env.dupes instead of raise Graph_code.NodeAlreadyPresent *)
       extract_defs_uses { env with phase = Defs} ast readable;
    ));
-  Common.hkeys env.dupes +>  List.iter (fun node ->
+  Common.hkeys env.dupes 
+  +> List.filter (fun (_, kind) ->
+    match kind with
+    | E.ClassConstant | E.Field | E.Method _ -> false
+    | _ -> true
+  )
+  +> List.iter (fun node ->
     let nodeinfo = G.nodeinfo node g in
     let orig_file = nodeinfo.G.pos.Parse_info.file in
     let orig_readable = Common.filename_without_leading_path root orig_file in
