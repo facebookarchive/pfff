@@ -192,7 +192,8 @@ let add_node_and_edge_if_defs_mode env name_node =
    *)
   if Hashtbl.mem env.dupes node
   then env
-  else { env with current = node }
+  else 
+    { env with current = node }
 
 
 

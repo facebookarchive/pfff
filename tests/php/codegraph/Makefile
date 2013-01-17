@@ -1,4 +1,8 @@
 graph:
 	~/pfff/codegraph -lang php -build .
-	~/pfff/codegraph -adjust_graph graph_code.marshall adjust_graph.txt
+	mv graph_code.marshall save_code.marshall
+	~/pfff/codegraph -adjust_graph save_code.marshall adjust_graph.txt graph_code.marshall
+	cat pfff.log
+
+
 
