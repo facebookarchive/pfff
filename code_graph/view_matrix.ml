@@ -59,7 +59,8 @@ let color_of_node (_, kind) =
 
   | E.Other s -> raise Todo
 
-  | E.Dir | E.MultiDirs -> "SteelBlue2"
+  | E.Dir -> "SteelBlue2"
+  | E.MultiDirs -> "SteelBlue3"
   | E.File -> "wheat"
 
 (* we often keep fully qualified names in the graph_code to avoid
@@ -69,7 +70,7 @@ let color_of_node (_, kind) =
  *)
 let txt_of_node (s, kind) = 
   match kind with
-  | E.Dir | E.File -> Common.basename s
+  | E.Dir | E.File | E.MultiDirs -> Common.basename s
   | E.Package | E.Module
   | E.Class _ 
   | E.Field | E.Constructor | E.Method _  | E.ClassConstant
