@@ -801,7 +801,9 @@ let find_constructed_object_and_more xs =
      when TH.is_basic_type kind ->
         aux xs
 
-    (* int(...) *)
+    (* int(...)  unless it's int( * xxx ) *)
+    | ({t=kind})::{t=TOPar _}::{t=TMul _}::xs ->
+      aux xs
     | ({t=kind} as tok1)::{t=TOPar _}::xs 
      when TH.is_basic_type kind ->
         let newone = 
