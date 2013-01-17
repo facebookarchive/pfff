@@ -207,12 +207,15 @@ and type_def = name * type_
 type define_body = 
   | CppExpr of expr
   | CppStmt of stmt
+  (* usually used only for ifdefs *)
+  | CppEmpty
 
 (* ------------------------------------------------------------------------- *)
 (* Program *)
 (* ------------------------------------------------------------------------- *)
 type toplevel =
   | Define of name * define_body 
+  | Undef of name
   | Include of string wrap (* path *)
   | Macro of name * (name list) * define_body
 

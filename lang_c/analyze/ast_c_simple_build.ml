@@ -120,8 +120,11 @@ and toplevel env = function
       as x ->
       debug (Toplevel x); raise CplusplusConstruct
 
-      
-  | (MacroVarTop (_, _)|MacroTop (_, _, _)|IfdefTop _|DeclTodo) 
+  | IfdefTop _ -> 
+    pr2_once "SKIPPING ifdefs";
+    []
+
+  | (MacroVarTop (_, _)|MacroTop (_, _, _)|DeclTodo) 
       as x ->
       debug (Toplevel x);
       raise Todo
@@ -272,16 +275,19 @@ and cpp_directive env = function
         )
       in
       A.Include (s, tok)
-  | (PragmaAndCo _|Undef _) as x ->
+  | Undef (s, tok) -> A.Undef (s, tok)
+
+  | PragmaAndCo _ as x ->
       debug (Cpp x); raise Todo
 
 and cpp_def_val for_debug env x = 
   match x with
   | DefineExpr e -> A.CppExpr (expr env e)
   | DefineStmt st -> A.CppStmt (stmt env st)
+  | DefineEmpty -> A.CppEmpty
   | ( DefineText _|DefineInit _|DefineFunction _
     | DefineDoWhileZero _|DefineType _
-    | DefineTodo|DefineEmpty
+    | DefineTodo
     ) -> 
       debug (Cpp for_debug);
       raise Todo
@@ -350,13 +356,15 @@ and stmt env x =
       debug (Stmt x); raise Todo
 
 and compound env (_, x, _) =
-  List.map (statement_sequencable env) x
+  List.map (statement_sequencable env) x +> List.flatten
 
 and statement_sequencable env x =
   match x with
-  | StmtElem st -> stmt env st
+  | StmtElem st -> [stmt env st]
   | CppDirectiveStmt x -> debug (Cpp x); raise Todo
-  | IfdefStmt _ -> raise Todo
+  | IfdefStmt _ -> 
+    pr2_once "SKIPPING ifdefs";
+    []
 
 and cases env x =
   let (st, ii) = x in
@@ -463,15 +471,19 @@ and expr env e =
       A.GccConstructor (full_type env ft,
                        initialiser env (InitList xs))
 
+  | ConstructedObject (_, _) ->
+    pr2_once "BUG PARSING LOCAL DECL";
+    debug (Expr e); 
+    raise CplusplusConstruct
+
   | (TypeIdOfType (_, _)|TypeIdOfExpr (_, _)
   | StatementExpr _
   | ExprTodo
   ) ->
       debug (Expr e); raise Todo
-
   | Throw _|DeleteArray (_, _)|Delete (_, _)|New (_, _, _, _, _)
   | CplusplusCast (_, _, _)
-  | ConstructedObject (_, _) | This _
+  | This _
   | RecordPtStarAccess (_, _)|RecordStarAccess (_, _)
       ->
       debug (Expr e); raise CplusplusConstruct
@@ -486,7 +498,7 @@ and constant env toks x =
   | String (s, _) -> A.String (s, List.hd toks)
 
   | Bool _ -> raise CplusplusConstruct
-  | MultiString -> raise Todo
+  | MultiString -> A.String ("TODO", List.hd toks)
 
 and argument env x =
   match x with
