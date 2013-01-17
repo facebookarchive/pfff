@@ -162,6 +162,9 @@ let add_node_and_edge_if_defs_mode env name_node =
     if G.has_node node env.g 
     then 
       let file = Parse_info.file_of_info (Ast.tok_of_name name) in
+      (* todo: look if is_skip_error_file in which case populate
+       * a env.dupe_renaming
+       *)
       (match kind with
       (* less: log at least? *)
       | E.Class _ | E.Function | E.Constant when not env.at_toplevel -> 
