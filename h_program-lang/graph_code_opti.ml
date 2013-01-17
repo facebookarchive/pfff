@@ -127,7 +127,7 @@ let has_node n g =
  *)
 let adjust_graph_pack_some_children_under_dotdotdot parent to_pack g =
   let dotdotdot = fst parent ^ "/..." in
-  let new_node = (dotdotdot, E.Dir) in
+  let new_node = (dotdotdot, E.MultiDirs) in
   if (has_node new_node g)
   then failwith (spf "already a node with '%s' for a name" dotdotdot);
 
