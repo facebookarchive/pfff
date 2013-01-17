@@ -216,7 +216,7 @@ let rec add_use_edge env (((str, tok) as name, kind)) =
   (match () with
   (* maybe nested function, in which case we dont have the def *)
   | _ when not (G.has_node src env.g) ->
-      env.log (spf "LOOKUP SRC FAIL %s --> %s, src doesn't exist (nested func?)"
+      env.pr2_and_log (spf "LOOKUP SRC FAIL %s --> %s, src doesn't exist (nested func?)"
               (G.string_of_node src) (G.string_of_node dst));
 
   | _ when G.has_node dst env.g -> 
@@ -246,8 +246,15 @@ let rec add_use_edge env (((str, tok) as name, kind)) =
             ()
           | _ ->
             let file = name +> Ast.tok_of_name +> Parse_info.string_of_info in
-            env.log (spf "PB: lookup fail on %s (at %s)"
-                   (G.string_of_node dst) file);
+            let f = 
+              if env.phase = Inheritance
+              then env.pr2_and_log 
+              else 
+                if file =~ ".*third-party" || file =~ ".*third_party"
+                then (fun _s -> ())
+                else env.log
+            in
+            f (spf "PB: lookup fail on %s (at %s)"(G.string_of_node dst) file);
             env.g +> G.add_edge (parent_target, dst) G.Has;
             env.g +> G.add_edge (src, dst) G.Use;
           );
