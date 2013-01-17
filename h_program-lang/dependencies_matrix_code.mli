@@ -61,6 +61,8 @@ val info_orders:
  dm -> unit
 val score_upper_triangle:
   dm -> Graph_code.node list (* exclude list *) -> int
+val score_downer_triangle:
+  dm -> Graph_code.node list (* exclude list *) -> int
 
 (* APIs useful for other to use *)
 val final_nodes_of_tree: tree -> Graph_code.node list

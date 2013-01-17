@@ -419,12 +419,16 @@ let draw_matrix cr w =
   let nodes_dots = w.m.DM.i_to_name +> Array.to_list +> List.filter (fun n ->
     snd n = E.MultiDirs
   ) in
+  let score_up   = DM.score_upper_triangle w.m [] in
+  let score_down = DM.score_downer_triangle w.m [] in
     
-  !Ctl._label_settext (spf "#backwared deps = %d (no PB = %d, no PB|... = %d)" 
-                         (DM.score_upper_triangle w.m [])
-                         (DM.score_upper_triangle w.m nodes_pb)
-                         (DM.score_upper_triangle w.m (nodes_pb ++ nodes_dots))
-  );
+  !Ctl._label_settext 
+    (spf "#backward deps = %d (%2f%%), no PB = %d, no PB|... = %d" 
+       score_up
+       (Common.pourcent_float score_up (score_up +.. score_down))
+       (DM.score_upper_triangle w.m nodes_pb)
+       (DM.score_upper_triangle w.m (nodes_pb ++ nodes_dots))
+    );
 
   w.interactive_regions <- !interactive_regions;
   ()

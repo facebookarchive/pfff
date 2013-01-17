@@ -835,3 +835,17 @@ let score_upper_triangle dm exclude_nodes =
     done
   done;
   !score
+
+let score_downer_triangle dm exclude_nodes =
+  let score = ref 0 in
+  let exclude_idx = exclude_nodes +> List.map (fun n -> 
+    hashtbl_find dm.name_to_i n) in
+
+  for i = 0 to Array.length dm.matrix -1 do
+    for j = 0 to i - 1 do
+      if (List.mem i exclude_idx) || (List.mem j exclude_idx)
+      then ()
+      else score := !score + dm.matrix.(i).(j)
+    done
+  done;
+  !score
