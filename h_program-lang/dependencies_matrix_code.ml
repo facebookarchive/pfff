@@ -421,7 +421,6 @@ let build_with_tree a b =
 (*****************************************************************************)
 (* Create fake "a/b/..." directories *)
 (*****************************************************************************)
-let threshold_pack = ref 30
 
 (* design decisions, when should we pack?
  *  - in an adhoc manner in adjust_graph.txt
@@ -433,41 +432,103 @@ let threshold_pack = ref 30
  * Packing lazily is good but it does not necessaraly work well with
  * the Focus because depending on our focus, we may have want different
  * packings. Also it makes it a bit hard to use cg from the command line
- * in a subdirectory. Packing in the UI would be more flexible for the Focus, 
+ * in a subdirectory. A solution could be to restart from a fresh gopti for
+ * for each new focus.
+ * 
+ * Packing in the UI would be more flexible for the Focus, 
  * but we need lots of extra logic whereas just abusing the Has and
  * reorganize the graph makes things (at first) easier.
  * 
+ * There are some issues also on how packing and layering impact each other.
+ * We may not want to pack things that affect a lot the number of
+ * backward references once packed.
  *)
-let optional_pack_in_dotdotdot_entry parent xs dm gopti =
-  if List.length xs <= !threshold_pack
-  then xs, dm, gopti
-  else begin
-    let score = xs +> List.map (fun n ->
-      let idx = hashtbl_find dm.name_to_i n in
-      let m = dm.matrix in
-      n, count_column idx m dm 
-         (* + count_row idx m dm *)
-         (* + m.(idx).(idx) / 3 *)
-    ) +> Common.sort_by_val_highfirst
-      +> List.map fst
-    in
-    (* minus one because after the packing we will have 
-     * threshold_pack - 1 + the new entry = threshold_pack
-     * and so we will not loop again and again.
-     *)
-    let (ok, to_pack) = Common.splitAt (!threshold_pack - 1) score in
-    pr2 (spf "REPACKING: TO_PACK = %s, TO_KEEP = %s" 
-           (Common.dump to_pack) (Common.dump ok));
-    let gopti, dotdotdot_entry = 
-      Graph_code_opti.adjust_graph_pack_some_children_under_dotdotdot 
-        parent to_pack gopti
-    in
-    let config = (Node(parent, 
-                       (ok++[dotdotdot_entry]) +> List.map 
-                         (fun n -> Node(n,[])))) 
-    in
-    (ok++[dotdotdot_entry], build_with_tree config gopti, gopti)
-  end
+
+let threshold_pack = ref 30
+
+
+(* Optionaly put less "relevant" entries under an extra "..." fake dir.
+ *  
+ * We used to do this phase in build() at the same time we were building
+ * the new config. But doing too many things at the same time was complicated
+ * so better to separate a bit things in a preprocessing phase
+ * where here we just adjust gopti.
+ * 
+ * Moreover we wanted the heuristics to order and to pack to use different
+ * schemes. For packing we want to put under "..." entries considered
+ * irrelevant when looked globally, that is not look only at the
+ * column count in the submatrix but in the whole matrix.
+ * For instance if a/b/c/d is used a lot from e/, but not used
+ * that much internally inside a/b/c, we still don't want
+ * to put it under a extra "..." because this directory is globally
+ * very important.
+ * 
+ * Moreover when in Focused mode, the children of a node
+ * are actually not the full set of children, and so we could pack
+ * things under a "..." that are incomplete? Hmmm at the same time
+ * it can be good to do some specialized packing based on a Focus.
+ *)
+let adjust_gopti_if_needed_lazily tree gopti =
+  let gopti = ref gopti in
+
+  let rec aux (tree: tree) (brothers: Graph_code.node list) =
+    match tree with
+    | Node (n, xs) ->
+      if null xs
+      then Node (n, [])
+      else 
+        (* less: use the full list of children of n? xs can be a subset
+         * because in a focused generated config
+         *)
+        if List.length xs <= !threshold_pack
+        then 
+          Node (n, xs +> List.map (fun (Node (n1, xs1)) -> 
+            let more_brothers = 
+              xs +> Common.map_filter (fun (Node (n2, _)) ->
+                if n1 <> n2 then Some n2 else None
+              ) 
+            in
+            aux (Node (n1, xs1)) (brothers ++ more_brothers)
+          ))
+        else begin
+          let children_nodes = xs +> List.map (fun (Node (n,_)) -> n) in
+          let config = (Node (n,
+             (xs +> List.map (fun (Node (n, _)) -> Node (n, []))) ++
+             (brothers +> List.map (fun n -> Node (n, [])))))
+          in
+          let dm = build_with_tree config !gopti in
+
+          let score = children_nodes +> List.map (fun n ->
+            let idx = hashtbl_find dm.name_to_i n in
+            let m = dm.matrix in
+            n, count_column idx m dm 
+               + count_row idx m dm
+            (* + m.(idx).(idx) / 3 *)
+          ) +> Common.sort_by_val_highfirst
+            +> List.map fst
+          in
+          (* minus one because after the packing we will have 
+           * threshold_pack - 1 + the new entry = threshold_pack
+           * and so we will not loop again and again.
+           *)
+          let (ok, to_pack) = Common.splitAt (!threshold_pack - 1) score in
+          pr2 (spf "REPACKING: TO_PACK = %s, TO_KEEP = %s" 
+                 (Common.dump to_pack) (Common.dump ok));
+          let new_gopti, dotdotdot_entry = 
+            Graph_code_opti.adjust_graph_pack_some_children_under_dotdotdot 
+              n to_pack !gopti in
+          gopti := new_gopti;
+          Node (n,
+             (ok ++ [dotdotdot_entry]) +> List.map (fun n ->
+               (* todo: grab the children of n in the original config? *)
+               Node (n, [])
+              )
+          )
+        end
+  in
+  let adjusted_tree = aux tree [] in
+  !gopti, adjusted_tree
+
 
 (*****************************************************************************)
 (* Building the matrix *)
@@ -479,7 +540,7 @@ let optional_pack_in_dotdotdot_entry parent xs dm gopti =
  *)
 let build tree constraints_opt gopti =
 
-  let gopti = ref gopti in
+  let gopti, tree = adjust_gopti_if_needed_lazily tree gopti in
 
   (* let's compute a better reordered tree *)  
   let rec aux tree =
@@ -492,17 +553,13 @@ let build tree constraints_opt gopti =
             Node (n,xs +> List.map (function (Node (n2,_)) -> (Node (n2, []))))
           in
           (* first draft *)
-          let dm = build_with_tree config_depth1 !gopti in
+          let dm = build_with_tree config_depth1 gopti in
 
           let children_nodes = 
             xs +> List.map (function (Node (n2, _)) -> n2) in
-          (* optionaly put less relevant entries under an extra "..." dir *)
-          let children_nodes, dm, new_gopti = 
-            optional_pack_in_dotdotdot_entry n children_nodes dm !gopti in
-          gopti := new_gopti;
           
           (* Now we need to reorder to minimize the number of dependencies in
-           * the top right corner of the matrix.
+           * the top right corner of the matrix (of the submatrix actually)
            *)
           let nodes_reordered = 
             partition_matrix children_nodes dm in
@@ -527,7 +584,7 @@ let build tree constraints_opt gopti =
         end
   in
   let ordered_config = aux tree in
-  build_with_tree ordered_config !gopti, !gopti
+  build_with_tree ordered_config gopti, gopti
 
 (*****************************************************************************)
 (* Explain the matrix *)
