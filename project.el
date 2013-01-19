@@ -51,7 +51,6 @@
      facebook/flib_navigator
      facebook/visual
      facebook/qa_test
-     facebook/qa_code
      facebook/static_analysis
      external/ocamlmysql
      external/ocamlmysql/orm-mysql
@@ -66,6 +65,8 @@
     ")
    pad-ocaml-project-toplevel "pfff.top"
    )
+;     facebook/qa_code facebook/check_cpp
+
 
 ; branches 
 ;
@@ -625,14 +626,14 @@
    (join-string 
     (list 
      "-debugger"
-     (case 0
-       (0 "-test")
+     (case 20
+       (0 "--no_autoload -test")
        (1 "--flib-map /home/pad/www/flib/_bin/.flib.map /home/pad/www/flib/buffy/")
        (2 "--strict /home/pad/www/flib/site/tools/pfff/")
        (3 "-test_visualize_dependencies 1 /home/pad/pfff/facebook/tests/mini_www/flib/")
        (10 "-test")
 
-       (20 "/home/pad/www/flib/utils/async")
+       (20 "--debug --no_autoload /home/pad/www/flib/core/utils/time")
        (30 "/home/pad/www/html/ajax/payment/token_proxy.php")
        (50 "--bugs -juju /home/pad/pfff/facebook/tests/mini_www/html/injection/xss.php")
        (60 "--di-gen /home/pad/pfff/facebook/tests/mini_www/flib/dependency_injection/foo.php")
