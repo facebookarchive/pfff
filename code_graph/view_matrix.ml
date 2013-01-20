@@ -103,6 +103,17 @@ let line_color_of_depth d =
 (* Matrix Coord -> XY Coord  *)
 (*****************************************************************************)
 
+let rect_of_cell i j l =
+  (* the matrix is accessed as matrix.(row).(col), but here y corresponds
+   * to the row, and x to the column, hence the association of j to x
+   * and i to y.
+   *)
+  let x = (float_of_int j) * l.width_cell + l.x_start_matrix_left in
+  let y = (float_of_int i) * l.height_cell + l.y_start_matrix_up in
+  { p = { x = x; y = y; };
+    q = { x = x + l.width_cell; y = y + l.height_cell };
+  }
+    
 let rect_of_column j l =
   let x = (float_of_int j) * l.width_cell + l.x_start_matrix_left in
   let y = l.y_start_matrix_up in
@@ -117,13 +128,13 @@ let rect_of_line i l =
     q = { x = l.x_end_matrix_right; y = y + l.height_cell }
   }
 
+
 let rect_of_label_left i l =
   let x = 0.0 in
   let y = (float_of_int i) * l.height_cell + l.y_start_matrix_up in
   { p = { x = x; y = y; };
     q = { x = l.x_start_matrix_left; y = y + l.height_cell };
   }
- 
 
 (*****************************************************************************)
 (* Drawing helpers *)
@@ -134,29 +145,18 @@ let draw_cells cr w ~interactive_regions =
 
   for i = 0 to l.nb_elts -.. 1 do
     for j = 0 to l.nb_elts -.. 1 do
-      (* the matrix is accessed as matrix.(row).(col), but here y corresponds
-       * to the row, and x to the column, hence the association of j to x
-       * and i to y.
-       *)
-      let x = (float_of_int j) * l.width_cell + l.x_start_matrix_left in
-      let y = (float_of_int i) * l.height_cell + l.y_start_matrix_up in
-
-      let rect = { 
-        p = { x = x; y = y; };
-        q = { x = x + l.width_cell; y = y + l.height_cell };
-      } in
+      let rect = rect_of_cell i j l in
       Common.push2 (Cell (i, j), rect) interactive_regions;
       
       (* less: could also display intra dependencies *)
       if i = j then
-        (* todo: heatmap? *)
-        CairoH.fill_rectangle_xywh ~cr ~x ~y ~w:l.width_cell ~h:l.height_cell
-          ~color:"wheat" ()
+        CairoH.fill_rectangle ~cr ~color:"wheat" rect
       else begin
         (* old: this is now done in draw_left_rows
          *  let _line_width = line_width_of_depth l depth in
          *  CairoH.draw_rectangle ~cr ~line_width ~color:"wheat" rect; 
          *)
+        (* todo: heatmap? *)
         let n = w.m.DM.matrix.(i).(j) in
         if n > 0 then begin
           let txt = string_of_int n in
@@ -172,6 +172,8 @@ let draw_cells cr w ~interactive_regions =
           let extent = CairoH.text_extents cr txt in
           let tw = extent.Cairo.text_width in
           let th = extent.Cairo.text_height in
+          let x = rect.p.x in
+          let y = rect.p.y in
           
           let x = x + (l.width_cell / 2.) - (tw / 2.0) in
           let y = y + (l.height_cell / 2.) + (th / 2.0) in
@@ -382,6 +384,21 @@ let highlight_internal_helpers cr w =
     end
   done
 
+let highlight_biggest_offenders cr w nodes =
+  let l = M.layout_of_w w in
+  let mat = w.m.DM.matrix in
+  nodes +> List.iter (fun n ->
+    let idx = Hashtbl.find w.m.DM.name_to_i n in
+    for j = idx +.. 1 to Array.length mat -.. 1 do
+      CairoH.fill_rectangle ~cr ~alpha:0.1 ~color:"yellow"
+        (rect_of_cell idx j l)
+    done;
+    for i = 0 to idx -.. 1 do
+      CairoH.fill_rectangle ~cr ~alpha:0.1 ~color:"yellow"
+        (rect_of_cell i idx l)
+    done;
+  )
+
 (*****************************************************************************)
 (* Drawing entry point *)
 (*****************************************************************************)
@@ -428,6 +445,7 @@ let draw_matrix cr w =
     +> Common.take_safe 4
   in
   let nodes_major = biggest_offenders +> List.map fst in
+  highlight_biggest_offenders cr w nodes_major;
     
   !Ctl._label_settext 
     (spf "#backward deps = %d (%.2f%%), - PB = %d, - ... = %d, - biggest = %d" 
