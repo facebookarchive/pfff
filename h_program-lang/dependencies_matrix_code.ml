@@ -849,3 +849,14 @@ let score_downer_triangle dm exclude_nodes =
     done
   done;
   !score
+
+let score_upper_triangle_nodes dm =
+  let score = Array.create (Array.length dm.matrix) 0 in
+  for i = 0 to Array.length dm.matrix -1 do
+    for j = i + 1 to Array.length dm.matrix -1 do
+      let v = dm.matrix.(i).(j) in
+      score.(i) <- score.(i) + v;
+      score.(j) <- score.(j) + v;
+    done
+  done;
+  score +> Array.mapi (fun i v -> (dm.i_to_name.(i), v)) +> Array.to_list

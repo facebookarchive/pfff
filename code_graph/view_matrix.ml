@@ -421,13 +421,21 @@ let draw_matrix cr w =
   ) in
   let score_up   = DM.score_upper_triangle w.m [] in
   let score_down = DM.score_downer_triangle w.m [] in
+
+  let biggest_offenders =
+    DM.score_upper_triangle_nodes w.m 
+    +> Common.sort_by_val_highfirst
+    +> Common.take_safe 4
+  in
+  let nodes_major = biggest_offenders +> List.map fst in
     
   !Ctl._label_settext 
-    (spf "#backward deps = %d (%.2f%%), no PB = %d, no PB|... = %d" 
+    (spf "#backward deps = %d (%.2f%%), - PB = %d, - ... = %d, - biggest = %d" 
        score_up
        (Common.pourcent_float score_up (score_up +.. score_down))
        (DM.score_upper_triangle w.m nodes_pb)
-       (DM.score_upper_triangle w.m (nodes_pb ++ nodes_dots))
+       (DM.score_upper_triangle w.m (nodes_pb $+$ nodes_dots))
+       (DM.score_upper_triangle w.m (nodes_pb $+$ nodes_dots $+$ nodes_major))
     );
 
   w.interactive_regions <- !interactive_regions;
