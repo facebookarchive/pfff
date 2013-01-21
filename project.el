@@ -626,8 +626,8 @@
    (join-string 
     (list 
      "-debugger"
-     (case 20
-       (0 "--no_autoload -test")
+     (case 0
+       (0 "-test")
        (1 "--flib-map /home/pad/www/flib/_bin/.flib.map /home/pad/www/flib/buffy/")
        (2 "--strict /home/pad/www/flib/site/tools/pfff/")
        (3 "-test_visualize_dependencies 1 /home/pad/pfff/facebook/tests/mini_www/flib/")

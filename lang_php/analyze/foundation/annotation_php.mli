@@ -1,5 +1,5 @@
 (*s: annotation_php.mli *)
-type annotation = 
+type annotation =
   | Owner of unixname
   | Emails of (email * notification_kind option) list
   | Status of string
@@ -32,6 +32,8 @@ type annotation =
    | Method of string
    | MethodExternal of string (* class *) * string
 
+exception AnnotationPb of string * Ast_php.info
+
 (* The returned parse_info is the one associated with the whole comment.
  * We use it in cmf to raise errors like use of undefined function when
  * a a comment references a bad function name as a data provider for
@@ -41,7 +43,7 @@ val annotations_of_program_with_comments:
   Parse_php.program_with_comments -> (annotation * Ast_php.info) list
 
 (* Helper. The string is the string of a comment (with its markers). *)
-val extract_annotations: string -> annotation list
+val extract_annotations: string -> Ast_php.info -> annotation list
 
 val vof_annotation: annotation -> Ocaml.v
 val str_debug_of_annotation: annotation -> string

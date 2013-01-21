@@ -107,12 +107,14 @@ type annotation =
    | MethodExternal of string (* class *) * string
  (* with tarzan *)
 
+exception AnnotationPb of string * Ast_php.info
+
 (*****************************************************************************)
 (* string -> annotation *)
 (*****************************************************************************)
 
 (* str is usually a comment, hence the strip_comment_marks below *)
-let extract_annotations str =
+let extract_annotations str tok =
   let lines = Common.lines str in 
 
   lines +> Common.map_flatten (fun str ->
@@ -158,14 +160,14 @@ let extract_annotations str =
               | "trash" -> None
                   
               | s ->
-                  failwith ("wrong notification: " ^ s)
+                  raise (AnnotationPb ("wrong notification: " ^ s, tok))
             in
 
             if (not (is_email email || is_unixname email)) 
-            then failwith ("not a valid email address: " ^ s);
+            then raise (AnnotationPb ("not a valid email address: " ^ s, tok));
             
             (email, notification)
-          else failwith ("not a valid email address: " ^ s)
+          else raise (AnnotationPb ("not a valid email address: " ^ s, tok))
         ) in
 
         [Emails emails]
@@ -305,7 +307,7 @@ let annotations_of_program_with_comments2 asts_and_tokens =
   | Parser_php.T_DOC_COMMENT info 
     ->
       let s = Ast_php.str_of_info info in
-      let annots = extract_annotations s in
+      let annots = extract_annotations s info in
       (* add location information to the annotation by reusing the
        * location information of the comment (that means
        * that multiple annotations in one comment will share
@@ -327,7 +329,7 @@ let annotations_before tok all_toks =
   match comment_opt with
   | Some ii ->
       let s = Ast.str_of_info ii in
-      extract_annotations s
+      extract_annotations s ii
   | None -> []
 
 let annotations_after tok all_toks =
@@ -335,5 +337,5 @@ let annotations_after tok all_toks =
   match comment_opt with
   | Some ii ->
       let s = Ast.str_of_info ii in
-      extract_annotations s
+      extract_annotations s ii
   | None -> []

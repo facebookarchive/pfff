@@ -579,8 +579,14 @@ let index_db4_2 ~annotate_variables_program db =
     let tags = ref [] in
     comment_opt +> Common.do_option (fun info ->
       let str = info.Parse_info.str in
+      let tok = { Parse_info.
+        token= Parse_info.OriginTok info;
+        comments = ();
+        transfo = Parse_info.NoTransfo;
+
+      } in
       let comment_tags = 
-        try Annotation_php.extract_annotations str 
+        try Annotation_php.extract_annotations str tok
         with exn ->
           pr2_err (spf "PB: EXTRACT ANNOTATION: %s on %s" 
                   (Common.exn_to_s exn) file);
