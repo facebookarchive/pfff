@@ -84,8 +84,14 @@ let (convert2: Graph_code.graph -> graph) = fun g ->
       h.has_children.(i) <- j :: h.has_children.(i);
     );
     g +> G.succ node G.Use +> List.iter (fun node2 ->
-      let j = hashtbl_find h.name_to_i node2 in
-      h.use.(i) <- j :: h.use.(i);
+      (match node2 with
+      (* ugly: less important dependency *)
+      | _, E.Constant -> ()
+      | _, E.ClassConstant -> ()
+      | _ ->
+        let j = hashtbl_find h.name_to_i node2 in
+        h.use.(i) <- j :: h.use.(i);
+      )
     );
   );
   h
