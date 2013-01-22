@@ -399,6 +399,13 @@ let highlight_biggest_offenders cr w nodes =
     done;
   )
 
+let highlight_biggest_offenders_cells cr w cells =
+  let l = M.layout_of_w w in
+  cells +> List.iter (fun (i, j) ->
+    CairoH.fill_rectangle ~cr ~alpha:0.3 ~color:"purple"
+      (rect_of_cell i j l)
+  )
+
 (*****************************************************************************)
 (* Drawing entry point *)
 (*****************************************************************************)
@@ -446,6 +453,12 @@ let draw_matrix cr w =
   in
   let nodes_major = biggest_offenders +> List.map fst in
   highlight_biggest_offenders cr w nodes_major;
+  let biggest_cells =
+    DM.score_upper_triangle_cells w.m
+     +> Common.sort_by_val_highfirst
+     +> Common.take_safe 20
+  in
+  highlight_biggest_offenders_cells cr w (biggest_cells +> List.map fst);
     
   !Ctl._label_settext 
     (spf "#backward deps = %d (%.2f%%), - PB = %d, - ... = %d, - biggest = %d" 

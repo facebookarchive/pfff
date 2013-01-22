@@ -121,13 +121,13 @@ let unittest =
           |];
         assert_equal
           ~msg:"It should not find distance between foo.ml and a/x.ml"
-          (DM.distance_entity 0 1 arr) 0;
+          (DM.distance_entity (0, 1) arr) 0;
         assert_equal
           ~msg:"It should find distance between a/x.ml and foo.ml"
-          (DM.distance_entity 1 0 arr) 1;
+          (DM.distance_entity (1, 0) arr) 1;
         assert_equal
           ~msg:"It should not find distance between a/x.ml a/y.ml"
-          (DM.distance_entity 1 2 arr) 0;
+          (DM.distance_entity (1, 2) arr) 0;
 
         assert_equal 
           false (DM.is_internal_helper 0 dm);

@@ -12,6 +12,8 @@ type dm = {
 
 type partition_constraints = 
   (string, string list) Hashtbl.t
+type cell_coord =
+  (int * int)
 
 val verbose: bool ref
 
@@ -28,7 +30,7 @@ val build:
   dm * Graph_code_opti.graph
 
 val explain_cell_list_use_edges: 
-  (int * int) -> dm -> Graph_code_opti.graph ->
+  cell_coord -> dm -> Graph_code_opti.graph ->
   (Graph_code.node * Graph_code.node) list
 
 type config_path_elem = 
@@ -65,13 +67,15 @@ val score_downer_triangle:
   dm -> Graph_code.node list (* exclude list *) -> int
 val score_upper_triangle_nodes:
   dm -> (Graph_code.node * int) list
+val score_upper_triangle_cells:
+  dm -> (cell_coord * int) list
 
 (* APIs useful for other to use *)
 val final_nodes_of_tree: tree -> Graph_code.node list
 
 (* should be used only by test code *)
 val distance_entity:
-  int -> int -> Graph_code.node list array -> int
+  cell_coord -> Graph_code.node list array -> int
 val parents_of_indexes:
   dm -> Graph_code.node list array
 

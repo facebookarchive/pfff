@@ -124,6 +124,8 @@ type idm
 type igopti
 type ifull
 
+type cell_coord = int * int
+
 (*****************************************************************************)
 (* Globals *)
 (*****************************************************************************)
@@ -785,7 +787,7 @@ let parents_of_indexes dm =
   arr
 
 (* ex: dist  a/b/c to a/b/d/e should be ? *)
-let distance_entity i j arr =
+let distance_entity (i, j) arr =
   let xs = arr.(i) in
   let ys = arr.(j) in
   let rec aux xs ys =
@@ -815,7 +817,7 @@ let is_internal_helper j dm =
   let has_users_outside_parent = ref false in
   let parents = arr.(j) in
   for i = 0 to Array.length mat - 1 do
-      if mat.(i).(j) > 0 && i <> j && distance_entity j i arr > 0
+      if mat.(i).(j) > 0 && i <> j && distance_entity (j, i) arr > 0
       then has_users_outside_parent := true
   done;
   not !has_users_outside_parent && 
@@ -860,3 +862,12 @@ let score_upper_triangle_nodes dm =
     done
   done;
   score +> Array.mapi (fun i v -> (dm.i_to_name.(i), v)) +> Array.to_list
+
+let score_upper_triangle_cells dm =
+  let res = ref [] in
+  for i = 0 to Array.length dm.matrix -1 do
+    for j = i + 1 to Array.length dm.matrix -1 do
+      Common.push2 ((i, j), dm.matrix.(i).(j)) res
+    done
+  done;
+  !res
