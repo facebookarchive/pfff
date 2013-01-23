@@ -7,6 +7,7 @@ open Common
 module Model = Model3
 module View = View3
 
+module E = Database_code
 module GC = Graph_code
 module GC2 = Graph_code_opti
 module DM = Dependencies_matrix_code
@@ -293,6 +294,29 @@ let adjust_graph graph_file adjust_file dest_file =
   ()
 
 (*****************************************************************************)
+(* Analysis *)
+(*****************************************************************************)
+let analyze_backward_deps graph_file =
+  let g = GC.load graph_file in
+  let gopti = 
+    Common.cache_computation ~verbose:!verbose graph_file ".opti"
+      (fun () -> Graph_code_opti.convert g)
+  in
+  let config = DM.basic_config_opti gopti in
+  DM.threshold_pack := 1000;
+  let config = DM.expand_node_opti (("flib", E.Dir)) config gopti in
+  let dm, gopti = DM.build config None gopti in
+  let n = Array.length dm.DM.matrix in
+  for i = 0 to n - 1 do
+    for j = i + 1 to n - 1 do
+      let xs = DM.explain_cell_list_use_edges (i, j) dm gopti in
+      pr2 (spf " (%d, %d) = %d" i j (List.length xs));
+    done
+  done;
+  ()
+
+
+(*****************************************************************************)
 (* Main action, viewing the graph *)
 (*****************************************************************************)
 
@@ -476,6 +500,8 @@ let extra_actions () = [
   Common.mk_action_2_arg (fun dir dst -> build_stdlib !lang dir dst);
   "-adjust_graph", " <graph> <adjust_file> <dstfile>",
   Common.mk_action_3_arg (fun graph file dst -> adjust_graph graph file dst);
+  "-analyze", " <graph>",
+  Common.mk_action_1_arg (fun graph -> analyze_backward_deps graph);
 (*
   "-test_phylomel", " <geno file>",
   Common.mk_action_1_arg test_phylomel;
