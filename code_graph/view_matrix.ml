@@ -450,6 +450,7 @@ let draw_matrix cr w =
     DM.score_upper_triangle_nodes w.m 
     +> Common.sort_by_val_highfirst
     +> Common.take_safe 4
+    +> Common.exclude (fun (i, n) -> n = 0)
   in
   let nodes_major = biggest_offenders +> List.map fst in
   highlight_biggest_offenders cr w nodes_major;
@@ -457,6 +458,7 @@ let draw_matrix cr w =
     DM.score_upper_triangle_cells w.m
      +> Common.sort_by_val_highfirst
      +> Common.take_safe 20
+     +> Common.exclude (fun (i, n) -> n = 0)
   in
   highlight_biggest_offenders_cells cr w (biggest_cells +> List.map fst);
     
