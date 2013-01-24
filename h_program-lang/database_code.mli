@@ -21,6 +21,7 @@ type entity_kind =
   and method_type = RegularMethod | StaticMethod
 
 val string_of_entity_kind: entity_kind -> string
+val entity_kind_of_string: string -> entity_kind
 
 type entity_id = int
 

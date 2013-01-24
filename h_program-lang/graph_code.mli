@@ -15,6 +15,12 @@ exception Error of error
 (* really an hypergraph actually *)
 type graph
 
+(* moving around directories to have less backward dependencies *)
+type adjust = (string * string)
+(* skip certain edges that are marked as ok regarding backward dependencies *)
+type dependency = (node * node)
+type whitelist = dependency list
+
 val save: graph -> Common.filename -> unit
 val load: Common.filename -> graph
 
@@ -47,6 +53,7 @@ val parent: node -> graph -> node
 val parents: node -> graph -> node list
 val children: node -> graph -> node list
 val nodeinfo: node -> graph -> nodeinfo
+val file_of_node: node -> graph -> Common.filename
 
 val all_children: node -> graph -> node list
 
@@ -70,9 +77,10 @@ val string_of_node: node -> string
 val display_with_gv: graph -> unit
 
 (* adjustments *)
-type adjust = (string * string)
 val load_adjust: Common.filename -> adjust list
+val load_whitelist: Common.filename -> whitelist
+val save_whitelist: whitelist -> Common.filename -> graph -> unit
 (* does side effect on the graph *)
-val adjust_graph: graph -> adjust list -> unit
+val adjust_graph: graph -> adjust list -> whitelist -> unit
 
 (* internals *)

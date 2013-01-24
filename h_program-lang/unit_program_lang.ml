@@ -78,7 +78,7 @@ let unittest =
       "adjust graph" >:: (fun () ->
         let (g, _dm) = build_g_and_dm () in
         let adjust = [("a", "EXTRA_DIR")] in
-        Graph_code.adjust_graph g adjust;
+        Graph_code.adjust_graph g adjust [];
         let gopti = Graph_code_opti.convert g in
         let config = DM.basic_config g in
         let _dm = DM.build config None gopti in

@@ -138,6 +138,10 @@ exception Error of error
  *)
 type adjust = (string * string)
 
+(* skip certain edges that are marked as ok regarding backward dependencies *)
+type dependency = (node * node)
+type whitelist = dependency list
+
 (*****************************************************************************)
 (* Globals *)
 (*****************************************************************************)
@@ -309,6 +313,14 @@ let create_initial_hierarchy g =
 let string_of_node (s, kind) =
   E.string_of_entity_kind kind ^ ":" ^ s
 
+let node_of_string s =
+  if s =~ "\\([^:]*\\):\\(.*\\)"
+  then 
+    let (s1, s2) = Common.matched2 s in
+    s2, E.entity_kind_of_string s1
+  else 
+    failwith (spf "node_of_string: wrong format '%s'" s)
+
 
 let display_with_gv g =
   (* TODO? use different colors for the different kind of edges? *)
@@ -319,19 +331,19 @@ let display_with_gv g =
 (*****************************************************************************)
 
 
+let file_of_node n g =
+  try 
+    let info = nodeinfo n g in
+    info.pos.Parse_info.file
+  with Not_found ->
+    (match n with
+    | str, (E.Dir | E.File) -> str
+    | _ -> "NOT_FOUND_FILE"
+    )
+
 let group_edges_by_files_edges xs g =
-  let file_of_node n =
-    try 
-      let info = nodeinfo n g in
-      info.pos.Parse_info.file
-    with Not_found ->
-      (match n with
-      | str, (E.Dir | E.File) -> str
-      | _ -> "NOT_FOUND_FILE"
-      )
-  in
   xs +> Common.group_by_mapped_key (fun (n1, n2) ->
-    (file_of_node n1, file_of_node n2)
+    (file_of_node n1 g, file_of_node n2 g)
   ) +> List.map (fun (x, deps) -> List.length deps, (x, deps))
     +> Common.sort_by_key_highfirst
     +> List.map snd
@@ -352,11 +364,31 @@ let load_adjust file =
     | _ -> failwith ("wrong line format in adjust file: " ^ s)
   )
 
+let load_whitelist file =
+  Common.cat file +>
+  List.map (fun s ->
+    if s =~ "\\(.*\\) --> \\(.*\\) "
+    then
+      let (s1, s2) = Common.matched2 s in
+      node_of_string s1, node_of_string s2
+    else failwith (spf "load_whitelist: wrong line: %s" s)
+  )
+
+let save_whitelist xs file g =
+  Common.with_open_outfile file (fun (pr_no_nl, _chan) ->
+    xs +> List.iter (fun (n1, n2) ->
+      let file = file_of_node n2 g in
+      pr_no_nl (spf "%s --> %s (%s)\n"
+                  (string_of_node n1) (string_of_node n2) file);
+    )
+  )
+
+
 (* Used mainly to collapse many entries under a "..." intermediate fake
  * parent. Maybe this could be done automatically in codegraph at some point,
  * like ndepend does I think.
  *)
-let adjust_graph g xs =
+let adjust_graph g xs whitelist =
   let mapping = Hashtbl.create 101 in
   g +> iter_nodes (fun (s, kind) ->
     Hashtbl.add mapping s (s, kind)
@@ -375,4 +407,11 @@ let adjust_graph g xs =
     | _ -> failwith (spf "multiple entities with %s as a name" s1)
     )
   );
-  ()
+  whitelist +> Common_extra.progress ~show:true (fun k ->
+    List.iter (fun (n1, n2) ->
+      k();
+      remove_edge (n1, n2) Use g;
+    )
+  )
+
+    
