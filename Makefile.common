@@ -35,7 +35,7 @@ OPTOBJS?= $(SRC:.ml=.cmx)
 OCAMLCFLAGS?=-g -dtypes -bin-annot -thread -w +9 -w -21 -warn-error +a
 
 # This flag is also used in subdirectories so don't change its name here.
-OPTFLAGS?=-thread
+OPTFLAGS?=-thread -g
 
 OCAMLC=ocamlc$(OPTBIN) $(OCAMLCFLAGS)  $(INCLUDES)
 OCAMLOPT=ocamlopt$(OPTBIN) $(OPTFLAGS) $(INCLUDES)
