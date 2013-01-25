@@ -33,13 +33,7 @@ type skip =
   (* mostly to avoid parsing errors messages *)
   | Dir of Common.dirname
   | File of Common.filename
-
-  (* todo: mostly for the graph_code builder, but it's better
-   * to have whitelist rule to operate after the graph_code has been
-   * built, in a "rule" file, so this Edge should not be used.
-   *)
-  | Edge of string * string
-
+  | DirElement of Common.dirname
   | SkipErrorsDir of Common.dirname
 
 (*****************************************************************************)
@@ -56,9 +50,6 @@ let load file =
     | _ when s =~ "^skip_errors_dir:[ ]*\\([^ ]+\\)" -> 
         SkipErrorsDir (Common.matched1 s)
     | _ when s =~ "^file:[ ]*\\([^ ]+\\)" -> File (Common.matched1 s)
-    | _ when s =~ "^edge:[ ]*\\([^ -]+\\)[ ]*-->[ ]*\\([^ -]+\\)" ->
-        let (s1, s2) = Common.matched2 s in
-        Edge (s1, s2)
     | _ -> failwith ("wrong line format in skip file: " ^ s)
   )
 
@@ -85,13 +76,6 @@ let filter_files skip_list root xs =
     (Hashtbl.mem skip_files readable) ||
     (skip_dirs +> List.exists (fun dir -> readable =~ (dir ^ ".*")))
   )
-
-let build_filter_edges skip_list =
-  skip_list +> Common.map_filter (function
-  | Edge (s1, s2) -> Some (s1, s2)
-  | _ -> None
-  ) +> Common.hash_of_list 
-
 
 let build_filter_errors_file skip_list =
   let skip_dirs = 

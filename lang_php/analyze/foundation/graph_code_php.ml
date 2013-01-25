@@ -653,8 +653,6 @@ let build ?(verbose=true) ?(only_defs=false) dir skip_list =
   let files = Skip_code.filter_files skip_list root all_files in
   (* step0: reorder files *)
   let files = Skip_code.reorder_files_skip_errors_last skip_list root files in
-  (* TODO: to remove, generalize via a skip_multi_dir? *)
-  let files = files +> Common.exclude (fun f -> f =~ ".*__tests__") in
   
   let g = G.create () in
   G.create_initial_hierarchy g;

@@ -57,9 +57,6 @@ type env = {
   current: Graph_code.node;
   g: Graph_code.graph;
 
-  (* we use the Hashtbl.find_all property *)
-  skip_edges: (string, string) Hashtbl.t;
-
   mutable params_locals: string list;
 
   (* error reporting *)
@@ -216,12 +213,11 @@ let extract_defs ~g ~dupes ~ast ~readable =
 (* Uses *)
 (*****************************************************************************)
 
-let rec extract_uses ~g ~ast ~dupes ~readable ~lookup_fails ~skip_edges =
+let rec extract_uses ~g ~ast ~dupes ~readable ~lookup_fails =
   let env = {
     current = (readable, E.File);
     g;
     dupes; lookup_fails;
-    skip_edges;
     params_locals = [];
   }
   in
@@ -470,17 +466,12 @@ let build ?(verbose=true) dir skip_list =
   (* step2: creating the 'Use' edges, the uses *)
   if verbose then pr2 "\nstep2: extract uses";
   let lookup_fails = Common.hash_with_default (fun () -> 0) in
-  let skip_edges = skip_list +> Common.map_filter (function
-    | Skip_code.Edge (s1, s2) -> Some (s1, s2)
-    | _ -> None
-  ) +> Common.hash_of_list 
-  in
   files +> Common_extra.progress ~show:verbose (fun k -> 
    List.iter (fun file ->
      k();
      let readable = Common.filename_without_leading_path root file in
      let ast = parse ~show_parse_error:false file in
-     extract_uses ~g ~dupes ~ast ~readable ~lookup_fails ~skip_edges;
+     extract_uses ~g ~dupes ~ast ~readable ~lookup_fails;
    ));
 (* make less sense now that have G.not_found
   lookup_fails#to_list +> Common.sort_by_val_highfirst +> Common.take_safe 20

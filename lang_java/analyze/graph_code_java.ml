@@ -91,8 +91,6 @@ type env = {
   params_or_locals: (string * bool (* is_final *)) list;
   (* To avoid looking up type parameters in the graph. *)
   type_parameters: string list;
-
-  (* less: skip_edges *)
 }
 
   (* We need 3 phases, one to get all the definitions, one to
@@ -296,7 +294,7 @@ let rec import_of_inherited_classes env n =
 (* Note that there is no ~dupe argument. Java code uses packages and 
  * fully qualified entities so there should be no name conflicts.
  *)
-let rec extract_defs_uses ~phase ~g ~ast ~readable ~lookup_fails ~skip_edges =
+let rec extract_defs_uses ~phase ~g ~ast ~readable ~lookup_fails =
 
   let env = {
     g; phase;
@@ -854,11 +852,6 @@ let build ?(verbose=true) ?(only_defs=false) dir_or_file skip_list =
   G.create_initial_hierarchy g;
 
   let lookup_fails = Common.hash_with_default (fun () -> 0) in
-  let skip_edges = skip_list +> Common.map_filter (function
-    | Skip_code.Edge (s1, s2) -> Some (s1, s2)
-    | _ -> None
-  ) +> Common.hash_of_list 
-  in
 
   (* step1: creating the nodes and 'Has' edges, the defs *)
   if verbose then pr2 "\nstep1: extract defs";
@@ -867,8 +860,7 @@ let build ?(verbose=true) ?(only_defs=false) dir_or_file skip_list =
       k();
       let readable = Common.filename_without_leading_path root file in
       let ast = parse ~show_parse_error:true file in
-     extract_defs_uses ~phase:Defs ~g ~ast ~readable 
-       ~lookup_fails ~skip_edges;
+     extract_defs_uses ~phase:Defs ~g ~ast ~readable ~lookup_fails;
     ));
   if not only_defs then begin
 
@@ -879,8 +871,7 @@ let build ?(verbose=true) ?(only_defs=false) dir_or_file skip_list =
      k();
      let readable = Common.filename_without_leading_path root file in
      let ast = parse ~show_parse_error:false file in
-     extract_defs_uses ~phase:Inheritance ~g ~ast ~readable
-       ~lookup_fails ~skip_edges;
+     extract_defs_uses ~phase:Inheritance ~g ~ast ~readable ~lookup_fails;
    ));
 
   (* step3: creating the 'Use' edges that can rely on recursive inheritance *)
@@ -890,8 +881,7 @@ let build ?(verbose=true) ?(only_defs=false) dir_or_file skip_list =
      k();
      let readable = Common.filename_without_leading_path root file in
      let ast = parse ~show_parse_error:false file in
-     extract_defs_uses ~phase:Uses ~g ~ast ~readable
-       ~lookup_fails ~skip_edges;
+     extract_defs_uses ~phase:Uses ~g ~ast ~readable ~lookup_fails;
    ));
   end;
   g
