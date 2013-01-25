@@ -67,18 +67,23 @@ let all_actions () =
   Test_parsing_js.actions()++
   Test_parsing_c.actions()++
   Test_parsing_cpp.actions()++
+  Test_parsing_objc.actions()++
+  Test_parsing_bytecode.actions()++
+  Test_parsing_java.actions()++
+
   Test_parsing_nw.actions()++
+
   Test_parsing_lisp.actions()++
   Test_parsing_hs.actions()++
   Test_parsing_python.actions()++
   Test_parsing_csharp.actions()++
-  Test_parsing_bytecode.actions()++
-  Test_parsing_java.actions()++
   Test_parsing_erlang.actions()++
+
   Test_parsing_text.actions()++
   Test_parsing_html.actions()++
   Test_parsing_css.actions()++
   Test_parsing_web.actions()++
+
   Test_parsing_opa.actions()++
 
   Test_analyze_cpp.actions () ++
