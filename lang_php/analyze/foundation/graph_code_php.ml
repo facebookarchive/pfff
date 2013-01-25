@@ -657,7 +657,7 @@ let build ?(verbose=true) ?(only_defs=false) dir skip_list =
   let g = G.create () in
   G.create_initial_hierarchy g;
 
-  let chan = open_out (Filename.concat dir "pfff.log") in
+  let chan = open_out (Filename.concat (Sys.getcwd()) "pfff.log") in
 
   let env = {
     g; 

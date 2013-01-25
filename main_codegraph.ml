@@ -206,14 +206,14 @@ let constraints_of_info_txt info_txt =
 (* Model Helpers *)
 (*****************************************************************************)
 
-let dep_file dir = 
+let dep_file_of_dir dir = 
   Filename.concat dir "graph_code.marshall"
 
-let skip_file dir = 
+let skip_file_of_dir dir = 
   Filename.concat dir "skip_list.txt"
 
 let build_model root =
-  let file = dep_file root in
+  let file = dep_file_of_dir root in
   let g = Graph_code.load file in
   let gopti = 
     Common.cache_computation ~verbose:!verbose file ".opti"
@@ -243,9 +243,14 @@ let package_node xs =
 (*****************************************************************************)
 
 let build_graph_code lang root =
+  let pwd = Sys.getcwd () in
+  let skip_file = skip_file_of_dir pwd in
   let skip_list =
-    if Sys.file_exists (skip_file root)
-    then Skip_code.load (skip_file root)
+    if Sys.file_exists skip_file
+    then begin 
+      if !verbose then  pr2 (spf "Using skip file: %s" skip_file);
+      Skip_code.load skip_file
+    end
     else []
   in
   let g =
@@ -267,15 +272,15 @@ let build_graph_code lang root =
     | "cmt"  -> Graph_code_cmt.build ~verbose:!verbose root skip_list
     | _ -> failwith ("language not supported: " ^ lang)
   in
-  Graph_code.save g (dep_file root)
+  Graph_code.save g (dep_file_of_dir pwd)
 
 (*****************************************************************************)
 (* Language specific, building stdlib *)
 (*****************************************************************************)
 let build_stdlib lang root dst =
   let skip_list =
-    if Sys.file_exists (skip_file root)
-    then Skip_code.load (skip_file root)
+    if Sys.file_exists (skip_file_of_dir root)
+    then Skip_code.load (skip_file_of_dir root)
     else []
   in
   match lang with
@@ -368,7 +373,8 @@ let main_action xs =
   in
   let inits = Common.inits_of_absolute_dir dir in
   let root =
-    inits +> List.rev +> List.find (fun path -> Sys.file_exists (dep_file path))
+    inits +> List.rev +> List.find (fun path -> 
+      Sys.file_exists (dep_file_of_dir path))
   in
   pr2 (spf "Using root = %s" root);
   let model = build_model root in
