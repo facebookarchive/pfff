@@ -78,6 +78,7 @@ let test regexp =
       Unit_parsing_html.unittest;
       Unit_parsing_opa.unittest;
       Unit_parsing_cpp.unittest;
+      Unit_parsing_objc.unittest;
 
       Unit_version_control.unittest;
       Unit_program_lang.unittest;
