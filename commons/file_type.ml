@@ -1,6 +1,6 @@
 (* Yoann Padioleau
  *
- * Copyright (C) 2010 Facebook
+ * Copyright (C) 2010-2013 Facebook
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public License
@@ -40,7 +40,7 @@ type file_type =
   | Prolog of string
   | Makefile
   | Script of string (* sh, csh, awk, sed, etc *)
-  | C of string | Cplusplus of string | Java | Csharp
+  | C of string | Cplusplus of string | ObjectiveC of string | Java | Csharp
   | Perl | Python | Ruby
   | Erlang
   | Beta
@@ -117,6 +117,8 @@ let file_type_of_file2 file =
   | "cc" -> PL (Cplusplus e)  | "cxx" -> PL (Cplusplus e)
   (* used in libstdc++ *)
   | "tcc" -> PL (Cplusplus e)
+
+  | "m" | "mm" -> PL (ObjectiveC e)
 
   | "java" -> PL Java
   | "cs" -> PL Csharp
