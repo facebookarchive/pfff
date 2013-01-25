@@ -18,7 +18,7 @@ let test_tokens_cpp file =
   toks +> List.iter (fun x -> pr2_gen x);
   ()
 
-let test_parse_cpp ?c xs  =
+let test_parse_cpp ?lang xs  =
   let fullxs = Lib_parsing_cpp.find_cpp_files_of_dir_or_files xs in
 
   Parse_cpp.init_defs !Flag.macros_h;
@@ -29,7 +29,7 @@ let test_parse_cpp ?c xs  =
   fullxs +> List.iter (fun file -> 
     pr2 ("PARSING: " ^ file);
     
-    let (xs, stat) = Parse_cpp.parse ?c file in
+    let (xs, stat) = Parse_cpp.parse ?lang file in
 
     Common.push2 stat stat_list;
 

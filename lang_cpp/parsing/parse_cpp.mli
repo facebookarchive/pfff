@@ -6,11 +6,16 @@ type program2 = toplevel2 list
 
 exception Parse_error of Parse_info.info
 
+type language = 
+  | C
+  | Cplusplus
+  | ObjC
+
 (* This is the main function. It uses _defs below which often comes 
  * from a standard.h macro file 
  *)
 val parse:
-  ?c:bool ->
+  ?lang:language ->
   Common.filename -> (program2 * Statistics_parsing.parsing_stat)
 
 val parse_program:  

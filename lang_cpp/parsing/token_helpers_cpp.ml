@@ -223,6 +223,10 @@ let is_maybenot_cpp_keyword = function
     -> true
   | _ -> false
 
+
+let is_objectivec_keyword = function
+  | _ -> false
+
 (* used in the algorithm for "10 most problematic tokens". C-s for TIdent
  * in parser_cpp.mly
  *)

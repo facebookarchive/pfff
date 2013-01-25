@@ -1,6 +1,6 @@
 (* Yoann Padioleau
  *
- * Copyright (C) 2002-2011 Yoann Padioleau
+ * Copyright (C) 2002-2013 Yoann Padioleau
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License (GPL)
@@ -30,7 +30,7 @@ module Hack = Parsing_hacks_lib
 (* Prelude *)
 (*****************************************************************************)
 (* 
- * A heuristic based C/C++/CPP parser.
+ * A heuristic based C/cpp/C++/Objective-C/Objective-C++ parser.
  * 
  * See "Parsing C/C++ Code without Pre-Preprocessing - Yoann Padioleau, CC'09"
  * avalaible at http://padator.org/papers/yacfe-cc09.pdf
@@ -52,6 +52,11 @@ let with_program2 f program2 =
   +> Common.unzip 
   +> (fun (program, infos) -> f program, infos)
   +> Common.uncurry Common.zip
+
+type language = 
+  | C
+  | Cplusplus
+  | ObjC
 
 (*****************************************************************************)
 (* Wrappers *)
@@ -164,7 +169,7 @@ let is_same_line_or_close line tok =
 (*****************************************************************************)
 let fix_tokens_for_c xs =
   xs +> List.map (function
-  | x when TH.is_cpp_keyword x ->
+  | x when TH.is_cpp_keyword x || TH.is_objectivec_keyword x ->
       let ii = TH.info_of_tok x in
       Parser.TIdent (Ast.str_of_info ii, ii)
   | x -> x
@@ -289,7 +294,7 @@ exception Parse_error of Parse_info.info
  * !!!This function use refs, and is not reentrant !!! so take care.
  * It uses the _defs global defined above!!!!
  *)
-let parse2 ?(c=false) file = 
+let parse2 ?(lang=Cplusplus) file = 
 
   let stat = Statistics_parsing.default_stat file in
   let filelines = Common.cat_array file in
@@ -300,7 +305,12 @@ let parse2 ?(c=false) file =
   let toks_orig = tokens file in
 
   let toks = Parsing_hacks_define.fix_tokens_define toks_orig in
-  let toks = if c then fix_tokens_for_c toks else toks in
+  let toks = 
+    match lang with
+    | Cplusplus -> toks
+    | C -> fix_tokens_for_c toks
+    | ObjC -> toks
+  in
   (* todo: _defs_builtins *)
   let toks = 
     try Parsing_hacks.fix_tokens ~macro_defs:!_defs toks
@@ -450,10 +460,10 @@ let parse2 ?(c=false) file =
   let v = with_program2 Parsing_consistency_cpp.consistency_checking v in
   (v, stat)
 
-let parse ?c file  = 
+let parse ?lang file  = 
   Common.profile_code "Parse_cpp.parse" (fun () -> 
     try 
-      parse2 ?c file
+      parse2 ?lang file
     with Stack_overflow ->
       pr2 (spf "PB stack overflow in %s" file);
       [(Ast.NotParsedCorrectly [], ("", []))], {Stat.

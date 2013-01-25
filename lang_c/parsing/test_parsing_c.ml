@@ -11,6 +11,6 @@ open Common
 let actions () = [
     "-parse_c", "   <file or dir>", 
     Common.mk_action_n_arg (fun xs -> 
-      Test_parsing_cpp.test_parse_cpp ~c:true xs
+      Test_parsing_cpp.test_parse_cpp ~lang:Parse_cpp.C xs
     );
 ]
