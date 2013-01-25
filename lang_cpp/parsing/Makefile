@@ -11,17 +11,14 @@ SRC= flag_parsing_cpp.ml \
      type_cpp.ml semantic_cpp.ml \
      meta_ast_cpp.ml export_ast_cpp.ml \
      visitor_cpp.ml lib_parsing_cpp.ml \
-     lexer_parser_cpp.ml parser_cpp_mly_helper.ml parser_cpp.ml lexer_cpp.ml \
-     parsing_stat_cpp.ml \
+     parser_cpp_mly_helper.ml parser_cpp.ml lexer_cpp.ml \
      token_helpers_cpp.ml token_views_cpp.ml \
      parsing_hacks_lib.ml pp_token.ml \
      parsing_hacks_pp.ml parsing_hacks_cpp.ml parsing_hacks_typedef.ml \
      parsing_hacks_define.ml \
      parsing_hacks.ml \
-     pp_analysis.ml \
      parsing_recovery_cpp.ml parsing_consistency_cpp.ml \
      parse_cpp.ml \
-     pp_ast.ml \
      test_parsing_cpp.ml unit_parsing_cpp.ml \
 
 SYSLIBS= str.cma unix.cma 
