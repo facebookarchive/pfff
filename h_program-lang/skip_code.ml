@@ -46,10 +46,14 @@ let load file =
   )
   +> List.map (fun s ->
     match s with
-    | _ when s =~ "^dir:[ ]*\\([^ ]+\\)" -> Dir (Common.matched1 s)
+    | _ when s =~ "^dir:[ ]*\\([^ ]+\\)" -> 
+      Dir (Common.matched1 s)
     | _ when s =~ "^skip_errors_dir:[ ]*\\([^ ]+\\)" -> 
-        SkipErrorsDir (Common.matched1 s)
-    | _ when s =~ "^file:[ ]*\\([^ ]+\\)" -> File (Common.matched1 s)
+      SkipErrorsDir (Common.matched1 s)
+    | _ when s =~ "^file:[ ]*\\([^ ]+\\)" -> 
+      File (Common.matched1 s)
+    | _ when s =~ "^dir_element:[ ]*\\([^ ]+\\)" ->
+      DirElement (Common.matched1 s)
     | _ -> failwith ("wrong line format in skip file: " ^ s)
   )
 
@@ -71,10 +75,19 @@ let filter_files skip_list root xs =
     | _ -> None
     ) 
   in
+  let skip_dir_elements =
+    skip_list +> Common.map_filter (function
+    | DirElement s -> Some s
+    | _ -> None
+    ) 
+  in
   xs +> Common.exclude (fun file ->
     let readable = Common.filename_without_leading_path root file in
     (Hashtbl.mem skip_files readable) ||
-    (skip_dirs +> List.exists (fun dir -> readable =~ (dir ^ ".*")))
+    (skip_dirs +> List.exists 
+       (fun dir -> readable =~ (dir ^ ".*"))) ||
+    (skip_dir_elements +> List.exists 
+       (fun dir -> readable =~ (".*/" ^ dir ^ ".*")))
   )
 
 let build_filter_errors_file skip_list =
