@@ -27,11 +27,12 @@ module Ast = Ast_cpp
 (* Prelude *)
 (*****************************************************************************)
 
-(* The C/C++/CPP lexer.
+(* The C/cpp/C++/Objective-C lexer.
  *
  * This lexer generates tokens for C (int, while, ...), C++ (new, delete, ...),
- * and CPP (#define, #ifdef, ...). It also generate tokens for comments
- * and spaces. This means that it can not be used as-is. Some post-filtering
+ * CPP (#define, #ifdef, ...) and objective C (@interface, @end, ...).
+ * It also generate tokens for comments and spaces. This means that
+ * it can not be used as-is. Some post-filtering
  * has to be done to feed it to a parser. Note that C and C++ are not
  * context free languages and so some idents must be disambiguated
  * in some ways. TIdent below must thus be post-processed too (as well
@@ -156,6 +157,23 @@ let keyword_table = Common.hash_of_list [
   "mutable", (fun ii -> Tmutable ii);
 
   "export", (fun ii -> Texport ii);
+
+  (* objcext: see also TH.is_objectivec_keyword *)
+  "@interface", (fun ii -> TAt_interface ii);
+  "@implementation", (fun ii -> TAt_implementation ii);
+  "@protocol", (fun ii -> TAt_protocol ii);
+  "@class", (fun ii -> TAt_class ii);
+  "@selector", (fun ii -> TAt_selector ii);
+  "@encode", (fun ii -> TAt_encode ii);
+  "@defs", (fun ii -> TAt_defs ii);
+
+  "@end", (fun ii -> TAt_end ii);
+
+  "@public", (fun ii -> TAt_public ii);
+  "@private", (fun ii -> TAt_private ii);
+  "@protected", (fun ii -> TAt_protected ii);
+
+  
  ]
 
 let error_radix s = 
@@ -480,6 +498,14 @@ rule token = parse
         pr2 ("LEXER: identifier with dollar: "  ^ s);
         TIdent (s, tokinfo lexbuf)
       }
+
+  (* objcext: *)
+  | "@" letter+ { 
+      let info = tokinfo lexbuf in
+      let s = tok lexbuf in
+      let f = Hashtbl.find keyword_table s in
+      f info
+  }
 
   (* ----------------------------------------------------------------------- *)
   (* C constant *)

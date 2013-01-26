@@ -200,6 +200,15 @@ module Ast = Ast_cpp
 /*(* fresh_token: appears after solved if next token is a typedef *)*/
 %token <Ast_cpp.info> TColCol_BeforeTypedef
 
+/*(*-----------------------------------------*)*/
+/*(*2 objcext: extra tokens *)*/
+/*(*-----------------------------------------*)*/
+%token <Ast_cpp.info>
+  TAt_interface TAt_implementation TAt_protocol TAt_class
+  TAt_selector TAt_encode TAt_defs
+  TAt_end
+  TAt_public TAt_private TAt_protected
+
 /*(*************************************************************************)*/
 /*(*1 Priorities *)*/
 /*(*************************************************************************)*/

@@ -481,6 +481,18 @@ let info_of_tok = function
 
   | Tunsigned_Constr i -> i
   | Tsigned_Constr i -> i
+
+  | TAt_interface i -> i
+  | TAt_implementation i -> i
+  | TAt_protocol i  -> i
+  | TAt_class i -> i
+  | TAt_selector i -> i
+  | TAt_encode i -> i
+  | TAt_defs i -> i
+  | TAt_end i -> i
+  | TAt_public i -> i
+  | TAt_private i -> i
+  | TAt_protected i -> i
       
   | EOF                  (i) -> i
   
@@ -709,6 +721,18 @@ let visitor_info_of_tok f = function
 
   | Tsigned_Constr  (i) -> Tsigned_Constr (f i)
   | Tunsigned_Constr  (i) -> Tunsigned_Constr (f i)
+
+  | TAt_interface i -> TAt_interface (f i)
+  | TAt_implementation i -> TAt_implementation (f i)
+  | TAt_protocol i  -> TAt_protocol (f i)
+  | TAt_class i -> TAt_class (f i)
+  | TAt_selector i -> TAt_selector (f i)
+  | TAt_encode i -> TAt_encode (f i)
+  | TAt_defs i -> TAt_defs (f i)
+  | TAt_end i -> TAt_end (f i)
+  | TAt_public i -> TAt_public (f i)
+  | TAt_private i -> TAt_private (f i)
+  | TAt_protected i -> TAt_protected (f i)
 
   | EOF                  (i) -> EOF                  (f i) 
 

@@ -592,6 +592,20 @@ MemberField _|MemberDecl _ | Access (_, _))
     | T.Tclass ii | T.Tstruct ii ->
         tag ii KeywordObject
 
+    | T.TAt_interface ii
+    | T.TAt_implementation ii
+    | T.TAt_protocol ii
+    | T.TAt_class ii
+    | T.TAt_selector ii
+    | T.TAt_encode ii
+    | T.TAt_defs ii
+    | T.TAt_end ii
+    | T.TAt_public ii
+    | T.TAt_private ii
+    | T.TAt_protected ii
+        -> tag ii KeywordObject
+
+
     (* thrift *)
     | T.TIdent (("service" | "include" | "extends"), ii) ->
         tag ii Keyword
