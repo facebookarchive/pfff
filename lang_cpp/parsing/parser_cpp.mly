@@ -564,6 +564,7 @@ primary_expr:
  /*(* objcext: *)*/
  | message_expression { mk_e(ExprTodo) noii }
  | protocol_expression { mk_e(ExprTodo) noii }
+ | selector_expression { mk_e(ExprTodo) noii }
 
 /*(*----------------------------*)*/
 /*(*2 objcext: *)*/
@@ -592,6 +593,19 @@ keyword_argument:
 
 protocol_expression: TAt_protocol TOPar protocol_name TCPar { }
 
+selector_expression: TAt_selector TOPar selector_name TCPar { }
+
+selector_name:
+ | selector { }
+ | keyword_name_list { }
+
+keyword_name_list:
+ | keyword_name { }
+ | keyword_name_list keyword_name { }
+
+keyword_name:
+ | selector TCol { }
+ | TCol { }
 
 /*(*----------------------------*)*/
 /*(*2 c++ext: *)*/
