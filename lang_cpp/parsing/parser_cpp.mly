@@ -1890,9 +1890,13 @@ keyword_selector:
  | keyword_declarator { }
  | keyword_selector keyword_declarator { }
 
+/*(* we put ident here, not TIdent, because the typedef heuristic
+   * will flag many idents as typedefs
+   * TODO: fix the heuristic to not be applied on objective C region?
+   *)*/
 keyword_declarator:
- | TCol method_type_opt TIdent { }
- | selector TCol method_type_opt TIdent { }
+ | TCol method_type_opt ident { }
+ | selector TCol method_type_opt ident { }
 
 selector: TIdent { }
 
