@@ -532,6 +532,12 @@ rule token = parse
         let s = string lexbuf in 
         TString   ((s,   IsWchar),  (info +> tok_add_s (s ^ "\""))) 
       }
+  (* objcext: *)
+  | '@' '"' 
+      { let info = tokinfo lexbuf in 
+        let s = string lexbuf in 
+        TString   ((s,   IsWchar),  (info +> tok_add_s (s ^ "\""))) 
+      }
 
   (* Take care of the order ? No because lex try the longest match. The
    * strange diff between decimal and octal constant semantic is not
