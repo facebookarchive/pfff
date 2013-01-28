@@ -144,15 +144,20 @@ let is_same_line_or_close line tok =
   TH.line_of_tok tok =|= line - 2
 
 (*****************************************************************************)
-(* C vs C++ *)
+(* C vs C++ vs ObjectiveC *)
 (*****************************************************************************)
-let fix_tokens_for_c xs =
-  xs +> List.map (function
-  | x when TH.is_cpp_keyword x || TH.is_objectivec_keyword x ->
+let fix_tokens_for_language lang xs =
+  xs +> List.map (fun tok ->
+    match tok, lang with
+    | x, Flag.C when TH.is_cpp_keyword x || TH.is_objectivec_keyword x ->
       let ii = TH.info_of_tok x in
       Parser.TIdent (Ast.str_of_info ii, ii)
-  | x -> x
+    | x, Flag.ObjectiveC when TH.is_cpp_keyword x ->
+      let ii = TH.info_of_tok x in
+      Parser.TIdent (Ast.str_of_info ii, ii)
+    | x, _ -> x
   )
+
 
 (*****************************************************************************)
 (* Lexing only *)
@@ -284,12 +289,7 @@ let parse2 ?(lang=Flag_parsing_cpp.Cplusplus) file =
   let toks_orig = tokens file in
 
   let toks = Parsing_hacks_define.fix_tokens_define toks_orig in
-  let toks = 
-    match lang with
-    | Flag.Cplusplus -> toks
-    | Flag.C -> fix_tokens_for_c toks
-    | Flag.ObjectiveC -> toks
-  in
+  let toks = fix_tokens_for_language lang toks in
   (* todo: _defs_builtins *)
   let toks = 
     try Parsing_hacks.fix_tokens ~macro_defs:!_defs toks
