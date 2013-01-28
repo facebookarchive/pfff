@@ -11,7 +11,7 @@ open Common
 let actions () = [
     "-parse_objc", " <file or dir>", 
     Common.mk_action_n_arg (fun xs -> 
-      Test_parsing_cpp.test_parse_cpp ~lang:Parse_cpp.ObjC xs
+      Test_parsing_cpp.test_parse_cpp ~lang:Flag_parsing_cpp.ObjectiveC xs
     );
     "-tokens_objc", " <file>", 
     Common.mk_action_1_arg (fun file -> 

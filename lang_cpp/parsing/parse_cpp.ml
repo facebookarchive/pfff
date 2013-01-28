@@ -52,11 +52,6 @@ let with_program2 f program2 =
   +> (fun (program, infos) -> f program, infos)
   +> Common.uncurry Common.zip
 
-type language = 
-  | C
-  | Cplusplus
-  | ObjC
-
 (*****************************************************************************)
 (* Wrappers *)
 (*****************************************************************************)
@@ -278,7 +273,7 @@ exception Parse_error of Parse_info.info
  * !!!This function use refs, and is not reentrant !!! so take care.
  * It uses the _defs global defined above!!!!
  *)
-let parse2 ?(lang=Cplusplus) file = 
+let parse2 ?(lang=Flag_parsing_cpp.Cplusplus) file = 
 
   let stat = Statistics_parsing.default_stat file in
   let filelines = Common.cat_array file in
@@ -291,9 +286,9 @@ let parse2 ?(lang=Cplusplus) file =
   let toks = Parsing_hacks_define.fix_tokens_define toks_orig in
   let toks = 
     match lang with
-    | Cplusplus -> toks
-    | C -> fix_tokens_for_c toks
-    | ObjC -> toks
+    | Flag.Cplusplus -> toks
+    | Flag.C -> fix_tokens_for_c toks
+    | Flag.ObjectiveC -> toks
   in
   (* todo: _defs_builtins *)
   let toks = 

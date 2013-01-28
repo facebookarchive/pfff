@@ -4,7 +4,7 @@ val test_tokens_cpp : Common.filename -> unit
 
 (* used by test_parsing_c.ml and test_parsing_objc.ml *)
 val test_parse_cpp:
-  ?lang:Parse_cpp.language -> Common.filename list -> unit
+  ?lang:Flag_parsing_cpp.language -> Common.filename list -> unit
 val test_tokens_cpp:
   Common.filename -> unit
 val test_dump_cpp:

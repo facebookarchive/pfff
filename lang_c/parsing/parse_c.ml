@@ -33,7 +33,7 @@ let parse file =
     Parse_cpp.init_defs !Flag_parsing_cpp.macros_h;
     _done_init := true
   end;
-  Parse_cpp.parse ~lang:Parse_cpp.C file
+  Parse_cpp.parse ~lang:Flag_parsing_cpp.C file
 
 
 let parse_program file =
