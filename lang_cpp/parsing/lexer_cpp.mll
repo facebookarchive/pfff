@@ -173,6 +173,12 @@ let keyword_table = Common.hash_of_list [
   "@private", (fun ii -> TAt_private ii);
   "@protected", (fun ii -> TAt_protected ii);
 
+   (* objc 2.0? apple extensions? not in original grammar *)
+  "@throw", (fun ii -> TAt_throw ii);
+  "@try", (fun ii -> TAt_try ii);
+  "@catch", (fun ii -> TAt_catch ii);
+  "@finally", (fun ii -> TAt_finally ii);
+  "@synchronized", (fun ii -> TAt_synchronized ii);
   
  ]
 

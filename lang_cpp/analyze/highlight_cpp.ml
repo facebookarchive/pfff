@@ -605,6 +605,12 @@ MemberField _|MemberDecl _ | Access (_, _))
     | T.TAt_protected ii
         -> tag ii KeywordObject
 
+    | T.TAt_throw ii
+    | T.TAt_catch ii
+    | T.TAt_try ii
+    | T.TAt_finally ii
+      -> tag ii KeywordExn
+    | T.TAt_synchronized ii -> tag ii Keyword
 
     (* thrift *)
     | T.TIdent (("service" | "include" | "extends"), ii) ->

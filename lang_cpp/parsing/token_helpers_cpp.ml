@@ -493,6 +493,12 @@ let info_of_tok = function
   | TAt_public i -> i
   | TAt_private i -> i
   | TAt_protected i -> i
+
+  | TAt_throw i -> i
+  | TAt_catch i -> i
+  | TAt_try i -> i
+  | TAt_finally i -> i
+  | TAt_synchronized i -> i
       
   | EOF                  (i) -> i
   
@@ -733,6 +739,12 @@ let visitor_info_of_tok f = function
   | TAt_public i -> TAt_public (f i)
   | TAt_private i -> TAt_private (f i)
   | TAt_protected i -> TAt_protected (f i)
+
+  | TAt_throw i -> TAt_throw (f i)
+  | TAt_catch i -> TAt_catch (f i)
+  | TAt_try i -> TAt_try (f i)
+  | TAt_finally i -> TAt_finally (f i)
+  | TAt_synchronized i -> TAt_synchronized (f i)
 
   | EOF                  (i) -> EOF                  (f i) 
 
