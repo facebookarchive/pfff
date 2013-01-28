@@ -1872,8 +1872,8 @@ celem:
 /*(*************************************************************************)*/
 
 class_interface:
- TAt_interface TIdent super_opt 
- protocol_reference_list_opt instance_variables_opt
+ TAt_interface TIdent super_opt  protocol_reference_list_opt 
+ instance_variables_opt
  interface_declaration_list_opt
  TAt_end 
   { }
@@ -1886,8 +1886,8 @@ class_implementation:
   { }
 
 category_interface:
- TAt_interface TIdent TOPar TIdent TCPar 
- protocol_reference_list_opt interface_declaration_list_opt
+ TAt_interface TIdent TOPar TIdent TCPar protocol_reference_list_opt 
+ interface_declaration_list_opt
  TAt_end
   { }
 
@@ -1898,8 +1898,8 @@ category_implementation:
  { }
 
 protocol_declaration:
- TAt_protocol TIdent
- protocol_reference_list_opt interface_declaration_list_opt
+ TAt_protocol TIdent protocol_reference_list_opt 
+ interface_declaration_list_opt
  TAt_end
  { }
 
@@ -1907,7 +1907,14 @@ super_opt:
  | TCol TIdent { }
  | /*(*empty*)*/ { }
 
-protocol_reference: TInf /*TODO*/ TSup { }
+protocol_reference: TInf protocol_list TSup { }
+
+protocol_list:
+ | protocol_name { }
+ | protocol_list TComma protocol_name { }
+
+protocol_name: ident { }
+                     
 
 interface_declaration: method_declaration { }
 
