@@ -1852,6 +1852,7 @@ celem:
  /*(* objcext: *)*/
  | class_interface      { DeclTodo }
  | class_implementation { DeclTodo }
+ | category_interface   { DeclTodo }
 
  /*
  (* when have error recovery, we can end up skipping the
@@ -1877,6 +1878,12 @@ class_implementation:
  TAt_implementation TIdent super_opt
  instance_variables_opt
  implementation_definition_list_opt
+ TAt_end
+  { }
+
+category_interface:
+ TAt_interface TIdent TOPar TIdent TCPar 
+ protocol_reference_list_opt interface_declaration_list_opt
  TAt_end
   { }
 
