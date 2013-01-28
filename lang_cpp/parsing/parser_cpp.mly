@@ -583,6 +583,8 @@ keyword_argument_list:
 
 keyword_argument:
  | selector TCol expr { }
+ /*(* TODO added cos wrong typedef detection *)*/
+ | selector TCol type_id { }
  | TCol expr { } 
 
 /*(*----------------------------*)*/
