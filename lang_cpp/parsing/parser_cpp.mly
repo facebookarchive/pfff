@@ -277,12 +277,9 @@ module Ast = Ast_cpp
 main:  
  | translation_unit EOF     { $1 }
 
-
 translation_unit: 
- | external_declaration                  
-     { [$1] }
- | translation_unit external_declaration
-     { $1 ++ [$2] }
+ | external_declaration                      { [$1] }
+ | translation_unit external_declaration     { $1 ++ [$2] }
 
 external_declaration: 
  | function_definition            { Func (FunctionOrMethod $1) }
@@ -556,8 +553,34 @@ primary_expr:
 
  /*(* c++ext: *)*/
  | Tthis { mk_e(This $1) [] }
+ /*(* contains identifier rule *)*/
  | primary_cplusplus_id { $1 }
 
+ /*(* objcext: *)*/
+ | message_expression { mk_e(ExprTodo) noii }
+
+/*(*----------------------------*)*/
+/*(*2 objcext: *)*/
+/*(*----------------------------*)*/
+
+message_expression: TOCro receiver message_selector TCCro { }
+
+receiver: 
+ | expr { }
+ | enum_name_or_typedef_name_or_simple_class_name { }
+ /*TODO super */
+
+message_selector:
+ | selector { }
+ | keyword_argument_list { }
+
+keyword_argument_list:
+ | keyword_argument { }
+ | keyword_argument_list keyword_argument { }
+
+keyword_argument:
+ | selector TCol expr { }
+ | TCol expr { } 
 
 /*(*----------------------------*)*/
 /*(*2 c++ext: *)*/
@@ -1805,6 +1828,11 @@ celem:
  | cpp_directive       { CppTop $1 }
  | cpp_ifdef_directive /*(*external_declaration_list ...*)*/ { IfdefTop $1 }
  | cpp_other           { $1 }
+
+ /*(* objcext: *)*/
+ | class_interface      { DeclTodo }
+ | class_implementation { DeclTodo }
+
  /*
  (* when have error recovery, we can end up skipping the
   * beginning of the file, and so get trailing unclose } at
@@ -1813,6 +1841,132 @@ celem:
  | TCBrace { EmptyDef $1 }
 
  | EOF        { FinalDef $1 }
+
+/*(*************************************************************************)*/
+/*(*1 Class, Objective C *)*/
+/*(*************************************************************************)*/
+
+class_interface:
+ TAt_interface TIdent super_opt 
+ protocol_reference_list_opt instance_variables_opt
+ interface_declaration_list_opt
+ TAt_end 
+  { }
+
+class_implementation:
+ TAt_implementation TIdent super_opt
+ instance_variables_opt
+ implementation_definition_list_opt
+ TAt_end
+  { }
+
+super_opt:
+ | TCol TIdent { }
+ | /*(*empty*)*/ { }
+
+protocol_reference: TInf /*TODO*/ TSup { }
+
+interface_declaration: method_declaration { }
+
+method_declaration:
+ | class_method_declaration { }
+ | instance_method_declaration { }
+
+class_method_declaration: TPlus method_type_opt method_selector TPtVirg 
+  { }
+
+instance_method_declaration: TMinus method_type_opt method_selector TPtVirg
+  { }
+
+method_type: TOPar type_id TCPar { }
+
+method_selector: 
+ | unary_selector { }
+ | keyword_selector { }
+
+unary_selector: selector { }
+
+keyword_selector: 
+ | keyword_declarator { }
+ | keyword_selector keyword_declarator { }
+
+keyword_declarator:
+ | TCol method_type_opt TIdent { }
+ | selector TCol method_type_opt TIdent { }
+
+selector: TIdent { }
+
+method_type_opt:
+ | method_type { }
+ | /*(*empty*)*/ { }
+
+
+protocol_reference_list_opt:
+ | protocol_reference_list { }
+ | /*(*empty*)*/ { }
+
+protocol_reference_list:
+ | protocol_reference                         { }
+ | protocol_reference_list protocol_reference { }
+
+
+
+interface_declaration_list_opt:
+ | interface_declaration_list { }
+ | /*(*empty*)*/ { }
+
+interface_declaration_list:
+ | interface_declaration                         { }
+ | interface_declaration_list interface_declaration { }
+
+implementation_definition_list_opt:
+ | implementation_definition_list { }
+ | /*(*empty*)*/ { }
+
+implementation_definition_list:
+ | implementation_definition                         { }
+ | implementation_definition_list implementation_definition { }
+
+implementation_definition:
+ /*(* covers also function_definition in C++ *)*/
+ | declaration { }
+ | method_definition { }
+
+method_definition:
+ | class_method_definition { }
+ | instance_method_definition { }
+
+class_method_definition: 
+ TPlus method_type_opt method_selector declaration_list_opt 
+ compound { }
+
+instance_method_definition: 
+ TMinus method_type_opt method_selector declaration_list_opt 
+ compound { }
+
+instance_variables_opt:
+ | instance_variables { }
+ | /*(*empty*)*/ { }
+
+instance_variables: TOBrace instance_variable_declaration_list TCBrace { }
+
+instance_variable_declaration_list:
+ | instance_variable_declaration                         { }
+ | instance_variable_declaration_list instance_variable_declaration { }
+
+instance_variable_declaration:
+ visibility_specification_opt struct_declaration { }
+
+struct_declaration: decl_spec declarator TPtVirg { }
+
+visibility_specification_opt:
+ | visibility_specification { }
+ | /*(*empty*)*/ { }
+
+visibility_specification:
+ | TAt_public { }
+ | TAt_private { }
+ | TAt_protected { }
 
 /*(*************************************************************************)*/
 /*(*1 xxx_list, xxx_opt *)*/
