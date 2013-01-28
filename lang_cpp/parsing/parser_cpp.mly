@@ -1855,6 +1855,7 @@ celem:
  | class_interface      { DeclTodo }
  | class_implementation { DeclTodo }
  | category_interface   { DeclTodo }
+ | category_implementation { DeclTodo }
 
  /*
  (* when have error recovery, we can end up skipping the
@@ -1888,6 +1889,12 @@ category_interface:
  protocol_reference_list_opt interface_declaration_list_opt
  TAt_end
   { }
+
+category_implementation:
+ TAt_implementation TIdent TOPar TIdent TCPar
+ implementation_definition_list_opt
+ TAt_end
+ { }
 
 super_opt:
  | TCol TIdent { }
