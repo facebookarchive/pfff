@@ -562,9 +562,10 @@ primary_expr:
  | primary_cplusplus_id { $1 }
 
  /*(* objcext: *)*/
- | message_expression { mk_e(ExprTodo) noii }
+ | message_expression  { mk_e(ExprTodo) noii }
  | protocol_expression { mk_e(ExprTodo) noii }
  | selector_expression { mk_e(ExprTodo) noii }
+ | encode_expression   { mk_e(ExprTodo) noii }
 
 /*(*----------------------------*)*/
 /*(*2 objcext: *)*/
@@ -606,6 +607,11 @@ keyword_name_list:
 keyword_name:
  | selector TCol { }
  | TCol { }
+
+encode_expression: TAt_encode TOPar encode_name TCPar { }
+
+/*(* TODO: should be just type_name *)*/
+encode_name: ident { }
 
 /*(*----------------------------*)*/
 /*(*2 c++ext: *)*/
