@@ -101,7 +101,7 @@ let compute_database ?(verbose=false) files_or_dirs =
       Hashtbl.create 101
     in
 
-    ast2 +> List.iter (fun (ast, (_str, toks)) ->
+    ast2 +> List.iter (fun (ast, toks) ->
       let prefs = Highlight_code.default_highlighter_preferences in
 
       Highlight_cpp.visit_toplevel ~tag_hook:(fun info categ -> 
@@ -145,7 +145,7 @@ let compute_database ?(verbose=false) files_or_dirs =
     Check_variables_cpp.check_and_annotate_program
       ast;
 
-    ast2 +> List.iter (fun (ast, (_str, toks)) ->
+    ast2 +> List.iter (fun (ast, toks) ->
       let prefs = Highlight_code.default_highlighter_preferences in
 
       Highlight_cpp.visit_toplevel ~tag_hook:(fun info categ -> 

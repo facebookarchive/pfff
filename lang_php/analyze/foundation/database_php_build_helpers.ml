@@ -165,7 +165,7 @@ let get_newid db =
   id
 
 let add_toplevel2 file (top, info_item) db = 
-  let (str,toks) = info_item in
+  let toks = info_item in
 
   let newfullid = 
     try 
@@ -219,7 +219,7 @@ let add_toplevel2 file (top, info_item) db =
 
   db.defs.toplevels#add2 (newid, top);
 
-  db.defs.str_of_topid#add2 (newid, str);
+(* nomore:  db.defs.str_of_topid#add2 (newid, str); *)
   db.defs.tokens_of_topid#add2 (newid, toks);
   db.defs.range_of_topid#add2 (newid, range);
 

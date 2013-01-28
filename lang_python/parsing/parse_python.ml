@@ -11,21 +11,17 @@
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * file license.txt for more details.
  *)
-
 open Common 
 
 module Ast = Ast_python
 module Flag = Flag_parsing_python
 module TH   = Token_helpers_python
-
 module T = Parser_python
-
 module PI = Parse_info
 
 (*****************************************************************************)
 (* Prelude *)
 (*****************************************************************************)
-
 (* Lots of copy paste with my other parsers (e.g. C++, PHP, sql) but
  * copy paste is sometimes ok.
  *)
@@ -35,10 +31,10 @@ module PI = Parse_info
 (*****************************************************************************)
 
 type program2 = toplevel2 list
+  (* the token list contains also the comment-tokens *)
   and toplevel2 = 
-    Ast.toplevel (* NotParsedCorrectly if parse error *) * info_item
-     (* the token list contains also the comment-tokens *)
-     and info_item = (string * Parser_python.token list)
+  Ast_python.toplevel (* NotParsedCorrectly if parse error *) * 
+    Parser_python.token list
 
 let program_of_program2 xs = 
   xs +> List.map fst
@@ -118,7 +114,7 @@ let parse2 filename =
   let toks_orig = tokens filename in
 
   (* TODO *)
-  [(), ("", toks_orig)], stat
+  [(), toks_orig], stat
 
 
 let parse a = 

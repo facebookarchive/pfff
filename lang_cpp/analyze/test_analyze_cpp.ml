@@ -19,7 +19,7 @@ let test_highlight_cpp file =
 
   let h = Hashtbl.create 101 in
 
-  ast2 +> List.iter (fun (ast, (_str, toks)) ->
+  ast2 +> List.iter (fun (ast, toks) ->
     (* computing the token attributes *)
     let prefs = Highlight_code.default_highlighter_preferences in
 

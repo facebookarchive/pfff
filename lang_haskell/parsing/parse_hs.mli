@@ -1,8 +1,7 @@
 
 type program2 = toplevel2 list
- and toplevel2 = Ast_hs.toplevel * info_item
-     (* the token list contains also the comment-tokens *)
-     and info_item = (string * Parser_hs.token list)
+ (* the token list contains also the comment-tokens *)
+ and toplevel2 = Ast_hs.toplevel * Parser_hs.token list
 
 (* This is the main function *)
 val parse:

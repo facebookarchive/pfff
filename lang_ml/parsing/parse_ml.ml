@@ -22,7 +22,6 @@ module PI = Parse_info
 (*****************************************************************************)
 (* Prelude *)
 (*****************************************************************************)
-
 (* Lots of copy paste with my other parsers (e.g. C++, PHP, sql) but
  * copy paste is sometimes ok.
  *)
@@ -32,14 +31,12 @@ module PI = Parse_info
 (*****************************************************************************)
 
 type program2 = toplevel2 list
+  (* the token list contains also the comment-tokens *)
   and toplevel2 = 
-    Ast.toplevel (* NotParsedCorrectly if parse error *) * info_item
-     (* the token list contains also the comment-tokens *)
-     and info_item = (string * Parser_ml.token list)
+    Ast.toplevel (* NotParsedCorrectly if parse error *) * Parser_ml.token list
 
 let program_of_program2 xs = 
   xs +> List.map fst
-
 
 (*****************************************************************************)
 (* Wrappers *)
@@ -62,9 +59,7 @@ let rec distribute_info_items_toplevel2 xs toks filename =
   | [] -> raise Impossible
   | [Ast_ml.FinalDef e] -> 
       (* assert (null toks) ??? no cos can have whitespace tokens *) 
-      let info_item = Parse_info.mk_info_item 
-        ~info_of_tok:TH.info_of_tok toks 
-      in
+      let info_item = toks in
       [Ast_ml.FinalDef e, info_item]
   | ast::xs ->
 
@@ -80,10 +75,7 @@ let rec distribute_info_items_toplevel2 xs toks filename =
             | _ -> raise Impossible
           ))
       in
-      let info_item = Parse_info.mk_info_item 
-        ~info_of_tok:TH.info_of_tok
-        toks_before_max 
-      in
+      let info_item = toks_before_max in
       (ast, info_item)::distribute_info_items_toplevel2 xs toks_after filename
 
 
@@ -257,10 +249,7 @@ let parse2 filename =
 
       stat.PI.bad     <- Common.cat filename +> List.length;
 
-      let info_item = 
-        Parse_info.mk_info_item ~info_of_tok:TH.info_of_tok 
-          (List.rev tr.PI.passed) 
-      in 
+      let info_item = List.rev tr.PI.passed in
       [Ast.NotParsedCorrectly info_of_bads, info_item], 
       stat
 

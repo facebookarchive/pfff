@@ -12,7 +12,6 @@
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the file
  * license.txt for more details.
  *)
-
 open Common 
 
 module Ast = Ast_js
@@ -24,7 +23,6 @@ module PI = Parse_info
 (*****************************************************************************)
 (* Prelude *)
 (*****************************************************************************)
-
 (* Lots of copy paste with my other parsers (e.g. PHP, C, sql) but
  * copy paste is sometimes ok.
  *)
@@ -34,10 +32,10 @@ module PI = Parse_info
 (*****************************************************************************)
 
 type program2 = toplevel2 list
+  (* the token list contains also the comment-tokens *)
   and toplevel2 = 
-    Ast_js.toplevel (* NotParsedCorrectly if parse error *) * info_item
-     (* the token list contains also the comment-tokens *)
-     and info_item = (string * Parser_js.token list)
+    Ast_js.toplevel (* NotParsedCorrectly if parse error *) * 
+      Parser_js.token list
 
 let program_of_program2 xs = 
   xs +> List.map fst
@@ -54,32 +52,6 @@ let pr2_err, pr2_once = Common.mk_pr2_wrappers Flag.verbose_parsing
 let lexbuf_to_strpos lexbuf     = 
   (Lexing.lexeme lexbuf, Lexing.lexeme_start lexbuf)    
 
-let mk_info_item2 filename toks = 
-  let buf = Buffer.create 100 in
-  let s = 
-    (* old: get_slice_file filename (line1, line2) *)
-    begin
-      toks +> List.iter (fun tok -> 
-        match TH.pinfo_of_tok tok with
-        | Parse_info.OriginTok _ 
-        | Parse_info.ExpandedTok _ ->
-            Buffer.add_string buf (TH.str_of_tok tok)
-
-        (* the virtual semicolon *)
-        | Parse_info.FakeTokStr _ -> 
-            ()
-
-        | Parse_info.Ab  -> raise Impossible
-      );
-      Buffer.contents buf
-    end
-  in
-  (s, toks) 
-
-let mk_info_item a b = 
-  Common.profile_code "Parsing.mk_info_item" 
-    (fun () -> mk_info_item2 a b)
-
 (* on very huge file, this function was previously segmentation fault
  * in native mode because span was not tail call
  *)
@@ -88,7 +60,7 @@ let rec distribute_info_items_toplevel2 xs toks filename =
   | [] -> raise Impossible
   | [Ast_js.FinalDef e] -> 
       (* assert (null toks) ??? no cos can have whitespace tokens *) 
-      let info_item = mk_info_item filename toks in
+      let info_item = toks in
       [Ast_js.FinalDef e, info_item]
   | ast::xs ->
       (match ast with
@@ -108,7 +80,7 @@ let rec distribute_info_items_toplevel2 xs toks filename =
                 | _ -> raise Impossible
               ))
           in
-          let info_item = mk_info_item filename toks_before_max in
+          let info_item = toks_before_max in
           (ast, info_item)::distribute_info_items_toplevel2 xs toks_after filename
       )
 
@@ -437,7 +409,7 @@ let parse2 filename =
 
       stat.PI.bad     <- Common.cat filename +> List.length;
 
-      let info_item = mk_info_item filename (List.rev tr.PI.passed) in 
+      let info_item = List.rev tr.PI.passed in 
       [Ast.NotParsedCorrectly info_of_bads, info_item], 
       stat
 

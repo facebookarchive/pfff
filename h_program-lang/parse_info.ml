@@ -387,7 +387,7 @@ let mk_info_item2 ~info_of_tok toks  =
   in
   (s, toks) 
 
-let mk_info_item ~info_of_tok a = 
+let mk_info_item_DEPRECATED ~info_of_tok a = 
   Common.profile_code "Parsing.mk_info_item" 
     (fun () -> mk_info_item2 ~info_of_tok a)
 

@@ -37,9 +37,8 @@ module TH = Parser_lisp
 (*****************************************************************************)
 
 type program2 = toplevel2 list
- and toplevel2 = Ast_lisp.toplevel * info_item
      (* the token list contains also the comment-tokens *)
-     and info_item = (string * Parser_lisp.token list)
+ and toplevel2 = Ast_lisp.toplevel * Parser_lisp.token list
 
 let program_of_program2 xs = 
   xs +> List.map fst
@@ -113,7 +112,7 @@ let parse2 filename =
   let toks_orig = tokens filename in
 
   (* TODO *)
-  [(), ("", toks_orig)], stat
+  [(), toks_orig], stat
 
 let parse a = 
   Common.profile_code "Parse_lisp.parse" (fun () -> parse2 a)

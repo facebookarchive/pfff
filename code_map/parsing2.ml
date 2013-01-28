@@ -151,7 +151,7 @@ let tokens_with_categ_of_file_helper ~parse ~highlight_visit
   let ast2 = parse file in
 
   if !Flag.verbose_visual then pr2 (spf "Highlighting: %s" file);
-  ast2 +> List.map (fun (ast, (_str, toks)) ->
+  ast2 +> List.map (fun (ast, toks) ->
 
     (* computing the token attributes *)
     highlight_visit ~tag_hook:(fun info categ -> Hashtbl.add h info categ)
@@ -258,7 +258,7 @@ let tokens_with_categ_of_file file hentities =
         ~parse:(parse_cache 
          (fun file -> Opa (Parse_opa.parse_just_tokens file))
          (function 
-         | Opa (ast, toks) -> [ast, ("", toks)] 
+         | Opa (ast, toks) -> [ast, toks] 
          | _ -> raise Impossible))
         ~highlight_visit:Highlight_opa.visit_toplevel
         ~info_of_tok:Token_helpers_opa.info_of_tok
@@ -280,7 +280,7 @@ let tokens_with_categ_of_file file hentities =
         ~parse:(parse_cache 
          (fun file -> Java (Parse_java.parse file +> fst))
           (function 
-          | Java (ast, toks) -> [Common.some ast, ("", toks)] 
+          | Java (ast, toks) -> [Common.some ast, (toks)] 
           | _ -> raise Impossible))
         ~highlight_visit:Highlight_java.visit_toplevel
         ~info_of_tok:Token_helpers_java.info_of_tok
@@ -345,7 +345,7 @@ let tokens_with_categ_of_file file hentities =
         ~parse:(parse_cache 
           (fun file -> Html (Parse_html.parse file))
           (function 
-          | Html (ast, toks) -> [ast, ("", toks)] 
+          | Html (ast, toks) -> [ast, toks] 
           | _ -> raise Impossible))
         ~highlight_visit:Highlight_html.visit_toplevel
         ~info_of_tok:Token_helpers_html.info_of_tok

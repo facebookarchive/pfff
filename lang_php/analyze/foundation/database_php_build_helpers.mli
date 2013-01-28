@@ -14,7 +14,7 @@ val first_comment :
 val get_newid : Database_php.database -> Entity_php.id
 val add_toplevel2 :
   string ->
-  Ast_php.toplevel * (string * Parser_php.token list) ->
+  Ast_php.toplevel * Parser_php.token list ->
   Database_php.database -> Entity_php.id
 val add_nested_id_and_ast :
   enclosing_id:Database_php.id ->

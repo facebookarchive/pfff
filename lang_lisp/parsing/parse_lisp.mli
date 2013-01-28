@@ -1,8 +1,7 @@
 
 type program2 = toplevel2 list
- and toplevel2 = Ast_lisp.toplevel * info_item
      (* the token list contains also the comment-tokens *)
-     and info_item = (string * Parser_lisp.token list)
+ and toplevel2 = Ast_lisp.toplevel * Parser_lisp.token list
 
 (* This is the main function *)
 val parse:

@@ -301,7 +301,7 @@ let str_debug_of_annotation a =
 (*****************************************************************************)
 
 let annotations_of_program_with_comments2 asts_and_tokens =
- asts_and_tokens +> List.map (fun (ast, (_str, toks)) ->
+ asts_and_tokens +> List.map (fun (ast, toks) ->
   toks +> List.map (function
   | Parser_php.T_COMMENT info
   | Parser_php.T_DOC_COMMENT info 

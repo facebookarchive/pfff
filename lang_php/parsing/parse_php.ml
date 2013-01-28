@@ -38,10 +38,9 @@ module PI = Parse_info
 
 (*s: type program2 *)
 type program2 = toplevel2 list
-  and toplevel2 = 
-    Ast_php.toplevel * info_item
      (* the token list contains also the comment-tokens *)
-     and info_item = (string * Parser_php.token list)
+  and toplevel2 = Ast_php.toplevel * Parser_php.token list
+
 type program_with_comments = program2
 (*e: type program2 *)
 
@@ -66,27 +65,6 @@ let lexbuf_to_strpos lexbuf     =
 let token_to_strpos tok = 
   (TH.str_of_tok tok, TH.pos_of_tok tok)
 (*x: parse_php helpers *)
-let mk_info_item2 filename toks = 
-  let buf = Buffer.create 100 in
-  let s = 
-    (* old: get_slice_file filename (line1, line2) *)
-    begin
-      toks +> List.iter (fun tok -> 
-        match TH.pinfo_of_tok tok with
-        | Parse_info.OriginTok _ 
-        | Parse_info.ExpandedTok _ ->
-            Buffer.add_string buf (TH.str_of_tok tok)
-
-        | Parse_info.Ab | Parse_info.FakeTokStr _ -> raise Impossible
-      );
-      Buffer.contents buf
-    end
-  in
-  (s, toks) 
-
-let mk_info_item a b = 
-  Common.profile_code "Parsing.mk_info_item" 
-    (fun () -> mk_info_item2 a b)
 (*x: parse_php helpers *)
 (* on very huge file, this function was previously segmentation fault
  * in native mode because span was not tail call
@@ -96,7 +74,7 @@ let rec distribute_info_items_toplevel2 xs toks filename =
   | [] -> raise Impossible
   | [Ast_php.FinalDef e] -> 
       (* assert (null toks) ??? no cos can have whitespace tokens *) 
-      let info_item = mk_info_item filename toks in
+      let info_item = toks in
       [Ast_php.FinalDef e, info_item]
   | ast::xs ->
       
@@ -116,7 +94,7 @@ let rec distribute_info_items_toplevel2 xs toks filename =
           | _ -> raise Impossible
         ))
       in
-      let info_item = mk_info_item filename toks_before_max in
+      let info_item = toks_before_max in
       (ast, info_item)::distribute_info_items_toplevel2 xs toks_after filename
 
 let distribute_info_items_toplevel a b c = 
@@ -400,7 +378,7 @@ let parse2 ?(pp=(!Flag.pp_default)) filename =
 
       stat.PI.bad     <- Common.cat filename +> List.length;
 
-      let info_item = mk_info_item filename (List.rev tr.PI.passed) in 
+      let info_item = (List.rev tr.PI.passed) in 
       [Ast.NotParsedCorrectly info_of_bads, info_item], 
       stat
 (*x: Parse_php.parse *)
@@ -428,9 +406,9 @@ let parse_program ?pp file =
 let ast_and_tokens file =
   let (ast2, _stat) = parse file in
   let ast = 
-    ast2 +> List.map (fun (top, (_, toks)) -> top) in
+    ast2 +> List.map (fun (top, _toks) -> top) in
   let toks = 
-    ast2 +> List.map (fun (_top, (_, toks)) -> toks) +> List.flatten in
+    ast2 +> List.map (fun (_top, toks) -> toks) +> List.flatten in
   ast, toks
 
 (*****************************************************************************)

@@ -215,8 +215,8 @@ let s_of_add = function
  *   too many places where we do ugly hack around newline
  *)
 let rec ast2_to_elts ast2 =
-  ast2 |> List.map (fun (_ast, (_s, toks)) ->
-    toks |> List.map (fun tok ->
+  ast2 +> List.map (fun (_ast, toks) ->
+    toks +> List.map (fun tok ->
       let info = TH.info_of_tok tok in
       match TH.pinfo_of_tok tok with
       | Ab | FakeTokStr _ | ExpandedTok _ -> raise Impossible

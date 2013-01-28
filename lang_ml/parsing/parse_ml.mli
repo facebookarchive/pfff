@@ -1,9 +1,8 @@
 
 type program2 = toplevel2 list
-  and toplevel2 = 
-    Ast_ml.toplevel (* NotParsedCorrectly if parse error *) * info_item
      (* the token list contains also the comment-tokens *)
-     and info_item = (string * Parser_ml.token list)
+  and toplevel2 = 
+  Ast_ml.toplevel (* NotParsedCorrectly if parse error *) * Parser_ml.token list
 
 exception Parse_error of Parse_info.info
 

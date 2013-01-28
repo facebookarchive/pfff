@@ -1,8 +1,7 @@
 
 type program2 = toplevel2 list
-   and toplevel2 = Ast_cpp.toplevel * info_item
     (* the token list contains now also the comment-tokens  *)
-     and info_item = (string * Parser_cpp.token list)
+   and toplevel2 = Ast_cpp.toplevel * Parser_cpp.token list
 
 exception Parse_error of Parse_info.info
 

@@ -2,10 +2,8 @@
 
 (*s: type program2 *)
 type program2 = toplevel2 list
-  and toplevel2 = 
-    Ast_php.toplevel * info_item
-     (* the token list contains also the comment-tokens *)
-     and info_item = (string * Parser_php.token list)
+  (* the token list contains also the comment-tokens *)
+  and toplevel2 = Ast_php.toplevel * Parser_php.token list
 type program_with_comments = program2
 (*e: type program2 *)
 

@@ -612,6 +612,8 @@ MemberField _|MemberDecl _ | Access (_, _))
       -> tag ii KeywordExn
     | T.TAt_synchronized ii -> tag ii Keyword
 
+    | T.TAt_property ii -> tag ii Keyword
+
     (* thrift *)
     | T.TIdent (("service" | "include" | "extends"), ii) ->
         tag ii Keyword

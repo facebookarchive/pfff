@@ -139,7 +139,7 @@ let compute_database ?(verbose=false) files_or_dirs =
     in
 
     (* this is quite similar to what we do in tags_ml.ml *)
-    ast2 +> List.iter (fun (ast, (_str, toks)) ->
+    ast2 +> List.iter (fun (ast, toks) ->
       let prefs = Highlight_code.default_highlighter_preferences in
 
       Highlight_ml.visit_toplevel 
@@ -284,7 +284,7 @@ let compute_database ?(verbose=false) files_or_dirs =
      *)
     let hmodule_aliases = Hashtbl.create 11 in
 
-    ast2 +> List.iter (fun (ast, (_str, toks)) ->
+    ast2 +> List.iter (fun (ast, toks) ->
       let toks = toks +> Common.exclude (function
         | T.TCommentSpace _ -> true
         | _ -> false

@@ -128,7 +128,7 @@ let compute_database ?(verbose=false) files_or_dirs =
       Class_js.extract_complete_name_of_info ast 
     in
 
-    ast2 +> List.iter (fun (ast, (_str, toks)) ->
+    ast2 +> List.iter (fun (ast, toks) ->
       let prefs = Highlight_code.default_highlighter_preferences in
 
       Highlight_js.visit_toplevel 
@@ -165,7 +165,7 @@ let compute_database ?(verbose=false) files_or_dirs =
 
     let (ast2, _stat) = Parse_js.parse file in
 
-    ast2 +> List.iter (fun (ast, (_str, toks)) ->
+    ast2 +> List.iter (fun (ast, toks) ->
 
       let toks = toks +> Common.exclude (function
         | T.TCommentSpace _ -> true

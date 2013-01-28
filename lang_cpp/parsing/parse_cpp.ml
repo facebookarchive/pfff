@@ -41,8 +41,7 @@ module Hack = Parsing_hacks_lib
 (*****************************************************************************)
 
 type program2 = toplevel2 list
-     and toplevel2 = Ast.toplevel * info_item
-      and info_item =  string * Parser.token list
+     and toplevel2 = Ast.toplevel * Parser.token list
 
 let program_of_program2 xs = 
   xs +> List.map fst
@@ -72,21 +71,6 @@ let lexbuf_to_strpos lexbuf     =
 
 let token_to_strpos tok = 
   (TH.str_of_tok tok, TH.pos_of_tok tok)
-
-let mk_info_item2 filename toks = 
-  let s = 
-    Common.with_open_stringbuf (fun (_pr, buf) ->
-      toks +> List.iter (fun tok -> 
-        match TH.pinfo_of_tok tok with
-        | PI.OriginTok _ -> Buffer.add_string buf (TH.str_of_tok tok)
-        | PI.ExpandedTok _ | PI.FakeTokStr _ -> ()
-        | PI.Ab -> raise Impossible
-      );
-    )
-  in
-  (s, toks) 
-let mk_info_item a b = 
-  Common.profile_code "Parse_cpp.mk_info_item"  (fun () -> mk_info_item2 a b)
 
 (*****************************************************************************)
 (* Error diagnostic *)
@@ -437,11 +421,11 @@ let parse2 ?(lang=Cplusplus) file =
          * the lines in the token from the correct file ?
          *)
     in
-    let info = mk_info_item file (List.rev tr.PI.passed) in 
+    let info = List.rev tr.PI.passed in 
 
     (* some stat updates *)
     stat.Stat.commentized <- 
-      stat.Stat.commentized + count_lines_commentized (snd info);
+      stat.Stat.commentized + count_lines_commentized info;
     (match elem with
     | Ast.NotParsedCorrectly xs -> 
         if !was_define && !Flag.filter_define_error
@@ -466,7 +450,7 @@ let parse ?lang file  =
       parse2 ?lang file
     with Stack_overflow ->
       pr2 (spf "PB stack overflow in %s" file);
-      [(Ast.NotParsedCorrectly [], ("", []))], {Stat.
+      [(Ast.NotParsedCorrectly [], ([]))], {Stat.
         correct = 0;
         bad = Common.nblines_with_wc file;
         filename = file;

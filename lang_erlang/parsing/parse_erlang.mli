@@ -1,9 +1,9 @@
 
 type program2 = toplevel2 list
-  and toplevel2 = 
-    Ast_erlang.toplevel (* NotParsedCorrectly if parse error *) * info_item
      (* the token list contains also the comment-tokens *)
-     and info_item = (string * Parser_erlang.token list)
+  and toplevel2 = 
+    Ast_erlang.toplevel (* NotParsedCorrectly if parse error *) * 
+      Parser_erlang.token list
 
 (* This is the main function *)
 val parse:

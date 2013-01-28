@@ -67,7 +67,7 @@ let extract_annotations str =
  * would require to lex the comment.
  *)
 let annotations_of_program_with_comments asts_and_tokens =
-  asts_and_tokens +> List.map (fun (ast, (_str, toks)) ->
+  asts_and_tokens +> List.map (fun (ast, toks) ->
     toks +> List.map (function
     | Parser_js.TComment tok ->
         let s = Ast_js.str_of_info tok in

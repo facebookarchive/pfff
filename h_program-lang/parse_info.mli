@@ -125,7 +125,7 @@ val get_orig_info: (parse_info -> 'a) -> info -> 'a
 val compare_pos: info -> info -> int
 val min_max_ii_by_pos: info list -> info * info
 
-val mk_info_item: 
+val mk_info_item_DEPRECATED: 
   info_of_tok:('tok -> info) -> 'tok list -> string * 'tok list
 
 val lexbuf_to_strpos:

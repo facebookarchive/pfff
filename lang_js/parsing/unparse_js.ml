@@ -99,7 +99,7 @@ let (string_of_program2_using_tokens: Parse_js.program2 -> string) =
           raise Todo
     in
     
-    ast2 |> List.iter (fun (ast, (s, toks)) ->
+    ast2 +> List.iter (fun (ast, toks) ->
 
       let toks = [fake_tok] ++ toks ++ [fake_tok] in
       

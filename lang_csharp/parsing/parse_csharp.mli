@@ -1,9 +1,9 @@
 
 type program2 = toplevel2 list
+  (* the token list contains also the comment-tokens *)
   and toplevel2 = 
-    Ast_csharp.toplevel (* NotParsedCorrectly if parse error *) * info_item
-     (* the token list contains also the comment-tokens *)
-     and info_item = (string * Parser_csharp.token list)
+    Ast_csharp.toplevel (* NotParsedCorrectly if parse error *) * 
+      Parser_csharp.token list
 
 (* This is the main function *)
 val parse:

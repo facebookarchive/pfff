@@ -11,14 +11,11 @@
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * file license.txt for more details.
  *)
-
 open Common 
 
 module Ast = Ast_hs
 module Flag = Flag_parsing_hs
-
 module PI = Parse_info
-
 (* we don't need a full grammar for lisp code, so we put everything,
  * the token type, the helper in parser_hs. No token_helpers_hs.ml
  *)
@@ -27,7 +24,6 @@ module TH = Parser_hs
 (*****************************************************************************)
 (* Prelude *)
 (*****************************************************************************)
-
 (* 
  * alt: 
  *  - Could reuse the parser in ocamlsexp ? but they just have Atom | Sexp
@@ -40,9 +36,8 @@ module TH = Parser_hs
 (*****************************************************************************)
 
 type program2 = toplevel2 list
- and toplevel2 = Ast_hs.toplevel * info_item
-     (* the token list contains also the comment-tokens *)
-     and info_item = (string * Parser_hs.token list)
+ (* the token list contains also the comment-tokens *)
+ and toplevel2 = Ast_hs.toplevel * Parser_hs.token list
 
 let program_of_program2 xs = 
   xs +> List.map fst
@@ -55,7 +50,7 @@ let pr2_err, pr2_once = Common.mk_pr2_wrappers Flag.verbose_parsing
 (*****************************************************************************)
 (* Helpers *)
 (*****************************************************************************)
-let lexbuf_to_strpos lexbuf     = 
+let lexbuf_to_strpos lexbuf = 
   (Lexing.lexeme lexbuf, Lexing.lexeme_start lexbuf)    
 
 (*****************************************************************************)
@@ -117,7 +112,7 @@ let parse2 filename =
   let toks_orig = tokens filename in
 
   (* TODO *)
-  [(), ("", toks_orig)], stat
+  [(), toks_orig], stat
 
 let parse a = 
   Common.profile_code "Parse_hs.parse" (fun () -> parse2 a)

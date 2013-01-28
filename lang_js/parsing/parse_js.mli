@@ -1,9 +1,9 @@
 
 type program2 = toplevel2 list
+  (* the token list contains also the comment-tokens *)
   and toplevel2 = 
-    Ast_js.toplevel (* NotParsedCorrectly if parse error *) * info_item
-     (* the token list contains also the comment-tokens *)
-     and info_item = (string * Parser_js.token list)
+    Ast_js.toplevel (* NotParsedCorrectly if parse error *) * 
+      Parser_js.token list
 
 exception Parse_error of Parse_info.info
 

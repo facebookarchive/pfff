@@ -11,7 +11,6 @@
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * file license.txt for more details.
  *)
-
 open Common 
 
 module Ast = Ast_nw
@@ -23,7 +22,6 @@ module PI = Parse_info
 (*****************************************************************************)
 (* Prelude *)
 (*****************************************************************************)
-
 (* Lots of copy paste with my other parsers (e.g. C++, PHP, sql) but
  * copy paste is sometimes ok.
  *)
@@ -33,10 +31,9 @@ module PI = Parse_info
 (*****************************************************************************)
 
 type program2 = toplevel2 list
-  and toplevel2 = 
-    Ast.toplevel (* NotParsedCorrectly if parse error *) * info_item
      (* the token list contains also the comment-tokens *)
-     and info_item = (string * Parser_nw.token list)
+  and toplevel2 = 
+    Ast.toplevel (* NotParsedCorrectly if parse error *) * Parser_nw.token list
 
 let program_of_program2 xs = 
   xs +> List.map fst
@@ -126,7 +123,7 @@ let parse2 filename =
   let toks_orig = tokens filename in
 
   (* TODO *)
-  [(), ("", toks_orig)], stat
+  [(), toks_orig], stat
 
 let parse a = 
   Common.profile_code "Parse_nw.parse" (fun () -> parse2 a)
