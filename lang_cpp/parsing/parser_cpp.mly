@@ -561,6 +561,7 @@ primary_expr:
 
  /*(* objcext: *)*/
  | message_expression { mk_e(ExprTodo) noii }
+ | protocol_expression { mk_e(ExprTodo) noii }
 
 /*(*----------------------------*)*/
 /*(*2 objcext: *)*/
@@ -586,6 +587,9 @@ keyword_argument:
  /*(* TODO added cos wrong typedef detection *)*/
  | selector TCol type_id { }
  | TCol expr { } 
+
+protocol_expression: TAt_protocol TOPar protocol_name TCPar { }
+
 
 /*(*----------------------------*)*/
 /*(*2 c++ext: *)*/
