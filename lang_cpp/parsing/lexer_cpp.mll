@@ -179,7 +179,10 @@ let keyword_table = Common.hash_of_list [
   "@catch", (fun ii -> TAt_catch ii);
   "@finally", (fun ii -> TAt_finally ii);
   "@synchronized", (fun ii -> TAt_synchronized ii);
-  
+
+   (* apple ext? *)
+  "@property", (fun ii -> TAt_property ii);
+
  ]
 
 let error_radix s = 

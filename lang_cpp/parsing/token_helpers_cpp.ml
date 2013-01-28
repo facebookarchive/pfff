@@ -499,6 +499,8 @@ let info_of_tok = function
   | TAt_try i -> i
   | TAt_finally i -> i
   | TAt_synchronized i -> i
+
+  | TAt_property i -> i
       
   | EOF                  (i) -> i
   
@@ -745,6 +747,8 @@ let visitor_info_of_tok f = function
   | TAt_try i -> TAt_try (f i)
   | TAt_finally i -> TAt_finally (f i)
   | TAt_synchronized i -> TAt_synchronized (f i)
+
+  | TAt_property i -> TAt_property (f i)
 
   | EOF                  (i) -> EOF                  (f i) 
 

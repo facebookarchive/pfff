@@ -212,6 +212,8 @@ module Ast = Ast_cpp
   TAt_throw TAt_try TAt_catch TAt_finally
   TAt_synchronized
 
+  TAt_property
+
 /*(*************************************************************************)*/
 /*(*1 Priorities *)*/
 /*(*************************************************************************)*/
@@ -1920,11 +1922,24 @@ protocol_list:
 protocol_name: ident { }
                      
 
-interface_declaration: method_declaration { }
+interface_declaration: 
+ | declaration { }
+ | method_declaration { }
+ | property_declaration { }
 
 method_declaration:
  | class_method_declaration { }
  | instance_method_declaration { }
+
+property_declaration: 
+ TAt_property TOPar property_list TCPar 
+  decl_spec declarator TPtVirg { }
+
+property_list:
+ | property_name { }
+ | property_list TComma property_name { }
+
+property_name: ident { }
 
 class_method_declaration: TPlus method_type_opt method_selector TPtVirg 
   { }
