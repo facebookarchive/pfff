@@ -18,6 +18,7 @@ module E = Database_code
 module G = Graph_code
 
 module Flag = Flag_parsing_cpp
+module T = Parser_cpp
 
 (*****************************************************************************)
 (* Prelude *)
@@ -56,6 +57,23 @@ let parse ~show_parse_error file =
     pr2_once (spf "PARSE ERROR with %s, exn = %s" file (Common.exn_to_s exn));
     raise exn
 
+let add_use_edge env (name, kind) =
+  let src = env.current in
+  let dst = (name, kind) in
+  (match () with
+  | _ when G.has_node dst env.g -> 
+      G.add_edge (src, dst) G.Use env.g
+
+  | _ -> 
+    G.add_node dst env.g;
+    let parent_target = G.not_found in
+    pr2 (spf "PB: lookup fail on %s (in %s)" 
+           (G.string_of_node dst) (G.string_of_node src));
+    env.g +> G.add_edge (parent_target, dst) G.Has;
+    env.g +> G.add_edge (src, dst) G.Use;
+    ()
+  )
+
 (*****************************************************************************)
 (* Defs *)
 (*****************************************************************************)
@@ -71,6 +89,26 @@ let extract_defs ~g ~ast ~readable =
 (*****************************************************************************)
 (* Uses *)
 (*****************************************************************************)
+let extract_uses ~g ~ast ~readable =
+  let env = {
+    current = (readable, E.File);
+    g;
+  }
+  in
+  let dir = Common.dirname readable in
+  ast +> List.iter (function
+  | T.TInclude (_, file, _) ->
+    (match file with
+    | s when s =~ "\"\\(.*\\)\"" ->
+      let s = Common.matched1 file in
+      let final = Filename.concat dir s in
+      add_use_edge env (final, E.File)
+    | s when s =~ "<\\(.*\\)>" ->
+      ()
+    | _ -> failwith ("weird include: " ^ file)
+    )
+  | _ -> ()
+  )
 
 (*****************************************************************************)
 (* Main entry point *)
@@ -95,5 +133,15 @@ let build ?(verbose=true) dir skip_list =
       let ast = parse ~show_parse_error:true file in
       extract_defs ~g ~ast ~readable;
     ));
+
+  (* step2: creating the 'Use' edges, the uses *)
+  if verbose then pr2 "\nstep2: extract uses";
+  files +> Common_extra.progress ~show:verbose (fun k -> 
+   List.iter (fun file ->
+     k();
+     let readable = Common.filename_without_leading_path root file in
+     let ast = parse ~show_parse_error:false file in
+     extract_uses ~g ~ast ~readable;
+   ));
 
   g
