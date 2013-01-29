@@ -221,8 +221,7 @@ module Ast = Ast_cpp
   TAt_optional
   TAt_required
   TAt_compatibility_alias
-  TAt___SB_QUOTE
-  TAt_FB_TO_STRING
+  TAt_Misc
 
 /*(*************************************************************************)*/
 /*(*1 Priorities *)*/

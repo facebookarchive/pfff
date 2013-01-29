@@ -622,8 +622,8 @@ MemberField _|MemberDecl _ | Access (_, _))
     | T.TAt_optional ii
     | T.TAt_required ii
     | T.TAt_compatibility_alias ii
-    | T.TAt___SB_QUOTE ii
-    | T.TAt_FB_TO_STRING ii
+
+    | T.TAt_Misc ii
       -> tag ii Keyword
 
 

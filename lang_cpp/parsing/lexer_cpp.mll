@@ -190,8 +190,10 @@ let keyword_table = Common.hash_of_list [
   "@optional", (fun ii -> TAt_optional ii);
   "@required", (fun ii -> TAt_required ii);
   "@compatibility_alias", (fun ii -> TAt_compatibility_alias ii);
-  "@__SB_QUOTE", (fun ii -> TAt___SB_QUOTE ii);
-  "@FB_TO_STRING", (fun ii -> TAt_FB_TO_STRING ii);
+
+  "@__SB_QUOTE", (fun ii -> TAt_Misc ii);
+  "@FB_TO_STRING", (fun ii -> TAt_Misc ii);
+  "@REGEXKITLITE_VERSION_CSTRING", (fun ii -> TAt_Misc ii);
  ]
 
 let error_radix s = 
