@@ -205,9 +205,6 @@ type expr =
   (*x: exprbis other constructors *)
   | AssignList  of tok (* list *)  * list_assign comma_list paren *
         tok (* = *) * expr
-  (* php-facebook-ext: the 'array' tok can also be 'strmap' or 'intmap'
-   * in fbstrict mode.
-   *)
   | ArrayLong of tok (* array *) * array_pair  comma_list paren
   (* php 5.4: https://wiki.php.net/rfc/shortsyntaxforarrays *)
   | ArrayShort of array_pair comma_list bracket
