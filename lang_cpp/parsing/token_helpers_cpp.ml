@@ -501,6 +501,17 @@ let info_of_tok = function
   | TAt_synchronized i -> i
 
   | TAt_property i -> i
+
+  | TAt_synthesize i -> i
+  | TAt_autoreleasepool i -> i
+  | TAt_dynamic i -> i
+  | TAt_YES i -> i
+  | TAt_NO i -> i
+  | TAt_optional i -> i
+  | TAt_required i -> i
+  | TAt_compatibility_alias i -> i
+  | TAt___SB_QUOTE i -> i
+  | TAt_FB_TO_STRING i -> i
       
   | EOF                  (i) -> i
   
@@ -749,6 +760,17 @@ let visitor_info_of_tok f = function
   | TAt_synchronized i -> TAt_synchronized (f i)
 
   | TAt_property i -> TAt_property (f i)
+
+  | TAt_synthesize i -> TAt_synthesize (f i)
+  | TAt_autoreleasepool i -> TAt_autoreleasepool (f i)
+  | TAt_dynamic i -> TAt_dynamic (f i)
+  | TAt_YES i -> TAt_YES (f i)
+  | TAt_NO i -> TAt_NO (f i)
+  | TAt_optional i -> TAt_optional (f i)
+  | TAt_required i -> TAt_required (f i)
+  | TAt_compatibility_alias i -> TAt_compatibility_alias (f i)
+  | TAt___SB_QUOTE i -> TAt___SB_QUOTE (f i)
+  | TAt_FB_TO_STRING i -> TAt_FB_TO_STRING (f i)
 
   | EOF                  (i) -> EOF                  (f i) 
 

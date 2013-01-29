@@ -182,7 +182,16 @@ let keyword_table = Common.hash_of_list [
 
    (* apple ext? *)
   "@property", (fun ii -> TAt_property ii);
-
+  "@synthesize", (fun ii -> TAt_synthesize ii);
+  "@autoreleasepool", (fun ii -> TAt_autoreleasepool ii);
+  "@dynamic", (fun ii -> TAt_dynamic ii);
+  "@YES", (fun ii -> TAt_YES ii);
+  "@NO", (fun ii -> TAt_NO ii);
+  "@optional", (fun ii -> TAt_optional ii);
+  "@required", (fun ii -> TAt_required ii);
+  "@compatibility_alias", (fun ii -> TAt_compatibility_alias ii);
+  "@__SB_QUOTE", (fun ii -> TAt___SB_QUOTE ii);
+  "@FB_TO_STRING", (fun ii -> TAt_FB_TO_STRING ii);
  ]
 
 let error_radix s = 
@@ -512,8 +521,11 @@ rule token = parse
   | "@" letter+ { 
       let info = tokinfo lexbuf in
       let s = tok lexbuf in
-      let f = Hashtbl.find keyword_table s in
-      f info
+      try 
+        let f = Hashtbl.find keyword_table s in
+        f info
+      with Not_found ->
+        failwith ("LEXER: unknown objective C keyword: " ^ s);
   }
 
   (* ----------------------------------------------------------------------- *)

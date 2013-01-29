@@ -20,6 +20,17 @@ let test_tokens_cpp file =
 
 let test_parse_cpp ?lang xs  =
   let fullxs = Lib_parsing_cpp.find_cpp_files_of_dir_or_files xs in
+  let fullxs =
+    match xs with
+    | [dir] when Common.is_directory dir ->
+      let file = Filename.concat dir "skip_list.txt" in
+      if Sys.file_exists file
+      then 
+        let skip_list = Skip_code.load file in
+        Skip_code.filter_files skip_list dir fullxs
+      else fullxs
+    | _ -> fullxs
+  in
 
   Parse_cpp.init_defs !Flag.macros_h;
 

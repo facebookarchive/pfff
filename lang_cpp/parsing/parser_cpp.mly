@@ -213,6 +213,16 @@ module Ast = Ast_cpp
   TAt_synchronized
 
   TAt_property
+  TAt_synthesize
+  TAt_autoreleasepool
+  TAt_dynamic
+  TAt_YES
+  TAt_NO
+  TAt_optional
+  TAt_required
+  TAt_compatibility_alias
+  TAt___SB_QUOTE
+  TAt_FB_TO_STRING
 
 /*(*************************************************************************)*/
 /*(*1 Priorities *)*/
@@ -1883,6 +1893,8 @@ celem:
  | category_interface   { DeclTodo }
  | category_implementation { DeclTodo }
  | protocol_declaration { DeclTodo }
+ | class_declaration_list { DeclTodo }
+ | protocol_small_declaration { DeclTodo }
 
  /*
  (* when have error recovery, we can end up skipping the
@@ -1928,6 +1940,17 @@ protocol_declaration:
  interface_declaration_list_opt
  TAt_end
  { }
+
+/*(* not in official grammar *)*/
+protocol_small_declaration:
+ TAt_protocol ident TPtVirg { }
+
+class_declaration_list:
+ TAt_class class_list TPtVirg { }
+
+class_list:
+ | ident { }
+ | class_list TComma ident { }
 
 super_opt:
  | TCol TIdent { }

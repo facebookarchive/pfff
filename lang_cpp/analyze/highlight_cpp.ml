@@ -614,6 +614,19 @@ MemberField _|MemberDecl _ | Access (_, _))
 
     | T.TAt_property ii -> tag ii Keyword
 
+    | T.TAt_synthesize ii
+    | T.TAt_autoreleasepool ii
+    | T.TAt_dynamic ii
+    | T.TAt_YES ii
+    | T.TAt_NO ii
+    | T.TAt_optional ii
+    | T.TAt_required ii
+    | T.TAt_compatibility_alias ii
+    | T.TAt___SB_QUOTE ii
+    | T.TAt_FB_TO_STRING ii
+      -> tag ii Keyword
+
+
     (* thrift *)
     | T.TIdent (("service" | "include" | "extends"), ii) ->
         tag ii Keyword
