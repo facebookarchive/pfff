@@ -830,6 +830,8 @@ type any =
   | XhpAttribute of xhp_attribute
   | XhpAttrValue of xhp_attr_value
   | XhpHtml2 of xhp_html
+  | XhpChildrenDecl2 of xhp_children_decl
+
 
   | Info of tok
   | InfoList of tok list

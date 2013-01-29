@@ -1083,6 +1083,7 @@ and v_any = function
   | XhpAttribute v1 -> let v1 = v_xhp_attribute v1 in ()
   | XhpAttrValue v1 -> let v1 = v_xhp_attr_value v1 in ()
   | XhpHtml2 v1 -> let v1 = v_xhp_html v1 in ()
+  | XhpChildrenDecl2 v1 -> let v1 = v_xhp_children_decl v1 in ()
   | Info v1 -> let v1 = v_info v1 in ()
   | InfoList v1 -> let v1 = v_list v_info v1 in ()
   | ColonStmt2 v1 -> let v1 = v_colon_stmt v1 in ()

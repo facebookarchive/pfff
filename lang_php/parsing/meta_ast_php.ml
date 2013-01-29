@@ -1180,6 +1180,9 @@ and vof_any =
       let v1 = vof_xhp_attr_value v1 in Ocaml.VSum (("XhpAttrValue", [ v1 ]))
   | XhpHtml2 v1 ->
       let v1 = vof_xhp_html v1 in Ocaml.VSum (("XhpHtml2", [ v1 ]))
+  | XhpChildrenDecl2 v1 ->
+      let v1 = vof_xhp_children_decl v1 in Ocaml.VSum (("XhpChildrenDecl2", 
+                                                        [ v1 ]))
 
   | Info v1 -> let v1 = vof_info v1 in Ocaml.VSum (("Info", [ v1 ]))
   | InfoList v1 ->

@@ -1109,6 +1109,8 @@ and map_any =
   | XhpAttribute v1 -> let v1 = map_xhp_attribute v1 in XhpAttribute ((v1))
   | XhpAttrValue v1 -> let v1 = map_xhp_attr_value v1 in XhpAttrValue ((v1))
   | XhpHtml2 v1 -> let v1 = map_xhp_html v1 in XhpHtml2 ((v1))
+  | XhpChildrenDecl2 v1 -> let v1 = map_xhp_children_decl v1 in 
+                           XhpChildrenDecl2 ((v1))
   | Info v1 -> let v1 = map_info v1 in Info ((v1))
   | InfoList v1 -> let v1 = map_of_list map_info v1 in InfoList ((v1))
   | Case2 v1 -> let v1 = map_case v1 in Case2 ((v1))

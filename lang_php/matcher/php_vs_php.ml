@@ -2663,6 +2663,9 @@ and m_parameter a b =
 and m_attributes a b =
   raise Todo
 
+and m_xhp_children_decl a b =
+  raise Todo
+
 and m_hint_type a b = 
   match a, b with
   | A.Hint(a1), B.Hint(b1) ->
@@ -3164,6 +3167,13 @@ let m_any a b =
        B.XhpHtml2(b1)
     )
     )
+  | A.XhpChildrenDecl2(a1), B.XhpChildrenDecl2(b1) ->
+    m_xhp_children_decl a1 b1 >>= (fun (a1, b1) -> 
+    return (
+       A.XhpChildrenDecl2(a1),
+       B.XhpChildrenDecl2(b1)
+    )
+    )
   | A.Info(a1), B.Info(b1) ->
     m_info a1 b1 >>= (fun (a1, b1) -> 
     return (
@@ -3206,6 +3216,7 @@ let m_any a b =
   | A.XhpAttribute _, _
   | A.XhpAttrValue _, _
   | A.XhpHtml2 _, _
+  | A.XhpChildrenDecl2 _, _
   | A.Info _, _
   | A.InfoList _, _
   | A.Name2 _, _
