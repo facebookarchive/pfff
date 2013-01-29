@@ -240,6 +240,7 @@ LIBS= commons/lib.cma \
     lang_c/parsing/lib.cma \
      lang_c/analyze/lib.cma \
     lang_objc/parsing/lib.cma \
+     lang_objc/analyze/lib.cma \
     lang_java/parsing/lib.cma \
      lang_java/analyze/lib.cma \
     lang_bytecode/parsing/lib.cma \
@@ -290,6 +291,7 @@ MAKESUBDIRS=commons \
   lang_c/parsing \
    lang_c/analyze \
   lang_objc/parsing \
+   lang_objc/analyze \
   lang_java/parsing \
    lang_java/analyze \
   lang_bytecode/parsing \

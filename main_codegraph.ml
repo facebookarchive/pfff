@@ -259,6 +259,7 @@ let build_graph_code lang root =
     | "php" -> Graph_code_php.build ~verbose:!verbose root skip_list
     | "web" -> raise Todo
     | "c" -> Graph_code_c.build ~verbose:!verbose root skip_list
+    | "objc" -> Graph_code_objc.build ~verbose:!verbose root skip_list
     | "java" -> Graph_code_java.build ~verbose:!verbose root skip_list
     | "bytecode" -> 
       let graph_code_java = 
