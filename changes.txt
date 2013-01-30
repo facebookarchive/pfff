@@ -1,5 +1,13 @@
 -*- org -*-
 
+* 0.23 (Q1 2013) ()
+
+** codegraph, packing in "...", deadcode/internal_module highlightings,
+backward dependencies statistics and highlightings
+
+** introduce lang_objc/
+basic lexer and grammar
+
 * -----------------------------------------------------------
 
 * 0.22 (Q4 2012) (codegraph faster/finer, .cmt/.class parsers)
