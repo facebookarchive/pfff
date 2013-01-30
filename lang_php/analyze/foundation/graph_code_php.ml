@@ -53,7 +53,7 @@ open Ast_php_simple
  *  - parse errors, test code
  *    => skip list, file: or dir:
  *  - nested functions, duped functions defined conditionnally
- *    => use the at_toplevel
+ *    => use the at_toplevel field below
  *  - duped functions 
  *    => skip list (or remove the offending code), file: or dir:
  *  - duped local functions in scripts/
@@ -61,6 +61,7 @@ open Ast_php_simple
  *  - lookup failure because use different software stack (e.g.
  *    html/intern/wiki/, lib/arcanist/, etc) 
  *    => skip list, dir:
+ * 
  * where to display the errors:
  *  - terminal for the really important one
  *  - pfff.log for less important and to have more details
