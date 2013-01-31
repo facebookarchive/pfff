@@ -30,34 +30,34 @@ module Trace = Tracing_php
 (*
  * Abstract interpreter for PHP, with hooks for tainting analysis
  * (to find XSS holes), and hooks for callgraph generation.
- * 
+ *
  * An abstract interpreter kinda mimics a normal interpreter by
  * also executing a program, in a top-down manner, modifying a heap,
  * managing local and global variables, etc, but maintains "abstract"
  * values for variables instead of concrete values as in a regular
  * interpreter. See env_interpreter_php.ml.
- * 
+ *
  * For instance on 'if(cond()) { $x = 42; } else { $x = 3;}'
  * the abstract interpreter will actually execute both branches and
  * merge/unify the different values for the variable in a more
  * abstract value. So, while processing the first branch the interpreter
  * will add a new local variable $x, allocate space in the abstract
  * heap, and sets its value to the precise (Vint 42). But after
- * both branches, the abstract interpreter will unify/merge/abstract 
- * the different values for $x to a (Vabstr Tint) and from now on, 
- * the value for $x will be that abstract. 
- * 
- * Two key concepts are the different level of abstractions 
- * (resulting from unification/generalization values), and 
+ * both branches, the abstract interpreter will unify/merge/abstract
+ * the different values for $x to a (Vabstr Tint) and from now on,
+ * the value for $x will be that abstract.
+ *
+ * Two key concepts are the different level of abstractions
+ * (resulting from unification/generalization values), and
  * reaching a fixpoint.
- * 
+ *
  * References:
  *  - http://en.wikipedia.org/wiki/Abstract_interpretation
- * 
- * Actually the unify/merge/abstract in the example above will happen 
- * as soon as processing the else branch in the current algorithm. 
+ *
+ * Actually the unify/merge/abstract in the example above will happen
+ * as soon as processing the else branch in the current algorithm.
  * So there will be no (Vint 3) in the heap. See tests/php/ia/if.php.
- * 
+ *
  * The algorithm is kinda:
  *  - flow insensitive, because??
  *  - path insensitive, because we don't look for instance
@@ -65,16 +65,16 @@ module Trace = Tracing_php
  *    unreachable path
  *  - BUT context sensitive, because we treat different calls
  *    to the same function differently (we unroll each call).
- *    There is a limit on the depth of the call stack though, 
+ *    There is a limit on the depth of the call stack though,
  *    see max_depth.
  *
  * For a bottom-up approach see typing_php.ml.
- * 
+ *
  * To help you debug the interpreter you can put some
  * 'var_dump($x)' in the PHP file to see the abstract
  * value of a variable at a certain point in the program.
  *
- * pad's notes: 
+ * pad's notes:
  *  - strings are sometimes (ab)used to not only represent
  *    variables and entities but also special variables:
  *    * "*return*", to communicate the return value to the caller
@@ -91,8 +91,8 @@ module Trace = Tracing_php
  *    are in the closure of the method and are pointers to
  *    the fake object that represents the class.
  *  - the id() function semantic is hardcoded
- * 
- * TODO: 
+ *
+ * TODO:
  *  - ask juju about the many '??' in this file
  *  - the places where expect a VPtr, and so need to call Ptr.get,
  *    or even a VptrVptr and so where need to call Ptr.get two times,
@@ -104,13 +104,13 @@ module Trace = Tracing_php
  *  - $x++ is ignored (we don't really care about int for now)
  *  - many places where play with $ in s.(0)
  *  - C-s for Vany, it's usually a Todo
- * 
- * 
- * TODO long term: 
+ *
+ *
+ * TODO long term:
  *  - we could use the ia also to find bugs that my current
  *    checkers can't find (e.g. undefined methods in $o->m() because
- *    of the better interprocedural class analysis, wrong type, 
- *    passing null, use of undeclared field in $o->fld, etc). 
+ *    of the better interprocedural class analysis, wrong type,
+ *    passing null, use of undeclared field in $o->fld, etc).
  *    But the interpreter first needs to be correct
  *    and to work on www/ without so many exceptions.
  *    TODO just go through all constructs and find opportunities
@@ -119,7 +119,7 @@ module Trace = Tracing_php
  *    by providing a kind of tracer.
  *  - maybe it could be combined with the type inference to give
  *    more precise results and find even more bugs.
- * 
+ *
  * history:
  *  - basic values (Vint 2, Vstring "foo"), abstract value with types
  *    (Vabstr Tint), also range for ints. Special care for PHP references
@@ -138,12 +138,12 @@ module Trace = Tracing_php
  *  - fixpoint was too costly, and when '$i = 1;for() { $i=$i+1 }' it does
  *    not converge if use range so make it in such a way to reach the fixpoint
  *    in one step when unify. In the end we don't unify heaps,
- *    we don't do fixpoint. So for the loop example before, 
- *    first have $i = Vint 1, but as soon as have $i=$i+1, we say it's a 
+ *    we don't do fixpoint. So for the loop example before,
+ *    first have $i = Vint 1, but as soon as have $i=$i+1, we say it's a
  *    Vabstr Tint (and this is the fixpoint, in just one step).
  *  - handle objects and other constructs.
- * 
- *  - all comments added by pad, split files, add mli, add unit tests, 
+ *
+ *  - all comments added by pad, split files, add mli, add unit tests,
  *    add tests/ia/*.php, fixed bugs, added strict mode, etc
  *)
 
@@ -202,7 +202,7 @@ exception UnknownObject
 exception LostControl
 
 type field = Static | NonStatic
-  
+
 (*****************************************************************************)
 (* Helpers *)
 (*****************************************************************************)
@@ -218,15 +218,16 @@ and make_fake_params l =
     match p.p_type with
     | Some (Hint name) -> New (Id (name), [])
     | None | Some (HintArray) -> Id (w "null")
+    | _ -> failwith "fake params not implemented for extended types"
   ) l
 
-let exclude_toplevel_defs xs = 
-  List.filter (function 
-  | ClassDef _ | FuncDef _ | ConstantDef _ -> false 
+let exclude_toplevel_defs xs =
+  List.filter (function
+  | ClassDef _ | FuncDef _ | ConstantDef _ -> false
   | _ -> true
   ) xs
 
-let methods_and_fields members = 
+let methods_and_fields members =
   List.map fst (SMap.bindings members)
 
 let is_variable s =
@@ -245,7 +246,7 @@ let rec program env heap program =
   env.path := [CG.File !(env.file)];
   (* Ok, let's interpret the toplevel statements. env.db must
    * be populated with all the necessary functions/classes/constants.
-   * 
+   *
    * Note that Include/Require are transformed into __builtin__require()
    * calls in ast_php_simple and we will silently skip them below
    * (because the definitions of those __builtin__ are empty in
@@ -255,7 +256,7 @@ let rec program env heap program =
   let finalheap = stmtl env heap (exclude_toplevel_defs program) in
 
   if !extract_paths
-  then begin 
+  then begin
     (* Normally the abstract interpreter needs a starting point, like
      * a toplevel call to 'main();' to start interpret. A file with just
      * functions can't really be interpreted. But some code may not be
@@ -288,7 +289,7 @@ and fake_root env heap =
       (* pad: julien was first processing all static methods, not sure why *)
       List.iter (fun m ->
         let params = make_fake_params m.f_params in
-        let e = 
+        let e =
           if is_static m.m_modifiers
           then (Call (Class_get (Id c.c_name, Id m.f_name), params))
           else (Call (Obj_get (New (Id c.c_name, []), Id m.f_name), params))
@@ -341,7 +342,7 @@ and stmt env heap x =
    * and env.vars with an entry for $x, and when visiting
    * the second branch the second assignment will
    * cause a generalization for $x to an int.
-   *) 
+   *)
   | If (c, st1, st2) ->
       (* todo: warn type error if value/type of c is not ok? *)
       let heap, _ = expr env heap c in
@@ -364,10 +365,10 @@ and stmt env heap x =
   | Block stl ->
       stmtl env heap stl
   | Return (e) ->
-      let e = 
-        match e with 
+      let e =
+        match e with
         | None -> Id (w "null")
-        | Some e -> e 
+        | Some e -> e
       in
       (* the special "*return*" variable is used in call_fun() below *)
       let heap, _ = expr env heap (Assign (None, Id (w "*return*"), e)) in
@@ -425,13 +426,13 @@ and stmt env heap x =
   | Global idl -> List.fold_left (global env) heap idl
   | StaticVars sl -> List.fold_left (static_var env) heap sl
 
-  | ClassDef _ | FuncDef _ -> 
-      if !strict 
+  | ClassDef _ | FuncDef _ ->
+      if !strict
       then failwith "nested classes/functions";
       heap
   | ConstantDef _ ->
       (* see exclude_toplevel_defs above and parser_php.mly which
-       * shows we can't have nested constants by construction 
+       * shows we can't have nested constants by construction
        *)
       raise Common.Impossible
 
@@ -489,7 +490,7 @@ and catch env heap (_, _, stl) =
 (* ---------------------------------------------------------------------- *)
 and expr env heap x =
   if !Taint.taint_mode
-  then Taint.taint_expr env heap 
+  then Taint.taint_expr env heap
     (expr_, lvalue, get_dynamic_function, call_fun, call, assign) !(env.path) x
   else expr_ env heap x
 
@@ -523,9 +524,9 @@ and expr_ env heap x =
        * they are managed through the env.db instead and we handle
        * them at the Call (Id ...) and New (Id ...) cases.
        *)
-       (try 
+       (try
            let def = env.db.constants s in
-           expr env heap def.cst_body    
+           expr env heap def.cst_body
        with Not_found ->
          (* todo: when used in an instanceof context, as in
           * $x instanceof A, then Id will contain actually
@@ -560,7 +561,7 @@ and expr_ env heap x =
 
 
   (* with '$x = (true)? 45 : "foo"' we will return a
-   * Tsum(Vint 42, Vstring "foo") 
+   * Tsum(Vint 42, Vstring "foo")
    *)
   | CondExpr (e1, e2, e3) ->
       let heap, _ = expr env heap e1 in
@@ -623,7 +624,7 @@ and expr_ env heap x =
           (* todo: fname can also reference a static method *)
           let heap, def = get_dynamic_function env heap v in
           call_fun def env heap el
-        with (LostControl | UnknownFunction _) -> 
+        with (LostControl | UnknownFunction _) ->
           if !strict then failwith "call_user_func unknown function";
           heap, Vany
       )
@@ -679,7 +680,7 @@ and binaryOp env heap bop v1 v2 =
       | _ -> Vsum [Vnull; Vabstr Tint]
       )
   | Ast_php.Logical lop -> Vabstr Tbool
-  | Ast_php.BinaryConcat -> 
+  | Ast_php.BinaryConcat ->
       (* Vabstr Tstring by default *)
       Taint.binary_concat env heap v1 v2 !(env.path)
 
@@ -736,7 +737,7 @@ and lvalue env heap x =
        *)
       Var.get env heap s
 
-  | This name -> 
+  | This name ->
       (* $this is present in env.globals (see make_method())
        * todo: so with this actually look for the value of $this in
        * env.globals??
@@ -758,9 +759,9 @@ and lvalue env heap x =
       let heap, v' = Ptr.get heap v in
       let members = obj_get_members ISet.empty env heap [v'] in
       (try heap, false, SMap.find s members
-      with Not_found -> 
+      with Not_found ->
         (* This will actually try access to a static class variables
-         * See class_vars() below. 
+         * See class_vars() below.
          * todo: We should throw an exception here in strict mode,
          * people should not access static member via $o->.
          * I don't even know how to do that actually.
@@ -770,7 +771,7 @@ and lvalue env heap x =
           (match s with
           (* it's ok to not have a __construct method *)
           | "__construct" -> ()
-          | _ -> 
+          | _ ->
               if !strict then begin
                 let xs = methods_and_fields members in
                 if Common.null xs
@@ -792,18 +793,18 @@ and lvalue env heap x =
       let heap, _, v = Var.get_global env heap str in
       let heap, v = Ptr.get heap v in
       let heap, v = Ptr.get heap v in
-      (try 
+      (try
           match v with
           | Vobject members when SMap.mem s members ->
               heap, false, SMap.find s members
           | Vobject members ->
-              if !strict 
+              if !strict
               then raise (UnknownMember (s, str, methods_and_fields members));
               heap, false, Vany
           | _ ->
               if !strict then failwith "Class_get not a Vobject";
               heap, false, Vany
-      with Not_found -> 
+      with Not_found ->
         if !strict then failwith "Class_get not found";
         heap, false, Vany
       )
@@ -814,22 +815,22 @@ and lvalue env heap x =
       heap, false, Vany
 
   | List _ -> failwith "List should be handled in caller"
-  | e -> 
+  | e ->
       if !strict then failwith "lvalue not handled";
       heap, false, Vany
 
 (* ---------------------------------------------------------------------- *)
 (* Assign *)
 (* ---------------------------------------------------------------------- *)
-(* 
+(*
  * When doing $x = ... lots of things can happen in PHP. For instance
  * PHP can copy the value of the right to the left. If the right
  * part is a reference (as in $x = &$y), then it will create instead
  * a shared reference.
- * 
+ *
  * root is a pointer to pointer resulting from '$x = ...'
  * but also from 'A::$x = ...', or '$o->x = ....'
- * 
+ *
  * TODO explain. Why need is_new?
  * note:could be moved in helper
  *)
@@ -900,7 +901,7 @@ and get_dynamic_function env heap v =
   | _ -> raise LostControl
 and get_function_list env heap = function
   | [] -> raise LostControl
-  | Vstring s :: _ -> 
+  | Vstring s :: _ ->
       (try heap, env.db.funs s
       with Not_found -> raise (UnknownFunction s)
       )
@@ -978,7 +979,7 @@ and make_ref e =
   | _ -> e
 
 (* ???
- * could be moved in helper 
+ * could be moved in helper
  *)
 and fun_nspace f roots =
   List.fold_left (
@@ -1008,7 +1009,7 @@ and sum_call env heap v el =
   | Vmethod (_, fm) :: _ ->
       let fl = IMap.fold (fun _ y acc -> y :: acc) fm [] in
       call_methods env heap fl el
-  | Vtaint _ as v :: _ -> 
+  | Vtaint _ as v :: _ ->
       if !strict then failwith "sum_call Vtaint";
       heap, v
   | _ :: rl -> sum_call env heap rl el
@@ -1073,7 +1074,7 @@ and array_value env id heap x =
           let heap, _ = assign env heap true v e2 in
           heap
       | _ ->
-          let heap, _ = 
+          let heap, _ =
             expr env heap (Assign (None, Array_get (id, Some e1), e2)) in
           heap
       )
@@ -1126,7 +1127,7 @@ and xhp env heap x =
   | XhpExpr e ->
       let heap, _ = expr env heap e in
       heap
-  | XhpXml x -> 
+  | XhpXml x ->
       (* todo: should set the children field of the enclosing xhp? *)
       let heap, _v = xml env heap x in
       heap
@@ -1145,7 +1146,7 @@ and xhp_attr env heap x =
   | e -> fst (expr env heap e)
 
 and xml env heap x =
-  let heap = List.fold_left (fun heap (_, x) -> 
+  let heap = List.fold_left (fun heap (_, x) ->
     xhp_attr env heap x
   ) heap x.xml_attrs in
   let heap = List.fold_left (xhp env) heap x.xml_body in
@@ -1228,7 +1229,7 @@ and lazy_class env heap classname =
   else force_class env heap classname
 
 and force_class env heap classname =
-  try 
+  try
     let def = env.db.classes classname in
 
     let heap, null = Ptr.new_ heap in
@@ -1262,14 +1263,14 @@ and class_def env heap (c: Ast.class_def) =
   let heap, ddparent = Ptr.get heap parent in
   let heap, ddparent = Ptr.get heap ddparent in
   (* 'm' for members, not only methods *)
-  let m = 
-    match ddparent with 
+  let m =
+    match ddparent with
     (* we inherit all previous members *)
-    | Vobject m -> m 
-    (* todo: strict, exn/? hmm can happen when have no parents so Vnull 
+    | Vobject m -> m
+    (* todo: strict, exn/? hmm can happen when have no parents so Vnull
      * so put | Vnull->Smap.empty | _ -> raise Impossible?
      *)
-    | _ -> SMap.empty 
+    | _ -> SMap.empty
   in
   let heap, m = List.fold_left (cconstants env) (heap,m) c.c_constants in
   let heap, m = List.fold_left (class_vars env Static) (heap,m) c.c_variables in
@@ -1291,14 +1292,14 @@ and class_def env heap (c: Ast.class_def) =
 and build_new env heap pname parent self c m =
   let mid = Utils.fresh() in
   let closure = build_new_ env heap pname parent self c m in
-  Vmethod (Vnull (* no this, BUILD is static method *), 
+  Vmethod (Vnull (* no this, BUILD is static method *),
           IMap.add mid closure IMap.empty)
 
-(* "new est une method comme les autres". 
+(* "new est une method comme les autres".
  * m contains all the methods, static vars, and constants of this
  * class and parents.
  *)
-and build_new_ env heap pname parent self c m = 
+and build_new_ env heap pname parent self c m =
  fun env heap args ->
   (* we should always call *BUILD* without arguments *)
   if args <> [] then raise Common.Impossible;
@@ -1321,10 +1322,10 @@ and build_new_ env heap pname parent self c m =
   let heap, up = Ptr.get heap ptr in
   let heap, up = Ptr.get heap up in
   (* get all members of the parent *)
-  let m = 
-    match up with 
-    | Vobject m' -> SMap.fold SMap.add m' m 
-    | _ -> m 
+  let m =
+    match up with
+    | Vobject m' -> SMap.fold SMap.add m' m
+    | _ -> m
   in
   let heap, m' =
     List.fold_left (class_vars env NonStatic) (heap, m) c.c_variables in
@@ -1345,16 +1346,16 @@ and cconstants env (heap, m) cst =
 (* static is to indicate if we want create members for static variables. *)
 and class_vars env static (heap, m) cv =
   match static, is_static cv.cv_modifiers with
-  | Static, true 
-  | NonStatic, false -> 
+  | Static, true
+  | NonStatic, false ->
       (class_var env static) (heap, m) (cv.cv_name, cv.cv_value)
   | _ -> heap, m
 
 and class_var env static (heap, m) ((s, tok), e) =
   (* static variables keep their $, regular fields don't *)
-  let s = 
+  let s =
     match static with
-    | Static -> s 
+    | Static -> s
     | NonStatic -> String.sub s 1 (String.length s - 1)
   in
   match e with
@@ -1407,7 +1408,7 @@ and make_method mname parent self this fdef =
     | None -> ()
     | Some v -> Var.set_global env "$this" v
     );
-    let heap, res = 
+    let heap, res =
       (* the actual call! *)
       call_fun fdef env heap el in
 
@@ -1415,7 +1416,7 @@ and make_method mname parent self this fdef =
     let heap, res' = Ptr.get heap res in
     let heap, res' = Ptr.get heap res' in
     if unw mname = "render"
-    then Taint.check_danger env heap "return value of render" (snd mname) 
+    then Taint.check_danger env heap "return value of render" (snd mname)
       !(env.path) res';
 
     (match old_self with Some x -> Var.set_global env self_ x | None -> ());

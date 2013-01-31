@@ -6,7 +6,7 @@
  * modify it under the terms of the GNU Lesser General Public License
  * version 2.1 as published by the Free Software Foundation, with the
  * special exception on linking described in file license.txt.
- * 
+ *
  * This library is distributed in the hope that it will be useful, but
  * WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the file
@@ -26,17 +26,17 @@ open Ast_php
 type visitor_in = {
   kexpr: (expr  -> expr) * visitor_out -> expr  -> expr;
   klvalue: (lvalue  -> lvalue) * visitor_out -> lvalue  -> lvalue;
-  kstmt_and_def: 
+  kstmt_and_def:
     (stmt_and_def -> stmt_and_def) * visitor_out -> stmt_and_def ->stmt_and_def;
   kstmt: (stmt -> stmt) * visitor_out -> stmt -> stmt;
   kqualifier: (qualifier -> qualifier) * visitor_out -> qualifier -> qualifier;
-  kclass_name_or_kwd: 
-    (class_name_or_kwd -> class_name_or_kwd) * visitor_out -> 
+  kclass_name_or_kwd:
+    (class_name_or_kwd -> class_name_or_kwd) * visitor_out ->
      class_name_or_kwd -> class_name_or_kwd;
   kclass_def:  (class_def -> class_def) * visitor_out -> class_def -> class_def;
 
   kinfo: (tok -> tok) * visitor_out -> tok -> tok;
-                                                                            
+
 }
 and visitor_out = {
   vtop: toplevel -> toplevel;
@@ -48,7 +48,7 @@ and visitor_out = {
   vany: any -> any;
 }
 
-let default_visitor = 
+let default_visitor =
   { kexpr   = (fun (k,_) x -> k x);
     klvalue   = (fun (k,_) x -> k x);
     kstmt_and_def = (fun (k,_) x -> k x);
@@ -62,15 +62,15 @@ let default_visitor =
 let (mk_visitor: visitor_in -> visitor_out) = fun vin ->
 
 (* start of auto generation *)
-  
-let rec map_info x = 
-  let rec k x = 
+
+let rec map_info x =
+  let rec k x =
     match x with
-    { Parse_info.token = v_pinfo; 
+    { Parse_info.token = v_pinfo;
       transfo = v_transfo;
       comments = v_comments;
     } ->
-    let v_pinfo = 
+    let v_pinfo =
       (* todo? map_pinfo v_pinfo *)
     v_pinfo
     in
@@ -82,23 +82,23 @@ let rec map_info x =
   in
   vin.kinfo (k, all_functions) x
 
-and map_tok v = 
+and map_tok v =
   map_info v
-and map_wrap:'a. ('a -> 'a) -> 'a wrap -> 'a wrap = fun _of_a (v1, v2) -> 
+and map_wrap:'a. ('a -> 'a) -> 'a wrap -> 'a wrap = fun _of_a (v1, v2) ->
   let v1 = _of_a v1 and v2 = map_info v2 in (v1, v2)
 and map_paren:'a. ('a -> 'a) -> 'a paren -> 'a paren = fun _of_a (v1, v2, v3)->
   let v1 = map_tok v1 and v2 = _of_a v2 and v3 = map_tok v3 in (v1, v2, v3)
 and map_brace: 'a. ('a -> 'a) -> 'a brace -> 'a brace = fun _of_a (v1, v2, v3)->
   let v1 = map_tok v1 and v2 = _of_a v2 and v3 = map_tok v3 in (v1, v2, v3)
-and map_bracket: 'a. ('a -> 'a) -> 'a bracket -> 'a bracket = 
+and map_bracket: 'a. ('a -> 'a) -> 'a bracket -> 'a bracket =
  fun _of_a (v1, v2, v3)->
   let v1 = map_tok v1 and v2 = _of_a v2 and v3 = map_tok v3 in (v1, v2, v3)
-and map_angle: 'a. ('a -> 'a) -> 'a angle -> 'a angle = 
+and map_angle: 'a. ('a -> 'a) -> 'a angle -> 'a angle =
  fun _of_a (v1, v2, v3)->
   let v1 = map_tok v1 and v2 = _of_a v2 and v3 = map_tok v3 in (v1, v2, v3)
-and map_comma_list_dots _of_a xs = 
+and map_comma_list_dots _of_a xs =
   map_of_list (fun x -> Ocaml.map_of_either3 _of_a map_info map_info x) xs
-and map_comma_list:'a. ('a -> 'a) -> 'a comma_list -> 'a comma_list = 
+and map_comma_list:'a. ('a -> 'a) -> 'a comma_list -> 'a comma_list =
   fun _of_a xs ->
   map_of_list (fun x -> Ocaml.map_of_either _of_a map_info x) xs
 
@@ -106,7 +106,7 @@ and map_comma_list:'a. ('a -> 'a) -> 'a comma_list -> 'a comma_list =
 and map_name =
   function
   | Name v1 -> let v1 = map_wrap map_of_string v1 in Name ((v1))
-  | XhpName v1 -> let v1 = map_wrap (map_of_list map_of_string) v1 in 
+  | XhpName v1 -> let v1 = map_wrap (map_of_list map_of_string) v1 in
                   XhpName ((v1))
 and map_xhp_tag v = map_of_list map_of_string v
 and map_dname =
@@ -119,7 +119,7 @@ and map_qualifier v =
   vin.kqualifier (k, all_functions) v
 
 and map_class_name_or_selfparent v =
-  let k v = 
+  let k v =
     match v with
     | ClassName v1 ->
         let v1 = map_fully_qualified_class_name v1 in ClassName ((v1))
@@ -131,7 +131,7 @@ and map_class_name_or_selfparent v =
 
 and map_fully_qualified_class_name v = map_name v
 
-  
+
 and map_ptype =
   function
   | BoolTy -> BoolTy
@@ -140,7 +140,7 @@ and map_ptype =
   | StringTy -> StringTy
   | ArrayTy -> ArrayTy
   | ObjectTy -> ObjectTy
-  
+
 and map_expr (x) =
   let k x =  match x with
   | Lv v1 -> let v1 = map_variable v1 in Lv ((v1))
@@ -443,7 +443,7 @@ and map_xhp_body =
 and map_lvalue a = map_variable a
 
 and map_variable x =
-  let k x = 
+  let k x =
     match x with
   | Var ((v1, v2)) ->
       let v1 = map_dname v1
@@ -459,7 +459,7 @@ and map_variable x =
       and v2 = map_bracket (map_of_option map_expr) v2
       in VArrayAccessXhp ((v1, v2))
   | VBrace ((v1, v2)) ->
-      let v1 = map_tok v1 and v2 = map_brace map_expr v2 in 
+      let v1 = map_tok v1 and v2 = map_brace map_expr v2 in
       VBrace ((v1, v2))
   | VBraceAccess ((v1, v2)) ->
       let v1 = map_variable v1
@@ -558,7 +558,7 @@ and map_rw_variable v = map_variable v
 and map_r_variable v = map_variable v
 and map_w_variable v = map_variable v
 and map_stmt x =
-  let rec k x = 
+  let rec k x =
     match x with
   | ExprStmt ((v1, v2)) ->
       let v1 = map_expr v1 and v2 = map_tok v2 in ExprStmt ((v1, v2))
@@ -838,6 +838,13 @@ and map_hint_type =
   function
   | Hint v1 -> let v1 = map_class_name_or_selfparent v1 in Hint ((v1))
   | HintArray v1 -> let v1 = map_tok v1 in HintArray ((v1))
+  | HintQuestion (v1, v2) -> let v1 = map_tok v1 in
+                             let v2 = map_hint_type v2 in
+                             HintQuestion (v1, v2)
+  | HintTuple v1 -> let v1 = map_paren (map_comma_list map_hint_type) v1 in
+                    HintTuple v1
+  | HintCallback -> HintCallback
+
 and map_is_ref v = map_of_option map_tok v
 and map_lambda_def (v1, v2) =
   let v1 = map_of_option map_lexical_vars v1
@@ -876,7 +883,7 @@ and
     c_body = v_c_body;
     c_attrs = v_c_attrs;
   }
- in 
+ in
   vin.kclass_def (k, all_functions) x
 
 
@@ -1034,11 +1041,11 @@ and map_static_var (v1, v2) =
 and map_static_scalar x = map_expr x
 and map_static_scalar_affect (v1, v2) =
   let v1 = map_tok v1 and v2 = map_static_scalar v2 in (v1, v2)
-and map_stmt_and_def def = 
+and map_stmt_and_def def =
   let rec k x = map_stmt x in
   vin.kstmt_and_def (k, all_functions) def
 and map_constant_def (v1, v2, v3, v4, v5) =
-      let v1 = map_tok v1 
+      let v1 = map_tok v1
       and v2 = map_name v2
       and v3 = map_tok v3
       and v4 = map_static_scalar v4
@@ -1116,7 +1123,7 @@ and map_any =
   | Case2 v1 -> let v1 = map_case v1 in Case2 ((v1))
   | Name2 v1 -> let v1 = map_name v1 in Name2 v1
 
- and all_functions =   
+ and all_functions =
     {
       vtop = map_toplevel;
       vstmt_and_def = map_stmt_and_def;

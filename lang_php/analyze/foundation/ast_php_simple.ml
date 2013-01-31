@@ -28,11 +28,11 @@
  * or even removed.
  *
  * Here is a list of the simplications/factorizations:
- *  - no purely syntactical tokens in the AST like parenthesis, brackets, 
+ *  - no purely syntactical tokens in the AST like parenthesis, brackets,
  *    braces, angles, commas, semicolons, etc. No ParenExpr. No FinalDef. No
  *    NotParsedCorrectly. The only token information kept is for identifiers
  *    for error reporting. See wrap() below.
- * 
+ *
  *  - support for old syntax is removed. No IfColon, ColonStmt,
  *    CaseColonList.
  *  - support for extra tools is removed. No XdebugXxx, SgrepXxx.
@@ -43,16 +43,16 @@
  *  - some known directives like 'declare(ticks=1);' or 'declare(strict=1);'
  *    are skipped because they don't have a useful semantic for
  *    the abstract interpreter or the type inference engine. No Declare.
- * 
+ *
  *  - sugar is removed, no ArrayLong vs ArrayShort, no InlineHtml,
  *    no HereDoc, no EncapsXxx, no XhpSingleton (but kept Xhp).
  *  - some builtins, for instance 'echo', are transformed in "__builtin__echo".
  *    See builtin() below.
  *  - no include/require, they are transformed in call
  *    to __builtin__require (maybe not a good idea)
- *  - some special keywords, for instance 'self', are transformed in 
+ *  - some special keywords, for instance 'self', are transformed in
  *    "__special__self". See special() below.
- * 
+ *
  *  - a simpler stmt type; no extra toplevel and stmt_and_def types,
  *    no FuncDefNested, no ClassDefNested. No StmtList.
  *  - a simpler expr type; no lvalue vs expr vs static_scalar vs attribute
@@ -77,20 +77,20 @@
  *  - a unified Array_get. No VArrayAccess, VArrayAccessXhp,
  *    VBraceAccess, OArrayAccess, OBraceAccess
  *  - unified Class_get and Obj_get instead of lots of duplication in
- *    many constructors, e.g. no ClassConstant in a separate scalar type, 
+ *    many constructors, e.g. no ClassConstant in a separate scalar type,
  *    no retarded obj_prop_access/obj_dim types,
- *    no OName, CName, ObjProp, ObjPropVar, ObjAccessSimple vs ObjAccess, 
+ *    no OName, CName, ObjProp, ObjPropVar, ObjAccessSimple vs ObjAccess,
  *    no ClassNameRefDynamic, no VQualifier, ClassVar, DynamicClassVar,
  *    etc.
  *  - unified eval_var, some constructs were transformed into calls to
  *    "eval_var" builtin, e.g. no GlobalDollar, no VBrace, no Indirect.
- * 
+ *
  *  - a simpler 'name': identifiers, xhp names, and variables are unified
  *    (maybe not a good idea retrospectively, cos it forces in many places
  *     to do some s =~ "$.*")
  *  - ...
  *
- * todo: 
+ * todo:
  *  - support for generics of sphp
  *  - XHP class declaration? e.g. children, @required, etc?
  *  - less: factorize more? string vs Guil vs xhp?
@@ -104,7 +104,7 @@
 (* The wrap is to get position information for certain elements in the AST.
  * It can be None when we want to optimize things and have a very
  * small marshalled AST. See Ast_php_simple.build.store_position flag.
- * Right now with None the marshalled AST for www is 190MB instead of 
+ * Right now with None the marshalled AST for www is 190MB instead of
  * 380MB.
  *)
 type 'a wrap = 'a * Ast_php.tok option
@@ -184,7 +184,7 @@ and expr =
    * So can have Id "foo" and Id "$foo". Can also contain "self/parent".
    * Can also be "true", "false", "null" and many other builtin constants.
    * See builtin() and special() below.
-   * 
+   *
    * todo: For field name, if in the code they are referenced like $this->fld,
    * we should prepend a $ to fld to match their definition.
    *
@@ -263,7 +263,7 @@ and expr =
 
 (* The func_def type below is actually used both for functions and methods.
  *
- * For methods, a few names are specials: 
+ * For methods, a few names are specials:
  *  - __construct, __destruct
  *  - __call, __callStatic
  *)
@@ -284,8 +284,8 @@ and func_def = {
 
   f_body: stmt list;
 }
-   and function_kind = 
-     | Function 
+   and function_kind =
+     | Function
      | AnonLambda
      | Method
 
@@ -301,6 +301,9 @@ and func_def = {
    and hint_type =
      | Hint of name
      | HintArray
+     | HintQuestion of hint_type
+     | HintTuple of hint_type list
+     | HintCallback
 
   (* for methods, and below for fields too *)
   and modifier = Ast_php.modifier
@@ -326,7 +329,7 @@ and class_def = {
   c_attrs: attribute list;
 
   (* todo: What about XHP class attributes? right now they
-   * are skipped at parsing time 
+   * are skipped at parsing time
    *)
   c_constants: constant_def list;
   c_variables: class_var list;
@@ -379,10 +382,10 @@ let wrap s = s, Some (Ast_php.fakeInfo s)
  *  - '@', '`',
  *  - 'include', 'require', 'include_once', 'require_once'.
  *  -  __LINE__/__FILE/__DIR/__CLASS/__TRAIT/__FUNCTION/__METHOD/
- * 
+ *
  * See also pfff/data/php_stdlib/pfff.php which declares those builtins.
  * See also tests/php/semantic/ for example of uses of those builtins.
- * 
+ *
  * coupling: if modify the string, git grep it because it's probably
  *  used in patterns too.
  *)
@@ -405,7 +408,7 @@ let tok_of_name (s, x) =
 
 (* todo: probably better to have different Id and Var constructors *)
 let is_variable (s, tok) =
-  if s = "" then begin 
+  if s = "" then begin
     Common.pr2_gen tok;
     failwith "empty variable???"
   end;

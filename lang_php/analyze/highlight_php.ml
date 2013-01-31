@@ -6,7 +6,7 @@
  * modify it under the terms of the GNU Lesser General Public License
  * version 2.1 as published by the Free Software Foundation, with the
  * special exception on linking described in file license.txt.
- * 
+ *
  * This library is distributed in the hope that it will be useful, but
  * WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the file
@@ -34,30 +34,30 @@ module T = Parser_php
 (*****************************************************************************)
 
 (* todo: should do that generically via the light db.
- * look if def in same file of current file 
+ * look if def in same file of current file
  *)
-let place_ids current_file ids db = 
+let place_ids current_file ids db =
   match ids with
-  | [] -> NoInfoPlace 
+  | [] -> NoInfoPlace
   | [x] ->
       let other_file = DbPHP.filename_of_id x db in
       if other_file = current_file
       then PlaceLocal
-      else 
-        if Common.dirname current_file = 
+      else
+        if Common.dirname current_file =
            Common.dirname other_file
         then PlaceSameDir
         else PlaceExternal
 
-  | x::y::xs -> 
-      let other_files = 
-        Common.map (fun id -> DbPHP.filename_of_id id db) ids +> Common.uniq 
+  | x::y::xs ->
+      let other_files =
+        Common.map (fun id -> DbPHP.filename_of_id id db) ids +> Common.uniq
       in
       if List.mem current_file other_files
       then PlaceLocal
-      else 
-        if List.exists (fun other_file -> 
-          Common.dirname current_file = 
+      else
+        if List.exists (fun other_file ->
+          Common.dirname current_file =
           Common.dirname other_file
         ) other_files
         then PlaceSameDir
@@ -76,14 +76,14 @@ let arity_of_number nbuses =
   | _ -> LotsOfUse
 let use_arity_ident_function_or_macro s db =
   let ids = DbPHP.function_ids__of_string s db in
-  let nbuses = 
-    ids +> List.map (fun id -> 
-      try 
+  let nbuses =
+    ids +> List.map (fun id ->
+      try
         let callers = db.DbPHP.uses.DbPHP.callers_of_f#assoc id in
         List.length callers
       with Not_found -> 0
     )
-    +> Common.sum_int 
+    +> Common.sum_int
   in
   arity_of_number nbuses
 
@@ -114,7 +114,7 @@ let tag_string ~tag s ii =
 
 let highlight_funcall_simple ~tag ~hentities f args info =
 
-  if Hashtbl.mem Env_php.hdynamic_call_wrappers f 
+  if Hashtbl.mem Env_php.hdynamic_call_wrappers f
   then begin
     match args with
     | [] -> failwith "dynamic call wrappers should have arguments"
@@ -126,22 +126,22 @@ let highlight_funcall_simple ~tag ~hentities f args info =
          *)
         let ii = Lib_parsing_php.ii_of_any (Argument x) in
         ii +> List.iter (fun info -> tag info PointerCall);
-        
+
   end;
   (match () with
   (* security: *)
   | _ when Hashtbl.mem Env_php.hbad_functions f ->
       tag info BadSmell
-        
+
   | _ ->
       (match Hashtbl.find_all hentities f with
       | [e] ->
           let ps = e.Db.e_properties in
-          
+
           (* dynamic call *)
           (if List.mem Db.ContainDynamicCall ps
           then
-            (* todo: should try to find instead which arguments 
+            (* todo: should try to find instead which arguments
              * is called dynamically using dataflow analysis
              *)
             tag info PointerCall
@@ -152,54 +152,78 @@ let highlight_funcall_simple ~tag ~hentities f args info =
           (* args by ref *)
           ps +> List.iter (function
           | Db.TakeArgNByRef i ->
-              (try 
+              (try
                 let a = List.nth args i in
                 let ii = Lib_parsing_php.ii_of_any (Argument a) in
                 ii +> List.iter (fun info -> tag info CallByRef)
               with exn ->
                 pr2_once ("highlight_php: pb with TakeArgNByRef for " ^ f);
               )
-                
+
           | Db.ContainDynamicCall -> ()
           | _ -> raise Todo
           );
           ()
-            
-      | x::y::xs -> 
+
+      | x::y::xs ->
           pr2_once ("highlight_php: multiple entities for: " ^ f);
 
           (* todo: place of id *)
           tag info (Function (Use2 fake_no_use2));
-      | [] -> 
+      | [] ->
           (* todo: place of id *)
           tag info (Function (Use2 fake_no_use2));
       );
   );
   ()
 
+
+let rec handle_typehint tag x = match x with
+  | Some th -> (match th with
+    | Hint (ClassName name) ->
+      let info = Ast.info_of_name name in
+      tag info (TypeMisc);
+    | Hint (Self _ | Parent _) ->
+      ()
+    | Hint (LateStatic tok) ->
+      tag tok BadSmell
+    | HintArray tok ->
+      tag tok (TypeMisc);
+    | HintQuestion (tok,t) ->
+      tag tok (TypeMisc);
+      handle_typehint tag (Some t)
+    | HintTuple (vl, elts, vr) ->
+      tag vl (TypeMisc);
+      List.iter (fun x -> handle_typehint tag (Some x)) (Ast.uncomma elts);
+      tag vr (TypeMisc)
+    | HintCallback -> ()
+  )
+  | None -> ()
+
+
 (*****************************************************************************)
 (* PHP Code highlighter *)
 (*****************************************************************************)
 
-(* 
- * Visitor to help write an emacs-like php mode. Offer some 
+(*
+ * Visitor to help write an emacs-like php mode. Offer some
  * additional coloring and categories compared to font-lock-mode.
  * Offer also now also some semantic coloring and global-information
  * semantic feedback coloring!
- * 
- * history: 
- *  - I was using emacs_mode_xxx before but now have inlined the code 
+ *
+ * history:
+ *  - I was using emacs_mode_xxx before but now have inlined the code
  *    and extended it.
  *
- * design: Can do either a single function that do all, or multiple independent 
- * functions that repeatedly visit the same ast and tokens. The 
+ * design: Can do either a single function that do all, or multiple independent
+ * functions that repeatedly visit the same ast and tokens. The
  * former is faster (no forest) but less flexible. If for instance want
- * to impose an order between the coloring, such as first keywords and 
+ * to impose an order between the coloring, such as first keywords and
  * then yacfe specific coloring such as "expanded", then need extra
  * stuff such as priority list. If have separate functions for those then
  * the caller can simply choose to call them in the order he wants so that
  * the last color win. Thus can easily separate concern.
- * 
+ *
  * The idea of the code below is to visit the program either through its
  * AST or its list of tokens. The tokens are easier for tagging keywords,
  * number and basic entities. The Ast is better for tagging idents
@@ -214,12 +238,12 @@ let visit_toplevel ~tag prefs  hentities (toplevel, toks) =
   (* with xhp lots of tokens such as 'var' can also be used
    * as attribute name so we must highlight them with their
    * generic keyword category only if there were not already
-   * tagged. 
-   * 
+   * tagged.
+   *
    * The same is true for other kinds of tokens.
    *)
     if not (Hashtbl.mem already_tagged ii)
-    then begin 
+    then begin
       tag ii categ;
       Hashtbl.add already_tagged ii true
     end
@@ -227,9 +251,9 @@ let visit_toplevel ~tag prefs  hentities (toplevel, toks) =
   in
 
   (* -------------------------------------------------------------------- *)
-  (* toks phase 1 *) 
+  (* toks phase 1 *)
   (* -------------------------------------------------------------------- *)
-  let rec aux_toks xs = 
+  let rec aux_toks xs =
     match xs with
     | [] -> ()
 
@@ -267,7 +291,7 @@ let visit_toplevel ~tag prefs  hentities (toplevel, toks) =
 
 
   (* -------------------------------------------------------------------- *)
-  (* ast phase 1 *) 
+  (* ast phase 1 *)
   (* -------------------------------------------------------------------- *)
 
   (* less: some of the logic duplicates what is in check_variables_php.ml
@@ -278,10 +302,10 @@ let visit_toplevel ~tag prefs  hentities (toplevel, toks) =
   let hooks = { V.default_visitor with
 
     (* -------------------------------------------------------------------- *)
-    V.kfunc_def = (fun (k, vx) def -> 
+    V.kfunc_def = (fun (k, vx) def ->
       let name = def.f_name in
       let info = Ast.info_of_name name in
-      let kind = 
+      let kind =
         match def.f_type with
         | FunctionRegular | FunctionLambda ->
             tag def.f_tok Keyword;
@@ -329,27 +353,18 @@ let visit_toplevel ~tag prefs  hentities (toplevel, toks) =
         );
       end;
 
-      param.p_type +> Common.do_option (function
-      | Hint (ClassName name) -> 
-          let info = Ast.info_of_name name in
-          tag info (TypeMisc);
-      | Hint (Self _ | Parent _) -> 
-          ()
-      | Hint (LateStatic tok) -> 
-          tag tok BadSmell
-      | HintArray tok ->
-          tag tok (TypeMisc);
-      );
+      param.p_type +> handle_typehint tag;
+
     );
 
     (* -------------------------------------------------------------------- *)
     V.kclass_stmt = (fun (k, bigf) x ->
       match x with
-      | Ast.Method def -> 
+      | Ast.Method def ->
           (* done in kfunc_def *)
           k x
 
-      | Ast.XhpDecl d -> 
+      | Ast.XhpDecl d ->
           (match d with
           | XhpAttributesDecl _ -> k x
           | XhpChildrenDecl _ -> k x
@@ -377,7 +392,7 @@ let visit_toplevel ~tag prefs  hentities (toplevel, toks) =
     );
 
     (* -------------------------------------------------------------------- *)
-    V.kstmt = (fun (k,bigf) stmt -> 
+    V.kstmt = (fun (k,bigf) stmt ->
       k stmt;
       match stmt with
       | Globals ((v1, v2, v3)) ->
@@ -402,7 +417,7 @@ let visit_toplevel ~tag prefs  hentities (toplevel, toks) =
 
     );
     (* -------------------------------------------------------------------- *)
-    V.kcatch = (fun (k,bigf) c -> 
+    V.kcatch = (fun (k,bigf) c ->
       let (tok, (lp, (cname, dname), rp), stmts) = c in
       let info_class = Ast.info_of_name cname in
       tag info_class (Class (Use2 fake_no_use2));
@@ -413,7 +428,7 @@ let visit_toplevel ~tag prefs  hentities (toplevel, toks) =
     );
 
     (* -------------------------------------------------------------------- *)
-    V.kexpr = (fun (k,bigf) expr -> 
+    V.kexpr = (fun (k,bigf) expr ->
       k expr;
       (match expr with
       | Cast (((cast, v1), v2)) ->
@@ -475,12 +490,12 @@ let visit_toplevel ~tag prefs  hentities (toplevel, toks) =
 
           let info = Ast.info_of_dname dname in
           (match !aref with
-          | S.Local -> 
+          | S.Local ->
               tag info (Local Use)
           | S.Param ->
               tag info (Parameter Use)
 
-          | S.Class -> 
+          | S.Class ->
               tag info (Field (Use2 fake_no_use2))
 
           | S.Global | S.Closed ->
@@ -506,7 +521,7 @@ let visit_toplevel ~tag prefs  hentities (toplevel, toks) =
           tag info (Global (Use2 fake_no_use2))
 
       | DynamicClassVar (v1, t2, v2) ->
-          (* todo? colorize v1? bad to use dynamic variable ... 
+          (* todo? colorize v1? bad to use dynamic variable ...
           let info = Ast.info_of_dname dname in
           tag info BadSmell
           *)
@@ -517,7 +532,7 @@ let visit_toplevel ~tag prefs  hentities (toplevel, toks) =
 
       | VArrayAccess (var, exprbracket) ->
           (match Ast.unbracket exprbracket with
-          | None -> 
+          | None ->
               k x
           | Some (exprbis) ->
               (match exprbis with
@@ -550,7 +565,7 @@ let visit_toplevel ~tag prefs  hentities (toplevel, toks) =
           tag info (Field (Use2 fake_no_use2));
           k x
 
-      | StaticMethodCallSimple (qualif, name, args) -> 
+      | StaticMethodCallSimple (qualif, name, args) ->
           let info = Ast.info_of_name name in
           tag info (StaticMethod (Use2 fake_no_use2));
           k x
@@ -566,7 +581,7 @@ let visit_toplevel ~tag prefs  hentities (toplevel, toks) =
           let ii = Lib_parsing_php.ii_of_any (Lvalue lval) in
           ii +> List.iter (fun info -> tag info PointerCall);
 
-      | ObjAccess (_, _) 
+      | ObjAccess (_, _)
       | VQualifier (_, _)
       | Indirect (_, _)
       | VBraceAccess (_, _)
@@ -586,33 +601,33 @@ let visit_toplevel ~tag prefs  hentities (toplevel, toks) =
     (* -------------------------------------------------------------------- *)
     V.kconstant = (fun (k, vx) e ->
       match e with
-      | Int v1 | Double v1 -> 
+      | Int v1 | Double v1 ->
           tag (snd v1) Number
 
-      | Ast.String (s, ii) -> 
+      | Ast.String (s, ii) ->
           (* this can be sometimes tagged as url, or field access in array *)
           if not (Hashtbl.mem already_tagged ii)
-          then 
+          then
             tag_string ~tag s ii
 
-      | CName name -> 
+      | CName name ->
           (* cf also typing_php.ml *)
           let s = Ast.name name in
           let info = Ast.info_of_name name in
           (match s with
-          | "true" -> 
+          | "true" ->
               tag info Boolean
-          | "false" -> 
+          | "false" ->
               tag info Boolean
-          | "null" -> 
+          | "null" ->
               tag info Null
-              
+
           | _ ->
               (* TODO *)
               tag info (Macro (Use2 fake_no_use2))
           )
 
-      | PreProcess v1 -> 
+      | PreProcess v1 ->
           tag (snd v1) Builtin
       | XdebugClass (_, _) | XdebugResource ->
           ()
@@ -620,13 +635,13 @@ let visit_toplevel ~tag prefs  hentities (toplevel, toks) =
     (* -------------------------------------------------------------------- *)
     V.kscalar = (fun (k, vx) sc ->
       match sc with
-      | C cst -> 
+      | C cst ->
           k sc
       | ClassConstant (qualif, name) ->
           k sc;
           let info = Ast.info_of_name name in
           tag info (Macro (Use2 fake_no_use2))
-      | Guil _ | HereDoc _ -> 
+      | Guil _ | HereDoc _ ->
           k sc
     );
 
@@ -640,7 +655,7 @@ let visit_toplevel ~tag prefs  hentities (toplevel, toks) =
     );
     (* -------------------------------------------------------------------- *)
     V.kclass_name_reference = (fun (k, vx) x ->
-      match x with 
+      match x with
       | ClassNameRefStatic (ClassName name) ->
           let info = Ast.info_of_name name in
           tag info (Class (Use2 fake_no_use2));
@@ -667,7 +682,7 @@ let visit_toplevel ~tag prefs  hentities (toplevel, toks) =
       | LateStatic tok ->
           tag tok BadSmell
     );
-  } 
+  }
   in
   let visitor = V.mk_visitor hooks in
   visitor (Toplevel toplevel);
@@ -675,9 +690,9 @@ let visit_toplevel ~tag prefs  hentities (toplevel, toks) =
   (* -------------------------------------------------------------------- *)
   (* toks phase 2 *)
   (* -------------------------------------------------------------------- *)
-  toks +> List.iter (fun tok -> 
+  toks +> List.iter (fun tok ->
     (* all the name and varname should have been tagged by now. *)
-     
+
     match tok with
 
     | T.EOF ii -> ()
@@ -687,9 +702,9 @@ let visit_toplevel ~tag prefs  hentities (toplevel, toks) =
     | T.TSpaces ii -> ()
 
     | T.TCommentPP ii -> ()
-   
+
     (* they should have been covered before *)
-    | T.T_VARIABLE (_, ii) -> 
+    | T.T_VARIABLE (_, ii) ->
         if not (Hashtbl.mem already_tagged ii)
         then tag ii Error
 
@@ -697,13 +712,13 @@ let visit_toplevel ~tag prefs  hentities (toplevel, toks) =
         if not (Hashtbl.mem already_tagged ii)
         then tag ii Error
 
-    
-    | T.T_OPEN_TAG ii -> 
+
+    | T.T_OPEN_TAG ii ->
         tag ii Keyword
 
     | T.TOPAR ii   | T.TCPAR ii
     | T.TOBRACE ii | T.TCBRACE ii
-    | T.TOBRA ii   | T.TCBRA ii 
+    | T.TOBRA ii   | T.TCBRA ii
       ->
         tag ii Punctuation
 
@@ -719,9 +734,9 @@ let visit_toplevel ~tag prefs  hentities (toplevel, toks) =
         (*
         let toks = Parse_comments.tokens_string s in
 
-        toks +> List.iter (fun tok -> 
+        toks +> List.iter (fun tok ->
           match tok with
-          | Token_comments.TWord (s, pi) -> 
+          | Token_comments.TWord (s, pi) ->
               let startp = start_pos + pi.Common.charpos in
               let endp = startp + String.length s in
 
@@ -730,10 +745,10 @@ let visit_toplevel ~tag prefs  hentities (toplevel, toks) =
                     ["interrupts"; "interrupt";
                      "irq"; "irqs";
                      "lock";"locking";"locks";"locked";
-                    ] -> 
+                    ] ->
                   pr2_gen (startp, endp);
                   let (i1, i2) = iter_range_of_range bufinfo (startp, endp) in
-                  buffer#apply_tag_by_name 
+                  buffer#apply_tag_by_name
                     (stag buffer CommentWordImportantNotion) i1 i2
 
               | _ when List.mem (String.lowercase s)
@@ -743,10 +758,10 @@ let visit_toplevel ~tag prefs  hentities (toplevel, toks) =
                      "hold"; "held";
                      "enabled";"enable";"enables";
                      "disabled";"disable";"disables";
-                    ] -> 
+                    ] ->
                   pr2_gen (startp, endp);
                   let (i1, i2) = iter_range_of_range bufinfo (startp, endp) in
-                  buffer#apply_tag_by_name 
+                  buffer#apply_tag_by_name
                     (stag buffer CommentWordImportantModal) i1 i2
 
               | _ -> ()
@@ -761,7 +776,7 @@ let visit_toplevel ~tag prefs  hentities (toplevel, toks) =
       | T.T_XHP_PCDATA ii | T.T_XHP_ANY ii
       | T.T_XHP_REQUIRED ii | T.T_XHP_ENUM ii
       | T.T_XHP_CATEGORY ii | T.T_XHP_CHILDREN ii
-      | T.T_XHP_ATTRIBUTE ii 
+      | T.T_XHP_ATTRIBUTE ii
         -> tag ii KeywordObject
 
       | T.T_XHP_TEXT (_, ii) -> tag ii String
@@ -774,11 +789,11 @@ let visit_toplevel ~tag prefs  hentities (toplevel, toks) =
 
       (* should have been transformed into a XhpName or XhpInherit in Ast *)
 
-      | T.T_XHP_PERCENTID_DEF (_, ii) -> 
+      | T.T_XHP_PERCENTID_DEF (_, ii) ->
           if not (Hashtbl.mem already_tagged ii)
           then tag ii Error
 
-      | T.T_XHP_COLONID_DEF (_, ii) -> 
+      | T.T_XHP_COLONID_DEF (_, ii) ->
           if not (Hashtbl.mem already_tagged ii)
           then tag ii Error
 
@@ -797,7 +812,7 @@ let visit_toplevel ~tag prefs  hentities (toplevel, toks) =
       | T.T_EVAL ii -> tag ii BadSmell
 
       | T.T_REQUIRE_ONCE ii | T.T_REQUIRE ii
-      | T.T_INCLUDE_ONCE ii | T.T_INCLUDE ii 
+      | T.T_INCLUDE_ONCE ii | T.T_INCLUDE ii
           -> tag ii Include
 
       | T.T_INSTANCEOF ii -> tag ii KeywordObject
@@ -856,16 +871,16 @@ let visit_toplevel ~tag prefs  hentities (toplevel, toks) =
           -> ()
 
       (* can be a type hint *)
-      | T.T_ARRAY ii -> 
+      | T.T_ARRAY ii ->
           if not (Hashtbl.mem already_tagged ii)
-          then 
+          then
             tag ii Builtin
 
       | T.T_LIST ii -> tag ii Builtin
 
-      | T.T_DOUBLE_ARROW ii -> 
+      | T.T_DOUBLE_ARROW ii ->
           tag ii Punctuation
-      | T.T_OBJECT_OPERATOR ii -> 
+      | T.T_OBJECT_OPERATOR ii ->
           tag ii Punctuation
 
       | T.T_IMPLEMENTS ii -> tag ii KeywordObject
@@ -881,7 +896,7 @@ let visit_toplevel ~tag prefs  hentities (toplevel, toks) =
       | T.T_UNSET ii -> tag ii Builtin
 
       | T.T_VAR ii -> tag ii Keyword
-      | T.T_PUBLIC ii | T.T_PROTECTED ii | T.T_PRIVATE ii 
+      | T.T_PUBLIC ii | T.T_PROTECTED ii | T.T_PRIVATE ii
           -> tag ii Keyword
 
       | T.T_FINAL ii | T.T_ABSTRACT ii -> tag ii KeywordObject
@@ -890,7 +905,7 @@ let visit_toplevel ~tag prefs  hentities (toplevel, toks) =
       | T.T_CONST ii -> tag ii Keyword
 
       (* could be for func or method or lambda so tagged via ast *)
-      | T.T_FUNCTION ii -> 
+      | T.T_FUNCTION ii ->
           if not (Hashtbl.mem already_tagged ii)
           then tag ii Keyword
 
@@ -912,10 +927,10 @@ let visit_toplevel ~tag prefs  hentities (toplevel, toks) =
       | T.T_ENDFOREACH ii | T.T_FOREACH ii
       | T.T_ENDFOR ii | T.T_FOR ii
       | T.T_ENDWHILE ii | T.T_WHILE ii
-      | T.T_DO ii 
+      | T.T_DO ii
         -> tag ii KeywordLoop
 
-      | T.T_IF ii | T.T_ELSEIF ii  | T.T_ELSE ii | T.T_ENDIF ii 
+      | T.T_IF ii | T.T_ELSEIF ii  | T.T_ELSE ii | T.T_ENDIF ii
           -> tag ii KeywordConditional
 
       | T.T_PRINT ii -> tag ii Builtin
@@ -933,11 +948,11 @@ let visit_toplevel ~tag prefs  hentities (toplevel, toks) =
 
       | T.T_NUM_STRING ii -> ()
 
-      | T.T_ENCAPSED_AND_WHITESPACE (s, ii) -> 
+      | T.T_ENCAPSED_AND_WHITESPACE (s, ii) ->
           if not (Hashtbl.mem already_tagged ii)
           then tag_string ~tag s ii
 
-      | T.T_CONSTANT_ENCAPSED_STRING (s, ii) -> 
+      | T.T_CONSTANT_ENCAPSED_STRING (s, ii) ->
           if not (Hashtbl.mem already_tagged ii)
           then tag_string ~tag s ii
 
@@ -947,10 +962,10 @@ let visit_toplevel ~tag prefs  hentities (toplevel, toks) =
   );
 
   (* -------------------------------------------------------------------- *)
-  (* ast phase 2 *)  
+  (* ast phase 2 *)
   (* -------------------------------------------------------------------- *)
   (match toplevel with
-  | NotParsedCorrectly iis -> 
+  | NotParsedCorrectly iis ->
       (*
         let (max,min) = Lib_parsing_c.max_min_ii_by_pos ii in
         let i1 = iterline_of_info bufinfo min in

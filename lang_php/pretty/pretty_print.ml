@@ -189,9 +189,14 @@ let visibility env = function
   | A.Protected    -> "protected"
   | A.Abstract     -> "abstract"
 
-let hint_type env = function
-  | A.Hint s       -> s
-  | A.HintArray    -> "array"
+let rec hint_type env = function
+  | A.Hint s         -> s
+  | A.HintArray      -> "array"
+  | A.HintQuestion s -> "?" ^ (hint_type env s)
+  | A.HintTuple l ->
+    let elts = String.concat ", " (List.map (hint_type env) l) in
+    "(" ^ elts ^ ")"
+  | A.HintCallback -> failwith "not implemented: pp callback"
 
 let ptype = function
   | BoolTy   -> "bool"
@@ -278,7 +283,7 @@ and stmt_ env = function
   | FuncDef fd ->
       func_def env fd
   | ClassDef c -> class_def env c
-  | ConstantDef c -> 
+  | ConstantDef c ->
       Pp.print env "const ";
       Pp.print env c.cst_name;
       (* todo? what if we reach 80 col after the =?

@@ -27,7 +27,7 @@ module T = Parser_php
  * tokens, and return an AST that will make it easy to pretty print
  * the code while still maintaining the comments of the original file
  * (see ast_pp.ml).
- * 
+ *
  * This is mostly a copy paste of ast_php_simple_build.ml.
  *)
 
@@ -341,12 +341,12 @@ and stmt_ env st acc =
   | Echo (_, el, _) ->
       A.Expr (A.Call (A.Id "echo", (List.map (expr env) (comma_list el))))
       :: acc
-  | Globals (_, gvl, _) -> 
+  | Globals (_, gvl, _) ->
       A.Global (List.map (global_var env) (comma_list gvl)) :: acc
   | StaticVars (_, svl, _) ->
       A.StaticVars (List.map (static_var env) (comma_list svl)) :: acc
   | InlineHtml (s, _) -> A.InlineHtml s :: acc
-  | Use (_, fn, _) -> 
+  | Use (_, fn, _) ->
       A.Expr (A.Call (A.Id "use", [A.String (use_filename env fn)])) :: acc
   | Unset (_, (_, lp, _), e) ->
       let lp = comma_list lp in
@@ -429,10 +429,10 @@ and expr env = function
       let e1 = lvalue env e1 in
       let e2 = lvalue env e2 in
       A.Assign (None, e1, A.Ref e2)
-  | AssignNew _ -> 
+  | AssignNew _ ->
       raise (TodoConstruct "expr AssignNew")
   | Cast ((c, _), e) -> A.Cast (c, expr env e)
-  | CastUnset _ -> 
+  | CastUnset _ ->
       raise (TodoConstruct "expr CastUnset")
   | InstanceOf (e, _, cn) ->
       let e = expr env e in
@@ -540,6 +540,9 @@ and dname = function
 and hint_type env = function
   | Hint q -> A.Hint (class_name_or_selfparent env q)
   | HintArray _ -> A.HintArray
+  | HintQuestion (i, t) -> A.HintQuestion (hint_type env t)
+  | HintTuple (v1)      -> A.HintTuple (List.map (hint_type env) (comma_list (unbrace v1)))
+  | HintCallback -> A.HintCallback
 
 and qualifier env (cn, _) = class_name_or_selfparent env cn
 

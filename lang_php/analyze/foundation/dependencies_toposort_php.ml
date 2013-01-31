@@ -157,6 +157,9 @@ module Deps = struct
     (* not sure a type hints counts as a dependency *)
     | Hint (s, _) -> SSet.add s acc
     | HintArray -> acc
+    | HintQuestion t -> hint_type_ acc t
+    | HintTuple t -> List.fold_left (fun accp x -> SSet.union accp (hint_type_ accp x)) acc t
+    | HintCallback -> acc
 
   and class_def acc c =
     (* todo? implements? traits? *)
@@ -166,7 +169,7 @@ module Deps = struct
     let acc = method_defl acc c.c_methods in
     acc
 
-  and extends acc l = 
+  and extends acc l =
     match l with
     | None -> acc
     | Some (x, _) -> SSet.add x acc

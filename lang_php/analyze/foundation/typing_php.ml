@@ -25,17 +25,17 @@ module Unify = Typing_unify_php
 (*****************************************************************************)
 (* Prelude *)
 (*****************************************************************************)
-(* 
+(*
  * This module implements a bottom-up type-inference for PHP.
  * It's using union types, polymorphic types, and object types
  * (see Env_typing_php.t)
- * Every functions/classes are sorted in their topological order, 
+ * Every functions/classes are sorted in their topological order,
  * and are then typed independently (hence the term "bottom-up").
- * 
+ *
  * This module is also (ab)used to provide autocompletion.
- * 
+ *
  * TODO: explain
- * 
+ *
  *  - the subsitution technique, and why it's better than the alternatives:
  *     * W: simple gauss like, but slow fixpoint, bad error message (too late)
  *     * compose_subst: nice algo, but strong invariant which makes it easy
@@ -45,27 +45,27 @@ module Unify = Typing_unify_php
  *       objects according to julien)
  *     * constraints: complex solver
  *     * leroy levels: ??
- * 
+ *
  *    Typical algorithms for type inference use equality,
  *    but here we manage sets that grow, so not pure equality but
  *    set inclusion (a constraint). $y = $x means all types of $x
  *    should go in $y.
  *    Julien's techniques makes it easy to manage union types.
- * 
+ *
  *  - absorbtion (string -> int -> bool -> null)
- * 
+ *
  *  - it's not really bottom-up, in the sense that a call site
  *    can influence globally the type of the called function or method
- * 
+ *
  * pad's notes:
  *  - abused strings:
  *    * "$;return"
  *    * "$;tmp"
- * 
+ *
  * history:
  *  - pad wanted to do type inference for PHP a long time ago, like many
  *    other people at Facebook such as iproctor, yiding, etc. He reads
- *    a few papers on it: 
+ *    a few papers on it:
  *     * soft typing for scheme,
  *     * inferring types for dynamic languages javascript/ruby/python/php/...,
  *     * the cartesian product inference algorithm of ole agesen,
@@ -76,18 +76,18 @@ module Unify = Typing_unify_php
  *    to read something that explains simply how to handle union types.
  *    The traditional algorithms have a strong equality model, not a
  *    set model, which is required for union types.
- * 
+ *
  *  - pad did some type inference by cheating, by abusing xdebug to
  *    extract type information from traces
- * 
+ *
  *  - julien wanted first to (ab)use the (top-down) abstract interpreter to
  *    also do type inference, but the interpreter is kinda hacky already
- *    and full of heuristics. Pad had the idea of trying 
+ *    and full of heuristics. Pad had the idea of trying
  *    a bottom-up approach, but failed to know how to use W or
  *    compose_subst with union types that grows. Julien did it.
- * 
+ *
  *  - algo unification and managing subsitution a la ?? coq?
- * 
+ *
  * todo: each time we use 'any' below, it's probably a todo
  *)
 
@@ -164,9 +164,9 @@ module Collect = struct
         | Tsstring _
         | Tsenum _ as x -> x
         | Trecord m -> Trecord (SMap.map (ty env subst tenv mem depth) m)
-        | Tarray (s, t1, t2) -> 
-            Tarray (s, 
-                   ty env subst tenv mem depth t1, 
+        | Tarray (s, t1, t2) ->
+            Tarray (s,
+                   ty env subst tenv mem depth t1,
                    ty env subst tenv mem depth t2)
         | Tfun (tl, t) -> Tfun (
             List.map (fun (s, x) -> s, ty env subst tenv mem depth x) tl,
@@ -174,7 +174,7 @@ module Collect = struct
         | Tobject m ->
             let m = SMap.map (ty env subst tenv mem depth) m in
             Tobject m
-        | Tclosed (s, m) -> 
+        | Tclosed (s, m) ->
             Tclosed (s, SMap.map (ty env subst tenv mem depth) m)
       in
       Hashtbl.add mem.prims t t';
@@ -227,7 +227,7 @@ let rec infer_type_definition env str =
       func_id env str
   | _ when SSet.mem ("^Fun:" ^ str) !(env.builtins) -> ()
   | _ ->
-      (* TODO: 
+      (* TODO:
       if env.strict
       then failwith ("infer_type_definition, unknown def: " ^ str)
       *)
@@ -277,7 +277,7 @@ and stmt env= function
       let ti = (pi, Env_typing_php.ReturnValue) in
       let _ = AEnv.set env id ti in
       iexpr env (Assign (None, Id (wrap "$;return"), e))
-  | Return (Some e) -> 
+  | Return (Some e) ->
       let id = AEnv.create_ai env e in
       let ti = (pi, Env_typing_php.ReturnValue) in
       let _ = AEnv.set env id ti in
@@ -338,8 +338,8 @@ and iexpr env e = ignore (expr env e)
 and expr env e =
   expr_ env false e
 
-and var_name e = 
-  match e with 
+and var_name e =
+  match e with
   | Id(n, _) ->n;
   | _ -> "NONAME";
 
@@ -397,8 +397,8 @@ and expr_ env lv = function
       | _ when env.auto_complete && is_marked ->
           if s.[0] = '$'
           then
-            let locals = 
-              SMap.fold (fun x _ acc -> SSet.add x acc) !(env.vars) SSet.empty 
+            let locals =
+              SMap.fold (fun x _ acc -> SSet.add x acc) !(env.vars) SSet.empty
             in
             env.show := Slocal (get_marked_id env s, locals)
           else env.show := Sglobal (get_marked_id env s);
@@ -415,7 +415,7 @@ and expr_ env lv = function
       | _ when GEnv.mem_fun env s -> GEnv.get_fun env s
       | _ when GEnv.mem_class env s -> GEnv.get_class env s
       | _ when Classes.mem env s || Functions.mem env s ->
-          infer_type_definition env s; 
+          infer_type_definition env s;
           expr env (Id (s, tok))
       | _ ->
           if env.strict
@@ -429,23 +429,23 @@ and expr_ env lv = function
   | Array_get (e, None) ->
       let id = AEnv.create_ai env e in
       let t1 = expr env e in
-      let v = Tvar (fresh()) in 
+      let v = Tvar (fresh()) in
       let t2 = array (int, v) in
-      let ti = (pi, Env_typing_php.NoIndex (v)) in 
+      let ti = (pi, Env_typing_php.NoIndex (v)) in
       let _ = Unify.unify env t1 t2 in
       let _ = AEnv.set env id ti in
       v
   (* Array access with const as key *)
   | Array_get (e, Some (Id (s,tok))) when s.[0] <> '$' ->
       let id = AEnv.create_ai env e in
-      let v = expr env (Array_get (e, Some (String (s,tok)))) in 
-      let ti = (pi, Env_typing_php.Const v) in 
+      let v = expr env (Array_get (e, Some (String (s,tok)))) in
+      let ti = (pi, Env_typing_php.Const v) in
       let _ = AEnv.set env id ti in
       v
 
   | Array_get (Id (s,y), Some (String (x, _)))
       when Hashtbl.mem Builtins_typed_php.super_globals s ->
-      
+
       let id = AEnv.create_ai env (Id(s, y)) in
       let ti = (pi, Env_typing_php.UnhandledAccess) in
       let _ = AEnv.set env id ti in
@@ -455,7 +455,7 @@ and expr_ env lv = function
       let v = Tvar (fresh()) in
       let t2 = srecord (x, v) in
       let _ = Unify.unify env t1 t2 in
-      let v = Instantiate.approx env ISet.empty v in 
+      let v = Instantiate.approx env ISet.empty v in
       v
 
   | Array_get (e, Some (String (s, _)))->
@@ -472,7 +472,7 @@ and expr_ env lv = function
 
   (* disguised array access *)
   | Call (Id (("idx" | "edx" | "adx" | "sdx"),_), (e :: k :: r)) ->
-      let e = expr env (Array_get (e, Some k)) in 
+      let e = expr env (Array_get (e, Some k)) in
       (match r with
       | [] -> e
       | x :: _ -> Unify.unify env (expr env x) e
@@ -508,7 +508,7 @@ and expr_ env lv = function
       let t2 = sobject (x, v) in
       let _ = Unify.unify env t1 t2 in
       v
-  | Class_get _ | Obj_get _ -> 
+  | Class_get _ | Obj_get _ ->
       any
 
 
@@ -517,29 +517,29 @@ and expr_ env lv = function
     let id = AEnv.create_ai env e in
     let t1 = expr env e1 in
     let t2 = expr env e2 in
-    let ti = (pi, Env_typing_php.Value(t2)) in 
+    let ti = (pi, Env_typing_php.Value(t2)) in
     let _ = AEnv.set env id ti in
-    let t = Unify.unify env t1 t2 in 
+    let t = Unify.unify env t1 t2 in
     t
 
   | Assign (None, Id("$;return", tok), ConsArray(i, avl))  -> (
     let e1 = Id("$;return", tok) in
-    let e2 = ConsArray(Some(e1), avl) in 
+    let e2 = ConsArray(Some(e1), avl) in
       let t1 = expr env e1 in
       let t2 = expr env e2 in
       let t = Unify.unify env t1 t2 in
-      match pi with 
-      | Some(p) -> 
-          let e = ConsArray(i, avl) in 
+      match pi with
+      | Some(p) ->
+          let e = ConsArray(i, avl) in
           let id = AEnv.create_ai env e in
-          let tl = List.map (array_declaration env id pi) avl in 
-          let ti = (pi, Env_typing_php.Declaration(tl)) in 
-          let _ = AEnv.set env id ti in 
+          let tl = List.map (array_declaration env id pi) avl in
+          let ti = (pi, Env_typing_php.Declaration(tl)) in
+          let _ = AEnv.set env id ti in
           t
       | None -> t
   )
 
-  | Assign (None, e1, ConsArray(_, avl)) -> 
+  | Assign (None, e1, ConsArray(_, avl)) ->
       let e2 = ConsArray (Some(e1), avl) in
       let t1 = expr env e1 in
       let t2 = expr env e2 in
@@ -551,7 +551,7 @@ and expr_ env lv = function
       let t2 = expr env e2 in
       let t = Unify.unify env t1 t2 in
       t
-  
+
   | Assign (Some bop, e1, e2) ->
       expr env (Assign (None, e1, Binop (bop, e1, e2)))
 
@@ -560,8 +560,8 @@ and expr_ env lv = function
       let t = List.fold_left (array_value env) t avl in
       (match id with
       | None ->(
-	match pi with 
-	| Some(p) -> 
+	match pi with
+	| Some(p) ->
           let e = ConsArray(id, avl) in
           let id = AEnv.create_ai env e in
           let tl  = List.map (array_declaration env id pi) avl in
@@ -570,14 +570,14 @@ and expr_ env lv = function
           t
 	| None -> t )
       | Some(Id("$;return", _)) -> t
-      | Some(e) -> 
+      | Some(e) ->
         let id = AEnv.create_ai env e in
         let tl  = List.map (array_declaration env id pi) avl in
 	let ti = (pi, Env_typing_php.Declaration(tl)) in
         let _ = AEnv.set env id ti in
         t)
 
-  | List el -> 
+  | List el ->
       let t = Tvar (fresh()) in
       let el = List.map (expr env) el in
       let t = List.fold_left (Unify.unify env) t el in
@@ -619,7 +619,7 @@ and expr_ env lv = function
       iexpr env e2;
       bool
   (* TODO *)
-  | Lambda _ -> 
+  | Lambda _ ->
       any
 
 and encaps env e =
@@ -638,7 +638,7 @@ and array_value env t = function
       Unify.unify env t t'
 
 and array_declaration env id pi = function
-  | Aval e -> 
+  | Aval e ->
       let t = expr env e in
       let aa = (pi, DeclarationValue (t)) in
       AEnv.set env id aa;
@@ -647,7 +647,7 @@ and array_declaration env id pi = function
       let t1 = expr env e1 in
       let t2 = expr env e2 in
       let aa = (pi, DeclarationKValue(t1, t2)) in
-      AEnv.set env id aa; 
+      AEnv.set env id aa;
       t2
 
 and ptype env = function
@@ -700,19 +700,19 @@ and xhp_attr env = function
 (* Functions *)
 (* ---------------------------------------------------------------------- *)
 and func_id env fname =
-  if GEnv.mem_fun env fname then () 
+  if GEnv.mem_fun env fname then ()
   else
     try func_def env (Functions.get env fname)
     with Not_found ->
-      if env.strict 
+      if env.strict
       then raise (UnknownEntity fname);
       GEnv.set_fun env fname (Tvar (fresh()))
 
 and func_def env fd =
   if not (GEnv.mem_fun env (A.unwrap fd.f_name)) && env.verbose then begin
     incr env.count;
-    pr (spf "Typing function(%d/%d)[%d]: %s" 
-           !(env.count) !(env.total) env.depth (A.unwrap fd.f_name)); 
+    pr (spf "Typing function(%d/%d)[%d]: %s"
+           !(env.count) !(env.total) env.depth (A.unwrap fd.f_name));
   end;
   Collect.collect env;
   let env = { env with vars = ref SMap.empty } in
@@ -731,7 +731,7 @@ and func_def env fd =
    * enough. We need to process the dependencies. The topological
    * sort is just some kind of optimisations (to converge more quicky??)
    *)
-  List.iter (infer_type_definition env) 
+  List.iter (infer_type_definition env)
     (Graph.get_deps !(env.graph) (A.unwrap fd.f_name));
   Env.set env "$;return" return;
   stmtl env fd.f_body;
@@ -754,10 +754,15 @@ and parameter env p =
           expr env (New (Id (x, tok), [])))
     | Some (HintArray) ->
         expr env (ConsArray (None, []))
+
+    (* don't handle type extensions *)
+    | Some (HintQuestion _)
+    | Some (HintTuple _)
+    | Some (HintCallback) -> Tvar (fresh())
   in
   (match p.p_default with
   | None -> ()
-  | Some (ConsArray(id, avl)) -> 
+  | Some (ConsArray(id, avl)) ->
       let id = Some(Id(p.p_name)) in
       let e = ConsArray(id, avl) in
       ignore (Unify.unify env pval (expr env e))
@@ -807,8 +812,8 @@ and class_def env c =
     | None -> Tvar (fresh()), "" in
   if env.verbose then begin
     incr env.count;
-    Printf.printf "Typing class(%d/%d)[%d]: %s\n" 
-      !(env.count) !(env.total) env.depth (A.unwrap c.c_name); 
+    Printf.printf "Typing class(%d/%d)[%d]: %s\n"
+      !(env.count) !(env.total) env.depth (A.unwrap c.c_name);
     flush stdout;
   end;
   let env = { env with vars = ref SMap.empty } in
@@ -901,14 +906,14 @@ and constant is_enum env ien sen acc cst =
 and class_vars static env acc c =
   if static <> is_static c.cv_modifiers
   then acc
-  else 
+  else
     let ((s, _tok), e) = (c.cv_name, c.cv_value) in
-    let t = match e with 
-      | None -> Tvar (fresh()) 
-      | Some (ConsArray(_, avl)) -> 
+    let t = match e with
+      | None -> Tvar (fresh())
+      | Some (ConsArray(_, avl)) ->
           let ex = Id((s), _tok) in
           expr env (ConsArray(Some(ex), avl))
-      | Some x -> expr env x 
+      | Some x -> expr env x
     in
     let s = if static then s else A.remove_first_char s in
     SMap.add s t acc
@@ -916,7 +921,7 @@ and class_vars static env acc c =
 and method_decl static env acc m =
   if static <> is_static m.m_modifiers
   then acc
-  else 
+  else
     let pl = List.map (parameter env) m.f_params in
     let ret = fresh() in
     let f = afun pl (Tvar ret) in
@@ -939,7 +944,7 @@ and method_def static env acc m =
     env.vars := env_cpy;
     SMap.add (A.unwrap m.f_name) f acc
 
-(* 
+(*
  * When we have:
  *   class A { function foo() { return $this; } }
  *   class B extends A { }
