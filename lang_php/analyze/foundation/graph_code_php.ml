@@ -40,7 +40,7 @@ open Ast_php_simple
  *       -> Dir -> SubDir -> File -> ...
  *       -> Dir -> SubDir -> Module? -> ...
  * 
- * todo: 
+ * less: 
  *  - handle Interface and Traits, do not translate them in RegularClass?
  *  - handle static vs non static methods/fields? but at the same time
  *    lots of our code abuse $this-> where they should use self::, so
@@ -99,7 +99,7 @@ type env = {
    * because right now they are listed in the skip file as skip_errors_dir:,
    * then we dynamically and locally rename this function.
    *)
-  (* TODO: dupe_renaming *)
+  (* less: dupe_renaming *)
 
   (* PHP is case insensitive so certain lookup fails because people
    * used the wrong case. Those errors are less important so
@@ -107,7 +107,7 @@ type env = {
    *)
   case_insensitive: (Graph_code.node, Graph_code.node) Hashtbl.t;
 
-  (* todo: dynamic_fails stats *)
+  (* less: dynamic_fails stats *)
 
   log: string -> unit;
   pr2_and_log: string -> unit;
@@ -408,7 +408,7 @@ and class_def env def =
     def.c_extends +> Common.do_option (fun c2 ->
       add_use_edge env (c2, E.Class E.RegularClass);
     );
-    (* todo: use Interface and Traits at some point *)
+    (* less: use Interface and Traits at some point *)
     def.c_implements +> List.iter (fun c2 ->
       add_use_edge env (c2, E.Class E.RegularClass);
     );
@@ -462,10 +462,11 @@ and expr env x =
     if G.has_node (entity, E.Class E.RegularClass) env.g 
     then begin
       (match env.readable with
-      (* less: phabricator specific *)
+      (* less: phabricator/fb specific *)
       | s when s =~ ".*__phutil_library_map__.php" -> ()
+      | s when s =~ ".*autoload_map.php" -> ()
       | _ -> 
-        env.log (spf "DYNCALL_STR:%s (at %s)" s env.readable);
+        (*env.log (spf "DYNCALL_STR:%s (at %s)" s env.readable);*)
         add_use_edge env ((entity, tok), E.Class E.RegularClass)
       );
     end
@@ -539,15 +540,15 @@ and expr env x =
           expr env (Call (Class_get (Id (env.self, tok), Id name2), es))
         (* need class analysis ... *)
         | _ -> 
-          (* todo: increment dynamic_fails stats *)
+          (* less: increment dynamic_fails stats *)
           expr env e1;
           exprl env es
         )
-    (* todo: increment dynamic_fails stats *)
+    (* less: increment dynamic_fails stats *)
     | _ -> 
       expr env e; 
       exprl env es
-    (* todo: increment dynamic_fails stats also when use func_call_args() *)
+    (* less: increment dynamic_fails stats also when use func_call_args() *)
     )
 
   (* -------------------------------------------------- *)
@@ -588,7 +589,7 @@ and expr env x =
           | Some n -> add_use_edge env n
           )
  
-     (* todo: update dynamic stats *)
+     (* less: update dynamic stats *)
      | Id name1, e2 when not (Ast.is_variable name1) ->
           add_use_edge env (name1, E.Class E.RegularClass);
           expr env e2;
@@ -625,7 +626,7 @@ and expr env x =
       | Id name when not (Ast.is_variable name) -> 
           ()
       | _ -> 
-          (* todo: update dynamic *)
+          (* less: update dynamic *)
           expr env e2
       )
           
@@ -649,9 +650,9 @@ and array_value env = function
   | Aval e -> expr env e
   | Akval (e1, e2) -> exprl env [e1; e2]  
 
-(* todo: dependency to :x:y class? *)
 and xml env x =
-(* todo: dependency on field? *)
+ (* todo: dependency on field? *)
+  add_use_edge env (x.xml_tag, E.Class E.RegularClass);
   x.xml_attrs +> List.iter (fun (name, xhp_attr) -> expr env xhp_attr);
   x.xml_body +> List.iter (xhp env)
 
