@@ -1,5 +1,17 @@
 <?php
 
+function a_function() {
+}
+
+const A_CONSTANT = 1;
+
+class AClass {
+  public $fld;
+  function testThis() {
+    echo $this->fld;
+  }
+}
+
 class Exception {
 }
 
@@ -18,12 +30,4 @@ function test_instanceof() {
 
 function test_interface_lookup() {
   echo I::CST_IN_INTERFACE;
-}
-
-
-class AClass {
-  public $fld;
-  function testThis() {
-    echo $this->fld;
-  }
 }

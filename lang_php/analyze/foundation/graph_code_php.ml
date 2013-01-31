@@ -121,6 +121,9 @@ type env = {
    *)
   and phase = Defs | Inheritance | Uses
 
+let look_like_class_re = 
+  Str.regexp "^\\([A-Z][A-Za-z_0-9]*\\)\\(::[A-Za-z_0-9]*\\)?$"
+
 (*****************************************************************************)
 (* Helpers *)
 (*****************************************************************************)
@@ -452,7 +455,25 @@ and expr env x =
   (match x with
   | Int _ | Double _  -> ()
 
-  (* todo: this can hide actually name of functions or classes ... *)
+  (* a String in PHP can actually hide a class (or a function) *)
+  | String (s, tok) when s ==~ look_like_class_re ->
+    let entity = Common.matched1 s in
+    (* less: do case insensitive? handle conflicts? *)
+    if G.has_node (entity, E.Class E.RegularClass) env.g 
+    then begin
+      (match env.readable with
+      (* less: phabricator specific *)
+      | s when s =~ ".*__phutil_library_map__.php" -> ()
+      | _ -> 
+        env.log (spf "DYNCALL_STR:%s (at %s)" s env.readable);
+        add_use_edge env ((entity, tok), E.Class E.RegularClass)
+      );
+    end
+  (* todo? also look for functions? but has more FPs with regular
+   * fields. Need to avoid this FP either by not calling
+   * the String visitor when inside an array where all fields are
+   * short or some field do not correspond to an existing function
+   *)
   | String _ -> ()
 
   (* Note that you should go here only when it's a constant. You should
