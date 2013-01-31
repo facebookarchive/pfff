@@ -1151,7 +1151,7 @@ and xml env heap x =
   let heap = List.fold_left (xhp env) heap x.xml_body in
   (* todo? args = ? *)
   let args = [] in
-  new_ env heap (Id (A.string_of_xhp_tag x.xml_tag, None)) args
+  new_ env heap (Id x.xml_tag) args
 
 and encaps env heap x = expr env heap x
 

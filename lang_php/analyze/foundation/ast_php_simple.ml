@@ -251,7 +251,7 @@ and expr =
     | XhpXml of xml
 
     and xml = {
-      xml_tag: string list; (* todo? name? *)
+      xml_tag: name;
       xml_attrs: (name * xhp_attr) list;
       xml_body: xhp list;
     }

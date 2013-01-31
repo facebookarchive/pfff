@@ -609,16 +609,16 @@ and func_def env f =
 
 and xhp_html env = function
   | Xhp (tag, attrl, _, body, _) ->
-      let tag, _ = tag in
+      let tag, tok = tag in
       let attrl = List.map (xhp_attribute env) attrl in
-      { A.xml_tag = tag;
+      { A.xml_tag = (A.string_of_xhp_tag tag, wrap tok);
         A.xml_attrs = attrl;
         A.xml_body = List.map (xhp_body env) body;
       }
   | XhpSingleton (tag, attrl, _) ->
-      let tag, _ = tag in
+      let tag, tok = tag in
       let attrl = List.map (xhp_attribute env) attrl in
-      { A.xml_tag = tag;
+      { A.xml_tag = (A.string_of_xhp_tag tag, wrap tok);
         A.xml_attrs = attrl;
         A.xml_body = [];
       }

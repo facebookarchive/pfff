@@ -197,7 +197,7 @@ and
       v_xml_attrs in
   let bnd = ("xml_attrs", arg) in
   let bnds = bnd :: bnds in
-  let arg = Ocaml.vof_list Ocaml.vof_string v_xml_tag in
+  let arg = vof_name v_xml_tag in
   let bnd = ("xml_tag", arg) in let bnds = bnd :: bnds in Ocaml.VDict bnds
 and vof_xhp_attr x = vof_expr x
 

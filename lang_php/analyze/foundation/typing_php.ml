@@ -596,8 +596,7 @@ and expr_ env lv = function
 
   | Xhp x ->
       xml env x;
-      let name = A.string_of_xhp_tag x.xml_tag in
-      let t = expr env (New (Id (wrap name), [])) in
+      let t = expr env (New (Id (x.xml_tag), [])) in
       t
 
   | New (Id (x,_), _) when env.auto_complete && has_marker env x ->

@@ -107,7 +107,7 @@ module Deps = struct
     | Call (e, el) -> exprl (expr acc e) el
     | Xhp x ->
         let acc = xml acc x in
-        let name = Ast.string_of_xhp_tag x.xml_tag in
+        let name = Ast.unwrap x.xml_tag in
         SSet.add name acc
     | ConsArray (_, avl) -> array_valuel acc avl
     | List el -> exprl acc el
