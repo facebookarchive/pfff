@@ -97,7 +97,7 @@ let refactor refactorings ast_with_tokens =
                         failwith "impossible to have such name as type hints"
                     | HintQuestion (tok, t) -> tok
                     | HintTuple (t, _, _) -> t
-                    | HintCallback -> failwith "no token here yet"
+                    | HintCallback (lparen,_,_) -> lparen
                   in
                   if tok_pos_equal_refactor_pos tok r then begin
                     tok.PI.transfo <-

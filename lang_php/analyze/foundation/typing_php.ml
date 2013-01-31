@@ -758,7 +758,7 @@ and parameter env p =
     (* don't handle type extensions *)
     | Some (HintQuestion _)
     | Some (HintTuple _)
-    | Some (HintCallback) -> Tvar (fresh())
+    | Some (HintCallback _) -> Tvar (fresh())
   in
   (match p.p_default with
   | None -> ()

@@ -196,7 +196,13 @@ let rec hint_type env = function
   | A.HintTuple l ->
     let elts = String.concat ", " (List.map (hint_type env) l) in
     "(" ^ elts ^ ")"
-  | A.HintCallback -> failwith "not implemented: pp callback"
+  | A.HintCallback (args, ret) ->
+      let args = List.map (hint_type env) args in
+      let args = "(" ^ (String.concat ", " args) ^ ")" in
+      let ret  = match ret with
+                  | Some t -> ": " ^ (hint_type env t)
+                  | None -> "" in
+      Printf.sprintf "(function%s%s)" args ret
 
 let ptype = function
   | BoolTy   -> "bool"

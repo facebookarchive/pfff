@@ -303,7 +303,7 @@ and func_def = {
      | HintArray
      | HintQuestion of hint_type
      | HintTuple of hint_type list
-     | HintCallback
+     | HintCallback of hint_type list * (hint_type option)
 
   (* for methods, and below for fields too *)
   and modifier = Ast_php.modifier

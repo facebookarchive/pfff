@@ -2165,7 +2165,14 @@ and m_list__m_array_pair (xsa: A.array_pair A.comma_list) (xsb: B.array_pair B.c
 (* comma list dots iso *)
 (*---------------------------------------------------------------------------*)
 
-and m_comma_list_dots f xsa xsb =
+and m_comma_list_dots :
+'a 'b .
+('a -> 'b -> X.tin -> ('a * 'b) X.tout) ->
+  'a A.comma_list_dots ->
+  'b B.comma_list_dots ->
+  X.tin ->
+  ('a A.comma_list_dots * 'b B.comma_list_dots) X.tout
+  = fun  f xsa xsb ->
   match xsa, xsb with
   | [], [] ->
       return ([], [])
@@ -2180,10 +2187,7 @@ and m_comma_list_dots f xsa xsb =
 
   | [Right3 _; Middle3 _], bbs ->
       (* TODO do different combinaisons *)
-      return (
-        xsa,
-        xsb
-      )
+      return (xsa, xsb)
 
   | (Middle3 _)::xs, bbs ->
       failwith "... is allowed for now only at the end. Give money to pad to get this feature"
@@ -2691,12 +2695,20 @@ and m_hint_type a b =
   | A.HintTuple v1, B.HintTuple v2 ->
     (m_paren (m_comma_list m_hint_type)) v1 v2 >>= (fun (v1, v2) ->
       return (A.HintTuple v1, B.HintTuple v2))
-  | A.HintCallback, B.HintCallback -> fail ()
+  | A.HintCallback (lp1, (tok1, args1, ret1), rp1),
+    B.HintCallback (lp2, (tok2, args2, ret2), rp2) ->
+    (m_tok lp1 lp2) >>= (fun (lp1, lp2) ->
+      (m_tok tok1 tok2) >>= (fun (tok1, tok2) ->
+        (m_paren (m_comma_list_dots m_hint_type)) args1 args2 >>= (fun (args1, args2) ->
+          (m_option m_hint_type) ret1 ret2 >>= (fun (ret1, ret2) ->
+            return (A.HintCallback (lp1, (tok1, args1, ret1), rp1),
+                    B.HintCallback (lp2, (tok2, args2, ret2), rp2))
+           ))))
   | A.Hint _, _
   | A.HintArray _, _
   | A.HintQuestion _, _
   | A.HintTuple _, _
-  | A.HintCallback, _
+  | A.HintCallback _, _
    -> fail ()
 
 

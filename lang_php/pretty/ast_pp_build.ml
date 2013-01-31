@@ -542,7 +542,11 @@ and hint_type env = function
   | HintArray _ -> A.HintArray
   | HintQuestion (i, t) -> A.HintQuestion (hint_type env t)
   | HintTuple (v1)      -> A.HintTuple (List.map (hint_type env) (comma_list (unbrace v1)))
-  | HintCallback -> A.HintCallback
+  | HintCallback v1 ->
+    let args, ret = (fun (_, args, ret) ->
+                      (List.map (hint_type env) (comma_list_dots (unbrace args)),
+                       Common.fmap (hint_type env) ret)) (unbrace v1) in
+    A.HintCallback (args, ret)
 
 and qualifier env (cn, _) = class_name_or_selfparent env cn
 

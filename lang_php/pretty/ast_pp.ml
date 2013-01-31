@@ -179,7 +179,7 @@ and func_def = {
      | HintArray
      | HintQuestion of hint_type
      | HintTuple of hint_type list
-     | HintCallback
+     | HintCallback of hint_type list * (hint_type option)
 
   and lambda_def = {
     l_ref: bool;

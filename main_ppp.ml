@@ -573,7 +573,16 @@ let unparse_without_type_hints file =
             [ [v1; v2];
               List.flatten
                 (List.map (function Left x -> get_hint_tokens x | Right t -> [t]) elts) ]
-      | HintCallback -> []
+      | HintCallback (lp, (tok, (lap, args, rap), ret), rp) ->
+          let tokens = [lp; tok; lap; rap; rp ] in
+          let args =
+            List.flatten
+              (List.map
+                 (function Left3 x -> get_hint_tokens x | Middle3 t | Right3 t -> [t])
+                 args) in
+          let ret = match ret with Some x -> get_hint_tokens x | None -> [] in
+          List.flatten [tokens; args; ret]
+
     in
     List.iter (fun token -> token.Parse_info.transfo <- Remove) (get_hint_tokens type_hint)
   in

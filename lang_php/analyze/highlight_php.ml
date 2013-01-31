@@ -181,22 +181,29 @@ let highlight_funcall_simple ~tag ~hentities f args info =
 let rec handle_typehint tag x = match x with
   | Some th -> (match th with
     | Hint (ClassName name) ->
-      let info = Ast.info_of_name name in
-      tag info (TypeMisc);
+       let info = Ast.info_of_name name in
+       tag info (TypeMisc);
     | Hint (Self _ | Parent _) ->
-      ()
+        ()
     | Hint (LateStatic tok) ->
-      tag tok BadSmell
+        tag tok BadSmell
     | HintArray tok ->
-      tag tok (TypeMisc);
+        tag tok (TypeMisc);
     | HintQuestion (tok,t) ->
-      tag tok (TypeMisc);
-      handle_typehint tag (Some t)
+        tag tok (TypeMisc);
+        handle_typehint tag (Some t)
     | HintTuple (vl, elts, vr) ->
-      tag vl (TypeMisc);
-      List.iter (fun x -> handle_typehint tag (Some x)) (Ast.uncomma elts);
-      tag vr (TypeMisc)
-    | HintCallback -> ()
+        tag vl (TypeMisc);
+        List.iter (fun x -> handle_typehint tag (Some x)) (Ast.uncomma elts);
+        tag vr (TypeMisc)
+    | HintCallback (lp, (tok, (lap, args, rap), ret), rp) ->
+        tag lp (TypeMisc);
+        tag tok (TypeMisc);
+        tag lap (TypeMisc);
+        List.iter (fun x -> handle_typehint tag (Some x)) (Ast.uncomma_dots args);
+        tag rap (TypeMisc);
+        handle_typehint tag ret;
+        tag rp (TypeMisc)
   )
   | None -> ()
 
