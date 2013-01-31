@@ -6,7 +6,7 @@
  * modify it under the terms of the GNU Lesser General Public License
  * version 2.1 as published by the Free Software Foundation, with the
  * special exception on linking described in file license.txt.
- * 
+ *
  * This library is distributed in the hope that it will be useful, but
  * WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the file
@@ -35,9 +35,9 @@ let tok_pos_equal_refactor_pos tok refactoring =
 let string_of_class_var_modifier modifiers =
   match modifiers with
   | NoModifiers _ -> "var"
-  | VModifiers xs -> xs +> List.map (fun (modifier, tok) -> 
+  | VModifiers xs -> xs +> List.map (fun (modifier, tok) ->
       Ast.str_of_info tok) +> Common.join " "
-                      
+
 
 (*****************************************************************************)
 (* Main entry point *)
@@ -46,7 +46,7 @@ let string_of_class_var_modifier modifiers =
 let refactor refactorings ast_with_tokens =
   refactorings +> List.iter (fun r ->
     let was_modifed = ref false in
-    let visitor = 
+    let visitor =
       match r.R.action with
       | R.AddReturnType str ->
           { V.default_visitor with
@@ -55,10 +55,10 @@ let refactor refactorings ast_with_tokens =
               | FunctionRegular | MethodRegular | MethodAbstract ->
                   let tok = Ast.info_of_name def.f_name in
                   if tok_pos_equal_refactor_pos tok r then begin
-                    let tok_close_paren = 
+                    let tok_close_paren =
                       let (a,b,c) = def.f_params in c
                     in
-                    tok_close_paren.PI.transfo <- 
+                    tok_close_paren.PI.transfo <-
                       PI.AddAfter (PI.AddStr (": " ^ str));
                     was_modifed := true;
                   end;
@@ -76,7 +76,7 @@ let refactor refactorings ast_with_tokens =
             V.kparameter = (fun (k, _) p ->
               let tok = Ast.info_of_dname p.p_name in
               if tok_pos_equal_refactor_pos tok r then begin
-                tok.PI.transfo <- 
+                tok.PI.transfo <-
                   PI.AddBefore (PI.AddStr (str ^ " "));
                 was_modifed := true;
               end;
@@ -89,15 +89,18 @@ let refactor refactorings ast_with_tokens =
               (match p.p_type with
               | None -> ()
               | Some x ->
-                  let tok = 
+                  let tok =
                     match x with
                     | HintArray tok -> tok
                     | Hint (ClassName name) -> Ast.info_of_name name
                     | Hint (LateStatic _ | Parent _ | Self _) ->
                         failwith "impossible to have such name as type hints"
+                    | HintQuestion (tok, t) -> tok
+                    | HintTuple (t, _, _) -> t
+                    | HintCallback -> failwith "no token here yet"
                   in
                   if tok_pos_equal_refactor_pos tok r then begin
-                    tok.PI.transfo <- 
+                    tok.PI.transfo <-
                       PI.AddBefore (PI.AddStr ("?"));
                     was_modifed := true;
                   end
@@ -115,7 +118,7 @@ let refactor refactorings ast_with_tokens =
                   | [Left (dname, affect_opt)] ->
                       let tok = Ast.info_of_dname dname in
                       if tok_pos_equal_refactor_pos tok r then begin
-                        tok.PI.transfo <- 
+                        tok.PI.transfo <-
                           PI.AddBefore (PI.AddStr (str ^ " "));
                         was_modifed := true;
                       end;
@@ -175,8 +178,8 @@ let refactor refactorings ast_with_tokens =
     in
     let ast = Parse_php.program_of_program2 ast_with_tokens in
     (V.mk_visitor visitor) (Program ast);
-    if not !was_modifed 
-    then begin 
+    if not !was_modifed
+    then begin
       pr2_gen r;
       failwith ("refactoring didn't apply");
     end

@@ -23,10 +23,10 @@
  * of the original file. Moreover a few things are now unsugared
  * in ast_php_simple.ml such as Encaps, InlineHtml, ShortArray,
  * that we must keep here because of the refactoring/pretty-printing context.
- * 
+ *
  * coupling: that means each time we add a feature in PHP we need to extend
  * ast_php.ml, ast_php_simple.ml, and now ast_pp.ml :( Life is hard.
- * 
+ *
  * Note that we assume all Newline below are esthetic newlines
  * (see the prelude comment in ast_pp_build.ml).
  *)
@@ -177,12 +177,15 @@ and func_def = {
    and hint_type =
      | Hint of string
      | HintArray
+     | HintQuestion of hint_type
+     | HintTuple of hint_type list
+     | HintCallback
 
   and lambda_def = {
     l_ref: bool;
     l_params: parameter list;
     (* actually use parameter can't have a default value nor a type hint
-     * so maybe we should use a more specific type 
+     * so maybe we should use a more specific type
      *)
     l_use: parameter list;
     l_body: stmt list;

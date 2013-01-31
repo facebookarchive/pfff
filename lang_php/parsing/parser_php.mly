@@ -503,7 +503,7 @@ constant_declaration_statement:
 function_declaration_statement:
  |            unticked_function_declaration_statement { $1 }
  /*(* can not factorize with a 'attributes_opt', see conflict.txt *)*/
- | attributes unticked_function_declaration_statement 
+ | attributes unticked_function_declaration_statement
      { { $2 with f_attrs = Some $1 } }
 
 unticked_function_declaration_statement:
@@ -533,23 +533,23 @@ non_empty_parameter_list:
  | non_empty_parameter_list TCOMMA TDOTS
      { $1 ++ [Right3 $2; Middle3 $3] }
  /*(*s: repetitive non_empty_parameter_list *)*/
-  | non_empty_parameter_list TCOMMA  parameter 
+  | non_empty_parameter_list TCOMMA  parameter
       { $1 ++ [Right3 $2; Left3 $3] }
  /*(*e: repetitive non_empty_parameter_list *)*/
 
 parameter:
   |               parameter_bis   { $1 }
-  | ext_type_hint parameter_bis   { { $2 with p_type = $1 } }
+  | ext_type_hint parameter_bis   { { $2 with p_type = Some $1 } }
   | attributes    parameter_bis   { { $2 with p_attrs = Some $1 } }
-  | attributes ext_type_hint parameter_bis 
-      { { $3 with p_attrs = Some $1; p_type = $2; } }
+  | attributes ext_type_hint parameter_bis
+      { { $3 with p_attrs = Some $1; p_type = Some $2; } }
 
 parameter_bis:
- | T_VARIABLE      
+ | T_VARIABLE
      { mk_param $1 }
- | TAND T_VARIABLE 
+ | TAND T_VARIABLE
      { let p = mk_param $2 in {p with p_ref=Some $1} }
- | T_VARIABLE TEQ static_scalar  
+ | T_VARIABLE TEQ static_scalar
      { let p = mk_param $1 in {p with p_default=Some($2,$3)} }
  | TAND T_VARIABLE TEQ static_scalar
      { let p = mk_param $2 in {p with p_ref=Some $1; p_default=Some($3,$4)}}
@@ -581,7 +581,7 @@ lexical_var_list:
 /*(*s: GRAMMAR class declaration *)*/
 class_declaration_statement:
  |            unticked_class_declaration_statement { $1 }
- | attributes unticked_class_declaration_statement 
+ | attributes unticked_class_declaration_statement
      { { $2 with c_attrs = Some $1 } }
 
 unticked_class_declaration_statement:
@@ -615,7 +615,7 @@ trait_declaration_statement_aux:
        { c_type = Trait $1; c_name = $2; c_extends = None;
          c_implements = None; c_body = ($4, $5, $6);
          c_attrs = None;
-       } 
+       }
      }
 
 /*(*x: GRAMMAR class declaration *)*/
@@ -671,7 +671,7 @@ class_statement:
 
  | variable_modifiers ext_type_hint class_variable_declaration TSEMICOLON
      {
-       ClassVariables($1, $2, $3, $4)
+       ClassVariables($1, Some $2, $3, $4)
      }
 
  |            method_declaration { Method $1 }
@@ -914,24 +914,24 @@ type_hint:
 
 /*(* extended type hint includes the new type extensions ?.. (a, b) etc ...*)*/
 ext_type_hint:
- | type_hint                            { Some $1 }
- | type_hint_extensions                 { None }
+ | type_hint                            { $1 }
+ | type_hint_extensions                 { $1 }
 
 type_hint_extensions:
- | TQUESTION ext_type_hint                      {}
- | TOPAR non_empty_ext_type_hint_list TCPAR     {}
+ | TQUESTION ext_type_hint                      { HintQuestion ($1, $2)  }
+ | TOPAR non_empty_ext_type_hint_list TCPAR     { HintTuple ($1, $2, $3) }
  | TOPAR T_FUNCTION
      TOPAR ext_type_hint_list TCPAR
      non_empty_return_type
-   TCPAR                                        {}
+   TCPAR                                        { HintCallback }
 
 ext_type_hint_list:
  | {}
  | non_empty_ext_type_hint_list {}
 
 non_empty_ext_type_hint_list:
- | ext_type_hint                                     {}
- | ext_type_hint TCOMMA non_empty_ext_type_hint_list {}
+ | ext_type_hint                                     { [ Left $1 ] }
+ | ext_type_hint TCOMMA non_empty_ext_type_hint_list { (Left $1)::(Right $2)::$3 }
 
 /*(* Do not confuse type_parameters and type_arguments. Type parameters
    * can only be simple identifiers, as in class Foo<T1, T2> { ... },
@@ -966,10 +966,10 @@ non_empty_return_type:
  /*(* HPHP extension. *)*/
 attributes: T_SL attribute_list T_SR { ($1, $2, $3) }
 
-attribute: 
- | ident 
+attribute:
+ | ident
      { Attribute $1 }
- | ident TOPAR attribute_argument_list TCPAR 
+ | ident TOPAR attribute_argument_list TCPAR
      { AttributeWithArgs ($1, ($2, $3, $4)) }
 
 attribute_argument: static_scalar { $1 }
@@ -1140,7 +1140,7 @@ expr_without_variable_bis:
        let body = ($8, $9, $10) in
        Lambda ($7, { f_tok = $1;f_ref = $2;f_params = params; f_body = body;
                      f_name = Name("__lambda__", $1);
-                     f_return_type = None; f_type = FunctionLambda;
+                     f_return_type = $6; f_type = FunctionLambda;
                      f_modifiers = [];
                      f_attrs = None;
        })
@@ -1183,7 +1183,7 @@ internal_functions_in_yacc:
    * related rules and move the xhp sugared access inside variable
    *)*/
 isset_variable:
- | expr { 
+ | expr {
    match $1 with
    | Lv v -> v
    | _ -> raise Parsing.Parse_error

@@ -98,7 +98,7 @@ and vof_expr =
       let v1 = Ocaml.vof_list vof_encaps v1 in Ocaml.VSum (("Guil", [ v1 ]))
   | Id v1 ->
       let v1 = vof_wrapped_string v1 in Ocaml.VSum (("Id", [ v1 ]))
-  | This name -> 
+  | This name ->
       let v1 = vof_wrapped_string name in
       Ocaml.VSum (("This", [ v1 ]))
   | Array_get ((v1, v2)) ->
@@ -249,7 +249,7 @@ and vof_func_def {
   let bnd = ("f_name", arg) in
   let bnds = bnd :: bnds in
   Ocaml.VDict bnds
-and vof_lexical_var (is_ref, name) = 
+and vof_lexical_var (is_ref, name) =
   Ocaml.VTuple ([Ocaml.vof_bool is_ref; vof_name name])
 and vof_function_type =
   function
@@ -272,11 +272,11 @@ and
   let bnd = ("p_ref", arg) in
   let bnds = bnd :: bnds in
   let arg = Ocaml.vof_list vof_attribute v_p_attrs in
-  let bnd = ("p_attrs", arg) in 
-  let bnds = bnd :: bnds in 
+  let bnd = ("p_attrs", arg) in
+  let bnds = bnd :: bnds in
   let arg = Ocaml.vof_option vof_hint_type v_p_type in
-  let bnd = ("p_type", arg) in 
-  let bnds = bnd :: bnds in 
+  let bnd = ("p_type", arg) in
+  let bnds = bnd :: bnds in
   let arg = vof_wrapped_string v_p_name in
   let bnd = ("p_name", arg) in
   let bnds = bnd :: bnds in
@@ -285,6 +285,10 @@ and vof_hint_type =
   function
   | Hint v1 -> let v1 = vof_name v1 in Ocaml.VSum (("Hint", [ v1 ]))
   | HintArray -> Ocaml.VSum (("HintArray", []))
+  | HintQuestion t -> (Ocaml.VSum (("HintQuestion", [ vof_hint_type t ])))
+  | HintTuple l -> (Ocaml.VSum (("HintTuple", List.map vof_hint_type l)))
+  | HintCallback -> (Ocaml.VSum (("HintCallback", [])))
+
 and
   vof_class_def {
                   c_kind = v_c_type;

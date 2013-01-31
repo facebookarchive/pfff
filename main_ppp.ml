@@ -13,50 +13,50 @@ module S = Scope_code
 (* Purpose *)
 (*****************************************************************************)
 
-(* 
+(*
  * Closure implementation via souce-to-source transformation to classes.
- * 
- * TODO should be moved in demos/ maybe later, or in phpext/ ? 
+ *
+ * TODO should be moved in demos/ maybe later, or in phpext/ ?
  * and LP-ized and shown as a tutorial on pfff and source-to-source
  * transformation.
- * 
- * history: 
+ *
+ * history:
  *  - came up with simple source-to-source transformation idea,
  *    see tests/proto/closure_transfo.php, but that would have
  *    required small support from runtime
  *  - sgrimm proposed a simple trick, using call_user_func
  *    to remove the need from runtime support
  *  - implemented first proto
- *  - erling broke my proto when using nested lambdas, 
+ *  - erling broke my proto when using nested lambdas,
  *    see erling_sk.php
  *  - implemented second proto
- *  - drew broke second proto when using dynamic vars ($$x), 
+ *  - drew broke second proto when using dynamic vars ($$x),
  *    see drew_foo3.php
  *  - implemented third proto using trick proposed by iain
- *    so that no need to replace the $x or $$x by some $this->x 
+ *    so that no need to replace the $x or $$x by some $this->x
  *    or ${$this-x} that would not have worked anyway.
- *  - use my tool on my own php code to do some with_open, iter, 
+ *  - use my tool on my own php code to do some with_open, iter,
  *    and turns out we need to pass stuff by reference in constructor.
- * 
+ *
  * Was it useful ? After all iproctor will probably implement closures
  * in HPHP in a more direct way. But it was the occasion to
  * force me to implement a basic pretty printer, map_php, fix bugs
- * in the visitor, and it can be a good basis for 
+ * in the visitor, and it can be a good basis for
  * a tutorial on code transfo using pfff :)
- * Moreover maybe they will use it. Without that, may have to wait 
+ * Moreover maybe they will use it. Without that, may have to wait
  * months before iproctor implements it ... Maybe this will put some
  * pressure on iproctor :)
  * Moreover, for php projects like phpunit, who wants to support legacy
  * PHP code, they can use internally closures but
  * output still code compliant with php 5.2 :)
- * 
+ *
  * futur work:
  *  - transform our code to use that :) and see how more beautiful it is
  *  - bench ?
  *
  * I could have used a template like below instead of manually
- * constructing the AST and use a camlp4 quasiquotation, or 
- * camlmix system. But the code I generate is small so it's ok. 
+ * constructing the AST and use a camlp4 quasiquotation, or
+ * camlmix system. But the code I generate is small so it's ok.
  * Moreover it shows* how to do things manually :)
  *)
 let template_class = "
@@ -91,7 +91,7 @@ let fkt str = { Parse_info.
   transfo = Parse_info.NoTransfo;
   comments = ();
 }
-let fkdname s = 
+let fkdname s =
   DName (s, fkt ("$" ^ s))
 
 
@@ -100,8 +100,8 @@ let fkdname s =
  * use the name of the file and its file position to have a quite
  * good unique name.
  *)
-let gensym info = 
-  (* less: for now just use line and col info, later should also use filename 
+let gensym info =
+  (* less: for now just use line and col info, later should also use filename
    * could simply do a md5sum on the all file:line:col string
    *)
   let (l,c) = Ast.line_of_info info, Ast.col_of_info info in
@@ -127,16 +127,16 @@ let mk_method s params body =
     f_attrs = None;
   })
 
-let mk_param s = { 
+let mk_param s = {
   p_type = None;
   p_ref = Some (fkt "&"); (* we want passed by ref *)
   p_name = fkdname s;
   p_default = None;
   p_attrs = None;
 }
-  
 
-let mk_obj_access s = 
+
+let mk_obj_access s =
   (ObjAccessSimple
       ((Var
            (DName ("this", fkt "$this"),
@@ -145,18 +145,18 @@ let mk_obj_access s =
       fkt "->",
       Name (s, fkt s)))
 
-(* use sgrimm technique 
+(* use sgrimm technique
  * TODO may have to prefix certain closed_vars with this because
  * when we have nested lambda, we are called recursively to
- * generate also the body of the eval_closure method, which 
- * now have itself some closed var and private vars that 
+ * generate also the body of the eval_closure method, which
+ * now have itself some closed var and private vars that
  * when mentionned in the use ($x, ...) of nested lambdas
  * should be transformed to call to the 'new' anon_class
  * but with as parameters some ($this->x)
 *)
-let mk_new_anon_class_call s 
-  private_vars_enclosing_closure_class 
-  closed_vars_of_this_closure = 
+let mk_new_anon_class_call s
+  private_vars_enclosing_closure_class
+  closed_vars_of_this_closure =
  (ArrayLong
   (fkt "array",
   (fkt "(",
@@ -164,7 +164,7 @@ let mk_new_anon_class_call s
      (New
        (fkt "new",
        ClassNameRefStatic
-        (ClassName(Name 
+        (ClassName(Name
           (s,
            fkt s))),
        Some
@@ -179,7 +179,7 @@ let mk_new_anon_class_call s
                    (fkdname closed_var,
                    {contents = S.NoScope})
                )
-           in        
+           in
            (* todo: should introduce some comma with Right too *)
            Left (Arg (Lv var))
          )
@@ -201,8 +201,8 @@ let mk_new_anon_class_call s
 
 
 
-let mk_private_affect s = 
-  let expr = 
+let mk_private_affect s =
+  let expr =
     (AssignRef
         ((ObjAccessSimple
              ((Var
@@ -233,7 +233,7 @@ let mk_call_user_func_call var args_paren =
 
 
 
-let mk_aliasing_for_member_in_body () = 
+let mk_aliasing_for_member_in_body () =
 [(Foreach
       (fkt "foreach",
       fkt "(",
@@ -308,28 +308,28 @@ let mk_aliasing_for_member_in_body () =
  * It has to be a recursive process done by the caller of this func.
  * So this func really just do a simple job of substituting the right
  * variables by adding the this prefix.
- * 
+ *
  * update: turns out this scheme does not work well when people
  * use dynamic var as in $$x. See tests/closures/drew_foo3.php.
  * The pb is that what was a local var before, and so referenced as
  * $bar = 'foo'; and later naively as ${$this->bar}}
 *)
-let (add_this_to_closed_var_in_body: 
-     string list ->  
+let (add_this_to_closed_var_in_body:
+     string list ->
      stmt_and_def list ->
      stmt_and_def list
   ) = fun closed_vars xs ->
-  (* visit original code and replace. 
-   * TODO take care of scope ? shadowing ? 
+  (* visit original code and replace.
+   * TODO take care of scope ? shadowing ?
    *)
   xs +> List.map (fun stmt_and_def ->
     let hook = { Map_php.default_visitor with
       Map_php.klvalue = (fun (k, _) v ->
 
         match v with
-        | Var (v1, v2) -> 
+        | Var (v1, v2) ->
             let s = Ast.dname v1 in
-            if List.mem s closed_vars 
+            if List.mem s closed_vars
             then mk_obj_access s
             else k v
         | _ -> k v
@@ -337,7 +337,7 @@ let (add_this_to_closed_var_in_body:
       (* bugfix: and dont go inslide nested lambdas *)
       Map_php.kexpr = (fun (k, _) v ->
         match v with
-        | Lambda def -> 
+        | Lambda def ->
             (* no recursive processing *)
             v
         | _ -> k v
@@ -348,46 +348,46 @@ let (add_this_to_closed_var_in_body:
   )
 
 
-let closed_vars (l_use, l) = 
+let closed_vars (l_use, l) =
   match l_use with
   | None -> []
-  | Some (_use, vars) -> 
+  | Some (_use, vars) ->
       Ast.unparen vars +> Ast.uncomma +> List.map (function
       | LexicalVar (is_ref, dname) ->
-          if is_ref = None 
+          if is_ref = None
           then Ast.dname dname
           else failwith "not handling ref in closures"
       )
-  
 
-  
+
+
 (* This function was previously generating the sym, and the body
  * of eval_closure, but as said previously, it has to be a recursive
  * process, so now this function really just do boilerplate stuff:
  * add the remaining class, __construct, and the eval_closure method
  * header.
  *)
-let (mk_anon_class: 
+let (mk_anon_class:
    string (* name of gensymed class *) ->
-   Ast.lambda_def -> Ast.stmt_and_def list -> Ast.class_def) 
+   Ast.lambda_def -> Ast.stmt_and_def list -> Ast.class_def)
  = fun anon_str l body_eval_closure ->
 
 
   let closed_vars = closed_vars l in
 
-  (* what if lambda contains a lambda ? 
+  (* what if lambda contains a lambda ?
    * old:
-   * let body_eval_closure = 
-   * mk_body_eval_closure 
-   * closed_vars 
+   * let body_eval_closure =
+   * mk_body_eval_closure
+   * closed_vars
    * (Ast.unbrace l.l_body)
    * in
    *)
-  let params_eval_closure = 
+  let params_eval_closure =
     Ast.unparen (snd l).f_params
   in
 
-  let privates = 
+  let privates =
     closed_vars +> List.map (fun s ->
       ClassVariables (
         VModifiers [Private, fkt "private"],
@@ -397,9 +397,9 @@ let (mk_anon_class:
       )
     )
   in
-  let construct = 
+  let construct =
     let s = "__construct" in
-    let params = closed_vars +> List.map mk_param 
+    let params = closed_vars +> List.map mk_param
       (* todo: introduce commas *)
       +> List.map (fun p -> Left3 p)
     in
@@ -410,12 +410,12 @@ let (mk_anon_class:
     in
     mk_method s params constr_body
   in
-  let eval_closure = 
+  let eval_closure =
     let s = "eval_closure" in
     let params = params_eval_closure in
     mk_method s params body_eval_closure
   in
-  let body = 
+  let body =
     privates ++ [construct] ++ [eval_closure]
   in
 
@@ -425,7 +425,7 @@ let (mk_anon_class:
     c_extends = None;
       (* Some (fkt "extends", Name ("Closure", fkt "Closure")); *)
     c_implements = None;
-    c_body = 
+    c_body =
       fkt "{", body, fkt "}";
     c_attrs = None;
   }
@@ -438,7 +438,7 @@ let (mk_anon_class:
 (* Main action *)
 (*****************************************************************************)
 
-let (all_classes: class_def list ref) = ref [] 
+let (all_classes: class_def list ref) = ref []
 
 let rec (transfo: string list -> stmt_and_def list -> stmt_and_def list) =
  fun current_closed_vars_when_in_eval_closure    stmts ->
@@ -446,38 +446,38 @@ let rec (transfo: string list -> stmt_and_def list -> stmt_and_def list) =
    let hook = { Map_php.default_visitor with
      Map_php.kexpr = (fun (k, _) v ->
        match v with
-       | Lambda (l_use, ldef) -> 
+       | Lambda (l_use, ldef) ->
            let info = ldef.f_tok in
-           
+
            let anon_str = gensym info in
            let closed_vars = closed_vars (l_use, ldef) in
 
-           let res = 
+           let res =
              mk_new_anon_class_call anon_str
-               current_closed_vars_when_in_eval_closure 
+               current_closed_vars_when_in_eval_closure
                closed_vars
            in
 
            let body_closure = Ast.unbrace ldef.f_body in
-           
+
            (* this will not do the subst inside the possible nested
-            * lambdas 
+            * lambdas
             *)
-           let body' = 
-             (* old: add_this_to_closed_var_in_body closed_vars body_closure 
+           let body' =
+             (* old: add_this_to_closed_var_in_body closed_vars body_closure
               * this was not working well when using dynamic vars.
               * Thx to drew and ian for better proposal.
               *)
              body_closure
            in
-           let body'' = 
+           let body'' =
              transfo closed_vars body'
            in
            let body'' =
              mk_aliasing_for_member_in_body () ++ body''
            in
-           
-           let anon_class = 
+
+           let anon_class =
              mk_anon_class anon_str (l_use, ldef) body''
            in
            Common.push2 anon_class all_classes;
@@ -492,7 +492,7 @@ let rec (transfo: string list -> stmt_and_def list -> stmt_and_def list) =
       match res with
       | FunCallVar (qu_opt, var, args) ->
 
-          (* do we care wether var is a regular var ? 
+          (* do we care wether var is a regular var ?
            * do something with qu_opt ?
            *)
           mk_call_user_func_call var args
@@ -505,7 +505,7 @@ let rec (transfo: string list -> stmt_and_def list -> stmt_and_def list) =
 
 
 
-let main_action file = 
+let main_action file =
   let (ast2, _stat) = Parse_php.parse file in
   let ast = Parse_php.program_of_program2 ast2 in
 
@@ -516,7 +516,7 @@ let main_action file =
       | [stmt'] -> stmt'
       | _ -> raise Impossible
     );
-    (* this is only for the toplevel elements which are 
+    (* this is only for the toplevel elements which are
      * a StmtList, not a stmt_and_def, but we still need
      * to transform them
      *)
@@ -527,7 +527,7 @@ let main_action file =
     );
   }
   in
-  
+
   let ast' = (Map_php.mk_visitor hook).Map_php.vprogram ast in
 
   let ast2' = Common.zip ast' (ast2 +> List.map snd) in
@@ -540,7 +540,7 @@ let main_action file =
     pr s;
   );
   ()
-  
+
 (*****************************************************************************)
 (* Extra actions *)
 (*****************************************************************************)
@@ -551,31 +551,38 @@ let unparse_without_type_hints file =
    *  - parse with enabling the type hints grammar extension
    *  - visit ast and annotate type hints tokens with Remove
    *  - unparse ast using the tokens annotations
-   * 
+   *
    * old:  Flag_parsing_php.type_hints_extension := true;
-   * 
+   *
    *)
 
   let (ast2, _stat) = Parse_php.parse file in
   let ast = Parse_php.program_of_program2 ast2 in
 
+
   (* visit ast and annotate type hints *)
-  let annotate_type_hint_tokens_as_remove type_hint =
-    let token = 
-      match type_hint with
-      | Hint (ClassName name) -> Ast.info_of_name name
-      | Hint (Self tok | Parent tok) -> tok
-      | HintArray tok -> tok
+  let mark_typehint type_hint =
+    let rec get_hint_tokens type_hint = match type_hint with
+      | Hint (ClassName name) -> [ Ast.info_of_name name ]
+      | Hint (Self tok | Parent tok) -> [ tok ]
+      | HintArray tok -> [ tok ]
       | Hint (LateStatic tok) -> raise Impossible
+      | HintQuestion (t, x) -> List.flatten [[t]; get_hint_tokens x]
+      | HintTuple (v1, elts, v2) ->
+          List.flatten
+            [ [v1; v2];
+              List.flatten
+                (List.map (function Left x -> get_hint_tokens x | Right t -> [t]) elts) ]
+      | HintCallback -> []
     in
-    token.Parse_info.transfo <- Remove;
+    List.iter (fun token -> token.Parse_info.transfo <- Remove) (get_hint_tokens type_hint)
   in
   let v = V.mk_visitor { V.default_visitor with
     (* todo? we could keep some typehint such as Object or Array,
      * at certain places like in function parameters as they are already
      * accepted by vanilla PHP *)
     V.khint_type = (fun (k, _) ty ->
-      annotate_type_hint_tokens_as_remove ty
+      mark_typehint ty
     );
   }
   in
@@ -599,23 +606,23 @@ let xhp_preprocesor file =
  * in the rewriter, but I don't have time to work on it. It would probably
  * take a while to build since I think you would need to rewrite much
  * of the parser.
- * 
+ *
  * The idea is that given code like:
- * 
+ *
  * $foo = <div><span><a href={$href}>hello</a></span></div>;
  * ...
  * Currently we rewrite it to:
- * 
+ *
  * $foo=new xhp_div(array(), array(new xhp_span(array(), array(new xhp_a(array('href' => $this,), array('hello'))))));
- * 
+ *
  * But we could rewrite it to this instead:
- * 
+ *
  * $foo=new xhp_div(array(), array(HTML('<span><a href='.txt2html($href).'>hello</a></span>')));
- * 
- * You can't convert the outside div to a string, but you can convert 
- * the inside nodes. Since we mostly enforce that you can only append 
- * to XHP nodes this would be safe. If we have an intern or noob or 
- * someone who's interested in parsers and wants to work on XHP this 
+ *
+ * You can't convert the outside div to a string, but you can convert
+ * the inside nodes. Since we mostly enforce that you can only append
+ * to XHP nodes this would be safe. If we have an intern or noob or
+ * someone who's interested in parsers and wants to work on XHP this
  * might be a good project.
  *)
 
@@ -637,14 +644,14 @@ let extra_actions () = [
 (* The options *)
 (*****************************************************************************)
 
-let all_actions () = 
+let all_actions () =
  extra_actions () ++
  Test_parsing_php.actions()++
  []
 
-let options () = 
+let options () =
   [
-    "-verbose", Arg.Set verbose, 
+    "-verbose", Arg.Set verbose,
     " ";
   ] ++
   Flag_parsing_php.cmdline_flags_pp () ++
@@ -653,17 +660,17 @@ let options () =
   Common.cmdline_flags_verbose () ++
   Common.cmdline_flags_other () ++
   [
-  "-version",   Arg.Unit (fun () -> 
+  "-version",   Arg.Unit (fun () ->
     Common.pr2 (spf "XXX version: %s" Config_pfff.version);
     exit 0;
-  ), 
+  ),
     "  guess what";
 
   (* this can not be factorized in Common *)
-  "-date",   Arg.Unit (fun () -> 
+  "-date",   Arg.Unit (fun () ->
     Common.pr2 "version: $Date: 2008/10/26 00:44:57 $";
     raise (Common.UnixExit 0)
-    ), 
+    ),
   "   guess what";
   ] ++
   []
@@ -672,42 +679,42 @@ let options () =
 (* Main entry point *)
 (*****************************************************************************)
 
-let main () = 
-  let usage_msg = 
-    "Usage: " ^ Common.basename Sys.argv.(0) ^ 
+let main () =
+  let usage_msg =
+    "Usage: " ^ Common.basename Sys.argv.(0) ^
       " [options] <file or dir> " ^ "\n" ^ "Options are:"
   in
   (* does side effect on many global flags *)
   let args = Common.parse_options (options()) usage_msg Sys.argv in
 
   (* must be done after Arg.parse, because Common.profile is set by it *)
-  Common.profile_code "Main total" (fun () -> 
+  Common.profile_code "Main total" (fun () ->
 
     (match args with
-   
+
     (* --------------------------------------------------------- *)
     (* actions, useful to debug subpart *)
     (* --------------------------------------------------------- *)
-    | xs when List.mem !action (Common.action_list (all_actions())) -> 
+    | xs when List.mem !action (Common.action_list (all_actions())) ->
         Common.do_action !action xs (all_actions())
 
-    | _ when not (Common.null_string !action) -> 
+    | _ when not (Common.null_string !action) ->
         failwith ("unrecognized action or wrong params: " ^ !action)
 
     (* --------------------------------------------------------- *)
     (* main entry *)
     (* --------------------------------------------------------- *)
-    | [x] -> 
+    | [x] ->
         main_action x
 
     (* --------------------------------------------------------- *)
     (* empty entry *)
     (* --------------------------------------------------------- *)
-    | [] -> 
-        Common.usage usage_msg (options()); 
+    | [] ->
+        Common.usage usage_msg (options());
         failwith "too few arguments"
-    | x::y::zs -> 
-        Common.usage usage_msg (options()); 
+    | x::y::zs ->
+        Common.usage usage_msg (options());
         failwith "too many arguments"
     )
   )
@@ -716,6 +723,6 @@ let main () =
 
 (*****************************************************************************)
 let _ =
-  Common.main_boilerplate (fun () -> 
+  Common.main_boilerplate (fun () ->
       main ();
   )

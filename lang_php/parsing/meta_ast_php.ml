@@ -5,18 +5,18 @@ open Common
 open Ast_php
 
 (* pad: few tweaks because of module limitations in ocamltarzan.
- *  
+ *
  * I inlined the vof_of_phptype here
  * (to avoid having multiple meta_of_xxx.ml files)
  *)
 
 module Type_php = struct
-    let vof_phptype x = 
+    let vof_phptype x =
       Ocaml.VTODO ""
-    let vof_phpfunction_type x = 
+    let vof_phpfunction_type x =
       Ocaml.VTODO ""
 end
- 
+
 let vof_int = Ocaml.vof_int
 let vof_unit = Ocaml.vof_unit
 let vof_string = Ocaml.vof_string
@@ -26,7 +26,7 @@ let vof_ref = Ocaml.vof_ref
 
 (* pad: generated code starts here *)
 
-  
+
 let rec vof_info x = Parse_info.vof_info x
 and vof_tok v = vof_info v
 and vof_wrap _of_a (v1, v2) =
@@ -52,12 +52,12 @@ and vof_angle _of_a (v1, v2, v3) =
   and v3 = vof_tok v3
   in Ocaml.VTuple [ v1; v2; v3 ]
 
-and vof_comma_list _of_a xs = 
+and vof_comma_list _of_a xs =
   Ocaml.vof_list (fun x -> Ocaml.vof_either _of_a vof_info x) xs
 
-and vof_comma_list_dots _of_a xs = 
+and vof_comma_list_dots _of_a xs =
   Ocaml.vof_list (fun x -> Ocaml.vof_either3 _of_a vof_info vof_info x) xs
-  
+
 let rec vof_name =
   function
   | Name v1 ->
@@ -83,7 +83,7 @@ and vof_class_name_or_selfparent =
   | LateStatic v1 -> let v1 = vof_tok v1 in Ocaml.VSum (("LateStatic", [ v1 ]))
 
 and vof_fully_qualified_class_name v = vof_name v
-  
+
 let vof_ptype =
   function
   | BoolTy -> Ocaml.VSum (("BoolTy", []))
@@ -92,7 +92,7 @@ let vof_ptype =
   | StringTy -> Ocaml.VSum (("StringTy", []))
   | ArrayTy -> Ocaml.VSum (("ArrayTy", []))
   | ObjectTy -> Ocaml.VSum (("ObjectTy", []))
-  
+
 let rec vof_expr = function
   | Lv v1 -> let v1 = vof_lvalue v1 in Ocaml.VSum (("Lv", [ v1 ]))
   | Sc v1 -> let v1 = vof_scalar v1 in Ocaml.VSum (("Sc", [ v1 ]))
@@ -236,7 +236,7 @@ let rec vof_expr = function
       in Ocaml.VSum (("Isset", [ v1; v2 ]))
   | XhpHtml v1 ->
       let v1 = vof_xhp_html v1 in Ocaml.VSum (("XhpHtml", [ v1 ]))
-  | SgrepExprDots v1 -> 
+  | SgrepExprDots v1 ->
       let v1 = vof_info v1 in Ocaml.VSum (("SgrepExprDots", [ v1 ]))
   | ParenExpr v1 ->
       let v1 = vof_paren vof_expr v1 in Ocaml.VSum (("ParenExpr", [ v1 ]))
@@ -550,7 +550,7 @@ and vof_obj_dim =
 and vof_rw_variable v = vof_variable v
 and vof_r_variable v = vof_variable v
 and vof_w_variable v = vof_variable v
-  
+
 and vof_stmt =
   function
   | ExprStmt ((v1, v2)) ->
@@ -822,8 +822,8 @@ and
   let bnd = ("f_type", arg) in
   let bnds = bnd :: bnds in
   let arg = vof_tok v_f_tok in
-  let bnd = ("f_tok", arg) in 
-  let bnds = bnd :: bnds in 
+  let bnd = ("f_tok", arg) in
+  let bnds = bnd :: bnds in
   Ocaml.VDict bnds
 and vof_function_type =
   function
@@ -850,17 +850,24 @@ and
   let bnd = ("p_ref", arg) in
   let bnds = bnd :: bnds in
   let arg = vof_option vof_hint_type v_p_type in
-  let bnd = ("p_type", arg) in 
+  let bnd = ("p_type", arg) in
   let bnds = bnd :: bnds  in
   let arg = vof_option vof_attributes v_p_attrs in
-  let bnd = ("p_attrs", arg) in 
+  let bnd = ("p_attrs", arg) in
   let bnds = bnd :: bnds in
   Ocaml.VDict bnds
 and vof_hint_type =
   function
-  | Hint v1 -> let v1 = vof_class_name_or_selfparent v1 in 
+  | Hint v1 -> let v1 = vof_class_name_or_selfparent v1 in
                Ocaml.VSum (("Hint", [ v1 ]))
   | HintArray v1 -> let v1 = vof_tok v1 in Ocaml.VSum (("HintArray", [ v1 ]))
+  | HintQuestion (v1, v2) -> let v1 = vof_tok v1 in
+                             let v2 = vof_hint_type v2 in
+                             Ocaml.VSum (("HintQuestion", [ v1; v2]))
+  | HintTuple v1 -> let v1 = vof_paren (vof_comma_list vof_hint_type) v1 in
+                    Ocaml.VSum (("HintTuple", [ v1 ]))
+  | HintCallback -> Ocaml.VSum (("HintCallback", []))
+
 and vof_is_ref v = vof_option vof_tok v
 
 and vof_lexical_vars (v1, v2) =
@@ -1114,7 +1121,7 @@ and vof_toplevel =
       let v1 = vof_list vof_info v1
       in Ocaml.VSum (("NotParsedCorrectly", [ v1 ]))
   | FinalDef v1 -> let v1 = vof_info v1 in Ocaml.VSum (("FinalDef", [ v1 ]))
-and vof_program v = 
+and vof_program v =
   profile_code "vof_program" (fun () ->
     vof_list vof_toplevel v
   )
@@ -1196,4 +1203,4 @@ and vof_any =
       in Ocaml.VSum (("StmtAndDefs", [ v1 ]))
 
   | Entity v1 -> let v1 = vof_entity v1 in Ocaml.VSum (("Entity", [ v1 ]))
-  | Name2 v1 -> let v1 = vof_name v1 in Ocaml.VSum(("Name2", [ v1 ]))  
+  | Name2 v1 -> let v1 = vof_name v1 in Ocaml.VSum(("Name2", [ v1 ]))

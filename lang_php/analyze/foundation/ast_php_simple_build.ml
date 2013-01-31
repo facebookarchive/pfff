@@ -136,7 +136,7 @@ and stmt env st acc =
   | Echo (tok, el, _) ->
       A.Expr (A.Call (A.Id (A.builtin "echo", wrap tok),
                      (List.map (expr env) (comma_list el)))) :: acc
-  | Globals (_, gvl, _) -> 
+  | Globals (_, gvl, _) ->
       A.Global (List.map (global_var env) (comma_list gvl)) :: acc
   | StaticVars (_, svl, _) ->
       A.StaticVars (List.map (static_var env) (comma_list svl)) :: acc
@@ -150,17 +150,17 @@ and stmt env st acc =
       let lp = List.map (lvalue env) lp in
       A.Expr (A.Call (A.Id (A.builtin "unset", wrap tok), lp)) :: acc
   (* http://php.net/manual/en/control-structures.declare.php *)
-  | Declare (tok, args, stmt) -> 
+  | Declare (tok, args, stmt) ->
       (match args, stmt with
       (* declare(strict=1); (or 0) can be skipped,
        * See 'i wiki/index.php/Pfff/Declare_strict' *)
       | (_,[Common.Left((Name(("strict",_)),(_,Sc(C(Int((("1"|"0"),_)))))))],_),
-      SingleStmt(EmptyStmt(_)) 
+      SingleStmt(EmptyStmt(_))
       (* declare(ticks=1); can be skipped too.
        * http://www.php.net/manual/en/control-structures.declare.php#control-structures.declare.ticks
        *)
       | (_,[Common.Left((Name(("ticks",_)), (_,Sc(C(Int((("1"),_)))))))],_),
-      SingleStmt(EmptyStmt(_)) 
+      SingleStmt(EmptyStmt(_))
       ->
         acc
       |  _ -> raise (TodoConstruct ("Declare", tok))
@@ -305,7 +305,7 @@ and lambda_def env (l_use, ld) =
     A.f_kind = A.AnonLambda;
     A.m_modifiers = [];
     A.f_attrs = attributes env ld.f_attrs;
-    A.l_uses = 
+    A.l_uses =
       (match l_use with
       | None -> []
       | Some (_, (_lp, xs, _rp)) ->
@@ -359,6 +359,9 @@ and dname = function
 and hint_type env = function
   | Hint q -> A.Hint (class_name_or_selfparent env q)
   | HintArray _ -> A.HintArray
+  | HintQuestion (i, t) -> A.HintQuestion (hint_type env t)
+  | HintTuple v1 -> A.HintTuple (List.map (hint_type env) (comma_list (brace v1)))
+  | HintCallback -> A.HintCallback
 
 and qualifier env (cn, _) = class_name_or_selfparent env cn
 
@@ -371,10 +374,10 @@ and class_name_or_selfparent env = function
 and class_name_reference env = function
    | ClassNameRefStatic cn -> A.Id (class_name_or_selfparent env cn)
    | ClassNameRefDynamic (lv, []) -> lvalue env lv
-   | ClassNameRefDynamic (lv, [tok, obj_prop]) -> 
+   | ClassNameRefDynamic (lv, [tok, obj_prop]) ->
        let obj = lvalue env lv in
        obj_property env tok obj obj_prop
-   | ClassNameRefDynamic (lv, (tok, _)::xs) -> 
+   | ClassNameRefDynamic (lv, (tok, _)::xs) ->
        raise (TodoConstruct ("ClassNameRefDynamic", tok))
 
 and lvalue env = function
@@ -399,9 +402,9 @@ and lvalue env = function
       let (_, tok) = q in
       A.Class_get (A.Id (qualifier env q),
                   A.Call (A.Id (A.builtin "eval_var", wrap tok),[lvalue env v]))
-  | ClassVar (q, dn) -> 
+  | ClassVar (q, dn) ->
       A.Class_get (A.Id (qualifier env q), A.Id (dname dn))
-  | FunCallSimple (f, (tok, args, _)) -> 
+  | FunCallSimple (f, (tok, args, _)) ->
       let f = name env f in
       let args = comma_list args in
       let args = List.map (argument env) args in
@@ -410,9 +413,9 @@ and lvalue env = function
       let argl = comma_list argl in
       let argl = List.map (argument env) argl in
       let lv = lvalue env lv in
-      let lv = match q with 
+      let lv = match q with
         | None -> lv
-        | Some q -> A.Class_get (A.Id (qualifier env q), lv) 
+        | Some q -> A.Class_get (A.Id (qualifier env q), lv)
       in
       A.Call (lv, argl)
   | StaticMethodCallSimple (q, n, (tok, args, _)) ->
@@ -431,7 +434,7 @@ and lvalue env = function
       let args = comma_list args in
       let args = List.map (argument env) args in
       A.Call (f, args)
-  | StaticObjCallVar (lv, tok, lv2, args) -> 
+  | StaticObjCallVar (lv, tok, lv2, args) ->
       raise (TodoConstruct ("StaticObjCallVar", tok))
 
   | ObjAccessSimple (lv, _, n) -> A.Obj_get (lvalue env lv, A.Id (name env n))
@@ -455,7 +458,7 @@ and obj_access env obj (tok, objp, args) =
 and obj_property env tok obj = function
   | ObjProp objd -> obj_dim env obj objd
   | ObjPropVar lv ->
-      A.Obj_get (obj, A.Call (A.Id (A.builtin "eval_var_field", wrap tok), 
+      A.Obj_get (obj, A.Call (A.Id (A.builtin "eval_var_field", wrap tok),
                              [lvalue env lv]))
 
 and obj_dim env obj = function
@@ -468,7 +471,7 @@ and obj_dim env obj = function
       let x = obj_dim env obj x in
       A.Array_get (x, e)
   (* this is almost never used in our codebase, just in some third-party code.*)
-  | OBraceAccess (x, (tok, e, _)) -> 
+  | OBraceAccess (x, (tok, e, _)) ->
       let e = expr env e in
       let x = obj_dim env obj x in
       A.Array_get(x, Some e)
@@ -492,7 +495,7 @@ and class_def env c =
     A.c_uses =
       List.fold_right (class_traits env) body [];
     A.c_implements =
-      (match c.c_implements with 
+      (match c.c_implements with
       | None -> []
       | Some x -> interfaces env x
       );
@@ -583,7 +586,7 @@ and method_def env m =
 and method_body env (_, stl, _) =
   List.fold_right (stmt_and_def env) stl []
 
-and parameter env 
+and parameter env
  { p_type = t; p_ref = r; p_name = name; p_default = d; p_attrs = a} =
   { A.p_type = opt hint_type env t;
     A.p_ref = r <> None;
@@ -712,9 +715,9 @@ and assignOp env = function
 and global_var env = function
   | GlobalVar dn -> A.Id (dname dn)
   (* this is used only once in our codebase, and it should not ... *)
-  | GlobalDollar (tok, lv) -> 
+  | GlobalDollar (tok, lv) ->
       A.Call (A.Id ((A.builtin "eval_var", wrap tok)), [lvalue env lv])
-  | GlobalDollarExpr (tok, _) -> 
+  | GlobalDollarExpr (tok, _) ->
       raise (TodoConstruct ("GlobalDollarExpr", tok))
 
 and attributes env = function

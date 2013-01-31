@@ -21,39 +21,39 @@ open Parse_info
 (*****************************************************************************)
 (* Prelude *)
 (*****************************************************************************)
-(* 
+(*
  * This module defines an Abstract Syntax Tree for PHP 5.2 with
  * a few PHP 5.3 (e.g. closures) and 5.4 (e.g. traits) extensions as well
  * as support for a few Facebook extensions (XHP, generators, annotations).
- * 
+ *
  * This is actually more a concrete syntax tree (CST) than an AST. This
  * is convenient in a refactoring context or code visualization
  * context, but if you need to do some heavy static analysis, consider
  * instead lang_php/analyze/foundation/pil.ml which defines a
  * PHP Intermediate Language a la CIL.
- * 
- * todo: maybe even in a refactoring context a PIL+comment 
+ *
+ * todo: maybe even in a refactoring context a PIL+comment
  * (see pretty/ast_pp.ml) would make more sense.
- * 
+ *
  * NOTE: data from this type are often marshalled in berkeley DB tables
- * which means that if you add a new constructor or field in the types below, 
+ * which means that if you add a new constructor or field in the types below,
  * you must erase the berkeley DB databases otherwise pfff
  * will probably finish with a segfault (OCaml serialization is not
  * type-safe). A hacky solution is to add new constructors only at the end
  * of a type definition.
- * 
+ *
  * COUPLING: some programs in other languages (e.g. Python) may
  * use some of the pfff binding, or JSON/sexp exporters, so if you
  * change the name of constructors in this file, don't forget
  * to regenerate the JSON/sexp exporters, but also to modify the
  * dependent programs !!!! An easier solution is to not change this
  * file, or to only add new constructors.
- * 
+ *
  * todo:
  *  - add fbstrict types in AST, not just in grammar
  *  - support for '...' fbstrict extension in parameters
  *  - less: add namespace in AST (also add in grammar)
- * 
+ *
  *  - introduce QualifierDynamic and factorize things in lvalue type
  *  - unify toplevel statement vs statements? hmmm maybe not
  *  - unify expr and lvalue? hmmm maybe not
@@ -629,7 +629,10 @@ and func_def = {
   (*x: AST function definition rest *)
       and hint_type =
         | Hint of class_name_or_kwd (* only self/parent, no static *)
-        | HintArray  of tok
+        | HintArray of tok
+        | HintQuestion of (tok * hint_type)
+        | HintTuple of hint_type comma_list paren
+        | HintCallback (* of (tok * (hint_type comma_list_dots paren) * hint_type option) paren *)
   (*x: AST function definition rest *)
     and is_ref = tok (* bool wrap ? *) option
   (*e: AST function definition rest *)
@@ -821,7 +824,7 @@ and stmt_and_def = stmt
 (* ------------------------------------------------------------------------- *)
 (*s: AST phpext *)
 (* HPHP extension similar to http://en.wikipedia.org/wiki/Java_annotation *)
-and attribute = 
+and attribute =
   | Attribute of string wrap
   | AttributeWithArgs of string wrap * static_scalar comma_list paren
 

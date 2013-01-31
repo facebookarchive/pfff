@@ -104,7 +104,7 @@ let name_of_node = function
   | CG.Method (s1, s2) -> spf "('%s','%s')" s1 s2
   | CG.FakeRoot -> "'__FAKE_ROOT__'"
 
-let string_of_id_kind x = 
+let string_of_id_kind x =
   Graph_code_prolog.string_of_entity_kind x
 
 let string_of_modifier = function
@@ -113,17 +113,22 @@ let string_of_modifier = function
   | Protected -> "is_protected"
   | Static -> "static"  | Abstract -> "abstract" | Final -> "final"
 
-let string_of_hint_type h = 
+let rec string_of_hint_type h =
   match h with
-  | Some x -> 
+  | Some x ->
       (match x with
-      | Hint c -> 
+      | Hint c ->
           (match c with
           | ClassName c -> Ast.name c
           | Self _ -> "self"
           | Parent _ -> "parent"
           | LateStatic _ -> "")
       | HintArray _ -> "array"
+      | HintQuestion (_, t) -> "?" ^ (string_of_hint_type (Some t))
+      | HintTuple v1 ->
+        let elts = List.map (fun x -> string_of_hint_type (Some x)) (Ast.uncomma (Ast.unparen v1)) in
+        "(" ^ (String.concat ", " elts) ^ ")"
+      | HintCallback -> ""
       )
   | None -> ""
 
@@ -165,10 +170,10 @@ let add_uses id ast pr db =
            * don't index in the Prolog database the arguments to functions, but
            * certain function calls are really disguised calls
            * to new, hence the special cases below.
-           * 
+           *
            * todo: we should automatically extract the list of all
            * higher-order functions.
-           *) 
+           *)
           | ("newv" | "DT"), Arg ((Sc (C (String (str2,_)))))::rest ->
               pr (spf "docall(%s, ('%s','%s'), special)."
                      (name_id id db) str str2)
@@ -177,7 +182,7 @@ let add_uses id ast pr db =
           | "require_module", [Arg ((Sc (C (String (str,_)))))] ->
               pr (spf "require_module('%s', '%s')."
                      (Db.readable_filename_of_id id db) str)
-              
+
           | _ -> ()
           );
 
@@ -213,11 +218,11 @@ let add_uses id ast pr db =
               (* can't do much ... *)
               | LateStatic _ -> ()
               )
-          | MethodCallSimple _ 
-          | StaticMethodCallVar _ 
+          | MethodCallSimple _
+          | StaticMethodCallVar _
               -> ()
           | _ -> raise Impossible
-          );              
+          );
 
           k x
 
@@ -554,7 +559,7 @@ let append_callgraph_to_prolog_db ?show_progress a b =
 (* used for testing *)
 let prolog_query ?(verbose=false) ~source_file ~query =
   let facts_pl_file = Common.new_temp_file "prolog_php_db" ".pl" in
-  let helpers_pl_file = 
+  let helpers_pl_file =
     Config_pfff.path ^ "/h_program-lang/database_code.pl" in
 
   let show_progress = false in
