@@ -246,8 +246,8 @@ let rec add_use_edge env (((str, tok) as name, kind)) =
           let parent_target = G.not_found in
           (match kind with
           (* TODO, fix those *)
-          | E.Method _ | E.Field | E.ClassConstant -> 
-            ()
+          | E.Field -> ()
+          (* | E.Method _  | E.ClassConstant ->          () *)
           | _ ->
             let file = name +> Ast.tok_of_name +> Parse_info.string_of_info in
             let f = 

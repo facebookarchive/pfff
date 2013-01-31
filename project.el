@@ -298,11 +298,12 @@
    (join-string 
     (list 
      "-debugger"
-     (case 2
+     (case 3
 
        (0 "-lang java -build /home/pad/pfff/tests/java/codegraph")
        (1 "-lang cmt -build /home/pad/pfff/tests/ml/cmt")
        (2 ".")
+       (3 "-lang php -build /home/pad/pfff/tests/php/codegraph")
        )
      )
     )
