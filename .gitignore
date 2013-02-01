@@ -435,3 +435,7 @@ web/var/logs/warnings.log
 /demos/find_methods_return_this
 /globals/config_pfff.ml
 /facts_pl
+/lang_clang/parsing/lexer_clang.ml
+/lang_clang/parsing/parser_clang.ml
+/lang_clang/parsing/parser_clang.mli
+/lang_clang/parsing/parser_clang.output

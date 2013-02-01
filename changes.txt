@@ -8,6 +8,9 @@ backward dependencies statistics and highlightings
 ** introduce lang_objc/
 basic lexer and grammar
 
+** introduce lang_clang/
+a thin wrapper around the clang/llvm ast dumps of clang-check -emit-ast.
+
 * -----------------------------------------------------------
 
 * 0.22 (Q4 2012) (codegraph faster/finer, .cmt/.class parsers)

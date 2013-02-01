@@ -63,11 +63,15 @@ let pfff_extra_actions () = [
 let all_actions () = 
   pfff_extra_actions() ++
   Test_parsing_ml.actions()++
+
   Test_parsing_php.actions()++
   Test_parsing_js.actions()++
+
   Test_parsing_c.actions()++
   Test_parsing_cpp.actions()++
   Test_parsing_objc.actions()++
+  Test_parsing_clang.actions()++
+
   Test_parsing_bytecode.actions()++
   Test_parsing_java.actions()++
 
