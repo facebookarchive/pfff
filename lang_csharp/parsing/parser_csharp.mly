@@ -113,7 +113,6 @@ open Ast_csharp
 /*(* extra tokens: *)*/
 /*(*-----------------------------------------*)*/
 
-
 /*(* classic *)*/
 %token <Ast_csharp.info> TUnknown
 %token <Ast_csharp.info> EOF

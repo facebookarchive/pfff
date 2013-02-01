@@ -13,7 +13,6 @@
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the file
  * license.txt for more details.
  *)
-
 open Common 
 
 module Ast = Ast_csharp
@@ -21,11 +20,9 @@ module Flag = Flag_parsing_csharp
 
 open Parser_csharp
 
-
 (*****************************************************************************)
 (* Prelude *)
 (*****************************************************************************)
-
 (*
  * http://www.jaggersoft.com/csharp_grammar.html
  *)
