@@ -37,14 +37,27 @@ let tok     lexbuf  =
 let letter = ['A'-'Z' 'a'-'z']
 let digit  = ['0'-'9']
 
+let upper_letter = ['A'-'Z']
+let lower_letter = ['a'-'z']
+
 let newline = '\n'
 let space = [' ' '\t']
 
 let hexdigit = digit | ['a'-'f'] | ['A'-'F']
 
+let operator = ['!' '%' '&' '*' '+' '-' '/' '<' '=' '>' '^' '|' '~']
+
 let hexinteger = '0' ('x' | 'X') hexdigit+
 
+let dec = ['0'-'9']
+let pent   = dec+
+let pfract = dec+
+let sign = ['-' '+']
+let exp  = ['e''E'] sign? dec+
+let real = pent exp | ((pent? '.' pfract | pent '.' pfract? ) exp?)
+
 (*****************************************************************************)
+
 
 rule token = parse
 
@@ -58,18 +71,44 @@ rule token = parse
   (* ----------------------------------------------------------------------- *)
   (* symbols *)
   (* ----------------------------------------------------------------------- *)
+  | "(" { TOPar } | ")" { TCPar }
+  | "<" { TInf } | ">" { TSup }
+  | "<<" { TOAngle } | ">>" { TCAngle }
+  | "[" { TOBracket } | "]" { TCBracket }
 
+  | ":" { TColon } | "," { TComma }
+  | "->" { TArrow } | "." { TDot }
+  | "=" { TEq }
+  | "+" { TPlus } | "-" { TMinus }
+  | "~" { TTilde } 
+  | "*" { TStar } | "&" { TAnd }
+      
   (* ----------------------------------------------------------------------- *)
   (* Keywords and ident *)
   (* ----------------------------------------------------------------------- *)
+  | upper_letter (letter | digit | '_')* { TUpperIdent (tok lexbuf) }
+  | (letter | '_') (letter | '_' | digit | '$')* { TLowerIdent (tok lexbuf) }
+  | "built-in" 
+  | "Getter&Setter"
+      { TMisc (tok lexbuf) }
+  | "operator" operator+
+      { TMisc (tok lexbuf) }
 
   (* ----------------------------------------------------------------------- *)
   (* Constant *)
   (* ----------------------------------------------------------------------- *)
+  | digit+ { TInt (tok lexbuf) }
+  | hexinteger { THexInt (tok lexbuf) }
+  | real { TFloat (tok lexbuf) }
 
   (* ----------------------------------------------------------------------- *)
   (* Strings *)
   (* ----------------------------------------------------------------------- *)
+  | "'" [^'\'' ]* "'" { TString (tok lexbuf) }
+
+  | '"' [^'\n']* '"' { TString (tok lexbuf) }
+
+  | '/' [^ ':']* { TPath(tok lexbuf) }
 
   (* ----------------------------------------------------------------------- *)
   (* eof *)
@@ -80,7 +119,8 @@ rule token = parse
   | _ { 
       if !Flag.verbose_lexing 
       then pr2_once ("LEXER:unrecognised symbol, in token rule:"^tok lexbuf);
-      TUnknown (tok lexbuf)
+      (* TUnknown (tok lexbuf) *)
+      raise (Lexical (tok lexbuf))
     }
 
 (*****************************************************************************)

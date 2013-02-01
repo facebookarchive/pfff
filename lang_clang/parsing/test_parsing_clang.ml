@@ -16,6 +16,18 @@ let test_tokens_clang file =
   toks +> List.iter (fun x -> pr2_gen x);
   ()
 
+let test_parse_clang xs =
+
+  let fullxs = Lib_parsing_clang.find_source_files_of_dir_or_files xs in
+
+  fullxs +> List.iter (fun file -> 
+    pr2 ("PARSING: " ^ file);
+    let _ast = Parse_clang.parse file in
+    ()
+  );
+  ()
+
+
 let test_clang_dump file =
   let chan = open_in file in
 
@@ -33,6 +45,7 @@ let test_clang_dump file =
       if s =~ "^Processing: /Users/mathieubaudet/git/fbobjc/\\(.*\\)\\.$"
       then begin
         let file = Common.matched1 s in
+        let file = Str.global_replace (Str.regexp " ") "___" file in
         let (d,b,e) = Common.dbe_of_filename file in
         pr2 file;
         Common.command2 (spf "mkdir -p %s" d);
@@ -63,6 +76,8 @@ let test_clang_dump2 file =
 let actions () = [
   "-tokens_clang", "   <file>", 
   Common.mk_action_1_arg test_tokens_clang;
+  "-parse_clang", "   <files or dirs>", 
+  Common.mk_action_n_arg test_parse_clang;
 
   "-test_clang_dump", " <>",
   Common.mk_action_1_arg (test_clang_dump);

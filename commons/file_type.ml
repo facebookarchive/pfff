@@ -246,6 +246,8 @@ let file_type_of_file2 file =
 
   (* was PL Bytecode, but more accurate as an Obj *)
   | "class" -> Obj e
+  (* pad specific, clang ast dump *)
+  | "clang" -> Obj e
 
   (* was Archive *)
   | "jar" -> Archive e

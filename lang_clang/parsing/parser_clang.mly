@@ -29,6 +29,19 @@ open Common
 /*(* the normal tokens *)*/
 /*(*-----------------------------------------*)*/
 
+%token <string> TUpperIdent TLowerIdent 
+%token <string> TInt THexInt TFloat
+%token <string> TString TPath
+%token <string> TMisc
+
+%token TOPar TCPar TInf TSup TOAngle TCAngle TOBracket TCBracket
+%token TColon TComma 
+%token TArrow TDot
+%token TEq
+%token TPlus TMinus
+%token TTilde TStar TAnd
+
+
 /*(*-----------------------------------------*)*/
 /*(* extra tokens: *)*/
 /*(*-----------------------------------------*)*/
