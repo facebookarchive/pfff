@@ -632,7 +632,11 @@ and func_def = {
         | HintArray of tok
         | HintQuestion of (tok * hint_type)
         | HintTuple of hint_type comma_list paren
-        | HintCallback (* of (tok * (hint_type comma_list_dots paren) * hint_type option) paren *)
+        | HintCallback of
+            (tok                                 (* "function" *)
+             * (hint_type comma_list_dots paren) (* params *)
+             * hint_type option)                 (* return type *)
+            paren
   (*x: AST function definition rest *)
     and is_ref = tok (* bool wrap ? *) option
   (*e: AST function definition rest *)

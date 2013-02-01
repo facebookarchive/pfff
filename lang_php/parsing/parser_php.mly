@@ -921,13 +921,22 @@ type_hint_extensions:
  | TQUESTION ext_type_hint                      { HintQuestion ($1, $2)  }
  | TOPAR non_empty_ext_type_hint_list TCPAR     { HintTuple ($1, $2, $3) }
  | TOPAR T_FUNCTION
-     TOPAR ext_type_hint_list TCPAR
+     TOPAR ext_type_hint_list_dots TCPAR
      non_empty_return_type
-   TCPAR                                        { HintCallback }
+   TCPAR                                        { HintCallback ($1, ($2, ($3, $4, $5), $6), $7)}
 
-ext_type_hint_list:
- | {}
- | non_empty_ext_type_hint_list {}
+ext_type_hint_list_dots:
+ | /*(*empty*)*/                  { [] }
+ | non_empty_ext_type_list_dots opt_trailing_ext_type_hint_dots  { $1 ++ $2 }
+
+non_empty_ext_type_list_dots:
+ | ext_type_hint { [Left3 $1] }
+ | non_empty_ext_type_list_dots TCOMMA ext_type_hint
+     { $1 ++ [Right3 $2; Left3 $3] }
+
+opt_trailing_ext_type_hint_dots:
+ | /* (*empty*) */ { [] }
+ | TCOMMA TDOTS { [ Right3 $1; Middle3 $2 ] }
 
 non_empty_ext_type_hint_list:
  | ext_type_hint                                     { [ Left $1 ] }

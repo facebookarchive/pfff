@@ -866,7 +866,18 @@ and vof_hint_type =
                              Ocaml.VSum (("HintQuestion", [ v1; v2]))
   | HintTuple v1 -> let v1 = vof_paren (vof_comma_list vof_hint_type) v1 in
                     Ocaml.VSum (("HintTuple", [ v1 ]))
-  | HintCallback -> Ocaml.VSum (("HintCallback", []))
+  | HintCallback v1 ->
+    let v1 = vof_paren
+      (fun (func, args, ret) ->
+        Ocaml.VTuple [ vof_tok func;
+                       vof_paren (vof_comma_list_dots vof_hint_type) args;
+                       match ret with
+                       | Some ret -> vof_hint_type ret
+                       | None -> Ocaml.VSum (("None", []))
+                     ])
+      v1
+    in
+    Ocaml.VSum (("HintCallback", [v1]))
 
 and vof_is_ref v = vof_option vof_tok v
 

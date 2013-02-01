@@ -96,7 +96,8 @@ and map_bracket: 'a. ('a -> 'a) -> 'a bracket -> 'a bracket =
 and map_angle: 'a. ('a -> 'a) -> 'a angle -> 'a angle =
  fun _of_a (v1, v2, v3)->
   let v1 = map_tok v1 and v2 = _of_a v2 and v3 = map_tok v3 in (v1, v2, v3)
-and map_comma_list_dots _of_a xs =
+and map_comma_list_dots : 'a. ('a -> 'a) -> 'a comma_list_dots -> 'a comma_list_dots =
+  fun _of_a xs ->
   map_of_list (fun x -> Ocaml.map_of_either3 _of_a map_info map_info x) xs
 and map_comma_list:'a. ('a -> 'a) -> 'a comma_list -> 'a comma_list =
   fun _of_a xs ->
@@ -843,8 +844,15 @@ and map_hint_type =
                              HintQuestion (v1, v2)
   | HintTuple v1 -> let v1 = map_paren (map_comma_list map_hint_type) v1 in
                     HintTuple v1
-  | HintCallback -> HintCallback
-
+  | HintCallback v1 ->
+      let v1 = map_paren
+        (fun (tok, args, ret) ->
+           (map_tok tok,
+            map_paren (map_comma_list_dots map_hint_type) args,
+            Common.fmap map_hint_type ret))
+        v1
+      in
+      HintCallback v1
 and map_is_ref v = map_of_option map_tok v
 and map_lambda_def (v1, v2) =
   let v1 = map_of_option map_lexical_vars v1

@@ -181,7 +181,7 @@ and v_comma x =
   let k info = v_tok info
   in
   vin.kcomma (k, all_functions) x
-and v_comma_list_dots _of_a xs =
+and v_comma_list_dots : 'a. ('a -> unit) -> 'a comma_list_dots -> unit = fun _of_a xs ->
   xs +> List.iter (function
   | Left3 x -> _of_a x
   | Middle3 info -> v_tok info
@@ -854,7 +854,11 @@ and v_hint_type x =
   | HintQuestion (v1, v2) -> let v1 = v_tok v1 in
                              let v2 = v_hint_type v2 in ()
   | HintTuple v1 -> let v1 = v_paren (v_comma_list v_hint_type) v1 in ()
-  | HintCallback -> ()
+  | HintCallback v1 ->
+      let v1 = v_paren (fun (tok, args, ret) ->
+                          v_tok tok;
+                          v_paren (v_comma_list_dots v_hint_type) args;
+                          Common.do_option v_hint_type ret) v1 in ()
   in
   vin.khint_type (k, all_functions) x
 

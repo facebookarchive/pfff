@@ -126,9 +126,12 @@ let rec string_of_hint_type h =
       | HintArray _ -> "array"
       | HintQuestion (_, t) -> "?" ^ (string_of_hint_type (Some t))
       | HintTuple v1 ->
-        let elts = List.map (fun x -> string_of_hint_type (Some x)) (Ast.uncomma (Ast.unparen v1)) in
-        "(" ^ (String.concat ", " elts) ^ ")"
-      | HintCallback -> ""
+          let elts = List.map
+                       (fun x -> string_of_hint_type (Some x))
+                       (Ast.uncomma (Ast.unparen v1))
+          in
+          "(" ^ (String.concat ", " elts) ^ ")"
+      | HintCallback _ -> "callback"
       )
   | None -> ""
 
