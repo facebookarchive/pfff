@@ -44,7 +44,7 @@ let tokens2 file =
         let tok = a_token lexbuf in
         if !Flag.debug_lexer then Common.pr2_gen tok;
 
-        if (match tok with Parser_clang.EOF _  -> true | _ -> false)
+        if (match tok with Parser_clang.EOF  -> true | _ -> false)
         then List.rev (tok::acc)
         else tokens_aux (tok::acc)
       in

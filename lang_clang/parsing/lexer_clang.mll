@@ -30,19 +30,19 @@ exception Lexical of string
 
 let tok     lexbuf  = 
   Lexing.lexeme lexbuf
-let tokinfo lexbuf  = 
-  Parse_info.tokinfo_str_pos (Lexing.lexeme lexbuf) (Lexing.lexeme_start lexbuf)
-
-(* ---------------------------------------------------------------------- *)
-let keyword_table = Common.hash_of_list [
-  "", "";
-]
 
 }
 (*****************************************************************************)
 
+let letter = ['A'-'Z' 'a'-'z']
+let digit  = ['0'-'9']
+
 let newline = '\n'
 let space = [' ' '\t']
+
+let hexdigit = digit | ['a'-'f'] | ['A'-'F']
+
+let hexinteger = '0' ('x' | 'X') hexdigit+
 
 (*****************************************************************************)
 
@@ -75,12 +75,12 @@ rule token = parse
   (* eof *)
   (* ----------------------------------------------------------------------- *)
 
-  | eof { EOF (tokinfo lexbuf) }
+  | eof { EOF }
 
   | _ { 
       if !Flag.verbose_lexing 
       then pr2_once ("LEXER:unrecognised symbol, in token rule:"^tok lexbuf);
-      TUnknown (tokinfo lexbuf)
+      TUnknown (tok lexbuf)
     }
 
 (*****************************************************************************)

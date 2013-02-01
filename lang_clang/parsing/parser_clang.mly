@@ -34,8 +34,8 @@ open Common
 /*(*-----------------------------------------*)*/
 
 /*(* classic *)*/
-%token <Ast_clang.info> TUnknown
-%token <Ast_clang.info> EOF
+%token <string> TUnknown
+%token EOF
 
 /*(*-----------------------------------------*)*/
 /*(* priorities *)*/
