@@ -60,7 +60,7 @@ open Common
 /*(*************************************************************************)*/
 
 %start main
-%type <Ast_clang.program> main
+%type <unit> main
 
 %%
 

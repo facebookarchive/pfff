@@ -7,11 +7,11 @@ TARGET=lib
 -include $(TOP)/Makefile.config
 
 SRC= flag_parsing_clang.ml \
-     ast_clang.ml \
      visitor_clang.ml \
      meta_ast_clang.ml \
      lib_parsing_clang.ml \
      parser_clang.ml lexer_clang.ml \
+     ast_clang.ml \
      parse_clang.ml \
      test_parsing_clang.ml
 

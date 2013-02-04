@@ -65,6 +65,7 @@ rule token = parse
   (* spacing/comments *)
   (* ----------------------------------------------------------------------- *)
 
+  | "Processing:" [^'\n']+ { token lexbuf }
   | newline { token lexbuf }
   | space+ { token lexbuf }
 

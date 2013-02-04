@@ -16,6 +16,9 @@ open Common
 module Flag = Flag_parsing_clang
 module PI = Parse_info
 
+open Ast_clang
+open Parser_clang
+
 (*****************************************************************************)
 (* Prelude *)
 (*****************************************************************************)
@@ -63,6 +66,43 @@ let tokens a =
 (* Main entry point *)
 (*****************************************************************************)
 
+let rec sexp_list acc ending toks =
+  match toks with
+  | x::xs when x =*= ending -> List.rev acc, xs
+
+  | TOPar::TUpperIdent s::THexInt _dontcare::xs ->
+      let (body, xs) = sexp_list [] TCPar xs in
+      sexp_list (Paren (s, body)::acc) ending xs
+
+  | TOAngle::xs ->
+      let (body, xs) = sexp_list [] TCAngle xs in
+      sexp_list (Anchor body::acc) ending xs
+  | TOBracket::xs ->
+      let (body, xs) = sexp_list [] TCBracket xs in
+      sexp_list (Bracket body::acc) ending xs
+  | TInf::xs ->
+      let (body, xs) = sexp_list [] TSup xs in
+      sexp_list (Angle body::acc) ending xs
+
+  | t::xs -> sexp_list (T t::acc) ending xs
+  | [] -> 
+      failwith ("unterminated sexp_list: " ^
+                   (match ending with
+                   | TCPar -> "')'"
+                   | TCAngle -> "'>>'"
+                   | TSup -> "'>'"
+                   | TCBracket -> "']'"
+                   | _ -> raise Impossible
+                   ))
+
+      
+
 let parse file =
-  let _toks = tokens file in
-  ()
+  let toks = tokens file in
+  let (body, rest) = sexp_list [] EOF toks in
+  (match body, rest with
+  | [Paren (s,args)], [] -> Paren (s, args)
+  | _ -> 
+      failwith "noise after sexp"
+  )
+

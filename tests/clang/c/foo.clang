@@ -1,13 +1,26 @@
 Processing: /home/pad/pfff/tests/clang/c/foo.c.
-(TranslationUnitDecl 0x7fc8188290d0 <<invalid sloc>>
-  (TypedefDecl 0x7fc8188295b0 <<invalid sloc>> __int128_t '__int128')
-  (TypedefDecl 0x7fc818829610 <<invalid sloc>> __uint128_t 'unsigned __int128')
-  (TypedefDecl 0x7fc818829960 <<invalid sloc>> __builtin_va_list '__va_list_tag [1]')
-  (FunctionDecl 0x7fc818829a80 <foo.c:1:1, line:3:1> f 'int (int)'
-    (ParmVarDecl 0x7fc8188299c0 <line:1:7, col:11> a 'int')
-    (CompoundStmt 0x7fc818829bd0 <col:14, line:3:1>
-      (ReturnStmt 0x7fc818829bb0 <line:2:3, col:12>
-        (BinaryOperator 0x7fc818829b88 <col:10, col:12> 'int' '*'
-          (IntegerLiteral 0x7fc818829b28 <col:10> 'int' 2)
-          (ImplicitCastExpr 0x7fc818829b70 <col:12> 'int' <LValueToRValue>
-            (DeclRefExpr 0x7fc818829b48 <col:12> 'int' lvalue ParmVar 0x7fc8188299c0 'a' 'int')))))))
+(TranslationUnitDecl 0x7f92430290d0 <<invalid sloc>>
+  (TypedefDecl 0x7f92430295b0 <<invalid sloc>> __int128_t '__int128')
+  (TypedefDecl 0x7f9243029610 <<invalid sloc>> __uint128_t 'unsigned __int128')
+  (TypedefDecl 0x7f9243029960 <<invalid sloc>> __builtin_va_list '__va_list_tag [1]')
+  (FunctionDecl 0x7f9243029a80 <foo.c:1:1, col:14> bar 'int (int)'
+    (ParmVarDecl 0x7f92430299c0 <col:9, col:13> a 'int'))
+  (FunctionDecl 0x7f9243029bc0 <line:3:1, line:5:1> foo 'int (int)'
+    (ParmVarDecl 0x7f9243029b40 <line:3:9, col:13> a 'int')
+    (CompoundStmt 0x7f9243029db0 <col:16, line:5:1>
+      (ReturnStmt 0x7f9243029d90 <line:4:3, col:17>
+        (BinaryOperator 0x7f9243029d68 <col:10, col:17> 'int' '*'
+          (IntegerLiteral 0x7f9243029c68 <col:10> 'int' 2)
+          (CallExpr 0x7f9243029d20 <col:12, col:17> 'int'
+            (ImplicitCastExpr 0x7f9243029d08 <col:12> 'int (*)(int)' <FunctionToPointerDecay>
+              (DeclRefExpr 0x7f9243029c88 <col:12> 'int (int)' Function 0x7f9243029a80 'bar' 'int (int)'))
+            (ImplicitCastExpr 0x7f9243029d50 <col:16> 'int' <LValueToRValue>
+              (DeclRefExpr 0x7f9243029cb0 <col:16> 'int' lvalue ParmVar 0x7f9243029b40 'a' 'int')))))))
+  (FunctionDecl 0x7f9243053e90 <line:8:1, line:10:1> bar 'int (int)'
+    (ParmVarDecl 0x7f9243053e10 <line:8:9, col:13> a 'int')
+    (CompoundStmt 0x7f9243053fe0 <col:16, line:10:1>
+      (ReturnStmt 0x7f9243053fc0 <line:9:3, col:12>
+        (BinaryOperator 0x7f9243053f98 <col:10, col:12> 'int' '*'
+          (IntegerLiteral 0x7f9243053f38 <col:10> 'int' 4)
+          (ImplicitCastExpr 0x7f9243053f80 <col:12> 'int' <LValueToRValue>
+            (DeclRefExpr 0x7f9243053f58 <col:12> 'int' lvalue ParmVar 0x7f9243053e10 'a' 'int')))))))
