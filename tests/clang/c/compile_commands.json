@@ -1,0 +1,7 @@
+[
+{
+  "directory": "/home/pad/pfff/tests/clang/c",
+  "command": "clang -o foo foo.c",
+  "file": "foo.c"
+}
+]

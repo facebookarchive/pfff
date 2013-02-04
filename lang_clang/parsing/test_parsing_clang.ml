@@ -28,7 +28,7 @@ let test_parse_clang xs =
   ()
 
 
-let test_clang_dump file =
+let test_clang_split_dump file =
   let chan = open_in file in
 
   let chan_out = open_out "/dev/null" in
@@ -63,12 +63,6 @@ let test_clang_dump file =
   in
   aux chan_out
 
-let test_clang_dump2 file =
-  Common.cat file +> List.iter (fun s ->
-    let str = Str.global_replace (Str.regexp ("\027\\[[^m]+m")) "" s in
-    pr str
-  )
-
 (*****************************************************************************)
 (* Main entry for Arg *)
 (*****************************************************************************)
@@ -79,8 +73,6 @@ let actions () = [
   "-parse_clang", "   <files or dirs>", 
   Common.mk_action_n_arg test_parse_clang;
 
-  "-test_clang_dump", " <>",
-  Common.mk_action_1_arg (test_clang_dump);
-  "-test_clang_dump2", " <>",
-  Common.mk_action_1_arg (test_clang_dump2);
+  "-split_clang_dump", " <>",
+  Common.mk_action_1_arg (test_clang_split_dump);
 ]
