@@ -63,6 +63,26 @@ let test_clang_split_dump file =
   in
   aux chan_out
 
+let stat_clang_constructors xs =
+  let fullxs = Lib_parsing_clang.find_source_files_of_dir_or_files xs in
+  let h = Common.hash_with_default (fun () -> 0) in
+  
+  fullxs +> Common_extra.progress (fun k ->
+    List.iter (fun file ->
+      k();
+      let ast = Parse_clang.parse file in
+      ast +> Visitor_clang.visit (fun k x ->
+        match x with
+        | Paren (s, _) ->
+            h#update s (fun x -> x + 1);
+            k x
+        | _ -> k x
+      )
+  ));
+  h#to_list 
+  +> Common.sort_by_val_highfirst 
+  +> List.iter (fun (k, v) -> pr2 (spf "%s: %d" k v))
+
 (*****************************************************************************)
 (* Main entry for Arg *)
 (*****************************************************************************)
@@ -75,4 +95,6 @@ let actions () = [
 
   "-split_clang_dump", " <>",
   Common.mk_action_1_arg (test_clang_split_dump);
+  "-stat_clang_constructors", " <files or dirs>",
+  Common.mk_action_n_arg stat_clang_constructors;
 ]
