@@ -1,0 +1,13 @@
+Processing: /home/pad/pfff/tests/clang/c/foo.c.
+(TranslationUnitDecl 0x7fc8188290d0 <<invalid sloc>>
+  (TypedefDecl 0x7fc8188295b0 <<invalid sloc>> __int128_t '__int128')
+  (TypedefDecl 0x7fc818829610 <<invalid sloc>> __uint128_t 'unsigned __int128')
+  (TypedefDecl 0x7fc818829960 <<invalid sloc>> __builtin_va_list '__va_list_tag [1]')
+  (FunctionDecl 0x7fc818829a80 <foo.c:1:1, line:3:1> f 'int (int)'
+    (ParmVarDecl 0x7fc8188299c0 <line:1:7, col:11> a 'int')
+    (CompoundStmt 0x7fc818829bd0 <col:14, line:3:1>
+      (ReturnStmt 0x7fc818829bb0 <line:2:3, col:12>
+        (BinaryOperator 0x7fc818829b88 <col:10, col:12> 'int' '*'
+          (IntegerLiteral 0x7fc818829b28 <col:10> 'int' 2)
+          (ImplicitCastExpr 0x7fc818829b70 <col:12> 'int' <LValueToRValue>
+            (DeclRefExpr 0x7fc818829b48 <col:12> 'int' lvalue ParmVar 0x7fc8188299c0 'a' 'int')))))))

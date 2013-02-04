@@ -1,3 +1,4 @@
-int f() {
-  return 1;
+int f(int a) {
+  return 2*a;
 }
+
