@@ -22,9 +22,6 @@ open Parser_clang
 (*****************************************************************************)
 (* Prelude *)
 (*****************************************************************************)
-(* Lots of copy paste with my other parsers (e.g. C++, PHP, sql) but
- * copy paste is sometimes ok.
- *)
 
 (*****************************************************************************)
 (* Types *)
@@ -79,7 +76,10 @@ let rec sexp_list env acc ending toks =
   (* the hex address seems actually used when one wants to crossref
    * information in the AST, e.g. implicit param references.
    *)
-  | TOPar l::TUpperIdent (("ImplicitCastExpr") as s)::THexInt _dontcare::xs ->
+  | TOPar l
+    ::TUpperIdent (("ImplicitCastExpr" | "CXXStaticCastExpr" 
+                   | "CStyleCastExpr") as s)
+    ::THexInt _dontcare::xs ->
       let newenv = {line_open_tok = l; check_topar = false} in 
       let (body, xs) = sexp_list newenv  [] TCPar xs in
       sexp_list env (Paren (s, body)::acc) ending xs
@@ -90,12 +90,17 @@ let rec sexp_list env acc ending toks =
       sexp_list env (Paren (s, body)::acc) ending xs
 
 
+  (* ugly, clang-check -ast-dump is not that regular :( *)
+
   | TOPar l::TLowerIdent "super"::TUpperIdent s::THexInt _dontcare::xs ->
       let newenv = {env with line_open_tok = l} in 
       let (body, xs) = sexp_list newenv  [] TCPar xs in
       sexp_list env (Paren ("__Super__" ^ s, body)::acc) ending xs
 
-  | TOPar l::TLowerIdent (("public" | "protected" | "virtual") as s)::xs ->
+  | TOPar l
+    ::TLowerIdent (("public" | "private" | "protected" 
+                   | "virtual") as s)
+    ::xs ->
       let newenv = {env with line_open_tok = l} in 
       let (body, xs) = sexp_list newenv  [] TCPar xs in
       sexp_list env (Paren (spf "__%s__" s, body)::acc) ending xs
@@ -119,21 +124,10 @@ let rec sexp_list env acc ending toks =
       let (body, xs) = sexp_list newenv  [] TCPar xs in
       sexp_list env (Paren ("__Cleanup__" ^ s, body)::acc) ending xs
 
-  | TOPar l::TLowerIdent "capture"::TLowerIdent "byref"::TUpperIdent s::
-      THexInt _dontcare::xs ->
+  | TOPar l::TLowerIdent "capture"::xs ->
       let newenv = {env with line_open_tok = l} in 
       let (body, xs) = sexp_list newenv  [] TCPar xs in
-      sexp_list env (Paren ("__CaptureByRef__" ^ s, body)::acc) ending xs
-  | TOPar l::TLowerIdent "capture"::TLowerIdent "nested"::TUpperIdent s::
-      THexInt _dontcare::xs ->
-      let newenv = {env with line_open_tok = l} in 
-      let (body, xs) = sexp_list newenv  [] TCPar xs in
-      sexp_list env (Paren ("__CaptureNested__" ^ s, body)::acc) ending xs
-
-  | TOPar l::TLowerIdent "capture"::TUpperIdent s::THexInt _dontcare::xs ->
-      let newenv = {env with line_open_tok = l} in 
-      let (body, xs) = sexp_list newenv  [] TCPar xs in
-      sexp_list env (Paren ("__Capture__" ^ s, body)::acc) ending xs
+      sexp_list env (Paren ("__Capture__", body)::acc) ending xs
 
 
   | TOPar l::TLowerIdent (("getter" | "setter") as s1)::TUpperIdent s2
@@ -232,6 +226,9 @@ let parse file =
   | [Paren (s,args);T Error] -> 
       pr2 (spf "PB with %s" file);
       Paren (s, args)
+  | [T Error] -> 
+      pr2 (spf "PB not data at all with %s" file);
+      T Error
   | _ -> 
       failwith "noise after sexp"
   )
