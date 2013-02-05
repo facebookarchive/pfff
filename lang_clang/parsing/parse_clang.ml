@@ -180,9 +180,12 @@ let rec sexp_list env acc ending toks =
 let parse file =
   let toks = tokens file in
   let env = { line = ref 1; line_open_tok = 0 } in
-  let (body, rest) = sexp_list env [] EOF toks in
-  (match body, rest with
-  | [Paren (s,args)], [] -> Paren (s, args)
+  let (body, _rest) = sexp_list env [] EOF toks in
+  (match body with
+  | [Paren (s,args)]-> Paren (s, args)
+  | [Paren (s,args);T Error] -> 
+      pr2 (spf "PB with %s" file);
+      Paren (s, args)
   | _ -> 
       failwith "noise after sexp"
   )
