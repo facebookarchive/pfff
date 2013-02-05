@@ -108,6 +108,10 @@ rule token = parse
 
   | '"' [^'\n']* '"' { TString (tok lexbuf) }
 
+  (* ugly *)
+  | '"' "(null)" '"'  { TString (tok lexbuf) }
+  | '"' "(null)" { TString (tok lexbuf) }
+
   | '/' [^ ':']* { TPath(tok lexbuf) }
 
   (* ----------------------------------------------------------------------- *)
