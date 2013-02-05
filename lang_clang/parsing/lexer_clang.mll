@@ -119,6 +119,7 @@ rule token = parse
   | "Text=" '"' [^'\n']* '"' { TString (tok lexbuf) }
   | "SetterFor" letter* "=" '"' "(null)" '"' { TString (tok lexbuf) }
   | "SetterFor" letter* "=" '"' "(null)"{ TString (tok lexbuf) }
+  | '"' "href=" '"' '"' { TString (tok lexbuf) }
 
   | '/' [^ ':']* { TPath(tok lexbuf) }
 

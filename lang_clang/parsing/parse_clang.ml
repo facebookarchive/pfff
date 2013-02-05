@@ -124,6 +124,11 @@ let rec sexp_list env acc ending toks =
       let newenv = {env with line_open_tok = l} in 
       let (body, xs) = sexp_list newenv  [] TCPar xs in
       sexp_list env (Paren ("__CaptureByRef__" ^ s, body)::acc) ending xs
+  | TOPar l::TLowerIdent "capture"::TLowerIdent "nested"::TUpperIdent s::
+      THexInt _dontcare::xs ->
+      let newenv = {env with line_open_tok = l} in 
+      let (body, xs) = sexp_list newenv  [] TCPar xs in
+      sexp_list env (Paren ("__CaptureNested__" ^ s, body)::acc) ending xs
 
   | TOPar l::TLowerIdent "capture"::TUpperIdent s::THexInt _dontcare::xs ->
       let newenv = {env with line_open_tok = l} in 
