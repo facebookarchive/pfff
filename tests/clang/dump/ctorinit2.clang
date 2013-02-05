@@ -1,0 +1,4 @@
+(CXXCtorInitializer '__gnu_cxx::new_allocator<int>':'class __gnu_cxx::new_allocator<int>'
+            (CXXConstructExpr 0x10d46ba28 </Applications/Xcode.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/SDKs/iPhoneSimulator6.0.sdk/usr/include/c++/4.2.1/bits/c++allocator.h:40:35, /Applications/Xcode.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/SDKs/iPhoneSimulator6.0.sdk/usr/include/c++/4.2.1/bits/allocator.h:103:42> '__gnu_cxx::new_allocator<int>':'class __gnu_cxx::new_allocator<int>' 'void (const class __gnu_cxx::new_allocator<int> &) throw()'
+              (ImplicitCastExpr 0x10d46ba08 <col:39> 'const class __gnu_cxx::new_allocator<int>' lvalue <DerivedToBase (new_allocator)>
+                (DeclRefExpr 0x10d46b588 <col:39> 'const class std::allocator<int>' lvalue ParmVar 0x10d3aa290 '__a' 'const class std::allocator<int> &'))))

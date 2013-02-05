@@ -1,0 +1,4 @@
+      (ClassTemplateSpecializationDecl 0x10d2e8b50 </Applications/Xcode.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/SDKs/iPhoneSimulator6.0.sdk/usr/include/c++/4.2.1/bits/stl_construct.h:166:3, col:33> class allocator
+        (public '__gnu_cxx::new_allocator<int>':'class __gnu_cxx::new_allocator<int>')
+        (TemplateArgument type 'int')
+)
