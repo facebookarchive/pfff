@@ -41,6 +41,7 @@ open Common
 %token TPlus TMinus
 %token TTilde TStar TAnd
 
+%token Error
 
 /*(*-----------------------------------------*)*/
 /*(* extra tokens: *)*/
