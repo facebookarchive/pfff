@@ -1,0 +1,10 @@
+(TranslationUnitDecl 0x7feaa582bcd0 <<invalid sloc>>
+  (TypedefDecl 0x7feaa582c1e0 <<invalid sloc>> SEL 'SEL *')
+  (TypedefDecl 0x7feaa582c2b0 <<invalid sloc>> id 'id')
+  (TypedefDecl 0x7feaa582c380 <<invalid sloc>> Class 'Class *')
+  (ObjCInterfaceDecl 0x7feaa582c3d0 <<invalid sloc>> Protocol)
+  (RecordDecl 0x7feaa582c920 <line:76:9, line:79:1> union
+    (FieldDecl 0x7feaa5892870 <line:77:2, col:22> __mbstate8 'char [128]')
+    (FieldDecl 0x7feaa58928d0 <line:78:2, col:12> _mbstateL 'long long'))
+  (<<<NULL>>>)
+)

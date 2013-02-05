@@ -35,6 +35,7 @@ open Common
 %token <string> TMisc
 
 %token TOPar TCPar TInf TSup TOAngle TCAngle TOBracket TCBracket
+%token TOArrows TCArrows
 %token TColon TComma 
 %token TArrow TDot
 %token TEq

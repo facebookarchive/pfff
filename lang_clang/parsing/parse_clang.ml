@@ -66,40 +66,58 @@ let tokens a =
 (* Main entry point *)
 (*****************************************************************************)
 
-let rec sexp_list acc ending toks =
+type env = {
+  line: int ref;
+  line_open_tok: int;
+}
+
+let rec sexp_list env acc ending toks =
   match toks with
   | x::xs when x =*= ending -> List.rev acc, xs
 
   | TOPar::TUpperIdent s::THexInt _dontcare::xs ->
-      let (body, xs) = sexp_list [] TCPar xs in
-      sexp_list (Paren (s, body)::acc) ending xs
+      incr env.line;
+      let (body, xs) = 
+        sexp_list {env with line_open_tok = !(env.line)} [] TCPar xs in
+      sexp_list env (Paren (s, body)::acc) ending xs
 
   | TOAngle::xs ->
-      let (body, xs) = sexp_list [] TCAngle xs in
-      sexp_list (Anchor body::acc) ending xs
+      let (body, xs) = 
+        sexp_list {env with line_open_tok = !(env.line)} [] TCAngle xs in
+      sexp_list env (Anchor body::acc) ending xs
   | TOBracket::xs ->
-      let (body, xs) = sexp_list [] TCBracket xs in
-      sexp_list (Bracket body::acc) ending xs
+      let (body, xs) = 
+        sexp_list {env with line_open_tok = !(env.line)} [] TCBracket xs in
+      sexp_list env (Bracket body::acc) ending xs
   | TInf::xs ->
-      let (body, xs) = sexp_list [] TSup xs in
-      sexp_list (Angle body::acc) ending xs
+      let (body, xs) = 
+        sexp_list {env with line_open_tok = !(env.line)} [] TSup xs in
+      sexp_list env (Angle body::acc) ending xs
 
-  | t::xs -> sexp_list (T t::acc) ending xs
+  | TOPar::TOArrows::TUpperIdent "NULL"::TCArrows::TCPar::xs ->
+      sexp_list env (Paren ("NULL", [])::acc) ending xs
+
+  | TOPar::TUpperIdent _::xs ->
+      failwith (spf "open paren without hexint at line %d" !(env.line))
+  | TOPar::xs ->
+      xs +> Common.take_safe 20 +> List.iter pr2_gen;
+      failwith (spf "open paren without constructor at line %d" !(env.line))
+
+  | t::xs -> sexp_list env (T t::acc) ending xs
   | [] -> 
-      failwith ("unterminated sexp_list: " ^
+      failwith (spf "unterminated sexp_list %s at line %d, opened at line %d"
                    (match ending with
                    | TCPar -> "')'"
                    | TCAngle -> "'>>'"
                    | TSup -> "'>'"
                    | TCBracket -> "']'"
                    | _ -> raise Impossible
-                   ))
-
-      
+                   ) !(env.line) env.line_open_tok)
 
 let parse file =
   let toks = tokens file in
-  let (body, rest) = sexp_list [] EOF toks in
+  let env = { line = ref 0; line_open_tok = 0 } in
+  let (body, rest) = sexp_list env [] EOF toks in
   (match body, rest with
   | [Paren (s,args)], [] -> Paren (s, args)
   | _ -> 
