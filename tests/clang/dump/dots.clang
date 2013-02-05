@@ -1,0 +1,5 @@
+(TranslationUnitDecl 0x7feaa582bcd0 <<invalid sloc>>
+    (ObjCMethodDecl 0x7feaa5c3cd30 <line:88:1, col:69> + arrayWithObjects: 'id':'id'
+      (ParmVarDecl 0x7feaa5c3cdc0 <col:25, col:28> firstObj 'id':'id')
+      (...)
+))
