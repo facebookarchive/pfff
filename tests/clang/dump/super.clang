@@ -1,0 +1,5 @@
+(TranslationUnitDecl 0x7feaa582bcd0 <<invalid sloc>>
+  (ObjCInterfaceDecl 0x7feaa5c02f90 <line:409:1, col:8> NSString
+    (super ObjCInterface 0x7feaa5c22b20 'NSObject')
+  )   
+)
