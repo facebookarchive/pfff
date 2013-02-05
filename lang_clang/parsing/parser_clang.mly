@@ -34,8 +34,7 @@ open Common
 %token <string> TString TPath
 %token <string> TMisc
 
-%token TOPar TCPar TInf TSup TOAngle TCAngle TOBracket TCBracket
-%token TOArrows TCArrows
+%token TOPar TCPar TInf TSup TOBracket TCBracket
 %token TColon TComma 
 %token TArrow TDot TDots
 %token TEq

@@ -74,9 +74,7 @@ rule token = parse
   (* ----------------------------------------------------------------------- *)
   | "(" { TOPar } | ")" { TCPar }
   | "<" { TInf } | ">" { TSup }
-  | "<<" { TOAngle } | ">>" { TCAngle }
   | "[" { TOBracket } | "]" { TCBracket }
-  | "<<<" { TOArrows } | ">>>" { TCArrows }
 
   | ":" { TColon } | "," { TComma }
   | "->" { TArrow } | "." { TDot } | "..." { TDots }

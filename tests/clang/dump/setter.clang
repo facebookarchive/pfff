@@ -1,0 +1,2 @@
+    (ObjCPropertyDecl 0x7feaa5e75690 <line:76:1, col:36> adaptive 'BOOL':'signed char' assign readwrite atomic unsafe_unretained
+      (setter ObjCMethod 0x7feaa5e76080 'isAdaptive'))

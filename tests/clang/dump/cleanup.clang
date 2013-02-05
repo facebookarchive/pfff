@@ -1,0 +1,5 @@
+(TranslationUnitDecl 0x7feaa582bcd0 <<invalid sloc>>
+ (ExprWithCleanups 0x7feaa4831208 <line:47:38, line:49:3> 'void (^)(NSInvocation *)'
+    (cleanup Block 0x7feaa4831000)
+    )
+)

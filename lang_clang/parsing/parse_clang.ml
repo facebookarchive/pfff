@@ -75,6 +75,9 @@ let rec sexp_list env acc ending toks =
   match toks with
   | x::xs when x =*= ending -> List.rev acc, xs
 
+  (* the hex address seems actually used when one wants to crossref
+   * information in the AST, e.g. implicit param references.
+   *)
   | TOPar::TUpperIdent s::THexInt _dontcare::xs ->
       incr env.line;
       let (body, xs) = 
@@ -85,28 +88,63 @@ let rec sexp_list env acc ending toks =
       incr env.line;
       let (body, xs) = 
         sexp_list {env with line_open_tok = !(env.line)} [] TCPar xs in
-      sexp_list env (Paren ("Super" ^ s, body)::acc) ending xs
+      sexp_list env (Paren ("__Super__" ^ s, body)::acc) ending xs
+
+  | TOPar::TLowerIdent "public"::xs ->
+      incr env.line;
+      let (body, xs) = 
+        sexp_list {env with line_open_tok = !(env.line)} [] TCPar xs in
+      sexp_list env (Paren ("__Public__", body)::acc) ending xs
+
+  | TOPar::TLowerIdent "cleanup"::TUpperIdent s::THexInt _dontcare::xs ->
+      incr env.line;
+      let (body, xs) = 
+        sexp_list {env with line_open_tok = !(env.line)} [] TCPar xs in
+      sexp_list env (Paren ("__Cleanup__" ^ s, body)::acc) ending xs
+
+  | TOPar::TLowerIdent "capture"::TLowerIdent "byref"::TUpperIdent s::
+      THexInt _dontcare::xs ->
+      incr env.line;
+      let (body, xs) = 
+        sexp_list {env with line_open_tok = !(env.line)} [] TCPar xs in
+      sexp_list env (Paren ("__CaptureByRef__" ^ s, body)::acc) ending xs
+
+  | TOPar::TLowerIdent "capture"::TUpperIdent s::THexInt _dontcare::xs ->
+      incr env.line;
+      let (body, xs) = 
+        sexp_list {env with line_open_tok = !(env.line)} [] TCPar xs in
+      sexp_list env (Paren ("__Capture__" ^ s, body)::acc) ending xs
 
   | TOPar::TLowerIdent "getter"::TUpperIdent s::THexInt _dontcare::xs ->
       incr env.line;
       let (body, xs) = 
         sexp_list {env with line_open_tok = !(env.line)} [] TCPar xs in
-      sexp_list env (Paren ("Getter" ^ s, body)::acc) ending xs
-
-  | TOPar::TOArrows::TUpperIdent "NULL"::TCArrows::TCPar::xs ->
+      sexp_list env (Paren ("__Getter__" ^ s, body)::acc) ending xs
+  | TOPar::TLowerIdent "setter"::TUpperIdent s::THexInt _dontcare::xs ->
       incr env.line;
-      sexp_list env (Paren ("NULL", [])::acc) ending xs
+      let (body, xs) = 
+        sexp_list {env with line_open_tok = !(env.line)} [] TCPar xs in
+      sexp_list env (Paren ("__Setter__" ^ s, body)::acc) ending xs
+
+  | TOPar::TInf::TInf::TInf::TUpperIdent "NULL"::TSup::TSup::TSup::TCPar::xs ->
+      incr env.line;
+      sexp_list env (Paren ("__Null__", [])::acc) ending xs
 
   | TOPar::TDots::TCPar::xs ->
       incr env.line;
-      sexp_list env (Paren ("DOTS", [])::acc) ending xs
+      sexp_list env (Paren ("__Dots__", [])::acc) ending xs
 
+  | TOPar::TLowerIdent "instance"::TCPar::xs ->
+      sexp_list env (Paren ("__Instance__", [])::acc) ending xs
 
-
-  | TOAngle::xs ->
+  | TOPar::TUpperIdent "CXXCtorInitializer"::TUpperIdent s::THexInt _dontcare::xs ->
+      incr env.line;
       let (body, xs) = 
-        sexp_list {env with line_open_tok = !(env.line)} [] TCAngle xs in
-      sexp_list env (Anchor body::acc) ending xs
+        sexp_list {env with line_open_tok = !(env.line)} [] TCPar xs in
+      sexp_list env (Paren ("__CXXCtorInitializer__" ^ s, body)::acc) ending xs
+
+
+
   | TOBracket::xs ->
       let (body, xs) = 
         sexp_list {env with line_open_tok = !(env.line)} [] TCBracket xs in
@@ -128,7 +166,6 @@ let rec sexp_list env acc ending toks =
       failwith (spf "unterminated sexp_list %s at line %d, opened at line %d"
                    (match ending with
                    | TCPar -> "')'"
-                   | TCAngle -> "'>>'"
                    | TSup -> "'>'"
                    | TCBracket -> "']'"
                    | _ -> raise Impossible
