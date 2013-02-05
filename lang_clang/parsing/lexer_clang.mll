@@ -31,6 +31,8 @@ exception Lexical of string
 let tok     lexbuf  = 
   Lexing.lexeme lexbuf
 
+let line = ref 0
+
 }
 (*****************************************************************************)
 
@@ -66,16 +68,16 @@ rule token = parse
   (* ----------------------------------------------------------------------- *)
 
   | "Processing:" [^'\n']+ { token lexbuf }
-  | newline { token lexbuf }
+  | newline { incr line; token lexbuf }
   | space+ { token lexbuf }
 
   | "Error while processing" [^'\n']+ { Error }
   (* ----------------------------------------------------------------------- *)
   (* symbols *)
   (* ----------------------------------------------------------------------- *)
-  | "(" { TOPar } | ")" { TCPar }
-  | "<" { TInf } | ">" { TSup }
-  | "[" { TOBracket } | "]" { TCBracket }
+  | "(" { TOPar (!line) } | ")" { TCPar }
+  | "<" { TInf (!line) } | ">" { TSup }
+  | "[" { TOBracket (!line) } | "]" { TCBracket }
 
   | ":" { TColon } | "," { TComma }
   | "->" { TArrow } | "." { TDot } | "..." { TDots }
@@ -93,6 +95,8 @@ rule token = parse
   | "Getter&Setter"
       { TMisc (tok lexbuf) }
   | "operator" operator+
+      { TMisc (tok lexbuf) }
+  | "operator()"
       { TMisc (tok lexbuf) }
 
   (* ----------------------------------------------------------------------- *)
