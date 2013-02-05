@@ -35,6 +35,7 @@ open Parser_clang
 (*****************************************************************************)
 
 let tokens2 file = 
+  Lexer_clang.line := 1;
   Common.with_open_infile file (fun chan -> 
     let lexbuf = Lexing.from_channel chan in
 
@@ -67,8 +68,8 @@ let tokens a =
 (*****************************************************************************)
 
 type env = {
-  line: int ref;
   line_open_tok: int;
+  check_topar: bool;
 }
 
 let rec sexp_list env acc ending toks =
@@ -78,108 +79,148 @@ let rec sexp_list env acc ending toks =
   (* the hex address seems actually used when one wants to crossref
    * information in the AST, e.g. implicit param references.
    *)
-  | TOPar::TUpperIdent s::THexInt _dontcare::xs ->
-      incr env.line;
-      let (body, xs) = 
-        sexp_list {env with line_open_tok = !(env.line)} [] TCPar xs in
+  | TOPar l::TUpperIdent (("ImplicitCastExpr") as s)::THexInt _dontcare::xs ->
+      let newenv = {line_open_tok = l; check_topar = false} in 
+      let (body, xs) = sexp_list newenv  [] TCPar xs in
+      sexp_list env (Paren (s, body)::acc) ending xs
+
+  | TOPar l::TUpperIdent s::THexInt _dontcare::xs ->
+      let newenv = {line_open_tok = l; check_topar = true} in 
+      let (body, xs) = sexp_list newenv  [] TCPar xs in
       sexp_list env (Paren (s, body)::acc) ending xs
 
 
-  | TOPar::TLowerIdent "super"::TUpperIdent s::THexInt _dontcare::xs ->
-      incr env.line;
-      let (body, xs) = 
-        sexp_list {env with line_open_tok = !(env.line)} [] TCPar xs in
+  | TOPar l::TLowerIdent "super"::TUpperIdent s::THexInt _dontcare::xs ->
+      let newenv = {env with line_open_tok = l} in 
+      let (body, xs) = sexp_list newenv  [] TCPar xs in
       sexp_list env (Paren ("__Super__" ^ s, body)::acc) ending xs
 
-  | TOPar::TLowerIdent "public"::xs ->
-      incr env.line;
-      let (body, xs) = 
-        sexp_list {env with line_open_tok = !(env.line)} [] TCPar xs in
-      sexp_list env (Paren ("__Public__", body)::acc) ending xs
+  | TOPar l::TLowerIdent (("public" | "protected" | "virtual") as s)::xs ->
+      let newenv = {env with line_open_tok = l} in 
+      let (body, xs) = sexp_list newenv  [] TCPar xs in
+      sexp_list env (Paren (spf "__%s__" s, body)::acc) ending xs
 
-  | TOPar::TLowerIdent "instance"::TCPar::xs ->
+  | TOPar l::TUpperIdent "TemplateArgument"::xs ->
+      let newenv = {env with line_open_tok = l} in 
+      let (body, xs) = sexp_list newenv  [] TCPar xs in
+      sexp_list env (Paren ("__TemplateArgument__", body)::acc) ending xs
+
+  | TOPar l::TLowerIdent "instance"::TCPar::xs ->
       sexp_list env (Paren ("__Instance__", [])::acc) ending xs
 
+  | TOPar l::TLowerIdent "original"::TUpperIdent s::THexInt _dontcare::xs ->
+      let newenv = {env with line_open_tok = l} in 
+      let (body, xs) = sexp_list newenv  [] TCPar xs in
+      sexp_list env (Paren ("__Original__" ^ s, body)::acc) ending xs
 
 
-  | TOPar::TLowerIdent "cleanup"::TUpperIdent s::THexInt _dontcare::xs ->
-      incr env.line;
-      let (body, xs) = 
-        sexp_list {env with line_open_tok = !(env.line)} [] TCPar xs in
+  | TOPar l::TLowerIdent "cleanup"::TUpperIdent s::THexInt _dontcare::xs ->
+      let newenv = {env with line_open_tok = l} in 
+      let (body, xs) = sexp_list newenv  [] TCPar xs in
       sexp_list env (Paren ("__Cleanup__" ^ s, body)::acc) ending xs
 
-  | TOPar::TLowerIdent "capture"::TLowerIdent "byref"::TUpperIdent s::
+  | TOPar l::TLowerIdent "capture"::TLowerIdent "byref"::TUpperIdent s::
       THexInt _dontcare::xs ->
-      incr env.line;
-      let (body, xs) = 
-        sexp_list {env with line_open_tok = !(env.line)} [] TCPar xs in
+      let newenv = {env with line_open_tok = l} in 
+      let (body, xs) = sexp_list newenv  [] TCPar xs in
       sexp_list env (Paren ("__CaptureByRef__" ^ s, body)::acc) ending xs
 
-  | TOPar::TLowerIdent "capture"::TUpperIdent s::THexInt _dontcare::xs ->
-      incr env.line;
-      let (body, xs) = 
-        sexp_list {env with line_open_tok = !(env.line)} [] TCPar xs in
+  | TOPar l::TLowerIdent "capture"::TUpperIdent s::THexInt _dontcare::xs ->
+      let newenv = {env with line_open_tok = l} in 
+      let (body, xs) = sexp_list newenv  [] TCPar xs in
       sexp_list env (Paren ("__Capture__" ^ s, body)::acc) ending xs
 
 
-  | TOPar::TLowerIdent "getter"::TUpperIdent s::THexInt _dontcare::xs ->
-      incr env.line;
-      let (body, xs) = 
-        sexp_list {env with line_open_tok = !(env.line)} [] TCPar xs in
-      sexp_list env (Paren ("__Getter__" ^ s, body)::acc) ending xs
-  | TOPar::TLowerIdent "setter"::TUpperIdent s::THexInt _dontcare::xs ->
-      incr env.line;
-      let (body, xs) = 
-        sexp_list {env with line_open_tok = !(env.line)} [] TCPar xs in
-      sexp_list env (Paren ("__Setter__" ^ s, body)::acc) ending xs
+  | TOPar l::TLowerIdent (("getter" | "setter") as s1)::TUpperIdent s2
+    ::THexInt _dontcare::xs ->
+      let newenv = {env with line_open_tok = l} in 
+      let (body, xs) = sexp_list newenv  [] TCPar xs in
+      sexp_list env (Paren (spf "__%s__" s1 ^ s2, body)::acc) ending xs
 
-
-  | TOPar::TInf::TInf::TInf::TUpperIdent "NULL"::TSup::TSup::TSup::TCPar::xs ->
-      incr env.line;
+  | TOPar l::TInf _::TInf _::TInf _::TUpperIdent "NULL"
+    ::TSup::TSup::TSup::TCPar::xs->
       sexp_list env (Paren ("__Null__", [])::acc) ending xs
 
-  | TOPar::TDots::TCPar::xs ->
-      incr env.line;
+  | TOPar l::TDots::TCPar::xs ->
       sexp_list env (Paren ("__Dots__", [])::acc) ending xs
 
+  | TOPar l::TLowerIdent "class"::TCPar::xs ->
+      sexp_list env (Paren ("__Class__", [])::acc) ending xs
 
-  | TOPar::TUpperIdent "CXXCtorInitializer"::TUpperIdent s::THexInt _dontcare::xs ->
-      incr env.line;
-      let (body, xs) = 
-        sexp_list {env with line_open_tok = !(env.line)} [] TCPar xs in
+  | TOPar l::TUpperIdent "ADL"::TCPar::xs ->
+      sexp_list env (Paren ("__ADL__", [])::acc) ending xs
+  | TOPar l::TLowerIdent "no"::TUpperIdent "ADL"::TCPar::xs ->
+      sexp_list env (Paren ("__NoADL__", [])::acc) ending xs
+
+  | TOPar l::TUpperIdent "CXXCtorInitializer"::TUpperIdent s::THexInt _dontcare::xs ->
+      let newenv = {env with line_open_tok = l} in 
+      let (body, xs) = sexp_list newenv  [] TCPar xs in
       sexp_list env (Paren ("__CXXCtorInitializer__" ^ s, body)::acc) ending xs
 
+  | TOPar l::TUpperIdent "CXXCtorInitializer"::xs ->
+      let newenv = {env with line_open_tok = l} in 
+      let (body, xs) = sexp_list newenv  [] TCPar xs in
+      sexp_list env (Paren ("__CXXCtorInitializer__", body)::acc) ending xs
+
+(*
+  | TInf
+    ::TUpperIdent ("UncheckedDerivedToBase"|"DerivedToBase"|"BaseToDerived")
+    ::TOPar::_::TCPar::TSup::xs ->
+    (* SKIP *)
+    sexp_list env (Angle []::acc) ending xs
+  | TInf
+    ::TUpperIdent ("UncheckedDerivedToBase"|"DerivedToBase"|"BaseToDerived")
+    ::TOPar::_::TArrow::_::TCPar::TSup::xs ->
+    (* SKIP *)
+    sexp_list env (Angle []::acc) ending xs
+  | TInf
+    ::TUpperIdent ("UncheckedDerivedToBase"|"DerivedToBase"|"BaseToDerived")
+    ::TOPar::_::TArrow::_::TArrow::_::TCPar::TSup::xs ->
+    (* SKIP *)
+    sexp_list env (Angle []::acc) ending xs
+*)
 
 
-  | TOBracket::xs ->
-      let (body, xs) = 
-        sexp_list {env with line_open_tok = !(env.line)} [] TCBracket xs in
+
+  | TOBracket l::xs ->
+      let newenv = {env with line_open_tok = l} in 
+      let (body, xs) = sexp_list newenv  [] TCBracket xs in
       sexp_list env (Bracket body::acc) ending xs
-  | TInf::xs ->
-      let (body, xs) = 
-        sexp_list {env with line_open_tok = !(env.line)} [] TSup xs in
+  | TInf l::xs ->
+      let newenv = {env with line_open_tok = l} in 
+      let (body, xs) = sexp_list newenv  [] TSup xs in
       sexp_list env (Angle body::acc) ending xs
 
 
-  | TOPar::TUpperIdent _::xs ->
-      failwith (spf "open paren without hexint at line %d" !(env.line))
-  | TOPar::xs ->
-      xs +> Common.take_safe 20 +> List.iter pr2_gen;
-      failwith (spf "open paren without constructor at line %d" !(env.line))
+  | TOPar l::TUpperIdent _::xs ->
+    if env.check_topar 
+    then failwith (spf "open paren without hexint at line %d" l)
+    else
+      let newenv = {env with line_open_tok = l} in 
+      let (body, xs) = sexp_list newenv  [] TCPar xs in
+      sexp_list env (Paren ("__SKIPPED__", body)::acc) ending xs
+      
+  | TOPar l::xs ->
+    if env.check_topar 
+    then failwith (spf "open paren without constructor at line %d" l)
+    else
+      let newenv = {env with line_open_tok = l} in 
+      let (body, xs) = sexp_list newenv  [] TCPar xs in
+      sexp_list env (Paren ("__SKIPPED__", body)::acc) ending xs
 
   | t::xs -> sexp_list env (T t::acc) ending xs
   | [] -> 
-      failwith (spf "unterminated sexp_list %s at line %d, opened at line %d"
+      failwith (spf "unterminated sexp_list '%s' opened at line %d"
                    (match ending with
                    | TCPar -> "')'"
                    | TSup -> "'>'"
                    | TCBracket -> "']'"
                    | _ -> raise Impossible
-                   ) !(env.line) env.line_open_tok)
+                   ) env.line_open_tok)
 
 let parse file =
   let toks = tokens file in
-  let env = { line = ref 1; line_open_tok = 0 } in
+  let env = { line_open_tok = 0; check_topar = true } in
   let (body, _rest) = sexp_list env [] EOF toks in
   (match body with
   | [Paren (s,args)]-> Paren (s, args)
