@@ -81,6 +81,28 @@ let rec sexp_list env acc ending toks =
         sexp_list {env with line_open_tok = !(env.line)} [] TCPar xs in
       sexp_list env (Paren (s, body)::acc) ending xs
 
+  | TOPar::TLowerIdent "super"::TUpperIdent s::THexInt _dontcare::xs ->
+      incr env.line;
+      let (body, xs) = 
+        sexp_list {env with line_open_tok = !(env.line)} [] TCPar xs in
+      sexp_list env (Paren ("Super" ^ s, body)::acc) ending xs
+
+  | TOPar::TLowerIdent "getter"::TUpperIdent s::THexInt _dontcare::xs ->
+      incr env.line;
+      let (body, xs) = 
+        sexp_list {env with line_open_tok = !(env.line)} [] TCPar xs in
+      sexp_list env (Paren ("Getter" ^ s, body)::acc) ending xs
+
+  | TOPar::TOArrows::TUpperIdent "NULL"::TCArrows::TCPar::xs ->
+      incr env.line;
+      sexp_list env (Paren ("NULL", [])::acc) ending xs
+
+  | TOPar::TDots::TCPar::xs ->
+      incr env.line;
+      sexp_list env (Paren ("DOTS", [])::acc) ending xs
+
+
+
   | TOAngle::xs ->
       let (body, xs) = 
         sexp_list {env with line_open_tok = !(env.line)} [] TCAngle xs in
@@ -94,8 +116,6 @@ let rec sexp_list env acc ending toks =
         sexp_list {env with line_open_tok = !(env.line)} [] TSup xs in
       sexp_list env (Angle body::acc) ending xs
 
-  | TOPar::TOArrows::TUpperIdent "NULL"::TCArrows::TCPar::xs ->
-      sexp_list env (Paren ("NULL", [])::acc) ending xs
 
   | TOPar::TUpperIdent _::xs ->
       failwith (spf "open paren without hexint at line %d" !(env.line))
@@ -116,7 +136,7 @@ let rec sexp_list env acc ending toks =
 
 let parse file =
   let toks = tokens file in
-  let env = { line = ref 0; line_open_tok = 0 } in
+  let env = { line = ref 1; line_open_tok = 0 } in
   let (body, rest) = sexp_list env [] EOF toks in
   (match body, rest with
   | [Paren (s,args)], [] -> Paren (s, args)

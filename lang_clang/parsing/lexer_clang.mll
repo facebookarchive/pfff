@@ -79,7 +79,7 @@ rule token = parse
   | "<<<" { TOArrows } | ">>>" { TCArrows }
 
   | ":" { TColon } | "," { TComma }
-  | "->" { TArrow } | "." { TDot }
+  | "->" { TArrow } | "." { TDot } | "..." { TDots }
   | "=" { TEq }
   | "+" { TPlus } | "-" { TMinus }
   | "~" { TTilde } 

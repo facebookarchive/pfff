@@ -37,7 +37,7 @@ open Common
 %token TOPar TCPar TInf TSup TOAngle TCAngle TOBracket TCBracket
 %token TOArrows TCArrows
 %token TColon TComma 
-%token TArrow TDot
+%token TArrow TDot TDots
 %token TEq
 %token TPlus TMinus
 %token TTilde TStar TAnd
