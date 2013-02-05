@@ -106,12 +106,15 @@ rule token = parse
   (* Strings *)
   (* ----------------------------------------------------------------------- *)
   | "'" [^'\'' ]* "'" { TString (tok lexbuf) }
+  | '"' [^'\n''"']* '"' { TString (tok lexbuf) }
 
-  | '"' [^'\n']* '"' { TString (tok lexbuf) }
+  | '"' ([^'\n''"'] | '\\' '"')* '"' { TString (tok lexbuf) }
 
   (* ugly *)
-  | '"' "(null)" '"'  { TString (tok lexbuf) }
-  | '"' "(null)" { TString (tok lexbuf) }
+  | '"' '"' '"' { TString (tok lexbuf) }
+  | "Text=" '"' [^'\n']* '"' { TString (tok lexbuf) }
+  | "SetterFor" letter* "=" '"' "(null)" '"' { TString (tok lexbuf) }
+  | "SetterFor" letter* "=" '"' "(null)"{ TString (tok lexbuf) }
 
   | '/' [^ ':']* { TPath(tok lexbuf) }
 

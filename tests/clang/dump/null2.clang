@@ -1,0 +1,5 @@
+    (ObjCSubscriptRefExpr 0x7f86a3dfcc10 
+  <col:5, col:20> '<pseudo-object type>' 
+    lvalue Kind=ArraySubscript 
+     GetterForArray="(null)"  SetterForArray="(null)
+)
