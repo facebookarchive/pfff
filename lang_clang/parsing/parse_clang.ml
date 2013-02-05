@@ -84,6 +84,7 @@ let rec sexp_list env acc ending toks =
         sexp_list {env with line_open_tok = !(env.line)} [] TCPar xs in
       sexp_list env (Paren (s, body)::acc) ending xs
 
+
   | TOPar::TLowerIdent "super"::TUpperIdent s::THexInt _dontcare::xs ->
       incr env.line;
       let (body, xs) = 
@@ -95,6 +96,11 @@ let rec sexp_list env acc ending toks =
       let (body, xs) = 
         sexp_list {env with line_open_tok = !(env.line)} [] TCPar xs in
       sexp_list env (Paren ("__Public__", body)::acc) ending xs
+
+  | TOPar::TLowerIdent "instance"::TCPar::xs ->
+      sexp_list env (Paren ("__Instance__", [])::acc) ending xs
+
+
 
   | TOPar::TLowerIdent "cleanup"::TUpperIdent s::THexInt _dontcare::xs ->
       incr env.line;
@@ -115,6 +121,7 @@ let rec sexp_list env acc ending toks =
         sexp_list {env with line_open_tok = !(env.line)} [] TCPar xs in
       sexp_list env (Paren ("__Capture__" ^ s, body)::acc) ending xs
 
+
   | TOPar::TLowerIdent "getter"::TUpperIdent s::THexInt _dontcare::xs ->
       incr env.line;
       let (body, xs) = 
@@ -126,6 +133,7 @@ let rec sexp_list env acc ending toks =
         sexp_list {env with line_open_tok = !(env.line)} [] TCPar xs in
       sexp_list env (Paren ("__Setter__" ^ s, body)::acc) ending xs
 
+
   | TOPar::TInf::TInf::TInf::TUpperIdent "NULL"::TSup::TSup::TSup::TCPar::xs ->
       incr env.line;
       sexp_list env (Paren ("__Null__", [])::acc) ending xs
@@ -134,8 +142,6 @@ let rec sexp_list env acc ending toks =
       incr env.line;
       sexp_list env (Paren ("__Dots__", [])::acc) ending xs
 
-  | TOPar::TLowerIdent "instance"::TCPar::xs ->
-      sexp_list env (Paren ("__Instance__", [])::acc) ending xs
 
   | TOPar::TUpperIdent "CXXCtorInitializer"::TUpperIdent s::THexInt _dontcare::xs ->
       incr env.line;
