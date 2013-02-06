@@ -219,6 +219,19 @@ and expr env = function
       let apl = comma_list apl in
       let apl = List.map (array_pair env) apl in
       A.ConsArray (None, apl)
+  | VectorLit (_, (_, vel, _)) ->
+      let vel = comma_list vel in
+      let vel = List.map (vector_elt env) vel in
+      A.ConsVector vel
+  | MapLit (t, (_, mel, _)) ->
+      let kind = match Parse_info.str_of_info t with
+        | "Map"       -> A.Map
+        | "StableMap" -> A.StableMap
+        | _ -> raise Common.Impossible
+      in
+      let mel = comma_list mel in
+      let mel = List.map (map_elt env) mel in
+      A.ConsMap (kind, mel)
   | New (_, cn, args) ->
       let args =
         match args with
@@ -664,6 +677,13 @@ and array_pair env = function
   | ArrayArrowExpr (e1, _, e2) -> A.Akval (expr env e1, expr env e2)
   | ArrayArrowRef (e1, _, _, lv) -> A.Akval (expr env e1, A.Ref (lvalue env lv))
 
+and vector_elt env = function
+  | VectorExpr e -> expr env e
+  | VectorRef (_, e) -> A.Ref (lvalue env e)
+
+and map_elt env = function
+  | MapArrowExpr (e1, _, e2) -> (expr env e1, expr env e2)
+  | MapArrowRef (e1, _, _, lv) -> (expr env e1, A.Ref (lvalue env lv))
 
 and for_expr env el = List.map (expr env) (comma_list el)
 

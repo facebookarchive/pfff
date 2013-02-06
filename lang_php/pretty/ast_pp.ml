@@ -120,6 +120,8 @@ and expr =
 
   | Xhp of xml
   | ConsArray of array_value list
+  | ConsVector of vector_value list
+  | ConsMap of map_kind * (map_value list)
   | List of expr list
 
   | New of expr * expr list
@@ -130,10 +132,16 @@ and expr =
 
   | Lambda of lambda_def
 
+  and map_kind =
+    | Map
+    | StableMap
+
   and array_value =
     | Aval of expr
     | Akval of expr * expr
 
+  and vector_value = expr
+  and map_value = expr * expr
   and encaps =
     | EncapsString of string
     | EncapsVar of expr

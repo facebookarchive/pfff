@@ -84,8 +84,8 @@ module Ptr = struct
   and set_ heap ptr v =
     { ptrs = IMap.add ptr v heap.ptrs }
 
-  (* 'get' dereference a pointer when the value is a pointer. 
-   * 
+  (* 'get' dereference a pointer when the value is a pointer.
+   *
    * todo: should have different functions when we know it's always
    * a pointer. Same when we know it's not already in the heap.
    *)
@@ -131,7 +131,7 @@ module Var = struct
       "$_REQUEST";
       "$_ENV";
 
-      (* pad: ??? why they are considered as superglobals? 
+      (* pad: ??? why they are considered as superglobals?
        * todo: use A.special "self" ?
        *)
       "self";
@@ -164,16 +164,16 @@ module Var = struct
    * It creates a new variable because that's the semantic
    * of PHP which does not have construction to declare
    * variable. The first use of the variable is its declaration.
-   * 
+   *
    * todo? again have different function when know it's not
    * already in env.vars ?
    *)
   let get env heap str =
     try
-      let vars = 
-        if Hashtbl.mem super_globals str 
-        then !(env.globals) 
-        else !(env.vars) 
+      let vars =
+        if Hashtbl.mem super_globals str
+        then !(env.globals)
+        else !(env.vars)
       in
       let v = SMap.find str vars in
       heap, false, v
@@ -245,7 +245,7 @@ module Unify = struct
   (* todo: this whole code is complicated and mysterious,
    * need more examples
    *)
-  
+
   let make_ref ptrs x =
     match x with
     | Vptr n ->
@@ -262,14 +262,14 @@ module Unify = struct
     Otherwise what we do is we dereference the left pointer
     then dereference the right pointer, unify the two values
     that we found (let's call this new value v).
-    
+
     Vptr 0 --> Vint
     Vptr 1 --> Vbool
     pointers stack ptrs 0 1
 
     if(true) {
       $x = 42; &2&1 Vint 42
-    } else { 
+    } else {
       $x = 55; &2&1 Vint 55
     }
      // the pointer in $x must point to the same abstract value,
@@ -306,11 +306,11 @@ module Unify = struct
    *)
   and value stack ptrs v1 v2 =
     match v1, v2 with
-    | Vany, x | x, Vany -> 
+    | Vany, x | x, Vany ->
         ptrs, Vany
-    | Vtaint s, _ | _, Vtaint s -> 
+    | Vtaint s, _ | _, Vtaint s ->
         ptrs, Vtaint s
-    | Vptr n, Vref s | Vref s, Vptr n -> 
+    | Vptr n, Vref s | Vref s, Vptr n ->
         value stack ptrs (Vref s) (Vref (ISet.singleton n))
     | Vref s1, Vref s2 ->
         let s = ISet.union s1 s2 in
@@ -468,7 +468,7 @@ end
 (*****************************************************************************)
 
 (* Because assignements can be in conditionals ... have to extract them.
- *  
+ *
  * todo: could delete that. It was used in a first version of the
  * interpreter where we were unifying heaps. But we don't unify
  * heaps anymore. Moreover it's incomplete.
@@ -504,7 +504,7 @@ module Copy = struct
     | Vsum _
     | Vmap _
     | Vobject _ | Vmethod _
-      -> 
+      ->
         ptrs, x
     | Vptr n ->
         let ptrs, v' = value ptrs (IMap.find n ptrs) in
@@ -542,8 +542,9 @@ module IsLvalue = struct
 
     | Lambda _
     | (Cast (_, _)|CondExpr (_, _, _)|InstanceOf (_, _)|New (_, _)|ConsArray _|
+      ConsVector _| ConsMap _ |
       Xhp _|Ref _|Call (_, _)|Unop (_, _)|Binop (_, _, _)|Assign (_, _, _)|
-      Guil _|String _|Double _|Int _) -> 
+      Guil _|String _|Double _|Int _) ->
         false
 end
 

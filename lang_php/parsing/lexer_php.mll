@@ -724,6 +724,12 @@ rule st_in_scripting = parse
     | "SELF"   { T_IDENT (case_str (tok lexbuf), tokinfo lexbuf) }
     | "PARENT" { T_IDENT (case_str (tok lexbuf), tokinfo lexbuf) }
   (*s: keyword and ident rules *)
+    (* Collection literals are case sensitive, so put these here
+       before the main (case insensitive) keyword lookup
+    *)
+    | "Vector" { T_VECTOR (tokinfo lexbuf) }
+    | "Map"    { T_MAP (tokinfo lexbuf) }
+    | "StableMap" { T_STABLEMAP (tokinfo lexbuf) }
     | LABEL
         { let info = tokinfo lexbuf in
           let s = tok lexbuf in

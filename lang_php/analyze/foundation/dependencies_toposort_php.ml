@@ -110,6 +110,8 @@ module Deps = struct
         let name = Ast.unwrap x.xml_tag in
         SSet.add name acc
     | ConsArray (_, avl) -> array_valuel acc avl
+    | ConsVector vel -> vector_eltl acc vel
+    | ConsMap (_, mel) -> map_eltl acc mel
     | List el -> exprl acc el
     | New (e, el) -> exprl (expr acc e) el
     | CondExpr (e1, e2, e3) ->
@@ -117,10 +119,16 @@ module Deps = struct
     | Lambda fd -> func_def acc fd
 
   and array_valuel acc l = List.fold_left array_value acc l
+  and vector_eltl acc l = List.fold_left vector_elt acc l
+  and map_eltl acc l = List.fold_left map_elt acc l
   and array_value acc = function
     | Aval e -> expr acc e
     | Akval (e1, e2) -> expr (expr acc e1) e2
 
+  and vector_elt acc e = expr acc e
+  and map_elt acc (e1, e2) =
+    let accp = expr acc e1 in
+    expr accp e2
   and encapsl acc l = List.fold_left encaps acc l
   and encaps acc x = expr acc x
 
