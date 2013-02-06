@@ -3,6 +3,7 @@ open Common
 open Ast_clang
 module Ast = Ast_clang
 module Flag = Flag_parsing_clang
+module J = Json_type
 
 (*****************************************************************************)
 (* Subsystem testing *)
@@ -27,8 +28,79 @@ let test_parse_clang xs =
   );
   ()
 
+let clang_check =
+  "/home/pad/local/clang_ast/clang-llvm/llvm/Debug+Asserts/bin/clang-check"
 
-let test_clang_split_dump file =
+let gen_clang jsonfile =
+  let json = Json_in.load_json jsonfile in
+  (match json with
+  | J.Array xs ->
+      let hdone = Hashtbl.create 101 in
+      xs +> List.iter (fun json ->
+        (match json with
+        | J.Object ([
+            "directory", _;
+            "command", _;
+            "file", J.String filename;
+          ]) ->
+            pr2 (spf "processing %s" filename);
+            if Hashtbl.mem hdone filename
+            then failwith ("already processed" ^ filename);
+            Hashtbl.add hdone filename true;
+
+            let (d,b,e) = Common.dbe_of_filename filename in
+            (match e with
+            | "c" -> ()
+            | _ -> failwith ("wierd extension for a clang input file: " ^ e)
+            );
+            let output = Common.filename_of_dbe (d,b,"clang") in
+            let cmd = spf "%s --ast-dump '%s' > '%s'" 
+              clang_check filename output in
+            Common.command2 cmd;
+        | _ -> failwith "wrong compile_commands.json format"
+        )
+      )
+  | _ -> failwith "wrong compile_commands.json format"
+  )
+
+(* Some 'compile_commands.json' files contain multiple times the same entry
+ * for a filename, because files can be compiled with different arguments,
+ * e.g. to be built as an object for a dynamic vs static library.
+ * This causes then 'clang-check --ast-dump' to generate wrong .clang
+ * files with multiple times a TranslationUnitDecl. So let's filter
+ * those duplicate entries.
+ *)
+let sanitize_compile_commands jsonfile =
+  let json = Json_in.load_json jsonfile in
+  let hdone = Hashtbl.create 101 in
+  let json = 
+    (match json with
+    | J.Array xs ->
+        J.Array (xs +> List.filter (fun json ->
+        (match json with
+        | J.Object ([
+            "directory", d;
+            "command", c;
+            "file", J.String filename;
+          ]) ->
+            if Hashtbl.mem hdone filename
+            then begin
+              pr2 (spf "skipping entry %s" filename);
+              false
+            end else begin
+              Hashtbl.add hdone filename true;
+              true
+            end
+        | _ -> failwith "wrong compile_commands.json format"
+        )
+        ))
+    | _ -> failwith "wrong compile_commands.json format"
+    )
+  in
+  pr (Json_out.string_of_json json)
+
+
+let split_dump file =
   let chan = open_in file in
 
   let chan_out = open_out "/dev/null" in
@@ -93,8 +165,12 @@ let actions () = [
   "-parse_clang", "   <files or dirs>", 
   Common.mk_action_n_arg test_parse_clang;
 
+  "-sanitize_compile_commands", " <>",
+  Common.mk_action_1_arg (sanitize_compile_commands);
+  "-gen_clang", " <>",
+  Common.mk_action_1_arg (gen_clang);
   "-split_clang_dump", " <>",
-  Common.mk_action_1_arg (test_clang_split_dump);
+  Common.mk_action_1_arg (split_dump);
   "-stat_clang_constructors", " <files or dirs>",
   Common.mk_action_n_arg stat_clang_constructors;
 ]
