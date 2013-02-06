@@ -153,7 +153,7 @@ let stat_clang_constructors xs =
   ));
   h#to_list 
   +> Common.sort_by_val_highfirst 
-  +> List.iter (fun (k, v) -> pr2 (spf "%s: %d" k v))
+  +> List.iter (fun (k, v) -> pr2 (spf "%s: %d" (Parse_clang.str_of_enum k) v))
 
 (*****************************************************************************)
 (* Main entry for Arg *)

@@ -140,6 +140,7 @@ type enum =
  | TypedefDecl
  | VarDecl
  | BlockDecl
+ | ParmVarDecl
 
  | TranslationUnitDecl
 
