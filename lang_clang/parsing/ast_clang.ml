@@ -27,28 +27,128 @@ open Common
 (* ------------------------------------------------------------------------- *)
 type info = Parse_info.info
 
+type enum = 
+
 (* ------------------------------------------------------------------------- *)
 (* Names  *)
 (* ------------------------------------------------------------------------- *)
 
 (* ------------------------------------------------------------------------- *)
+(* Comments *)
+(* ------------------------------------------------------------------------- *)
+
+ | FullComment
+ | TextComment
+ | ParagraphComment
+ | InlineCommandComment
+ | VerbatimLineComment
+ | BlockCommandComment
+
+(* ------------------------------------------------------------------------- *)
+(* Attributes *)
+(* ------------------------------------------------------------------------- *)
+
+ | VisibilityAttr
+ | DeprecatedAttr
+ | MaxFieldAlignmentAttr
+ | AlwaysInlineAttr
+ | NoDebugAttr
+ | ConstAttr
+ | NoThrowAttr
+ | NonNullAttr
+ | AsmLabelAttr
+ | PackedAttr
+ | FormatAttr
+ | AlignedAttr
+ | WarnUnusedResultAttr
+ | MayAliasAttr
+ | PureAttr
+ | MallocAttr
+ | ReturnsTwiceAttr
+ | UnusedAttr
+ | FormatArgAttr
+ | UnavailableAttr
+ | TransparentUnionAttr
+ | BlocksAttr
+
+(* ------------------------------------------------------------------------- *)
+(* Misc *)
+(* ------------------------------------------------------------------------- *)
+
+ | Misc__Null__
+ | Misc__Capture__
+ | Misc__Cleanup__Block
+
+(* ------------------------------------------------------------------------- *)
 (* Expressions *)
 (* ------------------------------------------------------------------------- *)
+
+ | IntegerLiteral
+ | StringLiteral
+ | FloatingLiteral
+ | CharacterLiteral
+
+ | UnaryOperator
+ | BinaryOperator
+ | ConditionalOperator
+ | CompoundAssignOperator
+
+ | DeclRefExpr
+ | ImplicitCastExpr
+ | CStyleCastExpr
+ | CallExpr
+ | MemberExpr
+ | ArraySubscriptExpr
+ | InitListExpr
+ | CompoundLiteralExpr
+ | ShuffleVectorExpr
+ | UnaryExprOrTypeTraitExpr
+ | BlockExpr
+ | ParenExpr
+
+ | ExprWithCleanups
 
 (* ------------------------------------------------------------------------- *)
 (* Statements *)
 (* ------------------------------------------------------------------------- *)
+ | CompoundStmt
+ | NullStmt
+ | DeclStmt
+ | IfStmt
+ | ForStmt
+ | WhileStmt
+ | DoStmt
+ | BreakStmt
+ | ContinueStmt
+ | SwitchStmt
+ | CaseStmt
+ | DefaultStmt
+ | ReturnStmt
+ | GotoStmt
+ | LabelStmt
+ | GCCAsmStmt
 
 (* ------------------------------------------------------------------------- *)
 (* Decl *)
 (* ------------------------------------------------------------------------- *)
+
+ | FunctionDecl
+ | EnumDecl
+ | EnumConstantDecl
+ | RecordDecl
+ | FieldDecl
+ | TypedefDecl
+ | VarDecl
+ | BlockDecl
+
+ | TranslationUnitDecl
 
 (*****************************************************************************)
 (* Intermediate representations *)
 (*****************************************************************************)
 
 type sexp = 
-  | Paren of string (* UpperIdent*) * sexp list
+  | Paren of enum * sexp list
   | Angle of sexp list
   | Anchor of sexp list
   | Bracket of sexp list
