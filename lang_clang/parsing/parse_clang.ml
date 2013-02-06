@@ -222,14 +222,15 @@ let parse file =
   let env = { line_open_tok = 0; check_topar = true } in
   let (body, _rest) = sexp_list env [] EOF toks in
   (match body with
-  | [Paren (s,args)]-> Paren (s, args)
-  | [Paren (s,args);T Error] -> 
+  | [Paren (s,args)] -> Paren (s, args)
+  | [Paren (s,args); T Error] -> 
       pr2 (spf "PB with %s" file);
       Paren (s, args)
   | [T Error] -> 
       pr2 (spf "PB not data at all with %s" file);
       T Error
-  | _ -> 
-      failwith "noise after sexp"
+  | xs -> 
+      pr2_gen (Common.list_last xs);
+      failwith (spf "noise after sexp, length list = %d" (List.length xs))
   )
 
