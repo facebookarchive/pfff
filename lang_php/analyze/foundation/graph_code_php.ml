@@ -247,6 +247,8 @@ let rec add_use_edge env (((str, tok) as name, kind)) =
           (match kind with
           (* TODO, fix those *)
           | E.Field -> ()
+          | E.Method _ when str =~ "gen.*" || str =~ "get.*" -> ()
+
           (* | E.Method _  | E.ClassConstant ->          () *)
           | _ ->
             let file = name +> Ast.tok_of_name +> Parse_info.string_of_info in
