@@ -6,7 +6,7 @@
  * modify it under the terms of the GNU Lesser General Public License
  * version 2.1 as published by the Free Software Foundation, with the
  * special exception on linking described in file license.txt.
- * 
+ *
  * This library is distributed in the hope that it will be useful, but
  * WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the file
@@ -30,19 +30,19 @@ module Ent = Database_code
  * the AST with scoping information as a side effect. This is useful
  * in codemap to display differently references to parameters, local vars,
  * global vars, etc.
- * 
+ *
  * This file mostly deals with scoping issues. Scoping is different
  * from typing! Those are two orthogonal programming language concepts.
  * old: This file is concerned with variables, that is Ast_php.dname
  *  entities, so for completness C-s for dname in ast_php.ml and
  *  see if all uses of it are covered. Other files are more concerned
  *  about checks related to entities, that is Ast_php.name.
- * 
+ *
  * The errors detected here are mostly:
  *  - UseOfUndefinedVariable
  *  - UnusedVariable
  * Some similar checks are done by JSlint.
- * 
+ *
  * Some issues:
  *  - detecting variable-related mistakes is made slightly more complicated
  *    by PHP because of the lack of declaration in the language;
@@ -50,7 +50,7 @@ module Ent = Database_code
  *    the PHP language forces people to explicitly declared
  *    the use of global variables (via the 'global' statement) which
  *    makes certain things easier).
- * 
+ *
  *  - variables passed by reference can look like UseOfUndefinedVariable
  *    bugs but they are not. One way to fix it is to do a global analysis that
  *    remembers what are all the functions taking arguments by reference
@@ -59,12 +59,12 @@ module Ent = Database_code
  *    level approach (recursive a la cpp, flib-map, git-grep, git head).
  *    Another way is to force programmers to actually declare such variables
  *    before those kinds of function calls (this is what Evan advocated).
- * 
+ *
  *  - people abuse assignements in function calls to emulate "keyword arguments"
  *    as in 'foo($color = "red", $width = 10)'. Such assignments looks
  *    like UnusedVariable but they are not. One can fix that by detecting
  *    such code patterns.
- * 
+ *
  *  - functions like extract(), param_get(), param_post()
  *    or variable variables like $$x introduce some false positives.
  *    Regarding the param_get/param_post(), one way to fix it is to just
@@ -73,9 +73,9 @@ module Ent = Database_code
  *    for the extract() and $$x one can just bailout of such code or
  *    as Evan did remember the first line where such code happen and
  *    don't do any analysis pass this point.
- * 
+ *
  *  - any analysis will probably flag lots of warnings on an existing PHP
- *    codebase. Some programmers may find legitimate certain things, 
+ *    codebase. Some programmers may find legitimate certain things,
  *    for instance having variables declared in a foreach to escape its
  *    foreach scope. This would then hinder the whole analysis because
  *    people would just not run the analysis. You need the approval of
@@ -84,9 +84,9 @@ module Ent = Database_code
  *    a strict mode where only certain checks are enabled. A good
  *    alternative is also to rank errors. A final trick is to report
  *    only new errors.
- * 
+ *
  * Here are some extra notes by Evan in his own variable linter:
- * 
+ *
  * "These things declare variables in a function":
  * - DONE Explicit parameters
  * - DONE Assignment (pad: variable mentionned for the first time)
@@ -97,18 +97,18 @@ module Ent = Database_code
  * - DONE Builtins ($this)
  * - DONE Lexical vars, in php 5.3 lambda expressions
  * pad: forgot pass by reference variables
- * 
+ *
  * "These things make lexical scope unknowable":
  * - DONE Use of extract()
  * - DONE Assignment or Global with variable variables ($$x)
  *   (pad: so just bailout on such code)
  * pad: forgot eval()? but eval can introduce new variables in scope?
- * 
+ *
  * These things don't count as "using" a variable:
  * - DONE isset() (pad: this should be forbidden, it's a bad way to program)
  * - DONE empty()
  * - DONE Static class variables (pad: check done in check_classes instead)
- * 
+ *
  * Here are a few additional checks and features of this checker:
  *  - when the strict_scope flag is set, check_variables will
  *    emulate a block-scoped language as in JSLint and flags
@@ -116,21 +116,21 @@ module Ent = Database_code
  *  - when passed the find_entity hook, check_variables will
  *    know about functions taking parameters by refs, which removes
  *    some false positives
- * 
+ *
  * history:
  *  - sgrimm had the simple idea of just counting the number of occurences
  *    of a variable in a program, at the token level. If only 1, then
  *    probably a typo. But sometimes variable names are mentionned in
  *    interface signatures in which case they occur only once. So you need
  *    some basic analysis; the token level is not enough. You may not
- *    need the CFG but at least you need the AST to differentiate the 
- *    different kinds of unused variables. 
+ *    need the CFG but at least you need the AST to differentiate the
+ *    different kinds of unused variables.
  *  - Some of the scoping logic was previously in another file, scoping_php.ml
  *    but we were kind of duplicating the logic that is in scoping_php.ml.
  *    PHP has bad scoping rule allowing variables declared through a foreach
  *    to be used outside the foreach, which is probably wrong.
  *    Unfortunately, knowing from scoping_php.ml just the status of a
- *    variable (local, global, or param) is not good enough to find bugs 
+ *    variable (local, global, or param) is not good enough to find bugs
  *    related to those weird scoping rules. So I've put all variable scope
  *    related stuff in this file and removed the duplication in scoping_php.ml.
  *  - I was using ast_php.ml and a visitor approach but then I rewrote it
@@ -140,7 +140,7 @@ module Ent = Database_code
  *    assigns in if, list() not at the toplevel of an expression, undefined
  *    access to an array), and code regarding lexical variables became
  *    more clear because localized in one place.
- * 
+ *
  * TODO OTHER:
  *  - factorize code for the shared_ref thing and create_new_local_if_necessary
  *  - the old checker was handling correctly globals? was it looking up
@@ -158,7 +158,7 @@ type env = {
    * for the UnusedVariable check.
    * The ref for the Map.t is to avoid threading the env, because
    * any stmt/expression can introduce new variables.
-   * 
+   *
    * todo? use a list of Map.t to represent nested scopes?
    * (globals, methods/functions, nested blocks)? when in strict/block mode?
    *)
@@ -172,7 +172,7 @@ type env = {
   (* we need to access the definitions of functions/methods to know
    * if an argument was passed by reference, in which case what looks
    * like a UseOfUndefinedVariable is actually not (but it would be
-   * better for them to fix the code to introduce/declare this variable 
+   * better for them to fix the code to introduce/declare this variable
    * before ...).
    *)
   db: Entity_php.entity_finder option;
@@ -181,7 +181,7 @@ type env = {
 
   (* for better error message when the variable was inside a lambda *)
   in_lambda: bool;
-  
+
   (* when the body of a function contains eval/extract/... we bailout
    * because we don't want to report false positives
    *)
@@ -192,7 +192,7 @@ type env = {
 (* Helpers *)
 (*****************************************************************************)
 
-let unused_ok s =     
+let unused_ok s =
   s =~ "\\$_.*" ||
   s =~ "\\$ignore.*" ||
   List.mem s ["$unused";"$dummy";"$guard"] ||
@@ -219,14 +219,14 @@ let str_of_any any =
 (*****************************************************************************)
 (* Vars passed by ref *)
 (*****************************************************************************)
-(* 
+(*
  * Detecting variables passed by reference is complicated in PHP because
  * one does not have to use &$var at the call site (one can though). This is
  * ugly. So to detect variables passed by reference, we need to look at
  * the definition of the function/method called, hence the need for a
  * entity_finder in env.db.
- * 
- * note that it currently returns an Ast_php.func_def, not 
+ *
+ * note that it currently returns an Ast_php.func_def, not
  * an Ast_php_simple.func_def because the database currently
  * stores concrete ASTs, not simple ASTs.
  *)
@@ -242,12 +242,12 @@ let funcdef_of_call_or_new_opt env e =
             let (s, tok) = s_tok_of_name name in
             (match find_entity (Ent.Function, s) with
             | [Ast_php.FunctionE def] -> Some def
-            (* normally those errors should be triggered in 
+            (* normally those errors should be triggered in
              * check_functions_php.ml, but right now this file uses
              * ast_php.ml and not ast_php_simple.ml, so there are some
              * differences in the logic so we double check things here.
              *)
-            | [] -> 
+            | [] ->
                 E.fatal tok (E.UndefinedEntity (Ent.Function, s));
                 None
             | _x::_y::_xs ->
@@ -257,9 +257,9 @@ let funcdef_of_call_or_new_opt env e =
             )
           (* dynamic function call *)
           else None
-              
+
       (* static method call *)
-      | Class_get (Id name1, Id name2) 
+      | Class_get (Id name1, Id name2)
           when not (A.is_variable name1) && not (A.is_variable name2) ->
           (* todo: name1 can be self/parent in traits, or static: *)
           let aclass = A.str_of_name name1 in
@@ -271,8 +271,8 @@ let funcdef_of_call_or_new_opt env e =
                * it's not our business here; this error will
                * be reported anyway in check_classes_php.ml anyway
                *)
-            with 
-            | Not_found | Multi_found 
+            with
+            | Not_found | Multi_found
             | Class_php.Use__Call|Class_php.UndefinedClassWhileLookup _ ->
                 None
           )
@@ -280,7 +280,7 @@ let funcdef_of_call_or_new_opt env e =
        * Being complete and handling any method calls like $o->...()
        * requires to know what is the type of $o which is quite
        * complicated ... so let's skip that for now.
-       * 
+       *
        * todo: special case also id(new ...)-> ?
        *)
       | Obj_get (This _, Id name2)
@@ -289,10 +289,10 @@ let funcdef_of_call_or_new_opt env e =
           | Some name1 ->
               let aclass = A.str_of_name name1 in
               let amethod = A.str_of_name name2 in
-              (try 
+              (try
                 Some (Class_php.lookup_method ~case_insensitive:true
                     (aclass, amethod) find_entity)
-               with 
+               with
                | Not_found | Multi_found
                | Class_php.Use__Call|Class_php.UndefinedClassWhileLookup _ ->
                    None
@@ -304,7 +304,7 @@ let funcdef_of_call_or_new_opt env e =
       (* dynamic call, not much we can do ... *)
       | _ -> None
       )
-      
+
 (*****************************************************************************)
 (* Checks *)
 (*****************************************************************************)
@@ -319,11 +319,11 @@ let check_defined env name ~incr_count =
       if !(env.bailout)
       then ()
       else
-        let err = 
+        let err =
           if env.in_lambda
           then E.UseOfUndefinedVariableInLambda s
-          else 
-            let allvars = 
+          else
+            let allvars =
               !(env.vars) +> Map_poly.to_list +> List.map fst in
             let suggest = Suggest_fix_php.suggest s allvars in
             E.UseOfUndefinedVariable (s, suggest)
@@ -340,7 +340,7 @@ let check_used env vars =
     then
       if unused_ok s
       then ()
-      else 
+      else
         (* if you use compact(), some variables may look unused but
          * they can actually be used. See variables_fp.php.
          *)
@@ -371,7 +371,7 @@ let create_new_local_if_necessary ~incr_count env name =
 (* Main entry point *)
 (*****************************************************************************)
 
-(* For each introduced variable (parameter, foreach variable, exception, etc), 
+(* For each introduced variable (parameter, foreach variable, exception, etc),
  * we add the binding in the environment with a counter, a la checkModule.
  * We then check at use-time if something was declared before. We then
  * finally check when we exit a scope that all variables were actually used.
@@ -392,20 +392,20 @@ and func_def env def =
 
   (* should not contain variables anyway, but does not hurt to check *)
   def.f_params +> List.iter (fun p -> Common.opt (expr env) p.p_default);
-  
-  let access_cnt = 
+
+  let access_cnt =
     match def.f_kind with
     | Function  | AnonLambda -> 0
     (* Don't report UnusedParameter for parameters of methods;
      * people sometimes override a method and don't use all
      * the parameters, hence the 1 value below.
-     * 
+     *
      * less: we we don't want parameters just in method interface
-     *  to not be counted as unused Parameter 
+     *  to not be counted as unused Parameter
      * less: one day we will have an @override annotation in which
      *  case we can reconsider the above design decision.
      *)
-    | Method -> 1 
+    | Method -> 1
   in
   let oldvars = !(env.vars) in
 
@@ -465,7 +465,7 @@ and stmt env = function
       expr env e;
       casel env xs
 
-  | While (e, xs) -> 
+  | While (e, xs) ->
       expr env e;
       stmtl env xs
   | Do (xs, e) ->
@@ -474,13 +474,13 @@ and stmt env = function
   | For (es1, es2, es3, xs) ->
       exprl env (es1 ++ es2 ++ es3);
       stmtl env xs
- 
+
   | Foreach (e1, e2, e3opt, xs) ->
       expr env e1;
 
       (* People often use only one of the iterator when
        * they do foreach like   foreach(... as $k => $v).
-       * We want to make sure that at least one of 
+       * We want to make sure that at least one of
        * the iterator variables is used, hence this trick to
        * make them share the same access count reference.
        *)
@@ -493,7 +493,7 @@ and stmt env = function
           (* todo: if already in scope? shadowing? *)
           (* todo: if strict then introduce new scope here *)
           (* todo: scope_ref := S.LocalIterator; *)
-          env.vars := Map_poly.add s (tok, S.LocalIterator, shared_ref) 
+          env.vars := Map_poly.add s (tok, S.LocalIterator, shared_ref)
             !(env.vars);
       (* other kinds of lvalue are permitted too, but it's a little bit wierd
        * and very rarely used in www
@@ -501,9 +501,9 @@ and stmt env = function
       | Array_get _ -> expr env e2
 
       (* todo: E.warning tok E.WeirdForeachNoIteratorVar *)
-      | _ -> 
+      | _ ->
           pr2 (str_of_any (Expr2 e2));
-          raise Todo          
+          raise Todo
       );
 
       (match e3opt with
@@ -514,17 +514,17 @@ and stmt env = function
               assert (A.is_variable name);
               let (s, tok) = s_tok_of_name name in
               (* todo: scope_ref := S.LocalIterator; *)
-              env.vars := Map_poly.add s (tok, S.LocalIterator, shared_ref) 
+              env.vars := Map_poly.add s (tok, S.LocalIterator, shared_ref)
                 !(env.vars);
               (* todo: E.warning tok E.WeirdForeachNoIteratorVar *)
-          | _ -> 
+          | _ ->
               pr2 (str_of_any (Expr2 e3));
               raise Todo
           )
       );
       stmtl env xs
 
-  | Return eopt   
+  | Return eopt
   | Break eopt | Continue eopt ->
       Common.opt (expr env) eopt
 
@@ -550,7 +550,7 @@ and stmt env = function
             let (s, tok) = s_tok_of_name name in
             env.vars := Map_poly.add s (tok, S.Global, ref 0) !(env.vars);
         (* todo: E.warning tok E.UglyGlobalDynamic *)
-        | _ ->                      
+        | _ ->
             pr2 (str_of_any (Expr2 e));
             raise Todo
       )
@@ -560,7 +560,7 @@ and stmt env = function
  * todo: but for this one it is so ugly that I introduce a new scope
  * even outside strict mode. It's just too ugly.
  * todo: check unused
- * todo? could use local ? could have a UnusedExceptionParameter ? 
+ * todo? could use local ? could have a UnusedExceptionParameter ?
  * less: could use ref 1, the exception is often not used
  *)
 and catch env (hint_type, name, xs) =
@@ -594,16 +594,16 @@ and expr env = function
       (* e1 should be an lvalue *)
       (match e1 with
       | Id name ->
-          (* Does an assignation counts as a use? If you only 
-           * assign and never use a variable what is the point? 
+          (* Does an assignation counts as a use? If you only
+           * assign and never use a variable what is the point?
            * This should be legal only for parameters passed by reference.
-           * (note that here I talk about parameters, not arguments) 
-           * 
+           * (note that here I talk about parameters, not arguments)
+           *
            * TODO: hmm if you take a reference to something, then
            *  assigning something to it should be considered as a use too.
            *)
           create_new_local_if_necessary ~incr_count:false env name;
-          
+
       (* extract all vars, and share the same reference *)
       | List xs ->
           (* Use the same trick than for LocalIterator *)
@@ -611,7 +611,7 @@ and expr env = function
 
           let rec aux = function
             (* should be an lvalue again *)
-            | Id name when A.is_variable name -> 
+            | Id name when A.is_variable name ->
                 let (s, tok) = s_tok_of_name name in
                 (match lookup_opt s !(env.vars) with
                 | None ->
@@ -623,7 +623,7 @@ and expr env = function
             | ((Array_get _ | Obj_get _ | Class_get _) as e) ->
                 expr env e
             | List xs -> List.iter aux xs
-            | _ -> 
+            | _ ->
                 pr2 (str_of_any (Expr2 (List xs)));
                 raise Todo
           in
@@ -670,12 +670,12 @@ and expr env = function
             check_defined ~incr_count:false env name
         (* Unsetting a field, seems like a valid use.
          * Unsetting a prop, not clear why you want that.
-         * Unsetting a class var, not clear why you want that either 
+         * Unsetting a class var, not clear why you want that either
          *)
-        | (Array_get (_, _) | Obj_get _ | Class_get _) as e -> 
+        | (Array_get (_, _) | Obj_get _ | Class_get _) as e ->
             (* make sure that the array used is actually defined *)
             expr env e
-        | e -> 
+        | e ->
             pr2 (str_of_any (Expr2 e));
             raise Todo
       )
@@ -720,7 +720,7 @@ and expr env = function
       then begin
         let prefix_opt =
           match rest_param_xxx_args with
-          | [String(str_prefix, _tok_prefix)] -> 
+          | [String(str_prefix, _tok_prefix)] ->
               Some str_prefix
           | [] ->
               (match kind with
@@ -730,7 +730,7 @@ and expr env = function
               | "param_cookie" -> Some "cookie_"
               | _ -> raise Impossible
               )
-          | _ -> 
+          | _ ->
               (* less: display an error? weird argument to param_xxx func?*)
               None
         in
@@ -748,15 +748,15 @@ and expr env = function
 
   | Call (e, es) ->
       expr env e;
-      
+
       (* getting the def for args passed by ref false positives fix *)
       let def_opt = funcdef_of_call_or_new_opt env e in
       let es_with_parameters =
         match def_opt with
-        | None -> 
+        | None ->
             es +> List.map (fun e -> e, None)
         | Some def ->
-            let params = 
+            let params =
               def.Ast_php.f_params +> Ast_php.unparen +> Ast_php.uncomma_dots
             in
             let rec zip args params =
@@ -784,7 +784,7 @@ and expr env = function
         (* a variable passed by reference, this can considered a new decl *)
         | Id name, Some {Ast_php.p_ref = Some _;_} when A.is_variable name ->
 
-            (* if was already assigned and passed by refs, 
+            (* if was already assigned and passed by refs,
              * increment its use counter then.
              * less: or should we increase only if inout param?
              *)
@@ -827,6 +827,8 @@ and expr env = function
   | Ref e -> expr env e
 
   | ConsArray (_, xs) -> array_valuel env xs
+  | ConsVector xs -> vector_valuel env xs
+  | ConsMap (_, xs) -> map_valuel env xs
   | Xhp x -> xml env x
 
   | CondExpr (e1, e2, e3) -> exprl env [e1; e2; e3]
@@ -837,7 +839,11 @@ and expr env = function
 
 and array_value env = function
   | Aval e -> expr env e
-  | Akval (e1, e2) -> exprl env [e1; e2]  
+  | Akval (e1, e2) -> exprl env [e1; e2]
+
+and vector_value env e = expr env e
+
+and map_value env (e1, e2) = exprl env [e1; e2]
 
 and xml env x =
   x.xml_attrs +> List.iter (fun (name, xhp_attr) -> expr env xhp_attr);
@@ -850,6 +856,8 @@ and xhp env = function
 
 and exprl env xs = List.iter (expr env) xs
 and array_valuel env xs = List.iter (array_value env) xs
+and vector_valuel env xs = List.iter (vector_value env) xs
+and map_valuel env xs = List.iter (map_value env) xs
 
 (* ---------------------------------------------------------------------- *)
 (* Misc *)
@@ -857,7 +865,7 @@ and array_valuel env xs = List.iter (array_value env) xs
 
 (* checks for use of undefined members should be in check_classes, but
  * it's hard to do locally.
- * 
+ *
  * todo: inline the code of traits?
  *)
 and class_def env def =
@@ -899,7 +907,7 @@ let check_and_annotate_program2 find_entity prog =
   program env ast;
 
   (* annotating the scope of Var *)
-  (Ast_php.Program prog) +> 
+  (Ast_php.Program prog) +>
     Visitor_php.mk_visitor { Visitor_php.default_visitor with
     Visitor_php.klvalue = (fun (k, _) x ->
       match x with
@@ -915,6 +923,6 @@ let check_and_annotate_program2 find_entity prog =
   };
   ()
 
-let check_and_annotate_program a b = 
-  Common.profile_code "Checker.variables" (fun () -> 
+let check_and_annotate_program a b =
+  Common.profile_code "Checker.variables" (fun () ->
     check_and_annotate_program2 a b)

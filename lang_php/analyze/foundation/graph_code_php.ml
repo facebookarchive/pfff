@@ -6,7 +6,7 @@
  * modify it under the terms of the GNU Lesser General Public License
  * version 2.1 as published by the Free Software Foundation, with the
  * special exception on linking described in file license.txt.
- * 
+ *
  * This library is distributed in the hope that it will be useful, but
  * WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the file
@@ -26,10 +26,10 @@ open Ast_php_simple
 (*
  * Graph of dependencies for PHP. See graph_code.ml and main_codegraph.ml
  * for more information. Yet another code database for PHP ...
- * 
+ *
  * See also old/graph_php.ml, facebook/flib_dependencies/,
  * facebook/check_module/graph_module.ml
- * 
+ *
  * schema:
  *  Root -> Dir -> File (.php) -> Class (interfaces and traits too)
  *                                 -> Method
@@ -39,8 +39,8 @@ open Ast_php_simple
  *                             -> Constant
  *       -> Dir -> SubDir -> File -> ...
  *       -> Dir -> SubDir -> Module? -> ...
- * 
- * less: 
+ *
+ * less:
  *  - handle Interface and Traits, do not translate them in RegularClass?
  *  - handle static vs non static methods/fields? but at the same time
  *    lots of our code abuse $this-> where they should use self::, so
@@ -48,20 +48,20 @@ open Ast_php_simple
  *  - reuse env, most of of build() and put it in graph_code.ml
  *    and just pass the PHP specificities.
  *  - add tests
- * 
+ *
  * issues regarding errors in a codebase:
  *  - parse errors, test code
  *    => skip list, file: or dir:
  *  - nested functions, duped functions defined conditionnally
  *    => use the at_toplevel field below
- *  - duped functions 
+ *  - duped functions
  *    => skip list (or remove the offending code), file: or dir:
  *  - duped local functions in scripts/
  *    => skip list, skip_errors_dir:
  *  - lookup failure because use different software stack (e.g.
- *    html/intern/wiki/, lib/arcanist/, etc) 
+ *    html/intern/wiki/, lib/arcanist/, etc)
  *    => skip list, dir:
- * 
+ *
  * where to display the errors:
  *  - terminal for the really important one
  *  - pfff.log for less important and to have more details
@@ -95,7 +95,7 @@ type env = {
   dupes: (Graph_code.node, (Common.filename * Common.filename)) Hashtbl.t;
 
   (* in many files like scripts/ people reuse the same function name. This
-   * is annoying for global analysis, so when we detect such files, 
+   * is annoying for global analysis, so when we detect such files,
    * because right now they are listed in the skip file as skip_errors_dir:,
    * then we dynamically and locally rename this function.
    *)
@@ -121,7 +121,7 @@ type env = {
    *)
   and phase = Defs | Inheritance | Uses
 
-let look_like_class_re = 
+let look_like_class_re =
   Str.regexp "^\\([A-Z][A-Za-z_0-9]*\\)\\(::[A-Za-z_0-9]*\\)?$"
 
 (*****************************************************************************)
@@ -129,8 +129,8 @@ let look_like_class_re =
 (*****************************************************************************)
 
 let _hmemo = Hashtbl.create 101
-let parse2 file = 
-  try 
+let parse2 file =
+  try
     Common.save_excursion Ast_php_simple_build.store_position true (fun () ->
     let cst = Parse_php.parse_program file in
     let ast = Ast_php_simple_build.program cst in
@@ -141,12 +141,12 @@ let parse2 file =
   | exn ->
     pr2_once (spf "PARSE ERROR with %s, exn = %s" file (Common.exn_to_s exn));
     []
-let parse a = 
+let parse a =
   (* on huge codebase naive memoization stresses too much the GC.
    * We marshall a la juju so the heap graph is smaller at least.
    *)
   Marshal.from_string
-    (Common.memoized _hmemo a (fun () -> 
+    (Common.memoized _hmemo a (fun () ->
       Marshal.to_string (parse2 a) []
      )) 0
 
@@ -155,23 +155,23 @@ let add_node_and_edge_if_defs_mode env name_node =
   let (name, kind) = name_node in
   let str =
     match kind with
-    | E.ClassConstant | E.Field | E.Method _ -> 
+    | E.ClassConstant | E.Field | E.Method _ ->
       env.self ^ "." ^ Ast.str_of_name name
-    | _ -> 
+    | _ ->
       Ast.str_of_name name
   in
   let node = (str, kind) in
 
   if env.phase = Defs then begin
-    if G.has_node node env.g 
-    then 
+    if G.has_node node env.g
+    then
       let file = Parse_info.file_of_info (Ast.tok_of_name name) in
       (* todo: look if is_skip_error_file in which case populate
        * a env.dupe_renaming
        *)
       (match kind with
       (* less: log at least? *)
-      | E.Class _ | E.Function | E.Constant when not env.at_toplevel -> 
+      | E.Class _ | E.Function | E.Constant when not env.at_toplevel ->
         ()
 
       (* If the class was dupe, of course all its members are also duped.
@@ -179,12 +179,12 @@ let add_node_and_edge_if_defs_mode env name_node =
        * we dont set env.current to this node, otherwise we may
        * pollute the callees of the original node.
        *)
-      | E.ClassConstant | E.Field | E.Method _ 
+      | E.ClassConstant | E.Field | E.Method _
         when Hashtbl.mem env.dupes (env.self, E.Class E.RegularClass) ->
         Hashtbl.add env.dupes node (env.readable, file)
       | E.ClassConstant | E.Field | E.Method _ ->
         env.pr2_and_log (spf "DUPE METHOD: %s" (G.string_of_node node));
-      | _ -> 
+      | _ ->
         Hashtbl.add env.dupes node (env.readable, file)
       )
     else begin
@@ -202,14 +202,14 @@ let add_node_and_edge_if_defs_mode env name_node =
       env.g +> G.add_nodeinfo node nodeinfo;
     end
   end;
-  (* for dupes like main(), but also dupe classes, or methods of dupe 
+  (* for dupes like main(), but also dupe classes, or methods of dupe
    * classe, it's better to keep 'current' as the current File so
    * at least we will avoid to add in the wrong node some relations
    * that should not exist.
    *)
   if Hashtbl.mem env.dupes node
   then env
-  else 
+  else
     { env with current = node }
 
 
@@ -223,19 +223,19 @@ let rec add_use_edge env (((str, tok) as name, kind)) =
       env.pr2_and_log (spf "LOOKUP SRC FAIL %s --> %s, src doesn't exist (nested func?)"
               (G.string_of_node src) (G.string_of_node dst));
 
-  | _ when G.has_node dst env.g -> 
+  | _ when G.has_node dst env.g ->
       G.add_edge (src, dst) G.Use env.g
 
   | _ when Hashtbl.mem env.case_insensitive (String.lowercase str, kind) ->
-      let (final_str, _) = 
+      let (final_str, _) =
         Hashtbl.find env.case_insensitive (String.lowercase str, kind) in
       add_use_edge env ((final_str, tok), kind)
 
-  | _ -> 
+  | _ ->
       (match kind with
       (* if dst is a Class, then try Interface *)
       (*
-      | E.Class E.RegularClass -> 
+      | E.Class E.RegularClass ->
           add_use_edge env (name, E.Class E.Interface)
       *)
       | _ ->
@@ -250,10 +250,10 @@ let rec add_use_edge env (((str, tok) as name, kind)) =
           (* | E.Method _  | E.ClassConstant ->          () *)
           | _ ->
             let file = name +> Ast.tok_of_name +> Parse_info.string_of_info in
-            let f = 
+            let f =
               if env.phase = Inheritance
-              then env.pr2_and_log 
-              else 
+              then env.pr2_and_log
+              else
                 if file =~ ".*third-party" || file =~ ".*third_party"
                 then (fun _s -> ())
                 else env.log
@@ -273,10 +273,10 @@ let lookup2 g (aclass, amethod_or_field_or_constant) tok =
   let rec depth current =
     if not (G.has_node current g)
     then None
-    else 
+    else
       let children = G.children current g in
       let full_name = (fst current ^ "." ^ amethod_or_field_or_constant) in
-      let res = 
+      let res =
         children +> Common.find_some_opt (fun (s2, kind) ->
           if full_name =$= s2
           then Some ((s2, tok), kind)
@@ -292,7 +292,7 @@ let lookup2 g (aclass, amethod_or_field_or_constant) tok =
   in
   depth (aclass, E.Class E.RegularClass)
 
-let lookup g a = 
+let lookup g a =
   Common.profile_code "Graph_php.lookup" (fun () -> lookup2 g a)
 
 (*****************************************************************************)
@@ -311,7 +311,7 @@ let rec extract_defs_uses env ast readable =
 (* ---------------------------------------------------------------------- *)
 (* Stmt/toplevel *)
 (* ---------------------------------------------------------------------- *)
-and stmt env x = 
+and stmt env x =
   stmt_bis { env with at_toplevel = false } x
 and stmt_toplevel env x =
   stmt_bis env x
@@ -378,10 +378,10 @@ and catches env xs = List.iter (catch env) xs
 (* ---------------------------------------------------------------------- *)
 and func_def env def =
   let node = (def.f_name, E.Function) in
-  let env = 
+  let env =
     match def.f_kind with
     | AnonLambda -> env
-    | Function -> add_node_and_edge_if_defs_mode env node 
+    | Function -> add_node_and_edge_if_defs_mode env node
     | Method -> raise Impossible
   in
   def.f_params +> List.iter (fun p ->
@@ -393,7 +393,7 @@ and func_def env def =
 and class_def env def =
   let kind = E.RegularClass in
   (*
-    let _kind = 
+    let _kind =
     match def.c_kind with
     | ClassRegular | ClassFinal | ClassAbstract -> E.RegularClass
     | Interface -> E.Interface
@@ -417,13 +417,13 @@ and class_def env def =
     );
   end;
   let self = Ast.str_of_name def.c_name in
-  let parent = 
-    match def.c_extends with 
-    | None -> "NOPARENT" 
+  let parent =
+    match def.c_extends with
+    | None -> "NOPARENT"
     | Some c2 -> Ast.str_of_name c2
   in
   let env = { env with self; parent } in
-  
+
   def.c_constants +> List.iter (fun def ->
     let node = (def.cst_name, E.ClassConstant) in
     let env = add_node_and_edge_if_defs_mode env node in
@@ -450,7 +450,7 @@ and constant_def env def =
 (* ---------------------------------------------------------------------- *)
 (* Expr *)
 (* ---------------------------------------------------------------------- *)
-and expr env x = 
+and expr env x =
   if env.phase = Uses then
   (match x with
   | Int _ | Double _  -> ()
@@ -459,13 +459,13 @@ and expr env x =
   | String (s, tok) when s ==~ look_like_class_re ->
     let entity = Common.matched1 s in
     (* less: do case insensitive? handle conflicts? *)
-    if G.has_node (entity, E.Class E.RegularClass) env.g 
+    if G.has_node (entity, E.Class E.RegularClass) env.g
     then begin
       (match env.readable with
       (* less: phabricator/fb specific *)
       | s when s =~ ".*__phutil_library_map__.php" -> ()
       | s when s =~ ".*autoload_map.php" -> ()
-      | _ -> 
+      | _ ->
         (*env.log (spf "DYNCALL_STR:%s (at %s)" s env.readable);*)
         add_use_edge env ((entity, tok), E.Class E.RegularClass)
       );
@@ -483,9 +483,9 @@ and expr env x =
    * is executed really as a last resort, which usually means when
    * there is the use of a constant.
    *)
-  | Id name -> 
+  | Id name ->
       (* a parameter or local variable *)
-      if Ast.is_variable name 
+      if Ast.is_variable name
       then ()
       else add_use_edge env (name, E.Constant)
 
@@ -506,7 +506,7 @@ and expr env x =
     | Class_get (Id ("__special__static", tok), e2) ->
         expr env (Call (Class_get (Id (env.self, tok), e2), es))
 
-    | Class_get (Id name1, Id name2) 
+    | Class_get (Id name1, Id name2)
         when not (Ast.is_variable name1) && not (Ast.is_variable name2) ->
          let aclass = Ast.str_of_name name1 in
          let amethod = Ast.str_of_name name2 in
@@ -523,7 +523,7 @@ and expr env x =
          | _ -> ()
          );
          (match lookup env.g (aclass, amethod) tok with
-         | None -> 
+         | None ->
            (match amethod with
            | "__construct" -> ()
            | _ -> add_use_edge env node
@@ -539,14 +539,14 @@ and expr env x =
         | This (_,tok) ->
           expr env (Call (Class_get (Id (env.self, tok), Id name2), es))
         (* need class analysis ... *)
-        | _ -> 
+        | _ ->
           (* less: increment dynamic_fails stats *)
           expr env e1;
           exprl env es
         )
     (* less: increment dynamic_fails stats *)
-    | _ -> 
-      expr env e; 
+    | _ ->
+      expr env e;
       exprl env es
     (* less: increment dynamic_fails stats also when use func_call_args() *)
     )
@@ -588,14 +588,14 @@ and expr env x =
           (* less: assert kind = Static variable *)
           | Some n -> add_use_edge env n
           )
- 
+
      (* less: update dynamic stats *)
      | Id name1, e2 when not (Ast.is_variable name1) ->
           add_use_edge env (name1, E.Class E.RegularClass);
           expr env e2;
      | e1, Id name2 when not (Ast.is_variable name2) ->
        expr env e1;
-     | _ -> 
+     | _ ->
        exprl env [e1; e2]
       )
 
@@ -619,17 +619,17 @@ and expr env x =
   (* boilerplate *)
   | List xs -> exprl env xs
   | Assign (_, e1, e2) -> exprl env [e1;e2]
-  | InstanceOf (e1, e2) -> 
+  | InstanceOf (e1, e2) ->
       expr env e1;
       (match e2 with
       (* less: add deps? *)
-      | Id name when not (Ast.is_variable name) -> 
+      | Id name when not (Ast.is_variable name) ->
           ()
-      | _ -> 
+      | _ ->
           (* less: update dynamic *)
           expr env e2
       )
-          
+
   | This _ -> ()
   | Array_get (e, eopt) ->
       expr env e;
@@ -639,6 +639,8 @@ and expr env x =
   | Guil xs -> exprl env xs
   | Ref e -> expr env e
   | ConsArray (_, xs) -> array_valuel env xs
+  | ConsVector xs -> vector_valuel env xs
+  | ConsMap (_, xs) -> map_valuel env xs
   | Xhp x -> xml env x
   | CondExpr (e1, e2, e3) -> exprl env [e1; e2; e3]
   (* less: again, add deps for type? *)
@@ -648,7 +650,11 @@ and expr env x =
 
 and array_value env = function
   | Aval e -> expr env e
-  | Akval (e1, e2) -> exprl env [e1; e2]  
+  | Akval (e1, e2) -> exprl env [e1; e2]
+
+and vector_value env e = expr env e
+
+and map_value env (e1, e2) = exprl env [e1; e2]
 
 and xml env x =
  (* todo: dependency on field? *)
@@ -663,6 +669,8 @@ and xhp env = function
 
 and exprl env xs = List.iter (expr env) xs
 and array_valuel env xs = List.iter (array_value env) xs
+and vector_valuel env xs = List.iter (vector_value env) xs
+and map_valuel env xs = List.iter (map_value env) xs
 
 (*****************************************************************************)
 (* Main entry point *)
@@ -671,19 +679,19 @@ and array_valuel env xs = List.iter (array_value env) xs
 let build ?(verbose=true) ?(only_defs=false) dir skip_list =
   let root = Common.realpath dir in
   let all_files = Lib_parsing_php.find_php_files_of_dir_or_files [root] in
-  
+
   (* step0: filter noisy modules/files *)
   let files = Skip_code.filter_files skip_list root all_files in
   (* step0: reorder files *)
   let files = Skip_code.reorder_files_skip_errors_last skip_list root files in
-  
+
   let g = G.create () in
   G.create_initial_hierarchy g;
 
   let chan = open_out (Filename.concat (Sys.getcwd()) "pfff.log") in
 
   let env = {
-    g; 
+    g;
     phase = Defs;
     current = ("filled_later", E.File);
     readable = "filled_later";
@@ -692,22 +700,22 @@ let build ?(verbose=true) ?(only_defs=false) dir skip_list =
     (* set after the defs phase *)
     case_insensitive = Hashtbl.create 101;
     log = (fun s ->
-        output_string chan (s ^ "\n"); 
-        flush chan; 
+        output_string chan (s ^ "\n");
+        flush chan;
     );
     pr2_and_log = (fun s ->
       if verbose then pr2 s;
-      output_string chan (s ^ "\n"); 
-      flush chan; 
+      output_string chan (s ^ "\n");
+      flush chan;
     );
     is_skip_error_file = Skip_code.build_filter_errors_file skip_list;
     at_toplevel = true;
-  } 
+  }
   in
 
   (* step1: creating the nodes and 'Has' edges, the defs *)
   env.pr2_and_log "\nstep1: extract defs";
-  files +> Common_extra.progress ~show:verbose (fun k -> 
+  files +> Common_extra.progress ~show:verbose (fun k ->
     List.iter (fun file ->
       k();
       let readable = Common.filename_without_leading_path root file in
@@ -715,7 +723,7 @@ let build ?(verbose=true) ?(only_defs=false) dir skip_list =
       (* will modify env.dupes instead of raise Graph_code.NodeAlreadyPresent *)
       extract_defs_uses { env with phase = Defs} ast readable;
    ));
-  Common.hkeys env.dupes 
+  Common.hkeys env.dupes
   +> List.filter (fun (_, kind) ->
     match kind with
     | E.ClassConstant | E.Field | E.Method _ -> false
@@ -732,7 +740,7 @@ let build ?(verbose=true) ?(only_defs=false) dir skip_list =
     let dupes = orig_readable::List.map fst files in
     let cnt = List.length dupes in
 
-    let (in_skip_errors, other) = 
+    let (in_skip_errors, other) =
       List.partition env.is_skip_error_file dupes in
 
     (match List.length in_skip_errors, List.length other with
@@ -746,7 +754,7 @@ let build ?(verbose=true) ?(only_defs=false) dir skip_list =
     (* duplicating a regular function, bad, but ok, should have renamed it in
      * our analysis, see env.dupe_renaming
      *)
-    | n, 1 when n > 0 -> 
+    | n, 1 when n > 0 ->
       env.log (spf "DUPE BAD STYLE: %s (%d)" (G.string_of_node node) cnt);
       env.log (spf " orig = %s" orig_file) ;
       env.log (spf " dupe = %s" ex_file);
@@ -758,23 +766,23 @@ let build ?(verbose=true) ?(only_defs=false) dir skip_list =
   );
   if not only_defs then begin
     g +> G.iter_nodes (fun (str, kind) ->
-      Hashtbl.replace env.case_insensitive 
+      Hashtbl.replace env.case_insensitive
         (String.lowercase str, kind) (str, kind)
     );
 
     (* step2: creating the 'Use' edges for inheritance *)
     env.pr2_and_log "\nstep2: extract inheritance";
-    files +> Common_extra.progress ~show:verbose (fun k -> 
+    files +> Common_extra.progress ~show:verbose (fun k ->
       List.iter (fun file ->
         k();
         let readable = Common.filename_without_leading_path root file in
         let ast = parse file in
         extract_defs_uses { env with phase = Inheritance} ast readable
       ));
-    
+
     (* step3: creating the 'Use' edges, the uses *)
     env.pr2_and_log "\nstep3: extract uses";
-    files +> Common_extra.progress ~show:verbose (fun k -> 
+    files +> Common_extra.progress ~show:verbose (fun k ->
       List.iter (fun file ->
         k();
         let readable = Common.filename_without_leading_path root file in
@@ -782,5 +790,5 @@ let build ?(verbose=true) ?(only_defs=false) dir skip_list =
         extract_defs_uses {env with phase = Uses} ast readable
    ));
   end;
-  
+
   g

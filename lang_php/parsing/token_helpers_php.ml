@@ -6,7 +6,7 @@
  * modify it under the terms of the GNU Lesser General Public License
  * version 2.1 as published by the Free Software Foundation, with the
  * special exception on linking described in file license.txt.
- * 
+ *
  * This library is distributed in the hope that it will be useful, but
  * WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the file
@@ -26,21 +26,21 @@ let is_eof = function
   | _ -> false
 
 let is_comment = function
-  | T_COMMENT _ | T_DOC_COMMENT _ 
+  | T_COMMENT _ | T_DOC_COMMENT _
   | TSpaces _ | TNewline _ -> true
   | TCommentPP _ -> true
-  | _ -> false 
+  | _ -> false
 
 let is_just_comment = function
   | T_COMMENT _ -> true
-  | _ -> false 
+  | _ -> false
 
 
 (*****************************************************************************)
 (* Visitors *)
 (*****************************************************************************)
 
-(* Ugly repetitive code but ocamlyacc force us to do it that way. 
+(* Ugly repetitive code but ocamlyacc force us to do it that way.
  * Indeed the ocamlyacc token  cant be a pair of a sum type, it must be
  * directly a sum type. Fortunately most of the code was generated via an
  * emacs macro working on the type definition of token in parser_php.mli
@@ -104,6 +104,9 @@ let info_of_tok = function
   | T_DOUBLE_ARROW ii -> ii
   | T_LIST ii -> ii
   | T_ARRAY ii -> ii
+  | T_VECTOR ii -> ii
+  | T_MAP ii -> ii
+  | T_STABLEMAP ii -> ii
   | T_CLASS_C ii -> ii
   | T_METHOD_C ii -> ii
   | T_FUNC_C ii -> ii
@@ -292,6 +295,9 @@ let visitor_info_of_tok f = function
   | T_DOUBLE_ARROW ii -> T_DOUBLE_ARROW(f ii)
   | T_LIST ii -> T_LIST(f ii)
   | T_ARRAY ii -> T_ARRAY(f ii)
+  | T_VECTOR ii -> T_VECTOR(f ii)
+  | T_MAP ii -> T_MAP(f ii)
+  | T_STABLEMAP ii -> T_STABLEMAP(f ii)
   | T_CLASS_C ii -> T_CLASS_C(f ii)
   | T_METHOD_C ii -> T_METHOD_C(f ii)
   | T_FUNC_C ii -> T_FUNC_C(f ii)

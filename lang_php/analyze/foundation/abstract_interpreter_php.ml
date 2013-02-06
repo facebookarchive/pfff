@@ -612,7 +612,8 @@ and expr_ env heap x =
       let heap, v = Ptr.get heap v in
       Var.unset env "*array*";
       heap, v
-
+  | ConsVector _ -> failwith "Vector literals not implemented - complain to pieter@"
+  | ConsMap _    -> failwith "Map literals not implemented - complain to pieter@"
 
   (* hardcoded special case, not sure why we need that *)
   | Call (Id ("id",_), [x]) -> expr env heap x

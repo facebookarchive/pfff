@@ -1299,6 +1299,23 @@ and m_expr a b =
        B.ArrayShort(b1)
     )
     )
+
+  | A.VectorLit(a1,a2), B.VectorLit(b1,b2) ->
+     m_tok a1 b1 >>= (fun (a1, b1) ->
+       m_brace (m_comma_list m_vector_elt) a2 b2 >>= (fun (a2, b2) ->
+         return (
+           A.VectorLit(a1,a2),
+           B.VectorLit(b1,b2)
+         )
+       ))
+  | A.MapLit (a1, a2), B.MapLit(b1,b2) ->
+    m_tok a1 b1 >>= (fun (a1, b1) ->
+      m_brace (m_comma_list m_map_elt) a2 b2 >>= (fun (a2, b2) ->
+        return (
+          A.MapLit(a1, a2),
+          B.MapLit(b1, b2)
+        )
+      ))
   | A.New(a1, a2, a3), B.New(b1, b2, b3) ->
     m_tok a1 b1 >>= (fun (a1, b1) ->
     m_class_name_reference a2 b2 >>= (fun (a2, b2) ->
@@ -1512,6 +1529,8 @@ and m_expr a b =
   | A.AssignList _, _
   | A.ArrayLong _, _
   | A.ArrayShort _, _
+  | A.VectorLit _, _
+  | A.MapLit _, _
   | A.New _, _
   | A.Clone _, _
   | A.AssignRef _, _
@@ -1854,7 +1873,50 @@ and m_array_pair a b =
   | A.ArrayArrowExpr _, _
   | A.ArrayArrowRef _, _
    -> fail ()
-
+and m_vector_elt a b =
+  match a, b with
+  | A.VectorExpr(a1), B.VectorExpr(b1) ->
+    m_expr a1 b1 >>= (fun (a1, b1) ->
+    return (
+       A.VectorExpr(a1),
+       B.VectorExpr(b1)
+    )
+    )
+  | A.VectorRef(a1, a2), B.VectorRef(b1, b2) ->
+    m_tok a1 b1 >>= (fun (a1, b1) ->
+    m_variable a2 b2 >>= (fun (a2, b2) ->
+    return (
+       A.VectorRef(a1, a2),
+       B.VectorRef(b1, b2)
+    )
+    ))
+  | A.VectorExpr _, _
+  | A.VectorRef _, _
+    -> fail()
+and m_map_elt a b =
+  match a, b with
+  | A.MapArrowExpr(a1, a2, a3), B.MapArrowExpr(b1, b2, b3) ->
+    m_expr a1 b1 >>= (fun (a1, b1) ->
+    m_tok a2 b2 >>= (fun (a2, b2) ->
+    m_expr a3 b3 >>= (fun (a3, b3) ->
+    return (
+       A.MapArrowExpr(a1, a2, a3),
+       B.MapArrowExpr(b1, b2, b3)
+    )
+    )))
+  | A.MapArrowRef(a1, a2, a3, a4), B.MapArrowRef(b1, b2, b3, b4) ->
+    m_expr a1 b1 >>= (fun (a1, b1) ->
+    m_tok a2 b2 >>= (fun (a2, b2) ->
+    m_tok a3 b3 >>= (fun (a3, b3) ->
+    m_variable a4 b4 >>= (fun (a4, b4) ->
+    return (
+       A.MapArrowRef(a1, a2, a3, a4),
+       B.MapArrowRef(b1, b2, b3, b4)
+    )
+    ))))
+  | A.MapArrowExpr _, _
+  | A.MapArrowRef _, _
+   -> fail ()
 and m_class_name_reference a b =
   match a, b with
   | A.ClassNameRefStatic(a1), B.ClassNameRefStatic(b1) ->

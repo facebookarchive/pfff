@@ -208,6 +208,8 @@ type expr =
   | ArrayLong of tok (* array *) * array_pair  comma_list paren
   (* php 5.4: https://wiki.php.net/rfc/shortsyntaxforarrays *)
   | ArrayShort of array_pair comma_list bracket
+  | VectorLit of tok (* Vector *) * vector_elt comma_list brace
+  | MapLit of tok (* Map/StableMap *) * map_elt comma_list brace
   (*x: exprbis other constructors *)
   | New of tok * class_name_reference * argument comma_list paren option
   | Clone of tok * expr
@@ -368,6 +370,12 @@ type expr =
      | ArrayRef of tok (* & *) * lvalue
      | ArrayArrowExpr of expr * tok (* => *) * expr
      | ArrayArrowRef of expr * tok (* => *) * tok (* & *) * lvalue
+   and vector_elt =
+     | VectorExpr of expr
+     | VectorRef of tok (* & *) * lvalue
+   and map_elt =
+     | MapArrowExpr of expr * tok (* => *) * expr
+     | MapArrowRef of expr * tok (* => *) * tok (* & *) * lvalue
   (*x: AST expression rest *)
    and class_name_reference =
      | ClassNameRefStatic of class_name_or_kwd

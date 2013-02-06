@@ -133,7 +133,7 @@ and unaryOp = function
 let expr_priority = function
   | A.Int _ | A.Double _ | A.String _ | A.Id _
   | A.Obj_get _ | A.Class_get _ | A.Call _
-  | A.Xhp _ | A.ConsArray _
+  | A.Xhp _ | A.ConsArray _ | A.ConsVector _ | A.ConsMap _
   | A.Guil _ | A.HereDoc _
   | A.List _
   | A.This
@@ -607,6 +607,14 @@ and expr_ env = function
   | ConsArray avl ->
       Pp.print env "array";
       Pp.list env (array_value 0) "(" avl "," ")";
+  | ConsVector vel ->
+      Pp.print env "Vector";
+      Pp.list env vector_elt "{" vel "," "}"
+  | ConsMap (kind, mel) ->
+      Pp.print env (match kind with
+                     | Map -> "Map"
+                     | StableMap -> "StableMap");
+      Pp.list env map_elt "{" mel "," "}"
   | List el ->
       Pp.print env "list";
       Pp.list env expr "(" el "," ")";
@@ -723,6 +731,13 @@ and array_value pad env = function
       expr env e1;
       Pp.print env " => ";
       expr env e2
+
+and vector_elt env = expr env
+
+and map_elt env (k,v) =
+  expr env k;
+  Pp.print env " => ";
+  expr env v
 
 and class_def env c =
   (match c.c_type with

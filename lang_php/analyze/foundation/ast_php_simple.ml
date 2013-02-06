@@ -232,6 +232,8 @@ and expr =
   | Ref of expr
 
   | ConsArray of expr option * array_value list
+  | ConsVector of vector_value list
+  | ConsMap of map_kind * (map_value list)
   | Xhp of xml
 
   | CondExpr of expr * expr * expr
@@ -240,9 +242,14 @@ and expr =
   (* yeah! PHP 5.3 is becoming a real language *)
   | Lambda of func_def
 
+  and map_kind =
+    | Map
+    | StableMap
   and array_value = (*TODO: Add line number information *)
     | Aval of expr
     | Akval of expr * expr
+  and vector_value = expr
+  and map_value = expr * expr
 
   (* pad: do we need that? could convert into something more basic *)
   and xhp =
