@@ -727,9 +727,11 @@ rule st_in_scripting = parse
     (* Collection literals are case sensitive, so put these here
        before the main (case insensitive) keyword lookup
     *)
+(* TODO pieter
     | "Vector" { T_VECTOR (tokinfo lexbuf) }
     | "Map"    { T_MAP (tokinfo lexbuf) }
     | "StableMap" { T_STABLEMAP (tokinfo lexbuf) }
+*)
     | LABEL
         { let info = tokinfo lexbuf in
           let s = tok lexbuf in
