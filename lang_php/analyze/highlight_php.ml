@@ -882,18 +882,6 @@ let visit_toplevel ~tag prefs  hentities (toplevel, toks) =
           if not (Hashtbl.mem already_tagged ii)
           then
             tag ii Builtin
-      | T.T_VECTOR ii ->
-          if not (Hashtbl.mem already_tagged ii)
-          then
-            tag ii Builtin
-      | T.T_MAP ii ->
-          if not (Hashtbl.mem already_tagged ii)
-          then
-            tag ii Builtin
-      | T.T_STABLEMAP ii ->
-          if not (Hashtbl.mem already_tagged ii)
-          then
-            tag ii Builtin
       | T.T_LIST ii -> tag ii Builtin
 
       | T.T_DOUBLE_ARROW ii ->

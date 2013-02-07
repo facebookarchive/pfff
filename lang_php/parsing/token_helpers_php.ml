@@ -104,9 +104,6 @@ let info_of_tok = function
   | T_DOUBLE_ARROW ii -> ii
   | T_LIST ii -> ii
   | T_ARRAY ii -> ii
-  | T_VECTOR ii -> ii
-  | T_MAP ii -> ii
-  | T_STABLEMAP ii -> ii
   | T_CLASS_C ii -> ii
   | T_METHOD_C ii -> ii
   | T_FUNC_C ii -> ii
@@ -295,9 +292,6 @@ let visitor_info_of_tok f = function
   | T_DOUBLE_ARROW ii -> T_DOUBLE_ARROW(f ii)
   | T_LIST ii -> T_LIST(f ii)
   | T_ARRAY ii -> T_ARRAY(f ii)
-  | T_VECTOR ii -> T_VECTOR(f ii)
-  | T_MAP ii -> T_MAP(f ii)
-  | T_STABLEMAP ii -> T_STABLEMAP(f ii)
   | T_CLASS_C ii -> T_CLASS_C(f ii)
   | T_METHOD_C ii -> T_METHOD_C(f ii)
   | T_FUNC_C ii -> T_FUNC_C(f ii)

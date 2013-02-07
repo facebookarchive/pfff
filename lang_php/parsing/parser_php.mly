@@ -121,7 +121,7 @@ module Ast = Ast_php
  T_UNSET T_ISSET T_EMPTY
  T_CLASS   T_INTERFACE  T_EXTENDS T_IMPLEMENTS
  T_TRAIT T_INSTEADOF
- T_LIST T_ARRAY T_VECTOR T_MAP T_STABLEMAP
+ T_LIST T_ARRAY
  T_CLASS_C T_METHOD_C T_FUNC_C T_LINE   T_FILE T_DIR T_TRAIT_C
  T_LOGICAL_OR   T_LOGICAL_AND   T_LOGICAL_XOR
  T_NEW T_CLONE T_INSTANCEOF
@@ -819,7 +819,7 @@ xhp_attr_name_atom:
  | T_INCLUDE { $1 } | T_INCLUDE_ONCE { $1 } | T_REQUIRE { $1 }
  | T_REQUIRE_ONCE { $1 } | T_EVAL { $1 } | T_SELF { $1 } | T_PARENT { $1 }
  | T_TRAIT { $1 } | T_INSTEADOF { $1 } | T_TRAIT_C { $1 }
- | T_VECTOR { $1 } | T_MAP { $1 } | T_STABLEMAP { $1 }
+
 /*(*----------------------------*)*/
 /*(*2 XHP children *)*/
 /*(*----------------------------*)*/
@@ -1095,21 +1095,39 @@ expr_without_variable_bis:
  | TMINUS expr    %prec T_INC           { Unary((UnMinus,$1),$2) }
  | TBANG  expr                          { Unary((UnBang,$1),$2) }
  | TTILDE expr                          { Unary((UnTilde,$1),$2) }
-
-
  | T_LIST TOPAR assignment_list TCPAR TEQ expr
      { AssignList($1,($2,$3,$4),$5,$6) }
  | T_ARRAY TOPAR array_pair_list TCPAR
      { ArrayLong($1,($2,$3,$4)) }
- | T_VECTOR TOBRACE vector_elt_list TCBRACE
-     { VectorLit($1, ($2, $3, $4)) }
- | T_MAP TOBRACE map_elt_list TCBRACE
-     { MapLit($1, ($2, $3, $4)) }
- | T_STABLEMAP TOBRACE map_elt_list TCBRACE
-     { MapLit($1, ($2, $3, $4)) }
+
+ | fully_qualified_class_name TOBRACE array_pair_list TCBRACE
+     { let name, tok = match $1 with
+                     | Name (name, t)
+                       when List.mem name  ["Map"; "StableMap"; "Vector"] -> name, t
+                     | _ -> raise Parsing.Parse_error in
+       if name = "Vector" then
+         let elts = List.map
+           (function
+           | Left (ArrayExpr e) -> Left (VectorExpr e)
+           | Left (ArrayRef (t,e)) -> Left (VectorRef (t,e))
+           | Right t -> Right t
+           | Left _ -> raise Parsing.Parse_error)
+           $3
+         in
+         VectorLit(tok, ($2, elts, $4))
+       else (* map or stablemap *)
+         let elts = List.map
+           (function
+           | Left (ArrayArrowExpr (e1,t,e2)) -> Left (MapArrowExpr (e1,t,e2))
+           | Left (ArrayArrowRef (e1, t1, t2, e2)) -> Left (MapArrowRef (e1,t1,t2,e2))
+           | Right t -> Right t
+           | Left _ -> raise Parsing.Parse_error)
+           $3
+         in
+         MapLit(tok, ($2, elts, $4))
+     }
  | TOBRA array_pair_list TCBRA
      { ArrayShort($1, $2, $3) }
-
  | T_NEW class_name_reference ctor_arguments
      { New($1,$2,$3) }
  | T_CLONE expr { Clone($1,$2) }
@@ -1387,30 +1405,6 @@ array_pair:
  | TAND w_variable 		       { (ArrayRef ($1,$2)) }
  | expr T_DOUBLE_ARROW expr	       { (ArrayArrowExpr($1,$2,$3)) }
  | expr T_DOUBLE_ARROW TAND w_variable { (ArrayArrowRef($1,$2,$3,$4)) }
-
-vector_elt_list: vector_elt_list_rev { List.rev $1 }
-vector_elt_list_rev:
- | /*(*empty*)*/ { [] }
- | non_empty_vector_elt_list_rev possible_comma2 { $2++$1 }
-non_empty_vector_elt_list_rev:
- | vector_elt { [Left $1] }
- | non_empty_vector_elt_list_rev TCOMMA vector_elt  { Left $3::Right $2::$1 }
-vector_elt:
- | expr 			       { (VectorExpr $1) }
- | TAND w_variable 		       { (VectorRef ($1,$2)) }
-
-map_elt_list: map_elt_list_rev { List.rev $1 }
-map_elt_list_rev:
- | /*(*empty*)*/ { [] }
- | non_empty_map_elt_list_rev possible_comma3 { $2++$1 }
-non_empty_map_elt_list_rev:
- | map_elt { [Left $1] }
- | non_empty_map_elt_list_rev TCOMMA map_elt  { Left $3::Right $2::$1 }
-map_elt:
- | expr T_DOUBLE_ARROW expr	       { (MapArrowExpr($1,$2,$3)) }
- | expr T_DOUBLE_ARROW TAND w_variable { (MapArrowRef($1,$2,$3,$4)) }
-
-
 
 /*(*x: GRAMMAR variable *)*/
 
@@ -1819,21 +1813,13 @@ possible_comma2:
  | /*(*empty*)*/ { [] }
  | TCOMMA        { [Right $1] }
 
-possible_comma3:
- | /*(*empty*)*/ { [] }
- | TCOMMA        { [Right $1] }
-
-possible_comma4:
- | /*(*empty*)*/ { [] }
- | TCOMMA        { [Right $1] }
-
 static_array_pair_list_rev:
  | /*(*empty*)*/ {  [] }
  | non_empty_static_array_pair_list_rev possible_comma	{ $2++$1 }
 
 array_pair_list_rev:
  | /*(*empty*)*/ { [] }
- | non_empty_array_pair_list_rev possible_comma4	{ $2++$1 }
+ | non_empty_array_pair_list_rev possible_comma2	{ $2++$1 }
 
 /*(*e: GRAMMAR xxxlist or xxxopt *)*/
 
