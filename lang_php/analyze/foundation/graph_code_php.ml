@@ -247,7 +247,7 @@ let rec add_use_edge env (((str, tok) as name, kind)) =
           (match kind with
           (* TODO, fix those *)
           | E.Field -> ()
-          | E.Method _ when str =~ "gen.*" || str =~ "get.*" -> ()
+          | E.Method _ when str =~ ".*\\.gen.*" || str =~ ".*\\.get.*" -> ()
 
           (* | E.Method _  | E.ClassConstant ->          () *)
           | _ ->
