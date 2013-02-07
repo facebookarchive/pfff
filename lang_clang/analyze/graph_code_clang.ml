@@ -41,6 +41,9 @@ type env = {
   phase: phase;
 
   current: Graph_code.node;
+
+  log: string -> unit;
+  pr2_and_log: string -> unit;
 }
  and phase = Defs | Uses
 
@@ -48,6 +51,18 @@ type env = {
 (*****************************************************************************)
 (* Parsing *)
 (*****************************************************************************)
+
+(* todo? memoize? but the files are huge, maybe could try to memoize
+ * and share the many parts that are in common in all those .clang files
+ * because they include the same files.
+ *)
+let parse file = 
+  Parse_clang.parse file
+
+(*****************************************************************************)
+(* Filename helpers *)
+(*****************************************************************************)
+
 
 (*****************************************************************************)
 (* Add Node *)
@@ -60,7 +75,24 @@ type env = {
 (*****************************************************************************)
 (* Defs/Uses *)
 (*****************************************************************************)
+let rec extract_defs_uses env ast =
+  
+  sexp env ast
 
+and sexp env x =
+  match x with
+  | Paren (enum, xs) ->
+      sexps env xs
+  | Angle (xs) ->
+      sexps env xs
+  | Anchor (xs) ->
+      sexps env xs
+  | Bracket (xs) ->
+      sexps env xs
+  | T tok ->
+      ()
+
+and sexps env xs = List.iter (sexp env) xs
 
 (* ---------------------------------------------------------------------- *)
 (* Toplevels *)
@@ -87,5 +119,51 @@ type env = {
 (*****************************************************************************)
 
 let build ?(verbose=true) dir skip_list =
-  raise Todo
+  let root = Common.realpath dir in
+  let all_files = Lib_parsing_clang.find_source_files_of_dir_or_files [root] in
 
+  (* step0: filter noisy modules/files *)
+  let files = Skip_code.filter_files skip_list root all_files in
+  (* step0: reorder files *)
+  let files = Skip_code.reorder_files_skip_errors_last skip_list root files in
+
+  let g = G.create () in
+  G.create_initial_hierarchy g;
+
+  let chan = open_out (Filename.concat (Sys.getcwd()) "pfff.log") in
+
+  let env = {
+    g;
+    phase = Defs;
+    current = ("filled_later", E.File);
+
+    log = (fun s ->
+        output_string chan (s ^ "\n");
+        flush chan;
+    );
+    pr2_and_log = (fun s ->
+      if verbose then pr2 s;
+      output_string chan (s ^ "\n");
+      flush chan;
+    );
+  } in
+  
+  (* step1: creating the nodes and 'Has' edges, the defs *)
+  env.pr2_and_log "\nstep1: extract defs";
+  files +> Common_extra.progress ~show:verbose (fun k ->
+    List.iter (fun file ->
+      k();
+      let ast = parse file in
+      (* will modify env.dupes instead of raise Graph_code.NodeAlreadyPresent *)
+      extract_defs_uses { env with phase = Defs} ast
+   ));
+
+  (* step2: creating the 'Use' edges for inheritance *)
+  env.pr2_and_log "\nstep2: extract inheritance";
+  files +> Common_extra.progress ~show:verbose (fun k ->
+    List.iter (fun file ->
+      k();
+      let ast = parse file in
+      extract_defs_uses { env with phase = Uses} ast
+    ));
+  g

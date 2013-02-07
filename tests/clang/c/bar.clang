@@ -1,15 +1,15 @@
 Processing: /home/pad/pfff/tests/clang/c/bar.c.
-(TranslationUnitDecl 0x7fe21c0290d0 <<invalid sloc>>
-  (TypedefDecl 0x7fe21c0295b0 <<invalid sloc>> __int128_t '__int128')
-  (TypedefDecl 0x7fe21c029610 <<invalid sloc>> __uint128_t 'unsigned __int128')
-  (TypedefDecl 0x7fe21c029960 <<invalid sloc>> __builtin_va_list '__va_list_tag [1]')
-  (FunctionDecl 0x7fe21c029a80 <./common.h:3:1, col:12> bar 'int (int)'
-    (ParmVarDecl 0x7fe21c0299c0 <col:9, col:12> 'int'))
-  (FunctionDecl 0x7fe21c029bc0 <bar.c:3:1, line:5:1> bar 'int (int)'
-    (ParmVarDecl 0x7fe21c029b40 <line:3:9, col:13> a 'int')
-    (CompoundStmt 0x7fe21c029d10 <col:16, line:5:1>
-      (ReturnStmt 0x7fe21c029cf0 <line:4:3, col:14>
-        (BinaryOperator 0x7fe21c029cc8 <col:10, col:14> 'int' '*'
-          (ImplicitCastExpr 0x7fe21c029cb0 <col:10> 'int' <LValueToRValue>
-            (DeclRefExpr 0x7fe21c029c68 <col:10> 'int' lvalue ParmVar 0x7fe21c029b40 'a' 'int'))
-          (IntegerLiteral 0x7fe21c029c90 <col:14> 'int' 42))))))
+(TranslationUnitDecl 0x7fedf08290d0 <<invalid sloc>>
+  (TypedefDecl 0x7fedf08295b0 <<invalid sloc>> __int128_t '__int128')
+  (TypedefDecl 0x7fedf0829610 <<invalid sloc>> __uint128_t 'unsigned __int128')
+  (TypedefDecl 0x7fedf0829960 <<invalid sloc>> __builtin_va_list '__va_list_tag [1]')
+  (FunctionDecl 0x7fedf0829a80 </home/pad/pfff/tests/clang/c/common.h:3:1, col:12> bar 'int (int)'
+    (ParmVarDecl 0x7fedf08299c0 <col:9, col:12> 'int'))
+  (FunctionDecl 0x7fedf0829bc0 </home/pad/pfff/tests/clang/c/bar.c:3:1, line:5:1> bar 'int (int)'
+    (ParmVarDecl 0x7fedf0829b40 <line:3:9, col:13> a 'int')
+    (CompoundStmt 0x7fedf0829d10 <col:16, line:5:1>
+      (ReturnStmt 0x7fedf0829cf0 <line:4:3, col:14>
+        (BinaryOperator 0x7fedf0829cc8 <col:10, col:14> 'int' '*'
+          (ImplicitCastExpr 0x7fedf0829cb0 <col:10> 'int' <LValueToRValue>
+            (DeclRefExpr 0x7fedf0829c68 <col:10> 'int' lvalue ParmVar 0x7fedf0829b40 'a' 'int'))
+          (IntegerLiteral 0x7fedf0829c90 <col:14> 'int' 42))))))
