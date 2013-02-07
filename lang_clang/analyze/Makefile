@@ -4,9 +4,8 @@ TOP=../..
 ##############################################################################
 TARGET=lib
 
-SRC= ast_c_simple.ml ast_c_simple_build.ml \
-     graph_code_c.ml \
-     test_analyze_c.ml
+SRC= graph_code_clang.ml \
+     test_analyze_clang.ml
 
 -include $(TOP)/Makefile.config
 

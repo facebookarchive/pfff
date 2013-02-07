@@ -256,10 +256,15 @@ let build_graph_code lang root =
   let g =
     match lang with
     | "ml"  -> Graph_code_ml.build ~verbose:!verbose root skip_list
+    | "cmt"  -> Graph_code_cmt.build ~verbose:!verbose root skip_list
+
     | "php" -> Graph_code_php.build ~verbose:!verbose root skip_list
     | "web" -> raise Todo
+
     | "c" -> Graph_code_c.build ~verbose:!verbose root skip_list
     | "objc" -> Graph_code_objc.build ~verbose:!verbose root skip_list
+    | "clang" -> Graph_code_clang.build ~verbose:!verbose root skip_list
+
     | "java" -> Graph_code_java.build ~verbose:!verbose root skip_list
     | "bytecode" -> 
       let graph_code_java = 
@@ -270,7 +275,7 @@ let build_graph_code lang root =
       in
       Graph_code_bytecode.build ~verbose:!verbose ~graph_code_java
         root skip_list
-    | "cmt"  -> Graph_code_cmt.build ~verbose:!verbose root skip_list
+
     | _ -> failwith ("language not supported: " ^ lang)
   in
   Graph_code.save g (dep_file_of_dir pwd)
