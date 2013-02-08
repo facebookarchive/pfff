@@ -36,7 +36,7 @@ let rec visit hook x =
   let rec sexp x = 
     let rec k x =
       match x with
-      | Paren (_, xs) | Angle xs | Anchor xs | Bracket xs ->
+      | Paren (_, _, xs) | Angle xs | Anchor xs | Bracket xs ->
           List.iter sexp xs
       | T _ -> ()
     in

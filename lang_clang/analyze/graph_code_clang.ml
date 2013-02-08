@@ -18,6 +18,7 @@ module E = Database_code
 module G = Graph_code
 
 open Ast_clang
+open Parser_clang
 module Ast = Ast_clang
 
 (*****************************************************************************)
@@ -41,6 +42,8 @@ type env = {
   phase: phase;
 
   current: Graph_code.node;
+  current_file: Common.filename;
+  line: int;
 
   log: string -> unit;
   pr2_and_log: string -> unit;
@@ -62,8 +65,34 @@ let parse file =
 (*****************************************************************************)
 (* Filename helpers *)
 (*****************************************************************************)
+type location =
+  | InvalidSloc
+  | File of Common.filename
+  | Other
 
-
+let location_of_angle env xs =
+  match xs with
+  | [Angle [T (TLowerIdent "invalid"); T (TLowerIdent "sloc")]] ->
+      InvalidSloc
+  | xs ->
+      let xxs = Common.split_gen_when 
+        (function (T TComma)::xs -> Some xs | _ -> None) xs in
+      xxs +> List.iter (function
+      | [T (TLowerIdent "line"); T TColon; T (TInt _);T TColon; T (TInt _)] ->
+          ()
+      | [T (TLowerIdent "col"); T TColon; T (TInt _);] ->
+          ()
+      | [T (TPath f); T TColon; T (TInt _);T TColon; T (TInt _)] ->
+          ()
+      | [TAngle _; T TColon; T (TInt _);T TColon; T (TInt _)] ->
+          ()
+      | xs -> 
+          pr2_gen xs;
+          failwith (spf "wrong location format at line %d in %s" 
+                       env.line env.current_file)
+      );
+      Other
+      
 (*****************************************************************************)
 (* Add Node *)
 (*****************************************************************************)
@@ -76,12 +105,21 @@ let parse file =
 (* Defs/Uses *)
 (*****************************************************************************)
 let rec extract_defs_uses env ast =
-  
   sexp env ast
 
 and sexp env x =
   match x with
-  | Paren (enum, xs) ->
+  | Paren (enum, l, xs) ->
+      let env = { env with line = l } in
+      let _location =
+        (match enum, xs with
+        | (Misc__Null__), _ -> None
+        | _, Angle xs::_rest -> 
+            Some (location_of_angle env xs)
+        | _ -> 
+            failwith (spf "%s:%d: no location" env.current_file env.line)
+        )
+      in
       sexps env xs
   | Angle (xs) ->
       sexps env xs
@@ -135,7 +173,9 @@ let build ?(verbose=true) dir skip_list =
   let env = {
     g;
     phase = Defs;
-    current = ("filled_later", E.File);
+    current = ("__filled_later__", E.File);
+    current_file = "__filled_later__";
+    line = -1;
 
     log = (fun s ->
         output_string chan (s ^ "\n");
@@ -155,15 +195,17 @@ let build ?(verbose=true) dir skip_list =
       k();
       let ast = parse file in
       (* will modify env.dupes instead of raise Graph_code.NodeAlreadyPresent *)
-      extract_defs_uses { env with phase = Defs} ast
+      extract_defs_uses { env with phase = Defs; current_file = file} ast
    ));
 
+(*
   (* step2: creating the 'Use' edges for inheritance *)
   env.pr2_and_log "\nstep2: extract inheritance";
   files +> Common_extra.progress ~show:verbose (fun k ->
     List.iter (fun file ->
       k();
       let ast = parse file in
-      extract_defs_uses { env with phase = Uses} ast
+      extract_defs_uses { env with phase = Uses; current_file = file} ast
     ));
+*)
   g

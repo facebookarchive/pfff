@@ -174,12 +174,12 @@ let rec sexp_list env acc ending toks =
     ::THexInt _dontcare::xs ->
       let newenv = {line_open_tok = l; check_topar = false} in 
       let (body, xs) = sexp_list newenv  [] TCPar xs in
-      sexp_list env (Paren (conv s, body)::acc) ending xs
+      sexp_list env (Paren (conv s, l, body)::acc) ending xs
 
   | TOPar l::TUpperIdent s::THexInt _dontcare::xs ->
       let newenv = {line_open_tok = l; check_topar = true} in 
       let (body, xs) = sexp_list newenv  [] TCPar xs in
-      sexp_list env (Paren (conv s, body)::acc) ending xs
+      sexp_list env (Paren (conv s, l, body)::acc) ending xs
 
 
   (* ugly, clang-check -ast-dump is not that regular :( *)
@@ -187,7 +187,7 @@ let rec sexp_list env acc ending toks =
   | TOPar l::TLowerIdent "super"::TUpperIdent s::THexInt _dontcare::xs ->
       let newenv = {env with line_open_tok = l} in 
       let (body, xs) = sexp_list newenv  [] TCPar xs in
-      sexp_list env (Paren (conv ("Misc__Super__" ^ s), body)::acc) ending xs
+      sexp_list env (Paren (conv ("Misc__Super__" ^ s), l, body)::acc) ending xs
 
   | TOPar l
     ::TLowerIdent (("public" | "private" | "protected" 
@@ -195,63 +195,63 @@ let rec sexp_list env acc ending toks =
     ::xs ->
       let newenv = {env with line_open_tok = l} in 
       let (body, xs) = sexp_list newenv  [] TCPar xs in
-      sexp_list env (Paren (conv (spf "Misc__%s__" s), body)::acc) ending xs
+      sexp_list env (Paren (conv (spf "Misc__%s__" s), l, body)::acc) ending xs
 
   | TOPar l::TUpperIdent "TemplateArgument"::xs ->
       let newenv = {env with line_open_tok = l} in 
       let (body, xs) = sexp_list newenv  [] TCPar xs in
-      sexp_list env (Paren (conv "Misc__TemplateArgument__", body)::acc) ending xs
+      sexp_list env (Paren (conv "Misc__TemplateArgument__",l,body)::acc) ending xs
 
   | TOPar l::TLowerIdent "instance"::TCPar::xs ->
-      sexp_list env (Paren (conv "Misc__Instance__", [])::acc) ending xs
+      sexp_list env (Paren (conv "Misc__Instance__", l,[])::acc) ending xs
 
   | TOPar l::TLowerIdent "original"::TUpperIdent s::THexInt _dontcare::xs ->
       let newenv = {env with line_open_tok = l} in 
       let (body, xs) = sexp_list newenv  [] TCPar xs in
-      sexp_list env (Paren (conv ("Misc__Original__" ^ s), body)::acc) ending xs
+      sexp_list env (Paren (conv ("Misc__Original__" ^ s), l,body)::acc) ending xs
 
 
   | TOPar l::TLowerIdent "cleanup"::TUpperIdent s::THexInt _dontcare::xs ->
       let newenv = {env with line_open_tok = l} in 
       let (body, xs) = sexp_list newenv  [] TCPar xs in
-      sexp_list env (Paren (conv ("Misc__Cleanup__" ^ s), body)::acc) ending xs
+      sexp_list env (Paren (conv ("Misc__Cleanup__" ^ s),l, body)::acc) ending xs
 
   | TOPar l::TLowerIdent "capture"::xs ->
       let newenv = {env with line_open_tok = l} in 
       let (body, xs) = sexp_list newenv  [] TCPar xs in
-      sexp_list env (Paren (conv "Misc__Capture__", body)::acc) ending xs
+      sexp_list env (Paren (conv "Misc__Capture__", l, body)::acc) ending xs
 
 
   | TOPar l::TLowerIdent (("getter" | "setter") as s1)::TUpperIdent s2
     ::THexInt _dontcare::xs ->
       let newenv = {env with line_open_tok = l} in 
       let (body, xs) = sexp_list newenv  [] TCPar xs in
-      sexp_list env (Paren (conv (spf "Misc__%s__" s1 ^ s2), body)::acc) ending xs
+      sexp_list env (Paren (conv (spf "Misc__%s__" s1 ^ s2), l, body)::acc) ending xs
 
   | TOPar l::TInf _::TInf _::TInf _::TUpperIdent "NULL"
     ::TSup::TSup::TSup::TCPar::xs->
-      sexp_list env (Paren (conv "Misc__Null__", [])::acc) ending xs
+      sexp_list env (Paren (conv "Misc__Null__", l, [])::acc) ending xs
 
   | TOPar l::TDots::TCPar::xs ->
-      sexp_list env (Paren (conv "Misc__Dots__", [])::acc) ending xs
+      sexp_list env (Paren (conv "Misc__Dots__", l, [])::acc) ending xs
 
   | TOPar l::TLowerIdent "class"::TCPar::xs ->
-      sexp_list env (Paren (conv "Misc__Class__", [])::acc) ending xs
+      sexp_list env (Paren (conv "Misc__Class__", l, [])::acc) ending xs
 
   | TOPar l::TUpperIdent "ADL"::TCPar::xs ->
-      sexp_list env (Paren (conv "Misc__ADL__", [])::acc) ending xs
+      sexp_list env (Paren (conv "Misc__ADL__", l, [])::acc) ending xs
   | TOPar l::TLowerIdent "no"::TUpperIdent "ADL"::TCPar::xs ->
-      sexp_list env (Paren (conv "Misc__NoADL__", [])::acc) ending xs
+      sexp_list env (Paren (conv "Misc__NoADL__", l, [])::acc) ending xs
 
   | TOPar l::TUpperIdent "CXXCtorInitializer"::TUpperIdent s::THexInt _dontcare::xs ->
       let newenv = {env with line_open_tok = l} in 
       let (body, xs) = sexp_list newenv  [] TCPar xs in
-      sexp_list env (Paren (conv ("Misc__CXXCtorInitializer__" ^ s), body)::acc) ending xs
+      sexp_list env (Paren (conv ("Misc__CXXCtorInitializer__" ^ s), l, body)::acc) ending xs
 
   | TOPar l::TUpperIdent "CXXCtorInitializer"::xs ->
       let newenv = {env with line_open_tok = l} in 
       let (body, xs) = sexp_list newenv  [] TCPar xs in
-      sexp_list env (Paren (conv ("Misc__CXXCtorInitializer__"), body)::acc) ending xs
+      sexp_list env (Paren (conv ("Misc__CXXCtorInitializer__"), l, body)::acc) ending xs
 
 (*
   | TInf
@@ -289,7 +289,7 @@ let rec sexp_list env acc ending toks =
     else
       let newenv = {env with line_open_tok = l} in 
       let (body, xs) = sexp_list newenv  [] TCPar xs in
-      sexp_list env (Paren (conv "Misc__SKIPPED__", body)::acc) ending xs
+      sexp_list env (Paren (conv "Misc__SKIPPED__", l, body)::acc) ending xs
       
   | TOPar l::xs ->
     if env.check_topar 
@@ -297,7 +297,7 @@ let rec sexp_list env acc ending toks =
     else
       let newenv = {env with line_open_tok = l} in 
       let (body, xs) = sexp_list newenv  [] TCPar xs in
-      sexp_list env (Paren (conv "Misc__SKIPPED__", body)::acc) ending xs
+      sexp_list env (Paren (conv "Misc__SKIPPED__", l, body)::acc) ending xs
 
   | t::xs -> sexp_list env (T t::acc) ending xs
   | [] -> 
@@ -314,10 +314,10 @@ let parse file =
   let env = { line_open_tok = 0; check_topar = true } in
   let (body, _rest) = sexp_list env [] EOF toks in
   (match body with
-  | [Paren (s,args)] -> Paren (s, args)
-  | [Paren (s,args); T Error] -> 
+  | [Paren (s,l, args)] -> Paren (s, l, args)
+  | [Paren (s,l, args); T Error] -> 
       pr2 (spf "PB with %s" file);
-      Paren (s, args)
+      Paren (s, l, args)
   | [T Error] -> 
       pr2 (spf "PB not data at all with %s" file);
       T Error

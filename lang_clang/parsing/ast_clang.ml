@@ -149,7 +149,7 @@ type enum =
 (*****************************************************************************)
 
 type sexp = 
-  | Paren of enum * sexp list
+  | Paren of enum * int (* location *) * sexp list
   | Angle of sexp list
   | Anchor of sexp list
   | Bracket of sexp list

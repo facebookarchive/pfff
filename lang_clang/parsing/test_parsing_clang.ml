@@ -145,7 +145,7 @@ let stat_clang_constructors xs =
       let ast = Parse_clang.parse file in
       ast +> Visitor_clang.visit (fun k x ->
         match x with
-        | Paren (s, _) ->
+        | Paren (s, _, _) ->
             h#update s (fun x -> x + 1);
             k x
         | _ -> k x
