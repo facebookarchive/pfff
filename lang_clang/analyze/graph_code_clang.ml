@@ -113,7 +113,8 @@ and sexp env x =
       let env = { env with line = l } in
       let _location =
         (match enum, xs with
-        | (Misc__Null__), _ -> None
+        | (Misc__Null__ | Misc__Capture__ | Misc__Cleanup__Block
+          ), _ -> None
         | _, Angle xs::_rest -> 
             Some (location_of_angle env xs)
         | _ -> 
