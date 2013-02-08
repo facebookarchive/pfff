@@ -1,5 +1,5 @@
 CLANG=/home/pad/local/clang_ast/clang-llvm/llvm/Debug+Asserts/bin/clang-check
-CG=../../../codegraph
+CG=../../../codegraph.opt
 
 SRC=foo.c bar.c
 

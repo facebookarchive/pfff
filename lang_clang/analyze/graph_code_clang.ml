@@ -66,32 +66,32 @@ let parse file =
 (* Filename helpers *)
 (*****************************************************************************)
 type location =
-  | InvalidSloc
-  | File of Common.filename
+  | File of Common.filename * int * int
+  | Line of int * int
+  | Col of int
   | Other
 
 let location_of_angle env xs =
   match xs with
   | [Angle [T (TLowerIdent "invalid"); T (TLowerIdent "sloc")]] ->
-      InvalidSloc
+      [Other]
   | xs ->
       let xxs = Common.split_gen_when 
         (function (T TComma)::xs -> Some xs | _ -> None) xs in
-      xxs +> List.iter (function
-        | [T (TLowerIdent "line"); T TColon; T (TInt _);T TColon; T (TInt _)] ->
-          ()
-        | [T (TLowerIdent "col"); T TColon; T (TInt _);] ->
-          ()
-        | [T (TPath f); T TColon; T (TInt _);T TColon; T (TInt _)] ->
-          ()
+      xxs +> List.map (function
+        | [T (TLowerIdent "line"); T TColon; T (TInt i1);T TColon; T(TInt i2)]->
+            Line (s_to_i i1, s_to_i i2)
+        | [T (TLowerIdent "col"); T TColon; T (TInt i);] ->
+            Col (s_to_i i)
+        | [T (TPath f); T TColon; T (TInt i1);T TColon; T (TInt i2)] ->
+            File (f, s_to_i i1, s_to_i i2)
         | [Angle _; T TColon; T (TInt _);T TColon; T (TInt _)] ->
-          ()
+            Other
         | xs -> 
           pr2_gen xs;
           failwith (spf "wrong location format at line %d in %s" 
                       env.line env.current_file)
-      );
-      Other
+      )
       
 (*****************************************************************************)
 (* Add Node *)
@@ -111,14 +111,22 @@ and sexp env x =
   match x with
   | Paren (enum, l, xs) ->
       let env = { env with line = l } in
-      let _location =
+      let location =
         (match enum, xs with
         | (Misc__Null__ | Misc__Capture__ | Misc__Cleanup__Block
-          ), _ -> None
+          ), _ -> [Other]
         | _, Angle xs::_rest -> 
-            Some (location_of_angle env xs)
+            location_of_angle env xs
         | _ -> 
             failwith (spf "%s:%d: no location" env.current_file env.line)
+        )
+      in
+      let _file_opt = 
+        location +> Common.find_some_opt (function 
+        | File (f, _,_) -> 
+            pr2_once f;
+            Some f
+        | _ -> None
         )
       in
       sexps env xs
