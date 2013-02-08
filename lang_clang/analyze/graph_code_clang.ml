@@ -42,7 +42,9 @@ type env = {
   phase: phase;
 
   current: Graph_code.node;
-  current_file: Common.filename;
+  current_c_file: Common.filename;
+
+  current_clang_file: Common.filename;
   line: int;
 
   log: string -> unit;
@@ -90,7 +92,7 @@ let location_of_angle env xs =
         | xs -> 
           pr2_gen xs;
           failwith (spf "wrong location format at line %d in %s" 
-                      env.line env.current_file)
+                      env.line env.current_clang_file)
       )
 let readable_of_filename f =
   let xs = Common.split "/" f in
@@ -108,6 +110,8 @@ let readable_of_filename f =
     (* todo: use env.dir? *)
     | "home"::"pad"::"local"::"lang-c"::"Chipmunk-Physics"::rest -> 
         rest
+    | "home"::"pad"::"pfff"::"tests"::"clang"::"c"::rest ->
+        rest
     | _ -> failwith ("unhandled prefix: " ^ f)
   in
   Common.join "/" xs
@@ -115,6 +119,20 @@ let readable_of_filename f =
 (*****************************************************************************)
 (* Add Node *)
 (*****************************************************************************)
+
+let add_node_and_edge_if_defs_mode env node =
+  if env.phase = Defs then begin
+    if G.has_node node env.g
+    then begin
+      ()
+    end
+    else begin
+      env.g +> G.add_node node;
+      env.g +> G.add_edge ((env.current_c_file, E.File), node) G.Has;
+    end
+  end;
+  env
+
 
 (*****************************************************************************)
 (* Add edge *)
@@ -134,10 +152,10 @@ and sexp env x =
         (match enum, xs with
         | (Misc__Null__ | Misc__Capture__ | Misc__Cleanup__Block
           ), _ -> [Other]
-        | _, Angle xs::_rest -> 
+        | _, Angle xs::_rest ->
             location_of_angle env xs
         | _ -> 
-            failwith (spf "%s:%d: no location" env.current_file env.line)
+            failwith (spf "%s:%d: no location" env.current_clang_file env.line)
         )
       in
       let file_opt = 
@@ -159,6 +177,28 @@ and sexp env x =
           end
         )
       end;
+      let env = 
+        match file_opt with
+        | None -> env
+        | Some f -> { env with current_c_file = f }
+      in
+      let env =
+        (match enum, xs with
+        | FunctionDecl, _loc::(T (TLowerIdent s | TUpperIdent s))::_typ_char::_rest ->
+            add_node_and_edge_if_defs_mode env (s, E.Function)
+
+        | TypedefDecl, _loc::(T (TLowerIdent s | TUpperIdent s))::_typ_char::_rest ->
+            add_node_and_edge_if_defs_mode env (s, E.Type)
+
+        | FunctionDecl, _ ->
+            failwith (spf "%s:%d:wrong FunctionDecl line" 
+                         env.current_clang_file env.line)
+        | TypedefDecl, _ ->
+            failwith (spf "%s:%d:wrong TypedefDecl line" 
+                         env.current_clang_file env.line)
+        | _ -> env
+        )
+      in
       sexps env xs
   | Angle (xs) ->
       sexps env xs
@@ -213,7 +253,8 @@ let build ?(verbose=true) dir skip_list =
     g;
     phase = Defs;
     current = ("__filled_later__", E.File);
-    current_file = "__filled_later__";
+    current_c_file = "Unknown_Location";
+    current_clang_file = "__filled_later__";
     line = -1;
 
     log = (fun s ->
@@ -226,6 +267,8 @@ let build ?(verbose=true) dir skip_list =
       flush chan;
     );
   } in
+  G.add_node (env.current_c_file, E.File) g;
+  G.add_edge (G.not_found, (env.current_c_file, E.File)) G.Has g;
   
   (* step1: creating the nodes and 'Has' edges, the defs *)
   env.pr2_and_log "\nstep1: extract defs";
@@ -234,7 +277,7 @@ let build ?(verbose=true) dir skip_list =
       k();
       let ast = parse file in
       (* will modify env.dupes instead of raise Graph_code.NodeAlreadyPresent *)
-      extract_defs_uses { env with phase = Defs; current_file = file} ast
+      extract_defs_uses { env with phase = Defs; current_clang_file = file} ast
    ));
 
 (*
@@ -244,7 +287,7 @@ let build ?(verbose=true) dir skip_list =
     List.iter (fun file ->
       k();
       let ast = parse file in
-      extract_defs_uses { env with phase = Uses; current_file = file} ast
+      extract_defs_uses { env with phase = Uses; current_clang_file = file} ast
     ));
 *)
   g
