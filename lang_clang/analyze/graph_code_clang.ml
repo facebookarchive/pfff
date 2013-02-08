@@ -78,18 +78,18 @@ let location_of_angle env xs =
       let xxs = Common.split_gen_when 
         (function (T TComma)::xs -> Some xs | _ -> None) xs in
       xxs +> List.iter (function
-      | [T (TLowerIdent "line"); T TColon; T (TInt _);T TColon; T (TInt _)] ->
+        | [T (TLowerIdent "line"); T TColon; T (TInt _);T TColon; T (TInt _)] ->
           ()
-      | [T (TLowerIdent "col"); T TColon; T (TInt _);] ->
+        | [T (TLowerIdent "col"); T TColon; T (TInt _);] ->
           ()
-      | [T (TPath f); T TColon; T (TInt _);T TColon; T (TInt _)] ->
+        | [T (TPath f); T TColon; T (TInt _);T TColon; T (TInt _)] ->
           ()
-      | [TAngle _; T TColon; T (TInt _);T TColon; T (TInt _)] ->
+        | [Angle _; T TColon; T (TInt _);T TColon; T (TInt _)] ->
           ()
-      | xs -> 
+        | xs -> 
           pr2_gen xs;
           failwith (spf "wrong location format at line %d in %s" 
-                       env.line env.current_file)
+                      env.line env.current_file)
       );
       Other
       
