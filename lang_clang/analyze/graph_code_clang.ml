@@ -92,7 +92,26 @@ let location_of_angle env xs =
           failwith (spf "wrong location format at line %d in %s" 
                       env.line env.current_file)
       )
-      
+let readable_of_filename f =
+  let xs = Common.split "/" f in
+  let xs = 
+    match xs with
+    | "usr"::"include"::rest -> 
+        "EXTERNAL"::"CORE"::rest
+    | "Users"::"yoann.padioleau"::"local"::"clang_ast"::"clang-llvm"
+      ::"llvm"::"Debug+Asserts"::"bin"::".."
+      ::"lib"::"clang"::"3.3"::"include"::rest ->
+        "EXTERNAL"::"CLANG"::rest
+    | "System"::"Library"::"Frameworks"::rest -> 
+        "EXTERNAL"::"MACOS"::rest
+
+    (* todo: use env.dir? *)
+    | "home"::"pad"::"local"::"lang-c"::"Chipmunk-Physics"::rest -> 
+        rest
+    | _ -> failwith ("unhandled prefix: " ^ f)
+  in
+  Common.join "/" xs
+
 (*****************************************************************************)
 (* Add Node *)
 (*****************************************************************************)
@@ -121,14 +140,25 @@ and sexp env x =
             failwith (spf "%s:%d: no location" env.current_file env.line)
         )
       in
-      let _file_opt = 
+      let file_opt = 
         location +> Common.find_some_opt (function 
-        | File (f, _,_) -> 
-            pr2_once f;
-            Some f
+        | File (f, _,_) ->
+            let readable = readable_of_filename f in
+            Some readable
         | _ -> None
         )
       in
+      if env.phase = Defs then begin
+        file_opt +> Common.do_option (fun readable ->
+          let dir = Common.dirname readable in
+          G.create_intermediate_directories_if_not_present env.g dir;
+          let node = (readable, E.File) in
+          if not (G.has_node node env.g) then begin
+            env.g +> G.add_node node;
+            env.g +> G.add_edge ((dir, E.Dir), node) G.Has;
+          end
+        )
+      end;
       sexps env xs
   | Angle (xs) ->
       sexps env xs
