@@ -1,0 +1,8 @@
+Processing: /home/pad/pfff/tests/clang/c/enum.c.
+(TranslationUnitDecl 0x7fbf5282a6d0 <<invalid sloc>>
+  (TypedefDecl 0x7fbf5282abb0 <<invalid sloc>> __int128_t '__int128')
+  (TypedefDecl 0x7fbf5282ac10 <<invalid sloc>> __uint128_t 'unsigned __int128')
+  (TypedefDecl 0x7fbf5282af60 <<invalid sloc>> __builtin_va_list '__va_list_tag [1]')
+  (EnumDecl 0x7fbf5282afb0 </home/pad/pfff/tests/clang/c/enum.c:2:1, line:5:1> an_enum
+    (EnumConstantDecl 0x7fbf5282b060 <line:3:3> A_CST_ENUM1 'int')
+    (EnumConstantDecl 0x7fbf5282b0b0 <line:4:3> A_CST_ENUM2 'int')))

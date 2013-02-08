@@ -1,0 +1,7 @@
+Processing: /home/pad/pfff/tests/clang/c/global.c.
+(TranslationUnitDecl 0x7f9ba202a6d0 <<invalid sloc>>
+  (TypedefDecl 0x7f9ba202abb0 <<invalid sloc>> __int128_t '__int128')
+  (TypedefDecl 0x7f9ba202ac10 <<invalid sloc>> __uint128_t 'unsigned __int128')
+  (TypedefDecl 0x7f9ba202af60 <<invalid sloc>> __builtin_va_list '__va_list_tag [1]')
+  (VarDecl 0x7f9ba202afc0 </home/pad/pfff/tests/clang/c/global.c:1:1, col:14> global 'int'
+    (IntegerLiteral 0x7f9ba202b018 <col:14> 'int' 1)))

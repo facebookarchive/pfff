@@ -41,6 +41,8 @@ type env = {
   g: Graph_code.graph;
   phase: phase;
 
+  cnt: int ref;
+
   current: Graph_code.node;
   current_c_file: Common.filename;
 
@@ -187,14 +189,40 @@ and sexp env x =
         | FunctionDecl, _loc::(T (TLowerIdent s | TUpperIdent s))::_typ_char::_rest ->
             add_node_and_edge_if_defs_mode env (s, E.Function)
 
+        (* I am not sure about the namespaces, so I prepend strings *)
         | TypedefDecl, _loc::(T (TLowerIdent s | TUpperIdent s))::_typ_char::_rest ->
-            add_node_and_edge_if_defs_mode env (s, E.Type)
+            add_node_and_edge_if_defs_mode env ("t__" ^ s, E.Type)
+        | EnumDecl, _loc::(T (TLowerIdent s | TUpperIdent s))::_rest ->
+            add_node_and_edge_if_defs_mode env ("e__" ^ s, E.Type)
 
-        | FunctionDecl, _ ->
-            failwith (spf "%s:%d:wrong FunctionDecl line" 
-                         env.current_clang_file env.line)
-        | TypedefDecl, _ ->
-            failwith (spf "%s:%d:wrong TypedefDecl line" 
+        | RecordDecl, _loc::(T (TLowerIdent "struct"))
+            ::(T (TLowerIdent s | TUpperIdent s))::_rest ->
+            add_node_and_edge_if_defs_mode env ("s__" ^ s, E.Type)
+        | RecordDecl, _loc::(T (TLowerIdent "union"))
+            ::(T (TLowerIdent s | TUpperIdent s))::_rest ->
+            add_node_and_edge_if_defs_mode env ("u__" ^ s, E.Type)
+
+        (* usually embedded struct *)
+        | RecordDecl, _loc::(T (TLowerIdent "struct"))::_rest ->
+            incr env.cnt;
+            add_node_and_edge_if_defs_mode env 
+              (spf "s__anon__%d" !(env.cnt), E.Type)
+
+
+        (* todo: usually there is a typedef just behind *)
+        | EnumDecl, _loc::_rest ->
+            incr env.cnt;
+            add_node_and_edge_if_defs_mode env 
+              (spf "e__anon__%d" !(env.cnt), E.Type)
+        | RecordDecl, _loc::(T (TLowerIdent "union"))::_rest ->
+            incr env.cnt;
+            add_node_and_edge_if_defs_mode env 
+              (spf "u__anon__%d" !(env.cnt), E.Type)
+
+        (* todo: FieldDecl EnumConstantDecl *)
+
+        | (FunctionDecl | TypedefDecl | EnumDecl | RecordDecl), _ ->
+            failwith (spf "%s:%d:wrong Decl line" 
                          env.current_clang_file env.line)
         | _ -> env
         )
@@ -256,6 +284,7 @@ let build ?(verbose=true) dir skip_list =
     current_c_file = "Unknown_Location";
     current_clang_file = "__filled_later__";
     line = -1;
+    cnt = ref 0;
 
     log = (fun s ->
         output_string chan (s ^ "\n");

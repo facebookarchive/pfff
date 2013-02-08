@@ -1,15 +1,15 @@
 Processing: /home/pad/pfff/tests/clang/c/bar.c.
-(TranslationUnitDecl 0x7fedf08290d0 <<invalid sloc>>
-  (TypedefDecl 0x7fedf08295b0 <<invalid sloc>> __int128_t '__int128')
-  (TypedefDecl 0x7fedf0829610 <<invalid sloc>> __uint128_t 'unsigned __int128')
-  (TypedefDecl 0x7fedf0829960 <<invalid sloc>> __builtin_va_list '__va_list_tag [1]')
-  (FunctionDecl 0x7fedf0829a80 </home/pad/pfff/tests/clang/c/common.h:3:1, col:12> bar 'int (int)'
-    (ParmVarDecl 0x7fedf08299c0 <col:9, col:12> 'int'))
-  (FunctionDecl 0x7fedf0829bc0 </home/pad/pfff/tests/clang/c/bar.c:3:1, line:5:1> bar 'int (int)'
-    (ParmVarDecl 0x7fedf0829b40 <line:3:9, col:13> a 'int')
-    (CompoundStmt 0x7fedf0829d10 <col:16, line:5:1>
-      (ReturnStmt 0x7fedf0829cf0 <line:4:3, col:14>
-        (BinaryOperator 0x7fedf0829cc8 <col:10, col:14> 'int' '*'
-          (ImplicitCastExpr 0x7fedf0829cb0 <col:10> 'int' <LValueToRValue>
-            (DeclRefExpr 0x7fedf0829c68 <col:10> 'int' lvalue ParmVar 0x7fedf0829b40 'a' 'int'))
-          (IntegerLiteral 0x7fedf0829c90 <col:14> 'int' 42))))))
+(TranslationUnitDecl 0x7fa49302a6d0 <<invalid sloc>>
+  (TypedefDecl 0x7fa49302abb0 <<invalid sloc>> __int128_t '__int128')
+  (TypedefDecl 0x7fa49302ac10 <<invalid sloc>> __uint128_t 'unsigned __int128')
+  (TypedefDecl 0x7fa49302af60 <<invalid sloc>> __builtin_va_list '__va_list_tag [1]')
+  (FunctionDecl 0x7fa49302b080 </home/pad/pfff/tests/clang/c/common.h:3:1, col:12> bar 'int (int)'
+    (ParmVarDecl 0x7fa49302afc0 <col:9, col:12> 'int'))
+  (FunctionDecl 0x7fa49302b1c0 </home/pad/pfff/tests/clang/c/bar.c:3:1, line:5:1> bar 'int (int)'
+    (ParmVarDecl 0x7fa49302b140 <line:3:9, col:13> a 'int')
+    (CompoundStmt 0x7fa49302b310 <col:16, line:5:1>
+      (ReturnStmt 0x7fa49302b2f0 <line:4:3, col:14>
+        (BinaryOperator 0x7fa49302b2c8 <col:10, col:14> 'int' '*'
+          (ImplicitCastExpr 0x7fa49302b2b0 <col:10> 'int' <LValueToRValue>
+            (DeclRefExpr 0x7fa49302b268 <col:10> 'int' lvalue ParmVar 0x7fa49302b140 'a' 'int'))
+          (IntegerLiteral 0x7fa49302b290 <col:14> 'int' 42))))))
