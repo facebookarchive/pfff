@@ -44,7 +44,7 @@ type env = {
   cnt: int ref;
 
   current: Graph_code.node;
-  current_c_file: Common.filename;
+  mutable current_c_file: Common.filename;
 
   current_clang_file: Common.filename;
   line: int;
@@ -184,11 +184,10 @@ and sexp env x =
           end
         )
       end;
-      let env = 
-        match file_opt with
-        | None -> env
-        | Some f -> { env with current_c_file = f }
-      in
+      (match file_opt with
+      | None -> ()
+      | Some f -> env.current_c_file <- f
+      );
       (match enum with
       | FunctionDecl 
       | TypedefDecl | RecordDecl | EnumDecl ->
