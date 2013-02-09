@@ -129,6 +129,11 @@ let readable_of_filename f =
   in
   Common.join "/" xs
 
+let unchar s =
+  if s =~ "'\\(.*\\)'"
+  then Common.matched1 s
+  else failwith ("unchar pb: " ^ s)
+
 (*****************************************************************************)
 (* Add Node *)
 (*****************************************************************************)
@@ -163,6 +168,17 @@ let add_node_and_edge_if_defs_mode env node =
 (*****************************************************************************)
 (* Add edge *)
 (*****************************************************************************)
+
+let add_use_edge env (s, kind) =
+  let src = env.current in
+  let dst = (s, kind) in
+
+  if G.has_node dst env.g
+  then  G.add_edge (src, dst) G.Use env.g
+  else begin
+    ()
+  end
+
 
 (*****************************************************************************)
 (* Defs/Uses *)
@@ -295,7 +311,20 @@ and decl env (enum, l, xs) =
 (* Expr *)
 (* ---------------------------------------------------------------------- *)
 and expr env (enum, l, xs) =
-  
+  (match enum, xs with
+  | CallExpr, _loc::_typ::
+      (Paren (ImplicitCastExpr, _l2, 
+             _loc2::_typ2::Angle _::
+               (Paren (DeclRefExpr, _l3,
+                      _loc3::_typ3::T (TUpperIdent "Function")::T (THexInt _)
+                        ::T (TString s)::_typ4::[]))::[]))
+      ::_args ->
+      let s = unchar s in
+      add_use_edge env (s, E.Function)
+  | CallExpr, _ ->
+      ()
+  | _ -> raise Impossible
+  );
   sexps env xs
 
 (* ---------------------------------------------------------------------- *)
