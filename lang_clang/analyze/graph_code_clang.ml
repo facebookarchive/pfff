@@ -54,6 +54,7 @@ type env = {
 }
  and phase = Defs | Uses
 
+let unknown_location = "Unknown_Location", E.File
 
 (*****************************************************************************)
 (* Parsing *)
@@ -63,8 +64,10 @@ type env = {
  * and share the many parts that are in common in all those .clang files
  * because they include the same files.
  *)
-let parse file = 
+let parse2 file = 
   Parse_clang.parse file
+let parse a = 
+  Common.profile_code "Parse_clang.parse" (fun () -> parse2 a)
 
 (*****************************************************************************)
 (* Filename helpers *)
@@ -96,12 +99,14 @@ let location_of_angle env xs =
           failwith (spf "wrong location format at line %d in %s" 
                       env.line env.current_clang_file)
       )
+
 let readable_of_filename f =
   let xs = Common.split "/" f in
   let xs = 
     match xs with
     | "usr"::"include"::rest -> 
         "EXTERNAL"::"CORE"::rest
+
     | "Users"::"yoann.padioleau"::"local"::"clang_ast"::"clang-llvm"
       ::"llvm"::"Debug+Asserts"::"bin"::".."
       ::"lib"::"clang"::"3.3"::"include"::rest ->
@@ -135,7 +140,6 @@ let add_node_and_edge_if_defs_mode env node =
   end;
   env
 
-
 (*****************************************************************************)
 (* Add edge *)
 (*****************************************************************************)
@@ -149,6 +153,7 @@ let rec extract_defs_uses env ast =
 and sexp env x =
   match x with
   | Paren (enum, l, xs) ->
+
       let env = { env with line = l } in
       let location =
         (match enum, xs with
@@ -184,50 +189,13 @@ and sexp env x =
         | None -> env
         | Some f -> { env with current_c_file = f }
       in
-      let env =
-        (match enum, xs with
-        | FunctionDecl, _loc::(T (TLowerIdent s | TUpperIdent s))::_typ_char::_rest ->
-            add_node_and_edge_if_defs_mode env (s, E.Function)
-
-        (* I am not sure about the namespaces, so I prepend strings *)
-        | TypedefDecl, _loc::(T (TLowerIdent s | TUpperIdent s))::_typ_char::_rest ->
-            add_node_and_edge_if_defs_mode env ("t__" ^ s, E.Type)
-        | EnumDecl, _loc::(T (TLowerIdent s | TUpperIdent s))::_rest ->
-            add_node_and_edge_if_defs_mode env ("e__" ^ s, E.Type)
-
-        | RecordDecl, _loc::(T (TLowerIdent "struct"))
-            ::(T (TLowerIdent s | TUpperIdent s))::_rest ->
-            add_node_and_edge_if_defs_mode env ("s__" ^ s, E.Type)
-        | RecordDecl, _loc::(T (TLowerIdent "union"))
-            ::(T (TLowerIdent s | TUpperIdent s))::_rest ->
-            add_node_and_edge_if_defs_mode env ("u__" ^ s, E.Type)
-
-        (* usually embedded struct *)
-        | RecordDecl, _loc::(T (TLowerIdent "struct"))::_rest ->
-            incr env.cnt;
-            add_node_and_edge_if_defs_mode env 
-              (spf "s__anon__%d" !(env.cnt), E.Type)
-
-
-        (* todo: usually there is a typedef just behind *)
-        | EnumDecl, _loc::_rest ->
-            incr env.cnt;
-            add_node_and_edge_if_defs_mode env 
-              (spf "e__anon__%d" !(env.cnt), E.Type)
-        | RecordDecl, _loc::(T (TLowerIdent "union"))::_rest ->
-            incr env.cnt;
-            add_node_and_edge_if_defs_mode env 
-              (spf "u__anon__%d" !(env.cnt), E.Type)
-
-        (* todo: FieldDecl EnumConstantDecl *)
-
-        | (FunctionDecl | TypedefDecl | EnumDecl | RecordDecl), _ ->
-            failwith (spf "%s:%d:wrong Decl line" 
-                         env.current_clang_file env.line)
-        | _ -> env
-        )
-      in
-      sexps env xs
+      (match enum with
+      | FunctionDecl 
+      | TypedefDecl | RecordDecl | EnumDecl ->
+          decl env (enum, l, xs)
+      | _ -> 
+          sexps env xs
+      )
   | Angle (xs) ->
       sexps env xs
   | Anchor (xs) ->
@@ -240,8 +208,50 @@ and sexp env x =
 and sexps env xs = List.iter (sexp env) xs
 
 (* ---------------------------------------------------------------------- *)
-(* Toplevels *)
+(* Decls *)
 (* ---------------------------------------------------------------------- *)
+
+and decl env (enum, l, xs) =
+  let env =
+    match enum, xs with
+    | FunctionDecl, _loc::(T (TLowerIdent s | TUpperIdent s))::_typ_char::_rest ->
+        add_node_and_edge_if_defs_mode env (s, E.Function)
+
+    (* I am not sure about the namespaces, so I prepend strings *)
+    | TypedefDecl, _loc::(T (TLowerIdent s | TUpperIdent s))::_typ_char::_rest ->
+        add_node_and_edge_if_defs_mode env ("t__" ^ s, E.Type)
+    | EnumDecl, _loc::(T (TLowerIdent s | TUpperIdent s))::_rest ->
+        add_node_and_edge_if_defs_mode env ("e__" ^ s, E.Type)
+          
+    | RecordDecl, _loc::(T (TLowerIdent "struct"))
+        ::(T (TLowerIdent s | TUpperIdent s))::_rest ->
+        add_node_and_edge_if_defs_mode env ("s__" ^ s, E.Type)
+    | RecordDecl, _loc::(T (TLowerIdent "union"))
+        ::(T (TLowerIdent s | TUpperIdent s))::_rest ->
+        add_node_and_edge_if_defs_mode env ("u__" ^ s, E.Type)
+          
+    (* usually embedded struct *)
+    | RecordDecl, _loc::(T (TLowerIdent "struct"))::_rest ->
+        incr env.cnt;
+        add_node_and_edge_if_defs_mode env 
+          (spf "s__anon__%d" !(env.cnt), E.Type)
+          
+    (* todo: usually there is a typedef just behind *)
+    | EnumDecl, _loc::_rest ->
+        incr env.cnt;
+        add_node_and_edge_if_defs_mode env 
+          (spf "e__anon__%d" !(env.cnt), E.Type)
+    | RecordDecl, _loc::(T (TLowerIdent "union"))::_rest ->
+        incr env.cnt;
+        add_node_and_edge_if_defs_mode env 
+          (spf "u__anon__%d" !(env.cnt), E.Type)
+          
+    (* todo: FieldDecl EnumConstantDecl *)
+    | _ ->
+        failwith (spf "%s:%d:wrong Decl line" 
+                     env.current_clang_file env.line)
+  in
+  sexps env xs
 
 (* ---------------------------------------------------------------------- *)
 (* Stmt *)
@@ -280,8 +290,8 @@ let build ?(verbose=true) dir skip_list =
   let env = {
     g;
     phase = Defs;
-    current = ("__filled_later__", E.File);
-    current_c_file = "Unknown_Location";
+    current = unknown_location;
+    current_c_file = fst unknown_location;
     current_clang_file = "__filled_later__";
     line = -1;
     cnt = ref 0;
@@ -296,8 +306,8 @@ let build ?(verbose=true) dir skip_list =
       flush chan;
     );
   } in
-  G.add_node (env.current_c_file, E.File) g;
-  G.add_edge (G.not_found, (env.current_c_file, E.File)) G.Has g;
+  G.add_node unknown_location g;
+  G.add_edge (G.not_found, unknown_location) G.Has g;
   
   (* step1: creating the nodes and 'Has' edges, the defs *)
   env.pr2_and_log "\nstep1: extract defs";
