@@ -1,8 +1,11 @@
 Processing: /home/pad/pfff/tests/clang/c/struct.c.
-(TranslationUnitDecl 0x7fdfe382a6d0 <<invalid sloc>>
-  (TypedefDecl 0x7fdfe382abb0 <<invalid sloc>> __int128_t '__int128')
-  (TypedefDecl 0x7fdfe382ac10 <<invalid sloc>> __uint128_t 'unsigned __int128')
-  (TypedefDecl 0x7fdfe382af60 <<invalid sloc>> __builtin_va_list '__va_list_tag [1]')
-  (RecordDecl 0x7fdfe382afb0 </home/pad/pfff/tests/clang/c/struct.c:2:1, line:5:1> struct a_struct
-    (FieldDecl 0x7fdfe382b060 <line:3:3, col:7> field1 'int')
-    (FieldDecl 0x7fdfe382b0c0 <line:4:3, col:7> field2 'int')))
+(TranslationUnitDecl 0x7fb81b82a6d0 <<invalid sloc>>
+  (TypedefDecl 0x7fb81b82abb0 <<invalid sloc>> __int128_t '__int128')
+  (TypedefDecl 0x7fb81b82ac10 <<invalid sloc>> __uint128_t 'unsigned __int128')
+  (TypedefDecl 0x7fb81b82af60 <<invalid sloc>> __builtin_va_list '__va_list_tag [1]')
+  (RecordDecl 0x7fb81b82afb0 </home/pad/pfff/tests/clang/c/struct.c:2:1, line:9:1> struct a_struct
+    (FieldDecl 0x7fb81b82b060 <line:3:3, col:7> field1 'int')
+    (FieldDecl 0x7fb81b82b0c0 <line:4:3, col:7> field2 'int')
+    (RecordDecl 0x7fb81b82b110 <line:5:3, line:8:3> struct anon
+      (FieldDecl 0x7fb81b82b1d0 <line:6:5, col:9> subfield1 'int')
+      (FieldDecl 0x7fb81b82b230 <line:7:5, col:9> subfield2 'int'))))
