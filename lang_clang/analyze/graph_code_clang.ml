@@ -203,10 +203,12 @@ and sexp env x =
       | Some f -> 
           env.current_c_file := f
       );
+      (* dispatch *)
       (match enum with
       | FunctionDecl 
       | TypedefDecl | RecordDecl | EnumDecl 
       | FieldDecl | EnumConstantDecl
+      (* | VarDecl | BlockDecl | ParmVarDecl    |   TranslationUnitDecl  *)
           ->
           decl env (enum, l, xs)
       | _ -> 
