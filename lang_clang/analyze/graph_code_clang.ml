@@ -44,7 +44,7 @@ type env = {
   cnt: int ref;
 
   current: Graph_code.node;
-  mutable current_c_file: Common.filename;
+  current_c_file: Common.filename ref;
 
   current_clang_file: Common.filename;
   line: int;
@@ -135,7 +135,7 @@ let add_node_and_edge_if_defs_mode env node =
     end
     else begin
       env.g +> G.add_node node;
-      env.g +> G.add_edge ((env.current_c_file, E.File), node) G.Has;
+      env.g +> G.add_edge ((!(env.current_c_file), E.File), node) G.Has;
     end
   end;
   env
@@ -186,7 +186,8 @@ and sexp env x =
       end;
       (match file_opt with
       | None -> ()
-      | Some f -> env.current_c_file <- f
+      | Some f -> 
+          env.current_c_file := f
       );
       (match enum with
       | FunctionDecl 
@@ -290,7 +291,7 @@ let build ?(verbose=true) dir skip_list =
     g;
     phase = Defs;
     current = unknown_location;
-    current_c_file = fst unknown_location;
+    current_c_file = ref (fst unknown_location);
     current_clang_file = "__filled_later__";
     line = -1;
     cnt = ref 0;
