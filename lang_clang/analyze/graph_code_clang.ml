@@ -30,6 +30,12 @@ module Ast = Ast_clang
  * 
  * 
  * schema:
+ *  Root -> Dir -> File (.c|.h) -> Type TODO? struct? enum? union?
+ *                                 -> Field
+ *                                 -> ClassConstant (enum)
+ *                              -> Function
+ *                              -> Type (for Typedef)
+ *       -> Dir -> SubDir -> ...
  *)
 
 (*****************************************************************************)
@@ -209,8 +215,9 @@ and sexp env x =
       | TypedefDecl | RecordDecl | EnumDecl 
       | FieldDecl | EnumConstantDecl
       (* | VarDecl | BlockDecl | ParmVarDecl    |   TranslationUnitDecl  *)
-          ->
-          decl env (enum, l, xs)
+        -> decl env (enum, l, xs)
+      | CallExpr 
+        -> expr env (enum, l, xs)
       | _ -> 
           sexps env xs
       )
@@ -287,6 +294,9 @@ and decl env (enum, l, xs) =
 (* ---------------------------------------------------------------------- *)
 (* Expr *)
 (* ---------------------------------------------------------------------- *)
+and expr env (enum, l, xs) =
+  
+  sexps env xs
 
 (* ---------------------------------------------------------------------- *)
 (* Types *)

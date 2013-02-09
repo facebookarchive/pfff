@@ -34,10 +34,12 @@ module Flag = Flag_parsing_cpp
  *  - tags (struct name, enum name)
  *  - ???
  *  - internals: remove lookup_fails, like in graph_code_php.ml
- * see ast_c.ml notes in coccinelle
- * 
- *  
+ * todo: fields? enum constants? 
+ * todo: see ast_c.ml notes in coccinelle?
  * less: reuse code with the other graph_code_xxx ?
+ * 
+ * What about nested structures? they are lifted up in ast_c_build.
+ *  
  * 
  * schema:
  *  Root -> Dir -> File (.c|.h) -> Struct 
