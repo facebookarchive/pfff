@@ -128,6 +128,15 @@ let readable_of_filename f =
 (*****************************************************************************)
 
 let add_node_and_edge_if_defs_mode env node =
+  let (str, kind) = node in
+  let str' =
+    match kind, env.current with
+    | E.Field, (s, E.Type) ->
+        s ^ "." ^ str
+    | _ -> str
+  in
+  let node = (str', kind) in
+
   if env.phase = Defs then begin
     if G.has_node node env.g
     then begin
@@ -135,10 +144,15 @@ let add_node_and_edge_if_defs_mode env node =
     end
     else begin
       env.g +> G.add_node node;
-      env.g +> G.add_edge ((!(env.current_c_file), E.File), node) G.Has;
+      let current =
+        if env.current =*= unknown_location
+        then !(env.current_c_file), E.File
+        else env.current
+      in
+      env.g +> G.add_edge (current, node) G.Has;
     end
   end;
-  env
+  { env with current = node }
 
 (*****************************************************************************)
 (* Add edge *)
@@ -191,7 +205,9 @@ and sexp env x =
       );
       (match enum with
       | FunctionDecl 
-      | TypedefDecl | RecordDecl | EnumDecl ->
+      | TypedefDecl | RecordDecl | EnumDecl 
+      | FieldDecl | EnumConstantDecl
+          ->
           decl env (enum, l, xs)
       | _ -> 
           sexps env xs
@@ -245,8 +261,17 @@ and decl env (enum, l, xs) =
         incr env.cnt;
         add_node_and_edge_if_defs_mode env 
           (spf "u__anon__%d" !(env.cnt), E.Type)
-          
-    (* todo: FieldDecl EnumConstantDecl *)
+
+    | FieldDecl, _loc::(T (TLowerIdent s | TUpperIdent s))::_rest ->
+        add_node_and_edge_if_defs_mode env (s, E.Field)
+
+    | FieldDecl, _loc::_rest ->
+        incr env.cnt;
+        add_node_and_edge_if_defs_mode env 
+          (spf "f__anon__%d" !(env.cnt), E.Field)
+    | EnumConstantDecl, _loc::(T (TLowerIdent s | TUpperIdent s))::_rest ->
+        add_node_and_edge_if_defs_mode env (s, E.ClassConstant)
+        
     | _ ->
         failwith (spf "%s:%d:wrong Decl line" 
                      env.current_clang_file env.line)
