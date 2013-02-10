@@ -161,10 +161,10 @@ and sexp env x =
       end;
       (* dispatch *)
       (match enum with
-      | FunctionDecl 
+      | FunctionDecl | VarDecl
       | TypedefDecl | RecordDecl | EnumDecl 
       | FieldDecl | EnumConstantDecl
-      (* | VarDecl | BlockDecl | ParmVarDecl    |   TranslationUnitDecl  *)
+      (* BlockDecl? *)
         -> decl env (enum, l, xs)
       | CallExpr 
         -> expr env (enum, l, xs)
@@ -191,6 +191,8 @@ and decl env (enum, l, xs) =
     match enum, xs with
     | FunctionDecl, _loc::(T (TLowerIdent s | TUpperIdent s))::_typ_char::_rest ->
         add_node_and_edge_if_defs_mode env (s, E.Function)
+    | VarDecl, _loc::(T (TLowerIdent s | TUpperIdent s))::_typ_char::_rest ->
+        add_node_and_edge_if_defs_mode env (s, E.Global)
 
     (* I am not sure about the namespaces, so I prepend strings *)
     | TypedefDecl, _loc::(T (TLowerIdent s | TUpperIdent s))::_typ_char::_rest ->
