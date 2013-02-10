@@ -292,6 +292,8 @@ let build_stdlib lang root dst =
   match lang with
   | "java" ->
       Builtins_java.extract_from_sources ~skip_list ~src:root ~dst
+  | "clang" ->
+      Uninclude_clang.uninclude ~verbose:!verbose root skip_list dst
   | _ -> failwith ("language not supported: " ^ lang)
 
 (*****************************************************************************)
