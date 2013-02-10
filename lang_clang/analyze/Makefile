@@ -4,7 +4,9 @@ TOP=../..
 ##############################################################################
 TARGET=lib
 
-SRC= graph_code_clang.ml \
+SRC= location_clang.ml \
+     uninclude_clang.ml \
+     graph_code_clang.ml \
      test_analyze_clang.ml
 
 -include $(TOP)/Makefile.config

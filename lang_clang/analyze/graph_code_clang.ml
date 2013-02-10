@@ -20,6 +20,7 @@ module G = Graph_code
 open Ast_clang
 open Parser_clang
 module Ast = Ast_clang
+module Loc = Location_clang
 
 (*****************************************************************************)
 (* Prelude *)
@@ -78,56 +79,6 @@ let parse a =
 (*****************************************************************************)
 (* Filename helpers *)
 (*****************************************************************************)
-type location =
-  | File of Common.filename * int * int
-  | Line of int * int
-  | Col of int
-  | Other
-
-let location_of_angle env xs =
-  match xs with
-  | [Angle [T (TLowerIdent "invalid"); T (TLowerIdent "sloc")]] ->
-      [Other]
-  | xs ->
-      let xxs = Common.split_gen_when 
-        (function (T TComma)::xs -> Some xs | _ -> None) xs in
-      xxs +> List.map (function
-        | [T (TLowerIdent "line"); T TColon; T (TInt i1);T TColon; T(TInt i2)]->
-            Line (s_to_i i1, s_to_i i2)
-        | [T (TLowerIdent "col"); T TColon; T (TInt i);] ->
-            Col (s_to_i i)
-        | [T (TPath f); T TColon; T (TInt i1);T TColon; T (TInt i2)] ->
-            File (f, s_to_i i1, s_to_i i2)
-        | [Angle _; T TColon; T (TInt _);T TColon; T (TInt _)] ->
-            Other
-        | xs -> 
-          pr2_gen xs;
-          failwith (spf "wrong location format at line %d in %s" 
-                      env.line env.current_clang_file)
-      )
-
-let readable_of_filename f =
-  let xs = Common.split "/" f in
-  let xs = 
-    match xs with
-    | "usr"::"include"::rest -> 
-        "EXTERNAL"::"CORE"::rest
-
-    | "Users"::"yoann.padioleau"::"local"::"clang_ast"::"clang-llvm"
-      ::"llvm"::"Debug+Asserts"::"bin"::".."
-      ::"lib"::"clang"::"3.3"::"include"::rest ->
-        "EXTERNAL"::"CLANG"::rest
-    | "System"::"Library"::"Frameworks"::rest -> 
-        "EXTERNAL"::"MACOS"::rest
-
-    (* todo: use env.dir? *)
-    | "home"::"pad"::"local"::"lang-c"::"Chipmunk-Physics"::rest -> 
-        rest
-    | "home"::"pad"::"pfff"::"tests"::"clang"::"c"::rest ->
-        rest
-    | _ -> failwith ("unhandled prefix: " ^ f)
-  in
-  Common.join "/" xs
 
 let unchar s =
   if s =~ "'\\(.*\\)'"
@@ -194,17 +145,17 @@ and sexp env x =
       let location =
         (match enum, xs with
         | (Misc__Null__ | Misc__Capture__ | Misc__Cleanup__Block
-          ), _ -> [Other]
+          ), _ -> [Loc.Other]
         | _, Angle xs::_rest ->
-            location_of_angle env xs
+            Loc.location_of_angle (env.line, env.current_clang_file) xs
         | _ -> 
             failwith (spf "%s:%d: no location" env.current_clang_file env.line)
         )
       in
       let file_opt = 
         location +> Common.find_some_opt (function 
-        | File (f, _,_) ->
-            let readable = readable_of_filename f in
+        | Loc.File (f, _,_) ->
+            let readable = Loc.readable_of_filename f in
             Some readable
         | _ -> None
         )
