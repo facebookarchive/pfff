@@ -140,26 +140,14 @@ let rec extract_defs_uses env ast =
 and sexp env x =
   match x with
   | Paren (enum, l, xs) ->
-
-      let env = { env with line = l } in
-      let location =
-        (match enum, xs with
-        | (Misc__Null__ | Misc__Capture__ | Misc__Cleanup__Block
-          ), _ -> [Loc.Other]
-        | _, Angle xs::_rest ->
-            Loc.location_of_angle (env.line, env.current_clang_file) xs
-        | _ -> 
-            failwith (spf "%s:%d: no location" env.current_clang_file env.line)
-        )
-      in
+      let env = 
+        { env with line = l } in
       let file_opt = 
-        location +> Common.find_some_opt (function 
-        | Loc.File (f, _,_) ->
-            let readable = Loc.readable_of_filename f in
-            Some readable
-        | _ -> None
-        )
-      in
+        Loc.location_of_paren_opt env.current_clang_file (enum, l, xs) in
+      file_opt +> Common.do_option (fun f ->
+          env.current_c_file := f
+      );
+
       if env.phase = Defs then begin
         file_opt +> Common.do_option (fun readable ->
           let dir = Common.dirname readable in
@@ -171,11 +159,6 @@ and sexp env x =
           end
         )
       end;
-      (match file_opt with
-      | None -> ()
-      | Some f -> 
-          env.current_c_file := f
-      );
       (* dispatch *)
       (match enum with
       | FunctionDecl 

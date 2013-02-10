@@ -79,3 +79,23 @@ let readable_of_filename f =
     | _ -> failwith ("unhandled prefix: " ^ f)
   in
   Common.join "/" xs
+
+
+let location_of_paren_opt clang_file (enum, l, xs) =
+  let location =
+    match enum, xs with
+    | (Misc__Null__ | Misc__Capture__ | Misc__Cleanup__Block
+      ), _ -> [Other]
+    | _, Angle xs::_rest ->
+        location_of_angle (l, clang_file) xs
+    | _ -> 
+        failwith (spf "%s:%d: no location" clang_file l)
+
+  in
+  location +> Common.find_some_opt (function 
+  | File (f, _,_) ->
+      let readable = readable_of_filename f in
+      Some readable
+  | _ -> None
+  )
+
