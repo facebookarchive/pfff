@@ -626,7 +626,11 @@ and expr env x =
       (match e2 with
       (* less: add deps? *)
       | Id name when not (Ast.is_variable name) ->
-          ()
+        let node = Ast.str_of_name name, E.Class E.RegularClass in
+          if not (G.has_node node env.g) 
+          then 
+            env.pr2_and_log (spf "PB: instanceof unknown class: %s"
+                               (G.string_of_node node))
       | _ ->
           (* less: update dynamic *)
           expr env e2
