@@ -32,6 +32,9 @@ type location =
   | Col of int
   | Other
 
+let unknown_loc_angle =
+  Angle [Angle [T (TLowerIdent "invalid"); T (TLowerIdent "sloc")]]
+
 (*****************************************************************************)
 (* Helpers *)
 (*****************************************************************************)

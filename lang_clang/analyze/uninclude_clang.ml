@@ -187,4 +187,8 @@ let uninclude ?(verbose=true) dir skip_list dst =
   env.hfile_data +> Common.hash_to_list +> List.iter (fun (file, xs) ->
     let file = spf "%s/%s.clang2" dst  file in
     pr2 (spf "generating %s" file);
+    let dir = Filename.dirname file in
+    Common.command2 (spf "mkdir -p %s" dir);
+    Common.write_value (Paren (TranslationUnitDecl, 0, 
+                              Loc.unknown_loc_angle::xs)) file
   )

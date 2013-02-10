@@ -15,3 +15,6 @@ val location_of_paren_opt:
   Common.filename ->
   (Ast_clang.enum * int * Ast_clang.sexp list) -> 
   Common.filename option
+
+val unknown_loc_angle: Ast_clang.sexp
+
