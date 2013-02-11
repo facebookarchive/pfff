@@ -19,6 +19,7 @@ module G = Graph_code
 
 open Ast_clang
 open Parser_clang
+
 module Ast = Ast_clang
 module Loc = Location_clang
 
@@ -31,13 +32,18 @@ module Loc = Location_clang
  * 
  * 
  * schema:
- *  Root -> Dir -> File (.c|.h) -> Type struct | enum | union
+ *  Root -> Dir -> File (.c|.h) -> Type (struct | enum | union) TODO use Class?
  *                                 -> Field
  *                                 -> ClassConstant (enum)
  *                              -> Function | Prototype
  *                              -> Type (for Typedef)
  *                              -> Global
  *       -> Dir -> SubDir -> ...
+ * 
+ * todo: 
+ *  - proper defs for anon struct and union
+ *  - Use for types, fields, globals
+ * 
  *)
 
 (*****************************************************************************)
@@ -47,17 +53,18 @@ module Loc = Location_clang
 type env = {
   g: Graph_code.graph;
   phase: phase;
-  dir: Common.dirname;
 
   cnt: int ref;
 
   current: Graph_code.node;
 
+  dir: Common.dirname;
   readable_clang_file: Common.filename;
   (* we now prefer to use uninclude_clang.ml *)
   current_c_file_DEPRECATED: Common.filename ref;
 
   at_toplevel: bool;
+  (* todo: static_func_rename: ... Hashtbl.t; *)
 
   (* for error reports *)
   current_clang_file: Common.filename;
@@ -105,22 +112,16 @@ let add_node_and_edge_if_defs_mode env node =
 
   if env.phase = Defs then begin
     if G.has_node node env.g
-    then begin
+    then
       (match kind with
-      | E.Function -> pr2 (spf "DUPE entity: %s" (G.string_of_node node))
-      (* TODO: have no Use for now for the other entities so skip errors *) 
+      | E.Function -> 
+          env.pr2_and_log (spf "DUPE entity: %s" (G.string_of_node node))
+      | E.Prototype -> ()
+      (* todo: have no Use for now for the other entities so skip errors *) 
       | _ -> ()
-      );
-    end else begin
+      )
+    else begin
       env.g +> G.add_node node;
-      (* clang2_old: *)
-      (*
-      let current =
-        if env.current =*= unknown_location
-        then (env.readable_clang_file, E.File)
-        else env.current
-      in
-      *)
       env.g +> G.add_edge (env.current, node) G.Has;
     end
   end;
@@ -130,24 +131,29 @@ let add_node_and_edge_if_defs_mode env node =
 (* Add edge *)
 (*****************************************************************************)
 
-let add_use_edge env (s, kind) =
+let rec add_use_edge env (s, kind) =
   let src = env.current in
   let dst = (s, kind) in
 
   if G.has_node dst env.g
   then  G.add_edge (src, dst) G.Use env.g
-  else begin
-    ()
-  end
+  else 
+    (match kind with
+    (* look for Prototype if no Function *)
+    | E.Function -> add_use_edge env (s, E.Prototype)
+    | _ ->
+        env.pr2_and_log (spf "Lookup failure on %s (in %s)"
+                            (G.string_of_node dst)
+                            (env.current_clang_file))
+    )
 
 
 (*****************************************************************************)
 (* Defs/Uses *)
 (*****************************************************************************)
 let rec extract_defs_uses env ast =
-  let env = { env with
-    readable_clang_file = 
-      Common.filename_without_leading_path env.dir env.current_clang_file ;
+  let env = { env with readable_clang_file = 
+      Common.filename_without_leading_path env.dir env.current_clang_file;
   }
   in
   let readable = env.readable_clang_file in
@@ -155,10 +161,8 @@ let rec extract_defs_uses env ast =
     let dir = Common.dirname readable in
     G.create_intermediate_directories_if_not_present env.g dir;
     let node = (readable, E.File) in
-    if not (G.has_node node env.g) then begin
-      env.g +> G.add_node node;
-      env.g +> G.add_edge ((dir, E.Dir), node) G.Has;
-    end
+    env.g +> G.add_node node;
+    env.g +> G.add_edge ((dir, E.Dir), node) G.Has;
   end;
   let env = { env with current = (readable, E.File) } in
   (match ast with
@@ -210,8 +214,19 @@ and sexps env xs = List.iter (sexp env) xs
 and decl env (enum, l, xs) =
   let env =
     match enum, xs with
-    | FunctionDecl, _loc::(T (TLowerIdent s | TUpperIdent s))::_typ_char::_rest ->
-        add_node_and_edge_if_defs_mode env (s, E.Function)
+    (* todo: look for static? *)
+    | FunctionDecl, _loc::(T (TLowerIdent s | TUpperIdent s))::_typ_char::rest ->
+        let kind = 
+          if rest +> List.exists (function 
+          | Paren (CompoundStmt, _, _) -> true
+          | _ -> false
+          )
+          then E.Function
+          else E.Prototype
+        in
+        add_node_and_edge_if_defs_mode env (s, kind)
+
+    (* todo: what about extern *)
     | VarDecl, _loc::(T (TLowerIdent s | TUpperIdent s))::_typ_char::_rest ->
         if env.at_toplevel 
         then add_node_and_edge_if_defs_mode env (s, E.Global)
@@ -279,7 +294,10 @@ and expr env (enum, l, xs) =
                         ::T (TString s)::_typ4::[]))::[]))
       ::_args ->
       let s = unchar s in
-      add_use_edge env (s, E.Function)
+      if env.phase = Uses
+      then add_use_edge env (s, E.Function)
+
+  (* todo: unexpected form of call? function pointer call? *)
   | CallExpr, _ ->
       ()
   | _ -> raise Impossible
@@ -343,18 +361,15 @@ let build ?(verbose=true) dir skip_list =
     List.iter (fun file ->
       k();
       let ast = parse file in
-      (* will modify env.dupes instead of raise Graph_code.NodeAlreadyPresent *)
       extract_defs_uses { env with phase = Defs; current_clang_file = file} ast
    ));
 
-(*
-  (* step2: creating the 'Use' edges for inheritance *)
-  env.pr2_and_log "\nstep2: extract inheritance";
+  (* step2: creating the 'Use' edges *)
+  env.pr2_and_log "\nstep2: extract Uses";
   files +> Common_extra.progress ~show:verbose (fun k ->
     List.iter (fun file ->
       k();
       let ast = parse file in
       extract_defs_uses { env with phase = Uses; current_clang_file = file} ast
     ));
-*)
   g
