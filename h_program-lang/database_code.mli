@@ -1,6 +1,6 @@
 
 type entity_kind = 
-  | Function 
+  | Function
   | Class of class_type
   | Module | Package
   | Type 
@@ -13,6 +13,8 @@ type entity_kind =
   | Constructor
   | Method of method_type 
   | ClassConstant
+
+  | Prototype
 
   | Other of string
 

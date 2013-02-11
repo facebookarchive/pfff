@@ -114,6 +114,8 @@ type entity_kind =
   | Method of method_type
   | ClassConstant
 
+  | Prototype
+
   (* todo: constructor *)
 
   | Other of string
@@ -262,6 +264,7 @@ let default_db_name =
 let string_of_entity_kind e = 
   match e with
   | Function -> "Function"
+  | Prototype -> "Prototype"
   | Class RegularClass -> "Class"
   | Class Interface -> "Interface"
   | Class Trait -> "Trait"
