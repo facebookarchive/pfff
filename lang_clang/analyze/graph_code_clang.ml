@@ -47,11 +47,16 @@ module Loc = Location_clang
 type env = {
   g: Graph_code.graph;
   phase: phase;
+  dir: Common.dirname;
 
   cnt: int ref;
 
   current: Graph_code.node;
-  current_c_file: Common.filename ref;
+
+  readable_clang_file: Common.filename;
+  current_c_file_DEPRECATED: Common.filename ref;
+
+  at_toplevel: bool;
 
   current_clang_file: Common.filename;
   line: int;
@@ -72,7 +77,8 @@ let unknown_location = "Unknown_Location", E.File
  * because they include the same files.
  *)
 let parse2 file = 
-  Parse_clang.parse file
+  (* clang2_old: Parse_clang.parse file *)
+  Common.get_value file
 let parse a = 
   Common.profile_code "Parse_clang.parse" (fun () -> parse2 a)
 
@@ -102,16 +108,22 @@ let add_node_and_edge_if_defs_mode env node =
   if env.phase = Defs then begin
     if G.has_node node env.g
     then begin
-      ()
-    end
-    else begin
+      (match kind with
+      | E.Function -> pr2 (spf "DUPE entity: %s" (G.string_of_node node))
+      (* TODO: have no Use for now for the other entities so skip errors *) 
+      | _ -> ()
+      );
+    end else begin
       env.g +> G.add_node node;
+      (* clang2_old: *)
+      (*
       let current =
         if env.current =*= unknown_location
-        then !(env.current_c_file), E.File
+        then (env.readable_clang_file, E.File)
         else env.current
       in
-      env.g +> G.add_edge (current, node) G.Has;
+      *)
+      env.g +> G.add_edge (env.current, node) G.Has;
     end
   end;
   { env with current = node }
@@ -135,30 +147,39 @@ let add_use_edge env (s, kind) =
 (* Defs/Uses *)
 (*****************************************************************************)
 let rec extract_defs_uses env ast =
-  sexp env ast
+  let env = { env with
+    readable_clang_file = 
+      Common.filename_without_leading_path env.dir env.current_clang_file ;
+  }
+  in
+  let readable = env.readable_clang_file in
+  if env.phase = Defs then begin
+    let dir = Common.dirname readable in
+    G.create_intermediate_directories_if_not_present env.g dir;
+    let node = (readable, E.File) in
+    if not (G.has_node node env.g) then begin
+      env.g +> G.add_node node;
+      env.g +> G.add_edge ((dir, E.Dir), node) G.Has;
+    end
+  end;
+  let env = { env with current = (readable, E.File) } in
+  (match ast with
+  | Paren (TranslationUnitDecl, l, _loc::xs) ->
+      List.iter (sexp_toplevel env) xs
+  | _ -> failwith (spf "%s: not a TranslationDecl" env.current_clang_file)
+  )
 
-and sexp env x =
+and sexp_toplevel env x =
   match x with
   | Paren (enum, l, xs) ->
       let env = 
         { env with line = l } in
-      let file_opt = 
+      (let file_opt = 
         Loc.location_of_paren_opt env.current_clang_file (enum, l, xs) in
       file_opt +> Common.do_option (fun f ->
-          env.current_c_file := f
-      );
+          env.current_c_file_DEPRECATED := f
+      ));
 
-      if env.phase = Defs then begin
-        file_opt +> Common.do_option (fun readable ->
-          let dir = Common.dirname readable in
-          G.create_intermediate_directories_if_not_present env.g dir;
-          let node = (readable, E.File) in
-          if not (G.has_node node env.g) then begin
-            env.g +> G.add_node node;
-            env.g +> G.add_edge ((dir, E.Dir), node) G.Has;
-          end
-        )
-      end;
       (* dispatch *)
       (match enum with
       | FunctionDecl | VarDecl
@@ -180,6 +201,9 @@ and sexp env x =
   | T tok ->
       ()
 
+and sexp env x =
+  sexp_toplevel {env with at_toplevel = false} x
+
 and sexps env xs = List.iter (sexp env) xs
 
 (* ---------------------------------------------------------------------- *)
@@ -192,7 +216,9 @@ and decl env (enum, l, xs) =
     | FunctionDecl, _loc::(T (TLowerIdent s | TUpperIdent s))::_typ_char::_rest ->
         add_node_and_edge_if_defs_mode env (s, E.Function)
     | VarDecl, _loc::(T (TLowerIdent s | TUpperIdent s))::_typ_char::_rest ->
-        add_node_and_edge_if_defs_mode env (s, E.Global)
+        if env.at_toplevel 
+        then add_node_and_edge_if_defs_mode env (s, E.Global)
+        else env
 
     (* I am not sure about the namespaces, so I prepend strings *)
     | TypedefDecl, _loc::(T (TLowerIdent s | TUpperIdent s))::_typ_char::_rest ->
@@ -293,10 +319,13 @@ let build ?(verbose=true) dir skip_list =
     g;
     phase = Defs;
     current = unknown_location;
-    current_c_file = ref (fst unknown_location);
+    current_c_file_DEPRECATED = ref (fst unknown_location);
     current_clang_file = "__filled_later__";
+    readable_clang_file = "__filled_later__";
     line = -1;
     cnt = ref 0;
+    dir = root;
+    at_toplevel = true;
 
     log = (fun s ->
         output_string chan (s ^ "\n");
