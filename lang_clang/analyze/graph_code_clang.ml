@@ -31,18 +31,18 @@ module Loc = Location_clang
  * 
  * 
  * schema:
- *  Root -> Dir -> File (.c|.h) -> Type TODO? struct? enum? union?
+ *  Root -> Dir -> File (.c|.h) -> Type struct | enum | union
  *                                 -> Field
  *                                 -> ClassConstant (enum)
- *                              -> Function
+ *                              -> Function | Prototype
  *                              -> Type (for Typedef)
+ *                              -> Global
  *       -> Dir -> SubDir -> ...
  *)
 
 (*****************************************************************************)
 (* Types *)
 (*****************************************************************************)
-(* for the extract_uses visitor *)
 
 type env = {
   g: Graph_code.graph;
@@ -54,10 +54,12 @@ type env = {
   current: Graph_code.node;
 
   readable_clang_file: Common.filename;
+  (* we now prefer to use uninclude_clang.ml *)
   current_c_file_DEPRECATED: Common.filename ref;
 
   at_toplevel: bool;
 
+  (* for error reports *)
   current_clang_file: Common.filename;
   line: int;
 
@@ -72,10 +74,6 @@ let unknown_location = "Unknown_Location", E.File
 (* Parsing *)
 (*****************************************************************************)
 
-(* todo? memoize? but the files are huge, maybe could try to memoize
- * and share the many parts that are in common in all those .clang files
- * because they include the same files.
- *)
 let parse2 file = 
   (* clang2_old: Parse_clang.parse file *)
   Common.get_value file
@@ -185,7 +183,6 @@ and sexp_toplevel env x =
       | FunctionDecl | VarDecl
       | TypedefDecl | RecordDecl | EnumDecl 
       | FieldDecl | EnumConstantDecl
-      (* BlockDecl? *)
         -> decl env (enum, l, xs)
       | CallExpr 
         -> expr env (enum, l, xs)
