@@ -1,15 +1,22 @@
 -*- org -*-
 
-* 0.23 (Q1 2013) ()
+* 0.23 (Q1 2013) (clang parser)
 
-** codegraph, packing in "...", deadcode/internal_module highlightings,
-backward dependencies statistics and highlightings
+** codegraph
 
-** introduce lang_objc/
-basic lexer and grammar
+*** packing less relevant entities in a fake "..." entity
+
+*** deadcode/internal_module highlightings
+
+*** backward dependencies statistics and highlightings
+
+*** basic support for clang/C
 
 ** introduce lang_clang/
 a thin wrapper around the clang/llvm ast dumps of clang-check -emit-ast.
+
+** introduce lang_objc/
+basic lexer and grammar
 
 * -----------------------------------------------------------
 
