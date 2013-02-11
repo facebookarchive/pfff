@@ -50,13 +50,7 @@ let gen_package_file_with_class_defs pr xs g =
     | E.ClassConstant
         -> ()
         
-    | (E.Other _
-      |E.MultiDirs|E.Dir
-      |E.TopStmts|E.Macro|E.Global
-      |E.Type
-      |E.Package|E.Module
-      |E.Function|E.Exception|E.Constructor
-      ) -> ()
+    | _ -> ()
   in
   List.iter (aux 0) xs
 

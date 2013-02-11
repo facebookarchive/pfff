@@ -101,6 +101,7 @@ let icon_of_kind kind has_test =
   | Db.Macro -> `CONNECT
   | Db.Exception -> `CONNECT
   | Db.Constructor -> `CONNECT
+  | Db.Prototype -> `CONNECT
 
   | (Db.TopStmts | Db.Other _ | Db.ClassConstant) -> raise Todo
 

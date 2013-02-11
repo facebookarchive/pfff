@@ -101,11 +101,7 @@ let tags_of_ast ast filelines =
 
             [Tags.tag_of_info filelines info' kind] @ yieldmagic @ prepmagic
         )
-    | (   Db.Field | Db.ClassConstant | Db.Other _
-        | Db.Type | Db.Module | Db.Package | Db.TopStmts | Db.Macro | Db.Global
-        | Db.MultiDirs | Db.Dir | Db.File
-        | Db.Exception | Db.Constructor
-      ) ->
+    | _ ->
         (* see defs_of_any *)
         raise Impossible
   ) +> List.flatten

@@ -88,10 +88,7 @@ let name_id id db =
     (* ?? *)
     | E.Other s -> spf "'__IDMISC__%s'" (EC.str_of_id id)
 
-    | (E.MultiDirs|E.Dir|E.File | E.Macro|E.Global|E.Type
-      |E.Module|E.Package
-      |E.Exception|E.Constructor
-      ) ->
+    | _ ->
         (* not in db for now *)
         raise Impossible
     )

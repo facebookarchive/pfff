@@ -41,6 +41,7 @@ module CairoH = Cairo_helpers3
 let color_of_node (_, kind) =
   match kind with
   | E.Function -> "gold"
+  | E.Prototype -> "gold4"
   (* less: different color for interfaces and traits? *)
   | E.Class _ -> "coral"
   | E.Module -> "chocolate"
@@ -433,7 +434,7 @@ let draw_matrix cr w =
   draw_up_columns cr w ~interactive_regions;
 
   (* highlight_dead_lines cr w; *)
-  highlight_dead_columns cr w;
+(*  highlight_dead_columns cr w; *)
   highlight_internal_helpers cr w;
 
   (* todo: could start from the config and mark all children of PB too *)

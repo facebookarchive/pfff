@@ -95,14 +95,7 @@ let (build_entity_finder: database -> Entity_php.entity_finder) = fun db ->
         Db.filter_ids_of_string s id_kind db
         +> List.map (fun id -> Db.ast_of_id id db)
 
-    | (E.Method _|E.ClassConstant|E.Field|E.Constructor
-      |E.Global|E.Type|E.Module|E.Package|E.Macro
-      |E.TopStmts
-      |E.MultiDirs|E.Dir|E.File
-      |E.Other _
-      |E.Exception
-      )
-      -> raise Todo
+    | _ -> raise Todo
    ) with 
    | Timeout -> raise Timeout
    | exn ->
