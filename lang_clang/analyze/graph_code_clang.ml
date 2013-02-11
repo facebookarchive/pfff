@@ -114,9 +114,8 @@ let add_node_and_edge_if_defs_mode env node =
     if G.has_node node env.g
     then
       (match kind with
-      | E.Function -> 
+      | E.Function | E.Prototype -> 
           env.pr2_and_log (spf "DUPE entity: %s" (G.string_of_node node))
-      | E.Prototype -> ()
       (* todo: have no Use for now for the other entities so skip errors *) 
       | _ -> ()
       )
