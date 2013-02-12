@@ -107,6 +107,9 @@ let enum__str_conv = [
  TranslationUnitDecl, "TranslationUnitDecl";
 
  ParmVarDecl, "ParmVarDecl";
+
+ VAArgExpr, "VAArgExpr";
+ PredefinedExpr, "PredefinedExpr";
 ]
 
 let (enum_of_str, str_of_enum) =
