@@ -77,6 +77,8 @@ let readable_of_filename f =
     (* todo: use env.dir? *)
     | "home"::"pad"::"local"::"lang-c"::"Chipmunk-Physics"::rest -> 
         rest
+    | "home"::"pad"::"local"::"lang-c"::"Bear"::rest -> 
+        rest
     | "home"::"pad"::"pfff"::"tests"::"clang"::"c"::rest ->
         rest
     | _ -> failwith ("unhandled prefix: " ^ f)
