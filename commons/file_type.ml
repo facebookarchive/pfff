@@ -201,7 +201,7 @@ let file_type_of_file2 file =
   | "nw" | "web" -> Text e
 
   | "org" 
-  | "md" | "rest" | "textile" | "wiki"
+  | "md" | "rest" | "textile" | "wiki" | "rst"
     -> Text e
 
   | "rtf" -> Text e
