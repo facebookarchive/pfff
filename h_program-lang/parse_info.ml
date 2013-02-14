@@ -6,7 +6,7 @@
  * modify it under the terms of the GNU Lesser General Public License
  * version 2.1 as published by the Free Software Foundation, with the
  * special exception on linking described in file license.txt.
- * 
+ *
  * This library is distributed in the hope that it will be useful, but
  * WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the file
@@ -23,15 +23,15 @@ open Common
 (* Types *)
 (*****************************************************************************)
 
-(* 
+(*
  * Currently lexing.ml does not handle the line number position.
- * Even if there is some fields in the lexing structure, they are not 
+ * Even if there is some fields in the lexing structure, they are not
  * maintained by the lexing engine :( So the following code does not work:
- * 
- *   let pos = Lexing.lexeme_end_p lexbuf in 
- *   sprintf "at file %s, line %d, char %d" pos.pos_fname pos.pos_lnum  
- *      (pos.pos_cnum - pos.pos_bol) in 
- * 
+ *
+ *   let pos = Lexing.lexeme_end_p lexbuf in
+ *   sprintf "at file %s, line %d, char %d" pos.pos_fname pos.pos_lnum
+ *      (pos.pos_cnum - pos.pos_bol) in
+ *
  * Hence those functions to overcome the previous limitation.
  *)
 
@@ -42,17 +42,17 @@ type parse_info = {
     line: int;
     column: int;
     file: filename;
-  } 
+  }
   (* with tarzan *)
 
-let fake_parse_info = { 
+let fake_parse_info = {
   charpos = -1; str = ""; line = -1; column = -1; file = "";
 }
 
 
-(* 
- * The token type is used to represent the leaves of ASTs, the token. 
- *  
+(*
+ * The token type is used to represent the leaves of ASTs, the token.
+ *
  * To be perfectly correct this is not really a token as a token usually
  * also have a category, e.g. TNumber or TIdent, but this would
  * be specific to a programming language and lexer, which is
@@ -65,7 +65,7 @@ type token =
     (* Present only in the AST and generated after parsing. Can be used
      * when building some extra AST elements. *)
     | FakeTokStr of string (* to help the generic pretty printer *) *
-        (* Sometimes we generate fake tokens close to existing 
+        (* Sometimes we generate fake tokens close to existing
          * origin tokens. This can be useful when have to give an error
          * message that involves a fakeToken. The int is a kind of
          * virtual position, an offset. See compare_pos below.
@@ -74,32 +74,32 @@ type token =
 
     (* In the case of a XHP file, we could preprocess it and incorporate
      * the tokens of the preprocessed code with the tokens from
-     * the original file. We want to mark those "expanded" tokens 
-     * with a special tag so that if someone do some transformation on 
+     * the original file. We want to mark those "expanded" tokens
+     * with a special tag so that if someone do some transformation on
      * those expanded tokens they will get a warning (because we may have
      * trouble back-propagating the transformation back to the original file).
      *)
-    | ExpandedTok of 
+    | ExpandedTok of
         (* refers to the preprocessed file, e.g. /tmp/pp-xxxx.pphp *)
         parse_info  *
        (* kind of virtual position. This info refers to the last token
         * before a serie of expanded tokens and the int is an offset.
         * The goal is to be able to compare the position of tokens
-        * between then, even for expanded tokens. See compare_pos 
+        * between then, even for expanded tokens. See compare_pos
         * below.
         *)
-        parse_info * int 
+        parse_info * int
 
-    (* The Ab constructor is (ab)used to call '=' to compare 
-     * big AST portions. Indeed as we keep the token information in the AST, 
+    (* The Ab constructor is (ab)used to call '=' to compare
+     * big AST portions. Indeed as we keep the token information in the AST,
      * if we have an expression in the code like "1+1" and want to test if
      * it's equal to another code like "1+1" located elsewhere, then
-     * the Pervasives.'=' of OCaml will not return true because 
+     * the Pervasives.'=' of OCaml will not return true because
      * when it recursively goes down to compare the leaf of the AST, that is
      * the parse_info, there will be some differences of positions. If instead
-     * all leaves use Ab, then there is no position information and we can 
+     * all leaves use Ab, then there is no position information and we can
      * use '='. See also the 'al_info' function below.
-     * 
+     *
      * Ab means AbstractLineTok. I Use a short name to not
      * polluate in debug mode.
      *)
@@ -107,30 +107,30 @@ type token =
 
    (* with tarzan *)
 
-type posrv = 
-  | Real of parse_info 
-  | Virt of 
-      parse_info (* last real info before expanded tok *) * 
+type posrv =
+  | Real of parse_info
+  | Virt of
+      parse_info (* last real info before expanded tok *) *
       int (* virtual offset *)
 
-type info = { 
+type info = {
   (* contains among other things the position of the token through
    * the Common.parse_info embedded inside the pinfo type.
    *)
-  mutable token : token; 
+  mutable token : token;
   mutable comments: unit; (* TODO *)
   mutable transfo: transformation;
 }
 
 (* poor's man refactoring *)
-and transformation = 
+and transformation =
   | NoTransfo
-  | Remove 
+  | Remove
   | AddBefore of add
   | AddAfter of add
   | Replace of add
 
-  and add = 
+  and add =
     | AddStr of string
     | AddNewlineAndIdent
 
@@ -147,14 +147,14 @@ let info_start_file file = {
   comments = ();
   transfo = NoTransfo;
 }
-  
+
 
 type parsing_stat = {
   filename: Common.filename;
   mutable correct: int;
   mutable bad: int;
 }
-let default_stat file =  { 
+let default_stat file =  {
     filename = file;
     correct = 0; bad = 0;
 (*
@@ -181,10 +181,10 @@ type 'tok tokens_state = {
    * mutable rest_clean :   'tok list;
    *)
 }
-let mk_tokens_state toks = { 
+let mk_tokens_state toks = {
     rest       = toks;
     current    = (List.hd toks);
-    passed = []; 
+    passed = [];
     (* passed_clean = [];
      * rest_clean = (toks +> List.filter TH.is_not_comment);
      *)
@@ -194,24 +194,24 @@ let mk_tokens_state toks = {
 (* string_of *)
 (*****************************************************************************)
 
-let string_of_parse_info x = 
+let string_of_parse_info x =
   spf "%s at %s:%d:%d" x.str x.file x.line x.column
-let string_of_parse_info_bis x = 
+let string_of_parse_info_bis x =
   spf "%s:%d:%d" x.file x.line x.column
 
 (*****************************************************************************)
 (* Lexer helpers *)
 (*****************************************************************************)
 
-let tokinfo_str_pos str pos = 
-  { 
+let tokinfo_str_pos str pos =
+  {
     token = OriginTok {
-      charpos = pos; 
+      charpos = pos;
       str     = str;
 
       (* info filled in a post-lexing phase, cf Parse_php.tokens *)
-      line = -1; 
-      column = -1; 
+      line = -1;
+      column = -1;
       file = "";
     };
     comments = ();
@@ -219,13 +219,13 @@ let tokinfo_str_pos str pos =
   }
 
 
-let rewrap_str s ii =  
+let rewrap_str s ii =
   {ii with token =
     (match ii.token with
     | OriginTok pi -> OriginTok { pi with str = s;}
     | FakeTokStr (s, info) -> FakeTokStr (s, info)
     | Ab -> Ab
-    | ExpandedTok _ -> 
+    | ExpandedTok _ ->
         (* ExpandedTok ({ pi with Common.str = s;},vpi) *)
         failwith "rewrap_str: ExpandedTok not allowed here"
     )
@@ -233,16 +233,16 @@ let rewrap_str s ii =
 (*
 val rewrap_parse_info : Parse_info.parse_info -> info -> info
 
-let rewrap_parse_info pi ii = 
+let rewrap_parse_info pi ii =
   {ii with pinfo =
     (match ii.pinfo with
     | OriginTok _oldpi -> OriginTok pi
-    | FakeTokStr _  | Ab | ExpandedTok _ -> 
+    | FakeTokStr _  | Ab | ExpandedTok _ ->
         failwith "rewrap_parseinfo: no OriginTok"
     )
   }
 *)
-let parse_info_of_info ii = 
+let parse_info_of_info ii =
   match ii.token with
   | OriginTok pinfo -> pinfo
   (* TODO ? dangerous ? *)
@@ -250,14 +250,14 @@ let parse_info_of_info ii =
   | FakeTokStr (_, (Some (pi, _))) -> pi
 
   | FakeTokStr (_, None)
-  | Ab 
+  | Ab
     -> failwith "parse_info_of_info: no OriginTok"
 
 (* for error reporting *)
 let string_of_info x =
   string_of_parse_info (parse_info_of_info x)
 
-let str_of_info  ii = (parse_info_of_info ii).str 
+let str_of_info  ii = (parse_info_of_info ii).str
 let file_of_info ii = (parse_info_of_info ii).file
 let line_of_info ii = (parse_info_of_info ii).line
 let col_of_info  ii = (parse_info_of_info ii).column
@@ -267,7 +267,7 @@ let pos_of_info  ii = (parse_info_of_info ii).charpos
 
 let pinfo_of_info ii = ii.token
 
-let is_origintok ii = 
+let is_origintok ii =
   match ii.token with
   | OriginTok pi -> true
   | _ -> false
@@ -281,9 +281,9 @@ let get_pi = function
   | OriginTok pi -> pi
   | ExpandedTok (_,pi,_) -> pi
   | FakeTokStr (_,(Some (pi,_))) -> pi
-  | FakeTokStr (_,None) -> 
+  | FakeTokStr (_,None) ->
       failwith "FakeTokStr None"
-  | Ab -> 
+  | Ab ->
       failwith "Ab"
 
 (* original info *)
@@ -299,9 +299,9 @@ let get_info f ii =
   | OriginTok pi -> f pi
   | ExpandedTok (_,pi,_) -> f pi
   | FakeTokStr (_,Some (pi,_)) -> f pi
-  | FakeTokStr (_,None) -> 
+  | FakeTokStr (_,None) ->
       failwith "FakeTokStr None"
-  | Ab -> 
+  | Ab ->
       failwith "Ab"
 
 let get_orig_info f ii =
@@ -309,9 +309,9 @@ let get_orig_info f ii =
   | OriginTok pi -> f pi
   | ExpandedTok (pi,_, _) -> f pi
   | FakeTokStr (_,Some (pi,_)) -> f pi
-  | FakeTokStr (_,None ) -> 
+  | FakeTokStr (_,None ) ->
       failwith "FakeTokStr None"
-  | Ab -> 
+  | Ab ->
       failwith "Ab"
 
 
@@ -323,7 +323,7 @@ let compare_pos ii1 ii2 =
         Virt (pi_orig, offset)
 *)
     | FakeTokStr _
-    | Ab  
+    | Ab
       -> failwith "get_pos: Ab or FakeTok"
     | ExpandedTok (pi_pp, pi_orig, offset) ->
         Virt (pi_orig, offset)
@@ -334,12 +334,12 @@ let compare_pos ii1 ii2 =
   | (Real p1, Real p2) ->
       compare p1.charpos p2.charpos
   | (Virt (p1,_), Real p2) ->
-      if (compare p1.charpos p2.charpos) =|= (-1) 
-      then (-1) 
+      if (compare p1.charpos p2.charpos) =|= (-1)
+      then (-1)
       else 1
   | (Real p1, Virt (p2,_)) ->
-      if (compare p1.charpos p2.charpos) =|= 1 
-      then 1 
+      if (compare p1.charpos p2.charpos) =|= 1
+      then 1
       else (-1)
   | (Virt (p1,o1), Virt (p2,o2)) ->
       let poi1 = p1.charpos in
@@ -355,9 +355,9 @@ let min_max_ii_by_pos xs =
   match xs with
   | [] -> failwith "empty list, max_min_ii_by_pos"
   | [x] -> (x, x)
-  | x::xs -> 
+  | x::xs ->
       let pos_leq p1 p2 = (compare_pos p1 p2) =|= (-1) in
-      xs +> List.fold_left (fun (minii,maxii) e -> 
+      xs +> List.fold_left (fun (minii,maxii) e ->
         let maxii' = if pos_leq maxii e then e else maxii in
         let minii' = if pos_leq e minii then e else minii in
         minii', maxii'
@@ -365,35 +365,35 @@ let min_max_ii_by_pos xs =
 
 
 
-let mk_info_item2 ~info_of_tok toks  = 
+let mk_info_item2 ~info_of_tok toks  =
   let buf = Buffer.create 100 in
-  let s = 
+  let s =
     (* old: get_slice_file filename (line1, line2) *)
     begin
-      toks +> List.iter (fun tok -> 
+      toks +> List.iter (fun tok ->
         let info = info_of_tok tok in
         match info.token with
-        | OriginTok _ 
+        | OriginTok _
         | ExpandedTok _ ->
             Buffer.add_string buf (str_of_info info)
 
         (* the virtual semicolon *)
-        | FakeTokStr _ -> 
+        | FakeTokStr _ ->
             ()
         | Ab  -> raise Impossible
       );
       Buffer.contents buf
     end
   in
-  (s, toks) 
+  (s, toks)
 
-let mk_info_item_DEPRECATED ~info_of_tok a = 
-  Common.profile_code "Parsing.mk_info_item" 
+let mk_info_item_DEPRECATED ~info_of_tok a =
+  Common.profile_code "Parsing.mk_info_item"
     (fun () -> mk_info_item2 ~info_of_tok a)
 
 
-let lexbuf_to_strpos lexbuf     = 
-  (Lexing.lexeme lexbuf, Lexing.lexeme_start lexbuf)    
+let lexbuf_to_strpos lexbuf     =
+  (Lexing.lexeme lexbuf, Lexing.lexeme_start lexbuf)
 
 (*****************************************************************************)
 (* vtoken -> ocaml *)
@@ -429,7 +429,7 @@ let vof_token =
   | OriginTok v1 ->
       let v1 = vof_parse_info v1 in Ocaml.VSum (("OriginTok", [ v1 ]))
   | FakeTokStr (v1, opt) ->
-      let v1 = Ocaml.vof_string v1 in 
+      let v1 = Ocaml.vof_string v1 in
       let opt = Ocaml.vof_option (fun (p1, i) ->
         Ocaml.VTuple [vof_parse_info p1; Ocaml.vof_int i]
       ) opt
@@ -437,8 +437,8 @@ let vof_token =
       Ocaml.VSum (("FakeTokStr", [ v1; opt ]))
   | Ab -> Ocaml.VSum (("Ab", []))
   | ExpandedTok (v1, v2, v3) ->
-      let v1 = vof_parse_info v1 in 
-      let v2 = vof_parse_info v2 in 
+      let v1 = vof_parse_info v1 in
+      let v2 = vof_parse_info v2 in
       let v3 = Ocaml.vof_int v3 in
       Ocaml.VSum (("ExpandedTok", [ v1; v2; v3 ]))
 
@@ -456,7 +456,7 @@ and vof_add =
       let v1 = Ocaml.vof_string v1 in Ocaml.VSum (("AddStr", [ v1 ]))
   | AddNewlineAndIdent -> Ocaml.VSum (("AddNewlineAndIdent", []))
 
-let rec vof_info 
+let rec vof_info
  { token = v_token; comments = v_comments; transfo = v_transfo } =
   let bnds = [] in
   let arg = vof_transformation v_transfo in
@@ -475,10 +475,10 @@ let rec vof_info
 (* todo: should move this in commons/ *)
 let filename_ofv__ =
   let _loc = "Xxx.filename" in fun sexp -> Ocaml.string_ofv sexp
-  
+
 let filename_ofv sexp =
   filename_ofv__ sexp
-  
+
 
 let parse_info_ofv__ =
   let _loc = "Xxx.parse_info"
@@ -557,7 +557,7 @@ let parse_info_ofv__ =
                         ((!column_field = None), "column");
                         ((!file_field = None), "file") ]))
     | sexp -> Ocaml.record_list_instead_atom _loc sexp
-  
+
 let parse_info_ofv sexp = parse_info_ofv__ sexp
 
 
@@ -596,7 +596,7 @@ let pinfo_ofv__ =
              in ExpandedTok ((v1, v2, v3))
          | _ -> Ocaml.stag_incorrect_n_args _loc tag sexp)
     | sexp -> Ocaml.unexpected_stag _loc sexp
-  
+
 let token_ofv sexp = pinfo_ofv__ sexp
 
 
@@ -611,9 +611,9 @@ let rec v_pinfo =
   function
   | OriginTok v1 -> let _v1 = v_parse_info v1 in ()
   | FakeTokStr ((v1, v2)) ->
-      let _v1 = v_string v1 
-      and _v2 = Ocaml.v_option v_parse_info v2 
-      in 
+      let _v1 = v_string v1
+      and _v2 = Ocaml.v_option v_parse_info v2
+      in
       ()
   | Ab -> ()
   | ExpandedTok ((v1, v2, v3)) ->
@@ -639,14 +639,14 @@ and v_add =
 (*
 let map_pinfo =
   function
-  | OriginTok v1 -> let v1 = Common.map_parse_info v1 
+  | OriginTok v1 -> let v1 = Common.map_parse_info v1
     in OriginTok ((v1))
-  | FakeTokStr (v1, opt) -> 
+  | FakeTokStr (v1, opt) ->
       (* TODO? do something with opt ? *)
-      let v1 = map_of_string v1 in 
+      let v1 = map_of_string v1 in
       FakeTokStr ((v1, opt))
   | Ab -> Ab
-  | ExpandedTok _ -> 
+  | ExpandedTok _ ->
       failwith "map: ExpandedTok: TODO"
 *)
 
@@ -696,21 +696,21 @@ let map_parse_info {
     file = v_file
   }
 
-  
+
 
 (*****************************************************************************)
 (* Error location report *)
 (*****************************************************************************)
 
-let (info_from_charpos2: int -> filename -> (int * int * string)) = 
+let (info_from_charpos2: int -> filename -> (int * int * string)) =
  fun charpos filename ->
 
   (* Currently lexing.ml does not handle the line number position.
-   * Even if there is some fields in the lexing structure, they are not 
+   * Even if there is some fields in the lexing structure, they are not
    * maintained by the lexing engine :( So the following code does not work:
-   *   let pos = Lexing.lexeme_end_p lexbuf in 
-   *   sprintf "at file %s, line %d, char %d" pos.pos_fname pos.pos_lnum  
-   *      (pos.pos_cnum - pos.pos_bol) in 
+   *   let pos = Lexing.lexeme_end_p lexbuf in
+   *   sprintf "at file %s, line %d, char %d" pos.pos_fname pos.pos_lnum
+   *      (pos.pos_cnum - pos.pos_bol) in
    * Hence this function to overcome the previous limitation.
    *)
   let chan = open_in filename in
@@ -734,12 +734,12 @@ let (info_from_charpos2: int -> filename -> (int * int * string)) =
           charpos_to_pos_aux !posl;
         end
     | None -> (!linen, charpos - !posl, "\n")
-  in 
+  in
   let res = charpos_to_pos_aux 0 in
   close_in chan;
   res
 
-let info_from_charpos a b = 
+let info_from_charpos a b =
   profile_code "Common.info_from_charpos" (fun () -> info_from_charpos2 a b)
 
 
@@ -761,33 +761,33 @@ let full_charpos_to_pos2 = fun filename ->
        incr line;
 
        (* '... +1 do'  cos input_line dont return the trailing \n *)
-       for i = 0 to (slength s - 1) + 1 do 
+       for i = 0 to (slength s - 1) + 1 do
          arr.(!charpos + i) <- (!line, i);
        done;
        charpos := !charpos + slength s + 1;
        full_charpos_to_pos_aux();
-       
-     with End_of_file -> 
+
+     with End_of_file ->
        for i = !charpos to Array.length arr - 1 do
          arr.(i) <- (!line, 0);
        done;
        ();
-    in 
-    begin 
+    in
+    begin
       full_charpos_to_pos_aux ();
       close_in chan;
       arr
     end
 let full_charpos_to_pos a =
   profile_code "Common.full_charpos_to_pos" (fun () -> full_charpos_to_pos2 a)
-    
-let test_charpos file = 
+
+let test_charpos file =
   full_charpos_to_pos file +> dump +> pr2
 
 
 
-let complete_parse_info filename table x = 
-  { x with 
+let complete_parse_info filename table x =
+  { x with
     file = filename;
     line   = fst (table.(x.charpos));
     column = snd (table.(x.charpos));
@@ -800,9 +800,9 @@ let full_charpos_to_pos_large2 = fun filename ->
   let size = (filesize filename + 2) in
 
     (* old: let arr = Array.create size  (0,0) in *)
-    let arr1 = Bigarray.Array1.create 
+    let arr1 = Bigarray.Array1.create
       Bigarray.int Bigarray.c_layout size in
-    let arr2 = Bigarray.Array1.create 
+    let arr2 = Bigarray.Array1.create
       Bigarray.int Bigarray.c_layout size in
     Bigarray.Array1.fill arr1 0;
     Bigarray.Array1.fill arr2 0;
@@ -812,72 +812,72 @@ let full_charpos_to_pos_large2 = fun filename ->
     let charpos   = ref 0 in
     let line  = ref 0 in
 
-    let rec full_charpos_to_pos_aux () =
-     try
-       let s = (input_line chan) in
-       incr line;
+    let full_charpos_to_pos_aux () =
+      try
+        while true do begin
+          let s = (input_line chan) in
+          incr line;
 
-       (* '... +1 do'  cos input_line dont return the trailing \n *)
-       for i = 0 to (slength s - 1) + 1 do 
-         (* old: arr.(!charpos + i) <- (!line, i); *)
-         arr1.{!charpos + i} <- (!line);
-         arr2.{!charpos + i} <- i;
-       done;
-       charpos := !charpos + slength s + 1;
-       full_charpos_to_pos_aux();
-       
-     with End_of_file -> 
-       for i = !charpos to (* old: Array.length arr *) 
+          (* '... +1 do'  cos input_line dont return the trailing \n *)
+          for i = 0 to (slength s - 1) + 1 do
+            (* old: arr.(!charpos + i) <- (!line, i); *)
+            arr1.{!charpos + i} <- (!line);
+            arr2.{!charpos + i} <- i;
+          done;
+          charpos := !charpos + slength s + 1;
+        end done
+     with End_of_file ->
+       for i = !charpos to (* old: Array.length arr *)
          Bigarray.Array1.dim arr1 - 1 do
          (* old: arr.(i) <- (!line, 0); *)
          arr1.{i} <- !line;
          arr2.{i} <- 0;
        done;
        ();
-    in 
-    begin 
+    in
+    begin
       full_charpos_to_pos_aux ();
       close_in chan;
       (fun i -> arr1.{i}, arr2.{i})
     end
 let full_charpos_to_pos_large a =
-  profile_code "Common.full_charpos_to_pos_large" 
+  profile_code "Common.full_charpos_to_pos_large"
     (fun () -> full_charpos_to_pos_large2 a)
 
 
-let complete_parse_info_large filename table x = 
-  { x with 
+let complete_parse_info_large filename table x =
+  { x with
     file = filename;
     line   = fst (table (x.charpos));
     column = snd (table (x.charpos));
   }
 
 (*---------------------------------------------------------------------------*)
-(* Decalage is here to handle stuff such as cpp which include file and who 
+(* Decalage is here to handle stuff such as cpp which include file and who
  * can make shift.
  *)
 let (error_messagebis: filename -> (string * int) -> int -> string)=
  fun filename (lexeme, lexstart) decalage ->
 
   let charpos = lexstart      + decalage in
-  let tok = lexeme in 
+  let tok = lexeme in
   let (line, pos, linecontent) =  info_from_charpos charpos filename in
   spf "File \"%s\", line %d, column %d,  charpos = %d
     around = '%s', whole content = %s"
     filename line pos charpos tok (chop linecontent)
 
-let error_message = fun filename (lexeme, lexstart) -> 
-  try error_messagebis filename (lexeme, lexstart) 0    
+let error_message = fun filename (lexeme, lexstart) ->
+  try error_messagebis filename (lexeme, lexstart) 0
   with
     End_of_file ->
       ("PB in Common.error_message, position " ^ i_to_s lexstart ^
        " given out of file:" ^ filename)
 
-let error_message_parse_info = fun info -> 
+let error_message_parse_info = fun info ->
   let filename = info.file in
   let lexeme = info.str in
   let lexstart = info.charpos in
-  try error_messagebis filename (lexeme, lexstart) 0    
+  try error_messagebis filename (lexeme, lexstart) 0
   with
     End_of_file ->
       ("PB in Common.error_message, position " ^ i_to_s lexstart ^
@@ -888,29 +888,29 @@ let error_message_info info =
   error_message_parse_info pinfo
 
 
-let error_message_short = fun filename (lexeme, lexstart) -> 
-  try 
+let error_message_short = fun filename (lexeme, lexstart) ->
+  try
   let charpos = lexstart in
   let (line, pos, linecontent) =  info_from_charpos charpos filename in
   spf "File \"%s\", line %d"  filename line
 
-  with End_of_file -> 
+  with End_of_file ->
     begin
       ("PB in Common.error_message, position " ^ i_to_s lexstart ^
           " given out of file:" ^ filename);
     end
 
 
-let print_bad line_error (start_line, end_line) filelines  = 
+let print_bad line_error (start_line, end_line) filelines  =
   begin
     pr2 ("badcount: " ^ i_to_s (end_line - start_line));
 
-    for i = start_line to end_line do 
-      let line = filelines.(i) in 
+    for i = start_line to end_line do
+      let line = filelines.(i) in
 
-      if i =|= line_error 
-      then  pr2 ("BAD:!!!!!" ^ " " ^ line) 
-      else  pr2 ("bad:" ^ " " ^      line) 
+      if i =|= line_error
+      then  pr2 ("BAD:!!!!!" ^ " " ^ line)
+      else  pr2 ("bad:" ^ " " ^      line)
     done
   end
 
@@ -921,12 +921,12 @@ let print_bad line_error (start_line, end_line) filelines  =
 
 let print_parsing_stat_list statxs =
   let total = List.length statxs in
-  let perfect = 
-    statxs 
-      +> List.filter (function 
-      | {bad = n; _} when n = 0 -> true 
+  let perfect =
+    statxs
+      +> List.filter (function
+      | {bad = n; _} when n = 0 -> true
       | _ -> false)
-      +> List.length 
+      +> List.length
   in
 
   pr2 "\n\n\n---------------------------------------------------------------";
