@@ -1,6 +1,11 @@
 [
 {
   "directory": "/home/pad/pfff/tests/clang/c",
+  "command": "clang -c /home/pad/pfff/tests/clang/c/add.c",
+  "file": "/home/pad/pfff/tests/clang/c/add.c"
+},
+{
+  "directory": "/home/pad/pfff/tests/clang/c",
   "command": "clang -c /home/pad/pfff/tests/clang/c/foo.c",
   "file": "/home/pad/pfff/tests/clang/c/foo.c"
 },
