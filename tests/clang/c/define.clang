@@ -1,5 +1,0 @@
-Processing: /home/pad/pfff/tests/clang/c/define.c.
-(TranslationUnitDecl 0x7f9ad982a6d0 <<invalid sloc>>
-  (TypedefDecl 0x7f9ad982abb0 <<invalid sloc>> __int128_t '__int128')
-  (TypedefDecl 0x7f9ad982ac10 <<invalid sloc>> __uint128_t 'unsigned __int128')
-  (TypedefDecl 0x7f9ad982af60 <<invalid sloc>> __builtin_va_list '__va_list_tag [1]'))

@@ -1,6 +1,0 @@
-Processing: /home/pad/pfff/tests/clang/c/typedef.c.
-(TranslationUnitDecl 0x7fefa202a6d0 <<invalid sloc>>
-  (TypedefDecl 0x7fefa202abb0 <<invalid sloc>> __int128_t '__int128')
-  (TypedefDecl 0x7fefa202ac10 <<invalid sloc>> __uint128_t 'unsigned __int128')
-  (TypedefDecl 0x7fefa202af60 <<invalid sloc>> __builtin_va_list '__va_list_tag [1]')
-  (TypedefDecl 0x7fefa202afc0 </home/pad/pfff/tests/clang/c/typedef.c:1:1, col:13> a_typedef 'int'))
