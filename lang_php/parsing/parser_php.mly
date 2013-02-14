@@ -909,7 +909,7 @@ type_hint:
  | fully_qualified_class_name type_arguments { Hint (ClassName $1) }
  | T_SELF   { Hint (Self $1) }
  | T_PARENT { Hint (Parent $1) }
- | T_ARRAY		                { HintArray $1 }
+ | T_ARRAY type_arguments { HintArray $1 }
 /*(* TODO inline type_hint_extensions here and remove ext_type_hint *)*/
 
 /*(* extended type hint includes the new type extensions ?.. (a, b) etc ...*)*/
