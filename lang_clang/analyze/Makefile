@@ -6,6 +6,7 @@ TARGET=lib
 
 SRC= location_clang.ml \
      uninclude_clang.ml \
+     compile_commands_clang.ml \
      graph_code_clang.ml \
      test_analyze_clang.ml
 
