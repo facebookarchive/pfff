@@ -159,6 +159,12 @@ let rec extract_defs_uses env ast =
   if env.phase = Defs then begin
     let dir = Common.dirname readable in
     G.create_intermediate_directories_if_not_present env.g dir;
+    let readable =
+      if readable =~ "\\(.*\\).clang2"
+      then Common.matched1 readable
+      else readable
+    in
+      
     let node = (readable, E.File) in
     env.g +> G.add_node node;
     env.g +> G.add_edge ((dir, E.Dir), node) G.Has;
