@@ -6,6 +6,16 @@
 },
 {
   "directory": "/home/pad/pfff/tests/clang/c",
+  "command": "clang -c /home/pad/pfff/tests/clang/c/static1.c",
+  "file": "/home/pad/pfff/tests/clang/c/static1.c"
+},
+{
+  "directory": "/home/pad/pfff/tests/clang/c",
+  "command": "clang -c /home/pad/pfff/tests/clang/c/static2.c",
+  "file": "/home/pad/pfff/tests/clang/c/static2.c"
+},
+{
+  "directory": "/home/pad/pfff/tests/clang/c",
   "command": "clang -c /home/pad/pfff/tests/clang/c/foo.c",
   "file": "/home/pad/pfff/tests/clang/c/foo.c"
 },
