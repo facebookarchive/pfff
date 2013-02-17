@@ -162,7 +162,8 @@ let rec sexp_list env acc ending toks =
     try 
       enum_of_str s
     with Not_found ->
-      failwith (spf "Could not find %s" s)
+      pr2_once (spf "Could not find %s" s);
+      Todo s
   in
 
   match toks with

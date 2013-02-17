@@ -39,7 +39,7 @@ let unknown_loc_angle =
 (* Helpers *)
 (*****************************************************************************)
 
-let location_of_angle (line, file) xs =
+let location_of_angle pwd (line, file) xs =
   match xs with
   | [Angle [T (TLowerIdent "invalid"); T (TLowerIdent "sloc")]] ->
       [Other]
@@ -53,6 +53,23 @@ let location_of_angle (line, file) xs =
             Col (s_to_i i)
         | [T (TPath f); T TColon; T (TInt i1);T TColon; T (TInt i2)] ->
             File (f, s_to_i i1, s_to_i i2)
+
+        | [T TDot; T TDot; T (TPath f); T TColon; T (TInt i1);T TColon; T (TInt i2)] ->
+            let f = Filename.concat (Common.dirname pwd) f in
+            File (f, s_to_i i1, s_to_i i2)
+        | [T TDot; T (TPath f); T TColon; T (TInt i1);T TColon; T (TInt i2)] ->
+            let f = Filename.concat pwd f in
+            File (f, s_to_i i1, s_to_i i2)
+        (* #line directive, ignore it? *)
+        | [T (TLowerIdent "lex"); T TDot; T (TLowerIdent "yy");T TDot;
+           T (TLowerIdent "c"); T TColon; T (TInt i1);T TColon; T (TInt i2)] ->
+            let f = Filename.concat pwd "lex.yy.c" in
+            File (f, s_to_i i1, s_to_i i2)
+        | [T (TLowerIdent "parser_yacc"); T TDot;
+           T (TLowerIdent "c"); T TColon; T (TInt i1);T TColon; T (TInt i2)] ->
+            let f = Filename.concat pwd "parser_yacc.c" in
+            File (f, s_to_i i1, s_to_i i2)
+
         | [Angle _; T TColon; T (TInt _);T TColon; T (TInt _)] ->
             Other
         | xs -> 
@@ -81,18 +98,24 @@ let readable_of_filename f =
         rest
     | "home"::"pad"::"pfff"::"tests"::"clang"::"c"::rest ->
         rest
+
+    | ".."::"CPU"::rest ->
+        "CPU"::rest
+    | "Users"::"yoann.padioleau"::"local"::"lang-c"::"spimsimulator"::rest ->
+        rest
+
     | _ -> failwith ("unhandled prefix: " ^ f)
   in
   Common.join "/" xs
 
 
-let location_of_paren_opt clang_file (enum, l, xs) =
+let location_of_paren_opt pwd clang_file (enum, l, xs) =
   let location =
     match enum, xs with
     | (Misc__Null__ | Misc__Capture__ | Misc__Cleanup__Block
       ), _ -> [Other]
     | _, Angle xs::_rest ->
-        location_of_angle (l, clang_file) xs
+        location_of_angle pwd (l, clang_file) xs
     | _ -> 
         failwith (spf "%s:%d: no location" clang_file l)
 

@@ -60,6 +60,7 @@ type env = {
 
   dir: Common.dirname;
   readable_clang_file: Common.filename;
+  pwd: Common.dirname;
   (* we now prefer to use uninclude_clang.ml *)
   current_c_file_DEPRECATED: Common.filename ref;
 
@@ -151,8 +152,12 @@ let rec add_use_edge env (s, kind) =
 (* Defs/Uses *)
 (*****************************************************************************)
 let rec extract_defs_uses env ast =
-  let env = { env with readable_clang_file = 
-      Common.filename_without_leading_path env.dir env.current_clang_file;
+  let readable = 
+    Common.filename_without_leading_path env.dir env.current_clang_file in
+
+  let env = { env with 
+    readable_clang_file = readable;
+    pwd = Common.dirname env.current_clang_file;
   }
   in
   let readable = env.readable_clang_file in
@@ -182,7 +187,8 @@ and sexp_toplevel env x =
       let env = 
         { env with line = l } in
       (let file_opt = 
-        Loc.location_of_paren_opt env.current_clang_file (enum, l, xs) in
+        Loc.location_of_paren_opt env.pwd env.current_clang_file (enum, l, xs) 
+        in
       file_opt +> Common.do_option (fun f ->
           env.current_c_file_DEPRECATED := f
       ));
@@ -343,6 +349,7 @@ let build ?(verbose=true) dir skip_list =
     current_c_file_DEPRECATED = ref (fst unknown_location);
     current_clang_file = "__filled_later__";
     readable_clang_file = "__filled_later__";
+    pwd = "__filled_later__";
     line = -1;
     cnt = ref 0;
     dir = root;
