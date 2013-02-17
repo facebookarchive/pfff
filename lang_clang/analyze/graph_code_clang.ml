@@ -178,14 +178,14 @@ let rec extract_defs_uses env ast =
   (match ast with
   | Paren (TranslationUnitDecl, l, _loc::xs) ->
       List.iter (sexp_toplevel env) xs
-  | _ -> failwith (spf "%s: not a TranslationDecl" env.current_clang_file)
+  | _ -> 
+      failwith (spf "%s: not a TranslationDecl" env.current_clang_file)
   )
 
 and sexp_toplevel env x =
   match x with
   | Paren (enum, l, xs) ->
-      let env = 
-        { env with line = l } in
+      let env = { env with line = l } in
       (let file_opt = 
         Loc.location_of_paren_opt env.pwd env.current_clang_file (enum, l, xs) 
         in
@@ -214,7 +214,7 @@ and sexp_toplevel env x =
       ()
 
 and sexp env x =
-  sexp_toplevel {env with at_toplevel = false} x
+  sexp_toplevel { env with at_toplevel = false} x
 
 and sexps env xs = List.iter (sexp env) xs
 
@@ -226,7 +226,7 @@ and decl env (enum, l, xs) =
   let env =
     match enum, xs with
     (* todo: look for static? *)
-    | FunctionDecl, _loc::(T (TLowerIdent s | TUpperIdent s))::_typ_char::rest ->
+    | FunctionDecl, _loc::(T (TLowerIdent s | TUpperIdent s))::_typ_char::rest->
         let kind = 
           if rest +> List.exists (function 
           | Paren (CompoundStmt, _, _) -> true
@@ -329,7 +329,6 @@ and expr env (enum, l, xs) =
 
 let build ?(verbose=true) dir skip_list =
   let root = Common.realpath dir in
-  (* clang2_old: *)
   let all_files = Lib_parsing_clang.find_source2_files_of_dir_or_files [root] in
 
   (* step0: filter noisy modules/files *)
@@ -347,9 +346,11 @@ let build ?(verbose=true) dir skip_list =
     phase = Defs;
     current = unknown_location;
     current_c_file_DEPRECATED = ref (fst unknown_location);
+
     current_clang_file = "__filled_later__";
     readable_clang_file = "__filled_later__";
     pwd = "__filled_later__";
+
     line = -1;
     cnt = ref 0;
     dir = root;
@@ -365,6 +366,7 @@ let build ?(verbose=true) dir skip_list =
       flush chan;
     );
   } in
+
   G.add_node unknown_location g;
   G.add_edge (G.not_found, unknown_location) G.Has g;
   
