@@ -58,18 +58,16 @@ type env = {
 
   current: Graph_code.node;
 
-  dir: Common.dirname;
-  readable_clang_file: Common.filename;
+  root: Common.dirname;
+
   pwd: Common.dirname;
-  (* we now prefer to use uninclude_clang.ml *)
-  current_c_file_DEPRECATED: Common.filename ref;
-
-  at_toplevel: bool;
-  (* todo: static_func_rename: ... Hashtbl.t; *)
-
   (* for error reports *)
   current_clang_file: Common.filename;
   line: int;
+
+  at_toplevel: bool;
+  
+  local_rename: (string, string) Hashtbl.t;
 
   log: string -> unit;
   pr2_and_log: string -> unit;
@@ -153,18 +151,16 @@ let rec add_use_edge env (s, kind) =
 (*****************************************************************************)
 let rec extract_defs_uses env ast =
   let readable = 
-    Common.filename_without_leading_path env.dir env.current_clang_file in
-
-  let env = { env with 
-    readable_clang_file = readable;
-    pwd = Common.dirname env.current_clang_file;
-  }
-  in
-  let readable = env.readable_clang_file in
+    Common.filename_without_leading_path env.root env.current_clang_file in
   let readable =
     if readable =~ "\\(.*\\).clang2"
     then Common.matched1 readable
     else readable
+  in
+
+  let env = { env with 
+    pwd = Common.dirname env.current_clang_file;
+  }
   in
       
   if env.phase = Defs then begin
@@ -186,12 +182,6 @@ and sexp_toplevel env x =
   match x with
   | Paren (enum, l, xs) ->
       let env = { env with line = l } in
-      (let file_opt = 
-        Loc.location_of_paren_opt env.pwd env.current_clang_file (enum, l, xs) 
-        in
-      file_opt +> Common.do_option (fun f ->
-          env.current_c_file_DEPRECATED := f
-      ));
 
       (* dispatch *)
       (match enum with
@@ -340,21 +330,21 @@ let build ?(verbose=true) dir skip_list =
   G.create_initial_hierarchy g;
 
   let chan = open_out (Filename.concat (Sys.getcwd()) "pfff.log") in
+  let local_renames = Hashtbl.create 101 in
 
   let env = {
     g;
     phase = Defs;
     current = unknown_location;
-    current_c_file_DEPRECATED = ref (fst unknown_location);
 
     current_clang_file = "__filled_later__";
-    readable_clang_file = "__filled_later__";
     pwd = "__filled_later__";
 
     line = -1;
     cnt = ref 0;
-    dir = root;
+    root = root;
     at_toplevel = true;
+    local_rename = Hashtbl.create 0;
 
     log = (fun s ->
         output_string chan (s ^ "\n");
@@ -376,7 +366,13 @@ let build ?(verbose=true) dir skip_list =
     List.iter (fun file ->
       k();
       let ast = parse file in
-      extract_defs_uses { env with phase = Defs; current_clang_file = file} ast
+      let h = Hashtbl.create 101 in
+      Hashtbl.add local_renames file h;
+      extract_defs_uses { env with 
+        phase = Defs; 
+        current_clang_file = file;
+        local_rename = h;
+      } ast
    ));
 
   (* step2: creating the 'Use' edges *)
@@ -385,6 +381,10 @@ let build ?(verbose=true) dir skip_list =
     List.iter (fun file ->
       k();
       let ast = parse file in
-      extract_defs_uses { env with phase = Uses; current_clang_file = file} ast
+      extract_defs_uses { env with 
+        phase = Uses; 
+        current_clang_file = file;
+        local_rename = Hashtbl.find local_renames file;
+      } ast
     ));
   g
