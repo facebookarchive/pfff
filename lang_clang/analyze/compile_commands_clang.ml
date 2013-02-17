@@ -44,8 +44,44 @@ module J = Json_type
 type compile_commands = Json_type.t
 
 (*****************************************************************************)
-(* Main entry point *)
+(* Main entry points *)
 (*****************************************************************************)
+
+(* Some 'compile_commands.json' files contain multiple times the same entry
+ * for a filename, because files can be compiled with different arguments,
+ * e.g. to be built as an object for a dynamic vs static library.
+ * This causes then 'clang-check --ast-dump' to generate wrong .clang
+ * files with multiple times a TranslationUnitDecl. So let's filter
+ * those duplicate entries.
+ *)
+let sanitize_compile_commands jsonfile =
+  let json = Json_in.load_json jsonfile in
+  let hdone = Hashtbl.create 101 in
+  let json = 
+    (match json with
+    | J.Array xs ->
+        J.Array (xs +> List.filter (fun json ->
+        (match json with
+        | J.Object ([
+            "directory", d;
+            "command", c;
+            "file", J.String filename;
+          ]) ->
+            if Hashtbl.mem hdone filename
+            then begin
+              pr2 (spf "skipping entry %s" filename);
+              false
+            end else begin
+              Hashtbl.add hdone filename true;
+              true
+            end
+        | _ -> failwith "wrong compile_commands.json format"
+        )
+        ))
+    | _ -> failwith "wrong compile_commands.json format"
+    )
+  in
+  pr (Json_out.string_of_json json)
 
 let analyze_make_trace file =
   raise Todo
