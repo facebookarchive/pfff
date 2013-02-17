@@ -12,6 +12,9 @@
 *.exe
 *.class
 
+# codegraph
+pfff.log
+
 # ocamldoc
 *.out
 
