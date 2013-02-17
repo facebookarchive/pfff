@@ -96,6 +96,19 @@ let unchar s =
   else failwith ("unchar pb: " ^ s)
 
 (*****************************************************************************)
+(* Helpers *)
+(*****************************************************************************)
+let final_str env s =
+  if env.phase = Defs
+  then begin
+    incr env.cnt;
+    let s2 = spf "%s__%d" s !(env.cnt) in
+    Hashtbl.add env.local_rename s s2;
+    s2
+  end
+  else Hashtbl.find env.local_rename s
+
+(*****************************************************************************)
 (* Add Node *)
 (*****************************************************************************)
 
@@ -225,6 +238,17 @@ and decl env (enum, l, xs) =
           then E.Function
           else E.Prototype
         in
+        let static = 
+          match rest with
+          | T (TLowerIdent "static")::T (TLowerIdent "inline")::_rest -> false
+          | T (TLowerIdent "static")::_rest -> true
+          | _ -> false
+        in
+        let s = 
+          if static 
+          then final_str env s
+          else s
+        in
         add_node_and_edge_if_defs_mode env (s, kind)
 
     (* todo: what about extern *)
@@ -296,7 +320,13 @@ and expr env (enum, l, xs) =
       ::_args ->
       let s = unchar s in
       if env.phase = Uses
-      then add_use_edge env (s, E.Function)
+      then 
+        let s = 
+          if Hashtbl.mem env.local_rename s
+          then final_str env s
+          else s
+        in
+        add_use_edge env (s, E.Function)
 
   (* todo: unexpected form of call? function pointer call? *)
   | CallExpr, _ ->
