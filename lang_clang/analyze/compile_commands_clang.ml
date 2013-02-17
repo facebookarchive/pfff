@@ -28,14 +28,13 @@ module J = Json_type
  * One can generate this compile_commands.json by:
  *  - provide a fake gcc/clang frontend script recording all compile
  *    commands and then running the actual compiler
- *  - analyzing the make trace a posteriori
  *  - processing the xcodebuild trace, 
  *    http://docs.oclint.org/en/dev/usage/oclint-xcodebuild.html
  *  - intercept system calls while compiling a project, the coverity approach
  *    which apparently has just started to be imitated
  *    https://github.com/rizsotto/Bear
+ *  - analyzing the make trace a posteriori
  *)
-
 
 (*****************************************************************************)
 (* Types *)
@@ -84,4 +83,30 @@ let sanitize_compile_commands jsonfile =
   pr (Json_out.string_of_json json)
 
 let analyze_make_trace file =
-  raise Todo
+  let relevant_lines = 
+    Common.cat file +> Common.map_filter (fun s ->
+      let xs = Common.split "[ \t]+" s in
+      match xs with
+      | ("clang"|"gcc")::xs when List.mem "-c" xs ->
+          xs +> Common.find_some_opt (fun file ->
+            if file =~ ".*\\.c"
+            then Some (file, s)
+            else None
+          )
+      | ("clang"|"gcc")::xs when List.mem "-o" xs -> None
+      | ("flex" | "bison")::_rest -> 
+          None
+      | _ -> failwith ("unknown compilation command: " ^ s)
+    )
+  in
+  relevant_lines +> List.map (fun (file, s) ->
+    let path = Common.realpath file in
+    let cmd = Str.global_replace (Str.regexp_string file) path s in
+    J.Object [
+      "directory", J.String (Common.realpath ".");
+      "command", J.String cmd;
+      "file", J.String path;
+    ]
+  ) +> (fun xs -> J.Array xs)
+
+

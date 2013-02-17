@@ -15,5 +15,9 @@ let actions () = [
     let json = Compile_commands_clang.analyze_make_trace file in
     pr (Json_out.string_of_json json)
   );
+  "-uninclude_clang", "",
+  Common.mk_action_0_arg (fun () ->
+    Uninclude_clang.uninclude ~verbose:true "." [] ".";
+  );
   
 ]
