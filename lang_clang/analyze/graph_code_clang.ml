@@ -126,9 +126,10 @@ let add_node_and_edge_if_defs_mode env node =
     if G.has_node node env.g
     then
       (match kind with
-      | E.Function | E.Prototype -> 
+      | E.Function  -> 
           env.pr2_and_log (spf "DUPE entity: %s" (G.string_of_node node))
       (* todo: have no Use for now for the other entities so skip errors *) 
+      | E.Prototype -> ()
       | _ -> ()
       )
     else begin
@@ -228,7 +229,6 @@ and sexps env xs = List.iter (sexp env) xs
 and decl env (enum, l, xs) =
   let env =
     match enum, xs with
-    (* todo: look for static? *)
     | FunctionDecl, _loc::(T (TLowerIdent s | TUpperIdent s))::_typ_char::rest->
         let kind = 
           if rest +> List.exists (function 
@@ -240,7 +240,14 @@ and decl env (enum, l, xs) =
         in
         let static = 
           match rest with
-          | T (TLowerIdent "static")::T (TLowerIdent "inline")::_rest -> false
+          (* if we are in an header file, then we don't want to rename
+           * the inline static function because of uninclude_clang which
+           * splitted in different files, and so with different
+           * local_rename hash. Renaming in the header file would lead to
+           * some unresolvev lookup in the c files.
+           *)
+          | T (TLowerIdent "static")::T (TLowerIdent "inline")::_rest ->
+              env.current_clang_file =~ ".*\\.c\\.clang2"
           | T (TLowerIdent "static")::_rest -> true
           | _ -> false
         in
