@@ -60,7 +60,6 @@ type env = {
 
   root: Common.dirname;
 
-  pwd: Common.dirname;
   (* for error reports *)
   current_clang_file: Common.filename;
   line: int;
@@ -172,11 +171,6 @@ let rec extract_defs_uses env ast =
     else readable
   in
 
-  let env = { env with 
-    pwd = Common.dirname env.current_clang_file;
-  }
-  in
-      
   if env.phase = Defs then begin
     let dir = Common.dirname readable in
     G.create_intermediate_directories_if_not_present env.g dir;
@@ -376,7 +370,6 @@ let build ?(verbose=true) dir skip_list =
     current = unknown_location;
 
     current_clang_file = "__filled_later__";
-    pwd = "__filled_later__";
 
     line = -1;
     cnt = ref 0;
