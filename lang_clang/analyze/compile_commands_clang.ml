@@ -53,13 +53,11 @@ type compile_commands = Json_type.t
  * files with multiple times a TranslationUnitDecl. So let's filter
  * those duplicate entries.
  *)
-let sanitize_compile_commands jsonfile =
-  let json = Json_in.load_json jsonfile in
+let sanitize_compile_commands json =
   let hdone = Hashtbl.create 101 in
-  let json = 
-    (match json with
-    | J.Array xs ->
-        J.Array (xs +> List.filter (fun json ->
+  match json with
+  | J.Array xs ->
+      J.Array (xs +> List.filter (fun json ->
         (match json with
         | J.Object ([
             "directory", d;
@@ -76,11 +74,9 @@ let sanitize_compile_commands jsonfile =
             end
         | _ -> failwith "wrong compile_commands.json format"
         )
-        ))
-    | _ -> failwith "wrong compile_commands.json format"
-    )
-  in
-  pr (Json_out.string_of_json json)
+      ))
+  | _ -> failwith "wrong compile_commands.json format"
+
 
 let analyze_make_trace file =
   let relevant_lines = 
@@ -113,5 +109,7 @@ let analyze_make_trace file =
       "file", J.String path;
     ]
   ) +> (fun xs -> J.Array xs)
+  +> sanitize_compile_commands
+
 
 
