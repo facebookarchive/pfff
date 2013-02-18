@@ -1,0 +1,45 @@
+diff --git a/lib/AST/ASTDumper.cpp b/lib/AST/ASTDumper.cpp
+index 6248da0..797b285 100644
+--- a/lib/AST/ASTDumper.cpp
++++ b/lib/AST/ASTDumper.cpp
+@@ -105,12 +105,12 @@ namespace  {
+     public:
+       ColorScope(ASTDumper &Dumper, TerminalColor Color)
+         : Dumper(Dumper) {
+-        if (Dumper.ShowColors)
+-          Dumper.OS.changeColor(Color.Color, Color.Bold);
++        //if (Dumper.ShowColors)
++          //Dumper.OS.changeColor(Color.Color, Color.Bold);
+       }
+       ~ColorScope() {
+-        if (Dumper.ShowColors)
+-          Dumper.OS.resetColor();
++        //if (Dumper.ShowColors)
++          //Dumper.OS.resetColor();
+       }
+     };
+ 
+@@ -312,14 +312,22 @@ void ASTDumper::dumpLocation(SourceLocation Loc) {
+   // that haven't changed since the last loc printed.
+   PresumedLoc PLoc = SM->getPresumedLoc(SpellingLoc);
+ 
++
+   if (PLoc.isInvalid()) {
+     OS << "<invalid sloc>";
+     return;
+   }
+ 
+   if (strcmp(PLoc.getFilename(), LastLocFilename) != 0) {
+-    OS << PLoc.getFilename() << ':' << PLoc.getLine()
++    const char* f = PLoc.getFilename();
++    char* f2 = realpath(f, NULL);
++    const char* f3 = f2 ? f2 : f;
++    OS << f3 << ':' << PLoc.getLine()
+        << ':' << PLoc.getColumn();
++    if(f2 == NULL) {
++    } else {
++      free(f2);
++    }
+     LastLocFilename = PLoc.getFilename();
+     LastLocLine = PLoc.getLine();
+   } else if (PLoc.getLine() != LastLocLine) {
