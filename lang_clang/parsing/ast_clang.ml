@@ -141,10 +141,13 @@ type enum =
  | EnumConstantDecl
  | RecordDecl
  | FieldDecl
+ | IndirectFieldDecl
+ | Field
  | TypedefDecl
  | VarDecl
  | BlockDecl
  | ParmVarDecl
+
 
  | TranslationUnitDecl
 

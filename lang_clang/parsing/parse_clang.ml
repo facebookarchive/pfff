@@ -110,6 +110,9 @@ let enum__str_conv = [
 
  VAArgExpr, "VAArgExpr";
  PredefinedExpr, "PredefinedExpr";
+ (* tcc *)
+ IndirectFieldDecl, "IndirectFieldDecl";
+ Field, "Field";
 ]
 
 let (enum_of_str, str_of_enum) =
