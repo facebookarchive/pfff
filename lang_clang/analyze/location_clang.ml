@@ -100,6 +100,8 @@ let readable_of_filename f =
         rest
     | "Users"::"yoann.padioleau"::"local"::"lang-objc"::"objc"::"hello"::rest
         -> rest
+    | "Users"::"yoann.padioleau"::"software-src"::"tool-other"::"sparse"::rest
+        -> rest
 
     | "Users"::"yoann.padioleau"::"software-src"::"XIX"::"compiler-byacc"::rest
         -> rest
