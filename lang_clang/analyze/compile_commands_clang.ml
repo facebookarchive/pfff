@@ -33,9 +33,9 @@ module J = Json_type
  *  - processing the xcodebuild trace, 
  *    http://docs.oclint.org/en/dev/usage/oclint-xcodebuild.html
  *  - intercept system calls while compiling a project, the coverity approach
- *    which apparently has just started to be imitated
- *    https://github.com/rizsotto/Bear
- * 
+ *    * https://github.com/rizsotto/Bear (just started)
+ *    * https://github.com/pgbovine/CDE/
+ *    * ??
  *)
 
 (*****************************************************************************)
