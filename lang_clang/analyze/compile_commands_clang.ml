@@ -26,14 +26,16 @@ module J = Json_type
  * See http://clang.llvm.org/docs/JSONCompilationDatabase.html
  * 
  * One can generate this compile_commands.json by:
+ *  - if the project uses cmake, run 'cmake CMAKE_EXPORT_COMPILE_COMMANDS=on'
  *  - provide a fake gcc/clang frontend script recording all compile
  *    commands and then running the actual compiler
+ *  - analyzing the make compilation trace a posteriori
  *  - processing the xcodebuild trace, 
  *    http://docs.oclint.org/en/dev/usage/oclint-xcodebuild.html
  *  - intercept system calls while compiling a project, the coverity approach
  *    which apparently has just started to be imitated
  *    https://github.com/rizsotto/Bear
- *  - analyzing the make trace a posteriori
+ * 
  *)
 
 (*****************************************************************************)
@@ -110,6 +112,3 @@ let analyze_make_trace file =
     ]
   ) +> (fun xs -> J.Array xs)
   +> sanitize_compile_commands
-
-
-
