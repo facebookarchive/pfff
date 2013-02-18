@@ -22,7 +22,7 @@ module Ast = Ast_clang
 (* Prelude *)
 (*****************************************************************************)
 (*
- * Assumes clang-check --ast-dump dumps realpath paths. Modify
+ * Assumes 'clang-check --ast-dump' dumps realpath paths. Modify
  * ASTDumper.cpp for that, see clang.patch in this directory.
  *)
 
@@ -55,29 +55,9 @@ let location_of_angle (line, file) xs =
             Line (s_to_i i1, s_to_i i2)
         | [T (TLowerIdent "col"); T TColon; T (TInt i);] ->
             Col (s_to_i i)
+        (* less: #line directive, ignore? use ExpansionLoc in ASTDumper? *)
         | [T (TPath f); T TColon; T (TInt i1);T TColon; T (TInt i2)] ->
             File (f, s_to_i i1, s_to_i i2)
-
-       (* once ASTDumper.cpp has been modified to use realpath, we can skip
-        * this ugly code.
-        *)
-(*             
-        | [T TDot; T TDot; T (TPath f); T TColon; T (TInt i1);T TColon; T (TInt i2)] ->
-            let f = Filename.concat (Common.dirname pwd) f in
-            File (f, s_to_i i1, s_to_i i2)
-        | [T TDot; T (TPath f); T TColon; T (TInt i1);T TColon; T (TInt i2)] ->
-            let f = Filename.concat pwd f in
-            File (f, s_to_i i1, s_to_i i2)
-        (* #line directive, ignore it? dont use PresumedLoc but ExpansionLoc *)
-        | [T (TLowerIdent "lex"); T TDot; T (TLowerIdent "yy");T TDot;
-           T (TLowerIdent "c"); T TColon; T (TInt i1);T TColon; T (TInt i2)] ->
-            let f = Filename.concat pwd "lex.yy.c" in
-            File (f, s_to_i i1, s_to_i i2)
-        | [T (TLowerIdent "parser_yacc"); T TDot;
-           T (TLowerIdent "c"); T TColon; T (TInt i1);T TColon; T (TInt i2)] ->
-            let f = Filename.concat pwd "parser_yacc.c" in
-            File (f, s_to_i i1, s_to_i i2)
-*)
         | [Angle _; T TColon; T (TInt _);T TColon; T (TInt _)] ->
             Other
         | xs -> 
@@ -91,38 +71,22 @@ let readable_of_filename ~root f =
     match xs with
     | "usr"::"include"::rest -> 
         "EXTERNAL"::"CORE"::rest
+
+    (* macos specific *)
     | "System"::"Library"::"Frameworks"::rest -> 
         "EXTERNAL"::"MACOS"::rest
     | "opt"::"local"::rest ->
         "EXTERNAL"::"OPT"::rest
+
     (* llvm install specific on macos *)
     | "Users"::"yoann.padioleau"::"local"::"clang_ast"::"clang-llvm"
       ::"llvm"::"Debug+Asserts"::"lib"::"clang"::"3.3"::"include"::rest ->
         "EXTERNAL"::"CLANG"::rest
+
     | _ ->
         Common.split "/" (Common.filename_without_leading_path root f)
-(*
-    | "Users"::"yoann.padioleau"::"software-src"::"tool-other"::"sparse"::rest
-        -> rest
-    | "Users"::"yoann.padioleau"::"software-src"::"XIX"::"compiler-byacc"::rest
-        -> rest
-    | "Users"::"yoann.padioleau"::"software-src"::"XIX"::"compiler-tiny-cc"::rest
-        -> rest
-    | "Users"::"yoann.padioleau"::"software-src"::"tool-other"::"ctags-cscope"::"ctags-5.8"::rest ->
-        rest
-    | "Users"::"yoann.padioleau"::"software-src"::"EDU"::"editor-nano"::rest ->
-        rest
-    | "Users"::"yoann.padioleau"::"software-src"::"BIG"::"machine-qemu"::rest ->
-        rest
-
-    | ".."::"CPU"::rest ->
-        "CPU"::rest
-    | "Users"::"yoann.padioleau"::"local"::"lang-c"::"spimsimulator"::rest ->
-        rest
-*)
   in
   Common.join "/" xs
-
 
 let location_of_paren_opt ~root clang_file (enum, l, xs) =
   let location =
@@ -142,4 +106,3 @@ let location_of_paren_opt ~root clang_file (enum, l, xs) =
       Some readable
   | _ -> None
   )
-

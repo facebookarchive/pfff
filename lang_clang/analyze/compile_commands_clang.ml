@@ -94,7 +94,7 @@ let analyze_make_trace file =
       | ("clang"|"gcc"|"cc")::xs when List.mem "-o" xs -> None
       | ("flex" | "bison"
         |"ar"
-        |"sh" | "sed"
+        |"sh" | "sed" | "mv"
         )::_rest -> 
           None
       | _ -> 
