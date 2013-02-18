@@ -89,6 +89,8 @@ let readable_of_filename f =
         "EXTERNAL"::"CORE"::rest
     | "System"::"Library"::"Frameworks"::rest -> 
         "EXTERNAL"::"MACOS"::rest
+    | "opt"::"local"::rest ->
+        "EXTERNAL"::"OPT"::rest
     (* llvm install specific on macos *)
     | "Users"::"yoann.padioleau"::"local"::"clang_ast"::"clang-llvm"
       ::"llvm"::"Debug+Asserts"::"bin"::".."
@@ -112,6 +114,12 @@ let readable_of_filename f =
     | "Users"::"yoann.padioleau"::"software-src"::"XIX"::"compiler-tiny-cc"::rest
         -> rest
     | "Users"::"yoann.padioleau"::"software-src"::"tool-other"::"ctags-cscope"::"ctags-5.8"::rest ->
+        rest
+    | "Users"::"yoann.padioleau"::"software-src"::"EDU"::"editor-nano"::rest ->
+        rest
+    | "home"::"pad"::"software-src"::"BIG"::"machine-qemu"::rest -> 
+        rest
+    | "Users"::"yoann.padioleau"::"software-src"::"BIG"::"machine-qemu"::rest ->
         rest
 
     | ".."::"CPU"::rest ->
