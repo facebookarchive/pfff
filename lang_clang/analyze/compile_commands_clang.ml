@@ -94,7 +94,9 @@ let analyze_make_trace file =
             else None
           )
       | ("clang"|"gcc")::xs when List.mem "-o" xs -> None
-      | ("flex" | "bison")::_rest -> 
+      | ("flex" | "bison"
+        |"ar"
+        )::_rest -> 
           None
       | _ -> failwith ("unknown compilation command: " ^ s)
     )
