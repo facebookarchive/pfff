@@ -31,7 +31,7 @@ module Loc = Location_clang
 (*****************************************************************************)
 type env = {
   hfile: 
-    (Common.filename, (Ast.enum * string) Common.hashset) Hashtbl.t;
+    (Common.filename, (Ast.enum * string * variant) Common.hashset) Hashtbl.t;
   hfile_data:
     (Common.filename, sexp list) Hashtbl.t;
 
@@ -39,12 +39,14 @@ type env = {
   current_c_file: Common.filename ref;
   current_clang_file: Common.filename;
 }
+ and variant = Proto | Def | Misc
+
 let unknown_loc = "unknown_loc"
 
 (*****************************************************************************)
 (* Accumulating *)
 (*****************************************************************************)
-let add_if_not_already_there env (enum, s) sexp =
+let add_if_not_already_there env (enum, s, v) sexp =
   let c_file = !(env.current_c_file) in
   let hset = 
     try 
@@ -52,12 +54,12 @@ let add_if_not_already_there env (enum, s) sexp =
     with Not_found ->
       failwith (spf "Not_found:%s" c_file)
   in
-  if Hashtbl.mem hset (enum, s)
+  if Hashtbl.mem hset (enum, s, v)
   then ()
   else begin
     Hashtbl.replace env.hfile_data c_file
       (sexp::Hashtbl.find env.hfile_data c_file);
-    Hashtbl.add hset (enum, s) true
+    Hashtbl.add hset (enum, s, v) true
   end
 
 (*****************************************************************************)
@@ -106,36 +108,45 @@ and decl env (enum, l, xs) =
    * fields or enum constants as we care only about toplevel decls here.
    *)
   (match enum, xs with
-  | FunctionDecl, _loc::(T (TLowerIdent s | TUpperIdent s))::_typ_char::_rest ->
-      add_if_not_already_there env (FunctionDecl, s) sexp
+  | FunctionDecl, _loc::(T (TLowerIdent s | TUpperIdent s))::_typ_char::rest ->
+      let variant = 
+        if rest +> List.exists (function 
+        | Paren (CompoundStmt, _, _) -> true
+        | _ -> false
+        )
+        then Def
+        else Proto
+      in
+      add_if_not_already_there env (FunctionDecl, s, variant) sexp
   | TypedefDecl, _loc::(T (TLowerIdent s | TUpperIdent s))::_typ_char::_rest ->
-      add_if_not_already_there env (TypedefDecl, s) sexp
+      add_if_not_already_there env (TypedefDecl, s, Misc) sexp
   | EnumDecl, _loc::(T (TLowerIdent s | TUpperIdent s))::_rest ->
-      add_if_not_already_there env (EnumDecl, s) sexp
+      add_if_not_already_there env (EnumDecl, s, Misc) sexp
   | RecordDecl, _loc::(T (TLowerIdent "struct"))
       ::(T (TLowerIdent s | TUpperIdent s))::_rest ->
-      add_if_not_already_there env (RecordDecl, s) sexp
+      add_if_not_already_there env (RecordDecl, s, Misc) sexp
   | RecordDecl, _loc::(T (TLowerIdent "union"))
       ::(T (TLowerIdent s | TUpperIdent s))::_rest ->
-      add_if_not_already_there env (RecordDecl, s) sexp
+      add_if_not_already_there env (RecordDecl, s, Misc) sexp
 
+  (* todo: what about extern *)
   | VarDecl, _loc::(T (TLowerIdent s | TUpperIdent s))::_typ_char::_rest ->
-      add_if_not_already_there env (VarDecl, s) sexp
+      (* todo: extern? *)
+      let variant = Misc in
+      add_if_not_already_there env (VarDecl, s, variant) sexp
 
   (* todo: usually there is a typedef just behind, need a stable name! 
    * use the line loc?
    *)
   | RecordDecl, _loc::(T (TLowerIdent "union"))::_rest ->
-      add_if_not_already_there env (RecordDecl, "union__anon") sexp
+      add_if_not_already_there env (RecordDecl, "union__anon", Misc) sexp
   | EnumDecl, _loc::_rest ->
-      add_if_not_already_there env (EnumDecl, "enum__anon") sexp
+      add_if_not_already_there env (EnumDecl, "enum__anon", Misc) sexp
   | RecordDecl, _loc::(T (TLowerIdent "struct"))::_rest ->
-      add_if_not_already_there env (RecordDecl, "struct__anon") sexp
+      add_if_not_already_there env (RecordDecl, "struct__anon", Misc) sexp
 
   | _ ->
-      failwith (spf "%s:%d:wrong Decl line" 
-                   env.current_clang_file l)
-
+      failwith (spf "%s:%d:wrong Decl line" env.current_clang_file l)
   );
   sexps env xs
 
