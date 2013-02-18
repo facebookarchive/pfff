@@ -21,6 +21,10 @@ module Ast = Ast_clang
 (*****************************************************************************)
 (* Prelude *)
 (*****************************************************************************)
+(*
+ * Assumes clang-check --ast-dump dumps realpath paths. Modify
+ * ASTDumper.cpp for that, see clang.patch in this directory.
+ *)
 
 (*****************************************************************************)
 (* Types *)
@@ -55,7 +59,7 @@ let location_of_angle (line, file) xs =
             File (f, s_to_i i1, s_to_i i2)
 
        (* once ASTDumper.cpp has been modified to use realpath, we can skip
-        * this ugly code
+        * this ugly code.
         *)
 (*             
         | [T TDot; T TDot; T (TPath f); T TColon; T (TInt i1);T TColon; T (TInt i2)] ->
@@ -64,7 +68,7 @@ let location_of_angle (line, file) xs =
         | [T TDot; T (TPath f); T TColon; T (TInt i1);T TColon; T (TInt i2)] ->
             let f = Filename.concat pwd f in
             File (f, s_to_i i1, s_to_i i2)
-        (* #line directive, ignore it? *)
+        (* #line directive, ignore it? dont use PresumedLoc but ExpansionLoc *)
         | [T (TLowerIdent "lex"); T TDot; T (TLowerIdent "yy");T TDot;
            T (TLowerIdent "c"); T TColon; T (TInt i1);T TColon; T (TInt i2)] ->
             let f = Filename.concat pwd "lex.yy.c" in
@@ -98,18 +102,8 @@ let readable_of_filename ~root f =
     | _ ->
         Common.split "/" (Common.filename_without_leading_path root f)
 (*
-    (* todo: use env.dir? *)
-    | "home"::"pad"::"pfff"::"tests"::"clang"::"c"::rest ->
-        rest
-    | "home"::"pad"::"local"::"lang-c"::"Chipmunk-Physics"::rest -> 
-        rest
-    | "home"::"pad"::"local"::"lang-c"::"Bear"::rest -> 
-        rest
-    | "Users"::"yoann.padioleau"::"local"::"lang-objc"::"objc"::"hello"::rest
-        -> rest
     | "Users"::"yoann.padioleau"::"software-src"::"tool-other"::"sparse"::rest
         -> rest
-
     | "Users"::"yoann.padioleau"::"software-src"::"XIX"::"compiler-byacc"::rest
         -> rest
     | "Users"::"yoann.padioleau"::"software-src"::"XIX"::"compiler-tiny-cc"::rest
@@ -117,8 +111,6 @@ let readable_of_filename ~root f =
     | "Users"::"yoann.padioleau"::"software-src"::"tool-other"::"ctags-cscope"::"ctags-5.8"::rest ->
         rest
     | "Users"::"yoann.padioleau"::"software-src"::"EDU"::"editor-nano"::rest ->
-        rest
-    | "home"::"pad"::"software-src"::"BIG"::"machine-qemu"::rest -> 
         rest
     | "Users"::"yoann.padioleau"::"software-src"::"BIG"::"machine-qemu"::rest ->
         rest
