@@ -158,6 +158,7 @@ let tokens a =
 type env = {
   line_open_tok: int;
   check_topar: bool;
+  file: Common.filename;
 }
 
 let rec sexp_list env acc ending toks =
@@ -179,12 +180,12 @@ let rec sexp_list env acc ending toks =
     ::TUpperIdent (("ImplicitCastExpr" | "CXXStaticCastExpr" 
                    | "CStyleCastExpr") as s)
     ::THexInt _dontcare::xs ->
-      let newenv = {line_open_tok = l; check_topar = false} in 
+      let newenv = {env with line_open_tok = l; check_topar = false} in 
       let (body, xs) = sexp_list newenv  [] TCPar xs in
       sexp_list env (Paren (conv s, l, body)::acc) ending xs
 
   | TOPar l::TUpperIdent s::THexInt _dontcare::xs ->
-      let newenv = {line_open_tok = l; check_topar = true} in 
+      let newenv = {env with line_open_tok = l; check_topar = true} in 
       let (body, xs) = sexp_list newenv  [] TCPar xs in
       sexp_list env (Paren (conv s, l, body)::acc) ending xs
 
@@ -292,7 +293,7 @@ let rec sexp_list env acc ending toks =
 
   | TOPar l::TUpperIdent _::xs ->
     if env.check_topar 
-    then failwith (spf "open paren without hexint at line %d" l)
+    then failwith (spf "%s:%d: open paren without hexint at line " env.file l)
     else
       let newenv = {env with line_open_tok = l} in 
       let (body, xs) = sexp_list newenv  [] TCPar xs in
@@ -308,7 +309,8 @@ let rec sexp_list env acc ending toks =
 
   | t::xs -> sexp_list env (T t::acc) ending xs
   | [] -> 
-      failwith (spf "unterminated sexp_list '%s' opened at line %d"
+      failwith (spf "%s: unterminated sexp_list '%s' opened at line %d"
+                   env.file
                    (match ending with
                    | TCPar -> "')'"
                    | TSup -> "'>'"
@@ -318,7 +320,7 @@ let rec sexp_list env acc ending toks =
 
 let parse file =
   let toks = tokens file in
-  let env = { line_open_tok = 0; check_topar = true } in
+  let env = { line_open_tok = 0; check_topar = true; file = file } in
   let (body, _rest) = sexp_list env [] EOF toks in
   (match body with
   | [Paren (s,l, args)] -> Paren (s, l, args)
