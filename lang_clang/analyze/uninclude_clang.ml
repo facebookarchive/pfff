@@ -25,6 +25,9 @@ module Loc = Location_clang
 (*****************************************************************************)
 (* Prelude *)
 (*****************************************************************************)
+(*
+ * This assumes 'clang-check --ast-dump' generate realpath path.
+ *)
 
 (*****************************************************************************)
 (* Types *)
@@ -35,7 +38,8 @@ type env = {
   hfile_data:
     (Common.filename, sexp list) Hashtbl.t;
 
-  pwd: Common.dirname;
+  (* for readable_filename *)
+  root: Common.dirname;
   current_c_file: Common.filename ref;
   current_clang_file: Common.filename;
 }
@@ -67,7 +71,6 @@ let add_if_not_already_there env (enum, s, v) sexp =
 (*****************************************************************************)
 
 let rec process env ast =
-  let env = { env with pwd = Common.dirname env.current_clang_file } in
   match ast with
   | Paren (TranslationUnitDecl, l, _loc::xs) ->
       xs +> List.iter (fun sexp ->
@@ -94,7 +97,7 @@ let rec process env ast =
 and decl env (enum, l, xs) =
   (* less: dupe with below *)
   let file_opt = 
-    Loc.location_of_paren_opt env.pwd env.current_clang_file (enum, l, xs) in
+    Loc.location_of_paren_opt env.root env.current_clang_file (enum, l, xs) in
   file_opt +> Common.do_option (fun f ->
     env.current_c_file := f;
     if not (Hashtbl.mem env.hfile f)
@@ -154,7 +157,7 @@ and sexp env x =
   match x with
   | Paren (enum, l, xs) ->
       let file_opt = 
-        Loc.location_of_paren_opt env.pwd env.current_clang_file (enum, l, xs) 
+        Loc.location_of_paren_opt env.root env.current_clang_file (enum, l, xs) 
       in
       file_opt +> Common.do_option (fun f ->
         env.current_c_file := f;
@@ -187,7 +190,7 @@ let uninclude ?(verbose=true) dir skip_list dst =
     hfile_data = Common.hash_of_list [unknown_loc, []];
     current_c_file = ref unknown_loc;
     current_clang_file = "__filled_later__";
-    pwd = "__filled_later__";
+    root;
   } in
   
 

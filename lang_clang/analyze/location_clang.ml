@@ -39,7 +39,7 @@ let unknown_loc_angle =
 (* Helpers *)
 (*****************************************************************************)
 
-let location_of_angle pwd (line, file) xs =
+let location_of_angle (line, file) xs =
   match xs with
   | [Angle [T (TLowerIdent "invalid"); T (TLowerIdent "sloc")]] ->
       [Other]
@@ -81,7 +81,7 @@ let location_of_angle pwd (line, file) xs =
           failwith (spf "wrong location format at line %d in %s"  line file)
       )
 
-let readable_of_filename f =
+let readable_of_filename ~root f =
   let xs = Common.split "/" f in
   let xs = 
     match xs with
@@ -93,10 +93,11 @@ let readable_of_filename f =
         "EXTERNAL"::"OPT"::rest
     (* llvm install specific on macos *)
     | "Users"::"yoann.padioleau"::"local"::"clang_ast"::"clang-llvm"
-      ::"llvm"::"Debug+Asserts"::"bin"::".."
-      ::"lib"::"clang"::"3.3"::"include"::rest ->
+      ::"llvm"::"Debug+Asserts"::"lib"::"clang"::"3.3"::"include"::rest ->
         "EXTERNAL"::"CLANG"::rest
-
+    | _ ->
+        Common.split "/" (Common.filename_without_leading_path root f)
+(*
     (* todo: use env.dir? *)
     | "home"::"pad"::"pfff"::"tests"::"clang"::"c"::rest ->
         rest
@@ -126,27 +127,26 @@ let readable_of_filename f =
         "CPU"::rest
     | "Users"::"yoann.padioleau"::"local"::"lang-c"::"spimsimulator"::rest ->
         rest
-
-    | _ -> failwith ("unhandled prefix: " ^ f)
+*)
   in
   Common.join "/" xs
 
 
-let location_of_paren_opt pwd clang_file (enum, l, xs) =
+let location_of_paren_opt ~root clang_file (enum, l, xs) =
   let location =
     match enum, xs with
     | (Misc__Null__ | Misc__Capture__ | Misc__Cleanup__Block
       |Field (* TODO: when under IndirectDecl *)
       ), _ -> [Other]
     | _, Angle xs::_rest ->
-        location_of_angle pwd (l, clang_file) xs
+        location_of_angle (l, clang_file) xs
     | _ -> 
         failwith (spf "%s:%d: no location" clang_file l)
 
   in
   location +> Common.find_some_opt (function 
   | File (f, _,_) ->
-      let readable = readable_of_filename f in
+      let readable = readable_of_filename ~root f in
       Some readable
   | _ -> None
   )
