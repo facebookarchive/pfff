@@ -75,7 +75,7 @@ let unittest =
     assert_equal 
       { Graph_code_bytecode.
         package = ["Foo"]; baseclass = "Bar";
-        nested_or_anon = [G.DollarNestedClass "FooBar"; G.DollarAnonClass 1];
+        nested_or_anon = [G.DollarNestedClass "FooBar"; G.DollarAnonClass "1"];
       }
       (Graph_code_bytecode.bytecode_class_name_of_string "Foo.Bar$FooBar$1")
   );

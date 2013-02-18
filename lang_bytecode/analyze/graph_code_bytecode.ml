@@ -93,7 +93,7 @@ type bytecode_class_name = {
 }
   and dollar_suffix =
   | DollarNestedClass of string
-  | DollarAnonClass of int
+  | DollarAnonClass of string
 
 (*****************************************************************************)
 (* Helpers *)
@@ -125,7 +125,7 @@ let bytecode_class_name_of_string name =
     { package; baseclass = y;
       nested_or_anon = ys +> List.map (fun y ->
         if y =~ "[0-9]+" 
-        then DollarAnonClass (s_to_i y)
+        then DollarAnonClass y
         else DollarNestedClass y
       );
     }
