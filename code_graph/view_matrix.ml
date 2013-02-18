@@ -549,6 +549,11 @@ let button_action da w ev =
                 pr2 (spf "clicking on cell (%d, %d)" i j);
                 let deps = 
                   DM.explain_cell_list_use_edges  (i, j) w.m w.model.gopti in
+                let ncount =
+                  if List.length deps > 100
+                  then 2
+                  else 50
+                in
                 let xs = Common.take_safe 1000 deps in
                 let grouped_deps = 
                   Graph_code.group_edges_by_files_edges xs 
@@ -563,7 +568,7 @@ let button_action da w ev =
                     let f1 = final_file f1 in
                     let f2 = final_file f2 in
                     spf "%s --> %s (%d)\n" f1 f2 (List.length deps) ^
-                    (Common.take_safe 2 deps +> List.map (fun (n1, n2) ->
+                    (Common.take_safe ncount deps +> List.map (fun (n1, n2) ->
                       spf "            %s --> %s" 
                       (Graph_code.string_of_node n1)  
                       (Graph_code.string_of_node n2)
