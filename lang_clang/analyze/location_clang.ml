@@ -99,6 +99,9 @@ let readable_of_filename f =
     | "home"::"pad"::"pfff"::"tests"::"clang"::"c"::rest ->
         rest
 
+    | "Users"::"yoann.padioleau"::"software-src"::"XIX"::"compiler-byacc"::rest
+        -> rest
+
     | ".."::"CPU"::rest ->
         "CPU"::rest
     | "Users"::"yoann.padioleau"::"local"::"lang-c"::"spimsimulator"::rest ->
