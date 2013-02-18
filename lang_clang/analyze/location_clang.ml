@@ -83,20 +83,20 @@ let readable_of_filename f =
     match xs with
     | "usr"::"include"::rest -> 
         "EXTERNAL"::"CORE"::rest
-
+    | "System"::"Library"::"Frameworks"::rest -> 
+        "EXTERNAL"::"MACOS"::rest
+    (* llvm install specific on macos *)
     | "Users"::"yoann.padioleau"::"local"::"clang_ast"::"clang-llvm"
       ::"llvm"::"Debug+Asserts"::"bin"::".."
       ::"lib"::"clang"::"3.3"::"include"::rest ->
         "EXTERNAL"::"CLANG"::rest
-    | "System"::"Library"::"Frameworks"::rest -> 
-        "EXTERNAL"::"MACOS"::rest
 
     (* todo: use env.dir? *)
+    | "home"::"pad"::"pfff"::"tests"::"clang"::"c"::rest ->
+        rest
     | "home"::"pad"::"local"::"lang-c"::"Chipmunk-Physics"::rest -> 
         rest
     | "home"::"pad"::"local"::"lang-c"::"Bear"::rest -> 
-        rest
-    | "home"::"pad"::"pfff"::"tests"::"clang"::"c"::rest ->
         rest
     | "Users"::"yoann.padioleau"::"local"::"lang-objc"::"objc"::"hello"::rest
         -> rest
@@ -107,6 +107,8 @@ let readable_of_filename f =
         -> rest
     | "Users"::"yoann.padioleau"::"software-src"::"XIX"::"compiler-tiny-cc"::rest
         -> rest
+    | "Users"::"yoann.padioleau"::"software-src"::"tool-other"::"ctags-cscope"::"ctags-5.8"::rest ->
+        rest
 
     | ".."::"CPU"::rest ->
         "CPU"::rest
