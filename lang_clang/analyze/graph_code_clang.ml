@@ -249,6 +249,7 @@ and decl env (enum, l, xs) =
           | T (TLowerIdent "static")::T (TLowerIdent "inline")::_rest ->
               env.current_clang_file =~ ".*\\.c\\.clang2"
           | T (TLowerIdent "static")::_rest -> true
+          | _ when s = "main" -> true
           | _ -> false
         in
         let s = 
