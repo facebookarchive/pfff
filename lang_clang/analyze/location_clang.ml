@@ -54,6 +54,10 @@ let location_of_angle pwd (line, file) xs =
         | [T (TPath f); T TColon; T (TInt i1);T TColon; T (TInt i2)] ->
             File (f, s_to_i i1, s_to_i i2)
 
+       (* once ASTDumper.cpp has been modified to use realpath, we can skip
+        * this ugly code
+        *)
+(*             
         | [T TDot; T TDot; T (TPath f); T TColon; T (TInt i1);T TColon; T (TInt i2)] ->
             let f = Filename.concat (Common.dirname pwd) f in
             File (f, s_to_i i1, s_to_i i2)
@@ -69,7 +73,7 @@ let location_of_angle pwd (line, file) xs =
            T (TLowerIdent "c"); T TColon; T (TInt i1);T TColon; T (TInt i2)] ->
             let f = Filename.concat pwd "parser_yacc.c" in
             File (f, s_to_i i1, s_to_i i2)
-
+*)
         | [Angle _; T TColon; T (TInt _);T TColon; T (TInt _)] ->
             Other
         | xs -> 

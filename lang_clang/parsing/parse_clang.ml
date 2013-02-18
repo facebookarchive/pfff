@@ -22,6 +22,11 @@ open Parser_clang
 (*****************************************************************************)
 (* Prelude *)
 (*****************************************************************************)
+(* 
+ * This assumes clang-check --ast-dump does not dump the color. One can
+ * do that by running it from a terminal detected as no-color (e.g. eshell),
+ * or by modifying ASTDumper.cpp in clang source
+ *)
 
 (*****************************************************************************)
 (* Types *)
