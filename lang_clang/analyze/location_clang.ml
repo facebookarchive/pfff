@@ -101,6 +101,8 @@ let readable_of_filename f =
 
     | "Users"::"yoann.padioleau"::"software-src"::"XIX"::"compiler-byacc"::rest
         -> rest
+    | "Users"::"yoann.padioleau"::"software-src"::"XIX"::"compiler-tiny-cc"::rest
+        -> rest
 
     | ".."::"CPU"::rest ->
         "CPU"::rest
@@ -116,6 +118,7 @@ let location_of_paren_opt pwd clang_file (enum, l, xs) =
   let location =
     match enum, xs with
     | (Misc__Null__ | Misc__Capture__ | Misc__Cleanup__Block
+      |Field (* TODO: when under IndirectDecl *)
       ), _ -> [Other]
     | _, Angle xs::_rest ->
         location_of_angle pwd (l, clang_file) xs
