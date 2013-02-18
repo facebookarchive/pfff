@@ -98,6 +98,8 @@ let readable_of_filename f =
         rest
     | "home"::"pad"::"pfff"::"tests"::"clang"::"c"::rest ->
         rest
+    | "Users"::"yoann.padioleau"::"local"::"lang-objc"::"objc"::"hello"::rest
+        -> rest
 
     | "Users"::"yoann.padioleau"::"software-src"::"XIX"::"compiler-byacc"::rest
         -> rest

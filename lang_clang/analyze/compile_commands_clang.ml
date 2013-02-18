@@ -89,7 +89,7 @@ let analyze_make_trace file =
       match xs with
       | ("clang"|"gcc")::xs when List.mem "-c" xs ->
           xs +> Common.find_some_opt (fun file ->
-            if file =~ ".*\\.c"
+            if file =~ ".*\\.[cm]"
             then Some (file, s)
             else None
           )
