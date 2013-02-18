@@ -87,18 +87,21 @@ let analyze_make_trace file =
     Common.cat file +> Common.map_filter (fun s ->
       let xs = Common.split "[ \t]+" s in
       match xs with
-      | ("clang"|"gcc")::xs when List.mem "-c" xs ->
+      | ("clang"|"gcc"|"cc")::xs when List.mem "-c" xs ->
           xs +> Common.find_some_opt (fun file ->
-            if file =~ ".*\\.[cm]"
+            if file =~ ".*\\.[cm]$"
             then Some (file, s)
             else None
           )
-      | ("clang"|"gcc")::xs when List.mem "-o" xs -> None
+      | ("clang"|"gcc"|"cc")::xs when List.mem "-o" xs -> None
       | ("flex" | "bison"
         |"ar"
+        |"sh" | "sed"
         )::_rest -> 
           None
-      | _ -> failwith ("unknown compilation command: " ^ s)
+      | _ -> 
+          pr2 ("unknown compilation command: " ^ s);
+          None
     )
   in
   relevant_lines +> List.map (fun (file, s) ->
