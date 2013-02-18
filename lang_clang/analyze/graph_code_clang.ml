@@ -252,7 +252,7 @@ and decl env (enum, l, xs) =
           | _ -> false
         in
         let s = 
-          if static 
+          if static && kind = E.Function
           then final_str env s
           else s
         in
