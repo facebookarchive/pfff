@@ -261,32 +261,32 @@ and decl env (enum, l, xs) =
 
     (* I am not sure about the namespaces, so I prepend strings *)
     | TypedefDecl, _loc::(T (TLowerIdent s | TUpperIdent s))::_typ_char::_rest ->
-        add_node_and_edge_if_defs_mode env ("t__" ^ s, E.Type)
+        add_node_and_edge_if_defs_mode env ("T__" ^ s, E.Type)
     | EnumDecl, _loc::(T (TLowerIdent s | TUpperIdent s))::_rest ->
-        add_node_and_edge_if_defs_mode env ("e__" ^ s, E.Type)
+        add_node_and_edge_if_defs_mode env ("E__" ^ s, E.Type)
           
     | RecordDecl, _loc::(T (TLowerIdent "struct"))
         ::(T (TLowerIdent s | TUpperIdent s))::_rest ->
-        add_node_and_edge_if_defs_mode env ("s__" ^ s, E.Type)
+        add_node_and_edge_if_defs_mode env ("S__" ^ s, E.Type)
     | RecordDecl, _loc::(T (TLowerIdent "union"))
         ::(T (TLowerIdent s | TUpperIdent s))::_rest ->
-        add_node_and_edge_if_defs_mode env ("u__" ^ s, E.Type)
+        add_node_and_edge_if_defs_mode env ("U__" ^ s, E.Type)
           
     (* usually embedded struct *)
     | RecordDecl, _loc::(T (TLowerIdent "struct"))::_rest ->
         incr env.cnt;
         add_node_and_edge_if_defs_mode env 
-          (spf "s__anon__%d" !(env.cnt), E.Type)
+          (spf "S__anon__%d" !(env.cnt), E.Type)
           
     (* todo: usually there is a typedef just behind *)
     | EnumDecl, _loc::_rest ->
         incr env.cnt;
         add_node_and_edge_if_defs_mode env 
-          (spf "e__anon__%d" !(env.cnt), E.Type)
+          (spf "E__anon__%d" !(env.cnt), E.Type)
     | RecordDecl, _loc::(T (TLowerIdent "union"))::_rest ->
         incr env.cnt;
         add_node_and_edge_if_defs_mode env 
-          (spf "u__anon__%d" !(env.cnt), E.Type)
+          (spf "U__anon__%d" !(env.cnt), E.Type)
 
     | FieldDecl, _loc::(T (TLowerIdent s | TUpperIdent s))::_rest ->
         add_node_and_edge_if_defs_mode env (s, E.Field)
@@ -294,7 +294,7 @@ and decl env (enum, l, xs) =
     | FieldDecl, _loc::_rest ->
         incr env.cnt;
         add_node_and_edge_if_defs_mode env 
-          (spf "f__anon__%d" !(env.cnt), E.Field)
+          (spf "F__anon__%d" !(env.cnt), E.Field)
     | EnumConstantDecl, _loc::(T (TLowerIdent s | TUpperIdent s))::_rest ->
         add_node_and_edge_if_defs_mode env (s, E.Constant)
         
