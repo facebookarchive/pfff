@@ -97,6 +97,7 @@ let string_of_entity_kind = function
   | E.Module -> "module"
   | E.Package -> "package"
   | E.Prototype -> "prototype"
+  | E.GlobalExtern -> "global_extern"
 
   | (E.MultiDirs|E.Dir|E.File|E.Macro) ->
       raise Impossible
@@ -162,7 +163,7 @@ let build root g =
         -> add (Kind (entity_of_str str, kind))
     | E.File -> ()
     | E.Dir -> ()
-    | (E.Macro|E.TopStmts|E.Other _|E.MultiDirs|E.Prototype) ->
+    | (E.Macro|E.TopStmts|E.Other _|E.MultiDirs|E.Prototype|E.GlobalExtern) ->
         pr2_gen n;
         raise Todo
     );

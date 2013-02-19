@@ -114,7 +114,8 @@ type entity_kind =
   | Method of method_type
   | ClassConstant
 
-  | Prototype
+  (* forward decl *)
+  | Prototype | GlobalExtern
 
   (* todo: constructor *)
 
@@ -265,6 +266,7 @@ let string_of_entity_kind e =
   match e with
   | Function -> "Function"
   | Prototype -> "Prototype"
+  | GlobalExtern -> "GlobalExtern"
   | Class RegularClass -> "Class"
   | Class Interface -> "Interface"
   | Class Trait -> "Trait"

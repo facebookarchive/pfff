@@ -118,7 +118,7 @@ let vim_tag_kind_str tag_kind =
 
   | Db.File | Db.Dir | Db.MultiDirs
   | Db.Exception
-  | Db.Prototype
+  | Db.Prototype | Db.GlobalExtern
       -> ""
 
 (* For methods, in addition to the tag for the precise 'class::method'

@@ -14,7 +14,7 @@ type entity_kind =
   | Method of method_type 
   | ClassConstant
 
-  | Prototype
+  | Prototype | GlobalExtern
 
   | Other of string
 
