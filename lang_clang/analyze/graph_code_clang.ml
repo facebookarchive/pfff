@@ -197,7 +197,7 @@ and sexp_toplevel env x =
       | TypedefDecl | RecordDecl | EnumDecl 
       | FieldDecl | EnumConstantDecl
         -> decl env (enum, l, xs)
-      | CallExpr 
+      | CallExpr | DeclRefExpr
         -> expr env (enum, l, xs)
       | _ -> 
           sexps env xs
@@ -296,7 +296,7 @@ and decl env (enum, l, xs) =
         add_node_and_edge_if_defs_mode env 
           (spf "f__anon__%d" !(env.cnt), E.Field)
     | EnumConstantDecl, _loc::(T (TLowerIdent s | TUpperIdent s))::_rest ->
-        add_node_and_edge_if_defs_mode env (s, E.ClassConstant)
+        add_node_and_edge_if_defs_mode env (s, E.Constant)
         
     | _ ->
         failwith (spf "%s:%d:wrong Decl line" 
@@ -333,6 +333,16 @@ and expr env (enum, l, xs) =
   (* todo: unexpected form of call? function pointer call? *)
   | CallExpr, _ ->
       ()
+
+  | DeclRefExpr, _loc::_typ::T (TUpperIdent "EnumConstant")::_address
+      ::T (TString s)::_rest ->
+      let s = unchar s in
+      if env.phase = Uses
+      then 
+        add_use_edge env (s, E.Constant)
+  | DeclRefExpr, _ ->
+      ()
+
   | _ -> raise Impossible
   );
   sexps env xs
