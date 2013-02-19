@@ -34,16 +34,14 @@ module Loc = Location_clang
  * schema:
  *  Root -> Dir -> File (.c|.h) -> Type (struct | enum | union) TODO use Class?
  *                                 -> Field
- *                                 -> ClassConstant (enum)
+ *                                 -> Constant (enum)
  *                              -> Function | Prototype
  *                              -> Type (for Typedef)
- *                              -> Global
+ *                              -> Global | GlobalExtern
  *       -> Dir -> SubDir -> ...
  * 
  * todo: 
- *  - proper defs for anon struct and union
- *  - Use for types, fields, globals
- * 
+ *  - Use for types, fields
  *)
 
 (*****************************************************************************)
@@ -90,18 +88,9 @@ let parse a =
   Common.profile_code "Parse_clang.parse" (fun () -> parse2 a)
 
 (*****************************************************************************)
-(* Filename helpers *)
-(*****************************************************************************)
-
-let unchar s =
-  if s =~ "'\\(.*\\)'"
-  then Common.matched1 s
-  else failwith ("unchar pb: " ^ s)
-
-(*****************************************************************************)
 (* Helpers *)
 (*****************************************************************************)
-let final_str env s =
+let new_str_if_defs env s =
   if env.phase = Defs
   then begin
     incr env.cnt;
@@ -110,6 +99,19 @@ let final_str env s =
     s2
   end
   else Hashtbl.find env.local_rename s
+
+let str env s =
+  if Hashtbl.mem env.local_rename s
+  then Hashtbl.find env.local_rename s
+  else s
+
+let unchar s =
+  if s =~ "'\\(.*\\)'"
+  then Common.matched1 s
+  else failwith ("unchar pb: " ^ s)
+
+let error env s =
+  failwith (spf "%s:%d: %s" env.current_clang_file env.line s)
 
 (*****************************************************************************)
 (* Add Node *)
@@ -154,11 +156,12 @@ let rec add_use_edge env (s, kind) =
   let dst = (s, kind) in
 
   if G.has_node dst env.g
-  then  G.add_edge (src, dst) G.Use env.g
+  then G.add_edge (src, dst) G.Use env.g
   else 
     (match kind with
     (* look for Prototype if no Function *)
     | E.Function -> add_use_edge env (s, E.Prototype)
+    (* look for GlobalExtern if no Global *)
     | _ ->
         env.pr2_and_log (spf "Lookup failure on %s (in %s)"
                             (G.string_of_node dst)
@@ -186,12 +189,12 @@ let rec extract_defs_uses env ast =
     env.g +> G.add_edge ((dir, E.Dir), node) G.Has;
   end;
   let env = { env with current = (readable, E.File) } in
-  (match ast with
+  match ast with
   | Paren (TranslationUnitDecl, l, _loc::xs) ->
       List.iter (sexp_toplevel env) xs
   | _ -> 
-      failwith (spf "%s: not a TranslationDecl" env.current_clang_file)
-  )
+      error env "not a TranslationDecl"
+  
 
 and sexp_toplevel env x =
   match x with
@@ -255,7 +258,7 @@ and decl env (enum, l, xs) =
         in
         let s = 
           if static && kind = E.Function
-          then final_str env s
+          then new_str_if_defs env s
           else s
         in
         let env = add_node_and_edge_if_defs_mode env (s, kind) in
@@ -309,9 +312,7 @@ and decl env (enum, l, xs) =
     | EnumConstantDecl, _loc::(T (TLowerIdent s | TUpperIdent s))::_rest ->
         add_node_and_edge_if_defs_mode env (s, E.Constant)
         
-    | _ ->
-        failwith (spf "%s:%d:wrong Decl line" 
-                     env.current_clang_file env.line)
+    | _ -> error env "wrong Decl line" 
   in
   sexps env xs
 
@@ -334,11 +335,7 @@ and expr env (enum, l, xs) =
       let s = unchar s in
       if env.phase = Uses
       then 
-        let s = 
-          if Hashtbl.mem env.local_rename s
-          then final_str env s
-          else s
-        in
+        let s = str env s in
         add_use_edge env (s, E.Function)
 
   (* todo: unexpected form of call? function pointer call? *)
@@ -349,10 +346,8 @@ and expr env (enum, l, xs) =
       ::T (TString s)::_rest ->
       let s = unchar s in
       if env.phase = Uses
-      then 
-        add_use_edge env (s, E.Constant)
-  | DeclRefExpr, _loc::_typ::_lval::T (TUpperIdent "ParmVar")::_rest ->
-      ()
+      then add_use_edge env (s, E.Constant)
+
   | DeclRefExpr, _loc::_typ::_lval::T (TUpperIdent "Var")::_address
       ::T (TString s)::_rest ->
       let s = unchar s in
@@ -362,21 +357,18 @@ and expr env (enum, l, xs) =
         then ()
         else add_use_edge env (s, E.Global)
 
+  | DeclRefExpr, _loc::_typ::_lval::T (TUpperIdent "ParmVar")::_rest ->
+      ()
+
   | DeclRefExpr, _loc::_typ::T (TUpperIdent "Function")::_address
       ::T (TString s)::_rest ->
       let s = unchar s in
       if env.phase = Uses
       then 
-        let s = 
-          if Hashtbl.mem env.local_rename s
-          then final_str env s
-          else s
-        in
+        let s = str env s in
         add_use_edge env (s, E.Function)
 
-  | DeclRefExpr, _ ->
-      failwith (spf "%s:%d: DeclRefExpr to handle" env.current_clang_file l)
-
+  | DeclRefExpr, _ -> error env "DeclRefExpr to handle"
   | _ -> raise Impossible
   );
   sexps env xs
