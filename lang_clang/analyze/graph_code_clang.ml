@@ -129,11 +129,14 @@ let add_node_and_edge_if_defs_mode env node =
     if G.has_node node env.g
     then
       (match kind with
-      | E.Function  -> 
+      | E.Function | E.Global | E.Constant -> 
           env.pr2_and_log (spf "DUPE entity: %s" (G.string_of_node node))
-      (* todo: have no Use for now for the other entities so skip errors *) 
-      | E.Prototype -> ()
-      | _ -> ()
+      (* todo: have no Use for now for those so skip errors *) 
+      | E.Prototype
+      | E.Type | E.Field
+          -> ()
+      | _ ->
+          failwith (spf "Unhandled category: %s" (G.string_of_node node))
       )
     else begin
       env.g +> G.add_node node;
@@ -359,8 +362,20 @@ and expr env (enum, l, xs) =
         then ()
         else add_use_edge env (s, E.Global)
 
+  | DeclRefExpr, _loc::_typ::T (TUpperIdent "Function")::_address
+      ::T (TString s)::_rest ->
+      let s = unchar s in
+      if env.phase = Uses
+      then 
+        let s = 
+          if Hashtbl.mem env.local_rename s
+          then final_str env s
+          else s
+        in
+        add_use_edge env (s, E.Function)
+
   | DeclRefExpr, _ ->
-      ()
+      failwith (spf "%s:%d: DeclRefExpr to handle" env.current_clang_file l)
 
   | _ -> raise Impossible
   );
@@ -381,6 +396,8 @@ and expr env (enum, l, xs) =
 let build ?(verbose=true) dir skip_list =
   let root = Common.realpath dir in
   let all_files = Lib_parsing_clang.find_source2_files_of_dir_or_files [root] in
+  if null all_files 
+  then failwith "no .clang2 files, run pfff -uninclude_clang";
 
   (* step0: filter noisy modules/files *)
   let files = Skip_code.filter_files skip_list root all_files in
