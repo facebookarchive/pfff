@@ -132,6 +132,12 @@ let actions () = [
   Common.mk_action_1_arg test_tokens_clang;
   "-parse_clang", "   <files or dirs>", 
   Common.mk_action_n_arg test_parse_clang;
+  "-dump_clang2", "   <file>", 
+  Common.mk_action_1_arg (fun file ->
+    let o = Common.get_value file in
+    let v = Meta_ast_clang.vof_program o in
+    pr (Ocaml.string_of_v v);
+  );
 
   "-gen_clang", " <>",
   Common.mk_action_1_arg (gen_clang);
