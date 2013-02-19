@@ -110,6 +110,10 @@ rule token = parse
   (* Strings *)
   (* ----------------------------------------------------------------------- *)
   | "'" [^'\'' ]* "'" { TString (tok lexbuf) }
+  (* lots of type annotation have this format, it simplify things
+   * to have just one token for the whole thing.
+   *)
+  | "'" [^'\'' ]* "'" ":" "'" [^'\'' ]* "'"  { TString (tok lexbuf) }
   | '"' [^'\n''"']* '"' { TString (tok lexbuf) }
 
   | '"' ([^'\n''"'] | '\\' '"')* '"' { TString (tok lexbuf) }
