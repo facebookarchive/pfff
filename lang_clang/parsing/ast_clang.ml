@@ -29,7 +29,7 @@ type info = Parse_info.info
 
 type enum = 
 
-  | Todo of string
+  | TodoAst of string
 (* ------------------------------------------------------------------------- *)
 (* Names  *)
 (* ------------------------------------------------------------------------- *)
@@ -150,6 +150,7 @@ type enum =
 
 
  | TranslationUnitDecl
+ (* with tarzan *)
 
 (*****************************************************************************)
 (* Intermediate representations *)
@@ -162,8 +163,11 @@ type sexp =
   | Bracket of sexp list
   (* everything except the TOxxx and TCxxx normally *)
   | T of Parser_clang.token 
+  (* with tarzan *)
+
 (* ------------------------------------------------------------------------- *)
 (* Toplevel phrases *)
 (* ------------------------------------------------------------------------- *)
 
 type program = sexp
+  (* with tarzan *)
