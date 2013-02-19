@@ -92,7 +92,7 @@ let analyze_make_trace file =
             else None
           )
       | ("clang"|"gcc"|"cc")::xs when List.mem "-o" xs -> None
-      | ("flex" | "bison"
+      | ("flex" | "bison" | "yacc"
         |"ar"
         |"sh" | "sed" | "mv"
         )::_rest -> 
