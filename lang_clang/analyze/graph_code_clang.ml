@@ -65,6 +65,10 @@ type env = {
   line: int;
 
   at_toplevel: bool;
+  (* we don't need to store also the params as they are marked specially
+   * as ParamVar in the AST.
+   *)
+  locals: string list ref;
   
   local_rename: (string, string) Hashtbl.t;
 
@@ -251,13 +255,17 @@ and decl env (enum, l, xs) =
           then final_str env s
           else s
         in
-        add_node_and_edge_if_defs_mode env (s, kind)
+        let env = add_node_and_edge_if_defs_mode env (s, kind) in
+        { env with locals = ref [] }
 
     (* todo: what about extern *)
     | VarDecl, _loc::(T (TLowerIdent s | TUpperIdent s))::_typ_char::_rest ->
         if env.at_toplevel 
         then add_node_and_edge_if_defs_mode env (s, E.Global)
-        else env
+        else begin 
+          env.locals := s::!(env.locals);
+          env
+        end
 
     (* I am not sure about the namespaces, so I prepend strings *)
     | TypedefDecl, _loc::(T (TLowerIdent s | TUpperIdent s))::_typ_char::_rest ->
@@ -340,6 +348,17 @@ and expr env (enum, l, xs) =
       if env.phase = Uses
       then 
         add_use_edge env (s, E.Constant)
+  | DeclRefExpr, _loc::_typ::_lval::T (TUpperIdent "ParmVar")::_rest ->
+      ()
+  | DeclRefExpr, _loc::_typ::_lval::T (TUpperIdent "Var")::_address
+      ::T (TString s)::_rest ->
+      let s = unchar s in
+      if env.phase = Uses
+      then
+        if List.mem s !(env.locals)
+        then ()
+        else add_use_edge env (s, E.Global)
+
   | DeclRefExpr, _ ->
       ()
 
@@ -386,6 +405,7 @@ let build ?(verbose=true) dir skip_list =
     root = root;
     at_toplevel = true;
     local_rename = Hashtbl.create 0;
+    locals = ref [];
 
     log = (fun s ->
         output_string chan (s ^ "\n");
