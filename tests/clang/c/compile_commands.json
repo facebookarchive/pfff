@@ -16,6 +16,11 @@
 },
 {
   "directory": "/home/pad/pfff/tests/clang/c",
+  "command": "clang -c /home/pad/pfff/tests/clang/c/function_pointer.c",
+  "file": "/home/pad/pfff/tests/clang/c/function_pointer.c"
+},
+{
+  "directory": "/home/pad/pfff/tests/clang/c",
   "command": "clang -c /home/pad/pfff/tests/clang/c/foo.c",
   "file": "/home/pad/pfff/tests/clang/c/foo.c"
 },
