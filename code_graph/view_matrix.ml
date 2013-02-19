@@ -353,9 +353,9 @@ let highlight_dead_columns cr w =
   for j = 0 to Array.length mat -.. 1 do
     if DM.is_dead_column j w.m
     then begin
-      CairoH.fill_rectangle ~cr ~alpha:0.3 ~color:"red" 
+      CairoH.fill_rectangle ~cr ~alpha:0.1 ~color:"red" 
         (rect_of_column j l);
-      CairoH.fill_rectangle ~cr ~alpha:0.3 ~color:"red" 
+      CairoH.fill_rectangle ~cr ~alpha:0.1 ~color:"red" 
         (rect_of_label_left j l)
     end
   done
