@@ -48,6 +48,23 @@ type env = {
 let unknown_loc = "unknown_loc"
 
 (*****************************************************************************)
+(* Helper *)
+(*****************************************************************************)
+let str_of_angle_loc env line paren =
+  let loc =
+    match paren with
+    | Angle xs ->
+        Location_clang.location_of_angle (line, env.current_clang_file) xs
+    | _ ->
+        failwith (spf "%s:%d: no location" env.current_clang_file line)
+  in
+  match loc with
+  | Loc.Line (i1, i2)::_ -> spf "__line_%d_%d" i1 i2
+  | Loc.File (_, i1, i2)::_ -> spf "__line_%d_%d" i1 i2
+  | _ -> 
+      failwith (spf "%s:%d: no Line location" env.current_clang_file line)
+
+(*****************************************************************************)
 (* Accumulating *)
 (*****************************************************************************)
 let add_if_not_already_there env (enum, s, v) sexp =
@@ -82,7 +99,7 @@ let rec process env ast =
             | TypedefDecl | RecordDecl | EnumDecl
             (* BlockDecl ?? *)
               -> decl env (enum, l, xs)
-            | Todo s ->
+            | TodoAst s ->
                 pr2_once ("TODO:Uninclude_clang: " ^ s)
             | _ -> 
                 failwith (spf "%s:%d: not a toplevel decl" 
@@ -138,15 +155,19 @@ and decl env (enum, l, xs) =
       let variant = Misc in
       add_if_not_already_there env (VarDecl, s, variant) sexp
 
-  (* todo: usually there is a typedef just behind, need a stable name! 
-   * use the line loc?
+  (* usually there is a typedef just behind those anon decl. We need a
+   * stable string for the hfile key, so let's use the line loc for now.
+   * todo: for enum, could also take the name of the first constant?
    *)
-  | RecordDecl, _loc::(T (TLowerIdent "union"))::_rest ->
-      add_if_not_already_there env (RecordDecl, "union__anon", Misc) sexp
-  | EnumDecl, _loc::_rest ->
-      add_if_not_already_there env (EnumDecl, "enum__anon", Misc) sexp
-  | RecordDecl, _loc::(T (TLowerIdent "struct"))::_rest ->
-      add_if_not_already_there env (RecordDecl, "struct__anon", Misc) sexp
+  | RecordDecl, loc::(T (TLowerIdent "union"))::_rest ->
+      add_if_not_already_there env 
+        (RecordDecl, "union__anon" ^ str_of_angle_loc env l loc, Misc) sexp
+  | EnumDecl, loc::_rest ->
+      add_if_not_already_there env 
+        (EnumDecl, "enum__anon" ^ str_of_angle_loc env l loc, Misc) sexp
+  | RecordDecl, loc::(T (TLowerIdent "struct"))::_rest ->
+      add_if_not_already_there env 
+        (RecordDecl, "struct__anon" ^ str_of_angle_loc env l loc, Misc) sexp
 
   | _ ->
       failwith (spf "%s:%d:wrong Decl line" env.current_clang_file l)
@@ -209,6 +230,7 @@ let uninclude ?(verbose=true) dir skip_list dst =
     pr2 (spf "generating %s" file);
     let dir = Filename.dirname file in
     Common.command2 (spf "mkdir -p %s" dir);
+    let xs = List.rev xs in
     Common.write_value (Paren (TranslationUnitDecl, 0, 
                               Loc.unknown_loc_angle::xs)) file
   )
