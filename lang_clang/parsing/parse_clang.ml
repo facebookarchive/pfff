@@ -172,7 +172,7 @@ let rec sexp_list env acc ending toks =
       enum_of_str s
     with Not_found ->
       pr2_once (spf "Could not find %s" s);
-      Todo s
+      TodoAst s
   in
 
   match toks with
