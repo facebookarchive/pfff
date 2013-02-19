@@ -134,7 +134,7 @@ let add_node_and_edge_if_defs_mode env node =
       | E.Function | E.Global | E.Constant -> 
           env.pr2_and_log (spf "DUPE entity: %s" (G.string_of_node node))
       (* todo: have no Use for now for those so skip errors *) 
-      | E.Prototype
+      | E.Prototype | E.GlobalExtern
       | E.Type | E.Field
           -> ()
       | _ ->
@@ -162,6 +162,7 @@ let rec add_use_edge env (s, kind) =
     (* look for Prototype if no Function *)
     | E.Function -> add_use_edge env (s, E.Prototype)
     (* look for GlobalExtern if no Global *)
+    | E.Global -> add_use_edge env (s, E.GlobalExtern)
     | _ ->
         env.pr2_and_log (spf "Lookup failure on %s (in %s)"
                             (G.string_of_node dst)
@@ -264,10 +265,14 @@ and decl env (enum, l, xs) =
         let env = add_node_and_edge_if_defs_mode env (s, kind) in
         { env with locals = ref [] }
 
-    (* todo: what about extern *)
-    | VarDecl, _loc::(T (TLowerIdent s | TUpperIdent s))::_typ_char::_rest ->
+    | VarDecl, _loc::(T (TLowerIdent s | TUpperIdent s))::_typ_char::rest ->
+        let kind =
+          match rest with
+          | T (TLowerIdent "extern")::_ -> E.GlobalExtern
+          | _ -> E.Global
+        in
         if env.at_toplevel 
-        then add_node_and_edge_if_defs_mode env (s, E.Global)
+        then add_node_and_edge_if_defs_mode env (s, kind)
         else begin 
           env.locals := s::!(env.locals);
           env
