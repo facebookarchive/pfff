@@ -184,6 +184,12 @@ let mk_gui w =
           let dm = w.m in
           Dependencies_matrix_code.info_orders dm;
         ) +> ignore;
+        fc#add_item "_PrintTree" ~callback:(fun () ->
+          let dm = w.m in
+          dm.DM.i_to_name +> Array.iter (fun node ->
+            pr (Graph_code.string_of_node node)
+          );
+        ) +> ignore;
       );
 
       factory#add_submenu "_Help" +> (fun menu -> 
