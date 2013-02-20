@@ -932,7 +932,6 @@ and initial = parse
         yyless 1 lexbuf;
         set_mode ST_IN_SCRIPTING;
         T_OPEN_TAG(tokinfo lexbuf)
-
       }
 
   | "<?PHP"([' ''\t']|NEWLINE)
