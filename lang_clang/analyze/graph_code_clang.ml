@@ -366,12 +366,21 @@ and expr env (enum, l, xs) =
       ()
 
   | DeclRefExpr, _loc::_typ::T (TUpperIdent "Function")::_address
-      ::T (TString s)::_rest ->
+      ::T (TString s)::_rest 
+  | DeclRefExpr, _loc::_typ::T (TLowerIdent "lvalue")
+      ::T (TUpperIdent "Function")::_address
+      ::T (TString s)::_rest 
+      ->
       let s = unchar s in
       if env.phase = Uses
       then 
         let s = str env s in
         add_use_edge env (s, E.Function)
+
+  | DeclRefExpr, _loc::_typ::T (TLowerIdent "lvalue")
+      ::T (TUpperIdent "CXXMethod")::_rest
+      -> pr2_once "TODO: CXXMethod"
+     
 
   | DeclRefExpr, _ -> error env "DeclRefExpr to handle"
   | _ -> raise Impossible
