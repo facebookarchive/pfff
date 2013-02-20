@@ -12,7 +12,7 @@
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the file
  * license.txt for more details.
  *)
-
+open Common2
 open Common
 
 open Ast_php
@@ -82,7 +82,7 @@ exception NotEnoughWorkingTests
 let _hnblines = Hashtbl.create 101
 let nblines_with_wc_cached file = 
   Common.memoized _hnblines file (fun () ->
-    Common.nblines_with_wc file
+    Common2.nblines_with_wc file
   )
 (* 
  * To print coverage statistics, we need a base number.
@@ -135,7 +135,7 @@ let get_all_call_lines_with_sanity_check
      ?is_directive_to_filter file lines_covered =
 
   (* don't know why but sometimes 0 is in the trace *)
-  let lines_covered = lines_covered |> Common.exclude (fun x -> x = 0) in
+  let lines_covered = lines_covered +> Common.exclude (fun x -> x = 0) in
       
   let nb_lines_covered = List.length lines_covered in
       
@@ -152,7 +152,7 @@ let get_all_call_lines_with_sanity_check
   let lines_calls = 
     calls 
     +> List.map (fun (sopt, rp) -> Ast.line_of_info rp)
-    +> Common.set
+    +> Common2.set
   in
   let nb_lines_calls = List.length lines_calls in
       
@@ -170,11 +170,11 @@ let get_all_call_lines_with_sanity_check
     in
     let lines = 
       try 
-        Common.cat_excerpts file diff
+        Common2.cat_excerpts file diff
       with
       exn -> [Common.exn_to_s exn]
     in
-    lines |> List.iter pr2;
+    lines +> List.iter pr2;
     pr2 "PB: fix get_all_calls";
     
   end;
@@ -238,7 +238,7 @@ let coverage_tests
     pr2 "computing set of test files";
     let xs = all_test_files () in
     pr2 (spf "%d test files found" (List.length xs));
-    Common.index_list_and_total xs
+    Common2.index_list_and_total xs
   in
 
   (* using a map reduce model *)
@@ -247,7 +247,7 @@ let coverage_tests
     let trace_file = Common.new_temp_file "xdebug" ".xt" in
     Common.finalize (fun () ->
     pr2 (spf "processing: %s (%d/%d)" test_file i total);
-    pr2 (Common.get_mem());
+    pr2 (Common2.get_mem());
 
     if not (Xdebug.php_has_xdebug_extension ())
     then failwith "xdebug is not properly installed";
@@ -280,9 +280,9 @@ let coverage_tests
     match test_result.Phpunit.t_status with
     | Phpunit.Pass _ -> 
 
-        let h = Common.hash_with_default (fun () -> 0) in
+        let h = Common2.hash_with_default (fun () -> 0) in
 
-        let nblines = Common.nblines_with_wc trace_file in
+        let nblines = Common2.nblines_with_wc trace_file in
 
         pr2 (spf " trace length = %d lines, xdebug trace = %d lines" 
                 (List.length output_cmd) nblines);
@@ -308,7 +308,7 @@ let coverage_tests
          * but some tests generates really weird binary output
          * that makes OCaml raise a Sys_blocked_io exception.
          * 
-         * old: output_cmd |> List.iter pr2; 
+         * old: output_cmd +> List.iter pr2; 
          *)
         Problem (test_file, "failing or fataling test")
     )
@@ -320,13 +320,13 @@ let coverage_tests
      Problem (test_file, "timeout when running test and computing coverage")
     ) 
       (fun () ->
-        Common.erase_this_temp_file trace_file;
+        Common2.erase_this_temp_file trace_file;
       )
 
   in
 
   (* regular_php_file -> hash_of_relevant_test_files_with_score *)
-  let h = Common.hash_with_default (fun () -> 
+  let h = Common2.hash_with_default (fun () -> 
     Hashtbl.create 101
   )
   in
@@ -340,12 +340,12 @@ let coverage_tests
   let reducer _acc test_cover_result = 
     match test_cover_result with
     | Cover (test_file, files_called) ->
-        let total = files_called |> List.map snd |> Common.sum in
-        files_called |> List.iter (fun (file_called, nb_occurences) ->
+        let total = files_called +> List.map snd +> Common2.sum in
+        files_called +> List.iter (fun (file_called, nb_occurences) ->
           h#update file_called (fun hbis -> 
             Hashtbl.replace hbis test_file 
               (* "term" frequency *)
-              (Common.pourcent_float nb_occurences total);
+              (Common2.pourcent_float nb_occurences total);
             hbis
           );
         );
@@ -357,29 +357,29 @@ let coverage_tests
     Features.Distribution.map_reduce_lazy 
       ~fmap:mapper ~freduce:reducer () test_files_fn
   in
-  not_done |> List.iter (fun test_file ->
+  not_done +> List.iter (fun test_file ->
     Common.push2 (test_file, "MPI error, see the full log") pb_test_files;
   );
 
   pr2 "test dependencies";
   let coverage = 
-    h#to_list |> Common.map (fun (source_file, h) ->
+    h#to_list +> List.map (fun (source_file, h) ->
       let tests = h 
-      |> Common.hash_to_list 
-      |> Common.sort_by_val_highfirst
+      +> Common.hash_to_list 
+      +> Common.sort_by_val_highfirst
       in
       (source_file, tests)
     )
   in
 
   (* error report *)
-  !pb_test_files |> List.rev |> List.iter (fun (test_file, error) ->
+  !pb_test_files +> List.rev +> List.iter (fun (test_file, error) ->
     pr2 (spf "PB with %s, \n\t%s" test_file error);
   );
   let good = !ok_test_files in
   let bad = List.length (!pb_test_files) in
   let total = good + bad in
-  let percent = Common.pourcent_float good total in
+  let percent = Common2.pourcent_float good total in
   pr2 (spf "Coverage: %d/%d tests (%.02f%%)" 
           good total percent);
 
@@ -407,11 +407,11 @@ let lines_coverage_from_tests
  ()
  = 
   (* file -> hashset of covered lines *)
-  let h = Common.hash_with_default (fun () -> 
+  let h = Common2.hash_with_default (fun () -> 
     Hashtbl.create 101
   ) in
 
-  all_test_files +> Common.index_list_and_total +> List.iter 
+  all_test_files +> Common2.index_list_and_total +> List.iter 
   (fun (test_file, i, total) ->
     let trace_file = Common.new_temp_file "xdebug" ".xt" in
     Common.finalize (fun () ->
@@ -444,7 +444,7 @@ let lines_coverage_from_tests
     in
     pr2 (spf " trace length = %d lines, xdebug trace = %d lines" 
             (List.length output_cmd)
-            (Common.nblines_with_wc trace_file)
+            (Common2.nblines_with_wc trace_file)
     );
 
     trace_file +> Xdebug.iter_dumpfile 
@@ -478,7 +478,7 @@ let lines_coverage_from_tests
      pr2 (spf "PB with %s, timeout" test_file);
      killall_php_process (); 
   ) (fun () ->
-    Common.erase_this_temp_file trace_file;
+    Common2.erase_this_temp_file trace_file;
     )
   );
     
@@ -490,7 +490,7 @@ let lines_coverage_from_tests
       (spf "file with coverage information %s not in list of files" file);
   );
 
-  all_files +> Common.index_list_and_total +> List.map (fun (file, i, total) ->
+  all_files +> Common2.index_list_and_total +> List.map (fun (file, i, total) ->
     pr2 (spf "processing source: %s (%d/%d)" file i total);
     let covered = 
       try 

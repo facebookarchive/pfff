@@ -153,7 +153,7 @@ let options () =
     "-emacs", Arg.Unit (fun () -> format := Emacs),
     " ";
     "-symlinks", Arg.Unit (fun () -> 
-      Common.follow_symlinks := true;
+      Common2.follow_symlinks := true;
     ), " ";
     "-verbose", Arg.Set verbose, 
     " ";
@@ -162,8 +162,8 @@ let options () =
 
   ] ++
   Common.options_of_actions action (all_actions()) ++
-  Common.cmdline_flags_devel () ++
-  Common.cmdline_flags_other () ++
+  Common2.cmdline_flags_devel () ++
+  Common2.cmdline_flags_other () ++
   [
     "-version",   Arg.Unit (fun () -> 
       pr2 (spf "stags version: %s" Config_pfff.version);
@@ -182,7 +182,7 @@ let main () =
   *)
 
   let usage_msg = 
-    "Usage: " ^ basename Sys.argv.(0) ^ 
+    "Usage: " ^ Common2.basename Sys.argv.(0) ^ 
       " [options] <file or dir> " ^ "\n" ^ "Options are:"
   in
   (* does side effect on many global flags *)

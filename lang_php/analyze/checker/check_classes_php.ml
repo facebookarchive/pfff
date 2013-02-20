@@ -34,7 +34,7 @@ module Flag = Flag_analyze_php
 (*****************************************************************************)
 (* Wrappers *)
 (*****************************************************************************)
-let pr2, pr2_once = Common.mk_pr2_wrappers Flag_analyze_php.verbose_checking
+let pr2, pr2_once = Common2.mk_pr2_wrappers Flag_analyze_php.verbose_checking
 
 (*****************************************************************************)
 (* Types *)

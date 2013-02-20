@@ -14,7 +14,7 @@
  * license.txt for more details.
  *)
 
-open Common.BasicType
+open Common2.BasicType
 
 (*****************************************************************************)
 (* Type classes via module signature. *)

@@ -78,7 +78,7 @@ let unittest =
   end;
   
   let (actual_errors: (Common.filename * int (* line *)) list) = 
-    !Error_php._errors +> Common.map (fun err ->
+    !Error_php._errors +> List.map (fun err ->
       let info = err.Error_php.loc in
       Ast.file_of_info info, Ast.line_of_info info
       )
@@ -86,12 +86,12 @@ let unittest =
   
   (* diff report *)
   let (common, only_in_expected, only_in_actual) = 
-    Common.diff_set_eff expected_errors actual_errors in
+    Common2.diff_set_eff expected_errors actual_errors in
 
-  only_in_expected |> List.iter (fun (src, l) ->
+  only_in_expected +> List.iter (fun (src, l) ->
     pr2 (spf "this one error is missing: %s:%d" src l);
   );
-  only_in_actual |> List.iter (fun (src, l) ->
+  only_in_actual +> List.iter (fun (src, l) ->
     pr2 (spf "this one error was not expected: %s:%d" src l);
   );
   assert_bool

@@ -51,10 +51,10 @@ type overlay = {
 (*****************************************************************************)
 
 let load_overlay file =
-  Common.get_value file
+  Common2.get_value file
 
 let save_overlay overlay file =
-  Common.write_value overlay file
+  Common2.write_value overlay file
 
 (*****************************************************************************)
 (* Check consistency *)
@@ -94,7 +94,7 @@ let check_overlay ~dir_orig ~dir_overlay =
   );
 
   let (common, only_in_orig, only_in_overlay) = 
-    Common.diff_set_eff files files2 in
+    Common2.diff_set_eff files files2 in
 
 
   only_in_orig +> List.iter (fun l ->
@@ -120,11 +120,11 @@ let overlay_equivalences ~dir_orig ~dir_overlay  =
   
   let equiv = 
     links +> List.map (fun link ->
-      let stat = Common.unix_stat_eff link in
+      let stat = Common2.unix_stat_eff link in
       match stat.Unix.st_kind with
       | Unix.S_DIR ->
           let (children, _) = 
-            Common.cmd_to_list_and_status (spf 
+            Common2.cmd_to_list_and_status (spf 
               "cd %s; find * -type f" (link)) in
           let dir = Common.realpath link in
           
@@ -154,7 +154,7 @@ let overlay_equivalences ~dir_orig ~dir_overlay  =
   {
     data = data;
     overlay_to_orig = Common.hash_of_list data;
-    orig_to_overlay = Common.hash_of_list (data +> List.map Common.swap);
+    orig_to_overlay = Common.hash_of_list (data +> List.map Common2.swap);
     root_overlay = dir_overlay;
     root_orig = dir_orig;
   }
@@ -181,7 +181,7 @@ let adapt_layer layer overlay =
 
 (* copy paste of the one in main_codemap.ml *)
 let layers_in_dir dir =
-  Common.readdir_to_file_list dir +> Common.map_filter (fun file ->
+  Common2.readdir_to_file_list dir +> Common.map_filter (fun file ->
     if file =~ "layer.*marshall"
     then Some (Filename.concat dir file)
     else None
@@ -195,7 +195,7 @@ let adapt_layers ~overlay ~dir_layers_orig ~dir_layers_overlay =
     let layer = Layer_code.load_layer layer_filename in
     let layer' = adapt_layer layer overlay in
     Layer_code.save_layer layer' 
-      (Filename.concat dir_layers_overlay (Common.basename layer_filename))
+      (Filename.concat dir_layers_overlay (Common2.basename layer_filename))
   )
 
 

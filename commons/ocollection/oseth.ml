@@ -28,8 +28,8 @@ object(o)
     with Not_found -> false
 
   method null = 
-    try (Hashtbl.iter (fun k v -> raise ReturnExn) data; false) 
-    with ReturnExn -> true
+    try (Hashtbl.iter (fun k v -> raise Common2.ReturnExn) data; false) 
+    with Common2.ReturnExn -> true
 
 (* TODO    method length *)
 
@@ -51,10 +51,10 @@ object(o)
   method getone = 
     let x = ref None in
     try (
-      Hashtbl.iter (fun k _ -> x := Some k; raise ReturnExn) data; 
+      Hashtbl.iter (fun k _ -> x := Some k; raise Common2.ReturnExn) data; 
       raise Not_found
     ) 
-    with ReturnExn -> some !x
+    with Common2.ReturnExn -> Common2.some !x
       
       
 end

@@ -83,7 +83,7 @@ let gen_layer ?(verbose=false) dir ~output =
             List.hd iis, Cyclomatic_php.cyclomatic_complexity_func def
           )
         with exn ->
-          pr2 (spf "PB with %s, exn = %s" file (Common.string_of_exn exn));
+          pr2 (spf "PB with %s, exn = %s" file (Common.exn_to_s exn));
           []
       in
       let readable_file = Common.filename_without_leading_path dir file in
@@ -98,7 +98,7 @@ let gen_layer ?(verbose=false) dir ~output =
           match ii_with_cyclo with
           | [] -> ["noinfo", 1.]
           | xs -> 
-              let max = xs +> List.map snd +> Common.maximum in
+              let max = xs +> List.map snd +> Common2.maximum in
               [property_of_cyclo max, 1.]
         ;
       }

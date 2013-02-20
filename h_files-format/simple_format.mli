@@ -1,4 +1,4 @@
-open Common.BasicType
+open Common2.BasicType
 
 val regexp_comment_line : string
 

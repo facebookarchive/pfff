@@ -1,5 +1,5 @@
 
-type outline = outline_node Common.tree2
+type outline = outline_node Common2.tree2
     and outline_node = {
       stars : string;
       title : string;

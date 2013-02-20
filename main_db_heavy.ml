@@ -51,7 +51,7 @@ let main_action xs =
           pr2 "note: could not find realpath";
           dir
         )
-        +> Common.chop_dirsymbol 
+        +> Common2.chop_dirsymbol 
       in
       let db = 
         Database_php_build.create_db
@@ -86,7 +86,7 @@ let layers = [
     let find_entity = Some (Database_php_build.build_entity_finder db) in
     let env = Env_php.mk_env dir in
 
-    files +> Common.index_list_and_total +> List.iter (fun (file, i, total) ->
+    files +> Common2.index_list_and_total +> List.iter (fun (file, i, total) ->
       try 
         pr2 (spf "processing: %s (%d/%d)" file i total);
         Check_all_php.check_file ~find_entity env file;
@@ -94,7 +94,7 @@ let layers = [
       | (Timeout | UnixExit _) as exn -> raise exn
       | exn ->
           Common.push2 (spf "PB with %s, exn = %s" file 
-                           (Common.string_of_exn exn)) errors;
+                           (Common.exn_to_s exn)) errors;
     );
     !errors +> List.iter pr2;
     Layer_checker_php.gen_layer ~root:dir ~output:layerfile !Error_php._errors
@@ -166,9 +166,9 @@ let options () =
   Common.options_of_actions action (all_actions()) ++
   Flag_parsing_php.cmdline_flags_verbose () ++
   Flag_parsing_php.cmdline_flags_debugging () ++
-  Common.cmdline_flags_devel () ++
-  Common.cmdline_flags_verbose () ++
-  Common.cmdline_flags_other () ++
+  Common2.cmdline_flags_devel () ++
+  Common2.cmdline_flags_verbose () ++
+  Common2.cmdline_flags_other () ++
   [
     "-version",   Arg.Unit (fun () -> 
       pr2 (spf "pfff db (console) version: %s" Config_pfff.version);
@@ -197,7 +197,7 @@ let main () =
   Gc.set {(Gc.get ()) with Gc.stack_limit = 1000 * 1024 * 1024};
 
   let usage_msg = 
-    "Usage: " ^ basename Sys.argv.(0) ^ 
+    "Usage: " ^ Common2.basename Sys.argv.(0) ^ 
       " [options] <file or dir> " ^ "\n" ^ "Options are:"
   in
   (* does side effect on many global flags *)

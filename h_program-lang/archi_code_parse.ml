@@ -12,7 +12,7 @@
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the file
  * license.txt for more details.
  *)
-
+open Common2
 open Common
 
 open Archi_code
@@ -40,44 +40,44 @@ let re_c_yaccfile = Str.regexp "\\(.*\\).tab"
 
 (* coupling: don't forget to extend re_auto_generated below too *)
 let is_auto_generated file =
-  let (d,b,e) = Common.dbe_of_filename_noext_ok file in
+  let (d,b,e) = Common2.dbe_of_filename_noext_ok file in
   match e with
   | "ml"->
-      Sys.file_exists (Common.filename_of_dbe (d,b, "mll"))
+      Sys.file_exists (Common2.filename_of_dbe (d,b, "mll"))
       || 
-      Sys.file_exists (Common.filename_of_dbe (d,b, "mly"))
+      Sys.file_exists (Common2.filename_of_dbe (d,b, "mly"))
       ||
-      Sys.file_exists (Common.filename_of_dbe (d,b, "mlb"))
+      Sys.file_exists (Common2.filename_of_dbe (d,b, "mlb"))
 
   | "mli" ->
-      Sys.file_exists (Common.filename_of_dbe (d,b, "mly"))
+      Sys.file_exists (Common2.filename_of_dbe (d,b, "mly"))
 
   | "tex" ->
-      Sys.file_exists (Common.filename_of_dbe (d,b ^ ".tex", "nw"))
+      Sys.file_exists (Common2.filename_of_dbe (d,b ^ ".tex", "nw"))
 
   | "info" ->
-      Sys.file_exists (Common.filename_of_dbe (d,b, "texi"))
+      Sys.file_exists (Common2.filename_of_dbe (d,b, "texi"))
 
   (* Makefile.in *)
   | "in" ->
-      Sys.file_exists (Common.filename_of_dbe (d,b, "am"))
+      Sys.file_exists (Common2.filename_of_dbe (d,b, "am"))
 
   | "c" ->
-      Sys.file_exists (Common.filename_of_dbe (d,b, "y")) ||
-      Sys.file_exists (Common.filename_of_dbe (d,b, "l")) ||
+      Sys.file_exists (Common2.filename_of_dbe (d,b, "y")) ||
+      Sys.file_exists (Common2.filename_of_dbe (d,b, "l")) ||
       (* bigloo *)
-      Sys.file_exists (Common.filename_of_dbe (d,b, "scm")) ||
+      Sys.file_exists (Common2.filename_of_dbe (d,b, "scm")) ||
       (if b ==~ re_c_yaccfile
       then 
         let b' = Common.matched1 b in
-        Sys.file_exists (Common.filename_of_dbe (d,b', "y"))
+        Sys.file_exists (Common2.filename_of_dbe (d,b', "y"))
       else false
       )
  
   | _ when b = "Makefile" && e = "NOEXT" ->
-      Sys.file_exists (Common.filename_of_dbe (d,b, "am")) ||
-      Sys.file_exists (Common.filename_of_dbe (d,b, "in")) ||
-      Sys.file_exists (Common.filename_of_dbe (d,"Imakefile", ""))
+      Sys.file_exists (Common2.filename_of_dbe (d,b, "am")) ||
+      Sys.file_exists (Common2.filename_of_dbe (d,b, "in")) ||
+      Sys.file_exists (Common2.filename_of_dbe (d,"Imakefile", ""))
 
   | _ -> false
 
@@ -104,7 +104,7 @@ let source_archi_of_filename3 ~root f =
 
   let base = Filename.basename f in
 
-  let b = "/" ^ Common.lowercase base ^ "/" in
+  let b = "/" ^ Common2.lowercase base ^ "/" in
 
   (* we try to give the most specialized category by first considering
    * the extension of the file, then its basename, and then its
@@ -138,7 +138,7 @@ let source_archi_of_filename3 ~root f =
     Common.memoized _hmemo_categ_dir d (fun () ->
 
       let d = Common.filename_without_leading_path root d in
-      let d = Common.lowercase d in
+      let d = Common2.lowercase d in
 
       let xs = Common.split "/" d in
       let xs = List.rev xs in

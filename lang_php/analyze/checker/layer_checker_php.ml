@@ -164,7 +164,7 @@ let info_of_error_and_kind err =
 
 let gen_layer ~root ~output errors = 
 
-  let infos = errors +> Common.map info_of_error_and_kind in
+  let infos = errors +> List.map info_of_error_and_kind in
 
   let layer = Layer_code.simple_layer_of_parse_infos 
     ~title:"PHP Bugs"

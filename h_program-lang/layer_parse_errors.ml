@@ -38,14 +38,14 @@ open Statistics_parsing
 (*****************************************************************************)
 
 let gen_red_green_layer ~root ~output stats =
-  let root = Common.relative_to_absolute root in
+  let root = Common2.relative_to_absolute root in
 
   let layer = { Layer_code.
     title = "Parsing errors (red/green)";
     description = "";
     files = stats +> List.map (fun stat ->
      let file = 
-       stat.filename +> Common.relative_to_absolute
+       stat.filename +> Common2.relative_to_absolute
          +> Common.filename_without_leading_path root
      in
       
@@ -66,14 +66,14 @@ let gen_red_green_layer ~root ~output stats =
   Layer_code.save_layer layer output
 
 let gen_heatmap_layer ~root ~output stats =
-  let root = Common.relative_to_absolute root in
+  let root = Common2.relative_to_absolute root in
 
   let layer = { Layer_code.
     title = "Parsing errors (heatmap)";
     description = "lower is better";
     files = stats +> List.map (fun stat ->
      let file = 
-       stat.filename +> Common.relative_to_absolute
+       stat.filename +> Common2.relative_to_absolute
          +> Common.filename_without_leading_path root
      in
      let covered = stat.correct in
@@ -81,7 +81,7 @@ let gen_heatmap_layer ~root ~output stats =
 
      let percent = 
         try 
-          Common.pourcent_good_bad not_covered covered
+          Common2.pourcent_good_bad not_covered covered
        with Division_by_zero -> 0
      in
       

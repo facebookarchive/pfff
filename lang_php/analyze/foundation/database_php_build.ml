@@ -76,8 +76,8 @@ module DbH = Database_php_build_helpers
 (*****************************************************************************)
 (* Wrappers *)
 (*****************************************************************************)
-let pr2, pr2_once = Common.mk_pr2_wrappers Flag.verbose_database
-let pr2_err, pr2_err_once = Common.mk_pr2_wrappers Flag.show_errors
+let pr2, pr2_once = Common2.mk_pr2_wrappers Flag.verbose_database
+let pr2_err, pr2_err_once = Common2.mk_pr2_wrappers Flag.show_errors
 
 (*****************************************************************************)
 (* Build_entity_finder *)
@@ -461,8 +461,8 @@ let index_db3_2 db =
     let classes_used = 
       users_of_class_in_any (Entity ast) in
     let candidates = 
-      classes_used +> List.map Ast.name +> Common.set 
-      +> Common.map_flatten (fun s -> class_ids_of_string s db)
+      classes_used +> List.map Ast.name +> Common2.set 
+      +> Common2.map_flatten (fun s -> class_ids_of_string s db)
     in
     candidates +> List.iter (fun idclass -> 
       db.uses.users_of_class#apply_with_default idclass
@@ -553,12 +553,12 @@ let index_db4_2 ~annotate_variables_program db =
           (Some (fun x ->
             (* we just want to annotate here *)
             try find_entity x 
-            with Multi_found -> raise Not_found
+            with Common2.Multi_found -> raise Not_found
           ))
           asts;
       );
     (* store back the AST *)
-    zip ids asts +> List.iter (fun (id, ast) ->
+    Common2.zip ids asts +> List.iter (fun (id, ast) ->
       db.defs.toplevels#add2 (id, ast);
     );
 
@@ -634,19 +634,19 @@ let create_db
           if (Sys.file_exists (Filename.concat metapath "notes.txt"))
           then failwith "there is a notes.txt file";
         *)
-        if not (Common.command2_y_or_no("rm -rf " ^ metapath))
+        if not (Common2.command2_y_or_no("rm -rf " ^ metapath))
         then failwith "ok we stop";
         
         Common.command2("mkdir -p " ^ metapath);
         Common.command2(spf "touch %s/%s" metapath 
                            Database_php.database_tag_filename);
-        Common.write_value prj (metapath ^ "/prj.raw");
+        Common2.write_value prj (metapath ^ "/prj.raw");
 
         (* berkeley DB usually *)
         let db = !Database_php._current_open_db_backend metapath in
 
         let logchan = open_out (metapath ^ "/log.log") in
-        Common._chan_pr2 := Some logchan;
+        Common2._chan_pr2 := Some logchan;
         db
     (* note that is is in practice less efficient than Disk :( because
      * probably of the GC that needs to traverse more heap cells.
@@ -737,7 +737,7 @@ let db_of_files_or_dirs
  files_or_dirs =
   let php_files =
     Lib_parsing_php.find_php_files_of_dir_or_files files_or_dirs
-    +> List.map Common.relative_to_absolute
+    +> List.map Common2.relative_to_absolute
   in
   Common.save_excursion Flag.verbose_database show_progress (fun () ->
    create_db

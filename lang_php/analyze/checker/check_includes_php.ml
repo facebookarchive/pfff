@@ -29,7 +29,7 @@ module E = Error_php
 (*****************************************************************************)
 (* Wrappers *)
 (*****************************************************************************)
-let pr2, pr2_once = Common.mk_pr2_wrappers Flag_analyze_php.verbose_checking
+let pr2, pr2_once = Common2.mk_pr2_wrappers Flag_analyze_php.verbose_checking
 
 (*****************************************************************************)
 (* Main entry point *)
@@ -51,7 +51,7 @@ let check env file ast =
           pr2 (spf "(not a static include/require %s)"(Ast.string_of_info tok))
     ) 
     with 
-    | (Timeout | UnixExit _) as exn -> raise exn
+    | (Timeout | Common2.UnixExit _) as exn -> raise exn
     | exn -> 
       pr2 (spf "PB: treating a include/require: %s" (Ast.string_of_info tok));
       raise exn

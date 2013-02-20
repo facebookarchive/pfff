@@ -64,7 +64,7 @@ type env = {
   (* error reporting *)
   dupes: (Graph_code.node) Common.hashset;
   (* less: less useful now with G.not_found *)
-  lookup_fails: (Graph_code.node, int) Common.hash_with_default;
+  lookup_fails: (Graph_code.node, int) Common2.hash_with_default;
   (* todo: dynamic_fails stats *)
 }
 (*****************************************************************************)
@@ -137,7 +137,7 @@ let rec add_use_edge env (name, kind) =
   | _ when not (G.has_node src env.g) ->
       pr2 (spf "LOOKUP SRC FAIL %s --> %s, src does not exist???"
               (G.string_of_node src) (G.string_of_node dst));
-      env.lookup_fails#update src Common.add1
+      env.lookup_fails#update src Common2.add1
 
   (* now handled via G.dupe nodes
    * we skip reference to dupes
@@ -180,7 +180,7 @@ let rec add_use_edge env (name, kind) =
 
           env.g +> G.add_edge (parent_target, dst) G.Has;
           env.g +> G.add_edge (src, dst) G.Use;
-          env.lookup_fails#update dst Common.add1
+          env.lookup_fails#update dst Common2.add1
       )
   )
 
@@ -189,7 +189,7 @@ let rec add_use_edge env (name, kind) =
 (*****************************************************************************)
 
 let extract_defs ~g ~dupes ~ast ~readable =
-  let dir = Common.dirname readable in
+  let dir = Common2.dirname readable in
   G.create_intermediate_directories_if_not_present g dir;
   g +> G.add_node (readable, E.File);
   g +> G.add_edge ((dir, E.Dir), (readable, E.File))  G.Has;
@@ -271,7 +271,7 @@ and toplevel env x =
         
   | EnumDef (name, xs) ->
       xs +> List.iter (fun (name, eopt) ->
-        Common.opt (expr env) eopt
+        Common2.opt (expr env) eopt
       )
 
   | TypeDef (name, t) -> type_ env t
@@ -281,7 +281,7 @@ and toplevel env x =
         { v_name = n; v_type = t; v_storage = _; v_init = eopt } ->
           (* env.params_locals <- (Ast.str_of_name n)::env.params_locals; *)
           type_ env t;
-          Common.opt (expr env) eopt
+          Common2.opt (expr env) eopt
       )
 
   (* less: should analyze if s has the form "..." and not <> and
@@ -318,12 +318,12 @@ and stmt env = function
       expr env e;
       stmt env st
   | For (e1, e2, e3, st) ->
-      Common.opt (expr env) e1;
-      Common.opt (expr env) e2;
-      Common.opt (expr env) e3;
+      Common2.opt (expr env) e1;
+      Common2.opt (expr env) e2;
+      Common2.opt (expr env) e3;
       stmt env st
   | Return eopt ->
-      Common.opt (expr env) eopt;
+      Common2.opt (expr env) eopt;
   | Continue | Break -> ()
   | Label (_name, st) ->
       stmt env st
@@ -335,7 +335,7 @@ and stmt env = function
         { v_name = n; v_type = t; v_storage = _; v_init = eopt } ->
           env.params_locals <- (Ast.str_of_name n)::env.params_locals;
           type_ env t;
-          Common.opt (expr env) eopt
+          Common2.opt (expr env) eopt
       )
 
  and case env = function
@@ -467,7 +467,7 @@ let build ?(verbose=true) dir skip_list =
 
   (* step2: creating the 'Use' edges, the uses *)
   if verbose then pr2 "\nstep2: extract uses";
-  let lookup_fails = Common.hash_with_default (fun () -> 0) in
+  let lookup_fails = Common2.hash_with_default (fun () -> 0) in
   files +> Common_extra.progress ~show:verbose (fun k -> 
    List.iter (fun file ->
      k();

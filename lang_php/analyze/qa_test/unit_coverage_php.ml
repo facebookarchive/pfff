@@ -90,8 +90,8 @@ let unittest = "coverage_php" >::: [
     let cover_a = List.assoc (p "a.php") cover in
     let cover_b = List.assoc (p "b.php") cover in
 
-    assert_equal [p "t1_a.php"; p "t3_a_b.php"] (Common.keys cover_a);
-    assert_equal [p "t2_b.php"; p "t3_a_b.php"] (Common.keys cover_b);
+    assert_equal [p "t1_a.php"; p "t3_a_b.php"] (Common2.keys cover_a);
+    assert_equal [p "t2_b.php"; p "t3_a_b.php"] (Common2.keys cover_b);
 
     (* Right now if a function calls another function in a loop, then
      * those functions calls will occcur a lot in the trace, which

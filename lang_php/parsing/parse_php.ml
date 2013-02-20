@@ -53,7 +53,7 @@ let program_of_program_with_comments a = program_of_program2 a
 (*****************************************************************************)
 (* Wrappers *)
 (*****************************************************************************)
-let pr2_err, pr2_once = Common.mk_pr2_wrappers Flag.verbose_parsing 
+let pr2_err, pr2_once = Common2.mk_pr2_wrappers Flag.verbose_parsing 
 
 (*****************************************************************************)
 (* Helpers *)
@@ -87,7 +87,7 @@ let rec distribute_info_items_toplevel2 xs toks filename =
 
       let toks_before_max, toks_after = 
         Common.profile_code "spanning tokens" (fun () ->
-        toks +> Common.span_tail_call (fun tok ->
+        toks +> Common2.span_tail_call (fun tok ->
           match Ast_php.compare_pos (TH.info_of_tok tok) max with
           | -1 | 0 -> true
           | 1 -> false
@@ -298,7 +298,7 @@ let parse2 ?(pp=(!Flag.pp_default)) filename =
   in
 
   let stat = Parse_info.default_stat filename in
-  let filelines = Common.cat_array filename in
+  let filelines = Common2.cat_array filename in
 
   let toks = tokens filename in
   (* note that now that pfff support XHP constructs directly, 
@@ -334,7 +334,7 @@ let parse2 ?(pp=(!Flag.pp_default)) filename =
       (* no error recovery, the whole file is discarded *)
       tr.PI.passed <- List.rev toks;
 
-      let info_of_bads = Common.map_eff_rev TH.info_of_tok tr.PI.passed in 
+      let info_of_bads = Common2.map_eff_rev TH.info_of_tok tr.PI.passed in 
 
       Right (info_of_bads, line_error, current, e)
   in
@@ -444,7 +444,7 @@ let any_of_string s =
   let tmpfile = Common.new_temp_file "pfff_any_of_s" "php" in
   Common.write_file tmpfile s;
   let res = parse_any tmpfile in
-  Common.erase_this_temp_file tmpfile;
+  Common2.erase_this_temp_file tmpfile;
   res
 
 (* 
@@ -466,7 +466,7 @@ let (expr_of_string: string -> Ast_php.expr) = fun s ->
   | _ -> failwith "only expr pattern are supported for now"
   )
   in
-  Common.erase_this_temp_file tmpfile;
+  Common2.erase_this_temp_file tmpfile;
   res
 
 (* It is clearer for our testing code to programmatically build source files
@@ -479,7 +479,7 @@ let (program_of_string: string -> Ast_php.program) = fun s ->
   Common.write_file tmpfile ("<?php \n" ^ s ^ "\n");
   let (ast2, _stat) = parse tmpfile in
   let ast = program_of_program2 ast2 in
-  Common.erase_this_temp_file tmpfile;
+  Common2.erase_this_temp_file tmpfile;
   ast
 
 (* use program_of_string when you can *)
@@ -494,7 +494,7 @@ let (tokens_of_string: string -> Parser_php.token list) = fun s ->
   let tmpfile = Common.new_temp_file "pfff_tokens_of_s" "php" in
   Common.write_file tmpfile ("<?php \n" ^ s ^ "\n");
   let toks = tokens tmpfile in
-  Common.erase_this_temp_file tmpfile;
+  Common2.erase_this_temp_file tmpfile;
   toks
   
 

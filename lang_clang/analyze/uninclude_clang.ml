@@ -231,6 +231,6 @@ let uninclude ?(verbose=true) dir skip_list dst =
     let dir = Filename.dirname file in
     Common.command2 (spf "mkdir -p %s" dir);
     let xs = List.rev xs in
-    Common.write_value (Paren (TranslationUnitDecl, 0, 
+    Common2.write_value (Paren (TranslationUnitDecl, 0, 
                               Loc.unknown_loc_angle::xs)) file
   )

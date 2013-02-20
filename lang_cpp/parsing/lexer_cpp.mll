@@ -48,7 +48,7 @@ module Ast = Ast_cpp
 (*****************************************************************************)
 (* Wrappers *)
 (*****************************************************************************)
-let pr2, pr2_once = Common.mk_pr2_wrappers Flag.verbose_lexing
+let pr2, pr2_once = Common2.mk_pr2_wrappers Flag.verbose_lexing
 
 (*****************************************************************************)
 (* Helpers *)
@@ -491,7 +491,7 @@ rule token = parse
       { let info = tokinfo lexbuf in
         let s = tok lexbuf in
         Common.profile_code "C parsing.lex_ident" (fun () -> 
-          match Common.optionise (fun () -> Hashtbl.find keyword_table s) with
+          match Common2.optionise (fun () -> Hashtbl.find keyword_table s) with
           | Some f -> f info
 
            (* typedef_hack. note: now this is no more useful, cos
@@ -641,7 +641,8 @@ and char = parse
 *)
 (* c++ext: mostly copy paste of string but s/"/'/  " and s/string/char *)
   | '\''                                      { "" }
-  | (_ as x)                                  { string_of_char x^char lexbuf}
+  | (_ as x)                                  
+      { Common2.string_of_char x^char lexbuf}
 
   | ("\\" (oct | oct oct | oct oct oct)) as x { x ^ char lexbuf }
   | ("\\x" (hex | hex hex)) as x              { x ^ char lexbuf }
@@ -669,7 +670,8 @@ and char = parse
 (* todo? factorise code with char ? but not same ending token so hard. *)
 and string  = parse
   | '"'                                       { "" }
-  | (_ as x)                                  { string_of_char x^string lexbuf}
+  | (_ as x)                                  
+      { Common2.string_of_char x^string lexbuf}
 
   | ("\\" (oct | oct oct | oct oct oct)) as x { x ^ string lexbuf }
   | ("\\x" (hex | hex hex)) as x              { x ^ string lexbuf }

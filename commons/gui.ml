@@ -300,7 +300,7 @@ let model_of_list conv l =
   let model = GTree.list_store cols in
   pr2 (spf "model_of_list: length= %d" (List.length l));
 
-  Common.profile_code2 "model_of_list" (fun () -> 
+  Common.profile_code "model_of_list" (fun () -> 
   List.iter
     (fun data ->
       let row = model#append () in
@@ -379,12 +379,12 @@ let clist_connect ~callback:f (widget : string GList.clist) =
       );
 
       f (Some s);
-    );
+    ) +> ignore;
 
 
     widget#connect#unselect_row ~callback:(fun ~row ~column ~event ->
       f None
-    );
+    ) +> ignore;
   end
 
 let clist_update xs widget = 
@@ -516,7 +516,7 @@ let dialog_text ~text ~title =
   let _label  = GMisc.label    ~text     ~packing:dialog#vbox#add () in
   let dquit  = GButton.button ~label:"Close" ~packing:dialog#vbox#add () in 
   begin
-    dquit#connect#clicked ~callback: (fun _ -> dialog#destroy ());
+    dquit#connect#clicked ~callback: (fun _ -> dialog#destroy ()) +>ignore;
     dialog#show ();
   end
 
@@ -614,7 +614,7 @@ let dialog_ask_generic ?width ~title fbuild fget_val  =
   let w = 
     GWindow.dialog ~modal:true ~border_width:1 ~title ?width () 
   in
-  w#connect#destroy ~callback: GMain.Main.quit;
+  w#connect#destroy ~callback: GMain.Main.quit +> ignore;
 
   let ok_button = GButton.button ~stock: `YES ()in
   let no_button = GButton.button ~stock: `NO () in
@@ -629,11 +629,11 @@ let dialog_ask_generic ?width ~title fbuild fget_val  =
   ok_button#connect#clicked ~callback:(fun () -> 
     res := Some (fget_val ());
     w#destroy ()
-  );
+  ) +> ignore;
   no_button#connect#clicked ~callback:(fun () -> 
     res := None;
     w#destroy ();
-  );
+  ) +> ignore;
 
   w#event#connect#key_press ~callback:(fun ev -> 
     let k = GdkEvent.Key.keyval ev in
@@ -646,7 +646,7 @@ let dialog_ask_generic ?width ~title fbuild fget_val  =
       (* pr2 (i_to_s k); *)
       false
     end 
-  );
+  ) +> ignore;
 
 
   w#show ();
@@ -696,16 +696,16 @@ let dialog_ask_filename ~title ~filename =
   let (res: filename option ref) = ref None in
 
   let filew = GWindow.file_selection ~title ~filename ~modal:true () in
-  filew#connect#destroy ~callback: GMain.Main.quit;
+  filew#connect#destroy ~callback: GMain.Main.quit +> ignore;
 
   filew#ok_button#connect#clicked ~callback:(fun () -> 
     res := Some (filew#filename);
     filew#destroy ()
-  );
+  ) +> ignore;
   filew#cancel_button#connect#clicked ~callback:(fun () -> 
     res := None;
     filew#destroy ();
-  );
+  ) +> ignore;
   filew#show ();
   GMain.Main.main ();
   !res
@@ -788,7 +788,7 @@ let gmain_idle_add ~prio callback =
       try 
         callback ()
       with exn ->
-        pr2 (Common.exn_to_s_with_backtrace exn);
+        pr2 (Common2.exn_to_s_with_backtrace exn);
         raise exn
     )
   else begin
@@ -804,11 +804,11 @@ let gmain_idle_add ~prio callback =
 (*****************************************************************************)
   
 let mk_gui_main ~title ?(width=800) ?(height=600) f = 
-  GtkMain.Main.init();
+  GtkMain.Main.init() +> ignore;
   let w = GWindow.window ~title ~width ~height () in
 
-  w#event#connect#delete ~callback:(fun _ -> GMain.Main.quit (); true);
-  w#connect#destroy      ~callback:          GMain.Main.quit;
+  w#event#connect#delete ~callback:(fun _ -> GMain.Main.quit (); true) +>ignore;
+  w#connect#destroy      ~callback:          GMain.Main.quit +> ignore;
 
   f w;
   (*

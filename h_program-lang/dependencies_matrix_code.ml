@@ -265,7 +265,7 @@ let partition_matrix nodes dm =
     let xs = sort_by_count_rows_low_first elts_with_empty_columns m dm in
     xs +> List.iter (empty_all_cells_relevant_to_node m dm);
     right := xs ++ !right;
-    pr2 (spf "step1: %s" (Common.dump xs));
+    pr2 (spf "step1: %s" (Common2.dump xs));
     if null xs
     then rest
     else step1 rest
@@ -282,7 +282,7 @@ let partition_matrix nodes dm =
       nodes +> List.partition (fun node -> is_empty_row node m dm) in
     let xs = sort_by_count_columns_high_first elts_with_empty_lines m dm in
     xs+> List.iter (empty_all_cells_relevant_to_node m dm);
-    pr2 (spf "step2: %s" (Common.dump xs));
+    pr2 (spf "step2: %s" (Common2.dump xs));
     left := !left ++ xs;
     if null xs
     then step1 rest
@@ -333,7 +333,7 @@ let optional_manual_reordering (s, node_kind) nodes constraints_opt =
         let current = ref 0 in
         let nodes_with_order = 
           nodes +> List.map (fun (s, node_kind) ->
-            match Common.hfind_option s horder with
+            match Common2.hfind_option s horder with
             | None ->
                 pr2 (spf "INFO_TXT: could not find %s in constraint set" s);
                 (s, node_kind), !current
@@ -379,7 +379,7 @@ let build_with_tree2 tree gopti =
   );
 
   let dm = {
-    matrix = Common.make_matrix_init ~nrow:n ~ncolumn:n (fun i j -> 0);
+    matrix = Common2.make_matrix_init ~nrow:n ~ncolumn:n (fun i j -> 0);
     name_to_i = name_to_idm;
     i_to_name = idm_to_name;
     config = tree;
@@ -513,7 +513,7 @@ let adjust_gopti_if_needed_lazily tree gopti =
            * threshold_pack - 1 + the new entry = threshold_pack
            * and so we will not loop again and again.
            *)
-          let (ok, to_pack) = Common.splitAt (!threshold_pack - 1) score in
+          let (ok, to_pack) = Common2.splitAt (!threshold_pack - 1) score in
           pr2 (spf "REPACKING: TO_PACK = %s, TO_KEEP = %s" 
                  (Common.dump to_pack) (Common.dump ok));
           let new_gopti, dotdotdot_entry = 
@@ -728,7 +728,7 @@ let focus_on_node n deps_style tree dm =
         else Some (Node (n2, xs))
   in
   (* should be a Some cos at least we have 'n' in the tree *)
-  Common.some (aux tree)
+  Common2.some (aux tree)
   
 
 (*****************************************************************************)

@@ -30,7 +30,7 @@ module CG = Callgraph_php
 (*****************************************************************************)
 (* Wrappers *)
 (*****************************************************************************)
-let pr2, pr2_once = Common.mk_pr2_wrappers Flag.verbose_database
+let pr2, pr2_once = Common2.mk_pr2_wrappers Flag.verbose_database
 
 (*****************************************************************************)
 (* Helpers *)

@@ -30,15 +30,15 @@ let test_highlight_cpp file =
     ;
 
         (* getting the text *)
-        let _ = toks |> Common.map_filter (fun tok -> 
+        let _ = toks +> Common.map_filter (fun tok -> 
           let info = Token_helpers_cpp.info_of_tok tok in
           let s = Token_helpers_cpp.str_of_tok tok in
 
           if not (Ast_cpp.is_origintok info)
           then None
           else 
-            let categ = Common.hfind_option info h in
-            let categ = categ +> Common.fmap (fun categ ->
+            let categ = Common2.hfind_option info h in
+            let categ = categ +> Common2.fmap (fun categ ->
               (*
                 rewrite_categ_using_entities s categ file hentities
               *)
@@ -46,7 +46,7 @@ let test_highlight_cpp file =
               )
             in
             Some (s, categ,
-                 { l = Ast_cpp.line_of_info info;
+                 { Common2.l = Ast_cpp.line_of_info info;
                    c = Ast_cpp.col_of_info info;
                  })
         )

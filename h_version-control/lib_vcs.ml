@@ -12,7 +12,7 @@
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the file
  * license.txt for more details.
  *)
-
+open Common2
 open Common
 
 (*****************************************************************************)
@@ -25,7 +25,7 @@ type author =
   Author of string
 
 (* could also add author *)
-type line_annotation = versionid * author * Common.date_dmy
+type line_annotation = versionid * author * Common2.date_dmy
 
 type commit_patch = (string list) (* header *) * Patch.patchinfo
 
@@ -61,7 +61,7 @@ let s_of_versionid (VersionId s) = s
 let parse_commit_patch xs = 
   try 
     let (before, x, after) = 
-      Common.split_when (fun l -> l =~ "^diff.*") xs 
+      Common2.split_when (fun l -> l =~ "^diff.*") xs 
     in
     before, (Patch.parse_patch (x::after))
   with Not_found ->

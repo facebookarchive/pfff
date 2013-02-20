@@ -12,7 +12,7 @@
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the file
  * license.txt for more details.
  *)
-
+open Common2
 open Common
 
 open Ast_php
@@ -66,8 +66,8 @@ let parsing_stat_db db =
   let numtoplevel = ref 0 in
   let numnotparsedcorrectly = ref 0 in
 
-  db.file_to_topids#tolist +> Common.index_list_and_total +>
-  (fun xs -> Common.execute_and_show_progress (List.length xs) (fun k -> 
+  db.file_to_topids#tolist +> Common2.index_list_and_total +>
+  (fun xs -> Common2.execute_and_show_progress (List.length xs) (fun k -> 
    xs 
    +> List.iter 
     (fun ((file, ids), i, total) -> 
@@ -115,7 +115,7 @@ let parsing_stat_db db =
       if !is_perfect then incr numperfect;
       
     )));
-  let percent = Common.pourcent_good_bad_float !good !bad in
+  let percent = Common2.pourcent_good_bad_float !good !bad in
 
   pr2 ("parsing stat");
   pr2 (spf "perfect = %d" !numperfect);
@@ -291,7 +291,7 @@ let fields_stat_db db =
   let hcount = Hashtbl.create 101 in
 
   db.file_to_topids#tolist +> (fun xs -> 
-  Common.execute_and_show_progress (List.length xs) (fun k -> 
+  Common2.execute_and_show_progress (List.length xs) (fun k -> 
     xs +> List.iter (fun (file, ids)-> 
      k();
      ids +> List.iter (fun id ->
@@ -305,7 +305,7 @@ let fields_stat_db db =
               (match var2, Ast.unbracket expr_bracket with
               | (Var (dname, scope), 
                 Some (Sc (C (Ast.String (s, info))))) ->
-                  Common.hupdate_default s Common.add1 Common.cst_zero hcount;
+                  Common2.hupdate_default s Common2.add1 Common2.cst_zero hcount;
               | _ -> k v
               )
           | _ -> k v

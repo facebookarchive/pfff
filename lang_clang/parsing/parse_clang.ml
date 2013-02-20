@@ -121,7 +121,7 @@ let enum__str_conv = [
 ]
 
 let (enum_of_str, str_of_enum) =
-  Common.mk_str_func_of_assoc_conv enum__str_conv
+  Common2.mk_str_func_of_assoc_conv enum__str_conv
 
 (*****************************************************************************)
 (* Lexing only *)
@@ -336,7 +336,7 @@ let parse file =
       pr2 (spf "PB not data at all with %s" file);
       T Error
   | xs -> 
-      pr2_gen (Common.list_last xs);
+      pr2_gen (Common2.list_last xs);
       failwith (spf "noise after sexp, length list = %d" (List.length xs))
   )
 

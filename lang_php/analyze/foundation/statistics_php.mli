@@ -1,6 +1,6 @@
 (*s: statistics_php.mli *)
 (*x: statistics_php.mli *)
-type stat = (string, int) Common.hash_with_default
+type stat = (string, int) Common2.hash_with_default
 
 type stat_hooks = {
   entity: (Database_code.entity_kind * string) -> unit;

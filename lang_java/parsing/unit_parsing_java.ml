@@ -15,7 +15,7 @@ let unittest =
 
     "regression files" >:: (fun () ->
       let dir = Filename.concat Config_pfff.path "/tests/java/parsing" in
-      let files = Common.glob (spf "%s/*.java" dir) in
+      let files = Common2.glob (spf "%s/*.java" dir) in
       files +> List.iter (fun file ->
         try
           let _ = Parse_java.parse file in
@@ -53,7 +53,7 @@ let unittest =
         }"
       in
 
-      let ast = Common.with_tmp_file
+      let ast = Common2.with_tmp_file
                   ~str:thecode
                   ~ext:"java"
                   Parse_java.parse_program in

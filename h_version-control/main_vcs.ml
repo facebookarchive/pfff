@@ -50,9 +50,9 @@ let options () =
     " ";
   ] ++
   Common.options_of_actions action (all_actions()) ++
-  Common.cmdline_flags_devel () ++
-  Common.cmdline_flags_verbose () ++
-  Common.cmdline_flags_other () ++
+  Common2.cmdline_flags_devel () ++
+  Common2.cmdline_flags_verbose () ++
+  Common2.cmdline_flags_other () ++
   [
   "-version",   Arg.Unit (fun () -> 
     pr2 (spf "vcs version: %s" version);
@@ -63,7 +63,7 @@ let options () =
   (* this can not be factorized in Common *)
   "-date",   Arg.Unit (fun () -> 
     pr2 "version: $Date: 2008/10/26 00:44:57 $";
-    raise (Common.UnixExit 0)
+    raise (Common2.UnixExit 0)
     ), 
   "   guess what";
   ] ++
@@ -75,7 +75,7 @@ let options () =
 
 let main () = 
   let usage_msg = 
-    "Usage: " ^ Common.basename Sys.argv.(0) ^ 
+    "Usage: " ^ Common2.basename Sys.argv.(0) ^ 
       " [options] <file or dir> " ^ "\n" ^ "Options are:"
   in
   (* does side effect on many global flags *)

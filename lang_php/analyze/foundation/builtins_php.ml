@@ -220,7 +220,7 @@ let idl_type__str_conv = [
 ]
 
 let (idl_type_of_string, str_of_idl_type) = 
- Common.mk_str_func_of_assoc_conv idl_type__str_conv
+ Common2.mk_str_func_of_assoc_conv idl_type__str_conv
 
 let idl_type_of_string (s, info) =
     try idl_type_of_string s
@@ -256,7 +256,7 @@ let generate_php_stdlib ~src ~phpmanual_dir ~dest =
    *)
   (* todo: need also find .idl in hphp/facebook/extensions/ *)
 
-  if not (Common.command2_y_or_no("rm -rf " ^ dest))
+  if not (Common2.command2_y_or_no("rm -rf " ^ dest))
   then failwith "ok we stop";
   Common.command2("mkdir -p " ^ dest);
 

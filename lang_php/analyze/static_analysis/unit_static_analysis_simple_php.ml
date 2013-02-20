@@ -40,9 +40,9 @@ let id s db =
       Db.id_of_function s db
 
 let callers id db =
-  Db.callers_of_id id db |> List.map Cg.id_of_callerinfo
+  Db.callers_of_id id db +> List.map Cg.id_of_callerinfo
 let callees id db =
-  Db.callees_of_id id db |> List.map Cg.id_of_callsite
+  Db.callees_of_id id db +> List.map Cg.id_of_callsite
 
 (*****************************************************************************)
 (* Unit tests *)
@@ -85,7 +85,7 @@ let deadcode_unittest =
         let id s = id s db in
 
         let dead_ids =
-          Deadcode_php.finding_dead_functions hooks db |> List.map snd in
+          Deadcode_php.finding_dead_functions hooks db +> List.map snd in
 
         assert_bool
           "nocaller() should be dead"
@@ -197,7 +197,7 @@ let deadcode_unittest =
         let db = db_from_string file in
 
         let dead_ids =
-          Deadcode_php.finding_dead_classes hooks db |> List.map snd in
+          Deadcode_php.finding_dead_classes hooks db +> List.map snd in
         assert_bool
           "DeadA should be dead"
           (List.mem (id "DeadA::" db) dead_ids);
@@ -212,7 +212,7 @@ let deadcode_unittest =
         let db = db_from_string file in
 
         let dead_ids =
-          Deadcode_php.finding_dead_classes hooks db |> List.map snd in
+          Deadcode_php.finding_dead_classes hooks db +> List.map snd in
         assert_bool
           "NotDeadA should not be dead"
           (not (List.mem (id "NotDeadA::" db) dead_ids));

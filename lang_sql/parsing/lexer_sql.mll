@@ -151,7 +151,7 @@ rule lexer = parse
         let info = tokinfo lexbuf in
         let s = tok lexbuf in
 
-          match Common.optionise (fun () -> 
+          match Common2.optionise (fun () -> 
             Hashtbl.find keyword_table (String.lowercase s))
           with
           | Some f -> f info

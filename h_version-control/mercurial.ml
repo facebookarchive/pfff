@@ -55,9 +55,9 @@ let annotate2 ?(basedir="") filename =
         let (author, commitid, month_str, day, year) = Common.matched5 s in
         Some (VersionId commitid, 
               Author author,
-              Common.mk_date_dmy 
+              Common2.mk_date_dmy 
                 (s_to_i day) 
-                (Common.int_of_month (Common.month_of_string month_str))
+                (Common2.int_of_month (Common2.month_of_string month_str))
                 (s_to_i year))
       else begin 
         pr2 ("hg annotate wrong line: " ^ s);
@@ -121,9 +121,9 @@ let date_file_creation2 ?(basedir="") file =
     if s =~ date_regexp
     then 
       let (month_str, day, year) = Common.matched3 s in
-      Some (Common.mk_date_dmy 
+      Some (Common2.mk_date_dmy 
                (s_to_i day) 
-               (Common.int_of_month (Common.month_of_string month_str))
+               (Common2.int_of_month (Common2.month_of_string month_str))
                (s_to_i year))
     else None
   )

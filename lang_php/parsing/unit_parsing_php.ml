@@ -86,7 +86,7 @@ let unittest =
 
     "regression files" >:: (fun () ->
       let dir = Filename.concat Config_pfff.path "/tests/php/parsing" in
-      let files = Common.glob (spf "%s/*.php" dir) in
+      let files = Common2.glob (spf "%s/*.php" dir) in
       files +> List.iter (fun file ->
         try
           let _ = Parse_php.parse_program file in

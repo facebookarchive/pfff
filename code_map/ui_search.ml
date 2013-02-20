@@ -17,7 +17,7 @@
 (*e: Facebook copyright *)
 open Common
 (* floats are the norm in graphics *)
-open Common.ArithFloatInfix
+open Common2.ArithFloatInfix
 
 module G = Gui
 

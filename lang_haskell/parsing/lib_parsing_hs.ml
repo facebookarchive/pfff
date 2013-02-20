@@ -32,6 +32,6 @@ let find_hs_files_of_dir_or_files xs =
     match ftype with
     | File_type.PL (File_type.Haskell _) -> true
     | _ -> false
-  ) |> Common.sort
+  ) +> Common.sort
 
 

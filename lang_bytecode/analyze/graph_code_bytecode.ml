@@ -144,7 +144,7 @@ let java_class_name_of_bytecode_class_name x =
 let create_intermediate_packages_if_not_present g root xs =
 
   (* ["java";"lang"] -> [[]; ["java"]; ["java";"lang"] ] *)
-  let dirs = Common.inits xs in
+  let dirs = Common2.inits xs in
   let dirs = 
     match dirs with
     | []::xs -> xs
@@ -403,7 +403,7 @@ let extract_uses_inheritance2 ~g ast =
   let current = (name, E.Class E.RegularClass) in
   let env = { g; current; consts = jclass.j_consts } in
 
-  let parents = Common.option_to_list jclass.j_super ++ jclass.j_interfaces in
+  let parents = Common2.option_to_list jclass.j_super ++ jclass.j_interfaces in
   parents +> List.iter (fun cname ->
     let node = (JBasics.cn_name cname, E.Class E.RegularClass) in
     add_use_edge env node;

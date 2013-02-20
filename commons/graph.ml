@@ -319,7 +319,7 @@ let add_edge_and_nodes_if_not_present k1 k2 g =
 (*****************************************************************************)
 
 let nodes g = 
-  Common.hkeys g.vertex_of_key
+  Common2.hkeys g.vertex_of_key
 
 let out_degree k g = OG.out_degree g.og (g +> vertex_of_key k)
 let in_degree k g  = OG.in_degree  g.og (g +> vertex_of_key k)

@@ -14,7 +14,7 @@
  *)
 open Common
 (* floats are the norm in graphics *)
-open Common.ArithFloatInfix
+open Common2.ArithFloatInfix
 
 module G = Gui
 module K = GdkKeysyms
@@ -210,7 +210,7 @@ let mk_gui w =
 
       tb#insert_widget (G.mk (GButton.button ~stock:`GO_BACK) (fun b -> 
         b#connect#clicked ~callback:(fun () -> 
-          w.path <- Common.list_init w.path;
+          w.path <- Common2.list_init w.path;
           View_matrix.recompute_matrix w;
         )
       ));
@@ -266,7 +266,7 @@ let mk_gui w =
     pr2 "fucking callback";
     let s = Printexc.get_backtrace () in
     pr2 s;
-    let pb = "pb: " ^ string_of_exn exn in
+    let pb = "pb: " ^ Common.exn_to_s exn in
     G.dialog_text ~text:pb ~title:"pb";
     raise exn
   );

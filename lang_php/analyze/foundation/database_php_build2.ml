@@ -61,7 +61,7 @@ let index_db_includes_requires2
     let increq = Include_require_php.top_increq_of_program program in
     
     let included_files = 
-      increq |> Common.map_filter (fun (_kind, tok, inc_expr) ->
+      increq +> Common.map_filter (fun (_kind, tok, inc_expr) ->
       let dir = Filename.dirname file in
       let path_opt = 
         Include_require_php.resolve_path (env, dir) inc_expr
@@ -77,7 +77,7 @@ let index_db_includes_requires2
     let additional = hook_additional_includes file program in
     
     (* some self check that we use the same path format *)
-    additional |> List.iter (fun file ->
+    additional +> List.iter (fun file ->
       try 
         let _ = absolute_to_readable_filename file db in
         ()
@@ -89,7 +89,7 @@ let index_db_includes_requires2
     let included_files = additional ++ included_files in
 
     db.uses.includees_of_file#add2 (file, included_files);
-    included_files |> List.iter (fun included ->
+    included_files +> List.iter (fun included ->
       db.uses.includers_of_file#apply_with_default included
         (fun old -> file::old) (fun() -> []) +> ignore
     );

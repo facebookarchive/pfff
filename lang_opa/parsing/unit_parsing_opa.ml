@@ -32,7 +32,7 @@ let unittest =
 
     "regression files" >:: (fun () ->
       let dir = Filename.concat Config_pfff.path "/tests/opa/parsing" in
-      let files = Common.glob (spf "%s/*.opa" dir) in
+      let files = Common2.glob (spf "%s/*.opa" dir) in
       files +> List.iter (fun file ->
         try
           let (_, toks) = Parse_opa.parse_just_tokens file in

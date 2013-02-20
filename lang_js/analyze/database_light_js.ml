@@ -79,7 +79,7 @@ let mk_entity ~root ~hcomplete_name_of_info info categ =
     e_file = 
       Ast.file_of_info info +> 
         Common.filename_without_leading_path root;
-    e_pos = { Common.l = l; Common.c = c };
+    e_pos = { Common2.l = l; c };
     e_kind = Database_code.entity_kind_of_highlight_category_def categ;
 
     (* filled in step 2 *)
@@ -104,11 +104,11 @@ let compute_database ?(verbose=false) files_or_dirs =
    *)
   let files_or_dirs = files_or_dirs +> List.map Common.realpath in
 
-  let root = Common.common_prefix_of_files_or_dirs files_or_dirs in
+  let root = Common2.common_prefix_of_files_or_dirs files_or_dirs in
   pr2 (spf "generating JS db_light with root = %s" root);
 
   let files = Lib_parsing_js.find_js_files_of_dir_or_files files_or_dirs in
-  let dirs = files +> List.map Filename.dirname +> Common.uniq_eff in
+  let dirs = files +> List.map Filename.dirname +> Common2.uniq_eff in
 
   (* step1: collecting definitions *)
   let (hdefs: (string, Db.entity) Hashtbl.t) = Hashtbl.create 1001 in

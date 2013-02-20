@@ -12,7 +12,7 @@
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the file
  * license.txt for more details.
  *)
-open Common.Infix
+open Common2.Infix
 
 open Ast_php
 module A = Ast_php_simple
@@ -376,7 +376,7 @@ and hint_type env = function
   | HintTuple v1 -> A.HintTuple (List.map (hint_type env) (comma_list (brace v1)))
   | HintCallback (_, (_, args, ret), _) ->
       let args = List.map (hint_type env) (comma_list_dots (brace args)) in
-      let ret  = Common.fmap (hint_type env) ret in
+      let ret  = Common2.fmap (hint_type env) ret in
       A.HintCallback (args, ret)
 
 

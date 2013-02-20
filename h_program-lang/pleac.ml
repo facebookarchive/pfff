@@ -56,7 +56,7 @@ type skeleton =
 (*****************************************************************************)
 
 let skip_no_heading xs =
-  xs +> Common.exclude (fun (s, _) -> s =$= Common.split_list_regexp_noheading)
+  xs +> Common.exclude (fun (s, _) -> s =$= Common2.split_list_regexp_noheading)
 
 
 let mangle_to_generate_filename s =
@@ -71,7 +71,7 @@ let regexp_section_pleac_data = "\\(.*\\) @@PLEAC@@_\\([0-9\\.]+\\)\\(.*\\)"
 let parse_data_file file =
   file 
   +> Common.cat
-  +> Common.split_list_regexp regexp_section_pleac_data +> skip_no_heading
+  +> Common2.split_list_regexp regexp_section_pleac_data +> skip_no_heading
   +> List.map (fun (s, group) ->
     if s =~ regexp_section_pleac_data
     then
@@ -84,7 +84,7 @@ let parse_data_file file =
 let detect_comment_style file =
   file 
   +> Common.cat 
-  +> Common.return_when (fun s ->
+  +> Common2.return_when (fun s ->
     if s =~ regexp_section_pleac_data
     then 
       let (s1, s2, s3) = Common.matched3 s in
@@ -108,20 +108,20 @@ let regexp_skeleton_section_number = "PLEAC:\\(.*\\):"
 let parse_skeleton_file file =
   file 
   +> Common.cat
-  +> Common.split_list_regexp regexp_skeleton_section1 +> skip_no_heading
+  +> Common2.split_list_regexp regexp_skeleton_section1 +> skip_no_heading
   +> List.map (fun (s, group) ->
     if s =~ regexp_skeleton_section1
     then
       let section1 = Common.matched1 s in
       section1,
       group 
-        +> Common.split_list_regexp regexp_skeleton_section2 +> skip_no_heading
+        +> Common2.split_list_regexp regexp_skeleton_section2 +> skip_no_heading
         +> List.map (fun (s2, group) ->
           if s2 =~ regexp_skeleton_section2
           then
             let section2 = Common.matched1 s2 in
             section2, 
-            group +> Common.return_when (fun s3 ->
+            group +> Common2.return_when (fun s3 ->
               if s3 =~ regexp_skeleton_section_number
               then Some (Common.matched1 s3)
               else None
@@ -155,15 +155,15 @@ let gen_source_files
     ~hook_end_section2
     =
 
-  if not (Common.command2_y_or_no("rm -rf " ^ output_dir))
+  if not (Common2.command2_y_or_no("rm -rf " ^ output_dir))
   then failwith "ok we stop";
 
   Common.command2("mkdir -p " ^ output_dir);
         
   let hsections = Common.hash_of_list sections in
 
-  let estet_sect1 = (Common.repeat "*" 70) +> Common.join "" in
-  let estet_sect2 = (Common.repeat "-" 70) +> Common.join "" in
+  let estet_sect1 = (Common2.repeat "*" 70) +> Common.join "" in
+  let estet_sect2 = (Common2.repeat "-" 70) +> Common.join "" in
 
   (match gen_mode with
   | OneFilePerSection ->

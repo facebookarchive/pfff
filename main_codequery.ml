@@ -65,7 +65,7 @@ let build_prolog_db lang root =
        * 
        * note: copy paste of www_db_build, yet another one ...
        *)
-       let dir = Common.realpath root +> Common.chop_dirsymbol in
+       let dir = Common.realpath root +> Common2.chop_dirsymbol in
        (* so many errors that is better to hide them for now *)
        Flag_analyze_php.show_errors := false;
 
@@ -169,7 +169,7 @@ let options () = [
   ), " ";
   ] ++
   Common.options_of_actions action (all_actions()) ++
-  Common.cmdline_flags_devel () ++
+  Common2.cmdline_flags_devel () ++
   [
     "-version",   Arg.Unit (fun () -> 
       pr2 (spf "CodeQuery version: %s" Config_pfff.version);
@@ -190,7 +190,7 @@ let main () =
 
   let usage_msg = 
     spf "Usage: %s [options] <dir> \nDoc: %s\nOptions:"
-      (Common.basename Sys.argv.(0))
+      (Common2.basename Sys.argv.(0))
       "https://github.com/facebook/pfff/wiki/Codequery"
   in
   (* does side effect on many global flags *)

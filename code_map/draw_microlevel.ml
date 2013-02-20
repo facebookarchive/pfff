@@ -16,7 +16,7 @@
  *)
 (*e: Facebook copyright *)
 open Common
-open Common.ArithFloatInfix
+open Common2.ArithFloatInfix
 
 open Figures (* for the fields *)
 open Model2 (* for the fields *)
@@ -67,7 +67,7 @@ let text_with_user_pos = ref []
 
 let is_big_file_with_few_lines ~nblines fullpath = 
   nblines < 20. && 
-  Common.filesize_eff fullpath > 4000
+  Common2.filesize_eff fullpath > 4000
 
 (*****************************************************************************)
 (* Anamorphic entities *)
@@ -130,7 +130,7 @@ let set_source_rgba_and_font_size_of_categ
   let final_font_size_real = 
     CairoH.user_to_device_font_size cr final_font_size in
   
-  attrs |> List.iter (fun attr ->
+  attrs +> List.iter (fun attr ->
     match attr with
     | `FOREGROUND s 
     | `BACKGROUND s (* todo: should really draw the background of the text *)
@@ -301,7 +301,7 @@ let draw_content2 ~cr ~layout ~context ~file rect =
     | FT.PL (FT.Erlang)
     | FT.PL (FT.Opa)
     ) -> true
-  | (FT.Text "txt") when Common.basename file =$= "info.txt" -> true
+  | (FT.Text "txt") when Common2.basename file =$= "info.txt" -> true
   | _ -> false
   in
 
@@ -328,15 +328,15 @@ let draw_content2 ~cr ~layout ~context ~file rect =
         ~is_matching_line:(Hashtbl.mem hmatching_lines !line)
         categ;
       
-      let xs = Common.lines_with_nl_either s in
+      let xs = Common2.lines_with_nl_either s in
       
       xs +> List.iter (function
-      | Left s -> 
+      | Common2.Left s -> 
           let pt = Cairo.get_current_point cr in
           Common.push2 (s, filepos, pt) text_with_user_pos;
 
           CairoH.show_text cr s
-      | Right () ->
+      | Common2.Right () ->
           
           incr line_in_column;
           incr line;
@@ -353,7 +353,7 @@ let draw_content2 ~cr ~layout ~context ~file rect =
             (layout.space_per_line * (float_of_int !line_in_column)) in
 
           (* must be done before the move_to below ! *)
-          (match Common.hfind_option !line hmatching_lines with
+          (match Common2.hfind_option !line hmatching_lines with
           | None -> ()
           | Some color ->
               CairoH.fill_rectangle ~cr 
@@ -381,7 +381,7 @@ let draw_content2 ~cr ~layout ~context ~file rect =
     Cairo.set_source_rgba cr 0.0 0.0 0.0 0.9;
       
     let xs = Common.cat file in
-    let xxs = Common.pack_safe nblines_per_column xs in
+    let xxs = Common2.pack_safe nblines_per_column xs in
 
     (* I start at 0 for the column because the x displacement
      * is null at the beginning, but at 1 for the line because
@@ -430,7 +430,7 @@ let draw_treemap_rectangle_content_maybe2 ~cr ~clipping ~context rect  =
    * it confuses cairo which then can confuse computation done in gtk
    * idle callbacks
    *)
-  if Common.lfile_exists_eff file && File_type.is_textual_file file
+  if Common2.lfile_exists_eff file && File_type.is_textual_file file
   then begin
     let font_size_estimate = h / 100. in
     let font_size_real_estimate = 
@@ -442,7 +442,7 @@ let draw_treemap_rectangle_content_maybe2 ~cr ~clipping ~context rect  =
      * alternative: we could store the nblines of a file in the db but
      * we would need a fast absolute_to_readable then.
      *)
-    let nblines = Common.nblines_eff file +> float_of_int in
+    let nblines = Common2.nblines_eff file +> float_of_int in
 
     (* assume our code follow certain conventions. Could infer from file. 
      * we should put 80, but a font is higher than large, so 

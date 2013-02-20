@@ -125,7 +125,7 @@ let get_public_or_protected_vars_of_class def =
           List.mem Protected modifiers
        then
          let dnames = 
-           class_vars |> Ast.uncomma |> List.map fst
+           class_vars +> Ast.uncomma +> List.map fst
          in
          Some dnames
        else None
@@ -211,7 +211,7 @@ let lookup_gen aclass find_entity hook =
           (* traits have priority over inheritance *)
           let xs = traits def in
           (try 
-            xs +> Common.return_when (fun trait ->
+            xs +> Common2.return_when (fun trait ->
               let str = Ast.str_of_name trait in
               (* recurse *)
               try Some (aux str)
@@ -229,7 +229,7 @@ let lookup_gen aclass find_entity hook =
           )
         )
     | [] -> raise (UndefinedClassWhileLookup aclass)
-    | x::y::xs -> raise Multi_found
+    | x::y::xs -> raise Common2.Multi_found
     | [_] -> raise Impossible
   in
   aux aclass
@@ -299,7 +299,7 @@ let collect_members aclass find_entity =
     )
     in
     ()
-   with Not_found | UndefinedClassWhileLookup _ | Multi_found -> 
+   with Not_found | UndefinedClassWhileLookup _ | Common2.Multi_found -> 
     ()
   );
   !res

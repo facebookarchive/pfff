@@ -52,12 +52,12 @@ let gen_clang jsonfile =
             then failwith ("already processed" ^ filename);
             Hashtbl.add hdone filename true;
 
-            let (d,b,e) = Common.dbe_of_filename filename in
+            let (d,b,e) = Common2.dbe_of_filename filename in
             (match e with
             | "c" | "m" -> ()
             | _ -> failwith ("wierd extension for a clang input file: " ^ e)
             );
-            let output = Common.filename_of_dbe (d,b,"clang") in
+            let output = Common2.filename_of_dbe (d,b,"clang") in
             let cmd = spf "%s --ast-dump '%s' > '%s'" 
               clang_check filename output in
             Common.command2 cmd;
@@ -86,11 +86,11 @@ let split_dump file =
       then begin
         let file = Common.matched1 s in
         let file = Str.global_replace (Str.regexp " ") "___" file in
-        let (d,b,e) = Common.dbe_of_filename file in
+        let (d,b,e) = Common2.dbe_of_filename file in
         pr2 file;
         Common.command2 (spf "mkdir -p %s" d);
         close_out chan_out;
-        let file = Common.filename_of_dbe (d,b,"clang") in
+        let file = Common2.filename_of_dbe (d,b,"clang") in
         let chan_out = open_out file in
         aux chan_out
       end
@@ -105,7 +105,7 @@ let split_dump file =
 
 let stat_clang_constructors xs =
   let fullxs = Lib_parsing_clang.find_source_files_of_dir_or_files xs in
-  let h = Common.hash_with_default (fun () -> 0) in
+  let h = Common2.hash_with_default (fun () -> 0) in
   
   fullxs +> Common_extra.progress (fun k ->
     List.iter (fun file ->
@@ -134,7 +134,7 @@ let actions () = [
   Common.mk_action_n_arg test_parse_clang;
   "-dump_clang2", "   <file>", 
   Common.mk_action_1_arg (fun file ->
-    let o = Common.get_value file in
+    let o = Common2.get_value file in
     let v = Meta_ast_clang.vof_program o in
     pr (Ocaml.string_of_v v);
   );

@@ -16,7 +16,7 @@ val draw_treemap_rectangle_content_maybe :
  * the file at the right position.
  *)
 val text_with_user_pos :
-  (string * Common.filepos * Cairo.point) Common.stack ref
+  (string * Common2.filepos * Cairo.point) Common.stack ref
 (*e: text_with_user_pos sig *)
 
 (*e: draw_microlevel.mli *)

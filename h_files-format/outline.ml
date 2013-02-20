@@ -1,3 +1,4 @@
+open Common2
 open Common
 
 (*****************************************************************************)
@@ -9,7 +10,7 @@ type outline_node = {
   title: string;
   before_first_children: string list;
 }
-type outline = outline_node Common.tree2
+type outline = outline_node Common2.tree2
 
 let outline_default_regexp = "^\\(\\*+\\)[ ]*\\(.*\\)"
 
@@ -79,7 +80,7 @@ let parse_outline ?(outline_regexp=outline_default_regexp) file =
       | x::xs -> 
           let ((lvl, stars, title), before_first_children) = x in
           
-          let (children, rest) = xs +> Common.span (fun x2 -> 
+          let (children, rest) = xs +> Common2.span (fun x2 -> 
             let ((lvl2, _, _), _) = x2 in
             lvl2 > lvl
           )
@@ -106,7 +107,7 @@ let write_outline outline file =
   Common.with_open_outfile file (fun (pr_no_nl, chan) -> 
     let pr s = pr_no_nl (s ^ "\n") in
     
-    outline +> Common.tree2_iter (fun node -> 
+    outline +> Common2.tree2_iter (fun node -> 
       if not (is_root_node node)
       then pr (node.stars ^ node.title);
 

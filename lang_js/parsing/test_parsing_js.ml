@@ -25,11 +25,11 @@ let test_parse_js xs  =
   let ext = ".*\\.\\(js\\|javascript\\)$" in
 
   (* could now use Lib_parsing_php.find_php_files_of_dir_or_files *)
-  let fullxs = Common.files_of_dir_or_files_no_vcs_post_filter ext xs in
+  let fullxs = Common2.files_of_dir_or_files_no_vcs_post_filter ext xs in
 
   let stat_list = ref [] in
 
-  Common.check_stack_nbfiles (List.length fullxs);
+  Common2.check_stack_nbfiles (List.length fullxs);
 
   fullxs +> List.iter (fun file -> 
     pr2 ("PARSING: " ^ file);
@@ -52,9 +52,9 @@ let test_unparse_js file =
   let s = Unparse_js.string_of_program2_using_tokens ast2 in
   pr2 s;
   Common.write_file ~file:tmpfile s;
-  let xs = Common.unix_diff file tmpfile in
+  let xs = Common2.unix_diff file tmpfile in
   pr2 "diff = ";
-  xs |> List.iter pr2;
+  xs +> List.iter pr2;
   ()
 
 let test_json_js file = 

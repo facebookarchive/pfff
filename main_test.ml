@@ -89,13 +89,13 @@ let test regexp =
     then tests
     else
       let paths = 
-        OUnit.test_case_paths tests |> List.map OUnit.string_of_path in
+        OUnit.test_case_paths tests +> List.map OUnit.string_of_path in
       let keep = paths 
-        +> Common.filter (fun path -> 
+        +> List.filter (fun path -> 
           pr2 path;
           path =~ (".*" ^ regexp)) 
       in
-      Common.some (OUnit.test_filter keep tests)
+      Common2.some (OUnit.test_filter keep tests)
   in
     
   OUnit.run_test_tt ~verbose:!verbose suite +> ignore;
@@ -124,10 +124,10 @@ let test_json_pretty_printer file =
   pr s
 
 let test_json_bench file =
-  Common.profile_code2 "json_bench" (fun () ->
-    pr2 (Common.memory_stat ());
+  Common.profile_code "json_bench" (fun () ->
+    pr2 (Common2.memory_stat ());
     let _json = Json_in.load_json file in
-    pr2 (Common.memory_stat ());
+    pr2 (Common2.memory_stat ());
   )
 
 (* ---------------------------------------------------------------------- *)
@@ -184,8 +184,8 @@ let options () = [
   " ";
   ] ++
   Common.options_of_actions action (all_actions()) ++
-  Common.cmdline_flags_devel () ++
-  Common.cmdline_flags_other () ++
+  Common2.cmdline_flags_devel () ++
+  Common2.cmdline_flags_other () ++
   [
     "-version",   Arg.Unit (fun () -> 
       pr2 (spf "pfff (test) version: %s" Config_pfff.version);
@@ -210,7 +210,7 @@ let main () =
   Common_extra.set_link(); 
 
   let usage_msg = 
-    "Usage: " ^ basename Sys.argv.(0) ^ 
+    "Usage: " ^ Common2.basename Sys.argv.(0) ^ 
       " [options] <file or dir> " ^ "\n" ^ "Options are:"
   in
   (* does side effect on many global flags *)

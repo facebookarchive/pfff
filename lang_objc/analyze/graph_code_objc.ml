@@ -79,7 +79,7 @@ let add_use_edge env (name, kind) =
 (*****************************************************************************)
 
 let extract_defs ~g ~ast ~readable =
-  let dir = Common.dirname readable in
+  let dir = Common2.dirname readable in
   G.create_intermediate_directories_if_not_present g dir;
   g +> G.add_node (readable, E.File);
   g +> G.add_edge ((dir, E.Dir), (readable, E.File))  G.Has;
@@ -95,7 +95,7 @@ let extract_uses ~g ~ast ~readable =
     g;
   }
   in
-  let dir = Common.dirname readable in
+  let dir = Common2.dirname readable in
   ast +> List.iter (function
   | T.TInclude (_, file, _) ->
     (match file with

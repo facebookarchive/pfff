@@ -530,7 +530,7 @@ let main_action file =
 
   let ast' = (Map_php.mk_visitor hook).Map_php.vprogram ast in
 
-  let ast2' = Common.zip ast' (ast2 +> List.map snd) in
+  let ast2' = Common2.zip ast' (ast2 +> List.map snd) in
   let s = Unparse_php.string_of_program2 ast2' in
   pr s;
 
@@ -665,9 +665,9 @@ let options () =
   ] ++
   Flag_parsing_php.cmdline_flags_pp () ++
   Common.options_of_actions action (all_actions()) ++
-  Common.cmdline_flags_devel () ++
-  Common.cmdline_flags_verbose () ++
-  Common.cmdline_flags_other () ++
+  Common2.cmdline_flags_devel () ++
+  Common2.cmdline_flags_verbose () ++
+  Common2.cmdline_flags_other () ++
   [
   "-version",   Arg.Unit (fun () ->
     Common.pr2 (spf "XXX version: %s" Config_pfff.version);
@@ -690,7 +690,7 @@ let options () =
 
 let main () =
   let usage_msg =
-    "Usage: " ^ Common.basename Sys.argv.(0) ^
+    "Usage: " ^ Common2.basename Sys.argv.(0) ^
       " [options] <file or dir> " ^ "\n" ^ "Options are:"
   in
   (* does side effect on many global flags *)

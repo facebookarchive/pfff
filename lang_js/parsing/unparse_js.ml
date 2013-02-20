@@ -77,7 +77,7 @@ let (string_of_program2_using_tokens: Parse_js.program2 -> string) =
      Parser_js.T_SEMICOLON (info)
    in
 
-  Common.with_open_stringbuf (fun (_pr_with_nl, buf) ->
+  Common2.with_open_stringbuf (fun (_pr_with_nl, buf) ->
     let pp s = 
       Buffer.add_string buf s 
     in
@@ -104,12 +104,12 @@ let (string_of_program2_using_tokens: Parse_js.program2 -> string) =
       let toks = [fake_tok] ++ toks ++ [fake_tok] in
       
       let (toks_ast_with_comment_attached, trailing_comments) = 
-        Common.group_by_post (fun tok -> is_in_ast tok) toks
+        Common2.group_by_post (fun tok -> is_in_ast tok) toks
       in
       (* the last comments should be attached to the last fake_tok *)
       assert(null trailing_comments);
 
-      toks_ast_with_comment_attached |> Common.iter_with_previous 
+      toks_ast_with_comment_attached +> Common2.iter_with_previous 
           (fun (comments_prev, tok_prev) (comments, tok)  ->
 
             if is_in_between_some_remove tok_prev tok 
@@ -118,7 +118,7 @@ let (string_of_program2_using_tokens: Parse_js.program2 -> string) =
               *  || is_behind_a_remove_or_replace tok_prev tok
               *)
             then () 
-            else comments |> List.iter pp_tok;
+            else comments +> List.iter pp_tok;
 
             let info = TH.info_of_tok tok in
 

@@ -13,7 +13,7 @@
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the file
  * license.txt for more details.
  *)
-
+open Common2
 open Common 
 
 open Ast_html
@@ -561,5 +561,5 @@ let (html_tree_of_string: string -> Ast_html.html_tree) = fun s ->
   let tmpfile = Common.new_temp_file "pfff_html_tree_of_s" "html" in
   Common.write_file tmpfile s;
   let (ast, _toks) = parse tmpfile in
-  Common.erase_this_temp_file tmpfile;
+  Common2.erase_this_temp_file tmpfile;
   ast

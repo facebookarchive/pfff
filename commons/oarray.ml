@@ -20,7 +20,7 @@ object(o: 'o)
     o
 
   method iter f = 
-    Array.iteri (curry f) data
+    Array.iteri (Common2.curry f) data
   method view = raise Todo
 
   method assoc i = 

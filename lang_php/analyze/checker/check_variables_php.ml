@@ -206,7 +206,7 @@ let unused_ok s =
   )
 
 let lookup_opt s vars =
-  Common.optionise (fun () -> Map_poly.find s vars)
+  Common2.optionise (fun () -> Map_poly.find s vars)
 
 let s_tok_of_name name =
   A.str_of_name name, A.tok_of_name name

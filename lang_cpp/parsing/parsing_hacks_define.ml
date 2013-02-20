@@ -66,7 +66,7 @@ module Hack = Parsing_hacks_lib
 (*****************************************************************************)
 (* Wrappers *)
 (*****************************************************************************)
-let pr2, pr2_once = Common.mk_pr2_wrappers Flag_parsing_cpp.verbose_lexing
+let pr2, pr2_once = Common2.mk_pr2_wrappers Flag_parsing_cpp.verbose_lexing
 
 (*****************************************************************************)
 (* Helpers  *)

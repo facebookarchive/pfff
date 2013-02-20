@@ -11,7 +11,7 @@ class ['a,'b] oassocb xs =
     method empty = {< data = Map_poly.empty >}
     method add (k,v) = {< data = Map_poly.add k v data >}
     method replkey (k,v) = {< data = Map_poly.add k v (Map_poly.remove k data) >}
-    method iter f = Map_poly.iter (curry f) data
+    method iter f = Map_poly.iter (Common2.curry f) data
     method view = raise Todo
 
     method del (k,v) = {< data = Map_poly.remove k data >}

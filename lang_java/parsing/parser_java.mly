@@ -742,7 +742,7 @@ for_statement:
 
 for_control:
  | for_init_opt SM expression_opt SM for_update_opt 
-     { ForClassic ($1, Common.option_to_list $3, $5) } 
+     { ForClassic ($1, Common2.option_to_list $3, $5) } 
  | for_var_control 
      { let (a, b) = $1 in Foreach (a, b) }
 

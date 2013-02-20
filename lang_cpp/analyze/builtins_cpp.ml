@@ -33,11 +33,11 @@ open Common
 let rename_header_std_files dir =
   let files = Common.files_of_dir_or_files_no_vcs_nofilter [dir] in
   files +> List.iter (fun file ->
-    match Common.dbe_of_filename_safe file with
-    | Left _ -> ()
-    | Right (_dir, _file) ->
+    match Common2.dbe_of_filename_safe file with
+    | Common2.Left _ -> ()
+    | Common2.Right (_dir, _file) ->
         let cmd = spf "mv %s %s" file (file ^ ".hpp") in
-        Common.command2_y_or_no_exit_if_no cmd
+        Common2.command2_y_or_no_exit_if_no cmd
   )
 
 

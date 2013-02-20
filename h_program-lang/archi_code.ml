@@ -172,10 +172,10 @@ let s_of_source_archi =
 let find_duplicate_dirname dir =
 
   let h = Hashtbl.create 101 in
-  let dups = Common.hash_with_default (fun () -> 0) in
+  let dups = Common2.hash_with_default (fun () -> 0) in
 
   let rec aux path = 
-    let subdirs = Common.readdir_to_dir_list path +> List.sort compare in
+    let subdirs = Common2.readdir_to_dir_list path +> List.sort compare in
 
     subdirs +> List.iter (fun dir ->
       let path = Filename.concat path dir in

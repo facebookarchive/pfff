@@ -154,12 +154,12 @@ let init_drawing
   paths
  =
 
-  let paths = paths +> Common.map Common.relative_to_absolute in
-  let root = Common.common_prefix_of_files_or_dirs paths in
+  let paths = paths +> List.map Common2.relative_to_absolute in
+  let root = Common2.common_prefix_of_files_or_dirs paths in
   pr2_gen root;
 
   let treemap = 
-   Common.profile_code2 "Visual.building the treemap" (fun () -> func paths) in
+   Common.profile_code "Visual.building the treemap" (fun () -> func paths) in
   let pm = new_pixmap ~width ~height in
 
   {
@@ -262,7 +262,7 @@ let find_rectangle_at_user_point2 dw user =
    match matching_rects with
    | [] -> None
    | [x] -> Some (x, [], x)
-   | _ -> Some (Common.head_middle_tail matching_rects)
+   | _ -> Some (Common2.head_middle_tail matching_rects)
 
 let find_rectangle_at_user_point a b = 
   Common.profile_code "Model.find_rectangle_at_point" (fun () ->
@@ -296,15 +296,15 @@ let rec readable_to_absolute_filename_under_root ~root filename =
 
   (* the root may be a filename *)
   let root_dir = 
-    if is_directory root then root
+    if Common2.is_directory root then root
     else Filename.dirname root
   in
 
   let root_and_parents =
-    Common.inits_of_absolute_dir root_dir +> List.rev
+    Common2.inits_of_absolute_dir root_dir +> List.rev
   in
   try 
-    root_and_parents +> Common.return_when (fun dir ->
+    root_and_parents +> Common2.return_when (fun dir ->
       let path = Filename.concat dir filename in
       if Sys.file_exists path
       then Some path

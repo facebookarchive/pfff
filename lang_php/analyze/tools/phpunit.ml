@@ -402,7 +402,7 @@ let parse_one_trace2 file xs =
       match s with
       | s when s =~ "^OK (\\([0-9]+\\) tests?, \\([0-9]+\\) assertions?)" ->
           let (nb_tests, nb_asserts) = 
-            Common.matched2 s +> Common.pair s_to_i 
+            Common.matched2 s +> Common2.pair s_to_i 
           in
           Some (Pass (nb_tests, 0))
 
@@ -410,7 +410,7 @@ let parse_one_trace2 file xs =
       (* old: | s when s =~ "There were \\([0-9]+\\) failures:" -> *)
       | s when s =~ "Tests?: \\([0-9]+\\), Assertions?: \\([0-9]+\\), Failures?: \\([0-9]+\\)" ->
           let (nb_tests, nb_asserts, nb_fail) = 
-            Common.matched3 s +> Common.triple s_to_i
+            Common.matched3 s +> Common2.triple s_to_i
           in
 
           (* todo? parse the failure message, file pos/method, 
@@ -421,21 +421,21 @@ let parse_one_trace2 file xs =
       (* TODO: diff between fail and errors ? *)
       | s when s =~ "Tests?: \\([0-9]+\\), Assertions?: \\([0-9]+\\), Errors?: \\([0-9]+\\)" ->
           let (nb_tests, nb_asserts, nb_fail) = 
-            Common.matched3 s +> Common.triple s_to_i
+            Common.matched3 s +> Common2.triple s_to_i
           in
           Some (Fail (nb_fail, nb_tests - nb_fail))
 
 
       | s when s =~ "Tests?: \\([0-9]+\\), Assertions?: \\([0-9]+\\), Skipped?: \\([0-9]+\\)" ->
           let (nb_tests, nb_asserts, nb_skip) = 
-            Common.matched3 s +> Common.triple s_to_i
+            Common.matched3 s +> Common2.triple s_to_i
           in
           Some (Pass (nb_tests - nb_skip, nb_skip))
 
       (* maybe facebook specific, with our FacebookTestCase wrapper *)
       | s when s =~ "Tests?: \\([0-9]+\\), Assertions?: \\([0-9]+\\), Incompletes?: \\([0-9]+\\)" ->
           let (nb_tests, nb_asserts, nb_skip) = 
-            Common.matched3 s +> Common.triple s_to_i
+            Common.matched3 s +> Common2.triple s_to_i
           in
           Some (Pass (nb_tests - nb_skip, nb_skip))
 
@@ -496,7 +496,7 @@ let parse_one_trace2 file xs =
                 s_to_i (Common.matched1 tm)
             | _ when tm =~ "\\([0-9]+\\):\\([0-9]+\\)" ->
                 let (min, sec) = 
-                  Common.matched2 tm +> Common.pair s_to_i in
+                  Common.matched2 tm +> Common2.pair s_to_i in
                 min * 60 + sec
             | _ ->
                 failwith ("wrong time format: " ^ tm)
@@ -505,7 +505,7 @@ let parse_one_trace2 file xs =
             match () with
             | _ when mem =~ "\\([0-9]+\\)\\.\\([0-9]+\\)Mb" ->
                 let (x1, x2) = 
-                  Common.matched2 mem +> Common.pair s_to_i in
+                  Common.matched2 mem +> Common2.pair s_to_i in
                 (* could also call float_of_string directly on mem ... *)
                 float_of_string (spf "%d.%d" x1 x2)
             | _ ->
@@ -563,9 +563,9 @@ let parse_one_trace a b =
 
 let final_report ?(report_also_pass=false) tr = 
   
-  pr2_xxxxxxxxxxxxxxxxx();
+  Common2.pr2_xxxxxxxxxxxxxxxxx();
   pr2 "Report";
-  pr2_xxxxxxxxxxxxxxxxx();
+  Common2.pr2_xxxxxxxxxxxxxxxxx();
 
   tr +> List.iter (fun t ->
     match t.t_status with
@@ -593,33 +593,33 @@ let final_report ?(report_also_pass=false) tr =
 
   let total_fail = tr +> Common.map_filter (fun t ->
     match t.t_status with Fail (i, _) -> Some i | _ -> None) +> 
-    Common.sum_int in
+    Common2.sum_int in
   let total_pass = tr +> Common.map_filter (fun t ->
     match t.t_status with Pass (i,_) | Fail(_,i) -> Some i | _ -> None) +> 
-    Common.sum_int in
+    Common2.sum_int in
   let total_fatal = tr +> Common.map_filter (fun t ->
     match t.t_status with Fatal _-> Some 1 | _ -> None) +> 
-    Common.sum_int in
+    Common2.sum_int in
 
-  let total_files_with_pbs = tr +> Common.map (fun t ->
-    match t.t_status with Fatal _ | Fail(_) -> 1 | _ -> 0) +> Common.sum_int in
+  let total_files_with_pbs = tr +> List.map (fun t ->
+    match t.t_status with Fatal _ | Fail(_) -> 1 | _ -> 0) +> Common2.sum_int in
   let total_files = List.length tr in
 
-  let total_shimmed = tr +> Common.map (fun t -> t.t_shimmed) 
-    +> Common.sum_int in
+  let total_shimmed = tr +> List.map (fun t -> t.t_shimmed) 
+    +> Common2.sum_int in
     
   pr2 (spf "total shimmed: %d" total_shimmed);
 
   let total = total_fail + total_pass + total_fatal in
   pr2 (spf "pass  = %02.2f%% (%d)" 
-          (Common.pourcent_float total_pass total) total_pass);
+          (Common2.pourcent_float total_pass total) total_pass);
   pr2 (spf "fail  = %02.2f%% (%d)" 
-          (Common.pourcent_float total_fail total) total_fail);
+          (Common2.pourcent_float total_fail total) total_fail);
   pr2 (spf "fatal = %02.2f%% (%d)" 
-          (Common.pourcent_float total_fatal total) total_fatal);
+          (Common2.pourcent_float total_fatal total) total_fatal);
 
   pr2 (spf "files with pbs = %02.2f%% (%d)" 
-          (Common.pourcent_float total_files_with_pbs total_files)
+          (Common2.pourcent_float total_files_with_pbs total_files)
           total_files_with_pbs);
 
   ()
@@ -809,7 +809,7 @@ let test_results_of_json json =
 (*****************************************************************************)
 
 let gen_regression_filename files_or_dirs =
-  let files_or_dirs = files_or_dirs +> List.map chop_dirsymbol in
+  let files_or_dirs = files_or_dirs +> List.map Common2.chop_dirsymbol in
 
   let str = 
     files_or_dirs +> Common.join "___" 
@@ -819,7 +819,7 @@ let gen_regression_filename files_or_dirs =
   (* ext3 does not like too long filenames *)  
   if String.length str > 50
   then 
-    let md = md5sum_of_string str in
+    let md = Common2.md5sum_of_string str in
     (String.sub str 0 40) ^ md
   else 
     str
@@ -827,14 +827,14 @@ let gen_regression_filename files_or_dirs =
 
 let regression ~regression_file tr = 
 
-  let newscore  = Common.empty_score () in
+  let newscore  = Common2.empty_score () in
 
   tr +> List.iter (fun t ->
     let score = 
       match t.t_status with
-      | Pass _ -> Common.Ok
-      | Fail (i,j) -> Common.Pb (spf "Fail: (%d, %d)" i j)
-      | Fatal s    -> Common.Pb (spf "Fatal: %s" s)
+      | Pass _ -> Common2.Ok
+      | Fail (i,j) -> Common2.Pb (spf "Fail: (%d, %d)" i j)
+      | Fatal s    -> Common2.Pb (spf "Fatal: %s" s)
     in
     Hashtbl.add newscore t.t_file score;
   );
@@ -842,7 +842,7 @@ let regression ~regression_file tr =
   pr2 "--------------------------------";
   pr2 "functional regression information";
   pr2 "--------------------------------";
-  Common.regression_testing newscore regression_file;
+  Common2.regression_testing newscore regression_file;
 
   ()
 
@@ -850,7 +850,7 @@ let regression ~regression_file tr =
 (* Perf Regression *)
 (*****************************************************************************)
 let regression_perf ~regression_file tr = 
-  let newscore  = Common.empty_score () in
+  let newscore  = Common2.empty_score () in
 
   tr +> List.iter (fun t ->
     let score_opt = 
@@ -858,11 +858,11 @@ let regression_perf ~regression_file tr =
       | Pass _ -> 
           (match test_speed_of_int t.t_time, test_space_of_float t.t_memory with
           | (Fast | NormalSpeed), (SmallMem | NormalMem) ->
-              Some Common.Ok
+              Some Common2.Ok
           | Slow, _ ->
-              Some (Common.Pb "SLOW")
+              Some (Common2.Pb "SLOW")
           | _, BigMem ->
-              Some (Common.Pb "BIGMEM")
+              Some (Common2.Pb "BIGMEM")
           )
       (* prefer to not include failing tests. They will be reported already
        * by the other regressions
@@ -880,7 +880,7 @@ let regression_perf ~regression_file tr =
   pr2 "--------------------------------";
   pr2 "performance regression  information";
   pr2 "--------------------------------";
-  Common.regression_testing newscore regression_file;
+  Common2.regression_testing newscore regression_file;
   ()
 
 

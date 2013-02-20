@@ -39,7 +39,7 @@ open Parser_php
 (*****************************************************************************)
 (* Wrappers *)
 (*****************************************************************************)
-let pr2, pr2_once = Common.mk_pr2_wrappers Flag.verbose_lexing
+let pr2, pr2_once = Common2.mk_pr2_wrappers Flag.verbose_lexing
 
 (*****************************************************************************)
 (* Helpers *)
@@ -212,7 +212,7 @@ let keyword_table = Common.hash_of_list [
   (* "empty" is already a PHP keyword, see T_EMPTY *)
   "pcdata", (fun ii -> xhp_or_t_ident ii (fun x -> T_XHP_PCDATA x));
 ]
-let _ = assert ((Common.hkeys keyword_table) +>
+let _ = assert ((Common2.hkeys keyword_table) +>
                  List.for_all (fun s -> s = String.lowercase s))
 (*e: keywords_table hash *)
 
@@ -316,14 +316,14 @@ let reset () =
 (*s: lexer state function hepers *)
 let rec current_mode () =
   try
-    Common.top !_mode_stack
+    Common2.top !_mode_stack
   with Failure("hd") ->
     pr2("LEXER: mode_stack is empty, defaulting to INITIAL");
     reset();
     current_mode ()
 (*x: lexer state function hepers *)
 let push_mode mode = Common.push2 mode _mode_stack
-let pop_mode () = ignore(Common.pop2 _mode_stack)
+let pop_mode () = ignore(Common2.pop2 _mode_stack)
 
 (* What is the semantic of BEGIN() in flex ? start from scratch with empty
  * stack ?
@@ -730,7 +730,7 @@ rule st_in_scripting = parse
     | LABEL
         { let info = tokinfo lexbuf in
           let s = tok lexbuf in
-          match Common.optionise (fun () ->
+          match Common2.optionise (fun () ->
             (* PHP is case insensitive ... it's ok to write IF(...) { ... } *)
             Hashtbl.find keyword_table (String.lowercase s))
           with
@@ -1177,7 +1177,7 @@ and st_start_heredoc stopdoc = parse
       let colon_info =
         Parse_info.tokinfo_str_pos semi pos_after_label in
       let space_info =
-        Parse_info.tokinfo_str_pos (string_of_char space) pos_after_semi in
+        Parse_info.tokinfo_str_pos (Common2.string_of_char space) pos_after_semi in
 
       if s = stopdoc
       then begin
@@ -1257,7 +1257,7 @@ and st_start_nowdoc stopdoc = parse
       let colon_info =
         Parse_info.tokinfo_str_pos semi pos_after_label in
       let space_info =
-        Parse_info.tokinfo_str_pos (string_of_char space) pos_after_semi in
+        Parse_info.tokinfo_str_pos (Common2.string_of_char space) pos_after_semi in
 
       if s = stopdoc
       then begin

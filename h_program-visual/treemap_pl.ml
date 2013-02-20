@@ -236,7 +236,7 @@ let treemap_file_size_hook2 ~root file =
 
   (* todo: should be passed to the hook!! *)
   let filesize = 
-    try (Common.unix_stat_eff file).Unix.st_size
+    try (Common2.unix_stat_eff file).Unix.st_size
     with Unix.Unix_error _ ->
       pr2 (spf "PB stating %s" file);
       0
@@ -274,7 +274,7 @@ let no_filter_file file = true
 
 let ex_filter_file file = 
   (* simple example of filtering *)
-  let (d,b,e) = Common.dbe_of_filename_noext_ok file in
+  let (d,b,e) = Common2.dbe_of_filename_noext_ok file in
   match e with
   | "output" -> false
   | _ -> true
@@ -308,7 +308,7 @@ let pad_filter_file file =
       
 
 let code_treemap2 ~filter_file paths =
-  let root = Common.common_prefix_of_files_or_dirs paths in
+  let root = Common2.common_prefix_of_files_or_dirs paths in
   let tree = 
     paths +> Treemap.tree_of_dirs_or_files
       ~filter_dir:Lib_vcs.filter_vcs_dir

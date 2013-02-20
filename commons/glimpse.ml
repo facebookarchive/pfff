@@ -114,7 +114,7 @@ let glimpseindex_files files indexdir =
   let tmpfile = Common.new_temp_file "glimpse" "list" in
     (* "/tmp/pad_glimpseindex_files.list" *)
   
-  Common.uncat files tmpfile;
+  Common2.uncat files tmpfile;
   Common.command2 
     (spf "cat %s | %s" tmpfile (glimpse_cmd indexdir));
   ()

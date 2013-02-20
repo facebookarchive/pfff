@@ -45,7 +45,7 @@ let properties = [
 (*****************************************************************************)
 
 let infos_and_kinds_of_xhprof_entities xhprof_entities db =
-  xhprof_entities +> Common.map (fun e ->
+  xhprof_entities +> Common2.map (fun e ->
     try (
     match e with
     | X.Function funcname ->
@@ -77,10 +77,10 @@ let infos_and_kinds_of_xhprof_entities xhprof_entities db =
     )
     with exn ->
       (match exn with
-      | Not_found | Multi_found ->
+      | Not_found | Common2.Multi_found ->
           pr2 (spf "PB with %s, exn = %s"
                 (X.string_of_xhprof_entity e)
-                (Common.string_of_exn exn));
+                (Common.exn_to_s exn));
           []
       | _ -> raise exn
       )

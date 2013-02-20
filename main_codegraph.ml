@@ -174,14 +174,14 @@ let constraints_of_info_txt info_txt =
   pr2_gen info_txt;
   let rec aux current node =
     match node with
-    | Common.Tree (node, xs) ->
+    | Common2.Tree (node, xs) ->
       let title = node.Outline.title in
       let entry = 
         match title with
         | "__ROOT__" -> "."
         | _ -> Filename.concat current title
       in
-      let children = xs +> List.map (fun (Common.Tree (node, _)) ->
+      let children = xs +> List.map (fun (Common2.Tree (node, _)) ->
         (match entry with
         | "." -> node.Outline.title
         | _ -> Filename.concat entry node.Outline.title
@@ -379,7 +379,7 @@ let main_action xs =
         else failwith "go the directory you want"
     | _ -> failwith "give just one directory" 
   in
-  let inits = Common.inits_of_absolute_dir dir in
+  let inits = Common2.inits_of_absolute_dir dir in
   let root =
     inits +> List.rev +> List.find (fun path -> 
       Sys.file_exists (dep_file_of_dir path))
@@ -398,7 +398,7 @@ let main_action xs =
       let readable_subdir =
         let xs = Common.split "/" root in
         let ys = Common.split "/" dir in
-        let (a, b) = Common.splitAt (List.length xs) ys in
+        let (a, b) = Common2.splitAt (List.length xs) ys in
         assert (xs =*= a);
         b
       in
@@ -407,7 +407,7 @@ let main_action xs =
         then dir_node, readable_subdir
         else package_node, 
               try
-               Common.tails readable_subdir +> List.find (fun xs ->
+               Common2.tails readable_subdir +> List.find (fun xs ->
                  GC.has_node (package_node xs) model.Model.g_deprecated
                )
               with Not_found ->
@@ -570,7 +570,7 @@ let options () = [
   " ";
 
   "-symlinks", Arg.Unit (fun () -> 
-      Common.follow_symlinks := true;
+      Common2.follow_symlinks := true;
     ), " ";
  
   "-verbose", Arg.Unit (fun () ->
@@ -579,8 +579,8 @@ let options () = [
   ), " ";
   ] ++
   Common.options_of_actions action (all_actions()) ++
-  Common.cmdline_flags_devel () ++
-  Common.cmdline_flags_verbose () ++
+  Common2.cmdline_flags_devel () ++
+  Common2.cmdline_flags_verbose () ++
   [
     "-version",   Arg.Unit (fun () -> 
       pr2 (spf "CodeGraph version: %s" Config_pfff.version);
@@ -604,7 +604,7 @@ let main () =
   (* Common_extra.set_link(); *)
   let usage_msg = 
     spf "Usage: %s [options] <dir> \nDoc: %s\nOptions:"
-      (Common.basename Sys.argv.(0))
+      (Common2.basename Sys.argv.(0))
       "https://github.com/facebook/pfff/wiki/Codegraph"
   in
   (* does side effect on many global flags *)

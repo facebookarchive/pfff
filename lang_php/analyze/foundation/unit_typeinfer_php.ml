@@ -40,7 +40,7 @@ let get_signature file =
 
   Infer.add_defs_code_database_and_update_dependencies env ast;
 
-  match Common.list_last ast with
+  match Common2.list_last ast with
   | Ast.FuncDef fd ->
       Infer.func_def env fd;
       normalize (InferH.GEnv.get_fun env (Ast.unwrap fd.Ast.f_name))

@@ -123,7 +123,7 @@ let defs_of_any any =
     V.klvalue = (fun (k, bigf) x ->
       match x with
       | FunCallSimple((Name ("define", tok)), args) ->
-          let args = args |> Ast.unparen |> Ast.uncomma in
+          let args = args +> Ast.unparen +> Ast.uncomma in
           (match args with
           (* Maybe better to have a Define directly in the AST. Note that
            * PHP 5.3 has a new const features that makes the use of define

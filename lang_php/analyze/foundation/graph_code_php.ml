@@ -12,6 +12,7 @@
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the file
  * license.txt for more details.
  *)
+open Common2
 open Common
 
 module E = Database_code
@@ -303,7 +304,7 @@ let lookup g a =
 let rec extract_defs_uses env ast readable =
   let env = { env with current = (readable, E.File); readable } in
   if env.phase = Defs then begin
-    let dir = Common.dirname env.readable in
+    let dir = Common2.dirname env.readable in
     G.create_intermediate_directories_if_not_present env.g dir;
     env.g +> G.add_node (env.readable, E.File);
     env.g +> G.add_edge ((dir, E.Dir), (env.readable, E.File))  G.Has;
@@ -346,17 +347,17 @@ and stmt_bis env x =
       stmtl env xs
   | Foreach (e1, e2, e3opt, xs) ->
       exprl env [e1;e2];
-      Common.opt (expr env) e3opt;
+      Common2.opt (expr env) e3opt;
       stmtl env xs;
   | Return eopt  | Break eopt | Continue eopt ->
-      Common.opt (expr env) eopt
+      Common2.opt (expr env) eopt
   | Throw e -> expr env e
   | Try (xs, c1, cs) ->
       stmtl env xs;
       catches env (c1::cs)
 
   | StaticVars xs ->
-      xs +> List.iter (fun (name, eopt) -> Common.opt (expr env) eopt;)
+      xs +> List.iter (fun (name, eopt) -> Common2.opt (expr env) eopt;)
   (* could add entity for that? *)
   | Global xs -> exprl env xs
 
@@ -388,7 +389,7 @@ and func_def env def =
   in
   def.f_params +> List.iter (fun p ->
     (* less: add deps to type hint? *)
-    Common.opt (expr env) p.p_default;
+    Common2.opt (expr env) p.p_default;
   );
   stmtl env def.f_body
 
@@ -434,7 +435,7 @@ and class_def env def =
   def.c_variables +> List.iter (fun def ->
     let node = (def.cv_name, E.Field) in
     let env = add_node_and_edge_if_defs_mode env node in
-    Common.opt (expr env) def.cv_value
+    Common2.opt (expr env) def.cv_value
   );
   def.c_methods +> List.iter (fun def ->
     (* less: be more precise at some point *)
@@ -639,7 +640,7 @@ and expr env x =
   | This _ -> ()
   | Array_get (e, eopt) ->
       expr env e;
-      Common.opt (expr env) eopt
+      Common2.opt (expr env) eopt
   | Infix (_, e) | Postfix (_, e) | Unop (_, e) -> expr env e
   | Binop (_, e1, e2) -> exprl env [e1; e2]
   | Guil xs -> exprl env xs
@@ -729,7 +730,7 @@ let build ?(verbose=true) ?(only_defs=false) dir skip_list =
       (* will modify env.dupes instead of raise Graph_code.NodeAlreadyPresent *)
       extract_defs_uses { env with phase = Defs} ast readable;
    ));
-  Common.hkeys env.dupes
+  Common2.hkeys env.dupes
   +> List.filter (fun (_, kind) ->
     match kind with
     | E.ClassConstant | E.Field | E.Method _ -> false

@@ -44,7 +44,7 @@ let create_graph ?(show_progress=false) ?(strict=false) files db =
          let ast = 
            Ast_php_simple_build.program (Parse_php.parse_program file) in
          let _heap = 
-           Common.timeout_function_opt (Some 20) (fun () ->
+           Common2.timeout_function_opt (Some 20) (fun () ->
              Interp.program env Env.empty_heap ast
            )
          in

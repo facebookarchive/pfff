@@ -49,7 +49,7 @@ let tags_of_files_or_dirs ?(verbose=false) xs =
     in
     let ast = Parse_js.program_of_program2 ast_and_tokens in
 
-    let filelines = Common.cat_array file in
+    let filelines = Common2.cat_array file in
 
     (* many class idioms are recognized in Class_js *)
     let hcomplete_name_of_info = 

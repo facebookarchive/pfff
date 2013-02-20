@@ -1,3 +1,4 @@
+open Common2
 open Common
 
 (*****************************************************************************)
@@ -36,7 +37,7 @@ let invariant xs =
 
 let string_of_seti xs = 
   "[" ^  
-    join "," (xs +> List.rev +> map (function 
+    join "," (xs +> List.rev +> List.map (function 
     | (Exact i) -> string_of_int i
     | (Interv (i,j)) -> Printf.sprintf "%d - %d" i j)) ^
     "]"
@@ -66,7 +67,7 @@ let rec (add2: int -> seti -> seti) = fun x -> function
   | (Interv (i,j)::xs) when x <= j && x >= i -> (Interv (i,j))::xs
   | other -> 
 (*         let _ = log "Cache miss" in *)
-      let _ = count2 () in
+      let _ = Common2.count2 () in
       (match other with
       |       (Exact i)::xs when x =|= i-1 -> pack x i xs 
       |       (Exact i)::xs when x < i-1 -> (Exact i)::add x xs
@@ -75,13 +76,13 @@ let rec (add2: int -> seti -> seti) = fun x -> function
       |       (Interv (i,j)::xs) when x < i-1 -> (Interv (i,j))::add x xs
       |       _ -> raise Impossible
       )
-and add x y = let _ = count5 () in add2 x y                                                         
+and add x y = let _ = Common2.count5 () in add2 x y                                                         
 
             
 let rec tolist2 = function
   | [] -> []
   | (Exact i)::xs -> i::tolist2 xs
-  | (Interv (i,j))::xs -> enum i j @ tolist2 xs 
+  | (Interv (i,j))::xs -> Common2.enum i j @ tolist2 xs 
 let rec tolist xs = List.rev (tolist2 xs)
 
 let rec fromlist = function xs -> List.fold_left (fun a e -> add e a) empty xs

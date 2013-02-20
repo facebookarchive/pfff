@@ -36,8 +36,8 @@ module E = Database_code
 (*****************************************************************************)
 (* Wrappers *)
 (*****************************************************************************)
-let pr2, pr2_once = Common.mk_pr2_wrappers Flag.verbose_database
-let pr2_err, pr2_err_once = Common.mk_pr2_wrappers Flag.show_errors
+let pr2, pr2_once = Common2.mk_pr2_wrappers Flag.verbose_database
+let pr2_err, pr2_err_once = Common2.mk_pr2_wrappers Flag.show_errors
 
 (*****************************************************************************)
 (* Iter Helpers *)
@@ -53,13 +53,13 @@ let pr2_err, pr2_err_once = Common.mk_pr2_wrappers Flag.show_errors
  *)
 let iter_files db f = 
   db.file_to_topids#tolist 
-  +> Common.sortgen_by_key_lowfirst (* does it really help ? real opti ? *)
+  +> Common2.sortgen_by_key_lowfirst (* does it really help ? real opti ? *)
   +> Common_extra.progress ~show:!Flag.verbose_database (fun k ->
     List.iter (fun (file, ids) -> 
       k ();
       try f (file, ids)
       with exn -> 
-        pr2_err (Common.exn_to_s_with_backtrace exn);
+        pr2_err (Common2.exn_to_s_with_backtrace exn);
         pr2_err (spf "PB with %s, exn = %s" file (Common.exn_to_s exn));
     ));
   ()
@@ -265,7 +265,7 @@ let (add_def:
     | E.Function | E.Class _ | E.Constant ->
         let before = 
           db.defs.name_defs#find_opt idstr 
-          +> Common.option_to_list +> List.flatten 
+          +> Common2.option_to_list +> List.flatten 
         in
         if before +> List.exists (fun id -> db.defs.id_kind#find id =*= idkind)
         then
@@ -421,7 +421,7 @@ let (add_callees_of_id2: (id * (N.nameS Ast_php.wrap list)) -> database -> unit)
 
    let directcalls =   
      grouped_instances_same_ident_with_candidates 
-     |> List.map (fun (a,b,c) -> CG.DirectCallToOpt (a,b,c))
+     +> List.map (fun (a,b,c) -> CG.DirectCallToOpt (a,b,c))
    in
    
    Common.profile_code "DB.add_callees_of_f_p2" (fun () -> 
@@ -469,7 +469,7 @@ let (add_callees_of_id2: (id * (N.nameS Ast_php.wrap list)) -> database -> unit)
            (* old: idcaller (name, infos), but can be retrieved from
             * reversed table. 
             *)
-           Common.cons (CG.DirectCallerIsOpt (idcaller, name, nbinstances)) old
+           Common2.cons (CG.DirectCallerIsOpt (idcaller, name, nbinstances)) old
          ) (fun() -> []) +> ignore;
      ));
    );

@@ -5,7 +5,7 @@ type author =
   Author of string
 
 type line_annotation = 
-  versionid * author * Common.date_dmy
+  versionid * author * Common2.date_dmy
 
 type commit_patch = (string list) (* header *) * Patch.patchinfo
 

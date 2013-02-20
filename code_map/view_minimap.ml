@@ -18,7 +18,7 @@
 
 open Common
 (* floats are the norm in graphics *)
-open Common.ArithFloatInfix
+open Common2.ArithFloatInfix
 
 module GR = Gdk.Rectangle
 
@@ -82,7 +82,7 @@ let paint_minimap2 dw =
 
 
 let paint_minimap dw = 
-  Common.profile_code2 "View.paint minimap" (fun () -> paint_minimap2 dw)
+  Common.profile_code "View.paint minimap" (fun () -> paint_minimap2 dw)
 (*e: paint_minimap *)
 
 (* ---------------------------------------------------------------------- *)
@@ -105,7 +105,7 @@ let expose_minimap da dw_ref ev =
   let gwin = da#misc#window in
   let d = new GDraw.drawable gwin in
 
-  Common.profile_code2 "View.put_pixmap mini" (fun () ->
+  Common.profile_code "View.put_pixmap mini" (fun () ->
     d#put_pixmap ~x ~y ~xsrc:x ~ysrc:y ~width ~height 
       dw.pm_minimap#pixmap;
   );

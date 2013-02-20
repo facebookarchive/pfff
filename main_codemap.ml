@@ -102,7 +102,7 @@ let filters = [
     | _ -> false
   );
   "cpp", (let x = ref false in (fun file ->
-    Common.once x (fun () -> Parse_cpp.init_defs !Flag_parsing_cpp.macros_h);
+    Common2.once x (fun () -> Parse_cpp.init_defs !Flag_parsing_cpp.macros_h);
     match FT.file_type_of_file file with
     | FT.PL (FT.C _ | FT.Cplusplus _) -> true 
     | _ -> false
@@ -144,7 +144,7 @@ let treemap_generator paths =
 
 (*s: build_model *)
 let build_model2 root dbfile_opt =   
-  let db_opt = Common.fmap Database_code.load_database dbfile_opt in
+  let db_opt = Common2.fmap Database_code.load_database dbfile_opt in
   let hentities = Model.hentities root db_opt in
   let hfiles_entities = Model.hfiles_and_top_entities root db_opt in
   let all_entities = Model.all_entities db_opt root in
@@ -174,14 +174,14 @@ let build_model2 root dbfile_opt =
   model
 
 let build_model a b = 
-  Common.profile_code2 "View.build_model" (fun () ->
+  Common.profile_code "View.build_model" (fun () ->
     build_model2 a b)
 (*e: build_model *)
 
 (* could also try to parse all json files and filter the one which do
  * not parse *)
 let layers_in_dir dir =
-  Common.readdir_to_file_list dir +> Common.map_filter (fun file ->
+  Common2.readdir_to_file_list dir +> Common.map_filter (fun file ->
     if file =~ "layer.*marshall"
     then Some (Filename.concat dir file)
     else None
@@ -196,7 +196,7 @@ let main_action xs =
   set_gc ();
   Logger.log Config_pfff.logger "codemap" None;
 
-  let root = Common.common_prefix_of_files_or_dirs xs in
+  let root = Common2.common_prefix_of_files_or_dirs xs in
   pr2 (spf "Using root = %s" root);
 
   let model = Async.async_make () in
@@ -368,8 +368,8 @@ let options () = [
   (*e: options *)
   ] ++
   Common.options_of_actions action (all_actions()) ++
-  Common.cmdline_flags_devel () ++
-  Common.cmdline_flags_verbose () ++
+  Common2.cmdline_flags_devel () ++
+  Common2.cmdline_flags_verbose () ++
   [
   "-version",   Arg.Unit (fun () -> 
     pr2 (spf "CodeMap version: %s" Config_pfff.version);
@@ -386,7 +386,7 @@ let main () =
 
   let usage_msg = 
     spf "Usage: %s [options] <file or dir> \nDoc: %s\nOptions:"
-      (Common.basename Sys.argv.(0))
+      (Common2.basename Sys.argv.(0))
       "https://github.com/facebook/pfff/wiki/Codemap"
   in
   let args = Common.parse_options (options()) usage_msg Sys.argv in

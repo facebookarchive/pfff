@@ -375,10 +375,10 @@ let (path_of_project_in_database: database -> Common.dirname) = fun db ->
 
 let (normalize_project: project -> project) = function
   (Project (path, nameopt)) -> 
-    Project (Common.chop_dirsymbol path, nameopt)
+    Project (Common2.chop_dirsymbol path, nameopt)
 
 let prj_of_dir dir =
-  let dir = Common.realpath dir |> Common.chop_dirsymbol in
+  let dir = Common.realpath dir +> Common2.chop_dirsymbol in
   let prj = Project (dir, None) in
   let prj = normalize_project prj in 
   prj
@@ -506,7 +506,7 @@ let parent_name_of_id2 id db =
   let ast = ast_of_id id db in
   match ast with
   | Ast_php.ClassE def ->
-      def.c_extends |> Common.fmap (fun (tok, classname) -> 
+      def.c_extends +> Common2.fmap (fun (tok, classname) -> 
         Ast.name classname
       )
   | _ ->
@@ -546,8 +546,8 @@ let class_or_interface_id_of_nested_id_opt id db =
 
 let classdef_of_nested_id_opt id db = 
   let enclosing = enclosing_ids id db in
-  Common.optionise (fun () ->
-    enclosing |> Common.find_some (fun id ->
+  Common2.optionise (fun () ->
+    enclosing +> Common.find_some (fun id ->
       let id_kind = db.defs.id_kind#assoc id in
       match id_kind with
       | E.Class _ -> 
@@ -567,7 +567,7 @@ let self_parent_of_nested_id id db =
   | None -> None, None
   | Some cdef ->
       let self = Some (Ast.name cdef.c_name) in
-      let parent = cdef.c_extends |> Common.fmap (fun (tok, classname) ->
+      let parent = cdef.c_extends +> Common2.fmap (fun (tok, classname) ->
         Ast.name classname
       )
       in
@@ -653,7 +653,7 @@ let filter_ids_in_db kinds db =
       id, db.defs.id_kind#assoc id
     )
     in
-    let goodone = ids_with_kind +> Common.filter (fun (id, kind2) -> 
+    let goodone = ids_with_kind +> List.filter (fun (id, kind2) -> 
       List.mem kind2 kinds)
     in
     if null goodone
@@ -682,10 +682,10 @@ let is_function_id id db =
  *  the hint file can help to disambiguate
  *)
 let id_of_function s db = 
-  function_ids__of_string s db +> Common.list_to_single_or_exn
+  function_ids__of_string s db +> Common2.list_to_single_or_exn
 
 let id_of_class s db = 
-  class_ids_of_string s db +> Common.list_to_single_or_exn
+  class_ids_of_string s db +> Common2.list_to_single_or_exn
 
 (* todo? do we want to handle inheritance ? also we could allow to have 
  * multiple classes with same name, and the method name can then be used 
@@ -701,7 +701,7 @@ let id_of_method ~theclass:sclass smethod db =
       (kind = E.Method E.RegularMethod) && db.defs.id_name#assoc id =$= smethod
     )
   in
-  Common.list_to_single_or_exn methods
+  Common2.list_to_single_or_exn methods
 
 
 (* 
@@ -716,7 +716,7 @@ let id_of_method ~theclass:sclass smethod db =
 let rec static_function_ids_of_strings ~theclass smethod db = 
   let idclasses = class_ids_of_string theclass db in
 
-  idclasses |> Common.map (fun idclass -> 
+  idclasses +> Common.map (fun idclass -> 
 
     let children = db.children_ids#assoc idclass in
 
@@ -743,7 +743,7 @@ let rec static_function_ids_of_strings ~theclass smethod db =
           static_function_ids_of_strings ~theclass:theclass_parent smethod db
 
     else candidates
-  ) |> List.flatten
+  ) +> List.flatten
 *)
 
 let id_of_kind_call ?(file_disambiguator="") call db = 
@@ -776,7 +776,7 @@ let id_of_phpname name db =
     Not_found -> false
   )
   in
-  Common.list_to_single_or_exn matching
+  Common2.list_to_single_or_exn matching
 
 
 (*****************************************************************************)
@@ -784,7 +784,7 @@ let id_of_phpname name db =
 (*****************************************************************************)
 
 let all_files db = 
-  db.file_to_topids#tolist |> List.map fst |> Common.sort
+  db.file_to_topids#tolist +> List.map fst +> Common.sort
 
 let has_parsing_problem file db = 
   try 
@@ -816,7 +816,7 @@ let rec includees_rec_of_file_set file db =
       with Not_found -> []
     in
     
-    direct |> List.fold_left (fun acc file -> 
+    direct +> List.fold_left (fun acc file -> 
       if Hashtbl.mem _hmemo_includees_done file
       then begin 
         pr2 (spf "WARNING: include cycle for %s" file);
@@ -838,7 +838,7 @@ let rec includers_rec_of_file_set file db =
       with Not_found -> []
     in
     
-    direct |> List.fold_left (fun acc file -> 
+    direct +> List.fold_left (fun acc file -> 
       if Hashtbl.mem _hmemo_includers_done file
       then begin 
         pr2 (spf "WARNING: include cycle for %s" file);
@@ -856,13 +856,13 @@ let rec includers_rec_of_file_set file db =
 let includees_rec_of_file file db = 
   if not (db.file_to_topids#haskey file)
   then failwith (spf "file %s  is not in the database" file);
-  includees_rec_of_file_set file db |> Set_poly.elements
+  includees_rec_of_file_set file db +> Set_poly.elements
    
 
 let includers_rec_of_file file db = 
   if not (db.file_to_topids#haskey file)
   then failwith (spf "file %s  is not in the database" file);
-  includers_rec_of_file_set file db |> Set_poly.elements
+  includers_rec_of_file_set file db +> Set_poly.elements
 
 
 
@@ -892,7 +892,7 @@ let mk_graph_of_file ?(depth_limit=None) succ file db =
       g +> G.add_vertex_if_not_present file;
       
       let direct = succ file in
-      direct |> List.iter (fun file2 ->
+      direct +> List.iter (fun file2 ->
         
         g +> G.add_vertex_if_not_present file2;
         g +> G.add_edge file file2;

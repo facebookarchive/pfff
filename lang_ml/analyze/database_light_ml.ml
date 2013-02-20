@@ -54,21 +54,21 @@ module T = Parser_ml
  * database_php.ml. 
  *)
 type entity_poor_id = 
-  Id of (Common.filename * Common.filepos)
+  Id of (Common.filename * Common2.filepos)
 
 (*****************************************************************************)
 (* Helpers *)
 (*****************************************************************************)
 
 let is_pleac_file file = 
-  let file = Common.lowercase file in
+  let file = Common2.lowercase file in
   file =~ ".*pleac*"
 
 (* todo? quite pad specific ... 
  * try detect when use OUnit ?
  *)
 let is_test_file file =
-  let file = Common.lowercase file in
+  let file = Common2.lowercase file in
   (file =~ ".*/test_" || file =~ ".*/unit_")
 
 let is_test_or_pleac_file file = 
@@ -84,7 +84,7 @@ let rank_and_filter_examples_of_use ~root ids entities_arr =
   ids +> List.map (fun id ->
     let file = entities_arr.(id).Db.e_file in
     let file = Filename.concat root file in
-    let size = Common.filesize file in
+    let size = Common2.filesize file in
     
     (* Low means better; so prefer small size and pleac files *)
     let score = 
@@ -106,12 +106,12 @@ let parse file =
 
 let compute_database ?(verbose=false) files_or_dirs = 
 
-  let root = Common.common_prefix_of_files_or_dirs files_or_dirs in
-  let root = Common.chop_dirsymbol root in
+  let root = Common2.common_prefix_of_files_or_dirs files_or_dirs in
+  let root = Common2.chop_dirsymbol root in
   if verbose then pr2 (spf "generating ML db_light with root = %s" root);
 
   let files = Lib_parsing_ml.find_ml_files_of_dir_or_files files_or_dirs in
-  let dirs = files +> List.map Filename.dirname +> Common.uniq_eff in
+  let dirs = files +> List.map Filename.dirname +> Common2.uniq_eff in
 
   (* PHASE 1: collecting definitions *)
   if verbose then pr2 (spf "PHASE 1: collecting definitions");
@@ -171,10 +171,10 @@ let compute_database ?(verbose=false) files_or_dirs =
               (* stuff in mli is ok only where there is no .ml, like
                * for the externals/core/ stuff
                *)
-              let (d,b,e) = Common.dbe_of_filename fullpath in
+              let (d,b,e) = Common2.dbe_of_filename fullpath in
               if e = "ml" ||
                  (e = "mli" && not (Sys.file_exists
-                                      (Common.filename_of_dbe (d,b, "ml"))))
+                                      (Common2.filename_of_dbe (d,b, "ml"))))
               then begin
 
               
@@ -182,7 +182,7 @@ let compute_database ?(verbose=false) files_or_dirs =
                 e_name = s;
                 e_fullname = spf "%s.%s" module_name s;
                 e_file = file;
-                e_pos = { Common.l = l; Common.c = c };
+                e_pos = { Common2.l = l; c };
                 e_kind = Db.entity_kind_of_highlight_category_def categ;
                 (* filled in step 2 *)
                 e_number_external_users = 0;
@@ -245,7 +245,7 @@ let compute_database ?(verbose=false) files_or_dirs =
    * encountered.
    *)
   let add_good_example_of_use test_file entity =
-    let poor_id_opt = Common.hfind_option test_file hfile_to_entities in
+    let poor_id_opt = Common2.hfind_option test_file hfile_to_entities in
     (match poor_id_opt with
     | None -> pr2 (spf "WEIRD, could not find an entity in %s" test_file)
     | Some poor_id_user ->
@@ -320,7 +320,7 @@ let compute_database ?(verbose=false) files_or_dirs =
                 else s
               in
               let module_entity = 
-                let (_d,b,_e) = Common.dbe_of_filename file_entity in
+                let (_d,b,_e) = Common2.dbe_of_filename file_entity in
                 String.capitalize b
               in
               

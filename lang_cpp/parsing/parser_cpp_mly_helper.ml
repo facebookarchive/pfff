@@ -10,11 +10,11 @@ open Semantic_cpp
 (*****************************************************************************)
 (* Wrappers *)
 (*****************************************************************************)
-let pr2, pr2_once = Common.mk_pr2_wrappers Flag.verbose_parsing 
+let pr2, pr2_once = Common2.mk_pr2_wrappers Flag.verbose_parsing 
 
 let warning s v = 
   if !Flag.verbose_parsing 
-  then Common.warning ("PARSING: " ^ s) v
+  then Common2.warning ("PARSING: " ^ s) v
   else v
 
 (*****************************************************************************)
@@ -100,7 +100,7 @@ let addQualif = function
       {v with const=Some x}
   | ({volatile=Some x; _}, v) -> 
       {v with volatile=Some x}
-  | _ -> internal_error "there is no noconst or novolatile keyword"
+  | _ -> Common2.internal_error "there is no noconst or novolatile keyword"
 
 let addQualifD (qu, ({qualifD = v; _} as x)) =
   { x with qualifD = addQualif (qu, v) }

@@ -62,7 +62,7 @@ open Token_views_cpp
 (*****************************************************************************)
 (* Wrappers *)
 (*****************************************************************************)
-let pr2, pr2_once = Common.mk_pr2_wrappers Flag_parsing_cpp.verbose_parsing 
+let pr2, pr2_once = Common2.mk_pr2_wrappers Flag_parsing_cpp.verbose_parsing 
 
 (*****************************************************************************)
 (* Types *)
@@ -103,7 +103,7 @@ let rec (cpp_engine:
   = fun env xs ->
   xs +> List.map (fun tok -> 
     match tok with
-    | TIdent (s,i1) when List.mem_assoc s env -> Common.assoc s env
+    | TIdent (s,i1) when List.mem_assoc s env -> Common2.assoc s env
     | x -> [x]
   )
   +> List.flatten
@@ -141,7 +141,7 @@ let rec apply_macro_defs defs xs =
               )
             ) in
             id.new_tokens_before <-
-              cpp_engine (Common.zip params xxs') bodymacro
+              cpp_engine (Common2.zip params xxs') bodymacro
 
           else begin
             pr2 ("macro with wrong number of arguments, wierd: " ^ s);
@@ -201,15 +201,15 @@ let rec define_parse xs =
   | [] -> []
   | TDefine i1::TIdent_Define (s,i2)::TOPar_Define i3::xs -> 
       let (tokparams, _, xs) = 
-        xs +> Common.split_when (function TCPar _ -> true | _ -> false) in
+        xs +> Common2.split_when (function TCPar _ -> true | _ -> false) in
       let (body, _, xs) = 
-        xs +> Common.split_when 
+        xs +> Common2.split_when 
           (function TCommentNewline_DefineEndOfMacro _ -> true | _ -> false) in
       let params = 
         tokparams +> Common.map_filter (function
         | TComma _ -> None
         | TIdent (s, _) -> Some s
-        | x -> error_cant_have x
+        | x -> Common2.error_cant_have x
         ) in
       let body = body +> List.map 
         (TH.visitor_info_of_tok Ast.make_expanded) in
@@ -218,7 +218,7 @@ let rec define_parse xs =
 
   | TDefine i1::TIdent_Define (s,i2)::xs -> 
       let (body, _, xs) = 
-        xs +> Common.split_when 
+        xs +> Common2.split_when 
           (function TCommentNewline_DefineEndOfMacro _ -> true | _ -> false) in
       let body = body +> List.map 
         (TH.visitor_info_of_tok Ast.make_expanded) in

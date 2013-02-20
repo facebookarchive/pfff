@@ -28,7 +28,7 @@ open Common
 let suggest s xs =
   try 
     Some (xs +> Common.find_some (fun s2 ->
-      let dist = Common.edit_distance s s2 in
+      let dist = Common2.edit_distance s s2 in
       if dist <= 2
       then Some (s2, dist)
       else None

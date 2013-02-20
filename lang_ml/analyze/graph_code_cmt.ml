@@ -178,7 +178,7 @@ let add_node_and_edge_if_defs_mode ?(dupe_ok=false) env name_node loc =
       env.g +> G.add_nodeinfo node nodeinfo
     end
   end;
-  add_full_path_local env (Common.list_last name, name) kind;
+  add_full_path_local env (Common2.list_last name, name) kind;
   { env with 
     current = node; 
     current_entity = name; 
@@ -327,7 +327,7 @@ let rec typename_of_texpr x =
 let add_use_edge_lid env lid texpr kind =
  if env.phase = Uses then begin
   (* the typename already contains the qualifier *)
-  let str = Common.list_last (path_resolve_locals env lid kind) in
+  let str = Common2.list_last (path_resolve_locals env lid kind) in
   let tname = path_resolve_locals env (typename_of_texpr texpr) E.Type in
   let tname = path_type_resolve_aliases env tname in
   let full_ident = tname ++ [str] in
@@ -469,7 +469,7 @@ let rec extract_defs_uses
   }
   in
   if phase = Defs then begin
-    let dir = Common.dirname readable in
+    let dir = Common2.dirname readable in
     G.create_intermediate_directories_if_not_present g dir;
     g +> G.add_node env.current;
     g +> G.add_edge ((dir, E.Dir), env.current) G.Has;

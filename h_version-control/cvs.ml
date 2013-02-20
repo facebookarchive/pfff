@@ -12,7 +12,7 @@
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the file
  * license.txt for more details.
  *)
-
+open Common2
 open Common
 
 (*****************************************************************************)
@@ -37,8 +37,8 @@ let _ = assert ("1.208        (imp      07-Jan-05): /*-" =~ annotate_regexp)
 
 let annotate2 ?(basedir="") filename = 
 
-  let today = Common.today () in
-  let dmy = today +> floattime_to_unixtime +> unixtime_to_dmy in
+  let today = Common2.today () in
+  let dmy = today +> Common2.floattime_to_unixtime +> Common2.unixtime_to_dmy in
   let (DMY (_,_,Year this_year)) = dmy in
 
   (* TODO????: compute it from file directly ? *)
@@ -74,9 +74,9 @@ let annotate2 ?(basedir="") filename =
 
         Some (Lib_vcs.VersionId rcsid,
               Lib_vcs.Author author,
-              Common.mk_date_dmy 
+              Common2.mk_date_dmy 
                 (s_to_i day) 
-                (Common.int_of_month (Common.month_of_string month_str))
+                (Common2.int_of_month (Common2.month_of_string month_str))
                 iyear)
       (* header *)
       | () when s = "***************" -> None
@@ -159,7 +159,7 @@ let find_all_date cmd =
       then 
         let (year, month, day) = matched3 s in
         Some (
-          Common.mk_date_dmy 
+          Common2.mk_date_dmy 
             (s_to_i day) 
             (s_to_i month)
             (s_to_i year) 
@@ -170,7 +170,7 @@ let find_all_date cmd =
         then 
           let (year, month, day) = matched3 s in
           Some (
-            Common.mk_date_dmy 
+            Common2.mk_date_dmy 
               (s_to_i day) 
               (s_to_i month)
               (s_to_i year) 
@@ -188,7 +188,7 @@ let find_date cmd =
 let find_date_min cmd = 
   let xs' = find_all_date cmd in
   match xs' with
-  | x::xs -> Some (Common.minimum_dmy (x::xs))
+  | x::xs -> Some (Common2.minimum_dmy (x::xs))
   | [] -> None
 
 let date_file_creation2 ?(basedir="") file = 

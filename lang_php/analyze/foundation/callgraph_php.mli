@@ -67,8 +67,8 @@ type node = {
   gray: bool;
 }
 
-type idtree = node Common.treeref
-type calltree = node Common.treeref
+type idtree = node Common2.treeref
+type calltree = node Common2.treeref
 
 
 (* as argument for the building functions *)

@@ -15,7 +15,7 @@
  * license.txt for more details.
  *)
 (*e: Facebook copyright *)
-
+open Common2
 open Common
 
 open Ast_php
@@ -165,19 +165,19 @@ let hash_of_config cfg =
 
 let cmdline_args_of_config cfg =
   hash_of_config cfg 
-  |> Common.hash_to_list 
-  |> List.map (fun (s, d) -> spf "-d xdebug.%s=%s" s d) 
-  |> Common.join " "
+  +> Common.hash_to_list 
+  +> List.map (fun (s, d) -> spf "-d xdebug.%s=%s" s d) 
+  +> Common.join " "
 
 (*****************************************************************************)
 (* Small wrapper over php interpreter *)
 (*****************************************************************************)
 let php_cmd_with_xdebug_on ?(config = default_config) ~trace_file () = 
-  let (d, b, e) = Common.dbe_of_filename trace_file in
+  let (d, b, e) = Common2.dbe_of_filename trace_file in
 
   if e <> "xt" 
   then failwith "the xdebug trace file must end in .xt";
-  if Sys.file_exists trace_file && Common.filesize trace_file > 0
+  if Sys.file_exists trace_file && Common2.filesize trace_file > 0
   then pr2 (spf "WARNING: %s already exists, xdebug will concatenate data"
                trace_file);
 
@@ -190,7 +190,7 @@ let php_cmd_with_xdebug_on ?(config = default_config) ~trace_file () =
 
 let php_has_xdebug_extension () = 
   let xs = Common.cmd_to_list "php -v 2>&1" in
-  xs |> List.exists (fun s -> s =~ ".*with Xdebug v.*")
+  xs +> List.exists (fun s -> s =~ ".*with Xdebug v.*")
 
 (*****************************************************************************)
 (* Helpers *)
@@ -320,12 +320,12 @@ let iter_dumpfile2
    callback file = 
 
   pr2 (spf "computing number of lines of %s" file);
-  let nblines = Common.nblines_with_wc file in
+  let nblines = Common2.nblines_with_wc file in
  
   pr2 (spf "nb lines = %d" nblines);
   let nb_fails = ref 0 in
 
-  Common.execute_and_show_progress ~show:show_progress nblines (fun k ->
+  Common2.execute_and_show_progress ~show:show_progress nblines (fun k ->
   Common.with_open_infile file (fun (chan) ->
 
     let stack = ref [] in
@@ -463,7 +463,7 @@ let iter_dumpfile2
               | [] -> failwith "empty call stack"
               | (depth_call, trace)::rest -> 
                   (match depth_call <=> depth_here with
-                  | Common.Equal ->
+                  | Common2.Equal ->
                       stack := rest;
 
                       let caller = trace.f_call in
@@ -480,9 +480,9 @@ let iter_dumpfile2
                                    (Common.exn_to_s exn) line);
                             raise exn
                         )
-                  | Common.Inf ->
+                  | Common2.Inf ->
                       raise Todo
-                  | Common.Sup -> 
+                  | Common2.Sup -> 
                       raise Todo
                   )
               with

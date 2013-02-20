@@ -220,8 +220,8 @@ let heat_map_properties = [
  * I doubt MySQL can be as fast and light as my JSON + hashtbl indexing.
  *)
 let build_index_of_layers ~root layers = 
-  let hmicro = Common.hash_with_default (fun () -> Hashtbl.create 101) in
-  let hmacro = Common.hash_with_default (fun () -> []) in
+  let hmicro = Common2.hash_with_default (fun () -> Hashtbl.create 101) in
+  let hmacro = Common2.hash_with_default (fun () -> []) in
   
   layers 
    +> List.filter (fun (layer, active) -> active) 
@@ -284,7 +284,7 @@ let build_index_of_layers ~root layers =
 (* Layers helpers *)
 (*****************************************************************************)
 let has_active_layers layers =
-  layers.layers +> List.map snd +> Common.or_list
+  layers.layers +> List.map snd +> Common2.or_list
 
 (*****************************************************************************)
 (* Meta *)
@@ -538,13 +538,13 @@ let load_layer file =
   pr2 (spf "loading layer: %s" file);
   if File_type.is_json_filename file
   then Ocaml.load_json file +> layer_of_json
-  else Common.get_value file
+  else Common2.get_value file
 
 let save_layer layer file =
   if File_type.is_json_filename file
   (* layer +> vof_layer +> Ocaml.string_of_v +> Common.write_file ~file *)
   then layer +> json_of_layer +> Ocaml.save_json file
-  else  Common.write_value layer file
+  else  Common2.write_value layer file
 
 (*****************************************************************************)
 (* Layer builder helper *)
@@ -560,7 +560,7 @@ let simple_layer_of_parse_infos ~root ~title ?(description="") xs kinds =
   let files_and_lines = xs +> List.map (fun (tok, kind) ->
     let file = Parse_info.file_of_info tok in
     let line = Parse_info.line_of_info tok in
-    let file' = Common.relative_to_absolute file in 
+    let file' = Common2.relative_to_absolute file in 
     Common.filename_without_leading_path root file', (line, kind)
   )
   in
@@ -579,12 +579,12 @@ let simple_layer_of_parse_infos ~root ~title ?(description="") xs kinds =
         Common.group_assoc_bykey_eff lines_and_kinds 
       in
       let all_kinds_in_file = 
-        group +> List.map snd +> List.flatten +> Common.uniq in
+        group +> List.map snd +> List.flatten +> Common2.uniq in
 
       (file, { 
        micro_level = 
           group +> List.map (fun (line, kinds) -> 
-            let kinds = Common.uniq kinds in
+            let kinds = Common2.uniq kinds in
             kinds +> List.map (fun kind -> line, kind)
           ) +> List.flatten;
 
@@ -644,7 +644,7 @@ let layer_red_green_and_heatmap ~root ~output xs =
  * just the line count.
  *)
 let stat_of_layer layer =
-  let h = Common.hash_with_default (fun () -> 0) in
+  let h = Common2.hash_with_default (fun () -> 0) in
   
   layer.kinds +> List.iter (fun (kind, _color) -> 
     h#add kind 0
@@ -659,5 +659,5 @@ let stat_of_layer layer =
 
 let filter_layer f layer =
   { layer with 
-    files = layer.files +> Common.filter (fun (file, _) -> f file);
+    files = layer.files +> List.filter (fun (file, _) -> f file);
   }

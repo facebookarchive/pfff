@@ -33,7 +33,7 @@ open Parser_nw
 (*****************************************************************************)
 (* Wrappers *)
 (*****************************************************************************)
-let pr2, pr2_once = Common.mk_pr2_wrappers Flag.verbose_lexing 
+let pr2, pr2_once = Common2.mk_pr2_wrappers Flag.verbose_lexing 
 
 (*****************************************************************************)
 (* Helpers *)
@@ -77,14 +77,14 @@ let reset () =
 
 let rec current_mode () = 
   try 
-    Common.top !_mode_stack
+    Common2.top !_mode_stack
   with Failure("hd") -> 
     pr2("LEXER: mode_stack is empty, defaulting to INITIAL");
     reset();
     current_mode ()
 
 let push_mode mode = Common.push2 mode _mode_stack
-let pop_mode () = ignore(Common.pop2 _mode_stack)
+let pop_mode () = ignore(Common2.pop2 _mode_stack)
 
 }
 

@@ -13,6 +13,7 @@
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the file
  * license.txt for more details.
  *)
+open Common2
 open Common
 
 open Lib_vcs 
@@ -54,8 +55,8 @@ let is_git_repository basedir =
   Version_control.detect_vcs_source_tree basedir =*= Some (Version_control.Git)
 
 let find_root_from_absolute_path file =
-  let xs = Common.split "/" (Common.dirname file) in
-  let xxs = Common.inits xs in
+  let xs = Common.split "/" (Common2.dirname file) in
+  let xxs = Common2.inits xs in
   xxs +> List.rev +> Common.find_some (fun xs ->
     let dir = "/" ^ Common.join "/" xs in
     let gitdir = Filename.concat dir ".git" in
@@ -69,7 +70,7 @@ let cleanup_cache_files dir =
   cache_ext +> List.iter (fun ext -> 
     let files = Common.files_of_dir_or_files_no_vcs ext [dir] in
     files +> List.iter (fun file -> 
-      assert(Common.filesuffix file = ext);
+      assert(Common2.filesuffix file = ext);
       pr2 file;
       Common.command2(spf "rm -f %s" file);
     ));
@@ -139,7 +140,7 @@ let annotate2 ?(basedir="") ?(use_cache=false) ?(use_dash_C=true) filename =
     (* todo? check status. can have a file not under git in which case we
      * get a 'fatal: no such path ... in HEAD
      *)
-    let (xs, _status) = Common.cmd_to_list_and_status cmd in
+    let (xs, _status) = Common2.cmd_to_list_and_status cmd in
     (*let ys = Common.cat (Common.filename_of_db (basedir,filename)) in*)
 
     let annots = 
@@ -149,7 +150,7 @@ let annotate2 ?(basedir="") ?(use_cache=false) ?(use_dash_C=true) filename =
           let (commitid, author, year, month, day) = Common.matched5 s in
           Some (VersionId commitid, 
                Author author,
-               Common.mk_date_dmy (s_to_i day) (s_to_i month) (s_to_i year))
+               Common2.mk_date_dmy (s_to_i day) (s_to_i month) (s_to_i year))
         else begin 
           pr2 ("git annotate wrong line: " ^ s);
           None
@@ -214,7 +215,7 @@ let date_file_creation2 ?(basedir="") file =
       then
         let (day, month_str, year) = matched3 s in
         DMY (Day (s_to_i day),
-             Common.month_of_string month_str,
+             Common2.month_of_string month_str,
             Year (s_to_i year)
         )
       else failwith ("git log wrong line: " ^ s)
@@ -299,7 +300,7 @@ let commit_of_relative_time ~basedir relative_data_string =
                  relative_data_string
              )) in
   let xs = Common.cmd_to_list cmd in
-  let last = Common.list_last xs in
+  let last = Common2.list_last xs in
   id_and_summary_oneline last +> fst
 
 let files_involved_in_diff ~basedir commitid =
@@ -327,10 +328,10 @@ let commits_between_commitids ~basedir ~old_id ~recent_id =
  
 
 let file_to_commits ~basedir commits = 
-  let h = Common.hash_with_default (fun() -> []) in
+  let h = Common2.hash_with_default (fun() -> []) in
   let total = List.length commits in
   commits +> Common.index_list_1 |> List.iter (fun (vid, cnt) ->
-    Common.log2 (spf "patch %d/%d" cnt total);
+    Common2.log2 (spf "patch %d/%d" cnt total);
     try 
       let patch = commit_patch ~basedir vid in
       let (strs, patchinfo) = patch in
@@ -358,7 +359,7 @@ let refactoring_commits ?(since="--since='1 year ago'") ?(threshold=50) repo =
   pr2 (spf "#commits = %d" (List.length commits));
   
   let refactoring_ids = 
-  commits +> Common_extra.progress (fun k -> Common.filter (fun (id, x) ->
+  commits +> Common_extra.progress (fun k -> List.filter (fun (id, x) ->
     k ();
     let (Lib_vcs.VersionId scommit) = id in
     let cmd = (spf "cd %s; git show --oneline --no-color --stat %s"
@@ -379,7 +380,7 @@ let refactoring_commits ?(since="--since='1 year ago'") ?(threshold=50) repo =
   ()
 
 let parse_skip_revs_file file =
-  file +> Common.cat +> Common.map (fun s ->
+  file +> Common.cat +> List.map (fun s ->
     if s =~ "^\\([^ ]+\\) "
     (* git annotate returns commitid of length 8, so must match that *)
     then Lib_vcs.VersionId (String.sub (Common.matched1 s) 0 8)
@@ -392,7 +393,7 @@ let parse_skip_revs_file file =
 
 let apply_patch ~basedir patch_string_list = 
   let tmpfile = Common.new_temp_file "git" ".patch" in
-  let s = Common.unlines patch_string_list in
+  let s = Common2.unlines patch_string_list in
   Common.write_file ~file:tmpfile s;
   
   let cmd = (goto_dir basedir ^ "git apply "^tmpfile^" 2>&1") in
@@ -480,19 +481,19 @@ let get_2_best_blamers_of_lines
     annots +> Array.to_list +> Common.map_filter (fun x ->
       let (version, Lib_vcs.Author author, date) = x in
       if is_valid_author author 
-         && not (Common.hmem author hblame) 
+         && not (Common2.hmem author hblame) 
          && not (List.mem version skip_revs)
       then Some author
       else None
     )
   in
       
-  let counts = Common.count_elements_sorted_highfirst toblame +>
+  let counts = Common2.count_elements_sorted_highfirst toblame +>
     List.map fst in
-  let counts' = Common.count_elements_sorted_highfirst other_authors +>
+  let counts' = Common2.count_elements_sorted_highfirst other_authors +>
     List.map fst in
 
-  Common.take_safe 2 (counts ++ counts')
+  Common2.take_safe 2 (counts ++ counts')
 
 
 let max_date_of_lines ~basedir ?use_cache ?(skip_revs=[])
@@ -510,7 +511,7 @@ let max_date_of_lines ~basedir ?use_cache ?(skip_revs=[])
       else None
     )
   in
-  Common.maximum_dmy toblame
+  Common2.maximum_dmy toblame
 
 (*****************************************************************************)
 (* Archeology *)

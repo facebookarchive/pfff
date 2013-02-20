@@ -30,7 +30,7 @@ open Parser_hs
 (*****************************************************************************)
 (* Wrappers *)
 (*****************************************************************************)
-let pr2, pr2_once = Common.mk_pr2_wrappers Flag.verbose_lexing 
+let pr2, pr2_once = Common2.mk_pr2_wrappers Flag.verbose_lexing 
 
 (*****************************************************************************)
 (* Helpers *)
@@ -162,7 +162,7 @@ rule token = parse
   | ident {
       let info = tokinfo lexbuf in
       let s = tok lexbuf in
-      match Common.optionise (fun () -> Hashtbl.find keyword_table s) with
+      match Common2.optionise (fun () -> Hashtbl.find keyword_table s) with
       | Some f -> f info
       | None -> TIdent (s, info)
     }

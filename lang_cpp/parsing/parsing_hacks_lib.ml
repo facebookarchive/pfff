@@ -12,7 +12,7 @@
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * file license.txt for more details.
  *)
-
+open Common2
 open Common
 
 module Flag = Flag_parsing_cpp
@@ -27,7 +27,7 @@ open Token_views_cpp
 (*****************************************************************************)
 (* Wrappers  *)
 (*****************************************************************************)
-let pr2, pr2_once = Common.mk_pr2_wrappers Flag_parsing_cpp.verbose_parsing
+let pr2, pr2_once = Common2.mk_pr2_wrappers Flag_parsing_cpp.verbose_parsing
 
 (*****************************************************************************)
 (* Helpers  *)

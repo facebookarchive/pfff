@@ -183,7 +183,7 @@ let model_of_list_pair_string_with_icon2 query xs =
 
 
 let model_of_list_pair_string_with_icon query a =
-  Common.profile_code2 "Completion2.model_of_list" (fun () ->
+  Common.profile_code "Completion2.model_of_list" (fun () ->
     model_of_list_pair_string_with_icon2 query a
   )
 
@@ -235,7 +235,7 @@ let fake_entity = {Database_code.
      e_fullname = "";
      e_file = "foo.php";
      e_kind = Db.Function;
-     e_pos = { Common.l = -1; Common.c = -1 };
+     e_pos = { Common2.l = -1; c = -1 };
      e_number_external_users = 0;
      e_good_examples_of_use = [];
      e_properties = [];

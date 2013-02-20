@@ -32,8 +32,8 @@ let sexp_of_stack _of_a = Conv.sexp_of_list _of_a
 
 let sexp_of_score_result =
   function
-  | Ok -> Sexp.Atom "Ok"
-  | Pb v1 ->
+  | Common2.Ok -> Sexp.Atom "Ok"
+  | Common2.Pb v1 ->
       let v1 = Conv.sexp_of_string v1 in Sexp.List [ Sexp.Atom "Pb"; v1 ]
   
 let sexp_of_score v =

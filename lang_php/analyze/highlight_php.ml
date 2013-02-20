@@ -44,21 +44,21 @@ let place_ids current_file ids db =
       if other_file = current_file
       then PlaceLocal
       else
-        if Common.dirname current_file =
-           Common.dirname other_file
+        if Common2.dirname current_file =
+           Common2.dirname other_file
         then PlaceSameDir
         else PlaceExternal
 
   | x::y::xs ->
       let other_files =
-        Common.map (fun id -> DbPHP.filename_of_id id db) ids +> Common.uniq
+        List.map (fun id -> DbPHP.filename_of_id id db) ids +> Common2.uniq
       in
       if List.mem current_file other_files
       then PlaceLocal
       else
         if List.exists (fun other_file ->
-          Common.dirname current_file =
-          Common.dirname other_file
+          Common2.dirname current_file =
+          Common2.dirname other_file
         ) other_files
         then PlaceSameDir
         else PlaceExternal
@@ -83,7 +83,7 @@ let use_arity_ident_function_or_macro s db =
         List.length callers
       with Not_found -> 0
     )
-    +> Common.sum_int
+    +> Common2.sum_int
   in
   arity_of_number nbuses
 

@@ -12,9 +12,10 @@
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the file
  * license.txt for more details.
  *)
+open Common2
 open Common
 (* floats are the norm in graphics *)
-open Common.ArithFloatInfix
+open Common2.ArithFloatInfix
 
 open Figures
 
@@ -72,7 +73,7 @@ let color_of_node (_, kind) =
  *)
 let txt_of_node (s, kind) = 
   match kind with
-  | E.Dir | E.File | E.MultiDirs -> Common.basename s
+  | E.Dir | E.File | E.MultiDirs -> Common2.basename s
   | E.Package | E.Module
   | E.Class _ 
   | E.Field | E.Constructor | E.Method _  | E.ClassConstant
@@ -80,7 +81,7 @@ let txt_of_node (s, kind) =
   | E.Exception 
     ->
       let xs = Common.split "[.]" s in
-      Common.list_last xs
+      Common2.list_last xs
   | _ -> s
 
 (* todo: style/font_of_node_kind? so put in bold directories *)
@@ -287,7 +288,7 @@ let draw_left_tree cr w ~interactive_regions =
         let extent = CairoH.text_extents cr txt in
         let th = extent.Cairo.text_height in
         let tw = extent.Cairo.text_width in
-        let angle = -. (pi / 2.) in
+        let angle = -. (Common2.pi / 2.) in
         Cairo.move_to cr 
           ((x + l.width_vertical_label / 2.) + (th / 2.0))
           (y + ((n * l.height_cell) /2.) + (tw / 2.0));
@@ -327,13 +328,13 @@ let draw_up_columns cr w ~interactive_regions =
     (* because of the xy_ratio, this actually does not do a 45 deg line.
      * old: Cairo.line_to cr (x + (y_start_matrix_up / atan (pi / 4.)))  0.; 
      *)
-    Cairo.line_to cr (x + (l.y_start_matrix_up / atan (pi / 2.8)))  0.; 
+    Cairo.line_to cr (x + (l.y_start_matrix_up / atan (Common2.pi / 2.8)))  0.; 
     Cairo.stroke cr;
 
     if j < l.nb_elts then begin
       let node = w.m.DM.i_to_name.(j) in
       Cairo.move_to cr (x + (l.width_cell / 2.0) + (th / 2.0)) (y - 0.001);
-      let angle = -. (pi / 4.) in
+      let angle = -. (Common2.pi / 4.) in
       Cairo.rotate cr ~angle:angle;
       let color = color_of_node node in
       let txt = txt_of_node node in
@@ -467,7 +468,7 @@ let draw_matrix cr w =
   !Ctl._label_settext 
     (spf "#backward deps = %d (%.2f%%), - PB = %d, - ... = %d, - biggest = %d" 
        score_up
-       (Common.pourcent_float score_up (score_up +.. score_down))
+       (Common2.pourcent_float score_up (score_up +.. score_down))
        (DM.score_upper_triangle w.m nodes_pb)
        (DM.score_upper_triangle w.m (nodes_pb $+$ nodes_dots))
        (DM.score_upper_triangle w.m (nodes_pb $+$ nodes_dots $+$ nodes_major))
@@ -497,7 +498,7 @@ let paint w =
 let recompute_matrix w =
   let config = M.config_of_path w.path w.model in
   let m, gopti = 
-    Common.profile_code2 "Model.building matrix" (fun () -> 
+    Common.profile_code "Model.building matrix" (fun () -> 
       Dependencies_matrix_code.build config 
         (Some w.model.constraints) w.model.gopti
     )

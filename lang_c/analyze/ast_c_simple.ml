@@ -12,7 +12,7 @@
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the file
  * license.txt for more details.
  *)
-open Common.Infix
+open Common2.Infix
 
 (*****************************************************************************)
 (* Prelude *)

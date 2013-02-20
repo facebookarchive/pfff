@@ -15,9 +15,10 @@
  * license.txt for more details.
  *)
 (*e: Facebook copyright *)
+open Common2
 open Common
 (* floats are the norm in graphics *)
-open Common.ArithFloatInfix
+open Common2.ArithFloatInfix
 
 module G = Gui
 module K = GdkKeysyms
@@ -45,7 +46,7 @@ module Db = Database_code
 (*****************************************************************************)
 (* Wrappers *)
 (*****************************************************************************)
-let pr2, pr2_once = Common.mk_pr2_wrappers Flag.verbose_visual
+let pr2, pr2_once = Common2.mk_pr2_wrappers Flag.verbose_visual
 
 (*****************************************************************************)
 (* Globals *)
@@ -61,7 +62,7 @@ let pr2, pr2_once = Common.mk_pr2_wrappers Flag.verbose_visual
 
 (* ugly *)
 let root_orig () = 
-  (Common.list_last !Controller.dw_stack).M.root
+  (Common2.list_last !Controller.dw_stack).M.root
 
 (*e: view globals *)
 
@@ -129,7 +130,7 @@ let expose2 da dw_ref ev =
   true
 
 let expose a b c = 
-  Common.profile_code2 "View.expose" (fun () -> expose2 a b c)
+  Common.profile_code "View.expose" (fun () -> expose2 a b c)
 (*e: expose *)
 
 (*s: configure *)
@@ -161,7 +162,7 @@ let configure2 a b c =
     configure2_bis a b c
 
 let configure a b c =
-  Common.profile_code2 "View.configure" (fun () -> configure2 a b c)
+  Common.profile_code "View.configure" (fun () -> configure2 a b c)
 (*e: configure *)
 
 (* ---------------------------------------------------------------------- *)
@@ -299,7 +300,7 @@ let mk_gui ~screen_size ~legend test_mode (root, model, dw, dbfile_opt) =
               root_orig ()
             in
             let matching_files = Ui_search.run_grep_query ~root s in
-            let files = matching_files +> List.map fst +> Common.uniq in
+            let files = matching_files +> List.map fst +> Common2.uniq in
             let current_grep_query = 
               Some (Common.hash_of_list matching_files)
             in
@@ -313,7 +314,7 @@ let mk_gui ~screen_size ~legend test_mode (root, model, dw, dbfile_opt) =
           res +> Common.do_option (fun s ->
             let root = !dw.root in
             let matching_files = Ui_search.run_tbgs_query ~root s in
-            let files = matching_files +> List.map fst +> Common.uniq in
+            let files = matching_files +> List.map fst +> Common2.uniq in
             let current_grep_query = 
               Some (Common.hash_of_list matching_files)
             in
@@ -350,11 +351,11 @@ let mk_gui ~screen_size ~legend test_mode (root, model, dw, dbfile_opt) =
 
         fc#add_item "_Refresh" ~key:K._R ~callback:(fun () -> 
           let current_root = !dw.root in
-          let _old_dw = Common.pop2 Controller.dw_stack in
+          let _old_dw = Common2.pop2 Controller.dw_stack in
           (* have to disable the AST caching.
            * todo? disable all entries in the cache ?
            *)
-          if Common.is_file current_root
+          if Common2.is_file current_root
           then Parsing2.disable_file_in_cache current_root;
 
           !Controller._go_dirs_or_file dw [current_root];
@@ -504,13 +505,13 @@ let mk_gui ~screen_size ~legend test_mode (root, model, dw, dbfile_opt) =
       tb#insert_widget (G.mk (GButton.button ~stock:`GO_UP) (fun b -> 
         b#connect#clicked ~callback:(fun () -> 
           let current_root = !dw.root in
-          !Controller._go_dirs_or_file dw [Common.dirname current_root];
+          !Controller._go_dirs_or_file dw [Common2.dirname current_root];
         )
       ));
 
       tb#insert_widget (G.mk (GButton.button ~stock:`GOTO_TOP) (fun b -> 
         b#connect#clicked ~callback:(fun () -> 
-          let top = Common.list_last !Controller.dw_stack in
+          let top = Common2.list_last !Controller.dw_stack in
           (* put 2 in the stack because _go_back will popup one *)
           Controller.dw_stack := [top; top];
           !Controller._go_back dw;

@@ -50,7 +50,7 @@ let find_js_files_of_dir_or_files xs =
     (filename =~ ".*\\.js$") ||
       (filename =~ ".*\\.javascript$") ||
       is_js_script filename
-  ) |> Common.sort
+  ) +> Common.sort
 
 (*****************************************************************************)
 (* Extract infos *)

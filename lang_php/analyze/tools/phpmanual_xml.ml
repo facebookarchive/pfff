@@ -49,7 +49,7 @@ module Xml = Xml_parse
 
 (* e.g. array-intersect.xml -> array_intersect *)
 let function_name_of_xml_filename filename =
-  let (d,b,e) = Common.dbe_of_filename filename in
+  let (d,b,e) = Common2.dbe_of_filename filename in
   if e <> "xml" then failwith "not a xml file";
 
   Str.global_replace (Str.regexp "-") "_" b
@@ -103,8 +103,8 @@ let extract_useful_doc xml =
   );
   spf "Purpose: %s\nExample: %s\nOutput: %s" 
     !refpurpose
-    (Common.indent_string 2 !programlisting)
-    (Common.indent_string 2 !screen)
+    (Common2.indent_string 2 !programlisting)
+    (Common2.indent_string 2 !screen)
 
 
 (*****************************************************************************)
@@ -112,7 +112,7 @@ let extract_useful_doc xml =
 (*****************************************************************************)
 
 let find_functions_reference_of_dir phpdoc_reference_dir =
-  Common.files_of_dir_or_files_no_vcs_post_filter
+  Common2.files_of_dir_or_files_no_vcs_post_filter
     ".*/functions/"
     [phpdoc_reference_dir]
 

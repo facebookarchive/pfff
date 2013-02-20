@@ -36,17 +36,17 @@ module J = Json_type
 (*****************************************************************************)
 
 let json_string_of_expr x = 
-  x |> Meta_ast_php.vof_expr |> Ocaml.json_of_v |> Json_out.string_of_json
+  x +> Meta_ast_php.vof_expr +> Ocaml.json_of_v +> Json_out.string_of_json
 let json_string_of_toplevel x = 
-  x |> Meta_ast_php.vof_toplevel |> Ocaml.json_of_v |> Json_out.string_of_json
+  x +> Meta_ast_php.vof_toplevel +> Ocaml.json_of_v +> Json_out.string_of_json
 let json_string_of_program x = 
   Common.profile_code "json_of_program" (fun () ->
-    x |> Meta_ast_php.vof_program |> Ocaml.json_of_v |> Json_out.string_of_json
+    x +> Meta_ast_php.vof_program +> Ocaml.json_of_v +> Json_out.string_of_json
   )
 
 let json_string_of_program_fast x = 
   Common.profile_code "json_of_program_fast" (fun () ->
-    let json = x |> Meta_ast_php.vof_program |> Ocaml.json_of_v 
+    let json = x +> Meta_ast_php.vof_program +> Ocaml.json_of_v 
     in
     Common.profile_code "string_of_json" (fun () ->
       Json_io.string_of_json ~compact:true ~recursive:false json

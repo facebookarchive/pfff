@@ -342,7 +342,7 @@ let record_list_instead_atom loc v =
   failwith ("record_list_instead_atom:")
 
 let tuple_of_size_n_expected  loc n v = 
-  failwith (spf "tuple_of_size_n_expected: %d, got %s" n (Common.dump v))
+  failwith (spf "tuple_of_size_n_expected: %d, got %s" n (Common2.dump v))
 
 
 
@@ -705,11 +705,11 @@ let rec json_of_v v =
   match v with
   | VString s -> J.String s
   | VSum ((s, vs)) ->J.Array ((J.String s)::(List.map json_of_v vs ))
-  | VTuple xs -> J.Array (xs |> List.map json_of_v)
-  | VDict xs -> J.Object (xs |> List.map (fun (s, v) ->
+  | VTuple xs -> J.Array (xs +> List.map json_of_v)
+  | VDict xs -> J.Object (xs +> List.map (fun (s, v) ->
       s, json_of_v v
     ))
-  | VList xs -> J.Array (xs |> List.map json_of_v)
+  | VList xs -> J.Array (xs +> List.map json_of_v)
   | VNone -> J.Null
   | VSome v -> J.Array [ J.String "Some"; json_of_v v]
   | VRef v -> J.Array [ J.String "Ref"; json_of_v v]
@@ -722,7 +722,7 @@ let rec json_of_v v =
    * to guard certain code.
    *)
   | VFloat f -> J.Float f
-  | VChar c -> J.String (string_of_char c)
+  | VChar c -> J.String (Common2.string_of_char c)
   | VInt i -> J.Int i
   | VTODO v1 -> J.String "VTODO"
   | VVar v1 ->
@@ -779,7 +779,7 @@ let load_json file =
 (* Format pretty printers *)
 (*****************************************************************************)
 let add_sep xs = 
-  xs +> List.map (fun x -> Right x) +> Common.join_gen (Left ())
+  xs +> List.map (fun x -> Right x) +> Common2.join_gen (Left ())
 
 (* 
  * OCaml value pretty printer. A similar functionnality is provided by
@@ -803,7 +803,7 @@ let add_sep xs =
  *)
 
 let string_of_v v = 
-  Common.format_to_string (fun () ->
+  Common2.format_to_string (fun () ->
     let ppf = Format.printf in
     let rec aux v = 
       match v with

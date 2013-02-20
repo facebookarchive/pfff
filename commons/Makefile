@@ -9,7 +9,7 @@ TARGET=lib
 # Here are the sources without any external dependencies. The core of commons!
 
 # note: if you add a file (a .mli or .ml), dont forget to redo a 'make depend'
-MYSRC=common.ml common_extra.ml \
+MYSRC=common2.ml common.ml common_extra.ml \
       interfaces.ml objet.ml \
       int.ml \
       ocollection.ml \

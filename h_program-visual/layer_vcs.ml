@@ -79,7 +79,7 @@ let property_of_nb_authors n =
   | _ when n <= 5 -> spf "authors = %d" n
   | _ -> raise Impossible
 
-let property_of_age (Common.Days n) =
+let property_of_age (Common2.Days n) =
   match n with
   | _ when n > 5 * 365 -> "age > 5 years"
   | _ when n > 3 * 365 -> "age > 3 years"
@@ -140,7 +140,7 @@ let gen_nbauthors_layer ?(verbose=false) ~skip_revs dir ~output =
             then None
             else Some s
           )
-          +> Common.uniq
+          +> Common2.uniq
           +> List.length
         in
         let property = property_of_nb_authors nbauthors in
@@ -193,8 +193,8 @@ let gen_age_layer ?(verbose=false) ~line_granularity ~skip_revs dir ~output =
            )
         in
         let now_dmy = 
-          Common.today () 
-          +> Common.floattime_to_unixtime +> Common.unixtime_to_dmy 
+          Common2.today () 
+          +> Common2.floattime_to_unixtime +> Common2.unixtime_to_dmy 
         in
 
         let max_age = 
@@ -205,10 +205,10 @@ let gen_age_layer ?(verbose=false) ~line_granularity ~skip_revs dir ~output =
            let max_date_dmy =
             xs
             +> List.map (fun (version, Lib_vcs.Author _, date_dmy) -> date_dmy)
-            +> Common.maximum_dmy
+            +> Common2.maximum_dmy
            in
            let age_in_days = 
-             Common.rough_days_between_dates max_date_dmy now_dmy
+             Common2.rough_days_between_dates max_date_dmy now_dmy
            in
            pr2_gen max_date_dmy;
            pr2_gen age_in_days;
@@ -223,7 +223,7 @@ let gen_age_layer ?(verbose=false) ~line_granularity ~skip_revs dir ~output =
             annots +> Common.index_list_1 +> List.map
               (fun ((_version, Lib_vcs.Author _, date_dmy), i) -> 
                 let age_in_days = 
-                  Common.rough_days_between_dates date_dmy now_dmy
+                  Common2.rough_days_between_dates date_dmy now_dmy
                 in
                 i, property_of_age age_in_days
               )

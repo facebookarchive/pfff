@@ -33,10 +33,10 @@ object(o)
        (Marshal.to_string k []) [] 
        with Not_found -> ());
     *)
-    let k' = Common.marshal__to_string k [] in
+    let k' = Common2.marshal__to_string k [] in
     let v' = 
       try
-        Common.marshal__to_string (fv v) [(*Marshal.Closures*)] 
+        Common2.marshal__to_string (fv v) [(*Marshal.Closures*)] 
       with Out_of_memory -> 
         pr2 ("PBBBBBBB Out_of_memory in: " ^ namedb);
         raise Out_of_memory
@@ -59,8 +59,8 @@ object(o)
 	(try 
 	    let a = Cursor.dbc_get dbc [Cursor.DB_NEXT] in
             (* minsky ? Cursor.get dbc Cursor.NEXT [] *)
-	    let key  = (* unkey *) Common.marshal__from_string (fst a) 0 in 
-	    let valu = unv (Common.marshal__from_string (snd a) 0) in
+	    let key  = (* unkey *) Common2.marshal__from_string (fst a) 0 in 
+	    let valu = unv (Common2.marshal__from_string (snd a) 0) in
 	    f (key, valu);
             true
 	 with Failure "ending" -> false
@@ -110,18 +110,18 @@ object(o)
 
   method private assoc2 k = 
     try 
-      let k' = Common.marshal__to_string k [] in
+      let k' = Common2.marshal__to_string k [] in
       let vget = Db.get data (transact()) k' [] in
       (* minsky ? Db.get data ~txn:(transact() *)
-      unv (Common.marshal__from_string vget  0)
+      unv (Common2.marshal__from_string vget  0)
     with Not_found -> 
-      log3 ("pb assoc with k = " ^ (Dumper.dump k)); 
+      Common2.log3 ("pb assoc with k = " ^ (Dumper.dump k)); 
       raise Not_found
   method assoc x = 
     Common.profile_code ("Btree.assoc" ^ namedb) (fun () -> o#assoc2 x)
 
   method private delkey2 k = 
-    let k' = Common.marshal__to_string k [] in
+    let k' = Common2.marshal__to_string k [] in
     Db.del data (transact()) k'  []; 
     o
   method delkey x = 
@@ -136,7 +136,7 @@ object(o)
 	(try 
 	    let a = Cursor.dbc_get dbc [Cursor.DB_NEXT] in
             (* minsky ? Cursor.get dbc Cursor.NEXT [] *)
-	    let key  = (* unkey *) Common.marshal__from_string (fst a) 0 in 
+	    let key  = (* unkey *) Common2.marshal__from_string (fst a) 0 in 
 	    (* 
                let valu = unv (Common.marshal__from_string (snd a) 0) in
 	       f (key, valu);
@@ -177,7 +177,7 @@ end
 
 let create_bdb metapath dbname env  transact (fv, unv) size_buffer_oassoc_buffer =
   (* bugfix: open_db expects an absolute path *)
-  let metapath = Common.relative_to_absolute metapath in
+  let metapath = Common2.relative_to_absolute metapath in
   let db = Bdb.Db.create env [] in 
   Bdb.Db.db_open db (transact()) 
     (spf "%s/%s.db4" metapath dbname) 

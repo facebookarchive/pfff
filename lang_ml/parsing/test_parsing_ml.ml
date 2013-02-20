@@ -77,7 +77,7 @@ let refactor_grammar subst_file file =
 
   let ys = Common.cat file in
   ys +> List.iter (fun l ->
-    let s = Common.global_replace_regexp "\\([a-zA-Z_][A-Za-z_0-9]*\\)" (fun s ->
+    let s = Common2.global_replace_regexp "\\([a-zA-Z_][A-Za-z_0-9]*\\)" (fun s ->
       try 
         Hashtbl.find h s
       with 

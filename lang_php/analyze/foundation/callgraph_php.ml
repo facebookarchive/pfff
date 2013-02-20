@@ -12,7 +12,7 @@
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the file
  * license.txt for more details.
  *)
-
+open Common2
 open Common 
 
 open Ast_php
@@ -327,8 +327,8 @@ type node = {
   gray: bool;
 }
 
-type idtree = node Common.treeref
-type calltree = node Common.treeref
+type idtree = node Common2.treeref
+type calltree = node Common2.treeref
 
 type calltree_preferences = {
   squeeze_duplicate: bool; (* when want abstract about each instance call *)
@@ -449,7 +449,7 @@ let find_caller_instances_with_name
    * the name through which idcallee was called so there is no
    * ambiguity. Hence the   'name = name2' check above.
    *)
-  Common.list_to_single_or_exn !res
+  Common2.list_to_single_or_exn !res
 
 
 
@@ -596,8 +596,8 @@ let confidence_of_call_extra_info ~fullid_info (id1x, id2x) x =
   (if id1.E.file = id2.E.file 
   then score += 10
   else 
-      if Common.dirname id1.E.file = 
-         Common.dirname id2.E.file 
+      if Common2.dirname id1.E.file = 
+         Common2.dirname id2.E.file 
       then score += 5
   );
 (*
@@ -622,8 +622,8 @@ let confidence_of_directcall_when_multi ~fullid_info (id1x, id2x) nbbrothers =
   if id1.E.file = id2.E.file 
   then 100
   else 
-    (if (Common.dirname id1.E.file = 
-        Common.dirname id2.E.file 
+    (if (Common2.dirname id1.E.file = 
+        Common2.dirname id2.E.file 
        )
     then 50
     else 30) / nbbrothers
@@ -731,7 +731,7 @@ let get_direct_children_scored_and_sorted_and_with_kindcall_and_more
   let scored_calls = 
     grouped +> List.map (fun (kind, calls) -> 
       let scores = confidence_of_related_calls ~fullid_info (kind, calls) in
-      Common.zip calls scores
+      Common2.zip calls scores
     ) +> List.flatten in
 
   let ys = 

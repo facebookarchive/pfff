@@ -43,7 +43,7 @@ let program_of_program2 xs =
 (*****************************************************************************)
 (* Wrappers *)
 (*****************************************************************************)
-let pr2_err, pr2_once = Common.mk_pr2_wrappers Flag.verbose_parsing 
+let pr2_err, pr2_once = Common2.mk_pr2_wrappers Flag.verbose_parsing 
 
 (*****************************************************************************)
 (* Helpers *)
@@ -73,7 +73,7 @@ let rec distribute_info_items_toplevel2 xs toks filename =
           
           let toks_before_max, toks_after = 
             Common.profile_code "spanning tokens" (fun () ->
-              toks +> Common.span_tail_call (fun tok ->
+              toks +> Common2.span_tail_call (fun tok ->
                 match Parse_info.compare_pos (TH.info_of_tok tok) max with
                 | -1 | 0 -> true
                 | 1 -> false
@@ -164,13 +164,13 @@ let rparens_of_if toks =
 
   let rparens_if = ref [] in
 
-  toks +> Common.iter_with_previous_opt (fun prev x -> 
+  toks +> Common2.iter_with_previous_opt (fun prev x -> 
     (match x with
     | T.T_LPAREN _ -> 
         Common.push2 prev stack;
     | T.T_RPAREN info ->
         if !stack <> [] then begin
-        let top = Common.pop2 stack in
+        let top = Common2.pop2 stack in
         (match top with
         | Some (T.T_IF _) -> 
             Common.push2 info rparens_if
@@ -335,7 +335,7 @@ exception Parse_error of Parse_info.info
 let parse2 filename =
 
   let stat = Parse_info.default_stat filename in
-  let filelines = Common.cat_array filename in
+  let filelines = Common2.cat_array filename in
 
   let toks_orig = tokens filename in
   let toks = adjust_tokens toks_orig in
@@ -365,7 +365,7 @@ let parse2 filename =
       (* no error recovery, the whole file is discarded *)
       tr.PI.passed <- List.rev toks;
 
-      let info_of_bads = Common.map_eff_rev TH.info_of_tok tr.PI.passed in 
+      let info_of_bads = Common2.map_eff_rev TH.info_of_tok tr.PI.passed in 
 
       Right (info_of_bads, line_error, current, e)
   in
@@ -434,5 +434,5 @@ let (program_of_string: string -> Ast_js.program) = fun s ->
   let tmpfile = tmp_file_from_string s in
   let (ast2, _stat) = parse tmpfile in
   let ast = program_of_program2 ast2 in
-  Common.erase_this_temp_file tmpfile;
+  Common2.erase_this_temp_file tmpfile;
   ast

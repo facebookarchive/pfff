@@ -18,7 +18,7 @@ let execute_and_show_progress ~show len f =
   let nothing () = () in 
 
   (* ANSITerminal.printf [] "0 / %d" len; flush stdout; *)
-  if !Common._batch_mode || not show
+  if !Common2._batch_mode || not show
   then f nothing
   else f continue_pourcentage
   ;
@@ -27,7 +27,7 @@ let execute_and_show_progress ~show len f =
 
 
 let set_link () = 
-  Common._execute_and_show_progress_func := execute_and_show_progress
+  Common2._execute_and_show_progress_func := execute_and_show_progress
 
 
 let _init_execute = 
@@ -44,7 +44,7 @@ let execute_and_show_progress2 ?(show=true) len f =
   let nothing () = () in 
 
   (* ANSITerminal.printf [] "0 / %d" len; flush stdout; *)
-  if !Common._batch_mode || not show
+  if !Common2._batch_mode || not show
   then f nothing
   else f continue_pourcentage
 

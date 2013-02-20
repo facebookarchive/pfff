@@ -40,15 +40,15 @@ type annotation =
  * comment esthetic prefix mark), so the line-based approach may be better.
  *)
 let extract_annotations str =
-  let lines = Common.lines str +> List.map Comment_js.strip_comment_marks in
-  lines +> Common.map_flatten (fun str ->
+  let lines = Common2.lines str +> List.map Comment_js.strip_comment_marks in
+  lines +> Common2.map_flatten (fun str ->
     match () with
     | _ when str =~ "@providesModule[ \t]+\\([A-Za-z-_0-9]+\\)" ->
         [ProvidesModule (Common.matched1 str)]
     | _ when str =~ "@providesLegacy[ \t]+\\([A-Za-z-_0-9]+\\)" ->
         [ProvidesLegacy (Common.matched1 str)]
     | _ ->
-        let xs = Common.all_match "\\(@[A-Za-z-]+\\)" str in
+        let xs = Common2.all_match "\\(@[A-Za-z-]+\\)" str in
         xs +> List.map (function
         | "@runWhenReady" -> RunWhenReady
         | s -> Other s

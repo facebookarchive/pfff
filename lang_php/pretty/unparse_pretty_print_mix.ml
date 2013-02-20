@@ -65,7 +65,7 @@ let toks_before_after_ii ii toks =
   let (min, max) = Lib_parsing_php.min_max_ii_by_pos ii in
   let toks_before_max, toks_after = 
     Common.profile_code "spanning tokens" (fun () ->
-      toks +> Common.span_tail_call (fun tok ->
+      toks +> Common2.span_tail_call (fun tok ->
         match Ast_php.compare_pos (TH.info_of_tok tok) max with
         | -1 | 0 -> true
         | 1 -> 
@@ -129,7 +129,7 @@ let split_chunks tokens ast =
             Lib_parsing_php.ii_of_any 
               (Ast_php.Toplevel (Ast_php.ClassDef just_class)) 
             (* don't count ending } *)
-            +> Common.list_init
+            +> Common2.list_init
           in
           let toks_header, toks = 
             toks_before_after_ii ii_header toks in

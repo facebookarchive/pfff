@@ -49,7 +49,7 @@ open Parser_cpp
 (*****************************************************************************)
 (* Some debugging functions  *)
 (*****************************************************************************)
-let pr2, pr2_once = Common.mk_pr2_wrappers Flag.verbose_parsing 
+let pr2, pr2_once = Common2.mk_pr2_wrappers Flag.verbose_parsing 
 
 (*****************************************************************************)
 (* Types *)
@@ -154,7 +154,7 @@ let rebuild_tokens_extented toks_ext =
     push2 tok.t _tokens 
   );
   let tokens = List.rev !_tokens in
-  (tokens +> acc_map mk_token_extended)
+  (tokens +> Common2.acc_map mk_token_extended)
 
 (*****************************************************************************)
 (* View builders  *)
@@ -370,7 +370,7 @@ let line_range_of_paren = function
       | [] -> raise Impossible
       | x::xs -> 
           let lines_no = (x::xs) +> List.map (fun x -> x.line) in
-          Common.minimum lines_no, Common.maximum lines_no
+          Common2.minimum lines_no, Common2.maximum lines_no
       )
 
 let rec span_line_paren_range (imin, imax) = function
@@ -510,7 +510,7 @@ let mk_multi xs =
   aux xs
 
 let split_comma xs =
-  xs +> Common.split_gen_when (function
+  xs +> Common2.split_gen_when (function
   | Tok{t=TComma _;_}::xs -> Some xs
   | _ -> None
   )
@@ -698,7 +698,7 @@ let rec set_in_other xs =
     ::BToken ({t=TCol _;_})::xs when TH.is_classkey_keyword tokstruct -> 
 
       (try 
-        let (before, elem, after) = Common.split_when is_braceised xs in
+        let (before, elem, after) = Common2.split_when is_braceised xs in
         (match elem with 
         | Braceised(body, tok1, tok2) -> 
             body +> List.iter (iter_token_brace (fun tok -> 

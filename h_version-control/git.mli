@@ -11,7 +11,7 @@ val annotate:
   ?basedir:string -> ?use_cache:bool -> ?use_dash_C:bool ->
   Common.filename -> Lib_vcs.line_annotation array
 val date_file_creation: 
-  ?basedir:string -> Common.filename -> Common.date_dmy
+  ?basedir:string -> Common.filename -> Common2.date_dmy
 val annotate_raw: 
   ?basedir:string -> Common.filename -> string array
 
@@ -76,7 +76,7 @@ val max_date_of_lines:
   ?use_cache:bool ->
   ?skip_revs:Lib_vcs.versionid list ->
   Common.filename -> int list (* lines *) ->
-  Common.date_dmy
+  Common2.date_dmy
 
 (* misc operations *)
 val clean_git_patch: Patch.patch_raw -> Patch.patch_raw

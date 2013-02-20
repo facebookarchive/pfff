@@ -28,7 +28,7 @@ module MV = Metavars_php
 (*****************************************************************************)
 (* Wrappers *)
 (*****************************************************************************)
-let pr2, pr2_once = Common.mk_pr2_wrappers Flag_matcher_php.verbose
+let pr2, pr2_once = Common2.mk_pr2_wrappers Flag_matcher_php.verbose
 
 (*****************************************************************************)
 (* The functor argument *)
@@ -143,7 +143,7 @@ module XMATCH = struct
         false
 
   let check_and_add_metavar_binding((mvar:Metavars_php.mvar), valu) = fun tin ->
-    match Common.assoc_option mvar tin with
+    match Common2.assoc_option mvar tin with
     | Some valu' ->
         (* Should we use php_vs_php itself for comparing the binded code ?
          * Hmmm, we can't because it leads to a circular dependencies.
@@ -155,7 +155,7 @@ module XMATCH = struct
         else None
     | None ->
         (* first time the metavar is binded, just add it to the environment *)
-        Some (Common.insert_assoc (mvar, valu) tin)
+        Some (Common2.insert_assoc (mvar, valu) tin)
 
   let (envf: (Metavars_php.mvar Ast_php.wrap, Ast_php.any) matcher) =
    fun (mvar, imvar) any  -> fun tin ->

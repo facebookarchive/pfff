@@ -221,7 +221,7 @@ iteration_statement:
      expression_opt T_SEMICOLON 
      expression_opt 
      T_RPAREN statement 
-     { For ($1, $2, $3 +>Common.fmap (fun x -> LHS x), $4, $5, $6, $7, $8, $9) }
+     { For ($1, $2, $3 +>Common2.fmap (fun x -> LHS x), $4, $5, $6, $7, $8, $9) }
  | T_FOR T_LPAREN 
      T_VAR variable_declaration_list_no_in T_SEMICOLON 
      expression_opt T_SEMICOLON 

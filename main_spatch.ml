@@ -89,14 +89,14 @@ let apply_transfo transfo xs =
   Flag_parsing_php.verbose_lexing := false;
 
   files +> Common_extra.progress (fun k -> List.iter (fun file ->
-    let file = Common.relative_to_absolute file in
+    let file = Common2.relative_to_absolute file in
     pr2 (spf "processing: %s" file);
     k();
 
     let worth_trying = 
       match transfo.grep_keywords with
       | None -> true
-      | Some xs -> Common.contain_any_token_with_egrep xs file
+      | Some xs -> Common2.contain_any_token_with_egrep xs file
     in
     if not worth_trying then ()
     else
@@ -114,7 +114,7 @@ let apply_transfo transfo xs =
     (* old: 
      * let patch = Patch.generate_patch !edition_cmds 
      * ~filename_in_project:file file in
-     * patch |> List.iter pr
+     * patch +> List.iter pr
      *)
 
     if was_modified then begin 
@@ -123,8 +123,8 @@ let apply_transfo transfo xs =
       let tmpfile = Common.new_temp_file "trans" ".php" in
       Common.write_file ~file:tmpfile s;
       
-      let diff = Common.unix_diff file tmpfile in
-      diff |> List.iter pr;
+      let diff = Common2.unix_diff file tmpfile in
+      diff +> List.iter pr;
 
       if !apply_patch 
       then Common.write_file ~file:file s;
@@ -191,7 +191,7 @@ let main_action xs =
       then Unparse_pretty_print_mix.pretty_print_when_needit
              ~oldfile:file ~newfile:tmpfile;
       
-      let diff = Common.unix_diff file tmpfile in
+      let diff = Common2.unix_diff file tmpfile in
       diff +> List.iter pr;
       if !apply_patch 
       then Common.write_file ~file:file (Common.read_file tmpfile);
@@ -228,7 +228,7 @@ let simple_transfo xs =
             pr2 "found match";
             
             let ii = Lib_parsing_php.ii_of_any (Lvalue x) in
-            ii |> List.iter (fun info ->
+            ii +> List.iter (fun info ->
               info.transfo <- Remove
             );
             info_foo.transfo <- Replace (AddStr "1");
@@ -244,8 +244,8 @@ let simple_transfo xs =
     let tmpfile = Common.new_temp_file "trans" ".php" in
     Common.write_file ~file:tmpfile s;
     
-    let diff = Common.unix_diff file tmpfile in
-    diff |> List.iter pr;
+    let diff = Common2.unix_diff file tmpfile in
+    diff +> List.iter pr;
   );
   ()
 
@@ -390,7 +390,7 @@ let test_pp file =
 
   let tmp_file = Common.new_temp_file "pp" ".php" in
   Common.write_file ~file:tmp_file s;
-  let xs = Common.unix_diff file tmp_file in
+  let xs = Common2.unix_diff file tmp_file in
   xs +> List.iter pr2
 
 (*---------------------------------------------------------------------------*)
@@ -419,7 +419,7 @@ let juju_refactoring spec_file =
     then Unparse_pretty_print_mix.pretty_print_when_needit
       ~oldfile:file ~newfile:tmpfile;
       
-    let diff = Common.unix_diff file tmpfile in
+    let diff = Common2.unix_diff file tmpfile in
     diff +> List.iter pr;
     if !apply_patch 
     then Common.write_file ~file:file (Common.read_file tmpfile);
@@ -432,7 +432,7 @@ let juju_refactoring spec_file =
 open OUnit
 let test () =
   let suite = "spatch" >::: Unit_matcher_php.spatch_unittest in
-  OUnit.run_test_tt suite |> ignore;
+  OUnit.run_test_tt suite +> ignore;
   ()
 
 (*---------------------------------------------------------------------------*)
@@ -484,7 +484,7 @@ let options () =
   ] ++
   (* Flag_parsing_php.cmdline_flags_pp () ++ *)
   Common.options_of_actions action (all_actions()) ++
-  Common.cmdline_flags_devel () ++
+  Common2.cmdline_flags_devel () ++
   [
   "-version",   Arg.Unit (fun () -> 
     Common.pr2 (spf "spatch_php version: %s" Config_pfff.version);
@@ -502,7 +502,7 @@ let main () =
 
   let usage_msg = 
     spf "Usage: %s [options] <file or dir> \nDoc: %s\nOptions:"
-      (Common.basename Sys.argv.(0))
+      (Common2.basename Sys.argv.(0))
       "https://github.com/facebook/pfff/wiki/Spatch"
   in
   (* does side effect on many global flags *)

@@ -94,8 +94,8 @@ type t =
 
 (* todo: reuse Env_interpreter_php.code_database? *)
 type code_database = {
-    classes: Ast_php_simple.class_def Common.cached SMap.t ref;
-    funcs: Ast_php_simple.func_def Common.cached SMap.t ref;
+    classes: Ast_php_simple.class_def Common2.cached SMap.t ref;
+    funcs: Ast_php_simple.func_def Common2.cached SMap.t ref;
     (* todo: constants?? *)
 }
 

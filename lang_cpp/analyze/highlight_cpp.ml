@@ -12,7 +12,7 @@
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the file
  * license.txt for more details.
  *)
-
+open Common2
 open Common
 
 open Ast_cpp
@@ -164,7 +164,7 @@ let visit_toplevel ~tag_hook prefs (*db_opt *) (toplevel, toks) =
               find_ident_paren xs
           | [] -> ()
         in
-        let same_line = (t1::xs) +> Common.take_while (fun t ->
+        let same_line = (t1::xs) +> Common2.take_while (fun t ->
           TH.line_of_tok t = line_t1) 
         in
         find_ident_paren same_line;
@@ -228,7 +228,7 @@ let visit_toplevel ~tag_hook prefs (*db_opt *) (toplevel, toks) =
           k x
 
       | Jump (Goto s), ii ->
-          let (iigoto, lblii, iiptvirg) = Common.tuple_of_list3 ii in
+          let (iigoto, lblii, iiptvirg) = Common2.tuple_of_list3 ii in
           tag lblii KeywordExn;
           k x
       | _ -> k x

@@ -184,7 +184,7 @@ let visit_toplevel
         if not (Hashtbl.mem already_tagged ii)
         then
           let kind_name_opt =
-            Common.hfind_option ii hcomplete_name_of_info 
+            Common2.hfind_option ii hcomplete_name_of_info 
           in
           (match kind_name_opt with
           | Some (Db.Class _, fullname) ->
@@ -210,7 +210,7 @@ let visit_toplevel
        if not (Hashtbl.mem already_tagged ii)
        then
         let kind_name_opt =
-          Common.hfind_option ii hcomplete_name_of_info 
+          Common2.hfind_option ii hcomplete_name_of_info 
         in
         (match kind_name_opt with
         | Some (Db.Class _, fullname) ->

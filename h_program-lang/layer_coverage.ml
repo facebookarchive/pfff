@@ -46,10 +46,10 @@ let gen_red_green_layer lines_coverage ~output =
     files = lines_coverage +> List.map (fun (file, lines_cover) ->
       let covered = lines_cover.Coverage_code.covered_sites in
       let all = lines_cover.Coverage_code.all_sites in
-      let not_covered = Common.minus_set all covered in
+      let not_covered = Common2.minus_set all covered in
       let percent = 
         try 
-          Common.pourcent_good_bad 
+          Common2.pourcent_good_bad 
             (List.length covered) (List.length not_covered) 
        with Division_by_zero -> 0
       in
@@ -84,10 +84,10 @@ let gen_heatmap_layer lines_coverage ~output =
     files = lines_coverage +> List.map (fun (file, lines_cover) ->
       let covered = lines_cover.Coverage_code.covered_sites in
       let all = lines_cover.Coverage_code.all_sites in
-      let not_covered = Common.minus_set all covered in
+      let not_covered = Common2.minus_set all covered in
       let percent = 
         try 
-          Common.pourcent_good_bad 
+          Common2.pourcent_good_bad 
             (List.length covered) (List.length not_covered) 
        with Division_by_zero -> 0
       in

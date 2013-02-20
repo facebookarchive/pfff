@@ -88,7 +88,7 @@ let visitor_info_of_tok f = function
 let info_of_tok tok = 
   let res = ref None in
   visitor_info_of_tok (fun ii -> res := Some ii; ii) tok +> ignore;
-  Common.some !res
+  Common2.some !res
 
 
 let str_of_tok  x = PI.str_of_info  (info_of_tok x)

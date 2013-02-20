@@ -48,6 +48,8 @@ and visitor_out = {
   vany: any -> any;
 }
 
+let map_option = Common2.map_option
+
 let default_visitor =
   { kexpr   = (fun (k,_) x -> k x);
     klvalue   = (fun (k,_) x -> k x);
@@ -876,7 +878,7 @@ and map_hint_type =
         (fun (tok, args, ret) ->
            (map_tok tok,
             map_paren (map_comma_list_dots map_hint_type) args,
-            Common.fmap map_hint_type ret))
+            Common2.fmap map_hint_type ret))
         v1
       in
       HintCallback v1

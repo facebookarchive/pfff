@@ -12,7 +12,7 @@
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * file license.txt for more details.
  *)
-
+open Common2
 open Common
 
 module Flag = Flag_parsing_cpp
@@ -573,7 +573,7 @@ let rec find_macro_lineparen xs =
       if condition
       then begin
           (* just to avoid the end-of-stream pb of ocamlyacc  *)
-          let tcpar = Common.list_last info_parens in
+          let tcpar = Common2.list_last info_parens in
           change_tok tcpar (TCPar_EOL (TH.info_of_tok tcpar.t));
           (*macro.t <- TMacroTop (s, TH.info_of_tok macro.t);*)
       end;

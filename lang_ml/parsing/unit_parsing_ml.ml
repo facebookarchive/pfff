@@ -15,7 +15,7 @@ let unittest =
 
     "regression files" >:: (fun () ->
       let dir = Filename.concat Config_pfff.path "/tests/ml/parsing" in
-      let files = Common.glob (spf "%s/*.ml" dir) in
+      let files = Common2.glob (spf "%s/*.ml" dir) in
       files +> List.iter (fun file ->
         try
           let _ = Parse_ml.parse_program file in
@@ -30,7 +30,7 @@ let unittest =
      * sub-sub expressions inside parenthesis).
      *)
     "visitor" >:: (fun () ->
-      Common.with_tmp_file ~ext:".ml" ~str:
+      Common2.with_tmp_file ~ext:".ml" ~str:
 "open Foo1
 module A = Foo2
 "      (fun file ->

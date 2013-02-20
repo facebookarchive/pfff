@@ -18,7 +18,7 @@ let unittest =
 
     "regression files" >:: (fun () ->
       let dir = Filename.concat Config_pfff.path "/tests/js/parsing" in
-      let files = Common.glob (spf "%s/*.js" dir) in
+      let files = Common2.glob (spf "%s/*.js" dir) in
       files +> List.iter (fun file ->
         try
           let _ = Parse_js.parse_program file in
@@ -40,7 +40,7 @@ let unittest =
 
     "the javascript AST mapper" >:: (fun () ->
       let js_ex = "foo(42, 101);" in
-      Common.with_tmp_file ~str:js_ex ~ext:".js" (fun file ->
+      Common2.with_tmp_file ~str:js_ex ~ext:".js" (fun file ->
         let prog = Parse_js.parse_program file in
         let map_visitor = M.mk_visitor { M.default_visitor with
           M.kexpr = (fun (k, _) x ->
@@ -76,5 +76,5 @@ let unittest =
 (*****************************************************************************)
 let actions () = [
     "-unittest_parsing_js", "   ", 
-    Common.mk_action_0_arg (fun () -> OUnit.run_test_tt unittest |> ignore);
+    Common.mk_action_0_arg (fun () -> OUnit.run_test_tt unittest +> ignore);
 ]

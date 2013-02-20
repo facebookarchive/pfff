@@ -12,7 +12,7 @@
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the file
  * license.txt for more details.
  *)
-
+open Common2
 open Common
 
 module Db = Database_code
@@ -84,7 +84,7 @@ let naive_top_n_search2 ~top_n ~query xs =
 
 
 let naive_top_n_search ~top_n ~query idx =
-  Common.profile_code2 "Big_grep.naive_top_n" (fun () -> 
+  Common.profile_code "Big_grep.naive_top_n" (fun () -> 
     naive_top_n_search2 ~top_n ~query idx
   )
 
@@ -104,11 +104,11 @@ let build_index2 ?(case_sensitive=false) entities =
      * files_and_dirs_and_sorted_entities_for_completion
      * should have done the job of putting the fullename in e_name.
      *)
-    let s = Common.string_of_char separation_marker_char ^ e.Db.e_name in
+    let s = Common2.string_of_char separation_marker_char ^ e.Db.e_name in
     let s = 
       if case_sensitive
       then s
-      else Common.lowercase s
+      else Common2.lowercase s
     in
 
     Buffer.add_string buf s;
@@ -118,7 +118,7 @@ let build_index2 ?(case_sensitive=false) entities =
   (* just to make it easier to code certain algorithms such as
    * find_position_marker_after
    *)
-  Buffer.add_string buf (Common.string_of_char separation_marker_char);
+  Buffer.add_string buf (Common2.string_of_char separation_marker_char);
 
   {
     big_string = Buffer.contents buf;
@@ -127,7 +127,7 @@ let build_index2 ?(case_sensitive=false) entities =
   }
 
 let build_index ?case_sensitive a =
-  Common.profile_code2 "Big_grep.build_idx" (fun () -> 
+  Common.profile_code "Big_grep.build_idx" (fun () -> 
     build_index2 ?case_sensitive a)
 
 
@@ -151,7 +151,7 @@ let find_position_marker_after start_pos str =
 let top_n_search2 ~top_n ~query idx =
 
   let query = 
-    if idx.case_sensitive then query else Common.lowercase query
+    if idx.case_sensitive then query else Common2.lowercase query
   in
 
   let words = Str.split (Str.regexp "[ \t]+") query in
@@ -185,7 +185,7 @@ let top_n_search2 ~top_n ~query idx =
 
 
 let top_n_search ~top_n ~query idx =
-  Common.profile_code2 "Big_grep.top_n" (fun () -> 
+  Common.profile_code "Big_grep.top_n" (fun () -> 
     top_n_search2 ~top_n ~query idx
   )
 

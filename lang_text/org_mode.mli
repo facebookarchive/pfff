@@ -10,6 +10,6 @@ val parse:
   Common.filename -> org
 
 val highlight:
-  org -> (string * Highlight_code.category option * Common.filepos) list
+  org -> (string * Highlight_code.category option * Common2.filepos) list
 
 

@@ -115,9 +115,9 @@ exception AnnotationPb of string * Ast_php.info
 
 (* str is usually a comment, hence the strip_comment_marks below *)
 let extract_annotations str tok =
-  let lines = Common.lines str in 
+  let lines = Common2.lines str in 
 
-  lines +> Common.map_flatten (fun str ->
+  lines +> Common2.map_flatten (fun str ->
 
     let str = Comment_php.strip_comment_marks str in
 
@@ -197,7 +197,7 @@ let extract_annotations str tok =
         [DataProvider (Method amethod)]
        
     | _ -> 
-        let xs = Common.all_match "\\(@[A-Za-z-]+\\)" str in
+        let xs = Common2.all_match "\\(@[A-Za-z-]+\\)" str in
         xs +> List.map (function
         | "@called-from-phpsh" -> CalledFromPhpsh
         | "@called-outside-tfb" -> CalledOutsideTfb

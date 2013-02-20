@@ -125,7 +125,7 @@ let print_parsing_stat_list ?(verbose=false) = fun statxs ->
 
 (* inspired by a comment by a reviewer of my CC'09 paper *)
 let lines_around_error_line ~context (file, line) =
-  let arr = Common.cat_array file in
+  let arr = Common2.cat_array file in
 
   let startl = max 0 (line - context) in
   let endl   = min (Array.length arr) (line + context) in
@@ -142,13 +142,13 @@ let print_recurring_problematic_tokens xs =
     let file = x.filename in
     x.problematic_lines +> List.iter (fun (xs, line_error) ->
       xs +> List.iter (fun s ->
-        Common.hupdate_default s
+        Common2.hupdate_default s
           (fun (old, example)  -> old + 1, example)
           (fun() -> 0, (file, line_error)) h;
       )));
-  pr2_xxxxxxxxxxxxxxxxx();
+  Common2.pr2_xxxxxxxxxxxxxxxxx();
   pr2 ("maybe 10 most problematic tokens");
-  pr2_xxxxxxxxxxxxxxxxx();
+  Common2.pr2_xxxxxxxxxxxxxxxxx();
   Common.hash_to_list h
   +> List.sort (fun (k1,(v1,_)) (k2,(v2,_)) -> compare v2 v1)
   +> Common.take_safe 10
@@ -158,5 +158,5 @@ let print_recurring_problematic_tokens xs =
     let lines = lines_around_error_line ~context:2 (file_ex, line_ex) in
     lines +> List.iter (fun s -> pr2 ("       " ^ s));
   );
-  pr2_xxxxxxxxxxxxxxxxx();
+  Common2.pr2_xxxxxxxxxxxxxxxxx();
   ()

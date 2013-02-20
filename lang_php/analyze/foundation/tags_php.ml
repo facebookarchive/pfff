@@ -12,6 +12,7 @@
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the file
  * license.txt for more details.
  *)
+open Common2
 open Common
 
 open Ast_php
@@ -141,7 +142,7 @@ let php_defs_of_files_or_dirs ?(verbose=false) xs =
         Common.pr2 (spf "warning: parsing problem in %s" file);
         []
     in
-    let filelines = Common.cat_array file in
+    let filelines = Common2.cat_array file in
     let defs =
       try tags_of_ast ast filelines
       with

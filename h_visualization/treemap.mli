@@ -4,7 +4,7 @@ open Figures
 
 (*s: type treemap *)
 type ('dir, 'file) treemap = 
- (treemap_rect * 'dir, treemap_rect * 'file) Common.tree
+ (treemap_rect * 'dir, treemap_rect * 'file) Common2.tree
     and treemap_rect = { 
       size : int; 
       color : Simple_color.color; 
@@ -81,7 +81,7 @@ val treemap_of_tree :
   color_of_leaf:('file -> Simple_color.color) ->
   ?label_of_file:('file -> string) ->
   ?label_of_dir:('dir -> string) ->
-  ('dir, 'file) Common.tree ->
+  ('dir, 'file) Common2.tree ->
   ('dir, 'file) treemap
 (*e: signature treemap_of_tree *)
 
@@ -100,7 +100,7 @@ val tree_of_dir:
   ?sort:directory_sort ->
   file_hook:(Common.filename -> 'a) -> 
   Common.dirname -> 
-  (Common.dirname, Common.filename * 'a) Common.tree
+  (Common.dirname, Common.filename * 'a) Common2.tree
 (*e: signature tree_of_dir *)
 
 val tree_of_dir_or_file:
@@ -108,20 +108,20 @@ val tree_of_dir_or_file:
   ?filter_dir:(Common.dirname -> bool) ->
   ?sort:directory_sort ->
   file_hook:(Common.filename -> 'a) -> 
-  Common.path -> 
-  (Common.dirname, Common.filename * 'a) Common.tree
+  Common2.path -> 
+  (Common.dirname, Common.filename * 'a) Common2.tree
 
 val tree_of_dirs_or_files:
   ?filter_file:(Common.filename -> bool) ->
   ?filter_dir:(Common.dirname -> bool) ->
   ?sort:directory_sort ->
   file_hook:(Common.filename -> 'a) -> 
-  Common.path list -> 
-  (Common.dirname, Common.filename * 'a) Common.tree
+  Common2.path list -> 
+  (Common.dirname, Common.filename * 'a) Common2.tree
 
 val remove_singleton_subdirs:
-  (Common.dirname, Common.filename * 'a) Common.tree ->
-  (Common.dirname, Common.filename * 'a) Common.tree
+  (Common.dirname, Common.filename * 'a) Common2.tree ->
+  (Common.dirname, Common.filename * 'a) Common2.tree
 
 
 (* internal functions *)
@@ -142,8 +142,8 @@ val algo_of_s: string -> algorithm
 val treemap_rectangles_ex:
    ((float * float) list * (float * float) list * (float * float * float)) list
 
-val tree_ex_shneiderman_1991 : (unit, int) Common.tree
-val tree_ex_wijk_1999: (unit, int) Common.tree
+val tree_ex_shneiderman_1991 : (unit, int) Common2.tree
+val tree_ex_wijk_1999: (unit, int) Common2.tree
 val treemap_ex_ordered_2001: (unit, unit) treemap
 (*e: signature tree and treemap examples *)
 

@@ -72,7 +72,7 @@ type file_type =
 (*****************************************************************************)
 
 let file_type_of_file2 file = 
-  let (d,b,e) = Common.dbe_of_filename_noext_ok file in
+  let (d,b,e) = Common2.dbe_of_filename_noext_ok file in
   match e with
 (* expensive ? *)
 (* todo:
@@ -261,7 +261,7 @@ let file_type_of_file2 file =
   | "exe" -> Binary e
   | "mk" -> PL Makefile
 
-  | _ when Common.is_executable file -> Binary e
+  | _ when Common2.is_executable file -> Binary e
 
   | _ when b = "Makefile" || b = "mkfile" || b = "Imakefile" -> PL Makefile
   | _ when b = "README" -> Text "txt"
@@ -271,7 +271,7 @@ let file_type_of_file2 file =
   | _ when b = ".depend" -> Obj "depend"
   | _ when b = ".emacs" -> PL (Lisp (Elisp))
 
-  | _ when Common.filesize file > 300_000 ->
+  | _ when Common2.filesize file > 300_000 ->
       Obj e
   | _ -> Other e
 

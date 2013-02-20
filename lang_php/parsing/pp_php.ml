@@ -12,7 +12,7 @@
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the file
  * license.txt for more details.
  *)
-
+open Common2
 open Common 
 
 module Ast  = Ast_php
@@ -77,11 +77,11 @@ let group_tokens_by_line toks =
     | x::xs ->
         let line = TH.line_of_tok x in
         (match line <=> current_line with
-        | Common.Inf -> 
+        | Common2.Inf -> 
             failwith ("Impossible: wrong order of tokens: " ^ TH.str_of_tok x)
-        | Common.Equal ->
+        | Common2.Equal ->
             aux current_line (x::current_toks) xs
-        | Common.Sup -> 
+        | Common2.Sup -> 
             let hd = current_line, List.rev current_toks in
             hd::aux line [x] xs
         )
@@ -89,17 +89,17 @@ let group_tokens_by_line toks =
   aux 1 [] toks
 
 let comment_pp_ize toks = 
-  toks |> List.map (fun tok -> 
+  toks +> List.map (fun tok -> 
     let info = TH.info_of_tok tok in 
     Parser_php.TCommentPP info
   )
 
 let mark_as_expanded last_orig_parse_info toks =
   let cnt = ref (String.length (last_orig_parse_info.Parse_info.str)) in
-  toks |> List.map (fun tok -> 
+  toks +> List.map (fun tok -> 
     let len = String.length (TH.str_of_tok tok) in
     cnt := !cnt + len;
-    tok |> TH.visitor_info_of_tok (fun info -> 
+    tok +> TH.visitor_info_of_tok (fun info -> 
       let parse_info_in_pp = Parse_info.parse_info_of_info info in
       { info with 
         Parse_info.token = Parse_info.ExpandedTok (
@@ -135,8 +135,8 @@ let merge_tokens_line ~orig_toks ~pp_toks =
     TH.visitor_info_of_tok (fun info -> Ast.al_info info) tok
   in
   
-  let a' = Common.exclude TH.is_comment a |> List.map al_info_tok in
-  let b' = Common.exclude TH.is_comment b |> List.map al_info_tok in
+  let a' = Common.exclude TH.is_comment a +> List.map al_info_tok in
+  let b' = Common.exclude TH.is_comment b +> List.map al_info_tok in
 
   if a' =*= b'
   then a
@@ -146,7 +146,7 @@ let merge_tokens_line ~orig_toks ~pp_toks =
     if null commented_a
     then failwith "WEIRD: a XHP line has tokens but not the original one";
     
-    let last_orig_info = Common.list_last commented_a |> TH.info_of_tok in
+    let last_orig_info = Common2.list_last commented_a +> TH.info_of_tok in
     let last_orig_parse_info = Parse_info.parse_info_of_info last_orig_info in
 
     let expanded_b = mark_as_expanded last_orig_parse_info b in
@@ -191,7 +191,7 @@ let  zip_and_sync ~toks_orig_lines ~toks_pp_lines =
          * mark the tokens as ExpandedTok.
          *)
         let all_remaining_toks = 
-          (ytoks::List.map snd ys) |> List.flatten
+          (ytoks::List.map snd ys) +> List.flatten
         in
 
         let last_orig_parse_info = 
@@ -201,7 +201,7 @@ let  zip_and_sync ~toks_orig_lines ~toks_pp_lines =
         
         
     | (((xline, xtoks)::xs) as a), (((yline, ytoks)::ys) as b) -> 
-        last_orig_tok := Common.list_last xtoks;
+        last_orig_tok := Common2.list_last xtoks;
         (match xline <=> yline with
         | Inf ->
             (* Sometimes XHP just remove certain tokens, like
@@ -224,7 +224,7 @@ let  zip_and_sync ~toks_orig_lines ~toks_pp_lines =
             pr2 (spf "WEIRD, wrong line numbers in preprocessed file %d > %d"
                      xline yline);
                     
-            let b' = b |> List.map (fun (yline, ytoks) -> yline+1, ytoks) in
+            let b' = b +> List.map (fun (yline, ytoks) -> yline+1, ytoks) in
             aux a b'
         )
   in

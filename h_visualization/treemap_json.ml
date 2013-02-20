@@ -15,7 +15,7 @@
  * license.txt for more details.
  *)
 (*e: Facebook copyright *)
-
+open Common2
 open Common
 
 module J = Json_type
@@ -45,7 +45,7 @@ let rec treemap_of_json j =
       let children = xs +> List.map treemap_of_json in
 
       let sizes = children +> List.map Treemap.size_of_treemap_node in
-      let size = Common.sum sizes in
+      let size = Common2.sum sizes in
 
       let rect = {
         label = s;
@@ -186,7 +186,7 @@ let json_of_treemap_rendering rendering =
 (*s: function test_json_of *)
 let test_json_of dir = 
   let maxc = 256 in
-  let tree = tree_of_dir ~file_hook:(fun file -> Common.filesize file) dir in
+  let tree = tree_of_dir ~file_hook:(fun file -> Common2.filesize file) dir in
   let treemap = treemap_of_tree
     ~size_of_leaf:(fun (f, intleaf) -> intleaf) 
     ~color_of_leaf:(fun (f, intleaf) -> 

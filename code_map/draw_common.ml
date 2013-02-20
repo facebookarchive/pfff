@@ -16,7 +16,7 @@
  *)
 (*e: Facebook copyright *)
 open Common
-open Common.ArithFloatInfix
+open Common2.ArithFloatInfix
 module CairoH = Cairo_helpers
 
 (*****************************************************************************)
@@ -44,7 +44,7 @@ let final_font_size_when_multiplier
   in
   
   let final_font_size = 
-    Common.borne ~min:font_size ~max:(font_size * 30.) font_size_adjusted
+    Common2.borne ~min:font_size ~max:(font_size * 30.) font_size_adjusted
   in
   final_font_size
 (*e: final_font_size_when_multiplier *)

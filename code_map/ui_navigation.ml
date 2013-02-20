@@ -17,7 +17,7 @@
 (*e: Facebook copyright *)
 open Common
 (* floats are the norm in graphics *)
-open Common.ArithFloatInfix
+open Common2.ArithFloatInfix
 
 module G = Gui
 
@@ -42,7 +42,7 @@ let go_back dw_ref =
     GMain.Idle.remove x;
   );
 
-  let old_dw = Common.pop2 Controller.dw_stack in
+  let old_dw = Common2.pop2 Controller.dw_stack in
   dw_ref := old_dw;
   
   let path = !dw_ref.root in
@@ -56,7 +56,7 @@ let go_back dw_ref =
 let go_dirs_or_file ?(current_entity=None) ?(current_grep_query=None) 
   dw_ref paths =
 
-  let root = Common.common_prefix_of_files_or_dirs paths in
+  let root = Common2.common_prefix_of_files_or_dirs paths in
   pr2 (spf "zooming in %s" (Common.join "|" paths));
 
   (* reset the painter ? not needed because will call draw below

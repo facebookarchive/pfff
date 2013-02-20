@@ -425,7 +425,7 @@ let print_locals_and_globals o env heap =
 
 
 let string_of_value heap v =
-  Common.with_open_stringbuf (fun (_pr, buf) ->
+  Common2.with_open_stringbuf (fun (_pr, buf) ->
     let pr s = Buffer.add_string buf s in
     value heap.ptrs pr v
   )

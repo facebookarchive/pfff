@@ -187,7 +187,7 @@ let visitor_info_of_tok f = function
 let info_of_tok tok = 
   let res = ref None in
   visitor_info_of_tok (fun ii -> res := Some ii; ii) tok +> ignore;
-  Common.some !res
+  Common2.some !res
 
 (*****************************************************************************)
 (* Accessors *)

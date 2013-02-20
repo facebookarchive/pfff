@@ -74,7 +74,7 @@ let (functions_not_covered_and_high_code_rank:
      Coverage_static_php.mk_is_covered_by_test 
        ~is_test_file db in
    
-   let is_not_covered = sorted +> Common.filter (fun (id, rank) ->
+   let is_not_covered = sorted +> List.filter (fun (id, rank) ->
      not (is_dynamically_covered id)
    )
    in

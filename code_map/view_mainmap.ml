@@ -18,7 +18,7 @@
 
 open Common
 (* floats are the norm in graphics *)
-open Common.ArithFloatInfix
+open Common2.ArithFloatInfix
 
 module K = GdkKeysyms
 
@@ -182,7 +182,7 @@ let paint2 dw =
   ()
 
 let paint dw = 
-  Common.profile_code2 "View.paint" (fun () -> paint2 dw)
+  Common.profile_code "View.paint" (fun () -> paint2 dw)
 (*e: paint *)
 
 (*****************************************************************************)
@@ -301,7 +301,7 @@ let find_filepos_in_rectangle_at_user_point user_pt dw r =
       None
   | (s, filepos)::xs ->
       pr2 (spf "closest point is: %s at %d:%d"
-              s filepos.Common.l filepos.Common.c);
+              s filepos.Common2.l filepos.Common2.c);
       Some filepos
   )
 (*e: find_filepos_in_rectangle_at_user_point *)
@@ -348,7 +348,7 @@ let button_action da dw_ref ev =
                 Editor_connection.open_file_in_current_editor ~file ~line:0;
             | Some (fpos) ->
                 Editor_connection.open_file_in_current_editor ~file 
-                  ~line:fpos.Common.l;
+                  ~line:fpos.Common2.l;
           );
           true
 

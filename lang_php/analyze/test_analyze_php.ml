@@ -197,7 +197,7 @@ let test_prolog_php file query =
 let test_stat_php xs =
 
   let files = Lib_parsing_php.find_php_files_of_dir_or_files xs in
-  let h = Common.hash_with_default (fun () -> 0) in
+  let h = Common2.hash_with_default (fun () -> 0) in
 
   files +> Common_extra.progress (fun k -> List.iter (fun file ->
     k();
@@ -215,7 +215,7 @@ let test_stat_php xs =
    * let str = Statistics_php.string_of_stat stat in
    * pr2 str
    *)
-  pr2_xxxxxxxxxxxxxxxxx();
+  Common2.pr2_xxxxxxxxxxxxxxxxx();
   h#to_list +> List.iter (fun (s, i) -> pr2 (spf "%-30s: %d" s i));
   ()
 

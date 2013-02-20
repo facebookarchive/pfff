@@ -26,7 +26,7 @@ let test_parse_php xs  =
 
   let dirname_opt, fullxs = 
     match xs with
-    | [x] when is_directory x -> 
+    | [x] when Common2.is_directory x -> 
       let skip_list =
         if Sys.file_exists (x ^ "/skip_list.txt")
         then Skip_code.load (x ^ "/skip_list.txt")
@@ -38,10 +38,10 @@ let test_parse_php xs  =
 
   let stat_list = ref [] in
   (*s: initialize -parse_php regression testing hash *)
-  let newscore  = Common.empty_score () in
+  let newscore  = Common2.empty_score () in
   (*e: initialize -parse_php regression testing hash *)
 
-  Common.check_stack_nbfiles (List.length fullxs);
+  Common2.check_stack_nbfiles (List.length fullxs);
 
   fullxs +> Common_extra.progress (fun k -> List.iter (fun file -> 
      k ();
@@ -55,8 +55,8 @@ let test_parse_php xs  =
     (*s: add stat for regression testing in hash *)
         let s = spf "bad = %d" stat.Parse_info.bad in
         if stat.Parse_info.bad = 0
-        then Hashtbl.add newscore file (Common.Ok)
-        else Hashtbl.add newscore file (Common.Pb s)
+        then Hashtbl.add newscore file (Common2.Ok)
+        else Hashtbl.add newscore file (Common2.Pb s)
         ;
     (*e: add stat for regression testing in hash *)
   ));
@@ -69,7 +69,7 @@ let test_parse_php xs  =
       pr2 "regression testing  information";
       pr2 "--------------------------------";
       let str = Str.global_replace (Str.regexp "/") "__" dirname in
-      Common.regression_testing newscore 
+      Common2.regression_testing newscore 
         (Filename.concat score_path
          ("score_parsing__" ^str ^ "php.marshalled"))
     );
@@ -137,8 +137,8 @@ let test_unparse_php file =
   let tmpfile = Common.new_temp_file "unparse_php" ".php" in
   let s = Unparse_php.string_of_program2_using_transfo ast2 in
   Common.write_file ~file:tmpfile s;
-  let xs = Common.unix_diff file tmpfile in
-  xs |> List.iter pr2;
+  let xs = Common2.unix_diff file tmpfile in
+  xs +> List.iter pr2;
   ()
 
 let test_pretty_print_php file = 

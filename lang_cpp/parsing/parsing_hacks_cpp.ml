@@ -358,7 +358,7 @@ let set_context_tag groups =
     ->
       let (before, braces, after) =
         try 
-          xs +> Common.split_when (function
+          xs +> Common2.split_when (function
           | Braces _ -> true
           | _ -> false
           )

@@ -33,13 +33,13 @@ module TH = Token_helpers_nw
 (* Helpers *)
 (*****************************************************************************)
 
-let span_close_brace xs = xs +> Common.split_when (function 
+let span_close_brace xs = xs +> Common2.split_when (function 
   | T.TCBrace _ -> true | _ -> false)
 
-let span_newline xs = xs +> Common.split_when (function 
+let span_newline xs = xs +> Common2.split_when (function 
   | T.TCommentNewline _ -> true | _ -> false)
 
-let span_end_bracket xs = xs +> Common.split_when (function 
+let span_end_bracket xs = xs +> Common2.split_when (function 
   | T.TSymbol("]", _) -> true | _ -> false)
 
 

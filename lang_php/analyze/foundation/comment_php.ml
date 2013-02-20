@@ -81,13 +81,13 @@ let (parse_comment: string -> comment) = fun s ->
       SingleLineSlashStar (Common.matched1 s)
 
   | _ when s =~ "^/\\*.*" ->
-      let xs = Common.lines s in
+      let xs = Common2.lines s in
       if List.length xs <= 2 then begin
         pr2 ("wrong docblock comment: " ^ s);
         OtherStyle s
       end
       else
-        (match Common.head_middle_tail xs with
+        (match Common2.head_middle_tail xs with
         | start_comment, ys, end_comment -> 
 
             if not (List.mem start_comment ["/**"; "/*"]) || 
@@ -133,7 +133,7 @@ let _ = example(parse_comment "/*\n * foo\n */" = (MultiLineSlashStar ["foo"]))
 (* UnParsing *)
 (*****************************************************************************)
 let gen_space indent = 
-  (Common.repeat " " indent) +> Common.join ""
+  (Common2.repeat " " indent) +> Common.join ""
 
 let (unparse_comment: ?indent:int -> comment -> string) = 
  fun ?(indent=0) m ->
@@ -149,7 +149,7 @@ let (unparse_comment: ?indent:int -> comment -> string) =
       then [spf "%s */" (gen_space indent)]
       else [spf "%s **/" (gen_space indent)]
       )
-      ) +> Common.unlines
+      ) +> Common2.unlines
   | _ -> 
       raise Todo
 
@@ -197,13 +197,13 @@ let comments_of_file file =
 let comment_before tok all_toks =
   let pos = Ast_php.pos_of_info tok in
   let before = 
-    all_toks +> Common.take_while (fun tok2 ->
+    all_toks +> Common2.take_while (fun tok2 ->
       let pos2 = Token_helpers_php.pos_of_tok tok2 in
       pos2 < pos
     )
   in
   let first_non_space =
-    List.rev before +> Common.drop_while (function
+    List.rev before +> Common2.drop_while (function
     | Parser_php.TNewline _ | Parser_php.TSpaces _ -> true
     | _ -> false
     )
@@ -217,13 +217,13 @@ let comment_before tok all_toks =
 let comment_after tok all_toks =
   let pos = Ast_php.pos_of_info tok in
   let after = 
-    all_toks +> Common.drop_while (fun tok2 ->
+    all_toks +> Common2.drop_while (fun tok2 ->
       let pos2 = Token_helpers_php.pos_of_tok tok2 in
       pos2 <= pos
     )
   in
   let first_non_space =
-    after +> Common.drop_while (function
+    after +> Common2.drop_while (function
     | Parser_php.TNewline _ | Parser_php.TSpaces _ -> true
     | _ -> false
     )

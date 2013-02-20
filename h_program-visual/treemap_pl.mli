@@ -19,5 +19,5 @@ val php_filter_file: Common.filename -> bool
 (* default treemap *)
 val code_treemap: 
   filter_file: (Common.filename -> bool) ->
-  Common.path list ->
+  Common2.path list ->
   (string, Common.filename * int) Treemap.treemap

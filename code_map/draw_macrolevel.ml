@@ -16,7 +16,7 @@
  *)
 (*e: Facebook copyright *)
 open Common
-open Common.ArithFloatInfix
+open Common2.ArithFloatInfix
 
 open Figures (* for the fields *)
 open Model2 (* for the fields *)
@@ -143,7 +143,7 @@ let draw_summary_content2 ~cr ~w_per_column ~context ~nblines ~file rect =
   let entities = 
     entities 
     +> Common.take_safe 5
-    +> Common.filter (fun e ->
+    +> List.filter (fun e ->
       e.Db.e_number_external_users > threshold_print_summary_entity_users
     )
   in

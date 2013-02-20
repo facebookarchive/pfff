@@ -17,17 +17,17 @@ class ['a,'b] oassoch xs =
        to delkey before add, replace do both action directly.
      *)
     method replkey (k,v) = (Hashtbl.replace data k v; o)
-    method iter f = Hashtbl.iter (curry f) data
+    method iter f = Hashtbl.iter (Common2.curry f) data
     method view = raise Todo
 
     method del (k,v) = (Hashtbl.remove data k; o)
     method mem e = raise Todo
-    method null = (try (Hashtbl.iter (fun k v -> raise ReturnExn) data; false) with ReturnExn -> true)
+    method null = (try (Hashtbl.iter (fun k v -> raise Common2.ReturnExn) data; false) with Common2.ReturnExn -> true)
 
     method assoc k = 
       try 
         Hashtbl.find data k
-      with Not_found -> (log3 ("pb assoc with k = " ^ (Dumper.dump k)); raise Not_found) 
+      with Not_found -> (Common2.log3 ("pb assoc with k = " ^ (Dumper.dump k)); raise Not_found) 
         
     method delkey k = (Hashtbl.remove data k; o)
 

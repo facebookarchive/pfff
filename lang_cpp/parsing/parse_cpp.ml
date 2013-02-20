@@ -48,14 +48,14 @@ let program_of_program2 xs =
 
 let with_program2 f program2 = 
   program2 
-  +> Common.unzip 
+  +> Common2.unzip 
   +> (fun (program, infos) -> f program, infos)
-  +> Common.uncurry Common.zip
+  +> Common2.uncurry Common2.zip
 
 (*****************************************************************************)
 (* Wrappers *)
 (*****************************************************************************)
-let pr2, pr2_once = Common.mk_pr2_wrappers Flag_parsing_cpp.verbose_parsing
+let pr2, pr2_once = Common2.mk_pr2_wrappers Flag_parsing_cpp.verbose_parsing
 
 (*****************************************************************************)
 (* Helpers *)
@@ -216,7 +216,7 @@ let extract_macros2 file =
     Pp_token.extract_macros toks
   )
 let extract_macros a = 
-  Common.profile_code_exclusif "Parse_cpp.extract_macros" (fun () -> 
+  Common2.profile_code_exclusif "Parse_cpp.extract_macros" (fun () -> 
     extract_macros2 a)
 
 (*****************************************************************************)
@@ -281,7 +281,7 @@ exception Parse_error of Parse_info.info
 let parse2 ?(lang=Flag_parsing_cpp.Cplusplus) file = 
 
   let stat = Statistics_parsing.default_stat file in
-  let filelines = Common.cat_array file in
+  let filelines = Common2.cat_array file in
 
   (* -------------------------------------------------- *)
   (* call lexer and get all the tokens *)
@@ -351,8 +351,8 @@ let parse2 ?(lang=Flag_parsing_cpp.Cplusplus) file =
 
             let pbline =
               tr.PI.passed
-              +> Common.filter (is_same_line_or_close line_error)
-              +> Common.filter TH.is_ident_like
+              +> List.filter (is_same_line_or_close line_error)
+              +> List.filter TH.is_ident_like
             in
             let error_info =(pbline +> List.map TH.str_of_tok), line_error in
             stat.Stat.problematic_lines <-
@@ -374,7 +374,7 @@ let parse2 ?(lang=Flag_parsing_cpp.Cplusplus) file =
             let xs = tr.PI.passed +> List.rev +> Common.exclude TH.is_comment in
             (if List.length xs >= 2 
             then 
-              (match Common.head_middle_tail xs with
+              (match Common2.head_middle_tail xs with
               | Parser.TDefine _, _, Parser.TCommentNewline_DefineEndOfMacro _ 
                   -> 
                   was_define := true
@@ -394,7 +394,7 @@ let parse2 ?(lang=Flag_parsing_cpp.Cplusplus) file =
             );
 
             let info_of_bads = 
-              Common.map_eff_rev TH.info_of_tok tr.PI.passed in 
+              Common2.map_eff_rev TH.info_of_tok tr.PI.passed in 
 
             Ast.NotParsedCorrectly info_of_bads
           end
@@ -447,7 +447,7 @@ let parse ?lang file  =
       pr2 (spf "PB stack overflow in %s" file);
       [(Ast.NotParsedCorrectly [], ([]))], {Stat.
         correct = 0;
-        bad = Common.nblines_with_wc file;
+        bad = Common2.nblines_with_wc file;
         filename = file;
         have_timeout = true;
         commentized = 0;

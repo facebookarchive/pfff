@@ -146,7 +146,7 @@ module XMATCH = struct
    * two times the same metavariable in the pattern.
    *)
   let check_and_add_metavar_binding  (mvar, valu) = fun tin ->
-    match Common.assoc_option (mvar: string) tin with
+    match Common2.assoc_option (mvar: string) tin with
     | Some valu' ->
         (* Should we use php_vs_php itself for comparing the binded code ?
          * Hmmm, we can't because it leads to a circular dependencies.
@@ -158,7 +158,7 @@ module XMATCH = struct
         else None
     | None ->
         (* first time the metavar is binded. Just add it to the environment *)
-        Some (Common.insert_assoc (mvar, valu) tin)
+        Some (Common2.insert_assoc (mvar, valu) tin)
 
 
 
@@ -174,7 +174,7 @@ module XMATCH = struct
          * mevar (X)
          *)
         let s = 
-         s +> Common.global_replace_regexp MV.metavar_variable_regexp_string
+         s +> Common2.global_replace_regexp MV.metavar_variable_regexp_string
          (fun matched ->
           try List.assoc matched env
           with Not_found -> 
@@ -183,7 +183,7 @@ module XMATCH = struct
          )
         in
 
-        let s = s +> Common.global_replace_regexp MV.metavar_regexp_string
+        let s = s +> Common2.global_replace_regexp MV.metavar_regexp_string
          (fun matched ->
           try List.assoc matched env
           with Not_found -> 

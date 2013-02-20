@@ -172,7 +172,7 @@ let (code_with_bad_cyclomatic: selection -> Common.filename list -> unit) =
          xs +> Common.sort_by_val_highfirst +> 
            Common.take_safe n
    in
-   pr2_xxxxxxxxxxxxxxxxx ();
+   Common2.pr2_xxxxxxxxxxxxxxxxx ();
    bad +> List.iter (fun (name, score) -> 
      pr2 (string_of_bad_cyclo name score)
    )

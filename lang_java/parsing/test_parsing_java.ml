@@ -24,9 +24,9 @@ let test_parse xs  =
   let ext = "java" in
 
   let stat_list = ref [] in
-  let newscore  = Common.empty_score () in
+  let newscore  = Common2.empty_score () in
 
-  Common.check_stack_nbfiles (List.length fullxs);
+  Common2.check_stack_nbfiles (List.length fullxs);
 
   fullxs +> List.iter (fun file -> 
     pr2 ("PARSING: " ^ file);
@@ -38,8 +38,8 @@ let test_parse xs  =
     Common.push2 stat stat_list;
     let s = spf "bad = %d" stat.PI.bad in
     if stat.PI.bad = 0
-    then Hashtbl.add newscore file (Common.Ok)
-    else Hashtbl.add newscore file (Common.Pb s)
+    then Hashtbl.add newscore file (Common2.Ok)
+    else Hashtbl.add newscore file (Common2.Pb s)
     ;
   );
   flush stdout; flush stderr;
@@ -48,7 +48,7 @@ let test_parse xs  =
 
   let dirname_opt = 
     match xs with
-    | [x] when is_directory x -> Some (Common.realpath x)
+    | [x] when Common2.is_directory x -> Some (Common.realpath x)
     | _ -> None
   in
   let score_path = Filename.concat Config_pfff.path "tmp" in
@@ -57,7 +57,7 @@ let test_parse xs  =
     pr2 "regression testing  information";
     pr2 "--------------------------------";
     let str = Str.global_replace (Str.regexp "/") "__" dirname in
-    Common.regression_testing newscore 
+    Common2.regression_testing newscore 
       (Filename.concat score_path
        ("score_parsing__" ^str ^ ext ^ ".marshalled"))
   );

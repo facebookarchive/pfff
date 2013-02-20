@@ -17,7 +17,7 @@
 (*e: Facebook copyright *)
 open Common
 (* floats are the norm in graphics *)
-open Common.ArithFloatInfix
+open Common2.ArithFloatInfix
 
 module F = Figures
 module T = Treemap
@@ -243,12 +243,12 @@ let draw_zoomed_overlay ~cr_overlay ~user ~dw ~x ~y r =
   let width = float_of_int dw.width / 2.5 in
   let height = float_of_int dw.height / 2.5 in
   let source_x = 
-    Common.borne
+    Common2.borne
       ~min:0. ~max:(zoomed_device_width - width)
       ((percent_x * zoomed_device_width) - 140.)
   in
   let source_y = 
-    Common.borne
+    Common2.borne
       ~min:0. ~max:(zoomed_device_height - height)
       ((percent_y * zoomed_device_height) - 30.)
   in

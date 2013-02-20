@@ -16,7 +16,7 @@
  *)
 (*e: Facebook copyright *)
 open Common
-open Common.ArithFloatInfix
+open Common2.ArithFloatInfix
 
 module CairoH = Cairo_helpers
 

@@ -169,11 +169,11 @@ let reset () =
   ()
 
 let push_mode mode = Common.push2 mode _mode_stack
-let pop_mode () = ignore(Common.pop2 _mode_stack)
+let pop_mode () = ignore(Common2.pop2 _mode_stack)
 
 let rec current_mode () = 
   try 
-    Common.top !_mode_stack
+    Common2.top !_mode_stack
   with Failure("hd") -> 
     error("LEXER: mode_stack is empty, defaulting to INITIAL");
     reset();
@@ -337,7 +337,7 @@ rule initial = parse
   | ident | '`' [^ '`' '\n' '\r']+ '`' {
       let info = tokinfo lexbuf in
       let s = tok lexbuf in
-      match Common.optionise (fun () -> Hashtbl.find keyword_table s) with
+      match Common2.optionise (fun () -> Hashtbl.find keyword_table s) with
       | Some f -> 
           let res = f info in
           (match res, !_last_non_whitespace_like_token with

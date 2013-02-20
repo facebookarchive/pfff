@@ -5,7 +5,7 @@ module J = Json_type
 (* see opa/pfff_logger.opa *)
 let log config cmd extra_args =
   config +> do_option (fun server ->
-    let unixname = unixname() in
+    let unixname = Common2.unixname() in
     let extra_args = 
       match extra_args with
       | Some s -> s

@@ -2,9 +2,10 @@
 
 (* pad: just copy paste the generic algorithmic part and add types! *)
 
+open Common2
 open Common (* for StringSet *)
 
-type graph = (string * StringSet.t) list
+type graph = (string * Common2.StringSet.t) list
 
                   (********************************)
                   (* Utility functions for graphs *)

@@ -435,7 +435,7 @@ let print_text env s =
     fun env ->
       let i = first_char_escape env s in
       for i = i to size do
-        if Common.is_space s.[i]
+        if Common2.is_space s.[i]
         then
           if !last_is_space
           then ()

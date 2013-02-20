@@ -41,7 +41,7 @@ let db_from_fake_files xs =
   (* todo? would be better to create each time a fresh new dir *)
   let tmp_dir = "/tmp/pfff_fake_dir" in
   Common.command2 ("rm -rf " ^ tmp_dir);
-  xs |> List.iter (fun (file, s) ->
+  xs +> List.iter (fun (file, s) ->
     let dir = Filename.dirname file in
     Common.command2 (spf "mkdir -p %s/%s" tmp_dir dir);
     Common.write_file ~file:(Filename.concat tmp_dir file) ("<?php\n" ^ s);
@@ -76,9 +76,9 @@ let id s db =
     Db.id_of_function s db
 
 let callers id db =
-  Db.callers_of_id id db |> List.map Cg.id_of_callerinfo
+  Db.callers_of_id id db +> List.map Cg.id_of_callerinfo
 let callees id db =
-  Db.callees_of_id id db |> List.map Cg.id_of_callsite
+  Db.callees_of_id id db +> List.map Cg.id_of_callsite
 
 (*****************************************************************************)
 (* Unit tests *)
@@ -105,7 +105,7 @@ let database_unittest =
       Common.save_excursion Flag_analyze_php.verbose_database false (fun () ->
       Common.save_excursion Flag_parsing_php.verbose_lexing false (fun () ->
       Common.save_excursion Flag_parsing_php.verbose_parsing false (fun () ->
-      Common.save_excursion Common.verbose_level 0 (fun () ->
+      Common.save_excursion Common2.verbose_level 0 (fun () ->
       let _db = Database_php_build.db_of_files_or_dirs [data_dir] in
       ()
       )))))

@@ -29,7 +29,7 @@ module V2 = Map_php
 (*****************************************************************************)
 (* Wrappers *)
 (*****************************************************************************)
-let pr2, pr2_once = Common.mk_pr2_wrappers Flag.verbose_parsing
+let pr2, pr2_once = Common2.mk_pr2_wrappers Flag.verbose_parsing
 
 (*****************************************************************************)
 (* Filenames *)
@@ -66,7 +66,7 @@ let find_php_files_of_dir_or_files ?(verbose=false) xs =
     if not valid && verbose
     then pr2 ("not analyzing: " ^ filename);
     valid
-  ) |> Common.sort
+  ) +> Common.sort
 
 (*****************************************************************************)
 (* Extract infos *)
@@ -194,8 +194,8 @@ let print_match ?(format = Normal) ii =
   let (file, line) = 
     Ast.file_of_info mini, Ast.line_of_info mini in
   let prefix = spf "%s:%d" file line in
-  let arr = Common.cat_array file in
-  let lines = Common.enum (Ast.line_of_info mini) (Ast.line_of_info maxi) in
+  let arr = Common2.cat_array file in
+  let lines = Common2.enum (Ast.line_of_info mini) (Ast.line_of_info maxi) in
   
   match format with
   | Normal ->
@@ -304,7 +304,7 @@ let get_static_vars_any any =
     V.kstmt = (fun (k,vx) x ->
       match x with
       | StaticVars (tok, xs, tok2) ->
-          xs |> Ast.uncomma |> List.iter (fun (dname, affect_opt) -> 
+          xs +> Ast.uncomma +> List.iter (fun (dname, affect_opt) -> 
             Common.push2 dname aref
           );
       | _ -> 
@@ -352,12 +352,12 @@ let get_vars_any any =
 (* todo? let lvalue_to_expr ?? *)
 
 let top_statements_of_program ast = 
-  ast |> List.map (function
+  ast +> List.map (function
   | StmtList xs -> xs
   | FinalDef _|NotParsedCorrectly _
   | ClassDef _| FuncDef _ | ConstantDef _
       -> []
-  ) |> List.flatten  
+  ) +> List.flatten  
 
 let toplevel_to_entity x = 
   match x with
@@ -417,9 +417,9 @@ let get_vars_assignements_any recursor =
       V.kstmt = (fun (k,vx) x ->
         match x with
         | StaticVars (tok, xs, tok2) ->
-            xs |> Ast.uncomma |> List.iter (fun (dname, affect_opt) -> 
+            xs +> Ast.uncomma +> List.iter (fun (dname, affect_opt) -> 
               let s = Ast.dname dname in
-              affect_opt |> Common.do_option (fun (_tok, scalar) ->
+              affect_opt +> Common.do_option (fun (_tok, scalar) ->
                 Common.push2 (s, scalar) aref;
               );
             );
@@ -448,6 +448,6 @@ let get_vars_assignements_any recursor =
             k x
       );
     }
-  ) recursor |> Common.group_assoc_bykey_eff
+  ) recursor +> Common.group_assoc_bykey_eff
 
 (*e: lib_parsing_php.ml *)

@@ -201,7 +201,7 @@ let spatch_unittest = [
   "spatch regressions files" >:: (fun () ->
 
     let testdir = Filename.concat Config_pfff.path "tests/php/spatch/" in
-    let expfiles = Common.glob (testdir ^ "*.exp") in
+    let expfiles = Common2.glob (testdir ^ "*.exp") in
   
     expfiles +> List.iter (fun expfile ->
       (* todo: this regexp should just be .*? but ocaml regexp do not
@@ -229,7 +229,7 @@ let spatch_unittest = [
               Common.write_file ~file:tmpfile s;
               tmpfile
         in
-        let diff = Common.unix_diff file_res expfile in
+        let diff = Common2.unix_diff file_res expfile in
         diff +> List.iter pr;
         if List.length diff > 1
         then assert_failure

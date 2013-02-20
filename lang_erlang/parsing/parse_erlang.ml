@@ -42,7 +42,7 @@ let program_of_program2 xs =
 (*****************************************************************************)
 (* Wrappers *)
 (*****************************************************************************)
-let pr2_err, pr2_once = Common.mk_pr2_wrappers Flag.verbose_parsing 
+let pr2_err, pr2_once = Common2.mk_pr2_wrappers Flag.verbose_parsing 
 
 (*****************************************************************************)
 (* Helpers *)

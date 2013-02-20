@@ -22,12 +22,12 @@ let ml_pattern_string_of_web_document webdoc =
   let s_css =  
     webdoc.css +> List.map (fun (s, css) ->
       Export_ast_css.ml_pattern_string_of_stylesheet css
-    ) +> Common.unlines
+    ) +> Common2.unlines
   in
   let s_js =
     webdoc.js +> List.map (fun (s, js) ->
       Export_ast_js.ml_pattern_string_of_program js
-    ) +> Common.unlines
+    ) +> Common2.unlines
   in
   s_html ^ "\n" ^ s_css ^ "\n" ^ s_js
 

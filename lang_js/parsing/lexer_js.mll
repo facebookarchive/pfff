@@ -198,7 +198,7 @@ rule initial = parse
   | ['a'-'z''A'-'Z''$''_']['a'-'z''A'-'Z''$''_''0'-'9']* {
       let s = tok lexbuf in
       let info = tokinfo lexbuf in
-      match Common.optionise (fun () -> 
+      match Common2.optionise (fun () -> 
         Hashtbl.find keyword_table s (* need case insensitive ? *))
       with
       | Some f -> f info
@@ -310,7 +310,7 @@ rule initial = parse
 (*****************************************************************************)
 and string_quote = parse
   | "'"            { "" }
-  | (_ as x)       { string_of_char x^string_quote lexbuf}
+  | (_ as x)       { Common2.string_of_char x^string_quote lexbuf}
   | ("\\" (_ as v)) as x { 
       (* check char ? *)
       (match v with
@@ -322,7 +322,7 @@ and string_quote = parse
 
 and string_double_quote  = parse
   | '"'            { "" }
-  | (_ as x)       { string_of_char x^string_double_quote lexbuf}
+  | (_ as x)       { Common2.string_of_char x^string_double_quote lexbuf}
   | ("\\" (_ as v)) as x { 
       (* check char ? *)
       (match v with
@@ -335,7 +335,7 @@ and string_double_quote  = parse
 (*****************************************************************************)
 and regexp = parse
   | '/'            { "/" ^ regexp_maybe_ident lexbuf }
-  | (_ as x)       { string_of_char x^regexp lexbuf}
+  | (_ as x)       { Common2.string_of_char x^regexp lexbuf}
   | ("\\" (_ as v)) as x { 
       (* check char ? *)
       (match v with

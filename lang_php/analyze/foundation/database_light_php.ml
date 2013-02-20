@@ -54,7 +54,7 @@ let mk_entity ~root id nb_users good_example_ids properties db =
       if fullname <> name then fullname else "";
 
     e_file = Common.filename_without_leading_path root file;
-    e_pos = { Common.l = l; Common.c = c };
+    e_pos = { Common2.l = l; c };
     e_kind = kind;
     e_number_external_users = nb_users;
     e_good_examples_of_use = good_example_ids; 
@@ -70,7 +70,7 @@ let exclude_ids_same_file ids idfile db =
 
 
 let is_pleac_file file = 
-  let file = Common.lowercase file in
+  let file = Common2.lowercase file in
   file =~ ".*pleac*"
 
 (* todo? should perhaps be a property in database_php.ml, so   (fun xs -> Common_extra.execute_and_show_progress2 
@@ -80,7 +80,7 @@ let is_pleac_file file =
  * don't have to put facebook specific stuff here ?
  *)
 let is_test_file file =
-  let file = Common.lowercase file in
+  let file = Common2.lowercase file in
   (file =~ ".*test.php$") ||
   (file =~ ".*__tests__.*") ||
   (file =~ ".*tests/push-blocking/") ||
@@ -199,7 +199,7 @@ let database_code_from_php_database ?(verbose=false) db =
   if verbose then pr2 (spf "generating PHP db_light with root = %s" root);
 
   let files = DbPHP.all_files db in
-  let dirs = files +> List.map Filename.dirname +> Common.uniq_eff in
+  let dirs = files +> List.map Filename.dirname +> Common2.uniq_eff in
 
   (* phase 1: collecting entities and basic information *)
   if verbose then pr2 "phase 1: collecting entities";

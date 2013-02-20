@@ -32,7 +32,7 @@ type entity = {
   e_name: string;
   e_fullname: string; (* can be empty *)
   e_file: Common.filename;
-  e_pos: Common.filepos;
+  e_pos: Common2.filepos;
   mutable e_number_external_users: int;
   mutable e_good_examples_of_use: entity_id list;
   e_properties: property list;

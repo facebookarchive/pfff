@@ -70,16 +70,16 @@ let main_action xs =
   Database_php.with_db ~metapath:!metapath (fun db ->
 
   let find_entity = Some (Database_php_build.build_entity_finder db) in
-  files +> Common.index_list_and_total +> List.iter (fun (file, i, total) ->
+  files +> Common2.index_list_and_total +> List.iter (fun (file, i, total) ->
     try 
       pr2_dbg (spf "processing: %s (%d/%d)" file i total);
-      let env = Env_php.mk_env (Common.dirname file) in
+      let env = Env_php.mk_env (Common2.dirname file) in
       Check_all_php.check_file ~find_entity env file;
     with 
     | (Timeout | UnixExit _) as exn -> raise exn
     | exn ->
       Common.push2 (spf "PB with %s, exn = %s" file 
-                              (Common.string_of_exn exn)) errors;
+                              (Common.exn_to_s exn)) errors;
   );
 
   let errs = !Error_php._errors +> List.rev in
@@ -99,7 +99,7 @@ let main_action xs =
 
   !layer_file +> Common.do_option (fun file ->
     (*  a layer needs readable paths, hence the root *)
-    let root = Common.common_prefix_of_files_or_dirs xs in
+    let root = Common2.common_prefix_of_files_or_dirs xs in
 
     Layer_checker_php.gen_layer ~root ~output:file !Error_php._errors
 
@@ -142,9 +142,9 @@ let options () =
   ] ++
   Flag_analyze_php.cmdline_flags_verbose () ++
   Common.options_of_actions action (all_actions()) ++
-  Common.cmdline_flags_devel () ++
-  Common.cmdline_flags_verbose () ++
-  Common.cmdline_flags_other () ++
+  Common2.cmdline_flags_devel () ++
+  Common2.cmdline_flags_verbose () ++
+  Common2.cmdline_flags_other () ++
   [
   "-version",   Arg.Unit (fun () ->
     pr2 (spf "scheck version: %s" Config_pfff.version);
@@ -171,7 +171,7 @@ let main () =
   Database_php_storage.set_link();
 
   let usage_msg =
-    "Usage: " ^ Common.basename Sys.argv.(0) ^
+    "Usage: " ^ Common2.basename Sys.argv.(0) ^
       " [options] <file or dir> " ^ "\n" ^ "Options are:"
   in
   (* does side effect on many global flags *)

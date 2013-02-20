@@ -75,11 +75,11 @@ let rec light_db_of_files_or_dirs lang xs =
                   Database_php.check_is_database_dir !with_php_db;
                   Database_php_storage.open_db !with_php_db
                 with _ ->
-                  let root = Common.common_prefix_of_files_or_dirs xs in
+                  let root = Common2.common_prefix_of_files_or_dirs xs in
 
                   let php_files = 
                     Lib_parsing_php.find_php_files_of_dir_or_files xs 
-                    +> List.map Common.relative_to_absolute 
+                    +> List.map Common2.relative_to_absolute 
                   in
                   Database_php_build.create_db
                     ~db_support:Database_php.Mem
@@ -120,7 +120,7 @@ let rec light_db_of_files_or_dirs lang xs =
 
 let main_action xs =
 
-  let xs = xs +> List.map Common.relative_to_absolute in
+  let xs = xs +> List.map Common2.relative_to_absolute in
   let db = light_db_of_files_or_dirs !lang xs in
   
   let file = 
@@ -132,8 +132,8 @@ let main_action xs =
     | _ ->
         failwith "please use -o"
   in
-  let file = Common.relative_to_absolute file in
-  let res = Common.y_or_no (spf "writing data in %s" file) in
+  let file = Common2.relative_to_absolute file in
+  let res = Common2.y_or_no (spf "writing data in %s" file) in
   if not res 
   then failwith "ok I stop";
 
@@ -253,8 +253,8 @@ let options () =
   ] ++
   Flag_parsing_cpp.cmdline_flags_macrofile() ++
   Common.options_of_actions action (all_actions()) ++
-  Common.cmdline_flags_devel () ++
-  Common.cmdline_flags_other () ++
+  Common2.cmdline_flags_devel () ++
+  Common2.cmdline_flags_other () ++
   [
     "-version",   Arg.Unit (fun () -> 
       pr2 (spf "pfff (console) version: %s" Config_pfff.version);
@@ -285,7 +285,7 @@ let main () =
   Database_php_storage.set_link ();
 
   let usage_msg = 
-    "Usage: " ^ basename Sys.argv.(0) ^ 
+    "Usage: " ^ Common2.basename Sys.argv.(0) ^ 
       " [options] <file or dir> " ^ "\n" ^ "Options are:"
   in
   (* does side effect on many global flags *)

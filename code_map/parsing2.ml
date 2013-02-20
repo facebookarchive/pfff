@@ -164,10 +164,10 @@ let tokens_with_categ_of_file_helper ~parse ~highlight_visit
       if not (Parse_info.is_origintok info)
       then None
       else 
-        let categ = Common.hfind_option info h +> Common.fmap (fun categ ->
+        let categ = Common2.hfind_option info h +> Common2.fmap (fun categ ->
           rewrite_categ_using_entities s categ file hentities
         ) in
-        Some (s, categ,{ l = PI.line_of_info info; c = PI.col_of_info info; })
+        Some (s, categ,{ Common2.l = PI.line_of_info info; c = PI.col_of_info info; })
     )) +> List.flatten
 
 (*****************************************************************************)
@@ -280,7 +280,7 @@ let tokens_with_categ_of_file file hentities =
         ~parse:(parse_cache 
          (fun file -> Java (Parse_java.parse file +> fst))
           (function 
-          | Java (ast, toks) -> [Common.some ast, (toks)] 
+          | Java (ast, toks) -> [Common2.some ast, (toks)] 
           | _ -> raise Impossible))
         ~highlight_visit:Highlight_java.visit_toplevel
         ~info_of_tok:Token_helpers_java.info_of_tok
@@ -360,7 +360,7 @@ let tokens_with_categ_of_file file hentities =
    * # -*- org   indication.
    * very pad and code-overlay specific.
    *)
-  | FT.Text ("txt") when Common.basename file =$= "info.txt" ->
+  | FT.Text ("txt") when Common2.basename file =$= "info.txt" ->
       let org = Org_mode.parse file in
       Org_mode.highlight org
 

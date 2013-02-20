@@ -22,7 +22,7 @@ let test_parse_cpp ?lang xs  =
   let fullxs = Lib_parsing_cpp.find_cpp_files_of_dir_or_files xs in
   let fullxs =
     match xs with
-    | [dir] when Common.is_directory dir ->
+    | [dir] when Common2.is_directory dir ->
       let file = Filename.concat dir "skip_list.txt" in
       if Sys.file_exists file
       then 
@@ -35,7 +35,7 @@ let test_parse_cpp ?lang xs  =
   Parse_cpp.init_defs !Flag.macros_h;
 
   let stat_list = ref [] in
-  let newscore  = Common.empty_score () in
+  let newscore  = Common2.empty_score () in
 
   fullxs +> List.iter (fun file -> 
     pr2 ("PARSING: " ^ file);
@@ -46,19 +46,19 @@ let test_parse_cpp ?lang xs  =
 
     let s = spf "bad = %d" stat.Stat.bad in
     if stat.Stat.bad = 0
-    then Hashtbl.add newscore file (Common.Ok)
-    else Hashtbl.add newscore file (Common.Pb s)
+    then Hashtbl.add newscore file (Common2.Ok)
+    else Hashtbl.add newscore file (Common2.Pb s)
   );
 
   Stat.print_recurring_problematic_tokens !stat_list;
   (match xs with 
-  | [dirname] when is_directory dirname ->
+  | [dirname] when Common2.is_directory dirname ->
       pr2 "--------------------------------";
       pr2 "regression testing  information";
       pr2 "--------------------------------";
       let score_path = Filename.concat !Flag.path "tmp" in
       let str = Str.global_replace (Str.regexp "/") "__" dirname in
-      Common.regression_testing newscore 
+      Common2.regression_testing newscore 
         (Filename.concat score_path
             ("score_parsing__" ^str ^ "cpp" ^ ".marshalled"));
 

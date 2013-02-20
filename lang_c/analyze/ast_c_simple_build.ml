@@ -315,9 +315,9 @@ and stmt env x =
           A.DoWhile (stmt env st, expr env e)
       | For (_, (_, ((est1, _), (est2, _), (est3, _)), _), st) ->
           A.For (
-            Common.fmap (expr env) est1,
-            Common.fmap (expr env) est2,
-            Common.fmap (expr env) est3,
+            Common2.fmap (expr env) est1,
+            Common2.fmap (expr env) est2,
+            Common2.fmap (expr env) est3,
             stmt env st
           )
 
@@ -573,7 +573,7 @@ and full_type env x =
         let def' = { A.
           s_name = name;
           s_kind = struct_kind env kind;
-          s_flds = Common.map (class_member_sequencable env) xs +> List.flatten;
+          s_flds = Common2.map (class_member_sequencable env) xs +> List.flatten;
         }
         in
         env.struct_defs_toadd <- def' :: env.struct_defs_toadd;

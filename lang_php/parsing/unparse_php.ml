@@ -97,7 +97,7 @@ let debug = false
  *)
 let string_of_program2 ast2 = 
   let ast = Parse_php.program_of_program2 ast2 in
-  Common.with_open_stringbuf (fun (_pr_with_nl, buf) ->
+  Common2.with_open_stringbuf (fun (_pr_with_nl, buf) ->
     let pp s = Buffer.add_string buf s in
     let cur_line = ref 1 in
 
@@ -112,7 +112,7 @@ let string_of_program2 ast2 =
             let line = p.Parse_info.line in 
             if line > !cur_line
             then begin
-              (line - !cur_line) +> Common.times (fun () -> pp "\n"); 
+              (line - !cur_line) +> Common2.times (fun () -> pp "\n"); 
               cur_line := line;
             end;
             let s =  p.Parse_info.str in
@@ -169,14 +169,14 @@ let mk_unparser_visitor pp =
 
 let string_of_infos ii = 
   (* todo: keep space, keep comments *)
-  ii |> List.map (fun info -> Ast.str_of_info info) |> Common.join ""
+  ii +> List.map (fun info -> Ast.str_of_info info) +> Common.join ""
 
 let string_of_expr_old e = 
   let ii = Lib_parsing_php.ii_of_any (Expr e) in
   string_of_infos ii
 
 let string_of_any any = 
-  Common.with_open_stringbuf (fun (_pr_with_nl, buf) ->
+  Common2.with_open_stringbuf (fun (_pr_with_nl, buf) ->
     let pp s = Buffer.add_string buf s in
     (mk_unparser_visitor pp) any
   )
@@ -228,8 +228,8 @@ let rec ast2_to_elts ast2 =
         | AddAfter toadd -> [elt_of_tok tok; Added (s_of_add toadd)]
         | AddBefore toadd -> [Added (s_of_add toadd); elt_of_tok tok]
         )
-    ) |> List.flatten
-  ) |> List.flatten
+    ) +> List.flatten
+  ) +> List.flatten
 
 (* but needs to keep the Removed, otherwise drop_whole_line_if_only_removed()
  * can not know which new empty lines it has to remove
@@ -252,7 +252,7 @@ let drop_esthet_between_removed xs =
  * was removed, which is what we want most of the time
  *)
 let drop_whole_line_if_only_removed xs =
-  let (before_first_newline, xxs) = xs +> Common.group_by_pre (function
+  let (before_first_newline, xxs) = xs +> Common2.group_by_pre (function
     | Esthet Newline -> true | _ -> false)
   in
   let xxs = xxs +> Common.exclude (fun (newline, elts_after_newline) ->
@@ -273,7 +273,7 @@ let drop_whole_line_if_only_removed xs =
 
 let string_of_program2_using_transfo ast2 =
 
-  Common.with_open_stringbuf (fun (_pr_with_nl, buf) ->
+  Common2.with_open_stringbuf (fun (_pr_with_nl, buf) ->
     let pp s = Buffer.add_string buf s in
 
     let xs = ast2_to_elts ast2 in

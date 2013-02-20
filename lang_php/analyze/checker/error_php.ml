@@ -253,7 +253,7 @@ let warning loc err =
   Common.push2 { loc = loc; typ = err; sev = Warning } _errors
 
 let report_all_errors () = 
-  !_errors |> List.rev |> List.iter report_error
+  !_errors +> List.rev +> List.iter report_error
 
 (*****************************************************************************)
 (* Ranking *)
@@ -275,13 +275,13 @@ let rank_errors errs =
     | UseOfUndefinedMember _ -> 5
     (* todo: *)
     | _ -> 0
-  ) +> Common.sort_by_val_highfirst +> Common.map fst
+  ) +> Common.sort_by_val_highfirst +> Common2.map fst
 
 
 let show_10_most_recurring_unused_variable_names () =
 
   (* most recurring, probably false positives *)
-  let hcount_str = Common.hash_with_default (fun() -> 0) in
+  let hcount_str = Common2.hash_with_default (fun() -> 0) in
 
   !_errors +> List.iter (fun err ->
     match err.typ with

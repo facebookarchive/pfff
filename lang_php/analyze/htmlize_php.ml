@@ -63,7 +63,7 @@ let magic_newline = "MAGIC_NEWLINE666"
 let pretty_print_limit = 10000000
 
 let decorate_pcdata_with_attributes pcdata attrs =
-  attrs |> List.fold_left (fun acc attr ->
+  attrs +> List.fold_left (fun acc attr ->
     match attr with
     | `FOREGROUND s -> 
         let (r,g,b) = Simple_color.rgb_of_string s in
@@ -109,7 +109,7 @@ let htmlize_pre_xhtml ?(use_magic_newline=false) ~hook_token filename db =
   let prefs = Highlight_code.default_highlighter_preferences in
 
   let inside_pre = 
-    asts_and_toks |> List.map (fun (id, ast, toks) ->
+    asts_and_toks +> List.map (fun (id, ast, toks) ->
 
       let h = Hashtbl.create 101 in
 
@@ -119,7 +119,7 @@ let htmlize_pre_xhtml ?(use_magic_newline=false) ~hook_token filename db =
         ~tag:(fun info categ -> Hashtbl.add h info categ)
         prefs  empty_hentities  (ast, toks);
       
-      toks |> Common.map_filter (fun tok -> 
+      toks +> Common.map_filter (fun tok -> 
         let info = Token_helpers_php.info_of_tok tok in
         let s = Token_helpers_php.str_of_tok tok in
 
@@ -127,7 +127,7 @@ let htmlize_pre_xhtml ?(use_magic_newline=false) ~hook_token filename db =
         then None
         else begin
 
-        let categ = Common.hfind_option info h in
+        let categ = Common2.hfind_option info h in
         let attrs =
           match categ with
           | None -> []
@@ -136,17 +136,17 @@ let htmlize_pre_xhtml ?(use_magic_newline=false) ~hook_token filename db =
 
         (* old: decorate_pcdata_with_attributes (H.pcdata s) attrs *)
 
-        let xs = Common.lines_with_nl_either s in
+        let xs = Common2.lines_with_nl_either s in
         let res = 
           xs +> List.map (function
-          | Left s -> 
+          | Common2.Left s -> 
               (* by default would return H.pcdata s, but
                * could also be used to transform text into
                * clickable elements, as in lxr
                *)
               let data = hook_token s tok categ in
               decorate_pcdata_with_attributes data attrs
-          | Right () ->
+          | Common2.Right () ->
               (* no need for attributes for newlines *)
               H.pcdata 
                 (if use_magic_newline then magic_newline else "\n")
@@ -154,8 +154,8 @@ let htmlize_pre_xhtml ?(use_magic_newline=false) ~hook_token filename db =
         in
         Some res
         end
-      ) |> List.flatten
-    ) |> List.flatten
+      ) +> List.flatten
+    ) +> List.flatten
   in
   inside_pre
 
@@ -173,7 +173,7 @@ let htmlize ~hook_token filename db =
             ])
         ))
   in
-  Common.with_open_stringbuf (fun (pr, buf) -> 
+  Common2.with_open_stringbuf (fun (pr, buf) -> 
     let pr_no_nl s = Buffer.add_string buf s in
     H.pretty_print ~width:pretty_print_limit pr_no_nl html
   )
@@ -186,7 +186,7 @@ let htmlize_pre ~hook_token filename db =
   let html = H.magic_tag elt_list in
 
   let s =
-    Common.with_open_stringbuf (fun (pr, buf) -> 
+    Common2.with_open_stringbuf (fun (pr, buf) -> 
       let pr_no_nl s = Buffer.add_string buf s in
       XML.pretty_print 
         ~preformatted:["MAGIC_TAG_666"]
@@ -199,7 +199,7 @@ let htmlize_pre ~hook_token filename db =
 
   let s = Pcre.replace ~rex:rex1 ~templ:"" s in
   let s = Pcre.replace ~rex:rex2 ~templ:"" s in
-  Common.lines s
+  Common2.lines s
 
 
 
@@ -214,7 +214,7 @@ let htmlize_pre_does_not_work ~hook_token filename db =
   let xs = 
     elt_list +> List.map (fun elt ->
       let s = 
-        Common.with_open_stringbuf (fun (pr, buf) -> 
+        Common2.with_open_stringbuf (fun (pr, buf) -> 
           let pr_no_nl s = Buffer.add_string buf s in
           
           XML.pretty_print ~width:5000 pr_no_nl (Obj.magic elt)
@@ -233,5 +233,5 @@ let htmlize_pre_does_not_work ~hook_token filename db =
     )
   in
   let s = Common.join "" xs in
-  Common.lines s
+  Common2.lines s
 

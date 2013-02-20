@@ -724,13 +724,13 @@ let (info_from_charpos2: int -> filename -> (int * int * string)) =
     match s with
       Some s ->
         let s = s ^ "\n" in
-        if (!posl + slength s > charpos)
+        if (!posl + String.length s > charpos)
         then begin
           close_in chan;
           (!linen, charpos - !posl, s)
         end
         else begin
-          posl := !posl + slength s;
+          posl := !posl + String.length s;
           charpos_to_pos_aux !posl;
         end
     | None -> (!linen, charpos - !posl, "\n")
@@ -746,7 +746,7 @@ let info_from_charpos a b =
 
 let full_charpos_to_pos2 = fun filename ->
 
-  let size = (filesize filename + 2) in
+  let size = (Common2.filesize filename + 2) in
 
     let arr = Array.create size  (0,0) in
 
@@ -761,10 +761,10 @@ let full_charpos_to_pos2 = fun filename ->
        incr line;
 
        (* '... +1 do'  cos input_line dont return the trailing \n *)
-       for i = 0 to (slength s - 1) + 1 do
+       for i = 0 to (String.length s - 1) + 1 do
          arr.(!charpos + i) <- (!line, i);
        done;
-       charpos := !charpos + slength s + 1;
+       charpos := !charpos + String.length s + 1;
        full_charpos_to_pos_aux();
 
      with End_of_file ->
@@ -782,7 +782,7 @@ let full_charpos_to_pos a =
   profile_code "Common.full_charpos_to_pos" (fun () -> full_charpos_to_pos2 a)
 
 let test_charpos file =
-  full_charpos_to_pos file +> dump +> pr2
+  full_charpos_to_pos file +> Common2.dump +> pr2
 
 
 
@@ -797,7 +797,7 @@ let complete_parse_info filename table x =
 
 let full_charpos_to_pos_large2 = fun filename ->
 
-  let size = (filesize filename + 2) in
+  let size = (Common2.filesize filename + 2) in
 
     (* old: let arr = Array.create size  (0,0) in *)
     let arr1 = Bigarray.Array1.create
@@ -819,12 +819,12 @@ let full_charpos_to_pos_large2 = fun filename ->
           incr line;
 
           (* '... +1 do'  cos input_line dont return the trailing \n *)
-          for i = 0 to (slength s - 1) + 1 do
+          for i = 0 to (String.length s - 1) + 1 do
             (* old: arr.(!charpos + i) <- (!line, i); *)
             arr1.{!charpos + i} <- (!line);
             arr2.{!charpos + i} <- i;
           done;
-          charpos := !charpos + slength s + 1;
+          charpos := !charpos + String.length s + 1;
         end done
      with End_of_file ->
        for i = !charpos to (* old: Array.length arr *)
@@ -864,7 +864,7 @@ let (error_messagebis: filename -> (string * int) -> int -> string)=
   let (line, pos, linecontent) =  info_from_charpos charpos filename in
   spf "File \"%s\", line %d, column %d,  charpos = %d
     around = '%s', whole content = %s"
-    filename line pos charpos tok (chop linecontent)
+    filename line pos charpos tok (Common2.chop linecontent)
 
 let error_message = fun filename (lexeme, lexstart) ->
   try error_messagebis filename (lexeme, lexstart) 0

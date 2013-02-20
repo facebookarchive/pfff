@@ -35,12 +35,12 @@ module PI = Parse_info
 (* the token list contains also the comment-tokens *)
 type program2 = Ast_java.program option * Parser_java.token list
 
-let program_of_program2 x = Common.some (fst x)
+let program_of_program2 x = Common2.some (fst x)
 
 (*****************************************************************************)
 (* Wrappers *)
 (*****************************************************************************)
-let pr2_err, pr2_once = Common.mk_pr2_wrappers Flag.verbose_parsing 
+let pr2_err, pr2_once = Common2.mk_pr2_wrappers Flag.verbose_parsing 
 
 (*****************************************************************************)
 (* Helpers *)
@@ -125,7 +125,7 @@ exception Parse_error of Parse_info.info
 let parse2 filename = 
 
   let stat = Parse_info.default_stat filename in
-  let filelines = Common.cat_array filename in
+  let filelines = Common2.cat_array filename in
 
   let toks = tokens filename in
   let toks = Parsing_hacks_java.fix_tokens toks in
@@ -155,7 +155,7 @@ let parse2 filename =
       (* no error recovery, the whole file is discarded *)
       tr.PI.passed <- List.rev toks;
 
-      let info_of_bads = Common.map_eff_rev TH.info_of_tok tr.PI.passed in 
+      let info_of_bads = Common2.map_eff_rev TH.info_of_tok tr.PI.passed in 
 
       Right (info_of_bads, line_error, current, e)
   in

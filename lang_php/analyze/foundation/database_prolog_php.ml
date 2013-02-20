@@ -375,7 +375,7 @@ let add_uses_and_properties id kind ast pr db =
         pr (spf "extends(%s, '%s')." (name_id id db) (Ast.name x));
       );
       def.c_implements +> Common.do_option (fun (tok, interface_list) ->
-        interface_list +> Ast.uncomma |> List.iter (fun x ->
+        interface_list +> Ast.uncomma +> List.iter (fun x ->
           (* could put implements instead? it's not really the same
            * kind of extends. Or have a extends_interface/2? maybe
            * not worth it, just add kind(X, class) when using children/2
@@ -516,7 +516,7 @@ let append_callgraph_to_prolog_db2 ?(show_progress=true) g file =
     then Hashtbl.add h_oldcallgraph s true
   );
 
-  Common.with_open_outfile_append file (fun (pr, _chan) ->
+  Common2.with_open_outfile_append file (fun (pr, _chan) ->
     let pr s = pr (s ^ "\n") in
     pr "";
     g +> Map_poly.iter (fun src xs ->

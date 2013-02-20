@@ -126,7 +126,7 @@ let insert_virtual_positions l =
  * in the token original list.
  *)
 let fix_tokens2 ~macro_defs tokens = 
-  let tokens2 = ref (tokens +> acc_map TV.mk_token_extended) in
+  let tokens2 = ref (tokens +> Common2.acc_map TV.mk_token_extended) in
   
   (* ifdef *)
   let cleaner = !tokens2 +> filter_comment_stuff in
@@ -202,7 +202,7 @@ let fix_tokens2 ~macro_defs tokens =
   
   Parsing_hacks_cpp.reclassify_tokens_before_idents_or_typedefs multi_grouped;
   
-  insert_virtual_positions (!tokens2 +> acc_map (fun x -> x.TV.t))
+  insert_virtual_positions (!tokens2 +> Common2.acc_map (fun x -> x.TV.t))
 
 
 let fix_tokens ~macro_defs a = 

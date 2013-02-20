@@ -160,7 +160,7 @@ let build_mem_db file =
    * the include in the file and see where the files are.
    *)
   let env = 
-    Env_php.mk_env (Common.dirname file)
+    Env_php.mk_env (Common2.dirname file)
   in
   let root = "/" in (* todo ? *)
 
@@ -215,7 +215,7 @@ let main_action xs =
           Some (Database_php_build.build_entity_finder db) 
       in
       let env = 
-        Env_php.mk_env (Common.dirname file)
+        Env_php.mk_env (Common2.dirname file)
       in
       Check_all_php.check_file ~find_entity env file
     with 
@@ -223,8 +223,8 @@ let main_action xs =
 (*    | (Unix.Unix_error(_, "waitpid", "")) as exn -> raise exn *)
     | exn ->
         Common.push2 (spf "PB with %s, exn = %s" file 
-                         (Common.string_of_exn exn)) errors;
-        if !Common.debugger then raise exn
+                         (Common.exn_to_s exn)) errors;
+        if !Common2.debugger then raise exn
   ));
 
   let errs = !Error_php._errors +> List.rev in
@@ -244,7 +244,7 @@ let main_action xs =
 
   !layer_file +> Common.do_option (fun file ->
     (*  a layer needs readable paths, hence the root *)
-    let root = Common.common_prefix_of_files_or_dirs xs in
+    let root = Common2.common_prefix_of_files_or_dirs xs in
 
     Layer_checker_php.gen_layer ~root ~output:file !Error_php._errors
   );
@@ -298,7 +298,7 @@ let type_inference file =
 (*---------------------------------------------------------------------------*)
 let test () =
   let suite = Unit_checker_php.unittest in
-  OUnit.run_test_tt suite |> ignore;
+  OUnit.run_test_tt suite +> ignore;
   ()
 
 (*---------------------------------------------------------------------------*)
@@ -347,9 +347,9 @@ let options () =
   ] ++
   Flag_analyze_php.cmdline_flags_verbose () ++
   Common.options_of_actions action (all_actions()) ++
-  Common.cmdline_flags_devel () ++
-  Common.cmdline_flags_verbose () ++
-  Common.cmdline_flags_other () ++
+  Common2.cmdline_flags_devel () ++
+  Common2.cmdline_flags_verbose () ++
+  Common2.cmdline_flags_other () ++
   [
   "-version",   Arg.Unit (fun () ->
     pr2 (spf "scheck version: %s" Config_pfff.version);
@@ -373,7 +373,7 @@ let options () =
 let main () =
 
   let usage_msg =
-    "Usage: " ^ Common.basename Sys.argv.(0) ^
+    "Usage: " ^ Common2.basename Sys.argv.(0) ^
       " [options] <file or dir> " ^ "\n" ^ "Options are:" ^
       "https://github.com/facebook/pfff/wiki/Scheck"
   in

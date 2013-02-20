@@ -123,7 +123,7 @@ let parse file =
         s
   )
   in
-  let spatch_without_patch_annot = Common.unlines ys in
+  let spatch_without_patch_annot = Common2.unlines ys in
   (* pr2 spatch_without_patch_annot; *)
 
   let pattern = 
@@ -178,13 +178,13 @@ let parse file =
         (* if the next line was a +, then associate with the last token
          * on this line
          *)
-        (match Common.hfind_option (line+1) hline_env with
+        (match Common2.hfind_option (line+1) hline_env with
         | None -> 
             (* probably because was last line *) 
             ()
         | Some (Plus toadd) ->
             (* todo? what if there is no token on this line ? *)
-            let last_tok = Common.list_last toks_at_line in
+            let last_tok = Common2.list_last toks_at_line in
 
             (* ugly hack *)
             let toadd =
@@ -213,7 +213,7 @@ let parse file =
   pattern
 
 let parse_string spatch_str =
-  Common.with_tmp_file ~str:spatch_str ~ext:".spatch" 
+  Common2.with_tmp_file ~str:spatch_str ~ext:".spatch" 
     (fun file -> parse file)
 
 let spatch ?(case_sensitive=false) pattern file =

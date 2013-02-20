@@ -14,7 +14,7 @@
  *)
 open Common
 (* floats are the norm in graphics *)
-open Common.ArithFloatInfix
+open Common2.ArithFloatInfix
 
 module CairoH = Cairo_helpers3
 module DM = Dependencies_matrix_code
@@ -152,7 +152,7 @@ let config_of_path (path: DM.config_path) m =
 let init_world ?(width = 600) ?(height = 600) path model =
   let config = config_of_path path model in
   let m, gopti = 
-    Common.profile_code2 "Model.building matrix" (fun () -> 
+    Common.profile_code "Model.building matrix" (fun () -> 
       Dependencies_matrix_code.build config 
         (Some model.constraints) model.gopti
     )

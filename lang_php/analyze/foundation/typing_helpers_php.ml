@@ -50,11 +50,11 @@ module Classes: sig
 end = struct
 
   let add env n x =
-    env.db.classes := SMap.add n (Common.serial x) !(env.db.classes)
+    env.db.classes := SMap.add n (Common2.serial x) !(env.db.classes)
 
   let get env n =
     let x = SMap.find n !(env.db.classes) in
-    Common.unserial x
+    Common2.unserial x
 
   let remove env x =
     env.db.classes := SMap.remove x !(env.db.classes)
@@ -72,11 +72,11 @@ module Functions: sig
 end = struct
 
   let add env n x =
-    env.db.funcs := SMap.add n (Common.serial x) !(env.db.funcs)
+    env.db.funcs := SMap.add n (Common2.serial x) !(env.db.funcs)
 
   let get env n =
     let x = SMap.find n !(env.db.funcs) in
-    Common.unserial x
+    Common2.unserial x
 
   let remove env x =
     env.db.funcs := SMap.remove x !(env.db.funcs)

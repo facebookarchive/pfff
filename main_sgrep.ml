@@ -78,7 +78,7 @@ let print_match mvars mvar_binding tokens_matched_code =
 
       let strings_metavars =
         xs +> List.map (fun x ->
-          match Common.assoc_option x mvar_binding with
+          match Common2.assoc_option x mvar_binding with
           | Some any ->
               Lib_parsing_php.ii_of_any any
               +> List.map Ast.str_of_info 
@@ -99,7 +99,7 @@ let print_simple_match tokens_matched_code =
 let gen_layer ~root ~query file =
   pr2 ("generating layer in " ^ file);
 
-  let root = Common.relative_to_absolute root in
+  let root = Common2.relative_to_absolute root in
 
   let toks = !_matching_tokens in
   let kinds = ["m" (* match *), "red"] in
@@ -108,7 +108,7 @@ let gen_layer ~root ~query file =
   let files_and_lines = toks +> List.map (fun tok ->
     let file = Ast.file_of_info tok in
     let line = Ast.line_of_info tok in
-    let file' = Common.relative_to_absolute file in 
+    let file' = Common2.relative_to_absolute file in 
     Common.filename_without_leading_path root file', line
   )
   in
@@ -118,7 +118,7 @@ let gen_layer ~root ~query file =
     description = "output of sgrep";
     kinds = kinds;
     files = group +> List.map (fun (file, lines) ->
-      let lines = Common.uniq lines in
+      let lines = Common2.uniq lines in
       (file, { Layer_code.
                micro_level = (lines +> List.map (fun l -> l, "m"));
                macro_level =  if null lines then [] else ["m", 1.];
@@ -161,7 +161,7 @@ let main_action xs =
   );
 
   !layer_file +> Common.do_option (fun file ->
-    let root = Common.common_prefix_of_files_or_dirs xs in
+    let root = Common2.common_prefix_of_files_or_dirs xs in
     gen_layer ~root ~query:query_string  file
   );
   ()
@@ -181,7 +181,7 @@ let dump_sgrep_pattern file =
 open OUnit
 let test () =
   let suite = "sgrep" >::: Unit_matcher_php.sgrep_unittest in
-  OUnit.run_test_tt suite |> ignore;
+  OUnit.run_test_tt suite +> ignore;
   ()
 
 (*---------------------------------------------------------------------------*)
@@ -231,7 +231,7 @@ let options () =
   ] ++
   (* old: Flag_parsing_php.cmdline_flags_pp () ++ *)
   Common.options_of_actions action (all_actions()) ++
-  Common.cmdline_flags_devel () ++
+  Common2.cmdline_flags_devel () ++
   [
   "-version",   Arg.Unit (fun () -> 
     pr2 (spf "sgrep_php version: %s" Config_pfff.version);
@@ -248,7 +248,7 @@ let options () =
 let main () = 
   let usage_msg = 
     spf "Usage: %s [options] <pattern> <file or dir> \nDoc: %s\nOptions:"
-      (Common.basename Sys.argv.(0))
+      (Common2.basename Sys.argv.(0))
       "https://github.com/facebook/pfff/wiki/Sgrep"
   in
   (* does side effect on many global flags *)

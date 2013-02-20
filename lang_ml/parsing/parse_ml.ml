@@ -41,7 +41,7 @@ let program_of_program2 xs =
 (*****************************************************************************)
 (* Wrappers *)
 (*****************************************************************************)
-let pr2_err, pr2_once = Common.mk_pr2_wrappers Flag.verbose_parsing 
+let pr2_err, pr2_once = Common2.mk_pr2_wrappers Flag.verbose_parsing 
 
 (*****************************************************************************)
 (* Helpers *)
@@ -68,7 +68,7 @@ let rec distribute_info_items_toplevel2 xs toks filename =
           
       let toks_before_max, toks_after = 
         Common.profile_code "spanning tokens" (fun () ->
-          toks +> Common.span_tail_call (fun tok ->
+          toks +> Common2.span_tail_call (fun tok ->
             match Parse_info.compare_pos (TH.info_of_tok tok) max with
             | -1 | 0 -> true
             | 1 -> false
@@ -101,7 +101,7 @@ let error_msg_tok tok =
 let tokens2 file = 
   let table     = Parse_info.full_charpos_to_pos_large file in
 
-  Common.with_open_infile file (fun chan -> 
+  Common2.with_open_infile file (fun chan -> 
     let lexbuf = Lexing.from_channel chan in
 
     try 
@@ -174,7 +174,7 @@ exception Parse_error of Parse_info.info
 let parse2 filename = 
 
   let stat = Parse_info.default_stat filename in
-  let filelines = Common.cat_array filename in
+  let filelines = Common2.cat_array filename in
 
   let toks = tokens filename in
 
@@ -205,7 +205,7 @@ let parse2 filename =
       (* no error recovery, the whole file is discarded *)
       tr.PI.passed <- List.rev toks;
 
-      let info_of_bads = Common.map_eff_rev TH.info_of_tok tr.PI.passed in 
+      let info_of_bads = Common2.map_eff_rev TH.info_of_tok tr.PI.passed in 
 
       Right (info_of_bads, line_error, current, e)
   in

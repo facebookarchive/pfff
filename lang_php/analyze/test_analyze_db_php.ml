@@ -55,9 +55,9 @@ let test_deadcode_php files_or_dirs =
   let dead =
     Deadcode_php.finding_dead_functions hooks_deadcode db
   in
-  pr_xxxxxxxxxxxxxxxxx();
+  Common2.pr_xxxxxxxxxxxxxxxxx();
   pr "Dead functions:";
-  pr_xxxxxxxxxxxxxxxxx();
+  Common2.pr_xxxxxxxxxxxxxxxxx();
   dead +> List.iter (fun (s, id) ->
     pr (spf "%s at %s" s (Database_php.str_of_id id db));
   );
@@ -81,7 +81,7 @@ let test_callgraph_php files_or_dirs =
   db.Db.fullid_of_id#iter (fun (id, _) ->
     try
       let callsites = Db.callees_of_id id db in
-      callsites |> List.iter (fun (Callgraph_php.CallSite (id2, kind_call)) ->
+      callsites +> List.iter (fun (Callgraph_php.CallSite (id2, kind_call)) ->
         g#add_arc (id, id2) ();
       )
     with
@@ -147,7 +147,7 @@ let test_includers_php metapath file _depth =
   Database_php.with_db ~metapath (fun db ->
     let file = Common.realpath file in
     let xs = Db.includers_rec_of_file file db in
-    xs |> List.iter pr;
+    xs +> List.iter pr;
   )
 
 let test_includees_php metapath file depth =
@@ -155,7 +155,7 @@ let test_includees_php metapath file depth =
     let file = Common.realpath file in
     (*
     let xs = Db.includees_rec_of_file file db in
-      xs |> List.iter pr;
+      xs +> List.iter pr;
     *)
     let g = Db.includees_graph_of_file ~depth_limit:(Some depth) file db in
     Graph.print_graph_generic
@@ -171,7 +171,7 @@ let test_includees_php metapath file depth =
 (*---------------------------------------------------------------------------*)
 let generate_html_php file =
   let file = Common.realpath file in
-  let nblines = Common.cat file |> List.length in
+  let nblines = Common.cat file +> List.length in
 
   let db = Database_php_build.db_of_files_or_dirs [file] in
   let xs = Htmlize_php.htmlize_pre 

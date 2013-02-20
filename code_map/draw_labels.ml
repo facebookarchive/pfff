@@ -16,7 +16,7 @@
  *)
 (*e: Facebook copyright *)
 open Common
-open Common.ArithFloatInfix
+open Common2.ArithFloatInfix
 
 open Figures (* for the fields *)
 open Model2 (* for the fields *)

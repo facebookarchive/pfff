@@ -32,9 +32,9 @@ module SMap = Map.Make (String)
 (*****************************************************************************)
 
 type database = {
-  funs_juju    : Ast_php_simple.func_def Common.cached SMap.t ref;
-  classes_juju : Ast_php_simple.class_def Common.cached SMap.t ref;
-  constants_juju: Ast_php_simple.constant_def Common.cached SMap.t ref;
+  funs_juju    : Ast_php_simple.func_def Common2.cached SMap.t ref;
+  classes_juju : Ast_php_simple.class_def Common2.cached SMap.t ref;
+  constants_juju: Ast_php_simple.constant_def Common2.cached SMap.t ref;
 }
 
 (*****************************************************************************)
@@ -61,7 +61,7 @@ let juju_db_of_files ?(show_progress=false) xs =
           let s = (A.unwrap name) in
           if SMap.mem s !aref
           then pr2 (spf "ERROR in %s, %s is already present" file s);
-          aref := SMap.add s (Common.serial c) !aref
+          aref := SMap.add s (Common2.serial c) !aref
         in
         match x with
         | ClassDef c -> add db.classes_juju c.c_name c
@@ -86,7 +86,7 @@ let juju_db_of_files ?(show_progress=false) xs =
  *)
 let code_database_of_juju_db db = 
   let get s aref =
-    let x = SMap.find s !aref in Common.unserial x
+    let x = SMap.find s !aref in Common2.unserial x
   in
  { Env.
    funs      = (fun s -> get s db.funs_juju);

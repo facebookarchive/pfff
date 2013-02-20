@@ -37,7 +37,7 @@ module CG = Callgraph_php2
 (* Types *)
 (*****************************************************************************)
 
-type stat = (string, int) Common.hash_with_default
+type stat = (string, int) Common2.hash_with_default
 
 (* todo? move this in h_program-lang/ ? This is quite similar to
  * statistics_code.mli ? but want the kinds of the toplevel funcalls,
@@ -123,8 +123,8 @@ let stat_of_program ?(hooks=default_hooks) h file ast =
   let inc fld = h#update fld (fun old -> old + 1); () in
 
   let current_node = ref (CG.File file) in
-  h#update "LOC" (fun old -> old + Common.nblines_with_wc file);
-  h#update "SOC" (fun old -> old + Common.filesize file);
+  h#update "LOC" (fun old -> old + Common2.nblines_with_wc file);
+  h#update "SOC" (fun old -> old + Common2.filesize file);
   
 
   (Program ast) +> V.mk_visitor { V.default_visitor with

@@ -66,7 +66,7 @@ let lookup_env a b =
   Common.profile_code "CheckVar.lookup_env" (fun () -> lookup_env2  a b)
 
 let lookup_env_opt a b = 
-  Common.optionise (fun () -> lookup_env a b)
+  Common2.optionise (fun () -> lookup_env a b)
 
 (*****************************************************************************)
 (* Helpers *)
@@ -78,7 +78,7 @@ let lookup_env_opt a b =
 
 (* use a ref because we may want to modify it *)
 let (initial_env: environment ref) = ref [
-(*  Env_php.globals_builtins |> List.map (fun s ->
+(*  Env_php.globals_builtins +> List.map (fun s ->
     fake_dname s, (S.Global, ref 1)
   )
 *)
@@ -102,7 +102,7 @@ let do_in_new_scope f =
   end
 
 let add_in_scope namedef =
-  let (current, older) = Common.uncons !_scoped_env in
+  let (current, older) = Common2.uncons !_scoped_env in
   _scoped_env := (namedef::current)::older
 
 
@@ -133,7 +133,7 @@ let do_in_new_scope_and_check f =
   let top = top_scope () in
   del_scope();
 
-  top |> List.rev |> List.iter (fun (name, (scope, aref)) ->
+  top +> List.rev +> List.iter (fun (name, (scope, aref)) ->
     if !aref = 0 
     then 
       let s = Ast.string_of_name_tmp name in

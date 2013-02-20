@@ -69,7 +69,7 @@ let defs_of_files_or_dirs ?(verbose=false) xs =
          pr2 (spf "PARSING error in %s" (Parse_info.string_of_info pos));
          []
      in
-    let filelines = Common.cat_array file in
+    let filelines = Common2.cat_array file in
     let defs = ref [] in
     let h = Hashtbl.create 101 in
 
@@ -90,14 +90,14 @@ let defs_of_files_or_dirs ?(verbose=false) xs =
         let info = Token_helpers_ml.info_of_tok tok in
         let s = Token_helpers_ml.str_of_tok tok in
 
-        let categ = Common.hfind_option info h in
+        let categ = Common2.hfind_option info h in
         
         categ +> Common.do_option (fun x ->
           entity_of_highlight_category_opt x +> Common.do_option (fun kind ->
 
               Common.push2 (Tags.tag_of_info filelines info kind) defs;
 
-              let (d,b,e) = Common.dbe_of_filename file in
+              let (d,b,e) = Common2.dbe_of_filename file in
               let module_name = String.capitalize b in
 
               let info' = Parse_info.rewrap_str (module_name ^ "." ^ s) info in
@@ -109,7 +109,7 @@ let defs_of_files_or_dirs ?(verbose=false) xs =
 
               if e = "ml" ||
                  (e = "mli" && not (Sys.file_exists
-                                      (Common.filename_of_dbe (d,b, "ml"))))
+                                      (Common2.filename_of_dbe (d,b, "ml"))))
               then
                 Common.push2 (Tags.tag_of_info filelines info' kind) defs;
           )

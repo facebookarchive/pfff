@@ -48,7 +48,7 @@ let location_of_angle (line, file) xs =
   | [Angle [T (TLowerIdent "invalid"); T (TLowerIdent "sloc")]] ->
       [Other]
   | xs ->
-      let xxs = Common.split_gen_when 
+      let xxs = Common2.split_gen_when 
         (function (T TComma)::xs -> Some xs | _ -> None) xs in
       xxs +> List.map (function
         | [T (TLowerIdent "line"); T TColon; T (TInt i1);T TColon; T(TInt i2)]->

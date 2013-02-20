@@ -40,13 +40,13 @@ let for_json = {
 
 (*
 let string_of_expr x = 
-  x |> Meta_ast_js.vof_expr |> Ocaml.json_of_v |> Json_out.string_of_json
+  x +> Meta_ast_js.vof_expr +> Ocaml.json_of_v +> Json_out.string_of_json
 let string_of_toplevel x = 
-  x |> Meta_ast_js.vof_toplevel |> Ocaml.json_of_v |> Json_out.string_of_json
+  x +> Meta_ast_js.vof_toplevel +> Ocaml.json_of_v +> Json_out.string_of_json
 *)
 let string_json_of_program x = 
-  x |> Meta_ast_js.vof_program for_json 
-    |> Ocaml.json_of_v |> Json_out.string_of_json
+  x +> Meta_ast_js.vof_program for_json 
+    +> Ocaml.json_of_v +> Json_out.string_of_json
 
 
 (*****************************************************************************)

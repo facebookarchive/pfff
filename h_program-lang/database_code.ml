@@ -154,7 +154,7 @@ type entity = {
   e_fullname: string;
 
   e_file: Common.filename;
-  e_pos: Common.filepos;
+  e_pos: Common2.filepos;
   
   (* Semantic information that can be leverage by a code visualizer.
    * The fields are set as mutable because usually we compute
@@ -321,7 +321,7 @@ let entity_kind_of_string s =
 (*---------------------------------------------------------------------------*)
 
 let json_of_filepos x = 
-  J.Array [J.Int x.Common.l; J.Int x.Common.c]
+  J.Array [J.Int x.Common2.l; J.Int x.Common2.c]
 
 let json_of_property x =
   match x with
@@ -370,7 +370,7 @@ let ids_of_json json =
 let filepos_of_json json = 
   match json with
   | J.Array [J.Int l; J.Int c] ->
-      { Common.l = l; Common.c = c }
+      { Common2.l = l; Common2.c = c }
   | _ -> failwith "Bad json"
 
 let property_of_json json =
@@ -466,14 +466,14 @@ let load_database2 file =
      * one wants to have a readable database.
      *)
     let json = 
-      Common.profile_code2 "Json_in.load_json" (fun () ->
+      Common.profile_code "Json_in.load_json" (fun () ->
         Json_in.load_json file
       ) in
     database_of_json json
-  else Common.get_value file
+  else Common2.get_value file
 
 let load_database file =
-  Common.profile_code2 "Db.load_db" (fun () -> load_database2 file)
+  Common.profile_code "Db.load_db" (fun () -> load_database2 file)
 
 (* We allow to save in JSON format because it may be useful to let
  * the user edit read the generated data.
@@ -487,7 +487,7 @@ let save_database database file =
     database +> json_of_database 
     +> Json_io.string_of_json ~compact:false ~recursive:false
     +> Common.write_file ~file
-  else Common.write_value database file
+  else Common2.write_value database file
 
 
 (*****************************************************************************)
@@ -568,8 +568,8 @@ let entity_and_highlight_category_correpondance entity categ =
  *)
 let alldirs_and_parent_dirs_of_relative_dirs dirs =
   dirs 
-  +> List.map Common.inits_of_relative_dir 
-  +> List.flatten +> Common.uniq_eff
+  +> List.map Common2.inits_of_relative_dir 
+  +> List.flatten +> Common2.uniq_eff
 
 
 let merge_databases db1 db2 =
@@ -578,7 +578,7 @@ let merge_databases db1 db2 =
   then begin
     pr2 (spf "merge_database: the root differs, %s != %s"
             db1.root db2.root);
-    if not (Common.y_or_no "Continue ?")
+    if not (Common2.y_or_no "Continue ?")
     then failwith "ok we stop";
   end;
 
@@ -604,7 +604,7 @@ let merge_databases db1 db2 =
     dirs = (db1.dirs ++ db2.dirs) 
       +> Common.group_assoc_bykey_eff
       +> List.map (fun (file, xs) ->
-        file, Common.sum xs
+        file, Common2.sum xs
       );
     files = db1.files ++ db2.files; (* should ensure exclusive ? *)
     entities = Array.append db1.entities db2_entities_adjusted;
@@ -625,26 +625,26 @@ let build_top_k_sorted_entities_per_file2 ~k xs =
   ) +> Common.hash_of_list
 
 let build_top_k_sorted_entities_per_file ~k xs =
-  Common.profile_code2 "Db.build_sorted_entities" (fun () ->
+  Common.profile_code "Db.build_sorted_entities" (fun () ->
     build_top_k_sorted_entities_per_file2 ~k xs
   )
 
 
 let mk_dir_entity dir n = { 
-  e_name = Common.basename dir ^ "/";
+  e_name = Common2.basename dir ^ "/";
   e_fullname = "";
   e_file = dir;
-  e_pos = { Common.l = 1; Common.c = 0 };
+  e_pos = { Common2.l = 1; c = 0 };
   e_kind = Dir;
   e_number_external_users = n;
   e_good_examples_of_use = [];
   e_properties = [];
 }
 let mk_file_entity file n = { 
-  e_name = Common.basename file;
+  e_name = Common2.basename file;
   e_fullname = "";
   e_file = file;
-  e_pos = { Common.l = 1; Common.c = 0 };
+  e_pos = { Common2.l = 1; c = 0 };
   e_kind = File;
   e_number_external_users = n;
   e_good_examples_of_use = [];
@@ -662,7 +662,7 @@ let mk_multi_dirs_entity name dirs_entities =
   (* hack *)
   e_file = Common.join "|" dirs_fullnames;
 
-  e_pos = { Common.l = 1; Common.c = 0 };
+  e_pos = { Common2.l = 1; c = 0 };
   e_kind = MultiDirs;
   e_number_external_users = 
     (* todo? *)
@@ -676,7 +676,7 @@ let multi_dirs_entities_of_dirs es =
   es +> List.iter (fun e ->
     Hashtbl.add h e.e_name e
   );
-  let keys = Common.hkeys h in
+  let keys = Common2.hkeys h in
   keys +> Common.map_filter (fun k ->
     let vs = Hashtbl.find_all h k in
     if List.length vs > 1
@@ -688,7 +688,7 @@ let files_and_dirs_database_from_root root =
 
   (* quite similar to what we first do in a database_light_xxx.ml *)
   let files = Common.files_of_dir_or_files_no_vcs_nofilter [root] in
-  let dirs = files +> List.map Filename.dirname +> Common.uniq_eff in
+  let dirs = files +> List.map Filename.dirname +> Common2.uniq_eff in
 
   let dirs = dirs +> List.map (fun s -> 
     Common.filename_without_leading_path root s) in
@@ -758,7 +758,7 @@ let files_and_dirs_and_sorted_entities_for_completion2
   
 let files_and_dirs_and_sorted_entities_for_completion
     ~threshold_too_many_entities a =
- Common.profile_code2 "Db.sorted_entities" (fun () ->
+ Common.profile_code "Db.sorted_entities" (fun () ->
    files_and_dirs_and_sorted_entities_for_completion2
     ~threshold_too_many_entities a)
 
@@ -770,14 +770,14 @@ let files_and_dirs_and_sorted_entities_for_completion
  *)
 let adjust_method_or_field_external_users ~verbose entities =
   (* phase1: collect all method counts *)
-  let h_method_def_count = Common.hash_with_default (fun () -> 0) in
+  let h_method_def_count = Common2.hash_with_default (fun () -> 0) in
   
   entities +> Array.iter (fun e ->
     match e.e_kind with
     (* do also for staticMethods ? hmm should be less needed *)
     | Method RegularMethod | Field ->
         let k = e.e_name in
-        h_method_def_count#update k (Common.add1)
+        h_method_def_count#update k (Common2.add1)
     | _ -> ()
   );
 

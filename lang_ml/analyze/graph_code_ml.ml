@@ -89,14 +89,14 @@ let lookup_module_name h_module_aliases s =
  * TODO: extract Function, Type, Constructor, Field, etc.
  *)
 let extract_defs ~g ~duplicate_modules ~ast ~readable ~file =
-  let dir = Common.dirname readable in
+  let dir = Common2.dirname readable in
   G.create_intermediate_directories_if_not_present g dir;
   let m = Module_ml.module_name_of_filename file in
 
   g +> G.add_node (readable, E.File);
 
   match () with
-  | _ when List.mem m (Common.keys duplicate_modules) ->
+  | _ when List.mem m (Common2.keys duplicate_modules) ->
       (* we could attach to two parents when we are almost sure that
        * nobody will reference this module (e.g. because it's an 
        * entry point), but then all the uses in those files would
@@ -208,7 +208,7 @@ let build ?(verbose=true) dir skip_list =
 
   let duplicate_modules =
     files 
-    +> Common.group_by_mapped_key (fun f -> Common.basename f)
+    +> Common.group_by_mapped_key (fun f -> Common2.basename f)
     +> List.filter (fun (k, xs) -> List.length xs >= 2)
     +> List.map (fun (k, xs) -> Module_ml.module_name_of_filename k, xs)
   in

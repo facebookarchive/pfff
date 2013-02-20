@@ -42,7 +42,7 @@ type deadcode_patch_info = {
   file     : Common.filename; (* relative to the project *)
   reviewer : string option;
   cc       : string option;
-  date     : Common.date_dmy;
+  date     : Common2.date_dmy;
 }
 
 

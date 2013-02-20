@@ -58,7 +58,7 @@ let defs_of_graph_code ?(verbose=false) g =
       let text = 
         try 
           let array = Common.memoized hmemo_file_array file (fun () ->
-            Common.cat_array file
+            Common2.cat_array file
           )
           in
           (* not sure why, but can't put an empty string for 
@@ -98,7 +98,7 @@ let defs_of_graph_code ?(verbose=false) g =
       )
     )
   );
-  Common.hkeys hfile_to_tags +> List.map (fun file ->
+  Common2.hkeys hfile_to_tags +> List.map (fun file ->
     file, 
     Hashtbl.find_all hfile_to_tags file 
     +> List.map (fun tag -> tag.Tags_file.byte_offset, tag)

@@ -199,10 +199,10 @@ let version = 1
 
 let save g file =
   (* see ocamlgraph FAQ *)
-  Common.write_value (g, !Ocamlgraph.Blocks.cpt_vertex, version) file
+  Common2.write_value (g, !Ocamlgraph.Blocks.cpt_vertex, version) file
 
 let load file =
-  let (g, serialized_cpt_vertex, version2) = Common.get_value file in
+  let (g, serialized_cpt_vertex, version2) = Common2.get_value file in
   if version != version2
   then failwith (spf "your marshalled file has an old version, delete it");
   Ocamlgraph.Blocks.after_unserialization serialized_cpt_vertex;
@@ -228,7 +228,7 @@ let succ n e g =
 
 let parent n g =
   let xs = G.pred n g.has in
-  Common.list_to_single_or_exn xs
+  Common2.list_to_single_or_exn xs
 
 let parents n g =
   G.pred n g.has
@@ -276,7 +276,7 @@ let all_nodes g =
 (*****************************************************************************)
 
 let create_intermediate_directories_if_not_present g dir =
-  let dirs = Common.inits_of_relative_dir dir in
+  let dirs = Common2.inits_of_relative_dir dir in
 
   let rec aux current xs =
     match xs with
@@ -342,7 +342,7 @@ let file_of_node n g =
     )
 
 let group_edges_by_files_edges xs g =
-  xs +> Common.group_by_mapped_key (fun (n1, n2) ->
+  xs +> Common2.group_by_mapped_key (fun (n1, n2) ->
     (file_of_node n1 g, file_of_node n2 g)
   ) +> List.map (fun (x, deps) -> List.length deps, (x, deps))
     +> Common.sort_by_key_highfirst

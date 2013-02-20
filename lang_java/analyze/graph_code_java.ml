@@ -149,13 +149,13 @@ let rec classname_and_info_of_typ t =
   | TBasic x -> x
   | TArray t -> classname_and_info_of_typ t
   | TClass xs ->
-      let x = Common.list_last xs in
+      let x = Common2.list_last xs in
       let (ident, _args) = x in
       ident
 
 (* quite similar to create_intermediate_directories_if_not_present *)
 let create_intermediate_packages_if_not_present g root xs =
-  let dirs = Common.inits xs +> List.map str_of_qualified_ident in
+  let dirs = Common2.inits xs +> List.map str_of_qualified_ident in
   let dirs = 
     match dirs with
     | ""::xs -> xs
@@ -339,7 +339,7 @@ let rec extract_defs_uses ~phase ~g ~ast ~readable ~lookup_fails =
     match ast.package with
     (* have None usually for scripts, tests, or entry points *)
     | None ->
-        let dir = Common.dirname readable in
+        let dir = Common2.dirname readable in
         G.create_intermediate_directories_if_not_present g dir;
         g +> G.add_node (readable, E.File);
         g +> G.add_edge ((dir, E.Dir), (readable, E.File))  G.Has;
@@ -428,7 +428,7 @@ and class_decl env def =
   }
   in
   let parents = 
-    Common.option_to_list def.cl_extends ++
+    Common2.option_to_list def.cl_extends ++
     (def.cl_impls)
   in
   List.iter (typ env) parents;
@@ -621,17 +621,17 @@ and stmt env = function
    *)
   | Label (_id, st) -> stmt env st
   | Break _idopt | Continue _idopt -> ()
-  | Return eopt -> exprs env (Common.option_to_list eopt)
+  | Return eopt -> exprs env (Common2.option_to_list eopt)
   | Sync (e, st) ->
       expr env e;
       stmt env st;
   | Try (st, xs, stopt) ->
       stmt env st;
       catches env xs;
-      stmts env (Common.option_to_list stopt);
+      stmts env (Common2.option_to_list stopt);
   | Throw e -> expr env e
   | Assert (e, eopt) ->
-      exprs env (e::Common.option_to_list eopt)
+      exprs env (e::Common2.option_to_list eopt)
   (* The modification of env.params_locals is done in decls() *)
   | LocalVar f -> field env f
   | LocalClass def -> class_decl env def
@@ -851,7 +851,7 @@ let build ?(verbose=true) ?(only_defs=false) dir_or_file skip_list =
   let g = G.create () in
   G.create_initial_hierarchy g;
 
-  let lookup_fails = Common.hash_with_default (fun () -> 0) in
+  let lookup_fails = Common2.hash_with_default (fun () -> 0) in
 
   (* step1: creating the nodes and 'Has' edges, the defs *)
   if verbose then pr2 "\nstep1: extract defs";

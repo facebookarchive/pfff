@@ -99,7 +99,7 @@ module Db = Database_php
 (* Wrappers *)
 (*****************************************************************************)
 let verbose_reaper = ref false
-let pr2, pr2_once = Common.mk_pr2_wrappers verbose_reaper
+let pr2, pr2_once = Common2.mk_pr2_wrappers verbose_reaper
 
 (*****************************************************************************)
 (* Types and globals *)
@@ -166,7 +166,7 @@ type deadcode_patch_info = {
   file     : Common.filename; (* path relative to the project *)
   reviewer : string option; (* maybe nobody ... *)
   cc       : string option;
-  date     : Common.date_dmy;
+  date     : Common2.date_dmy;
 }
 
 type dead_ids_by_file = 
@@ -183,9 +183,9 @@ let group_ids_by_file ids db =
 
 let ungroup_ids_by_file grouped_ids = 
   grouped_ids 
-  |> List.map (fun (file, ids) -> 
+  +> List.map (fun (file, ids) -> 
        ids +> List.map (fun (s, fullid, id) -> id))
-  |> List.flatten
+  +> List.flatten
 
 (*****************************************************************************)
 (* Deadcode analysis Helpers *)
@@ -473,8 +473,8 @@ let get_lines_to_remove db ids =
     let minline = min.Parse_info.line in
     let maxline = max.Parse_info.line in
     let minline_comment = min_comment.Parse_info.line in
-    { just_code_lines = enum minline maxline;
-      code_and_comment_lines = enum minline_comment maxline
+    { just_code_lines = Common2.enum minline maxline;
+      code_and_comment_lines = Common2.enum minline_comment maxline
     }
   ) 
   +> (fun couples -> 
@@ -536,7 +536,7 @@ let generate_deadcode_patch ~prj_path ~filename ~filename_in_project
       lines_to_remove.just_code_lines
   in
 
-  let (dir, base) = Common.db_of_filename filename_in_project in
+  let (dir, base) = Common2.db_of_filename filename_in_project in
   let finaldir = Filename.concat hooks.patches_path dir in
   pr2(spf "Blaming %s for file %s" blame filename_in_project);
   Common.command2("mkdir -p " ^ finaldir);
@@ -544,11 +544,11 @@ let generate_deadcode_patch ~prj_path ~filename ~filename_in_project
   let patchfile = spf "%s/%s__%s__%s.patch" 
     finaldir
     blame 
-    (Common.string_of_date_dmy date)
+    (Common2.string_of_date_dmy date)
     base
   in
   pr2 ("Generating: " ^ patchfile);
-  Common.uncat xs' patchfile;
+  Common2.uncat xs' patchfile;
   ()
 
 
@@ -578,7 +578,7 @@ let deadcode_patch_info patch =
         file = file;
         reviewer = reviewer;
         cc = cc;
-        date = Common.date_dmy_of_string date;
+        date = Common2.date_dmy_of_string date;
       }
     else 
       failwith ("WIERD: content of deadcode patch seems invalid: " ^ first_line)
@@ -592,16 +592,16 @@ let deadcode_patch_info patch =
 (* who has the most deadcode :) *)
 let deadcode_stat dir = 
   let files = 
-    Common.files_of_dir_or_files_no_vcs_post_filter "" [dir ^ "/"] in
+    Common2.files_of_dir_or_files_no_vcs_post_filter "" [dir ^ "/"] in
   let h = Hashtbl.create 101 in
 
   files +> List.iter (fun file ->
 
     let info = deadcode_patch_info file in
     let nblines = Common.cat file +> List.length in
-    let author = Common.some_or info.reviewer "NOBODYTOBLAME" in
-    Common.hupdate_default author (fun old -> old + nblines) 
-      Common.cst_zero  h
+    let author = Common2.some_or info.reviewer "NOBODYTOBLAME" in
+    Common2.hupdate_default author (fun old -> old + nblines) 
+      Common2.cst_zero  h
   
   (* old: Common.command2(spf "mv \"%s\" \"%s.patch\" " file file); *)
   );
@@ -610,7 +610,7 @@ let deadcode_stat dir =
   sorted +> List.iter (fun (author, count) ->
     pr2(spf "%15s = %d lines of dead code" author count);
   );
-  let total = sorted +> List.map snd +> Common.sum_int in
+  let total = sorted +> List.map snd +> Common2.sum_int in
   pr2 (spf "total = %d" total);
   ()
 
@@ -625,7 +625,7 @@ let deadcode_stat dir =
 let deadcode_analysis hooks db = 
 
   if hooks.with_blame then begin
-    if not (Common.command2_y_or_no("rm -rf " ^ hooks.patches_path))
+    if not (Common2.command2_y_or_no("rm -rf " ^ hooks.patches_path))
     then failwith "ok we stop";
     Common.command2("mkdir -p " ^ hooks.patches_path);
   end;

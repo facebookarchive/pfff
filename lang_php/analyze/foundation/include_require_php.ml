@@ -12,7 +12,6 @@
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the file
  * license.txt for more details.
  *)
-
 open Common
 
 open Ast_php
@@ -269,7 +268,7 @@ let all_increq_of_any =
 
 let top_increq_of_program asts = 
   let stmts = Lib_parsing_php.top_statements_of_program asts in
-  stmts |> Common.map_filter (fun st ->
+  stmts +> Common.map_filter (fun st ->
     match st with
     | ExprStmt (e, tok) -> 
         increq_of_include_stmt e
@@ -339,7 +338,7 @@ let resolve_path (env, pwd) incexpr =
 (* note: copy pasted in flib.ml *)
 let includes_of_file env file = 
   let ast = Parse_php.parse_program file in
-  let dir = dirname file in
+  let dir = Common2.dirname file in
   
   let incs = all_increq_of_any (Program ast) in
   incs +> Common.map_filter (fun (_kind, tok, incexpr) ->
@@ -381,7 +380,7 @@ let recursive_included_files_of_file
        * info is in env ? :)
        *)
       if verbose then begin
-        Common._tab_level_print := depth;
+        Common2._tab_level_print := depth;
         pr2 (spf "->%s" file);
       end;
 
@@ -428,7 +427,7 @@ let recursive_included_files_of_file
   in
   (match default_algo with
   | Dfs -> 
-      Common.save_excursion Common._tab_level_print 1 (fun () ->
+      Common.save_excursion Common2._tab_level_print 1 (fun () ->
         aux_dfs 0 file [];
       )
       

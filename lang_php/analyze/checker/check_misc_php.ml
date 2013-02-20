@@ -67,7 +67,7 @@ let check ast =
        *)
       | InstanceOf (e, tok, classname) ->
           let str = Ast.str_of_info tok in
-          let lower = Common.lowercase str in
+          let lower = Common2.lowercase str in
           if not (str =$= lower)
           then E.warning tok E.CaseSensitivityKeyword;
           k e

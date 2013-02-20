@@ -39,7 +39,7 @@ let bdb_size_tables = 50000
 
 let create_bdb ?(size_buffer=800) metapath dbname env = 
   let transact () = None in
-  let (fv, unv) = Common.id, Common.id in
+  let (fv, unv) = Common2.id, Common2.id in
   let flag_size_buffer_oassoc_buffer = size_buffer in
 
   Oassocbdb.create_bdb metapath dbname env transact (fv, unv) 
@@ -74,21 +74,21 @@ exception DatabaseAlreadyLocked
 let lockfile metapath = Filename.concat metapath "lockfile.lock" 
 
 let acquire_lock metapath = 
-  try Common.acquire_file_lock (lockfile metapath)
-  with Common.FileAlreadyLocked -> raise DatabaseAlreadyLocked
+  try Common2.acquire_file_lock (lockfile metapath)
+  with Common2.FileAlreadyLocked -> raise DatabaseAlreadyLocked
 
 let release_lock metapath = 
-  Common.release_file_lock (lockfile metapath)
+  Common2.release_file_lock (lockfile metapath)
 
 (*****************************************************************************)
 (* Main entry point *)
 (*****************************************************************************)
 
 let open_db metapath = 
-  let metapath = Common.chop_dirsymbol metapath in
+  let metapath = Common2.chop_dirsymbol metapath in
   check_is_database_dir metapath;
 
-  let prj = Common.read_value (metapath ^ "/prj.raw") in
+  let prj = Common2.read_value (metapath ^ "/prj.raw") in
   acquire_lock metapath;
   
   (* assert (default_metapath_of_project prj = metapath); 

@@ -83,7 +83,7 @@ let unknown_location = "Unknown_Location", E.File
 
 let parse2 file = 
   (* clang2_old: Parse_clang.parse file *)
-  Common.get_value file
+  Common2.get_value file
 let parse a = 
   Common.profile_code "Parse_clang.parse" (fun () -> parse2 a)
 
@@ -183,7 +183,7 @@ let rec extract_defs_uses env ast =
   in
 
   if env.phase = Defs then begin
-    let dir = Common.dirname readable in
+    let dir = Common2.dirname readable in
     G.create_intermediate_directories_if_not_present env.g dir;
     let node = (readable, E.File) in
     env.g +> G.add_node node;

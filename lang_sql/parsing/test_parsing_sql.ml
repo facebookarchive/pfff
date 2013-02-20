@@ -26,7 +26,7 @@ let test_parse_sql file  =
 let stress_parse_sql file =
   let xs = Common.cat file in
   
-  let ys = Common.split_list_regexp "^-----------" xs in
+  let ys = Common2.split_list_regexp "^-----------" xs in
   let bad = ref 0 in 
   let nbtotal = List.length ys in 
 
