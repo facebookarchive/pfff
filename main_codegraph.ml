@@ -539,7 +539,14 @@ let extra_actions () = [
   Common.mk_action_4_arg (fun graph file file2 dst -> 
     adjust_graph graph file file2 dst);
   "-analyze", " <graph>",
-  Common.mk_action_1_arg (fun graph -> analyze_backward_deps graph);
+  Common.mk_action_1_arg (fun graph_file -> 
+    analyze_backward_deps graph_file
+  );
+  "-protected_to_private", " <graph>",
+  Common.mk_action_1_arg (fun graph_file ->
+    let g = Graph_code.load graph_file in
+    Graph_code_analysis.protected_to_private g
+  );
 (*
   "-test_phylomel", " <geno file>",
   Common.mk_action_1_arg test_phylomel;
