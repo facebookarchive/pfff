@@ -570,7 +570,7 @@ let options () = [
   " ";
 
   "-symlinks", Arg.Unit (fun () -> 
-      Common2.follow_symlinks := true;
+      Common.follow_symlinks := true;
     ), " ";
  
   "-verbose", Arg.Unit (fun () ->

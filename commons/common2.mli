@@ -11,23 +11,8 @@
  * the "Flags and actions" section at the end of this file.
  *)
 
-(* if set then will not do certain finalize so faster to go back in replay *)
-val debugger : bool ref
-
-type prof = PALL | PNONE | PSOME of string list
-val profile : prof ref
-val show_trace_profile : bool ref
-
-
 val verbose_level : int ref
 
-(* forbid pr2_once to do the once "optimisation" *)
-val disable_pr2_once : bool ref
-
-
-
-(* works with new_temp_file *)
-val save_tmp_files : bool ref
 (*e: common.mli globals flags *)
 
 (*****************************************************************************)
@@ -154,8 +139,6 @@ val pr2_xxxxxxxxxxxxxxxxx : unit -> unit
 val pr2_gen: 'a -> unit
 val dump: 'a -> string
 
-(* see flag: val disable_pr2_once : bool ref *)
-val _already_printed : (string, bool) Hashtbl.t
 val pr2_once : string -> unit
 
 val mk_pr2_wrappers: bool ref -> (string -> unit) * (string -> unit)
@@ -239,22 +222,6 @@ val profile_diagnostic_basic : unit -> string
 
 val time_func : (unit -> 'a) -> 'a
 
-
-
-(* see flag: type prof = PALL | PNONE | PSOME of string list *)
-(* see flag: val profile : prof ref *)
-
-val _profile_table : (string, (float ref * int ref)) Hashtbl.t ref
-val profile_code : string -> (unit -> 'a) -> 'a
-val profile_diagnostic : unit -> string
-
-val profile_code_exclusif : string -> (unit -> 'a) -> 'a
-val profile_code_inside_exclusif_ok : string -> (unit -> 'a) -> 'a
-
-val report_if_take_time : int -> string -> (unit -> 'a) -> 'a
-
-(* similar to profile_code but print some information during execution too *)
-val profile_code2 : string -> (unit -> 'a) -> 'a
 (*x: common.mli basic features *)
 (*****************************************************************************)
 (* Test. But have a look at ounit.mli *)
@@ -429,12 +396,6 @@ val save_excursion : 'a ref -> 'a -> (unit -> 'b) -> 'b
 val save_excursion_and_disable : bool ref -> (unit -> 'b) -> 'b
 val save_excursion_and_enable :  bool ref -> (unit -> 'b) -> 'b
 
-(* emacs spirit *)
-val unwind_protect : (unit -> 'a) -> (exn -> 'b) -> 'a
-
-(* java spirit *)
-val finalize :       (unit -> 'a) -> (unit -> 'b) -> 'a
-
 val memoized : 
   ?use_cache:bool -> ('a, 'b) Hashtbl.t -> 'a -> (unit -> 'b) -> 'b
 
@@ -464,10 +425,6 @@ val oncef : ('a -> unit) -> ('a -> unit)
 val once: bool ref -> (unit -> unit) -> unit
 
 val before_leaving : ('a -> unit) -> 'a -> 'a
-
-(* do some finalize, signal handling, unix exit conversion, etc *)
-val main_boilerplate : (unit -> unit) -> unit
-
 
 (* cf also the timeout function below that are control related too *)
 (*x: common.mli basic features *)
@@ -521,74 +478,7 @@ val check_stack_nbfiles: int -> unit
 (* internally common.ml set Gc. parameters *)
 val _init_gc_stack : unit
 (*x: common.mli basic features *)
-(*****************************************************************************)
-(* Arguments and command line *)
-(*****************************************************************************)
 
-type arg_spec_full = Arg.key * Arg.spec * Arg.doc
-type cmdline_options = arg_spec_full list
-
-
-type options_with_title = string * string * arg_spec_full list
-type cmdline_sections = options_with_title list
-
-
-(* A wrapper around Arg modules that have more logical argument order, 
- * and returns the remaining args.
- *)
-val parse_options : 
-  cmdline_options -> Arg.usage_msg -> string array -> string list
-
-(* Another wrapper that does Arg.align automatically *)
-val usage : Arg.usage_msg -> cmdline_options -> unit
-
-
-
-(* Work with the options_with_title type way to organize a long
- * list of command line switches.
- *)
-val short_usage : 
-  Arg.usage_msg -> short_opt:cmdline_options -> unit
-val long_usage : 
-  Arg.usage_msg -> short_opt:cmdline_options -> long_opt:cmdline_sections -> 
-  unit
-
-(* With the options_with_title way, we don't want the default -help and --help
- * so need adapter of Arg module, not just wrapper.
- *)
-val arg_align2 : cmdline_options -> cmdline_options
-val arg_parse2 : 
-  cmdline_options -> Arg.usage_msg -> (unit -> unit) (* short_usage func *) -> 
-  string list
-
-
-
-
-
-(* The action lib. Useful to debug supart of your system. cf some of
- * my main.ml for example of use. *)
-type flag_spec   = Arg.key * Arg.spec * Arg.doc
-type action_spec = Arg.key * Arg.doc * action_func 
-   and action_func = (string list -> unit)
-
-type cmdline_actions = action_spec list
-exception WrongNumberOfArguments
-
-val mk_action_0_arg : (unit -> unit)                       -> action_func
-val mk_action_1_arg : (string -> unit)                     -> action_func
-val mk_action_2_arg : (string -> string -> unit)           -> action_func
-val mk_action_3_arg : (string -> string -> string -> unit) -> action_func
-val mk_action_4_arg : (string -> string -> string -> string -> unit) -> 
-  action_func
-
-val mk_action_n_arg : (string list -> unit) -> action_func
-
-val options_of_actions: 
-  string ref (* the action ref *) -> cmdline_actions -> cmdline_options
-val action_list: 
-  cmdline_actions -> Arg.key list
-val do_action: 
-  Arg.key -> string list (* args *) -> cmdline_actions -> unit
 (*x: common.mli basic features *)
 (*****************************************************************************)
 (* Equality *)
@@ -1216,7 +1106,6 @@ val readdir_to_dir_size_list : string -> (string * int) list
 
 val unixname: unit -> string
 
-val follow_symlinks: bool ref
 
 val glob : string -> filename list
 val files_of_dir_or_files : 
@@ -1243,10 +1132,6 @@ val file_perm_of : u:rwx -> g:rwx -> o:rwx -> Unix.file_perm
 val has_env : string -> bool
 
 (* scheme spirit. do a finalize so no leak. *)
-val with_open_outfile : 
-  filename -> ((string -> unit) * out_channel -> 'a) -> 'a
-val with_open_infile : 
-  filename -> (in_channel -> 'a) -> 'a
 val with_open_outfile_append : 
   filename -> ((string -> unit) * out_channel -> 'a) -> 'a
 
@@ -1268,15 +1153,6 @@ val timeout_function :
 
 val timeout_function_opt : int option -> (unit -> 'a) -> 'a
 
-
-(* creation of /tmp files, a la gcc 
- * ex: new_temp_file "cocci" ".c" will give "/tmp/cocci-3252-434465.c" 
- *)
-val _temp_files_created : string list ref
-(* see flag: val save_tmp_files : bool ref *)
-val new_temp_file : string (* prefix *) -> string (* suffix *) -> filename
-val erase_temp_files : unit -> unit
-val erase_this_temp_file : filename -> unit
 
 val with_tmp_file: str:string -> ext:string -> (filename -> 'a) -> 'a
 
@@ -2170,10 +2046,10 @@ val unserial: 'a cached -> 'a
 (* Postlude *)
 (*###########################################################################*)
 (*s: common.mli postlude *)
-val cmdline_flags_devel : unit -> cmdline_options
-val cmdline_flags_verbose : unit -> cmdline_options
-val cmdline_flags_other : unit -> cmdline_options
+val cmdline_flags_devel : unit -> Common.cmdline_options
+val cmdline_flags_verbose : unit -> Common.cmdline_options
+val cmdline_flags_other : unit -> Common.cmdline_options
 
-val cmdline_actions : unit -> cmdline_actions
+val cmdline_actions : unit -> Common.cmdline_actions
 (*e: common.mli postlude *)
 (*e: common.mli *)

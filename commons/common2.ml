@@ -111,34 +111,6 @@ let push2 v l =
 let null xs = match xs with [] -> true | _ -> false
 
 
-
-
-let debugger = ref false
-
-let unwind_protect f cleanup =
-  if !debugger then f () else
-    try f ()
-    with e -> begin cleanup e; raise e end
-
-let finalize f cleanup =
-  (* bug: we can not just call f in debugger mode because
-   * this change the semantic of the program. I originally
-   * put this code below:
-   *   if !debugger then f () else
-   * because I wanted some errors to pop-out to the top so I can
-   * debug them but because now I use save_excursion and finalize
-   * quite a lot this changes too much the semantic.
-   * TODO: maybe I should not use save_excursion so much ? maybe
-   *  -debugger helps see code that I should refactor ?
-   *)
-  try
-    let res = f () in
-    cleanup ();
-    res
-  with e ->
-    cleanup ();
-    raise e
-
 let command2 s = ignore(Sys.command s)
 
 
@@ -193,7 +165,7 @@ let _prefix_pr = ref ""
 
 let indent_do f =
   _tab_level_print := !_tab_level_print + _tab_indent;
-  finalize f
+  Common.finalize f
    (fun () -> _tab_level_print := !_tab_level_print - _tab_indent;)
 
 
@@ -371,15 +343,12 @@ let (dump : 'a -> string) = fun x ->
 let pr2_gen x = pr2 (dump x)
 
 (* ---------------------------------------------------------------------- *)
-let _already_printed = Hashtbl.create 101
-let disable_pr2_once = ref false
-
 let xxx_once f s =
-  if !disable_pr2_once then pr2 s
+  if !Common.disable_pr2_once then pr2 s
   else
-    if not (Hashtbl.mem _already_printed s)
+    if not (Hashtbl.mem Common._already_printed s)
     then begin
-      Hashtbl.add _already_printed s true;
+      Hashtbl.add Common._already_printed s true;
       f ("(ONCE) " ^ s);
     end
 
@@ -527,13 +496,6 @@ let debugon  () = _debug := true
 let debugoff () = _debug := false
 let debug f = if !_debug then f () else ()
 
-
-
-(* now in prelude:
- * let debugger = ref false
- *)
-
-
 (*****************************************************************************)
 (* Profiling *)
 (*****************************************************************************)
@@ -573,138 +535,11 @@ let profile_diagnostic_basic () =
     "count1 = %d\ncount2 = %d\ncount3 = %d\ncount4 = %d\ncount5 = %d\n"
     !_count1 !_count2 !_count3 !_count4 !_count5
 
-
-
 let time_func f =
   (*   let _ = Timing () in *)
   let x = f () in
   (*   let _ = Timing () in *)
   x
-
-(* ---------------------------------------------------------------------- *)
-
-type prof = PALL | PNONE | PSOME of string list
-let profile = ref PNONE
-let show_trace_profile = ref false
-
-let check_profile category =
-  match !profile with
-    PALL -> true
-  | PNONE -> false
-  | PSOME l -> List.mem category l
-
-let _profile_table = ref (Hashtbl.create 100)
-
-let adjust_profile_entry category difftime =
-  let (xtime, xcount) =
-    (try Hashtbl.find !_profile_table category
-    with Not_found ->
-      let xtime = ref 0.0 in
-      let xcount = ref 0 in
-      Hashtbl.add !_profile_table category (xtime, xcount);
-      (xtime, xcount)
-    ) in
-  xtime := !xtime +. difftime;
-  xcount := !xcount + 1;
-  ()
-
-let profile_start category = failwith "todo"
-let profile_end category = failwith "todo"
-
-
-(* subtil: don't forget to give all argumens to f, otherwise partial app
- * and will profile nothing.
- *
- * todo: try also detect when complexity augment each time, so can
- * detect the situation for a function gets worse and worse ?
- *)
-let profile_code category f =
-  if not (check_profile category)
-  then f ()
-  else begin
-  if !show_trace_profile then pr2 (spf "> %s" category);
-  let t = Unix.gettimeofday () in
-  let res, prefix =
-    try Some (f ()), ""
-    with Timeout -> None, "*"
-  in
-  let category = prefix ^ category in (* add a '*' to indicate timeout func *)
-  let t' = Unix.gettimeofday () in
-
-  if !show_trace_profile then pr2 (spf "< %s" category);
-
-  adjust_profile_entry category (t' -. t);
-  (match res with
-  | Some res -> res
-  | None -> raise Timeout
-  );
-  end
-
-
-let _is_in_exclusif = ref (None: string option)
-
-let profile_code_exclusif category f =
-  if not (check_profile category)
-  then f ()
-  else begin
-
-  match !_is_in_exclusif with
-  | Some s ->
-      failwith (spf "profile_code_exclusif: %s but already in %s " category s);
-  | None ->
-      _is_in_exclusif := (Some category);
-      finalize
-        (fun () ->
-          profile_code category f
-        )
-        (fun () ->
-          _is_in_exclusif := None
-        )
-
-  end
-
-let profile_code_inside_exclusif_ok category f =
-  failwith "Todo"
-
-
-(* todo: also put  % ? also add % to see if coherent numbers *)
-let profile_diagnostic () =
-  if !profile = PNONE then "" else
-  let xs =
-    Hashtbl.fold (fun k v acc -> (k,v)::acc) !_profile_table []
-      +> List.sort (fun (k1, (t1,n1)) (k2, (t2,n2)) -> compare t2 t1)
-    in
-    with_open_stringbuf (fun (pr,_) ->
-      pr "---------------------";
-      pr "profiling result";
-      pr "---------------------";
-      xs +> List.iter (fun (k, (t,n)) ->
-        pr (Printf.sprintf "%-40s : %10.3f sec %10d count" k !t !n)
-      )
-    )
-
-
-
-let report_if_take_time timethreshold s f =
-  let t = Unix.gettimeofday () in
-  let res = f () in
-  let t' = Unix.gettimeofday () in
-  if (t' -. t  > float_of_int timethreshold)
-  then pr2 (Printf.sprintf "Note: processing took %7.1fs: %s" (t' -. t) s);
-  res
-
-let profile_code2 category f =
-  profile_code category (fun () ->
-    if !profile = PALL
-    then pr2 ("starting: " ^ category);
-    let t = Unix.gettimeofday () in
-    let res = f () in
-    let t' = Unix.gettimeofday () in
-    if !profile = PALL
-    then pr2 (spf "ending: %s, %fs" category (t' -. t));
-    res
-  )
-
 
 (*****************************************************************************)
 (* Test *)
@@ -756,7 +591,7 @@ let (test: string -> unit) = fun s ->
 
 
 let (++) a b =
-  profile_code "++" (fun () -> a @ b)
+  Common.profile_code "++" (fun () -> a @ b)
 
 let _ex = example3 "++" ([1;2]++[3;4;5] = [1;2;3;4;5])
 
@@ -957,12 +792,12 @@ let read_value f = get_value f
 let marshal__to_string2 v flags =
   Marshal.to_string v flags
 let marshal__to_string a b =
-  profile_code "Marshalling" (fun () -> marshal__to_string2 a b)
+  Common.profile_code "Marshalling" (fun () -> marshal__to_string2 a b)
 
 let marshal__from_string2 v flags =
   Marshal.from_string v flags
 let marshal__from_string a b =
-  profile_code "Marshalling" (fun () -> marshal__from_string2 a b)
+  Common.profile_code "Marshalling" (fun () -> marshal__from_string2 a b)
 
 
 
@@ -1219,7 +1054,7 @@ type 'a mylazy = (unit -> 'a)
 let save_excursion reference newv f =
   let old = !reference in
   reference := newv;
-  finalize f (fun _ -> reference := old;)
+  Common.finalize f (fun _ -> reference := old;)
 
 let save_excursion_and_disable reference f =
   save_excursion reference false (fun () ->
@@ -1443,175 +1278,6 @@ let _init_gc_stack =
 let check_stack_nbfiles nbfiles =
   if nbfiles > 200
   then check_stack_size 2000000
-
-(*****************************************************************************)
-(* Arguments/options and command line (cocci and acomment) *)
-(*****************************************************************************)
-
-(*
- * todo? isn't unison or scott-mcpeak-lib-in-cil handles that kind of
- * stuff better ? That is the need to localize command line argument
- * while still being able to gathering them. Same for logging.
- * Similiar to the type prof = PALL | PNONE | PSOME of string list.
- * Same spirit of fine grain config in log4j ?
- *
- * todo? how mercurial/cvs/git manage command line options ? because they
- * all have a kind of DSL around arguments with some common options,
- * specific options, conventions, etc.
- *
- *
- * todo? generate the corresponding noxxx options ?
- * todo? generate list of options and show their value ?
- *
- * todo? make it possible to set this value via a config file ?
- *
- *
- *)
-
-type arg_spec_full = Arg.key * Arg.spec * Arg.doc
-type cmdline_options = arg_spec_full list
-
-(* the format is a list of triples:
- *  (title of section * (optional) explanation of sections * options)
- *)
-type options_with_title = string * string * arg_spec_full list
-type cmdline_sections = options_with_title list
-
-
-(* ---------------------------------------------------------------------- *)
-
-(* now I use argv as I like at the call sites to show that
- * this function internally use argv.
- *)
-let parse_options options usage_msg argv =
-  let args = ref [] in
-  (try
-    Arg.parse_argv argv options (fun file -> args := file::!args) usage_msg;
-    args := List.rev !args;
-    !args
-  with
-  | Arg.Bad msg -> Printf.eprintf "%s" msg; exit 2
-  | Arg.Help msg -> Printf.printf "%s" msg; exit 0
-  )
-
-
-
-
-let usage usage_msg options  =
-  Arg.usage (Arg.align options) usage_msg
-
-
-(* for coccinelle *)
-
-(* If you don't want the -help and --help that are appended by Arg.align *)
-let arg_align2 xs =
-  Arg.align xs +> List.rev +> drop 2 +> List.rev
-
-
-let short_usage usage_msg  ~short_opt =
-  usage usage_msg short_opt
-
-let long_usage  usage_msg  ~short_opt ~long_opt  =
-  pr usage_msg;
-  pr "";
-  let all_options_with_title =
-    (("main options", "", short_opt)::long_opt) in
-  all_options_with_title +> List.iter
-    (fun (title, explanations, xs) ->
-      pr title;
-      pr_xxxxxxxxxxxxxxxxx();
-      if explanations <> ""
-      then begin pr explanations; pr "" end;
-      arg_align2 xs +> List.iter (fun (key,action,s) ->
-        pr ("  " ^ key ^ s)
-      );
-      pr "";
-    );
-  ()
-
-
-(* copy paste of Arg.parse. Don't want the default -help msg *)
-let arg_parse2 l msg short_usage_fun =
-  let args = ref [] in
-  let f = (fun file -> args := file::!args) in
-  let l = Arg.align l in
-  (try begin
-    Arg.parse_argv Sys.argv l f msg;
-    args := List.rev !args;
-    !args
-   end
-  with
-  | Arg.Bad msg -> (* eprintf "%s" msg; exit 2; *)
-      let xs = lines msg in
-      (* take only head, it's where the error msg is *)
-      pr2 (List.hd xs);
-      short_usage_fun();
-      raise (UnixExit (2))
-  | Arg.Help msg -> (* printf "%s" msg; exit 0; *)
-      raise Impossible  (* -help is specified in speclist *)
-  )
-
-
-(* ---------------------------------------------------------------------- *)
-
-type flag_spec   = Arg.key * Arg.spec * Arg.doc
-type action_spec = Arg.key * Arg.doc * action_func
-   and action_func = (string list -> unit)
-
-type cmdline_actions = action_spec list
-exception WrongNumberOfArguments
-
-let options_of_actions action_ref actions =
-  actions +> List.map (fun (key, doc, _func) ->
-    (key, (Arg.Unit (fun () -> action_ref := key)), doc)
-  )
-
-let (action_list: cmdline_actions -> Arg.key list) = fun xs ->
-  List.map (fun (a,b,c) -> a) xs
-
-let (do_action: Arg.key -> string list (* args *) -> cmdline_actions -> unit) =
-  fun key args xs ->
-    let assoc = xs +> List.map (fun (a,b,c) -> (a,c)) in
-    let action_func = List.assoc key assoc in
-    action_func args
-
-
-(* todo? if have a function with default argument ? would like a
- *  mk_action_0_or_1_arg ?
- *)
-
-let mk_action_0_arg f =
-  (function
-  | [] -> f ()
-  | _ -> raise WrongNumberOfArguments
-  )
-
-let mk_action_1_arg f =
-  (function
-  | [file] -> f file
-  | _ -> raise WrongNumberOfArguments
-  )
-
-let mk_action_2_arg f =
-  (function
-  | [file1;file2] -> f file1 file2
-  | _ -> raise WrongNumberOfArguments
-  )
-
-let mk_action_3_arg f =
-  (function
-  | [file1;file2;file3] -> f file1 file2 file3
-  | _ -> raise WrongNumberOfArguments
-  )
-
-let mk_action_4_arg f =
-  (function
-  | [file1;file2;file3;file4] -> f file1 file2 file3 file4
-  | _ -> raise WrongNumberOfArguments
-  )
-
-let mk_action_n_arg f = f
-
 
 (*****************************************************************************)
 (* Equality *)
@@ -2030,7 +1696,7 @@ type bool3 = True3 | False3 | TrueFalsePb3 of string
 
 
 let (==~) s re =
-  profile_code "Common.==~" (fun () ->
+  Common.profile_code "Common.==~" (fun () ->
     Str.string_match re s 0
   )
 
@@ -2043,7 +1709,7 @@ let candidate_match_func s re =
   Str.string_match compile_re s 0
 
 let match_func s re =
-  profile_code "Common.=~" (fun () -> candidate_match_func s re)
+  Common.profile_code "Common.=~" (fun () -> candidate_match_func s re)
 
 let (=~) s re =
   match_func s re
@@ -3104,7 +2770,7 @@ let nblines_eff2 file =
   close_in ch;
   !res
 let nblines_eff a =
-  profile_code "Nblines_eff" (fun () -> nblines_eff2 a)
+  Common.profile_code "Nblines_eff" (fun () -> nblines_eff2 a)
 
 
 
@@ -3223,7 +2889,7 @@ let nblines_with_wc2 file =
   | [s] when s =~ "^[ \t]*\\([0-9]+\\) " -> s_to_i (matched1 s)
   | _ -> failwith "pb in output of wc"
 let nblines_with_wc a =
-  profile_code "Common.nblines_with_wc" (fun () -> nblines_eff2 a)
+  Common.profile_code "Common.nblines_with_wc" (fun () -> nblines_eff2 a)
 
 let unix_diff file1 file2 =
   let (xs, _status) =
@@ -3307,7 +2973,7 @@ let write_file ~file s =
   (output_string chan s; close_out chan)
 
 let unix_stat file =
-  profile_code "Unix.stat" (fun () ->
+  Common.profile_code "Unix.stat" (fun () ->
     Unix.stat file
   )
 
@@ -3350,7 +3016,7 @@ let _hmemo_unix_lstat_eff = Hashtbl.create 101
 let _hmemo_unix_stat_eff = Hashtbl.create 101
 
 let unix_lstat_eff file =
-  profile_code "Unix.lstat_eff" (fun () ->
+  Common.profile_code "Unix.lstat_eff" (fun () ->
     if is_absolute file
     then
       memoized _hmemo_unix_lstat_eff file (fun () ->
@@ -3362,7 +3028,7 @@ let unix_lstat_eff file =
   )
 
 let unix_stat_eff file =
-  profile_code "Unix.stat_eff" (fun () ->
+  Common.profile_code "Unix.stat_eff" (fun () ->
     if is_absolute file
     then
       memoized _hmemo_unix_stat_eff file (fun () ->
@@ -3478,7 +3144,7 @@ let cache_computation2 ?(verbose=false) ?(use_cache=true) file ext_cache f =
     end
   end
 let cache_computation ?verbose ?use_cache a b c =
-  profile_code "Common.cache_computation" (fun () ->
+  Common.profile_code "Common.cache_computation" (fun () ->
     cache_computation2 ?verbose ?use_cache a b c)
 
 
@@ -3510,7 +3176,7 @@ let cache_computation_robust2
   end
 
 let cache_computation_robust a b c d e =
-  profile_code "Common.cache_computation_robust" (fun () ->
+  Common.profile_code "Common.cache_computation_robust" (fun () ->
     cache_computation_robust2 a b c d e)
 
 
@@ -3533,8 +3199,6 @@ let dirs_of_dir dir =
 (* TODO: do a files_of_dir_or_files ?no_vcs ?filter:Ext|Reg|Filter
 *)
 
-let follow_symlinks = ref false
-
 (* update: have added the -type f, so normally need less the sanity_check_xxx
  * function below *)
 let files_of_dir_or_files ext xs =
@@ -3550,7 +3214,7 @@ let grep_dash_v_str =
  "| grep -v /.svn/ | grep -v .git_annot | grep -v .marshall"
 
 let arg_symlink () = 
-  if !follow_symlinks
+  if !Common.follow_symlinks
   then " -L "
   else ""
 
@@ -3635,31 +3299,12 @@ let has_env var =
   with Not_found -> false
 *)
 
-(* emacs/lisp inspiration (eric cooper and yaron minsky use that too) *)
-let (with_open_outfile: filename -> (((string -> unit) * out_channel) -> 'a) -> 'a) =
- fun file f ->
-  let chan = open_out file in
-  let pr s = output_string chan s in
-  unwind_protect (fun () ->
-    let res = f (pr, chan) in
-    close_out chan;
-    res)
-    (fun e -> close_out chan)
-
-let (with_open_infile: filename -> ((in_channel) -> 'a) -> 'a) = fun file f ->
-  let chan = open_in file in
-  unwind_protect (fun () ->
-    let res = f chan in
-    close_in chan;
-    res)
-    (fun e -> close_in chan)
-
 
 let (with_open_outfile_append: filename -> (((string -> unit) * out_channel) -> 'a) -> 'a) =
  fun file f ->
   let chan = open_out_gen [Open_creat;Open_append] 0o666 file in
   let pr s = output_string chan s in
-  unwind_protect (fun () ->
+  Common.unwind_protect (fun () ->
     let res = f (pr, chan) in
     close_out chan;
     res)
@@ -3720,42 +3365,10 @@ let timeout_function_opt timeoutvalopt f =
   | Some x -> timeout_function x f
 
 
-
-(* creation of tmp files, a la gcc *)
-
-let _temp_files_created = ref ([] : filename list)
-
-(* ex: new_temp_file "cocci" ".c" will give "/tmp/cocci-3252-434465.c" *)
-let new_temp_file prefix suffix =
-  let processid = i_to_s (Unix.getpid ()) in
-  let tmp_file = Filename.temp_file (prefix ^ "-" ^ processid ^ "-") suffix in
-  push2 tmp_file _temp_files_created;
-  tmp_file
-
-
-let save_tmp_files = ref false
-let erase_temp_files () =
-  if not !save_tmp_files then begin
-    !_temp_files_created +> List.iter (fun s ->
-      (* pr2 ("erasing: " ^ s); *)
-      command2 ("rm -f " ^ s)
-    );
-    _temp_files_created := []
-  end
-
-let erase_this_temp_file f =
-  if not !save_tmp_files then begin
-    _temp_files_created :=
-      List.filter (function x -> not (x =$= f)) !_temp_files_created;
-    command2 ("rm -f " ^ f)
-  end
-
-
 let with_tmp_file ~str ~ext f =
-  let tmpfile = new_temp_file "tmp" ext in
+  let tmpfile = Common.new_temp_file "tmp" ext in
   write_file ~file:tmpfile str;
   f tmpfile
-
 
 (* now in prelude: exception UnixExit of int *)
 let exn_to_real_unixexit f =
@@ -3766,7 +3379,7 @@ let exn_to_real_unixexit f =
 
 
 let uncat xs file =
-  with_open_outfile file (fun (pr,_chan) ->
+  Common.with_open_outfile file (fun (pr,_chan) ->
     xs +> List.iter (fun s -> pr s; pr "\n");
 
   )
@@ -4497,7 +4110,7 @@ let _ = assert_equal
     [1,"3";1,"4";1,"5";  2,"3";2,"4";2,"5"]
 
 let sort_prof a b =
-  profile_code "Common.sort_by_xxx" (fun () -> List.sort a b)
+  Common.profile_code "Common.sort_by_xxx" (fun () -> List.sort a b)
 
 type order = HighFirst | LowFirst
 let compare_order order a b =
@@ -4778,7 +4391,8 @@ let (include_set_strict: 'a set -> 'a set -> bool) = fun s1 s2 ->
 let ($*$) = inter_set
 let ($+$) = union_set
 let ($-$) = minus_set
-let ($?$) a b = profile_code "$?$" (fun () -> member_set a b)
+let ($?$) a b = 
+  Common.profile_code "$?$" (fun () -> member_set a b)
 let ($<$) = include_set_strict
 let ($<=$) = include_set
 let ($=$) = equal_set
@@ -5096,7 +4710,7 @@ let group_assoc_bykey_eff2 xs =
   keys +> List.map (fun k -> k, Hashtbl.find_all h k)
 
 let group_assoc_bykey_eff xs =
-  profile_code "Common.group_assoc_bykey_eff" (fun () ->
+  Common.profile_code "Common.group_assoc_bykey_eff" (fun () ->
     group_assoc_bykey_eff2 xs)
 
 
@@ -6181,18 +5795,18 @@ let random_subset_of_list num xs =
  *)
 let cmdline_flags_devel () =
   [
-    "-debugger",         Arg.Set debugger ,
+    "-debugger",         Arg.Set Common.debugger ,
     " option to set if launched inside ocamldebug";
-    "-profile",          Arg.Unit (fun () -> profile := PALL),
+    "-profile",          Arg.Unit (fun () -> Common.profile := Common.PALL),
     " output profiling information";
   ]
 let cmdline_flags_verbose () =
   [
     "-verbose_level",  Arg.Set_int verbose_level,
     " <int> guess what";
-    "-disable_pr2_once",     Arg.Set disable_pr2_once,
+    "-disable_pr2_once",     Arg.Set Common.disable_pr2_once,
     " to print more messages";
-    "-show_trace_profile",          Arg.Set show_trace_profile,
+    "-show_trace_profile",          Arg.Set Common.show_trace_profile,
     " show trace";
   ]
 
@@ -6202,7 +5816,7 @@ let cmdline_flags_other () =
     " ";
     "-batch_mode", Arg.Set _batch_mode,
     " no interactivity";
-    "-keep_tmp_files", Arg.Set save_tmp_files,
+    "-keep_tmp_files", Arg.Set Common.save_tmp_files,
     " ";
   ]
 
@@ -6245,7 +5859,7 @@ let cmdline_flags_other () =
 let cmdline_actions () =
   [
     "-test_check_stack", "  <limit>",
-    mk_action_1_arg test_check_stack_size;
+    Common.mk_action_1_arg test_check_stack_size;
   ]
 
 (*e: common.ml cmdline *)
@@ -6264,51 +5878,6 @@ module Infix = struct
   let (==~) = (==~)
   let (=~) = (=~)
 end
-
-
-let main_boilerplate f =
-  if not (!Sys.interactive) then
-    exn_to_real_unixexit (fun () ->
-
-      Sys.set_signal Sys.sigint (Sys.Signal_handle   (fun _ ->
-        pr2 "C-c intercepted, will do some cleaning before exiting";
-        (* But if do some try ... with e -> and if do not reraise the exn,
-         * the bubble never goes at top and so I cant really C-c.
-         *
-         * A solution would be to not raise, but do the erase_temp_file in the
-         * syshandler, here, and then exit.
-         * The current solution is to not do some wild  try ... with e
-         * by having in the exn handler a case: UnixExit x -> raise ... | e ->
-         *)
-        Sys.set_signal Sys.sigint Sys.Signal_default;
-        raise (UnixExit (-1))
-      ));
-
-      (* The finalize below makes it tedious to go back to exn when use
-       * 'back' in the debugger. Hence this special case. But the
-       * Common.debugger will be set in main(), so too late, so
-       * have to be quicker
-       *)
-      if Sys.argv +> Array.to_list +> List.exists (fun x -> x =$= "-debugger")
-      then debugger := true;
-
-      finalize          (fun ()->
-        pp_do_in_zero_box (fun () ->
-          try
-            f (); (* <---- here it is *)
-          with Unix.Unix_error (e, fm, argm) ->
-            pr2 (spf "exn Unix_error: %s %s %s\n"
-                    (Unix.error_message e) fm argm);
-            raise (Unix.Unix_error (e, fm, argm))
-        ))
-       (fun()->
-         if !profile <> PNONE
-         then pr2 (profile_diagnostic ());
-         erase_temp_files ();
-       )
-    )
-(* let _ = if not !Sys.interactive then (main ()) *)
-
 
 (* based on code found in cameleon from maxence guesdon *)
 let md5sum_of_string s =
@@ -6330,7 +5899,7 @@ let realpath path =
 
 
 let with_pr2_to_string f =
-  let file = new_temp_file "pr2" "out" in
+  let file = Common.new_temp_file "pr2" "out" in
   redirect_stdout_stderr file f;
   cat file
 
@@ -6509,7 +6078,7 @@ let common_prefix_of_files_or_dirs2 xs =
       "/" ^ join "/" dirs
 
 let common_prefix_of_files_or_dirs xs =
-  profile_code "Common.common_prefix_of" (fun () ->
+  Common.profile_code "Common.common_prefix_of" (fun () ->
     common_prefix_of_files_or_dirs2 xs)
 
 (*
@@ -6522,9 +6091,9 @@ let _ =
 *)
 
 let unix_diff_strings s1 s2 =
-  let tmp1 = new_temp_file "s1" "" in
+  let tmp1 = Common.new_temp_file "s1" "" in
   write_file tmp1 s1;
-  let tmp2 = new_temp_file "s2" "" in
+  let tmp2 = Common.new_temp_file "s2" "" in
   write_file tmp2 s2;
   unix_diff tmp1 tmp2
 

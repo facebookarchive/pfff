@@ -101,7 +101,7 @@ let error_msg_tok tok =
 let tokens2 file = 
   let table     = Parse_info.full_charpos_to_pos_large file in
 
-  Common2.with_open_infile file (fun chan -> 
+  Common.with_open_infile file (fun chan -> 
     let lexbuf = Lexing.from_channel chan in
 
     try 

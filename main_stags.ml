@@ -153,7 +153,7 @@ let options () =
     "-emacs", Arg.Unit (fun () -> format := Emacs),
     " ";
     "-symlinks", Arg.Unit (fun () -> 
-      Common2.follow_symlinks := true;
+      Common.follow_symlinks := true;
     ), " ";
     "-verbose", Arg.Set verbose, 
     " ";

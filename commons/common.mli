@@ -10,6 +10,10 @@ val (=*=): 'a -> 'a -> bool
 
 val pr : string -> unit
 val pr2 : string -> unit
+
+(* forbid pr2_once to do the once "optimisation" *)
+val _already_printed : (string, bool) Hashtbl.t
+val disable_pr2_once : bool ref
 val pr2_once : string -> unit
 
 val pr2_gen: 'a -> unit
@@ -113,10 +117,36 @@ val partition_either3 :
 type arg_spec_full = Arg.key * Arg.spec * Arg.doc
 type cmdline_options = arg_spec_full list
 
-val usage : Arg.usage_msg -> cmdline_options -> unit
+type options_with_title = string * string * arg_spec_full list
+type cmdline_sections = options_with_title list
+
+(* A wrapper around Arg modules that have more logical argument order, 
+ * and returns the remaining args.
+ *)
 val parse_options : 
   cmdline_options -> Arg.usage_msg -> string array -> string list
+(* Another wrapper that does Arg.align automatically *)
+val usage : Arg.usage_msg -> cmdline_options -> unit
 
+(* Work with the options_with_title type way to organize a long
+ * list of command line switches.
+ *)
+val short_usage : 
+  Arg.usage_msg -> short_opt:cmdline_options -> unit
+val long_usage : 
+  Arg.usage_msg -> short_opt:cmdline_options -> long_opt:cmdline_sections -> 
+  unit
+
+(* With the options_with_title way, we don't want the default -help and --help
+ * so need adapter of Arg module, not just wrapper.
+ *)
+val arg_align2 : cmdline_options -> cmdline_options
+val arg_parse2 : 
+  cmdline_options -> Arg.usage_msg -> (unit -> unit) (* short_usage func *) -> 
+  string list
+
+(* The action lib. Useful to debug supart of your system. cf some of
+ * my main.ml for example of use. *)
 type flag_spec   = Arg.key * Arg.spec * Arg.doc
 type action_spec = Arg.key * Arg.doc * action_func 
    and action_func = (string list -> unit)
@@ -141,9 +171,11 @@ val action_list:
   cmdline_actions -> Arg.key list
 
 
+(* if set then will not do certain finalize so faster to go back in replay *)
+val debugger : bool ref
+
 (* emacs spirit *)
 val unwind_protect : (unit -> 'a) -> (exn -> 'b) -> 'a
-
 (* java spirit *)
 val finalize :       (unit -> 'a) -> (unit -> 'b) -> 'a
 
@@ -159,9 +191,27 @@ val timeout_function :
   ?verbose:bool ->
   int -> (unit -> 'a) -> 'a
 
-val profile_code : string -> (unit -> 'a) -> 'a
+type prof = PALL | PNONE | PSOME of string list
+val profile : prof ref
+val show_trace_profile : bool ref
 
+val _profile_table : (string, (float ref * int ref)) Hashtbl.t ref
+val profile_code : string -> (unit -> 'a) -> 'a
+val profile_diagnostic : unit -> string
+val profile_code_exclusif : string -> (unit -> 'a) -> 'a
+val profile_code_inside_exclusif_ok : string -> (unit -> 'a) -> 'a
+val report_if_take_time : int -> string -> (unit -> 'a) -> 'a
+(* similar to profile_code but print some information during execution too *)
+val profile_code2 : string -> (unit -> 'a) -> 'a
+
+(* creation of /tmp files, a la gcc 
+ * ex: new_temp_file "cocci" ".c" will give "/tmp/cocci-3252-434465.c" 
+ *)
+val _temp_files_created : string list ref
+val save_tmp_files : bool ref
 val new_temp_file : string (* prefix *) -> string (* suffix *) -> filename
+val erase_temp_files : unit -> unit
+val erase_this_temp_file : filename -> unit
 
 val realpath: filename -> filename
 
@@ -171,6 +221,7 @@ val cache_computation :
 
 val filename_without_leading_path : string -> filename -> filename
 
+val follow_symlinks: bool ref
 val files_of_dir_or_files_no_vcs_nofilter:
  string list -> filename list
 

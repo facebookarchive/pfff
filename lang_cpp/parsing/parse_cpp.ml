@@ -216,7 +216,7 @@ let extract_macros2 file =
     Pp_token.extract_macros toks
   )
 let extract_macros a = 
-  Common2.profile_code_exclusif "Parse_cpp.extract_macros" (fun () -> 
+  Common.profile_code_exclusif "Parse_cpp.extract_macros" (fun () -> 
     extract_macros2 a)
 
 (*****************************************************************************)

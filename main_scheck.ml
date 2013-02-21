@@ -224,7 +224,7 @@ let main_action xs =
     | exn ->
         Common.push2 (spf "PB with %s, exn = %s" file 
                          (Common.exn_to_s exn)) errors;
-        if !Common2.debugger then raise exn
+        if !Common.debugger then raise exn
   ));
 
   let errs = !Error_php._errors +> List.rev in

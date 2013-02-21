@@ -320,7 +320,7 @@ let coverage_tests
      Problem (test_file, "timeout when running test and computing coverage")
     ) 
       (fun () ->
-        Common2.erase_this_temp_file trace_file;
+        Common.erase_this_temp_file trace_file;
       )
 
   in
@@ -478,7 +478,7 @@ let lines_coverage_from_tests
      pr2 (spf "PB with %s, timeout" test_file);
      killall_php_process (); 
   ) (fun () ->
-    Common2.erase_this_temp_file trace_file;
+    Common.erase_this_temp_file trace_file;
     )
   );
     

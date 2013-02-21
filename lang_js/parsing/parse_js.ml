@@ -434,5 +434,5 @@ let (program_of_string: string -> Ast_js.program) = fun s ->
   let tmpfile = tmp_file_from_string s in
   let (ast2, _stat) = parse tmpfile in
   let ast = program_of_program2 ast2 in
-  Common2.erase_this_temp_file tmpfile;
+  Common.erase_this_temp_file tmpfile;
   ast

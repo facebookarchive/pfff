@@ -935,6 +935,8 @@ let timeout_function ?(verbose=false) timeoutval = fun f ->
         raise e
       end
 
+(* creation of tmp files, a la gcc *)
+
 let _temp_files_created = ref ([] : filename list)
 
 (* ex: new_temp_file "cocci" ".c" will give "/tmp/cocci-3252-434465.c" *)
@@ -952,6 +954,13 @@ let erase_temp_files () =
       command2 ("rm -f " ^ s)
     );
     _temp_files_created := []
+  end
+
+let erase_this_temp_file f =
+  if not !save_tmp_files then begin
+    _temp_files_created :=
+      List.filter (function x -> not (x =$= f)) !_temp_files_created;
+    command2 ("rm -f " ^ f)
   end
 
 (*###########################################################################*)

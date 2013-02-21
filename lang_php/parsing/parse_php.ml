@@ -444,7 +444,7 @@ let any_of_string s =
   let tmpfile = Common.new_temp_file "pfff_any_of_s" "php" in
   Common.write_file tmpfile s;
   let res = parse_any tmpfile in
-  Common2.erase_this_temp_file tmpfile;
+  Common.erase_this_temp_file tmpfile;
   res
 
 (* 
@@ -466,7 +466,7 @@ let (expr_of_string: string -> Ast_php.expr) = fun s ->
   | _ -> failwith "only expr pattern are supported for now"
   )
   in
-  Common2.erase_this_temp_file tmpfile;
+  Common.erase_this_temp_file tmpfile;
   res
 
 (* It is clearer for our testing code to programmatically build source files
@@ -479,7 +479,7 @@ let (program_of_string: string -> Ast_php.program) = fun s ->
   Common.write_file tmpfile ("<?php \n" ^ s ^ "\n");
   let (ast2, _stat) = parse tmpfile in
   let ast = program_of_program2 ast2 in
-  Common2.erase_this_temp_file tmpfile;
+  Common.erase_this_temp_file tmpfile;
   ast
 
 (* use program_of_string when you can *)
@@ -494,7 +494,7 @@ let (tokens_of_string: string -> Parser_php.token list) = fun s ->
   let tmpfile = Common.new_temp_file "pfff_tokens_of_s" "php" in
   Common.write_file tmpfile ("<?php \n" ^ s ^ "\n");
   let toks = tokens tmpfile in
-  Common2.erase_this_temp_file tmpfile;
+  Common.erase_this_temp_file tmpfile;
   toks
   
 
