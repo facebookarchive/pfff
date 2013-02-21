@@ -151,8 +151,18 @@ let parse a =
       Marshal.to_string (parse2 a) []
      )) 0
 
+let privacy_of_field def =
+  let p = ref E.Private in
+  def.cv_modifiers +> List.iter (function
+  | Ast_php.Public -> p := E.Public
+  | Ast_php.Private -> p := E.Private
+  | Ast_php.Protected -> p := E.Protected
+  | _ -> ()
+  );
+  !p
 
-let add_node_and_edge_if_defs_mode env name_node =
+
+let add_node_and_edge_if_defs_mode ?(props=[]) env name_node =
   let (name, kind) = name_node in
   let str =
     match kind with
@@ -198,7 +208,7 @@ let add_node_and_edge_if_defs_mode env name_node =
 
       let nodeinfo = { Graph_code.
         pos = Parse_info.parse_info_of_info (Ast.tok_of_name name);
-        props = [];
+        props = props;
       } in
       env.g +> G.add_nodeinfo node nodeinfo;
     end
@@ -434,7 +444,8 @@ and class_def env def =
   );
   def.c_variables +> List.iter (fun def ->
     let node = (def.cv_name, E.Field) in
-    let env = add_node_and_edge_if_defs_mode env node in
+    let props = [E.Privacy (privacy_of_field def)] in
+    let env = add_node_and_edge_if_defs_mode ~props env node in
     Common2.opt (expr env) def.cv_value
   );
   def.c_methods +> List.iter (fun def ->
