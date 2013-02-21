@@ -25,19 +25,7 @@ type entity_kind =
 val string_of_entity_kind: entity_kind -> string
 val entity_kind_of_string: string -> entity_kind
 
-type entity_id = int
-
-type entity = {
-  e_kind: entity_kind;
-  e_name: string;
-  e_fullname: string; (* can be empty *)
-  e_file: Common.filename;
-  e_pos: Common2.filepos;
-  mutable e_number_external_users: int;
-  mutable e_good_examples_of_use: entity_id list;
-  e_properties: property list;
-}
- and property = 
+type property = 
    (* mostly for Function kind *)
    | ContainDynamicCall
    | ContainReflectionCall
@@ -50,6 +38,22 @@ type entity = {
    | ContainDeadStatements
 
    | CodeCoverage of int list (* e.g. covered lines by unit tests *)
+
+   | Privacy of privacy
+  and privacy = Public | Protected | Private
+
+type entity_id = int
+
+type entity = {
+  e_kind: entity_kind;
+  e_name: string;
+  e_fullname: string; (* can be empty *)
+  e_file: Common.filename;
+  e_pos: Common2.filepos;
+  mutable e_number_external_users: int;
+  mutable e_good_examples_of_use: entity_id list;
+  e_properties: property list;
+}
 
 (* for debugging *)
 val json_of_entity: entity -> Json_type.t
