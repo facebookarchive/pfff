@@ -97,6 +97,7 @@ module HC = Highlight_code
  * If you add a constructor don't forget to modify entity_kind_of_string.
  * 
  * See also http://ctags.sourceforge.net/FORMAT and the doc on 'kind'
+ * note: if you change this, you may have to bump graph_code.version.
  *)
 type entity_kind = 
   | Function
