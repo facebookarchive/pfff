@@ -70,6 +70,9 @@ module G = Graph
  * 
  *  - maybe I can generate the light database from this graph_code.ml
  *    (I already do a bit for prolog with graph_code_prolog.ml)
+ * 
+ * related work:
+ *  - grok: by steve yegge http://www.youtube.com/watch?v=KTJs-0EInW8
  *)
 
 (*****************************************************************************)
