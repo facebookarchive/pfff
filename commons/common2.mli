@@ -786,9 +786,6 @@ val map_snd : ('a -> 'b) -> 'c * 'a -> 'c * 'b
 val pair : ('a -> 'b) -> 'a * 'a -> 'b * 'b
 val triple : ('a -> 'b) -> 'a * 'a * 'a -> 'b * 'b * 'b
 
-val snd : 'a * 'b -> 'b (* alias *)
-val fst : 'a * 'b -> 'a (* alias *)
-
 val double : 'a -> 'a * 'a
 val swap : 'a * 'b -> 'b * 'a
 

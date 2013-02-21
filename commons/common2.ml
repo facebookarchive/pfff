@@ -28,7 +28,8 @@
  * those sections, of those dependencies, I put the functions causing
  * dependency problem here. C is better than caml on this with the
  * ability to declare prototype, enabling some form of forward
- * reference. *)
+ * reference. 
+ *)
 
 let (+>) o f = f o
 let (|>) o f = f o
@@ -1879,8 +1880,10 @@ let pair  f (x,y) = (f x, f y)
 let triple  f (x,y,z) = (f x, f y, f z)
 
 (* for my ocamlbeautify script *)
+(*
 let snd = snd
 let fst = fst
+*)
 
 let double a = a,a
 let swap (x,y) = (y,x)

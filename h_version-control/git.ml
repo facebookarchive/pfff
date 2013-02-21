@@ -68,7 +68,7 @@ let find_root_from_absolute_path file =
 let cleanup_cache_files dir = 
   let cache_ext = [ext_git_annot_cache] in
   cache_ext +> List.iter (fun ext -> 
-    let files = Common.files_of_dir_or_files_no_vcs ext [dir] in
+    let files = Common2.files_of_dir_or_files_no_vcs ext [dir] in
     files +> List.iter (fun file -> 
       assert(Common2.filesuffix file = ext);
       pr2 file;

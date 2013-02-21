@@ -171,8 +171,6 @@ val cache_computation :
 
 val filename_without_leading_path : string -> filename -> filename
 
-val files_of_dir_or_files_no_vcs :
-  string (* ext *) -> string list -> filename list
 val files_of_dir_or_files_no_vcs_nofilter:
  string list -> filename list
 
