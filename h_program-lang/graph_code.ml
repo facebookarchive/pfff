@@ -92,14 +92,8 @@ type edge =
 
 type nodeinfo = { 
   pos: Parse_info.parse_info;
-  props: property list;
+  props: E.property list;
 }
- (* related: Database_code.property type 
-  * todo: IsInlinedMethod, ...
-  * todo: IsOverriding, IsOverriden
-  *)
- and property =
-   | IsEnum
 
 (* 
  * We use an imperative, directed, without intermediate node-index, graph.

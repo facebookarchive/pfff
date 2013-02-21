@@ -2,10 +2,8 @@
 type node = string * Database_code.entity_kind
  type nodeinfo = {
    pos: Parse_info.parse_info;
-   props: property list;
+   props: Database_code.property list;
  }
-  and property =
-    | IsEnum
 type edge = Has | Use
 
 type error =

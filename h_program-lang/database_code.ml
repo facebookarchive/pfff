@@ -192,6 +192,9 @@ type entity = {
 
   e_properties: property list;
  }
+ (* todo: IsInlinedMethod, ...
+  * todo: IsOverriding, IsOverriden
+  *)
  and property = 
    (* mostly function properties *)
 
