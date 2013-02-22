@@ -32,6 +32,7 @@ let test_parse_clang xs =
 (* Other actions *)
 (*****************************************************************************)
 
+(* see also clang -cc1 -ast-dump *)
 let clang_check =
   "/home/pad/local/clang_ast/clang-llvm/llvm/Debug+Asserts/bin/clang-check"
 
