@@ -36,6 +36,9 @@ module J = Json_type
  *    * https://github.com/rizsotto/Bear (just started)
  *    * https://github.com/pgbovine/CDE/
  *    * ??
+ * 
+ * todo: analyze the -I and use realpath on its argument => easier
+ * to merge trace from subdirectories.
  *)
 
 (*****************************************************************************)
@@ -81,6 +84,8 @@ let sanitize_compile_commands json =
 
 
 let analyze_make_trace file =
+  let dir = ref None in
+
   let relevant_lines = 
     Common.cat file +> Common.map_filter (fun s ->
       let xs = Common.split "[ \t]+" s in
@@ -88,7 +93,7 @@ let analyze_make_trace file =
       | ("clang"|"gcc"|"cc")::xs when List.mem "-c" xs ->
           xs +> Common.find_some_opt (fun file ->
             if file =~ ".*\\.[cm]$"
-            then Some (file, s)
+            then Some (file, s, !dir)
             else None
           )
       | ("clang"|"gcc"|"cc")::xs when List.mem "-o" xs -> None
@@ -97,17 +102,32 @@ let analyze_make_trace file =
         |"sh" | "sed" | "mv"
         )::_rest -> 
           None
+      (* special for plan9-userspace make_target *)
+      | ["DIR:";s] ->
+          dir := Some s;
+          None
       | _ -> 
           pr2 ("unknown compilation command: " ^ s);
           None
     )
   in
-  relevant_lines +> List.map (fun (file, s) ->
-    let path = Common.realpath file in
-    let cmd = Str.global_replace (Str.regexp_string file) path s in
+  relevant_lines +> List.map (fun (file, s, dir) ->
+    let final_file = 
+      match dir with
+      | None -> file
+      | Some f -> Filename.concat f file
+    in
+    let directory =
+      match dir with
+      | None -> "."
+      | Some f -> f
+    in
+    
+    let path = Common.realpath final_file in
+    (*let cmd = Str.global_replace (Str.regexp_string file) path s in *)
     J.Object [
-      "directory", J.String (Common.realpath ".");
-      "command", J.String cmd;
+      "directory", J.String (Common.realpath directory);
+      "command", J.String s;
       "file", J.String path;
     ]
   ) +> (fun xs -> J.Array xs)
