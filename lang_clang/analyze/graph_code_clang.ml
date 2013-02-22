@@ -42,6 +42,19 @@ module Loc = Location_clang
  * 
  * todo: 
  *  - Use for types, fields
+ * 
+ * procedure:
+ *  $ make V=1 > make_trace.txt
+ *  $ ~/pfff/pfff -analyze_make_trace make_trace.txt > compile_commands.json
+ *  $ ~/pfff/pfff -gen_clang compile_commands.json 
+ *  $ ~/pfff/pfff -uninclude_clang
+ *  $ ~/pfff/codegraph -lang clang2 -build .
+ * 
+ * alt:
+ *  $ cmake -DCMAKE_EXPORT_COMPILE_COMMANDS=ON 
+ *  $ mv compile_commands.json old.json
+ *  $ ~/pfff/pfff -sanitize_compile_commands old.json > compile_commands.json
+ *  ...
  *)
 
 (*****************************************************************************)
