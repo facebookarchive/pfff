@@ -41,7 +41,7 @@ module Loc = Location_clang
  *       -> Dir -> SubDir -> ...
  * 
  * todo: 
- *  - Use for types, fields
+ *  - Use for fields
  * 
  * procedure:
  *  $ make V=1 > make_trace.txt
