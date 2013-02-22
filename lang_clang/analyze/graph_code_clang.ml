@@ -143,7 +143,7 @@ let add_node_and_edge_if_defs_mode env node =
     then
       (match kind with
       | E.Function | E.Global | E.Constant 
-      | E.Type | E.Field
+      | E.Type
           ->
           (match kind, str with
           | E.Type, ("T____int128_t" | "T____uint128_t" 
@@ -154,8 +154,8 @@ let add_node_and_edge_if_defs_mode env node =
               env.pr2_and_log (spf "DUPE entity: %s" (G.string_of_node node))
           )
       (* todo: have no Use for now for those so skip errors *) 
-      | E.Prototype | E.GlobalExtern -> 
-          ()
+      | E.Prototype | E.GlobalExtern -> ()
+      | E.Field -> ()
       | _ ->
           failwith (spf "Unhandled category: %s" (G.string_of_node node))
       )
