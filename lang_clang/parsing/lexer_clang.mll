@@ -85,6 +85,9 @@ rule token = parse
   | "+" { TPlus } | "-" { TMinus }
   | "~" { TTilde } 
   | "*" { TStar } | "&" { TAnd }
+
+  (* only in type expressions *)
+  | "^" { TMisc (tok lexbuf) }
       
   (* ----------------------------------------------------------------------- *)
   (* Keywords and ident *)
@@ -109,14 +112,15 @@ rule token = parse
   (* ----------------------------------------------------------------------- *)
   (* Strings *)
   (* ----------------------------------------------------------------------- *)
-  | "'" [^'\'' ]* "'" { TString (tok lexbuf) }
+  | "'" ([^'\'' ]* as s) "'" { TString (s) }
   (* lots of type annotation have this format, it simplify things
    * to have just one token for the whole thing.
+   * todo: also store what is after the ":"?
    *)
-  | "'" [^'\'' ]* "'" ":" "'" [^'\'' ]* "'"  { TString (tok lexbuf) }
-  | '"' [^'\n''"']* '"' { TString (tok lexbuf) }
+  | "'" ([^'\'' ]* as s) "'" ":" "'" [^'\'' ]* "'"  { TString (s) }
+  | '"' ([^'\n''"']* as s) '"' { TString (s) }
 
-  | '"' ([^'\n''"'] | '\\' '"')* '"' { TString (tok lexbuf) }
+  | '"' (([^'\n''"'] | '\\' '"')* as s)'"' { TString (s) }
 
   (* ugly *)
   | '"' '"' '"' { TString (tok lexbuf) }

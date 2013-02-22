@@ -106,3 +106,21 @@ let location_of_paren_opt ~root clang_file (enum, l, xs) =
       Some readable
   | _ -> None
   )
+
+
+(* for anon struct, union, enums, to have a stable unique name based
+ * on the location of the struct, which should be unique enough ...
+ *)
+let str_of_angle_loc line paren current_clang_file =
+  let loc =
+    match paren with
+    | Angle xs ->
+        location_of_angle (line, current_clang_file) xs
+    | _ ->
+        failwith (spf "%s:%d: no location" current_clang_file line)
+  in
+  match loc with
+  | Line (i1, i2)::_ -> spf "__line_%d_%d" i1 i2
+  | File (_, i1, i2)::_ -> spf "__line_%d_%d" i1 i2
+  | _ -> 
+      failwith (spf "%s:%d: no Line location" current_clang_file line)

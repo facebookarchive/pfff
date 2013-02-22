@@ -8,3 +8,8 @@ struct a_struct {
   };
 };
 
+struct use_a_struct {
+  struct a_struct x;
+};
+
+

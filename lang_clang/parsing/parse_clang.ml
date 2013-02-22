@@ -153,6 +153,17 @@ let tokens2 file =
   | e -> raise e
  )
 
+let tokens_of_string s =
+  let lexbuf = Lexing.from_string s in
+  let rec tokens () =
+    let tok = Lexer_clang.token lexbuf in
+    match tok with 
+    | Parser_clang.EOF -> []
+    | x -> x::tokens ()
+  in
+  tokens ()
+    
+
 let tokens a = 
   Common.profile_code "Parse_clang.tokens" (fun () -> tokens2 a)
 

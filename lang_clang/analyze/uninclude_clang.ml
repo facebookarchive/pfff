@@ -50,19 +50,8 @@ let unknown_loc = "unknown_loc"
 (*****************************************************************************)
 (* Helper *)
 (*****************************************************************************)
-let str_of_angle_loc env line paren =
-  let loc =
-    match paren with
-    | Angle xs ->
-        Location_clang.location_of_angle (line, env.current_clang_file) xs
-    | _ ->
-        failwith (spf "%s:%d: no location" env.current_clang_file line)
-  in
-  match loc with
-  | Loc.Line (i1, i2)::_ -> spf "__line_%d_%d" i1 i2
-  | Loc.File (_, i1, i2)::_ -> spf "__line_%d_%d" i1 i2
-  | _ -> 
-      failwith (spf "%s:%d: no Line location" env.current_clang_file line)
+let str_of_angle_loc env l loc =
+  Location_clang.str_of_angle_loc l loc env.current_clang_file
 
 (*****************************************************************************)
 (* Accumulating *)

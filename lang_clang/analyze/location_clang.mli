@@ -20,3 +20,5 @@ val location_of_paren_opt:
 
 val unknown_loc_angle: Ast_clang.sexp
 
+val str_of_angle_loc:
+  int -> Ast_clang.sexp -> Common.filename -> string

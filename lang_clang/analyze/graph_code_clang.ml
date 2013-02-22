@@ -105,13 +105,11 @@ let str env s =
   then Hashtbl.find env.local_rename s
   else s
 
-let unchar s =
-  if s =~ "'\\(.*\\)'"
-  then Common.matched1 s
-  else failwith ("unchar pb: " ^ s)
-
 let error env s =
   failwith (spf "%s:%d: %s" env.current_clang_file env.line s)
+
+let str_of_angle_loc env loc =
+  Location_clang.str_of_angle_loc env.line loc env.current_clang_file
 
 (*****************************************************************************)
 (* Add Node *)
@@ -141,8 +139,11 @@ let add_node_and_edge_if_defs_mode env node =
           failwith (spf "Unhandled category: %s" (G.string_of_node node))
       )
     else begin
-      env.g +> G.add_node node;
-      env.g +> G.add_edge (env.current, node) G.Has;
+      try 
+        env.g +> G.add_node node;
+        env.g +> G.add_edge (env.current, node) G.Has;
+      with Not_found ->
+        error env ("Not_found:" ^ str)
     end
   end;
   { env with current = node }
@@ -154,6 +155,8 @@ let add_node_and_edge_if_defs_mode env node =
 let rec add_use_edge env (s, kind) =
   let src = env.current in
   let dst = (s, kind) in
+  if not (G.has_node src env.g)
+  then error env ("SRC FAIL:" ^ G.string_of_node src);
 
   if G.has_node dst env.g
   then G.add_edge (src, dst) G.Use env.g
@@ -168,7 +171,54 @@ let rec add_use_edge env (s, kind) =
                             (G.string_of_node dst)
                             (env.current_clang_file))
     )
+      
+let builtin_types = Common.hashset_of_list [
+  "char";
+  "int";"short";"long";
+  "float";"double";
+  "void";
+  "unsigned";"signed";
 
+  "const";"restrict";"volatile";
+
+  "noreturn";"__attribute__";
+  (* clang *)
+  "__int128";
+  "__va_list_tag";
+]
+let add_type_deps env typ =
+  match typ with
+  | T (TString s) ->
+      if env.phase = Uses then begin
+        try 
+          let xs = Parse_clang.tokens_of_string s in
+          let rec aux xs =
+            match xs with
+            | [] -> ()
+            | TLowerIdent "struct"::(TLowerIdent s | TUpperIdent s)::rest ->
+                add_use_edge env ("S__"^s, E.Type);
+                aux rest
+            | TLowerIdent "union"::(TLowerIdent s | TUpperIdent s)::rest ->
+                add_use_edge env ("U__"^s, E.Type);
+                aux rest
+            | TLowerIdent "enum"::(TLowerIdent s | TUpperIdent s)::rest ->
+                add_use_edge env ("E__"^s, E.Type);
+                aux rest
+            | (TLowerIdent s | TUpperIdent s)::rest ->
+                (if Hashtbl.mem builtin_types s
+                then ()
+                else add_use_edge env ("T__"^s, E.Type)
+                );
+                aux rest
+            | x::xs ->
+                aux xs
+          in
+          aux xs
+        with Lexer_clang.Lexical s ->
+          error env s
+      end
+  | _ ->
+      error env "wrong type format"
 
 (*****************************************************************************)
 (* Defs/Uses *)
@@ -234,7 +284,7 @@ and sexps env xs = List.iter (sexp env) xs
 and decl env (enum, l, xs) =
   let env =
     match enum, xs with
-    | FunctionDecl, _loc::(T (TLowerIdent s | TUpperIdent s))::_typ_char::rest->
+    | FunctionDecl, _loc::(T (TLowerIdent s | TUpperIdent s))::typ::rest->
         let kind = 
           if rest +> List.exists (function 
           | Paren (CompoundStmt, _, _) -> true
@@ -263,24 +313,33 @@ and decl env (enum, l, xs) =
           else s
         in
         let env = add_node_and_edge_if_defs_mode env (s, kind) in
+        add_type_deps env typ;
         { env with locals = ref [] }
 
-    | VarDecl, _loc::(T (TLowerIdent s | TUpperIdent s))::_typ_char::rest ->
+    | VarDecl, _loc::(T (TLowerIdent s | TUpperIdent s))::typ::rest ->
         let kind =
           match rest with
           | T (TLowerIdent "extern")::_ -> E.GlobalExtern
           | _ -> E.Global
         in
-        if env.at_toplevel 
-        then add_node_and_edge_if_defs_mode env (s, kind)
-        else begin 
-          env.locals := s::!(env.locals);
-          env
-        end
+        let env =
+          if env.at_toplevel 
+          then add_node_and_edge_if_defs_mode env (s, kind)
+          else begin 
+            env.locals := s::!(env.locals);
+            env
+          end
+        in
+        add_type_deps env typ;
+        env
+        
 
     (* I am not sure about the namespaces, so I prepend strings *)
-    | TypedefDecl, _loc::(T (TLowerIdent s | TUpperIdent s))::_typ_char::_rest ->
-        add_node_and_edge_if_defs_mode env ("T__" ^ s, E.Type)
+    | TypedefDecl, _loc::(T (TLowerIdent s | TUpperIdent s))::typ::_rest ->
+        let env = add_node_and_edge_if_defs_mode env ("T__" ^ s, E.Type) in
+        add_type_deps env typ;
+        env
+        
     | EnumDecl, _loc::(T (TLowerIdent s | TUpperIdent s))::_rest ->
         add_node_and_edge_if_defs_mode env ("E__" ^ s, E.Type)
           
@@ -292,28 +351,26 @@ and decl env (enum, l, xs) =
         add_node_and_edge_if_defs_mode env ("U__" ^ s, E.Type)
           
     (* usually embedded struct *)
-    | RecordDecl, _loc::(T (TLowerIdent "struct"))::_rest ->
-        incr env.cnt;
+    | RecordDecl, loc::(T (TLowerIdent "struct"))::_rest ->
         add_node_and_edge_if_defs_mode env 
-          (spf "S__anon__%d" !(env.cnt), E.Type)
+          (spf "S__anon__%s" (str_of_angle_loc env loc), E.Type)
           
     (* todo: usually there is a typedef just behind *)
-    | EnumDecl, _loc::_rest ->
-        incr env.cnt;
+    | EnumDecl, loc::_rest ->
         add_node_and_edge_if_defs_mode env 
-          (spf "E__anon__%d" !(env.cnt), E.Type)
-    | RecordDecl, _loc::(T (TLowerIdent "union"))::_rest ->
-        incr env.cnt;
+          (spf "E__anon__%s" (str_of_angle_loc env loc), E.Type)
+    | RecordDecl, loc::(T (TLowerIdent "union"))::_rest ->
         add_node_and_edge_if_defs_mode env 
-          (spf "U__anon__%d" !(env.cnt), E.Type)
+          (spf "U__anon__%s" (str_of_angle_loc env loc), E.Type)
 
-    | FieldDecl, _loc::(T (TLowerIdent s | TUpperIdent s))::_rest ->
-        add_node_and_edge_if_defs_mode env (s, E.Field)
+    | FieldDecl, _loc::(T (TLowerIdent s | TUpperIdent s))::typ::_rest ->
+        let env = add_node_and_edge_if_defs_mode env (s, E.Field) in
+        add_type_deps env typ;
+        env
 
-    | FieldDecl, _loc::_rest ->
-        incr env.cnt;
+    | FieldDecl, loc::_rest ->
         add_node_and_edge_if_defs_mode env 
-          (spf "F__anon__%d" !(env.cnt), E.Field)
+          (spf "F__anon__%s" (str_of_angle_loc env loc), E.Field)
     | EnumConstantDecl, _loc::(T (TLowerIdent s | TUpperIdent s))::_rest ->
         add_node_and_edge_if_defs_mode env (s, E.Constant)
         
@@ -337,7 +394,6 @@ and expr env (enum, l, xs) =
                       _loc3::_typ3::T (TUpperIdent "Function")::T (THexInt _)
                         ::T (TString s)::_typ4::[]))::[]))
       ::_args ->
-      let s = unchar s in
       if env.phase = Uses
       then 
         let s = str env s in
@@ -349,13 +405,11 @@ and expr env (enum, l, xs) =
 
   | DeclRefExpr, _loc::_typ::T (TUpperIdent "EnumConstant")::_address
       ::T (TString s)::_rest ->
-      let s = unchar s in
       if env.phase = Uses
       then add_use_edge env (s, E.Constant)
 
   | DeclRefExpr, _loc::_typ::_lval::T (TUpperIdent "Var")::_address
       ::T (TString s)::_rest ->
-      let s = unchar s in
       if env.phase = Uses
       then
         if List.mem s !(env.locals)
@@ -371,7 +425,6 @@ and expr env (enum, l, xs) =
       ::T (TUpperIdent "Function")::_address
       ::T (TString s)::_rest 
       ->
-      let s = unchar s in
       if env.phase = Uses
       then 
         let s = str env s in
