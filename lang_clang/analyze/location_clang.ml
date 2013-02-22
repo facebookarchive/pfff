@@ -121,6 +121,7 @@ let str_of_angle_loc line paren current_clang_file =
     | _ ->
         failwith (spf "%s:%d: no location" current_clang_file line)
   in
+  "__" ^ current_clang_file ^
   match loc with
   | Line (i1, i2)::_ -> spf "__line_%d_%d" i1 i2
   | File (_, i1, i2)::_ -> spf "__line_%d_%d" i1 i2
