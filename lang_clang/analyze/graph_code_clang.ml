@@ -72,7 +72,7 @@ type env = {
   root: Common.dirname;
 
   (* for error reports *)
-  current_clang_file: Common.filename;
+  current_clang2_file: Common.filename;
   line: int;
 
   at_toplevel: bool;
@@ -119,10 +119,10 @@ let str env s =
   else s
 
 let error env s =
-  failwith (spf "%s:%d: %s" env.current_clang_file env.line s)
+  failwith (spf "%s:%d: %s" env.current_clang2_file env.line s)
 
 let str_of_angle_loc env loc =
-  Location_clang.str_of_angle_loc env.line loc env.current_clang_file
+  Location_clang.str_of_angle_loc env.line loc env.current_clang2_file
 
 (*****************************************************************************)
 (* Add Node *)
@@ -146,12 +146,23 @@ let add_node_and_edge_if_defs_mode env node =
       | E.Type
           ->
           (match kind, str with
-          | E.Type, ("T____int128_t" | "T____uint128_t" 
-              | "T____builtin_va_list"
+          | E.Type, (
+              (* clang builtins *)
+                "T____int128_t" | "T____uint128_t"  | "T____builtin_va_list"
+              (* /usr/include dupes. todo: could look if same def body and
+               * also if both duped entities are in EXTERNAL/
+               *)
+              | "T__pid_t" | "T__intptr_t" | "T__off_t" | "T__ssize_t"
+              | "T__dev_t" | "T__mode_t"
             )
               -> ()
+          | _ when env.current_clang2_file =~ ".*EXTERNAL" -> ()
           | _ ->
-              env.pr2_and_log (spf "DUPE entity: %s" (G.string_of_node node))
+              env.pr2_and_log (spf "DUPE entity: %s" (G.string_of_node node));
+              let nodeinfo = G.nodeinfo node env.g in
+              let orig_file = nodeinfo.G.pos.Parse_info.file in
+              env.log (spf " orig = %s" orig_file);
+              env.log (spf " dupe = %s" env.current_clang2_file);
           )
       (* todo: have no Use for now for those so skip errors *) 
       | E.Prototype | E.GlobalExtern -> ()
@@ -160,9 +171,19 @@ let add_node_and_edge_if_defs_mode env node =
           failwith (spf "Unhandled category: %s" (G.string_of_node node))
       )
     else begin
-      try 
+      try
+        let nodeinfo = { Graph_code.
+          pos = { Parse_info.
+            str = "";
+            charpos = -1;
+            line = -1; column = -1;
+            file = env.current_clang2_file;
+          };
+          props = [];
+        } in
         env.g +> G.add_node node;
         env.g +> G.add_edge (env.current, node) G.Has;
+        env.g +> G.add_nodeinfo node nodeinfo;
       with Not_found ->
         error env ("Not_found:" ^ str)
     end
@@ -187,10 +208,11 @@ let rec add_use_edge env (s, kind) =
     | E.Function -> add_use_edge env (s, E.Prototype)
     (* look for GlobalExtern if no Global *)
     | E.Global -> add_use_edge env (s, E.GlobalExtern)
+    | _ when env.current_clang2_file =~ ".*EXTERNAL" -> ()
     | _ ->
         env.pr2_and_log (spf "Lookup failure on %s (in %s)"
                             (G.string_of_node dst)
-                            (env.current_clang_file))
+                            (env.current_clang2_file))
     )
       
 let builtin_types = Common.hashset_of_list [
@@ -246,7 +268,7 @@ let add_type_deps env typ =
 (*****************************************************************************)
 let rec extract_defs_uses env ast =
   let readable = 
-    Common.filename_without_leading_path env.root env.current_clang_file in
+    Common.filename_without_leading_path env.root env.current_clang2_file in
   let readable =
     if readable =~ "\\(.*\\).clang2"
     then Common.matched1 readable
@@ -323,7 +345,7 @@ and decl env (enum, l, xs) =
            * some unresolvev lookup in the c files.
            *)
           | T (TLowerIdent "static")::T (TLowerIdent "inline")::_rest ->
-              env.current_clang_file =~ ".*\\.c\\.clang2"
+              env.current_clang2_file =~ ".*\\.c\\.clang2"
           | T (TLowerIdent "static")::_rest -> true
           | _ when s = "main" -> true
           | _ -> false
@@ -495,7 +517,7 @@ let build ?(verbose=true) dir skip_list =
     phase = Defs;
     current = unknown_location;
 
-    current_clang_file = "__filled_later__";
+    current_clang2_file = "__filled_later__";
 
     line = -1;
     cnt = ref 0;
@@ -529,7 +551,7 @@ let build ?(verbose=true) dir skip_list =
       Hashtbl.add local_renames file h;
       extract_defs_uses { env with 
         phase = Defs; 
-        current_clang_file = file;
+        current_clang2_file = file;
         local_rename = h;
       } ast
    ));
@@ -542,7 +564,7 @@ let build ?(verbose=true) dir skip_list =
       let ast = parse file in
       extract_defs_uses { env with 
         phase = Uses; 
-        current_clang_file = file;
+        current_clang2_file = file;
         local_rename = Hashtbl.find local_renames file;
       } ast
     ));
