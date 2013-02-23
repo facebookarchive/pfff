@@ -509,7 +509,8 @@ let build ?(verbose=true) dir skip_list =
         flush chan;
     );
     pr2_and_log = (fun s ->
-      if verbose then pr2 s;
+      (*if verbose then *)
+      pr2 s;
       output_string chan (s ^ "\n");
       flush chan;
     );
