@@ -101,17 +101,32 @@ let location_of_paren_opt ~root clang_file (enum, l, xs) =
         failwith (spf "%s:%d: no location" clang_file l)
 
   in
+  (* Because of some macro expansions, sometimes one can have multiple
+   * 'File' locations in one Angle, for instance when use 'bool' from stdbool.h
+   * or with macro like '#define RETSIGTYPE void' in which case
+   * one can get such an Angle location:
+   *  [T(TPath("/Users/yoann.padioleau/local/lang-c/editor-nano/config.h"));
+   *   T(TColon); T(TInt("236")); T(TColon); T(TInt("20")); T(TComma);
+   *   T(
+   *   TPath(
+   *   "/Users/yoann.padioleau/local/lang-c/editor-nano/src/proto.h"));
+   *   T(TColon); T(TInt("454")); T(TColon); T(TInt("37"))]);
+   * 
+   * I think it's safe to consider the last TPath as the current
+   * location, hence the List.rev below.
+   * update: now that use ExpansionLoc, can get rid of List.rev?
+   *)
   location +> Common.find_some_opt (function 
   | File (f, _,_) ->
       let readable = readable_of_filename ~root f in
       (* ugly: stdbool.h contains some macros that then confused
        * the unincluder
        *)
-(*
+      (* less needed now that uses ExpansionLoc in ASTDumper
       if readable =$= "EXTERNAL/CLANG/stdbool.h"
       then None
       else 
-*)
+      *)
         Some readable
   | _ -> None
   )
