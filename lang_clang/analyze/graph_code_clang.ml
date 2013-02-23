@@ -228,6 +228,10 @@ let builtin_types = Common.hashset_of_list [
   (* clang *)
   "__int128";
   "__va_list_tag";
+  (* todo: ugly, because of stdbool.h skip? but now that use ExpansionLoc,
+   * don't need that anymore? apparently still need it :(
+   *)
+  "_Bool";
 ]
 let add_type_deps env typ =
   match typ with
