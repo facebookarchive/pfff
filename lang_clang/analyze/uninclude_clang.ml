@@ -51,7 +51,10 @@ let unknown_loc = "unknown_loc"
 (* Helper *)
 (*****************************************************************************)
 let str_of_angle_loc env l loc =
-  Location_clang.str_of_angle_loc l loc env.current_clang_file
+  (* for the includer, we must use enc.current_c_file, not
+   * env.current_clang_file because we actually want to dedupe
+   *)
+  Location_clang.str_of_angle_loc l loc !(env.current_c_file)
 
 (*****************************************************************************)
 (* Accumulating *)
