@@ -103,7 +103,15 @@ let location_of_paren_opt ~root clang_file (enum, l, xs) =
   location +> Common.find_some_opt (function 
   | File (f, _,_) ->
       let readable = readable_of_filename ~root f in
-      Some readable
+      (* ugly: stdbool.h contains some macros that then confused
+       * the unincluder
+       *)
+(*
+      if readable =$= "EXTERNAL/CLANG/stdbool.h"
+      then None
+      else 
+*)
+        Some readable
   | _ -> None
   )
 
