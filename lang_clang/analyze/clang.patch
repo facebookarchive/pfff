@@ -1,5 +1,5 @@
 diff --git a/lib/AST/ASTDumper.cpp b/lib/AST/ASTDumper.cpp
-index 6248da0..797b285 100644
+index 6248da0..9d8cad4 100644
 --- a/lib/AST/ASTDumper.cpp
 +++ b/lib/AST/ASTDumper.cpp
 @@ -105,12 +105,12 @@ namespace  {
@@ -19,14 +19,21 @@ index 6248da0..797b285 100644
        }
      };
  
-@@ -312,14 +312,22 @@ void ASTDumper::dumpLocation(SourceLocation Loc) {
-   // that haven't changed since the last loc printed.
-   PresumedLoc PLoc = SM->getPresumedLoc(SpellingLoc);
+@@ -306,11 +306,11 @@ void ASTDumper::dumpPointer(const void *Ptr) {
  
-+
+ void ASTDumper::dumpLocation(SourceLocation Loc) {
+   ColorScope Color(*this, LocationColor);
+-  SourceLocation SpellingLoc = SM->getSpellingLoc(Loc);
++  SourceLocation ExpansionLoc = SM->getExpansionLoc(Loc);
+ 
+   // The general format we print out is filename:line:col, but we drop pieces
+   // that haven't changed since the last loc printed.
+-  PresumedLoc PLoc = SM->getPresumedLoc(SpellingLoc);
++  PresumedLoc PLoc = SM->getPresumedLoc(ExpansionLoc);
+ 
    if (PLoc.isInvalid()) {
      OS << "<invalid sloc>";
-     return;
+@@ -318,8 +318,15 @@ void ASTDumper::dumpLocation(SourceLocation Loc) {
    }
  
    if (strcmp(PLoc.getFilename(), LastLocFilename) != 0) {
