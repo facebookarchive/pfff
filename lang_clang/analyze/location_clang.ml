@@ -22,8 +22,8 @@ module Ast = Ast_clang
 (* Prelude *)
 (*****************************************************************************)
 (*
- * Assumes 'clang-check --ast-dump' dumps realpath paths. Modify
- * ASTDumper.cpp for that, see clang.patch in this directory.
+ * Assumes 'clang-check --ast-dump' dumps realpath paths and ExpansionLoc.
+ * Modify ASTDumper.cpp for that, see clang.patch in this directory.
  *)
 
 (*****************************************************************************)
@@ -55,7 +55,7 @@ let location_of_angle (line, file) xs =
             Line (s_to_i i1, s_to_i i2)
         | [T (TLowerIdent "col"); T TColon; T (TInt i);] ->
             Col (s_to_i i)
-        (* less: #line directive, ignore? use ExpansionLoc in ASTDumper? *)
+        (* still?: #line directive, ignore? ExpansionLoc solves this? *)
         | [T (TPath f); T TColon; T (TInt i1);T TColon; T (TInt i2)] ->
             File (f, s_to_i i1, s_to_i i2)
         | [Angle _; T TColon; T (TInt _);T TColon; T (TInt _)] ->
@@ -92,7 +92,8 @@ let location_of_paren_opt ~root clang_file (enum, l, xs) =
   let location =
     match enum, xs with
     | (Misc__Null__ | Misc__Capture__ | Misc__Cleanup__Block
-      |Field (* TODO: when under IndirectDecl *)
+      (* TODO: when under IndirectDecl *)
+      | Field 
       ), _ -> [Other]
     | _, Angle xs::_rest ->
         location_of_angle (l, clang_file) xs
