@@ -229,7 +229,7 @@ let lookup_gen aclass find_entity hook =
           )
         )
     | [] -> raise (UndefinedClassWhileLookup aclass)
-    | x::y::xs -> raise Common2.Multi_found
+    | x::y::xs -> raise Multi_found
     | [_] -> raise Impossible
   in
   aux aclass
@@ -299,7 +299,7 @@ let collect_members aclass find_entity =
     )
     in
     ()
-   with Not_found | UndefinedClassWhileLookup _ | Common2.Multi_found -> 
+   with Not_found | UndefinedClassWhileLookup _ | Multi_found -> 
     ()
   );
   !res

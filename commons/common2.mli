@@ -440,12 +440,8 @@ val release_file_lock : filename -> unit
 (*****************************************************************************)
 (* Error managment *)
 (*****************************************************************************)
-exception Todo
-exception Impossible
 exception Here
 exception ReturnExn
-
-exception Multi_found
 
 exception WrongFormat of string
 

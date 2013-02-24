@@ -553,7 +553,7 @@ let index_db4_2 ~annotate_variables_program db =
           (Some (fun x ->
             (* we just want to annotate here *)
             try find_entity x 
-            with Common2.Multi_found -> raise Not_found
+            with Multi_found -> raise Not_found
           ))
           asts;
       );

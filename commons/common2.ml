@@ -1173,12 +1173,8 @@ let release_file_lock filename =
 (* Error managment *)
 (*****************************************************************************)
 
-exception Todo
-exception Impossible
 exception Here
 exception ReturnExn
-
-exception Multi_found (* to be consistent with Not_found *)
 
 exception WrongFormat of string
 
@@ -1658,7 +1654,7 @@ let map_find f xs =
 let list_to_single_or_exn xs =
   match xs with
   | [] -> raise Not_found
-  | x::y::zs -> raise Multi_found
+  | x::y::zs -> raise Common.Multi_found
   | [x] -> x
 
 
@@ -2240,13 +2236,13 @@ type float_time = float
 
 
 let check_date_dmy (DMY (day, month, year)) =
-  raise Todo
+  raise Common.Todo
 
 let check_time_dmy (TimeDMY (day, month, year)) =
-  raise Todo
+  raise Common.Todo
 
 let check_time_hms (HMS (x,y,a)) =
-  raise Todo
+  raise Common.Todo
 
 
 
@@ -2283,7 +2279,7 @@ let int_to_month i =
   | 11 -> "November"
   | 12 -> "December"
 *)
-  | _ -> raise Impossible
+  | _ -> raise Common.Impossible
 
 
 let month_info = [
@@ -2360,7 +2356,7 @@ let wday_str_of_int ~langage i =
   match langage with
   | English -> string_en_of_wday wday
   | Francais -> string_fr_of_wday wday
-  | Deutsch -> raise Todo
+  | Deutsch -> raise Common.Todo
 
 
 
@@ -3510,7 +3506,7 @@ let group_and_count xs =
   +> List.map (fun xs ->
     match xs with
     | x::rest -> x, List.length xs
-    | [] -> raise Impossible
+    | [] -> raise Common.Impossible
   )
 
 
@@ -4269,7 +4265,7 @@ let nb_columns_matrix m =
 
 (* check all nested arrays have the same size *)
 let invariant_matrix m =
-  raise Todo
+  raise Common.Todo
 
 let (rows_of_matrix: 'a matrix -> 'a list list) = fun m ->
   Array.to_list m +> List.map Array.to_list
@@ -4948,7 +4944,7 @@ let find_treeref f tree =
   match !res with
   | [n,xs] -> NodeRef (n, xs)
   | [] -> raise Not_found
-  | x::y::zs -> raise Multi_found
+  | x::y::zs -> raise Common.Multi_found
 
 let rec (treeref_node_iter_with_parents:
  (*  (('a * ('a, 'b) treeref list ref) -> ('a list) -> unit) ->
@@ -5003,7 +4999,7 @@ let find_treeref2 f tree =
   match !res with
   | [n,xs] -> NodeRef2 (n, xs)
   | [] -> raise Not_found
-  | x::y::zs -> raise Multi_found
+  | x::y::zs -> raise Common.Multi_found
 
 
 
@@ -5044,7 +5040,7 @@ let find_treeref_with_parents_some f tree =
   match !res with
   | [v] -> v
   | [] -> raise Not_found
-  | x::y::zs -> raise Multi_found
+  | x::y::zs -> raise Common.Multi_found
 
 let find_multi_treeref_with_parents_some f tree =
   let res = ref [] in
@@ -5319,7 +5315,7 @@ let (diff: (int -> int -> diff -> unit)-> (string list * string list) -> unit)=
       | ("|" | "/" | "\\" ) ->
           f !a !b BnotinA; f !a !b AnotinB; incr a; incr b;
       | "<" -> f !a !b AnotinB; incr a;
-      | _ -> raise Impossible
+      | _ -> raise Common.Impossible
     )
 (*
 let _ =
@@ -5347,7 +5343,7 @@ let (diff2: (int -> int -> diff -> unit) -> (string * string) -> unit) =
       | ">" -> f !a !b BnotinA; incr b;
       | "|" -> f !a !b BnotinA; f !a !b AnotinB; incr a; incr b;
       | "<" -> f !a !b AnotinB; incr a;
-      | _ -> raise Impossible
+      | _ -> raise Common.Impossible
     )
 
 
@@ -5475,7 +5471,7 @@ let regression_testing_vs newscore bestscore =
         optionise (fun () -> Hashtbl.find newscore res),
         optionise (fun () -> Hashtbl.find bestscore res)
       with
-      | None, None -> raise Impossible
+      | None, None -> raise Common.Impossible
       | Some x, None ->
           Printf.printf "new test file appeared: %s\n" res;
           Hashtbl.add newbestscore res x;

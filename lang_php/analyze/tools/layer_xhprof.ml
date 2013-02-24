@@ -77,7 +77,7 @@ let infos_and_kinds_of_xhprof_entities xhprof_entities db =
     )
     with exn ->
       (match exn with
-      | Not_found | Common2.Multi_found ->
+      | Not_found | Multi_found ->
           pr2 (spf "PB with %s, exn = %s"
                 (X.string_of_xhprof_entity e)
                 (Common.exn_to_s exn));
