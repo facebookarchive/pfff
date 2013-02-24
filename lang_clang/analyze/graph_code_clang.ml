@@ -232,6 +232,9 @@ let builtin_types = Common.hashset_of_list [
    * don't need that anymore? apparently still need it :(
    *)
   "_Bool";
+
+  (* otherwise get wierd edges from EXTERNAL to the source. e.g. in byacc *)
+  "__builtin_va_list";
 ]
 let add_type_deps env typ =
   match typ with
