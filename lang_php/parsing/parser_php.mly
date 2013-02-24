@@ -1721,6 +1721,8 @@ non_empty_member_modifiers:
 function_call_argument_list:
  | non_empty_function_call_argument_list      { $1 }
  | /*(*empty*)*/			       { [] }
+ /*(* php-facebook-ext: *)*/
+ | non_empty_function_call_argument_list TCOMMA  { $1 ++ [Right $2] }
 /*(*e: repetitive xxx and non_empty_xxx *)*/
 
 non_empty_function_call_argument_list:
