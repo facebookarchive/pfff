@@ -276,6 +276,11 @@ let add_type_deps env typ =
 
             | TLowerIdent "volatile"::rest ->
                 aux rest
+            (* todo: sparse has such code, why clang does not unsugar?
+             * it does in 'a':'b' 'b' is unsugared!
+             *)
+            | TLowerIdent "typeof"::rest ->
+                ()
 
             | (TLowerIdent s | TUpperIdent s)::rest ->
                 (if Hashtbl.mem builtin_types s
