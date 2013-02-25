@@ -135,8 +135,9 @@ and decl env (enum, l, xs) =
   | EnumDecl, _loc::(T (TLowerIdent s | TUpperIdent s))::_rest ->
       add_if_not_already_there env (EnumDecl, s, Misc) sexp
   | RecordDecl, _loc::(T (TLowerIdent "struct"))
-      ::(T (TLowerIdent s | TUpperIdent s))::_rest ->
-      add_if_not_already_there env (RecordDecl, s, Misc) sexp
+      ::(T (TLowerIdent s | TUpperIdent s))::rest ->
+      let kind = if rest = [] then Proto else Misc in
+      add_if_not_already_there env (RecordDecl, s, kind) sexp
   | RecordDecl, _loc::(T (TLowerIdent "union"))
       ::(T (TLowerIdent s | TUpperIdent s))::_rest ->
       add_if_not_already_there env (RecordDecl, s, Misc) sexp
