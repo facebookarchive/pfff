@@ -105,6 +105,9 @@ type visitor_in = {
     (class_name_or_kwd -> unit) * visitor_out -> class_name_or_kwd -> unit;
   karray_pair: (array_pair -> unit) * visitor_out -> array_pair -> unit;
 
+  karguments: (argument comma_list paren -> unit) * visitor_out ->
+    argument comma_list paren -> unit;
+
   kcomma: (tok -> unit) * visitor_out -> tok -> unit;
   kinfo: (tok -> unit)  * visitor_out -> tok  -> unit;
 }
@@ -122,6 +125,7 @@ let default_visitor =
     kclass_stmt = (fun (k,_) x -> k x);
     kparameter = (fun (k,_) x -> k x);
     kargument = (fun (k,_) x -> k x);
+    karguments = (fun (k,_) x -> k x);
     kcatch = (fun (k,_) x -> k x);
 
     kobj_dim = (fun (k,_) x -> k x);
@@ -248,7 +252,7 @@ and v_expr (x: expr) =
       and v3 = v_tok v3
       and v4 = v_tok v4
       and v5 = v_class_name_reference v5
-      and v6 = v_option (v_paren (v_comma_list v_argument)) v6
+      and v6 = v_option (v_arguments) v6
       in ()
   | AssignOp ((v1, v2, v3)) ->
       let v1 = v_variable v1
@@ -291,7 +295,7 @@ and v_expr (x: expr) =
   | New ((v1, v2, v3)) ->
       let v1 = v_tok v1
       and v2 = v_class_name_reference v2
-      and v3 = v_option (v_paren (v_comma_list v_argument)) v3
+      and v3 = v_option (v_arguments) v3
       in ()
   | Clone ((v1, v2)) -> let v1 = v_tok v1 and v2 = v_expr v2 in ()
   | InstanceOf ((v1, v2, v3)) ->
@@ -530,6 +534,12 @@ and v_xhp_body =
 
 and v_lvalue x = v_variable x
 
+and v_arguments x =
+  let k x =
+    v_paren (v_comma_list v_argument) x
+  in
+  vin.karguments (k, all_functions) x
+
 and v_variable x =
   let k x = match x with
   | Var ((v1, v2)) ->
@@ -548,12 +558,12 @@ and v_variable x =
       ()
   | FunCallSimple ((v2, v3)) ->
       let v2 = v_name v2
-      and v3 = v_paren (v_comma_list v_argument) v3
-      in ()
+      and v3 = v_arguments v3 in
+      ()
   | FunCallVar ((v1, v2, v3)) ->
       let v1 = v_option v_qualifier v1
       and v2 = v_variable v2
-      and v3 = v_paren (v_comma_list v_argument) v3
+      and v3 = v_arguments v3
       in ()
   | VQualifier ((v1, v2)) ->
       let v1 = v_qualifier v1 and v2 = v_variable v2 in ()
@@ -565,25 +575,25 @@ and v_variable x =
   | StaticMethodCallSimple ((v1, v2, v3)) ->
       let v1 = v_qualifier v1
       and v2 = v_name v2
-      and v3 = v_paren (v_comma_list v_argument) v3
+      and v3 = v_arguments v3
       in ()
   | MethodCallSimple ((v1, v2, v3, v4)) ->
       let v1 = v_variable v1
       and v2 = v_tok v2
       and v3 = v_name v3
-      and v4 = v_paren (v_comma_list v_argument) v4
+      and v4 = v_arguments v4
       in ()
   | StaticMethodCallVar ((v1, v2, v3, v4)) ->
       let v1 = v_variable v1
       and v2 = v_tok v2
       and v3 = v_name v3
-      and v4 = v_paren (v_comma_list v_argument) v4
+      and v4 = v_arguments v4
       in ()
   | StaticObjCallVar ((v1, v2, v3, v4)) ->
       let v1 = v_variable v1
       and v2 = v_tok v2
       and v3 = v_lvalue v3
-      and v4 = v_paren (v_comma_list v_argument) v4
+      and v4 = v_arguments v4
       in ()
   | ObjAccessSimple ((v1, v2, v3)) ->
       let v1 = v_variable v1 and v2 = v_tok v2 and v3 = v_name v3 in ()
@@ -607,7 +617,7 @@ and v_indirect = function | Dollar v1 -> let v1 = v_tok v1 in ()
 and v_obj_access (v1, v2, v3) =
   let v1 = v_tok v1
   and v2 = v_obj_property v2
-  and v3 = v_option (v_paren (v_comma_list v_argument)) v3
+  and v3 = v_option (v_arguments) v3
   in ()
 and v_obj_property =
   function
