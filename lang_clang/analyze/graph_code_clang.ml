@@ -392,6 +392,11 @@ and decl env (enum, l, xs) =
         
     | EnumDecl, _loc::(T (TLowerIdent s | TUpperIdent s))::_rest ->
         add_node_and_edge_if_defs_mode env ("E__" ^ s, E.Type)
+
+    (* ignore forward decl, to avoid duped entities *)
+    | RecordDecl, _loc::(T (TLowerIdent "struct"))
+        ::(T (TLowerIdent s | TUpperIdent s))::[] ->
+        env
           
     | RecordDecl, _loc::(T (TLowerIdent "struct"))
         ::(T (TLowerIdent s | TUpperIdent s))::_rest ->
