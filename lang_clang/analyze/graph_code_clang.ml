@@ -253,6 +253,8 @@ let add_type_deps env typ =
              *)
             | TLowerIdent"struct"::TInf _::TLowerIdent "anonymous"::rest ->
                 ()
+            | TLowerIdent"union"::TInf _::TLowerIdent "anonymous"::rest ->
+                ()
             | TLowerIdent"enum"::TInf _::TLowerIdent "anonymous"::rest ->
                 ()
 
