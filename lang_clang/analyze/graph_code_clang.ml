@@ -277,9 +277,16 @@ let add_type_deps env typ =
                 else add_use_edge env ("T__"^s, E.Type)
                 );
                 aux rest
+            | TOBracket _::rest ->
+                skip_until_closing_bracket rest
             | x::xs ->
                 aux xs
-          in
+          (* todo: recursive? *)
+          and skip_until_closing_bracket = function
+            | [] -> ()
+            | TCBracket::xs -> aux xs
+            | x::xs -> skip_until_closing_bracket xs
+          in  
           aux xs
         with Lexer_clang.Lexical s ->
           error env s
