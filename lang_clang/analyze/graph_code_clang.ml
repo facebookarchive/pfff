@@ -209,6 +209,12 @@ let rec add_use_edge env (s, kind) =
     (* look for GlobalExtern if no Global *)
     | E.Global -> add_use_edge env (s, E.GlobalExtern)
     | _ when env.current_clang2_file =~ ".*EXTERNAL" -> ()
+    | E.Type when s =~ "S__\\(.*\\)" ->
+        add_use_edge env ("T__" ^ Common.matched1 s, E.Type)
+    | E.Type when s =~ "U__\\(.*\\)" ->
+        add_use_edge env ("T__" ^ Common.matched1 s, E.Type)
+    | E.Type when s =~ "E__\\(.*\\)" ->
+        add_use_edge env ("T__" ^ Common.matched1 s, E.Type)
     | _ ->
         env.pr2_and_log (spf "Lookup failure on %s (%s:%d)"
                             (G.string_of_node dst)
