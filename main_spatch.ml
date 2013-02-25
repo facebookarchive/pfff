@@ -248,6 +248,51 @@ let simple_transfo xs =
     diff +> List.iter pr;
   );
   ()
+(* -------------------------------------------------------------------------*)
+(* Trailing comma transformation *)
+(* -------------------------------------------------------------------------*)
+let all_different xs = 
+  List.length xs = (xs +> Common.sort +> Common2.uniq +> List.length)
+
+(* todo: 
+ * - julien thinks we should transform even if some commas
+ *   are on the same line, as long as the last ')' is on a different line.
+ * - we should also transform function decl and use() lists.
+ *)
+let add_trailing_comma_multiline_funcalls ast =
+  let was_modified = ref false in
+  let visitor = V.mk_visitor { V.default_visitor with
+    V.karguments = (fun (k, _) (lp, args, rp) ->
+      if List.length args >= 1 then begin
+        let (args, commas) = Common.partition_either (fun x -> x) args in
+        let lines_commas = 
+          commas +> List.map Ast_php.line_of_info
+        in
+        let line_rp = Ast_php.line_of_info rp in
+        let last_expr = Common2.list_last args in
+        let ii = Lib_parsing_php.ii_of_any (Argument last_expr) in
+        let (_min, max) =
+          Lib_parsing_php.min_max_ii_by_pos ii in
+        let line_last_expr = Ast_php.line_of_info max in
+
+        if List.length args > 2 && 
+          all_different (line_last_expr::line_rp::lines_commas) then
+          begin
+            max.transfo <- AddAfter (AddStr ",");
+            was_modified := true;
+          end;
+      end;
+      k (lp, args, rp)
+    );
+  }
+  in
+  visitor (Program ast);
+  !was_modified
+
+let trailing_comma_transfo = {
+  trans_func = add_trailing_comma_multiline_funcalls;
+  grep_keywords = None;
+}
 
 (* -------------------------------------------------------------------------*)
 (* An example of an XHP transformation *)
@@ -447,6 +492,8 @@ let spatch_extra_actions () = [
   Common.mk_action_n_arg (apply_transfo remove_border_attribute_transfo);
   "-add_action_ui_form", " <files_or_dirs>",
   Common.mk_action_n_arg (apply_transfo add_action_ui_form_transfo);
+  "-add_trailing_comma", " <files_or_dirs>",
+  Common.mk_action_n_arg (apply_transfo trailing_comma_transfo);
 
   "-juju_refactoring", " <file>",
   Common.mk_action_1_arg juju_refactoring;
