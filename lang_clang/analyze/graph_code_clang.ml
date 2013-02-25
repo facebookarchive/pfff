@@ -210,9 +210,11 @@ let rec add_use_edge env (s, kind) =
     | E.Global -> add_use_edge env (s, E.GlobalExtern)
     | _ when env.current_clang2_file =~ ".*EXTERNAL" -> ()
     | _ ->
-        env.pr2_and_log (spf "Lookup failure on %s (in %s)"
+        env.pr2_and_log (spf "Lookup failure on %s (%s:%d)"
                             (G.string_of_node dst)
-                            (env.current_clang2_file))
+                            env.current_clang2_file
+                            env.line
+        )
     )
       
 let builtin_types = Common.hashset_of_list [
@@ -245,6 +247,15 @@ let add_type_deps env typ =
           let rec aux xs =
             match xs with
             | [] -> ()
+            (* todo: anonymous struct? enum? parse the pathname?
+             * or just look at preceding type def before the VarDecl,
+             * probably the anon struct
+             *)
+            | TLowerIdent"struct"::TInf _::TLowerIdent "anonymous"::rest ->
+                ()
+            | TLowerIdent"enum"::TInf _::TLowerIdent "anonymous"::rest ->
+                ()
+
             | TLowerIdent "struct"::(TLowerIdent s | TUpperIdent s)::rest ->
                 add_use_edge env ("S__"^s, E.Type);
                 aux rest
@@ -254,6 +265,10 @@ let add_type_deps env typ =
             | TLowerIdent "enum"::(TLowerIdent s | TUpperIdent s)::rest ->
                 add_use_edge env ("E__"^s, E.Type);
                 aux rest
+
+            | TLowerIdent "volatile"::rest ->
+                aux rest
+
             | (TLowerIdent s | TUpperIdent s)::rest ->
                 (if Hashtbl.mem builtin_types s
                 then ()
