@@ -444,16 +444,35 @@ and class_def env def =
     let env = add_node_and_edge_if_defs_mode env node in
     expr env def.cst_body;
   );
-  def.c_variables +> List.iter (fun def ->
-    let node = (def.cv_name, E.Field) in
-    let props = [E.Privacy (privacy_of_field def)] in
+  def.c_variables +> List.iter (fun fld ->
+    let node = (fld.cv_name, E.Field) in
+    let props = [E.Privacy (privacy_of_field fld)] in
     let env = add_node_and_edge_if_defs_mode ~props env node in
-    (* todo: PHP allow to refine a field, for instance on can do
+    (* PHP allow to refine a field, for instance on can do
      * 'protected $foo = 42;' in a class B extending A which contains
      * such a field (also this field could have been declared
      * as Public there.
      *)
-    Common2.opt (expr env) def.cv_value
+    if env.phase = Inheritance && 
+       privacy_of_field fld =*= E.Protected then begin
+         (* todo? handle trait and interface here? can redefine field? *)
+         (match def.c_extends with
+         | None -> ()
+         | Some c ->
+           (match 
+               lookup env.g (Ast.str_of_name c, Ast.str_of_name fld.cv_name) ()
+            with
+            | None -> ()
+            | Some ((s, _), _kind) ->
+              env.log (spf "REDEFINED protected %s in class %s" s env.self);
+              let class_ = (env.self, (E.Class kind)) in
+              env.g +> G.remove_edge (class_, env.current) G.Has;
+              env.g +> G.add_edge (G.dupe, env.current) G.Has;
+           )
+         )   
+      end;
+
+    Common2.opt (expr env) fld.cv_value
   );
   def.c_methods +> List.iter (fun def ->
     (* less: be more precise at some point *)

@@ -6,14 +6,18 @@ class ProtectedUsed {
 
   protected $fld;
   protected $dead_fld;
+  protected $redefined_in_child;
   function method1() {
     $this->fld = 1;
   }
 }
 
 class ProtectedUsedChild extends ProtectedUsed {
+  protected $redefined_in_child;
+
   function method2() {
     $this->fld = 1;
+    $this->redefined_in_child = 1;
   }
 }
 

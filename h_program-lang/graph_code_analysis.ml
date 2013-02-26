@@ -65,19 +65,22 @@ let protected_to_private g =
         then pr2 (spf "DEAD private field: %s" (G.string_of_node node))
       | E.Protected ->
         let class_ = G.parent node g in
-        let classname = fst class_ in
-
-        let users = pred node G.Use g in
-        if null users
-        then pr2 (spf "DEAD protected field: %s" (G.string_of_node node))
-        else 
-          if users +> List.for_all (fun (s, kind) -> 
-            s =~ (spf "^%s\\." classname)
-          )
-          then pr2 (spf "Protected to private candidate: %s"
-                      (G.string_of_node node))
-          else ()
-          
+        if class_ =*= G.dupe 
+        then pr2 (spf "Redefined field: %s" (G.string_of_node node))
+        else begin
+          let classname = fst class_ in
+        
+          let users = pred node G.Use g in
+          if null users
+          then pr2 (spf "DEAD protected field: %s" (G.string_of_node node))
+          else 
+            if users +> List.for_all (fun (s, kind) -> 
+              s =~ (spf "^%s\\." classname)
+            )
+            then pr2 (spf "Protected to private candidate: %s"
+                        (G.string_of_node node))
+            else ()
+        end
       | _ -> ()
       )
     | _ -> ()
