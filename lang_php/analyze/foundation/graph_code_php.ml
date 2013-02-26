@@ -152,7 +152,8 @@ let parse a =
      )) 0
 
 let privacy_of_field def =
-  let p = ref E.Private in
+  (* yes, default is public ... love PHP *)
+  let p = ref E.Public in
   def.cv_modifiers +> List.iter (function
   | Ast_php.Public -> p := E.Public
   | Ast_php.Private -> p := E.Private

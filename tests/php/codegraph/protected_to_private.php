@@ -1,6 +1,9 @@
 <?php
 
-class ProtectedUsed { 
+class ProtectedUsed {
+  // default is public in PHP
+  static $public_static;
+
   protected $fld;
   protected $dead_fld;
   function method1() {
