@@ -283,6 +283,7 @@ let rec add_use_edge env (((str, tok) as name, kind)) =
 (* Lookup *)
 (*****************************************************************************)
 
+(* todo: handle privacy? *)
 let lookup2 g (aclass, amethod_or_field_or_constant) tok =
   let rec depth current =
     if not (G.has_node current g)
@@ -447,6 +448,11 @@ and class_def env def =
     let node = (def.cv_name, E.Field) in
     let props = [E.Privacy (privacy_of_field def)] in
     let env = add_node_and_edge_if_defs_mode ~props env node in
+    (* todo: PHP allow to refine a field, for instance on can do
+     * 'protected $foo = 42;' in a class B extending A which contains
+     * such a field (also this field could have been declared
+     * as Public there.
+     *)
     Common2.opt (expr env) def.cv_value
   );
   def.c_methods +> List.iter (fun def ->
