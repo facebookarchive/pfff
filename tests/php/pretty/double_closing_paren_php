@@ -6,8 +6,8 @@ function yieldAuthor() {
   yield wait_for(
     Ent::createLoader(
       'EntUser',
-      $this->getViewerContext(),
-      $this->getOwnerID(),
+      $this->foo(),
+      $this->bar(),
       $owner
     ));
   yield result($owner);
