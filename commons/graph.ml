@@ -372,6 +372,7 @@ let remove_vertex k g =
 let remove_edge k1 k2 g =
   let vx = g +> vertex_of_key k1 in
   let vy = g +> vertex_of_key k2 in
+  (* todo? assert edge exists? *)
   OG.remove_edge g.og vx vy;
   ()
 

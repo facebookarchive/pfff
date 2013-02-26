@@ -465,8 +465,12 @@ and class_def env def =
             | None -> ()
             | Some ((s, _), _kind) ->
               env.log (spf "REDEFINED protected %s in class %s" s env.self);
-              let class_ = (env.self, (E.Class kind)) in
-              env.g +> G.remove_edge (class_, env.current) G.Has;
+              let parent = G.parent env.current env.g in
+              (* was using env.self for parent node, but in files with
+               * duplicated classes, the parent may be the File so
+               * let's use G.parent, safer.
+               *)
+              env.g +> G.remove_edge (parent, env.current) G.Has;
               env.g +> G.add_edge (G.dupe, env.current) G.Has;
            )
          )   
