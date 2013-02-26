@@ -329,6 +329,7 @@ let nb_edges g = OG.nb_edges g.og
 
 let succ k g = OG.succ g.og (g +> vertex_of_key k) 
   +> List.map (fun k -> key_of_vertex k g)
+(* this seems slow on the version of ocamlgraph I currently have *)
 let pred k g  = OG.pred  g.og (g +> vertex_of_key k)
   +> List.map (fun k -> key_of_vertex k g)
 
