@@ -41,9 +41,14 @@ let nodeinfo a b =
  * analyze.
  *)
 let protected_to_private g =
+  let found = ref false in
   g +> G.iter_nodes (fun node ->
     match node with
     | (s, E.Field) ->
+      if s =$= "PlacesCheckinMoreTestCase.$method_name"
+      then found := true;
+
+      if !found then begin
       let props =
         try 
           let info = nodeinfo node g in
@@ -64,6 +69,9 @@ let protected_to_private g =
         if null users
         then pr2 (spf "DEAD private field: %s" (G.string_of_node node))
       | E.Protected ->
+        let parents = G.parents node g in
+        if List.length parents > 1
+        then begin pr2_gen node; pr2_gen parents end;
         let class_ = G.parent node g in
         if class_ =*= G.dupe 
         then pr2 (spf "Redefined field: %s" (G.string_of_node node))
@@ -83,5 +91,6 @@ let protected_to_private g =
         end
       | _ -> ()
       )
+      end
     | _ -> ()
   )
