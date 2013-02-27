@@ -32,29 +32,27 @@ module Loc = Location_clang
  * 
  * 
  * schema:
- *  Root -> Dir -> File (.c|.h) -> Type (struct | enum | union) TODO use Class?
+ *  Root -> Dir -> File (.c|.h) -> Function | Prototype
+ *                              -> Global | GlobalExtern
+ *                              -> Type (for Typedef)
+ *                              -> Type (struct|enum|union) TODO use Class?
  *                                 -> Field
  *                                 -> Constant (enum)
- *                              -> Function | Prototype
- *                              -> Type (for Typedef)
- *                              -> Global | GlobalExtern
  *       -> Dir -> SubDir -> ...
  * 
- * todo: 
- *  - Use for fields
- * 
- * procedure:
+ * procedure to analyze a project:
  *  $ make V=1 > make_trace.txt
  *  $ ~/pfff/pfff -analyze_make_trace make_trace.txt > compile_commands.json
  *  $ ~/pfff/pfff -gen_clang compile_commands.json 
  *  $ ~/pfff/pfff -uninclude_clang
  *  $ ~/pfff/codegraph -lang clang2 -build .
  * 
- * alt:
+ * alternative when project uses cmake:
  *  $ cmake -DCMAKE_EXPORT_COMPILE_COMMANDS=ON 
  *  $ mv compile_commands.json old.json
  *  $ ~/pfff/pfff -sanitize_compile_commands old.json > compile_commands.json
- *  ...
+ *  $ ~/pfff/pfff -gen_clang ...
+ *  $ ...
  *)
 
 (*****************************************************************************)
