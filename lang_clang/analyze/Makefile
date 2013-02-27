@@ -5,6 +5,7 @@ TOP=../..
 TARGET=lib
 
 SRC= location_clang.ml \
+     type_clang.ml \
      uninclude_clang.ml \
      compile_commands_clang.ml \
      graph_code_clang.ml \
