@@ -5,11 +5,15 @@ struct a_struct {
   struct anon {
     int subfield1;
     int subfield2;
-  };
+  } field3;
 };
 
 struct use_a_struct {
   struct a_struct x;
 };
 
-
+void use_field() {
+  struct a_struct x;
+  x.field1++;
+  x.field3.subfield1++;
+}

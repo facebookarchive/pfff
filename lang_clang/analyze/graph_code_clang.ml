@@ -337,13 +337,13 @@ and sexp_toplevel env x =
   | Paren (enum, l, xs) ->
       let env = { env with line = l } in
 
-      (* dispatch *)
+      (* dispatcher *)
       (match enum with
       | FunctionDecl | VarDecl
       | TypedefDecl | RecordDecl | EnumDecl 
       | FieldDecl | EnumConstantDecl
         -> decl env (enum, l, xs)
-      | CallExpr | DeclRefExpr
+      | CallExpr | DeclRefExpr | MemberExpr
         -> expr env (enum, l, xs)
       | _ -> 
           sexps env xs
@@ -366,6 +366,7 @@ and sexps env xs = List.iter (sexp env) xs
 (* Decls *)
 (* ---------------------------------------------------------------------- *)
 
+(* coupling: must add constructor in dispatcher above *)
 and decl env (enum, l, xs) =
   let env =
     match enum, xs with
@@ -493,6 +494,8 @@ and decl env (enum, l, xs) =
 (* ---------------------------------------------------------------------- *)
 (* Expr *)
 (* ---------------------------------------------------------------------- *)
+
+(* coupling: must add constructor in dispatcher above *)
 and expr env (enum, l, xs) =
   (match enum, xs with
   | CallExpr, _loc::_typ::
@@ -546,6 +549,32 @@ and expr env (enum, l, xs) =
      
 
   | DeclRefExpr, _ -> error env "DeclRefExpr to handle"
+
+  | MemberExpr, [_loc;_typ;_lval;T (TDot|TArrow);
+                 T (TLowerIdent s|TUpperIdent s);
+                 _address;(Paren (enum2, l2, xs))] ->
+      if env.phase = Uses
+      then ()
+
+  | MemberExpr, [_loc;_typ;T (TDot|TArrow);
+                 T (TLowerIdent s | TUpperIdent s);
+                 _address;(Paren (enum2, l2, xs))] ->
+      if env.phase = Uses
+      then ()
+
+  | MemberExpr, [_loc;_typ;_lval;T (TLowerIdent "bitfield"); T (TDot|TArrow);
+                 T (TLowerIdent s | TUpperIdent s);
+                 _address;(Paren (enum2, l2, xs))] ->
+      if env.phase = Uses
+      then ()
+
+  (* anon field *)
+  | MemberExpr, _loc::_typ::_lval::T (TDot|TArrow)::
+      _address::(Paren (enum2, l2, xs))::[] ->
+      if env.phase = Uses
+      then ()
+
+  | MemberExpr, _ -> error env "MemberExpr to handle"
   | _ -> raise Impossible
   );
   sexps env xs
