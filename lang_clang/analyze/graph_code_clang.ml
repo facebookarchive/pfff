@@ -80,7 +80,8 @@ type env = {
    * as ParamVar in the AST.
    *)
   locals: string list ref;
-  
+
+  (* static functions and globals and main renaming *)
   local_rename: (string, string) Hashtbl.t;
 
   log: string -> unit;
@@ -388,7 +389,7 @@ and decl env (enum, l, xs) =
            * some unresolvev lookup in the c files.
            *)
           | T (TLowerIdent "static")::T (TLowerIdent "inline")::_rest ->
-              env.current_clang2_file =~ ".*\\.c\\.clang2"
+              env.current_clang2_file =~ ".*\\.[cm]\\.clang2"
           | T (TLowerIdent "static")::_rest -> true
           | _ when s = "main" -> true
           | _ -> false
@@ -408,9 +409,27 @@ and decl env (enum, l, xs) =
           | T (TLowerIdent "extern")::_ -> E.GlobalExtern
           | _ -> E.Global
         in
+        let static = 
+          match rest with
+          (* if we are in an header file, then we don't want to rename
+           * the static global because of uninclude_clang which
+           * splitted in different files, and so with different
+           * local_rename hash. Renaming in the header file would lead to
+           * some unresolved lookup in the c files.
+           *)
+          | T (TLowerIdent "static")::_rest ->
+              env.current_clang2_file =~ ".*\\.[cm]\\.clang2"
+          | _ -> false
+        in
         let env =
           if env.at_toplevel 
-          then add_node_and_edge_if_defs_mode env (s, kind)
+          then 
+            let s = 
+              if static
+              then new_str_if_defs env s
+              else s
+            in
+            add_node_and_edge_if_defs_mode env (s, kind)
           else begin 
             env.locals := s::!(env.locals);
             env
@@ -505,7 +524,9 @@ and expr env (enum, l, xs) =
       then
         if List.mem s !(env.locals)
         then ()
-        else add_use_edge env (s, E.Global)
+        else 
+          let s = str env s in
+          add_use_edge env (s, E.Global)
 
   | DeclRefExpr, _loc::_typ::_lval::T (TUpperIdent "ParmVar")::_rest ->
       ()
