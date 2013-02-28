@@ -71,6 +71,8 @@ let readable_of_filename ~root f =
     match xs with
     | "usr"::"include"::rest -> 
         "EXTERNAL"::"CORE"::rest
+    | "usr"::"X11"::"include"::"X11"::rest ->
+        "EXTERNAL"::"X11"::rest
 
     (* macos specific *)
     | "System"::"Library"::"Frameworks"::rest -> 
