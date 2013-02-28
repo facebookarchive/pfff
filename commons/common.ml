@@ -26,7 +26,7 @@
  * those sections, of those dependencies, I put the functions causing
  * dependency problem here. C is better than OCaml on this with the
  * ability to declare prototypes, enabling some form of forward
- * reference. 
+ * reference.
  *)
 
 let (+>) o f = f o
@@ -42,13 +42,15 @@ let rec drop n xs =
   | (_,[]) -> failwith "drop: not enough"
   | (n,x::xs) -> drop (n-1) xs
 
-let rec take n xs =
-  match (n,xs) with
-  | (0,_) -> []
-  | (_,[]) -> failwith "Common.take: not enough"
-  | (n,x::xs) -> x::take (n-1) xs
+let take n xs =
+  let rec next n xs acc =
+    match (n,xs) with
+    | (0,_) -> List.rev acc
+    | (_,[]) -> failwith "Common.take: not enough"
+    | (n,x::xs) -> next (n-1) xs (x::acc) in
+  next n xs []
 
-let rec enum_orig x n = 
+let rec enum_orig x n =
   if x = n then [n] else x::enum_orig (x+1)  n
 
 let enum x n =
@@ -140,7 +142,7 @@ let pr s =
   print_string "\n";
   flush stdout
 
-let pr2 s = 
+let pr2 s =
   prerr_string s;
   prerr_string "\n";
   flush stderr
@@ -679,7 +681,7 @@ let rec find_some p = function
 
 let rec find_some_opt p = function
   | [] -> None
-  | x :: l -> 
+  | x :: l ->
       match p x with
       |	Some v -> Some v
       |	None -> find_some_opt p l
@@ -1006,7 +1008,7 @@ let rec zip xs ys =
   | (_,[]) -> failwith "zip: not same length"
   | (x::xs,y::ys) -> (x,y)::zip xs ys
 
-let null xs = 
+let null xs =
   match xs with [] -> true | _ -> false
 
 let index_list xs =
@@ -1076,7 +1078,7 @@ let hash_of_list xs =
 type 'a hashset = ('a, bool) Hashtbl.t
   (* with sexp *)
 
-let hashset_to_list h = 
+let hashset_to_list h =
   hash_to_list h +> List.map fst
 
 let hashset_of_list xs =
@@ -1192,7 +1194,7 @@ let main_boilerplate f =
 
 let follow_symlinks = ref false
 
-let arg_symlink () = 
+let arg_symlink () =
   if !follow_symlinks
   then " -L "
   else ""
