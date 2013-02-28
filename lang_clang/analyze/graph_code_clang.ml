@@ -223,32 +223,12 @@ let rec add_use_edge env (s, kind) =
         )
     )
       
-let builtin_types = Common.hashset_of_list [
-  "char";
-  "int";"short";"long";
-  "float";"double";
-  "void";
-  "unsigned";"signed";
-
-  "const";"restrict";"volatile";
-
-  "noreturn";"__attribute__";
-  (* clang *)
-  "__int128";
-  "__va_list_tag";
-  (* todo: ugly, because of stdbool.h skip? but now that use ExpansionLoc,
-   * don't need that anymore? apparently still need it :(
-   *)
-  "_Bool";
-
-  (* otherwise get wierd edges from EXTERNAL to the source. e.g. in byacc *)
-  "__builtin_va_list";
-]
 let add_type_deps env typ =
   match typ with
   | T (TString s) ->
       if env.phase = Uses then begin
-        try 
+        try
+          (* todo? move in type_clang.ml? *)
           let xs = Parse_clang.tokens_of_string s in
           let rec aux xs =
             match xs with
@@ -283,7 +263,7 @@ let add_type_deps env typ =
                 ()
 
             | (TLowerIdent s | TUpperIdent s)::rest ->
-                (if Hashtbl.mem builtin_types s
+                (if Hashtbl.mem Type_clang.builtin_types s
                 then ()
                 else add_use_edge env ("T__"^s, E.Type)
                 );
