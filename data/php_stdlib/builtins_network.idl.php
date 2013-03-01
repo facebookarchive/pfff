@@ -24,6 +24,7 @@ function socket_set_blocking($stream, $mode) { }
 function socket_set_timeout($stream, $seconds, $microseconds = 0) { }
 function header($str, $replace = true, $http_response_code = 0) { }
 function headers_list() { }
+function get_http_request_size() { }
 function headers_sent(&$file = null, &$line = null) { }
 function header_register_callback($callback) { }
 function header_remove($name = null_string) { }
