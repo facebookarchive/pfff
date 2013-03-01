@@ -47,8 +47,11 @@ let pr2, pr2_once = Common2.mk_pr2_wrappers Flag.verbose_lexing
 exception Lexical of string
 
 (*s: lexer helpers *)
-(* pad: hack around ocamllex to emulate the yyless of flex *)
-let yyless n lexbuf =
+(* pad: hack around ocamllex to emulate the yyless() of flex. The semantic
+ * is not exactly the same than yyless(), so I use yyback() instead.
+ * http://my.safaribooksonline.com/book/programming/flex/9780596805418/a-reference-for-flex-specifications/yyless
+ *)
+let yyback n lexbuf =
   lexbuf.Lexing.lex_curr_pos <- lexbuf.Lexing.lex_curr_pos - n;
   let currp = lexbuf.Lexing.lex_curr_p in
   lexbuf.Lexing.lex_curr_p <- { currp with
@@ -637,7 +640,7 @@ rule st_in_scripting = parse
           let xs = Common.split ":" tag in
           T_XHP_COLONID_DEF (xs, tokinfo lexbuf)
         else begin
-          yyless (String.length tag) lexbuf;
+          yyback (String.length tag) lexbuf;
           TCOLON(tokinfo lexbuf)
         end
       }
@@ -649,7 +652,7 @@ rule st_in_scripting = parse
           let xs = Common.split ":" tag in
           T_XHP_PERCENTID_DEF (xs, tokinfo lexbuf)
         else begin
-          yyless (String.length tag) lexbuf;
+          yyback (String.length tag) lexbuf;
           TMOD(tokinfo lexbuf)
         end
       }
@@ -695,7 +698,7 @@ rule st_in_scripting = parse
               push_mode (ST_IN_XHP_TAG xs);
               T_XHP_OPEN_TAG(xs, tokinfo lexbuf)
           | _ ->
-              yyless (String.length tag) lexbuf;
+              yyback (String.length tag) lexbuf;
               TSMALLER(tokinfo lexbuf)
         }
 
@@ -704,7 +707,7 @@ rule st_in_scripting = parse
          if !Flag.xhp_builtin
          then T_XHP_REQUIRED (tokinfo lexbuf)
          else begin
-           yyless (String.length s - 1) lexbuf;
+           yyback (String.length s - 1) lexbuf;
            T__AT(tokinfo lexbuf)
          end
       }
@@ -926,10 +929,10 @@ and initial = parse
   (* php-facebook-ext: fbstrict extensions *)
   | "<?hh" ([' ''\t']|NEWLINE)
       {
-        (* I now do a yyless to not eat the newline which is more
+        (* I now do a yyback to not eat the newline which is more
          * consistent with how I treat newlines elsewhere
          *)
-        yyless 1 lexbuf;
+        yyback 1 lexbuf;
         set_mode ST_IN_SCRIPTING;
         T_OPEN_TAG(tokinfo lexbuf)
       }
@@ -991,7 +994,7 @@ and st_looking_for_property = parse
     }
 (*
   | ANY_CHAR {
-      (* XXX yyless(0) ?? *)
+      (* XXX yyback(0) ?? *)
       pop_mode();
     }
 *)
@@ -1006,7 +1009,7 @@ and st_looking_for_varname = parse
       T_STRING_VARNAME(tok lexbuf, tokinfo lexbuf)
     }
   | _ {
-      yyless 1 lexbuf;
+      yyback 1 lexbuf;
       set_mode ST_IN_SCRIPTING;
       st_in_scripting lexbuf
     }
@@ -1071,7 +1074,7 @@ and st_double_quotes = parse
 
   (*x: encapsulated dollar stuff rules *)
     | "{$" {
-        yyless 1 lexbuf;
+        yyback 1 lexbuf;
         push_mode ST_IN_SCRIPTING;
         T_CURLY_OPEN(tokinfo lexbuf);
       }
@@ -1129,7 +1132,7 @@ and st_backquote = parse
 
   (*x: encapsulated dollar stuff rules *)
     | "{$" {
-        yyless 1 lexbuf;
+        yyback 1 lexbuf;
         push_mode ST_IN_SCRIPTING;
         T_CURLY_OPEN(tokinfo lexbuf);
       }
@@ -1219,7 +1222,7 @@ and st_start_heredoc stopdoc = parse
 
   (*x: encapsulated dollar stuff rules *)
     | "{$" {
-        yyless 1 lexbuf;
+        yyback 1 lexbuf;
         push_mode ST_IN_SCRIPTING;
         T_CURLY_OPEN(tokinfo lexbuf);
       }
@@ -1431,24 +1434,24 @@ and st_one_line_comment = parse
       {
         (match x with
         | '?' | '%' | '>' ->
-            yyless 1 lexbuf;
+            yyback 1 lexbuf;
             start ^ st_one_line_comment lexbuf
         (* end of recursion when new line or other character  *)
         | '\n' ->
             (* don't want the newline to be part of the comment *)
-            yyless 1 lexbuf;
+            yyback 1 lexbuf;
             start
         | c -> start ^ String.make 1 c
         )
       }
   | NEWLINE {
       (* don't want the newline to be part of the comment *)
-      yyless 1 lexbuf;
+      yyback 1 lexbuf;
       ""
     }
   | "?>" {
       (* "%>" is only when use asp_tags *)
-      yyless 2 lexbuf;
+      yyback 2 lexbuf;
       ""
     }
 
