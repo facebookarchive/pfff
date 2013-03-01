@@ -117,7 +117,7 @@ rule token = parse
    * to have just one token for the whole thing.
    * todo: also store what is after the ":"?
    *)
-  | "'" ([^'\'' ]* as s) "'" ":" "'" [^'\'' ]* "'"  { TString (s) }
+  | "'" ([^'\'' ]* as s) "'" ":" "'" ([^'\'' ]* as _s2) "'"  { TString (s) }
   | '"' ([^'\n''"']* as s) '"' { TString (s) }
 
   | '"' (([^'\n''"'] | '\\' '"')* as s)'"' { TString (s) }
