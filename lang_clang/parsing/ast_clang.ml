@@ -25,7 +25,8 @@ open Common
 (* ------------------------------------------------------------------------- *)
 (* Token/info *)
 (* ------------------------------------------------------------------------- *)
-type info = Parse_info.info
+(* to report analysis error, need the .clang (or .clang2) filename and line *)
+type loc = Common.filename * int
 
 type enum = 
 

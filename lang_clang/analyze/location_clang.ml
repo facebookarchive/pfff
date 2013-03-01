@@ -30,6 +30,7 @@ module Ast = Ast_clang
 (* Types *)
 (*****************************************************************************)
 
+(* references a source (C/C++/...) code location  *)
 type location =
   | File of Common.filename * int * int
   | Line of int * int

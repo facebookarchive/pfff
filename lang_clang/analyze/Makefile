@@ -4,7 +4,8 @@ TOP=../..
 ##############################################################################
 TARGET=lib
 
-SRC= location_clang.ml \
+SRC= errors_clang.ml \
+     location_clang.ml \
      type_clang.ml \
      uninclude_clang.ml \
      compile_commands_clang.ml \

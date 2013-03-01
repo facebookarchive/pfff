@@ -117,8 +117,11 @@ let str env s =
   then Hashtbl.find env.local_rename s
   else s
 
+let loc_of_env env =
+  env.current_clang2_file, env.line
+
 let error env s =
-  failwith (spf "%s:%d: %s" env.current_clang2_file env.line s)
+  Errors_clang.error (loc_of_env env) s
 
 let str_of_angle_loc env loc =
   Location_clang.str_of_angle_loc env.line loc env.current_clang2_file
