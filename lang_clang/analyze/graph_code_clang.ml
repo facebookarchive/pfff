@@ -230,60 +230,29 @@ let add_type_deps env typ =
   match typ with
   | T (TString s) ->
       if env.phase = Uses then begin
-        try
-          (* todo? move in type_clang.ml? *)
-          let xs = Parse_clang.tokens_of_string s in
-          let rec aux xs =
-            match xs with
-            | [] -> ()
-            (* todo: anonymous struct? enum? parse the pathname?
-             * or just look at preceding type def before the VarDecl,
-             * probably the anon struct
-             *)
-            | TLowerIdent"struct"::TInf _::TLowerIdent "anonymous"::rest ->
-                ()
-            | TLowerIdent"union"::TInf _::TLowerIdent "anonymous"::rest ->
-                ()
-            | TLowerIdent"enum"::TInf _::TLowerIdent "anonymous"::rest ->
-                ()
-
-            | TLowerIdent "struct"::(TLowerIdent s | TUpperIdent s)::rest ->
-                add_use_edge env ("S__"^s, E.Type);
-                aux rest
-            | TLowerIdent "union"::(TLowerIdent s | TUpperIdent s)::rest ->
-                add_use_edge env ("U__"^s, E.Type);
-                aux rest
-            | TLowerIdent "enum"::(TLowerIdent s | TUpperIdent s)::rest ->
-                add_use_edge env ("E__"^s, E.Type);
-                aux rest
-
-            | TLowerIdent "volatile"::rest ->
-                aux rest
-            (* todo: sparse has such code, why clang does not unsugar?
-             * it does in 'a':'b' 'b' is unsugared!
-             *)
-            | TLowerIdent "typeof"::rest ->
-                ()
-
-            | (TLowerIdent s | TUpperIdent s)::rest ->
-                (if Hashtbl.mem Type_clang.builtin_types s
-                then ()
-                else add_use_edge env ("T__"^s, E.Type)
-                );
-                aux rest
-            | TOBracket _::rest ->
-                skip_until_closing_bracket rest
-            | x::xs ->
-                aux xs
-          (* todo: recursive? *)
-          and skip_until_closing_bracket = function
-            | [] -> ()
-            | TCBracket::xs -> aux xs
-            | x::xs -> skip_until_closing_bracket xs
-          in  
-          aux xs
-        with Lexer_clang.Lexical s ->
-          error env s
+        let t = Type_clang.extract_type_of_string (loc_of_env env) s in
+        let rec aux t = 
+          match t with
+          | Type_clang.Builtin _ -> ()
+              
+          | Type_clang.StructName s ->
+              add_use_edge env ("S__"^s, E.Type)
+          | Type_clang.UnionName s ->
+              add_use_edge env ("U__"^s, E.Type)
+          | Type_clang.EnumName s ->
+              add_use_edge env ("E__"^s, E.Type)
+          | Type_clang.Typename s ->
+              add_use_edge env ("T__"^s, E.Type)
+                
+          | Type_clang.AnonStuff -> ()
+              (* todo: use the canonical type in that case? *)
+          | Type_clang.TypeofStuff -> ()
+          | Type_clang.Other _ -> ()
+          | Type_clang.Pointer x-> aux x
+          (* todo: should analyze parameters *)
+          | Type_clang.Function x -> aux x
+        in
+        aux t
       end
   | _ ->
       error env "wrong type format"
@@ -533,23 +502,53 @@ and expr env (enum, l, xs) =
 
   | DeclRefExpr, _ -> error env "DeclRefExpr to handle"
 
-  | MemberExpr, [_loc;_typ;_lval;T (TDot|TArrow);
+  | MemberExpr, [_loc;_typ;_(*lval*);T (TDot|TArrow);
                  T (TLowerIdent s|TUpperIdent s);
-                 _address;(Paren (enum2, l2, xs))] ->
-      if env.phase = Uses
-      then ()
-
+                 _address;(Paren (enum2, l2, xs))]
   | MemberExpr, [_loc;_typ;T (TDot|TArrow);
                  T (TLowerIdent s | TUpperIdent s);
-                 _address;(Paren (enum2, l2, xs))] ->
-      if env.phase = Uses
-      then ()
-
-  | MemberExpr, [_loc;_typ;_lval;T (TLowerIdent "bitfield"); T (TDot|TArrow);
+                 _address;(Paren (enum2, l2, xs))]
+  | MemberExpr, [_loc;_typ;_(*lval*);T (TLowerIdent "bitfield");T(TDot|TArrow);
                  T (TLowerIdent s | TUpperIdent s);
                  _address;(Paren (enum2, l2, xs))] ->
       if env.phase = Uses
-      then ()
+      then
+        let loc = env.current_clang2_file, l2 in
+        let typ_expr = 
+          Type_clang.extract_type_of_sexp loc (Paren(enum2, l2, xs))
+        in
+        (*pr2_gen typ_expr *)
+        (match typ_expr with
+        | Type_clang.StructName s 
+        (* because TDot|TArrow above *)
+        | Type_clang.Pointer (Type_clang.StructName s) ->
+            ()
+        | Type_clang.UnionName s 
+        (* because TDot|TArrow above *)
+        | Type_clang.Pointer (Type_clang.UnionName s) ->
+            ()
+        | Type_clang.AnonStuff
+        | Type_clang.Pointer (Type_clang.AnonStuff) ->
+            ()
+        | Type_clang.Typename _
+        | Type_clang.Pointer (Type_clang.Typename _) ->
+            (* todo: use canonical type *)
+            ()
+        | Type_clang.TypeofStuff
+        | Type_clang.Pointer (Type_clang.TypeofStuff) ->
+            (* todo: use canonical type *)
+            ()
+
+        | (Type_clang.Builtin _
+          |Type_clang.Function _
+          |Type_clang.EnumName _
+          |Type_clang.Other _
+
+          |Type_clang.Pointer _
+          ) ->
+            error env (spf "unhandled typ: %s" (Common.dump typ_expr))
+
+        )
 
   (* anon field *)
   | MemberExpr, _loc::_typ::_lval::T (TDot|TArrow)::
