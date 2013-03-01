@@ -388,6 +388,27 @@ let is_in_binary_operator_position last_tok =
       -> true
   | _ -> false
 
+(* ugly: in code like 'function foo( (function(string):string) $callback){}'
+ * we want to parse the '(string)' not as a T_STRING_CAST but
+ * as an open paren followed by other tokens. The right fix would
+ * be to not have those ugly lexing rules for cast, but this would
+ * lead to some grammar ambiguities or require other parsing hacks anyway.
+*)
+let lang_ext_or_cast t lexbuf =
+  if !Flag.facebook_lang_extensions
+  then 
+    (match !_last_non_whitespace_like_token with
+    | Some (T_FUNCTION _) ->
+      let s = tok lexbuf in
+      (* just keep the open parenthesis *)
+      yyback (String.length s - 1) lexbuf;
+      TOPAR (tokinfo lexbuf)
+    | _ ->
+      t
+    )
+  else t
+     
+
 }
 
 (*****************************************************************************)
@@ -837,40 +858,48 @@ rule st_in_scripting = parse
   (* Misc *)
   (* ----------------------------------------------------------------------- *)
   (*s: misc rules *)
-    (* ugly, they could have done that in the grammar ... or maybe it was
-     * because it could lead to some ambiguities ?
+    (* ugly: the cast syntax in PHP is newline and even comment sensitive. Hmm.
+     * You cannot write for instance '$o = (int/*comment*/) foo();'.
+     * We would really like to have different tokens for '(', space,
+     * idents, and a grammar rule like 'expr: TOPAR TIdent TCPAR'
+     * but then the grammar would be ambiguous with 'expr: TOPAR expr TCPAR'
+     * unless like in C typenames have a special token type and you can
+     * have a rule like 'expr: TOPAR TTypename TCPAR.
+     * This could have been done in PHP if those typenames were reserved
+     * tokens, but PHP allows to have functions or methods called e.g. 
+     * string(). So what they have done if this ugly lexing hack.
      *)
     | "(" TABS_AND_SPACES ("int"|"integer") TABS_AND_SPACES ")"
-        { T_INT_CAST(tokinfo lexbuf) }
+        { lang_ext_or_cast (T_INT_CAST(tokinfo lexbuf)) lexbuf }
 
     | "(" TABS_AND_SPACES ("real"|"double"|"float") TABS_AND_SPACES ")"
-        { T_DOUBLE_CAST(tokinfo lexbuf) }
+        { lang_ext_or_cast (T_DOUBLE_CAST(tokinfo lexbuf)) lexbuf }
 
     | "(" TABS_AND_SPACES "string" TABS_AND_SPACES ")"
-        { T_STRING_CAST(tokinfo lexbuf); }
+        { lang_ext_or_cast (T_STRING_CAST(tokinfo lexbuf)) lexbuf }
 
     | "(" TABS_AND_SPACES "binary" TABS_AND_SPACES ")"
-        { T_STRING_CAST(tokinfo lexbuf); }
+        { lang_ext_or_cast (T_STRING_CAST(tokinfo lexbuf)) lexbuf }
 
     | "(" TABS_AND_SPACES "array" TABS_AND_SPACES ")"
-        { T_ARRAY_CAST(tokinfo lexbuf); }
+        { lang_ext_or_cast (T_ARRAY_CAST(tokinfo lexbuf)) lexbuf }
 
     | "(" TABS_AND_SPACES "object" TABS_AND_SPACES ")"
-        { T_OBJECT_CAST(tokinfo lexbuf); }
+        { lang_ext_or_cast (T_OBJECT_CAST(tokinfo lexbuf)) lexbuf }
 
     | "(" TABS_AND_SPACES ("bool"|"boolean") TABS_AND_SPACES ")"
-        { T_BOOL_CAST(tokinfo lexbuf); }
+        { lang_ext_or_cast (T_BOOL_CAST(tokinfo lexbuf)) lexbuf }
 
     (* PHP is case insensitive for many things *)
     | "(" TABS_AND_SPACES "Array" TABS_AND_SPACES ")"
-        { T_ARRAY_CAST(tokinfo lexbuf); }
+        { lang_ext_or_cast (T_ARRAY_CAST(tokinfo lexbuf)) lexbuf }
     | "(" TABS_AND_SPACES "Object" TABS_AND_SPACES ")"
-        { T_OBJECT_CAST(tokinfo lexbuf); }
+        { lang_ext_or_cast (T_OBJECT_CAST(tokinfo lexbuf)) lexbuf }
     | "(" TABS_AND_SPACES ("Bool"|"Boolean") TABS_AND_SPACES ")"
-        { T_BOOL_CAST(tokinfo lexbuf); }
+        { lang_ext_or_cast (T_BOOL_CAST(tokinfo lexbuf)) lexbuf }
 
     | "(" TABS_AND_SPACES ("unset") TABS_AND_SPACES ")"
-        { T_UNSET_CAST(tokinfo lexbuf); }
+        { lang_ext_or_cast (T_UNSET_CAST(tokinfo lexbuf)) lexbuf }
   (*x: misc rules *)
     | "?>"
         {

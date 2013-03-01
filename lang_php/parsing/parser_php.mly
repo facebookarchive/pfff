@@ -1150,13 +1150,16 @@ expr_without_variable_bis:
  | expr TQUESTION  expr T_XHP_COLONID_DEF
      { failwith_xhp_ambiguity_colon (snd $4) }
 
+ /*(* less: it would be nicer to have TOPAR TTypename TCPAR
+    * but this would require some parsing tricks to sometimes return
+    * a TIdent and TTypename like in pfff/lang_cpp/parsing/.
+    *)*/
  | T_BOOL_CAST   expr	{ Cast((BoolTy,$1),$2) }
  | T_INT_CAST    expr 	{ Cast((IntTy,$1),$2) }
  | T_DOUBLE_CAST expr 	{ Cast((DoubleTy,$1),$2) }
  | T_STRING_CAST expr	{ Cast((StringTy,$1),$2) }
  | T_ARRAY_CAST  expr 	{ Cast((ArrayTy,$1),$2) }
  | T_OBJECT_CAST expr 	{ Cast((ObjectTy,$1),$2) }
-
 
  | T_UNSET_CAST  expr	{ CastUnset($1,$2) }
 
