@@ -292,10 +292,7 @@ let default_state = INITIAL
 let _mode_stack =
   ref [default_state]
 (*x: lexer state global variables *)
-(* because ocamllex does not have the yyless feature, have to cheat.
- * update: in fact can hack my own yyless so maybe should revisit
- * this code.
- *)
+(* todo: now that I have yyback, maybe I should revisit this code. *)
 let _pending_tokens =
   ref ([]: Parser_php.token list)
 
@@ -580,10 +577,7 @@ rule st_in_scripting = parse
       }
   (*x: symbol rules *)
     | ("->" as sym) (WHITESPACEOPT as white) (LABEL as label) {
-     (* TODO: The ST_LOOKING_FOR_PROPERTY state does not work for now because
-      * it requires a yyless(1) which is not available in ocamllex (or is it ?)
-      * So have to cheat and use instead the pending_token with push_token.
-      *
+     (* todo: use yyback() instead of using pending_token with push_token.
       * buggy: push_mode ST_LOOKING_FOR_PROPERTY;
       *)
         let info = tokinfo lexbuf in
