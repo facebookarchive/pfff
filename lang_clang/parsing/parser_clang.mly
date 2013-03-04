@@ -33,6 +33,7 @@ open Common
 %token <string> TInt THexInt TFloat
 %token <string> TString TPath
 %token <string> TMisc
+%token <string * string> TType
 
 %token <int> TOPar TInf TOBracket
 %token TCPar TSup TCBracket

@@ -113,11 +113,7 @@ rule token = parse
   (* Strings *)
   (* ----------------------------------------------------------------------- *)
   | "'" ([^'\'' ]* as s) "'" { TString (s) }
-  (* lots of type annotation have this format, it simplify things
-   * to have just one token for the whole thing.
-   * todo: also store what is after the ":"?
-   *)
-  | "'" ([^'\'' ]* as s) "'" ":" "'" ([^'\'' ]* as _s2) "'"  { TString (s) }
+  | "'" ([^'\'' ]* as s1) "'" ":" "'" ([^'\'' ]* as s2) "'"  { TType (s1, s2) }
   | '"' ([^'\n''"']* as s) '"' { TString (s) }
 
   | '"' (([^'\n''"'] | '\\' '"')* as s)'"' { TString (s) }

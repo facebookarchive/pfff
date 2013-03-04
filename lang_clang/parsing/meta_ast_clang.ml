@@ -15,6 +15,10 @@ let vof_token =
       let v1 = Ocaml.vof_string v1 in Ocaml.VSum (("TFloat", [ v1 ]))
   | TString v1 ->
       let v1 = Ocaml.vof_string v1 in Ocaml.VSum (("TString", [ v1 ]))
+  | TType (v1, v2) ->
+      let v1 = Ocaml.vof_string v1 in 
+      let v2 = Ocaml.vof_string v2 in 
+      Ocaml.VSum (("TType", [ v1; v2 ]))
   | TPath v1 ->
       let v1 = Ocaml.vof_string v1 in Ocaml.VSum (("TPath", [ v1 ]))
   | TMisc v1 ->
