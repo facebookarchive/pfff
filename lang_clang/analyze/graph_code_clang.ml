@@ -530,6 +530,7 @@ and expr env (enum, l, xs) =
 
         (* with some struct anon this can happen apparently, cf umalloc.c *)
         | Typ.Typename _ | Typ.Pointer (Typ.Typename _) ->
+            (* TODO *)
             ()
 
         | Typ.TypeofStuff | Typ.Pointer (Typ.TypeofStuff) ->
