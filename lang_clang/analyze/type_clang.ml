@@ -158,11 +158,11 @@ let extract_type_of_string loc s =
   with Lexer_clang.Lexical s ->
     Errors_clang.error loc s
   
-let extract_type_of_sexp loc sexp =
+let extract_canonical_type_of_sexp loc sexp =
   match sexp with
   | Paren (enum, l, xs) ->
       (match xs with
-      | _loc::T (TString s)::_rest ->
+      | _loc::(T (TString s) | T (TType (_, s)))::_rest ->
           extract_type_of_string loc s
       | _ -> Errors_clang.error loc "didn't find type"
       )

@@ -229,7 +229,7 @@ let rec add_use_edge env (s, kind) =
       
 let add_type_deps env typ =
   match typ with
-  | T (TString s) ->
+  | T (TString s) | T (TType (s, _)) ->
       if env.phase = Uses then begin
         let t = Type_clang.extract_type_of_string (loc_of_env env) s in
         let rec aux t = 
@@ -245,7 +245,7 @@ let add_type_deps env typ =
           | Typ.Typename s ->
               add_use_edge env ("T__"^s, E.Type)
 
-           (* todo: use the canonical type in that case? *)
+           (* less: use the canonical type in that case? *)
           | Typ.TypeofStuff -> ()
                
           | Typ.AnonStuff -> ()
@@ -520,7 +520,7 @@ and expr env (enum, l, xs) =
       then
         let loc = env.current_clang2_file, l2 in
         let typ_expr = 
-          Type_clang.extract_type_of_sexp loc (Paren(enum2, l2, xs))
+          Type_clang.extract_canonical_type_of_sexp loc (Paren(enum2, l2, xs))
         in
         (match typ_expr with
         (* because TDot|TArrow above, need Pointer too *)
