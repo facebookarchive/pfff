@@ -508,13 +508,13 @@ and expr env (enum, l, xs) =
 
 
   | MemberExpr, [_loc;_typ;_(*lval*);T (TDot|TArrow);
-                 T (TLowerIdent s|TUpperIdent s);
+                 T (TLowerIdent fld|TUpperIdent fld);
                  _address;(Paren (enum2, l2, xs))]
   | MemberExpr, [_loc;_typ;T (TDot|TArrow);
-                 T (TLowerIdent s | TUpperIdent s);
+                 T (TLowerIdent fld | TUpperIdent fld);
                  _address;(Paren (enum2, l2, xs))]
   | MemberExpr, [_loc;_typ;_(*lval*);T (TLowerIdent "bitfield");T(TDot|TArrow);
-                 T (TLowerIdent s | TUpperIdent s);
+                 T (TLowerIdent fld | TUpperIdent fld);
                  _address;(Paren (enum2, l2, xs))] ->
       if env.phase = Uses
       then
@@ -525,17 +525,19 @@ and expr env (enum, l, xs) =
         (match typ_expr with
         (* because TDot|TArrow above, need Pointer too *)
         | Typ.StructName s | Typ.Pointer (Typ.StructName s) ->
-            ()
+            (* no lookup for now *)
+            add_use_edge env (spf "S__%s.%s" s fld, E.Field)
 
-        | Typ.UnionName s  | Typ.Pointer (Typ.UnionName s) ->
-            ()
-        | Typ.AnonStuff | Typ.Pointer (Typ.AnonStuff) ->
-            ()
         | Typ.Typename _ | Typ.Pointer (Typ.Typename _) ->
             (* todo: use canonical type *)
             ()
         | Typ.TypeofStuff | Typ.Pointer (Typ.TypeofStuff) ->
             (* todo: use canonical type *)
+            ()
+
+        | Typ.UnionName s  | Typ.Pointer (Typ.UnionName s) ->
+            ()
+        | Typ.AnonStuff | Typ.Pointer (Typ.AnonStuff) ->
             ()
 
         | (Typ.Builtin _
