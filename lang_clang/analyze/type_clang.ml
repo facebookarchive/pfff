@@ -134,9 +134,11 @@ let type_clang_of_tokens loc xs =
     | TOPar _::rest ->
         Function acc
     | TLowerIdent ("const" | "volatile")::rest -> aux2 acc rest
-    (* todo: can have 'union Sym::<anonymous at /Users/yoann/...' in tiny-cc *)
+    (* todo: can have 'union Sym::<anonymous at /Users/yoann/...' in tiny-cc 
+     * or struct header::<anonymous in umalloc.c
+     *)
     | TColon::TColon::rest ->
-        acc
+        AnonStuff
     | TStar::rest ->
         aux2 (Pointer acc) rest
     | x::xs -> 

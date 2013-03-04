@@ -528,12 +528,13 @@ and expr env (enum, l, xs) =
             (* no lookup for now *)
             add_use_edge env (spf "S__%s.%s" s fld, E.Field)
 
+        (* with some struct anon this can happen apparently, cf umalloc.c *)
         | Typ.Typename _ | Typ.Pointer (Typ.Typename _) ->
-            (* todo: use canonical type *)
             ()
+
         | Typ.TypeofStuff | Typ.Pointer (Typ.TypeofStuff) ->
-            (* todo: use canonical type *)
-            ()
+            (* use canonical type, should never get there *)
+            error env ("impossible")
 
         | Typ.UnionName s  | Typ.Pointer (Typ.UnionName s) ->
             ()
