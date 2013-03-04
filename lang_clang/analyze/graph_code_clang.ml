@@ -22,6 +22,7 @@ open Parser_clang
 
 module Ast = Ast_clang
 module Loc = Location_clang
+module Typ = Type_clang
 
 (*****************************************************************************)
 (* Prelude *)
@@ -146,6 +147,7 @@ let add_node_and_edge_if_defs_mode env node =
       (match kind with
       | E.Function | E.Global | E.Constant 
       | E.Type
+      | E.Field
           ->
           (match kind, str with
           | E.Type, (
@@ -168,7 +170,6 @@ let add_node_and_edge_if_defs_mode env node =
           )
       (* todo: have no Use for now for those so skip errors *) 
       | E.Prototype | E.GlobalExtern -> ()
-      | E.Field -> ()
       | _ ->
           failwith (spf "Unhandled category: %s" (G.string_of_node node))
       )
@@ -233,24 +234,25 @@ let add_type_deps env typ =
         let t = Type_clang.extract_type_of_string (loc_of_env env) s in
         let rec aux t = 
           match t with
-          | Type_clang.Builtin _ -> ()
+          | Typ.Builtin _ -> ()
               
-          | Type_clang.StructName s ->
+          | Typ.StructName s ->
               add_use_edge env ("S__"^s, E.Type)
-          | Type_clang.UnionName s ->
+          | Typ.UnionName s ->
               add_use_edge env ("U__"^s, E.Type)
-          | Type_clang.EnumName s ->
+          | Typ.EnumName s ->
               add_use_edge env ("E__"^s, E.Type)
-          | Type_clang.Typename s ->
+          | Typ.Typename s ->
               add_use_edge env ("T__"^s, E.Type)
-                
-          | Type_clang.AnonStuff -> ()
-              (* todo: use the canonical type in that case? *)
-          | Type_clang.TypeofStuff -> ()
-          | Type_clang.Other _ -> ()
-          | Type_clang.Pointer x-> aux x
+
+           (* todo: use the canonical type in that case? *)
+          | Typ.TypeofStuff -> ()
+               
+          | Typ.AnonStuff -> ()
+          | Typ.Other _ -> ()
+          | Typ.Pointer x-> aux x
           (* todo: should analyze parameters *)
-          | Type_clang.Function x -> aux x
+          | Typ.Function x -> aux x
         in
         aux t
       end
@@ -447,7 +449,7 @@ and decl env (enum, l, xs) =
 (* Expr *)
 (* ---------------------------------------------------------------------- *)
 
-(* coupling: must add constructor in dispatcher above *)
+(* coupling: must add constructor in dispatcher above if add one here *)
 and expr env (enum, l, xs) =
   (match enum, xs with
   | CallExpr, _loc::_typ::
@@ -465,6 +467,8 @@ and expr env (enum, l, xs) =
   (* todo: unexpected form of call? function pointer call? *)
   | CallExpr, _ ->
       ()
+
+
 
   | DeclRefExpr, _loc::_typ::T (TUpperIdent "EnumConstant")::_address
       ::T (TString s)::_rest ->
@@ -499,8 +503,9 @@ and expr env (enum, l, xs) =
       ::T (TUpperIdent "CXXMethod")::_rest
       -> pr2_once "TODO: CXXMethod"
      
-
   | DeclRefExpr, _ -> error env "DeclRefExpr to handle"
+
+
 
   | MemberExpr, [_loc;_typ;_(*lval*);T (TDot|TArrow);
                  T (TLowerIdent s|TUpperIdent s);
@@ -517,37 +522,30 @@ and expr env (enum, l, xs) =
         let typ_expr = 
           Type_clang.extract_type_of_sexp loc (Paren(enum2, l2, xs))
         in
-        (*pr2_gen typ_expr *)
         (match typ_expr with
-        | Type_clang.StructName s 
-        (* because TDot|TArrow above *)
-        | Type_clang.Pointer (Type_clang.StructName s) ->
+        (* because TDot|TArrow above, need Pointer too *)
+        | Typ.StructName s | Typ.Pointer (Typ.StructName s) ->
             ()
-        | Type_clang.UnionName s 
-        (* because TDot|TArrow above *)
-        | Type_clang.Pointer (Type_clang.UnionName s) ->
+
+        | Typ.UnionName s  | Typ.Pointer (Typ.UnionName s) ->
             ()
-        | Type_clang.AnonStuff
-        | Type_clang.Pointer (Type_clang.AnonStuff) ->
+        | Typ.AnonStuff | Typ.Pointer (Typ.AnonStuff) ->
             ()
-        | Type_clang.Typename _
-        | Type_clang.Pointer (Type_clang.Typename _) ->
+        | Typ.Typename _ | Typ.Pointer (Typ.Typename _) ->
             (* todo: use canonical type *)
             ()
-        | Type_clang.TypeofStuff
-        | Type_clang.Pointer (Type_clang.TypeofStuff) ->
+        | Typ.TypeofStuff | Typ.Pointer (Typ.TypeofStuff) ->
             (* todo: use canonical type *)
             ()
 
-        | (Type_clang.Builtin _
-          |Type_clang.Function _
-          |Type_clang.EnumName _
-          |Type_clang.Other _
+        | (Typ.Builtin _
+          |Typ.Function _
+          |Typ.EnumName _
+          |Typ.Other _
 
-          |Type_clang.Pointer _
+          |Typ.Pointer _
           ) ->
             error env (spf "unhandled typ: %s" (Common.dump typ_expr))
-
         )
 
   (* anon field *)
