@@ -115,7 +115,10 @@ let analyze_make_trace file =
     let final_file = 
       match dir with
       | None -> file
-      | Some f -> Filename.concat f file
+      | Some f -> 
+          if file =~ "^/" 
+          then file
+          else Filename.concat f file
     in
     let directory =
       match dir with
