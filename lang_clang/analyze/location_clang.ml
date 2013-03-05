@@ -97,6 +97,8 @@ let location_of_paren_opt ~root clang_file (enum, l, xs) =
     | (Misc__Null__ | Misc__Capture__ | Misc__Cleanup__Block
       (* TODO: when under IndirectDecl *)
       | Field 
+      (* CXXCtorInitializer *)
+      | TodoAst _
       ), _ -> [Other]
     | _, Angle xs::_rest ->
         location_of_angle (l, clang_file) xs

@@ -297,6 +297,13 @@ and sexp_toplevel env x =
       | TypedefDecl | RecordDecl | EnumDecl 
       | FieldDecl | EnumConstantDecl
         -> decl env (enum, l, xs)
+      | LinkageSpecDecl ->
+          (match xs with
+          | _loc::T (TUpperIdent "C")::xs ->
+              xs +> List.iter (sexp_toplevel env)
+          | _ -> error env "weird LinkageSpecDecl"
+          )
+
       | CallExpr | DeclRefExpr | MemberExpr
         -> expr env (enum, l, xs)
       | _ -> 
