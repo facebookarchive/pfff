@@ -82,26 +82,27 @@ let add_if_not_already_there env (enum, s, v) sexp =
 let rec process env ast =
   match ast with
   | Paren (TranslationUnitDecl, l, _loc::xs) ->
-      xs +> List.iter (fun sexp ->
-        (match sexp with
-        | Paren (enum, l, xs) ->
-            (* dispatch *)
-            (match enum with
-            | FunctionDecl | VarDecl
-            | TypedefDecl | RecordDecl | EnumDecl
-            (* BlockDecl ?? *)
-              -> decl env (enum, l, xs)
-            | TodoAst s ->
-                pr2_once ("TODO:Uninclude_clang: " ^ s)
-            | _ -> 
-                failwith (spf "%s:%d: not a toplevel decl" 
-                             env.current_clang_file l)
-            )
-        | _ -> failwith (spf "%s:%d:not a Paren sexp" 
-                            env.current_clang_file l)
-        )
-      )
+      xs +> List.iter (fun sexp -> dispatch_sexp env sexp)
   | _ -> failwith (spf "%s: not a TranslationDecl" env.current_clang_file)
+
+and dispatch_sexp env exp =
+  match exp with
+  | Paren (enum, l, xs) ->
+      (match enum with
+      | FunctionDecl | VarDecl
+      | TypedefDecl | RecordDecl | EnumDecl
+      | LinkageSpecDecl
+          (* BlockDecl ?? *)
+        -> decl env (enum, l, xs)
+      | TodoAst s ->
+          pr2_once ("TODO:Uninclude_clang: " ^ s);
+          (* still need to recurse to at least adjust current_c_file *)
+          sexp env exp
+      | _ -> 
+          failwith (spf "%s:%d: not a toplevel decl" env.current_clang_file l)
+      )
+  | _ -> failwith (spf "%s:not a Paren sexp" env.current_clang_file)
+
 
 and decl env (enum, l, xs) =
   (* less: dupe with below *)
@@ -162,6 +163,8 @@ and decl env (enum, l, xs) =
       add_if_not_already_there env 
         (RecordDecl, "struct__anon" ^ str_of_angle_loc env l loc, Misc) sexp
 
+  | LinkageSpecDecl, _loc::(T (TUpperIdent "C"))::xs ->
+      List.iter (dispatch_sexp env) xs
   | _ ->
       failwith (spf "%s:%d:wrong Decl line" env.current_clang_file l)
   );
