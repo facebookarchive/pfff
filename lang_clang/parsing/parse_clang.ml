@@ -118,6 +118,8 @@ let enum__str_conv = [
  (* tcc *)
  IndirectFieldDecl, "IndirectFieldDecl";
  Field, "Field";
+ (* spim *)
+ LinkageSpecDecl , "LinkageSpecDecl";
 ]
 
 let (enum_of_str, str_of_enum) =

@@ -49,6 +49,7 @@ let vof_token =
 let vof_enum =
   function
   | TodoAst v1 -> let v1 = Ocaml.vof_string v1 in Ocaml.VSum (("TodoAst", [ v1 ]))
+  | LinkageSpecDecl -> Ocaml.VSum (("LinkageSpecDecl", []))
   | FullComment -> Ocaml.VSum (("FullComment", []))
   | TextComment -> Ocaml.VSum (("TextComment", []))
   | ParagraphComment -> Ocaml.VSum (("ParagraphComment", []))

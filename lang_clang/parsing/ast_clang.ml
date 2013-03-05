@@ -28,6 +28,7 @@ open Common
 (* to report analysis error, need the .clang (or .clang2) filename and line *)
 type loc = Common.filename * int
 
+(* coupling: modify also parse_clang conv function *)
 type enum = 
 
   | TodoAst of string
@@ -149,6 +150,8 @@ type enum =
  | BlockDecl
  | ParmVarDecl
 
+ (* extern "C" { ... } *)
+ | LinkageSpecDecl
 
  | TranslationUnitDecl
  (* with tarzan *)
