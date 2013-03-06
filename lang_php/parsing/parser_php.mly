@@ -1101,33 +1101,7 @@ expr_without_variable_bis:
      { AssignList($1,($2,$3,$4),$5,$6) }
  | T_ARRAY TOPAR array_pair_list TCPAR
      { ArrayLong($1,($2,$3,$4)) }
-
- | fully_qualified_class_name TOBRACE array_pair_list TCBRACE
-     { let name, tok = match $1 with
-                     | Name (name, t)
-                       when List.mem name  ["Map"; "StableMap"; "Vector"] -> name, t
-                     | _ -> raise Parsing.Parse_error in
-       if name = "Vector" then
-         let elts = List.map
-           (function
-           | Left (ArrayExpr e) -> Left (VectorExpr e)
-           | Left (ArrayRef (t,e)) -> Left (VectorRef (t,e))
-           | Right t -> Right t
-           | Left _ -> raise Parsing.Parse_error)
-           $3
-         in
-         VectorLit(tok, ($2, elts, $4))
-       else (* map or stablemap *)
-         let elts = List.map
-           (function
-           | Left (ArrayArrowExpr (e1,t,e2)) -> Left (MapArrowExpr (e1,t,e2))
-           | Left (ArrayArrowRef (e1, t1, t2, e2)) -> Left (MapArrowRef (e1,t1,t2,e2))
-           | Right t -> Right t
-           | Left _ -> raise Parsing.Parse_error)
-           $3
-         in
-         MapLit(tok, ($2, elts, $4))
-     }
+ | collection_literal                   { $1 }
  | TOBRA array_pair_list TCBRA
      { ArrayShort($1, $2, $3) }
  | T_NEW class_name_reference ctor_arguments
@@ -1199,6 +1173,34 @@ expr_without_variable_bis:
     *)*/
  | xhp_html { XhpHtml $1 }
 
+collection_literal:
+ | fully_qualified_class_name TOBRACE array_pair_list TCBRACE
+     { 
+       match $1 with
+       | Name ("Vector", t) ->
+           let elts = List.map
+             (function
+             | Left (ArrayExpr e) -> Left (VectorExpr e)
+             | Left (ArrayRef (t,e)) -> Left (VectorRef (t,e))
+             | Right t -> Right t
+             | Left _ -> raise Parsing.Parse_error)
+             $3
+           in
+           VectorLit(t, ($2, elts, $4))
+       | Name (("Map" | "StableMap"), t) ->
+           let elts = List.map
+             (function
+             | Left (ArrayArrowExpr (e1,t,e2)) -> Left (MapArrowExpr (e1,t,e2))
+             | Left (ArrayArrowRef (e1, t1, t2, e2)) ->
+                 Left (MapArrowRef (e1,t1,t2,e2))
+             | Right t -> Right t
+             | Left _ -> raise Parsing.Parse_error)
+             $3
+           in
+           MapLit(t, ($2, elts, $4))
+        | _ -> raise Parsing.Parse_error 
+     }
+
  /*(*e: exprbis grammar rule hook *)*/
 /*(*x: GRAMMAR expression *)*/
 /*(*pad: why this name ? *)*/
@@ -1269,8 +1271,35 @@ static_scalar: /* compile-time evaluated scalars */
   /* xdebug TODO AST  */
   | TDOTS { sgrep_guard (SgrepExprDots $1)  }
  /*(*e: static_scalar grammar rule hook *)*/
+  | static_collection_literal  { $1 }
 
-
+static_collection_literal:
+ | fully_qualified_class_name TOBRACE static_array_pair_list TCBRACE
+     { 
+       match $1 with
+       | Name ("Vector", t) ->
+           let elts = List.map
+             (function
+             | Left (ArrayExpr e) -> Left (VectorExpr e)
+             | Left (ArrayRef (t,e)) -> Left (VectorRef (t,e))
+             | Right t -> Right t
+             | Left _ -> raise Parsing.Parse_error)
+             $3
+           in
+           VectorLit(t, ($2, elts, $4))
+       | Name (("Map" | "StableMap"), t) ->
+           let elts = List.map
+             (function
+             | Left (ArrayArrowExpr (e1,t,e2)) -> Left (MapArrowExpr (e1,t,e2))
+             | Left (ArrayArrowRef (e1, t1, t2, e2)) ->
+                 Left (MapArrowRef (e1,t1,t2,e2))
+             | Right t -> Right t
+             | Left _ -> raise Parsing.Parse_error)
+             $3
+           in
+           MapLit(t, ($2, elts, $4))
+        | _ -> raise Parsing.Parse_error 
+     }
 
 common_scalar:
  | T_LNUMBER 			{ Int($1) }
