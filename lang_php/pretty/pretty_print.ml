@@ -1001,13 +1001,16 @@ and xhp env = function
 
 and xhp_attr env = function
   | AttrString el ->
+    Pp.print env "\"";
       Pp.choice_left env (
         fun env ->
           List.iter (encaps env) el;
       ) (
         fun env ->
           xhp_attr env (AttrExpr (Guil el))
-      )
+      );
+    Pp.print env "\"";
+
   | AttrExpr e ->
       Pp.nestc env (
         fun env ->
@@ -1082,7 +1085,7 @@ and encaps_list env = function
       encaps_list env rl
 
 and encaps env = function
-  | EncapsString s -> Pp.string "\"" " ." env s
+  | EncapsString s -> Pp.print env s
   | EncapsVar x -> expr env x
   | EncapsCurly x -> Pp.print env "{"; expr env x; Pp.print env "}"
   | EncapsDollarCurly _ -> failwith "TODO EncapsDollarCurly"
