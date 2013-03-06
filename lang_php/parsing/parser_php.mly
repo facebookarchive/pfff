@@ -525,6 +525,8 @@ unticked_function_declaration_statement:
 parameter_list:
  | non_empty_parameter_list   { $1 }
  | /*(*empty*)*/              { [] }
+ /*(* php-facebook-ext: *)*/
+ | non_empty_parameter_list TCOMMA  { $1 ++ [Right3 $2] }
 
 non_empty_parameter_list:
  | parameter { [Left3 $1] }
@@ -1722,8 +1724,8 @@ non_empty_member_modifiers:
 
 
 function_call_argument_list:
+ | /*(*empty*)*/                              { [] }
  | non_empty_function_call_argument_list      { $1 }
- | /*(*empty*)*/			       { [] }
  /*(* php-facebook-ext: *)*/
  | non_empty_function_call_argument_list TCOMMA  { $1 ++ [Right $2] }
 /*(*e: repetitive xxx and non_empty_xxx *)*/
