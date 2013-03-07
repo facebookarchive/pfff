@@ -259,6 +259,7 @@ let rec add_use_edge env (((str, tok) as name, kind)) =
           (match kind with
           (* TODO, fix those *)
           | E.Field -> ()
+          (* TODO, handled __call? *)
           | E.Method _ when str =~ ".*\\.gen.*" || str =~ ".*\\.get.*" -> ()
 
           (* | E.Method _  | E.ClassConstant ->          () *)
@@ -464,7 +465,7 @@ and class_def env def =
             with
             | None -> ()
             | Some ((s, _), _kind) ->
-              env.log (spf "REDEFINED protected %s in class %s" s env.self);
+             (*env.log (spf "REDEFINED protected %s in class %s" s env.self);*)
               let parent = G.parent env.current env.g in
               (* was using env.self for parent node, but in files with
                * duplicated classes, the parent may be the File so
