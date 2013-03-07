@@ -776,6 +776,17 @@ let rec m_variable a b =
        B.This(b1)
     )
     )
+  | A.NewLv(a0, (a1, a2, a3), a4), B.NewLv(b0, (b1, b2, b3), b4) ->
+    m_tok a0 b0 >>= (fun (a0, b0) ->
+    m_tok a1 b1 >>= (fun (a1, b1) ->
+    m_class_name_reference a2 b2 >>= (fun (a2, b2) ->
+    (m_option (m_paren (m_list__m_argument))) a3 b3 >>= (fun (a3, b3) ->
+    m_tok a4 b4 >>= (fun (a4, b4) ->
+    return (
+       A.NewLv(a0, (a1, a2, a3), a4),
+       B.NewLv(b0, (b1, b2, b3), b4)
+    )
+    )))))
 
   | A.VArrayAccess(a1, a2), B.VArrayAccess(b1, b2) ->
     m_variable a1 b1 >>= (fun (a1, b1) ->
@@ -930,6 +941,7 @@ let rec m_variable a b =
     ))
   | A.Var _, _
   | A.This _, _
+  | A.NewLv _, _
   | A.VArrayAccess _, _
   | A.VArrayAccessXhp _, _
   | A.VBrace _, _

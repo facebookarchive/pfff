@@ -545,6 +545,16 @@ and v_variable x =
   | Var ((v1, v2)) ->
       let v1 = v_dname v1 and v2 = v_ref Scope_php.v_phpscope v2 in ()
   | This v1 -> let v1 = v_tok v1 in ()
+  | NewLv v1 ->
+      let v1 =
+        v_paren
+          (fun (v1, v2, v3) ->
+             let v1 = v_tok v1
+             and v2 = v_class_name_reference v2
+             and v3 = v_option (v_paren (v_comma_list v_argument)) v3
+             in ())
+          v1
+      in ()
   | VArrayAccess ((v1, v2)) ->
       let v1 = v_variable v1 and v2 = v_bracket (v_option v_expr) v2 in ()
   | VArrayAccessXhp ((v1, v2)) ->

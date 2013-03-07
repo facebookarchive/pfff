@@ -577,6 +577,14 @@ and class_name_reference env = function
 and lvalue env = function
   | Var (dn, scope) -> A.Id (dname dn)
   | This _ -> A.This
+  | NewLv (_, (_, cn, args), _) ->
+      let args =
+        match args with
+        | None -> []
+        | Some (_, cl, _) -> List.map (argument env) (comma_list cl)
+      in
+      let cn = class_name_reference env cn in
+      A.New (cn, args)
   | VArrayAccess (lv, (_, e, _)) ->
       let lv = lvalue env lv in
       let e = opt expr env e in

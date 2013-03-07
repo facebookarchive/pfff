@@ -536,6 +536,8 @@ let visit_toplevel ~tag prefs  hentities (toplevel, toks) =
 
       | This (tok) ->
           tag tok (Class (Use2 fake_no_use2))
+      | NewLv  _ ->
+          k x
 
       | VArrayAccess (var, exprbracket) ->
           (match Ast.unbracket exprbracket with

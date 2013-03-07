@@ -480,6 +480,17 @@ and map_variable x =
       and v2 = map_of_ref Scope_code.map_scope v2
       in Var ((v1, v2))
   | This v1 -> let v1 = map_tok v1 in This ((v1))
+  | NewLv v1 ->
+      let v1 =
+        map_paren
+          (fun (v1, v2, v3) ->
+             let v1 = map_tok v1
+             and v2 = map_class_name_reference v2
+             and v3 =
+               map_of_option (map_paren (map_comma_list map_argument)) v3
+             in (v1, v2, v3))
+          v1
+      in NewLv ((v1))
   | VArrayAccess ((v1, v2)) ->
       let v1 = map_variable v1
       and v2 = map_bracket (map_of_option map_expr) v2
