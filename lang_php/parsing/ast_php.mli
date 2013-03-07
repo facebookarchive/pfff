@@ -354,6 +354,9 @@ and lvalue =
      *
      * todo? a VArrayAccessSimple with Constant string in expr ?
      *)
+    (* for (new Foo)->bar(), ugly: when expr = lvalue, no need that *)
+    | NewLv of 
+        (tok * class_name_reference * argument comma_list paren option) paren
     | VArrayAccess of lvalue * expr option bracket
     | VArrayAccessXhp of expr * expr option bracket
   (*x: lvaluebis constructors *)

@@ -50,13 +50,13 @@ open Parse_info
  * file, or to only add new constructors.
  *
  * todo:
+ *  - unify expr and lvalue
  *  - add fbstrict types in AST, not just in grammar
  *  - support for '...' fbstrict extension in parameters
  *  - less: add namespace in AST (also add in grammar)
  *
  *  - introduce QualifierDynamic and factorize things in lvalue type
  *  - unify toplevel statement vs statements? hmmm maybe not
- *  - unify expr and lvalue? hmmm maybe not
  *)
 
 (*****************************************************************************)
@@ -416,6 +416,9 @@ and lvalue =
      (*e: scope_php annotation *)
   (*x: lvaluebis constructors *)
     | This of tok
+    (* for (new Foo)->bar(), ugly: when expr = lvalue, no need that *)
+    | NewLv of 
+        (tok * class_name_reference * argument comma_list paren option) paren
     (* xhp: normally we can not have a FunCall in the lvalue of VArrayAccess,
      * but with xhp we can.
      *

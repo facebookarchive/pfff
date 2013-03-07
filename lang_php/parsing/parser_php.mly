@@ -28,6 +28,8 @@
  *  - added support for generics (another facebook extensions).
  *  - added support for attributes (a.k.a annotations)
  *  - factorized some rules (e.g. parameters, arguments)
+ *  - added support for trailing comma in function calls and definitions
+ *  - added support for (new Foo)->method() (id() not needed anymore)
  *
  /*(*s: Zend copyright *)*/
   * +----------------------------------------------------------------------+
@@ -996,7 +998,7 @@ expr:
 
 expr_without_variable:
  | expr_without_variable_bis { mk_e $1 }
- /*(* ugly: generate 4 conflicts, see conflicts.txt *)*/
+ /*(* ugly: generate 6 conflicts, see conflicts.txt *)*/
  | expr TOBRA dim_offset TCBRA
    {
      match $1 with
@@ -1101,11 +1103,15 @@ expr_without_variable_bis:
      { AssignList($1,($2,$3,$4),$5,$6) }
  | T_ARRAY TOPAR array_pair_list TCPAR
      { ArrayLong($1,($2,$3,$4)) }
+
  | collection_literal                   { $1 }
  | TOBRA array_pair_list TCBRA
      { ArrayShort($1, $2, $3) }
- | T_NEW class_name_reference ctor_arguments
-     { New($1,$2,$3) }
+ | new_expr 
+     { let (a,b,c) = $1 in New (a,b,c) }
+ | TOPAR new_expr TCPAR instance_call 
+     { let (a,b,c) = $2 in Lv ($4 (NewLv ($1, (a,b,c), $3))) }
+
  | T_CLONE expr { Clone($1,$2) }
  | expr T_INSTANCEOF class_name_reference
      { InstanceOf($1,$2,$3) }
@@ -1172,6 +1178,32 @@ expr_without_variable_bis:
     * in function arguments
     *)*/
  | xhp_html { XhpHtml $1 }
+
+new_expr:
+ | T_NEW class_name_reference ctor_arguments { ($1,$2,$3) }
+
+instance_call:
+ | /*(*empty*)*/ { (fun lv -> lv) }
+ | chaining_instance_call { $1 }
+
+chaining_instance_call:
+ | chaining_dereference chaining_method_or_property  { (fun lv -> $2 ($1 lv)) }
+ | chaining_dereference { $1 }
+ | chaining_method_or_property { $1 }
+
+chaining_dereference:
+ | chaining_dereference TOBRA dim_offset TCBRA 
+     { (fun lv -> VArrayAccess ($1 lv, ($2, $3, $4))) }
+ | TOBRA dim_offset TCBRA 
+     { (fun lv -> VArrayAccess (lv, ($1, $2, $3))) }
+
+chaining_method_or_property:
+ | chaining_method_or_property variable_property_bis { (fun lv -> $2 ($1 lv)) }
+ | variable_property_bis { $1 }
+
+
+variable_property_bis: variable_property 
+  { (fun lv -> Parser_php_mly_helper.method_object_simple (ObjAccess (lv, $1)))}
 
 collection_literal:
  | fully_qualified_class_name TOBRACE array_pair_list TCBRACE
