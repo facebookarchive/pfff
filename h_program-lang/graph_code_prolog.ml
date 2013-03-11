@@ -112,6 +112,7 @@ let string_of_fact fact =
         spf "at(%s, '%s', %d)" (string_of_entity entity) file line
     | Extends (s1, s2) ->
         spf "extends('%s', '%s')" s1 s2
+    (* todo: method?? *)
     | Call (e1, e2) ->
         spf "docall(%s, %s, method)" 
           (string_of_entity e1) (string_of_entity e2)
@@ -163,7 +164,9 @@ let build root g =
         -> add (Kind (entity_of_str str, kind))
     | E.File -> ()
     | E.Dir -> ()
-    | (E.Macro|E.TopStmts|E.Other _|E.MultiDirs|E.Prototype|E.GlobalExtern) ->
+    | E.Prototype|E.GlobalExtern -> ()
+
+    | (E.Macro|E.TopStmts|E.Other _|E.MultiDirs) ->
         pr2_gen n;
         raise Todo
     );
@@ -193,6 +196,11 @@ let build root g =
       add (Call (entity_of_str s1, entity_of_str s2))
     | ((s1, E.Method _kind1), (s2, (E.Field | E.ClassConstant) )) ->
       add (UseData (entity_of_str s1, entity_of_str s2))
+
+    | ((s1, E.Function), (s2, E.Function)) ->
+      add (Call (entity_of_str s1, entity_of_str s2))
+    | ((s1, E.Function), (s2, E.Prototype)) ->
+      add (Call (entity_of_str s1, entity_of_str s2))
 
     | _ -> ()
   );
