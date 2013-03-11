@@ -34,8 +34,8 @@ ifeq ($(FEATURE_BDB), 1)
 PROGS+=pfff_db_heavy
 PROGS+=scheck_heavy
 #TODO: make independent of BDB
-PROGS+=codequery
 endif
+PROGS+=codequery
 
 ifeq ($(FEATURE_VISUAL), 1)
 PROGS+=codemap
