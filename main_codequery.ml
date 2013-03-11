@@ -30,8 +30,14 @@ let lang = ref "php"
 let skip_file dir = 
   Filename.concat dir "skip_list.txt"
 (* todo: swipl (SWI-Prolog) is not in PATH by default on our machines *)
-let swipl = "/home/pad/packages/Linux/bin/swipl"
-let predicates_file = "/home/engshare/pfff/database_code.pl"
+let swipl_fb = "/home/pad/packages/Linux/bin/swipl"
+let swipl =
+  if Sys.file_exists swipl_fb
+  then swipl_fb
+  else "swipl"
+
+let predicates_file = 
+  Filename.concat Config_pfff.path "h_program-lang/database_code.pl"
 
 (* todo: should remove that at some point and be able to do everything in RAM *)
 let metapath = ref "/tmp/pfff_db"
@@ -100,7 +106,7 @@ let build_prolog_db lang root =
        pr2 (spf "Your compiled prolog DB is ready. Run %s/%s"
                !metapath prolog_compiled_db);
 
-  | "cmt" | "bytecode" ->
+  | "cmt" | "bytecode" | "clang2" ->
       let g = 
         match lang with
         | "cmt" -> 
@@ -114,6 +120,9 @@ let build_prolog_db lang root =
           in
           Graph_code_bytecode.build ~verbose:!verbose ~graph_code_java 
             root skip_list 
+        | "clang2" -> 
+          Graph_code_clang.build ~verbose:!verbose root skip_list 
+
         | _ -> raise Impossible
       in
       let facts = Graph_code_prolog.build root g in
