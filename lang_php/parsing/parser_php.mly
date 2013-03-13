@@ -992,6 +992,11 @@ type_arg_list_gt:
     let lhs, rhs = split_two_char_info $4 in
       ([Left(Hint(ClassName($1, Some ($2, $3, lhs))))], rhs)
   }
+  | TQUESTION fully_qualified_class_name TSMALLER non_empty_ext_type_hint_list T_SR {
+    let lhs, rhs = split_two_char_info $5 in
+      ([Left(HintQuestion($1, Hint(ClassName($2, Some ($3, $4, lhs)))))], rhs)
+  }
+
 
 
 return_type_opt:
