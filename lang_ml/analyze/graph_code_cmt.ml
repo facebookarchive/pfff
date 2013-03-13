@@ -489,7 +489,9 @@ let rec extract_defs_uses
 and binary_annots env = function
   | Implementation s -> 
       structure env s
+  (* todo? for core lib we actually may prefer to process the .mli *)
   | Interface _
+
   | Packed _ 
   | Partial_implementation _ | Partial_interface _ ->
       pr2_gen env.current;

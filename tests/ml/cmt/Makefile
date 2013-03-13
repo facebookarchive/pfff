@@ -8,7 +8,8 @@ SRC=pervasives.ml list.ml hashtbl.ml \
   namespace_type_value.ml namespace_type_field.ml \
   letrec.ml typerec.ml letrec_nested.ml \
   alias_type_function.ml use_hashtbl.ml \
-  dupe_exn.ml let_scope.ml
+  dupe_exn.ml let_scope.ml \
+  toplevel_dep.ml
 
 # not handled well
 #  functor.ml \
@@ -33,5 +34,8 @@ graph_code.marshall: $(OBJS)
 .ml.cmt:
 	ocamlc -c -nostdlib -nopervasives -dtypes -bin-annot $<
 
-clean:
+clean::
 	rm -f *.cm* *.annot graph_code.*
+
+clean::
+	rm -f prolog_compiled_db
