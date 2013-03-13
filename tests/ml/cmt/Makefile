@@ -25,9 +25,9 @@ all: graph_code.marshall
 
 .PHONY: graph_code.marshall
 
-
+CG = ../../../codegraph
 graph_code.marshall: $(OBJS)
-	cg -symlinks -lang cmt -build .
+	$(CG) -symlinks -lang cmt -build .
 
 .SUFFIXES: .ml .cmt
 

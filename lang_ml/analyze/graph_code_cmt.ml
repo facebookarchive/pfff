@@ -65,12 +65,11 @@ type env = {
   
   current: Graph_code.node;
   current_entity: name;
-  (* todo: used? *)
-  current_module: name;
 
   mutable locals: string list;
+
   (* see notes_cmt.txt, the cmt files do not contain the full path
-   * for locally referenced functions, types, or modules, so have to resolve
+   * for locally referenced functions, types, or modules, so we have to resolve
    * them. Each time you add an Ident.t, add it there, and each
    * time you use a Path.t, use path_resolve_locals().
    * We use 3 different fields because those are different namespaces; we
@@ -105,6 +104,12 @@ let parse file =
   )
 
 (*****************************************************************************)
+(* Helpers *)
+(*****************************************************************************)
+let unwrap x = 
+  x.Asttypes.loc
+
+(*****************************************************************************)
 (* Add edges *)
 (*****************************************************************************)
 
@@ -131,7 +136,9 @@ let add_use_edge env dst =
 
 let full_path_local_of_kind env kind =
   match kind with
-  | E.Function | E.Global | E.Constant -> env.full_path_local_value
+  | E.Function | E.Global | E.Constant
+  | E.TopStmts
+    -> env.full_path_local_value
   | E.Type | E.Exception -> env.full_path_local_type
   | E.Module -> 
       (* todo: why cant put env.full_path_local_module ? *)
@@ -152,7 +159,7 @@ let add_node_and_edge_if_defs_mode ?(dupe_ok=false) env name_node loc =
       env.g +> G.add_node node;
       env.g +> G.add_edge (env.current, node) G.Has;
 
-      let lexing_pos = loc.Asttypes.loc.Location.loc_start in
+      let lexing_pos = loc.Location.loc_start in
       let file = env.source_file in
       let nodeinfo = { Graph_code.
          pos = { Parse_info.
@@ -453,7 +460,6 @@ let rec extract_defs_uses
     g; phase;
     current;
     current_entity = [fst current];
-    current_module = [ast.cmt_modname];
     file = readable;
     (* less: it's in absolute format, should we use instead a readable format?*)
     source_file = Filename.concat ast.cmt_builddir
@@ -501,8 +507,8 @@ and structure env
  { str_items = v_str_items;  str_type = _v_str_type; str_final_env = _env } =
   List.iter (structure_item env) v_str_items
 and structure_item env 
- { str_desc = v_str_desc; str_loc = _; str_env = _ } =
-  structure_item_desc env v_str_desc
+ { str_desc = v_str_desc; str_loc = loc; str_env = _ } =
+  structure_item_desc env loc v_str_desc
 and  pattern env
   { pat_desc = v_pat_desc; pat_type = v_pat_type; 
     pat_loc = v_pat_loc; pat_extra = _v_pat_extra; pat_env = v_pat_env } =
@@ -520,9 +526,14 @@ and module_expr env
 (* ---------------------------------------------------------------------- *)
 (* Structure *)
 (* ---------------------------------------------------------------------- *)
-and structure_item_desc env = function
+and structure_item_desc env loc = function
   | Tstr_eval v1 -> 
-      expression env v1
+    let full_ident = env.current_entity ++ ["__toplevel__"] in
+    let node = (full_ident, E.TopStmts) in
+    let env = 
+      add_node_and_edge_if_defs_mode ~dupe_ok:true env node loc in
+    expression env v1
+
   | Tstr_value ((rec_flag, xs)) ->
       (* first pass *)
       if rec_flag = Asttypes.Recursive then begin
@@ -544,7 +555,8 @@ and structure_item_desc env = function
             let node = (full_ident, kind_of_type_expr v2.exp_type) in
             (* some people do let foo = ... let foo = ... in the same file *)
             let env = 
-              add_node_and_edge_if_defs_mode ~dupe_ok:true env node loc in
+              add_node_and_edge_if_defs_mode ~dupe_ok:true env node 
+                (unwrap loc) in
             expression env v2
         | Tpat_tuple xs ->
             let xdone = ref false in
@@ -554,7 +566,8 @@ and structure_item_desc env = function
                   let full_ident = env.current_entity ++ [Ident.name id] in
                   let node = (full_ident, kind_of_type_expr p.pat_type) in
                   let env = 
-                    add_node_and_edge_if_defs_mode ~dupe_ok:true env node loc in
+                    add_node_and_edge_if_defs_mode ~dupe_ok:true env node 
+                      (unwrap loc) in
 
                   (* arbitrarily choose the first one as the source for v2 *)
                   if not !xdone then begin
@@ -574,13 +587,13 @@ and structure_item_desc env = function
   | Tstr_primitive ((id, loc, vd)) ->
       let full_ident = env.current_entity ++ [Ident.name id] in
       let node = (full_ident, kind_of_value_descr vd) in
-      let env = add_node_and_edge_if_defs_mode env node loc in
+      let env = add_node_and_edge_if_defs_mode env node (unwrap loc) in
       value_description env vd
   | Tstr_type xs ->
       List.iter (fun (id, loc, td) ->
         let full_ident = env.current_entity ++ [Ident.name id] in
         let node = (full_ident, E.Type) in
-        let env = add_node_and_edge_if_defs_mode env node loc in
+        let env = add_node_and_edge_if_defs_mode env node (unwrap loc) in
 
         (match td.typ_kind, td.typ_manifest with
         | Ttype_abstract, Some ({ctyp_desc=Ttyp_constr (path, _loc, _xs); _}) ->
@@ -594,12 +607,13 @@ and structure_item_desc env = function
   | Tstr_exception ((id, loc, v3)) ->
       let full_ident = env.current_entity ++ ["exn";Ident.name id] in
       let node = (full_ident, E.Exception) in
-      let env = add_node_and_edge_if_defs_mode ~dupe_ok:true env node loc in
+      let env = 
+        add_node_and_edge_if_defs_mode ~dupe_ok:true env node (unwrap loc) in
       exception_declaration env v3
   | Tstr_exn_rebind ((id, loc, v3, _loc2)) ->
       let full_ident = env.current_entity ++ ["exn";Ident.name id] in
       let node = (full_ident, E.Exception) in
-      let env = add_node_and_edge_if_defs_mode env node loc in
+      let env = add_node_and_edge_if_defs_mode env node (unwrap loc) in
       path_t env v3
   | Tstr_module ((id, loc, modexpr)) ->
       let full_ident = env.current_entity ++ [Ident.name id] in
@@ -613,16 +627,14 @@ and structure_item_desc env = function
           end;
           add_full_path_local env (Ident.name id, full_ident) E.Module
       | _ -> 
-          let env = add_node_and_edge_if_defs_mode env node loc in
-          let env = { env with current_module = full_ident } in
+          let env = add_node_and_edge_if_defs_mode env node (unwrap loc) in
           module_expr env modexpr
       )
   | Tstr_recmodule xs ->
       List.iter (fun (id, loc, v3, v4) ->
         let full_ident = env.current_entity ++ [Ident.name id] in
         let node = (full_ident, E.Module) in
-        let env = add_node_and_edge_if_defs_mode env node loc in
-        let env = { env with current_module = full_ident } in
+        let env = add_node_and_edge_if_defs_mode env node (unwrap loc) in
         module_type env v3;
         module_expr env v4;
       ) xs
@@ -665,14 +677,14 @@ and type_kind env = function
       List.iter (fun (id, loc, v3, _loc2) ->
         let full_ident = env.current_entity ++ [Ident.name id] in
         let node = (full_ident, E.Constructor) in
-        let env = add_node_and_edge_if_defs_mode env node loc in
+        let env = add_node_and_edge_if_defs_mode env node (unwrap loc) in
         List.iter (core_type env) v3;
       ) xs
   | Ttype_record xs ->
       List.iter  (fun (id, loc, _mutable_flag, v4, _loc2) ->
         let full_ident = env.current_entity ++ [Ident.name id] in
         let node = (full_ident, E.Field) in
-        let env = add_node_and_edge_if_defs_mode env node loc in
+        let env = add_node_and_edge_if_defs_mode env node (unwrap loc) in
         core_type env v4;
       ) xs
 
