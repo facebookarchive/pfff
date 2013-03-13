@@ -1,14 +1,14 @@
 (*s: export_ast_php.ml *)
 (*s: Facebook copyright *)
 (* Yoann Padioleau
- * 
+ *
  * Copyright (C) 2009-2011 Facebook
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public License
  * version 2.1 as published by the Free Software Foundation, with the
  * special exception on linking described in file license.txt.
- * 
+ *
  * This library is distributed in the hope that it will be useful, but
  * WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the file
@@ -18,13 +18,13 @@
 open Common
 
 (*s: json_ast_php.ml *)
-module J = Json_type 
+module J = Json_type
 
 (*****************************************************************************)
 (* Prelude *)
 (*****************************************************************************)
-(* 
- * It can be useful for people who don't like OCaml to still benefit 
+(*
+ * It can be useful for people who don't like OCaml to still benefit
  * from pfff parsing by having at least a JSON representation
  * of the Ast, hence this file. Other parts of pfff generates JSON
  * data (see flib_navigator/, fb_phpunit/, h_visualization/).
@@ -35,18 +35,18 @@ module J = Json_type
 (* Entry points *)
 (*****************************************************************************)
 
-let json_string_of_expr x = 
+let json_string_of_expr x =
   x +> Meta_ast_php.vof_expr +> Ocaml.json_of_v +> Json_out.string_of_json
-let json_string_of_toplevel x = 
+let json_string_of_toplevel x =
   x +> Meta_ast_php.vof_toplevel +> Ocaml.json_of_v +> Json_out.string_of_json
-let json_string_of_program x = 
+let json_string_of_program x =
   Common.profile_code "json_of_program" (fun () ->
     x +> Meta_ast_php.vof_program +> Ocaml.json_of_v +> Json_out.string_of_json
   )
 
-let json_string_of_program_fast x = 
+let json_string_of_program_fast x =
   Common.profile_code "json_of_program_fast" (fun () ->
-    let json = x +> Meta_ast_php.vof_program +> Ocaml.json_of_v 
+    let json = x +> Meta_ast_php.vof_program +> Ocaml.json_of_v
     in
     Common.profile_code "string_of_json" (fun () ->
       Json_io.string_of_json ~compact:true ~recursive:false json
@@ -91,7 +91,7 @@ let string_of_v v =
         | _ when xs +> List.exists (function ("tvar", _) -> true | _ -> false)->
             incr cnt_other;
             Ocaml.VVar ("tlval", Int64.of_int !cnt_other)
-        | _ -> 
+        | _ ->
             (* recurse, x can be a record containing itself some records *)
             k x
         )
@@ -101,11 +101,14 @@ let string_of_v v =
   let s = Ocaml.string_of_v v' in
   s
 
-let ml_pattern_string_of_program ast = 
+let ml_pattern_string_of_program ast =
   Meta_ast_php.vof_program ast +> string_of_v
 
-let ml_pattern_string_of_expr e = 
+let ml_pattern_string_of_expr e =
   Meta_ast_php.vof_expr e +> string_of_v
+
+let ml_pattern_string_of_typehint th =
+  Meta_ast_php.vof_hint_type th +> string_of_v
 
 let ml_pattern_string_of_any any =
   Meta_ast_php.vof_any any +> string_of_v

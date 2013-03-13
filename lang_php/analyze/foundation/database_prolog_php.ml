@@ -116,7 +116,7 @@ let rec string_of_hint_type h =
       (match x with
       | Hint c ->
           (match c with
-          | ClassName c -> Ast.name c
+          | ClassName (c, _) -> Ast.name c (* TODO: figure out a reasonable respresentation for type args in prolog *)
           | Self _ -> "self"
           | Parent _ -> "parent"
           | LateStatic _ -> "")
@@ -208,7 +208,7 @@ let add_uses id ast pr db =
           (match x with
           | StaticMethodCallSimple ((qu,_tok), name, args) ->
               (match qu with
-              | ClassName name2 ->
+              | ClassName (name2, _) ->
                   pr (spf "docall(%s, ('%s','%s'), method)."
                            (name_id id db) (Ast_php.name name2) str)
               (* this should have been desugared while building the
@@ -268,7 +268,7 @@ let add_uses id ast pr db =
           (match classref with
           | ClassNameRefStatic x ->
               (match x with
-              | ClassName name ->
+              | ClassName (name, _) -> (* TODO: currently ignoring type args *)
 
                   let str = Ast_php.name name in
                   (* use a different namespace than func? *)
@@ -311,7 +311,7 @@ let add_uses id ast pr db =
     );
     V.kstmt = (fun (k, _) x ->
       (match x with
-      | Throw (_, New (_, ClassNameRefStatic (ClassName name), _), _) ->
+      | Throw (_, New (_, ClassNameRefStatic (ClassName (name, _)), _), _) ->
           pr (spf "throw(%s, '%s')."
                  (name_id id db) (Ast.str_of_name name))
       | Try (_, _, c1, cs) ->

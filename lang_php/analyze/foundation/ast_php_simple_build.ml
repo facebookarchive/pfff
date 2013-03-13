@@ -383,7 +383,7 @@ and hint_type env = function
 and qualifier env (cn, _) = class_name_or_selfparent env cn
 
 and class_name_or_selfparent env = function
-   | ClassName fqcn -> name env fqcn
+   | ClassName (fqcn, _) -> name env fqcn (* TODO: support type args? *)
    | Self tok -> (A.special "self", wrap tok)
    | Parent tok -> (A.special "parent", wrap tok)
    | LateStatic tok -> (A.special "static", wrap tok)

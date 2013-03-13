@@ -24,6 +24,7 @@ val vof_castOp: Ast_php.castOp -> Ocaml.v
 val vof_fixOp: Ast_php.fixOp -> Ocaml.v
 val vof_ptype: Ast_php.ptype -> Ocaml.v
 
+val vof_hint_type: Ast_php.hint_type -> Ocaml.v
 val vof_constant: Ast_php.constant -> Ocaml.v
 val vof_class_name_reference: Ast_php.class_name_reference -> Ocaml.v
 val vof_modifier: Ast_php.modifier -> Ocaml.v

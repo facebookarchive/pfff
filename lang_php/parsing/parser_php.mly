@@ -62,6 +62,34 @@ open Ast_php
 open Parser_php_mly_helper
 
 module Ast = Ast_php
+
+(* Split a single (assumed to be 2-chars wide) info and turn it
+   into a (1-char) lhs and rhs. Used to convert `>>` into two `>`
+*)
+let split_two_char pi =
+  let lhs = { pi with Parse_info.str = String.sub pi.Parse_info.str 0 1 } in
+  let rhs = { pi with Parse_info.str = String.sub pi.Parse_info.str 1 1;
+                     Parse_info.charpos = pi.Parse_info.charpos + 1;
+                     Parse_info.column = pi.Parse_info.column + 1 } in
+  (lhs, rhs)
+
+let split_two_char_info i =
+  let tok = match i.Parse_info.token with
+    | Parse_info.OriginTok t -> t
+    | _ -> failwith "Parse error..."
+  in
+
+  let lhspi, rhspi = split_two_char tok in
+  let lhs = { Parse_info.token = Parse_info.OriginTok lhspi;
+              Parse_info.comments = ();
+              Parse_info.transfo = Parse_info.NoTransfo
+            } in
+  let rhs = { Parse_info.token = Parse_info.OriginTok rhspi;
+              Parse_info.comments = ();
+              Parse_info.transfo = Parse_info.NoTransfo
+            } in
+  (lhs, rhs)
+
 %}
 
 /*(*e: GRAMMAR prelude *)*/
@@ -910,7 +938,7 @@ type_params_list:
 /*(*************************************************************************)*/
 
 type_hint:
- | fully_qualified_class_name type_arguments { Hint (ClassName $1) }
+ | fully_qualified_class_name type_arguments { Hint (ClassName ($1, $2)) }
  | T_SELF   { Hint (Self $1) }
  | T_PARENT { Hint (Parent $1) }
  | T_ARRAY type_arguments { HintArray $1 }
@@ -953,14 +981,17 @@ non_empty_ext_type_hint_list:
    * and are used in a 'use' context.
    *)*/
 type_arguments:
-  | {}
-  | TSMALLER type_arg_list_gt {}
+  | { None }
+  | TSMALLER type_arg_list_gt { Some ($1, fst $2, snd $2) }
 
 /*(* A dirty hack to get A<A<...>> to work without an additional space *)*/
 type_arg_list_gt:
-  | ext_type_hint TGREATER { }
-  | ext_type_hint TCOMMA type_arg_list_gt { }
-  | fully_qualified_class_name TSMALLER non_empty_ext_type_hint_list T_SR { }
+  | ext_type_hint TGREATER { [Left $1], $2 }
+  | ext_type_hint TCOMMA type_arg_list_gt { (Left $1)::(Right $2)::(fst $3), snd $3}
+  | fully_qualified_class_name TSMALLER non_empty_ext_type_hint_list T_SR {
+    let lhs, rhs = split_two_char_info $4 in
+      ([Left(Hint(ClassName($1, Some ($2, $3, lhs))))], rhs)
+  }
 
 
 return_type_opt:
@@ -1207,7 +1238,7 @@ variable_property_bis: variable_property
 
 collection_literal:
  | fully_qualified_class_name TOBRACE array_pair_list TCBRACE
-     { 
+     {
        match $1 with
        | Name ("Vector", t) ->
            let elts = List.map
@@ -1230,7 +1261,7 @@ collection_literal:
              $3
            in
            MapLit(t, ($2, elts, $4))
-        | _ -> raise Parsing.Parse_error 
+        | _ -> raise Parsing.Parse_error
      }
 
  /*(*e: exprbis grammar rule hook *)*/
@@ -1307,7 +1338,7 @@ static_scalar: /* compile-time evaluated scalars */
 
 static_collection_literal:
  | fully_qualified_class_name TOBRACE static_array_pair_list TCBRACE
-     { 
+     {
        match $1 with
        | Name ("Vector", t) ->
            let elts = List.map
@@ -1330,7 +1361,7 @@ static_collection_literal:
              $3
            in
            MapLit(t, ($2, elts, $4))
-        | _ -> raise Parsing.Parse_error 
+        | _ -> raise Parsing.Parse_error
      }
 
 common_scalar:
@@ -1546,7 +1577,7 @@ ident:
 qualifier: class_name_or_selfparent TCOLCOL { $1, $2 }
 
 class_name_or_selfparent:
- | fully_qualified_class_name { ClassName $1 }
+ | fully_qualified_class_name { ClassName ($1, None) }
  | T_SELF   { Self $1 }
  | T_PARENT { Parent $1 }
 /*(* php 5.3 late static binding *)*/

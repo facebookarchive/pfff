@@ -180,7 +180,7 @@ let highlight_funcall_simple ~tag ~hentities f args info =
 
 let rec handle_typehint tag x = match x with
   | Some th -> (match th with
-    | Hint (ClassName name) ->
+    | Hint (ClassName (name, _)) -> (* TODO: emit info for type args *)
        let info = Ast.info_of_name name in
        tag info (TypeMisc);
     | Hint (Self _ | Parent _) ->
@@ -665,7 +665,7 @@ let visit_toplevel ~tag prefs  hentities (toplevel, toks) =
     (* -------------------------------------------------------------------- *)
     V.kclass_name_reference = (fun (k, vx) x ->
       match x with
-      | ClassNameRefStatic (ClassName name) ->
+      | ClassNameRefStatic (ClassName (name,_)) ->
           let info = Ast.info_of_name name in
           tag info (Class (Use2 fake_no_use2));
       | ClassNameRefStatic (Self _ | Parent _) ->

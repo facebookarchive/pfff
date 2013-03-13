@@ -46,6 +46,12 @@ and vof_bracket _of_a (v1, v2, v3) =
   and v2 = _of_a v2
   and v3 = vof_tok v3
   in Ocaml.VTuple [ v1; v2; v3 ]
+and vof_single_angle _of_a (v1, v2, v3) =
+  let v1 = vof_tok v1 in
+  let v2 = vof_comma_list _of_a v2 in
+  let v3 = vof_tok v3
+  in Ocaml.VTuple [ v1; v2; v3 ]
+
 and vof_angle _of_a (v1, v2, v3) =
   let v1 = vof_tok v1
   and v2 = _of_a v2
@@ -75,16 +81,17 @@ and vof_qualifier (v1, v2) =
   in Ocaml.VTuple [ v1; v2 ]
 and vof_class_name_or_selfparent =
   function
-  | ClassName v1 ->
-      let v1 = vof_fully_qualified_class_name v1
-      in Ocaml.VSum (("ClassName", [ v1 ]))
+  | ClassName (v1, v2) ->
+      let v1 = vof_fully_qualified_class_name v1 in
+      let v2 = vof_option vof_type_args v2
+      in Ocaml.VSum (("ClassName", [ v1; v2 ]))
   | Self v1 -> let v1 = vof_tok v1 in Ocaml.VSum (("Self", [ v1 ]))
   | Parent v1 -> let v1 = vof_tok v1 in Ocaml.VSum (("Parent", [ v1 ]))
   | LateStatic v1 -> let v1 = vof_tok v1 in Ocaml.VSum (("LateStatic", [ v1 ]))
-
+and vof_type_args v = vof_single_angle vof_hint_type v
 and vof_fully_qualified_class_name v = vof_name v
 
-let vof_ptype =
+and vof_ptype =
   function
   | BoolTy -> Ocaml.VSum (("BoolTy", []))
   | IntTy -> Ocaml.VSum (("IntTy", []))
@@ -93,7 +100,7 @@ let vof_ptype =
   | ArrayTy -> Ocaml.VSum (("ArrayTy", []))
   | ObjectTy -> Ocaml.VSum (("ObjectTy", []))
 
-let rec vof_expr = function
+and vof_expr = function
   | Lv v1 -> let v1 = vof_lvalue v1 in Ocaml.VSum (("Lv", [ v1 ]))
   | Sc v1 -> let v1 = vof_scalar v1 in Ocaml.VSum (("Sc", [ v1 ]))
   | Binary ((v1, v2, v3)) ->

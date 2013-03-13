@@ -299,6 +299,17 @@ let m_wrap f a b =
     )
     )
 
+let m_single_angle f a b =
+  match a, b with
+  | (a1, a2, a3), (b1, b2, b3) ->
+    m_tok a1 b1 >>= (fun (a1, b1) ->
+      f a2 b2 >>= (fun (a2, b2) ->
+        m_tok a3 b3 >>= (fun (a3, b3) ->
+          return (
+            (a1,a2,a3), (b1, b2, b3)
+          )
+        )))
+
 let m_bracket f a b =
   match a, b with
   | (a1, a2, a3), (b1, b2, b3) ->
@@ -988,13 +999,12 @@ and m_qualifier a b =
 
 and m_class_name_or_selfparent a b =
   match a, b with
-  | A.ClassName(a1), B.ClassName(b1) ->
+  | A.ClassName(a1, a2), B.ClassName(b1, b2) ->
     m_fully_qualified_class_name a1 b1 >>= (fun (a1, b1) ->
-    return (
-       A.ClassName(a1),
-       B.ClassName(b1)
-    )
-    )
+      m_option m_type_args a2 b2 >>= (fun (a2, b2) ->
+        return (A.ClassName(a1,a2),
+                B.ClassName(b1,b2)
+    )))
   | A.Self(a1), B.Self(b1) ->
     m_tok a1 b1 >>= (fun (a1, b1) ->
     return (
@@ -1023,6 +1033,10 @@ and m_class_name_or_selfparent a b =
   | A.Parent _, _
   | A.LateStatic _, _
    -> fail ()
+
+and m_type_args a b =
+  (m_single_angle (m_comma_list m_hint_type)) a b
+      >>= (fun (a, b) -> return (a,b))
 
 and m_fully_qualified_class_name a b =
   match a, b with

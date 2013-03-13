@@ -179,7 +179,11 @@ and v_brace: 'a. ('a -> unit) -> 'a brace -> unit = fun _of_a (v1, v2, v3) ->
   let v1 = v_tok v1 and v2 = _of_a v2 and v3 = v_tok v3 in ()
 and v_bracket: 'a. ('a -> unit) -> 'a bracket -> unit = fun _of_a (v1, v2, v3)->
   let v1 = v_tok v1 and v2 = _of_a v2 and v3 = v_tok v3 in ()
-and v_angle: 'a. ('a -> unit) -> 'a bracket -> unit = fun _of_a (v1, v2, v3)->
+and v_single_angle: 'a. ('a -> unit) -> 'a single_angle -> unit = fun _of_a (v1, v2, v3)->
+  let v1 = v_tok v1 in
+  let v2 = _of_a v2 in
+  let v3 = v_tok v3 in ()
+and v_angle: 'a. ('a -> unit) -> 'a angle -> unit = fun _of_a (v1, v2, v3)->
   let v1 = v_tok v1 and v2 = _of_a v2 and v3 = v_tok v3 in ()
 and v_comma x =
   let k info = v_tok info
@@ -222,12 +226,16 @@ and v_qualifier v =
 and v_class_name_or_selfparent x =
   let rec k x =
     match x with
-  | ClassName v1 -> let v1 = v_fully_qualified_class_name v1 in ()
+  | ClassName (v1, v2) ->
+      let v1 = v_fully_qualified_class_name v1 in
+      let v2 = v_option v_type_args v2 in ()
   | Self v1 -> let v1 = v_tok v1 in ()
   | Parent v1 -> let v1 = v_tok v1 in ()
   | LateStatic v1 -> let v1 = v_tok v1 in ()
   in
   vin.kclass_name_or_kwd (k, all_functions) x
+and v_type_args x =
+  v_single_angle (v_comma_list v_hint_type) x; ()
 
 and v_fully_qualified_class_name v =
   let k x = v_name x in

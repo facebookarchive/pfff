@@ -95,6 +95,9 @@ and map_brace: 'a. ('a -> 'a) -> 'a brace -> 'a brace = fun _of_a (v1, v2, v3)->
 and map_bracket: 'a. ('a -> 'a) -> 'a bracket -> 'a bracket =
  fun _of_a (v1, v2, v3)->
   let v1 = map_tok v1 and v2 = _of_a v2 and v3 = map_tok v3 in (v1, v2, v3)
+and map_single_angle: 'a. ('a -> 'a) -> 'a single_angle -> 'a single_angle =
+  fun _of_a (v1, v2, v3) ->
+  let v1 = map_tok v1 and v2 = _of_a v2 and v3 = map_tok v3 in (v1, v2, v3)
 and map_angle: 'a. ('a -> 'a) -> 'a angle -> 'a angle =
  fun _of_a (v1, v2, v3)->
   let v1 = map_tok v1 and v2 = _of_a v2 and v3 = map_tok v3 in (v1, v2, v3)
@@ -124,14 +127,16 @@ and map_qualifier v =
 and map_class_name_or_selfparent v =
   let k v =
     match v with
-    | ClassName v1 ->
-        let v1 = map_fully_qualified_class_name v1 in ClassName ((v1))
+    | ClassName (v1, v2) ->
+        let v1 = map_fully_qualified_class_name v1 in
+        let v2 = map_option map_type_args v2 in
+          ClassName ((v1, v2))
     | Self v1 -> let v1 = map_tok v1 in Self ((v1))
     | Parent v1 -> let v1 = map_tok v1 in Parent ((v1))
     | LateStatic v1 -> let v1 = map_tok v1 in LateStatic ((v1))
   in
   vin.kclass_name_or_kwd (k, all_functions) v
-
+and map_type_args v = map_single_angle (map_comma_list map_hint_type) v
 and map_fully_qualified_class_name v = map_name v
 
 

@@ -166,7 +166,7 @@ let mk_new_anon_class_call s
        ClassNameRefStatic
         (ClassName(Name
           (s,
-           fkt s))),
+           fkt s), None)),
        Some
         (fkt "(",
          closed_vars_of_this_closure +> List.map (fun closed_var ->
@@ -563,7 +563,12 @@ let unparse_without_type_hints file =
   (* visit ast and annotate type hints *)
   let mark_typehint type_hint =
     let rec get_hint_tokens type_hint = match type_hint with
-      | Hint (ClassName name) -> [ Ast.info_of_name name ]
+      | Hint (ClassName (name, args)) ->
+        let argtoks = match args with
+          | None -> []
+          | Some elts -> List.flatten (List.map (function Left x -> get_hint_tokens x | Right t -> [t]) (unbrace elts))
+        in
+        (Ast.info_of_name name)::argtoks
       | Hint (Self tok | Parent tok) -> [ tok ]
       | HintArray tok -> [ tok ]
       | Hint (LateStatic tok) -> raise Impossible

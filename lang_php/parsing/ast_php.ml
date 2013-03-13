@@ -80,6 +80,7 @@ and 'a paren   = tok * 'a * tok
 and 'a brace   = tok * 'a * tok
 and 'a bracket = tok * 'a * tok
 and 'a angle = tok * 'a * tok
+and 'a single_angle = tok * 'a * tok
 and 'a comma_list = ('a, tok (* the comma *)) Common.either list
 and 'a comma_list_dots =
   ('a, tok (* ... in parameters *), tok (* the comma *)) Common.either3 list
@@ -130,7 +131,7 @@ and 'a comma_list_dots =
  (*s: qualifiers *)
  and qualifier = class_name_or_kwd * tok (* :: *)
   and class_name_or_kwd =
-   | ClassName of fully_qualified_class_name
+   | ClassName of fully_qualified_class_name * (type_args option)
    (* Could also transform at parsing time all occurences of self:: and
     * parent:: by their respective names. But I prefer to have all the
     * PHP features somehow explicitely represented in the AST.
@@ -143,6 +144,7 @@ and 'a comma_list_dots =
     * StaticDynamicCall stuff in lvalue?
     *)
  and fully_qualified_class_name = name
+ and type_args = hint_type comma_list single_angle
  (*e: qualifiers *)
  (*s: tarzan annotation *)
   (* with tarzan *)
@@ -153,7 +155,7 @@ and 'a comma_list_dots =
 (* ------------------------------------------------------------------------- *)
 (*s: AST type *)
 (* This is used in Cast. For type analysis see type_php.ml *)
-type ptype =
+and ptype =
   | BoolTy
   | IntTy
   | DoubleTy (* float *)
@@ -176,7 +178,7 @@ type ptype =
  * a real AST like the PIL. So just have this file be a simple concrete
  * syntax tree and no more.
  *)
-type expr =
+and expr =
   (*s: type exp_info *)
   (*e: type exp_info *)
   | Lv of lvalue
@@ -844,6 +846,7 @@ and attribute =
   | AttributeWithArgs of string wrap * static_scalar comma_list paren
 
 and attributes = attribute comma_list angle
+
 (*e: AST phpext *)
 (* ------------------------------------------------------------------------- *)
 (* The toplevels elements *)

@@ -92,7 +92,7 @@ let refactor refactorings ast_with_tokens =
                   let tok =
                     match x with
                     | HintArray tok -> tok
-                    | Hint (ClassName name) -> Ast.info_of_name name
+                    | Hint (ClassName (name, typeargs)) -> Ast.info_of_name name
                     | Hint (LateStatic _ | Parent _ | Self _) ->
                         failwith "impossible to have such name as type hints"
                     | HintQuestion (tok, t) -> tok

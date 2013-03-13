@@ -564,7 +564,8 @@ and hint_type env = function
 and qualifier env (cn, _) = class_name_or_selfparent env cn
 
 and class_name_or_selfparent env = function
-   | ClassName fqcn -> name env fqcn
+   | ClassName (fqcn, _) -> (* TODO: add handling for type args here? *)
+      name env fqcn
    | Self _ -> "self"
    | Parent _ -> "parent"
    | LateStatic _ -> "static"
