@@ -209,6 +209,7 @@ let heat_map_properties = [
   "bad", "red";
 
   "base", "azure4";
+  "no_info", "white";
 ]
 
 
