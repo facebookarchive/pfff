@@ -207,6 +207,8 @@ let heat_map_properties = [
   (* when we zoom on a file we just show red/green coverage, no heat color *)
   "ok", "green";
   "bad", "red";
+
+  "base", "azure4";
 ]
 
 
