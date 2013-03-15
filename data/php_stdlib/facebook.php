@@ -112,8 +112,3 @@ function syck_load($xs) { }
 // function xhp_preprocess_code() { }
 
 //class phpmcc {}
-
-function mysql_fetch_result($conn) { }
-function mysql_more_results($conn) { }
-function mysql_next_result($conn) { }
-function mysql_multi_query($sql, $conn) { }
