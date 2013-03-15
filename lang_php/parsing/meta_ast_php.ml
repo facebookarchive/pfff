@@ -1263,3 +1263,6 @@ and vof_any =
 
   | Entity v1 -> let v1 = vof_entity v1 in Ocaml.VSum (("Entity", [ v1 ]))
   | Name2 v1 -> let v1 = vof_name v1 in Ocaml.VSum(("Name2", [ v1 ]))
+  | ClassNameRef v1 ->
+      let v1 = vof_class_name_reference v1
+      in Ocaml.VSum (("ClassNameRef", [ v1 ]))

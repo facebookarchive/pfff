@@ -80,7 +80,10 @@ let sgrep_unittest = [
       "foo('X');", "foo('a_func');", true;
       (* metavariable on reference arguments *)
       "foo(X,Y);", "foo(&$a, $b);", true;
-      
+      (* metavariable on class name reference *)
+      "new X(...);", "new $dyn();", true;
+      "new X(...);", "new self();", true;
+
       (* isomorphism on "keyword" arguments *)
       "foo(true);", "foo($x=true);", true;
       "foo(true);", "foo(true);", true;

@@ -146,9 +146,6 @@ and 'a comma_list_dots =
  and fully_qualified_class_name = name
  and type_args = hint_type comma_list single_angle
  (*e: qualifiers *)
- (*s: tarzan annotation *)
-  (* with tarzan *)
- (*e: tarzan annotation *)
 (*e: AST name *)
 (* ------------------------------------------------------------------------- *)
 (* Types *)
@@ -164,9 +161,6 @@ and ptype =
 
   | ArrayTy
   | ObjectTy
- (*s: tarzan annotation *)
-  (* with tarzan *)
- (*e: tarzan annotation *)
 (*e: AST type *)
 (* ------------------------------------------------------------------------- *)
 (* Expression *)
@@ -936,6 +930,8 @@ type any =
   | InfoList of tok list
 
   | Name2 of name
+  | ClassNameRef of class_name_reference
+ (* with tarzan *)
 (*e: AST any *)
 
 (*****************************************************************************)

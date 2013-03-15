@@ -858,6 +858,7 @@ type any =
   | InfoList of tok list
 
   | Name2 of name
+  | ClassNameRef of class_name_reference
 (*e: AST any *)
 
   (* with tarzan *)

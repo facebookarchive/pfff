@@ -29,17 +29,15 @@ open Common
  * using OCaml pad-style reflection (see commons/ocaml.ml) on
  * parsing_php/ast_php.ml.
  *
- * An alternative could have been to transform ast_php.ml
+ * todo: an alternative would be to transform ast_php.ml
  * in a very simple term language and do the 1-vs-1 match
- * on this term language, but depending on the construct, a PHP variable,
- * a string, we may want to do special things so it's better to work
- * on the full AST. Working on a term language would be like working
- * in an untyped language.
- *
- * update: todo: we may want to revisit that design choice.
- * I have to constantly update sgrep to handle more patterns
- * e.g. X::foo() should match AClass::foo(), which would not happen
- * if I just went with the simpler term language from the beginning.
+ * on this term language. But depending on the construct, a PHP variable,
+ * a string, we may want to do special things so is it better to work
+ * on the full AST? Working on a term language would be like working
+ * in an untyped language? But I have to constantly update sgrep to
+ * handle more patterns e.g. X::foo() should match AClass::foo(), 
+ * which would not happenif I just went with the simpler term language
+ * from the beginning.
  *
  * I then hardcoded a few isomorphisms by abusing some existing constructs,
  * for instance constants starting with a big X are considered metavars
@@ -1945,6 +1943,20 @@ and m_map_elt a b =
    -> fail ()
 and m_class_name_reference a b =
   match a, b with
+
+  (* iso: metavar on classname_ref, e.g. new X() should match new $x() *)
+  | A.ClassNameRefStatic(A.ClassName(A.Name (name, info_name) , None)), b1
+    when MV.is_metavar_name name ->
+      X.envf (name, info_name) (B.ClassNameRef (b1)) >>= (function
+      | ((name, info_name), B.ClassNameRef (b1))  ->
+        return (
+          A.ClassNameRefStatic(A.ClassName(A.Name (name, info_name), None)),
+          b1
+        )
+      | _ -> raise Impossible
+      )
+
+
   | A.ClassNameRefStatic(a1), B.ClassNameRefStatic(b1) ->
     m_class_name_or_selfparent a1 b1 >>= (fun (a1, b1) ->
     return (
@@ -3308,6 +3320,13 @@ let m_any a b =
        B.Name2(b1)
     )
     )
+  | A.ClassNameRef(a1), B.ClassNameRef(b1) ->
+    m_class_name_reference a1 b1 >>= (fun (a1, b1) ->
+    return (
+       A.ClassNameRef(a1),
+       B.ClassNameRef(b1)
+    )
+    )
   | A.Lvalue _, _
   | A.Expr _, _
   | A.Stmt2 _, _
@@ -3333,6 +3352,7 @@ let m_any a b =
   | A.Info _, _
   | A.InfoList _, _
   | A.Name2 _, _
+  | A.ClassNameRef _, _
    -> fail ()
 
 end

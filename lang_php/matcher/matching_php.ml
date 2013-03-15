@@ -123,6 +123,7 @@ module XMATCH = struct
     | Ast.Lvalue _, Ast.Lvalue _ 
     | Ast.XhpAttrValue _, Ast.XhpAttrValue _ 
     | Ast.Argument _, Ast.Argument _
+    | Ast.ClassNameRef _, Ast.ClassNameRef _
       ->
         (* Note that because we want to retain the position information
          * of the matched code in the environment (e.g. for the -pvar
