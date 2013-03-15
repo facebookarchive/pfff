@@ -162,6 +162,9 @@ let verbose = ref false
 let lang = ref "ml"
 let deps_style = ref DM.DepsInOut
 
+let skip_list = ref None
+let output_dir = ref None
+
 (* action mode *)
 let action = ref ""
 
@@ -244,7 +247,11 @@ let package_node xs =
 
 let build_graph_code lang root =
   let pwd = Sys.getcwd () in
-  let skip_file = skip_file_of_dir pwd in
+  let skip_file = 
+    match !skip_list with
+    | None -> skip_file_of_dir pwd 
+    | Some f -> f
+  in
   let skip_list =
     if Sys.file_exists skip_file
     then begin 
@@ -278,7 +285,12 @@ let build_graph_code lang root =
 
     | _ -> failwith ("language not supported: " ^ lang)
   in
-  Graph_code.save g (dep_file_of_dir pwd)
+  let output_dir =
+    match !output_dir with
+    | None -> pwd
+    | Some d -> d
+  in
+  Graph_code.save g (dep_file_of_dir output_dir)
 
 (*****************************************************************************)
 (* Language specific, building stdlib *)
@@ -574,6 +586,11 @@ let options () = [
   " ";
 
   "-dots_threshold", Arg.Int (fun i -> DM.threshold_pack := i),
+  " ";
+
+  "-skip_list", Arg.String (fun s -> skip_list := Some s), 
+  " ";
+  "-o", Arg.String (fun s -> output_dir := Some s), 
   " ";
 
   "-symlinks", Arg.Unit (fun () -> 
