@@ -938,11 +938,14 @@ type_params_list:
 /*(*************************************************************************)*/
 
 type_hint:
- | fully_qualified_class_name type_arguments { Hint (ClassName ($1, $2)) }
+ | class_name_or_array type_arguments { Hint (ClassName ($1, $2)) }
  | T_SELF   { Hint (Self $1) }
  | T_PARENT { Hint (Parent $1) }
- | T_ARRAY type_arguments { HintArray $1 }
 /*(* TODO inline type_hint_extensions here and remove ext_type_hint *)*/
+
+class_name_or_array:
+ | fully_qualified_class_name { $1 }
+ | T_ARRAY { Name ("array", $1) }
 
 /*(* extended type hint includes the new type extensions ?.. (a, b) etc ...*)*/
 ext_type_hint:
@@ -988,11 +991,11 @@ type_arguments:
 type_arg_list_gt:
   | ext_type_hint TGREATER { [Left $1], $2 }
   | ext_type_hint TCOMMA type_arg_list_gt { (Left $1)::(Right $2)::(fst $3), snd $3}
-  | fully_qualified_class_name TSMALLER non_empty_ext_type_hint_list T_SR {
+  | class_name_or_array TSMALLER non_empty_ext_type_hint_list T_SR {
     let lhs, rhs = split_two_char_info $4 in
       ([Left(Hint(ClassName($1, Some ($2, $3, lhs))))], rhs)
   }
-  | TQUESTION fully_qualified_class_name TSMALLER non_empty_ext_type_hint_list T_SR {
+  | TQUESTION class_name_or_array TSMALLER non_empty_ext_type_hint_list T_SR {
     let lhs, rhs = split_two_char_info $5 in
       ([Left(HintQuestion($1, Hint(ClassName($2, Some ($3, $4, lhs)))))], rhs)
   }
