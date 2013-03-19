@@ -1177,6 +1177,7 @@ and map_any =
   | Name2 v1 -> let v1 = map_name v1 in Name2 v1
   | ClassNameRef v1 ->
       let v1 = map_class_name_reference v1 in ClassNameRef ((v1))
+  | Hint2 v1 -> let v1 = map_hint_type v1 in Hint2 ((v1))
 
  and all_functions =
     {

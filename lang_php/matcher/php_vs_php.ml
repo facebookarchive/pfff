@@ -3327,6 +3327,13 @@ let m_any a b =
        B.ClassNameRef(b1)
     )
     )
+  | A.Hint2(a1), B.Hint2(b1) ->
+    m_hint_type a1 b1 >>= (fun (a1, b1) ->
+    return (
+       A.Hint2(a1),
+       B.Hint2(b1)
+    )
+    )
   | A.Lvalue _, _
   | A.Expr _, _
   | A.Stmt2 _, _
@@ -3353,6 +3360,7 @@ let m_any a b =
   | A.InfoList _, _
   | A.Name2 _, _
   | A.ClassNameRef _, _
+  | A.Hint2 _, _
    -> fail ()
 
 end

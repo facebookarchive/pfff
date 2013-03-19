@@ -1150,6 +1150,7 @@ and v_any = function
   | Case2 v1 -> let v1 = v_case v1 in ()
   | Name2 v1 -> let v1 = v_name v1 in ()
   | ClassNameRef v1 -> let v1 = v_class_name_reference v1 in ()
+  | Hint2 v1 -> let v1 = v_hint_type v1 in ()
 
 (* end of auto generation *)
 

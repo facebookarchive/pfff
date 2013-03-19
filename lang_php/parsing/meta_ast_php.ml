@@ -1266,3 +1266,4 @@ and vof_any =
   | ClassNameRef v1 ->
       let v1 = vof_class_name_reference v1
       in Ocaml.VSum (("ClassNameRef", [ v1 ]))
+  | Hint2 v1 -> let v1 = vof_hint_type v1 in Ocaml.VSum (("Hint2", [ v1 ]))

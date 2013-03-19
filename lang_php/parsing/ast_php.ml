@@ -931,6 +931,8 @@ type any =
 
   | Name2 of name
   | ClassNameRef of class_name_reference
+  | Hint2 of hint_type
+
  (* with tarzan *)
 (*e: AST any *)
 
