@@ -37,6 +37,7 @@ let unittest =
     p "tests/php/scheck/endpoint.php";
     p "tests/php/scheck/dynamic_bailout.php";
     p "tests/php/scheck/misc.php";
+    p "tests/php/scheck/lint.php";
   ] 
   in
   

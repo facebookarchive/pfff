@@ -94,6 +94,8 @@ let properties = [
   "eFileNotFound", "tan";
   "eInjection", "tan";
 
+  "eAssignInBooleanContext", "cyan";
+
   "eOther", "red";
 ]
 
@@ -151,6 +153,8 @@ let info_of_error_and_kind err =
 (*  | CfgPilError ( _) -> "eCfgError" *)
   | FileNotFound ( _) ->
       "eFileNotFound"
+  | AssignInBooleanContext ->
+      "eAssignInBooleanContext"
   | Injection (_) ->
       "eInjection"
   | CaseWithSemiColon | CaseSensitivityKeyword ->

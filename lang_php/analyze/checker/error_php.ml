@@ -97,6 +97,9 @@ type error = {
   (* wrong include/require *)
   | FileNotFound of Common.filename
 
+  (* lint *)
+  | AssignInBooleanContext
+
   (* bail-out constructs *)
   | UglyGlobalDynamic
   | WeirdForeachNoIteratorVar
@@ -211,6 +214,9 @@ to statically analyze. Please avoid using those features."
 
   | FileNotFound s ->
       spf "File not found %s" s
+
+  | AssignInBooleanContext ->
+      "use == or add another set of parens around the assignment"
 
   | Injection kind ->
       let s =

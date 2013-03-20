@@ -78,8 +78,7 @@ function test_declared_in_middle_of_expr() {
     echo $v;
   }
 
-  //TODO: this should at least generate an error to force people to use extra
-  // () around the assignement
+  //ERROR: use == or add another set of parens around the assignment
   if ($v = misc1('')) {
     echo $v;
   }

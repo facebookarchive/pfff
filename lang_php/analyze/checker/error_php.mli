@@ -36,6 +36,9 @@ type error = {
   (* wrong include/require *)
   | FileNotFound of Common.filename
 
+  (* lint *)
+  | AssignInBooleanContext
+
   (* bail-out constructs *)
   | UglyGlobalDynamic
   | WeirdForeachNoIteratorVar
