@@ -16,12 +16,14 @@ open Common
  * searching for idx. By using a real parser tagging a file becomes
  * trivial and correct (but slower I have to admit).
  * 
- * Note that for OCaml the situation is kinda reversed. 'otags' 
+ * Note that for OCaml the situation was kinda reversed. 'otags' 
  * can work only at the AST level, which requires to
  * correctly parse the file. Nevertheless many files using camlp4 are
  * causing otags to fatal. One option is to help otags by passing it
  * the correct -pp flags. Another option is to at least default to
  * a lexical-level tag generator which is what I do for OCaml.
+ * update: with the new .cmt format, one can finally have a precise
+ * tag generator for OCaml code too.
  * 
  * usage: 
  *  $ stags -lang web -o TAGS *
