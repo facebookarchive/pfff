@@ -17,30 +17,27 @@ TARGET=pfff
 # Program related variables
 #------------------------------------------------------------------------------
 
-PROGS=pfff
-
-PROGS+=sgrep spatch
-PROGS+=stags
-
-PROGS+=ppp
-
-# note that without bdb, pfff_db will be incomplete regarding PHP
-PROGS+=pfff_db
-PROGS+=scheck
-
-PROGS+=pfff_test
-
-ifeq ($(FEATURE_BDB), 1)
-PROGS+=pfff_db_heavy
-PROGS+=scheck_heavy
-#TODO: make independent of BDB
-endif
-PROGS+=codequery
+PROGS=pfff \
+ sgrep spatch \
+ stags \
+ codequery \
+ scheck \
+ pfff_test
 
 ifeq ($(FEATURE_VISUAL), 1)
 PROGS+=codemap
 PROGS+=codegraph
 endif
+# note that without bdb, pfff_db will be incomplete regarding PHP
+PROGS+=pfff_db
+
+#todo: to remove
+PROGS+=ppp
+
+ifeq ($(FEATURE_BDB), 1)
+PROGS+=pfff_db_heavy
+endif
+
 
 OPTPROGS= $(PROGS:=.opt)
 
@@ -470,17 +467,6 @@ scheck.opt: $(LIBS:.cma=.cmxa) main_scheck.cmx
 	$(OCAMLOPT) $(STATIC) -o $@ $(SYSLIBS:.cma=.cmxa) $^
 clean::
 	rm -f scheck
-
-#------------------------------------------------------------------------------
-# scheck_heavy targets
-#------------------------------------------------------------------------------
-
-scheck_heavy: $(LIBS) main_scheck_heavy.cmo 
-	$(OCAMLC) $(CUSTOM) -o $@ $(SYSLIBS) $^
-scheck_heavy.opt: $(LIBS:.cma=.cmxa) $(LIBS2:.cma=.cmxa) $(OBJS2:.cmo=.cmx) main_scheck_heavy.cmx
-	$(OCAMLOPT) $(STATIC) -o $@ $(SYSLIBS:.cma=.cmxa)   $^ 
-clean:: 
-	rm -f scheck_heavy
 
 #------------------------------------------------------------------------------
 # codequery targets
