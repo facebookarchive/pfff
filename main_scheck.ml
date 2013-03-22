@@ -21,13 +21,15 @@ module S = Scope_code
  * A lint-like checker for PHP (for now).
  * https://github.com/facebook/pfff/wiki/Scheck
  * 
- * By default 'scheck' performs only a local analysis of the files passed
+ * By default 'scheck' performs only a local analysis of the file(s) passed
  * on the command line. It is thus quite fast while still detecting a few
  * important bugs like the use of undefined variables. 
- * 
  * 'scheck' can also leverage more expensive global analysis to find more 
- * bugs. Doing so requires a PHP "code database" which is usually very 
- * expensive to build (see pfff_db_heavy) and takes lots of space. 
+ * bugs. Doing so requires a PHP "code database", abstracted below
+ * under the 'entity_finder' interface. 
+ * 
+ * Computing a code database is usually expensive to 
+ * build (see pfff_db_heavy) and takes lots of space. 
  * Fortunately one can now build this database in memory, on the fly. 
  * Indeed, thanks to the include_require_php.ml analysis, we can now
  * build only the db for the files that matters, cutting significantly
@@ -106,10 +108,9 @@ module S = Scope_code
  *)
 let strict_scope = ref false 
 
-(* running the heavy analysis processing for instance the included files *)
+(* running the heavy analysis by processing the included files *)
 let heavy = ref false
 (* depth_limit is used to stop the expensive recursive includes process.
- *
  * I put 5 because it's fast enough at depth 5, and 
  * I think it's good enough as it is probably bad for a file to use
  * something that is distant by more than 5 includes. 
@@ -119,19 +120,20 @@ let heavy = ref false
  *  Maybe we should have a unfacebookizer preprocessor that removes
  *  this sugar. The alternative right now is to copy most of the code
  *  in this file in facebook/qa_code/checker.ml :( and plug in the
- *  special include_require_php.ml hooks. Another alternative is to use
- *  the light_db.json cache.
+ *  special include_require_php.ml hooks. 
+ * Another alternative is to use the light_db or graph_code for the 
+ * entity finder.
  *)
 let depth_limit = ref (Some 5: int option)
 
 let php_stdlib = 
   ref (Filename.concat Config_pfff.path "/data/php_stdlib")
 
-(* no -heavy or -depth_limit or -php_stdlib or -cache_parse here *)
+(* running heavy analysis using the graph_code as the entity finder *)
+let graph_code = ref (None: Common.filename option)
+
 (* old: main_scheck_heavy: let metapath = ref "/tmp/pfff_db" *)
 
-(* running heavy analysis using the graph_code as the code database *)
-let graph_code = ref (None: Common.filename option)
 
 
 let cache_parse = ref true
@@ -349,14 +351,18 @@ let options () =
     "-verbose", Arg.Set verbose,
     " guess what";
 
+    "-with_graph_code", Arg.String (fun s ->
+      graph_code := Some s
+    ), " <file> use graph_code file for heavy analysis";
+
     "-heavy", Arg.Set heavy,
     " process included files";
     "-depth_limit", Arg.Int (fun i -> depth_limit := Some i), 
-    " limit the number of includes to process";
+    " <int> limit the number of includes to process";
     "-no_caching", Arg.Clear cache_parse, 
     " don't cache parsed ASTs";
      "-php_stdlib", Arg.Set_string php_stdlib, 
-     (spf " path to builtins (default = %s)" !php_stdlib);
+     (spf " <dir> path to builtins (default = %s)" !php_stdlib);
 
     "-strict", Arg.Set strict_scope,
     " emulate block scope instead of function scope";
@@ -397,8 +403,8 @@ let main () =
   Common_extra.set_link();
 
   let usage_msg =
-    "Usage: " ^ Common2.basename Sys.argv.(0) ^
-      " [options] <file or dir> " ^ "\n" ^ "Options are:" ^
+    spf "Usage: %s [options] <file or dir> \nDoc: %s\nOptions:"
+      (Common2.basename Sys.argv.(0))
       "https://github.com/facebook/pfff/wiki/Scheck"
   in
   (* does side effect on many global flags *)
