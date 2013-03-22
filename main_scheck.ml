@@ -6,11 +6,9 @@
  *    May you find forgiveness for yourself and forgive others.
  *    May you share freely, never taking more than you give.
  *)
-
 open Common
 
 open Ast_php
-
 module Ast = Ast_php
 module V = Visitor_php
 
@@ -53,17 +51,19 @@ module S = Scope_code
  *  - local analysis
  *  - perform global analysis "lazily" by building db on-the-fly
  *    of the relevant included files (configurable via a -depth_limit flag)
- *  - TODO leverage global analysis computed previously by pfff_db_light
+ *  - leverage global analysis computed previously by codegraph
+ *  - TODO leverage global analysis computed previously by pfff_db(light)
  *  - leverage global analysis computed by pfff_db_heavy, 
  *    see main_scheck_heavy.ml
  * 
  * current checks:
  *   - variable related (use of undeclared variable, unused variable, etc)
+ *     with good handling of reference false positives when have a code db
  *   - use/def of entities (e.g. use of undefined class/function/constant
  *     a la checkModule)
  *   - function call related (wrong number of arguments, bad keyword
  *     arguments, etc)
- *   - TODO class related (use of undefined member, wrong number of arguments
+ *   - SEMI class related (use of undefined member, wrong number of arguments
  *     in method call, etc)
  *   - include/require and file related (e.g. including file that do not
  *     exist anymore); needs to pass an env
@@ -84,9 +84,10 @@ module S = Scope_code
  * todo: make it possible to take a db in parameter so
  * for other functions, we can also get their prototype.
  * 
- * The check leverages info about builtins, so when call to preg_match(),
+ * The checks leverage also info about builtins, so when one calls preg_match(),
  * we know that this function takes things by reference which avoids
- * some false positives regarding use of undeclared variable for instance.
+ * some false positives regarding the use of undeclared variable
+ * for instance.
  * 
  * later: it could later also check javascript, CSS, sql, etc
  * 
@@ -345,11 +346,8 @@ let options () =
     " <file> save result in pfff layer file";
 
   ] ++
-  Flag_analyze_php.cmdline_flags_verbose () ++
   Common.options_of_actions action (all_actions()) ++
   Common2.cmdline_flags_devel () ++
-  Common2.cmdline_flags_verbose () ++
-  Common2.cmdline_flags_other () ++
   [
   "-version",   Arg.Unit (fun () ->
     pr2 (spf "scheck version: %s" Config_pfff.version);
