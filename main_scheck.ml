@@ -131,6 +131,9 @@ let php_stdlib =
 
 let cache_parse = ref true
 
+(* no -heavy or -depth_limit or -php_stdlib or -cache_parse here *)
+(* old: main_scheck_heavy: let metapath = ref "/tmp/pfff_db" *)
+
 (* for ranking errors *)
 let rank = ref true
 
@@ -207,8 +210,13 @@ let main_action xs =
   Common.save_excursion Flag_parsing_php.caching_parsing !cache_parse (fun ()->
   files +> List.iter (fun file ->
     try 
+      (*TODO: use Common_extra.with_progress *)
       pr2_dbg (spf "processing: %s" file);
       let find_entity =
+(*
+  Database_php.with_db ~metapath:!metapath (fun db ->
+  let find_entity = Some (Database_php_build.build_entity_finder db) in
+*)
         if not !heavy 
         then None
         else 
@@ -369,6 +377,8 @@ let options () =
 (*****************************************************************************)
 
 let main () =
+
+  Common_extra.set_link();
 
   let usage_msg =
     "Usage: " ^ Common2.basename Sys.argv.(0) ^
