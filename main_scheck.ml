@@ -17,44 +17,48 @@ module S = Scope_code
 (*****************************************************************************)
 (* Purpose *)
 (*****************************************************************************)
-
-(* A lint-like checker for PHP.
+(* 
+ * A lint-like checker for PHP (for now).
  * https://github.com/facebook/pfff/wiki/Scheck
  * 
  * By default 'scheck' performs only a local analysis of the files passed
  * on the command line. It is thus quite fast while still detecting a few
  * important bugs like the use of undefined variables. 
  * 
- * 'scheck' can also leverage more expensive global analysis to find more bugs.
- * Doing so requires a PHP code database which is usually very expensive 
- * to build (see pfff_db_heavy) and takes lots of space. Fortunately one can
- * now build this database in memory, on the fly. Indeed, thanks
- * to the include_require_php.ml analysis, we can now
+ * 'scheck' can also leverage more expensive global analysis to find more 
+ * bugs. Doing so requires a PHP "code database" which is usually very 
+ * expensive to build (see pfff_db_heavy) and takes lots of space. 
+ * Fortunately one can now build this database in memory, on the fly. 
+ * Indeed, thanks to the include_require_php.ml analysis, we can now
  * build only the db for the files that matters, cutting significantly
  * the time to build the db (going down from 40 000 files to about 1000
  * files on average on facebook code). In a way it is similar
  * to what gcc does when it calls 'cpp' to get the full information for
  * a file. 
  * 
- * 'scheck' can also leverage a light database (see pfff_db) and 
- * use this as a cache.
+ * 'scheck' can also use a light database (see pfff_db) for its code
+ * database. 'scheck' can also leverage the graph_code database
+ * (see codegraph).
  * 
  * 'scheck' could also use the heavy database but this requires to have
  * the program linked with Berkeley DB, adding some dependencies to 
- * the user of the program (and is not very multi-user friendly for now).
- * See main_scheck_heavy.ml for such a program.
- * 
- * Note that scheck is mostly for generic bugs (that sometimes
- * requires global analysis). For API-specific bugs, you can use 'sgrep'.
+ * the user of the program. But because BDB is not very multi-user
+ * friendly for now, and because Berkeley DB has been deprecated
+ * in favor of the Prolog database (see main_codequery.ml) or 
+ * graph_code database (see main_codegraph.ml), this option is not
+ * supported anymore.
  * 
  * modes:
  *  - local analysis
  *  - perform global analysis "lazily" by building db on-the-fly
  *    of the relevant included files (configurable via a -depth_limit flag)
- *  - leverage global analysis computed previously by codegraph
  *  - TODO leverage global analysis computed previously by pfff_db(light)
- *  - leverage global analysis computed by pfff_db_heavy, 
- *    see main_scheck_heavy.ml
+ *  - leverage global analysis computed previously by codegraph
+ *  - nomore: global analysis computed by main_scheck_heavy.ml
+ * 
+ * Note that scheck is mostly for generic bugs (which sometimes
+ * requires global analysis). For API-specific bugs, use 'sgrep'.
+ * todo: implement SgrepLint for scheck (port it from the Facebook repo).
  * 
  * current checks:
  *   - variable related (use of undeclared variable, unused variable, etc)
@@ -97,11 +101,6 @@ module S = Scope_code
 (* Flags *)
 (*****************************************************************************)
 
-let verbose = ref false
-
-(* action mode *)
-let action = ref ""
-
 (* In strict mode, we are more aggressive regarding scope like in
  * JsLint. This is a copy of the same variable in Error_php.ml
  *)
@@ -109,7 +108,6 @@ let strict_scope = ref false
 
 (* running the heavy analysis processing for instance the included files *)
 let heavy = ref false
-
 (* depth_limit is used to stop the expensive recursive includes process.
  *
  * I put 5 because it's fast enough at depth 5, and 
@@ -129,10 +127,14 @@ let depth_limit = ref (Some 5: int option)
 let php_stdlib = 
   ref (Filename.concat Config_pfff.path "/data/php_stdlib")
 
-let cache_parse = ref true
-
 (* no -heavy or -depth_limit or -php_stdlib or -cache_parse here *)
 (* old: main_scheck_heavy: let metapath = ref "/tmp/pfff_db" *)
+
+(* running heavy analysis using the graph_code as the code database *)
+let graph_code = ref (None: Common.filename option)
+
+
+let cache_parse = ref true
 
 (* for ranking errors *)
 let rank = ref true
@@ -140,8 +142,21 @@ let rank = ref true
 (* for codemap or layer_stat *)
 let layer_file = ref (None: filename option)
 
+
+
+let verbose = ref false
+
+(* action mode *)
+let action = ref ""
+
 (*****************************************************************************)
-(* Helpers *)
+(* Wrappers *)
+(*****************************************************************************)
+let pr2_dbg s =
+  if !verbose then Common.pr2 s
+
+(*****************************************************************************)
+(* Entity finders *)
 (*****************************************************************************)
 
 (* Build the database of information. Take the name of the file
@@ -151,12 +166,6 @@ let layer_file = ref (None: filename option)
  * Some checks needs to have a global view of the code, for instance
  * to know what are the sets of valid protected variable that can be used
  * in a child class.
- * 
- * todo: can probably optimize this later. For instance lazy
- * loading of files, stop when are in flib as modules are
- * not transitive.
- * 
- * see also facebook/.../dependencies.ml
  *)
 let build_mem_db file =
 
@@ -187,11 +196,16 @@ let build_mem_db file =
       (Database_php.prj_of_dir root) 
   )
 
-(*****************************************************************************)
-(* Wrappers *)
-(*****************************************************************************)
-let pr2_dbg s =
-  if !verbose then Common.pr2 s
+let entity_finder_of_db file =
+  let db = build_mem_db file in
+  Database_php_build.build_entity_finder db
+
+
+(* 
+ * TODO: cache
+ *)
+let entity_finder_of_graph_code graph_file =
+  raise Todo
 
 (*****************************************************************************)
 (* Main action *)
@@ -200,6 +214,7 @@ let pr2_dbg s =
 let main_action xs =
   Logger.log Config_pfff.logger "scheck" None;
 
+  (* less: use skip_code *)
   let files = Lib_parsing_php.find_php_files_of_dir_or_files xs in
   let errors = ref [] in
 
@@ -213,15 +228,16 @@ let main_action xs =
       (*TODO: use Common_extra.with_progress *)
       pr2_dbg (spf "processing: %s" file);
       let find_entity =
-(*
-  Database_php.with_db ~metapath:!metapath (fun db ->
-  let find_entity = Some (Database_php_build.build_entity_finder db) in
-*)
-        if not !heavy 
-        then None
-        else 
-          let db = build_mem_db file in
-          Some (Database_php_build.build_entity_finder db) 
+        match () with
+        | _ when !heavy ->
+          Some (entity_finder_of_db file)
+        | _ when !graph_code <> None ->
+          Some (entity_finder_of_graph_code (Common2.some !graph_code))
+        (* old: main_scheck_heavy:
+         * Database_php.with_db ~metapath:!metapath (fun db ->
+         *  Database_php_build.build_entity_finder db
+         *) 
+        | _ -> None
       in
       let env = 
         Env_php.mk_env (Common2.dirname file)
