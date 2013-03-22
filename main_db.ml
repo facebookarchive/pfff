@@ -2,27 +2,28 @@
  * Please imagine a long and boring gnu-style copyright notice 
  * appearing just here.
  *)
-
 open Common
 
 (*****************************************************************************)
 (* Purpose *)
 (*****************************************************************************)
-
-(* Something lighter than a full berkeley database but more powerful than
- * just a TAGS file. Such a light_database can be leveraged by
- * the code/treemap visualizer to convey visually semantic
- * information that can help navigate a big codebase with huge API.
+(* 
+ * pfff_db computes a "light" code database; something lighter than a
+ * full berkeley database but still more powerful than just a TAGS file. 
+ * Such a light_database can be leveraged by the codemap visualizer
+ * to convey visual semantic information that can help navigate a
+ * big codebase with huge APIs.
+ * update: could maybe be merged with the graph code database.
  * 
- * Try to leverage multiple code artifacts:
+ * We try to leverage multiple code artifacts:
  *  - the source code
+ *  - documentation such as API reference or PLEAC cookbooks
  *  - SEMI the test coverage (the static part)
  *  - TODO some static analysis (deadcode, SEMI bad smell, type inference, etc)
  *  - TODO some dynamic analysis (tainting, test coverage)
  *  - TODO version history
- *  - documentation such as API reference or PLEAC cookbooks
  * 
- * See also vision.txt
+ * See also docs/manual/vision.txt
  *)
 
 (*****************************************************************************)
