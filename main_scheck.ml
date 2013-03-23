@@ -204,10 +204,59 @@ let entity_finder_of_db file =
 
 
 (* 
- * TODO: cache
+ * TODO: use more cache? parsing cache too?
  *)
+let hcache_entities = Hashtbl.create 101
+
+module E = Database_code
+module G = Graph_code
+
+let ast_php_entity_in_file (s, kind) file =
+  (* pr2_gen (s, kind, file); *)
+  let ast2 = Parse_php.parse_program file in
+  let entities =
+    ast2 +> Common.map_filter (function
+    | StmtList _ -> None
+    | FuncDef def ->
+      Some ((Ast.str_of_name def.f_name, E.Function), FunctionE def)
+    | ClassDef def -> raise Todo
+    | ConstantDef def -> raise Todo
+    | NotParsedCorrectly _ | FinalDef _ -> None
+    )
+  in
+  (* cache all those entities. todo: use marshalled form? for GC? *)
+  entities +> List.iter (fun ((s2, kind2), def) -> 
+    Hashtbl.replace hcache_entities (s2, kind2) [def]
+  );
+  Hashtbl.find hcache_entities (s, kind)
+
+
 let entity_finder_of_graph_code graph_file =
-  raise Todo
+  let g = Graph_code.load graph_file in
+  (* todo: the graph_code contains absolute path?? *)
+  let _root = Filename.dirname graph_file in
+
+  (fun (kind, s) ->
+    (* pr2_gen (kind, s); *)
+    Common.memoized hcache_entities (s, kind) (fun () ->
+      match kind with
+      | E.Function | E.Class _ | E.Constant ->
+        if G.has_node (s, kind) g then begin
+          let file = G.file_of_node (s, kind) g in
+          let path = (*Filename.concat root*) file in
+          ast_php_entity_in_file (s, kind) path
+        end
+        else begin
+          pr2 (spf "entity not found: %s" (G.string_of_node (s, kind)));
+          []
+        end
+      | _ ->
+        pr2 (spf "entity not handled: %s" (G.string_of_node (s, kind)));
+        []
+    )
+  )
+
+
 
 (*****************************************************************************)
 (* Main action *)
