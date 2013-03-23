@@ -139,7 +139,7 @@ let graph_code = ref (None: Common.filename option)
 let cache_parse = ref true
 
 (* for ranking errors *)
-let rank = ref true
+let rank = ref false
 
 (* for codemap or layer_stat *)
 let layer_file = ref (None: filename option)
@@ -212,15 +212,20 @@ module E = Database_code
 module G = Graph_code
 
 let ast_php_entity_in_file (s, kind) file =
-  (* pr2_gen (s, kind, file); *)
+  pr2_dbg (Common.dump (s, kind, file));
   let ast2 = Parse_php.parse_program file in
   let entities =
     ast2 +> Common.map_filter (function
     | StmtList _ -> None
     | FuncDef def ->
       Some ((Ast.str_of_name def.f_name, E.Function), FunctionE def)
-    | ClassDef def -> raise Todo
-    | ConstantDef def -> raise Todo
+    | ClassDef def -> 
+      (* do as in graph_code_php.ml *)
+      let kind = E.RegularClass in
+      Some ((Ast.str_of_name def.c_name, E.Class kind), ClassE def)
+    | ConstantDef def ->
+      let (_, name, _, _, _) = def in
+      Some ((Ast.str_of_name name, E.Constant), ConstantE def)
     | NotParsedCorrectly _ | FinalDef _ -> None
     )
   in
@@ -273,27 +278,29 @@ let main_action xs =
   Flag_parsing_php.verbose_lexing := false;
   Error_php.strict := !strict_scope;
 
-  Common.save_excursion Flag_parsing_php.caching_parsing !cache_parse (fun ()->
-  files +> List.iter (fun file ->
-    try 
-      (*TODO: use Common_extra.with_progress *)
-      pr2_dbg (spf "processing: %s" file);
-      let find_entity =
-        match () with
-        | _ when !heavy ->
-          Some (entity_finder_of_db file)
-        | _ when !graph_code <> None ->
-          Some (entity_finder_of_graph_code (Common2.some !graph_code))
+  let find_entity =
+    match () with
+    | _ when !heavy ->
+      Some (entity_finder_of_db (List.hd files))
+    | _ when !graph_code <> None ->
+      Some (entity_finder_of_graph_code (Common2.some !graph_code))
         (* old: main_scheck_heavy:
          * Database_php.with_db ~metapath:!metapath (fun db ->
          *  Database_php_build.build_entity_finder db
          *) 
         | _ -> None
-      in
+  in
+  
+  Common.save_excursion Flag_parsing_php.caching_parsing !cache_parse (fun ()->
+  files +> List.iter (fun file ->
+    try 
+      (*TODO: use Common_extra.with_progress *)
+      pr2_dbg (spf "processing: %s" file);
       let env = 
         Env_php.mk_env (Common2.dirname file)
       in
-      Check_all_php.check_file ~find_entity env file
+      Check_all_php.check_file ~find_entity env file;
+      
     with 
     | (Timeout | UnixExit _) as exn -> raise exn
 (*    | (Unix.Unix_error(_, "waitpid", "")) as exn -> raise exn *)
