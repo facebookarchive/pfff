@@ -76,6 +76,10 @@ val warning: Ast_php.info -> error_kind -> unit
 val report_error : error -> unit
 val report_all_errors: unit -> unit
 
+type rank
+val score_of_rank: rank -> int
+
+val rank_of_error_kind: error_kind -> rank
 val rank_errors: error list -> error list
 
 val show_10_most_recurring_unused_variable_names: unit -> unit

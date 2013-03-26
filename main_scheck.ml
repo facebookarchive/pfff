@@ -108,6 +108,11 @@ module S = Scope_code
  *)
 let strict_scope = ref false 
 
+(* show only bugs with "rank" super to this *)
+let filter = ref 2
+(* rank errors *)
+let rank = ref false
+
 (* running the heavy analysis by processing the included files *)
 let heavy = ref false
 (* depth_limit is used to stop the expensive recursive includes process.
@@ -137,9 +142,6 @@ let graph_code = ref (None: Common.filename option)
 
 
 let cache_parse = ref true
-
-(* for ranking errors *)
-let rank = ref false
 
 (* for codemap or layer_stat *)
 let layer_file = ref (None: filename option)
@@ -300,6 +302,21 @@ let main_action xs =
         Env_php.mk_env (Common2.dirname file)
       in
       Check_all_php.check_file ~find_entity env file;
+      let errs = 
+        !Error_php._errors 
+        +> List.rev 
+        +> List.filter (fun x -> 
+          Error_php.score_of_rank
+            (Error_php.rank_of_error_kind x.Error_php.typ) >= 
+            !filter
+        )
+      in
+      
+      if not !rank 
+      then begin 
+        errs +> List.iter (fun err -> pr (Error_php.string_of_error err));
+        Error_php._errors := []
+      end
       
     with 
     | (Timeout | UnixExit _) as exn -> raise exn
@@ -310,25 +327,24 @@ let main_action xs =
         if !Common.debugger then raise exn
   ));
 
-  let errs = !Error_php._errors +> List.rev in
-  let errs = 
-    if !rank 
-    then Error_php.rank_errors errs +> Common.take_safe 20 
-    else errs 
-  in
-
-  errs +> List.iter (fun err -> pr (Error_php.string_of_error err));
-  Error_php.show_10_most_recurring_unused_variable_names ();
-  pr2 (spf "total errors = %d" (List.length !Error_php._errors));
-
-  pr2 "";
-  !errors +> List.iter pr2;
-  pr2 "";
+  if !rank then begin
+    let errs = 
+      !Error_php._errors 
+      +> List.rev
+      +> Error_php.rank_errors
+      +> Common.take_safe 20 
+    in
+    errs +> List.iter (fun err -> pr (Error_php.string_of_error err));
+    Error_php.show_10_most_recurring_unused_variable_names ();
+    pr2 (spf "total errors = %d" (List.length !Error_php._errors));
+    pr2 "";
+    !errors +> List.iter pr2;
+    pr2 "";
+  end;
 
   !layer_file +> Common.do_option (fun file ->
     (*  a layer needs readable paths, hence the root *)
     let root = Common2.common_prefix_of_files_or_dirs xs in
-
     Layer_checker_php.gen_layer ~root ~output:file !Error_php._errors
   );
   ()
@@ -388,9 +404,9 @@ let test () =
 (* the command line flags *)
 (*---------------------------------------------------------------------------*)
 let extra_actions () = [
-  "-type_inference", " <file>",
+  "-type_inference", " <file> (experimental)",
   Common.mk_action_1_arg type_inference;
-  "-test", " ",
+  "-test", " run regression tests",
   Common.mk_action_0_arg test;
 ]
 
@@ -425,8 +441,10 @@ let options () =
     "-no_scrict", Arg.Clear strict_scope, 
     " use function scope (default)";
 
-    "-no_rank", Arg.Clear rank,
-    " ";
+    "-filter", Arg.Set_int filter,
+    " <n> show only bugs whose importance > n";
+    "-rank", Arg.Set rank,
+    " rank errors and display the 20 most important";
 
     "-gen_layer", Arg.String (fun s -> layer_file := Some s),
     " <file> save result in pfff layer file";

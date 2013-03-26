@@ -265,24 +265,185 @@ let report_all_errors () =
 (* Ranking *)
 (*****************************************************************************)
 
+type rank =
+ (* Too many FPs for now. Not applied even in strict mode. *)
+ | Never
+ (* Usually a few FPs or too many of them. Only applied in strict mode. *)
+ | OnlyStrict
+ | Less
+ | Ok
+ | Important
+ | ReallyImportant
+
+let score_of_rank = function
+  | Never -> 0
+  | OnlyStrict -> 1
+  | Less -> 3
+  | Ok -> 5
+  | Important -> 10
+  | ReallyImportant -> 30
+
+let rank_of_error_kind err_kind =
+  match err_kind with
+  (* less: this error requires to inspect the inheritance tree to truly know
+   * if the class variable is unused; need lookup parents too.
+   *)
+  | UnusedVariable (_, Scope_code.Class) -> Never
+  (* they should put some _unused ... but don't want to fight this battle *)
+  | UnusedVariable (_, Scope_code.Param) -> OnlyStrict
+  | UnusedVariable (_, Scope_code.LocalIterator) -> OnlyStrict
+  (* some FPs when variable passed by ref I think *)
+  | UnusedVariable (_, Scope_code.Closed) -> Never
+
+  (* some FPs with empty *)
+  | UnusedVariable (_, Scope_code.Local) -> OnlyStrict
+
+  (* todo: would like to bump that ... but run only in strict mode for now *)
+  | UnusedVariable (_, _) -> Less
+
+  (* This used to have many false positives because Lint_php.db_of_defs
+   * did not handle require_module_lazy modules. I used to disable it
+   * because it was not so important because UndefinedXxx checks were
+   * already done by cmf. But once we had the flib-map based
+   * entity_finder, this check was useful again to make sure
+   * that we check the #args for all functions, and if we're not, then
+   * at least that we report the function as an UndefinedEntity. It's just
+   * forcing us to have a correct flib-map based entity_finder.
+   * 
+   * I also used to disable the error for undefined static methods because
+   * the resolution was buggy. Indeed self::foo does not necesseraly
+   * mean foo is defined in the current class (ugly PHP IMHO). So one
+   * needs to lookup method there too in the inheritance tree, which
+   * we have now thx to the flib-map based entity_finder.
+   * 
+   * update: it also actually useful to detect bad code using entities
+   * in lib/. Indeed people abuse class_dependency() and other stuff
+   * to call code from lib/. This is whitelisted by checkModule
+   * but fortunately not by scheck!
+   *)
+  | UndefinedEntity (kind, s) -> 
+    (match kind with
+    (* todo: too many for now *)
+    | Database_code.ClassConstant -> Less
+    | Database_code.Method _ -> Less
+    (* some FPs about case sensitivity *)
+    | _ -> Important
+    )
+
+  (* TODO: dont handle interface or traits very well for now *)
+  | UndefinedClassWhileLookup _ -> Less
+
+  (* todo: bad, but because of our ugly code, it's hard to fix sometimes
+   * as in coreDataType for instance.
+  *)
+  | UndefinedMethodInAbstractClass _ -> Less
+
+  | UseOfUndefinedMember (s1, suggest) -> 
+      (match suggest with
+      (* too many for now :( *)
+      | None -> Less
+      | Some (s2, i) ->
+          (match i with
+          | 1 -> 
+              let s1 = String.lowercase s1 in
+              let s2 = String.lowercase s2 in
+              if (s1 ^ "s" =$= s2) || (s1 =$= s2 ^ "s")
+              then Less
+              else ReallyImportant
+          (* todo? *)
+          | 2 -> Less
+          | _ -> Less
+          )
+      )
+
+
+  (* todo: e.g. apc_fetch in conditional, whitelist those? *)
+  | MultiDefinedEntity (_, _, _) -> Important
+
+  (* have false positives when pass variables by reference, but they 
+   * can be reduced by using --heavy.
+   *)
+  | UseOfUndefinedVariable (s, suggest) -> 
+      (match suggest with
+      (* todo: still too many fps, even with --heavy for now :( *)
+      | None -> Less
+      | Some (s2, i) ->
+          (match i with
+          | 1 ->  ReallyImportant
+          | 2 -> Less
+          | _ -> Less
+          )
+      )
+
+  | UseOfUndefinedVariableInLambda _ -> Important
+          
+  (* giving too many args is kinda ok, it's ignored, but not giving enough can
+   * be bad. Those errors happens only when run with --heavy.
+   *)
+  | TooManyArguments _ -> ReallyImportant
+  | NotEnoughArguments _ -> ReallyImportant
+  (* many FPs :( todo? edit distance? *)
+  | WrongKeywordArgument (_, _, severity) -> 
+      (match severity with
+      | Bad -> Less
+      | ReallyBad -> Important
+      | ReallyReallyBad -> ReallyImportant
+      )
+  (* too many of them ... *)
+  | CallingStaticMethodWithoutQualifier _ -> OnlyStrict
+  (* too many of them, and FPs, for instance parent::X is ok from a method X *)
+  | CallingMethodWithQualifier _ -> OnlyStrict
+
+  | PassingUnexpectedRef -> ReallyImportant
+      
+  | CfgError (Controlflow_build_php.DeadCode stmt) ->
+      (match stmt with
+      (* some dead break and return are ok (too many FP for now) *)
+      | Controlflow_php.Break | Controlflow_php.Return _ -> OnlyStrict
+      | Controlflow_php.Throw  -> Never
+      | Controlflow_php.SimpleStmt (Controlflow_php.ExprStmt (e, _tok)) ->
+          (match e with
+          | (Lv (FunCallSimple(Name(
+              ( "invariant_violation" | "_piranha_rollback_log"), _), _args)
+              )) -> Never
+
+          | (Yield(i_1,
+               (Lv(
+                (FunCallSimple(Name(("result", i_2)),
+                 (i_3, [Left(Arg((Sc(C(CName(Name(("null", i_4))))))))],
+                i_6))
+                ))
+               ))) -> Never
+
+          | _ -> Ok
+          )
+      | _ -> Ok
+      )
+  | CfgError 
+      (* (DynamicBreak|NoMethodBody|ColonSyntax|NoEnclosingLoop) *) _ ->
+      Ok
+  (* | CfgPilError _  -> only_strict *)
+
+  | FileNotFound _ -> ReallyImportant
+
+  | AssignInBooleanContext -> Less
+
+  | Injection _ -> ReallyImportant
+
+  | CaseWithSemiColon | CaseSensitivityKeyword -> Less
+  | DynamicCode -> OnlyStrict
+
+  | WeirdForeachNoIteratorVar
+  | UglyGlobalDynamic
+    -> OnlyStrict
+
+
 (* ranking errors, inspired by Engler slides *)
 let rank_errors errs =
   errs +> List.map (fun x ->
     x,
-    match x.typ with
-    | UnusedVariable (_, Scope_code.Local) -> 10
-    | CfgError (Controlflow_build_php.DeadCode node_kind) ->
-        (match node_kind with
-        | Controlflow_php.Break -> 3
-        | Controlflow_php.Return _ -> 3
-        | _ -> 15
-        )
-    | CfgError _ -> 11
-    | UseOfUndefinedMember _ -> 5
-    (* todo: *)
-    | _ -> 0
+    rank_of_error_kind x.typ
   ) +> Common.sort_by_val_highfirst +> Common2.map fst
-
 
 let show_10_most_recurring_unused_variable_names () =
 
