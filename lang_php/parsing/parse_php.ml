@@ -441,11 +441,15 @@ let parse_any filename =
     raise exn
     
 let any_of_string s =
-  let tmpfile = Common.new_temp_file "pfff_any_of_s" "php" in
-  Common.write_file tmpfile s;
-  let res = parse_any tmpfile in
-  Common.erase_this_temp_file tmpfile;
-  res
+  let old = Filename.get_temp_dir_name () in
+  Filename.set_temp_dir_name "/dev/shm";
+  Common.finalize
+    (fun () ->
+      let tmpfile = Common.new_temp_file "pfff_any_of_s" "php" in
+      Common.write_file tmpfile s;
+      parse_any tmpfile)
+    (fun () ->
+      Filename.set_temp_dir_name old)
 
 (* 
  * todo: obsolete now with parse_any ? just redirect to parse_any ?
