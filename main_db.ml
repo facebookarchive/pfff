@@ -15,6 +15,9 @@ open Common
  * big codebase with huge APIs.
  * update: could maybe be merged with the graph code database.
  * 
+ * todo: use this file for provide an interface to the layers generation
+ * functions?
+ * 
  * We try to leverage multiple code artifacts:
  *  - the source code
  *  - documentation such as API reference or PLEAC cookbooks
