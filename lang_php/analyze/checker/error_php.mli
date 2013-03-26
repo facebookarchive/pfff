@@ -24,6 +24,7 @@ type error = {
   | CallingStaticMethodWithoutQualifier of string
   | CallingMethodWithQualifier of string
   | PassingUnexpectedRef
+  | KeywordArgumentForRef
         
   (* variables *)
   | UseOfUndefinedVariable of string (* dname *) * suggest option

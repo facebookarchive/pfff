@@ -159,6 +159,8 @@ let info_of_error_and_kind err =
       "eInjection"
   | CaseWithSemiColon | CaseSensitivityKeyword ->
       "eOther"
+  | KeywordArgumentForRef ->
+      "eOther"
   in
   err.loc, kind
 

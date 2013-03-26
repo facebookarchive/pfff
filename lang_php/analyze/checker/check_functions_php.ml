@@ -76,9 +76,15 @@ let check_args_vs_params (callname, all_args) (defname, all_params) =
         (match x with
         (* erling's idea of wrong keyword argument check *)
         | Arg(Assign((Var(dn, _)),_ , expr)) ->
+            (match y with
+            (* passing a keyword argument for a reference is bad *)
+            | { p_ref = Some _; _ } ->
+                let loc = Ast.info_of_dname dn in
+                E.fatal loc (E.KeywordArgumentForRef);
+            | _ -> ()
+            );
             if not (Ast.dname dn =$= Ast.dname y.p_name)
             then
-              
               let all_params_str = 
                 all_params +> List.map (fun p -> Ast.dname p.p_name) in
               let severity =

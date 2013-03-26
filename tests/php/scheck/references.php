@@ -24,3 +24,6 @@ taking_a_ref(&$y);
 //SKIP: not indicating a "pass-by-ref" at call site is bad, but skip cos too many
 taking_a_ref($y);
 
+//ERROR: keyword argument to reference parameter is bad
+taking_a_ref($x = 2);
+

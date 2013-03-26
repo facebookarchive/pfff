@@ -85,6 +85,7 @@ type error = {
   | CallingStaticMethodWithoutQualifier of string
   | CallingMethodWithQualifier of string
   | PassingUnexpectedRef (* alok's idea *)
+  | KeywordArgumentForRef (* lovro's idea *)
 
   (* variables *)
   | UseOfUndefinedVariable of string (* dname *) * suggest option
@@ -179,6 +180,8 @@ let string_of_error_kind error_kind =
       spf "Calling non static method %s with a qualifier" name
   | PassingUnexpectedRef ->
       "passing a reference to a function not expecting one"
+  | KeywordArgumentForRef ->
+      "passing a keyword argument to a function expecting a reference"
 
   | UseOfUndefinedVariable (dname, x) ->
       spf "Use of undeclared variable %s%s. " dname (string_of_suggest_opt x)
@@ -398,6 +401,7 @@ let rank_of_error_kind err_kind =
   | CallingMethodWithQualifier _ -> OnlyStrict
 
   | PassingUnexpectedRef -> ReallyImportant
+  | KeywordArgumentForRef -> ReallyImportant
       
   | CfgError (Controlflow_build_php.DeadCode stmt) ->
       (match stmt with
