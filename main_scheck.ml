@@ -254,7 +254,7 @@ let entity_finder_of_graph_code graph_file =
           ast_php_entity_in_file (s, kind) path
         end
         else begin
-          pr2 (spf "entity not found: %s" (G.string_of_node (s, kind)));
+          pr2_dbg (spf "entity not found: %s" (G.string_of_node (s, kind)));
           []
         end
       | _ ->

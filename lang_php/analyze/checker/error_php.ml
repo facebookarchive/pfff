@@ -379,9 +379,12 @@ let rank_of_error_kind err_kind =
           
   (* giving too many args is kinda ok, it's ignored, but not giving enough can
    * be bad. Those errors happens only when run with --heavy.
+   * We have lots of those though because for instance people give the
+   * wrong signature for abstract method and forget a default value for
+   * instance.
    *)
-  | TooManyArguments _ -> ReallyImportant
-  | NotEnoughArguments _ -> ReallyImportant
+  | TooManyArguments _ -> Important
+  | NotEnoughArguments _ -> Important
   (* many FPs :( todo? edit distance? *)
   | WrongKeywordArgument (_, _, severity) -> 
       (match severity with
