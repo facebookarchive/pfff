@@ -278,10 +278,10 @@ type rank =
 let score_of_rank = function
   | Never -> 0
   | OnlyStrict -> 1
-  | Less -> 3
-  | Ok -> 5
-  | Important -> 10
-  | ReallyImportant -> 30
+  | Less -> 2
+  | Ok -> 3
+  | Important -> 4
+  | ReallyImportant -> 5
 
 let rank_of_error_kind err_kind =
   match err_kind with
