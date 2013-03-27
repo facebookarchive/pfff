@@ -140,8 +140,10 @@ let graph_code = ref (None: Common.filename option)
 (* old: main_scheck_heavy: let metapath = ref "/tmp/pfff_db" *)
 
 
-
-let cache_parse = ref true
+(* take care, putting this to true can lead to performance regression
+ * actually, because of the bigger stress on the GC
+ *)
+let cache_parse = ref false
 
 (* for codemap or layer_stat *)
 let layer_file = ref (None: filename option)
