@@ -151,6 +151,7 @@ let layer_file = ref (None: filename option)
 
 
 let verbose = ref false
+let show_progress = ref true
 
 (* action mode *)
 let action = ref ""
@@ -296,13 +297,13 @@ let main_action xs =
   in
   
   Common.save_excursion Flag_parsing_php.caching_parsing !cache_parse (fun ()->
-  files +> List.iter (fun file ->
+  files +> Common_extra.progress ~show:!show_progress (fun k -> 
+   List.iter (fun file ->
+    k();
     try 
-      (*TODO: use Common_extra.with_progress *)
       pr2_dbg (spf "processing: %s" file);
-      let env = 
-        Env_php.mk_env (Common2.dirname file)
-      in
+      (* less: good? need infer PHP_ROOT no ? *)
+      let env = Env_php.mk_env (Common2.dirname file) in
       Check_all_php.check_file ~find_entity env file;
       let errs = 
         !Error_php._errors 
@@ -313,21 +314,19 @@ let main_action xs =
             !filter
         )
       in
-      
       if not !rank 
       then begin 
         errs +> List.iter (fun err -> pr (Error_php.string_of_error err));
         Error_php._errors := []
       end
-      
     with 
     | (Timeout | UnixExit _) as exn -> raise exn
-(*    | (Unix.Unix_error(_, "waitpid", "")) as exn -> raise exn *)
+(*  | (Unix.Unix_error(_, "waitpid", "")) as exn -> raise exn *)
     | exn ->
         Common.push2 (spf "PB with %s, exn = %s" file 
                          (Common.exn_to_s exn)) errors;
         if !Common.debugger then raise exn
-  ));
+  )));
 
   if !rank then begin
     let errs = 
@@ -430,11 +429,9 @@ let options () =
     ), " <file> use graph_code file for heavy analysis";
 
     "-heavy", Arg.Set heavy,
-    " process included files";
+    " process included files for heavy analysis";
     "-depth_limit", Arg.Int (fun i -> depth_limit := Some i), 
     " <int> limit the number of includes to process";
-    "-no_caching", Arg.Clear cache_parse, 
-    " don't cache parsed ASTs";
      "-php_stdlib", Arg.Set_string php_stdlib, 
      (spf " <dir> path to builtins (default = %s)" !php_stdlib);
 
@@ -448,8 +445,15 @@ let options () =
     "-rank", Arg.Set rank,
     " rank errors and display the 20 most important";
 
+    "-caching", Arg.Clear cache_parse, 
+    " cache parsed ASTs";
+
     "-gen_layer", Arg.String (fun s -> layer_file := Some s),
     " <file> save result in pfff layer file";
+
+    "-emacs", Arg.Unit (fun () ->
+      show_progress := false;
+    ), " emacs friendly output"
 
   ] ++
   Common.options_of_actions action (all_actions()) ++
@@ -458,15 +462,12 @@ let options () =
   "-version",   Arg.Unit (fun () ->
     pr2 (spf "scheck version: %s" Config_pfff.version);
     exit 0;
-  ),
-    "  guess what";
-
+  ), " guess what";
   (* this can not be factorized in Common *)
   "-date",   Arg.Unit (fun () ->
-    pr2 "version: $Date: 2011/05/12 00:44:57 $";
+    pr2 "version: $Date: 2013/03/26 00:44:57 $";
     raise (Common.UnixExit 0)
-    ),
-  "   guess what";
+    ), " guess what";
   ] ++
   []
 
