@@ -305,7 +305,7 @@ let main_action xs =
 
   (* less: use skip_code *)
   let files = Lib_parsing_php.find_php_files_of_dir_or_files xs in
-  let errors = ref [] in
+  let errors_exn_scheck = ref [] in
 
   Flag_parsing_php.show_parsing_error := false;
   Flag_parsing_php.verbose_lexing := false;
@@ -323,6 +323,17 @@ let main_action xs =
          *) 
         | _ -> None
   in
+  (* less: use a VCS.find... that is more general ?
+   * infer PHP_ROOT? or take a --php_root?
+  *)
+  let an_arg = List.hd xs +> Common2.relative_to_absolute in
+  let root = 
+    try 
+      Git.find_root_from_absolute_path an_arg 
+    with Not_found -> "/"
+  in
+  pr (spf "using %s for php_root" root);
+  let env = Env_php.mk_env root in
   
   Common.save_excursion Flag_parsing_php.caching_parsing !cache_parse (fun ()->
   files +> Common_extra.progress ~show:!show_progress (fun k -> 
@@ -330,8 +341,6 @@ let main_action xs =
     k();
     try 
       pr2_dbg (spf "processing: %s" file);
-      (* less: good? need infer PHP_ROOT no ? *)
-      let env = Env_php.mk_env (Common2.dirname file) in
       Check_all_php.check_file ~find_entity env file;
       let errs = 
         !Error_php._errors 
@@ -352,7 +361,7 @@ let main_action xs =
 (*  | (Unix.Unix_error(_, "waitpid", "")) as exn -> raise exn *)
     | exn ->
         Common.push2 (spf "PB with %s, exn = %s" file 
-                         (Common.exn_to_s exn)) errors;
+                         (Common.exn_to_s exn)) errors_exn_scheck;
         if !Common.debugger then raise exn
   )));
 
@@ -367,9 +376,9 @@ let main_action xs =
     Error_php.show_10_most_recurring_unused_variable_names ();
     pr2 (spf "total errors = %d" (List.length !Error_php._errors));
     pr2 "";
-    !errors +> List.iter pr2;
     pr2 "";
   end;
+  !errors_exn_scheck +> List.iter pr2;
 
   !layer_file +> Common.do_option (fun file ->
     (*  a layer needs readable paths, hence the root *)
