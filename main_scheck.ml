@@ -230,8 +230,21 @@ let hcache_entities = Hashtbl.create 101
 module E = Database_code
 module G = Graph_code
 
+(* Note that we will parse 2 times a file, once to analyze it, below,
+ * in Check_all_php.check_file, and once because of the entity_finder
+ * here. The -profile may actually return numbers for Parse_php.parse
+ * more than 2 times the one for the checkers because we may
+ * need to load via the entity_finder files outside the directory
+ * passed as a parameter to scheck (e.g. flib/). We could cache
+ * the parsed AST but it can stress the GC too much.
+ *)
+let hdone = Hashtbl.create 101
 let ast_php_entity_in_file (s, kind) file =
   pr2_dbg (Common.dump (s, kind, file));
+  (* sanity check, this should never happened *)
+  if Hashtbl.mem hdone file
+  then failwith (spf "already processed file %s" file);
+  Hashtbl.add hdone file true;
   let ast2 = Parse_php.parse_program file in
   let entities =
     ast2 +> Common.map_filter (function
