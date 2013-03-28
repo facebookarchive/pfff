@@ -161,6 +161,8 @@ let info_of_error_and_kind err =
       "eOther"
   | KeywordArgumentForRef ->
       "eOther"
+  | IncludeUnresolved ->
+      "eOther"
   in
   err.loc, kind
 

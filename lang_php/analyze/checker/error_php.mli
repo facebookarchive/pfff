@@ -36,6 +36,7 @@ type error = {
 
   (* wrong include/require *)
   | FileNotFound of Common.filename
+  | IncludeUnresolved
 
   (* lint *)
   | AssignInBooleanContext

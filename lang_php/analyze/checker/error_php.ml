@@ -97,6 +97,7 @@ type error = {
 
   (* wrong include/require *)
   | FileNotFound of Common.filename
+  | IncludeUnresolved
 
   (* lint *)
   | AssignInBooleanContext
@@ -217,6 +218,8 @@ to statically analyze. Please avoid using those features."
 
   | FileNotFound s ->
       spf "File not found %s" s
+  | IncludeUnresolved ->
+      spf "can not resolve statically the include/require"
 
   | AssignInBooleanContext ->
       "use == or add another set of parens around the assignment"
@@ -431,7 +434,10 @@ let rank_of_error_kind err_kind =
       Ok
   (* | CfgPilError _  -> only_strict *)
 
+  (* need a correct env_php *)
   | FileNotFound _ -> ReallyImportant
+  (* need a complete env_php *)
+  | IncludeUnresolved -> Less
 
   | AssignInBooleanContext -> Less
 

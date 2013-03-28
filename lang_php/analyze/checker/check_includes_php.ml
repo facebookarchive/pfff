@@ -47,8 +47,7 @@ let check env file ast =
           then E.fatal tok (E.FileNotFound path)
             
       | None ->
-          (* todo: E.warning UglyDynamicInclude? *)
-          pr2 (spf "(not a static include/require %s)"(Ast.string_of_info tok))
+          E.warning tok (E.IncludeUnresolved)
     ) 
     with 
     | (Timeout | Common2.UnixExit _) as exn -> raise exn
