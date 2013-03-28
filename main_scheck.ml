@@ -424,6 +424,14 @@ let extra_actions () = [
   Common.mk_action_1_arg type_inference;
   "-test", " run regression tests",
   Common.mk_action_0_arg test;
+  "-unprogress", " ",
+  Common.mk_action_1_arg (fun file ->
+    Common.cat file +> List.iter (fun s ->
+      if s =~ ".*\\(flib/[^ ]+ CHECK: [^\n]+\\)"
+      then pr (Common.matched1 s)
+      else ()
+    );
+  );
 ]
 
 (*****************************************************************************)
