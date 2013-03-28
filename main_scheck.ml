@@ -163,6 +163,20 @@ let pr2_dbg s =
   if !verbose then Common.pr2 s
 
 (*****************************************************************************)
+(* Helpers *)
+(*****************************************************************************)
+
+let set_gc () =
+(*
+  if !Flag.debug_gc
+  then Gc.set { (Gc.get()) with Gc.verbose = 0x01F };
+*)
+  (* see http://www.elehack.net/michael/blog/2010/06/ocaml-memory-tuning *)
+  Gc.set { (Gc.get()) with Gc.minor_heap_size = 2_000_000 };
+  Gc.set { (Gc.get()) with Gc.space_overhead = 200 };
+  ()
+
+(*****************************************************************************)
 (* Entity finders *)
 (*****************************************************************************)
 
@@ -273,6 +287,7 @@ let entity_finder_of_graph_code graph_file =
 (*****************************************************************************)
 
 let main_action xs =
+  set_gc ();
   Logger.log Config_pfff.logger "scheck" None;
 
   (* less: use skip_code *)
