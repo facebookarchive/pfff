@@ -404,7 +404,7 @@ let rank_of_error_kind err_kind =
   | CallingMethodWithQualifier _ -> OnlyStrict
 
   | PassingUnexpectedRef -> ReallyImportant
-  | KeywordArgumentForRef -> ReallyImportant
+  | KeywordArgumentForRef -> Less
       
   | CfgError (Controlflow_build_php.DeadCode stmt) ->
       (match stmt with
