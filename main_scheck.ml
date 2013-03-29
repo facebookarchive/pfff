@@ -305,7 +305,6 @@ let main_action xs =
 
   (* less: use skip_code *)
   let files = Lib_parsing_php.find_php_files_of_dir_or_files xs in
-  let errors_exn_scheck = ref [] in
 
   Flag_parsing_php.show_parsing_error := false;
   Flag_parsing_php.verbose_lexing := false;
@@ -360,8 +359,7 @@ let main_action xs =
     | (Timeout | UnixExit _) as exn -> raise exn
 (*  | (Unix.Unix_error(_, "waitpid", "")) as exn -> raise exn *)
     | exn ->
-        Common.push2 (spf "PB with %s, exn = %s" file 
-                         (Common.exn_to_s exn)) errors_exn_scheck;
+        pr2 (spf "PB with %s, exn = %s" file (Common.exn_to_s exn));
         if !Common.debugger then raise exn
   )));
 
@@ -378,7 +376,6 @@ let main_action xs =
     pr2 "";
     pr2 "";
   end;
-  !errors_exn_scheck +> List.iter pr2;
 
   !layer_file +> Common.do_option (fun file ->
     (*  a layer needs readable paths, hence the root *)
