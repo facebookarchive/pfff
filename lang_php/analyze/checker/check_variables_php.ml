@@ -418,7 +418,11 @@ and func_def env def =
       )) ++
       (Env_php.globals_builtins +> List.map (fun s ->
        "$" ^ s, (Ast_php.fakeInfo s, S.Global, ref 1)
-      ))
+      )) ++
+      (* $this is now implicitly passed in use() for closures *)
+      (try ["$this", Map_poly.find "$this" oldvars]
+       with Not_found -> []
+      )
       ) +> Map_poly.of_list);
     (* reinitialize bailout for each function/method *)
     bailout = ref false;

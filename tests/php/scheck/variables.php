@@ -151,8 +151,8 @@ function test_lambda_bis() {
 }
 
 class TestLambdaUseThis {
-  public function test_lambda($a) {
 
+  public function test_lambda($a) {
     $f = (function ($b) use($a, $this) {
         echo $this;
         return $a +
@@ -160,6 +160,14 @@ class TestLambdaUseThis {
                //ERROR: use of undeclared variable
                $use_of_undeclared_variable_in_lambda;
         ;
+      });
+    return $f;
+  }
+  public function test_lambda_this_passed_implicitly($a) {
+    $f = (function ($b) use($a) {
+        // this is now ok in recent PHP, no need to pass $this in use()
+        var_dump($this);
+        return $a + $b;
       });
     return $f;
   }
