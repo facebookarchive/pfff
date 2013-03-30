@@ -1,5 +1,5 @@
 open Common
-open Common.ArithFloatInfix
+open Common2.ArithFloatInfix
 open Common_client
 
 module T = Treemap
@@ -18,8 +18,8 @@ open Figures (* for the fields *)
 (*****************************************************************************)
 
 (* see visual/style2.ml *)
-let width = 2350 (* 1200 *)
-let height = 1400 (* 750 *)
+let width = 800 (* 2350, 1200 *)
+let height = 600 (* 1400, 750 *)
 
 (*****************************************************************************)
 (* Helpers *)
@@ -48,7 +48,7 @@ let draw_treemap_rendering (rects: Treemap.treemap_rendering) =
   scale_zoom_pan_map ~width ~height ctx;
 
   rects +> List.iter (fun rect -> 
-    Draw_macrolevel.draw_treemap_rectangle ctx rect
+    Draw_macro.draw_treemap_rectangle ctx rect
   );
 
   Dom.appendChild Dom_html.document##body canvas;

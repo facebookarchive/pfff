@@ -1,17 +1,17 @@
 open Eliom_pervasives
 
-module H = HTML5.M
+module H = Eliom_content.Html5.D
 
 (*****************************************************************************)
 (* main entry points *)
 (*****************************************************************************)
 
-let result_service = Eliom_output.Html5.register_service 
+let result_service = Eliom_registration.Html5.register_service 
   ~path:["dumper_result"]
-  ~get_params:(Eliom_parameters.string "content")
+  ~get_params:(Eliom_parameter.string "content")
   (fun (content) () ->
     let s =
-      Common.with_tmp_file ~str:content ~ext:".php" (fun file ->
+      Common2.with_tmp_file ~str:content ~ext:".php" (fun file ->
         let ast = Parse_php.parse_program file in
         Export_ast_php.ml_pattern_string_of_program ast
       )
@@ -22,22 +22,23 @@ let result_service = Eliom_output.Html5.register_service
     ]
     )))
 
-let main_service = Eliom_output.Html5.register_service 
+let main_service = Eliom_registration.Html5.register_service 
   ~path:["dumper"]
-  ~get_params:(Eliom_parameters.unit)
+  ~get_params:(Eliom_parameter.unit)
   (fun () () ->
     Lwt.return (H.html(H.head (H.title (H.pcdata "Demo")) []) (H.body [
 
       H.h1 [H.pcdata "Welcome to the Dumper"];
-      Eliom_output.Html5.get_form ~service:result_service
+      Eliom_content.Html5.D.get_form ~service:result_service
         (fun (name) ->
           [H.p [
             H.pcdata "File content: ";
             H.br ();
-            Eliom_output.Html5.textarea ~name ~rows:10 ~cols:80 
+            Eliom_content.Html5.D.textarea ~name
+              (* TODO ~a:[`Rows (Xml.int_attrib "rows" 10)] *) (*:10 ~cols:80*)
               ~value:"<?php\n" ();
             H.br ();
-            Eliom_output.Html5.string_input ~input_type:`Submit ~value:"Go" ()
+            Eliom_content.Html5.D.string_input ~input_type:`Submit ~value:"Go" ()
             ]
           ]);
     ]

@@ -25,7 +25,6 @@ LIBS_SERVER= -thread -package tyxml,eliom,eliom.server \
 LIBS_CLIENT= -package js_of_ocaml,eliom,eliom.client \
   -package eliom.syntax,js_of_ocaml.syntax -syntax camlp4o \
   $(LIBS_SHARED)
-#,oclosure
 
 OBJS_SERVER= \
  _server/common_server.cmo \
@@ -41,7 +40,7 @@ OBJS_SERVER= \
 OBJS_CLIENT= \
  _client/common_client.cmo \
  _client/canvas_helpers.cmo \
- _client/draw_macrolevel.cmo \
+ _client/draw_macro.cmo \
  _client/shared.cmo \
  _client/client.cmo \
  _client/codemap.cmo \
@@ -63,7 +62,6 @@ SYSLIBS_SERVER=
 ##############################################################################
 
 all: var/app.cma var/static/app.js
-#_oclosure
 
 # server-side
 var/app.cma: $(OBJS_SERVER)
@@ -75,18 +73,16 @@ _server/htmlize_php2.cmo: htmlize_php2.ml
 
 
 _server/home.cmo: home.eliom
-	eliomc  -c -noinfer $(INCLUDES) $^
+	eliomc  -infer $(INCLUDES) $^
+	eliomc  -c $(INCLUDES) $^
 _server/codemap.cmo: codemap.eliom
-	eliomc  -c -noinfer $(INCLUDES) $^
+	eliomc  -infer $(INCLUDES) $^
+	eliomc  -c $(INCLUDES) $^
 
 
 # client-side
-var/static/app_oclosure.js: var/static/app.js
-	oclosure_req $^
-
 var/static/app.js: $(OBJS_CLIENT)
-	js_of_eliom $(JSOPT) -o $@ $(SYSLIBS_CLIENT) $(LIBS_CLIENT2)  $^ -jsopt runtime2.js
-#-package oclosure
+	js_of_eliom $(JSOPT) -o $@ $(SYSLIBS_CLIENT) $(LIBS_CLIENT2)  $^ -jsopt runtime1.js
 
 
 _client/home.cmo: home.eliom
@@ -98,7 +94,7 @@ _client/codemap.cmo: codemap.eliom
 
 
 run:
-	CAML_LD_LIBRARY_PATH=../external/ocamlbdb ocsigenserver -c ocsigen.conf
+	ocsigenserver -c ocsigen.conf
 
 annot:
 	ocamlfind ocamlc -dtypes -c $(LIBS_SHARED) shared.ml
@@ -112,8 +108,8 @@ annot:
 	ocamlfind ocamlc -dtypes -c $(INCLUDES) $(LIBS_CLIENT) common_client.ml
 	ocamlfind ocamlc -dtypes -c $(INCLUDES) $(LIBS_CLIENT) canvas_helpers.mli
 	ocamlfind ocamlc -dtypes -c $(INCLUDES) $(LIBS_CLIENT) canvas_helpers.ml
-	ocamlfind ocamlc -dtypes -c $(INCLUDES) $(LIBS_CLIENT) draw_macrolevel.mli
-	ocamlfind ocamlc -dtypes -c $(INCLUDES) $(LIBS_CLIENT) draw_macrolevel.ml
+	ocamlfind ocamlc -dtypes -c $(INCLUDES) $(LIBS_CLIENT) draw_macro.mli
+	ocamlfind ocamlc -dtypes -c $(INCLUDES) $(LIBS_CLIENT) draw_macro.ml
 	ocamlfind ocamlc -dtypes -c $(INCLUDES) $(LIBS_CLIENT) client.ml
 	rm -f *.cm*
 
@@ -142,5 +138,8 @@ _client/%.cmo: %.ml
 
 _client/%.cmi: %.mli
 	js_of_eliom $(JSOPT) -c $(INCLUDES) $^
+
+clean::
+	rm -f *.annot
 
 -include .depend

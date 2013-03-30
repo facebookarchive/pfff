@@ -14,7 +14,7 @@
  *)
 
 open Common
-open Common.ArithFloatInfix
+open Common2.ArithFloatInfix
 open Common_client
 
 module T = Treemap

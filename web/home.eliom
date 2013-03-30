@@ -1,16 +1,16 @@
-module H = HTML5.M
-module Link = Eliom_output.Html5
+module H = Eliom_content.Html5.D
+module Link = Eliom_content.Html5.D
 
 (*****************************************************************************)
 (* Main entry point *)
 (*****************************************************************************)
 let main_service =
-  Eliom_output.Html5.register_service 
+  Eliom_registration.Html5.register_service 
   ~path:[""]
-  ~get_params:Eliom_parameters.unit
+  ~get_params:Eliom_parameter.unit
   (fun () () ->
-    Eliom_services.onload
-      {{ (* *) () }};
+    ignore
+      {unit{ (* *) () }};
     Lwt.return
       (H.html (H.head (H.title (H.pcdata "Home")) []) (H.body [
 

@@ -15,7 +15,7 @@
 
 open Common
 (* floats are the norm in graphics *)
-open Common.ArithFloatInfix
+open Common2.ArithFloatInfix
 
 module F = Figures
 module Color = Simple_color
