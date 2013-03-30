@@ -19,5 +19,5 @@ let treemap_generator paths =
     ~algo ~big_borders:!Flag.boost_label_size
     treemap 
   in
-  Common.pr2 (spf "%d rectangles to draw" (List.length rects));
+  pr2 (spf "%d rectangles to draw" (List.length rects));
   rects
