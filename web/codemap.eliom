@@ -30,9 +30,10 @@ let main_service =
     Treemap.follow_symlinks := true;
     let path = Common2.relative_to_absolute path in
     let rects = 
-      Common.cache_computation ~verbose:true path "_treemap.marshall" (fun () ->
-        Server.treemap_generator [path] 
-      )
+         Server.treemap_generator [path] 
+     
+     (* Common.cache_computation ~verbose:true path "_treemap.marshall" (fun () ->
+       ) *)
     in
     (* optimize and filter very small rectangles so
      * that we send less data
@@ -52,9 +53,10 @@ let main_service =
       (H.html 
           (H.head (H.title (H.pcdata "Codemap")) [ 
 
+         (* this is now included by default
          H.js_script
-           ~uri:(H.make_uri  (Eliom_service.static_dir ())
-                  ["app.js"]) ();
+           ~uri:(H.make_uri  (Eliom_service.static_dir ())["app.js"]) ();
+         *)
           ])
 	  (H.body [
           ]))
@@ -74,10 +76,6 @@ let test_codemap_micro =
     Lwt.return
       (H.html 
           (H.head (H.title (H.pcdata "Micro")) [ 
-
-         H.js_script
-           ~uri:(H.make_uri  (Eliom_service.static_dir ())
-                  ["app.js"]) ();
           ])
 	  (H.body [
           ]))
