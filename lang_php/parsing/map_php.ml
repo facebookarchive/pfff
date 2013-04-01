@@ -1011,7 +1011,7 @@ and map_xhp_attribute_decl =
 
 and map_xhp_attribute_type =
   function
-  | XhpAttrType v1 -> let v1 = map_name v1 in XhpAttrType ((v1))
+  | XhpAttrType v1 -> let v1 = map_hint_type v1 in XhpAttrType ((v1))
   | XhpAttrEnum ((v1, v2)) ->
       let v1 = map_tok v1
       and v2 = map_brace (map_comma_list map_constant) v2

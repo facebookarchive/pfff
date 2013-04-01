@@ -781,16 +781,11 @@ xhp_attribute_decl:
      xhp_attribute_is_required
      { XhpAttrDecl ($1, ((Ast.str_of_info $2, $2)), $3, $4) }
 
-/*(* In the original grammar each types, e.g. float/string/bool/...
-   * had their special token. I abuse T_IDENT here, except for
-   * enum which needs a special grammar rule.
-   *)*/
 xhp_attribute_decl_type:
- | class_name   { XhpAttrType $1 }
- | T_VAR        { XhpAttrType (Name (Ast.str_of_info $1, $1)) }
- | T_ARRAY      { XhpAttrType (Name (Ast.str_of_info $1, $1)) }
  | T_XHP_ENUM TOBRACE xhp_enum_list TCBRACE
      { XhpAttrEnum ($1, ($2, $3, $4)) }
+ | T_VAR        { XhpAttrType (Hint (ClassName(Name("__var__", $1), None))) }
+ | ext_type_hint { XhpAttrType $1 } 
 
 xhp_attribute_default:
  | /*(*empty*)*/     { None }

@@ -1080,7 +1080,7 @@ and vof_xhp_attribute_decl =
 and vof_xhp_attribute_type =
   function
   | XhpAttrType v1 ->
-      let v1 = vof_name v1 in Ocaml.VSum (("XhpAttrType", [ v1 ]))
+      let v1 = vof_hint_type v1 in Ocaml.VSum (("XhpAttrType", [ v1 ]))
   | XhpAttrEnum ((v1, v2)) ->
       let v1 = vof_tok v1
       and v2 = vof_brace (vof_comma_list vof_constant) v2

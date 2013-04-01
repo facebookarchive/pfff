@@ -478,13 +478,6 @@ let visit_toplevel ~tag prefs  hentities (toplevel, toks) =
           tag ii (Class (Use2 (fake_no_use2)));
 
       | XhpAttrDecl ((attr_type, (attr_name, iiname), affect_opt, tok_opt)) ->
-          (match attr_type with
-          | XhpAttrType name ->
-              let info = Ast.info_of_name name in
-              tag info (TypeMisc);
-          | XhpAttrEnum (tok_enum, xs) ->
-              ()
-          );
           tag iiname (Field (Use2 fake_no_use2));
           k x
     );

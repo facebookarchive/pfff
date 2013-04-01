@@ -697,7 +697,7 @@ and class_def = {
    | XhpAttrDecl of xhp_attribute_type * xhp_attr_name *
        xhp_value_affect option * tok option (* is required *)
    and xhp_attribute_type =
-     | XhpAttrType of name (* e.g. float, bool, var, array, :foo *)
+     | XhpAttrType of hint_type
      | XhpAttrEnum of tok (* enum *) * constant comma_list brace
   and xhp_value_affect = tok (* = *) * static_scalar
 
