@@ -55,7 +55,7 @@ LIBS_SERVER2=
 SYSLIBS_SERVER=
 
 #to debug
-#JSOPT=-jsopt -pretty -jsopt -noinline
+JSOPT=-jsopt -pretty -jsopt -noinline
 
 ##############################################################################
 # Top rules
