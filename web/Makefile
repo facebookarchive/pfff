@@ -61,7 +61,10 @@ JSOPT=-jsopt -pretty -jsopt -noinline
 # Top rules
 ##############################################################################
 
-all: var/app.cma var/static/app.js
+#note: need compile client side before server side because of the -infer
+# done when compile client side modules, which is needed anyway for
+# compiling the server side
+all: var/static/app.js var/app.cma 
 
 # server-side
 var/app.cma: $(OBJS_SERVER)
@@ -73,10 +76,8 @@ _server/htmlize_php2.cmo: htmlize_php2.ml
 
 
 _server/home.cmo: home.eliom
-	eliomc  -infer $(INCLUDES) $^
 	eliomc  -c $(INCLUDES) $^
 _server/codemap.cmo: codemap.eliom
-	eliomc  -infer $(INCLUDES) $^
 	eliomc  -c $(INCLUDES) $^
 
 
