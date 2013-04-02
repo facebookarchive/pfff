@@ -38,6 +38,11 @@ interface Iterable extends IteratorAggregate {
 }
 
 // http://php.net/manual/en/class.arrayaccess.php
+// TODO: hphp/hphp/system/classes
 interface ArrayAccess {
 }
 
+// TODO: hphp/hphp/system/classes
+interface Awaitable {
+  public function getWaitHandle();
+}
