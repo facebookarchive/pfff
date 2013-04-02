@@ -63,6 +63,7 @@ define('IsPublic',                       1 <<  6);
 define('IsProtected',                    1 <<  7);
 define('IsPrivate',                      1 <<  8);
 define('IsStatic',                       1 <<  9);
+define('IsCppAbstract',                  1 << 10);
 define('HasDocComment',                  1 << 14);
 define('HipHopSpecific',                 1 << 16);
 define('VariableArguments',              1 << 17);
