@@ -35,7 +35,7 @@ let main_service = Eliom_registration.Html5.register_service
             H.pcdata "File content: ";
             H.br ();
             Eliom_content.Html5.D.textarea ~name
-              (* TODO ~a:[`Rows (Xml.int_attrib "rows" 10)] *) (*:10 ~cols:80*)
+              ~a:[H.a_rows  10; H.a_cols 80]
               ~value:"<?php\n" ();
             H.br ();
             Eliom_content.Html5.D.string_input ~input_type:`Submit ~value:"Go" ()
