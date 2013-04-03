@@ -449,6 +449,43 @@ let main_action xs =
 (* Extra Actions *)
 (*****************************************************************************)
 
+(* quite similar to analyze_backward_deps *)
+let test_thrift_alive graph_file =
+  let g = GC.load graph_file in
+  let gopti = 
+    Common.cache_computation ~verbose:!verbose graph_file ".opti"
+      (fun () -> Graph_code_opti.convert g)
+  in
+  let config = DM.basic_config_opti gopti in
+  DM.threshold_pack := max_int;
+  let config = DM.expand_node_opti (("lib", E.Dir)) config gopti in
+  let config = DM.expand_node_opti (("lib/thrift", E.Dir)) config gopti in
+  let config = DM.expand_node_opti (("lib/thrift/packages", E.Dir)) config gopti in
+  let dm, gopti = DM.build config None gopti in
+  let n = Array.length dm.DM.matrix in
+
+  let kflib = Hashtbl.find dm.DM.name_to_i ("flib", E.Dir) in
+  for j = 0 to n - 1 do
+    let (s, kind) = dm.DM.i_to_name.(j) in
+    if s =~ "lib/thrift/packages/.*"
+    then begin
+      let v = dm.DM.matrix.(kflib).(j) in
+      if v > 0 then begin
+        pr2 (spf "%s is USED in flib/" s);
+        let xs = DM.explain_cell_list_use_edges (kflib, j) dm gopti in
+        xs +> Common.take_safe 5 +> List.iter (fun (n1, n2) ->
+          pr2 (spf "    %s --> %s" 
+                 (GC.string_of_node n1) (GC.string_of_node n2))
+        )
+      end else begin
+        if DM.is_dead_column j dm
+        then begin
+          pr2 (spf "%s appeared DEAD" s);
+        end
+      end
+    end
+  done
+
 (* ---------------------------------------------------------------------- *)
 (* Phylomel *)
 (* ---------------------------------------------------------------------- *)
@@ -559,6 +596,8 @@ let extra_actions () = [
     let g = Graph_code.load graph_file in
     Graph_code_analysis.protected_to_private g
   );
+  "-thrift_alive", " <graph>",
+  Common.mk_action_1_arg test_thrift_alive;
 (*
   "-test_phylomel", " <geno file>",
   Common.mk_action_1_arg test_phylomel;
@@ -610,7 +649,7 @@ let options () = [
       pr2 (spf "CodeGraph version: %s" Config_pfff.version);
       exit 0;
     ), 
-    "  guess what";
+    " guess what";
   ]
 
 (*****************************************************************************)
@@ -628,7 +667,7 @@ let main () =
   (* Common_extra.set_link(); *)
   let usage_msg = 
     spf "Usage: %s [options] <dir> \nDoc: %s\nOptions:"
-      (Common2.basename Sys.argv.(0))
+      (Filename.basename Sys.argv.(0))
       "https://github.com/facebook/pfff/wiki/Codegraph"
   in
   (* does side effect on many global flags *)
