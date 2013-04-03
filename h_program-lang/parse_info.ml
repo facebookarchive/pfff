@@ -702,8 +702,25 @@ let map_parse_info {
 (* Error location report *)
 (*****************************************************************************)
 
+(* A changen is a stand-in for a file for the underlying code.  We use
+   channels in the underlying parsing code as this avoids loading
+   potentially very large source files directly into memory before we
+   even parse them, but this makes it difficult to parse small chunks of
+   code.  The changen works around this problem by providing a channel,
+   size and source for underlying data.  This allows us to wrap a string
+   in a channel, or pass a file, depending on our needs. *)
+type changen = unit -> (in_channel * int * Common.filename)
+
+(* Many functions in parse_php were implemented in terms of files and
+   are now adapted to work in terms of changens.  However, we wish to
+   provide the original API to users.  This wraps changen-based functions
+   and makes them operate on filenames again. *)
+let file_wrap_changen : (changen -> 'a) -> (Common.filename -> 'a) = fun f ->
+  (fun file ->
+    f (fun () -> (open_in file, Common2.filesize file, file)))
+
 let (info_from_charpos2: int -> filename -> (int * int * string)) =
- fun charpos filename ->
+  fun charpos filename ->
 
   (* Currently lexing.ml does not handle the line number position.
    * Even if there is some fields in the lexing structure, they are not
@@ -742,15 +759,12 @@ let (info_from_charpos2: int -> filename -> (int * int * string)) =
 let info_from_charpos a b =
   profile_code "Common.info_from_charpos" (fun () -> info_from_charpos2 a b)
 
+let full_charpos_to_pos_from_changen changen =
+  let (chan, chansize, _) = changen () in
 
-
-let full_charpos_to_pos2 = fun filename ->
-
-  let size = (Common2.filesize filename + 2) in
+  let size = (chansize + 2) in
 
     let arr = Array.create size  (0,0) in
-
-    let chan = open_in filename in
 
     let charpos   = ref 0 in
     let line  = ref 0 in
@@ -778,6 +792,9 @@ let full_charpos_to_pos2 = fun filename ->
       close_in chan;
       arr
     end
+
+let full_charpos_to_pos2 = file_wrap_changen full_charpos_to_pos_from_changen
+
 let full_charpos_to_pos a =
   profile_code "Common.full_charpos_to_pos" (fun () -> full_charpos_to_pos2 a)
 
@@ -795,9 +812,10 @@ let complete_parse_info filename table x =
 
 
 
-let full_charpos_to_pos_large2 = fun filename ->
+let full_charpos_to_pos_large_from_changen = fun changen ->
+  let (chan, chansize, _) = changen () in
 
-  let size = (Common2.filesize filename + 2) in
+  let size = (chansize + 2) in
 
     (* old: let arr = Array.create size  (0,0) in *)
     let arr1 = Bigarray.Array1.create
@@ -806,8 +824,6 @@ let full_charpos_to_pos_large2 = fun filename ->
       Bigarray.int Bigarray.c_layout size in
     Bigarray.Array1.fill arr1 0;
     Bigarray.Array1.fill arr2 0;
-
-    let chan = open_in filename in
 
     let charpos   = ref 0 in
     let line  = ref 0 in
@@ -840,6 +856,10 @@ let full_charpos_to_pos_large2 = fun filename ->
       close_in chan;
       (fun i -> arr1.{i}, arr2.{i})
     end
+
+let full_charpos_to_pos_large2 =
+  file_wrap_changen full_charpos_to_pos_large_from_changen
+
 let full_charpos_to_pos_large a =
   profile_code "Common.full_charpos_to_pos_large"
     (fun () -> full_charpos_to_pos_large2 a)

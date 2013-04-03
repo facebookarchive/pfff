@@ -119,10 +119,12 @@ let error_msg_tok tok =
 (* Lexing only *)
 (*****************************************************************************)
 (*s: function tokens *)
-let tokens2 ?(init_state=Lexer_php.INITIAL) file = 
-  let table     = Parse_info.full_charpos_to_pos_large file in
+let tokens_from_changen ?(init_state=Lexer_php.INITIAL) changen =
+  let table     = Parse_info.full_charpos_to_pos_large_from_changen changen in
 
-  Common.with_open_infile file (fun chan -> 
+  let (chan, _, file) = changen () in
+
+  Common.finalize (fun () ->
     let lexbuf = Lexing.from_channel chan in
 
     Lexer_php.reset();
@@ -210,6 +212,11 @@ let tokens2 ?(init_state=Lexer_php.INITIAL) file =
                    (Parse_info.error_message file (lexbuf_to_strpos lexbuf)))
   | e -> raise e
  )
+ (fun () -> close_in chan)
+
+let tokens2 ?init_state =
+  Parse_info.file_wrap_changen (tokens_from_changen ?init_state)
+
 (*x: function tokens *)
 let tokens ?init_state a = 
   Common.profile_code "Parse_php.tokens" (fun () -> tokens2 ?init_state a)
@@ -415,12 +422,12 @@ let ast_and_tokens file =
 (* Sub parsers *)
 (*****************************************************************************)
 
-let parse_any filename =
-  let toks = tokens ~init_state:Lexer_php.ST_IN_SCRIPTING filename in
+let parse_any_from_changen (changen : Parse_info.changen) =
+  let toks = tokens_from_changen ~init_state:Lexer_php.ST_IN_SCRIPTING changen  in
 
   let tr = PI.mk_tokens_state toks in
   let lexbuf_fake = Lexing.from_function (fun buf n -> raise Impossible) in
-  
+
   try 
     Parser_php.sgrep_spatch_pattern (lexer_function tr) lexbuf_fake
   with exn ->
@@ -439,13 +446,26 @@ let parse_any filename =
      | _ -> raise exn
     );
     raise exn
-    
+
+let parse_any = Parse_info.file_wrap_changen parse_any_from_changen
+
+(* any_of_string allows small chunks of PHP to be parsed without
+   having to use the filesystem by levereging the changen mechanism.
+   In order to supply a string as a channel we must create a socket
+   pair and write our string to it.  This is not ideal and may fail if
+   we try to parse too many short strings without closing the channel,
+   or if the string is so large that the OS blocks our socket. *)
 let any_of_string s =
-  let tmpfile = Common.new_temp_file "pfff_any_of_s" "php" in
-  Common.write_file tmpfile s;
-  let res = parse_any tmpfile in
-  Common.erase_this_temp_file tmpfile;
-  res
+  let len = String.length s in
+  let changen = (fun () ->
+    let (socket_a, socket_b) = Unix.(socketpair PF_UNIX SOCK_STREAM 0) in
+    let (data_in, data_out) =
+      Unix.(in_channel_of_descr socket_a, out_channel_of_descr socket_b) in
+    output_string data_out s;
+    flush data_out;
+    close_out data_out;
+    (data_in, len, "")) in
+  parse_any_from_changen changen
 
 (* 
  * todo: obsolete now with parse_any ? just redirect to parse_any ?

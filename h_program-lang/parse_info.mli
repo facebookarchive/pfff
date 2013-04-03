@@ -66,15 +66,22 @@ type 'tok tokens_state = {
 
 val mk_tokens_state: 'tok list -> 'tok tokens_state
 
+(* channel, size, source *)
+type changen = unit -> (in_channel * int * Common.filename)
+
+(* Create filename-arged functions from changen-type ones *)
+val file_wrap_changen : (changen -> 'a) -> (Common.filename -> 'a)
 
 (* array[i] will contain the (line x col) of the i char position *)
 val full_charpos_to_pos : Common.filename -> (int * int) array
+val full_charpos_to_pos_from_changen : changen -> (int * int) array
 (* fill in the line and column field of parse_info that were not set
  * during lexing because of limitations of ocamllex. *)
 val complete_parse_info : 
   Common.filename -> (int * int) array -> parse_info -> parse_info
 val full_charpos_to_pos_large: 
   Common.filename -> (int -> (int * int))
+val full_charpos_to_pos_large_from_changen : changen -> (int -> (int * int))
 val complete_parse_info_large : 
   Common.filename -> (int -> (int * int))  -> parse_info -> parse_info
 
