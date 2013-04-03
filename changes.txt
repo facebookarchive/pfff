@@ -2,17 +2,27 @@
 
 * 0.24 (Q2 2013) (??)
 
+** web: resume work on ocsigen, port to eliom3, use of OPAM
+basic treemap service, dumper service, and overlay?
+
+** scheck
+
+*** use graph_code as an entity finder
+
+*** ranking and filtering of errors via -filter <n> or -rank
+
 * 0.23 (Q1 2013) (clang parser)
 
 ** codegraph
 
 *** packing less relevant entities in a fake "..." entity
+making codegraph usable on ugly projects with hundreds of subdirectories
 
-*** deadcode/internal_module highlightings
+*** deadcode/internal_module highlighting
 
 *** backward dependencies statistics and highlightings
 
-*** basic support for clang/C
+*** finer grained support for clang/C
 
 ** introduce lang_clang/
 a thin wrapper around the clang/llvm ast dumps of clang-check -emit-ast.
@@ -155,8 +165,6 @@ update: superseded by codegraph
 ** started port of codemap to ocsigen
 can now display the treemap. Had to report many bugs to the ocsigen team
 to get this to work.
-
-update: staled
 
 ** sgrep: support for regexp when matching string constants
 
