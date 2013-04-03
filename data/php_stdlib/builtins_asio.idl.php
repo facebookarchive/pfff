@@ -31,17 +31,19 @@ class StaticExceptionWaitHandle {
  function __construct() { }
  function create($exception) { }
 }
-class WaitableWaitHandle {
- function __construct() { }
+class WaitableWaitHandle extends WaitHandle {
+ function __construct() { 
+   parent::__construct();
+ }
  function getContextIdx() { }
  function getCreator() { }
  function getParents() { }
  function getStackTrace() { }
 }
-class BlockableWaitHandle {
+class BlockableWaitHandle extends WaitableWaitHandle {
  function __construct() { }
 }
-class ContinuationWaitHandle {
+class ContinuationWaitHandle extends BlockableWaitHandle {
  function __construct() { }
  function start($continuation) { }
  function getPrivData() { }
