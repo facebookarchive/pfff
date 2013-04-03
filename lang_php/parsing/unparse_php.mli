@@ -15,4 +15,6 @@ val string_of_infos: Ast_php.info list -> string
 val string_of_program2_using_transfo:
   Parse_php.program2 -> string
 
+val debug: bool ref
+
 (*e: unparse_php.mli *)

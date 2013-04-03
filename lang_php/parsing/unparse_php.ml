@@ -85,7 +85,7 @@ and vof_esthet =
       let v1 = Ocaml.vof_string v1 in Ocaml.VSum (("Space", [ v1 ]))
 
 
-let debug = false
+let debug = ref false
 
 (*****************************************************************************)
 (* Unparsing using AST visitor *)
@@ -203,6 +203,8 @@ let elt_of_tok tok =
   | T_COMMENT _ | T_DOC_COMMENT _ -> Esthet (Comment str)
   | TSpaces _ -> Esthet (Space str)
   | TNewline _ -> Esthet Newline
+  (* just after a ?>, the newline are not anymore TNewline but that *)
+  | T_INLINE_HTML ("\n", _) -> Esthet Newline
   | _ -> OrigElt str
 
 let s_of_add = function
@@ -277,7 +279,7 @@ let string_of_program2_using_transfo ast2 =
     let pp s = Buffer.add_string buf s in
 
     let xs = ast2_to_elts ast2 in
-    if debug 
+    if !debug 
     then xs +> List.iter (fun x -> (pr2 (Ocaml.string_of_v (vof_elt x))));
     let xs = drop_esthet_between_removed xs in
     let xs = drop_whole_line_if_only_removed xs in
