@@ -113,6 +113,11 @@ let filters = [
 (*    | FT.PL (FT.Web (_)) -> true *)
     | _ -> false
   );
+  "rs", (fun file -> 
+    match FT.file_type_of_file file with
+    | FT.PL (FT.Rust) -> true
+    | _ -> false
+  );
 ]
 
 (*****************************************************************************)

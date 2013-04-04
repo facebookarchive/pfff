@@ -20,6 +20,7 @@ type file_type =
   | Beta
   | Pascal
   | Haxe | Opa
+  | Rust
   | Web of webpl_type
   | R of string
   | Bytecode of string

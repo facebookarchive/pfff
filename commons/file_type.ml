@@ -46,6 +46,7 @@ type file_type =
   | Beta
   | Pascal
   | Haxe | Opa
+  | Rust
   | Web of webpl_type
   | R of string
   | Bytecode of string
@@ -260,6 +261,8 @@ let file_type_of_file2 file =
 
   | "exe" -> Binary e
   | "mk" -> PL Makefile
+
+  | "rs" -> PL Rust
 
   | _ when Common2.is_executable file -> Binary e
 
