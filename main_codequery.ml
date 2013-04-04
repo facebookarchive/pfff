@@ -151,10 +151,21 @@ let main_action xs =
 (* Extra Actions *)
 (*****************************************************************************)
 
+(*---------------------------------------------------------------------------*)
+(* regression testing *)
+(*---------------------------------------------------------------------------*)
+open OUnit
+let test () =
+  let suite = Unit_prolog_php.unittest in
+  OUnit.run_test_tt suite +> ignore;
+  ()
+
 (* ---------------------------------------------------------------------- *)
 let extra_actions () = [
   "-build", " <dir> source code to analyze",
   Common.mk_action_1_arg (fun dir -> build_prolog_db !lang dir);
+  "-test", " run regression tests",
+  Common.mk_action_0_arg test;
 ]
 
 (*****************************************************************************)
