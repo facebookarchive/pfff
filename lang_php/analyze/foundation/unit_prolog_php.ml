@@ -155,7 +155,6 @@ class B extends A { public function foo() { } }
   (*-------------------------------------------------------------------------*)
   (* Callgraph and functions *)
   (*-------------------------------------------------------------------------*)
-
     "basic callgraph for functions" >:: (fun () ->
       let file = "
 function foo() { }
@@ -185,6 +184,12 @@ function bar() {
         "docall('bar', X, method), writeln(X), fail" in
       assert_equal ~msg:"it should find basic callers to a method name"
         ["foo"]
+        (sort xs);
+
+      let xs = prolog_query ~file 
+        "docall('bar', X, class), writeln(X), fail" in
+      assert_equal ~msg:"it should find basic use of new"
+        ["A"]
         (sort xs);
     );
 
