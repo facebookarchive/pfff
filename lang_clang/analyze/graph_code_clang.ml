@@ -54,6 +54,10 @@ module Typ = Type_clang
  *  $ ~/pfff/pfff -sanitize_compile_commands old.json > compile_commands.json
  *  $ ~/pfff/pfff -gen_clang ...
  *  $ ...
+ * 
+ * related:
+ *  - http://code.google.com/p/include-what-you-use/wiki/WhyIWYU
+ * 
  *)
 
 (*****************************************************************************)
