@@ -2822,7 +2822,7 @@ let cat_excerpts file lines = Common.with_open_infile file (fun chan ->
     if (not b) then acc else
     match lines with
     | [] -> acc
-    | count::cdr -> aux (l::acc) cdr (count+1)
+    | c::cdr when (c==count) -> aux (l::acc) cdr (count+1)
     | _ -> aux acc lines (count+1)
   in
   aux [] lines 0 +> List.rev)
