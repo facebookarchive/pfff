@@ -359,6 +359,20 @@ function foo3(A $o) {
       ["foo3"] (xs);
     );
 
+    "class constant use" >:: (fun () ->
+      let file = "
+class A {
+ const CST = 1;
+}
+function foo() {
+  echo A::CST;
+}
+" in
+    let xs = prolog_query ~file "use('foo', X , constant, read), writeln(X)" in
+    assert_equal ~msg:"it should find basic access to a class constant"
+      ["A,CST"] (xs);
+    );
+
 (*****************************************************************************)
 (* XHP *)
 (*****************************************************************************)
