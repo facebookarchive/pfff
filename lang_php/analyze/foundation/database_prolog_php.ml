@@ -154,6 +154,31 @@ let add_uses id ast pr db =
 
   let in_lvalue_pos = ref false in
 
+  (* to fatorize code between NewLv and New *)
+  let docall_class classref =
+    match classref with
+    | ClassNameRefStatic x ->
+      (match x with
+      | ClassName (name, _) -> (* TODO: currently ignoring type args *)
+
+        let str = Ast_php.name name in
+        (* use a different namespace than func? *)
+        if not (Hashtbl.mem h str)
+        then begin
+          Hashtbl.replace h str true;
+          pr (spf "docall(%s, '%s', class)."
+                (name_id id db) str)
+        end;
+        
+      (* todo: do something here *)
+      | Self _
+      | Parent _
+      | LateStatic _ ->
+        ()
+      )
+    | ClassNameRefDynamic _ -> ()
+  in
+
   let visitor = V.mk_visitor { V.default_visitor with
 
     V.klvalue = (fun (k,vx) x ->
@@ -247,7 +272,9 @@ let add_uses id ast pr db =
                    (name_id id db) str (read_write !in_lvalue_pos))
           end;
           k x
-
+      | NewLv (_, (_, classref, args), _) ->
+         docall_class classref;
+         k x
 
       | _ -> k x
     );
@@ -265,28 +292,7 @@ let add_uses id ast pr db =
 
       | New (_, classref, args)
       | AssignNew (_, _, _, _, classref, args) ->
-          (match classref with
-          | ClassNameRefStatic x ->
-              (match x with
-              | ClassName (name, _) -> (* TODO: currently ignoring type args *)
-
-                  let str = Ast_php.name name in
-                  (* use a different namespace than func? *)
-                  if not (Hashtbl.mem h str)
-                  then begin
-                    Hashtbl.replace h str true;
-                    pr (spf "docall(%s, '%s', class)."
-                           (name_id id db) str)
-                  end;
-
-              (* todo: do something here *)
-              | Self _
-              | Parent _
-              | LateStatic _ ->
-                  ()
-              )
-          | ClassNameRefDynamic _ -> ()
-          );
+          docall_class classref;
           k x
       | Yield _ | YieldBreak _ ->
           pr (spf "yield(%s)." (name_id id db));

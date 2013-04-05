@@ -193,6 +193,30 @@ function bar() {
         (sort xs);
     );
 
+    "handling new PHP syntax (new X)->" >:: (fun () ->
+      (* we used to use id() for that *)
+      let file ="
+class A { }
+class B { }
+function bar1() {
+  $o = (new A())->foo();
+}
+function bar2() {
+  $o = new B;
+  $o = (new A);
+} " in
+      let xs = prolog_query ~file 
+        "docall('bar1', X, class), writeln(X), fail" in
+      assert_equal ~msg:"it should find nested use of new"
+        ["A"]
+        (sort xs);
+      let xs = prolog_query ~file 
+        "docall('bar2', X, class), writeln(X), fail" in
+      assert_equal ~msg:"it should find nested use of new"
+        ["A";"B"]
+        (sort xs);
+    );
+
     "callgraph for static methods" >:: (fun () ->
       let file ="
 class A { 
