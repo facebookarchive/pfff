@@ -28,7 +28,7 @@
  * those sections, of those dependencies, I put the functions causing
  * dependency problem here. C is better than caml on this with the
  * ability to declare prototype, enabling some form of forward
- * reference. 
+ * reference.
  *)
 
 let (+>) o f = f o
@@ -1639,7 +1639,7 @@ let rec find_some p = function
 
 let rec find_some_opt p = function
   | [] -> None
-  | x :: l -> 
+  | x :: l ->
       match p x with
       |	Some v -> Some v
       |	None -> find_some_opt p l
@@ -2815,9 +2815,17 @@ let cat file =
 let cat_array file =
   (""::cat file) +> Array.of_list
 
-let cat_excerpts file lines =
-  let arr = cat_array file in
-  lines |> List.map (fun i -> arr.(i))
+let cat_excerpts file lines = Common.with_open_infile file (fun chan ->
+  let lines = List.sort compare lines in
+  let rec aux acc lines count =
+    let (b,l) = try (true, input_line chan) with End_of_file -> (false, "") in
+    if (not b) then acc else
+    match lines with
+    | [] -> acc
+    | count::cdr -> aux (l::acc) cdr (count+1)
+    | _ -> aux acc lines (count+1)
+  in
+  aux [] lines 0 +> List.rev)
 
 let interpolate str =
   begin
@@ -2911,7 +2919,7 @@ let y_or_no msg =
       match read_line () with
       | "y" | "yes" | "Y" -> true
       | "n" | "no"  | "N" -> false
-      | _ -> 
+      | _ ->
         pr2 "answer by 'y' or 'n'";
         aux ()
     in
@@ -3209,7 +3217,7 @@ let grep_dash_v_str =
  "| grep -v /.hg/ |grep -v /CVS/ | grep -v /.git/ |grep -v /_darcs/" ^
  "| grep -v /.svn/ | grep -v .git_annot | grep -v .marshall"
 
-let arg_symlink () = 
+let arg_symlink () =
   if !Common.follow_symlinks
   then " -L "
   else ""
@@ -3886,13 +3894,13 @@ let _ = assert
 
 let chunks n xs =
   let size = List.length xs in
-  let chunksize = 
-    if size mod n =|= 0 
+  let chunksize =
+    if size mod n =|= 0
     then size / n
     else 1 + (size / n)
   in
   let xxs = pack_safe chunksize xs in
-  if List.length xxs <> n 
+  if List.length xxs <> n
   then failwith "chunks: impossible, wrong size";
   xxs
 
@@ -4387,7 +4395,7 @@ let (include_set_strict: 'a set -> 'a set -> bool) = fun s1 s2 ->
 let ($*$) = inter_set
 let ($+$) = union_set
 let ($-$) = minus_set
-let ($?$) a b = 
+let ($?$) a b =
   Common.profile_code "$?$" (fun () -> member_set a b)
 let ($<$) = include_set_strict
 let ($<=$) = include_set
@@ -4781,7 +4789,7 @@ type ('k,'v) hash_with_default = {
 }
 *)
 type ('a, 'b) hash_with_default =
-  < add : 'a -> 'b -> unit; 
+  < add : 'a -> 'b -> unit;
     to_list : ('a * 'b) list;
     to_h: ('a, 'b) Hashtbl.t;
     update : 'a -> ('b -> 'b) -> unit;
@@ -5059,7 +5067,7 @@ let find_multi_treeref_with_parents_some f tree =
 (*****************************************************************************)
 (* Graph. Have a look too at Ograph_*.mli  *)
 (*****************************************************************************)
-(* 
+(*
  * Very simple implementation of a (directed) graph by list of pairs.
  * Could also use a matrix, or adjacent list, or pointer(ref).
  * todo: do some check (dont exist already, ...)
