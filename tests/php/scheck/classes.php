@@ -11,7 +11,7 @@ class CB extends CA {
 class ClassDupe {
 }
 
-//should return an error there too.
+//SKIP: should return an error there too.
 class ClassDupe {
 }
 
