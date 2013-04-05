@@ -2815,7 +2815,12 @@ let cat file =
 let cat_array file =
   (""::cat file) +> Array.of_list
 
-(*
+(* Spec for cat_excerpts:
+let cat_excerpts file lines =
+  let arr = cat_array file in
+  lines |> List.map (fun i -> arr.(i))
+*)
+
 let cat_excerpts file lines = Common.with_open_infile file (fun chan ->
   let lines = List.sort compare lines in
   let rec aux acc lines count =
@@ -2826,11 +2831,7 @@ let cat_excerpts file lines = Common.with_open_infile file (fun chan ->
     | c::cdr when (c==count) -> aux (l::acc) cdr (count+1)
     | _ -> aux acc lines (count+1)
   in
-  aux [] lines 0 +> List.rev)
-*)
-let cat_excerpts file lines =
-  let arr = cat_array file in
-  lines |> List.map (fun i -> arr.(i))
+  aux [] lines 1 +> List.rev)
 
 let interpolate str =
   begin
