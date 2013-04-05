@@ -1026,6 +1026,7 @@ and v_xhp_attribute_decl x =
 and v_xhp_attribute_type =
   function
   | XhpAttrType v1 -> let v1 = v_hint_type v1 in ()
+  | XhpAttrVar v1 -> let v1 = v_tok v1 in ()
   | XhpAttrEnum ((v1, v2)) ->
       let v1 = v_tok v1 and v2 = v_brace (v_comma_list v_constant) v2 in ()
 and v_xhp_value_affect (v1, v2) =

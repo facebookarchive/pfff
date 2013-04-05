@@ -784,7 +784,7 @@ xhp_attribute_decl:
 xhp_attribute_decl_type:
  | T_XHP_ENUM TOBRACE xhp_enum_list TCBRACE
      { XhpAttrEnum ($1, ($2, $3, $4)) }
- | T_VAR        { XhpAttrType (Hint (ClassName(Name("__var__", $1), None))) }
+ | T_VAR        { XhpAttrVar $1 }
  | ext_type_hint { XhpAttrType $1 } 
 
 xhp_attribute_default:

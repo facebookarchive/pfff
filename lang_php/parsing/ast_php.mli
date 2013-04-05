@@ -698,6 +698,7 @@ and class_def = {
        xhp_value_affect option * tok option (* is required *)
    and xhp_attribute_type =
      | XhpAttrType of hint_type
+     | XhpAttrVar of tok
      | XhpAttrEnum of tok (* enum *) * constant comma_list brace
   and xhp_value_affect = tok (* = *) * static_scalar
 
