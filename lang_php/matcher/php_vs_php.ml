@@ -1343,7 +1343,7 @@ and m_expr a b =
   | A.New(a1, a2, a3), B.New(b1, b2, b3) ->
     m_tok a1 b1 >>= (fun (a1, b1) ->
     m_class_name_reference a2 b2 >>= (fun (a2, b2) ->
-    (m_option (m_paren (m_list__m_argument))) a3 b3 >>= (fun (a3, b3) ->
+    m_option__m_paren__m_list__m_argument a3 b3 >>= (fun (a3, b3) ->
     return (
        A.New(a1, a2, a3),
        B.New(b1, b2, b3)
@@ -2219,6 +2219,19 @@ and m_list__m_argument (xsa: A.argument A.comma_list) (xsb: B.argument B.comma_l
   | [], _
   | _::_, _ ->
       fail ()
+
+(* iso: new Foo(...) can match new X; *)
+and m_option__m_paren__m_list__m_argument a b =
+  match a, b with
+  (* iso on ... *)
+  | Some (lp, [Left (A.Arg (A.SgrepExprDots i))], rp), None ->
+      (* todo: for spatch need apply possible transfo *)
+      return (
+        a,
+        b
+      )
+  | _ ->
+    m_option (m_paren (m_list__m_argument)) a b
 
 
 (*---------------------------------------------------------------------------*)

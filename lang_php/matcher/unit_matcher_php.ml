@@ -64,6 +64,11 @@ let sgrep_unittest = [
       "foo(\"...\");", "foo(\"a string\");", true;
       "foo(\"...\");", "foo(\"a string\" . \"another string\");", true;
 
+      (* '...' in new *)
+      "new Foo(...);","new Foo(1);", true;
+      "new Foo(...);","new Foo();", true;
+      "new Foo(...);","new Foo;", true;
+
       (* many arguments metavariables *)
       "foo(MANYARGS);", "foo(1,2,3);", true;
       "foo(MANYARGS2);", "foo(1,2,3);", true;

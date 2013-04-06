@@ -1,5 +1,6 @@
 <?php
 
+$o = new Foo;
 $o = new Foo();
 
 class Bar {
