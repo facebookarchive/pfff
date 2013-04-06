@@ -98,7 +98,8 @@ let rec defs_of_files_or_dirs lang xs =
             | "java" -> 
               Graph_code_java.build ~verbose ~only_defs:true root skip_list
             | "php2" -> 
-              Graph_code_php.build ~verbose ~only_defs:true root skip_list
+              Graph_code_php.build ~verbose ~only_defs:true 
+                (Left root) skip_list
             | _ -> raise Impossible
           in
           Graph_code_tags.defs_of_graph_code ~verbose g

@@ -336,7 +336,7 @@ let file_of_node n g =
   with Not_found ->
     (match n with
     | str, (E.Dir | E.File) -> str
-    | _ -> "NOT_FOUND_FILE"
+    | _ -> spf "NOT_FOUND_FILE (for node %s)" (string_of_node n)
     )
 
 let group_edges_by_files_edges xs g =

@@ -250,7 +250,7 @@ let rec add_use_edge env (((str, tok) as name, kind)) =
       | E.Class E.RegularClass ->
           add_use_edge env (name, E.Class E.Interface)
       *)
-      | _ ->
+      | _  ->
           let kind_original = kind in
           let dst = (str, kind_original) in
 
@@ -725,15 +725,29 @@ and map_valuel env xs = List.iter (map_value env) xs
 (* Main entry point *)
 (*****************************************************************************)
 
-let build ?(verbose=true) ?(only_defs=false) dir skip_list =
-  let root = Common.realpath dir in
-  let all_files = Lib_parsing_php.find_php_files_of_dir_or_files [root] in
+let build 
+    ?(verbose=true) 
+    ?(only_defs=false)
+    dir_or_files skip_list 
+ =
+  let root, files =
+    match dir_or_files with
+    | Left dir ->
+      let root = Common.realpath dir in
+      let all_files = Lib_parsing_php.find_php_files_of_dir_or_files [root] in
 
-  (* step0: filter noisy modules/files *)
-  let files = Skip_code.filter_files skip_list root all_files in
-  (* step0: reorder files *)
-  let files = Skip_code.reorder_files_skip_errors_last skip_list root files in
-
+      (* step0: filter noisy modules/files *)
+      let files = 
+        Skip_code.filter_files skip_list root all_files in
+      (* step0: reorder files *)
+      let files = 
+        Skip_code.reorder_files_skip_errors_last skip_list root files in
+      root, files
+    (* useful when build codegraph from test code *)
+    | Right files ->
+      "/", files
+  in
+      
   let g = G.create () in
   G.create_initial_hierarchy g;
 
@@ -839,5 +853,5 @@ let build ?(verbose=true) ?(only_defs=false) dir skip_list =
         extract_defs_uses {env with phase = Uses} ast readable
    ));
   end;
-
+  close_out chan;
   g

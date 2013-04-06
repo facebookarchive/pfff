@@ -504,7 +504,7 @@ let (find_entity_and_warn:
        fatal (Ast.info_of_name name) (UndefinedEntity (kind, str));
        
    | x::y::xs ->
-       if Hashtbl.mem h_already_error (kind, str) 
+       if Hashtbl.mem h_already_error (kind, str)
        then ()
        else begin
          Hashtbl.add h_already_error (kind, str) true;

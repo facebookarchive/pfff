@@ -1,6 +1,6 @@
 (* Yoann Padioleau
  *
- * Copyright (C) 2010 Facebook
+ * Copyright (C) 2010, 2013 Facebook
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public License
@@ -14,7 +14,11 @@
  *)
 open Common
 
+open Ast_php
 module Ast = Ast_php
+module G = Graph_code
+module Flag = Flag_analyze_php
+module E = Database_code
 
 (*****************************************************************************)
 (* Prelude *)
@@ -102,6 +106,13 @@ type entity_finder = (id_kind * string) -> Ast_php.entity list
 type method_identifier = (string * string)
 
 (*****************************************************************************)
+(* Wrappers *)
+(*****************************************************************************)
+let pr2_dbg s =
+  if !Flag.verbose_entity_finder
+  then pr2 s
+
+(*****************************************************************************)
 (* String_of *)
 (*****************************************************************************)
 let str_of_id (Id x) = 
@@ -158,3 +169,105 @@ let (filepos_of_parse_info: Parse_info.parse_info -> filepos) = fun pi ->
     line = pi.Parse_info.line;
     column = pi.Parse_info.column;
   }
+
+(*****************************************************************************)
+(* Entity finder based on graphcode *)
+(*****************************************************************************)
+
+(* 
+ * TODO: use more cache? parsing cache too?
+ *)
+let hcache_entities = Hashtbl.create 101
+
+(* Note that we will parse 2 times a file, once to analyze it, below,
+ * in Check_all_php.check_file, and once because of the entity_finder
+ * here. The -profile may actually return numbers for Parse_php.parse
+ * more than 2 times the one for the checkers because we may
+ * need to load via the entity_finder files outside the directory
+ * passed as a parameter to scheck (e.g. flib/). We could cache
+ * the parsed AST but it can stress the GC too much.
+ *)
+let hdone = Hashtbl.create 101
+let ast_php_entity_in_file (s, kind) file =
+  (* pr2_dbg (Common.dump (s, kind, file)); *)
+
+  (* sanity check, this should never happened *)
+(*
+  if Hashtbl.mem hdone file
+  then failwith (spf "already processed file %s" file);
+  Hashtbl.add hdone file true;
+*)
+
+  let ast2 = Parse_php.parse_program file in
+  let entities =
+    ast2 +> Common.map_filter (function
+    | StmtList _ -> None
+    | FuncDef def ->
+      Some ((Ast.str_of_name def.f_name, E.Function), FunctionE def)
+    | ClassDef def -> 
+      (* do as in graph_code_php.ml *)
+      let kind = E.RegularClass in
+      Some ((Ast.str_of_name def.c_name, E.Class kind), ClassE def)
+    | ConstantDef def ->
+      let (_, name, _, _, _) = def in
+      Some ((Ast.str_of_name name, E.Constant), ConstantE def)
+    | NotParsedCorrectly _ | FinalDef _ -> None
+    )
+  in
+  (* cache all those entities. todo: use marshalled form? for GC? *)
+  entities +> List.iter (fun ((s2, kind2), def) -> 
+    (* we can have duplicated functions that we want to store as such *)
+    Hashtbl.replace hcache_entities (s2, kind2) [def]
+  );
+  Hashtbl.find hcache_entities (s, kind)
+
+
+let entity_finder_of_graph_code g =
+  (fun (kind, s) ->
+    (* pr2_gen (kind, s); *)
+    let f () =
+      match kind with
+      | E.Function | E.Class _ | E.Constant ->
+        (* todo: transpose in regular class as graph_code only stores that?*)
+        if G.has_node (s, kind) g then
+          let parent = G.parent (s, kind) g in
+          (match parent with
+          | x when x =*= G.not_found ->
+            pr2_dbg (spf "entity not found: %s" (G.string_of_node (s, kind)));
+            []
+          | x when x =*= G.dupe ->
+            pr2_dbg (spf "entity dupe found: %s" (G.string_of_node (s, kind)));
+            let file = G.file_of_node (s, kind) g in
+            let asts = ast_php_entity_in_file (s, kind) file in
+            (* create fake multi entities *)
+            asts ++ asts
+          | _ ->
+            let file = G.file_of_node (s, kind) g in
+            let path = (*Filename.concat root*) file in
+            ast_php_entity_in_file (s, kind) path
+          )
+        else begin
+          pr2_dbg (spf "entity not found: %s" (G.string_of_node (s, kind)));
+          []
+        end
+      | _ ->
+        pr2 (spf "entity not handled: %s" (G.string_of_node (s, kind)));
+        []
+    in
+    f()
+  )
+(*
+    (* mostly a copy paste of Common.memoized but using find_all *)
+    if Hashtbl.mem hcache_entities (s, kind)
+    then Hashtbl.find hcache_entities (s, kind)
+    else begin
+      let res = f () in
+      res +> List.iter (fun x ->
+        Hashtbl.add hcache_entities (s, kind) x
+      );
+      Hashtbl.find_all hcache_entities (s, kind)
+    end
+    )
+*)
+  
+

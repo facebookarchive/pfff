@@ -41,7 +41,11 @@ let unittest =
     p "tests/php/scheck/lint.php";
   ] 
   in
-  
+  let builtin_files =
+    Lib_parsing_php.find_php_files_of_dir_or_files [p "/data/php_stdlib"]
+  in
+  let files = builtin_files ++ test_files in
+
   let (expected_errors :(Common.filename * int (* line *)) list) =
     test_files +> List.map (fun file ->
       Common.cat file +> Common.index_list_1 +> Common.map_filter 
@@ -57,19 +61,19 @@ let unittest =
         )
     ) +> List.flatten
   in
-  let builtin_files =
-    Lib_parsing_php.find_php_files_of_dir_or_files [p "/data/php_stdlib"]
-  in
-
   Error_php._errors := [];
-  let db = 
-    Database_php_build.db_of_files_or_dirs (builtin_files ++ test_files) in
-  let find_entity = 
-    Some (Database_php_build.build_entity_finder db) in
-  let env = 
-    Env_php.mk_env ~php_root:"/" in
 
   let verbose = false in
+
+  (* old:
+   *  let db = Database_php_build.db_of_files_or_dirs files in
+   *  let find_entity = Some (Database_php_build.build_entity_finder db) in
+   *)
+  let skip_code = [] in
+  let cg = Graph_code_php.build ~verbose (Right files) skip_code in
+  let find_entity = Some (Entity_php.entity_finder_of_graph_code cg) in
+  
+  let env = Env_php.mk_env ~php_root:"/" in
 
   (* run the bugs finders *)
   test_files +> List.iter (fun file ->

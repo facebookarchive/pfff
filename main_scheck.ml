@@ -221,79 +221,11 @@ let entity_finder_of_db file =
   let db = build_mem_db file in
   Database_php_build.build_entity_finder db
 
-
-(* 
- * TODO: use more cache? parsing cache too?
- *)
-let hcache_entities = Hashtbl.create 101
-
-module E = Database_code
-module G = Graph_code
-
-(* Note that we will parse 2 times a file, once to analyze it, below,
- * in Check_all_php.check_file, and once because of the entity_finder
- * here. The -profile may actually return numbers for Parse_php.parse
- * more than 2 times the one for the checkers because we may
- * need to load via the entity_finder files outside the directory
- * passed as a parameter to scheck (e.g. flib/). We could cache
- * the parsed AST but it can stress the GC too much.
- *)
-let hdone = Hashtbl.create 101
-let ast_php_entity_in_file (s, kind) file =
-  pr2_dbg (Common.dump (s, kind, file));
-  (* sanity check, this should never happened *)
-  if Hashtbl.mem hdone file
-  then failwith (spf "already processed file %s" file);
-  Hashtbl.add hdone file true;
-  let ast2 = Parse_php.parse_program file in
-  let entities =
-    ast2 +> Common.map_filter (function
-    | StmtList _ -> None
-    | FuncDef def ->
-      Some ((Ast.str_of_name def.f_name, E.Function), FunctionE def)
-    | ClassDef def -> 
-      (* do as in graph_code_php.ml *)
-      let kind = E.RegularClass in
-      Some ((Ast.str_of_name def.c_name, E.Class kind), ClassE def)
-    | ConstantDef def ->
-      let (_, name, _, _, _) = def in
-      Some ((Ast.str_of_name name, E.Constant), ConstantE def)
-    | NotParsedCorrectly _ | FinalDef _ -> None
-    )
-  in
-  (* cache all those entities. todo: use marshalled form? for GC? *)
-  entities +> List.iter (fun ((s2, kind2), def) -> 
-    Hashtbl.replace hcache_entities (s2, kind2) [def]
-  );
-  Hashtbl.find hcache_entities (s, kind)
-
-
-let entity_finder_of_graph_code graph_file =
+let entity_finder_of_graph_file graph_file =
   let g = Graph_code.load graph_file in
-  (* todo: the graph_code contains absolute path?? *)
   let _root = Filename.dirname graph_file in
-
-  (fun (kind, s) ->
-    (* pr2_gen (kind, s); *)
-    Common.memoized hcache_entities (s, kind) (fun () ->
-      match kind with
-      | E.Function | E.Class _ | E.Constant ->
-        if G.has_node (s, kind) g then begin
-          let file = G.file_of_node (s, kind) g in
-          let path = (*Filename.concat root*) file in
-          ast_php_entity_in_file (s, kind) path
-        end
-        else begin
-          pr2_dbg (spf "entity not found: %s" (G.string_of_node (s, kind)));
-          []
-        end
-      | _ ->
-        pr2 (spf "entity not handled: %s" (G.string_of_node (s, kind)));
-        []
-    )
-  )
-
-
+  (* todo: the graph_code contains absolute path?? *)
+  Entity_php.entity_finder_of_graph_code g
 
 (*****************************************************************************)
 (* Main action *)
@@ -315,7 +247,7 @@ let main_action xs =
     | _ when !heavy ->
       Some (entity_finder_of_db (List.hd files))
     | _ when !graph_code <> None ->
-      Some (entity_finder_of_graph_code (Common2.some !graph_code))
+      Some (entity_finder_of_graph_file (Common2.some !graph_code))
         (* old: main_scheck_heavy:
          * Database_php.with_db ~metapath:!metapath (fun db ->
          *  Database_php_build.build_entity_finder db
@@ -463,7 +395,10 @@ let all_actions () =
 
 let options () =
   [
-    "-verbose", Arg.Set verbose,
+    "-verbose", Arg.Unit (fun () -> 
+      verbose := true;
+      Flag_analyze_php.verbose_entity_finder := true;
+    ),
     " guess what";
 
     "-with_graph_code", Arg.String (fun s ->
