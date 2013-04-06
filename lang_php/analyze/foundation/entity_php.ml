@@ -188,7 +188,7 @@ let hcache_entities = Hashtbl.create 101
  * the parsed AST but it can stress the GC too much.
  *)
 let hdone = Hashtbl.create 101
-let ast_php_entity_in_file (s, kind) file =
+let ast_php_entity_in_file ~check_dupes (s, kind) g file =
   (* pr2_dbg (Common.dump (s, kind, file)); *)
 
   (* sanity check, this should never happened *)
@@ -215,59 +215,67 @@ let ast_php_entity_in_file (s, kind) file =
     )
   in
   (* cache all those entities. todo: use marshalled form? for GC? *)
-  entities +> List.iter (fun ((s2, kind2), def) -> 
-    (* we can have duplicated functions that we want to store as such *)
-    Hashtbl.replace hcache_entities (s2, kind2) [def]
+  entities +> List.iter (fun ((s, kind), def) -> 
+    (* This is expensive so we do it only if one really wants
+     * the check_dupe checks (like in our unit tests). Most of 
+     * the time you don't need this check as building the codegraph
+     * will already display such errors
+     *)
+    let asts =
+     if check_dupes then
+      if G.has_node (s, kind) g then
+        let parent = G.parent (s, kind) g in
+        match parent with
+        | x when x =*= G.not_found ->
+          pr2_dbg (spf "entity not found: %s" (G.string_of_node (s, kind)));
+          []
+        | x when x =*= G.dupe ->
+          pr2_dbg (spf "entity dupe found: %s" (G.string_of_node (s, kind)));
+          (* create fake multi entities *)
+          [def; def]
+        | _ ->
+          [def]
+      else begin
+        pr2_dbg (spf "entity not in graph: %s" (G.string_of_node (s, kind)));
+        []
+      end
+     else [def]
+    in
+    Hashtbl.replace hcache_entities (s, kind) asts
+
   );
   Hashtbl.find hcache_entities (s, kind)
 
 
-let entity_finder_of_graph_code g =
+let entity_finder_of_graph_code ?(check_dupes=false) g =
   (fun (kind, s) ->
     (* pr2_gen (kind, s); *)
-    let f () =
+    Common.memoized hcache_entities (s, kind) (fun () ->
       match kind with
       | E.Function | E.Class _ | E.Constant ->
         (* todo: transpose in regular class as graph_code only stores that?*)
         if G.has_node (s, kind) g then
           let parent = G.parent (s, kind) g in
           (match parent with
+          (* file_of_node() below would not work on undefined functions as
+           * they are added on the fly in graph_code_php
+           *)
           | x when x =*= G.not_found ->
             pr2_dbg (spf "entity not found: %s" (G.string_of_node (s, kind)));
             []
-          | x when x =*= G.dupe ->
-            pr2_dbg (spf "entity dupe found: %s" (G.string_of_node (s, kind)));
-            let file = G.file_of_node (s, kind) g in
-            let asts = ast_php_entity_in_file (s, kind) file in
-            (* create fake multi entities *)
-            asts ++ asts
           | _ ->
             let file = G.file_of_node (s, kind) g in
             let path = (*Filename.concat root*) file in
-            ast_php_entity_in_file (s, kind) path
+            ast_php_entity_in_file ~check_dupes (s, kind) g path
           )
         else begin
-          pr2_dbg (spf "entity not found: %s" (G.string_of_node (s, kind)));
+          pr2_dbg (spf "entity not in graph: %s" (G.string_of_node (s, kind)));
           []
         end
       | _ ->
         pr2 (spf "entity not handled: %s" (G.string_of_node (s, kind)));
         []
-    in
-    f()
-  )
-(*
-    (* mostly a copy paste of Common.memoized but using find_all *)
-    if Hashtbl.mem hcache_entities (s, kind)
-    then Hashtbl.find hcache_entities (s, kind)
-    else begin
-      let res = f () in
-      res +> List.iter (fun x ->
-        Hashtbl.add hcache_entities (s, kind) x
-      );
-      Hashtbl.find_all hcache_entities (s, kind)
-    end
     )
-*)
+  )
   
 
