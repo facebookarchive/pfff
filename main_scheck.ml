@@ -235,22 +235,22 @@ let main_action xs =
   set_gc ();
   Logger.log Config_pfff.logger "scheck" None;
 
-  (* less: use skip_code *)
-  let skip_list, root =
+  let files = Lib_parsing_php.find_php_files_of_dir_or_files xs in
+  let files =
     match xs with
     | [dir] -> 
       let skip_file = Filename.concat dir "skip_list.txt" in
       if Sys.file_exists skip_file
       then begin 
         if !verbose then  pr2 (spf "Using skip file: %s" skip_file);
-        Skip_code.load skip_file, dir
+        let skip_list = Skip_code.load skip_file in
+        let root = dir in
+        (* todo: also skip the skip_errors? *)
+        Skip_code.filter_files skip_list root files
       end
-      else [], "/"
-    | _ -> [], "/"
+      else files
+    | _ -> files
   in
-  let files = Lib_parsing_php.find_php_files_of_dir_or_files xs in
-  (* todo: also skip the skip_errors? *)
-  let files = Skip_code.filter_files skip_list root files in
 
   Flag_parsing_php.show_parsing_error := false;
   Flag_parsing_php.verbose_lexing := false;
