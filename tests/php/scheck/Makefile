@@ -1,6 +1,7 @@
 graph: 
-	~/pfff/codegraph  -symlinks -verbose -lang php -build .
+	~/pfff/codegraph  -symlinks -lang php -build .
+	cat pfff.log
 
 check:
-	~/pfff/scheck -with_graph_code graph_code.marshall .
+	~/pfff/scheck -emacs -with_graph_code graph_code.marshall .
 
