@@ -22,9 +22,9 @@ let find_methods_return_this_version1 dir =
               match method_def.f_body with
               | [] -> ()
               | xs ->
-                let last = Common.list_last xs in
+                let last = Common2.list_last xs in
                 (match last with
-                | Return(_, Some(This(_))) ->
+                | Return(Some(This(_))) ->
                     pr2 (spf "Found a match in %s %s"
                            file (Ast_php_simple.str_of_name method_def.f_name))
                 | _ -> ()

@@ -82,7 +82,7 @@ let options () =
 
 let main () = 
   let usage_msg = 
-    "Usage: " ^ basename Sys.argv.(0) ^ 
+    "Usage: " ^ Filename.basename Sys.argv.(0) ^ 
       " [options] <file> " ^ "\n" ^ "Options are:"
   in
   (* does side effect on many global flags *)

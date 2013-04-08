@@ -10,11 +10,11 @@ let show_function_calls file =
   let asts = Parse_php.program_of_program2 asts2 in
 
   (*s: iter on asts manually *)
-    asts |> List.iter (fun toplevel ->
+    asts +> List.iter (fun toplevel ->
       match toplevel with
       | StmtList stmts ->
           (*s: iter on stmts *)
-          stmts |> List.iter (fun stmt ->
+          stmts +> List.iter (fun stmt ->
             (match stmt with
             | ExprStmt (e, _ptvirg) ->
       

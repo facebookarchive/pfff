@@ -94,7 +94,7 @@ let main files_or_dirs =
   Flag_parsing_php.show_parsing_error := false;
   Flag_parsing_php.verbose_lexing := false;
 
-  files +> Common.index_list_and_total +> List.iter (fun (file, i, total) ->
+  files +> Common2.index_list_and_total +> List.iter (fun (file, i, total) ->
     pr2 (spf "processing: %s (%d/%d)" file i total);
 
     (* step1: parse the file *)
@@ -150,7 +150,7 @@ let main files_or_dirs =
          *)
         | (Lv(
              (StaticMethodCallSimple(
-               (ClassName(Name(("ArgAssert", i_9))), i_10),
+               (ClassName(Name(("ArgAssert", i_9)), _), i_10),
                Name(("isString", i_11)),
                (i_left_paren,
                [Left(
@@ -170,7 +170,7 @@ let main files_or_dirs =
          *)
         | (Lv(
              (StaticMethodCallSimple(
-               (ClassName(Name(("ArgAssert", i_9))), i_10),
+               (ClassName(Name(("ArgAssert", i_9)), _), i_10),
                Name(("isArray", i_11)),
                (i_12,
                [Left(
@@ -203,7 +203,7 @@ let main files_or_dirs =
     Common.write_file ~file:tmpfile s;
       
     let diff = Common.cmd_to_list (spf "diff -u %s %s" file tmpfile) in
-    diff |> List.iter pr;
+    diff +> List.iter pr;
 
     if !apply_patch 
     then Common.write_file ~file:file s;

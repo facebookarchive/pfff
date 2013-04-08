@@ -66,7 +66,7 @@ let navigator_extract_functions file =
               | New       (_,          classref, _)
               | AssignNew (_, _, _, _, classref, _) ->
                   (match classref with
-                  | ClassNameRefStatic (ClassName name) ->
+                  | ClassNameRefStatic (ClassName (name,_)) ->
                       Common.push2 (Ast.name name) instances;
                   | ClassNameRefStatic _ -> ()
                   | ClassNameRefDynamic (var, objs) ->

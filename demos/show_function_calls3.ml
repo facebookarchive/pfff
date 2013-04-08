@@ -11,8 +11,8 @@ let show_function_calls file =
   let asts = Parse_php.program_of_program2 asts2 in
 
   (*s: initialize hfuncs *)
-    let hfuncs = Common.hash_with_default (fun () ->
-      Common.hash_with_default (fun () -> 0)
+    let hfuncs = Common2.hash_with_default (fun () ->
+      Common2.hash_with_default (fun () -> 0)
     )
     in
   (*e: initialize hfuncs *)
@@ -47,10 +47,10 @@ let show_function_calls file =
 
   (*s: display hfuncs to user *)
     (* printing statistics *)
-    hfuncs#to_list |> List.iter (fun (f, hcount) ->
+    hfuncs#to_list +> List.iter (fun (f, hcount) ->
       pr2 (spf "statistics for %s" f);
-      hcount#to_list |> Common.sort_by_key_highfirst
-        |> List.iter (fun (nbargs, nbcalls_at_nbargs) ->
+      hcount#to_list +> Common.sort_by_key_highfirst
+        +> List.iter (fun (nbargs, nbcalls_at_nbargs) ->
           pr2 (spf " when # of args is %d: found %d call sites" 
                   nbargs nbcalls_at_nbargs)
         )

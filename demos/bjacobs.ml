@@ -280,7 +280,7 @@ let dependencies_file file =
       | New (tok, classname_ref, _) 
       | AssignNew (_, _, _, tok, classname_ref, _) ->
           (match classname_ref with
-          | ClassNameRefStatic (ClassName classname) -> 
+          | ClassNameRefStatic (ClassName (classname,_)) -> 
               let sclass = Ast.name classname in
               let info = Ast.info_of_name classname in
               Common.push2 ({
@@ -357,7 +357,7 @@ let dependencies_file file =
 
               (* dir, base, extension *)
               let (d,b,e) = 
-                Common.dbe_of_filename_nodot flib_relative_path_file in
+                Common2.dbe_of_filename_nodot flib_relative_path_file in
               
               Common.push2 (
                 (* e.g. require_source('bar.php') in flib/a/__init__php 
