@@ -486,7 +486,7 @@ let draw_matrix cr w =
  *)
 let paint w =
   let cr = Cairo.create w.base in
-  scale_coordinate_system cr w;
+  M.scale_coordinate_system cr w;
   draw_matrix cr w;
   !Ctl._refresh_drawing_area ();
   ()
