@@ -295,6 +295,26 @@ let visual_commitid id =
   pr2_gen files;
   main_action files
 (*e: visual_commitid() action *)
+
+let width = 500
+let height = 500
+
+let test_draw cr =
+  ()
+
+let test_cairo () =
+  let w = GWindow.window ~title:"test" () in
+  ignore (w#connect#destroy GMain.quit);
+  let px = GDraw.pixmap ~width ~height ~window:w () in
+  px#set_foreground `WHITE;
+  px#rectangle ~x:0 ~y:0 ~width ~height ~filled:true ();
+  let cr = Cairo_lablgtk.create px#pixmap in
+  test_draw cr;
+  
+  ignore(GMisc.pixmap px ~packing:w#add ());
+  w#show ();
+  GMain.main();
+  ()
   
 (*---------------------------------------------------------------------------*)
 (* the command line flags *)
@@ -303,6 +323,8 @@ let extra_actions () = [
  (*s: actions *)
    "-commitid", " <id>",
    Common.mk_action_1_arg (visual_commitid);
+   "-test_cairo", " ",
+   Common.mk_action_0_arg (test_cairo);
  (*e: actions *)
 ]
  
