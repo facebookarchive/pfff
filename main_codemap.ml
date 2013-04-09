@@ -302,11 +302,19 @@ let height = 500
 let test_draw cr =
   (* [0,0][1,1] world *)
   Cairo.scale cr (float_of_int width) (float_of_int height);
+
   Cairo.set_source_rgb cr ~red:0.5 ~green:0.5 ~blue:0.5;
   Cairo.set_line_width cr 0.001;
+
   Cairo.move_to cr 0.5 0.5;
   Cairo.line_to cr 0.6 0.6;
   Cairo.stroke cr;
+
+  Cairo.select_font_face cr "serif"
+    Cairo.FONT_SLANT_NORMAL Cairo.FONT_WEIGHT_BOLD;
+  Cairo.set_font_size cr 0.1;
+  Cairo.move_to cr 0.1 0.1;
+  Cairo.show_text cr "THIS IS SOME TEXT";
   ()
 
 let test_cairo () =
