@@ -32,6 +32,7 @@ OBJS_SERVER= \
  _server/dump_server.cmo \
  _server/server.cmo \
  _server/codemap.cmo \
+ _server/test.cmo \
  _server/home.cmo \
 
 # _server/global_db.cmo _server/htmlize_php2.cmo \
@@ -44,6 +45,7 @@ OBJS_CLIENT= \
  _client/shared.cmo \
  _client/client.cmo \
  _client/codemap.cmo \
+ _client/test.cmo \
  _client/home.cmo \
 
 LIBS_CLIENT2= $(TOP)/commons/lib.cma \
@@ -79,6 +81,8 @@ _server/home.cmo: home.eliom
 	eliomc  -c $(INCLUDES) $^
 _server/codemap.cmo: codemap.eliom
 	eliomc  -c $(INCLUDES) $^
+_server/test.cmo: test.eliom
+	eliomc  -c $(INCLUDES) $^
 
 
 # client-side
@@ -92,6 +96,9 @@ _client/home.cmo: home.eliom
 _client/codemap.cmo: codemap.eliom
 	eliomc  -infer $(INCLUDES) $^
 	js_of_eliom $(JSOPT) -c $(INCLUDES) $^
+_client/test.cmo: test.eliom
+	eliomc  -infer $(INCLUDES) $^
+	js_of_eliom $(JSOPT) -c $^
 
 
 run:

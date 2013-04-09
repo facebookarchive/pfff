@@ -21,5 +21,7 @@ let main_service =
         H.h1 [H.a Codemap.main_service     [H.pcdata "overlay"] 
                  "/home/pad/overlays/www"];
 
+        H.h1 [H.a Test.main_service     [H.pcdata "test"] ()];
+
       ]))
   )
