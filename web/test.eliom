@@ -8,12 +8,18 @@ module H = Eliom_content.Html5.D
 {client{
 open Common
 open Common_client
+module CanvasH = Canvas_helpers
 
 (* from jflo slides *)
 let unopt x =
   Js.Opt.get x (fun () -> raise Not_found)
 let retrieve id =
   unopt (Dom_html.document ## getElementById (Js.string id))
+}}
+
+{shared{
+let width = 500
+let height = 500
 }}
 
 (*****************************************************************************)
@@ -26,7 +32,25 @@ end)
 
 {client{
 let test_draw ctx =
-  pr2 "TODO"
+  ctx##setTransform (1.,0.,0.,1.,0.,0.);
+  ctx##scale (float_of_int width, float_of_int height);
+
+  let (r, g, b) = 0.5, 0.5, 0.5 in
+  let alpha = 0.5 in
+  ctx##fillStyle <- Js.string (CanvasH.rgba_of_rgbf (r,g,b) alpha);
+
+  ctx##lineWidth <- 0.001;
+  ctx##moveTo (0.5, 0.5);
+  ctx##lineTo (0.6, 0.6);
+  ctx##stroke();
+(*
+  Cairo.set_source_rgb cr ~red:0.5 ~green:0.5 ~blue:0.5;
+  Cairo.set_line_width cr 0.001;
+  Cairo.move_to cr 0.5 0.5;
+  Cairo.line_to cr 0.6 0.6;
+  Cairo.stroke cr;
+*)
+
 }}
 
 let main_service =
@@ -49,7 +73,7 @@ let main_service =
     Lwt.return
       (H.html (H.head (H.title (H.pcdata "test")) []) (H.body [
         H.canvas
-          ~a:[H.a_id "main_canvas"; H.a_width 500; H.a_height 500]
+          ~a:[H.a_id "main_canvas"; H.a_width width; H.a_height height]
           []
       ]
       ))

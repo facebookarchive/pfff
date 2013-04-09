@@ -303,7 +303,7 @@ let test_draw cr =
   (* [0,0][1,1] world *)
   Cairo.scale cr (float_of_int width) (float_of_int height);
 
-  Cairo.set_source_rgb cr ~red:0.5 ~green:0.5 ~blue:0.5;
+  Cairo.set_source_rgba cr ~red:0.5 ~green:0.5 ~blue:0.5 ~alpha:0.5;
   Cairo.set_line_width cr 0.001;
 
   Cairo.move_to cr 0.5 0.5;
