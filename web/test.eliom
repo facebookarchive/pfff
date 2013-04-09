@@ -31,6 +31,7 @@ module App = Eliom_registration.App (struct
 end)
 
 {client{
+(* imitate Main_codemap.test_draw but using canvas instead of cairo *)
 let test_draw ctx =
   ctx##setTransform (1.,0.,0.,1.,0.,0.);
   ctx##scale (float_of_int width, float_of_int height);
@@ -48,6 +49,25 @@ let test_draw ctx =
   Cairo.set_line_width cr 0.001;
   Cairo.move_to cr 0.5 0.5;
   Cairo.line_to cr 0.6 0.6;
+  Cairo.stroke cr;
+*)
+
+(*
+  Cairo.select_font_face cr "serif"
+    Cairo.FONT_SLANT_NORMAL Cairo.FONT_WEIGHT_BOLD;
+  Cairo.set_font_size cr 0.1;
+  Cairo.move_to cr 0.1 0.1;
+  Cairo.show_text cr "THIS IS SOME TEXT";
+  Cairo.move_to cr 0.1 0.2;
+  Cairo.show_text cr "THIS IS SOME TEXT";
+  Cairo.move_to cr 0.1 0.3;
+  Cairo.show_text cr "THIS IS SOME TEXT";
+*)
+
+(*
+  Cairo.set_source_rgb cr ~red:0.1 ~green:0.1 ~blue:0.1;
+  Cairo.move_to cr 0.1 0.1;
+  Cairo.line_to cr 0.1 0.2;
   Cairo.stroke cr;
 *)
 
