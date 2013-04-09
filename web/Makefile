@@ -59,6 +59,9 @@ SYSLIBS_SERVER=
 #to debug
 JSOPT=-jsopt -pretty -jsopt -noinline
 
+ELIOMC=eliomc -annot
+JS_OF_ELIOM=js_of_eliom -annot
+
 ##############################################################################
 # Top rules
 ##############################################################################
@@ -73,39 +76,39 @@ var/app.cma: $(OBJS_SERVER)
 	eliomc -a -o $@ $(SYSLIBS_SERVER) $(LIBS_SERVER2) $^
 
 _server/htmlize_php2.cmo: htmlize_php2.ml
-	eliomc -c $(INCLUDES) -package tyxml htmlize_php2.mli
-	eliomc -c $(INCLUDES) -package tyxml $^
+	$(ELIOMC) -c $(INCLUDES) -package tyxml htmlize_php2.mli
+	$(ELIOMC) -c $(INCLUDES) -package tyxml $^
 
 
 _server/home.cmo: home.eliom
-	eliomc  -c $(INCLUDES) $^
+	$(ELIOMC)  -c $(INCLUDES) $^
 _server/codemap.cmo: codemap.eliom
-	eliomc  -c $(INCLUDES) $^
+	$(ELIOMC)  -c $(INCLUDES) $^
 _server/test.cmo: test.eliom
-	eliomc  -c $(INCLUDES) $^
+	$(ELIOMC)  -c $(INCLUDES) $^
 
 
 # client-side
 var/static/app.js: $(OBJS_CLIENT) runtime1.js
-	js_of_eliom $(JSOPT) -o $@ $(SYSLIBS_CLIENT) $(LIBS_CLIENT2)  $(OBJS_CLIENT) -jsopt runtime1.js
+	$(JS_OF_ELIOM) $(JSOPT) -o $@ $(SYSLIBS_CLIENT) $(LIBS_CLIENT2)  $(OBJS_CLIENT) -jsopt runtime1.js
 
 
 _client/home.cmo: home.eliom
-	eliomc  -infer $(INCLUDES) $^
-	js_of_eliom $(JSOPT) -c $^
+	$(ELIOMC)  -infer $(INCLUDES) $^
+	$(JS_OF_ELIOM) $(JSOPT) -c $^
 _client/codemap.cmo: codemap.eliom
-	eliomc  -infer $(INCLUDES) $^
-	js_of_eliom $(JSOPT) -c $(INCLUDES) $^
+	$(ELIOMC)  -infer $(INCLUDES) $^
+	$(JS_OF_ELIOM) $(JSOPT) -c $(INCLUDES) $^
 _client/test.cmo: test.eliom
-	eliomc  -infer $(INCLUDES) $^
-	js_of_eliom $(JSOPT) -c $(INCLUDES) $^
+	$(ELIOMC)  -infer $(INCLUDES) $^
+	$(JS_OF_ELIOM) $(JSOPT) -c $(INCLUDES) $^
 
 # additional dependencies needed, not sure why
 _server/test.type_mli: test.eliom
-	eliomc  -infer $(INCLUDES) $^
+	$(ELIOMC)  -infer $(INCLUDES) $^
 
 #_client/common.cmo: $(TOP)/commons/common.ml
-#	js_of_eliom $(INCLUDES) $(JSOPT) -c $^ -o $@
+#	$(JS_OF_ELIOM) $(INCLUDES) $(JSOPT) -c $^ -o $@
 
 run:
 	ocsigenserver -c ocsigen.conf
@@ -125,11 +128,11 @@ annot:
 	ocamlfind ocamlc -dtypes -c $(INCLUDES) $(LIBS_CLIENT) draw_macro.mli
 	ocamlfind ocamlc -dtypes -c $(INCLUDES) $(LIBS_CLIENT) draw_macro.ml
 	ocamlfind ocamlc -dtypes -c $(INCLUDES) $(LIBS_CLIENT) client.ml
-	eliomc -annot -c $(INCLUDES) test.eliom
+	$(ELIOMC) -annot -c $(INCLUDES) test.eliom
 	ln -s _server/test.annot
-	eliomc -annot -c $(INCLUDES) codemap.eliom
+	$(ELIOMC) -annot -c $(INCLUDES) codemap.eliom
 	ln -s _server/codemap.annot
-	eliomc -annot -c $(INCLUDES) home.eliom
+	$(ELIOMC) -annot -c $(INCLUDES) home.eliom
 	ln -s _server/home.annot
 	rm -f *.cm*
 
@@ -149,16 +152,16 @@ _server/home.cmo: _server/test.cmo
 ##############################################################################
 
 _server/%.cmo: %.ml
-	eliomc -c $(INCLUDES) $^
+	$(ELIOMC) -c $(INCLUDES) $^
 
 _server/%.cmi: %.mli
-	eliomc -c $(INCLUDES) $^
+	$(ELIOMC) -c $(INCLUDES) $^
 
 _client/%.cmo: %.ml
-	js_of_eliom $(JSOPT) -c $(INCLUDES) $^
+	$(JS_OF_ELIOM) $(JSOPT) -c $(INCLUDES) $^
 
 _client/%.cmi: %.mli
-	js_of_eliom $(JSOPT) -c $(INCLUDES) $^
+	$(JS_OF_ELIOM) $(JSOPT) -c $(INCLUDES) $^
 
 clean::
 	rm -f *.annot
