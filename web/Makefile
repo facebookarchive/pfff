@@ -86,8 +86,8 @@ _server/test.cmo: test.eliom
 
 
 # client-side
-var/static/app.js: $(OBJS_CLIENT)
-	js_of_eliom $(JSOPT) -o $@ $(SYSLIBS_CLIENT) $(LIBS_CLIENT2)  $^ -jsopt runtime1.js
+var/static/app.js: $(OBJS_CLIENT) runtime1.js
+	js_of_eliom $(JSOPT) -o $@ $(SYSLIBS_CLIENT) $(LIBS_CLIENT2)  $(OBJS_CLIENT) -jsopt runtime1.js
 
 
 _client/home.cmo: home.eliom
@@ -98,8 +98,14 @@ _client/codemap.cmo: codemap.eliom
 	js_of_eliom $(JSOPT) -c $(INCLUDES) $^
 _client/test.cmo: test.eliom
 	eliomc  -infer $(INCLUDES) $^
-	js_of_eliom $(JSOPT) -c $^
+	js_of_eliom $(JSOPT) -c $(INCLUDES) $^
 
+# additional dependencies needed, not sure why
+_server/test.type_mli: test.eliom
+	eliomc  -infer $(INCLUDES) $^
+
+#_client/common.cmo: $(TOP)/commons/common.ml
+#	js_of_eliom $(INCLUDES) $(JSOPT) -c $^ -o $@
 
 run:
 	ocsigenserver -c ocsigen.conf
@@ -107,7 +113,7 @@ run:
 annot:
 	ocamlfind ocamlc -dtypes -c $(LIBS_SHARED) shared.ml
 	ocamlfind ocamlc -dtypes -c $(LIBS_SHARED) flag_web.ml
-	ocamlfind ocamlc -dtypes -c $(INCLUDES) $(LIBS_SERVER) global_db.ml
+#	ocamlfind ocamlc -dtypes -c $(INCLUDES) $(LIBS_SERVER) global_db.ml
 #	ocamlfind ocamlc -dtypes -c $(INCLUDES) $(LIBS_SERVER) htmlize_php2.mli
 #	ocamlfind ocamlc -dtypes -c $(INCLUDES) $(LIBS_SERVER) htmlize_php2.ml
 #	ocamlfind ocamlc -dtypes -c $(INCLUDES) $(LIBS_SERVER) lxr_server.ml
@@ -119,6 +125,12 @@ annot:
 	ocamlfind ocamlc -dtypes -c $(INCLUDES) $(LIBS_CLIENT) draw_macro.mli
 	ocamlfind ocamlc -dtypes -c $(INCLUDES) $(LIBS_CLIENT) draw_macro.ml
 	ocamlfind ocamlc -dtypes -c $(INCLUDES) $(LIBS_CLIENT) client.ml
+	eliomc -annot -c $(INCLUDES) test.eliom
+	ln -s _server/test.annot
+	eliomc -annot -c $(INCLUDES) codemap.eliom
+	ln -s _server/codemap.annot
+	eliomc -annot -c $(INCLUDES) home.eliom
+	ln -s _server/home.annot
 	rm -f *.cm*
 
 clean::
@@ -130,6 +142,7 @@ depend::
 
 # eliomdep does not handle dependencies between .eliom files for now
 _server/home.cmo: _server/codemap.cmo
+_server/home.cmo: _server/test.cmo
 
 ##############################################################################
 # Generic ocaml rules

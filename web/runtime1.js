@@ -16,4 +16,6 @@ function unix_gettimeofday(x) { caml_failwith("unix_gettimeofday"); }
 function caml_sys_exit(x) { caml_failwith("caml_sys_exit"); }
 
 //Provides: caml_ml_output_char
-function caml_ml_output_char(x) { caml_failwith("caml_ml_output_char"); }
+function caml_ml_output_char(x) { 
+  caml_failwith("caml_ml_output_char");
+}
