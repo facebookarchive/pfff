@@ -7,6 +7,7 @@ module H = Eliom_content.Html5.D
 
 {client{
 open Common
+open Common2.ArithFloatInfix
 open Common_client
 module CanvasH = Canvas_helpers
 
@@ -33,6 +34,27 @@ end)
 {client{
 (* imitate Main_codemap.test_draw but using canvas instead of cairo *)
 let test_draw ctx =
+
+  ctx##font <- Js.string (spf "20 px serif" );
+  let text = "f" in
+  let metric = ctx##measureText (Js.string text) in
+  let width_text = metric##width in
+  pr2 (spf "width text = %f" width_text);
+
+  let fill_text_scaled ctx str ~x ~y ~size =
+    let orig = 500. in
+(*
+    ctx##save;
+    ctx##translate (x * orig) (y * orig);
+    ctx##restore;
+*)
+    pr2_gen orig
+  in
+
+  (* 500 -> width_text *)
+  (* 1 -> *)
+  (* 0.1 -> ? *)
+
   ctx##setTransform (1.,0.,0.,1.,0.,0.);
   ctx##scale (float_of_int width, float_of_int height);
 
@@ -51,6 +73,9 @@ let test_draw ctx =
   Cairo.line_to cr 0.6 0.6;
   Cairo.stroke cr;
 *)
+
+  fill_text_scaled ctx "THIS IS SOME TEXT" ~x:0.1 ~y:0.1 ~size:0.1;
+
 
 (*
   Cairo.select_font_face cr "serif"
