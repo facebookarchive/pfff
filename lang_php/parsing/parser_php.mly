@@ -925,8 +925,15 @@ type_params_opt:
   | TSMALLER type_params_list TGREATER {}
 
 type_params_list:
-  | ident {}
-  | ident TCOMMA type_params_list {}
+  | type_param  {}
+  | type_param TCOMMA type_params_list {}
+
+type_param:
+  | ident { }
+  | ident T_AS class_hint { }
+
+class_hint:
+  | class_name_or_array type_arguments { }
 
 /*(*************************************************************************)*/
 /*(*1 Types *)*/
