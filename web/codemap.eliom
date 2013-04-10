@@ -30,7 +30,7 @@ let main_service =
     Treemap.follow_symlinks := true;
     let path = Common2.relative_to_absolute path in
     let rects = 
-         Server.treemap_generator [path] 
+         Server_codemap.treemap_generator [path] 
      
      (* Common.cache_computation ~verbose:true path "_treemap.marshall" (fun () ->
        ) *)
@@ -48,7 +48,7 @@ let main_service =
     pr2 (spf "nb rects after filtering: %d" (List.length rects));
 
     ignore
-      {unit { Client.draw_treemap_rendering %rects }};
+      {unit { Client_codemap.draw_treemap_rendering %rects }};
     Lwt.return
       (H.html 
           (H.head (H.title (H.pcdata "Codemap")) [ 
@@ -72,7 +72,7 @@ let test_codemap_micro =
     let lines = Common.cat path in
 
     ignore
-      {unit{ Client.draw_file %lines }};
+      {unit{ Client_codemap.draw_file %lines }};
     Lwt.return
       (H.html 
           (H.head (H.title (H.pcdata "Micro")) [ 

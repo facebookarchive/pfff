@@ -14,8 +14,14 @@ INCLUDEDIRS= $(TOP)/commons \
  $(TOP)/lang_php/parsing \
   $(TOP)/lang_php/analyze \
   $(TOP)/lang_php/analyze/foundation \
+  $(TOP)/web/commons \
+  $(TOP)/web/code_map \
+  $(TOP)/web/code_graph \
+  $(TOP)/web/lxr \
 
 INCLUDES?=$(INCLUDEDIRS:%=-I %) $(SYSINCLUDES)
+
+MAKESUBDIRS=commons code_map
 
 # for 'make annot'
 LIBS_SHARED= -package deriving-ocsigen.syntax,js_of_ocaml.deriving.syntax \
@@ -27,10 +33,7 @@ LIBS_CLIENT= -package js_of_ocaml,eliom,eliom.client \
   $(LIBS_SHARED)
 
 OBJS_SERVER= \
- _server/common_server.cmo \
- _server/flag_web.cmo \
  _server/dump_server.cmo \
- _server/server.cmo \
  _server/codemap.cmo \
  _server/test.cmo \
  _server/home.cmo \
@@ -39,17 +42,15 @@ OBJS_SERVER= \
 # _server/lxr_server.cmo \
 
 OBJS_CLIENT= \
- _client/common_client.cmo \
- _client/canvas_helpers.cmo \
- _client/draw_macro.cmo \
- _client/shared.cmo \
- _client/client.cmo \
  _client/codemap.cmo \
  _client/test.cmo \
  _client/home.cmo \
 
 LIBS_CLIENT2= $(TOP)/commons/lib.cma \
-  $(TOP)/h_visualization/lib.cma
+  $(TOP)/h_visualization/lib.cma \
+  $(TOP)/web/commons/lib_client.cma \
+  $(TOP)/web/code_map/lib_client.cma \
+
 
 SYSLIBS_CLIENT=str.cma unix.cma
 
@@ -69,7 +70,14 @@ JS_OF_ELIOM=js_of_eliom -annot
 #note: need compile client side before server side because of the -infer
 # done when compile client side modules, which is needed anyway for
 # compiling the server side
-all: var/static/app.js var/app.cma 
+all: rec var/static/app.js var/app.cma
+
+#	$(MAKE) rec 
+#	$(MAKE) var/static/app.js 
+#	$(MAKE) var/app.cma 
+
+rec:
+	set -e; for i in $(MAKESUBDIRS); do $(MAKE) -C $$i all || exit 1; done 
 
 # server-side
 var/app.cma: $(OBJS_SERVER)
@@ -106,9 +114,8 @@ _client/test.cmo: test.eliom
 # additional dependencies needed, not sure why
 _server/test.type_mli: test.eliom
 	$(ELIOMC)  -infer $(INCLUDES) $^
-
-#_client/common.cmo: $(TOP)/commons/common.ml
-#	$(JS_OF_ELIOM) $(INCLUDES) $(JSOPT) -c $^ -o $@
+_server/codemap.type_mli: codemap.eliom
+	$(ELIOMC)  -infer $(INCLUDES) $^
 
 run:
 	ocsigenserver -c ocsigen.conf
@@ -137,11 +144,17 @@ annot:
 	rm -f *.cm*
 
 clean::
+	set -e; for i in $(MAKESUBDIRS); do $(MAKE) -C $$i clean; done 
+
+depend::
+	set -e; for i in $(MAKESUBDIRS); do echo $$i; $(MAKE) -C $$i depend; done
+
+clean::
 	rm -rf _client _server
 
 depend::
-	eliomdep -client *.ml *.eliom > .depend
-	eliomdep -server *.ml *.eliom >> .depend
+	eliomdep -client *.ml *.eliom  > .depend
+	eliomdep -server *.ml *.eliom  >> .depend
 
 # eliomdep does not handle dependencies between .eliom files for now
 _server/home.cmo: _server/codemap.cmo
