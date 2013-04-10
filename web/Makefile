@@ -8,13 +8,9 @@ TOP=..
 ##############################################################################
 
 INCLUDEDIRS= $(TOP)/commons \
- $(TOP)/h_program-lang/ \
  $(TOP)/h_visualization/ \
- $(TOP)/h_program-visual/ \
  $(TOP)/lang_php/parsing \
-  $(TOP)/lang_php/analyze \
-  $(TOP)/lang_php/analyze/foundation \
-  $(TOP)/web/commons \
+ $(TOP)/web/commons \
   $(TOP)/web/code_map \
   $(TOP)/web/code_graph \
   $(TOP)/web/lxr \
@@ -121,20 +117,7 @@ run:
 	ocsigenserver -c ocsigen.conf
 
 annot:
-	ocamlfind ocamlc -dtypes -c $(LIBS_SHARED) shared.ml
-	ocamlfind ocamlc -dtypes -c $(LIBS_SHARED) flag_web.ml
-#	ocamlfind ocamlc -dtypes -c $(INCLUDES) $(LIBS_SERVER) global_db.ml
-#	ocamlfind ocamlc -dtypes -c $(INCLUDES) $(LIBS_SERVER) htmlize_php2.mli
-#	ocamlfind ocamlc -dtypes -c $(INCLUDES) $(LIBS_SERVER) htmlize_php2.ml
-#	ocamlfind ocamlc -dtypes -c $(INCLUDES) $(LIBS_SERVER) lxr_server.ml
 	ocamlfind ocamlc -dtypes -c $(INCLUDES) $(LIBS_SERVER) dump_server.ml
-	ocamlfind ocamlc -dtypes -c $(INCLUDES) $(LIBS_SERVER) server.ml
-	ocamlfind ocamlc -dtypes -c $(INCLUDES) $(LIBS_CLIENT) common_client.ml
-	ocamlfind ocamlc -dtypes -c $(INCLUDES) $(LIBS_CLIENT) canvas_helpers.mli
-	ocamlfind ocamlc -dtypes -c $(INCLUDES) $(LIBS_CLIENT) canvas_helpers.ml
-	ocamlfind ocamlc -dtypes -c $(INCLUDES) $(LIBS_CLIENT) draw_macro.mli
-	ocamlfind ocamlc -dtypes -c $(INCLUDES) $(LIBS_CLIENT) draw_macro.ml
-	ocamlfind ocamlc -dtypes -c $(INCLUDES) $(LIBS_CLIENT) client.ml
 	$(ELIOMC) -annot -c $(INCLUDES) test.eliom
 	ln -s _server/test.annot
 	$(ELIOMC) -annot -c $(INCLUDES) codemap.eliom
