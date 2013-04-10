@@ -15,7 +15,7 @@ module CanvasH = Canvas_helpers
 let unopt x =
   Js.Opt.get x (fun () -> raise Not_found)
 let retrieve id =
-  unopt (Dom_html.document ## getElementById (Js.string id))
+  unopt (Dom_html.document##getElementById (Js.string id))
 }}
 
 {shared{
@@ -35,37 +35,40 @@ end)
 (* imitate Main_codemap.test_draw but using canvas instead of cairo *)
 let test_draw ctx =
 
-  ctx##font <- Js.string (spf "20 px serif" );
-  let text = "f" in
+  (* ugly hack because html5 canvas does not handle using float size for fonts
+   * when printing text in a scaled context.
+   *)
+  ctx##font <- Js.string (spf "bold 12 px serif" );
+  let text = "MM" in
   let metric = ctx##measureText (Js.string text) in
-  let width_text = metric##width in
-  pr2 (spf "width text = %f" width_text);
+  let width_text_etalon_orig_coord = metric##width / 2.0 in
+  pr2 (spf "width text orig coord = %f" width_text_etalon_orig_coord);
+
+  let orig_coord_width = 500. in
+  let normalized_coord_width = 1. in
+
+  let width_text_etalon_normalized_coord = 
+    (normalized_coord_width * width_text_etalon_orig_coord) /
+      orig_coord_width
+  in
+  pr2 (spf "width text normalized coord = %f" width_text_etalon_normalized_coord);
 
   let fill_text_scaled ctx str ~x ~y ~size =
-    let orig = 500. in
-(*
-    ctx##save;
-    ctx##translate (x * orig) (y * orig);
-    ctx##restore;
-*)
-    pr2_gen orig
-  in
+    ctx##save ();
+    ctx##setTransform (1.,0.,0.,1.,0.,0.);
+    ctx##translate (x * orig_coord_width, y * orig_coord_width);
 
-  (* 500 -> width_text *)
-  (* 1 -> *)
-  (* 0.1 -> ? *)
+
+    let scale_factor = size / width_text_etalon_normalized_coord in
+
+    ctx##scale (scale_factor, scale_factor);
+    ctx##fillText (Js.string "THIS IS SOME TEXT", 0., 0.);
+    ctx##restore ();
+  in
 
   ctx##setTransform (1.,0.,0.,1.,0.,0.);
   ctx##scale (float_of_int width, float_of_int height);
 
-  let (r, g, b) = 0.5, 0.5, 0.5 in
-  let alpha = 0.5 in
-  ctx##fillStyle <- Js.string (CanvasH.rgba_of_rgbf (r,g,b) alpha);
-
-  ctx##lineWidth <- 0.001;
-  ctx##moveTo (0.5, 0.5);
-  ctx##lineTo (0.6, 0.6);
-  ctx##stroke();
 (*
   Cairo.set_source_rgb cr ~red:0.5 ~green:0.5 ~blue:0.5;
   Cairo.set_line_width cr 0.001;
@@ -73,9 +76,13 @@ let test_draw ctx =
   Cairo.line_to cr 0.6 0.6;
   Cairo.stroke cr;
 *)
-
-  fill_text_scaled ctx "THIS IS SOME TEXT" ~x:0.1 ~y:0.1 ~size:0.1;
-
+  let (r, g, b) = 0.5, 0.5, 0.5 in
+  let alpha = 0.5 in
+  ctx##fillStyle <- Js.string (CanvasH.rgba_of_rgbf (r,g,b) alpha);
+  ctx##lineWidth <- 0.001;
+  ctx##moveTo (0.5, 0.5);
+  ctx##lineTo (0.6, 0.6);
+  ctx##stroke();
 
 (*
   Cairo.select_font_face cr "serif"
@@ -89,12 +96,20 @@ let test_draw ctx =
   Cairo.show_text cr "THIS IS SOME TEXT";
 *)
 
+  fill_text_scaled ctx "THIS IS SOME TEXT" ~x:0.1 ~y:0.1 ~size:0.1;
+  fill_text_scaled ctx "THIS IS SOME TEXT" ~x:0.1 ~y:0.2 ~size:0.1;
+  fill_text_scaled ctx "THIS IS SOME TEXT" ~x:0.1 ~y:0.3 ~size:0.05;
+
 (*
   Cairo.set_source_rgb cr ~red:0.1 ~green:0.1 ~blue:0.1;
   Cairo.move_to cr 0.1 0.1;
   Cairo.line_to cr 0.1 0.2;
   Cairo.stroke cr;
 *)
+  ctx##fillStyle <- Js.string (CanvasH.rgba_of_rgbf (0.1,0.1,0.1) 1.0);
+  ctx##moveTo (0.1, 0.1);
+  ctx##lineTo (0.1, 0.2);
+  ctx##stroke();
 
 }}
 

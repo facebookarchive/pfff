@@ -317,9 +317,9 @@ let test_draw cr =
   Cairo.show_text cr "THIS IS SOME TEXT";
   Cairo.move_to cr 0.1 0.2;
   Cairo.show_text cr "THIS IS SOME TEXT";
+  Cairo.set_font_size cr 0.05;
   Cairo.move_to cr 0.1 0.3;
   Cairo.show_text cr "THIS IS SOME TEXT";
-
 
   Cairo.set_source_rgb cr ~red:0.1 ~green:0.1 ~blue:0.1;
   Cairo.move_to cr 0.1 0.1;
