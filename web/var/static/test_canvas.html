@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html>
+<head>
+<script>
+function display() {
+    var canvas = document.getElementById('test');
+    var ctx = canvas.getContext('2d');
+    // For EM and % cases....
+    //canvas.style.font="5px Arial";
+    //canvas.height = 1000;
+    //var minSize = 10;
+    //var lineHeight = 100;
+    //for(var a=minSize; a< 20; a+=0.1)
+    //{
+    //    var font_size =  Math.round(a*10000)/10000;
+    //    context.font = a + "px Arial";
+    //    context.fillText("A: EXAMPLE TEXT > " +  font_size, 20, (font_size-minSize)*lineHeight);
+    //}
+    ctx.scale(500,500);
+    //ctx.fillStyle
+    ctx.lineWidth = 0.001;
+    ctx.moveTo (0.5, 0.5);
+    ctx.lineTo (0.6, 0.6);
+    ctx.stroke();
+
+    //ctx.font = "0.1 px Arial";
+    //ctx.fillText("X", 0.5, 0.5);
+    //
+    //var tempimg = document.createElement('canvas');
+    //tempimg.width = 50;
+    //tempimg.height = 40;
+    //oc = tempimg.getContext('2d');
+    //oc.font = "40 px serif";
+    //oc.fillText("f", 0, 40);
+    //ctx.drawImage(tempimg, 0.5, 0.5, 0.1, 0.1);
+
+    ctx.setTransform (1.,0.,0.,1.,0.,0.);
+    //ctx.scale(1,1);
+    ctx.font = "20 px serif";
+    ctx.translate(250, 250);
+    ctx.scale(20,20);
+    ctx.fillText("X", 0, 0);
+
+}
+</script>
+</head>
+<body onload="display()">
+<canvas id="test" width="500" height="500"></canvas>
+</body></html>
