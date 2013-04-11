@@ -28,7 +28,7 @@ LIBS_CLIENT= -package js_of_ocaml.syntax -syntax camlp4o
 
 -include $(TOP)/Makefile.common
 
-OCAMLC=ocamlfind ocamlc -annot $(INCLUDES) $(LIBS_CLIENT)
+OCAMLC=ocamlfind ocamlc -g -annot $(INCLUDES) $(LIBS_CLIENT)
 OCAMLDEP=ocamlfind ocamldep $(INCLUDES) $(LIBS_CLIENT)
 
 ##############################################################################

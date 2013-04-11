@@ -9,6 +9,7 @@ TOP=../..
 
 INCLUDEDIRS= $(TOP)/commons \
   $(TOP)/web/commons \
+  $(TOP)/h_program-lang/ \
   $(TOP)/h_visualization/ \
   $(TOP)/h_program-visual/ \
 
@@ -17,7 +18,7 @@ OBJS_SERVER= \
  server_codegraph.cmo \
 
 OBJS_CLIENT= \
- draw_matrix.cmo \
+ view_matrix_codegraph.cmo \
  client_codegraph.cmo \
 
 LIBS_CLIENT= -package js_of_ocaml.syntax -syntax camlp4o
@@ -28,7 +29,7 @@ LIBS_CLIENT= -package js_of_ocaml.syntax -syntax camlp4o
 
 -include $(TOP)/Makefile.common
 
-OCAMLC=ocamlfind ocamlc -annot $(INCLUDES) $(LIBS_CLIENT)
+OCAMLC=ocamlfind ocamlc -g -annot $(INCLUDES) $(LIBS_CLIENT)
 OCAMLDEP=ocamlfind ocamldep $(INCLUDES) $(LIBS_CLIENT)
 
 ##############################################################################

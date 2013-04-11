@@ -132,6 +132,9 @@ let main_service =
 
     Lwt.return
       (H.html (H.head (H.title (H.pcdata "test")) []) (H.body [
+        (* used by runtime1.js, useful to see exceptions thrown *)
+        H.div ~a:[H.a_id "output";] [];
+
         H.canvas
           ~a:[H.a_id "main_canvas"; H.a_width width; H.a_height height]
           []

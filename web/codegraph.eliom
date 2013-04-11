@@ -19,6 +19,8 @@ end)
 {shared{
 let width = 1000
 let height = 1000
+module DM = Dependencies_matrix_code
+
 }}
 
 (*****************************************************************************)
@@ -31,15 +33,24 @@ let main_service =
   (fun path () ->
     pr2 path;
 
+    (* TODO: compute config based on path *)
+    let config = DM.basic_config_opti Globals.gopti in
+    let m, _gopti =
+      DM.build config (None) Globals.gopti in
+    
+
     ignore
-      {unit { () }};
+      {unit { View_matrix_codegraph.paint_weirrrrd %m }};
     Lwt.return
       (H.html 
           (H.head (H.title (H.pcdata "CodeGraph")) [ 
           ])
 	  (H.body [
+            (* used by runtime1.js, useful to see exceptions thrown *)
+            H.div ~a:[H.a_id "output";] [];
+
             H.canvas
               ~a:[H.a_id "main_canvas"; H.a_width width; H.a_height height]
-              []
+              [];
           ]))
   )

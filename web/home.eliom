@@ -13,6 +13,8 @@ let main_service =
       {unit{ (* *) () }};
     Lwt.return
       (H.html (H.head (H.title (H.pcdata "Pfff Web Interface")) []) (H.body [
+        (* used by runtime1.js, useful to see exceptions thrown *)
+        H.div ~a:[H.a_id "output";] [];
 
         H.h1 [H.a Dump_server.main_service [H.pcdata "dumper"]  
                  ()];

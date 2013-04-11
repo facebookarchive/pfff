@@ -8,6 +8,7 @@ TOP=..
 ##############################################################################
 
 INCLUDEDIRS= $(TOP)/commons \
+ $(TOP)/h_program-lang/ \
  $(TOP)/h_visualization/ \
  $(TOP)/lang_php/parsing \
  $(TOP)/web/commons \
@@ -29,6 +30,7 @@ LIBS_CLIENT= -package js_of_ocaml,eliom,eliom.client \
   $(LIBS_SHARED)
 
 OBJS_SERVER= \
+ _server/globals.cmo \
  _server/dump_server.cmo \
  _server/codemap.cmo \
  _server/codegraph.cmo \
@@ -44,7 +46,12 @@ OBJS_CLIENT= \
  _client/test.cmo \
  _client/home.cmo \
 
+# We need h_program-lang for Database_code, but this leads to
+# requiring in turn ocamlgraph :( hopefully it will not be to big
 LIBS_CLIENT2= $(TOP)/commons/lib.cma \
+  $(TOP)/external/ocamlgraph/ocamlgraph.cma \
+  $(TOP)/commons/commons_graph.cma \
+  $(TOP)/h_program-lang/lib.cma \
   $(TOP)/h_visualization/lib.cma \
   $(TOP)/web/commons/lib_client.cma \
   $(TOP)/web/code_map/lib_client.cma \
@@ -58,8 +65,8 @@ SYSLIBS_SERVER=
 #to debug
 JSOPT=-jsopt -pretty -jsopt -noinline
 
-ELIOMC=eliomc -annot
-JS_OF_ELIOM=js_of_eliom -annot
+ELIOMC=eliomc -g -annot
+JS_OF_ELIOM=js_of_eliom -g -annot
 
 ##############################################################################
 # Top rules

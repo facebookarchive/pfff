@@ -78,5 +78,8 @@ let test_codemap_micro =
           (H.head (H.title (H.pcdata "Micro")) [ 
           ])
 	  (H.body [
+            (* used by runtime1.js, useful to see exceptions thrown *)
+            H.div ~a:[H.a_id "output";] [];
+
           ]))
   )
