@@ -3,7 +3,11 @@
 * 0.24 (Q2 2013) (??)
 
 ** web: resume work on ocsigen, port to eliom3, use of OPAM
-basic treemap service, dumper service, and overlay?
+basic treemap service, dumper service.
+
+** codegraph
+
+*** web frontend, using ocsigen
 
 ** scheck
 
