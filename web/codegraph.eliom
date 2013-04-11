@@ -20,6 +20,7 @@ end)
 let width = 1000
 let height = 1000
 module DM = Dependencies_matrix_code
+module Model = Model_codegraph
 
 }}
 
@@ -33,14 +34,19 @@ let main_service =
   (fun path () ->
     pr2 path;
 
-    (* TODO: compute config based on path *)
+    (* TODO: compute config based on path, and compute g depending
+     * on some OCaml pfff repo type.
+     *)
     let config = DM.basic_config_opti Globals.gopti in
     let m, _gopti =
       DM.build config (None) Globals.gopti in
-    
+
+    let w = { Model.
+       m;
+    } in
 
     ignore
-      {unit { View_matrix_codegraph.paint_weirrrrd %m }};
+      {unit { View_matrix_codegraph.paint %w }};
     Lwt.return
       (H.html 
           (H.head (H.title (H.pcdata "CodeGraph")) [ 

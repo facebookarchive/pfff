@@ -58,5 +58,5 @@ module DM = Dependencies_matrix_code
 (* Events *)
 (*****************************************************************************)
 
-let paint_weirrrrd w =
+let paint w =
   raise Todo
