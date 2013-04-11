@@ -13,12 +13,12 @@ INCLUDEDIRS= $(TOP)/commons \
   $(TOP)/h_program-visual/ \
 
 OBJS_SERVER= \
- shared_codemap.cmo \
- server_codemap.cmo \
+ shared_codegraph.cmo \
+ server_codegraph.cmo \
 
 OBJS_CLIENT= \
- draw_macro.cmo \
- client_codemap.cmo \
+ draw_matrix.cmo \
+ client_codegraph.cmo \
 
 LIBS_CLIENT= -package js_of_ocaml.syntax -syntax camlp4o
 

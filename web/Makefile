@@ -31,6 +31,7 @@ LIBS_CLIENT= -package js_of_ocaml,eliom,eliom.client \
 OBJS_SERVER= \
  _server/dump_server.cmo \
  _server/codemap.cmo \
+ _server/codegraph.cmo \
  _server/test.cmo \
  _server/home.cmo \
 
@@ -39,6 +40,7 @@ OBJS_SERVER= \
 
 OBJS_CLIENT= \
  _client/codemap.cmo \
+ _client/codegraph.cmo \
  _client/test.cmo \
  _client/home.cmo \
 
@@ -46,7 +48,7 @@ LIBS_CLIENT2= $(TOP)/commons/lib.cma \
   $(TOP)/h_visualization/lib.cma \
   $(TOP)/web/commons/lib_client.cma \
   $(TOP)/web/code_map/lib_client.cma \
-
+  $(TOP)/web/code_graph/lib_client.cma \
 
 SYSLIBS_CLIENT=str.cma unix.cma
 
@@ -88,6 +90,8 @@ _server/home.cmo: home.eliom
 	$(ELIOMC)  -c $(INCLUDES) $^
 _server/codemap.cmo: codemap.eliom
 	$(ELIOMC)  -c $(INCLUDES) $^
+_server/codegraph.cmo: codegraph.eliom
+	$(ELIOMC)  -c $(INCLUDES) $^
 _server/test.cmo: test.eliom
 	$(ELIOMC)  -c $(INCLUDES) $^
 
@@ -103,6 +107,9 @@ _client/home.cmo: home.eliom
 _client/codemap.cmo: codemap.eliom
 	$(ELIOMC)  -infer $(INCLUDES) $^
 	$(JS_OF_ELIOM) $(JSOPT) -c $(INCLUDES) $^
+_client/codegraph.cmo: codegraph.eliom
+	$(ELIOMC)  -infer $(INCLUDES) $^
+	$(JS_OF_ELIOM) $(JSOPT) -c $(INCLUDES) $^
 _client/test.cmo: test.eliom
 	$(ELIOMC)  -infer $(INCLUDES) $^
 	$(JS_OF_ELIOM) $(JSOPT) -c $(INCLUDES) $^
@@ -111,6 +118,8 @@ _client/test.cmo: test.eliom
 _server/test.type_mli: test.eliom
 	$(ELIOMC)  -infer $(INCLUDES) $^
 _server/codemap.type_mli: codemap.eliom
+	$(ELIOMC)  -infer $(INCLUDES) $^
+_server/codegraph.type_mli: codegraph.eliom
 	$(ELIOMC)  -infer $(INCLUDES) $^
 
 run:
@@ -122,6 +131,8 @@ annot:
 	ln -s _server/test.annot
 	$(ELIOMC) -annot -c $(INCLUDES) codemap.eliom
 	ln -s _server/codemap.annot
+	$(ELIOMC) -annot -c $(INCLUDES) codegraph.eliom
+	ln -s _server/codegraph.annot
 	$(ELIOMC) -annot -c $(INCLUDES) home.eliom
 	ln -s _server/home.annot
 	rm -f *.cm*
@@ -141,6 +152,7 @@ depend::
 
 # eliomdep does not handle dependencies between .eliom files for now
 _server/home.cmo: _server/codemap.cmo
+_server/home.cmo: _server/codegraph.cmo
 _server/home.cmo: _server/test.cmo
 
 ##############################################################################

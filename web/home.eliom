@@ -16,12 +16,17 @@ let main_service =
 
         H.h1 [H.a Dump_server.main_service [H.pcdata "dumper"]  
                  ()];
-(*        H.h1 [H.a Lxr_server.main_service  [H.pcdata "lxr"]     ""]; *)
-        H.h1 [H.a Codemap.main_service     [H.pcdata "codemap"] 
-                 "/home/pad/pfff/facebook/tests/mini_www"];
 
+        H.h1 [H.a Codemap.main_service     [H.pcdata "codemap"] 
+                 "/home/pad/pfff/"];
+        H.h1 [H.a Codegraph.main_service     [H.pcdata "codegraph"] 
+                 "/home/pad/pfff/"];
+
+(*        H.h1 [H.a Lxr_server.main_service  [H.pcdata "lxr"]     ""]; *)
+(*
         H.h1 [H.a Codemap.main_service     [H.pcdata "overlay"] 
                  "/home/pad/overlays/www"];
+*)
 
         H.h1 [H.a Test.main_service     [H.pcdata "test"] ()];
 
