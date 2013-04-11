@@ -113,7 +113,7 @@ let test_draw ctx =
 
   ctx##beginPath();
   ctx##moveTo (0.3, 0.3);
-  ctx##lineTo (0.3, 0.4);
+  ctx##lineTo (0.4, 0.3);
   ctx##lineTo (0.4, 0.4);
   ctx##lineTo (0.3, 0.4);
   ctx##closePath();

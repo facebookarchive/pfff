@@ -33,7 +33,7 @@ module DM = Dependencies_matrix_code
 (* TODO: factorize with pfff/code_graph/view_matrix.ml *)
 
 (*****************************************************************************)
-(* Helpers *)
+(* JS Helpers *)
 (*****************************************************************************)
 
 (* from jflo slides *)
@@ -41,6 +41,26 @@ let unopt x =
   Js.Opt.get x (fun () -> raise Not_found)
 let retrieve id =
   unopt (Dom_html.document##getElementById (Js.string id))
+
+(*****************************************************************************)
+(* Helpers *)
+(*****************************************************************************)
+
+let line_width_of_depth l d =
+  let h = l.height_cell in
+  match d with
+  | 0 -> h / 8.
+  | 1 -> h / 20.
+  | 2 -> h / 40.
+  | _ -> h / 80.
+
+let line_color_of_depth d =
+  match d with
+  | 0 -> "wheat"
+  | 1 -> "grey80"
+  | 2 -> "grey65"
+  | 3 -> "grey50"
+  | _ -> "grey30"
 
 (*****************************************************************************)
 (* Canvas helpers *)
@@ -72,7 +92,6 @@ let fill_rectangle_xywh ?alpha ~ctx ~x ~y ~w ~h ~color () =
 
   ctx##fill();
   ()
-
 
 let draw_rectangle ?alpha ~ctx ~color ~line_width r =
 
@@ -206,6 +225,171 @@ let draw_cells ctx w ~interactive_regions =
   done;
   ()
 
+let draw_left_tree ctx w ~interactive_regions =
+  let l = M.layout_of_w w in
+  let _font_size_default = 
+    min (l.height_cell/1.5) (l.x_start_matrix_left/10.) in
+(*
+  CairoH.set_font_size cr font_size_default;
+*)
+  let i = ref 0 in
+  let rec aux depth tree =
+    match tree with
+    (* a leaf *)
+    | DM.Node (node, []) ->
+        (* draw box around label *)
+        let x = float_of_int depth * l.width_vertical_label in
+        let y = (float_of_int !i) * l.height_cell + l.y_start_matrix_up in
+        let rect = { 
+          p = { x = x; y = y; };
+          q = { x = l.x_start_matrix_left; y = y + l.height_cell };
+        } in
+        let line_width = line_width_of_depth l depth in
+        let color = line_color_of_depth depth in
+        draw_rectangle ~ctx ~line_width ~color rect;
+
+        Common.push2 (Row !i, rect) interactive_regions;
+
+        (* draw horizontal lines around cells *)
+        let rect2 = {
+          p = { x = l.x_start_matrix_left; y = y; };
+          q = { x = l.x_end_matrix_right; y = y + l.height_cell };
+        } in
+        draw_rectangle ~ctx ~line_width ~color rect2;
+       
+        (* draw vertical lines around cells *)
+        let x' = (float_of_int !i) * l.width_cell + l.x_start_matrix_left in
+        let y'  = l.y_start_matrix_up in
+        let rect3 = {
+          p = { x = x'; y = y'; };
+          q = { x = x' + l.width_cell; y = l.y_end_matrix_down};
+        } in
+        draw_rectangle ~ctx ~line_width ~color rect3;
+
+        (* old: let node = Hashtbl.find w.m.DM.i_to_name i in *)
+(*
+        let color = color_of_node node in
+        let txt = txt_of_node node in
+        CairoH.set_source_color cr color ();
+        CairoH.set_font_size cr font_size_default;
+        let extent = CairoH.text_extents cr txt in
+        let w = extent.Cairo.text_width in
+        let width_for_label = l.x_start_matrix_left - x in
+        (* todo: could try different settings until it works? like in cm? *)
+        let font_size_final =
+          if w > width_for_label 
+          then (font_size_default / (w / width_for_label))
+          else font_size_default
+        in
+        CairoH.set_font_size cr font_size_final;
+
+        (* align text on the left *)
+        let extent = CairoH.text_extents cr txt in
+        let th = extent.Cairo.text_height in
+        Cairo.move_to cr (x + 0.002) (y + (l.height_cell /2.) + (th / 2.0));
+        CairoH.show_text cr txt;
+*)
+        incr i
+
+    (* a node, draw the label vertically *)
+    | DM.Node (node, xs) ->
+        let x = float_of_int depth * l.width_vertical_label in
+        let y = (float_of_int !i) * l.height_cell + l.y_start_matrix_up in
+        let n = float_of_int (List.length (DM.final_nodes_of_tree tree)) in
+        let rect = {
+          p = { x; y; };
+          q = { x = x + l.width_vertical_label; y = y + n * l.height_cell};
+        } in
+
+        let line_width = line_width_of_depth l depth in
+        draw_rectangle ~ctx ~line_width ~color:"SteelBlue2" rect;
+        (* todo? push2 ?? interactive_regions *)
+
+(*
+        let color = color_of_node node in
+        let txt = txt_of_node node in
+        CairoH.set_source_color cr color ();
+        let font_size_default = 
+          min (l.width_vertical_label/1.5) ((n * l.height_cell) /10.) in
+
+        CairoH.set_font_size cr font_size_default;
+        let extent = CairoH.text_extents cr txt in
+        let w = extent.Cairo.text_width in
+
+        let width_for_label = n * l.height_cell in
+        (* todo: could try different settings until it works? like in cm? *)
+        let font_size_final =
+          if w > width_for_label 
+          then (font_size_default / (w / width_for_label))
+          else font_size_default
+        in
+        CairoH.set_font_size cr font_size_final;
+
+        (* center the text *)
+        let extent = CairoH.text_extents cr txt in
+        let th = extent.Cairo.text_height in
+        let tw = extent.Cairo.text_width in
+        let angle = -. (Common2.pi / 2.) in
+        Cairo.move_to cr 
+          ((x + l.width_vertical_label / 2.) + (th / 2.0))
+          (y + ((n * l.height_cell) /2.) + (tw / 2.0));
+        Cairo.rotate cr ~angle;
+        CairoH.show_text cr txt;
+        Cairo.rotate cr ~angle:(-. angle);
+*)
+        xs +> List.iter (aux (depth +.. 1))
+  in
+  (* use dm.config, not w.config which is not necessaraly ordered *)
+  let config = w.m.DM.config in
+  (match config with
+  | DM.Node (_root, xs) -> xs +> List.iter (aux 0)
+  )
+
+let draw_up_columns ctx w ~interactive_regions =
+  let l = M.layout_of_w w in
+
+  (* peh because it exercises the spectrum of high letters *)
+(*
+  let extent = CairoH.text_extents cr "peh" in
+  let _base_tw = extent.Cairo.text_width / 3. in
+  let th = extent.Cairo.text_height in
+*)
+
+  (* not -.. 1, cos we draw lines here, not rectangles *)
+  for j = 0 to l.nb_elts do
+    let x = (float_of_int j) * l.width_cell + l.x_start_matrix_left in
+    let y = l.y_start_matrix_up in
+    let rect = {
+      (* fake rectangle *)
+      p = { x = x; y = 0. };
+      q = { x = x + l.width_cell; y = l.y_start_matrix_up };
+    } in
+    Common.push2 (Column j, rect) interactive_regions;
+
+    ctx##strokeStyle <- Js.string (rgba_of_color ~ctx ~color:"wheat" ());
+    ctx##moveTo(x, y);
+    (* because of the xy_ratio, this actually does not do a 45 deg line.
+     * old: Cairo.line_to cr (x + (y_start_matrix_up / atan (pi / 4.)))  0.; 
+     *)
+    ctx##lineTo (x + (l.y_start_matrix_up / atan (Common2.pi / 2.8)),   0.); 
+    ctx##stroke();
+
+    if j < l.nb_elts then begin
+(*
+      let node = w.m.DM.i_to_name.(j) in
+      Cairo.move_to cr (x + (l.width_cell / 2.0) + (th / 2.0)) (y - 0.001);
+      let angle = -. (Common2.pi / 4.) in
+      Cairo.rotate cr ~angle:angle;
+      let color = color_of_node node in
+      let txt = txt_of_node node in
+      CairoH.set_source_color cr color ();
+      CairoH.show_text cr txt;
+      Cairo.rotate cr ~angle:(-. angle);
+*)
+      ()
+    end;
+  done;
+  ()
 
 (*****************************************************************************)
 (* Semantic overlays *)
@@ -231,6 +415,8 @@ let draw_matrix ctx w =
 
   let interactive_regions = ref [] in
   draw_cells      ctx w ~interactive_regions;
+  draw_left_tree  ctx w ~interactive_regions;
+  draw_up_columns ctx w ~interactive_regions;
 
   ()
 

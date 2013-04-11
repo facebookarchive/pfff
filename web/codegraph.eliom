@@ -18,8 +18,8 @@ end)
 
 {shared{
 
-let width = 1000
-let height = 600
+let width = 1200
+let height = 680
 module DM = Dependencies_matrix_code
 module Model = Model_codegraph
 
