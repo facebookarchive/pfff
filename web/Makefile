@@ -17,7 +17,7 @@ INCLUDEDIRS= $(TOP)/commons \
 
 INCLUDES?=$(INCLUDEDIRS:%=-I %) $(SYSINCLUDES)
 
-MAKESUBDIRS=commons code_map
+MAKESUBDIRS=commons code_map code_graph
 
 # for 'make annot'
 LIBS_SHARED= -package deriving-ocsigen.syntax,js_of_ocaml.deriving.syntax \
