@@ -17,8 +17,9 @@ end)
 (*****************************************************************************)
 
 {shared{
+
 let width = 1000
-let height = 1000
+let height = 600
 module DM = Dependencies_matrix_code
 module Model = Model_codegraph
 
@@ -43,6 +44,8 @@ let main_service =
 
     let w = { Model.
        m;
+       width = width;
+       height = height;
     } in
 
     ignore
@@ -51,7 +54,7 @@ let main_service =
       (H.html 
           (H.head (H.title (H.pcdata "CodeGraph")) [ 
           ])
-	  (H.body [
+          (H.body [
             (* used by runtime1.js, useful to see exceptions thrown *)
             H.div ~a:[H.a_id "output";] [];
 

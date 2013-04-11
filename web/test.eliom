@@ -111,6 +111,14 @@ let test_draw ctx =
   ctx##lineTo (0.1, 0.2);
   ctx##stroke();
 
+  ctx##beginPath();
+  ctx##moveTo (0.3, 0.3);
+  ctx##lineTo (0.3, 0.4);
+  ctx##lineTo (0.4, 0.4);
+  ctx##lineTo (0.3, 0.4);
+  ctx##closePath();
+  ctx##fill();
+
 }}
 
 let main_service =

@@ -85,8 +85,8 @@ rec:
 	set -e; for i in $(MAKESUBDIRS); do $(MAKE) -C $$i all || exit 1; done 
 
 # server-side
-var/app.cma: $(OBJS_SERVER)
-	eliomc -a -o $@ $(SYSLIBS_SERVER) $(LIBS_SERVER2) $^
+var/app.cma: $(LIBS_SERVER2) $(OBJS_SERVER) 
+	eliomc -a -o $@ $(SYSLIBS_SERVER) $^
 
 _server/htmlize_php2.cmo: htmlize_php2.ml
 	$(ELIOMC) -c $(INCLUDES) -package tyxml htmlize_php2.mli
@@ -104,7 +104,7 @@ _server/test.cmo: test.eliom
 
 
 # client-side
-var/static/app.js: $(OBJS_CLIENT) runtime1.js
+var/static/app.js: $(OBJS_CLIENT) $(LIBS_CLIENT2) runtime1.js
 	$(JS_OF_ELIOM) $(JSOPT) -o $@ $(SYSLIBS_CLIENT) $(LIBS_CLIENT2)  $(OBJS_CLIENT) -jsopt runtime1.js
 
 
@@ -129,7 +129,7 @@ _server/codemap.type_mli: codemap.eliom
 _server/codegraph.type_mli: codegraph.eliom
 	$(ELIOMC)  -infer $(INCLUDES) $^
 
-run:
+run: all
 	ocsigenserver -c ocsigen.conf
 
 annot:
@@ -153,14 +153,17 @@ depend::
 clean::
 	rm -rf _client _server
 
-depend::
-	eliomdep -client *.ml *.eliom  > .depend
-	eliomdep -server *.ml *.eliom  >> .depend
+depend2::
+	eliomdep -client *.ml *.eliom $(INCLUDES)  > .depend
+	eliomdep -server *.ml *.eliom $(INCLUDES)  >> .depend
 
 # eliomdep does not handle dependencies between .eliom files for now
 _server/home.cmo: _server/codemap.cmo
 _server/home.cmo: _server/codegraph.cmo
 _server/home.cmo: _server/test.cmo
+
+# eliomdep does not handle dependencies between .eliom files and other dirs
+_client/codegraph.cmo: code_graph/lib_client.cma
 
 ##############################################################################
 # Generic ocaml rules
