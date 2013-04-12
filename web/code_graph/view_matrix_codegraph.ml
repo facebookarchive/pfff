@@ -171,7 +171,7 @@ let text_extends_scaled ctx w str ~size =
   (* rough approximation *)
 
   let width = size * ((float_of_int (String.length str)) * 0.8) in
-  let height = size * 0.8 in
+  let height = size * 0.9 in
   width, height
   
 
@@ -244,8 +244,8 @@ let draw_cells ctx w ~interactive_regions =
                 l.width_cell / (float_of_int (String.length txt))
           in
           let tw, th = text_extends_scaled ctx w txt ~size:font_size in
-          pr2 (spf "tw = %f, th = %f" tw th);
-          (*let tw, th = 0. , 0. in*)
+          (* pr2 (spf "tw = %f, th = %f" tw th); *)
+          (* let tw, th = 0. , 0. in *)
 
           let x = rect.p.x in
           let y = rect.p.y in
