@@ -46,6 +46,54 @@ let retrieve id =
 (* Helpers *)
 (*****************************************************************************)
 
+(* similar to highlight_code.ml *)
+let color_of_node (_, kind) =
+  match kind with
+  | E.Function -> "gold"
+  | E.Prototype -> "gold4"
+  (* less: different color for interfaces and traits? *)
+  | E.Class _ -> "coral"
+  | E.Module -> "chocolate"
+  | E.Package -> "chocolate"
+  | E.Type -> "YellowGreen"
+  | E.Constant -> "pink"
+  | E.Global -> "cyan"
+  | E.GlobalExtern -> "cyan4"
+  | E.Macro -> "pink1"
+  | E.Exception -> "orchid"
+  | E.TopStmts -> "black"
+
+  | E.Method _ -> "gold3"
+  | E.Field -> "MediumPurple1"
+  | E.ClassConstant -> "pink3"
+  | E.Constructor -> "pink3"
+
+  | E.Other s -> raise Todo
+
+  | E.Dir -> "SteelBlue2"
+  | E.MultiDirs -> "SteelBlue3"
+  | E.File -> "wheat"
+
+(* we often keep fully qualified names in the graph_code to avoid
+ * ambiguities between entities, but in code_graph we prefer to
+ * display short names as the parents already contain the
+ * information.
+ *)
+let txt_of_node (s, kind) = 
+  match kind with
+  | E.Dir | E.File | E.MultiDirs -> Common2.basename s
+  | E.Package | E.Module
+  | E.Class _ 
+  | E.Field | E.Constructor | E.Method _  | E.ClassConstant
+  | E.Function | E.Type | E.Constant | E.Global
+  | E.Exception 
+    ->
+      let xs = Common.split "[.]" s in
+      Common2.list_last xs
+  | _ -> s
+
+(* todo: style/font_of_node_kind? so put in bold directories *)
+
 let line_width_of_depth l d =
   let h = l.height_cell in
   match d with
@@ -261,11 +309,9 @@ let draw_cells ctx w ~interactive_regions =
 
 let draw_left_tree ctx w ~interactive_regions =
   let l = M.layout_of_w w in
-  let _font_size_default = 
+  let font_size_default = 
     min (l.height_cell/1.5) (l.x_start_matrix_left/10.) in
-(*
-  CairoH.set_font_size cr font_size_default;
-*)
+
   let i = ref 0 in
   let rec aux depth tree =
     match tree with
@@ -301,28 +347,24 @@ let draw_left_tree ctx w ~interactive_regions =
         draw_rectangle ~ctx ~line_width ~color rect3;
 
         (* old: let node = Hashtbl.find w.m.DM.i_to_name i in *)
-(*
         let color = color_of_node node in
         let txt = txt_of_node node in
-        CairoH.set_source_color cr color ();
-        CairoH.set_font_size cr font_size_default;
-        let extent = CairoH.text_extents cr txt in
-        let w = extent.Cairo.text_width in
+        let tw, _ = text_extends_scaled ctx w txt ~size:font_size_default in
+
         let width_for_label = l.x_start_matrix_left - x in
         (* todo: could try different settings until it works? like in cm? *)
         let font_size_final =
-          if w > width_for_label 
-          then (font_size_default / (w / width_for_label))
+          if tw > width_for_label 
+          then (font_size_default / (tw / width_for_label))
           else font_size_default
         in
-        CairoH.set_font_size cr font_size_final;
 
         (* align text on the left *)
-        let extent = CairoH.text_extents cr txt in
-        let th = extent.Cairo.text_height in
-        Cairo.move_to cr (x + 0.002) (y + (l.height_cell /2.) + (th / 2.0));
-        CairoH.show_text cr txt;
-*)
+        let _, th = text_extends_scaled ctx w txt ~size:font_size_final in
+        let x = (x + 0.002) in
+        let y = (y + (l.height_cell /2.) + (th / 2.0)) in
+        ctx##fillStyle <- Js.string (rgba_of_color ~ctx ~color ());
+        fill_text_scaled ctx w txt ~size:font_size_final ~x ~y;
         incr i
 
     (* a node, draw the label vertically *)

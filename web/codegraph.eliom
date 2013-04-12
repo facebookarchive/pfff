@@ -38,6 +38,7 @@ let main_service =
     (* TODO: compute config based on path, and compute g depending
      * on some OCaml pfff repo type.
      *)
+    let _path = [DM.Expand ("lang_php", Database_code.Dir)] in
     let config = DM.basic_config_opti Globals.gopti in
     let m, _gopti =
       DM.build config (None) Globals.gopti in
