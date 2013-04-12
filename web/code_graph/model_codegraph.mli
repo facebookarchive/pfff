@@ -4,6 +4,11 @@ type world_client = {
 
   width:  int;
   height: int;
+
+  orig_coord_width: float;
+  orig_coord_height: float;
+
+  width_text_etalon_normalized_coord: float;
 }
 
 type region =

@@ -124,17 +124,56 @@ let fill_rectangle ?alpha ~ctx ~color r =
   ctx##fill();
   ()
 
-(*****************************************************************************)
-(* Coordinate system *)
-(*****************************************************************************)
-
-let scale_coordinate_system ctx w =
+let fill_text_scaled ctx w str ~x ~y ~size =
+  ctx##save ();
   ctx##setTransform (1.,0.,0.,1.,0.,0.);
-  ctx##scale (
-    (float_of_int w.width / M.xy_ratio),
-    (float_of_int w.height)
-  );
+
+  (* y should be between 0 and 1 *)
+  let y' = y * w.orig_coord_height in
+  (* x should be between 0 and 1.71 *)
+  let x' = (x / xy_ratio) * w.orig_coord_width in
+  
+  ctx##translate (x', y');
+
+  (* ugly *)
+  let size = size * 0.9 in
+
+  let scale_factor = size / w.width_text_etalon_normalized_coord in
+
+  ctx##scale (scale_factor, scale_factor);
+  ctx##fillText (Js.string str, 0., 0.);
+  ctx##restore ();
   ()
+
+(* todo: can probably compute the extend without scaling and so on,
+ * just by playing with w.xxx info
+ *)
+let text_extends_scaled ctx w str ~size =
+(*
+  ctx##save ();
+  ctx##setTransform (1.,0.,0.,1.,0.,0.);
+
+  let scale_factor = size / w.width_text_etalon_normalized_coord in
+
+  ctx##scale (scale_factor, scale_factor);
+  (* does not work, it returns value on unscaled world *)
+  let metric = ctx##measureText (Js.string str) in
+  let width = metric##width in
+  let metric = ctx##measureText (Js.string "X") in
+  let height = metric##width in
+  ctx##restore ();
+  width, height
+*)
+
+  (* ugly *)
+  let size = size * 0.9 in
+  
+  (* rough approximation *)
+
+  let width = size * ((float_of_int (String.length str)) * 0.8) in
+  let height = size * 0.8 in
+  width, height
+  
 
 (*****************************************************************************)
 (* Matrix Coord -> XY Coord  *)
@@ -197,28 +236,23 @@ let draw_cells ctx w ~interactive_regions =
         let n = w.m.DM.matrix.(i).(j) in
         if n > 0 then begin
           let txt = string_of_int n in
-          let _font_size = 
+          let font_size = 
             match n with
             | _ when n <= 10 -> 
                 l.width_cell / 2.
             | _ ->
                 l.width_cell / (float_of_int (String.length txt))
           in
-          ()
-(*
-          CairoH.set_font_size cr font_size;
-          (* todo: optimize? *)
-          let extent = CairoH.text_extents cr txt in
-          let tw = extent.Cairo.text_width in
-          let th = extent.Cairo.text_height in
+          let tw, th = text_extends_scaled ctx w txt ~size:font_size in
+          pr2 (spf "tw = %f, th = %f" tw th);
+          (*let tw, th = 0. , 0. in*)
+
           let x = rect.p.x in
           let y = rect.p.y in
           
           let x = x + (l.width_cell / 2.) - (tw / 2.0) in
           let y = y + (l.height_cell / 2.) + (th / 2.0) in
-          Cairo.move_to cr x y;
-          CairoH.show_text cr txt;
-*)
+          fill_text_scaled ctx w txt ~x ~y ~size:font_size
         end;
       end
     done
@@ -459,8 +493,18 @@ let paint w =
          width_text_etalon_normalized_coord);
 
 
-  scale_coordinate_system ctx w;
+  ctx##setTransform (1.,0.,0.,1.,0.,0.);
+  ctx##scale (
+    (float_of_int w.width / M.xy_ratio),
+    (float_of_int w.height));
 
+  let w = { w with
+    width_text_etalon_normalized_coord;
+    orig_coord_width;
+    orig_coord_height = float_of_int w.height;
+  }
+  in
+    
   draw_matrix ctx w;
   ()
 
