@@ -496,7 +496,8 @@ let paint w =
 (*****************************************************************************)
 
 let recompute_matrix w =
-  let config = M.config_of_path w.path w.model in
+  let config, gopti = DM.config_of_path w.path w.model.gopti in
+  w.model.gopti <- gopti;
   let m, gopti = 
     Common.profile_code "Model.building matrix" (fun () -> 
       Dependencies_matrix_code.build config 

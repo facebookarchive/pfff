@@ -17,10 +17,6 @@ type cell_coord =
 
 val verbose: bool ref
 
-(* just the expanded root *)
-val basic_config: Graph_code.graph -> config
-val basic_config_opti: Graph_code_opti.graph -> config
-
 val threshold_pack: int ref
 (* we now return also a new graph because we may have modified the
  * input graph to add some extra "..." nodes
@@ -32,6 +28,11 @@ val build:
 val explain_cell_list_use_edges: 
   cell_coord -> dm -> Graph_code_opti.graph ->
   (Graph_code.node * Graph_code.node) list
+
+
+(* just the expanded root *)
+val basic_config: Graph_code.graph -> config
+val basic_config_opti: Graph_code_opti.graph -> config
 
 type config_path_elem = 
   | Expand of Graph_code.node
@@ -51,6 +52,10 @@ val expand_node_opti:
   Graph_code.node -> tree -> Graph_code_opti.graph -> tree
 val focus_on_node:
   Graph_code.node -> deps_style -> tree -> dm -> tree
+
+(* we return a gopti because of threshold_pack that may alter the graph *)
+val config_of_path: config_path -> Graph_code_opti.graph ->
+  config * Graph_code_opti.graph
 
 (* matrix analysis *)
 val is_dead_column: 

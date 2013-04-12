@@ -729,6 +729,55 @@ let focus_on_node n deps_style tree dm =
   in
   (* should be a Some cos at least we have 'n' in the tree *)
   Common2.some (aux tree)
+
+
+(*****************************************************************************)
+(* Path manipulation *)
+(*****************************************************************************)
+
+(* less: could be put in dependencies_matrix_code.ml *)
+let put_expand_just_before_last_focus_if_not_children n xs g =
+  let rec aux xs =
+    match xs with
+    | [] -> [Expand n]
+    | x::xs ->
+        (match x with
+        | Expand _ -> x::aux xs
+        | Focus (n2,style) ->
+            let children = Graph_code_opti.all_children n2 g in
+            if not (List.mem n children)
+            then (Expand n)::x::xs
+            else x::aux xs
+        )
+  in
+  aux xs
+
+let fix_path path g =
+  let rec aux acc xs =
+    match xs with
+    | [] -> acc
+    | x::xs ->
+        (match x with
+        | Focus _ -> 
+            aux (acc ++ [x]) xs
+        | Expand (n) ->
+            aux (put_expand_just_before_last_focus_if_not_children n acc g) xs
+        )
+  in
+  aux [] path
+
+let config_of_path (path: config_path) gopti =
+  let path = fix_path path gopti in
+  let initial_config = basic_config_opti gopti in
+  (* pr2_gen path; *)
+  path +> List.fold_left (fun (config, gopti) e ->
+    match e with
+    | Expand node ->
+        expand_node_opti node config gopti, gopti
+    | Focus (node, kind) ->
+        let dm, gopti = build config None gopti in
+        focus_on_node node kind config dm, gopti
+  ) (initial_config, gopti)
   
 
 (*****************************************************************************)

@@ -94,55 +94,6 @@ let new_surface ~alpha ~width ~height =
     ) width height
 
 (*****************************************************************************)
-(* Path manipulation *)
-(*****************************************************************************)
-
-(* less: could be put in dependencies_matrix_code.ml *)
-let put_expand_just_before_last_focus_if_not_children n xs g =
-  let rec aux xs =
-    match xs with
-    | [] -> [DM.Expand n]
-    | x::xs ->
-        (match x with
-        | DM.Expand _ -> x::aux xs
-        | DM.Focus (n2,style) ->
-            let children = Graph_code_opti.all_children n2 g in
-            if not (List.mem n children)
-            then (DM.Expand n)::x::xs
-            else x::aux xs
-        )
-  in
-  aux xs
-
-let fix_path path g =
-  let rec aux acc xs =
-    match xs with
-    | [] -> acc
-    | x::xs ->
-        (match x with
-        | DM.Focus _ -> 
-            aux (acc ++ [x]) xs
-        | DM.Expand (n) ->
-            aux (put_expand_just_before_last_focus_if_not_children n acc g) xs
-        )
-  in
-  aux [] path
-
-let config_of_path (path: DM.config_path) m =
-  let path = fix_path path m.gopti in
-  let initial_config = DM.basic_config_opti m.gopti in
-  pr2_gen path;
-  path +> List.fold_left (fun config e ->
-    match e with
-    | DM.Expand node ->
-        DM.expand_node_opti node config m.gopti
-    | DM.Focus (node, kind) ->
-        let dm, gopti = DM.build config None m.gopti in
-        m.gopti <- gopti;
-        DM.focus_on_node node kind config dm
-  ) initial_config
-
-(*****************************************************************************)
 (* Main entry point *)
 (*****************************************************************************)
 
@@ -150,7 +101,8 @@ let config_of_path (path: DM.config_path) m =
  * coupling: with View_matrix.recompute_matrix
  *)
 let init_world ?(width = 600) ?(height = 600) path model =
-  let config = config_of_path path model in
+  let config, gopti = DM.config_of_path path model.gopti in
+  model.gopti <- gopti;
   let m, gopti = 
     Common.profile_code "Model.building matrix" (fun () -> 
       Dependencies_matrix_code.build config 
