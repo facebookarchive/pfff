@@ -172,7 +172,7 @@ let fill_rectangle ?alpha ~ctx ~color r =
   ctx##fill();
   ()
 
-let fill_text_scaled ctx w str ~x ~y ~size =
+let fill_text_scaled ctx w ?(rotate=0.) ~x ~y ~size str =
   ctx##save ();
   ctx##setTransform (1.,0.,0.,1.,0.,0.);
 
@@ -182,6 +182,7 @@ let fill_text_scaled ctx w str ~x ~y ~size =
   let x' = (x / xy_ratio) * w.orig_coord_width in
   
   ctx##translate (x', y');
+  ctx##rotate (rotate);
 
   (* ugly *)
   let size = size * 0.9 in
@@ -196,7 +197,7 @@ let fill_text_scaled ctx w str ~x ~y ~size =
 (* todo: can probably compute the extend without scaling and so on,
  * just by playing with w.xxx info
  *)
-let text_extends_scaled ctx w str ~size =
+let text_extents_scaled ctx w str ~size =
 (*
   ctx##save ();
   ctx##setTransform (1.,0.,0.,1.,0.,0.);
@@ -291,7 +292,7 @@ let draw_cells ctx w ~interactive_regions =
             | _ ->
                 l.width_cell / (float_of_int (String.length txt))
           in
-          let tw, th = text_extends_scaled ctx w txt ~size:font_size in
+          let tw, th = text_extents_scaled ctx w txt ~size:font_size in
           (* pr2 (spf "tw = %f, th = %f" tw th); *)
           (* let tw, th = 0. , 0. in *)
 
@@ -300,7 +301,7 @@ let draw_cells ctx w ~interactive_regions =
           
           let x = x + (l.width_cell / 2.) - (tw / 2.0) in
           let y = y + (l.height_cell / 2.) + (th / 2.0) in
-          fill_text_scaled ctx w txt ~x ~y ~size:font_size
+          fill_text_scaled ctx w ~x ~y ~size:font_size txt;
         end;
       end
     done
@@ -349,7 +350,7 @@ let draw_left_tree ctx w ~interactive_regions =
         (* old: let node = Hashtbl.find w.m.DM.i_to_name i in *)
         let color = color_of_node node in
         let txt = txt_of_node node in
-        let tw, _ = text_extends_scaled ctx w txt ~size:font_size_default in
+        let tw, _ = text_extents_scaled ctx w txt ~size:font_size_default in
 
         let width_for_label = l.x_start_matrix_left - x in
         (* todo: could try different settings until it works? like in cm? *)
@@ -360,11 +361,11 @@ let draw_left_tree ctx w ~interactive_regions =
         in
 
         (* align text on the left *)
-        let _, th = text_extends_scaled ctx w txt ~size:font_size_final in
+        let _, th = text_extents_scaled ctx w txt ~size:font_size_final in
         let x = (x + 0.002) in
         let y = (y + (l.height_cell /2.) + (th / 2.0)) in
         ctx##fillStyle <- Js.string (rgba_of_color ~ctx ~color ());
-        fill_text_scaled ctx w txt ~size:font_size_final ~x ~y;
+        fill_text_scaled ctx w ~size:font_size_final ~x ~y txt;
         incr i
 
     (* a node, draw the label vertically *)
@@ -381,38 +382,30 @@ let draw_left_tree ctx w ~interactive_regions =
         draw_rectangle ~ctx ~line_width ~color:"SteelBlue2" rect;
         (* todo? push2 ?? interactive_regions *)
 
-(*
         let color = color_of_node node in
+        ctx##fillStyle <- Js.string (rgba_of_color ~ctx ~color ());
         let txt = txt_of_node node in
-        CairoH.set_source_color cr color ();
         let font_size_default = 
           min (l.width_vertical_label/1.5) ((n * l.height_cell) /10.) in
 
-        CairoH.set_font_size cr font_size_default;
-        let extent = CairoH.text_extents cr txt in
-        let w = extent.Cairo.text_width in
+        let tw,_ = text_extents_scaled ctx w txt ~size:font_size_default in
 
         let width_for_label = n * l.height_cell in
         (* todo: could try different settings until it works? like in cm? *)
         let font_size_final =
-          if w > width_for_label 
-          then (font_size_default / (w / width_for_label))
+          if tw > width_for_label 
+          then (font_size_default / (tw / width_for_label))
           else font_size_default
         in
-        CairoH.set_font_size cr font_size_final;
 
         (* center the text *)
-        let extent = CairoH.text_extents cr txt in
-        let th = extent.Cairo.text_height in
-        let tw = extent.Cairo.text_width in
+        let tw, th = text_extents_scaled ctx w txt ~size:font_size_final in
         let angle = -. (Common2.pi / 2.) in
-        Cairo.move_to cr 
-          ((x + l.width_vertical_label / 2.) + (th / 2.0))
-          (y + ((n * l.height_cell) /2.) + (tw / 2.0));
-        Cairo.rotate cr ~angle;
-        CairoH.show_text cr txt;
-        Cairo.rotate cr ~angle:(-. angle);
-*)
+        let x = ((x + l.width_vertical_label / 2.) + (th / 2.0)) in
+        let y = (y + ((n * l.height_cell) /2.) + (tw / 2.0)) in
+        fill_text_scaled ~x ~y ~size:font_size_final
+          ~rotate:angle ctx w txt;
+
         xs +> List.iter (aux (depth +.. 1))
   in
   (* use dm.config, not w.config which is not necessaraly ordered *)
