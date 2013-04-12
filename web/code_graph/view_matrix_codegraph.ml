@@ -416,13 +416,10 @@ let draw_left_tree ctx w ~interactive_regions =
 
 let draw_up_columns ctx w ~interactive_regions =
   let l = M.layout_of_w w in
+  let font_size_default = min (l.height_cell/1.5) (l.x_start_matrix_left/10.) in
 
   (* peh because it exercises the spectrum of high letters *)
-(*
-  let extent = CairoH.text_extents cr "peh" in
-  let _base_tw = extent.Cairo.text_width / 3. in
-  let th = extent.Cairo.text_height in
-*)
+  let _, th = text_extents_scaled ctx w ~size:font_size_default "peh" in
 
   (* not -.. 1, cos we draw lines here, not rectangles *)
   for j = 0 to l.nb_elts do
@@ -444,17 +441,14 @@ let draw_up_columns ctx w ~interactive_regions =
     ctx##stroke();
 
     if j < l.nb_elts then begin
-(*
       let node = w.m.DM.i_to_name.(j) in
-      Cairo.move_to cr (x + (l.width_cell / 2.0) + (th / 2.0)) (y - 0.001);
+      let x = (x + (l.width_cell / 2.0) + (th / 2.0)) in
+      let y = (y - 0.001) in
       let angle = -. (Common2.pi / 4.) in
-      Cairo.rotate cr ~angle:angle;
       let color = color_of_node node in
       let txt = txt_of_node node in
-      CairoH.set_source_color cr color ();
-      CairoH.show_text cr txt;
-      Cairo.rotate cr ~angle:(-. angle);
-*)
+      ctx##fillStyle <- Js.string (rgba_of_color ~ctx ~color ());
+      fill_text_scaled ctx w ~rotate:angle ~x ~y ~size:font_size_default txt;
       ()
     end;
   done;

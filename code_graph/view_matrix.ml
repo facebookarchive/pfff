@@ -306,6 +306,9 @@ let draw_left_tree cr w ~interactive_regions =
 
 let draw_up_columns cr w ~interactive_regions =
   let l = M.layout_of_w w in
+(* todo? no context for the size?
+  let font_size_default = min (l.height_cell/1.5) (l.x_start_matrix_left/10.) in
+*)
 
   (* peh because it exercises the spectrum of high letters *)
   let extent = CairoH.text_extents cr "peh" in
