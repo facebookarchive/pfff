@@ -165,6 +165,8 @@ _server/home.cmo: _server/test.cmo
 # eliomdep does not handle dependencies between .eliom files and other dirs
 _client/codegraph.cmo: code_graph/lib_client.cma
 
+_server/codegraph.cmo: _server/globals.cmo
+
 ##############################################################################
 # Generic ocaml rules
 ##############################################################################
