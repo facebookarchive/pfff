@@ -27,12 +27,12 @@ MYSRC=common.ml common2.ml common_extra.ml \
       concurrency.ml parallel.ml \
 
 
-# src from other authors, got from the web or caml hump, too small to be 
+# src from other authors, got from the web or caml hump, too small to be
 # in their own external/ocamlxxx/
 SRC=ocamlextra/dumper.ml
 SRC+=ocamlextra/ANSITerminal.ml
 # defunctorized version of standard set/map; g for generic
-SRC+=ocamlextra/set_poly.ml ocamlextra/map_poly.ml 
+SRC+=ocamlextra/set_poly.ml ocamlextra/map_poly.ml
 SRC+=ocamlextra/setPt.ml
 SRC+=$(MYSRC)
 SRC+=ocamlextra/enum.ml ocamlextra/dynArray.ml
@@ -49,7 +49,7 @@ SYSLIBS=str.cma bigarray.cma unix.cma nums.cma
 INCLUDEDIRS=ocamlextra ocollection
 SUBDIRS=ocamlextra ocollection
 
-# sexp/json/xml are so helpful to debug code that they are considered 
+# sexp/json/xml are so helpful to debug code that they are considered
 # fundamental and so they are part of commons.cma
 
 ifeq ($(FEATURE_SEXP_BUILTIN_COMMONS),1)
@@ -102,7 +102,7 @@ endif
 
 
 ifeq ($(FEATURE_JSON_BUILTIN_COMMONS),1)
-SRC+=  
+SRC+=
 #NOMORE: json_common.ml
 endif
 
@@ -115,6 +115,8 @@ endif
 
 OBJS = $(SRC:.ml=.cmo)
 OPTOBJS = $(SRC:.ml=.cmx)
+
+COBJS=realpath.o
 
 # so one can just include common.cma to compile
 # but not worth it, because does not work well for native code
@@ -152,15 +154,15 @@ PYSYSLIBS=python.cma
 
 #ocamlmpi
 MYMPISRC=distribution.ml
-MPIINCLUDES=-I ../external/ocamlmpi -I +ocamlmpi 
+MPIINCLUDES=-I ../external/ocamlmpi -I +ocamlmpi
 MPISYSLIBS=mpi.cma
 
-#pcre 
+#pcre
 MYREGEXPSRC=regexp.ml
 REGEXPINCLUDES=-I ../external/ocamlpcre/lib  -I ../../ocamlpcre/lib
 #REGEXPINCLUDES=-I +pcre
 
-#sexplib 
+#sexplib
 MYSEXPSRC=sexp_common.ml
 SEXPINCLUDES=-I ../ocamlsexp -I ../external/ocamltarzan/lib-sexp -I ../../ocamltarzan/lib-sexp
 
@@ -197,9 +199,9 @@ INCLUDES=$(INCLUDEDIRS:%=-I %) $(INCLUDESEXTRA)
 # For profiling use:  -p -inline 0
 OPTFLAGS=-thread
 
-# The OPTBIN variable is here to allow to use ocamlc.opt instead of 
+# The OPTBIN variable is here to allow to use ocamlc.opt instead of
 # ocaml, when it is available, which speeds up compilation. So
-# if you want the fast version of the ocaml chain tools, set this var 
+# if you want the fast version of the ocaml chain tools, set this var
 # or setenv it to ".opt" in your startup script.
 OPTBIN ?= #.opt
 
@@ -230,11 +232,11 @@ all.opt: $(OPTLIB)
 opt: all.opt
 top: $(TARGET).top
 
-$(LIB): $(OBJS)
-	$(OCAMLC) -a -o $@ $(BUILTINLIBS) $^
+$(LIB): $(OBJS) $(COBJS)
+	$(OCAMLMKLIB) -o lib $(BUILTINLIBS) $^
 
-$(OPTLIB): $(OPTOBJS)
-	$(OCAMLOPT) -a -o $@ $(BUILTINLIBSOPT) $^
+$(OPTLIB): $(OPTOBJS) $(COBJS)
+	$(OCAMLMKLIB) -o lib $(BUILTINLIBSOPT) $^
 
 $(TARGET).top: $(OBJS)
 	$(OCAMLMKTOP) -o $@ $(SYSLIBS) $^
@@ -345,6 +347,9 @@ commons_backtrace.cma: $(MYBACKTRACESRC:.ml=.cmo) backtrace_c.o
 commons_backtrace.cmxa: $(MYBACKTRACESRC:.ml=.cmx) backtrace_c.o
 	$(OCAMLMKLIB) -o commons_backtrace  $^
 
+realpath.o: ocamlextra/realpath.c
+	$(OCAMLC) -c $^ -o $@
+
 clean::
 	rm -f dllcommons_backtrace.so
 
@@ -423,7 +428,7 @@ LPSRC1=common.mli \
  glimpse.mli parser_combinators.mli
 
 LPSRCSHARED=common.ml interfaces.ml concurrency.ml
-# internal oriented 
+# internal oriented
 LPSRC2=
 
 LPSRC=$(LPSRC1) $(LPSRCSHARED) $(LPSRC2)
@@ -435,11 +440,11 @@ SYNCWEB=~/c__syncweb/syncweb $(SYNCFLAGS)
 NOWEB=~/c__syncweb/scripts/noweblatex
 OCAMLDOC=ocamldoc $(INCLUDES)
 
-PDFLATEX=pdflatex --shell-escape 
+PDFLATEX=pdflatex --shell-escape
 
 #------------------------------------------------------------------------------
 sync:
-	for i in $(LPSRC); do $(SYNCWEB) $(SRCNW) $$i || exit 1; done 
+	for i in $(LPSRC); do $(SYNCWEB) $(SRCNW) $$i || exit 1; done
 
 pdf:
 	$(NOWEB) Commons.tex.nw > Commons.tex
@@ -454,7 +459,7 @@ dot:
 doti:
 
 touch:
-	for i in $(SRCNW); do touch $$i; done 
+	for i in $(SRCNW); do touch $$i; done
 
 #------------------------------------------------------------------------------
 lpclean::
