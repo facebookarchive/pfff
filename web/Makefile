@@ -105,7 +105,7 @@ _server/test.cmo: test.eliom
 
 # client-side
 var/static/app.js: $(OBJS_CLIENT) $(LIBS_CLIENT2) runtime1.js
-	$(JS_OF_ELIOM) $(JSOPT) -o $@ $(SYSLIBS_CLIENT) $(LIBS_CLIENT2)  $(OBJS_CLIENT) -jsopt runtime1.js
+	$(JS_OF_ELIOM) -I ../commons $(JSOPT) -o $@ $(SYSLIBS_CLIENT) $(LIBS_CLIENT2)  $(OBJS_CLIENT) -jsopt runtime1.js
 
 
 _client/home.cmo: home.eliom
@@ -130,7 +130,7 @@ _server/codegraph.type_mli: codegraph.eliom
 	$(ELIOMC)  -infer $(INCLUDES) $^
 
 run: all
-	ocsigenserver -c ocsigen.conf
+	LD_LIBRARY_PATH=../commons ocsigenserver -c ocsigen.conf
 
 annot:
 	ocamlfind ocamlc -dtypes -c $(INCLUDES) $(LIBS_SERVER) dump_server.ml
