@@ -13,11 +13,12 @@ INCLUDEDIRS= $(TOP)/commons \
   $(TOP)/h_program-visual/ \
 
 OBJS_SERVER= \
+ flag_visual.cmo \
  model_codemap.cmo \
  server_codemap.cmo \
 
 OBJS_CLIENT= \
- flag_visual.ml \
+ flag_visual.cmo \
  model_codemap.cmo \
  draw_microlevel.cmo \
  draw_macrolevel.cmo \
@@ -39,7 +40,7 @@ OCAMLDEP=ocamlfind ocamldep $(INCLUDES) $(LIBS_CLIENT)
 # Top rules
 ##############################################################################
 
-all:: lib.cma lib_client.cma
+all:: lib_client.cma lib.cma 
 
 # server-side
 lib.cma: $(OBJS_SERVER)

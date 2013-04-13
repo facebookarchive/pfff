@@ -20,6 +20,7 @@ INCLUDEDIRS= $(TOP)/commons \
 INCLUDES?=$(INCLUDEDIRS:%=-I %) $(SYSINCLUDES)
 
 MAKESUBDIRS=commons code_map code_graph
+#lxr
 
 # for 'make annot'
 LIBS_SHARED= -package deriving-ocsigen.syntax,js_of_ocaml.deriving.syntax \
@@ -38,9 +39,6 @@ OBJS_SERVER= \
  _server/test.cmo \
  _server/home.cmo \
 
-# _server/global_db.cmo _server/htmlize_php2.cmo \
-# _server/lxr_server.cmo \
-
 OBJS_CLIENT= \
  _client/codemap.cmo \
  _client/codegraph.cmo \
@@ -48,7 +46,8 @@ OBJS_CLIENT= \
  _client/home.cmo \
 
 # We need h_program-lang for Database_code, but this leads to
-# requiring in turn ocamlgraph :( hopefully it will not be to big
+# requiring in turn ocamlgraph :( hopefully it will not be too big for
+# js_of_ocaml and we don't send a too big js file on the wire
 LIBS_CLIENT2= $(TOP)/commons/lib.cma \
   $(TOP)/external/ocamlgraph/ocamlgraph.cma \
   $(TOP)/commons/commons_graph.cma \
@@ -63,7 +62,7 @@ SYSLIBS_CLIENT=str.cma unix.cma
 LIBS_SERVER2=
 SYSLIBS_SERVER=
 
-#to debug
+#to debug, but not that good, not enough
 JSOPT=-jsopt -pretty -jsopt -noinline
 
 ELIOMC=eliomc -g -annot
@@ -77,7 +76,6 @@ JS_OF_ELIOM=js_of_eliom -g -annot
 # done when compile client side modules, which is needed anyway for
 # compiling the server side
 all: rec var/static/app.js var/app.cma
-
 #	$(MAKE) rec 
 #	$(MAKE) var/static/app.js 
 #	$(MAKE) var/app.cma 
@@ -88,11 +86,6 @@ rec:
 # server-side
 var/app.cma: $(LIBS_SERVER2) $(OBJS_SERVER) 
 	eliomc -a -o $@ $(SYSLIBS_SERVER) $^
-
-_server/htmlize_php2.cmo: htmlize_php2.ml
-	$(ELIOMC) -c $(INCLUDES) -package tyxml htmlize_php2.mli
-	$(ELIOMC) -c $(INCLUDES) -package tyxml $^
-
 
 _server/home.cmo: home.eliom
 	$(ELIOMC)  -c $(INCLUDES) $^
@@ -122,14 +115,6 @@ _client/test.cmo: test.eliom
 	$(ELIOMC)  -infer $(INCLUDES) $^
 	$(JS_OF_ELIOM) $(JSOPT) -c $(INCLUDES) $^
 
-# additional dependencies needed, not sure why
-_server/test.type_mli: test.eliom
-	$(ELIOMC)  -infer $(INCLUDES) $^
-_server/codemap.type_mli: codemap.eliom
-	$(ELIOMC)  -infer $(INCLUDES) $^
-_server/codegraph.type_mli: codegraph.eliom
-	$(ELIOMC)  -infer $(INCLUDES) $^
-
 run: all
 	LD_LIBRARY_PATH=../commons ocsigenserver -c ocsigen.conf
 
@@ -154,9 +139,17 @@ depend::
 clean::
 	rm -rf _client _server
 
-depend2::
+depend::
 	eliomdep -client *.ml *.eliom $(INCLUDES)  > .depend
 	eliomdep -server *.ml *.eliom $(INCLUDES)  >> .depend
+
+# additional dependencies needed, not sure why
+_server/test.type_mli: test.eliom
+	$(ELIOMC)  -infer $(INCLUDES) $^
+_server/codemap.type_mli: codemap.eliom
+	$(ELIOMC)  -infer $(INCLUDES) $^
+_server/codegraph.type_mli: codegraph.eliom
+	$(ELIOMC)  -infer $(INCLUDES) $^
 
 # eliomdep does not handle dependencies between .eliom files for now
 _server/home.cmo: _server/codemap.cmo

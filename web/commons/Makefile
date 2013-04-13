@@ -43,4 +43,3 @@ lib.cma: $(OBJS_SERVER)
 # client-side
 lib_client.cma: $(OBJS_CLIENT)
 	$(OCAMLC) -a -o $@ $^ 
-
