@@ -27,6 +27,10 @@ let height = 500
 (* Test *)
 (*****************************************************************************)
 
+(* Without this, I get some "sitedata not defined" js error.
+ * Maybe some headers sent back by eliom apps contain
+ * some important information.
+ *)
 module App = Eliom_registration.App (struct
     let application_name = "app"
 end)
@@ -139,7 +143,12 @@ let main_service =
       }};
 
     Lwt.return
-      (H.html (H.head (H.title (H.pcdata "test")) []) (H.body [
+      (H.html (H.head (H.title (H.pcdata "test")) [
+         (* this is now included by default
+         H.js_script 
+            ~uri:(H.make_uri  (Eliom_service.static_dir ())["app.js"]) ();
+         *)
+      ]) (H.body [
         (* used by runtime1.js, useful to see exceptions thrown *)
         H.div ~a:[H.a_id "output";] [];
 

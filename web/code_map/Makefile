@@ -19,6 +19,7 @@ OBJS_SERVER= \
 OBJS_CLIENT= \
  flag_visual.ml \
  model_codemap.cmo \
+ draw_microlevel.cmo \
  draw_macrolevel.cmo \
  draw_labels.cmo \
  client_codemap.cmo \

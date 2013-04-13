@@ -1,4 +1,5 @@
 open Common
+
 module H = Eliom_content.Html5.D
 
 (*****************************************************************************)
@@ -8,21 +9,17 @@ module H = Eliom_content.Html5.D
 (*****************************************************************************)
 (* App *)
 (*****************************************************************************)
-module App = Eliom_registration.App (struct
-    let application_name = "app"
-end)
+module App = Eliom_registration.App (struct let application_name = "app" end)
 
 (*****************************************************************************)
 (* Shared *)
 (*****************************************************************************)
 
 {shared{
-
 let width = 1200
 let height = 680
 module DM = Dependencies_matrix_code
 module Model = Model_codegraph
-
 }}
 
 (*****************************************************************************)
@@ -61,11 +58,9 @@ let main_service =
           (H.head (H.title (H.pcdata "CodeGraph")) [ 
           ])
           (H.body [
-            (* used by runtime1.js, useful to see exceptions thrown *)
-            H.div ~a:[H.a_id "output";] [];
-
+            H.div 
+              ~a:[H.a_id "output";] [];
             H.canvas
-              ~a:[H.a_id "main_canvas"; H.a_width width; H.a_height height]
-              [];
+              ~a:[H.a_id "main_canvas"; H.a_width width; H.a_height height] [];
           ]))
   )

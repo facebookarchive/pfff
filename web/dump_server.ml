@@ -3,7 +3,7 @@ open Eliom_pervasives
 module H = Eliom_content.Html5.D
 
 (*****************************************************************************)
-(* main entry points *)
+(* Result service *)
 (*****************************************************************************)
 
 let result_service = Eliom_registration.Html5.register_service 
@@ -22,23 +22,25 @@ let result_service = Eliom_registration.Html5.register_service
     ]
     )))
 
+(*****************************************************************************)
+(* main entry point *)
+(*****************************************************************************)
+
 let main_service = Eliom_registration.Html5.register_service 
   ~path:["dumper"]
   ~get_params:(Eliom_parameter.unit)
   (fun () () ->
-    Lwt.return (H.html(H.head (H.title (H.pcdata "Demo")) []) (H.body [
+    Lwt.return (H.html (H.head (H.title (H.pcdata "Demo")) []) (H.body [
 
       H.h1 [H.pcdata "Welcome to the Dumper"];
-      Eliom_content.Html5.D.get_form ~service:result_service
+      H.get_form ~service:result_service
         (fun (name) ->
           [H.p [
             H.pcdata "File content: ";
             H.br ();
-            Eliom_content.Html5.D.textarea ~name
-              ~a:[H.a_rows  10; H.a_cols 80]
-              ~value:"<?php\n" ();
+            H.textarea ~name ~a:[H.a_rows  10; H.a_cols 80] ~value:"<?php\n" ();
             H.br ();
-            Eliom_content.Html5.D.string_input ~input_type:`Submit ~value:"Go" ()
+            H.string_input ~input_type:`Submit ~value:"Go" ()
             ]
           ]);
     ]

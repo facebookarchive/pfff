@@ -1,8 +1,6 @@
-(*s: draw_microlevel.ml *)
-(*s: Facebook copyright *)
 (* Yoann Padioleau
  * 
- * Copyright (C) 2010-2012 Facebook
+ * Copyright (C) 2010-2013 Facebook
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public License
@@ -14,7 +12,6 @@
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the file
  * license.txt for more details.
  *)
-(*e: Facebook copyright *)
 open Common
 open Common2.ArithFloatInfix
 
@@ -22,16 +19,20 @@ open Figures (* for the fields *)
 module F = Figures
 module Color = Simple_color
 
-open Model2 (* for the fields *)
+open Model_codemap (* for the fields *)
 
 module Flag = Flag_visual
-module Style = Style2
+(*
+module Style = Style_codemap
+*)
 
 module T = Treemap
-module CairoH = Cairo_helpers
+(*module CairoH = Cairo_helpers*)
 
+(*
 module FT = File_type
 module Parsing = Parsing2
+*)
 
 (*****************************************************************************)
 (* Prelude *)
@@ -41,11 +42,11 @@ module Parsing = Parsing2
 (* Types *)
 (*****************************************************************************)
 
-(*s: type draw_content_layout *)
 (* note: some types below could be 'int' but it's more convenient to have
  * everything as a float because arithmetic with OCaml sucks when have
  * multiple numeric types
  *)
+(*
 type draw_content_layout = {
   font_size: float;
   split_nb_columns: float;
@@ -53,28 +54,27 @@ type draw_content_layout = {
   space_per_line: float;
   nblines: float;
 }
-(*e: type draw_content_layout *)
-
+*)
 (*****************************************************************************)
 (* globals *)
 (*****************************************************************************)
-
-(* ugly, see mli for explanation *)
-let text_with_user_pos = ref []
 
 (*****************************************************************************)
 (* Helpers *)
 (*****************************************************************************)
 
+(*
 let is_big_file_with_few_lines ~nblines fullpath = 
   nblines < 20. && 
   Common2.filesize_eff fullpath > 4000
+*)
 
 (*****************************************************************************)
 (* Anamorphic entities *)
 (*****************************************************************************)
 
 (*s: final_font_size_of_categ *)
+(*
 let final_font_size_of_categ ~font_size ~font_size_real categ = 
 
   let multiplier = Style.size_font_multiplier_of_categ ~font_size_real categ in
@@ -95,9 +95,9 @@ let final_font_size_of_categ ~font_size ~font_size_real categ =
     ~size_font_multiplier_multiplier
     ~font_size
     ~font_size_real
-(*e: final_font_size_of_categ *)
+*)
 
-
+(*
 let set_source_rgba_and_font_size_of_categ 
   ~cr ~font_size ~font_size_real ~is_matching_line
  categ 
@@ -160,27 +160,27 @@ let set_source_rgba_and_font_size_of_categ
     | _ -> ()
   );
   ()
-
+*)
 (*****************************************************************************)
 (* Columns *)
 (*****************************************************************************)
 
-(*s: font_size_when_have_x_columns *)
+(*
 let font_size_when_have_x_columns ~nblines ~chars_per_column ~w ~h ~with_n_columns = 
   let size_x = (w / with_n_columns) / chars_per_column in
   let size_y = (h / (nblines / with_n_columns)) in
 
   let min_font = min size_x size_y in
   min_font
-(*e: font_size_when_have_x_columns *)
+*)
    
-(*s: optimal_nb_columns *)
 (* Given a file with nblines and nbcolumns (usually 80) and
  * a rectangle of w width and h height, what is the optimal
  * number of columns. The principle is to start at 1 column
  * and see if by adding columns we can have a bigger font.
  * We try to maximize the font_size.
  *)
+(*
 let optimal_nb_columns ~nblines ~chars_per_column ~w ~h = 
   
   let rec aux current_font_size current_nb_columns = 
@@ -194,10 +194,11 @@ let optimal_nb_columns ~nblines ~chars_per_column ~w ~h =
       current_nb_columns - 1.
   in
   aux 0.0   1.
-(*e: optimal_nb_columns *)
+*)
 
-(*s: draw_column_bars *)
-let draw_column_bars2 ~cr ~split_nb_columns ~font_size ~w_per_column rect = 
+
+(*
+let draw_column_bars ~cr ~split_nb_columns ~font_size ~w_per_column rect = 
   let r = rect.T.tr_rect in
   for i = 1 to int_of_float (split_nb_columns - 1.) do
     let i = float_of_int i in
@@ -216,10 +217,7 @@ let draw_column_bars2 ~cr ~split_nb_columns ~font_size ~w_per_column rect =
     Cairo.line_to cr (r.p.x + w_per_column * i) r.q.y;
     Cairo.stroke cr ;
   done
-let draw_column_bars ~cr ~split_nb_columns ~font_size ~w_per_column rect =
-  Common.profile_code "View.draw_bars" (fun () ->
-    draw_column_bars2 ~cr ~split_nb_columns ~font_size ~w_per_column rect)
-(*e: draw_column_bars *)
+*)
 
 
 (*****************************************************************************)
@@ -227,7 +225,8 @@ let draw_column_bars ~cr ~split_nb_columns ~font_size ~w_per_column rect =
 (*****************************************************************************)
 
 (*s: draw_content *)
-let draw_content2 ~cr ~layout ~context ~file rect =
+(*
+let draw_content ~cr ~layout ~context ~file rect =
 
   let r = rect.T.tr_rect in
 
@@ -412,11 +411,12 @@ let draw_content2 ~cr ~layout ~context ~file rect =
 let draw_content ~cr ~layout ~context ~file rect =
   Common.profile_code "View.draw_content" (fun () ->
     draw_content2 ~cr ~layout ~context ~file rect)
-(*e: draw_content *)
+*)
 
 
-(*s: draw_treemap_rectangle_content_maybe *)
-let draw_treemap_rectangle_content_maybe2 ~cr ~clipping ~context rect  =
+let draw_treemap_rectangle_content_maybe ctx fileinfo rect  =
+  raise Todo
+(*
   let r = rect.T.tr_rect in
   let file = rect.T.tr_label in
 
@@ -502,10 +502,4 @@ let draw_treemap_rectangle_content_maybe2 ~cr ~clipping ~context rect  =
     end
   end
   end
-let draw_treemap_rectangle_content_maybe ~cr ~clipping ~context rect = 
-  Common.profile_code "View.draw_content_maybe" (fun () ->
-    draw_treemap_rectangle_content_maybe2 ~cr ~clipping ~context rect)
-(*e: draw_treemap_rectangle_content_maybe *)
-    
-
-(*e: draw_microlevel.ml *)
+*)

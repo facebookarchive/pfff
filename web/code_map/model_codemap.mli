@@ -11,3 +11,7 @@ type world_client = {
 }
 
 type context = Dom_html.canvasRenderingContext2D Js.t
+
+type fileinfo_client = {
+  lines: string list;
+}

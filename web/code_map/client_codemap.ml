@@ -18,10 +18,10 @@ open Common2.ArithFloatInfix
 open Common_client
 
 open Figures (* for the fields *)
+module F = Figures
 module Color = Simple_color
 
 module T = Treemap
-module F = Figures
 
 open Model_codemap
 module M = Model_codemap
@@ -113,46 +113,49 @@ let paint w =
   (* phase 3, draw the content, if have enough space *)
   ()
 
-(*****************************************************************************)
-(* Test micro *)
-(*****************************************************************************)
 
-let width = 100
-let height = 100
-let draw_file lines =
-  pr2 "draw_file";
-  pr2 (spf "# lines = %d " (List.length lines));
 
-  let canvas = Dom_html.createCanvas Dom_html.document in
+
+let test_paint_micro w fileinfo =
+  let canvas =
+    retrieve "main_canvas" +> 
+      Dom_html.CoerceTo.canvas +>
+      unopt
+  in
   let ctx = canvas##getContext (Dom_html._2d_) in
-  canvas##width <- width; 
-  canvas##height <- height;
 
-(* http://stackoverflow.com/questions/6278249/html5-canvas-font-size 
- * with 200 px or more, firefox goes back to the default font
- * (chrome is fine though).
- *)
-
-  ctx##font <- Js.string (spf "%d px serif" 200);
-  ctx##fillStyle <- Js.string "#000";
-
-  let text = "foobar" in
+  ctx##font <- Js.string (spf "bold 12 px serif" );
+  let text = "MM" in
   let metric = ctx##measureText (Js.string text) in
-  let width_text = metric##width in
-  pr2 (spf "width text = %f" width_text);
+  let width_text_etalon_orig_coord = metric##width / 2.0 in
+  pr2 (spf "width text orig coord = %f" width_text_etalon_orig_coord);
 
-  ctx##fillText (Js.string "foobar", 100., 100.);
+  let orig_coord_width = float_of_int w.width in
+  let normalized_coord_width = T.xy_ratio in
 
-(*
-  scale_zoom_pan_map ~width ~height ctx;
-  ctx##font <- Js.string (spf "%d%%" 2000);
+  let width_text_etalon_normalized_coord =
+    (normalized_coord_width * width_text_etalon_orig_coord) /
+      orig_coord_width
+  in
+  pr2 (spf "width text normalized coord = %f" 
+         width_text_etalon_normalized_coord);
 
-  ctx##fillText (Js.string "foobar", 0.5, 0.5);
-*)  
+  ctx##setTransform (1.,0.,0.,1.,0.,0.);
+  ctx##scale (
+    (float_of_int w.width / T.xy_ratio),
+    (float_of_int w.height));
 
-(*
-  ctx##rotate(0.5);
-  ctx##fillText (Js.string "foobar", 200., 100.);
-*)
-  Dom.appendChild Dom_html.document##body canvas;
+  let w = { w with
+    width_text_etalon_normalized_coord;
+    orig_coord_width;
+    orig_coord_height = float_of_int w.height;
+  }
+  in
+  let rect = {
+    p = { x = 0.; y = 0.};
+    q = { x = T.xy_ratio; y = 1. };
+  }
+  in
+
+  Draw_microlevel.draw_treemap_rectangle_content_maybe ctx w fileinfo rect;
   ()

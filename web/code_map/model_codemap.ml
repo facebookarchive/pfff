@@ -40,6 +40,10 @@ type world_client = {
   width_text_etalon_normalized_coord: float;
 }
 
+type fileinfo_client = {
+  lines: string list;
+}
+
 (*****************************************************************************)
 (* Coordinate system *)
 (*****************************************************************************)
