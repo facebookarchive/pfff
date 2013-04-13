@@ -197,8 +197,7 @@ let optimal_nb_columns ~nblines ~chars_per_column ~w ~h =
 (*e: optimal_nb_columns *)
 
 (*s: draw_column_bars *)
-let draw_column_bars2 ~cr ~split_nb_columns ~font_size ~w_per_column rect = 
-  let r = rect.T.tr_rect in
+let draw_column_bars2 ~cr ~split_nb_columns ~font_size ~w_per_column r = 
   for i = 1 to int_of_float (split_nb_columns - 1.) do
     let i = float_of_int i in
       
@@ -462,7 +461,7 @@ let draw_treemap_rectangle_content_maybe2 ~cr ~clipping ~context rect  =
     let space_per_line = 
       font_size in
     
-    draw_column_bars ~cr ~split_nb_columns ~font_size ~w_per_column rect;
+    draw_column_bars ~cr ~split_nb_columns ~font_size ~w_per_column r;
 
     (* todo: does not work :(
     let font_option = Cairo.Font_Options.make [`ANTIALIAS_SUBPIXEL] in
