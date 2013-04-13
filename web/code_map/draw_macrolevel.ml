@@ -1,6 +1,6 @@
 (* Yoann Padioleau
  * 
- * Copyright (C) 2011 Facebook
+ * Copyright (C) 2011, 2013 Facebook
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public License
@@ -22,6 +22,12 @@ module Color = Simple_color
 module CanvasH = Canvas_helpers
 
 open Figures (* for the fields *)
+
+(*****************************************************************************)
+(* Prelude *)
+(*****************************************************************************)
+
+(* TODO: factorize with pfff/code_map/ *)
 
 (*****************************************************************************)
 (* Drawing a treemap rectangle *)

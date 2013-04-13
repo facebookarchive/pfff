@@ -20,7 +20,7 @@ open Common2.ArithFloatInfix
 (* Prelude *)
 (*****************************************************************************)
 
-(* TODO: factorize with pfff/code_map/model.ml ? *)
+(* TODO: factorize with pfff/code_map/model2.ml ? *)
 
 (*****************************************************************************)
 (* Types *)
@@ -29,7 +29,9 @@ open Common2.ArithFloatInfix
 type world_client = {
   rects: Treemap.treemap_rendering;
 
-  (* viewport, device coordinates *)
+  (* viewport, device coordinates 
+   * todo: factorize with code_map/ and put in the graphics_context class type?
+   *)
   width:  int;
   height: int;
 
@@ -42,4 +44,4 @@ type world_client = {
 (* Coordinate system *)
 (*****************************************************************************)
 
-let xy_ratio = 1.71
+(* in treemap.ml: xy_ratio = 1.71 *)

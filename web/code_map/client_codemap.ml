@@ -1,6 +1,6 @@
 (* Yoann Padioleau
  * 
- * Copyright (C) 2013 Facebook
+ * Copyright (C) 2011, 2013 Facebook
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public License
@@ -56,17 +56,15 @@ let retrieve id =
 
 let paint w =
 
-  let rects = w.rects in
-
-  pr2 "paint";
-  pr2 (spf "# rects = %d " (List.length rects));
-
   let canvas = 
     retrieve "main_canvas" +> 
       Dom_html.CoerceTo.canvas +>
       unopt
   in
   let ctx = canvas##getContext (Dom_html._2d_) in
+
+  pr2 "paint";
+  pr2 (spf "# rects = %d " (List.length w.rects));
 
 (* TODO: factorize with pfff/web/code_graph *)
   
@@ -101,6 +99,8 @@ let paint w =
     orig_coord_height = float_of_int w.height;
   }
   in
+
+  let rects = w.rects in
 
   (* phase 1, draw the rectangles *)
   rects +> List.iter (Draw_macrolevel.draw_treemap_rectangle ctx);
