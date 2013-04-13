@@ -39,6 +39,32 @@ module Parsing = Parsing2
 (*****************************************************************************)
 
 (*****************************************************************************)
+(* Helpers *)
+(*****************************************************************************)
+
+let fill_text_scaled ctx w ?(rotate=0.) ~x ~y ~size str =
+  ctx##save ();
+  ctx##setTransform (1.,0.,0.,1.,0.,0.);
+
+  (* y should be between 0 and 1 *)
+  let y' = y * w.orig_coord_height in
+  (* x should be between 0 and 1.71 *)
+  let x' = (x / T.xy_ratio) * w.orig_coord_width in
+  
+  ctx##translate (x', y');
+  ctx##rotate (rotate);
+
+  (* ugly *)
+  let size = size * 0.9 in
+
+  let scale_factor = size / w.width_text_etalon_normalized_coord in
+
+  ctx##scale (scale_factor, scale_factor);
+  ctx##fillText (Js.string str, 0., 0.);
+  ctx##restore ();
+  ()
+
+(*****************************************************************************)
 (* Types *)
 (*****************************************************************************)
 
@@ -46,15 +72,14 @@ module Parsing = Parsing2
  * everything as a float because arithmetic with OCaml sucks when have
  * multiple numeric types
  *)
-(*
 type draw_content_layout = {
   font_size: float;
   split_nb_columns: float;
   w_per_column:float;
   space_per_line: float;
-  nblines: float;
+  l_nblines: float;
 }
-*)
+
 (*****************************************************************************)
 (* globals *)
 (*****************************************************************************)
@@ -219,32 +244,34 @@ let draw_column_bars ~ctx ~ctx2 ~split_nb_columns ~font_size ~w_per_column r =
 (* File Content *)
 (*****************************************************************************)
 
-(*s: draw_content *)
-(*
-let draw_content ~cr ~layout ~context ~file rect =
-
-  let r = rect.T.tr_rect in
-
+let draw_content ~ctx ~ctx2 ~layout fileinfo r =
   let font_size = layout.font_size in
-  let font_size_real = CairoH.user_to_device_font_size cr font_size in
+  let font_size_real = 
+    (* CairoH.user_to_device_font_size cr font_size  *)
+    font_size * ctx2.orig_coord_width (* TODO *)
+  in
 
-  if font_size_real > Style.threshold_draw_dark_background_font_size_real
+  if font_size_real > Flag.threshold_draw_dark_background_font_size_real
   then begin
 
     (* erase what was done at the macrolevel *)
+(*
     if Hashtbl.length context.layers_microlevel > 0 then begin
       Draw_macrolevel.draw_treemap_rectangle ~cr ~color:(Some "white") 
         ~alpha:1.0 rect;
     end;
+*)
 
-    let alpha = 
-      match context.nb_rects_on_screen with
+    let nb_rects_on_screen = 1 in (* TODO *)
+    let _alpha = 
+      match (*context.*)nb_rects_on_screen with
       | n when n <= 1 -> 0.95
       | n when n <= 2 -> 0.8
       | n when n <= 10 -> 0.6
       | _ -> 0.3
     in
     (* unset when used when debugging the layering display *)
+(*
     if Hashtbl.length context.layers_microlevel = 0 || true
     then begin
       Draw_macrolevel.draw_treemap_rectangle ~cr ~color:(Some "DarkSlateGray") 
@@ -254,30 +281,15 @@ let draw_content ~cr ~layout ~context ~file rect =
         ~line_width:(font_size / 2.) rect.T.tr_rect;
     end
   end;
+*)
 
-  (* highlighting layers (and grep-like queries at one point) *)
-  let hmatching_lines = 
-    try Hashtbl.find context.layers_microlevel file
-    with Not_found -> Hashtbl.create 0
-  in
-
-  (* todo: make sgrep_query a form of layer *)
-  let matching_grep_lines = 
-    try Hashtbl.find_all context.grep_query file
-    with Not_found -> []
-  in
-  matching_grep_lines +> List.iter (fun line ->
-    Hashtbl.add hmatching_lines line "purple"
-  );
 
   let nblines_per_column = 
-    (layout.nblines / layout.split_nb_columns) +> ceil +> int_of_float in
+    (layout.l_nblines / layout.split_nb_columns) +> ceil +> int_of_float in
 
   let line = ref 1 in
 
-  (* ugly *)
-  text_with_user_pos := [];
-
+(*
   let use_fancy_highlighting =
   match FT.file_type_of_file file with
   | ( FT.PL (FT.Web (FT.Php _))
@@ -299,10 +311,13 @@ let draw_content ~cr ~layout ~context ~file rect =
   | (FT.Text "txt") when Common2.basename file =$= "info.txt" -> true
   | _ -> false
   in
+  *)
+  let use_fancy_highlighting = false in
 
   (* coupling: with parsing2.ml *)
   if use_fancy_highlighting then begin
-
+    raise Todo
+(*
     let column = ref 0 in
     let line_in_column = ref 1 in
 
@@ -365,17 +380,20 @@ let draw_content ~cr ~layout ~context ~file rect =
           
       );
     )
-  end else begin
+ *)
+  end 
+
+ else begin
+(*
   match FT.file_type_of_file file with
-  | FT.PL _ | FT.Text _ ->      
+  | FT.PL _ | FT.Text _ ->
+*)
    (* This was causing some "out_of_memory" cairo error on linux. Not
     * sure why.
     *)
+   ctx##fillStyle <- Js.string (CanvasH.rgba_of_rgbf (0.0,0.0,0.0) 0.9);
 
-    Cairo.set_font_size cr font_size ;
-    Cairo.set_source_rgba cr 0.0 0.0 0.0 0.9;
-      
-    let xs = Common.cat file in
+    let xs = fileinfo.lines in
     let xxs = Common2.pack_safe nblines_per_column xs in
 
     (* I start at 0 for the column because the x displacement
@@ -391,22 +409,18 @@ let draw_content ~cr ~layout ~context ~file rect =
         let y = r.p.y + 
           (layout.space_per_line * (float_of_int line_in_column)) in
         
-        Cairo.move_to cr x y;
-        CairoH.show_text cr s;
+        fill_text_scaled ctx ctx2 s ~x ~y ~size:font_size;
 
         incr line;
       );
     );
       ()
+(*
   | _ ->
       ()
-  end
-
-
-let draw_content ~cr ~layout ~context ~file rect =
-  Common.profile_code "View.draw_content" (fun () ->
-    draw_content2 ~cr ~layout ~context ~file rect)
 *)
+ end
+end
 
 
 let draw_treemap_rectangle_content_maybe ctx ctx2 fileinfo r  =
@@ -440,31 +454,29 @@ let draw_treemap_rectangle_content_maybe ctx ctx2 fileinfo r  =
         ~with_n_columns:split_nb_columns in
     let w_per_column = 
       w / split_nb_columns in
-    let _space_per_line = 
+    let space_per_line = 
       font_size in
     
     draw_column_bars ~ctx ~ctx2 ~split_nb_columns ~font_size ~w_per_column r;
 
-(*
-    Cairo.select_font_face cr Style.font_text
-      Cairo.FONT_SLANT_NORMAL Cairo.FONT_WEIGHT_NORMAL;
-    
-    let font_size_real = CairoH.user_to_device_font_size cr font_size in
-    (*pr2 (spf "file: %s, font_size_real = %f" file font_size_real);*)
+    let font_size_real = 
+      (* CairoH.user_to_device_font_size cr font_size  *)
+      font_size * ctx2.orig_coord_width (* TODO *)
+    in
     
     let layout = {
       font_size = font_size;
       split_nb_columns = split_nb_columns;
       w_per_column = w_per_column;
       space_per_line = space_per_line;
-      nblines = nblines;
+      l_nblines = nblines;
     } 
     in
 
     if font_size_real > !Flag.threshold_draw_content_font_size_real 
-       && not (is_big_file_with_few_lines ~nblines file)
+       (* && not (is_big_file_with_few_lines ~nblines file) *)
        && nblines < !Flag.threshold_draw_content_nblines
-    then draw_content ~cr ~layout ~context ~file rect
+    then draw_content ~ctx ~ctx2 ~layout fileinfo r
     else ()
-*)
+
   end
