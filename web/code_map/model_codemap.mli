@@ -14,4 +14,5 @@ type context = Dom_html.canvasRenderingContext2D Js.t
 
 type fileinfo_client = {
   lines: string list;
+  nblines: float; (* more convenient than int *)
 }

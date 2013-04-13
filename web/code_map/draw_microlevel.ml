@@ -27,7 +27,7 @@ module Style = Style_codemap
 *)
 
 module T = Treemap
-(*module CairoH = Cairo_helpers*)
+module CanvasH = Canvas_helpers
 
 (*
 module FT = File_type
@@ -165,14 +165,12 @@ let set_source_rgba_and_font_size_of_categ
 (* Columns *)
 (*****************************************************************************)
 
-(*
 let font_size_when_have_x_columns ~nblines ~chars_per_column ~w ~h ~with_n_columns = 
   let size_x = (w / with_n_columns) / chars_per_column in
   let size_y = (h / (nblines / with_n_columns)) in
 
   let min_font = min size_x size_y in
   min_font
-*)
    
 (* Given a file with nblines and nbcolumns (usually 80) and
  * a rectangle of w width and h height, what is the optimal
@@ -180,7 +178,6 @@ let font_size_when_have_x_columns ~nblines ~chars_per_column ~w ~h ~with_n_colum
  * and see if by adding columns we can have a bigger font.
  * We try to maximize the font_size.
  *)
-(*
 let optimal_nb_columns ~nblines ~chars_per_column ~w ~h = 
   
   let rec aux current_font_size current_nb_columns = 
@@ -194,30 +191,28 @@ let optimal_nb_columns ~nblines ~chars_per_column ~w ~h =
       current_nb_columns - 1.
   in
   aux 0.0   1.
-*)
 
 
-(*
-let draw_column_bars ~cr ~split_nb_columns ~font_size ~w_per_column rect = 
-  let r = rect.T.tr_rect in
+let draw_column_bars ~ctx ~ctx2 ~split_nb_columns ~font_size ~w_per_column r = 
   for i = 1 to int_of_float (split_nb_columns - 1.) do
     let i = float_of_int i in
-      
-    Cairo.set_source_rgba cr 0.0 0.0 1. 0.2;
 
-    let font_size_real = CairoH.user_to_device_font_size cr font_size in
+    ctx##fillStyle <- Js.string (CanvasH.rgba_of_rgbf (0.0,0.0,1.0) 0.2);
+      
+    let font_size_real = 
+      (* CairoH.user_to_device_font_size cr font_size  *)
+      font_size * ctx2.orig_coord_width (* TODO *)
+    in
     let width = 
       if font_size_real > 5.
       then  (font_size / 10.)
       else font_size
     in
-    Cairo.set_line_width cr width;
-
-    Cairo.move_to cr (r.p.x + w_per_column * i) r.p.y;
-    Cairo.line_to cr (r.p.x + w_per_column * i) r.q.y;
-    Cairo.stroke cr ;
+    ctx##lineWidth <- width;
+    ctx##moveTo (r.p.x + w_per_column * i, r.p.y);
+    ctx##lineTo (r.p.x + w_per_column * i, r.q.y);
+    ctx##stroke();
   done
-*)
 
 
 (*****************************************************************************)
@@ -414,36 +409,22 @@ let draw_content ~cr ~layout ~context ~file rect =
 *)
 
 
-let draw_treemap_rectangle_content_maybe ctx fileinfo rect  =
-  raise Todo
-(*
-  let r = rect.T.tr_rect in
-  let file = rect.T.tr_label in
-
-  if F.intersection_rectangles r clipping = None
-  then (* pr2 ("not drawing: " ^ file) *) ()
-  else begin
+let draw_treemap_rectangle_content_maybe ctx ctx2 fileinfo r  =
+  (* let file = rect.T.tr_label in *)
 
   let w = F.rect_width r in
   let h = F.rect_height r in
 
-  (* if the file is not textual, or contain weird characters, then
-   * it confuses cairo which then can confuse computation done in gtk
-   * idle callbacks
-   *)
-  if Common2.lfile_exists_eff file && File_type.is_textual_file file
-  then begin
-    let font_size_estimate = h / 100. in
-    let font_size_real_estimate = 
-      CairoH.user_to_device_font_size cr font_size_estimate in
-    if font_size_real_estimate > 0.4
-    then begin
+  let nblines = fileinfo.nblines in
 
-    (* Common.nblines_with_wc was really slow. fork sucks.
-     * alternative: we could store the nblines of a file in the db but
-     * we would need a fast absolute_to_readable then.
-     *)
-    let nblines = Common2.nblines_eff file +> float_of_int in
+  let font_size_estimate = h / 100. in
+  let font_size_real_estimate = 
+    (* CairoH.user_to_device_font_size cr font_size_estimate *)
+    font_size_estimate * ctx2.orig_coord_width (* TODO *)
+
+  in
+  if font_size_real_estimate > 0.4
+  then begin
 
     (* assume our code follow certain conventions. Could infer from file. 
      * we should put 80, but a font is higher than large, so 
@@ -459,22 +440,12 @@ let draw_treemap_rectangle_content_maybe ctx fileinfo rect  =
         ~with_n_columns:split_nb_columns in
     let w_per_column = 
       w / split_nb_columns in
-    let space_per_line = 
+    let _space_per_line = 
       font_size in
     
-    draw_column_bars ~cr ~split_nb_columns ~font_size ~w_per_column rect;
+    draw_column_bars ~ctx ~ctx2 ~split_nb_columns ~font_size ~w_per_column r;
 
-    (* todo: does not work :(
-    let font_option = Cairo.Font_Options.make [`ANTIALIAS_SUBPIXEL] in
-    
-    (try 
-      Cairo.set_font_options cr font_option;
-    with exn ->
-      let status = Cairo.status cr in
-      let s2 = Cairo.string_of_status status in
-      failwith s2;
-    );
-    *)
+(*
     Cairo.select_font_face cr Style.font_text
       Cairo.FONT_SLANT_NORMAL Cairo.FONT_WEIGHT_NORMAL;
     
@@ -494,12 +465,6 @@ let draw_treemap_rectangle_content_maybe ctx fileinfo rect  =
        && not (is_big_file_with_few_lines ~nblines file)
        && nblines < !Flag.threshold_draw_content_nblines
     then draw_content ~cr ~layout ~context ~file rect
-    else 
-     if context.settings.draw_summary 
-     then 
-       raise Todo
-         (* draw_summary_content ~cr ~layout ~context ~file  rect *)
-    end
-  end
-  end
+    else ()
 *)
+  end

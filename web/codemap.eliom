@@ -99,9 +99,21 @@ let test_codemap_micro =
     }
     in
     let fileinfo = { Model.
-      lines = ["foo";"bar"] 
+      lines = ["foo";"bar"];
+      nblines = 500.;
     }
     in
+  (* if the file is not textual, or contain weird characters, then
+   * it confuses cairo which then can confuse computation done in gtk
+   * idle callbacks
+   *)
+  (*if Common2.lfile_exists_eff file && File_type.is_textual_file file*)
+
+  (* Common.nblines_with_wc was really slow. fork sucks.
+   * alternative: we could store the nblines of a file in the db but
+   * we would need a fast absolute_to_readable then.
+   *)
+  (*let nblines = Common2.nblines_eff file +> float_of_int in *)
 
     ignore
       {unit{ Client_codemap.test_paint_micro %w %fileinfo }};
