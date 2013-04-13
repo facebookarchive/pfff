@@ -14,12 +14,11 @@
  *)
 open Common
 
+module FT = File_type
 module Model = Model_codemap
-
 module Flag = Flag_web
 
 (*
-module FT = File_type
 module Parsing = Parsing2
 *)
 
@@ -87,7 +86,33 @@ let is_big_file_with_few_lines ~nblines fullpath =
    *)
 
 let fileinfo_of_file file =
+
+  (* coupling: with parsing2.ml *)
+  let style =
+    match FT.file_type_of_file file with
+    | ( FT.PL (FT.Web (FT.Php _))
+      | FT.PL (FT.Web (FT.Js))
+      | FT.PL (FT.Web (FT.Html))
+      | FT.PL (FT.ML _)
+      | FT.PL (FT.Cplusplus _ | FT.C _)
+      | FT.PL (FT.Thrift)
+      | FT.Text ("nw" | "tex"  | "texi" | "web" | "org")
+      | FT.PL (FT.Lisp _)
+      | FT.PL (FT.Haskell _)
+      | FT.PL (FT.Python)
+      | FT.PL (FT.Csharp)
+      | FT.PL (FT.Java)
+            (*    | FT.PL (FT.Prolog _) *)
+      | FT.PL (FT.Erlang)
+      | FT.PL (FT.Opa)
+      (* | (FT.Text "txt") when Common2.basename file =$= "info.txt" *)
+      ) -> Model.Fancy
+    | FT.PL _ | FT.Text _ ->
+        Model.Regular (Common.cat file)
+    | _ -> Model.Nothing
+  in
+
   { Model.
-      lines = Common.cat file;
+      style;
       nblines = float_of_int (Common2.nblines_eff file);
   }

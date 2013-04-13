@@ -279,33 +279,8 @@ let draw_content ~ctx ~ctx2 ~layout fileinfo r =
 
   let line = ref 1 in
 
-(*
-  let use_fancy_highlighting =
-  match FT.file_type_of_file file with
-  | ( FT.PL (FT.Web (FT.Php _))
-    | FT.PL (FT.Web (FT.Js))
-    | FT.PL (FT.Web (FT.Html))
-    | FT.PL (FT.ML _)
-    | FT.PL (FT.Cplusplus _ | FT.C _)
-    | FT.PL (FT.Thrift)
-    | FT.Text ("nw" | "tex"  | "texi" | "web" | "org")
-    | FT.PL (FT.Lisp _)
-    | FT.PL (FT.Haskell _)
-    | FT.PL (FT.Python)
-    | FT.PL (FT.Csharp)
-    | FT.PL (FT.Java)
-(*    | FT.PL (FT.Prolog _) *)
-    | FT.PL (FT.Erlang)
-    | FT.PL (FT.Opa)
-    ) -> true
-  | (FT.Text "txt") when Common2.basename file =$= "info.txt" -> true
-  | _ -> false
-  in
-  *)
-  let use_fancy_highlighting = false in
-
-  (* coupling: with parsing2.ml *)
-  if use_fancy_highlighting then begin
+  (match fileinfo.style with
+  | Fancy ->
     raise Todo
 (*
     let column = ref 0 in
@@ -371,19 +346,13 @@ let draw_content ~ctx ~ctx2 ~layout fileinfo r =
       );
     )
  *)
-  end 
-
- else begin
-(*
-  match FT.file_type_of_file file with
-  | FT.PL _ | FT.Text _ ->
-*)
+  | Regular lines ->
    (* This was causing some "out_of_memory" cairo error on linux. Not
     * sure why.
     *)
    ctx##fillStyle <- Js.string (CanvasH.rgba_of_rgbf (0.0,0.0,0.0) 0.9);
 
-    let xs = fileinfo.lines in
+    let xs = lines in
     let xxs = Common2.pack_safe nblines_per_column xs in
 
     (* I start at 0 for the column because the x displacement
@@ -404,13 +373,10 @@ let draw_content ~ctx ~ctx2 ~layout fileinfo r =
         incr line;
       );
     );
+  | Nothing ->
       ()
-(*
-  | _ ->
-      ()
-*)
+  )
  end
-end
 
 
 let draw_treemap_rectangle_content_maybe ctx ctx2 fileinfo r  =

@@ -41,9 +41,15 @@ type world_client = {
 }
 
 type fileinfo_client = {
-  lines: string list;
   nblines: float; (* more convenient than int *)
+
+  style: file_rendering_style;
 }
+
+  and file_rendering_style =
+    | Regular of string list (* lines *)
+    | Fancy
+    | Nothing
 
 (*****************************************************************************)
 (* Coordinate system *)
