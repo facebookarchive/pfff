@@ -57,7 +57,7 @@ let main_service =
       let r = rect.Treemap.tr_rect in
       let w = Figures.rect_width r in
       let h = Figures.rect_height r in
-      w *. h <= 0.000005
+      w *. h <= 0.000009
     )
     in
     pr2 (spf "nb rects after filtering: %d" (List.length rects));
