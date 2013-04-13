@@ -98,9 +98,10 @@ let test_codemap_micro =
        width_text_etalon_normalized_coord = 0.;
     }
     in
+    let file = "/home/pad/pfff/Makefile" in
     let fileinfo = { Model.
-      lines = ["foo";"bar"];
-      nblines = 500.;
+      lines = Common.cat file;
+      nblines = float_of_int (Common2.nblines_eff file);
     }
     in
   (* if the file is not textual, or contain weird characters, then
@@ -113,7 +114,6 @@ let test_codemap_micro =
    * alternative: we could store the nblines of a file in the db but
    * we would need a fast absolute_to_readable then.
    *)
-  (*let nblines = Common2.nblines_eff file +> float_of_int in *)
 
     ignore
       {unit{ Client_codemap.test_paint_micro %w %fileinfo }};
