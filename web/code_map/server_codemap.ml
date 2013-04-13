@@ -2,6 +2,11 @@ open Common
 
 module Flag = Flag_web
 
+(*
+module FT = File_type
+module Parsing = Parsing2
+*)
+
 (*****************************************************************************)
 (* Flags *)
 (*****************************************************************************)
@@ -9,7 +14,7 @@ module Flag = Flag_web
 let filter = ref Treemap_pl.ex_filter_file
 
 (*****************************************************************************)
-(* Model helpers *)
+(* Macro view server helpers *)
 (*****************************************************************************)
 
 let treemap_generator paths = 
@@ -21,3 +26,13 @@ let treemap_generator paths =
   in
   pr2 (spf "%d rectangles to draw" (List.length rects));
   rects
+
+(*****************************************************************************)
+(* Micro view server helpers *)
+(*****************************************************************************)
+
+(*
+let is_big_file_with_few_lines ~nblines fullpath = 
+  nblines < 20. && 
+  Common2.filesize_eff fullpath > 4000
+*)

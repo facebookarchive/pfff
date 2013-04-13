@@ -14,6 +14,7 @@
  *)
 open Common
 open Common2.ArithFloatInfix
+open Common_client
 
 open Figures (* for the fields *)
 module F = Figures
@@ -28,11 +29,6 @@ module Style = Style_codemap
 
 module T = Treemap
 module CanvasH = Canvas_helpers
-
-(*
-module FT = File_type
-module Parsing = Parsing2
-*)
 
 (*****************************************************************************)
 (* Prelude *)
@@ -88,17 +84,10 @@ type draw_content_layout = {
 (* Helpers *)
 (*****************************************************************************)
 
-(*
-let is_big_file_with_few_lines ~nblines fullpath = 
-  nblines < 20. && 
-  Common2.filesize_eff fullpath > 4000
-*)
-
 (*****************************************************************************)
 (* Anamorphic entities *)
 (*****************************************************************************)
 
-(*s: final_font_size_of_categ *)
 (*
 let final_font_size_of_categ ~font_size ~font_size_real categ = 
 
@@ -186,11 +175,12 @@ let set_source_rgba_and_font_size_of_categ
   );
   ()
 *)
+
 (*****************************************************************************)
 (* Columns *)
 (*****************************************************************************)
 
-let font_size_when_have_x_columns ~nblines ~chars_per_column ~w ~h ~with_n_columns = 
+let font_size_when_have_x_columns ~nblines ~chars_per_column ~w ~h ~with_n_columns =
   let size_x = (w / with_n_columns) / chars_per_column in
   let size_y = (h / (nblines / with_n_columns)) in
 
