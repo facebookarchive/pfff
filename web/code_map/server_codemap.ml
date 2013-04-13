@@ -107,6 +107,10 @@ let fileinfo_of_file file =
       | FT.PL (FT.Opa)
       (* | (FT.Text "txt") when Common2.basename file =$= "info.txt" *)
       ) -> 
+(*
+        let tokens_with_categ = Parsing.tokens_with_categ_of_file file entities in
+*)
+
         Model.Fancy
     | FT.PL _ | FT.Text _ ->
         Model.Regular (Common.cat file)

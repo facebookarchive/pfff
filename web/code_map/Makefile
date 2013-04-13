@@ -9,6 +9,7 @@ TOP=../..
 
 INCLUDEDIRS= $(TOP)/commons \
   $(TOP)/web/commons \
+  $(TOP)/h_program-lang/ \
   $(TOP)/h_visualization/ \
   $(TOP)/h_program-visual/ \
 
@@ -19,6 +20,7 @@ OBJS_SERVER= \
 
 OBJS_CLIENT= \
  flag_visual.cmo \
+ style_codemap.cmo \
  model_codemap.cmo \
  draw_microlevel.cmo \
  draw_macrolevel.cmo \

@@ -20,15 +20,13 @@ open Figures (* for the fields *)
 module F = Figures
 module Color = Simple_color
 
+module T = Treemap
+
+module CanvasH = Canvas_helpers
 open Model_codemap (* for the fields *)
 
 module Flag = Flag_visual
-(*
 module Style = Style_codemap
-*)
-
-module T = Treemap
-module CanvasH = Canvas_helpers
 
 (*****************************************************************************)
 (* Prelude *)
@@ -88,7 +86,26 @@ type draw_content_layout = {
 (* Anamorphic entities *)
 (*****************************************************************************)
 
-(*
+let final_font_size_when_multiplier 
+    ~multiplier ~size_font_multiplier_multiplier 
+    ~font_size ~font_size_real 
+   = 
+  let size_font_multiplier = multiplier in
+  
+  let font_size_adjusted = 
+    if size_font_multiplier = 1.
+    then font_size
+    else 
+      max 
+       (font_size * size_font_multiplier * size_font_multiplier_multiplier)
+       (font_size * 1.5)
+  in
+  
+  let final_font_size = 
+    Common2.borne ~min:font_size ~max:(font_size * 30.) font_size_adjusted
+  in
+  final_font_size
+
 let final_font_size_of_categ ~font_size ~font_size_real categ = 
 
   let multiplier = Style.size_font_multiplier_of_categ ~font_size_real categ in
@@ -104,18 +121,17 @@ let final_font_size_of_categ ~font_size ~font_size_real categ =
     | _ -> 0.5
   in
 
-  Draw_common.final_font_size_when_multiplier 
+  final_font_size_when_multiplier 
     ~multiplier
     ~size_font_multiplier_multiplier
     ~font_size
     ~font_size_real
-*)
 
-(*
-let set_source_rgba_and_font_size_of_categ 
-  ~cr ~font_size ~font_size_real ~is_matching_line
+let rgba_and_font_size_of_categ 
+  ~ctx ~ctx2 ~font_size ~font_size_real (*~is_matching_line*)
  categ 
  =
+  let is_matching_line = false in
 
   let attrs =
     match categ with
@@ -140,41 +156,16 @@ let set_source_rgba_and_font_size_of_categ
     | _ -> 0.3
   in
   
-  Cairo.set_font_size cr final_font_size;
-  
-  let final_font_size_real = 
-    CairoH.user_to_device_font_size cr final_font_size in
-  
-  attrs +> List.iter (fun attr ->
+  attrs +> Common.find_some (fun attr ->
     match attr with
     | `FOREGROUND s 
     | `BACKGROUND s (* todo: should really draw the background of the text *)
       -> 
         let (r,g,b) = Color.rgbf_of_string s in
-        (* this seems needed only on old version of Cario, or at least
-         * on the cairo I am using under Linux. Under Mac I don't need
-         * this; I put alpha = 1. for everything and the rendering
-         * is fine.
-         *)
-        let alpha = 
-          if CairoH.is_old_cairo () then
-            match () with
-            | _ when final_font_size_real < 1. -> 0.2
-            | _ when final_font_size_real < 3. -> 0.4
-            | _ when final_font_size_real < 5. -> 0.9
-                
-            | _ when final_font_size_real < 8. 
-                  -> 1. (* TODO - alpha_adjust, do that only when not in
-                           fully zoomed mode *)
-                    
-            | _ -> 1.
-          else 1.
-        in
-        Cairo.set_source_rgba cr r g b alpha;
-    | _ -> ()
-  );
-  ()
-*)
+        let alpha = 1. in
+        Some (((r, g, b), alpha), final_font_size);
+    | _ -> None
+  )
 
 (*****************************************************************************)
 (* Columns *)
@@ -274,109 +265,115 @@ let draw_content ~ctx ~ctx2 ~layout fileinfo r =
 *)
 
 
-  let nblines_per_column = 
-    (layout.l_nblines / layout.split_nb_columns) +> ceil +> int_of_float in
+    let nblines_per_column = 
+      (layout.l_nblines / layout.split_nb_columns) +> ceil +> int_of_float in
 
-  let line = ref 1 in
+    let line = ref 1 in
 
-  (match fileinfo.style with
-  | Fancy ->
-    raise Todo
-(*
-    let column = ref 0 in
-    let line_in_column = ref 1 in
+    (match fileinfo.style with
+    | Fancy ->
+        let tokens_with_categ = raise Todo in
 
-    let x = r.p.x + (float_of_int !column) * layout.w_per_column in
-    let y = r.p.y + (layout.space_per_line * (float_of_int !line_in_column)) in
+        let column = ref 0 in
+        let line_in_column = ref 1 in
+
+        let x = ref 
+          (r.p.x + (float_of_int !column) * layout.w_per_column) in
+        let y = ref 
+          (r.p.y + (layout.space_per_line * (float_of_int !line_in_column))) in
         
-    Cairo.move_to cr x y;
-
+(*
     let model = Async.async_get context.model in
     let entities = model.Model2.hentities in
+*)
 
-    let tokens_with_categ = Parsing.tokens_with_categ_of_file file entities in
+        tokens_with_categ +> List.iter (fun (s, categ, filepos) ->
 
-    tokens_with_categ +> List.iter (fun (s, categ, filepos) ->
+          let (((red,g,b), alpha), final_font_size) =
+            rgba_and_font_size_of_categ 
+              ~ctx ~ctx2 ~font_size ~font_size_real
+              (*~is_matching_line:(Hashtbl.mem hmatching_lines !line)*)
+              categ in
+          ctx##fillStyle <- 
+            Js.string (CanvasH.rgba_of_rgbf (red,g,b) alpha);
 
-      set_source_rgba_and_font_size_of_categ 
-        ~cr ~font_size ~font_size_real
-        ~is_matching_line:(Hashtbl.mem hmatching_lines !line)
-        categ;
+          let xs = Common2.lines_with_nl_either s in
       
-      let xs = Common2.lines_with_nl_either s in
-      
-      xs +> List.iter (function
-      | Common2.Left s -> 
-          let pt = Cairo.get_current_point cr in
-          Common.push2 (s, filepos, pt) text_with_user_pos;
+          xs +> List.iter (function
+          | Common2.Left s -> 
+              (*
+                let pt = Cairo.get_current_point cr in
+                Common.push2 (s, filepos, pt) text_with_user_pos;
+              *)
+              
+              fill_text_scaled ctx ctx2 s ~x:!x ~y:!y ~size:final_font_size;
+              (* TODO XXXX this move x and y ... *)
 
-          CairoH.show_text cr s
-      | Common2.Right () ->
-          
-          incr line_in_column;
-          incr line;
-
-          if !line_in_column > nblines_per_column
-          then begin 
-            incr column;
-            line_in_column := 1;
-          end;
-
-          let x = r.p.x + 
-            (float_of_int !column) * layout.w_per_column in
-          let y = r.p.y + 
-            (layout.space_per_line * (float_of_int !line_in_column)) in
-
+          | Common2.Right () ->
+              
+              incr line_in_column;
+              incr line;
+              
+              if !line_in_column > nblines_per_column
+              then begin 
+                incr column;
+                line_in_column := 1;
+              end;
+              
+              x := r.p.x + 
+                (float_of_int !column) * layout.w_per_column;
+              y := r.p.y + 
+                (layout.space_per_line * (float_of_int !line_in_column));
+              
           (* must be done before the move_to below ! *)
-          (match Common2.hfind_option !line hmatching_lines with
-          | None -> ()
-          | Some color ->
-              CairoH.fill_rectangle ~cr 
-                ~alpha:0.25
-                ~color
-                ~x 
-                ~y:(y - layout.space_per_line) 
+          (*
+            (match Common2.hfind_option !line hmatching_lines with
+            | None -> ()
+            | Some color ->
+            CairoH.fill_rectangle ~cr 
+            ~alpha:0.25
+            ~color
+            ~x 
+            ~y:(y - layout.space_per_line) 
                 ~w:layout.w_per_column 
-                ~h:(layout.space_per_line * 3.)
-                ()
-          );
-          Cairo.move_to cr x y;
-          
-          
-      );
-    )
- *)
-  | Regular lines ->
-   (* This was causing some "out_of_memory" cairo error on linux. Not
-    * sure why.
-    *)
-   ctx##fillStyle <- Js.string (CanvasH.rgba_of_rgbf (0.0,0.0,0.0) 0.9);
+            ~h:(layout.space_per_line * 3.)
+            ()
+            );
+          *)
+          )
+        )
 
-    let xs = lines in
-    let xxs = Common2.pack_safe nblines_per_column xs in
+    | Regular lines ->
+      (* This was causing some "out_of_memory" cairo error on linux. Not
+       * sure why.
+       *)
+        ctx##fillStyle <- Js.string (CanvasH.rgba_of_rgbf (0.0,0.0,0.0) 0.9);
 
-    (* I start at 0 for the column because the x displacement
-     * is null at the beginning, but at 1 for the line because
-     * the y displacement must be more than 0 at the
-     * beginning
-     *)
-    Common.index_list_0 xxs +> List.iter (fun (xs, column) ->
-      Common.index_list_1 xs +> List.iter (fun (s, line_in_column) ->
-      
-        let x = r.p.x + 
-          (float_of_int column) * layout.w_per_column in
-        let y = r.p.y + 
-          (layout.space_per_line * (float_of_int line_in_column)) in
+        let xs = lines in
+        let xxs = Common2.pack_safe nblines_per_column xs in
         
-        fill_text_scaled ctx ctx2 s ~x ~y ~size:font_size;
-
-        incr line;
-      );
-    );
-  | Nothing ->
-      ()
-  )
- end
+        (* I start at 0 for the column because the x displacement
+         * is null at the beginning, but at 1 for the line because
+         * the y displacement must be more than 0 at the
+         * beginning
+         *)
+        Common.index_list_0 xxs +> List.iter (fun (xs, column) ->
+          Common.index_list_1 xs +> List.iter (fun (s, line_in_column) ->
+            
+            let x = r.p.x + 
+              (float_of_int column) * layout.w_per_column in
+            let y = r.p.y + 
+              (layout.space_per_line * (float_of_int line_in_column)) in
+            
+            fill_text_scaled ctx ctx2 s ~x ~y ~size:font_size;
+            
+            incr line;
+          );
+        );
+    | Nothing ->
+        ()
+    )
+  end
 
 
 let draw_treemap_rectangle_content_maybe ctx ctx2 fileinfo r  =
