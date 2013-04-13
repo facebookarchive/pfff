@@ -106,10 +106,12 @@ let fileinfo_of_file file =
       | FT.PL (FT.Erlang)
       | FT.PL (FT.Opa)
       (* | (FT.Text "txt") when Common2.basename file =$= "info.txt" *)
-      ) -> Model.Fancy
+      ) -> 
+        Model.Fancy
     | FT.PL _ | FT.Text _ ->
         Model.Regular (Common.cat file)
-    | _ -> Model.Nothing
+    | _ -> 
+        Model.Nothing
   in
 
   { Model.
