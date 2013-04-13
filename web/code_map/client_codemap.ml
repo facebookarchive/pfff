@@ -107,6 +107,8 @@ let paint w =
   (* TODO: handle layers *)
 
   (* phase 2, draw the labels, if have enough space *)
+  rects +> List.iter (Draw_labels.draw_treemap_rectangle_label_maybe 
+                        ~ctx ~ctx2:w ~color:None);
 
   (* phase 3, draw the content, if have enough space *)
   ()

@@ -9,3 +9,5 @@ type world_client = {
   orig_coord_height: float;
   width_text_etalon_normalized_coord: float;
 }
+
+type context = Dom_html.canvasRenderingContext2D Js.t

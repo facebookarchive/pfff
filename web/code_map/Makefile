@@ -17,8 +17,10 @@ OBJS_SERVER= \
  server_codemap.cmo \
 
 OBJS_CLIENT= \
+ flag_visual.ml \
  model_codemap.cmo \
  draw_macrolevel.cmo \
+ draw_labels.cmo \
  client_codemap.cmo \
 
 LIBS_CLIENT= -package js_of_ocaml.syntax -syntax camlp4o
