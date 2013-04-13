@@ -30,11 +30,13 @@ module M = Model_codemap
 (* Prelude *)
 (*****************************************************************************)
 
+(* TODO: factorize code with pfff/code_map/view_mainmap.ml *)
+
 (*****************************************************************************)
 (* JS Helpers *)
 (*****************************************************************************)
 
-(* from jflo slides *)
+(* TODO: from jflo slides, factorize with pfff/web/code_graph *)
 let unopt x =
   Js.Opt.get x (fun () -> raise Not_found)
 let retrieve id =
@@ -65,6 +67,8 @@ let paint w =
       unopt
   in
   let ctx = canvas##getContext (Dom_html._2d_) in
+
+(* TODO: factorize with pfff/web/code_graph *)
   
   (* ugly hack because html5 canvas does not handle using float size for fonts
    * when printing text in a scaled context.
@@ -98,9 +102,13 @@ let paint w =
   }
   in
 
-  rects +> List.iter (fun rect -> 
-    Draw_macro.draw_treemap_rectangle ctx rect
-  );
+  (* phase 1, draw the rectangles *)
+  rects +> List.iter (Draw_macrolevel.draw_treemap_rectangle ctx);
+  (* TODO: handle layers *)
+
+  (* phase 2, draw the labels, if have enough space *)
+
+  (* phase 3, draw the content, if have enough space *)
   ()
 
 (*****************************************************************************)

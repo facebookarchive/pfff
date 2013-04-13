@@ -18,7 +18,7 @@ OBJS_SERVER= \
 
 OBJS_CLIENT= \
  model_codemap.cmo \
- draw_macro.cmo \
+ draw_macrolevel.cmo \
  client_codemap.cmo \
 
 LIBS_CLIENT= -package js_of_ocaml.syntax -syntax camlp4o

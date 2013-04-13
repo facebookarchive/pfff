@@ -162,10 +162,8 @@ depend2::
 _server/home.cmo: _server/codemap.cmo
 _server/home.cmo: _server/codegraph.cmo
 _server/home.cmo: _server/test.cmo
-
-# eliomdep does not handle dependencies between .eliom files and other dirs
+_server/codemap.type_mli: _server/globals.cmo
 _client/codegraph.cmo: code_graph/lib_client.cma
-
 _server/codegraph.cmo: _server/globals.cmo
 _server/codemap.cmo: _server/globals.cmo
 

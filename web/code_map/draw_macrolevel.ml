@@ -27,7 +27,7 @@ open Figures (* for the fields *)
 (* Drawing a treemap rectangle *)
 (*****************************************************************************)
 
-let draw_treemap_rectangle ?(color=None) ?(alpha=1.) ctx rect =
+let draw_treemap_rectangle ctx ?(color=None) ?(alpha=1.) rect =
   let r = rect.T.tr_rect in
 
   (let (r,g,b) = 
