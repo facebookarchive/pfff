@@ -487,7 +487,6 @@ let draw_matrix ctx w =
 (* Painting entry point *)
 (*****************************************************************************)
 
-
 (* paint() creates the cairo context and adjusts the scaling if needed
  * and then calls the 'draw' functions.
  *)

@@ -1,25 +1,44 @@
+(* Yoann Padioleau
+ * 
+ * Copyright (C) 2013 Facebook
+ *
+ * This library is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU Lesser General Public License
+ * version 2.1 as published by the Free Software Foundation, with the
+ * special exception on linking described in file license.txt.
+ * 
+ * This library is distributed in the hope that it will be useful, but
+ * WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the file
+ * license.txt for more details.
+ *)
 open Common
+(* floats are the norm in graphics *)
 open Common2.ArithFloatInfix
 open Common_client
 
+open Figures (* for the fields *)
+module Color = Simple_color
+
 module T = Treemap
 module F = Figures
-module Color = Simple_color
-module CanvasH = Canvas_helpers
 
-open Figures (* for the fields *)
+open Model_codemap
+module M = Model_codemap
 
 (*****************************************************************************)
 (* Prelude *)
 (*****************************************************************************)
 
 (*****************************************************************************)
-(* Types, constants *)
+(* JS Helpers *)
 (*****************************************************************************)
 
-(* see visual/style2.ml *)
-let width = 800 (* 2350, 1200 *)
-let height = 600 (* 1400, 750 *)
+(* from jflo slides *)
+let unopt x =
+  Js.Opt.get x (fun () -> raise Not_found)
+let retrieve id =
+  unopt (Dom_html.document##getElementById (Js.string id))
 
 (*****************************************************************************)
 (* Helpers *)
@@ -28,33 +47,68 @@ let height = 600 (* 1400, 750 *)
 (*****************************************************************************)
 (* Misc *)
 (*****************************************************************************)
-let scale_zoom_pan_map ~width ~height ctx =
-  (* original matrix *)
-  ctx##setTransform (1.,0.,0.,1.,0.,0.);
 
-  ctx##scale (float_of_int width /. T.xy_ratio,
-              float_of_int height);
-  ()
+(*****************************************************************************)
+(* Painting entry point *)
+(*****************************************************************************)
 
-let draw_treemap_rendering (rects: Treemap.treemap_rendering) =
-  pr2 "draw_treemap_rendering";
+let paint w =
+
+  let rects = w.rects in
+
+  pr2 "paint";
   pr2 (spf "# rects = %d " (List.length rects));
 
-  let canvas = Dom_html.createCanvas Dom_html.document in
+  let canvas = 
+    retrieve "main_canvas" +> 
+      Dom_html.CoerceTo.canvas +>
+      unopt
+  in
   let ctx = canvas##getContext (Dom_html._2d_) in
-  canvas##width <- width; 
-  canvas##height <- height;
+  
+  (* ugly hack because html5 canvas does not handle using float size for fonts
+   * when printing text in a scaled context.
+   *)
+  ctx##font <- Js.string (spf "bold 12 px serif" );
+  let text = "MM" in
+  let metric = ctx##measureText (Js.string text) in
+  let width_text_etalon_orig_coord = metric##width / 2.0 in
+  pr2 (spf "width text orig coord = %f" width_text_etalon_orig_coord);
 
-  scale_zoom_pan_map ~width ~height ctx;
+  let orig_coord_width = float_of_int w.width in
+  let normalized_coord_width = T.xy_ratio in
+
+  let width_text_etalon_normalized_coord = 
+    (normalized_coord_width * width_text_etalon_orig_coord) /
+      orig_coord_width
+  in
+  pr2 (spf "width text normalized coord = %f" 
+         width_text_etalon_normalized_coord);
+
+
+  ctx##setTransform (1.,0.,0.,1.,0.,0.);
+  ctx##scale (
+    (float_of_int w.width / T.xy_ratio),
+    (float_of_int w.height));
+
+  let w = { w with
+    width_text_etalon_normalized_coord;
+    orig_coord_width;
+    orig_coord_height = float_of_int w.height;
+  }
+  in
 
   rects +> List.iter (fun rect -> 
     Draw_macro.draw_treemap_rectangle ctx rect
   );
-
-  Dom.appendChild Dom_html.document##body canvas;
   ()
 
+(*****************************************************************************)
+(* Test micro *)
+(*****************************************************************************)
 
+let width = 100
+let height = 100
 let draw_file lines =
   pr2 "draw_file";
   pr2 (spf "# lines = %d " (List.length lines));

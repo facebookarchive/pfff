@@ -17,6 +17,14 @@ let gopti = begin
     (fun () -> Graph_code_opti.convert g)
 end
 
+let paths = ["/home/pad/pfff"]
+let filter = Treemap_pl.ocaml_filter_file
+let treemap = Treemap_pl.code_treemap ~filter_file:filter paths
+let algo = Treemap.Ordered Treemap.PivotByMiddle
+let rects = Treemap.render_treemap_algo 
+    ~algo ~big_borders:false
+    treemap 
+
 let _ = begin
   pr2 "READY";
 end

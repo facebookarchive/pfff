@@ -1,8 +1,6 @@
 open Common
 module H = Eliom_content.Html5.D
 
-module Flag = Flag_web
-
 (*****************************************************************************)
 (* Prelude *)
 (*****************************************************************************)
@@ -19,6 +17,19 @@ module App = Eliom_registration.App (struct
 end)
 
 (*****************************************************************************)
+(* Shared *)
+(*****************************************************************************)
+
+{shared{
+
+let width = 1200
+let height = 680
+module DM = Dependencies_matrix_code
+module Model = Model_codemap
+
+}}
+
+(*****************************************************************************)
 (* Main entry point *)
 (*****************************************************************************)
 let main_service =
@@ -27,14 +38,18 @@ let main_service =
     ~get_params:(Eliom_parameter.string "path")
   (fun path () ->
     pr2 path;
-    Treemap.follow_symlinks := true;
-    let path = Common2.relative_to_absolute path in
-    let rects = 
-         Server_codemap.treemap_generator [path] 
-     
-     (* Common.cache_computation ~verbose:true path "_treemap.marshall" (fun () ->
-       ) *)
+
+    (* TODO: compute config based on path and depending
+     * on some OCaml pfff repo type.
+     *)
+    let rects = Globals.rects in
+   
+(*
+    let rects = Server_codemap.treemap_generator [path] in
+    Common.cache_computation ~verbose:true path "_treemap.marshall" 
+      (fun () ->)
     in
+*)
     (* optimize and filter very small rectangles so
      * that we send less data
      *)
@@ -46,21 +61,41 @@ let main_service =
     )
     in
     pr2 (spf "nb rects after filtering: %d" (List.length rects));
+    let w = { Model.
+       rects;
+
+       width = width;
+       height = height;
+       orig_coord_width = 0.;
+       orig_coord_height = 0.;
+       width_text_etalon_normalized_coord = 0.;
+    }
+    in
 
     ignore
-      {unit { Client_codemap.draw_treemap_rendering %rects }};
+      {unit { Client_codemap.paint %w }};
     Lwt.return
       (H.html 
           (H.head (H.title (H.pcdata "Codemap")) [ 
-
          (* this is now included by default
-         H.js_script
-           ~uri:(H.make_uri  (Eliom_service.static_dir ())["app.js"]) ();
+         H.js_script 
+            ~uri:(H.make_uri  (Eliom_service.static_dir ())["app.js"]) ();
          *)
           ])
 	  (H.body [
+            (* used by runtime1.js, useful to see exceptions thrown *)
+            H.div ~a:[H.a_id "output";] [];
+
+            H.canvas
+              ~a:[H.a_id "main_canvas"; H.a_width width; H.a_height height]
+              [];
           ]))
   )
+
+
+(*****************************************************************************)
+(* Testing *)
+(*****************************************************************************)
 
 let test_codemap_micro =
   App.register_service 

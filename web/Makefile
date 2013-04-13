@@ -10,6 +10,7 @@ TOP=..
 INCLUDEDIRS= $(TOP)/commons \
  $(TOP)/h_program-lang/ \
  $(TOP)/h_visualization/ \
+ $(TOP)/h_program-visual/ \
  $(TOP)/lang_php/parsing \
  $(TOP)/web/commons \
   $(TOP)/web/code_map \
@@ -166,6 +167,7 @@ _server/home.cmo: _server/test.cmo
 _client/codegraph.cmo: code_graph/lib_client.cma
 
 _server/codegraph.cmo: _server/globals.cmo
+_server/codemap.cmo: _server/globals.cmo
 
 ##############################################################################
 # Generic ocaml rules

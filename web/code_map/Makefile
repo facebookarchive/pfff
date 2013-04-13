@@ -13,10 +13,11 @@ INCLUDEDIRS= $(TOP)/commons \
   $(TOP)/h_program-visual/ \
 
 OBJS_SERVER= \
- shared_codemap.cmo \
+ model_codemap.cmo \
  server_codemap.cmo \
 
 OBJS_CLIENT= \
+ model_codemap.cmo \
  draw_macro.cmo \
  client_codemap.cmo \
 
