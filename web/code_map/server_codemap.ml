@@ -1,4 +1,20 @@
+(* Yoann Padioleau
+ * 
+ * Copyright (C) 2013 Facebook
+ *
+ * This library is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU Lesser General Public License
+ * version 2.1 as published by the Free Software Foundation, with the
+ * special exception on linking described in file license.txt.
+ * 
+ * This library is distributed in the hope that it will be useful, but
+ * WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the file
+ * license.txt for more details.
+ *)
 open Common
+
+module Model = Model_codemap
 
 module Flag = Flag_web
 
@@ -6,6 +22,10 @@ module Flag = Flag_web
 module FT = File_type
 module Parsing = Parsing2
 *)
+
+(*****************************************************************************)
+(* Prelude *)
+(*****************************************************************************)
 
 (*****************************************************************************)
 (* Flags *)
@@ -27,6 +47,24 @@ let treemap_generator paths =
   pr2 (spf "%d rectangles to draw" (List.length rects));
   rects
 
+(*
+    Common.cache_computation ~verbose:true path "_treemap.marshall" 
+      (fun () ->)
+    in
+*)
+
+(* optimize and filter very small rectangles so that we send less data *)
+let optimize_rects rects =
+  let rects = rects +> Common.exclude (fun rect ->
+    let r = rect.Treemap.tr_rect in
+    let w = Figures.rect_width r in
+    let h = Figures.rect_height r in
+    w *. h <= 0.000009
+  )
+  in
+  pr2 (spf "nb rects after filtering: %d" (List.length rects));
+  rects
+
 (*****************************************************************************)
 (* Micro view server helpers *)
 (*****************************************************************************)
@@ -36,3 +74,20 @@ let is_big_file_with_few_lines ~nblines fullpath =
   nblines < 20. && 
   Common2.filesize_eff fullpath > 4000
 *)
+
+  (* if the file is not textual, or contain weird characters, then
+   * it confuses cairo which then can confuse computation done in gtk
+   * idle callbacks
+   *)
+  (*if Common2.lfile_exists_eff file && File_type.is_textual_file file*)
+
+  (* Common.nblines_with_wc was really slow. fork sucks.
+   * alternative: we could store the nblines of a file in the db but
+   * we would need a fast absolute_to_readable then.
+   *)
+
+let fileinfo_of_file file =
+  { Model.
+      lines = Common.cat file;
+      nblines = float_of_int (Common2.nblines_eff file);
+  }

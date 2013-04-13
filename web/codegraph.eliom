@@ -18,7 +18,6 @@ module App = Eliom_registration.App (struct let application_name = "app" end)
 {shared{
 let width = 1200
 let height = 680
-module DM = Dependencies_matrix_code
 module Model = Model_codegraph
 }}
 
@@ -32,14 +31,8 @@ let main_service =
   (fun path () ->
     pr2 path;
 
-    (* TODO: compute config based on path, and compute g depending
-     * on some OCaml pfff repo type.
-     *)
-    let path = [DM.Expand ("lang_php", Database_code.Dir)] in
-    DM.threshold_pack := 4000;
-    let config, _goptiTODO = DM.config_of_path path Globals.gopti in
-    let m, _goptiTODO =
-      DM.build config (None) Globals.gopti in
+    (* todo: gopti should be a param too? memoized *)
+    let m = Server_codegraph.build Globals.gopti path in
 
     let w = { Model.
        m;

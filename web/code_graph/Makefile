@@ -15,6 +15,7 @@ INCLUDEDIRS= $(TOP)/commons \
 
 OBJS_SERVER= \
  model_codegraph.cmo \
+ server_codegraph.cmo \
 
 OBJS_CLIENT= \
  model_codegraph.cmo \
