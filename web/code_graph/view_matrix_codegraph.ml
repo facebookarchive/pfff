@@ -33,16 +33,6 @@ module DM = Dependencies_matrix_code
 (* TODO: factorize with pfff/code_graph/view_matrix.ml *)
 
 (*****************************************************************************)
-(* JS Helpers *)
-(*****************************************************************************)
-
-(* from jflo slides *)
-let unopt x =
-  Js.Opt.get x (fun () -> raise Not_found)
-let retrieve id =
-  unopt (Dom_html.document##getElementById (Js.string id))
-
-(*****************************************************************************)
 (* Helpers *)
 (*****************************************************************************)
 
@@ -377,7 +367,6 @@ let draw_matrix (ctx: Canvas_helpers.context) w =
 (* paint() creates the cairo context and adjusts the scaling if needed
  * and then calls the 'draw' functions.
  *)
-
 let paint w =
   let canvas = 
     retrieve "main_canvas" +> 
@@ -391,6 +380,7 @@ let paint w =
     ~height:w.height
     ~xy_ratio:xy_ratio
   in
+
   draw_matrix ctx w;
   ()
 

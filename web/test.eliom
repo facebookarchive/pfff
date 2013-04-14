@@ -11,11 +11,6 @@ open Common2.ArithFloatInfix
 open Common_client
 module CanvasH = Canvas_helpers
 
-(* from jflo slides *)
-let unopt x =
-  Js.Opt.get x (fun () -> raise Not_found)
-let retrieve id =
-  unopt (Dom_html.document##getElementById (Js.string id))
 }}
 
 {shared{
