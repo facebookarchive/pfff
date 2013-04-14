@@ -85,7 +85,7 @@ let test_draw ctx =
 *)
   let (r, g, b) = 0.5, 0.5, 0.5 in
   let alpha = 0.5 in
-  ctx##strokeStyle <- Js.string (CanvasH.rgba_of_rgbf (r,g,b) alpha);
+  ctx##strokeStyle <- Js.string (CanvasH.css_color_of_rgbf (r,g,b) alpha);
   ctx##lineWidth <- 0.001;
   ctx##moveTo (0.5, 0.5);
   ctx##lineTo (0.6, 0.6);
@@ -102,7 +102,7 @@ let test_draw ctx =
   Cairo.move_to cr 0.1 0.3;
   Cairo.show_text cr "THIS IS SOME TEXT";
 *)
-  ctx##fillStyle <- Js.string (CanvasH.rgba_of_rgbf (r,g,b) alpha);
+  ctx##fillStyle <- Js.string (CanvasH.css_color_of_rgbf (r,g,b) alpha);
   ignore(fill_text_scaled ctx "THIS IS" ~x:0.1 ~y:0.1 ~size:0.1);
   let width = fill_text_scaled ctx "THIS IS" ~x:0.1 ~y:0.2 ~size:0.1 in
   ignore(fill_text_scaled ctx " AFTER" ~x:(0.1 + width) ~y:0.2 ~size:0.1);
@@ -114,7 +114,7 @@ let test_draw ctx =
   Cairo.line_to cr 0.1 0.2;
   Cairo.stroke cr;
 *)
-  ctx##fillStyle <- Js.string (CanvasH.rgba_of_rgbf (0.1,0.1,0.1) 1.0);
+  ctx##fillStyle <- Js.string (CanvasH.css_color_of_rgbf (0.1,0.1,0.1) 1.0);
   ctx##moveTo (0.1, 0.1);
   ctx##lineTo (0.1, 0.2);
   ctx##stroke();

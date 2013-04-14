@@ -38,10 +38,6 @@ let main_service =
        m;
        width = width;
        height = height;
-       
-       orig_coord_width = 0.;
-       orig_coord_height = 0.;
-       width_text_etalon_normalized_coord = 0.;
     } in
 
     ignore

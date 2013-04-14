@@ -44,7 +44,7 @@ let draw_treemap_rectangle ctx ?(color=None) ?(alpha=1.) rect =
         let (r2,g2,b2) = c +> Color.rgbf_of_string in
         (r2 + r / 20., g2 + g / 20., b2 + b / 20.)
     in
-   ctx##fillStyle <- Js.string (CanvasH.rgba_of_rgbf (r,g,b) alpha)
+   ctx##fillStyle <- Js.string (CanvasH.css_color_of_rgbf (r,g,b) alpha)
   );
   ctx##lineWidth <- 0.;
 

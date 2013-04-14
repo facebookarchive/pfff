@@ -30,16 +30,9 @@ module DM = Dependencies_matrix_code
 
 type world_client = {
   m: Dependencies_matrix_code.dm;
-
-  (* viewport, device coordinates. 
-   * todo: factorize with code_map/ and put in the graphics_context class type?
-   *)
+  (* viewport, device coordinates *)
   width:  int;
   height: int;
-
-  orig_coord_width: float;
-  orig_coord_height: float;
-  width_text_etalon_normalized_coord: float;
 }
 
 type region =

@@ -205,7 +205,7 @@ let draw_column_bars ~ctx ~ctx2 ~split_nb_columns ~font_size ~w_per_column r =
   for i = 1 to int_of_float (split_nb_columns - 1.) do
     let i = float_of_int i in
 
-    ctx##fillStyle <- Js.string (CanvasH.rgba_of_rgbf (0.0,0.0,1.0) 0.2);
+    ctx##fillStyle <- Js.string (CanvasH.css_color_of_rgbf (0.0,0.0,1.0) 0.2);
       
     let font_size_real = 
       (* CairoH.user_to_device_font_size cr font_size  *)
@@ -291,7 +291,7 @@ let draw_content ~ctx ~ctx2 ~layout fileinfo rect =
               (*~is_matching_line:(Hashtbl.mem hmatching_lines !line)*)
               categ in
           ctx##fillStyle <- 
-            Js.string (CanvasH.rgba_of_rgbf (red,g,b) alpha);
+            Js.string (CanvasH.css_color_of_rgbf (red,g,b) alpha);
 
           xs +> List.iter (function
           | Common2.Left s -> 
@@ -342,7 +342,7 @@ let draw_content ~ctx ~ctx2 ~layout fileinfo rect =
       (* This was causing some "out_of_memory" cairo error on linux. Not
        * sure why.
        *)
-        ctx##fillStyle <- Js.string (CanvasH.rgba_of_rgbf (0.0,0.0,0.0) 0.9);
+        ctx##fillStyle <- Js.string (CanvasH.css_color_of_rgbf (0.0,0.0,0.0) 0.9);
 
         let xs = lines in
         let xxs = Common2.pack_safe nblines_per_column xs in
