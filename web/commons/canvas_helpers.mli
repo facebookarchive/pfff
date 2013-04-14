@@ -4,6 +4,9 @@ type css_color = string
 val css_color_of_rgbf: 
   Simple_color.rgbf -> float (* alpha *) -> css_color
 
+(* todo: make it class type in h_visualization/ to abstract away differences
+ * between gtk and canvas
+ *)
 class context: 
   ctx: Dom_html.canvasRenderingContext2D Js.t -> 
   width: int -> height: int ->
