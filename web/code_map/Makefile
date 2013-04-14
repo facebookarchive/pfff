@@ -18,37 +18,30 @@ INCLUDEDIRS= $(TOP)/commons \
    $(TOP)/lang_php/analyze \
    $(TOP)/lang_php/analyze/checker \
    $(TOP)/lang_php/analyze/visual \
-
-#   $(TOP)/lang_php/parsing \
-#   $(TOP)/lang_php/analyze \
-#    $(TOP)/lang_php/analyze/foundation \
-#    $(TOP)/lang_php/analyze/checker \
-#    $(TOP)/lang_php/analyze/database \
-#   $(TOP)/lang_php/matcher \
-#    $(TOP)/lang_ml/analyze \
-#   $(TOP)/lang_haskell/parsing \
-#    $(TOP)/lang_haskell/analyze \
-#   $(TOP)/lang_nw/parsing \
-#    $(TOP)/lang_nw/analyze \
-#   $(TOP)/lang_lisp/parsing \
-#    $(TOP)/lang_lisp/analyze \
-#   $(TOP)/lang_cpp/parsing \
-#    $(TOP)/lang_cpp/analyze \
-#   $(TOP)/lang_js/parsing \
-#    $(TOP)/lang_js/analyze \
-#   $(TOP)/lang_python/parsing \
-#    $(TOP)/lang_python/analyze \
-#   $(TOP)/lang_csharp/parsing \
-#    $(TOP)/lang_csharp/analyze \
-#   $(TOP)/lang_opa/parsing \
-#    $(TOP)/lang_opa/analyze \
-#   $(TOP)/lang_java/parsing \
-#    $(TOP)/lang_java/analyze \
-#   $(TOP)/lang_erlang/parsing \
-#    $(TOP)/lang_erlang/analyze \
-#   $(TOP)/lang_html/parsing \
-#    $(TOP)/lang_html/analyze \
-#   $(TOP)/lang_text \
+   $(TOP)/lang_php/parsing \
+   $(TOP)/lang_haskell/parsing \
+    $(TOP)/lang_haskell/analyze \
+   $(TOP)/lang_nw/parsing \
+    $(TOP)/lang_nw/analyze \
+   $(TOP)/lang_lisp/parsing \
+    $(TOP)/lang_lisp/analyze \
+   $(TOP)/lang_cpp/parsing \
+    $(TOP)/lang_cpp/analyze \
+   $(TOP)/lang_js/parsing \
+    $(TOP)/lang_js/analyze \
+   $(TOP)/lang_python/parsing \
+    $(TOP)/lang_python/analyze \
+   $(TOP)/lang_csharp/parsing \
+    $(TOP)/lang_csharp/analyze \
+   $(TOP)/lang_opa/parsing \
+    $(TOP)/lang_opa/analyze \
+   $(TOP)/lang_java/parsing \
+    $(TOP)/lang_java/analyze \
+   $(TOP)/lang_erlang/parsing \
+    $(TOP)/lang_erlang/analyze \
+   $(TOP)/lang_html/parsing \
+    $(TOP)/lang_html/analyze \
+   $(TOP)/lang_text \
 
 OBJS_SERVER= \
  flag_visual.cmo \

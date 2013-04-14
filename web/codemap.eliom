@@ -85,7 +85,8 @@ let test_codemap_micro =
     in
     let file = 
       (* "/home/pad/pfff/Makefile" *)
-      "/home/pad/pfff/facebook/tests/mini_www/flib/cmf/check_module/test.php"
+      (*"/home/pad/pfff/facebook/tests/mini_www/flib/cmf/check_module/test.php"*)
+      "/home/pad/pfff/main.ml"
     in
     let fileinfo = Server_codemap.fileinfo_of_file file in
 

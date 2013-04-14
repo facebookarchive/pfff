@@ -124,6 +124,7 @@ let test_paint_micro w fileinfo =
   in
   let ctx = canvas##getContext (Dom_html._2d_) in
 
+  (* less: find better font? *)
   ctx##font <- Js.string (spf "bold 12 px serif" );
   let text = "MM" in
   let metric = ctx##measureText (Js.string text) in

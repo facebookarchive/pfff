@@ -42,7 +42,6 @@ open Highlight_code
  *)
 type ast = 
   | Php of Parse_php.program2
-(*
   | ML  of Parse_ml.program2
   | Hs  of Parse_hs.program2
 
@@ -62,7 +61,6 @@ type ast =
   | Python of Parse_python.program2
 
   | Noweb of Parse_nw.program2
-*)
 
   (* less? | Org of Org_mode.org ? *)
 
@@ -209,7 +207,6 @@ let tokens_with_categ_of_file file (* hentities *) =
         ~info_of_tok:Token_helpers_php.info_of_tok
         ~str_of_tok:Token_helpers_php.str_of_tok
         file prefs hentities
-(*
   | FT.PL (FT.ML _) ->
       tokens_with_categ_of_file_helper 
         ~parse:(parse_cache (fun file -> 
@@ -222,8 +219,6 @@ let tokens_with_categ_of_file file (* hentities *) =
         ~info_of_tok:Token_helpers_ml.info_of_tok
         ~str_of_tok:Token_helpers_ml.str_of_tok
         file prefs hentities
-*)
-(*
   | FT.PL (FT.Haskell _) ->
       tokens_with_categ_of_file_helper 
         ~parse:(parse_cache 
@@ -368,7 +363,6 @@ let tokens_with_categ_of_file file (* hentities *) =
   | FT.Text ("txt") when Common2.basename file =$= "info.txt" ->
       let org = Org_mode.parse file in
       Org_mode.highlight org
-*)
 
   | _ -> failwith 
       "impossible: should be called only when file has good file_kind"
