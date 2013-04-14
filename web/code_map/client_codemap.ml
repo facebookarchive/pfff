@@ -61,44 +61,16 @@ let paint w =
       Dom_html.CoerceTo.canvas +>
       unopt
   in
-  let ctx = canvas##getContext (Dom_html._2d_) in
+  let canvas_ctx = canvas##getContext (Dom_html._2d_) in
+  let ctx = new Canvas_helpers.context 
+    ~ctx:canvas_ctx
+    ~width:w.width
+    ~height:w.height
+    ~xy_ratio:T.xy_ratio
+  in
 
   pr2 "paint";
   pr2 (spf "# rects = %d " (List.length w.rects));
-
-(* TODO: factorize with pfff/web/code_graph *)
-  
-  (* ugly hack because html5 canvas does not handle using float size for fonts
-   * when printing text in a scaled context.
-   *)
-  ctx##font <- Js.string (spf "bold 12 px serif" );
-  let text = "MM" in
-  let metric = ctx##measureText (Js.string text) in
-  let width_text_etalon_orig_coord = metric##width / 2.0 in
-  pr2 (spf "width text orig coord = %f" width_text_etalon_orig_coord);
-
-  let orig_coord_width = float_of_int w.width in
-  let normalized_coord_width = T.xy_ratio in
-
-  let width_text_etalon_normalized_coord = 
-    (normalized_coord_width * width_text_etalon_orig_coord) /
-      orig_coord_width
-  in
-  pr2 (spf "width text normalized coord = %f" 
-         width_text_etalon_normalized_coord);
-
-
-  ctx##setTransform (1.,0.,0.,1.,0.,0.);
-  ctx##scale (
-    (float_of_int w.width / T.xy_ratio),
-    (float_of_int w.height));
-
-  let w = { w with
-    width_text_etalon_normalized_coord;
-    orig_coord_width;
-    orig_coord_height = float_of_int w.height;
-  }
-  in
 
   let rects = w.rects in
 
@@ -108,11 +80,10 @@ let paint w =
 
   (* phase 2, draw the labels, if have enough space *)
   rects +> List.iter (Draw_labels.draw_treemap_rectangle_label_maybe 
-                        ~ctx ~ctx2:w ~color:None);
+                        ctx ~color:None);
 
   (* phase 3, draw the content, if have enough space *)
   ()
-
 
 
 
@@ -122,36 +93,14 @@ let test_paint_micro w fileinfo =
       Dom_html.CoerceTo.canvas +>
       unopt
   in
-  let ctx = canvas##getContext (Dom_html._2d_) in
-
-  (* less: find better font? *)
-  ctx##font <- Js.string (spf "bold 12 px serif" );
-  let text = "MM" in
-  let metric = ctx##measureText (Js.string text) in
-  let width_text_etalon_orig_coord = metric##width / 2.0 in
-  pr2 (spf "width text orig coord = %f" width_text_etalon_orig_coord);
-
-  let orig_coord_width = float_of_int w.width in
-  let normalized_coord_width = T.xy_ratio in
-
-  let width_text_etalon_normalized_coord =
-    (normalized_coord_width * width_text_etalon_orig_coord) /
-      orig_coord_width
+  let canvas_ctx = canvas##getContext (Dom_html._2d_) in
+  let ctx = new Canvas_helpers.context 
+    ~ctx:canvas_ctx
+    ~width:w.width
+    ~height:w.height
+    ~xy_ratio:T.xy_ratio
   in
-  pr2 (spf "width text normalized coord = %f" 
-         width_text_etalon_normalized_coord);
 
-  ctx##setTransform (1.,0.,0.,1.,0.,0.);
-  ctx##scale (
-    (float_of_int w.width / T.xy_ratio),
-    (float_of_int w.height));
-
-  let w = { w with
-    width_text_etalon_normalized_coord;
-    orig_coord_width;
-    orig_coord_height = float_of_int w.height;
-  }
-  in
   let r = {
     p = { x = 0.; y = 0.};
     q = { x = T.xy_ratio; y = 1. };
@@ -165,6 +114,5 @@ let test_paint_micro w fileinfo =
     tr_is_node = false;
   }
   in
-
-  Draw_microlevel.draw_treemap_rectangle_content_maybe ctx w fileinfo rect;
+  Draw_microlevel.draw_treemap_rectangle_content_maybe ctx fileinfo rect;
   ()

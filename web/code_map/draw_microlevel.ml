@@ -33,34 +33,6 @@ module Style = Style_codemap
 (*****************************************************************************)
 
 (*****************************************************************************)
-(* Helpers *)
-(*****************************************************************************)
-
-let fill_text_scaled ctx w ?(rotate=0.) ~x ~y ~size str =
-  ctx##save ();
-  ctx##setTransform (1.,0.,0.,1.,0.,0.);
-
-  (* y should be between 0 and 1 *)
-  let y' = y * w.orig_coord_height in
-  (* x should be between 0 and 1.71 *)
-  let x' = (x / T.xy_ratio) * w.orig_coord_width in
-  
-  ctx##translate (x', y');
-  ctx##rotate (rotate);
-
-  (* ugly *)
-  let size = size * 0.9 in
-
-  let scale_factor = size / w.width_text_etalon_normalized_coord in
-
-  ctx##scale (scale_factor, scale_factor);
-  ctx##fillText (Js.string str, 0., 0.);
-  let metric = ctx##measureText (Js.string str) in
-  ctx##restore ();
-  metric##width * scale_factor * T.xy_ratio / w.orig_coord_width
-
-
-(*****************************************************************************)
 (* Types *)
 (*****************************************************************************)
 
@@ -130,7 +102,7 @@ let final_font_size_of_categ ~font_size ~font_size_real categ =
     ~font_size_real
 
 let rgba_and_font_size_of_categ 
-  ~ctx ~ctx2 ~font_size ~font_size_real (*~is_matching_line*)
+  ~ctx ~font_size ~font_size_real (*~is_matching_line*)
  categ 
  =
   let is_matching_line = false in
@@ -201,25 +173,23 @@ let optimal_nb_columns ~nblines ~chars_per_column ~w ~h =
   aux 0.0   1.
 
 
-let draw_column_bars ~ctx ~ctx2 ~split_nb_columns ~font_size ~w_per_column r = 
+let draw_column_bars ctx ~split_nb_columns ~font_size ~w_per_column r = 
+  let ctx2 = ctx#canvas_ctx in
   for i = 1 to int_of_float (split_nb_columns - 1.) do
     let i = float_of_int i in
 
-    ctx##fillStyle <- Js.string (CanvasH.css_color_of_rgbf (0.0,0.0,1.0) 0.2);
+    ctx2##fillStyle <- Js.string (CanvasH.css_color_of_rgbf (0.0,0.0,1.0) 0.2);
       
-    let font_size_real = 
-      (* CairoH.user_to_device_font_size cr font_size  *)
-      font_size * ctx2.orig_coord_width (* TODO *)
-    in
+    let font_size_real = ctx#user_to_device_font_size font_size in
     let width = 
       if font_size_real > 5.
       then  (font_size / 10.)
       else font_size
     in
-    ctx##lineWidth <- width;
-    ctx##moveTo (r.p.x + w_per_column * i, r.p.y);
-    ctx##lineTo (r.p.x + w_per_column * i, r.q.y);
-    ctx##stroke();
+    ctx2##lineWidth <- width;
+    ctx2##moveTo (r.p.x + w_per_column * i, r.p.y);
+    ctx2##lineTo (r.p.x + w_per_column * i, r.q.y);
+    ctx2##stroke();
   done
 
 
@@ -227,13 +197,10 @@ let draw_column_bars ~ctx ~ctx2 ~split_nb_columns ~font_size ~w_per_column r =
 (* File Content *)
 (*****************************************************************************)
 
-let draw_content ~ctx ~ctx2 ~layout fileinfo rect =
+let draw_content (ctx:Canvas_helpers.context) ~layout fileinfo rect =
   let r = rect.T.tr_rect in
   let font_size = layout.font_size in
-  let font_size_real = 
-    (* CairoH.user_to_device_font_size cr font_size  *)
-    font_size * ctx2.orig_coord_width (* TODO *)
-  in
+  let font_size_real = ctx#user_to_device_font_size font_size in
 
   if font_size_real > Flag.threshold_draw_dark_background_font_size_real
   then begin
@@ -287,10 +254,10 @@ let draw_content ~ctx ~ctx2 ~layout fileinfo rect =
 
           let (((red,g,b), alpha), final_font_size) =
             rgba_and_font_size_of_categ 
-              ~ctx ~ctx2 ~font_size ~font_size_real
+              ~ctx ~font_size ~font_size_real
               (*~is_matching_line:(Hashtbl.mem hmatching_lines !line)*)
               categ in
-          ctx##fillStyle <- 
+          ctx#canvas_ctx##fillStyle <- 
             Js.string (CanvasH.css_color_of_rgbf (red,g,b) alpha);
 
           xs +> List.iter (function
@@ -301,7 +268,8 @@ let draw_content ~ctx ~ctx2 ~layout fileinfo rect =
               *)
               
               let width = 
-                fill_text_scaled ctx ctx2 s ~x:!x ~y:!y ~size:final_font_size in
+                ctx#fill_text_scaled_return_width 
+                  s ~x:!x ~y:!y ~size:final_font_size in
               x := !x + width;
 
           | Common2.Right () ->
@@ -342,7 +310,8 @@ let draw_content ~ctx ~ctx2 ~layout fileinfo rect =
       (* This was causing some "out_of_memory" cairo error on linux. Not
        * sure why.
        *)
-        ctx##fillStyle <- Js.string (CanvasH.css_color_of_rgbf (0.0,0.0,0.0) 0.9);
+        ctx#canvas_ctx##fillStyle <- 
+          Js.string (CanvasH.css_color_of_rgbf (0.0,0.0,0.0) 0.9);
 
         let xs = lines in
         let xxs = Common2.pack_safe nblines_per_column xs in
@@ -360,7 +329,7 @@ let draw_content ~ctx ~ctx2 ~layout fileinfo rect =
             let y = r.p.y + 
               (layout.space_per_line * (float_of_int line_in_column)) in
             
-            ignore(fill_text_scaled ctx ctx2 s ~x ~y ~size:font_size);
+            ctx#fill_text_scaled s ~x ~y ~size:font_size;
             
             incr line;
           );
@@ -371,7 +340,7 @@ let draw_content ~ctx ~ctx2 ~layout fileinfo rect =
   end
 
 
-let draw_treemap_rectangle_content_maybe ctx ctx2 fileinfo rect =
+let draw_treemap_rectangle_content_maybe ctx fileinfo rect =
   let r = rect.T.tr_rect in
   let w = F.rect_width r in
   let h = F.rect_height r in
@@ -380,10 +349,8 @@ let draw_treemap_rectangle_content_maybe ctx ctx2 fileinfo rect =
 
   let font_size_estimate = h / 100. in
   let font_size_real_estimate = 
-    (* CairoH.user_to_device_font_size cr font_size_estimate *)
-    font_size_estimate * ctx2.orig_coord_width (* TODO *)
+    ctx#user_to_device_font_size font_size_estimate in
 
-  in
   if font_size_real_estimate > 0.4
   then begin
 
@@ -404,12 +371,9 @@ let draw_treemap_rectangle_content_maybe ctx ctx2 fileinfo rect =
     let space_per_line = 
       font_size in
     
-    draw_column_bars ~ctx ~ctx2 ~split_nb_columns ~font_size ~w_per_column r;
+    draw_column_bars ctx ~split_nb_columns ~font_size ~w_per_column r;
 
-    let font_size_real = 
-      (* CairoH.user_to_device_font_size cr font_size  *)
-      font_size * ctx2.orig_coord_width (* TODO *)
-    in
+    let font_size_real = ctx#user_to_device_font_size font_size in
     
     let layout = {
       font_size = font_size;
@@ -423,7 +387,7 @@ let draw_treemap_rectangle_content_maybe ctx ctx2 fileinfo rect =
     if font_size_real > !Flag.threshold_draw_content_font_size_real 
        (* && not (is_big_file_with_few_lines ~nblines file) *)
        && nblines < !Flag.threshold_draw_content_nblines
-    then draw_content ~ctx ~ctx2 ~layout fileinfo rect
+    then draw_content ctx ~layout fileinfo rect
     else ()
 
   end

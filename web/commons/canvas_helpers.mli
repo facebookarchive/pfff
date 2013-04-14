@@ -17,8 +17,8 @@ object
 
   method canvas_ctx: Dom_html.canvasRenderingContext2D Js.t
 
-  method fillStyle: Simple_color.emacs_color -> unit
-  method strokeStyle: Simple_color.emacs_color -> unit
+  method fillStyle: ?alpha:float -> Simple_color.emacs_color -> unit
+  method strokeStyle: ?alpha:float -> Simple_color.emacs_color -> unit
 
   method draw_line: (css_color * float * (float * float) * (float * float)) 
     -> unit
@@ -42,8 +42,18 @@ object
     ?rotate:float ->
     x:float -> y:float -> 
     size:float -> string -> unit
+
+  method fill_text_scaled_return_width:
+    ?rotate:float ->
+    x:float -> y:float -> 
+    size:float -> string -> 
+    float
+
   method text_extents_scaled:
     string -> size:float -> float * float
+
+  method user_to_device_font_size:
+    float -> float
 
 end
 

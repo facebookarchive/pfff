@@ -26,74 +26,9 @@ module F = Figures
 module Color = Simple_color
 
 (*****************************************************************************)
-(* Canvas helpers *)
-(*****************************************************************************)
-
-let rgba_of_rgbf (r,g,b) alpha =
-  let f_to_i f = int_of_float (100. * f) in
-  let (r, g, b) = f_to_i r, f_to_i g, f_to_i b in
-  spf "rgba(%d%%, %d%%, %d%%, %f)" r g b alpha
-
-let rgba_of_color ?(alpha=1.) ~ctx ~color () = 
-  let (r,g,b) = color +> Color.rgbf_of_string in
-  rgba_of_rgbf (r,g,b) alpha
-
-let fill_text_scaled ctx w ?(rotate=0.) ~x ~y ~size str =
-  ctx##save ();
-  ctx##setTransform (1.,0.,0.,1.,0.,0.);
-
-  (* y should be between 0 and 1 *)
-  let y' = y * w.orig_coord_height in
-  (* x should be between 0 and 1.71 *)
-  let x' = (x / T.xy_ratio) * w.orig_coord_width in
-  
-  ctx##translate (x', y');
-  ctx##rotate (rotate);
-
-  (* ugly *)
-  let size = size * 0.9 in
-
-  let scale_factor = size / w.width_text_etalon_normalized_coord in
-
-  ctx##scale (scale_factor, scale_factor);
-  ctx##fillText (Js.string str, 0., 0.);
-  ctx##restore ();
-  ()
-
-(* todo: can probably compute the extend without scaling and so on,
- * just by playing with w.xxx info
- *)
-let text_extents_scaled ctx w str ~size =
-(*
-  ctx##save ();
-  ctx##setTransform (1.,0.,0.,1.,0.,0.);
-
-  let scale_factor = size / w.width_text_etalon_normalized_coord in
-
-  ctx##scale (scale_factor, scale_factor);
-  (* does not work, it returns value on unscaled world *)
-  let metric = ctx##measureText (Js.string str) in
-  let width = metric##width in
-  let metric = ctx##measureText (Js.string "X") in
-  let height = metric##width in
-  ctx##restore ();
-  width, height
-*)
-
-  (* ugly *)
-  let size = size * 0.9 in
-  
-  (* rough approximation *)
-
-  let width = size * ((float_of_int (String.length str)) * 0.8) in
-  let height = size * 0.9 in
-  width, height
-
-(*****************************************************************************)
 (* Label *)
 (*****************************************************************************)
 
-(*s: draw_treemap_rectangle_label_maybe *)
 let _hmemo_text_extent = Hashtbl.create 101
 
 (* This can be quite cpu intensive. CairoH.text_extents is quite slow
@@ -115,7 +50,7 @@ let _hmemo_text_extent = Hashtbl.create 101
  * in some projects there is always an intermediate src/ directory;
  * each software have different conventions.
  *)
-let rec draw_treemap_rectangle_label_maybe ~ctx ~ctx2 ?(color=None) rect =
+let rec draw_treemap_rectangle_label_maybe ctx ?(color=None) rect =
 
   let lbl = rect.T.tr_label in
   let base = Filename.basename lbl in
@@ -164,12 +99,14 @@ let rec draw_treemap_rectangle_label_maybe ~ctx ~ctx2 ?(color=None) rect =
   let alpha = 1. - (minus_alpha / zoom) in
 
   try_draw_label 
+    ctx
     ~font_size_orig:font_size
     ~color ~alpha 
-    ~ctx ~ctx2 ~rect txt
+    ~rect txt
 
 
-and try_draw_label ~font_size_orig ~color ~alpha ~ctx ~ctx2 ~rect txt =
+and try_draw_label 
+    (ctx: Canvas_helpers.context) ~font_size_orig ~color ~alpha ~rect txt =
 
 (* ugly: sometimes labels are too big. Should provide a way to
  * shorten them.
@@ -199,13 +136,10 @@ and try_draw_label ~font_size_orig ~color ~alpha ~ctx ~ctx2 ~rect txt =
   
   let rec aux ~font_size ~step =
 
-  ctx##fillStyle <- Js.string (rgba_of_color ~alpha ~ctx ~color ());
+  ctx#fillStyle ~alpha color;
 
     (* opti: this avoid lots of computation *)
-    let font_size_real = 
-      (* CairoH.user_to_device_font_size cr font_size  *)
-      font_size * ctx2.orig_coord_width (* TODO *)
-    in
+    let font_size_real = ctx#user_to_device_font_size font_size in
 
     if font_size_real < !Flag.threshold_draw_label_font_size_real
     then ()
@@ -218,7 +152,7 @@ and try_draw_label ~font_size_orig ~color ~alpha ~ctx ~ctx2 ~rect txt =
        Common.memoized _hmemo_text_extent (font_size, font_size_real) (fun ()->
          (* peh because it exercises the spectrum of high letters *)
          
-         let tw, th = text_extents_scaled ctx ctx2 "peh" ~size:font_size in
+         let tw, th = ctx#text_extents_scaled "peh" ~size:font_size in
          th, tw
        )
      in
@@ -239,18 +173,15 @@ and try_draw_label ~font_size_orig ~color ~alpha ~ctx ~ctx2 ~rect txt =
            let x = r.p.x + w / 2.0 - (tw / 2.0) in
            let y = r.p.y + h / 2.0 + (th / 2.0) in
        
-           fill_text_scaled ctx ctx2 txt ~x ~y ~size:font_size;
+           ctx#fill_text_scaled txt ~x ~y ~size:font_size;
 
            (* '<= 2' actually means "the toplevel entries" as 
             * the root is at depth=1
             *)
            if rect.T.tr_depth <= 2 then begin
 
-             ctx##fillStyle <- 
-               Js.string (rgba_of_color ~alpha ~ctx ~color:"red" ());
-
-            fill_text_scaled ctx ctx2 (String.sub txt 0 1) ~x ~y 
-               ~size:font_size
+             ctx#fillStyle ~alpha "red";
+             ctx#fill_text_scaled (String.sub txt 0 1) ~x ~y ~size:font_size
            end
            
    
@@ -281,13 +212,11 @@ and try_draw_label ~font_size_orig ~color ~alpha ~ctx ~ctx2 ~rect txt =
          let x = r.p.x + w / 2.0 - (cos angle * (tw / 2.0)) in
          let y = r.p.y + h / 2.0 - (sin angle * (tw / 2.0)) in
            
-         fill_text_scaled ctx ctx2 txt ~x ~y ~size:font_size ~rotate:angle;
+         ctx#fill_text_scaled txt ~x ~y ~size:font_size ~rotate:angle;
          
          if rect.T.tr_depth <= 2 then begin
-           ctx##fillStyle <- 
-             Js.string (rgba_of_color ~alpha ~ctx ~color:"red" ());
-
-           fill_text_scaled ctx ctx2 (String.sub txt 0 1) ~x ~y ~size:font_size
+           ctx#fillStyle ~alpha "red";
+           ctx#fill_text_scaled (String.sub txt 0 1) ~x ~y ~size:font_size
             ~rotate:angle;
          end;
    

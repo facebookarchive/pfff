@@ -52,6 +52,7 @@ class context ~ctx ~width ~height ~xy_ratio =
 
   (* ugly hack because html5 canvas does not handle using float size for
    * fonts when printing text in a scaled context.
+   * less: find better font?
    *)
   let _ = ctx##font <- Js.string (spf "bold 12 px serif" ) in
   let text = "MM" in
@@ -90,11 +91,11 @@ object (self)
 (*****************************************************************************)
 (* state *)
 (*****************************************************************************)
-method fillStyle color =
-  ctx##fillStyle <- Js.string (css_color_of_color ~color ())
+method fillStyle ?alpha color =
+  ctx##fillStyle <- Js.string (css_color_of_color ?alpha ~color ())
 
-method strokeStyle color =
-  ctx##strokeStyle <- Js.string (css_color_of_color ~color ())
+method strokeStyle ?alpha color =
+  ctx##strokeStyle <- Js.string (css_color_of_color ?alpha ~color ())
 
 (*****************************************************************************)
 (* Figures *)
@@ -161,7 +162,7 @@ method fill_rectangle ?alpha ~color r =
 (* Text *)
 (*****************************************************************************)
 
-method fill_text_scaled ?(rotate=0.) ~x ~y ~size str =
+method fill_text_scaled_return_width ?(rotate=0.) ~x ~y ~size str =
   ctx##save ();
   ctx##setTransform (1.,0.,0.,1.,0.,0.);
 
@@ -180,8 +181,13 @@ method fill_text_scaled ?(rotate=0.) ~x ~y ~size str =
 
   ctx##scale (scale_factor, scale_factor);
   ctx##fillText (Js.string str, 0., 0.);
+  let metric = ctx##measureText (Js.string str) in
   ctx##restore ();
-  ()
+  metric##width * scale_factor * xy_ratio / orig_coord_width
+
+method fill_text_scaled ?rotate ~x ~y ~size str =
+  ignore(self#fill_text_scaled_return_width ?rotate ~x ~y ~size str)
+
 
 (* todo: can probably compute the extend without scaling and so on,
  * just by playing with w.xxx info
@@ -213,7 +219,10 @@ method text_extents_scaled str ~size =
   width, height
 
 
-  
+method user_to_device_font_size size =
+  (* CairoH.user_to_device_font_size cr font_size  *)
+  size * orig_coord_width (* TODO *)
+
 
 
 end

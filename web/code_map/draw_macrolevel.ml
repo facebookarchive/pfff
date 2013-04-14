@@ -33,8 +33,10 @@ open Figures (* for the fields *)
 (* Drawing a treemap rectangle *)
 (*****************************************************************************)
 
-let draw_treemap_rectangle ctx ?(color=None) ?(alpha=1.) rect =
+let draw_treemap_rectangle 
+    (ctx2: Canvas_helpers.context) ?(color=None) ?(alpha=1.) rect =
   let r = rect.T.tr_rect in
+  let ctx = ctx2#canvas_ctx in
 
   (let (r,g,b) = 
     let (r,g,b) = rect.T.tr_color +> Color.rgb_of_color +> Color.rgbf_of_rgb in
