@@ -55,8 +55,10 @@ let fill_text_scaled ctx w ?(rotate=0.) ~x ~y ~size str =
 
   ctx##scale (scale_factor, scale_factor);
   ctx##fillText (Js.string str, 0., 0.);
+  let metric = ctx##measureText (Js.string str) in
   ctx##restore ();
-  ()
+  metric##width * scale_factor * T.xy_ratio / w.orig_coord_width
+
 
 (*****************************************************************************)
 (* Types *)
@@ -298,8 +300,9 @@ let draw_content ~ctx ~ctx2 ~layout fileinfo rect =
                 Common.push2 (s, filepos, pt) text_with_user_pos;
               *)
               
-              fill_text_scaled ctx ctx2 s ~x:!x ~y:!y ~size:final_font_size;
-              (* TODO XXXX this move x and y ... *)
+              let width = 
+                fill_text_scaled ctx ctx2 s ~x:!x ~y:!y ~size:final_font_size in
+              x := !x + width;
 
           | Common2.Right () ->
               
@@ -357,7 +360,7 @@ let draw_content ~ctx ~ctx2 ~layout fileinfo rect =
             let y = r.p.y + 
               (layout.space_per_line * (float_of_int line_in_column)) in
             
-            fill_text_scaled ctx ctx2 s ~x ~y ~size:font_size;
+            ignore(fill_text_scaled ctx ctx2 s ~x ~y ~size:font_size);
             
             incr line;
           );
