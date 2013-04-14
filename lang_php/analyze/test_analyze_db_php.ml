@@ -173,10 +173,14 @@ let generate_html_php file =
   let file = Common.realpath file in
   let nblines = Common.cat file +> List.length in
 
-  let db = Database_php_build.db_of_files_or_dirs [file] in
-  let xs = Htmlize_php.htmlize_pre 
+  let _db = Database_php_build.db_of_files_or_dirs [file] in
+  let xs = 
+(*
+Htmlize_php.htmlize_pre 
     ~hook_token:(fun s tok categ -> XHTML2.M.pcdata s)
     file db in
+*)
+    raise Todo in
   let xs' = Common.index_list_1 xs in
   xs' +> List.iter (fun (s, i) ->
     pr2 (spf "%d: %s" i s);

@@ -12,11 +12,12 @@ endif
 
 #todo? have a visual/ directory, where put highlight, htmlize, dependencies?
 SRC= \
-     highlight_php.ml \
-     htmlize_php.ml \
      database_php_storage.ml \
      test_analyze_php.ml \
      test_analyze_db_php.ml \
+
+#pcre deps
+#     htmlize_php.ml \
 
 -include $(TOP)/Makefile.config
 
@@ -39,7 +40,7 @@ LIBS=$(TOP)/commons/lib.cma \
      ../parsing/lib.cma \
 
 MAKESUBDIRS=foundation tools checker \
-  database dynamic_analysis static_analysis qa_test \
+  database dynamic_analysis static_analysis qa_test visual \
 #qa_code annotaters
 #typing finder
 
