@@ -20,10 +20,7 @@ LIBS=$(TOP)/commons/lib.cma \
      $(TOP)/h_version-control/lib.cma \
      ../parsing/lib.cma \
 
-MAKESUBDIRS=
-#database \
-# dynamic_analysis static_analysis \
-# qa_test qa_code \
+MAKESUBDIRS=visual
 
 OCAMLCOMPILERDIR=$(shell ocamlc -where)/compiler-libs
 
@@ -38,6 +35,7 @@ INCLUDEDIRS= $(TOP)/commons \
    $(TOP)/h_visualization  \
    $(TOP)/globals \
    ../parsing \
+   visual \
 
 #   $(TOP)/analyze_php/basic \
 #   $(TOP)/analyze_php/foundation \
