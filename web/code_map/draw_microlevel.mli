@@ -6,5 +6,5 @@ val draw_treemap_rectangle_content_maybe :
   (* clipping:Figures.rectangle -> *)
   (* context:Model2.context -> *)
   Model_codemap.fileinfo_client ->
-  Figures.rectangle -> 
+  Treemap.treemap_rectangle -> 
   unit

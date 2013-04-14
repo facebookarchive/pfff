@@ -83,7 +83,10 @@ let test_codemap_micro =
        width_text_etalon_normalized_coord = 0.;
     }
     in
-    let file = "/home/pad/pfff/Makefile" in
+    let file = 
+      (* "/home/pad/pfff/Makefile" *)
+      "/home/pad/pfff/demos/foo.php"
+    in
     let fileinfo = Server_codemap.fileinfo_of_file file in
 
     ignore

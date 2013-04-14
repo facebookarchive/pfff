@@ -107,11 +107,16 @@ let fileinfo_of_file file =
       | FT.PL (FT.Opa)
       (* | (FT.Text "txt") when Common2.basename file =$= "info.txt" *)
       ) -> 
-(*
-        let tokens_with_categ = Parsing.tokens_with_categ_of_file file entities in
-*)
+        let tokens_with_categ = 
+          Server_codemap_parsing.tokens_with_categ_of_file 
+            file (* entities *) in
 
-        Model.Fancy
+        let res = tokens_with_categ +> List.map
+          (fun (s, categ, filepos) ->
+            Common2.lines_with_nl_either s, categ, filepos
+          )
+        in
+        Model.Fancy res
     | FT.PL _ | FT.Text _ ->
         Model.Regular (Common.cat file)
     | _ -> 

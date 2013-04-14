@@ -151,9 +151,17 @@ let test_paint_micro w fileinfo =
     orig_coord_height = float_of_int w.height;
   }
   in
-  let rect = {
+  let r = {
     p = { x = 0.; y = 0.};
     q = { x = T.xy_ratio; y = 1. };
+  }
+  in
+  let rect = { Treemap.
+    tr_rect = r;
+    tr_color = 1;
+    tr_label = "TODO";
+    tr_depth = 1;
+    tr_is_node = false;
   }
   in
 

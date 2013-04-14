@@ -20,5 +20,7 @@ type fileinfo_client = {
 
   and file_rendering_style =
     | Regular of string list (* lines *)
-    | Fancy
+    | Fancy of (lines * Highlight_code.category option * Common2.filepos) list
     | Nothing
+  and lines = 
+   (string, unit) Common2.either list

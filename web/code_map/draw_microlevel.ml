@@ -225,7 +225,8 @@ let draw_column_bars ~ctx ~ctx2 ~split_nb_columns ~font_size ~w_per_column r =
 (* File Content *)
 (*****************************************************************************)
 
-let draw_content ~ctx ~ctx2 ~layout fileinfo r =
+let draw_content ~ctx ~ctx2 ~layout fileinfo rect =
+  let r = rect.T.tr_rect in
   let font_size = layout.font_size in
   let font_size_real = 
     (* CairoH.user_to_device_font_size cr font_size  *)
@@ -244,26 +245,20 @@ let draw_content ~ctx ~ctx2 ~layout fileinfo r =
 *)
 
     let nb_rects_on_screen = 1 in (* TODO *)
-    let _alpha = 
+    let alpha = 
       match (*context.*)nb_rects_on_screen with
       | n when n <= 1 -> 0.95
       | n when n <= 2 -> 0.8
       | n when n <= 10 -> 0.6
       | _ -> 0.3
     in
-    (* unset when used when debugging the layering display *)
-(*
-    if Hashtbl.length context.layers_microlevel = 0 || true
-    then begin
-      Draw_macrolevel.draw_treemap_rectangle ~cr ~color:(Some "DarkSlateGray") 
+    Draw_macrolevel.draw_treemap_rectangle ctx ~color:(Some "DarkSlateGray") 
         ~alpha rect;
-      (* draw a thin rectangle with aspect color *)
+    (* draw a thin rectangle with aspect color *)
+    (*
       CairoH.draw_rectangle_bis ~cr ~color:(rect.T.tr_color) 
-        ~line_width:(font_size / 2.) rect.T.tr_rect;
-    end
-  end;
-*)
-
+      ~line_width:(font_size / 2.) rect.T.tr_rect;
+    *)
 
     let nblines_per_column = 
       (layout.l_nblines / layout.split_nb_columns) +> ceil +> int_of_float in
@@ -271,8 +266,7 @@ let draw_content ~ctx ~ctx2 ~layout fileinfo r =
     let line = ref 1 in
 
     (match fileinfo.style with
-    | Fancy ->
-        let tokens_with_categ = raise Todo in
+    | Fancy tokens_with_categ ->
 
         let column = ref 0 in
         let line_in_column = ref 1 in
@@ -287,7 +281,7 @@ let draw_content ~ctx ~ctx2 ~layout fileinfo r =
     let entities = model.Model2.hentities in
 *)
 
-        tokens_with_categ +> List.iter (fun (s, categ, filepos) ->
+        tokens_with_categ +> List.iter (fun (xs, categ, filepos) ->
 
           let (((red,g,b), alpha), final_font_size) =
             rgba_and_font_size_of_categ 
@@ -297,8 +291,6 @@ let draw_content ~ctx ~ctx2 ~layout fileinfo r =
           ctx##fillStyle <- 
             Js.string (CanvasH.rgba_of_rgbf (red,g,b) alpha);
 
-          let xs = Common2.lines_with_nl_either s in
-      
           xs +> List.iter (function
           | Common2.Left s -> 
               (*
@@ -376,9 +368,8 @@ let draw_content ~ctx ~ctx2 ~layout fileinfo r =
   end
 
 
-let draw_treemap_rectangle_content_maybe ctx ctx2 fileinfo r  =
-  (* let file = rect.T.tr_label in *)
-
+let draw_treemap_rectangle_content_maybe ctx ctx2 fileinfo rect =
+  let r = rect.T.tr_rect in
   let w = F.rect_width r in
   let h = F.rect_height r in
 
@@ -429,7 +420,7 @@ let draw_treemap_rectangle_content_maybe ctx ctx2 fileinfo r  =
     if font_size_real > !Flag.threshold_draw_content_font_size_real 
        (* && not (is_big_file_with_few_lines ~nblines file) *)
        && nblines < !Flag.threshold_draw_content_nblines
-    then draw_content ~ctx ~ctx2 ~layout fileinfo r
+    then draw_content ~ctx ~ctx2 ~layout fileinfo rect
     else ()
 
   end
