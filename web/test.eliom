@@ -66,8 +66,11 @@ let test_draw ctx =
     let scale_factor = size / width_text_etalon_normalized_coord in
 
     ctx##scale (scale_factor, scale_factor);
-    ctx##fillText (Js.string "THIS IS SOME TEXT", 0., 0.);
+    ctx##fillText (Js.string str, 0., 0.);
+    let metric = ctx##measureText (Js.string str) in
+    pr2 (spf "width = %f" metric##width);
     ctx##restore ();
+    metric##width * scale_factor / orig_coord_width
   in
 
   ctx##setTransform (1.,0.,0.,1.,0.,0.);
@@ -100,9 +103,10 @@ let test_draw ctx =
   Cairo.show_text cr "THIS IS SOME TEXT";
 *)
   ctx##fillStyle <- Js.string (CanvasH.rgba_of_rgbf (r,g,b) alpha);
-  fill_text_scaled ctx "THIS IS SOME TEXT" ~x:0.1 ~y:0.1 ~size:0.1;
-  fill_text_scaled ctx "THIS IS SOME TEXT" ~x:0.1 ~y:0.2 ~size:0.1;
-  fill_text_scaled ctx "THIS IS SOME TEXT" ~x:0.1 ~y:0.3 ~size:0.05;
+  ignore(fill_text_scaled ctx "THIS IS" ~x:0.1 ~y:0.1 ~size:0.1);
+  let width = fill_text_scaled ctx "THIS IS" ~x:0.1 ~y:0.2 ~size:0.1 in
+  ignore(fill_text_scaled ctx " AFTER" ~x:(0.1 + width) ~y:0.2 ~size:0.1);
+  ignore(fill_text_scaled ctx "THIS IS" ~x:0.1 ~y:0.3 ~size:0.05);
 
 (*
   Cairo.set_source_rgb cr ~red:0.1 ~green:0.1 ~blue:0.1;
