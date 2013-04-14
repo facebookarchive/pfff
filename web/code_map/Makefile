@@ -13,7 +13,7 @@ INCLUDEDIRS= $(TOP)/commons \
   $(TOP)/h_visualization/ \
   $(TOP)/h_program-visual/ \
   $(TOP)/lang_ml/parsing \
-   $(TOP)/lang_ml/analyze \
+   $(TOP)/lang_ml/analyze/visual \
   $(TOP)/lang_php/parsing \
    $(TOP)/lang_php/analyze \
    $(TOP)/lang_php/analyze/checker \

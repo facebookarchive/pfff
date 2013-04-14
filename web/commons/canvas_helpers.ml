@@ -1,6 +1,6 @@
 (* Yoann Padioleau
  * 
- * Copyright (C) 2011 Facebook
+ * Copyright (C) 2011, 2013 Facebook
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public License
@@ -16,10 +16,9 @@ open Common
 (* floats are the norm in graphics *)
 open Common2.ArithFloatInfix
 
+open Figures
 module F = Figures
 module Color = Simple_color
-
-open Figures
 
 (*****************************************************************************)
 (* Prelude *)
@@ -29,9 +28,10 @@ open Figures
 (* Types *)
 (*****************************************************************************)
 
-type context = Dom_html.canvasRenderingContext2D Js.t
-
 type css_color = string
+
+class context ~ctx = object
+end
 
 (*****************************************************************************)
 (* Color *)

@@ -1,8 +1,11 @@
 
-type context = Dom_html.canvasRenderingContext2D Js.t
+class context: 
+  ctx: Dom_html.canvasRenderingContext2D Js.t -> 
+object  
+end
 
 val draw_line: 
-  context -> 
+  Dom_html.canvasRenderingContext2D Js.t -> 
   string * float * (float * float) * (float * float) ->
   unit
 
