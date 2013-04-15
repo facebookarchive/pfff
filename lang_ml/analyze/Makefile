@@ -6,7 +6,6 @@ TARGET=lib
 
 SRC= module_ml.ml \
      graph_code_ml.ml \
-     highlight_ml.ml \
      tags_ml.ml \
      database_light_ml.ml \
      ast_cmt.ml meta_ast_cmt.ml graph_code_cmt.ml \
@@ -62,8 +61,8 @@ INCLUDEDIRS= $(TOP)/commons \
 # Top rules
 ##############################################################################
 # no rec yet
-all:: $(TARGET).cma
-all.opt:: $(TARGET).cmxa
+all:: rec $(TARGET).cma
+all.opt:: rec.opt $(TARGET).cmxa
 
 rec:
 	set -e; for i in $(MAKESUBDIRS); do $(MAKE) -C $$i all || exit 1; done 

@@ -33,9 +33,11 @@ INCLUDEDIRS=$(TOP)/commons $(TOP)/globals \
          $(TOP)/lang_php/analyze/foundation \
          $(TOP)/lang_php/analyze/checker \
          $(TOP)/lang_php/analyze/database \
+         $(TOP)/lang_php/analyze/visual \
         $(TOP)/lang_php/matcher \
         $(TOP)/lang_ml/parsing \
          $(TOP)/lang_ml/analyze \
+         $(TOP)/lang_ml/analyze/visual \
         $(TOP)/lang_haskell/parsing \
          $(TOP)/lang_haskell/analyze \
         $(TOP)/lang_nw/parsing \

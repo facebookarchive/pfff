@@ -212,6 +212,7 @@ LIBS= commons/lib.cma \
     h_program-visual/lib.cma \
     globals/lib.cma \
     lang_ml/parsing/lib.cma \
+     lang_ml/analyze/visual/lib.cma \
      lang_ml/analyze/lib.cma \
     lang_nw/parsing/lib.cma \
      lang_nw/analyze/lib.cma \
@@ -228,6 +229,7 @@ LIBS= commons/lib.cma \
      lang_php/analyze/static_analysis/lib.cma \
      lang_php/analyze/dynamic_analysis/lib.cma \
      lang_php/analyze/qa_test/lib.cma \
+     lang_php/analyze/visual/lib.cma \
      lang_php/analyze/lib.cma \
      lang_php/pretty/lib.cma \
     lang_sql/parsing/lib.cma \
