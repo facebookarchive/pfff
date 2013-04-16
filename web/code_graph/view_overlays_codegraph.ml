@@ -13,14 +13,12 @@
  * license.txt for more details.
  *)
 open Common
-(* floats are the norm in graphics *)
 open Common2.ArithFloatInfix
 open Common_client
 
 open Figures
 open Model_codegraph
 module M = Model_codegraph
-(* module Ctl = Controller3 *)
 
 module G = Graph_code
 module DM = Dependencies_matrix_code
@@ -29,19 +27,8 @@ module DM = Dependencies_matrix_code
 (* Prelude *)
 (*****************************************************************************)
 
-(* This module mainly modifies the w.overlay cairo surface. It also
- * triggers the refresh_da() which triggers itself the expose event
- * which triggers the View.assemble_layers composition of w.base with
- * w.overlay which refreshes the screen.
- *)
-
-
 (*****************************************************************************)
-(* Helpers *)
-(*****************************************************************************)
-
-(*****************************************************************************)
-(* Globals *)
+(* Constants *)
 (*****************************************************************************)
 let color_using = "green"
 let color_used_by = "chocolate"
