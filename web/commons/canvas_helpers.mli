@@ -20,6 +20,8 @@ object
   method fillStyle: ?alpha:float -> Simple_color.emacs_color -> unit
   method strokeStyle: ?alpha:float -> Simple_color.emacs_color -> unit
 
+  method device_to_user: x:int -> y:int -> float * float
+
   method draw_line: (css_color * float * (float * float) * (float * float)) 
     -> unit
 
@@ -54,6 +56,8 @@ object
 
   method user_to_device_font_size:
     float -> float
+
+  
 
 end
 

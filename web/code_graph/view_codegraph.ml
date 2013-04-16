@@ -33,15 +33,21 @@ let paint w =
       unopt
   in
   let canvas_ctx = canvas##getContext (Dom_html._2d_) in
-  let ctx = new Canvas_helpers.context 
+  let ctx_final = new Canvas_helpers.context 
     ~ctx:canvas_ctx
     ~width:w.M.width
     ~height:w.M.height
     ~xy_ratio:M.xy_ratio
   in
 
-  View_matrix_codegraph.draw_matrix ctx w;
+  (* TODO *)
+  let ctx_draw = ctx_final in
+
+  View_matrix_codegraph.draw_matrix ctx_draw w;
+
+  (* TODO *)
+  let ctx_overlay = ctx_final in
 
   canvas_elt##onmousemove <- Dom_html.handler (fun ev ->
-    View_overlays_codegraph.mousemove ev
+    View_overlays_codegraph.mousemove ctx_overlay ev
   )

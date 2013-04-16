@@ -118,27 +118,18 @@ let draw_green_yellow_dependent_rows ~ctx w i =
 (* Assembling overlays *)
 (*****************************************************************************)
 
-let mousemove ev =
-  pr2 "mousemove";
-  Js._true
-
-(*
-let motion_notify_refresher da w ev () =
-
-  let (x, y) = GdkEvent.Motion.x ev, GdkEvent.Motion.y ev in
-  let pt = { Cairo. x = x; y = y } in
-  pr2 (spf "motion device coord: %f, %f" x y);
-
-  let cr = Cairo.create w.overlay in
-  M.scale_coordinate_system cr w;
+(* was called motion_notify_refresher in gtk version *)
+let mousemove ctx ev =
+  let device_x, device_y = ev##clientX, ev##clientY in
+  pr2 (spf "mousemove device coord: %d x %d" device_x device_y);
 
   (* clear overlay *)
-  CairoH.clear cr;
+  (* CairoH.clear cr;*)
 
-  let pt2 = Cairo.device_to_user cr pt in
-  let (x, y) = (pt2.Cairo.x, pt2.Cairo.y) in
+  let (x, y) = ctx#device_to_user ~x:device_x ~y:device_y in
   pr2 (spf "motion user coord: %f, %f" x y);
 
+(*
   (* less: update status bar? *)
   (match M.find_region_at_user_point w ~x ~y with
   | None -> ()
@@ -170,7 +161,11 @@ let motion_notify_refresher da w ev () =
   );
   !Ctl._refresh_drawing_area ();
   false
+*)
+  Js._true
 
+
+(*
 let motion_notify da w ev =
   !Ctl.current_motion_refresher +> Common.do_option (fun x ->
     GMain.Idle.remove x;

@@ -157,6 +157,9 @@ method fill_rectangle ?alpha ~color r =
 (*****************************************************************************)
 (* Distance conversion *)
 (*****************************************************************************)
+method device_to_user ~x ~y =
+  ((float_of_int x) / orig_coord_width) * xy_ratio,
+  (float_of_int y / orig_coord_height)
 
 (*****************************************************************************)
 (* Text *)
