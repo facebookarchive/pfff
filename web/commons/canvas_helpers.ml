@@ -197,7 +197,9 @@ method fill_text_scaled ?rotate ~x ~y ~size str =
 
 
 (* todo: can probably compute the extend without scaling and so on,
- * just by playing with w.xxx info
+ * just by playing with w.xxx info.
+ * note: you can also use ctx##textAlign <- Js.string "center"
+ * which alleviate the need for this method sometimes.
  *)
 method text_extents_scaled str ~size =
 (*

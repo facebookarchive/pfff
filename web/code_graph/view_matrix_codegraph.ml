@@ -175,6 +175,10 @@ let draw_cells (ctx: Canvas_helpers.context) w ~interactive_regions =
           let x = rect.p.x in
           let y = rect.p.y in
           
+          (* note: could also use ctx##textAlign <- Js.string "center"
+           * to avoid this contorsion, but that way we are portable
+           * with cairo
+           *)
           let x = x + (l.width_cell / 2.) - (tw / 2.0) in
           let y = y + (l.height_cell / 2.) + (th / 2.0) in
           ctx#fill_text_scaled ~x ~y ~size:font_size txt;
