@@ -18,13 +18,9 @@ open Common_client
 module M = Model_codegraph
 
 (*****************************************************************************)
-(* Painting entry point *)
+(* Init *)
 (*****************************************************************************)
-
-(* paint() creates the cairo context and adjusts the scaling if needed
- * and then calls the 'draw' functions.
- *)
-let paint w =
+let init w =
 
   let canvas_elt = retrieve "main_canvas" in
   let canvas = canvas_elt +> Dom_html.CoerceTo.canvas +> unopt in
@@ -82,15 +78,33 @@ let paint w =
     ctx_overlay#canvas_ctx##restore();
     ()
   in
-  
-  View_matrix_codegraph.draw_matrix ctx_paint w;
-  refresh_drawing_area ();
-
   (* to debug *)
 (*
   Dom.appendChild d##body canvas_paint;
   Dom.appendChild d##body canvas_overlay;
 *)
+
+  (ctx_paint, ctx_overlay, ctx_final),
+  refresh_drawing_area, 
+  canvas_elt
+
+(*****************************************************************************)
+(* Painting entry point *)
+(*****************************************************************************)
+
+(* paint() creates the cairo context and adjusts the scaling if needed
+ * and then calls the 'draw' functions.
+ *)
+let paint w =
+
+  let 
+  (ctx_paint, ctx_overlay, ctx_final),
+  refresh_drawing_area,
+  canvas_elt
+   = init w in
+
+  View_matrix_codegraph.draw_matrix ctx_paint w;
+  refresh_drawing_area ();
 
   canvas_elt##onmousemove <- Dom_html.handler (fun ev ->
     View_overlays_codegraph.mousemove ctx_overlay w ev;
