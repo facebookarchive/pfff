@@ -54,11 +54,18 @@ let treemap_generator paths =
 
 (* optimize and filter very small rectangles so that we send less data *)
 let optimize_rects rects =
-  let rects = rects +> Common.exclude (fun rect ->
+  let rects = rects +> Common.map_filter (fun rect ->
     let r = rect.Treemap.tr_rect in
     let w = Figures.rect_width r in
     let h = Figures.rect_height r in
-    w *. h <= 0.000009
+    (match () with 
+    | _ when w *. h <= 0.000009 ->
+      None
+    | _ when w *. h <= 0.0009 ->
+      Some { rect with Treemap.tr_label = ""; }
+    | _ ->
+      Some rect
+    )
   )
   in
   pr2 (spf "nb rects after filtering: %d" (List.length rects));

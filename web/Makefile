@@ -161,6 +161,7 @@ _client/codegraph.cmo: code_graph/lib_client.cma
 _server/codegraph.cmo: _server/globals.cmo
 _client/codemap.cmo: code_map/lib_client.cma
 _server/codemap.cmo: _server/globals.cmo
+_client/test.cmo: code_map/lib_client.cma
 
 ##############################################################################
 # Generic ocaml rules

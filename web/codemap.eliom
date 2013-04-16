@@ -22,6 +22,14 @@ module Model = Model_codemap
 }}
 
 (*****************************************************************************)
+(* Profiling *)
+(*****************************************************************************)
+
+let size_data x = 
+  let s = Marshal.to_string x [] in
+  String.length s
+
+(*****************************************************************************)
 (* Main entry point *)
 (*****************************************************************************)
 let main_service =
@@ -37,7 +45,9 @@ let main_service =
     let rects = Globals.rects in
     let root = Globals.root in
     (* let rects = Server_codemap.treemap_generator [path] in *)
+    pr2 (spf "obj size before = %d" (size_data rects));
     let rects = Server_codemap.optimize_rects rects in
+    pr2 (spf "obj size after = %d" (size_data rects));
 
     let w = { Model.
        rects; root;

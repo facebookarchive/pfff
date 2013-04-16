@@ -112,7 +112,6 @@ let init w =
 
 let paint w =
 
-
   let 
   (ctx_paint, ctx_overlay, ctx_final),
   refresh_drawing_area,
@@ -129,10 +128,14 @@ let paint w =
   (* TODO: handle layers *)
 
   (* phase 2, draw the labels, if have enough space *)
+ 
+  Dom_html.window##setTimeout (Js.wrap_callback (fun () ->
   rects +> List.iter (Draw_labels.draw_treemap_rectangle_label_maybe 
                         ctx_paint ~color:None);
+  ), 0.5);
 
   (* phase 3, draw the content, if have enough space *)
+  (* TODO *)
 
   refresh_drawing_area ();
 

@@ -53,6 +53,9 @@ let _hmemo_text_extent = Hashtbl.create 101
 let rec draw_treemap_rectangle_label_maybe ctx ?(color=None) rect =
 
   let lbl = rect.T.tr_label in
+  (* we do some opti in server_codemap now which can lead to empty txt *)
+  if lbl <> "" then begin
+
   let base = Filename.basename lbl in
   (* old: Common.is_directory_eff lbl *)
   let is_directory = rect.T.tr_is_node in
@@ -103,7 +106,7 @@ let rec draw_treemap_rectangle_label_maybe ctx ?(color=None) rect =
     ~font_size_orig:font_size
     ~color ~alpha 
     ~rect txt
-
+  end
 
 and try_draw_label 
     (ctx: Canvas_helpers.context) ~font_size_orig ~color ~alpha ~rect txt =

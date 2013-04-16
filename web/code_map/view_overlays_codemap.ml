@@ -50,6 +50,8 @@ let filename_without_leading_path ~prefix str =
 
 let draw_label_overlay (ctx: Canvas_helpers.context) w ~x ~y r =
   let txt = r.T.tr_label in
+  (* we do some opti in server_codemap now which can lead to empty txt *)
+  if txt <> "" then begin
 
   let readable_txt = 
     if w.M.root = txt (* when we are fully zoomed on one file *)
@@ -87,23 +89,21 @@ let draw_label_overlay (ctx: Canvas_helpers.context) w ~x ~y r =
 
   ctx#fillStyle "white";
   ctx#fill_text_scaled readable_txt ~size:font_size ~x:refx ~y:refy;
- 
-  ()
+  end 
 
 (* ---------------------------------------------------------------------- *)
 (* The current rectangles *)
 (* ---------------------------------------------------------------------- *)
 
-(*
-let draw_rectangle_overlay ~cr_overlay ~dw (r, middle, r_englobing) =
-  Cairo.save cr_overlay;
-  View_mainmap.zoom_pan_scale_map cr_overlay dw;
-  CairoH.draw_rectangle_figure ~cr:cr_overlay ~color:"white" r.T.tr_rect;
+let draw_rectangle_overlay 
+  (ctx: Canvas_helpers.context) w (r, middle, r_englobing) =
 
-  CairoH.draw_rectangle_figure
-    ~cr:cr_overlay ~color:"blue" r_englobing.T.tr_rect;
+  let line_width = ctx#device_to_user_size 3 in
+
+  ctx#draw_rectangle ~color:"white" r.T.tr_rect ~line_width;
+  ctx#draw_rectangle ~color:"blue" r_englobing.T.tr_rect ~line_width;
   Draw_labels.draw_treemap_rectangle_label_maybe 
-    ~cr:cr_overlay ~color:(Some "red") ~zoom:dw.zoom r_englobing;
+    ctx ~color:(Some "red") r_englobing;
 
   middle +> Common.index_list_1 +> List.iter (fun (r, i) ->
     let color = 
@@ -112,15 +112,11 @@ let draw_rectangle_overlay ~cr_overlay ~dw (r, middle, r_englobing) =
       | 2 -> "grey40"
       | _ -> spf "grey%d" (max 1 (50 -.. (i *.. 10)))
     in
-    CairoH.draw_rectangle_figure
-      ~cr:cr_overlay ~color r.T.tr_rect;
+    ctx#draw_rectangle ~color r.T.tr_rect ~line_width;
     Draw_labels.draw_treemap_rectangle_label_maybe 
-      ~cr:cr_overlay ~color:(Some color) ~zoom:dw.zoom r;
-  );
-    
-  Cairo.restore cr_overlay;
-  ()
-*)
+      ctx ~color:(Some color) r;
+  )
+
 
 (* ---------------------------------------------------------------------- *)
 (* The selected rectangles *)
@@ -176,9 +172,9 @@ let mousemove
 
     pr2 (spf "found: %s" txt);
     draw_label_overlay ctx w ~x ~y r;
-(*
-    draw_rectangle_overlay ~cr_overlay ~dw (r, middle, r_englobing);
+    draw_rectangle_overlay ctx w (r, middle, r_englobing);
     
+(*
     if dw.dw_settings.draw_searched_rectangles;
     then
         draw_searched_rectangles ~cr_overlay ~dw;

@@ -165,6 +165,9 @@ method device_to_user ~x ~y =
   ((float_of_int x) / orig_coord_width) * xy_ratio,
   (float_of_int y / orig_coord_height)
 
+method device_to_user_size size =
+  (float_of_int size / orig_coord_height)
+
 (*****************************************************************************)
 (* Text *)
 (*****************************************************************************)

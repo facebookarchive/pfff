@@ -5,6 +5,9 @@ let verbose = ref true
 (* type repo = Pfff | ... ? *)
 
 let graph_file = "/home/pad/pfff/graph_code.marshall"
+(*
+let graph_file = "/home/pad/www/graph_code.marshall"
+*)
 
 let g = begin
   pr2 (spf "loading %s" graph_file);
