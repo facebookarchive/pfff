@@ -165,8 +165,7 @@ let mousemove
 
       )
   );
-  (* !Ctl._refresh_drawing_area (); *)
-  Js._false
+  ()
 
 
 (*

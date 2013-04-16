@@ -27,27 +27,51 @@ module M = Model_codegraph
  * and then calls the 'draw' functions.
  *)
 let paint w =
+
   let canvas_elt = retrieve "main_canvas" in
-  let canvas = canvas_elt +>
-      Dom_html.CoerceTo.canvas +>
-      unopt
-  in
-  let canvas_ctx = canvas##getContext (Dom_html._2d_) in
-  let ctx_final = new Canvas_helpers.context 
-    ~ctx:canvas_ctx
+  let canvas = canvas_elt +> Dom_html.CoerceTo.canvas +> unopt in
+
+  let d = Dom_html.window##document in
+
+  let canvas_paint = Dom_html.createCanvas d in
+  canvas_paint##width <- w.M.width;
+  canvas_paint##height <- w.M.height;
+  let ctx_paint = new Canvas_helpers.context
+    ~ctx:(canvas_paint##getContext (Dom_html._2d_))
     ~width:w.M.width
     ~height:w.M.height
     ~xy_ratio:M.xy_ratio
   in
 
-  (* TODO *)
-  let ctx_draw = ctx_final in
+  let canvas_overlay = Dom_html.createCanvas d in
+  canvas_overlay##width <- w.M.width;
+  canvas_overlay##height <- w.M.height;
+  let ctx_overlay = new Canvas_helpers.context
+    ~ctx:(canvas_overlay##getContext (Dom_html._2d_))
+    ~width:w.M.width
+    ~height:w.M.height
+    ~xy_ratio:M.xy_ratio
+  in
 
-  View_matrix_codegraph.draw_matrix ctx_draw w;
-
-  (* TODO *)
-  let ctx_overlay = ctx_final in
-
+  let ctx_final = new Canvas_helpers.context 
+    ~ctx:(canvas##getContext (Dom_html._2d_))
+    ~width:w.M.width
+    ~height:w.M.height
+    ~xy_ratio:M.xy_ratio
+  in
+  let refresh_drawing_area () =
+    ctx_final#canvas_ctx##drawImage_fromCanvas
+      (canvas_paint, 0., 0.);
+    ()
+  in
+  
+  View_matrix_codegraph.draw_matrix ctx_paint w;
+  refresh_drawing_area ();
+(*
   canvas_elt##onmousemove <- Dom_html.handler (fun ev ->
-    View_overlays_codegraph.mousemove ctx_overlay w ev
+    View_overlays_codegraph.mousemove ctx_overlay w ev;
+    refresh_drawing_area ();
+    Js._false
   )
+*)
+  ()
