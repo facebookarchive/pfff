@@ -125,7 +125,7 @@ let mousemove
   pr2 (spf "mousemove device coord: %d x %d" device_x device_y);
 
   (* clear overlay *)
-  (* CairoH.clear cr;*)
+  ctx#canvas_ctx##clearRect (0., 0., M.xy_ratio, 1.0);
 
   let (x, y) = ctx#device_to_user ~x:device_x ~y:device_y in
   pr2 (spf "motion user coord: %f, %f" x y);

@@ -13,8 +13,6 @@
  * license.txt for more details.
  *)
 open Common
-(* floats are the norm in graphics *)
-open Common2.ArithFloatInfix
 open Common_client
 
 module M = Model_codegraph
@@ -60,18 +58,43 @@ let paint w =
     ~xy_ratio:M.xy_ratio
   in
   let refresh_drawing_area () =
+    ctx_final#canvas_ctx##save();
+    ctx_paint#canvas_ctx##save();
+    ctx_overlay#canvas_ctx##save();
+
+    ctx_final#canvas_ctx##moveTo (0., 0.);
+    ctx_final#canvas_ctx##setTransform (1.,0.,0.,1.,0.,0.);
+    ctx_paint#canvas_ctx##moveTo (0., 0.);
+    ctx_paint#canvas_ctx##setTransform (1.,0.,0.,1.,0.,0.);
+    ctx_overlay#canvas_ctx##moveTo (0., 0.);
+    ctx_overlay#canvas_ctx##setTransform (1.,0.,0.,1.,0.,0.);
+    
+    (* have to set the transform back to normal otherwise drawImage
+     * does not work, weird a bit.
+     *)
     ctx_final#canvas_ctx##drawImage_fromCanvas
       (canvas_paint, 0., 0.);
+    ctx_final#canvas_ctx##drawImage_fromCanvas
+      (canvas_overlay, 0., 0.);
+
+    ctx_final#canvas_ctx##restore();
+    ctx_paint#canvas_ctx##restore();
+    ctx_overlay#canvas_ctx##restore();
     ()
   in
   
   View_matrix_codegraph.draw_matrix ctx_paint w;
   refresh_drawing_area ();
+
+  (* to debug *)
 (*
+  Dom.appendChild d##body canvas_paint;
+  Dom.appendChild d##body canvas_overlay;
+*)
+
   canvas_elt##onmousemove <- Dom_html.handler (fun ev ->
     View_overlays_codegraph.mousemove ctx_overlay w ev;
     refresh_drawing_area ();
     Js._false
-  )
-*)
+  );
   ()

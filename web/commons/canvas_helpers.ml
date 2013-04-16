@@ -25,6 +25,10 @@ module Color = Simple_color
 (* Prelude *)
 (*****************************************************************************)
 
+(* 
+ * See Dom_html.mli and also http://www.w3schools.com/tags/ref_canvas.asp
+ *)
+
 (*****************************************************************************)
 (* Color *)
 (*****************************************************************************)
@@ -141,7 +145,7 @@ method fill_rectangle_xywh ?alpha ~x ~y ~w ~h ~color () =
 
 method fill_rectangle ?alpha ~color r = 
   ctx##fillStyle <- Js.string (css_color_of_color ?alpha ~color ());
-  pr2 (Figures.s_of_rectangle r);
+  (* pr2 (Figures.s_of_rectangle r); *)
   (* need the begin/close thing in canvas *)
   ctx##beginPath();
   ctx##moveTo (r.p.x, r.p.y);
