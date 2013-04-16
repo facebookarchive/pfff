@@ -29,6 +29,7 @@ let algo = Treemap.Ordered Treemap.PivotByMiddle
 let rects = Treemap.render_treemap_algo 
     ~algo ~big_borders:false
     treemap 
+let root = List.hd paths
 
 let _ = begin
   pr2 "READY";

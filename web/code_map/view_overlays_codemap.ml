@@ -34,6 +34,13 @@ module Style = Style2
 (*****************************************************************************)
 
 (*****************************************************************************)
+(* Helpers *)
+(*****************************************************************************)
+let filename_without_leading_path ~prefix str =
+  String.sub str (String.length prefix) 
+    (String.length str -.. String.length prefix)
+
+(*****************************************************************************)
 (* The overlays *)
 (*****************************************************************************)
 
@@ -41,18 +48,15 @@ module Style = Style2
 (* The current filename *)
 (* ---------------------------------------------------------------------- *)
 
-let draw_label_overlay ~cr_overlay ~dw ~x ~y r =
-
-  raise Todo
-(*
+let draw_label_overlay (ctx: Canvas_helpers.context) w ~x ~y r =
   let txt = r.T.tr_label in
 
   let readable_txt = 
-    if dw.root = txt (* when we are fully zoomed on one file *)
+    if w.M.root = txt (* when we are fully zoomed on one file *)
     then "root"
-    else 
-      Common.filename_without_leading_path dw.root txt in
-
+    else filename_without_leading_path ~prefix:w.M.root txt
+  in
+(*
   let readable_txt =
     if String.length readable_txt > 25
     then 
@@ -61,37 +65,30 @@ let draw_label_overlay ~cr_overlay ~dw ~x ~y r =
       spf "%s/.../%s" (List.hd dirs) file
     else readable_txt
   in
-
-  Cairo.select_font_face cr_overlay "serif" 
-    Cairo.FONT_SLANT_NORMAL Cairo.FONT_WEIGHT_NORMAL;
-  Cairo.set_font_size cr_overlay Style2.font_size_filename_cursor;
+*)
+  let _, font_size = 
+    ctx#device_to_user 
+      ~x:0
+      ~y:Style_codemap.font_size_filename_cursor_device_world
+  in
       
-  let extent = CairoH.text_extents cr_overlay readable_txt in
-  let tw = extent.Cairo.text_width in
-  let th = extent.Cairo.text_height in
+  let tw, th = ctx#text_extents_scaled readable_txt ~size:font_size in
 
   let refx = x - tw / 2. in
   let refy = y in
+  let x_bearing = 0. in
+  let y_bearing = 0. - th in
 
-  CairoH.fill_rectangle ~cr:cr_overlay 
-    ~x:(refx + extent.Cairo.x_bearing) ~y:(refy + extent.Cairo.y_bearing)
-    ~w:tw ~h:(th * 1.2)
+  ctx#fill_rectangle_xywh
+    ~x:(refx + x_bearing) ~y:(refy + y_bearing)
+    ~w:tw ~h:(th * 1.4)
     ~color:"black"
-    ~alpha:0.5
-    ();
+    ~alpha:0.5 ();
 
-  Cairo.move_to cr_overlay refx refy;
-  Cairo.set_source_rgba cr_overlay 1. 1. 1.    1.0;
-  CairoH.show_text cr_overlay readable_txt;
-  
-  (*
-  Cairo.set_source_rgb cr_overlay 0.3 0.3 0.3;
-  Cairo.move_to cr_overlay x y;
-  Cairo.line_to cr_overlay (x + 10.) (y + 10.);
-  Cairo.stroke cr_overlay;
-  *)
+  ctx#fillStyle "white";
+  ctx#fill_text_scaled readable_txt ~size:font_size ~x:refx ~y:refy;
+ 
   ()
-*)
 
 (* ---------------------------------------------------------------------- *)
 (* The current rectangles *)
@@ -170,14 +167,16 @@ let mousemove
 
   let (x, y) = ctx#device_to_user ~x:device_x ~y:device_y in
   pr2 (spf "motion user coord: %f, %f" x y);
+  let user = { Figures.x = x; y = y } in
 
-(*
-  let r_opt = M.find_rectangle_at_user_point dw user in
+  let r_opt = M.find_rectangle_at_user_point w user in
   r_opt +> Common.do_option (fun (r, middle, r_englobing) ->
     let txt = r.T.tr_label in
-    !Controller._statusbar_addtext txt;
-    
-    draw_label_overlay ~cr_overlay ~dw ~x ~y r;
+    (* !Controller._statusbar_addtext txt; *)
+
+    pr2 (spf "found: %s" txt);
+    draw_label_overlay ctx w ~x ~y r;
+(*
     draw_rectangle_overlay ~cr_overlay ~dw (r, middle, r_englobing);
     
     if dw.dw_settings.draw_searched_rectangles;
@@ -191,6 +190,5 @@ let mousemove
       dw.in_zoom_incruste
     then
       draw_zoomed_overlay ~cr_overlay ~user ~dw ~x ~y r;
-      
-  );
 *)
+  )

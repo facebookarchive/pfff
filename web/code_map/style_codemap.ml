@@ -26,6 +26,8 @@ module SH = Highlight_code
 (* Visual style *)
 (*****************************************************************************)
 
+let font_size_filename_cursor_device_world = 15
+
 
 let multiplier_use x = 
   match x with

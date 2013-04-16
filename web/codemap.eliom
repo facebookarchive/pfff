@@ -35,17 +35,14 @@ let main_service =
      * on some OCaml pfff repo type.
      *)
     let rects = Globals.rects in
+    let root = Globals.root in
     (* let rects = Server_codemap.treemap_generator [path] in *)
     let rects = Server_codemap.optimize_rects rects in
 
     let w = { Model.
-       rects;
+       rects; root;
        width = width;
        height = height;
-
-       orig_coord_width = 0.;
-       orig_coord_height = 0.;
-       width_text_etalon_normalized_coord = 0.;
     }
     in
 
@@ -75,12 +72,9 @@ let test_codemap_micro =
     let rects = [] in
     let w = { Model.
        rects;
-
        width = width;
        height = height;
-       orig_coord_width = 0.;
-       orig_coord_height = 0.;
-       width_text_etalon_normalized_coord = 0.;
+       root = "/";
     }
     in
     let file = 

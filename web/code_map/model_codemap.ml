@@ -13,8 +13,10 @@
  * license.txt for more details.
  *)
 open Common
-(* floats are the norm in graphics *)
 open Common2.ArithFloatInfix
+
+module F = Figures
+module T = Treemap
 
 (*****************************************************************************)
 (* Prelude *)
@@ -29,15 +31,12 @@ open Common2.ArithFloatInfix
 type world_client = {
   rects: Treemap.treemap_rendering;
 
-  (* viewport, device coordinates 
-   * todo: factorize with code_map/ and put in the graphics_context class type?
-   *)
+  (* to show labels without leading path *)
+  root: Common.dirname;
+
+  (* viewport, device coordinates  *)
   width:  int;
   height: int;
-
-  orig_coord_width: float;
-  orig_coord_height: float;
-  width_text_etalon_normalized_coord: float;
 }
 
 type fileinfo_client = {
@@ -64,3 +63,35 @@ type fileinfo_client = {
 (*****************************************************************************)
 
 type context = Dom_html.canvasRenderingContext2D Js.t
+
+(*****************************************************************************)
+(* Point -> treemap info *)
+(*****************************************************************************)
+
+(* alt: could use Cairo_bigarray and the pixel trick if
+ * it takes too long to detect which rectangle is under the cursor.
+ * coud also sort the rectangles ... or have some kind of BSP.
+ *)
+let find_rectangle_at_user_point w user =
+  let rects = w.rects in
+
+  if List.length rects = 1
+  then 
+    (* we are fully zommed, this treemap will have tr_depth = 1 but we return
+     * it *)
+    let x = List.hd rects in
+    Some (x, [], x)
+  else 
+   let matching_rects = rects 
+    +> List.filter (fun r -> 
+      F.point_is_in_rectangle user r.T.tr_rect
+      && r.T.tr_depth > 1
+    ) 
+    +> List.map (fun r -> r, r.T.tr_depth) 
+    +> Common.sort_by_val_highfirst 
+    +> List.map fst
+   in
+   match matching_rects with
+   | [] -> None
+   | [x] -> Some (x, [], x)
+   | _ -> Some (Common2.head_middle_tail matching_rects)

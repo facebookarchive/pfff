@@ -1,13 +1,11 @@
 type world_client = {
   rects: Treemap.treemap_rendering;
 
+  root: Common.dirname;
+
   (* viewport, device coordinates *)
   width:  int;
   height: int;
-
-  orig_coord_width: float;
-  orig_coord_height: float;
-  width_text_etalon_normalized_coord: float;
 }
 
 type context = Dom_html.canvasRenderingContext2D Js.t
@@ -24,3 +22,11 @@ type fileinfo_client = {
     | Nothing
   and lines = 
    (string, unit) Common2.either list
+
+val find_rectangle_at_user_point:
+  world_client ->
+  Figures.point ->
+  (Treemap.treemap_rectangle * 
+   Treemap.treemap_rectangle list * 
+   Treemap.treemap_rectangle)
+  option

@@ -137,7 +137,7 @@ let paint w =
   refresh_drawing_area ();
 
   canvas_elt##onmousemove <- Dom_html.handler (fun ev ->
-    (* View_overlays_codegraph.mousemove ctx_overlay w ev; *)
+    View_overlays_codemap.mousemove ctx_overlay w ev;
     refresh_drawing_area ();
     Js._false
   );
