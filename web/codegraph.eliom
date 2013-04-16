@@ -38,6 +38,7 @@ let main_service =
        m;
        width = width;
        height = height;
+       interactive_regions = [];
     } in
 
     ignore

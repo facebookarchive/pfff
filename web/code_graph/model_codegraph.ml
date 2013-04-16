@@ -33,9 +33,11 @@ type world_client = {
   (* viewport, device coordinates *)
   width:  int;
   height: int;
+
+  mutable interactive_regions: (region * Figures.rectangle) list;
 }
 
-type region =
+and region =
     | Cell of int * int (* i, j *)
     | Row of int (* i *)
     | Column of int (* j *)
@@ -91,3 +93,19 @@ let layout_of_w w =
     width_cell;
     height_cell;
   }
+
+(*****************************************************************************)
+(* Helpers *)
+(*****************************************************************************)
+
+let find_region_at_user_point w ~x ~y =
+  let regions = w.interactive_regions in
+  let pt = { Figures. x = x; y = y } in
+  try 
+    let (kind, rect) = regions +> List.find (fun (kind, rect) ->
+      Figures.point_is_in_rectangle pt rect
+    )
+    in
+    Some kind
+  with Not_found -> None
+

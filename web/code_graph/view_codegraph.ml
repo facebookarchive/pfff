@@ -49,5 +49,5 @@ let paint w =
   let ctx_overlay = ctx_final in
 
   canvas_elt##onmousemove <- Dom_html.handler (fun ev ->
-    View_overlays_codegraph.mousemove ctx_overlay ev
+    View_overlays_codegraph.mousemove ctx_overlay w ev
   )

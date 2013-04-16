@@ -358,6 +358,8 @@ let draw_matrix (ctx: Canvas_helpers.context) w =
   draw_left_tree  ctx w ~interactive_regions;
   draw_up_columns ctx w ~interactive_regions;
 
+  w.interactive_regions <- !interactive_regions;
+
   ()
 
 

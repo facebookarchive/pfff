@@ -51,7 +51,7 @@ let color_used_by = "chocolate"
 (*****************************************************************************)
 
 (* inspired by the DSM in jetbrains IDEA *)
-let draw_row_column ~ctx ~color w i =
+let draw_row_column ~(ctx: Canvas_helpers.context) ~color w i =
   let l = M.layout_of_w w in
 
   (* draw row *)
@@ -76,7 +76,7 @@ let draw_row_column ~ctx ~color w i =
  
 
 (* inspired by the DSM in jetbrains IDEA *)
-let draw_green_yellow_dependent_rows ~ctx w i =
+let draw_green_yellow_dependent_rows ~(ctx: Canvas_helpers.context) w i =
   let i_uses = ref [] in
   let i_used_by = ref [] in
   
@@ -119,7 +119,8 @@ let draw_green_yellow_dependent_rows ~ctx w i =
 (*****************************************************************************)
 
 (* was called motion_notify_refresher in gtk version *)
-let mousemove ctx ev =
+let mousemove
+ (ctx: Canvas_helpers.context) (w: Model_codegraph.world_client) ev =
   let device_x, device_y = ev##clientX, ev##clientY in
   pr2 (spf "mousemove device coord: %d x %d" device_x device_y);
 
@@ -129,40 +130,43 @@ let mousemove ctx ev =
   let (x, y) = ctx#device_to_user ~x:device_x ~y:device_y in
   pr2 (spf "motion user coord: %f, %f" x y);
 
-(*
   (* less: update status bar? *)
   (match M.find_region_at_user_point w ~x ~y with
   | None -> ()
   | Some x ->
       (match x with
       | Row i -> 
-          draw_green_yellow_dependent_rows ~cr w i;
-          draw_row_column ~color:color_used_by ~cr w i;
+          draw_green_yellow_dependent_rows ~ctx w i;
+          draw_row_column ~color:color_used_by ~ctx w i;
+(*
           let txt = spf "Row: %s" 
             (G.string_of_node (w.m.DM.i_to_name.(i))) in
           !Ctl._statusbar_addtext txt;
+*)
       | Cell (i, j) ->
-          draw_green_yellow_dependent_rows ~cr w i;
-          draw_row_column ~color:color_used_by ~cr w i;
-          draw_row_column ~color:color_using ~cr w j;
+          draw_green_yellow_dependent_rows ~ctx w i;
+          draw_row_column ~color:color_used_by ~ctx w i;
+          draw_row_column ~color:color_using ~ctx w j;
+(*
           let txt = spf "Cell: %s x %s" 
             (G.string_of_node (w.m.DM.i_to_name.(i)))
             (G.string_of_node (w.m.DM.i_to_name.(j)))
           in
           !Ctl._statusbar_addtext txt;
+*)
       | Column j ->
-          draw_green_yellow_dependent_rows ~cr w j;
-          draw_row_column ~color:color_using ~cr w j;
+          draw_green_yellow_dependent_rows ~ctx w j;
+          draw_row_column ~color:color_using ~ctx w j;
+(*
           let txt = spf "Col: %s" 
             (G.string_of_node (w.m.DM.i_to_name.(j))) in
           !Ctl._statusbar_addtext txt;
+*)
 
       )
   );
-  !Ctl._refresh_drawing_area ();
-  false
-*)
-  Js._true
+  (* !Ctl._refresh_drawing_area (); *)
+  Js._false
 
 
 (*

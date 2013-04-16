@@ -4,9 +4,11 @@ type world_client = {
 
   width:  int;
   height: int;
+
+  mutable interactive_regions: (region * Figures.rectangle) list;
 }
 
-type region =
+and region =
     | Cell of int * int (* i, j *)
     | Row of int (* i *)
     | Column of int (* j *)
@@ -29,3 +31,6 @@ type layout = {
 
 val layout_of_w: world_client -> layout
 
+val find_region_at_user_point: 
+  world_client -> x:float -> y:float -> 
+  region option
