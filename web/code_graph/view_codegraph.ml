@@ -13,26 +13,35 @@
  * license.txt for more details.
  *)
 open Common
+(* floats are the norm in graphics *)
+open Common2.ArithFloatInfix
+open Common_client
 
-module DM = Dependencies_matrix_code
+module M = Model_codegraph
 
 (*****************************************************************************)
-(* Prelude *)
+(* Painting entry point *)
 (*****************************************************************************)
 
-(*****************************************************************************)
-(* Builder *)
-(*****************************************************************************)
+(* paint() creates the cairo context and adjusts the scaling if needed
+ * and then calls the 'draw' functions.
+ *)
+let paint w =
+  let canvas_elt = retrieve "main_canvas" in
+  let canvas = canvas_elt +>
+      Dom_html.CoerceTo.canvas +>
+      unopt
+  in
+  let canvas_ctx = canvas##getContext (Dom_html._2d_) in
+  let ctx = new Canvas_helpers.context 
+    ~ctx:canvas_ctx
+    ~width:w.M.width
+    ~height:w.M.height
+    ~xy_ratio:M.xy_ratio
+  in
 
-let build gopti _pathTODO =
+  View_matrix_codegraph.draw_matrix ctx w;
 
-  (* TODO: compute config based on path, and compute g depending
-   * on some OCaml pfff repo type.
-   *)
-  let path = [DM.Expand ("lang_php", Database_code.Dir)] in
-  DM.threshold_pack := 4000;
-  let config, _goptiTODO = DM.config_of_path path gopti in
-  
-  let m, _goptiTODO =
-    DM.build config (None) gopti in
-  m
+  canvas_elt##onmousemove <- Dom_html.handler (fun ev ->
+    View_overlays_codegraph.mousemove ev
+  )

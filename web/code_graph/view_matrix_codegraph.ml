@@ -360,29 +360,6 @@ let draw_matrix (ctx: Canvas_helpers.context) w =
 
   ()
 
-(*****************************************************************************)
-(* Painting entry point *)
-(*****************************************************************************)
-
-(* paint() creates the cairo context and adjusts the scaling if needed
- * and then calls the 'draw' functions.
- *)
-let paint w =
-  let canvas = 
-    retrieve "main_canvas" +> 
-      Dom_html.CoerceTo.canvas +>
-      unopt
-  in
-  let canvas_ctx = canvas##getContext (Dom_html._2d_) in
-  let ctx = new Canvas_helpers.context 
-    ~ctx:canvas_ctx
-    ~width:w.width
-    ~height:w.height
-    ~xy_ratio:xy_ratio
-  in
-
-  draw_matrix ctx w;
-  ()
 
 (*****************************************************************************)
 (* Events *)
