@@ -42,7 +42,7 @@ let main_service =
     } in
 
     ignore
-      {unit { View_codegraph.paint %w }};
+      {unit { Client_codegraph.paint %w }};
     Lwt.return
       (H.html 
           (H.head (H.title (H.pcdata "CodeGraph")) [ 

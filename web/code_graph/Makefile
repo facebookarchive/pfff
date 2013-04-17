@@ -21,7 +21,7 @@ OBJS_CLIENT= \
  model_codegraph.cmo \
  view_overlays_codegraph.cmo \
  view_matrix_codegraph.cmo \
- view_codegraph.cmo \
+ client_codegraph.cmo \
 
 LIBS_CLIENT= -package lwt.syntax -package js_of_ocaml.syntax -syntax camlp4o
 
