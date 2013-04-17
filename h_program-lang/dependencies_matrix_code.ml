@@ -142,6 +142,13 @@ let rec final_nodes_of_tree tree =
       then [n]
       else List.map final_nodes_of_tree xs +> List.flatten
 
+let hashtbl_find_node h n =
+  try Hashtbl.find h n
+  with Not_found ->
+    (* pr2 (spf "PB: %s" (G.string_of_node n));*)
+    (* raise Not_found *)
+    failwith (spf "Not_found: %s" (G.string_of_node n))
+
 let hashtbl_find h n =
   try Hashtbl.find h n
   with Not_found ->
@@ -177,7 +184,7 @@ let count_column j m dm =
   !cnt
 
 let is_empty_column n m dm =
-  count_column (hashtbl_find dm.name_to_i n) m dm = 0
+  count_column (hashtbl_find_node dm.name_to_i n) m dm = 0
 
 let count_row i m dm =
   let n = Array.length m in
@@ -189,10 +196,10 @@ let count_row i m dm =
   !cnt
 
 let is_empty_row n m dm = 
-  count_row (hashtbl_find dm.name_to_i n) m dm = 0
+  count_row (hashtbl_find_node dm.name_to_i n) m dm = 0
 
 let empty_all_cells_relevant_to_node m dm n =
-  let i = hashtbl_find dm.name_to_i n in
+  let i = hashtbl_find_node dm.name_to_i n in
   let n = Array.length m in
   for x = 0 to n - 1 do
     m.(i).(x) <- 0;
@@ -200,12 +207,12 @@ let empty_all_cells_relevant_to_node m dm n =
   done
 
 let sort_by_count_rows_low_first xs m dm =
-  xs +> List.map (fun n -> n, count_row (hashtbl_find dm.name_to_i n) m dm)
+  xs +> List.map (fun n -> n, count_row (hashtbl_find_node dm.name_to_i n) m dm)
      +> Common.sort_by_val_lowfirst
      +> List.map fst
 
 let sort_by_count_columns_high_first xs m dm =
-  xs +> List.map (fun n -> n, count_column (hashtbl_find dm.name_to_i n) m dm)
+  xs +> List.map (fun n -> n, count_column (hashtbl_find_node dm.name_to_i n) m dm)
      +> Common.sort_by_val_highfirst
      +> List.map fst
 
@@ -218,7 +225,7 @@ let sort_by_count_columns_high_first xs m dm =
  *)
 let sort_by_count_rows_low_columns_high_first xs m dm =
   xs +> List.map (fun n ->
-    let idx = hashtbl_find dm.name_to_i n in
+    let idx = hashtbl_find_node dm.name_to_i n in
     let h =
       float_of_int (count_row idx m dm) 
       /. 
@@ -374,7 +381,7 @@ let build_with_tree2 tree gopti =
   nodes +> List.iter (fun node ->
     Hashtbl.add name_to_idm node !i;
     idm_to_name.(!i) <- node;
-    igopti_to_idm.(hashtbl_find gopti.G2.name_to_i node) <- !i;
+    igopti_to_idm.(hashtbl_find_node gopti.G2.name_to_i node) <- !i;
     incr i;
   );
 
@@ -386,7 +393,7 @@ let build_with_tree2 tree gopti =
   }
   in
   let (projected_parent_of_igopti: idm idx array) = Array.create n_nodes (-1) in
-  let (iroot: igopti idx) = hashtbl_find gopti.G2.name_to_i G.root in
+  let (iroot: igopti idx) = hashtbl_find_node gopti.G2.name_to_i G.root in
   let rec depth parent igopti =
     let children = gopti.G2.has_children.(igopti) in
     let idm = igopti_to_idm.(igopti) in
@@ -501,7 +508,7 @@ let adjust_gopti_if_needed_lazily tree gopti =
           let dm = build_with_tree config !gopti in
 
           let score = children_nodes +> List.map (fun n ->
-            let idx = hashtbl_find dm.name_to_i n in
+            let idx = hashtbl_find_node dm.name_to_i n in
             let m = dm.matrix in
             n, count_column idx m dm 
                + count_row idx m dm
@@ -597,16 +604,16 @@ let build tree constraints_opt gopti =
  * - iterate only on the children of i
  * - use graph_opti instead of the memoized projection index
  *)
-let explain_cell_list_use_edges2 (i, j) dm gopti =
+let explain_cell_list_use_edges (i, j) dm gopti =
   let res = ref [] in
 
   let n_nodes = G2.nb_nodes gopti in
   let igopti_to_idm = Array.create n_nodes (-1) in
   dm.i_to_name +> Array.iteri (fun idm node ->
-    igopti_to_idm.(hashtbl_find gopti.G2.name_to_i node) <- idm;
+    igopti_to_idm.(hashtbl_find_node gopti.G2.name_to_i node) <- idm;
   );
   let (projected_parent_of_igopti: idm idx array) = Array.create n_nodes (-1) in
-  let (iroot: igopti idx) = hashtbl_find gopti.G2.name_to_i G.root in
+  let (iroot: igopti idx) = hashtbl_find_node gopti.G2.name_to_i G.root in
   let rec depth parent igopti =
     let children = gopti.G2.has_children.(igopti) in
     let idm = igopti_to_idm.(igopti) in
@@ -650,10 +657,12 @@ let explain_cell_list_use_edges2 (i, j) dm gopti =
 *)
   !res
                      
-   
+
+(*   
 let explain_cell_list_use_edges a b c =
   Common.profile_code "DM.explain_cell" (fun () -> 
     explain_cell_list_use_edges2 a b c)
+*)
 
 (*****************************************************************************)
 (* tree config manipulation *)
@@ -693,7 +702,7 @@ let expand_node_opti n tree g =
  * expand or focus to get a new dm and so on.
  *)
 let focus_on_node n deps_style tree dm =
-  let i = hashtbl_find dm.name_to_i n in
+  let i = hashtbl_find_node dm.name_to_i n in
   let (deps: int list ref) = ref [] in
   let nb_elts = Array.length dm.matrix in
   for j = 0 to nb_elts - 1 do
@@ -711,13 +720,13 @@ let focus_on_node n deps_style tree dm =
   done;
   (* old: this was not keeping the hierarchy (which can be a feature)
    *  Node (G.root, !deps +> List.rev +> List.map (fun i ->
-   *    Node (hashtbl_find dm.i_to_name i, []))
+   *    Node (hashtbl_find_node dm.i_to_name i, []))
    *  )
    *)
   let rec aux tree = 
     match tree with
     | Node (n2, []) ->
-        let j = hashtbl_find dm.name_to_i n2 in
+        let j = hashtbl_find_node dm.name_to_i n2 in
         if i = j || List.mem j !deps
         then Some (Node (n2, []))
         else None
@@ -876,7 +885,7 @@ let is_internal_helper j dm =
 let score_upper_triangle dm exclude_nodes =
   let score = ref 0 in
   let exclude_idx = exclude_nodes +> List.map (fun n -> 
-    hashtbl_find dm.name_to_i n) in
+    hashtbl_find_node dm.name_to_i n) in
 
   for i = 0 to Array.length dm.matrix -1 do
     for j = i + 1 to Array.length dm.matrix -1 do
@@ -890,7 +899,7 @@ let score_upper_triangle dm exclude_nodes =
 let score_downer_triangle dm exclude_nodes =
   let score = ref 0 in
   let exclude_idx = exclude_nodes +> List.map (fun n -> 
-    hashtbl_find dm.name_to_i n) in
+    hashtbl_find_node dm.name_to_i n) in
 
   for i = 0 to Array.length dm.matrix -1 do
     for j = 0 to i - 1 do
