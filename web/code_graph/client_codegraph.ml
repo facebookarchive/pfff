@@ -109,7 +109,6 @@ let paint w rpc_log rpc_test rpc_explain_cell =
               ("external", Database_code.Dir)));
   *)
 
-
   View_matrix_codegraph.draw_matrix ctx_paint w;
   refresh_drawing_area ();
 
@@ -120,7 +119,7 @@ let paint w rpc_log rpc_test rpc_explain_cell =
   );
   canvas_elt##onclick <- Dom_html.handler (fun ev ->
     Lwt.async (fun () ->
-      Interaction_codegraph.mouseclick ctx_overlay w rpc_explain_cell ev;
+      Interaction_codegraph.mouseclick ctx_paint w rpc_explain_cell ev;
     );
     Js._false
   );
