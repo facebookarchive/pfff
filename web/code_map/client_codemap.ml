@@ -132,7 +132,7 @@ let paint w =
   Dom_html.window##setTimeout (Js.wrap_callback (fun () ->
   rects +> List.iter (Draw_labels.draw_treemap_rectangle_label_maybe 
                         ctx_paint ~color:None);
-  ), 0.5);
+  ), 0.5) +> ignore;
 
   (* phase 3, draw the content, if have enough space *)
   (* TODO *)

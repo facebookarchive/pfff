@@ -28,6 +28,10 @@ let log str =
   Lwt_io.write_line Lwt_io.stdout str
 let rpc_log = Eliom_pervasives.server_function Json.t<string> log
 
+let test () =
+  Lwt.return "42"
+let rpc_test = Eliom_pervasives.server_function Json.t<unit> test
+
 (*****************************************************************************)
 (* Main entry point *)
 (*****************************************************************************)
@@ -58,7 +62,11 @@ let main_service =
     *)
 
     ignore
-      {unit { Client_codegraph.paint %w %rpc_log }};
+      {unit { 
+        Lwt.async (fun() -> Client_codegraph.paint %w 
+            %rpc_log %rpc_test
+        )
+      }};
     Lwt.return
       (H.html 
           (H.head (H.title (H.pcdata "CodeGraph")) [ 
