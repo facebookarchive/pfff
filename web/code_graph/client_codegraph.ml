@@ -95,7 +95,7 @@ let init w =
 (* paint() creates the cairo context and adjusts the scaling if needed
  * and then calls the 'draw' functions.
  *)
-let paint w =
+let paint w rpc_log =
 
   let 
   (ctx_paint, ctx_overlay, ctx_final),
@@ -122,4 +122,5 @@ let paint w =
     Interaction_codegraph.mouseclick ctx_overlay w ev;
     Js._false
   );
+  rpc_log "done";
   ()

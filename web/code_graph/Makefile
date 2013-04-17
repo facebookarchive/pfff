@@ -24,7 +24,9 @@ OBJS_CLIENT= \
  interaction_codegraph.cmo \
  client_codegraph.cmo \
 
-LIBS_CLIENT= -package lwt.syntax -package js_of_ocaml.syntax -syntax camlp4o
+LIBS_CLIENT= \
+  -package eliom.client \
+  -package lwt.syntax -package js_of_ocaml.syntax -syntax camlp4o
 
 ##############################################################################
 # Generic variables
