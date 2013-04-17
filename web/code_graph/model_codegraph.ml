@@ -30,6 +30,13 @@ module DM = Dependencies_matrix_code
 
 type world_client = {
   m: Dependencies_matrix_code.dm;
+
+  (* this is too big, keep on server, and it looks like it's not marshalled
+   * correctly as some Hashtbl.find failed on the passed data in the client
+   * whereas it works perfectly fine on the same data on the server
+   *)
+  (* gopti: Graph_code_opti.graph; *)
+
   (* viewport, device coordinates *)
   width:  int;
   height: int;

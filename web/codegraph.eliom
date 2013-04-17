@@ -36,10 +36,18 @@ let main_service =
 
     let w = { Model.
        m;
+       (* too big and apparently pb with Hashtbl.find :( *)
+       (* gopti = Globals.gopti; *)
+
        width = width;
        height = height;
        interactive_regions = [];
     } in
+    (*
+    pr2_gen 
+      (Hashtbl.find w.Model.gopti.Graph_code_opti.name_to_i 
+          ("external", Database_code.Dir));
+    *)
 
     ignore
       {unit { Client_codegraph.paint %w }};

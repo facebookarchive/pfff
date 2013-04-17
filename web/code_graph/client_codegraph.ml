@@ -103,12 +103,23 @@ let paint w =
   canvas_elt
    = init w in
 
+  (*
+  pr2 (spf " index external = %d"
+          (Hashtbl.find w.M.gopti.Graph_code_opti.name_to_i 
+              ("external", Database_code.Dir)));
+  *)
+
+
   View_matrix_codegraph.draw_matrix ctx_paint w;
   refresh_drawing_area ();
 
   canvas_elt##onmousemove <- Dom_html.handler (fun ev ->
     View_overlays_codegraph.mousemove ctx_overlay w ev;
     refresh_drawing_area ();
+    Js._false
+  );
+  canvas_elt##onclick <- Dom_html.handler (fun ev ->
+    Interaction_codegraph.mouseclick ctx_overlay w ev;
     Js._false
   );
   ()
