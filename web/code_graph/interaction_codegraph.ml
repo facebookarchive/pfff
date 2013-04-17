@@ -28,7 +28,9 @@ module DM = Dependencies_matrix_code
 (*****************************************************************************)
 
 let mouseclick
-  (ctx:Canvas_helpers.context) (w: Model_codegraph.world_client) ev =
+  (ctx:Canvas_helpers.context) (w: Model_codegraph.world_client) 
+  rpc_explain_cell
+  ev =
 
   let device_x, device_y = ev##clientX, ev##clientY in
   pr2 (spf "mouseclick device coord: %d x %d" device_x device_y);
@@ -36,11 +38,11 @@ let mouseclick
   pr2 (spf "mouseclick user coord: %f, %f" x y);
 
   (match M.find_region_at_user_point w ~x ~y with
-  | None -> ()
+  | None -> Lwt.return ()
   | Some x ->
       (match x with
       | M.Row i -> 
-          ()
+          Lwt.return ()
 (*
             (match GdkEvent.get_type ev, GdkEvent.Button.button ev with
             | `TWO_BUTTON_PRESS, 1 ->
@@ -63,7 +65,7 @@ let mouseclick
       | M.Cell (i, j) -> 
           
           pr2 (spf "clicking on cell (%d, %d)" i j);
-          let str = "TODO" in
+          lwt str = rpc_explain_cell (i, j) in
 (*
           let deps = 
             DM.explain_cell_list_use_edges  (i, j) w.M.m w.M.gopti in
@@ -106,6 +108,7 @@ let mouseclick
 *)
           pr2 str;
           Dom_html.window##alert (Js.string str);
+          Lwt.return ();
 
 (*
             | `BUTTON_PRESS, 3 ->
@@ -125,7 +128,7 @@ let mouseclick
 *)
 
       | M.Column j ->
-          ()
+          Lwt.return ()
 (*
             (match GdkEvent.get_type ev, GdkEvent.Button.button ev with
             | `TWO_BUTTON_PRESS, 1 ->

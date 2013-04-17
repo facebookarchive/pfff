@@ -2,6 +2,7 @@ open Common
 
 module H = Eliom_content.Html5.D
 
+module DM = Dependencies_matrix_code
 (*****************************************************************************)
 (* Prelude *)
 (*****************************************************************************)
@@ -28,10 +29,6 @@ let log str =
   Lwt_io.write_line Lwt_io.stdout str
 let rpc_log = Eliom_pervasives.server_function Json.t<string> log
 
-let test () =
-  Lwt.return "42"
-let rpc_test = Eliom_pervasives.server_function Json.t<unit> test
-
 (*****************************************************************************)
 (* Main entry point *)
 (*****************************************************************************)
@@ -44,7 +41,28 @@ let main_service =
     pr2 path;
 
     (* todo: gopti should be a param too? memoized *)
-    let m = Server_codegraph.build Globals.gopti path in
+    let gopti = Globals.gopti in
+    let m = Server_codegraph.build gopti path in
+
+    let test () =
+      Lwt.return "42" in
+    let rpc_test = Eliom_pervasives.server_function Json.t<unit> test in
+
+    let explain_cell (i, j) =
+      let deps = 
+        DM.explain_cell_list_use_edges  (i, j) m gopti in
+      let str = 
+        deps +> Common.take_safe 50 +> List.map (fun (n1, n2) ->
+          spf "            %s --> %s" 
+            (Graph_code.string_of_node n1)  
+            (Graph_code.string_of_node n2)
+        ) +> Common.join "\n"
+      in
+      (*Lwt.return (spf "%d %d" i j)*)
+      Lwt.return str
+    in
+    let rpc_explain_cell =
+      Eliom_pervasives.server_function Json.t<int * int> explain_cell in
 
     let w = { Model.
        m;
@@ -64,7 +82,7 @@ let main_service =
     ignore
       {unit { 
         Lwt.async (fun() -> Client_codegraph.paint %w 
-            %rpc_log %rpc_test
+            %rpc_log %rpc_test %rpc_explain_cell
         )
       }};
     Lwt.return

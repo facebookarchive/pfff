@@ -95,7 +95,7 @@ let init w =
 (* paint() creates the cairo context and adjusts the scaling if needed
  * and then calls the 'draw' functions.
  *)
-let paint w rpc_log rpc_test =
+let paint w rpc_log rpc_test rpc_explain_cell =
 
   let 
   (ctx_paint, ctx_overlay, ctx_final),
@@ -119,7 +119,9 @@ let paint w rpc_log rpc_test =
     Js._false
   );
   canvas_elt##onclick <- Dom_html.handler (fun ev ->
-    Interaction_codegraph.mouseclick ctx_overlay w ev;
+    Lwt.async (fun () ->
+      Interaction_codegraph.mouseclick ctx_overlay w rpc_explain_cell ev;
+    );
     Js._false
   );
   (*
