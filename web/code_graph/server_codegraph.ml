@@ -21,17 +21,22 @@ module DM = Dependencies_matrix_code
 (*****************************************************************************)
 
 (*****************************************************************************)
+(* Types *)
+(*****************************************************************************)
+(* todo: 'config_path list' at some point *)
+type path = string list
+
+(*****************************************************************************)
 (* Builder *)
 (*****************************************************************************)
 
-let build gopti _pathTODO =
+let build gopti path =
 
-  (* TODO: compute config based on path, and compute g depending
-   * on some OCaml pfff repo type.
-   *)
-  let path = [DM.Expand ("lang_php", Database_code.Dir)] in
+  (* TODO: a/b -> Expand "a"; Expand "a/b" *)
+  let config_path = 
+    path +> List.map (fun s -> DM.Expand (s, Database_code.Dir)) in
   DM.threshold_pack := 4000;
-  let config, _goptiTODO = DM.config_of_path path gopti in
+  let config, _goptiTODO = DM.config_of_path config_path gopti in
   
   let m, _goptiTODO =
     DM.build config (None) gopti in

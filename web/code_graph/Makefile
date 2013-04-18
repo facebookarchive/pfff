@@ -13,12 +13,15 @@ INCLUDEDIRS= $(TOP)/commons \
   $(TOP)/h_visualization/ \
   $(TOP)/h_program-visual/ \
 
-OBJS_SERVER= \
+OBJS_SHARED= \
  model_codegraph.cmo \
+
+OBJS_SERVER= \
+ $(OBJS_SHARED) \
  server_codegraph.cmo \
 
 OBJS_CLIENT= \
- model_codegraph.cmo \
+ $(OBJS_SHARED) \
  view_overlays_codegraph.cmo \
  view_matrix_codegraph.cmo \
  interaction_codegraph.cmo \
@@ -27,6 +30,9 @@ OBJS_CLIENT= \
 LIBS_CLIENT= \
   -package eliom.client \
   -package lwt.syntax -package js_of_ocaml.syntax -syntax camlp4o
+
+LIBS_SERVER= \
+  -package eliom.server \
 
 ##############################################################################
 # Generic variables

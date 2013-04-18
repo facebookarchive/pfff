@@ -20,6 +20,12 @@ let gopti = begin
     (fun () -> Graph_code_opti.convert g)
 end
 
+let gopti_of_project prj =
+  (match prj with
+  | "pfff" -> gopti
+  | _ -> failwith "unsupported project"
+  )
+
 let paths = ["/home/pad/pfff"]
 let filter = Treemap_pl.ocaml_filter_file
 (*

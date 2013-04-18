@@ -29,6 +29,10 @@ module DM = Dependencies_matrix_code
 (*****************************************************************************)
 
 type world_client = {
+  project: string;
+  (* todo: Dependencies_matrix_code.config_path at some point *)
+  path: string list; 
+
   m: Dependencies_matrix_code.dm;
 
   (* this is too big, keep on server, and it looks like it's not marshalled
@@ -48,6 +52,10 @@ and region =
     | Cell of int * int (* i, j *)
     | Row of int (* i *)
     | Column of int (* j *)
+
+(*****************************************************************************)
+(* Links *)
+(*****************************************************************************)
 
 (*****************************************************************************)
 (* Coordinate system *)

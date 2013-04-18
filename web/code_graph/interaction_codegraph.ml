@@ -42,12 +42,12 @@ let mouseclick
   | Some x ->
       (match x with
       | M.Row i -> 
-          Lwt.return ()
+        pr2 (spf "clicking on row i");
+        let _node = w.M.m.DM.i_to_name.(i) in
+        Lwt.return ()
 (*
             (match GdkEvent.get_type ev, GdkEvent.Button.button ev with
             | `TWO_BUTTON_PRESS, 1 ->
-                pr2 (spf "double clicking on row i");
-                let node = w.m.DM.i_to_name.(i) in
                 w.path <- add_path (DM.Expand node) w.path;
                 recompute_matrix w;
                 true

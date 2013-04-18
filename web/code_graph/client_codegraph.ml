@@ -95,7 +95,10 @@ let init w =
 (* paint() creates the cairo context and adjusts the scaling if needed
  * and then calls the 'draw' functions.
  *)
-let paint w rpc_log rpc_test rpc_explain_cell =
+let paint w 
+  rpc_log rpc_test rpc_explain_cell 
+  main_service
+  =
 
   let 
   (ctx_paint, ctx_overlay, ctx_final),
@@ -119,7 +122,12 @@ let paint w rpc_log rpc_test rpc_explain_cell =
   );
   canvas_elt##onclick <- Dom_html.handler (fun ev ->
     Lwt.async (fun () ->
-      Interaction_codegraph.mouseclick ctx_paint w rpc_explain_cell ev;
+      lwt () =
+        Interaction_codegraph.mouseclick ctx_paint w rpc_explain_cell ev 
+      in
+      Eliom_client.exit_to ~service:main_service
+        ("pfff", "lang_php") ();
+      Lwt.return ()
     );
     Js._false
   );

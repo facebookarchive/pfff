@@ -22,7 +22,7 @@ let main_service =
         H.h1 [H.a Codemap.main_service     [H.pcdata "codemap"] 
                  "/home/pad/pfff/"];
         H.h1 [H.a Codegraph.main_service     [H.pcdata "codegraph"] 
-                 "/home/pad/pfff/"];
+                 ("pfff", "")];
 
 (*      H.h1 [H.a Lxr_server.main_service  [H.pcdata "lxr"]     ""]; *)
 (*

@@ -3,6 +3,7 @@ open Common
 module H = Eliom_content.Html5.D
 
 module DM = Dependencies_matrix_code
+
 (*****************************************************************************)
 (* Prelude *)
 (*****************************************************************************)
@@ -35,14 +36,18 @@ let rpc_log =
 (*****************************************************************************)
 
 let main_service =
-  App.register_service 
-    ~path:["codegraph"] 
-    ~get_params:(Eliom_parameter.string "path")
-  (fun path () ->
-    pr2 path;
+  Eliom_service.service 
+    ~path:["codegraph"]
+    ~get_params:Eliom_parameter.(string "project" ** string "path") ()
 
-    (* todo: gopti should be a param too? memoized *)
-    let gopti = Globals.gopti in
+
+let _ =
+  App.register ~service:main_service 
+  (fun (project, path) () ->
+    let path = Str.split (Str.regexp "/") path in
+    pr2_gen path;
+
+    let gopti = Globals.gopti_of_project project in
     let m = Server_codegraph.build gopti path in
 
     let test () =
@@ -66,6 +71,7 @@ let main_service =
       Eliom_pervasives.server_function Json.t<int * int> explain_cell in
 
     let w = { Model.
+       project; path;
        m;
        (* too big and apparently pb with Hashtbl.find :( *)
        (* gopti = Globals.gopti; *)
@@ -84,6 +90,7 @@ let main_service =
       {unit { 
         Lwt.async (fun() -> Client_codegraph.paint %w 
             %rpc_log %rpc_test %rpc_explain_cell
+            %main_service
         )
       }};
     Lwt.return
