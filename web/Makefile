@@ -119,7 +119,9 @@ run: all
 	LD_LIBRARY_PATH=../commons ocsigenserver -c ocsigen.conf
 
 annot:
+	rm -f *.annot
 	ocamlfind ocamlc -dtypes -c $(INCLUDES) $(LIBS_SERVER) dump_server.ml
+	ocamlfind ocamlc -dtypes -c $(INCLUDES) $(LIBS_SERVER) globals.ml
 	$(ELIOMC) -annot -c $(INCLUDES) test.eliom
 	ln -s _server/test.annot
 	$(ELIOMC) -annot -c $(INCLUDES) codemap.eliom

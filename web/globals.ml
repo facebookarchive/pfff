@@ -2,6 +2,8 @@ open Common
 
 let verbose = ref true
 
+module T = Treemap
+
 (*****************************************************************************)
 (* Projects *)
 (*****************************************************************************)
@@ -12,6 +14,7 @@ let info_projects = [
 
   "www", ("/home/pad/www", Treemap_pl.php_filter_file);
   "flib", ("/home/pad/www/flib", Treemap_pl.php_filter_file);
+  "hack", ("/home/pad/www/flib", Treemap_pl.php_filter_file);
 ]
 
 (*****************************************************************************)
@@ -42,11 +45,41 @@ let rects_of_project_and_path (project, path) =
 
   (* todo: sanitize path, disallow '..' *)
   let paths = [Filename.concat root path] in
+  (* less: generate readable path directly *)
   let treemap = Treemap_pl.code_treemap ~filter_file:filter paths in
   let algo = Treemap.Ordered Treemap.PivotByMiddle in
   let rects = Treemap.render_treemap_algo 
     ~algo ~big_borders:false
     treemap in
+
+  let rects =
+    match project with
+    | "hack" ->
+      let file = Filename.concat root "layer_hack.json" in
+      let layer = Layer_code.load_layer file in
+      let active = true in
+      let layers_with_index = 
+        Layer_code.build_index_of_layers ~root [layer, active] in
+      rects +> List.map (fun r ->
+        let file = r.T.tr_label in
+        let is_file = not r.T.tr_is_node in
+        let emacs_color = 
+          if is_file then begin
+            try 
+              let xs = 
+                Hashtbl.find layers_with_index.Layer_code.macro_index file in
+              let (_float, emacs_color) = List.hd xs in
+              emacs_color
+            with
+              Not_found -> "white"
+          end
+          else "black" 
+        in
+        let int_color = Simple_color.color_of_string emacs_color in
+        { r with T.tr_color = int_color }
+      )
+    | _ -> rects
+  in
   rects
 
 (*****************************************************************************)
@@ -54,5 +87,6 @@ let rects_of_project_and_path (project, path) =
 (*****************************************************************************)
 
 let _ = begin
+  let _ = rects_of_project_and_path ("hack", "") in
   pr2 "READY";
 end
