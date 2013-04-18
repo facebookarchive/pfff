@@ -13,7 +13,6 @@
  * license.txt for more details.
  *)
 open Common
-(* floats are the norm in graphics *)
 open Common2.ArithFloatInfix
 
 module DM = Dependencies_matrix_code
@@ -67,7 +66,7 @@ let xy_ratio = 1.71
 (* Layout *)
 (*****************************************************************************)
 
-(* todo: can put some of it as mutable? as we expand things we may want
+(* less: can put some of it as mutable? as we expand things we may want
  * to reserve more space to certain things?
  *)
 type layout = {
@@ -123,4 +122,3 @@ let find_region_at_user_point w ~x ~y =
     in
     Some kind
   with Not_found -> None
-
