@@ -33,18 +33,17 @@ let size_data x =
 (* Main entry point *)
 (*****************************************************************************)
 let main_service =
-  App.register_service 
+  Eliom_service.service 
     ~path:["codemap"] 
-    ~get_params:(Eliom_parameter.string "path")
-  (fun path () ->
-    pr2 path;
+    ~get_params:Eliom_parameter.(string "project" ** string "path") ()
 
-    (* TODO: compute config based on path and depending
-     * on some OCaml pfff repo type.
-     *)
-    let rects = Globals.rects in
-    let root = Globals.root in
-    (* let rects = Server_codemap.treemap_generator [path] in *)
+let _ =
+  App.register ~service:main_service
+  (fun (project, path) () ->
+
+    let rects = Globals.rects_of_project_and_path (project, path) in
+    let root = Globals.root_of_project project in
+
     pr2 (spf "obj size before = %d" (size_data rects));
     let rects = Server_codemap.optimize_rects rects in
     pr2 (spf "obj size after = %d" (size_data rects));
