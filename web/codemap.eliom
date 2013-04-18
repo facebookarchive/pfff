@@ -59,7 +59,7 @@ let _ =
     in
 
     ignore
-      {unit { Client_codemap.paint %w }};
+      {unit { Client_codemap.paint %w %main_service }};
     Lwt.return
       (H.html 
           (H.head (H.title (H.pcdata "Codemap")) [ 

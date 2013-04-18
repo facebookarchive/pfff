@@ -57,9 +57,12 @@ OBJS_CLIENT= \
  draw_microlevel.cmo \
  draw_labels.cmo \
  view_overlays_codemap.cmo \
+ interaction_codemap.cmo \
  client_codemap.cmo \
 
-LIBS_CLIENT= -package js_of_ocaml.syntax -syntax camlp4o
+LIBS_CLIENT= \
+  -package eliom.client \
+  -package lwt.syntax -package js_of_ocaml.syntax -syntax camlp4o
 
 ##############################################################################
 # Generic variables

@@ -109,7 +109,7 @@ let init w =
 (*****************************************************************************)
 
 
-let paint w =
+let paint w main_service =
 
   let 
   (ctx_paint, ctx_overlay, ctx_final),
@@ -141,6 +141,15 @@ let paint w =
   canvas_elt##onmousemove <- Dom_html.handler (fun ev ->
     View_overlays_codemap.mousemove ctx_overlay w ev;
     refresh_drawing_area ();
+    Js._false
+  );
+
+  canvas_elt##onclick <- Dom_html.handler (fun ev ->
+    Lwt.async (fun () ->
+      Interaction_codemap.mouseclick ctx_overlay w 
+        main_service
+        ev 
+    );
     Js._false
   );
 
