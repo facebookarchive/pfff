@@ -126,12 +126,10 @@ let paint w
   );
   canvas_elt##onclick <- Dom_html.handler (fun ev ->
     Lwt.async (fun () ->
-      lwt () =
-        Interaction_codegraph.mouseclick ctx_paint w rpc_explain_cell ev 
-      in
-      Eliom_client.exit_to ~service:main_service
-        ("pfff", "lang_php") ();
-      Lwt.return ()
+      Interaction_codegraph.mouseclick ctx_paint w 
+        rpc_explain_cell 
+        main_service
+        ev 
     );
     Js._false
   );

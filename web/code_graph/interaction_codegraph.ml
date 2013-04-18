@@ -29,7 +29,7 @@ module DM = Dependencies_matrix_code
 
 let mouseclick
   (ctx:Canvas_helpers.context) (w: Model_codegraph.world_client) 
-  rpc_explain_cell
+  rpc_explain_cell main_service
   ev =
 
   let device_x, device_y = ev##clientX, ev##clientY in
@@ -43,14 +43,14 @@ let mouseclick
       (match x with
       | M.Row i -> 
         pr2 (spf "clicking on row i");
-        let _node = w.M.m.DM.i_to_name.(i) in
+        let (str, _kind) = w.M.m.DM.i_to_name.(i) in
+        Eliom_client.exit_to ~service:main_service
+          (w.M.project, str) ();
         Lwt.return ()
 (*
             (match GdkEvent.get_type ev, GdkEvent.Button.button ev with
             | `TWO_BUTTON_PRESS, 1 ->
                 w.path <- add_path (DM.Expand node) w.path;
-                recompute_matrix w;
-                true
             | `BUTTON_PRESS, 3 ->
                 pr2 (spf "right clicking on row i");
                 let node = w.m.DM.i_to_name.(i) in
