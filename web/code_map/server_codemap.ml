@@ -15,6 +15,8 @@
 open Common
 
 module FT = File_type
+module T = Treemap
+
 module Model = Model_codemap
 module Flag = Flag_web
 
@@ -53,8 +55,11 @@ let treemap_generator paths =
 *)
 
 (* optimize and filter very small rectangles so that we send less data *)
-let optimize_rects rects =
+let optimize_rects root rects =
   let rects = rects +> Common.map_filter (fun rect ->
+    let readable = 
+      Common.filename_without_leading_path root rect.T.tr_label in
+    let rect = { rect with T.tr_label = readable } in
     let r = rect.Treemap.tr_rect in
     let w = Figures.rect_width r in
     let h = Figures.rect_height r in

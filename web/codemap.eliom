@@ -45,7 +45,7 @@ let _ =
     let root = Globals.root_of_project project in
 
     pr2 (spf "obj size before = %d" (size_data rects));
-    let rects = Server_codemap.optimize_rects rects in
+    let rects = Server_codemap.optimize_rects root rects in
     pr2 (spf "obj size after = %d" (size_data rects));
 
     let w = { Model.

@@ -144,7 +144,7 @@ let paint w main_service =
     Js._false
   );
 
-  canvas_elt##onclick <- Dom_html.handler (fun ev ->
+  canvas_elt##ondblclick <- Dom_html.handler (fun ev ->
     Lwt.async (fun () ->
       Interaction_codemap.mouseclick ctx_overlay w 
         main_service
