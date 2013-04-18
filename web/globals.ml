@@ -39,7 +39,16 @@ let root_of_project project =
   let (root, _) = List.assoc project info_projects in
   root
 
-(* todo: memoize *)
+let _hmemo_index = Hashtbl.create 101
+let layers_with_index_of_file (root, file) =
+  Common.memoized _hmemo_index (root, file) (fun () ->
+    
+    let file = Filename.concat root file in
+    let layer = Layer_code.load_layer file in
+    let active = true in
+    Layer_code.build_index_of_layers ~root [layer, active] 
+  )
+
 let rects_of_project_and_path (project, path) =
   let (root, filter) = List.assoc project info_projects in
 
@@ -55,11 +64,8 @@ let rects_of_project_and_path (project, path) =
   let rects =
     match project with
     | "hack" ->
-      let file = Filename.concat root "layer_hack.json" in
-      let layer = Layer_code.load_layer file in
-      let active = true in
       let layers_with_index = 
-        Layer_code.build_index_of_layers ~root [layer, active] in
+        layers_with_index_of_file (root, "layer_hack.json") in
       rects +> List.map (fun r ->
         let file = r.T.tr_label in
         let is_file = not r.T.tr_is_node in
@@ -81,6 +87,13 @@ let rects_of_project_and_path (project, path) =
     | _ -> rects
   in
   rects
+
+let _hmemo_rects = Hashtbl.create 101
+(* todo: memoize *)
+let rects_of_project_and_path (a,b) =
+  Common.memoized _hmemo_rects (a,b) (fun () ->
+    rects_of_project_and_path (a,b)
+  )
 
 (*****************************************************************************)
 (* Init *)
