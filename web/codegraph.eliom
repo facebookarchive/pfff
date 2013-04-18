@@ -27,7 +27,8 @@ module Model = Model_codegraph
 (*****************************************************************************)
 let log str = 
   Lwt_io.write_line Lwt_io.stdout str
-let rpc_log = Eliom_pervasives.server_function Json.t<string> log
+let rpc_log = 
+  Eliom_pervasives.server_function Json.t<string> log
 
 (*****************************************************************************)
 (* Main entry point *)
