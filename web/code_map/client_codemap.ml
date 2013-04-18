@@ -13,7 +13,6 @@
  * license.txt for more details.
  *)
 open Common
-(* floats are the norm in graphics *)
 open Common2.ArithFloatInfix
 open Common_client
 

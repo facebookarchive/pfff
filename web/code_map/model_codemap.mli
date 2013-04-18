@@ -1,4 +1,8 @@
 type world_client = {
+  project: string;
+  (* readable path *)
+  path: string;
+
   rects: Treemap.treemap_rendering;
 
   root: Common.dirname;

@@ -29,6 +29,10 @@ module T = Treemap
 (*****************************************************************************)
 
 type world_client = {
+  project: string;
+  (* readable path *)
+  path: string;
+
   rects: Treemap.treemap_rendering;
 
   (* to show labels without leading path *)

@@ -49,9 +49,12 @@ let _ =
     pr2 (spf "obj size after = %d" (size_data rects));
 
     let w = { Model.
-       rects; root;
-       width = width;
-       height = height;
+       project;
+       path;
+       rects; 
+       root;
+       width;
+       height;
     }
     in
 
@@ -81,6 +84,8 @@ let test_codemap_micro =
     let rects = [] in
     let w = { Model.
        rects;
+       project = "whatever";
+       path = "";
        width = width;
        height = height;
        root = "/";
