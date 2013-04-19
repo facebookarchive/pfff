@@ -15,7 +15,9 @@ let info_projects = [
   "www", ("/home/pad/www", Treemap_pl.php_filter_file);
   "flib", ("/home/pad/www/flib", Treemap_pl.php_filter_file);
   "hack", ("/home/pad/www/flib", Treemap_pl.php_filter_file);
+
   "fbcode", ("/home/pad/local/fbcode", Treemap_pl.no_filter_file);
+  "fb4a", ("/home/pad/local/fb4a", Treemap_pl.no_filter_file);
 ]
 
 let dimensions_of_size = function
