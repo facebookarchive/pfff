@@ -30,14 +30,14 @@ type path = string list
 (* Builder *)
 (*****************************************************************************)
 
-let build gopti path =
+let build gopti_ref path =
 
   (* TODO: a/b -> Expand "a"; Expand "a/b" *)
   let config_path = 
     path +> List.map (fun s -> DM.Expand (s, Database_code.Dir)) in
-  DM.threshold_pack := 4000;
-  let config, _goptiTODO = DM.config_of_path config_path gopti in
-  
-  let m, _goptiTODO =
+  DM.threshold_pack := 50;
+  let config, gopti = DM.config_of_path config_path !gopti_ref in
+  let m, gopti =
     DM.build config (None) gopti in
+  gopti_ref := gopti;
   m

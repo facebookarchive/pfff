@@ -47,7 +47,7 @@ let _ =
 
     let explain_cell (i, j) =
       let deps = 
-        DM.explain_cell_list_use_edges  (i, j) m gopti in
+        DM.explain_cell_list_use_edges  (i, j) m !gopti_ref in
       let str = 
         deps +> Common.take_safe 50 +> List.map (fun (n1, n2) ->
           spf "            %s --> %s" 

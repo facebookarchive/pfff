@@ -39,6 +39,12 @@ let gopti_of_project prj =
       Graph_code_opti.convert g
     )
 
+let gopti_of_project prj =
+  Common.memoized _hmemo_gopti prj (fun () ->
+    ref (gopti_of_project prj)
+  )
+
+
 (*****************************************************************************)
 (* Codemap *)
 (*****************************************************************************)
