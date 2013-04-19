@@ -1,11 +1,16 @@
 -*- org -*-
 
-* 0.24 (Q2 2013) (??)
+* 0.24 (Q2 2013) (web-codemap, web-codegraph)
 
 ** web: resume work on ocsigen, port to eliom3, use of OPAM
-basic treemap service, dumper service.
 
 ** codegraph
+
+*** web frontend, using ocsigen
+
+*** new backend for dotfiles
+
+** codemap
 
 *** web frontend, using ocsigen
 
