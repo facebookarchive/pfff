@@ -118,6 +118,10 @@ _client/test.cmo: test.eliom
 run: all
 	LD_LIBRARY_PATH=../commons ocsigenserver -c ocsigen.conf
 
+rerun: 
+	pkill ocsigenserver
+	LD_LIBRARY_PATH=../commons ocsigenserver -c ocsigen.conf
+
 annot:
 	rm -f *.annot
 	ocamlfind ocamlc -dtypes -c $(INCLUDES) $(LIBS_SERVER) dump_server.ml
