@@ -12,16 +12,6 @@ module H = Eliom_content.Html5.D
 module App = Eliom_registration.App (struct let application_name = "app" end)
 
 (*****************************************************************************)
-(* Shared *)
-(*****************************************************************************)
-
-{shared{
-let width = 1200
-let height = 680
-module Model = Model_codemap
-}}
-
-(*****************************************************************************)
 (* Profiling *)
 (*****************************************************************************)
 
@@ -35,11 +25,14 @@ let size_data x =
 let main_service =
   Eliom_service.service 
     ~path:["codemap"] 
-    ~get_params:Eliom_parameter.(string "project" ** string "path") ()
+    ~get_params:Eliom_parameter.
+      (string "size" ** string "project" ** string "path") ()
 
 let _ =
   App.register ~service:main_service
-  (fun (project, path) () ->
+  (fun (size, (project, path)) () ->
+
+    let (width, height) = Globals.dimensions_of_size size in
 
     let rects = Globals.rects_of_project_and_path (project, path) in
     let root = Globals.root_of_project project in
@@ -48,9 +41,8 @@ let _ =
     let rects = Server_codemap.optimize_rects root rects in
     pr2 (spf "obj size after = %d" (size_data rects));
 
-    let w = { Model.
-       project;
-       path;
+    let w = { Model_codemap.
+       project; path; size;
        rects; 
        root;
        width;
@@ -81,14 +73,17 @@ let test_codemap_micro =
     ~get_params:(Eliom_parameter.unit)
   (fun () () ->
 
+    let size = "small" in
+    let (width, height) = Globals.dimensions_of_size size in
     let rects = [] in
-    let w = { Model.
+    let w = { Model_codemap.
        rects;
        project = "whatever";
        path = "";
        width = width;
        height = height;
        root = "/";
+       size;
     }
     in
     let file = 

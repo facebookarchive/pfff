@@ -9,6 +9,7 @@ let main_service =
   ~path:[""]
   ~get_params:Eliom_parameter.unit
   (fun () () ->
+    let size = "small" in
     ignore
       {unit{ (* *) () }};
     Lwt.return
@@ -20,12 +21,12 @@ let main_service =
                  ()];
 
         H.h1 [H.a Codemap.main_service     [H.pcdata "codemap"] 
-                 ("pfff", "")];
+                 (size, ("pfff", ""))];
         H.h1 [H.a Codegraph.main_service     [H.pcdata "codegraph"] 
-                 ("small", ("pfff", ""))];
+                 (size, ("pfff", ""))];
 
         H.h1 [H.a Codemap.main_service     [H.pcdata "hack dashboard"] 
-                 ("hack", "")];
+                 (size, ("hack", ""))];
 
 (*      H.h1 [H.a Lxr_server.main_service  [H.pcdata "lxr"]     ""]; *)
 (*

@@ -43,7 +43,7 @@ let mouseclick
   r_opt +> Common.do_option (fun (_r, _, r_englobing) ->
     let path = r_englobing.T.tr_label in
     Eliom_client.exit_to ~service:main_service
-      (w.M.project, path) ();
+      (w.M.size, (w.M.project, path)) ();
 
   );
 

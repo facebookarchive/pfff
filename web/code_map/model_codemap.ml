@@ -32,6 +32,7 @@ type world_client = {
   project: string;
   (* readable path *)
   path: string;
+  size: string;
 
   rects: Treemap.treemap_rendering;
 
