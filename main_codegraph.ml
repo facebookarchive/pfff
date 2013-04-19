@@ -283,6 +283,8 @@ let build_graph_code lang root =
       Graph_code_bytecode.build ~verbose:!verbose ~graph_code_java
         root skip_list
 
+    | "dot" -> Graph_code.graph_of_dotfile (Filename.concat root "graph.dot")
+
     | _ -> failwith ("language not supported: " ^ lang)
   in
   let output_dir =

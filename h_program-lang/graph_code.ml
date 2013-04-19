@@ -412,4 +412,41 @@ let adjust_graph g xs whitelist =
     )
   )
 
+(*****************************************************************************)
+(* Example *)
+(*****************************************************************************)
+let graph_of_dotfile dotfile =
+  let xs = Common.cat dotfile in
+  let deps =
+    xs +> Common.map_filter (fun s ->
+      if s =~ "^\"\\(.*\\)\" -> \"\\(.*\\)\"$"
+      then
+        let (src, dst) = Common.matched2 s in
+        Some (src, dst)
+      else begin
+        pr2 (spf "ignoring line: %s" s);
+        None
+      end
+    )
+  in
+  let g = create () in
+  create_initial_hierarchy g;
+  (* step1: defs *)
+  deps +> List.iter (fun (src, dst) ->
+    try 
+      create_intermediate_directories_if_not_present g src;
+      create_intermediate_directories_if_not_present g dst;
+    with Assert_failure _ ->
+      pr2_gen (src, dst);
+  );
+  (* step2: use *)
+  deps +> List.iter (fun (src, dst) ->
+    let src_node = (src, E.Dir) in
+    let dst_node = (dst, E.Dir) in
+    g +> add_edge (src_node, dst_node) Use;
+  );
+  g
+
+
     
+

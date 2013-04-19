@@ -81,4 +81,7 @@ val save_whitelist: whitelist -> Common.filename -> graph -> unit
 (* does side effect on the graph *)
 val adjust_graph: graph -> adjust list -> whitelist -> unit
 
+(* example builder *)
+val graph_of_dotfile: Common.filename -> graph
+
 (* internals *)
