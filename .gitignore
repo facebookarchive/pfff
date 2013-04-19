@@ -442,3 +442,4 @@ web/var/logs/warnings.log
 /lang_clang/parsing/parser_clang.ml
 /lang_clang/parsing/parser_clang.mli
 /lang_clang/parsing/parser_clang.output
+/web/scripts/stat_web
