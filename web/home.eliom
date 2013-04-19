@@ -22,7 +22,7 @@ let main_service =
         H.h1 [H.a Codemap.main_service     [H.pcdata "codemap"] 
                  ("pfff", "")];
         H.h1 [H.a Codegraph.main_service     [H.pcdata "codegraph"] 
-                 ("pfff", "")];
+                 ("small", ("pfff", ""))];
 
         H.h1 [H.a Codemap.main_service     [H.pcdata "hack dashboard"] 
                  ("hack", "")];

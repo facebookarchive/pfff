@@ -28,7 +28,7 @@ module DM = Dependencies_matrix_code
 (*****************************************************************************)
 
 let mouseclick
-  (ctx:Canvas_helpers.context) (w: Model_codegraph.world_client) 
+  (ctx:Canvas_helpers.context) (w: Model_codegraph.world_client) dblclick
   rpc_explain_cell main_service
   ev =
 
@@ -44,8 +44,10 @@ let mouseclick
       | M.Row i -> 
         pr2 (spf "clicking on row i");
         let (str, _kind) = w.M.m.DM.i_to_name.(i) in
-        Eliom_client.exit_to ~service:main_service
-          (w.M.project, str) ();
+        if dblclick 
+        then
+          Eliom_client.exit_to ~service:main_service
+            (w.M.size, (w.M.project, str)) ();
         Lwt.return ()
 (*
             (match GdkEvent.get_type ev, GdkEvent.Button.button ev with

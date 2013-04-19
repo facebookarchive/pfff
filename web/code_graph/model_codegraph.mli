@@ -2,6 +2,8 @@
 type world_client = {
   project: string;
   path: string list; 
+  size: string;
+
   m: Dependencies_matrix_code.dm;
 
   width:  int;

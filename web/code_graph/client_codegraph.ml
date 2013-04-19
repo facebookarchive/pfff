@@ -126,13 +126,23 @@ let paint w
   );
   canvas_elt##onclick <- Dom_html.handler (fun ev ->
     Lwt.async (fun () ->
-      Interaction_codegraph.mouseclick ctx_paint w 
+      Interaction_codegraph.mouseclick ctx_paint w false
         rpc_explain_cell 
         main_service
         ev 
     );
     Js._false
   );
+  canvas_elt##ondblclick <- Dom_html.handler (fun ev ->
+    Lwt.async (fun () ->
+      Interaction_codegraph.mouseclick ctx_paint w true
+        rpc_explain_cell
+        main_service
+        ev 
+    );
+    Js._false
+  );
+
   (*
   lwt _ = rpc_log "done" in
   lwt x = rpc_test () in

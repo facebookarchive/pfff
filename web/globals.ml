@@ -15,13 +15,21 @@ let info_projects = [
   "www", ("/home/pad/www", Treemap_pl.php_filter_file);
   "flib", ("/home/pad/www/flib", Treemap_pl.php_filter_file);
   "hack", ("/home/pad/www/flib", Treemap_pl.php_filter_file);
+  "fbcode", ("/home/pad/local/fbcode", Treemap_pl.no_filter_file);
 ]
+
+let dimensions_of_size = function
+  | "small" -> 1200, 680
+  | "large" -> 2500, 1490
+  | "extralarge" -> 7000, 4000
+  | _ -> failwith "size not regonized, try 'large' or 'small'"
 
 (*****************************************************************************)
 (* Codegraph *)
 (*****************************************************************************)
 
-(* todo: memoize *)
+let _hmemo_gopti = Hashtbl.create 101
+
 let gopti_of_project prj =
   let (root, _) = List.assoc prj info_projects in
   let graph_file = Filename.concat root "graph_code.marshall" in

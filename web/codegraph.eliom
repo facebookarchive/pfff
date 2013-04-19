@@ -14,16 +14,6 @@ module DM = Dependencies_matrix_code
 module App = Eliom_registration.App (struct let application_name = "app" end)
 
 (*****************************************************************************)
-(* Shared *)
-(*****************************************************************************)
-
-{shared{
-let width = 1200
-let height = 680
-module Model = Model_codegraph
-}}
-
-(*****************************************************************************)
 (* Logging *)
 (*****************************************************************************)
 let log str = 
@@ -38,17 +28,18 @@ let rpc_log =
 let main_service =
   Eliom_service.service 
     ~path:["codegraph"]
-    ~get_params:Eliom_parameter.(string "project" ** string "path") ()
-
+    ~get_params:Eliom_parameter.
+      (string "size" ** string "project" ** string "path") ()
 
 let _ =
   App.register ~service:main_service 
-  (fun (project, path) () ->
+  (fun (size, (project, path)) () ->
     let path = Str.split (Str.regexp "/") path in
     pr2_gen path;
+    let (width, height) = Globals.dimensions_of_size size in
 
-    let gopti = Globals.gopti_of_project project in
-    let m = Server_codegraph.build gopti path in
+    let gopti_ref = Globals.gopti_of_project project in
+    let m = Server_codegraph.build gopti_ref path in
 
     let test () =
       Lwt.return "42" in
@@ -70,8 +61,8 @@ let _ =
     let rpc_explain_cell =
       Eliom_pervasives.server_function Json.t<int * int> explain_cell in
 
-    let w = { Model.
-       project; path;
+    let w = { Model_codegraph.
+       project; path; size;
        m;
        (* too big and apparently pb with Hashtbl.find :( *)
        (* gopti = Globals.gopti; *)
