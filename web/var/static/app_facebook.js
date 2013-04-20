@@ -6,9 +6,8 @@ window.fbAsyncInit = function() {
     status     : true, // check login status
     cookie     : true, // enable cookies to allow the server to access the session
     xfbml      : true  // parse XFBML
-        });
+  });
 
-    // Additional init code here
   FB.getLoginStatus(function(response) {
       if (response.status === 'connected') {
         //window.alert("connected");
@@ -23,7 +22,7 @@ window.fbAsyncInit = function() {
       }
     });
 
-  };
+};
 
 function login() {
   FB.login(function(response) {
@@ -40,6 +39,17 @@ function testAPI() {
   console.log('Welcome!  Fetching your information.... ');
   FB.api('/me', function(response) {
       console.log('Good to see you, ' + response.name + '.');
+    });
+}
+
+function getUserName(f) {
+  FB.getLoginStatus(function(response) {
+      if (response.status === 'connected') {
+        FB.api('/me', function(response) {
+            console.log('GetUserName, ' + response.name + '.');
+            f(response.name);
+          });
+      }
     });
 }
 

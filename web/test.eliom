@@ -19,6 +19,14 @@ let height = 500
 }}
 
 (*****************************************************************************)
+(* Logging *)
+(*****************************************************************************)
+let log str = 
+  Lwt_io.write_line Lwt_io.stdout str
+let rpc_log = 
+  Eliom_pervasives.server_function Json.t<string> log
+
+(*****************************************************************************)
 (* Test *)
 (*****************************************************************************)
 
@@ -138,16 +146,32 @@ let main_service =
           unopt
         in
         let ctx = canvas##getContext (Dom_html._2d_) in
-        test_draw ctx
+        test_draw ctx;
+
+        let f x = 
+          Dom_html.window##alert(x);
+          %rpc_log (spf "CONNECTION Test.eliom: %s" (Js.to_string x))
+        in
+
+        Js.Unsafe.fun_call (Js.Unsafe.variable "getUserName") 
+          [| Js.Unsafe.inject f|];
       }};
 
     Lwt.return
-      (H.html (H.head (H.title (H.pcdata "test")) [
+      (H.html (H.head (H.title (H.pcdata "test")) 
          (* this is now included by default
          H.js_script 
             ~uri:(H.make_uri  (Eliom_service.static_dir ())["app.js"]) ();
          *)
-      ]) (H.body [
+         (if !Globals.use_facebook
+         then 
+           [H.js_script 
+            ~uri:(H.make_uri  (Eliom_service.static_dir ())
+                    ["app_facebook.js"]) ();
+           ]
+         else []
+         )
+      ) (H.body [
         (* used by runtime1.js, useful to see exceptions thrown *)
         H.div ~a:[H.a_id "output";] [];
 

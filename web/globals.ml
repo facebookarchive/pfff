@@ -2,6 +2,8 @@ open Common
 
 let verbose = ref true
 
+let use_facebook = ref true
+
 module T = Treemap
 
 (*****************************************************************************)
@@ -116,6 +118,6 @@ let rects_of_project_and_path (a,b) =
 (*****************************************************************************)
 
 let _ = begin
-  let _ = rects_of_project_and_path ("hack", "") in
+  (* let _ = rects_of_project_and_path ("hack", "") in *)
   pr2 "READY";
 end
