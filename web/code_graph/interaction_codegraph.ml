@@ -30,9 +30,9 @@ module DM = Dependencies_matrix_code
 let mouseclick
   (ctx:Canvas_helpers.context) (w: Model_codegraph.world_client) dblclick
   rpc_explain_cell main_service
-  ev =
+  (elt: Dom_html.element Js.t) (ev: Dom_html.mouseEvent Js.t) =
 
-  let device_x, device_y = ev##clientX, ev##clientY in
+  let device_x, device_y = Common_client.get_position elt ev in
   pr2 (spf "mouseclick device coord: %d x %d" device_x device_y);
   let (x, y) = ctx#device_to_user ~x:device_x ~y:device_y in
   pr2 (spf "mouseclick user coord: %f, %f" x y);

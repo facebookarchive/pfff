@@ -139,7 +139,7 @@ let paint w main_service =
   refresh_drawing_area ();
 
   canvas_elt##onmousemove <- Dom_html.handler (fun ev ->
-    View_overlays_codemap.mousemove ctx_overlay w ev;
+    View_overlays_codemap.mousemove ctx_overlay w canvas_elt ev;
     refresh_drawing_area ();
     Js._false
   );
@@ -148,7 +148,7 @@ let paint w main_service =
     Lwt.async (fun () ->
       Interaction_codemap.mouseclick ctx_overlay w 
         main_service
-        ev 
+        canvas_elt ev 
     );
     Js._false
   );

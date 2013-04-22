@@ -107,8 +107,9 @@ let draw_green_yellow_dependent_rows ~(ctx: Canvas_helpers.context) w i =
 
 (* was called motion_notify_refresher in gtk version *)
 let mousemove
- (ctx: Canvas_helpers.context) (w: Model_codegraph.world_client) ev =
-  let device_x, device_y = ev##clientX, ev##clientY in
+ (ctx: Canvas_helpers.context) (w: Model_codegraph.world_client) 
+ elt ev =
+  let device_x, device_y = Common_client.get_position elt ev in
   pr2 (spf "mousemove device coord: %d x %d" device_x device_y);
 
   (* clear overlay *)

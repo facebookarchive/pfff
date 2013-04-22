@@ -7,4 +7,4 @@ val mouseclick:
             [< Eliom_service.suff ], 'c, 'd, [< Eliom_service.registrable ],
             [< Eliom_registration.non_caml_service ]) Eliom_service.service->
 
-  (Dom_html.mouseEvent Js.t -> unit Lwt.t)
+  (Dom_html.element Js.t -> Dom_html.mouseEvent Js.t -> unit Lwt.t)

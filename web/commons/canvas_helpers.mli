@@ -58,7 +58,4 @@ object
   method user_to_device_font_size:
     float -> float
 
-  
-
 end
-

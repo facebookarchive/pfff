@@ -154,8 +154,9 @@ let draw_searched_rectangles ~cr_overlay ~dw =
 (* was called motion_notify_refresher in gtk version *)
 
 let mousemove
- (ctx: Canvas_helpers.context) (w: Model_codemap.world_client) ev =
-  let device_x, device_y = ev##clientX, ev##clientY in
+ (ctx: Canvas_helpers.context) (w: Model_codemap.world_client) 
+ (elt: Dom_html.element Js.t) ev =
+  let device_x, device_y = Common_client.get_position elt ev in
   pr2 (spf "mousemove device coord: %d x %d" device_x device_y);
 
   (* clear overlay *)

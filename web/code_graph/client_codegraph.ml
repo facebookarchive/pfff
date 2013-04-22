@@ -120,7 +120,7 @@ let paint w
   refresh_drawing_area ();
 
   canvas_elt##onmousemove <- Dom_html.handler (fun ev ->
-    View_overlays_codegraph.mousemove ctx_overlay w ev;
+    View_overlays_codegraph.mousemove ctx_overlay w canvas_elt ev;
     refresh_drawing_area ();
     Js._false
   );
@@ -129,7 +129,7 @@ let paint w
       Interaction_codegraph.mouseclick ctx_paint w false
         rpc_explain_cell 
         main_service
-        ev 
+        canvas_elt ev 
     );
     Js._false
   );
@@ -138,7 +138,7 @@ let paint w
       Interaction_codegraph.mouseclick ctx_paint w true
         rpc_explain_cell
         main_service
-        ev 
+        canvas_elt ev 
     );
     Js._false
   );

@@ -92,6 +92,8 @@ let _ =
             H.div 
               ~a:[H.a_id "output";] [];
             H.canvas
-              ~a:[H.a_id "main_canvas"; H.a_width width; H.a_height height] [];
+              ~a:[H.a_id "main_canvas"; 
+                  H.a_width width; 
+                  H.a_height height] [];
           ]))
   )
