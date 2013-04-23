@@ -105,10 +105,11 @@ let database_unittest =
       Common.save_excursion Flag_analyze_php.verbose_database false (fun () ->
       Common.save_excursion Flag_parsing_php.verbose_lexing false (fun () ->
       Common.save_excursion Flag_parsing_php.verbose_parsing false (fun () ->
+      Common.save_excursion Flag_parsing_php.strict_lexer false (fun () ->
       Common.save_excursion Common2.verbose_level 0 (fun () ->
       let _db = Database_php_build.db_of_files_or_dirs [data_dir] in
       ()
-      )))))
+      ))))))
     );
     "light database" >:: (fun () ->
       let data_dir = Config_pfff.path ^ "/tests/php/db/" in

@@ -37,14 +37,16 @@ open Parser_php
  *)
 
 (*****************************************************************************)
-(* Wrappers *)
-(*****************************************************************************)
-let pr2, pr2_once = Common2.mk_pr2_wrappers Flag.verbose_lexing
-
-(*****************************************************************************)
 (* Helpers *)
 (*****************************************************************************)
 exception Lexical of string
+
+let error s =
+  if !Flag.strict_lexer
+  then raise (Lexical s)
+  else 
+    if !Flag.verbose_lexing
+    then pr2 ("LEXER: " ^ s)
 
 (*s: lexer helpers *)
 (* pad: hack around ocamllex to emulate the yyless() of flex. The semantic
@@ -318,7 +320,7 @@ let rec current_mode () =
   try
     Common2.top !_mode_stack
   with Failure("hd") ->
-    pr2("LEXER: mode_stack is empty, defaulting to INITIAL");
+    error("mode_stack is empty, defaulting to INITIAL");
     reset();
     current_mode ()
 (*x: lexer state function hepers *)
@@ -934,8 +936,7 @@ rule st_in_scripting = parse
   (*s: semi repetitive st_in_scripting rules for eof and error handling *)
     | eof { EOF (tokinfo lexbuf +> Ast.rewrap_str "") }
     | _ {
-        if !Flag.verbose_lexing
-        then pr2_once ("LEXER:unrecognised symbol, in token rule:"^tok lexbuf);
+        error ("unrecognised symbol, in token rule:"^tok lexbuf);
         TUnknown (tokinfo lexbuf)
       }
   (*e: semi repetitive st_in_scripting rules for eof and error handling *)
@@ -995,8 +996,7 @@ and initial = parse
 
   | eof { EOF (tokinfo lexbuf +> Ast.rewrap_str "") }
   | _ (* ANY_CHAR *) {
-      if !Flag.verbose_lexing
-      then pr2_once ("LEXER:unrecognised symbol, in token rule:"^tok lexbuf);
+      error("unrecognised symbol, in token rule:"^tok lexbuf);
       TUnknown (tokinfo lexbuf)
     }
 
@@ -1056,8 +1056,7 @@ and st_var_offset = parse
  (*s: repetitive st_var_offset rules for error handling *)
    | eof { EOF (tokinfo lexbuf +> Ast.rewrap_str "") }
    | _ {
-       if !Flag.verbose_lexing
-       then pr2_once ("LEXER:unrecognised symbol, in st_var_offset rule:"^tok lexbuf);
+       error ("unrecognised symbol, in st_var_offset rule:"^tok lexbuf);
        TUnknown (tokinfo lexbuf)
      }
  (*e: repetitive st_var_offset rules for error handling *)
@@ -1119,8 +1118,7 @@ and st_double_quotes = parse
  (*s: repetitive st_double_quotes rules for error handling *)
    | eof { EOF (tokinfo lexbuf +> Ast.rewrap_str "") }
    | _ {
-       if !Flag.verbose_lexing
-       then pr2_once ("LEXER:unrecognised symbol, in st_double_quotes rule:"^tok lexbuf);
+       error("unrecognised symbol, in st_double_quotes rule:"^tok lexbuf);
        TUnknown (tokinfo lexbuf)
      }
  (*e: repetitive st_double_quotes rules for error handling *)
@@ -1174,8 +1172,7 @@ and st_backquote = parse
   (*s: repetitive st_backquote rules for error handling *)
     | eof { EOF (tokinfo lexbuf +> Ast.rewrap_str "") }
     | _ {
-        if !Flag.verbose_lexing
-        then pr2_once ("LEXER:unrecognised symbol, in st_backquote rule:"^tok lexbuf);
+        error ("unrecognised symbol, in st_backquote rule:"^tok lexbuf);
         TUnknown (tokinfo lexbuf)
       }
   (*e: repetitive st_backquote rules for error handling *)
@@ -1259,8 +1256,7 @@ and st_start_heredoc stopdoc = parse
   (*s: repetitive st_start_heredoc rules for error handling *)
     | eof { EOF (tokinfo lexbuf +> Ast.rewrap_str "") }
     | _ {
-        if !Flag.verbose_lexing
-        then pr2_once ("LEXER:unrecognised symbol, in st_start_heredoc rule:"^tok lexbuf);
+        error("unrecognised symbol, in st_start_heredoc rule:"^tok lexbuf);
         TUnknown (tokinfo lexbuf)
       }
   (*e: repetitive st_start_heredoc rules for error handling *)
@@ -1306,9 +1302,8 @@ and st_start_nowdoc stopdoc = parse
 
   | eof { EOF (tokinfo lexbuf +> Ast.rewrap_str "") }
   | _ {
-      if !Flag.verbose_lexing
-      then pr2_once ("LEXER:unrecognised symbol, in st_start_nowdoc rule:"^tok lexbuf);
-        TUnknown (tokinfo lexbuf)
+       error ("unrecognised symbol, in st_start_nowdoc rule:"^tok lexbuf);
+       TUnknown (tokinfo lexbuf)
     }
 (*e: rule st_start_heredoc *)
 
@@ -1377,8 +1372,7 @@ and st_in_xhp_tag current_tag = parse
 
   | eof { EOF (tokinfo lexbuf +> Ast.rewrap_str "") }
   | _  {
-        if !Flag.verbose_lexing
-        then pr2_once ("LEXER:unrecognised symbol, in XHP tag:"^tok lexbuf);
+        error("unrecognised symbol, in XHP tag:"^tok lexbuf);
         TUnknown (tokinfo lexbuf)
     }
 
@@ -1397,7 +1391,7 @@ and st_in_xhp_text current_tag = parse
       let xs = Common.split ":" tag in
       if (xs <> current_tag)
       then begin
-        pr2 (spf "XHP: wrong closing tag for, %s != %s"
+        error (spf "XHP: wrong closing tag for, %s != %s"
                      (Common.join ":" xs)
                      (Common.join ":" current_tag));
       end;
@@ -1424,8 +1418,7 @@ and st_in_xhp_text current_tag = parse
 
   | eof { EOF (tokinfo lexbuf +> Ast.rewrap_str "") }
   | _  {
-      if !Flag.verbose_lexing
-      then pr2_once ("LEXER:unrecognised symbol, in XHP text:"^tok lexbuf);
+      error ("unrecognised symbol, in XHP text:"^tok lexbuf);
       TUnknown (tokinfo lexbuf)
     }
 
@@ -1441,10 +1434,10 @@ and st_comment = parse
   | "*"     { let s = tok lexbuf in s ^ st_comment lexbuf }
 
   (*s: repetitive st_comment rules for error handling *)
-    | eof { pr2 "LEXER: end of file in comment"; "*/"}
+    | eof { error "end of file in comment"; "*/"}
     | _  {
         let s = tok lexbuf in
-        pr2 ("LEXER: unrecognised symbol in comment:"^s);
+        error("unrecognised symbol in comment:"^s);
         s ^ st_comment lexbuf
       }
   (*e: repetitive st_comment rules for error handling *)
@@ -1479,10 +1472,9 @@ and st_one_line_comment = parse
     }
 
   (*s: repetitive st_one_line_comment rules for error handling *)
-    | eof { pr2 "LEXER: end of file in comment"; "*/" }
+    | eof { error "end of file in comment"; "*/" }
     | _ {
-        if !Flag.verbose_lexing
-        then pr2_once ("LEXER:unrecognised symbol, in st_one_line_comment rule:"^tok lexbuf);
+        error ("unrecognised symbol, in st_one_line_comment rule:"^tok lexbuf);
         tok lexbuf
       }
   (*e: repetitive st_one_line_comment rules for error handling *)

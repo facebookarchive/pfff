@@ -13,6 +13,9 @@ let cmdline_flags_debugging () = [
   "-debug_lexer",        Arg.Set  debug_lexer , " ";
 ]
 (*x: flag_parsing_php.ml *)
+
+let strict_lexer = ref true
+
 let show_parsing_error = ref true
 (* Do not raise an exn when a parse error but use NotParsedCorrectly.
  * Now that the PHP parser is quite complete, it's better to set 
