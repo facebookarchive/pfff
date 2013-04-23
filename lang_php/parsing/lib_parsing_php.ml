@@ -51,6 +51,7 @@ let is_php_filename filename =
   (filename =~ ".*\\.inc") ||
   (* hack uses this extension *)
 (* TODO  (filename =~ ".*\\.hhi") *)
+  false
 
 let is_php_file filename =
   is_php_filename filename || is_php_script filename
