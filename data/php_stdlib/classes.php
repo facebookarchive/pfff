@@ -108,6 +108,14 @@ class RecursiveIterator { }
 //http://php.net/manual/en/class.seekableiterator.php
 class SeekableIterator { }
 
+// from hphp/system/classes/iterator.php
+interface Traversable {
+}
+interface Iterator extends Traversable {
+}
+interface KeyedIterator extends Iterator {
+}
+
 // ***************************************************************************
 // Used by phabricator
 // ***************************************************************************
