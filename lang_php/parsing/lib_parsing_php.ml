@@ -48,7 +48,9 @@ let is_php_script file =
 let is_php_filename filename =
   (filename =~ ".*\\.php$") || (filename =~ ".*\\.phpt$") ||
   (* hotcrp uses this extension *)
-  (filename =~ ".*\\.inc")
+  (filename =~ ".*\\.inc") ||
+  (* hack uses this extension *)
+(* TODO  (filename =~ ".*\\.hhi") *)
 
 let is_php_file filename =
   is_php_filename filename || is_php_script filename
