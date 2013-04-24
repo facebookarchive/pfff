@@ -19,6 +19,8 @@ define('__CLASS__', 1);
 define('__METHOD__', 1);
 // 5.3
 define('__NAMESPACE__', 1);
+// 5.4
+define('__TRAIT__', 1);
 
 define('__function__', 1);
 define('__class__', 1);
