@@ -35,11 +35,12 @@ class SoapVar {
  function __construct($data, $type, $type_name = null_string, $type_namespace = null_string, $node_name = null_string, $node_namespace = null_string) { }
  function __destruct() { }
 }
-class SoapFault {
- function __construct($code, $message, $actor = null_string, $detail = null, $name = null_string, $header = null) { }
- function __tostring() { }
- function __destruct() { }
-}
+//dupe with soapfault.php
+//class SoapFault {
+// function __construct($code, $message, $actor = null_string, $detail = null, $name = null_string, $header = null) { }
+// function __tostring() { }
+// function __destruct() { }
+//}
 class SoapParam {
  function __construct($data, $name) { }
  function __destruct() { }
