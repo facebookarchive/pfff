@@ -37,6 +37,7 @@ interface IteratorAggregate {
 interface Iterable extends IteratorAggregate {
 }
 
+
 // http://php.net/manual/en/class.arrayaccess.php
 // TODO: hphp/hphp/system/classes
 interface ArrayAccess {
@@ -45,4 +46,11 @@ interface ArrayAccess {
 // TODO: hphp/hphp/system/classes
 interface Awaitable {
   public function getWaitHandle();
+}
+
+// from hphp/system/classes/iterator.php
+interface KeyedIterator extends Iterator {
+}
+
+interface KeyedIterable extends Iterable {
 }
