@@ -81,6 +81,16 @@ let rec is_concat_of_strings e =
      is_concat_of_strings e1 && is_concat_of_strings e2
   | _ -> false
 
+let is_NoTransfo tok =
+  match tok.Parse_info.transfo with
+  | Parse_info.NoTransfo -> true
+  | _ -> false
+
+let is_Remove tok =
+  match tok.Parse_info.transfo with
+  | Parse_info.Remove -> true
+  | _ -> false
+
 (*****************************************************************************)
 (* Functor parameter combinators *)
 (*****************************************************************************)
@@ -2148,13 +2158,16 @@ and m_list__m_argument (xsa: A.argument A.comma_list) (xsb: B.argument B.comma_l
 
   (* iso on ... *)
   | [Left (A.Arg (A.SgrepExprDots i))], bbs ->
-      (* TODO do the different combinaisons, and apply the possible
-       * transfo in tok.
-       *)
+    (* todo: if remove could apply the transfo on bbs *)
+    if is_NoTransfo i then
       return (
         xsa,
         xsb
       )
+    else failwith 
+      ("transformation (minus or plus) on '...' not allowed, " ^
+       "rewrite your spatch")
+
   | [Left (A.Arg ((A.Sc (A.C (A.CName (A.Name (name,info_name)))))))], bbs
     when MV.is_metavar_manyargs_name name ->
 
@@ -2180,15 +2193,22 @@ and m_list__m_argument (xsa: A.argument A.comma_list) (xsb: B.argument B.comma_l
       )
 
   (* '...' can also match no argument.
-   * TODO: this is ok in sgrep mode, but in spatch mode the comma
+   * this is ok in sgrep mode, but in spatch mode the comma
    * or SgrepExprDots could carry some transfo. What should we do?
    * Maybe just print warning.
    *)
-  | [Right _; Left (A.Arg (A.SgrepExprDots i))], [] ->
+  | [Right a; Left (A.Arg (A.SgrepExprDots i))], [] ->
+    if is_NoTransfo a || is_Remove a
+    then
       return (
         xsa,
         xsb
       )
+    else failwith 
+      ("transformation (minus or plus) on ',' not allowed when used with " ^
+       "'...'. Rewrite your spatch: put your trailing comma on the line " ^
+       "with the '...'. See also " ^ 
+       "https://github.com/facebook/pfff/wiki/Spatch#wiki-spacing-issues")
   | [Right _;Left (A.Arg ((A.Sc (A.C (A.CName (A.Name (name,info_name)))))))],[]
     when MV.is_metavar_manyargs_name name ->
       X.envf (name, info_name) (B.Arguments ([])) >>= (function
