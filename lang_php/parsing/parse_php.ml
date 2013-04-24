@@ -449,23 +449,30 @@ let parse_any_from_changen (changen : Parse_info.changen) =
 
 let parse_any = Parse_info.file_wrap_changen parse_any_from_changen
 
-(* any_of_string allows small chunks of PHP to be parsed without
-   having to use the filesystem by levereging the changen mechanism.
-   In order to supply a string as a channel we must create a socket
-   pair and write our string to it.  This is not ideal and may fail if
-   we try to parse too many short strings without closing the channel,
-   or if the string is so large that the OS blocks our socket. *)
+(* any_of_string() allows small chunks of PHP to be parsed without
+ * having to use the filesystem by leveraging the changen mechanism.
+ * In order to supply a string as a channel we must create a socket
+ * pair and write our string to it.  This is not ideal and may fail if
+ * we try to parse too many short strings without closing the channel,
+ * or if the string is so large that the OS blocks our socket. 
+ *)
 let any_of_string s =
   let len = String.length s in
   let changen = (fun () ->
     let (socket_a, socket_b) = Unix.(socketpair PF_UNIX SOCK_STREAM 0) in
+    let fake_filename = "" in
     let (data_in, data_out) =
       Unix.(in_channel_of_descr socket_a, out_channel_of_descr socket_b) in
     output_string data_out s;
     flush data_out;
     close_out data_out;
-    (data_in, len, "")) in
-  parse_any_from_changen changen
+    (data_in, len, fake_filename)) in
+  (* disable showing parsing errors as there is no filename and
+   * error_msg_tok() would throw a Sys_error exception
+   *)
+  Common.save_excursion Flag.show_parsing_error false (fun () ->
+    parse_any_from_changen changen
+  )
 
 (* 
  * todo: obsolete now with parse_any ? just redirect to parse_any ?

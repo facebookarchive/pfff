@@ -118,6 +118,9 @@ let parse file =
         let rest_line = Common.matched1 s in
         Hashtbl.add hline_env lineno Minus;
         rest_line
+    | _ when s =~ "^[ \t]+[-+]" ->
+        failwith 
+          "you must put the minus or plus annotations in the first column"
     | _ ->
         Hashtbl.add hline_env lineno Context;
         s
@@ -128,7 +131,10 @@ let parse file =
 
   let pattern = 
     Common.save_excursion Flag_parsing_php.sgrep_mode true (fun () ->
-      Parse_php.any_of_string spatch_without_patch_annot
+      try 
+        Parse_php.any_of_string spatch_without_patch_annot
+      with Parsing.Parse_error ->
+        failwith (spf "could not parse: %s" spatch_without_patch_annot);
     )
   in
 
