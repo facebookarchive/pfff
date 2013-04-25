@@ -52,7 +52,9 @@ let sgrep ~hook pattern ast =
       V.ktrees = (fun (k, _) xs ->
         if List.length xs >= len then begin
           let shorter, rest = Common2.splitAt len xs in
-        
+
+          (* pr (Ocaml.string_of_v (Ast_fuzzy.vof_trees shorter));*)
+
           let matches_with_env =
             Matching_fuzzy.match_trees_trees pattern shorter
           in
@@ -71,6 +73,9 @@ let sgrep ~hook pattern ast =
             k rest
           end
         end
+        else 
+          (* at least recurse *)
+          k xs
       );
     }
   in
