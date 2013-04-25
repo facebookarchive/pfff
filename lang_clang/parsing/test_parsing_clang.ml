@@ -56,7 +56,7 @@ let gen_clang jsonfile =
 
             let (d,b,e) = Common2.dbe_of_filename filename in
             (match e with
-            | "c" | "m" -> ()
+            | "c" | "m" | "cpp" -> ()
             | _ -> failwith ("wierd extension for a clang input file: " ^ e)
             );
             let output = Common2.filename_of_dbe (d,b,"clang") in
