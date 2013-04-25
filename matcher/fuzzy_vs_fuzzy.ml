@@ -149,17 +149,94 @@ let rec m_list f a b =
       fail ()
 
 (* ---------------------------------------------------------------------- *)
-(* m_string *)
-(* ---------------------------------------------------------------------- *)
-
-(* ---------------------------------------------------------------------- *)
 (* tokens *)
 (* ---------------------------------------------------------------------- *)
+let m_tok a b =
+  let a1 = Parse_info.str_of_info a in
+  let b1 = Parse_info.str_of_info b in
+  if a1 =$= b1
+  then
+    return (
+      a,
+      b
+    )
+  else fail ()
+
+(* ---------------------------------------------------------------------- *)
+(* list isos *)
+(* ---------------------------------------------------------------------- *)
+let rec m_list__m_tree xsa xsb =
+    match xsa, xsb with
+  | [], [] ->
+      return ([], [])
+
+  (* iso: ok to have shorter patter, assume implicit '...' *)
+  | [], aas ->
+    return (
+      [],
+      []
+    )
+
+  | xa::aas, xb::bbs ->
+      m_tree xa xb >>= (fun (xa, xb) ->
+      m_list__m_tree aas bbs >>= (fun (aas, bbs) ->
+        return (
+          xa::aas,
+          xb::bbs
+        )
+      )
+      )
+  | _::_, _ ->
+      fail ()
+
 
 (* ---------------------------------------------------------------------- *)
 (* trees *)
 (* ---------------------------------------------------------------------- *)
-let m_trees a b =
-  raise Todo
+and m_tree a b =
+  match a, b with
+  | A.Braces (a1, a2, a3), B.Braces (b1, b2, b3) ->
+    m_tok a1 b1 >>= (fun (a1, b1) ->
+    m_trees a2 b2 >>= (fun (a2, b2) ->
+    m_tok a3 b3 >>= (fun (a3, b3) ->
+      return (
+        A.Braces (a1, a2, a3), 
+        B.Braces (b1, b2, b3)
+      )
+    )))
+  | A.Parens (a1, a2, a3), B.Parens (b1, b2, b3) ->
+    m_tok a1 b1 >>= (fun (a1, b1) ->
+    m_trees a2 b2 >>= (fun (a2, b2) ->
+    m_tok a3 b3 >>= (fun (a3, b3) ->
+      return (
+        A.Parens (a1, a2, a3), 
+        B.Parens (b1, b2, b3)
+      )
+    )))
+  | A.Angle (a1, a2, a3), B.Angle (b1, b2, b3) ->
+    m_tok a1 b1 >>= (fun (a1, b1) ->
+    m_trees a2 b2 >>= (fun (a2, b2) ->
+    m_tok a3 b3 >>= (fun (a3, b3) ->
+      return (
+        A.Angle (a1, a2, a3), 
+        B.Angle (b1, b2, b3)
+      )
+    )))
+  | A.Tok a1, B.Tok b1 ->
+    m_tok a1 b1 >>= (fun (a1, b1) ->
+      return (
+        A.Tok a1,
+        B.Tok b1
+      )
+    )
+
+
+  | A.Braces _, _
+  | A.Parens _, _
+  | A.Angle _, _
+  | A.Tok _, _
+    -> fail ()
+
+and m_trees a b = m_list__m_tree a b
 
 end

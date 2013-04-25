@@ -160,8 +160,7 @@ let sgrep pattern file =
     let ast = Parse_cpp.parse_fuzzy file in
     Sgrep_fuzzy.sgrep
       ~hook:(fun env matched_tokens ->
-        (* print_match !mvars env Lib_parsing_php.ii_of_any matched_tokens *)
-        ()
+        print_match !mvars env Ast_fuzzy.ii_of_trees matched_tokens
       )
       pattern ast
   | _ -> failwith ("unsupported language: " ^ !lang)

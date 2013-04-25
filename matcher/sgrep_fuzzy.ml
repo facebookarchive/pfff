@@ -35,8 +35,6 @@ let (parse: string -> pattern) = fun str ->
 (*****************************************************************************)
 (* Helpers *)
 (*****************************************************************************)
-let ii_of_trees x =
-  raise Todo
 
 (*****************************************************************************)
 (* Main entry point *)
@@ -57,10 +55,9 @@ let sgrep ~hook pattern ast =
     (* could also recurse to find nested matching inside the matched code
      * itself
      *)
-      let _matched_tokens = ii_of_trees x in
+      let matched_tokens = Ast_fuzzy.ii_of_trees x in
       matches_with_env +> List.iter (fun env ->
-      (* hook env matched_tokens*)
-        ()
+        hook env matched_tokens
       )
     end
   in

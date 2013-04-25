@@ -34,6 +34,59 @@ and trees = tree list
  (* with tarzan *)
 
 (*****************************************************************************)
+(* Visitor *)
+(*****************************************************************************)
+
+type visitor_out = trees -> unit
+
+type visitor_in = {
+  ktree: (tree -> unit) * visitor_out -> tree -> unit;
+  ktok: (tok -> unit) * visitor_out -> tok -> unit;
+}
+
+let (default_visitor : visitor_in) = 
+  { ktree = (fun (k, _) x -> k x);
+    ktok  = (fun (k, _) x -> k x);
+  }
+
+let (mk_visitor: visitor_in -> visitor_out) = fun vin ->
+
+  let rec v_tree x =
+    let rec k x = match x with
+      | Braces ((v1, v2, v3)) ->
+        let _v1 = v_tok v1 and _v2 = v_trees v2 and _v3 = v_tok v3 in ()
+      | Parens ((v1, v2, v3)) ->
+        let _v1 = v_tok v1 and _v2 = v_trees v2 and _v3 = v_tok v3 in ()
+      | Angle ((v1, v2, v3)) ->
+        let _v1 = v_tok v1 and _v2 = v_trees v2 and _v3 = v_tok v3 in ()
+      | Tok v1 -> let _v1 = v_tok v1 in ()
+    in
+    vin.ktree (k, all_functions) x
+ and v_trees v = v_list v_tree v
+ and v_list f x = List.iter f x
+ and v_tok x =
+    let rec k x = () in
+    vin.ktok (k, all_functions) x
+
+  and all_functions x = v_trees x in
+  all_functions
+
+(*****************************************************************************)
+(* Extractor *)
+(*****************************************************************************)
+
+let (ii_of_trees: trees -> Parse_info.info list) = fun trees ->
+  let globals = ref [] in
+  let hooks = { default_visitor with
+    ktok = (fun (k, _) i -> Common.push2 i globals)
+  } in
+  begin
+    let vout = mk_visitor hooks in
+    vout trees;
+    List.rev !globals
+  end
+
+(*****************************************************************************)
 (* Vof *)
 (*****************************************************************************)
 

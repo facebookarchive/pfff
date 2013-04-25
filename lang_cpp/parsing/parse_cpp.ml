@@ -214,7 +214,11 @@ let tokens a =
  *)
 let parse_fuzzy file =
   let toks = tokens file 
-    +> Common.exclude Token_helpers_cpp.is_comment in
+    +> Common.exclude (fun x ->
+      Token_helpers_cpp.is_comment x ||
+      Token_helpers_cpp.is_eof x
+    )
+  in
   let extended = 
     toks +> List.map Token_views_cpp.mk_token_extended in
   Parsing_hacks_cpp.find_template_inf_sup extended;

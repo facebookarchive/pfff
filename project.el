@@ -22,6 +22,7 @@
      h_version-control
      h_visualization
      h_program-lang
+     matcher
      lang_ml/parsing
       lang_ml/analyze
      lang_php/parsing
@@ -219,7 +220,7 @@
    (join-string 
     (list 
      "-debugger"
-     (case 5
+     (case 6
        
        (0 "-e 1 /home/pad/c-pfff/tests/")
        (1 "-f /home/pad/c-pfff/tests/semantic_grep/method_call.php  /home/pad/c-pfff/tests/method_call.php")
@@ -227,6 +228,7 @@
        (3 " -find_run_once_pattern tests/sgrep/run_once_pattern.php ")
        (4 " -f /home/pad/pfff/tests/php/sgrep/foreach.sgrep /home/pad/pfff/tests/php/sgrep/foreach.php")
        (5 " -f /tmp/try.sgrep /home/pad/pfff/tests/php/sgrep/xhp_metavar2.php")
+       (6 " -lang c++ -f /home/pad/pfff/tests/cpp/sgrep/namespace.sgrep /home/pad/pfff/tests/cpp/sgrep/namespace.cpp")
        (10 "-test")
        )
      )
