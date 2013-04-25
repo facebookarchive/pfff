@@ -20,6 +20,15 @@
 
 *** ranking and filtering of errors via -filter <n> or -rank
 
+** sgrep/spatch
+
+*** partial support for C/C++/... via ast_fuzzy 
+which paved the way for sgrep/spatch support for more languages
+as long as there is an ast_fuzzy "backend"
+
+*** better error message when try to do transformations not handled well
+(e.g. minus on a '...')
+
 ** fuzzy parser for C/C++/...
 
 * 0.23 (Q1 2013) (clang parser)

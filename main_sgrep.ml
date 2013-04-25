@@ -15,7 +15,8 @@ module S = Scope_code
 (* Purpose *)
 (*****************************************************************************)
 (* 
- * A syntactical grep for PHP/C++. https://github.com/facebook/pfff/wiki/Sgrep
+ * A syntactical grep. https://github.com/facebook/pfff/wiki/Sgrep
+ * Right now there is support only for PHP and C/C++/ObjectiveC.
  * 
  * opti: git grep xxx | xargs sgrep -e 'foo(...)'
  *)
