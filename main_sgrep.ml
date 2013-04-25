@@ -129,18 +129,26 @@ let gen_layer ~root ~query file =
 
 let parse_pattern str =
   match !lang with
-  | "php" -> Sgrep_php.parse str
+  | "php" -> Left (Sgrep_php.parse str)
+  | "c++" -> 
+    let parse str =
+      Common2.with_tmp_file ~str ~ext:"cpp" (fun tmpfile ->
+        Parse_cpp.parse_fuzzy tmpfile
+      )
+    in
+    Right (parse str)
   | _ -> failwith ("unsupported language: " ^ !lang)
 
 let find_source_files_of_dir_or_files xs =
   match !lang with
   | "php" ->   Lib_parsing_php.find_php_files_of_dir_or_files xs
+  | "c++" -> Lib_parsing_cpp.find_cpp_files_of_dir_or_files xs
   | _ -> failwith ("unsupported language: " ^ !lang)
 
 
 let sgrep pattern file =
-  match !lang with
-  | "php" -> 
+  match !lang, pattern with
+  | "php", Left pattern -> 
     Sgrep_php.sgrep 
       ~case_sensitive:!case_sensitive 
       ~hook:(fun env matched_tokens -> 
@@ -148,6 +156,14 @@ let sgrep pattern file =
       )
       pattern 
       file 
+  | "c++", Right pattern ->
+    let ast = Parse_cpp.parse_fuzzy file in
+    Sgrep_fuzzy.sgrep
+      ~hook:(fun env matched_tokens ->
+        (* print_match !mvars env Lib_parsing_php.ii_of_any matched_tokens *)
+        ()
+      )
+      pattern ast
   | _ -> failwith ("unsupported language: " ^ !lang)
 
 (*****************************************************************************)
