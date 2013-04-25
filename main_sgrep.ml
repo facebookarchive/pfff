@@ -127,6 +127,29 @@ let gen_layer ~root ~query file =
 (* Language specific *)
 (*****************************************************************************)
 
+let parse_pattern str =
+  match !lang with
+  | "php" -> Sgrep_php.parse str
+  | _ -> failwith ("unsupported language: " ^ !lang)
+
+let find_source_files_of_dir_or_files xs =
+  match !lang with
+  | "php" ->   Lib_parsing_php.find_php_files_of_dir_or_files xs
+  | _ -> failwith ("unsupported language: " ^ !lang)
+
+
+let sgrep pattern file =
+  match !lang with
+  | "php" -> 
+    Sgrep_php.sgrep 
+      ~case_sensitive:!case_sensitive 
+      ~hook:(fun env matched_tokens -> 
+        print_match !mvars env Lib_parsing_php.ii_of_any matched_tokens
+      )
+      pattern 
+      file 
+  | _ -> failwith ("unsupported language: " ^ !lang)
+
 (*****************************************************************************)
 (* Main action *)
 (*****************************************************************************)
@@ -137,25 +160,18 @@ let main_action xs =
         failwith "I need a pattern; use -f or -e";
     | file, _ when file <> "" ->
         let s = Common.read_file file in
-        Sgrep_php.parse s, s
+        parse_pattern s, s
     | _, s when s <> ""->
-        Sgrep_php.parse s, s
+        parse_pattern s, s
     | _ -> raise Impossible
   in
   Logger.log Config_pfff.logger "sgrep" (Some query_string);
 
-  let files = Lib_parsing_php.find_php_files_of_dir_or_files xs in
+  let files = find_source_files_of_dir_or_files xs in
 
   files +> List.iter (fun file ->
     if !verbose then pr2 (spf "processing: %s" file);
-
-    Sgrep_php.sgrep 
-      ~case_sensitive:!case_sensitive 
-      ~hook:(fun env matched_tokens -> 
-        print_match !mvars env Lib_parsing_php.ii_of_any matched_tokens
-      )
-      pattern 
-      file 
+    sgrep pattern file
   );
 
   !layer_file +> Common.do_option (fun file ->
@@ -167,7 +183,7 @@ let main_action xs =
 (*****************************************************************************)
 (* Extra actions *)
 (*****************************************************************************)
-let dump_sgrep_pattern file =
+let dump_sgrep_php_pattern file =
   let any = Parse_php.parse_any file in
   let s = Export_ast_php.ml_pattern_string_of_any any in
   pr s
@@ -185,8 +201,8 @@ let test () =
 (* the command line flags *)
 (*---------------------------------------------------------------------------*)
 let sgrep_extra_actions () = [
-  "-dump_pattern", " <file> (internal)",
-  Common.mk_action_1_arg dump_sgrep_pattern;
+  "-dump_php_pattern", " <file> (internal)",
+  Common.mk_action_1_arg dump_sgrep_php_pattern;
   "-test", " run regression tests",
   Common.mk_action_0_arg test;
 ]
