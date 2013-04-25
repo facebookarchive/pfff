@@ -20,6 +20,8 @@
 
 *** ranking and filtering of errors via -filter <n> or -rank
 
+** fuzzy parser for C/C++/...
+
 * 0.23 (Q1 2013) (clang parser)
 
 ** codegraph

@@ -15,7 +15,8 @@ val parse:
 val parse_program:  
   Common.filename -> Ast_cpp.program
 
-
+val parse_fuzzy:
+  Common.filename -> Ast_fuzzy.tree list
 
 (* usually correspond to what is inside your macros.h *)
 val _defs : (string, Pp_token.define_body) Hashtbl.t ref

@@ -203,6 +203,36 @@ let tokens a =
   Common.profile_code "Parse_cpp.tokens" (fun () -> tokens2 a)
 
 (*****************************************************************************)
+(* Fuzzy parsing *)
+(*****************************************************************************)
+
+let parse_fuzzy file =
+  let toks = tokens file 
+    +> Common.exclude Token_helpers_cpp.is_comment in
+  let extended = 
+    toks +> List.map Token_views_cpp.mk_token_extended in
+  Parsing_hacks_cpp.find_template_inf_sup extended;
+
+  let groups = Token_views_cpp.mk_multi extended in
+
+  let rec multi_grouped_list xs = 
+    xs +> List.map multi_grouped
+  and multi_grouped = function
+    | Token_views_cpp.Braces (tok1, xs, (Some tok2)) ->
+        Ast_fuzzy.Braces (tokext tok1, multi_grouped_list xs, tokext tok2)
+    | Token_views_cpp.Parens (tok1, xs, (Some tok2)) ->
+        Ast_fuzzy.Parens (tokext tok1, multi_grouped_list xs, tokext tok2)
+    | Token_views_cpp.Angle (tok1, xs, (Some tok2)) ->
+        Ast_fuzzy.Angle (tokext tok1, multi_grouped_list xs, tokext tok2)
+    | Token_views_cpp.Tok (tok) ->
+        Ast_fuzzy.Tok (tokext tok)
+    | _ -> failwith "could not find closing brace/parens/angle"
+  and tokext tok_extended =
+    TH.info_of_tok tok_extended.Token_views_cpp.t
+  in
+  multi_grouped_list groups
+
+(*****************************************************************************)
 (* Extract macros *)
 (*****************************************************************************)
 

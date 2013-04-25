@@ -105,14 +105,9 @@ let test_dump_cpp_full file =
 
 
 let test_view_cpp file =
-  let toks = Parse_cpp.tokens file 
-    +> Common.exclude Token_helpers_cpp.is_comment in
-  let extended = 
-    toks +> List.map Token_views_cpp.mk_token_extended in
-  Parsing_hacks_cpp.find_template_inf_sup extended;
-
-  let groups = Token_views_cpp.mk_multi extended in
-  let s = Token_views_cpp.string_of_multi_grouped groups in
+  let fuzzy = Parse_cpp.parse_fuzzy file in
+  let v = Ast_fuzzy.vof_trees fuzzy in
+  let s = Ocaml.string_of_v v in
   pr2 s
 
 (* this is similar to what 'cpplint' of andrei does? *)
@@ -132,14 +127,7 @@ let test_parse_cpp_fuzzy dir_or_file =
      k ();
     Common.save_excursion Flag_parsing_cpp.strict_lexer true (fun () ->
       try 
-        let toks = Parse_cpp.tokens file in
-
-        let toks = toks +> Common.exclude Token_helpers_cpp.is_comment in
-        let extended = 
-          toks +> List.map Token_views_cpp.mk_token_extended in
-        Parsing_hacks_cpp.find_template_inf_sup extended;
-
-        let _groups = Token_views_cpp.mk_multi extended in
+        let _fuzzy = Parse_cpp.parse_fuzzy file in
         ()
       with exn ->
         (* pr2 (spf "PB with: %s, exn = %s" file (Common.exn_to_s exn)); *)
