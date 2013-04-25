@@ -53,12 +53,12 @@ let _matching_tokens = ref []
  * would see where the parameters come from :)
  *)
 
-let print_match mvars mvar_binding tokens_matched_code = 
+let print_match mvars mvar_binding ii_of_any tokens_matched_code = 
   (match mvars with
   | [] ->
       Lib_matcher.print_match ~format:!match_format tokens_matched_code
   | xs ->
-      (* similar to the code of Lib_parsing_php.print_match, maybe could
+      (* similar to the code of Lib_matcher.print_match, maybe could
        * factorize code a bit.
        * This assumes there is no FakeTok in tokens_matched_code.
        * Currently the only fake tokens generated in parser_php.mly are
@@ -74,7 +74,7 @@ let print_match mvars mvar_binding tokens_matched_code =
         xs +> List.map (fun x ->
           match Common2.assoc_option x mvar_binding with
           | Some any ->
-              Lib_parsing_php.ii_of_any any
+              ii_of_any any
               +> List.map PI.str_of_info 
               +> Lib_matcher.join_with_space_if_needed
           | None ->
@@ -148,7 +148,7 @@ let main_action xs =
     Sgrep_php.sgrep 
       ~case_sensitive:!case_sensitive 
       ~hook:(fun env matched_tokens -> 
-        print_match !mvars env matched_tokens
+        print_match !mvars env Lib_parsing_php.ii_of_any matched_tokens
       )
       pattern 
       file 
