@@ -60,6 +60,7 @@ INCLUDEDIRS= $(TOP)/commons \
    $(TOP)/external/ocamlpcre/lib \
    $(TOP)/h_program-lang $(TOP)/h_version-control  \
    $(TOP)/globals \
+   $(TOP)/matcher \
    $(TOP)/lang_php/parsing \
 
 ##############################################################################

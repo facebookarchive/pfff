@@ -157,61 +157,6 @@ let (range_of_origin_ii: Ast_php.tok list -> (int * int) option) =
 (* Print helpers *)
 (*****************************************************************************)
 
-(* could perhaps create a special file related to display of code ? *)
-type match_format =
-  (* ex: tests/misc/foo4.php:3
-   *  foo(
-   *   1,
-   *   2);
-   *)
-  | Normal
-  (* ex: tests/misc/foo4.php:3: foo( *)
-  | Emacs
-  (* ex: tests/misc/foo4.php:3: foo(1,2) *)
-  | OneLine
-
-
-(* When we print in the OneLine format we want to normalize the matched
- * expression or code and so only print the tokens in the AST (and not
- * the extra whitespace, newlines or comments). It's not enough though
- * to just List.map str_of_info because some PHP expressions such as
- * '$x = print FOO' would then be transformed into $x=printFOO, hence
- * this function
- *)
-let rec join_with_space_if_needed xs = 
-  match xs with
-  | [] -> ""
-  | [x] -> x
-  | x::y::xs ->
-      if x =~ ".*[a-zA-Z0-9_]$" && 
-         y =~ "^[a-zA-Z0-9_]"
-      then x ^ " " ^ (join_with_space_if_needed (y::xs))
-      else x ^ (join_with_space_if_needed (y::xs))
-let _ = assert
-  (join_with_space_if_needed ["$x";"=";"print";"FOO"] = "$x=print FOO")
-
-
-
-let print_match ?(format = Normal) ii = 
-  let (mini, maxi) = min_max_ii_by_pos ii in
-  let (file, line) = 
-    Ast.file_of_info mini, Ast.line_of_info mini in
-  let prefix = spf "%s:%d" file line in
-  let arr = Common2.cat_array file in
-  let lines = Common2.enum (Ast.line_of_info mini) (Ast.line_of_info maxi) in
-  
-  match format with
-  | Normal ->
-      pr prefix;
-      (* todo? some context too ? *)
-      lines +> List.map (fun i -> arr.(i)) +> List.iter (fun s -> pr (" " ^ s));
-  | Emacs ->
-      pr (prefix ^ ": " ^ arr.(List.hd lines))
-  | OneLine ->
-      pr (prefix ^ ": " ^ (ii +> List.map Ast.str_of_info 
-                            +> join_with_space_if_needed))
-
-
 (* obsolete: now catch Parse_php.Parse_error *)
 let print_warning_if_not_correctly_parsed ast file =
   if ast +> List.exists (function 

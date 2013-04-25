@@ -4,7 +4,8 @@ TOP=..
 ##############################################################################
 TARGET=lib
 
-SRC= metavars_fuzzy.ml \
+SRC= lib_matcher.ml \
+     metavars_fuzzy.ml \
      fuzzy_vs_fuzzy.ml \
      matching_fuzzy.ml \
      transforming_fuzzy.ml \

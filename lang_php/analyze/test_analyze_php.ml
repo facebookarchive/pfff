@@ -176,7 +176,7 @@ let test_include_require file =
     match incexpr with
     | Include_require_php.SimpleVar _
     | Include_require_php.Other _ ->
-        Lib_parsing_php.print_match [tok]
+        Lib_matcher.print_match [tok]
     | _ -> ()
   );
   ()

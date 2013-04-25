@@ -70,7 +70,7 @@ let index_db_includes_requires2
       | Some path -> Some path
       | None ->
           pr2 ("Bad include, can not statically determine the path");
-          Lib_parsing_php.print_match ~format:Lib_parsing_php.Emacs [tok];
+          Lib_matcher.print_match ~format:Lib_matcher.Emacs [tok];
           None
       )
     in
