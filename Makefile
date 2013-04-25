@@ -211,6 +211,7 @@ LIBS= commons/lib.cma \
     h_program-lang/lib.cma \
     h_program-visual/lib.cma \
     globals/lib.cma \
+    matcher/lib.cma \
     lang_ml/parsing/lib.cma \
      lang_ml/analyze/visual/lib.cma \
      lang_ml/analyze/lib.cma \
@@ -274,6 +275,7 @@ MAKESUBDIRS=commons \
   h_program-lang \
   h_program-visual \
   globals \
+  matcher \
   lang_ml/parsing \
    lang_ml/analyze \
   lang_nw/parsing \
