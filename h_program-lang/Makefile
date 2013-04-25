@@ -5,6 +5,7 @@ TOP=..
 TARGET=lib
 
 SRC= parse_info.ml \
+     ast_fuzzy.ml \
      meta_ast_generic.ml \
      scope_code.ml \
      highlight_code.ml \
