@@ -6,26 +6,18 @@
  *    May you find forgiveness for yourself and forgive others.
  *    May you share freely, never taking more than you give.
  *)
-
 open Common
 
-open Ast_php 
-
-module Ast = Ast_php
-module V = Visitor_php
-
+module PI = Parse_info
 module S = Scope_code
-
-open Ast_php
 
 (*****************************************************************************)
 (* Purpose *)
 (*****************************************************************************)
-
 (* 
- * A syntactical grep for PHP. https://github.com/facebook/pfff/wiki/Sgrep
+ * A syntactical grep for PHP/C++. https://github.com/facebook/pfff/wiki/Sgrep
  * 
- * opti: git grep xxx | xargs sgrep_php
+ * opti: git grep xxx | xargs sgrep -e 'foo(...)'
  *)
 
 (*****************************************************************************)
@@ -33,7 +25,6 @@ open Ast_php
 (*****************************************************************************)
 
 let verbose = ref false
-
 
 let pattern_file = ref ""
 let pattern_string = ref ""
@@ -72,16 +63,16 @@ let print_match mvars mvar_binding tokens_matched_code =
        * to match such construct so we should be safe.
        *)
       let (mini, maxi) = 
-        Lib_parsing_php.min_max_ii_by_pos tokens_matched_code in
+        PI.min_max_ii_by_pos tokens_matched_code in
       let (file, line) = 
-        Ast.file_of_info mini, Ast.line_of_info mini in
+        PI.file_of_info mini, PI.line_of_info mini in
 
       let strings_metavars =
         xs +> List.map (fun x ->
           match Common2.assoc_option x mvar_binding with
           | Some any ->
               Lib_parsing_php.ii_of_any any
-              +> List.map Ast.str_of_info 
+              +> List.map PI.str_of_info 
               +> Lib_parsing_php.join_with_space_if_needed
           | None ->
               failwith (spf "the metavariable '%s' was not binded" x)
@@ -106,8 +97,8 @@ let gen_layer ~root ~query file =
   
   (* todo: could now use Layer_code.simple_layer_of_parse_infos *)
   let files_and_lines = toks +> List.map (fun tok ->
-    let file = Ast.file_of_info tok in
-    let line = Ast.line_of_info tok in
+    let file = PI.file_of_info tok in
+    let line = PI.line_of_info tok in
     let file' = Common2.relative_to_absolute file in 
     Common.filename_without_leading_path root file', line
   )
@@ -174,7 +165,6 @@ let dump_sgrep_pattern file =
   let s = Export_ast_php.ml_pattern_string_of_any any in
   pr s
 
-
 (*---------------------------------------------------------------------------*)
 (* Regression testing *)
 (*---------------------------------------------------------------------------*)
@@ -234,7 +224,7 @@ let options () =
   Common2.cmdline_flags_devel () ++
   [
   "-version",   Arg.Unit (fun () -> 
-    pr2 (spf "sgrep_php version: %s" Config_pfff.version);
+    pr2 (spf "sgrep version: %s" Config_pfff.version);
     exit 0;
   ), 
     "  guess what";
