@@ -14,8 +14,13 @@ http://clang.llvm.org/docs/LibASTMatchersTutorial.html
 Note that the clang in macport doesn't have clang-check.
 Moreover clang-3.2 has a version of clang-check that does not print
 everything as a sexp (e.g. typedefs are not a sexp) which makes
-parsing harder. clang-git seems to be good, but the dumper was evolved,
-and so prefer an old version, e8d411997899a87e1a9f63ad3f52b38e7931687c^
+parsing harder. clang-git seems to be good.
+
+
+Note that the dumper was evolved in e8d411997899a87e1a9f63ad3f52b38e7931687c
+from a simple sexp-based AST to a pstree like AST which is harder to parse.
+So we have to undo partially what was done there. Apply the patch 
+pfff/lang_clang/analyze/clang2.patch in your clang repo.
 
 * Statistics
 

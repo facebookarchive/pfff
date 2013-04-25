@@ -34,7 +34,8 @@ let test_parse_clang xs =
 
 (* see also clang -cc1 -ast-dump *)
 let clang_check =
-  "/home/pad/local/clang_ast/clang-llvm/llvm/Debug+Asserts/bin/clang-check"
+ (*  "/home/pad/local/clang_ast/clang-llvm/llvm/Debug+Asserts/bin/clang-check" *)
+  "clang-check"
 
 let gen_clang jsonfile =
   let json = Json_in.load_json jsonfile in

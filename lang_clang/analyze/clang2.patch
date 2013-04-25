@@ -1,0 +1,127 @@
+diff --git a/lib/AST/ASTDumper.cpp b/lib/AST/ASTDumper.cpp
+index 340cc41..4bd8c96 100644
+--- a/lib/AST/ASTDumper.cpp
++++ b/lib/AST/ASTDumper.cpp
+@@ -79,6 +79,7 @@ namespace  {
+     raw_ostream &OS;
+     const CommandTraits *Traits;
+     const SourceManager *SM;
++    unsigned IndentLevel;
+     bool IsFirstLine;
+ 
+     // Indicates whether more child are expected at the current tree depth
+@@ -125,19 +126,19 @@ namespace  {
+     public:
+       ColorScope(ASTDumper &Dumper, TerminalColor Color)
+         : Dumper(Dumper) {
+-        if (Dumper.ShowColors)
+-          Dumper.OS.changeColor(Color.Color, Color.Bold);
++        //if (Dumper.ShowColors)
++          //Dumper.OS.changeColor(Color.Color, Color.Bold);
+       }
+       ~ColorScope() {
+-        if (Dumper.ShowColors)
+-          Dumper.OS.resetColor();
++        //if (Dumper.ShowColors)
++          //Dumper.OS.resetColor();
+       }
+     };
+ 
+   public:
+     ASTDumper(raw_ostream &OS, const CommandTraits *Traits,
+               const SourceManager *SM)
+-      : OS(OS), Traits(Traits), SM(SM), IsFirstLine(true), MoreChildren(false),
++      : OS(OS), Traits(Traits), SM(SM), IndentLevel(0), IsFirstLine(true), MoreChildren(false),
+         LastLocFilename(""), LastLocLine(~0U), FC(0),
+         ShowColors(SM && SM->getDiagnostics().getShowColors()) { }
+ 
+@@ -328,6 +329,10 @@ void ASTDumper::indent() {
+   else
+     OS << "\n";
+ 
++  OS.indent(IndentLevel * 2);
++  OS << "(";
++  IndentLevel++;
++
+   ColorScope Color(*this, IndentColor);
+   for (llvm::SmallVector<IndentType, 32>::const_iterator I = Indents.begin(),
+                                                          E = Indents.end();
+@@ -335,15 +340,19 @@ void ASTDumper::indent() {
+     switch (*I) {
+     case IT_Child:
+       if (I == E - 1)
+-        OS << "|-";
++        //OS << "|-";
++        ;
+       else
+-        OS << "| ";
++        //OS << "| ";
++        ;
+       continue;
+     case IT_LastChild:
+       if (I == E - 1)
+-        OS << "`-";
++        //OS << "`-";
++        ;
+       else
+-        OS << "  ";
++        //OS << "  ";
++        ;
+       continue;
+     }
+     llvm_unreachable("Invalid IndentType");
+@@ -352,6 +361,8 @@ void ASTDumper::indent() {
+ }
+ 
+ void ASTDumper::unindent() {
++  OS << ")";
++  IndentLevel--;
+   Indents.pop_back();
+ }
+ 
+@@ -379,11 +390,11 @@ void ASTDumper::dumpPointer(const void *Ptr) {
+ 
+ void ASTDumper::dumpLocation(SourceLocation Loc) {
+   ColorScope Color(*this, LocationColor);
+-  SourceLocation SpellingLoc = SM->getSpellingLoc(Loc);
++  SourceLocation ExpansionLoc = SM->getExpansionLoc(Loc);
+ 
+   // The general format we print out is filename:line:col, but we drop pieces
+   // that haven't changed since the last loc printed.
+-  PresumedLoc PLoc = SM->getPresumedLoc(SpellingLoc);
++  PresumedLoc PLoc = SM->getPresumedLoc(ExpansionLoc);
+ 
+   if (PLoc.isInvalid()) {
+     OS << "<invalid sloc>";
+@@ -391,8 +402,15 @@ void ASTDumper::dumpLocation(SourceLocation Loc) {
+   }
+ 
+   if (strcmp(PLoc.getFilename(), LastLocFilename) != 0) {
+-    OS << PLoc.getFilename() << ':' << PLoc.getLine()
++    const char* f = PLoc.getFilename();
++    char* f2 = realpath(f, NULL);
++    const char* f3 = f2 ? f2 : f;
++    OS << f3 << ':' << PLoc.getLine()
+        << ':' << PLoc.getColumn();
++    if(f2 == NULL) {
++    } else {
++      free(f2);
++    }
+     LastLocFilename = PLoc.getFilename();
+     LastLocLine = PLoc.getLine();
+   } else if (PLoc.getLine() != LastLocLine) {
+@@ -660,10 +678,10 @@ void ASTDumper::dumpDecl(const Decl *D) {
+     OS << D->getDeclKindName() << "Decl";
+   }
+   dumpPointer(D);
+-  if (D->getLexicalDeclContext() != D->getDeclContext())
+-    OS << " parent " << cast<Decl>(D->getDeclContext());
+-  if (const Decl *Prev = getPreviousDecl(D))
+-    OS << " prev " << Prev;
++  //if (D->getLexicalDeclContext() != D->getDeclContext())
++  //  OS << " parent " << cast<Decl>(D->getDeclContext());
++  //if (const Decl *Prev = getPreviousDecl(D))
++  //  OS << " prev " << Prev;
+   dumpSourceRange(D->getSourceRange());
+ 
+   bool HasAttrs = D->attr_begin() != D->attr_end();

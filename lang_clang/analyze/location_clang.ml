@@ -86,6 +86,10 @@ let readable_of_filename ~root f =
       ::"llvm"::"Debug+Asserts"::"lib"::"clang"::"3.3"::"include"::rest ->
         "EXTERNAL"::"CLANG"::rest
 
+    | "data"::"users"::"pad"::"clang"::"build"::"lib"::"clang"::"3.3"
+      ::"include":: rest -> 
+        "EXTERNAL"::"CLANG"::rest
+
     | _ ->
         Common.split "/" (Common.filename_without_leading_path root f)
   in
