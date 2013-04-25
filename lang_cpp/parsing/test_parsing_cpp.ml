@@ -115,6 +115,7 @@ let test_view_cpp file =
   let s = Token_views_cpp.string_of_multi_grouped groups in
   pr2 s
 
+(* this is similar to what 'cpplint' of andrei does? *)
 let test_parse_cpp_fuzzy dir_or_file =
   let fullxs = Lib_parsing_cpp.find_cpp_files_of_dir_or_files [dir_or_file] in
 
