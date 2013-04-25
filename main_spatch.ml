@@ -272,7 +272,7 @@ let add_trailing_comma_multiline_funcalls ast =
         let last_expr = Common2.list_last args in
         let ii = Lib_parsing_php.ii_of_any (Argument last_expr) in
         let (_min, max) =
-          Lib_parsing_php.min_max_ii_by_pos ii in
+          Parse_info.min_max_ii_by_pos ii in
         let line_last_expr = Ast_php.line_of_info max in
 
         if List.length args > 2 && 

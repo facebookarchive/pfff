@@ -17,7 +17,6 @@ val abstract_position_info_any: Ast_php.any -> Ast_php.any
 
 (*x: lib_parsing_php.mli *)
 val range_of_origin_ii: Ast_php.tok list -> (int * int) option
-val min_max_ii_by_pos: Ast_php.tok list -> Ast_php.tok * Ast_php.tok
 
 (*x: lib_parsing_php.mli *)
 val get_funcalls_any         : Ast_php.any -> string list

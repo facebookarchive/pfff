@@ -110,7 +110,7 @@ let prange_of_origin_tokens toks =
   let ii = toks +> List.map TH.info_of_tok in
   
   try 
-    let (min, max) = Lib_parsing_php.min_max_ii_by_pos ii in
+    let (min, max) = Parse_info.min_max_ii_by_pos ii in
     Parse_info.parse_info_of_info min, Parse_info.parse_info_of_info max
   with _ -> 
     (Parse_info.fake_parse_info, Parse_info.fake_parse_info)
@@ -118,7 +118,7 @@ let prange_of_origin_tokens toks =
 
 let first_comment ast toks =
   let ii = Lib_parsing_php.ii_of_any (Toplevel ast) in
-  let (min, max) = Lib_parsing_php.min_max_ii_by_pos ii in
+  let (min, max) = Parse_info.min_max_ii_by_pos ii in
 
   let min = Parse_info.parse_info_of_info min in
 

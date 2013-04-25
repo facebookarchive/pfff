@@ -62,7 +62,7 @@ type diff = Match | BnotinA | AnotinB
 (*****************************************************************************)
 
 let toks_before_after_ii ii toks =
-  let (min, max) = Lib_parsing_php.min_max_ii_by_pos ii in
+  let (min, max) = Parse_info.min_max_ii_by_pos ii in
   let toks_before_max, toks_after = 
     Common.profile_code "spanning tokens" (fun () ->
       toks +> Common2.span_tail_call (fun tok ->

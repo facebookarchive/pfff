@@ -83,7 +83,7 @@ let rec distribute_info_items_toplevel2 xs toks filename =
        * have to filter the abstract info here
        *)
       let ii = List.filter Parse_info.is_origintok ii in
-      let (min, max) = Lib_parsing_php.min_max_ii_by_pos ii in
+      let (min, max) = Parse_info.min_max_ii_by_pos ii in
 
       let toks_before_max, toks_after = 
         Common.profile_code "spanning tokens" (fun () ->

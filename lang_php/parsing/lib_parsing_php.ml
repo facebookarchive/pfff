@@ -113,17 +113,6 @@ let abstract_position_info_any x =
 (* Max min, range *)
 (*****************************************************************************)
 (*s: max min range *)
-let min_max_ii_by_pos xs = 
-  match xs with
-  | [] -> failwith "empty list, max_min_ii_by_pos"
-  | [x] -> (x, x)
-  | x::xs -> 
-      let pos_leq p1 p2 = (Ast_php.compare_pos p1 p2) =|= (-1) in
-      xs +> List.fold_left (fun (minii,maxii) e -> 
-        let maxii' = if pos_leq maxii e then e else maxii in
-        let minii' = if pos_leq e minii then e else minii in
-        minii', maxii'
-      ) (x,x)
 (*x: max min range *)
 let info_to_fixpos ii =
   match Ast_php.pinfo_of_info ii with
@@ -136,14 +125,14 @@ let info_to_fixpos ii =
     -> failwith "unexpected abstract or faketok"
   
 let min_max_by_pos xs = 
-  let (i1, i2) = min_max_ii_by_pos xs in
+  let (i1, i2) = Parse_info.min_max_ii_by_pos xs in
   (info_to_fixpos i1, info_to_fixpos i2)
 
 let (range_of_origin_ii: Ast_php.tok list -> (int * int) option) = 
  fun ii -> 
   let ii = List.filter Ast_php.is_origintok ii in
   try 
-    let (min, max) = min_max_ii_by_pos ii in
+    let (min, max) = Parse_info.min_max_ii_by_pos ii in
     assert(Ast_php.is_origintok max);
     assert(Ast_php.is_origintok min);
     let strmax = Ast_php.str_of_info max in
