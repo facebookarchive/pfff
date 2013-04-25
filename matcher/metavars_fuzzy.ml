@@ -26,7 +26,7 @@ type mvar = string
 
 type 'a metavars_binding = (mvar, 'a) Common.assoc
 
-(* type fuzzy_metavars_binding = *)
+type fuzzy_binding = Ast_fuzzy.trees metavars_binding
 
 let empty_environment () = []
 

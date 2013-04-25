@@ -29,6 +29,14 @@ type pattern = Ast_fuzzy.tree list
 (*****************************************************************************)
 (* Parsing *)
 (*****************************************************************************)
+let (parse: string -> pattern) = fun str ->
+  raise Todo
+
+(*****************************************************************************)
+(* Helpers *)
+(*****************************************************************************)
+let ii_of_trees x =
+  raise Todo
 
 (*****************************************************************************)
 (* Main entry point *)
@@ -36,5 +44,26 @@ type pattern = Ast_fuzzy.tree list
 
 let sgrep ~hook pattern ast =
 
-  raise Todo
+  (* visit AST and try to match pattern on it *)
+  let rec visit trees =
+    let x = trees in
+    let matches_with_env =
+      Matching_fuzzy.match_trees_trees pattern x
+    in
+    if matches_with_env = []
+    then (* recurse *)
+      ()
+    else begin
+    (* could also recurse to find nested matching inside the matched code
+     * itself
+     *)
+      let _matched_tokens = ii_of_trees x in
+      matches_with_env +> List.iter (fun env ->
+      (* hook env matched_tokens*)
+        ()
+      )
+    end
+  in
+  visit ast
+
 

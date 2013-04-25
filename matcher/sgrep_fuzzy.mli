@@ -1,8 +1,8 @@
 
-type pattern = Ast_fuzzy.tree list
+type pattern = Ast_fuzzy.trees
 
 (* val parse: string -> pattern *)
 
 val sgrep:   
-  hook:('a Metavars_fuzzy.metavars_binding -> Parse_info.info list -> unit) ->
-  pattern -> Ast_fuzzy.tree list -> unit
+  hook:(Metavars_fuzzy.fuzzy_binding -> Parse_info.info list -> unit) ->
+  pattern -> Ast_fuzzy.trees -> unit

@@ -25,11 +25,12 @@ open Common
 type tok = Parse_info.info
 
 type tree =
-  | Braces of tok * tree list * tok
+  | Braces of tok * trees * tok
   (* todo: comma *)
-  | Parens of tok * tree list * tok
-  | Angle  of tok * tree list * tok
+  | Parens of tok * trees * tok
+  | Angle  of tok * trees * tok
   | Tok of tok
+and trees = tree list
  (* with tarzan *)
 
 (*****************************************************************************)
