@@ -115,6 +115,19 @@ let test_view_cpp file =
   let s = Token_views_cpp.string_of_multi_grouped groups in
   pr2 s
 
+let test_parse_cpp_fuzzy dir_or_file =
+  let fullxs = Lib_parsing_cpp.find_cpp_files_of_dir_or_files [dir_or_file] in
+
+  fullxs +> Common_extra.progress (fun k -> List.iter (fun file -> 
+     k ();
+    Common.save_excursion Flag_parsing_cpp.strict_lexer true (fun () ->
+      let _toks = Parse_cpp.tokens file in
+     ()
+    )
+  ));
+  ()
+  
+
 (*****************************************************************************)
 (* Unit tests *)
 (*****************************************************************************)
@@ -132,6 +145,8 @@ let actions () = [
     Common.mk_action_1_arg test_dump_cpp;
     "-dump_cpp_ml", "   <file>", 
     Common.mk_action_1_arg test_dump_cpp;
+    "-parse_cpp_fuzzy", "   <file>", 
+    Common.mk_action_1_arg test_parse_cpp_fuzzy;
     "-view_cpp", "   <file>", 
     Common.mk_action_1_arg test_view_cpp;
     "-dump_cpp_full", "   <file>", 

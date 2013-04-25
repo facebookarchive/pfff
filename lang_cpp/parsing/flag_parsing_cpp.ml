@@ -81,5 +81,7 @@ let cmdline_flags_debugging () = [
 (* Disable parsing features *)
 (*****************************************************************************)
 
+let strict_lexer = ref false
+
 let if0_passing = ref true
 let ifdef_to_if  = ref false

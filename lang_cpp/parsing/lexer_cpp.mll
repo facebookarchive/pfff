@@ -4,7 +4,7 @@
  * Copyright (C) 2002      Yoann Padioleau
  * Copyright (C) 2006-2007 Ecole des Mines de Nantes
  * Copyright (C) 2008-2009 University of Urbana Champaign
- * Copyright (C) 2010-2011 Facebook
+ * Copyright (C) 2010-2013 Facebook
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License (GPL)
@@ -36,7 +36,7 @@ module Ast = Ast_cpp
  * has to be done to feed it to a parser. Note that C and C++ are not
  * context free languages and so some idents must be disambiguated
  * in some ways. TIdent below must thus be post-processed too (as well
- * as other tokens like '<' for c++). See parsing_hack.ml
+ * as other tokens like '<' for c++). See parsing_hack.ml for example.
  * 
  * note: We can't use Lexer_parser._lexer_hint here to do different
  * things because we now call the lexer to get all the tokens
@@ -54,6 +54,11 @@ let pr2, pr2_once = Common2.mk_pr2_wrappers Flag.verbose_lexing
 (* Helpers *)
 (*****************************************************************************)
 exception Lexical of string
+
+let error s =
+  if !Flag.strict_lexer
+  then raise (Lexical s)
+  else pr2 ("LEXER: " ^ s)
 
 let tok     lexbuf = 
   Lexing.lexeme lexbuf
@@ -515,7 +520,7 @@ rule token = parse
   | (letter | '$') (letter | digit | '$')*
       { 
         let s = tok lexbuf in
-        pr2 ("LEXER: identifier with dollar: "  ^ s);
+        error ("identifier with dollar: "  ^ s);
         TIdent (s, tokinfo lexbuf)
       }
 
@@ -581,17 +586,17 @@ rule token = parse
   | (real as x)           { TFloat ((x, CDouble),     tokinfo lexbuf) }
 
   | ['0'] ['0'-'9']+  
-      { pr2 ("LEXER: " ^ error_radix "octal" ^ tok lexbuf); 
+      { error (error_radix "octal" ^ tok lexbuf); 
         TUnknown (tokinfo lexbuf)
       }
   | ("0x" |"0X") ['0'-'9' 'a'-'z' 'A'-'Z']+ 
-      { pr2 ("LEXER: " ^ error_radix "hexa" ^ tok lexbuf);
+      { error (error_radix "hexa" ^ tok lexbuf);
         TUnknown (tokinfo lexbuf)
       }
 
  (* !put after other rules! otherwise 0xff will be parsed as an ident *)
   | ['0'-'9']+ letter (letter | digit) *  
-      { pr2 ("LEXER: ZARB integer_string, certainly a macro:" ^ tok lexbuf);
+      { error ("ZARB integer_string, certainly a macro:" ^ tok lexbuf);
         TUnknown (tokinfo lexbuf)
       } 
 
@@ -604,8 +609,7 @@ rule token = parse
   | eof { EOF (tokinfo lexbuf +> Ast.rewrap_str "") }
 
   | _ { 
-      if !Flag.verbose_lexing 
-      then pr2_once ("LEXER:unrecognised symbol, in token rule:"^tok lexbuf);
+      error("unrecognised symbol, in token rule:" ^ tok lexbuf);
       TUnknown (tokinfo lexbuf)
     }
 
@@ -630,12 +634,12 @@ and char = parse
 	  | '\\' -> () | '?'  -> () | '\'' -> ()  | '"' -> ()
           | 'e' -> () (* linuxext: ? *)
 	  | _ -> 
-              pr2 ("LEXER: unrecognised symbol in char:"^tok lexbuf);
+              error ("unrecognised symbol in char:"^tok lexbuf);
 	  );
           x
 	} 
   | _ 
-      { pr2 ("LEXER: unrecognised symbol in char:"^tok lexbuf);
+      { error ("unrecognised symbol in char:"^tok lexbuf);
         tok lexbuf
       }
 *)
@@ -658,11 +662,11 @@ and char = parse
 
          (* cppext:  can have   \ for multiline in string too *)
          | '\n' -> () 
-         | _ -> pr2 ("LEXER: unrecognised symbol in char:"^tok lexbuf);
+         | _ -> error ("unrecognised symbol in char:"^tok lexbuf);
 	 );
           x ^ char lexbuf
        }
-  | eof { pr2 "LEXER: WEIRD end of file in char"; ""}
+  | eof { error "WEIRD end of file in char"; ""}
 
 (*****************************************************************************)
 (* Rule string *)
@@ -687,11 +691,11 @@ and string  = parse
 
          (* cppext:  can have   \ for multiline in string too *)
          | '\n' -> () 
-         | _ -> pr2 ("LEXER: unrecognised symbol in string:"^tok lexbuf);
+         | _ -> error ("unrecognised symbol in string:"^tok lexbuf);
 	 );
           x ^ string lexbuf
        }
-  | eof { pr2 "LEXER: WEIRD end of file in string"; ""}
+  | eof { error "WEIRD end of file in string"; ""}
 
  (* Bug if add following code, cos match also the '"' that is needed
   * to finish the string, and so go until end of file.
@@ -715,10 +719,10 @@ and comment = parse
   | [ '*']   { let s = tok lexbuf in s ^ comment lexbuf }
   | _  
       { let s = tok lexbuf in
-        pr2 ("LEXER: unrecognised symbol in comment:"^s);
+        error ("unrecognised symbol in comment:"^s);
         s ^ comment lexbuf
       }
-  | eof { pr2 "LEXER: WEIRD end of file in comment"; ""}
+  | eof { error "WEIRD end of file in comment"; ""}
 
 (*****************************************************************************)
 (* Rule cpp_eat_until_nl *)
@@ -752,5 +756,5 @@ and cpp_eat_until_nl = parse
   | [^ '\n' '\\'      '/' '*'  ]+ 
      { let s = tok lexbuf in s ^ cpp_eat_until_nl lexbuf } 
 
-  | eof { pr2 "LEXER: end of file in cpp_eat_until_nl"; ""}
+  | eof { error "end of file in cpp_eat_until_nl"; ""}
   | _   { let s = tok lexbuf in s ^ cpp_eat_until_nl lexbuf }  
