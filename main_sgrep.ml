@@ -124,6 +124,10 @@ let gen_layer ~root ~query file =
   ()
   
 (*****************************************************************************)
+(* Language specific *)
+(*****************************************************************************)
+
+(*****************************************************************************)
 (* Main action *)
 (*****************************************************************************)
 let main_action xs =
@@ -212,6 +216,9 @@ let options () =
 
     "-pvar", Arg.String (fun s -> mvars := Common.split "," s),
     " <metavars> print the metavariables, not the matched code";
+
+    "-lang", Arg.Set_string lang, 
+    (spf " <str> choose language (default = %s)" !lang);
 
     "-gen_layer", Arg.String (fun s -> layer_file := Some s),
     " <file> save result in a pfff layer file";
