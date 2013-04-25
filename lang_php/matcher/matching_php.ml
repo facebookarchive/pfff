@@ -16,6 +16,7 @@ open Common
 
 module Ast = Ast_php
 module MV = Metavars_php
+module MVGen = Metavars_fuzzy
 
 (*****************************************************************************)
 (* Prelude *)
@@ -197,22 +198,22 @@ let (extract_bindings: 'a XMATCH.tout -> MV.metavars_binding list) = fun tout ->
   
 (* todo: should maybe have a match_any_any *)
 let match_e_e pattern e = 
-  let env = MV.empty_environment in
+  let env = MVGen.empty_environment () in
   MATCH.m_expr pattern e env +> extract_bindings
 
 let match_v_v pattern e = 
-  let env = MV.empty_environment in
+  let env = MVGen.empty_environment () in
   MATCH.m_variable pattern e env +> extract_bindings
 
 let match_st_st pattern e = 
-  let env = MV.empty_environment in
+  let env = MVGen.empty_environment () in
   MATCH.m_stmt pattern e env +> extract_bindings
 
 let match_top_top pattern e = 
-  let env = MV.empty_environment in
+  let env = MVGen.empty_environment () in
   MATCH.m_toplevel pattern e env +> extract_bindings
 
 let match_xhp_xhp pattern e = 
-  let env = MV.empty_environment in
+  let env = MVGen.empty_environment () in
   MATCH.m_xhp_html pattern e env +> extract_bindings
 

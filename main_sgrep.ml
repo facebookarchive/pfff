@@ -30,10 +30,12 @@ let verbose = ref false
 let pattern_file = ref ""
 let pattern_string = ref ""
 
+let lang = ref "php"
+
 let case_sensitive = ref false
 let match_format = ref Lib_parsing_php.Normal
 
-let mvars = ref ([]: Metavars_php.mvar list)
+let mvars = ref ([]: Metavars_fuzzy.mvar list)
 
 let layer_file = ref (None: filename option)
 

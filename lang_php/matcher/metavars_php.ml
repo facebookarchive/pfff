@@ -22,14 +22,14 @@ open Common
 (* Types *)
 (*****************************************************************************)
 
+(* mostly copy of metavars_fuzzy.ml *)
+
 (* todo? could want to remember the position in the pattern of the metavar
  * for error reporting ? so use a 'string Ast_php.wrap' ?
  *)
 type mvar = string 
 
 type metavars_binding = (mvar, Ast_php.any) Common.assoc
-
-let empty_environment = []
 
 (* bugfix: don't forget \\b, otherwise a string like FBredirect would
  * match such regexp (the starting F) even if it's not a metavar at all.
