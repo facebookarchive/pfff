@@ -174,6 +174,7 @@ BASICLIBS=commons/lib.cma \
  globals/lib.cma \
  h_files-format/lib.cma \
  h_program-lang/lib.cma \
+ matcher/lib.cma \
  lang_ml/parsing/lib.cma \
  lang_nw/parsing/lib.cma \
  lang_php/parsing/lib.cma \
