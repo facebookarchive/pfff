@@ -1,4 +1,7 @@
 
+(* 'parse_info' < 'token' < 'info' *)
+
+(* regular position information *)
 type parse_info = {
     str: string;
     charpos: int;
@@ -6,6 +9,16 @@ type parse_info = {
     file: Common.filename;
 } 
 
+(* to deal with expanded tokens, e.g. preprocessor like cpp for C *)
+type token =
+  | OriginTok  of parse_info
+  | FakeTokStr of string  * (parse_info * int) option
+  | ExpandedTok of parse_info *  parse_info * int 
+  | Ab
+
+(* to allow source to source transformation via token annotations, 
+ * see the documentation for spatch.
+ *)
 type info = {
   (* contains among other things the position of the token through
    * the Common.parse_info embedded inside the token type.
@@ -16,12 +29,6 @@ type info = {
   (* for spatch *)
   mutable transfo: transformation;
 }
-
- and token =
-  | OriginTok  of parse_info
-  | FakeTokStr of string  * (parse_info * int) option
-  | ExpandedTok of parse_info *  parse_info * int 
-  | Ab
 
  and transformation = 
   | NoTransfo
@@ -34,6 +41,7 @@ type info = {
     | AddStr of string
     | AddNewlineAndIdent
 
+(* not used but used to be useful in coccinelle *)
 type posrv = 
   | Real of parse_info 
   | Virt of 

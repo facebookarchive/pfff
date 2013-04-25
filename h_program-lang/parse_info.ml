@@ -12,7 +12,6 @@
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the file
  * license.txt for more details.
  *)
-
 open Common
 
 (*****************************************************************************)
@@ -25,8 +24,8 @@ open Common
 
 (*
  * Currently lexing.ml does not handle the line number position.
- * Even if there is some fields in the lexing structure, they are not
- * maintained by the lexing engine :( So the following code does not work:
+ * Even if there are certain fields in the lexing structure, they are not
+ * maintained by the lexing engine so the following code does not work:
  *
  *   let pos = Lexing.lexeme_end_p lexbuf in
  *   sprintf "at file %s, line %d, char %d" pos.pos_fname pos.pos_lnum
