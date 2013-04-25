@@ -118,11 +118,31 @@ let test_view_cpp file =
 let test_parse_cpp_fuzzy dir_or_file =
   let fullxs = Lib_parsing_cpp.find_cpp_files_of_dir_or_files [dir_or_file] in
 
+  let file = Filename.concat dir_or_file "skip_list.txt" in
+  let fullxs = 
+    if Sys.file_exists file
+    then 
+      let skip_list = Skip_code.load file in
+      Skip_code.filter_files skip_list dir_or_file fullxs
+    else fullxs
+  in
+
   fullxs +> Common_extra.progress (fun k -> List.iter (fun file -> 
      k ();
     Common.save_excursion Flag_parsing_cpp.strict_lexer true (fun () ->
-      let _toks = Parse_cpp.tokens file in
-     ()
+      try 
+        let toks = Parse_cpp.tokens file in
+
+        let toks = toks +> Common.exclude Token_helpers_cpp.is_comment in
+        let extended = 
+          toks +> List.map Token_views_cpp.mk_token_extended in
+        Parsing_hacks_cpp.find_template_inf_sup extended;
+
+        let _groups = Token_views_cpp.mk_multi extended in
+        ()
+      with exn ->
+        (* pr2 (spf "PB with: %s, exn = %s" file (Common.exn_to_s exn)); *)
+        pr2 file;
     )
   ));
   ()
