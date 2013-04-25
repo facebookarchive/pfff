@@ -14,6 +14,8 @@
  *)
 open Common
 
+module V = Ast_fuzzy
+
 (*****************************************************************************)
 (* Prelude *)
 (*****************************************************************************)
@@ -42,25 +44,36 @@ let (parse: string -> pattern) = fun str ->
 
 let sgrep ~hook pattern ast =
 
+  let len = List.length pattern in
+
   (* visit AST and try to match pattern on it *)
-  let rec visit trees =
-    let x = trees in
-    let matches_with_env =
-      Matching_fuzzy.match_trees_trees pattern x
-    in
-    if matches_with_env = []
-    then (* recurse *)
-      ()
-    else begin
-    (* could also recurse to find nested matching inside the matched code
-     * itself
-     *)
-      let matched_tokens = Ast_fuzzy.ii_of_trees x in
-      matches_with_env +> List.iter (fun env ->
-        hook env matched_tokens
-      )
-    end
+  let hook =
+    { V.default_visitor with
+      V.ktrees = (fun (k, _) xs ->
+        if List.length xs >= len then begin
+          let shorter, rest = Common2.splitAt len xs in
+        
+          let matches_with_env =
+            Matching_fuzzy.match_trees_trees pattern shorter
+          in
+          if matches_with_env = []
+          then
+            (* recurse on sublists *)
+            k xs
+          else begin
+            (* could also recurse to find nested matching inside 
+             * the matched code itself
+             *)
+            let matched_tokens = Ast_fuzzy.ii_of_trees shorter in
+            matches_with_env +> List.iter (fun env ->
+              hook env matched_tokens
+            );
+            k rest
+          end
+        end
+      );
+    }
   in
-  visit ast
+  (V.mk_visitor hook) ast
 
 

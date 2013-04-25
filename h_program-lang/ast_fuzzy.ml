@@ -41,12 +41,14 @@ type visitor_out = trees -> unit
 
 type visitor_in = {
   ktree: (tree -> unit) * visitor_out -> tree -> unit;
+  ktrees: (trees -> unit) * visitor_out -> trees -> unit;
   ktok: (tok -> unit) * visitor_out -> tok -> unit;
 }
 
 let (default_visitor : visitor_in) = 
   { ktree = (fun (k, _) x -> k x);
     ktok  = (fun (k, _) x -> k x);
+    ktrees = (fun (k, _) x -> k x);
   }
 
 let (mk_visitor: visitor_in -> visitor_out) = fun vin ->
@@ -62,8 +64,16 @@ let (mk_visitor: visitor_in -> visitor_out) = fun vin ->
       | Tok v1 -> let _v1 = v_tok v1 in ()
     in
     vin.ktree (k, all_functions) x
- and v_trees v = v_list v_tree v
- and v_list f x = List.iter f x
+ and v_trees a = 
+    let rec k xs =
+      match xs with
+      | [] -> ()
+      | x::xs ->
+        v_tree x;
+        v_trees xs;
+    in
+    vin.ktrees (k, all_functions) a
+        
  and v_tok x =
     let rec k x = () in
     vin.ktok (k, all_functions) x

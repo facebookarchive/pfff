@@ -170,13 +170,6 @@ let rec m_list__m_tree xsa xsb =
   | [], [] ->
       return ([], [])
 
-  (* iso: ok to have shorter patter, assume implicit '...' *)
-  | [], aas ->
-    return (
-      [],
-      []
-    )
-
   | xa::aas, xb::bbs ->
       m_tree xa xb >>= (fun (xa, xb) ->
       m_list__m_tree aas bbs >>= (fun (aas, bbs) ->
@@ -186,6 +179,7 @@ let rec m_list__m_tree xsa xsb =
         )
       )
       )
+  | [], _::_
   | _::_, _ ->
       fail ()
 
