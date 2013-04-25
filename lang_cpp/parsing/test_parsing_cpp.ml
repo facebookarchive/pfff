@@ -103,14 +103,12 @@ let test_dump_cpp_full file =
   );
   ()
 
-
-let test_view_cpp file =
+let test_dump_cpp_fuzzy file =
   let fuzzy = Parse_cpp.parse_fuzzy file in
   let v = Ast_fuzzy.vof_trees fuzzy in
   let s = Ocaml.string_of_v v in
   pr2 s
 
-(* this is similar to what 'cpplint' of andrei does? *)
 let test_parse_cpp_fuzzy dir_or_file =
   let fullxs = Lib_parsing_cpp.find_cpp_files_of_dir_or_files [dir_or_file] in
 
@@ -154,11 +152,12 @@ let actions () = [
     Common.mk_action_1_arg test_dump_cpp;
     "-dump_cpp_ml", "   <file>", 
     Common.mk_action_1_arg test_dump_cpp;
-    "-parse_cpp_fuzzy", "   <file>", 
-    Common.mk_action_1_arg test_parse_cpp_fuzzy;
-    "-view_cpp", "   <file>", 
-    Common.mk_action_1_arg test_view_cpp;
     "-dump_cpp_full", "   <file>", 
     Common.mk_action_1_arg test_dump_cpp_full;
+
+    "-parse_cpp_fuzzy", "   <file or dir>", 
+    Common.mk_action_1_arg test_parse_cpp_fuzzy;
+    "-dump_cpp_fuzzy", "   <file>", 
+    Common.mk_action_1_arg test_dump_cpp_fuzzy;
 
 ]

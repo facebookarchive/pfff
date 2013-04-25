@@ -206,6 +206,12 @@ let tokens a =
 (* Fuzzy parsing *)
 (*****************************************************************************)
 
+(* This is similar to what I did for OPA. This is also similar
+ * to what I do for parsing hacks, but this fuzzy AST can be useful
+ * on its own, e.g. for a not too bad sgrep/spatch.
+ * 
+ * note: this is similar to what 'cpplint' of andrei does? 
+ *)
 let parse_fuzzy file =
   let toks = tokens file 
     +> Common.exclude Token_helpers_cpp.is_comment in
