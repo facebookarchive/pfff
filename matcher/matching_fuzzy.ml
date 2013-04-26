@@ -122,5 +122,3 @@ let (extract_bindings: 'a XMATCH.tout -> MV.fuzzy_binding list) = fun tout ->
 let match_trees_trees pattern x =
   let env = MV.empty_environment () in
   MATCH.m_trees pattern x env +> extract_bindings
-
-

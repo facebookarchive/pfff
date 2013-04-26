@@ -80,5 +80,3 @@ let sgrep ~hook pattern ast =
     }
   in
   (V.mk_visitor hook) ast
-
-

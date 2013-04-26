@@ -189,6 +189,6 @@ let parse
 (* Main entry points *)
 (*****************************************************************************)
 
-let spatch pattern file =
+let spatch pattern ast =
   raise Todo
 

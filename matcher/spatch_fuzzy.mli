@@ -1,5 +1,4 @@
 
-
 type pattern = Ast_fuzzy.trees
 
 val parse: 
@@ -8,6 +7,4 @@ val parse:
  Common.filename -> pattern
 
 val spatch: 
-  pattern -> Common.filename -> string option
-
-
+  pattern -> Ast_fuzzy.trees -> string option

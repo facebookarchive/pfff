@@ -89,7 +89,16 @@ let spatch pattern file =
     )
 
   | "c++", Right pattern ->
-    raise Todo
+    let ast =
+      try 
+        Common.save_excursion Flag_parsing_cpp.verbose_lexing false (fun () ->
+          Parse_cpp.parse_fuzzy file 
+        )
+      with exn ->
+        pr2 (spf "PB with %s, exn = %s"  file (Common.exn_to_s exn));
+        []
+    in
+    Spatch_fuzzy.spatch pattern ast
   | _ -> failwith ("unsupported language: " ^ !lang)
 
 (*****************************************************************************)

@@ -16,6 +16,10 @@ SRC= lib_matcher.ml \
 #flag_matcher_php.ml   \
 #     refactoring_code_php.ml \
 
+# put here also generic parts of:
+#  token_views_of_xxx ?
+#  unparser_xxx
+
 
 SYSLIBS= str.cma unix.cma
 LIBS=$(TOP)/commons/lib.cma \
