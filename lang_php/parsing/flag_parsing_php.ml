@@ -14,7 +14,7 @@ let cmdline_flags_debugging () = [
 ]
 (*x: flag_parsing_php.ml *)
 
-let strict_lexer = ref true
+let strict_lexer = ref false
 
 let show_parsing_error = ref true
 (* Do not raise an exn when a parse error but use NotParsedCorrectly.
