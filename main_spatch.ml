@@ -6,26 +6,20 @@
  *    May you find forgiveness for yourself and forgive others.
  *    May you share freely, never taking more than you give.
  *)
-
 open Common
 
-open Ast_php
-
-module Ast = Ast_php
-module V = Visitor_php
-
-module Ast2 = Ast_js
-module V2 = Visitor_js
-
+open Parse_info
 module PI = Parse_info
 
-open Parse_info
+open Ast_php
+module V = Visitor_php
 
 (*****************************************************************************)
 (* Purpose *)
 (*****************************************************************************)
 (* 
- * A syntactical patch for PHP. https://github.com/facebook/pfff/wiki/Spatch
+ * A syntactical patch. https://github.com/facebook/pfff/wiki/Spatch
+ * Right now there is support only for PHP and C/C++/ObjectiveC.
  * 
  * opti: git grep xxx | xargs spatch_php ...
  * 
@@ -42,14 +36,16 @@ open Parse_info
 
 let verbose = ref false
 
-let case_sensitive = ref false
-
 let apply_patch = ref false
 (* too experimental for now *)
 let pretty_printer = ref false
 
 let spatch_file = ref ""
 let sed_string = ref ""
+
+let lang = ref "php"
+
+let case_sensitive = ref false
 
 (* action mode *)
 let action = ref ""
@@ -516,16 +512,23 @@ let options () =
   [
     "-f", Arg.Set_string spatch_file, 
     " <spatch_file>";
-    "-e", Arg.Set_string sed_string, 
+    "-e", Arg.Set_string sed_string,
     " <s/before/after/>, sed mode";
-    "--apply-patch", Arg.Set apply_patch, 
+
+    "--apply-patch", Arg.Set apply_patch,
     " ";
     "--pretty-printer", Arg.Set pretty_printer, 
-    " reindent the modified code";
+    " reindent the modified code (fragile)";
+
     "--case-sensitive", Arg.Set case_sensitive, 
     " match code in a case sensitive manner";
+
     "--verbose", Arg.Set verbose, 
     " ";
+
+    "-lang", Arg.Set_string lang, 
+    (spf " <str> choose language (default = %s)" !lang);
+
     "-v", Arg.Set verbose, 
     " shortcut for --verbose";
   ] ++
@@ -534,7 +537,7 @@ let options () =
   Common2.cmdline_flags_devel () ++
   [
   "-version",   Arg.Unit (fun () -> 
-    Common.pr2 (spf "spatch_php version: %s" Config_pfff.version);
+    Common.pr2 (spf "spatch version: %s" Config_pfff.version);
     exit 0;
   ), 
     "  guess what";
