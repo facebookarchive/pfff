@@ -133,10 +133,11 @@ let _hmemo = Hashtbl.create 101
 let parse2 file =
   try
     Common.save_excursion Ast_php_simple_build.store_position true (fun () ->
+    Common.save_excursion Flag_parsing_php.strict_lexer true (fun () ->
     let cst = Parse_php.parse_program file in
     let ast = Ast_php_simple_build.program cst in
     ast
-    )
+    ))
   with
   | Timeout -> raise Timeout
   | exn ->
