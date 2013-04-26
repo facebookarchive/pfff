@@ -1,8 +1,10 @@
 -*- org -*-
 
-* 0.24 (Q2 2013) (web-codemap, web-codegraph)
+* 0.24 (Q2 2013) (web-codemap, web-codegraph, ast_fuzzy)
 
-** web: resume work on ocsigen, port to eliom3, use of OPAM
+** web: resume work on ocsigen, port to eliom3, js_of_ocaml
+also assume OPAM for web/ (but not for the rest of pfff/ so people
+don't need OPAM to compile most of pfff)
 
 ** codegraph
 
