@@ -98,7 +98,10 @@ let spatch pattern file =
         pr2 (spf "PB with %s, exn = %s"  file (Common.exn_to_s exn));
         []
     in
-    Spatch_fuzzy.spatch pattern ast
+    let was_modified = Spatch_fuzzy.spatch pattern ast in
+    if was_modified
+    then Some ""
+    else None
   | _ -> failwith ("unsupported language: " ^ !lang)
 
 (*****************************************************************************)

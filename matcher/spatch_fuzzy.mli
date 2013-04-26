@@ -6,5 +6,9 @@ val parse:
  ii_of_pattern:(pattern -> Parse_info.info list) ->
  Common.filename -> pattern
 
+(* It will modify by side effects the tokens in trees. It's up to you
+ * then to unparse things in the correct way. See unparse_fuzzy.ml
+ * for an example.
+ *)
 val spatch: 
-  pattern -> Ast_fuzzy.trees -> string option
+  pattern -> Ast_fuzzy.trees -> bool

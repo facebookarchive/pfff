@@ -16,6 +16,7 @@ open Common
 
 module PI = Parse_info
 open Parse_info
+module V = Ast_fuzzy
 
 (*****************************************************************************)
 (* Prelude *)
@@ -190,5 +191,43 @@ let parse
 (*****************************************************************************)
 
 let spatch pattern ast =
-  raise Todo
+
+  let was_modifed = ref false in
+
+  let len = List.length pattern in
+
+  (* visit AST and try to match pattern on it *)
+  let hook =
+    { V.default_visitor with
+      V.ktrees = (fun (k, _) xs ->
+        if List.length xs >= len then begin
+          let shorter, rest = Common2.splitAt len xs in
+
+          (* pr (Ocaml.string_of_v (Ast_fuzzy.vof_trees shorter));*)
+
+          let matches_with_env =
+            Matching_fuzzy.match_trees_trees pattern shorter
+          in
+          if matches_with_env = []
+          then
+            (* recurse on sublists *)
+            k xs
+          else begin
+            was_modifed := true;
+            Transforming_fuzzy.transform_trees_trees pattern shorter
+              (* TODO, maybe could get multiple matching env *)
+              (List.hd matches_with_env);
+
+            k rest
+          end
+        end
+        else 
+          (* at least recurse *)
+          k xs
+      );
+    }
+  in
+  (V.mk_visitor hook) ast;
+  !was_modifed
+
 
