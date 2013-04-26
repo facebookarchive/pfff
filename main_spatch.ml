@@ -64,7 +64,7 @@ let parse_pattern file =
   | "c++" -> 
       let parse str =
         Common2.with_tmp_file ~str ~ext:"cpp" (fun tmpfile ->
-          Parse_cpp.parse_fuzzy tmpfile
+          Parse_cpp.parse_fuzzy tmpfile +> fst
         )
       in
       Right (Spatch_fuzzy.parse 
@@ -89,18 +89,25 @@ let spatch pattern file =
     )
 
   | "c++", Right pattern ->
-    let ast =
+    let trees, toks =
       try 
         Common.save_excursion Flag_parsing_cpp.verbose_lexing false (fun () ->
-          Parse_cpp.parse_fuzzy file 
+          Parse_cpp.parse_fuzzy file
         )
       with exn ->
         pr2 (spf "PB with %s, exn = %s"  file (Common.exn_to_s exn));
-        []
+        [], []
     in
-    let was_modified = Spatch_fuzzy.spatch pattern ast in
+    let was_modified = Spatch_fuzzy.spatch pattern trees in
+
+    let elts_of_tok tok =
+      raise Todo
+    in
+    let unparse toks = 
+      Lib_unparser.string_of_toks_using_transfo ~elts_of_tok toks
+    in
     if was_modified
-    then Some ""
+    then Some (unparse toks)
     else None
   | _ -> failwith ("unsupported language: " ^ !lang)
 

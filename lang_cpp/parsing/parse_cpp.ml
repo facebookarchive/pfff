@@ -206,6 +206,23 @@ let tokens a =
 (* Fuzzy parsing *)
 (*****************************************************************************)
 
+let rec multi_grouped_list xs = 
+  xs +> List.map multi_grouped
+
+and multi_grouped = function
+  | Token_views_cpp.Braces (tok1, xs, (Some tok2)) ->
+      Ast_fuzzy.Braces (tokext tok1, multi_grouped_list xs, tokext tok2)
+  | Token_views_cpp.Parens (tok1, xs, (Some tok2)) ->
+      Ast_fuzzy.Parens (tokext tok1, multi_grouped_list xs, tokext tok2)
+  | Token_views_cpp.Angle (tok1, xs, (Some tok2)) ->
+      Ast_fuzzy.Angle (tokext tok1, multi_grouped_list xs, tokext tok2)
+  | Token_views_cpp.Tok (tok) ->
+      Ast_fuzzy.Tok (tokext tok)
+  | _ -> failwith "could not find closing brace/parens/angle"
+and tokext tok_extended =
+  TH.info_of_tok tok_extended.Token_views_cpp.t
+
+
 (* This is similar to what I did for OPA. This is also similar
  * to what I do for parsing hacks, but this fuzzy AST can be useful
  * on its own, e.g. for a not too bad sgrep/spatch.
@@ -213,8 +230,9 @@ let tokens a =
  * note: this is similar to what 'cpplint' of andrei does? 
  *)
 let parse_fuzzy file =
-  let toks = tokens file 
-    +> Common.exclude (fun x ->
+  let toks_orig = tokens file in
+  let toks = 
+    toks_orig +> Common.exclude (fun x ->
       Token_helpers_cpp.is_comment x ||
       Token_helpers_cpp.is_eof x
     )
@@ -225,22 +243,7 @@ let parse_fuzzy file =
 
   let groups = Token_views_cpp.mk_multi extended in
 
-  let rec multi_grouped_list xs = 
-    xs +> List.map multi_grouped
-  and multi_grouped = function
-    | Token_views_cpp.Braces (tok1, xs, (Some tok2)) ->
-        Ast_fuzzy.Braces (tokext tok1, multi_grouped_list xs, tokext tok2)
-    | Token_views_cpp.Parens (tok1, xs, (Some tok2)) ->
-        Ast_fuzzy.Parens (tokext tok1, multi_grouped_list xs, tokext tok2)
-    | Token_views_cpp.Angle (tok1, xs, (Some tok2)) ->
-        Ast_fuzzy.Angle (tokext tok1, multi_grouped_list xs, tokext tok2)
-    | Token_views_cpp.Tok (tok) ->
-        Ast_fuzzy.Tok (tokext tok)
-    | _ -> failwith "could not find closing brace/parens/angle"
-  and tokext tok_extended =
-    TH.info_of_tok tok_extended.Token_views_cpp.t
-  in
-  multi_grouped_list groups
+  multi_grouped_list groups, toks_orig
 
 (*****************************************************************************)
 (* Extract macros *)

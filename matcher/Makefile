@@ -5,6 +5,7 @@ TOP=..
 TARGET=lib
 
 SRC= lib_matcher.ml \
+     lib_unparser.ml \
      metavars_fuzzy.ml \
      fuzzy_vs_fuzzy.ml \
      matching_fuzzy.ml \
@@ -17,8 +18,7 @@ SRC= lib_matcher.ml \
 #     refactoring_code_php.ml \
 
 # put here also generic parts of:
-#  token_views_of_xxx ?
-#  unparser_xxx
+#  token_views_of_xxx ? lib_parse_fuzzy
 
 
 SYSLIBS= str.cma unix.cma

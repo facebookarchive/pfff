@@ -133,7 +133,7 @@ let parse_pattern str =
   | "c++" -> 
     let parse str =
       Common2.with_tmp_file ~str ~ext:"cpp" (fun tmpfile ->
-        Parse_cpp.parse_fuzzy tmpfile
+        Parse_cpp.parse_fuzzy tmpfile +> fst
       )
     in
     Right (parse str)
@@ -160,7 +160,7 @@ let sgrep pattern file =
     let ast = 
       try 
         Common.save_excursion Flag_parsing_cpp.verbose_lexing false (fun () ->
-        Parse_cpp.parse_fuzzy file 
+          Parse_cpp.parse_fuzzy file +> fst
         )
       with exn ->
         pr2 (spf "PB with %s, exn = %s"  file (Common.exn_to_s exn));

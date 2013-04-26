@@ -104,7 +104,7 @@ let test_dump_cpp_full file =
   ()
 
 let test_dump_cpp_fuzzy file =
-  let fuzzy = Parse_cpp.parse_fuzzy file in
+  let fuzzy, _toks = Parse_cpp.parse_fuzzy file in
   let v = Ast_fuzzy.vof_trees fuzzy in
   let s = Ocaml.string_of_v v in
   pr2 s
