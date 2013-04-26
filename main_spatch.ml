@@ -11,9 +11,6 @@ open Common
 open Parse_info
 module PI = Parse_info
 
-open Ast_php
-module V = Visitor_php
-
 (*****************************************************************************)
 (* Purpose *)
 (*****************************************************************************)
@@ -21,7 +18,7 @@ module V = Visitor_php
  * A syntactical patch. https://github.com/facebook/pfff/wiki/Spatch
  * Right now there is support only for PHP and C/C++/ObjectiveC.
  * 
- * opti: git grep xxx | xargs spatch_php ...
+ * opti: git grep xxx | xargs spatch -e 's/foo()/bar()/'
  * 
  * 
  * Alternatives: 
@@ -36,14 +33,14 @@ module V = Visitor_php
 
 let verbose = ref false
 
-let apply_patch = ref false
-(* too experimental for now *)
-let pretty_printer = ref false
-
 let spatch_file = ref ""
 let sed_string = ref ""
 
 let lang = ref "php"
+
+let apply_patch = ref false
+(* too experimental for now *)
+let pretty_printer = ref false
 
 let case_sensitive = ref false
 
@@ -57,7 +54,93 @@ let pr2 s =
   if !verbose then Common.pr2 s
 
 (*****************************************************************************)
-(* Helpers *)
+(* Language specific *)
+(*****************************************************************************)
+ 
+let parse_pattern file =
+  match !lang with
+  | "php" -> Left (Spatch_php.parse file)
+  | "c++" -> Right (Spatch_fuzzy.parse file)
+  | _ -> failwith ("unsupported language: " ^ !lang)
+
+let find_source_files_of_dir_or_files xs =
+  match !lang with
+  | "php" ->   Lib_parsing_php.find_php_files_of_dir_or_files xs
+  | "c++" -> Lib_parsing_cpp.find_cpp_files_of_dir_or_files xs
+  | _ -> failwith ("unsupported language: " ^ !lang)
+
+let spatch pattern file =
+  match !lang, pattern with
+  | "php", Left pattern -> 
+    (try 
+      Spatch_php.spatch ~case_sensitive:!case_sensitive pattern file
+    with Parse_php.Parse_error tok ->
+      failwith ("PARSING PB: " ^ Parse_info.error_message_info tok);
+    )
+
+  | "c++", Right pattern ->
+    raise Todo
+  | _ -> failwith ("unsupported language: " ^ !lang)
+
+(*****************************************************************************)
+(* Main action *)
+(*****************************************************************************)
+
+let main_action xs =
+  let spatch_file = 
+    match !spatch_file, !sed_string with
+    | "", "" ->
+      failwith "I need a semantic patch file; use -f"
+    | "", s ->
+        (* does not handle nested /, does not handle s# alternate
+         * syntax as in perl, does not handle much ...
+         *)
+        if s =~ "s/\\(.*\\)/\\(.*\\)/"
+        then begin
+          let (before, after) = Common.matched2 s in
+          let tmpfile = Common.new_temp_file "spatch" ".spatch" in
+          Common.with_open_outfile tmpfile (fun (pr, _chan) ->
+            pr (spf "- %s\n" before);
+            if after <> "" 
+            then pr (spf "+ %s\n" after);
+          );
+          tmpfile
+        end 
+        else failwith ("wrong format, use s/.../.../ not: " ^ s)
+    | s, "" ->
+        !spatch_file 
+    | s1, s2 ->
+        failwith "Can't use -f and -e at the same time"
+  in
+
+  Logger.log Config_pfff.logger "spatch" (Some (Common.read_file spatch_file));
+
+  let pattern = parse_pattern spatch_file in
+  let files = find_source_files_of_dir_or_files xs in
+
+  files +> Common_extra.progress ~show:!verbose (fun k -> 
+   List.iter (fun file->
+    k();
+    let resopt = spatch pattern file in
+    resopt +> Common.do_option (fun (s) ->
+      pr2 (spf "transforming: %s" file);
+
+      let tmpfile = Common.new_temp_file "trans" ".spatch" in
+      Common.write_file ~file:tmpfile s;
+
+      if !pretty_printer && !lang =$= "php"
+      then Unparse_pretty_print_mix.pretty_print_when_needit
+             ~oldfile:file ~newfile:tmpfile;
+      
+      let diff = Common2.unix_diff file tmpfile in
+      diff +> List.iter pr;
+      if !apply_patch 
+      then Common.write_file ~file:file (Common.read_file tmpfile);
+    )
+  ))
+
+(*****************************************************************************)
+(* Helpers for PHP *)
 (*****************************************************************************)
 
 (* Some helper functions when using the low-level transformation API of pfff.
@@ -129,76 +212,13 @@ let apply_transfo transfo xs =
       Common.push2 (spf "PB with %s, exn = %s" file (Common.exn_to_s exn)) pbs;
   ));
   !pbs +> List.iter Common.pr2
- 
-(*****************************************************************************)
-(* Main action *)
-(*****************************************************************************)
-
-let main_action xs =
-  let spatch_file = 
-    match !spatch_file, !sed_string with
-    | "", "" ->
-        failwith "I need a semantic patch file; use -f"
-    | "", s ->
-        (* does not handle nested /, does not handle s# alternate
-         * syntax as in perl, does not handle much ...
-         *)
-        if s =~ "s/\\(.*\\)/\\(.*\\)/"
-        then begin
-          let (before, after) = Common.matched2 s in
-          let tmpfile = Common.new_temp_file "spatch" ".spatch" in
-          Common.with_open_outfile tmpfile (fun (pr, _chan) ->
-            pr (spf "- %s\n" before);
-            if after <> "" 
-            then pr (spf "+ %s\n" after);
-          );
-          tmpfile
-        end 
-        else failwith ("wrong format, use s/.../.../ not: " ^ s)
-    | s, "" ->
-        !spatch_file 
-    | s1, s2 ->
-        failwith "Can't use -f and -e at the same time"
-  in
-
-  Logger.log Config_pfff.logger "spatch" (Some (Common.read_file spatch_file));
-
-  (* old: let pattern = dumb_spatch_pattern in *)
-  let pattern = 
-    Spatch_php.parse spatch_file in
-
-  let files = Lib_parsing_php.find_php_files_of_dir_or_files xs in
-
-  files +> Common_extra.progress ~show:!verbose (fun k -> 
-   List.iter (fun file->
-    k();
-    try (
-    let resopt = 
-      Spatch_php.spatch ~case_sensitive:!case_sensitive pattern file
-    in
-    resopt +> Common.do_option (fun (s) ->
-
-      pr2 (spf "transforming: %s" file);
-
-      let tmpfile = Common.new_temp_file "trans" ".php" in
-      Common.write_file ~file:tmpfile s;
-
-      if !pretty_printer
-      then Unparse_pretty_print_mix.pretty_print_when_needit
-             ~oldfile:file ~newfile:tmpfile;
-      
-      let diff = Common2.unix_diff file tmpfile in
-      diff +> List.iter pr;
-      if !apply_patch 
-      then Common.write_file ~file:file (Common.read_file tmpfile);
-    )
-    ) with Parse_php.Parse_error tok ->
-      failwith ("PARSING PB: " ^ Parse_info.error_message_info tok);
-  ))
 
 (*****************************************************************************)
 (* Extra actions *)
 (*****************************************************************************)
+
+open Ast_php
+module V = Visitor_php
 
 (* -------------------------------------------------------------------------*)
 (* to test *)
@@ -217,8 +237,8 @@ let simple_transfo xs =
     let (ast2, _stat) = Parse_php.parse file in
     let ast = Parse_php.program_of_program2 ast2 in
 
-    let hook = { V.default_visitor with
-      V.klvalue = (fun (k, _) x ->
+    let hook = { Visitor_php.default_visitor with
+      Visitor_php.klvalue = (fun (k, _) x ->
         match x with
         | FunCallSimple((Name ("foo", info_foo)), (lp, args, rp)) ->
             pr2 "found match";
@@ -233,7 +253,7 @@ let simple_transfo xs =
       );
     }
     in
-    (V.mk_visitor hook) (Program ast);
+    (Visitor_php.mk_visitor hook) (Program ast);
 
     let s = Unparse_php.string_of_program2_using_transfo ast2 in
     
