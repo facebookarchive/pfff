@@ -99,8 +99,9 @@ module type PARAM =
     val return : ('a * 'b) -> tin -> ('a *'b) tout
     val fail : tin -> ('a * 'b) tout
 
+    val tokenf : (Parse_info.info, Parse_info.info) matcher
+
 (*
-    val tokenf : (A.info, B.info) matcher
 
     val envf : (Metavars_php.mvar Ast_php.wrap, Ast_php.any) matcher
     (* ugly hack for the "A" string metavariables *)
@@ -154,15 +155,7 @@ let rec m_list f a b =
 (* tokens *)
 (* ---------------------------------------------------------------------- *)
 let m_tok a b =
-  let a1 = Parse_info.str_of_info a in
-  let b1 = Parse_info.str_of_info b in
-  if a1 =$= b1
-  then
-    return (
-      a,
-      b
-    )
-  else fail ()
+  X.tokenf a b
 
 (* ---------------------------------------------------------------------- *)
 (* list isos *)

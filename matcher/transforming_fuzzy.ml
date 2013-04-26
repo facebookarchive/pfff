@@ -110,6 +110,43 @@ module XMATCH = struct
   (* Environment *) 
   (* ------------------------------------------------------------------------*)
 
+  let subst_metavars env x =
+    (* TODO *)
+    x
+
+  (* when a transformation contains a '+' part, as in 
+   * - 2
+   * + bar(X)
+   * 
+   * then before applying the transformation we need first to
+   * substitute all metavariables by their actual binded value
+   * in the environment.
+   *)
+  let adjust_transfo_with_env env transfo = 
+     match transfo with
+     | PI.NoTransfo 
+     | PI.Remove -> transfo
+
+     | PI.AddBefore add ->
+         PI.AddBefore (subst_metavars env add)
+     | PI.AddAfter add ->
+         PI.AddAfter (subst_metavars env add)
+     | PI.Replace add ->
+         PI.Replace (subst_metavars env add)
+
+  (* propagate the transformation info *)
+  let tokenf a b = fun tin ->
+    
+    let a1 = Parse_info.str_of_info a in
+    let b1 = Parse_info.str_of_info b in
+    if a1 =$= b1
+    then begin
+      let transfo = a.PI.transfo in
+      b.PI.transfo <- adjust_transfo_with_env tin transfo;   
+      return (a, b) tin
+    end
+    else fail tin
+
 end
 
 (*****************************************************************************)

@@ -25,7 +25,7 @@ module type PARAM =
     (* -------------------------------------------------------------------- *)
     (* Tokens tagging *)
     (* -------------------------------------------------------------------- *)
-(*    val tokenf :     (Ast_php.info,  Ast_php.info) matcher *)
+    val tokenf :     (Parse_info.info,  Parse_info.info) matcher
 
     (* -------------------------------------------------------------------- *)
     (* Distr_f functions, to tag a range of tokens *)

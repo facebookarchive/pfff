@@ -105,6 +105,17 @@ module XMATCH = struct
   (* Environment *) 
   (* ------------------------------------------------------------------------*)
 
+  let tokenf a b = 
+    let a1 = Parse_info.str_of_info a in
+    let b1 = Parse_info.str_of_info b in
+    if a1 =$= b1
+    then
+      return (
+        a,
+        b
+      )
+    else fail
+
 end
 
 (*****************************************************************************)
