@@ -244,7 +244,7 @@
    (join-string 
     (list 
      "-debugger"
-     (case 40
+     (case 50
 
        (0 "-send_mail_transfo /home/pad/pfff/tests/spatch/send_mail.php")
        (1 "-fbt_xhp_izer /home/pad/pfff/tests/php/spatch/fbt.php ")
@@ -263,6 +263,7 @@
        (20 "-f /tmp/test.spatch /tmp/test.php")
 
        (40 "-e s/foo(X);// /home/pad/pfff/demos/foo.php")
+       (50 " -lang c++ -f /home/pad/pfff/tests/cpp/spatch/namespace.spatch /home/pad/pfff/tests/cpp/spatch/namespace.cpp")
 
        (100 "-test")
        )

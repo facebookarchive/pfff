@@ -59,8 +59,18 @@ let pr2 s =
  
 let parse_pattern file =
   match !lang with
-  | "php" -> Left (Spatch_php.parse file)
-  | "c++" -> Right (Spatch_fuzzy.parse file)
+  | "php" -> 
+      Left (Spatch_php.parse file)
+  | "c++" -> 
+      let parse str =
+        Common2.with_tmp_file ~str ~ext:"cpp" (fun tmpfile ->
+          Parse_cpp.parse_fuzzy tmpfile
+        )
+      in
+      Right (Spatch_fuzzy.parse 
+                ~pattern_of_string:parse
+                ~ii_of_pattern:Ast_fuzzy.ii_of_trees
+                file)
   | _ -> failwith ("unsupported language: " ^ !lang)
 
 let find_source_files_of_dir_or_files xs =
