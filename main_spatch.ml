@@ -101,7 +101,10 @@ let spatch pattern file =
     let was_modified = Spatch_fuzzy.spatch pattern trees in
 
     let elts_of_tok tok =
-      raise Todo
+      Lib_unparser.elts_of_any 
+        ~elt_of_tok:Token_helpers_cpp.elt_of_tok
+        ~info_of_tok:Token_helpers_cpp.info_of_tok 
+        tok
     in
     let unparse toks = 
       Lib_unparser.string_of_toks_using_transfo ~elts_of_tok toks

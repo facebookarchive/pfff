@@ -30,7 +30,8 @@ INCLUDEDIRS= \
  $(TOP)/commons $(TOP)/commons/ocamlextra \
  $(TOP)/commons/lib-sexp $(TOP)/commons/lib-json \
  $(TOP)/globals \
- $(TOP)/h_program-lang
+ $(TOP)/h_program-lang \
+ $(TOP)/matcher
 
 ##############################################################################
 # Generic variables

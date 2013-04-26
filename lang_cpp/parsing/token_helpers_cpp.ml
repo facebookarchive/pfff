@@ -772,6 +772,7 @@ let visitor_info_of_tok f = function
 
   | EOF                  (i) -> EOF                  (f i) 
 
+
 (*****************************************************************************)
 (* Accessors *)
 (*****************************************************************************)
@@ -795,3 +796,19 @@ let is_fake x =
   match pinfo_of_tok x with Parse_info.FakeTokStr _ -> true | _ -> false
 let is_abstract x =
   match pinfo_of_tok x with Parse_info.Ab -> true | _ -> false
+
+(*****************************************************************************)
+(* For unparsing *)
+(*****************************************************************************)
+
+open Lib_unparser
+
+let elt_of_tok tok =
+  let str = str_of_tok tok in
+  match tok with
+  | TComment _ | TComment_Pp _ | TComment_Cpp _ -> Esthet (Comment str)
+  | TCommentSpace _ -> Esthet (Space str)
+  | TCommentNewline _ -> Esthet Newline
+  (* just after a ?>, the newline are not anymore TNewline but that *)
+  (*| T_INLINE_HTML ("\n", _) -> Esthet Newline *)
+  | _ -> OrigElt str

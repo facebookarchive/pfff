@@ -50,3 +50,6 @@ val is_origin : Parser_cpp.token -> bool
 val is_expanded : Parser_cpp.token -> bool
 val is_fake : Parser_cpp.token -> bool
 val is_abstract : Parser_cpp.token -> bool
+
+(* for unparsing *)
+val elt_of_tok: Parser_cpp.token -> Lib_unparser.elt
