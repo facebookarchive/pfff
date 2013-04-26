@@ -131,6 +131,7 @@ let fail () =
 (* option, list, ref, either *)
 (* ---------------------------------------------------------------------- *)
 
+(*
 let rec m_list f a b =
   match a, b with
   | [], [] ->
@@ -147,6 +148,7 @@ let rec m_list f a b =
   | [], _
   | _::_, _ ->
       fail ()
+*)
 
 (* ---------------------------------------------------------------------- *)
 (* tokens *)
@@ -169,6 +171,14 @@ let rec m_list__m_tree xsa xsb =
     match xsa, xsb with
   | [], [] ->
       return ([], [])
+
+  | [A.Tok t], bbs when Parse_info.str_of_info t =$= "..." ->
+    (* todo: should it annot on t *)
+      return (
+        xsa,
+        xsb
+      )
+
 
   | xa::aas, xb::bbs ->
       m_tree xa xb >>= (fun (xa, xb) ->

@@ -157,7 +157,15 @@ let sgrep pattern file =
       pattern 
       file 
   | "c++", Right pattern ->
-    let ast = Parse_cpp.parse_fuzzy file in
+    let ast = 
+      try 
+        Common.save_excursion Flag_parsing_cpp.verbose_lexing false (fun () ->
+        Parse_cpp.parse_fuzzy file 
+        )
+      with exn ->
+        pr2 (spf "PB with %s, exn = %s"  file (Common.exn_to_s exn));
+        []
+    in
     Sgrep_fuzzy.sgrep
       ~hook:(fun env matched_tokens ->
         print_match !mvars env Ast_fuzzy.ii_of_trees matched_tokens
