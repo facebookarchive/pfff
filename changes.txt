@@ -1,6 +1,6 @@
 -*- org -*-
 
-* 0.24 (Q2 2013) (web-codemap, web-codegraph, ast_fuzzy)
+* 0.24 (Q2 2013) (web-codemap, web-codegraph, generalized sgrep/spatch)
 
 ** web: resume work on ocsigen, port to eliom3, js_of_ocaml
 also assume OPAM for web/ (but not for the rest of pfff/ so people
@@ -21,6 +21,7 @@ don't need OPAM to compile most of pfff)
 *** use graph_code as an entity finder
 
 *** ranking and filtering of errors via -filter <n> or -rank
+
 
 ** sgrep/spatch
 
@@ -213,7 +214,7 @@ update: not used
 
 * -----------------------------------------------------------
 
-* 0.14 (Q4 2010) (layers, spatch, more language highlighters)
+* 0.14 (Q4 2010) (layers, spatch php, more language highlighters)
 
 ** codemap
 
@@ -320,7 +321,7 @@ update: also useful for codegraph backend.
 
 first public release!
 
-* 0.12 (Q3 2010) (codemap, light db, tags, scheck, ocaml/js parsers)
+* 0.12 (Q3 2010) (codemap, light db, tags php, scheck php, ocaml/js parsers)
 
 Real start of multi-language support.
 
@@ -408,7 +409,7 @@ analysis, etc.
 to grab all the files needed to check one file, in a way similar
 to what gcc does with cpp. Provide a DFS and BFS algo.
 
-* 0.10 (Q2 2010) (test coverage)
+* 0.10 (Q2 2010) (test coverage php)
 
 ** finish test coverage analysis using xdebug.ml and phpunit.ml
 rank, filter, parallelize (using MPI), cronize.
@@ -473,7 +474,7 @@ update: not used for now
 ** internals
 reorganized json/sexp output, factorize code and use more ocaml.ml
 
-* 0.8 (Q1 2010) (sgrep, treemap, xdebug dynamic analysis)
+* 0.8 (Q1 2010) (sgrep php, treemap, xdebug dynamic analysis)
 
 ** xdebug trace parsing, can now do dynamic analysis! 
 Done for type "inference/extraction" at the beginnning and useful
