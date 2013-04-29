@@ -12,6 +12,9 @@
 *.exe
 *.class
 
+*.clang2
+*.clang
+
 # codegraph
 pfff.log
 
