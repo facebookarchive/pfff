@@ -130,7 +130,7 @@ let look_like_class_re =
 (*****************************************************************************)
 
 let _hmemo = Hashtbl.create 101
-let parse2 file =
+let parse2 env file =
   try
     Common.save_excursion Ast_php_simple_build.store_position true (fun () ->
     Common.save_excursion Flag_parsing_php.strict_lexer true (fun () ->
@@ -141,15 +141,16 @@ let parse2 file =
   with
   | Timeout -> raise Timeout
   | exn ->
-    pr2_once (spf "PARSE ERROR with %s, exn = %s" file (Common.exn_to_s exn));
+    env.pr2_and_log 
+      (spf "PARSE ERROR with %s, exn = %s" file (Common.exn_to_s exn));
     []
-let parse a =
+let parse env a =
   (* on huge codebase naive memoization stresses too much the GC.
    * We marshall a la juju so the heap graph is smaller at least.
    *)
   Marshal.from_string
     (Common.memoized _hmemo a (fun () ->
-      Marshal.to_string (parse2 a) []
+      Marshal.to_string (parse2 env a) []
      )) 0
 
 let privacy_of_field def =
@@ -272,7 +273,12 @@ let rec add_use_edge env (((str, tok) as name, kind)) =
               else
                 if file =~ ".*third-party" || file =~ ".*third_party"
                 then (fun _s -> ())
-                else env.log
+                else 
+                  (match kind with
+                  | E.Function | E.Class _ | E.ClassConstant
+                    -> env.pr2_and_log
+                  | _ -> env.log
+                  )
             in
             f (spf "PB: lookup fail on %s (at %s)"(G.string_of_node dst) file);
             env.g +> G.add_edge (parent_target, dst) G.Has;
@@ -783,7 +789,7 @@ let build
     List.iter (fun file ->
       k();
       let readable = Common.filename_without_leading_path root file in
-      let ast = parse file in
+      let ast = parse env file in
       (* will modify env.dupes instead of raise Graph_code.NodeAlreadyPresent *)
       extract_defs_uses { env with phase = Defs} ast readable;
    ));
@@ -840,7 +846,7 @@ let build
       List.iter (fun file ->
         k();
         let readable = Common.filename_without_leading_path root file in
-        let ast = parse file in
+        let ast = parse env file in
         extract_defs_uses { env with phase = Inheritance} ast readable
       ));
 
@@ -850,7 +856,7 @@ let build
       List.iter (fun file ->
         k();
         let readable = Common.filename_without_leading_path root file in
-        let ast = parse file in
+        let ast = parse env file in
         extract_defs_uses {env with phase = Uses} ast readable
    ));
   end;
