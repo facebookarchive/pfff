@@ -1,3 +1,3 @@
-<?php
+<?hh
 
 const int CST = 0;

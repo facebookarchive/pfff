@@ -1,4 +1,4 @@
-<?php
+<?hh
 
 // sphp allows that
 function id(?A $x): int { 
