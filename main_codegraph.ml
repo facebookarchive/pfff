@@ -488,6 +488,23 @@ let test_thrift_alive graph_file =
     end
   done
 
+
+(* quite similar to analyze_backward_deps *)
+let test_pad graph_file =
+  let g = GC.load graph_file in
+  g +> GC.iter_use_edges (fun n1 n2 ->
+    let file = GC.file_of_node n2 g in
+    if file =~ ".*flib/intern/thrift/lib"
+    then begin
+      let file2 = GC.file_of_node n1 g in
+      if file2 =~ ".*tests/" || file2 =~ ".*/__tests__/.*"
+      then begin
+        pr2_once (spf "%s --> %s" file2 file);
+        (*pr2 (spf " %s --> %s" (GC.string_of_node n1) (GC.string_of_node n2));*)
+      end
+    end
+  )
+
 (* ---------------------------------------------------------------------- *)
 (* Phylomel *)
 (* ---------------------------------------------------------------------- *)
@@ -600,6 +617,8 @@ let extra_actions () = [
   );
   "-thrift_alive", " <graph>",
   Common.mk_action_1_arg test_thrift_alive;
+  "-test_pad", " <graph>",
+  Common.mk_action_1_arg test_pad;
 (*
   "-test_phylomel", " <geno file>",
   Common.mk_action_1_arg test_phylomel;
