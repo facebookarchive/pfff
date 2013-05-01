@@ -283,7 +283,10 @@ let rec add_use_edge env (((str, tok) as name, kind)) =
                 then (fun _s -> ())
                 else 
                   (match kind with
-                  | E.Function | E.Class _ | E.ClassConstant
+                  | E.Function 
+(* TODO, fix those too
+                  | E.Class _ | E.ClassConstant
+*)
                     -> env.pr2_and_log
                   | _ -> env.log
                   )
