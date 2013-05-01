@@ -122,9 +122,6 @@ type env = {
    *)
   and phase = Defs | Inheritance | Uses
 
-let look_like_class_re =
-  Str.regexp "^\\([A-Z][A-Za-z_0-9]*\\)\\(::[A-Za-z_0-9]*\\)?$"
-
 (*****************************************************************************)
 (* Helpers *)
 (*****************************************************************************)
@@ -152,6 +149,17 @@ let parse env a =
     (Common.memoized _hmemo a (fun () ->
       Marshal.to_string (parse2 env a) []
      )) 0
+
+let look_like_class_sure =
+  Str.regexp "^\\([A-Z][A-Za-z_0-9]*\\)\\(::[A-Za-z_0-9]*\\)$"
+let look_like_class_maybe =
+  Str.regexp "^\\([A-Z][A-Za-z_0-9]*[A-Z][A-Za-z_0-9]*\\)$"
+
+let look_like_class s =
+  match s with
+  | s when s ==~ look_like_class_sure -> true
+  | s when s ==~ look_like_class_maybe -> true
+  | _ -> false
 
 let privacy_of_field def =
   (* yes, default is public ... love PHP *)
@@ -508,7 +516,8 @@ and expr env x =
   | Int _ | Double _  -> ()
 
   (* a String in PHP can actually hide a class (or a function) *)
-  | String (s, tok) when s ==~ look_like_class_re ->
+  | String (s, tok) when look_like_class s ->
+    (* less: could also be a class constant or field or method *)
     let entity = Common.matched1 s in
     (* less: do case insensitive? handle conflicts? *)
     if G.has_node (entity, E.Class E.RegularClass) env.g

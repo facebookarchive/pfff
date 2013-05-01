@@ -12,6 +12,13 @@ class AClass {
   }
 }
 
+class AnotherClass {
+}
+
+class Anotherclassagain {
+}
+
+
 class Exception {
 }
 
