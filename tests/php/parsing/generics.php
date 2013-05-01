@@ -1,6 +1,4 @@
-<?php
-
-// sphp extensions
+<?hh
 
 // generic classes
 class A<T1, T2> {
@@ -13,8 +11,8 @@ interface I<T> { }
 trait T<T> { }
 
 // generic functions
-function id<T>(T $x): T { 
-  return $x; 
+function id<T>(T $x): T {
+  return $x;
 }
 
 // use of type arguments
