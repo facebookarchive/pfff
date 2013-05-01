@@ -158,9 +158,9 @@ let look_like_class_maybe =
 let look_like_class s =
   match s with
   | s when s ==~ look_like_class_sure -> true
-(* TODO: too many fps in thrift code
-  | s when s ==~ look_like_class_maybe -> true
-*)
+  (* todo: too many fps in thrift code
+   * | s when s ==~ look_like_class_maybe -> true
+   *)
   | _ -> false
 
 let privacy_of_field def =
@@ -269,9 +269,9 @@ let rec add_use_edge env (((str, tok) as name, kind)) =
           G.add_node dst env.g;
           let parent_target = G.not_found in
           (match kind with
-          (* TODO, fix those *)
+          (* todo: fix those *)
           | E.Field -> ()
-          (* TODO, handled __call? *)
+          (* todo: handle __call? *)
           | E.Method _ when str =~ ".*\\.gen.*" || str =~ ".*\\.get.*" -> ()
 
           (* | E.Method _  | E.ClassConstant ->          () *)
@@ -286,9 +286,9 @@ let rec add_use_edge env (((str, tok) as name, kind)) =
                 else 
                   (match kind with
                   | E.Function 
-(* TODO, fix those too
+                    (* todo: fix those too
                   | E.Class _ | E.ClassConstant
-*)
+                    *)
                     -> env.pr2_and_log
                   | _ -> env.log
                   )
@@ -304,7 +304,7 @@ let rec add_use_edge env (((str, tok) as name, kind)) =
 (* Lookup *)
 (*****************************************************************************)
 
-(* todo: handle privacy? *)
+(* less: handle privacy? *)
 let lookup2 g (aclass, amethod_or_field_or_constant) tok =
   let rec depth current =
     if not (G.has_node current g)
@@ -568,7 +568,7 @@ and expr env x =
         expr env (Call (Class_get (Id (env.self, tok), e2), es))
     | Class_get (Id ("__special__parent", tok), e2) ->
         expr env (Call (Class_get (Id (env.parent, tok), e2), es))
-    (* TODO: incorrect actually ... but good enough for now for codegraph *)
+    (* less: incorrect actually ... but good enough for now for codegraph *)
     | Class_get (Id ("__special__static", tok), e2) ->
         expr env (Call (Class_get (Id (env.self, tok), e2), es))
 
@@ -627,7 +627,7 @@ and expr env x =
         expr env (Class_get (Id (env.self, tok), e2))
       | Id ("__special__parent", tok), _ ->
         expr env (Class_get (Id (env.parent, tok), e2))
-      (* TODO: incorrect actually ... but good enough for now for codegraph *)
+      (* less: incorrect actually ... but good enough for now for codegraph *)
       | Id ("__special__static", tok), _ ->
         expr env (Class_get (Id (env.self, tok), e2))
 
