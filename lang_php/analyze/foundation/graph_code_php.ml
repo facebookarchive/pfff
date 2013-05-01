@@ -158,7 +158,9 @@ let look_like_class_maybe =
 let look_like_class s =
   match s with
   | s when s ==~ look_like_class_sure -> true
+(* TODO: too many fps in thrift code
   | s when s ==~ look_like_class_maybe -> true
+*)
   | _ -> false
 
 let privacy_of_field def =
