@@ -1,9 +1,8 @@
 <?hh
 
-// sphp allows that
-function id(?A $x): int { 
+function id(?A $x): int {
   return $x;
-} 
+}
 
 function foo(mixed $x): int { }
 
