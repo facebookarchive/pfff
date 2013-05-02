@@ -915,7 +915,11 @@ and map_lexical_var =
       let v1 = map_is_ref v1 and v2 = map_dname v2 in LexicalVar ((v1, v2))
 
 and
-  map_namespace_def x = x
+  map_namespace_def x = 
+  let k v1 = map_name v1
+  in
+  vin.knamespace_def (k, all_functions) x
+
 and
   map_class_def x =
   let rec k {
