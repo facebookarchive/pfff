@@ -608,6 +608,7 @@ and constant_def = tok * name * tok (* = *) * static_scalar * tok (* ; *)
  * to be so specific, so I factorized things. Classes/interfaces/traits
  * are not that different. Interfaces are really just abstract traits.
  *)
+and namespace_def = fully_qualified_class_name
 and class_def = {
   c_attrs: attributes option;
   c_type: class_type;
@@ -796,6 +797,7 @@ and toplevel =
   (*x: toplevel constructors *)
     | FinalDef of tok (* EOF *)
   (*e: toplevel constructors *)
+    | NamespaceDef of namespace_def
  and program = toplevel list
  (*s: tarzan annotation *)
   (* with tarzan *)
@@ -815,6 +817,7 @@ and toplevel =
 type entity =
   | FunctionE of func_def
   | ClassE of class_def
+  | NamespaceE of namespace_def
   | ConstantE of constant_def
   | StmtListE of stmt list
 

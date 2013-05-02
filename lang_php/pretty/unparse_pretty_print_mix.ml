@@ -154,6 +154,7 @@ let split_chunks tokens ast =
 
       | Ast_php.FinalDef _ 
       | Ast_php.NotParsedCorrectly _
+      | Ast_php.NamespaceDef _ 
         -> raise Impossible
   in
   aux ast tokens

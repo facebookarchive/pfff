@@ -48,6 +48,8 @@ let is_just_comment = function
 
 let info_of_tok = function
   | TUnknown ii -> ii
+  | T_BACKSLASH ii -> ii
+  | T_NAMESPACE ii -> ii
   | TSpaces ii -> ii
   | TNewline ii -> ii
   | TCommentPP ii -> ii
@@ -236,6 +238,8 @@ let info_of_tok = function
 
 let visitor_info_of_tok f = function
   | TUnknown ii -> TUnknown(f ii)
+  | T_BACKSLASH ii -> T_BACKSLASH(f ii)
+  | T_NAMESPACE ii -> T_NAMESPACE(f ii)
   | TSpaces ii -> TSpaces(f ii)
   | TNewline ii -> TNewline(f ii)
   | TCommentPP ii -> TCommentPP(f ii)
