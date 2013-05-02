@@ -283,6 +283,7 @@ let rec toplevel env st acc =
       let s = name env cst_name in
       A.ConstantDef { Ast_pp.cst_name = s; cst_body = e } :: acc
   | NotParsedCorrectly _ -> raise Common.Impossible
+  | NamespaceDef _ -> acc
 
 and stmt env st acc =
   let line = last_line_of_stmt st in

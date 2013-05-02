@@ -12,6 +12,7 @@ type visitor_in = {
     (class_name_or_kwd -> class_name_or_kwd) * visitor_out -> 
      class_name_or_kwd -> class_name_or_kwd;
   kclass_def:  (class_def -> class_def) * visitor_out -> class_def -> class_def;
+  knamespace_def:  (namespace_def -> namespace_def) * visitor_out -> namespace_def -> namespace_def;
   kinfo: (tok -> tok) * visitor_out -> tok -> tok;
                                                                             
 }

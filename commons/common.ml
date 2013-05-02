@@ -829,16 +829,23 @@ let write_file ~file s =
 let filemtime file =
   (Unix.stat file).Unix.st_mtime
 
-external c_realpath: string -> string option = "caml_realpath"
-
+(*external c_realpath: string -> string option = "caml_realpath"
+*)
+(*
 let realpath2 path =
   match c_realpath path with
   | Some s -> s
   | None -> failwith (spf "problem with realpath on %s" path)
-
+*)
 let realpath path =
-  profile_code "Common.realpath" (fun () -> realpath2 path)
+  match cmd_to_list (spf "realpath %s" path) with
+  | [s] -> s
+  | xs ->
+     failwith (spf "problem with realpath on %s: %s " path (unlines xs))
 
+(*let realpath path =
+  profile_code "Common.realpath" (fun () -> realpath2 path)
+*)
 (* Why a use_cache argument ? because sometimes want disable it but dont
  * want put the cache_computation funcall in comment, so just easier to
  * pass this extra option.

@@ -34,7 +34,7 @@ type visitor_in = {
     (class_name_or_kwd -> class_name_or_kwd) * visitor_out ->
      class_name_or_kwd -> class_name_or_kwd;
   kclass_def:  (class_def -> class_def) * visitor_out -> class_def -> class_def;
-
+  knamespace_def:  (namespace_def -> namespace_def) * visitor_out -> namespace_def -> namespace_def;
   kinfo: (tok -> tok) * visitor_out -> tok -> tok;
 
 }
@@ -58,6 +58,7 @@ let default_visitor =
     kqualifier = (fun (k,_) x -> k x);
     kclass_name_or_kwd = (fun (k,_) x -> k x);
     kclass_def = (fun (k,_) x -> k x);
+    knamespace_def = (fun (k,_) x -> k x);
     kinfo = (fun (k,_) x -> k x);
   }
 
@@ -912,6 +913,9 @@ and map_lexical_var =
   function
   | LexicalVar ((v1, v2)) ->
       let v1 = map_is_ref v1 and v2 = map_dname v2 in LexicalVar ((v1, v2))
+
+and
+  map_namespace_def x = x
 and
   map_class_def x =
   let rec k {
@@ -1122,12 +1126,14 @@ and map_toplevel =
   | NotParsedCorrectly v1 ->
       let v1 = map_of_list map_info v1 in NotParsedCorrectly ((v1))
   | FinalDef v1 -> let v1 = map_info v1 in FinalDef ((v1))
+  | NamespaceDef v1 -> let v1 = map_namespace_def v1 in NamespaceDef ((v1))
 and map_program v = map_of_list map_toplevel v
 
 and map_entity =
   function
   | FunctionE v1 -> let v1 = map_func_def v1 in FunctionE ((v1))
   | ClassE v1 -> let v1 = map_class_def v1 in ClassE ((v1))
+  | NamespaceE v1 -> let v1 = map_namespace_def v1 in NamespaceE ((v1))
   | StmtListE v1 -> let v1 = map_of_list map_stmt v1 in StmtListE ((v1))
   | MethodE v1 -> let v1 = map_method_def v1 in MethodE ((v1))
   | ConstantE v1 -> let v1 = map_constant_def v1 in ConstantE v1

@@ -946,6 +946,8 @@ and vof_lambda_def (v1, v2) =
   in Ocaml.VTuple [ v1; v2 ]
 
 and
+  vof_namespace_def x = vof_name x
+and 
   vof_class_def {
                   c_type = v_c_type;
                   c_name = v_c_name;
@@ -1182,6 +1184,7 @@ and vof_toplevel =
       let v1 = vof_list vof_info v1
       in Ocaml.VSum (("NotParsedCorrectly", [ v1 ]))
   | FinalDef v1 -> let v1 = vof_info v1 in Ocaml.VSum (("FinalDef", [ v1 ]))
+  | NamespaceDef v1 -> let v1 = vof_namespace_def v1 in Ocaml.VSum (("NamespaceDef", [ v1 ]))
 and vof_program v =
   profile_code "vof_program" (fun () ->
     vof_list vof_toplevel v
@@ -1192,6 +1195,7 @@ and vof_entity =
   | FunctionE v1 ->
       let v1 = vof_func_def v1 in Ocaml.VSum (("FunctionE", [ v1 ]))
   | ClassE v1 -> let v1 = vof_class_def v1 in Ocaml.VSum (("ClassE", [ v1 ]))
+  | NamespaceE v1 -> let v1 = vof_namespace_def v1 in Ocaml.VSum (("NamespaceE", [ v1 ]))
   | StmtListE v1 ->
       let v1 = Ocaml.vof_list vof_stmt v1
       in Ocaml.VSum (("StmtListE", [ v1 ]))

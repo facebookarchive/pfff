@@ -36,6 +36,7 @@ type visitor_in = {
    *)
   kfunc_def:  (func_def -> unit) * visitor_out -> func_def -> unit;
   kclass_def:  (class_def -> unit) * visitor_out -> class_def -> unit;
+  knamespace_def:  (namespace_def -> unit) * visitor_out -> namespace_def -> unit;
 
   kmethod_def: (method_def -> unit) * visitor_out -> method_def -> unit;
 

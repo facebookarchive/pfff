@@ -154,6 +154,7 @@ let keyword_table = Common.hash_of_list [
 
   (* used for traits and namespace *)
   "use",             (fun ii -> T_USE ii);
+  "namespace",       (fun ii -> T_NAMESPACE ii);
 
   "class",           (fun ii -> T_CLASS ii);
   "new",             (fun ii -> T_NEW ii);
@@ -570,6 +571,8 @@ rule st_in_scripting = parse
     | '.'  { TDOT(tokinfo lexbuf) }
     | ','  { TCOMMA(tokinfo lexbuf) }
     | '@'  { T__AT(tokinfo lexbuf) }
+
+    | "\\" { T_BACKSLASH(tokinfo lexbuf) }
 
     | "=>" { T_DOUBLE_ARROW(tokinfo lexbuf) }
     | "~"  { TTILDE(tokinfo lexbuf) }

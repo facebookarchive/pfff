@@ -87,6 +87,8 @@ type visitor_in = {
     (func_def -> unit) * visitor_out -> func_def -> unit;
   kclass_def:
     (class_def -> unit) * visitor_out -> class_def -> unit;
+  knamespace_def:
+    (namespace_def -> unit) * visitor_out -> namespace_def -> unit;
   kmethod_def:
     (method_def -> unit) * visitor_out -> method_def -> unit;
 
@@ -135,6 +137,7 @@ let default_visitor =
     kfunc_def = (fun (k,_) x -> k x);
     kmethod_def = (fun (k,_) x -> k x);
     kclass_def = (fun (k,_) x -> k x);
+    knamespace_def = (fun (k,_) x -> k x);
 
     kcomma   = (fun (k,_) x -> k x);
 
@@ -915,6 +918,7 @@ and v_hint_type x =
   vin.khint_type (k, all_functions) x
 
 and v_is_ref v = v_option v_tok v
+and v_namespace_def x = v_fully_qualified_class_name x
 and
   v_class_def x =
   let rec k {
@@ -1107,6 +1111,8 @@ and v_toplevel x =
       v_list v_info xs
   | FinalDef v1 ->
       v_info v1
+  | NamespaceDef v1 ->
+     let v1 = v_namespace_def v1 in ()
   in
   vin.ktop (k, all_functions) x
 
@@ -1115,6 +1121,7 @@ and v_program v = v_list v_toplevel v
 and v_entity = function
   | FunctionE v1 -> let v1 = v_func_def v1 in ()
   | ClassE v1 -> let v1 = v_class_def v1 in ()
+  | NamespaceE v1 -> let v1 = v_namespace_def v1 in ()
   | ConstantE v1 -> let v1 = v_constant_def v1 in ()
   | StmtListE v1 -> let v1 = v_list v_stmt v1 in ()
   | MethodE v1 -> let v1 = v_method_def v1 in ()

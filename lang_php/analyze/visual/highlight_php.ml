@@ -699,9 +699,11 @@ let visit_toplevel ~tag prefs  hentities (toplevel, toks) =
 
     | T.EOF ii -> ()
     | T.TUnknown ii -> tag ii Error
+    | T.T_NAMESPACE ii -> ()
 
     | T.TNewline ii -> ()
     | T.TSpaces ii -> ()
+    | T.T_BACKSLASH ii -> ()
 
     | T.TCommentPP ii -> ()
 
