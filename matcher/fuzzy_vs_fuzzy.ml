@@ -32,15 +32,6 @@ module MV = Metavars_fuzzy
  * a flexible way.
  *)
 
-
-(*****************************************************************************)
-(* Globals *)
-(*****************************************************************************)
-
-(*****************************************************************************)
-(* Helpers *)
-(*****************************************************************************)
-
 (*****************************************************************************)
 (* Functor parameter combinators *)
 (*****************************************************************************)
@@ -69,7 +60,7 @@ module type PARAM =
      *)
     type ('a, 'b) matcher = 'a -> 'b  -> tin -> ('a * 'b) tout
 
-    (* The >>= combinator below allow you to configure the matching process
+    (* The >>= combinator below allows you to configure the matching process
      * anyway you want. Essentially this combinator takes a matcher,
      * another matcher, and returns a matcher that combine the 2
      * matcher arguments.
@@ -129,49 +120,26 @@ let fail () =
   X.fail
 
 (* ---------------------------------------------------------------------- *)
-(* option, list, ref, either *)
-(* ---------------------------------------------------------------------- *)
-
-(*
-let rec m_list f a b =
-  match a, b with
-  | [], [] ->
-      return ([], [])
-  | xa::aas, xb::bbs ->
-      f xa xb >>= (fun (xa, xb) ->
-      m_list f aas bbs >>= (fun (aas, bbs) ->
-        return (
-          xa::aas,
-          xb::bbs
-        )
-      )
-      )
-  | [], _
-  | _::_, _ ->
-      fail ()
-*)
-
-(* ---------------------------------------------------------------------- *)
 (* tokens *)
 (* ---------------------------------------------------------------------- *)
 let m_tok a b =
   X.tokenf a b
 
 (* ---------------------------------------------------------------------- *)
-(* list isos *)
+(* list of trees *)
 (* ---------------------------------------------------------------------- *)
 let rec m_list__m_tree xsa xsb =
     match xsa, xsb with
   | [], [] ->
       return ([], [])
 
-  | [A.Tok t], bbs when Parse_info.str_of_info t =$= "..." ->
-    (* todo: should it annot on t *)
+  (* iso: allow "..." to match any list of trees *)
+  | [A.Tok t],  bbs    when Parse_info.str_of_info t =$= "..." ->
+    (* todo: check no annot on t *)
       return (
         xsa,
         xsb
       )
-
 
   | xa::aas, xb::bbs ->
       m_tree xa xb >>= (fun (xa, xb) ->
@@ -188,7 +156,7 @@ let rec m_list__m_tree xsa xsb =
 
 
 (* ---------------------------------------------------------------------- *)
-(* trees *)
+(* tree *)
 (* ---------------------------------------------------------------------- *)
 and m_tree a b =
   match a, b with
@@ -226,7 +194,6 @@ and m_tree a b =
         B.Tok b1
       )
     )
-
 
   | A.Braces _, _
   | A.Parens _, _
