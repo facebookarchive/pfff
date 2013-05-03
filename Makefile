@@ -672,6 +672,10 @@ pull:
 	git pull
 	cd facebook; git pull
 
+fbpull:
+	proxycmd.sh git pull
+	cd facebook; git pull
+
 fb:
 	$(MAKE)
 	$(MAKE) -C facebook
