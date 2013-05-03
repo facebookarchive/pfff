@@ -22,30 +22,28 @@ open Parse_info
 (*****************************************************************************)
 (*
  * There are multiple ways to unparse code:
- *  - one can iterate over the AST, and print its leaves, but 
- *    comments and spaces are not in the AST right now so you need
- *    some extra code that also visits the tokens and try to "sync" the
- *    visit of the AST with the tokens
+ *  - one can iterate over an AST (or better CST), and print its leaves, but 
+ *    comments and spaces are usually not in the CST (and for a good reason)
+ *    so you need  some extra code that also visits the tokens and try 
+ *    to "sync" the visit of the CST with the tokens
+ *  - one can use a real pretty printer with a boxing or backtracking model
+ *    working on an AST extended with comments (see julien's ast_pretty_print/)
  *  - one can iterate over the tokens, where comments and spaces are normal
  *    citizens, but this can be too low level
- *  - one can use a real pretty printer with a boxing or backtracking model
- *    working on a AST extended with comments (see julien's ast_pretty_print/)
  * 
- * Right now the preferred method for spatch is the second one. The pretty
+ * Right now the preferred method for spatch is the last one. The pretty
  * printer currently is too different from our coding conventions
  * (also because we don't have precise coding conventions).
- * This token-based unparser handles transfo annotations (Add/Remove).
- * This is the approach used in Coccinelle.
- * 
- * related: the sexp/json "exporters".
+ * This token-based unparser handles transformation annotations (Add/Remove).
+ * This was also the approach used in Coccinelle.
  *)
 
 (*****************************************************************************)
 (* Types *)
 (*****************************************************************************)
 
-(* intermediate representations easier to work on, more convenient to
- * program heuristics that try to maintain some good indentation
+(* Intermediate representations easier to work on; more convenient to
+ * program heuristics which try to maintain some good indentation
  * and style.
  *)
 type elt =
@@ -88,17 +86,8 @@ and vof_esthet =
       let v1 = Ocaml.vof_string v1 in Ocaml.VSum (("Space", [ v1 ]))
 
 (*****************************************************************************)
-(* Transformation-aware unparser (using the tokens) *)
+(* Helpers *)
 (*****************************************************************************)
-
-(* 
- * The idea of the algorithm below is to iterate over all the tokens
- * and depending on the token 'transfo' annotation to print or not
- * the token as well as the comments/spaces associated with the token.
- * Note that if two tokens were annotated with a Remove, we
- * also want to remove the spaces between so we need a few heuristics
- * to try to maintain some good style.
- *)
 
 let s_of_add = function
   | AddStr s -> s
@@ -164,6 +153,15 @@ let drop_whole_line_if_only_removed xs =
 (*****************************************************************************)
 (* Main entry point *)
 (*****************************************************************************)
+
+(* 
+ * The idea of the algorithm below is to iterate over all the tokens
+ * and depending on the token 'transfo' annotation to print or not
+ * the token as well as the comments/spaces associated with the token.
+ * Note that if two tokens were annotated with a Remove, we
+ * also want to remove the spaces between so we need a few heuristics
+ * to maintain some good style.
+ *)
 
 let string_of_toks_using_transfo ~elts_of_tok toks =
 
