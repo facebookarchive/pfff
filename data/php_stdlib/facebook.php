@@ -64,8 +64,6 @@ class StringBuffer {
 // ------------------------------------------
 
 //TODO: autogenerate them too
-function photodna_jpeg_get_hashes($filename) { }
-
 function fbobj_hphp_register_config_func($str, $version) { }
 
 function fbobj_hphp_create(int $fbtype, int $profile, int $fbid, array
