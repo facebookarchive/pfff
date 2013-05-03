@@ -524,7 +524,11 @@ let juju_refactoring spec_file =
 (*---------------------------------------------------------------------------*)
 open OUnit
 let test () =
-  let suite = "spatch" >::: Unit_matcher_php.spatch_unittest in
+  let suite = "spatch" >::: (
+    Unit_matcher.spatch_unittest ++
+    Unit_matcher_php.spatch_unittest ++
+    []
+  ) in
   OUnit.run_test_tt suite +> ignore;
   ()
 

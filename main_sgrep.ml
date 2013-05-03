@@ -123,6 +123,12 @@ let gen_layer ~root ~query file =
   Layer_code.save_layer layer file;
   ()
   
+
+let ast_fuzzy_of_string str =
+  Common2.with_tmp_file ~str ~ext:"cpp" (fun tmpfile ->
+    Parse_cpp.parse_fuzzy tmpfile +> fst
+  )
+
 (*****************************************************************************)
 (* Language specific *)
 (*****************************************************************************)
@@ -131,12 +137,7 @@ let parse_pattern str =
   match !lang with
   | "php" -> Left (Sgrep_php.parse str)
   | "c++" -> 
-    let parse str =
-      Common2.with_tmp_file ~str ~ext:"cpp" (fun tmpfile ->
-        Parse_cpp.parse_fuzzy tmpfile +> fst
-      )
-    in
-    Right (parse str)
+    Right (ast_fuzzy_of_string str)
   | _ -> failwith ("unsupported language: " ^ !lang)
 
 let find_source_files_of_dir_or_files xs =
@@ -216,7 +217,15 @@ let dump_sgrep_php_pattern file =
 (*---------------------------------------------------------------------------*)
 open OUnit
 let test () =
-  let suite = "sgrep" >::: Unit_matcher_php.sgrep_unittest in
+  (* ugly: todo: use a toy fuzzy parser instead of the one in lang_cpp/ *)
+  Unit_matcher._parse_func := ast_fuzzy_of_string;
+
+  let suite = "sgrep" >::: (
+    Unit_matcher.sgrep_unittest ++
+    Unit_matcher_php.sgrep_unittest ++
+    []
+  )
+  in
   OUnit.run_test_tt suite +> ignore;
   ()
 
