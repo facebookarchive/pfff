@@ -675,6 +675,9 @@ pull:
 fbpull:
 	proxycmd.sh git pull
 	cd facebook; git pull
+fbpush:
+	proxycmd.sh git push
+	cd facebook; git push
 
 fb:
 	$(MAKE)
