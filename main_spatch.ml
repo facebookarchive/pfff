@@ -522,10 +522,24 @@ let juju_refactoring spec_file =
 (*---------------------------------------------------------------------------*)
 (* regression testing *)
 (*---------------------------------------------------------------------------*)
+
 open OUnit
 let test () =
+
   let suite = "spatch" >::: (
-    Unit_matcher.spatch_unittest ++
+  (* ugly: todo: use a toy fuzzy parser instead of the one in lang_cpp/ *)
+    Unit_matcher.spatch_unittest
+      ~ast_fuzzy_of_string:(fun str ->
+        Common2.with_tmp_file ~str ~ext:"cpp" (fun tmpfile ->
+          Parse_cpp.parse_fuzzy tmpfile +> fst
+        ))
+      ~parse_file:(fun file ->
+        Common.save_excursion Flag_parsing_cpp.verbose_lexing false (fun () ->
+          Parse_cpp.parse_fuzzy file
+        ))
+      ~elt_of_tok:Token_helpers_cpp.elt_of_tok
+      ~info_of_tok:Token_helpers_cpp.info_of_tok
+    ++
     Unit_matcher_php.spatch_unittest ++
     []
   ) in

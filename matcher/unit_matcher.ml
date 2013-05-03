@@ -5,18 +5,6 @@ open OUnit
 (* Helpers *)
 (*****************************************************************************)
 
-let (_parse_func: (string -> Ast_fuzzy.tree list) ref) = ref 
-  (fun s -> failwith "parse_func not defined")
-
-(* there is a circular dependency right now as lang_cpp/ depends on
- * matcher/ and matcher unit tests needs a fuzzy parser and so
- * needs lang_cpp/. At some point we could have a toy fuzzy parser
- * that simply use GenLex. For now we break the ciruclar dependency
- * by using function pointers set in main_sgrep.ml and main_spatch.ml.
- *)
-let ast_fuzzy_of_string str =
-  !_parse_func str
-
 (*****************************************************************************)
 (* Sgrep Unit tests *)
 (*****************************************************************************)
@@ -24,7 +12,7 @@ let ast_fuzzy_of_string str =
 (* See https://github.com/facebook/pfff/wiki/Sgrep *)
 
 (* run by sgrep -test *)
-let sgrep_unittest = [
+let sgrep_unittest ~ast_fuzzy_of_string = [
   "sgrep features" >:: (fun () ->
 
     (* spec: pattern string, code string, should_match boolean *)
@@ -59,10 +47,11 @@ let sgrep_unittest = [
 (* See https://github.com/facebook/pfff/wiki/Spatch *)
 
 (* run by spatch -test *)
-let spatch_unittest = [
+let spatch_unittest 
+    ~ast_fuzzy_of_string ~parse_file ~elt_of_tok ~info_of_tok = 
+  [
   "spatch regressions files" >:: (fun () ->
 
-(*  
     let testdir = Filename.concat Config_pfff.path "tests/fuzzy/spatch/" in
     let expfiles = Common2.glob (testdir ^ "*.exp") in
 
@@ -76,27 +65,39 @@ let spatch_unittest = [
         let spatchfile = prefix ^ ".spatch" in
         let srcfile = prefix ^ variant ^ ".fuzzy" in
 
-        
-        let _pattern = 
-          raise Todo
-          (* Spatch_php.parse spatchfile in *)
+        let pattern =
+          Spatch_fuzzy.parse
+            ~pattern_of_string:ast_fuzzy_of_string
+            ~ii_of_pattern:Ast_fuzzy.ii_of_trees
+            spatchfile
         in
-        let resopt = 
-          try 
-            raise Todo
-            (* Spatch_php.spatch pattern phpfile *)
-          with Failure s ->
-            assert_failure (spf "spatch on %s have resulted in exn = %s"
-                               srcfile s)
+        let trees, toks = 
+          parse_file srcfile
         in
-        
+        let was_modified = Spatch_fuzzy.spatch pattern trees in
+
+        let elts_of_tok tok =
+          Lib_unparser.elts_of_any 
+            ~elt_of_tok:elt_of_tok
+            ~info_of_tok:info_of_tok 
+            tok
+        in
+        let unparse toks = 
+          Lib_unparser.string_of_toks_using_transfo ~elts_of_tok toks
+        in
+        let resopt =
+          if was_modified
+          then Some (unparse toks)
+          else None
+        in
+
         let file_res = 
           match resopt with
           | None -> srcfile
           | Some s ->
-              let tmpfile = Common.new_temp_file "spatch_test" ".fuzzy" in
-              Common.write_file ~file:tmpfile s;
-              tmpfile
+            let tmpfile = Common.new_temp_file "spatch_test" ".fuzzy" in
+            Common.write_file ~file:tmpfile s;
+            tmpfile
         in
         let diff = Common2.unix_diff file_res expfile in
         diff +> List.iter pr;
@@ -109,9 +110,6 @@ let spatch_unittest = [
       end 
       else failwith ("wrong format for expfile: " ^ expfile)
     )
-  )
-*)
-    ()
   )
 ]
 
@@ -131,7 +129,9 @@ let misc_unittest =
 (* Final suite *)
 (*****************************************************************************)
 
+(*
 let unittest =
   "matcher" >::: (
     sgrep_unittest ++ spatch_unittest ++ [misc_unittest]
   )
+*)

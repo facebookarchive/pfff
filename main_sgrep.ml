@@ -217,11 +217,9 @@ let dump_sgrep_php_pattern file =
 (*---------------------------------------------------------------------------*)
 open OUnit
 let test () =
-  (* ugly: todo: use a toy fuzzy parser instead of the one in lang_cpp/ *)
-  Unit_matcher._parse_func := ast_fuzzy_of_string;
-
   let suite = "sgrep" >::: (
-    Unit_matcher.sgrep_unittest ++
+   (* ugly: todo: use a toy fuzzy parser instead of the one in lang_cpp/ *)
+    Unit_matcher.sgrep_unittest ~ast_fuzzy_of_string ++
     Unit_matcher_php.sgrep_unittest ++
     []
   )
