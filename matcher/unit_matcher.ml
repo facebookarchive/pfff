@@ -116,10 +116,22 @@ let spatch_unittest = [
 ]
 
 (*****************************************************************************)
+(* Misc unit tests *)
+(*****************************************************************************)
+let misc_unittest =
+  "misc" >::: [
+    "join_with_space" >:: (fun () ->
+      assert_equal
+        (Lib_matcher.join_with_space_if_needed ["$x";"=";"print";"FOO"])
+        "$x=print FOO"
+    )
+  ]
+
+(*****************************************************************************)
 (* Final suite *)
 (*****************************************************************************)
 
 let unittest =
   "matcher" >::: (
-    sgrep_unittest ++ spatch_unittest
+    sgrep_unittest ++ spatch_unittest ++ [misc_unittest]
   )
