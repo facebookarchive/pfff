@@ -79,6 +79,9 @@ rule token = parse
   | "<" { TInf (!line) } | ">" { TSup }
   | "[" { TOBracket (!line) } | "]" { TCBracket }
 
+  (* In my modifed AST dumper for type information *)
+  | "{" { TOBrace (!line) } | "}" { TCBrace }
+
   | ":" { TColon } | "," { TComma }
   | "->" { TArrow } | "." { TDot } | "..." { TDots }
   | "=" { TEq }
@@ -88,6 +91,8 @@ rule token = parse
 
   (* only in type expressions *)
   | "^" { TMisc (tok lexbuf) }
+  (* only in c++ type expressions *)
+  | "!" { TMisc (tok lexbuf) }
       
   (* ----------------------------------------------------------------------- *)
   (* Keywords and ident *)
@@ -113,7 +118,6 @@ rule token = parse
   (* Strings *)
   (* ----------------------------------------------------------------------- *)
   | "'" ([^'\'' ]* as s) "'" { TString (s) }
-  | "'" ([^'\'' ]* as s1) "'" ":" "'" ([^'\'' ]* as s2) "'"  { TType (s1, s2) }
   | '"' ([^'\n''"']* as s) '"' { TString (s) }
 
   | '"' (([^'\n''"'] | '\\' '"')* as s)'"' { TString (s) }

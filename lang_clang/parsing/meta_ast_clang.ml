@@ -15,20 +15,18 @@ let vof_token =
       let v1 = Ocaml.vof_string v1 in Ocaml.VSum (("TFloat", [ v1 ]))
   | TString v1 ->
       let v1 = Ocaml.vof_string v1 in Ocaml.VSum (("TString", [ v1 ]))
-  | TType (v1, v2) ->
-      let v1 = Ocaml.vof_string v1 in 
-      let v2 = Ocaml.vof_string v2 in 
-      Ocaml.VSum (("TType", [ v1; v2 ]))
   | TPath v1 ->
       let v1 = Ocaml.vof_string v1 in Ocaml.VSum (("TPath", [ v1 ]))
   | TMisc v1 ->
       let v1 = Ocaml.vof_string v1 in Ocaml.VSum (("TMisc", [ v1 ]))
   | TOPar v1 -> let v1 = Ocaml.vof_int v1 in Ocaml.VSum (("TOPar", [ v1 ]))
+  | TOBrace v1 -> let v1 = Ocaml.vof_int v1 in Ocaml.VSum (("TOBrace", [ v1 ]))
   | TInf v1 -> let v1 = Ocaml.vof_int v1 in Ocaml.VSum (("TInf", [ v1 ]))
   | TOBracket v1 ->
       let v1 = Ocaml.vof_int v1 in Ocaml.VSum (("TOBracket", [ v1 ]))
   | TCPar -> Ocaml.VSum (("TCPar", []))
   | TSup -> Ocaml.VSum (("TSup", []))
+  | TCBrace -> Ocaml.VSum (("TCBrace", []))
   | TCBracket -> Ocaml.VSum (("TCBracket", []))
   | TColon -> Ocaml.VSum (("TColon", []))
   | TComma -> Ocaml.VSum (("TComma", []))
@@ -146,6 +144,10 @@ let rec vof_sexp =
       let v1 = Ocaml.vof_list vof_sexp v1 in Ocaml.VSum (("Anchor", [ v1 ]))
   | Bracket v1 ->
       let v1 = Ocaml.vof_list vof_sexp v1 in Ocaml.VSum (("Bracket", [ v1 ]))
+  | Brace ((v1, v2)) ->
+      let v1 = Ocaml.vof_list vof_token v1
+      and v2 = Ocaml.vof_option (Ocaml.vof_list vof_token) v2
+      in Ocaml.VSum (("Brace", [ v1; v2 ]))
   | T v1 -> let v1 = vof_token v1 in Ocaml.VSum (("T", [ v1 ]))
   
 let vof_program v = vof_sexp v

@@ -38,6 +38,7 @@ let rec visit hook x =
       match x with
       | Paren (_, _, xs) | Angle xs | Anchor xs | Bracket xs ->
           List.iter sexp xs
+      | Brace (toks, _) -> ()
       | T _ -> ()
     in
     hook k x

@@ -25,7 +25,7 @@ open Parser_clang
 (* 
  * This assumes clang-check --ast-dump does not dump the color. One can
  * do that by running it from a terminal detected as no-color (e.g. eshell),
- * or by modifying ASTDumper.cpp in clang source
+ * or by modifying ASTDumper.cpp in clang source.
  *)
 
 (*****************************************************************************)
@@ -324,6 +324,21 @@ let rec sexp_list env acc ending toks =
       let newenv = {env with line_open_tok = l} in 
       let (body, xs) = sexp_list newenv  [] TCPar xs in
       sexp_list env (Paren (conv "Misc__SKIPPED__", l, body)::acc) ending xs
+
+  | TOBrace l::xs ->
+      let (toks, _, rest) = 
+        Common2.split_when (function TCBrace -> true | _ -> false) xs in
+      let (toks_opt, rest) =
+        (match rest with
+        | TColon::TOBrace l2::xs ->
+            let (toks, _, rest) = 
+              Common2.split_when (function TCBrace -> true | _ -> false) xs in
+            Some toks, rest
+        | _ -> None, rest
+        )
+      in
+      sexp_list env (Brace (toks, toks_opt)::acc) ending rest
+      
 
   | t::xs -> sexp_list env (T t::acc) ending xs
   | [] -> 
