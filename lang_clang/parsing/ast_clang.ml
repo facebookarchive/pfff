@@ -163,8 +163,11 @@ type enum =
 type sexp = 
   | Paren of enum * int (* location *) * sexp list
   | Angle of sexp list
+  (* usually for position *)
   | Anchor of sexp list
   | Bracket of sexp list
+  (* for types, original type and final types *)
+  | Brace of Parser_clang.token list * Parser_clang.token list option
   (* everything except the TOxxx and TCxxx normally *)
   | T of Parser_clang.token 
   (* with tarzan *)
