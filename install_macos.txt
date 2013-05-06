@@ -16,6 +16,12 @@ For codequery:
 
 Troubles ?
 --------------
+- If you are using homebrew, you may have pbs compiling gtk and cairo.
+  You'll need to export PKG_CONFIG_PATH /usr/X11/lib/pkgconfig so
+  that it can find cairo.pc, but then you need to force to link
+  with the new cairo library in homebrew because the default one of
+  MacOS is causing a segfault, so add -L/usr/local/opt/cairo/lib 
+  when linking.
 
 - If you have problem installing cairo and get an error message like:
   "Error: db46 requires the Java for Mac OS X development headers.
