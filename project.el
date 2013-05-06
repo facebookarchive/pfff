@@ -42,6 +42,8 @@
      lang_cpp/parsing
      lang_java/parsing
       lang_java/analyze
+     lang_clang/parsing
+      lang_clang/analyze
      visual
      codegraph
      facebook
@@ -98,7 +100,7 @@
    (join-string 
     (list 
      "-debugger"
-     (case 400
+     (case 401
 
        (0 "-tokens_php /home/pad/pfff/tests/php/parsing/heredoc4.php")
 
@@ -133,6 +135,7 @@
 
        (300 "-pfff_gephi_dependencies /home/pad/pfff /tmp/pfff.gexf")
        (400 "-dump_cmt2 /home/pad/pfff/tests/ml/cmt/foo.cmt")
+       (401 "-parse_clang /home/pad/local/games/cruelhessian-0.1.6-rc3/src/Weapon.clang")
 
        )
      )

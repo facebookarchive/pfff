@@ -188,6 +188,7 @@ and sexp env x =
 
   | Angle xs | Anchor xs | Bracket xs ->
       sexps env xs
+  | Brace (toks, _) -> ()
   | T tok -> ()
 
 and sexps env xs = List.iter (sexp env) xs

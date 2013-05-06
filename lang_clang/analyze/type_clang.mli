@@ -18,8 +18,8 @@ type type_clang =
 
 val builtin_types: string Common.hashset
 
-val extract_type_of_string: 
-  Ast_clang.loc -> string -> type_clang
+val extract_type_of_tokens: 
+  Ast_clang.loc -> Parser_clang.token list -> type_clang
 
 val extract_canonical_type_of_sexp: 
   Ast_clang.loc -> Ast_clang.sexp -> type_clang

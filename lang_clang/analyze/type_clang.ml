@@ -79,7 +79,7 @@ let builtin_types = Common.hashset_of_list [
 (* todo? could use parse_cpp.type_of_string? hmm but clang uses some
  * special syntax for anon struct or typeof.
  *)
-let type_clang_of_tokens loc xs =
+let extract_type_of_tokens loc xs =
   let rec aux xs =
     match xs with
     | [] -> Errors_clang.error loc "empty type string?"
@@ -153,19 +153,14 @@ let type_clang_of_tokens loc xs =
   aux xs
 
 
-let extract_type_of_string loc s =
-  try 
-    let xs = Parse_clang.tokens_of_string s in
-    type_clang_of_tokens loc xs
-  with Lexer_clang.Lexical s ->
-    Errors_clang.error loc s
-  
 let extract_canonical_type_of_sexp loc sexp =
   match sexp with
   | Paren (enum, l, xs) ->
       (match xs with
-      | _loc::(T (TString s) | T (TType (_, s)))::_rest ->
-          extract_type_of_string loc s
+      | _loc::Brace (toks, toks_opt)::_rest ->
+          extract_type_of_tokens loc toks
+      | _loc::(T (TString s))::_rest ->
+          failwith "use old AST dumper format, apply latest patch"
       | _ -> Errors_clang.error loc "didn't find type"
       )
   | _ -> Errors_clang.error loc "not a paren exp"

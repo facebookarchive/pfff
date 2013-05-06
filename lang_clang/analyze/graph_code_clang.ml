@@ -233,9 +233,12 @@ let rec add_use_edge env (s, kind) =
       
 let add_type_deps env typ =
   match typ with
-  | T (TString s) | T (TType (s, _)) ->
+  (* in a codegraph context we want to use the original type, not the
+   * final type as we want to create dependencies to typedefs
+   *)
+  | Brace (toks, _toks_final) ->
       if env.phase = Uses then begin
-        let t = Type_clang.extract_type_of_string (loc_of_env env) s in
+        let t = Type_clang.extract_type_of_tokens (loc_of_env env) toks in
         let rec aux t = 
           match t with
           | Typ.Builtin _ -> ()
@@ -260,6 +263,8 @@ let add_type_deps env typ =
         in
         aux t
       end
+  | T (TString s) ->
+      failwith "you're using an old version of the AST dumper, apply patch"
   | _ ->
       error env "wrong type format"
 
@@ -319,6 +324,8 @@ and sexp_toplevel env x =
       sexps env xs
   | Bracket (xs) ->
       sexps env xs
+  | Brace (xs, _) ->
+      ()
   | T tok ->
       ()
 

@@ -83,12 +83,15 @@ let readable_of_filename ~root f =
 
     (* llvm install specific on macos *)
     | "Users"::"yoann.padioleau"::"local"::"clang_ast"::"clang-llvm"
-      ::"llvm"::"Debug+Asserts"::"lib"::"clang"::"3.3"::"include"::rest ->
+      ::"llvm"::"Debug+Asserts"::"lib"::"clang"
+      ::"3.3"::"include"::rest
+    | "data"::"users"::"pad"::"clang"::"build"::"lib"::"clang"
+      ::"3.3"::"include"::rest
+    | "Users"::"yoann.padioleau"::"local"::"clang"::"build"::"lib"::"clang"
+      ::"3.3"::"include"::rest
+      ->
         "EXTERNAL"::"CLANG"::rest
 
-    | "data"::"users"::"pad"::"clang"::"build"::"lib"::"clang"::"3.3"
-      ::"include":: rest -> 
-        "EXTERNAL"::"CLANG"::rest
 
     | _ ->
         Common.split "/" (Common.filename_without_leading_path root f)
