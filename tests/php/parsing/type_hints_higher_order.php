@@ -5,5 +5,5 @@ function f1():
   return null;
 }
 
-
-
+function f2(string $name, (function(...):mixed) $func) {
+}
