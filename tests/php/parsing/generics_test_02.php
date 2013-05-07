@@ -36,3 +36,13 @@ $d = (function():UNICORNS{return 'd';});
 echo vidx($a, 0), Foo::BLEH, car($blork), $d();
 
 abcd;
+
+
+class Foo {
+  public Vector< ?Vector<string> > $y;
+  public Vector<?Vector<string> > $y;
+  public Vector<Vector<string>> $y;
+
+  // not handled for now :(
+  // public Vector< ?Vector<string>> $y;
+}
