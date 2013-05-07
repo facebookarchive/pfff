@@ -58,6 +58,14 @@ let contain_func_name_args_like any =
     List.mem danger_func funcalls
   )
 
+(* introduced in hh *)
+let is_var_args_function def =
+  def.f_params +> Ast.unparen +> List.exists (function
+  (* ... *)
+  | Middle3 _ -> true
+  | _ -> false
+  )
+
 let check_args_vs_params (callname, all_args) (defname, all_params) =
 
   let info = Ast_php.info_of_name callname in
@@ -132,7 +140,8 @@ let visit_and_check_funcalls find_entity prog =
          E.find_entity_and_warn find_entity (Ent.Function, callname)
          (function Ast_php.FunctionE def ->
            (* todo? memoize ? *)
-           if contain_func_name_args_like (Body def.f_body) 
+           if is_var_args_function def ||
+              contain_func_name_args_like (Body def.f_body)
            then pr2_once "not checking functions with calls to func_num_args()"
            else 
              check_args_vs_params 
