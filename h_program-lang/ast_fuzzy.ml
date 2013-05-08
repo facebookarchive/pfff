@@ -29,6 +29,7 @@ type tree =
   (* todo: comma *)
   | Parens of tok * trees * tok
   | Angle  of tok * trees * tok
+  (* todo: add Dots, Metavar and maybe more *)
   | Tok of tok
 and trees = tree list
  (* with tarzan *)
