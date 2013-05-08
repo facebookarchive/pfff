@@ -100,15 +100,11 @@ let spatch pattern file =
     in
     let was_modified = Spatch_fuzzy.spatch pattern trees in
 
-    let elts_of_tok tok =
-      Lib_unparser.elts_of_any 
-        ~elt_and_info_of_tok:(fun tok ->
-          Token_helpers_cpp.elt_of_tok tok, Token_helpers_cpp.info_of_tok  tok
-        )
-        tok
+    let elt_and_info_of_tok tok =
+      Token_helpers_cpp.elt_of_tok tok, Token_helpers_cpp.info_of_tok  tok
     in
     let unparse toks = 
-      Lib_unparser.string_of_toks_using_transfo ~elts_of_tok toks
+      Lib_unparser.string_of_toks_using_transfo ~elt_and_info_of_tok toks
     in
     if was_modified
     then Some (unparse toks)

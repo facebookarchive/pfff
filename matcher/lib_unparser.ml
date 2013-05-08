@@ -163,7 +163,11 @@ let drop_whole_line_if_only_removed xs =
  * to maintain some good style.
  *)
 
-let string_of_toks_using_transfo ~elts_of_tok toks =
+let string_of_toks_using_transfo ~elt_and_info_of_tok toks =
+
+  let elts_of_tok tok =
+    elts_of_any ~elt_and_info_of_tok tok
+  in
 
   Common2.with_open_stringbuf (fun (_pr_with_nl, buf) ->
     let pp s = Buffer.add_string buf s in

@@ -24,5 +24,4 @@ val debug: bool ref
 
 (* main entry point *)
 val string_of_toks_using_transfo:
- elts_of_tok:('a -> elt list) -> 
-  'a list -> string
+  elt_and_info_of_tok:('tok -> elt * Parse_info.info) -> 'tok list -> string

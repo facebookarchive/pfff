@@ -180,11 +180,8 @@ let rec ast2_to_toks ast2 =
 
 let string_of_program2_using_transfo ast2 =
   let toks = ast2_to_toks ast2 in
-  let elts_of_tok tok = 
-    Lib_unparser.elts_of_any 
-      ~elt_and_info_of_tok:(fun tok ->
-        elt_of_tok tok, TH.info_of_tok tok
-      ) tok
-  in
-  Lib_unparser.string_of_toks_using_transfo ~elts_of_tok toks
+ toks +> Lib_unparser.string_of_toks_using_transfo 
+   ~elt_and_info_of_tok:(fun tok ->
+     elt_of_tok tok, TH.info_of_tok tok
+   )
 (*e: unparse_php.ml *)
