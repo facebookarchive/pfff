@@ -102,8 +102,9 @@ let spatch pattern file =
 
     let elts_of_tok tok =
       Lib_unparser.elts_of_any 
-        ~elt_of_tok:Token_helpers_cpp.elt_of_tok
-        ~info_of_tok:Token_helpers_cpp.info_of_tok 
+        ~elt_and_info_of_tok:(fun tok ->
+          Token_helpers_cpp.elt_of_tok tok, Token_helpers_cpp.info_of_tok  tok
+        )
         tok
     in
     let unparse toks = 
@@ -537,8 +538,9 @@ let test () =
         Common.save_excursion Flag_parsing_cpp.verbose_lexing false (fun () ->
           Parse_cpp.parse_fuzzy file
         ))
-      ~elt_of_tok:Token_helpers_cpp.elt_of_tok
-      ~info_of_tok:Token_helpers_cpp.info_of_tok
+      ~elt_and_info_of_tok:(fun tok ->
+        Token_helpers_cpp.elt_of_tok tok, Token_helpers_cpp.info_of_tok tok
+      )
     ++
     Unit_matcher_php.spatch_unittest ++
     []

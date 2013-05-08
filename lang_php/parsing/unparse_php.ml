@@ -179,11 +179,12 @@ let rec ast2_to_toks ast2 =
   ) +> List.flatten
 
 let string_of_program2_using_transfo ast2 =
-  
   let toks = ast2_to_toks ast2 in
-  Lib_unparser.string_of_toks_using_transfo ~elts_of_tok:(fun tok ->
+  let elts_of_tok tok = 
     Lib_unparser.elts_of_any 
-      ~elt_of_tok
-      ~info_of_tok:TH.info_of_tok tok
-  ) toks
+      ~elt_and_info_of_tok:(fun tok ->
+        elt_of_tok tok, TH.info_of_tok tok
+      ) tok
+  in
+  Lib_unparser.string_of_toks_using_transfo ~elts_of_tok toks
 (*e: unparse_php.ml *)

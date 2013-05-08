@@ -93,17 +93,17 @@ let s_of_add = function
   | AddStr s -> s
   | AddNewlineAndIdent -> raise Todo
 
-let elts_of_any ~elt_of_tok ~info_of_tok tok =
-  let info = info_of_tok tok in
+let elts_of_any ~elt_and_info_of_tok tok =
+  let elt, info = elt_and_info_of_tok tok in
   match info.token with
   | Ab | FakeTokStr _ | ExpandedTok _ -> raise Impossible
   | OriginTok _ -> 
       (match info.transfo with
-      | NoTransfo -> [elt_of_tok tok]
-      | Remove -> [Removed (str_of_info info)]
-      | Replace toadd -> [Added (s_of_add toadd);Removed(str_of_info info)]
-      | AddAfter toadd -> [elt_of_tok tok; Added (s_of_add toadd)]
-      | AddBefore toadd -> [Added (s_of_add toadd); elt_of_tok tok]
+      | NoTransfo -> [elt]
+      | Remove -> [Removed (PI.str_of_info info)]
+      | Replace toadd -> [Added (s_of_add toadd);Removed(PI.str_of_info info)]
+      | AddAfter toadd -> [elt; Added (s_of_add toadd)]
+      | AddBefore toadd -> [Added (s_of_add toadd); elt]
       )
 
 (*****************************************************************************)

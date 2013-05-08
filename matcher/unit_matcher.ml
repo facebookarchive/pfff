@@ -48,7 +48,7 @@ let sgrep_unittest ~ast_fuzzy_of_string = [
 
 (* run by spatch -test *)
 let spatch_unittest 
-    ~ast_fuzzy_of_string ~parse_file ~elt_of_tok ~info_of_tok = 
+    ~ast_fuzzy_of_string ~parse_file ~elt_and_info_of_tok = 
   [
   "spatch regressions files" >:: (fun () ->
 
@@ -76,11 +76,8 @@ let spatch_unittest
         in
         let was_modified = Spatch_fuzzy.spatch pattern trees in
 
-        let elts_of_tok tok =
-          Lib_unparser.elts_of_any 
-            ~elt_of_tok:elt_of_tok
-            ~info_of_tok:info_of_tok 
-            tok
+        let elts_of_tok tok = 
+          Lib_unparser.elts_of_any ~elt_and_info_of_tok tok
         in
         let unparse toks = 
           Lib_unparser.string_of_toks_using_transfo ~elts_of_tok toks
