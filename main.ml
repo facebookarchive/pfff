@@ -50,6 +50,8 @@ let test_json_pretty_printer file =
   
 (* ---------------------------------------------------------------------- *)
 let pfff_extra_actions () = [
+  "-dump_json", " <file>",
+  Common.mk_action_1_arg test_json_pretty_printer;
   "-json_pp", " <file>",
   Common.mk_action_1_arg test_json_pretty_printer;
   "-layer_stat", " <file>",
