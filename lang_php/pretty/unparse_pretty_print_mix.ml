@@ -20,8 +20,8 @@ module TH = Token_helpers_php
 (*****************************************************************************)
 (* Prelude *)
 (*****************************************************************************)
-
-(* The goal of this module is to help pretty print php code
+(* 
+ * The goal of this module is to help pretty print php code
  * that has been modified by spatch.
  * 
  * One could just run julien's pretty printer on the whole file, but
@@ -35,6 +35,8 @@ module TH = Token_helpers_php
  * to handle newlines in spatch file and indentation, but I think it's
  * better to have some separation of concerns here: have spatch just
  * patch code (in a gross way) and have the pretty printer pretty print!
+ * update: unparse_php.ml (and matcher/lib_unparser.ml) now actually 
+ * also use better heuristics.
  *)
 
 (*****************************************************************************)
@@ -208,7 +210,7 @@ let string_of_toks toks =
  *  - if no diff then use the conservative unparser
  *  - if diff then use the new pretty printer
  *)
-let pretty_print_when_needit ~oldfile ~newfile =
+let pretty_print_when_need_it ~oldfile ~newfile =
   
   let toks_old = Parse_php.tokens oldfile in
   let ast_old = Parse_php.parse_program oldfile in

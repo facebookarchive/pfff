@@ -5,7 +5,7 @@
  * that we want to pretty print. When nothing has changed we can just
  * print the code in its original style.
  *)
-val pretty_print_when_needit:
+val pretty_print_when_need_it:
   oldfile:Common.filename -> newfile:Common.filename ->
   unit
 

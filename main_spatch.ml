@@ -158,7 +158,7 @@ let main_action xs =
       Common.write_file ~file:tmpfile s;
 
       if !pretty_printer && !lang =$= "php"
-      then Unparse_pretty_print_mix.pretty_print_when_needit
+      then Unparse_pretty_print_mix.pretty_print_when_need_it
              ~oldfile:file ~newfile:tmpfile;
       
       let diff = Common2.unix_diff file tmpfile in
@@ -506,7 +506,7 @@ let juju_refactoring spec_file =
     Common.write_file ~file:tmpfile s;
 
     if !pretty_printer
-    then Unparse_pretty_print_mix.pretty_print_when_needit
+    then Unparse_pretty_print_mix.pretty_print_when_need_it
       ~oldfile:file ~newfile:tmpfile;
       
     let diff = Common2.unix_diff file tmpfile in
