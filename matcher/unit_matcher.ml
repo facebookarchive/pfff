@@ -22,6 +22,11 @@ let sgrep_unittest ~ast_fuzzy_of_string = [
       "foo(1,3);", "foo(1,2);", false;
       (* matches even when space differs *)
       "foo(1,2);", "foo(1,     2);", true;
+      (* matches even when have comments differs *)
+      "foo(1,2);", "foo(1, /* foo */ 2);", true;
+
+      (* ... for stmts *)
+      "class Foo { ... }", "class Foo { int x; }", true;
 
     ]
     in
