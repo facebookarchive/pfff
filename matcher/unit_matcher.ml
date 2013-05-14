@@ -28,6 +28,9 @@ let sgrep_unittest ~ast_fuzzy_of_string = [
       (* ... for stmts *)
       "class Foo { ... }", "class Foo { int x; }", true;
 
+      (* metavariable *)
+      "class $X { ... }", "class Foo { int x; }", true;
+
     ]
     in
     triples +> List.iter (fun (spattern, scode, should_match) ->

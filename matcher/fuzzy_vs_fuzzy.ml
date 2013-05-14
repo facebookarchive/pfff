@@ -134,7 +134,7 @@ let rec m_list__m_tree xsa xsb =
       return ([], [])
 
   (* iso: allow "..." to match any list of trees *)
-  | [A.Tok t],  bbs    when Parse_info.str_of_info t =$= "..." ->
+  | [A.Dots t],  bbs  ->
     (* todo: check no annot on t *)
       return (
         xsa,
@@ -160,6 +160,14 @@ let rec m_list__m_tree xsa xsb =
 (* ---------------------------------------------------------------------- *)
 and m_tree a b =
   match a, b with
+
+  | A.Metavar a, b ->
+    (* todo: add in environment, and handle spatch *)
+    return (
+      A.Metavar a,
+      b
+    )
+
   | A.Braces (a1, a2, a3), B.Braces (b1, b2, b3) ->
     m_tok a1 b1 >>= (fun (a1, b1) ->
     m_trees a2 b2 >>= (fun (a2, b2) ->
@@ -199,6 +207,7 @@ and m_tree a b =
   | A.Parens _, _
   | A.Angle _, _
   | A.Tok _, _
+  | A.Dots _, _
     -> fail ()
 
 and m_trees a b = m_list__m_tree a b

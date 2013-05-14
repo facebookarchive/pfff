@@ -25,7 +25,7 @@ open Common
  * are looking for, or newlines. Things are even more complicated when
  * you want to handle nested parenthesized expressions or statements. This is
  * because regexps can't count. For instance how would you
- * remove a namespace in C++? you would like to write a transformation
+ * remove a namespace in C++? You would like to write a transformation
  * like:
  * 
  *  - namespace my_namespace {
@@ -42,11 +42,11 @@ open Common
  * 
  * Moreover, in my experience matching AST against AST lacks
  * flexibility sometimes. For instance many people want to use 'sgrep' to
- * find a method foo and so write a "sgrep like 'foo(...)'" but
+ * find a method foo and so do "sgrep like 'foo(...)'" but
  * because the matching is done at the AST level, 'foo(...)' is
  * parsed as a function call, not a method call, and so it will
  * not work. But people expect it to work because it works
- * with regexps. So 'sgrep' currently forces people to write this
+ * with regexps. So 'sgrep' for PHP currently forces people to write this
  * pattern '$V->foo(...)' but this is not what people wants.
  * In the same way a pattern like '1' was originally matching
  * only expressions, but was not matching static constants because
@@ -95,10 +95,21 @@ type tree =
   (* todo: comma *)
   | Parens of tok * trees * tok
   | Angle  of tok * trees * tok
-  (* todo: add Dots, Metavar and maybe more *)
+  (* note that gcc allows $ in identifiers, so using $ for metavariables
+   * means we will not be able to match such identifiers. No big deal.
+   *)
+  | Metavar of tok
+  (* note that "..." are allowed in many languages, so using "..."
+   * to represent a list of anything means we will not be able to
+   * match specifically "...".
+   *)
+  | Dots of tok
   | Tok of tok
 and trees = tree list
  (* with tarzan *)
+
+let is_metavar s =
+  s =~ "^\\$.*"
 
 (*****************************************************************************)
 (* Visitor *)
@@ -128,6 +139,8 @@ let (mk_visitor: visitor_in -> visitor_out) = fun vin ->
         let _v1 = v_tok v1 and _v2 = v_trees v2 and _v3 = v_tok v3 in ()
       | Angle ((v1, v2, v3)) ->
         let _v1 = v_tok v1 and _v2 = v_trees v2 and _v3 = v_tok v3 in ()
+      | Metavar v1 -> let _v1 = v_tok v1 in ()
+      | Dots v1 -> let _v1 = v_tok v1 in ()
       | Tok v1 -> let _v1 = v_tok v1 in ()
     in
     vin.ktree (k, all_functions) x
@@ -188,6 +201,8 @@ let rec vof_multi_grouped =
       and v2 = Ocaml.vof_list vof_multi_grouped v2
       and v3 = vof_token v3
       in Ocaml.VSum (("Angle", [ v1; v2; v3 ]))
+  | Metavar v1 -> let v1 = vof_token v1 in Ocaml.VSum (("Metavar", [ v1 ]))
+  | Dots v1 -> let v1 = vof_token v1 in Ocaml.VSum (("Dots", [ v1 ]))
   | Tok v1 -> let v1 = vof_token v1 in Ocaml.VSum (("Tok", [ v1 ]))
 
 let vof_trees xs =

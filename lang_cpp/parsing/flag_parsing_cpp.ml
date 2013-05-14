@@ -85,3 +85,5 @@ let strict_lexer = ref false
 
 let if0_passing = ref true
 let ifdef_to_if  = ref false
+
+let sgrep_mode = ref false

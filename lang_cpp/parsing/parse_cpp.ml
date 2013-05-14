@@ -217,7 +217,11 @@ and multi_grouped = function
   | Token_views_cpp.Angle (tok1, xs, (Some tok2)) ->
       Ast_fuzzy.Angle (tokext tok1, multi_grouped_list xs, tokext tok2)
   | Token_views_cpp.Tok (tok) ->
-      Ast_fuzzy.Tok (tokext tok)
+    (match Ast.str_of_info (tokext tok) with
+    | "..." -> Ast_fuzzy.Dots (tokext tok)
+    | s when Ast_fuzzy.is_metavar s -> Ast_fuzzy.Metavar (tokext tok)
+    | _ -> Ast_fuzzy.Tok (tokext tok)
+    )
   | _ -> failwith "could not find closing brace/parens/angle"
 and tokext tok_extended =
   TH.info_of_tok tok_extended.Token_views_cpp.t
@@ -230,6 +234,7 @@ and tokext tok_extended =
  * note: this is similar to what 'cpplint' of andrei does? 
  *)
 let parse_fuzzy file =
+  Common.save_excursion Flag.sgrep_mode true (fun () ->
   let toks_orig = tokens file in
   let toks = 
     toks_orig +> Common.exclude (fun x ->
@@ -244,6 +249,7 @@ let parse_fuzzy file =
   let groups = Token_views_cpp.mk_multi extended in
 
   multi_grouped_list groups, toks_orig
+  )
 
 (*****************************************************************************)
 (* Extract macros *)
