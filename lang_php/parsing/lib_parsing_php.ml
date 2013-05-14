@@ -78,7 +78,20 @@ let find_php_files_of_dir_or_files ?(verbose=false) xs =
 let extract_info_visitor recursor = 
   let globals = ref [] in
   let hooks = { V.default_visitor with
-    V.kinfo = (fun (k, _) i -> Common.push2 i globals)
+    V.kinfo = (fun (k, _) i -> 
+      (* most of the time when you use ii_of_any, you want to use
+       * functions like max_min_pos which works only on origin tokens
+       * hence the filtering done here.
+       * 
+       * ugly: For PHP we use a fakeInfo only for generating a fake left
+       * brace for abstract methods.
+       *)
+      match i.Parse_info.token with
+      | Parse_info.OriginTok _ ->
+        Common.push2 i globals
+      | _ ->
+        ()
+    )
   } in
   begin
     let vout = V.mk_visitor hooks in
