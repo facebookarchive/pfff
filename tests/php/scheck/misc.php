@@ -27,3 +27,10 @@ function test_instanceof() {
 }
 
 var_dump(test_case());
+
+interface TestInterfaceWithBody {
+  public function foo();
+
+  //ERROR: interface method with a body
+  public function wtf_is_this() { }
+}

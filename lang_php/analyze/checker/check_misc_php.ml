@@ -33,6 +33,26 @@ module E = Error_php
 (*****************************************************************************)
 
 let check ast = 
+
+  ast +> List.iter (function
+  | ClassDef cdef ->
+    (match cdef.c_type with
+    | Interface _ ->
+      cdef.c_body +> Ast.unbrace +> List.iter (function
+      | Method mdef ->
+        (match mdef.f_type with
+        | MethodAbstract -> ()
+        | MethodRegular ->
+          E.warning mdef.f_tok E.InterfaceMethodWithBody
+        | _ -> ()
+        )
+      | _ -> ()
+      )
+    | _ -> ()
+    )
+  | _ -> ()
+  );
+
   let visitor = V.mk_visitor { V.default_visitor with
     V.kstmt = (fun (k, _) st ->
       (match st with

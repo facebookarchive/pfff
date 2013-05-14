@@ -52,6 +52,7 @@ type error = {
 
   | CaseWithSemiColon
   | CaseSensitivityKeyword
+  | InterfaceMethodWithBody
 
   and severity2 =
     | Bad

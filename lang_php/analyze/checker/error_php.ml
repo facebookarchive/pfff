@@ -122,6 +122,8 @@ type error = {
    *)
   | CaseSensitivityKeyword
 
+  | InterfaceMethodWithBody
+
   (* todo: 
    *  - type errors, 
    *  - protocol errors (statistical analysis), 
@@ -236,6 +238,8 @@ to statically analyze. Please avoid using those features."
       "Use a colon not a semicolon"
   | CaseSensitivityKeyword ->
       "Use the lowercase version of the keyword"
+  | InterfaceMethodWithBody ->
+      "The method of an interface should not have a body, use ';' not '{ }'"
 
 (* note that the output is emacs compile-mode compliant *)
 let string_of_error error =
@@ -444,6 +448,7 @@ let rank_of_error_kind err_kind =
   | Injection _ -> ReallyImportant
 
   | CaseWithSemiColon | CaseSensitivityKeyword -> Less
+  | InterfaceMethodWithBody -> Less
   | DynamicCode -> OnlyStrict
 
   | WeirdForeachNoIteratorVar
