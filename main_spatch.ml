@@ -25,6 +25,9 @@ module PI = Parse_info
  *  - you could also just write a sgrep that put a special mark to the 
  *    place where it matched and then do the transformation using an 
  *    emacs macro leveraging those marks.
+ * 
+ * related: 
+ *  - http://www.jetbrains.com/idea/documentation/ssr.html
  *)
 
 (*****************************************************************************)

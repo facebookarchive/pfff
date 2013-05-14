@@ -19,6 +19,9 @@ module S = Scope_code
  * Right now there is support only for PHP and C/C++/ObjectiveC.
  * 
  * opti: git grep xxx | xargs sgrep -e 'foo(...)'
+ * 
+ * related: 
+ *  - http://www.jetbrains.com/idea/documentation/ssr.html
  *)
 
 (*****************************************************************************)
