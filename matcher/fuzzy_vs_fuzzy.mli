@@ -7,7 +7,9 @@ module type PARAM =
   sig 
     type tin
     type 'x tout
+
     type ('a, 'b) matcher = 'a -> 'b  -> tin -> ('a * 'b) tout
+
     val (>>=): 
       (tin -> ('a * 'b) tout)  -> 
       ('a * 'b -> (tin -> ('c * 'd) tout)) -> 
