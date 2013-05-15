@@ -221,6 +221,11 @@ if($arch =~ /FreeBSD/) {
   $MAKE_PROGRAM = "gmake";
 }
 
+my $BREW_PROGRAM = "";
+if($arch =~ /Darwin/) {
+  $BREW_PROGRAM = `which brew`;
+}
+
 $error += check_config(
   "$MAKE_PROGRAM -v 2>&1 |grep --colour=never Make|",
   "GNU Make 3\.[0-9]+", #version 3.81
@@ -241,7 +246,7 @@ show_error_msg_and_exit_if_error($error);
 # if darwin or cygwin then could just modify this variable ? enough ?
 my $prefix_distrib = "/usr";
 
-if($arch =~ /FreeBSD/) {
+if( ($arch =~ /FreeBSD/) || (($arch =~ /Darwin/) && ($BREW_PROGRAM)) ) {
   $prefix_distrib = "/usr/local";
 }
 
@@ -261,6 +266,7 @@ if($bdb) {
         $BDB_INCLUDE="/opt/local/include/db46";
         $BDB_LIBS="/opt/local/lib/db46";
     }
+
     if($arch =~ /FreeBSD/) {
         $BDB_INCLUDE="/usr/local/include/db46";
         $BDB_LIBS="/usr/local/lib/db46";
@@ -294,8 +300,13 @@ if($mysql) {
 if($pcre) {
 
     if($arch =~ /Darwin/) {
-        $PCRE_INCLUDE="/opt/local/include";
-        $PCRE_LIBS="/opt/local/lib";
+        if ($BREW_PROGRAM) {
+            $PCRE_INCLUDE="/usr/local/include";
+            $PCRE_LIBS="/usr/local/lib";
+        } else {	
+            $PCRE_INCLUDE="/opt/local/include";
+            $PCRE_LIBS="/opt/local/lib";
+        }
     }
 
     if($arch =~ /FreeBSD/) {
