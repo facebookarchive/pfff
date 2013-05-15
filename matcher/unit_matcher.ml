@@ -17,6 +17,7 @@ let sgrep_unittest ~ast_fuzzy_of_string = [
 
     (* spec: pattern string, code string, should_match boolean *)
     let triples = [
+
       (* basic string match of course *)
       "foo(1,2);", "foo(1,2);", true;
       "foo(1,3);", "foo(1,2);", false;
