@@ -61,9 +61,9 @@ open Common
  * It fills a niche between regexps and very-precise ASTs.
  * 
  * In Ast_fuzzy we just want to keep the parenthesized information
- * from the code, the main thing that regexps have troubles with,
- * and then let people match over this parenthesized tree in
- * a flexible way.
+ * from the code, and abstract away spacing, the main things that 
+ * regexps have troubles with, and then let people match over this
+ * parenthesized cleaned-up tree in a flexible way.
  * 
  * related:
  *  - xpath? but do programming languages need the full power of xpath?
