@@ -274,6 +274,7 @@ let options () =
 
     "-verbose", Arg.Unit (fun () -> 
       verbose := true;
+      Flag_matcher.verbose := true;
       Flag_matcher_php.verbose := true;
     ),
     " ";

@@ -89,6 +89,7 @@ open Common
 (*****************************************************************************)
 
 type tok = Parse_info.info
+type 'a wrap = 'a * tok
 
 type tree =
   | Braces of tok * trees * tok
@@ -98,13 +99,13 @@ type tree =
   (* note that gcc allows $ in identifiers, so using $ for metavariables
    * means we will not be able to match such identifiers. No big deal.
    *)
-  | Metavar of tok
+  | Metavar of string wrap
   (* note that "..." are allowed in many languages, so using "..."
    * to represent a list of anything means we will not be able to
    * match specifically "...".
    *)
   | Dots of tok
-  | Tok of tok
+  | Tok of string wrap
 and trees = tree list
  (* with tarzan *)
 
@@ -139,9 +140,9 @@ let (mk_visitor: visitor_in -> visitor_out) = fun vin ->
         let _v1 = v_tok v1 and _v2 = v_trees v2 and _v3 = v_tok v3 in ()
       | Angle ((v1, v2, v3)) ->
         let _v1 = v_tok v1 and _v2 = v_trees v2 and _v3 = v_tok v3 in ()
-      | Metavar v1 -> let _v1 = v_tok v1 in ()
+      | Metavar v1 -> let _v1 = v_wrap v1 in ()
       | Dots v1 -> let _v1 = v_tok v1 in ()
-      | Tok v1 -> let _v1 = v_tok v1 in ()
+      | Tok v1 -> let _v1 = v_wrap v1 in ()
     in
     vin.ktree (k, all_functions) x
  and v_trees a = 
@@ -153,6 +154,8 @@ let (mk_visitor: visitor_in -> visitor_out) = fun vin ->
         v_trees xs;
     in
     vin.ktrees (k, all_functions) a
+
+ and v_wrap (s, x) = v_tok x
         
  and v_tok x =
     let rec k x = () in
@@ -160,6 +163,43 @@ let (mk_visitor: visitor_in -> visitor_out) = fun vin ->
 
   and all_functions x = v_trees x in
   all_functions
+
+(*****************************************************************************)
+(* Map *)
+(*****************************************************************************)
+
+type map_visitor = {
+  mtok: (tok -> tok) -> tok -> tok;
+}
+
+let rec (mk_mapper: map_visitor -> (trees -> trees)) = fun hook ->
+  let rec map_tree =
+    function
+    | Braces ((v1, v2, v3)) ->
+      let v1 = map_tok v1
+      and v2 = map_trees v2
+      and v3 = map_tok v3
+      in Braces ((v1, v2, v3))
+    | Parens ((v1, v2, v3)) ->
+      let v1 = map_tok v1
+      and v2 = map_trees v2
+      and v3 = map_tok v3
+      in Parens ((v1, v2, v3))
+    | Angle ((v1, v2, v3)) ->
+      let v1 = map_tok v1
+      and v2 = map_trees v2
+      and v3 = map_tok v3
+      in Angle ((v1, v2, v3))
+  | Metavar v1 -> let v1 = map_wrap v1 in Metavar ((v1))
+  | Dots v1 -> let v1 = map_tok v1 in Dots ((v1))
+  | Tok v1 -> let v1 = map_wrap v1 in Tok ((v1))
+  and map_trees v = List.map map_tree v
+  and map_tok v = 
+    let k v = v in
+    hook.mtok k v
+  and map_wrap (s, t) = (s, map_tok t)
+  in
+  map_trees
 
 (*****************************************************************************)
 (* Extractor *)
@@ -175,6 +215,19 @@ let (ii_of_trees: trees -> Parse_info.info list) = fun trees ->
     vout trees;
     List.rev !globals
   end
+
+(*****************************************************************************)
+(* Abstract position *)
+(*****************************************************************************)
+
+let abstract_position_trees trees = 
+  let hooks = { 
+    mtok = (fun (k) i -> 
+      { i with Parse_info.token = Parse_info.Ab }
+    )
+  } in
+  let mapper = mk_mapper hooks in
+  mapper trees
 
 (*****************************************************************************)
 (* Vof *)
@@ -201,9 +254,10 @@ let rec vof_multi_grouped =
       and v2 = Ocaml.vof_list vof_multi_grouped v2
       and v3 = vof_token v3
       in Ocaml.VSum (("Angle", [ v1; v2; v3 ]))
-  | Metavar v1 -> let v1 = vof_token v1 in Ocaml.VSum (("Metavar", [ v1 ]))
+  | Metavar v1 -> let v1 = vof_wrap v1 in Ocaml.VSum (("Metavar", [ v1 ]))
   | Dots v1 -> let v1 = vof_token v1 in Ocaml.VSum (("Dots", [ v1 ]))
-  | Tok v1 -> let v1 = vof_token v1 in Ocaml.VSum (("Tok", [ v1 ]))
+  | Tok v1 -> let v1 = vof_wrap v1 in Ocaml.VSum (("Tok", [ v1 ]))
+and vof_wrap (s, x) = Ocaml.VString s
 
 let vof_trees xs =
   Ocaml.VList (xs +> List.map vof_multi_grouped)

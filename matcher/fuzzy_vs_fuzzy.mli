@@ -36,11 +36,8 @@ module type PARAM =
     (* -------------------------------------------------------------------- *)
     (* Environment manipulation. Extract info from tin, the "something" *)
     (* -------------------------------------------------------------------- *)
-(*
-    val envf : (Metavars_php.mvar Ast_php.wrap, Ast_php.any) matcher
-    val envf2 : 
-      (Metavars_php.mvar Ast_php.wrap, Ast_php.any * Ast_php.any) matcher
-*)
+    val envf : (Metavars_fuzzy.mvar * Parse_info.info, Ast_fuzzy.trees)
+      matcher
   end
 
 (*****************************************************************************)

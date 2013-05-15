@@ -92,12 +92,8 @@ module type PARAM =
 
     val tokenf : (Parse_info.info, Parse_info.info) matcher
 
-(*
-
-    val envf : (Metavars_php.mvar Ast_php.wrap, Ast_php.any) matcher
-    (* ugly hack for the "A" string metavariables *)
-    val envf2 : (Metavars_php.mvar Ast_php.wrap, Ast_php.any * Ast_php.any) matcher
-*)
+    val envf : (Metavars_fuzzy.mvar * Parse_info.info, Ast_fuzzy.trees)
+      matcher
 
   end
 
@@ -161,11 +157,14 @@ let rec m_list__m_tree xsa xsb =
 and m_tree a b =
   match a, b with
 
-  | A.Metavar a, b ->
-    (* todo: add in environment, and handle spatch *)
-    return (
-      A.Metavar a,
-      b
+  | A.Metavar (s, tok), b ->
+    X.envf (s, tok) [b] >>= (function 
+    | ((s, a), [b]) ->
+      return (
+        A.Metavar (s, tok),
+        b
+      )
+    | _ -> raise Impossible
     )
 
   | A.Braces (a1, a2, a3), B.Braces (b1, b2, b3) ->
@@ -196,7 +195,7 @@ and m_tree a b =
       )
     )))
   | A.Tok a1, B.Tok b1 ->
-    m_tok a1 b1 >>= (fun (a1, b1) ->
+    m_wrap a1 b1 >>= (fun (a1, b1) ->
       return (
         A.Tok a1,
         B.Tok b1
@@ -210,6 +209,13 @@ and m_tree a b =
   | A.Dots _, _
     -> fail ()
 
+and m_wrap (a1, a2) (b1, b2) =
+  m_tok a2 b2 >>= (fun (a2, b2) ->
+    return (
+      (a1, a2),
+      (b1, b2)
+  )
+  )
 and m_trees a b = m_list__m_tree a b
 
 end

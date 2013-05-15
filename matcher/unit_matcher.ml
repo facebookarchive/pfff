@@ -17,7 +17,6 @@ let sgrep_unittest ~ast_fuzzy_of_string = [
 
     (* spec: pattern string, code string, should_match boolean *)
     let triples = [
-
       (* basic string match of course *)
       "foo(1,2);", "foo(1,2);", true;
       "foo(1,3);", "foo(1,2);", false;
@@ -31,6 +30,11 @@ let sgrep_unittest ~ast_fuzzy_of_string = [
 
       (* metavariable *)
       "class $X { ... }", "class Foo { int x; }", true;
+
+      (* "linear" patterns, a la Prolog *)
+      "$X && $X;", "(a || b) && (a || b);", true;
+      "foo($X, $X);", "foo(a, a);", true;
+      "foo($X, $X);", "foo(a, b);", false;
 
     ]
     in

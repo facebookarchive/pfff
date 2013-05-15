@@ -25,6 +25,11 @@ module MV = Metavars_fuzzy
  *)
 
 (*****************************************************************************)
+(* Wrappers *)
+(*****************************************************************************)
+let pr2, pr2_once = Common2.mk_pr2_wrappers Flag_matcher.verbose
+
+(*****************************************************************************)
 (* The functor argument *)
 (*****************************************************************************)
 
@@ -115,6 +120,54 @@ module XMATCH = struct
         b
       )
     else fail
+
+  (* pre: both 'a' and 'b' contains only regular PHP code. There is no
+   * metavariables in them.
+   * coupling: don't forget to also modify the one in transforming_php.ml
+   * todo: factorize code
+   *)
+  let equal_ast_binded_code a b =
+
+    (* Note that because we want to retain the position information
+     * of the matched code in the environment (e.g. for the -pvar
+     * sgrep command line argument), we can not just use the
+     * generic '=' OCaml operator as 'a' and 'b' may represent
+     * the same code but they will contain leaves in their AST
+     * with different position information. So before doing
+     * the comparison we just need to remove/abstract-away 
+     * the line number information in each ASTs.
+     * 
+     * less: optimize by caching the abstract_lined ?
+     *)
+    let a = Ast_fuzzy.abstract_position_trees a in
+    let b = Ast_fuzzy.abstract_position_trees b in
+    a =*= b
+
+
+  let check_and_add_metavar_binding((mvar:string), valu) = fun tin ->
+    match Common2.assoc_option mvar tin with
+    | Some valu' ->
+        (* Should we use fuzzy_vs_fuzzy itself for comparing the binded code ?
+         * Hmmm, we can't because it leads to a circular dependencies.
+         * Moreover here we know both valu and valu' are regular code,
+         * not patterns, so we can just use the generic '=' of OCaml.
+         *)
+        if equal_ast_binded_code valu valu'
+        then Some tin
+        else None
+    | None ->
+        (* first time the metavar is binded, just add it to the environment *)
+        Some (Common2.insert_assoc (mvar, valu) tin)
+
+  let (envf: (Metavars_fuzzy.mvar * Parse_info.info, Ast_fuzzy.trees) matcher) =
+   fun (mvar, tok) any  -> fun tin ->
+    match check_and_add_metavar_binding (mvar, any) tin with
+    | None ->
+        pr2 (spf "envf: fail, %s" mvar);
+        fail tin
+    | Some new_binding ->
+        pr2 (spf "envf: success, %s" mvar);
+        return ((mvar, tok), any) new_binding
 
 end
 

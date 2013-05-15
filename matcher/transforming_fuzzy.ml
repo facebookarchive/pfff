@@ -147,6 +147,19 @@ module XMATCH = struct
     end
     else fail tin
 
+
+  let (envf: (Metavars_fuzzy.mvar * Parse_info.info, Ast_fuzzy.trees) matcher) =
+   fun (mvar, tok) any  -> fun tin ->
+     raise Todo
+(*
+    match check_and_add_metavar_binding (mvar, any) tin with
+    | None ->
+        fail tin
+    | Some new_binding ->
+        distribute_transfo imvar.PI.transfo any tin;
+
+        return ((mvar, imvar), any) new_binding
+*)
 end
 
 (*****************************************************************************)

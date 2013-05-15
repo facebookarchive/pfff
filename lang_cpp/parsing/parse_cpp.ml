@@ -219,8 +219,8 @@ and multi_grouped = function
   | Token_views_cpp.Tok (tok) ->
     (match Ast.str_of_info (tokext tok) with
     | "..." -> Ast_fuzzy.Dots (tokext tok)
-    | s when Ast_fuzzy.is_metavar s -> Ast_fuzzy.Metavar (tokext tok)
-    | _ -> Ast_fuzzy.Tok (tokext tok)
+    | s when Ast_fuzzy.is_metavar s -> Ast_fuzzy.Metavar (s, tokext tok)
+    | s -> Ast_fuzzy.Tok (s, tokext tok)
     )
   | _ -> failwith "could not find closing brace/parens/angle"
 and tokext tok_extended =
