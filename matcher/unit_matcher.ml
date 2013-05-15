@@ -2,10 +2,6 @@ open Common
 open OUnit
 
 (*****************************************************************************)
-(* Helpers *)
-(*****************************************************************************)
-
-(*****************************************************************************)
 (* Sgrep Unit tests *)
 (*****************************************************************************)
 
@@ -17,24 +13,89 @@ let sgrep_unittest ~ast_fuzzy_of_string = [
 
     (* spec: pattern string, code string, should_match boolean *)
     let triples = [
+
+      (* ------------ *)
+      (* spacing *)  
+      (* ------------ *)
+   
       (* basic string match of course *)
       "foo(1,2);", "foo(1,2);", true;
       "foo(1,3);", "foo(1,2);", false;
-      (* matches even when space differs *)
+      (* matches even when space or newline differs *)
       "foo(1,2);", "foo(1,     2);", true;
-      (* matches even when have comments differs *)
+      "foo(1,2);", "foo(1,     
+                        2);", true;
+      (* matches even when have comments in the middle *)
       "foo(1,2);", "foo(1, /* foo */ 2);", true;
 
-      (* ... for stmts *)
-      "class Foo { ... }", "class Foo { int x; }", true;
+      (* ------------ *)
+      (* metavariables *)
+      (* ------------ *)
 
-      (* metavariable *)
+      (* for identifiers *)
       "class $X { ... }", "class Foo { int x; }", true;
+      (* for expressions *)
+      "foo($X);",  "foo(1);", true;
+(*TODO      "foo($X);",  "foo(1+1);", true; *)
+      (* for lvalues *)
+      "$X->method();",  "$this->method();", true;
+(*TODO      "$X->method();"  ,  "$this->foo()->method();", true; *)
+(*TODO      "->method();"  ,  "$this->foo()->method();", true; *)
 
       (* "linear" patterns, a la Prolog *)
       "$X && $X;", "(a || b) && (a || b);", true;
       "foo($X, $X);", "foo(a, a);", true;
       "foo($X, $X);", "foo(a, b);", false;
+
+      (* many arguments metavariables *)
+(*TODO      "foo($MANYARGS);", "foo(1,2,3);", true; *)
+
+      (* metavariable on function name *)
+      "$X(1,2);", "foo(1,2);", true;
+      (* metavariable on class name *)
+      "$X::foo();", "Ent::foo();", true;
+      (* metavariable string for identifiers *)
+(*TODO      "foo('X');", "foo('a_func');", true; *)
+      (* metavariable on reference arguments *)
+(*TODO      "foo($X,$Y);", "foo(&$a, $b);", true; *)
+      (* metavariable on class name reference *)
+      "new $X(...);", "new $dyn();", true;
+      "new $X(...);", "new self();", true;
+
+      (* ------------ *)
+      (* ... *)
+      (* ------------ *)
+
+      (* for stmts *)
+      "class Foo { ... }", "class Foo { int x; }", true;
+
+      (* '...' in funcall *)
+      "foo(...);", "foo();", true;
+      "foo(...);", "foo(1);", true;
+      "foo(...);", "foo(1,2);", true;
+      "foo($X,...);", "foo(1,2);", true;
+      (* ... also match when there is no additional arguments *)
+(*TODO      "foo($X,...);", "foo(1);", true; *)
+      (* TODO: foo(..., 3, ...), foo(1,2,3,4) *)
+
+      (* '...' in arrays *)
+      "foo($X, array(...));",  "foo(1, array(2, 3));", true;
+
+      (* '...' in strings *)
+(*TODO      "foo(\"...\");", "foo(\"a string\");", true; *)
+(*TODO      "foo(\"...\");", "foo(\"a string\" . \"another string\");", true;*)
+
+      (* '...' in new *)
+      "new Foo(...);","new Foo(1);", true;
+      "new Foo(...);","new Foo();", true;
+(*TODO      "new Foo(...);","new Foo;", true; *)
+
+      (* more complex expressions *)
+      "strstr(...) == false;", "strstr(x)==false;", true;
+
+      (* ------------ *)
+      (* Misc isomorphisms *)
+      (* ------------ *)
 
     ]
     in
