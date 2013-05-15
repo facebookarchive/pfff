@@ -17,11 +17,20 @@ let sgrep_unittest = [
   "sgrep features" >:: (fun () ->
     (* spec: pattern string, code string (statement), should_match boolean *)
     let triples = [
+
+      (* ------------ *)
+      (* spacing *)  
+      (* ------------ *)
+
       (* basic string match of course *)
       "foo(1,2);", "foo(1,2);", true;
       "foo(1,3);", "foo(1,2);", false;
       (* matches even when space differs *)
       "foo(1,2);", "foo(1,     2);", true;
+
+      (* ------------ *)
+      (* metavariables *)
+      (* ------------ *)
 
       (* expression metavariable *)
       "foo(X);",  "foo(1);", true;
@@ -48,6 +57,31 @@ let sgrep_unittest = [
       "foo($V, $V);", "foo($x, $x);", true;
       "foo($V, $V);", "foo($x, $y);", false;
 
+      (* many arguments metavariables *)
+      "foo(MANYARGS);", "foo(1,2,3);", true;
+      "foo(MANYARGS2);", "foo(1,2,3);", true;
+      "foo(MANYARGS);", "foo();", true;
+      "foo(X, MANYARGS);", "foo(1,2,3);", true;
+      (* ... also match when there is no additional arguments *)
+      "foo(X, MANYARGS);", "foo(1);", true;
+
+      (* metavariables on function name *)
+      "X(1,2);", "foo(1,2);", true;
+      (* metavariables on class name *)
+      "X::foo();", "Ent::foo();", true;
+      (* metavariable string for identifiers *)
+      "foo('X');", "foo('a_func');", true;
+      (* metavariable on reference arguments *)
+      "foo(X,Y);", "foo(&$a, $b);", true;
+      (* metavariable on class name reference *)
+      "new X(...);", "new $dyn();", true;
+      "new X(...);", "new self();", true;
+
+
+      (* ------------ *)
+      (* ... *)
+      (* ------------ *)
+
       (* '...' in funcall *)
       "foo(...);", "foo();", true;
       "foo(...);", "foo(1);", true;
@@ -69,25 +103,9 @@ let sgrep_unittest = [
       "new Foo(...);","new Foo();", true;
       "new Foo(...);","new Foo;", true;
 
-      (* many arguments metavariables *)
-      "foo(MANYARGS);", "foo(1,2,3);", true;
-      "foo(MANYARGS2);", "foo(1,2,3);", true;
-      "foo(MANYARGS);", "foo();", true;
-      "foo(X, MANYARGS);", "foo(1,2,3);", true;
-      (* ... also match when there is no additional arguments *)
-      "foo(X, MANYARGS);", "foo(1);", true;
-
-      (* metavariables on function name *)
-      "X(1,2);", "foo(1,2);", true;
-      (* metavariables on class name *)
-      "X::foo();", "Ent::foo();", true;
-      (* metavariable string for identifiers *)
-      "foo('X');", "foo('a_func');", true;
-      (* metavariable on reference arguments *)
-      "foo(X,Y);", "foo(&$a, $b);", true;
-      (* metavariable on class name reference *)
-      "new X(...);", "new $dyn();", true;
-      "new X(...);", "new self();", true;
+      (* ------------ *)
+      (* Misc isomorphisms *)
+      (* ------------ *)
 
       (* isomorphism on "keyword" arguments *)
       "foo(true);", "foo($x=true);", true;
