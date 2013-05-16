@@ -88,11 +88,15 @@ open Common
  *    but as a tree as we want for instance '$X->foo()' to match
  *    whole expression like 'this->bar()->foo()', or we want
  *    '$X' to match '1+1' (and not only in Parens context)
- *  - how to handle isomorphisms like order of attributes don't matter
- *    for XHP? or class can be mentioned anywhere in the arguments
- *    to implements? or how can make 'class X { ... }' to also match
+ *  - same for function calls? so maybe we need to transform our
+ *    original program in a lisp like AST where things are more uniform
+ *  - how to handle isomorphisms like 'order of attributes don't matter'
+ *    as in XHP? or class that can be mentioned anywhere in the arguments
+ *    to implements? or how can we make 'class X { ... }' to also match
  *    'class X extends whatever { ... }'
  *    Use regexp over trees? Use isomorphisms file as in coccinelle?
+ *  - want powerful queries like 
+ *      'class X { ... function(...) { ... foo() ... } ... }
  *)
 
 (*****************************************************************************)
