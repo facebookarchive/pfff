@@ -1,8 +1,6 @@
-/*(*s: parser_php.mly *)*/
-/*(*s: Facebook copyright2 *)*/
 /* Yoann Padioleau
  *
- * Copyright (C) 2009-2012 Facebook
+ * Copyright (C) 2009-2013 Facebook
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public License
@@ -14,9 +12,7 @@
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the file
  * license.txt for more details.
  */
-/*(*e: Facebook copyright2 *)*/
 
-/*(*s: GRAMMAR prelude *)*/
 %{
 (* src: ocamlyaccified from zend_language_parser.y in Zend PHP source code.
  * updates:
@@ -92,11 +88,9 @@ let split_two_char_info i =
 
 %}
 
-/*(*e: GRAMMAR prelude *)*/
 /*(*************************************************************************)*/
 /*(*1 Tokens *)*/
 /*(*************************************************************************)*/
-/*(*s: GRAMMAR tokens declaration *)*/
 
 %token <Ast_php.info> TUnknown /*(* unrecognized token *)*/
 %token <Ast_php.info> EOF
@@ -104,7 +98,6 @@ let split_two_char_info i =
 /*(*-----------------------------------------*)*/
 /*(*2 The space/comment tokens *)*/
 /*(*-----------------------------------------*)*/
-/*(*s: GRAMMAR comment tokens *)*/
 /*(* coupling: Token_helpers.is_real_comment *)*/
 %token <Ast_php.info> TSpaces TNewline
 
@@ -113,12 +106,10 @@ let split_two_char_info i =
 
 /*(* when use preprocessor and want to mark removed tokens as commented *)*/
 %token <Ast_php.info> TCommentPP
-/*(*e: GRAMMAR comment tokens *)*/
 
 /*(*-----------------------------------------*)*/
 /*(*2 The normal tokens *)*/
 /*(*-----------------------------------------*)*/
-/*(*s: GRAMMAR normal tokens *)*/
 %token <string * Ast_php.info>
  T_LNUMBER T_DNUMBER
  /*(* T_IDENT is for a regular ident and  T_VARIABLE is for a dollar ident.
@@ -199,18 +190,13 @@ let split_two_char_info i =
  TSEMICOLON
  TDOLLAR /*(* see also T_VARIABLE *)*/
  TGUIL
-/*(*e: GRAMMAR normal tokens *)*/
 
 /*(*-----------------------------------------*)*/
 /*(*2 Extra tokens: *)*/
 /*(*-----------------------------------------*)*/
-/*(*s: GRAMMAR tokens hook *)*/
 %token <Ast_php.info> TDOTS
-/*(*x: GRAMMAR tokens hook *)*/
 
-/*(*x: GRAMMAR tokens hook *)*/
 %token <Ast_php.info> T_CLASS_XDEBUG  T_RESOURCE_XDEBUG
-/*(*e: GRAMMAR tokens hook *)*/
 
 /*(*-----------------------------------------*)*/
 /*(*2 PHP language extensions: *)*/
@@ -246,9 +232,7 @@ let split_two_char_info i =
  T_XHP_ANY /*(* T_XHP_EMPTY is T_EMPTY *)*/
  T_XHP_PCDATA
 
-/*(*e: GRAMMAR tokens declaration *)*/
 
-/*(*s: GRAMMAR tokens priorities *)*/
 /*(*************************************************************************)*/
 /*(*1 Priorities *)*/
 /*(*************************************************************************)*/
@@ -290,30 +274,24 @@ let split_two_char_info i =
    *)*/
 %left T_XHP_PERCENTID_DEF
 
-/*(*e: GRAMMAR tokens priorities *)*/
 /*(*************************************************************************)*/
 /*(*1 Rules type declaration *)*/
 /*(*************************************************************************)*/
 %start main expr class_declaration_statement sgrep_spatch_pattern
-/*(*s: GRAMMAR type of main rule *)*/
 %type <Ast_php.toplevel list> main
 %type <Ast_php.expr> expr
 %type <Ast_php.class_def> class_declaration_statement
 %type <Ast_php.any> sgrep_spatch_pattern
-/*(*e: GRAMMAR type of main rule *)*/
 
 %%
 
-/*(*s: GRAMMAR long set of rules *)*/
 /*(*************************************************************************)*/
 /*(*1 Toplevel *)*/
 /*(*************************************************************************)*/
-/*(*s: GRAMMAR toplevel *)*/
 main: start EOF { squash_stmt_list $1 ++ [FinalDef $2] }
 
 start: top_statement_list { $1 }
 
-/*(*x: GRAMMAR toplevel *)*/
 top_statement:
  | statement                            { StmtList [$1] }
  | constant_declaration_statement       { ConstantDef $1 }
@@ -321,7 +299,6 @@ top_statement:
  | class_declaration_statement		{ ClassDef $1 }
  | trait_declaration_statement          { ClassDef $1 }
 
-/*(*e: GRAMMAR toplevel *)*/
 sgrep_spatch_pattern:
  | expr EOF      { Expr $1 }
  | statement EOF { Stmt2 $1 }
@@ -331,14 +308,12 @@ sgrep_spatch_pattern:
 /*(*************************************************************************)*/
 /*(*1 Statements *)*/
 /*(*************************************************************************)*/
-/*(*s: GRAMMAR statement *)*/
 inner_statement:
  | statement                            { $1 }
  | function_declaration_statement	{ FuncDefNested $1 }
  | class_declaration_statement		{ ClassDefNested $1 }
 
 statement: unticked_statement { $1 }
-/*(*x: GRAMMAR statement *)*/
 unticked_statement:
  | expr           TSEMICOLON		  { ExprStmt($1,$2) }
  | /*(* empty*)*/ TSEMICOLON              { EmptyStmt($1) }
@@ -409,7 +384,6 @@ unticked_statement:
  | T_DECLARE  TOPAR declare_list TCPAR declare_statement
      { Declare($1,($2,$3,$4),$5) }
 
-/*(*x: GRAMMAR statement *)*/
 /*(*----------------------------*)*/
 /*(*2 auxillary statements *)*/
 /*(*----------------------------*)*/
@@ -492,7 +466,6 @@ additional_catch:
        let catch = ($1, ($2, ($3, DName $4), $5), catch_block) in
        catch
      }
-/*(*x: GRAMMAR statement *)*/
 /*(*----------------------------*)*/
 /*(*2 auxillary bis *)*/
 /*(*----------------------------*)*/
@@ -513,7 +486,6 @@ unset_variable: variable	{ $1 }
 use_filename:
  |       T_CONSTANT_ENCAPSED_STRING		{ UseDirect $1 }
  | TOPAR T_CONSTANT_ENCAPSED_STRING TCPAR	{ UseParen ($1, $2, $3) }
-/*(*e: GRAMMAR statement *)*/
 
 /*(*************************************************************************)*/
 /*(*1 Constant declaration *)*/
@@ -529,7 +501,6 @@ constant_declaration_statement:
 /*(*************************************************************************)*/
 /*(*1 Function declaration *)*/
 /*(*************************************************************************)*/
-/*(*s: GRAMMAR function declaration *)*/
 function_declaration_statement:
  |            unticked_function_declaration_statement { $1 }
  /*(* can not factorize with a 'attributes_opt', see conflict.txt *)*/
@@ -551,7 +522,6 @@ unticked_function_declaration_statement:
     })
    }
 
-/*(*x: GRAMMAR function declaration *)*/
 parameter_list:
  | non_empty_parameter_list   { $1 }
  | /*(*empty*)*/              { [] }
@@ -586,7 +556,6 @@ parameter_bis:
  | TAND T_VARIABLE TEQ static_scalar
      { let p = mk_param $2 in {p with p_ref=Some $1; p_default=Some($3,$4)}}
 
-/*(*x: GRAMMAR function declaration *)*/
 
 is_reference:
  | /*(*empty*)*/  { None }
@@ -605,12 +574,10 @@ lexical_var_list:
  | TAND T_VARIABLE			{ [Left (Some $1, DName $2)] }
  | lexical_var_list TCOMMA T_VARIABLE       { $1 ++ [Right $2; Left (None, DName $3)]  }
  | lexical_var_list TCOMMA TAND T_VARIABLE  { $1 ++ [Right $2; Left (Some $3, DName $4)] }
-/*(*e: GRAMMAR function declaration *)*/
 
 /*(*************************************************************************)*/
 /*(*1 Class declaration *)*/
 /*(*************************************************************************)*/
-/*(*s: GRAMMAR class declaration *)*/
 class_declaration_statement:
  |            unticked_class_declaration_statement { $1 }
  | attributes unticked_class_declaration_statement
@@ -650,7 +617,6 @@ trait_declaration_statement_aux:
        }
      }
 
-/*(*x: GRAMMAR class declaration *)*/
 class_name:
   | ident             { Name $1 }
  /*(*s: class_name grammar rule hook *)*/
@@ -666,7 +632,6 @@ class_entry_type:
 
 interface_entry:
  | T_INTERFACE		{ $1 }
-/*(*x: GRAMMAR class declaration *)*/
 extends_from:
  | /*(*empty*)*/			{ None }
  | T_EXTENDS fully_qualified_class_name	type_arguments { Some ($1, $2) }
@@ -688,7 +653,6 @@ trait_list:
  | fully_qualified_class_name type_arguments		{ [Left $1] }
  | trait_list TCOMMA fully_qualified_class_name type_arguments { $1 ++ [Right $2; Left $3] }
 
-/*(*x: GRAMMAR class declaration *)*/
 /*(*----------------------------*)*/
 /*(*2 class statement *)*/
 /*(*----------------------------*)*/
@@ -741,7 +705,6 @@ method_name:
  | T_PARENT { "parent", $1 }
  | T_SELF   { "self", $1 }
 
-/*(*x: GRAMMAR class declaration *)*/
 class_constant_declaration:
  | ident TEQ static_scalar
      { [Left ((Name $1), ($2, $3))] }
@@ -758,7 +721,6 @@ class_variable:
  | T_VARIABLE			{ (DName $1, None) }
  | T_VARIABLE TEQ static_scalar	{ (DName $1, Some ($2, $3)) }
 
-/*(*x: GRAMMAR class declaration *)*/
 member_modifier:
  | T_PUBLIC    { Public,($1) } | T_PROTECTED { Protected,($1) }
  | T_PRIVATE   { Private,($1) }
@@ -1015,7 +977,6 @@ non_empty_return_type:
  | TCOLON type_hint                { Some $2 }
  | TCOLON type_hint_extensions     { None }
 
-/*(*e: GRAMMAR class declaration *)*/
 
 /*(*************************************************************************)*/
 /*(*1 Attributes *)*/
@@ -1034,7 +995,6 @@ attribute_argument: static_scalar { $1 }
 /*(*************************************************************************)*/
 /*(*1 Expressions (and variables) *)*/
 /*(*************************************************************************)*/
-/*(*s: GRAMMAR expression *)*/
 /*(* a little coupling with non_empty_function_call_argument_list *)*/
 expr:
  | r_variable				{ mk_e (Lv $1) }
@@ -1078,7 +1038,6 @@ expr_without_variable:
          mk_e (Lv var)
    }
 
-/*(*x: GRAMMAR expression *)*/
 expr_without_variable_bis:
  | scalar				{ Sc $1 }
 
@@ -1278,7 +1237,6 @@ collection_literal:
      }
 
  /*(*e: exprbis grammar rule hook *)*/
-/*(*x: GRAMMAR expression *)*/
 /*(*pad: why this name ? *)*/
 internal_functions_in_yacc:
  | T_INCLUDE      expr 		       { Include($1,$2) }
@@ -1305,12 +1263,10 @@ isset_variable:
    | _ -> raise Parsing.Parse_error
    }
 
-/*(*x: GRAMMAR expression *)*/
 /*(*----------------------------*)*/
 /*(*2 scalar *)*/
 /*(*----------------------------*)*/
 
-/*(*s: GRAMMAR scalar *)*/
 scalar:
  | common_scalar		{ C $1 }
  | ident 			{ C (CName (Name $1)) }
@@ -1327,7 +1283,6 @@ scalar:
     *)*/
   /*(* | T_STRING_VARNAME {  raise Todo } *)*/
 
-/*(*x: GRAMMAR scalar *)*/
 static_scalar: /* compile-time evaluated scalars */
  | common_scalar	 { Sc (C $1) }
  | ident 		 { Sc (C (CName (Name $1))) }
@@ -1406,21 +1361,17 @@ class_constant:
   | qualifier ident { $1, (Name $2) }
 
 static_class_constant: class_constant { $1 }
-/*(*x: GRAMMAR scalar *)*/
 static_array_pair_list: static_array_pair_list_rev { List.rev $1 }
 
 static_array_pair:
  | static_scalar                               { (ArrayExpr $1) }
  | static_scalar T_DOUBLE_ARROW static_scalar  { (ArrayArrowExpr ($1,$2,$3)) }
-/*(*e: GRAMMAR scalar *)*/
 
 /*(*----------------------------*)*/
 /*(*2 variable *)*/
 /*(*----------------------------*)*/
 
-/*(*s: GRAMMAR variable *)*/
 variable: variable2 { variable2_to_lvalue $1 }
-/*(*x: GRAMMAR variable *)*/
 variable2:
  | base_variable_with_function_calls
      { Variable ($1,[]) }
@@ -1459,7 +1410,6 @@ compound_variable:
  | T_VARIABLE			{ Var2 (DName $1, Ast.noScope()) }
  | TDOLLAR TOBRACE expr TCBRACE	{ VDollar2 ($1, ($2, $3, $4)) }
 
-/*(*x: GRAMMAR variable *)*/
 simple_indirect_reference:
  | TDOLLAR                           { [Dollar $1] }
  | simple_indirect_reference TDOLLAR { $1 ++ [Dollar $2] }
@@ -1467,11 +1417,9 @@ simple_indirect_reference:
 dim_offset:
  | /*(*empty*)*/   { None }
  | expr		   { Some $1 }
-/*(*x: GRAMMAR variable *)*/
 r_variable: variable { $1 }
 w_variable: variable { $1 }
 rw_variable: variable { $1 }
-/*(*x: GRAMMAR variable *)*/
 /*(*----------------------------*)*/
 /*(*2 function call *)*/
 /*(*----------------------------*)*/
@@ -1492,13 +1440,11 @@ function_head:
  | variable_class_name TCOLCOL ident { StaticMethodVar($1, $2, Name $3) }
  | variable_class_name TCOLCOL variable_without_objects { StaticObjVar ($1, $2, $3) }
 
-/*(*x: GRAMMAR variable *)*/
 function_call_argument:
  | variable			{ (Arg (mk_e (Lv $1))) }
  | expr_without_variable	{ (Arg ($1)) }
  | TAND w_variable 		{ (ArgRef($1,$2)) }
 
-/*(*x: GRAMMAR variable *)*/
 /*(*----------------------------*)*/
 /*(*2 list/array *)*/
 /*(*----------------------------*)*/
@@ -1507,7 +1453,6 @@ assignment_list_element:
  | variable				{ ListVar $1 }
  | T_LIST TOPAR assignment_list TCPAR	{ ListList ($1, ($2, $3, $4)) }
  | /*(*empty*)*/			{ ListEmpty }
-/*(*x: GRAMMAR variable *)*/
 array_pair_list: array_pair_list_rev { List.rev $1 }
 
 array_pair:
@@ -1516,7 +1461,6 @@ array_pair:
  | expr T_DOUBLE_ARROW expr	       { (ArrayArrowExpr($1,$2,$3)) }
  | expr T_DOUBLE_ARROW TAND w_variable { (ArrayArrowRef($1,$2,$3,$4)) }
 
-/*(*x: GRAMMAR variable *)*/
 
 /*(*----------------------------*)*/
 /*(*2 XHP embeded html *)*/
@@ -1554,13 +1498,10 @@ exit_expr:
  | TOPAR TCPAR		{ Some($1, None, $2) }
  | TOPAR expr TCPAR	{ Some($1, Some $2, $3) }
 
-/*(*e: GRAMMAR variable *)*/
-/*(*e: GRAMMAR expression *)*/
 
 /*(*************************************************************************)*/
 /*(*1 Ident, namespace *)*/
 /*(*************************************************************************)*/
-/*(*s: GRAMMAR namespace *)*/
 
 ident:
  | T_IDENT { $1 }
@@ -1614,14 +1555,12 @@ fully_qualified_class_name:
 class_namespace_string:
   | ident { Name $1 }
 
-/*(*e: GRAMMAR namespace *)*/
 
 variable_class_name: reference_variable { $1 }
 
 /*(*************************************************************************)*/
 /*(*1 Class bis *)*/
 /*(*************************************************************************)*/
-/*(*s: GRAMMAR class bis *)*/
 class_name_reference:
  | class_name_or_selfparent	{ ClassNameRefStatic $1 }
  | dynamic_class_name_reference	{ ClassNameRefDynamic (fst $1, snd $1) }
@@ -1643,7 +1582,6 @@ method_or_not:
 ctor_arguments:
   | TOPAR function_call_argument_list TCPAR	{ Some ($1, $2, $3) }
   | /*(*empty*)*/ { None }
-/*(*x: GRAMMAR class bis *)*/
 /*(*----------------------------*)*/
 /*(*2 object property, variable property *)*/
 /*(*----------------------------*)*/
@@ -1672,11 +1610,9 @@ variable_property: T_OBJECT_OPERATOR object_property method_or_not
 dynamic_class_name_variable_property: T_OBJECT_OPERATOR object_property
   { $1, $2 }
 
-/*(*e: GRAMMAR class bis *)*/
 /*(*************************************************************************)*/
 /*(*1 Encaps *)*/
 /*(*************************************************************************)*/
-/*(*s: GRAMMAR encaps *)*/
 encaps:
  | T_ENCAPSED_AND_WHITESPACE { EncapsString $1 }
  | T_VARIABLE
@@ -1739,7 +1675,6 @@ encaps:
  | T_CURLY_OPEN variable TCBRACE           { EncapsCurly($1, $2, $3) }
  /*(* for ? *)*/
  | T_DOLLAR_OPEN_CURLY_BRACES expr TCBRACE { EncapsExpr ($1, $2, $3) }
-/*(*x: GRAMMAR encaps *)*/
 encaps_var_offset:
  | T_IDENT	{
      (* It looks like an ident but as we are in encaps_var_offset,
@@ -1766,16 +1701,13 @@ encaps_var_offset:
      let cst = String $1 in (* will not have enclosing "'"  as usual *)
      Sc (C cst)
    }
-/*(*e: GRAMMAR encaps *)*/
 /*(*************************************************************************)*/
 /*(*1 xxx_list, xxx_opt *)*/
 /*(*************************************************************************)*/
-/*(*s: GRAMMAR xxxlist or xxxopt *)*/
 top_statement_list:
  | top_statement_list  top_statement { $1 ++ [$2] }
  | /*(*empty*)*/ { [] }
 
-/*(*s: repetitive xxx_list *)*/
 inner_statement_list:
  | inner_statement_list  inner_statement { $1 ++ [$2] }
  | /*(*empty*)*/ { [] }
@@ -1808,7 +1740,6 @@ xhp_children:
 trait_rules:
  | trait_rules trait_rule { $1 ++ [$2] }
  | /*(*empty*)*/ { [] }
-/*(*e: repetitive xxx_list *)*/
 
 additional_catches:
  | non_empty_additional_catches { $1 }
@@ -1818,7 +1749,6 @@ non_empty_additional_catches:
  | additional_catch                              { [$1] }
  | non_empty_additional_catches additional_catch { $1 ++ [$2] }
 
-/*(*s: repetitive xxx and non_empty_xxx *)*/
 method_modifiers:
  | /*(*empty*)*/				{ [] }
  | non_empty_member_modifiers			{ $1 }
@@ -1833,7 +1763,6 @@ function_call_argument_list:
  | non_empty_function_call_argument_list      { $1 }
  /*(* php-facebook-ext: *)*/
  | non_empty_function_call_argument_list TCOMMA  { $1 ++ [Right $2] }
-/*(*e: repetitive xxx and non_empty_xxx *)*/
 
 non_empty_function_call_argument_list:
  | function_call_argument { [Left $1] }
@@ -1847,7 +1776,6 @@ unset_variables:
  | unset_variable { [Left $1] }
  | unset_variables TCOMMA unset_variable { $1 ++ [Right $2; Left $3] }
 
-/*(*s: repetitive xxx_list with TCOMMA *)*/
 global_var_list:
  | global_var				{ [Left $1] }
  | global_var_list TCOMMA global_var	{ $1 ++ [Right $2; Left $3] }
@@ -1916,7 +1844,6 @@ non_empty_array_pair_list_rev:
  | non_empty_array_pair_list_rev TCOMMA array_pair  { Left $3::Right $2::$1 }
  /*(*e: repetitive non_empty_array_pair_list *)*/
 
-/*(*e: repetitive xxx_list with TCOMMA *)*/
 possible_comma:
  | /*(*empty*)*/ { [] }
  | TCOMMA        { [Right $1] }
@@ -1933,7 +1860,4 @@ array_pair_list_rev:
  | /*(*empty*)*/ { [] }
  | non_empty_array_pair_list_rev possible_comma2	{ $2++$1 }
 
-/*(*e: GRAMMAR xxxlist or xxxopt *)*/
 
-/*(*e: GRAMMAR long set of rules *)*/
-/*(*e: parser_php.mly *)*/
