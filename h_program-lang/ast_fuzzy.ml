@@ -82,6 +82,17 @@ open Common
  *    perl -pe 's/namespace(<(?:[^<>]|(?1))*>)/foo/'
  *  => 'something< foo, other >'
  *  but it's arguably more complicated than the proposed spatch above.
+ * 
+ * todo:
+ *  - handle infix operators: parse them not as a sequence
+ *    but as a tree as we want for instance '$X->foo()' to match
+ *    whole expression like 'this->bar()->foo()', or we want
+ *    '$X' to match '1+1' (and not only in Parens context)
+ *  - how to handle isomorphisms like order of attributes don't matter
+ *    for XHP? or class can be mentioned anywhere in the arguments
+ *    to implements? or how can make 'class X { ... }' to also match
+ *    'class X extends whatever { ... }'
+ *    Use regexp over trees? Use isomorphisms file as in coccinelle?
  *)
 
 (*****************************************************************************)
