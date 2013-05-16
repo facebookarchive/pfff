@@ -93,10 +93,15 @@ open Common
  *  - how to handle isomorphisms like 'order of attributes don't matter'
  *    as in XHP? or class that can be mentioned anywhere in the arguments
  *    to implements? or how can we make 'class X { ... }' to also match
- *    'class X extends whatever { ... }'
+ *    'class X extends whatever { ... }'? or have public/static to
+ *    be optional?
  *    Use regexp over trees? Use isomorphisms file as in coccinelle?
+ *    Have special mark about optional things in ast_fuzzy? 
+ *    Derives such information from the grammar?
  *  - want powerful queries like 
  *      'class X { ... function(...) { ... foo() ... } ... }
+ *    so sgrep powerful for microlevel queries, and prolog for macrolevel
+ *    queries
  *)
 
 (*****************************************************************************)
