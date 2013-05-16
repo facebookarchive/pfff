@@ -94,7 +94,7 @@ type 'a wrap = 'a * tok
 type tree =
   | Braces of tok * trees * tok
   (* todo: comma *)
-  | Parens of tok * trees * tok
+  | Parens of tok * (trees, tok (* comma*)) Common.either list * tok
   | Angle  of tok * trees * tok
   (* note that gcc allows $ in identifiers, so using $ for metavariables
    * means we will not be able to match such identifiers. No big deal.
@@ -137,7 +137,11 @@ let (mk_visitor: visitor_in -> visitor_out) = fun vin ->
       | Braces ((v1, v2, v3)) ->
         let _v1 = v_tok v1 and _v2 = v_trees v2 and _v3 = v_tok v3 in ()
       | Parens ((v1, v2, v3)) ->
-        let _v1 = v_tok v1 and _v2 = v_trees v2 and _v3 = v_tok v3 in ()
+        let _v1 = v_tok v1
+        and _v2 = Ocaml.v_list (Ocaml.v_either v_trees v_tok) v2
+        and _v3 = v_tok v3
+      in ()
+
       | Angle ((v1, v2, v3)) ->
         let _v1 = v_tok v1 and _v2 = v_trees v2 and _v3 = v_tok v3 in ()
       | Metavar v1 -> let _v1 = v_wrap v1 in ()
@@ -182,7 +186,7 @@ let rec (mk_mapper: map_visitor -> (trees -> trees)) = fun hook ->
       in Braces ((v1, v2, v3))
     | Parens ((v1, v2, v3)) ->
       let v1 = map_tok v1
-      and v2 = map_trees v2
+      and v2 = List.map (Ocaml.map_of_either map_trees map_tok) v2
       and v3 = map_tok v3
       in Parens ((v1, v2, v3))
     | Angle ((v1, v2, v3)) ->
@@ -246,7 +250,7 @@ let rec vof_multi_grouped =
       in Ocaml.VSum (("Braces", [ v1; v2; v3 ]))
   | Parens ((v1, v2, v3)) ->
       let v1 = vof_token v1
-      and v2 = Ocaml.vof_list vof_multi_grouped v2
+      and v2 = Ocaml.vof_list (Ocaml.vof_either vof_trees vof_token) v2
       and v3 = vof_token v3
       in Ocaml.VSum (("Parens", [ v1; v2; v3 ]))
   | Angle ((v1, v2, v3)) ->
@@ -258,6 +262,5 @@ let rec vof_multi_grouped =
   | Dots v1 -> let v1 = vof_token v1 in Ocaml.VSum (("Dots", [ v1 ]))
   | Tok v1 -> let v1 = vof_wrap v1 in Ocaml.VSum (("Tok", [ v1 ]))
 and vof_wrap (s, x) = Ocaml.VString s
-
-let vof_trees xs =
+and vof_trees xs =
   Ocaml.VList (xs +> List.map vof_multi_grouped)

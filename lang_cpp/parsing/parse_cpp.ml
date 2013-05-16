@@ -213,7 +213,7 @@ and multi_grouped = function
   | Token_views_cpp.Braces (tok1, xs, (Some tok2)) ->
       Ast_fuzzy.Braces (tokext tok1, multi_grouped_list xs, tokext tok2)
   | Token_views_cpp.Parens (tok1, xs, (Some tok2)) ->
-      Ast_fuzzy.Parens (tokext tok1, multi_grouped_list xs, tokext tok2)
+      Ast_fuzzy.Parens (tokext tok1, multi_grouped_list_comma xs, tokext tok2)
   | Token_views_cpp.Angle (tok1, xs, (Some tok2)) ->
       Ast_fuzzy.Angle (tokext tok1, multi_grouped_list xs, tokext tok2)
   | Token_views_cpp.Tok (tok) ->
@@ -225,6 +225,25 @@ and multi_grouped = function
   | _ -> failwith "could not find closing brace/parens/angle"
 and tokext tok_extended =
   TH.info_of_tok tok_extended.Token_views_cpp.t
+and multi_grouped_list_comma xs =
+  let rec aux acc xs =
+  match xs with
+  | [] ->
+      if null acc
+      then []
+      else [Left (acc +> List.rev +> multi_grouped_list)]
+  | (x::xs) ->
+      (match x with
+      | Token_views_cpp.Tok tok when Ast.str_of_info (tokext tok) = "," ->
+          let before = acc +> List.rev +> multi_grouped_list in
+          if null before
+          then aux [] xs
+          else (Left before)::(Right (tokext tok))::aux [] xs
+      | _ ->
+        aux (x::acc) xs
+      )
+  in
+  aux [] xs
 
 
 (* This is similar to what I did for OPA. This is also similar

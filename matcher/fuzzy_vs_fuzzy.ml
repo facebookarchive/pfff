@@ -98,6 +98,20 @@ module type PARAM =
   end
 
 (*****************************************************************************)
+(* Helpers *)
+(*****************************************************************************)
+
+let is_NoTransfo tok =
+  match tok.Parse_info.transfo with
+  | Parse_info.NoTransfo -> true
+  | _ -> false
+
+let is_Remove tok =
+  match tok.Parse_info.transfo with
+  | Parse_info.Remove -> true
+  | _ -> false
+
+(*****************************************************************************)
 (* Functor code, "X vs X" *)
 (*****************************************************************************)
 
@@ -125,7 +139,7 @@ let m_tok a b =
 (* list of trees *)
 (* ---------------------------------------------------------------------- *)
 let rec m_list__m_tree xsa xsb =
-    match xsa, xsb with
+  match xsa, xsb with
   | [], [] ->
       return ([], [])
 
@@ -150,6 +164,96 @@ let rec m_list__m_tree xsa xsb =
   | _::_, _ ->
       fail ()
 
+
+(* ---------------------------------------------------------------------- *)
+(* list of trees in Parens context *)
+(* ---------------------------------------------------------------------- *)
+and m_arguments xsa xsb =
+  match xsa, xsb with
+  | [], [] ->
+      return ([], [])
+
+  (* iso on ... *)
+  | [Left [(A.Dots t)]], bbs ->
+    (* less: if just Remove, then could apply the transfo on bbs? *)
+    if is_NoTransfo t then
+      return (
+        xsa,
+        xsb
+      )
+    else failwith 
+      ("transformation (minus or plus) on '...' not allowed, " ^
+       "rewrite your spatch")
+
+  (* bugfix: we can have some Replace or AddAfter in the token of
+   * the comma. We need to apply it to the code.
+   *)
+  | [Right a; Left [A.Dots i]], Right b::bbs ->
+      m_tok a b >>= (fun (a, b) ->
+        return (
+          [Right a; Left [A.Dots i]],
+          Right b::bbs
+        )
+      )
+
+  (* '...' can also match no argument *)
+  | [Right a; Left [A.Dots i]], [] ->
+    if is_NoTransfo a || is_Remove a
+    then
+      return (
+        xsa,
+        xsb
+      )
+    else failwith 
+      ("transformation (minus or plus) on ',' not allowed when used with " ^
+       "'...'. Rewrite your spatch: put your trailing comma on the line " ^
+       "with the '...'. See also " ^ 
+       "https://github.com/facebook/pfff/wiki/Spatch#wiki-spacing-issues")
+
+  | [Right _; Left [A.Dots i]], bbs ->
+      raise Impossible
+
+  | Left [A.Dots i]::xs, bbs ->
+      failwith "... is allowed for now only at the end. Give money to pad to get this feature"
+
+  | xa::aas, xb::bbs ->
+      m_either_m_argument xa xb >>= (fun (xa, xb) ->
+      m_arguments aas bbs >>= (fun (aas, bbs) ->
+        return (
+          xa::aas,
+          xb::bbs
+        )
+      )
+      )
+  | [], _
+  | _::_, _ ->
+      fail ()
+
+and m_either_m_argument a b =
+  match a, b with
+  | Left [A.Metavar (s, tok)], Left b ->
+    X.envf (s, tok) b >>= (function 
+    | ((s, a), b) ->
+      return (
+        Left [A.Metavar (s, tok)],
+        Left b
+      )
+    )
+
+  | Left a, Left b ->
+    m_trees a b >>= (fun (a, b) ->
+      return (
+        Left a, Left b
+      ))
+  | Right a, Right b ->
+    m_tok a b >>= (fun (a, b) ->
+      return (
+        Right a, Right b
+      ))
+  | Left _, Right _
+  | Right _, Left _ ->
+    fail ()
+      
 
 (* ---------------------------------------------------------------------- *)
 (* tree *)
@@ -178,7 +282,7 @@ and m_tree a b =
     )))
   | A.Parens (a1, a2, a3), B.Parens (b1, b2, b3) ->
     m_tok a1 b1 >>= (fun (a1, b1) ->
-    m_trees a2 b2 >>= (fun (a2, b2) ->
+    m_arguments a2 b2 >>= (fun (a2, b2) ->
     m_tok a3 b3 >>= (fun (a3, b3) ->
       return (
         A.Parens (a1, a2, a3), 

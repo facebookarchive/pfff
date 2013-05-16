@@ -36,10 +36,10 @@ let sgrep_unittest ~ast_fuzzy_of_string = [
       "class $X { ... }", "class Foo { int x; }", true;
       (* for expressions *)
       "foo($X);",  "foo(1);", true;
-(*TODO      "foo($X);",  "foo(1+1);", true; *)
+      "foo($X);",  "foo(1+1);", true;
       (* for lvalues *)
-      "$X->method();",  "$this->method();", true;
-(*TODO      "$X->method();"  ,  "$this->foo()->method();", true; *)
+      "$X->method();",  "this->method();", true;
+(*      "$X->method();"  ,  "this->foo()->method();", true; *)
 (*TODO      "->method();"  ,  "$this->foo()->method();", true; *)
 
       (* "linear" patterns, a la Prolog *)
@@ -57,7 +57,7 @@ let sgrep_unittest ~ast_fuzzy_of_string = [
       (* metavariable string for identifiers *)
 (*TODO      "foo('X');", "foo('a_func');", true; *)
       (* metavariable on reference arguments *)
-(*TODO      "foo($X,$Y);", "foo(&$a, $b);", true; *)
+      "foo($X,$Y);", "foo(&a, b);", true;
       (* metavariable on class name reference *)
       "new $X(...);", "new $dyn();", true;
       "new $X(...);", "new self();", true;
@@ -75,7 +75,7 @@ let sgrep_unittest ~ast_fuzzy_of_string = [
       "foo(...);", "foo(1,2);", true;
       "foo($X,...);", "foo(1,2);", true;
       (* ... also match when there is no additional arguments *)
-(*TODO      "foo($X,...);", "foo(1);", true; *)
+      "foo($X,...);", "foo(1);", true;
       (* TODO: foo(..., 3, ...), foo(1,2,3,4) *)
 
       (* '...' in arrays *)
@@ -88,7 +88,6 @@ let sgrep_unittest ~ast_fuzzy_of_string = [
       (* '...' in new *)
       "new Foo(...);","new Foo(1);", true;
       "new Foo(...);","new Foo();", true;
-(*TODO      "new Foo(...);","new Foo;", true; *)
 
       (* more complex expressions *)
       "strstr(...) == false;", "strstr(x)==false;", true;
@@ -96,6 +95,7 @@ let sgrep_unittest ~ast_fuzzy_of_string = [
       (* ------------ *)
       (* Misc isomorphisms *)
       (* ------------ *)
+(*TODO      "new Foo(...);","new Foo;", true; *)
 
     ]
     in
