@@ -55,7 +55,6 @@ module Ast = Ast_php
 open Parser_php_mly_helper
 module H = Parser_php_mly_helper
 
-let exprTodo = Sc (C (Int ("ExprTodo", Ast.fakeInfo "")))
 %}
 
 /*(*************************************************************************)*/
@@ -1027,20 +1026,22 @@ new_expr:
  | T_NEW member_expr arguments { New ($1, $2, Some $3) }
 
 call_expr:
- | member_expr arguments { exprTodo }
- | call_expr arguments { exprTodo }
- | call_expr TOBRA dim_offset TCBRA { exprTodo }
- | call_expr TOBRACE expr TCBRACE { exprTodo }
- | call_expr T_OBJECT_OPERATOR primary_expr { exprTodo }
- | call_expr T_OBJECT_OPERATOR TOBRACE expr TCBRACE { exprTodo }
+ | member_expr arguments { Call ($1, $2) }
+ | call_expr arguments { Call ($1, $2) }
+ | call_expr TOBRA dim_offset TCBRA { ArrayGet($1, ($2, $3, $4)) }
+ | call_expr TOBRACE expr TCBRACE   { HashGet($1, ($2, $3, $4)) }
+ | call_expr T_OBJECT_OPERATOR primary_expr { ObjGet($1, $2, $3) }
+ | call_expr T_OBJECT_OPERATOR TOBRACE expr TCBRACE 
+     { ObjGet($1,$2, (BraceIdent ($3, $4, $5))) }
 
 member_expr:
  | primary_expr { $1 }
- | member_expr TOBRA dim_offset TCBRA { exprTodo }
- | member_expr TOBRACE expr TCBRACE { exprTodo }
- | member_expr T_OBJECT_OPERATOR primary_expr { exprTodo }
- | member_expr T_OBJECT_OPERATOR TOBRACE expr TCBRACE { exprTodo }
- | member_expr TCOLCOL primary_expr { exprTodo }
+ | member_expr TOBRA dim_offset TCBRA { ArrayGet($1, ($2, $3, $4)) }
+ | member_expr TOBRACE expr TCBRACE   { HashGet($1, ($2, $3, $4)) }
+ | member_expr T_OBJECT_OPERATOR primary_expr {  ObjGet($1, $2, $3) }
+ | member_expr T_OBJECT_OPERATOR TOBRACE expr TCBRACE 
+     { ObjGet($1,$2, (BraceIdent ($3, $4, $5))) }
+ | member_expr TCOLCOL primary_expr { ClassGet($1, $2, $3) }
 
 
 primary_expr:
@@ -1054,8 +1055,8 @@ primary_expr:
 
  | T_VARIABLE { Lv (Var (DName $1, Ast.noScope())) }
 
- | TDOLLAR primary_expr { exprTodo }
- | TDOLLAR TOBRACE expr TCBRACE { exprTodo }
+ | TDOLLAR primary_expr         { Deref($1, $2) }
+ | TDOLLAR TOBRACE expr TCBRACE { Deref($1, BraceIdent($2, $3, $4)) }
 
  | T_ARRAY TOPAR array_pair_list TCPAR
      { ArrayLong($1,($2,$3,$4)) }

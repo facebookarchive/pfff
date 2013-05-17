@@ -192,6 +192,34 @@ and expr env = function
   | Sc sc -> scalar env sc
   | Lv lv -> lvalue2 env lv
   | Cr x -> class_name_reference2 env x
+
+  | Call (e, (_lp, args, _rp)) ->
+      let e = expr env e in
+      let args = comma_list args in
+      let args = List.map (argument env) args in
+      A.Call (e, args)
+  | ObjGet (e1, _tok, e2) ->
+      let e1 = expr env e1 in
+      let e2 = expr env e2 in
+      A.Obj_get (e1, e2)
+
+  | ClassGet (e1, _tok, e2) ->
+      let e1 = class_name_reference env e1 in
+      let e2 = expr env e2 in
+      A.Class_get (e1, e2)
+  | HashGet (e1, (_l, e2, _r)) ->
+      let e1 = expr env e1 in
+      let e2 = expr env e2 in
+      A.Array_get (e1, Some e2)
+  | ArrayGet (e1, (_l, e2opt, _r)) ->
+      let e1 = expr env e1 in
+      let e2opt = opt expr env e2opt in
+      A.Array_get (e1, e2opt)
+  | BraceIdent (_l, e, _r) -> 
+      expr env e
+  | Deref (tok, e) ->
+      A.Call (A.Id (A.builtin "eval_var", wrap tok), [expr env e])
+
   | Binary (e1, (bop, _), e2) ->
       let e1 = expr env e1 in
       let e2 = expr env e2 in
@@ -306,7 +334,6 @@ and expr env = function
       (* should never use the abstract interpreter on a sgrep pattern *)
       raise Common.Impossible
   | ParenExpr (_, e, _) -> expr env e
-  | _ -> raise Common.Todo
 
 and lambda_def env (l_use, ld) =
   let _, params, _ = ld.f_params in
