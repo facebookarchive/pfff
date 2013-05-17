@@ -560,6 +560,7 @@ and stmt =
 
     (* was in stmt_and_def before *)
     | FuncDefNested of func_def
+    (* traits are actually not allowed here *)
     | ClassDefNested of class_def
 
   (*s: AST statement rest *)

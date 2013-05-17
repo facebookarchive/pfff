@@ -542,13 +542,12 @@ let rec basic_lexer_skip_comments lexbuf =
 (* A fast-path parser of xdebug expressions in xdebug dumpfiles. 
  * See xdebug.ml *)
 let (xdebug_expr_of_string: string -> Ast_php.expr) = fun s ->
+(*
   let lexbuf = Lexing.from_string s in
   let expr = Parser_php.expr basic_lexer_skip_comments lexbuf in
   expr
-
-let (class_def_of_string: string -> Ast_php.class_def) = fun s ->
-  let lexbuf = Lexing.from_string s in
-  Parser_php.class_declaration_statement basic_lexer_skip_comments lexbuf
+*)
+  raise Todo
 
 (* The default PHP parser function stores position information for all tokens,
  * build some Parse_php.info_items for each toplevel entities, and
