@@ -540,7 +540,7 @@ let visit_toplevel ~tag prefs  hentities (toplevel, toks) =
               (match exprbis with
               | Sc (C (Ast.String (s, info))) ->
                   tag info (Field (Use2 fake_no_use2));
-                  vx (Lvalue var);
+                  vx (Expr var);
 
               | Sc (C (Int (s, info))) ->
                   k x
@@ -574,13 +574,13 @@ let visit_toplevel ~tag prefs  hentities (toplevel, toks) =
 
       | FunCallVar (qu_opt, var, args) ->
           (* function pointer call !!! put in big font *)
-          let ii = Lib_parsing_php.ii_of_any (Lvalue var) in
+          let ii = Lib_parsing_php.ii_of_any (Expr var) in
           ii +> List.iter (fun info -> tag info PointerCall);
 
       | StaticMethodCallVar (lval, _, _, _)
       | StaticObjCallVar (lval, _, _, _)
         ->
-          let ii = Lib_parsing_php.ii_of_any (Lvalue lval) in
+          let ii = Lib_parsing_php.ii_of_any (Expr lval) in
           ii +> List.iter (fun info -> tag info PointerCall);
 
       | ObjAccess (_, _)

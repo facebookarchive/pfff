@@ -138,7 +138,7 @@ let mk_param s = {
 
 let mk_obj_access s =
   (ObjAccessSimple
-      ((Var
+      (Lv(Var
            (DName ("this", fkt "$this"),
            Ast.noScope())
        ),
@@ -204,8 +204,8 @@ let mk_new_anon_class_call s
 let mk_private_affect s =
   let expr =
     (AssignRef
-        ((ObjAccessSimple
-             ((Var
+        (Lv(ObjAccessSimple
+             (Lv(Var
                   (DName ("this", fkt "$this"),
                   Ast.noScope())
               ),
@@ -215,7 +215,7 @@ let mk_private_affect s =
         fkt "=",
         fkt "&", (* want assign by ref *)
         (
-            (Var
+            Lv(Var
                 (fkdname s,
                 Ast.noScope ())
             )
@@ -226,7 +226,7 @@ let mk_private_affect s =
 
 let mk_call_user_func_call var args_paren =
   let (op, args, cp) = args_paren in
-  let arg1 = Arg (Lv var) in
+  let arg1 = Arg (var) in
   let args' = (Left arg1)::args in
   let str = "call_user_func" in
   FunCallSimple ((Name (str, fkt str)), (op, args', cp))
@@ -248,7 +248,7 @@ let mk_aliasing_for_member_in_body () =
       fkt "as",
       Common.Left
        (None,
-        (Var
+        Lv(Var
           (DName
             ("p",
              fkt "$p"),
@@ -258,7 +258,7 @@ let mk_aliasing_for_member_in_body () =
        (fkt "=>",
         (Some
           (fkt "&"),
-         (Var
+         Lv(Var
            (DName
              ("v",
               fkt "$v"),
@@ -271,8 +271,8 @@ let mk_aliasing_for_member_in_body () =
           [
             (ExprStmt
               ((AssignRef
-                 ((Indirect
-                    ((Var
+                 (Lv(Indirect
+                    (Lv(Var
                        (DName
                          ("p",
                           fkt "$p"),
@@ -283,7 +283,7 @@ let mk_aliasing_for_member_in_body () =
                    ),
                  fkt "=",
                  fkt "&",
-                 (Var
+                 Lv(Var
                    (DName
                      ("v",
                       fkt "$v"),

@@ -61,7 +61,7 @@ type visitor_in = {
   kexpr: (expr  -> unit) * visitor_out -> expr  -> unit;
   kstmt: (stmt  -> unit) * visitor_out -> stmt  -> unit;
   ktop: (toplevel -> unit) * visitor_out -> toplevel  -> unit;
-  klvalue: (lvalue -> unit) * visitor_out -> lvalue  -> unit;
+  klvalue: (lvalue2 -> unit) * visitor_out -> lvalue2  -> unit;
   kconstant: (constant -> unit) * visitor_out -> constant  -> unit;
   kscalar: (scalar -> unit) * visitor_out -> scalar  -> unit;
   kencaps: (encaps -> unit) * visitor_out -> encaps -> unit;
@@ -247,15 +247,15 @@ and v_expr (x: expr) =
   | Lv v1 -> let v1 = v_variable v1 in ()
   | Sc v1 -> let v1 = v_scalar v1 in ()
   | Assign ((v1, v2, v3)) ->
-      let v1 = v_variable v1 and v2 = v_tok v2 and v3 = v_expr v3 in ()
+      let v1 = v_lvalue v1 and v2 = v_tok v2 and v3 = v_expr v3 in ()
   | AssignRef ((v1, v2, v3, v4)) ->
-      let v1 = v_variable v1
+      let v1 = v_lvalue v1
       and v2 = v_tok v2
       and v3 = v_tok v3
-      and v4 = v_variable v4
+      and v4 = v_lvalue v4
       in ()
   | AssignNew ((v1, v2, v3, v4, v5, v6)) ->
-      let v1 = v_variable v1
+      let v1 = v_lvalue v1
       and v2 = v_tok v2
       and v3 = v_tok v3
       and v4 = v_tok v4
@@ -263,7 +263,7 @@ and v_expr (x: expr) =
       and v6 = v_option (v_arguments) v6
       in ()
   | AssignOp ((v1, v2, v3)) ->
-      let v1 = v_variable v1
+      let v1 = v_lvalue v1
       and v2 = v_wrap v_assignOp v2
       and v3 = v_expr v3
       in ()
@@ -329,9 +329,9 @@ and v_expr (x: expr) =
   | Yield ((v1, v2)) -> let v1 = v_tok v1 and v2 = v_expr v2 in ()
   | YieldBreak ((v1, v2)) -> let v1 = v_tok v1 and v2 = v_tok v2 in ()
   | Empty ((v1, v2)) ->
-      let v1 = v_tok v1 and v2 = v_paren v_variable v2 in ()
+      let v1 = v_tok v1 and v2 = v_paren v_lvalue v2 in ()
   | Isset ((v1, v2)) ->
-      let v1 = v_tok v1 and v2 = v_paren (v_comma_list v_variable) v2 in ()
+      let v1 = v_tok v1 and v2 = v_paren (v_comma_list v_lvalue) v2 in ()
   | Eval ((v1, v2)) -> let v1 = v_tok v1 and v2 = v_paren v_expr v2 in ()
   | ParenExpr v1 -> let v1 = v_paren v_expr v1 in ()
 
@@ -399,11 +399,11 @@ and v_cpp_directive =
 and v_encaps x =
   let k x = match x with
   | EncapsString v1 -> let v1 = v_wrap v_string v1 in ()
-  | EncapsVar v1 -> let v1 = v_variable v1 in ()
+  | EncapsVar v1 -> let v1 = v_lvalue v1 in ()
   | EncapsCurly ((v1, v2, v3)) ->
-      let v1 = v_tok v1 and v2 = v_variable v2 and v3 = v_tok v3 in ()
+      let v1 = v_tok v1 and v2 = v_lvalue v2 and v3 = v_tok v3 in ()
   | EncapsDollarCurly ((v1, v2, v3)) ->
-      let v1 = v_tok v1 and v2 = v_variable v2 and v3 = v_tok v3 in ()
+      let v1 = v_tok v1 and v2 = v_lvalue v2 and v3 = v_tok v3 in ()
   | EncapsExpr ((v1, v2, v3)) ->
       let v1 = v_tok v1 and v2 = v_expr v2 and v3 = v_tok v3 in ()
   in
@@ -453,7 +453,7 @@ and v_class_name_reference x =
   let rec k x = match x with
   | ClassNameRefStatic v1 -> let v1 = v_class_name_or_selfparent v1 in ()
   | ClassNameRefDynamic (v1, v2) ->
-      let v1 = v_variable v1
+      let v1 = v_lvalue v1
       and v2 = v_list v_obj_prop_access v2
       in ()
   in
@@ -463,21 +463,21 @@ and v_obj_prop_access (v1, v2) =
   let v1 = v_tok v1 and v2 = v_obj_property v2 in ()
 and v_list_assign =
   function
-  | ListVar v1 -> let v1 = v_variable v1 in ()
+  | ListVar v1 -> let v1 = v_lvalue v1 in ()
   | ListList ((v1, v2)) ->
       let v1 = v_tok v1 and v2 = v_paren (v_comma_list v_list_assign) v2 in ()
   | ListEmpty -> ()
 and v_array_pair x =
   let rec k x = match x with
   | ArrayExpr v1 -> let v1 = v_expr v1 in ()
-  | ArrayRef ((v1, v2)) -> let v1 = v_tok v1 and v2 = v_variable v2 in ()
+  | ArrayRef ((v1, v2)) -> let v1 = v_tok v1 and v2 = v_lvalue v2 in ()
   | ArrayArrowExpr ((v1, v2, v3)) ->
       let v1 = v_expr v1 and v2 = v_tok v2 and v3 = v_expr v3 in ()
   | ArrayArrowRef ((v1, v2, v3, v4)) ->
       let v1 = v_expr v1
       and v2 = v_tok v2
       and v3 = v_tok v3
-      and v4 = v_variable v4
+      and v4 = v_lvalue v4
       in ()
   in
   vin.karray_pair (k, all_functions) x
@@ -540,7 +540,7 @@ and v_xhp_body =
   | XhpExpr v1 -> let v1 = v_brace v_expr v1 in ()
   | XhpNested v1 -> let v1 = v_xhp_html v1 in ()
 
-and v_lvalue x = v_variable x
+and v_lvalue x = v_expr x
 
 and v_arguments x =
   let k x =
@@ -564,15 +564,15 @@ and v_variable x =
           v1
       in ()
   | VArrayAccess ((v1, v2)) ->
-      let v1 = v_variable v1 and v2 = v_bracket (v_option v_expr) v2 in ()
+      let v1 = v_expr v1 and v2 = v_bracket (v_option v_expr) v2 in ()
   | VArrayAccessXhp ((v1, v2)) ->
       let v1 = v_expr v1 and v2 = v_bracket (v_option v_expr) v2 in ()
   | VBrace ((v1, v2)) -> let v1 = v_tok v1 and v2 = v_brace v_expr v2 in ()
   | VBraceAccess ((v1, v2)) ->
-      let v1 = v_variable v1 and v2 = v_brace v_expr v2 in ()
+      let v1 = v_lvalue v1 and v2 = v_brace v_expr v2 in ()
   | Indirect ((v1, v2)) ->
       let v2 = v_indirect v2 in
-      let v1 = v_variable v1 in
+      let v1 = v_lvalue v1 in
       ()
   | FunCallSimple ((v2, v3)) ->
       let v2 = v_name v2
@@ -580,11 +580,11 @@ and v_variable x =
       ()
   | FunCallVar ((v1, v2, v3)) ->
       let v1 = v_option v_qualifier v1
-      and v2 = v_variable v2
+      and v2 = v_lvalue v2
       and v3 = v_arguments v3
       in ()
   | VQualifier ((v1, v2)) ->
-      let v1 = v_qualifier v1 and v2 = v_variable v2 in ()
+      let v1 = v_qualifier v1 and v2 = v_lvalue v2 in ()
   | ClassVar ((v1, v2)) ->
       let v1 = v_qualifier v1 and v2 = v_dname v2 in ()
   | DynamicClassVar (v1, v2, v3) ->
@@ -596,27 +596,27 @@ and v_variable x =
       and v3 = v_arguments v3
       in ()
   | MethodCallSimple ((v1, v2, v3, v4)) ->
-      let v1 = v_variable v1
+      let v1 = v_lvalue v1
       and v2 = v_tok v2
       and v3 = v_name v3
       and v4 = v_arguments v4
       in ()
   | StaticMethodCallVar ((v1, v2, v3, v4)) ->
-      let v1 = v_variable v1
+      let v1 = v_lvalue v1
       and v2 = v_tok v2
       and v3 = v_name v3
       and v4 = v_arguments v4
       in ()
   | StaticObjCallVar ((v1, v2, v3, v4)) ->
-      let v1 = v_variable v1
+      let v1 = v_lvalue v1
       and v2 = v_tok v2
       and v3 = v_lvalue v3
       and v4 = v_arguments v4
       in ()
   | ObjAccessSimple ((v1, v2, v3)) ->
-      let v1 = v_variable v1 and v2 = v_tok v2 and v3 = v_name v3 in ()
+      let v1 = v_lvalue v1 and v2 = v_tok v2 and v3 = v_name v3 in ()
   | ObjAccess ((v1, v2)) ->
-      let v1 = v_variable v1 and v2 = v_obj_access v2 in ()
+      let v1 = v_lvalue v1 and v2 = v_obj_access v2 in ()
  in
   vin.klvalue (k, all_functions) x
 
@@ -640,7 +640,7 @@ and v_obj_access (v1, v2, v3) =
 and v_obj_property =
   function
   | ObjProp v1 -> let v1 = v_obj_dim v1 in ()
-  | ObjPropVar v1 -> let v1 = v_variable v1 in ()
+  | ObjPropVar v1 -> let v1 = v_lvalue v1 in ()
 and v_obj_dim x =
   let rec k x = match x with
   | OName v1 -> let v1 = v_name v1 in ()
@@ -652,9 +652,9 @@ and v_obj_dim x =
   in
   vin.kobj_dim (k, all_functions) x
 
-and v_rw_variable v = v_variable v
-and v_r_variable v = v_variable v
-and v_w_variable v = v_variable v
+and v_rw_variable v = v_lvalue v
+and v_r_variable v = v_lvalue v
+and v_w_variable v = v_lvalue v
 
 
 and v_stmt xxx =
@@ -714,7 +714,7 @@ and v_stmt xxx =
       and v2 = v_tok v2
       and v3 = v_expr v3
       and v4 = v_tok v4
-      and v5 = Ocaml.v_either v_foreach_variable v_variable v5
+      and v5 = Ocaml.v_either v_foreach_variable v_lvalue v5
       and v6 = v_option v_foreach_arrow v6
       and v7 = v_tok v7
       and v8 = v_colon_stmt v8
@@ -752,7 +752,7 @@ and v_stmt xxx =
       let v1 = v_tok v1 and v2 = v_use_filename v2 and v3 = v_tok v3 in ()
   | Unset ((v1, v2, v3)) ->
       let v1 = v_tok v1
-      and v2 = v_paren (v_comma_list v_variable) v2
+      and v2 = v_paren (v_comma_list v_lvalue) v2
       and v3 = v_tok v3
       in ()
   | Declare ((v1, v2, v3)) ->
@@ -763,7 +763,7 @@ and v_stmt xxx =
       ()
   | TypedDeclaration ((v1, v2, v3, v4)) ->
       let v1 = v_hint_type v1
-      and v2 = v_variable v2
+      and v2 = v_lvalue v2
       and v3 =
         v_option (fun (v1, v2) -> let v1 = v_tok v1 and v2 = v_expr v2 in ())
           v3
@@ -801,7 +801,7 @@ and v_for_expr v = v_comma_list v_expr v
 and v_foreach_arrow (v1, v2) =
   let v1 = v_tok v1 and v2 = v_foreach_variable v2 in ()
 and v_foreach_variable (v1, v2) =
-  let v1 = v_is_ref v1 and v2 = v_variable v2 in ()
+  let v1 = v_is_ref v1 and v2 = v_lvalue v2 in ()
 and v_switch_case_list =
   function
   | CaseList ((v1, v2, v3, v4)) ->

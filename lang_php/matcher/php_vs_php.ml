@@ -808,7 +808,7 @@ let rec m_variable a b =
     )))))
 
   | A.VArrayAccess(a1, a2), B.VArrayAccess(b1, b2) ->
-    m_variable a1 b1 >>= (fun (a1, b1) ->
+    m_lvalue a1 b1 >>= (fun (a1, b1) ->
     (m_bracket (m_option m_expr)) a2 b2 >>= (fun (a2, b2) ->
     return (
        A.VArrayAccess(a1, a2),
@@ -835,7 +835,7 @@ let rec m_variable a b =
     )
     ))
   | A.VBraceAccess(a1, a2), B.VBraceAccess(b1, b2) ->
-    m_variable a1 b1 >>= (fun (a1, b1) ->
+    m_lvalue a1 b1 >>= (fun (a1, b1) ->
     m_brace m_expr a2 b2 >>= (fun (a2, b2) ->
     return (
        A.VBraceAccess(a1, a2),
@@ -843,7 +843,7 @@ let rec m_variable a b =
     )
     ))
   | A.Indirect(a1, a2), B.Indirect(b1, b2) ->
-    m_variable a1 b1 >>= (fun (a1, b1) ->
+    m_lvalue a1 b1 >>= (fun (a1, b1) ->
     m_indirect a2 b2 >>= (fun (a2, b2) ->
     return (
        A.Indirect(a1, a2),
@@ -852,7 +852,7 @@ let rec m_variable a b =
     ))
   | A.VQualifier(a1, a2), B.VQualifier(b1, b2) ->
     m_qualifier a1 b1 >>= (fun (a1, b1) ->
-    m_variable a2 b2 >>= (fun (a2, b2) ->
+    m_lvalue a2 b2 >>= (fun (a2, b2) ->
     return (
        A.VQualifier(a1, a2),
        B.VQualifier(b1, b2)
@@ -888,7 +888,7 @@ let rec m_variable a b =
     ))
   | A.FunCallVar(a1, a2, a3), B.FunCallVar(b1, b2, b3) ->
     m_option m_qualifier a1 b1 >>= (fun (a1, b1) ->
-    m_variable a2 b2 >>= (fun (a2, b2) ->
+    m_lvalue a2 b2 >>= (fun (a2, b2) ->
     m_paren (m_list__m_argument) a3 b3 >>= (fun (a3, b3) ->
     return (
        A.FunCallVar(a1, a2, a3),
@@ -906,7 +906,7 @@ let rec m_variable a b =
     )
     )))
   | A.MethodCallSimple(a1, a2, a3, a4), B.MethodCallSimple(b1, b2, b3, b4) ->
-    m_variable a1 b1 >>= (fun (a1, b1) ->
+    m_lvalue a1 b1 >>= (fun (a1, b1) ->
     m_tok a2 b2 >>= (fun (a2, b2) ->
     m_name a3 b3 >>= (fun (a3, b3) ->
     m_paren (m_list__m_argument) a4 b4 >>= (fun (a4, b4) ->
@@ -941,7 +941,7 @@ let rec m_variable a b =
     ))))
 
   | A.ObjAccessSimple(a1, a2, a3), B.ObjAccessSimple(b1, b2, b3) ->
-    m_variable a1 b1 >>= (fun (a1, b1) ->
+    m_lvalue a1 b1 >>= (fun (a1, b1) ->
     m_tok a2 b2 >>= (fun (a2, b2) ->
     m_name a3 b3 >>= (fun (a3, b3) ->
     return (
@@ -951,7 +951,7 @@ let rec m_variable a b =
     )))
 
   | A.ObjAccess(a1, a2), B.ObjAccess(b1, b2) ->
-    m_variable a1 b1 >>= (fun (a1, b1) ->
+    m_lvalue a1 b1 >>= (fun (a1, b1) ->
     m_obj_access a2 b2 >>= (fun (a2, b2) ->
     return (
        A.ObjAccess(a1, a2),
@@ -979,10 +979,10 @@ let rec m_variable a b =
   | A.DynamicClassVar _, _
    -> fail ()
 
-and m_lvalue a b = m_variable a b
+and m_lvalue a b = m_expr a b
 
-and m_rw_variable a b = m_variable a b
-and m_w_variable a b = m_variable a b
+and m_rw_variable a b = m_expr a b
+and m_w_variable a b = m_expr a b
 
 and m_indirect a b =
   match a, b with
@@ -1062,8 +1062,8 @@ and m_argument a b =
   match a, b with
   | A.Arg(a1), B.Arg(b1) ->
       (match a1, b1 with
-      | A.Assign(A.Var(aname, ascope), atok, aexpr),
-        B.Assign(B.Var(bname, bscope), btok, bexpr) ->
+      | A.Assign(A.Lv (A.Var(aname, ascope)), atok, aexpr),
+        B.Assign(B.Lv (B.Var(bname, bscope)), btok, bexpr) ->
           m_expr a1 b1 >>= (fun (a1, b1) ->
             return (
               A.Arg(a1),
@@ -1071,12 +1071,12 @@ and m_argument a b =
             ))
 
       (* iso on keyword argument, keyword is optional in pattern *)
-      | a1, B.Assign(B.Var(bname, bscope), btok, bexpr) ->
+      | a1, B.Assign(A.Lv (B.Var(bname, bscope)), btok, bexpr) ->
           (* todo: should allow this only in sgrep mode? what about spatch? *)
           m_expr a1 bexpr >>= (fun (a1, bexpr) ->
             return (
               A.Arg(a1),
-              B.Arg(B.Assign(B.Var(bname, bscope), btok, bexpr))
+              B.Arg(B.Assign(B.Lv (B.Var(bname, bscope)), btok, bexpr))
             )
           )
       | a1, b1 ->
@@ -1137,7 +1137,7 @@ and m_obj_property a b =
     )
     )
   | A.ObjPropVar(a1), B.ObjPropVar(b1) ->
-    m_variable a1 b1 >>= (fun (a1, b1) ->
+    m_lvalue a1 b1 >>= (fun (a1, b1) ->
     return (
        A.ObjPropVar(a1),
        B.ObjPropVar(b1)
@@ -1263,7 +1263,7 @@ and m_expr a b =
     )
     ))
   | A.Assign(a1, a2, a3), B.Assign(b1, b2, b3) ->
-    m_variable a1 b1 >>= (fun (a1, b1) ->
+    m_lvalue a1 b1 >>= (fun (a1, b1) ->
     m_tok a2 b2 >>= (fun (a2, b2) ->
     m_expr a3 b3 >>= (fun (a3, b3) ->
     return (
@@ -1272,7 +1272,7 @@ and m_expr a b =
     )
     )))
   | A.AssignOp(a1, a2, a3), B.AssignOp(b1, b2, b3) ->
-    m_variable a1 b1 >>= (fun (a1, b1) ->
+    m_lvalue a1 b1 >>= (fun (a1, b1) ->
     m_wrap m_assignOp a2 b2 >>= (fun (a2, b2) ->
     m_expr a3 b3 >>= (fun (a3, b3) ->
     return (
@@ -1368,17 +1368,17 @@ and m_expr a b =
     )
     ))
   | A.AssignRef(a1, a2, a3, a4), B.AssignRef(b1, b2, b3, b4) ->
-    m_variable a1 b1 >>= (fun (a1, b1) ->
+    m_lvalue a1 b1 >>= (fun (a1, b1) ->
     m_tok a2 b2 >>= (fun (a2, b2) ->
     m_tok a3 b3 >>= (fun (a3, b3) ->
-    m_variable a4 b4 >>= (fun (a4, b4) ->
+    m_lvalue a4 b4 >>= (fun (a4, b4) ->
     return (
        A.AssignRef(a1, a2, a3, a4),
        B.AssignRef(b1, b2, b3, b4)
     )
     ))))
   | A.AssignNew(a1, a2, a3, a4, a5, a6), B.AssignNew(b1, b2, b3, b4, b5, b6) ->
-    m_variable a1 b1 >>= (fun (a1, b1) ->
+    m_lvalue a1 b1 >>= (fun (a1, b1) ->
     m_tok a2 b2 >>= (fun (a2, b2) ->
     m_tok a3 b3 >>= (fun (a3, b3) ->
     m_tok a4 b4 >>= (fun (a4, b4) ->
@@ -1530,7 +1530,7 @@ and m_expr a b =
     ))
   | A.Empty(a1, a2), B.Empty(b1, b2) ->
     m_tok a1 b1 >>= (fun (a1, b1) ->
-    m_paren m_variable a2 b2 >>= (fun (a2, b2) ->
+    m_paren m_lvalue a2 b2 >>= (fun (a2, b2) ->
     return (
        A.Empty(a1, a2),
        B.Empty(b1, b2)
@@ -1538,7 +1538,7 @@ and m_expr a b =
     ))
   | A.Isset(a1, a2), B.Isset(b1, b2) ->
     m_tok a1 b1 >>= (fun (a1, b1) ->
-    (m_paren (m_comma_list m_variable)) a2 b2 >>= (fun (a2, b2) ->
+    (m_paren (m_comma_list m_lvalue)) a2 b2 >>= (fun (a2, b2) ->
     return (
        A.Isset(a1, a2),
        B.Isset(b1, b2)
@@ -1842,7 +1842,7 @@ and m_scalar a b =
 and m_list_assign a b =
   match a, b with
   | A.ListVar(a1), B.ListVar(b1) ->
-    m_variable a1 b1 >>= (fun (a1, b1) ->
+    m_lvalue a1 b1 >>= (fun (a1, b1) ->
     return (
        A.ListVar(a1),
        B.ListVar(b1)
@@ -1877,7 +1877,7 @@ and m_array_pair a b =
     )
   | A.ArrayRef(a1, a2), B.ArrayRef(b1, b2) ->
     m_tok a1 b1 >>= (fun (a1, b1) ->
-    m_variable a2 b2 >>= (fun (a2, b2) ->
+    m_lvalue a2 b2 >>= (fun (a2, b2) ->
     return (
        A.ArrayRef(a1, a2),
        B.ArrayRef(b1, b2)
@@ -1896,7 +1896,7 @@ and m_array_pair a b =
     m_expr a1 b1 >>= (fun (a1, b1) ->
     m_tok a2 b2 >>= (fun (a2, b2) ->
     m_tok a3 b3 >>= (fun (a3, b3) ->
-    m_variable a4 b4 >>= (fun (a4, b4) ->
+    m_lvalue a4 b4 >>= (fun (a4, b4) ->
     return (
        A.ArrayArrowRef(a1, a2, a3, a4),
        B.ArrayArrowRef(b1, b2, b3, b4)
@@ -1918,7 +1918,7 @@ and m_vector_elt a b =
     )
   | A.VectorRef(a1, a2), B.VectorRef(b1, b2) ->
     m_tok a1 b1 >>= (fun (a1, b1) ->
-    m_variable a2 b2 >>= (fun (a2, b2) ->
+    m_lvalue a2 b2 >>= (fun (a2, b2) ->
     return (
        A.VectorRef(a1, a2),
        B.VectorRef(b1, b2)
@@ -1942,7 +1942,7 @@ and m_map_elt a b =
     m_expr a1 b1 >>= (fun (a1, b1) ->
     m_tok a2 b2 >>= (fun (a2, b2) ->
     m_tok a3 b3 >>= (fun (a3, b3) ->
-    m_variable a4 b4 >>= (fun (a4, b4) ->
+    m_lvalue a4 b4 >>= (fun (a4, b4) ->
     return (
        A.MapArrowRef(a1, a2, a3, a4),
        B.MapArrowRef(b1, b2, b3, b4)
@@ -1975,7 +1975,7 @@ and m_class_name_reference a b =
     )
     )
   | A.ClassNameRefDynamic(a1, a2), B.ClassNameRefDynamic(b1, b2) ->
-    m_variable a1 b1 >>= (fun (a1, b1) ->
+    m_lvalue a1 b1 >>= (fun (a1, b1) ->
     m_list m_obj_prop_access a2 b2 >>= (fun (a2, b2) ->
     return (
        A.ClassNameRefDynamic(a1, a2),
@@ -1996,7 +1996,7 @@ and m_encaps a b =
     )
     )
   | A.EncapsVar(a1), B.EncapsVar(b1) ->
-    m_variable a1 b1 >>= (fun (a1, b1) ->
+    m_lvalue a1 b1 >>= (fun (a1, b1) ->
     return (
        A.EncapsVar(a1),
        B.EncapsVar(b1)
@@ -2004,7 +2004,7 @@ and m_encaps a b =
     )
   | A.EncapsCurly(a1, a2, a3), B.EncapsCurly(b1, b2, b3) ->
     m_tok a1 b1 >>= (fun (a1, b1) ->
-    m_variable a2 b2 >>= (fun (a2, b2) ->
+    m_lvalue a2 b2 >>= (fun (a2, b2) ->
     m_tok a3 b3 >>= (fun (a3, b3) ->
     return (
        A.EncapsCurly(a1, a2, a3),
@@ -2013,7 +2013,7 @@ and m_encaps a b =
     )))
   | A.EncapsDollarCurly(a1, a2, a3), B.EncapsDollarCurly(b1, b2, b3) ->
     m_tok a1 b1 >>= (fun (a1, b1) ->
-    m_variable a2 b2 >>= (fun (a2, b2) ->
+    m_lvalue a2 b2 >>= (fun (a2, b2) ->
     m_tok a3 b3 >>= (fun (a3, b3) ->
     return (
        A.EncapsDollarCurly(a1, a2, a3),
@@ -2642,7 +2642,7 @@ and m_foreach_variable a b =
   match a, b with
   | (a1, a2), (b1, b2) ->
     m_is_ref a1 b1 >>= (fun (a1, b1) ->
-    m_variable a2 b2 >>= (fun (a2, b2) ->
+    m_lvalue a2 b2 >>= (fun (a2, b2) ->
     return (
        (a1, a2),
        (b1, b2)
@@ -3179,7 +3179,7 @@ let m_entity a b =
 let m_any a b =
   match a, b with
   | A.Lvalue(a1), B.Lvalue(b1) ->
-    m_lvalue a1 b1 >>= (fun (a1, b1) ->
+    m_variable a1 b1 >>= (fun (a1, b1) ->
     return (
        A.Lvalue(a1),
        B.Lvalue(b1)

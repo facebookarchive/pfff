@@ -303,7 +303,7 @@ let fields_stat_db db =
           match v with
           | VArrayAccess (var2, expr_bracket) ->
               (match var2, Ast.unbracket expr_bracket with
-              | (Var (dname, scope), 
+              | (Lv(Var (dname, scope)), 
                 Some (Sc (C (Ast.String (s, info))))) ->
                   Common2.hupdate_default s Common2.add1 Common2.cst_zero hcount;
               | _ -> k v

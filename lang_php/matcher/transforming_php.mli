@@ -9,10 +9,5 @@ val transform_e_e :
 val transform_st_st : 
   Ast_php.stmt -> Ast_php.stmt  -> Metavars_php.metavars_binding -> unit
 val transform_v_v :
-  Ast_php.lvalue -> Ast_php.lvalue -> Metavars_php.metavars_binding -> unit
-
-(* 
-val match_e_e : (Ast_php.expr, Ast_php.expr) matcher
-val match_v_v : (Ast_php.lvalue, Ast_php.lvalue) matcher 
-*)
+  Ast_php.lvalue2 -> Ast_php.lvalue2 -> Metavars_php.metavars_binding -> unit
 

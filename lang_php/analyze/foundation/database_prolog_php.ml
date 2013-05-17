@@ -285,7 +285,7 @@ let add_uses id ast pr db =
       | AssignOp(lval, _, e)
         ->
           Common.save_excursion in_lvalue_pos true (fun () ->
-            vx (Lvalue lval)
+            vx (Expr lval)
           );
           vx (Expr e);
 

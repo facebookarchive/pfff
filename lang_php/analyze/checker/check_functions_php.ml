@@ -83,7 +83,7 @@ let check_args_vs_params (callname, all_args) (defname, all_params) =
     | x::xs, y::ys ->
         (match x with
         (* erling's idea of wrong keyword argument check *)
-        | Arg(Assign((Var(dn, _)),_ , expr)) ->
+        | Arg(Assign(Lv(Var(dn, _)),_ , expr)) ->
             (match y with
             (* passing a keyword argument for a reference is bad *)
             | { p_ref = Some _; _ } ->

@@ -25,7 +25,7 @@ open Ast_php
 (* hooks *)
 type visitor_in = {
   kexpr: (expr  -> expr) * visitor_out -> expr  -> expr;
-  klvalue: (lvalue  -> lvalue) * visitor_out -> lvalue  -> lvalue;
+  klvalue: (lvalue2  -> lvalue2) * visitor_out -> lvalue2  -> lvalue2;
   kstmt_and_def:
     (stmt_and_def -> stmt_and_def) * visitor_out -> stmt_and_def ->stmt_and_def;
   kstmt: (stmt -> stmt) * visitor_out -> stmt -> stmt;
@@ -43,7 +43,7 @@ and visitor_out = {
   vstmt_and_def: stmt_and_def -> stmt_and_def;
   vprogram: program -> program;
   vexpr: expr -> expr;
-  vlvalue: lvalue -> lvalue;
+  vlvalue: lvalue2 -> lvalue2;
   vxhpattrvalue: xhp_attr_value -> xhp_attr_value;
   vany: any -> any;
 }
@@ -163,12 +163,12 @@ and map_expr (x) =
       and v2 = map_expr v2
       in Unary ((v1, v2))
   | Assign ((v1, v2, v3)) ->
-      let v1 = map_variable v1
+      let v1 = map_lvalue v1
       and v2 = map_tok v2
       and v3 = map_expr v3
       in Assign ((v1, v2, v3))
   | AssignOp ((v1, v2, v3)) ->
-      let v1 = map_variable v1
+      let v1 = map_lvalue v1
       and v2 = map_wrap map_assignOp v2
       and v3 = map_expr v3
       in AssignOp ((v1, v2, v3))
@@ -216,13 +216,13 @@ and map_expr (x) =
   | Clone ((v1, v2)) ->
       let v1 = map_tok v1 and v2 = map_expr v2 in Clone ((v1, v2))
   | AssignRef ((v1, v2, v3, v4)) ->
-      let v1 = map_variable v1
+      let v1 = map_lvalue v1
       and v2 = map_tok v2
       and v3 = map_tok v3
-      and v4 = map_variable v4
+      and v4 = map_lvalue v4
       in AssignRef ((v1, v2, v3, v4))
   | AssignNew ((v1, v2, v3, v4, v5, v6)) ->
-      let v1 = map_variable v1
+      let v1 = map_lvalue v1
       and v2 = map_tok v2
       and v3 = map_tok v3
       and v4 = map_tok v4
@@ -268,11 +268,11 @@ and map_expr (x) =
       let v1 = map_tok v1 and v2 = map_tok v2 in YieldBreak ((v1, v2))
   | Empty ((v1, v2)) ->
       let v1 = map_tok v1
-      and v2 = map_paren map_variable v2
+      and v2 = map_paren map_lvalue v2
       in Empty ((v1, v2))
   | Isset ((v1, v2)) ->
       let v1 = map_tok v1
-      and v2 = map_paren (map_comma_list map_variable) v2
+      and v2 = map_paren (map_comma_list map_lvalue) v2
       in Isset ((v1, v2))
   | SgrepExprDots v1 -> let v1 = map_info v1 in SgrepExprDots ((v1))
   | ParenExpr v1 -> let v1 = map_paren map_expr v1 in ParenExpr ((v1))
@@ -323,15 +323,15 @@ and map_encaps =
   function
   | EncapsString v1 ->
       let v1 = map_wrap map_of_string v1 in EncapsString ((v1))
-  | EncapsVar v1 -> let v1 = map_variable v1 in EncapsVar ((v1))
+  | EncapsVar v1 -> let v1 = map_lvalue v1 in EncapsVar ((v1))
   | EncapsCurly ((v1, v2, v3)) ->
       let v1 = map_tok v1
-      and v2 = map_variable v2
+      and v2 = map_lvalue v2
       and v3 = map_tok v3
       in EncapsCurly ((v1, v2, v3))
   | EncapsDollarCurly ((v1, v2, v3)) ->
       let v1 = map_tok v1
-      and v2 = map_variable v2
+      and v2 = map_lvalue v2
       and v3 = map_tok v3
       in EncapsDollarCurly ((v1, v2, v3))
   | EncapsExpr ((v1, v2, v3)) ->
@@ -385,7 +385,7 @@ and map_unaryOp =
 and map_castOp v = map_ptype v
 and map_list_assign =
   function
-  | ListVar v1 -> let v1 = map_variable v1 in ListVar ((v1))
+  | ListVar v1 -> let v1 = map_lvalue v1 in ListVar ((v1))
   | ListList ((v1, v2)) ->
       let v1 = map_tok v1
       and v2 = map_paren (map_comma_list map_list_assign) v2
@@ -395,7 +395,7 @@ and map_array_pair =
   function
   | ArrayExpr v1 -> let v1 = map_expr v1 in ArrayExpr ((v1))
   | ArrayRef ((v1, v2)) ->
-      let v1 = map_tok v1 and v2 = map_variable v2 in ArrayRef ((v1, v2))
+      let v1 = map_tok v1 and v2 = map_lvalue v2 in ArrayRef ((v1, v2))
   | ArrayArrowExpr ((v1, v2, v3)) ->
       let v1 = map_expr v1
       and v2 = map_tok v2
@@ -405,7 +405,7 @@ and map_array_pair =
       let v1 = map_expr v1
       and v2 = map_tok v2
       and v3 = map_tok v3
-      and v4 = map_variable v4
+      and v4 = map_lvalue v4
       in ArrayArrowRef ((v1, v2, v3, v4))
 and map_vector_elt =
   function
@@ -424,14 +424,14 @@ and map_map_elt =
       let v1 = map_expr v1 in
       let v2 = map_tok v2 in
       let v3 = map_tok v3 in
-      let v4 = map_variable v4 in
+      let v4 = map_lvalue v4 in
       MapArrowRef ((v1, v2, v3, v4))
 and map_class_name_reference =
   function
   | ClassNameRefStatic v1 ->
       let v1 = map_class_name_or_selfparent v1 in ClassNameRefStatic ((v1))
   | ClassNameRefDynamic (v1, v2) ->
-      let v1 = map_variable v1
+      let v1 = map_lvalue v1
       and v2 = map_of_list map_obj_prop_access v2
       in ClassNameRefDynamic (v1, v2)
 and map_obj_prop_access (v1, v2) =
@@ -475,7 +475,7 @@ and map_xhp_body =
 
 
 
-and map_lvalue a = map_variable a
+and map_lvalue a = map_expr a
 
 and map_variable x =
   let k x =
@@ -497,7 +497,7 @@ and map_variable x =
           v1
       in NewLv ((v1))
   | VArrayAccess ((v1, v2)) ->
-      let v1 = map_variable v1
+      let v1 = map_lvalue v1
       and v2 = map_bracket (map_of_option map_expr) v2
       in VArrayAccess ((v1, v2))
   | VArrayAccessXhp ((v1, v2)) ->
@@ -508,16 +508,16 @@ and map_variable x =
       let v1 = map_tok v1 and v2 = map_brace map_expr v2 in
       VBrace ((v1, v2))
   | VBraceAccess ((v1, v2)) ->
-      let v1 = map_variable v1
+      let v1 = map_lvalue v1
       and v2 = map_brace map_expr v2
       in VBraceAccess ((v1, v2))
   | Indirect ((v1, v2)) ->
-      let v1 = map_variable v1
+      let v1 = map_lvalue v1
       and v2 = map_indirect v2
       in Indirect ((v1, v2))
   | VQualifier ((v1, v2)) ->
       let v1 = map_qualifier v1
-      and v2 = map_variable v2
+      and v2 = map_lvalue v2
       in VQualifier ((v1, v2))
   | ClassVar ((v1, v2)) ->
       let v1 = map_qualifier v1
@@ -534,7 +534,7 @@ and map_variable x =
       in FunCallSimple ((v2, v3))
   | FunCallVar ((v1, v2, v3)) ->
       let v1 = map_of_option map_qualifier v1
-      and v2 = map_variable v2
+      and v2 = map_lvalue v2
       and v3 = map_paren (map_comma_list map_argument) v3
       in FunCallVar ((v1, v2, v3))
   | StaticMethodCallSimple ((v1, v2, v3)) ->
@@ -543,7 +543,7 @@ and map_variable x =
       and v3 = map_paren (map_comma_list map_argument) v3
       in StaticMethodCallSimple ((v1, v2, v3))
   | MethodCallSimple ((v1, v2, v3, v4)) ->
-      let v1 = map_variable v1
+      let v1 = map_lvalue v1
       and v2 = map_tok v2
       and v3 = map_name v3
       and v4 = map_paren (map_comma_list map_argument) v4
@@ -561,12 +561,12 @@ and map_variable x =
       and v4 = map_paren (map_comma_list map_argument) v4
       in StaticObjCallVar ((v1, v2, v3, v4))
   | ObjAccessSimple ((v1, v2, v3)) ->
-      let v1 = map_variable v1
+      let v1 = map_lvalue v1
       and v2 = map_tok v2
       and v3 = map_name v3
       in ObjAccessSimple ((v1, v2, v3))
   | ObjAccess ((v1, v2)) ->
-      let v1 = map_variable v1
+      let v1 = map_lvalue v1
       and v2 = map_obj_access v2
       in ObjAccess ((v1, v2))
   in
@@ -587,7 +587,7 @@ and map_obj_access (v1, v2, v3) =
 and map_obj_property =
   function
   | ObjProp v1 -> let v1 = map_obj_dim v1 in ObjProp ((v1))
-  | ObjPropVar v1 -> let v1 = map_variable v1 in ObjPropVar ((v1))
+  | ObjPropVar v1 -> let v1 = map_lvalue v1 in ObjPropVar ((v1))
 and map_obj_dim =
   function
   | OName v1 -> let v1 = map_name v1 in OName ((v1))
@@ -600,9 +600,9 @@ and map_obj_dim =
       let v1 = map_obj_dim v1
       and v2 = map_brace map_expr v2
       in OBraceAccess ((v1, v2))
-and map_rw_variable v = map_variable v
-and map_r_variable v = map_variable v
-and map_w_variable v = map_variable v
+and map_rw_variable v = map_lvalue v
+and map_r_variable v = map_lvalue v
+and map_w_variable v = map_lvalue v
 and map_stmt x =
   let rec k x =
     match x with
@@ -672,7 +672,7 @@ and map_stmt x =
       and v2 = map_tok v2
       and v3 = map_expr v3
       and v4 = map_tok v4
-      and v5 = Ocaml.map_of_either map_foreach_variable map_variable v5
+      and v5 = Ocaml.map_of_either map_foreach_variable map_lvalue v5
       and v6 = map_of_option map_foreach_arrow v6
       and v7 = map_tok v7
       and v8 = map_colon_stmt v8
@@ -726,7 +726,7 @@ and map_stmt x =
       in Use ((v1, v2, v3))
   | Unset ((v1, v2, v3)) ->
       let v1 = map_tok v1
-      and v2 = map_paren (map_comma_list map_variable) v2
+      and v2 = map_paren (map_comma_list map_lvalue) v2
       and v3 = map_tok v3
       in Unset ((v1, v2, v3))
   | Declare ((v1, v2, v3)) ->
@@ -736,7 +736,7 @@ and map_stmt x =
       in Declare ((v1, v2, v3))
   | TypedDeclaration ((v1, v2, v3, v4)) ->
       let v1 = map_hint_type v1
-      and v2 = map_variable v2
+      and v2 = map_lvalue v2
       and v3 =
         map_of_option
           (fun (v1, v2) ->
@@ -782,7 +782,7 @@ and map_for_expr v = map_comma_list map_expr v
 and map_foreach_arrow (v1, v2) =
   let v1 = map_tok v1 and v2 = map_foreach_variable v2 in (v1, v2)
 and map_foreach_variable (v1, v2) =
-  let v1 = map_is_ref v1 and v2 = map_variable v2 in (v1, v2)
+  let v1 = map_is_ref v1 and v2 = map_lvalue v2 in (v1, v2)
 and map_catch (v1, v2, v3) =
   let v1 = map_tok v1
   and v2 =

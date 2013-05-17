@@ -43,7 +43,7 @@ let check_boolean_expr expr =
        *)
       | (ParenExpr (lp, ((Assign (lval, tok, subexpr))), rp)) ->
           (* recurse only on subparts to avoid triggering rule below *)
-          visitor (Lvalue lval);
+          visitor (Expr lval);
           visitor (Expr subexpr);
           ()
       | (Assign (lval, tok, _expr)) ->
@@ -59,7 +59,7 @@ let check_boolean_expr expr =
     V.kargument = (fun (k, visitor) arg ->
       match arg with
       | Arg (Assign (lval, tok, subexpr)) ->
-          visitor (Lvalue lval);
+          visitor (Expr lval);
           visitor (Expr subexpr);
       | _ -> k arg
     );

@@ -7,7 +7,7 @@ type visitor_in = {
   kexpr: (expr  -> unit) * visitor_out -> expr  -> unit;
   kstmt: (stmt  -> unit) * visitor_out -> stmt  -> unit;
   ktop: (toplevel -> unit) * visitor_out -> toplevel  -> unit;
-  klvalue: (lvalue -> unit) * visitor_out -> lvalue  -> unit;
+  klvalue: (lvalue2 -> unit) * visitor_out -> lvalue2  -> unit;
   kconstant: (constant -> unit) * visitor_out -> constant  -> unit;
   kscalar: (scalar -> unit) * visitor_out -> scalar  -> unit;
   kencaps: (encaps -> unit) * visitor_out -> encaps -> unit;

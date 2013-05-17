@@ -56,7 +56,6 @@ open Parser_php_mly_helper
 module H = Parser_php_mly_helper
 
 let exprTodo = Sc (C (Int ("ExprTodo", Ast.fakeInfo "")))
-let lvTodo = This (Ast.fakeInfo "")
 let cstTodo = (Int ("cstTodo", Ast.fakeInfo ""))
 let classrefTodo = ClassNameRefStatic (Self (Ast.fakeInfo ""))
 %}
@@ -859,26 +858,26 @@ attribute_argument: static_scalar { $1 }
 expr: 
  | simple_expr { $1 }
 
- | expr TEQ expr	{ Assign(lvTodo,$2, $3) }
- | expr TEQ TAND expr   { AssignRef(lvTodo,$2,$3, lvTodo) }
+ | expr TEQ expr	{ Assign(exprTodo,$2, $3) }
+ | expr TEQ TAND expr   { AssignRef(exprTodo,$2,$3, exprTodo) }
 
- | expr T_PLUS_EQUAL   expr { AssignOp(lvTodo,(AssignOpArith Plus,$2),$3) }
- | expr T_MINUS_EQUAL  expr { AssignOp(lvTodo,(AssignOpArith Minus,$2),$3) }
- | expr T_MUL_EQUAL    expr { AssignOp(lvTodo,(AssignOpArith Mul,$2),$3) }
- | expr T_DIV_EQUAL    expr { AssignOp(lvTodo,(AssignOpArith Div,$2),$3) }
- | expr T_MOD_EQUAL    expr { AssignOp(lvTodo,(AssignOpArith Mod,$2),$3) }
- | expr T_AND_EQUAL    expr { AssignOp(lvTodo,(AssignOpArith And,$2),$3) }
- | expr T_OR_EQUAL     expr { AssignOp(lvTodo,(AssignOpArith Or,$2),$3) }
- | expr T_XOR_EQUAL    expr { AssignOp(lvTodo,(AssignOpArith Xor,$2),$3) }
- | expr T_SL_EQUAL     expr { AssignOp(lvTodo,(AssignOpArith DecLeft,$2),$3) }
- | expr T_SR_EQUAL     expr { AssignOp(lvTodo,(AssignOpArith DecRight,$2),$3) }
+ | expr T_PLUS_EQUAL   expr { AssignOp(exprTodo,(AssignOpArith Plus,$2),$3) }
+ | expr T_MINUS_EQUAL  expr { AssignOp(exprTodo,(AssignOpArith Minus,$2),$3) }
+ | expr T_MUL_EQUAL    expr { AssignOp(exprTodo,(AssignOpArith Mul,$2),$3) }
+ | expr T_DIV_EQUAL    expr { AssignOp(exprTodo,(AssignOpArith Div,$2),$3) }
+ | expr T_MOD_EQUAL    expr { AssignOp(exprTodo,(AssignOpArith Mod,$2),$3) }
+ | expr T_AND_EQUAL    expr { AssignOp(exprTodo,(AssignOpArith And,$2),$3) }
+ | expr T_OR_EQUAL     expr { AssignOp(exprTodo,(AssignOpArith Or,$2),$3) }
+ | expr T_XOR_EQUAL    expr { AssignOp(exprTodo,(AssignOpArith Xor,$2),$3) }
+ | expr T_SL_EQUAL     expr { AssignOp(exprTodo,(AssignOpArith DecLeft,$2),$3) }
+ | expr T_SR_EQUAL     expr { AssignOp(exprTodo,(AssignOpArith DecRight,$2),$3) }
                             
- | expr T_CONCAT_EQUAL expr { AssignOp(lvTodo,(AssignConcat,$2),$3) }
+ | expr T_CONCAT_EQUAL expr { AssignOp(exprTodo,(AssignConcat,$2),$3) }
 
- | expr T_INC { Postfix(lvTodo, (Inc, $2)) }
- | expr T_DEC { Postfix(lvTodo, (Dec, $2)) }
- | T_INC expr { Infix((Inc, $1), lvTodo) }
- | T_DEC expr { Infix((Dec, $1), lvTodo) }
+ | expr T_INC { Postfix(exprTodo, (Inc, $2)) }
+ | expr T_DEC { Postfix(exprTodo, (Dec, $2)) }
+ | T_INC expr { Infix((Inc, $1), exprTodo) }
+ | T_DEC expr { Infix((Dec, $1), exprTodo) }
 
  | expr T_BOOLEAN_OR   expr { Binary($1,(Logical OrBool ,$2),$3) }
  | expr T_BOOLEAN_AND  expr { Binary($1,(Logical AndBool,$2),$3) }
@@ -982,7 +981,7 @@ expr:
  | T_REQUIRE      expr		       { Require($1,$2) }
  | T_REQUIRE_ONCE expr		       { RequireOnce($1,$2) }
 
- | T_EMPTY TOPAR expr TCPAR	       { Empty($1,($2,lvTodo,$4)) }
+ | T_EMPTY TOPAR expr TCPAR	       { Empty($1,($2,exprTodo,$4)) }
 
  | T_EVAL TOPAR expr TCPAR 	       { Eval($1,($2,$3,$4)) }
 
@@ -1099,7 +1098,7 @@ constant:
  | T_FUNC_C { PreProcess(FunctionC, $1) }|T_METHOD_C { PreProcess(MethodC, $1)}
 
 variable:
- | expr { lvTodo }
+ | expr { exprTodo }
 
 static_scalar: expr { $1 }
 r_variable: variable { $1 }
@@ -1116,9 +1115,9 @@ assignment_list_element:
 array_pair_list: array_pair_list_rev { List.rev $1 }
 array_pair:
  | expr 			       { (ArrayExpr $1) }
- | TAND expr 		       { (ArrayRef ($1,lvTodo)) }
+ | TAND expr 		       { (ArrayRef ($1,exprTodo)) }
  | expr T_DOUBLE_ARROW expr	       { (ArrayArrowExpr($1,$2,$3)) }
- | expr T_DOUBLE_ARROW TAND expr { (ArrayArrowRef($1,$2,$3,lvTodo)) }
+ | expr T_DOUBLE_ARROW TAND expr { (ArrayArrowRef($1,$2,$3,exprTodo)) }
 
 /*(*----------------------------*)*/
 /*(*2 Calls *)*/
@@ -1128,7 +1127,7 @@ arguments: TOPAR function_call_argument_list TCPAR { exprTodo }
 
 function_call_argument:
  | expr	{ (Arg ($1)) }
- | TAND expr 		{ (ArgRef($1, lvTodo)) }
+ | TAND expr 		{ (ArgRef($1, exprTodo)) }
 
 /*(*----------------------------*)*/
 /*(*2 encaps *)*/
@@ -1157,7 +1156,7 @@ encaps:
      { EncapsString $2 (* TODO *) }
 
  /*(* for {$beer}s *)*/
- | T_CURLY_OPEN expr TCBRACE           { EncapsCurly($1, lvTodo, $3) }
+ | T_CURLY_OPEN expr TCBRACE           { EncapsCurly($1, exprTodo, $3) }
  /*(* for ? *)*/
  | T_DOLLAR_OPEN_CURLY_BRACES expr TCBRACE { EncapsExpr ($1, $2, $3) }
 

@@ -233,7 +233,7 @@ let get_funcvars_any any =
            * transformed at parsing time into a FunCallVar ?
            *)
           (match var with
-          | Var (dname, _scope) ->
+          | Lv (Var (dname, _scope)) ->
               let str = Ast_php.dname dname in
               Hashtbl.replace h str true;
               k x
@@ -387,7 +387,7 @@ let get_vars_assignements_any recursor =
             (* for now we handle only simple direct assignement to simple
              * variables *)
             (match lval with
-            | Var (dname, _scope) ->
+            | Lv (Var (dname, _scope)) ->
                 let s = Ast.dname dname in
                 Common.push2 (s, e) aref;
             | _ ->

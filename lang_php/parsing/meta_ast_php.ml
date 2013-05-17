@@ -101,7 +101,7 @@ and vof_ptype =
   | ObjectTy -> Ocaml.VSum (("ObjectTy", []))
 
 and vof_expr = function
-  | Lv v1 -> let v1 = vof_lvalue v1 in Ocaml.VSum (("Lv", [ v1 ]))
+  | Lv v1 -> let v1 = vof_lvalue2 v1 in Ocaml.VSum (("Lv", [ v1 ]))
   | Sc v1 -> let v1 = vof_scalar v1 in Ocaml.VSum (("Sc", [ v1 ]))
   | Binary ((v1, v2, v3)) ->
       let v1 = vof_expr v1
@@ -113,12 +113,12 @@ and vof_expr = function
       and v2 = vof_expr v2
       in Ocaml.VSum (("Unary", [ v1; v2 ]))
   | Assign ((v1, v2, v3)) ->
-      let v1 = vof_variable v1
+      let v1 = vof_lvalue v1
       and v2 = vof_tok v2
       and v3 = vof_expr v3
       in Ocaml.VSum (("Assign", [ v1; v2; v3 ]))
   | AssignOp ((v1, v2, v3)) ->
-      let v1 = vof_variable v1
+      let v1 = vof_lvalue v1
       and v2 = vof_wrap vof_assignOp v2
       and v3 = vof_expr v3
       in Ocaml.VSum (("AssignOp", [ v1; v2; v3 ]))
@@ -168,13 +168,13 @@ and vof_expr = function
       and v2 = vof_expr v2
       in Ocaml.VSum (("Clone", [ v1; v2 ]))
   | AssignRef ((v1, v2, v3, v4)) ->
-      let v1 = vof_variable v1
+      let v1 = vof_lvalue v1
       and v2 = vof_tok v2
       and v3 = vof_tok v3
-      and v4 = vof_variable v4
+      and v4 = vof_lvalue v4
       in Ocaml.VSum (("AssignRef", [ v1; v2; v3; v4 ]))
   | AssignNew ((v1, v2, v3, v4, v5, v6)) ->
-      let v1 = vof_variable v1
+      let v1 = vof_lvalue v1
       and v2 = vof_tok v2
       and v3 = vof_tok v3
       and v4 = vof_tok v4
@@ -243,11 +243,11 @@ and vof_expr = function
       in Ocaml.VSum (("YieldBreak", [ v1; v2 ]))
   | Empty ((v1, v2)) ->
       let v1 = vof_tok v1
-      and v2 = vof_paren vof_variable v2
+      and v2 = vof_paren vof_lvalue v2
       in Ocaml.VSum (("Empty", [ v1; v2 ]))
   | Isset ((v1, v2)) ->
       let v1 = vof_tok v1
-      and v2 = vof_paren (vof_comma_list vof_variable) v2
+      and v2 = vof_paren (vof_comma_list vof_lvalue) v2
       in Ocaml.VSum (("Isset", [ v1; v2 ]))
   | XhpHtml v1 ->
       let v1 = vof_xhp_html v1 in Ocaml.VSum (("XhpHtml", [ v1 ]))
@@ -304,15 +304,15 @@ and vof_encaps =
       let v1 = vof_wrap vof_string v1
       in Ocaml.VSum (("EncapsString", [ v1 ]))
   | EncapsVar v1 ->
-      let v1 = vof_variable v1 in Ocaml.VSum (("EncapsVar", [ v1 ]))
+      let v1 = vof_lvalue v1 in Ocaml.VSum (("EncapsVar", [ v1 ]))
   | EncapsCurly ((v1, v2, v3)) ->
       let v1 = vof_tok v1
-      and v2 = vof_variable v2
+      and v2 = vof_lvalue v2
       and v3 = vof_tok v3
       in Ocaml.VSum (("EncapsCurly", [ v1; v2; v3 ]))
   | EncapsDollarCurly ((v1, v2, v3)) ->
       let v1 = vof_tok v1
-      and v2 = vof_variable v2
+      and v2 = vof_lvalue v2
       and v3 = vof_tok v3
       in Ocaml.VSum (("EncapsDollarCurly", [ v1; v2; v3 ]))
   | EncapsExpr ((v1, v2, v3)) ->
@@ -372,7 +372,7 @@ and vof_castOp v = vof_ptype v
 and vof_list_assign =
   function
   | ListVar v1 ->
-      let v1 = vof_variable v1 in Ocaml.VSum (("ListVar", [ v1 ]))
+      let v1 = vof_lvalue v1 in Ocaml.VSum (("ListVar", [ v1 ]))
   | ListList ((v1, v2)) ->
       let v1 = vof_tok v1
       and v2 = vof_paren (vof_comma_list vof_list_assign) v2
@@ -384,7 +384,7 @@ and vof_array_pair =
       let v1 = vof_expr v1 in Ocaml.VSum (("ArrayExpr", [ v1 ]))
   | ArrayRef ((v1, v2)) ->
       let v1 = vof_tok v1
-      and v2 = vof_variable v2
+      and v2 = vof_lvalue v2
       in Ocaml.VSum (("ArrayRef", [ v1; v2 ]))
   | ArrayArrowExpr ((v1, v2, v3)) ->
       let v1 = vof_expr v1
@@ -395,7 +395,7 @@ and vof_array_pair =
       let v1 = vof_expr v1
       and v2 = vof_tok v2
       and v3 = vof_tok v3
-      and v4 = vof_variable v4
+      and v4 = vof_lvalue v4
       in Ocaml.VSum (("ArrayArrowRef", [ v1; v2; v3; v4 ]))
 and vof_vector_elt =
   function
@@ -417,7 +417,7 @@ and vof_map_elt =
       let v1 = vof_expr v1
       and v2 = vof_tok v2
       and v3 = vof_tok v3
-      and v4 = vof_variable v4
+      and v4 = vof_lvalue v4
       in Ocaml.VSum (("MapArrowRef", [ v1; v2; v3; v4 ]))
 and vof_class_name_reference =
   function
@@ -425,7 +425,7 @@ and vof_class_name_reference =
       let v1 = vof_class_name_or_selfparent v1 in
       Ocaml.VSum (("ClassNameRefStatic", [ v1 ]))
   | ClassNameRefDynamic (v1, v2) ->
-      let v1 = vof_variable v1
+      let v1 = vof_lvalue v1
       and v2 = vof_list vof_obj_prop_access v2
       in Ocaml.VSum (("ClassNameRefDynamic", [ v1; v2 ]))
 
@@ -470,8 +470,8 @@ and vof_xhp_body =
       let v1 = vof_brace vof_expr v1 in Ocaml.VSum (("XhpExpr", [ v1 ]))
   | XhpNested v1 ->
       let v1 = vof_xhp_html v1 in Ocaml.VSum (("XhpNested", [ v1 ]))
-and vof_lvalue x = vof_variable x
-and vof_variable = function
+and vof_lvalue x = vof_expr x
+and vof_lvalue2 = function
   | Var ((v1, v2)) ->
       let v1 = vof_dname v1
       and v2 = vof_ref Scope_code.vof_scope v2
@@ -489,7 +489,7 @@ and vof_variable = function
           v1
       in Ocaml.VSum (("NewLv", [ v1 ]))
   | VArrayAccess ((v1, v2)) ->
-      let v1 = vof_variable v1
+      let v1 = vof_lvalue v1
       and v2 = vof_bracket (vof_option vof_expr) v2
       in Ocaml.VSum (("VArrayAccess", [ v1; v2 ]))
   | VArrayAccessXhp ((v1, v2)) ->
@@ -501,16 +501,16 @@ and vof_variable = function
       and v2 = vof_brace vof_expr v2
       in Ocaml.VSum (("VBrace", [ v1; v2 ]))
   | VBraceAccess ((v1, v2)) ->
-      let v1 = vof_variable v1
+      let v1 = vof_lvalue v1
       and v2 = vof_brace vof_expr v2
       in Ocaml.VSum (("VBraceAccess", [ v1; v2 ]))
   | Indirect ((v1, v2)) ->
-      let v1 = vof_variable v1
+      let v1 = vof_lvalue v1
       and v2 = vof_indirect v2
       in Ocaml.VSum (("Indirect", [ v1; v2 ]))
   | VQualifier ((v1, v2)) ->
       let v1 = vof_qualifier v1
-      and v2 = vof_variable v2
+      and v2 = vof_lvalue v2
       in Ocaml.VSum (("VQualifier", [ v1; v2 ]))
   | ClassVar ((v1, v2)) ->
       let v1 = vof_qualifier v1
@@ -527,7 +527,7 @@ and vof_variable = function
       in Ocaml.VSum (("FunCallSimple", [v2; v3 ]))
   | FunCallVar ((v1, v2, v3)) ->
       let v1 = vof_option vof_qualifier v1
-      and v2 = vof_variable v2
+      and v2 = vof_lvalue v2
       and v3 = vof_paren (vof_comma_list vof_argument) v3
       in Ocaml.VSum (("FunCallVar", [ v1; v2; v3 ]))
   | StaticMethodCallSimple ((v1, v2, v3)) ->
@@ -536,7 +536,7 @@ and vof_variable = function
       and v3 = vof_paren (vof_comma_list vof_argument) v3
       in Ocaml.VSum (("StaticMethodCallSimple", [ v1; v2; v3 ]))
   | MethodCallSimple ((v1, v2, v3, v4)) ->
-      let v1 = vof_variable v1
+      let v1 = vof_lvalue v1
       and v2 = vof_tok v2
       and v3 = vof_name v3
       and v4 = vof_paren (vof_comma_list vof_argument) v4
@@ -554,12 +554,12 @@ and vof_variable = function
       and v4 = vof_paren (vof_comma_list vof_argument) v4
       in Ocaml.VSum (("StaticObjCallVar", [ v1; v2; v3; v4 ]))
   | ObjAccessSimple ((v1, v2, v3)) ->
-      let v1 = vof_variable v1
+      let v1 = vof_lvalue v1
       and v2 = vof_tok v2
       and v3 = vof_name v3
       in Ocaml.VSum (("ObjAccessSimple", [ v1; v2; v3 ]))
   | ObjAccess ((v1, v2)) ->
-      let v1 = vof_variable v1
+      let v1 = vof_lvalue v1
       and v2 = vof_obj_access v2
       in Ocaml.VSum (("ObjAccess", [ v1; v2 ]))
 and vof_indirect =
@@ -581,7 +581,7 @@ and vof_obj_property =
   function
   | ObjProp v1 -> let v1 = vof_obj_dim v1 in Ocaml.VSum (("ObjProp", [ v1 ]))
   | ObjPropVar v1 ->
-      let v1 = vof_variable v1 in Ocaml.VSum (("ObjPropVar", [ v1 ]))
+      let v1 = vof_lvalue v1 in Ocaml.VSum (("ObjPropVar", [ v1 ]))
 and vof_obj_dim =
   function
   | OName v1 -> let v1 = vof_name v1 in Ocaml.VSum (("OName", [ v1 ]))
@@ -595,9 +595,9 @@ and vof_obj_dim =
       let v1 = vof_obj_dim v1
       and v2 = vof_brace vof_expr v2
       in Ocaml.VSum (("OBraceAccess", [ v1; v2 ]))
-and vof_rw_variable v = vof_variable v
-and vof_r_variable v = vof_variable v
-and vof_w_variable v = vof_variable v
+and vof_rw_variable v = vof_lvalue v
+and vof_r_variable v = vof_lvalue v
+and vof_w_variable v = vof_lvalue v
 
 and vof_stmt =
   function
@@ -672,7 +672,7 @@ and vof_stmt =
       and v2 = vof_tok v2
       and v3 = vof_expr v3
       and v4 = vof_tok v4
-      and v5 = Ocaml.vof_either vof_foreach_variable vof_variable v5
+      and v5 = Ocaml.vof_either vof_foreach_variable vof_lvalue v5
       and v6 = vof_option vof_foreach_arrow v6
       and v7 = vof_tok v7
       and v8 = vof_colon_stmt v8
@@ -727,7 +727,7 @@ and vof_stmt =
       in Ocaml.VSum (("Use", [ v1; v2; v3 ]))
   | Unset ((v1, v2, v3)) ->
       let v1 = vof_tok v1
-      and v2 = vof_paren (vof_comma_list vof_variable) v2
+      and v2 = vof_paren (vof_comma_list vof_lvalue) v2
       and v3 = vof_tok v3
       in Ocaml.VSum (("Unset", [ v1; v2; v3 ]))
   | Declare ((v1, v2, v3)) ->
@@ -788,7 +788,7 @@ and vof_foreach_arrow (v1, v2) =
   and v2 = vof_foreach_variable v2
   in Ocaml.VTuple [ v1; v2 ]
 and vof_foreach_variable (v1, v2) =
-  let v1 = vof_is_ref v1 and v2 = vof_variable v2 in Ocaml.VTuple [ v1; v2 ]
+  let v1 = vof_is_ref v1 and v2 = vof_lvalue v2 in Ocaml.VTuple [ v1; v2 ]
 and vof_catch (v1, v2, v3) =
   let v1 = vof_tok v1
   and v2 =
@@ -1213,7 +1213,7 @@ and vof_entity =
 
 and vof_any =
   function
-  | Lvalue v1 -> let v1 = vof_lvalue v1 in Ocaml.VSum (("Lvalue", [ v1 ]))
+  | Lvalue v1 -> let v1 = vof_lvalue2 v1 in Ocaml.VSum (("Lvalue", [ v1 ]))
   | Expr v1 -> let v1 = vof_expr v1 in Ocaml.VSum (("Expr", [ v1 ]))
   | Stmt2 v1 -> let v1 = vof_stmt v1 in Ocaml.VSum (("Stmt2", [ v1 ]))
   | Toplevel v1 ->

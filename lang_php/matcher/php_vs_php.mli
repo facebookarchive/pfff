@@ -54,7 +54,7 @@ module PHP_VS_PHP :
       type ('a, 'b) matcher = 'a -> 'b -> X.tin -> ('a * 'b) X.tout
 
       val m_expr :     (Ast_php.expr,   Ast_php.expr)   matcher
-      val m_variable : (Ast_php.lvalue, Ast_php.lvalue) matcher
+      val m_variable : (Ast_php.lvalue2, Ast_php.lvalue2) matcher
       val m_stmt : (Ast_php.stmt, Ast_php.stmt) matcher
       val m_toplevel : (Ast_php.toplevel, Ast_php.toplevel) matcher
       val m_xhp_html : (Ast_php.xhp_html, Ast_php.xhp_html) matcher
