@@ -419,7 +419,8 @@ and vof_map_elt =
       and v3 = vof_tok v3
       and v4 = vof_lvalue v4
       in Ocaml.VSum (("MapArrowRef", [ v1; v2; v3; v4 ]))
-and vof_class_name_reference =
+and vof_class_name_reference a = vof_expr a
+and vof_class_name_reference2 =
   function
   | ClassNameRefStatic v1 ->
       let v1 = vof_class_name_or_selfparent v1 in
@@ -1266,6 +1267,6 @@ and vof_any =
   | Entity v1 -> let v1 = vof_entity v1 in Ocaml.VSum (("Entity", [ v1 ]))
   | Name2 v1 -> let v1 = vof_name v1 in Ocaml.VSum(("Name2", [ v1 ]))
   | ClassNameRef v1 ->
-      let v1 = vof_class_name_reference v1
+      let v1 = vof_class_name_reference2 v1
       in Ocaml.VSum (("ClassNameRef", [ v1 ]))
   | Hint2 v1 -> let v1 = vof_hint_type v1 in Ocaml.VSum (("Hint2", [ v1 ]))

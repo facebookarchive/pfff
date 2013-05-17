@@ -97,8 +97,8 @@ type visitor_in = {
     (fully_qualified_class_name -> unit) * visitor_out ->
     fully_qualified_class_name -> unit;
   kclass_name_reference:
-    (class_name_reference -> unit) * visitor_out ->
-    class_name_reference -> unit;
+    (class_name_reference2 -> unit) * visitor_out ->
+    class_name_reference2 -> unit;
   khint_type: (hint_type -> unit) * visitor_out -> hint_type -> unit;
   kqualifier: (qualifier -> unit) * visitor_out -> qualifier -> unit;
   kclass_name_or_kwd:
@@ -449,7 +449,8 @@ and v_assignOp =
 and v_unaryOp =
   function | UnPlus -> () | UnMinus -> () | UnBang -> () | UnTilde -> ()
 and v_castOp v = v_ptype v
-and v_class_name_reference x =
+and v_class_name_reference x = v_expr x
+and v_class_name_reference2 x =
   let rec k x = match x with
   | ClassNameRefStatic v1 -> let v1 = v_class_name_or_selfparent v1 in ()
   | ClassNameRefDynamic (v1, v2) ->
@@ -1150,7 +1151,7 @@ and v_any = function
   | ColonStmt2 v1 -> let v1 = v_colon_stmt v1 in ()
   | Case2 v1 -> let v1 = v_case v1 in ()
   | Name2 v1 -> let v1 = v_name v1 in ()
-  | ClassNameRef v1 -> let v1 = v_class_name_reference v1 in ()
+  | ClassNameRef v1 -> let v1 = v_class_name_reference2 v1 in ()
   | Hint2 v1 -> let v1 = v_hint_type v1 in ()
 
 (* end of auto generation *)

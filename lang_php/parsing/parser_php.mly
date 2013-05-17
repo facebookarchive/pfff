@@ -56,7 +56,6 @@ open Parser_php_mly_helper
 module H = Parser_php_mly_helper
 
 let exprTodo = Sc (C (Int ("ExprTodo", Ast.fakeInfo "")))
-let cstTodo = (Int ("cstTodo", Ast.fakeInfo ""))
 let classrefTodo = ClassNameRefStatic (Self (Ast.fakeInfo ""))
 %}
 
@@ -932,7 +931,7 @@ expr:
      { failwith_xhp_ambiguity_colon (snd $4) }
 
  | expr T_INSTANCEOF expr
-     { InstanceOf($1,$2,classrefTodo) }
+     { InstanceOf($1,$2,exprTodo) }
 
 
  /*(* less: it would be nicer to have TOPAR TTypename TCPAR

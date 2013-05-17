@@ -426,7 +426,8 @@ and map_map_elt =
       let v3 = map_tok v3 in
       let v4 = map_lvalue v4 in
       MapArrowRef ((v1, v2, v3, v4))
-and map_class_name_reference =
+and map_class_name_reference a = map_expr a
+and map_class_name_reference2 =
   function
   | ClassNameRefStatic v1 ->
       let v1 = map_class_name_or_selfparent v1 in ClassNameRefStatic ((v1))
@@ -1177,7 +1178,7 @@ and map_any =
   | Case2 v1 -> let v1 = map_case v1 in Case2 ((v1))
   | Name2 v1 -> let v1 = map_name v1 in Name2 v1
   | ClassNameRef v1 ->
-      let v1 = map_class_name_reference v1 in ClassNameRef ((v1))
+      let v1 = map_class_name_reference2 v1 in ClassNameRef ((v1))
   | Hint2 v1 -> let v1 = map_hint_type v1 in Hint2 ((v1))
 
  and all_functions =
