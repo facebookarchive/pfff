@@ -178,6 +178,14 @@ and expr =
   | Lv of lvalue2
   | Cr of class_name_reference2
 
+  | Call of expr * argument comma_list paren
+  | ObjGet of expr * tok (* -> *) * expr
+  | ClassGet of class_name_reference * tok (* :: *) * expr
+  | ArrayGet of expr * expr option bracket
+  | HashGet of expr * expr brace
+  | BraceIdent of expr brace
+  | Deref of tok (* $ *) * expr
+
   (* start of expr_without_variable in original PHP lexer/parser terminology *)
   | Sc of scalar
 

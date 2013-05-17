@@ -487,6 +487,7 @@ and expr env = function
   (* only appear in sgrep pattern *)
   | SgrepExprDots _ -> raise Common.Impossible
   | ParenExpr (_, e, _) -> expr env e
+  | _ -> raise Common.Todo
 
 and lambda_def env (l_use, ld) =
   let _, params, _ = ld.f_params in

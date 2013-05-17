@@ -153,6 +153,31 @@ and map_expr (x) =
   let k x =  match x with
   | Lv v1 -> let v1 = map_variable v1 in Lv ((v1))
   | Cr v1 -> let v1 = map_class_name_reference2 v1 in Cr ((v1))
+  | Call ((v1, v2)) ->
+      let v1 = map_expr v1
+      and v2 = map_paren (map_comma_list map_argument) v2
+      in Call ((v1, v2))
+  | ObjGet ((v1, v2, v3)) ->
+      let v1 = map_expr v1
+      and v2 = map_tok v2
+      and v3 = map_expr v3
+      in ObjGet ((v1, v2, v3))
+  | ClassGet ((v1, v2, v3)) ->
+      let v1 = map_class_name_reference v1
+      and v2 = map_tok v2
+      and v3 = map_expr v3
+      in ClassGet ((v1, v2, v3))
+  | ArrayGet ((v1, v2)) ->
+      let v1 = map_expr v1
+      and v2 = map_bracket (map_of_option map_expr) v2
+      in ArrayGet ((v1, v2))
+  | HashGet ((v1, v2)) ->
+      let v1 = map_expr v1
+      and v2 = map_brace map_expr v2
+      in HashGet ((v1, v2))
+  | BraceIdent v1 -> let v1 = map_brace map_expr v1 in BraceIdent ((v1))
+  | Deref ((v1, v2)) ->
+      let v1 = map_tok v1 and v2 = map_expr v2 in Deref ((v1, v2))
   | Sc v1 -> let v1 = map_scalar v1 in Sc ((v1))
   | Binary ((v1, v2, v3)) ->
       let v1 = map_expr v1

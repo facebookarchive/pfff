@@ -246,6 +246,20 @@ and v_expr (x: expr) =
   let k x =  match x with
   | Lv v1 -> let v1 = v_variable v1 in ()
   | Cr v1 -> let v1 = v_class_name_reference2 v1 in ()
+  | Call ((v1, v2)) ->
+      let v1 = v_expr v1 and v2 = v_paren (v_comma_list v_argument) v2 in ()
+  | ObjGet ((v1, v2, v3)) ->
+      let v1 = v_expr v1 and v2 = v_tok v2 and v3 = v_expr v3 in ()
+  | ClassGet ((v1, v2, v3)) ->
+      let v1 = v_class_name_reference v1
+      and v2 = v_tok v2
+      and v3 = v_expr v3
+      in ()
+  | ArrayGet ((v1, v2)) ->
+      let v1 = v_expr v1 and v2 = v_bracket (v_option v_expr) v2 in ()
+  | HashGet ((v1, v2)) -> let v1 = v_expr v1 and v2 = v_brace v_expr v2 in ()
+  | BraceIdent v1 -> let v1 = v_brace v_expr v1 in ()
+  | Deref ((v1, v2)) -> let v1 = v_tok v1 and v2 = v_expr v2 in ()
   | Sc v1 -> let v1 = v_scalar v1 in ()
   | Assign ((v1, v2, v3)) ->
       let v1 = v_lvalue v1 and v2 = v_tok v2 and v3 = v_expr v3 in ()
