@@ -1046,13 +1046,13 @@ member_expr:
 primary_expr:
  | constant { Sc (C $1) }
 
- | qualified_class_name    { (*C (CName (Name $1))*) exprTodo }
- | T_SELF               { (*Self $1*)exprTodo }
- | T_PARENT             { (*Parent $1*)exprTodo }
+ | qualified_class_name { Sc (C (CName ($1)))  }
+ | T_SELF               { Cr (ClassNameRefStatic (Self $1)) }
+ | T_PARENT             { Cr (ClassNameRefStatic (Parent $1)) }
 /*(* php 5.3 late static binding *)*/
- | T_STATIC             { (*LateStatic $1*)exprTodo }
+ | T_STATIC             {  Cr (ClassNameRefStatic (LateStatic $1)) }
 
- | T_VARIABLE { exprTodo }
+ | T_VARIABLE { Lv (Var (DName $1, Ast.noScope())) }
 
  | TDOLLAR primary_expr { exprTodo }
  | TDOLLAR TOBRACE expr TCBRACE { exprTodo }
@@ -1164,7 +1164,7 @@ encaps_var_offset:
      let cst = String $1 in (* will not have enclosing "'"  as usual *)
      Sc (C cst)
    }
- | T_VARIABLE	{ exprTodo }
+ | T_VARIABLE	{ Lv (Var (DName $1, Ast.noScope())) }
  | T_NUM_STRING	{
      (* the original php lexer does not return some numbers for
       * offset of array access inside strings. Not sure why ...
