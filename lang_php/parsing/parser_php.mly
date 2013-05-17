@@ -1023,8 +1023,8 @@ simple_expr:
 
 new_expr:
  | member_expr { $1 }
- | T_NEW member_expr { exprTodo }
- | T_NEW member_expr arguments { exprTodo }
+ | T_NEW member_expr { New ($1, $2, None) }
+ | T_NEW member_expr arguments { New ($1, $2, Some $3) }
 
 call_expr:
  | member_expr arguments { exprTodo }
