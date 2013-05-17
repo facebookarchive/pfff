@@ -558,6 +558,9 @@ and stmt =
     (* static-php-ext: *)
     | TypedDeclaration of hint_type * lvalue * (tok * expr) option * tok
 
+    (* nested funcs and classes are mostly used inside if() where the
+     * if() actually behaves like an ifdef in C.
+     *)
     (* was in stmt_and_def before *)
     | FuncDefNested of func_def
     (* traits are actually not allowed here *)
