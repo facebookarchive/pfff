@@ -56,7 +56,6 @@ open Parser_php_mly_helper
 module H = Parser_php_mly_helper
 
 let exprTodo = Sc (C (Int ("ExprTodo", Ast.fakeInfo "")))
-let classrefTodo = ClassNameRefStatic (Self (Ast.fakeInfo ""))
 %}
 
 /*(*************************************************************************)*/
