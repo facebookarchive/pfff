@@ -32,118 +32,10 @@ let rec squash_stmt_list xs =
 (*e: function top_statements_to_toplevels *)
 
 (*****************************************************************************)
-(* Variable original type *)
+(* todo? *)
 (*****************************************************************************)
-(*s: type variable2 *)
-(* This type is only used for now during parsing time. It was originally
- * fully part of the PHP AST but it makes some processing like typing
- * harder with all the special cases. This type below is more precise 
- * than the one currently in the AST but it's not worthwhile the
- * extra complexity.
- *)
-type variable2 =
-  | Variable of base_var_and_funcall * obj_access list
 
-  and base_var_and_funcall = 
-    | BaseVar of base_variable
-    | FunCall of func_head * argument comma_list paren
-
-    and base_variable = 
-      (qualifier, 
-       tok * tok, (* static::, not used anymore, static is in qualifier now *)
-       ref_variable * tok (* $x:: *)
-       ) either3 option 
-      * var_without_obj
-      and var_without_obj = indirect list * ref_variable
-
-      and ref_variable = 
-        | Var2 of dname * Scope_php.phpscope ref  (* semantic: *)
-        | VDollar2 of tok * expr brace
-        | VArrayAccess2 of ref_variable * expr option bracket
-        | VBraceAccess2 of ref_variable * expr brace
-
-
-    and func_head = 
-      (* static function call (or mostly static because in php
-       * you can redefine functions ...)  *)
-      | FuncName of qualifier option * name
-      (* dynamic function call *)
-      | FuncVar  of qualifier option * var_without_obj
-      (* PHP 5.3 *)
-      | StaticMethodVar of ref_variable * tok * name
-      | StaticObjVar of ref_variable * tok * var_without_obj
-
-(*e: type variable2 *)
-
-(*s: variable2 to variable functions *)
-let method_object_simple x = 
-  match x with
-  | ObjAccess(var, (t1, obj, argsopt)) ->
-      (match obj, argsopt with
-      | ObjProp (OName name), Some args ->
-          (* todo? do special case when var is a Var ? *)
-          MethodCallSimple (var, t1, name, args)
-      | ObjProp (OName name), None ->
-          ObjAccessSimple (var, t1, name)
-      | _ -> x
-      )          
-  | _ -> 
-      raise Impossible
-
-let rec variable2_to_lvalue var = 
-  match var with
-  | Variable (basevar, objs) -> 
-      let v = basevarfun_to_variable basevar in
-      (* TODO left ? right ? *)
-      objs +> List.fold_left (fun acc obj ->
-        (method_object_simple (ObjAccess (acc, obj)))
-      ) v
-
-and basevarfun_to_variable basevarfun = 
-  match basevarfun with
-  | BaseVar basevar ->
-      basevar_to_variable basevar
-  | FunCall (head, args) ->
-      let v = 
-      (match head with
-      | FuncName (qopt, name) -> 
-          (match qopt with
-          | None -> 
-              FunCallSimple (name, args)
-          | Some qualifier -> 
-              StaticMethodCallSimple (qualifier, name, args)
-          )
-      | FuncVar (qopt, vwithoutobj) ->
-          FunCallVar (qopt, vwithoutobj_to_variable vwithoutobj, args)
-      | StaticMethodVar (ref_var, tok, name) ->
-          let var = refvar_to_variable ref_var in
-          StaticMethodCallVar (var, tok, name, args)
-
-      | StaticObjVar (ref_var, tok, vwithoutobj) ->
-          let var = refvar_to_variable ref_var in
-          let var2 = vwithoutobj_to_variable vwithoutobj in
-          StaticObjCallVar (var, tok, var2, args)
-      )
-      in
-      v
-
-
-and basevar_to_variable basevar =
-  let (qu_opt, vwithoutobj) = basevar in
-  let v = vwithoutobj_to_variable vwithoutobj in
-  (match qu_opt with
-  | None -> v
-  | Some qu -> 
-      lift_qualifier_closer_to_var qu v
-  )
-
-and vwithoutobj_to_variable vwithoutobj = 
-  let (indirects, refvar) = vwithoutobj in
-  let v = refvar_to_variable refvar in
-  indirects +> List.fold_left (fun acc indirect ->
-    (Indirect (acc, indirect))) v
-  
-
+(*
 and refvar_to_variable refvar = 
   let v = 
     match refvar with
@@ -164,6 +56,7 @@ and refvar_to_variable refvar =
         VBraceAccess(v, exprb)
   in
   v
+*)
 
 (* even if A::$v['fld'] is parsed in the grammar
  * as a Qualifier(A, ArrayAccess($v, 'fld') we should really
@@ -174,6 +67,7 @@ and refvar_to_variable refvar =
  * access the deaper variable. We must stop when there is an indirect
  * because A::$$v should not be parsed as $(A::$v).
  *)
+(*
 and lift_qualifier_closer_to_var qu v =
 
   let rec aux v =
@@ -215,9 +109,7 @@ and lift_qualifier_closer_to_var qu v =
         (* e.g. when parse $class::$$prop *)
         (DynamicClassVar (v2, tok, v))
     )
-    
-
-(*e: variable2 to variable functions *)
+*)    
 
 (*****************************************************************************)
 (* XHP *)

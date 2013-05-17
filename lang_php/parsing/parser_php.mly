@@ -55,6 +55,10 @@ module Ast = Ast_php
 open Parser_php_mly_helper
 module H = Parser_php_mly_helper
 
+let exprTodo = Sc (C (Int ("ExprTodo", Ast.fakeInfo "")))
+let lvTodo = This (Ast.fakeInfo "")
+let cstTodo = (Int ("cstTodo", Ast.fakeInfo ""))
+let classrefTodo = ClassNameRefStatic (Self (Ast.fakeInfo ""))
 %}
 
 /*(*************************************************************************)*/
@@ -238,6 +242,11 @@ module H = Parser_php_mly_helper
 %left      T_ENDIF
 %nonassoc  T_YIELD
 
+/*(* not in original grammar *)*/
+%left TCOLCOL
+%left TDOLLAR
+%left T_OBJECT_OPERATOR
+
 /*(* xhp: this is used only to remove some shift/reduce ambiguities on the
    * error-rule trick.
    *)*/
@@ -296,23 +305,17 @@ statement:
  | T_SWITCH TOPAR expr TCPAR	switch_case_list
      { Switch($1,($2,$3,$4),$5) }
 
- | T_FOREACH TOPAR variable T_AS
-     foreach_variable foreach_optional_arg TCPAR
+ | T_FOREACH TOPAR expr T_AS foreach_variable foreach_optional_arg TCPAR
      foreach_statement
-     { Foreach($1,$2,mk_e (Lv $3),$4,Left $5,$6,$7,$8) }
- | T_FOREACH TOPAR expr_without_variable T_AS
-     variable foreach_optional_arg TCPAR
-     foreach_statement
-     { Foreach($1,$2,$3,$4,Right $5,$6,$7,$8)  }
+     { Foreach($1,$2,$3,$4,Left $5,$6,$7,$8)  }
 
  | T_BREAK      TSEMICOLON     	{ Break($1,None,$2) }
  | T_BREAK expr TSEMICOLON	{ Break($1,Some $2, $3) }
  | T_CONTINUE      TSEMICOLON	{ Continue($1,None,$2) }
  | T_CONTINUE expr TSEMICOLON	{ Continue($1,Some $2, $3) }
 
- | T_RETURN TSEMICOLON		              { Return ($1,None, $2) }
- | T_RETURN expr_without_variable TSEMICOLON  { Return ($1,Some ($2), $3)}
- | T_RETURN variable TSEMICOLON      { Return ($1,Some (mk_e (Lv $2)), $3)}
+ | T_RETURN TSEMICOLON	     { Return ($1,None, $2) }
+ | T_RETURN expr TSEMICOLON  { Return ($1,Some ($2), $3)}
 
  | T_TRY   TOBRACE inner_statement_list TCBRACE
    T_CATCH TOPAR qualified_class_name  T_VARIABLE TCPAR
@@ -361,8 +364,10 @@ foreach_optional_arg:
 foreach_variable: is_reference variable { ($1, $2) }
 
 switch_case_list:
- | TOBRACE            case_list TCBRACE  { CaseList($1,None,$2,$3) }
- | TOBRACE TSEMICOLON case_list TCBRACE  { CaseList($1, Some $2, $3, $4) }
+ | TOBRACE            case_list TCBRACE
+     { CaseList($1,None,$2,$3) }
+ | TOBRACE TSEMICOLON case_list TCBRACE
+     { CaseList($1, Some $2, $3, $4) }
  | TCOLON             case_list T_ENDSWITCH TSEMICOLON
      { CaseColonList($1,None,$2, $3, $4) }
  | TCOLON TSEMICOLON  case_list T_ENDSWITCH TSEMICOLON
@@ -678,7 +683,7 @@ xhp_attribute_is_required:
  | T_XHP_REQUIRED { Some $1 }
 
 xhp_enum:
- | common_scalar { $1 }
+ | constant { $1 }
 
 /*(* was called xhp_label_pass in original grammar *)*/
 xhp_attr_name:
@@ -848,85 +853,38 @@ attribute:
 attribute_argument: static_scalar { $1 }
 
 /*(*************************************************************************)*/
-/*(*1 Expressions (and variables) *)*/
+/*(*1 Expressions *)*/
 /*(*************************************************************************)*/
-/*(* a little coupling with non_empty_function_call_argument_list *)*/
-expr:
- | r_variable				{ mk_e (Lv $1) }
- | expr_without_variable		{ $1 }
 
-expr_without_variable:
- | expr_without_variable_bis { mk_e $1 }
- /*(* ugly: generate 6 conflicts, see conflicts.txt *)*/
- | expr TOBRA dim_offset TCBRA
-   {
-     match $1 with
-     (* Lv corresponds to Lvalue which includes function calls so
-      * foo()[1] will be translated into a
-      * VArrayAccess(FunCallSimple(...), 1).
-      *)
-     | Lv v ->
-         let var = (VArrayAccess (v, ($2, $3, $4))) in
-         mk_e (Lv var)
+expr: 
+ | simple_expr { $1 }
 
-     (* The 'lvalue' type was originally restricted to variables and
-      * function/method calls. It could not cope with
-      * VArrayAccess of arbitrary expressions such as
-      * "array(1,2,3)" which are ConsArray of the 'expr' type.
-      *
-      * So for the general case we could have transformed
-      * such array access into calls to __xhp_idx(), just like
-      * in the original XHP parser, and introduced some fake tokens
-      * in the Ast. But having fake tokens break some
-      * of the assumptions we have later when we build the database of code
-      * so it's simpler to introduce a new constructor,
-      * VarrayAccessXhp that can accept expressions. This forces us
-      * to add extra code to handle yet another constructor, but
-      * the __xhp_idx() solution would also force us, to have precise
-      * analysis, to special case such function calls anyway.
-      *
-      * An alternative would be to rethink ast_php.ml and
-      * merge the 'expr' and 'lvalue' types together.
-      *)
-     | _ ->
-         let var = (VArrayAccessXhp ($1, ($2, $3, $4))) in
-         mk_e (Lv var)
-   }
+ | expr TEQ expr	{ Assign(lvTodo,$2, $3) }
+ | expr TEQ TAND expr   { AssignRef(lvTodo,$2,$3, lvTodo) }
 
-expr_without_variable_bis:
- | scalar				{ Sc $1 }
+ | expr T_PLUS_EQUAL   expr { AssignOp(lvTodo,(AssignOpArith Plus,$2),$3) }
+ | expr T_MINUS_EQUAL  expr { AssignOp(lvTodo,(AssignOpArith Minus,$2),$3) }
+ | expr T_MUL_EQUAL    expr { AssignOp(lvTodo,(AssignOpArith Mul,$2),$3) }
+ | expr T_DIV_EQUAL    expr { AssignOp(lvTodo,(AssignOpArith Div,$2),$3) }
+ | expr T_MOD_EQUAL    expr { AssignOp(lvTodo,(AssignOpArith Mod,$2),$3) }
+ | expr T_AND_EQUAL    expr { AssignOp(lvTodo,(AssignOpArith And,$2),$3) }
+ | expr T_OR_EQUAL     expr { AssignOp(lvTodo,(AssignOpArith Or,$2),$3) }
+ | expr T_XOR_EQUAL    expr { AssignOp(lvTodo,(AssignOpArith Xor,$2),$3) }
+ | expr T_SL_EQUAL     expr { AssignOp(lvTodo,(AssignOpArith DecLeft,$2),$3) }
+ | expr T_SR_EQUAL     expr { AssignOp(lvTodo,(AssignOpArith DecRight,$2),$3) }
+                            
+ | expr T_CONCAT_EQUAL expr { AssignOp(lvTodo,(AssignConcat,$2),$3) }
 
- | TOPAR expr TCPAR 	{ ParenExpr($1,$2,$3) }
+ | expr T_INC { Postfix(lvTodo, (Inc, $2)) }
+ | expr T_DEC { Postfix(lvTodo, (Dec, $2)) }
+ | T_INC expr { Infix((Inc, $1), lvTodo) }
+ | T_DEC expr { Infix((Dec, $1), lvTodo) }
 
- | variable TEQ expr		{ Assign($1,$2,$3) }
- | variable TEQ TAND variable   { AssignRef($1,$2,$3,$4) }
- | variable TEQ TAND T_NEW class_name_reference ctor_arguments
-     { AssignNew($1,$2,$3,$4,$5,$6) }
-
-
- | variable T_PLUS_EQUAL   expr	{ AssignOp($1,(AssignOpArith Plus,$2),$3) }
- | variable T_MINUS_EQUAL  expr	{ AssignOp($1,(AssignOpArith Minus,$2),$3) }
- | variable T_MUL_EQUAL    expr	{ AssignOp($1,(AssignOpArith Mul,$2),$3) }
- | variable T_DIV_EQUAL    expr	{ AssignOp($1,(AssignOpArith Div,$2),$3) }
- | variable T_MOD_EQUAL    expr	{ AssignOp($1,(AssignOpArith Mod,$2),$3) }
- | variable T_AND_EQUAL    expr	{ AssignOp($1,(AssignOpArith And,$2),$3) }
- | variable T_OR_EQUAL     expr	{ AssignOp($1,(AssignOpArith Or,$2),$3) }
- | variable T_XOR_EQUAL    expr	{ AssignOp($1,(AssignOpArith Xor,$2),$3) }
- | variable T_SL_EQUAL     expr	{ AssignOp($1,(AssignOpArith DecLeft,$2),$3) }
- | variable T_SR_EQUAL     expr	{ AssignOp($1,(AssignOpArith DecRight,$2),$3) }
-
- | variable T_CONCAT_EQUAL expr	{ AssignOp($1,(AssignConcat,$2),$3) }
-
- | rw_variable T_INC { Postfix($1, (Inc, $2)) }
- | rw_variable T_DEC { Postfix($1, (Dec, $2)) }
- | T_INC rw_variable { Infix((Inc, $1),$2) }
- | T_DEC rw_variable { Infix((Dec, $1),$2) }
-
- | expr T_BOOLEAN_OR expr   { Binary($1,(Logical OrBool ,$2),$3) }
+ | expr T_BOOLEAN_OR   expr { Binary($1,(Logical OrBool ,$2),$3) }
  | expr T_BOOLEAN_AND  expr { Binary($1,(Logical AndBool,$2),$3) }
- | expr T_LOGICAL_OR  expr  { Binary($1,(Logical OrLog,  $2),$3) }
+ | expr T_LOGICAL_OR   expr { Binary($1,(Logical OrLog,  $2),$3) }
  | expr T_LOGICAL_AND  expr { Binary($1,(Logical AndLog, $2),$3) }
- | expr T_LOGICAL_XOR expr  { Binary($1,(Logical XorLog, $2),$3) }
+ | expr T_LOGICAL_XOR  expr { Binary($1,(Logical XorLog, $2),$3) }
 
  | expr TPLUS expr 	{ Binary($1,(Arith Plus ,$2),$3) }
  | expr TMINUS expr 	{ Binary($1,(Arith Minus,$2),$3) }
@@ -957,22 +915,6 @@ expr_without_variable_bis:
  | TMINUS expr    %prec T_INC           { Unary((UnMinus,$1),$2) }
  | TBANG  expr                          { Unary((UnBang,$1),$2) }
  | TTILDE expr                          { Unary((UnTilde,$1),$2) }
- | T_LIST TOPAR assignment_list TCPAR TEQ expr
-     { AssignList($1,($2,$3,$4),$5,$6) }
- | T_ARRAY TOPAR array_pair_list TCPAR
-     { ArrayLong($1,($2,$3,$4)) }
-
- | collection_literal                   { $1 }
- | TOBRA array_pair_list TCBRA
-     { ArrayShort($1, $2, $3) }
- | new_expr 
-     { let (a,b,c) = $1 in New (a,b,c) }
- | TOPAR new_expr TCPAR instance_call 
-     { let (a,b,c) = $2 in Lv ($4 (NewLv ($1, (a,b,c), $3))) }
-
- | T_CLONE expr { Clone($1,$2) }
- | expr T_INSTANCEOF class_name_reference
-     { InstanceOf($1,$2,$3) }
 
  | expr TQUESTION  expr TCOLON  expr	 { CondExpr($1,$2,Some $3,$4,$5) }
  /*(* PHP 5.3 *)*/
@@ -989,6 +931,10 @@ expr_without_variable_bis:
    *)*/
  | expr TQUESTION  expr T_XHP_COLONID_DEF
      { failwith_xhp_ambiguity_colon (snd $4) }
+
+ | expr T_INSTANCEOF expr
+     { InstanceOf($1,$2,classrefTodo) }
+
 
  /*(* less: it would be nicer to have TOPAR TTypename TCPAR
     * but this would require some parsing tricks to sometimes return
@@ -1007,7 +953,9 @@ expr_without_variable_bis:
  | T__AT expr           { At($1,$2) }
  | T_PRINT expr  { Print($1,$2) }
 
- | TBACKQUOTE encaps_list TBACKQUOTE   { BackQuote($1,$2,$3) }
+
+ | T_CLONE expr { Clone($1,$2) }
+
  /*(* PHP 5.3 *)*/
  | T_FUNCTION is_reference TOPAR parameter_list TCPAR return_type_opt
    lexical_vars
@@ -1026,48 +974,34 @@ expr_without_variable_bis:
  | T_YIELD expr { Yield ($1, $2) }
  | T_YIELD T_BREAK { YieldBreak ($1, $2) }
 
- | internal_functions_in_yacc { $1 }
-
- /*(*s: exprbis grammar rule hook *)*/
  /*(* sgrep_ext: *)*/
  | TDOTS { sgrep_guard (SgrepExprDots $1) }
 
- /*(* xhp: do not put in 'expr', otherwise can't have xhp
-    * in function arguments
-    *)*/
- | xhp_html { XhpHtml $1 }
+ | T_INCLUDE      expr 		       { Include($1,$2) }
+ | T_INCLUDE_ONCE expr 	               { IncludeOnce($1,$2) }
+ | T_REQUIRE      expr		       { Require($1,$2) }
+ | T_REQUIRE_ONCE expr		       { RequireOnce($1,$2) }
 
-new_expr:
- | T_NEW class_name_reference ctor_arguments { ($1,$2,$3) }
+ | T_EMPTY TOPAR expr TCPAR	       { Empty($1,($2,lvTodo,$4)) }
 
-instance_call:
- | /*(*empty*)*/ { (fun lv -> lv) }
- | chaining_instance_call { $1 }
+ | T_EVAL TOPAR expr TCPAR 	       { Eval($1,($2,$3,$4)) }
 
-chaining_instance_call:
- | chaining_dereference chaining_method_or_property  { (fun lv -> $2 ($1 lv)) }
- | chaining_dereference { $1 }
- | chaining_method_or_property { $1 }
+ | T_ISSET arguments { exprTodo }
 
-chaining_dereference:
- | chaining_dereference TOBRA dim_offset TCBRA 
-     { (fun lv -> VArrayAccess ($1 lv, ($2, $3, $4))) }
- | TOBRA dim_offset TCBRA 
-     { (fun lv -> VArrayAccess (lv, ($1, $2, $3))) }
+ | T_LIST TOPAR assignment_list TCPAR TEQ expr
+     { AssignList($1,($2,$3,$4),$5,$6) }
 
-chaining_method_or_property:
- | chaining_method_or_property variable_property_bis { (fun lv -> $2 ($1 lv)) }
- | variable_property_bis { $1 }
-
-
-variable_property_bis: variable_property 
-  { (fun lv -> Parser_php_mly_helper.method_object_simple (ObjAccess (lv, $1)))}
-
-collection_literal:
+/*(* inspired by parser_js.mly *)*/
+simple_expr: 
+ | new_expr { $1 }
+ | call_expr { $1 }
+ /* TODO: 1 s/r conflict, can not be in primary_expr otherwise
+  * $this->fld{...} is not parsed correctly
+  */
  | qualified_class_name TOBRACE array_pair_list TCBRACE
      {
-       match $1 with
-       | Name ("Vector", t) ->
+       match ($1) with
+       | Name("Vector", t) ->
            let elts = List.map
              (function
              | Left (ArrayExpr e) -> Left (VectorExpr e)
@@ -1077,7 +1011,7 @@ collection_literal:
              $3
            in
            VectorLit(t, ($2, elts, $4))
-       | Name (("Map" | "StableMap"), t) ->
+       | Name(("Map" | "StableMap"), t) ->
            let elts = List.map
              (function
              | Left (ArrayArrowExpr (e1,t,e2)) -> Left (MapArrowExpr (e1,t,e2))
@@ -1091,106 +1025,72 @@ collection_literal:
         | _ -> raise Parsing.Parse_error
      }
 
- /*(*e: exprbis grammar rule hook *)*/
-/*(*pad: why this name ? *)*/
-internal_functions_in_yacc:
- | T_INCLUDE      expr 		       { Include($1,$2) }
- | T_INCLUDE_ONCE expr 	               { IncludeOnce($1,$2) }
- | T_REQUIRE      expr		       { Require($1,$2) }
- | T_REQUIRE_ONCE expr		       { RequireOnce($1,$2) }
+new_expr:
+ | member_expr { $1 }
+ | T_NEW member_expr { exprTodo }
+ | T_NEW member_expr arguments { exprTodo }
 
- | T_ISSET TOPAR isset_variables TCPAR { Isset($1,($2,$3,$4)) }
- | T_EMPTY TOPAR variable TCPAR	       { Empty($1,($2,$3,$4)) }
+call_expr:
+ | member_expr arguments { exprTodo }
+ | call_expr arguments { exprTodo }
+ | call_expr TOBRA dim_offset TCBRA { exprTodo }
+ | call_expr TOBRACE expr TCBRACE { exprTodo }
+ | call_expr T_OBJECT_OPERATOR primary_expr { exprTodo }
+ | call_expr T_OBJECT_OPERATOR TOBRACE expr TCBRACE { exprTodo }
 
- | T_EVAL TOPAR expr TCPAR 	       { Eval($1,($2,$3,$4)) }
+member_expr:
+ | primary_expr { $1 }
+ | member_expr TOBRA dim_offset TCBRA { exprTodo }
+ | member_expr TOBRACE expr TCBRACE { exprTodo }
+ | member_expr T_OBJECT_OPERATOR primary_expr { exprTodo }
+ | member_expr T_OBJECT_OPERATOR TOBRACE expr TCBRACE { exprTodo }
+ | member_expr TCOLCOL primary_expr { exprTodo }
 
-/*(* ugly: this should really by 'isset_variable: variable { ... }', but
-   * because one can write 'isset(f()[0])' and that currently
-   * the xhp sugared array access is allowed in expr context
-   * we must accept expr.
-   * The right fix would be to rewrite variable, base_variable, and
-   * related rules and move the xhp sugared access inside variable
-   *)*/
-isset_variable:
- | expr {
-   match $1 with
-   | Lv v -> v
-   | _ -> raise Parsing.Parse_error
-   }
 
-/*(*----------------------------*)*/
-/*(*2 scalar *)*/
-/*(*----------------------------*)*/
+primary_expr:
+ | constant { Sc (C $1) }
 
-scalar:
- | common_scalar		{ C $1 }
- | ident 			{ C (CName (Name $1)) }
- | class_constant	        { ClassConstant (fst $1, snd $1) }
+ | qualified_class_name    { (*C (CName (Name $1))*) exprTodo }
+ | T_SELF               { (*Self $1*)exprTodo }
+ | T_PARENT             { (*Parent $1*)exprTodo }
+/*(* php 5.3 late static binding *)*/
+ | T_STATIC             { (*LateStatic $1*)exprTodo }
+
+ | T_VARIABLE { exprTodo }
+
+ | TDOLLAR primary_expr { exprTodo }
+ | TDOLLAR TOBRACE expr TCBRACE { exprTodo }
+
+ | T_ARRAY TOPAR array_pair_list TCPAR
+     { ArrayLong($1,($2,$3,$4)) }
+ | TOBRA array_pair_list TCBRA
+     { ArrayShort($1, $2, $3) }
+
 
  | TGUIL encaps_list TGUIL
-     { Guil ($1, $2, $3)}
+     { Sc (Guil ($1, $2, $3)) }
+ | TBACKQUOTE encaps_list TBACKQUOTE   
+     { BackQuote($1,$2,$3) }
  | T_START_HEREDOC encaps_list T_END_HEREDOC
-     { HereDoc ($1, $2, $3) }
-
+     { Sc (HereDoc ($1, $2, $3)) }
  /*(* generated by lexer for special case of ${beer}s. So it's really
     * more a variable than a constant. So I've decided to inline this
     * special case rule in encaps. Maybe this is too restrictive.
     *)*/
   /*(* | T_STRING_VARNAME {  raise Todo } *)*/
 
-static_scalar: /* compile-time evaluated scalars */
- | common_scalar	 { Sc (C $1) }
- | ident 		 { Sc (C (CName (Name $1))) }
- | static_class_constant { Sc (ClassConstant (fst $1, snd $1)) }
+ /*(* xhp: do not put in 'expr', otherwise can't have xhp
+    * in function arguments
+    *)*/
+ | xhp_html { XhpHtml $1 }
 
- | TPLUS static_scalar	 { Unary ((UnPlus, $1),$2)  }
- | TMINUS static_scalar	 { Unary ((UnMinus, $1),$2) }
- /*(* arrays are considered scalars in the PHP grammar, brilliant *)*/
- | T_ARRAY TOPAR static_array_pair_list TCPAR
-     { ArrayLong($1, ($2, $3, $4)) }
- | TOBRA static_array_pair_list TCBRA
-     { ArrayShort($1, $2, $3) }
- /*(* todo? ensure encaps_list contains only constant strings? *)*/
- | T_START_HEREDOC encaps_list T_END_HEREDOC
-     { Sc (HereDoc ($1, $2, $3)) }
- /*(*s: static_scalar grammar rule hook *)*/
-  /* xdebug TODO AST  */
-  | TDOTS { sgrep_guard (SgrepExprDots $1)  }
- /*(*e: static_scalar grammar rule hook *)*/
-  | static_collection_literal  { $1 }
+ | TOPAR expr TCPAR     { ParenExpr($1,$2,$3) }
 
-static_collection_literal:
- | qualified_class_name TOBRACE static_array_pair_list TCBRACE
-     {
-       match $1 with
-       | Name ("Vector", t) ->
-           let elts = List.map
-             (function
-             | Left (ArrayExpr e) -> Left (VectorExpr e)
-             | Left (ArrayRef (t,e)) -> Left (VectorRef (t,e))
-             | Right t -> Right t
-             | Left _ -> raise Parsing.Parse_error)
-             $3
-           in
-           VectorLit(t, ($2, elts, $4))
-       | Name (("Map" | "StableMap"), t) ->
-           let elts = List.map
-             (function
-             | Left (ArrayArrowExpr (e1,t,e2)) -> Left (MapArrowExpr (e1,t,e2))
-             | Left (ArrayArrowRef (e1, t1, t2, e2)) ->
-                 Left (MapArrowRef (e1,t1,t2,e2))
-             | Right t -> Right t
-             | Left _ -> raise Parsing.Parse_error)
-             $3
-           in
-           MapLit(t, ($2, elts, $4))
-        | _ -> raise Parsing.Parse_error
-     }
 
-common_scalar:
+
+constant:
  | T_LNUMBER 			{ Int($1) }
  | T_DNUMBER 			{ Double($1) }
-
  | T_CONSTANT_ENCAPSED_STRING	{ String($1) }
 
  | T_LINE { PreProcess(Line, $1) }
@@ -1198,107 +1098,11 @@ common_scalar:
  | T_CLASS_C { PreProcess(ClassC, $1) } | T_TRAIT_C { PreProcess(TraitC, $1)}
  | T_FUNC_C { PreProcess(FunctionC, $1) }|T_METHOD_C { PreProcess(MethodC, $1)}
 
+variable:
+ | expr { lvTodo }
 
- /*(*s: common_scalar grammar rule hook *)*/
-  | T_CLASS_XDEBUG ident_class_name TOBRACE class_statement_list TCBRACE {
-      XdebugClass ($2, $4)
-    }
-  | T_CLASS_XDEBUG ident_class_name TOBRACE TDOTS TCBRACE {
-      XdebugClass ($2, [])
-    }
-  | T_CLASS_XDEBUG ident_class_name TOBRACE TDOTS TSEMICOLON TCBRACE {
-      XdebugClass ($2, [])
-    }
-  | T_RESOURCE_XDEBUG  { XdebugResource }
- /*(*e: common_scalar grammar rule hook *)*/
-
-class_constant:
-  | qualifier ident { $1, (Name $2) }
-
-static_class_constant: class_constant { $1 }
-static_array_pair_list: static_array_pair_list_rev { List.rev $1 }
-
-static_array_pair:
- | static_scalar                               { (ArrayExpr $1) }
- | static_scalar T_DOUBLE_ARROW static_scalar  { (ArrayArrowExpr ($1,$2,$3)) }
-
-/*(*----------------------------*)*/
-/*(*2 variable *)*/
-/*(*----------------------------*)*/
-
-variable: variable2 { variable2_to_lvalue $1 }
-variable2:
- | base_variable_with_function_calls
-     { Variable ($1,[]) }
- | base_variable_with_function_calls
-     T_OBJECT_OPERATOR object_property method_or_not
-     variable_properties
-     { Variable ($1, ($2, $3, $4)::$5) }
- /*(* sgrep_ext: *)*/
- | T_IDENT T_OBJECT_OPERATOR object_property method_or_not
-     variable_properties /*(* contains more T_OBJECT_OPERATOR *)*/
-     { sgrep_guard (raise Todo) }
-
-base_variable_with_function_calls:
- | base_variable {  BaseVar $1 }
- | function_call {  $1 }
-
-base_variable:
- |             variable_without_objects
-     { None,    $1 }
- | qualifier  variable_without_objects /*(*static_member*)*/
-     { Some (Left3 $1), $2 }
- | variable_class_name TCOLCOL variable_without_objects
-     { Some (Right3 ($1, $2)), $3 }
-
-
-variable_without_objects:
- |                             reference_variable { [], $1 }
- | simple_indirect_reference   reference_variable { $1, $2 }
-
-reference_variable:
- | compound_variable			      { $1 }
- | reference_variable TOBRA dim_offset TCBRA  { VArrayAccess2($1, ($2,$3,$4)) }
- | reference_variable TOBRACE expr TCBRACE    { VBraceAccess2($1, ($2,$3,$4)) }
-
-compound_variable:
- | T_VARIABLE			{ Var2 (DName $1, Ast.noScope()) }
- | TDOLLAR TOBRACE expr TCBRACE	{ VDollar2 ($1, ($2, $3, $4)) }
-
-simple_indirect_reference:
- | TDOLLAR                           { [Dollar $1] }
- | simple_indirect_reference TDOLLAR { $1 ++ [Dollar $2] }
-
-dim_offset:
- | /*(*empty*)*/   { None }
- | expr		   { Some $1 }
+static_scalar: expr { $1 }
 r_variable: variable { $1 }
-w_variable: variable { $1 }
-rw_variable: variable { $1 }
-/*(*----------------------------*)*/
-/*(*2 function call *)*/
-/*(*----------------------------*)*/
-function_call: function_head TOPAR function_call_argument_list TCPAR
-  { FunCall ($1, ($2, $3, $4)) }
-
- /*(*s: function_call grammar rule hook *)*/
- /*(*e: function_call grammar rule hook *)*/
-
-/*(* cant factorize the rule with a qualifier_opt because it leads to
-   * many conflicts :( *)*/
-function_head:
- | ident                         { FuncName (None, Name $1) }
- | variable_without_objects      { FuncVar  (None, $1) }
- | qualifier    ident            { FuncName(Some $1, Name $2) }
- | qualifier    variable_without_objects  { FuncVar(Some $1, $2) }
-/*(* PHP 5.3 *)*/
- | variable_class_name TCOLCOL ident { StaticMethodVar($1, $2, Name $3) }
- | variable_class_name TCOLCOL variable_without_objects { StaticObjVar ($1, $2, $3) }
-
-function_call_argument:
- | variable			{ (Arg (mk_e (Lv $1))) }
- | expr_without_variable	{ (Arg ($1)) }
- | TAND w_variable 		{ (ArgRef($1,$2)) }
 
 /*(*----------------------------*)*/
 /*(*2 list/array *)*/
@@ -1308,14 +1112,75 @@ assignment_list_element:
  | variable				{ ListVar $1 }
  | T_LIST TOPAR assignment_list TCPAR	{ ListList ($1, ($2, $3, $4)) }
  | /*(*empty*)*/			{ ListEmpty }
-array_pair_list: array_pair_list_rev { List.rev $1 }
 
+array_pair_list: array_pair_list_rev { List.rev $1 }
 array_pair:
  | expr 			       { (ArrayExpr $1) }
- | TAND w_variable 		       { (ArrayRef ($1,$2)) }
+ | TAND expr 		       { (ArrayRef ($1,lvTodo)) }
  | expr T_DOUBLE_ARROW expr	       { (ArrayArrowExpr($1,$2,$3)) }
- | expr T_DOUBLE_ARROW TAND w_variable { (ArrayArrowRef($1,$2,$3,$4)) }
+ | expr T_DOUBLE_ARROW TAND expr { (ArrayArrowRef($1,$2,$3,lvTodo)) }
 
+/*(*----------------------------*)*/
+/*(*2 Calls *)*/
+/*(*----------------------------*)*/
+
+arguments: TOPAR function_call_argument_list TCPAR { exprTodo }
+
+function_call_argument:
+ | expr	{ (Arg ($1)) }
+ | TAND expr 		{ (ArgRef($1, lvTodo)) }
+
+/*(*----------------------------*)*/
+/*(*2 encaps *)*/
+/*(*----------------------------*)*/
+
+encaps:
+ | T_ENCAPSED_AND_WHITESPACE { EncapsString $1 }
+ | T_VARIABLE 
+     { EncapsString $1 (* TODO *) }
+ | T_VARIABLE TOBRA encaps_var_offset TCBRA
+     { EncapsString $1 (* TODO *) }
+ | T_VARIABLE T_OBJECT_OPERATOR T_IDENT
+     { EncapsString $1 (* TODO *) }
+
+ /*(* for ${beer}s. Note that this rule does not exist in the original PHP
+    * grammar. Instead only the case with a TOBRA after the T_STRING_VARNAME
+    * is covered. The case with only a T_STRING_VARNAME is handled
+    * originally in the scalar rule, but it does not makes sense to me
+    * as it's really more a variable than a scaler. So for now I have
+    * defined this rule. maybe it's too restrictive, we'll see.
+    *)*/
+ | T_DOLLAR_OPEN_CURLY_BRACES T_STRING_VARNAME TCBRACE
+     { EncapsString $2 (* TODO *) }
+
+ | T_DOLLAR_OPEN_CURLY_BRACES T_STRING_VARNAME  TOBRA expr TCBRA  TCBRACE
+     { EncapsString $2 (* TODO *) }
+
+ /*(* for {$beer}s *)*/
+ | T_CURLY_OPEN expr TCBRACE           { EncapsCurly($1, lvTodo, $3) }
+ /*(* for ? *)*/
+ | T_DOLLAR_OPEN_CURLY_BRACES expr TCBRACE { EncapsExpr ($1, $2, $3) }
+
+encaps_var_offset:
+ | T_IDENT	{
+     (* It looks like an ident but as we are in encaps_var_offset,
+      * PHP allows array access inside strings to omit the quote
+      * around fieldname, so it's actually really a Constant (String)
+      * rather than an ident, as we usually do for other T_IDENT
+      * cases.
+      *)
+     let cst = String $1 in (* will not have enclosing "'"  as usual *)
+     Sc (C cst)
+   }
+ | T_VARIABLE	{ exprTodo }
+ | T_NUM_STRING	{
+     (* the original php lexer does not return some numbers for
+      * offset of array access inside strings. Not sure why ...
+      * TODO?
+      *)
+     let cst = String $1 in (* will not have enclosing "'"  as usual *)
+     Sc (C cst)
+   }
 
 /*(*----------------------------*)*/
 /*(*2 XHP embeded html *)*/
@@ -1347,6 +1212,10 @@ xhp_attribute_value:
 /*(*----------------------------*)*/
 /*(*2 auxillary bis *)*/
 /*(*----------------------------*)*/
+
+dim_offset:
+ | /*(*empty*)*/   { None }
+ | expr		   { Some $1 }
 
 exit_expr:
  | /*(*empty*)*/	{ None }
@@ -1446,13 +1315,6 @@ qualified_class_name_or_array:
  | qualified_class_name { $1 }
  | T_ARRAY { Name ("array", $1) }
 
-qualified_class_name_or_kwd:
- | qualified_class_name { ClassName ($1, None) }
- | T_SELF               { Self $1 }
- | T_PARENT             { Parent $1 }
-/*(* php 5.3 late static binding *)*/
- | T_STATIC             { LateStatic $1 }
-
 /*(* todo? no support for namespace for now *)*/
 qualified_name_for_traits:
   | ident { Name $1 }
@@ -1464,155 +1326,6 @@ qualified_name_for_traits:
 class_name: qualified_class_name_or_array type_arguments { $1, $2 }
 
 class_name_no_array: qualified_class_name type_arguments { $1 (* TODO $2*) }
-
-qualifier: qualified_class_name_or_kwd TCOLCOL { $1, $2 }
-
-variable_class_name: reference_variable { $1 }
-
-/*(*************************************************************************)*/
-/*(*1 Class bis *)*/
-/*(*************************************************************************)*/
-class_name_reference:
- | qualified_class_name_or_kwd	{ ClassNameRefStatic $1 }
- | dynamic_class_name_reference  	{ ClassNameRefDynamic (fst $1, snd $1) }
-
-dynamic_class_name_reference:
- | base_variable_bis { ($1, []) }
- | base_variable_bis
-     T_OBJECT_OPERATOR object_property
-     dynamic_class_name_variable_properties
-     { ($1, ($2, $3)::$4) }
-
-
-base_variable_bis: base_variable { basevar_to_variable $1 }
-
-method_or_not:
-  | TOPAR function_call_argument_list TCPAR    { Some ($1, $2, $3) }
-  | /*(*empty*)*/ { None }
-
-ctor_arguments:
-  | TOPAR function_call_argument_list TCPAR	{ Some ($1, $2, $3) }
-  | /*(*empty*)*/ { None }
-/*(*----------------------------*)*/
-/*(*2 object property, variable property *)*/
-/*(*----------------------------*)*/
-
-object_property:
- | object_dim_list          { ObjProp $1 }
- | variable_without_objects_bis { ObjPropVar $1 }
-
-variable_without_objects_bis: variable_without_objects
-  { vwithoutobj_to_variable $1 }
-
-/*(* quite similar to reference_variable, but without the '$' *)*/
-object_dim_list:
- | variable_name { $1 }
- | object_dim_list TOBRA dim_offset TCBRA	{ OArrayAccess($1, ($2,$3,$4)) }
- | object_dim_list TOBRACE expr TCBRACE		{ OBraceAccess($1, ($2,$3,$4)) }
-
-variable_name:
- | T_IDENT		{ OName (Name $1) }
- | TOBRACE expr TCBRACE	{ OBrace ($1,$2,$3) }
-
-
-variable_property: T_OBJECT_OPERATOR object_property method_or_not
-  { $1, $2, $3 }
-
-dynamic_class_name_variable_property: T_OBJECT_OPERATOR object_property
-  { $1, $2 }
-
-/*(*************************************************************************)*/
-/*(*1 Encaps *)*/
-/*(*************************************************************************)*/
-encaps:
- | T_ENCAPSED_AND_WHITESPACE { EncapsString $1 }
- | T_VARIABLE
-     { let refvar = (Var2 (DName $1, Ast.noScope())) in
-       let basevar = None, ([], refvar) in
-       let basevarbis = BaseVar basevar in
-       let var = Variable (basevarbis, []) in
-       EncapsVar (variable2_to_lvalue var)
-     }
- | T_VARIABLE TOBRA encaps_var_offset TCBRA
-     { let refvar = (Var2 (DName $1, Ast.noScope())) in
-       let dimoffset = Some (mk_e $3) in
-       let refvar = VArrayAccess2(refvar, ($2, dimoffset, $4)) in
-       let basevar = None, ([], refvar) in
-       let basevarbis = BaseVar basevar in
-       let var = Variable (basevarbis, []) in
-       EncapsVar (variable2_to_lvalue var)
-     }
- | T_VARIABLE T_OBJECT_OPERATOR T_IDENT
-     { let refvar = (Var2 (DName $1, Ast.noScope())) in
-       let basevar = None, ([], refvar) in
-       let basevarbis = BaseVar basevar in
-       let prop_string = ObjProp (OName (Name $1)) in
-       let obj_prop = ($2, prop_string, None) in
-       let var = Variable (basevarbis, [obj_prop]) in
-       EncapsVar (variable2_to_lvalue var)
-     }
-
- /*(* for ${beer}s. Note that this rule does not exist in the original PHP
-    * grammar. Instead only the case with a TOBRA after the T_STRING_VARNAME
-    * is covered. The case with only a T_STRING_VARNAME is handled
-    * originally in the scalar rule, but it does not makes sense to me
-    * as it's really more a variable than a scaler. So for now I have
-    * defined this rule. maybe it's too restrictive, we'll see.
-    *)*/
- | T_DOLLAR_OPEN_CURLY_BRACES T_STRING_VARNAME TCBRACE
-     {
-       (* this is not really a T_VARIABLE, bit it's still conceptually
-        * a variable so we build it almost like above
-        *)
-       let refvar = (Var2 (DName $2, Ast.noScope())) in
-       let basevar = None, ([], refvar) in
-       let basevarbis = BaseVar basevar in
-       let var = Variable (basevarbis, []) in
-       EncapsDollarCurly ($1, variable2_to_lvalue var, $3)
-     }
-
- | T_DOLLAR_OPEN_CURLY_BRACES T_STRING_VARNAME  TOBRA expr TCBRA  TCBRACE
-     { let refvar = (Var2 (DName $2, Ast.noScope())) in
-       let dimoffset = Some ($4) in
-       let refvar = VArrayAccess2(refvar, ($3, dimoffset, $5)) in
-
-       let basevar = None, ([], refvar) in
-       let basevarbis = BaseVar basevar in
-       let var = Variable (basevarbis, []) in
-       EncapsDollarCurly ($1, variable2_to_lvalue var, $6)
-     }
-
- /*(* for {$beer}s *)*/
- | T_CURLY_OPEN variable TCBRACE           { EncapsCurly($1, $2, $3) }
- /*(* for ? *)*/
- | T_DOLLAR_OPEN_CURLY_BRACES expr TCBRACE { EncapsExpr ($1, $2, $3) }
-
-encaps_var_offset:
- | T_IDENT	{
-     (* It looks like an ident but as we are in encaps_var_offset,
-      * php allows array access inside strings to omit the quote
-      * around fieldname, so it's actually really a Constant (String)
-      * rather than an ident, as we usually do for other T_IDENT
-      * cases.
-      *)
-     let cst = String $1 in (* will not have enclosing "'"  as usual *)
-     Sc (C cst)
-   }
- | T_VARIABLE	{
-       let refvar = (Var2 (DName $1, Ast.noScope())) in
-       let basevar = None, ([], refvar) in
-       let basevarbis = BaseVar basevar in
-       let var = Variable (basevarbis, []) in
-       Lv (variable2_to_lvalue var)
-   }
- | T_NUM_STRING	{
-     (* the original php lexer does not return some numbers for
-      * offset of array access inside strings. Not sure why ...
-      * TODO?
-      *)
-     let cst = String $1 in (* will not have enclosing "'"  as usual *)
-     Sc (C cst)
-   }
 
 /*(*************************************************************************)*/
 /*(*1 xxx_list, xxx_opt *)*/
@@ -1629,26 +1342,9 @@ class_statement_list:
  | class_statement_list class_statement { $1 ++ [$2] }
  | /*(*empty*)*/ { [] }
 
-encaps_list:
- | encaps_list encaps                  { $1 ++ [$2] }
- | /*(*empty*)*/ { [] }
 
-variable_properties:
- | variable_properties variable_property { $1 ++ [$2] }
- | /*(*empty*)*/ { [] }
 
-dynamic_class_name_variable_properties:
- | dynamic_class_name_variable_properties dynamic_class_name_variable_property
-     { $1 ++ [$2] }
- | /*(*empty*)*/ { [] }
 
-xhp_attributes:
- | xhp_attributes xhp_attribute { $1 ++ [$2] }
- | /*(*empty*)*/ { [] }
-
-xhp_children:
- | xhp_children xhp_child { $1 ++ [$2] }
- | /*(*empty*)*/ { [] }
 
 trait_rules:
  | trait_rules trait_rule { $1 ++ [$2] }
@@ -1671,19 +1367,6 @@ non_empty_member_modifiers:
  | non_empty_member_modifiers member_modifier	{ $1 ++ [$2] }
 
 
-function_call_argument_list:
- | /*(*empty*)*/                              { [] }
- | non_empty_function_call_argument_list      { $1 }
- /*(* php-facebook-ext: *)*/
- | non_empty_function_call_argument_list TCOMMA  { $1 ++ [Right $2] }
-
-non_empty_function_call_argument_list:
- | function_call_argument { [Left $1] }
- /*(*s: repetitive non_empty_function_call_parameter_list *)*/
- | non_empty_function_call_argument_list TCOMMA function_call_argument
-      { $1 ++ [Right $2; Left $3] }
- /*(*e: repetitive non_empty_function_call_parameter_list *)*/
-
 
 unset_variables:
  | unset_variable { [Left $1] }
@@ -1697,13 +1380,6 @@ echo_expr_list:
  | expr				   { [Left $1] }
  | echo_expr_list TCOMMA expr      { $1 ++ [Right $2; Left $3] }
 
-assignment_list:
- | assignment_list_element                        { [Left $1] }
- | assignment_list TCOMMA assignment_list_element { $1 ++ [Right $2; Left $3] }
-
-isset_variables:
- | isset_variable 			       { [Left $1] }
- | isset_variables TCOMMA isset_variable       { $1 ++ [Right $2; Left $3] }
 
 
 declare_list:
@@ -1745,17 +1421,6 @@ class_variable_declaration:
  | class_variable_declaration TCOMMA class_variable { $1++[Right $2;Left $3] }
  /*(*e: repetitive class_variable_declaration with comma *)*/
 
-non_empty_static_array_pair_list_rev:
- | static_array_pair   { [Left $1] }
- /*(*s: repetitive non_empty_static_array_pair_list *)*/
- | non_empty_static_array_pair_list_rev TCOMMA static_array_pair { Left $3::Right $2::$1 }
- /*(*e: repetitive non_empty_static_array_pair_list *)*/
-
-non_empty_array_pair_list_rev:
- | array_pair { [Left $1] }
- /*(*s: repetitive non_empty_array_pair_list *)*/
- | non_empty_array_pair_list_rev TCOMMA array_pair  { Left $3::Right $2::$1 }
- /*(*e: repetitive non_empty_array_pair_list *)*/
 
 non_empty_lexical_var_list:
  | lexical_var                          { [Left $1] }
@@ -1788,18 +1453,45 @@ possible_comma:
  | /*(*empty*)*/ { [] }
  | TCOMMA        { [Right $1] }
 
-possible_comma2:
- | /*(*empty*)*/ { [] }
- | TCOMMA        { [Right $1] }
-
 return_type_opt:
  | return_type       { Some $1 }
  | /*(*empty*)*/     { None }
 
-static_array_pair_list_rev:
- | /*(*empty*)*/ {  [] }
- | non_empty_static_array_pair_list_rev possible_comma	{ $2++$1 }
+function_call_argument_list:
+ | /*(*empty*)*/                              { [] }
+ | non_empty_function_call_argument_list      { $1 }
+ /*(* php-facebook-ext: *)*/
+ | non_empty_function_call_argument_list TCOMMA  { $1 ++ [Right $2] }
+
+non_empty_function_call_argument_list:
+ | function_call_argument { [Left $1] }
+ /*(*s: repetitive non_empty_function_call_parameter_list *)*/
+ | non_empty_function_call_argument_list TCOMMA function_call_argument
+      { $1 ++ [Right $2; Left $3] }
+ /*(*e: repetitive non_empty_function_call_parameter_list *)*/
+
+assignment_list:
+ | assignment_list_element                        { [Left $1] }
+ | assignment_list TCOMMA assignment_list_element { $1 ++ [Right $2; Left $3] }
+
+non_empty_array_pair_list_rev:
+ | array_pair { [Left $1] }
+ /*(*s: repetitive non_empty_array_pair_list *)*/
+ | non_empty_array_pair_list_rev TCOMMA array_pair  { Left $3::Right $2::$1 }
+ /*(*e: repetitive non_empty_array_pair_list *)*/
 
 array_pair_list_rev:
  | /*(*empty*)*/ { [] }
- | non_empty_array_pair_list_rev possible_comma2	{ $2++$1 }
+ | non_empty_array_pair_list_rev possible_comma	{ $2++$1 }
+
+encaps_list:
+ | encaps_list encaps                  { $1 ++ [$2] }
+ | /*(*empty*)*/ { [] }
+
+xhp_attributes:
+ | xhp_attributes xhp_attribute { $1 ++ [$2] }
+ | /*(*empty*)*/ { [] }
+
+xhp_children:
+ | xhp_children xhp_child { $1 ++ [$2] }
+ | /*(*empty*)*/ { [] }
