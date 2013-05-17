@@ -358,7 +358,7 @@ foreach_optional_arg:
   | /*(*empty*)*/			{ None }
   | T_DOUBLE_ARROW foreach_variable	{ Some($1,$2) }
 
-foreach_variable: is_reference variable { ($1, $2) }
+foreach_variable: is_reference expr { ($1, $2) }
 
 switch_case_list:
  | TOBRACE            case_list TCBRACE
@@ -438,14 +438,14 @@ declare: ident   TEQ static_scalar { Name $1, ($2, $3) }
 
 global_var:
  | T_VARIABLE			{ GlobalVar (DName $1) }
- | TDOLLAR r_variable		{ GlobalDollar ($1, $2) }
+ | TDOLLAR expr  		{ GlobalDollar ($1, $2) }
  | TDOLLAR TOBRACE expr TCBRACE	{ GlobalDollarExpr ($1, ($2, $3, $4)) }
 
 static_var:
  | T_VARIABLE                   { (DName $1, None) }
  | T_VARIABLE TEQ static_scalar { (DName $1, Some ($2, $3)) }
 
-unset_variable: variable	{ $1 }
+unset_variable: expr	{ $1 }
 
 use_filename:
  |       T_CONSTANT_ENCAPSED_STRING		{ UseDirect $1 }
@@ -856,26 +856,26 @@ attribute_argument: static_scalar { $1 }
 expr: 
  | simple_expr { $1 }
 
- | expr TEQ expr	{ Assign(exprTodo,$2, $3) }
- | expr TEQ TAND expr   { AssignRef(exprTodo,$2,$3, exprTodo) }
+ | expr TEQ expr	{ Assign($1,$2, $3) }
+ | expr TEQ TAND expr   { AssignRef($1,$2,$3, $4) }
 
- | expr T_PLUS_EQUAL   expr { AssignOp(exprTodo,(AssignOpArith Plus,$2),$3) }
- | expr T_MINUS_EQUAL  expr { AssignOp(exprTodo,(AssignOpArith Minus,$2),$3) }
- | expr T_MUL_EQUAL    expr { AssignOp(exprTodo,(AssignOpArith Mul,$2),$3) }
- | expr T_DIV_EQUAL    expr { AssignOp(exprTodo,(AssignOpArith Div,$2),$3) }
- | expr T_MOD_EQUAL    expr { AssignOp(exprTodo,(AssignOpArith Mod,$2),$3) }
- | expr T_AND_EQUAL    expr { AssignOp(exprTodo,(AssignOpArith And,$2),$3) }
- | expr T_OR_EQUAL     expr { AssignOp(exprTodo,(AssignOpArith Or,$2),$3) }
- | expr T_XOR_EQUAL    expr { AssignOp(exprTodo,(AssignOpArith Xor,$2),$3) }
- | expr T_SL_EQUAL     expr { AssignOp(exprTodo,(AssignOpArith DecLeft,$2),$3) }
- | expr T_SR_EQUAL     expr { AssignOp(exprTodo,(AssignOpArith DecRight,$2),$3) }
+ | expr T_PLUS_EQUAL   expr { AssignOp($1,(AssignOpArith Plus,$2),$3) }
+ | expr T_MINUS_EQUAL  expr { AssignOp($1,(AssignOpArith Minus,$2),$3) }
+ | expr T_MUL_EQUAL    expr { AssignOp($1,(AssignOpArith Mul,$2),$3) }
+ | expr T_DIV_EQUAL    expr { AssignOp($1,(AssignOpArith Div,$2),$3) }
+ | expr T_MOD_EQUAL    expr { AssignOp($1,(AssignOpArith Mod,$2),$3) }
+ | expr T_AND_EQUAL    expr { AssignOp($1,(AssignOpArith And,$2),$3) }
+ | expr T_OR_EQUAL     expr { AssignOp($1,(AssignOpArith Or,$2),$3) }
+ | expr T_XOR_EQUAL    expr { AssignOp($1,(AssignOpArith Xor,$2),$3) }
+ | expr T_SL_EQUAL     expr { AssignOp($1,(AssignOpArith DecLeft,$2),$3) }
+ | expr T_SR_EQUAL     expr { AssignOp($1,(AssignOpArith DecRight,$2),$3) }
                             
- | expr T_CONCAT_EQUAL expr { AssignOp(exprTodo,(AssignConcat,$2),$3) }
+ | expr T_CONCAT_EQUAL expr { AssignOp($1,(AssignConcat,$2),$3) }
 
- | expr T_INC { Postfix(exprTodo, (Inc, $2)) }
- | expr T_DEC { Postfix(exprTodo, (Dec, $2)) }
- | T_INC expr { Infix((Inc, $1), exprTodo) }
- | T_DEC expr { Infix((Dec, $1), exprTodo) }
+ | expr T_INC { Postfix($1, (Inc, $2)) }
+ | expr T_DEC { Postfix($1, (Dec, $2)) }
+ | T_INC expr { Infix((Inc, $1), $2) }
+ | T_DEC expr { Infix((Dec, $1), $2) }
 
  | expr T_BOOLEAN_OR   expr { Binary($1,(Logical OrBool ,$2),$3) }
  | expr T_BOOLEAN_AND  expr { Binary($1,(Logical AndBool,$2),$3) }
@@ -929,8 +929,7 @@ expr:
  | expr TQUESTION  expr T_XHP_COLONID_DEF
      { failwith_xhp_ambiguity_colon (snd $4) }
 
- | expr T_INSTANCEOF expr
-     { InstanceOf($1,$2,exprTodo) }
+ | expr T_INSTANCEOF expr  { InstanceOf($1, $2, $3) }
 
 
  /*(* less: it would be nicer to have TOPAR TTypename TCPAR
@@ -979,7 +978,7 @@ expr:
  | T_REQUIRE      expr		       { Require($1,$2) }
  | T_REQUIRE_ONCE expr		       { RequireOnce($1,$2) }
 
- | T_EMPTY TOPAR expr TCPAR	       { Empty($1,($2,exprTodo,$4)) }
+ | T_EMPTY TOPAR expr TCPAR	       { Empty($1,($2,$3,$4)) }
 
  | T_EVAL TOPAR expr TCPAR 	       { Eval($1,($2,$3,$4)) }
 
@@ -1095,18 +1094,14 @@ constant:
  | T_CLASS_C { PreProcess(ClassC, $1) } | T_TRAIT_C { PreProcess(TraitC, $1)}
  | T_FUNC_C { PreProcess(FunctionC, $1) }|T_METHOD_C { PreProcess(MethodC, $1)}
 
-variable:
- | expr { exprTodo }
-
 static_scalar: expr { $1 }
-r_variable: variable { $1 }
 
 /*(*----------------------------*)*/
 /*(*2 list/array *)*/
 /*(*----------------------------*)*/
 
 assignment_list_element:
- | variable				{ ListVar $1 }
+ | expr				{ ListVar $1 }
  | T_LIST TOPAR assignment_list TCPAR	{ ListList ($1, ($2, $3, $4)) }
  | /*(*empty*)*/			{ ListEmpty }
 
