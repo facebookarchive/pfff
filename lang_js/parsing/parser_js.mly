@@ -36,17 +36,17 @@ let uop op a b = e(U((op,a), b))
 %}
 
 /*(*************************************************************************)*/
-/*(* Tokens *)*/
+/*(*1 Tokens *)*/
 /*(*************************************************************************)*/
 
 /*(*-----------------------------------------*)*/
-/*(* the comment tokens *)*/
+/*(*2 the comment tokens *)*/
 /*(*-----------------------------------------*)*/
 /*(* coupling: Token_helpers.is_real_comment *)*/
 %token <Ast_js.tok> TCommentSpace TCommentNewline   TComment
 
 /*(*-----------------------------------------*)*/
-/*(* the normal tokens *)*/
+/*(*2 the normal tokens *)*/
 /*(*-----------------------------------------*)*/
 
 /*(* tokens with a value *)*/
@@ -96,7 +96,7 @@ let uop op a b = e(U((op,a), b))
  T_NOT T_BIT_NOT T_INCR T_DECR T_DELETE T_TYPEOF T_VOID
 
 /*(*-----------------------------------------*)*/
-/*(* extra tokens: *)*/
+/*(*2 extra tokens: *)*/
 /*(*-----------------------------------------*)*/
 
 %token <Ast_js.tok> T_VIRTUAL_SEMICOLON
@@ -106,7 +106,7 @@ let uop op a b = e(U((op,a), b))
 %token <Ast_js.tok> EOF
 
 /*(*-----------------------------------------*)*/
-/*(* priorities *)*/
+/*(*2 priorities *)*/
 /*(*-----------------------------------------*)*/
 
 /*(* must be at the top so that it has the lowest priority *)*/
@@ -138,7 +138,7 @@ let uop op a b = e(U((op,a), b))
 %right T_NOT T_BIT_NOT T_INCR T_DECR T_DELETE T_TYPEOF T_VOID
 
 /*(*************************************************************************)*/
-/*(* Rules type declaration *)*/
+/*(*1 Rules type declaration *)*/
 /*(*************************************************************************)*/
 
 %start main
@@ -147,7 +147,7 @@ let uop op a b = e(U((op,a), b))
 %%
 
 /*(*************************************************************************)*/
-/*(* Toplevel *)*/
+/*(*1 Toplevel *)*/
 /*(*************************************************************************)*/
 
 main: program EOF { $1 ++ [FinalDef $2] }
@@ -159,7 +159,7 @@ source_element:
  | function_declaration { FunDecl $1 }
 
 /*(*************************************************************************)*/
-/*(* statement *)*/
+/*(*1 statement *)*/
 /*(*************************************************************************)*/
 
 statement:
@@ -289,7 +289,7 @@ finally:
  | T_FINALLY block { $1, $2 }
 
 /*(*----------------------------*)*/
-/*(* auxillary statements *)*/
+/*(*2 auxillary statements *)*/
 /*(*----------------------------*)*/
 
 case_block:
@@ -309,7 +309,7 @@ default_clause:
  | T_DEFAULT T_COLON statement_list { Default ($1, $2, $3) }
 
 /*(*************************************************************************)*/
-/*(* function declaration *)*/
+/*(*1 function declaration *)*/
 /*(*************************************************************************)*/
 
 function_declaration:
@@ -344,7 +344,7 @@ function_body:
  | statement_list  { $1 }
 
 /*(*************************************************************************)*/
-/*(* expression *)*/
+/*(*1 expression *)*/
 /*(*************************************************************************)*/
 
 expression:
@@ -458,7 +458,7 @@ primary_expression_no_statement:
  | T_LPAREN expression T_RPAREN { e(Paren ($1, $2, $3)) }
 
 /*(*----------------------------*)*/
-/*(* no in *)*/
+/*(*2 no in *)*/
 /*(*----------------------------*)*/
 expression_no_in:
  | assignment_expression_no_in { $1 }
@@ -496,7 +496,7 @@ post_in_expression_no_in:
                                                                     
 
 /*(*----------------------------*)*/
-/*(* (no statement)*)*/
+/*(*2 (no statement)*)*/
 /*(*----------------------------*)*/
 expression_no_statement:
  | assignment_expression_no_statement { $1 }
@@ -579,7 +579,7 @@ member_expression_no_statement:
  | T_NEW member_expression arguments                               { e(Apply(uop U_new $1 $2, $3)) }
 
 /*(*----------------------------*)*/
-/*(* scalar *)*/
+/*(*2 scalar *)*/
 /*(*----------------------------*)*/
 null_literal:
  | T_NULL { $1 }
@@ -598,7 +598,7 @@ string_literal:
  | T_STRING { $1 }
 
 /*(*----------------------------*)*/
-/*(* array *)*/
+/*(*2 array *)*/
 /*(*----------------------------*)*/
 
 array_literal:
@@ -632,11 +632,11 @@ property_name_and_value_list:
      { $1 ++ [Right $2; Left ($3, $4, $5)] }
 
 /*(*----------------------------*)*/
-/*(* variable *)*/
+/*(*2 variable *)*/
 /*(*----------------------------*)*/
 
 /*(*----------------------------*)*/
-/*(* function call *)*/
+/*(*2 function call *)*/
 /*(*----------------------------*)*/
 
 arguments:
@@ -650,11 +650,11 @@ argument_list:
      { $1 ++ [Right $2; Left $3] }
 
 /*(*----------------------------*)*/
-/*(* auxillary bis *)*/
+/*(*2 auxillary bis *)*/
 /*(*----------------------------*)*/
 
 /*(*************************************************************************)*/
-/*(* Entities, names *)*/
+/*(*1 Entities, names *)*/
 /*(*************************************************************************)*/
 identifier:
  | T_IDENTIFIER { $1 }
@@ -665,7 +665,7 @@ property_name:
  | numeric_literal { PN_Num $1 }
 
 /*(*************************************************************************)*/
-/*(* xxx_opt, xxx_list *)*/
+/*(*1 xxx_opt, xxx_list *)*/
 /*(*************************************************************************)*/
 
 semicolon:
