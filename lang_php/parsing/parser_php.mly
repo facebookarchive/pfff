@@ -982,7 +982,7 @@ expr:
 
  | T_EVAL TOPAR expr TCPAR 	       { Eval($1,($2,$3,$4)) }
 
- | T_ISSET arguments { exprTodo }
+ | T_ISSET TOPAR expr_list TCPAR { Isset($1, ($2, $3, $4)) }
 
  | T_LIST TOPAR assignment_list TCPAR TEQ expr
      { AssignList($1,($2,$3,$4),$5,$6) }
@@ -1108,19 +1108,19 @@ assignment_list_element:
 array_pair_list: array_pair_list_rev { List.rev $1 }
 array_pair:
  | expr 			       { (ArrayExpr $1) }
- | TAND expr 		       { (ArrayRef ($1,exprTodo)) }
+ | TAND expr 		       { (ArrayRef ($1,$2)) }
  | expr T_DOUBLE_ARROW expr	       { (ArrayArrowExpr($1,$2,$3)) }
- | expr T_DOUBLE_ARROW TAND expr { (ArrayArrowRef($1,$2,$3,exprTodo)) }
+ | expr T_DOUBLE_ARROW TAND expr { (ArrayArrowRef($1,$2,$3,$4)) }
 
 /*(*----------------------------*)*/
 /*(*2 Calls *)*/
 /*(*----------------------------*)*/
 
-arguments: TOPAR function_call_argument_list TCPAR { exprTodo }
+arguments: TOPAR function_call_argument_list TCPAR { ($1, $2, $3) }
 
 function_call_argument:
  | expr	{ (Arg ($1)) }
- | TAND expr 		{ (ArgRef($1, exprTodo)) }
+ | TAND expr 		{ (ArgRef($1, $2)) }
 
 /*(*----------------------------*)*/
 /*(*2 encaps *)*/
@@ -1149,7 +1149,7 @@ encaps:
      { EncapsString $2 (* TODO *) }
 
  /*(* for {$beer}s *)*/
- | T_CURLY_OPEN expr TCBRACE           { EncapsCurly($1, exprTodo, $3) }
+ | T_CURLY_OPEN expr TCBRACE           { EncapsCurly($1, $2, $3) }
  /*(* for ? *)*/
  | T_DOLLAR_OPEN_CURLY_BRACES expr TCBRACE { EncapsExpr ($1, $2, $3) }
 
@@ -1371,6 +1371,10 @@ global_var_list:
 echo_expr_list:
  | expr				   { [Left $1] }
  | echo_expr_list TCOMMA expr      { $1 ++ [Right $2; Left $3] }
+
+expr_list:
+ | expr				   { [Left $1] }
+ | expr_list TCOMMA expr      { $1 ++ [Right $2; Left $3] }
 
 
 
