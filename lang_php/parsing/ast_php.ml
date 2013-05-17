@@ -175,7 +175,7 @@ and ptype =
 and expr =
   (*s: type exp_info *)
   (*e: type exp_info *)
-  | Lv of lvalue
+  | Lv of lvalue2
 
   (* start of expr_without_variable in original PHP lexer/parser terminology *)
   | Sc of scalar
@@ -398,11 +398,12 @@ and expr =
      | XhpNested of xhp_html
 
 (*e: AST expression *)
+and lvalue = expr
 (* ------------------------------------------------------------------------- *)
 (* Variable (which in fact also contains function calls) *)
 (* ------------------------------------------------------------------------- *)
 (*s: AST lvalue *)
-and lvalue =
+and lvalue2 =
   (*s: type lvalue_info *)
   (*e: type lvalue_info *)
   (*s: lvaluebis constructors *)
@@ -907,7 +908,7 @@ type entity =
 type any =
   | Expr of expr
   | Stmt2 of stmt
-  | Lvalue of lvalue
+  | Lvalue of lvalue2
   | StmtAndDefs of stmt_and_def list
   | Toplevel of toplevel
   | Program of program
