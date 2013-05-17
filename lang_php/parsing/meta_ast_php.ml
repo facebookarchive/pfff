@@ -102,6 +102,7 @@ and vof_ptype =
 
 and vof_expr = function
   | Lv v1 -> let v1 = vof_lvalue2 v1 in Ocaml.VSum (("Lv", [ v1 ]))
+  | Cr v1 -> let v1 = vof_class_name_reference2 v1 in Ocaml.VSum (("Cr", [ v1 ]))
   | Sc v1 -> let v1 = vof_scalar v1 in Ocaml.VSum (("Sc", [ v1 ]))
   | Binary ((v1, v2, v3)) ->
       let v1 = vof_expr v1

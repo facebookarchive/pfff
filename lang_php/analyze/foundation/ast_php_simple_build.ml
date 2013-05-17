@@ -191,6 +191,7 @@ and stmt_and_def env st acc = stmt env st acc
 and expr env = function
   | Sc sc -> scalar env sc
   | Lv lv -> lvalue2 env lv
+  | Cr x -> class_name_reference2 env x
   | Binary (e1, (bop, _), e2) ->
       let e1 = expr env e1 in
       let e2 = expr env e2 in
@@ -388,7 +389,8 @@ and class_name_or_selfparent env = function
    | Parent tok -> (A.special "parent", wrap tok)
    | LateStatic tok -> (A.special "static", wrap tok)
 
-and class_name_reference env = function
+and class_name_reference env a = expr env a
+and class_name_reference2 env = function
    | ClassNameRefStatic cn -> A.Id (class_name_or_selfparent env cn)
    | ClassNameRefDynamic (lv, []) -> lvalue env lv
    | ClassNameRefDynamic (lv, [tok, obj_prop]) ->

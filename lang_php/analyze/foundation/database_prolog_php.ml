@@ -157,7 +157,7 @@ let add_uses id ast pr db =
   (* to fatorize code between NewLv and New *)
   let docall_class classref =
     match classref with
-    | ClassNameRefStatic x ->
+    | Cr ClassNameRefStatic x ->
       (match x with
       | ClassName (name, _) -> (* TODO: currently ignoring type args *)
 
@@ -176,7 +176,8 @@ let add_uses id ast pr db =
       | LateStatic _ ->
         ()
       )
-    | ClassNameRefDynamic _ -> ()
+    | Cr ClassNameRefDynamic _ -> ()
+    | _ -> ()
   in
 
   let visitor = V.mk_visitor { V.default_visitor with
@@ -317,7 +318,7 @@ let add_uses id ast pr db =
     );
     V.kstmt = (fun (k, _) x ->
       (match x with
-      | Throw (_, New (_, ClassNameRefStatic (ClassName (name, _)), _), _) ->
+      | Throw (_, New (_, Cr ClassNameRefStatic (ClassName (name, _)), _), _) ->
           pr (spf "throw(%s, '%s')."
                  (name_id id db) (Ast.str_of_name name))
       | Try (_, _, c1, cs) ->

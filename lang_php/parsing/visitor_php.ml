@@ -245,6 +245,7 @@ and v_expr (x: expr) =
   (* tweak *)
   let k x =  match x with
   | Lv v1 -> let v1 = v_variable v1 in ()
+  | Cr v1 -> let v1 = v_class_name_reference2 v1 in ()
   | Sc v1 -> let v1 = v_scalar v1 in ()
   | Assign ((v1, v2, v3)) ->
       let v1 = v_lvalue v1 and v2 = v_tok v2 and v3 = v_expr v3 in ()

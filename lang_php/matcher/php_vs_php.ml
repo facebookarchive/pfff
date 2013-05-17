@@ -1551,6 +1551,7 @@ and m_expr a b =
        B.ParenExpr(b1)
     )
     )
+  | A.Cr _, _
   | A.Lv _, _
   | A.Sc _, _
   | A.Binary _, _
@@ -1951,7 +1952,8 @@ and m_map_elt a b =
   | A.MapArrowExpr _, _
   | A.MapArrowRef _, _
    -> fail ()
-and m_class_name_reference a b =
+and m_class_name_reference a b = m_expr a b
+and m_class_name_reference2 a b =
   match a, b with
 
   (* iso: metavar on classname_ref, e.g. new X() should match new $x() *)
@@ -3354,7 +3356,7 @@ let m_any a b =
     )
     )
   | A.ClassNameRef(a1), B.ClassNameRef(b1) ->
-    m_class_name_reference a1 b1 >>= (fun (a1, b1) ->
+    m_class_name_reference2 a1 b1 >>= (fun (a1, b1) ->
     return (
        A.ClassNameRef(a1),
        B.ClassNameRef(b1)

@@ -152,6 +152,7 @@ and map_ptype =
 and map_expr (x) =
   let k x =  match x with
   | Lv v1 -> let v1 = map_variable v1 in Lv ((v1))
+  | Cr v1 -> let v1 = map_class_name_reference2 v1 in Cr ((v1))
   | Sc v1 -> let v1 = map_scalar v1 in Sc ((v1))
   | Binary ((v1, v2, v3)) ->
       let v1 = map_expr v1
