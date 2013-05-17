@@ -3096,6 +3096,7 @@ and m_toplevel a b =
   | A.ConstantDef _, _
   | A.NotParsedCorrectly _, _
   | A.FinalDef _, _
+  | A.NamespaceDef _, _ 
    -> fail ()
 
 
@@ -3173,6 +3174,7 @@ let m_entity a b =
   | A.ClassVariableE _, _
   | A.XhpAttrE _, _
   | A.MiscE _, _
+  | A.NamespaceE _, _
    -> fail ()
 
 

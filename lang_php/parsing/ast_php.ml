@@ -688,6 +688,7 @@ and class_def = {
    * have some 'use' *)
   c_body: class_stmt list brace;
 }
+and namespace_def = fully_qualified_class_name
   (*s: type class_type *)
     and class_type =
       | ClassRegular  of tok (* class *)
@@ -868,6 +869,7 @@ and toplevel =
   (*x: toplevel constructors *)
     | FinalDef of tok (* EOF *)
   (*e: toplevel constructors *)
+    | NamespaceDef of namespace_def
  and program = toplevel list
  (*s: tarzan annotation *)
   (* with tarzan *)
@@ -887,6 +889,7 @@ and toplevel =
 type entity =
   | FunctionE of func_def
   | ClassE of class_def
+  | NamespaceE of namespace_def
   | ConstantE of constant_def
 
   | StmtListE of stmt list

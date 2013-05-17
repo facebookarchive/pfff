@@ -153,7 +153,8 @@ let index_db1_2 db files =
           (* bugfix: the finaldef have the same id as the previous item so
            * do not add it otherwise id will not be a primary key.
            *)
-          | Ast.FinalDef _ -> ()
+          | Ast.FinalDef _ 
+          | Ast.NamespaceDef _ -> ()
         );
         db.file_to_topids#add2 (file, (List.rev !all_ids))
       );
@@ -216,7 +217,7 @@ let index_db2_2 db =
         );
     | ( FinalDef _
       | ClassDef _| FuncDef _ | ConstantDef _
-      | StmtList _)
+      | StmtList _ | NamespaceDef _)
         -> ()
     );
 
@@ -264,6 +265,7 @@ let index_db2_2 db =
         (* right now FinalDef are not in the database, because of possible 
          * fullid ambiguity *)
         | FinalDef _ -> raise Impossible
+        | NamespaceDef _ -> ()
       );
 
       (* todo?  could factorize more ... *)
@@ -512,7 +514,7 @@ let index_db3_2 db =
         
     | Ast.ClassVariableE _  | Ast.ClassConstantE _ | Ast.XhpAttrE _
     | Ast.MethodE _ | Ast.StmtListE _ | Ast.FunctionE _  | Ast.ConstantE _ 
-    | Ast.MiscE _
+    | Ast.MiscE _ | Ast.NamespaceE _ 
       ->  ()
     );
     (*

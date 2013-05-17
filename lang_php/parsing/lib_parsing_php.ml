@@ -305,7 +305,7 @@ let top_statements_of_program ast =
   ast +> List.map (function
   | StmtList xs -> xs
   | FinalDef _|NotParsedCorrectly _
-  | ClassDef _| FuncDef _ | ConstantDef _
+  | ClassDef _| FuncDef _ | ConstantDef _ | NamespaceDef _ 
       -> []
   ) +> List.flatten  
 
@@ -318,6 +318,7 @@ let toplevel_to_entity x =
   (* todo? *)
   | NotParsedCorrectly xs ->
       MiscE xs
+  | NamespaceDef v1 -> NamespaceE v1
   | FinalDef v1 ->
       MiscE [v1]
 

@@ -137,11 +137,12 @@ let split_two_char_info i =
 /*(*-----------------------------------------*)*/
 
 %token <Ast_php.info>
+ T_BACKSLASH
  T_IF T_ELSE T_ELSEIF T_ENDIF
  T_DO  T_WHILE   T_ENDWHILE  T_FOR     T_ENDFOR T_FOREACH T_ENDFOREACH
  T_SWITCH  T_ENDSWITCH T_CASE T_DEFAULT    T_BREAK T_CONTINUE
  T_RETURN  T_TRY  T_CATCH T_THROW
- T_EXIT T_DECLARE T_ENDDECLARE T_USE T_GLOBAL T_AS T_FUNCTION T_CONST T_VAR
+ T_EXIT T_DECLARE T_ENDDECLARE T_USE T_NAMESPACE T_GLOBAL T_AS T_FUNCTION T_CONST T_VAR
 /*(* ugly: because of my hack around the implicit echo when use <?=,
    * this T_ECHO might have a string different than "echo"
    *)*/
@@ -320,6 +321,7 @@ top_statement:
  | function_declaration_statement	{ FuncDef $1 }
  | class_declaration_statement		{ ClassDef $1 }
  | trait_declaration_statement          { ClassDef $1 }
+ | T_NAMESPACE fully_qualified_class_name TSEMICOLON { NamespaceDef ($2) }
 
 /*(*e: GRAMMAR toplevel *)*/
 sgrep_spatch_pattern:
@@ -1603,7 +1605,15 @@ class_name_or_selfparent:
    * This is currently equivalent to 'class_name' but adding
    * namespace at some point may change that.
    *)*/
+
+backslashed_name: 
+  | ident { $1 }
+  | T_BACKSLASH ident { $2 }
+  | backslashed_name T_BACKSLASH ident { $3 }
+
+
 fully_qualified_class_name:
+  | backslashed_name { Name $1}
   | ident { Name $1 }
  /*(*s: fully_qualified_class_name grammar rule hook *)*/
   /*(* xhp: an XHP element use *)*/

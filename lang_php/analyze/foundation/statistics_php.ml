@@ -155,7 +155,7 @@ let stat_of_program ?(hooks=default_hooks) h file ast =
 
       | StmtList _ -> 
           k x
-      | FinalDef _|NotParsedCorrectly _ -> ()
+      | FinalDef _|NotParsedCorrectly _ | NamespaceDef _ -> ()
       );
     );
     V.kmethod_def = (fun (k, _) def ->

@@ -82,6 +82,7 @@ and toplevel env st acc =
   | ClassDef cd -> A.ClassDef (class_def env cd) :: acc
   | ConstantDef x -> A.ConstantDef (constant_def env x) :: acc
   | FinalDef _ -> acc
+  | NamespaceDef _ -> acc
   (* error recovery is off by default now *)
   | NotParsedCorrectly _ -> raise Common.Impossible
 

@@ -211,7 +211,7 @@ let ast_php_entity_in_file ~check_dupes (s, kind) g file =
     | ConstantDef def ->
       let (_, name, _, _, _) = def in
       Some ((Ast.str_of_name name, E.Constant), ConstantE def)
-    | NotParsedCorrectly _ | FinalDef _ -> None
+    | NotParsedCorrectly _ | FinalDef _ | NamespaceDef _ -> None
     )
   in
   (* cache all those entities. todo: use marshalled form? for GC? *)
