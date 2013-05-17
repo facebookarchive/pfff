@@ -17,6 +17,8 @@ let cmdline_flags_debugging () = [
 let strict_lexer = ref false
 
 let show_parsing_error = ref true
+(* todo: not that useful, probably can remove *)
+let show_parsing_error_full = ref true
 (* Do not raise an exn when a parse error but use NotParsedCorrectly.
  * Now that the PHP parser is quite complete, it's better to set 
  * error_recovery to false by default and raise a true ParseError exn.

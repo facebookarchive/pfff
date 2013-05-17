@@ -380,7 +380,8 @@ let parse2 ?(pp=(!Flag.pp_default)) filename =
         );
       let checkpoint2 = Common.cat filename +> List.length in
 
-      if !Flag.show_parsing_error
+
+      if !Flag.show_parsing_error_full
       then Parse_info.print_bad line_error (checkpoint, checkpoint2) filelines;
 
       stat.PI.bad     <- Common.cat filename +> List.length;
