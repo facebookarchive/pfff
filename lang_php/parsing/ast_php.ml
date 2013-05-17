@@ -176,6 +176,7 @@ and expr =
   (*s: type exp_info *)
   (*e: type exp_info *)
   | Lv of lvalue2
+  | Cr of class_name_reference2
 
   (* start of expr_without_variable in original PHP lexer/parser terminology *)
   | Sc of scalar
