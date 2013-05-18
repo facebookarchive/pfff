@@ -424,9 +424,6 @@ and lvalue2 =
      (*e: scope_php annotation *)
   (*x: lvaluebis constructors *)
     | This of tok
-    (* for (new Foo)->bar(), ugly: when expr = lvalue, no need that *)
-    | NewLv of 
-        (tok * class_name_reference * argument comma_list paren option) paren
     (* xhp: normally we can not have a FunCall in the lvalue of VArrayAccess,
      * but with xhp we can.
      *

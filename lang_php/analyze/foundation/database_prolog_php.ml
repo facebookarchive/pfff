@@ -273,10 +273,6 @@ let add_uses id ast pr db =
                    (name_id id db) str (read_write !in_lvalue_pos))
           end;
           k x
-      | NewLv (_, (_, classref, args), _) ->
-         docall_class classref;
-         k x
-
       | _ -> k x
     );
     V.kexpr = (fun (k, vx) x ->
