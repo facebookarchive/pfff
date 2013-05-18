@@ -13,5 +13,8 @@ val parse:
 val parse_program:
   Common.filename -> Ast_ml.program
 
+val parse_fuzzy:
+  Common.filename -> Ast_fuzzy.tree list * Parser_ml.token list
+
 (* internal *)
 val tokens: Common.filename -> Parser_ml.token list

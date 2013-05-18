@@ -14,3 +14,6 @@ val pos_of_tok   : Parser_ml.token -> int
 
 (*val pos_of_tok   : Parser_ml.token -> int*)
 val pinfo_of_tok   : Parser_ml.token -> Parse_info.token
+
+(* for unparsing *)
+val elt_of_tok: Parser_ml.token -> Lib_unparser.elt

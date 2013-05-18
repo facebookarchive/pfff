@@ -311,3 +311,17 @@ let file_of_tok x = PI.file_of_info (info_of_tok x)
 let pos_of_tok x =  PI.pos_of_info (info_of_tok x)
 
 let pinfo_of_tok x = Parse_info.pinfo_of_info (info_of_tok x)
+
+(*****************************************************************************)
+(* For unparsing *)
+(*****************************************************************************)
+
+open Lib_unparser
+
+let elt_of_tok tok =
+  let str = str_of_tok tok in
+  match tok with
+  | TComment _ | TCommentMisc _ -> Esthet (Comment str)
+  | TCommentSpace _ -> Esthet (Space str)
+  | TCommentNewline _ -> Esthet Newline
+  | _ -> OrigElt str
