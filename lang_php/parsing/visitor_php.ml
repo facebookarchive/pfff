@@ -584,8 +584,6 @@ and v_variable x =
   | VArrayAccess ((v1, v2)) ->
       let v1 = v_expr v1 and v2 = v_bracket (v_option v_expr) v2 in ()
   | VBrace ((v1, v2)) -> let v1 = v_tok v1 and v2 = v_brace v_expr v2 in ()
-  | VBraceAccess ((v1, v2)) ->
-      let v1 = v_lvalue v1 and v2 = v_brace v_expr v2 in ()
   | FunCallSimple ((v2, v3)) ->
       let v2 = v_name v2
       and v3 = v_arguments v3 in

@@ -813,14 +813,6 @@ let rec m_variable a b =
        B.VBrace(b1, b2)
     )
     ))
-  | A.VBraceAccess(a1, a2), B.VBraceAccess(b1, b2) ->
-    m_lvalue a1 b1 >>= (fun (a1, b1) ->
-    m_brace m_expr a2 b2 >>= (fun (a2, b2) ->
-    return (
-       A.VBraceAccess(a1, a2),
-       B.VBraceAccess(b1, b2)
-    )
-    ))
 
   | A.FunCallSimple(a2, a3), B.FunCallSimple(b2, b3) ->
     (* iso on function name *)
@@ -856,7 +848,6 @@ let rec m_variable a b =
   | A.This _, _
   | A.VArrayAccess _, _
   | A.VBrace _, _
-  | A.VBraceAccess _, _
   | A.FunCallSimple _, _
   | A.MethodCallSimple _, _
   | A.StaticMethodCallSimple _, _

@@ -589,8 +589,6 @@ and lvalue2 env = function
       A.Array_get (lv, e)
   | VBrace (_, (_, e, _)) ->
       A.Call (A.Id "eval_var", [expr env e])
-  | VBraceAccess (lv, (_, e, _)) ->
-      A.Array_get (lvalue env lv, Some (expr env e))
   | FunCallSimple (f, (_, args, _)) ->
       let f = name env f in
       let args = comma_list args in

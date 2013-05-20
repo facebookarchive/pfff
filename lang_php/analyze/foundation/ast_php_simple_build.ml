@@ -446,9 +446,6 @@ and lvalue2 env = function
       let lv = lvalue env lv in
       let e = opt expr env e in
       A.Array_get (lv, e)
-  (* one can use $o[xxx] or $o{xxx} apparently *)
-  | VBraceAccess (lv, (tok, e, _)) ->
-      A.Array_get (lvalue env lv, Some (expr env e))
   | VBrace (tok, (_, e, _)) ->
       A.Call (A.Id ((A.builtin "eval_var", wrap tok)), [expr env e])
   | FunCallSimple (f, (tok, args, _)) ->

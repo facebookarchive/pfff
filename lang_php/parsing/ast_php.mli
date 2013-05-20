@@ -130,8 +130,11 @@ and expr =
   | Call of expr * argument comma_list paren
   | ObjGet of expr * tok (* -> *) * expr
   | ClassGet of class_name_reference * tok (* :: *) * expr
+
   | ArrayGet of expr * expr option bracket
+  (* one can use $o[xxx] or $o{xxx} apparently *)
   | HashGet of expr * expr brace
+
   | BraceIdent of expr brace
   | Deref of tok (* $ *) * expr
 
@@ -374,7 +377,6 @@ and lvalue2 =
     | VArrayAccess of lvalue * expr option bracket
   (*x: lvaluebis constructors *)
     | VBrace       of tok    * expr brace
-    | VBraceAccess of lvalue * expr brace
   (*x: lvaluebis constructors *)
     | FunCallSimple of name                      * argument comma_list paren
   (*x: lvaluebis constructors *)

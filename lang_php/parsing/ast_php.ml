@@ -440,7 +440,6 @@ and lvalue2 =
     | VArrayAccess of lvalue * expr option bracket
   (*x: lvaluebis constructors *)
     | VBrace       of tok    * expr brace
-    | VBraceAccess of lvalue * expr brace
   (*x: lvaluebis constructors *)
     | FunCallSimple of name                      * argument comma_list paren
   (*x: lvaluebis constructors *)
