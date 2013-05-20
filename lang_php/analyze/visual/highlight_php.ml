@@ -585,10 +585,6 @@ let visit_toplevel ~tag prefs  hentities (toplevel, toks) =
           let info = Ast.info_of_name name in
           tag info (StaticMethod (Use2 fake_no_use2));
           k x
-
-      | _
-        ->
-          k x
     );
 
     V.kobj_dim = (fun (k, vx) x ->

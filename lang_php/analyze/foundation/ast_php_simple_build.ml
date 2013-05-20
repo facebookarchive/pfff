@@ -446,8 +446,6 @@ and lvalue2 env = function
       let lv = lvalue env lv in
       let e = opt expr env e in
       A.Array_get (lv, e)
-  | VBrace (tok, (_, e, _)) ->
-      A.Call (A.Id ((A.builtin "eval_var", wrap tok)), [expr env e])
   | FunCallSimple (f, (tok, args, _)) ->
       let f = name env f in
       let args = comma_list args in

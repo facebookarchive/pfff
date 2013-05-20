@@ -527,10 +527,6 @@ and vof_lvalue2 = function
       let v1 = vof_lvalue v1
       and v2 = vof_bracket (vof_option vof_expr) v2
       in Ocaml.VSum (("VArrayAccess", [ v1; v2 ]))
-  | VBrace ((v1, v2)) ->
-      let v1 = vof_tok v1
-      and v2 = vof_brace vof_expr v2
-      in Ocaml.VSum (("VBrace", [ v1; v2 ]))
   | FunCallSimple ((v2, v3)) ->
       let v2 = vof_name v2
       and v3 = vof_paren (vof_comma_list vof_argument) v3

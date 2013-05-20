@@ -439,8 +439,6 @@ and lvalue2 =
      *)
     | VArrayAccess of lvalue * expr option bracket
   (*x: lvaluebis constructors *)
-    | VBrace       of tok    * expr brace
-  (*x: lvaluebis constructors *)
     | FunCallSimple of name                      * argument comma_list paren
   (*x: lvaluebis constructors *)
     (* note that can be a late static call since php 5.3 *)

@@ -531,9 +531,6 @@ and map_variable x =
       let v1 = map_lvalue v1
       and v2 = map_bracket (map_of_option map_expr) v2
       in VArrayAccess ((v1, v2))
-  | VBrace ((v1, v2)) ->
-      let v1 = map_tok v1 and v2 = map_brace map_expr v2 in
-      VBrace ((v1, v2))
   | FunCallSimple ((v2, v3)) ->
       let v2 = map_name v2
       and v3 = map_paren (map_comma_list map_argument) v3
