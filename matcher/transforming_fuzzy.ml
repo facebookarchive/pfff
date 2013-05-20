@@ -147,19 +147,102 @@ module XMATCH = struct
     end
     else fail tin
 
+  (* ------------------------------------------------------------------------*)
+  (* Environment *) 
+  (* ------------------------------------------------------------------------*)
+
+  (* pre: both 'a' and 'b' contains only regular PHP code. There is no
+   * metavariables in them.
+   * coupling: don't forget to also modify the one in matching_fuzzy.ml
+   * todo: factorize code
+   *)
+  let equal_ast_binded_code a b =
+
+    (* Note that because we want to retain the position information
+     * of the matched code in the environment (e.g. for the -pvar
+     * sgrep command line argument), we can not just use the
+     * generic '=' OCaml operator as 'a' and 'b' may represent
+     * the same code but they will contain leaves in their AST
+     * with different position information. So before doing
+     * the comparison we just need to remove/abstract-away 
+     * the line number information in each ASTs.
+     * 
+     * less: optimize by caching the abstract_lined ?
+     *)
+    let a = Ast_fuzzy.abstract_position_trees a in
+    let b = Ast_fuzzy.abstract_position_trees b in
+    a =*= b
+
+
+  (* This is quite similar to the code in matching_fuzzy.ml 
+   * 
+   * Note that in spatch we actually first calls match_x_x to get the
+   * environment and then we redo another pass by calling transform_x_x.
+   * So tin will be already populated with all metavariables so
+   * equal_ast_binded_code will be called even when we don't use
+   * two times the same metavariable in the pattern.
+   *)
+  let check_and_add_metavar_binding((mvar:string), valu) = fun tin ->
+    match Common2.assoc_option mvar tin with
+    | Some valu' ->
+        (* Should we use fuzzy_vs_fuzzy itself for comparing the binded code ?
+         * Hmmm, we can't because it leads to a circular dependencies.
+         * Moreover here we know both valu and valu' are regular code,
+         * not patterns, so we can just use the generic '=' of OCaml.
+         *)
+        if equal_ast_binded_code valu valu'
+        then Some tin
+        else None
+    | None ->
+        (* first time the metavar is binded, just add it to the environment *)
+        Some (Common2.insert_assoc (mvar, valu) tin)
+
+
+
+
+  (* 
+   * Sometimes a metavariable like X will match an expression made of
+   * multiple tokens  like  '1*2'. 
+   * This metavariable may have a transformation associated with it,
+   * like  '- X',  in which case we want to propagate the removal
+   * transformation to all the tokens in the matched expression.
+   * 
+   * In some cases the transformation may also contains a +, as in
+   *   - X
+   *   + 3
+   * in which case we can not just propagate the transformation
+   * to all the tokens. Indeed doing so would duplicate the '+ 3'
+   * on all the matched tokens. We need instead to distribute
+   * the removal transformation and associate the '+' transformation
+   * part only to the very last matched token by X (here '2').
+   *)
+
+  let distribute_transfo transfo any env = 
+    let ii = Ast_fuzzy.ii_of_trees any in
+
+    (match transfo with
+    | PI.NoTransfo -> ()
+    | PI.Remove -> 
+      ii +> List.iter (fun tok -> tok.PI.transfo <- PI.Remove)
+    | PI.Replace add ->
+        ii +> List.iter (fun tok -> tok.PI.transfo <- PI.Remove);
+        let _any_ii = List.hd ii in
+        raise Todo
+        (* any_ii.PI.transfo <- adjust_transfo_with_env env transfo; *)
+    | PI.AddBefore add -> raise Todo
+    | PI.AddAfter add -> raise Todo
+    )
+
 
   let (envf: (Metavars_fuzzy.mvar * Parse_info.info, Ast_fuzzy.trees) matcher) =
    fun (mvar, tok) any  -> fun tin ->
-     raise Todo
-(*
     match check_and_add_metavar_binding (mvar, any) tin with
     | None ->
         fail tin
     | Some new_binding ->
-        distribute_transfo imvar.PI.transfo any tin;
+        distribute_transfo tok.PI.transfo any tin;
 
-        return ((mvar, imvar), any) new_binding
-*)
+        return ((mvar, tok), any) new_binding
 end
 
 (*****************************************************************************)

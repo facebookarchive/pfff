@@ -123,7 +123,7 @@ module XMATCH = struct
 
   (* pre: both 'a' and 'b' contains only regular PHP code. There is no
    * metavariables in them.
-   * coupling: don't forget to also modify the one in transforming_php.ml
+   * coupling: don't forget to also modify the one in transforming_fuzzy.ml
    * todo: factorize code
    *)
   let equal_ast_binded_code a b =
