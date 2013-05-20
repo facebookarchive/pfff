@@ -919,16 +919,6 @@ let rec m_variable a b =
     )
     ))))
 
-  | A.ObjAccessSimple(a1, a2, a3), B.ObjAccessSimple(b1, b2, b3) ->
-    m_lvalue a1 b1 >>= (fun (a1, b1) ->
-    m_tok a2 b2 >>= (fun (a2, b2) ->
-    m_name a3 b3 >>= (fun (a3, b3) ->
-    return (
-       A.ObjAccessSimple(a1, a2, a3),
-       B.ObjAccessSimple(b1, b2, b3)
-    )
-    )))
-
   | A.Var _, _
   | A.This _, _
   | A.VArrayAccess _, _
@@ -943,7 +933,6 @@ let rec m_variable a b =
   | A.StaticMethodCallSimple _, _
   | A.StaticMethodCallVar _, _
   | A.StaticObjCallVar _, _
-  | A.ObjAccessSimple _, _
   | A.DynamicClassVar _, _
    -> fail ()
 

@@ -226,15 +226,6 @@ let visit_and_check  find_entity prog =
           check_member_access StaticAccess
             (Ast.name classname, Ast.dname dname) tok find_entity
 
-      | ObjAccessSimple (lval, tok, name) ->
-          let field = Ast.name name in
-          (match lval, !in_class with
-          | Lv This _, Some (aclass, is_abstract) ->
-              check_member_access ObjAccess (aclass, field) tok find_entity
-          (* todo: need dataflow ... *)
-          | _, _ -> ()
-          )
-
       | _ -> k x
     );
 
@@ -265,6 +256,16 @@ let visit_and_check  find_entity prog =
       | New (tok, (Cr ClassNameRefDynamic (class_name, _)), args) ->
           (* can't do much *)
           k x
+
+      | ObjGet (lval, tok, Id name) ->
+          let field = Ast.name name in
+          (match lval, !in_class with
+          | Lv This _, Some (aclass, is_abstract) ->
+              check_member_access ObjAccess (aclass, field) tok find_entity
+          (* todo: need dataflow ... *)
+          | _, _ -> ()
+          )
+
       | _ -> k x
     );
     V.kscalar = (fun (k, _) x ->

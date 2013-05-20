@@ -468,8 +468,6 @@ and lvalue2 =
         argument comma_list paren
     | StaticObjCallVar of lvalue * tok (* :: *) * lvalue *
         argument comma_list paren
-  (*x: lvaluebis constructors *)
-    | ObjAccessSimple of lvalue * tok (* -> *) * name
   (*e: lvaluebis constructors *)
 
   (*s: type lvalue aux *)

@@ -440,6 +440,12 @@ let visit_toplevel ~tag prefs  hentities (toplevel, toks) =
       (match expr with
       | Cast (((cast, v1), v2)) ->
           tag v1 TypeMisc
+
+      | ObjGet (lval, tok, Id name) ->
+          let info = Ast.info_of_name name in
+          tag info (Field (Use2 fake_no_use2));
+          k expr
+
       | _ ->
           ()
       )
@@ -558,11 +564,6 @@ let visit_toplevel ~tag prefs  hentities (toplevel, toks) =
       | MethodCallSimple (lval, tok, name, args) ->
           let info = Ast.info_of_name name in
           tag info (Method (Use2 fake_no_use2));
-          k x
-
-      | ObjAccessSimple (lval, tok, name) ->
-          let info = Ast.info_of_name name in
-          tag info (Field (Use2 fake_no_use2));
           k x
 
       | StaticMethodCallSimple (qualif, name, args) ->

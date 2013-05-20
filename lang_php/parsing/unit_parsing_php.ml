@@ -202,16 +202,11 @@ let unittest =
        * regarding objects. *)
       let e = Parse_php.expr_of_string "$o->foo" in
       match e with
-      | Lv v ->
-          (match v with
-          | ObjAccessSimple (v, tok, name) ->
-              let info = Ast.info_of_name name in
-              assert_equal 4 (Ast.col_of_info info)
-          | _ -> 
-              assert_failure "not good AST"
-          )
-      | _ ->
-          assert_failure "not good AST"
+      | ObjGet (v, tok, Id name) ->
+        let info = Ast.info_of_name name in
+        assert_equal 4 (Ast.col_of_info info)
+      | _ -> 
+        assert_failure "not good AST"
     );
 
     (*-----------------------------------------------------------------------*)

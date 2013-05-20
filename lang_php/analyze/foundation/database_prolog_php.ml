@@ -252,16 +252,6 @@ let add_uses id ast pr db =
 
           k x
 
-      | ObjAccessSimple (lval, tok, name) ->
-          let str = Ast_php.name name in
-          (* use a different namespace than func? *)
-          if not (Hashtbl.mem h str)
-          then begin
-            Hashtbl.replace h str true;
-            pr (spf "use(%s, '%s', field, %s)."
-                   (name_id id db) str (read_write !in_lvalue_pos))
-          end;
-          k x
 
       | VArrayAccess (lval, (_, Some((Sc(C(String((fld, i_9)))))), _)) ->
           let str = escape_quote_array_field fld in
@@ -277,6 +267,18 @@ let add_uses id ast pr db =
     );
     V.kexpr = (fun (k, vx) x ->
       match x with
+      | ObjGet (lval, tok, Id name) ->
+          let str = Ast_php.name name in
+          (* use a different namespace than func? *)
+          if not (Hashtbl.mem h str)
+          then begin
+            Hashtbl.replace h str true;
+            pr (spf "use(%s, '%s', field, %s)."
+                   (name_id id db) str (read_write !in_lvalue_pos))
+          end;
+          k x
+
+
       (* todo: enough? need to handle pass by ref too here *)
       | Assign (lval, _, e)
       | AssignOp(lval, _, e)

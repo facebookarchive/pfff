@@ -137,13 +137,13 @@ let mk_param s = {
 
 
 let mk_obj_access s =
-  (ObjAccessSimple
+  (ObjGet
       (Lv(Var
            (DName ("this", fkt "$this"),
            Ast.noScope())
        ),
       fkt "->",
-      Name (s, fkt s)))
+      Id (Name (s, fkt s))))
 
 (* use sgrimm technique
  * TODO may have to prefix certain closed_vars with this because
@@ -175,13 +175,13 @@ let mk_new_anon_class_call s
              if List.mem closed_var private_vars_enclosing_closure_class
              then mk_obj_access closed_var
              else
-               (Var
+               (IdVar
                    (fkdname closed_var,
                    {contents = S.NoScope})
                )
            in
            (* todo: should introduce some comma with Right too *)
-           Left (Arg (Lv var))
+           Left (Arg (var))
          )
          ,
         fkt ")"
@@ -204,13 +204,13 @@ let mk_new_anon_class_call s
 let mk_private_affect s =
   let expr =
     (AssignRef
-        (Lv(ObjAccessSimple
+        ((ObjGet
              (Lv(Var
                   (DName ("this", fkt "$this"),
                   Ast.noScope())
               ),
              fkt "->",
-             Name (s, fkt s))
+             Id (Name (s, fkt s)))
          ),
         fkt "=",
         fkt "&", (* want assign by ref *)
@@ -324,22 +324,18 @@ let (add_this_to_closed_var_in_body:
    *)
   xs +> List.map (fun stmt_and_def ->
     let hook = { Map_php.default_visitor with
-      Map_php.klvalue = (fun (k, _) v ->
-
-        match v with
-        | Var (v1, v2) ->
-            let s = Ast.dname v1 in
-            if List.mem s closed_vars
-            then mk_obj_access s
-            else k v
-        | _ -> k v
-      );
       (* bugfix: and dont go inslide nested lambdas *)
       Map_php.kexpr = (fun (k, _) v ->
         match v with
         | Lambda def ->
             (* no recursive processing *)
             v
+        | IdVar (v1, v2) ->
+            let s = Ast.dname v1 in
+            if List.mem s closed_vars
+            then mk_obj_access s
+            else k v
+
         | _ -> k v
       );
     }

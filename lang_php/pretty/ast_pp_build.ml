@@ -625,7 +625,6 @@ and lvalue2 env = function
       A.Call (f, args)
   | StaticObjCallVar _ -> raise (TodoConstruct "expr StaticObjCallVar")
 
-  | ObjAccessSimple (lv, _, n) -> A.Obj_get (lvalue env lv, A.Id (name env n))
   | DynamicClassVar (lv, _, lv2) ->
       A.Class_get (lvalue env lv, lvalue env lv2)
 

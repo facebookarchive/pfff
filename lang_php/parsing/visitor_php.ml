@@ -629,8 +629,6 @@ and v_variable x =
       and v3 = v_lvalue v3
       and v4 = v_arguments v4
       in ()
-  | ObjAccessSimple ((v1, v2, v3)) ->
-      let v1 = v_lvalue v1 and v2 = v_tok v2 and v3 = v_name v3 in ()
  in
   vin.klvalue (k, all_functions) x
 

@@ -205,6 +205,12 @@ let stat_of_program ?(hooks=default_hooks) h file ast =
           (* todo: resolve? *)
 
       | Yield _ | YieldBreak _ -> inc "yield"
+
+      | ObjGet (lval, _, Id name) ->
+          (match lval with
+          | Lv This _ -> inc "obj access with $this"
+          | _ -> inc "obj access not $this"
+          )
       
       | _ -> ()
       );
@@ -233,13 +239,7 @@ let stat_of_program ?(hooks=default_hooks) h file ast =
                          CG.Method (fake, Ast.str_of_name name))
           )
 
-      | ObjAccessSimple (lval, _, name) ->
-          (match lval with
-          | Lv This _ -> inc "obj access with $this"
-          | _ -> inc "obj access not $this"
-          )
 
- 
       | Indirect _ -> inc "Indirect"
       | DynamicClassVar _ -> inc "DynamicClassVar"
       | StaticObjCallVar _ -> inc "StaticObjCallVar"
