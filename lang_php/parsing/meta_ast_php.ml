@@ -535,10 +535,6 @@ and vof_lvalue2 = function
       let v1 = vof_lvalue v1
       and v2 = vof_brace vof_expr v2
       in Ocaml.VSum (("VBraceAccess", [ v1; v2 ]))
-  | Indirect ((v1, v2)) ->
-      let v1 = vof_lvalue v1
-      and v2 = vof_indirect v2
-      in Ocaml.VSum (("Indirect", [ v1; v2 ]))
   | FunCallSimple ((v2, v3)) ->
       let v2 = vof_name v2
       and v3 = vof_paren (vof_comma_list vof_argument) v3
@@ -554,9 +550,6 @@ and vof_lvalue2 = function
       and v3 = vof_name v3
       and v4 = vof_paren (vof_comma_list vof_argument) v4
       in Ocaml.VSum (("MethodCallSimple", [ v1; v2; v3; v4 ]))
-and vof_indirect =
-  function
-  | Dollar v1 -> let v1 = vof_tok v1 in Ocaml.VSum (("Dollar", [ v1 ]))
 and vof_argument =
   function
   | Arg v1 -> let v1 = vof_expr v1 in Ocaml.VSum (("Arg", [ v1 ]))

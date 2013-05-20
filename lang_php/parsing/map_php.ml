@@ -538,10 +538,6 @@ and map_variable x =
       let v1 = map_lvalue v1
       and v2 = map_brace map_expr v2
       in VBraceAccess ((v1, v2))
-  | Indirect ((v1, v2)) ->
-      let v1 = map_lvalue v1
-      and v2 = map_indirect v2
-      in Indirect ((v1, v2))
   | FunCallSimple ((v2, v3)) ->
       let v2 = map_name v2
       and v3 = map_paren (map_comma_list map_argument) v3
@@ -560,8 +556,6 @@ and map_variable x =
   in
   vin.klvalue (k, all_functions) x
 
-and map_indirect =
-  function | Dollar v1 -> let v1 = map_tok v1 in Dollar ((v1))
 and map_argument =
   function
   | Arg v1 -> let v1 = map_expr v1 in Arg ((v1))

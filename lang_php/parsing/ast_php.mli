@@ -376,9 +376,6 @@ and lvalue2 =
     | VBrace       of tok    * expr brace
     | VBraceAccess of lvalue * expr brace
   (*x: lvaluebis constructors *)
-    (* on the left of var *)
-    | Indirect  of lvalue * indirect
-  (*x: lvaluebis constructors *)
     | FunCallSimple of name                      * argument comma_list paren
   (*x: lvaluebis constructors *)
     (* note that can be a late static call since php 5.3 *)
@@ -386,8 +383,6 @@ and lvalue2 =
     | MethodCallSimple of lvalue * tok * name    * argument comma_list paren
   (*e: lvaluebis constructors *)
 
-  (*s: type lvalue aux *)
-    and indirect = Dollar of tok
   (*x: type lvalue aux *)
     and argument =
       | Arg    of expr

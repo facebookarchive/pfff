@@ -591,8 +591,6 @@ and lvalue2 env = function
       A.Call (A.Id "eval_var", [expr env e])
   | VBraceAccess (lv, (_, e, _)) ->
       A.Array_get (lvalue env lv, Some (expr env e))
-  | Indirect (e, _) ->
-      A.Call (A.Id "eval_var", [lvalue env e])
   | FunCallSimple (f, (_, args, _)) ->
       let f = name env f in
       let args = comma_list args in
@@ -625,9 +623,6 @@ and obj_dim env obj = function
       let x = obj_dim env obj x in
       A.Array_get (x, e)
   | OBraceAccess _ -> raise (TodoConstruct "brace access")
-
-and indirect env = function
-  | Dollar _ -> raise (TodoConstruct "expr Dollar")
 
 and argument env = function
   | Arg e -> expr env e

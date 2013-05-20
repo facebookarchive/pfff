@@ -821,14 +821,6 @@ let rec m_variable a b =
        B.VBraceAccess(b1, b2)
     )
     ))
-  | A.Indirect(a1, a2), B.Indirect(b1, b2) ->
-    m_lvalue a1 b1 >>= (fun (a1, b1) ->
-    m_indirect a2 b2 >>= (fun (a2, b2) ->
-    return (
-       A.Indirect(a1, a2),
-       B.Indirect(b1, b2)
-    )
-    ))
 
   | A.FunCallSimple(a2, a3), B.FunCallSimple(b2, b3) ->
     (* iso on function name *)
@@ -865,7 +857,6 @@ let rec m_variable a b =
   | A.VArrayAccess _, _
   | A.VBrace _, _
   | A.VBraceAccess _, _
-  | A.Indirect _, _
   | A.FunCallSimple _, _
   | A.MethodCallSimple _, _
   | A.StaticMethodCallSimple _, _
@@ -876,15 +867,6 @@ and m_lvalue a b = m_expr a b
 and m_rw_variable a b = m_expr a b
 and m_w_variable a b = m_expr a b
 
-and m_indirect a b =
-  match a, b with
-  | A.Dollar(a1), B.Dollar(b1) ->
-    m_tok a1 b1 >>= (fun (a1, b1) ->
-    return (
-       A.Dollar(a1),
-       B.Dollar(b1)
-    )
-    )
 
 and m_qualifier a b =
   match a, b with

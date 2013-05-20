@@ -224,6 +224,8 @@ let stat_of_program ?(hooks=default_hooks) h file ast =
       | Call (_, _args) -> 
           inc "fun call Dynamic"
 
+      | Deref _ -> inc "Deref"
+
       
       | _ -> ()
       );
@@ -248,8 +250,6 @@ let stat_of_program ?(hooks=default_hooks) h file ast =
                          CG.Method (fake, Ast.str_of_name name))
           )
 
-
-      | Indirect _ -> inc "Indirect"
 
       | _ -> ()
       );

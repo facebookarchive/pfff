@@ -586,10 +586,6 @@ and v_variable x =
   | VBrace ((v1, v2)) -> let v1 = v_tok v1 and v2 = v_brace v_expr v2 in ()
   | VBraceAccess ((v1, v2)) ->
       let v1 = v_lvalue v1 and v2 = v_brace v_expr v2 in ()
-  | Indirect ((v1, v2)) ->
-      let v2 = v_indirect v2 in
-      let v1 = v_lvalue v1 in
-      ()
   | FunCallSimple ((v2, v3)) ->
       let v2 = v_name v2
       and v3 = v_arguments v3 in
@@ -614,8 +610,6 @@ and v_argument x =
   | ArgRef ((v1, v2)) -> let v1 = v_tok v1 and v2 = v_w_variable v2 in ()
   in
   vin.kargument (k, all_functions) x
-
-and v_indirect = function | Dollar v1 -> let v1 = v_tok v1 in ()
 
 
 

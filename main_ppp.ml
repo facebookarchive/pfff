@@ -271,15 +271,13 @@ let mk_aliasing_for_member_in_body () =
           [
             (ExprStmt
               ((AssignRef
-                 (Lv(Indirect
-                    (Lv(Var
+                 ((Deref
+                    (fkt "$", Lv(Var
                        (DName
                          ("p",
                           fkt "$p"),
                        {contents = S.NoScope})
-                      ),
-                    Dollar
-                     (fkt "$"))
+                      ))
                    ),
                  fkt "=",
                  fkt "&",
