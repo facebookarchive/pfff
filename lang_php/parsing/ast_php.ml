@@ -457,8 +457,6 @@ and lvalue2 =
     | DynamicClassVar of lvalue * tok (* :: *) * lvalue
   (*x: lvaluebis constructors *)
     | FunCallSimple of name                      * argument comma_list paren
-    (* DynamicFunCall *)
-    | FunCallVar    of qualifier option * lvalue * argument comma_list paren
   (*x: lvaluebis constructors *)
     (* note that can be a late static call since php 5.3 *)
     | StaticMethodCallSimple of qualifier * name * argument comma_list paren

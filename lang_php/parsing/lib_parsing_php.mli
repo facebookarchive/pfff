@@ -22,7 +22,6 @@ val range_of_origin_ii: Ast_php.tok list -> (int * int) option
 (*x: lib_parsing_php.mli *)
 val get_funcalls_any         : Ast_php.any -> string list
 val get_constant_strings_any : Ast_php.any -> string list
-val get_funcvars_any         : Ast_php.any -> string (* dname *) list
 val get_vars_any              : Ast_php.any -> Ast_php.dname list
 val get_static_vars_any       : Ast_php.any -> Ast_php.dname list
 val get_returns_any           : Ast_php.any -> Ast_php.expr list

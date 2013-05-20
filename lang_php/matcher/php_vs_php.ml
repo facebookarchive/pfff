@@ -865,15 +865,6 @@ let rec m_variable a b =
        B.FunCallSimple(b2, b3)
     )
     ))
-  | A.FunCallVar(a1, a2, a3), B.FunCallVar(b1, b2, b3) ->
-    m_option m_qualifier a1 b1 >>= (fun (a1, b1) ->
-    m_lvalue a2 b2 >>= (fun (a2, b2) ->
-    m_paren (m_list__m_argument) a3 b3 >>= (fun (a3, b3) ->
-    return (
-       A.FunCallVar(a1, a2, a3),
-       B.FunCallVar(b1, b2, b3)
-    )
-    )))
   | A.StaticMethodCallSimple(a1, a2, a3),
     B.StaticMethodCallSimple(b1, b2, b3) ->
     m_qualifier a1 b1 >>= (fun (a1, b1) ->
@@ -904,7 +895,6 @@ let rec m_variable a b =
   | A.VQualifier _, _
   | A.ClassVar _, _
   | A.FunCallSimple _, _
-  | A.FunCallVar _, _
   | A.MethodCallSimple _, _
   | A.StaticMethodCallSimple _, _
   | A.DynamicClassVar _, _

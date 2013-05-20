@@ -215,6 +215,12 @@ let stat_of_program ?(hooks=default_hooks) h file ast =
       | Call (ClassGet (_, _, _), _args) ->
           inc "static method call Dynamic"
 
+      | Call (Id _, _args) ->
+          inc "fun call"
+
+      | Call (_, _args) -> 
+          inc "fun call Dynamic"
+
       
       | _ -> ()
       );
@@ -224,8 +230,6 @@ let stat_of_program ?(hooks=default_hooks) h file ast =
       (match x with
       | FunCallSimple _ -> 
           inc "fun call"
-      | FunCallVar _ -> 
-          inc "fun call Dynamic"
 
       | StaticMethodCallSimple _ -> 
           inc "static method call"

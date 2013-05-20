@@ -464,15 +464,6 @@ and lvalue2 env = function
       let args = comma_list args in
       let args = List.map (argument env) args in
       A.Call (A.Id f, args)
-  | FunCallVar (q, lv, (tok, argl, _)) ->
-      let argl = comma_list argl in
-      let argl = List.map (argument env) argl in
-      let lv = lvalue env lv in
-      let lv = match q with
-        | None -> lv
-        | Some q -> A.Class_get (A.Id (qualifier env q), lv)
-      in
-      A.Call (lv, argl)
   | StaticMethodCallSimple (q, n, (tok, args, _)) ->
       let f = A.Class_get (A.Id (qualifier env q), A.Id (name env n)) in
       let args = comma_list args in

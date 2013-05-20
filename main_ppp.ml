@@ -480,19 +480,21 @@ let rec (transfo: string list -> stmt_and_def list -> stmt_and_def list) =
 
            (* finally just return the 'new anon_class($y, $this->x)' *)
            res
-      | _ -> k v
-     );
-     Map_php.klvalue = (fun (k, _) v ->
+
+(*
       (* apply recursively first *)
       let res = k v in
       match res with
       | FunCallVar (qu_opt, var, args) ->
 
-          (* do we care wether var is a regular var ?
+          (* do we care whether var is a regular var ?
            * do something with qu_opt ?
            *)
           mk_call_user_func_call var args
-      | _ -> res
+
+*)
+
+      | _ -> k v
      );
    }
    in

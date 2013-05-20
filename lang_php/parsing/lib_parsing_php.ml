@@ -216,37 +216,6 @@ let get_constant_strings_any any =
   in
   (V.mk_visitor hooks) any;
   Common.hashset_to_list h
-(*x: ast getters *)
-
-let get_funcvars_any any =
-  let h = Hashtbl.create 101 in
-  
-  let hooks = { V.default_visitor with
-
-    V.klvalue = (fun (k,vx) x ->
-      match x with
-      | FunCallVar (qu_opt, var, args) ->
-          (* TODO enough ? what about qopt ? 
-           * and what if not directly a Var ?
-           * 
-           * and what about call_user_func ? should be
-           * transformed at parsing time into a FunCallVar ?
-           *)
-          (match var with
-          | Lv (Var (dname, _scope)) ->
-              let str = Ast_php.dname dname in
-              Hashtbl.replace h str true;
-              k x
-
-          | _ -> k x
-          )
-      | _ ->  k x
-    );
-  } 
-  in
-  let visitor = V.mk_visitor hooks in
-  visitor any;
-  Common.hashset_to_list h
 (*e: ast getters *)
 
 let get_static_vars_any any =

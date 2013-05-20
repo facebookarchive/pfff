@@ -556,11 +556,6 @@ and vof_lvalue2 = function
       let v2 = vof_name v2
       and v3 = vof_paren (vof_comma_list vof_argument) v3
       in Ocaml.VSum (("FunCallSimple", [v2; v3 ]))
-  | FunCallVar ((v1, v2, v3)) ->
-      let v1 = vof_option vof_qualifier v1
-      and v2 = vof_lvalue v2
-      and v3 = vof_paren (vof_comma_list vof_argument) v3
-      in Ocaml.VSum (("FunCallVar", [ v1; v2; v3 ]))
   | StaticMethodCallSimple ((v1, v2, v3)) ->
       let v1 = vof_qualifier v1
       and v2 = vof_name v2

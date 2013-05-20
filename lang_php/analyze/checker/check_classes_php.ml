@@ -218,10 +218,6 @@ let visit_and_check  find_entity prog =
           );
           k x
 
-      | FunCallVar _ ->
-          (* not much we can do there too ... *)
-          k x
-
       | ClassVar ((ClassName (classname, _), tok), dname) ->
           check_member_access StaticAccess
             (Ast.name classname, Ast.dname dname) tok find_entity
@@ -265,6 +261,12 @@ let visit_and_check  find_entity prog =
           (* todo: need dataflow ... *)
           | _, _ -> ()
           )
+
+(*
+      | Call _ ->
+          (* not much we can do there too ... *)
+          k x
+*)
 
       | _ -> k x
     );

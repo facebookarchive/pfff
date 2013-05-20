@@ -173,7 +173,15 @@ let properties_of_function_or_method id db =
    *  dynamic function, then it does not matter.
    *)
   let calls = Lib_parsing_php.get_funcalls_any (Ast.StmtAndDefs body) in
-  let dyncalls = Lib_parsing_php.get_funcvars_any (Ast.StmtAndDefs body) in
+  let dyncalls = 
+    (* todo: what about call_user_func ? should be
+     * transformed at parsing time into a FunCallVar ? use
+     * a bottom-up analysis to find all those wrappers?
+     * 
+     * old: Lib_parsing_php.get_funcvars_any (Ast.StmtAndDefs body) 
+     *)
+     []
+  in
 
   if not (null dyncalls) ||
      calls +> List.exists (fun s -> 
