@@ -212,6 +212,9 @@ let stat_of_program ?(hooks=default_hooks) h file ast =
           | _ -> inc "obj access not $this"
           )
 
+      | ClassGet (lval, _, _) ->
+          inc "DynamicClassVar"
+
       | Call (ClassGet (_, _, _), _args) ->
           inc "static method call Dynamic"
 
@@ -247,7 +250,6 @@ let stat_of_program ?(hooks=default_hooks) h file ast =
 
 
       | Indirect _ -> inc "Indirect"
-      | DynamicClassVar _ -> inc "DynamicClassVar"
 
       | _ -> ()
       );

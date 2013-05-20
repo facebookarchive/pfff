@@ -453,8 +453,6 @@ and lvalue2 =
     | VQualifier of qualifier * lvalue
     (* note that can be a late static class var since php 5.3 *)
     | ClassVar of qualifier * dname
-    (* used to be lvalue * dname but can have code like $class::$$prop *)
-    | DynamicClassVar of lvalue * tok (* :: *) * lvalue
   (*x: lvaluebis constructors *)
     | FunCallSimple of name                      * argument comma_list paren
   (*x: lvaluebis constructors *)
