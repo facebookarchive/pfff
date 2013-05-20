@@ -157,6 +157,10 @@ and map_expr (x) =
   | Id v1 ->
     let v1 = map_name v1 in
     Id v1
+  | IdSelf v1 -> let v1 = map_tok v1 in IdSelf ((v1))
+  | IdParent v1 -> let v1 = map_tok v1 in IdParent ((v1))
+  | IdStatic v1 -> let v1 = map_tok v1 in IdStatic ((v1))
+
   | IdVar ((v1, v2)) ->
       let v1 = map_dname v1
       and v2 = map_of_ref Scope_code.map_scope v2

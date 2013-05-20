@@ -107,6 +107,10 @@ and vof_expr = function
   | Id v1 ->
     let v1 = vof_name v1 in
     Ocaml.VSum ("Id", [ v1 ])
+  | IdSelf v1 -> let v1 = vof_tok v1 in Ocaml.VSum (("IdSelf", [ v1 ]))
+  | IdParent v1 -> let v1 = vof_tok v1 in Ocaml.VSum (("IdParent", [ v1 ]))
+  | IdStatic v1 -> let v1 = vof_tok v1 in Ocaml.VSum (("IdStatic", [ v1 ]))
+
   | IdVar ((v1, v2)) ->
       let v1 = vof_dname v1
       and v2 = vof_ref Scope_code.vof_scope v2

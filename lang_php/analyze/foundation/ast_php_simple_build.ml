@@ -194,6 +194,10 @@ and expr env = function
   | Cr x -> class_name_reference2 env x
 
   | Id n -> A.Id (name env n)
+  | IdSelf tok -> A.Id (A.special "self", wrap tok)
+  | IdParent tok -> A.Id (A.special "parent", wrap tok)
+  | IdStatic tok -> A.Id (A.special "static", wrap tok)
+
   | IdVar (dn, scope) -> A.Id (dname dn)
   | ThisVar tok -> A.This ("$this", wrap tok)
 

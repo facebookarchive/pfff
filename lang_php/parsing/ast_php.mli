@@ -120,6 +120,10 @@ and expr =
   | Cr of class_name_reference2
 
   | Id of name
+  | IdSelf of tok
+  | IdParent of tok
+  | IdStatic of tok
+
   | IdVar of dname * Scope_php.phpscope ref
   | ThisVar of tok
 

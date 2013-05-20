@@ -249,6 +249,10 @@ and v_expr (x: expr) =
 
   | Id v1 ->
     v_name v1
+  | IdSelf v1 -> let v1 = v_tok v1 in ()
+  | IdParent v1 -> let v1 = v_tok v1 in ()
+  | IdStatic v1 -> let v1 = v_tok v1 in ()
+
   | IdVar ((v1, v2)) ->
       let v1 = v_dname v1 and v2 = v_ref Scope_php.v_phpscope v2 in ()
   | ThisVar v1 -> let v1 = v_tok v1 in ()

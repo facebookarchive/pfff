@@ -1047,7 +1047,7 @@ member_expr:
 primary_expr:
  | constant { Sc (C $1) }
 
- | qualified_class_name { Sc (C (CName ($1)))  }
+ | qualified_class_name { Id $1  }
  | T_SELF               { Cr (ClassNameRefStatic (Self $1)) }
  | T_PARENT             { Cr (ClassNameRefStatic (Parent $1)) }
 /*(* php 5.3 late static binding *)*/
