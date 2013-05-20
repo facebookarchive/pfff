@@ -493,22 +493,9 @@ and lvalue2 env = function
       raise (TodoConstruct ("StaticObjCallVar", tok))
 
   | ObjAccessSimple (lv, _, n) -> A.Obj_get (lvalue env lv, A.Id (name env n))
-  | ObjAccess (lv, oa) ->
-      let lv = lvalue env lv in
-      obj_access env lv oa
   | DynamicClassVar (lv, _, lv2) ->
       A.Class_get (lvalue env lv, lvalue env lv2)
 
-
-and obj_access env obj (tok, objp, args) =
-  let e = obj_property env tok obj objp in
-  match args with
-  | None -> e
-  | Some (tok, args, _) ->
-      let args = comma_list args in
-      let args = List.map (argument env) args in
-      (* TODO CHECK THIS *)
-      A.Call (e, args)
 
 and obj_property env tok obj = function
   | ObjProp objd -> obj_dim env obj objd

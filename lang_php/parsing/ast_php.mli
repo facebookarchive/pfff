@@ -404,7 +404,6 @@ and lvalue2 =
         argument comma_list paren
   (*x: lvaluebis constructors *)
     | ObjAccessSimple of lvalue * tok (* -> *) * name
-    | ObjAccess of lvalue * obj_access
   (*e: lvaluebis constructors *)
 
   (*s: type lvalue aux *)

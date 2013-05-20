@@ -929,14 +929,6 @@ let rec m_variable a b =
     )
     )))
 
-  | A.ObjAccess(a1, a2), B.ObjAccess(b1, b2) ->
-    m_lvalue a1 b1 >>= (fun (a1, b1) ->
-    m_obj_access a2 b2 >>= (fun (a2, b2) ->
-    return (
-       A.ObjAccess(a1, a2),
-       B.ObjAccess(b1, b2)
-    )
-    ))
   | A.Var _, _
   | A.This _, _
   | A.VArrayAccess _, _
@@ -952,7 +944,6 @@ let rec m_variable a b =
   | A.StaticMethodCallVar _, _
   | A.StaticObjCallVar _, _
   | A.ObjAccessSimple _, _
-  | A.ObjAccess _, _
   | A.DynamicClassVar _, _
    -> fail ()
 

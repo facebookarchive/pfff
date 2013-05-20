@@ -238,8 +238,6 @@ let stat_of_program ?(hooks=default_hooks) h file ast =
           | Lv This _ -> inc "obj access with $this"
           | _ -> inc "obj access not $this"
           )
-      | ObjAccess _ ->
-          inc "ObjAccess"
 
  
       | Indirect _ -> inc "Indirect"

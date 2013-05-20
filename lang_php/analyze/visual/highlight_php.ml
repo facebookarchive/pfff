@@ -581,11 +581,7 @@ let visit_toplevel ~tag prefs  hentities (toplevel, toks) =
           let ii = Lib_parsing_php.ii_of_any (Expr lval) in
           ii +> List.iter (fun info -> tag info PointerCall);
 
-      | ObjAccess (_, _)
-      | VQualifier (_, _)
-      | Indirect (_, _)
-      | VBraceAccess (_, _)
-      | VBrace (_, _)
+      | _
         ->
           k x
     );

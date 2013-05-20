@@ -592,10 +592,6 @@ and map_variable x =
       and v2 = map_tok v2
       and v3 = map_name v3
       in ObjAccessSimple ((v1, v2, v3))
-  | ObjAccess ((v1, v2)) ->
-      let v1 = map_lvalue v1
-      and v2 = map_obj_access v2
-      in ObjAccess ((v1, v2))
   in
   vin.klvalue (k, all_functions) x
 
@@ -606,11 +602,6 @@ and map_argument =
   | Arg v1 -> let v1 = map_expr v1 in Arg ((v1))
   | ArgRef ((v1, v2)) ->
       let v1 = map_tok v1 and v2 = map_w_variable v2 in ArgRef ((v1, v2))
-and map_obj_access (v1, v2, v3) =
-  let v1 = map_tok v1
-  and v2 = map_obj_property v2
-  and v3 = map_of_option (map_paren (map_comma_list map_argument)) v3
-  in (v1, v2, v3)
 and map_obj_property =
   function
   | ObjProp v1 -> let v1 = map_obj_dim v1 in ObjProp ((v1))
