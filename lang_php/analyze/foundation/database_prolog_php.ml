@@ -221,7 +221,6 @@ let add_uses id ast pr db =
 
       | StaticMethodCallSimple(_, name, args)
       | MethodCallSimple (_, _, name, args)
-      | StaticMethodCallVar (_, _, name, args)
         ->
           let str = Ast_php.name name in
           (* use a different namespace than func? *)
@@ -245,8 +244,6 @@ let add_uses id ast pr db =
               | LateStatic _ -> ()
               )
           | MethodCallSimple _
-          | StaticMethodCallVar _
-              -> ()
           | _ -> raise Impossible
           );
 
@@ -267,6 +264,18 @@ let add_uses id ast pr db =
     );
     V.kexpr = (fun (k, vx) x ->
       match x with
+
+      | Call (ClassGet (_, _, Id name), args)
+        ->
+          let str = Ast_php.name name in
+          (* use a different namespace than func? *)
+          if not (Hashtbl.mem h str)
+          then begin
+            Hashtbl.replace h str true;
+            (* todo: imprecise, need julien's precise callgraph *)
+            pr (spf "docall(%s, '%s', method)." (name_id id db) str)
+          end
+
       | ObjGet (lval, tok, Id name) ->
           let str = Ast_php.name name in
           (* use a different namespace than func? *)

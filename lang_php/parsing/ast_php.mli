@@ -397,9 +397,6 @@ and lvalue2 =
     (* note that can be a late static call since php 5.3 *)
     | StaticMethodCallSimple of qualifier * name * argument comma_list paren
     | MethodCallSimple of lvalue * tok * name    * argument comma_list paren
-    (* PHP 5.3 *)
-    | StaticMethodCallVar of lvalue * tok (* :: *) * name *
-        argument comma_list paren
   (*e: lvaluebis constructors *)
 
   (*s: type lvalue aux *)

@@ -446,6 +446,15 @@ let visit_toplevel ~tag prefs  hentities (toplevel, toks) =
           tag info (Field (Use2 fake_no_use2));
           k expr
 
+      | Call (ClassGet (lval, _, Id name), _args) ->
+          k expr
+
+      | Call (ClassGet (lval, _, _var), _args)
+        ->
+          let ii = Lib_parsing_php.ii_of_any (Expr lval) in
+          ii +> List.iter (fun info -> tag info PointerCall);
+
+
       | _ ->
           ()
       )
@@ -574,11 +583,6 @@ let visit_toplevel ~tag prefs  hentities (toplevel, toks) =
       | FunCallVar (qu_opt, var, args) ->
           (* function pointer call !!! put in big font *)
           let ii = Lib_parsing_php.ii_of_any (Expr var) in
-          ii +> List.iter (fun info -> tag info PointerCall);
-
-      | StaticMethodCallVar (lval, _, _, _)
-        ->
-          let ii = Lib_parsing_php.ii_of_any (Expr lval) in
           ii +> List.iter (fun info -> tag info PointerCall);
 
       | _

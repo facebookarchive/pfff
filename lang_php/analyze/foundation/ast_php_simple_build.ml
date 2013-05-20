@@ -484,12 +484,6 @@ and lvalue2 env = function
       let args = comma_list args in
       let args = List.map (argument env) args in
       A.Call (f, args)
-  | StaticMethodCallVar (lv, _, n, (tok, args, _)) ->
-      let f = A.Class_get (lvalue env lv, A.Id (name env n)) in
-      let args = comma_list args in
-      let args = List.map (argument env) args in
-      A.Call (f, args)
-
   | DynamicClassVar (lv, _, lv2) ->
       A.Class_get (lvalue env lv, lvalue env lv2)
 

@@ -211,6 +211,10 @@ let stat_of_program ?(hooks=default_hooks) h file ast =
           | Lv This _ -> inc "obj access with $this"
           | _ -> inc "obj access not $this"
           )
+
+      | Call (ClassGet (_, _, _), _args) ->
+          inc "static method call Dynamic"
+
       
       | _ -> ()
       );
@@ -225,8 +229,6 @@ let stat_of_program ?(hooks=default_hooks) h file ast =
 
       | StaticMethodCallSimple _ -> 
           inc "static method call"
-      | StaticMethodCallVar _ ->
-          inc "static method call Dynamic"
 
       | MethodCallSimple (lval, _, name, xs) ->
           (* look at lval if simple form *)
