@@ -392,9 +392,7 @@ and expr =
   (*x: AST expression rest *)
    and class_name_reference2 =
      | ClassNameRefStatic of class_name_or_kwd
-     | ClassNameRefDynamic of lvalue * obj_prop_access list
-
-     and obj_prop_access = tok (* -> *) * obj_property
+     | ClassNameRefDynamic of lvalue * unit list
   (*e: AST expression rest *)
 
  and xhp_html =
@@ -451,23 +449,6 @@ and lvalue2 =
       | Arg    of expr
       | ArgRef of tok * w_variable
   (*x: type lvalue aux *)
-
-    and obj_property =
-      | ObjProp of obj_dim
-      | ObjPropVar of lvalue (* was originally var_without_obj *)
-
-      (* I would like to remove OName from here, as I inline most of them
-       * in the MethodCallSimple and ObjAccessSimple above, but they
-       * can also be mentionned in OArrayAccess in the obj_dim, so
-       * I keep it
-       *)
-      and obj_dim =
-        | OName of name
-        | OBrace of expr brace
-        | OArrayAccess of obj_dim * expr option bracket
-        | OBraceAccess of obj_dim * expr brace
-  (*e: type lvalue aux *)
-
 (* semantic: those grammar rule names were used in the original PHP
  * lexer/parser but not enforced. It's just comments. *)
 and rw_variable = lvalue

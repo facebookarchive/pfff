@@ -472,11 +472,9 @@ and vof_class_name_reference2 =
       Ocaml.VSum (("ClassNameRefStatic", [ v1 ]))
   | ClassNameRefDynamic (v1, v2) ->
       let v1 = vof_lvalue v1
-      and v2 = vof_list vof_obj_prop_access v2
+      and v2 = vof_list vof_unit v2
       in Ocaml.VSum (("ClassNameRefDynamic", [ v1; v2 ]))
 
-and vof_obj_prop_access (v1, v2) =
-  let v1 = vof_tok v1 and v2 = vof_obj_property v2 in Ocaml.VTuple [ v1; v2 ]
 and vof_xhp_html =
   function
   | Xhp ((v1, v2, v3, v4, v5)) ->
@@ -549,29 +547,6 @@ and vof_argument =
       let v1 = vof_tok v1
       and v2 = vof_w_variable v2
       in Ocaml.VSum (("ArgRef", [ v1; v2 ]))
-and vof_obj_access (v1, v2, v3) =
-  let v1 = vof_tok v1
-  and v2 = vof_obj_property v2
-  and v3 = vof_option (vof_paren (vof_comma_list vof_argument)) v3
-  in Ocaml.VTuple [ v1; v2; v3 ]
-and vof_obj_property =
-  function
-  | ObjProp v1 -> let v1 = vof_obj_dim v1 in Ocaml.VSum (("ObjProp", [ v1 ]))
-  | ObjPropVar v1 ->
-      let v1 = vof_lvalue v1 in Ocaml.VSum (("ObjPropVar", [ v1 ]))
-and vof_obj_dim =
-  function
-  | OName v1 -> let v1 = vof_name v1 in Ocaml.VSum (("OName", [ v1 ]))
-  | OBrace v1 ->
-      let v1 = vof_brace vof_expr v1 in Ocaml.VSum (("OBrace", [ v1 ]))
-  | OArrayAccess ((v1, v2)) ->
-      let v1 = vof_obj_dim v1
-      and v2 = vof_bracket (vof_option vof_expr) v2
-      in Ocaml.VSum (("OArrayAccess", [ v1; v2 ]))
-  | OBraceAccess ((v1, v2)) ->
-      let v1 = vof_obj_dim v1
-      and v2 = vof_brace vof_expr v2
-      in Ocaml.VSum (("OBraceAccess", [ v1; v2 ]))
 and vof_rw_variable v = vof_lvalue v
 and vof_r_variable v = vof_lvalue v
 and vof_w_variable v = vof_lvalue v

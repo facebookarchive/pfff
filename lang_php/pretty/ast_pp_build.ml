@@ -604,22 +604,6 @@ and lvalue2 env = function
       let args = List.map (argument env) args in
       A.Call (f, args)
 
-
-and obj_property env obj = function
-  | ObjProp objd -> obj_dim env obj objd
-  | ObjPropVar lv ->
-      A.Call (A.Id "ObjPropVar", [lvalue env lv])
-
-and obj_dim env obj = function
-  | OName n -> A.Obj_get (obj, A.Id(name env n))
-  | OBrace (_, e, _) ->
-      A.Obj_get (obj, expr env e)
-  | OArrayAccess (x, (_, e, _)) ->
-      let e = opt expr env e in
-      let x = obj_dim env obj x in
-      A.Array_get (x, e)
-  | OBraceAccess _ -> raise (TodoConstruct "brace access")
-
 and argument env = function
   | Arg e -> expr env e
   | ArgRef (_, e) -> A.Ref (lvalue env e)

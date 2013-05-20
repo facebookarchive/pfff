@@ -474,10 +474,8 @@ and map_class_name_reference2 =
       let v1 = map_class_name_or_selfparent v1 in ClassNameRefStatic ((v1))
   | ClassNameRefDynamic (v1, v2) ->
       let v1 = map_lvalue v1
-      and v2 = map_of_list map_obj_prop_access v2
+      and v2 = map_of_list (fun () -> ()) v2
       in ClassNameRefDynamic (v1, v2)
-and map_obj_prop_access (v1, v2) =
-  let v1 = map_tok v1 and v2 = map_obj_property v2 in (v1, v2)
 
 and map_xhp_html =
   function
@@ -554,22 +552,6 @@ and map_argument =
   | Arg v1 -> let v1 = map_expr v1 in Arg ((v1))
   | ArgRef ((v1, v2)) ->
       let v1 = map_tok v1 and v2 = map_w_variable v2 in ArgRef ((v1, v2))
-and map_obj_property =
-  function
-  | ObjProp v1 -> let v1 = map_obj_dim v1 in ObjProp ((v1))
-  | ObjPropVar v1 -> let v1 = map_lvalue v1 in ObjPropVar ((v1))
-and map_obj_dim =
-  function
-  | OName v1 -> let v1 = map_name v1 in OName ((v1))
-  | OBrace v1 -> let v1 = map_brace map_expr v1 in OBrace ((v1))
-  | OArrayAccess ((v1, v2)) ->
-      let v1 = map_obj_dim v1
-      and v2 = map_bracket (map_of_option map_expr) v2
-      in OArrayAccess ((v1, v2))
-  | OBraceAccess ((v1, v2)) ->
-      let v1 = map_obj_dim v1
-      and v2 = map_brace map_expr v2
-      in OBraceAccess ((v1, v2))
 and map_rw_variable v = map_lvalue v
 and map_r_variable v = map_lvalue v
 and map_w_variable v = map_lvalue v

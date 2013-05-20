@@ -70,8 +70,6 @@ type visitor_in = {
   kargument: (argument -> unit) * visitor_out -> argument -> unit;
   kcatch: (catch -> unit) * visitor_out -> catch -> unit;
 
-  kobj_dim: (obj_dim -> unit) * visitor_out -> obj_dim -> unit;
-
   kxhp_html:
     (xhp_html -> unit) * visitor_out -> xhp_html -> unit;
   kxhp_tag:
@@ -127,8 +125,6 @@ let default_visitor =
     kargument = (fun (k,_) x -> k x);
     karguments = (fun (k,_) x -> k x);
     kcatch = (fun (k,_) x -> k x);
-
-    kobj_dim = (fun (k,_) x -> k x);
 
     kstmt_and_def_list_scope    = (fun (k,_) x -> k x);
 
@@ -482,13 +478,11 @@ and v_class_name_reference2 x =
   | ClassNameRefStatic v1 -> let v1 = v_class_name_or_selfparent v1 in ()
   | ClassNameRefDynamic (v1, v2) ->
       let v1 = v_lvalue v1
-      and v2 = v_list v_obj_prop_access v2
+      and v2 = v_list v_unit v2
       in ()
   in
   vin.kclass_name_reference (k, all_functions) x
 
-and v_obj_prop_access (v1, v2) =
-  let v1 = v_tok v1 and v2 = v_obj_property v2 in ()
 and v_list_assign =
   function
   | ListVar v1 -> let v1 = v_lvalue v1 in ()
@@ -607,29 +601,6 @@ and v_argument x =
   | ArgRef ((v1, v2)) -> let v1 = v_tok v1 and v2 = v_w_variable v2 in ()
   in
   vin.kargument (k, all_functions) x
-
-
-
-
-and v_obj_access (v1, v2, v3) =
-  let v1 = v_tok v1
-  and v2 = v_obj_property v2
-  and v3 = v_option (v_arguments) v3
-  in ()
-and v_obj_property =
-  function
-  | ObjProp v1 -> let v1 = v_obj_dim v1 in ()
-  | ObjPropVar v1 -> let v1 = v_lvalue v1 in ()
-and v_obj_dim x =
-  let rec k x = match x with
-  | OName v1 -> let v1 = v_name v1 in ()
-  | OBrace v1 -> let v1 = v_brace v_expr v1 in ()
-  | OArrayAccess ((v1, v2)) ->
-      let v1 = v_obj_dim v1 and v2 = v_bracket (v_option v_expr) v2 in ()
-  | OBraceAccess ((v1, v2)) ->
-      let v1 = v_obj_dim v1 and v2 = v_brace v_expr v2 in ()
-  in
-  vin.kobj_dim (k, all_functions) x
 
 and v_rw_variable v = v_lvalue v
 and v_r_variable v = v_lvalue v

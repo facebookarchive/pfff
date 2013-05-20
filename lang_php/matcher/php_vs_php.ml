@@ -966,92 +966,6 @@ and m_argument a b =
   | A.ArgRef _, _
    -> fail ()
 
-(*---------------------------------------------------------------------------*)
-(* obj access *)
-(*---------------------------------------------------------------------------*)
-
-and m_obj_access a b =
-  match a, b with
-  | (a1, a2, a3), (b1, b2, b3) ->
-    m_tok a1 b1 >>= (fun (a1, b1) ->
-    m_obj_property a2 b2 >>= (fun (a2, b2) ->
-    (m_option (m_paren (m_list__m_argument))) a3 b3 >>= (fun (a3, b3) ->
-    return (
-       (a1, a2, a3),
-       (b1, b2, b3)
-    )
-    )))
-
-and m_obj_property a b =
-  match a, b with
-  | A.ObjProp(a1), B.ObjProp(b1) ->
-    m_obj_dim a1 b1 >>= (fun (a1, b1) ->
-    return (
-       A.ObjProp(a1),
-       B.ObjProp(b1)
-    )
-    )
-  | A.ObjPropVar(a1), B.ObjPropVar(b1) ->
-    m_lvalue a1 b1 >>= (fun (a1, b1) ->
-    return (
-       A.ObjPropVar(a1),
-       B.ObjPropVar(b1)
-    )
-    )
-  | A.ObjProp _, _
-  | A.ObjPropVar _, _
-   -> fail ()
-
-and m_obj_dim a b =
-  match a, b with
-  | A.OName(a1), B.OName(b1) ->
-    m_name a1 b1 >>= (fun (a1, b1) ->
-    return (
-       A.OName(a1),
-       B.OName(b1)
-    )
-    )
-  | A.OBrace(a1), B.OBrace(b1) ->
-    (m_brace m_expr) a1 b1 >>= (fun (a1, b1) ->
-    return (
-       A.OBrace(a1),
-       B.OBrace(b1)
-    )
-    )
-  | A.OArrayAccess(a1, a2), B.OArrayAccess(b1, b2) ->
-    m_obj_dim a1 b1 >>= (fun (a1, b1) ->
-    (m_bracket (m_option m_expr)) a2 b2 >>= (fun (a2, b2) ->
-    return (
-       A.OArrayAccess(a1, a2),
-       B.OArrayAccess(b1, b2)
-    )
-    ))
-  | A.OBraceAccess(a1, a2), B.OBraceAccess(b1, b2) ->
-    m_obj_dim a1 b1 >>= (fun (a1, b1) ->
-    (m_brace m_expr) a2 b2 >>= (fun (a2, b2) ->
-    return (
-       A.OBraceAccess(a1, a2),
-       B.OBraceAccess(b1, b2)
-    )
-    ))
-  | A.OName _, _
-  | A.OBrace _, _
-  | A.OArrayAccess _, _
-  | A.OBraceAccess _, _
-   -> fail ()
-
-
-and m_obj_prop_access a b =
-  match a, b with
-  | (a1, a2), (b1, b2) ->
-    m_tok a1 b1 >>= (fun (a1, b1) ->
-    m_obj_property a2 b2 >>= (fun (a2, b2) ->
-    return (
-       (a1, a2),
-       (b1, b2)
-    )
-    ))
-
 (* ---------------------------------------------------------------------- *)
 (* expr *)
 (* ---------------------------------------------------------------------- *)
@@ -1835,7 +1749,7 @@ and m_class_name_reference2 a b =
     )
   | A.ClassNameRefDynamic(a1, a2), B.ClassNameRefDynamic(b1, b2) ->
     m_lvalue a1 b1 >>= (fun (a1, b1) ->
-    m_list m_obj_prop_access a2 b2 >>= (fun (a2, b2) ->
+    m_list m_unit a2 b2 >>= (fun (a2, b2) ->
     return (
        A.ClassNameRefDynamic(a1, a2),
        B.ClassNameRefDynamic(b1, b2)

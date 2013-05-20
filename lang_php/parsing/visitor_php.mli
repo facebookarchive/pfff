@@ -16,8 +16,6 @@ type visitor_in = {
   kargument: (argument -> unit) * visitor_out -> argument -> unit;
   kcatch: (catch -> unit) * visitor_out -> catch -> unit;
 
-  kobj_dim: (obj_dim -> unit) * visitor_out -> obj_dim -> unit;
-
   (* xhp: *)
   kxhp_html: (xhp_html -> unit) * visitor_out -> xhp_html -> unit;
   kxhp_tag: (xhp_tag wrap -> unit) * visitor_out -> xhp_tag wrap -> unit;

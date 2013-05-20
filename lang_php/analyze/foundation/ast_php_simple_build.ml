@@ -430,11 +430,9 @@ and class_name_reference env a = expr env a
 and class_name_reference2 env = function
    | ClassNameRefStatic cn -> A.Id (class_name_or_selfparent env cn)
    | ClassNameRefDynamic (lv, []) -> lvalue env lv
-   | ClassNameRefDynamic (lv, [tok, obj_prop]) ->
-       let obj = lvalue env lv in
-       obj_property env tok obj obj_prop
-   | ClassNameRefDynamic (lv, (tok, _)::xs) ->
-       raise (TodoConstruct ("ClassNameRefDynamic", tok))
+   | ClassNameRefDynamic (lv, xs) ->
+       let _ = lvalue env lv in
+       raise Common.Todo
 
 
 and lvalue env a = expr env a 
@@ -462,28 +460,6 @@ and lvalue2 env = function
       let args = comma_list args in
       let args = List.map (argument env) args in
       A.Call (f, args)
-
-
-and obj_property env tok obj = function
-  | ObjProp objd -> obj_dim env obj objd
-  | ObjPropVar lv ->
-      A.Obj_get (obj, A.Call (A.Id (A.builtin "eval_var_field", wrap tok),
-                             [lvalue env lv]))
-
-and obj_dim env obj = function
-  | OName n -> A.Obj_get (obj, A.Id(name env n))
-  | OBrace (_, e, _) ->
-      A.Obj_get (obj, expr env e)
-  (* again, one can use the [] or {} syntax *)
-  | OArrayAccess (x, (tok, e, _)) ->
-      let e = opt expr env e in
-      let x = obj_dim env obj x in
-      A.Array_get (x, e)
-  (* this is almost never used in our codebase, just in some third-party code.*)
-  | OBraceAccess (x, (tok, e, _)) ->
-      let e = expr env e in
-      let x = obj_dim env obj x in
-      A.Array_get(x, Some e)
 
 and argument env = function
   | Arg e -> expr env e

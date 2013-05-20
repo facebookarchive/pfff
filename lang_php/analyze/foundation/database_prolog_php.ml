@@ -337,20 +337,7 @@ let add_uses id ast pr db =
       );
       k x
     );
-    V.kobj_dim = (fun (k, _) x ->
-      match x with
-      (* copy paste of ObjAccessSimple *)
-      | OName name ->
-          let str = Ast_php.name name in
-          if not (Hashtbl.mem h str)
-          then begin
-            Hashtbl.replace h str true;
-            pr (spf "use(%s, '%s', field, %s)."
-                   (name_id id db) str (read_write !in_lvalue_pos))
-          end;
-          k x
-      | _ -> k x
-    );
+
     V.kscalar = (fun (k, _) x ->
       match x with
       | ClassConstant ((qu,_tok), cstname) ->

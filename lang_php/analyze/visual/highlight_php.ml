@@ -587,14 +587,6 @@ let visit_toplevel ~tag prefs  hentities (toplevel, toks) =
           k x
     );
 
-    V.kobj_dim = (fun (k, vx) x ->
-      match x with
-      | OName name ->
-          let info = Ast.info_of_name name in
-          tag info (Field (Use2 fake_no_use2))
-      | _ -> k x
-    );
-
     (* -------------------------------------------------------------------- *)
     V.kconstant = (fun (k, vx) e ->
       match e with
