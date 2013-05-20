@@ -459,6 +459,11 @@ let visit_toplevel ~tag prefs  hentities (toplevel, toks) =
           let ii = Lib_parsing_php.ii_of_any (Expr e) in
           ii +> List.iter (fun info -> tag info PointerCall);
 
+      | ClassGet (qu, _, IdVar (dname, _)) ->
+          let info = Ast.info_of_dname dname in
+          (* todo? special category for class variables ? *)
+          tag info (Global (Use2 fake_no_use2))
+
 
       | ClassGet (v1, t2, v2) ->
           (* todo? colorize v1? bad to use dynamic variable ...
@@ -542,11 +547,6 @@ let visit_toplevel ~tag prefs  hentities (toplevel, toks) =
           | S.NoScope ->
               tag info (NoType)
           )
-
-      | ClassVar (qu, dname) ->
-          let info = Ast.info_of_dname dname in
-          (* todo? special category for class variables ? *)
-          tag info (Global (Use2 fake_no_use2))
 
       | This (tok) ->
           tag tok (Class (Use2 fake_no_use2))

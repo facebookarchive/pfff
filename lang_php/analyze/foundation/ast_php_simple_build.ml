@@ -457,8 +457,6 @@ and lvalue2 env = function
       let (_, tok) = q in
       A.Class_get (A.Id (qualifier env q),
                   A.Call (A.Id (A.builtin "eval_var", wrap tok),[lvalue env v]))
-  | ClassVar (q, dn) ->
-      A.Class_get (A.Id (qualifier env q), A.Id (dname dn))
   | FunCallSimple (f, (tok, args, _)) ->
       let f = name env f in
       let args = comma_list args in

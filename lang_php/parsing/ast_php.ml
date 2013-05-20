@@ -451,8 +451,6 @@ and lvalue2 =
      * todo? could merge 3 cases if qualifier allow some dname.
      *)
     | VQualifier of qualifier * lvalue
-    (* note that can be a late static class var since php 5.3 *)
-    | ClassVar of qualifier * dname
   (*x: lvaluebis constructors *)
     | FunCallSimple of name                      * argument comma_list paren
   (*x: lvaluebis constructors *)

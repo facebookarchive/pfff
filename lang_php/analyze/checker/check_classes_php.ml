@@ -218,9 +218,6 @@ let visit_and_check  find_entity prog =
           );
           k x
 
-      | ClassVar ((ClassName (classname, _), tok), dname) ->
-          check_member_access StaticAccess
-            (Ast.name classname, Ast.dname dname) tok find_entity
 
       | _ -> k x
     );
@@ -252,6 +249,10 @@ let visit_and_check  find_entity prog =
       | New (tok, (Cr ClassNameRefDynamic (class_name, _)), args) ->
           (* can't do much *)
           k x
+
+      | ClassGet (Id classname, tok, IdVar (dname, _scope)) ->
+          check_member_access StaticAccess
+            (Ast.name classname, Ast.dname dname) tok find_entity
 
       | ObjGet (lval, tok, Id name) ->
           let field = Ast.name name in
