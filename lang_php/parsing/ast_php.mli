@@ -371,7 +371,6 @@ and lvalue2 =
      Scope_php.phpscope ref
      (*e: scope_php annotation *)
   (*x: lvaluebis constructors *)
-    | This of tok
     | VArrayAccess of lvalue * expr option bracket
   (*x: lvaluebis constructors *)
     | FunCallSimple of name                      * argument comma_list paren

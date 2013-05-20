@@ -207,7 +207,7 @@ let visit_and_check  find_entity prog =
            * todo: special case also id(new ...)-> ?
            *)
           (match lval, !in_class with
-          | Lv This _, Some (aclass, is_abstract) ->
+          | ThisVar _, Some (aclass, is_abstract) ->
               let amethod = Ast.name name in
               check_method_call (MethodCall is_abstract)
                 (aclass, amethod) (name, args) find_entity
@@ -257,7 +257,7 @@ let visit_and_check  find_entity prog =
       | ObjGet (lval, tok, Id name) ->
           let field = Ast.name name in
           (match lval, !in_class with
-          | Lv This _, Some (aclass, is_abstract) ->
+          | ThisVar _, Some (aclass, is_abstract) ->
               check_member_access ObjAccess (aclass, field) tok find_entity
           (* todo: need dataflow ... *)
           | _, _ -> ()

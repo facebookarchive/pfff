@@ -582,7 +582,6 @@ and lvalue env x = expr env x
 
 and lvalue2 env = function
   | Var (dn, scope) -> A.Id (dname dn)
-  | This _ -> A.This
   | VArrayAccess (lv, (_, e, _)) ->
       let lv = lvalue env lv in
       let e = opt expr env e in

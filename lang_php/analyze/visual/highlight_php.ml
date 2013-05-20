@@ -441,6 +441,9 @@ let visit_toplevel ~tag prefs  hentities (toplevel, toks) =
       | Cast (((cast, v1), v2)) ->
           tag v1 TypeMisc
 
+      | ThisVar (tok) ->
+          tag tok (Class (Use2 fake_no_use2))
+
       | ObjGet (lval, tok, Id name) ->
           let info = Ast.info_of_name name in
           tag info (Field (Use2 fake_no_use2));
@@ -548,8 +551,6 @@ let visit_toplevel ~tag prefs  hentities (toplevel, toks) =
               tag info (NoType)
           )
 
-      | This (tok) ->
-          tag tok (Class (Use2 fake_no_use2))
 
       | VArrayAccess (var, exprbracket) ->
           (match Ast.unbracket exprbracket with

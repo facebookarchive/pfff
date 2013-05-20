@@ -524,7 +524,6 @@ and map_variable x =
       let v1 = map_dname v1
       and v2 = map_of_ref Scope_code.map_scope v2
       in Var ((v1, v2))
-  | This v1 -> let v1 = map_tok v1 in This ((v1))
   | VArrayAccess ((v1, v2)) ->
       let v1 = map_lvalue v1
       and v2 = map_bracket (map_of_option map_expr) v2

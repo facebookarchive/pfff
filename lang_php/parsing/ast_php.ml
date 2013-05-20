@@ -429,7 +429,6 @@ and lvalue2 =
      Scope_php.phpscope ref
      (*e: scope_php annotation *)
   (*x: lvaluebis constructors *)
-    | This of tok
     (* xhp: normally we can not have a FunCall in the lvalue of VArrayAccess,
      * but with xhp we can.
      *

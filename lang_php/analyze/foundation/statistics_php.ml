@@ -208,7 +208,7 @@ let stat_of_program ?(hooks=default_hooks) h file ast =
 
       | ObjGet (lval, _, Id name) ->
           (match lval with
-          | Lv This _ -> inc "obj access with $this"
+          | ThisVar _ -> inc "obj access with $this"
           | _ -> inc "obj access not $this"
           )
 
@@ -242,7 +242,7 @@ let stat_of_program ?(hooks=default_hooks) h file ast =
       | MethodCallSimple (lval, _, name, xs) ->
           (* look at lval if simple form *)
           (match lval with
-          | Lv This _ -> 
+          | ThisVar _ -> 
               inc "method call with $this"
           | _ -> 
               inc "method call not $this";

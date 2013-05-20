@@ -788,13 +788,7 @@ let rec m_variable a b =
        B.Var(b1, b2)
     )
     ))
-  | A.This(a1), B.This(b1) ->
-    m_tok a1 b1 >>= (fun (a1, b1) ->
-    return (
-       A.This(a1),
-       B.This(b1)
-    )
-    )
+
   | A.VArrayAccess(a1, a2), B.VArrayAccess(b1, b2) ->
     m_lvalue a1 b1 >>= (fun (a1, b1) ->
     (m_bracket (m_option m_expr)) a2 b2 >>= (fun (a2, b2) ->
@@ -836,7 +830,6 @@ let rec m_variable a b =
     ))))
 
   | A.Var _, _
-  | A.This _, _
   | A.VArrayAccess _, _
   | A.FunCallSimple _, _
   | A.MethodCallSimple _, _
