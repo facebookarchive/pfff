@@ -1048,12 +1048,12 @@ primary_expr:
  | constant { Sc (C $1) }
 
  | qualified_class_name { Id $1  }
- | T_SELF               { Cr (ClassNameRefStatic (Self $1)) }
- | T_PARENT             { Cr (ClassNameRefStatic (Parent $1)) }
+ | T_SELF               { IdSelf $1 }
+ | T_PARENT             { IdParent $1 }
 /*(* php 5.3 late static binding *)*/
- | T_STATIC             {  Cr (ClassNameRefStatic (LateStatic $1)) }
+ | T_STATIC             { IdStatic $1 }
 
- | T_VARIABLE { Lv (Var (DName $1, Ast.noScope())) }
+ | T_VARIABLE { IdVar (DName $1, Ast.noScope()) }
 
  | TDOLLAR primary_expr         { Deref($1, $2) }
  | TDOLLAR TOBRACE expr TCBRACE { Deref($1, BraceIdent($2, $3, $4)) }
