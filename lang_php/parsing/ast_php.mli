@@ -388,9 +388,6 @@ and lvalue2 =
       | Arg    of expr
       | ArgRef of tok * w_variable
   (*x: type lvalue aux *)
-    and obj_access =
-     tok (* -> *) * obj_property * argument comma_list paren option
-
     and obj_property =
       | ObjProp of obj_dim
       | ObjPropVar of lvalue (* was originally var_without_obj *)
