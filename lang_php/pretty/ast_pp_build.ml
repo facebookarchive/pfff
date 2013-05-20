@@ -623,7 +623,6 @@ and lvalue2 env = function
       let args = comma_list args in
       let args = List.map (argument env) args in
       A.Call (f, args)
-  | StaticObjCallVar _ -> raise (TodoConstruct "expr StaticObjCallVar")
 
   | DynamicClassVar (lv, _, lv2) ->
       A.Class_get (lvalue env lv, lvalue env lv2)

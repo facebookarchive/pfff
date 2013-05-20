@@ -400,8 +400,6 @@ and lvalue2 =
     (* PHP 5.3 *)
     | StaticMethodCallVar of lvalue * tok (* :: *) * name *
         argument comma_list paren
-    | StaticObjCallVar of lvalue * tok (* :: *) * lvalue *
-        argument comma_list paren
   (*e: lvaluebis constructors *)
 
   (*s: type lvalue aux *)

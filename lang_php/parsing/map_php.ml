@@ -581,12 +581,6 @@ and map_variable x =
       and v3 = map_name v3
       and v4 = map_paren (map_comma_list map_argument) v4
       in StaticMethodCallVar ((v1, v2, v3, v4))
-  | StaticObjCallVar ((v1, v2, v3, v4)) ->
-      let v1 = map_lvalue v1
-      and v2 = map_tok v2
-      and v3 = map_lvalue v3
-      and v4 = map_paren (map_comma_list map_argument) v4
-      in StaticObjCallVar ((v1, v2, v3, v4))
   in
   vin.klvalue (k, all_functions) x
 

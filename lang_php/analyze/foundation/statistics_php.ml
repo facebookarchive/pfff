@@ -242,7 +242,6 @@ let stat_of_program ?(hooks=default_hooks) h file ast =
 
       | Indirect _ -> inc "Indirect"
       | DynamicClassVar _ -> inc "DynamicClassVar"
-      | StaticObjCallVar _ -> inc "StaticObjCallVar"
 
       | _ -> ()
       );

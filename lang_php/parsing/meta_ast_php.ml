@@ -578,12 +578,6 @@ and vof_lvalue2 = function
       and v3 = vof_name v3
       and v4 = vof_paren (vof_comma_list vof_argument) v4
       in Ocaml.VSum (("StaticMethodCallVar", [ v1; v2; v3; v4 ]))
-  | StaticObjCallVar ((v1, v2, v3, v4)) ->
-      let v1 = vof_lvalue v1
-      and v2 = vof_tok v2
-      and v3 = vof_lvalue v3
-      and v4 = vof_paren (vof_comma_list vof_argument) v4
-      in Ocaml.VSum (("StaticObjCallVar", [ v1; v2; v3; v4 ]))
 and vof_indirect =
   function
   | Dollar v1 -> let v1 = vof_tok v1 in Ocaml.VSum (("Dollar", [ v1 ]))

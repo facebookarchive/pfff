@@ -577,7 +577,6 @@ let visit_toplevel ~tag prefs  hentities (toplevel, toks) =
           ii +> List.iter (fun info -> tag info PointerCall);
 
       | StaticMethodCallVar (lval, _, _, _)
-      | StaticObjCallVar (lval, _, _, _)
         ->
           let ii = Lib_parsing_php.ii_of_any (Expr lval) in
           ii +> List.iter (fun info -> tag info PointerCall);
