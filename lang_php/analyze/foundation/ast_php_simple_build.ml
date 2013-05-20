@@ -449,10 +449,6 @@ and lvalue2 env = function
   (* one can use $o[xxx] or $o{xxx} apparently *)
   | VBraceAccess (lv, (tok, e, _)) ->
       A.Array_get (lvalue env lv, Some (expr env e))
-  | VArrayAccessXhp (e1, (tok, e2, _)) ->
-      let e1 = expr env e1 in
-      let e2 = opt expr env e2 in
-      A.Array_get (e1, e2)
   | VBrace (tok, (_, e, _)) ->
       A.Call (A.Id ((A.builtin "eval_var", wrap tok)), [expr env e])
   | Indirect (e, (Dollar tok)) ->

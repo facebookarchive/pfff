@@ -438,7 +438,6 @@ and lvalue2 =
      * todo? a VArrayAccessSimple with Constant string in expr ?
      *)
     | VArrayAccess of lvalue * expr option bracket
-    | VArrayAccessXhp of expr * expr option bracket
   (*x: lvaluebis constructors *)
     | VBrace       of tok    * expr brace
     | VBraceAccess of lvalue * expr brace

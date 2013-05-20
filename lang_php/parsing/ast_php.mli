@@ -372,7 +372,6 @@ and lvalue2 =
   (*x: lvaluebis constructors *)
     | This of tok
     | VArrayAccess of lvalue * expr option bracket
-    | VArrayAccessXhp of expr * expr option bracket
   (*x: lvaluebis constructors *)
     | VBrace       of tok    * expr brace
     | VBraceAccess of lvalue * expr brace

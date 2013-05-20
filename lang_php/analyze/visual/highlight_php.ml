@@ -586,7 +586,7 @@ let visit_toplevel ~tag prefs  hentities (toplevel, toks) =
       | Indirect (_, _)
       | VBraceAccess (_, _)
       | VBrace (_, _)
-      | VArrayAccessXhp (_, _) ->
+        ->
           k x
     );
 

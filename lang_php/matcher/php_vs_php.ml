@@ -804,15 +804,6 @@ let rec m_variable a b =
     )
     ))
 
-  | A.VArrayAccessXhp(a1, a2), B.VArrayAccessXhp(b1, b2) ->
-    m_expr a1 b1 >>= (fun (a1, b1) ->
-    (m_bracket (m_option m_expr)) a2 b2 >>= (fun (a2, b2) ->
-    return (
-       A.VArrayAccessXhp(a1, a2),
-       B.VArrayAccessXhp(b1, b2)
-    )
-    ))
-
 
   | A.VBrace(a1, a2), B.VBrace(b1, b2) ->
     m_tok a1 b1 >>= (fun (a1, b1) ->
@@ -949,7 +940,6 @@ let rec m_variable a b =
   | A.Var _, _
   | A.This _, _
   | A.VArrayAccess _, _
-  | A.VArrayAccessXhp _, _
   | A.VBrace _, _
   | A.VBraceAccess _, _
   | A.Indirect _, _

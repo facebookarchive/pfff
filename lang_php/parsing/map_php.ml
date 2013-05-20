@@ -531,10 +531,6 @@ and map_variable x =
       let v1 = map_lvalue v1
       and v2 = map_bracket (map_of_option map_expr) v2
       in VArrayAccess ((v1, v2))
-  | VArrayAccessXhp ((v1, v2)) ->
-      let v1 = map_expr v1
-      and v2 = map_bracket (map_of_option map_expr) v2
-      in VArrayAccessXhp ((v1, v2))
   | VBrace ((v1, v2)) ->
       let v1 = map_tok v1 and v2 = map_brace map_expr v2 in
       VBrace ((v1, v2))

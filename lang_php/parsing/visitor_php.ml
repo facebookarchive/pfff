@@ -583,8 +583,6 @@ and v_variable x =
   | This v1 -> let v1 = v_tok v1 in ()
   | VArrayAccess ((v1, v2)) ->
       let v1 = v_expr v1 and v2 = v_bracket (v_option v_expr) v2 in ()
-  | VArrayAccessXhp ((v1, v2)) ->
-      let v1 = v_expr v1 and v2 = v_bracket (v_option v_expr) v2 in ()
   | VBrace ((v1, v2)) -> let v1 = v_tok v1 and v2 = v_brace v_expr v2 in ()
   | VBraceAccess ((v1, v2)) ->
       let v1 = v_lvalue v1 and v2 = v_brace v_expr v2 in ()

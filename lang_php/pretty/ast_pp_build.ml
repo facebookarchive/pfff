@@ -587,10 +587,6 @@ and lvalue2 env = function
       let lv = lvalue env lv in
       let e = opt expr env e in
       A.Array_get (lv, e)
-  | VArrayAccessXhp (e1, (_, e2, _)) ->
-      let e1 = expr env e1 in
-      let e2 = opt expr env e2 in
-      A.Array_get (e1, e2)
   | VBrace (_, (_, e, _)) ->
       A.Call (A.Id "eval_var", [expr env e])
   | VBraceAccess (lv, (_, e, _)) ->
