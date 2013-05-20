@@ -829,15 +829,6 @@ let rec m_variable a b =
        B.Indirect(b1, b2)
     )
     ))
-  | A.VQualifier(a1, a2), B.VQualifier(b1, b2) ->
-    m_qualifier a1 b1 >>= (fun (a1, b1) ->
-    m_lvalue a2 b2 >>= (fun (a2, b2) ->
-    return (
-       A.VQualifier(a1, a2),
-       B.VQualifier(b1, b2)
-    )
-    ))
-
 
   | A.FunCallSimple(a2, a3), B.FunCallSimple(b2, b3) ->
     (* iso on function name *)
@@ -875,7 +866,6 @@ let rec m_variable a b =
   | A.VBrace _, _
   | A.VBraceAccess _, _
   | A.Indirect _, _
-  | A.VQualifier _, _
   | A.FunCallSimple _, _
   | A.MethodCallSimple _, _
   | A.StaticMethodCallSimple _, _

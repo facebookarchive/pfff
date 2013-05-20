@@ -445,13 +445,6 @@ and lvalue2 =
     (* on the left of var *)
     | Indirect  of lvalue * indirect
   (*x: lvaluebis constructors *)
-    (* Note that even if A::$v['fld'] was parsed in the grammar
-     * as a Qualifier(A, ArrayAccess($v, 'fld') we
-     * generate a ArrayAccess(Qualifier(A, $v), 'fld').
-     * todo? could merge 3 cases if qualifier allow some dname.
-     *)
-    | VQualifier of qualifier * lvalue
-  (*x: lvaluebis constructors *)
     | FunCallSimple of name                      * argument comma_list paren
   (*x: lvaluebis constructors *)
     (* note that can be a late static call since php 5.3 *)

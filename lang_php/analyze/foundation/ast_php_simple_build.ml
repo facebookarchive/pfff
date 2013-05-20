@@ -453,10 +453,6 @@ and lvalue2 env = function
       A.Call (A.Id ((A.builtin "eval_var", wrap tok)), [expr env e])
   | Indirect (e, (Dollar tok)) ->
       A.Call (A.Id (A.builtin "eval_var", wrap tok), [lvalue env e])
-  | VQualifier (q, v)  ->
-      let (_, tok) = q in
-      A.Class_get (A.Id (qualifier env q),
-                  A.Call (A.Id (A.builtin "eval_var", wrap tok),[lvalue env v]))
   | FunCallSimple (f, (tok, args, _)) ->
       let f = name env f in
       let args = comma_list args in

@@ -594,8 +594,6 @@ and v_variable x =
       let v2 = v_name v2
       and v3 = v_arguments v3 in
       ()
-  | VQualifier ((v1, v2)) ->
-      let v1 = v_qualifier v1 and v2 = v_lvalue v2 in ()
   | StaticMethodCallSimple ((v1, v2, v3)) ->
       let v1 = v_qualifier v1
       and v2 = v_name v2
