@@ -246,6 +246,14 @@ and v_expr (x: expr) =
   let k x =  match x with
   | Lv v1 -> let v1 = v_variable v1 in ()
   | Cr v1 -> let v1 = v_class_name_reference2 v1 in ()
+
+  | Id v1 ->
+    v_name v1
+  | IdVar ((v1, v2)) ->
+      let v1 = v_dname v1 and v2 = v_ref Scope_php.v_phpscope v2 in ()
+  | ThisVar v1 -> let v1 = v_tok v1 in ()
+
+
   | Call ((v1, v2)) ->
       let v1 = v_expr v1 and v2 = v_paren (v_comma_list v_argument) v2 in ()
   | ObjGet ((v1, v2, v3)) ->

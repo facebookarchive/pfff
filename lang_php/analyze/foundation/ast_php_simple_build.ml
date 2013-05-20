@@ -193,6 +193,11 @@ and expr env = function
   | Lv lv -> lvalue2 env lv
   | Cr x -> class_name_reference2 env x
 
+  | Id n -> A.Id (name env n)
+  | IdVar (dn, scope) -> A.Id (dname dn)
+  | ThisVar tok -> A.This ("$this", wrap tok)
+
+
   | Call (e, (_lp, args, _rp)) ->
       let e = expr env e in
       let args = comma_list args in

@@ -178,6 +178,10 @@ and expr =
   | Lv of lvalue2
   | Cr of class_name_reference2
 
+  | Id of name
+  | IdVar of dname * Scope_php.phpscope ref
+  | ThisVar of tok
+
   | Call of expr * argument comma_list paren
   | ObjGet of expr * tok (* -> *) * expr
   | ClassGet of class_name_reference * tok (* :: *) * expr

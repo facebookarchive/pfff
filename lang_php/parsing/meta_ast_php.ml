@@ -104,6 +104,16 @@ and vof_expr = function
   | Lv v1 -> let v1 = vof_lvalue2 v1 in Ocaml.VSum (("Lv", [ v1 ]))
   | Cr v1 -> let v1 = vof_class_name_reference2 v1 in Ocaml.VSum (("Cr", [ v1 ]))
 
+  | Id v1 ->
+    let v1 = vof_name v1 in
+    Ocaml.VSum ("Id", [ v1 ])
+  | IdVar ((v1, v2)) ->
+      let v1 = vof_dname v1
+      and v2 = vof_ref Scope_code.vof_scope v2
+      in Ocaml.VSum (("IdVar", [ v1; v2 ]))
+  | ThisVar v1 -> let v1 = vof_tok v1 in Ocaml.VSum (("ThisVar", [ v1 ]))
+
+
   | Call ((v1, v2)) ->
       let v1 = vof_expr v1
       and v2 = vof_paren (vof_comma_list vof_argument) v2

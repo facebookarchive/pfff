@@ -153,6 +153,17 @@ and map_expr (x) =
   let k x =  match x with
   | Lv v1 -> let v1 = map_variable v1 in Lv ((v1))
   | Cr v1 -> let v1 = map_class_name_reference2 v1 in Cr ((v1))
+
+  | Id v1 ->
+    let v1 = map_name v1 in
+    Id v1
+  | IdVar ((v1, v2)) ->
+      let v1 = map_dname v1
+      and v2 = map_of_ref Scope_code.map_scope v2
+      in IdVar ((v1, v2))
+  | ThisVar v1 -> let v1 = map_tok v1 in ThisVar ((v1))
+
+
   | Call ((v1, v2)) ->
       let v1 = map_expr v1
       and v2 = map_paren (map_comma_list map_argument) v2
