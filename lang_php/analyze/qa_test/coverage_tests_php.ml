@@ -107,11 +107,6 @@ let get_all_calls ?(is_directive_to_filter= (fun _ -> false)) =
             Common.push2 (Some str, rp) aref;
 
           k x
-      | MethodCallSimple (var, t1, methname, (lp, args, rp)) ->
-          let str = Ast_php.name methname in
-          Common.push2 (Some str, rp) aref;
-          k x
-
       | StaticMethodCallSimple (qu, methname, (lp, args, rp)) ->
           let str = Ast_php.name methname in
           Common.push2 (Some str, rp) aref;
@@ -127,6 +122,13 @@ let get_all_calls ?(is_directive_to_filter= (fun _ -> false)) =
           Common.push2 (None, tok) aref;
 
           k x;
+
+      | Call (ObjGet(var, t1, Id methname), (lp, args, rp)) ->
+          let str = Ast_php.name methname in
+          Common.push2 (Some str, rp) aref;
+          k x
+
+
       | _ -> k x
     );
   })

@@ -583,12 +583,6 @@ and v_variable x =
       and v2 = v_name v2
       and v3 = v_arguments v3
       in ()
-  | MethodCallSimple ((v1, v2, v3, v4)) ->
-      let v1 = v_lvalue v1
-      and v2 = v_tok v2
-      and v3 = v_name v3
-      and v4 = v_arguments v4
-      in ()
  in
   vin.klvalue (k, all_functions) x
 

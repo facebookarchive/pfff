@@ -449,12 +449,6 @@ and lvalue2 env = function
       let args = comma_list args in
       let args = List.map (argument env) args in
       A.Call (f, args)
-  | MethodCallSimple (e, _, n, (tok, args, _)) ->
-      let f = lvalue env e in
-      let f = A.Obj_get (f, A.Id (name env n)) in
-      let args = comma_list args in
-      let args = List.map (argument env) args in
-      A.Call (f, args)
 
 and argument env = function
   | Arg e -> expr env e

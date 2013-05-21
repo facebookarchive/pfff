@@ -218,6 +218,17 @@ let stat_of_program ?(hooks=default_hooks) h file ast =
       | Call (ClassGet (_, _, _), _args) ->
           inc "static method call Dynamic"
 
+      | Call (ObjGet(lval, _, Id name), xs) ->
+          (* look at lval if simple form *)
+          (match lval with
+          | ThisVar _ -> 
+              inc "method call with $this"
+          | _ -> 
+              inc "method call not $this";
+              hooks.call (!current_node, 
+                         CG.Method (fake, Ast.str_of_name name))
+          )
+
       | Call (Id _, _args) ->
           inc "fun call"
 
@@ -239,16 +250,6 @@ let stat_of_program ?(hooks=default_hooks) h file ast =
       | StaticMethodCallSimple _ -> 
           inc "static method call"
 
-      | MethodCallSimple (lval, _, name, xs) ->
-          (* look at lval if simple form *)
-          (match lval with
-          | ThisVar _ -> 
-              inc "method call with $this"
-          | _ -> 
-              inc "method call not $this";
-              hooks.call (!current_node, 
-                         CG.Method (fake, Ast.str_of_name name))
-          )
 
 
       | _ -> ()

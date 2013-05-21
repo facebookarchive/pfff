@@ -474,6 +474,12 @@ let visit_toplevel ~tag prefs  hentities (toplevel, toks) =
           let ii = Lib_parsing_php.ii_of_any (Expr lval) in
           ii +> List.iter (fun info -> tag info PointerCall);
 
+      | Call (ObjGet(lval, tok, Id name), args) ->
+          let info = Ast.info_of_name name in
+          tag info (Method (Use2 fake_no_use2));
+          k expr
+
+
       | Call (e, args) ->
           (* function pointer call !!! put in big font *)
           let ii = Lib_parsing_php.ii_of_any (Expr e) in
@@ -578,10 +584,6 @@ let visit_toplevel ~tag prefs  hentities (toplevel, toks) =
           highlight_funcall_simple ~tag ~hentities f args info;
           k x
 
-      | MethodCallSimple (lval, tok, name, args) ->
-          let info = Ast.info_of_name name in
-          tag info (Method (Use2 fake_no_use2));
-          k x
 
       | StaticMethodCallSimple (qualif, name, args) ->
           let info = Ast.info_of_name name in

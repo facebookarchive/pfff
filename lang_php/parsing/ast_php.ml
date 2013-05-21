@@ -424,7 +424,6 @@ and lvalue2 =
     | Var of dname *  Scope_php.phpscope ref
     | FunCallSimple of name                      * argument comma_list paren
     | StaticMethodCallSimple of qualifier * name * argument comma_list paren
-    | MethodCallSimple of lvalue * tok * name    * argument comma_list paren
 
   (*x: type lvalue aux *)
     and argument =

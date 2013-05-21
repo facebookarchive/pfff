@@ -220,7 +220,6 @@ let add_uses id ast pr db =
           k x
 
       | StaticMethodCallSimple(_, name, args)
-      | MethodCallSimple (_, _, name, args)
         ->
           let str = Ast_php.name name in
           (* use a different namespace than func? *)
@@ -243,7 +242,6 @@ let add_uses id ast pr db =
               (* can't do much ... *)
               | LateStatic _ -> ()
               )
-          | MethodCallSimple _
           | _ -> raise Impossible
           );
 
@@ -265,6 +263,7 @@ let add_uses id ast pr db =
           end;
           k x
 
+      | Call (ObjGet (_, _, Id name), args)
       | Call (ClassGet (_, _, Id name), args)
         ->
           let str = Ast_php.name name in

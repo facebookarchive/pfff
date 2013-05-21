@@ -524,9 +524,9 @@ let callees_of_any any =
 
 let method_callees_of_any any =
   V.do_visit_with_ref (fun aref -> { V.default_visitor with
-    V.klvalue = (fun (k,vx) x ->
+    V.kexpr = (fun (k,vx) x ->
       match x with
-      | MethodCallSimple (var, t1, methname, args) ->
+      | Ast_php.Call (ObjGet(var, t1, Id methname), args) ->
           Common.push2 (N.name_to_nameS_wrap methname) aref;
           k x
       | _ ->

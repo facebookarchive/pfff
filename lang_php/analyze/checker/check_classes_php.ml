@@ -197,28 +197,6 @@ let visit_and_check  find_entity prog =
           );
           k x
 
-      | MethodCallSimple (lval, _tok, name, args) ->
-          (* if one calls a method via $this, then it's quite easy to check
-           * the arity (eletuchy's idea?).
-           * Being complete and handling any method calls like $o->foo()
-           * requires to know what is the type of $o which is quite
-           * complicated ... so let's skip that for now.
-           *
-           * todo: special case also id(new ...)-> ?
-           *)
-          (match lval, !in_class with
-          | ThisVar _, Some (aclass, is_abstract) ->
-              let amethod = Ast.name name in
-              check_method_call (MethodCall is_abstract)
-                (aclass, amethod) (name, args) find_entity
-          (* wtf? use of $this outside class ??? *)
-          | _, None -> ()
-          (* todo: need dataflow ... *)
-          | _, _ -> ()
-          );
-          k x
-
-
       | _ -> k x
     );
 
@@ -262,6 +240,28 @@ let visit_and_check  find_entity prog =
           (* todo: need dataflow ... *)
           | _, _ -> ()
           )
+
+      | Call (ObjGet(lval, _tok, Id name), args) ->
+          (* if one calls a method via $this, then it's quite easy to check
+           * the arity (eletuchy's idea?).
+           * Being complete and handling any method calls like $o->foo()
+           * requires to know what is the type of $o which is quite
+           * complicated ... so let's skip that for now.
+           *
+           * todo: special case also id(new ...)-> ?
+           *)
+          (match lval, !in_class with
+          | ThisVar _, Some (aclass, is_abstract) ->
+              let amethod = Ast.name name in
+              check_method_call (MethodCall is_abstract)
+                (aclass, amethod) (name, args) find_entity
+          (* wtf? use of $this outside class ??? *)
+          | _, None -> ()
+          (* todo: need dataflow ... *)
+          | _, _ -> ()
+          );
+          k x
+
 
 (*
       | Call _ ->

@@ -808,20 +808,8 @@ let rec m_variable a b =
        B.StaticMethodCallSimple(b1, b2, b3)
     )
     )))
-  | A.MethodCallSimple(a1, a2, a3, a4), B.MethodCallSimple(b1, b2, b3, b4) ->
-    m_lvalue a1 b1 >>= (fun (a1, b1) ->
-    m_tok a2 b2 >>= (fun (a2, b2) ->
-    m_name a3 b3 >>= (fun (a3, b3) ->
-    m_paren (m_list__m_argument) a4 b4 >>= (fun (a4, b4) ->
-    return (
-       A.MethodCallSimple(a1, a2, a3, a4),
-       B.MethodCallSimple(b1, b2, b3, b4)
-    )
-    ))))
-
   | A.Var _, _
   | A.FunCallSimple _, _
-  | A.MethodCallSimple _, _
   | A.StaticMethodCallSimple _, _
    -> fail ()
 
