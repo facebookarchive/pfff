@@ -30,13 +30,13 @@ module M = Map_php
  *
  * If you want a really unsugared AST you should use pil.ml.
  *
- * todo? turns out people also use self:: or parent:: or static::
- * in strings, to pass callbacks, so may have to unsugar the strings
- * too ?
- *
  * note that even if people use self::foo(), the foo() method may
  * actually not be in self but possibly in its parents; so we need
  * a lookup ancestor anyway ...
+ *
+ * todo? turns out people also use self:: or parent:: or static::
+ * in strings, to pass callbacks, so may have to unsugar the strings
+ * too?
  *
  * todo: have a unsugar_traits() that do the inlining of the mixins.
  * This requires an entity_finder.
@@ -53,8 +53,6 @@ module M = Map_php
  *)
 let resolve_class_name qu in_class =
   match qu, in_class with
-  | (ClassName (name, args)), _ -> (* TODO: Handle type args? *)
-      name, Ast.info_of_name name
   | (Self (tok1)), Some (name, _parent) ->
       name, tok1
   | (Parent (tok1)), (Some (_, Some parent)) ->
@@ -75,6 +73,7 @@ let resolve_class_name qu in_class =
    *)
   | (LateStatic tok1), _ ->
       failwith "LateStatic"
+  | _ -> raise Impossible
 
 let contain_self_or_parent def =
   let aref = ref false in
@@ -83,6 +82,11 @@ let contain_self_or_parent def =
       match qu with
       | Self _ | Parent _ -> aref := true
       | LateStatic _ | ClassName _ -> ()
+    );
+    V.kexpr = (fun (k, bigf) x ->
+      match x with
+      | IdSelf _ | IdParent _ -> aref := true
+      | _ -> k x
     );
     }
   in
@@ -124,7 +128,8 @@ let unsugar_self_parent_any2 any =
     M.kclass_name_or_kwd = (fun (k, bigf) qu ->
       match qu with
       | LateStatic tok -> LateStatic tok
-      | ClassName _ | Self _ | Parent _ ->
+      | ClassName (name, args) ->   ClassName (name, args)
+      | Self _ | Parent _ ->
           let (unsugar_name, tok_orig) =
             resolve_class_name qu !in_class in
           let name' =
@@ -134,7 +139,30 @@ let unsugar_self_parent_any2 any =
             | XhpName (xs, _info_of_referenced_class) ->
                 XhpName (xs, tok_orig)
           in
-          ClassName (name', None) (* TODO: add type args? *)
+          let type_args = None in
+          ClassName (name', type_args)
+    );
+    M.kexpr = (fun (k, bigf) x ->
+      match x with
+      | IdSelf tok | IdParent tok ->
+        let qu =
+          match x with
+          | IdSelf x -> Self x
+          | IdParent x -> Parent x 
+          | _ -> raise Impossible
+        in
+        let (unsugar_name, tok_orig) =
+          resolve_class_name qu !in_class in
+        let name' =
+          match unsugar_name with
+          | Name (s, _info_of_referenced_class) ->
+            Name (s, tok_orig)
+          | XhpName (xs, _info_of_referenced_class) ->
+            XhpName (xs, tok_orig)
+        in
+        let _TODOtype_args = None in
+        Id (name')
+      | _ -> k x
     );
   })
   in
