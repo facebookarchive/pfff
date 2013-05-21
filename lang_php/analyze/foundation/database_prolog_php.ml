@@ -47,7 +47,6 @@ module CG = Callgraph_php2
  *  - get rid of berkeley db prerequiste, use ast_php_simple
  *  - precise datagraph
  *  - types, refs
- *  - ??
  *
  * For more information look at h_program-lang/database_code.pl
  * and its many predicates.
@@ -154,29 +153,6 @@ let add_uses id ast pr db =
 
   let in_lvalue_pos = ref false in
 
-  (* to fatorize code between NewLv and New *)
-  let docall_class classref =
-    match classref with
-    | Id name ->(* TODO: currently ignoring type args *)
-
-        let str = Ast_php.name name in
-        (* use a different namespace than func? *)
-        if not (Hashtbl.mem h str)
-        then begin
-          Hashtbl.replace h str true;
-          pr (spf "docall(%s, '%s', class)."
-                (name_id id db) str)
-        end;
-        
-      (* todo: do something here *)
-    | IdSelf _
-    | IdParent _
-    | IdStatic _ ->
-        ()
-
-    | _ -> ()
-  in
-
   let visitor = V.mk_visitor { V.default_visitor with
 
     V.kexpr = (fun (k, vx) x ->
@@ -241,7 +217,7 @@ let add_uses id ast pr db =
           end;
 
           (match x with
-          | Call (ClassGet( qu,_tok, Id name), args) ->
+          | Call (ClassGet(qu,_tok, Id name), args) ->
               (match qu with
               | Id (name2) ->
                   pr (spf "docall(%s, ('%s','%s'), method)."
@@ -300,8 +276,29 @@ let add_uses id ast pr db =
 
       | New (_, classref, args)
       | AssignNew (_, _, _, _, classref, args) ->
-          docall_class classref;
-          k x
+
+        (match classref with
+        | Id name ->(* TODO: currently ignoring type args *)
+
+          let str = Ast_php.name name in
+        (* use a different namespace than func? *)
+          if not (Hashtbl.mem h str)
+          then begin
+            Hashtbl.replace h str true;
+            pr (spf "docall(%s, '%s', class)."
+                  (name_id id db) str)
+          end;
+          
+        (* todo: do something here *)
+        | IdSelf _
+        | IdParent _
+        | IdStatic _ ->
+          ()
+
+        | _ -> ()
+        );
+        k x
+
       | Yield _ | YieldBreak _ ->
           pr (spf "yield(%s)." (name_id id db));
           k x
