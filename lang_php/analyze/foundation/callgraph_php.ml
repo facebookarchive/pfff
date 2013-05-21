@@ -546,19 +546,20 @@ let method_callees_of_any any =
  *)
 let static_method_callees_of_any any =
   V.do_visit_with_ref (fun aref -> { V.default_visitor with
-    V.klvalue = (fun (k,vx) x ->
+    V.kexpr = (fun (k,vx) x ->
       match x with
-      | StaticMethodCallSimple (qu, methname, args) ->
+      | Ast_php.Call (ClassGet(qu, _tok, Id methname), args) ->
           let sclass_opt =
-            match fst qu with
-            | ClassName (classname, _) ->
+            match qu with
+            | Id (classname) ->
                 Some (Ast.name classname)
 
-            | Self _ | Parent _ ->
+            | IdSelf _ | IdParent _ ->
                 failwith "use Unsugar_php.unsugar_self_parent"
-            | LateStatic _ ->
+            | IdStatic _ ->
                 (* pr2 "LateStatic"; *)
                 None
+            | _ -> None
           in
           sclass_opt +> Common.do_option (fun sclass ->
           (match methname with

@@ -528,11 +528,6 @@ and map_variable x =
       let v2 = map_name v2
       and v3 = map_paren (map_comma_list map_argument) v3
       in FunCallSimple ((v2, v3))
-  | StaticMethodCallSimple ((v1, v2, v3)) ->
-      let v1 = map_qualifier v1
-      and v2 = map_name v2
-      and v3 = map_paren (map_comma_list map_argument) v3
-      in StaticMethodCallSimple ((v1, v2, v3))
   in
   vin.klvalue (k, all_functions) x
 

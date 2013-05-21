@@ -219,34 +219,6 @@ let add_uses id ast pr db =
           end;
           k x
 
-      | StaticMethodCallSimple(_, name, args)
-        ->
-          let str = Ast_php.name name in
-          (* use a different namespace than func? *)
-          if not (Hashtbl.mem h str)
-          then begin
-            Hashtbl.replace h str true;
-            (* todo: imprecise, need julien's precise callgraph *)
-            pr (spf "docall(%s, '%s', method)." (name_id id db) str)
-          end;
-          (match x with
-          | StaticMethodCallSimple ((qu,_tok), name, args) ->
-              (match qu with
-              | ClassName (name2, _) ->
-                  pr (spf "docall(%s, ('%s','%s'), method)."
-                           (name_id id db) (Ast_php.name name2) str)
-              (* this should have been desugared while building the
-               * code database, except for traits code ...
-               *)
-              | Self _| Parent _
-              (* can't do much ... *)
-              | LateStatic _ -> ()
-              )
-          | _ -> raise Impossible
-          );
-
-          k x
-
       | _ -> k x
     );
     V.kexpr = (fun (k, vx) x ->
@@ -273,7 +245,26 @@ let add_uses id ast pr db =
             Hashtbl.replace h str true;
             (* todo: imprecise, need julien's precise callgraph *)
             pr (spf "docall(%s, '%s', method)." (name_id id db) str)
-          end
+          end;
+
+          (match x with
+          | Call (ClassGet( qu,_tok, Id name), args) ->
+              (match qu with
+              | Id (name2) ->
+                  pr (spf "docall(%s, ('%s','%s'), method)."
+                           (name_id id db) (Ast_php.name name2) str)
+              (* this should have been desugared while building the
+               * code database, except for traits code ...
+               *)
+              | IdSelf _| IdParent _
+              (* can't do much ... *)
+              | IdStatic _ -> ()
+              | _ -> ()
+              )
+          | _ -> raise Impossible
+          );
+
+          k x
 
       | ObjGet (lval, tok, Id name) ->
           let str = Ast_php.name name in

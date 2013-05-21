@@ -467,6 +467,8 @@ let visit_toplevel ~tag prefs  hentities (toplevel, toks) =
           k expr
 
       | Call (ClassGet (lval, _, Id name), _args) ->
+          let info = Ast.info_of_name name in
+          tag info (StaticMethod (Use2 fake_no_use2));
           k expr
 
       | Call (ClassGet (lval, _, _var), _args)
@@ -585,10 +587,6 @@ let visit_toplevel ~tag prefs  hentities (toplevel, toks) =
           k x
 
 
-      | StaticMethodCallSimple (qualif, name, args) ->
-          let info = Ast.info_of_name name in
-          tag info (StaticMethod (Use2 fake_no_use2));
-          k x
     );
 
     (* -------------------------------------------------------------------- *)

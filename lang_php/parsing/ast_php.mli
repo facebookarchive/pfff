@@ -365,7 +365,6 @@ and class_name_reference = expr
 and lvalue2 =
     | Var of dname * Scope_php.phpscope ref
     | FunCallSimple of name                      * argument comma_list paren
-    | StaticMethodCallSimple of qualifier * name * argument comma_list paren
 
   (*x: type lvalue aux *)
     and argument =

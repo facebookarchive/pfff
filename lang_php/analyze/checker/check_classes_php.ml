@@ -177,26 +177,6 @@ let visit_and_check  find_entity prog =
     );
     V.klvalue = (fun (k,vx) x ->
       match x with
-      | StaticMethodCallSimple (qu, name, args) ->
-          (match fst qu with
-          | ClassName (classname,_) ->
-              let aclass = Ast.name classname in
-              let amethod = Ast.name name in
-              check_method_call StaticCall
-                (aclass, amethod) (name, args) find_entity
-
-          | (Self _ | Parent _) ->
-              if !in_trait
-              (* checking for right method name should be done at use time, it
-               * can't be done here, so let's accept any method call here.
-               *)
-              then ()
-              else failwith "check_classes_php: call unsugar_self_parent()"
-          (* not much we can do? *)
-          | LateStatic _ -> ()
-          );
-          k x
-
       | _ -> k x
     );
 
@@ -228,9 +208,33 @@ let visit_and_check  find_entity prog =
           (* can't do much *)
           k x
 
+
       | ClassGet (Id classname, tok, IdVar (dname, _scope)) ->
           check_member_access StaticAccess
             (Ast.name classname, Ast.dname dname) tok find_entity
+
+      | Call (ClassGet(qu, _tok, Id name), args) ->
+          (match qu with
+          | Id (classname) ->
+              let aclass = Ast.name classname in
+              let amethod = Ast.name name in
+              check_method_call StaticCall
+                (aclass, amethod) (name, args) find_entity
+
+          | (IdSelf _ | IdParent _) ->
+              if !in_trait
+              (* checking for right method name should be done at use time, it
+               * can't be done here, so let's accept any method call here.
+               *)
+              then ()
+              else failwith "check_classes_php: call unsugar_self_parent()"
+          (* not much we can do? *)
+          | IdStatic _ -> ()
+          | _ -> ()
+          );
+          k x
+
+
 
       | ObjGet (lval, tok, Id name) ->
           let field = Ast.name name in
