@@ -230,12 +230,18 @@ let add_uses id ast pr db =
               | IdStatic _ -> ()
               | _ -> ()
               )
+          | Call (ObjGet (_, _, Id name), args) ->
+            ()
           | _ -> raise Impossible
           );
 
+          (* todo: don't recurse on x, because we don't want to
+           * process the ObjGet and ClassGet
+           *)
           k x
 
 
+      (* the context should be anything except Call *)
       | ClassGet(qu, _tok, Id cstname) ->
          (match qu with
          | Id (classname) ->
@@ -252,6 +258,7 @@ let add_uses id ast pr db =
          );
         k x
 
+      (* the context should be anything except Call *)
       | ObjGet (lval, tok, Id name) ->
           let str = Ast_php.name name in
           (* use a different namespace than func? *)
