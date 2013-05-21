@@ -243,13 +243,11 @@ let get_returns_any any =
 
 let get_vars_any any = 
   V.do_visit_with_ref (fun aref -> { V.default_visitor with
-    V.klvalue = (fun (k,vx) x ->
-      match x with
-      | Var (dname, _scope) ->
-          Common.push2 dname aref
-    );
     V.kexpr = (fun (k, vx) x ->
       match x with
+      | IdVar (dname, _scope) ->
+          Common.push2 dname aref
+
       (* todo? sure ?? *)
       | Lambda (l_use, def) ->
           l_use +> Common.do_option (fun (_tok, xs) ->
@@ -355,7 +353,7 @@ let get_vars_assignements_any recursor =
             (* for now we handle only simple direct assignement to simple
              * variables *)
             (match lval with
-            | Lv (Var (dname, _scope)) ->
+            | IdVar (dname, _scope) ->
                 let s = Ast.dname dname in
                 Common.push2 (s, e) aref;
             | _ ->

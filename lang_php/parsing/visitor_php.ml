@@ -61,7 +61,6 @@ type visitor_in = {
   kexpr: (expr  -> unit) * visitor_out -> expr  -> unit;
   kstmt: (stmt  -> unit) * visitor_out -> stmt  -> unit;
   ktop: (toplevel -> unit) * visitor_out -> toplevel  -> unit;
-  klvalue: (lvalue2 -> unit) * visitor_out -> lvalue2  -> unit;
   kconstant: (constant -> unit) * visitor_out -> constant  -> unit;
   kscalar: (scalar -> unit) * visitor_out -> scalar  -> unit;
   kencaps: (encaps -> unit) * visitor_out -> encaps -> unit;
@@ -115,7 +114,6 @@ let default_visitor =
   { kexpr   = (fun (k,_) x -> k x);
     kstmt   = (fun (k,_) x -> k x);
     ktop    = (fun (k,_) x -> k x);
-    klvalue    = (fun (k,_) x -> k x);
     kconstant    = (fun (k,_) x -> k x);
     kscalar    = (fun (k,_) x -> k x);
     kencaps = (fun (k,_) x -> k x);
@@ -240,7 +238,6 @@ and v_fully_qualified_class_name v =
 and v_expr (x: expr) =
   (* tweak *)
   let k x =  match x with
-  | Lv v1 -> let v1 = v_variable v1 in ()
   | Cr v1 -> let v1 = v_class_name_reference2 v1 in ()
 
   | Id v1 ->
@@ -569,13 +566,6 @@ and v_arguments x =
     v_paren (v_comma_list v_argument) x
   in
   vin.karguments (k, all_functions) x
-
-and v_variable x =
-  let k x = match x with
-  | Var ((v1, v2)) ->
-      let v1 = v_dname v1 and v2 = v_ref Scope_php.v_phpscope v2 in ()
- in
-  vin.klvalue (k, all_functions) x
 
 and v_argument x =
   let rec k = function
@@ -1057,7 +1047,6 @@ and v_entity = function
   | MiscE v1 -> let v1 = v_list v_info v1 in ()
 
 and v_any = function
-  | Lvalue v1 -> let v1 = v_variable v1 in ()
   | Expr v1 -> let v1 = v_expr v1 in ()
   | Stmt2 v1 -> let v1 = v_stmt v1 in ()
   | Toplevel v1 -> let v1 = v_toplevel v1 in ()

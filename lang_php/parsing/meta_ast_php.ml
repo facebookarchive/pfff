@@ -101,7 +101,6 @@ and vof_ptype =
   | ObjectTy -> Ocaml.VSum (("ObjectTy", []))
 
 and vof_expr = function
-  | Lv v1 -> let v1 = vof_lvalue2 v1 in Ocaml.VSum (("Lv", [ v1 ]))
   | Cr v1 -> let v1 = vof_class_name_reference2 v1 in Ocaml.VSum (("Cr", [ v1 ]))
 
   | Id v1 ->
@@ -515,11 +514,6 @@ and vof_xhp_body =
   | XhpNested v1 ->
       let v1 = vof_xhp_html v1 in Ocaml.VSum (("XhpNested", [ v1 ]))
 and vof_lvalue x = vof_expr x
-and vof_lvalue2 = function
-  | Var ((v1, v2)) ->
-      let v1 = vof_dname v1
-      and v2 = vof_ref Scope_code.vof_scope v2
-      in Ocaml.VSum (("Var", [ v1; v2 ]))
 and vof_argument =
   function
   | Arg v1 -> let v1 = vof_expr v1 in Ocaml.VSum (("Arg", [ v1 ]))
@@ -1145,7 +1139,6 @@ and vof_entity =
 
 and vof_any =
   function
-  | Lvalue v1 -> let v1 = vof_lvalue2 v1 in Ocaml.VSum (("Lvalue", [ v1 ]))
   | Expr v1 -> let v1 = vof_expr v1 in Ocaml.VSum (("Expr", [ v1 ]))
   | Stmt2 v1 -> let v1 = vof_stmt v1 in Ocaml.VSum (("Stmt2", [ v1 ]))
   | Toplevel v1 ->

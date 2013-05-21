@@ -1165,7 +1165,7 @@ encaps_var_offset:
      let cst = String $1 in (* will not have enclosing "'"  as usual *)
      Sc (C cst)
    }
- | T_VARIABLE	{ Lv (Var (DName $1, Ast.noScope())) }
+ | T_VARIABLE	{ IdVar (DName $1, Ast.noScope()) }
  | T_NUM_STRING	{
      (* the original php lexer does not return some numbers for
       * offset of array access inside strings. Not sure why ...

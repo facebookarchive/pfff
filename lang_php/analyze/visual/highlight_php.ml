@@ -510,6 +510,38 @@ let visit_toplevel ~tag prefs  hentities (toplevel, toks) =
           tag t2 BadSmell
 
 
+      | IdVar (dname, aref) ->
+          (* see check_variables_php.ml *)
+
+          let info = Ast.info_of_dname dname in
+          (match !aref with
+          | S.Local ->
+              tag info (Local Use)
+          | S.Param ->
+              tag info (Parameter Use)
+
+          | S.Class ->
+              tag info (Field (Use2 fake_no_use2))
+
+          | S.Global | S.Closed ->
+              (* TODO, need global_used table *)
+              tag info (Global (Use2 fake_no_use2));
+
+          | S.Static ->
+              (* less: could invent a Static in highlight_code ? *)
+              tag info (Global (Use2 fake_no_use2))
+
+          | S.ListBinded
+          | S.LocalIterator
+          | S.LocalExn ->
+              tag info (Local Use)
+
+          | S.NoScope ->
+              tag info (NoType)
+          )
+
+
+
       | _ ->
           ()
       )
@@ -552,40 +584,6 @@ let visit_toplevel ~tag prefs  hentities (toplevel, toks) =
           k x
     );
 
-    (* -------------------------------------------------------------------- *)
-    V.klvalue = (fun (k,vx) x ->
-      match x with
-      | Var (dname, aref) ->
-          (* see check_variables_php.ml *)
-
-          let info = Ast.info_of_dname dname in
-          (match !aref with
-          | S.Local ->
-              tag info (Local Use)
-          | S.Param ->
-              tag info (Parameter Use)
-
-          | S.Class ->
-              tag info (Field (Use2 fake_no_use2))
-
-          | S.Global | S.Closed ->
-              (* TODO, need global_used table *)
-              tag info (Global (Use2 fake_no_use2));
-
-          | S.Static ->
-              (* less: could invent a Static in highlight_code ? *)
-              tag info (Global (Use2 fake_no_use2))
-
-          | S.ListBinded
-          | S.LocalIterator
-          | S.LocalExn ->
-              tag info (Local Use)
-
-          | S.NoScope ->
-              tag info (NoType)
-          )
-
-    );
 
     (* -------------------------------------------------------------------- *)
     V.kconstant = (fun (k, vx) e ->

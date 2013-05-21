@@ -387,7 +387,6 @@ and stmt_and_def env st acc = stmt env st acc
 
 and expr env = function
   | Sc sc -> scalar env sc
-  | Lv lv -> lvalue2 env lv
   | Cr x -> class_name_reference2 env x
   | Binary (e1, (bop, _), e2) ->
       let e1 = expr env e1 in
@@ -579,9 +578,6 @@ and class_name_reference2 env = function
    | ClassNameRefDynamic _ -> raise (TodoConstruct "ClassNameRefDynamic")
 
 and lvalue env x = expr env x
-
-and lvalue2 env = function
-  | Var (dn, scope) -> A.Id (dname dn)
 
 and argument env = function
   | Arg e -> expr env e

@@ -3,7 +3,6 @@ open Ast_php
 (* hooks *)
 type visitor_in = {
   kexpr: (expr  -> expr) * visitor_out -> expr  -> expr;
-  klvalue: (lvalue2  -> lvalue2) * visitor_out -> lvalue2  -> lvalue2;
   kstmt_and_def: 
    (stmt_and_def -> stmt_and_def) * visitor_out -> stmt_and_def ->stmt_and_def;
   kstmt: (stmt -> stmt) * visitor_out -> stmt -> stmt;
@@ -20,7 +19,6 @@ and visitor_out = {
   vstmt_and_def: stmt_and_def -> stmt_and_def;
   vprogram: program -> program;
   vexpr: expr -> expr;
-  vlvalue: lvalue2 -> lvalue2;
   vxhpattrvalue: xhp_attr_value -> xhp_attr_value;
   vany: any -> any;
 }

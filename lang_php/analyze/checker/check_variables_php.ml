@@ -913,15 +913,16 @@ let check_and_annotate_program2 find_entity prog =
   (* annotating the scope of Var *)
   (Ast_php.Program prog) +>
     Visitor_php.mk_visitor { Visitor_php.default_visitor with
-    Visitor_php.klvalue = (fun (k, _) x ->
+    Visitor_php.kexpr = (fun (k, _) x ->
       match x with
-      | Ast_php.Var (dname, aref) ->
+      | Ast_php.IdVar (dname, aref) ->
           let tok = Ast_php.info_of_dname dname in
           (try
             aref := Hashtbl.find env.scope_vars_used tok
           (* keep NoScope *)
           with Not_found -> ()
           )
+      | _ -> k x
     );
   };
   ()

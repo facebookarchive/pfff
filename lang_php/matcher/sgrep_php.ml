@@ -93,25 +93,6 @@ let sgrep ?(case_sensitive=false) ~hook pattern file =
      * types inside a recursive types, we need to do that
      * (for now lvalue and xhp_html).
      *)
-    | Expr (Lv pattern_var) ->
-        { V.default_visitor with
-          V.klvalue = (fun (k, _) x ->
-            let matches_with_env =  
-              Matching_php.match_v_v pattern_var x
-            in 
-            if matches_with_env = []
-            then k x
-            else begin
-              (* could also recurse to find nested matching inside
-               * the matched code itself.
-               *)
-              let matched_tokens = Lib_parsing_php.ii_of_any (Lvalue x) in
-              matches_with_env +> List.iter (fun env -> 
-                hook env matched_tokens
-              )
-            end
-          );
-        }
     | Expr (XhpHtml xhp) ->
         { V.default_visitor with
           V.kxhp_html = (fun (k, _) x ->

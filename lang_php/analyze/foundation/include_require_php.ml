@@ -81,7 +81,7 @@ let rec increq_expr_of_expr e =
   (* generated from ./ffi -dump_php_ml ../tests/require_classic.php *)
   | (Binary(
       ((
-        (ArrayGet(Lv(Var(darray, scope_ref)),
+        (ArrayGet(IdVar(darray, scope_ref),
                      (i_4, Some((Sc(C(String((sfld, i_5)))))), i_7))
         ))), (BinaryConcat, i_10),
       (Sc(C(String((sfilename, i_11)))))))
@@ -90,7 +90,7 @@ let rec increq_expr_of_expr e =
 
   (* generated from ./ffi -dump_php_ml ../tests/require_classic_bis.php *)
   | (Binary(
-      (Lv((Var(dvar, scope_ref)))),
+      (IdVar(dvar, scope_ref)),
       (BinaryConcat, i_5),
       (Sc(C(String((sfilename, i_6))))
       )))
@@ -101,7 +101,7 @@ let rec increq_expr_of_expr e =
   | (Binary(
       (Binary(
         (ArrayGet(
-            (Lv(Var(darray, _scope))),
+            (IdVar(darray, _scope)),
             (i_4,
             Some((Sc(C(String((sfld, i_5)))))),
             i_7))
@@ -203,7 +203,7 @@ let rec increq_expr_of_expr e =
   (* ./ffi -dump_php_ml ../tests/require_classic_bis2.php *)
   | (Sc(
       Guil(i_3,
-          [EncapsVar(Lv(Var(dname, _scope)));
+          [EncapsVar(IdVar(dname, _scope));
            EncapsString((sfilename, i_6))], i_7)))
     ->
       ConcatVar (dname, sfilename)
@@ -213,7 +213,7 @@ let rec increq_expr_of_expr e =
       increq_expr_of_expr (Ast.unparen eparen)
         
 
-  | Lv((Var(dvar, _scope))) ->
+  | IdVar(dvar, _scope) ->
       SimpleVar dvar
 
   | _ -> Other e

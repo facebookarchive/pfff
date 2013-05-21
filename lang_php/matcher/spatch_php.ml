@@ -244,23 +244,6 @@ let spatch ?(case_sensitive=false) pattern file =
      * a match_v_v with the same visitor
      *)
 
-    | Expr (Lv pattern_var) ->
-      { V.default_visitor with
-        V.klvalue = (fun (k, _) x ->
-          let matches_with_env =  
-            Matching_php.match_v_v pattern_var  x
-          in
-          if matches_with_env = []
-          then k x
-          else begin
-            was_modifed := true;
-            Transforming_php.transform_v_v pattern_var x
-              (* TODO, maybe could get multiple matching env *)
-              (List.hd matches_with_env) 
-          end
-        );
-      }
-
     | Expr pattern_expr ->
       { V.default_visitor with
         V.kexpr = (fun (k, _) x ->

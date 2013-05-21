@@ -121,7 +121,6 @@ module XMATCH = struct
     match a, b with
     | Ast.Name2 _, Ast.Name2 _
     | Ast.Expr _, Ast.Expr _ 
-    | Ast.Lvalue _, Ast.Lvalue _ 
     | Ast.XhpAttrValue _, Ast.XhpAttrValue _ 
     | Ast.Argument _, Ast.Argument _
     | Ast.ClassNameRef _, Ast.ClassNameRef _
@@ -200,10 +199,6 @@ let (extract_bindings: 'a XMATCH.tout -> MV.metavars_binding list) = fun tout ->
 let match_e_e pattern e = 
   let env = MVGen.empty_environment () in
   MATCH.m_expr pattern e env +> extract_bindings
-
-let match_v_v pattern e = 
-  let env = MVGen.empty_environment () in
-  MATCH.m_variable pattern e env +> extract_bindings
 
 let match_st_st pattern e = 
   let env = MVGen.empty_environment () in

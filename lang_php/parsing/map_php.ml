@@ -25,7 +25,6 @@ open Ast_php
 (* hooks *)
 type visitor_in = {
   kexpr: (expr  -> expr) * visitor_out -> expr  -> expr;
-  klvalue: (lvalue2  -> lvalue2) * visitor_out -> lvalue2  -> lvalue2;
   kstmt_and_def:
     (stmt_and_def -> stmt_and_def) * visitor_out -> stmt_and_def ->stmt_and_def;
   kstmt: (stmt -> stmt) * visitor_out -> stmt -> stmt;
@@ -43,7 +42,6 @@ and visitor_out = {
   vstmt_and_def: stmt_and_def -> stmt_and_def;
   vprogram: program -> program;
   vexpr: expr -> expr;
-  vlvalue: lvalue2 -> lvalue2;
   vxhpattrvalue: xhp_attr_value -> xhp_attr_value;
   vany: any -> any;
 }
@@ -52,7 +50,6 @@ let map_option = Common2.map_option
 
 let default_visitor =
   { kexpr   = (fun (k,_) x -> k x);
-    klvalue   = (fun (k,_) x -> k x);
     kstmt_and_def = (fun (k,_) x -> k x);
     kstmt = (fun (k,_) x -> k x);
     kqualifier = (fun (k,_) x -> k x);
@@ -151,7 +148,6 @@ and map_ptype =
 
 and map_expr (x) =
   let k x =  match x with
-  | Lv v1 -> let v1 = map_variable v1 in Lv ((v1))
   | Cr v1 -> let v1 = map_class_name_reference2 v1 in Cr ((v1))
 
   | Id v1 ->
@@ -516,16 +512,6 @@ and map_xhp_body =
 
 
 and map_lvalue a = map_expr a
-
-and map_variable x =
-  let k x =
-    match x with
-  | Var ((v1, v2)) ->
-      let v1 = map_dname v1
-      and v2 = map_of_ref Scope_code.map_scope v2
-      in Var ((v1, v2))
-  in
-  vin.klvalue (k, all_functions) x
 
 and map_argument =
   function
@@ -1074,7 +1060,6 @@ and map_entity =
 
 and map_any =
   function
-  | Lvalue v1 -> let v1 = map_variable v1 in Lvalue ((v1))
   | Expr v1 -> let v1 = map_expr v1 in Expr ((v1))
   | Stmt2 v1 -> let v1 = map_stmt v1 in Stmt2 ((v1))
   | Toplevel v1 -> let v1 = map_toplevel v1 in Toplevel ((v1))
@@ -1118,7 +1103,6 @@ and map_any =
       vstmt_and_def = map_stmt_and_def;
       vprogram = map_program;
       vexpr = map_expr;
-      vlvalue = map_variable;
       vxhpattrvalue = map_xhp_attr_value;
       vany = map_any;
     }

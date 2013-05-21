@@ -116,7 +116,6 @@ module XMATCH = struct
   let equal_ast_binded_code a b =
     match a, b with
     | A.Expr _, A.Expr _
-    | A.Lvalue _, A.Lvalue _ 
     | A.XhpAttrValue _, A.XhpAttrValue _
     | A.Name2 _, B.Name2 _
     | A.Argument _, B.Argument _
@@ -298,6 +297,3 @@ let transform_e_e pattern e   env =
 
 let transform_st_st pattern e   env = 
   ignore (MATCH.m_stmt pattern e   env)
-
-let transform_v_v pattern e   env = 
-  ignore (MATCH.m_variable pattern e   env)

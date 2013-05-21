@@ -138,10 +138,10 @@ let mk_param s = {
 
 let mk_obj_access s =
   (ObjGet
-      (Lv(Var
+      (IdVar
            (DName ("this", fkt "$this"),
            Ast.noScope())
-       ),
+       ,
       fkt "->",
       Id (Name (s, fkt s))))
 
@@ -205,20 +205,19 @@ let mk_private_affect s =
   let expr =
     (AssignRef
         ((ObjGet
-             (Lv(Var
+             (IdVar
                   (DName ("this", fkt "$this"),
                   Ast.noScope())
-              ),
+              ,
              fkt "->",
              Id (Name (s, fkt s)))
          ),
         fkt "=",
         fkt "&", (* want assign by ref *)
         (
-            Lv(Var
+            IdVar
                 (fkdname s,
                 Ast.noScope ())
-            )
         ))
     )
   in
@@ -237,33 +236,31 @@ let mk_aliasing_for_member_in_body () =
 [(Foreach
       (fkt "foreach",
       fkt "(",
-      (Lv
-        (Var
+      (IdVar
           (DName
             ("this",
              fkt "$this"),
           {contents = S.NoScope})
-         )
        ),
       fkt "as",
       Common.Left
        (None,
-        Lv(Var
+        IdVar
           (DName
             ("p",
              fkt "$p"),
           {contents = S.NoScope})
-         )),
+         ),
       Some
        (fkt "=>",
         (Some
           (fkt "&"),
-         Lv(Var
+         IdVar
            (DName
              ("v",
               fkt "$v"),
            {contents = S.NoScope})
-          ))),
+          )),
       fkt ")",
       SingleStmt
        (Block
@@ -272,21 +269,21 @@ let mk_aliasing_for_member_in_body () =
             (ExprStmt
               ((AssignRef
                  ((Deref
-                    (fkt "$", Lv(Var
+                    (fkt "$", IdVar
                        (DName
                          ("p",
                           fkt "$p"),
                        {contents = S.NoScope})
-                      ))
+                      )
                    ),
                  fkt "=",
                  fkt "&",
-                 Lv(Var
+                 IdVar
                    (DName
                      ("v",
                       fkt "$v"),
                    {contents = S.NoScope})
-                  ))
+                  )
                 ),
               fkt ";"))],
           fkt "}")))

@@ -190,7 +190,6 @@ and stmt_and_def env st acc = stmt env st acc
 
 and expr env = function
   | Sc sc -> scalar env sc
-  | Lv lv -> lvalue2 env lv
   | Cr x -> class_name_reference2 env x
 
   | Id n -> A.Id (name env n)
@@ -436,9 +435,6 @@ and class_name_reference2 env = function
 
 
 and lvalue env a = expr env a 
-
-and lvalue2 env = function
-  | Var (dn, scope) -> A.Id (dname dn)
 
 and argument env = function
   | Arg e -> expr env e

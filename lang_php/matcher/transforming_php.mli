@@ -8,6 +8,4 @@ val transform_e_e :
   Ast_php.expr -> Ast_php.expr -> Metavars_php.metavars_binding -> unit
 val transform_st_st : 
   Ast_php.stmt -> Ast_php.stmt  -> Metavars_php.metavars_binding -> unit
-val transform_v_v :
-  Ast_php.lvalue2 -> Ast_php.lvalue2 -> Metavars_php.metavars_binding -> unit
 

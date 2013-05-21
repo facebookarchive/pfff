@@ -175,10 +175,6 @@ let visit_and_check  find_entity prog =
           k def
         ))
     );
-    V.klvalue = (fun (k,vx) x ->
-      match x with
-      | _ -> k x
-    );
 
     V.kexpr = (fun (k,vx) x ->
       match x with

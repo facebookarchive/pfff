@@ -745,6 +745,7 @@ let m_cpp_directive a b =
 (* ---------------------------------------------------------------------- *)
 (* lvalue *)
 (* ---------------------------------------------------------------------- *)
+(*
 let rec m_variable a b =
   match a, b with
   (* pad: iso on $V metavar. Match any kind of PHP 'variable'.
@@ -788,8 +789,9 @@ let rec m_variable a b =
        B.Var(b1, b2)
     )
     ))
+*)
 
-and m_lvalue a b = m_expr a b
+let rec m_lvalue a b = m_expr a b
 
 and m_rw_variable a b = m_expr a b
 and m_w_variable a b = m_expr a b
@@ -863,8 +865,8 @@ and m_argument a b =
   match a, b with
   | A.Arg(a1), B.Arg(b1) ->
       (match a1, b1 with
-      | A.Assign(A.Lv (A.Var(aname, ascope)), atok, aexpr),
-        B.Assign(B.Lv (B.Var(bname, bscope)), btok, bexpr) ->
+      | A.Assign((A.IdVar(aname, ascope)), atok, aexpr),
+        B.Assign((B.IdVar(bname, bscope)), btok, bexpr) ->
           m_expr a1 b1 >>= (fun (a1, b1) ->
             return (
               A.Arg(a1),
@@ -872,12 +874,12 @@ and m_argument a b =
             ))
 
       (* iso on keyword argument, keyword is optional in pattern *)
-      | a1, B.Assign(A.Lv (B.Var(bname, bscope)), btok, bexpr) ->
+      | a1, B.Assign((B.IdVar(bname, bscope)), btok, bexpr) ->
           (* todo: should allow this only in sgrep mode? what about spatch? *)
           m_expr a1 bexpr >>= (fun (a1, bexpr) ->
             return (
               A.Arg(a1),
-              B.Arg(B.Assign(B.Lv (B.Var(bname, bscope)), btok, bexpr))
+              B.Arg(B.Assign((B.IdVar(bname, bscope)), btok, bexpr))
             )
           )
       | a1, b1 ->
@@ -938,13 +940,6 @@ and m_expr a b =
       fail ()
 
 
-  | A.Lv(a1), B.Lv(b1) ->
-    m_variable a1 b1 >>= (fun (a1, b1) ->
-    return (
-       A.Lv(a1),
-       B.Lv(b1)
-    )
-    )
   (* iso on concatenation of strings *)
   | A.Sc(A.C(A.String("...", info_string))), e when is_concat_of_strings e ->
      (* todo: propagate the transformation of info_string to e for spatch *)
@@ -1267,7 +1262,6 @@ and m_expr a b =
     )
     )
   | A.Cr _, _
-  | A.Lv _, _
   | A.Sc _, _
   | A.Binary _, _
   | A.Unary _, _
@@ -2897,13 +2891,6 @@ let m_entity a b =
 
 let m_any a b =
   match a, b with
-  | A.Lvalue(a1), B.Lvalue(b1) ->
-    m_variable a1 b1 >>= (fun (a1, b1) ->
-    return (
-       A.Lvalue(a1),
-       B.Lvalue(b1)
-    )
-    )
   | A.Expr(a1), B.Expr(b1) ->
     m_expr a1 b1 >>= (fun (a1, b1) ->
     return (
@@ -3086,7 +3073,6 @@ let m_any a b =
        B.Hint2(b1)
     )
     )
-  | A.Lvalue _, _
   | A.Expr _, _
   | A.Stmt2 _, _
   | A.StmtAndDefs _, _
