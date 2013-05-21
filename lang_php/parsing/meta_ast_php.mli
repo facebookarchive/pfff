@@ -14,8 +14,6 @@ val vof_tok: Ast_php.tok -> Ocaml.v
 val vof_dname: Ast_php.dname -> Ocaml.v
 val vof_name: Ast_php.name -> Ocaml.v
 
-val vof_qualifier: Ast_php.qualifier -> Ocaml.v
-
 val vof_binaryOp: Ast_php.binaryOp -> Ocaml.v
 val vof_unaryOp: Ast_php.unaryOp -> Ocaml.v
 val vof_assignOp: Ast_php.assignOp -> Ocaml.v

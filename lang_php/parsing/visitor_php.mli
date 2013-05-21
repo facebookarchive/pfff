@@ -46,7 +46,6 @@ type visitor_in = {
     (fully_qualified_class_name -> unit) * visitor_out -> 
     fully_qualified_class_name -> unit;
   khint_type: (hint_type -> unit) * visitor_out -> hint_type -> unit;
-  kqualifier: (qualifier -> unit) * visitor_out -> qualifier -> unit;
   kclass_name_or_kwd:
     (class_name_or_kwd -> unit) * visitor_out -> class_name_or_kwd -> unit;
   karray_pair: (array_pair -> unit) * visitor_out -> array_pair -> unit;

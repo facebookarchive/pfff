@@ -1517,14 +1517,6 @@ and m_scalar a b =
        B.C(b1)
     )
     )
-  | A.ClassConstant(a1, a2), B.ClassConstant(b1, b2) ->
-    m_qualifier a1 b1 >>= (fun (a1, b1) ->
-    m_name a2 b2 >>= (fun (a2, b2) ->
-    return (
-       A.ClassConstant(a1, a2),
-       B.ClassConstant(b1, b2)
-    )
-    ))
   | A.Guil(a1, a2, a3), B.Guil(b1, b2, b3) ->
     m_tok a1 b1 >>= (fun (a1, b1) ->
     m_list m_encaps a2 b2 >>= (fun (a2, b2) ->
@@ -1544,7 +1536,6 @@ and m_scalar a b =
     )
     )))
   | A.C _, _
-  | A.ClassConstant _, _
   | A.Guil _, _
   | A.HereDoc _, _
    -> fail ()

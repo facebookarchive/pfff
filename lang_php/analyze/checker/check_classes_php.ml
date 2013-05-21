@@ -205,6 +205,10 @@ let visit_and_check  find_entity prog =
           k x
 
 
+      | ClassGet (Id (classname), tok, Id name) ->
+          check_class_constant (Ast.name classname, Ast.name name) tok
+            find_entity
+
       | ClassGet (Id classname, tok, IdVar (dname, _scope)) ->
           check_member_access StaticAccess
             (Ast.name classname, Ast.dname dname) tok find_entity
@@ -271,16 +275,6 @@ let visit_and_check  find_entity prog =
 
       | _ -> k x
     );
-    V.kscalar = (fun (k, _) x ->
-      (match x with
-      | ClassConstant ((ClassName (classname,_), tok), name) ->
-          check_class_constant (Ast.name classname, Ast.name name) tok
-            find_entity
-      | _ -> ()
-      );
-      k x
-    );
-
   } in
   visitor (Program prog)
 

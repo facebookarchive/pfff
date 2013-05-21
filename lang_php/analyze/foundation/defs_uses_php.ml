@@ -171,22 +171,17 @@ let uses_of_any ?(verbose=false) any =
 
   V.do_visit_with_ref (fun aref -> { V.default_visitor with
 
-    V.kqualifier = (fun (k, bigf) x ->
-      (match fst x with
-      | ClassName _ -> ()
-      | Self _ | Parent _ -> 
-          if verbose then pr2 "defs_uses_php: call unsugar_self_parent";
-          ()
-      | LateStatic _ ->
-          if verbose then pr2 "LateStatic";
-          ()
-      );
-      k x
-    );
-
     V.kexpr = (fun (k, bigf) x ->
       (match x with
       (* todo: what about functions passed as strings? *)
+
+      | IdSelf _ | IdParent _ -> 
+          if verbose then pr2 "defs_uses_php: call unsugar_self_parent";
+          ()
+      | IdStatic _ ->
+          if verbose then pr2 "LateStatic";
+          ()
+
       | Call (Id name, args) ->
           Common.push2 (Db.Function, name) aref;
       | _ -> ()

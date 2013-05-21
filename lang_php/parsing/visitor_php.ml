@@ -94,7 +94,6 @@ type visitor_in = {
     (fully_qualified_class_name -> unit) * visitor_out ->
     fully_qualified_class_name -> unit;
   khint_type: (hint_type -> unit) * visitor_out -> hint_type -> unit;
-  kqualifier: (qualifier -> unit) * visitor_out -> qualifier -> unit;
   kclass_name_or_kwd:
     (class_name_or_kwd -> unit) * visitor_out -> class_name_or_kwd -> unit;
   karray_pair: (array_pair -> unit) * visitor_out -> array_pair -> unit;
@@ -131,7 +130,6 @@ let default_visitor =
 
     kfully_qualified_class_name = (fun (k,_) x -> k x);
     khint_type  = (fun (k,_) x -> k x);
-    kqualifier  = (fun (k,_) x -> k x);
     kclass_name_or_kwd  = (fun (k,_) x -> k x);
 
     kxhp_html = (fun (k,_) x -> k x);
@@ -208,11 +206,6 @@ and v_xhp_tag_wrap x =
   let k v = v_wrap v_xhp_tag v in
   vin.kxhp_tag (k, all_functions) x
 
-and v_qualifier v =
-  let k (v1, v2) =
-    let v1 = v_class_name_or_selfparent v1 and v2 = v_tok v2 in ()
-  in
-  vin.kqualifier (k, all_functions) v
 and v_class_name_or_selfparent x =
   let rec k x =
     match x with
@@ -372,9 +365,6 @@ and v_scalar v =
   let k x =
     match x with
   | C v1 -> let v1 = v_constant v1 in ()
-  | ClassConstant (v1, v2) ->
-      let v1 = v_qualifier v1 and v2 = v_name v2
-      in ()
   | Guil ((v1, v2, v3)) ->
       let v1 = v_tok v1 and v2 = v_list v_encaps v2 and v3 = v_tok v3 in ()
   | HereDoc ((v1, v2, v3)) ->

@@ -259,6 +259,23 @@ let add_uses id ast pr db =
 
           k x
 
+
+      | ClassGet(qu, _tok, Id cstname) ->
+         (match qu with
+         | Id (classname) ->
+           pr (spf "use(%s, ('%s','%s'), constant, read)."
+                (name_id id db) (Ast_php.str_of_name classname)
+                (Ast_php.str_of_name cstname))
+         (* this should have been desugared while building the
+          * code database, except for traits code ...
+          *)
+         | IdSelf _| IdParent _
+         (* can't do much ... *)
+         | IdStatic _ -> ()
+         | _ -> ()
+         );
+        k x
+
       | ObjGet (lval, tok, Id name) ->
           let str = Ast_php.name name in
           (* use a different namespace than func? *)
@@ -321,25 +338,6 @@ let add_uses id ast pr db =
       k x
     );
 
-    V.kscalar = (fun (k, _) x ->
-      match x with
-      | ClassConstant ((qu,_tok), cstname) ->
-         (match qu with
-         | ClassName (classname, _) ->
-           pr (spf "use(%s, ('%s','%s'), constant, read)."
-                (name_id id db) (Ast_php.str_of_name classname)
-                (Ast_php.str_of_name cstname))
-         (* this should have been desugared while building the
-          * code database, except for traits code ...
-          *)
-         | Self _| Parent _
-         (* can't do much ... *)
-         | LateStatic _ -> ()
-         );
-        k x
-
-      | _ -> k x
-    );
   }
   in
   visitor (Entity ast);

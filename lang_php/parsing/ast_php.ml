@@ -129,7 +129,6 @@ and 'a comma_list_dots =
  (*e: type dname *)
 
  (*s: qualifiers *)
- and qualifier = class_name_or_kwd * tok (* :: *)
   and class_name_or_kwd =
    | ClassName of fully_qualified_class_name * (type_args option)
    (* Could also transform at parsing time all occurences of self:: and
@@ -280,8 +279,6 @@ and expr =
   (*s: type scalar and constant and encaps *)
     and scalar =
       | C of constant
-      | ClassConstant of qualifier * name
-
       | Guil    of tok (* '"' or b'"' *) * encaps list * tok (* '"' *)
       | HereDoc of
           tok (* < < < EOF, or b < < < EOF *) *

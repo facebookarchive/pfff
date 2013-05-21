@@ -496,6 +496,11 @@ let visit_toplevel ~tag prefs  hentities (toplevel, toks) =
           let ii = Lib_parsing_php.ii_of_any (Expr e) in
           ii +> List.iter (fun info -> tag info PointerCall);
 
+      | ClassGet (qualif, _tok, Id name) ->
+          k expr;
+          let info = Ast.info_of_name name in
+          tag info (Macro (Use2 fake_no_use2))
+
       | ClassGet (qu, _, IdVar (dname, _)) ->
           let info = Ast.info_of_dname dname in
           (* todo? special category for class variables ? *)
@@ -635,10 +640,6 @@ let visit_toplevel ~tag prefs  hentities (toplevel, toks) =
       match sc with
       | C cst ->
           k sc
-      | ClassConstant (qualif, name) ->
-          k sc;
-          let info = Ast.info_of_name name in
-          tag info (Macro (Use2 fake_no_use2))
       | Guil _ | HereDoc _ ->
           k sc
     );
@@ -655,17 +656,6 @@ let visit_toplevel ~tag prefs  hentities (toplevel, toks) =
     V.kfully_qualified_class_name = (fun (k, vx) x ->
       let info = Ast.info_of_name x in
       tag info (Class (Use2 fake_no_use2));
-    );
-    (* -------------------------------------------------------------------- *)
-    V.kqualifier = (fun (k, vx) x ->
-      match fst x with
-      | Self (tok)
-      | Parent (tok) ->
-          tag tok (Class (Use2 fake_no_use2));
-      | ClassName _ ->
-          k x
-      | LateStatic tok ->
-          tag tok BadSmell
     );
   }
   in

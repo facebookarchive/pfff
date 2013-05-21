@@ -513,7 +513,6 @@ and lexical_var env = function
 
 and scalar env = function
   | C cst -> constant env cst
-  | ClassConstant (q, s) -> A.Class_get (A.Id (qualifier env q), A.Id (name env s))
   | Guil (_, el, _) -> A.Guil (List.map (encaps env) el)
   | HereDoc ({ PI.token = PI.OriginTok x; _ },
              el,

@@ -301,10 +301,6 @@ and vof_scalar =
   function
   | C v1 ->
       let v1 = vof_constant v1 in Ocaml.VSum (("C", [ v1 ]))
-  | ClassConstant (v1, v2) ->
-      let v1 = vof_qualifier v1
-      and v2 = vof_name v2
-      in Ocaml.VSum (("ClassConstant", [ v1; v2 ]))
   | Guil ((v1, v2, v3)) ->
       let v1 = vof_tok v1
       and v2 = vof_list vof_encaps v2

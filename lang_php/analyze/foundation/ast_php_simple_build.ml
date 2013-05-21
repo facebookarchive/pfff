@@ -367,8 +367,6 @@ and lambda_def env (l_use, ld) =
 
 and scalar env = function
   | C cst -> constant env cst
-  | ClassConstant (q, s) ->
-      A.Class_get (A.Id (qualifier env q), A.Id (name env s))
   | Guil (_, el, _) -> A.Guil (List.map (encaps env) el)
   | HereDoc (_, el, _) -> A.Guil (List.map (encaps env) el)
 
