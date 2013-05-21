@@ -179,7 +179,6 @@ let visit_and_check  find_entity prog =
     V.kexpr = (fun (k,vx) x ->
       match x with
       | New (tok, ((Id (class_name))), args) ->
-
           (* todo: use lookup_method *)
           E.find_entity_and_warn find_entity (Ent.Class Ent.RegularClass,
                                              class_name)
@@ -205,13 +204,29 @@ let visit_and_check  find_entity prog =
           k x
 
 
-      | ClassGet (Id (classname), tok, Id name) ->
-          check_class_constant (Ast.name classname, Ast.name name) tok
-            find_entity
+      | Call (ObjGet(lval, _tok, Id name), args) ->
+          (* if one calls a method via $this, then it's quite easy to check
+           * the arity (eletuchy's idea?).
+           * Being complete and handling any method calls like $o->foo()
+           * requires to know what is the type of $o which is quite
+           * complicated ... so let's skip that for now.
+           *
+           * todo: special case also id(new ...)-> ?
+           *)
+          (match lval, !in_class with
+          | ThisVar _, Some (aclass, is_abstract) ->
+            let amethod = Ast.name name in
+            check_method_call (MethodCall is_abstract)
+              (aclass, amethod) (name, args) find_entity
 
-      | ClassGet (Id classname, tok, IdVar (dname, _scope)) ->
-          check_member_access StaticAccess
-            (Ast.name classname, Ast.dname dname) tok find_entity
+          (* wtf? use of $this outside class ??? *)
+          | _, None -> ()
+          (* todo: need dataflow ... *)
+          | _, _ -> ()
+          );
+          vx (Expr lval);
+          vx (Arguments (Ast.unparen args));
+
 
       | Call (ClassGet(qu, _tok, Id name), args) ->
           (match qu with
@@ -232,7 +247,17 @@ let visit_and_check  find_entity prog =
           | IdStatic _ -> ()
           | _ -> ()
           );
-          k x
+          vx (Arguments (Ast.unparen args));
+
+
+
+      | ClassGet (Id (classname), tok, Id name) ->
+          check_class_constant (Ast.name classname, Ast.name name) tok
+            find_entity
+
+      | ClassGet (Id classname, tok, IdVar (dname, _scope)) ->
+          check_member_access StaticAccess
+            (Ast.name classname, Ast.dname dname) tok find_entity
 
 
 
@@ -245,33 +270,6 @@ let visit_and_check  find_entity prog =
           | _, _ -> ()
           )
 
-      | Call (ObjGet(lval, _tok, Id name), args) ->
-          (* if one calls a method via $this, then it's quite easy to check
-           * the arity (eletuchy's idea?).
-           * Being complete and handling any method calls like $o->foo()
-           * requires to know what is the type of $o which is quite
-           * complicated ... so let's skip that for now.
-           *
-           * todo: special case also id(new ...)-> ?
-           *)
-          (match lval, !in_class with
-          | ThisVar _, Some (aclass, is_abstract) ->
-              let amethod = Ast.name name in
-              check_method_call (MethodCall is_abstract)
-                (aclass, amethod) (name, args) find_entity
-          (* wtf? use of $this outside class ??? *)
-          | _, None -> ()
-          (* todo: need dataflow ... *)
-          | _, _ -> ()
-          );
-          k x
-
-
-(*
-      | Call _ ->
-          (* not much we can do there too ... *)
-          k x
-*)
 
       | _ -> k x
     );
