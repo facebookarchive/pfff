@@ -148,8 +148,6 @@ and map_ptype =
 
 and map_expr (x) =
   let k x =  match x with
-  | Cr v1 -> let v1 = map_class_name_reference2 v1 in Cr ((v1))
-
   | Id v1 ->
     let v1 = map_name v1 in
     Id v1
@@ -463,14 +461,6 @@ and map_map_elt =
       let v4 = map_lvalue v4 in
       MapArrowRef ((v1, v2, v3, v4))
 and map_class_name_reference a = map_expr a
-and map_class_name_reference2 =
-  function
-  | ClassNameRefStatic v1 ->
-      let v1 = map_class_name_or_selfparent v1 in ClassNameRefStatic ((v1))
-  | ClassNameRefDynamic (v1, v2) ->
-      let v1 = map_lvalue v1
-      and v2 = map_of_list (fun () -> ()) v2
-      in ClassNameRefDynamic (v1, v2)
 
 and map_xhp_html =
   function
@@ -1092,8 +1082,6 @@ and map_any =
   | InfoList v1 -> let v1 = map_of_list map_info v1 in InfoList ((v1))
   | Case2 v1 -> let v1 = map_case v1 in Case2 ((v1))
   | Name2 v1 -> let v1 = map_name v1 in Name2 v1
-  | ClassNameRef v1 ->
-      let v1 = map_class_name_reference2 v1 in ClassNameRef ((v1))
   | Hint2 v1 -> let v1 = map_hint_type v1 in Hint2 ((v1))
 
  and all_functions =

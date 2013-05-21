@@ -114,9 +114,6 @@ and ptype =
  * syntax tree and no more.
  *)
 and expr =
-  (*s: type exp_info *)
-  (*e: type exp_info *)
-  | Cr of class_name_reference2
 
   | Id of name
   | IdSelf of tok
@@ -329,10 +326,6 @@ and expr =
      | MapArrowExpr of expr * tok (* => *) * expr
      | MapArrowRef of expr * tok (* => *) * tok (* & *) * lvalue
   (*x: AST expression rest *)
-   and class_name_reference2 =
-     | ClassNameRefStatic of class_name_or_kwd
-     | ClassNameRefDynamic of lvalue * unit list
-  (*e: AST expression rest *)
 
  and xhp_html =
    | Xhp of xhp_tag wrap * xhp_attribute list * tok (* > *) *
@@ -797,7 +790,6 @@ type any =
   | InfoList of tok list
 
   | Name2 of name
-  | ClassNameRef of class_name_reference2
   | Hint2 of hint_type
 (*e: AST any *)
 

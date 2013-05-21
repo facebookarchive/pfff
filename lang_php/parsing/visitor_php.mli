@@ -45,9 +45,6 @@ type visitor_in = {
   kfully_qualified_class_name: 
     (fully_qualified_class_name -> unit) * visitor_out -> 
     fully_qualified_class_name -> unit;
-  kclass_name_reference:
-    (class_name_reference2 -> unit) * visitor_out -> 
-    class_name_reference2 -> unit;
   khint_type: (hint_type -> unit) * visitor_out -> hint_type -> unit;
   kqualifier: (qualifier -> unit) * visitor_out -> qualifier -> unit;
   kclass_name_or_kwd:

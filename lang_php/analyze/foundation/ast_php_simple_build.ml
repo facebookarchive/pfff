@@ -190,7 +190,6 @@ and stmt_and_def env st acc = stmt env st acc
 
 and expr env = function
   | Sc sc -> scalar env sc
-  | Cr x -> class_name_reference2 env x
 
   | Id n -> A.Id (name env n)
   | IdSelf tok -> A.Id (A.special "self", wrap tok)
@@ -425,12 +424,6 @@ and class_name_or_selfparent env = function
    | LateStatic tok -> (A.special "static", wrap tok)
 
 and class_name_reference env a = expr env a
-and class_name_reference2 env = function
-   | ClassNameRefStatic cn -> A.Id (class_name_or_selfparent env cn)
-   | ClassNameRefDynamic (lv, []) -> lvalue env lv
-   | ClassNameRefDynamic (lv, xs) ->
-       let _ = lvalue env lv in
-       raise Common.Todo
 
 
 and lvalue env a = expr env a 

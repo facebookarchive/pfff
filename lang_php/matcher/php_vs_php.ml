@@ -1261,7 +1261,6 @@ and m_expr a b =
        B.ParenExpr(b1)
     )
     )
-  | A.Cr _, _
   | A.Sc _, _
   | A.Binary _, _
   | A.Unary _, _
@@ -1664,40 +1663,6 @@ and m_map_elt a b =
   | A.MapArrowRef _, _
    -> fail ()
 and m_class_name_reference a b = m_expr a b
-and m_class_name_reference2 a b =
-  match a, b with
-
-  (* iso: metavar on classname_ref, e.g. new X() should match new $x() *)
-  | A.ClassNameRefStatic(A.ClassName(A.Name (name, info_name) , None)), b1
-    when MV.is_metavar_name name ->
-      X.envf (name, info_name) (B.ClassNameRef (b1)) >>= (function
-      | ((name, info_name), B.ClassNameRef (b1))  ->
-        return (
-          A.ClassNameRefStatic(A.ClassName(A.Name (name, info_name), None)),
-          b1
-        )
-      | _ -> raise Impossible
-      )
-
-
-  | A.ClassNameRefStatic(a1), B.ClassNameRefStatic(b1) ->
-    m_class_name_or_selfparent a1 b1 >>= (fun (a1, b1) ->
-    return (
-       A.ClassNameRefStatic(a1),
-       B.ClassNameRefStatic(b1)
-    )
-    )
-  | A.ClassNameRefDynamic(a1, a2), B.ClassNameRefDynamic(b1, b2) ->
-    m_lvalue a1 b1 >>= (fun (a1, b1) ->
-    m_list m_unit a2 b2 >>= (fun (a2, b2) ->
-    return (
-       A.ClassNameRefDynamic(a1, a2),
-       B.ClassNameRefDynamic(b1, b2)
-    )
-    ))
-  | A.ClassNameRefStatic _, _
-  | A.ClassNameRefDynamic _, _
-   -> fail ()
 
 and m_encaps a b =
   match a, b with
@@ -3051,13 +3016,6 @@ let m_any a b =
        B.Name2(b1)
     )
     )
-  | A.ClassNameRef(a1), B.ClassNameRef(b1) ->
-    m_class_name_reference2 a1 b1 >>= (fun (a1, b1) ->
-    return (
-       A.ClassNameRef(a1),
-       B.ClassNameRef(b1)
-    )
-    )
   | A.Hint2(a1), B.Hint2(b1) ->
     m_hint_type a1 b1 >>= (fun (a1, b1) ->
     return (
@@ -3089,7 +3047,6 @@ let m_any a b =
   | A.Info _, _
   | A.InfoList _, _
   | A.Name2 _, _
-  | A.ClassNameRef _, _
   | A.Hint2 _, _
    -> fail ()
 

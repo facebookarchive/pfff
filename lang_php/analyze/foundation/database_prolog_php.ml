@@ -157,9 +157,7 @@ let add_uses id ast pr db =
   (* to fatorize code between NewLv and New *)
   let docall_class classref =
     match classref with
-    | Cr ClassNameRefStatic x ->
-      (match x with
-      | ClassName (name, _) -> (* TODO: currently ignoring type args *)
+    | Id name ->(* TODO: currently ignoring type args *)
 
         let str = Ast_php.name name in
         (* use a different namespace than func? *)
@@ -171,12 +169,11 @@ let add_uses id ast pr db =
         end;
         
       (* todo: do something here *)
-      | Self _
-      | Parent _
-      | LateStatic _ ->
+    | IdSelf _
+    | IdParent _
+    | IdStatic _ ->
         ()
-      )
-    | Cr ClassNameRefDynamic _ -> ()
+
     | _ -> ()
   in
 
@@ -311,7 +308,7 @@ let add_uses id ast pr db =
     );
     V.kstmt = (fun (k, _) x ->
       (match x with
-      | Throw (_, New (_, Cr ClassNameRefStatic (ClassName (name, _)), _), _) ->
+      | Throw (_, New (_, (Id (name)), _), _) ->
           pr (spf "throw(%s, '%s')."
                  (name_id id db) (Ast.str_of_name name))
       | Try (_, _, c1, cs) ->

@@ -527,6 +527,17 @@ let visit_toplevel ~tag prefs  hentities (toplevel, toks) =
               tag info (Macro (Use2 fake_no_use2))
           )
 
+(* TODO
+      | ClassNameRefStatic (ClassName (name,_)) -> 
+          let info = Ast.info_of_name name in
+          tag info (Class (Use2 fake_no_use2));
+*)
+      | (IdSelf _ | IdParent _) ->
+          ()
+      | (IdStatic tok) ->
+          tag tok BadSmell
+
+
       | IdVar (dname, aref) ->
           (* see check_variables_php.ml *)
 
@@ -639,19 +650,6 @@ let visit_toplevel ~tag prefs  hentities (toplevel, toks) =
           if not (Hashtbl.mem already_tagged ii)
           then tag_string ~tag s ii
       | _ -> k e
-    );
-    (* -------------------------------------------------------------------- *)
-    V.kclass_name_reference = (fun (k, vx) x ->
-      match x with
-      | ClassNameRefStatic (ClassName (name,_)) ->
-          let info = Ast.info_of_name name in
-          tag info (Class (Use2 fake_no_use2));
-      | ClassNameRefStatic (Self _ | Parent _) ->
-          ()
-      | ClassNameRefStatic (LateStatic tok) ->
-          tag tok BadSmell
-      | ClassNameRefDynamic _ ->
-          ()
     );
     (* -------------------------------------------------------------------- *)
     V.kfully_qualified_class_name = (fun (k, vx) x ->

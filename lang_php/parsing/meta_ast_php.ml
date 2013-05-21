@@ -101,8 +101,6 @@ and vof_ptype =
   | ObjectTy -> Ocaml.VSum (("ObjectTy", []))
 
 and vof_expr = function
-  | Cr v1 -> let v1 = vof_class_name_reference2 v1 in Ocaml.VSum (("Cr", [ v1 ]))
-
   | Id v1 ->
     let v1 = vof_name v1 in
     Ocaml.VSum ("Id", [ v1 ])
@@ -463,15 +461,6 @@ and vof_map_elt =
       and v4 = vof_lvalue v4
       in Ocaml.VSum (("MapArrowRef", [ v1; v2; v3; v4 ]))
 and vof_class_name_reference a = vof_expr a
-and vof_class_name_reference2 =
-  function
-  | ClassNameRefStatic v1 ->
-      let v1 = vof_class_name_or_selfparent v1 in
-      Ocaml.VSum (("ClassNameRefStatic", [ v1 ]))
-  | ClassNameRefDynamic (v1, v2) ->
-      let v1 = vof_lvalue v1
-      and v2 = vof_list vof_unit v2
-      in Ocaml.VSum (("ClassNameRefDynamic", [ v1; v2 ]))
 
 and vof_xhp_html =
   function
@@ -1189,7 +1178,4 @@ and vof_any =
 
   | Entity v1 -> let v1 = vof_entity v1 in Ocaml.VSum (("Entity", [ v1 ]))
   | Name2 v1 -> let v1 = vof_name v1 in Ocaml.VSum(("Name2", [ v1 ]))
-  | ClassNameRef v1 ->
-      let v1 = vof_class_name_reference2 v1
-      in Ocaml.VSum (("ClassNameRef", [ v1 ]))
   | Hint2 v1 -> let v1 = vof_hint_type v1 in Ocaml.VSum (("Hint2", [ v1 ]))

@@ -163,10 +163,10 @@ let mk_new_anon_class_call s
    [Left (ArrayExpr
      (New
        (fkt "new",
-       (Cr (ClassNameRefStatic
-        (ClassName(Name
+       ((
+        (Id(Name
           (s,
-           fkt s), None)))),
+           fkt s))))),
        Some
         (fkt "(",
          closed_vars_of_this_closure +> List.map (fun closed_var ->

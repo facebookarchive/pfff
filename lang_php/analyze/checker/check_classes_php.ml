@@ -178,7 +178,7 @@ let visit_and_check  find_entity prog =
 
     V.kexpr = (fun (k,vx) x ->
       match x with
-      | New (tok, (Cr ClassNameRefStatic (ClassName (class_name,_))), args) ->
+      | New (tok, ((Id (class_name))), args) ->
 
           (* todo: use lookup_method *)
           E.find_entity_and_warn find_entity (Ent.Class Ent.RegularClass,
@@ -198,9 +198,9 @@ let visit_and_check  find_entity prog =
           );
           k x
 
-      | New (tok, (Cr ClassNameRefStatic (Self _ | Parent _)), args) ->
+      | New (tok, ((IdSelf _ | IdParent _)), args) ->
           failwith "check_classes_php: call unsugar_self_parent()"
-      | New (tok, (Cr ClassNameRefDynamic (class_name, _)), args) ->
+      | New (tok, (_ ), args) ->
           (* can't do much *)
           k x
 
