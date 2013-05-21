@@ -324,7 +324,6 @@ and vof_constant =
       let v1 = vof_wrap vof_string v1 in Ocaml.VSum (("Double", [ v1 ]))
   | String v1 ->
       let v1 = vof_wrap vof_string v1 in Ocaml.VSum (("String", [ v1 ]))
-  | CName v1 -> let v1 = vof_name v1 in Ocaml.VSum (("CName", [ v1 ]))
   | PreProcess v1 ->
       let v1 = vof_wrap vof_cpp_directive v1
       in Ocaml.VSum (("PreProcess", [ v1 ]))

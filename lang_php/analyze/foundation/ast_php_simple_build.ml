@@ -377,7 +377,6 @@ and constant env = function
   | Int (n, _) -> A.Int n
   | Double (n, _) -> A.Double n
   | String (s, tok) -> A.String (s, wrap tok)
-  | CName n -> A.Id (name env n)
   | PreProcess (cpp, tok) -> cpp_directive env tok cpp
   (* no reason to use the abstract interpreter on xdebug traces *)
   | XdebugClass _ | XdebugResource -> raise Common.Impossible

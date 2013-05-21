@@ -338,7 +338,6 @@ and map_constant =
   | Int v1 -> let v1 = map_wrap map_of_string v1 in Int ((v1))
   | Double v1 -> let v1 = map_wrap map_of_string v1 in Double ((v1))
   | String v1 -> let v1 = map_wrap map_of_string v1 in String ((v1))
-  | CName v1 -> let v1 = map_name v1 in CName ((v1))
   | PreProcess v1 ->
       let v1 = map_wrap map_cpp_directive v1 in PreProcess ((v1))
   | XdebugClass ((v1, v2)) ->

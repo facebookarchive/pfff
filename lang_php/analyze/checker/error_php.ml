@@ -423,7 +423,7 @@ let rank_of_error_kind err_kind =
 
           | (Yield(i_1,
                (Call(Id (Name(("result", i_2))),
-                 (i_3, [Left(Arg((Sc(C(CName(Name(("null", i_4))))))))],
+                 (i_3, [Left(Arg((Id(Name(("null", i_4))))))],
                 i_6))
                ))) -> Never
 

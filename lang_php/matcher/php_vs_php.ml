@@ -890,13 +890,13 @@ and m_argument a b =
             ))
       )
   (* an expression metavariable should also match a reference argument *)
-  | A.Arg (A.Sc (A.C (A.CName (A.Name (name,info_name))))),
+  | A.Arg (A.Id (A.Name (name,info_name))),
     B.ArgRef(_,_) when MV.is_metavar_name name ->
 
       X.envf (name, info_name) (B.Argument (b)) >>= (function
       | ((name, info_name), B.Argument (b))  ->
         return (
-          A.Arg (A.Sc (A.C (A.CName (A.Name (name,info_name))))),
+          A.Arg (A.Id (A.Name (name,info_name))),
           b
         )
       | _ -> raise Impossible
@@ -921,12 +921,12 @@ and m_argument a b =
 and m_expr a b =
   match a, b with
   (* special case, metavars !! *)
-  | ((A.Sc (A.C (A.CName (A.Name (name,info_name))))),
+  | ((A.Id (A.Name (name,info_name))),
     e2) when MV.is_metavar_name name ->
       X.envf (name, info_name) (B.Expr (e2)) >>= (function
       | ((name, info_name), B.Expr (e2))  ->
         return (
-          (A.Sc (A.C (A.CName (A.Name (name,info_name))))),
+          (A.Id (A.Name (name,info_name))),
           e2
         )
       | _ -> raise Impossible
@@ -1821,13 +1821,6 @@ and m_constant a b =
        B.String(b1)
     )
     )
-  | A.CName(a1), B.CName(b1) ->
-    m_name a1 b1 >>= (fun (a1, b1) ->
-    return (
-       A.CName(a1),
-       B.CName(b1)
-    )
-    )
   | A.PreProcess(a1), B.PreProcess(b1) ->
     m_wrap m_cpp_directive a1 b1 >>= (fun (a1, b1) ->
     return (
@@ -1848,7 +1841,6 @@ and m_constant a b =
   | A.Int _, _
   | A.Double _, _
   | A.String _, _
-  | A.CName _, _
   | A.PreProcess _, _
   | A.XdebugClass _, _
   | A.XdebugResource, _
@@ -1881,13 +1873,13 @@ and m_list__m_argument (xsa: A.argument A.comma_list) (xsb: B.argument B.comma_l
       ("transformation (minus or plus) on '...' not allowed, " ^
        "rewrite your spatch")
 
-  | [Left (A.Arg ((A.Sc (A.C (A.CName (A.Name (name,info_name)))))))], bbs
+  | [Left (A.Arg ((A.Id (A.Name (name,info_name)))))], bbs
     when MV.is_metavar_manyargs_name name ->
 
       X.envf (name, info_name) (B.Arguments (bbs)) >>= (function
       | ((name, info_name), B.Arguments (bbs))  ->
         return (
-          [Left (A.Arg ((A.Sc (A.C (A.CName (A.Name (name,info_name)))))))],
+          [Left (A.Arg ((A.Id (A.Name (name,info_name)))))],
           bbs
         )
       | _ -> raise Impossible
@@ -1922,7 +1914,7 @@ and m_list__m_argument (xsa: A.argument A.comma_list) (xsb: B.argument B.comma_l
        "'...'. Rewrite your spatch: put your trailing comma on the line " ^
        "with the '...'. See also " ^ 
        "https://github.com/facebook/pfff/wiki/Spatch#wiki-spacing-issues")
-  | [Right _;Left (A.Arg ((A.Sc (A.C (A.CName (A.Name (name,info_name)))))))],[]
+  | [Right _;Left (A.Arg ((A.Id (A.Name (name,info_name)))))],[]
     when MV.is_metavar_manyargs_name name ->
       X.envf (name, info_name) (B.Arguments ([])) >>= (function
       | ((name, info_name), B.Arguments ([]))  ->

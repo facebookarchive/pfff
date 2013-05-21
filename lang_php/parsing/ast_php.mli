@@ -246,8 +246,6 @@ and expr =
          *)
         | String of string wrap
        (*x: constant constructors *)
-        | CName of name (* true, false, null,  or defined constant *)
-       (*x: constant constructors *)
         | PreProcess of cpp_directive wrap
        (*e: constant constructors *)
        (*s: type constant hook *)

@@ -118,7 +118,7 @@ let rec increq_expr_of_expr e =
       (Call(Id (Name(("dirname", i_2))),
                       (i_3,
                       [Left (Arg(
-                        (Sc(C(CName(Name(("__FILE__", i_4))))))))],
+                        (Sc(C(PreProcess(((File, i_4))))))))],
                       i_6))), 
         (BinaryConcat, i_9),
       (Sc(C(String((sfilename, i_10)))))))
@@ -134,7 +134,7 @@ let rec increq_expr_of_expr e =
                                         (i_5,
                                         [Left (Arg(
                                           (Sc(
-                                            C(CName(Name(("__FILE__", i_6)))))
+                                            C(PreProcess(((File, i_6)))))
                                           )))],
                                         i_8))
                         )))],
@@ -155,7 +155,7 @@ let rec increq_expr_of_expr e =
                                           (i_5,
                                           [Left Arg((
                                             (Sc(
-                                              C(CName(Name(("__FILE__", i_6)))))
+                                              C(PreProcess(((File, i_6)))))
                                             )))],
                                           i_8))
                           ), (BinaryConcat, i_11),
@@ -178,7 +178,7 @@ let rec increq_expr_of_expr e =
                                         (i_5,
                                         [Left (Arg(
                                           (Sc(
-                                            C(CName(Name(("__FILE__", i_6)))))
+                                            C(PreProcess(((File, i_6)))))
                                           )))],
                                         i_8))
                         ), (BinaryConcat, i_11),
@@ -194,7 +194,7 @@ let rec increq_expr_of_expr e =
 
 
   (* ./ffi -dump_php_ml ../tests/require_constant_concat.php *)
-  | (Binary((Sc(C(CName(name)))),
+  | (Binary((Id(name)),
            (BinaryConcat, i_4),
            (Sc(C(String((sfilename, i_5)))))))
     ->

@@ -510,6 +510,23 @@ let visit_toplevel ~tag prefs  hentities (toplevel, toks) =
           tag t2 BadSmell
 
 
+      | Id name ->
+          (* cf also typing_php.ml *)
+          let s = Ast.name name in
+          let info = Ast.info_of_name name in
+          (match s with
+          | "true" ->
+              tag info Boolean
+          | "false" ->
+              tag info Boolean
+          | "null" ->
+              tag info Null
+
+          | _ ->
+              (* TODO *)
+              tag info (Macro (Use2 fake_no_use2))
+          )
+
       | IdVar (dname, aref) ->
           (* see check_variables_php.ml *)
 
@@ -596,23 +613,6 @@ let visit_toplevel ~tag prefs  hentities (toplevel, toks) =
           if not (Hashtbl.mem already_tagged ii)
           then
             tag_string ~tag s ii
-
-      | CName name ->
-          (* cf also typing_php.ml *)
-          let s = Ast.name name in
-          let info = Ast.info_of_name name in
-          (match s with
-          | "true" ->
-              tag info Boolean
-          | "false" ->
-              tag info Boolean
-          | "null" ->
-              tag info Null
-
-          | _ ->
-              (* TODO *)
-              tag info (Macro (Use2 fake_no_use2))
-          )
 
       | PreProcess v1 ->
           tag (snd v1) Builtin

@@ -397,7 +397,6 @@ and v_constant x =
   | Int v1 -> let v1 = v_wrap v_string v1 in ()
   | Double v1 -> let v1 = v_wrap v_string v1 in ()
   | String v1 -> let v1 = v_wrap v_string v1 in ()
-  | CName v1 -> let v1 = v_name v1 in ()
   | PreProcess v1 -> let v1 = v_wrap v_cpp_directive v1 in ()
   | XdebugClass ((v1, v2)) ->
       let v1 = v_name v1 and v2 = v_list v_class_stmt v2 in ()

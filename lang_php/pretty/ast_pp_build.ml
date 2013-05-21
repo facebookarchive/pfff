@@ -526,7 +526,6 @@ and constant env = function
   | Int (n, _) -> A.Int n
   | Double (n, _) -> A.Double n
   | String (s, _) -> A.String s
-  | CName n -> A.Id (name env n)
   | PreProcess (cpp, _) -> cpp_directive env cpp
   (* only appear when process xdebug coverage file *)
   | XdebugClass _ -> raise Common.Impossible

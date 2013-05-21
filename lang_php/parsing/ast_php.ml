@@ -177,7 +177,9 @@ and expr =
   (*e: type exp_info *)
   | Cr of class_name_reference2
 
+  (* true, false, null, or function/class/cst name *)
   | Id of name
+
   | IdSelf of tok
   | IdParent of tok
   | IdStatic of tok
@@ -302,8 +304,6 @@ and expr =
          * It does not contain either the possible 'b' prefix
          *)
         | String of string wrap
-       (*x: constant constructors *)
-        | CName of name (* true, false, null,  or defined constant *)
        (*x: constant constructors *)
         | PreProcess of cpp_directive wrap
        (*e: constant constructors *)
