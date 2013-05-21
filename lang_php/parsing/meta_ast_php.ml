@@ -520,10 +520,6 @@ and vof_lvalue2 = function
       let v1 = vof_dname v1
       and v2 = vof_ref Scope_code.vof_scope v2
       in Ocaml.VSum (("Var", [ v1; v2 ]))
-  | VArrayAccess ((v1, v2)) ->
-      let v1 = vof_lvalue v1
-      and v2 = vof_bracket (vof_option vof_expr) v2
-      in Ocaml.VSum (("VArrayAccess", [ v1; v2 ]))
   | FunCallSimple ((v2, v3)) ->
       let v2 = vof_name v2
       and v3 = vof_paren (vof_comma_list vof_argument) v3

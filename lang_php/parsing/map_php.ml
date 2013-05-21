@@ -524,10 +524,6 @@ and map_variable x =
       let v1 = map_dname v1
       and v2 = map_of_ref Scope_code.map_scope v2
       in Var ((v1, v2))
-  | VArrayAccess ((v1, v2)) ->
-      let v1 = map_lvalue v1
-      and v2 = map_bracket (map_of_option map_expr) v2
-      in VArrayAccess ((v1, v2))
   | FunCallSimple ((v2, v3)) ->
       let v2 = map_name v2
       and v3 = map_paren (map_comma_list map_argument) v3

@@ -574,8 +574,6 @@ and v_variable x =
   let k x = match x with
   | Var ((v1, v2)) ->
       let v1 = v_dname v1 and v2 = v_ref Scope_php.v_phpscope v2 in ()
-  | VArrayAccess ((v1, v2)) ->
-      let v1 = v_expr v1 and v2 = v_bracket (v_option v_expr) v2 in ()
   | FunCallSimple ((v2, v3)) ->
       let v2 = v_name v2
       and v3 = v_arguments v3 in

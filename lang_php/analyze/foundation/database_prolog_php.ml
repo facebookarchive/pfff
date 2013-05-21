@@ -249,8 +249,12 @@ let add_uses id ast pr db =
 
           k x
 
+      | _ -> k x
+    );
+    V.kexpr = (fun (k, vx) x ->
+      match x with
 
-      | VArrayAccess (lval, (_, Some((Sc(C(String((fld, i_9)))))), _)) ->
+      | ArrayGet (lval, (_, Some((Sc(C(String((fld, i_9)))))), _)) ->
           let str = escape_quote_array_field fld in
           (* use a different namespace than func? *)
           if not (Hashtbl.mem h str)
@@ -260,10 +264,6 @@ let add_uses id ast pr db =
                    (name_id id db) str (read_write !in_lvalue_pos))
           end;
           k x
-      | _ -> k x
-    );
-    V.kexpr = (fun (k, vx) x ->
-      match x with
 
       | Call (ClassGet (_, _, Id name), args)
         ->

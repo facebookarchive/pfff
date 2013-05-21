@@ -789,16 +789,6 @@ let rec m_variable a b =
     )
     ))
 
-  | A.VArrayAccess(a1, a2), B.VArrayAccess(b1, b2) ->
-    m_lvalue a1 b1 >>= (fun (a1, b1) ->
-    (m_bracket (m_option m_expr)) a2 b2 >>= (fun (a2, b2) ->
-    return (
-       A.VArrayAccess(a1, a2),
-       B.VArrayAccess(b1, b2)
-    )
-    ))
-
-
   | A.FunCallSimple(a2, a3), B.FunCallSimple(b2, b3) ->
     (* iso on function name *)
     m_name_metavar_ok a2 b2 >>= (fun (a2, b2) ->
@@ -830,7 +820,6 @@ let rec m_variable a b =
     ))))
 
   | A.Var _, _
-  | A.VArrayAccess _, _
   | A.FunCallSimple _, _
   | A.MethodCallSimple _, _
   | A.StaticMethodCallSimple _, _

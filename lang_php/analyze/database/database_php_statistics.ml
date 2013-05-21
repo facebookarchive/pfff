@@ -299,9 +299,9 @@ let fields_stat_db db =
       let ast = db.Db.defs.Db.toplevels#assoc id in
 
       let hooks = { V.default_visitor with
-        V.klvalue = (fun (k,vx) v ->
+        V.kexpr = (fun (k,vx) v ->
           match v with
-          | VArrayAccess (var2, expr_bracket) ->
+          | ArrayGet (var2, expr_bracket) ->
               (match var2, Ast.unbracket expr_bracket with
               | (Lv(Var (dname, scope)), 
                 Some (Sc (C (Ast.String (s, info))))) ->

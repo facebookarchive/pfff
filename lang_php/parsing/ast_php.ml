@@ -421,27 +421,10 @@ and class_name_reference = expr
 (* ------------------------------------------------------------------------- *)
 (*s: AST lvalue *)
 and lvalue2 =
-  (*s: type lvalue_info *)
-  (*e: type lvalue_info *)
-  (*s: lvaluebis constructors *)
-    | Var of dname *
-     (*s: scope_php annotation *)
-     Scope_php.phpscope ref
-     (*e: scope_php annotation *)
-  (*x: lvaluebis constructors *)
-    (* xhp: normally we can not have a FunCall in the lvalue of VArrayAccess,
-     * but with xhp we can.
-     *
-     * todo? a VArrayAccessSimple with Constant string in expr ?
-     *)
-    | VArrayAccess of lvalue * expr option bracket
-  (*x: lvaluebis constructors *)
+    | Var of dname *  Scope_php.phpscope ref
     | FunCallSimple of name                      * argument comma_list paren
-  (*x: lvaluebis constructors *)
-    (* note that can be a late static call since php 5.3 *)
     | StaticMethodCallSimple of qualifier * name * argument comma_list paren
     | MethodCallSimple of lvalue * tok * name    * argument comma_list paren
-  (*e: lvaluebis constructors *)
 
   (*x: type lvalue aux *)
     and argument =

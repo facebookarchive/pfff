@@ -435,7 +435,7 @@ let visit_toplevel ~tag prefs  hentities (toplevel, toks) =
     );
 
     (* -------------------------------------------------------------------- *)
-    V.kexpr = (fun (k,bigf) expr ->
+    V.kexpr = (fun (k,vx) expr ->
       k expr;
       (match expr with
       | Cast (((cast, v1), v2)) ->
@@ -443,6 +443,23 @@ let visit_toplevel ~tag prefs  hentities (toplevel, toks) =
 
       | ThisVar (tok) ->
           tag tok (Class (Use2 fake_no_use2))
+
+      | ArrayGet (var, exprbracket) ->
+          (match Ast.unbracket exprbracket with
+          | None ->
+              k expr
+          | Some (exprbis) ->
+              (match exprbis with
+              | Sc (C (Ast.String (s, info))) ->
+                  tag info (Field (Use2 fake_no_use2));
+                  vx (Expr var);
+
+              | Sc (C (Int (s, info))) ->
+                  k expr
+              | _ -> k expr
+              )
+          )
+
 
       | ObjGet (lval, tok, Id name) ->
           let info = Ast.info_of_name name in
@@ -551,22 +568,6 @@ let visit_toplevel ~tag prefs  hentities (toplevel, toks) =
               tag info (NoType)
           )
 
-
-      | VArrayAccess (var, exprbracket) ->
-          (match Ast.unbracket exprbracket with
-          | None ->
-              k x
-          | Some (exprbis) ->
-              (match exprbis with
-              | Sc (C (Ast.String (s, info))) ->
-                  tag info (Field (Use2 fake_no_use2));
-                  vx (Expr var);
-
-              | Sc (C (Int (s, info))) ->
-                  k x
-              | _ -> k x
-              )
-          )
 
       | FunCallSimple (callname, args) ->
           let info = Ast.info_of_name callname in

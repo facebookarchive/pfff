@@ -80,8 +80,8 @@ let rec increq_expr_of_expr e =
 
   (* generated from ./ffi -dump_php_ml ../tests/require_classic.php *)
   | (Binary(
-      (Lv(
-        (VArrayAccess(Lv(Var(darray, scope_ref)),
+      ((
+        (ArrayGet(Lv(Var(darray, scope_ref)),
                      (i_4, Some((Sc(C(String((sfld, i_5)))))), i_7))
         ))), (BinaryConcat, i_10),
       (Sc(C(String((sfilename, i_11)))))))
@@ -100,13 +100,11 @@ let rec increq_expr_of_expr e =
   (* generated from ./ffi -dump_php_ml ../tests/require_classic2.php *)
   | (Binary(
       (Binary(
-        (Lv(
-          (VArrayAccess(
+        (ArrayGet(
             (Lv(Var(darray, _scope))),
             (i_4,
             Some((Sc(C(String((sfld, i_5)))))),
             i_7))
-          ))
         ), (BinaryConcat, i_10),
         (Sc(C(String((sfilename1, i_11))))))), 
          (BinaryConcat, i_14),

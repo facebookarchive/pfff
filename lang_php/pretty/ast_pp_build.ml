@@ -582,10 +582,6 @@ and lvalue env x = expr env x
 
 and lvalue2 env = function
   | Var (dn, scope) -> A.Id (dname dn)
-  | VArrayAccess (lv, (_, e, _)) ->
-      let lv = lvalue env lv in
-      let e = opt expr env e in
-      A.Array_get (lv, e)
   | FunCallSimple (f, (_, args, _)) ->
       let f = name env f in
       let args = comma_list args in
