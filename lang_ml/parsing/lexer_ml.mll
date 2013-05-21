@@ -414,7 +414,7 @@ and comment = parse
   | "(*" { 
       (* in ocaml comments are nestable *)
       let s = comment lexbuf in
-      s ^ comment lexbuf
+      "(*" ^ s ^ comment lexbuf
     }
 
   (* noteopti: bugfix, need add '(' too *)

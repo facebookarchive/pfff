@@ -1,4 +1,14 @@
+
+
 (* this should be kept *)
+let foo x = 
+  MethodCallSimple(1, 2)
 
-let foo x = 1
 
+(* this should be kept too *)
+let foo x = 
+  MethodCallSimple(1, 2)
+
+(* nested comment should
+   (* be handled too *)
+*)
