@@ -129,7 +129,7 @@ let unittest =
        * the previous test will work but not this one.
        *)
       let _ast = Parse_php.program_of_string "return $this->foo()[2];"  in
-      OUnit.skip_if true "grammar extension for XHP incomplete";
+      ()
     );
 
     (*-----------------------------------------------------------------------*)
