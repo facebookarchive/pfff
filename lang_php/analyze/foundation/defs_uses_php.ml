@@ -155,10 +155,10 @@ let defs_of_any any =
  * - do for constants too ! see Database_code.entity_kind
  * - check_module.ml and the places where we call checkClassName,
  *   same than here ?
- * - todo? right now I don't make a difference between Class and Interface.
+ * - less: right now I don't make a difference between Class and Interface.
  *   If want then just intercept in the clas_def hook the processing
  *   of 'implements'.
- * - todo? todo? do stuff for dynamic stuff like ClassNameRefDynamic ?
+ * - less: do stuff for dynamic stuff like ClassNameRefDynamic ?
  *   return a special Tag ? DynamicStuff ? So at least know they
  *   are connections to more entities than one can infer statically.
  *)
@@ -169,28 +169,36 @@ let uses_of_any ?(verbose=false) any =
     V.kexpr = (fun (k, bigf) x ->
       (match x with
       (* todo: what about functions passed as strings? *)
-
-      | IdSelf _ | IdParent _ -> 
-          if verbose then pr2 "defs_uses_php: call unsugar_self_parent";
-          ()
-      | IdStatic _ ->
-          if verbose then pr2 "LateStatic";
-          ()
-
       | Call (Id name, args) ->
           Common.push2 (E.Function, name) aref;
+
+      | IdSelf _ | IdParent _ -> 
+        if verbose then pr2 "defs_uses_php: call unsugar_self_parent";
+        ()
+      | IdStatic _ ->
+        if verbose then pr2 "LateStatic";
+        ()
+
+    (* This covers
+     * - new X, instanceof X 
+     *   (via class_name_reference)
+     * - X::Cst, X::$var, X::method(), X::$f() 
+     *   (via qualifier)
+     *)
+      | New (_, Id name, _) 
+      | InstanceOf (_, _, Id name)
+      | AssignNew(_, _, _, _, Id name, _)
+      | ClassGet (Id name, _, _) ->
+        let kind = E.RegularClass in
+        Common.push2 (E.Class kind, name) aref;
       | _ -> ()
       );
       k x
     );
-
-    (* This covers
-     * - new X, instanceof X 
-     *   (via class_name_reference), 
-     * - X::Cst, X::$var, X::method(), X::$f() 
-     *   (via qualifier)
-     * - extends X, implements X, catch(X), function foo(X $f)
-     *   (via fully_qualified_class_name)
+    (* This covers:
+     * - extends X, implements X, catch(X)
+     * - function foo(X $f)
+     *   (via class_name_or_kwd)
      *)
     V.kfully_qualified_class_name = (fun (k, bigf) classname ->
       (* todo? can interface define constant ? in which case
@@ -198,11 +206,7 @@ let uses_of_any ?(verbose=false) any =
        * could be the use of a Class or Interface.
        * So right now I just merge Class and Interface
        *)
-      (* todo?? how know? for new it's always a RegularClass, but for the 
-       * rest? 
-       *)
       let kind = E.RegularClass in
-
       Common.push2 (E.Class kind, classname) aref;
       k classname
     );
