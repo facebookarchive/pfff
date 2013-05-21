@@ -1053,7 +1053,7 @@ primary_expr:
 /*(* php 5.3 late static binding *)*/
  | T_STATIC             { IdStatic $1 }
 
- | T_VARIABLE { IdVar (DName $1, Ast.noScope()) }
+ | T_VARIABLE { mk_var $1 }
 
  | TDOLLAR primary_expr         { Deref($1, $2) }
  | TDOLLAR TOBRACE expr TCBRACE { Deref($1, BraceIdent($2, $3, $4)) }
@@ -1131,11 +1131,11 @@ encaps:
  | T_ENCAPSED_AND_WHITESPACE
      { EncapsString $1 }
  | T_VARIABLE 
-     { EncapsVar (IdVar (DName $1, Ast.noScope()))  }
+     { EncapsVar (mk_var $1)  }
  | T_VARIABLE TOBRA encaps_var_offset TCBRA
-     { EncapsVar (ArrayGet (IdVar (DName $1, Ast.noScope()),($2,Some $3,$4)))}
+     { EncapsVar (ArrayGet (mk_var $1,($2,Some $3,$4)))}
  | T_VARIABLE T_OBJECT_OPERATOR T_IDENT
-     { EncapsVar (ObjGet(IdVar (DName $1, Ast.noScope()), $2, Id (Name $3)))}
+     { EncapsVar (ObjGet(mk_var $1, $2, Id (Name $3)))}
 
  /*(* for ${beer}s. Note that this rule does not exist in the original PHP
     * grammar. Instead only the case with a TOBRA after the T_STRING_VARNAME
@@ -1149,13 +1149,13 @@ encaps:
        (* this is not really a T_VARIABLE, bit it's still conceptually
         * a variable so we build it almost like above
         *)
-       let var = IdVar (DName $2, Ast.noScope()) in
+       let var = mk_var $2 in
        EncapsDollarCurly ($1, var, $3) 
      }
 
  | T_DOLLAR_OPEN_CURLY_BRACES T_STRING_VARNAME  TOBRA expr TCBRA  TCBRACE
      { 
-       let lval = ArrayGet(IdVar (DName $2, Ast.noScope()), ($3, Some $4, $5))
+       let lval = ArrayGet(mk_var $2, ($3, Some $4, $5))
        in
        EncapsDollarCurly ($1,  lval, $6)
      }
@@ -1176,7 +1176,7 @@ encaps_var_offset:
      let cst = String $1 in (* will not have enclosing "'"  as usual *)
      Sc (C cst)
    }
- | T_VARIABLE	{ IdVar (DName $1, Ast.noScope()) }
+ | T_VARIABLE	{ mk_var $1 }
  | T_NUM_STRING	{
      (* the original php lexer does not return some numbers for
       * offset of array access inside strings. Not sure why ...

@@ -190,5 +190,11 @@ let mk_param s =
   }
 (* old:  e, Ast_php.noType() *)
 let mk_e e = e
+
+let mk_var (s, tok) = 
+  match s with
+  | "this" -> ThisVar tok
+  | _ -> IdVar (DName(s, tok), Ast_php.noScope())
+
 (*e: AST builder *)
 (*e: parser_php_mly_helper.ml *)
