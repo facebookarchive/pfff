@@ -745,51 +745,6 @@ let m_cpp_directive a b =
 (* ---------------------------------------------------------------------- *)
 (* lvalue *)
 (* ---------------------------------------------------------------------- *)
-(*
-let rec m_variable a b =
-  match a, b with
-  (* pad: iso on $V metavar. Match any kind of PHP 'variable'.
-   * Note that this includes function call. It's 'variable' in
-   * the PHP original grammar sense, as usual.
-   *)
-  | A.Var((A.DName (dname, info_dname)), a2),
-    b when MV.is_metavar_lvalue_name ("$" ^ dname) ->
-
-      X.envf ("$" ^ dname, info_dname) (B.Lvalue (b)) >>=
-      (function
-      | ((dname, info_dname), B.Lvalue (b))  ->
-        return (
-          A.Var((A.DName (dname, info_dname)), a2),
-          b
-        )
-      | _ -> raise Impossible
-      )
-
-  (* pad, iso on variable name *)
-  | A.Var((A.DName (dname, info_dname)), a2),
-    B.Var(b1, b2) when MV.is_metavar_variable_name ("$" ^ dname) ->
-      (* we don't want expr metavariable and variable metavariable
-       * to collide, so X and $X are different keys in the environment
-       *)
-      X.envf ("$" ^ dname, info_dname) (B.Lvalue (b)) >>=
-      (function
-      | ((dname, info_dname), B.Lvalue (b))  ->
-        return (
-          A.Var((A.DName (dname, info_dname)), a2),
-          b
-        )
-      | _ -> raise Impossible
-      )
-
-  | A.Var(a1, a2), B.Var(b1, b2) ->
-    m_dname a1 b1 >>= (fun (a1, b1) ->
-    m_ref m_xxx_scope a2 b2 >>= (fun (a2, b2) ->
-    return (
-       A.Var(a1, a2),
-       B.Var(b1, b2)
-    )
-    ))
-*)
 
 let rec m_lvalue a b = m_expr a b
 
@@ -947,6 +902,128 @@ and m_expr a b =
        A.Sc(A.C(A.String("...", info_string))),
        e
      )
+
+
+  | A.Id(a1), B.Id(b1) ->
+    m_name a1 b1 >>= (fun (a1, b1) ->
+    return (
+       A.Id(a1),
+       B.Id(b1)
+    )
+    )
+  | A.IdSelf(a1), B.IdSelf(b1) ->
+    m_tok a1 b1 >>= (fun (a1, b1) ->
+    return (
+       A.IdSelf(a1),
+       B.IdSelf(b1)
+    )
+    )
+  | A.IdParent(a1), B.IdParent(b1) ->
+    m_tok a1 b1 >>= (fun (a1, b1) ->
+    return (
+       A.IdParent(a1),
+       B.IdParent(b1)
+    )
+    )
+
+  | A.IdStatic(a1), B.IdStatic(b1) ->
+    m_tok a1 b1 >>= (fun (a1, b1) ->
+    return (
+       A.IdStatic(a1),
+       B.IdStatic(b1)
+    )
+    )
+
+  (* pad, iso on variable name *)
+  | A.IdVar((A.DName (dname, info_dname)), a2),
+    B.IdVar(b1, b2) when MV.is_metavar_variable_name ("$" ^ dname) ->
+      (* we don't want expr metavariable and variable metavariable
+       * to collide, so X and $X are different keys in the environment
+       *)
+      X.envf ("$" ^ dname, info_dname) (B.Expr (b)) >>=
+      (function
+      | ((dname, info_dname), B.Expr (b))  ->
+        return (
+          A.IdVar((A.DName (dname, info_dname)), a2),
+          b
+        )
+      | _ -> raise Impossible
+      )
+
+  | A.IdVar(a1, a2), B.IdVar(b1, b2) ->
+    m_dname a1 b1 >>= (fun (a1, b1) ->
+    m_ref m_xxx_scope a2 b2 >>= (fun (a2, b2) ->
+    return (
+       A.IdVar(a1, a2),
+       B.IdVar(b1, b2)
+    )
+    ))
+
+  | A.ThisVar(a1), B.ThisVar(b1) ->
+    m_tok a1 b1 >>= (fun (a1, b1) ->
+    return (
+       A.ThisVar(a1),
+       B.ThisVar(b1)
+    )
+    )
+  | A.Call(a1, a2), B.Call(b1, b2) ->
+    m_expr a1 b1 >>= (fun (a1, b1) ->
+    m_paren (m_list__m_argument) a2 b2 >>= (fun (a2, b2) ->
+    return (
+       A.Call(a1, a2),
+       B.Call(b1, b2)
+    )
+    ))
+  | A.ObjGet(a1, a2, a3), B.ObjGet(b1, b2, b3) ->
+    m_expr a1 b1 >>= (fun (a1, b1) ->
+    m_tok a2 b2 >>= (fun (a2, b2) ->
+    m_expr a3 b3 >>= (fun (a3, b3) ->
+    return (
+       A.ObjGet(a1, a2, a3),
+       B.ObjGet(b1, b2, b3)
+    )
+    )))
+  | A.ClassGet(a1, a2, a3), B.ClassGet(b1, b2, b3) ->
+    m_expr a1 b1 >>= (fun (a1, b1) ->
+    m_tok a2 b2 >>= (fun (a2, b2) ->
+    m_expr a3 b3 >>= (fun (a3, b3) ->
+    return (
+       A.ClassGet(a1, a2, a3),
+       B.ClassGet(b1, b2, b3)
+    )
+    )))
+  | A.ArrayGet(a1, a2), B.ArrayGet(b1, b2) ->
+    m_expr a1 b1 >>= (fun (a1, b1) ->
+    (m_bracket (m_option m_expr)) a2 b2 >>= (fun (a2, b2) ->
+    return (
+       A.ArrayGet(a1, a2),
+       B.ArrayGet(b1, b2)
+    )
+    ))
+  | A.HashGet(a1, a2), B.HashGet(b1, b2) ->
+    m_expr a1 b1 >>= (fun (a1, b1) ->
+    m_brace m_expr a2 b2 >>= (fun (a2, b2) ->
+    return (
+       A.HashGet(a1, a2),
+       B.HashGet(b1, b2)
+    )
+    ))
+  | A.BraceIdent(a2), B.BraceIdent(b2) ->
+    m_brace m_expr a2 b2 >>= (fun (a2, b2) ->
+    return (
+       A.BraceIdent(a2),
+       B.BraceIdent(b2)
+    )
+    )
+  | A.Deref(a1, a2), B.Deref(b1, b2) ->
+    m_tok a1 b1 >>= (fun (a1, b1) ->
+    m_expr a2 b2 >>= (fun (a2, b2) ->
+    return (
+       A.Deref(a1, a2),
+       B.Deref(b1, b2)
+    )
+    ))
+
 
   | A.Sc(a1), B.Sc(b1) ->
     m_scalar a1 b1 >>= (fun (a1, b1) ->
@@ -1261,6 +1338,23 @@ and m_expr a b =
        B.ParenExpr(b1)
     )
     )
+  | A.Id _, _
+
+  | A.IdSelf _, _
+  | A.IdParent _, _
+  | A.IdStatic _, _
+
+  | A.IdVar _, _
+  | A.ThisVar _, _
+
+  | A.Call _, _
+  | A.ObjGet _, _
+  | A.ClassGet _, _
+  | A.ArrayGet _, _
+  | A.HashGet _, _
+  | A.BraceIdent _, _
+  | A.Deref _, _
+
   | A.Sc _, _
   | A.Binary _, _
   | A.Unary _, _
@@ -1298,8 +1392,6 @@ and m_expr a b =
   | A.Yield _, _
   | A.YieldBreak _, _
    -> fail ()
-
-  | _ -> raise Todo
 
 (* ---------------------------------------------------------------------- *)
 (* xhp (and a few xhp isos) *)
