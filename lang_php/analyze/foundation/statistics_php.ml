@@ -246,16 +246,6 @@ let stat_of_program ?(hooks=default_hooks) h file ast =
       );
       k x
     );
-    V.klvalue = (fun (k, _) x ->
-      (match x with
-      | FunCallSimple _ -> 
-          inc "fun call"
-
-
-
-      | _ -> ()
-      );
-    );
   }
 
 

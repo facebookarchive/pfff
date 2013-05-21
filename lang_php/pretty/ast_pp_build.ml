@@ -582,11 +582,6 @@ and lvalue env x = expr env x
 
 and lvalue2 env = function
   | Var (dn, scope) -> A.Id (dname dn)
-  | FunCallSimple (f, (_, args, _)) ->
-      let f = name env f in
-      let args = comma_list args in
-      let args = List.map (argument env) args in
-      A.Call (A.Id f, args)
 
 and argument env = function
   | Arg e -> expr env e

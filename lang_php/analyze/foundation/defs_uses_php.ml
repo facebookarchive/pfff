@@ -120,9 +120,9 @@ let defs_of_any any =
       | _ -> k x
     );
 
-    V.klvalue = (fun (k, bigf) x ->
+    V.kexpr = (fun (k, bigf) x ->
       match x with
-      | FunCallSimple((Name ("define", tok)), args) ->
+      | Call(Id(Name ("define", tok)), args) ->
           let args = args +> Ast.unparen +> Ast.uncomma in
           (match args with
           (* Maybe better to have a Define directly in the AST. Note that
@@ -184,10 +184,10 @@ let uses_of_any ?(verbose=false) any =
       k x
     );
 
-    V.klvalue = (fun (k, bigf) x ->
+    V.kexpr = (fun (k, bigf) x ->
       (match x with
       (* todo: what about functions passed as strings? *)
-      | FunCallSimple (name, args) ->
+      | Call (Id name, args) ->
           Common.push2 (Db.Function, name) aref;
       | _ -> ()
       );

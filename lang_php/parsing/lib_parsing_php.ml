@@ -181,9 +181,9 @@ let get_funcalls_any any =
   
   let hooks = { V.default_visitor with
     (* TODO if nested function ??? still wants to report ? *)
-    V.klvalue = (fun (k,vx) x ->
+    V.kexpr = (fun (k,vx) x ->
       match x with
-      | FunCallSimple (callname, args) ->
+      | Call (Id callname, args) ->
           let str = Ast_php.name callname in
           Hashtbl.replace h str true;
           k x
@@ -247,7 +247,6 @@ let get_vars_any any =
       match x with
       | Var (dname, _scope) ->
           Common.push2 dname aref
-      | _ -> k x
     );
     V.kexpr = (fun (k, vx) x ->
       match x with

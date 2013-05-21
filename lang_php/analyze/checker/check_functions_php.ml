@@ -134,9 +134,9 @@ let check_args_vs_params (callname, all_args) (defname, all_params) =
 let visit_and_check_funcalls find_entity prog =
   let visitor = V.mk_visitor { V.default_visitor with
 
-    V.klvalue = (fun (k,vx) x ->
+    V.kexpr = (fun (k,vx) x ->
       match x with
-      | FunCallSimple (callname, args)  ->
+      | Call (Id callname, args)  ->
          E.find_entity_and_warn find_entity (Ent.Function, callname)
          (function Ast_php.FunctionE def ->
            (* todo? memoize ? *)

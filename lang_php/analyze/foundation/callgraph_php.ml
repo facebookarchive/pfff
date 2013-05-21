@@ -502,9 +502,9 @@ let callees_of_any any =
   let hooks = { Visitor_php.default_visitor with
 
     (* TODO if nested function ??? still wants to report ? *)
-    Visitor_php.klvalue = (fun (k,vx) x ->
+    Visitor_php.kexpr = (fun (k,vx) x ->
       match x with
-      | FunCallSimple (callname, args) ->
+      | Ast_php.Call (Id callname, args) ->
          (* note that as opposed to C, f cant be the name of a local var or
           * a function pointer because the namespace are different
           * (T_STRING vs T_VARIABLE).

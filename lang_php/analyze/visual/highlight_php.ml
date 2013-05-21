@@ -466,6 +466,15 @@ let visit_toplevel ~tag prefs  hentities (toplevel, toks) =
           tag info (Field (Use2 fake_no_use2));
           k expr
 
+      | Call (Id callname, args) ->
+          let info = Ast.info_of_name callname in
+          let f = Ast.name callname in
+
+          let args = args +> Ast.unparen +> Ast.uncomma in
+
+          highlight_funcall_simple ~tag ~hentities f args info;
+          k expr
+
       | Call (ClassGet (lval, _, Id name), _args) ->
           let info = Ast.info_of_name name in
           tag info (StaticMethod (Use2 fake_no_use2));
@@ -575,17 +584,6 @@ let visit_toplevel ~tag prefs  hentities (toplevel, toks) =
           | S.NoScope ->
               tag info (NoType)
           )
-
-
-      | FunCallSimple (callname, args) ->
-          let info = Ast.info_of_name callname in
-          let f = Ast.name callname in
-
-          let args = args +> Ast.unparen +> Ast.uncomma in
-
-          highlight_funcall_simple ~tag ~hentities f args info;
-          k x
-
 
     );
 

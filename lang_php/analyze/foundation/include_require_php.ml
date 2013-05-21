@@ -115,12 +115,11 @@ let rec increq_expr_of_expr e =
 
   (* ./ffi -dump_php_ml ../tests/require_dirname.php *)
   | (Binary(
-      (Lv(
-        (FunCallSimple(Name(("dirname", i_2)),
+      (Call(Id (Name(("dirname", i_2))),
                       (i_3,
                       [Left (Arg(
                         (Sc(C(CName(Name(("__FILE__", i_4))))))))],
-                      i_6))))), 
+                      i_6))), 
         (BinaryConcat, i_9),
       (Sc(C(String((sfilename, i_10)))))))
     ->
@@ -128,22 +127,18 @@ let rec increq_expr_of_expr e =
 
   (* ./ffi -dump_php_ml ../tests/require_realpath.php *)
   | (Binary(
-      (Lv(
-        (FunCallSimple(Name(("realpath", i_2)),
+      (Call(Id (Name(("realpath", i_2))),
                       (i_3,
                       [Left (Arg(
-                        (Lv(
-                          (FunCallSimple(Name(("dirname", i_4)),
+                        (Call(Id (Name(("dirname", i_4))),
                                         (i_5,
                                         [Left (Arg(
                                           (Sc(
                                             C(CName(Name(("__FILE__", i_6)))))
                                           )))],
                                         i_8))
-                          ))
                         )))],
                       i_11))
-        ))
       ), (BinaryConcat, i_14),
       (Sc(
         C(String((sfilename, i_15))))
@@ -152,25 +147,22 @@ let rec increq_expr_of_expr e =
       ConcatRealpathDirname(sfilename)
 
   | (Binary(
-      (Lv(
-        (FunCallSimple(Name(("realpath", i_2)),
+      (Call(Id (Name(("realpath", i_2))),
                       (i_3,
                       [Left (Arg(
                         (Binary(
-                          (Lv(
-                            (FunCallSimple(Name(("dirname", i_4)),
+                          (Call(Id (Name(("dirname", i_4))),
                                           (i_5,
                                           [Left Arg((
                                             (Sc(
                                               C(CName(Name(("__FILE__", i_6)))))
                                             )))],
                                           i_8))
-                            ))
                           ), (BinaryConcat, i_11),
                           (Sc(C(String((sfilename1, i_12))))))
                         )))],
                       i_15))
-        ))), 
+        ), 
       (BinaryConcat, i_18),
       (Sc(C(String((sfilename2, i_19))))
       )))
@@ -178,20 +170,17 @@ let rec increq_expr_of_expr e =
       ConcatRealpathDirname(sfilename1 ^ sfilename2)
 
   (* ./ffi -dump_php_ml ../tests/require_realpath3.php *)
-  | (Lv(
-      (FunCallSimple(Name(("realpath", i_2)),
+  | (Call(Id (Name(("realpath", i_2))),
                     (i_3,
                     [Left (Arg(
                       (Binary(
-                        (Lv(
-                          (FunCallSimple(Name(("dirname", i_4)),
+                        (Call(Id (Name(("dirname", i_4))),
                                         (i_5,
                                         [Left (Arg(
                                           (Sc(
                                             C(CName(Name(("__FILE__", i_6)))))
                                           )))],
                                         i_8))
-                          ))
                         ), (BinaryConcat, i_11),
                         (Sc(
                           C(
@@ -199,7 +188,6 @@ let rec increq_expr_of_expr e =
                        ))
                     )))],
                 i_15))
-             ))
           )
       ->
       ConcatRealpathDirname(sfilename)

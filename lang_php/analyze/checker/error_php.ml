@@ -417,16 +417,14 @@ let rank_of_error_kind err_kind =
       | Controlflow_php.Throw  -> Never
       | Controlflow_php.SimpleStmt (Controlflow_php.ExprStmt (e, _tok)) ->
           (match e with
-          | (Lv (FunCallSimple(Name(
-              ( "invariant_violation" | "_piranha_rollback_log"), _), _args)
-              )) -> Never
+          | (Call(Id (Name(
+              ( "invariant_violation" | "_piranha_rollback_log"), _)), _args)
+              ) -> Never
 
           | (Yield(i_1,
-               (Lv(
-                (FunCallSimple(Name(("result", i_2)),
+               (Call(Id (Name(("result", i_2))),
                  (i_3, [Left(Arg((Sc(C(CName(Name(("null", i_4))))))))],
                 i_6))
-                ))
                ))) -> Never
 
           | _ -> Ok

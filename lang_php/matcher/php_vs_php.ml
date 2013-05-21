@@ -789,19 +789,6 @@ let rec m_variable a b =
     )
     ))
 
-  | A.FunCallSimple(a2, a3), B.FunCallSimple(b2, b3) ->
-    (* iso on function name *)
-    m_name_metavar_ok a2 b2 >>= (fun (a2, b2) ->
-    m_paren (m_list__m_argument) a3 b3 >>= (fun (a3, b3) ->
-    return (
-       A.FunCallSimple(a2, a3),
-       B.FunCallSimple(b2, b3)
-    )
-    ))
-  | A.Var _, _
-  | A.FunCallSimple _, _
-   -> fail ()
-
 and m_lvalue a b = m_expr a b
 
 and m_rw_variable a b = m_expr a b

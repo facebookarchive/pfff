@@ -94,9 +94,16 @@ let nblines_with_wc_cached file =
  *)
 let get_all_calls ?(is_directive_to_filter= (fun _ -> false)) =
   V.do_visit_with_ref (fun aref -> { V.default_visitor with
-    V.klvalue = (fun (k,vx) x ->
+
+    V.kexpr = (fun (k, vx) x ->
       match x with
-      | FunCallSimple (callname, (lp, args, rp)) ->
+      | New (tok, class_name_ref, args_opt) ->
+          (* can not use ')' here, so use the token for new *)
+          Common.push2 (None, tok) aref;
+
+          k x;
+
+      | Call (Id callname, (lp, args, rp)) ->
           let str = Ast_php.name callname in
           
           (* filter the require_module stuff that already skip
@@ -107,16 +114,6 @@ let get_all_calls ?(is_directive_to_filter= (fun _ -> false)) =
             Common.push2 (Some str, rp) aref;
 
           k x
-      | _ -> 
-          k x
-    );
-    V.kexpr = (fun (k, vx) x ->
-      match x with
-      | New (tok, class_name_ref, args_opt) ->
-          (* can not use ')' here, so use the token for new *)
-          Common.push2 (None, tok) aref;
-
-          k x;
 
       | Call (ClassGet(var, t1, Id methname), (lp, args, rp))
       | Call (ObjGet(var, t1, Id methname), (lp, args, rp)) 

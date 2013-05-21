@@ -300,12 +300,12 @@ let simple_transfo xs =
     let ast = Parse_php.program_of_program2 ast2 in
 
     let hook = { Visitor_php.default_visitor with
-      Visitor_php.klvalue = (fun (k, _) x ->
+      Visitor_php.kexpr = (fun (k, _) x ->
         match x with
-        | FunCallSimple((Name ("foo", info_foo)), (lp, args, rp)) ->
+        | Call(Id(Name ("foo", info_foo)), (lp, args, rp)) ->
             pr2 "found match";
             
-            let ii = Lib_parsing_php.ii_of_any (Lvalue x) in
+            let ii = Lib_parsing_php.ii_of_any (Expr x) in
             ii +> List.iter (fun info ->
               info.transfo <- Remove
             );

@@ -391,18 +391,14 @@ let iter_dumpfile2
                       let expr = parse_xdebug_expr str in
 
                       match expr with
-                      | Lv var ->
-                          (match var with
-                          | FunCallSimple (name, args_paren) ->
-                              assert(Ast.name name = "foo");
-                              Ast.unparen args_paren 
-                              +> Ast.uncomma 
-                              +> List.map (function
-                              | Arg e -> e
-                              | _ -> raise Impossible
-                              )
-                          | _ -> raise Impossible
-                          )
+                      | Call (Id name, args_paren) ->
+                        assert(Ast.name name = "foo");
+                        Ast.unparen args_paren 
+                        +> Ast.uncomma 
+                        +> List.map (function
+                        | Arg e -> e
+                        | _ -> raise Impossible
+                        )
                       | _ -> raise Impossible
                   in
 

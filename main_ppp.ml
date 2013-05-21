@@ -229,7 +229,7 @@ let mk_call_user_func_call var args_paren =
   let arg1 = Arg (var) in
   let args' = (Left arg1)::args in
   let str = "call_user_func" in
-  FunCallSimple ((Name (str, fkt str)), (op, args', cp))
+  Call (Id (Name (str, fkt str)), (op, args', cp))
 
 
 
@@ -479,7 +479,7 @@ let rec (transfo: string list -> stmt_and_def list -> stmt_and_def list) =
            (* finally just return the 'new anon_class($y, $this->x)' *)
            res
 
-(*
+(* TODO
       (* apply recursively first *)
       let res = k v in
       match res with

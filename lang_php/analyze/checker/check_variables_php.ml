@@ -922,7 +922,6 @@ let check_and_annotate_program2 find_entity prog =
           (* keep NoScope *)
           with Not_found -> ()
           )
-      | _ -> k x
     );
   };
   ()
