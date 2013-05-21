@@ -1,2 +1,2 @@
-- $V->addQueryData(A, B)
-+ $V->addQueryData(array(A => B))
+- X->addQueryData(A, B)
++ X->addQueryData(array(A => B))
