@@ -964,7 +964,7 @@ expr:
                      f_attrs = None;
        })
      }
- /*(* php-facebook-ext: todo? in hphp.y yield are at the statement level
+ /*(* php-facebook-ext: in hphp.y yield are at the statement level
     * and are restricted to a few forms *)*/
  | T_YIELD expr { Yield ($1, $2) }
  | T_YIELD T_BREAK { YieldBreak ($1, $2) }
@@ -1074,7 +1074,7 @@ primary_expr:
     * more a variable than a constant. So I've decided to inline this
     * special case rule in encaps. Maybe this is too restrictive.
     *)*/
-  /*(* | T_STRING_VARNAME {  raise Todo } *)*/
+  /*(* | T_STRING_VARNAME {  } *)*/
 
  /*(* xhp: do not put in 'expr', otherwise can't have xhp
     * in function arguments
@@ -1128,13 +1128,14 @@ function_call_argument:
 /*(*----------------------------*)*/
 
 encaps:
- | T_ENCAPSED_AND_WHITESPACE { EncapsString $1 }
+ | T_ENCAPSED_AND_WHITESPACE
+     { EncapsString $1 }
  | T_VARIABLE 
-     { EncapsString $1 (* TODO *) }
+     { EncapsVar (IdVar (DName $1, Ast.noScope()))  }
  | T_VARIABLE TOBRA encaps_var_offset TCBRA
-     { EncapsString $1 (* TODO *) }
+     { EncapsVar (ArrayGet (IdVar (DName $1, Ast.noScope()),($2,Some $3,$4)))}
  | T_VARIABLE T_OBJECT_OPERATOR T_IDENT
-     { EncapsString $1 (* TODO *) }
+     { EncapsVar (ObjGet(IdVar (DName $1, Ast.noScope()), $2, Id (Name $3)))}
 
  /*(* for ${beer}s. Note that this rule does not exist in the original PHP
     * grammar. Instead only the case with a TOBRA after the T_STRING_VARNAME
@@ -1144,10 +1145,20 @@ encaps:
     * defined this rule. maybe it's too restrictive, we'll see.
     *)*/
  | T_DOLLAR_OPEN_CURLY_BRACES T_STRING_VARNAME TCBRACE
-     { EncapsString $2 (* TODO *) }
+     { 
+       (* this is not really a T_VARIABLE, bit it's still conceptually
+        * a variable so we build it almost like above
+        *)
+       let var = IdVar (DName $2, Ast.noScope()) in
+       EncapsDollarCurly ($1, var, $3) 
+     }
 
  | T_DOLLAR_OPEN_CURLY_BRACES T_STRING_VARNAME  TOBRA expr TCBRA  TCBRACE
-     { EncapsString $2 (* TODO *) }
+     { 
+       let lval = ArrayGet(IdVar (DName $2, Ast.noScope()), ($3, Some $4, $5))
+       in
+       EncapsDollarCurly ($1,  lval, $6)
+     }
 
  /*(* for {$beer}s *)*/
  | T_CURLY_OPEN expr TCBRACE           { EncapsCurly($1, $2, $3) }
@@ -1169,7 +1180,6 @@ encaps_var_offset:
  | T_NUM_STRING	{
      (* the original php lexer does not return some numbers for
       * offset of array access inside strings. Not sure why ...
-      * TODO?
       *)
      let cst = String $1 in (* will not have enclosing "'"  as usual *)
      Sc (C cst)
@@ -1230,7 +1240,7 @@ ident:
    * in certain context, but this would force to share some states between
    * the lexer and parser.
    *
-   * todo? emit a warning when the user use XHP keywords for regular idents ?
+   * less? emit a warning when the user use XHP keywords for regular idents ?
    *)*/
  | T_XHP_ATTRIBUTE { Ast.str_of_info $1, $1 }
  | T_XHP_CATEGORY  { Ast.str_of_info $1, $1 }
@@ -1265,7 +1275,7 @@ ident_xhp_attr_name_atom:
     * (which roughly correspond to the tokens in Lexer_php.keywords_table).
     * There is no conflict introducing this big list of tokens.
     *
-    * todo? emit a warning when the user use PHP keywords for XHP attribute ?
+    * less? emit a warning when the user use PHP keywords for XHP attribute ?
     *)*/
  | T_ECHO { $1 } | T_PRINT { $1 } | T_IF { $1 } | T_ELSE { $1 }
  | T_ELSEIF { $1 } | T_ENDIF { $1 } | T_DO { $1 } | T_WHILE { $1 }
