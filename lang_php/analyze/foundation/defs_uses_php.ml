@@ -17,16 +17,16 @@ open Common
 open Ast_php
 
 module Ast = Ast_php
-
 module V = Visitor_php
-module Db = Database_code
+module E = Database_code
 
 (*****************************************************************************)
 (* Prelude *)
 (*****************************************************************************)
 (* 
  * There are many places where we need to get access to the list of
- * entities defined in a file or used in a file (e.g. for tags).
+ * entities defined in a file or used in a file (e.g. for tags,
+ * in cmf -deadcode to analyze the defs in a diff, etc)
  * 
  * This file is concerned with entities, that is Ast_php.name.
  * For completness C-s for name in ast_php.ml and see if all uses of 
@@ -34,9 +34,7 @@ module Db = Database_code
  * to variables, that is Ast_php.dname, as in check_variables_php.ml
  * 
  * todo: factorize code in
- *  - database_php_build.ml
  *  - lib_parsing_php.ml many get_xxx_any ?
- *  - check_module.ml
  *)
 
 (*****************************************************************************)
@@ -62,8 +60,6 @@ type use =
 (* Defs *)
 (*****************************************************************************)
 (* 
- * todo: similar to what is in database_php_build.ml
- * 
  * history: was previously duplicated in 
  *  - tags_php.ml
  *  - TODO check_module.ml and defs_module.ml
@@ -77,7 +73,7 @@ let defs_of_any any =
     V.kfunc_def = (fun (k, _) def ->
       (match def.f_type with
       | FunctionRegular -> 
-          Common.push2 (Db.Function, def.f_name, None) aref
+          Common.push2 (E.Function, def.f_name, None) aref
       | MethodRegular | MethodAbstract ->
           let classname =
             match !current_class with
@@ -86,10 +82,10 @@ let defs_of_any any =
           in
           let kind =
             if Class_php.is_static_method def
-            then Db.StaticMethod
-            else Db.RegularMethod
+            then E.StaticMethod
+            else E.RegularMethod
           in
-          Common.push2 (Db.Method kind, def.f_name, Some classname) aref
+          Common.push2 (E.Method kind, def.f_name, Some classname) aref
       | FunctionLambda ->
           (* the f_name is meaningless *)
           ()
@@ -102,11 +98,11 @@ let defs_of_any any =
     V.kclass_def = (fun (k, _) def ->
       let kind = 
         match def.c_type with
-        | ClassRegular _ | ClassFinal _ | ClassAbstract _ -> Db.RegularClass
-        | Interface _ -> Db.Interface
-        | Trait _ -> Db.Trait
+        | ClassRegular _ | ClassFinal _ | ClassAbstract _ -> E.RegularClass
+        | Interface _ -> E.Interface
+        | Trait _ -> E.Trait
       in
-      Common.push2 (Db.Class kind, def.c_name, None) aref;
+      Common.push2 (E.Class kind, def.c_name, None) aref;
       Common.save_excursion current_class (Some def.c_name) (fun () ->
           k def;
       );
@@ -115,7 +111,7 @@ let defs_of_any any =
       match x with
       (* const of php 5.3 *)
       | ConstantDef (tok, name, tok_equal, scalar, semicolon) ->
-          Common.push2 (Db.Constant, name, None) aref;
+          Common.push2 (E.Constant, name, None) aref;
           k x
       | _ -> k x
     );
@@ -134,14 +130,13 @@ let defs_of_any any =
                * which is not the case for s. See ast_php.ml
                *)
               let info' = Ast.rewrap_str (s) info in
-              Common.push2 (Db.Constant, (Name (s, info')), None) aref;
+              Common.push2 (E.Constant, (Name (s, info')), None) aref;
               k x
           | _ -> k x
           )
       | _ -> k x
     );
-    (* todo: globals? fields? class constants? *)
-
+    (* less: globals? fields? class constants? *)
   }) any
 
 (*****************************************************************************)
@@ -183,7 +178,7 @@ let uses_of_any ?(verbose=false) any =
           ()
 
       | Call (Id name, args) ->
-          Common.push2 (Db.Function, name) aref;
+          Common.push2 (E.Function, name) aref;
       | _ -> ()
       );
       k x
@@ -206,9 +201,9 @@ let uses_of_any ?(verbose=false) any =
       (* todo?? how know? for new it's always a RegularClass, but for the 
        * rest? 
        *)
-      let kind = Db.RegularClass in
+      let kind = E.RegularClass in
 
-      Common.push2 (Db.Class kind, classname) aref;
+      Common.push2 (E.Class kind, classname) aref;
       k classname
     );
 
@@ -216,10 +211,10 @@ let uses_of_any ?(verbose=false) any =
     V.kxhp_html = (fun (k, _) x ->
       match x with
       | Xhp (xhp_tag, _attrs, _tok, _body, _end) ->
-          Common.push2 (Db.Class Db.RegularClass, (XhpName xhp_tag)) aref;
+          Common.push2 (E.Class E.RegularClass, (XhpName xhp_tag)) aref;
           k x
       | XhpSingleton (xhp_tag, _attrs, _tok) ->
-          Common.push2 (Db.Class Db.RegularClass, (XhpName xhp_tag)) aref;
+          Common.push2 (E.Class E.RegularClass, (XhpName xhp_tag)) aref;
           k x
       (* todo: do it also for xhp attributes ? kxhp_tag then ?
        * (but take care to not include doublon because have
