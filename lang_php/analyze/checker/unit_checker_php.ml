@@ -64,7 +64,7 @@ let unittest =
   in
   Error_php._errors := [];
 
-  let verbose = true in
+  let verbose = false in
 
   (* old:
    *  let db = Database_php_build.db_of_files_or_dirs files in
