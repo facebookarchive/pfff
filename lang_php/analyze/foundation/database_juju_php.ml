@@ -56,7 +56,7 @@ let juju_db_of_files ?(show_progress=false) xs =
       let cst = Parse_php.parse_program file in		
       let ast = Ast_php_simple_build.program cst in
       List.iter (fun x ->
-        (* todo: print warning when duplicate class/func ? *)
+        (* print warning when duplicate class/func *)
         let add aref name c =
           let s = (A.unwrap name) in
           if SMap.mem s !aref
@@ -82,7 +82,7 @@ let juju_db_of_files ?(show_progress=false) xs =
   db
 
 (* todo: what if multiple matches?
- * todo: profiling information
+ * less: profiling information
  *)
 let code_database_of_juju_db db = 
   let get s aref =
