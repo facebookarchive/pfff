@@ -215,7 +215,9 @@ module H = Parser_php_mly_helper
 %left      T_LOGICAL_XOR
 %left      T_LOGICAL_AND
 %right     T_PRINT
-%left      TEQ T_PLUS_EQUAL T_MINUS_EQUAL T_MUL_EQUAL T_DIV_EQUAL T_CONCAT_EQUAL T_MOD_EQUAL T_AND_EQUAL T_OR_EQUAL T_XOR_EQUAL T_SL_EQUAL T_SR_EQUAL
+/*(* was left originally, but now that unified expr to lvalue, need that *)*/
+%right     T_EQ
+%left      T_PLUS_EQUAL T_MINUS_EQUAL T_MUL_EQUAL T_DIV_EQUAL T_CONCAT_EQUAL T_MOD_EQUAL T_AND_EQUAL T_OR_EQUAL T_XOR_EQUAL T_SL_EQUAL T_SR_EQUAL
 %left      TQUESTION TCOLON
 %left      T_BOOLEAN_OR
 %left      T_BOOLEAN_AND
