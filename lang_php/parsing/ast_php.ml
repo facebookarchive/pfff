@@ -169,13 +169,20 @@ and ptype =
  * syntax tree and no more.
  *)
 and expr =
-  (* true, false, null, or function/class/cst name.
+  (* cst/function/class/method/field/class_cst name.
    *  
    * Now that we've unified lvalue and expr, the use of Id is more
-   * ambiguous as it can refer to a classname, a function name,
-   * or a constant so you need to match the context of use of Id
+   * ambiguous; it can refer to a classname, a function name,
+   * a constant, etc. You need to match the context of use of Id
    * to know in which situation you are (and take care if you use a visitor
-   * to not always call recursively the visitor/continuation).
+   * to not always call recursively the visitor/continuation):
+   * 
+   * - function: Call (Id, _)
+   * - class: ClassGet (Id, _)  
+   * - method: Call (ClassGet (_, Id)), Call (ObjGet (_, Id))
+   * - field: ObjGet(_, Id)
+   * - class_constant: ClassGet (_, Id)
+   * - constant: Id
    *)
   | Id of name
 
@@ -184,6 +191,7 @@ and expr =
   | IdParent of tok
   | IdStatic of tok
 
+  (* less: maybe could unify *)
   | IdVar of dname * Scope_php.phpscope ref
   | ThisVar of tok
 
