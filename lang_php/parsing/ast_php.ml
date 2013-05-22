@@ -50,12 +50,9 @@ open Parse_info
  * file, or to only add new constructors.
  *
  * todo:
- *  - unify expr and lvalue
  *  - add fbstrict types in AST, not just in grammar
  *  - support for '...' fbstrict extension in parameters
  *  - less: add namespace in AST (also add in grammar)
- *
- *  - introduce QualifierDynamic and factorize things in lvalue type
  *  - unify toplevel statement vs statements? hmmm maybe not
  *)
 
@@ -172,9 +169,17 @@ and ptype =
  * syntax tree and no more.
  *)
 and expr =
-  (* true, false, null, or function/class/cst name *)
+  (* true, false, null, or function/class/cst name.
+   *  
+   * Now that we've unified lvalue and expr, the use of Id is more
+   * ambiguous as it can refer to a classname, a function name,
+   * or a constant so you need to match the context of use of Id
+   * to know in which situation you are (and take care if you use a visitor
+   * to not always call recursively the visitor/continuation).
+   *)
   | Id of name
 
+  (* less: maybe unify in an id type? *)
   | IdSelf of tok
   | IdParent of tok
   | IdStatic of tok
