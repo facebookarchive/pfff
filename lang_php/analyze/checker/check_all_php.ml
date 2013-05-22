@@ -19,12 +19,13 @@ open Common
 (*****************************************************************************)
 (*
  * A driver for our different PHP checkers:
- *  - use/def of entities (functions, constants, classes)
+ *  - use/def of entities (functions, classes)
  *  - use/def of variables
  *  - function/method call arity
  *  - etc, see error_php.ml
  * 
  * todo:
+ *  - use/def of constants
  *  - dataflow based useless assignments
  *  - type checker (e.g. wrong type of argument, expr is not a bool,
  *    use of array instead of scalar, etc)
