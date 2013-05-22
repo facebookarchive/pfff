@@ -1,4 +1,14 @@
 # -*- sh -*-
+
+#file: lang_php/analyze/foundation/ast_php_simple_build.ml
+#dir: commons
+#dir: lang_ml
+#dir: lang_java
+#dir: lang_javascript
+#dir: lang_clang
+#dir: lang_cpp
+#dir: lang_html
+
 ##############################################################################
 # All
 ##############################################################################
