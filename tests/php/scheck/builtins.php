@@ -17,7 +17,7 @@ function test_builtins() {
   $$x = 1;
   $o = new TestDynField();
   $fld = 'afield';
-  // eval_var_field()
+
   $o->$fld = 1;
 
   clone 1;

@@ -20,7 +20,6 @@ function __builtin__empty($x) { }
 
 function __builtin__eval($expr) { }
 function __builtin__eval_var($fld) { }
-function __builtin__eval_var_field($fld) { }
 
 function __builtin__clone($expr) { }
 function __builtin__exit($exit_code) { }

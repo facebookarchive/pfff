@@ -809,13 +809,23 @@ and expr env = function
       expr env e;
       Common.opt (expr env) eopt
 
-  | Obj_get (e1, e2) | Class_get (e1, e2) ->
+  | Obj_get (e1, e2) ->
+      expr env e1;
+      (match e2 with
+      (* with 'echo $o->$v' we have a dynamic field, we need to visit
+       * e2 to mark $v as used at least.
+       *)
+      | Id name when not (is_variable name)  -> ()
+      | _ -> expr env e2
+      )
+
+  | Class_get (e1, e2) ->
       expr env e1;
       (match e2 with
       (* with 'echo A::$v' we should not issue a UseOfUndefinedVariable,
        * check_classes_php.ml will handle this case.
        *)
-      | Id _ -> ()
+      | Id _  -> ()
       | _ -> expr env e2
       )
 

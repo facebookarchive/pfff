@@ -219,7 +219,7 @@ class TestDynProp {
   public $fld;
 }
 // I was originally not generating the right Ast for dynamic prop access
-function test_eval_var_field() {
+function test_dynamic_field() {
   $o = new TestDynProp;
   $x = 'fld';
   $o->$x = 1;

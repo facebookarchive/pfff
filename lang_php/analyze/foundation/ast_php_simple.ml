@@ -379,7 +379,6 @@ let wrap s = s, Some (Ast_php.fakeInfo s)
 (* builtin() is used for:
  *  - 'eval', and implicitly generated eval/reflection like functions:
  *     "eval_var" (e.g. for echo $$x, echo ${"x"."y"}),
- *     "eval_var_field" (e.g. for echo $o->$fld)
  *  - 'clone',
  *  - 'exit', 'yield', 'yield_break'
  *  - 'unset', 'isset', 'empty'
