@@ -183,6 +183,9 @@ and expr =
    * - field: ObjGet(_, Id)
    * - class_constant: ClassGet (_, Id)
    * - constant: Id
+   * 
+   * todo: just like we annotate IdVar with scope info, we could annotate
+   * Id with a kind info.
    *)
   | Id of name
 

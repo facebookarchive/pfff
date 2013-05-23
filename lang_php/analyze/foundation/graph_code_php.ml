@@ -545,7 +545,7 @@ and expr env x =
 
   (* Note that you should go here only when it's a constant. You should
    * catch the use of Id in other contexts before. For instance you
-   * should match on Id in Call, Class_get, etc so that this code
+   * should match on Id in Call, Class_get, Obj_get so that this code
    * is executed really as a last resort, which usually means when
    * there is the use of a constant.
    *)
