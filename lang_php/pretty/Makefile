@@ -40,7 +40,7 @@ all:: $(TARGET).cma $(BIN)
 all.opt:: $(TARGET).cmxa $(BIN).opt
 
 $(BIN): $(OBJS) $(LIBS) main.ml
-	$(OCAMLC) -o $@ $(SYSLIBS) $(LIBS) $(OBJS) main.ml
+	$(OCAMLC) -o $@ -custom $(SYSLIBS) $(LIBS) $(OBJS) main.ml
 
 $(BIN).opt: $(OBJS) $(LIBS) main.ml
 	$(OCAMLOPT) -o $@ $(SYSLIBSOPT) $(LIBS:.cma=.cmxa) $(OPTOBJS) main.ml
