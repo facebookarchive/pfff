@@ -215,8 +215,15 @@ module H = Parser_php_mly_helper
 %left      T_LOGICAL_XOR
 %left      T_LOGICAL_AND
 %right     T_PRINT
-/*(* was left originally, but now that unified expr to lvalue, need that *)*/
-%right     TEQ  T_PLUS_EQUAL T_MINUS_EQUAL T_MUL_EQUAL T_DIV_EQUAL T_CONCAT_EQUAL T_MOD_EQUAL T_AND_EQUAL T_OR_EQUAL T_XOR_EQUAL T_SL_EQUAL T_SR_EQUAL
+
+/*(* now that we've unified expr with lvalue, this should really be a %right
+   * and have higher priority than '&&' otherwise '1 && $x = 2'  would be 
+   * parsed as (1 && $x) = 2. We achieve the correct behavior not by
+   * using %right but by rewriting the rule regarding TEQ to be
+   * 'simple_expr TEQ expr' and not 'expr TEQ expr' (like in parser_cpp.mly).
+   *)*/
+%left     TEQ  T_PLUS_EQUAL T_MINUS_EQUAL T_MUL_EQUAL T_DIV_EQUAL T_CONCAT_EQUAL T_MOD_EQUAL T_AND_EQUAL T_OR_EQUAL T_XOR_EQUAL T_SL_EQUAL T_SR_EQUAL
+
 %left      TQUESTION TCOLON
 %left      T_BOOLEAN_OR
 %left      T_BOOLEAN_AND
@@ -228,6 +235,8 @@ module H = Parser_php_mly_helper
 %left      T_SL T_SR
 %left      TPLUS TMINUS TDOT
 %left      TMUL TDIV TMOD
+
+
 %right     TBANG
 %nonassoc  T_INSTANCEOF
 %right     TTILDE T_INC T_DEC T_INT_CAST T_DOUBLE_CAST T_STRING_CAST T_ARRAY_CAST T_OBJECT_CAST T_BOOL_CAST T_UNSET_CAST
@@ -856,21 +865,26 @@ attribute_argument: static_scalar { $1 }
 expr: 
  | simple_expr { $1 }
 
- | expr TEQ expr	{ Assign($1,$2, $3) }
- | expr TEQ TAND expr   { AssignRef($1,$2,$3, $4) }
+ /*(* the left part of TEQ used to be 'lvalue'. After the lvalue/expr
+    * unification, I put 'expr' but that was wrong because
+    * code like '1 && $x = 2'  was wrongly parsed. So we need to
+    * force to have a 'simple_expr' on the left side.
+    *)*/
+ | simple_expr TEQ expr	{ Assign($1,$2, $3) }
+ | simple_expr TEQ TAND expr   { AssignRef($1,$2,$3, $4) }
 
- | expr T_PLUS_EQUAL   expr { AssignOp($1,(AssignOpArith Plus,$2),$3) }
- | expr T_MINUS_EQUAL  expr { AssignOp($1,(AssignOpArith Minus,$2),$3) }
- | expr T_MUL_EQUAL    expr { AssignOp($1,(AssignOpArith Mul,$2),$3) }
- | expr T_DIV_EQUAL    expr { AssignOp($1,(AssignOpArith Div,$2),$3) }
- | expr T_MOD_EQUAL    expr { AssignOp($1,(AssignOpArith Mod,$2),$3) }
- | expr T_AND_EQUAL    expr { AssignOp($1,(AssignOpArith And,$2),$3) }
- | expr T_OR_EQUAL     expr { AssignOp($1,(AssignOpArith Or,$2),$3) }
- | expr T_XOR_EQUAL    expr { AssignOp($1,(AssignOpArith Xor,$2),$3) }
- | expr T_SL_EQUAL     expr { AssignOp($1,(AssignOpArith DecLeft,$2),$3) }
- | expr T_SR_EQUAL     expr { AssignOp($1,(AssignOpArith DecRight,$2),$3) }
+ | simple_expr T_PLUS_EQUAL   expr { AssignOp($1,(AssignOpArith Plus,$2),$3) }
+ | simple_expr T_MINUS_EQUAL  expr { AssignOp($1,(AssignOpArith Minus,$2),$3) }
+ | simple_expr T_MUL_EQUAL    expr { AssignOp($1,(AssignOpArith Mul,$2),$3) }
+ | simple_expr T_DIV_EQUAL    expr { AssignOp($1,(AssignOpArith Div,$2),$3) }
+ | simple_expr T_MOD_EQUAL    expr { AssignOp($1,(AssignOpArith Mod,$2),$3) }
+ | simple_expr T_AND_EQUAL    expr { AssignOp($1,(AssignOpArith And,$2),$3) }
+ | simple_expr T_OR_EQUAL     expr { AssignOp($1,(AssignOpArith Or,$2),$3) }
+ | simple_expr T_XOR_EQUAL    expr { AssignOp($1,(AssignOpArith Xor,$2),$3) }
+ | simple_expr T_SL_EQUAL     expr { AssignOp($1,(AssignOpArith DecLeft,$2),$3) }
+ | simple_expr T_SR_EQUAL     expr { AssignOp($1,(AssignOpArith DecRight,$2),$3) }
                             
- | expr T_CONCAT_EQUAL expr { AssignOp($1,(AssignConcat,$2),$3) }
+ | simple_expr T_CONCAT_EQUAL expr { AssignOp($1,(AssignConcat,$2),$3) }
 
  | expr T_INC { Postfix($1, (Inc, $2)) }
  | expr T_DEC { Postfix($1, (Dec, $2)) }

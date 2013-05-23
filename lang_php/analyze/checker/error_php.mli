@@ -30,6 +30,7 @@ type error = {
   | UseOfUndefinedVariable of string (* dname *) * suggest option
   | UnusedVariable of string (* dname *)  * Scope_php.phpscope
   | UseOfUndefinedVariableInLambda of string (* dname *)
+  | WrongLvalue
 
   (* classes (could be put in UndefinedEntity (ClassMember)) *)
   | UseOfUndefinedMember of string (* name *) * suggest option

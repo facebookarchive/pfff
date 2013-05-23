@@ -1,5 +1,5 @@
 <?php
 
-// parsed as $a = ($b = 1)
+// we want this to be parsed as $a = ($b = 1)
 // right associativity
 $a = $b = 1;

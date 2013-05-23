@@ -652,7 +652,7 @@ and expr env = function
       (* can we have another kind of lvalue? *)
       | e ->
           pr2 (str_of_any (Expr2 e));
-          raise Todo
+          failwith "WrongLvalue"
       );
       expr env e2
 

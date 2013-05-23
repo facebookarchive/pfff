@@ -91,6 +91,7 @@ type error = {
   | UseOfUndefinedVariable of string (* dname *) * suggest option
   | UnusedVariable of string (* dname *) * Scope_php.phpscope
   | UseOfUndefinedVariableInLambda of string (* dname *)
+  | WrongLvalue
 
   (* classes (could be put in UndefinedEntity (ClassMember)) *)
   | UseOfUndefinedMember of string (* name *) * suggest option
@@ -200,6 +201,8 @@ let string_of_error_kind error_kind =
 
   | UnusedVariable (dname, scope) ->
       spf "Unused %s variable %s" (Scope_php.s_of_phpscope scope) dname
+  | WrongLvalue ->
+      spf "The left side of = does not appear to be an lvalue"
 
   | UseOfUndefinedMember (name, x) ->
       spf "Use of undefined member $%s%s" name (string_of_suggest_opt x)
@@ -386,6 +389,7 @@ let rank_of_error_kind err_kind =
       )
 
   | UseOfUndefinedVariableInLambda _ -> Important
+  | WrongLvalue -> Important
           
   (* giving too many args is kinda ok, it's ignored, but not giving enough can
    * be bad. Those errors happens only when run with --heavy.

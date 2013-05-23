@@ -165,6 +165,8 @@ let info_of_error_and_kind err =
       "eOther"
   | IncludeUnresolved ->
       "eOther"
+  | WrongLvalue ->
+      "eOther"
   in
   err.loc, kind
 
