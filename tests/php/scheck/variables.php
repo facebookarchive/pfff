@@ -211,6 +211,15 @@ function test_global() {
   echo $undefined_global;
 }
 
+class TestTypoSelf {
+  const A_CST = 1;
+  
+  public function test_typo_self() {
+    //ERROR: use of undeclared variable $self
+    return $self::A_CST;
+  }
+}
+
 //*************************************************************************
 // Misc regressions
 //*************************************************************************
