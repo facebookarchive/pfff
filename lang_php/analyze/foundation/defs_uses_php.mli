@@ -15,5 +15,7 @@ type use =
 
 val defs_of_any: Ast_php.any -> def list
 
-(* pre: unsugar_self_parent *)
+(* pre: unsugar_self_parent 
+ * todo: works only for functions and classes right now.
+*)
 val uses_of_any: ?verbose:bool -> Ast_php.any -> use list

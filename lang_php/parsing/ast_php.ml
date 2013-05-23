@@ -189,11 +189,11 @@ and expr =
    * to not always call recursively the visitor/continuation):
    * 
    * - function: Call (Id, _)
+   * - method: Call (ClassGet (_, Id)), Call (ObjGet (_, Id))
    * - class: ClassGet (Id, _), New (Id, _), AssignNew, InstanceOf(_, Id)
    *   and also extends, implements, catch, type
-   * - method: Call (ClassGet (_, Id)), Call (ObjGet (_, Id))
-   * - field: ObjGet(_, Id)
    * - class_constant: ClassGet (_, Id)
+   * - field: ObjGet(_, Id)
    * - constant: Id
    * 
    * todo: just like we annotate IdVar with scope info, we could annotate

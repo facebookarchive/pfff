@@ -152,7 +152,8 @@ let defs_of_any any =
  *  - TODO check_module.ml and uses_module.ml
  * 
  * todo: 
- * - do for constants too ! see Database_code.entity_kind
+ * - constants too! 
+ * - methods, fields, class constants, see Database_code.entity_kind
  * - check_module.ml and the places where we call checkClassName,
  *   same than here ?
  * - less: right now I don't make a difference between Class and Interface.

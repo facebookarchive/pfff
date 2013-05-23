@@ -12,7 +12,7 @@
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the file
  * license.txt for more details.
  *)
-open Common2
+open Common2 (* for ==~ *)
 open Common
 
 module E = Database_code
@@ -32,7 +32,7 @@ open Ast_php_simple
  * facebook/check_module/graph_module.ml
  *
  * schema:
- *  Root -> Dir -> File (.php) -> Class (interfaces and traits too)
+ *  Root -> Dir -> File (.php) -> Class (used for interfaces and traits too)
  *                                 -> Method
  *                                 -> Field
  *                                 -> ClassConstant

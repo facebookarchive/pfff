@@ -184,6 +184,7 @@ and expr =
    * So can have Id "foo" and Id "$foo". Can also contain "self/parent".
    * Can also be "true", "false", "null" and many other builtin constants.
    * See builtin() and special() below.
+   * Id is also used for class methods/fields/constants.
    *
    * todo: For field name, if in the code they are referenced like $this->fld,
    * we should prepend a $ to fld to match their definition.
