@@ -43,7 +43,7 @@
  * 
  * TODO: does the linearization respect the semantic of PHP ? Is there
  * cases where spliting a complex expression into multiple parts
- * with intermediate variables leads to a different semantic ?
+ * with intermediate variables leads to a different semantic?
  * For instance apparently $i++ is not equivalent to $i = $i + 1 when
  * $i is a string. Wonderful PHP. 
  * But at the same time our goal here is not to write a compiler. Our goal
@@ -52,5 +52,4 @@
  * References:
  *  [1] CIL, C Intermediate Language, Necula et al, CC'00
  *  [2] The Ruby Intermediate Language, Furr et al, DSL'09
- * 
  *)
