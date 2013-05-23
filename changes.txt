@@ -2,7 +2,7 @@
 
 * 0.24 (Q2 2013) (web-codemap, web-codegraph, generalized sgrep/spatch)
 
-** web: resume work on ocsigen, port to eliom3, js_of_ocaml
+** web: resume work on ocsigen, port to eliom3, use of js_of_ocaml
 also assume OPAM for web/ (but not for the rest of pfff/ so people
 don't need OPAM to compile most of pfff)
 
@@ -10,7 +10,7 @@ don't need OPAM to compile most of pfff)
 
 *** web frontend, using ocsigen
 
-*** new backend for dotfiles
+*** new builder for dotfiles
 
 ** codemap
 
@@ -22,17 +22,22 @@ don't need OPAM to compile most of pfff)
 
 *** ranking and filtering of errors via -filter <n> or -rank
 
-
 ** sgrep/spatch
 
-*** partial support for C/C++/... via ast_fuzzy 
+*** partial support for C/C++/OCaml/... via ast_fuzzy 
 which paved the way for sgrep/spatch support for more languages
-as long as there is an ast_fuzzy "backend"
+as long as there is an ast_fuzzy generator
 
 *** better error message when try to do transformations not handled well
 (e.g. minus on a '...')
 
 ** fuzzy parser for C/C++/...
+
+** internal
+
+*** huge refactoring on the PHP grammar and AST, unified lvalue and expr,
+got from 7 s/r conflicts to 1, and can now parse more code by being
+more orthogonal.
 
 * 0.23 (Q1 2013) (clang parser)
 
