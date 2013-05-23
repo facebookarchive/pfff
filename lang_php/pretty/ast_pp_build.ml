@@ -834,13 +834,23 @@ and case env x acc =
   match x with
   | Case (_, e, _, []) -> A.Case (expr env e, []) :: acc
   | Case (_, e, _, stl) ->
-      let line = last_line_of_stmt_and_defl stl in
-      let acc = add_case_comments env acc line in
+      let acc = 
+        match stl with
+        | [] -> acc
+        | _ -> 
+          let line = last_line_of_stmt_and_defl stl in
+          add_case_comments env acc line 
+      in
       let stl = List.fold_right (stmt_and_def env) stl [] in
       A.Case (expr env e, stl) :: acc
   | Default (_, _, stl) ->
-      let line = last_line_of_stmt_and_defl stl in
-      let acc = add_case_comments env acc line in
+      let acc = 
+        match stl with
+        | [] -> acc
+        | _ -> 
+          let line = last_line_of_stmt_and_defl stl in
+          add_case_comments env acc line 
+      in
       let stl = List.fold_right (stmt_and_def env) stl [] in
       A.Default stl :: acc
 
