@@ -24,7 +24,8 @@ open Parse_info
 (*
  * This module defines an Abstract Syntax Tree for PHP 5.2 with
  * a few PHP 5.3 (e.g. closures) and 5.4 (e.g. traits) extensions as well
- * as support for a few Facebook extensions (XHP, generators, annotations).
+ * as support for a few Facebook extensions (XHP, generators, annotations,
+ * generics).
  *
  * This is actually more a concrete syntax tree (CST) than an AST. This
  * is convenient in a refactoring context or code visualization
@@ -38,7 +39,7 @@ open Parse_info
  * NOTE: data from this type are often marshalled in berkeley DB tables
  * which means that if you add a new constructor or field in the types below,
  * you must erase the berkeley DB databases otherwise pfff
- * will probably finish with a segfault (OCaml serialization is not
+ * will probably ends with a segfault (OCaml serialization is not
  * type-safe). A hacky solution is to add new constructors only at the end
  * of a type definition.
  *
@@ -50,9 +51,9 @@ open Parse_info
  * file, or to only add new constructors.
  *
  * todo:
- *  - add fbstrict types in AST, not just in grammar
+ *  - add namespace in AST (also add in grammar)
+ *  - add more fbstrict types in AST, not just in grammar
  *  - support for '...' fbstrict extension in parameters
- *  - less: add namespace in AST (also add in grammar)
  *  - unify toplevel statement vs statements? hmmm maybe not
  *)
 
@@ -98,6 +99,7 @@ and 'a comma_list_dots =
   * and <x:base for 'uses', so having this xhp_tag allow us to easily do
   * comparison between xhp names.
   *)
+ (* todo: change to ident *)
  type name =
     | Name of string wrap
     (*s: type name hook *)
@@ -136,9 +138,7 @@ and 'a comma_list_dots =
    | Parent of tok
    (* php 5.3 late static binding (no idea why it's useful ...) *)
    | LateStatic of tok
-   (* todo? Put ClassVar of dname here so can factorize some of the
-    * StaticDynamicCall stuff in lvalue?
-    *)
+ (* todo: just use class_name *)
  and fully_qualified_class_name = name
  and type_args = hint_type comma_list single_angle
  (*e: qualifiers *)
@@ -147,6 +147,17 @@ and 'a comma_list_dots =
 (* Types *)
 (* ------------------------------------------------------------------------- *)
 (*s: AST type *)
+and hint_type =
+ | Hint of class_name_or_kwd (* only self/parent, no static *)
+ | HintArray of tok
+ | HintQuestion of (tok * hint_type)
+ | HintTuple of hint_type comma_list paren
+ | HintCallback of
+     (tok                                 (* "function" *)
+      * (hint_type comma_list_dots paren) (* params *)
+      * hint_type option                 (* return type *)
+     ) paren
+
 (* This is used in Cast. For type analysis see type_php.ml *)
 and ptype =
   | BoolTy
@@ -233,6 +244,7 @@ and expr =
   | ArrayLong of tok (* array *) * array_pair  comma_list paren
   (* php 5.4: https://wiki.php.net/rfc/shortsyntaxforarrays *)
   | ArrayShort of array_pair comma_list bracket
+  (* facebook extensions *)
   | VectorLit of tok (* Vector *) * vector_elt comma_list brace
   | MapLit of tok (* Map/StableMap *) * map_elt comma_list brace
   (*x: exprbis other constructors *)
@@ -418,19 +430,33 @@ and expr =
      | XhpNested of xhp_html
 
 (*e: AST expression *)
-and lvalue = expr
-and class_name_reference = expr
-
   (*x: type lvalue aux *)
     and argument =
       | Arg    of expr
       | ArgRef of tok * w_variable
   (*x: type lvalue aux *)
+
+(* now unified with expr *)
+and lvalue = expr
+and class_name_reference = expr
 (* semantic: those grammar rule names were used in the original PHP
  * lexer/parser but not enforced. It's just comments. *)
 and rw_variable = lvalue
 and r_variable = lvalue
 and w_variable = lvalue
+(* static_scalar used to be a special type allowing constants and
+ * a restricted form of expressions. But it was yet
+ * another type and it turned out it was making things like spatch
+ * and visitors more complicated because stuff like "+ 1" could
+ * be an expr or a static_scalar. We don't need this "isomorphism".
+ * I never leveraged the specificities of static_scalar (maybe a compiler
+ * would, but my checker/refactorers/... don't).
+ *
+ * Note that it's not 'type static_scalar = scalar' because static_scalar
+ * actually allows arrays (why the heck they called it a scalar then ....)
+ * and plus/minus which are only in expr.
+ *)
+ and static_scalar = expr
 
 (*e: AST lvalue *)
 (* ------------------------------------------------------------------------- *)
@@ -563,8 +589,6 @@ and func_def = {
   f_return_type: hint_type option;
   (* the opening/closing brace can be (fakeInfo(), ';') for abstract methods *)
   f_body: stmt_and_def list brace;
-  (*s: f_type mutable field *)
-  (*e: f_type mutable field *)
 }
     and function_type =
       | FunctionRegular
@@ -580,18 +604,6 @@ and func_def = {
       p_name: dname;
       p_default: static_scalar_affect option;
     }
-  (*x: AST function definition rest *)
-      and hint_type =
-        | Hint of class_name_or_kwd (* only self/parent, no static *)
-        | HintArray of tok
-        | HintQuestion of (tok * hint_type)
-        | HintTuple of hint_type comma_list paren
-        | HintCallback of
-            (tok                                 (* "function" *)
-             * (hint_type comma_list_dots paren) (* params *)
-             * hint_type option)                 (* return type *)
-            paren
-  (*x: AST function definition rest *)
     and is_ref = tok (* bool wrap ? *) option
   (*e: AST function definition rest *)
 (*e: AST function definition *)
@@ -604,7 +616,7 @@ and lambda_def = (lexical_vars option * func_def)
 (* ------------------------------------------------------------------------- *)
 (* Constant definition *)
 (* ------------------------------------------------------------------------- *)
-(* todo use record *)
+(* todo: use a record *)
 and constant_def = tok * name * tok (* = *) * static_scalar * tok (* ; *)
 
 (*e: AST lambda definition *)
@@ -752,21 +764,6 @@ and global_var =
 (*x: AST other declaration *)
 and static_var = dname * static_scalar_affect option
 (*x: AST other declaration *)
-  (* static_scalar used to be a special type allowing constants and
-   * a restricted form of expressions. But it was yet
-   * another type and it turned out it was making things like spatch
-   * and visitors more complicated because stuff like "+ 1" could
-   * be an expr or a static_scalar. We don't need this "isomorphism".
-   * I never leveraged the specificities of static_scalar (maybe a compiler
-   * would, but my checker/refactorers/... don't).
-   *
-   * Note that it's not 'type static_scalar = scalar' because static_scalar
-   * actually allows arrays (why the heck they called it a scalar then ....)
-   * and plus/minus which are only in expr.
-   *)
-  and static_scalar = expr
-  (*s: type static_scalar hook *)
-  (*e: type static_scalar hook *)
 (*x: AST other declaration *)
    and static_scalar_affect = tok (* = *) * static_scalar
 (*x: AST other declaration *)
@@ -794,9 +791,10 @@ and attributes = attribute comma_list angle
 (* The toplevels elements *)
 (* ------------------------------------------------------------------------- *)
 (* For parsing reasons and estet I think it's better to differentiate
- * nested function and toplevel functions. Also it's better to
- * group the toplevel statements together (StmtList below), so that
- * in the database later they share the same id.
+ * nested functions and toplevel functions. 
+ * update: sure? ast_php_simple simplify things.
+ * Also it's better to group the toplevel statements together (StmtList below),
+ * so that in the database later they share the same id.
  *
  * Note that nested functions are usually under a if(defined(...)) at
  * the toplevel. There is no ifdef in PHP so they reuse if.
