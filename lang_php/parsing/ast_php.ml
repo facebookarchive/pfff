@@ -189,7 +189,8 @@ and expr =
    * to not always call recursively the visitor/continuation):
    * 
    * - function: Call (Id, _)
-   * - class: ClassGet (Id, _)  
+   * - class: ClassGet (Id, _), New (Id, _), AssignNew, InstanceOf(_, Id)
+   *   and also extends, implements, catch, type
    * - method: Call (ClassGet (_, Id)), Call (ObjGet (_, Id))
    * - field: ObjGet(_, Id)
    * - class_constant: ClassGet (_, Id)
@@ -205,7 +206,10 @@ and expr =
   | IdParent of tok
   | IdStatic of tok
 
-  (* less: maybe could unify *)
+  (* less: maybe could unify 
+   * note that IdVar is used not only for local variables
+   * but also globals, class variables, parameters, etc.
+   *)
   | IdVar of dname * Scope_php.phpscope ref
   | ThisVar of tok
 
