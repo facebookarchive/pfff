@@ -50,7 +50,6 @@ open Parse_info
  * todo:
  *  - add namespace in AST (also add in grammar)
  *  - add more fbstrict types in AST, not just in grammar
- *  - support for '...' fbstrict extension in parameters
  *  - unify toplevel statement vs statements? hmmm maybe not
  *)
 
@@ -484,7 +483,8 @@ and func_def = {
   f_ref: is_ref;
   (* can be a Name("__lambda", f_tok) when used for lambdas *)
   f_name: name;
-  f_params: parameter comma_list_dots paren; (* TODO: handle ... *)
+  (* the dots should be only at the end (unless in sgrep mode) *)
+  f_params: parameter comma_list_dots paren;
   (* static-php-ext: *)
   f_return_type: hint_type option;
   (* the opening/closing brace can be (fakeInfo(), ';') for abstract methods *)
