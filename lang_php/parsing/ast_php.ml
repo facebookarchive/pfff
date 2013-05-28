@@ -1,5 +1,3 @@
-(*s: ast_php.ml *)
-(*s: Facebook copyright *)
 (* Yoann Padioleau
  *
  * Copyright (C) 2009-2011 Facebook
@@ -14,7 +12,6 @@
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the file
  * license.txt for more details.
  *)
-(*e: Facebook copyright *)
 open Common
 
 open Parse_info
@@ -63,17 +60,14 @@ open Parse_info
 (* ------------------------------------------------------------------------- *)
 (* Token/info *)
 (* ------------------------------------------------------------------------- *)
-(*s: AST info *)
 (* Contains among other things the position of the token through
  * the Common.parse_info embedded inside it, as well as the
  * the transformation field that makes possible spatch.
  *)
 type tok = Parse_info.info
 and info = tok
-(*x: AST info *)
 (* a shortcut to annotate some information with token/position information *)
 and 'a wrap = 'a * tok
-(*x: AST info *)
 and 'a paren   = tok * 'a * tok
 and 'a brace   = tok * 'a * tok
 and 'a bracket = tok * 'a * tok
@@ -82,16 +76,10 @@ and 'a single_angle = tok * 'a * tok
 and 'a comma_list = ('a, tok (* the comma *)) Common.either list
 and 'a comma_list_dots =
   ('a, tok (* ... in parameters *), tok (* the comma *)) Common.either3 list
-(*x: AST info *)
- (*s: tarzan annotation *)
   (* with tarzan *)
- (*e: tarzan annotation *)
-(*e: AST info *)
 (* ------------------------------------------------------------------------- *)
 (* Name. See also analyze_php/namespace_php.ml  *)
 (* ------------------------------------------------------------------------- *)
-(*s: AST name *)
- (*s: type name *)
  (* Was called T_STRING in Zend, which are really just LABEL, see the lexer.
   * Why not factorize Name and XhpName together? Because I was not
   * sure originally some analysis should also be applied on Xhp
@@ -102,15 +90,11 @@ and 'a comma_list_dots =
  (* todo: change to ident *)
  type name =
     | Name of string wrap
-    (*s: type name hook *)
     (* xhp: for :x:foo the list is ["x";"foo"] *)
     | XhpName of xhp_tag wrap
-    (*e: type name hook *)
- (*e: type name *)
  (* for :x:foo the list is ["x";"foo"] *)
  and xhp_tag = string list
 
- (*s: type dname *)
  (* D for dollar. Was called T_VARIABLE in the original PHP parser/lexer.
   * The string does not contain the '$'. The info itself will usually
   * contain it, but not always! Indeed if the variable we build comes
@@ -125,9 +109,7 @@ and 'a comma_list_dots =
   *)
  and dname =
    | DName of string wrap
- (*e: type dname *)
 
- (*s: qualifiers *)
   and class_name_or_kwd =
    | ClassName of fully_qualified_class_name * (type_args option)
    (* Could also transform at parsing time all occurences of self:: and
@@ -141,12 +123,9 @@ and 'a comma_list_dots =
  (* todo: just use class_name *)
  and fully_qualified_class_name = name
  and type_args = hint_type comma_list single_angle
- (*e: qualifiers *)
-(*e: AST name *)
 (* ------------------------------------------------------------------------- *)
 (* Types *)
 (* ------------------------------------------------------------------------- *)
-(*s: AST type *)
 and hint_type =
  | Hint of class_name_or_kwd (* only self/parent, no static *)
  | HintArray of tok
@@ -168,11 +147,9 @@ and ptype =
 
   | ArrayTy
   | ObjectTy
-(*e: AST type *)
 (* ------------------------------------------------------------------------- *)
 (* Expression *)
 (* ------------------------------------------------------------------------- *)
-(*s: AST expression *)
 (* I used to have a 'type expr = exprbis * exp_type_info' but it complicates
  * many patterns when working on expressions, and it turns out I never
  * implemented the type annotater. It's easier to do such annotater on
@@ -224,16 +201,13 @@ and expr =
   (* start of expr_without_variable in original PHP lexer/parser terminology *)
   | Sc of scalar
 
-  (*s: exprbis other constructors *)
   | Binary  of expr * binaryOp wrap * expr
   | Unary   of unaryOp wrap * expr
-  (*x: exprbis other constructors *)
   (* should be a statement ... *)
   | Assign    of lvalue * tok (* = *) * expr
   | AssignOp  of lvalue * assignOp wrap * expr
   | Postfix of rw_variable   * fixOp wrap
   | Infix   of fixOp wrap    * rw_variable
-  (*x: exprbis other constructors *)
   (* PHP 5.3 allow 'expr ?: expr' hence the 'option' type below
    * from www.php.net/manual/en/language.operators.comparison.php#language.operators.comparison.ternary:
    * "Since PHP 5.3, it is possible to leave out the middle part of the
@@ -242,7 +216,6 @@ and expr =
    * otherwise."
    *)
   | CondExpr of expr * tok (* ? *) * expr option * tok (* : *) * expr
-  (*x: exprbis other constructors *)
   | AssignList  of tok (* list *)  * list_assign comma_list paren *
         tok (* = *) * expr
   | ArrayLong of tok (* array *) * array_pair  comma_list paren
@@ -251,40 +224,29 @@ and expr =
   (* facebook extensions *)
   | VectorLit of tok (* Vector *) * vector_elt comma_list brace
   | MapLit of tok (* Map/StableMap *) * map_elt comma_list brace
-  (*x: exprbis other constructors *)
   | New of tok * class_name_reference * argument comma_list paren option
   | Clone of tok * expr
-  (*x: exprbis other constructors *)
   | AssignRef of lvalue * tok (* = *) * tok (* & *) * lvalue
   | AssignNew of lvalue * tok (* = *) * tok (* & *) * tok (* new *) *
         class_name_reference *
         argument comma_list paren option
-  (*x: exprbis other constructors *)
   | Cast of castOp wrap * expr
   | CastUnset of tok * expr (* ??? *)
-  (*x: exprbis other constructors *)
   | InstanceOf of expr * tok * class_name_reference
-  (*x: exprbis other constructors *)
   (* !The evil eval! *)
   | Eval of tok * expr paren
-  (*x: exprbis other constructors *)
   (* Woohoo, viva PHP 5.3 *)
   | Lambda of lambda_def
-  (*x: exprbis other constructors *)
   (* should be a statement ... *)
   | Exit of tok * (expr option paren) option
   | At of tok (* @ *) * expr
   | Print of tok * expr
-  (*x: exprbis other constructors *)
   | BackQuote of tok * encaps list * tok
-  (*x: exprbis other constructors *)
   (* should be at toplevel *)
   | Include     of tok * expr | IncludeOnce of tok * expr
   | Require     of tok * expr | RequireOnce of tok * expr
-  (*x: exprbis other constructors *)
   | Empty of tok * lvalue paren
   | Isset of tok * lvalue comma_list paren
-  (*e: exprbis other constructors *)
 
   (* xhp: *)
   | XhpHtml of xhp_html
@@ -300,15 +262,11 @@ and expr =
   | Yield of tok * expr
   | YieldBreak of tok * tok
 
-  (*s: type exprbis hook *)
   (* only appear when process sgrep patterns *)
   | SgrepExprDots of tok
-  (*x: type exprbis hook *)
   (* unparser: *)
   | ParenExpr of expr paren
-  (*e: type exprbis hook *)
 
-  (*s: type scalar and constant and encaps *)
     and scalar =
       | C of constant
       | Guil    of tok (* '"' or b'"' *) * encaps list * tok (* '"' *)
@@ -318,59 +276,35 @@ and expr =
           tok  (* EOF; *)
       (* | StringVarName??? *)
 
-   (*s: type constant *)
        and constant =
-       (*s: constant constructors *)
         | Int of string wrap
         | Double of string wrap
-       (*x: constant constructors *)
         (* see also Guil for interpolated strings
          * The string does not contain the enclosing '"' or "'".
          * It does not contain either the possible 'b' prefix
          *)
         | String of string wrap
-       (*x: constant constructors *)
         | PreProcess of cpp_directive wrap
-       (*e: constant constructors *)
-       (*s: type constant hook *)
         (* only appear when process xdebug coverage file *)
         | XdebugClass of name * class_stmt list
         | XdebugResource
-       (*e: type constant hook *)
-       (*s: constant rest *)
-        (*s: type cpp_directive *)
         (* http://php.net/manual/en/language.constants.predefined.php *)
           and cpp_directive =
               | Line  | File | Dir
               | ClassC | TraitC
               | MethodC  | FunctionC
-        (*e: type cpp_directive *)
-       (*e: constant rest *)
-   (*e: type constant *)
-   (*s: type encaps *)
        and encaps =
-         (*s: encaps constructors *)
           | EncapsString of string wrap
-         (*x: encaps constructors *)
           | EncapsVar of lvalue
-         (*x: encaps constructors *)
           (* for "xx {$beer}s" *)
           | EncapsCurly of tok * lvalue * tok
-         (*x: encaps constructors *)
           (* for "xx ${beer}s" *)
           | EncapsDollarCurly of tok (* '${' *) * lvalue * tok
-         (*x: encaps constructors *)
           | EncapsExpr of tok * expr * tok
-         (*e: encaps constructors *)
-   (*e: type encaps *)
-  (*e: type scalar and constant and encaps *)
 
-  (*s: AST expression operators *)
    and fixOp    = Dec | Inc
    and binaryOp    = Arith of arithOp | Logical of logicalOp
-     (*s: php concat operator *)
       | BinaryConcat (* . *)
-     (*e: php concat operator *)
          and arithOp   =
            | Plus | Minus | Mul | Div | Mod
            | DecLeft | DecRight
@@ -379,29 +313,21 @@ and expr =
          and logicalOp =
            | Inf | Sup | InfEq | SupEq
            | Eq | NotEq
-           (*s: php identity operators *)
            | Identical (* === *) | NotIdentical (* !== *)
-           (*e: php identity operators *)
            | AndLog | OrLog | XorLog
            | AndBool | OrBool (* diff with AndLog ? short-circuit operators ? *)
    and assignOp = AssignOpArith of arithOp
-    (*s: php assign concat operator *)
      | AssignConcat (* .= *)
-    (*e: php assign concat operator *)
    and unaryOp =
      | UnPlus | UnMinus
      | UnBang | UnTilde
 
-  (*x: AST expression operators *)
    and castOp = ptype
-  (*e: AST expression operators *)
 
-  (*s: AST expression rest *)
    and list_assign =
      | ListVar of lvalue
      | ListList of tok * list_assign comma_list paren
      | ListEmpty
-  (*x: AST expression rest *)
    and array_pair =
      | ArrayExpr of expr
      | ArrayRef of tok (* & *) * lvalue
@@ -413,8 +339,6 @@ and expr =
    and map_elt =
      | MapArrowExpr of expr * tok (* => *) * expr
      | MapArrowRef of expr * tok (* => *) * tok (* & *) * lvalue
-  (*x: AST expression rest *)
-  (*e: AST expression rest *)
 
  and xhp_html =
    | Xhp of xhp_tag wrap * xhp_attribute list * tok (* > *) *
@@ -433,12 +357,9 @@ and expr =
      | XhpExpr of expr brace
      | XhpNested of xhp_html
 
-(*e: AST expression *)
-  (*x: type lvalue aux *)
     and argument =
       | Arg    of expr
       | ArgRef of tok * w_variable
-  (*x: type lvalue aux *)
 
 (* now unified with expr *)
 and lvalue = expr
@@ -462,23 +383,17 @@ and w_variable = lvalue
  *)
  and static_scalar = expr
 
-(*e: AST lvalue *)
 (* ------------------------------------------------------------------------- *)
 (* Statement *)
 (* ------------------------------------------------------------------------- *)
-(*s: AST statement *)
 (* By introducing Lambda, expr and stmt are now mutually recursive *)
 and stmt =
-  (*s: stmt constructors *)
     | ExprStmt of expr * tok (* ; *)
     | EmptyStmt of tok  (* ; *)
-  (*x: stmt constructors *)
     | Block of stmt_and_def list brace
-  (*x: stmt constructors *)
     | If      of tok * expr paren * stmt *
         (* elseif *) if_elseif list *
         (* else *)   if_else option
-    (*s: ifcolon *)
     | IfColon of tok * expr paren *
           tok * stmt_and_def list * new_elseif list * new_else option *
           tok * tok
@@ -489,7 +404,6 @@ and stmt =
        * else(cond):
        *   defs; stmst;
        * endif; *)
-    (*e: ifcolon *)
     | While of tok * expr paren * colon_stmt
     | Do of tok * stmt * tok * expr paren * tok
     | For of tok * tok *
@@ -499,7 +413,6 @@ and stmt =
         tok *
         colon_stmt
     | Switch of tok * expr paren * switch_case_list
-  (*x: stmt constructors *)
     (* if it's a expr_without_variable, the second arg must be a Right variable,
      * otherwise if it's a variable then it must be a foreach_variable
      *)
@@ -509,25 +422,18 @@ and stmt =
       (* example: foreach(expr as $lvalue) { colon_stmt }
        *          foreach(expr as $foreach_varialbe => $lvalue) { colon_stmt}
        *)
-  (*x: stmt constructors *)
     | Break    of tok * expr option * tok
     | Continue of tok * expr option * tok
     | Return of tok * expr option * tok
-  (*x: stmt constructors *)
     | Throw of tok * expr * tok
     | Try of tok * stmt_and_def list brace * catch * catch list
-  (*x: stmt constructors *)
     | Echo of tok * expr comma_list * tok
-  (*x: stmt constructors *)
     | Globals    of tok * global_var comma_list * tok
     | StaticVars of tok * static_var comma_list * tok
-  (*x: stmt constructors *)
     | InlineHtml of string wrap
-  (*x: stmt constructors *)
     | Use of tok * use_filename * tok
     | Unset of tok * lvalue comma_list paren * tok
     | Declare of tok * declare comma_list paren * colon_stmt
-  (*e: stmt constructors *)
     (* static-php-ext: *)
     | TypedDeclaration of hint_type * lvalue * (tok * expr) option * tok
 
@@ -539,7 +445,6 @@ and stmt =
     (* traits are actually not allowed here *)
     | ClassDefNested of class_def
 
-  (*s: AST statement rest *)
     and switch_case_list =
       | CaseList      of
           tok (* { *) * tok option (* ; *) * case list * tok (* } *)
@@ -552,33 +457,24 @@ and stmt =
 
    and if_elseif = tok * expr paren * stmt
    and if_else = (tok * stmt)
-  (*x: AST statement rest *)
     and for_expr = expr comma_list (* can be empty *)
     and foreach_arrow = tok * foreach_variable
     and foreach_variable = is_ref * lvalue
     and foreach_var_either = (foreach_variable, lvalue) Common.either
-  (*x: AST statement rest *)
     and catch =
       tok * (fully_qualified_class_name * dname) paren * stmt_and_def list brace
-  (*x: AST statement rest *)
     and use_filename =
       | UseDirect of string wrap
       | UseParen  of string wrap paren
-  (*x: AST statement rest *)
     and declare = name * static_scalar_affect
-  (*x: AST statement rest *)
     and colon_stmt =
       | SingleStmt of stmt
       | ColonStmt of tok (* : *) * stmt_and_def list * tok (* endxxx *) * tok (* ; *)
-  (*x: AST statement rest *)
     and new_elseif = tok * expr paren * tok * stmt_and_def list
     and new_else = tok * tok * stmt_and_def list
-  (*e: AST statement rest *)
-(*e: AST statement *)
 (* ------------------------------------------------------------------------- *)
 (* Function (and method) definition *)
 (* ------------------------------------------------------------------------- *)
-(*s: AST function definition *)
 and func_def = {
   f_attrs: attributes option;
   f_tok: tok; (* function *)
@@ -600,7 +496,6 @@ and func_def = {
       | MethodRegular
       | MethodAbstract
 
-  (*s: AST function definition rest *)
     and parameter = {
       p_attrs: attributes option;
       p_type: hint_type option;
@@ -609,9 +504,6 @@ and func_def = {
       p_default: static_scalar_affect option;
     }
     and is_ref = tok (* bool wrap ? *) option
-  (*e: AST function definition rest *)
-(*e: AST function definition *)
-(*s: AST lambda definition *)
 (* the f_name in func_def should be a fake name *)
 and lambda_def = (lexical_vars option * func_def)
   and lexical_vars = tok (* use *) * lexical_var comma_list paren
@@ -623,11 +515,9 @@ and lambda_def = (lexical_vars option * func_def)
 (* todo: use a record *)
 and constant_def = tok * name * tok (* = *) * static_scalar * tok (* ; *)
 
-(*e: AST lambda definition *)
 (* ------------------------------------------------------------------------- *)
 (* Class (and interface/trait) definition *)
 (* ------------------------------------------------------------------------- *)
-(*s: AST class definition *)
 (* I used to have a class_def and interface_def because interface_def
  * didn't allow certain forms of statements (methods with a body), but
  * with the introduction of traits, it does not make that much sense
@@ -651,7 +541,6 @@ and class_def = {
    * have some 'use' *)
   c_body: class_stmt list brace;
 }
-  (*s: type class_type *)
     and class_type =
       | ClassRegular  of tok (* class *)
       | ClassFinal    of tok * tok (* final class *)
@@ -665,15 +554,8 @@ and class_def = {
        * note: traits are allowed only at toplevel.
        *)
       | Trait of tok (* trait *)
-  (*e: type class_type *)
-  (*s: type extend *)
     and extend =    tok * fully_qualified_class_name
-  (*e: type extend *)
-  (*s: type interface *)
     and interface = tok * fully_qualified_class_name comma_list
-  (*e: type interface *)
-(*x: AST class definition *)
-(*x: AST class definition *)
   and class_stmt =
     | ClassConstants of tok (* const *) * class_constant comma_list * tok (*;*)
     | ClassVariables of
@@ -688,27 +570,20 @@ and class_def = {
     | UseTrait of tok (*use*) * name comma_list *
         (tok (* ; *), trait_rule list brace) Common.either
 
-    (*s: class_stmt types *)
         and class_constant = name * static_scalar_affect
-    (*x: class_stmt types *)
         and class_variable = dname * static_scalar_affect option
-    (*x: class_stmt types *)
         and class_var_modifier =
           | NoModifiers of tok (* 'var' *)
           | VModifiers of modifier wrap list
-    (*x: class_stmt types *)
         (* a few special names: __construct, __call, __callStatic
          * ugly: f_body is an empty stmt_and_def for abstract method
          * and the ';' is put for the info of the closing brace
          * (and the opening brace is a fakeInfo).
          *)
         and method_def = func_def
-    (*x: class_stmt types *)
           and modifier =
             | Public  | Private | Protected
             | Static  | Abstract | Final
-    (*x: class_stmt types *)
-    (*e: class_stmt types *)
  and xhp_decl =
     | XhpAttributesDecl of
         tok (* attribute *) * xhp_attribute_decl comma_list * tok (*;*)
@@ -756,33 +631,23 @@ and class_def = {
  *)
 and trait_rule = unit
 
-(*e: AST class definition *)
 (* ------------------------------------------------------------------------- *)
 (* Other declarations *)
 (* ------------------------------------------------------------------------- *)
-(*s: AST other declaration *)
 and global_var =
   | GlobalVar of dname
   | GlobalDollar of tok * r_variable
   | GlobalDollarExpr of tok * expr brace
-(*x: AST other declaration *)
 and static_var = dname * static_scalar_affect option
-(*x: AST other declaration *)
-(*x: AST other declaration *)
    and static_scalar_affect = tok (* = *) * static_scalar
-(*x: AST other declaration *)
-(*e: AST other declaration *)
-(*s: AST statement bis *)
 (* stmt_and_def used to be a special type allowing Stmt or nested functions
  * or classes but it was introducing yet another, not so useful, intermediate
  * type.
  *)
 and stmt_and_def = stmt
-(*e: AST statement bis *)
 (* ------------------------------------------------------------------------- *)
 (* phpext: *)
 (* ------------------------------------------------------------------------- *)
-(*s: AST phpext *)
 (* HPHP extension similar to http://en.wikipedia.org/wiki/Java_annotation *)
 and attribute =
   | Attribute of string wrap
@@ -790,7 +655,6 @@ and attribute =
 
 and attributes = attribute comma_list angle
 
-(*e: AST phpext *)
 (* ------------------------------------------------------------------------- *)
 (* The toplevels elements *)
 (* ------------------------------------------------------------------------- *)
@@ -803,30 +667,21 @@ and attributes = attribute comma_list angle
  * Note that nested functions are usually under a if(defined(...)) at
  * the toplevel. There is no ifdef in PHP so they reuse if.
  *)
-(*s: AST toplevel *)
 and toplevel =
-  (*s: toplevel constructors *)
     | StmtList of stmt list
     | FuncDef of func_def
     | ClassDef of class_def
     (* PHP 5.3, see http://us.php.net/const *)
     | ConstantDef of constant_def
     (* old:  | Halt of tok * unit paren * tok (* __halt__ ; *) *)
-  (*x: toplevel constructors *)
     | NotParsedCorrectly of tok list (* when Flag.error_recovery = true *)
-  (*x: toplevel constructors *)
     | FinalDef of tok (* EOF *)
-  (*e: toplevel constructors *)
  and program = toplevel list
- (*s: tarzan annotation *)
   (* with tarzan *)
- (*e: tarzan annotation *)
 
-(*e: AST toplevel *)
 (* ------------------------------------------------------------------------- *)
 (* Entity and any *)
 (* ------------------------------------------------------------------------- *)
-(*s: AST entity *)
 (* The goal of the entity type is to lift up important entities which
  * are originally nested in the AST such as methods.
  *
@@ -847,8 +702,6 @@ type entity =
   | XhpAttrE of xhp_attribute_decl
 
   | MiscE of tok list
-(*e: AST entity *)
-(*s: AST any *)
 type any =
   | Expr of expr
   | Stmt2 of stmt
@@ -882,12 +735,10 @@ type any =
   | Hint2 of hint_type
 
  (* with tarzan *)
-(*e: AST any *)
 
 (*****************************************************************************)
 (* Comments *)
 (*****************************************************************************)
-(*x: ast_php.ml *)
 (*****************************************************************************)
 (* Some constructors *)
 (*****************************************************************************)
@@ -898,7 +749,6 @@ let fakeInfo ?(next_to=None) str = {
   comments = ();
   transfo = NoTransfo;
   }
-(*x: ast_php.ml *)
 (*****************************************************************************)
 (* Wrappers *)
 (*****************************************************************************)
@@ -943,20 +793,14 @@ let unmodifiers class_vars =
   | NoModifiers _ -> []
   | VModifiers xs -> List.map unwrap xs
 
-(*x: ast_php.ml *)
-(*x: ast_php.ml *)
-(*x: ast_php.ml *)
 let str_of_info x = Parse_info.str_of_info x
 let col_of_info x = Parse_info.col_of_info x
 let line_of_info x = Parse_info.line_of_info x
 (* todo: return a Real | Virt position ? *)
 let pos_of_info x = Parse_info.pos_of_info x
 let file_of_info x = Parse_info.file_of_info x
-(*x: ast_php.ml *)
 let pinfo_of_info = Parse_info.pinfo_of_info
-(*x: ast_php.ml *)
 let rewrap_str = Parse_info.rewrap_str
-(*x: ast_php.ml *)
 (* for error reporting *)
 let string_of_info x = Parse_info.string_of_info x
 let is_origintok = Parse_info.is_origintok
@@ -995,8 +839,6 @@ let compare_pos ii1 ii2 =
       |	0 -> compare o1 o2
       |	1 -> 1
       | _ -> raise Impossible
-(*x: ast_php.ml *)
-(*x: ast_php.ml *)
 (*****************************************************************************)
 (* Abstract line *)
 (*****************************************************************************)
@@ -1010,7 +852,6 @@ let compare_pos ii1 ii2 =
 
 let al_info x =
   { x with token = Ab }
-(*x: ast_php.ml *)
 (*****************************************************************************)
 (* Views *)
 (*****************************************************************************)
@@ -1019,7 +860,6 @@ let al_info x =
  * inline more static funcall in expr type or variable type
  *
  *)
-(*x: ast_php.ml *)
 (*****************************************************************************)
 (* Helpers, could also be put in lib_parsing.ml instead *)
 (*****************************************************************************)
@@ -1033,10 +873,8 @@ let str_of_name x = name x
 let dname (DName x) = unwrap x
 let str_of_dname x = dname x
 
-(*x: ast_php.ml *)
 let info_of_name e =
   match e with
   | (Name (x,y)) -> y
   | (XhpName (x,y)) -> y
 let info_of_dname (DName (x,y)) = y
-(*e: ast_php.ml *)
