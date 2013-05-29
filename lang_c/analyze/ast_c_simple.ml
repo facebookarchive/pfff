@@ -66,7 +66,7 @@ type name = string wrap
 (* Types *)
 (* ------------------------------------------------------------------------- *)
 
-(* less: qualifier *)
+(* less: qualifier (const/volatile) *)
 type type_ =
   | TBase of name
   | TPointer of type_
