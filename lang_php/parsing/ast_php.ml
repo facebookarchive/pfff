@@ -222,12 +222,14 @@ and expr =
   | CondExpr of expr * tok (* ? *) * expr option * tok (* : *) * expr
   | AssignList  of tok (* list *)  * list_assign comma_list paren *
         tok (* = *) * expr
+
   | ArrayLong of tok (* array *) * array_pair  comma_list paren
   (* php 5.4: https://wiki.php.net/rfc/shortsyntaxforarrays *)
   | ArrayShort of array_pair comma_list bracket
   (* facebook extensions *)
   | VectorLit of tok (* Vector *) * vector_elt comma_list brace
   | MapLit of tok (* Map/StableMap *) * map_elt comma_list brace
+
   | New of tok * class_name_reference * argument comma_list paren option
   | Clone of tok * expr
   | AssignRef of lvalue * tok (* = *) * tok (* & *) * lvalue
@@ -742,9 +744,6 @@ type any =
  (* with tarzan *)
 
 (*****************************************************************************)
-(* Comments *)
-(*****************************************************************************)
-(*****************************************************************************)
 (* Some constructors *)
 (*****************************************************************************)
 let noScope () = ref (Scope_code.NoScope)
@@ -811,14 +810,14 @@ let unmodifiers class_vars =
 
 let al_info x =
   { x with Parse_info.token = Parse_info.Ab }
+
 (*****************************************************************************)
 (* Views *)
 (*****************************************************************************)
-
 (* examples:
  * inline more static funcall in expr type or variable type
- *
  *)
+
 (*****************************************************************************)
 (* Helpers, could also be put in lib_parsing.ml instead *)
 (*****************************************************************************)
