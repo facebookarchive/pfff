@@ -666,7 +666,6 @@ val unarg: argument -> expr
 val unmodifiers: class_var_modifier -> modifier list
 val unargs: argument comma_list -> expr list * w_variable list
 val al_info : tok -> tok
-val compare_pos : tok -> tok -> int
 val noScope : unit -> Scope_php.phpscope ref
 
 val fakeInfo: ?next_to:(Parse_info.parse_info * int) option -> string -> tok

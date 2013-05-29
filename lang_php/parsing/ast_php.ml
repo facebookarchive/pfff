@@ -14,8 +14,6 @@
  *)
 open Common
 
-open Parse_info
-
 (*****************************************************************************)
 (* Prelude *)
 (*****************************************************************************)
@@ -749,10 +747,10 @@ type any =
 (*****************************************************************************)
 let noScope () = ref (Scope_code.NoScope)
 
-let fakeInfo ?(next_to=None) str = {
-  token = FakeTokStr (str, next_to);
+let fakeInfo ?(next_to=None) str = { Parse_info.
+  token = Parse_info.FakeTokStr (str, next_to);
   comments = ();
-  transfo = NoTransfo;
+  transfo = Parse_info.NoTransfo;
   }
 (*****************************************************************************)
 (* Wrappers *)
@@ -798,40 +796,6 @@ let unmodifiers class_vars =
   | NoModifiers _ -> []
   | VModifiers xs -> List.map unwrap xs
 
-type posrv = Parse_info.posrv
-
-let compare_pos ii1 ii2 =
-  let get_pos = function
-    | OriginTok pi -> Real pi
-    | FakeTokStr (s, Some (pi_orig, offset)) ->
-        Virt (pi_orig, offset)
-    | FakeTokStr _
-    | Ab
-      -> failwith "get_pos: Ab or FakeTok"
-    | ExpandedTok (pi_pp, pi_orig, offset) ->
-        Virt (pi_orig, offset)
-  in
-  let pos1 = get_pos (pinfo_of_info ii1) in
-  let pos2 = get_pos (pinfo_of_info ii2) in
-  match (pos1,pos2) with
-  | (Real p1, Real p2) ->
-      compare p1.Parse_info.charpos p2.Parse_info.charpos
-  | (Virt (p1,_), Real p2) ->
-      if (compare p1.Parse_info.charpos p2.Parse_info.charpos) =|= (-1)
-      then (-1)
-      else 1
-  | (Real p1, Virt (p2,_)) ->
-      if (compare p1.Parse_info.charpos p2.Parse_info.charpos) =|= 1
-      then 1
-      else (-1)
-  | (Virt (p1,o1), Virt (p2,o2)) ->
-      let poi1 = p1.Parse_info.charpos in
-      let poi2 = p2.Parse_info.charpos in
-      match compare poi1 poi2 with
-      |	-1 -> -1
-      |	0 -> compare o1 o2
-      |	1 -> 1
-      | _ -> raise Impossible
 (*****************************************************************************)
 (* Abstract line *)
 (*****************************************************************************)
@@ -844,7 +808,7 @@ let compare_pos ii1 ii2 =
  *)
 
 let al_info x =
-  { x with token = Ab }
+  { x with Parse_info.token = Parse_info.Ab }
 (*****************************************************************************)
 (* Views *)
 (*****************************************************************************)

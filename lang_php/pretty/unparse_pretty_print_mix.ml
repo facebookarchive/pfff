@@ -68,7 +68,7 @@ let toks_before_after_ii ii toks =
   let toks_before_max, toks_after = 
     Common.profile_code "spanning tokens" (fun () ->
       toks +> Common2.span_tail_call (fun tok ->
-        match Ast_php.compare_pos (TH.info_of_tok tok) max with
+        match Parse_info.compare_pos (TH.info_of_tok tok) max with
         | -1 | 0 -> true
         | 1 -> 
             (* do exception for newline that we also include with the
