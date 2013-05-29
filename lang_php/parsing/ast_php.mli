@@ -3,16 +3,18 @@ open Common
 (*****************************************************************************)
 (* The AST related types *)
 (*****************************************************************************)
+
 (* ------------------------------------------------------------------------- *)
 (* Token/info *)
 (* ------------------------------------------------------------------------- *)
 (* Contains among other things the position of the token through
  * the Common.parse_info embedded inside it, as well as the
- * the transformation field that makes possible spatch.
+ * transformation field that makes possible spatch.
  *)
 type tok = Parse_info.info
 and info = tok
-(* a shortcut to annotate some information with token/position information *)
+
+(* shortcuts to annotate some information with token/position information *)
 and 'a wrap = 'a * tok
 and 'a paren   = tok * 'a * tok
 and 'a brace   = tok * 'a * tok
@@ -23,19 +25,19 @@ and 'a comma_list = ('a, tok (* the comma *)) Common.either list
 and 'a comma_list_dots =
   ('a, tok (* ... in parameters *), tok (* the comma *)) Common.either3 list
   (* with tarzan *)
+
 (* ------------------------------------------------------------------------- *)
-(* Name *)
+(* Ident/Name/LongName *)
 (* ------------------------------------------------------------------------- *)
- (* T_STRING, which are really just LABEL, see the lexer. *)
- type name =
+
+type ident =
     | Name of string wrap
     (* xhp: for :x:foo the list is ["x";"foo"] *)
     | XhpName of xhp_tag wrap
  (* for :x:foo the list is ["x";"foo"] *)
  and xhp_tag = string list
 
- (* D for dollar. Was called T_VARIABLE in the original PHP parser/lexer.
-  * The string does not contain the '$'. The info itself will usually
+ (* The string does not contain the '$'. The info itself will usually
   * contain it, but not always! Indeed if the variable we build comes
   * from an encapsulated strings as in  echo "${x[foo]}" then the 'x'
   * will be parsed as a T_STRING_VARNAME, and eventually lead to a DName,
@@ -46,11 +48,14 @@ and 'a comma_list_dots =
   * you may have to normalize this string wrap before moving it
   * in another context !!!
   *)
- and dname =
+type dname =
    | DName of string wrap
 
-  and class_name_or_kwd =
-   | ClassName of fully_qualified_class_name * (type_args option)
+ (* todo: for namespace *)
+type qualified_ident = ident
+
+type name =
+   | XName of qualified_ident
    (* Could also transform at parsing time all occurences of self:: and
     * parent:: by their respective names. But I prefer to have all the
     * PHP features somehow explicitely represented in the AST.
@@ -59,15 +64,24 @@ and 'a comma_list_dots =
    | Parent of tok
    (* php 5.3 late static binding (no idea why it's useful ...) *)
    | LateStatic of tok
-   (* todo? Put ClassVar of dname here so can factorize some of the
-    * StaticDynamicCall stuff in lvalue?
-    *)
- and fully_qualified_class_name = name
- and type_args = hint_type comma_list single_angle
-  (* with tarzan *)
+
 (* ------------------------------------------------------------------------- *)
 (* Type *)
 (* ------------------------------------------------------------------------- *)
+type hint_type =
+ | Hint of name (* only self/parent allowed, no static *) * type_args option
+ | HintArray  of tok
+ | HintQuestion of (tok * hint_type)
+ | HintTuple of hint_type comma_list paren
+ | HintCallback of
+     (tok                                 (* "function" *)
+      * (hint_type comma_list_dots paren) (* params *)
+      * hint_type option)                 (* return type *)
+       paren
+ and type_args = hint_type comma_list single_angle
+
+and class_name = hint_type
+
 and ptype =
   | BoolTy
   | IntTy
@@ -77,7 +91,7 @@ and ptype =
 
   | ArrayTy
   | ObjectTy
-  (* with tarzan *)
+
 (* ------------------------------------------------------------------------- *)
 (* Expression *)
 (* ------------------------------------------------------------------------- *)
@@ -90,9 +104,6 @@ and ptype =
 and expr =
 
   | Id of name
-  | IdSelf of tok
-  | IdParent of tok
-  | IdStatic of tok
 
   | IdVar of dname * Scope_php.phpscope ref
   | ThisVar of tok
@@ -352,11 +363,11 @@ and stmt =
     and foreach_variable = is_ref * lvalue
     and foreach_var_either = (foreach_variable, lvalue) Common.either
     and catch =
-      tok * (fully_qualified_class_name * dname) paren * stmt_and_def list brace
+      tok * (class_name * dname) paren * stmt_and_def list brace
     and use_filename =
       | UseDirect of string wrap
       | UseParen  of string wrap paren
-    and declare = name * static_scalar_affect
+    and declare = ident * static_scalar_affect
     and colon_stmt =
       | SingleStmt of stmt
       | ColonStmt of tok (* : *) * stmt_and_def list * tok (* endxxx *) * tok (* ; *)
@@ -372,7 +383,7 @@ and func_def = {
   (* only valid for methods *)
   f_modifiers: modifier wrap list;
   f_ref: is_ref;
-  f_name: name;
+  f_name: ident;
   f_params: parameter comma_list_dots paren;
   (* static-php-ext: *)
   f_return_type: hint_type option;
@@ -390,16 +401,6 @@ and func_def = {
       p_name: dname;
       p_default: static_scalar_affect option;
     }
-      and hint_type =
-        | Hint of class_name_or_kwd (* only self/parent, no static *)
-        | HintArray  of tok
-        | HintQuestion of (tok * hint_type)
-        | HintTuple of hint_type comma_list paren
-        | HintCallback of
-            (tok                                 (* "function" *)
-             * (hint_type comma_list_dots paren) (* params *)
-             * hint_type option)                 (* return type *)
-            paren
 
     and is_ref = tok (* bool wrap ? *) option
 (* the f_name in func_def should be a fake name *)
@@ -411,7 +412,7 @@ and lambda_def = (lexical_vars option * func_def)
 (* Constant definition *)
 (* ------------------------------------------------------------------------- *)
 (* todo use record *)
-and constant_def = tok * name * tok (* = *) * static_scalar * tok (* ; *)
+and constant_def = tok * ident * tok (* = *) * static_scalar * tok (* ; *)
 
 (* ------------------------------------------------------------------------- *)
 (* Class (and interface/trait) definition *)
@@ -425,7 +426,7 @@ and constant_def = tok * name * tok (* = *) * static_scalar * tok (* ; *)
 and class_def = {
   c_attrs: attributes option;
   c_type: class_type;
-  c_name: name;
+  c_name: ident;
   (* PHP uses single inheritance. Interfaces can also use 'extends'
    * but we use the c_implements field for that (because it can be a list).
    *)
@@ -452,8 +453,8 @@ and class_def = {
        * note: traits are allowed only at toplevel.
        *)
       | Trait of tok (* trait *)
-    and extend =    tok * fully_qualified_class_name
-    and interface = tok * fully_qualified_class_name comma_list
+    and extend =    tok * class_name
+    and interface = tok * class_name comma_list
   and class_stmt =
     | ClassConstants of tok (* const *) * class_constant comma_list * tok (*;*)
     | ClassVariables of
@@ -465,10 +466,10 @@ and class_def = {
 
     | XhpDecl of xhp_decl
     (* php 5.4, 'use' can appear in classes/traits (but not interface) *)
-    | UseTrait of tok (*use*) * name comma_list *
+    | UseTrait of tok (*use*) * class_name comma_list *
         (tok (* ; *), trait_rule list brace) Common.either
 
-        and class_constant = name * static_scalar_affect
+        and class_constant = ident * static_scalar_affect
         and class_variable = dname * static_scalar_affect option
         and class_var_modifier =
           | NoModifiers of tok (* 'var' *)
@@ -632,7 +633,7 @@ type any =
   | Info of tok
   | InfoList of tok list
 
-  | Name2 of name
+  | Ident2 of ident
   | Hint2 of hint_type
 
   (* with tarzan *)
@@ -640,19 +641,17 @@ type any =
 (*****************************************************************************)
 (* AST helpers *)
 (*****************************************************************************)
-val pinfo_of_info : tok -> Parse_info.token
-val pos_of_info : tok -> int
-val str_of_info : tok -> string
-val file_of_info : tok -> Common.filename
-val line_of_info : tok -> int
-val col_of_info : tok -> int
-val string_of_info : tok -> string
-val str_of_name: name -> string
+
+val str_of_ident: ident -> string
 val str_of_dname: dname -> string
-val name : name -> string
-val dname : dname -> string
+val str_of_name : name -> string
+val str_of_class_name: class_name -> string
+val name_of_class_name: class_name -> name
+
+val info_of_ident : ident -> tok
 val info_of_name : name -> tok
 val info_of_dname : dname -> tok
+
 val unwrap : 'a wrap -> 'a
 val unparen : tok * 'a * tok -> 'a
 val unbrace : tok * 'a * tok -> 'a
@@ -666,8 +665,6 @@ val map_comma_list: ('a -> 'b) -> 'a comma_list -> 'b comma_list
 val unarg: argument -> expr
 val unmodifiers: class_var_modifier -> modifier list
 val unargs: argument comma_list -> expr list * w_variable list
-val rewrap_str : string -> tok -> tok
-val is_origintok : tok -> bool
 val al_info : tok -> tok
 val compare_pos : tok -> tok -> int
 val noScope : unit -> Scope_php.phpscope ref
