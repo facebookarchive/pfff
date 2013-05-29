@@ -192,7 +192,7 @@ and expr =
    * but also globals, class variables, parameters, etc.
    *)
   | IdVar of dname * Scope_php.phpscope ref
-  | ThisVar of tok
+  | This of tok
 
   | Call of expr * argument comma_list paren
   | ObjGet of expr * tok (* -> *) * expr

@@ -925,11 +925,11 @@ and m_expr a b =
     )
     ))
 
-  | A.ThisVar(a1), B.ThisVar(b1) ->
+  | A.This(a1), B.This(b1) ->
     m_tok a1 b1 >>= (fun (a1, b1) ->
     return (
-       A.ThisVar(a1),
-       B.ThisVar(b1)
+       A.This(a1),
+       B.This(b1)
     )
     )
   | A.Call(a1, a2), B.Call(b1, b2) ->
@@ -1307,7 +1307,7 @@ and m_expr a b =
   | A.Id _, _
 
   | A.IdVar _, _
-  | A.ThisVar _, _
+  | A.This _, _
 
   | A.Call _, _
   | A.ObjGet _, _

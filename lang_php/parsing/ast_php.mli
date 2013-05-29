@@ -106,7 +106,7 @@ and expr =
   | Id of name
 
   | IdVar of dname * Scope_php.phpscope ref
-  | ThisVar of tok
+  | This of tok
 
   | Call of expr * argument comma_list paren
   | ObjGet of expr * tok (* -> *) * expr

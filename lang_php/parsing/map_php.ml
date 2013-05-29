@@ -146,7 +146,7 @@ and map_expr (x) =
       let v1 = map_dname v1
       and v2 = map_of_ref Scope_code.map_scope v2
       in IdVar ((v1, v2))
-  | ThisVar v1 -> let v1 = map_tok v1 in ThisVar ((v1))
+  | This v1 -> let v1 = map_tok v1 in This ((v1))
 
 
   | Call ((v1, v2)) ->

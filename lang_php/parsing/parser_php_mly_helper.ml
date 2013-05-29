@@ -193,7 +193,7 @@ let mk_e e = e
 
 let mk_var (s, tok) = 
   match s with
-  | "this" -> ThisVar tok
+  | "this" -> This tok
   | _ -> IdVar (DName(s, tok), Ast_php.noScope())
 
 (*e: AST builder *)

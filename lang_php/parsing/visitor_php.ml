@@ -226,7 +226,7 @@ and v_expr (x: expr) =
 
   | IdVar ((v1, v2)) ->
       let v1 = v_dname v1 and v2 = v_ref Scope_php.v_phpscope v2 in ()
-  | ThisVar v1 -> let v1 = v_tok v1 in ()
+  | This v1 -> let v1 = v_tok v1 in ()
 
 
   | Call ((v1, v2)) ->

@@ -506,7 +506,7 @@ and expr env = function
   | Id n -> A.Id (name env n)
 
   | IdVar (dn, scope) -> A.Id (dname dn)
-  | ThisVar tok -> A.This 
+  | This tok -> A.This 
 
 
   | Call (e, (_lp, args, _rp)) ->

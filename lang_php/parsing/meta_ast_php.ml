@@ -110,7 +110,7 @@ and vof_expr = function
       let v1 = vof_dname v1
       and v2 = vof_ref Scope_code.vof_scope v2
       in Ocaml.VSum (("IdVar", [ v1; v2 ]))
-  | ThisVar v1 -> let v1 = vof_tok v1 in Ocaml.VSum (("ThisVar", [ v1 ]))
+  | This v1 -> let v1 = vof_tok v1 in Ocaml.VSum (("This", [ v1 ]))
 
 
   | Call ((v1, v2)) ->

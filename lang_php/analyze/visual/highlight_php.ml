@@ -444,7 +444,7 @@ let visit_toplevel ~tag prefs  hentities (toplevel, toks) =
       | Cast (((cast, v1), v2)) ->
           tag v1 TypeMisc
 
-      | ThisVar (tok) ->
+      | This (tok) ->
           tag tok (Class (Use2 fake_no_use2))
 
       | ArrayGet (var, exprbracket) ->
