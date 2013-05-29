@@ -20,14 +20,14 @@ type token =
  * see the documentation for spatch.
  *)
 type info = {
-  (* contains among other things the position of the token through
-   * the Common.parse_info embedded inside the token type.
+  (* contains the position of the token through the parse_info embedded
+   * inside the token type.
    *)
   mutable token: token; 
-  (* TODO? *)
-  mutable comments: unit; 
   (* for spatch *)
   mutable transfo: transformation;
+  (* TODO? *)
+  mutable comments: unit; 
 }
 
  and transformation = 

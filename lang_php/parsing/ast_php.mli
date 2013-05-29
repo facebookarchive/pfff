@@ -8,7 +8,7 @@ open Common
 (* Token/info *)
 (* ------------------------------------------------------------------------- *)
 (* Contains among other things the position of the token through
- * the Common.parse_info embedded inside it, as well as the
+ * the Parse_info.parse_info embedded inside it, as well as the
  * transformation field that makes possible spatch.
  *)
 type tok = Parse_info.info

@@ -117,8 +117,8 @@ type info = {
    * the Common.parse_info embedded inside the pinfo type.
    *)
   mutable token : token;
-  mutable comments: unit; (* TODO *)
   mutable transfo: transformation;
+  mutable comments: unit; (* TODO *)
 }
 
 (* poor's man refactoring *)
