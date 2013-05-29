@@ -74,7 +74,7 @@ let toks_before_after_ii ii toks =
             (* do exception for newline that we also include with the
              * chunk
              *)
-            let pos_max = Ast_php.pos_of_info max in
+            let pos_max = Parse_info.pos_of_info max in
             let pos_here = TH.pos_of_tok tok in
             (match tok with
             | Parser_php.TNewline _ when pos_here = pos_max + 1 ->

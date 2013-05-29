@@ -442,21 +442,25 @@ and class_def env def =
   (* opti: could also just push those edges in a _todo ref during Defs *)
   if env.phase = Inheritance then begin
     def.c_extends +> Common.do_option (fun c2 ->
-      add_use_edge env (c2, E.Class E.RegularClass);
+      (* TODO: also mark as use the generic arguments *)
+      let n = Ast.name_of_class_name c2 in
+      add_use_edge env (n, E.Class E.RegularClass);
     );
     (* less: use Interface and Traits at some point *)
     def.c_implements +> List.iter (fun c2 ->
-      add_use_edge env (c2, E.Class E.RegularClass);
+      let n = Ast.name_of_class_name c2 in
+      add_use_edge env (n, E.Class E.RegularClass);
     );
     def.c_uses +> List.iter (fun c2 ->
-      add_use_edge env (c2, E.Class E.RegularClass);
+      let n = Ast.name_of_class_name c2 in
+      add_use_edge env (n, E.Class E.RegularClass);
     );
   end;
   let self = Ast.str_of_name def.c_name in
   let parent =
     match def.c_extends with
     | None -> "NOPARENT"
-    | Some c2 -> Ast.str_of_name c2
+    | Some c2 -> Ast.str_of_class_name c2
   in
   let env = { env with self; parent } in
 
@@ -481,7 +485,8 @@ and class_def env def =
          | None -> ()
          | Some c ->
            (match 
-               lookup env.g (Ast.str_of_name c, Ast.str_of_name fld.cv_name) ()
+               lookup env.g (Ast.str_of_class_name c, 
+                             Ast.str_of_name fld.cv_name) ()
             with
             | None -> ()
             | Some ((s, _), _kind) ->

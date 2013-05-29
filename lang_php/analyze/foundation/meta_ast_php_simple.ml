@@ -331,10 +331,10 @@ and
   let arg = Ocaml.vof_list vof_attribute v_c_attrs in
   let bnd = ("c_attrs", arg) in
   let bnds = bnd :: bnds in
-  let arg = Ocaml.vof_list vof_name v_c_implements in
+  let arg = Ocaml.vof_list vof_class_name v_c_implements in
   let bnd = ("c_implements", arg) in
   let bnds = bnd :: bnds in
-  let arg = Ocaml.vof_option vof_name v_c_extends in
+  let arg = Ocaml.vof_option vof_class_name v_c_extends in
   let bnd = ("c_extends", arg) in
   let bnds = bnd :: bnds in
   let arg = vof_class_type v_c_type in
@@ -344,6 +344,7 @@ and
   let bnd = ("c_name", arg) in
   let bnds = bnd :: bnds in
   Ocaml.VDict bnds
+and vof_class_name x = vof_hint_type x
 and vof_class_type =
   function
   | ClassRegular -> Ocaml.VSum (("ClassRegular", []))

@@ -91,7 +91,7 @@ let rec first_filepos_origin ii =
   match ii with
   | [] -> raise NoII
   | x::xs -> 
-      if Ast.is_origintok x 
+      if Parse_info.is_origintok x 
       then x +> Parse_info.parse_info_of_info +> EC.filepos_of_parse_info
       else first_filepos_origin xs
 
@@ -137,13 +137,13 @@ let first_comment ast toks =
     match toks_before_min with
     | Parser_php.TNewline i1::
         (Parser_php.T_COMMENT i2|Parser_php.T_DOC_COMMENT i2)::xs ->
-        if Ast_php.col_of_info i2 = 0
+        if Parse_info.col_of_info i2 = 0
         then Some (Parse_info.parse_info_of_info i2)
         else None
 
     (* for one-liner comment, there is no newline token before *)
     | Parser_php.T_COMMENT i2::xs ->
-        if Ast_php.col_of_info i2 = 0
+        if Parse_info.col_of_info i2 = 0
         then Some (Parse_info.parse_info_of_info i2)
         else None
     | _ -> None
@@ -257,7 +257,7 @@ let (add_nested_id_and_ast: enclosing_id:id -> Ast_php.entity ->database -> id)
 
 (*---------------------------------------------------------------------------*)
 let (add_def: 
- (id_string * id_kind * id * Ast_php.name option) -> database -> unit) =  
+ (id_string * id_kind * id * Ast_php.ident option) -> database -> unit) =  
   fun (idstr, idkind, id, nameopt) db -> 
 
     (* check if already has a function/class/constant with the same name *)

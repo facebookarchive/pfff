@@ -545,6 +545,8 @@ let method_callees_of_any any =
  * method
  *)
 let static_method_callees_of_any any =
+  raise Todo
+(*
   V.do_visit_with_ref (fun aref -> { V.default_visitor with
     V.kexpr = (fun (k,vx) x ->
       match x with
@@ -553,7 +555,6 @@ let static_method_callees_of_any any =
             match qu with
             | Id (classname) ->
                 Some (Ast.name classname)
-
             | IdSelf _ | IdParent _ ->
                 failwith "use Unsugar_php.unsugar_self_parent"
             | IdStatic _ ->
@@ -576,7 +577,7 @@ let static_method_callees_of_any any =
     );
   })
   any
-
+*)
 
 (*****************************************************************************)
 (* Precision of analysis *)

@@ -117,7 +117,7 @@ and lift_qualifier_closer_to_var qu v =
 let failwith_xhp_ambiguity_colon info =
   let err = 
     "XHP: ambiguity on ':', please put a space after the colon in " ^
-      Ast_php.string_of_info info
+      Parse_info.string_of_info info
   in
   (*failwith err*)
   pr2 err;
@@ -126,7 +126,7 @@ let failwith_xhp_ambiguity_colon info =
 let failwith_xhp_ambiguity_percent info =
   let err = 
     "XHP: ambiguity on '%', please put a space after the percent in " ^
-      Ast_php.string_of_info info
+      Parse_info.string_of_info info
   in
   (*failwith err*)
   pr2 err;

@@ -26,8 +26,8 @@ let make_tmp() =
 
 let print_token tok =
   let inf = Token_helpers_php.info_of_tok tok in
-  let tok = Ast_php.str_of_info inf in
-  let line = Ast_php.line_of_info inf in
+  let tok = Parse_info.str_of_info inf in
+  let line = Parse_info.line_of_info inf in
   Printf.printf "/BEGIN[%d]:%s:END/\n" line tok
 
 let () =

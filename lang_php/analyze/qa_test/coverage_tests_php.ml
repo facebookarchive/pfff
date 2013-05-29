@@ -104,7 +104,7 @@ let get_all_calls ?(is_directive_to_filter= (fun _ -> false)) =
           k x;
 
       | Call (Id callname, (lp, args, rp)) ->
-          let str = Ast_php.name callname in
+          let str = Ast_php.str_of_name callname in
           
           (* filter the require_module stuff that already skip
            * when generating the file coverage data
@@ -118,7 +118,7 @@ let get_all_calls ?(is_directive_to_filter= (fun _ -> false)) =
       | Call (ClassGet(var, t1, Id methname), (lp, args, rp))
       | Call (ObjGet(var, t1, Id methname), (lp, args, rp)) 
         ->
-          let str = Ast_php.name methname in
+          let str = Ast_php.str_of_name methname in
           Common.push2 (Some str, rp) aref;
           k x
 
@@ -147,7 +147,7 @@ let get_all_call_lines_with_sanity_check
      
   let lines_calls = 
     calls 
-    +> List.map (fun (sopt, rp) -> Ast.line_of_info rp)
+    +> List.map (fun (sopt, rp) -> Parse_info.line_of_info rp)
     +> Common2.set
   in
   let nb_lines_calls = List.length lines_calls in

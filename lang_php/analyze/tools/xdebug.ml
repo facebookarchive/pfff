@@ -392,7 +392,7 @@ let iter_dumpfile2
 
                       match expr with
                       | Call (Id name, args_paren) ->
-                        assert(Ast.name name = "foo");
+                        assert(Ast.str_of_name name = "foo");
                         Ast.unparen args_paren 
                         +> Ast.uncomma 
                         +> List.map (function

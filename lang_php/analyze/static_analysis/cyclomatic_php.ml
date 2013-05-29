@@ -93,11 +93,11 @@ let cyclomatic_complexity_flow ?(verbose=false) flow =
 (*****************************************************************************)
 
 let string_of_bad_cyclo name cyclo = 
-  let info = Ast.info_of_name name in
+  let info = Ast.info_of_ident name in
   spf "cyclo for %s at %s:%d = %d" 
-    (Ast.name name) 
-    (Ast.file_of_info info)
-    (Ast.line_of_info info)
+    (Ast.str_of_ident name) 
+    (Parse_info.file_of_info info)
+    (Parse_info.line_of_info info)
     cyclo
 
 (*****************************************************************************)

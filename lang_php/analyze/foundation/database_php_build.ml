@@ -244,19 +244,19 @@ let index_db2_2 db =
       V.ktop = (fun (k, bigf) x ->
         match x with
         | FuncDef def -> 
-            let s = Ast_php.name def.f_name in
+            let s = Ast_php.str_of_ident def.f_name in
             add_def (s, E.Function, id, Some def.f_name) db;
             (* add_type def.Ast_c.f_type; *)
             k x
         | ConstantDef (_, name, _, scalar, _) -> 
-            add_def (Ast_php.name name, E.Constant, id, Some name) db;
+            add_def (Ast_php.str_of_ident name, E.Constant, id, Some name) db;
             k x
         | StmtList stmt -> 
             let s = "__TOPSTMT__" in
             add_def (s, E.TopStmts, id, None) db;
             k x
         | ClassDef class_def ->
-            let s = Ast_php.name class_def.c_name in
+            let s = Ast_php.str_of_ident class_def.c_name in
             let kind = Class_php.class_type_of_ctype class_def.c_type in
             add_def (s, E.Class kind, id, Some class_def.c_name) db;
             k x
@@ -272,14 +272,14 @@ let index_db2_2 db =
         | FuncDefNested def ->
             let newid = add_nested_id_and_ast ~enclosing_id:!enclosing_id
               (Ast_php.FunctionE def) db in
-            let s = Ast_php.name def.f_name in
+            let s = Ast_php.str_of_ident def.f_name in
             add_def (s, E.Function, newid, Some def.f_name) db;
             Common.save_excursion enclosing_id newid  (fun () -> k x);
             
         | ClassDefNested def ->
             let newid = add_nested_id_and_ast ~enclosing_id:!enclosing_id
               (Ast_php.ClassE def) db in
-            let s = Ast_php.name def.c_name in
+            let s = Ast_php.str_of_ident def.c_name in
             let kind = Class_php.class_type_of_ctype def.c_type in
             add_def (s, E.Class kind, newid, Some def.c_name) db;
             Common.save_excursion enclosing_id newid (fun () -> k x);
@@ -290,7 +290,7 @@ let index_db2_2 db =
         | Method def ->
             let newid = add_nested_id_and_ast  ~enclosing_id:!enclosing_id
               (Ast_php.MethodE def) db in
-            let s = Ast_php.name def.f_name in
+            let s = Ast_php.str_of_ident def.f_name in
             let kind =
               if Class_php.is_static_method def
               then E.StaticMethod
@@ -314,7 +314,7 @@ let index_db2_2 db =
                 (Ast_php.ClassConstantE(class_cst))
                 db
               in
-              let s = Ast.name name in
+              let s = Ast.str_of_ident name in
               add_def (s, E.ClassConstant, newid, None) db;
             );
             (* not sure we need to recurse. There can't be more definitions
@@ -343,7 +343,7 @@ let index_db2_2 db =
                * Finally xhp attributes don't have a $ so it's again
                * more consistent to not add a $ here.
                *)
-              let s = Ast.dname dname in
+              let s = Ast.str_of_dname dname in
               add_def (s, E.Field, newid, None) db;
             );
             k x
@@ -461,7 +461,7 @@ let index_db3_2 db =
     let classes_used = 
       users_of_class_in_any (Entity ast) in
     let candidates = 
-      classes_used +> List.map Ast.name +> Common2.set 
+      classes_used +> List.map Ast.str_of_name +> Common2.set 
       +> Common2.map_flatten (fun s -> class_ids_of_string s db)
     in
     candidates +> List.iter (fun idclass -> 
@@ -479,7 +479,7 @@ let index_db3_2 db =
         def.c_extends +> Common.do_option (fun (tok, classnameA) ->
          (* we are in a situation like: class B extends A *)
 
-          let s = Ast.name classnameA in
+          let s = Ast.str_of_class_name classnameA in
           (* There may be multiple classes defining classnameA and 
            * so multiple ids. 
            * 
@@ -497,7 +497,7 @@ let index_db3_2 db =
           interface_list +> Ast.uncomma +> List.iter (fun interfacenameA ->
             (* we are in a situation like: class B implements A *)
 
-            let _s = Ast.name interfacenameA in
+            let _s = Ast.str_of_class_name interfacenameA in
             let candidates =  []
               (* TODO? 
               interface_ids_of_string s db 

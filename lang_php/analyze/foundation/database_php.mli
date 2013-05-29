@@ -120,7 +120,7 @@ type database = {
 
      (* shortcut, to avoid getting the ast to get the name of the entity *)
      id_name: (id, id_string) Oassoc.oassoc;
-     id_phpname: (id, Ast_php.name) Oassoc.oassoc;
+     id_phpname: (id, Ast_php.ident) Oassoc.oassoc;
 
      extra: (id, extra_id_info) Oassoc.oassoc;
    }
@@ -295,7 +295,7 @@ val functions_or_static_methods_in_db:
   database -> (string, id list) Common.assoc
 *)
 
-val id_of_phpname:   Ast_php.name -> database -> id
+val id_of_phpname:   Ast_php.ident -> database -> id
 
 val id_of_kind_call: 
   ?file_disambiguator:Common.filename ->

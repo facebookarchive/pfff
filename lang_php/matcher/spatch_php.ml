@@ -143,7 +143,7 @@ let parse file =
 
   (* adjust with Minus info *)  
   toks +> List.iter (fun tok ->
-    let line = Ast.line_of_info tok in
+    let line = Parse_info.line_of_info tok in
 
     let annot = Hashtbl.find hline_env line in
     (match annot with
@@ -176,7 +176,7 @@ let parse file =
    *)
 
   let grouped_by_lines = 
-    toks +> Common.group_by_mapped_key (fun tok -> Ast.line_of_info tok) in
+    toks +> Common.group_by_mapped_key (fun tok -> Parse_info.line_of_info tok) in
   let rec aux xs = 
     match xs with
     | (line, toks_at_line)::rest ->
@@ -194,7 +194,7 @@ let parse file =
 
             (* ugly hack *)
             let toadd =
-              match Ast.str_of_info last_tok with
+              match Parse_info.str_of_info last_tok with
               | ";" -> "\n" ^ toadd
               | _ -> toadd
             in

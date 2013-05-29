@@ -6,7 +6,7 @@ type increq =
  and increq_expr = 
    | Direct of Common.filename 
    | ConcatVar of Ast_php.dname * Common.filename
-   | ConcatConstant of Ast_php.name * Common.filename
+   | ConcatConstant of Ast_php.ident * Common.filename
    | ConcatArrrayVar of Ast_php.dname * string * Common.filename
    | ConcatDirname of Common.filename
    | ConcatRealpathDirname of Common.filename

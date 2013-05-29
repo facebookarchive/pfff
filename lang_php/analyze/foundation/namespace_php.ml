@@ -37,7 +37,7 @@ type dnameS =
 
 
 let name_to_nameS_wrap name =
-  let s = Ast_php.name name in
+  let s = Ast_php.str_of_name name in
   let ii  = Ast_php.info_of_name name in 
   NameS s, ii
 

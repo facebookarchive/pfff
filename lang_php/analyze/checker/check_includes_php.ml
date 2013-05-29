@@ -52,7 +52,8 @@ let check env file ast =
     with 
     | (Timeout | Common2.UnixExit _) as exn -> raise exn
     | exn -> 
-      pr2 (spf "PB: treating a include/require: %s" (Ast.string_of_info tok));
+      pr2 (spf "PB: treating a include/require: %s" 
+             (Parse_info.string_of_info tok));
       raise exn
   );
   ()

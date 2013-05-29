@@ -42,12 +42,8 @@ type visitor_in = {
   kstmt_and_def_list_scope: 
     (stmt_and_def list -> unit) * visitor_out -> stmt_and_def list  -> unit;
 
-  kfully_qualified_class_name: 
-    (fully_qualified_class_name -> unit) * visitor_out -> 
-    fully_qualified_class_name -> unit;
+  kname: (name -> unit) * visitor_out -> name -> unit;
   khint_type: (hint_type -> unit) * visitor_out -> hint_type -> unit;
-  kclass_name_or_kwd:
-    (class_name_or_kwd -> unit) * visitor_out -> class_name_or_kwd -> unit;
   karray_pair: (array_pair -> unit) * visitor_out -> array_pair -> unit;
 
   karguments: (argument comma_list paren -> unit) * visitor_out ->

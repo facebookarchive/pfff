@@ -438,9 +438,9 @@ let get_lines_to_remove db ids =
       match toks_before_min with
       | Parser_php.TNewline i1::
           (Parser_php.T_COMMENT i2|Parser_php.T_DOC_COMMENT i2)::xs ->
-          if Ast_php.col_of_info i2 = 0 &&
+          if PI.col_of_info i2 = 0 &&
              (* bugfix: dont want comment far away *)
-             Ast_php.line_of_info i1 = min.Parse_info.line - 1
+             PI.line_of_info i1 = min.PI.line - 1
           then PI.parse_info_of_info i2
           else min
 
@@ -449,21 +449,21 @@ let get_lines_to_remove db ids =
           Parser_php.TNewline i1::
           (Parser_php.T_COMMENT i2|Parser_php.T_DOC_COMMENT i2)::xs
         ->
-          if Ast_php.col_of_info i1first = 0 &&
-             Ast_php.col_of_info i2 = 0
+          if PI.col_of_info i1first = 0 &&
+             PI.col_of_info i2 = 0
           then PI.parse_info_of_info i2
           else min
 
       (* for one-liner comment, there is no newline token before *)
       | Parser_php.T_COMMENT i2::xs ->
-          if Ast_php.col_of_info i2 = 0
+          if PI.col_of_info i2 = 0
           then PI.parse_info_of_info i2
           else min
 
       | Parser_php.TNewline i1::tok2::xs ->
           let _ltok2 = Token_helpers_php.line_of_tok tok2 in
-          let _lwhite = Ast_php.line_of_info i1 in
-          if Ast_php.col_of_info i1 = 0 (* buggy: lwhite <> ltok2 *)
+          let _lwhite = PI.line_of_info i1 in
+          if PI.col_of_info i1 = 0 (* buggy: lwhite <> ltok2 *)
           then (* safe to remove the previous newline too *)
             PI.parse_info_of_info i1
           else min

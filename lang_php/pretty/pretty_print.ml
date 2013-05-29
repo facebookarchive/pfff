@@ -433,7 +433,7 @@ and case env = function
 
 and catch env (c, v, stl) =
   Pp.print env " catch (";
-  Pp.print env c;
+  Pp.print env (hint_type env c);
   Pp.print env " ";
   Pp.print env v;
   Pp.print env ") ";
@@ -753,7 +753,8 @@ and class_def env c =
   | [] -> ()
   | _ ->
       Pp.print env " extends ";
-      Pp.list env Pp.print "" c.c_extends " " "";
+      Pp.list env (fun env x -> Pp.print env (hint_type env x)) 
+        "" c.c_extends " " "";
   );
   (match c.c_implements with
   | [] -> Pp.print env " "
@@ -796,8 +797,11 @@ and class_const env l =
 
 and interfaces env = function
   | [] -> ()
-  | [x] -> Pp.print env x
-  | x :: rl -> Pp.print env x; Pp.print env ", "; interfaces env rl
+  | [x] -> Pp.print env (hint_type env x)
+  | x :: rl -> 
+    Pp.print env (hint_type env x); 
+    Pp.print env ", "; 
+    interfaces env rl
 
 and class_constants env = function
   | [] -> ()
@@ -1131,7 +1135,9 @@ and class_header env xs =
         | [] -> ()
         | _ ->
             Pp.print env " extends ";
-            Pp.list env Pp.print "" c.c_extends " " "";
+            Pp.list env (fun env s -> 
+              Pp.print env (hint_type env s))
+              "" c.c_extends " " "";
         );
         (match c.c_implements with
         | [] -> Pp.print env " "

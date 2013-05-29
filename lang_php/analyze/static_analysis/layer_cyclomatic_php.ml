@@ -91,7 +91,7 @@ let gen_layer ?(verbose=false) dir ~output =
       { Layer_code.
         micro_level = 
           ii_with_cyclo +> List.map (fun (ii, n) ->
-            let line = Ast.line_of_info ii in
+            let line = Parse_info.line_of_info ii in
             line, property_of_cyclo n
           );
         macro_level = 

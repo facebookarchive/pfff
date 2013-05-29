@@ -119,7 +119,7 @@ module XMATCH = struct
    *)
   let equal_ast_binded_code a b =
     match a, b with
-    | Ast.Name2 _, Ast.Name2 _
+    | Ast.Ident2 _, Ast.Ident2 _
     | Ast.Expr _, Ast.Expr _ 
     | Ast.XhpAttrValue _, Ast.XhpAttrValue _ 
     | Ast.Argument _, Ast.Argument _

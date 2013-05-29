@@ -809,7 +809,9 @@ and class_def env c =
   Collect.collect env;
   let parent, parent_name =
     match c.c_extends with
-    | Some (x, _) -> get_class env x, x
+    | Some ht ->
+      let (x, _) = name_of_class_name ht in
+      get_class env x, x
     | None -> Tvar (fresh()), "" in
   if env.verbose then begin
     incr env.count;
@@ -823,7 +825,10 @@ and class_def env c =
 
   (* Adding traits *)
   let traits =
-    List.map (fun (x, _) -> get_object (get_class env x)) c.c_uses in
+    List.map (fun ht -> 
+      let  (x, _) = name_of_class_name ht in
+      get_object (get_class env x)
+    ) c.c_uses in
   let obj_parent = List.fold_right (SMap.fold SMap.add) traits obj_parent in
 
   (* Declarations *)

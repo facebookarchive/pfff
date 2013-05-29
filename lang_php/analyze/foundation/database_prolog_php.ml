@@ -113,9 +113,10 @@ let rec string_of_hint_type h =
   match h with
   | Some x ->
       (match x with
-      | Hint c ->
+     (* TODO: figure out a reasonable respresentation for type args in prolog *)
+      | Hint (c, _targsTODO) ->
           (match c with
-          | ClassName (c, _) -> Ast.name c (* TODO: figure out a reasonable respresentation for type args in prolog *)
+          | XName (c) -> Ast.str_of_ident c
           | Self _ -> "self"
           | Parent _ -> "parent"
           | LateStatic _ -> "")
@@ -162,7 +163,7 @@ let add_uses id ast pr db =
        * for the right parameter. So need an entity_finder?
        *)
       | Call (Id callname, args) ->
-          let str = Ast_php.name callname in
+          let str = Ast_php.str_of_name callname in
           let args = args +> Ast.unparen +> Ast.uncomma in
           (match str, args with
           (* Many entities (functions, classes) in PHP are passed as
@@ -207,7 +208,7 @@ let add_uses id ast pr db =
       | Call (ObjGet (_, _, Id name), args)
       | Call (ClassGet (_, _, Id name), args)
         ->
-          let str = Ast_php.name name in
+          let str = Ast_php.str_of_name name in
           (* use a different namespace than func? *)
           if not (Hashtbl.mem h str)
           then begin
@@ -220,14 +221,17 @@ let add_uses id ast pr db =
           | Call (ClassGet(qu,_tok, Id name), args) ->
               (match qu with
               | Id (name2) ->
+                (match name2 with
+                | XName (name) ->
                   pr (spf "docall(%s, ('%s','%s'), method)."
-                           (name_id id db) (Ast_php.name name2) str)
-              (* this should have been desugared while building the
-               * code database, except for traits code ...
-               *)
-              | IdSelf _| IdParent _
-              (* can't do much ... *)
-              | IdStatic _ -> ()
+                           (name_id id db) (Ast_php.str_of_name name2) str)
+                (* this should have been desugared while building the
+                 * code database, except for traits code ...
+                 *)
+                | Self _| Parent _
+                (* can't do much ... *)
+                | LateStatic _ -> ()
+                )
               | _ -> ()
               )
           | Call (ObjGet (_, _, Id name), args) ->
@@ -244,23 +248,26 @@ let add_uses id ast pr db =
       (* the context should be anything except Call *)
       | ClassGet(qu, _tok, Id cstname) ->
          (match qu with
-         | Id (classname) ->
-           pr (spf "use(%s, ('%s','%s'), constant, read)."
-                (name_id id db) (Ast_php.str_of_name classname)
-                (Ast_php.str_of_name cstname))
-         (* this should have been desugared while building the
-          * code database, except for traits code ...
-          *)
-         | IdSelf _| IdParent _
-         (* can't do much ... *)
-         | IdStatic _ -> ()
+         | Id name ->
+           (match name with
+           | XName(classname) ->
+             pr (spf "use(%s, ('%s','%s'), constant, read)."
+                   (name_id id db) (Ast_php.str_of_ident classname)
+                   (Ast_php.str_of_name cstname))
+             (* this should have been desugared while building the
+              * code database, except for traits code ...
+              *)
+           | Self _| Parent _
+           (* can't do much ... *)
+           | LateStatic _ -> ()
+           )
          | _ -> ()
          );
         k x
 
       (* the context should be anything except Call *)
       | ObjGet (lval, tok, Id name) ->
-          let str = Ast_php.name name in
+          let str = Ast_php.str_of_name name in
           (* use a different namespace than func? *)
           if not (Hashtbl.mem h str)
           then begin
@@ -286,22 +293,23 @@ let add_uses id ast pr db =
 
         (match classref with
         | Id name ->(* TODO: currently ignoring type args *)
-
-          let str = Ast_php.name name in
-        (* use a different namespace than func? *)
-          if not (Hashtbl.mem h str)
-          then begin
-            Hashtbl.replace h str true;
-            pr (spf "docall(%s, '%s', class)."
-                  (name_id id db) str)
-          end;
-          
-        (* todo: do something here *)
-        | IdSelf _
-        | IdParent _
-        | IdStatic _ ->
-          ()
-
+          (match name with
+          | XName name ->
+            let str = Ast_php.str_of_ident name in
+          (* use a different namespace than func? *)
+            if not (Hashtbl.mem h str)
+            then begin
+              Hashtbl.replace h str true;
+              pr (spf "docall(%s, '%s', class)."
+                    (name_id id db) str)
+            end;
+            
+         (* todo: do something here *)
+          | Self _
+          | Parent _
+          | LateStatic _ ->
+            ()
+          )
         | _ -> ()
         );
         k x
@@ -317,7 +325,7 @@ let add_uses id ast pr db =
       | Xhp (xhp_tag, _attrs, _tok, _, _)
       | XhpSingleton (xhp_tag, _attrs, _tok)
         ->
-          let str = Ast_php.name (Ast_php.XhpName xhp_tag) in
+          let str = Ast_php.str_of_ident (Ast_php.XhpName xhp_tag) in
           (* use a different namespace than func? *)
           if not (Hashtbl.mem h str)
           then begin
@@ -335,7 +343,7 @@ let add_uses id ast pr db =
       | Try (_, _, c1, cs) ->
           (c1::cs) +> List.iter (fun (_, (_, (classname, dname), _), _) ->
             pr (spf "catch(%s, '%s')."
-                   (name_id id db) (Ast.str_of_name classname))
+                   (name_id id db) (Ast.str_of_class_name classname))
           );
       | _ -> ()
       );
@@ -377,7 +385,7 @@ let add_uses_and_properties id kind ast pr db =
       | Trait _ -> ()
       );
       def.c_extends +> Common.do_option (fun (tok, x) ->
-        pr (spf "extends(%s, '%s')." (name_id id db) (Ast.name x));
+        pr (spf "extends(%s, '%s')." (name_id id db) (Ast.str_of_class_name x));
       );
       def.c_implements +> Common.do_option (fun (tok, interface_list) ->
         interface_list +> Ast.uncomma +> List.iter (fun x ->
@@ -388,15 +396,15 @@ let add_uses_and_properties id kind ast pr db =
            *)
           (match def.c_type with
           | Interface _ ->
-             pr (spf "extends(%s, '%s')." (name_id id db) (Ast.name x));
+             pr (spf "extends(%s, '%s')." (name_id id db) (Ast.str_of_class_name x));
           | _ ->
-             pr (spf "implements(%s, '%s')." (name_id id db) (Ast.name x));
+             pr (spf "implements(%s, '%s')." (name_id id db) (Ast.str_of_class_name x));
           )
         ));
       def.c_body +> Ast.unbrace +> List.iter (function
       | UseTrait (_tok, names, rules_or_tok) ->
           names +> Ast.uncomma +> List.iter (fun name ->
-            pr (spf "mixins(%s, '%s')." (name_id id db) (Ast.name name))
+            pr (spf "mixins(%s, '%s')." (name_id id db) (Ast.str_of_class_name name))
           )
       | _ -> ()
       );

@@ -290,8 +290,11 @@ module FindCommonAncestor = struct
     let c = Classes.get env id in
     match c.c_extends with
     | None -> false
-    | Some (s, _) when s = cand -> true
-    | Some (s, _) -> class_match env cand acc s
+    | Some ht ->
+      let (s, _) = name_of_class_name ht in
+      if s = cand 
+      then true
+      else class_match env cand acc s
 
   let rec get_candidates env acc id =
     let acc = SSet.add id acc in
@@ -301,7 +304,9 @@ module FindCommonAncestor = struct
       let c = Classes.get env id in
       (match c.c_extends with 
       | None -> acc
-      | Some (s, _) -> get_candidates env acc s
+      | Some ht ->
+        let (s, _) = name_of_class_name ht in
+        get_candidates env acc s
       )
 
   let go env ss =

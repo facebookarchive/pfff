@@ -114,7 +114,7 @@ let check_member_access ctx (aclass, afield) loc find_entity =
           E.fatal loc (E.UndefinedEntity (Ent.Field, afield))
       | ObjAccess ->
           let allmembers = Class_php.collect_members aclass find_entity
-            +> List.map Ast.dname
+            +> List.map Ast.str_of_dname
           in
           (* todo? could also show a strong warning when the list
            * allmembers is big, in which case if most of the
@@ -162,13 +162,14 @@ let visit_and_check  find_entity prog =
         match def.c_type with Trait _ -> true | _ -> false in
 
       def.c_extends +> Common.do_option (fun (tok, parent) ->
+        let parent = name_of_class_name parent in
         E.find_entity_and_warn find_entity (Ent.Class Ent.RegularClass, parent)
           (fun _ ->
           ()
         )
       );
 
-      Common.save_excursion in_class (Some (Ast.name def.c_name, is_abstract))
+      Common.save_excursion in_class (Some (Ast.str_of_ident def.c_name, is_abstract))
       (fun () ->
       Common.save_excursion in_trait is_trait
       (fun () ->
@@ -191,14 +192,16 @@ let visit_and_check  find_entity prog =
                        if !Flag.show_analyze_error
                        then pr2_once (spf "Could not find constructor for: %s"
                                          (Ast.name name));
+
+      | New (tok, ((IdSelf _ | IdParent _)), args) ->
+          failwith "check_classes_php: call unsugar_self_parent()"
+
             *)
             ()
           | _ -> raise Impossible
           );
           k x
 
-      | New (tok, ((IdSelf _ | IdParent _)), args) ->
-          failwith "check_classes_php: call unsugar_self_parent()"
       | New (tok, (_ ), args) ->
           (* can't do much *)
           k x
@@ -215,7 +218,7 @@ let visit_and_check  find_entity prog =
            *)
           (match lval, !in_class with
           | ThisVar _, Some (aclass, is_abstract) ->
-            let amethod = Ast.name name in
+            let amethod = Ast.str_of_name name in
             check_method_call (MethodCall is_abstract)
               (aclass, amethod) (name, args) find_entity
 
@@ -231,20 +234,23 @@ let visit_and_check  find_entity prog =
       | Call (ClassGet(qu, _tok, Id name), args) ->
           (match qu with
           | Id (classname) ->
-              let aclass = Ast.name classname in
-              let amethod = Ast.name name in
+            (match classname with
+            | XName classname ->
+              let aclass = Ast.str_of_ident classname in
+              let amethod = Ast.str_of_name name in
               check_method_call StaticCall
                 (aclass, amethod) (name, args) find_entity
 
-          | (IdSelf _ | IdParent _) ->
+            | (Self _ | Parent _) ->
               if !in_trait
               (* checking for right method name should be done at use time, it
                * can't be done here, so let's accept any method call here.
                *)
               then ()
               else failwith "check_classes_php: call unsugar_self_parent()"
-          (* not much we can do? *)
-          | IdStatic _ -> ()
+            (* not much we can do? *)
+            | LateStatic _ -> ()
+            )
           | _ -> ()
           );
           vx (Arguments (Ast.unparen args));
@@ -252,17 +258,17 @@ let visit_and_check  find_entity prog =
 
 
       | ClassGet (Id (classname), tok, Id name) ->
-          check_class_constant (Ast.name classname, Ast.name name) tok
+          check_class_constant (Ast.str_of_name classname, Ast.str_of_name name) tok
             find_entity
 
       | ClassGet (Id classname, tok, IdVar (dname, _scope)) ->
           check_member_access StaticAccess
-            (Ast.name classname, Ast.dname dname) tok find_entity
+            (Ast.str_of_name classname, Ast.str_of_dname dname) tok find_entity
 
 
 
       | ObjGet (lval, tok, Id name) ->
-          let field = Ast.name name in
+          let field = Ast.str_of_name name in
           (match lval, !in_class with
           | ThisVar _, Some (aclass, is_abstract) ->
               check_member_access ObjAccess (aclass, field) tok find_entity

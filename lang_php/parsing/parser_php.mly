@@ -54,6 +54,7 @@ open Ast_php
 module Ast = Ast_php
 open Parser_php_mly_helper
 module H = Parser_php_mly_helper
+module PI = Parse_info
 
 %}
 
@@ -324,7 +325,7 @@ statement:
  | T_RETURN expr TSEMICOLON  { Return ($1,Some ($2), $3)}
 
  | T_TRY   TOBRACE inner_statement_list TCBRACE
-   T_CATCH TOPAR qualified_class_name  T_VARIABLE TCPAR
+   T_CATCH TOPAR class_name  T_VARIABLE TCPAR
      TOBRACE inner_statement_list TCBRACE
      additional_catches
      { let try_block = ($2,$3,$4) in
@@ -433,7 +434,7 @@ new_else_single:
 
 
 additional_catch:
- | T_CATCH TOPAR qualified_class_name T_VARIABLE TCPAR
+ | T_CATCH TOPAR class_name T_VARIABLE TCPAR
            TOBRACE inner_statement_list TCBRACE
      { let catch_block = ($6, $7, $8) in
        let catch = ($1, ($2, ($3, DName $4), $5), catch_block) in
@@ -672,7 +673,7 @@ xhp_attribute_decl:
      { XhpAttrInherit $1 }
  | xhp_attribute_decl_type xhp_attr_name xhp_attribute_default
      xhp_attribute_is_required
-     { XhpAttrDecl ($1, ((Ast.str_of_info $2, $2)), $3, $4) }
+     { XhpAttrDecl ($1, ((PI.str_of_info $2, $2)), $3, $4) }
 
 xhp_attribute_decl_type:
  | T_XHP_ENUM TOBRACE xhp_enum_list TCBRACE
@@ -702,8 +703,8 @@ xhp_attr_name:
     * tokens.
     *)*/
  | xhp_attr_name TMINUS ident_xhp_attr_name_atom
-     { let s = Ast.str_of_info $1 ^  Ast.str_of_info $2 ^ Ast.str_of_info $3 in
-       Ast.rewrap_str s $1
+     { let s = PI.str_of_info $1 ^  PI.str_of_info $2 ^ PI.str_of_info $3 in
+       PI.rewrap_str s $1
      }
 
 /*(*----------------------------*)*/
@@ -796,9 +797,9 @@ type_param:
 /*(*************************************************************************)*/
 
 type_php: 
- | class_name { Hint (ClassName (fst $1, snd $1)) }
- | T_SELF   { Hint (Self $1) }
- | T_PARENT { Hint (Parent $1) }
+ | class_name { $1 }
+ | T_SELF     { Hint (Self $1, None) }
+ | T_PARENT   { Hint (Parent $1, None) }
  /*(* hack extensions *)*/
  | TQUESTION type_php
      { HintQuestion ($1, $2)  }
@@ -809,7 +810,7 @@ type_php:
 
 /*(* similar to parameter_list, but without names for the parameters *)*/
 type_php_or_dots_list:
- | /*(*empty*)*/                  { [] }
+ | /*(*empty*)*/                     { [] }
  | non_empty_type_php_or_dots_list   { $1 }
  /*(* php-facebook-ext: *)*/
  | non_empty_type_php_or_dots_list TCOMMA { $1 ++ [Right3 $2] }
@@ -830,16 +831,18 @@ type_arguments:
 
 /*(* A dirty hack to get A<A<...>> to work without an additional space *)*/
 type_arg_list_gt:
-  | type_php TGREATER { [Left $1], $2 }
-  | type_php TCOMMA type_arg_list_gt { (Left $1)::(Right $2)::(fst $3), snd $3}
-  | qualified_class_name_or_array TSMALLER non_empty_type_php_list T_SR {
-    let lhs, rhs = split_two_char_info $4 in
-      ([Left(Hint(ClassName($1, Some ($2, $3, lhs))))], rhs)
-  }
-  | TQUESTION qualified_class_name_or_array TSMALLER non_empty_type_php_list T_SR {
-    let lhs, rhs = split_two_char_info $5 in
-      ([Left(HintQuestion($1, Hint(ClassName($2, Some ($3, $4, lhs)))))], rhs)
-  }
+  | type_php TGREATER 
+      { [Left $1], $2 }
+  | type_php TCOMMA type_arg_list_gt 
+      { (Left $1)::(Right $2)::(fst $3), snd $3}
+  | qualified_class_name_or_array TSMALLER non_empty_type_php_list T_SR 
+      { let lhs, rhs = split_two_char_info $4 in
+       ([Left(Hint(($1), Some ($2, $3, lhs)))], rhs)
+      }
+  | TQUESTION qualified_class_name_or_array TSMALLER non_empty_type_php_list T_SR     
+   { let lhs, rhs = split_two_char_info $5 in
+    ([Left(HintQuestion($1, Hint(($2), Some ($3, $4, lhs))))], rhs) 
+   }
 
 return_type:
    TCOLON type_php                 { $2 (* TODO $1 *) }
@@ -1011,7 +1014,7 @@ simple_expr:
  | qualified_class_name TOBRACE array_pair_list TCBRACE
      {
        match ($1) with
-       | Name("Vector", t) ->
+       | XName (Name("Vector", t)) ->
            let elts = List.map
              (function
              | Left (ArrayExpr e) -> Left (VectorExpr e)
@@ -1021,7 +1024,7 @@ simple_expr:
              $3
            in
            VectorLit(t, ($2, elts, $4))
-       | Name(("Map" | "StableMap"), t) ->
+       | XName (Name(("Map" | "StableMap"), t)) ->
            let elts = List.map
              (function
              | Left (ArrayArrowExpr (e1,t,e2)) -> Left (MapArrowExpr (e1,t,e2))
@@ -1063,10 +1066,10 @@ primary_expr:
  | constant { Sc (C $1) }
 
  | qualified_class_name { Id $1  }
- | T_SELF               { IdSelf $1 }
- | T_PARENT             { IdParent $1 }
+ | T_SELF               { Id (Self $1) }
+ | T_PARENT             { Id (Parent $1) }
 /*(* php 5.3 late static binding *)*/
- | T_STATIC             { IdStatic $1 }
+ | T_STATIC             { Id (LateStatic $1) }
 
  | T_VARIABLE { mk_var $1 }
 
@@ -1150,7 +1153,7 @@ encaps:
  | T_VARIABLE TOBRA encaps_var_offset TCBRA
      { EncapsVar (ArrayGet (mk_var $1,($2,Some $3,$4)))}
  | T_VARIABLE T_OBJECT_OPERATOR T_IDENT
-     { EncapsVar (ObjGet(mk_var $1, $2, Id (Name $3)))}
+     { EncapsVar (ObjGet(mk_var $1, $2, Id (XName (Name $3))))}
 
  /*(* for ${beer}s. Note that this rule does not exist in the original PHP
     * grammar. Instead only the case with a TOBRA after the T_STRING_VARNAME
@@ -1257,12 +1260,12 @@ ident:
    *
    * less? emit a warning when the user use XHP keywords for regular idents ?
    *)*/
- | T_XHP_ATTRIBUTE { Ast.str_of_info $1, $1 }
- | T_XHP_CATEGORY  { Ast.str_of_info $1, $1 }
- | T_XHP_CHILDREN  { Ast.str_of_info $1, $1 }
- | T_XHP_ENUM   { Ast.str_of_info $1, $1 }
- | T_XHP_ANY    { Ast.str_of_info $1, $1 }
- | T_XHP_PCDATA { Ast.str_of_info $1, $1 }
+ | T_XHP_ATTRIBUTE { PI.str_of_info $1, $1 }
+ | T_XHP_CATEGORY  { PI.str_of_info $1, $1 }
+ | T_XHP_CHILDREN  { PI.str_of_info $1, $1 }
+ | T_XHP_ENUM   { PI.str_of_info $1, $1 }
+ | T_XHP_ANY    { PI.str_of_info $1, $1 }
+ | T_XHP_PCDATA { PI.str_of_info $1, $1 }
 
 ident_class_name:
   | ident             { Name $1 }
@@ -1323,27 +1326,29 @@ ident_xhp_attr_name_atom:
    * namespace at some point may change that.
    *)*/
 qualified_class_name:
-  | ident { Name $1 }
+  | ident { XName(Name $1) }
  /*(*s: qualified_class_name grammar rule hook *)*/
   /*(* xhp: an XHP element use *)*/
-  | T_XHP_COLONID_DEF { XhpName $1 }
+  | T_XHP_COLONID_DEF { XName(XhpName $1) }
  /*(*e: qualified_class_name grammar rule hook *)*/
 
 qualified_class_name_or_array:
  | qualified_class_name { $1 }
- | T_ARRAY { Name ("array", $1) }
+ | T_ARRAY { XName(Name ("array", $1)) }
 
 /*(* todo? no support for namespace for now *)*/
 qualified_name_for_traits:
-  | ident { Name $1 }
+  | ident { XName (Name $1) }
 
 /*(*************************************************************************)*/
 /*(*1 Name *)*/
 /*(*************************************************************************)*/
 
-class_name: qualified_class_name_or_array type_arguments { $1, $2 }
+class_name: qualified_class_name_or_array type_arguments 
+  { Hint ($1, $2) }
 
-class_name_no_array: qualified_class_name type_arguments { $1 (* TODO $2*) }
+class_name_no_array: qualified_class_name type_arguments 
+  { Hint ($1, $2) }
 
 /*(*************************************************************************)*/
 /*(*1 xxx_list, xxx_opt *)*/

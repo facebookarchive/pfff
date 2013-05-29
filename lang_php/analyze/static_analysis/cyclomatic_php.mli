@@ -5,7 +5,7 @@ val cyclomatic_complexity_func:
   Ast_php.func_def -> int
 
 val cyclomatic_complexity_file:
-  Common.filename -> (Ast_php.name * int) list
+  Common.filename -> (Ast_php.ident * int) list
 
 (* internal *)
 val cyclomatic_complexity_flow: 

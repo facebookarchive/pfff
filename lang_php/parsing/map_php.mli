@@ -6,9 +6,7 @@ type visitor_in = {
   kstmt_and_def: 
    (stmt_and_def -> stmt_and_def) * visitor_out -> stmt_and_def ->stmt_and_def;
   kstmt: (stmt -> stmt) * visitor_out -> stmt -> stmt;
-  kclass_name_or_kwd: 
-    (class_name_or_kwd -> class_name_or_kwd) * visitor_out -> 
-     class_name_or_kwd -> class_name_or_kwd;
+  kname: (name -> name) * visitor_out -> name -> name;
   kclass_def:  (class_def -> class_def) * visitor_out -> class_def -> class_def;
   kinfo: (tok -> tok) * visitor_out -> tok -> tok;
                                                                             

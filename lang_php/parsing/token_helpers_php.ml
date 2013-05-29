@@ -16,6 +16,7 @@
 open Common
 
 open Parser_php
+module PI = Parse_info
 
 (*****************************************************************************)
 (* Token Helpers *)
@@ -427,16 +428,16 @@ let visitor_info_of_tok f = function
 
 let linecol_of_tok tok =
   let info = info_of_tok tok in
-  Ast_php.line_of_info info, Ast_php.col_of_info info
+  PI.line_of_info info, PI.col_of_info info
 
 let col_of_tok x  = snd (linecol_of_tok x)
 let line_of_tok x = fst (linecol_of_tok x)
 
-let str_of_tok  x = Ast_php.str_of_info  (info_of_tok x)
-let file_of_tok x = Ast_php.file_of_info (info_of_tok x)
-let pos_of_tok  x = Ast_php.pos_of_info  (info_of_tok x)
+let str_of_tok  x = PI.str_of_info  (info_of_tok x)
+let file_of_tok x = PI.file_of_info (info_of_tok x)
+let pos_of_tok  x = PI.pos_of_info  (info_of_tok x)
 
-let pinfo_of_tok x = Ast_php.pinfo_of_info (info_of_tok x)
+let pinfo_of_tok x = PI.pinfo_of_info (info_of_tok x)
 
 let is_origin x =
   match pinfo_of_tok x with Parse_info.OriginTok _ -> true | _ -> false

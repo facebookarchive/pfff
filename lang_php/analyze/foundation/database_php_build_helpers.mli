@@ -22,7 +22,7 @@ val add_nested_id_and_ast :
 
 val add_def :
   Database_php.id_string * Database_php.id_kind * Database_php.id *
-  Ast_php.name option -> Database_php.database -> unit
+  Ast_php.ident option -> Database_php.database -> unit
 
 val add_callees_of_id2 :
   Database_php.id * Namespace_php.nameS Ast_php.wrap list -> 

@@ -64,7 +64,7 @@ and vof_comma_list _of_a xs =
 and vof_comma_list_dots _of_a xs =
   Ocaml.vof_list (fun x -> Ocaml.vof_either3 _of_a vof_info vof_info x) xs
 
-let rec vof_name =
+let rec vof_ident =
   function
   | Name v1 ->
       let v1 = vof_wrap vof_string v1 in Ocaml.VSum (("Name", [ v1 ]))
@@ -79,17 +79,18 @@ and vof_qualifier (v1, v2) =
   let v1 = vof_class_name_or_selfparent v1
   and v2 = vof_tok v2
   in Ocaml.VTuple [ v1; v2 ]
+and vof_name x = vof_class_name_or_selfparent x
 and vof_class_name_or_selfparent =
   function
-  | ClassName (v1, v2) ->
-      let v1 = vof_fully_qualified_class_name v1 in
-      let v2 = vof_option vof_type_args v2
-      in Ocaml.VSum (("ClassName", [ v1; v2 ]))
+  | XName (v1) ->
+      let v1 = vof_ident v1
+      in Ocaml.VSum (("XName", [ v1 ]))
   | Self v1 -> let v1 = vof_tok v1 in Ocaml.VSum (("Self", [ v1 ]))
   | Parent v1 -> let v1 = vof_tok v1 in Ocaml.VSum (("Parent", [ v1 ]))
   | LateStatic v1 -> let v1 = vof_tok v1 in Ocaml.VSum (("LateStatic", [ v1 ]))
 and vof_type_args v = vof_single_angle vof_hint_type v
-and vof_fully_qualified_class_name v = vof_name v
+and (vof_fully_qualified_class_name: Ast_php.class_name -> Ocaml.v) = fun
+ v -> vof_hint_type v
 
 and vof_ptype =
   function
@@ -104,9 +105,6 @@ and vof_expr = function
   | Id v1 ->
     let v1 = vof_name v1 in
     Ocaml.VSum ("Id", [ v1 ])
-  | IdSelf v1 -> let v1 = vof_tok v1 in Ocaml.VSum (("IdSelf", [ v1 ]))
-  | IdParent v1 -> let v1 = vof_tok v1 in Ocaml.VSum (("IdParent", [ v1 ]))
-  | IdStatic v1 -> let v1 = vof_tok v1 in Ocaml.VSum (("IdStatic", [ v1 ]))
 
   | IdVar ((v1, v2)) ->
       let v1 = vof_dname v1
@@ -718,7 +716,7 @@ and vof_use_filename =
       let v1 = vof_paren (vof_wrap vof_string) v1
       in Ocaml.VSum (("UseParen", [ v1 ]))
 and vof_declare (v1, v2) =
-  let v1 = vof_name v1
+  let v1 = vof_ident v1
   and v2 = vof_static_scalar_affect v2
   in Ocaml.VTuple [ v1; v2 ]
 and vof_colon_stmt =
@@ -764,7 +762,7 @@ and
   let arg = vof_paren (vof_comma_list_dots vof_parameter) v_f_params in
   let bnd = ("f_params", arg) in
   let bnds = bnd :: bnds in
-  let arg = vof_name v_f_name in
+  let arg = vof_ident v_f_name in
   let bnd = ("f_name", arg) in
   let bnds = bnd :: bnds in
   let arg = vof_is_ref v_f_ref in
@@ -816,8 +814,10 @@ and
   Ocaml.VDict bnds
 and vof_hint_type =
   function
-  | Hint v1 -> let v1 = vof_class_name_or_selfparent v1 in
-               Ocaml.VSum (("Hint", [ v1 ]))
+  | Hint (v1, v2) -> 
+    let v1 = vof_class_name_or_selfparent v1 in
+    let v2 = vof_option vof_type_args v2 in
+    Ocaml.VSum (("Hint", [ v1; v2 ]))
   | HintArray v1 -> let v1 = vof_tok v1 in Ocaml.VSum (("HintArray", [ v1 ]))
   | HintQuestion (v1, v2) -> let v1 = vof_tok v1 in
                              let v2 = vof_hint_type v2 in
@@ -877,7 +877,7 @@ and
   let arg = vof_option vof_extend v_c_extends in
   let bnd = ("c_extends", arg) in
   let bnds = bnd :: bnds in
-  let arg = vof_name v_c_name in
+  let arg = vof_ident v_c_name in
   let bnd = ("c_name", arg) in
   let bnds = bnd :: bnds in
   let arg = vof_class_type v_c_type in
@@ -928,7 +928,7 @@ and vof_class_stmt =
       let v1 = vof_xhp_decl v1 in Ocaml.VSum (("XhpDecl", [ v1 ]))
   | UseTrait (v1, v2, v3) ->
       let v1 = vof_tok v1 in
-      let v2 = vof_comma_list vof_name v2 in
+      let v2 = vof_comma_list vof_fully_qualified_class_name v2 in
       let v3 = Ocaml.vof_either vof_tok (vof_brace (vof_list vof_trait_rule)) v3
       in
       Ocaml.VSum (("UseTrait", [v1; v2; v3]))
@@ -936,7 +936,7 @@ and vof_class_stmt =
 and vof_trait_rule = vof_unit
 
 and vof_class_constant (v1, v2) =
-  let v1 = vof_name v1
+  let v1 = vof_ident v1
   and v2 = vof_static_scalar_affect v2
   in Ocaml.VTuple [ v1; v2 ]
 and vof_class_variable (v1, v2) =
@@ -1062,7 +1062,7 @@ and vof_static_scalar_affect (v1, v2) =
 and vof_stmt_and_def x = vof_stmt x
 and vof_constant_def (v1, v2, v3, v4, v5) =
   let v1 = vof_tok v1
-  and v2 = vof_name v2
+  and v2 = vof_ident v2
   and v3 = vof_tok v3
   and v4 = vof_static_scalar v4
   and v5 = vof_tok v5
@@ -1173,5 +1173,5 @@ and vof_any =
       in Ocaml.VSum (("StmtAndDefs", [ v1 ]))
 
   | Entity v1 -> let v1 = vof_entity v1 in Ocaml.VSum (("Entity", [ v1 ]))
-  | Name2 v1 -> let v1 = vof_name v1 in Ocaml.VSum(("Name2", [ v1 ]))
+  | Ident2 v1 -> let v1 = vof_ident v1 in Ocaml.VSum(("Ident2", [ v1 ]))
   | Hint2 v1 -> let v1 = vof_hint_type v1 in Ocaml.VSum (("Hint2", [ v1 ]))

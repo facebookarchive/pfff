@@ -1,6 +1,6 @@
 (* Yoann Padioleau
  *
- * Copyright (C) 2009-2011 Facebook
+ * Copyright (C) 2009-2013 Facebook
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public License
@@ -15,6 +15,7 @@
 open Common
 
 open Parse_info
+
 (*****************************************************************************)
 (* Prelude *)
 (*****************************************************************************)
@@ -49,23 +50,24 @@ open Parse_info
  *
  * todo:
  *  - add namespace in AST (also add in grammar)
- *  - add more fbstrict types in AST, not just in grammar
  *  - unify toplevel statement vs statements? hmmm maybe not
  *)
 
 (*****************************************************************************)
 (* The AST related types *)
 (*****************************************************************************)
+
 (* ------------------------------------------------------------------------- *)
 (* Token/info *)
 (* ------------------------------------------------------------------------- *)
 (* Contains among other things the position of the token through
  * the Common.parse_info embedded inside it, as well as the
- * the transformation field that makes possible spatch.
+ * transformation field that makes possible spatch.
  *)
 type tok = Parse_info.info
 and info = tok
-(* a shortcut to annotate some information with token/position information *)
+
+(* shortcuts to annotate some information with token/position information *)
 and 'a wrap = 'a * tok
 and 'a paren   = tok * 'a * tok
 and 'a brace   = tok * 'a * tok
@@ -76,41 +78,46 @@ and 'a comma_list = ('a, tok (* the comma *)) Common.either list
 and 'a comma_list_dots =
   ('a, tok (* ... in parameters *), tok (* the comma *)) Common.either3 list
   (* with tarzan *)
+
 (* ------------------------------------------------------------------------- *)
-(* Name. See also analyze_php/namespace_php.ml  *)
+(* Ident/Name/LongName   *)
 (* ------------------------------------------------------------------------- *)
- (* Was called T_STRING in Zend, which are really just LABEL, see the lexer.
-  * Why not factorize Name and XhpName together? Because I was not
-  * sure originally some analysis should also be applied on Xhp
-  * classes. Moreover there is two syntax for xhp: :x:base for 'defs'
-  * and <x:base for 'uses', so having this xhp_tag allow us to easily do
-  * comparison between xhp names.
-  *)
- (* todo: change to ident *)
- type name =
+(* See also analyze_php/namespace_php.ml *)
+
+(* Was called T_STRING in Zend, which are really just LABEL, see the lexer.
+ * Why not factorize Name and XhpName together? Because I was not
+ * sure originally some analysis should also be applied on Xhp
+ * classes. Moreover there is two syntax for xhp: :x:base for 'defs'
+ * and <x:base for 'uses', so having this xhp_tag allow us to easily do
+ * comparison between xhp names.
+ *)
+type ident =
     | Name of string wrap
     (* xhp: for :x:foo the list is ["x";"foo"] *)
     | XhpName of xhp_tag wrap
  (* for :x:foo the list is ["x";"foo"] *)
  and xhp_tag = string list
 
- (* D for dollar. Was called T_VARIABLE in the original PHP parser/lexer.
-  * The string does not contain the '$'. The info itself will usually
-  * contain it, but not always! Indeed if the variable we build comes
-  * from an encapsulated strings as in  echo "${x[foo]}" then the 'x'
-  * will be parsed as a T_STRING_VARNAME, and eventually lead to a DName,
-  * even if in the text it appears as a name.
-  * So this token is kind of a FakeTok sometimes.
-  *
-  * So if at some point you want to do some program transformation,
-  * you may have to normalize this string wrap before moving it
-  * in another context !!!
-  *)
- and dname =
+(* D for dollar. Was called T_VARIABLE in the original PHP parser/lexer.
+ * The string does not contain the '$'. The info itself will usually
+ * contain it, but not always! Indeed if the variable we build comes
+ * from an encapsulated strings as in  echo "${x[foo]}" then the 'x'
+ * will be parsed as a T_STRING_VARNAME, and eventually lead to a DName,
+ * even if in the text it appears as a name.
+ * So this token is kind of a FakeTok sometimes.
+ *
+ * So if at some point you want to do some program transformation,
+ * you may have to normalize this string wrap before moving it
+ * in another context !!!
+ *)
+type dname =
    | DName of string wrap
 
-  and class_name_or_kwd =
-   | ClassName of fully_qualified_class_name * (type_args option)
+ (* todo: for namespace *)
+type qualified_ident = ident (* todo: list *)
+
+type name =
+   | XName of qualified_ident
    (* Could also transform at parsing time all occurences of self:: and
     * parent:: by their respective names. But I prefer to have all the
     * PHP features somehow explicitely represented in the AST.
@@ -119,14 +126,13 @@ and 'a comma_list_dots =
    | Parent of tok
    (* php 5.3 late static binding (no idea why it's useful ...) *)
    | LateStatic of tok
- (* todo: just use class_name *)
- and fully_qualified_class_name = name
- and type_args = hint_type comma_list single_angle
+
 (* ------------------------------------------------------------------------- *)
 (* Types *)
 (* ------------------------------------------------------------------------- *)
-and hint_type =
- | Hint of class_name_or_kwd (* only self/parent, no static *)
+
+type hint_type =
+ | Hint of name (* only self/parent, no static *) * type_args option
  | HintArray of tok
  | HintQuestion of (tok * hint_type)
  | HintTuple of hint_type comma_list paren
@@ -135,6 +141,10 @@ and hint_type =
       * (hint_type comma_list_dots paren) (* params *)
       * hint_type option                 (* return type *)
      ) paren
+
+ and type_args = hint_type comma_list single_angle
+
+ and class_name = hint_type
 
 (* This is used in Cast. For type analysis see type_php.ml *)
 and ptype =
@@ -176,11 +186,6 @@ and expr =
    * Id with a kind info.
    *)
   | Id of name
-
-  (* less: maybe unify in an id type? *)
-  | IdSelf of tok
-  | IdParent of tok
-  | IdStatic of tok
 
   (* less: maybe could unify 
    * note that IdVar is used not only for local variables
@@ -461,11 +466,11 @@ and stmt =
     and foreach_variable = is_ref * lvalue
     and foreach_var_either = (foreach_variable, lvalue) Common.either
     and catch =
-      tok * (fully_qualified_class_name * dname) paren * stmt_and_def list brace
+      tok * (class_name * dname) paren * stmt_and_def list brace
     and use_filename =
       | UseDirect of string wrap
       | UseParen  of string wrap paren
-    and declare = name * static_scalar_affect
+    and declare = ident * static_scalar_affect
     and colon_stmt =
       | SingleStmt of stmt
       | ColonStmt of tok (* : *) * stmt_and_def list * tok (* endxxx *) * tok (* ; *)
@@ -482,7 +487,7 @@ and func_def = {
   f_modifiers: modifier wrap list;
   f_ref: is_ref;
   (* can be a Name("__lambda", f_tok) when used for lambdas *)
-  f_name: name;
+  f_name: ident;
   (* the dots should be only at the end (unless in sgrep mode) *)
   f_params: parameter comma_list_dots paren;
   (* static-php-ext: *)
@@ -513,7 +518,7 @@ and lambda_def = (lexical_vars option * func_def)
 (* Constant definition *)
 (* ------------------------------------------------------------------------- *)
 (* todo: use a record *)
-and constant_def = tok * name * tok (* = *) * static_scalar * tok (* ; *)
+and constant_def = tok * ident * tok (* = *) * static_scalar * tok (* ; *)
 
 (* ------------------------------------------------------------------------- *)
 (* Class (and interface/trait) definition *)
@@ -527,7 +532,7 @@ and constant_def = tok * name * tok (* = *) * static_scalar * tok (* ; *)
 and class_def = {
   c_attrs: attributes option;
   c_type: class_type;
-  c_name: name;
+  c_name: ident;
   (* PHP uses single inheritance. Interfaces can also use 'extends'
    * but we use the c_implements field for that (because it can be a list).
    *)
@@ -554,8 +559,8 @@ and class_def = {
        * note: traits are allowed only at toplevel.
        *)
       | Trait of tok (* trait *)
-    and extend =    tok * fully_qualified_class_name
-    and interface = tok * fully_qualified_class_name comma_list
+    and extend =    tok * class_name
+    and interface = tok * class_name comma_list
   and class_stmt =
     | ClassConstants of tok (* const *) * class_constant comma_list * tok (*;*)
     | ClassVariables of
@@ -567,10 +572,10 @@ and class_def = {
 
     | XhpDecl of xhp_decl
     (* php 5.4, 'use' can appear in classes/traits (but not interface) *)
-    | UseTrait of tok (*use*) * name comma_list *
+    | UseTrait of tok (*use*) * class_name comma_list *
         (tok (* ; *), trait_rule list brace) Common.either
 
-        and class_constant = name * static_scalar_affect
+        and class_constant = ident * static_scalar_affect
         and class_variable = dname * static_scalar_affect option
         and class_var_modifier =
           | NoModifiers of tok (* 'var' *)
@@ -731,7 +736,7 @@ type any =
   | Info of tok
   | InfoList of tok list
 
-  | Name2 of name
+  | Ident2 of ident
   | Hint2 of hint_type
 
  (* with tarzan *)
@@ -793,18 +798,6 @@ let unmodifiers class_vars =
   | NoModifiers _ -> []
   | VModifiers xs -> List.map unwrap xs
 
-let str_of_info x = Parse_info.str_of_info x
-let col_of_info x = Parse_info.col_of_info x
-let line_of_info x = Parse_info.line_of_info x
-(* todo: return a Real | Virt position ? *)
-let pos_of_info x = Parse_info.pos_of_info x
-let file_of_info x = Parse_info.file_of_info x
-let pinfo_of_info = Parse_info.pinfo_of_info
-let rewrap_str = Parse_info.rewrap_str
-(* for error reporting *)
-let string_of_info x = Parse_info.string_of_info x
-let is_origintok = Parse_info.is_origintok
-
 type posrv = Parse_info.posrv
 
 let compare_pos ii1 ii2 =
@@ -863,18 +856,27 @@ let al_info x =
 (*****************************************************************************)
 (* Helpers, could also be put in lib_parsing.ml instead *)
 (*****************************************************************************)
-let name e =
+let str_of_ident e =
   match e with
   | Name x -> unwrap x
   | XhpName (xs, _tok) ->
       ":" ^ (Common.join ":" xs)
-let str_of_name x = name x
 
-let dname (DName x) = unwrap x
-let str_of_dname x = dname x
+let str_of_dname (DName x) = unwrap x
 
-let info_of_name e =
+let info_of_ident e =
   match e with
   | (Name (x,y)) -> y
   | (XhpName (x,y)) -> y
 let info_of_dname (DName (x,y)) = y
+
+let info_of_name x =
+  raise Todo
+
+let str_of_name x =
+  raise Todo
+
+let str_of_class_name x =
+  raise Todo
+let name_of_class_name x =
+  raise Todo

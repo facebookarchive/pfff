@@ -45,7 +45,7 @@ type increq =
    (* e.g. require $BASEPATH .'/lib/init/ajax.php'; *)
    | ConcatVar of Ast_php.dname * Common.filename
    (* e.g. require BASEPATH .'/lib/init/ajax.php'; *)
-   | ConcatConstant of Ast_php.name * Common.filename
+   | ConcatConstant of Ast_php.ident * Common.filename
    (* e.g. require $_SERVER['PHP_ROOT'].'/lib/init/ajax.php'; *)
    | ConcatArrrayVar of Ast_php.dname * string * Common.filename
    (* e.g. require dirname(__FILE__).'/master_include.php'; *)
@@ -115,7 +115,7 @@ let rec increq_expr_of_expr e =
 
   (* ./ffi -dump_php_ml ../tests/require_dirname.php *)
   | (Binary(
-      (Call(Id (Name(("dirname", i_2))),
+      (Call(Id (XName (Name(("dirname", i_2)))),
                       (i_3,
                       [Left (Arg(
                         (Sc(C(PreProcess(((File, i_4))))))))],
@@ -127,10 +127,10 @@ let rec increq_expr_of_expr e =
 
   (* ./ffi -dump_php_ml ../tests/require_realpath.php *)
   | (Binary(
-      (Call(Id (Name(("realpath", i_2))),
+      (Call(Id (XName (Name(("realpath", i_2)))),
                       (i_3,
                       [Left (Arg(
-                        (Call(Id (Name(("dirname", i_4))),
+                        (Call(Id (XName (Name(("dirname", i_4)))),
                                         (i_5,
                                         [Left (Arg(
                                           (Sc(
@@ -147,11 +147,11 @@ let rec increq_expr_of_expr e =
       ConcatRealpathDirname(sfilename)
 
   | (Binary(
-      (Call(Id (Name(("realpath", i_2))),
+      (Call(Id (XName (Name(("realpath", i_2)))),
                       (i_3,
                       [Left (Arg(
                         (Binary(
-                          (Call(Id (Name(("dirname", i_4))),
+                          (Call(Id (XName (Name(("dirname", i_4)))),
                                           (i_5,
                                           [Left Arg((
                                             (Sc(
@@ -170,11 +170,11 @@ let rec increq_expr_of_expr e =
       ConcatRealpathDirname(sfilename1 ^ sfilename2)
 
   (* ./ffi -dump_php_ml ../tests/require_realpath3.php *)
-  | (Call(Id (Name(("realpath", i_2))),
+  | (Call(Id (XName (Name(("realpath", i_2)))),
                     (i_3,
                     [Left (Arg(
                       (Binary(
-                        (Call(Id (Name(("dirname", i_4))),
+                        (Call(Id (XName (Name(("dirname", i_4)))),
                                         (i_5,
                                         [Left (Arg(
                                           (Sc(
@@ -194,7 +194,7 @@ let rec increq_expr_of_expr e =
 
 
   (* ./ffi -dump_php_ml ../tests/require_constant_concat.php *)
-  | (Binary((Id(name)),
+  | (Binary((Id(XName(name))),
            (BinaryConcat, i_4),
            (Sc(C(String((sfilename, i_5)))))))
     ->
@@ -278,7 +278,7 @@ let resolve_path (env, pwd) incexpr =
          Some filename
        end
    | ConcatVar (dname, filename) ->
-       let s = Ast.dname dname in
+       let s = Ast.str_of_dname dname in
        (try 
          let path = Hashtbl.find env.Env.globals s in
          Some (filename_concat path filename)
@@ -292,7 +292,7 @@ let resolve_path (env, pwd) incexpr =
          ))
        
    | ConcatConstant (name, filename) ->
-       let s = Ast.name name in
+       let s = Ast.str_of_ident name in
        (try
            let path = Hashtbl.find env.Env.constants s in
            Some (filename_concat path filename)
@@ -300,7 +300,7 @@ let resolve_path (env, pwd) incexpr =
        )
 
    | ConcatArrrayVar (dname, fld, filename) -> 
-       let s = Ast.dname dname in
+       let s = Ast.str_of_dname dname in
        (try 
            let h = Hashtbl.find env.Env.global_arrays s in
            let path = Hashtbl.find h fld in
@@ -334,7 +334,7 @@ let includes_of_file env file =
     | Some f -> Some f
     | None ->
         pr2_once (spf "includes_of_file: could not resolve path at\t %s"
-                (Ast.string_of_info tok));
+                (Parse_info.string_of_info tok));
         None
   )
 

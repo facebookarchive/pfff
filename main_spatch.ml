@@ -302,7 +302,7 @@ let simple_transfo xs =
     let hook = { Visitor_php.default_visitor with
       Visitor_php.kexpr = (fun (k, _) x ->
         match x with
-        | Call(Id(Name ("foo", info_foo)), (lp, args, rp)) ->
+        | Call(Id(XName (Name ("foo", info_foo))), (lp, args, rp)) ->
             pr2 "found match";
             
             let ii = Lib_parsing_php.ii_of_any (Expr x) in
@@ -344,14 +344,14 @@ let add_trailing_comma_multiline_funcalls ast =
       if List.length args >= 1 then begin
         let (args, commas) = Common.partition_either (fun x -> x) args in
         let lines_commas = 
-          commas +> List.map Ast_php.line_of_info
+          commas +> List.map Parse_info.line_of_info
         in
-        let line_rp = Ast_php.line_of_info rp in
+        let line_rp = Parse_info.line_of_info rp in
         let last_expr = Common2.list_last args in
         let ii = Lib_parsing_php.ii_of_any (Argument last_expr) in
         let (_min, max) =
           Parse_info.min_max_ii_by_pos ii in
-        let line_last_expr = Ast_php.line_of_info max in
+        let line_last_expr = Parse_info.line_of_info max in
 
         if List.length args > 2 && 
           all_different (line_last_expr::line_rp::lines_commas) then

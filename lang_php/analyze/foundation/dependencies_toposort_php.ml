@@ -185,7 +185,9 @@ module Deps = struct
   and extends acc l =
     match l with
     | None -> acc
-    | Some (x, _) -> SSet.add x acc
+    | Some ht ->
+      let (x, _) = name_of_class_name ht in
+      SSet.add x acc
 
   and cconstants acc l = List.fold_left cconstant acc l
   and cconstant acc cst = expr acc cst.cst_body

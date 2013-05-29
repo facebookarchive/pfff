@@ -7,7 +7,7 @@
  * tags_php.ml for instance)
  *)
 type def = 
-  Database_code.entity_kind * Ast_php.name * Ast_php.name option
+  Database_code.entity_kind * Ast_php.ident * Ast_php.ident option
 
 (* only for Function, Class uses for now *)
 type use = 

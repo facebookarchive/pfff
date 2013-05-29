@@ -106,7 +106,7 @@ let is_interface def =
 let get_constructor def =
   def.c_body +> Ast.unbrace +> Common.find_some (fun class_stmt ->
     match class_stmt with
-    | Method def when Ast.name def.f_name =$= constructor_name ->
+    | Method def when Ast.str_of_ident def.f_name =$= constructor_name ->
         Some def
     | _ -> None
   )
@@ -212,7 +212,7 @@ let lookup_gen aclass find_entity hook =
           let xs = traits def in
           (try 
             xs +> Common2.return_when (fun trait ->
-              let str = Ast.str_of_name trait in
+              let str = Ast.str_of_class_name trait in
               (* recurse *)
               try Some (aux str)
               with Not_found -> None
@@ -222,7 +222,7 @@ let lookup_gen aclass find_entity hook =
             (match def.c_extends with
             | None -> raise Not_found
             | Some (_, name) ->
-                let str = Ast.name name in
+                let str = Ast.str_of_class_name name in
                 (* recurse *)
                 aux str
             )
@@ -239,10 +239,10 @@ let lookup_method ?(case_insensitive=false) (aclass, amethod) find_entity =
   let eq = equal ~case_insensitive in
   lookup_gen aclass find_entity 
     (function
-    | Method def when eq (Ast.name def.f_name) amethod -> Some def
-    | Method def when (Ast.name def.f_name) =$= "__call" ->
+    | Method def when eq (Ast.str_of_ident def.f_name) amethod -> Some def
+    | Method def when (Ast.str_of_ident def.f_name) =$= "__call" ->
         raise Use__Call
-    | Method def when (Ast.name def.f_name) =$= "__callStatic" ->
+    | Method def when (Ast.str_of_ident def.f_name) =$= "__callStatic" ->
         raise Use__Call
     | _ -> None
     )
@@ -255,7 +255,7 @@ let lookup_member ?(case_insensitive=false) (aclass, afield) find_entity =
         (try 
           Some (class_vars +> Ast.uncomma +> Common.find_some 
             (fun (dname, affect_opt) ->
-              if eq (Ast.dname dname) afield
+              if eq (Ast.str_of_dname dname) afield
               then Some ((dname, affect_opt), modifier)
               else None
             ))
@@ -271,7 +271,7 @@ let lookup_constant (aclass, aconstant) find_entity =
         (try 
           Some (xs +> Ast.uncomma +> Common.find_some 
             (fun (name, affect) ->
-              if Ast.name name =$= aconstant
+              if Ast.str_of_ident name =$= aconstant
               then Some (name, affect)
               else None
             ))

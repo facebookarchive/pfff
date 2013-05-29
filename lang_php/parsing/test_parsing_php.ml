@@ -117,7 +117,7 @@ let test_visit_php file =
 
   let hooks = { Visitor_php.default_visitor with
     Visitor_php.kinfo = (fun (k, vx) info ->
-      let s = Ast_php.str_of_info info in
+      let s = Parse_info.str_of_info info in
       pr2 s;
     );
 

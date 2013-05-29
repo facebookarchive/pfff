@@ -28,9 +28,7 @@ type visitor_in = {
   kstmt_and_def:
     (stmt_and_def -> stmt_and_def) * visitor_out -> stmt_and_def ->stmt_and_def;
   kstmt: (stmt -> stmt) * visitor_out -> stmt -> stmt;
-  kclass_name_or_kwd:
-    (class_name_or_kwd -> class_name_or_kwd) * visitor_out ->
-     class_name_or_kwd -> class_name_or_kwd;
+  kname: (name -> name) * visitor_out -> name -> name;
   kclass_def:  (class_def -> class_def) * visitor_out -> class_def -> class_def;
 
   kinfo: (tok -> tok) * visitor_out -> tok -> tok;
@@ -51,7 +49,7 @@ let default_visitor =
   { kexpr   = (fun (k,_) x -> k x);
     kstmt_and_def = (fun (k,_) x -> k x);
     kstmt = (fun (k,_) x -> k x);
-    kclass_name_or_kwd = (fun (k,_) x -> k x);
+    kname = (fun (k,_) x -> k x);
     kclass_def = (fun (k,_) x -> k x);
     kinfo = (fun (k,_) x -> k x);
   }
@@ -104,7 +102,7 @@ and map_comma_list:'a. ('a -> 'a) -> 'a comma_list -> 'a comma_list =
   map_of_list (fun x -> Ocaml.map_of_either _of_a map_info x) xs
 
 
-and map_name =
+and map_ident =
   function
   | Name v1 -> let v1 = map_wrap map_of_string v1 in Name ((v1))
   | XhpName v1 -> let v1 = map_wrap (map_of_list map_of_string) v1 in
@@ -113,21 +111,20 @@ and map_xhp_tag v = map_of_list map_of_string v
 and map_dname =
   function | DName v1 -> let v1 = map_wrap map_of_string v1 in DName ((v1))
 
-
+and map_name x = map_class_name_or_selfparent x
 and map_class_name_or_selfparent v =
   let k v =
     match v with
-    | ClassName (v1, v2) ->
-        let v1 = map_fully_qualified_class_name v1 in
-        let v2 = map_option map_type_args v2 in
-          ClassName ((v1, v2))
+    | XName (v1) ->
+        let v1 = map_ident v1 in
+        XName (v1)
     | Self v1 -> let v1 = map_tok v1 in Self ((v1))
     | Parent v1 -> let v1 = map_tok v1 in Parent ((v1))
     | LateStatic v1 -> let v1 = map_tok v1 in LateStatic ((v1))
   in
-  vin.kclass_name_or_kwd (k, all_functions) v
+  vin.kname (k, all_functions) v
 and map_type_args v = map_single_angle (map_comma_list map_hint_type) v
-and map_fully_qualified_class_name v = map_name v
+and map_fully_qualified_class_name v = map_hint_type v
 
 
 and map_ptype =
@@ -144,9 +141,6 @@ and map_expr (x) =
   | Id v1 ->
     let v1 = map_name v1 in
     Id v1
-  | IdSelf v1 -> let v1 = map_tok v1 in IdSelf ((v1))
-  | IdParent v1 -> let v1 = map_tok v1 in IdParent ((v1))
-  | IdStatic v1 -> let v1 = map_tok v1 in IdStatic ((v1))
 
   | IdVar ((v1, v2)) ->
       let v1 = map_dname v1
@@ -697,7 +691,7 @@ and map_use_filename =
   | UseParen v1 ->
       let v1 = map_paren (map_wrap map_of_string) v1 in UseParen ((v1))
 and map_declare (v1, v2) =
-  let v1 = map_name v1 and v2 = map_static_scalar_affect v2 in (v1, v2)
+  let v1 = map_ident v1 and v2 = map_static_scalar_affect v2 in (v1, v2)
 and map_colon_stmt =
   function
   | SingleStmt v1 -> let v1 = map_stmt v1 in SingleStmt ((v1))
@@ -732,7 +726,7 @@ and
                } =
   let v_f_body = map_brace (map_of_list map_stmt_and_def) v_f_body in
   let v_f_params = map_paren (map_comma_list_dots map_parameter) v_f_params in
-  let v_f_name = map_name v_f_name in
+  let v_f_name = map_ident v_f_name in
   let v_f_ref = map_is_ref v_f_ref in
   let v_f_modifiers = map_of_list (map_wrap map_modifier) v_f_modifiers in
   let v_f_attrs = map_of_option map_attributes v_f_attrs in
@@ -779,7 +773,11 @@ and
 
 and map_hint_type =
   function
-  | Hint v1 -> let v1 = map_class_name_or_selfparent v1 in Hint ((v1))
+  | Hint (v1, v2) -> 
+    let v1 = map_class_name_or_selfparent v1 in
+    let v2 = map_option map_type_args v2 in
+    Hint ((v1, v2))
+
   | HintArray v1 -> let v1 = map_tok v1 in HintArray ((v1))
   | HintQuestion (v1, v2) -> let v1 = map_tok v1 in
                              let v2 = map_hint_type v2 in
@@ -823,7 +821,7 @@ and
   let v_c_implements = map_of_option map_interface v_c_implements in
   let v_c_extends = map_of_option map_extend v_c_extends in
   let v_c_attrs = map_of_option map_attributes v_c_attrs in
-  let v_c_name = map_name v_c_name in
+  let v_c_name = map_ident v_c_name in
   let v_c_type = map_class_type v_c_type in
   {
     c_type = v_c_type;
@@ -870,7 +868,7 @@ and map_class_stmt =
   | XhpDecl v1 -> let v1 = map_xhp_decl v1 in XhpDecl ((v1))
   | UseTrait (v1, v2, v3) ->
       let v1 = map_tok v1 in
-      let v2 = map_comma_list map_name v2 in
+      let v2 = map_comma_list map_fully_qualified_class_name v2 in
       let v3 = Ocaml.map_of_either map_tok (map_brace (List.map map_trait_rule))
         v3 in
       UseTrait (v1, v2, v3)
@@ -953,7 +951,7 @@ and map_xhp_category_decl v = map_wrap map_xhp_tag v
 
 
 and map_class_constant (v1, v2) =
-  let v1 = map_name v1 and v2 = map_static_scalar_affect v2 in (v1, v2)
+  let v1 = map_ident v1 and v2 = map_static_scalar_affect v2 in (v1, v2)
 and map_class_variable (v1, v2) =
   let v1 = map_dname v1
   and v2 = map_of_option map_static_scalar_affect v2
@@ -997,7 +995,7 @@ and map_stmt_and_def def =
   vin.kstmt_and_def (k, all_functions) def
 and map_constant_def (v1, v2, v3, v4, v5) =
       let v1 = map_tok v1
-      and v2 = map_name v2
+      and v2 = map_ident v2
       and v3 = map_tok v3
       and v4 = map_static_scalar v4
       and v5 = map_tok v5
@@ -1071,7 +1069,7 @@ and map_any =
   | Info v1 -> let v1 = map_info v1 in Info ((v1))
   | InfoList v1 -> let v1 = map_of_list map_info v1 in InfoList ((v1))
   | Case2 v1 -> let v1 = map_case v1 in Case2 ((v1))
-  | Name2 v1 -> let v1 = map_name v1 in Name2 v1
+  | Ident2 v1 -> let v1 = map_ident v1 in Ident2 v1
   | Hint2 v1 -> let v1 = map_hint_type v1 in Hint2 ((v1))
 
  and all_functions =

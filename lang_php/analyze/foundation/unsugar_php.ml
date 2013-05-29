@@ -78,15 +78,10 @@ let resolve_class_name qu in_class =
 let contain_self_or_parent def =
   let aref = ref false in
   let visitor = V.mk_visitor { V.default_visitor with
-    V.kclass_name_or_kwd = (fun (k, bigf) qu ->
+    V.kname = (fun (k, bigf) qu ->
       match qu with
       | Self _ | Parent _ -> aref := true
-      | LateStatic _ | ClassName _ -> ()
-    );
-    V.kexpr = (fun (k, bigf) x ->
-      match x with
-      | IdSelf _ | IdParent _ -> aref := true
-      | _ -> k x
+      | LateStatic _ | XName _ -> ()
     );
     }
   in
@@ -99,7 +94,7 @@ let contain_self_or_parent def =
 let unsugar_self_parent_any2 any =
 
   (* dupe: this is also done in check_module/uses_module.ml *)
-  let in_class = ref (None: (Ast.name * Ast.name option) option) in
+  let in_class = ref (None: (Ast.ident * Ast.ident option) option) in
 
   let visitor = M.mk_visitor ({ M.default_visitor with
 
@@ -108,7 +103,8 @@ let unsugar_self_parent_any2 any =
       let parent_opt =
         match def.c_extends with
         | None -> None
-        | Some (tok, classname) -> Some classname
+        | Some (tok, (Hint (XName classname, _targs))) -> Some classname
+        | _ -> raise Todo
       in
 
       match def.c_type with
@@ -125,10 +121,10 @@ let unsugar_self_parent_any2 any =
          )
     );
 
-    M.kclass_name_or_kwd = (fun (k, bigf) qu ->
+    M.kname = (fun (k, bigf) qu ->
       match qu with
       | LateStatic tok -> LateStatic tok
-      | ClassName (name, args) ->   ClassName (name, args)
+      | XName name -> XName name
       | Self _ | Parent _ ->
           let (unsugar_name, tok_orig) =
             resolve_class_name qu !in_class in
@@ -139,30 +135,7 @@ let unsugar_self_parent_any2 any =
             | XhpName (xs, _info_of_referenced_class) ->
                 XhpName (xs, tok_orig)
           in
-          let type_args = None in
-          ClassName (name', type_args)
-    );
-    M.kexpr = (fun (k, bigf) x ->
-      match x with
-      | IdSelf tok | IdParent tok ->
-        let qu =
-          match x with
-          | IdSelf x -> Self x
-          | IdParent x -> Parent x 
-          | _ -> raise Impossible
-        in
-        let (unsugar_name, tok_orig) =
-          resolve_class_name qu !in_class in
-        let name' =
-          match unsugar_name with
-          | Name (s, _info_of_referenced_class) ->
-            Name (s, tok_orig)
-          | XhpName (xs, _info_of_referenced_class) ->
-            XhpName (xs, tok_orig)
-        in
-        let _TODOtype_args = None in
-        Id (name')
-      | _ -> k x
+          XName (name')
     );
   })
   in

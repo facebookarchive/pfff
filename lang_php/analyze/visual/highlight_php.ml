@@ -180,12 +180,12 @@ let highlight_funcall_simple ~tag ~hentities f args info =
 
 let rec handle_typehint tag x = match x with
   | Some th -> (match th with
-    | Hint (ClassName (name, _)) -> (* TODO: emit info for type args *)
-       let info = Ast.info_of_name name in
+    | Hint (XName (name), _targsTODO) -> (* TODO: emit info for type args *)
+       let info = Ast.info_of_ident name in
        tag info (TypeMisc);
-    | Hint (Self _ | Parent _) ->
+    | Hint ((Self _ | Parent _), _) ->
         ()
-    | Hint (LateStatic tok) ->
+    | Hint (LateStatic tok, _) ->
         tag tok BadSmell
     | HintArray tok ->
         tag tok (TypeMisc);
@@ -271,8 +271,8 @@ let visit_toplevel ~tag prefs  hentities (toplevel, toks) =
       ::T.TNewline (ii4)
       ::T.T_COMMENT(ii5)
       ::xs ->
-        let s = Ast.str_of_info ii in
-        let s5 =  Ast.str_of_info ii5 in
+        let s = Parse_info.str_of_info ii in
+        let s5 =  Parse_info.str_of_info ii5 in
         (match () with
         | _ when s =~ ".*\\*\\*\\*\\*" && s5 =~ ".*\\*\\*\\*\\*" ->
           tag ii CommentEstet;
@@ -311,7 +311,7 @@ let visit_toplevel ~tag prefs  hentities (toplevel, toks) =
     (* -------------------------------------------------------------------- *)
     V.kfunc_def = (fun (k, vx) def ->
       let name = def.f_name in
-      let info = Ast.info_of_name name in
+      let info = Ast.info_of_ident name in
       let kind =
         match def.f_type with
         | FunctionRegular | FunctionLambda ->
@@ -330,14 +330,16 @@ let visit_toplevel ~tag prefs  hentities (toplevel, toks) =
 
     V.kclass_def = (fun (k, vx) def ->
       let name = def.c_name in
-      let info = Ast.info_of_name name in
+      let info = Ast.info_of_ident name in
       tag info (Class (Def2 fake_no_def2));
       def.c_extends +> Common.do_option (fun (tok, name) ->
+        let name = name_of_class_name name in
         let info = Ast.info_of_name name in
         tag info (Class (Use2 fake_no_use2));
       );
       def.c_implements +> Common.do_option (fun (tok, xs) ->
         xs +> Ast.uncomma +> List.iter (fun name ->
+          let name = name_of_class_name name in
           let info = Ast.info_of_name name in
           tag info (Class (Use2 fake_no_use2));
         );
@@ -383,7 +385,7 @@ let visit_toplevel ~tag prefs  hentities (toplevel, toks) =
 
       | Ast.ClassConstants (tok, vars, tok2) ->
           vars +> Ast.uncomma +> List.iter (fun (name, _opt) ->
-            let info = Ast.info_of_name name in
+            let info = Ast.info_of_ident name in
             tag info (Macro (Def2 NoUse));
           );
           k x;
@@ -426,7 +428,8 @@ let visit_toplevel ~tag prefs  hentities (toplevel, toks) =
     (* -------------------------------------------------------------------- *)
     V.kcatch = (fun (k,bigf) c ->
       let (tok, (lp, (cname, dname), rp), stmts) = c in
-      let info_class = Ast.info_of_name cname in
+      let name = name_of_class_name cname in
+      let info_class = Ast.info_of_name name in
       tag info_class (Class (Use2 fake_no_use2));
 
       let info_dname = Ast.info_of_dname dname in
@@ -468,7 +471,7 @@ let visit_toplevel ~tag prefs  hentities (toplevel, toks) =
 
       | Call (Id callname, args) ->
           let info = Ast.info_of_name callname in
-          let f = Ast.name callname in
+          let f = Ast.str_of_name callname in
 
           let args = args +> Ast.unparen +> Ast.uncomma in
 
@@ -517,7 +520,7 @@ let visit_toplevel ~tag prefs  hentities (toplevel, toks) =
 
       | Id name ->
           (* cf also typing_php.ml *)
-          let s = Ast.name name in
+          let s = Ast.str_of_name name in
           let info = Ast.info_of_name name in
           (match s with
           | "true" ->
@@ -536,11 +539,12 @@ let visit_toplevel ~tag prefs  hentities (toplevel, toks) =
       | ClassNameRefStatic (ClassName (name,_)) -> 
           let info = Ast.info_of_name name in
           tag info (Class (Use2 fake_no_use2));
-*)
+
       | (IdSelf _ | IdParent _) ->
           ()
       | (IdStatic tok) ->
           tag tok BadSmell
+*)
 
 
       | IdVar (dname, aref) ->
@@ -653,9 +657,14 @@ let visit_toplevel ~tag prefs  hentities (toplevel, toks) =
       | _ -> k e
     );
     (* -------------------------------------------------------------------- *)
-    V.kfully_qualified_class_name = (fun (k, vx) x ->
-      let info = Ast.info_of_name x in
-      tag info (Class (Use2 fake_no_use2));
+    V.khint_type = (fun (k, vx) x ->
+      (match x with
+      | Hint (x, _) ->
+        let info = Ast.info_of_name x in
+        tag info (Class (Use2 fake_no_use2));
+      | _ -> ()
+      );
+      k x
     );
   }
   in
@@ -700,12 +709,12 @@ let visit_toplevel ~tag prefs  hentities (toplevel, toks) =
 
     | T.T_COMMENT (ii)  | T.T_DOC_COMMENT (ii)  ->
 
-        assert(is_origintok ii);
+        assert(Parse_info.is_origintok ii);
 
         tag ii Comment;
 
-        let _s = Ast.str_of_info ii in
-        let _start_pos = Ast.pos_of_info ii in
+        let _s = Parse_info.str_of_info ii in
+        let _start_pos = Parse_info.pos_of_info ii in
         (*
         let toks = Parse_comments.tokens_string s in
 

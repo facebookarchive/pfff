@@ -137,7 +137,7 @@ let mk_unparser_visitor pp =
 
 let string_of_infos ii = 
   (* todo: keep space, keep comments *)
-  ii +> List.map (fun info -> Ast.str_of_info info) +> Common.join ""
+  ii +> List.map (fun info -> PI.str_of_info info) +> Common.join ""
 
 let string_of_expr_old e = 
   let ii = Lib_parsing_php.ii_of_any (Expr e) in

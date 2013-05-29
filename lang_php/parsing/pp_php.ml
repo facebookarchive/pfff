@@ -18,7 +18,6 @@ open Common
 module Ast  = Ast_php
 module Flag = Flag_parsing_php
 module TH   = Token_helpers_php
-
 module PI = Parse_info
 
 (*****************************************************************************)
@@ -243,7 +242,7 @@ let adapt_tokens_pp2 ~tokenizer ~orig_filename toks_pp =
   if not !Flag.obsolete_merge_tokens_xhp then
    toks_pp +> List.rev_map (fun tok ->
     tok +> TH.visitor_info_of_tok (fun ii ->
-      let pinfo = Ast.pinfo_of_info ii in
+      let pinfo = PI.pinfo_of_info ii in
       { ii with Parse_info.token =
           match pinfo with
           | Parse_info.OriginTok pi ->

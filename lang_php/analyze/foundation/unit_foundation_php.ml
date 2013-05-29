@@ -48,7 +48,7 @@ foo1();
       let ast = Parse_php.program_of_string file_content in
       let uses = Defs_uses_php.uses_of_any (Ast.Program ast) in
       let uses_strings =
-        uses +> List.map (fun (kind, name) -> Ast.name name) in
+        uses +> List.map (fun (kind, name) -> Ast.str_of_name name) in
       assert_equal
         (sort ["foo1"])
         (sort uses_strings);
@@ -75,9 +75,10 @@ $x = <x:xhp2/>;
       let ast = Parse_php.program_of_string file_content in
       let uses = Defs_uses_php.uses_of_any (Ast.Program ast) in
       let str_of_name = function
-        | Ast.Name (s, _) -> s
-        | Ast.XhpName (xhp_tag, _) ->
+        | Ast.XName (Ast.Name (s, _)) -> s
+        | Ast.XName (Ast.XhpName (xhp_tag, _)) ->
             Common.join ":" xhp_tag
+        | _ -> raise Impossible
       in
       let uses_strings =
         uses +> List.map (fun (kind, name) -> str_of_name name) in

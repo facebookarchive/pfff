@@ -268,7 +268,7 @@ let is_phpunit_derived_class_heuristics def =
   match def.c_extends with 
   | None -> false
   | Some (_tok, extend_classname) ->
-      let s = Ast.name extend_classname in
+      let s = Ast.str_of_class_name extend_classname in
 
       List.mem s phpunit_testcase_classnames ||
       (* todo? should maybe print a warning like 
@@ -279,7 +279,7 @@ let is_phpunit_derived_class_heuristics def =
       (Ast.unbrace def.c_body +> List.exists (fun class_stmt ->
         match class_stmt with
         | Method def -> 
-            let s = Ast.name def.f_name in 
+            let s = Ast.str_of_ident def.f_name in 
             s =~ "^test[A-Za-z_]+"
         | ClassConstants _  | ClassVariables _ -> false
         | XhpDecl _ -> false
@@ -331,7 +331,7 @@ let (find_testcase_class_if_any:
         *)
        match ast_toplevel with
        | ClassDef def ->
-           let classname = Ast.name def.c_name in
+           let classname = Ast.str_of_ident def.c_name in
 
            let is_abstract = 
              match def.c_type with
@@ -343,7 +343,7 @@ let (find_testcase_class_if_any:
            | None -> None
            | Some (_tok, extend_classname) ->
 
-               let extendname = Ast.name extend_classname in
+               let extendname = Ast.str_of_class_name extend_classname in
            
               (* our list of base classs may not be up to date
                * so better to keep the old heuristic.
@@ -363,7 +363,7 @@ let (find_testcase_class_if_any:
        | FinalDef _ -> None
        | NotParsedCorrectly infos ->
            let info = List.hd infos in
-           let file = Ast.file_of_info info in
+           let file = Parse_info.file_of_info info in
            pr2 (spf "WARNING: parsing problems in %s" file);
            None
     ) in

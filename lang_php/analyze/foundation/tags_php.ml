@@ -40,8 +40,8 @@ module Db = Database_code
 (* Helpers *)
 (*****************************************************************************)
 
-let tag_of_name filelines name kind =
-  let info = Ast.info_of_name name in
+let tag_of_ident filelines name kind =
+  let info = Ast.info_of_ident name in
   Tags.tag_of_info filelines info kind
 
 (*****************************************************************************)
@@ -55,7 +55,7 @@ let tags_of_ast ast filelines =
     match kind with
     | Db.Class _ ->
         (match name with
-        | Name _ -> [tag_of_name filelines name kind]
+        | Name _ -> [tag_of_ident filelines name kind]
         | XhpName (xs, tok) ->
             (* XHP classes have a different syntax for their definitions
              * (class :x:foo ...) and their uses ($xhp = <x:foo ...). People
@@ -69,7 +69,7 @@ let tags_of_ast ast filelines =
             ]
         )
     | Db.Function | Db.Constant ->
-        [ tag_of_name filelines name kind]
+        [ tag_of_ident filelines name kind]
     | Db.Method _ ->
         (match enclosing_name_opt with
         | None -> raise Impossible
@@ -78,25 +78,25 @@ let tags_of_ast ast filelines =
              * a nice completion and know all the methods available
              * in a class (the short Eiffel-like profile).
              *)
-            let info = Ast.info_of_name name in
-            let info' = Ast.rewrap_str
-              (Ast.name class_name  ^ "::" ^ Ast.name name) info in
+            let info = Ast.info_of_ident name in
+            let info' = Parse_info.rewrap_str
+              (Ast.str_of_ident class_name  ^ "::" ^ Ast.str_of_ident name) info in
 
             let yieldmagic =
-              if (Ast.name name) =~ "^yield" then
-                let tail = (Ast.name name) <!!> (5,-1) in
+              if (Ast.str_of_ident name) =~ "^yield" then
+                let tail = (Ast.str_of_ident name) <!!> (5,-1) in
                 [ "gen"; "prepare"; "get"] |>
                 List.map (fun w ->
-                  let info = Ast.rewrap_str
-                    (Ast.name class_name ^ "::" ^ w ^ tail) info in
+                  let info = Parse_info.rewrap_str
+                    (Ast.str_of_ident class_name ^ "::" ^ w ^ tail) info in
                   Tags.tag_of_info filelines info kind)
               else [] in
 
             let prepmagic =
-              if (Ast.name name) =~ "^prepare" then
-                let tail = (Ast.name name) <!!> (7, -1) in
-                let info = Ast.rewrap_str
-                  (Ast.name class_name ^ "::gen" ^ tail) info in
+              if (Ast.str_of_ident name) =~ "^prepare" then
+                let tail = (Ast.str_of_ident name) <!!> (7, -1) in
+                let info = Parse_info.rewrap_str
+                  (Ast.str_of_ident class_name ^ "::gen" ^ tail) info in
                 [ Tags.tag_of_info filelines info kind ]
               else [] in
 

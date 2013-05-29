@@ -345,7 +345,7 @@ let m_dname a b =
     )
     )
 
-let m_name a b =
+let m_ident a b =
   match a, b with
   | A.Name(a1), B.Name(b1) ->
     (m_wrap m_string_case) a1 b1 >>= (fun (a1, b1) ->
@@ -372,8 +372,8 @@ let m_name_metavar_ok a b =
   | A.Name(name, info_name), (B.Name _ | B.XhpName _)
       when MV.is_metavar_name name ->
 
-      X.envf (name, info_name) (B.Name2 b) >>= (function
-      | ((name, info_name), B.Name2 (b))  ->
+      X.envf (name, info_name) (B.Ident2 b) >>= (function
+      | ((name, info_name), B.Ident2 (b))  ->
         return (
           A.Name(name, info_name),
           b
@@ -391,8 +391,8 @@ let m_name_metavar_ok a b =
   | A.XhpName([name], info_name), B.XhpName(b1)
       when MV.is_metavar_name name ->
 
-      X.envf (name, info_name) (B.Name2 b) >>= (function
-      | ((name, info_name), B.Name2 (b))  ->
+      X.envf (name, info_name) (B.Ident2 b) >>= (function
+      | ((name, info_name), B.Ident2 (b))  ->
         return (A.XhpName([name], info_name), b)
       | _ -> raise Impossible
       )
@@ -752,25 +752,13 @@ and m_rw_variable a b = m_expr a b
 and m_w_variable a b = m_expr a b
 
 
-and m_qualifier a b =
+and m_name a b =
   match a, b with
-  | (a1, a2), (b1, b2) ->
-      m_class_name_or_selfparent a1 b1 >>= (fun (a1, b1) ->
-      m_tok a2 b2 >>= (fun (a2, b2) ->
-        return (
-          (a1, a2),
-          (b1, b2)
-        )
-      ))
-
-and m_class_name_or_selfparent a b =
-  match a, b with
-  | A.ClassName(a1, a2), B.ClassName(b1, b2) ->
+  | A.XName(a1), B.XName(b1) ->
     m_fully_qualified_class_name a1 b1 >>= (fun (a1, b1) ->
-      m_option m_type_args a2 b2 >>= (fun (a2, b2) ->
-        return (A.ClassName(a1,a2),
-                B.ClassName(b1,b2)
-    )))
+        return (A.XName(a1),
+                B.XName(b1)
+    ))
   | A.Self(a1), B.Self(b1) ->
     m_tok a1 b1 >>= (fun (a1, b1) ->
     return (
@@ -794,7 +782,7 @@ and m_class_name_or_selfparent a b =
     )
     )
 
-  | A.ClassName _, _
+  | A.XName _, _
   | A.Self _, _
   | A.Parent _, _
   | A.LateStatic _, _
@@ -845,13 +833,13 @@ and m_argument a b =
             ))
       )
   (* an expression metavariable should also match a reference argument *)
-  | A.Arg (A.Id (A.Name (name,info_name))),
+  | A.Arg (A.Id (A.XName (A.Name (name,info_name)))),
     B.ArgRef(_,_) when MV.is_metavar_name name ->
 
       X.envf (name, info_name) (B.Argument (b)) >>= (function
       | ((name, info_name), B.Argument (b))  ->
         return (
-          A.Arg (A.Id (A.Name (name,info_name))),
+          A.Arg (A.Id (A.XName (A.Name (name,info_name)))),
           b
         )
       | _ -> raise Impossible
@@ -876,12 +864,12 @@ and m_argument a b =
 and m_expr a b =
   match a, b with
   (* special case, metavars !! *)
-  | ((A.Id (A.Name (name,info_name))),
+  | ((A.Id (A.XName (A.Name (name,info_name)))),
     e2) when MV.is_metavar_name name ->
       X.envf (name, info_name) (B.Expr (e2)) >>= (function
       | ((name, info_name), B.Expr (e2))  ->
         return (
-          (A.Id (A.Name (name,info_name))),
+          (A.Id (A.XName (A.Name (name,info_name)))),
           e2
         )
       | _ -> raise Impossible
@@ -909,28 +897,6 @@ and m_expr a b =
     return (
        A.Id(a1),
        B.Id(b1)
-    )
-    )
-  | A.IdSelf(a1), B.IdSelf(b1) ->
-    m_tok a1 b1 >>= (fun (a1, b1) ->
-    return (
-       A.IdSelf(a1),
-       B.IdSelf(b1)
-    )
-    )
-  | A.IdParent(a1), B.IdParent(b1) ->
-    m_tok a1 b1 >>= (fun (a1, b1) ->
-    return (
-       A.IdParent(a1),
-       B.IdParent(b1)
-    )
-    )
-
-  | A.IdStatic(a1), B.IdStatic(b1) ->
-    m_tok a1 b1 >>= (fun (a1, b1) ->
-    return (
-       A.IdStatic(a1),
-       B.IdStatic(b1)
     )
     )
 
@@ -1339,10 +1305,6 @@ and m_expr a b =
     )
     )
   | A.Id _, _
-
-  | A.IdSelf _, _
-  | A.IdParent _, _
-  | A.IdStatic _, _
 
   | A.IdVar _, _
   | A.ThisVar _, _
@@ -1823,7 +1785,7 @@ and m_constant a b =
       when MV.is_metavar_name name ->
 
       (* removing the surrounding quotes *)
-      let any1 = B.Name2 (B.Name (sb, Ast_php.rewrap_str sb info_sb)) in
+      let any1 = B.Ident2 (B.Name (sb, Parse_info.rewrap_str sb info_sb)) in
 
       let any2 = B.Expr (B.Sc (B.C (B.String(sb, info_sb)))) in
 
@@ -1921,13 +1883,13 @@ and m_list__m_argument (xsa: A.argument A.comma_list) (xsb: B.argument B.comma_l
       ("transformation (minus or plus) on '...' not allowed, " ^
        "rewrite your spatch")
 
-  | [Left (A.Arg ((A.Id (A.Name (name,info_name)))))], bbs
+  | [Left (A.Arg ((A.Id (A.XName (A.Name (name,info_name))))))], bbs
     when MV.is_metavar_manyargs_name name ->
 
       X.envf (name, info_name) (B.Arguments (bbs)) >>= (function
       | ((name, info_name), B.Arguments (bbs))  ->
         return (
-          [Left (A.Arg ((A.Id (A.Name (name,info_name)))))],
+          [Left (A.Arg ((A.Id (A.XName (A.Name (name,info_name))))))],
           bbs
         )
       | _ -> raise Impossible
@@ -1962,7 +1924,7 @@ and m_list__m_argument (xsa: A.argument A.comma_list) (xsb: B.argument B.comma_l
        "'...'. Rewrite your spatch: put your trailing comma on the line " ^
        "with the '...'. See also " ^ 
        "https://github.com/facebook/pfff/wiki/Spatch#wiki-spacing-issues")
-  | [Right _;Left (A.Arg ((A.Id (A.Name (name,info_name)))))],[]
+  | [Right _;Left (A.Arg ((A.Id (A.XName (A.Name (name,info_name))))))],[]
     when MV.is_metavar_manyargs_name name ->
       X.envf (name, info_name) (B.Arguments ([])) >>= (function
       | ((name, info_name), B.Arguments ([]))  ->
@@ -2558,13 +2520,13 @@ and m_xhp_children_decl a b =
 
 and m_hint_type a b =
   match a, b with
-  | A.Hint(a1), B.Hint(b1) ->
-    m_class_name_or_selfparent a1 b1 >>= (fun (a1, b1) ->
+  | A.Hint(a1, a2), B.Hint(b1, b2) ->
+    m_name a1 b1 >>= (fun (a1, b1) ->
+    m_option m_type_args a2 b2 >>= (fun (a2, b2) ->
     return (
-       A.Hint(a1),
-       B.Hint(b1)
-    )
-    )
+       A.Hint(a1, a2),
+       B.Hint(b1, b2)
+    )))
   | A.HintArray(a1), B.HintArray(b1) ->
     m_tok a1 b1 >>= (fun (a1, b1) ->
     return (
@@ -2616,7 +2578,7 @@ and m_method_def a b =
 and m_class_constant a b =
   match a, b with
   | (a1, a2), (b1, b2) ->
-    m_name a1 b1 >>= (fun (a1, b1) ->
+    m_ident a1 b1 >>= (fun (a1, b1) ->
     m_static_scalar_affect a2 b2 >>= (fun (a2, b2) ->
     return (
        (a1, a2),
@@ -2661,7 +2623,7 @@ and m_class_stmt a b =
     )
   | A.UseTrait(a1, a2, a3), B.UseTrait(b1, b2, b3) ->
     m_tok a1 b1 >>= (fun (a1, b1) ->
-    (m_comma_list m_name) a2 b2 >>= (fun (a2, b2) ->
+    (m_comma_list m_hint_type) a2 b2 >>= (fun (a2, b2) ->
     (m_either m_tok (m_brace (m_list m_trait_rule))) a3 b3 >>= (fun (a3, b3) ->
     return (
        A.UseTrait(a1, a2, a3),
@@ -2789,7 +2751,7 @@ and m_constant_def a b =
   match a, b with
   | (a1, a2, a3, a4, a5), (b1, b2, b3, b4, b5) ->
       m_tok a1 b1 >>= (fun (a1, b1) ->
-      m_name a2 b2 >>= (fun (a2, b2) ->
+      m_ident a2 b2 >>= (fun (a2, b2) ->
       m_tok a3 b3 >>= (fun (a3, b3) ->
       m_static_scalar a4 b4 >>= (fun (a4, b4) ->
       m_tok a5 b5 >>= (fun (a5, b5) ->
@@ -3092,11 +3054,11 @@ let m_any a b =
        B.InfoList(b1)
     )
     )
-  | A.Name2(a1), B.Name2(b1) ->
-    m_name a1 b1 >>= (fun (a1, b1) ->
+  | A.Ident2(a1), B.Ident2(b1) ->
+    m_ident a1 b1 >>= (fun (a1, b1) ->
     return (
-       A.Name2(a1),
-       B.Name2(b1)
+       A.Ident2(a1),
+       B.Ident2(b1)
     )
     )
   | A.Hint2(a1), B.Hint2(b1) ->
@@ -3129,7 +3091,7 @@ let m_any a b =
   | A.XhpChildrenDecl2 _, _
   | A.Info _, _
   | A.InfoList _, _
-  | A.Name2 _, _
+  | A.Ident2 _, _
   | A.Hint2 _, _
    -> fail ()
 

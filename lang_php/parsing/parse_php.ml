@@ -189,7 +189,7 @@ let tokens_from_changen ?(init_state=Lexer_php.INITIAL) changen =
         let tok = tok +> TH.visitor_info_of_tok (fun ii ->
         { ii with Parse_info.token=
           (* could assert pinfo.filename = file ? *)
-               match Ast.pinfo_of_info ii with
+               match PI.pinfo_of_info ii with
                | Parse_info.OriginTok pi ->
                           Parse_info.OriginTok 
                             (Parse_info.complete_parse_info_large file table pi)

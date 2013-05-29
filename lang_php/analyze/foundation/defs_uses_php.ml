@@ -47,7 +47,7 @@ module E = Database_code
  * factorization we try to do in h_program-lang/
  *)
 type def =
-  Database_code.entity_kind * Ast_php.name * Ast_php.name option
+  Database_code.entity_kind * Ast_php.ident * Ast_php.ident option
 
 type use =
   Database_code.entity_kind * Ast_php.name
@@ -66,7 +66,7 @@ type use =
  *  - TODO database_php_build.ml ?
  *)
 let defs_of_any any =
-  let current_class = ref (None: Ast_php.name option) in
+  let current_class = ref (None: Ast_php.ident option) in
 
   V.do_visit_with_ref (fun aref -> { V.default_visitor with
 
@@ -118,7 +118,7 @@ let defs_of_any any =
 
     V.kexpr = (fun (k, bigf) x ->
       match x with
-      | Call(Id(Name ("define", tok)), args) ->
+      | Call(Id(XName (Name ("define", tok))), args) ->
           let args = args +> Ast.unparen +> Ast.uncomma in
           (match args with
           (* Maybe better to have a Define directly in the AST. Note that
@@ -129,7 +129,7 @@ let defs_of_any any =
               (* by default the info contains the '' or "" around the string,
                * which is not the case for s. See ast_php.ml
                *)
-              let info' = Ast.rewrap_str (s) info in
+              let info' = Parse_info.rewrap_str (s) info in
               Common.push2 (E.Constant, (Name (s, info')), None) aref;
               k x
           | _ -> k x
@@ -173,13 +173,6 @@ let uses_of_any ?(verbose=false) any =
       | Call (Id name, args) ->
           Common.push2 (E.Function, name) aref;
 
-      | IdSelf _ | IdParent _ -> 
-        if verbose then pr2 "defs_uses_php: call unsugar_self_parent";
-        ()
-      | IdStatic _ ->
-        if verbose then pr2 "LateStatic";
-        ()
-
     (* This covers
      * - new X, instanceof X 
      *   (via class_name_reference)
@@ -201,14 +194,18 @@ let uses_of_any ?(verbose=false) any =
      * - function foo(X $f)
      *   (via class_name_or_kwd)
      *)
-    V.kfully_qualified_class_name = (fun (k, bigf) classname ->
+    V.khint_type = (fun (k, bigf) classname ->
       (* todo? can interface define constant ? in which case
        * there is some ambiguity when seeing X::cst ...
        * could be the use of a Class or Interface.
        * So right now I just merge Class and Interface
        *)
       let kind = E.RegularClass in
-      Common.push2 (E.Class kind, classname) aref;
+      (match classname with
+      | Hint (classname, _targsTODO) ->
+        Common.push2 (E.Class kind, classname) aref;
+      | _ -> ()
+      );
       k classname
     );
 
@@ -216,10 +213,10 @@ let uses_of_any ?(verbose=false) any =
     V.kxhp_html = (fun (k, _) x ->
       match x with
       | Xhp (xhp_tag, _attrs, _tok, _body, _end) ->
-          Common.push2 (E.Class E.RegularClass, (XhpName xhp_tag)) aref;
+          Common.push2 (E.Class E.RegularClass, XName(XhpName xhp_tag)) aref;
           k x
       | XhpSingleton (xhp_tag, _attrs, _tok) ->
-          Common.push2 (E.Class E.RegularClass, (XhpName xhp_tag)) aref;
+          Common.push2 (E.Class E.RegularClass, XName(XhpName xhp_tag)) aref;
           k x
       (* todo: do it also for xhp attributes ? kxhp_tag then ?
        * (but take care to not include doublon because have

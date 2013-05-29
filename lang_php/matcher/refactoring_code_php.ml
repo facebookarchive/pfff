@@ -29,14 +29,14 @@ module R = Refactoring_code
 (*****************************************************************************)
 
 let tok_pos_equal_refactor_pos tok refactoring =
-  Ast.line_of_info tok = refactoring.R.line &&
-  Ast.col_of_info tok = refactoring.R.col
+  PI.line_of_info tok = refactoring.R.line &&
+  PI.col_of_info tok = refactoring.R.col
 
 let string_of_class_var_modifier modifiers =
   match modifiers with
   | NoModifiers _ -> "var"
   | VModifiers xs -> xs +> List.map (fun (modifier, tok) ->
-      Ast.str_of_info tok) +> Common.join " "
+      PI.str_of_info tok) +> Common.join " "
 
 
 (*****************************************************************************)
@@ -53,7 +53,7 @@ let refactor refactorings ast_with_tokens =
             V.kfunc_def = (fun (k, _) def ->
               (match def.f_type with
               | FunctionRegular | MethodRegular | MethodAbstract ->
-                  let tok = Ast.info_of_name def.f_name in
+                  let tok = Ast.info_of_ident def.f_name in
                   if tok_pos_equal_refactor_pos tok r then begin
                     let tok_close_paren =
                       let (a,b,c) = def.f_params in c
@@ -92,9 +92,7 @@ let refactor refactorings ast_with_tokens =
                   let tok =
                     match x with
                     | HintArray tok -> tok
-                    | Hint (ClassName (name, typeargs)) -> Ast.info_of_name name
-                    | Hint (LateStatic _ | Parent _ | Self _) ->
-                        failwith "impossible to have such name as type hints"
+                    | Hint (name, _typeargs) -> Ast.info_of_name name
                     | HintQuestion (tok, t) -> tok
                     | HintTuple (t, _, _) -> t
                     | HintCallback (lparen,_,_) -> lparen

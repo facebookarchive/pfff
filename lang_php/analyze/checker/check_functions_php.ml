@@ -69,7 +69,7 @@ let is_var_args_function def =
 let check_args_vs_params (callname, all_args) (defname, all_params) =
 
   let info = Ast_php.info_of_name callname in
-  let str_def = Ast.name defname in
+  let str_def = Ast.str_of_ident defname in
 
   let rec aux args params = 
     match args, params with
@@ -91,20 +91,20 @@ let check_args_vs_params (callname, all_args) (defname, all_params) =
                 E.fatal loc (E.KeywordArgumentForRef);
             | _ -> ()
             );
-            if not (Ast.dname dn =$= Ast.dname y.p_name)
+            if not (Ast.str_of_dname dn =$= Ast.str_of_dname y.p_name)
             then
               let all_params_str = 
-                all_params +> List.map (fun p -> Ast.dname p.p_name) in
+                all_params +> List.map (fun p -> Ast.str_of_dname p.p_name) in
               let severity =
-                if List.mem (Ast.dname dn) all_params_str
+                if List.mem (Ast.str_of_dname dn) all_params_str
                 then E.ReallyReallyBad
                 else 
                   (* todo: edit_distance *)
                   E.Bad
               in
               let loc = Ast.info_of_dname dn in
-              let s = Ast.dname dn in
-              let param = Ast.dname y.p_name in
+              let s = Ast.str_of_dname dn in
+              let param = Ast.str_of_dname y.p_name in
               E.fatal loc (E.WrongKeywordArgument(s, param, severity))
 
         (* passing a ref to a function not expecting one is fail.

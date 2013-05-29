@@ -89,7 +89,7 @@ let unittest =
   let (actual_errors: (Common.filename * int (* line *)) list) = 
     !Error_php._errors +> List.map (fun err ->
       let info = err.Error_php.loc in
-      Ast.file_of_info info, Ast.line_of_info info
+      Parse_info.file_of_info info, Parse_info.line_of_info info
       )
   in
   

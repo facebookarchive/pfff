@@ -306,7 +306,7 @@ let annotations_of_program_with_comments2 asts_and_tokens =
   | Parser_php.T_COMMENT info
   | Parser_php.T_DOC_COMMENT info 
     ->
-      let s = Ast_php.str_of_info info in
+      let s = Parse_info.str_of_info info in
       let annots = extract_annotations s info in
       (* add location information to the annotation by reusing the
        * location information of the comment (that means
@@ -328,7 +328,7 @@ let annotations_before tok all_toks =
   let comment_opt = Comment_php.comment_before tok all_toks in
   match comment_opt with
   | Some ii ->
-      let s = Ast.str_of_info ii in
+      let s = Parse_info.str_of_info ii in
       extract_annotations s ii
   | None -> []
 
@@ -336,6 +336,6 @@ let annotations_after tok all_toks =
   let comment_opt = Comment_php.comment_after tok all_toks in
   match comment_opt with
   | Some ii ->
-      let s = Ast.str_of_info ii in
+      let s = Parse_info.str_of_info ii in
       extract_annotations s ii
   | None -> []

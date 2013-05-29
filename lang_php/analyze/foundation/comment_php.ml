@@ -195,7 +195,7 @@ let comments_of_file file =
  * todo: optimize things ...
  *)
 let comment_before tok all_toks =
-  let pos = Ast_php.pos_of_info tok in
+  let pos = Parse_info.pos_of_info tok in
   let before = 
     all_toks +> Common2.take_while (fun tok2 ->
       let pos2 = Token_helpers_php.pos_of_tok tok2 in
@@ -215,7 +215,7 @@ let comment_before tok all_toks =
 
 
 let comment_after tok all_toks =
-  let pos = Ast_php.pos_of_info tok in
+  let pos = Parse_info.pos_of_info tok in
   let after = 
     all_toks +> Common2.drop_while (fun tok2 ->
       let pos2 = Token_helpers_php.pos_of_tok tok2 in

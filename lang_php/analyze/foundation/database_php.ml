@@ -245,7 +245,7 @@ type database = {
      (* reverse of defs, also sort of cache *)
      id_name: (id, id_string) Oassoc.oassoc;
 
-     id_phpname: (id, Ast_php.name) Oassoc.oassoc;
+     id_phpname: (id, Ast_php.ident) Oassoc.oassoc;
 
      extra: (id, extra_id_info) Oassoc.oassoc;
    }
@@ -507,7 +507,7 @@ let parent_name_of_id2 id db =
   match ast with
   | Ast_php.ClassE def ->
       def.c_extends +> Common2.fmap (fun (tok, classname) -> 
-        Ast.name classname
+        Ast.str_of_class_name classname
       )
   | _ ->
       failwith "parent_name_of_id: this is not a class"
@@ -566,9 +566,9 @@ let self_parent_of_nested_id id db =
   match classdef_of_nested_id_opt id db with
   | None -> None, None
   | Some cdef ->
-      let self = Some (Ast.name cdef.c_name) in
+      let self = Some (Ast.str_of_ident cdef.c_name) in
       let parent = cdef.c_extends +> Common2.fmap (fun (tok, classname) ->
-        Ast.name classname
+        Ast.str_of_class_name classname
       )
       in
       self, parent
@@ -584,7 +584,7 @@ let complete_name_of_id id db =
 
         (match classdef_of_nested_id_opt id db with
         | Some def -> 
-            let sclass = Ast.name def.c_name in
+            let sclass = Ast.str_of_ident def.c_name in
             (match id_kind with
             | E.Method _ ->
                 spf "%s->%s" sclass s
@@ -765,8 +765,8 @@ let ids_in_file file db =
 
       
 let id_of_phpname name db = 
-  let info = Ast.info_of_name name in
-  let file = Ast.file_of_info info in
+  let info = Ast.info_of_ident name in
+  let file = Parse_info.file_of_info info in
   
   let ids = ids_in_file file db in
   let matching = ids +> List.filter (fun id ->

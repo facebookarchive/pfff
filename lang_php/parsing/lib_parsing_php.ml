@@ -26,6 +26,8 @@ module Flag = Flag_parsing_php
 module V = Visitor_php 
 module V2 = Map_php 
 
+module PI = Parse_info
+
 (*****************************************************************************)
 (* Wrappers *)
 (*****************************************************************************)
@@ -128,7 +130,7 @@ let abstract_position_info_any x =
 (*s: max min range *)
 (*x: max min range *)
 let info_to_fixpos ii =
-  match Ast_php.pinfo_of_info ii with
+  match Parse_info.pinfo_of_info ii with
   | Parse_info.OriginTok pi -> 
       (* Ast_cocci.Real *)
       pi.Parse_info.charpos
@@ -143,14 +145,14 @@ let min_max_by_pos xs =
 
 let (range_of_origin_ii: Ast_php.tok list -> (int * int) option) = 
  fun ii -> 
-  let ii = List.filter Ast_php.is_origintok ii in
+  let ii = List.filter Parse_info.is_origintok ii in
   try 
     let (min, max) = Parse_info.min_max_ii_by_pos ii in
-    assert(Ast_php.is_origintok max);
-    assert(Ast_php.is_origintok min);
-    let strmax = Ast_php.str_of_info max in
+    assert(PI.is_origintok max);
+    assert(PI.is_origintok min);
+    let strmax = PI.str_of_info max in
     Some 
-      (Ast_php.pos_of_info min, Ast_php.pos_of_info max + String.length strmax)
+      (PI.pos_of_info min, PI.pos_of_info max + String.length strmax)
   with _ -> 
     None
 (*e: max min range *)
@@ -184,7 +186,7 @@ let get_funcalls_any any =
     V.kexpr = (fun (k,vx) x ->
       match x with
       | Call (Id callname, args) ->
-          let str = Ast_php.name callname in
+          let str = Ast_php.str_of_name callname in
           Hashtbl.replace h str true;
           k x
       | _ -> k x
@@ -334,7 +336,7 @@ let get_vars_assignements_any recursor =
         match x with
         | StaticVars (tok, xs, tok2) ->
             xs +> Ast.uncomma +> List.iter (fun (dname, affect_opt) -> 
-              let s = Ast.dname dname in
+              let s = Ast.str_of_dname dname in
               affect_opt +> Common.do_option (fun (_tok, scalar) ->
                 Common.push2 (s, scalar) aref;
               );
@@ -354,7 +356,7 @@ let get_vars_assignements_any recursor =
              * variables *)
             (match lval with
             | IdVar (dname, _scope) ->
-                let s = Ast.dname dname in
+                let s = Ast.str_of_dname dname in
                 Common.push2 (s, e) aref;
             | _ ->
                 ()

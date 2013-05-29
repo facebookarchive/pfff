@@ -151,7 +151,7 @@ let rec last_info_of_stmt = function
   | ClassDefNested { c_body = (_, _, x); _ }
    -> x
 
-let last_line_of_stmt x = line_of_info (last_info_of_stmt x)
+let last_line_of_stmt x = Parse_info.line_of_info (last_info_of_stmt x)
 
 let rec last_line_of_stmtl = function
   | [] -> assert false
@@ -202,7 +202,7 @@ let make_env l =
 let line_and_string_from_token x =
   let info = Token_helpers_php.info_of_tok x in
   let line = Parse_info.line_of_info info in
-  let str  = Ast_php.str_of_info info in
+  let str  = Parse_info.str_of_info info in
   x, line, str
 
 let rec extract_esthetic_newlines_and_comments l =
@@ -240,8 +240,8 @@ let env_of_tokens tokens =
 let env_of_tokens_for_spatch toks =
   let toks =
     Common.exclude (function T.TSpaces _ -> true | _ -> false) toks in
-  let l info = Ast_php.line_of_info info in
-  let str info = Ast_php.str_of_info info in
+  let l info = Parse_info.line_of_info info in
+  let str info = Parse_info.str_of_info info in
 
   let rec aux ~start xs =
     match xs with
@@ -271,18 +271,35 @@ let rec toplevel env st acc =
   | FinalDef _ -> acc
   | FuncDef fd ->
       let _, _, end_ = fd.f_body in
-      let acc = add_stmt_comments env acc (line_of_info end_) in
+      let acc = add_stmt_comments env acc (PI.line_of_info end_) in
       A.FuncDef (func_def env fd) :: acc
   | ClassDef cd ->
       let _, _, end_ = cd.c_body in
-      let acc = add_stmt_comments env acc (line_of_info end_) in
+      let acc = add_stmt_comments env acc (PI.line_of_info end_) in
       A.ClassDef (class_def env cd) :: acc
   | ConstantDef (_, cst_name, _, e, end_) ->
-      let acc = add_stmt_comments env acc (line_of_info end_) in
+      let acc = add_stmt_comments env acc (PI.line_of_info end_) in
       let e = expr env e in
-      let s = name env cst_name in
+      let s = ident env cst_name in
       A.ConstantDef { Ast_pp.cst_name = s; cst_body = e } :: acc
   | NotParsedCorrectly _ -> raise Common.Impossible
+
+and (name: env -> name -> string) = fun env -> function
+   | XName fqcn -> ident env fqcn
+   | Self _ -> "self"
+   | Parent _ -> "parent"
+   | LateStatic _ -> "static"
+
+and ident env = function
+  | Name (s, _) -> s
+  | XhpName (rl, _) ->
+      List.fold_left (fun x y -> x^":"^y) "" rl
+
+and dname = function
+  | DName (s, _) ->
+      if s.[0] = '$' then s
+      else "$"^s
+
 
 and stmt env st acc =
   let line = last_line_of_stmt st in
@@ -298,7 +315,7 @@ and stmt_ env st acc =
   | EmptyStmt _ -> A.Noop :: acc
   | Block (start, stdl, end_) ->
       let acc = List.fold_right (stmt_and_def env) stdl acc in
-      let acc = add_stmt_comments env acc (line_of_info start) in
+      let acc = add_stmt_comments env acc (PI.line_of_info start) in
       acc
   | If (_, (_, e, _), st, il, io) ->
       let e = expr env e in
@@ -320,7 +337,7 @@ and stmt_ env st acc =
   | Switch (_, (_, e, x), scl) ->
       let e = expr env e in
       let scl = switch_case_list env scl in
-      let line = line_of_info x in
+      let line = PI.line_of_info x in
       let scl = add_case_comments env scl line in
       A.Switch (e, scl) :: acc
   | Foreach (_, _, e, _, fve, fao, _, cst) ->
@@ -487,9 +504,6 @@ and expr env = function
   | ParenExpr (_, e, _) -> expr env e
 
   | Id n -> A.Id (name env n)
-  | IdSelf tok -> A.Id ("self")
-  | IdParent tok -> A.Id ("parent")
-  | IdStatic tok -> A.Id ("static")
 
   | IdVar (dn, scope) -> A.Id (dname dn)
   | ThisVar tok -> A.This 
@@ -575,18 +589,9 @@ and cpp_directive env = function
   | Dir       -> A.Id "__DIRECTORY__"
   | TraitC    -> A.Id "__TRAIT__"
 
-and name env = function
-  | Name (s, _) -> s
-  | XhpName (rl, _) ->
-      List.fold_left (fun x y -> x^":"^y) "" rl
-
-and dname = function
-  | DName (s, _) ->
-      if s.[0] = '$' then s
-      else "$"^s
 
 and hint_type env = function
-  | Hint q -> A.Hint (class_name_or_selfparent env q)
+  | Hint (q, _targsTODO) -> A.Hint (name env q)
   | HintArray _ -> A.HintArray
   | HintQuestion (i, t) -> A.HintQuestion (hint_type env t)
   | HintTuple (v1)      -> A.HintTuple (List.map (hint_type env) (comma_list (unbrace v1)))
@@ -595,15 +600,6 @@ and hint_type env = function
                       (List.map (hint_type env) (comma_list_dots (unbrace args)),
                        Common2.fmap (hint_type env) ret)) (unbrace v1) in
     A.HintCallback (args, ret)
-
-and qualifier env (cn, _) = class_name_or_selfparent env cn
-
-and class_name_or_selfparent env = function
-   | ClassName (fqcn, _) -> (* TODO: add handling for type args here? *)
-      name env fqcn
-   | Self _ -> "self"
-   | Parent _ -> "parent"
-   | LateStatic _ -> "static"
 
 and class_name_reference env a = expr env a
 
@@ -616,15 +612,15 @@ and argument env = function
 and class_def env c =
   let _, body, _ = c.c_body in
   let acc = List.fold_right (class_body env) body [] in
-  let line = line_of_info (info_of_name c.c_name) in
+  let line = PI.line_of_info (info_of_ident c.c_name) in
   let acc = add_ce_comments env acc line in
   {
     A.c_type = class_type env c.c_type ;
-    A.c_name = name env c.c_name;
+    A.c_name = ident env c.c_name;
     A.c_extends =
     (match c.c_extends with
     | None -> []
-    | Some (_, x) -> [name env x]);
+    | Some (_, x) -> [hint_type env x]);
     A.c_implements =
     (match c.c_implements with None -> []
     | Some x -> interfaces env x);
@@ -640,7 +636,7 @@ and class_type env = function
 
 and interfaces env (_, intfs) =
   let intfs = comma_list intfs in
-  List.map (name env) intfs
+  List.map (hint_type env) intfs
 
 and static_scalar_affect env (_, ss) = static_scalar env ss
 and static_scalar env a = expr env a
@@ -675,12 +671,12 @@ and class_body env st acc =
   match st with
   | Method md ->
       let x = match md.f_body with (_, _, x) -> x in
-      let line = line_of_info x in
+      let line = PI.line_of_info x in
       let acc  = add_ce_comments env acc line in
       let acc  = A.CEmethod (method_def env md) :: acc in
       acc
   | ClassVariables (m, ht, cvl, x) ->
-      let line = line_of_info x in
+      let line = PI.line_of_info x in
       let acc  = add_ce_comments env acc line in
       let cvl = comma_list cvl in
       let m =
@@ -706,14 +702,14 @@ and class_body env st acc =
         A.cv_vars = vars;
         } in
       let acc = A.CEdef cv :: acc in
-      let line = line_of_info (info_of_dname (fst (List.hd cvl))) in
+      let line = PI.line_of_info (info_of_dname (fst (List.hd cvl))) in
       let acc = add_ce_comments env acc line in
       acc
   | ClassConstants (_, cl, _) ->
       let consts =
         List.map (
         fun (n, ss) ->
-          (name env n, static_scalar_affect env ss)
+          (ident env n, static_scalar_affect env ss)
        ) (comma_list cl) in
       A.CEconst consts :: acc
   | XhpDecl _ -> acc (* TODO xhp decl *)
@@ -723,7 +719,7 @@ and method_def env m =
   let acc = [] in
   let body = m.f_body in
   let acc = method_body env m.f_type body acc in
-  let line = line_of_info (info_of_name m.f_name) in
+  let line = PI.line_of_info (info_of_ident m.f_name) in
   let acc = add_stmt_comments env acc line in
   let _, params, _ = m.f_params in
   let params = comma_list_dots params in
@@ -733,7 +729,7 @@ and method_def env m =
     A.m_final = final env mds;
     A.m_abstract = abstract env mds;
     A.m_ref = (match m.f_ref with None -> false | Some _ -> true);
-    A.m_name = name env m.f_name;
+    A.m_name = ident env m.f_name;
     A.m_params = List.map (parameter env) params ;
     A.m_return_type = opt hint_type env m.f_return_type;
     A.m_body = acc;
@@ -753,14 +749,14 @@ and parameter env p =
 and func_def env f =
   let acc = [] in
   let _, body, end_ = f.f_body in
-  let acc = add_stmt_comments env acc (line_of_info end_) in
+  let acc = add_stmt_comments env acc (PI.line_of_info end_) in
   let acc = List.fold_right (stmt_and_def env) body acc in
-  let line = line_of_info (info_of_name f.f_name) in
+  let line = PI.line_of_info (info_of_ident f.f_name) in
   let acc = add_stmt_comments env acc line in
   let _, params, _ = f.f_params in
   let params = comma_list_dots params in
   { A.f_ref = f.f_ref <> None;
-    A.f_name = name env f.f_name;
+    A.f_name = ident env f.f_name;
     A.f_params = List.map (parameter env) params;
     A.f_return_type = opt hint_type env f.f_return_type;
     A.f_body = acc;
@@ -866,7 +862,7 @@ and foreach_var_either env = function
 
 and catch env (_, (_, (fq, dn), _), (_, stdl, _)) =
   let stdl = List.fold_right (stmt_and_def env) stdl [] in
-  let fq = name env fq in
+  let fq = hint_type env fq in
   let dn = dname dn in
   fq, dn, stdl
 

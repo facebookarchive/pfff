@@ -104,7 +104,7 @@ let gensym info =
   (* less: for now just use line and col info, later should also use filename
    * could simply do a md5sum on the all file:line:col string
    *)
-  let (l,c) = Ast.line_of_info info, Ast.col_of_info info in
+  let (l,c) = Parse_info.line_of_info info, Parse_info.col_of_info info in
   spf "anon_class_closure_l%d_c%d" l c
 
 
@@ -143,7 +143,7 @@ let mk_obj_access s =
            Ast.noScope())
        ,
       fkt "->",
-      Id (Name (s, fkt s))))
+      Id (XName (Name (s, fkt s)))))
 
 (* use sgrimm technique
  * TODO may have to prefix certain closed_vars with this because
@@ -164,9 +164,9 @@ let mk_new_anon_class_call s
      (New
        (fkt "new",
        ((
-        (Id(Name
+        (Id(XName (Name
           (s,
-           fkt s))))),
+           fkt s)))))),
        Some
         (fkt "(",
          closed_vars_of_this_closure +> List.map (fun closed_var ->
@@ -210,7 +210,7 @@ let mk_private_affect s =
                   Ast.noScope())
               ,
              fkt "->",
-             Id (Name (s, fkt s)))
+             Id (XName (Name (s, fkt s))))
          ),
         fkt "=",
         fkt "&", (* want assign by ref *)
@@ -228,7 +228,7 @@ let mk_call_user_func_call var args_paren =
   let arg1 = Arg (var) in
   let args' = (Left arg1)::args in
   let str = "call_user_func" in
-  Call (Id (Name (str, fkt str)), (op, args', cp))
+  Call (Id (XName (Name (str, fkt str))), (op, args', cp))
 
 
 
@@ -326,7 +326,7 @@ let (add_this_to_closed_var_in_body:
             (* no recursive processing *)
             v
         | IdVar (v1, v2) ->
-            let s = Ast.dname v1 in
+            let s = Ast.str_of_dname v1 in
             if List.mem s closed_vars
             then mk_obj_access s
             else k v
@@ -346,7 +346,7 @@ let closed_vars (l_use, l) =
       Ast.unparen vars +> Ast.uncomma +> List.map (function
       | LexicalVar (is_ref, dname) ->
           if is_ref = None
-          then Ast.dname dname
+          then Ast.str_of_dname dname
           else failwith "not handling ref in closures"
       )
 
@@ -556,15 +556,15 @@ let unparse_without_type_hints file =
   (* visit ast and annotate type hints *)
   let mark_typehint type_hint =
     let rec get_hint_tokens type_hint = match type_hint with
-      | Hint (ClassName (name, args)) ->
+      | Hint (XName (name), args) ->
         let argtoks = match args with
           | None -> []
           | Some elts -> List.flatten (List.map (function Left x -> get_hint_tokens x | Right t -> [t]) (unbrace elts))
         in
-        (Ast.info_of_name name)::argtoks
-      | Hint (Self tok | Parent tok) -> [ tok ]
+        (Ast.info_of_ident name)::argtoks
+      | Hint ((Self tok | Parent tok), _args) -> [ tok ]
       | HintArray tok -> [ tok ]
-      | Hint (LateStatic tok) -> raise Impossible
+      | Hint (LateStatic tok, _args) -> raise Impossible
       | HintQuestion (t, x) -> List.flatten [[t]; get_hint_tokens x]
       | HintTuple (v1, elts, v2) ->
           List.flatten

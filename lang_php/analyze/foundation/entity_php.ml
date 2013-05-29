@@ -203,14 +203,14 @@ let ast_php_entity_in_file ~check_dupes (s, kind) g file =
     ast2 +> Common.map_filter (function
     | StmtList _ -> None
     | FuncDef def ->
-      Some ((Ast.str_of_name def.f_name, E.Function), FunctionE def)
+      Some ((Ast.str_of_ident def.f_name, E.Function), FunctionE def)
     | ClassDef def -> 
       (* do as in graph_code_php.ml *)
       let kind = E.RegularClass in
-      Some ((Ast.str_of_name def.c_name, E.Class kind), ClassE def)
+      Some ((Ast.str_of_ident def.c_name, E.Class kind), ClassE def)
     | ConstantDef def ->
       let (_, name, _, _, _) = def in
-      Some ((Ast.str_of_name name, E.Constant), ConstantE def)
+      Some ((Ast.str_of_ident name, E.Constant), ConstantE def)
     | NotParsedCorrectly _ | FinalDef _ -> None
     )
   in

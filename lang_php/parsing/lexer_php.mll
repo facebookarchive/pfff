@@ -26,6 +26,8 @@ module Flag = Flag_parsing_php
 (*e: basic pfff module open and aliases *)
 open Parser_php
 
+module PI = Parse_info
+
 (*****************************************************************************)
 (* Prelude *)
 (*****************************************************************************)
@@ -67,7 +69,7 @@ let tokinfo lexbuf  =
 
 (*x: lexer helpers *)
 let tok_add_s s ii  =
-  Ast.rewrap_str ((Ast.str_of_info ii) ^ s) ii
+  PI.rewrap_str ((PI.str_of_info ii) ^ s) ii
 (*e: lexer helpers *)
 
 (* all string passed to T_IDENT or T_VARIABLE should go through case_str *)
@@ -80,12 +82,12 @@ let case_str s =
 let xhp_or_t_ident ii fii =
   if !Flag.xhp_builtin
   then fii ii
-  else T_IDENT(case_str (Ast.str_of_info ii), ii)
+  else T_IDENT(case_str (PI.str_of_info ii), ii)
 
 let lang_ext_or_t_ident ii fii =
   if !Flag.facebook_lang_extensions
   then fii ii
-  else T_IDENT(case_str (Ast.str_of_info ii), ii)
+  else T_IDENT(case_str (PI.str_of_info ii), ii)
 
 (* ---------------------------------------------------------------------- *)
 (* Keywords *)
@@ -605,7 +607,7 @@ rule st_in_scripting = parse
       *)
         let info = tokinfo lexbuf in
 
-        let syminfo = rewrap_str sym info in
+        let syminfo = PI.rewrap_str sym info in
 
         let parse_info = Parse_info.parse_info_of_info info in
         let pos_after_sym   =
@@ -934,7 +936,7 @@ rule st_in_scripting = parse
 
   (* ----------------------------------------------------------------------- *)
   (*s: semi repetitive st_in_scripting rules for eof and error handling *)
-    | eof { EOF (tokinfo lexbuf +> Ast.rewrap_str "") }
+    | eof { EOF (tokinfo lexbuf +> PI.rewrap_str "") }
     | _ {
         error ("unrecognised symbol, in token rule:"^tok lexbuf);
         TUnknown (tokinfo lexbuf)
@@ -994,7 +996,7 @@ and initial = parse
 
   (*------------------------------------------------------------------------ *)
 
-  | eof { EOF (tokinfo lexbuf +> Ast.rewrap_str "") }
+  | eof { EOF (tokinfo lexbuf +> PI.rewrap_str "") }
   | _ (* ANY_CHAR *) {
       error("unrecognised symbol, in token rule:"^tok lexbuf);
       TUnknown (tokinfo lexbuf)
@@ -1054,7 +1056,7 @@ and st_var_offset = parse
       TCBRA(tokinfo lexbuf);
     }
  (*s: repetitive st_var_offset rules for error handling *)
-   | eof { EOF (tokinfo lexbuf +> Ast.rewrap_str "") }
+   | eof { EOF (tokinfo lexbuf +> PI.rewrap_str "") }
    | _ {
        error ("unrecognised symbol, in st_var_offset rule:"^tok lexbuf);
        TUnknown (tokinfo lexbuf)
@@ -1082,8 +1084,8 @@ and st_double_quotes = parse
     | "$" (LABEL as s) "[" {
           let info = tokinfo lexbuf in
 
-          let varinfo = rewrap_str ("$" ^ s) info in
-          let charpos_info = Ast.pos_of_info varinfo in
+          let varinfo = PI.rewrap_str ("$" ^ s) info in
+          let charpos_info = PI.pos_of_info varinfo in
           let pos_after_label = charpos_info + String.length ("$" ^ s) in
 
           let bra_info = Parse_info.tokinfo_str_pos "[" pos_after_label in
@@ -1116,7 +1118,7 @@ and st_double_quotes = parse
       TGUIL(tokinfo lexbuf)
     }
  (*s: repetitive st_double_quotes rules for error handling *)
-   | eof { EOF (tokinfo lexbuf +> Ast.rewrap_str "") }
+   | eof { EOF (tokinfo lexbuf +> PI.rewrap_str "") }
    | _ {
        error("unrecognised symbol, in st_double_quotes rule:"^tok lexbuf);
        TUnknown (tokinfo lexbuf)
@@ -1139,8 +1141,8 @@ and st_backquote = parse
     | "$" (LABEL as s) "[" {
           let info = tokinfo lexbuf in
 
-          let varinfo = rewrap_str ("$" ^ s) info in
-          let charpos_info = Ast.pos_of_info varinfo in
+          let varinfo = PI.rewrap_str ("$" ^ s) info in
+          let charpos_info = PI.pos_of_info varinfo in
           let pos_after_label = charpos_info + String.length ("$" ^ s) in
 
           let bra_info = Parse_info.tokinfo_str_pos "[" pos_after_label in
@@ -1170,7 +1172,7 @@ and st_backquote = parse
     }
 
   (*s: repetitive st_backquote rules for error handling *)
-    | eof { EOF (tokinfo lexbuf +> Ast.rewrap_str "") }
+    | eof { EOF (tokinfo lexbuf +>PI.rewrap_str "") }
     | _ {
         error ("unrecognised symbol, in st_backquote rule:"^tok lexbuf);
         TUnknown (tokinfo lexbuf)
@@ -1191,9 +1193,9 @@ and st_start_heredoc stopdoc = parse
   | (LABEL as s) (";"? as semi) (['\n' '\r'] as space) {
       let info = tokinfo lexbuf in
 
-      let lbl_info = rewrap_str s info in
+      let lbl_info = PI.rewrap_str s info in
 
-      let pos = Ast.pos_of_info info in
+      let pos = PI.pos_of_info info in
       let pos_after_label = pos + String.length s in
       let pos_after_semi = pos_after_label + String.length semi in
 
@@ -1225,8 +1227,8 @@ and st_start_heredoc stopdoc = parse
     | "$" (LABEL as s) "[" {
           let info = tokinfo lexbuf in
 
-          let varinfo = rewrap_str ("$" ^ s) info in
-          let charpos_info = Ast.pos_of_info varinfo in
+          let varinfo = PI.rewrap_str ("$" ^ s) info in
+          let charpos_info = PI.pos_of_info varinfo in
           let pos_after_label = charpos_info + String.length ("$" ^ s) in
 
           let bra_info = Parse_info.tokinfo_str_pos "[" pos_after_label in
@@ -1254,7 +1256,7 @@ and st_start_heredoc stopdoc = parse
   (*e: encapsulated dollar stuff rules *)
 
   (*s: repetitive st_start_heredoc rules for error handling *)
-    | eof { EOF (tokinfo lexbuf +> Ast.rewrap_str "") }
+    | eof { EOF (tokinfo lexbuf +> PI.rewrap_str "") }
     | _ {
         error("unrecognised symbol, in st_start_heredoc rule:"^tok lexbuf);
         TUnknown (tokinfo lexbuf)
@@ -1270,9 +1272,9 @@ and st_start_nowdoc stopdoc = parse
   | (LABEL as s) (";"? as semi) (['\n' '\r'] as space) {
       let info = tokinfo lexbuf in
 
-      let lbl_info = rewrap_str s info in
+      let lbl_info = PI.rewrap_str s info in
 
-      let pos = Ast.pos_of_info info in
+      let pos = PI.pos_of_info info in
       let pos_after_label = pos + String.length s in
       let pos_after_semi = pos_after_label + String.length semi in
 
@@ -1300,7 +1302,7 @@ and st_start_nowdoc stopdoc = parse
       TNewline (tokinfo lexbuf)
     }
 
-  | eof { EOF (tokinfo lexbuf +> Ast.rewrap_str "") }
+  | eof { EOF (tokinfo lexbuf +> PI.rewrap_str "") }
   | _ {
        error ("unrecognised symbol, in st_start_nowdoc rule:"^tok lexbuf);
        TUnknown (tokinfo lexbuf)
@@ -1370,7 +1372,7 @@ and st_in_xhp_tag current_tag = parse
       T_XHP_GT (tokinfo lexbuf)
     }
 
-  | eof { EOF (tokinfo lexbuf +> Ast.rewrap_str "") }
+  | eof { EOF (tokinfo lexbuf +> PI.rewrap_str "") }
   | _  {
         error("unrecognised symbol, in XHP tag:"^tok lexbuf);
         TUnknown (tokinfo lexbuf)
@@ -1416,7 +1418,7 @@ and st_in_xhp_text current_tag = parse
   | [^'<' '{']+ { T_XHP_TEXT (tok lexbuf, tokinfo lexbuf) }
 
 
-  | eof { EOF (tokinfo lexbuf +> Ast.rewrap_str "") }
+  | eof { EOF (tokinfo lexbuf +> PI.rewrap_str "") }
   | _  {
       error ("unrecognised symbol, in XHP text:"^tok lexbuf);
       TUnknown (tokinfo lexbuf)

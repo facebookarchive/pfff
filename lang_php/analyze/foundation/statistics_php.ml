@@ -131,7 +131,7 @@ let stat_of_program ?(hooks=default_hooks) h file ast =
     V.ktop = (fun (k, _) x ->
       (match x with
       | FuncDef def ->
-          let s = Ast.str_of_name def.f_name in
+          let s = Ast.str_of_ident def.f_name in
           inc "function";
           hooks.entity (E.Function, s);
           Common.save_excursion current_node (CG.Function s) (fun() ->
@@ -139,13 +139,13 @@ let stat_of_program ?(hooks=default_hooks) h file ast =
           )
       | ConstantDef (_, name, _, _, _) -> 
           inc "constant";
-          hooks.entity (E.Constant, Ast.str_of_name name);
+          hooks.entity (E.Constant, Ast.str_of_ident name);
           (* there should be no call inside constant definitions so
            * don't care about current_node
            *)
           k x
       | ClassDef def ->
-          let s = Ast.str_of_name def.c_name in
+          let s = Ast.str_of_ident def.c_name in
           inc (Class_php.string_of_class_type def.c_type);
           let kind = Class_php.class_type_of_ctype def.c_type in
           hooks.entity (E.Class kind, s);
@@ -161,7 +161,7 @@ let stat_of_program ?(hooks=default_hooks) h file ast =
     V.kmethod_def = (fun (k, _) def ->
       (match !current_node with
       | CG.Method (classname, _) ->
-          let s = Ast.str_of_name def.f_name in
+          let s = Ast.str_of_ident def.f_name in
           Common.save_excursion current_node (CG.Method (classname, s))
             (fun()-> k def)
       | _ -> raise Impossible
@@ -170,7 +170,7 @@ let stat_of_program ?(hooks=default_hooks) h file ast =
     V.kstmt = (fun (k,_) x ->
       (match x with
       | FuncDefNested def -> 
-          let s = Ast.str_of_name def.f_name in
+          let s = Ast.str_of_ident def.f_name in
           inc "function"; inc "Nested function";
           Common.save_excursion current_node (CG.Function s) (fun() ->
             k x
@@ -179,7 +179,7 @@ let stat_of_program ?(hooks=default_hooks) h file ast =
           let str = Class_php.string_of_class_type def.c_type in
           inc str; 
           inc ("Nested " ^ str);
-          let s = Ast.str_of_name def.c_name in
+          let s = Ast.str_of_ident def.c_name in
           Common.save_excursion current_node (CG.Method (s, fake))(fun()->
             k x
           )
@@ -187,9 +187,9 @@ let stat_of_program ?(hooks=default_hooks) h file ast =
           k x
       );
     );
-    V.kclass_name_or_kwd = (fun (k,_) x ->
+    V.kname = (fun (k,_) x ->
       (match x with
-      | Self _ | Parent _ | ClassName _ -> ()
+      | Self _ | Parent _ | XName _ -> ()
       | LateStatic _ -> inc "Late static"
       );
     );

@@ -87,7 +87,7 @@ and stmt =
   | Default of stmt list
 
   (* catch(Exception $exn) { ... } => ("Exception", "$exn", [...]) *)
-  and catch = string  * string * stmt list
+  and catch = hint_type  * string * stmt list
 
 (* ------------------------------------------------------------------------- *)
 (* Expression *)
@@ -165,6 +165,17 @@ and expr =
         | AttrExpr of expr
 
 (* ------------------------------------------------------------------------- *)
+(* Types *)
+(* ------------------------------------------------------------------------- *)
+
+and hint_type =
+     | Hint of string
+     | HintArray
+     | HintQuestion of hint_type
+     | HintTuple of hint_type list
+     | HintCallback of hint_type list * (hint_type option)
+
+(* ------------------------------------------------------------------------- *)
 (* Definitions *)
 (* ------------------------------------------------------------------------- *)
 and func_def = {
@@ -181,13 +192,6 @@ and func_def = {
      p_name: string;
      p_default: expr option;
    }
-
-   and hint_type =
-     | Hint of string
-     | HintArray
-     | HintQuestion of hint_type
-     | HintTuple of hint_type list
-     | HintCallback of hint_type list * (hint_type option)
 
   and lambda_def = {
     l_ref: bool;
@@ -206,8 +210,8 @@ and constant_def = {
 and class_def = {
   c_type: class_type;
   c_name: string;
-  c_extends: string list;
-  c_implements: string list;
+  c_extends: hint_type list;
+  c_implements: hint_type list;
   c_body: class_element list;
 }
 

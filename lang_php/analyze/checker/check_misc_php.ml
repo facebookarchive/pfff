@@ -65,7 +65,7 @@ let check ast =
                   (* this is more something that should be fixed by a proper
                    * grammar
                    *)
-                  let str = Ast.str_of_info case_separator in
+                  let str = Parse_info.str_of_info case_separator in
                   (match str with
                   | ":" -> ()
                   | ";" -> E.warning case_separator E.CaseWithSemiColon
@@ -86,7 +86,7 @@ let check ast =
        * this one in particular seems to happen a lot
        *)
       | InstanceOf (e, tok, classname) ->
-          let str = Ast.str_of_info tok in
+          let str = Parse_info.str_of_info tok in
           let lower = Common2.lowercase str in
           if not (str =$= lower)
           then E.warning tok E.CaseSensitivityKeyword;

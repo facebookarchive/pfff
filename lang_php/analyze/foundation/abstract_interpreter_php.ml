@@ -1251,7 +1251,8 @@ and class_def env heap (c: Ast.class_def) =
   let heap, self = Ptr.new_ heap in
   let heap, pname, parent =
     match c.c_extends with
-    | Some (p, _tok) ->
+    | Some ht ->
+        let (p, _tok) = name_of_class_name ht in
         let heap = lazy_class env heap p in
         let heap, _, ptr = Var.get_global env heap p in
         heap, p, ptr

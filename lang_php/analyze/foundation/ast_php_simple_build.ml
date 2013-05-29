@@ -85,8 +85,14 @@ and toplevel env st acc =
   (* error recovery is off by default now *)
   | NotParsedCorrectly _ -> raise Common.Impossible
 
+and name env = function
+   | XName x -> ident env x
+   | Self tok -> (A.special "self", wrap tok)
+   | Parent tok -> (A.special "parent", wrap tok)
+   | LateStatic tok -> (A.special "static", wrap tok)
+
 and constant_def env (_, cst_name, _, e, _) =
-  { A.cst_name = name env cst_name;
+  { A.cst_name = ident env cst_name;
     A.cst_body = expr env e;
   }
 
@@ -192,9 +198,6 @@ and expr env = function
   | Sc sc -> scalar env sc
 
   | Id n -> A.Id (name env n)
-  | IdSelf tok -> A.Id (A.special "self", wrap tok)
-  | IdParent tok -> A.Id (A.special "parent", wrap tok)
-  | IdStatic tok -> A.Id (A.special "static", wrap tok)
 
   | IdVar (dn, scope) -> A.Id (dname dn)
   | ThisVar tok -> A.This ("$this", wrap tok)
@@ -387,7 +390,7 @@ and cpp_directive env tok = function
   | Dir       -> A.Id (A.builtin "__DIR__", wrap tok)
   | TraitC    -> A.Id (A.builtin "__TRAIT__", wrap tok)
 
-and name env = function
+and ident env = function
   | Name (s, tok) -> s, wrap tok
   | XhpName (tl, tok) ->
       A.string_of_xhp_tag tl, wrap tok
@@ -403,7 +406,7 @@ and dname = function
       ("$"^s, wrap tok)
 
 and hint_type env = function
-  | Hint q -> A.Hint (class_name_or_selfparent env q)
+  | Hint (q, typeTODO) -> A.Hint (name env q)
   | HintArray _ -> A.HintArray
   | HintQuestion (i, t) -> A.HintQuestion (hint_type env t)
   | HintTuple v1 -> A.HintTuple (List.map (hint_type env) (comma_list (brace v1)))
@@ -413,13 +416,6 @@ and hint_type env = function
       A.HintCallback (args, ret)
 
 
-and qualifier env (cn, _) = class_name_or_selfparent env cn
-
-and class_name_or_selfparent env = function
-   | ClassName (fqcn, _) -> name env fqcn (* TODO: support type args? *)
-   | Self tok -> (A.special "self", wrap tok)
-   | Parent tok -> (A.special "parent", wrap tok)
-   | LateStatic tok -> (A.special "static", wrap tok)
 
 and class_name_reference env a = expr env a
 
@@ -435,12 +431,12 @@ and class_def env c =
   let _, body, _ = c.c_body in
   {
     A.c_kind = class_type env c.c_type ;
-    A.c_name = name env c.c_name;
+    A.c_name = ident env c.c_name;
     A.c_attrs = attributes env c.c_attrs;
     A.c_extends =
       (match c.c_extends with
       | None -> None
-      | Some (_, x) -> Some (name env x)
+      | Some (_, x) -> Some (hint_type env x)
       );
     A.c_uses =
       List.fold_right (class_traits env) body [];
@@ -466,12 +462,12 @@ and class_type env = function
 
 and interfaces env (_, intfs) =
   let intfs = comma_list intfs in
-  List.map (fun x -> (name env x)) intfs
+  List.map (fun x -> (hint_type env x)) intfs
 
 and class_traits env x acc =
   match x with
   | UseTrait (_, l, _) ->
-      List.map (name env) (comma_list l) @ acc
+      List.map (hint_type env) (comma_list l) @ acc
   | _ -> acc
 
 and class_constants env st acc =
@@ -479,7 +475,7 @@ and class_constants env st acc =
   | ClassConstants (_, cl, _) ->
       List.fold_right (
       fun (n, ss) acc ->
-        ({A.cst_name = name env n; cst_body= static_scalar_affect env ss})::acc
+        ({A.cst_name = ident env n; cst_body= static_scalar_affect env ss})::acc
      ) (comma_list cl) acc
   | _ -> acc
 
@@ -524,7 +520,7 @@ and method_def env m =
   let mds = List.map (fun (x, _) -> x) m.f_modifiers in
   { A.m_modifiers = mds;
     A.f_ref = (match m.f_ref with None -> false | Some _ -> true);
-    A.f_name = name env m.f_name;
+    A.f_name = ident env m.f_name;
     A.f_attrs = attributes env m.f_attrs;
     A.f_params = List.map (parameter env) params ;
     A.f_return_type = opt hint_type env m.f_return_type;
@@ -550,7 +546,7 @@ and func_def env f =
   let params = comma_list_dots params in
   let _, body, _ = f.f_body in
   { A.f_ref = f.f_ref <> None;
-    A.f_name = name env f.f_name;
+    A.f_name = ident env f.f_name;
     A.f_attrs = attributes env f.f_attrs;
     A.f_params = List.map (parameter env) params;
     A.f_return_type = opt hint_type env f.f_return_type;
@@ -649,9 +645,9 @@ and foreach_var_either env = function
 
 and catch env (_, (_, (fq, dn), _), (_, stdl, _)) =
   let stdl = List.fold_right (stmt_and_def env) stdl [] in
-  let fq = name env fq in
+  let fq = hint_type env fq in
   let dn = dname dn in
-  A.Hint fq, dn, stdl
+  fq, dn, stdl
 
 and static_var env (x, e) =
   dname x, opt static_scalar_affect env e

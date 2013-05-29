@@ -239,7 +239,7 @@ function bar() { return true; }
       let tmpfile = Parse_php.tmp_php_file_from_string file_content in
       let xs = Cyclomatic_php.cyclomatic_complexity_file tmpfile in
       let xs = xs +> List.map (fun (name, int) -> 
-        Ast_php.str_of_name name, int) +> List.rev  in
+        Ast_php.str_of_ident name, int) +> List.rev  in
       assert_equal
         ~msg:"it should get the right cyclomatic complexity of simple code"
         [("foo", 2);
@@ -259,13 +259,13 @@ function foo() {
       let tmpfile = Parse_php.tmp_php_file_from_string file_content in
       let xs = Cyclomatic_php.cyclomatic_complexity_file tmpfile in
       let xs = xs +> List.map (fun (name, int) ->
-        let info = Ast_php.info_of_name name in
+        let info = Ast_php.info_of_ident name in
         (* this was generating a Fatal at some point when we used to
          * return also the cyclomatic complexity of Lambda, which
          * had a fakeInfo attached to their name.
          *)
-        let _line = Ast_php.line_of_info info in
-        Ast_php.str_of_name name, int
+        let _line = Parse_info.line_of_info info in
+        Ast_php.str_of_ident name, int
       ) +> List.rev  in
       assert_equal
         ~msg:"it should not got inside lambdas"

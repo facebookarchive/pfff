@@ -204,7 +204,7 @@ let unittest =
       match e with
       | ObjGet (v, tok, Id name) ->
         let info = Ast.info_of_name name in
-        assert_equal 4 (Ast.col_of_info info)
+        assert_equal 4 (Parse_info.col_of_info info)
       | _ -> 
         assert_failure "not good AST"
     );

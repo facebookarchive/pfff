@@ -90,12 +90,8 @@ type visitor_in = {
   kstmt_and_def_list_scope:
     (stmt_and_def list -> unit) * visitor_out -> stmt_and_def list  -> unit;
 
-  kfully_qualified_class_name:
-    (fully_qualified_class_name -> unit) * visitor_out ->
-    fully_qualified_class_name -> unit;
+  kname: (name -> unit) * visitor_out -> name -> unit;
   khint_type: (hint_type -> unit) * visitor_out -> hint_type -> unit;
-  kclass_name_or_kwd:
-    (class_name_or_kwd -> unit) * visitor_out -> class_name_or_kwd -> unit;
   karray_pair: (array_pair -> unit) * visitor_out -> array_pair -> unit;
 
   karguments: (argument comma_list paren -> unit) * visitor_out ->
@@ -128,9 +124,8 @@ let default_visitor =
 
     kcomma   = (fun (k,_) x -> k x);
 
-    kfully_qualified_class_name = (fun (k,_) x -> k x);
     khint_type  = (fun (k,_) x -> k x);
-    kclass_name_or_kwd  = (fun (k,_) x -> k x);
+    kname  = (fun (k,_) x -> k x);
 
     kxhp_html = (fun (k,_) x -> k x);
     kxhp_tag = (fun (k,_) x -> k x);
@@ -197,7 +192,7 @@ and v_ptype =
 
 
 
-and v_name = function
+and v_ident = function
   | Name v1 -> let v1 = v_wrap v_string v1 in ()
   | XhpName v1 -> let v1 = v_xhp_tag_wrap v1 in ()
 and v_dname = function | DName v1 -> let v1 = v_wrap v_string v1 in ()
@@ -206,32 +201,28 @@ and v_xhp_tag_wrap x =
   let k v = v_wrap v_xhp_tag v in
   vin.kxhp_tag (k, all_functions) x
 
+and v_name x = v_class_name_or_selfparent x
 and v_class_name_or_selfparent x =
   let rec k x =
     match x with
-  | ClassName (v1, v2) ->
-      let v1 = v_fully_qualified_class_name v1 in
-      let v2 = v_option v_type_args v2 in ()
+  | XName (v1) ->
+      let v1 = v_ident v1 in
+      ()
   | Self v1 -> let v1 = v_tok v1 in ()
   | Parent v1 -> let v1 = v_tok v1 in ()
   | LateStatic v1 -> let v1 = v_tok v1 in ()
   in
-  vin.kclass_name_or_kwd (k, all_functions) x
+  vin.kname (k, all_functions) x
 and v_type_args x =
   v_single_angle (v_comma_list v_hint_type) x; ()
 
-and v_fully_qualified_class_name v =
-  let k x = v_name x in
-  vin.kfully_qualified_class_name (k, all_functions) v
+and v_fully_qualified_class_name v = v_hint_type v
 
 and v_expr (x: expr) =
   (* tweak *)
   let k x =  match x with
   | Id v1 ->
     v_name v1
-  | IdSelf v1 -> let v1 = v_tok v1 in ()
-  | IdParent v1 -> let v1 = v_tok v1 in ()
-  | IdStatic v1 -> let v1 = v_tok v1 in ()
 
   | IdVar ((v1, v2)) ->
       let v1 = v_dname v1 and v2 = v_ref Scope_php.v_phpscope v2 in ()
@@ -743,7 +734,7 @@ and v_use_filename =
   | UseDirect v1 -> let v1 = v_wrap v_string v1 in ()
   | UseParen v1 -> let v1 = v_paren (v_wrap v_string) v1 in ()
 and v_declare (v1, v2) =
-  let v1 = v_name v1 and v2 = v_static_scalar_affect v2 in ()
+  let v1 = v_ident v1 and v2 = v_static_scalar_affect v2 in ()
 and
   v_func_def x =
   let rec k x =
@@ -763,7 +754,7 @@ and
   let arg = v_function_type v_f_type in
   let arg = v_list (v_wrap v_modifier) v_f_modifiers in
   let arg = v_is_ref v_f_ref in
-  let arg = v_name v_f_name in
+  let arg = v_ident v_f_name in
   let arg = v_parameters v_f_params in
   let arg = v_body v_f_body in
   let arg = v_option v_hint_type v_f_return_type in
@@ -797,7 +788,10 @@ and v_parameter x =
   vin.kparameter (k, all_functions) x
 and v_hint_type x =
   let rec k x = match x with
-  | Hint v1 -> let v1 = v_class_name_or_selfparent v1 in ()
+  | Hint (v1, v2) -> 
+    let v1 = v_class_name_or_selfparent v1 in
+    let v2 = v_option v_type_args v2 in
+    ()
   | HintArray v1 -> let v1 = v_tok v1 in ()
   | HintQuestion (v1, v2) -> let v1 = v_tok v1 in
                              let v2 = v_hint_type v2 in ()
@@ -822,7 +816,7 @@ and
                 c_attrs = v_c_attrs;
               } =
   let arg = v_class_type v_c_type in
-  let arg = v_name v_c_name in
+  let arg = v_ident v_c_name in
   let arg = v_option v_extend v_c_extends in
   let arg = v_option v_interface v_c_implements in
   let arg = v_brace (v_list v_class_stmt) v_c_body in
@@ -861,7 +855,7 @@ and v_class_stmt x =
       let v1 = v_xhp_decl v1 in ()
   | UseTrait (v1, v2, v3) ->
       let v1 = v_tok v1 in
-      let v2 = v_comma_list v_name v2 in
+      let v2 = v_comma_list v_fully_qualified_class_name v2 in
       let v3 = Ocaml.v_either v_tok (v_brace (v_list v_trait_rule)) v3 in
       ()
   in
@@ -888,7 +882,7 @@ and v_xhp_decl x =
       in ()
 
 and v_class_constant (v1, v2) =
-  let v1 = v_name v1 and v2 = v_static_scalar_affect v2 in ()
+  let v1 = v_ident v1 and v2 = v_static_scalar_affect v2 in ()
 and v_class_var_modifier =
   function
   | NoModifiers v1 -> let v1 = v_tok v1 in ()
@@ -978,7 +972,7 @@ and v_stmt_and_def_list_scope x =
 
 and v_constant_def (v1, v2, v3, v4, v5) =
   let v1 = v_tok v1
-  and v2 = v_name v2
+  and v2 = v_ident v2
   and v3 = v_tok v3
   and v4 = v_static_scalar v4
   and v5 = v_tok v5
@@ -1044,7 +1038,7 @@ and v_any = function
   | InfoList v1 -> let v1 = v_list v_info v1 in ()
   | ColonStmt2 v1 -> let v1 = v_colon_stmt v1 in ()
   | Case2 v1 -> let v1 = v_case v1 in ()
-  | Name2 v1 -> let v1 = v_name v1 in ()
+  | Ident2 v1 -> let v1 = v_ident v1 in ()
   | Hint2 v1 -> let v1 = v_hint_type v1 in ()
 
 (* end of auto generation *)

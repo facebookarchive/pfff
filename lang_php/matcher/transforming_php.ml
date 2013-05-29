@@ -117,7 +117,7 @@ module XMATCH = struct
     match a, b with
     | A.Expr _, A.Expr _
     | A.XhpAttrValue _, A.XhpAttrValue _
-    | A.Name2 _, B.Name2 _
+    | A.Ident2 _, B.Ident2 _
     | A.Argument _, B.Argument _
      ->
 

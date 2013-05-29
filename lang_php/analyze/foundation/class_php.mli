@@ -1,8 +1,8 @@
 
 val interfaces:
-  Ast_php.class_def -> Ast_php.name list
+  Ast_php.class_def -> Ast_php.class_name list
 val traits:
-  Ast_php.class_def -> Ast_php.name list
+  Ast_php.class_def -> Ast_php.class_name list
 
 (* __construct *)
 val constructor_name: string 

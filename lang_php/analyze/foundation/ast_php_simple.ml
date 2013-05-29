@@ -109,6 +109,9 @@
  *)
 type 'a wrap = 'a * Ast_php.tok option
 
+type ident = string wrap
+type var = string wrap
+
 type name = string wrap
 
 (* ------------------------------------------------------------------------- *)
@@ -151,7 +154,7 @@ and stmt =
 
   (* Note that there is no LocalVars constructor. Variables in PHP are
    * declared when they are first assigned. *)
-  | StaticVars of (name * expr option) list
+  | StaticVars of (var * expr option) list
   (* expr is most of the time a simple variable name *)
   | Global of expr list
 
@@ -160,7 +163,7 @@ and stmt =
     | Default of stmt list
 
   (* catch(Exception $exn) { ... } => ("Exception", "$exn", [...]) *)
-  and catch = hint_type  * name * stmt list
+  and catch = hint_type  * var * stmt list
 
 (* ------------------------------------------------------------------------- *)
 (* Expression *)
@@ -259,11 +262,24 @@ and expr =
     | XhpXml of xml
 
     and xml = {
-      xml_tag: name;
-      xml_attrs: (name * xhp_attr) list;
+      xml_tag: ident;
+      xml_attrs: (ident * xhp_attr) list;
       xml_body: xhp list;
     }
      and xhp_attr = expr
+
+(* ------------------------------------------------------------------------- *)
+(* Types *)
+(* ------------------------------------------------------------------------- *)
+
+and hint_type =
+ | Hint of name (* todo: add the generics *)
+ | HintArray
+ | HintQuestion of hint_type
+ | HintTuple of hint_type list
+ | HintCallback of hint_type list * (hint_type option)
+
+and class_name = hint_type
 
 (* ------------------------------------------------------------------------- *)
 (* Definitions *)
@@ -277,7 +293,7 @@ and expr =
  *)
 and func_def = {
   (* "_lambda" when used for lambda, see also AnonLambda for f_kind below *)
-  f_name: name;
+  f_name: ident;
   f_kind: function_kind;
 
   f_params: parameter list;
@@ -287,7 +303,7 @@ and func_def = {
   (* only for methods; always empty for functions *)
   m_modifiers: modifier list;
   (* only for lambdas (could also abuse parameter) *)
-  l_uses: (bool (* is_ref *) * name) list;
+  l_uses: (bool (* is_ref *) * var) list;
   f_attrs: attribute list;
 
   f_body: stmt list;
@@ -300,18 +316,10 @@ and func_def = {
    and parameter = {
      p_type: hint_type option;
      p_ref: bool;
-     p_name: name;
+     p_name: var;
      p_default: expr option;
      p_attrs: attribute list;
    }
-
-   (* todo: add the generics of sphp? *)
-   and hint_type =
-     | Hint of name
-     | HintArray
-     | HintQuestion of hint_type
-     | HintTuple of hint_type list
-     | HintCallback of hint_type list * (hint_type option)
 
   (* for methods, and below for fields too *)
   and modifier = Ast_php.modifier
@@ -320,19 +328,19 @@ and func_def = {
   and attribute = expr
 
 and constant_def = {
-  cst_name: name;
+  cst_name: ident;
   (* normally a static scalar *)
   cst_body: expr;
 }
 
 and class_def = {
   (* for XHP classes it's x:frag (and not :x:frag), see string_of_xhp_tag *)
-  c_name: name;
+  c_name: ident;
   c_kind: class_kind;
 
-  c_extends: name option;
-  c_implements: name list;
-  c_uses: name list; (* traits *)
+  c_extends: class_name option;
+  c_implements: class_name list;
+  c_uses: class_name list; (* traits *)
 
   c_attrs: attribute list;
 
@@ -352,7 +360,7 @@ and class_def = {
 
   and class_var = {
     (* note that the name will contain a $ *)
-    cv_name: name;
+    cv_name: var;
     cv_type: hint_type option;
     cv_value: expr option;
     cv_modifiers: modifier list;
@@ -425,3 +433,7 @@ let is_variable (s, tok) =
 let remove_first_char s =
   String.sub s 1 (String.length s - 1)
 
+let name_of_class_name ht =
+  raise Common.Todo
+let str_of_class_name ht =
+  raise Common.Todo

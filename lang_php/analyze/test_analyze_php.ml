@@ -93,15 +93,15 @@ let test_cyclomatic_php file =
   let ast = Parse_php.program_of_program2 ast2 in
   ast +> List.iter (function
   | Ast_php.FuncDef def ->
-      let name = Ast_php.name def.Ast_php.f_name in
+      let name = Ast_php.str_of_ident def.Ast_php.f_name in
       let n = Cyclomatic_php.cyclomatic_complexity_func ~verbose:true def in
       pr2 (spf "cyclomatic complexity for function %s is %d" name n);
   | Ast_php.ClassDef def ->
       let class_stmts = Ast_php.unbrace def.Ast_php.c_body in
-      let class_name = Ast_php.name def.Ast_php.c_name in
+      let class_name = Ast_php.str_of_ident def.Ast_php.c_name in
       class_stmts +> List.iter (function
       | Ast_php.Method def ->
-          let name = Ast_php.name def.Ast_php.f_name in
+          let name = Ast_php.str_of_ident def.Ast_php.f_name in
           let n = Cyclomatic_php.cyclomatic_complexity_func ~verbose:true def in
           pr2 (spf "cyclomatic complexity for method %s::%s is %d"
                   class_name name n);
