@@ -647,6 +647,7 @@ val str_of_dname: dname -> string
 val str_of_name : name -> string
 val str_of_class_name: class_name -> string
 val name_of_class_name: class_name -> name
+val ident_of_class_name: class_name -> ident
 
 val info_of_ident : ident -> tok
 val info_of_name : name -> tok
