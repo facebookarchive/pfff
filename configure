@@ -247,8 +247,11 @@ show_error_msg_and_exit_if_error($error);
 my $prefix_distrib = "/usr";
 
 if( ($arch =~ /FreeBSD/) || (($arch =~ /Darwin/) && ($BREW_PROGRAM)) ) {
-  $prefix_distrib = "/usr/local";
+    $prefix_distrib = "/usr/local";
+} elsif ($arch =~ /Darwin/) {
+    $prefix_distrib = "/opt/local";
 }
+
 
 my $BDB_INCLUDE="$prefix_distrib/include";
 my $BDB_LIBS="$prefix_distrib/lib";
@@ -262,7 +265,7 @@ my $MYSQL_LIBS="$prefix_distrib/lib/mysql";
 
 if($bdb) {
 
-    if($arch =~ /Darwin/) {
+    if($arch =~ /Darwin/ && !($BREW_PROGRAM)) {
         $BDB_INCLUDE="/opt/local/include/db46";
         $BDB_LIBS="/opt/local/lib/db46";
     }
@@ -283,12 +286,12 @@ if($bdb) {
 
 if($mysql) {
 
-    if($arch =~ /Darwin/) {
+    if($arch =~ /Darwin/ && !($BREW_PROGRAM)) {
         $MYSQL_INCLUDE="/opt/local/include/mysql5";
         $MYSQL_LIBS="/opt/local/lib/mysql5/mysql";
     }
 
-    my $err += check_config("grep --colour=never MYSQL_BASE_VERSION  $MYSQL_INCLUDE/mysql/mysql_version.h |",
+    my $err += check_config("grep --colour=never MYSQL_BASE_VERSION  $MYSQL_INCLUDE/mysql_version.h |",
 		       "#define MYSQL_BASE_VERSION		\"mysqld-5.*\"",
 		       "MySQL is present.",
 		       "The MySQL library is missing.",
@@ -298,22 +301,6 @@ if($mysql) {
 }
 
 if($pcre) {
-
-    if($arch =~ /Darwin/) {
-        if ($BREW_PROGRAM) {
-            $PCRE_INCLUDE="/usr/local/include";
-            $PCRE_LIBS="/usr/local/lib";
-        } else {	
-            $PCRE_INCLUDE="/opt/local/include";
-            $PCRE_LIBS="/opt/local/lib";
-        }
-    }
-
-    if($arch =~ /FreeBSD/) {
-        $PCRE_INCLUDE="/usr/local/include";
-        $PCRE_LIBS="/usr/local/lib";
-    }
-
     my $err += check_config("grep --colour=never PCRE_MAJOR  $PCRE_INCLUDE/pcre.h |",
 		       "#define PCRE_MAJOR       ",
 		       "PCRE is present.",
