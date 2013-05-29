@@ -545,31 +545,28 @@ let method_callees_of_any any =
  * method
  *)
 let static_method_callees_of_any any =
-  raise Todo
-(*
   V.do_visit_with_ref (fun aref -> { V.default_visitor with
     V.kexpr = (fun (k,vx) x ->
       match x with
-      | Ast_php.Call (ClassGet(qu, _tok, Id methname), args) ->
+      | Ast_php.Call (ClassGet(Id name, _tok, Id methname), args) ->
           let sclass_opt =
-            match qu with
-            | Id (classname) ->
-                Some (Ast.name classname)
-            | IdSelf _ | IdParent _ ->
+            match name with
+            | XName classname ->
+                Some (Ast.str_of_ident classname)
+            | Self _ | Parent _ ->
                 failwith "use Unsugar_php.unsugar_self_parent"
-            | IdStatic _ ->
+            | LateStatic _ ->
                 (* pr2 "LateStatic"; *)
                 None
-            | _ -> None
           in
           sclass_opt +> Common.do_option (fun sclass ->
           (match methname with
-          | Name (smeth, info2) ->
+          | XName (Name (smeth, info2)) ->
               let e = N.NameQualifiedS (sclass, smeth), info2 in
               Common.push2 e aref;
               k x
-          | XhpName _ ->
-              failwith "TODO: XhpName"
+          | _ ->
+              failwith "TODO: ?"
           )
           )
       | _ ->
@@ -577,7 +574,6 @@ let static_method_callees_of_any any =
     );
   })
   any
-*)
 
 (*****************************************************************************)
 (* Precision of analysis *)

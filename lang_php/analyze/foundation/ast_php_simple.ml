@@ -433,7 +433,12 @@ let is_variable (s, tok) =
 let remove_first_char s =
   String.sub s 1 (String.length s - 1)
 
-let name_of_class_name ht =
-  raise Common.Todo
-let str_of_class_name ht =
-  raise Common.Todo
+let str_of_class_name x =
+  match x with
+  | Hint (name) -> str_of_name name
+  | _ -> raise Common.Impossible
+
+let name_of_class_name x =
+  match x with
+  | Hint (name) -> name
+  | _ -> raise Common.Impossible

@@ -861,22 +861,30 @@ let str_of_ident e =
   | Name x -> unwrap x
   | XhpName (xs, _tok) ->
       ":" ^ (Common.join ":" xs)
-
-let str_of_dname (DName x) = unwrap x
-
 let info_of_ident e =
   match e with
   | (Name (x,y)) -> y
   | (XhpName (x,y)) -> y
+
+let str_of_dname (DName x) = unwrap x
 let info_of_dname (DName (x,y)) = y
 
 let info_of_name x =
-  raise Todo
+  match x with
+  | XName x -> info_of_ident x
+  | Self tok | Parent tok | LateStatic tok -> tok
 
 let str_of_name x =
-  raise Todo
+  match x with
+  | XName x -> str_of_ident x
+  | Self tok | Parent tok | LateStatic tok -> Parse_info.str_of_info tok
 
 let str_of_class_name x =
-  raise Todo
+  match x with
+  | Hint (name, _targs) -> str_of_name name
+  | _ -> raise Impossible
+
 let name_of_class_name x =
-  raise Todo
+  match x with
+  | Hint (name, _targs) -> name
+  | _ -> raise Impossible
