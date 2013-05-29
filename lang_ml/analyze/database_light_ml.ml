@@ -354,8 +354,10 @@ let compute_database ?(verbose=false) files_or_dirs =
       rank_and_filter_examples_of_use ~root ids entities_arr;
   );
 
+  pr2_gen root;
   let dirs = dirs +> List.map (fun s -> 
     Common.filename_without_leading_path root s) in
+  pr2_gen dirs;
   let dirs = Db.alldirs_and_parent_dirs_of_relative_dirs dirs in
 
   { Db.
