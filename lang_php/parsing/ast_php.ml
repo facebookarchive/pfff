@@ -29,8 +29,11 @@ open Common
  * instead lang_php/analyze/foundation/pil.ml which defines a
  * PHP Intermediate Language a la CIL.
  *
- * todo: maybe even in a refactoring context a PIL+comment
- * (see pretty/ast_pp.ml) would make more sense.
+ * todo:
+ *  - add namespace in AST (also add in grammar)
+ *  - unify toplevel statement vs statements? hmmm maybe not
+ *  - maybe even in a refactoring context a PIL+comment
+ *    (see pretty/ast_pp.ml) would make more sense.
  *
  * NOTE: data from this type are often marshalled in berkeley DB tables
  * which means that if you add a new constructor or field in the types below,
@@ -46,9 +49,6 @@ open Common
  * dependent programs !!!! An easier solution is to not change this
  * file, or to only add new constructors.
  *
- * todo:
- *  - add namespace in AST (also add in grammar)
- *  - unify toplevel statement vs statements? hmmm maybe not
  *)
 
 (*****************************************************************************)
@@ -59,7 +59,7 @@ open Common
 (* Token/info *)
 (* ------------------------------------------------------------------------- *)
 (* Contains among other things the position of the token through
- * the Common.parse_info embedded inside it, as well as the
+ * the Parse_info.parse_info embedded inside it, as well as the
  * transformation field that makes possible spatch.
  *)
 type tok = Parse_info.info
@@ -82,12 +82,12 @@ and 'a comma_list_dots =
 (* ------------------------------------------------------------------------- *)
 (* See also analyze_php/namespace_php.ml *)
 
-(* Was called T_STRING in Zend, which are really just LABEL, see the lexer.
- * Why not factorize Name and XhpName together? Because I was not
+(* Why not factorize Name and XhpName together? Because I was not
  * sure originally some analysis should also be applied on Xhp
  * classes. Moreover there is two syntax for xhp: :x:base for 'defs'
  * and <x:base for 'uses', so having this xhp_tag allow us to easily do
- * comparison between xhp names.
+ * comparison between xhp identifiers.
+ * (was called T_STRING in Zend, which are really just LABEL, see the lexer)
  *)
 type ident =
     | Name of string wrap
@@ -96,8 +96,7 @@ type ident =
  (* for :x:foo the list is ["x";"foo"] *)
  and xhp_tag = string list
 
-(* D for dollar. Was called T_VARIABLE in the original PHP parser/lexer.
- * The string does not contain the '$'. The info itself will usually
+(* The string does not contain the '$'. The info itself will usually
  * contain it, but not always! Indeed if the variable we build comes
  * from an encapsulated strings as in  echo "${x[foo]}" then the 'x'
  * will be parsed as a T_STRING_VARNAME, and eventually lead to a DName,
@@ -107,11 +106,13 @@ type ident =
  * So if at some point you want to do some program transformation,
  * you may have to normalize this string wrap before moving it
  * in another context !!!
+ * 
+ * (D for dollar. Was called T_VARIABLE in the original PHP parser/lexer)
  *)
 type dname =
    | DName of string wrap
 
- (* todo: for namespace *)
+(* todo: for namespace *)
 type qualified_ident = ident (* todo: list *)
 
 type name =
@@ -137,7 +138,7 @@ type hint_type =
  | HintCallback of
      (tok                                 (* "function" *)
       * (hint_type comma_list_dots paren) (* params *)
-      * hint_type option                 (* return type *)
+      * hint_type option                  (* return type *)
      ) paren
 
  and type_args = hint_type comma_list single_angle
@@ -154,6 +155,7 @@ and ptype =
 
   | ArrayTy
   | ObjectTy
+
 (* ------------------------------------------------------------------------- *)
 (* Expression *)
 (* ------------------------------------------------------------------------- *)
@@ -173,12 +175,12 @@ and expr =
    * to not always call recursively the visitor/continuation):
    * 
    * - function: Call (Id, _)
-   * - method: Call (ClassGet (_, Id)), Call (ObjGet (_, Id))
-   * - class: ClassGet (Id, _), New (Id, _), AssignNew, InstanceOf(_, Id)
+   * - method: Call (ObjGet (_, Id), _),   Call (ClassGet (_, Id), _)
+   * - class: ClassGet (Id, _), New (Id, _), AssignNew(Id,_, InstanceOf(_, Id)
    *   and also extends, implements, catch, type
    * - class_constant: ClassGet (_, Id)
    * - field: ObjGet(_, Id)
-   * - constant: Id
+   * - constant: Id 
    * 
    * todo: just like we annotate IdVar with scope info, we could annotate
    * Id with a kind info.
