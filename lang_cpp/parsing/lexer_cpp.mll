@@ -36,7 +36,7 @@ module Ast = Ast_cpp
  * has to be done to feed it to a parser. Note that C and C++ are not
  * context free languages and so some idents must be disambiguated
  * in some ways. TIdent below must thus be post-processed too (as well
- * as other tokens like '<' for c++). See parsing_hack.ml for example.
+ * as other tokens like '<' for C++). See parsing_hack.ml for example.
  * 
  * note: We can't use Lexer_parser._lexer_hint here to do different
  * things because we now call the lexer to get all the tokens
@@ -535,6 +535,8 @@ rule token = parse
       with Not_found ->
         failwith ("LEXER: unknown objective C keyword: " ^ s);
   }
+  (* @[ *)
+  | "@" { TAt (tokinfo lexbuf) }
 
   (* ----------------------------------------------------------------------- *)
   (* C constant *)
@@ -680,6 +682,9 @@ and string  = parse
 
   | ("\\" (oct | oct oct | oct oct oct)) as x { x ^ string lexbuf }
   | ("\\x" (hex | hex hex)) as x              { x ^ string lexbuf }
+  (* unicode *)
+  | ("\\u" (hex hex hex hex)) as x { x ^ string lexbuf }
+  | ("\\U" (hex hex hex hex hex hex hex hex)) as x { x ^ string lexbuf }
   | ("\\" (_ as v)) as x  
        { 
          (match v with (* Machine specific ? *)

@@ -625,6 +625,8 @@ MemberField _|MemberDecl _ | Access (_, _))
 
     | T.TAt_Misc ii
       -> tag ii Keyword
+    | T.TAt ii
+      -> tag ii Keyword
 
 
     (* thrift *)

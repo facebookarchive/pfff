@@ -222,6 +222,8 @@ module Ast = Ast_cpp
   TAt_required
   TAt_compatibility_alias
   TAt_Misc
+  
+  TAt
 
 /*(*************************************************************************)*/
 /*(*1 Priorities *)*/

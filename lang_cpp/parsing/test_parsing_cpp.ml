@@ -128,8 +128,7 @@ let test_parse_cpp_fuzzy dir_or_file =
         let _fuzzy = Parse_cpp.parse_fuzzy file in
         ()
       with exn ->
-        (* pr2 (spf "PB with: %s, exn = %s" file (Common.exn_to_s exn)); *)
-        pr2 file;
+        pr2 (spf "PB with: %s, exn = %s" file (Common.exn_to_s exn)); 
     )
   ));
   ()

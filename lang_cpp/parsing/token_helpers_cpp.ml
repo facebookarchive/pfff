@@ -511,7 +511,8 @@ let info_of_tok = function
   | TAt_required i -> i
   | TAt_compatibility_alias i -> i
   | TAt_Misc i -> i
-      
+
+  | TAt i -> i      
   | EOF                  (i) -> i
   
 
@@ -769,7 +770,7 @@ let visitor_info_of_tok f = function
   | TAt_required i -> TAt_required (f i)
   | TAt_compatibility_alias i -> TAt_compatibility_alias (f i)
   | TAt_Misc i -> TAt_Misc (f i)
-
+  | TAt i -> TAt (f i)
   | EOF                  (i) -> EOF                  (f i) 
 
 
