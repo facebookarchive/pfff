@@ -81,6 +81,10 @@ dir: facebook/qa_code/old
 dir: facebook/flib_dependencies/old
 dir: old
 
+# -------------------------------------------------------------------------
+# _build
+# -------------------------------------------------------------------------
+
 # todo: factorize in a 'dir_element: _build' ?
 dir: facebook/external/archimedes/_build
 dir: opa/_build
