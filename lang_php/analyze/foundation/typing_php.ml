@@ -386,29 +386,34 @@ and expr_ env lv = function
 
   | Ref e -> expr env e
 
-  | Id (s, tok) ->
+  | (Id (s, tok) | Var (s, tok)) as elt ->
       let is_marked = has_marker env s in
-      (match () with
+      (match elt with
       | _ when env.infer_types && is_marked ->
           let s = get_marked_id env s in
           let t = expr env (Id (s, tok)) in
           env.show := Stype_infer t;
           t
       | _ when env.auto_complete && is_marked ->
-          if s.[0] = '$'
-          then
+          (match elt with
+          | Var _ ->
             let locals =
               SMap.fold (fun x _ acc -> SSet.add x acc) !(env.vars) SSet.empty
             in
             env.show := Slocal (get_marked_id env s, locals)
-          else env.show := Sglobal (get_marked_id env s);
-          any
+          | Id _ ->
+            env.show := Sglobal (get_marked_id env s);
+          | _ -> raise Common.Impossible
+          );
+        any
 
       (* a local variable, lookup in env. This can create a new
        * variable and assigns it a fresh type variable. This is
        * how PHP works ... there is no variable declaration.
        *)
-      | _ when s.[0] = '$' || Env.mem env s ->
+      | Var _ ->
+          Env.get env s
+      | _ when Env.mem env s ->
           Env.get env s
 
       (* this covers functions but also builtin constants such as null *)
@@ -422,7 +427,7 @@ and expr_ env lv = function
           then raise (UnknownEntity s);
           any
       )
-  | This name -> expr env (Id (name))
+  | This name -> expr env (Var (name))
 
   (*Array_get returns the type of the values of the array*)
   (* Array access without a key *)
@@ -606,7 +611,7 @@ and expr_ env lv = function
   | New (x, el) ->
       let v = "$;tmp"^(string_of_int (fresh())) in
       let obj = Class_get (x, Id (wrap "__obj")) in
-      iexpr env (Assign (None, Id (wrap v), obj));
+      iexpr env (Assign (None, Var (wrap v), obj));
       iexpr env (Call (Obj_get (obj, Id (wrap "__construct")), el));
       let t = expr env (Id (wrap v)) in
       let set = match x with

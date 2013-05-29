@@ -237,8 +237,6 @@ let funcdef_of_call_or_new_opt env e =
       (match e with
       | Id name ->
           (* simple function call *)
-          if not (A.is_variable name)
-          then
             let (s, tok) = s_tok_of_name name in
             (match find_entity (Ent.Function, s) with
             | [Ast_php.FunctionE def] -> Some def
@@ -255,12 +253,11 @@ let funcdef_of_call_or_new_opt env e =
                 None
             | _ -> raise Impossible
             )
-          (* dynamic function call *)
-          else None
+      (* dynamic function call *)
+      | Var _ -> None
 
       (* static method call *)
-      | Class_get (Id name1, Id name2)
-          when not (A.is_variable name1) && not (A.is_variable name2) ->
+      | Class_get (Id name1, Id name2) ->
           (* todo: name1 can be self/parent in traits, or static: *)
           let aclass = A.str_of_name name1 in
           let amethod = A.str_of_name name2 in
@@ -283,8 +280,7 @@ let funcdef_of_call_or_new_opt env e =
        *
        * todo: special case also id(new ...)-> ?
        *)
-      | Obj_get (This _, Id name2)
-          when not (A.is_variable name2) ->
+      | Obj_get (This _, Id name2) ->
           (match env.in_class with
           | Some name1 ->
               let aclass = A.str_of_name name1 in
@@ -350,7 +346,6 @@ let check_used env vars =
   )
 
 let create_new_local_if_necessary ~incr_count env name =
-  assert (A.is_variable name);
   let (s, tok) = s_tok_of_name name in
   match lookup_opt s !(env.vars) with
   (* new local variable implicit declaration.
@@ -491,8 +486,7 @@ and stmt env = function
       let shared_ref = ref 0 in
 
       (match e2 with
-      | Id name | Ref (Id name) ->
-          assert (A.is_variable name);
+      | Var name | Ref (Var name) ->
           let (s, tok) = s_tok_of_name name in
           (* todo: if already in scope? shadowing? *)
           (* todo: if strict then introduce new scope here *)
@@ -514,8 +508,7 @@ and stmt env = function
       | None -> ()
       | Some e3 ->
           (match e3 with
-          | Id name | Ref (Id name) ->
-              assert (A.is_variable name);
+          | Var name | Ref (Var name) ->
               let (s, tok) = s_tok_of_name name in
               (* todo: scope_ref := S.LocalIterator; *)
               env.vars := Map_poly.add s (tok, S.LocalIterator, shared_ref)
@@ -546,11 +539,11 @@ and stmt env = function
       )
   | Global xs ->
       xs +> List.iter (fun e ->
-        (* should be an Id most of the time.
+        (* should be an Var most of the time.
          * todo: should check in .globals that this variable actually exists
          *)
         match e with
-        | Id name when A.is_variable name ->
+        | Var name ->
             let (s, tok) = s_tok_of_name name in
             env.vars := Map_poly.add s (tok, S.Global, ref 0) !(env.vars);
         (* todo: E.warning tok E.UglyGlobalDynamic *)
@@ -589,7 +582,7 @@ and catches env xs = List.iter (catch env) xs
 and expr env = function
   | Int _ | Double _ | String _ -> ()
 
-  | Id name when A.is_variable name ->
+  | Var name ->
       check_defined ~incr_count:true env name
 
   | Id name -> ()
@@ -597,7 +590,7 @@ and expr env = function
   | Assign (None, e1, e2) ->
       (* e1 should be an lvalue *)
       (match e1 with
-      | Id name ->
+      | Var name ->
           (* Does an assignation counts as a use? If you only
            * assign and never use a variable what is the point?
            * This should be legal only for parameters passed by reference.
@@ -615,7 +608,7 @@ and expr env = function
 
           let rec aux = function
             (* should be an lvalue again *)
-            | Id name when A.is_variable name ->
+            | Var name ->
                 let (s, tok) = s_tok_of_name name in
                 (match lookup_opt s !(env.vars) with
                 | None ->
@@ -669,8 +662,7 @@ and expr env = function
       args +> List.iter (function
         (* should be an lvalue again *)
         (* less: The use of 'unset' on a variable is still not clear to me. *)
-        | Id name ->
-            assert (A.is_variable name);
+        | Var name ->
             check_defined ~incr_count:false env name
         (* Unsetting a field, seems like a valid use.
          * Unsetting a prop, not clear why you want that.
@@ -689,7 +681,7 @@ and expr env = function
       expr env x;
       expr env y;
       vars +> List.iter (function
-      | Id name when A.is_variable name ->
+      | Var name ->
           create_new_local_if_necessary ~incr_count:false env name
       (* less: wrong, it should be a variable? *)
       | e -> expr env e
@@ -700,12 +692,12 @@ and expr env = function
    *  maybe we should have a bailout_vars and skip further errors on $x.
    * todo: could have isset(Array_get(...) there too no?
    *)
-  | Call (Id ("__builtin__isset", tok), [Id (name)]) when A.is_variable name ->
+  | Call (Id ("__builtin__isset", tok), [Var (name)]) ->
       ()
   (* http://php.net/manual/en/function.empty.php
    * "empty() does not generate a warning if the variable does not exist."
    *)
-  | Call (Id ("__builtin__empty", tok), [Id (name)]) when A.is_variable name ->
+  | Call (Id ("__builtin__empty", tok), [Var (name)]) ->
       ()
 
 
@@ -783,10 +775,10 @@ and expr env = function
          * environment in strict mode? and if they are, shout because of
          * bad practice?
          *)
-        | Assign (None, Id name, e2), _ ->
+        | Assign (None, Var name, e2), _ ->
             expr env e2
         (* a variable passed by reference, this can considered a new decl *)
-        | Id name, Some {Ast_php.p_ref = Some _;_} when A.is_variable name ->
+        | Var name, Some {Ast_php.p_ref = Some _;_} ->
 
             (* if was already assigned and passed by refs,
              * increment its use counter then.
@@ -815,7 +807,7 @@ and expr env = function
       (* with 'echo $o->$v' we have a dynamic field, we need to visit
        * e2 to mark $v as used at least.
        *)
-      | Id name when not (is_variable name)  -> ()
+      | Id name  -> ()
       | _ -> expr env e2
       )
 
@@ -825,7 +817,7 @@ and expr env = function
       (* with 'echo A::$v' we should not issue a UseOfUndefinedVariable,
        * check_classes_php.ml will handle this case.
        *)
-      | Id _  -> ()
+      | Var _  -> ()
       | _ -> expr env e2
       )
 

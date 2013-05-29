@@ -98,6 +98,8 @@ and vof_expr =
       let v1 = Ocaml.vof_list vof_encaps v1 in Ocaml.VSum (("Guil", [ v1 ]))
   | Id v1 ->
       let v1 = vof_wrapped_string v1 in Ocaml.VSum (("Id", [ v1 ]))
+  | Var v1 ->
+      let v1 = vof_wrapped_string v1 in Ocaml.VSum (("Var", [ v1 ]))
   | This name ->
       let v1 = vof_wrapped_string name in
       Ocaml.VSum (("This", [ v1 ]))

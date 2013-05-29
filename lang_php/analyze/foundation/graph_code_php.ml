@@ -555,16 +555,17 @@ and expr env x =
    * there is the use of a constant.
    *)
   | Id name ->
-      (* a parameter or local variable *)
-      if Ast.is_variable name
-      then ()
-      else add_use_edge env (name, E.Constant)
+    add_use_edge env (name, E.Constant)
+
+  (* a parameter or local variable *)
+  | Var ident ->
+    ()
 
   (* -------------------------------------------------- *)
   | Call (e, es) ->
     (match e with
     (* simple function call *)
-    | Id name when not (Ast.is_variable name) ->
+    | Id name ->
         add_use_edge env (name, E.Function);
         exprl env es
 
@@ -577,8 +578,7 @@ and expr env x =
     | Class_get (Id ("__special__static", tok), e2) ->
         expr env (Call (Class_get (Id (env.self, tok), e2), es))
 
-    | Class_get (Id name1, Id name2)
-        when not (Ast.is_variable name1) && not (Ast.is_variable name2) ->
+    | Class_get (Id name1, Id name2) ->
          let aclass = Ast.str_of_name name1 in
          let amethod = Ast.str_of_name name2 in
          let tok = snd name2 in
@@ -604,7 +604,7 @@ and expr env x =
          exprl env es
 
     (* object call *)
-    | Obj_get (e1, Id name2)  when not (Ast.is_variable name2) ->
+    | Obj_get (e1, Id name2) ->
         (match e1 with
         (* handle easy case *)
         | This (_,tok) ->
@@ -636,8 +636,7 @@ and expr env x =
       | Id ("__special__static", tok), _ ->
         expr env (Class_get (Id (env.self, tok), e2))
 
-      | Id name1, Id name2
-        when not (Ast.is_variable name1) && not (Ast.is_variable name2) ->
+      | Id name1, Id name2 ->
           let aclass = Ast.str_of_name name1 in
           let aconstant = Ast.str_of_name name2 in
           let tok = snd name2 in
@@ -648,8 +647,7 @@ and expr env x =
           | Some n -> add_use_edge env n
           )
 
-      | Id name1, Id name2
-        when not (Ast.is_variable name1) && (Ast.is_variable name2) ->
+      | Id name1, Var name2 ->
           let aclass = Ast.str_of_name name1 in
           let astatic_var = Ast.str_of_name name2 in
           let tok = snd name2 in
@@ -661,10 +659,10 @@ and expr env x =
           )
 
      (* less: update dynamic stats *)
-     | Id name1, e2 when not (Ast.is_variable name1) ->
+     | Id name1, e2  ->
           add_use_edge env (name1, E.Class E.RegularClass);
           expr env e2;
-     | e1, Id name2 when not (Ast.is_variable name2) ->
+     | e1, Id name2  ->
        expr env e1;
      | _ ->
        exprl env [e1; e2]
@@ -674,10 +672,10 @@ and expr env x =
   | Obj_get (e1, e2) ->
       (match e1, e2 with
       (* handle easy case *)
-      | This (_, tok), Id name2 when not (Ast.is_variable name2) ->
+      | This (_, tok), Id name2 ->
           let (s2, tok2) = name2 in
           expr env (Class_get (Id (env.self, tok), Id ("$" ^ s2, tok2)))
-      | _, Id name2 when not (Ast.is_variable name2) ->
+      | _, Id name2  ->
           expr env e1;
       | _ ->
           exprl env [e1; e2]
@@ -694,7 +692,7 @@ and expr env x =
       expr env e1;
       (match e2 with
       (* less: add deps? *)
-      | Id name when not (Ast.is_variable name) ->
+      | Id name ->
         let node = Ast.str_of_name name, E.Class E.RegularClass in
           if not (G.has_node node env.g) 
           then 

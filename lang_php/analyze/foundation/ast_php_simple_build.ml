@@ -199,7 +199,7 @@ and expr env = function
 
   | Id n -> A.Id (name env n)
 
-  | IdVar (dn, scope) -> A.Id (dname dn)
+  | IdVar (dn, scope) -> A.Var (dname dn)
   | This tok -> A.This ("$this", wrap tok)
 
 
@@ -666,7 +666,7 @@ and assignOp env = function
   | AssignConcat -> BinaryConcat
 
 and global_var env = function
-  | GlobalVar dn -> A.Id (dname dn)
+  | GlobalVar dn -> A.Var (dname dn)
   (* this is used only once in our codebase, and it should not ... *)
   | GlobalDollar (tok, lv) ->
       A.Call (A.Id ((A.builtin "eval_var", wrap tok)), [lvalue env lv])

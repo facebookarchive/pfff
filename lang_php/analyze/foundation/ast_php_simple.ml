@@ -85,16 +85,13 @@
  *  - unified eval_var, some constructs were transformed into calls to
  *    "eval_var" builtin, e.g. no GlobalDollar, no VBrace, no Indirect.
  *
- *  - a simpler 'name': identifiers, xhp names, and variables are unified
- *    (maybe not a good idea retrospectively, cos it forces in many places
- *     to do some s =~ "$.*")
+ *  - a simpler 'name': identifiers, xhp names
  *  - ...
  *
  * todo:
  *  - support for generics of sphp
  *  - XHP class declaration? e.g. children, @required, etc?
  *  - less: factorize more? string vs Guil vs xhp?
- *  - less: split Id in Id and Var
  *)
 
 (*****************************************************************************)
@@ -170,7 +167,7 @@ and stmt =
 (* ------------------------------------------------------------------------- *)
 
 (* lvalue and expr has been mixed in this AST, but an lvalue should be
- * an expr restricted to: Id $var, Array_get, Obj_get, Class_get, List.
+ * an expr restricted to: Var $var, Array_get, Obj_get, Class_get, List.
  *)
 and expr =
   (* booleans are really just Int in PHP :( *)
@@ -183,28 +180,31 @@ and expr =
    *)
   | String of string wrap
 
-  (* Id is valid for "entities" (functions, classes, constants) and variables.
-   * So can have Id "foo" and Id "$foo". Can also contain "self/parent".
-   * Can also be "true", "false", "null" and many other builtin constants.
-   * See builtin() and special() below.
-   * Id is also used for class methods/fields/constants.
+  (* Id is valid for "entities" (functions, classes, constants). Id is also
+   * used for class methods/fields/constants. It Can also contain 
+   * "self/parent". It can be "true", "false", "null" and many other
+   * builtin constants. See builtin() and special() below.
    *
    * todo: For field name, if in the code they are referenced like $this->fld,
    * we should prepend a $ to fld to match their definition.
    *
-   * todo? Introduce a Var of name? can be good to differentiate
-   * them no? We do lots of ... when Ast.is_variable name.
-   * (at the same time OCaml does not differentiate Id from Var).
    *)
   | Id of name
+
+   (* Var used to be merged with Id. But then we were doing lots of
+    * 'when Ast.is_variable name' so maybe better to have Id and Var
+    * (at the same time OCaml does not differentiate Id from Var).
+    * The string contains the '$'.
+    *)
+  | Var of var
 
   (* when None it means add to the end when used in lvalue position *)
   | Array_get of expr * expr option
 
-  (* often transformed in Id "$this" in the analysis *)
+  (* often transformed in Var "$this" in the analysis *)
   | This of string wrap
   (* Unified method/field access.
-   * ex: $o->foo() ==> Call(Obj_get(Id "$o", Id "foo"), [])
+   * ex: $o->foo() ==> Call(Obj_get(Var "$o", Id "foo"), [])
    * ex: A::foo()  ==> Call(Class_get(Id "A", Id "foo"), [])
    * note that Id can be "self", "parent", "static".
    *)
@@ -230,7 +230,7 @@ and expr =
   | Unop of Ast_php.unaryOp * expr
   | Guil of expr list
 
-  (* $y =& $x is transformed into an Assign(Id "$y", Ref (Id "$x")). In
+  (* $y =& $x is transformed into an Assign(Var "$y", Ref (Var "$x")). In
    * PHP refs are always used in an Assign context.
    *)
   | Ref of expr
@@ -420,14 +420,6 @@ let tok_of_name (s, x) =
   match x with
   | None -> failwith (Common.spf "no token information for %s" s)
   | Some tok -> tok
-
-(* todo: probably better to have different Id and Var constructors *)
-let is_variable (s, tok) =
-  if s = "" then begin
-    Common.pr2_gen tok;
-    failwith "empty variable???"
-  end;
-  s.[0] = '$'
 
 (* we sometimes need to remove the '$' prefix *)
 let remove_first_char s =

@@ -230,11 +230,6 @@ let exclude_toplevel_defs xs =
 let methods_and_fields members =
   List.map fst (SMap.bindings members)
 
-let is_variable s =
-  match s with
-  | "*myobj*" | "*return*" -> true
-  | _  -> s =~ "\\$.*"
-
 (*****************************************************************************)
 (* Main entry point *)
 (*****************************************************************************)
@@ -371,7 +366,7 @@ and stmt env heap x =
         | Some e -> e
       in
       (* the special "*return*" variable is used in call_fun() below *)
-      let heap, _ = expr env heap (Assign (None, Id (w "*return*"), e)) in
+      let heap, _ = expr env heap (Assign (None, Var (w "*return*"), e)) in
       heap
 
   (* this may seem incorrect to treat 'do' and 'while' in the same way,
@@ -519,7 +514,7 @@ and expr_ env heap x =
   | Id ("null",_)  -> heap, Vnull
   | Id ("NULL",_)  -> heap, Vnull
 
-  | Id (s,_) when not (is_variable s) ->
+  | Id (s,_)  ->
       (* Must be a constant. Functions and classes are not in the heap;
        * they are managed through the env.db instead and we handle
        * them at the Call (Id ...) and New (Id ...) cases.
@@ -660,7 +655,8 @@ and expr_ env heap x =
       if !strict then failwith "todo: handle Lambda";
       heap, Vany
 
-  | Id _ | Array_get _ | Class_get (_, _) | Obj_get (_, _) | This _ as lv ->
+  | Array_get _ | Class_get (_, _) | Obj_get (_, _) 
+  | Var _ | This _ as lv ->
       (* The lvalue will contain the pointer to pointer, e.g. &2{&1{...}}
        * so someone can modify it. See also assign() below.
        * But in an expr context, we actually want the value, hence
@@ -721,7 +717,7 @@ and cast env heap ty v =
 and lvalue env heap x =
   match x with
   (* for taiting *)
-  | Id ("$_POST" | "$_GET" | "$_REQUEST" as s, _) ->
+  | Var ("$_POST" | "$_GET" | "$_REQUEST" as s, _) ->
       let heap, k = Ptr.new_val heap (Vtaint s) in
       let heap, v = Ptr.new_val heap (Vtaint s) in
       heap, false, Vmap (k, v)
@@ -731,11 +727,13 @@ and lvalue env heap x =
    * See also assign() below.
    *)
   | Id (s,_) ->
-      if not (is_variable s) && !strict
-      then failwith ("Id in lvalue should be variables: " ^ s);
+      if !strict
+      then failwith ("lvalue should be variables, not Id: " ^ s);
       (* this may create a new variable in env.vars, which is
        * PHP semantic since there is no variable declaration in PHP.
        *)
+      Var.get env heap s
+  | Var (s,_) ->
       Var.get env heap s
 
   | This name ->
@@ -743,7 +741,7 @@ and lvalue env heap x =
        * todo: so with this actually look for the value of $this in
        * env.globals??
       *)
-      lvalue env heap (Id (name))
+      lvalue env heap (Var (name))
 
   | Array_get (e, k) ->
       array_get env heap e k
@@ -960,7 +958,7 @@ and parameters env heap l1 l2 =
           let e = if p.p_ref then make_ref e else e in
           let heap, v = expr env heap e in
           Var.unset env (unw p.p_name);
-          let heap, _, lv = lvalue env heap (Id p.p_name) in
+          let heap, _, lv = lvalue env heap (Var p.p_name) in
           let heap, _ = assign env heap true lv v in
           parameters env heap rl []
       )
@@ -968,7 +966,7 @@ and parameters env heap l1 l2 =
       let e = if p.p_ref then make_ref e else e in
       let heap, v = expr env heap e in
       Var.unset env (unw p.p_name);
-      let heap, _, lv = lvalue env heap (Id p.p_name) in
+      let heap, _, lv = lvalue env heap (Var p.p_name) in
       let heap, _ = assign env heap true lv v in
       parameters env heap rl rl2
 
@@ -1171,9 +1169,9 @@ and new_ env heap e el =
   (* *myobj* = str::*BUILD*();
    * *myobj->__construct(el);
    *)
-    Expr (Assign (None, Id (w "*myobj*"),
+    Expr (Assign (None, Var (w "*myobj*"),
                  Call (Class_get (Id (w str), Id (w "*BUILD*")), [])));
-    Expr (Call (Obj_get (Id (w "*myobj*"), Id (w "__construct")), el));
+    Expr (Call (Obj_get (Var (w "*myobj*"), Id (w "__construct")), el));
   ] in
   let heap = stmtl env heap stl in
   let heap, _, v = Var.get env heap "*myobj*" in

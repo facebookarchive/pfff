@@ -86,9 +86,8 @@ module Deps = struct
   and expr_opt acc = function None -> acc | Some e -> expr acc e
 
   and expr acc = function
-    (* pad: this is why it could be useful to have two different types *)
-    | Id (s, _) when s.[0] <> '$' -> SSet.add s acc
-    | Id _ -> acc
+    | Id (s, _) -> SSet.add s acc
+    | Var _ -> acc
 
     | Int _ | Double _ | String _ -> acc
     | Guil el -> encapsl acc el
