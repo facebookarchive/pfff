@@ -31,14 +31,6 @@ endif
 # note that without bdb, pfff_db will be incomplete regarding PHP
 PROGS+=pfff_db
 
-#todo: to remove
-PROGS+=ppp
-
-ifeq ($(FEATURE_BDB), 1)
-PROGS+=pfff_db_heavy
-endif
-
-
 OPTPROGS= $(PROGS:=.opt)
 
 #------------------------------------------------------------------------------
@@ -485,17 +477,6 @@ clean::
 	rm -f codequery
 
 #------------------------------------------------------------------------------
-# OBSOLETE: ppp targets (obsolete now that have closures in hphp)
-#------------------------------------------------------------------------------
-
-ppp: $(LIBS) main_ppp.cmo 
-	$(OCAMLC) $(CUSTOM) -o $@ $(SYSLIBS) $^
-ppp.opt: $(LIBS:.cma=.cmxa) main_ppp.cmx
-	$(OCAMLOPT) $(STATIC) -o $@ $(SYSLIBS:.cma=.cmxa) $^
-clean::
-	rm -f ppp
-
-#------------------------------------------------------------------------------
 # pfff_db targets
 #------------------------------------------------------------------------------
 
@@ -505,17 +486,6 @@ pfff_db.opt: $(LIBS:.cma=.cmxa) $(LIBS2:.cma=.cmxa) $(OBJS2:.cmo=.cmx) main_db.c
 	$(OCAMLOPT) $(STATIC) -o $@ $(SYSLIBS:.cma=.cmxa)   $^ 
 clean:: 
 	rm -f pfff_db
-
-#------------------------------------------------------------------------------
-# pfff_db_heavy targets
-#------------------------------------------------------------------------------
-
-pfff_db_heavy: $(LIBS) main_db_heavy.cmo 
-	$(OCAMLC) $(CUSTOM) -o $@ $(SYSLIBS) $^
-pfff_db_heavy.opt: $(LIBS:.cma=.cmxa) $(LIBS2:.cma=.cmxa) $(OBJS2:.cmo=.cmx) main_db_heavy.cmx
-	$(OCAMLOPT) $(STATIC) -o $@ $(SYSLIBS:.cma=.cmxa)   $^ 
-clean:: 
-	rm -f pfff_db_heavy
 
 #------------------------------------------------------------------------------
 # codemap target (was pfff_visual)
@@ -553,16 +523,6 @@ codegraph.opt: $(LIBS:.cma=.cmxa) commons/commons_gui.cmxa $(OBJS4:.cma=.cmxa) m
 
 clean::
 	rm -f codegraph
-
-#------------------------------------------------------------------------------
-# pfff_misc targets
-#------------------------------------------------------------------------------
-pfff_misc: $(LIBS) main_misc.cmo 
-	$(OCAMLC) $(CUSTOM) -o $@ $(SYSLIBS) $(SYSLIBS4) $^
-pfff_misc.opt: $(LIBS:.cma=.cmxa) main_misc.cmx
-	$(OCAMLOPT) $(STATIC) -o $@ $(SYSLIBS:.cma=.cmxa)  $(SYSLIBS4:.cma=.cmxa)   $^ 
-clean:: 
-	rm -f pfff_misc
 
 #------------------------------------------------------------------------------
 # pfff_test targets
