@@ -3,7 +3,7 @@
 # This is to show how to build a simple Makefile from scratch
 # to people who wants to use pfff in their own application.
 
-all: simple_refactoring check_is_static_literal find_methods_return_this
+all: simple_refactoring
 
 ##############################################################################
 # Simple compilation
