@@ -87,14 +87,6 @@ else
 endif
 
 #todo: remove?
-ifeq ($(FEATURE_MPI),1)
-MPIDIR=external/ocamlmpi
-MPICMD=    $(MAKE) all -C $(MPIDIR) && $(MAKE) distribution -C commons
-MPICMDOPT= $(MAKE) all.opt -C $(MPIDIR) && $(MAKE) distribution.opt -C commons
-MPICMA=external/ocamlmpi/mpi.cma commons/commons_mpi.cma
-endif
-
-#todo: remove?
 ifeq ($(FEATURE_BACKTRACE), 1)
 BTCMD= $(MAKE) backtrace -C commons
 BTCMDOPT= $(MAKE) backtrace.opt -C commons
@@ -188,7 +180,6 @@ LIBS= commons/lib.cma \
        $(BTCMA) \
        $(BDBCMA) \
        $(REGEXPCMA) \
-       $(MPICMA) \
        $(OCAMLNETCMA) \
        $(GRAPHCMA) $(PHYLOMELCMA) \
        $(EXTLIBCMA) $(PTCMA) $(ZIPCMA) \
@@ -252,7 +243,7 @@ LIBS= commons/lib.cma \
     lang_web/parsing/lib.cma \
 
 MAKESUBDIRS=commons \
-  $(BDBDIR) $(REGEXPDIR) $(MPIDIR) \
+  $(BDBDIR) $(REGEXPDIR) \
   $(GRAPHDIR) $(PHYLOMELDIR) \
   $(OCAMLNETDIR) \
   $(GUIDIR) $(CAIRODIR) \
@@ -349,7 +340,6 @@ rec:
 	$(BTCMD)
 	$(BDBCMD)
 	$(REGEXPCMD)
-	$(MPICMD)
 	$(GRAPHCMD)
 	$(GUICMD)
 	$(MAKE) features -C commons 
@@ -360,7 +350,6 @@ rec.opt:
 	$(BTCMDOPT)
 	$(BDBCMDOPT)
 	$(REGEXPCMDOPT)
-	$(MPICMDOPT)
 	$(GRAPHCMDOPT)
 	$(GUICMDOPT)
 	$(MAKE) features.opt -C commons 
