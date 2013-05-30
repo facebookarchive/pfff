@@ -116,7 +116,7 @@ type database = {
      id_kind: (id, id_kind)   Oassoc.oassoc;
 
      (* computed statically or dynamically *)
-     id_type: (id, Type_php.phptype) Oassoc.oassoc;
+(*     id_type: (id, Type_php.phptype) Oassoc.oassoc; *)
 
      (* shortcut, to avoid getting the ast to get the name of the entity *)
      id_name: (id, id_string) Oassoc.oassoc;

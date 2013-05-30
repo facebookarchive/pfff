@@ -25,7 +25,6 @@ module Ast = Ast_php
 module PI = Parse_info
 
 module V = Visitor_php
-module T = Type_php
 module N = Namespace_php
 
 module Db = Database_php

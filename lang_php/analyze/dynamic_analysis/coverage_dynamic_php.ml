@@ -46,8 +46,8 @@ let (mk_is_covered_by_test: Database_php.database -> (Entity_php.id -> bool)) =
   (fun id ->
 
     try 
-      let _ = db.Db.defs.Db.id_type#assoc id  in
-      true
+      (*let _ = db.Db.defs.Db.id_type#assoc id  in true *)
+      raise Todo
    with Not_found -> 
      (* I also consider functions with multiple definitions (such as 
       * apc_fetch) as covered, as the -index_xdebug_db analysis

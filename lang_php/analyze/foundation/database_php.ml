@@ -240,7 +240,7 @@ type database = {
      id_kind: (id, id_kind) Oassoc.oassoc;
 
      (* computer statically or dynamically *)
-     id_type: (id, Type_php.phptype) Oassoc.oassoc;
+(*     id_type: (id, Type_php.phptype) Oassoc.oassoc; *)
 
      (* reverse of defs, also sort of cache *)
      id_name: (id, id_string) Oassoc.oassoc;
@@ -1071,7 +1071,7 @@ let open_db_mem prj =
 
         name_defs = mk_assoc ();
         id_kind = mk_assoc ();
-        id_type = mk_assoc ();
+(*        id_type = mk_assoc (); *)
         id_name = mk_assoc ();
         id_phpname = mk_assoc ();
 

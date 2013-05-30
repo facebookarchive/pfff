@@ -286,7 +286,7 @@ let open_db metapath =
 
         name_defs = fdef_info;
         id_kind = kinds_info;
-        id_type = types_info;
+(*        id_type = types_info; *)
         id_name = names_info;
         id_phpname = phpnames_info;
 
