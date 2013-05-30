@@ -835,6 +835,7 @@ type_arg_list_gt:
       { [Left $1], $2 }
   | type_php TCOMMA type_arg_list_gt 
       { (Left $1)::(Right $2)::(fst $3), snd $3}
+
   | qualified_class_name_or_array TSMALLER non_empty_type_php_list T_SR 
       { let lhs, rhs = split_two_char_info $4 in
        ([Left(Hint(($1), Some ($2, $3, lhs)))], rhs)
