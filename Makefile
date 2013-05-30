@@ -123,12 +123,6 @@ PTCMA=external/ptrees/ptrees.cma
 JAVALIBDIR=external/javalib/src
 JAVALIBCMA=external/javalib/src/lib.cma
 
-#todo: remove
-#PHYLOMELDIR=external/phylomel/src
-#PHYLOMELINCLUDE=external/phylomel/src
-#PHYLOMELCMA=external/phylomel/src/lib.cma
-
-
 ifeq ($(FEATURE_GRAPHICS), 1)
 #GRAPHICSCMXA=graphics.cmxa
 endif
@@ -181,7 +175,7 @@ LIBS= commons/lib.cma \
        $(BDBCMA) \
        $(REGEXPCMA) \
        $(OCAMLNETCMA) \
-       $(GRAPHCMA) $(PHYLOMELCMA) \
+       $(GRAPHCMA) \
        $(EXTLIBCMA) $(PTCMA) $(ZIPCMA) \
        $(JAVALIBCMA) \
        commons/commons_features.cma \
@@ -244,7 +238,7 @@ LIBS= commons/lib.cma \
 
 MAKESUBDIRS=commons \
   $(BDBDIR) $(REGEXPDIR) \
-  $(GRAPHDIR) $(PHYLOMELDIR) \
+  $(GRAPHDIR) \
   $(OCAMLNETDIR) \
   $(GUIDIR) $(CAIRODIR) \
   $(ZIPDIR)    $(EXTLIBDIR) $(PTDIR) $(JAVALIBDIR) \
@@ -308,7 +302,6 @@ INCLUDEDIRS=$(MAKESUBDIRS) \
  commons/ocamlextra commons/ocollection \
  commons/lib-json commons/lib-xml commons/lib-sexp \
  $(GTKINCLUDE) $(CAIROINCLUDE) $(PCREINCLUDE) $(OCAMLNETINCLUDE) \
- $(PHYLOMELINCLUDE) \
  $(EXTLIBDIR) $(PTDIR) $(ZIPDIR) $(JAVALIBDIR) \
  $(OCAMLCOMPILERDIR)
 
