@@ -110,10 +110,6 @@ GRAPHDIR=external/ocamlgraph
 GRAPHCMD= $(MAKE) all -C $(GRAPHDIR) && $(MAKE) graph -C commons
 GRAPHCMDOPT= $(MAKE) all.opt -C $(GRAPHDIR) && $(MAKE) graph.opt -C commons
 
-# for the moment it's used only by facebook/ code so could move in
-# facebook/external/
-THRIFTDIR=external/ocamlthrift
-
 # could be under some ifeq($(FEATURE_WEB))
 OCAMLNETDIR=external/ocamlnet
 OCAMLNETINCLUDE=external/ocamlnet/netsys external/ocamlnet/netstring
@@ -258,7 +254,6 @@ LIBS= commons/lib.cma \
 MAKESUBDIRS=commons \
   $(BDBDIR) $(REGEXPDIR) $(MPIDIR) \
   $(GRAPHDIR) $(PHYLOMELDIR) \
-  $(THRIFTDIR) \
   $(OCAMLNETDIR) \
   $(GUIDIR) $(CAIRODIR) \
   $(ZIPDIR)    $(EXTLIBDIR) $(PTDIR) $(JAVALIBDIR) \
