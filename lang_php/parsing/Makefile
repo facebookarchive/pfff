@@ -5,7 +5,7 @@ TOP=../..
 TARGET=lib
 
 SRC= flag_parsing_php.ml \
-     scope_php.ml type_php.ml \
+     scope_php.ml \
      ast_php.ml meta_ast_php.ml \
      export_ast_php.ml \
      visitor_php.ml map_php.ml \
