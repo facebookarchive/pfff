@@ -1,6 +1,0 @@
-it's version 1.01 from xavier leroy homepage
-
-added:
- test_map.ml
- generate library with ocamlmklib et linkall
-
