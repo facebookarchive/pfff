@@ -12,7 +12,5 @@ extlib: used by externals/javalib (used itself by lang_bytecode/)
 
 ocamlbdb: used by lang_php/analyze but could be removed, I now prefer prolog db
 ocamlmpi: not used, quite fragile in general and I now prefer to use cores
-ocamlthrift: used by facebook/, could be removed, quite fragile too
 ocamlnet: used by lang_html/, but mostly to double check, could be removed
 ocamlpcre: used by lang_php/ but could be replaced by just Str
-phylomel: used a bit by codegraph but could be removed, I prefer graphviz or cg
