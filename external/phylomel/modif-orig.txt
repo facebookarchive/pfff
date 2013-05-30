@@ -1,3 +1,0 @@
-src: http://code.google.com/p/phylomel/
-
-done classic pad style reorganization.
