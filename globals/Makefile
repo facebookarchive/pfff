@@ -6,7 +6,7 @@ TOP=..
 ##############################################################################
 TARGET=lib
 
-SRC= flag.ml config_pfff.ml
+SRC= config_pfff.ml
 
 LIBS=
 INCLUDEDIRS=../commons
