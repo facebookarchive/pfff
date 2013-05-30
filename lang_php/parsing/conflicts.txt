@@ -72,41 +72,4 @@ we can not factorize with a ext_type_hint_opt because seing an IDENT,
 one does not know if it should reduce ext_type_hint because it's
 the ident of a type or shift because maybe it's the ident of the const.
 
-* foo()[] xhp sugar
-
-    * This extension fix a deficiency in the original PHP grammar
-    * which does not allow to do things like foo()[2]. Array accesses
-    * in PHP were allowed only for variables.
-    *
-    * I thought I could remove some conflicts by putting the rule
-    * closer to the funcall_call rule, which does not
-    * generate any conflict, but it then can not handle
-    * code like $o->foo()['foo'].
-    *
-    * I then thought I could put it closer to variable2,
-    * but it must be 'variable' not 'variable2' otherwise
-    * it can not process code like foo()['fld1']['fld2'].
-    *
-    * In fact it can not be put close to 'variable' either because
-    * then it can not parse code like ($this->getAssocData($user))[0];
-    * So the right place is here, in expr_without_variable?
-    *
-    * But then it can not parse code like isset(foo()[0]) because
-    * isset accept only variable(lvalue).
-    *
-
-* variable declaration (not used anymore)
-
-/*
-(* less: this is commented because it is not really used and it generates
- * some conflicts now that type_hint is not anymore
- *   type_hint: ident { ... } but
- *   type_hint: class_name_or_selfparent { ... }
- *
- * | type_hint variable TSEMICOLON          { ... }
- * | type_hint variable TEQ expr TSEMICOLON { ... }
- * Right now the only places where we allow types are for parameters
- * and globals/constants. The rest is inferred.
- *)
- */
 
