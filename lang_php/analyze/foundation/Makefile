@@ -11,8 +11,7 @@ SRC= flag_analyze_php.ml \
      comment_php.ml annotation_php.ml \
      unsugar_php.ml \
      env_php.ml \
-     func_php.ml class_php.ml define_php.ml include_require_php.ml  \
-     lib_analyze_php.ml \
+     class_php.ml include_require_php.ml  \
 # used to be in ast_simple/
 SRC+= ast_php_simple.ml ast_php_simple_build.ml meta_ast_php_simple.ml
 SRC+= pil.ml
