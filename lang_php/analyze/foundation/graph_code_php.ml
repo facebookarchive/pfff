@@ -712,8 +712,9 @@ and expr env x =
   | Guil xs -> exprl env xs
   | Ref e -> expr env e
   | ConsArray (_, xs) -> array_valuel env xs
-  | ConsVector xs -> vector_valuel env xs
-  | ConsMap (_, xs) -> map_valuel env xs
+  | Collection (name, xs) ->
+    add_use_edge env (name, E.Class E.RegularClass);
+    array_valuel env xs
   | Xhp x -> xml env x
   | CondExpr (e1, e2, e3) -> exprl env [e1; e2; e3]
   (* less: again, add deps for type? *)

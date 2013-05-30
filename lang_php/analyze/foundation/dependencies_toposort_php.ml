@@ -109,8 +109,9 @@ module Deps = struct
         let name = Ast.unwrap x.xml_tag in
         SSet.add name acc
     | ConsArray (_, avl) -> array_valuel acc avl
-    | ConsVector vel -> vector_eltl acc vel
-    | ConsMap (_, mel) -> map_eltl acc mel
+    | Collection ((n,_), mel) -> 
+      let acc = SSet.add n acc in
+      array_valuel acc mel
     | List el -> exprl acc el
     | New (e, el) -> exprl (expr acc e) el
     | CondExpr (e1, e2, e3) ->

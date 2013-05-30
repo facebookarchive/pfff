@@ -581,8 +581,7 @@ and expr_ env lv = function
 	let ti = (pi, Env_typing_php.Declaration(tl)) in
         let _ = AEnv.set env id ti in
         t)
-  | ConsVector _ -> failwith "Vector literal is not implemented - complain to pieter@"
-  | ConsMap _ -> failwith "Map literal is not implemented - complain to pieter@"
+  | Collection _ -> failwith "Collection is not implemented - complain to pieter@"
   | List el ->
       let t = Tvar (fresh()) in
       let el = List.map (expr env) el in

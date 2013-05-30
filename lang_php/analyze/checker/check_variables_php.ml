@@ -833,8 +833,8 @@ and expr env = function
   | Ref e -> expr env e
 
   | ConsArray (_, xs) -> array_valuel env xs
-  | ConsVector xs -> vector_valuel env xs
-  | ConsMap (_, xs) -> map_valuel env xs
+  | Collection (_n, xs) -> 
+    array_valuel env xs
   | Xhp x -> xml env x
 
   | CondExpr (e1, e2, e3) -> exprl env [e1; e2; e3]

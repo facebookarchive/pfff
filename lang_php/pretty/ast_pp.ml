@@ -120,8 +120,7 @@ and expr =
 
   | Xhp of xml
   | ConsArray of array_value list
-  | ConsVector of vector_value list
-  | ConsMap of map_kind * (map_value list)
+  | Collection of string * array_value list
   | List of expr list
 
   | New of expr * expr list

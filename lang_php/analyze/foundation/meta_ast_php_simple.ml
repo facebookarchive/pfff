@@ -146,13 +146,10 @@ and vof_expr =
   | ConsArray (_, v1) ->
       let v1 = Ocaml.vof_list vof_array_value v1
       in Ocaml.VSum (("ConsArray", [ v1 ]))
-  | ConsVector (v1) ->
-      let v1 = Ocaml.vof_list vof_vector_elt v1 in
-      Ocaml.VSum (("ConsVector", [ v1 ] ))
-  | ConsMap (v1, v2) ->
-      let v1 = vof_map_kind v1 in
-      let v2 = Ocaml.vof_list vof_map_elt v2 in
-      Ocaml.VSum (("ConsMap", [ v1 ; v2 ]))
+  | Collection (v1, v2) ->
+      let v1 = vof_name v1 in
+      let v2 = Ocaml.vof_list vof_array_value v2 in
+      Ocaml.VSum (("Collection", [ v1 ; v2 ]))
   | List v1 ->
       let v1 = Ocaml.vof_list vof_expr v1 in Ocaml.VSum (("List", [ v1 ]))
   | New ((v1, v2)) ->

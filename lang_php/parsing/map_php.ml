@@ -222,14 +222,10 @@ and map_expr (x) =
   | ArrayShort ((v1)) ->
       let v1 = map_bracket (map_comma_list map_array_pair) v1
       in ArrayShort ((v1))
-  | VectorLit ((v1, v2)) ->
-      let v1 = map_tok v1 in
-      let v2 = map_brace (map_comma_list map_vector_elt) v2 in
-      VectorLit ((v1,v2))
-  | MapLit ((v1, v2)) ->
-      let v1 = map_tok v1 in
-      let v2 = map_brace (map_comma_list map_map_elt) v2 in
-      MapLit ((v1,v2))
+  | Collection ((v1, v2)) ->
+      let v1 = map_name v1 in
+      let v2 = map_brace (map_comma_list map_array_pair) v2 in
+      Collection ((v1,v2))
   | New ((v1, v2, v3)) ->
       let v1 = map_tok v1
       and v2 = map_class_name_reference v2
@@ -425,25 +421,6 @@ and map_array_pair =
       and v3 = map_tok v3
       and v4 = map_lvalue v4
       in ArrayArrowRef ((v1, v2, v3, v4))
-and map_vector_elt =
-  function
-  | VectorExpr v1 -> let v1 = map_expr v1 in VectorExpr ((v1))
-  | VectorRef ((v1, v2)) ->
-      let v1 = map_tok v1 in
-      let v2 = map_lvalue v2 in VectorRef ((v1, v2))
-and map_map_elt =
-  function
-  | MapArrowExpr ((v1, v2, v3)) ->
-      let v1 = map_expr v1 in
-      let v2 = map_tok v2 in
-      let v3 = map_expr v3 in
-      MapArrowExpr ((v1,v2,v3))
-  | MapArrowRef ((v1, v2, v3, v4)) ->
-      let v1 = map_expr v1 in
-      let v2 = map_tok v2 in
-      let v3 = map_tok v3 in
-      let v4 = map_lvalue v4 in
-      MapArrowRef ((v1, v2, v3, v4))
 and map_class_name_reference a = map_expr a
 
 and map_xhp_html =

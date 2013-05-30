@@ -236,8 +236,7 @@ and expr =
   | Ref of expr
 
   | ConsArray of expr option * array_value list
-  | ConsVector of vector_value list
-  | ConsMap of map_kind * (map_value list)
+  | Collection of name * array_value list
   | Xhp of xml
 
   | CondExpr of expr * expr * expr

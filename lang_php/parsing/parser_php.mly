@@ -1012,31 +1012,7 @@ simple_expr:
   * $this->fld{...} is not parsed correctly
   */
  | qualified_class_name TOBRACE array_pair_list TCBRACE
-     {
-       match ($1) with
-       | XName (Name("Vector", t)) ->
-           let elts = List.map
-             (function
-             | Left (ArrayExpr e) -> Left (VectorExpr e)
-             | Left (ArrayRef (t,e)) -> Left (VectorRef (t,e))
-             | Right t -> Right t
-             | Left _ -> raise Parsing.Parse_error)
-             $3
-           in
-           VectorLit(t, ($2, elts, $4))
-       | XName (Name(("Map" | "StableMap"), t)) ->
-           let elts = List.map
-             (function
-             | Left (ArrayArrowExpr (e1,t,e2)) -> Left (MapArrowExpr (e1,t,e2))
-             | Left (ArrayArrowRef (e1, t1, t2, e2)) ->
-                 Left (MapArrowRef (e1,t1,t2,e2))
-             | Right t -> Right t
-             | Left _ -> raise Parsing.Parse_error)
-             $3
-           in
-           MapLit(t, ($2, elts, $4))
-        | _ -> raise Parsing.Parse_error
-     }
+     { Collection ($1, ($2, $3, $4)) }
 
 new_expr:
  | member_expr { $1 }

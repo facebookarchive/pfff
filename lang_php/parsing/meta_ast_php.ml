@@ -190,14 +190,10 @@ and vof_expr = function
   | ArrayShort ((v1)) ->
       let v1 = vof_bracket (vof_comma_list vof_array_pair) v1
       in Ocaml.VSum (("ArrayShort", [ v1]))
-  | VectorLit ((v1, v2)) ->
-      let v1 = vof_tok v1 in
-      let v2 = vof_brace (vof_comma_list vof_vector_elt) v2 in
-      Ocaml.VSum (("VectorLit", [ v1; v2 ]))
-  | MapLit ((v1, v2)) ->
-      let v1 = vof_tok v1 in
-      let v2 = vof_brace (vof_comma_list vof_map_elt) v2 in
-      Ocaml.VSum (("MapLit", [ v1; v2 ]))
+  | Collection ((v1, v2)) ->
+      let v1 = vof_name v1 in
+      let v2 = vof_brace (vof_comma_list vof_array_pair) v2 in
+      Ocaml.VSum (("Collection", [ v1; v2 ]))
   | New ((v1, v2, v3)) ->
       let v1 = vof_tok v1
       and v2 = vof_class_name_reference v2
@@ -432,28 +428,6 @@ and vof_array_pair =
       and v3 = vof_tok v3
       and v4 = vof_lvalue v4
       in Ocaml.VSum (("ArrayArrowRef", [ v1; v2; v3; v4 ]))
-and vof_vector_elt =
-  function
-  | VectorExpr ((v1)) ->
-    let v1 = vof_expr v1 in
-    Ocaml.VSum (("VectorExpr", [ v1 ]))
-  | VectorRef ((v1, v2)) ->
-    let v1 = vof_tok v1 in
-    let v2 = vof_lvalue v2 in
-    Ocaml.VSum (("VectorExpr", [ v1; v2 ]))
-and vof_map_elt =
-  function
-  | MapArrowExpr ((v1, v2, v3)) ->
-      let v1 = vof_expr v1
-      and v2 = vof_tok v2
-      and v3 = vof_expr v3
-      in Ocaml.VSum (("MapArrowExpr", [ v1; v2; v3 ]))
-  | MapArrowRef ((v1, v2, v3, v4)) ->
-      let v1 = vof_expr v1
-      and v2 = vof_tok v2
-      and v3 = vof_tok v3
-      and v4 = vof_lvalue v4
-      in Ocaml.VSum (("MapArrowRef", [ v1; v2; v3; v4 ]))
 and vof_class_name_reference a = vof_expr a
 
 and vof_xhp_html =

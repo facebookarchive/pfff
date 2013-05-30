@@ -20,8 +20,8 @@ open Common
 (*
  * This module defines an Abstract Syntax Tree for PHP 5.2 with
  * a few PHP 5.3 (e.g. closures) and 5.4 (e.g. traits) extensions as well
- * as support for a few Facebook extensions (XHP, generators, annotations,
- * generics).
+ * as support for many Facebook extensions (XHP, generators, annotations,
+ * generics, collections).
  *
  * This is actually more a concrete syntax tree (CST) than an AST. This
  * is convenient in a refactoring context or code visualization
@@ -226,9 +226,8 @@ and expr =
   | ArrayLong of tok (* array *) * array_pair  comma_list paren
   (* php 5.4: https://wiki.php.net/rfc/shortsyntaxforarrays *)
   | ArrayShort of array_pair comma_list bracket
-  (* facebook extensions *)
-  | VectorLit of tok (* Vector *) * vector_elt comma_list brace
-  | MapLit of tok (* Map/StableMap *) * map_elt comma_list brace
+  (* facebook-ext: *)
+  | Collection of name * array_pair comma_list brace
 
   | New of tok * class_name_reference * argument comma_list paren option
   | Clone of tok * expr

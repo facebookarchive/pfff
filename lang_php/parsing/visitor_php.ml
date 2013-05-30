@@ -292,12 +292,9 @@ and v_expr (x: expr) =
       let v1 = v_tok v1 and v2 = v_paren (v_comma_list v_array_pair) v2 in ()
   | ArrayShort ((v1)) ->
       let v1 = v_bracket (v_comma_list v_array_pair) v1 in ()
-  | VectorLit ((v1, v2)) ->
-      let v1 = v_tok v1 in
-      let v2 = v_brace (v_comma_list v_vector_elt) v2 in ()
-  | MapLit ((v1, v2)) ->
-      let v1 = v_tok v1 in
-      let v2 = v_brace (v_comma_list v_map_elt) v2 in ()
+  | Collection ((v1, v2)) ->
+      let v1 = v_name v1 in
+      let v2 = v_brace (v_comma_list v_array_pair) v2 in ()
   | New ((v1, v2, v3)) ->
       let v1 = v_tok v1
       and v2 = v_class_name_reference v2
@@ -465,24 +462,6 @@ and v_array_pair x =
       in ()
   in
   vin.karray_pair (k, all_functions) x
-and v_vector_elt =
-  function
-  | VectorExpr (v1)
-    -> let v1 = v_expr v1 in ()
-  | VectorRef (v1, v2)
-    -> let v1 = v_tok v1 in
-       let v2 = v_lvalue v2 in ()
-and v_map_elt =
-  function
-  | MapArrowExpr ((v1, v2, v3)) ->
-    let v1 = v_expr v1 in
-    let v2 = v_tok v2 in
-    let v3 = v_expr v3 in ()
-  | MapArrowRef ((v1, v2, v3, v4)) ->
-    let v1 = v_expr v1 in
-    let v2 = v_tok v2 in
-    let v3 = v_tok v3 in
-    let v4 = v_lvalue v4 in ()
 and v_xhp_html x =
   let rec k x =
     match x with
