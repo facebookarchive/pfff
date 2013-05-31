@@ -21,7 +21,7 @@
  *    not namespace
  *  - added support for yield (facebook extension)
  *  - added support for a few PHP 5.4 extensions (e.g. traits, short array)
- *  - added support for generics (another facebook extensions)
+ *  - added support for generics (another facebook extension)
  *  - added support for attributes (a.k.a annotations)
  *  - factorized some rules (e.g. parameters, arguments)
  *  - added support for trailing comma in function calls and definitions
@@ -52,7 +52,6 @@ open Common
 
 open Ast_php
 module Ast = Ast_php
-open Parser_php_mly_helper
 module H = Parser_php_mly_helper
 module PI = Parse_info
 
@@ -380,7 +379,7 @@ switch_case_list:
  | TCOLON TSEMICOLON  case_list T_ENDSWITCH TSEMICOLON
      { CaseColonList($1, Some $2, $3, $4, $5) }
 
- | T_XHP_COLONID_DEF { failwith_xhp_ambiguity_colon (snd $1) }
+ | T_XHP_COLONID_DEF { H.failwith_xhp_ambiguity_colon (snd $1) }
 
 case_list: case_list_rev { List.rev $1 }
 case_list_rev:
@@ -395,7 +394,7 @@ case_separator:
  /*(* ugly php ... but reported in check_misc_php.ml *)*/
  | TSEMICOLON { $1 }
 
- | T_XHP_COLONID_DEF { failwith_xhp_ambiguity_colon (snd $1) }
+ | T_XHP_COLONID_DEF { H.failwith_xhp_ambiguity_colon (snd $1) }
 
 
 while_statement:
@@ -517,13 +516,13 @@ parameter:
 
 parameter_bis:
  | T_VARIABLE
-     { mk_param $1 }
+     { H.mk_param $1 }
  | TAND T_VARIABLE
-     { let p = mk_param $2 in {p with p_ref=Some $1} }
+     { let p = H.mk_param $2 in {p with p_ref=Some $1} }
  | T_VARIABLE TEQ static_scalar
-     { let p = mk_param $1 in {p with p_default=Some($2,$3)} }
+     { let p = H.mk_param $1 in {p with p_default=Some($2,$3)} }
  | TAND T_VARIABLE TEQ static_scalar
-     { let p = mk_param $2 in {p with p_ref=Some $1; p_default=Some($3,$4)}}
+     { let p = H.mk_param $2 in {p with p_ref=Some $1; p_default=Some($3,$4)}}
 
 
 is_reference:
@@ -837,11 +836,11 @@ type_arg_list_gt:
       { (Left $1)::(Right $2)::(fst $3), snd $3}
 
   | qualified_class_name_or_array TSMALLER non_empty_type_php_list T_SR 
-      { let lhs, rhs = split_two_char_info $4 in
+      { let lhs, rhs = H.split_two_char_info $4 in
        ([Left(Hint(($1), Some ($2, $3, lhs)))], rhs)
       }
   | TQUESTION qualified_class_name_or_array TSMALLER non_empty_type_php_list T_SR     
-   { let lhs, rhs = split_two_char_info $5 in
+   { let lhs, rhs = H.split_two_char_info $5 in
     ([Left(HintQuestion($1, Hint(($2), Some ($3, $4, lhs))))], rhs) 
    }
 
@@ -907,7 +906,7 @@ expr:
  | expr TDIV expr	{ Binary($1,(Arith Div,$2),$3) }
  | expr TMOD expr 	{ Binary($1,(Arith Mod,$2),$3) }
 
- | expr T_XHP_PERCENTID_DEF 	{ failwith_xhp_ambiguity_percent (snd $2) }
+ | expr T_XHP_PERCENTID_DEF 	{ H.failwith_xhp_ambiguity_percent (snd $2) }
 
  | expr TAND expr	{ Binary($1,(Arith And,$2),$3) }
  | expr TOR expr	{ Binary($1,(Arith Or,$2),$3) }
@@ -945,7 +944,7 @@ expr:
    * an error rule similar to the one below.
    *)*/
  | expr TQUESTION  expr T_XHP_COLONID_DEF
-     { failwith_xhp_ambiguity_colon (snd $4) }
+     { H.failwith_xhp_ambiguity_colon (snd $4) }
 
  | expr T_INSTANCEOF expr  { InstanceOf($1, $2, $3) }
 
@@ -989,7 +988,7 @@ expr:
  | T_YIELD T_BREAK { YieldBreak ($1, $2) }
 
  /*(* sgrep_ext: *)*/
- | TDOTS { sgrep_guard (SgrepExprDots $1) }
+ | TDOTS { H.sgrep_guard (SgrepExprDots $1) }
 
  | T_INCLUDE      expr 		       { Include($1,$2) }
  | T_INCLUDE_ONCE expr 	               { IncludeOnce($1,$2) }
@@ -1048,7 +1047,7 @@ primary_expr:
 /*(* php 5.3 late static binding *)*/
  | T_STATIC             { Id (LateStatic $1) }
 
- | T_VARIABLE { mk_var $1 }
+ | T_VARIABLE { H.mk_var $1 }
 
  | TDOLLAR primary_expr         { Deref($1, $2) }
  | TDOLLAR TOBRACE expr TCBRACE { Deref($1, BraceIdent($2, $3, $4)) }
@@ -1126,11 +1125,11 @@ encaps:
  | T_ENCAPSED_AND_WHITESPACE
      { EncapsString $1 }
  | T_VARIABLE 
-     { EncapsVar (mk_var $1)  }
+     { EncapsVar (H.mk_var $1)  }
  | T_VARIABLE TOBRA encaps_var_offset TCBRA
-     { EncapsVar (ArrayGet (mk_var $1,($2,Some $3,$4)))}
+     { EncapsVar (ArrayGet (H.mk_var $1,($2,Some $3,$4)))}
  | T_VARIABLE T_OBJECT_OPERATOR T_IDENT
-     { EncapsVar (ObjGet(mk_var $1, $2, Id (XName (Name $3))))}
+     { EncapsVar (ObjGet(H.mk_var $1, $2, Id (XName (Name $3))))}
 
  /*(* for ${beer}s. Note that this rule does not exist in the original PHP
     * grammar. Instead only the case with a TOBRA after the T_STRING_VARNAME
@@ -1144,13 +1143,13 @@ encaps:
        (* this is not really a T_VARIABLE, bit it's still conceptually
         * a variable so we build it almost like above
         *)
-       let var = mk_var $2 in
+       let var = H.mk_var $2 in
        EncapsDollarCurly ($1, var, $3) 
      }
 
  | T_DOLLAR_OPEN_CURLY_BRACES T_STRING_VARNAME  TOBRA expr TCBRA  TCBRACE
      { 
-       let lval = ArrayGet(mk_var $2, ($3, Some $4, $5))
+       let lval = ArrayGet(H.mk_var $2, ($3, Some $4, $5))
        in
        EncapsDollarCurly ($1,  lval, $6)
      }
@@ -1171,7 +1170,7 @@ encaps_var_offset:
      let cst = String $1 in (* will not have enclosing "'"  as usual *)
      Sc (C cst)
    }
- | T_VARIABLE	{ mk_var $1 }
+ | T_VARIABLE	{ H.mk_var $1 }
  | T_NUM_STRING	{
      (* the original php lexer does not return some numbers for
       * offset of array access inside strings. Not sure why ...
@@ -1205,7 +1204,7 @@ xhp_attribute_value:
     * XHP mode which means every ident is transformed in a xhp attribute
     *)*/
  /*(* sgrep_ext: *)*/
- | T_XHP_ATTR { sgrep_guard (SgrepXhpAttrValueMvar ($1)) }
+ | T_XHP_ATTR { H.sgrep_guard (SgrepXhpAttrValueMvar ($1)) }
 
 /*(*----------------------------*)*/
 /*(*2 auxillary bis *)*/
