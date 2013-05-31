@@ -200,9 +200,6 @@ LIBS= commons/lib.cma \
      lang_php/analyze/tools/lib.cma \
      lang_php/analyze/checker/lib.cma \
      lang_php/matcher/lib.cma \
-     lang_php/analyze/database/lib.cma \
-     lang_php/analyze/static_analysis/lib.cma \
-     lang_php/analyze/dynamic_analysis/lib.cma \
      lang_php/analyze/qa_test/lib.cma \
      lang_php/analyze/visual/lib.cma \
      lang_php/analyze/lib.cma \
@@ -286,11 +283,8 @@ MAKESUBDIRS=commons \
   lang_php/analyze \
    lang_php/analyze/foundation \
    lang_php/analyze/checker \
-   lang_php/analyze/database \
    lang_php/analyze/tools \
    lang_php/analyze/qa_test \
-   lang_php/analyze/dynamic_analysis \
-   lang_php/analyze/static_analysis \
   lang_html/parsing \
    lang_html/analyze \
   lang_css/parsing \
