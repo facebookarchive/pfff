@@ -11,10 +11,7 @@ BDBINCLUDE=$(TOP)/external/ocamlbdb
 endif
 
 #todo? have a visual/ directory, where put highlight, htmlize, dependencies?
-SRC= \
-     database_php_storage.ml \
-     test_analyze_php.ml \
-     test_analyze_db_php.ml \
+SRC= test_analyze_php.ml \
 
 #pcre deps
 #     htmlize_php.ml \
@@ -40,7 +37,7 @@ LIBS=$(TOP)/commons/lib.cma \
      ../parsing/lib.cma \
 
 MAKESUBDIRS=foundation tools checker \
-  database dynamic_analysis static_analysis qa_test visual \
+  qa_test visual \
 #qa_code annotaters
 #typing finder
 
@@ -54,11 +51,8 @@ INCLUDEDIRS= $(TOP)/commons \
    $(BDBINCLUDE) \
    ../parsing \
    foundation \
-   database \
    checker \
    tools \
-   static_analysis \
-   dynamic_analysis \
    qa_test \
 
 #   $(PCREINCLUDE) $(JANEINCLUDE)
