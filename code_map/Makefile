@@ -32,7 +32,6 @@ INCLUDEDIRS=$(TOP)/commons $(TOP)/globals \
         $(TOP)/lang_php/analyze \
          $(TOP)/lang_php/analyze/foundation \
          $(TOP)/lang_php/analyze/checker \
-         $(TOP)/lang_php/analyze/database \
          $(TOP)/lang_php/analyze/visual \
         $(TOP)/lang_php/matcher \
         $(TOP)/lang_ml/parsing \
