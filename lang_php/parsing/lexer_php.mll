@@ -197,6 +197,10 @@ let keyword_table = Common.hash_of_list [
   (* php-facebook-ext: *)
   "yield", (fun ii -> lang_ext_or_t_ident ii (fun x -> T_YIELD x));
 
+  (* php-facebook-ext: *)
+  "type",    (fun ii -> lang_ext_or_t_ident ii (fun x -> T_TYPE x));
+  "newtype", (fun ii -> lang_ext_or_t_ident ii (fun x -> T_NEWTYPE x));
+
   (* xhp: having those XHP keywords handled here could mean they can not
    * be used for entities like functions or class names. We could
    * avoid this by introducing some lexer/parser hacks so that those

@@ -232,6 +232,9 @@ let info_of_tok = function
   | T_INSTEADOF(ii) -> ii
   | T_TRAIT_C(ii) -> ii
 
+  | T_TYPE(ii) -> ii
+  | T_NEWTYPE(ii) -> ii
+
   | EOF ii -> ii
 
 
@@ -418,6 +421,9 @@ let visitor_info_of_tok f = function
   | T_TRAIT(ii) -> T_TRAIT(f ii)
   | T_INSTEADOF(ii) -> T_INSTEADOF(f ii)
   | T_TRAIT_C(ii) -> T_TRAIT_C(f ii)
+
+  | T_TYPE(ii) -> T_TYPE(f ii)
+  | T_NEWTYPE(ii) -> T_TYPE(f ii)
 
   | EOF ii -> EOF(f ii)
 

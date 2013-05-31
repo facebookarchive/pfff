@@ -29,6 +29,7 @@
  *  - heavy rewrite of expr and lvalue rules, to avoid the many conflicts
  *    regarding f()[] sugar and also to allow more forms of expressions
  *    such as (<whatever expr>)->method()
+ *  - added support for typedefs (another facebook extension)
  /*
   * +----------------------------------------------------------------------+
   * | Zend Engine                                                          |
@@ -119,6 +120,8 @@ module PI = Parse_info
  T_EVAL
  /*(* not in original grammar *)*/
  T_SELF T_PARENT
+ /*(* facebook extension *)*/
+ T_TYPE T_NEWTYPE
 
 /*(*-----------------------------------------*)*/
 /*(*2 Symbol tokens *)*/
@@ -277,6 +280,7 @@ top_statement:
  | constant_declaration_statement       { ConstantDef $1 }
  | function_declaration_statement	{ FuncDef $1 }
  | class_declaration_statement		{ ClassDef $1 }
+ | type_declaration                     { StmtList [$1] (* TODO AST *) }
 
 sgrep_spatch_pattern:
  | expr EOF      { Expr $1 }
@@ -777,6 +781,15 @@ trait_alias_rule_method:
  | T_IDENT { raise Todo }
 
 /*(*************************************************************************)*/
+/*(*1 Type definitions *)*/
+/*(*************************************************************************)*/
+type_declaration:
+ | T_TYPE    ident type_params_opt TEQ type_php TSEMICOLON 
+     { EmptyStmt $6 }
+ | T_NEWTYPE ident type_params_opt TEQ type_php TSEMICOLON 
+     { EmptyStmt $6 }
+
+/*(*************************************************************************)*/
 /*(*1 Generics parameters *)*/
 /*(*************************************************************************)*/
 type_params_opt:
@@ -1242,6 +1255,9 @@ ident:
  | T_XHP_ENUM   { PI.str_of_info $1, $1 }
  | T_XHP_ANY    { PI.str_of_info $1, $1 }
  | T_XHP_PCDATA { PI.str_of_info $1, $1 }
+
+ | T_TYPE      { PI.str_of_info $1, $1 }
+ | T_NEWTYPE   { PI.str_of_info $1, $1 }
 
 ident_class_name:
   | ident             { Name $1 }
