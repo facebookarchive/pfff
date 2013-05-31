@@ -22,8 +22,6 @@ open Ast_php
 
 module Ast = Ast_php
 
-module CG = Callgraph_php
-
 (*****************************************************************************)
 (* Prelude *)
 (*****************************************************************************)
@@ -71,10 +69,15 @@ module CG = Callgraph_php
 (* Types *)
 (*****************************************************************************)
 
+type kind_call = 
+    | FunCall of string
+    | ObjectCall of string (* class *) * string (* method *)
+    | ClassCall of string (* module *) * string
+
 (* Depending on config below, some of the fields may be incomplete
  * (e.g. f_return will be None when cfg.collect_return = false *)
 type call_trace = {
-  f_call: Callgraph_php.kind_call;
+  f_call: kind_call;
   f_file: Common.filename;
   f_line: int;
   f_params: Ast_php.expr list;
@@ -127,9 +130,14 @@ let default_config = {
 (* String of *)
 (*****************************************************************************)
 
+let s_of_kind_call = function
+  | FunCall s -> s
+  | ObjectCall (s1, s2) -> s1 ^ "->" ^ s2
+  | ClassCall (s1, s2) -> s1 ^ "::" ^ s2
+
 let string_of_call_trace x = 
   spf "%s:%d: call = %s"
-    x.f_file x.f_line (Callgraph_php.s_of_kind_call x.f_call)
+    x.f_file x.f_line (s_of_kind_call x.f_call)
 
 let intval_of_params_mode = function
   | NoParam -> 0
@@ -352,19 +360,19 @@ let iter_dumpfile2
                 match () with
                 | _ when call ==~ regexp_meth_call ->
                     let (sclass, smethod) = Common.matched2 call in
-                    CG.ObjectCall(sclass, smethod)
+                    ObjectCall(sclass, smethod)
                 | _ when call ==~ regexp_class_call -> 
                     let (sclass, smethod) = Common.matched2 call in
-                    CG.ClassCall(sclass, smethod)
+                    ClassCall(sclass, smethod)
                 | _ when call ==~ regexp_fun_call -> 
-                    CG.FunCall(call)
+                    FunCall(call)
 
                 (* We do not want to expose such funcall to the callback,
                  * but we to parse it and match its return. It will be
                  * filtered later.
                  *)
                 | _ when call = "{main}" -> 
-                    CG.FunCall(xdebug_main_name)
+                    FunCall(xdebug_main_name)
                 | _ -> 
                     failwith ("not a funcall: " ^ call)
               in
@@ -374,10 +382,10 @@ let iter_dumpfile2
                * filter them here.
                *)
               (match kind_call with
-              | CG.FunCall "require_once" 
-              | CG.FunCall "include_once" 
-              | CG.FunCall "include" 
-              | CG.FunCall "require" 
+              | FunCall "require_once" 
+              | FunCall "include_once" 
+              | FunCall "include" 
+              | FunCall "require" 
                 -> None
 
               | _ ->
@@ -426,7 +434,7 @@ let iter_dumpfile2
             trace_opt +> Common.do_option (fun trace -> 
               if not config.collect_return then
                 (try 
-                    if trace.f_call = CG.FunCall(xdebug_main_name) 
+                    if trace.f_call = FunCall(xdebug_main_name) 
                     then ()
                     else 
                       callback trace
@@ -463,7 +471,7 @@ let iter_dumpfile2
                       stack := rest;
 
                       let caller = trace.f_call in
-                      if caller = CG.FunCall(xdebug_main_name) 
+                      if caller = FunCall(xdebug_main_name) 
                       then ()
                       else 
                         (try 

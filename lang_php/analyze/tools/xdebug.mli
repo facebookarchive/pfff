@@ -1,7 +1,14 @@
 (*s: xdebug.mli *)
 
+type kind_call = 
+    | FunCall of string
+    | ObjectCall of string (* class *) * string (* method *)
+    | ClassCall of string (* module *) * string
+
+val s_of_kind_call: kind_call -> string
+
 type call_trace = {
-  f_call: Callgraph_php.kind_call;
+  f_call: kind_call;
   f_file: Common.filename;
   f_line: int;
   f_params: Ast_php.expr list;
