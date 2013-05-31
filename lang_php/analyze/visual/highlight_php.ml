@@ -22,7 +22,6 @@ open Highlight_code
 module S = Scope_code
 module Db = Database_code
 
-module DbPHP = Database_php
 module T = Parser_php
 
 (*****************************************************************************)
@@ -40,7 +39,10 @@ let place_ids current_file ids db =
   match ids with
   | [] -> NoInfoPlace
   | [x] ->
-      let other_file = DbPHP.filename_of_id x db in
+      let other_file = 
+        (* DbPHP.filename_of_id x db *)
+        "TODO"
+      in
       if other_file = current_file
       then PlaceLocal
       else
@@ -51,7 +53,10 @@ let place_ids current_file ids db =
 
   | x::y::xs ->
       let other_files =
-        List.map (fun id -> DbPHP.filename_of_id id db) ids +> Common2.uniq
+        List.map (fun id -> 
+          "TODO"
+          (* DbPHP.filename_of_id id db *)
+        ) ids +> Common2.uniq
       in
       if List.mem current_file other_files
       then PlaceLocal
@@ -75,11 +80,17 @@ let arity_of_number nbuses =
   | n when n < 50 -> MultiUse
   | _ -> LotsOfUse
 let use_arity_ident_function_or_macro s db =
-  let ids = DbPHP.function_ids__of_string s db in
+  let ids = 
+    (* DbPHP.function_ids__of_string s db *)
+    []
+  in
   let nbuses =
     ids +> List.map (fun id ->
       try
-        let callers = db.DbPHP.uses.DbPHP.callers_of_f#assoc id in
+        let callers =
+          (* db.DbPHP.uses.DbPHP.callers_of_f#assoc id in*)
+          []
+        in
         List.length callers
       with Not_found -> 0
     )
