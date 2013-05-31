@@ -126,7 +126,7 @@ let unittest = "coverage_php" >::: [
     in
     let skip_require_module_calls call = 
       match call.Xdebug.f_call with
-      | Callgraph_php.FunCall "require_module" -> true
+      | Xdebug.FunCall "require_module" -> true
       | _ -> false
     in
 

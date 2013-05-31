@@ -5,7 +5,6 @@ TOP=../../..
 TARGET=lib
 
 SRC= \
-  rank_test_php.ml \
   coverage_tests_php.ml \
   unit_coverage_php.ml \
 
@@ -21,9 +20,6 @@ INCLUDEDIRS= $(TOP)/commons \
    .. \
    ../foundation \
    ../tools \
-   ../database \
-   ../dynamic_analysis \
-   ../static_analysis \
    $(TOP)/globals \
 
 ##############################################################################
