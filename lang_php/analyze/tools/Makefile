@@ -8,7 +8,7 @@ SRC= \
      xdebug.ml \
      phpunit.ml \
      php_serialize.ml \
-     xhprof.ml layer_xhprof.ml \
+     xhprof.ml \
      phpmanual_xml.ml
 
 #hphpi_trace.ml is in facebook/qa_test/ for now (more convenient)
