@@ -60,7 +60,7 @@ let test regexp =
       Unit_typeinfer_php.unittest;
 (*      Unit_analyze_db_php.unittest; *)
 (*      Unit_static_analysis_simple_php.unittest;*)
-      Unit_prolog_php.unittest;
+(* TODO      Unit_prolog_php.unittest; *)
       Unit_checker_php.unittest;
       (* this one needs xdebug to work *)
       Unit_coverage_php.unittest;
