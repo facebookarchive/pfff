@@ -89,6 +89,7 @@ let test_cfg_php file =
 (*e: test_cfg_php *)
 (*s: test_cyclomatic_php *)
 let test_cyclomatic_php file =
+(*
   let (ast2,_stat) = Parse_php.parse file in
   let ast = Parse_php.program_of_program2 ast2 in
   ast +> List.iter (function
@@ -112,6 +113,8 @@ let test_cyclomatic_php file =
       )
   | _ -> ()
   )
+*)
+  raise Todo
 (*e: test_cyclomatic_php *)
 
 (*****************************************************************************)
@@ -246,7 +249,7 @@ let test_php_xdebug file =
   Common.command2 cmd;
   trace_file +> Xdebug.iter_dumpfile ~show_progress:false (fun call ->
     let caller = call.Xdebug.f_call in
-    let str = Callgraph_php.s_of_kind_call caller in
+    let str = Xdebug.s_of_kind_call caller in
     let file = call.Xdebug.f_file in
     let line = call.Xdebug.f_line in
     pr (spf "%s:%d: %s" file line str);

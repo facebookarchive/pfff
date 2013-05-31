@@ -19,7 +19,7 @@ SRC+= pil.ml
 SRC+= defs_uses_php.ml \
       builtins_php.ml \
       controlflow_php.ml  controlflow_build_php.ml \
-      callgraph_php.ml callgraph_php2.ml \
+      callgraph_php2.ml \
 # used to be in facebook/static_analysis/
 SRC+= env_interpreter_php.ml \
       abstract_interpreter_php_helpers.ml \
@@ -30,15 +30,14 @@ SRC+= dependencies_toposort_php.ml \
       env_typing_php.ml typing_helpers_php.ml\
       builtins_typed_php.ml typing_unify_php.ml \
       typing_php.ml
-SRC+= database_php.ml database_juju_php.ml
-SRC+=graph_code_php.ml
+SRC+= database_juju_php.ml
+SRC+= graph_code_php.ml
 # used to be in analyze/
 SRC+= tags_php.ml normalize_php.ml \
      database_light_php.ml \
-     database_php_build_helpers.ml database_php_build.ml database_php_build2.ml\
      database_prolog_php.ml \
      statistics_php.ml \
-     unit_foundation_php.ml unit_analyze_db_php.ml \
+     unit_foundation_php.ml \
      unit_static_analysis_php.ml   unit_typeinfer_php.ml \
      unit_prolog_php.ml
 
