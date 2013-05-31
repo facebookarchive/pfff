@@ -140,7 +140,7 @@ type dependency = (node * node)
 type whitelist = dependency list
 
 (*****************************************************************************)
-(* Globals *)
+(* Constants *)
 (*****************************************************************************)
 let root = ".", E.Dir
 let pb = "PB", E.Dir
@@ -328,7 +328,6 @@ let display_with_gv g =
 (* Misc *)
 (*****************************************************************************)
 
-
 let file_of_node n g =
   try 
     let info = nodeinfo n g in
@@ -345,7 +344,6 @@ let group_edges_by_files_edges xs g =
   ) +> List.map (fun (x, deps) -> List.length deps, (x, deps))
     +> Common.sort_by_key_highfirst
     +> List.map snd
-
 
 (*****************************************************************************)
 (* Graph adjustments *)
@@ -446,7 +444,4 @@ let graph_of_dotfile dotfile =
     g +> add_edge (src_node, dst_node) Use;
   );
   g
-
-
-    
 
