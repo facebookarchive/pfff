@@ -1,4 +1,4 @@
 
-val database_code_from_php_database:
+val database_code_from_graph_code:
   ?verbose:bool ->
-  Database_php.database -> Database_code.database
+  Graph_code.graph -> Database_code.database
