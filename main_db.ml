@@ -71,6 +71,8 @@ let rec light_db_of_files_or_dirs lang xs =
         Database_light_ml.compute_database ~verbose xs
 
     | "php" ->
+      raise Todo
+(*
         (match xs with
         | [_x] ->
 
@@ -101,6 +103,7 @@ let rec light_db_of_files_or_dirs lang xs =
         | _ -> 
             failwith "for PHP we expect one dir"
         )
+*)
     | "js" ->
         Database_light_js.compute_database ~verbose xs
 
@@ -280,13 +283,7 @@ let options () =
 (*****************************************************************************)
 
 let main () = 
-
   Gc.set {(Gc.get ()) with Gc.stack_limit = 1000 * 1024 * 1024};
-  (* Common_extra.set_link(); 
-     let argv = Features.Distribution.mpi_adjust_argv Sys.argv in
-  *)
-  (* ugly *)
-  Database_php_storage.set_link ();
 
   let usage_msg = 
     "Usage: " ^ Common2.basename Sys.argv.(0) ^ 

@@ -71,6 +71,7 @@ let build_prolog_db lang root =
        * 
        * note: copy paste of www_db_build, yet another one ...
        *)
+(*
        let dir = Common.realpath root +> Common2.chop_dirsymbol in
        (* so many errors that is better to hide them for now *)
        Flag_analyze_php.show_errors := false;
@@ -105,6 +106,8 @@ let build_prolog_db lang root =
        pr2 "";
        pr2 (spf "Your compiled prolog DB is ready. Run %s/%s"
                !metapath prolog_compiled_db);
+*)
+    raise Todo
 
   | "cmt" | "bytecode" | "clang2" ->
       let g = 
@@ -203,7 +206,6 @@ let options () = [
 (*****************************************************************************)
 
 let main () = 
-  Database_php_storage.set_link();
   Common_extra.set_link();
   Gc.set {(Gc.get ()) with Gc.stack_limit = 200 * 1024 * 1024};
   Flag_analyze_php.verbose_database := false;

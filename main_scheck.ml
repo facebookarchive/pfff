@@ -189,6 +189,7 @@ let set_gc () =
  * in a child class.
  *)
 let build_mem_db file =
+(*
 
   (* todo: could infer PHPROOT at least ? just look at
    * the include in the file and see where the files are.
@@ -216,10 +217,15 @@ let build_mem_db file =
       ~annotate_variables_program:None
       (Database_php.prj_of_dir root) 
   )
+*)
+  raise Todo
 
 let entity_finder_of_db file =
-  let db = build_mem_db file in
+  let _db = build_mem_db file in
+  raise Todo
+(*
   Database_php_build.build_entity_finder db
+*)
 
 let entity_finder_of_graph_file graph_file =
   let g = Graph_code.load graph_file in
