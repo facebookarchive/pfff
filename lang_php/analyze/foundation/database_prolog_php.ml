@@ -14,6 +14,16 @@
  *)
 open Common
 
+let prolog_query ?(verbose=false) ~source_file ~query =
+  raise Todo
+
+let gen_prolog_db ?show_progress a b =
+  raise Todo
+
+let append_callgraph_to_prolog_db ?show_progress a b =
+  raise Todo
+
+(*
 open Ast_php
 
 module Ast = Ast_php
@@ -604,3 +614,4 @@ let prolog_query ?(verbose=false) ~source_file ~query =
   in
   let xs = Common.cmd_to_list cmd in
   xs
+*)
