@@ -73,6 +73,10 @@ let check_file ?(verbose=true) ?(find_entity=None) env file =
   find_entity +> Common.do_option (fun find_entity ->
     Check_functions_php.check_program find_entity ast;
     Check_classes_php.check_program   find_entity ast;
+    (* could have a Check_typedefs_php.check_program but hack will
+     * already check the important things so no point doing redundant
+     * checks.
+     *)
   );
   ()
  )

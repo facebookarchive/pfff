@@ -451,8 +451,7 @@ and stmt env = function
   | FuncDef def -> func_def env def
   | ClassDef def -> class_def env def
   | ConstantDef def -> constant_def env def
-  | TypeDef def ->
-    failwith "TODO: support typedefs in variable checker"
+  | TypeDef def -> typedef_def env def
 
   | Expr e -> expr env e
   (* todo: block scope checking when in strict mode? *)
@@ -888,6 +887,10 @@ and class_def env def =
  *)
 and constant_def env def =
   expr env def.cst_body
+
+(* type definitions do not contain any variables *)
+and typedef_def env def =
+  ()
 
 and class_var env v =
   Common.opt (expr env) v.cv_value
