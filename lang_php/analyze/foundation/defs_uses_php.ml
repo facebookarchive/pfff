@@ -28,7 +28,8 @@ module E = Database_code
  * entities defined in a file or used in a file (e.g. for tags,
  * in cmf -deadcode to analyze the defs in a diff, etc)
  * 
- * This file is concerned with entities, that is Ast_php.name.
+ * This file is concerned with entities, that is Ast_php.ident for defs
+ * and Ast_php.name for uses.
  * For completness C-s for name in ast_php.ml and see if all uses of 
  * it are covered. Other files are more concerned about checks related 
  * to variables, that is Ast_php.dname, as in check_variables_php.ml
@@ -112,6 +113,9 @@ let defs_of_any any =
       (* const of php 5.3 *)
       | ConstantDef (tok, name, tok_equal, scalar, semicolon) ->
           Common.push2 (E.Constant, name, None) aref;
+          k x
+      | TypeDef def ->
+          Common.push2 (E.Type, def.t_name, None) aref;
           k x
       | _ -> k x
     );

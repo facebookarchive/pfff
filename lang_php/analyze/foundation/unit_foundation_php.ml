@@ -107,6 +107,7 @@ let tags_unittest =
             trait C { }
             const CST = 1;
             define('OldCst',1);
+            type T = int;
         "
         in
         let tmpfile = Parse_php.tmp_php_file_from_string file_content in
@@ -118,13 +119,14 @@ let tags_unittest =
             let xs = tags_in_file +> List.map (fun x ->
               x.Tags_file.tagname, x.Tags_file.kind
             ) in
-            assert_equal ~msg:"it should contain the right 6 entries" [
+            assert_equal ~msg:"it should contain the right entries" [
               "foo", Db.Function;
               "A", Db.Class Db.RegularClass;
               "B", Db.Class Db.Interface;
               "C", Db.Class Db.Trait;
               "CST", Db.Constant;
               "OldCst", Db.Constant;
+              "T", Db.Type;
             ]
             xs
         | _ ->

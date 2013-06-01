@@ -12,7 +12,6 @@
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the file
  * license.txt for more details.
  *)
-open Common2
 open Common
 
 open Ast_php
@@ -68,7 +67,7 @@ let tags_of_ast ast filelines =
              Tags.tag_of_info filelines (Parse_info.rewrap_str s2 tok) kind;
             ]
         )
-    | Db.Function | Db.Constant ->
+    | Db.Function | Db.Constant | Db.Type ->
         [ tag_of_ident filelines name kind]
     | Db.Method _ ->
         (match enclosing_name_opt with
@@ -82,10 +81,11 @@ let tags_of_ast ast filelines =
             let info' = Parse_info.rewrap_str
               (Ast.str_of_ident class_name  ^ "::" ^ Ast.str_of_ident name) info in
 
+            let s = Ast.str_of_ident name in
             let yieldmagic =
-              if (Ast.str_of_ident name) =~ "^yield" then
-                let tail = (Ast.str_of_ident name) <!!> (5,-1) in
-                [ "gen"; "prepare"; "get"] |>
+              if s =~ "^yield\\(.*\\)" then
+                let tail = Common.matched1 s in
+                [ "gen"; "prepare"; "get"] +>
                 List.map (fun w ->
                   let info = Parse_info.rewrap_str
                     (Ast.str_of_ident class_name ^ "::" ^ w ^ tail) info in
@@ -93,8 +93,8 @@ let tags_of_ast ast filelines =
               else [] in
 
             let prepmagic =
-              if (Ast.str_of_ident name) =~ "^prepare" then
-                let tail = (Ast.str_of_ident name) <!!> (7, -1) in
+              if s =~ "^prepare\\(.*\\)" then
+                let tail = Common.matched1 s in
                 let info = Parse_info.rewrap_str
                   (Ast.str_of_ident class_name ^ "::gen" ^ tail) info in
                 [ Tags.tag_of_info filelines info kind ]
@@ -103,8 +103,7 @@ let tags_of_ast ast filelines =
             [Tags.tag_of_info filelines info' kind] @ yieldmagic @ prepmagic
         )
     | _ ->
-        (* see defs_of_any *)
-        raise Impossible
+        failwith "your defs_of_any is probably wrong"
   ) +> List.flatten
 
 (* obsolete ? stuff with heavy_tagging ?

@@ -262,6 +262,8 @@ let rec add_use_edge env (((str, tok) as name, kind)) =
       | E.Class E.RegularClass ->
           add_use_edge env (name, E.Class E.Interface)
       *)
+      | E.Class E.RegularClass ->
+          add_use_edge env (name, E.Type)
       | _  ->
           let kind_original = kind in
           let dst = (str, kind_original) in
@@ -357,7 +359,7 @@ and stmt_bis env x =
   | FuncDef def -> func_def env def
   | ClassDef def -> class_def env def
   | ConstantDef def -> constant_def env def
-  | TypeDef def -> failwith "TODO: support for typedefs"
+  | TypeDef def -> type_def env def
 
   (* old style constant definition, before PHP 5.4 *)
   | Expr(Call(Id("define", _), [String((name)); v])) ->
@@ -517,6 +519,28 @@ and constant_def env def =
   let node = (def.cst_name, E.Constant) in
   let env = add_node_and_edge_if_defs_mode env node in
   expr env def.cst_body
+
+and type_def env def =
+ let node = (def.t_name, E.Type) in
+ let env = add_node_and_edge_if_defs_mode env node in
+ type_def_kind env def.t_kind
+
+and type_def_kind env = function
+  | Alias t | Newtype t -> hint_type env t
+
+(* ---------------------------------------------------------------------- *)
+(* Types *)
+(* ---------------------------------------------------------------------- *)
+and hint_type env = function
+  | Hint name ->
+      let node = (name, E.Class E.RegularClass) in
+      add_use_edge env node
+  | HintArray -> ()
+  | HintQuestion t -> hint_type env t
+  | HintTuple xs -> List.iter (hint_type env) xs
+  | HintCallback (tparams, tret_opt) ->
+      List.iter (hint_type env) tparams;
+      Common.opt (hint_type env) tret_opt
 
 (* ---------------------------------------------------------------------- *)
 (* Expr *)
