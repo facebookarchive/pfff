@@ -272,7 +272,7 @@ let partition_matrix nodes dm =
     let xs = sort_by_count_rows_low_first elts_with_empty_columns m dm in
     xs +> List.iter (empty_all_cells_relevant_to_node m dm);
     right := xs ++ !right;
-    pr2 (spf "step1: %s" (Common2.dump xs));
+    (* pr2 (spf "step1: %s" (Common2.dump xs)); *)
     if null xs
     then rest
     else step1 rest
@@ -289,7 +289,7 @@ let partition_matrix nodes dm =
       nodes +> List.partition (fun node -> is_empty_row node m dm) in
     let xs = sort_by_count_columns_high_first elts_with_empty_lines m dm in
     xs+> List.iter (empty_all_cells_relevant_to_node m dm);
-    pr2 (spf "step2: %s" (Common2.dump xs));
+    (* pr2 (spf "step2: %s" (Common2.dump xs)); *)
     left := !left ++ xs;
     if null xs
     then step1 rest
@@ -300,8 +300,10 @@ let partition_matrix nodes dm =
   if null rest
   then !left ++ !right
   else begin 
+(*
     pr2 "CYCLE";
     pr2_gen rest;
+*)
     let rest = sort_by_count_rows_low_columns_high_first rest m dm in
     (* TODO merge and iterate *)
     !left ++ rest ++ !right
@@ -521,8 +523,8 @@ let adjust_gopti_if_needed_lazily tree gopti =
            * and so we will not loop again and again.
            *)
           let (ok, to_pack) = Common2.splitAt (!threshold_pack - 1) score in
-          pr2 (spf "REPACKING: TO_PACK = %s, TO_KEEP = %s" 
-                 (Common.dump to_pack) (Common.dump ok));
+          (* pr2 (spf "REPACKING: TO_PACK = %s, TO_KEEP = %s" 
+                 (Common.dump to_pack) (Common.dump ok)); *)
           let new_gopti, dotdotdot_entry = 
             Graph_code_opti.adjust_graph_pack_some_children_under_dotdotdot 
               n to_pack !gopti in
