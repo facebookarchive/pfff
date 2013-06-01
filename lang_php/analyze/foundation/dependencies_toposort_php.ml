@@ -45,6 +45,7 @@ module Deps = struct
     | ClassDef c -> SSet.add (unwrap c.c_name) acc
     | FuncDef f -> SSet.add (unwrap f.f_name) acc
     | ConstantDef c -> SSet.add (unwrap c.cst_name) acc
+    | TypeDef t -> SSet.add (unwrap t.t_name) acc
 
     (* boilerplate to recurse *)
     | Expr e | Throw e -> expr acc e

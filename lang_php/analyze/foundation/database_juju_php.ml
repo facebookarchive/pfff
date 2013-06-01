@@ -67,6 +67,8 @@ let juju_db_of_files ?(show_progress=false) xs =
         | ClassDef c -> add db.classes_juju c.c_name c
         | FuncDef fd -> add db.funs_juju fd.f_name fd
         | ConstantDef c -> add db.constants_juju c.cst_name c
+        | TypeDef t -> 
+          failwith "no support for typedefs in juju database"
 
         | (Global _|StaticVars _
           |Try (_, _, _)|Throw _

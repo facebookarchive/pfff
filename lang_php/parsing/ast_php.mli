@@ -527,6 +527,20 @@ and class_def = {
 and trait_rule = unit
 
 (* ------------------------------------------------------------------------- *)
+(* Type definition *)
+(* ------------------------------------------------------------------------- *)
+and type_def = {
+  t_tok: tok; (* type/newtype *)
+  t_name: ident;
+  t_tokeq: tok; (* = *)
+  t_kind: type_def_kind;
+  t_sc: tok; (* ; *)
+}
+  and type_def_kind =
+  | Alias of hint_type
+  | Newtype of hint_type
+
+(* ------------------------------------------------------------------------- *)
 (* Other declarations *)
 (* ------------------------------------------------------------------------- *)
 and global_var =
@@ -571,6 +585,8 @@ and toplevel =
     | ClassDef of class_def
     (* PHP 5.3, see http://us.php.net/const *)
     | ConstantDef of constant_def
+    (* facebook extension *)
+    | TypeDef of type_def
     (* old:  | Halt of tok * unit paren * tok (* __halt__ ; *) *)
     | NotParsedCorrectly of tok list (* when Flag.error_recovery = true *)
     | FinalDef of tok (* EOF *)
@@ -590,6 +606,8 @@ type entity =
   | FunctionE of func_def
   | ClassE of class_def
   | ConstantE of constant_def
+  | TypedefE of type_def
+
   | StmtListE of stmt list
 
   | MethodE of method_def

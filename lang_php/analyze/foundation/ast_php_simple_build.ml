@@ -81,6 +81,7 @@ and toplevel env st acc =
   | FuncDef fd -> A.FuncDef (func_def env fd) :: acc
   | ClassDef cd -> A.ClassDef (class_def env cd) :: acc
   | ConstantDef x -> A.ConstantDef (constant_def env x) :: acc
+  | TypeDef x -> A.TypeDef (type_def env x) :: acc
   | FinalDef _ -> acc
   (* error recovery is off by default now *)
   | NotParsedCorrectly _ -> raise Common.Impossible
@@ -95,6 +96,13 @@ and constant_def env (_, cst_name, _, e, _) =
   { A.cst_name = ident env cst_name;
     A.cst_body = expr env e;
   }
+and type_def env def =
+  { A.t_name = ident env def.t_name;
+    A.t_kind = type_def_kind env def.t_kind;
+  }
+and type_def_kind env = function
+  | Alias t -> A.Alias (hint_type env t)
+  | Newtype t -> A.Newtype (hint_type env t)
 
 and stmt env st acc =
   match st with

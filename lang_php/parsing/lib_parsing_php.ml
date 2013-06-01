@@ -273,21 +273,9 @@ let top_statements_of_program ast =
   ast +> List.map (function
   | StmtList xs -> xs
   | FinalDef _|NotParsedCorrectly _
-  | ClassDef _| FuncDef _ | ConstantDef _
+  | ClassDef _| FuncDef _ | ConstantDef _ | TypeDef _
       -> []
   ) +> List.flatten  
-
-let toplevel_to_entity x = 
-  match x with
-  | StmtList v1 -> StmtListE v1
-  | FuncDef v1  -> FunctionE v1
-  | ClassDef v1 -> ClassE v1
-  | ConstantDef v1 -> ConstantE v1
-  (* todo? *)
-  | NotParsedCorrectly xs ->
-      MiscE xs
-  | FinalDef v1 ->
-      MiscE [v1]
 
 (* We often do some analysis on "unit" of code like a function,
  * a method, or toplevel statements. One can not use the

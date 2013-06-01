@@ -197,6 +197,7 @@ let sgrep_unittest = [
     );
   );
 
+(* TODO: should use sgrep_fuzzy for that
   "toplevel sgrep matching" >:: (fun () ->
     (* pattern string, code string *)
     let pairs = [
@@ -213,6 +214,7 @@ let sgrep_unittest = [
         assert_failure "parsing problem in sgrep pattern parsing"
     )
   );
+*)
 ]
 
 (*****************************************************************************)

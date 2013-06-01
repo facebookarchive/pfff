@@ -240,6 +240,7 @@ and stmtl env l =
   List.iter (stmt env) l
 
 and stmt env= function
+  | TypeDef _ -> failwith "no support for typedefs in type inferencer"
   | Expr e -> iexpr env e
   | Block stl -> stmtl env stl
   | If (e, st1, st2) ->

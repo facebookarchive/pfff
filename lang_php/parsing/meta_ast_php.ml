@@ -1052,6 +1052,35 @@ and vof_attribute =
       in Ocaml.VSum (("AttributeWithArgs", [ v1; v2 ]))
 and vof_attributes v = vof_angle (vof_comma_list vof_attribute) v
 
+and
+  vof_type_def {
+                 t_tok = v_t_tok;
+                 t_name = v_t_name;
+                 t_tokeq = v_t_tokeq;
+                 t_kind = v_t_kind;
+                 t_sc = v_t_sc
+               } =
+  let bnds = [] in
+  let arg = vof_tok v_t_sc in
+  let bnd = ("t_sc", arg) in
+  let bnds = bnd :: bnds in
+  let arg = vof_type_def_kind v_t_kind in
+  let bnd = ("t_kind", arg) in
+  let bnds = bnd :: bnds in
+  let arg = vof_tok v_t_tokeq in
+  let bnd = ("t_tokeq", arg) in
+  let bnds = bnd :: bnds in
+  let arg = vof_ident v_t_name in
+  let bnd = ("t_name", arg) in
+  let bnds = bnd :: bnds in
+  let arg = vof_tok v_t_tok in
+  let bnd = ("t_tok", arg) in let bnds = bnd :: bnds in Ocaml.VDict bnds
+and vof_type_def_kind =
+  function
+  | Alias v1 -> let v1 = vof_hint_type v1 in Ocaml.VSum (("Alias", [ v1 ]))
+  | Newtype v1 ->
+      let v1 = vof_hint_type v1 in Ocaml.VSum (("Newtype", [ v1 ]))
+
 and vof_toplevel =
   function
   | ConstantDef v1 ->
@@ -1062,6 +1091,8 @@ and vof_toplevel =
       let v1 = vof_func_def v1 in Ocaml.VSum (("FuncDef", [ v1 ]))
   | ClassDef v1 ->
       let v1 = vof_class_def v1 in Ocaml.VSum (("ClassDef", [ v1 ]))
+  | TypeDef v1 ->
+      let v1 = vof_type_def v1 in Ocaml.VSum (("TypeDef", [ v1 ]))
   | NotParsedCorrectly v1 ->
       let v1 = vof_list vof_info v1
       in Ocaml.VSum (("NotParsedCorrectly", [ v1 ]))
@@ -1081,6 +1112,8 @@ and vof_entity =
       in Ocaml.VSum (("StmtListE", [ v1 ]))
   | ConstantE v1 ->
       let v1 = vof_constant_def v1 in Ocaml.VSum (("ConstantE", [ v1 ]))
+  | TypedefE v1 ->
+      let v1 = vof_type_def v1 in Ocaml.VSum (("TypedefE", [ v1 ]))
   | MethodE v1 ->
       let v1 = vof_method_def v1 in Ocaml.VSum (("MethodE", [ v1 ]))
   | ClassConstantE v1 ->

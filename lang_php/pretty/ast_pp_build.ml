@@ -282,6 +282,7 @@ let rec toplevel env st acc =
       let e = expr env e in
       let s = ident env cst_name in
       A.ConstantDef { Ast_pp.cst_name = s; cst_body = e } :: acc
+  | TypeDef _-> failwith "pretty printing not supported for typedefs"
   | NotParsedCorrectly _ -> raise Common.Impossible
 
 and (name: env -> name -> string) = fun env -> function

@@ -148,6 +148,7 @@ and stmt =
   | FuncDef of func_def
   (* only at toplevel *)
   | ConstantDef of constant_def
+  | TypeDef of type_def
 
   (* Note that there is no LocalVars constructor. Variables in PHP are
    * declared when they are first assigned. *)
@@ -365,6 +366,14 @@ and class_def = {
     cv_modifiers: modifier list;
   }
   and method_def = func_def
+
+and type_def = {
+  t_name: ident;
+  t_kind: type_def_kind;
+}
+  and type_def_kind =
+  | Alias of hint_type
+  | Newtype of hint_type
  (* with tarzan *)
 
 (* ------------------------------------------------------------------------- *)

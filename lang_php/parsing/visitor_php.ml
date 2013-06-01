@@ -966,12 +966,30 @@ and v_attribute =
       in ()
 and v_attributes v = v_angle (v_comma_list v_attribute) v
 
+and
+  v_type_def {
+               t_tok = v_t_tok;
+               t_name = v_t_name;
+               t_tokeq = v_t_tokeq;
+               t_kind = v_t_kind;
+               t_sc = v_t_sc
+             } =
+  let arg = v_tok v_t_tok in
+  let arg = v_ident v_t_name in
+  let arg = v_tok v_t_tokeq in
+  let arg = v_type_def_kind v_t_kind in let arg = v_tok v_t_sc in ()
+and v_type_def_kind =
+  function
+  | Alias v1 -> let v1 = v_hint_type v1 in ()
+  | Newtype v1 -> let v1 = v_hint_type v1 in ()
+
 and v_toplevel x =
   let k x = match x with
   | StmtList v1 -> let v1 = v_list v_stmt v1 in ()
   | FuncDef v1 -> let v1 = v_func_def v1 in ()
   | ClassDef v1 -> let v1 = v_class_def v1 in ()
   | ConstantDef v1 -> let v1 = v_constant_def v1 in ()
+  | TypeDef v1 -> let v1 = v_type_def v1 in ()
   | NotParsedCorrectly xs ->
       v_list v_info xs
   | FinalDef v1 ->
@@ -985,6 +1003,7 @@ and v_entity = function
   | FunctionE v1 -> let v1 = v_func_def v1 in ()
   | ClassE v1 -> let v1 = v_class_def v1 in ()
   | ConstantE v1 -> let v1 = v_constant_def v1 in ()
+  | TypedefE v1 -> let v1 = v_type_def v1 in ()
   | StmtListE v1 -> let v1 = v_list v_stmt v1 in ()
   | MethodE v1 -> let v1 = v_method_def v1 in ()
   | ClassConstantE v1 -> let v1 = v_class_constant v1 in ()

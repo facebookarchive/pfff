@@ -357,6 +357,7 @@ and stmt_bis env x =
   | FuncDef def -> func_def env def
   | ClassDef def -> class_def env def
   | ConstantDef def -> constant_def env def
+  | TypeDef def -> failwith "TODO: support for typedefs"
 
   (* old style constant definition, before PHP 5.4 *)
   | Expr(Call(Id("define", _), [String((name)); v])) ->

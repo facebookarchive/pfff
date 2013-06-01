@@ -280,7 +280,7 @@ top_statement:
  | constant_declaration_statement       { ConstantDef $1 }
  | function_declaration_statement	{ FuncDef $1 }
  | class_declaration_statement		{ ClassDef $1 }
- | type_declaration                     { StmtList [$1] (* TODO AST *) }
+ | type_declaration                     { TypeDef $1 }
 
 sgrep_spatch_pattern:
  | expr EOF      { Expr $1 }
@@ -785,9 +785,13 @@ trait_alias_rule_method:
 /*(*************************************************************************)*/
 type_declaration:
  | T_TYPE    ident type_params_opt TEQ type_php TSEMICOLON 
-     { EmptyStmt $6 }
+     { { t_tok = $1; t_name = Name $2; (* TODO $3 *) t_tokeq = $4;
+         t_kind = Alias $5; t_sc = $6; } 
+     }
  | T_NEWTYPE ident type_params_opt TEQ type_php TSEMICOLON 
-     { EmptyStmt $6 }
+     { { t_tok = $1; t_name = Name $2; (* TODO $3 *) t_tokeq = $4;
+         t_kind = Newtype $5; t_sc = $6; } 
+     }
 
 /*(*************************************************************************)*/
 /*(*1 Generics parameters *)*/

@@ -985,12 +985,40 @@ and map_attribute =
       and v2 = map_paren (map_comma_list map_static_scalar) v2
       in AttributeWithArgs ((v1, v2))
 and map_attributes v = map_angle (map_comma_list map_attribute) v
+and
+  map_type_def {
+                 t_tok = v_t_tok;
+                 t_name = v_t_name;
+                 t_tokeq = v_t_tokeq;
+                 t_kind = v_t_kind;
+                 t_sc = v_t_sc
+               } =
+  let v_t_sc = map_tok v_t_sc in
+  let v_t_kind = map_type_def_kind v_t_kind in
+  let v_t_tokeq = map_tok v_t_tokeq in
+  let v_t_name = map_ident v_t_name in
+  let v_t_tok = map_tok v_t_tok in 
+  {
+                 t_tok = v_t_tok;
+                 t_name = v_t_name;
+                 t_tokeq = v_t_tokeq;
+                 t_kind = v_t_kind;
+                 t_sc = v_t_sc
+               }
+
+
+and map_type_def_kind =
+  function
+  | Alias v1 -> let v1 = map_hint_type v1 in Alias ((v1))
+  | Newtype v1 -> let v1 = map_hint_type v1 in Newtype ((v1))
+
 and map_toplevel =
   function
   | StmtList v1 -> let v1 = map_of_list map_stmt v1 in StmtList ((v1))
   | FuncDef v1 -> let v1 = map_func_def v1 in FuncDef ((v1))
   | ClassDef v1 -> let v1 = map_class_def v1 in ClassDef ((v1))
   | ConstantDef v1 -> let v1 = map_constant_def v1 in ConstantDef v1
+  | TypeDef v1 -> let v1 = map_type_def v1 in TypeDef ((v1))
   | NotParsedCorrectly v1 ->
       let v1 = map_of_list map_info v1 in NotParsedCorrectly ((v1))
   | FinalDef v1 -> let v1 = map_info v1 in FinalDef ((v1))
@@ -1000,6 +1028,7 @@ and map_entity =
   function
   | FunctionE v1 -> let v1 = map_func_def v1 in FunctionE ((v1))
   | ClassE v1 -> let v1 = map_class_def v1 in ClassE ((v1))
+  | TypedefE v1 -> let v1 = map_type_def v1 in TypedefE ((v1))
   | StmtListE v1 -> let v1 = map_of_list map_stmt v1 in StmtListE ((v1))
   | MethodE v1 -> let v1 = map_method_def v1 in MethodE ((v1))
   | ConstantE v1 -> let v1 = map_constant_def v1 in ConstantE v1

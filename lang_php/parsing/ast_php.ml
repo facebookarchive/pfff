@@ -21,7 +21,7 @@ open Common
  * This module defines an Abstract Syntax Tree for PHP 5.2 with
  * a few PHP 5.3 (e.g. closures) and 5.4 (e.g. traits) extensions as well
  * as support for many Facebook extensions (XHP, generators, annotations,
- * generics, collections).
+ * generics, collections, type definitions).
  *
  * This is actually more a concrete syntax tree (CST) than an AST. This
  * is convenient in a refactoring context or code visualization
@@ -30,6 +30,7 @@ open Common
  * PHP Intermediate Language a la CIL.
  *
  * todo:
+ *  - add type parameters in AST
  *  - add namespace in AST (also add in grammar)
  *  - unify toplevel statement vs statements? hmmm maybe not
  *  - maybe even in a refactoring context a PIL+comment
@@ -638,6 +639,20 @@ and class_def = {
 and trait_rule = unit
 
 (* ------------------------------------------------------------------------- *)
+(* Type definition *)
+(* ------------------------------------------------------------------------- *)
+and type_def = {
+  t_tok: tok; (* type/newtype *)
+  t_name: ident;
+  t_tokeq: tok; (* = *)
+  t_kind: type_def_kind;
+  t_sc: tok; (* ; *)
+}
+  and type_def_kind =
+  | Alias of hint_type
+  | Newtype of hint_type
+
+(* ------------------------------------------------------------------------- *)
 (* Other declarations *)
 (* ------------------------------------------------------------------------- *)
 and global_var =
@@ -679,6 +694,8 @@ and toplevel =
     | ClassDef of class_def
     (* PHP 5.3, see http://us.php.net/const *)
     | ConstantDef of constant_def
+    (* facebook extension *)
+    | TypeDef of type_def
     (* old:  | Halt of tok * unit paren * tok (* __halt__ ; *) *)
     | NotParsedCorrectly of tok list (* when Flag.error_recovery = true *)
     | FinalDef of tok (* EOF *)
@@ -698,6 +715,7 @@ type entity =
   | FunctionE of func_def
   | ClassE of class_def
   | ConstantE of constant_def
+  | TypedefE of type_def
 
   | StmtListE of stmt list
 

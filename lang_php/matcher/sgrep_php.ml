@@ -152,26 +152,6 @@ let sgrep ?(case_sensitive=false) ~hook pattern file =
           );
         }
 
-    | Toplevel pattern ->
-        { V.default_visitor with
-          V.ktop = (fun (k, _) x ->
-            let matches_with_env =  
-              Matching_php.match_top_top pattern x
-            in
-            if matches_with_env = []
-            then k x
-            else begin
-              (* could also recurse to find nested matching inside
-               * the matched code itself.
-               *)
-              let matched_tokens = Lib_parsing_php.ii_of_any (Toplevel x) in
-              matches_with_env +> List.iter (fun env ->
-                hook env matched_tokens
-              )
-            end
-          );
-        }
-          
     | _ -> failwith (spf "pattern not yet supported:" ^ 
                         Export_ast_php.ml_pattern_string_of_any pattern)
   in

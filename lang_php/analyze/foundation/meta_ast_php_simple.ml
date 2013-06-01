@@ -7,6 +7,7 @@ let rec vof_program v = Ocaml.vof_list vof_stmt v
 and vof_wrapped_string (s, tok) =
   Ocaml.VString s
 and vof_name x = vof_wrapped_string x
+and vof_ident x =vof_wrapped_string x
 
 and vof_stmt =
   function
@@ -73,6 +74,21 @@ and vof_stmt =
       let v1 = vof_func_def v1 in Ocaml.VSum (("FuncDef", [ v1 ]))
   | ConstantDef v1 ->
       let v1 = vof_constant_def v1 in Ocaml.VSum (("ConstantDef", [ v1 ]))
+  | TypeDef v1 ->
+      let v1 = vof_type_def v1 in Ocaml.VSum (("TypeDef", [ v1 ]))
+
+and vof_type_def { t_name = v_t_name; t_kind = v_t_kind } =
+  let bnds = [] in
+  let arg = vof_type_def_kind v_t_kind in
+  let bnd = ("t_kind", arg) in
+  let bnds = bnd :: bnds in
+  let arg = vof_ident v_t_name in
+  let bnd = ("t_name", arg) in let bnds = bnd :: bnds in Ocaml.VDict bnds
+and vof_type_def_kind =
+  function
+  | Alias v1 -> let v1 = vof_hint_type v1 in Ocaml.VSum (("Alias", [ v1 ]))
+  | Newtype v1 ->
+      let v1 = vof_hint_type v1 in Ocaml.VSum (("Newtype", [ v1 ]))
 
 and vof_case =
   function

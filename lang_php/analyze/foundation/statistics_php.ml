@@ -152,6 +152,8 @@ let stat_of_program ?(hooks=default_hooks) h file ast =
           Common.save_excursion current_node (CG.Method (s, fake))(fun()->
             k x
           )
+      | TypeDef def ->
+        failwith "TODO: support for typedefs"
 
       | StmtList _ -> 
           k x

@@ -451,6 +451,8 @@ and stmt env = function
   | FuncDef def -> func_def env def
   | ClassDef def -> class_def env def
   | ConstantDef def -> constant_def env def
+  | TypeDef def ->
+    failwith "TODO: support typedefs in variable checker"
 
   | Expr e -> expr env e
   (* todo: block scope checking when in strict mode? *)

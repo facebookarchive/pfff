@@ -204,6 +204,8 @@ let ast_php_entity_in_file ~check_dupes (s, kind) g file =
     | StmtList _ -> None
     | FuncDef def ->
       Some ((Ast.str_of_ident def.f_name, E.Function), FunctionE def)
+    | TypeDef def ->
+      Some ((Ast.str_of_ident def.t_name, E.Type), TypedefE def)
     | ClassDef def -> 
       (* do as in graph_code_php.ml *)
       let kind = E.RegularClass in
@@ -211,6 +213,7 @@ let ast_php_entity_in_file ~check_dupes (s, kind) g file =
     | ConstantDef def ->
       let (_, name, _, _, _) = def in
       Some ((Ast.str_of_ident name, E.Constant), ConstantE def)
+
     | NotParsedCorrectly _ | FinalDef _ -> None
     )
   in

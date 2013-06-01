@@ -310,6 +310,7 @@ and fake_root env heap =
 
 and stmt env heap x =
   match x with
+  | TypeDef x -> failwith "no support for typedefs for abstract interpreter"
   (* special keywords in the code to debug the abstract interpreter state.
    * I've added var_dump() so that one can easily run a PHP test file
    * with php or aphp and get both run working (show() is an

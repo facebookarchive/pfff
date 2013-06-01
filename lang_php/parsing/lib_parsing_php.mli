@@ -29,8 +29,6 @@ val get_vars_assignements_any : Ast_php.any -> (string * Ast_php.expr list) list
 
 val top_statements_of_program: 
   Ast_php.program -> Ast_php.stmt list
-val toplevel_to_entity: 
-  Ast_php.toplevel -> Ast_php.entity
 
 val functions_methods_or_topstms_of_program:
   Ast_php.program -> 
