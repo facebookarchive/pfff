@@ -42,7 +42,6 @@ open Ast_php_simple
  *       -> Dir -> SubDir -> Module? -> ...
  *
  * less:
- *  - handle Interface and Traits, do not translate them in RegularClass?
  *  - handle static vs non static methods/fields? but at the same time
  *    lots of our code abuse $this-> where they should use self::, so
  *    maybe simpler not make difference between static and non static
@@ -163,10 +162,10 @@ let look_like_class s =
    *)
   | _ -> false
 
-let privacy_of_field def =
+let privacy_of_modifiers modifiers =
   (* yes, default is public ... love PHP *)
   let p = ref E.Public in
-  def.cv_modifiers +> List.iter (function
+  modifiers +> List.iter (function
   | Ast_php.Public -> p := E.Public
   | Ast_php.Private -> p := E.Private
   | Ast_php.Protected -> p := E.Protected
@@ -264,6 +263,9 @@ let rec add_use_edge env (((str, tok) as name, kind)) =
       *)
       | E.Class E.RegularClass ->
           add_use_edge env (name, E.Type)
+      (* do not add such a node *)
+      | E.Type -> ()
+        
       | _  ->
           let kind_original = kind in
           let dst = (str, kind_original) in
@@ -446,14 +448,13 @@ and class_def env def =
       let n = Ast.name_of_class_name c2 in
       add_use_edge env (n, E.Class E.RegularClass);
     );
-    (* less: use Interface and Traits at some point *)
     def.c_implements +> List.iter (fun c2 ->
       let n = Ast.name_of_class_name c2 in
-      add_use_edge env (n, E.Class E.RegularClass);
+      add_use_edge env (n, E.Class E.Interface);
     );
     def.c_uses +> List.iter (fun c2 ->
       let n = Ast.name_of_class_name c2 in
-      add_use_edge env (n, E.Class E.RegularClass);
+      add_use_edge env (n, E.Class E.Trait);
     );
   end;
   let self = Ast.str_of_name def.c_name in
@@ -471,7 +472,7 @@ and class_def env def =
   );
   def.c_variables +> List.iter (fun fld ->
     let node = (fld.cv_name, E.Field) in
-    let props = [E.Privacy (privacy_of_field fld)] in
+    let props = [E.Privacy (privacy_of_modifiers fld.cv_modifiers)] in
     let env = add_node_and_edge_if_defs_mode ~props env node in
     (* PHP allow to refine a field, for instance on can do
      * 'protected $foo = 42;' in a class B extending A which contains
@@ -479,7 +480,7 @@ and class_def env def =
      * as Public there.
      *)
     if env.phase = Inheritance && 
-       privacy_of_field fld =*= E.Protected then begin
+       privacy_of_modifiers fld.cv_modifiers =*= E.Protected then begin
          (* todo? handle trait and interface here? can redefine field? *)
          (match def.c_extends with
          | None -> ()
@@ -508,7 +509,11 @@ and class_def env def =
     (* less: be more precise at some point *)
     let kind = E.RegularMethod in
     let node = (def.f_name, E.Method kind) in
-    let env = add_node_and_edge_if_defs_mode env node in
+    let props = [
+      E.Privacy (privacy_of_modifiers def.m_modifiers)
+    ]
+    in
+    let env = add_node_and_edge_if_defs_mode ~props env node in
     stmtl env def.f_body
   )
 

@@ -707,7 +707,7 @@
        (8 "-ia_php /home/pad/pfff/tests/php/ia/foo.php 6")
        (9 "-type_php /home/pad/pfff/tests/php/typing/test.php")
        (10 "-test_graph_code_ml /home/pad/pfff/commons")
-       (11 "dotdotdot")
+       (11 "prolog:")
        )
      ))
    )

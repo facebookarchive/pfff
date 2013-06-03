@@ -36,9 +36,12 @@ module E = Database_code
 type fact =
   | At of entity * Common.filename (* readable path *) * int (* line *)
   | Kind of entity * Database_code.entity_kind
-  | Extends of string * string
+  | Extends of string * string | Implements of string * string
+  | Mixins of string * string
+  | Privacy of entity * Database_code.privacy
   | Call of entity * entity
   | UseData of entity * entity
+
   | Misc of string
 
   (* todo? could use a record with 
@@ -112,6 +115,18 @@ let string_of_fact fact =
         spf "at(%s, '%s', %d)" (string_of_entity entity) file line
     | Extends (s1, s2) ->
         spf "extends('%s', '%s')" s1 s2
+    | Mixins (s1, s2) ->
+        spf "mixins('%s', '%s')" s1 s2
+    | Implements (s1, s2) ->
+        spf "implements('%s', '%s')" s1 s2
+    | Privacy (entity, p) ->
+      let predicate = 
+        match p with
+        | E.Public -> "is_public"
+        | E.Private -> "is_private"
+        | E.Protected -> "is_protected"
+      in
+      spf "%s(%s)" predicate (string_of_entity entity)
     (* todo: method?? *)
     | Call (e1, e2) ->
         spf "docall(%s, %s, method)" 

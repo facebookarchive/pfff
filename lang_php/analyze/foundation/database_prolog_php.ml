@@ -458,9 +458,9 @@ let build2 ?(show_progress=true) g =
    add (P.Misc "% -*- prolog -*-");
    add (P.Misc ":- discontiguous kind/2, at/3");
    add (P.Misc ":- discontiguous extends/2, implements/2, mixins/2");
+   add (P.Misc ":- discontiguous is_public/1, is_private/1, is_protected/1");
 (*
    pr (":- discontiguous static/1, abstract/1, final/1.");
-   pr (":- discontiguous is_public/1, is_private/1, is_protected/1.");
    pr (":- discontiguous arity/2.");
    pr (":- discontiguous parameter/4.");
    pr (":- discontiguous docall/3, use/4.");
@@ -480,9 +480,21 @@ let build2 ?(show_progress=true) g =
   g +> G.iter_nodes (fun n ->
     let (str, kind) = n in
     (match kind with
-    | E.Function | E.Global | E.Constant
-    | E.Method _ | E.Class _ | E.ClassConstant
+    | E.Function | E.Constant | E.Class _ 
+    | E.Global
+    | E.ClassConstant
         -> add (P.Kind (P.entity_of_str str, kind))
+
+    | E.Method _ ->
+      add (P.Kind (P.entity_of_str str, kind));
+      let nodeinfo = G.nodeinfo n g in
+      let props = nodeinfo.G.props in
+      props +> List.iter (function
+      | E.Privacy priv ->
+        add (P.Privacy (P.entity_of_str str, priv));
+      | _ -> ()
+      );
+
     | E.Field ->
       let (xs, x) = P.entity_of_str str in
       if x =~ "\\$\\(.*\\)"
@@ -512,9 +524,12 @@ let build2 ?(show_progress=true) g =
    *)
   g +> G.iter_use_edges (fun n1 n2 ->
     match n1, n2 with
-    (* todo: Implements/Mixins, but need adjust graph_code_php.ml too *)
-    | ((s1, E.Class _kind1), (s2, E.Class _kind2)) ->
+    | ((s1, E.Class _kind1), (s2, E.Class E.RegularClass)) ->
       add (P.Extends (s1, s2))
+    | ((s1, E.Class _kind1), (s2, E.Class E.Trait)) ->
+      add (P.Mixins (s1, s2))
+    | ((s1, E.Class _kind1), (s2, E.Class E.Interface)) ->
+      add (P.Implements (s1, s2))
 
     | _ -> ()
   );
