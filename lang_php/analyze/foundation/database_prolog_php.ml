@@ -23,12 +23,11 @@ let gen_prolog_db ?show_progress a b =
 let append_callgraph_to_prolog_db ?show_progress a b =
   raise Todo
 
-(*
 open Ast_php
 
 module Ast = Ast_php
 module EC = Entity_php
-module Db = Database_php
+(* module Db = Database_php *)
 module V = Visitor_php
 module E = Database_code
 
@@ -69,16 +68,28 @@ module CG = Callgraph_php2
 (* quite similar to Database_php.complete_name_of_id *)
 let name_id id db =
   try
-    let s = db.Db.defs.Db.id_name#assoc id in
-    let id_kind = db.Db.defs.Db.id_kind#assoc id in
-
+    let s = 
+      (* db.Db.defs.Db.id_name#assoc id in *)
+      raise Todo
+    in
+    let id_kind = 
+      (* db.Db.defs.Db.id_kind#assoc id in *)
+      raise Todo
+    in
+    
     (match id_kind with
     | E.Class _ | E.Function | E.Constant ->
         spf "'%s'" s
     | E.Method _ | E.ClassConstant | E.Field ->
-        (match Db.class_or_interface_id_of_nested_id_opt id db with
+        (match 
+(*Db.class_or_interface_id_of_nested_id_opt id db *)
+            raise Todo
+with
         | Some id_class ->
-            let sclass = Db.name_of_id id_class db in
+          let sclass = 
+            (* Db.name_of_id id_class db *)
+            raise Todo
+               in
             (match id_kind with
             (* todo? xhp decl ? *)
             (* old: I used to do something different for Field amd remove
@@ -91,7 +102,7 @@ let name_id id db =
             )
         | None ->
             failwith (spf "could not find enclosing class for %s"
-                         (Db.str_of_id id db))
+                         (raise Todo(*Db.str_of_id id db*)))
         )
     | E.TopStmts -> spf "'__TOPSTMT__%s'" (EC.str_of_id id)
     (* ?? *)
@@ -102,7 +113,7 @@ let name_id id db =
         raise Impossible
     )
   with Not_found ->
-    failwith (spf "could not find name for id %s" (Db.str_of_id id db))
+    failwith (spf "could not find name for id %s" (raise Todo(*Db.str_of_id id db*)))
 
 let name_of_node = function
   | CG.File s -> spf "'__TOPSTMT__%s'" s
@@ -192,7 +203,7 @@ let add_uses id ast pr db =
           (* could be encoded as a docall(...,special) too *)
           | "require_module", [Arg ((Sc (C (String (str,_)))))] ->
               pr (spf "require_module('%s', '%s')."
-                     (Db.readable_filename_of_id id db) str)
+                     (raise Todo(*Db.readable_filename_of_id id db*)) str)
 
           | _ -> ()
           );
@@ -454,7 +465,7 @@ let gen_prolog_db2 ?(show_progress=true) db file =
   Common.with_open_outfile file (fun (pr, _chan) ->
    let pr s = pr (s ^ "\n") in
    pr ("%% -*- prolog -*-");
-   pr (spf "%% facts about %s" (Db.path_of_project_in_database db));
+   pr (spf "%% facts about %s" (raise Todo(*Db.path_of_project_in_database db*)));
 
    pr (":- discontiguous kind/2, at/3.");
    pr (":- discontiguous static/1, abstract/1, final/1.");
@@ -474,7 +485,7 @@ let gen_prolog_db2 ?(show_progress=true) db file =
    pr (":- discontiguous special/1.");
    pr ("special('newv').");
    pr ("special('DT').");
-
+(*
    db.Db.file_info#tolist +> List.iter (fun (file, file_info) ->
      let file = Db.absolute_to_readable_filename file db in
      let parts = Common.split "/" file in
@@ -485,25 +496,30 @@ let gen_prolog_db2 ?(show_progress=true) db file =
      | `BAD -> pr2 (spf "problem('%s', parse_error)." file)
      );
    );
-   let ids = db.Db.defs.Db.id_kind#tolist in
+*)
+   let ids = raise Todo(*db.Db.defs.Db.id_kind#tolist*) in
    ids +> Common_extra.progress ~show:show_progress (fun k ->
     List.iter (fun (id, kind) ->
         k();
         pr (spf "kind(%s, %s)." (name_id id db) (string_of_id_kind kind));
         pr (spf "at(%s, '%s', %d)."
                (name_id id db)
-               (Db.readable_filename_of_id id db)
-               (Db.line_of_id id db)
+               (raise Todo(*Db.readable_filename_of_id id db*))
+               (raise Todo (*Db.line_of_id id db*))
         );
         (* note: variables can also be static but for prolog we are
          * interetested in a coarser grain level.
          *
          * todo: refs, types for params?
          *)
-        let ast = Db.ast_of_id id db in
+        let ast = 
+          (*Db.ast_of_id id db *)
+          raise Todo
+        in
         add_uses_and_properties id kind ast pr db;
 
    ));
+(*
    db.Db.uses.Db.includees_of_file#tolist +> List.iter (fun (file1, xs) ->
      let file1 = Db.absolute_to_readable_filename file1 db in
      xs +> List.iter (fun file2 ->
@@ -514,6 +530,7 @@ let gen_prolog_db2 ?(show_progress=true) db file =
        pr (spf "include('%s', '%s')." file1 file2)
      );
    );
+*)
   )
 let gen_prolog_db ?show_progress a b =
   Common.profile_code "Prolog_php.gen" (fun () ->
@@ -594,7 +611,9 @@ let prolog_query ?(verbose=false) ~source_file ~query =
    * generate the prolog db directly from the sources.
    *)
   let db =
-    Database_php_build.db_of_files_or_dirs ~show_progress [source_file] in
+    raise Todo
+    (*Database_php_build.db_of_files_or_dirs ~show_progress [source_file] *)
+      in
 
   gen_prolog_db ~show_progress db facts_pl_file;
 
@@ -614,4 +633,3 @@ let prolog_query ?(verbose=false) ~source_file ~query =
   in
   let xs = Common.cmd_to_list cmd in
   xs
-*)
