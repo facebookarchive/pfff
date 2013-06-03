@@ -14,25 +14,15 @@
  *)
 open Common
 
-let prolog_query ?(verbose=false) ~source_file ~query =
-  raise Todo
-
-let gen_prolog_db ?show_progress a b =
-  raise Todo
-
-let append_callgraph_to_prolog_db ?show_progress a b =
-  raise Todo
-
 open Ast_php
 
 module Ast = Ast_php
 module EC = Entity_php
-(* module Db = Database_php *)
 module V = Visitor_php
 module E = Database_code
-
-module Env = Env_interpreter_php
+module G = Graph_code
 module CG = Callgraph_php2
+module P = Graph_code_prolog
 
 (*****************************************************************************)
 (* Prelude *)
@@ -460,14 +450,14 @@ let add_uses_and_properties id kind ast pr db =
 (* Build db *)
 (*****************************************************************************)
 
-(* todo? could avoid going through database_php.ml and parse directly? *)
-let gen_prolog_db2 ?(show_progress=true) db file =
-  Common.with_open_outfile file (fun (pr, _chan) ->
-   let pr s = pr (s ^ "\n") in
-   pr ("%% -*- prolog -*-");
-   pr (spf "%% facts about %s" (raise Todo(*Db.path_of_project_in_database db*)));
+let build2 ?(show_progress=true) g =
 
-   pr (":- discontiguous kind/2, at/3.");
+  let res = ref [] in
+  let add x = Common.push2 x res in
+
+   add (P.Misc "% -*- prolog -*-");
+   add (P.Misc ":- discontiguous kind/2, at/3");
+(*
    pr (":- discontiguous static/1, abstract/1, final/1.");
    pr (":- discontiguous is_public/1, is_private/1, is_protected/1.");
    pr (":- discontiguous extends/2, implements/2, mixins/2.");
@@ -480,11 +470,42 @@ let gen_prolog_db2 ?(show_progress=true) db file =
    pr (":- discontiguous throw/2, catch/2.");
    pr (":- discontiguous problem/2.");
 
-
    (* see the comment on newv in add_uses() above *)
    pr (":- discontiguous special/1.");
    pr ("special('newv').");
    pr ("special('DT').");
+*)
+
+  (* defs *)
+  g +> G.iter_nodes (fun n ->
+    let (str, kind) = n in
+    (match kind with
+    | E.Function | E.Global | E.Constant
+    | E.Method _ | E.Class _ | E.ClassConstant
+        -> add (P.Kind (P.entity_of_str str, kind))
+    | E.Field ->
+      let (xs, x) = P.entity_of_str str in
+      if x =~ "\\$\\(.*\\)"
+      then add (P.Kind ((xs, Common.matched1 x), kind))
+      else failwith ("field does not contain $: " ^ x)
+
+    | E.File -> ()
+    | E.Dir -> ()
+
+    | _ ->
+        pr2_gen n;
+        raise Todo
+    );
+    (try 
+      let nodeinfo = G.nodeinfo n g in
+      add (P.At (P.entity_of_str str, 
+               nodeinfo.G.pos.Parse_info.file,
+               nodeinfo.G.pos.Parse_info.line))
+    with Not_found -> ()
+    );
+  );
+
+
 (*
    db.Db.file_info#tolist +> List.iter (fun (file, file_info) ->
      let file = Db.absolute_to_readable_filename file db in
@@ -497,6 +518,7 @@ let gen_prolog_db2 ?(show_progress=true) db file =
      );
    );
 *)
+(*
    let ids = raise Todo(*db.Db.defs.Db.id_kind#tolist*) in
    ids +> Common_extra.progress ~show:show_progress (fun k ->
     List.iter (fun (id, kind) ->
@@ -519,6 +541,8 @@ let gen_prolog_db2 ?(show_progress=true) db file =
         add_uses_and_properties id kind ast pr db;
 
    ));
+*)
+
 (*
    db.Db.uses.Db.includees_of_file#tolist +> List.iter (fun (file1, xs) ->
      let file1 = Db.absolute_to_readable_filename file1 db in
@@ -531,10 +555,10 @@ let gen_prolog_db2 ?(show_progress=true) db file =
      );
    );
 *)
-  )
-let gen_prolog_db ?show_progress a b =
-  Common.profile_code "Prolog_php.gen" (fun () ->
-    gen_prolog_db2 ?show_progress a b)
+   List.rev !res
+
+let build ?show_progress a =
+  Common.profile_code "Prolog_php.build" (fun () -> build2 ?show_progress a)
 
 (* todo:
  * - could also improve precision of use/4
@@ -607,15 +631,17 @@ let prolog_query ?(verbose=false) ~source_file ~query =
   (* make sure it's a valid PHP file *)
   let _ast = Parse_php.parse_program source_file in
 
-  (* todo: at some point avoid using database_php_build and
-   * generate the prolog db directly from the sources.
-   *)
-  let db =
-    raise Todo
-    (*Database_php_build.db_of_files_or_dirs ~show_progress [source_file] *)
-      in
+  let g =
+    Graph_code_php.build ~verbose (Right [source_file]) []
+  in
 
-  gen_prolog_db ~show_progress db facts_pl_file;
+  let facts = build ~show_progress g in
+  Common.with_open_outfile facts_pl_file (fun (pr_no_nl, _chan) ->
+    let pr s = pr_no_nl (s ^ "\n") in
+    facts +> List.iter (fun fact ->
+      pr (P.string_of_fact fact);
+    )
+  );
 
   let jujudb =
     Database_juju_php.juju_db_of_files ~show_progress [source_file] in

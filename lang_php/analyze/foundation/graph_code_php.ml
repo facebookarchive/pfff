@@ -430,15 +430,12 @@ and func_def env def =
   stmtl env def.f_body
 
 and class_def env def =
-  let kind = E.RegularClass in
-  (*
-    let _kind =
+  let kind =
     match def.c_kind with
     | ClassRegular | ClassFinal | ClassAbstract -> E.RegularClass
     | Interface -> E.Interface
     | Trait -> E.Trait
-    in
-  *)
+  in
   let node = (def.c_name, E.Class kind) in
   let env = add_node_and_edge_if_defs_mode env node in
 
