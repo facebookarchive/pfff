@@ -15,3 +15,5 @@ val string_of_fact: fact -> string
 val string_of_entity_kind: Database_code.entity_kind -> string
 
 val build: Common.dirname -> Graph_code.graph -> fact list
+
+val entity_of_str: string -> entity
