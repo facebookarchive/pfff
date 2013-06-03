@@ -1,11 +1,16 @@
 type fact =
   | At of entity * Common.filename (* readable path *) * int (* line *)
   | Kind of entity * Database_code.entity_kind
-  | Extends of string * string | Implements of string * string
+
+  | Extends of string * string 
+  | Implements of string * string
   | Mixins of string * string
+
   | Privacy of entity * Database_code.privacy
+
   | Call of entity * entity
   | UseData of entity * entity
+
   | Misc of string
 
   and entity = 

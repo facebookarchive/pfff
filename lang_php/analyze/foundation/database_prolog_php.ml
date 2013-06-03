@@ -459,12 +459,12 @@ let build2 ?(show_progress=true) g =
    add (P.Misc ":- discontiguous kind/2, at/3");
    add (P.Misc ":- discontiguous extends/2, implements/2, mixins/2");
    add (P.Misc ":- discontiguous is_public/1, is_private/1, is_protected/1");
+   add (P.Misc ":- discontiguous docall/3, use/4");
+   add (P.Misc ":- discontiguous docall2/3");
 (*
    pr (":- discontiguous static/1, abstract/1, final/1.");
    pr (":- discontiguous arity/2.");
    pr (":- discontiguous parameter/4.");
-   pr (":- discontiguous docall/3, use/4.");
-   pr (":- discontiguous docall2/3.");
    pr (":- discontiguous include/2, require_module/2.");
    pr (":- discontiguous yield/1.");
    pr (":- discontiguous throw/2, catch/2.");
@@ -530,6 +530,9 @@ let build2 ?(show_progress=true) g =
       add (P.Mixins (s1, s2))
     | ((s1, E.Class _kind1), (s2, E.Class E.Interface)) ->
       add (P.Implements (s1, s2))
+
+    | ((s1, E.Function), (s2, E.Function)) ->
+      add (P.Misc (spf "docall(%s, %s, function)" s1 s2))
 
     | _ -> ()
   );
