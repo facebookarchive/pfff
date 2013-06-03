@@ -94,9 +94,10 @@ let unittest =
           let config2 = 
             DM.expand_node_opti ("./...", E.Dir) dm.config gopti in
           let dm, gopti = DM.build config2 None gopti in
-          pr2_gen dm;
-          let xs = DM.explain_cell_list_use_edges (1, 0) dm gopti in
-          pr2_gen xs
+          (* pr2_gen dm; *)
+          let _xs = DM.explain_cell_list_use_edges (1, 0) dm gopti in
+          (* pr2_gen xs *)
+          ()
         )
       );
 

@@ -20,16 +20,15 @@ TARGET=pfff
 PROGS=pfff \
  sgrep spatch \
  stags \
- codequery \
  scheck \
+ pfff_db \
+ codequery \
  pfff_test
 
 ifeq ($(FEATURE_VISUAL), 1)
 PROGS+=codemap
 PROGS+=codegraph
 endif
-# note that without bdb, pfff_db will be incomplete regarding PHP
-PROGS+=pfff_db
 
 OPTPROGS= $(PROGS:=.opt)
 
@@ -73,16 +72,6 @@ REGEXPCMD= $(MAKE) -C $(REGEXPDIR) &&  $(MAKE) regexp -C commons
 REGEXPCMDOPT= $(MAKE) -C $(REGEXPDIR) &&  $(MAKE) regexp.opt -C commons
 REGEXPCMA=external/ocamlpcre/lib/pcre.cma  commons/commons_regexp.cma
 PCREINCLUDE=external/ocamlpcre/lib
-else
-endif
-
-# cf also below for target pfff_db_heavy
-ifeq ($(FEATURE_BDB), 1)
-BDBDIR=external/ocamlbdb
-BDBCMD= $(MAKE) all -C $(BDBDIR) && $(MAKE) bdb -C commons
-BDBCMDOPT= $(MAKE) all.opt -C $(BDBDIR) && $(MAKE) bdb.opt -C commons
-BDBCMA=external/ocamlbdb/bdb.cma commons/commons_bdb.cma
-BDBSYSCMA=
 else
 endif
 
@@ -172,7 +161,6 @@ BASICSYSLIBS=nums.cma bigarray.cma str.cma unix.cma
 
 LIBS= commons/lib.cma \
        $(BTCMA) \
-       $(BDBCMA) \
        $(REGEXPCMA) \
        $(OCAMLNETCMA) \
        $(GRAPHCMA) \
@@ -234,7 +222,7 @@ LIBS= commons/lib.cma \
     lang_web/parsing/lib.cma \
 
 MAKESUBDIRS=commons \
-  $(BDBDIR) $(REGEXPDIR) \
+  $(REGEXPDIR) \
   $(GRAPHDIR) \
   $(OCAMLNETDIR) \
   $(GUIDIR) $(CAIRODIR) \
@@ -325,7 +313,6 @@ top: $(TARGET).top
 rec:
 	$(MAKE) -C commons 
 	$(BTCMD)
-	$(BDBCMD)
 	$(REGEXPCMD)
 	$(GRAPHCMD)
 	$(GUICMD)
@@ -335,7 +322,6 @@ rec:
 rec.opt:
 	$(MAKE) all.opt -C commons 
 	$(BTCMDOPT)
-	$(BDBCMDOPT)
 	$(REGEXPCMDOPT)
 	$(GRAPHCMDOPT)
 	$(GUICMDOPT)
