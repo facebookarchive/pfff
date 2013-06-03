@@ -457,10 +457,10 @@ let build2 ?(show_progress=true) g =
 
    add (P.Misc "% -*- prolog -*-");
    add (P.Misc ":- discontiguous kind/2, at/3");
+   add (P.Misc ":- discontiguous extends/2, implements/2, mixins/2");
 (*
    pr (":- discontiguous static/1, abstract/1, final/1.");
    pr (":- discontiguous is_public/1, is_private/1, is_protected/1.");
-   pr (":- discontiguous extends/2, implements/2, mixins/2.");
    pr (":- discontiguous arity/2.");
    pr (":- discontiguous parameter/4.");
    pr (":- discontiguous docall/3, use/4.");
@@ -505,6 +505,19 @@ let build2 ?(show_progress=true) g =
     );
   );
 
+  (* uses *)
+
+  (* we iter on the Use edges of the graph_code (see graph_code.ml), which
+   * contains the inheritance tree, call graph, and data graph information.
+   *)
+  g +> G.iter_use_edges (fun n1 n2 ->
+    match n1, n2 with
+    (* todo: Implements/Mixins, but need adjust graph_code_php.ml too *)
+    | ((s1, E.Class _kind1), (s2, E.Class _kind2)) ->
+      add (P.Extends (s1, s2))
+
+    | _ -> ()
+  );
 
 (*
    db.Db.file_info#tolist +> List.iter (fun (file, file_info) ->
