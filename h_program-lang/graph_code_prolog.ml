@@ -225,3 +225,67 @@ let build root g =
   );
 
   List.rev !res
+
+(* old: was for PHP.
+
+  (* defs *)
+  g +> G.iter_nodes (fun n ->
+    let (str, kind) = n in
+    (match kind with
+    | E.Function | E.Constant | E.Class _ 
+    | E.Global
+    | E.ClassConstant
+        -> add (P.Kind (P.entity_of_str str, kind))
+
+    | E.Method _ ->
+      add (P.Kind (P.entity_of_str str, kind));
+      let nodeinfo = G.nodeinfo n g in
+      let props = nodeinfo.G.props in
+      props +> List.iter (function
+      | E.Privacy priv ->
+        add (P.Privacy (P.entity_of_str str, priv));
+      | _ -> ()
+      );
+
+    | E.Field ->
+      let (xs, x) = P.entity_of_str str in
+      if x =~ "\\$\\(.*\\)"
+      then add (P.Kind ((xs, Common.matched1 x), kind))
+      else failwith ("field does not contain $: " ^ x)
+
+    | E.File -> ()
+    | E.Dir -> ()
+
+    | _ ->
+        pr2_gen n;
+        raise Todo
+    );
+    (try 
+      let nodeinfo = G.nodeinfo n g in
+      add (P.At (P.entity_of_str str, 
+               nodeinfo.G.pos.Parse_info.file,
+               nodeinfo.G.pos.Parse_info.line))
+    with Not_found -> ()
+    );
+  );
+
+  (* uses *)
+
+  (* we iter on the Use edges of the graph_code (see graph_code.ml), which
+   * contains the inheritance tree, call graph, and data graph information.
+   *)
+  g +> G.iter_use_edges (fun n1 n2 ->
+    match n1, n2 with
+    | ((s1, E.Class _kind1), (s2, E.Class E.RegularClass)) ->
+      add (P.Extends (s1, s2))
+    | ((s1, E.Class _kind1), (s2, E.Class E.Trait)) ->
+      add (P.Mixins (s1, s2))
+    | ((s1, E.Class _kind1), (s2, E.Class E.Interface)) ->
+      add (P.Implements (s1, s2))
+
+    | ((s1, E.Function), (s2, E.Function)) ->
+      add (P.Misc (spf "docall(%s, %s, function)" s1 s2))
+
+    | _ -> ()
+  );
+*)

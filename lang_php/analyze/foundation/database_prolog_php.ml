@@ -1,6 +1,6 @@
 (* Yoann Padioleau
  *
- * Copyright (C) 2011, 2012 Facebook
+ * Copyright (C) 2011, 2012, 2013 Facebook
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public License
@@ -23,6 +23,7 @@ module E = Database_code
 module G = Graph_code
 module CG = Callgraph_php2
 module P = Graph_code_prolog
+module PI = Parse_info
 
 (*****************************************************************************)
 (* Prelude *)
@@ -43,7 +44,6 @@ module P = Graph_code_prolog
  *    previously pathup/pathdown)
  *
  * todo:
- *  - get rid of berkeley db prerequiste, use ast_php_simple
  *  - precise datagraph
  *  - types, refs
  *
@@ -54,56 +54,6 @@ module P = Graph_code_prolog
 (*****************************************************************************)
 (* Helpers *)
 (*****************************************************************************)
-
-(* quite similar to Database_php.complete_name_of_id *)
-let name_id id db =
-  try
-    let s = 
-      (* db.Db.defs.Db.id_name#assoc id in *)
-      raise Todo
-    in
-    let id_kind = 
-      (* db.Db.defs.Db.id_kind#assoc id in *)
-      raise Todo
-    in
-    
-    (match id_kind with
-    | E.Class _ | E.Function | E.Constant ->
-        spf "'%s'" s
-    | E.Method _ | E.ClassConstant | E.Field ->
-        (match 
-(*Db.class_or_interface_id_of_nested_id_opt id db *)
-            raise Todo
-with
-        | Some id_class ->
-          let sclass = 
-            (* Db.name_of_id id_class db *)
-            raise Todo
-               in
-            (match id_kind with
-            (* todo? xhp decl ? *)
-            (* old: I used to do something different for Field amd remove
-             * the $ because in use-mode but we don't use the $ anymore.
-             * now def don't have a $ too, and can be xhp attribute too.
-             *)
-            | E.Method _ | E.Field | E.ClassConstant ->
-                spf "('%s','%s')" sclass s
-            | _ -> raise Impossible
-            )
-        | None ->
-            failwith (spf "could not find enclosing class for %s"
-                         (raise Todo(*Db.str_of_id id db*)))
-        )
-    | E.TopStmts -> spf "'__TOPSTMT__%s'" (EC.str_of_id id)
-    (* ?? *)
-    | E.Other s -> spf "'__IDMISC__%s'" (EC.str_of_id id)
-
-    | _ ->
-        (* not in db for now *)
-        raise Impossible
-    )
-  with Not_found ->
-    failwith (spf "could not find name for id %s" (raise Todo(*Db.str_of_id id db*)))
 
 let name_of_node = function
   | CG.File s -> spf "'__TOPSTMT__%s'" s
@@ -149,23 +99,181 @@ let read_write in_lvalue =
 let escape_quote_array_field s =
   Str.global_replace (Str.regexp "[']") "__" s
 
+let add_function_params current def add =
+  def.f_params +> Ast.unparen +> Ast.uncomma_dots +> Common.index_list_0 +>
+    List.iter (fun (param, i) ->
+      add (P.Misc (spf "parameter(%s, %d, '$%s', '%s')"
+             current
+             i
+             (Ast.str_of_dname param.p_name)
+             (string_of_hint_type param.p_type)
+      ))
+    )
 
 (*****************************************************************************)
 (* Defs/uses *)
 (*****************************************************************************)
 
-(* todo: yet another use/def, factorize code with defs_uses_php.ml?
+(* Yet another use/def ... 
+ *
+ * Factorize code with defs_uses_php.ml?
  * But for defs we want more than just defs, we also want the arity
  * of parameters for instance. And for uses we also want sometimes to
  * process the arguments for instance with require_module, so it's hard
  * to factorize I think. Copy paste is fine sometimes ...
+ *  
+ * Factorize code with graph_code_php.ml? 
+ * But many things like approximate callgraphs with docall(_, 'bar', method)
+ * are not in the graph_code, or parameters, so we need anyway to
+ * visit the AST to add those speific predicates.
  *)
-let add_uses id ast pr db =
+let visit ~add readable ast =
+
   let h = Hashtbl.create 101 in
 
+  let current = ref (spf "'__TOPSTMT__%s'" readable) in
   let in_lvalue_pos = ref false in
 
   let visitor = V.mk_visitor { V.default_visitor with
+    V.ktop = (fun (k, vx) x ->
+      match x with
+      | FuncDef def ->
+        let s = Ast.str_of_ident def.f_name in
+        current := spf "'%s'" s;
+        Hashtbl.clear h;
+        add (P.Kind (P.entity_of_str s, E.Function));
+        add (P.At (P.entity_of_str s, readable, PI.line_of_info def.f_tok));
+        
+        add (P.Misc (spf "arity(%s, %d)" !current
+             (List.length (def.f_params +> Ast.unparen +> Ast.uncomma_dots))));
+        add_function_params !current def add;
+
+        k x
+      | ConstantDef (tok, id, _, _, _) ->
+        let s = Ast.str_of_ident id in
+        current := spf "'%s'" s;
+        Hashtbl.clear h;
+        add (P.Kind (P.entity_of_str s, E.Constant));
+        add (P.At (P.entity_of_str s, readable, PI.line_of_info tok));
+
+        k x
+
+      | ClassDef def ->
+        let s = Ast.str_of_ident def.c_name in
+        current := spf "'%s'" s;
+        Hashtbl.clear h;
+        let kind =
+          match def.c_type with
+          | ClassRegular _ | ClassFinal _ | ClassAbstract _ -> E.RegularClass
+          | Interface _ -> E.Interface
+          | Trait _ -> E.Trait
+        in
+        add (P.Kind (P.entity_of_str s, E.Class kind));
+        let tok = Ast.info_of_ident def.c_name in
+        add (P.At (P.entity_of_str s, readable, PI.line_of_info tok));
+
+
+        (match def.c_type with
+        | ClassAbstract _ -> add (P.Misc (spf "abstract(%s)" !current))
+        | ClassFinal _ -> add (P.Misc (spf "final(%s)" !current))
+        | ClassRegular _ -> ()
+        (* the kind/2 will cover those different cases *)
+        | Interface _
+        | Trait _ -> ()
+        );
+        def.c_extends +> Common.do_option (fun (tok, x) ->
+          add (P.Extends (s, (Ast.str_of_class_name x)));
+        );
+        def.c_implements +> Common.do_option (fun (tok, interface_list) ->
+          interface_list +> Ast.uncomma +> List.iter (fun x ->
+          (* could put implements instead? it's not really the same
+           * kind of extends. Or have a extends_interface/2? maybe
+           * not worth it, just add kind(X, class) when using children/2
+           * if you want to restrict your query.
+           *)
+            (match def.c_type with
+            | Interface _ ->
+              add (P.Extends (s, Ast.str_of_class_name x));
+            | _ ->
+              add (P.Implements(s, Ast.str_of_class_name x));
+            )
+          ));
+        def.c_body +> Ast.unbrace +> List.iter (function
+        | UseTrait (_tok, names, rules_or_tok) ->
+          names +> Ast.uncomma +> List.iter (fun name ->
+            add (P.Mixins (s, Ast.str_of_class_name name))
+          )
+        | _ -> ()
+        );
+
+        def.c_body +> Ast.unbrace +> List.iter (fun class_stmt ->
+          match class_stmt with
+        | Method def ->
+
+          let s2 = Ast.str_of_ident def.f_name in
+          current := spf "('%s', '%s')" s s2;
+          Hashtbl.clear h;
+          let sfull = (s ^ "." ^ s2) in
+          let kind = E.RegularMethod in
+          add (P.Kind (P.entity_of_str sfull, E.Method kind));
+          add (P.At (P.entity_of_str sfull, readable, PI.line_of_info def.f_tok));
+
+          add (P.Misc (spf "arity(%s, %d)" !current
+             (List.length (def.f_params +> Ast.unparen +> Ast.uncomma_dots))));
+          def.f_modifiers +> List.iter (fun (m, _) ->
+            add (P.Misc (spf "%s(%s)" (string_of_modifier m) !current));
+          );
+          add_function_params !current def add;
+
+          vx (ClassStmt class_stmt);
+
+        | ClassConstants (tok, xs, _sc) ->
+          xs +> Ast.uncomma +> List.iter (fun (id, (_, e)) ->
+            let s2 = Ast.str_of_ident id in
+            current := spf "('%s', '%s')" s s2;
+            Hashtbl.clear h;
+            let sfull = (s ^ "." ^ s2) in
+            add (P.Kind (P.entity_of_str sfull, E.ClassConstant));
+            add (P.At (P.entity_of_str sfull, readable, PI.line_of_info tok));
+
+            vx (Expr e);
+          )
+        | ClassVariables (ms, _typopt, xs, _sc) ->
+          
+          xs +> Ast.uncomma +> List.iter (fun classvar ->
+            let (dname, sc_opt) = classvar in
+            let s2 = Ast.str_of_dname dname in
+            
+            (* old: I used to do something different for Field amd remove
+             * the $ because in use-mode but we don't use the $ anymore.
+             * now def don't have a $ too, and can be xhp attribute too.
+             *)
+            current := spf "('%s', '%s')" s s2;
+            let sfull = (s ^ "." ^ s2) in
+            Hashtbl.clear h;
+            add (P.Kind (P.entity_of_str sfull, E.Field));
+            add (P.At (P.entity_of_str sfull, readable, PI.line_of_info tok));
+
+            (match ms with
+            | NoModifiers _ -> ()
+            | VModifiers ms ->
+              ms +> List.iter (fun (m, _) ->
+                add (P.Misc (spf "%s(%s)" (string_of_modifier m) !current))
+              );
+            );
+              
+            sc_opt +> Common.do_option (fun (_, e) ->
+              vx (Expr e)
+            )
+          )
+
+        (* todo? *)
+        | XhpDecl _ -> ()
+        | UseTrait _ -> ()
+        )
+      | _ -> k x
+
+    );
 
     V.kexpr = (fun (k, vx) x ->
       match x with
@@ -187,13 +295,13 @@ let add_uses id ast pr db =
            * higher-order functions.
            *)
           | ("newv" | "DT"), Arg ((Sc (C (String (str2,_)))))::rest ->
-              pr (spf "docall(%s, ('%s','%s'), special)."
-                     (name_id id db) str str2)
+              add (P.Misc (spf "docall(%s, ('%s','%s'), special)"
+                     !current str str2))
 
           (* could be encoded as a docall(...,special) too *)
           | "require_module", [Arg ((Sc (C (String (str,_)))))] ->
-              pr (spf "require_module('%s', '%s')."
-                     (raise Todo(*Db.readable_filename_of_id id db*)) str)
+              add (P.Misc (spf "require_module('%s', '%s')"
+                     (raise Todo(*Db.readable_filename_of_id id db*)) str))
 
           | _ -> ()
           );
@@ -201,7 +309,7 @@ let add_uses id ast pr db =
           if not (Hashtbl.mem h str)
           then begin
             Hashtbl.replace h str true;
-            pr (spf "docall(%s, '%s', function)." (name_id id db) str)
+            add (P.Misc (spf "docall(%s, '%s', function)" !current str))
           end;
           k x
 
@@ -211,8 +319,8 @@ let add_uses id ast pr db =
           if not (Hashtbl.mem h str)
           then begin
             Hashtbl.replace h str true;
-            pr (spf "use(%s, '%s', array, %s)."
-                   (name_id id db) str (read_write !in_lvalue_pos))
+            add (P.Misc (spf "use(%s, '%s', array, %s)"
+                  !current str (read_write !in_lvalue_pos)))
           end;
           k x
 
@@ -225,7 +333,7 @@ let add_uses id ast pr db =
           then begin
             Hashtbl.replace h str true;
             (* todo: imprecise, need julien's precise callgraph *)
-            pr (spf "docall(%s, '%s', method)." (name_id id db) str)
+            add (P.Misc (spf "docall(%s, '%s', method)" !current str))
           end;
 
           (match x with
@@ -234,8 +342,8 @@ let add_uses id ast pr db =
               | Id (name2) ->
                 (match name2 with
                 | XName (name) ->
-                  pr (spf "docall(%s, ('%s','%s'), method)."
-                           (name_id id db) (Ast_php.str_of_name name2) str)
+                  add (P.Misc (spf "docall(%s, ('%s','%s'), method)"
+                           !current (Ast_php.str_of_name name2) str))
                 (* this should have been desugared while building the
                  * code database, except for traits code ...
                  *)
@@ -262,9 +370,9 @@ let add_uses id ast pr db =
          | Id name ->
            (match name with
            | XName(classname) ->
-             pr (spf "use(%s, ('%s','%s'), constant, read)."
-                   (name_id id db) (Ast_php.str_of_ident classname)
-                   (Ast_php.str_of_name cstname))
+             add (P.Misc (spf "use(%s, ('%s','%s'), constant, read)"
+                   !current (Ast_php.str_of_ident classname)
+                   (Ast_php.str_of_name cstname)))
              (* this should have been desugared while building the
               * code database, except for traits code ...
               *)
@@ -283,8 +391,8 @@ let add_uses id ast pr db =
           if not (Hashtbl.mem h str)
           then begin
             Hashtbl.replace h str true;
-            pr (spf "use(%s, '%s', field, %s)."
-                   (name_id id db) str (read_write !in_lvalue_pos))
+            add (P.Misc (spf "use(%s, '%s', field, %s)"
+                   !current str (read_write !in_lvalue_pos)))
           end;
           k x
 
@@ -311,8 +419,8 @@ let add_uses id ast pr db =
             if not (Hashtbl.mem h str)
             then begin
               Hashtbl.replace h str true;
-              pr (spf "docall(%s, '%s', class)."
-                    (name_id id db) str)
+              add (P.Misc (spf "docall(%s, '%s', class)"
+                    !current str))
             end;
             
          (* todo: do something here *)
@@ -326,7 +434,7 @@ let add_uses id ast pr db =
         k x
 
       | Yield _ | YieldBreak _ ->
-          pr (spf "yield(%s)." (name_id id db));
+          add (P.Misc (spf "yield(%s)" !current));
           k x
 
       | _ -> k x
@@ -341,20 +449,19 @@ let add_uses id ast pr db =
           if not (Hashtbl.mem h str)
           then begin
             Hashtbl.replace h str true;
-            pr (spf "docall(%s, '%s', class)."
-                   (name_id id db) str)
+            add (P.Misc (spf "docall(%s, '%s', class)"  !current str))
           end;
           k x
     );
     V.kstmt = (fun (k, _) x ->
       (match x with
       | Throw (_, New (_, (Id (name)), _), _) ->
-          pr (spf "throw(%s, '%s')."
-                 (name_id id db) (Ast.str_of_name name))
+          add (P.Misc (spf "throw(%s, '%s')"
+                 !current (Ast.str_of_name name)))
       | Try (_, _, c1, cs) ->
           (c1::cs) +> List.iter (fun (_, (_, (classname, dname), _), _) ->
-            pr (spf "catch(%s, '%s')."
-                   (name_id id db) (Ast.str_of_class_name classname))
+            add (P.Misc (spf "catch(%s, '%s')"
+                   !current (Ast.str_of_class_name classname)))
           );
       | _ -> ()
       );
@@ -363,94 +470,33 @@ let add_uses id ast pr db =
 
   }
   in
-  visitor (Entity ast);
+  visitor (Program ast);
   ()
-
-let add_function_params id def pr db =
-  def.f_params +> Ast.unparen +> Ast.uncomma_dots +> Common.index_list_0 +>
-    List.iter (fun (param, i) ->
-      pr (spf "parameter(%s, %d, '$%s', '%s')."
-             (name_id id db)
-             i
-             (Ast.str_of_dname param.p_name)
-             (string_of_hint_type param.p_type)
-      ))
-
-let add_uses_and_properties id kind ast pr db =
-  match kind, ast with
-  | E.Function, FunctionE def ->
-      pr (spf "arity(%s, %d)." (name_id id db)
-             (List.length (def.f_params +> Ast.unparen +> Ast.uncomma_dots)));
-      add_function_params id def pr db;
-      add_uses id ast pr db;
-  | E.Constant, ConstantE def ->
-      add_uses id ast pr db
-
-  | E.Class _, ClassE def ->
-      (match def.c_type with
-      | ClassAbstract _ -> pr (spf "abstract(%s)." (name_id id db))
-      | ClassFinal _ -> pr (spf "final(%s)." (name_id id db))
-      | ClassRegular _ -> ()
-      (* the kind/2 will cover those different cases *)
-      | Interface _
-      | Trait _ -> ()
-      );
-      def.c_extends +> Common.do_option (fun (tok, x) ->
-        pr (spf "extends(%s, '%s')." (name_id id db) (Ast.str_of_class_name x));
-      );
-      def.c_implements +> Common.do_option (fun (tok, interface_list) ->
-        interface_list +> Ast.uncomma +> List.iter (fun x ->
-          (* could put implements instead? it's not really the same
-           * kind of extends. Or have a extends_interface/2? maybe
-           * not worth it, just add kind(X, class) when using children/2
-           * if you want to restrict your query.
-           *)
-          (match def.c_type with
-          | Interface _ ->
-             pr (spf "extends(%s, '%s')." (name_id id db) (Ast.str_of_class_name x));
-          | _ ->
-             pr (spf "implements(%s, '%s')." (name_id id db) (Ast.str_of_class_name x));
-          )
-        ));
-      def.c_body +> Ast.unbrace +> List.iter (function
-      | UseTrait (_tok, names, rules_or_tok) ->
-          names +> Ast.uncomma +> List.iter (fun name ->
-            pr (spf "mixins(%s, '%s')." (name_id id db) (Ast.str_of_class_name name))
-          )
-      | _ -> ()
-      );
-
-  | E.Method _, MethodE def ->
-      pr (spf "arity(%s, %d)." (name_id id db)
-             (List.length (def.f_params +> Ast.unparen +> Ast.uncomma_dots)));
-      def.f_modifiers +> List.iter (fun (m, _) ->
-        pr (spf "%s(%s)." (string_of_modifier m) (name_id id db));
-      );
-      add_function_params id def pr db;
-      add_uses id ast pr db;
-
-  | E.Field, ClassVariableE (var, ms) ->
-      ms +> List.iter (fun (m) ->
-        pr (spf "%s(%s)." (string_of_modifier m) (name_id id db))
-      )
-
-  (* todo? *)
-  | E.Field, XhpAttrE _ ->
-      ()
-
-  | E.ClassConstant, _ -> ()
-
-  | (E.TopStmts | E.Other _), _ ->
-      add_uses id ast pr db;
-
-  | _ -> raise Impossible
 
 
 (*****************************************************************************)
 (* Build db *)
 (*****************************************************************************)
 
-let build2 ?(show_progress=true) g =
+let build2 ?(show_progress=true) dir_or_files skip_list =
+
+  let root, files =
+    match dir_or_files with
+    | Left dir ->
+      let root = Common.realpath dir in
+      let all_files = Lib_parsing_php.find_php_files_of_dir_or_files [root] in
+
+      (* step0: filter noisy modules/files *)
+      let files = 
+        Skip_code.filter_files skip_list root all_files in
+      (* step0: reorder files *)
+      let files = 
+        Skip_code.reorder_files_skip_errors_last skip_list root files in
+      root, files
+    (* useful when build from test code *)
+    | Right files ->
+      "/", files
+  in
 
   let res = ref [] in
   let add x = Common.push2 x res in
@@ -461,116 +507,35 @@ let build2 ?(show_progress=true) g =
    add (P.Misc ":- discontiguous is_public/1, is_private/1, is_protected/1");
    add (P.Misc ":- discontiguous docall/3, use/4");
    add (P.Misc ":- discontiguous docall2/3");
-(*
-   pr (":- discontiguous static/1, abstract/1, final/1.");
-   pr (":- discontiguous arity/2.");
-   pr (":- discontiguous parameter/4.");
-   pr (":- discontiguous include/2, require_module/2.");
-   pr (":- discontiguous yield/1.");
-   pr (":- discontiguous throw/2, catch/2.");
-   pr (":- discontiguous problem/2.");
+   add (P.Misc ":- discontiguous static/1, abstract/1, final/1");
+   add (P.Misc ":- discontiguous arity/2");
+   add (P.Misc ":- discontiguous parameter/4");
+   add (P.Misc ":- discontiguous include/2, require_module/2");
+   add (P.Misc ":- discontiguous yield/1");
+   add (P.Misc ":- discontiguous throw/2, catch/2");
+   add (P.Misc ":- discontiguous problem/2");
 
    (* see the comment on newv in add_uses() above *)
-   pr (":- discontiguous special/1.");
-   pr ("special('newv').");
-   pr ("special('DT').");
-*)
+   add (P.Misc ":- discontiguous special/1");
+   add (P.Misc "special('newv')");
+   add (P.Misc "special('DT')");
 
-  (* defs *)
-  g +> G.iter_nodes (fun n ->
-    let (str, kind) = n in
-    (match kind with
-    | E.Function | E.Constant | E.Class _ 
-    | E.Global
-    | E.ClassConstant
-        -> add (P.Kind (P.entity_of_str str, kind))
+   files +> List.iter (fun file ->
 
-    | E.Method _ ->
-      add (P.Kind (P.entity_of_str str, kind));
-      let nodeinfo = G.nodeinfo n g in
-      let props = nodeinfo.G.props in
-      props +> List.iter (function
-      | E.Privacy priv ->
-        add (P.Privacy (P.entity_of_str str, priv));
-      | _ -> ()
-      );
+     let readable = Common.filename_without_leading_path root file in
+     let parts = Common.split "/" readable in 
+     add (P.Misc (spf "file('%s', [%s])" readable
+           (parts +> List.map (fun s -> spf "'%s'" s) +> Common.join ",")));
 
-    | E.Field ->
-      let (xs, x) = P.entity_of_str str in
-      if x =~ "\\$\\(.*\\)"
-      then add (P.Kind ((xs, Common.matched1 x), kind))
-      else failwith ("field does not contain $: " ^ x)
-
-    | E.File -> ()
-    | E.Dir -> ()
-
-    | _ ->
-        pr2_gen n;
-        raise Todo
-    );
-    (try 
-      let nodeinfo = G.nodeinfo n g in
-      add (P.At (P.entity_of_str str, 
-               nodeinfo.G.pos.Parse_info.file,
-               nodeinfo.G.pos.Parse_info.line))
-    with Not_found -> ()
-    );
-  );
-
-  (* uses *)
-
-  (* we iter on the Use edges of the graph_code (see graph_code.ml), which
-   * contains the inheritance tree, call graph, and data graph information.
-   *)
-  g +> G.iter_use_edges (fun n1 n2 ->
-    match n1, n2 with
-    | ((s1, E.Class _kind1), (s2, E.Class E.RegularClass)) ->
-      add (P.Extends (s1, s2))
-    | ((s1, E.Class _kind1), (s2, E.Class E.Trait)) ->
-      add (P.Mixins (s1, s2))
-    | ((s1, E.Class _kind1), (s2, E.Class E.Interface)) ->
-      add (P.Implements (s1, s2))
-
-    | ((s1, E.Function), (s2, E.Function)) ->
-      add (P.Misc (spf "docall(%s, %s, function)" s1 s2))
-
-    | _ -> ()
-  );
-
-(*
-   db.Db.file_info#tolist +> List.iter (fun (file, file_info) ->
-     let file = Db.absolute_to_readable_filename file db in
-     let parts = Common.split "/" file in
-     pr (spf "file('%s', [%s])." file
-            (parts +> List.map (fun s -> spf "'%s'" s) +> Common.join ","));
-     (match file_info.Db.parsing_status with
-     | `OK -> ()
-     | `BAD -> pr2 (spf "problem('%s', parse_error)." file)
-     );
+     try 
+       let ast = Parse_php.parse_program file in
+       visit ~add readable ast;
+     with Parse_php.Parse_error _ ->
+       add (P.Misc (spf "problem('%s', parse_error)" file))
    );
-*)
-(*
-   let ids = raise Todo(*db.Db.defs.Db.id_kind#tolist*) in
-   ids +> Common_extra.progress ~show:show_progress (fun k ->
-    List.iter (fun (id, kind) ->
-        k();
-        pr (spf "kind(%s, %s)." (name_id id db) (string_of_id_kind kind));
-        pr (spf "at(%s, '%s', %d)."
-               (name_id id db)
-               (raise Todo(*Db.readable_filename_of_id id db*))
-               (raise Todo (*Db.line_of_id id db*))
-        );
-        (* note: variables can also be static but for prolog we are
-         * interetested in a coarser grain level.
-         *
-         * todo: refs, types for params?
-         *)
-        let ast = 
-          (*Db.ast_of_id id db *)
-          raise Todo
-        in
-        add_uses_and_properties id kind ast pr db;
+       
 
+(*
    ));
 *)
 
@@ -582,14 +547,14 @@ let build2 ?(show_progress=true) g =
          try Db.absolute_to_readable_filename file2 db
          with Failure _ -> file2
        in
-       pr (spf "include('%s', '%s')." file1 file2)
+       add (P.Misc (spf "include('%s', '%s')." file1 file2)
      );
    );
 *)
    List.rev !res
 
-let build ?show_progress a =
-  Common.profile_code "Prolog_php.build" (fun () -> build2 ?show_progress a)
+let build ?show_progress a b =
+  Common.profile_code "Prolog_php.build" (fun () -> build2 ?show_progress a b)
 
 (* todo:
  * - could also improve precision of use/4
@@ -662,11 +627,13 @@ let prolog_query ?(verbose=false) ~source_file ~query =
   (* make sure it's a valid PHP file *)
   let _ast = Parse_php.parse_program source_file in
 
+(* 
   let g =
     Graph_code_php.build ~verbose (Right [source_file]) []
   in
+*)
 
-  let facts = build ~show_progress g in
+  let facts = build ~show_progress (Right [source_file]) [] in
   Common.with_open_outfile facts_pl_file (fun (pr_no_nl, _chan) ->
     let pr s = pr_no_nl (s ^ "\n") in
     facts +> List.iter (fun fact ->
