@@ -435,8 +435,8 @@ and class_def env def =
   let kind =
     match def.c_kind with
     | ClassRegular | ClassFinal | ClassAbstract -> E.RegularClass
-    | Interface -> E.Interface
-    | Trait -> E.Trait
+    | Interface -> (*E.Interface*) E.RegularClass
+    | Trait -> (*E.Trait*) E.RegularClass
   in
   let node = (def.c_name, E.Class kind) in
   let env = add_node_and_edge_if_defs_mode env node in
@@ -450,11 +450,11 @@ and class_def env def =
     );
     def.c_implements +> List.iter (fun c2 ->
       let n = Ast.name_of_class_name c2 in
-      add_use_edge env (n, E.Class E.Interface);
+      add_use_edge env (n, E.Class E.RegularClass (*E.Interface*));
     );
     def.c_uses +> List.iter (fun c2 ->
       let n = Ast.name_of_class_name c2 in
-      add_use_edge env (n, E.Class E.Trait);
+      add_use_edge env (n, E.Class E.RegularClass (*E.Trait*));
     );
   end;
   let self = Ast.str_of_name def.c_name in
