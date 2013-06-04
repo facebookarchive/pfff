@@ -267,8 +267,27 @@ let visit ~add readable ast =
             )
           )
 
-        (* todo? *)
-        | XhpDecl _ -> ()
+        | XhpDecl decl ->
+          (match decl with
+          | XhpAttributesDecl (tok, xs, sc) ->
+            xs +> Ast.uncomma +> List.iter (function
+            | XhpAttrDecl (_t, (name, _tok), affect_opt, tok_opt) ->
+              let s2 = name in
+              current := spf "('%s', '%s')" s s2;
+              Hashtbl.clear h;
+              let sfull = (s ^ "." ^ s2) in
+              let kind = E.Field in
+              add (P.Kind (P.entity_of_str sfull, kind));
+              add (P.At (P.entity_of_str sfull, readable, PI.line_of_info tok));
+              
+            | XhpAttrInherit _ -> ()
+            )
+
+          (* less: add some use edge? *)
+          | XhpChildrenDecl _ | XhpCategoriesDecl _ ->
+            ()
+          )
+
         | UseTrait _ -> ()
         )
       | _ -> k x
