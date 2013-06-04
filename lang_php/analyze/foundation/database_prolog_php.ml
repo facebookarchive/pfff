@@ -529,6 +529,7 @@ let build2 ?(show_progress=true) dir_or_files skip_list =
 
      try 
        let ast = Parse_php.parse_program file in
+       let ast = Unsugar_php.unsugar_self_parent_program ast in
        visit ~add readable ast;
      with Parse_php.Parse_error _ ->
        add (P.Misc (spf "problem('%s', parse_error)" file))
