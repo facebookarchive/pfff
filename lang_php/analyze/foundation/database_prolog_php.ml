@@ -320,7 +320,7 @@ let visit ~add readable ast =
           (* could be encoded as a docall(...,special) too *)
           | "require_module", [Arg ((Sc (C (String (str,_)))))] ->
               add (P.Misc (spf "require_module('%s', '%s')"
-                     (raise Todo(*Db.readable_filename_of_id id db*)) str))
+                     readable str))
 
           | _ -> ()
           );
@@ -522,6 +522,7 @@ let build2 ?(show_progress=true) dir_or_files skip_list =
 
    add (P.Misc "% -*- prolog -*-");
    add (P.Misc ":- discontiguous kind/2, at/3");
+   add (P.Misc ":- discontiguous file/2");
    add (P.Misc ":- discontiguous extends/2, implements/2, mixins/2");
    add (P.Misc ":- discontiguous is_public/1, is_private/1, is_protected/1");
    add (P.Misc ":- discontiguous docall/3, use/4");
