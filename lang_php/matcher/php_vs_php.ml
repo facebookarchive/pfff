@@ -2223,12 +2223,8 @@ and m_stmt a b =
       fail2 "TypedDeclaration"
 
   | A.FuncDefNested(a1), B.FuncDefNested(b1) ->
-    m_func_def a1 b1 >>= (fun (a1, b1) ->
-    return (
-       A.FuncDefNested(a1),
-       B.FuncDefNested(b1)
-    )
-    )
+      fail2 "FuncDefNested"
+
   | A.ClassDefNested(a1), B.ClassDefNested(b1) ->
     m_class_def a1 b1 >>= (fun (a1, b1) ->
     return (
@@ -2349,72 +2345,6 @@ and m_declare a b =
   fail2 "m_declare"
 
 
-(* ------------------------------------------------------------------------- *)
-(* Function definition *)
-(* ------------------------------------------------------------------------- *)
-
-and m_func_def a b =
-  match a, b with
-  { A.
-  f_tok = a1;
-  f_ref = a2;
-  f_name = a3;
-  f_params = a4;
-  f_return_type = a5;
-  f_body = a6;
-  f_type = a7;
-  f_modifiers = a8;
-  f_attrs = a9;
-  },
-  { B.
-  f_tok = b1;
-  f_ref = b2;
-  f_name = b3;
-  f_params = b4;
-  f_return_type = b5;
-  f_body = b6;
-  f_type = b7;
-  f_modifiers = b8;
-  f_attrs = b9;
-  } ->
-    (* TODO: sgrep/spatch for attributes? *)
-    m_tok a1 b1 >>= (fun (a1, b1) ->
-    m_is_ref a2 b2 >>= (fun (a2, b2) ->
-    (* iso on function name *)
-    m_name_metavar_ok a3 b3 >>= (fun (a3, b3) ->
-    (m_paren (m_comma_list_dots m_parameter)) a4 b4 >>= (fun (a4, b4) ->
-    (m_option m_hint_type) a5 b5 >>= (fun (a5, b5) ->
-    (m_brace (m_list m_stmt_and_def)) a6 b6 >>= (fun (a6, b6) ->
-    m_function_type a7 b7 >>= (fun (a7, b7) ->
-    m_modifiers a8 b8 >>= (fun (a8, b8) ->
-    return (
-      { A.
-      f_tok = a1;
-      f_ref = a2;
-      f_name = a3;
-      f_params = a4;
-      f_return_type = a5;
-      f_body = a6;
-      f_type = a7;
-      f_modifiers = a8;
-      f_attrs = a9;
-      },
-      { B.
-      f_tok = b1;
-      f_ref = b2;
-      f_name = b3;
-      f_params = b4;
-      f_return_type = b5;
-      f_body = b6;
-      f_type = b7;
-      f_modifiers= b8;
-      f_attrs = b9;
-      }
-    )
-  ))))))))
-
-(* todo? *)
-and m_function_type a b = return (a, b)
 
 and m_modifiers x = m_list (m_wrap m_modifier) x
 

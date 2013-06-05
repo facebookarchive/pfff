@@ -80,7 +80,13 @@ type hint_type =
        paren
  and type_args = hint_type comma_list single_angle
 
+ and type_params = type_param comma_list single_angle
+  and type_param =
+  | TParam of ident
+  | TParamConstraint of ident * tok (* as *) * class_name
+
 and class_name = hint_type
+
 
 and ptype =
   | BoolTy
@@ -380,6 +386,7 @@ and func_def = {
   f_modifiers: modifier wrap list;
   f_ref: is_ref;
   f_name: ident;
+  f_tparams: type_params option;
   f_params: parameter comma_list_dots paren;
   (* static-php-ext: *)
   f_return_type: hint_type option;
@@ -423,6 +430,7 @@ and class_def = {
   c_attrs: attributes option;
   c_type: class_type;
   c_name: ident;
+  c_tparams: type_params option;
   (* PHP uses single inheritance. Interfaces can also use 'extends'
    * but we use the c_implements field for that (because it can be a list).
    *)
@@ -532,6 +540,7 @@ and trait_rule = unit
 and type_def = {
   t_tok: tok; (* type/newtype *)
   t_name: ident;
+  t_tparams: type_params option;
   t_tokeq: tok; (* = *)
   t_kind: type_def_kind;
   t_sc: tok; (* ; *)

@@ -215,6 +215,13 @@ and v_class_name_or_selfparent x =
   vin.kname (k, all_functions) x
 and v_type_args x =
   v_single_angle (v_comma_list v_hint_type) x; ()
+and v_type_params v = v_single_angle (v_comma_list v_type_param) v
+and v_type_param =
+  function
+  | TParam v1 -> let v1 = v_ident v1 in ()
+  | TParamConstraint ((v1, v2, v3)) ->
+      let v1 = v_ident v1 and v2 = v_tok v2 and v3 = v_class_name v3 in ()
+and v_class_name v = v_hint_type v
 
 and v_fully_qualified_class_name v = v_hint_type v
 
@@ -723,6 +730,7 @@ and
                f_attrs = v_f_attrs;
                f_modifiers = v_f_modifiers;
                f_ref = v_f_ref;
+               f_tparams = v_f_tparams;
                f_name = v_f_name;
                f_params = v_f_params;
                f_body = v_f_body;
@@ -734,6 +742,7 @@ and
   let arg = v_list (v_wrap v_modifier) v_f_modifiers in
   let arg = v_is_ref v_f_ref in
   let arg = v_ident v_f_name in
+  let arg = v_option v_type_params v_f_tparams in
   let arg = v_parameters v_f_params in
   let arg = v_body v_f_body in
   let arg = v_option v_hint_type v_f_return_type in
@@ -789,6 +798,7 @@ and
   let rec k {
                 c_type = v_c_type;
                 c_name = v_c_name;
+                c_tparams = v_c_tparams;
                 c_extends = v_c_extends;
                 c_implements = v_c_implements;
                 c_body = v_c_body;
@@ -796,6 +806,7 @@ and
               } =
   let arg = v_class_type v_c_type in
   let arg = v_ident v_c_name in
+  let arg = v_option v_type_params v_c_tparams in
   let arg = v_option v_extend v_c_extends in
   let arg = v_option v_interface v_c_implements in
   let arg = v_brace (v_list v_class_stmt) v_c_body in
@@ -970,12 +981,14 @@ and
   v_type_def {
                t_tok = v_t_tok;
                t_name = v_t_name;
+               t_tparams = v_t_tparams;
                t_tokeq = v_t_tokeq;
                t_kind = v_t_kind;
                t_sc = v_t_sc
              } =
   let arg = v_tok v_t_tok in
   let arg = v_ident v_t_name in
+  let arg = v_option v_type_params v_t_tparams in
   let arg = v_tok v_t_tokeq in
   let arg = v_type_def_kind v_t_kind in let arg = v_tok v_t_sc in ()
 and v_type_def_kind =

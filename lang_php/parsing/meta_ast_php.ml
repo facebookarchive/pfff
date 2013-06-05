@@ -48,7 +48,7 @@ and vof_bracket _of_a (v1, v2, v3) =
   in Ocaml.VTuple [ v1; v2; v3 ]
 and vof_single_angle _of_a (v1, v2, v3) =
   let v1 = vof_tok v1 in
-  let v2 = vof_comma_list _of_a v2 in
+  let v2 = _of_a v2 in
   let v3 = vof_tok v3
   in Ocaml.VTuple [ v1; v2; v3 ]
 
@@ -88,9 +88,21 @@ and vof_class_name_or_selfparent =
   | Self v1 -> let v1 = vof_tok v1 in Ocaml.VSum (("Self", [ v1 ]))
   | Parent v1 -> let v1 = vof_tok v1 in Ocaml.VSum (("Parent", [ v1 ]))
   | LateStatic v1 -> let v1 = vof_tok v1 in Ocaml.VSum (("LateStatic", [ v1 ]))
-and vof_type_args v = vof_single_angle vof_hint_type v
+and vof_type_args v = vof_single_angle (vof_comma_list vof_hint_type) v
 and (vof_fully_qualified_class_name: Ast_php.class_name -> Ocaml.v) = fun
  v -> vof_hint_type v
+
+and (vof_type_params: Ast_php.type_params -> Ocaml.v) = fun v ->
+  vof_single_angle (vof_comma_list vof_type_param) v
+and (vof_type_param: Ast_php.type_param -> Ocaml.v) =
+  function
+  | TParam v1 -> let v1 = vof_ident v1 in Ocaml.VSum (("TParam", [ v1 ]))
+  | TParamConstraint ((v1, v2, v3)) ->
+      let v1 = vof_ident v1
+      and v2 = vof_tok v2
+      and v3 = vof_class_name v3
+      in Ocaml.VSum (("TParamConstraint", [ v1; v2; v3 ]))
+and vof_class_name x = vof_hint_type x
 
 and vof_ptype =
   function
@@ -722,6 +734,7 @@ and
                  f_modifiers = v_f_modifiers;
                  f_ref = v_f_ref;
                  f_name = v_f_name;
+                 f_tparams = v_f_tparams;
                  f_params = v_f_params;
                  f_return_type = v_f_return_type;
                  f_body = v_f_body;
@@ -730,12 +743,17 @@ and
   let arg = vof_brace (vof_list vof_stmt_and_def) v_f_body in
   let bnd = ("f_body", arg) in
   let bnds = bnd :: bnds in
-  let arg = Ocaml.vof_option vof_hint_type v_f_return_type in
+  let arg = vof_option vof_hint_type v_f_return_type in
   let bnd = ("f_return_type", arg) in
   let bnds = bnd :: bnds in
   let arg = vof_paren (vof_comma_list_dots vof_parameter) v_f_params in
   let bnd = ("f_params", arg) in
   let bnds = bnd :: bnds in
+
+  let arg = vof_option vof_type_params v_f_tparams in
+  let bnd = ("f_tparams", arg) in
+  let bnds = bnd :: bnds in
+
   let arg = vof_ident v_f_name in
   let bnd = ("f_name", arg) in
   let bnds = bnd :: bnds in
@@ -833,6 +851,7 @@ and
   vof_class_def {
                   c_type = v_c_type;
                   c_name = v_c_name;
+                  c_tparams = v_c_tparams;
                   c_extends = v_c_extends;
                   c_implements = v_c_implements;
                   c_body = v_c_body;
@@ -850,6 +869,9 @@ and
   let bnds = bnd :: bnds in
   let arg = vof_option vof_extend v_c_extends in
   let bnd = ("c_extends", arg) in
+  let bnds = bnd :: bnds in
+  let arg = Ocaml.vof_option vof_type_params v_c_tparams in
+  let bnd = ("c_tparams", arg) in
   let bnds = bnd :: bnds in
   let arg = vof_ident v_c_name in
   let bnd = ("c_name", arg) in
@@ -1056,6 +1078,7 @@ and
   vof_type_def {
                  t_tok = v_t_tok;
                  t_name = v_t_name;
+                 t_tparams = v_t_tparams;
                  t_tokeq = v_t_tokeq;
                  t_kind = v_t_kind;
                  t_sc = v_t_sc
@@ -1069,6 +1092,9 @@ and
   let bnds = bnd :: bnds in
   let arg = vof_tok v_t_tokeq in
   let bnd = ("t_tokeq", arg) in
+  let bnds = bnd :: bnds in
+  let arg = Ocaml.vof_option vof_type_params v_t_tparams in
+  let bnd = ("t_tparams", arg) in
   let bnds = bnd :: bnds in
   let arg = vof_ident v_t_name in
   let bnd = ("t_name", arg) in

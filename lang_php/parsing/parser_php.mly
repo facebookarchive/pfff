@@ -494,6 +494,7 @@ unticked_function_declaration_statement:
     let params = ($5, $6, $7) in
     let body = ($9, $10, $11) in
     ({ f_tok = $1; f_ref = $2; f_name = Name $3; f_params = params;
+       f_tparams = $4;
        f_return_type = $8;f_body = body;
        f_attrs = None;
        f_type = FunctionRegular; f_modifiers = [];
@@ -559,7 +560,7 @@ unticked_class_declaration_statement:
  | class_entry_type  ident_class_name  type_params_opt
      extends_from   implements_list
      TOBRACE class_statement_list TCBRACE
-     { { c_type = $1; c_name = $2; c_extends = $4;
+     { { c_type = $1; c_name = $2; c_extends = $4; c_tparams = $3;
          c_implements = $5; c_body = $6, $7, $8;
          c_attrs = None;
        }
@@ -567,7 +568,7 @@ unticked_class_declaration_statement:
  | T_INTERFACE ident_class_name type_params_opt
      interface_extends_list
      TOBRACE class_statement_list TCBRACE
-     { { c_type = Interface $1; c_name = $2; c_extends = None;
+     { { c_type = Interface $1; c_name = $2; c_extends = None; c_tparams = $3;
          (* we use c_implements for interface extension because
           * it can be a list. ugly?
           *)
@@ -576,8 +577,7 @@ unticked_class_declaration_statement:
      } }
  | T_TRAIT ident_class_name type_params_opt
     TOBRACE class_statement_list TCBRACE
-     { (* TODO: store $3, right now the info is thrown away! *)
-       { c_type = Trait $1; c_name = $2; c_extends = None;
+     { { c_type = Trait $1; c_name = $2; c_extends = None; c_tparams = $3;
          c_implements = None; c_body = ($4, $5, $6);
          c_attrs = None;
        }
@@ -638,7 +638,7 @@ method_declaration:
      return_type_opt
      method_body
      { let body, function_type = $10 in
-       ({ f_tok = $2; f_ref = $3; f_name = Name $4;
+       ({ f_tok = $2; f_ref = $3; f_name = Name $4; f_tparams = $5;
           f_params = ($6, $7, $8); f_return_type = $9;
           f_body = body; f_type = function_type; f_modifiers = $1;
           f_attrs = None;
@@ -785,11 +785,11 @@ trait_alias_rule_method:
 /*(*************************************************************************)*/
 type_declaration:
  | T_TYPE    ident type_params_opt TEQ type_php TSEMICOLON 
-     { { t_tok = $1; t_name = Name $2; (* TODO $3 *) t_tokeq = $4;
+     { { t_tok = $1; t_name = Name $2; t_tparams = $3; t_tokeq = $4;
          t_kind = Alias $5; t_sc = $6; } 
      }
  | T_NEWTYPE ident type_params_opt TEQ type_php TSEMICOLON 
-     { { t_tok = $1; t_name = Name $2; (* TODO $3 *) t_tokeq = $4;
+     { { t_tok = $1; t_name = Name $2; t_tparams = $3; t_tokeq = $4;
          t_kind = Newtype $5; t_sc = $6; } 
      }
 
@@ -797,16 +797,16 @@ type_declaration:
 /*(*1 Generics parameters *)*/
 /*(*************************************************************************)*/
 type_params_opt:
-  | {}
-  | TSMALLER type_params_list TGREATER {}
+  | /*(*empty*)*/                      { None }
+  | TSMALLER type_params_list TGREATER { Some ($1, $2, $3) }
 
 type_params_list:
-  | type_param  {}
-  | type_param TCOMMA type_params_list {}
+  | type_param                         { [Left $1] }
+  | type_param TCOMMA type_params_list { [Left $1; Right $2] ++ $3 }
 
 type_param:
-  | ident { }
-  | ident T_AS class_name { }
+  | ident                 { TParam (Name $1) }
+  | ident T_AS class_name { TParamConstraint (Name $1, $2, $3) }
 
 /*(*************************************************************************)*/
 /*(*1 Types *)*/
@@ -993,6 +993,7 @@ expr:
      { let params = ($3, $4, $5) in
        let body = ($8, $9, $10) in
        Lambda ($7, { f_tok = $1;f_ref = $2;f_params = params; f_body = body;
+                     f_tparams = None;
                      f_name = Name("__lambda__", $1);
                      f_return_type = $6; f_type = FunctionLambda;
                      f_modifiers = [];

@@ -126,6 +126,16 @@ and map_class_name_or_selfparent v =
 and map_type_args v = map_single_angle (map_comma_list map_hint_type) v
 and map_fully_qualified_class_name v = map_hint_type v
 
+and map_type_params v = map_single_angle (map_comma_list map_type_param) v
+and map_type_param =
+  function
+  | TParam v1 -> let v1 = map_ident v1 in TParam ((v1))
+  | TParamConstraint ((v1, v2, v3)) ->
+      let v1 = map_ident v1
+      and v2 = map_tok v2
+      and v3 = map_class_name v3
+      in TParamConstraint ((v1, v2, v3))
+and map_class_name v = map_hint_type v
 
 and map_ptype =
   function
@@ -697,6 +707,7 @@ and
                  f_modifiers = v_f_modifiers;
                  f_ref = v_f_ref;
                  f_name = v_f_name;
+                 f_tparams = v_f_tparams;
                  f_params = v_f_params;
                  f_body = v_f_body;
                  f_return_type = v_f_return_type;
@@ -704,6 +715,7 @@ and
   let v_f_body = map_brace (map_of_list map_stmt_and_def) v_f_body in
   let v_f_params = map_paren (map_comma_list_dots map_parameter) v_f_params in
   let v_f_name = map_ident v_f_name in
+  let v_f_tparams = map_of_option map_type_params v_f_tparams in
   let v_f_ref = map_is_ref v_f_ref in
   let v_f_modifiers = map_of_list (map_wrap map_modifier) v_f_modifiers in
   let v_f_attrs = map_of_option map_attributes v_f_attrs in
@@ -718,6 +730,7 @@ and
     f_ref = v_f_ref;
     f_name = v_f_name;
     f_params = v_f_params;
+    f_tparams = v_f_tparams;
     f_return_type = v_f_return_type;
     f_body = v_f_body;
   }
@@ -789,6 +802,7 @@ and
   let rec k {
                   c_type = v_c_type;
                   c_name = v_c_name;
+                  c_tparams = v_c_tparams;
                   c_extends = v_c_extends;
                   c_implements = v_c_implements;
                   c_body = v_c_body;
@@ -797,12 +811,14 @@ and
   let v_c_body = map_brace (map_of_list map_class_stmt) v_c_body in
   let v_c_implements = map_of_option map_interface v_c_implements in
   let v_c_extends = map_of_option map_extend v_c_extends in
+  let v_c_tparams = map_of_option map_type_params v_c_tparams in
   let v_c_attrs = map_of_option map_attributes v_c_attrs in
   let v_c_name = map_ident v_c_name in
   let v_c_type = map_class_type v_c_type in
   {
     c_type = v_c_type;
     c_name = v_c_name;
+    c_tparams = v_c_tparams;
     c_extends = v_c_extends;
     c_implements = v_c_implements;
     c_body = v_c_body;
@@ -989,6 +1005,7 @@ and
   map_type_def {
                  t_tok = v_t_tok;
                  t_name = v_t_name;
+                 t_tparams = v_t_tparams;
                  t_tokeq = v_t_tokeq;
                  t_kind = v_t_kind;
                  t_sc = v_t_sc
@@ -996,11 +1013,13 @@ and
   let v_t_sc = map_tok v_t_sc in
   let v_t_kind = map_type_def_kind v_t_kind in
   let v_t_tokeq = map_tok v_t_tokeq in
+  let v_t_tparams = map_of_option map_type_params v_t_tparams in
   let v_t_name = map_ident v_t_name in
   let v_t_tok = map_tok v_t_tok in 
   {
                  t_tok = v_t_tok;
                  t_name = v_t_name;
+                 t_tparams = v_t_tparams;
                  t_tokeq = v_t_tokeq;
                  t_kind = v_t_kind;
                  t_sc = v_t_sc
