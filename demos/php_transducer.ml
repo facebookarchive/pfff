@@ -38,7 +38,7 @@ let visit asts =
     V.ktop = (fun (k, bigf) top -> 
       match top with
       | FuncDef (def) -> 
-          let name = Ast.name def.f_name in
+          let name = Ast.str_of_ident def.f_name in
           Common.push2 ("function:" ^name) props;
       | _ -> 
           ()

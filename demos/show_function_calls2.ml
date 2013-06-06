@@ -13,20 +13,20 @@ let show_function_calls file =
 
   (*s: create visitor *)
     let visitor = V.mk_visitor { V.default_visitor with
-       V.klvalue = (fun (k, _) var ->
+       V.kexpr = (fun (k, _) e ->
 
-        match var with
-        | FunCallSimple (funcname, args) ->
+        match e with
+        | Call (Id funcname, args) ->
             (*s: print funcname *)
-            let s = Ast_php.name funcname in
+            let s = Ast_php.str_of_name funcname in
             let info = Ast_php.info_of_name funcname in
-            let line = Ast_php.line_of_info info in
+            let line = Parse_info.line_of_info info in
             pr2 (spf "Call to %s at line %d" s line);
             (*e: print funcname *)
 
         | _ -> 
             (*s: visitor recurse using k *)
-               k var
+               k e
             (*e: visitor recurse using k *)
       );
     }

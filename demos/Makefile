@@ -16,6 +16,7 @@ simple_refactoring: simple_refactoring.ml
          -I ../commons -I ../lang_php/parsing -I ../h_program-lang \
           str.cma unix.cma nums.cma bigarray.cma \
 	  ../commons/lib.cma ../h_program-lang/lib.cma \
+          ../matcher/lib.cma \
           ../lang_php/parsing/lib.cma \
           simple_refactoring.ml
 clean::
@@ -52,17 +53,6 @@ clean::
 # Now we switch to a more traditional Makefile
 
 include ../Makefile.config
-ifeq ($(FEATURE_BDB),1)
-ANALYZECMA=../external/ocamlpcre/lib/pcre.cma \
-	   ../external/ocamlbdb/bdb.cma ../commons/commons_bdb.cma \
-           ../lang_php/analyze/lib.cma \
-
-ANALUZEINCLUDES= \
-      ../external/ocamlbdb/ \
-      ../external/ocamlpcre/lib \
-      ../h_program-lang \
-      ../lang_php/analyze
-endif
 
 LIBS= ../commons/lib.cma \
       ../h_version-control/lib.cma \
@@ -70,7 +60,7 @@ LIBS= ../commons/lib.cma \
       ../lang_php/parsing/lib.cma \
       $(ANALYZECMA)
 INCLUDEDIRS=../commons ../commons/lib-sexp ../commons/lib-json \
-            ../lang_php/parsing $(ANALUZEINCLUDES)
+            ../h_program-lang ../lang_php/parsing 
 
 SYSLIBS= str.cma unix.cma nums.cma bigarray.cma
 
@@ -115,8 +105,7 @@ OCAMLMKTOP=ocamlmktop -g -custom $(INCLUDES) -thread
 # so dont forget to do a 'make sync' in parsing_php/ before doing make
 # in this directory.
 PROGS=php_transducer.byte \
- show_function_calls1.byte show_function_calls2.byte show_function_calls3.byte \
- justin.byte bjacobs.byte
+ show_function_calls1.byte show_function_calls2.byte show_function_calls3.byte
 
 # simple_zero_to_null.byte count_elseifs.byte
 
@@ -133,7 +122,7 @@ rec::
 .SUFFIXES: .byte .opt
 
 %.byte: %.cmo
-	$(OCAMLC) -o $@ $(SYSLIBS) $(LIBS) $^
+	$(OCAMLC) -custom -o $@ $(SYSLIBS) $(LIBS) $^
 
 %.opt: %.cmx
 	$(OCAMLOPT) -o $@ $(SYSLIBS:.cma=.cmxa) $(LIBS:.cma=.cmxa)  $^

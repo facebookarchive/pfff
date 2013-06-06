@@ -148,40 +148,40 @@ let main files_or_dirs =
          * The t_<num> are type information about the expression or lvalue
          * that we don't currently use.
          *)
-        | (Lv(
-             (StaticMethodCallSimple(
-               (ClassName(Name(("ArgAssert", i_9)), _), i_10),
-               Name(("isString", i_11)),
+        | 
+             (Call(
+               ClassGet (Id (XName(Name(("ArgAssert", i_9)))), i_10,
+                         Id (XName (Name(("isString", i_11))))),
                (i_left_paren,
                [Left(
                  Arg(
-                   (Lv((Var(DName((var_name, i_13)), _scope_info)))))); 
+                   (((IdVar(DName((var_name, i_13)), _scope_info)))))); 
                 Right(i_token_comma);
                 Left(Arg((Sc(C(String((a_string, i_token_string)))))))
                ],
                i_right_paren))
-             ))
-          ) ->
+             )
+           ->
             i_token_comma.PI.transfo <- PI.Remove;
             i_token_string.PI.transfo <- PI.Remove;
 
         (* similar pattern except we accept any kind of expression as
          * the second argument, not just constant strings.
          *)
-        | (Lv(
-             (StaticMethodCallSimple(
-               (ClassName(Name(("ArgAssert", i_9)), _), i_10),
-               Name(("isArray", i_11)),
-               (i_12,
+        | 
+             (Call(
+               ClassGet (Id (XName(Name(("ArgAssert", i_9)))), i_10,
+                         Id (XName (Name(("isString", i_11))))),
+               (i_left_paren,
                [Left(
                  Arg(
-                   (Lv((Var(DName((var_name, i_13)), _scope_info)))))); 
-                Right(token_comma);
+                   (((IdVar(DName((var_name, i_13)), _scope_info)))))); 
+                Right(i_token_comma);
                 Left(Arg(an_expr))
                ],
-               i_19))
-           ))) ->
-
+               i_right_paren))
+             )
+           ->
             (* let's get all the tokens composing the expression *)
             let tokens_in_expression = 
               Lib_parsing_php.ii_of_any (Expr an_expr) in
@@ -189,7 +189,7 @@ let main files_or_dirs =
             tokens_in_expression +> List.iter (fun tok ->
               tok.PI.transfo <- PI.Remove;
             );
-            token_comma.PI.transfo <- PI.Remove;
+            i_token_comma.PI.transfo <- PI.Remove;
         | _ -> k expr
       );
     }
