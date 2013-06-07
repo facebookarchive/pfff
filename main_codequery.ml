@@ -62,41 +62,31 @@ let build_prolog_db lang root =
   | "php" ->
       (* 
        * todo: 
-       * - simplify and do everything in memory; do not use berkeley DB.
-       * - do not use database_php.ml, do simple visit on ast_php_simple.ml
        * - do things in parallel, pack things.
        * => should significantly reduce the time to produce the
        * prolog facts. It currently takes 41min on www and I hope
        * we can reduce that to a few minutes.
-       * 
-       * note: copy paste of www_db_build, yet another one ...
        *)
-(*
        let dir = Common.realpath root +> Common2.chop_dirsymbol in
        (* so many errors that is better to hide them for now *)
        Flag_analyze_php.show_errors := false;
 
-       let phase = Database_php_build.max_phase in
-       (* you can also look at /tmp/pfff_db/log.log in case of problems *)
-       let db =
-         Database_php_build.create_db
-           ~db_support:(Database_php.Disk !metapath)
-           ~phase
-           ~annotate_variables_program:None
-           ~verbose_stats:!verbose
-           (Database_php.prj_of_dir dir)
-       in
-       Database_php.close_db db;
-
        let facts_pl_file = "facts.pl" in
        let prolog_compiled_db = "prolog_compiled_db" in
 
-
        let file = Filename.concat !metapath facts_pl_file in
        pr2 (spf "generating prolog facts in %s" file);
-       Database_php.with_db ~metapath:!metapath (fun db ->
-         Database_prolog_php.gen_prolog_db ~show_progress:!verbose db file;
+       let facts =
+         Database_prolog_php.build ~show_progress:!verbose 
+           (Left dir) skip_list in
+       Common.command2 (spf "mkdir -p %s" !metapath);
+       Common.with_open_outfile file (fun (pr_no_nl, _chan) ->
+         let pr s = pr_no_nl (s ^ "\n") in
+         facts +> List.iter (fun fact ->
+           pr (Graph_code_prolog.string_of_fact fact);
+         )
        );
+
        pr2 (spf "compiling prolog facts with swipl in %s/%s" 
                !metapath prolog_compiled_db);
        Common.command2 (spf "%s -c %s/%s %s" 
@@ -106,8 +96,6 @@ let build_prolog_db lang root =
        pr2 "";
        pr2 (spf "Your compiled prolog DB is ready. Run %s/%s"
                !metapath prolog_compiled_db);
-*)
-    raise Todo
 
   | "cmt" | "bytecode" | "clang2" ->
       let g = 
