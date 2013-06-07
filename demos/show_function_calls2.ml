@@ -23,6 +23,7 @@ let show_function_calls file =
             let line = Parse_info.line_of_info info in
             pr2 (spf "Call to %s at line %d" s line);
             (*e: print funcname *)
+            k e
 
         | _ -> 
             (*s: visitor recurse using k *)
