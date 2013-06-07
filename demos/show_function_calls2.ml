@@ -22,6 +22,8 @@ let show_function_calls file =
             let info = Ast_php.info_of_name funcname in
             let line = Ast_php.line_of_info info in
             pr2 (spf "Call to %s at line %d" s line);
+            (* to handle calls inside calls *)
+            k var
             (*e: print funcname *)
 
         | _ -> 
