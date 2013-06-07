@@ -64,6 +64,7 @@
      external/phylomel/src
      facebook/thrift
      facebook/thrift/gen-ocaml
+     demos
 /home/pad/packages/Linux/stow/ocaml-4.00.1/lib/ocaml/compiler-libs
 /home/pad/packages/MacOS/stow/ocaml-4.00.1/lib/ocaml/compiler-libs
     ")
@@ -708,6 +709,22 @@
        (9 "-type_php /home/pad/pfff/tests/php/typing/test.php")
        (10 "-test_graph_code_ml /home/pad/pfff/commons")
        (11 "prolog:")
+       )
+     ))
+   )
+
+  ; --------------------------------------------------------------------------
+  ; demos/show_function_calls
+  ; --------------------------------------------------------------------------
+  (setq
+   pad-ocaml-project-prog     "demos/show_function_calls2.byte"
+   ;pad-ocaml-project-prog "gui/test"
+   pad-ocaml-project-args 
+   (join-string 
+    (list 
+     
+     (case 0
+       (0 "/home/pad/pfff/demos/foo.php")
        )
      ))
    )
