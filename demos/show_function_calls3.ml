@@ -19,12 +19,12 @@ let show_function_calls file =
 
   (*s: iter on asts using visitor, updating hfuncs *)
     let visitor = V.mk_visitor  { V.default_visitor with
-       V.klvalue = (fun (k, _) var ->
-        match var with
-        | FunCallSimple (funcname, args) ->
+       V.kexpr = (fun (k, _) e ->
+        match e with
+        | Call (Id funcname, args) ->
 
             (*s: print funcname and nbargs *)
-            let f = Ast_php.name funcname in
+            let f = Ast_php.str_of_name funcname in
             let nbargs = List.length (Ast_php.unparen args) in
             pr2 (spf "Call to %s with %d arguments" f nbargs);
             (*e: print funcname and nbargs *)
@@ -38,7 +38,7 @@ let show_function_calls file =
             (*e: update hfuncs for name with nbargs *)
             
         | _ -> 
-            k var
+            k e
       );
     }
     in

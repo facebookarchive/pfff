@@ -100,10 +100,20 @@ let elts_of_any ~elt_and_info_of_tok tok =
   | OriginTok _ -> 
       (match info.transfo with
       | NoTransfo -> [elt]
-      | Remove -> [Removed (PI.str_of_info info)]
-      | Replace toadd -> [Added (s_of_add toadd);Removed(PI.str_of_info info)]
-      | AddAfter toadd -> [elt; Added (s_of_add toadd)]
-      | AddBefore toadd -> [Added (s_of_add toadd); elt]
+      | Remove -> 
+        [Removed (PI.str_of_info info)]
+      (* could also be 'Added; Removed], but because of heuristics like
+       * drop_esthet_between_removed, when people use Replace, they
+       * usually prefers this behavior.
+       * todo: it actually causes tests/php/spatch/distr_plus.spatch to
+       * have a bad spacing
+       *)
+      | Replace toadd -> 
+        [Removed(PI.str_of_info info);Added (s_of_add toadd);]
+      | AddAfter toadd -> 
+        [elt; Added (s_of_add toadd)]
+      | AddBefore toadd -> 
+        [Added (s_of_add toadd); elt]
       )
 
 (*****************************************************************************)

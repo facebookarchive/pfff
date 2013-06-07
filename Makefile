@@ -278,7 +278,8 @@ MAKESUBDIRS=commons \
   lang_css/parsing \
   lang_web/parsing \
   lang_text \
-  $(VISUALDIRS)
+  $(VISUALDIRS) \
+  demos
 
 INCLUDEDIRS=$(MAKESUBDIRS) \
  commons/ocamlextra commons/ocollection \

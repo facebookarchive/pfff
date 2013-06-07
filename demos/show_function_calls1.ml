@@ -19,26 +19,21 @@ let show_function_calls file =
             | ExprStmt (e, _ptvirg) ->
       
                 (match e with
-                | Lv var ->
-          
-                    (match var with
-                    | FunCallSimple (funcname, args) ->
-                        (*s: print funcname *)
-                        let s = Ast_php.name funcname in
-                        let info = Ast_php.info_of_name funcname in
-                        let line = Ast_php.line_of_info info in
-                        pr2 (spf "Call to %s at line %d" s line);
-                        (*e: print funcname *)
-                    | _ -> ()
-                    )
+                | Call(Id (funcname), args) ->
+                  (*s: print funcname *)
+                  let s = Ast_php.str_of_name funcname in
+                  let info = Ast_php.info_of_name funcname in
+                  let line = Parse_info.line_of_info info in
+                  pr2 (spf "Call to %s at line %d" s line);
+                    (*e: print funcname *)
                 | _ -> ()
                 )
             | _ -> ()
             )
           )
-          (*e: iter on stmts *)
+        (*e: iter on stmts *)
 
-      | (ConstantDef _|FuncDef _|ClassDef _
+      | (ConstantDef _|FuncDef _|ClassDef _ |TypeDef _
         |NotParsedCorrectly _| FinalDef _
         )
         -> ()

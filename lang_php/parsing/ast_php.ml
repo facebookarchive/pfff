@@ -30,7 +30,6 @@ open Common
  * PHP Intermediate Language a la CIL.
  *
  * todo:
- *  - add type parameters in AST
  *  - add namespace in AST (also add in grammar)
  *  - unify toplevel statement vs statements? hmmm maybe not
  *  - maybe even in a refactoring context a PIL+comment
@@ -144,7 +143,12 @@ type hint_type =
 
  and type_args = hint_type comma_list single_angle
 
- and class_name = hint_type
+ and type_params = type_param comma_list single_angle
+  and type_param =
+  | TParam of ident
+  | TParamConstraint of ident * tok (* as *) * class_name
+
+and class_name = hint_type
 
 (* This is used in Cast. For type analysis see type_php.ml *)
 and ptype =
@@ -490,6 +494,7 @@ and func_def = {
   f_ref: is_ref;
   (* can be a Name("__lambda", f_tok) when used for lambdas *)
   f_name: ident;
+  f_tparams: type_params option;
   (* the dots should be only at the end (unless in sgrep mode) *)
   f_params: parameter comma_list_dots paren;
   (* static-php-ext: *)
@@ -535,6 +540,7 @@ and class_def = {
   c_attrs: attributes option;
   c_type: class_type;
   c_name: ident;
+  c_tparams: type_params option;
   (* PHP uses single inheritance. Interfaces can also use 'extends'
    * but we use the c_implements field for that (because it can be a list).
    *)
@@ -644,6 +650,7 @@ and trait_rule = unit
 and type_def = {
   t_tok: tok; (* type/newtype *)
   t_name: ident;
+  t_tparams: type_params option;
   t_tokeq: tok; (* = *)
   t_kind: type_def_kind;
   t_sc: tok; (* ; *)
