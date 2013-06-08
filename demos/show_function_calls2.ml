@@ -25,6 +25,7 @@ let show_function_calls file =
             (* to handle calls inside calls *)
             k var
             (*e: print funcname *)
+            k e
 
         | _ -> 
             (*s: visitor recurse using k *)
