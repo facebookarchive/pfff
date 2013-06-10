@@ -59,7 +59,7 @@ type pattern = Ast_php.any
  *)
 let parse str =
   Common.save_excursion Flag_parsing_php.sgrep_mode true (fun () ->
-    Parse_php.any_of_string str
+    Parse_php.any_of_string str +> Metavars_php.check_pattern
   )
 
 (*****************************************************************************)

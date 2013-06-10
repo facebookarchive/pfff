@@ -216,7 +216,7 @@ let parse file =
    * reference so by modifying the tokens we actually also modifed
    * the AST.
    *)
-  pattern
+  pattern +> Metavars_php.check_pattern
 
 let parse_string spatch_str =
   Common2.with_tmp_file ~str:spatch_str ~ext:".spatch" 
