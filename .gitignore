@@ -446,3 +446,7 @@ web/var/logs/warnings.log
 /lang_clang/parsing/parser_clang.mli
 /lang_clang/parsing/parser_clang.output
 /web/scripts/stat_web
+/demos/php_transducer.byte
+/demos/show_function_calls1.byte
+/demos/show_function_calls2.byte
+/demos/show_function_calls3.byte

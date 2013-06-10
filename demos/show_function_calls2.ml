@@ -22,7 +22,9 @@ let show_function_calls file =
             let info = Ast_php.info_of_name funcname in
             let line = Parse_info.line_of_info info in
             pr2 (spf "Call to %s at line %d" s line);
+            (* to handle calls inside calls *)
             (*e: print funcname *)
+            k e
 
         | _ -> 
             (*s: visitor recurse using k *)
