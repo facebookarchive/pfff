@@ -866,7 +866,30 @@ and map_class_stmt =
         v3 in
       UseTrait (v1, v2, v3)
 
-and map_trait_rule = map_of_unit
+and map_trait_rule =
+  function
+  | InsteadOf ((v1, v2, v3, v4, v5, v6)) ->
+      let v1 = map_name v1
+      and v2 = map_tok v2
+      and v3 = map_ident v3
+      and v4 = map_tok v4
+      and v5 = map_comma_list map_class_name v5
+      and v6 = map_tok v6
+      in InsteadOf ((v1, v2, v3, v4, v5, v6))
+  | As ((v1, v2, v3, v4, v5)) ->
+      let v1 =
+        Ocaml.map_of_either map_ident
+          (fun (v1, v2, v3) ->
+             let v1 = map_name v1
+             and v2 = map_tok v2
+             and v3 = map_ident v3
+             in (v1, v2, v3))
+          v1
+      and v2 = map_tok v2
+      and v3 = map_of_list (map_wrap map_modifier) v3
+      and v4 = map_of_option map_ident v4
+      and v5 = map_tok v5
+      in As ((v1, v2, v3, v4, v5))
 
 and map_xhp_decl =
   function

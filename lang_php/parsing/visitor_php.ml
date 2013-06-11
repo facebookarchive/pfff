@@ -851,7 +851,27 @@ and v_class_stmt x =
   in
   vin.kclass_stmt (k, all_functions) x
 
-and v_trait_rule = v_unit
+and v_trait_rule =
+  function
+  | InsteadOf ((v1, v2, v3, v4, v5, v6)) ->
+      let v1 = v_name v1
+      and v2 = v_tok v2
+      and v3 = v_ident v3
+      and v4 = v_tok v4
+      and v5 = v_comma_list v_class_name v5
+      and v6 = v_tok v6
+      in ()
+  | As ((v1, v2, v3, v4, v5)) ->
+      let v1 =
+        Ocaml.v_either v_ident
+          (fun (v1, v2, v3) ->
+             let v1 = v_name v1 and v2 = v_tok v2 and v3 = v_ident v3 in ())
+          v1
+      and v2 = v_tok v2
+      and v3 = v_list (v_wrap v_modifier) v3
+      and v4 = v_option v_ident v4
+      and v5 = v_tok v5
+      in ()
 
 and v_xhp_decl x =
     match x with

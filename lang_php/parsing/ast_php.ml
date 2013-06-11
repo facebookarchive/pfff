@@ -639,10 +639,13 @@ and class_def = {
 
  and xhp_category_decl = xhp_tag wrap (* %x:frag *)
 
-(* todo: 'as' and 'insteadof', but those are bad features ... noone should
- * use them.
- *)
-and trait_rule = unit
+(* those are bad features ... noone should use them. *)
+and trait_rule = 
+  | InsteadOf of name * tok * ident * tok (* insteadof *) * 
+                class_name comma_list * tok (* ; *)
+  | As of (ident, name * tok * ident) Common.either * tok (* as *) *
+          modifier wrap list * ident option * tok (* ; *)
+
 
 (* ------------------------------------------------------------------------- *)
 (* Type definition *)

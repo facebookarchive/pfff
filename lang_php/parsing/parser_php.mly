@@ -767,18 +767,18 @@ trait_rule:
 
 trait_precedence_rule:
  | qualified_name_for_traits TCOLCOL T_IDENT T_INSTEADOF class_name_list TSEMICOLON
-   { raise Todo }
+   { InsteadOf ($1, $2, Name $3, $4, $5, $6) }
 
 trait_alias_rule:
  | trait_alias_rule_method T_AS method_modifiers T_IDENT TSEMICOLON
-   { raise Todo }
+   { As ($1, $2, $3, Some (Name $4), $5) }
 
  | trait_alias_rule_method T_AS non_empty_member_modifiers TSEMICOLON
-   { raise Todo }
+   { As ($1, $2, $3, None, $4) }
 
 trait_alias_rule_method:
- | qualified_name_for_traits TCOLCOL T_IDENT { raise Todo }
- | T_IDENT { raise Todo }
+ | qualified_name_for_traits TCOLCOL T_IDENT { Right ($1, $2, Name $3) }
+ | T_IDENT { Left (Name $1) }
 
 /*(*************************************************************************)*/
 /*(*1 Type definitions *)*/
