@@ -51,8 +51,8 @@ let sgrep_unittest = [
 
       (* "linear" patterns, a la Prolog *)
       "X && X;", "($a || $b) && ($a || $b);", true;
-      "foo($V, $V);", "foo($x, $x);", true;
-      "foo($V, $V);", "foo($x, $y);", false;
+      "foo($E, $E);", "foo($x, $x);", true;
+      "foo($E, $E);", "foo($x, $y);", false;
 
       (* many arguments metavariables *)
       "foo(MANYARGS);", "foo(1,2,3);", true;
@@ -186,7 +186,7 @@ let sgrep_unittest = [
   );
 
   "sgrep variable metavars matching" >:: (fun () ->
-    let pattern = Parse_php.any_of_string "foo($V, $V);" in
+    let pattern = Parse_php.any_of_string "foo($E, $E);" in
     let code = Parse_php.any_of_string "foo($x, $y);" in
     (match pattern, code with
     | Stmt2 pattern, Stmt2 code ->

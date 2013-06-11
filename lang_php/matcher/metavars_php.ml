@@ -14,6 +14,9 @@
  *)
 open Common
 
+module Ast = Ast_php
+module V = Visitor_php
+
 (*****************************************************************************)
 (* Prelude *)
 (*****************************************************************************)
@@ -47,9 +50,6 @@ let metavar_manyargs_regexp_string =
 let metavar_variable_regexp_string = 
   "\\(\\$[A-Z]\\)\\b"
 
-let metavar_lvalue_regexp_string =
-  "\\(\\$V\\(_[A-Z]*\\)?\\)"
-
 (* 
  * Hacks abusing existing PHP constructs to encode extra constructions.
  * One day we will have a pattern_php_ast.ml that mimics mostly
@@ -58,12 +58,29 @@ let metavar_lvalue_regexp_string =
 let is_metavar_name s = 
   s =~ metavar_regexp_string
 
-(* todo: replace this hack by allowing X->method(...) in PHP grammar *)
-let is_metavar_lvalue_name s = 
-  s =~ metavar_lvalue_regexp_string
-
 let is_metavar_variable_name s = 
   s =~ metavar_variable_regexp_string
 
 let is_metavar_manyargs_name s = 
   s =~ metavar_manyargs_regexp_string
+
+(*****************************************************************************)
+(* Checker *)
+(*****************************************************************************)
+
+let check_pattern any =
+  let visitor = V.mk_visitor { V.default_visitor with
+    V.kexpr = (fun (k, _) x ->
+      match x with
+      | Ast.IdVar (dname, _scope) ->
+        let s = Ast.str_of_dname dname in
+        if s =~ "V\\(_[A-Z]*\\)?"
+        then failwith ("Lvalue metavariables are deprecated, just use " ^
+                       "expression metavariables as in X->foo()")
+        else ();
+        k x
+      | _ -> k x
+    );
+  } in
+  visitor any;
+  any
