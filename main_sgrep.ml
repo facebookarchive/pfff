@@ -33,7 +33,7 @@ let verbose = ref false
 let pattern_file = ref ""
 let pattern_string = ref ""
 
-let lang = ref "php"
+let lang = ref "c++"
 
 let case_sensitive = ref false
 let match_format = ref Lib_matcher.Normal

@@ -39,7 +39,7 @@ let verbose = ref false
 let spatch_file = ref ""
 let sed_string = ref ""
 
-let lang = ref "php"
+let lang = ref "c++"
 
 let apply_patch = ref false
 (* too experimental for now *)
