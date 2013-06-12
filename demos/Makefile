@@ -9,7 +9,7 @@ all: simple_refactoring
 # Simple compilation
 ##############################################################################
 
-# This is intentionnaly not using OCAMLC, SYSLIBS and so on to show a simple 
+# This is intentionnaly not using OCAMLC, SYSLIBS and so on to show a simple
 # way to compile a pfff "script"
 simple_refactoring: simple_refactoring.ml
 	ocamlc -g -o simple_refactoring \
@@ -60,20 +60,20 @@ LIBS= ../commons/lib.cma \
       ../lang_php/parsing/lib.cma \
       $(ANALYZECMA)
 INCLUDEDIRS=../commons ../commons/lib-sexp ../commons/lib-json \
-            ../h_program-lang ../lang_php/parsing 
+            ../h_program-lang ../lang_php/parsing
 
 SYSLIBS= str.cma unix.cma nums.cma bigarray.cma
 
 
 # If you want to embed pfff in your own application, uncomment the following
 # instead of the previous settings
-#MAKESUBDIRS=commons parsing_php 
+#MAKESUBDIRS=commons parsing_php
 #LIBS=commons/lib.cma parsing_php/parsing_php.cma
 #INCLUDEDIRS=commons/ parsing_php/
 #rec::
-#	set -e; for i in $(MAKESUBDIRS); do $(MAKE) -C $$i all || exit 1; done 
+#	set -e; for i in $(MAKESUBDIRS); do $(MAKE) -C $$i all || exit 1; done
 #clean::
-#	set -e; for i in $(MAKESUBDIRS); do $(MAKE) -C $$i clean || exit 1; done 
+#	set -e; for i in $(MAKESUBDIRS); do $(MAKE) -C $$i clean || exit 1; done
 ##############################################################################
 # Generic variables
 ##############################################################################
@@ -105,7 +105,7 @@ OCAMLMKTOP=ocamlmktop -g -custom $(INCLUDES) -thread
 # so dont forget to do a 'make sync' in parsing_php/ before doing make
 # in this directory.
 PROGS=php_transducer.byte \
- show_function_calls1.byte show_function_calls2.byte show_function_calls3.byte
+ show_function_calls1.byte show_function_calls2.byte show_function_calls3.byte  show_function_class_names.byte show_function_class_names2.byte
 
 # simple_zero_to_null.byte count_elseifs.byte
 
@@ -149,7 +149,7 @@ clean::
 .ml.cmx:
 	$(OCAMLOPT)  -c $<
 
-.ml.mldepend: 
+.ml.mldepend:
 	$(OCAMLC) -i $<
 
 clean::
