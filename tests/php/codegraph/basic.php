@@ -7,6 +7,9 @@ const A_CONSTANT = 1;
 
 class AClass {
   public $fld;
+  function __construct(int $input) {
+    $this->tempvar = $input;
+  }
   function testThis() {
     echo $this->fld;
   }
