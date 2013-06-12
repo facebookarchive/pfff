@@ -28,7 +28,7 @@ app.js
 
 # binaries
 *.opt
-*.byte 
+*.byte
 
 # profilers files
 *.gprof

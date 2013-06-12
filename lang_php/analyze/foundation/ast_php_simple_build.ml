@@ -433,6 +433,7 @@ and class_def env c =
     A.c_kind = class_type env c.c_type ;
     A.c_name = ident env c.c_name;
     A.c_attrs = attributes env c.c_attrs;
+    A.c_xhp_fields = List.fold_right (xhp_fields env) body [];
     A.c_extends =
       (match c.c_extends with
       | None -> None
@@ -479,6 +480,37 @@ and class_constants env st acc =
      ) (comma_list cl) acc
   | _ -> acc
 
+and xhp_fields env st acc = 
+  match st with
+  | XhpDecl (XhpAttributesDecl (_ , xal, _)) ->
+    (comma_list xal) +> List.fold_left (fun acc xhp_attr ->
+      match xhp_attr with
+      | XhpAttrDecl (attr_type, attr_name, eopt, _) ->
+        let ht =
+          match attr_type with
+          | XhpAttrType attr_type -> Some(hint_type env attr_type)
+          | XhpAttrVar tok -> None
+          | XhpAttrEnum (tok, _) -> None
+        in
+        let value =
+          match eopt with
+          | None -> None
+          | Some (_tok,sc) -> Some(static_scalar env sc)
+        in
+        let attr_name =
+          match attr_name with
+          | (str, tok) -> (str, wrap tok)
+        in
+        {
+          A.cv_name = attr_name;
+          A.cv_value = value;
+          A.cv_modifiers = [];
+          A.cv_type = ht;
+        }::acc
+      | XhpAttrInherit _ -> acc
+     ) acc
+  | _ -> acc
+    
 and static_scalar_affect env (_, ss) = static_scalar env ss
 and static_scalar env a = expr env a
 

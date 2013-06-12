@@ -343,7 +343,7 @@ and class_def = {
   c_uses: class_name list; (* traits *)
 
   c_attrs: attribute list;
-
+  c_xhp_fields: class_var list; (*xhp attributes *)
   (* todo: What about XHP class attributes? right now they
    * are skipped at parsing time
    *)

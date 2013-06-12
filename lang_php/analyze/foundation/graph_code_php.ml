@@ -274,7 +274,7 @@ let rec add_use_edge env (((str, tok) as name, kind)) =
           let parent_target = G.not_found in
           (match kind with
           (* todo: fix those *)
-          | E.Field -> ()
+          | E.Field when (not (str =~ ".*\\.XHP__.*")) -> ()
           (* todo: handle __call? *)
           | E.Method _ when str =~ ".*\\.gen.*" || str =~ ".*\\.get.*" -> ()
 
@@ -469,6 +469,17 @@ and class_def env def =
     let node = (def.cst_name, E.ClassConstant) in
     let env = add_node_and_edge_if_defs_mode env node in
     expr env def.cst_body;
+  );
+  (* TODO: need to handle inheritance of attributes.
+     See URL: 
+     https://github.com/facebook/xhp/wiki "Defining Attributes"
+  *)
+  def.c_xhp_fields +> List.iter (fun def ->
+    let addprefix = function
+      | (str, tok) -> ("XHP__" ^ str, tok) in
+    let node = (addprefix def.cv_name, E.Field) in
+    let env = add_node_and_edge_if_defs_mode env node in
+    Common2.opt (expr env) def.cv_value;
   );
   def.c_variables +> List.iter (fun fld ->
     let node = (fld.cv_name, E.Field) in
@@ -760,7 +771,16 @@ and map_value env (e1, e2) = exprl env [e1; e2]
 and xml env x =
  (* todo: dependency on field? *)
   add_use_edge env (x.xml_tag, E.Class E.RegularClass);
-  x.xml_attrs +> List.iter (fun (name, xhp_attr) -> expr env xhp_attr);
+  let aclass = Ast.str_of_name x.xml_tag in
+  x.xml_attrs +> List.iter (fun (name, xhp_attr) ->
+    let afield = "XHP__" ^ Ast.str_of_name name in
+    let tok = snd name in
+    let node = ((aclass ^ "." ^ afield, tok), E.Field) in
+    (match lookup env.g (aclass, afield) tok with
+    | None -> add_use_edge env node
+    | Some n -> add_use_edge env n
+    );      
+    expr env xhp_attr);
   x.xml_body +> List.iter (xhp env)
 
 and xhp env = function

@@ -327,6 +327,7 @@ and
                   c_name = v_c_name;
                   c_extends = v_c_extends;
                   c_attrs = v_c_attrs;
+                  c_xhp_fields = v_c_xhp_fields;
                   c_uses = v_c_traits;
                   c_implements = v_c_implements;
                   c_constants = v_c_constants;
@@ -339,6 +340,9 @@ and
   let bnds = bnd :: bnds in
   let arg = Ocaml.vof_list vof_class_var v_c_variables in
   let bnd = ("c_variables", arg) in
+  let bnds = bnd :: bnds in
+  let arg = Ocaml.vof_list vof_class_var v_c_xhp_fields in
+  let bnd = ("c_xhp_fields", arg) in
   let bnds = bnd :: bnds in
   let arg = Ocaml.vof_list vof_constant_def v_c_constants in
   let bnd = ("c_constants", arg) in
