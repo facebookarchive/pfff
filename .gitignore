@@ -450,3 +450,5 @@ web/var/logs/warnings.log
 /demos/show_function_calls1.byte
 /demos/show_function_calls2.byte
 /demos/show_function_calls3.byte
+/demos/show_function_class_names.byte
+/demos/show_function_class_names2.byte
