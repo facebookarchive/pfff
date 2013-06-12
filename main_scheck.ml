@@ -241,21 +241,10 @@ let main_action xs =
   set_gc ();
   Logger.log Config_pfff.logger "scheck" None;
 
-  let files = Lib_parsing_php.find_php_files_of_dir_or_files xs in
-  let files =
-    match xs with
-    | [dir] -> 
-      let skip_file = Filename.concat dir "skip_list.txt" in
-      if Sys.file_exists skip_file
-      then begin 
-        if !verbose then  pr2 (spf "Using skip file: %s" skip_file);
-        let skip_list = Skip_code.load skip_file in
-        let root = dir in
-        (* todo: also skip the skip_errors? *)
-        Skip_code.filter_files skip_list root files
-      end
-      else files
-    | _ -> files
+  let xs = List.map Common.realpath xs in
+  let files = 
+    Lib_parsing_php.find_php_files_of_dir_or_files xs
+    +> Skip_code.filter_files_if_skip_list ~verbose:!verbose
   in
 
   Flag_parsing_php.show_parsing_error := false;
