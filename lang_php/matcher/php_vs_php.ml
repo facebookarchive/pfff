@@ -1762,8 +1762,11 @@ and m_constant a b =
   | A.String(name, info_name), B.String(sb, info_sb)
       when name =~ "^=~/\\(.*\\)/$" ->
       let s = Common.matched1 name in
+(*
       let rex = Pcre.regexp s in
       if Pcre.pmatch ~rex sb
+*)
+      if sb =~ s
       then
         return (
           A.String(name, info_name),

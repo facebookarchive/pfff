@@ -141,7 +141,8 @@ BASICLIBS=commons/lib.cma \
  lang_ml/parsing/lib.cma \
  lang_nw/parsing/lib.cma \
  lang_php/parsing/lib.cma \
- lang_php/matcher/lib.cma \
+  lang_php/matcher/lib.cma \
+  lang_php/pretty/lib.cma \
  lang_cpp/parsing/lib.cma \
  lang_c/parsing/lib.cma \
  lang_objc/parsing/lib.cma \
@@ -397,18 +398,18 @@ clean::
 # sgrep/spatch targets
 #------------------------------------------------------------------------------
 
-sgrep: $(LIBS) main_sgrep.cmo 
-	$(OCAMLC) $(CUSTOM) -o $@ $(SYSLIBS) $(REGEXPCMA) $^
+sgrep: $(BASICLIBS) main_sgrep.cmo 
+	$(OCAMLC) $(CUSTOM) -o $@ $(BASICSYSLIBS) $^
 sgrep.opt: $(BASICLIBS:.cma=.cmxa) main_sgrep.cmx
-	$(OCAMLOPT) $(STATIC) -o $@ $(BASICSYSLIBS:.cma=.cmxa) \
-	  $(REGEXPCMA:.cma=.cmxa) $^
+	$(OCAMLOPT) $(STATIC) -o $@ $(BASICSYSLIBS:.cma=.cmxa)
+
 clean::
 	rm -f sgrep
 
-spatch: $(LIBS) main_spatch.cmo 
-	$(OCAMLC) $(CUSTOM) -o $@ $(SYSLIBS) $^
-spatch.opt: $(LIBS:.cma=.cmxa) main_spatch.cmx
-	$(OCAMLOPT) $(STATIC) -o $@ $(SYSLIBS:.cma=.cmxa) $^
+spatch: $(BASICLIBS) main_spatch.cmo 
+	$(OCAMLC) $(CUSTOM) -o $@ $(BASICSYSLIBS) $^
+spatch.opt: $(BASICLIBS:.cma=.cmxa) main_spatch.cmx
+	$(OCAMLOPT) $(STATIC) -o $@ $(BASICSYSLIBS:.cma=.cmxa) $^
 clean::
 	rm -f spatch
 
