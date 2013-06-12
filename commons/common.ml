@@ -1209,9 +1209,15 @@ let files_of_dir_or_files_no_vcs_nofilter xs =
   xs +> List.map (fun x ->
     if is_directory x
     then
-      cmd_to_list_and_status
-        ("find "^arg_symlink()^x^" -noleaf -type f " ^
-            grep_dash_v_str
-        ) +> fst
+      let cmd = ("find "^arg_symlink()^x^" -noleaf -type f " ^
+            grep_dash_v_str) in
+      let (xs, status) =
+        cmd_to_list_and_status cmd in
+      (match status with
+      | Unix.WEXITED 0 -> xs
+      | _ -> raise (CmdError (status,
+                         (spf "CMD = %s, RESULT = %s"
+                             cmd (String.concat "\n" xs))))
+      )
     else [x]
   ) +> List.concat
