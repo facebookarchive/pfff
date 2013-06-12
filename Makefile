@@ -401,7 +401,7 @@ clean::
 sgrep: $(BASICLIBS) main_sgrep.cmo 
 	$(OCAMLC) $(CUSTOM) -o $@ $(BASICSYSLIBS) $^
 sgrep.opt: $(BASICLIBS:.cma=.cmxa) main_sgrep.cmx
-	$(OCAMLOPT) $(STATIC) -o $@ $(BASICSYSLIBS:.cma=.cmxa)
+	$(OCAMLOPT) $(STATIC) -o $@ $(BASICSYSLIBS:.cma=.cmxa) $^
 
 clean::
 	rm -f sgrep
