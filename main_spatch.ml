@@ -80,18 +80,13 @@ let parse_pattern file =
   | _ -> failwith ("unsupported language: " ^ !lang)
 
 let find_source_files_of_dir_or_files xs =
-  let xs' = 
-  match !lang with
+  let xs = List.map Common.realpath xs in
+  (match !lang with
   | "php" ->   Lib_parsing_php.find_php_files_of_dir_or_files xs
   | "c++" -> Lib_parsing_cpp.find_cpp_files_of_dir_or_files xs
   | "ml" -> Lib_parsing_ml.find_ml_files_of_dir_or_files xs
   | _ -> failwith ("unsupported language: " ^ !lang)
-  in
-  match xs with
-  | [root] when Sys.file_exists (Filename.concat root "skip_list.txt") -> 
-    let skip_list = Skip_code.load (Filename.concat root "skip_list.txt") in
-    Skip_code.filter_files skip_list root xs'
-  | _ -> xs'
+  ) +> Skip_code.filter_files_if_skip_list ~verbose:!verbose
 
 let spatch pattern file =
   match !lang, pattern with

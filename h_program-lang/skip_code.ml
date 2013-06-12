@@ -58,7 +58,7 @@ let load file =
   )
 
 (*****************************************************************************)
-(* Helpers *)
+(* Main entry point *)
 (*****************************************************************************)
 
 (* less: say when skipped stuff? *)
@@ -90,6 +90,48 @@ let filter_files skip_list root xs =
        (fun dir -> readable =~ (".*/" ^ dir ^ ".*")))
   )
 
+
+(* copy paste of h_version_control/git.ml *)
+let find_root_from_absolute_path file =
+  let xs = Common.split "/" (Common2.dirname file) in
+  let xxs = Common2.inits xs in
+  xxs +> List.rev +> Common.find_some (fun xs ->
+    let dir = "/" ^ Common.join "/" xs in
+    if Sys.file_exists (Filename.concat dir ".git") ||
+       Sys.file_exists (Filename.concat dir ".hg") ||
+       false
+    then Some dir
+    else None
+  )
+
+let find_skip_file_from_root root =
+  let candidates = [
+    "skip_list.txt";
+  ]
+  in
+  candidates +> Common.find_some (fun f ->
+    let full = Filename.concat root f in
+    if Sys.file_exists full
+    then Some full
+    else None
+  )
+
+let filter_files_if_skip_list ?(verbose=false) xs =
+  match xs with
+  | [] -> []
+  | x::_ ->
+      try 
+        let root = find_root_from_absolute_path x in
+        let skip_file = find_skip_file_from_root root in
+        let skip_list = load skip_file in
+        if verbose then pr2 (spf "using skip list in %s" skip_file);
+        filter_files skip_list root xs
+      with
+      Not_found -> xs
+
+(*****************************************************************************)
+(* Helpers *)
+(*****************************************************************************)
 let build_filter_errors_file skip_list =
   let skip_dirs = 
     skip_list +> Common.map_filter (function
@@ -110,3 +152,5 @@ let reorder_files_skip_errors_last skip_list root xs =
     )
   in
   ok ++ skip_errors
+
+

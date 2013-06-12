@@ -41,6 +41,8 @@ more orthogonal.
 
 *** removed cruft, old/ directories, dead subprojects
 
+*** better skip list file, more flexible
+
 * 0.23 (Q1 2013) (clang parser)
 
 ** codegraph
