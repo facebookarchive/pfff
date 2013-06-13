@@ -456,7 +456,7 @@ SYSLIBS3= \
 
 OBJS3=code_map/lib.cma
 
-GTKLOOP=gtkThread.cmo gtkInit.cmo
+GTKLOOP=gtkThread.cmo
 
 codemap: $(LIBS) commons/commons_gui.cma $(OBJS3) main_codemap.cmo
 	$(OCAMLC) -thread $(CUSTOM) -o $@ $(SYSLIBS) threads.cma  $(SYSLIBS3) $(GTKLOOP) $^

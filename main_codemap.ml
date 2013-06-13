@@ -200,6 +200,8 @@ let layers_in_dir dir =
 let main_action xs = 
   set_gc ();
   Logger.log Config_pfff.logger "codemap" None;
+  let _locale = GtkMain.Main.init () in
+
 
   let root = Common2.common_prefix_of_files_or_dirs xs in
   pr2 (spf "Using root = %s" root);

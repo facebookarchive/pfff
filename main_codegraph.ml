@@ -383,6 +383,7 @@ let analyze_backward_deps graph_file =
  *)
 let main_action xs =
   Logger.log Config_pfff.logger "codegraph" None;
+  let _locale = GtkMain.Main.init () in
 
   let dir = 
     match xs with 
