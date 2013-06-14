@@ -278,8 +278,12 @@ let rec add_use_edge env (((str, tok) as name, kind)) =
           (match kind with
           (* todo: fix those *)
           | E.Field when (not (str =~ ".*\\.XHP__.*")) -> ()
-          (* todo: handle __call? *)
-          | E.Method _ when str =~ ".*\\.gen.*" || str =~ ".*\\.get.*" -> ()
+          (* todo: handle __call and the dynamicYield idiom.
+          *)
+          | E.Method _ when str =~ ".*\\.gen.*" 
+                         || str =~ ".*\\.get.*" 
+                         || str =~ ".*\\.prepare.*" 
+             -> ()
 
           (* | E.Method _  | E.ClassConstant ->          () *)
           | _ ->
