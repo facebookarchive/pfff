@@ -39,7 +39,8 @@ let verbose = ref false
 let spatch_file = ref ""
 let sed_string = ref ""
 
-let lang = ref "c++"
+(* todo: infer from basename argv(0) ? *)
+let lang = ref "php"
 
 let apply_patch = ref false
 (* too experimental for now *)

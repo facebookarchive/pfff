@@ -33,7 +33,8 @@ let verbose = ref false
 let pattern_file = ref ""
 let pattern_string = ref ""
 
-let lang = ref "c++"
+(* todo: infer from basename argv(0) ? *)
+let lang = ref "php"
 
 let case_sensitive = ref false
 let match_format = ref Lib_matcher.Normal
