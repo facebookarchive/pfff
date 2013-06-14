@@ -140,6 +140,8 @@ let tokens a =
 (* Fuzzy parsing *)
 (*****************************************************************************)
 
+(* todo: factorize with parse_php.ml, put in matcher/lib_fuzzy_parser.ml? *)
+
 let is_lbrace = function
   | T.TOBrace _ -> true  | _ -> false
 let is_rbrace = function
