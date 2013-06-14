@@ -107,7 +107,10 @@ let find_root_from_absolute_path file =
 let find_skip_file_from_root root =
   let candidates = [
     "skip_list.txt";
+    (* fbobjc specific *)
     "Configurations/Sgrep/skip_list.txt";
+    (* www specific *)
+    "conf/codegraph/skip_list.txt";
   ]
   in
   candidates +> Common.find_some (fun f ->
