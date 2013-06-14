@@ -112,6 +112,7 @@ type env = {
   log: string -> unit;
   pr2_and_log: string -> unit;
   is_skip_error_file: Common.filename (* readable *) -> bool;
+  path: Common.filename -> string;
 }
   (* We need 3 phases, one to get all the definitions, one to
    * get the inheritance information, and one to get all the Uses.
@@ -138,8 +139,10 @@ let parse2 env file =
   | Timeout -> raise Timeout
   | exn ->
     env.pr2_and_log 
-      (spf "PARSE ERROR with %s, exn = %s" file (Common.exn_to_s exn));
+      (spf "PARSE ERROR with %s, exn = %s" (env.path file)
+         (Common.exn_to_s exn));
     []
+
 let parse env a =
   (* on huge codebase naive memoization stresses too much the GC.
    * We marshall a la juju so the heap graph is smaller at least.
@@ -280,7 +283,8 @@ let rec add_use_edge env (((str, tok) as name, kind)) =
 
           (* | E.Method _  | E.ClassConstant ->          () *)
           | _ ->
-            let file = name +> Ast.tok_of_name +> Parse_info.string_of_info in
+            let file = name +> Ast.tok_of_name +> Parse_info.file_of_info in
+            let line = name +> Ast.tok_of_name +> Parse_info.line_of_info in
             let f =
               if env.phase = Inheritance
               then env.pr2_and_log
@@ -297,7 +301,8 @@ let rec add_use_edge env (((str, tok) as name, kind)) =
                   | _ -> env.log
                   )
             in
-            f (spf "PB: lookup fail on %s (at %s)"(G.string_of_node dst) file);
+            f (spf "PB: lookup fail on %s (at %s:%d)"(G.string_of_node dst) 
+                 (env.path file) line);
             env.g +> G.add_edge (parent_target, dst) G.Has;
             env.g +> G.add_edge (src, dst) G.Use;
           );
@@ -798,7 +803,9 @@ and map_valuel env xs = List.iter (map_value env) xs
 (*****************************************************************************)
 
 let build 
-    ?(verbose=true) 
+    ?(verbose=true)
+    ?(logfile=(Filename.concat (Sys.getcwd()) "pfff.log"))
+    ?(readable_file_format=false)
     ?(only_defs=false)
     dir_or_files skip_list 
  =
@@ -823,8 +830,7 @@ let build
   let g = G.create () in
   G.create_initial_hierarchy g;
 
-  let chan = open_out (Filename.concat (Sys.getcwd()) "pfff.log") in
-
+  let chan = open_out logfile in
   let env = {
     g;
     phase = Defs;
@@ -844,6 +850,11 @@ let build
       flush chan;
     );
     is_skip_error_file = Skip_code.build_filter_errors_file skip_list;
+    path = (fun file ->
+      if readable_file_format
+      then Common.filename_without_leading_path root file
+      else file
+    );
     at_toplevel = true;
   }
   in
@@ -884,15 +895,15 @@ let build
       env.pr2_and_log  (spf "DUPE: %s (%d)" (G.string_of_node node) cnt);
       g +> G.remove_edge (G.parent node g, node) G.Has;
       g +> G.add_edge (G.dupe, node) G.Has;
-      env.log (spf " orig = %s" orig_file) ;
-      env.log (spf " dupe = %s" ex_file);
+      env.log (spf " orig = %s" (env.path orig_file));
+      env.log (spf " dupe = %s" (env.path ex_file));
     (* duplicating a regular function, bad, but ok, should have renamed it in
      * our analysis, see env.dupe_renaming
      *)
     | n, 1 when n > 0 ->
       env.log (spf "DUPE BAD STYLE: %s (%d)" (G.string_of_node node) cnt);
-      env.log (spf " orig = %s" orig_file) ;
-      env.log (spf " dupe = %s" ex_file);
+      env.log (spf " orig = %s" (env.path orig_file));
+      env.log (spf " dupe = %s" (env.path ex_file));
     (* probably local functions to a script duplicated in independent files,
      * most should have also been renamed, see env.dupe_renaming *)
     | n, 0 -> ()

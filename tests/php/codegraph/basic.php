@@ -8,6 +8,7 @@ const A_CONSTANT = 1;
 class AClass {
   public $fld;
   function __construct(int $input) {
+    //ERROR: lookup failure, undefined member
     $this->tempvar = $input;
   }
   function testThis() {

@@ -237,6 +237,27 @@ let tags_unittest =
     ]
 
 (*---------------------------------------------------------------------------*)
+(* Codegraph *)
+(*---------------------------------------------------------------------------*)
+let codegraph_unittest = 
+  "codegraph_php" >::: [
+    "regression files" >:: (fun () ->
+      let dir = Filename.concat Config_pfff.path "/tests/php/codegraph" in
+      let skip_list = Skip_code.load (Filename.concat dir "skip_list.txt") in
+      let logfile = Filename.concat dir "pfff_test.log" in
+      let expected_logfile = Filename.concat dir "pfff_test.exp" in
+      let _g = Graph_code_php.build 
+        ~verbose:false ~readable_file_format:true ~logfile
+        (Left dir) skip_list in
+      let xs = Common2.unix_diff logfile expected_logfile in
+      assert_bool
+        ~msg:("it should generate the right errors in pfff_test.log, diff = "^
+                 (Common.join "\n" xs))
+        (null xs)
+
+    )
+  ]
+(*---------------------------------------------------------------------------*)
 (* Annotations *)
 (*---------------------------------------------------------------------------*)
 
@@ -330,6 +351,7 @@ let unittest =
     ast_simple_unittest;
     defs_uses_unittest;
     tags_unittest;
+    codegraph_unittest;
     annotation_unittest;
     include_unittest;
   ]

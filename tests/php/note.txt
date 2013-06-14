@@ -1,2 +1,3 @@
-coverage/, deadcode/, parsing/, parsing_errors/, pretty/, spatch/, scheck/
- are used by -test all
+the codegraph/, coverage/, deadcode/, parsing/, parsing_errors/,
+pretty/, spatch/, and scheck/ directories are used by ~/pfff/pfff_test.
+
