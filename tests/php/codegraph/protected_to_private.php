@@ -1,5 +1,7 @@
 <?php
 
+// see Graph_code_analysis.protected_to_private()
+
 class ProtectedUsed {
   // default is public in PHP
   static $public_static;
