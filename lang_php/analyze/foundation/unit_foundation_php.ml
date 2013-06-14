@@ -4,6 +4,8 @@ open OUnit
 module Ast = Ast_php
 module A = Annotation_php
 module Db = Database_code
+module E = Database_code
+module G = Graph_code
 
 (*****************************************************************************)
 (* Prelude *)
@@ -246,14 +248,21 @@ let codegraph_unittest =
       let skip_list = Skip_code.load (Filename.concat dir "skip_list.txt") in
       let logfile = Filename.concat dir "pfff_test.log" in
       let expected_logfile = Filename.concat dir "pfff_test.exp" in
-      let _g = Graph_code_php.build 
+      let g = Graph_code_php.build 
         ~verbose:false ~readable_file_format:true ~logfile
         (Left dir) skip_list in
       let xs = Common2.unix_diff logfile expected_logfile in
       assert_bool
         ~msg:("it should generate the right errors in pfff_test.log, diff = "^
                  (Common.join "\n" xs))
-        (null xs)
+        (null xs);
+
+      let src = ("x:misc.XHP__xstr", E.Field) in
+      let pred = G.pred src G.Use g in
+      assert_equal
+        ~msg:"it should link the use of an xhp attribute to its def"
+        pred
+        ["xhp_use.php", E.File];
 
     )
   ]
