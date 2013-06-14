@@ -15,4 +15,8 @@ val pos_of_tok   : Parser_php.token -> int
 (*x: token_helpers_php.mli *)
 val pinfo_of_tok   : Parser_php.token -> Parse_info.token
 val is_origin : Parser_php.token -> bool
+
+(* for unparsing *)
+val elt_of_tok: Parser_php.token -> Lib_unparser.elt
+
 (*e: token_helpers_php.mli *)

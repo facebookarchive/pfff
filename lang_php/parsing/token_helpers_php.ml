@@ -447,3 +447,17 @@ let pinfo_of_tok x = PI.pinfo_of_info (info_of_tok x)
 
 let is_origin x =
   match pinfo_of_tok x with Parse_info.OriginTok _ -> true | _ -> false
+
+(*****************************************************************************)
+(* For unparsing *)
+(*****************************************************************************)
+
+open Lib_unparser
+
+let elt_of_tok tok =
+  let str = str_of_tok tok in
+  match tok with
+  | T_COMMENT _ | T_DOC_COMMENT _ | TCommentPP _ -> Esthet (Comment str)
+  | TSpaces _ -> Esthet (Space str)
+  | TNewline _ -> Esthet Newline
+  | _ -> OrigElt str

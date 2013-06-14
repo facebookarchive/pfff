@@ -68,7 +68,7 @@ let parse_pattern file =
   (* for now we abuse the fuzzy parser of cpp for ml for the pattern as
    * we should not use comments in patterns
    *)
-  | "c++" | "ml" -> 
+  | "c++" | "ml" | "phpfuzzy" -> 
       let parse str =
         Common2.with_tmp_file ~str ~ext:"cpp" (fun tmpfile ->
           Parse_cpp.parse_fuzzy tmpfile +> fst
@@ -83,7 +83,7 @@ let parse_pattern file =
 let find_source_files_of_dir_or_files xs =
   let xs = List.map Common.realpath xs in
   (match !lang with
-  | "php" ->   Lib_parsing_php.find_php_files_of_dir_or_files xs
+  | "php" | "phpfuzzy" -> Lib_parsing_php.find_php_files_of_dir_or_files xs
   | "c++" -> Lib_parsing_cpp.find_cpp_files_of_dir_or_files xs
   | "ml" -> Lib_parsing_ml.find_ml_files_of_dir_or_files xs
   | _ -> failwith ("unsupported language: " ^ !lang)
@@ -138,6 +138,27 @@ let spatch pattern file =
     if was_modified
     then Some (unparse toks)
     else None
+
+  | "phpfuzzy", Right pattern ->
+    let trees, toks =
+      try 
+          Parse_php.parse_fuzzy file
+      with exn ->
+        pr2 (spf "PB with %s, exn = %s"  file (Common.exn_to_s exn));
+        [], []
+    in
+    let was_modified = Spatch_fuzzy.spatch pattern trees in
+
+    let elt_and_info_of_tok tok =
+      Token_helpers_php.elt_of_tok tok, Token_helpers_php.info_of_tok  tok
+    in
+    let unparse toks = 
+      Lib_unparser.string_of_toks_using_transfo ~elt_and_info_of_tok toks
+    in
+    if was_modified
+    then Some (unparse toks)
+    else None
+
   | _ -> failwith ("unsupported language: " ^ !lang)
 
 (*****************************************************************************)

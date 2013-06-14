@@ -143,13 +143,13 @@ let parse_pattern str =
   (* for now we abuse the fuzzy parser of cpp for ml for the pattern as
    * we should not use comments in patterns
    *)
-  | "c++" | "ml" -> Right (ast_fuzzy_of_string str)
+  | "c++" | "ml" | "phpfuzzy" -> Right (ast_fuzzy_of_string str)
   | _ -> failwith ("unsupported language: " ^ !lang)
 
 let find_source_files_of_dir_or_files xs =
   let xs = List.map Common.realpath xs in
   (match !lang with
-  | "php" ->   Lib_parsing_php.find_php_files_of_dir_or_files xs
+  | "php" | "phpfuzzy" -> Lib_parsing_php.find_php_files_of_dir_or_files xs
   | "c++" -> Lib_parsing_cpp.find_cpp_files_of_dir_or_files xs
   | "ml" -> Lib_parsing_ml.find_ml_files_of_dir_or_files xs
   | _ -> failwith ("unsupported language: " ^ !lang)
@@ -185,6 +185,19 @@ let sgrep pattern file =
     let ast = 
       try 
           Parse_ml.parse_fuzzy file +> fst
+      with exn ->
+        pr2 (spf "PB with %s, exn = %s"  file (Common.exn_to_s exn));
+        []
+    in
+    Sgrep_fuzzy.sgrep
+      ~hook:(fun env matched_tokens ->
+        print_match !mvars env Ast_fuzzy.ii_of_trees matched_tokens
+      )
+      pattern ast
+  | "phpfuzzy", Right pattern ->
+    let ast = 
+      try 
+          Parse_php.parse_fuzzy file +> fst
       with exn ->
         pr2 (spf "PB with %s, exn = %s"  file (Common.exn_to_s exn));
         []
