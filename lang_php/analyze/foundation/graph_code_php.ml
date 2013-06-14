@@ -687,21 +687,27 @@ and expr env x =
           let aclass = Ast.str_of_name name1 in
           let aconstant = Ast.str_of_name name2 in
           let tok = snd name2 in
-          let node = ((aclass ^ "." ^ aconstant, tok), E.ClassConstant) in
           (match lookup env.g (aclass, aconstant) tok with
-          | None -> add_use_edge env node
+          | None -> 
+            let node = ((aclass ^ "." ^ aconstant, tok), E.ClassConstant) in
+            add_use_edge env node
           (* less: assert kind = ClassConstant? *)
-          | Some n -> add_use_edge env n
+          | Some n ->
+            add_use_edge env n
           )
 
       | Id name1, Var name2 ->
           let aclass = Ast.str_of_name name1 in
           let astatic_var = Ast.str_of_name name2 in
           let tok = snd name2 in
-          let node = ((aclass ^ "." ^ astatic_var, tok), E.Field) in
           (match lookup env.g (aclass, astatic_var) tok with
-          | None -> add_use_edge env node
-          (* less: assert kind = Static variable *)
+          | None -> 
+            let node = ((aclass ^ "." ^ astatic_var, tok), E.Field) in
+            add_use_edge env node
+          (* less: assert kind = Static variable
+           * actually because we convert some Obj_get into Class_get,
+           * this could also be a kind = Field here.
+           *)
           | Some n -> add_use_edge env n
           )
 
@@ -721,7 +727,7 @@ and expr env x =
       (* handle easy case *)
       | This (_, tok), Id name2 ->
           let (s2, tok2) = name2 in
-          expr env (Class_get (Id (env.self, tok), Id ("$" ^ s2, tok2)))
+          expr env (Class_get (Id (env.self, tok), Var ("$" ^ s2, tok2)))
       | _, Id name2  ->
           expr env e1;
       | _ ->

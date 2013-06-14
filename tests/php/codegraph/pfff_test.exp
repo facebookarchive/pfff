@@ -14,6 +14,6 @@ DUPE BAD STYLE: Function:__builtin__echo (2)
 step2: extract inheritance
 
 step3: extract uses
-PB: lookup fail on ClassConstant:AClass.$tempvar (at basic.php:12)
+PB: lookup fail on ClassConstant:A.UNDEFINED_CLASS_CONSTANT (at class.php:32)
 PB: instanceof unknown class: Class:UNKNOWN_CLASS
 PB: lookup fail on Field:x:misc.XHP__xnosuchstr (at xhp_use.php:9)

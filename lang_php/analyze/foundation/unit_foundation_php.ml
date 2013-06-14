@@ -243,6 +243,27 @@ let tags_unittest =
 (*---------------------------------------------------------------------------*)
 let codegraph_unittest = 
   "codegraph_php" >::: [
+
+    "basic class def/uses" >:: (fun () ->
+      let file_content = "
+class A {
+ public $fld;
+ public function test_field() {
+   return $this->fld;
+ }
+}"
+      in
+      let tmpfile = Parse_php.tmp_php_file_from_string file_content in
+      let g = Graph_code_php.build 
+        ~verbose:false ~logfile:"/dev/null" (Right [tmpfile]) [] in
+      let src = ("A.$fld", E.Field) in
+      let pred = G.pred src G.Use g in
+      assert_equal
+        ~msg:"it should link the use of a PHP field to its def"
+        pred
+        ["A.test_field", E.Method E.RegularMethod];
+    );
+
     "regression files" >:: (fun () ->
       let dir = Filename.concat Config_pfff.path "/tests/php/codegraph" in
       let skip_list = Skip_code.load (Filename.concat dir "skip_list.txt") in
@@ -251,6 +272,7 @@ let codegraph_unittest =
       let g = Graph_code_php.build 
         ~verbose:false ~readable_file_format:true ~logfile
         (Left dir) skip_list in
+
       let xs = Common2.unix_diff logfile expected_logfile in
       assert_bool
         ~msg:("it should generate the right errors in pfff_test.log, diff = "^
