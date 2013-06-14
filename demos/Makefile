@@ -60,7 +60,7 @@ LIBS= ../commons/lib.cma \
       ../lang_php/parsing/lib.cma \
       $(ANALYZECMA)
 INCLUDEDIRS=../commons ../commons/lib-sexp ../commons/lib-json \
-            ../h_program-lang ../lang_php/parsing
+            ../h_program-lang ../lang_php/parsing ../h_version-control
 
 SYSLIBS= str.cma unix.cma nums.cma bigarray.cma
 
@@ -105,7 +105,7 @@ OCAMLMKTOP=ocamlmktop -g -custom $(INCLUDES) -thread
 # so dont forget to do a 'make sync' in parsing_php/ before doing make
 # in this directory.
 PROGS=php_transducer.byte \
- show_function_calls1.byte show_function_calls2.byte show_function_calls3.byte  show_function_class_names.byte show_function_class_names2.byte
+ show_function_calls1.byte show_function_calls2.byte show_function_calls3.byte  show_function_class_names.byte show_function_class_names2.byte simple_metrics.byte
 
 # simple_zero_to_null.byte count_elseifs.byte
 
