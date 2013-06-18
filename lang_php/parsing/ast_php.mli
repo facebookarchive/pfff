@@ -76,8 +76,8 @@ type hint_type =
  | HintCallback of
      (tok                                 (* "function" *)
       * (hint_type comma_list_dots paren) (* params *)
-      * hint_type option)                 (* return type *)
-       paren
+      * (tok * hint_type) option                  (* return type *)
+     )  paren
  and type_args = hint_type comma_list single_angle
 
  and type_params = type_param comma_list single_angle
@@ -389,7 +389,7 @@ and func_def = {
   f_tparams: type_params option;
   f_params: parameter comma_list_dots paren;
   (* static-php-ext: *)
-  f_return_type: hint_type option;
+  f_return_type: (tok (* : *) * hint_type) option;
   f_body: stmt_and_def list brace;
 }
     and function_type =
@@ -415,8 +415,12 @@ and lambda_def = (lexical_vars option * func_def)
 (* ------------------------------------------------------------------------- *)
 (* Constant definition *)
 (* ------------------------------------------------------------------------- *)
-(* todo use record *)
-and constant_def = tok * ident * tok (* = *) * static_scalar * tok (* ; *)
+and constant_def = {
+  cst_toks: tok (* const *) * tok (* = *) * tok (* ; *);
+  cst_name: ident;
+  cst_type: hint_type option;
+  cst_val: static_scalar;
+}
 
 (* ------------------------------------------------------------------------- *)
 (* Class (and interface/trait) definition *)

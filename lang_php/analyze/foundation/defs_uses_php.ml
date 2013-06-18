@@ -111,8 +111,8 @@ let defs_of_any any =
     V.ktop = (fun (k, _) x ->
       match x with
       (* const of php 5.3 *)
-      | ConstantDef (tok, name, tok_equal, scalar, semicolon) ->
-          Common.push2 (E.Constant, name, None) aref;
+      | ConstantDef def ->
+          Common.push2 (E.Constant, def.cst_name, None) aref;
           k x
       | TypeDef def ->
           Common.push2 (E.Type, def.t_name, None) aref;

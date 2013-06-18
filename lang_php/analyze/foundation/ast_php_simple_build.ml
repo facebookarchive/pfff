@@ -92,9 +92,9 @@ and name env = function
    | Parent tok -> (A.special "parent", wrap tok)
    | LateStatic tok -> (A.special "static", wrap tok)
 
-and constant_def env (_, cst_name, _, e, _) =
+and constant_def env {cst_name; cst_val; cst_type=_TODO; cst_toks = _} =
   { A.cst_name = ident env cst_name;
-    A.cst_body = expr env e;
+    A.cst_body = expr env cst_val;
   }
 and type_def env def =
   { A.t_name = ident env def.t_name;
@@ -412,7 +412,7 @@ and hint_type env = function
   | HintTuple v1 -> A.HintTuple (List.map (hint_type env) (comma_list (brace v1)))
   | HintCallback (_, (_, args, ret), _) ->
       let args = List.map (hint_type env) (comma_list_dots (brace args)) in
-      let ret  = Common2.fmap (hint_type env) ret in
+      let ret  = Common2.fmap (fun (_, t) -> hint_type env t) ret in
       A.HintCallback (args, ret)
 
 
@@ -555,7 +555,8 @@ and method_def env m =
     A.f_name = ident env m.f_name;
     A.f_attrs = attributes env m.f_attrs;
     A.f_params = List.map (parameter env) params ;
-    A.f_return_type = opt hint_type env m.f_return_type;
+    A.f_return_type = 
+      Common2.fmap (fun (_, t) -> hint_type env t) m.f_return_type;
     A.f_body = method_body env m.f_body;
     A.f_kind = A.Method;
     A.l_uses = [];
@@ -583,7 +584,8 @@ and func_def env f =
     A.f_name = ident env f.f_name;
     A.f_attrs = attributes env f.f_attrs;
     A.f_params = List.map (parameter env) params;
-    A.f_return_type = opt hint_type env f.f_return_type;
+    A.f_return_type = 
+      Common2.fmap (fun (_, t) -> hint_type env t) f.f_return_type;
     A.f_body = List.fold_right (stmt_and_def env) body [];
     A.f_kind = A.Function;
     A.m_modifiers = [];

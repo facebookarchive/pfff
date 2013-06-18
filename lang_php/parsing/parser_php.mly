@@ -473,10 +473,13 @@ use_filename:
 /*(* PHP 5.3 *)*/
 constant_declaration_statement:
  | T_CONST           ident TEQ static_scalar TSEMICOLON
-     { ($1, Name $2, $3, $4, $5) }
+   { { cst_toks = ($1, $3, $5); cst_name = Name $2; cst_val = $4; 
+       cst_type = None} }
  /*(* can not factorize with a 'type_opt', see conflict.txt *)*/
  | T_CONST type_php  ident TEQ static_scalar TSEMICOLON
-     { ($1, Name $3, $4, $5, $6) (* todo: use $2 *) }
+   { { cst_toks = ($1, $4, $6); cst_name = Name $3; cst_val = $5; 
+       cst_type = Some $2 } }
+
 
 /*(*************************************************************************)*/
 /*(*1 Function declaration *)*/
@@ -864,8 +867,7 @@ type_arg_list_gt:
     ([Left(HintQuestion($1, Hint(($2), Some ($3, $4, lhs))))], rhs) 
    }
 
-return_type:
-   TCOLON type_php                 { $2 (* TODO $1 *) }
+return_type: TCOLON type_php                 { $1, $2 }
 
 /*(*************************************************************************)*/
 /*(*1 Attributes *)*/

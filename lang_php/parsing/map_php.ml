@@ -721,7 +721,11 @@ and
   let v_f_attrs = map_of_option map_attributes v_f_attrs in
   let v_f_type = map_function_type v_f_type in
   let v_f_tok = map_tok v_f_tok in
-  let v_f_return_type = map_of_option map_hint_type v_f_return_type in
+  let v_f_return_type =
+    map_of_option
+      (fun (v1, v2) ->
+         let v1 = map_tok v1 and v2 = map_hint_type v2 in (v1, v2))
+      v_f_return_type in
   {
     f_tok = v_f_tok;
     f_type = v_f_type;
@@ -778,14 +782,20 @@ and map_hint_type =
   | HintTuple v1 -> let v1 = map_paren (map_comma_list map_hint_type) v1 in
                     HintTuple v1
   | HintCallback v1 ->
-      let v1 = map_paren
-        (fun (tok, args, ret) ->
-           (map_tok tok,
-            map_paren (map_comma_list_dots map_hint_type) args,
-            Common2.fmap map_hint_type ret))
-        v1
-      in
-      HintCallback v1
+      let v1 =
+        map_paren
+          (fun (v1, v2, v3) ->
+             let v1 = map_tok v1
+             and v2 = map_paren (map_comma_list_dots map_hint_type) v2
+             and v3 =
+               map_of_option
+                 (fun (v1, v2) ->
+                    let v1 = map_tok v1 and v2 = map_hint_type v2 in (v1, v2))
+                 v3
+             in (v1, v2, v3))
+          v1
+      in HintCallback ((v1))
+
 and map_is_ref v = map_of_option map_tok v
 and map_lambda_def (v1, v2) =
   let v1 = map_of_option map_lexical_vars v1
@@ -1012,13 +1022,33 @@ and map_static_scalar_affect (v1, v2) =
 and map_stmt_and_def def =
   let rec k x = map_stmt x in
   vin.kstmt_and_def (k, all_functions) def
-and map_constant_def (v1, v2, v3, v4, v5) =
-      let v1 = map_tok v1
-      and v2 = map_ident v2
-      and v3 = map_tok v3
-      and v4 = map_static_scalar v4
-      and v5 = map_tok v5
-      in (v1, v2, v3, v4, v5)
+
+and  map_constant_def {
+                     cst_toks = v_cst_toks;
+                     cst_name = v_cst_name;
+                     cst_type = v_cst_type;
+                     cst_val = v_cst_val
+                   } =
+  let v_cst_val = map_static_scalar v_cst_val in
+  let v_cst_type = map_of_option map_hint_type v_cst_type in
+  let v_cst_name = map_ident v_cst_name in
+  let v_cst_toks =
+    match v_cst_toks with
+    | (v1, v2, v3) ->
+        let v1 = map_tok v1
+        and v2 = map_tok v2
+        and v3 = map_tok v3
+        in (v1, v2, v3)
+  in 
+  {
+    cst_toks = v_cst_toks;
+    cst_name = v_cst_name;
+    cst_type = v_cst_type;
+    cst_val = v_cst_val
+  }
+
+
+
 and map_attribute =
   function
   | Attribute v1 -> let v1 = map_wrap map_of_string v1 in Attribute ((v1))

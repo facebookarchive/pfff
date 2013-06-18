@@ -137,9 +137,9 @@ let stat_of_program ?(hooks=default_hooks) h file ast =
           Common.save_excursion current_node (CG.Function s) (fun() ->
             k x
           )
-      | ConstantDef (_, name, _, _, _) -> 
+      | ConstantDef def -> 
           inc "constant";
-          hooks.entity (E.Constant, Ast.str_of_ident name);
+          hooks.entity (E.Constant, Ast.str_of_ident def.cst_name);
           (* there should be no call inside constant definitions so
            * don't care about current_node
            *)

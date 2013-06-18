@@ -211,8 +211,7 @@ let ast_php_entity_in_file ~check_dupes (s, kind) g file =
       let kind = E.RegularClass in
       Some ((Ast.str_of_ident def.c_name, E.Class kind), ClassE def)
     | ConstantDef def ->
-      let (_, name, _, _, _) = def in
-      Some ((Ast.str_of_ident name, E.Constant), ConstantE def)
+      Some ((Ast.str_of_ident def.cst_name, E.Constant), ConstantE def)
 
     | NotParsedCorrectly _ | FinalDef _ -> None
     )

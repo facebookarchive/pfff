@@ -745,7 +745,10 @@ and
   let arg = v_option v_type_params v_f_tparams in
   let arg = v_parameters v_f_params in
   let arg = v_body v_f_body in
-  let arg = v_option v_hint_type v_f_return_type in
+  let arg =
+    v_option
+      (fun (v1, v2) -> let v1 = v_tok v1 and v2 = v_hint_type v2 in ())
+      v_f_return_type in
   ()
   in
   vin.kfunc_def (k, all_functions) x
@@ -786,11 +789,21 @@ and v_hint_type x =
   | HintQuestion (v1, v2) -> let v1 = v_tok v1 in
                              let v2 = v_hint_type v2 in ()
   | HintTuple v1 -> let v1 = v_paren (v_comma_list v_hint_type) v1 in ()
+
   | HintCallback v1 ->
-      let v1 = v_paren (fun (tok, args, ret) ->
-                          v_tok tok;
-                          v_paren (v_comma_list_dots v_hint_type) args;
-                          Common.do_option v_hint_type ret) v1 in ()
+      let v1 =
+        v_paren
+          (fun (v1, v2, v3) ->
+             let v1 = v_tok v1
+             and v2 = v_paren (v_comma_list_dots v_hint_type) v2
+             and v3 =
+               v_option
+                 (fun (v1, v2) ->
+                    let v1 = v_tok v1 and v2 = v_hint_type v2 in ())
+                 v3
+             in ())
+          v1
+      in ()
   in
   vin.khint_type (k, all_functions) x
 
@@ -982,13 +995,20 @@ and v_stmt_and_def_list_scope x =
   in
   vin.kstmt_and_def_list_scope (k, all_functions) x
 
-and v_constant_def (v1, v2, v3, v4, v5) =
-  let v1 = v_tok v1
-  and v2 = v_ident v2
-  and v3 = v_tok v3
-  and v4 = v_static_scalar v4
-  and v5 = v_tok v5
-  in ()
+and  v_constant_def {
+                   cst_toks = v_cst_toks;
+                   cst_name = v_cst_name;
+                   cst_type = v_cst_type;
+                   cst_val = v_cst_val
+                 } =
+  let arg =
+    match v_cst_toks with
+    | (v1, v2, v3) ->
+        let v1 = v_tok v1 and v2 = v_tok v2 and v3 = v_tok v3 in () in
+  let arg = v_ident v_cst_name in
+  let arg = v_option v_hint_type v_cst_type in
+  let arg = v_static_scalar v_cst_val in 
+  ()
 
 and v_attribute =
   function

@@ -743,7 +743,13 @@ and
   let arg = vof_brace (vof_list vof_stmt_and_def) v_f_body in
   let bnd = ("f_body", arg) in
   let bnds = bnd :: bnds in
-  let arg = vof_option vof_hint_type v_f_return_type in
+  let arg =
+    Ocaml.vof_option
+      (fun (v1, v2) ->
+         let v1 = vof_tok v1
+         and v2 = vof_hint_type v2
+         in Ocaml.VTuple [ v1; v2 ])
+      v_f_return_type in
   let bnd = ("f_return_type", arg) in
   let bnds = bnd :: bnds in
   let arg = vof_paren (vof_comma_list_dots vof_parameter) v_f_params in
@@ -821,17 +827,21 @@ and vof_hint_type =
   | HintTuple v1 -> let v1 = vof_paren (vof_comma_list vof_hint_type) v1 in
                     Ocaml.VSum (("HintTuple", [ v1 ]))
   | HintCallback v1 ->
-    let v1 = vof_paren
-      (fun (func, args, ret) ->
-        Ocaml.VTuple [ vof_tok func;
-                       vof_paren (vof_comma_list_dots vof_hint_type) args;
-                       match ret with
-                       | Some ret -> vof_hint_type ret
-                       | None -> Ocaml.VSum (("None", []))
-                     ])
-      v1
-    in
-    Ocaml.VSum (("HintCallback", [v1]))
+      let v1 =
+        vof_paren
+          (fun (v1, v2, v3) ->
+             let v1 = vof_tok v1
+             and v2 = vof_paren (vof_comma_list_dots vof_hint_type) v2
+             and v3 =
+               Ocaml.vof_option
+                 (fun (v1, v2) ->
+                    let v1 = vof_tok v1
+                    and v2 = vof_hint_type v2
+                    in Ocaml.VTuple [ v1; v2 ])
+                 v3
+             in Ocaml.VTuple [ v1; v2; v3 ])
+          v1
+      in Ocaml.VSum (("HintCallback", [ v1 ]))
 
 and vof_is_ref v = vof_option vof_tok v
 
@@ -1083,13 +1093,35 @@ and vof_static_scalar_affect (v1, v2) =
   and v2 = vof_static_scalar v2
   in Ocaml.VTuple [ v1; v2 ]
 and vof_stmt_and_def x = vof_stmt x
-and vof_constant_def (v1, v2, v3, v4, v5) =
-  let v1 = vof_tok v1
-  and v2 = vof_ident v2
-  and v3 = vof_tok v3
-  and v4 = vof_static_scalar v4
-  and v5 = vof_tok v5
-  in Ocaml.VTuple [ v1; v2; v3; v4; v5 ]
+and
+  vof_constant_def {
+                     cst_toks = v_cst_toks;
+                     cst_name = v_cst_name;
+                     cst_type = v_cst_type;
+                     cst_val = v_cst_val
+                   } =
+  let bnds = [] in
+  let arg = vof_static_scalar v_cst_val in
+  let bnd = ("cst_val", arg) in
+  let bnds = bnd :: bnds in
+  let arg = Ocaml.vof_option vof_hint_type v_cst_type in
+  let bnd = ("cst_type", arg) in
+  let bnds = bnd :: bnds in
+  let arg = vof_ident v_cst_name in
+  let bnd = ("cst_name", arg) in
+  let bnds = bnd :: bnds in
+  let arg =
+    match v_cst_toks with
+    | (v1, v2, v3) ->
+        let v1 = vof_tok v1
+        and v2 = vof_tok v2
+        and v3 = vof_tok v3
+        in Ocaml.VTuple [ v1; v2; v3 ] in
+  let bnd = ("cst_toks", arg) in 
+  let bnds = bnd :: bnds in 
+  Ocaml.VDict bnds
+
+
 and vof_attribute =
   function
   | Attribute v1 ->

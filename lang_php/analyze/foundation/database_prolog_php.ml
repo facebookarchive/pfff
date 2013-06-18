@@ -149,7 +149,7 @@ let visit ~add readable ast =
         add_function_params !current def add;
 
         k x
-      | ConstantDef (tok, id, _, _, _) ->
+      | ConstantDef {cst_toks =(tok, _, _); cst_name=id; _} ->
         let s = Ast.str_of_ident id in
         current := spf "'%s'" s;
         Hashtbl.clear h;

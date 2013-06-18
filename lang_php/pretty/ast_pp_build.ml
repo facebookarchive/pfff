@@ -277,9 +277,9 @@ let rec toplevel env st acc =
       let _, _, end_ = cd.c_body in
       let acc = add_stmt_comments env acc (PI.line_of_info end_) in
       A.ClassDef (class_def env cd) :: acc
-  | ConstantDef (_, cst_name, _, e, end_) ->
+  | ConstantDef { cst_name; cst_val; cst_toks = (_, _, end_); cst_type =_TODO } ->
       let acc = add_stmt_comments env acc (PI.line_of_info end_) in
-      let e = expr env e in
+      let e = expr env cst_val in
       let s = ident env cst_name in
       A.ConstantDef { Ast_pp.cst_name = s; cst_body = e } :: acc
   | TypeDef _-> failwith "pretty printing not supported for typedefs"
@@ -589,9 +589,12 @@ and hint_type env = function
   | HintQuestion (i, t) -> A.HintQuestion (hint_type env t)
   | HintTuple (v1)      -> A.HintTuple (List.map (hint_type env) (comma_list (unbrace v1)))
   | HintCallback v1 ->
-    let args, ret = (fun (_, args, ret) ->
-                      (List.map (hint_type env) (comma_list_dots (unbrace args)),
-                       Common2.fmap (hint_type env) ret)) (unbrace v1) in
+    let args, ret = 
+      (fun (_, args, ret) ->
+        (List.map (hint_type env) (comma_list_dots (unbrace args)),
+         Common2.fmap (fun (_, t) -> hint_type env t) ret)) 
+        (unbrace v1)
+    in
     A.HintCallback (args, ret)
 
 and class_name_reference env a = expr env a
@@ -724,7 +727,8 @@ and method_def env m =
     A.m_ref = (match m.f_ref with None -> false | Some _ -> true);
     A.m_name = ident env m.f_name;
     A.m_params = List.map (parameter env) params ;
-    A.m_return_type = opt hint_type env m.f_return_type;
+    A.m_return_type = Common2.fmap (fun (_, t) -> hint_type env t) 
+      m.f_return_type;
     A.m_body = acc;
   }
 
@@ -751,7 +755,8 @@ and func_def env f =
   { A.f_ref = f.f_ref <> None;
     A.f_name = ident env f.f_name;
     A.f_params = List.map (parameter env) params;
-    A.f_return_type = opt hint_type env f.f_return_type;
+    A.f_return_type = Common2.fmap (fun (_, t) -> hint_type env t) 
+      f.f_return_type;
     A.f_body = acc;
   }
 

@@ -2389,7 +2389,7 @@ and m_hint_type a b =
     (m_tok lp1 lp2) >>= (fun (lp1, lp2) ->
       (m_tok tok1 tok2) >>= (fun (tok1, tok2) ->
         (m_paren (m_comma_list_dots m_hint_type)) args1 args2 >>= (fun (args1, args2) ->
-          (m_option m_hint_type) ret1 ret2 >>= (fun (ret1, ret2) ->
+          (m_option m_hint_type_ret) ret1 ret2 >>= (fun (ret1, ret2) ->
             return (A.HintCallback (lp1, (tok1, args1, ret1), rp1),
                     B.HintCallback (lp2, (tok2, args2, ret2), rp2))
            ))))
@@ -2399,7 +2399,11 @@ and m_hint_type a b =
   | A.HintTuple _, _
   | A.HintCallback _, _
    -> fail ()
-
+and m_hint_type_ret (a1, a2) (b1, b2) =
+  m_tok a1 b1 >>= (fun (a1, b1) ->
+  m_hint_type a2 b2 >>= (fun (a2, b2) ->
+    return ((a1, a2), (b1, b2))
+  ))
 
 (* ------------------------------------------------------------------------- *)
 (* Class definition *)

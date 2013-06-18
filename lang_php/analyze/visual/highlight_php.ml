@@ -213,7 +213,11 @@ let rec handle_typehint tag x = match x with
         tag lap (TypeMisc);
         List.iter (fun x -> handle_typehint tag (Some x)) (Ast.uncomma_dots args);
         tag rap (TypeMisc);
-        handle_typehint tag ret;
+        (match ret with
+        | None -> ()
+        | Some (_, ret) ->
+          handle_typehint tag (Some ret);
+        );
         tag rp (TypeMisc)
   )
   | None -> ()
