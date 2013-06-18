@@ -253,7 +253,7 @@ if( ($arch =~ /FreeBSD/) || (($arch =~ /Darwin/) && ($BREW_PROGRAM)) ) {
 my $PCRE_INCLUDE="$prefix_distrib/include";
 my $PCRE_LIBS="$prefix_distrib/lib";
 
-my $MYSQL_INCLUDE="$prefix_distrib/include";
+my $MYSQL_INCLUDE="$prefix_distrib/include/mysql";
 my $MYSQL_LIBS="$prefix_distrib/lib/mysql";
 
 
