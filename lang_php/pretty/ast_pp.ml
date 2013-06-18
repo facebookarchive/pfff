@@ -186,6 +186,7 @@ and func_def = {
 }
 
    and parameter = {
+     (* todo: modifiers *)
      p_type: hint_type option;
      p_ref: bool;
      p_name: string;
