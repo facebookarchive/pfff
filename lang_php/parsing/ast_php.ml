@@ -21,7 +21,8 @@ open Common
  * This module defines an Abstract Syntax Tree for PHP 5.2 with
  * a few PHP 5.3 (e.g. closures) and 5.4 (e.g. traits) extensions as well
  * as support for many Facebook extensions (XHP, generators, annotations,
- * generics, collections, type definitions).
+ * generics, collections, type definitions, implicit fields via constructor
+ * parameters).
  *
  * This is actually more a concrete syntax tree (CST) than an AST. This
  * is convenient in a refactoring context or code visualization
@@ -510,6 +511,11 @@ and func_def = {
 
     and parameter = {
       p_attrs: attributes option;
+      (* php-facebook-ext: implicit field via constructor parameter,
+       * this is always None except for constructors and the modifier
+       * can be only Public or Protected or Private (but never Static, etc).
+       *)
+      p_modifier: modifier wrap option;
       p_type: hint_type option;
       p_ref: is_ref;
       p_name: dname;

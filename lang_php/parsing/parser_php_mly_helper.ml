@@ -187,6 +187,7 @@ let mk_param s =
     p_ref = None;
     p_name = DName s;
     p_default = None;
+    p_modifier = None;
   }
 (* old:  e, Ast_php.noType() *)
 let mk_e e = e

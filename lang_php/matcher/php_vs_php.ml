@@ -2353,45 +2353,6 @@ and m_modifiers x = m_list (m_wrap m_modifier) x
 
 and m_type a b = return (a, b)
 
-and m_parameter a b =
-  match a, b with
-  { A.
-  p_attrs = a0;
-  p_type = a1;
-  p_ref = a2;
-  p_name = a3;
-  p_default = a4;
-  },
-  { B.
-  p_attrs = b0;
-  p_type = b1;
-  p_ref = b2;
-  p_name = b3;
-  p_default = b4;
-  } ->
-    (m_option m_attributes) a0 b0 >>= (fun (a0, b0) ->
-    (m_option m_hint_type) a1 b1 >>= (fun (a1, b1) ->
-    m_is_ref a2 b2 >>= (fun (a2, b2) ->
-    m_dname a3 b3 >>= (fun (a3, b3) ->
-    (m_option m_static_scalar_affect) a4 b4 >>= (fun (a4, b4) ->
-    return (
-      { A.
-      p_attrs = a0;
-      p_type = a1;
-      p_ref = a2;
-      p_name = a3;
-      p_default = a4;
-      },
-      { B.
-      p_attrs = b0;
-      p_type = b1;
-      p_ref = b2;
-      p_name = b3;
-      p_default = b4;
-      }
-    )
-  )))))
-
 and m_attributes a b =
   raise Todo
 

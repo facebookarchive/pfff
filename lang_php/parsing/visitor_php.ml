@@ -761,12 +761,14 @@ and v_parameter x =
     match x with
     {
       p_attrs = v_p_attrs;
+      p_modifier = v_p_modifier;
       p_type = v_p_type;
       p_ref = v_p_ref;
       p_name = v_p_name;
       p_default = v_p_default
     } ->
       let arg = v_option v_attributes v_p_attrs in
+      let arg = v_option (v_wrap v_modifier) v_p_modifier in
       let arg = v_option v_hint_type v_p_type in
       let arg = v_is_ref v_p_ref in
       let arg = v_dname v_p_name in

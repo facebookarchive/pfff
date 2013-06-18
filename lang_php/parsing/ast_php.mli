@@ -399,6 +399,7 @@ and func_def = {
       | MethodAbstract
     and parameter = {
       p_attrs: attributes option;
+      p_modifier: modifier wrap option;
       p_type: hint_type option;
       p_ref: is_ref;
       p_name: dname;

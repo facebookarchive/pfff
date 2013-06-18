@@ -565,7 +565,9 @@ and method_body env (_, stl, _) =
   List.fold_right (stmt_and_def env) stl []
 
 and parameter env
- { p_type = t; p_ref = r; p_name = name; p_default = d; p_attrs = a} =
+ { p_type = t; p_ref = r; p_name = name; p_default = d; p_attrs = a;
+   p_modifier = mTODO;
+ } =
   { A.p_type = opt hint_type env t;
     A.p_ref = r <> None;
     A.p_name = dname name;

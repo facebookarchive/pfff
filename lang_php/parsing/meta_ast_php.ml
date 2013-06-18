@@ -782,6 +782,7 @@ and vof_function_type =
 and
   vof_parameter {
                   p_attrs = v_p_attrs;
+                  p_modifier = v_p_modifier;
                   p_type = v_p_type;
                   p_ref = v_p_ref;
                   p_name = v_p_name;
@@ -800,6 +801,9 @@ and
   let arg = vof_option vof_hint_type v_p_type in
   let bnd = ("p_type", arg) in
   let bnds = bnd :: bnds  in
+  let arg = Ocaml.vof_option (vof_wrap vof_modifier) v_p_modifier in
+  let bnd = ("p_modifier", arg) in
+  let bnds = bnd :: bnds in
   let arg = vof_option vof_attributes v_p_attrs in
   let bnd = ("p_attrs", arg) in
   let bnds = bnd :: bnds in

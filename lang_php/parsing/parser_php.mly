@@ -30,6 +30,8 @@
  *    regarding f()[] sugar and also to allow more forms of expressions
  *    such as (<whatever expr>)->method()
  *  - added support for typedefs (another facebook extension)
+ *  - added support for implicit fields via constructor parameters
+ *    (facebook extension)
  /*
   * +----------------------------------------------------------------------+
   * | Zend Engine                                                          |
@@ -504,7 +506,7 @@ unticked_function_declaration_statement:
 parameter_list:
  | /*(*empty*)*/              { [] }
  | non_empty_parameter_list   { $1 }
- /*(* php-facebook-ext: *)*/
+ /*(* php-facebook-ext: trailing comma *)*/
  | non_empty_parameter_list TCOMMA  { $1 ++ [Right3 $2] }
 
 parameter_or_dots:
@@ -512,12 +514,8 @@ parameter_or_dots:
  /*(* varargs extension *)*/
  | TDOTS { Middle3 $1 }
 
-parameter:
-  |                     parameter_bis    { $1 }
-  |            type_php parameter_bis    { { $2 with p_type = Some $1 } }
-  | attributes          parameter_bis    { { $2 with p_attrs = Some $1 } }
-  | attributes type_php parameter_bis
-      { { $3 with p_attrs = Some $1; p_type = Some $2; } }
+parameter: attributes_opt ctor_modifier_opt type_php_opt     parameter_bis  
+      { { $4 with p_attrs = $1; p_type = $3 } }
 
 parameter_bis:
  | T_VARIABLE
@@ -528,6 +526,11 @@ parameter_bis:
      { let p = H.mk_param $1 in {p with p_default=Some($2,$3)} }
  | TAND T_VARIABLE TEQ static_scalar
      { let p = H.mk_param $2 in {p with p_ref=Some $1; p_default=Some($3,$4)}}
+
+/*(* php-facebook-ext: implicit field via constructor parameter *)*/
+ctor_modifier:
+ | T_PUBLIC    { Public,($1) } | T_PROTECTED { Protected,($1) }
+ | T_PRIVATE   { Private,($1) }
 
 
 is_reference:
@@ -1480,6 +1483,18 @@ possible_comma:
 return_type_opt:
  | return_type       { Some $1 }
  | /*(*empty*)*/     { None }
+
+attributes_opt:
+  | attributes    { Some $1 }
+  | /*(*empty*)*/ { None }
+
+type_php_opt:
+  | type_php      { Some $1 }
+  | /*(*empty*)*/ { None }
+
+ctor_modifier_opt:
+  | ctor_modifier      { Some $1 }
+  | /*(*empty*)*/ { None }
 
 function_call_argument_list:
  | /*(*empty*)*/                              { [] }
