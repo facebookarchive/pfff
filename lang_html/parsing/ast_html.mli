@@ -13,7 +13,7 @@ type html_tree =
   and 'a wrap = 'a * info
 
 (* html type in ocamlnet *)
-type html_tree2 = Nethtml.document list
+(* type html_tree2 = Nethtml.document list *)
 
 (* precise html AST; see lib_parsing_html.html_tree_to_html *)
 type html = Html of attrs * head * (body, frameset) Common.either

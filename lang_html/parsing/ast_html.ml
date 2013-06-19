@@ -141,7 +141,7 @@ type html_tree =
  (* with tarzan *)
 
 (* a small wrapper over ocamlnet *)
-type html_tree2 = Nethtml.document list
+(* type html_tree2 = Nethtml.document list *)
 
 (*****************************************************************************)
 (* HTML full AST version *)

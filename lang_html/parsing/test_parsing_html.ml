@@ -45,11 +45,14 @@ let test_parse_html xs =
   ()
 
 let test_dump_html_old file =
+  failwith "ocamlnet not supported anymore"
+(*
   let s = Common.read_file file in 
   let ast = Parse_html.parse_simple_tree (HtmlRaw s) in
   let json = Export_html.json_of_html_tree2 ast in
   let s = Json_out.string_of_json json in
   pr2 s
+*)
 
 let test_dump_html file =
   let (ast, _toks) = Parse_html.parse file in

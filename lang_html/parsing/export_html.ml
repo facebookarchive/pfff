@@ -19,7 +19,7 @@ open Ast_html
 module H = Ast_html
 
 module J = Json_type
-module H2 = Nethtml
+(*module H2 = Nethtml*)
 
 let string_of_v v =
   let cnt = ref 0 in
@@ -50,6 +50,7 @@ let ml_pattern_string_of_html_tree ast =
 
 
 (* obsolete *)
+(*
 let rec json_of_document doc = 
   match doc with
   | H2.Element (name, args, subnodes) ->
@@ -64,7 +65,7 @@ let rec json_of_document doc =
   | H2.Data s -> J.Array [J.String "DATA"; J.String s]
 let rec json_of_html_tree2 html = 
   J.Array (html +> List.map json_of_document)
-
+*)
 
 let rec json_of_html_tree doc = 
   match doc with

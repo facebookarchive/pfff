@@ -76,6 +76,7 @@ exception Parse_error of Parse_info.info
 (*****************************************************************************)
 
 (* a small wrapper over ocamlnet *)
+(*
 let (parse_simple_tree: Ast_html.html_raw -> Ast_html.html_tree2) = 
  fun (Ast.HtmlRaw raw) -> 
   let ch = new Netchannels.input_string raw in
@@ -84,6 +85,7 @@ let (parse_simple_tree: Ast_html.html_raw -> Ast_html.html_tree2) =
     ~return_pis:true
     ~return_comments:true
     ch
+*)
 
 (*****************************************************************************)
 (* Parsing helpers *)
