@@ -86,24 +86,31 @@ and toplevel env st acc =
   (* error recovery is off by default now *)
   | NotParsedCorrectly _ -> raise Common.Impossible
 
+
 and name env = function
    | XName x -> ident env x
    | Self tok -> (A.special "self", wrap tok)
    | Parent tok -> (A.special "parent", wrap tok)
    | LateStatic tok -> (A.special "static", wrap tok)
 
-and constant_def env {cst_name; cst_val; cst_type=_TODO; cst_toks = _} =
-  { A.cst_name = ident env cst_name;
-    A.cst_body = expr env cst_val;
-  }
-and type_def env def =
-  { A.t_name = ident env def.t_name;
-    A.t_kind = type_def_kind env def.t_kind;
-  }
-and type_def_kind env = function
-  | Alias t -> A.Alias (hint_type env t)
-  | Newtype t -> A.Newtype (hint_type env t)
+and ident env = function
+  | Name (s, tok) -> s, wrap tok
+  | XhpName (tl, tok) ->
+      A.string_of_xhp_tag tl, wrap tok
 
+and dname = function
+  | DName (s, tok) ->
+      if s.[0] = '$'
+      then failwith "dname: the string has a dollar, weird";
+      (* We abuse Id to represent both variables and functions/classes
+       * identifiers in ast_php_simple, so to avoid collision
+       * we prepend a $ (the $ was removed in ast_php.ml and parse_php.ml)
+       *)
+      ("$"^s, wrap tok)
+
+(* ------------------------------------------------------------------------- *)
+(* Statement *)
+(* ------------------------------------------------------------------------- *)
 and stmt env st acc =
   match st with
   | ExprStmt (e, _) ->
@@ -202,6 +209,9 @@ and if_else env = function
 
 and stmt_and_def env st acc = stmt env st acc
 
+(* ------------------------------------------------------------------------- *)
+(* Expression *)
+(* ------------------------------------------------------------------------- *)
 and expr env = function
   | Sc sc -> scalar env sc
 
@@ -390,21 +400,18 @@ and cpp_directive env tok = function
   | Dir       -> A.Id (A.builtin "__DIR__", wrap tok)
   | TraitC    -> A.Id (A.builtin "__TRAIT__", wrap tok)
 
-and ident env = function
-  | Name (s, tok) -> s, wrap tok
-  | XhpName (tl, tok) ->
-      A.string_of_xhp_tag tl, wrap tok
+and lvalue env a = expr env a 
 
-and dname = function
-  | DName (s, tok) ->
-      if s.[0] = '$'
-      then failwith "dname: the string has a dollar, weird";
-      (* We abuse Id to represent both variables and functions/classes
-       * identifiers in ast_php_simple, so to avoid collision
-       * we prepend a $ (the $ was removed in ast_php.ml and parse_php.ml)
-       *)
-      ("$"^s, wrap tok)
+and argument env = function
+  | Arg e -> expr env e
+  | ArgRef (_, e) -> A.Ref (lvalue env e)
 
+and class_name_reference env a = expr env a
+
+
+(* ------------------------------------------------------------------------- *)
+(* Type *)
+(* ------------------------------------------------------------------------- *)
 and hint_type env = function
   | Hint (q, typeTODO) -> A.Hint (name env q)
   | HintArray _ -> A.HintArray
@@ -417,23 +424,46 @@ and hint_type env = function
 
 
 
-and class_name_reference env a = expr env a
+
+(* ------------------------------------------------------------------------- *)
+(* Definitions *)
+(* ------------------------------------------------------------------------- *)
+and constant_def env {cst_name; cst_val; cst_type=_TODO; cst_toks = _} =
+  { A.cst_name = ident env cst_name;
+    A.cst_body = expr env cst_val;
+  }
+
+and func_def env f =
+  let _, params, _ = f.f_params in
+  let params = comma_list_dots params in
+  let _, body, _ = f.f_body in
+  { A.f_ref = f.f_ref <> None;
+    A.f_name = ident env f.f_name;
+    A.f_attrs = attributes env f.f_attrs;
+    A.f_params = List.map (parameter env) params;
+    A.f_return_type = 
+      Common2.fmap (fun (_, t) -> hint_type env t) f.f_return_type;
+    A.f_body = List.fold_right (stmt_and_def env) body [];
+    A.f_kind = A.Function;
+    A.m_modifiers = [];
+    A.l_uses = [];
+  }
+
+and type_def env def =
+  { A.t_name = ident env def.t_name;
+    A.t_kind = type_def_kind env def.t_kind;
+  }
+and type_def_kind env = function
+  | Alias t -> A.Alias (hint_type env t)
+  | Newtype t -> A.Newtype (hint_type env t)
 
 
-and lvalue env a = expr env a 
-
-and argument env = function
-  | Arg e -> expr env e
-  | ArgRef (_, e) -> A.Ref (lvalue env e)
-
-(* todo: xhp class declaration ?*)
 and class_def env c =
   let _, body, _ = c.c_body in
   {
     A.c_kind = class_type env c.c_type ;
     A.c_name = ident env c.c_name;
     A.c_attrs = attributes env c.c_attrs;
-    A.c_xhp_fields = List.fold_right (xhp_fields env) body [];
     A.c_extends =
       (match c.c_extends with
       | None -> None
@@ -450,6 +480,8 @@ and class_def env c =
       List.fold_right (class_constants env) body [];
     A.c_variables =
       List.fold_right (class_variables env) body [];
+    A.c_xhp_fields = 
+      List.fold_right (xhp_fields env) body [];
     A.c_methods =
       List.fold_right (class_body env) body [];
   }
@@ -509,6 +541,7 @@ and xhp_fields env st acc =
         }::acc
       | XhpAttrInherit _ -> acc
      ) acc
+  (* TODO? or we don't care and it's ok? *)
   | _ -> acc
     
 and static_scalar_affect env (_, ss) = static_scalar env ss
@@ -539,12 +572,9 @@ and class_variables env st acc =
 
 and class_body env st acc =
   match st with
-  | Method md ->
-      method_def env md :: acc
-  (* TODO? or we don't care and it's ok? *)
-  | XhpDecl _ ->
-      acc
+  | Method md ->method_def env md :: acc
   | (ClassVariables (_, _, _, _)|ClassConstants (_, _, _)|UseTrait _) -> acc
+  | XhpDecl _ -> acc
 
 and method_def env m =
   let _, params, _ = m.f_params in
@@ -576,21 +606,9 @@ and parameter env
     A.p_attrs = attributes env a;
   }
 
-and func_def env f =
-  let _, params, _ = f.f_params in
-  let params = comma_list_dots params in
-  let _, body, _ = f.f_body in
-  { A.f_ref = f.f_ref <> None;
-    A.f_name = ident env f.f_name;
-    A.f_attrs = attributes env f.f_attrs;
-    A.f_params = List.map (parameter env) params;
-    A.f_return_type = 
-      Common2.fmap (fun (_, t) -> hint_type env t) f.f_return_type;
-    A.f_body = List.fold_right (stmt_and_def env) body [];
-    A.f_kind = A.Function;
-    A.m_modifiers = [];
-    A.l_uses = [];
-  }
+(*****************************************************************************)
+(* Misc *)
+(*****************************************************************************)
 
 and xhp_html env = function
   | Xhp (tag, attrl, _, body, _) ->
@@ -625,9 +643,6 @@ and xhp_body env = function
   | XhpExpr (_, e, _) -> A.XhpExpr (expr env e)
   | XhpNested xml -> A.XhpXml (xhp_html env xml)
 
-(*****************************************************************************)
-(* Misc *)
-(*****************************************************************************)
 
 and encaps env = function
   | EncapsString (s, tok) -> A.String (s, wrap tok)
