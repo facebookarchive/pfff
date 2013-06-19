@@ -2,7 +2,7 @@ To build pfff you will need several development packages usually
 not shipped in a default install.
 
 Install pcre-devel, gtk2-devel, atk-devel, pango-devel, and cairo-devel,
-swi-prolog, and binutils-gold.
+swi-prolog, ncurses-devel, and binutils-gold.
 
 For instance:
 for RedHat: sudo yum install pcre-devel
