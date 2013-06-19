@@ -91,15 +91,6 @@ GRAPHDIR=external/ocamlgraph
 GRAPHCMD= $(MAKE) all -C $(GRAPHDIR) && $(MAKE) graph -C commons
 GRAPHCMDOPT= $(MAKE) all.opt -C $(GRAPHDIR) && $(MAKE) graph.opt -C commons
 
-# could be under some ifeq($(FEATURE_WEB))
-OCAMLNETDIR=external/ocamlnet
-OCAMLNETINCLUDE=external/ocamlnet/netsys external/ocamlnet/netstring
-OCAMLNETCMA= \
-  external/ocamlnet/netsys/netsys_oothr.cma \
-  external/ocamlnet/netsys/netsys.cma \
-  external/ocamlnet/netstring/netstring.cma
-#  external/ocamlnet/netstring/netaccel.cma \
-
 ZIPDIR=external/ocamlzip
 ZIPCMA=external/ocamlzip/zip.cma
 
@@ -163,7 +154,6 @@ BASICSYSLIBS=nums.cma bigarray.cma str.cma unix.cma
 LIBS= commons/lib.cma \
        $(BTCMA) \
        $(REGEXPCMA) \
-       $(OCAMLNETCMA) \
        $(GRAPHCMA) \
        $(EXTLIBCMA) $(PTCMA) $(ZIPCMA) \
        $(JAVALIBCMA) \
@@ -225,7 +215,6 @@ LIBS= commons/lib.cma \
 MAKESUBDIRS=commons \
   $(REGEXPDIR) \
   $(GRAPHDIR) \
-  $(OCAMLNETDIR) \
   $(GUIDIR) $(CAIRODIR) \
   $(ZIPDIR)    $(EXTLIBDIR) $(PTDIR) $(JAVALIBDIR) \
   h_version-control \
@@ -285,7 +274,7 @@ MAKESUBDIRS=commons \
 INCLUDEDIRS=$(MAKESUBDIRS) \
  commons/ocamlextra commons/ocollection \
  commons/lib-json commons/lib-xml commons/lib-sexp \
- $(GTKINCLUDE) $(CAIROINCLUDE) $(PCREINCLUDE) $(OCAMLNETINCLUDE) \
+ $(GTKINCLUDE) $(CAIROINCLUDE) $(PCREINCLUDE) \
  $(EXTLIBDIR) $(PTDIR) $(ZIPDIR) $(JAVALIBDIR) \
  $(OCAMLCOMPILERDIR)
 
