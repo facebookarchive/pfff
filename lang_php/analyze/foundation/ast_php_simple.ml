@@ -56,7 +56,7 @@
  *  - a simpler stmt type; no extra toplevel and stmt_and_def types,
  *    no FuncDefNested, no ClassDefNested. No StmtList.
  *  - a simpler expr type; no lvalue vs expr vs static_scalar vs attribute
- *    (update: now static_scalar = expr also in ast_php.ml).
+ *    (update: now static_scalar = expr = lvalue also in ast_php.ml).
  *    Also no scalar. No Sc, no C. No Lv. Pattern matching constants
  *    is simpler:  | Sc (C (String ...)) -> ... becomes just | String -> ....
  *    Also no arg type. No Arg, ArgRef. Also no xhp_attr_value type.
@@ -72,16 +72,20 @@
  *    Same for arguments passed by reference, no Arg, ArgRef.
  *    Same for refs in arrays, no ArrayRef, ArrayArrowRef. Also no ListVar,
  *    ListList, ListEmpty. More orthogonal.
+
  *  - a unified Call. No FunCallSimple, FunCallVar, MethodCallSimple,
- *    StaticMethodCallSimple, StaticMethodCallVar.
+ *    StaticMethodCallSimple, StaticMethodCallVar
+ *    (update: same in ast_php.ml now)
  *  - a unified Array_get. No VArrayAccess, VArrayAccessXhp,
  *    VBraceAccess, OArrayAccess, OBraceAccess
+ *    (update: same in ast_php.ml now)
  *  - unified Class_get and Obj_get instead of lots of duplication in
  *    many constructors, e.g. no ClassConstant in a separate scalar type,
  *    no retarded obj_prop_access/obj_dim types,
  *    no OName, CName, ObjProp, ObjPropVar, ObjAccessSimple vs ObjAccess,
  *    no ClassNameRefDynamic, no VQualifier, ClassVar, DynamicClassVar,
  *    etc.
+ *    (update: same in ast_php.ml now)
  *  - unified eval_var, some constructs were transformed into calls to
  *    "eval_var" builtin, e.g. no GlobalDollar, no VBrace, no Indirect.
  *
@@ -89,8 +93,8 @@
  *  - ...
  *
  * todo:
- *  - support for generics of sphp
- *  - XHP class declaration? e.g. children, @required, etc?
+ *  - support for generics of hack
+ *  - more XHP class declaration e.g. children, @required, etc?
  *  - less: factorize more? string vs Guil vs xhp?
  *)
 
@@ -249,7 +253,7 @@ and expr =
   and map_kind =
     | Map
     | StableMap
-  and array_value = (*TODO: Add line number information *)
+  and array_value =
     | Aval of expr
     | Akval of expr * expr
   and vector_value = expr
@@ -343,10 +347,8 @@ and class_def = {
   c_uses: class_name list; (* traits *)
 
   c_attrs: attribute list;
-  c_xhp_fields: class_var list; (*xhp attributes *)
-  (* todo: What about XHP class attributes? right now they
-   * are skipped at parsing time
-   *)
+  (* xhp attributes. less: other xhp decl, e.g. children, @required, etc *)
+  c_xhp_fields: class_var list; 
   c_constants: constant_def list;
   c_variables: class_var list;
   c_methods: method_def list;
