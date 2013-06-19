@@ -86,7 +86,9 @@ and toplevel env st acc =
   (* error recovery is off by default now *)
   | NotParsedCorrectly _ -> raise Common.Impossible
 
-
+(* ------------------------------------------------------------------------- *)
+(* Names *)
+(* ------------------------------------------------------------------------- *)
 and name env = function
    | XName x -> ident env x
    | Self tok -> (A.special "self", wrap tok)
@@ -355,29 +357,6 @@ and expr env = function
       raise Common.Impossible
   | ParenExpr (_, e, _) -> expr env e
 
-and lambda_def env (l_use, ld) =
-  let _, params, _ = ld.f_params in
-  let params = comma_list_dots params in
-  let _, body, _ = ld.f_body in
-  { A.f_ref = ld.f_ref <> None;
-    A.f_name = (A.special "_lambda", wrap ld.f_tok);
-    A.f_params = List.map (parameter env) params;
-    A.f_return_type = None;
-    A.f_body = List.fold_right (stmt_and_def env) body [];
-    A.f_kind = A.AnonLambda;
-    A.m_modifiers = [];
-    A.f_attrs = attributes env ld.f_attrs;
-    A.l_uses =
-      (match l_use with
-      | None -> []
-      | Some (_, (_lp, xs, _rp)) ->
-          comma_list xs +> List.map (function
-          | LexicalVar (is_ref, name) -> is_ref <> None, dname name
-          )
-      );
-
-  }
-
 and scalar env = function
   | C cst -> constant env cst
   | Guil (_, el, _) -> A.Guil (List.map (encaps env) el)
@@ -408,6 +387,8 @@ and argument env = function
 
 and class_name_reference env a = expr env a
 
+and static_scalar_affect env (_, ss) = static_scalar env ss
+and static_scalar env a = expr env a
 
 (* ------------------------------------------------------------------------- *)
 (* Type *)
@@ -421,9 +402,6 @@ and hint_type env = function
       let args = List.map (hint_type env) (comma_list_dots (brace args)) in
       let ret  = Common2.fmap (fun (_, t) -> hint_type env t) ret in
       A.HintCallback (args, ret)
-
-
-
 
 (* ------------------------------------------------------------------------- *)
 (* Definitions *)
@@ -448,6 +426,29 @@ and func_def env f =
     A.m_modifiers = [];
     A.l_uses = [];
   }
+
+and lambda_def env (l_use, ld) =
+  let _, params, _ = ld.f_params in
+  let params = comma_list_dots params in
+  let _, body, _ = ld.f_body in
+  { A.f_ref = ld.f_ref <> None;
+    A.f_name = (A.special "_lambda", wrap ld.f_tok);
+    A.f_params = List.map (parameter env) params;
+    A.f_return_type = None;
+    A.f_body = List.fold_right (stmt_and_def env) body [];
+    A.f_kind = A.AnonLambda;
+    A.m_modifiers = [];
+    A.f_attrs = attributes env ld.f_attrs;
+    A.l_uses =
+      (match l_use with
+      | None -> []
+      | Some (_, (_lp, xs, _rp)) ->
+          comma_list xs +> List.map (function
+          | LexicalVar (is_ref, name) -> is_ref <> None, dname name
+          )
+      );
+  }
+
 
 and type_def env def =
   { A.t_name = ident env def.t_name;
@@ -512,6 +513,28 @@ and class_constants env st acc =
      ) (comma_list cl) acc
   | _ -> acc
 
+and class_variables env st acc =
+  match st with
+  | ClassVariables (m, ht, cvl, _) ->
+      let cvl = comma_list cvl in
+      let m =
+        match m with
+        | NoModifiers _ -> []
+        | VModifiers l -> List.map (fun (x, _) -> x) l
+      in
+      let ht = opt hint_type env ht in
+      List.map (fun (n, ss) ->
+          let name = dname n in
+          let value = opt static_scalar_affect env ss in
+          {
+            A.cv_name = name;
+            A.cv_value = value;
+            A.cv_modifiers = m;
+            A.cv_type = ht;
+          }
+       ) cvl @ acc
+  | _ -> acc
+
 and xhp_fields env st acc = 
   match st with
   | XhpDecl (XhpAttributesDecl (_ , xal, _)) ->
@@ -543,36 +566,11 @@ and xhp_fields env st acc =
      ) acc
   (* TODO? or we don't care and it's ok? *)
   | _ -> acc
-    
-and static_scalar_affect env (_, ss) = static_scalar env ss
-and static_scalar env a = expr env a
-
-and class_variables env st acc =
-  match st with
-  | ClassVariables (m, ht, cvl, _) ->
-      let cvl = comma_list cvl in
-      let m =
-        match m with
-        | NoModifiers _ -> []
-        | VModifiers l -> List.map (fun (x, _) -> x) l
-      in
-      let ht = opt hint_type env ht in
-      List.map (fun (n, ss) ->
-          let name = dname n in
-          let value = opt static_scalar_affect env ss in
-          {
-            A.cv_name = name;
-            A.cv_value = value;
-            A.cv_modifiers = m;
-            A.cv_type = ht;
-          }
-       ) cvl @ acc
-  | _ -> acc
 
 
 and class_body env st acc =
   match st with
-  | Method md ->method_def env md :: acc
+  | Method md -> method_def env md :: acc
   | (ClassVariables (_, _, _, _)|ClassConstants (_, _, _)|UseTrait _) -> acc
   | XhpDecl _ -> acc
 
