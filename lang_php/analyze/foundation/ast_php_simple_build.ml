@@ -718,10 +718,3 @@ let program_with_position_information prog =
   Common.save_excursion store_position true (fun () ->
     program prog
   )
-
-(*****************************************************************************)
-(* For cmf *)
-(*****************************************************************************)
-let func_def x = func_def (empty_env()) x
-let class_def x = class_def (empty_env()) x
-let constant_def x = constant_def (empty_env()) x
