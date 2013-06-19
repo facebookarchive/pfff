@@ -102,7 +102,7 @@
    (join-string 
     (list 
      "-debugger"
-     (case 401
+     (case 7
 
        (0 "-tokens_php /home/pad/pfff/tests/php/parsing/heredoc4.php")
 
@@ -115,6 +115,7 @@
        ;(5 "-typing_mini /home/pad/c-pfff/tests/typing/union.php")
        (5 "-typing_mini /home/pad/c-pfff/tests/typing/int.php")
        (6 "-parse_php /home/pad/pfff/tests/php/parsing/static_variable_variable.php")
+       (7 "-dump_php_simple /home/pad/pfff/tests/php/parsing/ctor_modifier_param.php")
 
        (20 "-json /home/pad/pfff/tests/json/float_pb.php")
 

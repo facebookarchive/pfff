@@ -518,7 +518,7 @@ parameter_or_dots:
  | TDOTS { Middle3 $1 }
 
 parameter: attributes_opt ctor_modifier_opt type_php_opt     parameter_bis  
-      { { $4 with p_attrs = $1; p_type = $3 } }
+      { { $4 with p_modifier = $2; p_attrs = $1; p_type = $3 } }
 
 parameter_bis:
  | T_VARIABLE

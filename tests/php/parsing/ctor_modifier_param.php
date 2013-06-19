@@ -7,9 +7,11 @@
 // See also section 5.3 of the scala reference manual.
 
 class A {
+  public $y;
   // this is desugar as
   // public $x; __construct($x) { $this->x = $x; }
-  public function __constuct(public $x) {
+  public function __construct(public $x, $y) {
+    $this->y = $y;
   }
   
 }

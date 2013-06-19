@@ -461,6 +461,8 @@ and type_def_kind env = function
 
 and class_def env c =
   let _, body, _ = c.c_body in
+  let (methods, implicit_fields) = 
+    List.fold_right (class_body env) body ([], []) in
   {
     A.c_kind = class_type env c.c_type ;
     A.c_name = ident env c.c_name;
@@ -480,11 +482,10 @@ and class_def env c =
     A.c_constants =
       List.fold_right (class_constants env) body [];
     A.c_variables =
-      List.fold_right (class_variables env) body [];
+      implicit_fields @ List.fold_right (class_variables env) body [];
     A.c_xhp_fields = 
       List.fold_right (xhp_fields env) body [];
-    A.c_methods =
-      List.fold_right (class_body env) body [];
+    A.c_methods = methods;
   }
 
 and class_type env = function
@@ -568,16 +569,47 @@ and xhp_fields env st acc =
   | _ -> acc
 
 
-and class_body env st acc =
+and class_body env st (mets, flds) =
   match st with
-  | Method md -> method_def env md :: acc
-  | (ClassVariables (_, _, _, _)|ClassConstants (_, _, _)|UseTrait _) -> acc
-  | XhpDecl _ -> acc
+  | Method md -> 
+    let (met, more_flds) = method_def env md in
+    met::mets, more_flds @ flds
+
+  | ClassVariables (_, _, _, _) | ClassConstants (_, _, _) | UseTrait _
+  | XhpDecl _
+    -> (mets, flds)
 
 and method_def env m =
   let _, params, _ = m.f_params in
   let params = comma_list_dots params in
   let mds = List.map (fun (x, _) -> x) m.f_modifiers in
+  let implicits =
+    params +> Common.map_filter (fun p ->
+      match p.p_modifier with
+      | None -> None
+      | Some (modifier, _tok) -> Some (p.p_name, modifier, p.p_type)
+    )
+  in
+  let implicit_flds = implicits +> List.map (fun (var, modifier, topt) ->
+    { A.cv_name = dname var;
+      (* less: should use default val of parameter?*)
+      A.cv_value = None; 
+      A.cv_modifiers = [modifier];
+      A.cv_type = opt hint_type env topt;
+    }
+  )
+  in
+  let implicit_assigns =
+    implicits +> List.map (fun (var, _, _) ->
+      let (str_with_dollar, tok) = dname var in
+      let str_without_dollar = Ast_php.str_of_dname var in
+      A.Expr (
+        A.Assign (None, A.Obj_get(A.This ("$this", tok), 
+                                  A.Id (str_without_dollar, tok)),
+                        A.Var (str_with_dollar, tok)))
+    )
+  in
+
   { A.m_modifiers = mds;
     A.f_ref = (match m.f_ref with None -> false | Some _ -> true);
     A.f_name = ident env m.f_name;
@@ -585,10 +617,11 @@ and method_def env m =
     A.f_params = List.map (parameter env) params ;
     A.f_return_type = 
       Common2.fmap (fun (_, t) -> hint_type env t) m.f_return_type;
-    A.f_body = method_body env m.f_body;
+    A.f_body = implicit_assigns @ method_body env m.f_body;
     A.f_kind = A.Method;
     A.l_uses = [];
-  }
+  },
+  implicit_flds
 
 and method_body env (_, stl, _) =
   List.fold_right (stmt_and_def env) stl []

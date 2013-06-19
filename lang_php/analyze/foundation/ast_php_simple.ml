@@ -45,7 +45,8 @@
  *    the abstract interpreter or the type inference engine. No Declare.
  *
  *  - sugar is removed, no ArrayLong vs ArrayShort, no InlineHtml,
- *    no HereDoc, no EncapsXxx, no XhpSingleton (but kept Xhp).
+ *    no HereDoc, no EncapsXxx, no XhpSingleton (but kept Xhp), no
+ *    implicit fields via constructor parameters.
  *  - some builtins, for instance 'echo', are transformed in "__builtin__echo".
  *    See builtin() below.
  *  - no include/require, they are transformed in call
