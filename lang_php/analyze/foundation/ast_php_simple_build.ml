@@ -434,6 +434,7 @@ and class_def env c =
     A.c_name = ident env c.c_name;
     A.c_attrs = attributes env c.c_attrs;
     A.c_xhp_fields = List.fold_right (xhp_fields env) body [];
+    A.c_xhp_attr_inherit = List.fold_right (xhp_attr_inherit env) body [];
     A.c_extends =
       (match c.c_extends with
       | None -> None
@@ -511,6 +512,17 @@ and xhp_fields env st acc =
      ) acc
   | _ -> acc
     
+and xhp_attr_inherit env st acc = 
+  match st with
+  | XhpDecl (XhpAttributesDecl(_, xal, _)) ->
+    (comma_list xal) +> List.fold_left (fun acc xhp_attr ->
+      match xhp_attr with
+      | XhpAttrInherit (source, tok) ->
+        A.Hint (ident env (Ast_php.XhpName (source, tok)))::acc
+      | XhpAttrDecl _ -> acc
+     ) acc
+  | _ -> acc
+
 and static_scalar_affect env (_, ss) = static_scalar env ss
 and static_scalar env a = expr env a
 

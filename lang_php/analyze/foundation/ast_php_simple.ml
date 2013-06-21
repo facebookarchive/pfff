@@ -347,6 +347,7 @@ and class_def = {
   (* todo: What about XHP class attributes? right now they
    * are skipped at parsing time
    *)
+  c_xhp_attr_inherit: class_name list;
   c_constants: constant_def list;
   c_variables: class_var list;
   c_methods: method_def list;
