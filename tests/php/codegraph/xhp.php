@@ -1,5 +1,8 @@
 <?php
 
+class :A {
+}
+
 class :x:super {
   attribute
     string superstr;

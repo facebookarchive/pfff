@@ -279,14 +279,14 @@ class A {
                  (Common.join "\n" xs))
         (null xs);
 
-      let src = ("x:misc.XHP__xstr", E.Field) in
+      let src = ("<x:misc>.xstr=", E.Field) in
       let pred = G.pred src G.Use g in
       assert_equal
         ~msg:"it should link the use of an xhp attribute to its def"
         pred
         ["xhp_use.php", E.File];
 
-      let src = ("x:super.XHP__superstr", E.Field) in
+      let src = ("<x:super>.superstr=", E.Field) in
       let pred = G.pred src G.Use g in
       assert_equal
         ~msg:"it should link the use of an xhp attribute to its def"

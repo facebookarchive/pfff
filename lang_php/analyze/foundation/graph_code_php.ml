@@ -280,13 +280,13 @@ let rec add_use_edge env (((str, tok) as name, kind)) =
           let parent_target = G.not_found in
           (match kind with
           (* todo: fix those *)
-          | E.Field when (not (str =~ ".*\\.XHP__.*")) -> ()
+          | E.Field when (not (str =~ ".*=")) -> ()
           (* ignore xhp field:
           custom data attribute:
              http://www.w3.org/TR/2011/WD-html5-20110525/elements.html \          
              #embedding-custom-non-visible-data-with-the-data-attributes
           ARIA : http://dev.w3.org/html5/markup/aria/aria.html *)
-          | E.Field when ((str =~ ".*\\.XHP__data-.*") || (str =~ ".*\\.XHP__aria-.*")) -> ()
+          | E.Field when ((str =~ ".*\\.data-.*=") || (str =~ ".*\\.aria-.*=")) -> ()
           (* todo: handle __call and the dynamicYield idiom.
           *)
           | E.Method _ when str =~ ".*\\.gen.*" 
@@ -498,9 +498,9 @@ and class_def env def =
      https://github.com/facebook/xhp/wiki "Defining Attributes"
   *)
   def.c_xhp_fields +> List.iter (fun def ->
-    let addprefix = function
-      | (str, tok) -> ("XHP__" ^ str, tok) in
-    let node = (addprefix def.cv_name, E.Field) in
+    let addpostfix = function
+      | (str, tok) -> (str ^ "=", tok) in
+    let node = (addpostfix def.cv_name, E.Field) in
     let env = add_node_and_edge_if_defs_mode env node in
     Common2.opt (expr env) def.cv_value;
   );
@@ -802,7 +802,7 @@ and xml env x =
   add_use_edge env (x.xml_tag, E.Class E.RegularClass);
   let aclass = Ast.str_of_name x.xml_tag in
   x.xml_attrs +> List.iter (fun (name, xhp_attr) ->
-    let afield = "XHP__" ^ Ast.str_of_name name in
+    let afield = Ast.str_of_name name ^ "=" in
     let tok = snd name in
     let node = ((aclass ^ "." ^ afield, tok), E.Field) in
     (match lookup env.g (aclass, afield) tok with

@@ -425,7 +425,7 @@ let has_modifier cv = List.length cv.cv_modifiers > 0
 let is_static modifiers  = List.mem Ast_php.Static  modifiers
 let is_private modifiers = List.mem Ast_php.Private modifiers
 
-let string_of_xhp_tag xs = Common.join ":" xs
+let string_of_xhp_tag xs = "<" ^ Common.join ":" xs ^ ">"
 
 let str_of_name (s, _) = s
 let tok_of_name (s, x) =
