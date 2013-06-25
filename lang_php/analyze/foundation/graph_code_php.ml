@@ -278,6 +278,12 @@ let rec add_use_edge env (((str, tok) as name, kind)) =
           (match kind with
           (* todo: fix those *)
           | E.Field when (not (str =~ ".*\\.XHP__.*")) -> ()
+          (* ignore xhp field:
+          custom data attribute:
+             http://www.w3.org/TR/2011/WD-html5-20110525/elements.html \          
+             #embedding-custom-non-visible-data-with-the-data-attributes
+          ARIA : http://dev.w3.org/html5/markup/aria/aria.html *)
+          | E.Field when ((str =~ ".*\\.XHP__data-.*") || (str =~ ".*\\.XHP__aria-.*")) -> ()
           (* todo: handle __call and the dynamicYield idiom.
           *)
           | E.Method _ when str =~ ".*\\.gen.*" 
@@ -465,6 +471,11 @@ and class_def env def =
       let n = Ast.name_of_class_name c2 in
       add_use_edge env (n, E.Class E.RegularClass (*E.Trait*));
     );
+    def.c_xhp_attr_inherit +> List.iter (fun c2 ->
+      let n = Ast.name_of_class_name c2 in
+      add_use_edge env (n, E.Class E.RegularClass);
+    );
+
   end;
   let self = Ast.str_of_name def.c_name in
   let parent =

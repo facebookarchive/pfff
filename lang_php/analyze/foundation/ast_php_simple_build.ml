@@ -467,6 +467,8 @@ and class_def env c =
     A.c_kind = class_type env c.c_type ;
     A.c_name = ident env c.c_name;
     A.c_attrs = attributes env c.c_attrs;
+    A.c_xhp_fields = List.fold_right (xhp_fields env) body [];
+    A.c_xhp_attr_inherit = List.fold_right (xhp_attr_inherit env) body [];
     A.c_extends =
       (match c.c_extends with
       | None -> None
@@ -483,8 +485,6 @@ and class_def env c =
       List.fold_right (class_constants env) body [];
     A.c_variables =
       implicit_fields @ List.fold_right (class_variables env) body [];
-    A.c_xhp_fields = 
-      List.fold_right (xhp_fields env) body [];
     A.c_methods = methods;
   }
 
@@ -565,8 +565,19 @@ and xhp_fields env st acc =
         }::acc
       | XhpAttrInherit _ -> acc
      ) acc
-  (* TODO? or we don't care and it's ok? *)
   | _ -> acc
+    
+and xhp_attr_inherit env st acc = 
+  match st with
+  | XhpDecl (XhpAttributesDecl(_, xal, _)) ->
+    (comma_list xal) +> List.fold_left (fun acc xhp_attr ->
+      match xhp_attr with
+      | XhpAttrInherit (source, tok) ->
+        A.Hint (ident env (Ast_php.XhpName (source, tok)))::acc
+      | XhpAttrDecl _ -> acc
+     ) acc
+  | _ -> acc
+
 
 
 and class_body env st (mets, flds) =

@@ -350,6 +350,7 @@ and class_def = {
   c_attrs: attribute list;
   (* xhp attributes. less: other xhp decl, e.g. children, @required, etc *)
   c_xhp_fields: class_var list; 
+  c_xhp_attr_inherit: class_name list;
   c_constants: constant_def list;
   c_variables: class_var list;
   c_methods: method_def list;
