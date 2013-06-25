@@ -127,6 +127,14 @@
 %  - CIA
 %  - ODASA, codequest
 %  - LFS/PofFS
+% 
+% limitations:
+%  - in the case of PHP, the language is case insensitive but we actually
+%    generate facts where the case matters. You can use downcase_atom/2
+%    to try to do case insensitive search, e.g.
+%      ? kind(X, class), downcase_atom(X, Y), Y = 'exception', <query with X>
+%    but this will work only for the first level. If in the code
+%    some extends or implements are using the wrong case, you're lost.
 
 %---------------------------------------------------------------------------
 % How to run/compile
@@ -379,3 +387,7 @@ wrong_public_genRender(X) :-
         kind((X, 'genRender'), _),
         children(X, 'GenXHP'),
         is_public((X, 'genRender')).
+
+%todo:
+% check for inconsistent case, e.g. Exception vs exception.
+% just check if 2 classes are different but downcase to the same name
