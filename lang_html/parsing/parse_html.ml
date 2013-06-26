@@ -318,7 +318,7 @@ let parse2 file =
           match Parse_info.pinfo_of_info ii with
           | Parse_info.OriginTok pi ->
               Parse_info.OriginTok 
-                (Parse_info.complete_parse_info_large file table pi)
+                (Parse_info.complete_token_location_large file table pi)
           | Parse_info.FakeTokStr _
           | Parse_info.Ab  
           | Parse_info.ExpandedTok _

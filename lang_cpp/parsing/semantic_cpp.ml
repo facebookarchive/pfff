@@ -1,2 +1,2 @@
 
-exception Semantic of string * Parse_info.parse_info
+exception Semantic of string * Parse_info.token_location

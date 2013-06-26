@@ -788,7 +788,6 @@ let col_of_info        = PI.col_of_info
 let file_of_info       = PI.file_of_info
 let pos_of_info        = PI.pos_of_info
 let pinfo_of_info      = PI.pinfo_of_info
-let parse_info_of_info = PI.parse_info_of_info
 let is_origintok       = PI.is_origintok
 
 let opos_of_info ii = 
@@ -797,10 +796,6 @@ let opos_of_info ii =
 (* used by parsing hacks *)
 let rewrap_pinfo pi ii =  
   {ii with PI.token = pi}
-
-(* for error reporting *) 
-let string_of_info ii = 
-  Parse_info.string_of_parse_info (parse_info_of_info ii)
 
 
 (* used while migrating the use of 'string' to 'name' *)

@@ -91,7 +91,7 @@ let visit_toplevel
           match xs with
           | [] -> 
               pr2 (spf "PB: find_first_string: at %s"
-                      (Ast.string_of_info info)
+                      (Parse_info.string_of_info info)
               );
               raise Not_found
           | T.T_STRING (_, ii)::_ -> ii
@@ -108,7 +108,7 @@ let visit_toplevel
       ::T.T_COLON(ii3)
       ::T.T_FUNCTION _
       ::xs 
-       (* todo? when Ast.col_of_info ii1 = 0 *)
+       (* todo? when Parse_info.col_of_info ii1 = 0 *)
       ->
         tag ii2 (Method (Def2 NoUse));
         aux_toks xs
@@ -117,7 +117,7 @@ let visit_toplevel
       ::T.T_IDENTIFIER (_, ii2)
       ::T.T_LPAREN(_)
       ::xs 
-       (* when Ast.col_of_info ii1 = 0 ? *)
+       (* when Parse_info.col_of_info ii1 = 0 ? *)
       ->
         tag ii2 (Function (Def2 NoUse));
         aux_toks xs
@@ -127,7 +127,7 @@ let visit_toplevel
       ::T.T_PERIOD(_)
       ::T.T_IDENTIFIER (_, ii_last)
       ::T.T_LPAREN(_)
-      ::xs when Ast.col_of_info ii1 = 0 ->
+      ::xs when Parse_info.col_of_info ii1 = 0 ->
 
         tag ii_last (Global (Def2 NoUse));
         aux_toks xs
@@ -136,7 +136,7 @@ let visit_toplevel
       ::T.T_PERIOD(_)
       ::T.T_IDENTIFIER (_, ii_last)
       ::T.T_LPAREN(_)
-      ::xs when Ast.col_of_info ii1 <> 0 ->
+      ::xs when Parse_info.col_of_info ii1 <> 0 ->
 
         tag ii_last (Class (Use2 fake_no_use2));
         aux_toks xs
@@ -147,7 +147,7 @@ let visit_toplevel
       ::T.T_PERIOD(_)
       ::T.T_IDENTIFIER (_, ii_last)
       ::T.T_LPAREN(_)
-      ::xs when Ast.col_of_info ii1 = 0 ->
+      ::xs when Parse_info.col_of_info ii1 = 0 ->
 
         tag ii_last (Global (Def2 NoUse));
         aux_toks xs
@@ -194,7 +194,7 @@ let visit_toplevel
                * the key of the hash and so may not find
                * back the category for a token.
                *)
-              (*let ii' = Ast.rewrap_str s ii in*)
+              (*let ii' = Parse_info.rewrap_str s ii in*)
               tag ii (Class (Def2 fake_no_def2));
           | Some ((Db.Method _), _) ->
               (* jsspec use strings for method names *)
@@ -202,7 +202,7 @@ let visit_toplevel
 
           | Some (_) ->
               failwith ("WEIRD: a string is not a class at " ^ 
-                           Ast.string_of_info ii)
+                           Parse_info.string_of_info ii)
           | None ->
               tag ii String
           )
@@ -221,7 +221,7 @@ let visit_toplevel
             tag ii (StaticMethod (Def2 fake_no_def2))
         | Some (_) ->
             failwith ("WEIRD: a identfier is not a class or method at " ^ 
-                           Ast.string_of_info ii)
+                           Parse_info.string_of_info ii)
         | None ->
             ()
         )

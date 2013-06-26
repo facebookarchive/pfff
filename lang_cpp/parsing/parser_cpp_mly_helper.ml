@@ -43,7 +43,7 @@ let nullDecl = {
   qualifD = Ast.nQ;
   inlineD = false, [];
 }
-let fake_pi = Parse_info.fake_parse_info
+let fake_pi = Parse_info.fake_token_location
 
 let addStorageD  = function 
   | ((x,ii), ({storageD = (NoSto,[]); _} as v)) -> 

@@ -76,7 +76,7 @@ let mark_end_define ii =
   let ii' = 
     { Parse_info.
       token = Parse_info.OriginTok { 
-        (Ast.parse_info_of_info ii) with 
+        (Parse_info.token_location_of_info ii) with 
           Parse_info.str = ""; 
           Parse_info.charpos = Ast.pos_of_info ii + 1
       };
@@ -86,7 +86,7 @@ let mark_end_define ii =
   in
   (* fresh_tok *) TCommentNewline_DefineEndOfMacro (ii')
 
-let pos ii = Ast.string_of_info ii
+let pos ii = Parse_info.string_of_info ii
 
 (*****************************************************************************)
 (* Parsing hacks for #define *)

@@ -364,7 +364,7 @@ let set_context_tag groups =
           )
         with Not_found ->
           raise (UnclosedSymbol (spf "PB with split_when at %s"
-                                    (Ast.string_of_info ii)))
+                                    (Parse_info.string_of_info ii)))
       in
       aux before;
       [braces] +> TV.iter_token_multi (fun tok ->

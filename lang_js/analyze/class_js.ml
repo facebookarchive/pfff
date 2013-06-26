@@ -276,7 +276,7 @@ let extract_complete_name_of_info ast =
               spf "%s->%s" classname method_name
           | Some classname, true, true ->
               pr2 ("WEIRD: both statics and members at " ^
-                      Ast.string_of_info info_method_name);
+                      Parse_info.string_of_info info_method_name);
               ""
           | Some classname, false, false ->
               (match method_name with
@@ -284,14 +284,14 @@ let extract_complete_name_of_info ast =
                   spf "%s::%s" classname method_name
               | _ ->
                   pr2 ("WEIRD: in class but no statics or members at " ^
-                          Ast.string_of_info info_method_name);
+                          Parse_info.string_of_info info_method_name);
                   ""
               )
           | None, true, _ 
           | None, _, true 
               ->
               pr2 ("WEIRD: no class but statics or members at " ^
-                      Ast.string_of_info info_method_name);
+                      Parse_info.string_of_info info_method_name);
               ""
           | None, _, _ ->
               (* jsspec use strings for method names *)

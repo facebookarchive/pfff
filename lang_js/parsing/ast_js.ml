@@ -254,7 +254,6 @@ let map_comma_list f xs = List.map (fun x ->
   xs
 
 
-let parse_info_of_info = PI.parse_info_of_info
 (* todo: return a Real | Virt position ? *)
 let pos_of_info  = PI.pos_of_info
 let str_of_info  = PI.str_of_info
@@ -275,10 +274,6 @@ let rewrap_parse_info pi ii =
     )
   }
 *)
-
-(* for error reporting *) 
-let string_of_info ii = 
-  Parse_info.string_of_parse_info (parse_info_of_info ii)
 
 let is_origintok = Parse_info.is_origintok
 
@@ -312,7 +307,7 @@ let al_info x =
 
 let fakeInfoAttach info = 
   let info = rewrap_str "FAKE" info in
-  let pinfo = parse_info_of_info info in
+  let pinfo = PI.token_location_of_info info in
   { PI.
     token = PI.FakeTokStr ("FAKE", Some (pinfo, -1));
     transfo = PI.NoTransfo;

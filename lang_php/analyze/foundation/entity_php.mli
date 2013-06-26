@@ -44,7 +44,7 @@ val str_of_fullid: fullid -> string
 val fullid_regexp: string
 val fullid_of_string: string -> fullid
 
-val filepos_of_parse_info: Parse_info.parse_info -> filepos
+val filepos_of_parse_info: Parse_info.token_location -> filepos
 
 val string_of_id_kind: id_kind -> string
 

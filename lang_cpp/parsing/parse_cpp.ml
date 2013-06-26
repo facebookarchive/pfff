@@ -178,10 +178,10 @@ let tokens2 file =
           (* could assert pinfo.filename = file ? *)
           match Parse_info.pinfo_of_info ii with
           |  PI.OriginTok pi ->
-             PI.OriginTok (Parse_info.complete_parse_info file table pi)
+             PI.OriginTok (Parse_info.complete_token_location file table pi)
           | PI.ExpandedTok (pi,vpi, off) ->
               PI.ExpandedTok(
-                (Parse_info.complete_parse_info file table pi),vpi, off)
+                (Parse_info.complete_token_location file table pi),vpi, off)
           | PI.FakeTokStr (s,vpi_opt) -> PI.FakeTokStr (s,vpi_opt)
           | PI.Ab -> raise Impossible
       })

@@ -170,7 +170,7 @@ type any =
   | HtmlTree of html_tree
 
 val fakeInfo:
-  ?next_to:(Parse_info.parse_info * int) option -> 
+  ?next_to:(Parse_info.token_location * int) option -> 
   ?str:string -> unit -> 
   Parse_info.info
 

@@ -49,7 +49,7 @@ let msg_gen is_known printer s =
     if not (is_known s)
     then printer s
 
-let pos ii = Ast.string_of_info ii
+let pos ii = Parse_info.string_of_info ii
 
 (*****************************************************************************)
 (* Some debugging functions  *)

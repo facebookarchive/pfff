@@ -163,7 +163,7 @@ and vof_filepos { file = v_file; line = v_line; column = v_column } =
 (* Helpers *)
 (*****************************************************************************)
 
-let (filepos_of_parse_info: Parse_info.parse_info -> filepos) = fun pi -> 
+let (filepos_of_parse_info: Parse_info.token_location -> filepos) = fun pi -> 
   { 
     file = pi.Parse_info.file;
     line = pi.Parse_info.line;

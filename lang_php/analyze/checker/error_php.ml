@@ -247,7 +247,7 @@ to statically analyze. Please avoid using those features."
 (* note that the output is emacs compile-mode compliant *)
 let string_of_error error =
   (* todo? use severity? *)
-  let info = Parse_info.parse_info_of_info error.loc in
+  let info = Parse_info.token_location_of_info error.loc in
   spf "%s:%d:%d: CHECK: %s" 
     info.Parse_info.file info.Parse_info.line info.Parse_info.column
     (string_of_error_kind error.typ)

@@ -23,7 +23,7 @@ open Common
 (*****************************************************************************)
 
 (*
- * Currently lexing.ml does not handle the line number position.
+ * Currently core/lexing.ml does not handle the line number position.
  * Even if there are certain fields in the lexing structure, they are not
  * maintained by the lexing engine so the following code does not work:
  *
@@ -34,7 +34,7 @@ open Common
  * Hence those functions to overcome the previous limitation.
  *)
 
-type parse_info = {
+type token_location = {
     str: string;
     charpos: int;
 
@@ -44,7 +44,7 @@ type parse_info = {
   }
   (* with tarzan *)
 
-let fake_parse_info = {
+let fake_token_location = {
   charpos = -1; str = ""; line = -1; column = -1; file = "";
 }
 
@@ -59,7 +59,7 @@ let fake_parse_info = {
  *)
 type token =
     (* Present both in the AST and list of tokens *)
-    | OriginTok  of parse_info
+    | OriginTok  of token_location
 
     (* Present only in the AST and generated after parsing. Can be used
      * when building some extra AST elements. *)
@@ -69,7 +69,7 @@ type token =
          * message that involves a fakeToken. The int is a kind of
          * virtual position, an offset. See compare_pos below.
          *)
-        (parse_info * int) option
+        (token_location * int) option
 
     (* In the case of a XHP file, we could preprocess it and incorporate
      * the tokens of the preprocessed code with the tokens from
@@ -80,14 +80,14 @@ type token =
      *)
     | ExpandedTok of
         (* refers to the preprocessed file, e.g. /tmp/pp-xxxx.pphp *)
-        parse_info  *
+        token_location  *
        (* kind of virtual position. This info refers to the last token
         * before a serie of expanded tokens and the int is an offset.
         * The goal is to be able to compare the position of tokens
         * between then, even for expanded tokens. See compare_pos
         * below.
         *)
-        parse_info * int
+        token_location * int
 
     (* The Ab constructor is (ab)used to call '=' to compare
      * big AST portions. Indeed as we keep the token information in the AST,
@@ -95,7 +95,7 @@ type token =
      * it's equal to another code like "1+1" located elsewhere, then
      * the Pervasives.'=' of OCaml will not return true because
      * when it recursively goes down to compare the leaf of the AST, that is
-     * the parse_info, there will be some differences of positions. If instead
+     * the token_location, there will be some differences of positions. If instead
      * all leaves use Ab, then there is no position information and we can
      * use '='. See also the 'al_info' function below.
      *
@@ -107,14 +107,14 @@ type token =
    (* with tarzan *)
 
 type posrv =
-  | Real of parse_info
+  | Real of token_location
   | Virt of
-      parse_info (* last real info before expanded tok *) *
+      token_location (* last real info before expanded tok *) *
       int (* virtual offset *)
 
 type info = {
   (* contains among other things the position of the token through
-   * the Common.parse_info embedded inside the pinfo type.
+   * the Common.token_location embedded inside the pinfo type.
    *)
   mutable token : token;
   mutable transfo: transformation;
@@ -193,9 +193,9 @@ let mk_tokens_state toks = {
 (* string_of *)
 (*****************************************************************************)
 
-let string_of_parse_info x =
+let string_of_token_location x =
   spf "%s at %s:%d:%d" x.str x.file x.line x.column
-let string_of_parse_info_bis x =
+let string_of_token_location_bis x =
   spf "%s:%d:%d" x.file x.line x.column
 
 (*****************************************************************************)
@@ -230,9 +230,9 @@ let rewrap_str s ii =
     )
   }
 (*
-val rewrap_parse_info : Parse_info.parse_info -> info -> info
+val rewrap_token_location : token_location.token_location -> info -> info
 
-let rewrap_parse_info pi ii =
+let rewrap_token_location pi ii =
   {ii with pinfo =
     (match ii.pinfo with
     | OriginTok _oldpi -> OriginTok pi
@@ -241,7 +241,7 @@ let rewrap_parse_info pi ii =
     )
   }
 *)
-let parse_info_of_info ii =
+let token_location_of_info ii =
   match ii.token with
   | OriginTok pinfo -> pinfo
   (* TODO ? dangerous ? *)
@@ -250,19 +250,19 @@ let parse_info_of_info ii =
 
   | FakeTokStr (_, None)
   | Ab
-    -> failwith "parse_info_of_info: no OriginTok"
+    -> failwith "token_location_of_info: no OriginTok"
 
 (* for error reporting *)
 let string_of_info x =
-  string_of_parse_info (parse_info_of_info x)
+  string_of_token_location_bis (token_location_of_info x)
 
-let str_of_info  ii = (parse_info_of_info ii).str
-let file_of_info ii = (parse_info_of_info ii).file
-let line_of_info ii = (parse_info_of_info ii).line
-let col_of_info  ii = (parse_info_of_info ii).column
+let str_of_info  ii = (token_location_of_info ii).str
+let file_of_info ii = (token_location_of_info ii).file
+let line_of_info ii = (token_location_of_info ii).line
+let col_of_info  ii = (token_location_of_info ii).column
 
 (* todo: return a Real | Virt position ? *)
-let pos_of_info  ii = (parse_info_of_info ii).charpos
+let pos_of_info  ii = (token_location_of_info ii).charpos
 
 let pinfo_of_info ii = ii.token
 
@@ -399,7 +399,7 @@ let lexbuf_to_strpos lexbuf     =
 (*****************************************************************************)
 let vof_filename v = Ocaml.vof_string v
 
-let vof_parse_info {
+let vof_token_location {
                      str = v_str;
                      charpos = v_charpos;
                      line = v_line;
@@ -426,18 +426,18 @@ let vof_parse_info {
 let vof_token =
   function
   | OriginTok v1 ->
-      let v1 = vof_parse_info v1 in Ocaml.VSum (("OriginTok", [ v1 ]))
+      let v1 = vof_token_location v1 in Ocaml.VSum (("OriginTok", [ v1 ]))
   | FakeTokStr (v1, opt) ->
       let v1 = Ocaml.vof_string v1 in
       let opt = Ocaml.vof_option (fun (p1, i) ->
-        Ocaml.VTuple [vof_parse_info p1; Ocaml.vof_int i]
+        Ocaml.VTuple [vof_token_location p1; Ocaml.vof_int i]
       ) opt
       in
       Ocaml.VSum (("FakeTokStr", [ v1; opt ]))
   | Ab -> Ocaml.VSum (("Ab", []))
   | ExpandedTok (v1, v2, v3) ->
-      let v1 = vof_parse_info v1 in
-      let v2 = vof_parse_info v2 in
+      let v1 = vof_token_location v1 in
+      let v2 = vof_token_location v2 in
       let v3 = Ocaml.vof_int v3 in
       Ocaml.VSum (("ExpandedTok", [ v1; v2; v3 ]))
 
@@ -479,8 +479,8 @@ let filename_ofv sexp =
   filename_ofv__ sexp
 
 
-let parse_info_ofv__ =
-  let _loc = "Xxx.parse_info"
+let token_location_ofv__ =
+  let _loc = "Xxx.token_location"
   in
     function
     | (Ocaml.VDict field_sexps as sexp) ->
@@ -557,7 +557,7 @@ let parse_info_ofv__ =
                         ((!file_field = None), "file") ]))
     | sexp -> Ocaml.record_list_instead_atom _loc sexp
 
-let parse_info_ofv sexp = parse_info_ofv__ sexp
+let token_location_ofv sexp = token_location_ofv__ sexp
 
 
 let pinfo_ofv__ =
@@ -566,7 +566,7 @@ let pinfo_ofv__ =
     function
     | (Ocaml.VSum (((("OriginTok" as tag)), sexp_args)) as sexp) ->
         (match sexp_args with
-         | [ v1 ] -> let v1 = parse_info_ofv v1 in OriginTok v1
+         | [ v1 ] -> let v1 = token_location_ofv v1 in OriginTok v1
          | _ -> Ocaml.stag_incorrect_n_args _loc tag sexp)
 
     | (Ocaml.VSum (((("FakeTokStr" as tag)), sexp_args)) as sexp) ->
@@ -577,7 +577,7 @@ let pinfo_ofv__ =
                Ocaml.option_ofv
                  (function
                   | Ocaml.VList ([ v1; v2 ]) ->
-                      let v1 = parse_info_ofv v1
+                      let v1 = token_location_ofv v1
                       and v2 = Ocaml.int_ofv v2
                       in (v1, v2)
                   | sexp -> Ocaml.tuple_of_size_n_expected _loc 2 sexp)
@@ -589,8 +589,8 @@ let pinfo_ofv__ =
     | (Ocaml.VSum (((("ExpandedTok" as tag)), sexp_args)) as sexp) ->
         (match sexp_args with
          | [ v1; v2; v3 ] ->
-             let v1 = parse_info_ofv v1
-             and v2 = parse_info_ofv v2
+             let v1 = token_location_ofv v1
+             and v2 = token_location_ofv v2
              and v3 = Ocaml.int_ofv v3
              in ExpandedTok ((v1, v2, v3))
          | _ -> Ocaml.stag_incorrect_n_args _loc tag sexp)
@@ -603,23 +603,23 @@ let token_ofv sexp = pinfo_ofv__ sexp
 (* Visitor *)
 (*****************************************************************************)
 
-let v_parse_info x = ()
+let v_token_location x = ()
 let v_string (s:string) = ()
 
 let rec v_pinfo =
   function
-  | OriginTok v1 -> let _v1 = v_parse_info v1 in ()
+  | OriginTok v1 -> let _v1 = v_token_location v1 in ()
   | FakeTokStr ((v1, v2)) ->
       let _v1 = v_string v1
-      and _v2 = Ocaml.v_option v_parse_info v2
+      and _v2 = Ocaml.v_option v_token_location v2
       in
       ()
   | Ab -> ()
   | ExpandedTok ((v1, v2, v3)) ->
       (* TODO ? not sure what behavior we want about expanded tokens.
       *)
-      let _v1 = v_parse_info v1
-      and _v2 = v_parse_info v2
+      let _v1 = v_token_location v1
+      and _v2 = v_token_location v2
       and _v3 = Ocaml.v_int v3
       in ()
 
@@ -638,7 +638,7 @@ and v_add =
 (*
 let map_pinfo =
   function
-  | OriginTok v1 -> let v1 = Common.map_parse_info v1
+  | OriginTok v1 -> let v1 = Common.map_token_location v1
     in OriginTok ((v1))
   | FakeTokStr (v1, opt) ->
       (* TODO? do something with opt ? *)
@@ -649,9 +649,10 @@ let map_pinfo =
       failwith "map: ExpandedTok: TODO"
 *)
 
+(*
 open Ocaml
 
-let sexp_of_parse_info {
+let sexp_of_token_location {
                          str = v_str;
                          charpos = v_charpos;
                          line = v_line;
@@ -675,7 +676,7 @@ let sexp_of_parse_info {
   let bnd = Sexp.List [ Sexp.Atom "str:"; arg ] in
   let bnds = bnd :: bnds in Sexp.List bnds
 
-let map_parse_info {
+let map_token_location {
                      str = v_str;
                      charpos = v_charpos;
                      line = v_line;
@@ -694,7 +695,7 @@ let map_parse_info {
     column = v_column;
     file = v_file
   }
-
+*)
 
 
 (*****************************************************************************)
@@ -802,7 +803,7 @@ let test_charpos file =
 
 
 
-let complete_parse_info filename table x =
+let complete_token_location filename table x =
   { x with
     file = filename;
     line   = fst (table.(x.charpos));
@@ -864,7 +865,7 @@ let full_charpos_to_pos_large a =
     (fun () -> full_charpos_to_pos_large2 a)
 
 
-let complete_parse_info_large filename table x =
+let complete_token_location_large filename table x =
   { x with
     file = filename;
     line   = fst (table (x.charpos));
@@ -892,7 +893,7 @@ let error_message = fun filename (lexeme, lexstart) ->
       ("PB in Common.error_message, position " ^ i_to_s lexstart ^
        " given out of file:" ^ filename)
 
-let error_message_parse_info = fun info ->
+let error_message_token_location = fun info ->
   let filename = info.file in
   let lexeme = info.str in
   let lexstart = info.charpos in
@@ -903,8 +904,8 @@ let error_message_parse_info = fun info ->
        " given out of file:" ^ filename)
 
 let error_message_info info =
-  let pinfo = parse_info_of_info info in
-  error_message_parse_info pinfo
+  let pinfo = token_location_of_info info in
+  error_message_token_location pinfo
 
 
 let error_message_short = fun filename (lexeme, lexstart) ->

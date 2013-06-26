@@ -99,7 +99,7 @@ let mark_as_expanded last_orig_parse_info toks =
     let len = String.length (TH.str_of_tok tok) in
     cnt := !cnt + len;
     tok +> TH.visitor_info_of_tok (fun info -> 
-      let parse_info_in_pp = Parse_info.parse_info_of_info info in
+      let parse_info_in_pp = Parse_info.token_location_of_info info in
       { info with 
         Parse_info.token = Parse_info.ExpandedTok (
           parse_info_in_pp, 
@@ -146,7 +146,8 @@ let merge_tokens_line ~orig_toks ~pp_toks =
     then failwith "WEIRD: a XHP line has tokens but not the original one";
     
     let last_orig_info = Common2.list_last commented_a +> TH.info_of_tok in
-    let last_orig_parse_info = Parse_info.parse_info_of_info last_orig_info in
+    let last_orig_parse_info = 
+      Parse_info.token_location_of_info last_orig_info in
 
     let expanded_b = mark_as_expanded last_orig_parse_info b in
 
@@ -194,7 +195,7 @@ let  zip_and_sync ~toks_orig_lines ~toks_pp_lines =
         in
 
         let last_orig_parse_info = 
-          !last_orig_tok +> TH.info_of_tok +> Parse_info.parse_info_of_info in
+          !last_orig_tok +> TH.info_of_tok +> Parse_info.token_location_of_info in
         let toks = mark_as_expanded last_orig_parse_info all_remaining_toks in
         [toks]
         

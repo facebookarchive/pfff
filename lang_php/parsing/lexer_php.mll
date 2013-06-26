@@ -65,7 +65,7 @@ let yyback n lexbuf =
 let tok lexbuf =
   Lexing.lexeme lexbuf
 let tokinfo lexbuf  =
-  Parse_info.tokinfo_str_pos (Lexing.lexeme lexbuf) (Lexing.lexeme_start lexbuf)
+  PI.tokinfo_str_pos (Lexing.lexeme lexbuf) (Lexing.lexeme_start lexbuf)
 
 (*x: lexer helpers *)
 let tok_add_s s ii  =
@@ -613,13 +613,13 @@ rule st_in_scripting = parse
 
         let syminfo = PI.rewrap_str sym info in
 
-        let parse_info = Parse_info.parse_info_of_info info in
+        let parse_info = PI.token_location_of_info info in
         let pos_after_sym   =
-          parse_info.Parse_info.charpos + String.length sym in
+          parse_info.PI.charpos + String.length sym in
         let pos_after_white = pos_after_sym + String.length white in
 
-        let whiteinfo = Parse_info.tokinfo_str_pos white pos_after_sym in
-        let lblinfo = Parse_info.tokinfo_str_pos label pos_after_white in
+        let whiteinfo = PI.tokinfo_str_pos white pos_after_sym in
+        let lblinfo = PI.tokinfo_str_pos label pos_after_white in
 
         push_token (T_IDENT (case_str label, lblinfo));
        (* todo: could be newline ... *)
@@ -1092,7 +1092,7 @@ and st_double_quotes = parse
           let charpos_info = PI.pos_of_info varinfo in
           let pos_after_label = charpos_info + String.length ("$" ^ s) in
 
-          let bra_info = Parse_info.tokinfo_str_pos "[" pos_after_label in
+          let bra_info = PI.tokinfo_str_pos "[" pos_after_label in
           push_token (TOBRA (bra_info));
           push_mode ST_VAR_OFFSET;
           T_VARIABLE(case_str s, varinfo)
@@ -1149,7 +1149,7 @@ and st_backquote = parse
           let charpos_info = PI.pos_of_info varinfo in
           let pos_after_label = charpos_info + String.length ("$" ^ s) in
 
-          let bra_info = Parse_info.tokinfo_str_pos "[" pos_after_label in
+          let bra_info = PI.tokinfo_str_pos "[" pos_after_label in
           push_token (TOBRA (bra_info));
           push_mode ST_VAR_OFFSET;
           T_VARIABLE(case_str s, varinfo)
@@ -1204,9 +1204,9 @@ and st_start_heredoc stopdoc = parse
       let pos_after_semi = pos_after_label + String.length semi in
 
       let colon_info =
-        Parse_info.tokinfo_str_pos semi pos_after_label in
+        PI.tokinfo_str_pos semi pos_after_label in
       let space_info =
-        Parse_info.tokinfo_str_pos (Common2.string_of_char space) pos_after_semi in
+        PI.tokinfo_str_pos (Common2.string_of_char space) pos_after_semi in
 
       if s = stopdoc
       then begin
@@ -1235,7 +1235,7 @@ and st_start_heredoc stopdoc = parse
           let charpos_info = PI.pos_of_info varinfo in
           let pos_after_label = charpos_info + String.length ("$" ^ s) in
 
-          let bra_info = Parse_info.tokinfo_str_pos "[" pos_after_label in
+          let bra_info = PI.tokinfo_str_pos "[" pos_after_label in
           push_token (TOBRA (bra_info));
           push_mode ST_VAR_OFFSET;
           T_VARIABLE(case_str s, varinfo)
@@ -1283,9 +1283,9 @@ and st_start_nowdoc stopdoc = parse
       let pos_after_semi = pos_after_label + String.length semi in
 
       let colon_info =
-        Parse_info.tokinfo_str_pos semi pos_after_label in
+        PI.tokinfo_str_pos semi pos_after_label in
       let space_info =
-        Parse_info.tokinfo_str_pos (Common2.string_of_char space) pos_after_semi in
+        PI.tokinfo_str_pos (Common2.string_of_char space) pos_after_semi in
 
       if s = stopdoc
       then begin

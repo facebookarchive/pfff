@@ -1,7 +1,7 @@
 
 type node = string * Database_code.entity_kind
  type nodeinfo = {
-   pos: Parse_info.parse_info;
+   pos: Parse_info.token_location;
    props: Database_code.property list;
  }
 type edge = Has | Use

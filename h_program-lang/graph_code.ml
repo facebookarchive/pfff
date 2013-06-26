@@ -91,7 +91,7 @@ type edge =
   | Use
 
 type nodeinfo = { 
-  pos: Parse_info.parse_info;
+  pos: Parse_info.token_location;
   props: E.property list;
 }
 

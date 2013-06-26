@@ -115,7 +115,7 @@ let tokens2 file =
            match PI.pinfo_of_info ii with
            | PI.OriginTok pi ->
                PI.OriginTok 
-                 (PI.complete_parse_info_large file table pi)
+                 (PI.complete_token_location_large file table pi)
            | _ -> raise Todo
         })
         in
