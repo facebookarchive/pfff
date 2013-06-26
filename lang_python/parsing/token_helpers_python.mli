@@ -12,5 +12,3 @@ val str_of_tok   : Parser_python.token -> string
 val file_of_tok  : Parser_python.token -> Common.filename
 val pos_of_tok   : Parser_python.token -> int
 
-(*val pos_of_tok   : Parser_python.token -> int*)
-val pinfo_of_tok   : Parser_python.token -> Parse_info.token

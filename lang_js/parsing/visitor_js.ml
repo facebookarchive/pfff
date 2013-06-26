@@ -60,9 +60,11 @@ let rec v_info x =
   let k x = match x with { Parse_info.
      token = v_pinfox; comments = v_comments; transfo = v_transfo 
     } ->
+(*
     let arg = Parse_info.v_pinfo v_pinfox in
     let arg = v_unit v_comments in 
     let arg = Parse_info.v_transformation v_transfo in 
+*)
     ()
   in
   vin.kinfo (k, all_functions) x

@@ -13,7 +13,7 @@ val str_of_tok   : Parser_php.token -> string
 val file_of_tok  : Parser_php.token -> Common.filename
 val pos_of_tok   : Parser_php.token -> int
 (*x: token_helpers_php.mli *)
-val pinfo_of_tok   : Parser_php.token -> Parse_info.token
+val pinfo_of_tok   : Parser_php.token -> Parse_info.token_origin
 val is_origin : Parser_php.token -> bool
 
 (* for unparsing *)

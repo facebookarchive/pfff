@@ -4,17 +4,17 @@
 (* regular position information *)
 type token_location = {
     str: string; (* the content of the "token" *)
-    charpos: int;
+    charpos: int; (* byte position *)
     line: int; column: int;
     file: Common.filename;
 } 
 
 (* to deal with expanded tokens, e.g. preprocessor like cpp for C *)
-type token =
+type token_origin =
   | OriginTok  of token_location
-  | FakeTokStr of string  * (token_location * int) option
-  | ExpandedTok of token_location *  token_location * int 
-  | Ab
+  | FakeTokStr of string  * (token_location * int) option (* next to *)
+  | ExpandedTok of token_location * token_location * int 
+  | Ab (* abstract token, see parse_info.ml comment *)
 
 (* to allow source to source transformation via token annotations, 
  * see the documentation for spatch.
@@ -23,7 +23,7 @@ type info = {
   (* contains the position of the token through the token_location embedded
    * inside the token type.
    *)
-  mutable token: token; 
+  mutable token: token_origin; 
   (* for spatch *)
   mutable transfo: transformation;
   (* TODO? *)
@@ -122,7 +122,7 @@ val line_of_info: info -> int
 val col_of_info: info -> int
 val file_of_info: info -> Common.filename
 val pos_of_info: info -> int
-val pinfo_of_info: info -> token
+val pinfo_of_info: info -> token_origin
 
 (* small error reporting, for longer reports use error_message above *)
 val string_of_info: info -> string
@@ -130,8 +130,8 @@ val string_of_info: info -> string
 val is_origintok: info -> bool
 
 (* original info *)
-val get_opi: token -> token_location
-val get_pi: token -> token_location
+val get_opi: token_origin -> token_location
+val get_pi: token_origin -> token_location
 
 (* misc *)
 val get_info: (token_location -> 'a) -> info -> 'a
@@ -147,19 +147,12 @@ val lexbuf_to_strpos:
   Lexing.lexbuf -> string * int
 
 (* meta *)
-val vof_token:
-  token -> Ocaml.v
-val vof_info:
-  info -> Ocaml.v
 val vof_token_location: 
   token_location -> Ocaml.v
+val vof_token_origin:
+  token_origin -> Ocaml.v
+val vof_info:
+  info -> Ocaml.v
+
 val vof_transformation:
   transformation -> Ocaml.v
-
-val token_ofv:
-  Ocaml.v -> token
-
-val v_pinfo: 
-  token -> unit
-val v_transformation: 
-  transformation -> unit

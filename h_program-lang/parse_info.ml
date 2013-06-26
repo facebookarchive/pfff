@@ -33,7 +33,6 @@ open Common
  *
  * Hence those functions to overcome the previous limitation.
  *)
-
 type token_location = {
     str: string;
     charpos: int;
@@ -50,14 +49,14 @@ let fake_token_location = {
 
 
 (*
- * The token type is used to represent the leaves of ASTs, the token.
+ * The token type below is used to represent the leaves of ASTs, the token.
  *
  * To be perfectly correct this is not really a token as a token usually
  * also have a category, e.g. TNumber or TIdent, but this would
  * be specific to a programming language and lexer, which is
  * what we try to avoid here.
  *)
-type token =
+type token_origin =
     (* Present both in the AST and list of tokens *)
     | OriginTok  of token_location
 
@@ -114,9 +113,9 @@ type posrv =
 
 type info = {
   (* contains among other things the position of the token through
-   * the Common.token_location embedded inside the pinfo type.
+   * the token_location embedded inside the token_origin type.
    *)
-  mutable token : token;
+  mutable token : token_origin;
   mutable transfo: transformation;
   mutable comments: unit; (* TODO *)
 }
@@ -423,7 +422,7 @@ let vof_token_location {
   let bnd = ("str", arg) in let bnds = bnd :: bnds in Ocaml.VDict bnds
 
 
-let vof_token =
+let vof_token_origin =
   function
   | OriginTok v1 ->
       let v1 = vof_token_location v1 in Ocaml.VSum (("OriginTok", [ v1 ]))
@@ -464,13 +463,14 @@ let rec vof_info
   let arg = Ocaml.vof_unit v_comments in
   let bnd = ("comments", arg) in
   let bnds = bnd :: bnds in
-  let arg = vof_token v_token in
+  let arg = vof_token_origin v_token in
   let bnd = ("token", arg) in let bnds = bnd :: bnds in Ocaml.VDict bnds
 
 (*****************************************************************************)
 (* ocaml -> vtoken *)
 (*****************************************************************************)
 
+(*
 (* todo: should move this in commons/ *)
 let filename_ofv__ =
   let _loc = "Xxx.filename" in fun sexp -> Ocaml.string_ofv sexp
@@ -597,12 +597,13 @@ let pinfo_ofv__ =
     | sexp -> Ocaml.unexpected_stag _loc sexp
 
 let token_ofv sexp = pinfo_ofv__ sexp
-
+*)
 
 (*****************************************************************************)
 (* Visitor *)
 (*****************************************************************************)
 
+(*
 let v_token_location x = ()
 let v_string (s:string) = ()
 
@@ -634,6 +635,8 @@ and v_add =
   function
   | AddStr v1 -> let _v1 = v_string v1 in ()
   | AddNewlineAndIdent -> ()
+
+*)
 
 (*
 let map_pinfo =

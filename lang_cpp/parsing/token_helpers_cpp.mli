@@ -43,7 +43,7 @@ val line_of_tok    : Parser_cpp.token -> int
 val pos_of_tok     : Parser_cpp.token -> int
 val str_of_tok     : Parser_cpp.token -> string
 val file_of_tok    : Parser_cpp.token -> Common.filename
-val pinfo_of_tok   : Parser_cpp.token -> Parse_info.token
+
 
 (* val mark_of_tok    : Parser_cpp.token -> Ast_c.mark_token *)
 val is_origin : Parser_cpp.token -> bool

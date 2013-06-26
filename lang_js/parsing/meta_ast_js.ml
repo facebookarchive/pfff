@@ -41,9 +41,6 @@ end
  
 let rec
   vof_info x = 
-  let { PI.token = v_pinfo; comments = v_comments; transfo = v_transfo } = x 
-  in
-  
   if not !_current_precision.M.full_info
   then 
     Ocaml.VDict [
@@ -51,15 +48,8 @@ let rec
       "col", Ocaml.VInt (Ast.col_of_info x);
     ]
   else 
-  let bnds = [] in
-  let arg = Parse_info.vof_transformation v_transfo in
-  let bnd = ("transfo", arg) in
-  let bnds = bnd :: bnds in
-  let arg = Ocaml.vof_unit v_comments in
-  let bnd = ("comments", arg) in
-  let bnds = bnd :: bnds in
-  let arg = Parse_info.vof_token v_pinfo in
-  let bnd = ("pinfo", arg) in let bnds = bnd :: bnds in Ocaml.VDict bnds
+    Parse_info.vof_info x
+
 and vof_tok v = vof_info v
 and vof_wrap _of_a (v1, v2) =
   let v1 = _of_a v1 and v2 = vof_info v2 in Ocaml.VTuple [ v1; v2 ]

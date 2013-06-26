@@ -11,6 +11,3 @@ val line_of_tok  : Parser_opa.token -> int
 val str_of_tok   : Parser_opa.token -> string
 val file_of_tok  : Parser_opa.token -> Common.filename
 val pos_of_tok   : Parser_opa.token -> int
-
-(*val pos_of_tok   : Parser_opa.token -> int*)
-val pinfo_of_tok   : Parser_opa.token -> Parse_info.token

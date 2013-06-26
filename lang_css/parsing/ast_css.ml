@@ -48,7 +48,7 @@ open Common
 (* Token/info *)
 (* ------------------------------------------------------------------------- *)
 
-type pinfo = Parse_info.token
+type pinfo = Parse_info.token_origin
 type info = Parse_info.info
 and tok = info
 

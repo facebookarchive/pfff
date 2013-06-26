@@ -22,7 +22,7 @@ module V = Visitor_js
 module Ast = Ast_js
 
 module TH = Token_helpers_js
-
+module PI = Parse_info
 open Parse_info
 
 (*****************************************************************************)
