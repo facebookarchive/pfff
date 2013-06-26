@@ -758,6 +758,10 @@ let file_wrap_changen : (changen -> 'a) -> (Common.filename -> 'a) = fun f ->
   (fun file ->
     f (fun () -> (open_in file, Common2.filesize file, file)))
 
+(* return line x col x str_line  from a charpos. This function is quite
+ * expensive so don't use it to get the line x col from every token in
+ * a file. Instead use full_charpos_to_pos.
+ *)
 let (info_from_charpos2: int -> filename -> (int * int * string)) =
   fun charpos filename ->
 

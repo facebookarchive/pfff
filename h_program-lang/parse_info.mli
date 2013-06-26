@@ -98,12 +98,6 @@ val full_charpos_to_pos_large:
 val complete_token_location_large : 
   Common.filename -> (int -> (int * int))  -> token_location -> token_location
 
-(* return line x col x str_line  from a charpos. This function is quite
- * expensive so don't use it to get the line x col from every token in
- * a file. Instead use full_charpos_to_pos.
- *)
-val info_from_charpos : int -> Common.filename -> (int * int * string)
-
 val error_message :       Common.filename -> (string * int) -> string
 val error_message_token_location :  token_location -> string
 val error_message_info :  info -> string
