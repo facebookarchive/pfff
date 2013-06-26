@@ -784,20 +784,10 @@ let linecol_of_tok tok =
 
 let col_of_tok x = snd (linecol_of_tok x)
 let line_of_tok x = fst (linecol_of_tok x)
-let pos_of_tok x =  Ast.opos_of_info (info_of_tok x)
-let str_of_tok x =  Ast.str_of_info (info_of_tok x)
-let file_of_tok x = Ast.file_of_info (info_of_tok x)
-let pinfo_of_tok x = Ast.pinfo_of_info (info_of_tok x)
 
-let is_origin x =
-  match pinfo_of_tok x with Parse_info.OriginTok _ -> true | _ -> false
-let is_expanded x =
-  match pinfo_of_tok x with Parse_info.ExpandedTok _ -> true | _ -> false
-let is_fake x =
-  match pinfo_of_tok x with Parse_info.FakeTokStr _ -> true | _ -> false
-let is_abstract x =
-  match pinfo_of_tok x with Parse_info.Ab -> true | _ -> false
-
+let str_of_tok tok = Parse_info.str_of_info (info_of_tok tok)
+let pos_of_tok tok = Parse_info.pos_of_info (info_of_tok tok)
+let file_of_tok tok = Parse_info.file_of_info (info_of_tok tok)
 (*****************************************************************************)
 (* For unparsing *)
 (*****************************************************************************)
@@ -805,7 +795,8 @@ let is_abstract x =
 open Lib_unparser
 
 let elt_of_tok tok =
-  let str = str_of_tok tok in
+  let info = info_of_tok tok in
+  let str = Parse_info.str_of_info info in
   match tok with
   | TComment _ | TComment_Pp _ | TComment_Cpp _ -> Esthet (Comment str)
   | TCommentSpace _ -> Esthet (Space str)

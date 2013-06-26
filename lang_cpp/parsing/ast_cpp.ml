@@ -778,10 +778,11 @@ let str_of_info = PI.str_of_info
 let make_expanded ii =
   let noVirtPos = ({PI.str="";charpos=0;line=0;column=0;file=""},-1) in
   let (a, b) = noVirtPos in
-  { ii with PI.token = PI.ExpandedTok (PI.get_opi ii.PI.token, a, b) }
+  { ii with PI.token = PI.ExpandedTok 
+      (PI.get_original_token_location ii.PI.token, a, b) }
+
 
 (* used by token_helpers *)
-let get_info = PI.get_info
 
 let line_of_info       = PI.line_of_info
 let col_of_info        = PI.col_of_info
@@ -789,9 +790,6 @@ let file_of_info       = PI.file_of_info
 let pos_of_info        = PI.pos_of_info
 let pinfo_of_info      = PI.pinfo_of_info
 let is_origintok       = PI.is_origintok
-
-let opos_of_info ii = 
-  PI.get_orig_info (function x -> x.PI.charpos) ii
 
 (* used by parsing hacks *)
 let rewrap_pinfo pi ii =  

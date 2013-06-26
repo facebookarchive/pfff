@@ -32,24 +32,17 @@ val is_cbrace : Parser_cpp.token -> bool
 
 val is_ident_like: Parser_cpp.token -> bool
 
-val info_of_tok : Parser_cpp.token -> Ast_cpp.info
-
+val info_of_tok : 
+  Parser_cpp.token -> Ast_cpp.info
 val visitor_info_of_tok : 
   (Ast_cpp.info -> Ast_cpp.info) -> Parser_cpp.token -> Parser_cpp.token
 
 val linecol_of_tok : Parser_cpp.token -> int * int
 val col_of_tok     : Parser_cpp.token -> int
 val line_of_tok    : Parser_cpp.token -> int
-val pos_of_tok     : Parser_cpp.token -> int
 val str_of_tok     : Parser_cpp.token -> string
+val pos_of_tok     : Parser_cpp.token -> int
 val file_of_tok    : Parser_cpp.token -> Common.filename
-
-
-(* val mark_of_tok    : Parser_cpp.token -> Ast_c.mark_token *)
-val is_origin : Parser_cpp.token -> bool
-val is_expanded : Parser_cpp.token -> bool
-val is_fake : Parser_cpp.token -> bool
-val is_abstract : Parser_cpp.token -> bool
 
 (* for unparsing *)
 val elt_of_tok: Parser_cpp.token -> Lib_unparser.elt

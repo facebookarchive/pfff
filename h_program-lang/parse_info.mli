@@ -23,7 +23,7 @@ type token_mutable = {
   (* contains the position of the token through the token_location embedded
    * inside the token type.
    *)
-  mutable token: token_origin; 
+  token: token_origin; 
   (* for spatch *)
   mutable transfo: transformation;
   (* TODO? *)
@@ -43,14 +43,6 @@ type token_mutable = {
 
 (* shortcut *)
 type info = token_mutable
-
-(* not used but used to be useful in coccinelle *)
-type posrv = 
-  | Real of token_location 
-  | Virt of 
-      token_location (* last real info before expanded tok *) * 
-      int (* virtual offset *)
-
 
 (* see also type filepos = { l: int; c: int; } in common.mli *)
 val fake_token_location : token_location
@@ -127,18 +119,12 @@ val file_of_info: info -> Common.filename
 val pos_of_info: info -> int
 val pinfo_of_info: info -> token_origin
 
+val get_original_token_location: token_origin -> token_location
+
 (* small error reporting, for longer reports use error_message above *)
 val string_of_info: info -> string
 
 val is_origintok: info -> bool
-
-(* original info *)
-val get_opi: token_origin -> token_location
-val get_pi: token_origin -> token_location
-
-(* misc *)
-val get_info: (token_location -> 'a) -> info -> 'a
-val get_orig_info: (token_location -> 'a) -> info -> 'a
 
 val compare_pos: info -> info -> int
 val min_max_ii_by_pos: info list -> info * info

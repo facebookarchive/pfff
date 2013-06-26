@@ -105,17 +105,11 @@ type token_origin =
 
    (* with tarzan *)
 
-type posrv =
-  | Real of token_location
-  | Virt of
-      token_location (* last real info before expanded tok *) *
-      int (* virtual offset *)
-
 type token_mutable = {
   (* contains among other things the position of the token through
    * the token_location embedded inside the token_origin type.
    *)
-  mutable token : token_origin;
+  token : token_origin;
   mutable transfo: transformation;
   mutable comments: unit; (* TODO *)
 }
@@ -274,6 +268,34 @@ let is_origintok ii =
   | OriginTok pi -> true
   | _ -> false
 
+(*
+let opos_of_info ii = 
+  PI.get_orig_info (function x -> x.PI.charpos) ii
+
+val pos_of_tok     : Parser_cpp.token -> int
+val str_of_tok     : Parser_cpp.token -> string
+val file_of_tok    : Parser_cpp.token -> Common.filename
+
+let pos_of_tok x =  Ast.opos_of_info (info_of_tok x)
+let str_of_tok x =  Ast.str_of_info (info_of_tok x)
+let file_of_tok x = Ast.file_of_info (info_of_tok x)
+let pinfo_of_tok x = Ast.pinfo_of_info (info_of_tok x)
+
+val is_origin : Parser_cpp.token -> bool
+val is_expanded : Parser_cpp.token -> bool
+val is_fake : Parser_cpp.token -> bool
+val is_abstract : Parser_cpp.token -> bool
+
+
+let is_origin x =
+  match pinfo_of_tok x with Parse_info.OriginTok _ -> true | _ -> false
+let is_expanded x =
+  match pinfo_of_tok x with Parse_info.ExpandedTok _ -> true | _ -> false
+let is_fake x =
+  match pinfo_of_tok x with Parse_info.FakeTokStr _ -> true | _ -> false
+let is_abstract x =
+  match pinfo_of_tok x with Parse_info.Ab -> true | _ -> false
+*)
 
 let tok_add_s s ii  =
   rewrap_str ((str_of_info ii) ^ s) ii
@@ -289,7 +311,7 @@ let get_pi = function
       failwith "Ab"
 
 (* original info *)
-let get_opi = function
+let get_original_token_location = function
   | OriginTok pi -> pi
   | ExpandedTok (pi,_, _) -> pi
   | FakeTokStr (_,_) -> failwith "no position information"
@@ -316,6 +338,13 @@ let get_orig_info f ii =
   | Ab ->
       failwith "Ab"
 
+
+(* not used but used to be useful in coccinelle *)
+type posrv =
+  | Real of token_location
+  | Virt of
+      token_location (* last real info before expanded tok *) *
+      int (* virtual offset *)
 
 let compare_pos ii1 ii2 =
   let get_pos = function
