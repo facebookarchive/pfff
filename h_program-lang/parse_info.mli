@@ -1,7 +1,7 @@
 
 (* 'token_location' < 'token_origin' < 'token_mutable' *)
 
-(* regular position information *)
+(* to report errors, regular position information *)
 type token_location = {
     str: string; (* the content of the "token" *)
     charpos: int; (* byte position *)
