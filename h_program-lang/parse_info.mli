@@ -16,10 +16,10 @@ type token_origin =
   | ExpandedTok of token_location * token_location * int 
   | Ab (* abstract token, see parse_info.ml comment *)
 
-(* to allow source to source transformation via token annotations, 
+(* to allow source to source transformation via token "annotations", 
  * see the documentation for spatch.
  *)
-type info = {
+type token_mutable = {
   (* contains the position of the token through the token_location embedded
    * inside the token type.
    *)
@@ -40,6 +40,9 @@ type info = {
   and add = 
     | AddStr of string
     | AddNewlineAndIdent
+
+(* shortcut *)
+type info = token_mutable
 
 (* not used but used to be useful in coccinelle *)
 type posrv = 

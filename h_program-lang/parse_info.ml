@@ -111,7 +111,7 @@ type posrv =
       token_location (* last real info before expanded tok *) *
       int (* virtual offset *)
 
-type info = {
+type token_mutable = {
   (* contains among other things the position of the token through
    * the token_location embedded inside the token_origin type.
    *)
@@ -133,6 +133,10 @@ and transformation =
     | AddNewlineAndIdent
 
  (* with tarzan *)
+
+(* shortcut *)
+type info = token_mutable
+
 
 let info_start_file file = {
   token = OriginTok {
