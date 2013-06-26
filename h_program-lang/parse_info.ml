@@ -524,49 +524,6 @@ let file_wrap_changen : (changen -> 'a) -> (Common.filename -> 'a) = fun f ->
   (fun file ->
     f (fun () -> (open_in file, Common2.filesize file, file)))
 
-(* return line x col x str_line  from a charpos. This function is quite
- * expensive so don't use it to get the line x col from every token in
- * a file. Instead use full_charpos_to_pos.
- *)
-let (info_from_charpos2: int -> filename -> (int * int * string)) =
-  fun charpos filename ->
-
-  (* Currently lexing.ml does not handle the line number position.
-   * Even if there is some fields in the lexing structure, they are not
-   * maintained by the lexing engine :( So the following code does not work:
-   *   let pos = Lexing.lexeme_end_p lexbuf in
-   *   sprintf "at file %s, line %d, char %d" pos.pos_fname pos.pos_lnum
-   *      (pos.pos_cnum - pos.pos_bol) in
-   * Hence this function to overcome the previous limitation.
-   *)
-  let chan = open_in filename in
-  let linen  = ref 0 in
-  let posl   = ref 0 in
-  let rec charpos_to_pos_aux last_valid =
-    let s =
-      try Some (input_line chan)
-      with End_of_file when charpos =|= last_valid -> None in
-    incr linen;
-    match s with
-      Some s ->
-        let s = s ^ "\n" in
-        if (!posl + String.length s > charpos)
-        then begin
-          close_in chan;
-          (!linen, charpos - !posl, s)
-        end
-        else begin
-          posl := !posl + String.length s;
-          charpos_to_pos_aux !posl;
-        end
-    | None -> (!linen, charpos - !posl, "\n")
-  in
-  let res = charpos_to_pos_aux 0 in
-  close_in chan;
-  res
-
-let info_from_charpos a b =
-  profile_code "Common.info_from_charpos" (fun () -> info_from_charpos2 a b)
 
 (*
 let full_charpos_to_pos_from_changen changen =
@@ -623,7 +580,6 @@ let complete_token_location filename table x =
   }
 *)
 
-
 let full_charpos_to_pos_large_from_changen = fun changen ->
   let (chan, chansize, _) = changen () in
 
@@ -676,7 +632,6 @@ let full_charpos_to_pos_large a =
   profile_code "Common.full_charpos_to_pos_large"
     (fun () -> full_charpos_to_pos_large2 a)
 
-
 let complete_token_location_large filename table x =
   { x with
     file = filename;
@@ -685,6 +640,51 @@ let complete_token_location_large filename table x =
   }
 
 (*---------------------------------------------------------------------------*)
+(* return line x col x str_line  from a charpos. This function is quite
+ * expensive so don't use it to get the line x col from every token in
+ * a file. Instead use full_charpos_to_pos.
+ *)
+let (info_from_charpos2: int -> filename -> (int * int * string)) =
+  fun charpos filename ->
+
+  (* Currently lexing.ml does not handle the line number position.
+   * Even if there is some fields in the lexing structure, they are not
+   * maintained by the lexing engine :( So the following code does not work:
+   *   let pos = Lexing.lexeme_end_p lexbuf in
+   *   sprintf "at file %s, line %d, char %d" pos.pos_fname pos.pos_lnum
+   *      (pos.pos_cnum - pos.pos_bol) in
+   * Hence this function to overcome the previous limitation.
+   *)
+  let chan = open_in filename in
+  let linen  = ref 0 in
+  let posl   = ref 0 in
+  let rec charpos_to_pos_aux last_valid =
+    let s =
+      try Some (input_line chan)
+      with End_of_file when charpos =|= last_valid -> None in
+    incr linen;
+    match s with
+      Some s ->
+        let s = s ^ "\n" in
+        if (!posl + String.length s > charpos)
+        then begin
+          close_in chan;
+          (!linen, charpos - !posl, s)
+        end
+        else begin
+          posl := !posl + String.length s;
+          charpos_to_pos_aux !posl;
+        end
+    | None -> (!linen, charpos - !posl, "\n")
+  in
+  let res = charpos_to_pos_aux 0 in
+  close_in chan;
+  res
+
+let info_from_charpos a b =
+  profile_code "Common.info_from_charpos" (fun () -> info_from_charpos2 a b)
+
+
 (* Decalage is here to handle stuff such as cpp which include file and who
  * can make shift.
  *)
