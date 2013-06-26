@@ -51,6 +51,19 @@ val col_of_info   : info -> int
 val pos_of_info   : info -> int
 val file_of_info  : info -> Common.filename
 
+(* small error reporting, for longer reports use error_message above *)
+val string_of_info: info -> string
+(* meta *)
+val vof_info: info -> Ocaml.v
+
+val is_origintok: info -> bool
+
+val token_location_of_info: info -> token_location
+val get_original_token_location: token_origin -> token_location
+
+val compare_pos: info -> info -> int
+val min_max_ii_by_pos: info list -> info * info
+
 type parsing_stat = {
   filename: Common.filename;
   mutable correct: int;
@@ -77,22 +90,15 @@ val rewrap_str: string -> info -> info
 val tok_add_s: string -> info -> info
 
 
-(* channel, size, source *)
-type changen = unit -> (in_channel * int * Common.filename)
-
-(* Create filename-arged functions from changen-type ones *)
-val file_wrap_changen : (changen -> 'a) -> (Common.filename -> 'a)
-
 (* array[i] will contain the (line x col) of the i char position *)
 val full_charpos_to_pos : Common.filename -> (int * int) array
-
 (* fill in the line and column field of token_location that were not set
  * during lexing because of limitations of ocamllex. *)
 val complete_token_location : 
   Common.filename -> (int * int) array -> token_location -> token_location
+
 val full_charpos_to_pos_large: 
   Common.filename -> (int -> (int * int))
-val full_charpos_to_pos_large_from_changen : changen -> (int -> (int * int))
 val complete_token_location_large : 
   Common.filename -> (int -> (int * int))  -> token_location -> token_location
 
@@ -108,18 +114,11 @@ val error_message_info :  info -> string
 
 val print_bad: int -> int * int -> string array -> unit
 
-val token_location_of_info: info -> token_location
 
-val get_original_token_location: token_origin -> token_location
+(* channel, size, source *)
+type changen = unit -> (in_channel * int * Common.filename)
+(* Create filename-arged functions from changen-type ones *)
+val file_wrap_changen : (changen -> 'a) -> (Common.filename -> 'a)
+val full_charpos_to_pos_large_from_changen : changen -> (int -> (int * int))
 
-(* small error reporting, for longer reports use error_message above *)
-val string_of_info: info -> string
 
-val is_origintok: info -> bool
-
-val compare_pos: info -> info -> int
-val min_max_ii_by_pos: info list -> info * info
-
-(* meta *)
-val vof_info:
-  info -> Ocaml.v
