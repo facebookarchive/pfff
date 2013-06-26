@@ -427,7 +427,6 @@ type any =
 
 let fakeInfo ?(next_to=None) ?(str="") () = { 
   PI.token = PI.FakeTokStr (str, next_to);
-  comments = ();
   transfo = PI.NoTransfo;
   }
 

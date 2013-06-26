@@ -81,7 +81,6 @@ let mark_end_define ii =
           Parse_info.charpos = Ast.pos_of_info ii + 1
       };
       transfo = Parse_info.NoTransfo;
-      comments = ();
     } 
   in
   (* fresh_tok *) TCommentNewline_DefineEndOfMacro (ii')

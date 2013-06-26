@@ -76,7 +76,6 @@ let (dumb_spatch_pattern: Ast_php.expr) =
         });
      (* the spatch is to replace every 1 by 42 *)
      PI.transfo = PI.Replace (PI.AddStr "42");
-     PI.comments = ();
     }
   in
   Sc(C(Int(("1", i_1))))

@@ -26,8 +26,6 @@ type token_mutable = {
   token: token_origin; 
   (* for spatch *)
   mutable transfo: transformation;
-  (* TODO? *)
-  mutable comments: unit; 
 }
 
  and transformation = 
@@ -46,9 +44,6 @@ type info = token_mutable
 
 (* see also type filepos = { l: int; c: int; } in common.mli *)
 val fake_token_location : token_location
-val string_of_token_location : token_location -> string
-
-val info_start_file: Common.filename -> info
 
 type parsing_stat = {
   filename: Common.filename;
@@ -105,7 +100,10 @@ val error_messagebis : Common.filename -> (string * int) -> int -> string
 val print_bad: int -> int * int -> string array -> unit
 
 (* lexer helpers *)
-val tokinfo_str_pos: string -> int -> info
+val tokinfo_str_pos: 
+  string -> int -> info
+val lexbuf_to_strpos:
+  Lexing.lexbuf -> string * int
 val rewrap_str: string -> info -> info
 val tok_add_s: string -> info -> info
 
@@ -131,8 +129,6 @@ val min_max_ii_by_pos: info list -> info * info
 val mk_info_item_DEPRECATED: 
   info_of_tok:('tok -> info) -> 'tok list -> string * 'tok list
 
-val lexbuf_to_strpos:
-  Lexing.lexbuf -> string * int
 
 (* meta *)
 val vof_token_location: 

@@ -168,11 +168,9 @@ let split_two_char_info i =
 
   let lhspi, rhspi = split_two_char tok in
   let lhs = { Parse_info.token = Parse_info.OriginTok lhspi;
-              Parse_info.comments = ();
               Parse_info.transfo = Parse_info.NoTransfo
             } in
   let rhs = { Parse_info.token = Parse_info.OriginTok rhspi;
-              Parse_info.comments = ();
               Parse_info.transfo = Parse_info.NoTransfo
             } in
   (lhs, rhs)

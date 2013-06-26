@@ -364,7 +364,6 @@ let unwrap = fst
 
 let fakeInfo ?(next_to=None) str = { Parse_info.
   token = Parse_info.FakeTokStr (str, next_to);
-  comments = ();
   transfo = Parse_info.NoTransfo;
 }
 

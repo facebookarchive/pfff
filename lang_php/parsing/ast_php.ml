@@ -787,7 +787,6 @@ let noScope () = ref (Scope_code.NoScope)
 
 let fakeInfo ?(next_to=None) str = { Parse_info.
   token = Parse_info.FakeTokStr (str, next_to);
-  comments = ();
   transfo = Parse_info.NoTransfo;
   }
 (*****************************************************************************)

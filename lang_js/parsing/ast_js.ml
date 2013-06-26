@@ -227,7 +227,6 @@ type any =
 let fakeInfo () = { PI.
     token = PI.FakeTokStr ("FAKE", None);
     transfo = PI.NoTransfo;
-    comments = ();
 }
 
 (*****************************************************************************)
@@ -311,7 +310,6 @@ let fakeInfoAttach info =
   { PI.
     token = PI.FakeTokStr ("FAKE", Some (pinfo, -1));
     transfo = PI.NoTransfo;
-    comments = ();
   }
 
 let remove_quotes_if_present s =

@@ -754,7 +754,7 @@ let noQscope = []
 let noTypedefDef () = None
 
 let fakeInfo pi  = 
-  { PI.token = PI.FakeTokStr ("",None); comments = ();transfo = PI.NoTransfo;}
+  { PI.token = PI.FakeTokStr ("",None); transfo = PI.NoTransfo;}
 
 (*****************************************************************************)
 (* Wrappers *)

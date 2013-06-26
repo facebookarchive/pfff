@@ -111,7 +111,7 @@ type token_mutable = {
    *)
   token : token_origin;
   mutable transfo: transformation;
-  mutable comments: unit; (* TODO *)
+(*  TODOL mutable comments: unit; *)
 }
 
 (* poor's man refactoring *)
@@ -132,6 +132,7 @@ and transformation =
 type info = token_mutable
 
 
+(*
 let info_start_file file = {
   token = OriginTok {
       str = "";
@@ -143,7 +144,7 @@ let info_start_file file = {
   comments = ();
   transfo = NoTransfo;
 }
-
+*)
 
 type parsing_stat = {
   filename: Common.filename;
@@ -201,7 +202,6 @@ let tokinfo_str_pos str pos =
       column = -1;
       file = "";
     };
-    comments = ();
     transfo = NoTransfo;
   }
 
@@ -490,16 +490,15 @@ and vof_add =
   | AddNewlineAndIdent -> Ocaml.VSum (("AddNewlineAndIdent", []))
 
 let rec vof_info
- { token = v_token; comments = v_comments; transfo = v_transfo } =
+ { token = v_token; transfo = v_transfo } =
   let bnds = [] in
   let arg = vof_transformation v_transfo in
   let bnd = ("transfo", arg) in
   let bnds = bnd :: bnds in
-  let arg = Ocaml.vof_unit v_comments in
-  let bnd = ("comments", arg) in
-  let bnds = bnd :: bnds in
   let arg = vof_token_origin v_token in
-  let bnd = ("token", arg) in let bnds = bnd :: bnds in Ocaml.VDict bnds
+  let bnd = ("token", arg) in 
+  let bnds = bnd :: bnds in 
+  Ocaml.VDict bnds
 
 (*****************************************************************************)
 (* ocaml -> vtoken *)

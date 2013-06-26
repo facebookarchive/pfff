@@ -76,7 +76,7 @@ let (mk_visitor: visitor_in -> visitor_out) = fun vin ->
 
 let rec v_info x =
   let k x = match x with { Parse_info.
-     token = v_pinfox; comments = v_comments; transfo = v_transfo 
+     token = v_pinfox; transfo = v_transfo 
     } ->
 (*
     let _arg = Parse_info.v_pinfo v_pinfox in
