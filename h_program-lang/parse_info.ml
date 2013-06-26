@@ -22,8 +22,7 @@ open Common
 (* Types *)
 (*****************************************************************************)
 
-(*
- * Currently core/lexing.ml does not handle the line number position.
+(* Currently core/lexing.ml does not handle the line number position.
  * Even if there are certain fields in the lexing structure, they are not
  * maintained by the lexing engine so the following code does not work:
  *
@@ -31,7 +30,8 @@ open Common
  *   sprintf "at file %s, line %d, char %d" pos.pos_fname pos.pos_lnum
  *      (pos.pos_cnum - pos.pos_bol) in
  *
- * Hence those functions to overcome the previous limitation.
+ * Hence those types and functions below to overcome the previous limitation,
+ * especially see complete_token_location_large().
  *)
 type token_location = {
     str: string;
@@ -48,9 +48,7 @@ let fake_token_location = {
   charpos = -1; str = ""; line = -1; column = -1; file = "";
 }
 
-
-(*
- * The token type below is used to represent the leaves of ASTs, the token.
+(* The token type below is used to represent the leaves of ASTs, the tokens.
  *
  * To be perfectly correct this is not really a token as a token usually
  * also have a category, e.g. TNumber or TIdent, but this would
@@ -198,7 +196,7 @@ let tokinfo_str_pos str pos =
       charpos = pos;
       str     = str;
 
-      (* info filled in a post-lexing phase, cf Parse_php.tokens *)
+      (* info filled in a post-lexing phase, see complete_token_location_large*)
       line = -1;
       column = -1;
       file = "";
@@ -508,18 +506,20 @@ let rec vof_info
 (*****************************************************************************)
 
 (* A changen is a stand-in for a file for the underlying code.  We use
-   channels in the underlying parsing code as this avoids loading
-   potentially very large source files directly into memory before we
-   even parse them, but this makes it difficult to parse small chunks of
-   code.  The changen works around this problem by providing a channel,
-   size and source for underlying data.  This allows us to wrap a string
-   in a channel, or pass a file, depending on our needs. *)
+ * channels in the underlying parsing code as this avoids loading
+ * potentially very large source files directly into memory before we
+ * even parse them, but this makes it difficult to parse small chunks of
+ * code.  The changen works around this problem by providing a channel,
+ * size and source for underlying data.  This allows us to wrap a string
+ * in a channel, or pass a file, depending on our needs. 
+ *)
 type changen = unit -> (in_channel * int * Common.filename)
 
 (* Many functions in parse_php were implemented in terms of files and
-   are now adapted to work in terms of changens.  However, we wish to
-   provide the original API to users.  This wraps changen-based functions
-   and makes them operate on filenames again. *)
+ * are now adapted to work in terms of changens.  However, we wish to
+ * provide the original API to users.  This wraps changen-based functions
+ * and makes them operate on filenames again. 
+ *)
 let file_wrap_changen : (changen -> 'a) -> (Common.filename -> 'a) = fun f ->
   (fun file ->
     f (fun () -> (open_in file, Common2.filesize file, file)))
@@ -568,6 +568,7 @@ let (info_from_charpos2: int -> filename -> (int * int * string)) =
 let info_from_charpos a b =
   profile_code "Common.info_from_charpos" (fun () -> info_from_charpos2 a b)
 
+(*
 let full_charpos_to_pos_from_changen changen =
   let (chan, chansize, _) = changen () in
 
@@ -606,20 +607,21 @@ let full_charpos_to_pos2 = file_wrap_changen full_charpos_to_pos_from_changen
 
 let full_charpos_to_pos a =
   profile_code "Common.full_charpos_to_pos" (fun () -> full_charpos_to_pos2 a)
+*)
 
 (*
 let test_charpos file =
   full_charpos_to_pos file +> Common2.dump +> pr2
 *)
 
-
+(*
 let complete_token_location filename table x =
   { x with
     file = filename;
     line   = fst (table.(x.charpos));
     column = snd (table.(x.charpos));
   }
-
+*)
 
 
 let full_charpos_to_pos_large_from_changen = fun changen ->
