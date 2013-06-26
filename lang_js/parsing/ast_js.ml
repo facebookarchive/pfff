@@ -260,8 +260,6 @@ let file_of_info = PI.file_of_info
 let line_of_info = PI.line_of_info
 let col_of_info  = PI.col_of_info
 
-let pinfo_of_info = PI.pinfo_of_info
-
 let rewrap_str =  PI.rewrap_str
 (*
 let rewrap_parse_info pi ii =  
@@ -273,9 +271,6 @@ let rewrap_parse_info pi ii =
     )
   }
 *)
-
-let is_origintok = Parse_info.is_origintok
-
 let info_of_name (s, info) = info
 
 (*****************************************************************************)

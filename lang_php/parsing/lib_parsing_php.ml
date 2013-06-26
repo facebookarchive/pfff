@@ -129,19 +129,9 @@ let abstract_position_info_any x =
 (*****************************************************************************)
 (*s: max min range *)
 (*x: max min range *)
-let info_to_fixpos ii =
-  match Parse_info.pinfo_of_info ii with
-  | Parse_info.OriginTok pi -> 
-      (* Ast_cocci.Real *)
-      pi.Parse_info.charpos
-  | Parse_info.FakeTokStr _
-  | Parse_info.Ab 
-  | Parse_info.ExpandedTok _
-    -> failwith "unexpected abstract or faketok"
-  
 let min_max_by_pos xs = 
   let (i1, i2) = Parse_info.min_max_ii_by_pos xs in
-  (info_to_fixpos i1, info_to_fixpos i2)
+  (PI.pos_of_info i1, PI.pos_of_info i2)
 
 let (range_of_origin_ii: Ast_php.tok list -> (int * int) option) = 
  fun ii -> 

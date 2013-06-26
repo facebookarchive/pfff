@@ -12,7 +12,6 @@
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the file
  * license.txt for more details.
  *)
-
 open Common 
 
 open Ast_js
@@ -20,7 +19,6 @@ open Parser_js (* the tokens *)
 
 module V = Visitor_js
 module Ast = Ast_js
-
 module TH = Token_helpers_js
 module PI = Parse_info
 open Parse_info
@@ -28,6 +26,8 @@ open Parse_info
 (*****************************************************************************)
 (* Prelude *)
 (*****************************************************************************)
+
+(* todo: reuse pfff/matcher/ code *)
 
 (*****************************************************************************)
 (* unparsing by using the tokens *)
@@ -82,7 +82,7 @@ let (string_of_program2_using_tokens: Parse_js.program2 -> string) =
     in
 
     let pp_tok tok = 
-      match TH.pinfo_of_tok tok with
+      match (TH.info_of_tok tok).Parse_info.token with
       | Parse_info.OriginTok _ -> 
           pp (TH.str_of_tok tok);
 
@@ -121,7 +121,7 @@ let (string_of_program2_using_tokens: Parse_js.program2 -> string) =
 
             let info = TH.info_of_tok tok in
 
-            (match TH.pinfo_of_tok tok, info.transfo with
+            (match (TH.info_of_tok tok).PI.token, info.transfo with
             | ExpandedTok _, NoTransfo -> () 
             | ExpandedTok _, 
                 (Remove | Replace _ | AddAfter _ | AddBefore _) ->

@@ -443,11 +443,6 @@ let str_of_tok  x = PI.str_of_info  (info_of_tok x)
 let file_of_tok x = PI.file_of_info (info_of_tok x)
 let pos_of_tok  x = PI.pos_of_info  (info_of_tok x)
 
-let pinfo_of_tok x = PI.pinfo_of_info (info_of_tok x)
-
-let is_origin x =
-  match pinfo_of_tok x with Parse_info.OriginTok _ -> true | _ -> false
-
 (*****************************************************************************)
 (* For unparsing *)
 (*****************************************************************************)

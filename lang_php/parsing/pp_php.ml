@@ -243,9 +243,9 @@ let adapt_tokens_pp2 ~tokenizer ~orig_filename toks_pp =
   if not !Flag.obsolete_merge_tokens_xhp then
    toks_pp +> List.rev_map (fun tok ->
     tok +> TH.visitor_info_of_tok (fun ii ->
-      let pinfo = PI.pinfo_of_info ii in
+      let pinfo = ii.PI.token in
       { ii with Parse_info.token =
-          match pinfo with
+          match ii.PI.token with
           | Parse_info.OriginTok pi ->
               Parse_info.OriginTok { pi with
                 Parse_info.file = orig_filename;

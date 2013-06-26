@@ -127,7 +127,7 @@ let tokens2 file =
         let tok = tok +> TH.visitor_info_of_tok (fun ii -> 
         { ii with Parse_info.token=
           (* could assert pinfo.filename = file ? *)
-               match Ast.pinfo_of_info ii with
+               match ii.Parse_info.token with
                | Parse_info.OriginTok pi ->
                    Parse_info.OriginTok 
                      (Parse_info.complete_token_location_large file table pi)

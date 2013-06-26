@@ -8,10 +8,7 @@ val info_of_tok :
 val visitor_info_of_tok : 
   (Ast_js.tok -> Ast_js.tok) -> Parser_js.token -> Parser_js.token
 
-val line_of_tok  : Parser_js.token -> int
 val str_of_tok   : Parser_js.token -> string
-val file_of_tok  : Parser_js.token -> Common.filename
+val line_of_tok  : Parser_js.token -> int
 val pos_of_tok   : Parser_js.token -> int
-
-val pinfo_of_tok   : Parser_js.token -> Parse_info.token_origin
-val is_origin : Parser_js.token -> bool
+val file_of_tok  : Parser_js.token -> Common.filename

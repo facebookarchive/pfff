@@ -81,7 +81,7 @@ let insert_virtual_positions l =
         let ii = TH.info_of_tok x in
         let inject pi =
           TH.visitor_info_of_tok (function ii -> Ast.rewrap_pinfo pi ii) x in
-        match Ast.pinfo_of_info ii with
+        match ii.Parse_info.token with
           Parse_info.OriginTok pi ->
             let prev = Parse_info.token_location_of_info ii in
             x::(loop prev (strlen ii) xs)
@@ -96,7 +96,7 @@ let insert_virtual_positions l =
       [] -> []
     | x::xs ->
         let ii = TH.info_of_tok x in
-        match Ast.pinfo_of_info ii with
+        match ii.Parse_info.token with
           Parse_info.OriginTok pi ->
             let prev = Parse_info.token_location_of_info ii in
             x::(loop prev (strlen ii) xs)

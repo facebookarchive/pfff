@@ -50,8 +50,6 @@ val line_of_info  : info -> int
 val col_of_info   : info -> int
 val pos_of_info   : info -> int
 val file_of_info  : info -> Common.filename
-val pinfo_of_info : info -> token_origin
-
 
 type parsing_stat = {
   filename: Common.filename;

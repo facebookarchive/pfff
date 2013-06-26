@@ -189,7 +189,7 @@ let unparse buf (_chunk, toks) =
   let pp s = Buffer.add_string buf s in
 
   let pp_tok tok = 
-      match TH.pinfo_of_tok tok with
+      match (TH.info_of_tok tok).Parse_info.token with
       | Parse_info.OriginTok _ -> pp (TH.str_of_tok tok)
       | Parse_info.ExpandedTok _ -> ()
       | Parse_info.FakeTokStr ("fake_token", _) -> ()

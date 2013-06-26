@@ -83,13 +83,13 @@ let rec distribute_info_items_toplevel2 xs toks filename =
       (* ugly: I use a fakeInfo for lambda f_name, so I have
        * have to filter the abstract info here
        *)
-      let ii = List.filter Parse_info.is_origintok ii in
-      let (min, max) = Parse_info.min_max_ii_by_pos ii in
+      let ii = List.filter PI.is_origintok ii in
+      let (min, max) = PI.min_max_ii_by_pos ii in
 
       let toks_before_max, toks_after = 
         Common.profile_code "spanning tokens" (fun () ->
         toks +> Common2.span_tail_call (fun tok ->
-          match Parse_info.compare_pos (TH.info_of_tok tok) max with
+          match PI.compare_pos (TH.info_of_tok tok) max with
           | -1 | 0 -> true
           | 1 -> false
           | _ -> raise Impossible
@@ -109,7 +109,7 @@ let distribute_info_items_toplevel a b c =
 (*****************************************************************************)
 (*s: parse_php error diagnostic *)
 let error_msg_tok tok = 
-  Parse_info.error_message_info (TH.info_of_tok tok)
+  PI.error_message_info (TH.info_of_tok tok)
 (*e: parse_php error diagnostic *)
 
 (*****************************************************************************)
@@ -121,7 +121,7 @@ let error_msg_tok tok =
 (*****************************************************************************)
 (*s: function tokens *)
 let tokens_from_changen ?(init_state=Lexer_php.INITIAL) changen =
-  let table     = Parse_info.full_charpos_to_pos_large_from_changen changen in
+  let table     = PI.full_charpos_to_pos_large_from_changen changen in
 
   let (chan, _, file) = changen () in
 
@@ -188,15 +188,15 @@ let tokens_from_changen ?(init_state=Lexer_php.INITIAL) changen =
 
         (*s: fill in the line and col information for tok *)
         let tok = tok +> TH.visitor_info_of_tok (fun ii ->
-        { ii with Parse_info.token=
+        { ii with PI.token=
           (* could assert pinfo.filename = file ? *)
-               match PI.pinfo_of_info ii with
-               | Parse_info.OriginTok pi ->
-                          Parse_info.OriginTok 
-                            (Parse_info.complete_token_location_large file table pi)
-               | Parse_info.FakeTokStr _
-               | Parse_info.Ab  
-               | Parse_info.ExpandedTok _
+               match ii.PI.token with
+               | PI.OriginTok pi ->
+                          PI.OriginTok 
+                            (PI.complete_token_location_large file table pi)
+               | PI.FakeTokStr _
+               | PI.Ab  
+               | PI.ExpandedTok _
                         -> raise Impossible
                   })
         in
@@ -210,13 +210,13 @@ let tokens_from_changen ?(init_state=Lexer_php.INITIAL) changen =
   with
   | Lexer_php.Lexical s -> 
       failwith ("lexical error " ^ s ^ "\n =" ^ 
-                   (Parse_info.error_message file (lexbuf_to_strpos lexbuf)))
+                   (PI.error_message file (lexbuf_to_strpos lexbuf)))
   | e -> raise e
  )
  (fun () -> close_in chan)
 
 let tokens2 ?init_state =
-  Parse_info.file_wrap_changen (tokens_from_changen ?init_state)
+  PI.file_wrap_changen (tokens_from_changen ?init_state)
 
 (*x: function tokens *)
 let tokens ?init_state a = 
@@ -260,7 +260,7 @@ let rec lexer_function tr = fun lexbuf ->
 (* could move that in h_program-lang/, but maybe clearer to put it closer
  * to the parsing function.
  *)
-exception Parse_error of Parse_info.info
+exception Parse_error of PI.info
 
 let parse2 ?(pp=(!Flag.pp_default)) filename =
 
@@ -305,7 +305,7 @@ let parse2 ?(pp=(!Flag.pp_default)) filename =
         )
   in
 
-  let stat = Parse_info.default_stat filename in
+  let stat = PI.default_stat filename in
   let filelines = Common2.cat_array filename in
 
   let toks = tokens filename in
@@ -318,7 +318,7 @@ let parse2 ?(pp=(!Flag.pp_default)) filename =
     else Pp_php.adapt_tokens_pp ~tokenizer:tokens ~orig_filename toks
   in
 
-  let tr = Parse_info.mk_tokens_state toks in
+  let tr = PI.mk_tokens_state toks in
 
   let checkpoint = TH.line_of_tok tr.PI.current in
 
@@ -383,7 +383,7 @@ let parse2 ?(pp=(!Flag.pp_default)) filename =
 
 
       if !Flag.show_parsing_error_full
-      then Parse_info.print_bad line_error (checkpoint, checkpoint2) filelines;
+      then PI.print_bad line_error (checkpoint, checkpoint2) filelines;
 
       stat.PI.bad     <- Common.cat filename +> List.length;
 
@@ -424,7 +424,7 @@ let ast_and_tokens file =
 (* Sub parsers *)
 (*****************************************************************************)
 
-let parse_any_from_changen (changen : Parse_info.changen) =
+let parse_any_from_changen (changen : PI.changen) =
   let toks = tokens_from_changen ~init_state:Lexer_php.ST_IN_SCRIPTING changen  in
 
   let tr = PI.mk_tokens_state toks in
@@ -449,7 +449,7 @@ let parse_any_from_changen (changen : Parse_info.changen) =
     );
     raise exn
 
-let parse_any = Parse_info.file_wrap_changen parse_any_from_changen
+let parse_any = PI.file_wrap_changen parse_any_from_changen
 
 (* any_of_string() allows small chunks of PHP to be parsed without
  * having to use the filesystem by leveraging the changen mechanism.

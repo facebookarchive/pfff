@@ -242,7 +242,3 @@ let str_of_tok  x = Ast_js.str_of_info  (info_of_tok x)
 let file_of_tok x = Ast_js.file_of_info (info_of_tok x)
 let pos_of_tok  x = Ast_js.pos_of_info  (info_of_tok x)
 
-let pinfo_of_tok x = Ast_js.pinfo_of_info (info_of_tok x)
-
-let is_origin x =
-  match pinfo_of_tok x with Parse_info.OriginTok _ -> true | _ -> false

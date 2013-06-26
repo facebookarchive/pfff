@@ -788,7 +788,6 @@ let line_of_info       = PI.line_of_info
 let col_of_info        = PI.col_of_info
 let file_of_info       = PI.file_of_info
 let pos_of_info        = PI.pos_of_info
-let pinfo_of_info      = PI.pinfo_of_info
 let is_origintok       = PI.is_origintok
 
 (* used by parsing hacks *)
