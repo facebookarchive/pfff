@@ -40,9 +40,7 @@ let test_big_grep file =
     let s = Json_io.string_of_json json in
     pr2 s
   );
-
   ()
-
 
 let test_layer file =
   let layer = Layer_code.load_layer file in

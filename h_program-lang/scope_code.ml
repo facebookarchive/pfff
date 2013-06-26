@@ -17,7 +17,6 @@ open Common
 (*****************************************************************************)
 (* Prelude *)
 (*****************************************************************************)
-
 (* 
  * It would be more convenient to move this file elsewhere like in analyse_xxx/
  * but we want our AST to contain scope annotations so it's convenient to 
@@ -84,30 +83,3 @@ let vof_scope x =
   | ListBinded -> Ocaml.VSum (("ListBinded", []))
   | Closed -> Ocaml.VSum (("Closed", []))
   | NoScope -> Ocaml.VSum (("NoScope", []))
-
-let map_scope =
-  function
-  | Global -> Global
-  | Local -> Local
-  | Param -> Param
-  | Static -> Static
-  | NoScope -> NoScope
-  | ListBinded -> ListBinded
-  | LocalIterator -> LocalIterator
-  | LocalExn -> LocalExn
-  | Closed -> Closed
-  | Class -> Class
-
-(* still needed ? *)
-let sexp_of_scope x =
-  match x with
-  | Global -> Sexp.Atom "Global"
-  | Local -> Sexp.Atom "Local"
-  | Param -> Sexp.Atom "Param"
-  | Static -> Sexp.Atom "Static"
-  | NoScope -> Sexp.Atom "NoScope"
-  | ListBinded -> Sexp.Atom "ListBinded"
-  | LocalIterator -> Sexp.Atom "LocalIterator"
-  | LocalExn -> Sexp.Atom "LocalExn"
-  | Closed -> Sexp.Atom "Closed"
-  | Class -> Sexp.Atom "Class"

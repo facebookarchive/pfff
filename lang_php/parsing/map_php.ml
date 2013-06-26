@@ -44,6 +44,7 @@ and visitor_out = {
 }
 
 let map_option = Common2.map_option
+let map_scope x = x
 
 let default_visitor =
   { kexpr   = (fun (k,_) x -> k x);
@@ -152,7 +153,7 @@ and map_expr (x) =
 
   | IdVar ((v1, v2)) ->
       let v1 = map_dname v1
-      and v2 = map_of_ref Scope_code.map_scope v2
+      and v2 = map_of_ref map_scope v2
       in IdVar ((v1, v2))
   | This v1 -> let v1 = map_tok v1 in This ((v1))
 
