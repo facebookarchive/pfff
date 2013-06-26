@@ -8,6 +8,7 @@ type token_location = {
     line: int; column: int;
     file: Common.filename;
 } 
+(* see also type filepos = { l: int; c: int; } in common.mli *)
 
 (* to deal with expanded tokens, e.g. preprocessor like cpp for C *)
 type token_origin =
@@ -42,8 +43,15 @@ type token_mutable = {
 (* shortcut *)
 type info = token_mutable
 
-(* see also type filepos = { l: int; c: int; } in common.mli *)
 val fake_token_location : token_location
+
+val str_of_info   : info -> string
+val line_of_info  : info -> int
+val col_of_info   : info -> int
+val pos_of_info   : info -> int
+val file_of_info  : info -> Common.filename
+val pinfo_of_info : info -> token_origin
+
 
 type parsing_stat = {
   filename: Common.filename;
@@ -54,14 +62,22 @@ val default_stat: Common.filename -> parsing_stat
 val print_parsing_stat_list: parsing_stat list -> unit
 
 
+(* lexer helpers *)
 type 'tok tokens_state = {
   mutable rest:         'tok list;
   mutable current:      'tok;
   (* it's passed since last "checkpoint", not passed from the beginning *)
   mutable passed:       'tok list;
 }
-
 val mk_tokens_state: 'tok list -> 'tok tokens_state
+
+val tokinfo_str_pos: 
+  string -> int -> info
+val lexbuf_to_strpos:
+  Lexing.lexbuf -> string * int
+val rewrap_str: string -> info -> info
+val tok_add_s: string -> info -> info
+
 
 (* channel, size, source *)
 type changen = unit -> (in_channel * int * Common.filename)
@@ -94,22 +110,7 @@ val error_message_info :  info -> string
 
 val print_bad: int -> int * int -> string array -> unit
 
-(* lexer helpers *)
-val tokinfo_str_pos: 
-  string -> int -> info
-val lexbuf_to_strpos:
-  Lexing.lexbuf -> string * int
-val rewrap_str: string -> info -> info
-val tok_add_s: string -> info -> info
-
 val token_location_of_info: info -> token_location
-
-val str_of_info: info -> string
-val line_of_info: info -> int
-val col_of_info: info -> int
-val file_of_info: info -> Common.filename
-val pos_of_info: info -> int
-val pinfo_of_info: info -> token_origin
 
 val get_original_token_location: token_origin -> token_location
 
