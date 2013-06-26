@@ -243,11 +243,9 @@ let (idl_type_of_string, str_of_idl_type) =
  Common2.mk_str_func_of_assoc_conv idl_type__str_conv
 
 let idl_type_of_string (s, info) =
-    try idl_type_of_string s
-    with Not_found ->
-      let pinfo = Parse_info.token_location_of_info info in
-      pr2 (Parse_info.error_message_token_location pinfo);
-      failwith ("not a idl type: " ^ s)
+  try idl_type_of_string s
+  with Not_found ->
+    failwith ("not a idl type: " ^ s)
 
 (*****************************************************************************)
 (* Constants *)

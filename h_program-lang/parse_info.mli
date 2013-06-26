@@ -89,7 +89,6 @@ val lexbuf_to_strpos:
 val rewrap_str: string -> info -> info
 val tok_add_s: string -> info -> info
 
-
 (* f(i) will contain the (line x col) of the i char position *)
 val full_charpos_to_pos_large: 
   Common.filename -> (int -> (int * int))
@@ -98,12 +97,9 @@ val full_charpos_to_pos_large:
 val complete_token_location_large : 
   Common.filename -> (int -> (int * int))  -> token_location -> token_location
 
-val error_message :       Common.filename -> (string * int) -> string
-val error_message_token_location :  token_location -> string
+val error_message : Common.filename -> (string * int) -> string
 val error_message_info :  info -> string
-
 val print_bad: int -> int * int -> string array -> unit
-
 
 (* channel, size, source *)
 type changen = unit -> (in_channel * int * Common.filename)
