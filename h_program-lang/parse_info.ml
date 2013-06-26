@@ -187,15 +187,6 @@ let mk_tokens_state toks = {
   }
 
 (*****************************************************************************)
-(* string_of *)
-(*****************************************************************************)
-
-let string_of_token_location x =
-  spf "%s at %s:%d:%d" x.str x.file x.line x.column
-let string_of_token_location_bis x =
-  spf "%s:%d:%d" x.file x.line x.column
-
-(*****************************************************************************)
 (* Lexer helpers *)
 (*****************************************************************************)
 
@@ -250,8 +241,15 @@ let token_location_of_info ii =
     -> failwith "token_location_of_info: no OriginTok"
 
 (* for error reporting *)
+(*
+let string_of_token_location x =
+  spf "%s at %s:%d:%d" x.str x.file x.line x.column
+*)
+let string_of_token_location x =
+  spf "%s:%d:%d" x.file x.line x.column
+
 let string_of_info x =
-  string_of_token_location_bis (token_location_of_info x)
+  string_of_token_location (token_location_of_info x)
 
 let str_of_info  ii = (token_location_of_info ii).str
 let file_of_info ii = (token_location_of_info ii).file
@@ -301,6 +299,7 @@ let tok_add_s s ii  =
   rewrap_str ((str_of_info ii) ^ s) ii
 
 (* info about the current location *)
+(*
 let get_pi = function
   | OriginTok pi -> pi
   | ExpandedTok (_,pi,_) -> pi
@@ -309,6 +308,7 @@ let get_pi = function
       failwith "FakeTokStr None"
   | Ab ->
       failwith "Ab"
+*)
 
 (* original info *)
 let get_original_token_location = function
@@ -318,6 +318,7 @@ let get_original_token_location = function
   | Ab -> failwith "Ab"
 
 (* used by token_helpers *)
+(*
 let get_info f ii =
   match ii.token with
   | OriginTok pi -> f pi
@@ -327,7 +328,8 @@ let get_info f ii =
       failwith "FakeTokStr None"
   | Ab ->
       failwith "Ab"
-
+*)
+(*
 let get_orig_info f ii =
   match ii.token with
   | OriginTok pi -> f pi
@@ -337,7 +339,7 @@ let get_orig_info f ii =
       failwith "FakeTokStr None"
   | Ab ->
       failwith "Ab"
-
+*)
 
 (* not used but used to be useful in coccinelle *)
 type posrv =

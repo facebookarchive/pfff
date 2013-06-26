@@ -47,7 +47,6 @@ type info = token_mutable
 (* see also type filepos = { l: int; c: int; } in common.mli *)
 val fake_token_location : token_location
 val string_of_token_location : token_location -> string
-val string_of_token_location_bis : token_location -> string
 
 val info_start_file: Common.filename -> info
 
