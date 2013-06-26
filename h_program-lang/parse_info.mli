@@ -71,7 +71,7 @@ val file_wrap_changen : (changen -> 'a) -> (Common.filename -> 'a)
 
 (* array[i] will contain the (line x col) of the i char position *)
 val full_charpos_to_pos : Common.filename -> (int * int) array
-val full_charpos_to_pos_from_changen : changen -> (int * int) array
+
 (* fill in the line and column field of token_location that were not set
  * during lexing because of limitations of ocamllex. *)
 val complete_token_location : 
@@ -91,10 +91,6 @@ val info_from_charpos : int -> Common.filename -> (int * int * string)
 val error_message :       Common.filename -> (string * int) -> string
 val error_message_token_location :  token_location -> string
 val error_message_info :  info -> string
-(* add a 'decalage/shift' argument to handle stuff such as cpp which includes 
- * files and who can make shift.
- *)
-val error_messagebis : Common.filename -> (string * int) -> int -> string
 
 val print_bad: int -> int * int -> string array -> unit
 
@@ -125,14 +121,6 @@ val is_origintok: info -> bool
 val compare_pos: info -> info -> int
 val min_max_ii_by_pos: info list -> info * info
 
-
 (* meta *)
-val vof_token_location: 
-  token_location -> Ocaml.v
-val vof_token_origin:
-  token_origin -> Ocaml.v
 val vof_info:
   info -> Ocaml.v
-
-val vof_transformation:
-  transformation -> Ocaml.v
