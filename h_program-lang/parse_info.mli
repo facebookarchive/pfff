@@ -89,7 +89,6 @@ val complete_token_location_large :
 val info_from_charpos : int -> Common.filename -> (int * int * string)
 
 val error_message :       Common.filename -> (string * int) -> string
-val error_message_short : Common.filename -> (string * int) -> string
 val error_message_token_location :  token_location -> string
 val error_message_info :  info -> string
 (* add a 'decalage/shift' argument to handle stuff such as cpp which includes 
@@ -125,9 +124,6 @@ val is_origintok: info -> bool
 
 val compare_pos: info -> info -> int
 val min_max_ii_by_pos: info list -> info * info
-
-val mk_info_item_DEPRECATED: 
-  info_of_tok:('tok -> info) -> 'tok list -> string * 'tok list
 
 
 (* meta *)

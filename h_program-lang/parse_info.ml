@@ -398,6 +398,7 @@ let min_max_ii_by_pos xs =
 
 
 
+(*
 let mk_info_item2 ~info_of_tok toks  =
   let buf = Buffer.create 100 in
   let s =
@@ -423,7 +424,7 @@ let mk_info_item2 ~info_of_tok toks  =
 let mk_info_item_DEPRECATED ~info_of_tok a =
   Common.profile_code "Parsing.mk_info_item"
     (fun () -> mk_info_item2 ~info_of_tok a)
-
+*)
 
 let lexbuf_to_strpos lexbuf     =
   (Lexing.lexeme lexbuf, Lexing.lexeme_start lexbuf)
@@ -835,9 +836,10 @@ let full_charpos_to_pos2 = file_wrap_changen full_charpos_to_pos_from_changen
 let full_charpos_to_pos a =
   profile_code "Common.full_charpos_to_pos" (fun () -> full_charpos_to_pos2 a)
 
+(*
 let test_charpos file =
   full_charpos_to_pos file +> Common2.dump +> pr2
-
+*)
 
 
 let complete_token_location filename table x =
@@ -945,6 +947,7 @@ let error_message_info info =
   error_message_token_location pinfo
 
 
+(*
 let error_message_short = fun filename (lexeme, lexstart) ->
   try
   let charpos = lexstart in
@@ -956,7 +959,7 @@ let error_message_short = fun filename (lexeme, lexstart) ->
       ("PB in Common.error_message, position " ^ i_to_s lexstart ^
           " given out of file:" ^ filename);
     end
-
+*)
 
 let print_bad line_error (start_line, end_line) filelines  =
   begin
