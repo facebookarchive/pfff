@@ -90,15 +90,11 @@ val rewrap_str: string -> info -> info
 val tok_add_s: string -> info -> info
 
 
-(* array[i] will contain the (line x col) of the i char position *)
-val full_charpos_to_pos : Common.filename -> (int * int) array
-(* fill in the line and column field of token_location that were not set
- * during lexing because of limitations of ocamllex. *)
-val complete_token_location : 
-  Common.filename -> (int * int) array -> token_location -> token_location
-
+(* f(i) will contain the (line x col) of the i char position *)
 val full_charpos_to_pos_large: 
   Common.filename -> (int -> (int * int))
+(* fill in the line and column field of token_location that were not set
+ * during lexing because of limitations of ocamllex. *)
 val complete_token_location_large : 
   Common.filename -> (int -> (int * int))  -> token_location -> token_location
 

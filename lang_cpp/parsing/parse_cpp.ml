@@ -165,7 +165,7 @@ let fix_tokens_for_language lang xs =
 
 (* called by parse below *)
 let tokens2 file = 
- let table     = Parse_info.full_charpos_to_pos file in
+ let table     = Parse_info.full_charpos_to_pos_large file in
 
  Common.with_open_infile file (fun chan -> 
   let lexbuf = Lexing.from_channel chan in
@@ -178,10 +178,12 @@ let tokens2 file =
           (* could assert pinfo.filename = file ? *)
           match ii.PI.token with
           |  PI.OriginTok pi ->
-             PI.OriginTok (Parse_info.complete_token_location file table pi)
+             PI.OriginTok (Parse_info.complete_token_location_large file 
+                             table pi)
           | PI.ExpandedTok (pi,vpi, off) ->
               PI.ExpandedTok(
-                (Parse_info.complete_token_location file table pi),vpi, off)
+                (Parse_info.complete_token_location_large file table pi),vpi, 
+                off)
           | PI.FakeTokStr (s,vpi_opt) -> PI.FakeTokStr (s,vpi_opt)
           | PI.Ab -> raise Impossible
       })
