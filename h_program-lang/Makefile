@@ -19,7 +19,7 @@ SRC= parse_info.ml \
      statistics_parsing.ml layer_parse_errors.ml \
      coverage_code.ml layer_coverage.ml \
      overlay_code.ml big_grep.ml pleac.ml info_code.ml \
-     pp2.ml \
+     pretty_print_code.ml \
      test_program_lang.ml unit_program_lang.ml
 
 SYSLIBS= str.cma unix.cma

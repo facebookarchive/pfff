@@ -17,7 +17,7 @@ let pp_file file =
   let ast = Ast_pp_build.program_with_comments tokens ast in
 
   let buf = Buffer.create 256 in
-  let env = Pp2.empty (fun s -> Buffer.add_string buf s) in
+  let env = Pretty_print_code.empty (fun s -> Buffer.add_string buf s) in
   Pretty_print.program_env env ast;
   Buffer.contents buf
 

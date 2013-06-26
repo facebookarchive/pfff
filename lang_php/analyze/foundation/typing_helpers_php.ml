@@ -15,7 +15,7 @@
 open Ast_php_simple
 open Env_typing_php
 
-module Pp = Pp2
+module Pp = Pretty_print_code
 
 (*****************************************************************************)
 (* Prelude *)

@@ -29,7 +29,7 @@ val split_chunks:
 
 (* julien's pretty printer *)
 val pretty_print: 
-  Buffer.t -> Pp2.env -> (chunk * Parser_php.token list) -> unit
+  Buffer.t -> Pretty_print_code.env -> (chunk * Parser_php.token list) -> unit
 
 (* pad's dumb unparser *)
 val unparse:

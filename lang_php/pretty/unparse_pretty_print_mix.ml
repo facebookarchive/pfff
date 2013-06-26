@@ -220,7 +220,7 @@ let pretty_print_when_need_it ~oldfile ~newfile =
   let ast_new = Parse_php.parse_program newfile in
 
   let buf = Buffer.create 256 in
-  let env = Pp2.empty (Buffer.add_string buf) in
+  let env = Pretty_print_code.empty (Buffer.add_string buf) in
 
   (* old: 
    * let ast = Ast_pp_build.program_with_comments toks_new ast_new in

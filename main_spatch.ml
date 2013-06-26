@@ -524,7 +524,7 @@ let test_pp file =
   let ast = Ast_pp_build.program_with_comments tokens ast in
 
   let buf = Buffer.create 256 in
-  let env = Pp2.empty (Buffer.add_string buf) in
+  let env = Pretty_print_code.empty (Buffer.add_string buf) in
   Pretty_print.program_env env ast;
   let s = Buffer.contents buf in
 

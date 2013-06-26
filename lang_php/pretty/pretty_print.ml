@@ -17,7 +17,7 @@ open Common
 open Ast_php
 open Ast_pp
 module A = Ast_pp
-module Pp = Pp2
+module Pp = Pretty_print_code
 
 (*****************************************************************************)
 (* Prelude *)
@@ -558,7 +558,7 @@ and expr_ env = function
           Pp.print env (binaryOp bop);
           Pp.print env " ";
           expr env e2;
-          if env.Pp2.cmargin >= 75 then raise Pp.Fail;
+          if env.Pretty_print_code.cmargin >= 75 then raise Pp.Fail;
       ) (
         fun env ->
           expr env e1;
@@ -1065,7 +1065,7 @@ and open_tag last env x =
  ) "" x.xml_attrs "" "" ;
   if last <> ""
   then Pp.print env " ";
-  if env.Pp2.last_nl
+  if env.Pp.last_nl
   then Pp.spaces env;
   Pp.print env last;
   Pp.print env ">"
