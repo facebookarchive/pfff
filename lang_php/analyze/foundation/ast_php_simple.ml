@@ -425,6 +425,9 @@ let has_modifier cv = List.length cv.cv_modifiers > 0
 let is_static modifiers  = List.mem Ast_php.Static  modifiers
 let is_private modifiers = List.mem Ast_php.Private modifiers
 
+(* old: Common.join ":" xs, but then webpage and :webpage are considered
+ * DUPE by codegraph, so simpler to prepend this <
+ *)
 let string_of_xhp_tag xs = "<" ^ Common.join ":" xs ^ ">"
 
 let str_of_name (s, _) = s
