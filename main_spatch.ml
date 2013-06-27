@@ -575,12 +575,20 @@ let case_refactoring pfff_log =
     xs +> Common.map_filter (fun s ->
    (*ex: CASE SENSITIVITY: SmsConst instead of SMSConst at /path/file:176:18 *)
       if s =~ 
-        ("CASE SENSITIVITY: \\([A-Za-z_0-9]+\\) " ^
-         "instead of \\([A-Za-z_0-9]+\\) " ^
+        ("CASE SENSITIVITY: \\([A-Za-z_0-9\\.]+\\) " ^
+         "instead of \\([A-Za-z_0-9\\.]+\\) " ^
          "at \\([^:]+\\):\\([0-9]+\\):\\([0-9]+\\)")
       then
         let (actual, expected, file, line, col) = Common.matched5 s in
-        if file =~ ".*/www-git/flib/[f-m].*"
+        if file =~ 
+          (match 5 with
+          | 1 -> ".*/www-git/\\(lib\\|scripts\\|tests\\)/*"
+          | 2 -> ".*/www-git/flib/[a-f].*"
+          | 3 -> ".*/www-git/flib/[g-m].*"
+          | 4 -> ".*/www-git/flib/[n-r].*"
+          | 5 -> ".*/www-git/flib/[s-z].*"
+          | _ -> raise Impossible
+          )
         then
           Some (actual, expected, file, s_to_i line, s_to_i col)
         else None
@@ -588,8 +596,17 @@ let case_refactoring pfff_log =
     )
   in
   simple_rename +> List.iter (fun (actual, expected, file, _, _) ->
+    let xs = Common.split "\\." actual in
+    let ys = Common.split "\\." expected in
+    (match xs, ys with
+    | [a1;a2], [b1;b2] when a1 <> b1 ->
+
     Common.command2 (spf "perl -p -i -e 's/\\b%s\\b/%s/g' %s"
-                       actual expected file);
+                       a1 b1 file);
+
+    pr2_gen (actual)
+    | _ -> ()
+  )
   )
 
 (*---------------------------------------------------------------------------*)
