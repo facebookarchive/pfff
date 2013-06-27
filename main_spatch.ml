@@ -612,6 +612,60 @@ let case_refactoring pfff_log =
   )
   )
 
+
+(*---------------------------------------------------------------------------*)
+(* remove undefined xhp field *)
+(*---------------------------------------------------------------------------*)
+let remove_undefined_xhp_field (xhp_class_str, field) ast=
+  let was_modified = ref false in
+  let string_of_xhp_tag xs = "<" ^ Common.join ":" xs ^ ">" in
+  let visitor = Visitor_php.mk_visitor {Visitor_php.default_visitor with
+    Visitor_php.kxhp_html = (fun (k, _) x ->
+      match x with
+      | XhpSingleton ( (xhp_class, _), attributes, _)
+      | Xhp ( (xhp_class, _), attributes, _, _, _)
+          when (xhp_class_str = string_of_xhp_tag xhp_class) ->
+        attributes +> List.iter (fun attr ->
+          match attr with
+          | ((s, _), _, _) when (s = field) ->              
+            let ii = Lib_parsing_php.ii_of_any (XhpAttribute attr) in
+            ii +> List.iter (fun info ->
+              info.transfo <- Remove
+            );
+            was_modified := true;
+          | _ -> ()
+        ); k x
+      | _ -> k x
+    );
+  }
+  in
+  visitor (Program ast);
+  !was_modified
+
+let read_log_undefined_xhp_field pfff_log =
+  let xs = Common.cat pfff_log in
+  let undefined_xhp_field =
+    xs +> Common.map_filter (fun s ->
+      (* PB: lookup fail on Field:<x:misc>.xnosuchstr= (at xhp_use.php:9) *)
+      if s =~ 
+        ("PB: lookup fail on Field:\\(<[A-Za-z_0-9:-]+>\\)\\." ^
+            "\\([A-Za-z_0-9-]+\\)= " ^
+            "(at \\([^:]+\\):\\([0-9]+\\))")
+      then
+        let (xhp_class_str, field, filename, line) = Common.matched4 s in
+        Some (xhp_class_str, field, filename, s_to_i line)
+      else None
+    )
+  in
+  undefined_xhp_field +> List.iter
+    (fun  (xhp_class_str, field, filename, _) ->
+      let transfo ={
+        trans_func = remove_undefined_xhp_field (xhp_class_str, field);
+        grep_keywords = None;
+      } in      
+      apply_transfo transfo [filename]
+    )
+    
 (*---------------------------------------------------------------------------*)
 (* regression testing *)
 (*---------------------------------------------------------------------------*)
@@ -659,6 +713,8 @@ let spatch_extra_actions () = [
   Common.mk_action_1_arg juju_refactoring;
   "-case_refactoring", " <file>",
   Common.mk_action_1_arg case_refactoring;
+  "-remove_undefined_xhp_field", " <file>",
+  Common.mk_action_1_arg read_log_undefined_xhp_field;
 
   "-test", " run regression tests",
   Common.mk_action_0_arg test;

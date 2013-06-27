@@ -662,6 +662,10 @@ let options () = [
     verbose := true;
     DM.verbose := true;
   ), " ";
+
+  "-no_fake_node", Arg.Clear Graph_code_php.add_fake_node_when_undefined_entity,
+  "Do not add fake nodes when use-def mismatches happen";
+
   ] ++
   Common.options_of_actions action (all_actions()) ++
   Common2.cmdline_flags_devel () ++

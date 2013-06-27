@@ -125,6 +125,7 @@ type env = {
 (*****************************************************************************)
 (* Helpers *)
 (*****************************************************************************)
+let add_fake_node_when_undefined_entity = ref true
 
 let _hmemo = Hashtbl.create 101
 let parse2 env file =
@@ -258,10 +259,10 @@ let rec add_use_edge env (((str, tok) as name, kind)) =
   | _ when Hashtbl.mem env.case_insensitive (lowercase_and_underscore str, kind) ->
       let (final_str, _) =
         Hashtbl.find env.case_insensitive (lowercase_and_underscore str, kind) in
-      env.pr2_and_log (spf "CASE SENSITIVITY: %s instead of %s at %s"
+      (*env.pr2_and_log (spf "CASE SENSITIVITY: %s instead of %s at %s"
                          str final_str 
                          (Parse_info.string_of_info (Ast.tok_of_name name)));
-      
+      *)
       add_use_edge env ((final_str, tok), kind)
 
   | _ ->
@@ -279,8 +280,8 @@ let rec add_use_edge env (((str, tok) as name, kind)) =
       | _  ->
           let kind_original = kind in
           let dst = (str, kind_original) in
-
-          G.add_node dst env.g;
+          if !add_fake_node_when_undefined_entity then
+            G.add_node dst env.g;
           let parent_target = G.not_found in
           (match kind with
           (* todo: fix those *)
@@ -320,8 +321,11 @@ let rec add_use_edge env (((str, tok) as name, kind)) =
             in
             f (spf "PB: lookup fail on %s (at %s:%d)"(G.string_of_node dst) 
                  (env.path file) line);
-            env.g +> G.add_edge (parent_target, dst) G.Has;
-            env.g +> G.add_edge (src, dst) G.Use;
+            if !add_fake_node_when_undefined_entity then
+              begin
+                env.g +> G.add_edge (parent_target, dst) G.Has;
+                env.g +> G.add_edge (src, dst) G.Use;
+              end
           );
       )
   )
