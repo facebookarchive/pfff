@@ -567,6 +567,32 @@ let juju_refactoring spec_file =
   ()
 
 (*---------------------------------------------------------------------------*)
+(* case refactorings *)
+(*---------------------------------------------------------------------------*)
+let case_refactoring pfff_log =
+  let xs = Common.cat pfff_log in
+  let simple_rename =
+    xs +> Common.map_filter (fun s ->
+   (*ex: CASE SENSITIVITY: SmsConst instead of SMSConst at /path/file:176:18 *)
+      if s =~ 
+        ("CASE SENSITIVITY: \\([A-Za-z_0-9]+\\) " ^
+         "instead of \\([A-Za-z_0-9]+\\) " ^
+         "at \\([^:]+\\):\\([0-9]+\\):\\([0-9]+\\)")
+      then
+        let (actual, expected, file, line, col) = Common.matched5 s in
+        if file =~ ".*/www-git/flib/[f-m].*"
+        then
+          Some (actual, expected, file, s_to_i line, s_to_i col)
+        else None
+      else None
+    )
+  in
+  simple_rename +> List.iter (fun (actual, expected, file, _, _) ->
+    Common.command2 (spf "perl -p -i -e 's/\\b%s\\b/%s/g' %s"
+                       actual expected file);
+  )
+
+(*---------------------------------------------------------------------------*)
 (* regression testing *)
 (*---------------------------------------------------------------------------*)
 
@@ -611,6 +637,8 @@ let spatch_extra_actions () = [
 
   "-juju_refactoring", " <file>",
   Common.mk_action_1_arg juju_refactoring;
+  "-case_refactoring", " <file>",
+  Common.mk_action_1_arg case_refactoring;
 
   "-test", " run regression tests",
   Common.mk_action_0_arg test;
