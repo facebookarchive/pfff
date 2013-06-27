@@ -447,7 +447,7 @@ function c() { $a = new A(); $a->foo(); }
 class :x:frag { public function foo() { } }
 function bar() { $x = <x:frag></x:frag>; $x->foo(); }
 " in
-      assert_graph file ["bar" --> ["x:frag::foo"]];
+      assert_graph file ["bar" --> ["<x:frag>::foo"]];
     );
 
     (* todo: example of current limitations of the analysis *)
