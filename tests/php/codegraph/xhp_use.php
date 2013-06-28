@@ -9,7 +9,14 @@ $o = <x:misc
     xnosuchstr="world"
     />;
 $o = <x:misc
+    //SAME ERROR: undefined attribute
+    xnosuchstr="world"
+    />;
+$o = <x:misc
     superstr="hello1"
+    />;
+$o = <x:misc
+    x_str="test"
     />;
 $o = <x:misc
     data-x="1"
