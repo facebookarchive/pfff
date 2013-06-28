@@ -8,8 +8,7 @@ module V = Visitor_php
 
 (*s: show_function_calls v2 *)
 let show_function_calls file = 
-  let (asts2, _stat) = Parse_php.parse file in
-  let asts = Parse_php.program_of_program2 asts2 in
+  let ast = Parse_php.parse_program file in
 
   (*s: create visitor *)
     let visitor = V.mk_visitor { V.default_visitor with
@@ -35,7 +34,7 @@ let show_function_calls file =
     in
   (*e: create visitor *)
   (*s: iter on asts using visitor *)
-  visitor (Program  asts)
+  visitor (Program  ast)
   (*e: iter on asts using visitor *)
 (*e: show_function_calls v2 *)
 

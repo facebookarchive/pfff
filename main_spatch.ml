@@ -259,14 +259,13 @@ let apply_transfo transfo xs =
     if not worth_trying then ()
     else
     try (
-    let (ast2) = 
+    let (ast, toks) = 
       try 
-        Parse_php.parse file +> fst
+        Parse_php.ast_and_tokens file
       with Parse_php.Parse_error err ->
         Common.pr2 (spf "warning: parsing problem in %s" file);
-        []
+        [], []
     in
-    let ast = Parse_php.program_of_program2 ast2 in
     let was_modified = transfo.trans_func ast in
 
     (* old: 
@@ -276,7 +275,9 @@ let apply_transfo transfo xs =
      *)
 
     if was_modified then begin 
-      let s = Unparse_php.string_of_program2_using_transfo ast2 in
+      let s = 
+        Unparse_php.string_of_program_with_comments_using_transfo (ast, toks) 
+      in
     
       let tmpfile = Common.new_temp_file "trans" ".php" in
       Common.write_file ~file:tmpfile s;
@@ -313,8 +314,7 @@ let simple_transfo xs =
   files +> List.iter (fun file ->
     pr2 (spf "processing: %s" file);
 
-    let (ast2, _stat) = Parse_php.parse file in
-    let ast = Parse_php.program_of_program2 ast2 in
+    let (ast, toks) = Parse_php.ast_and_tokens file in
 
     let hook = { Visitor_php.default_visitor with
       Visitor_php.kexpr = (fun (k, _) x ->
@@ -334,7 +334,8 @@ let simple_transfo xs =
     in
     (Visitor_php.mk_visitor hook) (Program ast);
 
-    let s = Unparse_php.string_of_program2_using_transfo ast2 in
+    let s = 
+      Unparse_php.string_of_program_with_comments_using_transfo (ast, toks) in
     
     let tmpfile = Common.new_temp_file "trans" ".php" in
     Common.write_file ~file:tmpfile s;

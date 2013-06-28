@@ -63,8 +63,7 @@ module PI = Parse_info
  * and good enough for printing small chunk of PHP code for debugging
  * purpose. We try to preserve the line numbers.
  *)
-let string_of_program2 ast2 = 
-  let ast = Parse_php.program_of_program2 ast2 in
+let string_of_program ast = 
   Common2.with_open_stringbuf (fun (_pr_with_nl, buf) ->
     let pp s = Buffer.add_string buf s in
     let cur_line = ref 1 in
@@ -173,13 +172,8 @@ let elt_of_tok tok =
  * - put some newline in the Added of a spatch, add_statement.spatch
  *   too many places where we do ugly hack around newline
  *)
-let rec ast2_to_toks ast2 =
-  ast2 +> List.map (fun (_ast, toks) ->
-    toks +> List.map (fun tok -> tok)
-  ) +> List.flatten
 
-let string_of_program2_using_transfo ast2 =
-  let toks = ast2_to_toks ast2 in
+let string_of_program_with_comments_using_transfo (ast, toks) =
  toks +> Lib_unparser.string_of_toks_using_transfo 
    ~elt_and_info_of_tok:(fun tok ->
      elt_of_tok tok, TH.info_of_tok tok

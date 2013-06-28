@@ -1,3 +1,5 @@
 
 val refactor: 
-  Refactoring_code.refactoring list -> Parse_php.program2 -> string
+  Refactoring_code.refactoring list -> 
+  Parse_php.program_with_comments -> 
+  string

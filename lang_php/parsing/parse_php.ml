@@ -37,19 +37,7 @@ module PI = Parse_info
 (* Types *)
 (*****************************************************************************)
 
-(*s: type program2 *)
-type program2 = toplevel2 list
-     (* the token list contains also the comment-tokens *)
-  and toplevel2 = Ast_php.toplevel * Parser_php.token list
-
-type program_with_comments = program2
-(*e: type program2 *)
-
-(*s: function program_of_program2 *)
-let program_of_program2 xs = 
-  xs +> List.map fst
-(*e: function program_of_program2 *)
-let program_of_program_with_comments a = program_of_program2 a
+type program_with_comments = Ast_php.program * Parser_php.token list
 
 (*****************************************************************************)
 (* Wrappers *)
@@ -70,38 +58,6 @@ let token_to_strpos tok =
 (* on very huge file, this function was previously segmentation fault
  * in native mode because span was not tail call
  *)
-let rec distribute_info_items_toplevel2 xs toks filename = 
-  match xs with
-  | [] -> raise Impossible
-  | [Ast_php.FinalDef e] -> 
-      (* assert (null toks) ??? no cos can have whitespace tokens *) 
-      let info_item = toks in
-      [Ast_php.FinalDef e, info_item]
-  | ast::xs ->
-      
-      let ii = Lib_parsing_php.ii_of_any (Ast.Toplevel ast) in
-      (* ugly: I use a fakeInfo for lambda f_name, so I have
-       * have to filter the abstract info here
-       *)
-      let ii = List.filter PI.is_origintok ii in
-      let (min, max) = PI.min_max_ii_by_pos ii in
-
-      let toks_before_max, toks_after = 
-        Common.profile_code "spanning tokens" (fun () ->
-        toks +> Common2.span_tail_call (fun tok ->
-          match PI.compare_pos (TH.info_of_tok tok) max with
-          | -1 | 0 -> true
-          | 1 -> false
-          | _ -> raise Impossible
-        ))
-      in
-      let info_item = toks_before_max in
-      (ast, info_item)::distribute_info_items_toplevel2 xs toks_after filename
-
-let distribute_info_items_toplevel a b c = 
-  Common.profile_code "distribute_info_items" (fun () -> 
-    distribute_info_items_toplevel2 a b c
-  )
 (*e: parse_php helpers *)
 
 (*****************************************************************************)
@@ -351,7 +307,7 @@ let parse2 ?(pp=(!Flag.pp_default)) filename =
   | Left xs ->
       stat.PI.correct <- (Common.cat filename +> List.length);
 
-      distribute_info_items_toplevel xs toks filename, 
+      (xs, toks), 
       stat
   | Right (info_of_bads, line_error, cur, exn) ->
 
@@ -388,7 +344,7 @@ let parse2 ?(pp=(!Flag.pp_default)) filename =
       stat.PI.bad     <- Common.cat filename +> List.length;
 
       let info_item = (List.rev tr.PI.passed) in 
-      [Ast.NotParsedCorrectly info_of_bads, info_item], 
+      ([Ast.NotParsedCorrectly info_of_bads], info_item), 
       stat
 (*x: Parse_php.parse *)
 
@@ -409,16 +365,12 @@ let parse ?pp a =
 (*e: Parse_php.parse *)
 
 let parse_program ?pp file = 
-  let (ast2, _stat) = parse ?pp file in
-  program_of_program2 ast2
+  let ((ast, toks), _stat) = parse ?pp file in
+  ast
 
 let ast_and_tokens file =
-  let (ast2, _stat) = parse file in
-  let ast = 
-    ast2 +> List.map (fun (top, _toks) -> top) in
-  let toks = 
-    ast2 +> List.map (fun (_top, toks) -> toks) +> List.flatten in
-  ast, toks
+  let ((ast, toks), _stat) = parse file in
+  (ast, toks)
 
 (*****************************************************************************)
 (* Sub parsers *)
@@ -486,8 +438,7 @@ let (expr_of_string: string -> Ast_php.expr) = fun s ->
   let tmpfile = Common.new_temp_file "pfff_expr_of_s" "php" in
   Common.write_file tmpfile ("<?php \n" ^ s ^ ";\n");
 
-  let (ast2, _stat) = parse tmpfile in
-  let ast = program_of_program2 ast2 in
+  let ast = parse_program tmpfile in
 
   let res = 
     (match ast with
@@ -506,8 +457,7 @@ let (expr_of_string: string -> Ast_php.expr) = fun s ->
 let (program_of_string: string -> Ast_php.program) = fun s -> 
   let tmpfile = Common.new_temp_file "pfff_expr_of_s" "php" in
   Common.write_file tmpfile ("<?php \n" ^ s ^ "\n");
-  let (ast2, _stat) = parse tmpfile in
-  let ast = program_of_program2 ast2 in
+  let ast = parse_program tmpfile in
   Common.erase_this_temp_file tmpfile;
   ast
 

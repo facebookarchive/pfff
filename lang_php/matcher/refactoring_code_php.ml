@@ -43,7 +43,7 @@ let string_of_class_var_modifier modifiers =
 (* Main entry point *)
 (*****************************************************************************)
 
-let refactor refactorings ast_with_tokens =
+let refactor refactorings (ast, tokens) =
   refactorings +> List.iter (fun r ->
     let was_modifed = ref false in
     let visitor =
@@ -174,7 +174,6 @@ let refactor refactorings ast_with_tokens =
           }
 
     in
-    let ast = Parse_php.program_of_program2 ast_with_tokens in
     (V.mk_visitor visitor) (Program ast);
     if not !was_modifed
     then begin
@@ -182,4 +181,4 @@ let refactor refactorings ast_with_tokens =
       failwith ("refactoring didn't apply");
     end
   );
-  Unparse_php.string_of_program2_using_transfo ast_with_tokens
+  Unparse_php.string_of_program_with_comments_using_transfo (ast, tokens)

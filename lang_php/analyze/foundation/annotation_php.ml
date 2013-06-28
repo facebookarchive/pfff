@@ -12,7 +12,6 @@
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the file
  * license.txt for more details.
  *)
-
 open Common
 
 module Ast = Ast_php
@@ -20,7 +19,6 @@ module Ast = Ast_php
 (*****************************************************************************)
 (* Prelude *)
 (*****************************************************************************)
-
 (* 
  * Helpers around code annotations in comments, e.g. @author.
  * 
@@ -300,9 +298,8 @@ let str_debug_of_annotation a =
 (* Main entry point *)
 (*****************************************************************************)
 
-let annotations_of_program_with_comments2 asts_and_tokens =
- asts_and_tokens +> List.map (fun (ast, toks) ->
-  toks +> List.map (function
+let annotations_of_program_with_comments2 (ast, tokens) =
+ tokens +> List.map (function
   | Parser_php.T_COMMENT info
   | Parser_php.T_DOC_COMMENT info 
     ->
@@ -317,8 +314,8 @@ let annotations_of_program_with_comments2 asts_and_tokens =
        *)
       annots +> List.map (fun annot -> annot, info)
   | _ -> []
-  ) +> List.flatten
  ) +> List.flatten
+
  
 let annotations_of_program_with_comments a = 
   Common.profile_code "Annotation_php.annotations" (fun () ->

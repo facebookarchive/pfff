@@ -7,8 +7,7 @@ module V = Visitor_php
 
 (*s: show_function_calls v3 *)
 let show_function_calls file = 
-  let (asts2, _stat) = Parse_php.parse file in
-  let asts = Parse_php.program_of_program2 asts2 in
+  let ast = Parse_php.parse_program file in
 
   (*s: initialize hfuncs *)
     let hfuncs = Common2.hash_with_default (fun () ->
@@ -42,7 +41,7 @@ let show_function_calls file =
       );
     }
     in
-    visitor (Program asts);
+    visitor (Program ast);
   (*e: iter on asts using visitor, updating hfuncs *)
 
   (*s: display hfuncs to user *)

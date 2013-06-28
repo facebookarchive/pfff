@@ -55,9 +55,8 @@ let transduce  file =
   Flag.verbose_parsing := false;
   Flag.show_parsing_error := false;
 
-  let (program2,_stat) = Parse_php.parse file in
-  let asts = Parse_php.program_of_program2 program2 in
-  let props = visit asts in
+  let ast = Parse_php.parse_program file in
+  let props = visit ast in
   pr (Common.join "/" props);
   ()
 

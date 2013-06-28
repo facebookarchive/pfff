@@ -225,14 +225,13 @@ let spatch ?(case_sensitive=false) pattern file =
   let was_modifed = ref false in
     
   (* quite similar to what we do in main_sgrep.ml *)
-  let ast2 = 
+  let (ast, tokens) = 
     try 
         Parse_php.parse file +> fst
     with Parse_php.Parse_error err ->
       Common.pr2 (spf "warning: parsing problem in %s" file);
-      []
+      [], []
   in
-  let ast = Parse_php.program_of_program2 ast2 in
 
   let hook = 
     match pattern with
@@ -285,5 +284,6 @@ let spatch ?(case_sensitive=false) pattern file =
   );
 
   if !was_modifed 
-  then Some (Unparse_php.string_of_program2_using_transfo ast2)
+  then Some (Unparse_php.string_of_program_with_comments_using_transfo 
+               (ast, tokens))
   else None

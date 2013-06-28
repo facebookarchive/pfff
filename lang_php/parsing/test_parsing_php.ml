@@ -86,17 +86,13 @@ let test_parse_php xs  =
 (*e: test_sexp_php *)
 (*s: test_json_php *)
 let test_json_php file = 
-  let (ast2,_stat) = Parse_php.parse file in
-  let ast = Parse_php.program_of_program2 ast2 in
-
+  let ast = Parse_php.parse_program file in
   let s = Export_ast_php.json_string_of_program ast in
   pr s;
   ()
 
 let test_json_fast_php file = 
-  let (ast2,_stat) = Parse_php.parse file in
-  let ast = Parse_php.program_of_program2 ast2 in
-
+  let ast = Parse_php.parse_program file in
   let s = Export_ast_php.json_string_of_program_fast ast in
   pr s;
   ()
@@ -112,8 +108,7 @@ let test_dump_php file =
 (*****************************************************************************)
 (*s: test_visit_php *)
 let test_visit_php file = 
-  let (ast2,_stat) = Parse_php.parse file in
-  let ast = Parse_php.program_of_program2 ast2 in
+  let ast = Parse_php.parse_program file in
 
   let hooks = { Visitor_php.default_visitor with
     Visitor_php.kinfo = (fun (k, vx) info ->
@@ -136,23 +131,21 @@ let test_visit_php file =
 let test_unparse_php file = 
   let (ast2, stat) = Parse_php.parse file in
   let tmpfile = Common.new_temp_file "unparse_php" ".php" in
-  let s = Unparse_php.string_of_program2_using_transfo ast2 in
+  let s = Unparse_php.string_of_program_with_comments_using_transfo ast2 in
   Common.write_file ~file:tmpfile s;
   let xs = Common2.unix_diff file tmpfile in
   xs +> List.iter pr2;
   ()
 
 let test_pretty_print_php file = 
-  let (ast2, stat) = Parse_php.parse file in
-  let _ast = Parse_php.program_of_program2 ast2 in
+  let _ast = Parse_php.parse_program file in
   raise Todo
   (* Pretty_print_php.pretty_print_program ast *)
 
 (* note that pfff can now parse XHP files without calling xhpize *)
 let test_parse_xhp_with_xhpize file = 
   let pp_cmd = "xhpize" in
-  let (ast2, stat) = Parse_php.parse ~pp:(Some pp_cmd) file in
-  let _ast = Parse_php.program_of_program2 ast2 in
+  let _ast = Parse_php.parse_program ~pp:(Some pp_cmd) file in
   raise Todo
 
 let test_parse_xdebug_expr s = 

@@ -73,8 +73,7 @@ let test_type_php file =
 
 (*s: test_cfg_php *)
 let test_cfg_php file =
-  let (ast2,_stat) = Parse_php.parse file in
-  let ast = Parse_php.program_of_program2 ast2 in
+  let ast = Parse_php.parse_program file in
   ast +> List.iter (function
   | Ast_php.FuncDef def ->
       (try

@@ -428,6 +428,60 @@ let mk_info_item_DEPRECATED ~info_of_tok a =
 let lexbuf_to_strpos lexbuf     =
   (Lexing.lexeme lexbuf, Lexing.lexeme_start lexbuf)
 
+
+(*
+I used to have:
+ type program2 = toplevel2 list
+  (* the token list contains also the comment-tokens *)
+  and toplevel2 = Ast_php.toplevel * Parser_php.token list
+type program_with_comments = program2
+
+and a function below called distribute_info_items_toplevel that
+would distribute the list of tokens to each toplevel entity.
+This was when I was storing parts of AST in berkeley DB and when
+I wanted to get some information about an entity (a function, a class)
+I wanted to get the list also of tokens associated with that entity.
+
+Now I just have
+ type program_with_comments = Ast_php.program * Parser_php.token list
+because I don't use berkeley DB. I use codegraph and an entity_finder
+we just focus on use/def and does not store huge asts on disk.
+
+
+let rec distribute_info_items_toplevel2 xs toks filename = 
+  match xs with
+  | [] -> raise Impossible
+  | [Ast_php.FinalDef e] -> 
+      (* assert (null toks) ??? no cos can have whitespace tokens *) 
+      let info_item = toks in
+      [Ast_php.FinalDef e, info_item]
+  | ast::xs ->
+      
+      let ii = Lib_parsing_php.ii_of_any (Ast.Toplevel ast) in
+      (* ugly: I use a fakeInfo for lambda f_name, so I have
+       * have to filter the abstract info here
+       *)
+      let ii = List.filter PI.is_origintok ii in
+      let (min, max) = PI.min_max_ii_by_pos ii in
+
+      let toks_before_max, toks_after = 
+        Common.profile_code "spanning tokens" (fun () ->
+        toks +> Common2.span_tail_call (fun tok ->
+          match PI.compare_pos (TH.info_of_tok tok) max with
+          | -1 | 0 -> true
+          | 1 -> false
+          | _ -> raise Impossible
+        ))
+      in
+      let info_item = toks_before_max in
+      (ast, info_item)::distribute_info_items_toplevel2 xs toks_after filename
+
+let distribute_info_items_toplevel a b c = 
+  Common.profile_code "distribute_info_items" (fun () -> 
+    distribute_info_items_toplevel2 a b c
+  )
+*)
+
 (*****************************************************************************)
 (* vtoken -> ocaml *)
 (*****************************************************************************)

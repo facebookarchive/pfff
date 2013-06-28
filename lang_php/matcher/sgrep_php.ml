@@ -67,9 +67,9 @@ let parse str =
 (*****************************************************************************)
 
 let sgrep ?(case_sensitive=false) ~hook pattern file =
-  let (ast2) = 
+  let ast = 
     try 
-      Parse_php.parse file +> fst
+      Parse_php.parse_program file
     with Parse_php.Parse_error err ->
       (* we usually do sgrep on a set of files or directories,
        * so we don't want on error in one file to stop the
@@ -78,7 +78,6 @@ let sgrep ?(case_sensitive=false) ~hook pattern file =
       Common.pr2 (spf "warning: parsing problem in %s" file);
       []
   in
-  let ast = Parse_php.program_of_program2 ast2 in
 
   (* coupling: copy paste with lang_php/matcher/spatch_php.ml 
    * coupling: copy paste with sgrep_lint

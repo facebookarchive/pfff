@@ -14,10 +14,9 @@ let pr_class_def class_def =
   pr2 (spf "Define class %s at line %d" s line)
 
 let show_function_calls file =
-  let (asts2, _stat) = Parse_php.parse file in
-  let asts = Parse_php.program_of_program2 asts2 in
+  let ast = Parse_php.parse_program file in
 
-    asts +> List.iter (fun toplevel ->
+    ast +> List.iter (fun toplevel ->
       match toplevel with
       | FuncDef func_def ->
         pr_func_def func_def

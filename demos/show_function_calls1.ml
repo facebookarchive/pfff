@@ -6,11 +6,10 @@ open Ast_php
 
 (*s: show_function_calls v1 *)
 let show_function_calls file = 
-  let (asts2, _stat) = Parse_php.parse file in
-  let asts = Parse_php.program_of_program2 asts2 in
+  let ast = Parse_php.parse_program file in
 
   (*s: iter on asts manually *)
-    asts +> List.iter (fun toplevel ->
+    ast +> List.iter (fun toplevel ->
       match toplevel with
       | StmtList stmts ->
           (*s: iter on stmts *)
