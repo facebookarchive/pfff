@@ -491,7 +491,7 @@
    (join-string 
     (list 
      "-debugger"
-     (case 30
+     (case 40
        (0 "-test_treemap_misc")
        (1 "-test_treemap_db /tmp/pfff_db")
        (2 "-lib_dependencies2 /home/pad/www/lib/platform_install.php /tmp/pfff_db")
@@ -506,6 +506,7 @@
        (23 "-test pretty")
        (24 "-overlayize_dry /home/pad/Overlays/www pegasus")
        (30 "-interface_methods_transfo /home/pad/www/flib/intern/puma/read_efficiency/advisor/ReadEffAggregationAdvisor.php")
+       (40 "-load_employee /home/pad/pfff/facebook/data/employees_infos.json")
        )
      ))
    )

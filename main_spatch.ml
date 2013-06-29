@@ -582,7 +582,8 @@ let case_refactoring pfff_log =
       then
         let (actual, expected, file, line, col) = Common.matched5 s in
         if file =~ 
-          (match 5 with
+          (match 0 with
+          | 0 -> ".*/www-git/"
           | 1 -> ".*/www-git/\\(lib\\|scripts\\|tests\\)/*"
           | 2 -> ".*/www-git/flib/[a-f].*"
           | 3 -> ".*/www-git/flib/[g-m].*"
@@ -600,12 +601,13 @@ let case_refactoring pfff_log =
     let xs = Common.split "\\." actual in
     let ys = Common.split "\\." expected in
     (match xs, ys with
+    | [a1], [b1]  -> ()
     | [a1;a2], [b1;b2] when a1 <> b1 ->
-
-    Common.command2 (spf "perl -p -i -e 's/\\b%s\\b/%s/g' %s"
-                       a1 b1 file);
-
-    pr2_gen (actual)
+      pr2_gen actual;
+      Common.command2 (spf "perl -p -i -e 's/\\b%s\\b/%s/g' %s"
+                         a1 b1 file);
+      ()
+      
     | _ -> ()
   )
   )
