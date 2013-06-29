@@ -238,7 +238,10 @@ let add_node_and_edge_if_defs_mode ?(props=[]) env name_node =
   else
     { env with current = node }
 
-
+let lowercase_and_underscore str = 
+  let lowercase_str = String.lowercase str in
+  let regexp = Str.regexp "-" in
+  Str.global_replace regexp "_" lowercase_str
 
 let rec add_use_edge env (((str, tok) as name, kind)) =
   let src = env.current in
@@ -252,9 +255,9 @@ let rec add_use_edge env (((str, tok) as name, kind)) =
   | _ when G.has_node dst env.g ->
       G.add_edge (src, dst) G.Use env.g
 
-  | _ when Hashtbl.mem env.case_insensitive (String.lowercase str, kind) ->
+  | _ when Hashtbl.mem env.case_insensitive (lowercase_and_underscore str, kind) ->
       let (final_str, _) =
-        Hashtbl.find env.case_insensitive (String.lowercase str, kind) in
+        Hashtbl.find env.case_insensitive (lowercase_and_underscore str, kind) in
       env.pr2_and_log (spf "CASE SENSITIVITY: %s instead of %s at %s"
                          str final_str 
                          (Parse_info.string_of_info (Ast.tok_of_name name)));
@@ -938,7 +941,7 @@ let build
   if not only_defs then begin
     g +> G.iter_nodes (fun (str, kind) ->
       Hashtbl.replace env.case_insensitive
-        (String.lowercase str, kind) (str, kind)
+        (lowercase_and_underscore str, kind) (str, kind)
     );
 
     (* step2: creating the 'Use' edges for inheritance *)
