@@ -10,7 +10,6 @@ module PI = Parse_info
 (*****************************************************************************)
 (* Prelude *)
 (*****************************************************************************)
-
 (* 
  * This file contains the implementation of a simple refactoring where we
  * remove the second argument in all calls to ArgAssert::isString() and
@@ -98,8 +97,7 @@ let main files_or_dirs =
     pr2 (spf "processing: %s (%d/%d)" file i total);
 
     (* step1: parse the file *)
-    let (ast_and_tokens_list, _stat) = Parse_php.parse file in
-    let ast = Parse_php.program_of_program2 ast_and_tokens_list in
+    let (ast, tokens) = Parse_php.ast_and_tokens file in
 
     (* step2: visit the AST and annotate the relevant tokens in AST leaves *)
     let visitor = V.mk_visitor { V.default_visitor with
@@ -197,7 +195,8 @@ let main files_or_dirs =
     visitor (Program ast);
 
     (* step3: unparse the annotated AST and show the diff *)
-    let s = Unparse_php.string_of_program2_using_transfo ast_and_tokens_list in
+    let s = 
+      Unparse_php.string_of_program_with_comments_using_transfo (ast, tokens) in
     
     let tmpfile = Common.new_temp_file "trans" ".php" in
     Common.write_file ~file:tmpfile s;
