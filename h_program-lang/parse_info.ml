@@ -110,7 +110,7 @@ type token_mutable = {
    *)
   token : token_origin;
   mutable transfo: transformation;
-(*  TODOL mutable comments: unit; *)
+  (* less: mutable comments: ...; *)
 }
 
 (* poor's man refactoring *)

@@ -22,7 +22,7 @@ type token_origin =
  *)
 type token_mutable = {
   (* contains the position of the token through the token_location embedded
-   * inside the token type.
+   * inside the token_origin type.
    *)
   token: token_origin; 
   (* for spatch *)
