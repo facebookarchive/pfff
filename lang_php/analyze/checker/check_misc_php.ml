@@ -26,7 +26,79 @@ module E = Error_php
  * Misc checks
  *  - use of ';' instead of ':', 
  *  - wrong case sensitivity for 'instanceOf'
+ *  - right number of arguments in printf type function
  *)
+
+(*****************************************************************************)
+(* Types and Constants *)
+(*****************************************************************************)
+
+(* functions that has format string on the n+1th argument *)
+let function_list = [
+  ("SQL", 0);
+  ("SQL_UNSAFE", 0);
+  ("exec_manual", 0);
+  ("execx", 0);
+  ("fprintf", 0);
+  ("invariant_violation", 0);
+  ("jsprintf", 0);
+  ("onloadRegister", 0);
+  ("printf", 0);
+  ("psprintf", 0);
+  ("qsprintf", 0);
+  ("sprintf", 0);
+  ("usprintf", 0);
+  ("invariant", 1);
+]
+
+(*****************************************************************************)
+(* Helper *)
+(*****************************************************************************)
+
+(* return None for error *)
+let rec start_state acc char_list =
+  match char_list with
+  | [] -> Some acc
+  | '\\'::t -> in_escape_state acc t
+  | '%'::t -> in_percent_state acc t
+  | _::t -> start_state acc t
+
+and in_percent_state acc char_list =
+  match char_list with
+  | [] -> None
+  | '%'::t -> start_state acc t
+  | _::t -> start_state (acc+1) t
+
+and in_escape_state acc char_list =
+  match char_list with
+  | [] -> None
+  | _::t -> start_state acc t
+
+let check_format_string args =
+  match args with
+  | [] -> false
+  | h::t when (h = "") -> true
+  | h::t ->
+    let char_list = Common2.list_of_string h in
+    let acc = start_state 0 char_list in
+    match acc with
+    | None -> false
+    | Some i -> i = List.length t
+
+(* skip first n arguments *)      
+let rec check_format_stringn n args =
+  match (n, args) with
+  | (n, _) when (n < 0) -> failwith "bad argument for check_format_stringn"
+  | (0, args) -> check_format_string args
+  | (n, h::t) -> check_format_stringn (n-1) t
+  | (n, []) -> false
+
+let rec unargs args =
+  match args with
+  | [] -> []
+  | Left(Arg(Sc(C(String((s , _))))))::t -> s::(unargs t)
+  | Left(x)::t -> ""::(unargs t)
+  | h::t -> unargs t
 
 (*****************************************************************************)
 (* Main entry point *)
@@ -57,24 +129,24 @@ let check ast =
     V.kstmt = (fun (k, _) st ->
       (match st with
       | Switch (tok, expr, cases) ->
-          (match cases with
-          | CaseList (obrace, tok2, cases, cbrace) ->
-              cases +> List.iter (function
-              | Case (_, _, case_separator, _)
-              | Default (_, case_separator, _) ->
+        (match cases with
+        | CaseList (obrace, tok2, cases, cbrace) ->
+          cases +> List.iter (function
+          | Case (_, _, case_separator, _)
+          | Default (_, case_separator, _) ->
                   (* this is more something that should be fixed by a proper
                    * grammar
                    *)
-                  let str = Parse_info.str_of_info case_separator in
-                  (match str with
-                  | ":" -> ()
-                  | ";" -> E.warning case_separator E.CaseWithSemiColon
-                      
-                  | _ -> raise Impossible
-                  )
-              )
-          | _ -> ()
+            let str = Parse_info.str_of_info case_separator in
+            (match str with
+            | ":" -> ()
+            | ";" -> E.warning case_separator E.CaseWithSemiColon
+              
+            | _ -> raise Impossible
+            )
           )
+        | _ -> ()
+        )
       | _ -> ()
       );
       (* recurse, call continuation *)
@@ -86,11 +158,18 @@ let check ast =
        * this one in particular seems to happen a lot
        *)
       | InstanceOf (e, tok, classname) ->
-          let str = Parse_info.str_of_info tok in
-          let lower = Common2.lowercase str in
-          if not (str =$= lower)
-          then E.warning tok E.CaseSensitivityKeyword;
-          k e
+        let str = Parse_info.str_of_info tok in
+        let lower = Common2.lowercase str in
+        if not (str =$= lower)
+        then E.warning tok E.CaseSensitivityKeyword;
+        k e
+      (* Check the number of argument if the function name is in function_list/function_listn*)
+      | Call(Id(XName(Name((func_name, tok)))), (_ , args, _))
+          when (List.mem_assoc func_name function_list) ->
+        let n = List.assoc func_name function_list in
+        if (not (check_format_stringn n (unargs args)))
+        then E.warning tok (E.FormatStringMismatch func_name);
+        k e
       | _ -> ()
       );
       (* recurse, call continuation *)
@@ -99,4 +178,3 @@ let check ast =
   }
   in
   visitor (Program ast)
-
