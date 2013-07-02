@@ -235,6 +235,10 @@ let info_of_tok = function
   | T_TYPE(ii) -> ii
   | T_NEWTYPE(ii) -> ii
 
+  | T_NAMESPACE(ii) -> ii
+  | TANTISLASH(ii) -> ii
+  | T_NAMESPACE_C(ii) -> ii
+
   | EOF ii -> ii
 
 
@@ -424,6 +428,10 @@ let visitor_info_of_tok f = function
 
   | T_TYPE(ii) -> T_TYPE(f ii)
   | T_NEWTYPE(ii) -> T_TYPE(f ii)
+
+  | T_NAMESPACE(ii) -> T_NAMESPACE(f ii)
+  | TANTISLASH(ii) -> TANTISLASH(f ii)
+  | T_NAMESPACE_C(ii) -> T_NAMESPACE_C(f ii)
 
   | EOF ii -> EOF(f ii)
 

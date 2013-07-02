@@ -32,6 +32,7 @@
  *  - added support for typedefs (another facebook extension)
  *  - added support for implicit fields via constructor parameters
  *    (facebook extension)
+ *  - added support for namespace (a PHP 5.3 extension)
  /*
   * +----------------------------------------------------------------------+
   * | Zend Engine                                                          |
@@ -114,8 +115,9 @@ module PI = Parse_info
  T_UNSET T_ISSET T_EMPTY
  T_CLASS   T_INTERFACE  T_EXTENDS T_IMPLEMENTS
  T_TRAIT T_INSTEADOF
+ T_NAMESPACE
  T_LIST T_ARRAY
- T_CLASS_C T_METHOD_C T_FUNC_C T_LINE   T_FILE T_DIR T_TRAIT_C
+ T_CLASS_C T_METHOD_C T_FUNC_C T_LINE   T_FILE T_DIR T_TRAIT_C T_NAMESPACE_C
  T_LOGICAL_OR   T_LOGICAL_AND   T_LOGICAL_XOR
  T_NEW T_CLONE T_INSTANCEOF
  T_INCLUDE T_INCLUDE_ONCE T_REQUIRE T_REQUIRE_ONCE
@@ -134,7 +136,7 @@ module PI = Parse_info
  T_OPEN_TAG  T_CLOSE_TAG T_OPEN_TAG_WITH_ECHO T_CLOSE_TAG_OF_ECHO
  T_START_HEREDOC    T_END_HEREDOC
  T_DOLLAR_OPEN_CURLY_BRACES T_CURLY_OPEN
- TCOLCOL
+ TCOLCOL TANTISLASH
  /*(* pad: was declared as left/right, without a token decl in orig gram *)*/
  TCOLON TCOMMA TDOT TBANG TTILDE TQUESTION
  TOBRA
@@ -1315,6 +1317,7 @@ ident_xhp_attr_name_atom:
  | T_INCLUDE { $1 } | T_INCLUDE_ONCE { $1 } | T_REQUIRE { $1 }
  | T_REQUIRE_ONCE { $1 } | T_EVAL { $1 } | T_SELF { $1 } | T_PARENT { $1 }
  | T_TRAIT { $1 } | T_INSTEADOF { $1 } | T_TRAIT_C { $1 }
+ | T_NAMESPACE { $1 } | T_NAMESPACE_C { $1 }
 
 /*(*************************************************************************)*/
 /*(*1 Namespace *)*/

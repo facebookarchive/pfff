@@ -691,22 +691,19 @@ let visit_toplevel ~tag prefs  hentities (toplevel, toks) =
   (* -------------------------------------------------------------------- *)
   toks +> List.iter (fun tok ->
     (* all the name and varname should have been tagged by now. *)
-
     match tok with
-
     | T.EOF ii -> ()
-    | T.TUnknown ii -> tag ii Error
 
     | T.TNewline ii -> ()
     | T.TSpaces ii -> ()
 
     | T.TCommentPP ii -> ()
 
+    | T.TUnknown ii -> tag ii Error
     (* they should have been covered before *)
     | T.T_VARIABLE (_, ii) ->
         if not (Hashtbl.mem already_tagged ii)
         then tag ii Error
-
     | T.T_IDENT (_, ii) ->
         if not (Hashtbl.mem already_tagged ii)
         then tag ii Error
@@ -800,6 +797,8 @@ let visit_toplevel ~tag prefs  hentities (toplevel, toks) =
       | T.T_CLASS_XDEBUG ii -> ()
 
       | T.TDOTS ii -> tag ii Punctuation
+      | T.TANTISLASH ii -> tag ii KeywordModule
+      | T.T_NAMESPACE ii -> tag ii Keyword
 
       | T.TGUIL ii -> tag ii String
 
@@ -867,6 +866,7 @@ let visit_toplevel ~tag prefs  hentities (toplevel, toks) =
       (* done in PreProcess *)
       | T.T_FILE ii  | T.T_LINE ii | T.T_DIR ii
       | T.T_FUNC_C ii | T.T_METHOD_C ii | T.T_CLASS_C ii | T.T_TRAIT_C ii
+      | T.T_NAMESPACE_C ii
           -> ()
 
       (* can be a type hint *)

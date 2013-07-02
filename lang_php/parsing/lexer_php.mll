@@ -16,11 +16,10 @@
 open Common
 
 open Ast_php
+open Parser_php
 
 module Ast = Ast_php
 module Flag = Flag_parsing_php
-open Parser_php
-
 module PI = Parse_info
 
 (*****************************************************************************)
@@ -106,10 +105,6 @@ let keyword_table = Common.hash_of_list [
   "for",     (fun ii -> T_FOR ii);     "endfor", (fun ii -> T_ENDFOR ii);
   "foreach", (fun ii -> T_FOREACH ii); "endforeach",(fun ii -> T_ENDFOREACH ii);
 
-  (* obsolete: now that use hphp instead of xdebug for coverage analysis *)
-  "class_xdebug",    (fun ii -> T_CLASS_XDEBUG ii);
-  "resource_xdebug", (fun ii -> T_RESOURCE_XDEBUG ii);
-
   (* Those tokens were not in the original PHP lexer. This allowed to
    * have "self"/"parent" to be used at more places, e.g. as a function
    * name which is tolerated by PHP but should not IMHO. Those idents
@@ -143,19 +138,22 @@ let keyword_table = Common.hash_of_list [
   "include",(fun ii ->T_INCLUDE ii);"include_once",(fun ii ->T_INCLUDE_ONCE ii);
   "require",(fun ii ->T_REQUIRE ii);"require_once",(fun ii ->T_REQUIRE_ONCE ii);
 
-  (* used for traits and namespace *)
-  "use",             (fun ii -> T_USE ii);
-
-  "class",           (fun ii -> T_CLASS ii);
-  "new",             (fun ii -> T_NEW ii);
-  "clone",           (fun ii -> T_CLONE ii);
-  "interface",       (fun ii -> T_INTERFACE ii);
+  "class",           (fun ii -> T_CLASS ii); 
+  "interface", (fun ii -> T_INTERFACE ii);
   "extends",         (fun ii -> T_EXTENDS ii);
   "implements",      (fun ii -> T_IMPLEMENTS ii);
+  "new",             (fun ii -> T_NEW ii);
+  "clone",           (fun ii -> T_CLONE ii);
   "instanceof",      (fun ii -> T_INSTANCEOF ii);
+
   (* php 5.4 traits ('use' and 'as' are used for traits and other things) *)
   "trait",           (fun ii -> T_TRAIT ii);
   "insteadof",       (fun ii -> T_INSTEADOF ii);
+
+  (* php 5.3 namespace *)
+  "namespace",       (fun ii -> T_NAMESPACE ii);
+  (* used for traits and namespace *)
+  "use",             (fun ii -> T_USE ii);
 
   "abstract", (fun ii -> T_ABSTRACT ii); "final", (fun ii -> T_FINAL ii);
 
@@ -176,12 +174,15 @@ let keyword_table = Common.hash_of_list [
   "static",          (fun ii -> T_STATIC ii);
   "unset",           (fun ii -> T_UNSET ii);
   "isset",           (fun ii -> T_ISSET ii);
+
   "__line__", (fun ii -> T_LINE ii);
   "__file__", (fun ii -> T_FILE ii); "__dir__",   (fun ii -> T_DIR ii);
   "__function__", (fun ii ->T_FUNC_C ii); "__method__",(fun ii ->T_METHOD_C ii);
   "__class__",  (fun ii -> T_CLASS_C ii);" __trait__", (fun ii ->T_TRAIT_C ii);
+  "__namespace__", (fun ii -> T_NAMESPACE_C ii);
 
   (* old: "__halt_compiler", (fun ii -> T_HALT_COMPILER ii); *)
+
   (* php-facebook-ext: *)
   "yield", (fun ii -> lang_ext_or_t_ident ii (fun x -> T_YIELD x));
 
@@ -210,7 +211,12 @@ let keyword_table = Common.hash_of_list [
   "any", (fun ii -> xhp_or_t_ident ii (fun x -> T_XHP_ANY x));
   (* "empty" is already a PHP keyword, see T_EMPTY *)
   "pcdata", (fun ii -> xhp_or_t_ident ii (fun x -> T_XHP_PCDATA x));
+
+  (* obsolete: now that use hphp instead of xdebug for coverage analysis *)
+  "class_xdebug",    (fun ii -> T_CLASS_XDEBUG ii);
+  "resource_xdebug", (fun ii -> T_RESOURCE_XDEBUG ii);
 ]
+
 let _ = assert ((Common2.hkeys keyword_table) +>
                  List.for_all (fun s -> s = String.lowercase s))
 
@@ -387,7 +393,6 @@ let lang_ext_or_cast t lexbuf =
       t
     )
   else t
-     
 
 }
 
@@ -537,6 +542,7 @@ rule st_in_scripting = parse
     | ";"  { TSEMICOLON(tokinfo lexbuf) }
     | "!"  { TBANG(tokinfo lexbuf) }
     | "::" { TCOLCOL (tokinfo lexbuf) } (* was called T_PAAMAYIM_NEKUDOTAYIM *)
+    | "\\" { TANTISLASH (tokinfo lexbuf) } (* was called T_NS_SEPARATOR *)
 
     | '(' { TOPAR(tokinfo lexbuf) }  | ')' { TCPAR(tokinfo lexbuf) }
     | '[' { TOBRA(tokinfo lexbuf) }  | ']' { TCBRA(tokinfo lexbuf) }
