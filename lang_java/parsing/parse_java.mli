@@ -12,6 +12,10 @@ val parse :
 val parse_program:
   Common.filename -> Ast_java.program
 
+(* for generalized sgrep/spatch patterns *)
+val parse_fuzzy:
+  Common.filename -> Ast_fuzzy.tree list * Parser_java.token list
+
 
 (* internal *)
 val tokens: Common.filename -> Parser_java.token list

@@ -205,3 +205,28 @@ let tmp_file_from_string s =
   let tmp_file = Common.new_temp_file "test" ".java" in
   Common.write_file ~file:tmp_file (s);
   tmp_file
+
+(*****************************************************************************)
+(* Fuzzy parsing *)
+(*****************************************************************************)
+
+let parse_fuzzy file =
+  let toks_orig = tokens file in
+  let toks = 
+    toks_orig +> Common.exclude (fun x ->
+      Token_helpers_java.is_comment x ||
+      Token_helpers_java.is_eof x
+    )
+  in
+  let trees = Lib_parser.mk_trees { Lib_parser.
+     tokf = TH.info_of_tok;
+     kind = (function
+      | T.LC _ -> Lib_parser.LBrace
+      | T.RC _ -> Lib_parser.RBrace
+      | T.LP _ -> Lib_parser.LPar
+      | T.RP _ -> Lib_parser.RPar
+      | _ -> Lib_parser.Other
+     );
+  } toks 
+  in
+  trees, toks_orig
