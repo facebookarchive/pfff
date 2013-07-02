@@ -255,12 +255,16 @@ let rec add_use_edge env (((str, tok) as name, kind)) =
   | _ when G.has_node dst env.g ->
       G.add_edge (src, dst) G.Use env.g
 
-  | _ when Hashtbl.mem env.case_insensitive (lowercase_and_underscore str, kind) ->
+  | _ when Hashtbl.mem env.case_insensitive(lowercase_and_underscore str, kind)
+      ->
       let (final_str, _) =
-        Hashtbl.find env.case_insensitive (lowercase_and_underscore str, kind) in
+        Hashtbl.find env.case_insensitive (lowercase_and_underscore str, kind) 
+      in
+(*
       env.pr2_and_log (spf "CASE SENSITIVITY: %s instead of %s at %s"
                          str final_str 
                          (Parse_info.string_of_info (Ast.tok_of_name name)));
+*)
       
       add_use_edge env ((final_str, tok), kind)
 
