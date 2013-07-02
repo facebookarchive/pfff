@@ -140,109 +140,6 @@ let tokens a =
 (* Fuzzy parsing *)
 (*****************************************************************************)
 
-(* todo: factorize with parse_php.ml, put in matcher/lib_fuzzy_parser.ml? *)
-
-let is_lbrace = function
-  | T.TOBrace _ -> true  | _ -> false
-let is_rbrace = function
-  | T.TCBrace _ -> true  | _ -> false
-
-let is_lparen = function
-  | T.TOParen _ -> true  | _ -> false
-let is_rparen = function
-  | T.TCParen _ -> true  | _ -> false
-
-
-let tokf tok =
-  TH.info_of_tok tok
-
-(* 
- * less: check that it's consistent with the indentation? 
- * less: more fault tolerance? if col == 0 and { then reset?
- * 
- * Assumes work on a list of tokens without comments.
- * 
- * todo: make this mode independent of ocaml so that we can reuse
- * this code for other languages. I should also factorize with
- * Parse_cpp.parse_fuzzy.
- *)
-let mk_trees xs =
-
-  let rec consume x xs =
-    match x with
-    | tok when is_lbrace tok -> 
-        let body, closing, rest = look_close_brace x [] xs in
-        Ast_fuzzy.Braces (tokf x, body, tokf closing), rest
-    | tok when is_lparen tok ->
-        let body, closing, rest = look_close_paren x [] xs in
-        let body' = split_comma body in
-        Ast_fuzzy.Parens (tokf x, body', tokf closing), rest
-    | tok -> 
-      Ast_fuzzy.Tok (TH.str_of_tok tok, tokf x), xs
-(*
-    (match Ast.str_of_info (tokext tok) with
-    | "..." -> Ast_fuzzy.Dots (tokext tok)
-    | s when Ast_fuzzy.is_metavar s -> Ast_fuzzy.Metavar (s, tokext tok)
-    | s -> Ast_fuzzy.Tok (s, tokext tok)
-*)
-  
-  and aux xs =
-  match xs with
-  | [] -> []
-  | x::xs ->
-      let x', xs' = consume x xs in
-      x'::aux xs'
-
-  and look_close_brace tok_start accbody xs =
-    match xs with
-    | [] -> 
-        failwith (spf "PB look_close_brace (started at %d)" 
-                    (TH.line_of_tok tok_start))
-    | x::xs -> 
-        (match x with
-        | tok when is_rbrace tok-> 
-          List.rev accbody, x, xs
-
-        | _ -> let (x', xs') = consume x xs in
-               look_close_brace tok_start (x'::accbody) xs'
-        )
-
-  and look_close_paren tok_start accbody xs =
-    match xs with
-    | [] -> 
-        failwith (spf "PB look_close_paren (started at %d)" 
-                     (TH.line_of_tok tok_start))
-    | x::xs -> 
-        (match x with
-        | tok when is_rparen tok -> 
-            List.rev accbody, x, xs
-        | _ -> 
-            let (x', xs') = consume x xs in
-            look_close_paren tok_start (x'::accbody) xs'
-        )
-
-  and split_comma xs =
-     let rec aux acc xs =
-       match xs with
-       | [] ->
-         if null acc
-         then []
-         else [Left (acc +> List.rev)]
-       | x::xs ->
-         (match x with
-         | Ast_fuzzy.Tok (",", info) ->
-           let before = acc +> List.rev in
-           if null before
-           then aux [] xs
-           else (Left before)::(Right (info))::aux [] xs
-         | _ ->
-           aux (x::acc) xs
-         )
-     in
-     aux [] xs
-  in
-  aux xs
-
 (* This is similar to what I did for OPA. This is also similar
  * to what I do for parsing hacks forC++, but this fuzzy AST can be useful
  * on its own, e.g. for a not too bad sgrep/spatch.
@@ -255,7 +152,17 @@ let parse_fuzzy file =
       Token_helpers_ml.is_eof x
     )
   in
-  let trees = mk_trees toks in
+  let trees = Lib_parser.mk_trees { Lib_parser.
+     tokf = TH.info_of_tok;
+     kind = (function
+      | T.TOBrace _ -> Lib_parser.LBrace
+      | T.TCBrace _ -> Lib_parser.RBrace
+      | T.TOParen _ -> Lib_parser.LPar
+      | T.TCParen _ -> Lib_parser.RPar
+      | _ -> Lib_parser.Other
+     );
+  } toks 
+  in
   trees, toks_orig
 
 (*****************************************************************************)

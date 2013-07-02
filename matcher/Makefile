@@ -4,22 +4,14 @@ TOP=..
 ##############################################################################
 TARGET=lib
 
-SRC= flag_matcher.ml lib_matcher.ml \
-     lib_unparser.ml \
-     metavars_fuzzy.ml \
-     fuzzy_vs_fuzzy.ml \
-     matching_fuzzy.ml \
-     transforming_fuzzy.ml \
-     sgrep_fuzzy.ml \
-     spatch_fuzzy.ml \
+SRC= flag_matcher.ml \
+     lib_parser.ml lib_matcher.ml lib_unparser.ml \
+     metavars_fuzzy.ml fuzzy_vs_fuzzy.ml \
+     matching_fuzzy.ml transforming_fuzzy.ml \
+     sgrep_fuzzy.ml spatch_fuzzy.ml \
      unit_matcher.ml
 
-#flag_matcher_php.ml   \
-#     refactoring_code_php.ml \
-
-# put here also generic parts of:
-#  token_views_of_xxx ? lib_parse_fuzzy
-
+#todo: refactoring_code_fuzzy.ml
 
 SYSLIBS= str.cma unix.cma
 LIBS=$(TOP)/commons/lib.cma \
