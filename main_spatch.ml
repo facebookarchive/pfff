@@ -604,8 +604,15 @@ let case_refactoring pfff_log =
     | [a1], [b1]  -> ()
     | [a1;a2], [b1;b2] when a1 <> b1 ->
       pr2_gen actual;
-      Common.command2 (spf "perl -p -i -e 's/\\b%s\\b/%s/g' %s"
-                         a1 b1 file);
+      (* old:
+       *  Common.command2 (spf "perl -p -i -e 's/\\b%s\\b/%s/g' %s" a1 b1 file);
+       * but got some FPs when s/crud/Crud/ on certain files because it also
+       * uppercased a URL (see D867035). So use spatch, safer.
+       *)
+      Common.command2 (spf 
+        "%s/spatch -lang phpfuzzy --apply-patch -e 's/%s/%s/' %s" 
+        Config_pfff.path
+        a1 b1 file);
       ()
       
     | _ -> ()
