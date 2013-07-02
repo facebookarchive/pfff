@@ -68,7 +68,7 @@ let parse_pattern file =
   (* for now we abuse the fuzzy parser of cpp for ml for the pattern as
    * we should not use comments in patterns
    *)
-  | "c++" | "ml" | "phpfuzzy" -> 
+  | "c++" | "ml" | "js" | "java" | "phpfuzzy" -> 
       let parse str =
         Common2.with_tmp_file ~str ~ext:"cpp" (fun tmpfile ->
           Parse_cpp.parse_fuzzy tmpfile +> fst
@@ -80,12 +80,15 @@ let parse_pattern file =
                 file)
   | _ -> failwith ("unsupported language: " ^ !lang)
 
+(* less: factorize with main_sgrep *)
 let find_source_files_of_dir_or_files xs =
   let xs = List.map Common.realpath xs in
   (match !lang with
   | "php" | "phpfuzzy" -> Lib_parsing_php.find_php_files_of_dir_or_files xs
   | "c++" -> Lib_parsing_cpp.find_cpp_files_of_dir_or_files xs
   | "ml" -> Lib_parsing_ml.find_ml_files_of_dir_or_files xs
+  | "java" -> Lib_parsing_java.find_source_files_of_dir_or_files xs
+  | "js"  -> Lib_parsing_js.find_source_files_of_dir_or_files xs
   | _ -> failwith ("unsupported language: " ^ !lang)
   ) +> Skip_code.filter_files_if_skip_list ~verbose:!verbose
 
@@ -151,6 +154,46 @@ let spatch pattern file =
 
     let elt_and_info_of_tok tok =
       Token_helpers_php.elt_of_tok tok, Token_helpers_php.info_of_tok  tok
+    in
+    let unparse toks = 
+      Lib_unparser.string_of_toks_using_transfo ~elt_and_info_of_tok toks
+    in
+    if was_modified
+    then Some (unparse toks)
+    else None
+
+  | "java", Right pattern ->
+    let trees, toks =
+      try 
+          Parse_java.parse_fuzzy file
+      with exn ->
+        pr2 (spf "PB with %s, exn = %s"  file (Common.exn_to_s exn));
+        [], []
+    in
+    let was_modified = Spatch_fuzzy.spatch pattern trees in
+
+    let elt_and_info_of_tok tok =
+      Token_helpers_java.elt_of_tok tok, Token_helpers_java.info_of_tok  tok
+    in
+    let unparse toks = 
+      Lib_unparser.string_of_toks_using_transfo ~elt_and_info_of_tok toks
+    in
+    if was_modified
+    then Some (unparse toks)
+    else None
+
+  | "js", Right pattern ->
+    let trees, toks =
+      try 
+          Parse_js.parse_fuzzy file
+      with exn ->
+        pr2 (spf "PB with %s, exn = %s"  file (Common.exn_to_s exn));
+        [], []
+    in
+    let was_modified = Spatch_fuzzy.spatch pattern trees in
+
+    let elt_and_info_of_tok tok =
+      Token_helpers_js.elt_of_tok tok, Token_helpers_js.info_of_tok  tok
     in
     let unparse toks = 
       Lib_unparser.string_of_toks_using_transfo ~elt_and_info_of_tok toks

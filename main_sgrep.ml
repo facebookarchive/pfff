@@ -148,6 +148,7 @@ let parse_pattern str =
     Right (ast_fuzzy_of_string str)
   | _ -> failwith ("unsupported language: " ^ !lang)
 
+(* less: factorize with main_sgrep *)
 let find_source_files_of_dir_or_files xs =
   let xs = List.map Common.realpath xs in
   (match !lang with

@@ -25,6 +25,11 @@ module PI = Parse_info
 (*****************************************************************************)
 (* Types *)
 (*****************************************************************************)
+
+(* todo: factorize code with lib_unparser.esthet type to have
+ * for each language a token_kind_of_tok. We then can avoid all those
+ * is_eof, is_comment, elt_of_tok, and hooks.kind in all the fuzzy parsers.
+ *)
 type token_kind =
   | LPar
   | RPar

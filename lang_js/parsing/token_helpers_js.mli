@@ -12,3 +12,6 @@ val str_of_tok   : Parser_js.token -> string
 val line_of_tok  : Parser_js.token -> int
 val pos_of_tok   : Parser_js.token -> int
 val file_of_tok  : Parser_js.token -> Common.filename
+
+(* for unparsing *)
+val elt_of_tok: Parser_js.token -> Lib_unparser.elt

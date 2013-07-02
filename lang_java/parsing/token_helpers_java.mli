@@ -7,8 +7,10 @@ val info_of_tok : Parser_java.token -> Ast_java.info
 val visitor_info_of_tok : 
   (Ast_java.info -> Ast_java.info) -> Parser_java.token -> Parser_java.token
 
-
 val line_of_tok    : Parser_java.token -> int
 val str_of_tok     : Parser_java.token -> string
 val file_of_tok    : Parser_java.token -> Common.filename
 val pos_of_tok    : Parser_java.token -> int
+
+(* for unparsing *)
+val elt_of_tok: Parser_java.token -> Lib_unparser.elt
