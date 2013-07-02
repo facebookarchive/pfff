@@ -581,6 +581,7 @@ and cpp_directive env = function
   | FunctionC -> A.Id "__FUNCTION__"
   | Dir       -> A.Id "__DIRECTORY__"
   | TraitC    -> A.Id "__TRAIT__"
+  | NamespaceC -> A.Id "__NAMESPACE__"
 
 
 and hint_type env = function

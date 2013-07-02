@@ -342,6 +342,7 @@ and map_cpp_directive =
   | MethodC -> MethodC
   | FunctionC -> FunctionC
   | TraitC -> TraitC
+  | NamespaceC -> NamespaceC
 and map_encaps =
   function
   | EncapsString v1 ->

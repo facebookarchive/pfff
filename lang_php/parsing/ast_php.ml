@@ -304,6 +304,7 @@ and expr =
               | Line  | File | Dir
               | ClassC | TraitC
               | MethodC  | FunctionC
+              | NamespaceC
        and encaps =
           | EncapsString of string wrap
           | EncapsVar of lvalue

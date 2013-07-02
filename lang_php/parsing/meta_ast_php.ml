@@ -341,6 +341,7 @@ and vof_cpp_directive =
   | MethodC -> Ocaml.VSum (("MethodC", []))
   | FunctionC -> Ocaml.VSum (("FunctionC", []))
   | TraitC -> Ocaml.VSum (("TraitC", []))
+  | NamespaceC -> Ocaml.VSum (("NamespaceC", []))
 and vof_encaps =
   function
   | EncapsString v1 ->

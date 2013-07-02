@@ -285,6 +285,8 @@ top_statement:
  | function_declaration_statement	{ FuncDef $1 }
  | class_declaration_statement		{ ClassDef $1 }
  | type_declaration                     { TypeDef $1 }
+ | namespace_declaration                { $1 (* TODO *) }
+ | use_declaration                      { $1 (* TODO *) }
 
 sgrep_spatch_pattern:
  | expr EOF      { Expr $1 }
@@ -481,7 +483,6 @@ constant_declaration_statement:
  | T_CONST type_php  ident TEQ static_scalar TSEMICOLON
    { { cst_toks = ($1, $4, $6); cst_name = Name $3; cst_val = $5; 
        cst_type = Some $2 } }
-
 
 /*(*************************************************************************)*/
 /*(*1 Function declaration *)*/
@@ -1113,6 +1114,7 @@ constant:
  | T_FILE { PreProcess(File, $1) } | T_DIR { PreProcess(Dir, $1) }
  | T_CLASS_C { PreProcess(ClassC, $1) } | T_TRAIT_C { PreProcess(TraitC, $1)}
  | T_FUNC_C { PreProcess(FunctionC, $1) }|T_METHOD_C { PreProcess(MethodC, $1)}
+ | T_NAMESPACE_C { PreProcess(NamespaceC, $1) }
 
 static_scalar: expr { $1 }
 
@@ -1323,6 +1325,33 @@ ident_xhp_attr_name_atom:
 /*(*1 Namespace *)*/
 /*(*************************************************************************)*/
 
+namespace_declaration:
+ | T_NAMESPACE namespace_name TSEMICOLON 
+     { StmtList [EmptyStmt $3] }
+ | T_NAMESPACE namespace_name TOBRACE top_statement_list TCBRACE 
+     { StmtList [EmptyStmt $3] }
+ | T_NAMESPACE                TOBRACE top_statement_list TCBRACE 
+     { StmtList [EmptyStmt $2] }
+
+use_declaration:
+ | T_USE use_declaration_name TSEMICOLON { StmtList [EmptyStmt $3] }
+
+namespace_name:
+ | ident { XName(Name $1) }
+ | namespace_name TANTISLASH ident { XName(Name $3) (* TODO *) }
+
+use_declaration_name:
+ | namespace_name { }
+ | namespace_name T_AS ident { }
+ | TANTISLASH namespace_name { }
+ | TANTISLASH namespace_name T_AS ident { }
+
+
+qualified_name:
+ | namespace_name { $1 }
+ | T_NAMESPACE TANTISLASH namespace_name { $3 (* TODO *) }
+ | TANTISLASH namespace_name { $2 (* TODO *) } 
+
 /*(* Should we have 'ident type_arguments' below? No because
    * we allow type arguments only at a few places, for instance
    * in 'class X extends A<int> { ... }' but not inside expressions
@@ -1331,11 +1360,9 @@ ident_xhp_attr_name_atom:
    * namespace at some point may change that.
    *)*/
 qualified_class_name:
-  | ident { XName(Name $1) }
- /*(*s: qualified_class_name grammar rule hook *)*/
+  | qualified_name { $1 }
   /*(* xhp: an XHP element use *)*/
   | T_XHP_COLONID_DEF { XName(XhpName $1) }
- /*(*e: qualified_class_name grammar rule hook *)*/
 
 qualified_class_name_or_array:
  | qualified_class_name { $1 }

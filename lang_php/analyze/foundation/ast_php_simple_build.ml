@@ -378,6 +378,7 @@ and cpp_directive env tok = function
   | FunctionC -> A.Id (A.builtin "__FUNCTION__", wrap tok)
   | Dir       -> A.Id (A.builtin "__DIR__", wrap tok)
   | TraitC    -> A.Id (A.builtin "__TRAIT__", wrap tok)
+  | NamespaceC -> A.Id (A.builtin "__NAMESPACE__", wrap tok)
 
 and lvalue env a = expr env a 
 

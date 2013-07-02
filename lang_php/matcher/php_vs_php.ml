@@ -733,6 +733,11 @@ let m_cpp_directive a b =
        A.TraitC,
        B.TraitC
     )
+  | A.NamespaceC, B.NamespaceC ->
+    return (
+       A.NamespaceC,
+       B.NamespaceC
+    )
   | A.Line, _
   | A.File, _
   | A.Dir, _
@@ -740,6 +745,7 @@ let m_cpp_directive a b =
   | A.MethodC, _
   | A.FunctionC, _
   | A.TraitC, _
+  | A.NamespaceC, _
    -> fail ()
 
 (* ---------------------------------------------------------------------- *)

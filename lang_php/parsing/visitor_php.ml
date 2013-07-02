@@ -393,6 +393,7 @@ and v_cpp_directive =
   | MethodC -> ()
   | FunctionC -> ()
   | TraitC -> ()
+  | NamespaceC -> ()
 
 and v_encaps x =
   let k x = match x with
