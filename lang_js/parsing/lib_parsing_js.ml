@@ -42,7 +42,7 @@ let is_js_script file =
     with End_of_file -> false
   )
 
-let find_js_files_of_dir_or_files xs = 
+let find_source_files_of_dir_or_files xs = 
   Common.files_of_dir_or_files_no_vcs_nofilter xs 
   +> List.filter (fun filename ->
     (* could use let ftype = File_type.file_type_of_file filename in *)

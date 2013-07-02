@@ -107,7 +107,7 @@ let compute_database ?(verbose=false) files_or_dirs =
   let root = Common2.common_prefix_of_files_or_dirs files_or_dirs in
   pr2 (spf "generating JS db_light with root = %s" root);
 
-  let files = Lib_parsing_js.find_js_files_of_dir_or_files files_or_dirs in
+  let files = Lib_parsing_js.find_source_files_of_dir_or_files files_or_dirs in
   let dirs = files +> List.map Filename.dirname +> Common2.uniq_eff in
 
   (* step1: collecting definitions *)

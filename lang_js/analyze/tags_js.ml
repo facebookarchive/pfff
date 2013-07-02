@@ -35,7 +35,7 @@ module Annot = Annotation_js
 (*****************************************************************************)
 
 let tags_of_files_or_dirs ?(verbose=false) xs =
-  let files = Lib_parsing_js.find_js_files_of_dir_or_files xs in
+  let files = Lib_parsing_js.find_source_files_of_dir_or_files xs in
 
   files +> Common_extra.progress ~show:verbose (fun k ->
    List.map (fun file ->
