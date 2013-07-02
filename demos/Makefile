@@ -57,6 +57,7 @@ include ../Makefile.config
 LIBS= ../commons/lib.cma \
       ../h_version-control/lib.cma \
       ../h_program-lang/lib.cma \
+      ../matcher/lib.cma \
       ../lang_php/parsing/lib.cma \
       $(ANALYZECMA)
 INCLUDEDIRS=../commons ../commons/lib-sexp ../commons/lib-json \
