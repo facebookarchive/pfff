@@ -1,6 +1,4 @@
-(*s: lexer_php.mll *)
 {
-(*s: Facebook copyright *)
 (* Yoann Padioleau
  *
  * Copyright (C) 2009-2012 Facebook
@@ -15,15 +13,12 @@
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the file
  * license.txt for more details.
  *)
-(*e: Facebook copyright *)
 open Common
 
-(*s: basic pfff module open and aliases *)
 open Ast_php
 
 module Ast = Ast_php
 module Flag = Flag_parsing_php
-(*e: basic pfff module open and aliases *)
 open Parser_php
 
 module PI = Parse_info
@@ -50,7 +45,6 @@ let error s =
     if !Flag.verbose_lexing
     then pr2 ("LEXER: " ^ s)
 
-(*s: lexer helpers *)
 (* pad: hack around ocamllex to emulate the yyless() of flex. The semantic
  * is not exactly the same than yyless(), so I use yyback() instead.
  * http://my.safaribooksonline.com/book/programming/flex/9780596805418/a-reference-for-flex-specifications/yyless
@@ -61,16 +55,13 @@ let yyback n lexbuf =
   lexbuf.Lexing.lex_curr_p <- { currp with
     Lexing.pos_cnum = currp.Lexing.pos_cnum - n;
   }
-(*x: lexer helpers *)
 let tok lexbuf =
   Lexing.lexeme lexbuf
 let tokinfo lexbuf  =
   PI.tokinfo_str_pos (Lexing.lexeme lexbuf) (Lexing.lexeme_start lexbuf)
 
-(*x: lexer helpers *)
 let tok_add_s s ii  =
   PI.rewrap_str ((PI.str_of_info ii) ^ s) ii
-(*e: lexer helpers *)
 
 (* all string passed to T_IDENT or T_VARIABLE should go through case_str *)
 let case_str s =
@@ -92,7 +83,6 @@ let lang_ext_or_t_ident ii fii =
 (* ---------------------------------------------------------------------- *)
 (* Keywords *)
 (* ---------------------------------------------------------------------- *)
-(*s: keywords_table hash *)
 (* opti: less convenient, but using a hash is faster than using a match.
  * Note that PHP allows those keywords to be used in certain places,
  * for instance as object fields as in $o->while, so the transformation
@@ -132,7 +122,6 @@ let keyword_table = Common.hash_of_list [
    *)
   "self", (fun ii -> T_SELF ii); "parent", (fun ii -> T_PARENT ii);
 
- (*s: repetitive keywords table *)
   "if",       (fun ii -> T_IF ii);     "else", (fun ii -> T_ELSE ii);
   "elseif",   (fun ii -> T_ELSEIF ii); "endif",      (fun ii -> T_ENDIF ii);
   "break",    (fun ii -> T_BREAK ii);  "continue",   (fun ii -> T_CONTINUE ii);
@@ -187,7 +176,6 @@ let keyword_table = Common.hash_of_list [
   "static",          (fun ii -> T_STATIC ii);
   "unset",           (fun ii -> T_UNSET ii);
   "isset",           (fun ii -> T_ISSET ii);
- (*e: repetitive keywords table *)
   "__line__", (fun ii -> T_LINE ii);
   "__file__", (fun ii -> T_FILE ii); "__dir__",   (fun ii -> T_DIR ii);
   "__function__", (fun ii ->T_FUNC_C ii); "__method__",(fun ii ->T_METHOD_C ii);
@@ -225,12 +213,10 @@ let keyword_table = Common.hash_of_list [
 ]
 let _ = assert ((Common2.hkeys keyword_table) +>
                  List.for_all (fun s -> s = String.lowercase s))
-(*e: keywords_table hash *)
 
 (* ---------------------------------------------------------------------- *)
 (* Lexer State *)
 (* ---------------------------------------------------------------------- *)
-(*s: type state_mode *)
 (* In most languages the lexer has no state and all strings are always
  * encoded in the same way, in the same token, wherever the string is
  * located in the file (except for strings inside comments). In PHP
@@ -291,15 +277,11 @@ type state_mode =
   (* started with the '>' of an opening tag, finished when '</x>' *)
   | ST_IN_XHP_TEXT of Ast_php.xhp_tag (* the current tag *)
 
-(*e: type state_mode *)
 
-(*s: lexer state trick helpers *)
-(*s: lexer state global variables *)
 let default_state = INITIAL
 
 let _mode_stack =
   ref [default_state]
-(*x: lexer state global variables *)
 (* todo: now that I have yyback, maybe I should revisit this code. *)
 let _pending_tokens =
   ref ([]: Parser_php.token list)
@@ -310,18 +292,12 @@ let _pending_tokens =
  *)
 let _last_non_whitespace_like_token =
   ref (None: Parser_php.token option)
-(*e: lexer state global variables *)
-(*s: lexer state global reinitializer *)
 let reset () =
   _mode_stack := [default_state];
-  (*s: auxillary reset lexing actions *)
     _pending_tokens := [];
-  (*e: auxillary reset lexing actions *)
    _last_non_whitespace_like_token := None;
   ()
-(*e: lexer state global reinitializer *)
 
-(*s: lexer state function hepers *)
 let rec current_mode () =
   try
     Common2.top !_mode_stack
@@ -329,7 +305,6 @@ let rec current_mode () =
     error("mode_stack is empty, defaulting to INITIAL");
     reset();
     current_mode ()
-(*x: lexer state function hepers *)
 let push_mode mode = Common.push2 mode _mode_stack
 let pop_mode () = ignore(Common2.pop2 _mode_stack)
 
@@ -364,11 +339,8 @@ let set_mode mode =
  *
  *)
 
-(*x: lexer state function hepers *)
 let push_token tok =
   _pending_tokens := tok::!_pending_tokens
-(*e: lexer state function hepers *)
-(*e: lexer state trick helpers *)
 
 (* xhp: the function below is used to disambiguate the use
  * of ":" and "%" as either a way to start an XHP identifier or as
@@ -422,23 +394,18 @@ let lang_ext_or_cast t lexbuf =
 (*****************************************************************************)
 (* Regexps aliases *)
 (*****************************************************************************)
-(*s: regexp aliases *)
 let ANY_CHAR = (_ | ['\n'] )
-(*x: regexp aliases *)
 (* \x7f-\xff ???*)
 let WHITESPACE = [' ' '\n' '\r' '\t']+
 let TABS_AND_SPACES = [' ''\t']*
 let NEWLINE = ("\r"|"\n"|"\r\n")
 let WHITESPACEOPT = [' ' '\n' '\r' '\t']*
-(*x: regexp aliases *)
 let LABEL =	['a'-'z''A'-'Z''_']['a'-'z''A'-'Z''0'-'9''_']*
-(*x: regexp aliases *)
 let LNUM =	['0'-'9']+
 let DNUM =	(['0'-'9']*['.']['0'-'9']+) | (['0'-'9']+['.']['0'-'9']* )
 
 let EXPONENT_DNUM =	((LNUM|DNUM)['e''E']['+''-']?LNUM)
 let HNUM =	"0x"['0'-'9''a'-'f''A'-'F']+
-(*x: regexp aliases *)
 (*/*
  * LITERAL_DOLLAR matches unescaped $ that aren't followed by a label character
  * or a { and therefore will be taken literally. The case of literal $ before
@@ -451,7 +418,6 @@ let DOUBLE_QUOTES_LITERAL_DOLLAR =
   ("$"+([^'a'-'z''A'-'Z''_''$''"''\\' '{']|('\\' ANY_CHAR)))
 let BACKQUOTE_LITERAL_DOLLAR =
   ("$"+([^'a'-'z''A'-'Z''_''$''`''\\' '{']|('\\' ANY_CHAR)))
-(*x: regexp aliases *)
 (*/*
  * CHARS matches everything up to a variable or "{$"
  * {'s are matched as long as they aren't followed by a $
@@ -466,25 +432,19 @@ let DOUBLE_QUOTES_CHARS =
     ("\\" ANY_CHAR))| DOUBLE_QUOTES_LITERAL_DOLLAR)
 let BACKQUOTE_CHARS =
   ("{"*([^'$' '`' '\\' '{']|('\\' ANY_CHAR))| BACKQUOTE_LITERAL_DOLLAR)
-(*x: regexp aliases *)
-(*x: regexp aliases *)
-(*x: regexp aliases *)
 let XHPLABEL =	['a'-'z''A'-'Z''_']['a'-'z''A'-'Z''0'-'9''_''-']*
 let XHPTAG = XHPLABEL (":" XHPLABEL)*
 (* is there some special restrictions for xhp attributes ? *)
 let XHPATTR = XHPLABEL
-(*e: regexp aliases *)
 
 (*****************************************************************************)
 (* Rule in script *)
 (*****************************************************************************)
-(*s: rule st_in_scripting *)
 rule st_in_scripting = parse
 
   (* ----------------------------------------------------------------------- *)
   (* spacing/comments *)
   (* ----------------------------------------------------------------------- *)
-  (*s: comments rules *)
     | "/*" {
         let info = tokinfo lexbuf in
         let com = st_comment lexbuf in
@@ -507,12 +467,10 @@ rule st_in_scripting = parse
     | [' '  '\t']+ { TSpaces(tokinfo lexbuf) }
     | ['\n' '\r']  { TNewline(tokinfo lexbuf) }
 
-  (*e: comments rules *)
 
   (* ----------------------------------------------------------------------- *)
   (* Symbols *)
   (* ----------------------------------------------------------------------- *)
-  (*s: symbol rules *)
     | '+' { TPLUS(tokinfo lexbuf) }      | '-' { TMINUS(tokinfo lexbuf) }
     | '*' { TMUL(tokinfo lexbuf) }       | '/' { TDIV(tokinfo lexbuf) }
     | '%' { TMOD(tokinfo lexbuf) }
@@ -521,7 +479,6 @@ rule st_in_scripting = parse
 
     | "="  { TEQ(tokinfo lexbuf) }
 
-    (*s: repetitive symbol rules *)
       | "+="  { T_PLUS_EQUAL(tokinfo lexbuf) }
       | "-="  { T_MINUS_EQUAL(tokinfo lexbuf) }
       | "*="  { T_MUL_EQUAL(tokinfo lexbuf) }
@@ -562,8 +519,6 @@ rule st_in_scripting = parse
       | "or"  { T_LOGICAL_OR(tokinfo lexbuf) }
       | "and" { T_LOGICAL_AND(tokinfo lexbuf) }
       | "xor" { T_LOGICAL_XOR(tokinfo lexbuf) }
-    (*e: repetitive symbol rules *)
-  (*x: symbol rules *)
    (* Flex/Bison allow to use single characters directly as-is in the grammar
     * by adding this in the lexer:
     *
@@ -591,7 +546,6 @@ rule st_in_scripting = parse
     (* semantic grep or var args extension *)
     | "..." { TDOTS(tokinfo lexbuf) }
 
-  (*x: symbol rules *)
     (* we may come from a st_looking_for_xxx context, like in string
      * interpolation, so seeing a } we pop_mode!
      *)
@@ -604,7 +558,6 @@ rule st_in_scripting = parse
         push_mode ST_IN_SCRIPTING;
         TOBRACE(tokinfo lexbuf)
       }
-  (*x: symbol rules *)
     | ("->" as sym) (WHITESPACEOPT as white) (LABEL as label) {
      (* todo: use yyback() instead of using pending_token with push_token.
       * buggy: push_mode ST_LOOKING_FOR_PROPERTY;
@@ -630,13 +583,11 @@ rule st_in_scripting = parse
     | "->" {
         T_OBJECT_OPERATOR(tokinfo lexbuf)
       }
-  (*x: symbol rules *)
     (* see also T_VARIABLE below. lex use longest matching strings so this
      * rule is used only in a last resort, for code such as $$x, ${, etc
      *)
     | "$" { TDOLLAR(tokinfo lexbuf) }
 
-  (*x: symbol rules *)
    (* XHP "elements".
     *
     * In XHP the ":" and "%" characters are used to identify
@@ -735,7 +686,6 @@ rule st_in_scripting = parse
          end
       }
 
-  (*e: symbol rules *)
 
   (* ----------------------------------------------------------------------- *)
   (* Keywords and ident *)
@@ -749,7 +699,6 @@ rule st_in_scripting = parse
      *)
     | "SELF"   { T_IDENT (case_str (tok lexbuf), tokinfo lexbuf) }
     | "PARENT" { T_IDENT (case_str (tok lexbuf), tokinfo lexbuf) }
-  (*s: keyword and ident rules *)
     (* Collection literals are case sensitive, so put these here
        before the main (case insensitive) keyword lookup
     *)
@@ -775,12 +724,10 @@ rule st_in_scripting = parse
         T_VARIABLE(case_str s, tokinfo lexbuf)
       }
 
-  (*e: keyword and ident rules *)
 
   (* ----------------------------------------------------------------------- *)
   (* Constant *)
   (* ----------------------------------------------------------------------- *)
-  (*s: constant rules *)
     | LNUM
         {
           (* more? cf original lexer *)
@@ -802,12 +749,10 @@ rule st_in_scripting = parse
 
     | DNUM|EXPONENT_DNUM { T_DNUMBER(tok lexbuf, tokinfo lexbuf) }
 
-  (*e: constant rules *)
 
   (* ----------------------------------------------------------------------- *)
   (* Strings *)
   (* ----------------------------------------------------------------------- *)
-  (*s: strings rules *)
     (*
      * The original PHP lexer does a few things to make the
      * difference at parsing time between static strings (which do not
@@ -838,7 +783,6 @@ rule st_in_scripting = parse
           (* more? cf original lexer *)
           T_CONSTANT_ENCAPSED_STRING(s, tokinfo lexbuf)
         }
-  (*x: strings rules *)
     (* dynamic strings *)
     | ['"'] {
         push_mode ST_DOUBLE_QUOTES;
@@ -848,7 +792,6 @@ rule st_in_scripting = parse
         push_mode ST_BACKQUOTE;
         TBACKQUOTE(tokinfo lexbuf)
       }
-  (*x: strings rules *)
     | 'b'? "<<<" TABS_AND_SPACES (LABEL as s) NEWLINE {
         set_mode (ST_START_HEREDOC s);
         T_START_HEREDOC (tokinfo lexbuf)
@@ -860,12 +803,10 @@ rule st_in_scripting = parse
         T_START_HEREDOC (tokinfo lexbuf)
       }
 
-  (*e: strings rules *)
 
   (* ----------------------------------------------------------------------- *)
   (* Misc *)
   (* ----------------------------------------------------------------------- *)
-  (*s: misc rules *)
     (* ugly: the cast syntax in PHP is newline and even comment sensitive. Hmm.
      * You cannot write for instance '$o = (int/*comment*/) foo();'.
      * We would really like to have different tokens for '(', space,
@@ -908,7 +849,6 @@ rule st_in_scripting = parse
 
     | "(" TABS_AND_SPACES ("unset") TABS_AND_SPACES ")"
         { lang_ext_or_cast (T_UNSET_CAST(tokinfo lexbuf)) lexbuf }
-  (*x: misc rules *)
     | "?>"
         {
           (* because of XHP and my token merger:
@@ -936,23 +876,18 @@ rule st_in_scripting = parse
               raise Impossible
         }
 
-  (*e: misc rules *)
 
   (* ----------------------------------------------------------------------- *)
-  (*s: semi repetitive st_in_scripting rules for eof and error handling *)
     | eof { EOF (tokinfo lexbuf +> PI.rewrap_str "") }
     | _ {
         error ("unrecognised symbol, in token rule:"^tok lexbuf);
         TUnknown (tokinfo lexbuf)
       }
-  (*e: semi repetitive st_in_scripting rules for eof and error handling *)
 
-(*e: rule st_in_scripting *)
 
 (*****************************************************************************)
 (* Rule initial (html) *)
 (*****************************************************************************)
-(*s: rule initial *)
 and initial = parse
 
   | "<?php" ([' ''\t']|NEWLINE)
@@ -1007,12 +942,10 @@ and initial = parse
     }
 
 
-(*e: rule initial *)
 
 (*****************************************************************************)
 (* Rule looking_for_xxx *)
 (*****************************************************************************)
-(*s: rule st_looking_for_property *)
 
 (* TODO not used for now *)
 and st_looking_for_property = parse
@@ -1028,10 +961,8 @@ and st_looking_for_property = parse
     }
 *)
 
-(*e: rule st_looking_for_property *)
 
 (*****************************************************************************)
-(*s: rule st_looking_for_varname *)
 and st_looking_for_varname = parse
   | LABEL {
       set_mode ST_IN_SCRIPTING;
@@ -1042,10 +973,8 @@ and st_looking_for_varname = parse
       set_mode ST_IN_SCRIPTING;
       st_in_scripting lexbuf
     }
-(*e: rule st_looking_for_varname *)
 
 (*****************************************************************************)
-(*s: rule st_var_offset *)
 and st_var_offset = parse
 
   | LNUM | HNUM { (* /* Offset must be treated as a string */ *)
@@ -1059,19 +988,15 @@ and st_var_offset = parse
       pop_mode();
       TCBRA(tokinfo lexbuf);
     }
- (*s: repetitive st_var_offset rules for error handling *)
    | eof { EOF (tokinfo lexbuf +> PI.rewrap_str "") }
    | _ {
        error ("unrecognised symbol, in st_var_offset rule:"^tok lexbuf);
        TUnknown (tokinfo lexbuf)
      }
- (*e: repetitive st_var_offset rules for error handling *)
-(*e: rule st_var_offset *)
 
 (*****************************************************************************)
 (* Rule strings *)
 (*****************************************************************************)
-(*s: rule st_double_quotes *)
 
 and st_double_quotes = parse
 
@@ -1082,9 +1007,7 @@ and st_double_quotes = parse
   (* todo? was in original scanner ? *)
   | "{" {  T_ENCAPSED_AND_WHITESPACE(tok lexbuf, tokinfo lexbuf)  }
 
-  (*s: encapsulated dollar stuff rules *)
     | "$" (LABEL as s)     { T_VARIABLE(case_str s, tokinfo lexbuf) }
-  (*x: encapsulated dollar stuff rules *)
     | "$" (LABEL as s) "[" {
           let info = tokinfo lexbuf in
 
@@ -1100,18 +1023,15 @@ and st_double_quotes = parse
     (* bugfix: can have strings like "$$foo$" *)
     | "$" { T_ENCAPSED_AND_WHITESPACE(tok lexbuf, tokinfo lexbuf) }
 
-  (*x: encapsulated dollar stuff rules *)
     | "{$" {
         yyback 1 lexbuf;
         push_mode ST_IN_SCRIPTING;
         T_CURLY_OPEN(tokinfo lexbuf);
       }
-  (*x: encapsulated dollar stuff rules *)
     | "${" {
         push_mode ST_LOOKING_FOR_VARNAME;
         T_DOLLAR_OPEN_CURLY_BRACES(tokinfo lexbuf);
       }
-  (*e: encapsulated dollar stuff rules *)
 
   | ['"'] {
       (* was originally set_mode ST_IN_SCRIPTING, but with XHP
@@ -1121,17 +1041,13 @@ and st_double_quotes = parse
       pop_mode ();
       TGUIL(tokinfo lexbuf)
     }
- (*s: repetitive st_double_quotes rules for error handling *)
    | eof { EOF (tokinfo lexbuf +> PI.rewrap_str "") }
    | _ {
        error("unrecognised symbol, in st_double_quotes rule:"^tok lexbuf);
        TUnknown (tokinfo lexbuf)
      }
- (*e: repetitive st_double_quotes rules for error handling *)
-(*e: rule st_double_quotes *)
 
 (* ----------------------------------------------------------------------- *)
-(*s: rule st_backquote *)
 (* mostly copy paste of st_double_quotes; just the end regexp is different *)
 and st_backquote = parse
 
@@ -1139,9 +1055,7 @@ and st_backquote = parse
       T_ENCAPSED_AND_WHITESPACE(tok lexbuf, tokinfo lexbuf)
     }
 
-  (*s: encapsulated dollar stuff rules *)
     | "$" (LABEL as s)     { T_VARIABLE(case_str s, tokinfo lexbuf) }
-  (*x: encapsulated dollar stuff rules *)
     | "$" (LABEL as s) "[" {
           let info = tokinfo lexbuf in
 
@@ -1157,35 +1071,28 @@ and st_backquote = parse
     (* bugfix: can have strings like "$$foo$" *)
     | "$" { T_ENCAPSED_AND_WHITESPACE(tok lexbuf, tokinfo lexbuf) }
 
-  (*x: encapsulated dollar stuff rules *)
     | "{$" {
         yyback 1 lexbuf;
         push_mode ST_IN_SCRIPTING;
         T_CURLY_OPEN(tokinfo lexbuf);
       }
-  (*x: encapsulated dollar stuff rules *)
     | "${" {
         push_mode ST_LOOKING_FOR_VARNAME;
         T_DOLLAR_OPEN_CURLY_BRACES(tokinfo lexbuf);
       }
-  (*e: encapsulated dollar stuff rules *)
 
   | ['`'] {
       set_mode ST_IN_SCRIPTING;
       TBACKQUOTE(tokinfo lexbuf)
     }
 
-  (*s: repetitive st_backquote rules for error handling *)
     | eof { EOF (tokinfo lexbuf +>PI.rewrap_str "") }
     | _ {
         error ("unrecognised symbol, in st_backquote rule:"^tok lexbuf);
         TUnknown (tokinfo lexbuf)
       }
-  (*e: repetitive st_backquote rules for error handling *)
-(*e: rule st_backquote *)
 
 (* ----------------------------------------------------------------------- *)
-(*s: rule st_start_heredoc *)
 (* As heredoc have some of the semantic of double quote strings, again some
  * rules from st_double_quotes are copy pasted here.
  *
@@ -1225,9 +1132,7 @@ and st_start_heredoc stopdoc = parse
     }
   | "\\" ANY_CHAR { T_ENCAPSED_AND_WHITESPACE (tok lexbuf, tokinfo lexbuf) }
 
-  (*s: encapsulated dollar stuff rules *)
     | "$" (LABEL as s)     { T_VARIABLE(case_str s, tokinfo lexbuf) }
-  (*x: encapsulated dollar stuff rules *)
     | "$" (LABEL as s) "[" {
           let info = tokinfo lexbuf in
 
@@ -1246,26 +1151,21 @@ and st_start_heredoc stopdoc = parse
 
   | ['\n' '\r'] { TNewline (tokinfo lexbuf) }
 
-  (*x: encapsulated dollar stuff rules *)
     | "{$" {
         yyback 1 lexbuf;
         push_mode ST_IN_SCRIPTING;
         T_CURLY_OPEN(tokinfo lexbuf);
       }
-  (*x: encapsulated dollar stuff rules *)
     | "${" {
         push_mode ST_LOOKING_FOR_VARNAME;
         T_DOLLAR_OPEN_CURLY_BRACES(tokinfo lexbuf);
       }
-  (*e: encapsulated dollar stuff rules *)
 
-  (*s: repetitive st_start_heredoc rules for error handling *)
     | eof { EOF (tokinfo lexbuf +> PI.rewrap_str "") }
     | _ {
         error("unrecognised symbol, in st_start_heredoc rule:"^tok lexbuf);
         TUnknown (tokinfo lexbuf)
       }
-  (*e: repetitive st_start_heredoc rules for error handling *)
 
 (* ----------------------------------------------------------------------- *)
 (* todo? this is not what was in the original lexer, but the original lexer
@@ -1311,7 +1211,6 @@ and st_start_nowdoc stopdoc = parse
        error ("unrecognised symbol, in st_start_nowdoc rule:"^tok lexbuf);
        TUnknown (tokinfo lexbuf)
     }
-(*e: rule st_start_heredoc *)
 
 (*****************************************************************************)
 (* Rules for XHP *)
@@ -1431,7 +1330,6 @@ and st_in_xhp_text current_tag = parse
 (*****************************************************************************)
 (* Rule comment *)
 (*****************************************************************************)
-(*s: rule st_comment *)
 and st_comment = parse
   | "*/" { tok lexbuf }
 
@@ -1439,17 +1337,13 @@ and st_comment = parse
   | [^'*']+ { let s = tok lexbuf in s ^ st_comment lexbuf }
   | "*"     { let s = tok lexbuf in s ^ st_comment lexbuf }
 
-  (*s: repetitive st_comment rules for error handling *)
     | eof { error "end of file in comment"; "*/"}
     | _  {
         let s = tok lexbuf in
         error("unrecognised symbol in comment:"^s);
         s ^ st_comment lexbuf
       }
-  (*e: repetitive st_comment rules for error handling *)
-(*e: rule st_comment *)
 
-(*s: rule st_one_line_comment *)
 and st_one_line_comment = parse
   | "?"|"%"|">" { let s = tok lexbuf in s ^ st_one_line_comment lexbuf }
   | ([^'\n' '\r' '?''%''>']* as start) (ANY_CHAR as x)
@@ -1477,13 +1371,9 @@ and st_one_line_comment = parse
       ""
     }
 
-  (*s: repetitive st_one_line_comment rules for error handling *)
     | eof { error "end of file in comment"; "*/" }
     | _ {
         error ("unrecognised symbol, in st_one_line_comment rule:"^tok lexbuf);
         tok lexbuf
       }
-  (*e: repetitive st_one_line_comment rules for error handling *)
-(*e: rule st_one_line_comment *)
 
-(*e: lexer_php.mll *)
