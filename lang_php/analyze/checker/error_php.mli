@@ -25,6 +25,7 @@ type error = {
   | CallingMethodWithQualifier of string
   | PassingUnexpectedRef
   | KeywordArgumentForRef
+  | FormatStringMismatch of string
         
   (* variables *)
   | UseOfUndefinedVariable of string (* dname *) * suggest option

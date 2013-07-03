@@ -86,6 +86,7 @@ type error = {
   | CallingMethodWithQualifier of string
   | PassingUnexpectedRef (* alok's idea *)
   | KeywordArgumentForRef (* lovro's idea *)
+  | FormatStringMismatch of string
 
   (* variables *)
   | UseOfUndefinedVariable of string (* dname *) * suggest option
@@ -186,6 +187,8 @@ let string_of_error_kind error_kind =
       "passing a reference to a function not expecting one"
   | KeywordArgumentForRef ->
       "passing a keyword argument to a function expecting a reference"
+  | FormatStringMismatch name ->
+      spf "Number of arguments in %s does not match the format string" name
 
   | UseOfUndefinedVariable (dname, x) ->
       spf "Use of undeclared variable %s%s. " dname (string_of_suggest_opt x)
@@ -413,6 +416,7 @@ let rank_of_error_kind err_kind =
 
   | PassingUnexpectedRef -> ReallyImportant
   | KeywordArgumentForRef -> Less
+  | FormatStringMismatch _ -> Ok
       
   | CfgError (Controlflow_build_php.DeadCode stmt) ->
       (match stmt with

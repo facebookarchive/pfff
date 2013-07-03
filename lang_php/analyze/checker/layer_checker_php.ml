@@ -129,6 +129,8 @@ let info_of_error_and_kind err =
       "eCallingMethodWithQualifier"
   | PassingUnexpectedRef -> 
       "eOther"
+  | FormatStringMismatch _ ->
+      "eOther"
       
   | UseOfUndefinedVariable _ 
   | UseOfUndefinedVariableInLambda _
