@@ -582,7 +582,7 @@ let case_refactoring pfff_log =
       then
         let (actual, expected, file, line, col) = Common.matched5 s in
         if file =~ 
-          (match 0 with
+          (match 2 with
           | 0 -> ".*/www-git/"
           | 1 -> ".*/www-git/\\(lib\\|scripts\\|tests\\)/*"
           | 2 -> ".*/www-git/flib/[a-f].*"
@@ -601,21 +601,31 @@ let case_refactoring pfff_log =
     let xs = Common.split "\\." actual in
     let ys = Common.split "\\." expected in
     (match xs, ys with
-    | [a1], [b1]  -> ()
+    | [a1], [b1]  ->
+      ()
     | [a1;a2], [b1;b2] when a1 <> b1 ->
-      pr2_gen actual;
       (* old:
        *  Common.command2 (spf "perl -p -i -e 's/\\b%s\\b/%s/g' %s" a1 b1 file);
        * but got some FPs when s/crud/Crud/ on certain files because it also
        * uppercased a URL (see D867035). So use spatch, safer.
        *)
+(*
+      pr2_gen actual;
       Common.command2 (spf 
         "%s/spatch -lang phpfuzzy --apply-patch -e 's/%s/%s/' %s" 
         Config_pfff.path
         a1 b1 file);
+*)
       ()
-      
-    | _ -> ()
+    | [a1;a2], [b1;b2] when a1 = b1 && a2 <> b2 ->
+      Common.command2 (spf 
+        "%s/spatch -lang phpfuzzy --apply-patch -e 's/%s/%s/' %s" 
+        Config_pfff.path
+        a2 b2 file);
+
+    | _ ->
+      ()
+     
   )
   )
 
