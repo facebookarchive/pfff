@@ -65,12 +65,14 @@ let parse_pattern file =
   match !lang with
   | "php" -> 
       Left (Spatch_php.parse file)
-  (* for now we abuse the fuzzy parser of cpp for ml for the pattern as
-   * we should not use comments in patterns
-   *)
   | "c++" | "ml" | "js" | "java" | "phpfuzzy" -> 
       let parse str =
         Common2.with_tmp_file ~str ~ext:"cpp" (fun tmpfile ->
+          (* for now we abuse the fuzzy parser of C++ for other languages
+           * as the pattern should be the same in all those languages
+           * (the main difference between those languages from the 
+           * fuzzy parser point of view is the syntax for comments).
+           *)
           Parse_cpp.parse_fuzzy tmpfile +> fst
         )
       in
