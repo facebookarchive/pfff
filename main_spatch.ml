@@ -615,6 +615,11 @@ let juju_refactoring spec_file =
 (*---------------------------------------------------------------------------*)
 (* case refactorings *)
 (*---------------------------------------------------------------------------*)
+(* todo: handke Xxx.$yyy
+ * Also avoid false positive change like s/TIME/Time/ where
+ * in some files you must do it only selectively, when on
+ * TIME::sec_day, but not on TimelineProfile::TIME
+ *)
 let case_refactoring pfff_log =
   let xs = Common.cat pfff_log in
   let simple_rename =
