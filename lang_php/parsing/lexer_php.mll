@@ -1316,6 +1316,12 @@ and st_in_xhp_text current_tag = parse
       pop_mode ();
       T_XHP_CLOSE_TAG(None, tokinfo lexbuf)
     }
+  | "<!--" {
+      let info = tokinfo lexbuf in
+      let com = st_xhp_comment lexbuf in
+      (* less: make a special token T_XHP_COMMENT? *)
+      T_COMMENT(info +> tok_add_s com)
+  }
 
   (* PHP interpolation. How the user can produce a { ? &;something ? *)
   | "{" {
@@ -1332,6 +1338,17 @@ and st_in_xhp_text current_tag = parse
       error ("unrecognised symbol, in XHP text:"^tok lexbuf);
       TUnknown (tokinfo lexbuf)
     }
+
+and st_xhp_comment = parse
+  | "-->" { tok lexbuf }
+  | [^'-']+ { let s = tok lexbuf in s ^ st_xhp_comment lexbuf }
+  | "-"     { let s = tok lexbuf in s ^ st_xhp_comment lexbuf }
+  | eof { error "end of file in xhp comment"; "-->"}
+  | _  {
+    let s = tok lexbuf in
+    error("unrecognised symbol in xhp comment:"^s);
+    s ^ st_xhp_comment lexbuf
+  }
 
 (*****************************************************************************)
 (* Rule comment *)
