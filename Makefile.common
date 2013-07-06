@@ -32,7 +32,7 @@ OPTOBJS?= $(SRC:.ml=.cmx)
 
 #-w +9 is for better warning on records, needs ocaml 3.12
 # -bin-annot is for codegraph, needs ocaml 4.00
-OCAMLCFLAGS?=-g -dtypes -bin-annot -thread -w +9 -w -21 -warn-error +a
+OCAMLCFLAGS?=-g -dtypes -bin-annot -absname -thread -w +9 -w -21 -warn-error +a
 
 # This flag is also used in subdirectories so don't change its name here.
 OPTFLAGS?=-thread -g
