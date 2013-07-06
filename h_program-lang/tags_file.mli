@@ -11,10 +11,10 @@ type tag = {
 
 (* will generate a TAGS file in the current directory *)
 val generate_TAGS_file: 
-  tags_file: Common.filename -> (Common.filename * tag list) list -> unit
+  Common.filename -> (Common.filename * tag list) list -> unit
 (* will generate a tags file in the current directory *)
 val generate_vi_tags_file: 
-  tags_file: Common.filename -> (Common.filename * tag list) list -> unit
+  Common.filename -> (Common.filename * tag list) list -> unit
 
 val add_method_tags_when_unambiguous: 
   (Common.filename * tag list) list -> (Common.filename * tag list) list

@@ -133,8 +133,8 @@ let main_action xs =
 
 
   (match !format with
-  | Emacs -> Tags_file.generate_TAGS_file ~tags_file files_and_defs;
-  | Vim -> Tags_file.generate_vi_tags_file ~tags_file files_and_defs;
+  | Emacs -> Tags_file.generate_TAGS_file tags_file files_and_defs;
+  | Vim -> Tags_file.generate_vi_tags_file tags_file files_and_defs;
   );
   ()
 

@@ -177,7 +177,7 @@ let add_method_tags_when_unambiguous files_and_defs =
 
 let threshold_long_line = 1000
 
-let generate_TAGS_file ~tags_file files_and_defs =
+let generate_TAGS_file tags_file files_and_defs =
   Common.with_open_outfile tags_file (fun (pr_no_nl, _chan) ->
     pr_no_nl header;
     files_and_defs +> List.iter (fun (file, defs) ->
@@ -198,7 +198,7 @@ let generate_TAGS_file ~tags_file files_and_defs =
   ()
 
 (* http://vimdoc.sourceforge.net/htmldoc/tagsrch.html#tags-file-format *)
-let generate_vi_tags_file ~tags_file files_and_defs =
+let generate_vi_tags_file tags_file files_and_defs =
   Common.with_open_outfile tags_file (fun (pr_no_nl, _chan) ->
 
     let all_tags =
