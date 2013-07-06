@@ -18,6 +18,7 @@ module Ast = Ast_ml
 module Db = Database_code
 module HC = Highlight_code
 module T = Parser_ml
+module PI = Parse_info
 
 (*****************************************************************************)
 (* Prelude *)
@@ -155,9 +156,9 @@ let compute_database ?(verbose=false) files_or_dirs =
           | HC.FunctionDecl _ 
             ->
 
-              let s = Ast.str_of_info info in
-              let l = Ast.line_of_info info in
-              let c = Ast.col_of_info info in
+              let s = PI.str_of_info info in
+              let l = PI.line_of_info info in
+              let c = PI.col_of_info info in
 
               let file =
                 Parse_info.file_of_info info +> 

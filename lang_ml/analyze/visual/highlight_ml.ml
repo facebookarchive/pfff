@@ -19,6 +19,7 @@ module Ast = Ast_ml
 module V = Visitor_ml
 open Highlight_code
 module T = Parser_ml
+module PI = Parse_info
 
 (*****************************************************************************)
 (* Prelude *)
@@ -360,8 +361,8 @@ let visit_toplevel
       ::T.TComment(ii5)
       ::xs ->
 
-        let s = Ast.str_of_info ii in
-        let s5 =  Ast.str_of_info ii5 in
+        let s = PI.str_of_info ii in
+        let s5 =  PI.str_of_info ii5 in
         (match () with
         | _ when s =~ ".*\\*\\*\\*\\*" && s5 =~ ".*\\*\\*\\*\\*" ->
           tag ii CommentEstet;
@@ -392,7 +393,7 @@ let visit_toplevel
      * a solid token-based tagger is still useful as a last resort.
      *)
     | T.Tlet(ii)::T.TLowerIdent(s, ii3)::T.TEq ii5::xs
-        when Ast.col_of_info ii = 0 ->
+        when PI.col_of_info ii = 0 ->
 
         if not (Hashtbl.mem already_tagged ii3) && lexer_based_tagger
         then tag ii3 (Global (Def2 NoUse));
@@ -400,7 +401,7 @@ let visit_toplevel
         aux_toks xs;
 
     | T.Tlet(ii)::T.TLowerIdent(s, ii3)::xs
-        when Ast.col_of_info ii = 0 ->
+        when PI.col_of_info ii = 0 ->
 
         if not (Hashtbl.mem already_tagged ii3) && lexer_based_tagger
         then tag ii3 (Function (Def2 NoUse));
@@ -408,7 +409,7 @@ let visit_toplevel
         aux_toks xs;
 
     | (T.Tval(ii)|T.Texternal(ii))::T.TLowerIdent(s, ii3)::xs
-        when Ast.col_of_info ii = 0 ->
+        when PI.col_of_info ii = 0 ->
 
         if not (Hashtbl.mem already_tagged ii3) && lexer_based_tagger
         then tag ii3 (FunctionDecl NoUse);
@@ -417,21 +418,21 @@ let visit_toplevel
     | T.Tlet(ii)::
       T.Trec(_ii)::
       T.TLowerIdent(s, ii3)::xs
-        when Ast.col_of_info ii = 0 ->
+        when PI.col_of_info ii = 0 ->
 
         if not (Hashtbl.mem already_tagged ii3) && lexer_based_tagger
         then tag ii3 (Function (Def2 NoUse));
         aux_toks xs;
 
     | T.Tand(ii)::T.TLowerIdent(s, ii3)::xs
-        when Ast.col_of_info ii = 0 ->
+        when PI.col_of_info ii = 0 ->
 
         if not (Hashtbl.mem already_tagged ii3) && lexer_based_tagger
         then tag ii3 (Function (Def2 NoUse));
         aux_toks xs;
 
     | T.Ttype(ii)::T.TLowerIdent(s, ii3)::xs
-        when Ast.col_of_info ii = 0 ->
+        when PI.col_of_info ii = 0 ->
 
         if not (Hashtbl.mem already_tagged ii3) && lexer_based_tagger
         then tag ii3 (TypeDef Def);
@@ -504,7 +505,7 @@ let visit_toplevel
 
     (* grammar rules in ocamlyacc *)
     | T.TLowerIdent (s, ii1)::T.TColon _::xs 
-      when Ast.col_of_info ii1 = 0
+      when PI.col_of_info ii1 = 0
         ->
         tag ii1 GrammarRule;
         aux_toks xs
@@ -531,7 +532,7 @@ let visit_toplevel
         if not (Hashtbl.mem already_tagged ii)
         then
           (* a little bit syncweb specific *)
-          let s = Ast.str_of_info ii in
+          let s = PI.str_of_info ii in
           (match s with
           (* yep, s e x are the syncweb markers *)
           | _ when s =~ "(\\*[sex]:"  -> tag ii CommentSyncweb

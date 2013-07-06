@@ -359,11 +359,6 @@ type any =
 (* Wrappers *)
 (*****************************************************************************)
 
-let str_of_info x = Parse_info.str_of_info x
-let col_of_info x = Parse_info.col_of_info x
-let line_of_info x = Parse_info.line_of_info x
-let pos_of_info x = Parse_info.pos_of_info x
-
 let str_of_name (Name (s,_)) = s
 let info_of_name (Name (_,info)) = info
 
