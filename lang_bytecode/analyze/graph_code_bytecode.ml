@@ -106,8 +106,9 @@ let parse ~show_parse_error file =
       Parse_bytecode.parse file
     )
   with exn ->
-    pr2_once (spf "PARSE ERROR with %s, exn = %s" file 
-                  (Common.exn_to_s exn));
+    if show_parse_error
+    then pr2_once (spf "PARSE ERROR with %s, exn = %s" file 
+                      (Common.exn_to_s exn));
     raise exn
 
 let bytecode_class_name_of_string name = 
