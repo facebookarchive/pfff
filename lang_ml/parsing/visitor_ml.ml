@@ -12,22 +12,19 @@
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the file
  * license.txt for more details.
  *)
-
 open Common
-
-open Ocaml
 
 open Ast_ml
 
 (*****************************************************************************)
 (* Prelude *)
 (*****************************************************************************)
-
 (*
  * TODO: do a kmodule_name that is called by kqualifier and
  * a few other places where the name in the long_name is actually
  * also a module name
  *)
+
 (*****************************************************************************)
 (* Types *)
 (*****************************************************************************)
@@ -80,13 +77,12 @@ let rec v_info x =
     } ->
 (*
     let _arg = Parse_info.v_pinfo v_pinfox in
-    let _arg = v_unit v_comments in 
+    let _arg = Ocaml.v_unit v_comments in 
     let _arg = Parse_info.v_transformation v_transfo in 
 *)
     ()
   in
   vin.kinfo (k, all_functions) x
-
 
 and v_tok v = v_info v
 
@@ -132,40 +128,40 @@ and v_brace11 _of_a (v1, v2, v3) =
 and v_bracket: 'a. ('a -> unit) -> 'a bracket -> unit = fun
   _of_a (v1, v2, v3) ->
   let v1 = v_tok v1 and v2 = _of_a v2 and v3 = v_tok v3 in ()
-and v_comma_list _of_a = v_list (Ocaml.v_either _of_a v_tok)
-and v_comma_list1 _of_a = v_list (Ocaml.v_either _of_a v_tok)
-and v_comma_list2 _of_a = v_list (Ocaml.v_either _of_a v_tok)
+and v_comma_list _of_a = Ocaml.v_list (Ocaml.v_either _of_a v_tok)
+and v_comma_list1 _of_a = Ocaml.v_list (Ocaml.v_either _of_a v_tok)
+and v_comma_list2 _of_a = Ocaml.v_list (Ocaml.v_either _of_a v_tok)
 
-and v_comma_list11 _of_a = v_list (Ocaml.v_either _of_a v_tok)
-and v_comma_list12 _of_a = v_list (Ocaml.v_either _of_a v_tok)
+and v_comma_list11 _of_a = Ocaml.v_list (Ocaml.v_either _of_a v_tok)
+and v_comma_list12 _of_a = Ocaml.v_list (Ocaml.v_either _of_a v_tok)
 
-and v_and_list _of_a = v_list (Ocaml.v_either _of_a v_tok)
-and v_and_list1 _of_a = v_list (Ocaml.v_either _of_a v_tok)
-and v_and_list2 _of_a = v_list (Ocaml.v_either _of_a v_tok)
+and v_and_list _of_a = Ocaml.v_list (Ocaml.v_either _of_a v_tok)
+and v_and_list1 _of_a = Ocaml.v_list (Ocaml.v_either _of_a v_tok)
+and v_and_list2 _of_a = Ocaml.v_list (Ocaml.v_either _of_a v_tok)
 
-and v_and_list13 _of_a = v_list (Ocaml.v_either _of_a v_tok)
+and v_and_list13 _of_a = Ocaml.v_list (Ocaml.v_either _of_a v_tok)
 
-and v_pipe_list _of_a = v_list (Ocaml.v_either _of_a v_tok)
-and v_pipe_list1 _of_a = v_list (Ocaml.v_either _of_a v_tok)
+and v_pipe_list _of_a = Ocaml.v_list (Ocaml.v_either _of_a v_tok)
+and v_pipe_list1 _of_a = Ocaml.v_list (Ocaml.v_either _of_a v_tok)
 
-and v_pipe_list11 _of_a = v_list (Ocaml.v_either _of_a v_tok)
-and v_pipe_list12 _of_a = v_list (Ocaml.v_either _of_a v_tok)
-and v_pipe_list13 _of_a = v_list (Ocaml.v_either _of_a v_tok)
+and v_pipe_list11 _of_a = Ocaml.v_list (Ocaml.v_either _of_a v_tok)
+and v_pipe_list12 _of_a = Ocaml.v_list (Ocaml.v_either _of_a v_tok)
+and v_pipe_list13 _of_a = Ocaml.v_list (Ocaml.v_either _of_a v_tok)
 
 and v_semicolon_list: 'a. ('a -> unit) -> 'a semicolon_list -> unit = fun _of_a
- -> v_list (Ocaml.v_either _of_a v_tok)
+ -> Ocaml.v_list (Ocaml.v_either _of_a v_tok)
 
-and v_semicolon_list1 _of_a = v_list (Ocaml.v_either _of_a v_tok)
-and v_semicolon_list2 _of_a = v_list (Ocaml.v_either _of_a v_tok)
+and v_semicolon_list1 _of_a = Ocaml.v_list (Ocaml.v_either _of_a v_tok)
+and v_semicolon_list2 _of_a = Ocaml.v_list (Ocaml.v_either _of_a v_tok)
 
-and v_semicolon_list11 _of_a = v_list (Ocaml.v_either _of_a v_tok)
-and v_semicolon_list12 _of_a = v_list (Ocaml.v_either _of_a v_tok)
+and v_semicolon_list11 _of_a = Ocaml.v_list (Ocaml.v_either _of_a v_tok)
+and v_semicolon_list12 _of_a = Ocaml.v_list (Ocaml.v_either _of_a v_tok)
 
-and v_star_list _of_a = v_list (Ocaml.v_either _of_a v_tok)
-and v_star_list1 _of_a = v_list (Ocaml.v_either _of_a v_tok)
-and v_star_list2 _of_a = v_list (Ocaml.v_either _of_a v_tok)
+and v_star_list _of_a = Ocaml.v_list (Ocaml.v_either _of_a v_tok)
+and v_star_list1 _of_a = Ocaml.v_list (Ocaml.v_either _of_a v_tok)
+and v_star_list2 _of_a = Ocaml.v_list (Ocaml.v_either _of_a v_tok)
   
-and v_name = function | Name v1 -> let v1 = v_wrap1 v_string v1 in ()
+and v_name = function | Name v1 -> let v1 = v_wrap1 Ocaml.v_string v1 in ()
 and v_lname v = v_name v
 and v_uname v = v_name v
   
@@ -173,7 +169,7 @@ and v_long_name (v1, v2) =
   let v1 = v_qualifier v1 and v2 = v_name v2 in ()
 and v_qualifier v =
   let k x = 
-    v_list (fun (v1, v2) -> let v1 = v_name v1 and v2 = v_tok v2 in ()) v
+    Ocaml.v_list (fun (v1, v2) -> let v1 = v_name v1 and v2 = v_tok v2 in ()) v
   in
   vin.kqualifier (k, all_functions) v
   
@@ -225,7 +221,7 @@ and
        fld_tok = v_fld_tok;
        fld_type = v_fld_type
      } ->
-     let arg = v_option v_tok v_fld_mutable in
+     let arg = Ocaml.v_option v_tok v_fld_mutable in
      let arg = v_name v_fld_name in
      let arg = v_tok v_fld_tok in let arg = v_ty v_fld_type in ()
    in
@@ -251,22 +247,22 @@ and v_expr v =
   | C v1 -> let v1 = v_constant v1 in ()
   | L v1 -> let v1 = v_long_name v1 in ()
   | Constr ((v1, v2)) ->
-      let v1 = v_long_name v1 and v2 = v_option v_expr v2 in ()
+      let v1 = v_long_name v1 and v2 = Ocaml.v_option v_expr v2 in ()
   | Tuple v1 -> let v1 = v_comma_list12 v_expr v1 in ()
   | List v1 -> let v1 = v_bracket (v_semicolon_list v_expr) v1 in ()
   | ParenExpr v1 -> let v1 = v_paren12 v_expr v1 in ()
   | Sequence v1 -> let v1 = v_paren11 v_seq_expr v1 in ()
   | Prefix ((v1, v2)) ->
-      let v1 = v_wrap18 v_string v1 and v2 = v_expr v2 in ()
+      let v1 = v_wrap18 Ocaml.v_string v1 and v2 = v_expr v2 in ()
   | Infix ((v1, v2, v3)) ->
       let v1 = v_expr v1
-      and v2 = v_wrap17 v_string v2
+      and v2 = v_wrap17 Ocaml.v_string v2
       and v3 = v_expr v3
       in ()
   | FunCallSimple ((v1, v2)) ->
-      let v1 = v_long_name v1 and v2 = v_list v_argument v2 in ()
+      let v1 = v_long_name v1 and v2 = Ocaml.v_list v_argument v2 in ()
   | FunCall ((v1, v2)) ->
-      let v1 = v_expr v1 and v2 = v_list v_argument v2 in ()
+      let v1 = v_expr v1 and v2 = Ocaml.v_list v_argument v2 in ()
   | RefAccess ((v1, v2)) -> let v1 = v_tok v1 and v2 = v_expr v2 in ()
   | RefAssign ((v1, v2, v3)) ->
       let v1 = v_expr v1 and v2 = v_tok v2 and v3 = v_expr v3 in ()
@@ -292,7 +288,7 @@ and v_expr v =
       in ()
   | Fun ((v1, v2, v3)) ->
       let v1 = v_tok v1
-      and v2 = v_list v_parameter v2
+      and v2 = Ocaml.v_list v_parameter v2
       and v3 = v_match_action v3
       in ()
   | Function ((v1, v2)) ->
@@ -303,7 +299,7 @@ and v_expr v =
       and v3 = v_tok v3
       and v4 = v_expr v4
       and v5 =
-        v_option (fun (v1, v2) -> let v1 = v_tok v1 and v2 = v_expr v2 in ())
+        Ocaml.v_option (fun (v1, v2) -> let v1 = v_tok v1 and v2 = v_expr v2 in ())
           v5
       in ()
   | Match ((v1, v2, v3, v4)) ->
@@ -342,10 +338,10 @@ and v_expr v =
 
 and v_constant =
   function
-  | Int v1 -> let v1 = v_wrap16 v_string v1 in ()
-  | Float v1 -> let v1 = v_wrap15 v_string v1 in ()
-  | Char v1 -> let v1 = v_wrap14 v_string v1 in ()
-  | String v1 -> let v1 = v_wrap13 v_string v1 in ()
+  | Int v1 -> let v1 = v_wrap16 Ocaml.v_string v1 in ()
+  | Float v1 -> let v1 = v_wrap15 Ocaml.v_string v1 in ()
+  | Char v1 -> let v1 = v_wrap14 Ocaml.v_string v1 in ()
+  | String v1 -> let v1 = v_wrap13 Ocaml.v_string v1 in ()
 
 and v_record_expr =
   function
@@ -397,7 +393,7 @@ and v_pattern x =
   | PatVar v1 -> let v1 = v_name v1 in ()
   | PatConstant v1 -> let v1 = v_signed_constant v1 in ()
   | PatConstr ((v1, v2)) ->
-      let v1 = v_long_name v1 and v2 = v_option v_pattern v2 in ()
+      let v1 = v_long_name v1 and v2 = Ocaml.v_option v_pattern v2 in ()
   | PatConsInfix ((v1, v2, v3)) ->
       let v1 = v_pattern v1 and v2 = v_tok v2 and v3 = v_pattern v3 in ()
   | PatTuple v1 -> let v1 = v_comma_list11 v_pattern v1 in ()
@@ -419,8 +415,8 @@ and v_pattern x =
    in
    vin.kpattern (k, all_functions) x
 
-and v_simple_pattern v = v_unit v
-and v_labeled_simple_pattern v = v_unit v
+and v_simple_pattern v = Ocaml.v_unit v
+and v_labeled_simple_pattern v = Ocaml.v_unit v
 and v_parameter v = v_labeled_simple_pattern v
 
 and v_signed_constant =
@@ -448,13 +444,13 @@ and
               l_body = v_l_body
             } ->
   let arg = v_name v_l_name in
-  let arg = v_list v_labeled_simple_pattern v_l_args in
+  let arg = Ocaml.v_list v_labeled_simple_pattern v_l_args in
   let arg = v_tok v_l_tok in let arg = v_seq_expr v_l_body in ()
   in
   vin.klet_def (k, all_functions) x
 
-and v_function_def v = v_unit v
-and v_module_type v = v_unit v
+and v_function_def v = Ocaml.v_unit v
+and v_module_type v = Ocaml.v_unit v
 and v_module_expr v = 
   let rec k v = 
   match v with
@@ -463,7 +459,7 @@ and v_module_expr v =
       ()
   | ModuleStruct (v1, v2, v3) ->
       let v1 = v_tok v1 in
-      let v2 = v_list v_item v2 in
+      let v2 = Ocaml.v_list v_item v2 in
       let v3 = v_tok v3 in
       ()
   | ModuleTodo ->
@@ -487,7 +483,7 @@ and v_item x =
       and v3 = v_tok v3
       and v4 = v_ty v4
       and v5 = v_tok v5
-      and v6 = v_list (v_wrap2 v_string) v6
+      and v6 = Ocaml.v_list (v_wrap2 Ocaml.v_string) v6
       in ()
   | Open ((v1, v2)) -> let v1 = v_tok v1 and v2 = v_long_name v2 in ()
   | Val ((v1, v2, v3, v4)) ->
@@ -514,7 +510,7 @@ and v_item x =
 
 and v_sig_item v = v_item v
 and v_struct_item v = v_item v
-and v_rec_opt v = v_option v_tok v
+and v_rec_opt v = Ocaml.v_option v_tok v
 
 
 and v_toplevel x =
@@ -522,13 +518,13 @@ and v_toplevel x =
   | Item v1 -> let v1 = v_item v1 in ()
   | ScSc v1 -> let v1 = v_info v1 in ()
   | TopSeqExpr v1 -> let v1 = v_seq_expr v1 in ()
-  | NotParsedCorrectly v1 -> let v1 = v_list v_info v1 in ()
+  | NotParsedCorrectly v1 -> let v1 = Ocaml.v_list v_info v1 in ()
   | FinalDef v1 -> let v1 = v_info v1 in ()
   | TopDirective v1 -> let v1 = v_info v1 in ()
   in
   vin.ktoplevel (k, all_functions) x
 
-and v_program v = v_list v_toplevel v
+and v_program v = Ocaml.v_list v_toplevel v
 
 and v_any = function
   | Ty v1 -> let v1 = v_ty v1 in ()
@@ -546,7 +542,7 @@ and v_any = function
   | Argument v1 -> let v1 = v_argument v1 in ()
   | Body v1 -> let v1 = v_seq_expr v1 in ()
   | Info v1 -> let v1 = v_info v1 in ()
-  | InfoList v1 -> let v1 = v_list v_info v1 in ()
+  | InfoList v1 -> let v1 = Ocaml.v_list v_info v1 in ()
 and all_functions x = v_any x
 in
 v_any
