@@ -12,16 +12,14 @@
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the file
  * license.txt for more details.
  *)
-
 open Common 
 
 module J = Json_type 
-
 module M = Meta_ast_generic
+
 (*****************************************************************************)
 (* Prelude *)
 (*****************************************************************************)
-
 (* 
  * It can be useful for people who don't like OCaml to still benefit 
  * from pfff parsing by having at least a JSON representation
@@ -47,7 +45,6 @@ let string_of_toplevel x =
 let string_json_of_program x = 
   x +> Meta_ast_js.vof_program for_json 
     +> Ocaml.json_of_v +> Json_out.string_of_json
-
 
 (*****************************************************************************)
 (* ML Patterns *)

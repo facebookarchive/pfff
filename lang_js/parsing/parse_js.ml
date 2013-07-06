@@ -69,7 +69,7 @@ let rec distribute_info_items_toplevel2 xs toks filename =
       | _ ->
 
           let ii = Lib_parsing_js.ii_of_any (Ast.Toplevel ast) in
-          let (min, max) = Lib_parsing_js.min_max_ii_by_pos ii in
+          let (min, max) = Parse_info.min_max_ii_by_pos ii in
           
           let toks_before_max, toks_after = 
             Common.profile_code "spanning tokens" (fun () ->

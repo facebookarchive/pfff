@@ -12,19 +12,12 @@
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the file
  * license.txt for more details.
  *)
-
 open Common
 
 open Ast_js
-
 module Ast = Ast_js
 module Flag = Flag_parsing_js
-
 module V = Visitor_js
-
-(*****************************************************************************)
-(* Wrappers *)
-(*****************************************************************************)
 
 (*****************************************************************************)
 (* Filemames *)
@@ -69,8 +62,3 @@ let extract_info_visitor recursor =
 
 let ii_of_any any = 
   extract_info_visitor (fun visitor -> visitor any)
-
-(*****************************************************************************)
-(* Max min, range *)
-(*****************************************************************************)
-let min_max_ii_by_pos xs = Parse_info.min_max_ii_by_pos xs
