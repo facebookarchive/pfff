@@ -30,63 +30,12 @@ module PI = Parse_info
 (* Types *)
 (*****************************************************************************)
 
-type program2 = toplevel2 list
-  (* the token list contains also the comment-tokens *)
-  and toplevel2 = 
-    Ast.toplevel (* NotParsedCorrectly if parse error *) * Parser_ml.token list
-
-let program_of_program2 xs = 
-  xs +> List.map fst
-
-(*****************************************************************************)
-(* Wrappers *)
-(*****************************************************************************)
-let pr2_err, pr2_once = Common2.mk_pr2_wrappers Flag.verbose_parsing 
-
-(*****************************************************************************)
-(* Tokens/Ast association  *)
-(*****************************************************************************)
-
-(* on very huge file, this function was previously segmentation fault
- * in native mode because span was not tail call
- *)
-let rec distribute_info_items_toplevel2 xs toks filename = 
-  match xs with
-  | [] -> raise Impossible
-  | [Ast_ml.FinalDef e] -> 
-      (* assert (null toks) ??? no cos can have whitespace tokens *) 
-      let info_item = toks in
-      [Ast_ml.FinalDef e, info_item]
-  | ast::xs ->
-
-      let ii = Lib_parsing_ml.ii_of_any (Ast_ml.Toplevel ast) in
-      let (min, max) = Parse_info.min_max_ii_by_pos ii in
-          
-      let toks_before_max, toks_after = 
-        Common.profile_code "spanning tokens" (fun () ->
-          toks +> Common2.span_tail_call (fun tok ->
-            match Parse_info.compare_pos (TH.info_of_tok tok) max with
-            | -1 | 0 -> true
-            | 1 -> false
-            | _ -> raise Impossible
-          ))
-      in
-      let info_item = toks_before_max in
-      (ast, info_item)::distribute_info_items_toplevel2 xs toks_after filename
-
-
-let distribute_info_items_toplevel a b c = 
-  Common.profile_code "distribute_info_items" (fun () -> 
-    distribute_info_items_toplevel2 a b c
-  )
+type program_and_tokens = 
+  Ast_ml.program (* NotParsedCorrectly if parse error *) * Parser_ml.token list
 
 (*****************************************************************************)
 (* Error diagnostic  *)
 (*****************************************************************************)
-
-let token_to_strpos tok = 
-  (TH.str_of_tok tok, TH.pos_of_tok tok)
-
 let error_msg_tok tok = 
   Parse_info.error_message_info (TH.info_of_tok tok)
 
@@ -132,7 +81,6 @@ let tokens2 file =
   | e -> raise e
  )
           
-
 let tokens a = 
   Common.profile_code "Parse_ml.tokens" (fun () -> tokens2 a)
 
@@ -141,7 +89,7 @@ let tokens a =
 (*****************************************************************************)
 
 (* This is similar to what I did for OPA. This is also similar
- * to what I do for parsing hacks forC++, but this fuzzy AST can be useful
+ * to what I do for parsing hacks for C++, but this fuzzy AST can be useful
  * on its own, e.g. for a not too bad sgrep/spatch.
  *)
 let parse_fuzzy file =
@@ -213,7 +161,7 @@ let parse2 filename =
       Left 
         (Common.profile_code "Parser_ml.main" (fun () ->
           if filename =~ ".*\\.mli"
-          then Parser_ml.interface (lexer_function tr) lexbuf_fake
+          then Parser_ml.interface      (lexer_function tr) lexbuf_fake
           else Parser_ml.implementation (lexer_function tr) lexbuf_fake
         ))
     ) with e ->
@@ -235,8 +183,8 @@ let parse2 filename =
   | Left xs ->
       stat.PI.correct <- (Common.cat filename +> List.length);
 
-      distribute_info_items_toplevel xs toks filename, 
-       stat
+      (xs, toks),
+      stat
   | Right (info_of_bads, line_error, cur, exn) ->
 
       if not !Flag.error_recovery
@@ -271,14 +219,12 @@ let parse2 filename =
       stat.PI.bad     <- Common.cat filename +> List.length;
 
       let info_item = List.rev tr.PI.passed in
-      [Ast.NotParsedCorrectly info_of_bads, info_item], 
+      ([Ast.NotParsedCorrectly info_of_bads], info_item), 
       stat
-
-
 
 let parse a = 
   Common.profile_code "Parse_ml.parse" (fun () -> parse2 a)
 
 let parse_program file = 
-  let (ast2, _stat) = parse file in
-  program_of_program2 ast2
+  let ((ast, toks), _stat) = parse file in
+  ast

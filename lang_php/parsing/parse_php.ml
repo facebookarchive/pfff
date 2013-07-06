@@ -14,13 +14,11 @@
  *)
 open Common 
 
+open Ast_php
 module Ast  = Ast_php
 module Flag = Flag_parsing_php
 module TH   = Token_helpers_php
 module T = Parser_php
-
-open Ast_php
-
 module PI = Parse_info
 
 (*****************************************************************************)
@@ -30,35 +28,13 @@ module PI = Parse_info
 (*****************************************************************************)
 (* Types *)
 (*****************************************************************************)
-
 type program_with_comments = Ast_php.program * Parser_php.token list
-
-(*****************************************************************************)
-(* Wrappers *)
-(*****************************************************************************)
-let pr2_err, pr2_once = Common2.mk_pr2_wrappers Flag.verbose_parsing 
-
-(*****************************************************************************)
-(* Helpers *)
-(*****************************************************************************)
-let lexbuf_to_strpos lexbuf     = 
-  (Lexing.lexeme lexbuf, Lexing.lexeme_start lexbuf)    
-
-let token_to_strpos tok = 
-  (TH.str_of_tok tok, TH.pos_of_tok tok)
-(* on very huge file, this function was previously segmentation fault
- * in native mode because span was not tail call
- *)
 
 (*****************************************************************************)
 (* Error diagnostic  *)
 (*****************************************************************************)
 let error_msg_tok tok = 
   PI.error_message_info (TH.info_of_tok tok)
-
-(*****************************************************************************)
-(* Stat *)
-(*****************************************************************************)
 
 (*****************************************************************************)
 (* Lexing only *)
@@ -147,7 +123,7 @@ let tokens_from_changen ?(init_state=Lexer_php.INITIAL) changen =
   with
   | Lexer_php.Lexical s -> 
       failwith ("lexical error " ^ s ^ "\n =" ^ 
-                   (PI.error_message file (lexbuf_to_strpos lexbuf)))
+                   (PI.error_message file (PI.lexbuf_to_strpos lexbuf)))
   | e -> raise e
  )
  (fun () -> close_in chan)
@@ -181,7 +157,6 @@ let rec lexer_function tr = fun lexbuf ->
         )
       then lexer_function (*~pass*) tr lexbuf
       else v
-
 
 (*****************************************************************************)
 (* Main entry point *)
@@ -564,4 +539,3 @@ let parse_fuzzy file =
   } toks 
   in
   trees, toks_orig
-

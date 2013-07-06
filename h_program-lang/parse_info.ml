@@ -453,6 +453,9 @@ let rec distribute_info_items_toplevel2 xs toks filename =
       let (min, max) = PI.min_max_ii_by_pos ii in
 
       let toks_before_max, toks_after = 
+(* on very huge file, this function was previously segmentation fault
+ * in native mode because span was not tail call
+ *)
         Common.profile_code "spanning tokens" (fun () ->
         toks +> Common2.span_tail_call (fun tok ->
           match PI.compare_pos (TH.info_of_tok tok) max with
