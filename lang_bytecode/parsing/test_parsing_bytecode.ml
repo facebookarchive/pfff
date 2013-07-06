@@ -35,13 +35,9 @@ let test_dump_bytecode file =
 (*****************************************************************************)
 (* Main entry for Arg *)
 (*****************************************************************************)
-
-
 let actions () = [
   "-parse_bytecode", "   <file or dir>", 
   Common.mk_action_n_arg test_parse_bytecode;
-
   "-dump_bytecode", "   <file>", 
   Common.mk_action_1_arg test_dump_bytecode;
-
 ]
