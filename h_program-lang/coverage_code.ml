@@ -12,7 +12,6 @@
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the file
  * license.txt for more details.
  *)
-
 open Common
 
 module J = Json_type
@@ -20,7 +19,6 @@ module J = Json_type
 (*****************************************************************************)
 (* Prelude *)
 (*****************************************************************************)
-
 (*
  * The goal of this module is to provide data structures that can be
  * used to mimic the Microsoft Echelon[1] project which given a patch
