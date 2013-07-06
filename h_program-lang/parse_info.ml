@@ -210,21 +210,6 @@ let tokinfo_str_pos str pos =
     transfo = NoTransfo;
   }
 
-let rewrap_str s ii =
-  {ii with token =
-    (match ii.token with
-    | OriginTok pi -> OriginTok { pi with str = s;}
-    | FakeTokStr (s, info) -> FakeTokStr (s, info)
-    | Ab -> Ab
-    | ExpandedTok _ ->
-        (* ExpandedTok ({ pi with Common.str = s;},vpi) *)
-        failwith "rewrap_str: ExpandedTok not allowed here"
-    )
-  }
-
-let tok_add_s s ii  =
-  rewrap_str ((str_of_info ii) ^ s) ii
-
 (*
 val rewrap_token_location : token_location.token_location -> info -> info
 
@@ -483,7 +468,23 @@ let distribute_info_items_toplevel a b c =
   Common.profile_code "distribute_info_items" (fun () -> 
     distribute_info_items_toplevel2 a b c
   )
+
 *)
+
+let rewrap_str s ii =
+  {ii with token =
+    (match ii.token with
+    | OriginTok pi -> OriginTok { pi with str = s;}
+    | FakeTokStr (s, info) -> FakeTokStr (s, info)
+    | Ab -> Ab
+    | ExpandedTok _ ->
+        (* ExpandedTok ({ pi with Common.str = s;},vpi) *)
+        failwith "rewrap_str: ExpandedTok not allowed here"
+    )
+  }
+
+let tok_add_s s ii  =
+  rewrap_str ((str_of_info ii) ^ s) ii
 
 (*****************************************************************************)
 (* vtoken -> ocaml *)
