@@ -26,7 +26,6 @@ open Common
 (* Token/info *)
 (* ------------------------------------------------------------------------- *)
 type tok = Parse_info.info
-and info = tok
 
 (* a shortcut to annotate some information with token/position information *)
 and 'a wrap = 'a * tok
@@ -296,7 +295,7 @@ and item =
 
   | Module of tok * uname * tok * module_expr
       
-  | ItemTodo of info
+  | ItemTodo of tok
 
 and sig_item = item
 and struct_item = item
@@ -310,17 +309,17 @@ and toplevel =
 
   (* should both be removed *)
   | TopSeqExpr of seq_expr
-  | ScSc of info (* ;; *)
+  | ScSc of tok (* ;; *)
 
   (* some ml files contain some #! or even #load directives *)
-  | TopDirective of info
+  | TopDirective of tok
 
-  | NotParsedCorrectly of info list
+  | NotParsedCorrectly of tok list
   (* todo: could maybe get rid of that now that we don't really use
    * berkeley DB and prefer Prolog, and so we don't need a sentinel
    * ast elements to associate the comments with it
    *)
-  | FinalDef of info (* EOF *)
+  | FinalDef of tok (* EOF *)
 
  and program = toplevel list
 
@@ -351,8 +350,8 @@ type any =
   | Argument of argument
   | Body of seq_expr
 
-  | Info of info
-  | InfoList of info list
+  | Info of tok
+  | InfoList of tok list
   (* with tarzan *)
 
 (*****************************************************************************)

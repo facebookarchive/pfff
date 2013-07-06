@@ -55,28 +55,28 @@ let to_item xs =
 /*(*************************************************************************)*/
 
 /*(* unrecognized token, will generate parse error *)*/
-%token <Ast_ml.info> TUnknown
+%token <Parse_info.info> TUnknown
 
-%token <Ast_ml.info> EOF
+%token <Parse_info.info> EOF
 
 /*(*-----------------------------------------*)*/
 /*(*2 The space/comment tokens *)*/
 /*(*-----------------------------------------*)*/
 /*(* coupling: Token_helpers.is_real_comment *)*/
-%token <Ast_ml.info> TCommentSpace TCommentNewline   TComment
-%token <Ast_ml.info> TCommentMisc
+%token <Parse_info.info> TCommentSpace TCommentNewline   TComment
+%token <Parse_info.info> TCommentMisc
 
 /*(*-----------------------------------------*)*/
 /*(*2 The normal tokens *)*/
 /*(*-----------------------------------------*)*/
 
 /*(* tokens with "values" *)*/
-%token <string * Ast_ml.info> TInt TFloat TChar TString
-%token <string * Ast_ml.info> TLowerIdent TUpperIdent
-%token <string * Ast_ml.info> TLabelUse TLabelDecl TOptLabelUse TOptLabelDecl
+%token <string * Parse_info.info> TInt TFloat TChar TString
+%token <string * Parse_info.info> TLowerIdent TUpperIdent
+%token <string * Parse_info.info> TLabelUse TLabelDecl TOptLabelUse TOptLabelDecl
 
 /*(* keywords tokens *)*/
-%token <Ast_ml.info>
+%token <Parse_info.info>
  Tfun Tfunction Trec Ttype Tof Tif Tthen Telse
  Tmatch Twith Twhen
  Tlet Tin Tas
@@ -92,7 +92,7 @@ let to_item xs =
  Tor Tmod Tlor Tlsl Tlsr Tlxor Tasr Tland
 
 /*(* syntax *)*/
-%token <Ast_ml.info> 
+%token <Parse_info.info> 
  TOParen TCParen TOBrace TCBrace TOBracket TCBracket
  TOBracketPipe TPipeCBracket  TOBracketLess TGreaterCBracket
  TOBraceLess TGreaterCBrace
@@ -106,13 +106,13 @@ let to_item xs =
  TMinusDot TPlusDot
 
 /*(* operators *)*/
-%token <Ast_ml.info> TPlus TMinus TLess TGreater
-%token <string * Ast_ml.info> TPrefixOperator TInfixOperator
+%token <Parse_info.info> TPlus TMinus TLess TGreater
+%token <string * Parse_info.info> TPrefixOperator TInfixOperator
 
 /*(*-----------------------------------------*)*/
 /*(*2 extra tokens: *)*/
 /*(*-----------------------------------------*)*/
-%token <Ast_ml.info> TSharpDirective
+%token <Parse_info.info> TSharpDirective
 
 /*(*************************************************************************)*/
 /*(*1 Priorities *)*/

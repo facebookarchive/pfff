@@ -1,7 +1,7 @@
 open Ast_ml
 
 type visitor_in = {
-  kinfo: info vin;
+  kinfo: tok vin;
   kexpr: expr vin;
   kfield_decl: field_declaration vin;
   kfield_expr: field_and_expr vin;
