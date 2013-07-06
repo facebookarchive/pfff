@@ -12,19 +12,13 @@
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the file
  * license.txt for more details.
  *)
-
 open Common
 
 open Ast_js
-
 module Ast = Ast_js
-(*module V = Visitor_js *)
-
 open Highlight_code
-
 module T = Parser_js
 module TH = Token_helpers_js
-
 module Db = Database_code
 
 (*****************************************************************************)
@@ -42,11 +36,11 @@ let fake_no_use2 = (NoInfoPlace, UniqueDef, MultiUse)
 (* Code highlighter *)
 (*****************************************************************************)
 
-let visit_toplevel 
+let visit_program
     ~tag_hook
     prefs 
     (*db_opt *)
-    (toplevel, toks)
+    (ast, toks)
   =
   let already_tagged = Hashtbl.create 101 in
   let tag = (fun ii categ ->
@@ -57,7 +51,7 @@ let visit_toplevel
 
   (* many class idions are recognized in Class_js *)
   let hcomplete_name_of_info = 
-    Class_js.extract_complete_name_of_info [toplevel] 
+    Class_js.extract_complete_name_of_info ast
   in
 
 

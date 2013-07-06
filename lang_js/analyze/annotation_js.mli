@@ -9,7 +9,7 @@ type annotation =
  * We use it in the tag generation.
  *)
 val annotations_of_program_with_comments: 
-  Parse_js.program2 -> (annotation * Parse_info.info) list
+  Parse_js.program_and_tokens -> (annotation * Parse_info.info) list
 
 (* Helper. The string is the string of a comment (with its markers). *)
 val extract_annotations: string -> annotation list

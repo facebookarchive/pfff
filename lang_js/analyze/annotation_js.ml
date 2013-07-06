@@ -12,7 +12,6 @@
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the file
  * license.txt for more details.
  *)
-
 open Common
 
 (*****************************************************************************)
@@ -66,8 +65,8 @@ let extract_annotations str =
  * but this should be good enough for the tags. Being more precise
  * would require to lex the comment.
  *)
-let annotations_of_program_with_comments asts_and_tokens =
-  asts_and_tokens +> List.map (fun (ast, toks) ->
+let annotations_of_program_with_comments (_, toks) =
+
     toks +> List.map (function
     | Parser_js.TComment tok ->
         let s = Parse_info.str_of_info tok in
@@ -83,4 +82,4 @@ let annotations_of_program_with_comments asts_and_tokens =
         annots +> List.map (fun annot -> annot, tok)
     | _ -> []
     ) +> List.flatten
-  ) +> List.flatten
+

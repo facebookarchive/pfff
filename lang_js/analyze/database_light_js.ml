@@ -119,17 +119,15 @@ let compute_database ?(verbose=false) files_or_dirs =
   files +> List.iter (fun file ->
     if verbose then pr2 (spf "PHASE 1: %s" file);
 
-    let (ast2, _stat) = Parse_js.parse file in
+    let ((ast, toks), _stat) = Parse_js.parse file in
 
-    let ast = Parse_js.program_of_program2 ast2 in
     let hcomplete_name_of_info = 
       Class_js.extract_complete_name_of_info ast 
     in
 
-    ast2 +> List.iter (fun (ast, toks) ->
-      let prefs = Highlight_code.default_highlighter_preferences in
+    let prefs = Highlight_code.default_highlighter_preferences in
 
-      Highlight_js.visit_toplevel 
+      Highlight_js.visit_program
         ~tag_hook:(fun info categ -> 
 
           (* todo: use is_entity_def_category ? *)
@@ -149,7 +147,6 @@ let compute_database ?(verbose=false) files_or_dirs =
         prefs
         (ast, toks)
       ;
-    );
   );
 
   (* step2: collecting uses *)
@@ -161,9 +158,7 @@ let compute_database ?(verbose=false) files_or_dirs =
     then pr2 (spf "skipping external file: %s" file)
     else begin
 
-    let (ast2, _stat) = Parse_js.parse file in
-
-    ast2 +> List.iter (fun (ast, toks) ->
+    let ((ast, toks), _stat) = Parse_js.parse file in
 
       let toks = toks +> Common.exclude (function
         | T.TCommentSpace _ -> true
@@ -247,8 +242,6 @@ let compute_database ?(verbose=false) files_or_dirs =
             aux_toks xs
       in
       aux_toks toks;
-    )
-    
     end
   );
 

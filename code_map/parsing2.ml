@@ -46,7 +46,7 @@ type ast =
   | Hs  of Parse_hs.program2
 
   | Html of Parse_html.program2
-  | Js  of Parse_js.program2
+  | Js  of Parse_js.program_and_tokens
   | Php of Parse_php.program_with_comments
 
   | Opa of Parse_opa.program_with_tokens
@@ -354,8 +354,8 @@ let tokens_with_categ_of_file file hentities =
             Common.save_excursion Flag_parsing_js.error_recovery true (fun () ->
               Js (Parse_js.parse file +> fst))
           )
-          (function Js x -> x | _ -> raise Impossible));
-        highlight_visit = Highlight_js.visit_toplevel;
+         (function Js (ast, toks) -> [ast, toks] | _ -> raise Impossible));
+        highlight_visit = Highlight_js.visit_program;
         info_of_tok = Token_helpers_js.info_of_tok;
         str_of_tok = (fun tok -> 
           let s = Token_helpers_js.str_of_tok tok in

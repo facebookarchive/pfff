@@ -51,8 +51,8 @@ let is_behind_a_remove_or_replace prev_tok cur_tok =
   | (Remove | Replace _), _ -> true
   | _ -> false
 
-let (string_of_program2_using_tokens: Parse_js.program2 -> string) = 
- fun ast2 ->
+let (string_of_program2_using_tokens: Parse_js.program_and_tokens -> string) = 
+ fun (_ast, toks) ->
 
 
    (* for some of the processing below, it is convenient to enclose
@@ -98,7 +98,6 @@ let (string_of_program2_using_tokens: Parse_js.program2 -> string) =
           raise Todo
     in
     
-    ast2 +> List.iter (fun (ast, toks) ->
 
       let toks = [fake_tok] ++ toks ++ [fake_tok] in
       
@@ -149,6 +148,5 @@ let (string_of_program2_using_tokens: Parse_js.program2 -> string) =
                 )
             )
           )
-    );
   )
 
