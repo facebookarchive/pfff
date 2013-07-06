@@ -42,7 +42,7 @@ open Highlight_code
  * disable_file_in_cache below.
  *)
 type ast = 
-  | ML  of Parse_ml.program2
+  | ML  of Parse_ml.program_and_tokens
   | Hs  of Parse_hs.program2
 
   | Html of Parse_html.program2
@@ -226,9 +226,9 @@ let tokens_with_categ_of_file file hentities =
            Common.save_excursion Flag_parsing_ml.error_recovery true (fun()->
              ML (Parse_ml.parse file +> fst))
          )
-         (function ML x -> x | _ -> raise Impossible));
+         (function ML (ast, toks) -> [ast, toks] | _ -> raise Impossible));
         highlight_visit = (fun ~tag_hook prefs (ast, toks) -> 
-          Highlight_ml.visit_toplevel ~tag_hook prefs (ast, toks));
+          Highlight_ml.visit_program ~tag_hook prefs (ast, toks));
         info_of_tok = Token_helpers_ml.info_of_tok;
         str_of_tok = Token_helpers_ml.str_of_tok;
         }

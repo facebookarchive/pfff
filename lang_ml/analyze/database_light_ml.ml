@@ -135,15 +135,14 @@ let compute_database ?(verbose=false) files_or_dirs =
   files +> Common_extra.progress ~show:verbose (fun k -> 
    List.iter (fun file ->
     k();
-    let (ast2, _stat) = 
+    let ((ast, toks), _stat) = 
       parse file 
     in
 
     (* this is quite similar to what we do in tags_ml.ml *)
-    ast2 +> List.iter (fun (ast, toks) ->
-      let prefs = Highlight_code.default_highlighter_preferences in
+    let prefs = Highlight_code.default_highlighter_preferences in
 
-      Highlight_ml.visit_toplevel 
+    Highlight_ml.visit_program
         ~lexer_based_tagger:true (* !! *)
         ~tag_hook:(fun info categ -> 
           (* todo: use is_entity_def_category ? *)
@@ -210,7 +209,7 @@ let compute_database ?(verbose=false) files_or_dirs =
         prefs
         (ast, toks)
     )
-  ));
+  );
 
   (* PHASE 2: collecting uses *)
   if verbose then pr2 (spf "PHASE 2: collecting uses");
@@ -274,7 +273,7 @@ let compute_database ?(verbose=false) files_or_dirs =
     then pr2 (spf "skipping external file: %s" file)
     else begin
 
-    let (ast2, _stat) = parse file in
+    let ((ast, toks), _stat) = parse file in
 
     let file = Common.filename_without_leading_path root file in
 
@@ -285,12 +284,11 @@ let compute_database ?(verbose=false) files_or_dirs =
      *)
     let hmodule_aliases = Hashtbl.create 11 in
 
-    ast2 +> List.iter (fun (ast, toks) ->
-      let toks = toks +> Common.exclude (function
-        | T.TCommentSpace _ -> true
-        | _ -> false
-      )
-      in
+    let toks = toks +> Common.exclude (function
+      | T.TCommentSpace _ -> true
+      | _ -> false
+    )
+    in
 
       (* Only consider Module.xxx. Otherwise names such as 'x', or 'yylex'
        * which are variables or internal functions are considered
@@ -342,9 +340,9 @@ let compute_database ?(verbose=false) files_or_dirs =
             aux_toks xs
       in
       aux_toks toks;
-    )
     end
-  ));
+    )
+  );
 
   (* PHASE 3: adjusting entities *)
   if verbose then pr2 (spf "PHASE 3: adjusting entities");
