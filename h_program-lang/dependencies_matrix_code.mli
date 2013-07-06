@@ -17,7 +17,9 @@ type cell_coord =
 
 val verbose: bool ref
 
+(* pack less relevant directories under an intermediate "..." subdirectory *)
 val threshold_pack: int ref
+
 (* we now return also a new graph because we may have modified the
  * input graph to add some extra "..." nodes
  *)
@@ -25,10 +27,10 @@ val build:
   config -> partition_constraints option -> Graph_code_opti.graph -> 
   dm * Graph_code_opti.graph
 
+
 val explain_cell_list_use_edges: 
   cell_coord -> dm -> Graph_code_opti.graph ->
   (Graph_code.node * Graph_code.node) list
-
 
 (* just the expanded root *)
 val basic_config: Graph_code.graph -> config
@@ -64,8 +66,10 @@ val is_dead_line:
   int -> dm -> bool
 val is_internal_helper:
   int -> dm -> bool
+
 val info_orders:
  dm -> unit
+
 val score_upper_triangle:
   dm -> Graph_code.node list (* exclude list *) -> int
 val score_downer_triangle:
