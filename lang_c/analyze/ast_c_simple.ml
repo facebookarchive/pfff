@@ -68,7 +68,7 @@ type name = string wrap
 
 (* less: qualifier (const/volatile) *)
 type type_ =
-  | TBase of name
+  | TBase of name (* int, float, etc *)
   | TPointer of type_
   | TArray of type_
   | TFunction of function_type
@@ -195,8 +195,10 @@ type struct_def = {
     fld_type: type_;
   }
 
+(* todo: use a record *)
 and enum_def = name * (name * expr option) list
 
+(* todo: use a record *)
 and type_def = name * type_
 
 (* ------------------------------------------------------------------------- *)
