@@ -17,6 +17,9 @@ open Common
 (*****************************************************************************)
 (* Prelude *)
 (*****************************************************************************)
+(*
+ * Some helpers for the different lexers and parsers in pfff.
+ *)
 
 (*****************************************************************************)
 (* Types *)
@@ -190,6 +193,9 @@ let mk_tokens_state toks = {
 (* Lexer helpers *)
 (*****************************************************************************)
 
+let lexbuf_to_strpos lexbuf     =
+  (Lexing.lexeme lexbuf, Lexing.lexeme_start lexbuf)
+
 let tokinfo_str_pos str pos =
   {
     token = OriginTok {
@@ -204,7 +210,6 @@ let tokinfo_str_pos str pos =
     transfo = NoTransfo;
   }
 
-
 let rewrap_str s ii =
   {ii with token =
     (match ii.token with
@@ -216,6 +221,10 @@ let rewrap_str s ii =
         failwith "rewrap_str: ExpandedTok not allowed here"
     )
   }
+
+let tok_add_s s ii  =
+  rewrap_str ((str_of_info ii) ^ s) ii
+
 (*
 val rewrap_token_location : token_location.token_location -> info -> info
 
@@ -293,9 +302,6 @@ let is_fake x =
 let is_abstract x =
   match pinfo_of_tok x with Parse_info.Ab -> true | _ -> false
 *)
-
-let tok_add_s s ii  =
-  rewrap_str ((str_of_info ii) ^ s) ii
 
 (* info about the current location *)
 (*
@@ -396,7 +402,6 @@ let min_max_ii_by_pos xs =
       ) (x,x)
 
 
-
 (*
 let mk_info_item2 ~info_of_tok toks  =
   let buf = Buffer.create 100 in
@@ -425,8 +430,6 @@ let mk_info_item_DEPRECATED ~info_of_tok a =
     (fun () -> mk_info_item2 ~info_of_tok a)
 *)
 
-let lexbuf_to_strpos lexbuf     =
-  (Lexing.lexeme lexbuf, Lexing.lexeme_start lexbuf)
 
 
 (*
