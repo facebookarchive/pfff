@@ -1,12 +1,10 @@
 open Common
+open OUnit
 
 open Ast_js
 module Ast = Ast_js
 module V = Visitor_js
 module M = Map_js
-
-open OUnit
-
 module Flag = Flag_parsing_js
 
 (*****************************************************************************)
@@ -69,7 +67,6 @@ let unittest =
       )
     );
   ]
-
 
 (*****************************************************************************)
 (* Main entry for Arg *)

@@ -12,13 +12,9 @@
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the file
  * license.txt for more details.
  *)
-
 open Common
-
 open Ocaml
-
 open Ast_js
-
 
 (*****************************************************************************)
 (* Prelude *)
@@ -53,7 +49,6 @@ let default_visitor =
 let (mk_visitor: visitor_in -> visitor_out) = fun vin ->
 
 (* start of auto generation *)
-
 
 
 let rec v_info x =
@@ -415,7 +410,6 @@ and v_any =  function
 and all_functions x = v_any x
 in
 all_functions
-
 
 (*****************************************************************************)
 (* Helpers *)
