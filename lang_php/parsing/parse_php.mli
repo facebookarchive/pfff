@@ -1,8 +1,5 @@
-(*s: parse_php.mli *)
 
-(*s: type program2 *)
 type program_with_comments = Ast_php.program * Parser_php.token list
-(*e: type program2 *)
 
 exception Parse_error of Parse_info.info
 
@@ -36,18 +33,12 @@ val parse_fuzzy:
 val parse_fast:
   Common.filename -> Ast_php.program
 
-(*s: extra parse function signature *)
 val xdebug_expr_of_string: string -> Ast_php.expr 
-(*x: extra parse function signature *)
 val expr_of_string: string -> Ast_php.expr
 val program_of_string: string -> Ast_php.program
 val tokens_of_string: string -> Parser_php.token list
 val any_of_string:  string -> Ast_php.any
 val tmp_php_file_from_string: string -> Common.filename
-(*e: extra parse function signature *)
-(*x: parse_php.mli *)
-(*x: parse_php.mli *)
 val tokens: 
   ?init_state:Lexer_php.state_mode ->
   Common.filename -> Parser_php.token list
-(*e: parse_php.mli *)
