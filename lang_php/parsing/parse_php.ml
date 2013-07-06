@@ -1,5 +1,3 @@
-(*s: parse_php.ml *)
-(*s: Facebook copyright *)
 (* Yoann Padioleau
  * 
  * Copyright (C) 2009-2011 Facebook
@@ -14,17 +12,14 @@
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the file
  * license.txt for more details.
  *)
-(*e: Facebook copyright *)
 open Common 
 
-(*s: parse_php module aliases *)
 module Ast  = Ast_php
 module Flag = Flag_parsing_php
 module TH   = Token_helpers_php
 module T = Parser_php
 
 open Ast_php
-(*e: parse_php module aliases *)
 
 module PI = Parse_info
 
@@ -46,26 +41,20 @@ let pr2_err, pr2_once = Common2.mk_pr2_wrappers Flag.verbose_parsing
 (*****************************************************************************)
 (* Helpers *)
 (*****************************************************************************)
-(*s: parse_php helpers *)
 let lexbuf_to_strpos lexbuf     = 
   (Lexing.lexeme lexbuf, Lexing.lexeme_start lexbuf)    
 
 let token_to_strpos tok = 
   (TH.str_of_tok tok, TH.pos_of_tok tok)
-(*x: parse_php helpers *)
-(*x: parse_php helpers *)
 (* on very huge file, this function was previously segmentation fault
  * in native mode because span was not tail call
  *)
-(*e: parse_php helpers *)
 
 (*****************************************************************************)
 (* Error diagnostic  *)
 (*****************************************************************************)
-(*s: parse_php error diagnostic *)
 let error_msg_tok tok = 
   PI.error_message_info (TH.info_of_tok tok)
-(*e: parse_php error diagnostic *)
 
 (*****************************************************************************)
 (* Stat *)
@@ -74,7 +63,6 @@ let error_msg_tok tok =
 (*****************************************************************************)
 (* Lexing only *)
 (*****************************************************************************)
-(*s: function tokens *)
 let tokens_from_changen ?(init_state=Lexer_php.INITIAL) changen =
   let table     = PI.full_charpos_to_pos_large_from_changen changen in
 
@@ -87,16 +75,13 @@ let tokens_from_changen ?(init_state=Lexer_php.INITIAL) changen =
     Lexer_php._mode_stack := [init_state];
 
     try 
-      (*s: function phptoken *)
       let phptoken lexbuf = 
-        (*s: yyless trick in phptoken *)
           (* for yyless emulation *)
           match !Lexer_php._pending_tokens with
           | x::xs -> 
               Lexer_php._pending_tokens := xs; 
               x
           | [] ->
-        (*e: yyless trick in phptoken *)
             (match Lexer_php.current_mode () with
             | Lexer_php.INITIAL -> 
                 Lexer_php.initial lexbuf
@@ -132,7 +117,6 @@ let tokens_from_changen ?(init_state=Lexer_php.INITIAL) changen =
                 Lexer_php.st_in_xhp_text current_tag lexbuf
             )
       in
-      (*e: function phptoken *)
 
       let rec tokens_aux acc = 
         let tok = phptoken lexbuf in
@@ -141,7 +125,6 @@ let tokens_from_changen ?(init_state=Lexer_php.INITIAL) changen =
         if not (TH.is_comment tok)
         then Lexer_php._last_non_whitespace_like_token := Some tok;
 
-        (*s: fill in the line and col information for tok *)
         let tok = tok +> TH.visitor_info_of_tok (fun ii ->
         { ii with PI.token=
           (* could assert pinfo.filename = file ? *)
@@ -155,7 +138,6 @@ let tokens_from_changen ?(init_state=Lexer_php.INITIAL) changen =
                         -> raise Impossible
                   })
         in
-        (*e: fill in the line and col information for tok *)
 
         if TH.is_eof tok
         then List.rev (tok::acc)
@@ -173,17 +155,12 @@ let tokens_from_changen ?(init_state=Lexer_php.INITIAL) changen =
 let tokens2 ?init_state =
   PI.file_wrap_changen (tokens_from_changen ?init_state)
 
-(*x: function tokens *)
 let tokens ?init_state a = 
   Common.profile_code "Parse_php.tokens" (fun () -> tokens2 ?init_state a)
-(*e: function tokens *)
 
 (*****************************************************************************)
 (* Helper for main entry point *)
 (*****************************************************************************)
-(*s: parse tokens_state helper *)
-(*x: parse tokens_state helper *)
-(*x: parse tokens_state helper *)
 (* Hacked lex. This function use refs passed by parse.
  * 'tr' means 'token refs'.
  *)
@@ -205,12 +182,10 @@ let rec lexer_function tr = fun lexbuf ->
       then lexer_function (*~pass*) tr lexbuf
       else v
 
-(*e: parse tokens_state helper *)
 
 (*****************************************************************************)
 (* Main entry point *)
 (*****************************************************************************)
-(*s: Parse_php.parse *)
 
 (* could move that in h_program-lang/, but maybe clearer to put it closer
  * to the parsing function.
@@ -345,7 +320,6 @@ let parse2 ?(pp=(!Flag.pp_default)) filename =
       let info_item = (List.rev tr.PI.passed) in 
       ([Ast.NotParsedCorrectly info_of_bads], info_item), 
       stat
-(*x: Parse_php.parse *)
 
 let _hmemo_parse_php = Hashtbl.create 101
 
@@ -361,7 +335,6 @@ let parse_memo ?pp file =
 
 let parse ?pp a = 
   Common.profile_code "Parse_php.parse" (fun () -> parse_memo ?pp a)
-(*e: Parse_php.parse *)
 
 let parse_program ?pp file = 
   let ((ast, toks), _stat) = parse ?pp file in
@@ -592,4 +565,3 @@ let parse_fuzzy file =
   in
   trees, toks_orig
 
-(*e: parse_php.ml *)
