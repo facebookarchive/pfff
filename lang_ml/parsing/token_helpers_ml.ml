@@ -12,7 +12,6 @@
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the file
  * license.txt for more details.
  *)
-
 open Common
 
 open Parser_ml
@@ -168,7 +167,6 @@ let info_of_tok = function
 
 
 let visitor_info_of_tok f = function
-
   | TCommentSpace ii -> TCommentSpace (f ii)
   | TCommentNewline ii -> TCommentNewline (f ii)
   | TComment ii -> TComment (f ii)
@@ -290,10 +288,6 @@ let visitor_info_of_tok f = function
   | TPlusDot (ii) -> TPlusDot (f ii)
   | TPlus (ii) -> TPlus (f ii)
   | TMinus (ii) -> TMinus (f ii)
-
-
-
-
 
 (*****************************************************************************)
 (* Accessors *)

@@ -42,12 +42,12 @@ open Common
  * 
  * Moreover, in my experience matching AST against AST lacks
  * flexibility sometimes. For instance many people want to use 'sgrep' to
- * find a method foo and so do "sgrep like 'foo(...)'" but
+ * find a method foo and so do "sgrep -e 'foo(...)'" but
  * because the matching is done at the AST level, 'foo(...)' is
  * parsed as a function call, not a method call, and so it will
  * not work. But people expect it to work because it works
  * with regexps. So 'sgrep' for PHP currently forces people to write this
- * pattern '$V->foo(...)' but this is not what people wants.
+ * pattern '$V->foo(...)'.
  * In the same way a pattern like '1' was originally matching
  * only expressions, but was not matching static constants because
  * again it was a different AST constructor. Actually many
@@ -57,7 +57,7 @@ open Common
  * 
  * Enter Ast_fuzzy, a way to factorize most of the needs of
  * 'sgrep' and 'spatch' over different programming languages,
- * while beeing more flexible in some ways than having a precise AST.
+ * while being more flexible in some ways than having a precise AST.
  * It fills a niche between regexps and very-precise ASTs.
  * 
  * In Ast_fuzzy we just want to keep the parenthesized information
@@ -72,9 +72,9 @@ open Common
  * 
  * See also lang_cpp/parsing_cpp/test_parsing_cpp and its parse_cpp_fuzzy()
  * and dump_cpp_fuzzy() functions. Most of the code related to Ast_fuzzy
- * is in matcher/ and called from sgrep and spatch.
+ * is in matcher/ and called from 'sgrep' and 'spatch'.
  * For 'sgrep' and 'spatch' examples, see unit_matcher.ml as well as
- * tests/cpp/sgrep/ and tests/cpp/spatch
+ * tests/cpp/sgrep/ and tests/cpp/spatch/
  * 
  * notes:
  *  [1] Actually Perl regexps are more powerful so one can do for instance:
