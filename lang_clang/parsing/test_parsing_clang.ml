@@ -18,9 +18,7 @@ let test_tokens_clang file =
   ()
 
 let test_parse_clang xs =
-
   let fullxs = Lib_parsing_clang.find_source_files_of_dir_or_files xs in
-
   fullxs +> List.iter (fun file -> 
     pr2 ("PARSING: " ^ file);
     let _ast = Parse_clang.parse file in
@@ -34,9 +32,10 @@ let test_parse_clang xs =
 
 (* see also clang -cc1 -ast-dump *)
 let clang_check =
- (*  "/home/pad/local/clang_ast/clang-llvm/llvm/Debug+Asserts/bin/clang-check" *)
+ (*  "/home/pad/local/clang_ast/clang-llvm/llvm/Debug+Asserts/bin/clang-check"*)
   "clang-check"
 
+(* take compile_commands.json file as a parameter *)
 let gen_clang jsonfile =
   let json = Json_in.load_json jsonfile in
   (match json with
@@ -70,6 +69,7 @@ let gen_clang jsonfile =
   )
 
 
+(* dead *)
 let split_dump file =
   let chan = open_in file in
 
