@@ -70,7 +70,7 @@ let annotations_of_program_with_comments asts_and_tokens =
   asts_and_tokens +> List.map (fun (ast, toks) ->
     toks +> List.map (function
     | Parser_js.TComment tok ->
-        let s = Ast_js.str_of_info tok in
+        let s = Parse_info.str_of_info tok in
         let annots = extract_annotations s in
 
         (* add location information to the annotation by reusing the

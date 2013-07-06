@@ -12,7 +12,6 @@
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the file
  * license.txt for more details.
  *)
-
 open Common
 
 open Parser_js
@@ -133,7 +132,6 @@ let info_of_tok = function
   | T_VOID ii -> ii
   | T_VIRTUAL_SEMICOLON ii -> ii
 
-
 (* generated via emacs macro from type definition in parse_js.ml *)
 let visitor_info_of_tok f = function
   | TUnknown ii -> TUnknown(f ii)
@@ -226,22 +224,20 @@ let visitor_info_of_tok f = function
   | T_VOID ii -> T_VOID (f ii)
   | T_VIRTUAL_SEMICOLON ii -> T_VIRTUAL_SEMICOLON (f ii)
 
-
 (*****************************************************************************)
 (* Accessors *)
 (*****************************************************************************)
 
 let linecol_of_tok tok =
   let info = info_of_tok tok in
-  Ast_js.line_of_info info, Ast_js.col_of_info info
+  Parse_info.line_of_info info, Parse_info.col_of_info info
 
 let col_of_tok x  = snd (linecol_of_tok x)
 let line_of_tok x = fst (linecol_of_tok x)
 
-let str_of_tok  x = Ast_js.str_of_info  (info_of_tok x)
-let file_of_tok x = Ast_js.file_of_info (info_of_tok x)
-let pos_of_tok  x = Ast_js.pos_of_info  (info_of_tok x)
-
+let str_of_tok  x = Parse_info.str_of_info  (info_of_tok x)
+let file_of_tok x = Parse_info.file_of_info (info_of_tok x)
+let pos_of_tok  x = Parse_info.pos_of_info  (info_of_tok x)
 
 (*****************************************************************************)
 (* For unparsing *)

@@ -13,15 +13,13 @@
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the file
  * license.txt for more details.
  *)
-
 open Common 
 
 open Ast_js
+open Parser_js
 
 module Ast = Ast_js
 module Flag = Flag_parsing_js
-
-open Parser_js
 
 (*****************************************************************************)
 (* Helpers *)
@@ -43,9 +41,6 @@ let tok     lexbuf  =
   Lexing.lexeme lexbuf
 let tokinfo lexbuf  = 
   Parse_info.tokinfo_str_pos (Lexing.lexeme lexbuf) (Lexing.lexeme_start lexbuf)
-
-let tok_add_s s ii  =
-  Ast.rewrap_str ((Ast.str_of_info ii) ^ s) ii
 
 (* ---------------------------------------------------------------------- *)
 let keyword_table = Common.hash_of_list [
@@ -85,7 +80,6 @@ let keyword_table = Common.hash_of_list [
   "null",       (fun ii -> T_NULL ii);
   "false",      (fun ii -> T_FALSE ii);
   "true",       (fun ii -> T_TRUE ii);
-
 ]
 
 (* ---------------------------------------------------------------------- *)
@@ -123,13 +117,13 @@ rule initial = parse
   | "/*" { 
       let info = tokinfo lexbuf in 
       let com = st_comment lexbuf in
-      TComment(info +> tok_add_s com)
+      TComment(info +> PI.tok_add_s com)
     }
 
   | "//" {
       let info = tokinfo lexbuf in
       let com = st_one_line_comment lexbuf in
-      TComment(info +> tok_add_s com)
+      TComment(info +> PI.tok_add_s com)
     }
 
   | [' ']+            { TCommentSpace(tokinfo lexbuf) }
@@ -226,14 +220,12 @@ rule initial = parse
       T_NUMBER (s, info)
     }
 
-
   | ['0'-'9']+'.'? |
     ['0'-'9']*'.'['0'-'9']+ {
       let s = tok lexbuf in
       let info = tokinfo lexbuf in
       T_NUMBER (s, info)
     }
-
 
   (* ----------------------------------------------------------------------- *)
   (* Strings *)
@@ -242,13 +234,13 @@ rule initial = parse
       let info = tokinfo lexbuf in 
       let s = string_quote lexbuf in
       (* s does not contain the enclosing "'" but the info does *)
-      T_STRING (s, info +> tok_add_s (s ^ "'"))
+      T_STRING (s, info +> PI.tok_add_s (s ^ "'"))
     }
 
   | '"' { 
       let info = tokinfo lexbuf in
       let s = string_double_quote lexbuf in 
-      T_STRING (s, info +> tok_add_s (s ^ "\""))
+      T_STRING (s, info +> PI.tok_add_s (s ^ "\""))
     }
 
   (* ----------------------------------------------------------------------- *)
@@ -289,7 +281,7 @@ rule initial = parse
           T_DIV (info); 
       | _ ->
           let s = regexp lexbuf in 
-          T_REGEX ("/" ^ s, info +> tok_add_s (s))
+          T_REGEX ("/" ^ s, info +> PI.tok_add_s (s))
     }
 
   (* ----------------------------------------------------------------------- *)
@@ -370,7 +362,6 @@ and st_one_line_comment = parse
       s ^ st_one_line_comment lexbuf
     }
 
-
   | NEWLINE { tok lexbuf }
 
   | eof { pr2 "LEXER: end of file in comment"; "\n" }
@@ -380,4 +371,3 @@ and st_one_line_comment = parse
         ("LEXER:unrecognised symbol, in st_one_line_comment rule:"^tok lexbuf);
       tok lexbuf
     }
-

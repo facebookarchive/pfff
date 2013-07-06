@@ -295,7 +295,7 @@ let extract_complete_name_of_info ast =
               ""
           | None, _, _ ->
               (* jsspec use strings for method names *)
-              let raw_str = Ast.str_of_info info_method_name in
+              let raw_str = Parse_info.str_of_info info_method_name in
               if  raw_str =~ "^[']"
               then ()
               else begin

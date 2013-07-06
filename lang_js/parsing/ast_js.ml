@@ -12,7 +12,6 @@
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the file
  * license.txt for more details.
  *)
-
 open Common
 
 module PI = Parse_info
@@ -20,7 +19,6 @@ module PI = Parse_info
 (*****************************************************************************)
 (* Prelude *)
 (*****************************************************************************)
-
 (* spec: http://www.ecmascript.org/ and the ecma-262 document.
  *
  * See also http://en.wikipedia.org/wiki/ECMAScript
@@ -137,6 +135,7 @@ type expr =
              
    and field =
       (property_name * tok (* : *) * expr)
+
 (* ------------------------------------------------------------------------- *)
 (* Statement *)
 (* ------------------------------------------------------------------------- *)
@@ -252,25 +251,6 @@ let map_comma_list f xs = List.map (fun x ->
   )
   xs
 
-
-(* todo: return a Real | Virt position ? *)
-let pos_of_info  = PI.pos_of_info
-let str_of_info  = PI.str_of_info
-let file_of_info = PI.file_of_info
-let line_of_info = PI.line_of_info
-let col_of_info  = PI.col_of_info
-
-let rewrap_str =  PI.rewrap_str
-(*
-let rewrap_parse_info pi ii =  
-  {ii with pinfo =
-    (match ii.pinfo with
-    | OriginTok _oldpi -> OriginTok pi
-    | FakeTokStr _  | Ab | ExpandedTok _ -> 
-        failwith "rewrap_parseinfo: no OriginTok"
-    )
-  }
-*)
 let info_of_name (s, info) = info
 
 (*****************************************************************************)
@@ -300,7 +280,7 @@ let al_info x =
 (*****************************************************************************)
 
 let fakeInfoAttach info = 
-  let info = rewrap_str "FAKE" info in
+  let info = PI.rewrap_str "FAKE" info in
   let pinfo = PI.token_location_of_info info in
   { PI.
     token = PI.FakeTokStr ("FAKE", Some (pinfo, -1));

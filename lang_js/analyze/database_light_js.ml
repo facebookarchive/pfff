@@ -16,12 +16,10 @@
 open Common
 
 module Ast = Ast_js
-
 module Db = Database_code
-
 module HC = Highlight_code
-
 module T = Parser_js
+module PI = Parse_info
 
 (*****************************************************************************)
 (* Prelude *)
@@ -55,7 +53,7 @@ let is_common_method s =
 
 let mk_entity ~root ~hcomplete_name_of_info info categ =
 
-  let s = Ast.str_of_info info in
+  let s = Parse_info.str_of_info info in
   (* when using frameworks like Javelin/JX, the defs are
    * actually in strings, as in JX.install("MyClass", { ... });
    *)
@@ -63,8 +61,8 @@ let mk_entity ~root ~hcomplete_name_of_info info categ =
 
   (*pr2 (spf "mk_entity %s" s);*)
 
-  let l = Ast.line_of_info info in
-  let c = Ast.col_of_info info in
+  let l = PI.line_of_info info in
+  let c = PI.col_of_info info in
   
   let name = s in
   let fullname = 
@@ -77,7 +75,7 @@ let mk_entity ~root ~hcomplete_name_of_info info categ =
     e_fullname = 
       if fullname <> name then fullname else "";
     e_file = 
-      Ast.file_of_info info +> 
+      PI.file_of_info info +> 
         Common.filename_without_leading_path root;
     e_pos = { Common2.l = l; c };
     e_kind = Database_code.entity_kind_of_highlight_category_def categ;
@@ -189,7 +187,7 @@ let compute_database ?(verbose=false) files_or_dirs =
           ::T.T_PERIOD(_)
           ::T.T_IDENTIFIER (s, ii_last)
           ::T.T_LPAREN(_)
-          ::xs when Ast.col_of_info ii1 <> 0 ->
+          ::xs when PI.col_of_info ii1 <> 0 ->
 
             Hashtbl.find_all hdefs s +> List.iter (fun entity ->
               (* todo: should check that method of appropriate class

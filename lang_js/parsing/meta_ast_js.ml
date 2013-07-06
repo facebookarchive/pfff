@@ -44,8 +44,8 @@ let rec
   if not !_current_precision.M.full_info
   then 
     Ocaml.VDict [
-      "line", Ocaml.VInt (Ast.line_of_info x);
-      "col", Ocaml.VInt (Ast.col_of_info x);
+      "line", Ocaml.VInt (PI.line_of_info x);
+      "col", Ocaml.VInt (PI.col_of_info x);
     ]
   else 
     Parse_info.vof_info x
