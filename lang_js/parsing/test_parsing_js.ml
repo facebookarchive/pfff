@@ -1,10 +1,9 @@
 open Common
+open OUnit
 
 open Ast_js
 module Ast = Ast_js
 module Flag = Flag_parsing_js
-
-open OUnit
 
 (*****************************************************************************)
 (* Subsystem testing *)
@@ -59,7 +58,6 @@ let test_unparse_js file =
 
 let test_json_js file = 
   let ast = Parse_js.parse_program file in
-
   let s = Export_ast_js.string_json_of_program ast in
   pr s;
   ()
@@ -70,29 +68,18 @@ let test_dump_js file =
   pr s
 
 (*****************************************************************************)
-(* Unit tests *)
-(*****************************************************************************)
-
-
-(*****************************************************************************)
 (* Main entry for Arg *)
 (*****************************************************************************)
 
 let actions () = [
-
-    "-parse_js", "   <file or dir>", 
-    Common.mk_action_n_arg test_parse_js;
-
     "-tokens_js", "   <file>", 
     Common.mk_action_1_arg test_tokens_js;
-
+    "-parse_js", "   <file or dir>", 
+    Common.mk_action_n_arg test_parse_js;
     "-unparse_js", "   <file>", 
     Common.mk_action_1_arg test_unparse_js;
-
     "-json", "   <file> export the AST of file into JSON", 
       Common.mk_action_1_arg test_json_js;
-
     "-dump_js_ml", "   <file>", 
     Common.mk_action_1_arg test_dump_js;
-
 ]
