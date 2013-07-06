@@ -19,14 +19,13 @@ type source_archi =
   | Script
 
   | Regular
+val s_of_source_archi: source_archi -> string
 
 val source_archi_list: source_archi list
 
 type source_kind =
   | Header
   | Source
-
-val s_of_source_archi: source_archi -> string
 
 (* can tell you about architecture, and also about design pbs *)
 val find_duplicate_dirname: Common.dirname -> unit
