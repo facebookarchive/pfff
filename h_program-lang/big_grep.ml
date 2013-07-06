@@ -12,7 +12,6 @@
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the file
  * license.txt for more details.
  *)
-open Common2
 open Common
 
 module Db = Database_code
@@ -20,7 +19,6 @@ module Db = Database_code
 (*****************************************************************************)
 (* Prelude *)
 (*****************************************************************************)
-
 (*
  * Inspired by 'tbgs' and big_grep at facebook.
  * The trick is to build a giant string and run compiled-regexps
@@ -59,10 +57,16 @@ let empty_index () = {
 }
 
 (*****************************************************************************)
+(* Helpers *)
+(*****************************************************************************)
+
+let (==~) = Common2.(==~)
+
+(*****************************************************************************)
 (* Naive version *)
 (*****************************************************************************)
-(* THIS IS THE NAIVE VERSION. Just to have a baseline for benchmarks *)
 
+(* This is the naive version, just to have a baseline for benchmarks *)
 let naive_top_n_search2 ~top_n ~query xs =
   let re = Str.regexp (".*" ^ query) in
 
@@ -188,5 +192,3 @@ let top_n_search ~top_n ~query idx =
   Common.profile_code "Big_grep.top_n" (fun () -> 
     top_n_search2 ~top_n ~query idx
   )
-
-
