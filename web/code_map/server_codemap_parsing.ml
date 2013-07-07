@@ -41,18 +41,18 @@ open Highlight_code
  * disable_file_in_cache below.
  *)
 type ast = 
-  | Php of Parse_php.program2
-  | ML  of Parse_ml.program2
+  | ML  of Parse_ml.program_and_tokens
   | Hs  of Parse_hs.program2
 
-(*  | Html of Parse_html.program2  PB ocamlnet conflict ocsigen *)
-  | Js  of Parse_js.program2
+  | Html of Parse_html.program2
+  | Js  of Parse_js.program_and_tokens
+  | Php of Parse_php.program_with_comments
 
   | Opa of Parse_opa.program_with_tokens
 
   | Cpp of Parse_cpp.program2
 
-  | Csharp of Parse_csharp.program2
+  | Csharp of Parse_csharp.program_and_tokens
   | Java of Parse_java.program2
 
   | Lisp of Parse_lisp.program2
@@ -141,9 +141,17 @@ let rewrite_categ_using_entities s categ file entities =
 (*****************************************************************************)
 (* Helpers *)
 (*****************************************************************************)
+type ('ast, 'token) for_helper = {
+  parse: (string -> ('ast * 'token list) list);
+  highlight_visit:(tag_hook:(Parse_info.info -> HC.category -> unit) ->
+                   Highlight_code.highlighter_preferences ->
+                   'ast * 'token list -> unit);
+  info_of_tok:('token -> Parse_info.info);
+  str_of_tok:('token -> string);
+}
 
-let tokens_with_categ_of_file_helper ~parse ~highlight_visit 
-  ~info_of_tok ~str_of_tok file prefs hentities =
+let tokens_with_categ_of_file_helper {parse;highlight_visit;
+  info_of_tok;str_of_tok} file prefs hentities =
   
   let h = Hashtbl.create 101 in
   if !Flag.verbose_visual_server then pr2 (spf "Parsing: %s" file);
@@ -185,10 +193,9 @@ let tokens_with_categ_of_file file (* hentities *) =
   match ftype with
   | FT.PL (FT.Web (FT.Php _)) ->
       tokens_with_categ_of_file_helper 
-        ~parse:(parse_cache (fun file ->
+        { parse = (parse_cache (fun file ->
           Common.save_excursion Flag_parsing_php.error_recovery true (fun () ->
-            let (ast2, stat) = Parse_php.parse file in
-            let ast = Parse_php.program_of_program2 ast2 in
+            let ((ast, toks), stat) = Parse_php.parse file in
             (* todo: use database_light if given? we could so that
              * variables are better annotated.
              * note that database_light will be passed in
@@ -199,116 +206,133 @@ let tokens_with_categ_of_file file (* hentities *) =
             Check_variables_php.check_and_annotate_program
               find_entity
               ast;
-            Php ast2
+            Php ((ast, toks))
           ))
-         (function Php x -> x | _ -> raise Impossible))
-        ~highlight_visit:(fun ~tag_hook prefs (ast, toks) ->
-          Highlight_php.visit_toplevel ~tag:tag_hook prefs hentities (ast,toks))
-        ~info_of_tok:Token_helpers_php.info_of_tok
-        ~str_of_tok:Token_helpers_php.str_of_tok
+         (function Php (ast, toks) -> [ast, toks] | _ -> raise Impossible));
+         highlight_visit = (fun ~tag_hook prefs (ast, toks) ->
+           raise Todo
+(*
+          Highlight_php.visit_toplevel ~tag:tag_hook prefs hentities 
+            (ast, toks)
+*)
+         );
+         info_of_tok = Token_helpers_php.info_of_tok;
+         str_of_tok = Token_helpers_php.str_of_tok;
+        }
         file prefs hentities
+
   | FT.PL (FT.ML _) ->
       tokens_with_categ_of_file_helper 
-        ~parse:(parse_cache (fun file -> 
+        { parse = (parse_cache (fun file -> 
            Common.save_excursion Flag_parsing_ml.error_recovery true (fun()->
              ML (Parse_ml.parse file +> fst))
          )
-         (function ML x -> x | _ -> raise Impossible))
-        ~highlight_visit:(fun ~tag_hook prefs (ast, toks) -> 
-          Highlight_ml.visit_toplevel ~tag_hook prefs (ast, toks))
-        ~info_of_tok:Token_helpers_ml.info_of_tok
-        ~str_of_tok:Token_helpers_ml.str_of_tok
+         (function ML (ast, toks) -> [ast, toks] | _ -> raise Impossible));
+        highlight_visit = (fun ~tag_hook prefs (ast, toks) -> 
+          Highlight_ml.visit_program ~tag_hook prefs (ast, toks));
+        info_of_tok = Token_helpers_ml.info_of_tok;
+        str_of_tok = Token_helpers_ml.str_of_tok;
+        }
         file prefs hentities
+
   | FT.PL (FT.Haskell _) ->
       tokens_with_categ_of_file_helper 
-        ~parse:(parse_cache 
+        { parse = (parse_cache 
          (fun file -> Hs (Parse_hs.parse file +> fst))
-         (function Hs x -> x | _ -> raise Impossible))
-        ~highlight_visit:(fun ~tag_hook prefs (ast, toks) -> 
-          Highlight_hs.visit_toplevel ~tag_hook prefs (ast, toks))
-        ~info_of_tok:Parser_hs.info_of_tok
-        ~str_of_tok:Parser_hs.str_of_tok
+         (function Hs x -> x | _ -> raise Impossible));
+        highlight_visit = (fun ~tag_hook prefs (ast, toks) -> 
+          Highlight_hs.visit_toplevel ~tag_hook prefs (ast, toks));
+        info_of_tok = Parser_hs.info_of_tok;
+        str_of_tok = Parser_hs.str_of_tok;
+        }
         file prefs hentities
 
   | FT.PL (FT.Python) ->
       tokens_with_categ_of_file_helper 
-        ~parse:(parse_cache 
+        { parse = (parse_cache 
          (fun file -> Python (Parse_python.parse file +> fst))
-         (function Python x -> x | _ -> raise Impossible))
-        ~highlight_visit:(fun ~tag_hook prefs (ast, toks) -> 
-          Highlight_python.visit_toplevel ~tag_hook prefs (ast, toks))
-        ~info_of_tok:Token_helpers_python.info_of_tok
-        ~str_of_tok:Token_helpers_python.str_of_tok
+         (function Python x -> x | _ -> raise Impossible));
+        highlight_visit = (fun ~tag_hook prefs (ast, toks) -> 
+          Highlight_python.visit_toplevel ~tag_hook prefs (ast, toks));
+        info_of_tok = Token_helpers_python.info_of_tok;
+        str_of_tok = Token_helpers_python.str_of_tok;
+        }
         file prefs hentities
 
   | FT.PL (FT.Csharp) ->
       tokens_with_categ_of_file_helper 
-        ~parse:(parse_cache 
+        { parse = (parse_cache 
          (fun file -> Csharp (Parse_csharp.parse file +> fst))
-         (function Csharp x -> x | _ -> raise Impossible))
-        ~highlight_visit:(fun ~tag_hook prefs (ast, toks) -> 
-          Highlight_csharp.visit_toplevel ~tag_hook prefs (ast, toks))
-        ~info_of_tok:Token_helpers_csharp.info_of_tok
-        ~str_of_tok:Token_helpers_csharp.str_of_tok
+         (function Csharp (ast, toks) -> [ast, toks] | _ -> raise Impossible));
+        highlight_visit = (fun ~tag_hook prefs (ast, toks) -> 
+          Highlight_csharp.visit_program ~tag_hook prefs (ast, toks));
+        info_of_tok = Token_helpers_csharp.info_of_tok;
+        str_of_tok = Token_helpers_csharp.str_of_tok;
+        }
         file prefs hentities
 
   | FT.PL (FT.Opa) ->
       tokens_with_categ_of_file_helper 
-        ~parse:(parse_cache 
+        { parse = (parse_cache 
          (fun file -> Opa (Parse_opa.parse_just_tokens file))
          (function 
          | Opa (ast, toks) -> [ast, toks] 
-         | _ -> raise Impossible))
-        ~highlight_visit:Highlight_opa.visit_toplevel
-        ~info_of_tok:Token_helpers_opa.info_of_tok
-        ~str_of_tok:Token_helpers_opa.str_of_tok
+         | _ -> raise Impossible));
+        highlight_visit = Highlight_opa.visit_toplevel;
+        info_of_tok = Token_helpers_opa.info_of_tok;
+        str_of_tok = Token_helpers_opa.str_of_tok;
+        }
         file prefs hentities
 
   | FT.PL (FT.Erlang) ->
       tokens_with_categ_of_file_helper 
-        ~parse:(parse_cache 
+        { parse = (parse_cache 
          (fun file -> Erlang (Parse_erlang.parse file +> fst))
-         (function Erlang x -> x | _ -> raise Impossible))
-        ~highlight_visit:Highlight_erlang.visit_toplevel
-        ~info_of_tok:Token_helpers_erlang.info_of_tok
-        ~str_of_tok:Token_helpers_erlang.str_of_tok
+         (function Erlang x -> x | _ -> raise Impossible));
+        highlight_visit = Highlight_erlang.visit_toplevel;
+        info_of_tok = Token_helpers_erlang.info_of_tok;
+        str_of_tok = Token_helpers_erlang.str_of_tok;
+        }
         file prefs hentities
 
   | FT.PL (FT.Java) ->
       tokens_with_categ_of_file_helper 
-        ~parse:(parse_cache 
+        { parse = (parse_cache 
          (fun file -> Java (Parse_java.parse file +> fst))
           (function 
           | Java (ast, toks) -> [Common2.some ast, (toks)] 
-          | _ -> raise Impossible))
-        ~highlight_visit:Highlight_java.visit_toplevel
-        ~info_of_tok:Token_helpers_java.info_of_tok
-        ~str_of_tok:Token_helpers_java.str_of_tok
+          | _ -> raise Impossible));
+        highlight_visit = Highlight_java.visit_toplevel;
+        info_of_tok = Token_helpers_java.info_of_tok;
+        str_of_tok = Token_helpers_java.str_of_tok;
+        }
         file prefs hentities
 
   | FT.PL (FT.Lisp _) ->
       tokens_with_categ_of_file_helper 
-        ~parse:(parse_cache 
+        { parse = (parse_cache 
          (fun file -> Lisp (Parse_lisp.parse file +> fst))
-         (function Lisp x -> x | _ -> raise Impossible))
-        ~highlight_visit:Highlight_lisp.visit_toplevel
-        ~info_of_tok:Parser_lisp.info_of_tok
-        ~str_of_tok:Parser_lisp.str_of_tok
+         (function Lisp x -> x | _ -> raise Impossible));
+        highlight_visit = Highlight_lisp.visit_toplevel;
+        info_of_tok = Parser_lisp.info_of_tok;
+        str_of_tok = Parser_lisp.str_of_tok;
+        }
         file prefs hentities
 
   | FT.Text ("nw" | "tex" | "texi" | "web") ->
       tokens_with_categ_of_file_helper 
-        ~parse:(parse_cache 
+        { parse = (parse_cache 
          (fun file -> Noweb (Parse_nw.parse file +> fst))
-         (function Noweb x -> x | _ -> raise Impossible))
-        ~highlight_visit:Highlight_nw.visit_toplevel
-        ~info_of_tok:Token_helpers_nw.info_of_tok
-        ~str_of_tok:Token_helpers_nw.str_of_tok
+         (function Noweb x -> x | _ -> raise Impossible));
+        highlight_visit = Highlight_nw.visit_toplevel;
+        info_of_tok = Token_helpers_nw.info_of_tok;
+        str_of_tok = Token_helpers_nw.str_of_tok;
+        }
         file prefs hentities
 
   | FT.PL (FT.Cplusplus _ | FT.C _ | FT.Thrift) ->
       tokens_with_categ_of_file_helper 
-        ~parse:(parse_cache 
+        { parse = (parse_cache 
          (fun file -> 
            let (ast2, stat) = Parse_cpp.parse file in
            let ast = Parse_cpp.program_of_program2 ast2 in
@@ -317,38 +341,41 @@ let tokens_with_categ_of_file file (* hentities *) =
              ast;
            Cpp ast2
          )
-         (function Cpp x -> x | _ -> raise Impossible))
-        ~highlight_visit:Highlight_cpp.visit_toplevel
-        ~info_of_tok:Token_helpers_cpp.info_of_tok
-        ~str_of_tok:Token_helpers_cpp.str_of_tok
+         (function Cpp x -> x | _ -> raise Impossible));
+        highlight_visit = Highlight_cpp.visit_toplevel;
+        info_of_tok = Token_helpers_cpp.info_of_tok;
+        str_of_tok = Token_helpers_cpp.str_of_tok;
+        }
         file prefs hentities
 
   | FT.PL (FT.Web (FT.Js)) ->
       tokens_with_categ_of_file_helper 
-        ~parse:(parse_cache
+        { parse = (parse_cache
           (fun file -> 
             Common.save_excursion Flag_parsing_js.error_recovery true (fun () ->
               Js (Parse_js.parse file +> fst))
           )
-          (function Js x -> x | _ -> raise Impossible))
-        ~highlight_visit:Highlight_js.visit_toplevel
-        ~info_of_tok:Token_helpers_js.info_of_tok
-        ~str_of_tok:(fun tok -> 
+         (function Js (ast, toks) -> [ast, toks] | _ -> raise Impossible));
+        highlight_visit = Highlight_js.visit_program;
+        info_of_tok = Token_helpers_js.info_of_tok;
+        str_of_tok = (fun tok -> 
           let s = Token_helpers_js.str_of_tok tok in
           Ast_js.remove_quotes_if_present s
-        )
+        );
+        }
         file prefs hentities
 (*
   | FT.PL (FT.Web (FT.Html)) ->
       tokens_with_categ_of_file_helper 
-        ~parse:(parse_cache 
+        { parse = (parse_cache 
           (fun file -> Html (Parse_html.parse file))
           (function 
           | Html (ast, toks) -> [ast, toks] 
-          | _ -> raise Impossible))
-        ~highlight_visit:Highlight_html.visit_toplevel
-        ~info_of_tok:Token_helpers_html.info_of_tok
-        ~str_of_tok:Token_helpers_html.str_of_tok
+          | _ -> raise Impossible));
+        highlight_visit = Highlight_html.visit_toplevel;
+        info_of_tok = Token_helpers_html.info_of_tok;
+        str_of_tok = Token_helpers_html.str_of_tok;
+        }
         file prefs hentities
 *)
 
