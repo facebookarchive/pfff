@@ -55,31 +55,11 @@ let with_program2 f program2 =
 let pr2, pr2_once = Common2.mk_pr2_wrappers Flag_parsing_cpp.verbose_parsing
 
 (*****************************************************************************)
-(* Helpers *)
-(*****************************************************************************)
-
-let token_to_strpos tok = 
-  (TH.str_of_tok tok, TH.pos_of_tok tok)
-
-(*****************************************************************************)
 (* Error diagnostic *)
 (*****************************************************************************)
 
 let error_msg_tok tok = 
   Parse_info.error_message_info (TH.info_of_tok tok)
-
-let print_bad line_error (start_line, end_line) filelines  = 
-  begin
-    pr2 ("badcount: " ^ i_to_s (end_line - start_line));
-
-    for i = start_line to end_line do 
-      let line = filelines.(i) in 
-
-      if i = line_error 
-      then  pr2 ("BAD:!!!!!" ^ " " ^ line) 
-      else  pr2 ("bad:" ^ " " ^      line) 
-    done
-  end
 
 (*****************************************************************************)
 (* Stats on what was passed/commentized  *)
@@ -151,7 +131,6 @@ let fix_tokens_for_language lang xs =
       T.TIdent (Ast.str_of_info ii, ii)
     | x, _ -> x
   )
-
 
 (*****************************************************************************)
 (* Lexing only *)
@@ -452,7 +431,7 @@ let parse2 ?(lang=Flag_parsing_cpp.Cplusplus) file =
             else 
               (* bugfix: *)
               (if (checkpoint_file = checkpoint2_file) && checkpoint_file = file
-              then print_bad line_error (checkpoint, checkpoint2) filelines
+              then PI.print_bad line_error (checkpoint, checkpoint2) filelines
               else pr2 "PB: bad: but on tokens not from original file"
               )
             );
