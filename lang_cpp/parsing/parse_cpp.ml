@@ -16,14 +16,11 @@ open Common
 module Ast = Ast_cpp
 module Flag = Flag_parsing_cpp
 module TH = Token_helpers_cpp
-
-module Parser = Parser_cpp
+module T = Parser_cpp
 module Lexer = Lexer_cpp
 module Semantic = Semantic_cpp
-
 module PI = Parse_info
 module Stat = Statistics_parsing
-
 module Hack = Parsing_hacks_lib
 
 (*****************************************************************************)
@@ -41,7 +38,7 @@ module Hack = Parsing_hacks_lib
 (*****************************************************************************)
 
 type program2 = toplevel2 list
-     and toplevel2 = Ast.toplevel * Parser.token list
+     and toplevel2 = Ast.toplevel * Parser_cpp.token list
 
 let program_of_program2 xs = 
   xs +> List.map fst
@@ -60,9 +57,6 @@ let pr2, pr2_once = Common2.mk_pr2_wrappers Flag_parsing_cpp.verbose_parsing
 (*****************************************************************************)
 (* Helpers *)
 (*****************************************************************************)
-
-let lexbuf_to_strpos lexbuf     = 
-  (Lexing.lexeme lexbuf, Lexing.lexeme_start lexbuf)    
 
 let token_to_strpos tok = 
   (TH.str_of_tok tok, TH.pos_of_tok tok)
@@ -92,7 +86,7 @@ let print_bad line_error (start_line, end_line) filelines  =
 (*****************************************************************************)
 
 let commentized xs = xs +> Common.map_filter (function
-  | Parser.TComment_Pp (cppkind, ii) -> 
+  | T.TComment_Pp (cppkind, ii) -> 
       if !Flag.filter_classic_passed
       then 
         (match cppkind with
@@ -110,7 +104,7 @@ let commentized xs = xs +> Common.map_filter (function
         )
       else Some (ii.PI.token)
       
-  | Parser.TAny_Action ii ->
+  | T.TAny_Action ii ->
       Some (ii.PI.token)
   | _ -> 
       None
@@ -151,10 +145,10 @@ let fix_tokens_for_language lang xs =
     match tok, lang with
     | x, Flag.C when TH.is_cpp_keyword x || TH.is_objectivec_keyword x ->
       let ii = TH.info_of_tok x in
-      Parser.TIdent (Ast.str_of_info ii, ii)
+      T.TIdent (Ast.str_of_info ii, ii)
     | x, Flag.ObjectiveC when TH.is_cpp_keyword x ->
       let ii = TH.info_of_tok x in
-      Parser.TIdent (Ast.str_of_info ii, ii)
+      T.TIdent (Ast.str_of_info ii, ii)
     | x, _ -> x
   )
 
@@ -197,7 +191,7 @@ let tokens2 file =
   with
     | Lexer.Lexical s -> 
         failwith ("lexical error " ^ s ^ "\n =" ^ 
-                  (Parse_info.error_message file (lexbuf_to_strpos lexbuf)))
+                  (PI.error_message file (PI.lexbuf_to_strpos lexbuf)))
     | e -> raise e
  )
 
@@ -398,7 +392,7 @@ let parse2 ?(lang=Flag_parsing_cpp.Cplusplus) file =
           (* -------------------------------------------------- *)
           (* Call parser *)
           (* -------------------------------------------------- *)
-          Parser.celem (lexer_function tr) lexbuf_fake
+          Parser_cpp.celem (lexer_function tr) lexbuf_fake
         with e -> 
 
           if not !Flag.error_recovery 
@@ -445,7 +439,7 @@ let parse2 ?(lang=Flag_parsing_cpp.Cplusplus) file =
             (if List.length xs >= 2 
             then 
               (match Common2.head_middle_tail xs with
-              | Parser.TDefine _, _, Parser.TCommentNewline_DefineEndOfMacro _ 
+              | T.TDefine _, _, T.TCommentNewline_DefineEndOfMacro _ 
                   -> 
                   was_define := true
               | _ -> ()
