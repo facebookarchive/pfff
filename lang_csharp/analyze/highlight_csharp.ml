@@ -12,16 +12,12 @@
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the file
  * license.txt for more details.
  *)
-
 open Common
 
 open Ast_csharp
-
 module Ast = Ast_csharp
 (*module V = Visitor_csharp *)
-
 open Highlight_code
-
 module T = Parser_csharp
 module TH = Token_helpers_csharp
 
@@ -41,7 +37,6 @@ let fake_no_use2 = (NoInfoPlace, UniqueDef, MultiUse)
 
 let lexer_based_tagger = true
 
-
 let is_module_name s = 
   s =~ "[A-Z].*"
 
@@ -55,11 +50,11 @@ let is_module_name s =
  * to figure out what kind of ident it is.
  *)
 
-let visit_toplevel 
+let visit_program
     ~tag_hook
     prefs 
     (*db_opt *)
-    (toplevel, toks)
+    (_ast, toks)
   =
   let already_tagged = Hashtbl.create 101 in
   let tag = (fun ii categ ->

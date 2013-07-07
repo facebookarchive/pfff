@@ -53,7 +53,7 @@ type ast =
 
   | Cpp of Parse_cpp.program2
 
-  | Csharp of Parse_csharp.program2
+  | Csharp of Parse_csharp.program_and_tokens
   | Java of Parse_java.program2
 
   | Lisp of Parse_lisp.program2
@@ -262,9 +262,9 @@ let tokens_with_categ_of_file file hentities =
       tokens_with_categ_of_file_helper 
         { parse = (parse_cache 
          (fun file -> Csharp (Parse_csharp.parse file +> fst))
-         (function Csharp x -> x | _ -> raise Impossible));
+         (function Csharp (ast, toks) -> [ast, toks] | _ -> raise Impossible));
         highlight_visit = (fun ~tag_hook prefs (ast, toks) -> 
-          Highlight_csharp.visit_toplevel ~tag_hook prefs (ast, toks));
+          Highlight_csharp.visit_program ~tag_hook prefs (ast, toks));
         info_of_tok = Token_helpers_csharp.info_of_tok;
         str_of_tok = Token_helpers_csharp.str_of_tok;
         }

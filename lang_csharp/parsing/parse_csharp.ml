@@ -30,33 +30,10 @@ module PI = Parse_info
 (* Types *)
 (*****************************************************************************)
 
-type program2 = toplevel2 list
-  (* the token list contains also the comment-tokens *)
-  and toplevel2 = 
-    Ast_csharp.toplevel (* NotParsedCorrectly if parse error *) * 
-      Parser_csharp.token list
-
-let program_of_program2 xs = 
-  xs +> List.map fst
-
-(*****************************************************************************)
-(* Wrappers *)
-(*****************************************************************************)
-let pr2_err, pr2_once = Common2.mk_pr2_wrappers Flag.verbose_parsing 
-
-(*****************************************************************************)
-(* Helpers *)
-(*****************************************************************************)
-let lexbuf_to_strpos lexbuf     = 
-  (Lexing.lexeme lexbuf, Lexing.lexeme_start lexbuf)    
-
-(*****************************************************************************)
-(* Tokens/Ast association  *)
-(*****************************************************************************)
-
-(*****************************************************************************)
-(* Error diagnostic  *)
-(*****************************************************************************)
+(* the token list contains also the comment-tokens *)
+type program_and_tokens = 
+  Ast_csharp.program (* NotParsedCorrectly if parse error *) * 
+  Parser_csharp.token list
 
 (*****************************************************************************)
 (* Lexing only *)
@@ -96,10 +73,9 @@ let tokens2 file =
   with
   | Lexer_csharp.Lexical s -> 
       failwith ("lexical error " ^ s ^ "\n =" ^ 
-                 (PI.error_message file (lexbuf_to_strpos lexbuf)))
+                 (PI.error_message file (PI.lexbuf_to_strpos lexbuf)))
   | e -> raise e
  )
-          
 
 let tokens a = 
   Common.profile_code "Parse_csharp.tokens" (fun () -> tokens2 a)
@@ -109,17 +85,15 @@ let tokens a =
 (*****************************************************************************)
 
 let parse2 filename = 
-
   let stat = Parse_info.default_stat filename in
   let toks_orig = tokens filename in
-
   (* TODO *)
-  [(), toks_orig], stat
+  ((), toks_orig), stat
 
 
 let parse a = 
   Common.profile_code "Parse_csharp.parse" (fun () -> parse2 a)
 
 let parse_program file = 
-  let (ast2, _stat) = parse file in
-  program_of_program2 ast2
+  let ((ast, toks), _stat) = parse file in
+  ast

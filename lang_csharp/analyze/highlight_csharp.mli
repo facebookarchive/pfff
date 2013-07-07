@@ -1,8 +1,8 @@
 
-val visit_toplevel :
+val visit_program:
   tag_hook:
-    (Ast_csharp.info -> Highlight_code.category -> unit) ->
+    (Parse_info.info -> Highlight_code.category -> unit) ->
   Highlight_code.highlighter_preferences ->
   (*(Database_php.id * Common.filename * Database_php.database) option -> *)
-  Ast_csharp.toplevel * Parser_csharp.token list ->
+  Ast_csharp.program * Parser_csharp.token list ->
   unit
