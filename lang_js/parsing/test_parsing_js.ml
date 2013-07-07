@@ -45,17 +45,6 @@ let test_parse_js xs  =
   ()
 
 
-let test_unparse_js file = 
-  let (ast2, stat) = Parse_js.parse file in
-  let tmpfile = Common.new_temp_file "unparse_js" ".js" in
-  let s = Unparse_js.string_of_program2_using_tokens ast2 in
-  pr2 s;
-  Common.write_file ~file:tmpfile s;
-  let xs = Common2.unix_diff file tmpfile in
-  pr2 "diff = ";
-  xs +> List.iter pr2;
-  ()
-
 let test_json_js file = 
   let ast = Parse_js.parse_program file in
   let s = Export_ast_js.string_json_of_program ast in
@@ -72,14 +61,13 @@ let test_dump_js file =
 (*****************************************************************************)
 
 let actions () = [
-    "-tokens_js", "   <file>", 
-    Common.mk_action_1_arg test_tokens_js;
-    "-parse_js", "   <file or dir>", 
-    Common.mk_action_n_arg test_parse_js;
-    "-unparse_js", "   <file>", 
-    Common.mk_action_1_arg test_unparse_js;
-    "-json", "   <file> export the AST of file into JSON", 
-      Common.mk_action_1_arg test_json_js;
-    "-dump_js_ml", "   <file>", 
-    Common.mk_action_1_arg test_dump_js;
+  "-tokens_js", "   <file>", 
+  Common.mk_action_1_arg test_tokens_js;
+  "-parse_js", "   <file or dir>", 
+  Common.mk_action_n_arg test_parse_js;
+  "-dump_js", "   <file>", 
+  Common.mk_action_1_arg test_dump_js;
+
+  "-json", "   <file> export the AST of file into JSON", 
+  Common.mk_action_1_arg test_json_js;
 ]

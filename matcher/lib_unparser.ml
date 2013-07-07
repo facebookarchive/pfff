@@ -52,9 +52,9 @@ type elt =
  | Added of string
  | Esthet of esthet
  and esthet =
- | Comment of string
- | Newline
- | Space of string
+  | Comment of string
+  | Newline
+  | Space of string
  (* with tarzan *)
 
 (*****************************************************************************)
@@ -172,7 +172,6 @@ let drop_whole_line_if_only_removed xs =
  * also want to remove the spaces between so we need a few heuristics
  * to maintain some good style.
  *)
-
 let string_of_toks_using_transfo ~elt_and_info_of_tok toks =
 
   let elts_of_tok tok =
