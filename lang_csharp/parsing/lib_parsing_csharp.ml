@@ -12,14 +12,11 @@
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the file
  * license.txt for more details.
  *)
-
 open Common
 
 open Ast_csharp
-
 module Ast = Ast_csharp
 module Flag = Flag_parsing_csharp
-
 (* module V = Visitor_csharp *)
 
 (*****************************************************************************)
@@ -38,4 +35,3 @@ let find_csharp_files_of_dir_or_files xs =
     | File_type.PL (File_type.Csharp) -> true
     | _ -> false
   ) +> Common.sort
-

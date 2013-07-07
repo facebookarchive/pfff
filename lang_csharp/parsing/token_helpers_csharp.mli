@@ -3,9 +3,10 @@ val is_eof          : Parser_csharp.token -> bool
 val is_comment      : Parser_csharp.token -> bool
 
 val info_of_tok : 
-  Parser_csharp.token -> Ast_csharp.info
+  Parser_csharp.token -> Parse_info.info
 val visitor_info_of_tok : 
-  (Ast_csharp.info -> Ast_csharp.info) -> Parser_csharp.token -> Parser_csharp.token
+  (Parse_info.info -> Parse_info.info) -> 
+  Parser_csharp.token -> Parser_csharp.token
 
 val line_of_tok  : Parser_csharp.token -> int
 val str_of_tok   : Parser_csharp.token -> string

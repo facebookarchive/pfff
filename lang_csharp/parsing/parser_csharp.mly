@@ -32,23 +32,23 @@ open Ast_csharp
 /*(*-----------------------------------------*)*/
 
 /*(* coupling: Token_helpers.is_real_comment *)*/
-%token <Ast_csharp.info> TCommentSpace TCommentNewline   TComment
-%token <Ast_csharp.info> TCommentMisc
+%token <Parse_info.info> TCommentSpace TCommentNewline   TComment
+%token <Parse_info.info> TCommentMisc
 
 /*(*-----------------------------------------*)*/
 /*(* the normal tokens *)*/
 /*(*-----------------------------------------*)*/
 
 /*(* tokens with "values" *)*/
-%token <string * Ast_csharp.info> TInt
-%token <string * Ast_csharp.info> TFloat
-%token <string * Ast_csharp.info> TChar
-%token <string * Ast_csharp.info> TString
+%token <string * Parse_info.info> TInt
+%token <string * Parse_info.info> TFloat
+%token <string * Parse_info.info> TChar
+%token <string * Parse_info.info> TString
 
-%token <string * Ast_csharp.info> TIdent
+%token <string * Parse_info.info> TIdent
 
 /*(* keywords tokens *)*/
-%token <Ast_csharp.info>
+%token <Parse_info.info>
   Tbool Tbyte Tchar Tvoid Tdouble Tfloat Tshort Tint Tlong Tstring Tsbyte
   Tushort Tuint Tulong
   Tclass Tabstract Tvirtual Tdelegate Tthis   Tinterface Tnew Tobject
@@ -77,20 +77,20 @@ open Ast_csharp
   Tsealed Tsizeof Tstackalloc  Ttypeof
 
 /*(* cpp *)*/
-%token <Ast_csharp.info>
+%token <Parse_info.info>
   TCppLine TCppError TCppWarning 
   TCppRegion TCppEndRegion
   TDefine TUndef
   TIfdefIf TIfdefElif TIfdefElse TIfdefEndif
 
 /*(* syntax *)*/
-%token <Ast_csharp.info> TOParen TCParen 
-%token <Ast_csharp.info> TOBracket TCBracket
-%token <Ast_csharp.info> TOBrace TCBrace
-%token <Ast_csharp.info> TOAngle TCAngle
+%token <Parse_info.info> TOParen TCParen 
+%token <Parse_info.info> TOBracket TCBracket
+%token <Parse_info.info> TOBrace TCBrace
+%token <Parse_info.info> TOAngle TCAngle
 
 
-%token <Ast_csharp.info>
+%token <Parse_info.info>
  TComma TColon TDot TSemiColon
  TStar TDiv TPercent
  TEq TEqEq TNotEq
@@ -104,7 +104,7 @@ open Ast_csharp
  TAndAnd TOrOr
  TArrow
 
-%token <string * Ast_csharp.info> TAssignOp
+%token <string * Parse_info.info> TAssignOp
 
 
 /*(* operators *)*/
@@ -114,8 +114,8 @@ open Ast_csharp
 /*(*-----------------------------------------*)*/
 
 /*(* classic *)*/
-%token <Ast_csharp.info> TUnknown
-%token <Ast_csharp.info> EOF
+%token <Parse_info.info> TUnknown
+%token <Parse_info.info> EOF
 
 /*(*-----------------------------------------*)*/
 /*(* priorities *)*/

@@ -27,11 +27,10 @@ open Common
 (* ------------------------------------------------------------------------- *)
 (* Token/info *)
 (* ------------------------------------------------------------------------- *)
-type info = Parse_info.info
-and tok = info
+type tok = Parse_info.info
 
 (* a shortcut to annotate some information with token/position information *)
-and 'a wrap = 'a * info
+and 'a wrap = 'a * tok
 
 (* ------------------------------------------------------------------------- *)
 (* Names  *)
