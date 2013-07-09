@@ -8,7 +8,6 @@ let show_errors = ref true
 let verbose_typing = ref true 
 let verbose_checking = ref true
 let verbose_entity_finder = ref false
-
 let debug_bdb = ref false
 let debug_checker = ref false
 

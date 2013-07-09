@@ -34,7 +34,7 @@ module E = Error_php
 (*****************************************************************************)
 
 (* functions that has format string on the n+1th argument *)
-let function_list = [
+let printf_like_functions_list = [
   ("SQL", 0);
   ("SQL_UNSAFE", 0);
   ("exec_manual", 0);
@@ -77,7 +77,6 @@ and in_escape_state acc char_list =
 let check_format_string args =
   match args with
   | [] -> false
-  | h::t when (h = "") -> true
   | h::t ->
     let char_list = Common2.list_of_string h in
     let acc = start_state 0 char_list in
@@ -165,8 +164,8 @@ let check ast =
         k e
       (* Check the number of argument if the function name is in function_list/function_listn*)
       | Call(Id(XName(Name((func_name, tok)))), (_ , args, _))
-          when (List.mem_assoc func_name function_list) ->
-        let n = List.assoc func_name function_list in
+          when (List.mem_assoc func_name printf_like_functions_list) ->
+        let n = List.assoc func_name printf_like_functions_list in
         if (not (check_format_stringn n (unargs args)))
         then E.warning tok (E.FormatStringMismatch func_name);
         k e

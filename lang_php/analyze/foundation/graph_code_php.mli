@@ -1,4 +1,4 @@
-
+val add_fake_node_when_undefined_entity: bool ref
 val build:
   ?verbose:bool -> 
   ?logfile:Common.filename ->

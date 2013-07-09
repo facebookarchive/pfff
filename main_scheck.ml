@@ -156,6 +156,8 @@ let show_progress = ref true
 (* action mode *)
 let action = ref ""
 
+let auto_fix = ref false
+
 (*****************************************************************************)
 (* Wrappers *)
 (*****************************************************************************)
@@ -294,6 +296,7 @@ let main_action xs =
       if not !rank 
       then begin 
         errs +> List.iter (fun err -> pr (Error_php.string_of_error err));
+        if !auto_fix then errs +> List.iter Auto_fix_php.try_auto_fix;
         Error_php._errors := []
       end
     with 
@@ -439,7 +442,10 @@ let options () =
 
     "-emacs", Arg.Unit (fun () ->
       show_progress := false;
-    ), " emacs friendly output"
+    ), " emacs friendly output";
+
+    "-auto_fix", Arg.Set auto_fix,
+    " try to auto fix the error"
 
   ] ++
   Common.options_of_actions action (all_actions()) ++

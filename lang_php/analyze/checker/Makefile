@@ -19,7 +19,7 @@ SRC+= check_functions_php.ml check_classes_php.ml
 
 SRC+= check_all_php.ml layer_checker_php.ml
 SRC+= unit_checker_php.ml
-
+SRC+= auto_fix_php.ml
 SYSLIBS= str.cma unix.cma 
 LIBS=$(TOP)/commons/lib.cma \
 
