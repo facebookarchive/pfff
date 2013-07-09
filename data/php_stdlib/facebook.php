@@ -95,7 +95,7 @@ define('SCRIPT_OWNER_FBID', 0);
 // we need to include it there because scheck is not
 // aware of the if(function_exists(...) idion. todo?
 
-function hphp_murmurhash($key, $len, $seed) { }
+//function hphp_murmurhash($key, $len, $seed) { }
 function syck_load($xs) { }
 
 // ------------------------------------------
