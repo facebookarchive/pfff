@@ -23,6 +23,7 @@ class Vector {
   public function addAll($iterable) { }
   public function pop() { }
   public function resize($sz, $value) { }
+  public function reserve($sz) { }
   public function toArray() { }
   public function getIterator() { }
   public function map($callback) { }
