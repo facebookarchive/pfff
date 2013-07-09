@@ -399,7 +399,7 @@ let generate_builtins idlfile pr_hook =
     | J.Object (flds) ->
       (match List.assoc "name" flds, 
              List.assoc "args" flds,
-             List.assoc "flags" flds 
+             (try List.assoc "flags" flds with Not_found -> J.Array [])
       with
       | J.String name, J.Array args, J.Array flags ->
         if List.mem name builtins_do_not_give_decl
@@ -465,7 +465,7 @@ let generate_builtins idlfile pr_hook =
 
       (* todo: use parent, ifaces *)
       (match List.assoc "name" flds,
-             List.assoc "consts" flds,
+             (try List.assoc "consts" flds with Not_found -> J.Array []),
              List.assoc "funcs" flds,
              List.assoc "flags" flds with
       | J.String name, J.Array consts, J.Array funcs, J.Array flags ->
@@ -505,7 +505,7 @@ let generate_builtins idlfile pr_hook =
         | J.Object (flds) ->
           (match List.assoc "name" flds, 
                  List.assoc "args" flds,
-                 List.assoc "flags" flds
+                 try List.assoc "flags" flds with Not_found -> J.Array []
            with
           | J.String name, J.Array args, J.Array flags ->
 
@@ -574,16 +574,20 @@ let generate_php_stdlib ~src (* ~phpmanual_dir *) ~dest =
 
   let files = Common2.glob (spf "%s/*.json" src) in
 
-  if not (Common2.command2_y_or_no("rm -rf " ^ dest))
+(*  if not (Common2.command2_y_or_no("rm -rf " ^ dest))
   then failwith "ok we stop";
+*)
   Common.command2("mkdir -p " ^ dest);
   files +> List.iter (fun file -> 
     pr2 (spf "processing: %s" file);
-    (* todo?: skip domdocument? generate undefined field access in www *)
       let (d,b,e) = Common2.dbe_of_filename file in
-      if b = "domdocument.idl" then ()
+        (* todo?: skip domdocument? generate undefined field access in www *)
+      if b = "domdocument.idl" || 
+         (* parse error on PHP_INT_MAX *)
+         b = "constants.idl"
+      then ()
       else begin
-        let target = Common2.filename_of_dbe (dest, "builtins_" ^ b, "hhi") in
+        let target = Common2.filename_of_dbe (dest, "builtins_" ^ b, "php") in
         Common.with_open_outfile target (fun (pr_no_nl, chan) ->
           let pr_hook s = pr_no_nl (s ^ "\n") in
           generate_builtins file pr_hook;
