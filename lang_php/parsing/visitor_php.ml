@@ -195,6 +195,8 @@ and v_ptype =
 and v_ident = function
   | Name v1 -> let v1 = v_wrap v_string v1 in ()
   | XhpName v1 -> let v1 = v_xhp_tag_wrap v1 in ()
+and v_qualified_ident x = v_ident x
+
 and v_dname = function | DName v1 -> let v1 = v_wrap v_string v1 in ()
 and v_xhp_tag v = v_list v_string v
 and v_xhp_tag_wrap x =
@@ -1050,6 +1052,13 @@ and v_toplevel x =
       v_list v_info xs
   | FinalDef v1 ->
       v_info v1
+  | NamespaceDef ((v1, v2, v3)) ->
+      let v1 = v_tok v1 and v2 = v_qualified_ident v2 and v3 = v_tok v3 in ()
+  | NamespaceBracketDef ((v1, v2, v3)) ->
+      let v1 = v_tok v1
+      and v2 = v_option v_qualified_ident v2
+      and v3 = v_brace (v_list v_toplevel) v3
+      in ()
   in
   vin.ktop (k, all_functions) x
 

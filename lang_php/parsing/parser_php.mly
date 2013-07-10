@@ -285,7 +285,7 @@ top_statement:
  | function_declaration_statement	{ FuncDef $1 }
  | class_declaration_statement		{ ClassDef $1 }
  | type_declaration                     { TypeDef $1 }
- | namespace_declaration                { $1 (* TODO *) }
+ | namespace_declaration                { $1 }
  | use_declaration                      { $1 (* TODO *) }
 
 sgrep_spatch_pattern:
@@ -1327,18 +1327,18 @@ ident_xhp_attr_name_atom:
 
 namespace_declaration:
  | T_NAMESPACE namespace_name TSEMICOLON 
-     { StmtList [EmptyStmt $3] }
+     { NamespaceDef ($1, $2, $3) }
  | T_NAMESPACE namespace_name TOBRACE top_statement_list TCBRACE 
-     { StmtList [EmptyStmt $3] }
+     { NamespaceBracketDef ($1, Some $2, ($3, H.squash_stmt_list $4, $5)) }
  | T_NAMESPACE                TOBRACE top_statement_list TCBRACE 
-     { StmtList [EmptyStmt $2] }
+     { NamespaceBracketDef ($1, None, ($2, H.squash_stmt_list $3, $4)) }
 
 use_declaration:
  | T_USE use_declaration_name TSEMICOLON { StmtList [EmptyStmt $3] }
 
 namespace_name:
- | ident { XName(Name $1) }
- | namespace_name TANTISLASH ident { XName(Name $3) (* TODO *) }
+ | ident { (Name $1) }
+ | namespace_name TANTISLASH ident { (Name $3) (* TODO *) }
 
 use_declaration_name:
  | namespace_name { }
@@ -1348,9 +1348,9 @@ use_declaration_name:
 
 
 qualified_name:
- | namespace_name { $1 }
- | T_NAMESPACE TANTISLASH namespace_name { $3 (* TODO *) }
- | TANTISLASH namespace_name { $2 (* TODO *) } 
+ | namespace_name { XName $1 }
+ | T_NAMESPACE TANTISLASH namespace_name { XName $3 (* TODO *) }
+ | TANTISLASH namespace_name { XName $2 (* TODO *) } 
 
 /*(* Should we have 'ident type_arguments' below? No because
    * we allow type arguments only at a few places, for instance

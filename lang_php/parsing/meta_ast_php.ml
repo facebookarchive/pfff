@@ -70,6 +70,7 @@ let rec vof_ident =
       let v1 = vof_wrap vof_string v1 in Ocaml.VSum (("Name", [ v1 ]))
   | XhpName v1 ->
       let v1 = vof_wrap vof_xhp_tag v1 in Ocaml.VSum (("XhpName", [ v1 ]))
+and vof_qualified_ident x = vof_ident x
 and vof_xhp_tag v = Ocaml.vof_list Ocaml.vof_string v
 and vof_dname =
   function
@@ -1183,6 +1184,17 @@ and vof_toplevel =
       let v1 = vof_list vof_info v1
       in Ocaml.VSum (("NotParsedCorrectly", [ v1 ]))
   | FinalDef v1 -> let v1 = vof_info v1 in Ocaml.VSum (("FinalDef", [ v1 ]))
+  | NamespaceDef ((v1, v2, v3)) ->
+      let v1 = vof_tok v1
+      and v2 = vof_qualified_ident v2
+      and v3 = vof_tok v3
+      in Ocaml.VSum (("NamespaceDef", [ v1; v2; v3 ]))
+  | NamespaceBracketDef ((v1, v2, v3)) ->
+      let v1 = vof_tok v1
+      and v2 = Ocaml.vof_option vof_qualified_ident v2
+      and v3 = vof_brace (Ocaml.vof_list vof_toplevel) v3
+      in Ocaml.VSum (("NamespaceBracketDef", [ v1; v2; v3 ]))
+
 and vof_program v =
   profile_code "vof_program" (fun () ->
     vof_list vof_toplevel v

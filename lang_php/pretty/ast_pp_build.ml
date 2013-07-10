@@ -265,6 +265,7 @@ let env_of_tokens_for_spatch toks =
 
 let rec toplevel env st acc =
   match st with
+  | NamespaceDef _ | NamespaceBracketDef _ -> failwith "no support namespace"
   | StmtList stmtl ->
       let acc = List.fold_right (stmt env) stmtl acc in
       acc

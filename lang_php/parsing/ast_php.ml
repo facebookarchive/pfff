@@ -19,10 +19,10 @@ open Common
 (*****************************************************************************)
 (*
  * This module defines an Abstract Syntax Tree for PHP 5.2 with
- * a few PHP 5.3 (e.g. closures) and 5.4 (e.g. traits) extensions as well
- * as support for many Facebook extensions (XHP, generators, annotations,
- * generics, collections, type definitions, implicit fields via constructor
- * parameters).
+ * a few PHP 5.3 (e.g. closures, namespace, const) and 5.4 (e.g. traits) 
+ * extensions as well as support for many Facebook extensions (XHP, generators,
+ * annotations, generics, collections, type definitions, implicit fields
+ * via constructor parameters).
  *
  * This is actually more a concrete syntax tree (CST) than an AST. This
  * is convenient in a refactoring context or code visualization
@@ -31,7 +31,6 @@ open Common
  * PHP Intermediate Language a la CIL.
  *
  * todo:
- *  - add namespace in AST (also add in grammar)
  *  - unify toplevel statement vs statements? hmmm maybe not
  *  - maybe even in a refactoring context a PIL+comment
  *    (see pretty/ast_pp.ml) would make more sense.
@@ -717,6 +716,9 @@ and toplevel =
     | ConstantDef of constant_def
     (* facebook extension *)
     | TypeDef of type_def
+    (* PHP 5.3, see http://www.php.net/manual/en/language.namespaces.rules.php*)
+    | NamespaceDef of tok * qualified_ident * tok (* ; *)
+    | NamespaceBracketDef of tok * qualified_ident option * toplevel list brace
     (* old:  | Halt of tok * unit paren * tok (* __halt__ ; *) *)
     | NotParsedCorrectly of tok list (* when Flag.error_recovery = true *)
     | FinalDef of tok (* EOF *)

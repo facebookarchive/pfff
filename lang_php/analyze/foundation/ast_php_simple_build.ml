@@ -12,7 +12,7 @@
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the file
  * license.txt for more details.
  *)
-open Common2.Infix
+open Common
 
 open Ast_php
 module A = Ast_php_simple
@@ -85,6 +85,11 @@ and toplevel env st acc =
   | FinalDef _ -> acc
   (* error recovery is off by default now *)
   | NotParsedCorrectly _ -> raise Common.Impossible
+  (* coming in next diff *)
+  | NamespaceDef _ ->
+    raise Todo
+  | NamespaceBracketDef _ ->
+    raise Todo
 
 (* ------------------------------------------------------------------------- *)
 (* Names *)

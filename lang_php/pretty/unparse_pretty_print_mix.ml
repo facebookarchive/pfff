@@ -121,6 +121,8 @@ let split_chunks tokens ast =
           raise Common.Todo
       | Ast_php.TypeDef def ->
           raise Common.Todo
+      | Ast_php.NamespaceDef _  | Ast_php.NamespaceBracketDef _ ->
+          raise Common.Todo
       | Ast_php.ClassDef def ->
 
           let toks = toks_before_max in

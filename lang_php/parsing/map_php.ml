@@ -107,6 +107,7 @@ and map_ident =
   | XhpName v1 -> let v1 = map_wrap (map_of_list map_of_string) v1 in
                   XhpName ((v1))
 and map_xhp_tag v = map_of_list map_of_string v
+and map_qualified_ident x = map_ident x
 and map_dname =
   function | DName v1 -> let v1 = map_wrap map_of_string v1 in DName ((v1))
 
@@ -1097,6 +1098,16 @@ and map_toplevel =
   | NotParsedCorrectly v1 ->
       let v1 = map_of_list map_info v1 in NotParsedCorrectly ((v1))
   | FinalDef v1 -> let v1 = map_info v1 in FinalDef ((v1))
+  | NamespaceDef ((v1, v2, v3)) ->
+      let v1 = map_tok v1
+      and v2 = map_qualified_ident v2
+      and v3 = map_tok v3
+      in NamespaceDef ((v1, v2, v3))
+  | NamespaceBracketDef ((v1, v2, v3)) ->
+      let v1 = map_tok v1
+      and v2 = map_of_option map_qualified_ident v2
+      and v3 = map_brace (map_of_list map_toplevel) v3
+      in NamespaceBracketDef ((v1, v2, v3))
 and map_program v = map_of_list map_toplevel v
 
 and map_entity =

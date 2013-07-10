@@ -366,6 +366,8 @@ let (find_testcase_class_if_any:
            let file = Parse_info.file_of_info info in
            pr2 (spf "WARNING: parsing problems in %s" file);
            None
+       | NamespaceDef _ | NamespaceBracketDef _ ->
+         failwith "no support for namespace yet"
     ) in
     Some x
   with Not_found -> None

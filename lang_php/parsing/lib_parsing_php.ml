@@ -264,6 +264,7 @@ let top_statements_of_program ast =
   | StmtList xs -> xs
   | FinalDef _|NotParsedCorrectly _
   | ClassDef _| FuncDef _ | ConstantDef _ | TypeDef _
+  | NamespaceDef _ | NamespaceBracketDef _
       -> []
   ) +> List.flatten  
 
