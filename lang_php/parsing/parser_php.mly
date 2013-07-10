@@ -286,7 +286,7 @@ top_statement:
  | class_declaration_statement		{ ClassDef $1 }
  | type_declaration                     { TypeDef $1 }
  | namespace_declaration                { $1 }
- | use_declaration                      { $1 (* TODO *) }
+ | use_declaration                      { $1 }
 
 sgrep_spatch_pattern:
  | expr EOF      { Expr $1 }
@@ -1349,8 +1349,8 @@ use_declaration_name:
 
 qualified_name:
  | namespace_name { XName $1 }
- | T_NAMESPACE TANTISLASH namespace_name { XName $3 (* TODO *) }
  | TANTISLASH namespace_name { XName $2 (* TODO *) } 
+ | T_NAMESPACE TANTISLASH namespace_name { XName $3 (* TODO *) }
 
 /*(* Should we have 'ident type_arguments' below? No because
    * we allow type arguments only at a few places, for instance
