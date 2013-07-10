@@ -287,12 +287,16 @@ let rec add_use_edge env (((str, tok) as name, kind)) =
           (match kind with
           (* todo: fix those *)
           | E.Field when (not (str =~ ".*=")) -> ()
-          (* ignore xhp field: custom data attribute
+          (* Ignore xhp field:
+           * custom data attribute :
            * http://www.w3.org/TR/2011/WD-html5-20110525/elements.html
            * #embedding-custom-non-visible-data-with-the-data-attributes
            * ARIA : http://dev.w3.org/html5/markup/aria/aria.html 
+           * server side attribute :
+           * flib/markup/xhp/html.php:52
            *)
-          | E.Field when ((str =~ ".*\\.data-.*=") || (str =~ ".*\\.aria-.*="))
+          | E.Field when ((str =~ ".*\\.data-.*=") || (str =~ ".*\\.aria-.*=")
+                          || (str =~ ".*\\.srvr-.*="))
               -> ()
           (* todo: handle __call and the dynamicYield idiom *)
           | E.Method _ when str =~ ".*\\.gen.*" 
