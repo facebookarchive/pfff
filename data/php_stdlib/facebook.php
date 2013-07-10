@@ -95,8 +95,13 @@ define('SCRIPT_OWNER_FBID', 0);
 // we need to include it there because scheck is not
 // aware of the if(function_exists(...) idion. todo?
 
-//function hphp_murmurhash($key, $len, $seed) { }
 function syck_load($xs) { }
+
+// defined in flib/autoload/autoload_map.php but skipped by codegraph
+function __flib_autoload_get_function_map() { }
+function __flib_autoload_get_class_map() { }
+function __flib_autoload_get_type_map() { }
+function __flib_autoload_get_constant_map() { }
 
 // ------------------------------------------
 // Now in HPHP idl files
@@ -104,9 +109,8 @@ function syck_load($xs) { }
 // see also static $extension_functions
 // in www/flib/_bin/_checkModuleLib.php
 // function mysql_connect_with_db() { }
-
 // function hphp_get_thread_id() { }
-
 // function xhp_preprocess_code() { }
+// function hphp_murmurhash($key, $len, $seed) { }
 
 //class phpmcc {}
