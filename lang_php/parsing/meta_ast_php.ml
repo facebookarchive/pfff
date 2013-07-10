@@ -1168,6 +1168,17 @@ and vof_type_def_kind =
   | Newtype v1 ->
       let v1 = vof_hint_type v1 in Ocaml.VSum (("Newtype", [ v1 ]))
 
+and vof_namespace_use_rule =
+  function
+  | ImportNamespace v1 ->
+      let v1 = vof_qualified_ident v1
+      in Ocaml.VSum (("ImportNamespace", [ v1 ]))
+  | AliasNamespace ((v1, v2, v3)) ->
+      let v1 = vof_qualified_ident v1
+      and v2 = vof_tok v2
+      and v3 = vof_ident v3
+      in Ocaml.VSum (("AliasNamespace", [ v1; v2; v3 ]))
+
 and vof_toplevel =
   function
   | ConstantDef v1 ->
@@ -1194,6 +1205,11 @@ and vof_toplevel =
       and v2 = Ocaml.vof_option vof_qualified_ident v2
       and v3 = vof_brace (Ocaml.vof_list vof_toplevel) v3
       in Ocaml.VSum (("NamespaceBracketDef", [ v1; v2; v3 ]))
+  | NamespaceUse ((v1, v2, v3)) ->
+      let v1 = vof_tok v1
+      and v2 = vof_namespace_use_rule v2
+      and v3 = vof_tok v3
+      in Ocaml.VSum (("NamespaceUse", [ v1; v2; v3 ]))
 
 and vof_program v =
   profile_code "vof_program" (fun () ->

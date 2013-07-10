@@ -1040,6 +1040,14 @@ and v_type_def_kind =
   function
   | Alias v1 -> let v1 = v_hint_type v1 in ()
   | Newtype v1 -> let v1 = v_hint_type v1 in ()
+and v_namespace_use_rule =
+  function
+  | ImportNamespace v1 -> let v1 = v_qualified_ident v1 in ()
+  | AliasNamespace ((v1, v2, v3)) ->
+      let v1 = v_qualified_ident v1
+      and v2 = v_tok v2
+      and v3 = v_ident v3
+      in ()
 
 and v_toplevel x =
   let k x = match x with
@@ -1058,6 +1066,11 @@ and v_toplevel x =
       let v1 = v_tok v1
       and v2 = v_option v_qualified_ident v2
       and v3 = v_brace (v_list v_toplevel) v3
+      in ()
+  | NamespaceUse ((v1, v2, v3)) ->
+      let v1 = v_tok v1
+      and v2 = v_namespace_use_rule v2
+      and v3 = v_tok v3
       in ()
   in
   vin.ktop (k, all_functions) x

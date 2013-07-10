@@ -149,25 +149,3 @@ let unsugar_self_parent_any a =
 let unsugar_self_parent_program ast =
   unsugar_self_parent_any (Program ast) +>
     (function Program x -> x | _ -> raise Impossible)
-
-(* This is used in database_php_build. It's quite expensive to do a map
- * because of all the reallocation. Because in most cases there is
- * no self/parent in the code, we can optimize things and doing the
- * map only when we really needs it.
- *)
-let unsugar_self_parent_toplevel x =
-  match x with
-  | StmtList _
-  | FuncDef _ | ConstantDef _ | TypeDef _
-  | NotParsedCorrectly _ | FinalDef _
-      -> x
-
-  | ClassDef def ->
-      if contain_self_or_parent def
-      then
-        unsugar_self_parent_any (Toplevel x) +>
-          (function Toplevel x -> x | _ -> raise Impossible)
-      else x
-
-  | NamespaceDef _ -> x
-  | NamespaceBracketDef _ -> failwith "no namespace support yet"

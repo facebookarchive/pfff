@@ -257,14 +257,12 @@ let get_vars_any any =
 (* Ast adapters *)
 (*****************************************************************************)
 
-(* todo? let lvalue_to_expr ?? *)
-
 let top_statements_of_program ast = 
   ast +> List.map (function
   | StmtList xs -> xs
   | FinalDef _|NotParsedCorrectly _
   | ClassDef _| FuncDef _ | ConstantDef _ | TypeDef _
-  | NamespaceDef _ | NamespaceBracketDef _
+  | NamespaceDef _ | NamespaceBracketDef _ | NamespaceUse _
       -> []
   ) +> List.flatten  
 

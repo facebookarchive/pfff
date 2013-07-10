@@ -154,7 +154,9 @@ let stat_of_program ?(hooks=default_hooks) h file ast =
           )
       | TypeDef def ->
         failwith "TODO: support for typedefs"
-      | NamespaceDef _ | NamespaceBracketDef _ ->
+      | NamespaceDef _ | NamespaceBracketDef _ 
+      | NamespaceUse _
+        ->
         failwith "TODO: support for namespace"
 
       | StmtList _ -> 

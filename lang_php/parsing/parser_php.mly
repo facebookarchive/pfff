@@ -1334,17 +1334,17 @@ namespace_declaration:
      { NamespaceBracketDef ($1, None, ($2, H.squash_stmt_list $3, $4)) }
 
 use_declaration:
- | T_USE use_declaration_name TSEMICOLON { StmtList [EmptyStmt $3] }
+ | T_USE use_declaration_name TSEMICOLON { NamespaceUse ($1, $2, $3) }
 
 namespace_name:
  | ident { (Name $1) }
  | namespace_name TANTISLASH ident { (Name $3) (* TODO *) }
 
 use_declaration_name:
- | namespace_name { }
- | namespace_name T_AS ident { }
- | TANTISLASH namespace_name { }
- | TANTISLASH namespace_name T_AS ident { }
+ | namespace_name { ImportNamespace $1 }
+ | namespace_name T_AS ident { AliasNamespace ($1, $2, Name $3) }
+ | TANTISLASH namespace_name { ImportNamespace ($2) (* TODO *) }
+ | TANTISLASH namespace_name T_AS ident { AliasNamespace ($2, $3, Name $4) (* TODO*) }
 
 
 qualified_name:

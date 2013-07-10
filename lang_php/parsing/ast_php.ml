@@ -686,6 +686,12 @@ and static_var = dname * static_scalar_affect option
  * type.
  *)
 and stmt_and_def = stmt
+
+(* the qualified_ident can have a leading '\' *)
+and namespace_use_rule =
+ | ImportNamespace of qualified_ident
+ | AliasNamespace of qualified_ident * tok (* as *) * ident
+
 (* ------------------------------------------------------------------------- *)
 (* phpext: *)
 (* ------------------------------------------------------------------------- *)
@@ -717,8 +723,10 @@ and toplevel =
     (* facebook extension *)
     | TypeDef of type_def
     (* PHP 5.3, see http://www.php.net/manual/en/language.namespaces.rules.php*)
+    (* the qualified_ident below can not have a leading '\' *)
     | NamespaceDef of tok * qualified_ident * tok (* ; *)
     | NamespaceBracketDef of tok * qualified_ident option * toplevel list brace
+    | NamespaceUse of tok * namespace_use_rule * tok (* ; *)
     (* old:  | Halt of tok * unit paren * tok (* __halt__ ; *) *)
     | NotParsedCorrectly of tok list (* when Flag.error_recovery = true *)
     | FinalDef of tok (* EOF *)

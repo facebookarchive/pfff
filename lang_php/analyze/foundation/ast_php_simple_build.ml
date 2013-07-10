@@ -90,6 +90,8 @@ and toplevel env st acc =
     raise Todo
   | NamespaceBracketDef _ ->
     raise Todo
+  | NamespaceUse _ ->
+    raise Todo
 
 (* ------------------------------------------------------------------------- *)
 (* Names *)

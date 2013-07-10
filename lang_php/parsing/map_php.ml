@@ -1088,6 +1088,16 @@ and map_type_def_kind =
   | Alias v1 -> let v1 = map_hint_type v1 in Alias ((v1))
   | Newtype v1 -> let v1 = map_hint_type v1 in Newtype ((v1))
 
+and map_namespace_use_rule =
+  function
+  | ImportNamespace v1 ->
+      let v1 = map_qualified_ident v1 in ImportNamespace ((v1))
+  | AliasNamespace ((v1, v2, v3)) ->
+      let v1 = map_qualified_ident v1
+      and v2 = map_tok v2
+      and v3 = map_ident v3
+      in AliasNamespace ((v1, v2, v3))
+
 and map_toplevel =
   function
   | StmtList v1 -> let v1 = map_of_list map_stmt v1 in StmtList ((v1))
@@ -1108,6 +1118,11 @@ and map_toplevel =
       and v2 = map_of_option map_qualified_ident v2
       and v3 = map_brace (map_of_list map_toplevel) v3
       in NamespaceBracketDef ((v1, v2, v3))
+  | NamespaceUse ((v1, v2, v3)) ->
+      let v1 = map_tok v1
+      and v2 = map_namespace_use_rule v2
+      and v3 = map_tok v3
+      in NamespaceUse ((v1, v2, v3))
 and map_program v = map_of_list map_toplevel v
 
 and map_entity =

@@ -14,7 +14,7 @@ let rec squash_stmt_list xs =
       let v, rest = 
         (match x with
         | (FuncDef _ | ClassDef _ | ConstantDef _ | TypeDef _
-          | NamespaceDef _ | NamespaceBracketDef _
+          | NamespaceDef _ | NamespaceBracketDef _ | NamespaceUse _
           ) -> x,  xs
         | StmtList [st] -> 
             let stmts, rest = xs +> Common.span (function
