@@ -6,8 +6,10 @@ module Ast_php = Meta_ast_php
 let rec vof_program v = Ocaml.vof_list vof_stmt v
 and vof_wrapped_string (s, tok) =
   Ocaml.VString s
-and vof_name x = vof_wrapped_string x
+and vof_name x = Ocaml.vof_list vof_wrapped_string x
+and vof_qualified_ident x = Ocaml.vof_list vof_wrapped_string x
 and vof_ident x =vof_wrapped_string x
+and vof_var x = vof_wrapped_string x
 
 and vof_stmt =
   function
@@ -76,6 +78,10 @@ and vof_stmt =
       let v1 = vof_constant_def v1 in Ocaml.VSum (("ConstantDef", [ v1 ]))
   | TypeDef v1 ->
       let v1 = vof_type_def v1 in Ocaml.VSum (("TypeDef", [ v1 ]))
+  | NamespaceDef v1 ->
+      let v1 = vof_qualified_ident v1
+      in Ocaml.VSum (("NamespaceDef", [ v1 ]))
+
 
 and vof_type_def { t_name = v_t_name; t_kind = v_t_kind } =
   let bnds = [] in
@@ -100,7 +106,7 @@ and vof_case =
       let v1 = Ocaml.vof_list vof_stmt v1 in Ocaml.VSum (("Default", [ v1 ]))
 and vof_catch (v1, v2, v3) =
   let v1 = vof_hint_type v1
-  and v2 = vof_name v2
+  and v2 = vof_var v2
   and v3 = Ocaml.vof_list vof_stmt v3
   in Ocaml.VTuple [ v1; v2; v3 ]
 and vof_expr =
@@ -109,13 +115,13 @@ and vof_expr =
   | Double v1 ->
       let v1 = Ocaml.vof_string v1 in Ocaml.VSum (("Double", [ v1 ]))
   | String v1 ->
-      let v1 = vof_name v1 in Ocaml.VSum (("String", [ v1 ]))
+      let v1 = vof_wrapped_string v1 in Ocaml.VSum (("String", [ v1 ]))
   | Guil v1 ->
       let v1 = Ocaml.vof_list vof_encaps v1 in Ocaml.VSum (("Guil", [ v1 ]))
   | Id v1 ->
-      let v1 = vof_wrapped_string v1 in Ocaml.VSum (("Id", [ v1 ]))
+      let v1 = vof_name v1 in Ocaml.VSum (("Id", [ v1 ]))
   | Var v1 ->
-      let v1 = vof_wrapped_string v1 in Ocaml.VSum (("Var", [ v1 ]))
+      let v1 = vof_var v1 in Ocaml.VSum (("Var", [ v1 ]))
   | This name ->
       let v1 = vof_wrapped_string name in
       Ocaml.VSum (("This", [ v1 ]))
@@ -220,13 +226,13 @@ and
   let arg =
     Ocaml.vof_list
       (fun (v1, v2) ->
-         let v1 = vof_name v1
+         let v1 = vof_var v1
          and v2 = vof_xhp_attr v2
          in Ocaml.VTuple [ v1; v2 ])
       v_xml_attrs in
   let bnd = ("xml_attrs", arg) in
   let bnds = bnd :: bnds in
-  let arg = vof_name v_xml_tag in
+  let arg = vof_ident v_xml_tag in
   let bnd = ("xml_tag", arg) in let bnds = bnd :: bnds in Ocaml.VDict bnds
 and vof_xhp_attr x = vof_expr x
 
@@ -279,7 +285,7 @@ and vof_func_def {
   let bnds = bnd :: bnds in
   Ocaml.VDict bnds
 and vof_lexical_var (is_ref, name) =
-  Ocaml.VTuple ([Ocaml.vof_bool is_ref; vof_name name])
+  Ocaml.VTuple ([Ocaml.vof_bool is_ref; vof_var name])
 and vof_function_type =
   function
   | Function -> Ocaml.VSum (("Function", []))
@@ -392,7 +398,7 @@ and
   let arg = Ocaml.vof_option vof_hint_type v_cv_type in
   let bnd = ("cv_type", arg) in
   let bnds = bnd :: bnds in
-  let arg = vof_name v_cv_name in
+  let arg = vof_var v_cv_name in
   let bnd = ("cv_name", arg) in let bnds = bnd :: bnds in Ocaml.VDict bnds
 and vof_modifier x = Ast_php.vof_modifier x
 and vof_attribute v = vof_expr v

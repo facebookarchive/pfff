@@ -29,17 +29,16 @@
  *
  * Here is a list of the simplications/factorizations:
  *  - no purely syntactical tokens in the AST like parenthesis, brackets,
- *    braces, angles, commas, semicolons, etc. No ParenExpr. No FinalDef. No
- *    NotParsedCorrectly. The only token information kept is for identifiers
- *    for error reporting. See wrap() below.
+ *    braces, angles, commas, semicolons, antislash, etc. No ParenExpr. 
+ *    No FinalDef. No NotParsedCorrectly. The only token information kept 
+ *    is for identifiers for error reporting. See wrap() below.
  *
  *  - support for old syntax is removed. No IfColon, ColonStmt,
  *    CaseColonList.
  *  - support for extra tools is removed. No XdebugXxx, SgrepXxx.
  *  - support for features we don't really use in our code is removed
- *    e.g. 'use' for namespaces (we accept it for traits and closures though),
- *    unset cast, etc. No Use, UseDirect, UseParen. No CastUnset.
- *    Also no StaticObjCallVar.
+ *    e.g. unset cast. No Use, UseDirect, UseParen. No CastUnset.
+ *    Also no StaticObjCallVar. Also no NamespaceBracketDef.
  *  - some known directives like 'declare(ticks=1);' or 'declare(strict=1);'
  *    are skipped because they don't have a useful semantic for
  *    the abstract interpreter or the type inference engine. No Declare.
@@ -90,7 +89,9 @@
  *  - unified eval_var, some constructs were transformed into calls to
  *    "eval_var" builtin, e.g. no GlobalDollar, no VBrace, no Indirect.
  *
- *  - a simpler 'name': identifiers, xhp names
+ *  - a simpler 'name' for identifiers, xhp names and regular names are merged,
+ *    the special keyword self/parent/static are merged,
+ *    so the complex Id (XName [QI (Name "foo")]) becomes just Id ["foo"].
  *  - ...
  *
  * todo:
@@ -114,7 +115,12 @@ type 'a wrap = 'a * Ast_php.tok option
 type ident = string wrap
 type var = string wrap
 
-type name = string wrap
+(* The keyword 'namespace' can be in a leading position. The special
+ * ident 'ROOT' can also be leading.
+ *)
+type qualified_ident = ident list
+
+type name = qualified_ident
 
 (* ------------------------------------------------------------------------- *)
 (* Program *)
@@ -154,6 +160,8 @@ and stmt =
   (* only at toplevel *)
   | ConstantDef of constant_def
   | TypeDef of type_def
+  (* the qualified_ident below can not have a leading '\' *)
+  | NamespaceDef of qualified_ident
 
   (* Note that there is no LocalVars constructor. Variables in PHP are
    * declared when they are first assigned. *)
@@ -188,8 +196,8 @@ and expr =
 
   (* Id is valid for "entities" (functions, classes, constants). Id is also
    * used for class methods/fields/constants. It Can also contain 
-   * "self/parent". It can be "true", "false", "null" and many other
-   * builtin constants. See builtin() and special() below.
+   * "self/parent" or "static". It can be "true", "false", "null" and many
+   * other builtin constants. See builtin() and special() below.
    *
    * todo: For field name, if in the code they are referenced like $this->fld,
    * we should prepend a $ to fld to match their definition.
@@ -417,7 +425,7 @@ let wrap s = s, Some (Ast_php.fakeInfo s)
  *  used in patterns too.
  *)
 let builtin x = "__builtin__" ^ x
-(* for 'self'/'parent', 'static', 'lambda' *)
+(* for 'self'/'parent', 'static', 'lambda', 'namespace', root namespace '\' *)
 let special x = "__special__" ^ x
 
 (* AST helpers *)
@@ -430,11 +438,18 @@ let is_private modifiers = List.mem Ast_php.Private modifiers
  *)
 let string_of_xhp_tag xs = "<" ^ Common.join ":" xs ^ ">"
 
-let str_of_name (s, _) = s
-let tok_of_name (s, x) =
+let str_of_ident (s, _) = s
+let tok_of_ident (s, x) =
   match x with
   | None -> failwith (Common.spf "no token information for %s" s)
   | Some tok -> tok
+
+let str_of_name = function
+  | [id] -> str_of_ident id
+  | _ -> failwith "no namespace support yet"
+let tok_of_name = function
+  | [id] -> tok_of_ident id
+  | _ -> failwith "no namespace support yet"
 
 (* we sometimes need to remove the '$' prefix *)
 let remove_first_char s =
@@ -447,5 +462,6 @@ let str_of_class_name x =
 
 let name_of_class_name x =
   match x with
-  | Hint (name) -> name
+  | Hint ([name]) -> name
+  | Hint _ -> failwith "no namespace support yet"
   | _ -> raise Common.Impossible

@@ -86,10 +86,9 @@ and toplevel env st acc =
   (* error recovery is off by default now *)
   | NotParsedCorrectly _ -> raise Common.Impossible
   (* coming in next diff *)
-  | NamespaceDef _ ->
-    raise Todo
-  | NamespaceBracketDef _ ->
-    raise Todo
+  | NamespaceDef (_, qi, _) -> A.NamespaceDef (qualified_ident env qi)::acc
+  | NamespaceBracketDef (tok, _, _) ->
+    raise (ObsoleteConstruct tok)
   | NamespaceUse _ ->
     raise Todo
 
@@ -97,16 +96,32 @@ and toplevel env st acc =
 (* Names *)
 (* ------------------------------------------------------------------------- *)
 and name env = function
-   | XName [QI x] -> ident env x
-   | XName _ -> failwith "no namespace support yet"
-   | Self tok -> (A.special "self", wrap tok)
-   | Parent tok -> (A.special "parent", wrap tok)
-   | LateStatic tok -> (A.special "static", wrap tok)
+   | XName qi -> qualified_ident env qi
+   | Self tok -> [A.special "self", wrap tok]
+   | Parent tok -> [A.special "parent", wrap tok]
+   | LateStatic tok -> [A.special "static", wrap tok]
 
 and ident env = function
   | Name (s, tok) -> s, wrap tok
   | XhpName (tl, tok) ->
       A.string_of_xhp_tag tl, wrap tok
+
+and qualified_ident env xs =
+  let leading, rest =
+    match xs with
+    (* a leading '\' *)
+    | (QITok tok)::rest ->
+      [(A.special "ROOT", wrap tok)], rest
+    | (QI (Name ("namespace", tok)))::rest ->
+      [(A.special "namespace", wrap tok)], rest
+    | rest -> [], rest
+  in
+  leading ++
+    (rest +> Common.map_filter (function
+    | QITok _ -> None
+    | QI id -> Some (ident env id)
+     )
+    )
 
 and dname = function
   | DName (s, tok) ->
@@ -165,21 +180,21 @@ and stmt env st acc =
       let cl = List.map (catch env) cl in
       A.Try (stl, c, cl) :: acc
   | Echo (tok, el, _) ->
-      A.Expr (A.Call (A.Id (A.builtin "echo", wrap tok),
+      A.Expr (A.Call (A.Id [A.builtin "echo", wrap tok],
                      (List.map (expr env) (comma_list el)))) :: acc
   | Globals (_, gvl, _) ->
       A.Global (List.map (global_var env) (comma_list gvl)) :: acc
   | StaticVars (_, svl, _) ->
       A.StaticVars (List.map (static_var env) (comma_list svl)) :: acc
   | InlineHtml (s, tok) ->
-      A.Expr (A.Call (A.Id (A.builtin "echo", wrap tok),
+      A.Expr (A.Call (A.Id [A.builtin "echo", wrap tok],
                      [A.String (s, wrap tok)])) :: acc
   | Use (tok, fn, _) ->
       raise (TodoConstruct ("use", tok))
   | Unset (tok, (_, lp, _), e) ->
       let lp = comma_list lp in
       let lp = List.map (lvalue env) lp in
-      A.Expr (A.Call (A.Id (A.builtin "unset", wrap tok), lp)) :: acc
+      A.Expr (A.Call (A.Id [A.builtin "unset", wrap tok], lp)) :: acc
   (* http://php.net/manual/en/control-structures.declare.php *)
   | Declare (tok, args, stmt) ->
       (match args, stmt with
@@ -256,7 +271,7 @@ and expr env = function
   | BraceIdent (_l, e, _r) -> 
       expr env e
   | Deref (tok, e) ->
-      A.Call (A.Id (A.builtin "eval_var", wrap tok), [expr env e])
+      A.Call (A.Id [A.builtin "eval_var", wrap tok], [expr env e])
 
   | Binary (e1, (bop, _), e2) ->
       let e1 = expr env e1 in
@@ -300,7 +315,7 @@ and expr env = function
       let cn = class_name_reference env cn in
       A.New (cn, args)
   | Clone (tok, e) ->
-      A.Call (A.Id (A.builtin "clone", wrap tok), [expr env e])
+      A.Call (A.Id [A.builtin "clone", wrap tok], [expr env e])
   | AssignRef (e1, _, _, e2) ->
       let e1 = lvalue env e1 in
       let e2 = lvalue env e2 in
@@ -319,7 +334,7 @@ and expr env = function
       let cn = class_name_reference env cn in
       A.InstanceOf (e, cn)
   | Eval (tok, (_, e, _)) ->
-      A.Call (A.Id (A.builtin "eval", wrap tok), [expr env e])
+      A.Call (A.Id [A.builtin "eval", wrap tok], [expr env e])
   | Lambda ld ->
       A.Lambda (lambda_def env ld)
   | Exit (tok, e) ->
@@ -329,37 +344,37 @@ and expr env = function
         | Some (_, None, _) -> []
         | Some (_, Some e, _) -> [expr env e]
       in
-      A.Call (A.Id (A.builtin "exit", wrap tok), arg)
+      A.Call (A.Id [A.builtin "exit", wrap tok], arg)
   | At (tok, e) ->
       let arg = expr env e in
-      A.Call (A.Id (A.builtin "at", wrap tok), [arg])
+      A.Call (A.Id [A.builtin "at", wrap tok], [arg])
   | Print (tok, e) ->
-      A.Call (A.Id (A.builtin "print", wrap tok), [expr env e])
+      A.Call (A.Id [A.builtin "print", wrap tok], [expr env e])
   | BackQuote (tok, el, _) ->
-      A.Call (A.Id (A.builtin "exec", wrap tok (* not really an exec token *)),
+      A.Call (A.Id [A.builtin "exec", wrap tok (* not really an exec token *)],
              [A.Guil (List.map (encaps env) el)])
   | Include (tok, e) ->
-      A.Call (A.Id (A.builtin "include", wrap tok), [expr env e])
+      A.Call (A.Id [A.builtin "include", wrap tok], [expr env e])
   | IncludeOnce (tok, e) ->
-      A.Call (A.Id (A.builtin "include_once", wrap tok), [expr env e])
+      A.Call (A.Id [A.builtin "include_once", wrap tok], [expr env e])
   | Require (tok, e) ->
-      A.Call (A.Id (A.builtin "require", wrap tok), [expr env e])
+      A.Call (A.Id [A.builtin "require", wrap tok], [expr env e])
   | RequireOnce (tok, e) ->
-      A.Call (A.Id (A.builtin "require_once", wrap tok), [expr env e])
+      A.Call (A.Id [A.builtin "require_once", wrap tok], [expr env e])
 
   | Empty (tok, (_, lv, _)) ->
-      A.Call (A.Id (A.builtin "empty", wrap tok), [lvalue env lv])
+      A.Call (A.Id [A.builtin "empty", wrap tok], [lvalue env lv])
   | Isset (tok, (_, lvl, _)) ->
-      A.Call (A.Id (A.builtin "isset", wrap tok),
+      A.Call (A.Id [A.builtin "isset", wrap tok],
              List.map (lvalue env) (comma_list lvl))
   | XhpHtml xhp -> A.Xhp (xhp_html env xhp)
 
   | Yield (tok, e) ->
-      A.Call (A.Id (A.builtin "yield", wrap tok), [expr env e])
+      A.Call (A.Id [A.builtin "yield", wrap tok], [expr env e])
   (* todo? merge in one yield_break? *)
   | YieldBreak (tok, tok2) ->
-      A.Call (A.Id (A.builtin "yield", wrap tok),
-             [A.Id (A.builtin "yield_break", wrap tok2)])
+      A.Call (A.Id [A.builtin "yield", wrap tok],
+             [A.Id [A.builtin "yield_break", wrap tok2]])
   | SgrepExprDots _ ->
       (* should never use the abstract interpreter on a sgrep pattern *)
       raise Common.Impossible
@@ -379,14 +394,14 @@ and constant env = function
   | XdebugClass _ | XdebugResource -> raise Common.Impossible
 
 and cpp_directive env tok = function
-  | Line      -> A.Id (A.builtin "__LINE__", wrap tok)
-  | File      -> A.Id (A.builtin "__FILE__", wrap tok)
-  | ClassC    -> A.Id (A.builtin "__CLASS__", wrap tok)
-  | MethodC   -> A.Id (A.builtin "__METHOD__", wrap tok)
-  | FunctionC -> A.Id (A.builtin "__FUNCTION__", wrap tok)
-  | Dir       -> A.Id (A.builtin "__DIR__", wrap tok)
-  | TraitC    -> A.Id (A.builtin "__TRAIT__", wrap tok)
-  | NamespaceC -> A.Id (A.builtin "__NAMESPACE__", wrap tok)
+  | Line      -> A.Id [A.builtin "__LINE__", wrap tok]
+  | File      -> A.Id [A.builtin "__FILE__", wrap tok]
+  | ClassC    -> A.Id [A.builtin "__CLASS__", wrap tok]
+  | MethodC   -> A.Id [A.builtin "__METHOD__", wrap tok]
+  | FunctionC -> A.Id [A.builtin "__FUNCTION__", wrap tok]
+  | Dir       -> A.Id [A.builtin "__DIR__", wrap tok]
+  | TraitC    -> A.Id [A.builtin "__TRAIT__", wrap tok]
+  | NamespaceC -> A.Id [A.builtin "__NAMESPACE__", wrap tok]
 
 and lvalue env a = expr env a 
 
@@ -582,7 +597,7 @@ and xhp_attr_inherit env st acc =
     (comma_list xal) +> List.fold_left (fun acc xhp_attr ->
       match xhp_attr with
       | XhpAttrInherit (source, tok) ->
-        A.Hint (ident env (Ast_php.XhpName (source, tok)))::acc
+        A.Hint [ident env (Ast_php.XhpName (source, tok))]::acc
       | XhpAttrDecl _ -> acc
      ) acc
   | _ -> acc
@@ -625,7 +640,7 @@ and method_def env m =
       let str_without_dollar = Ast_php.str_of_dname var in
       A.Expr (
         A.Assign (None, A.Obj_get(A.This ("$this", tok), 
-                                  A.Id (str_without_dollar, tok)),
+                                  A.Id [str_without_dollar, tok]),
                         A.Var (str_with_dollar, tok)))
     )
   in
@@ -763,7 +778,7 @@ and global_var env = function
   | GlobalVar dn -> A.Var (dname dn)
   (* this is used only once in our codebase, and it should not ... *)
   | GlobalDollar (tok, lv) ->
-      A.Call (A.Id ((A.builtin "eval_var", wrap tok)), [lvalue env lv])
+      A.Call (A.Id [(A.builtin "eval_var", wrap tok)], [lvalue env lv])
   | GlobalDollarExpr (tok, _) ->
       raise (TodoConstruct ("GlobalDollarExpr", tok))
 
@@ -772,9 +787,9 @@ and attributes env = function
   | Some (_, xs, _) ->
     let xs = comma_list xs in
     xs +> List.map (function
-    | Attribute (s, tok) -> A.Id (s, wrap tok)
+    | Attribute (s, tok) -> A.Id [s, wrap tok]
     | AttributeWithArgs ((s, tok), (_, xs, _)) ->
-      A.Call (A.Id (s, wrap tok), List.map (static_scalar env) (comma_list xs))
+      A.Call (A.Id [s, wrap tok], List.map (static_scalar env) (comma_list xs))
     )
 
 (*****************************************************************************)
