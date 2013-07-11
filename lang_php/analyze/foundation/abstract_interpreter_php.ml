@@ -217,7 +217,7 @@ and make_fake_params l =
   List.map (fun p ->
     match p.p_type with
     | Some (Hint name) -> New (Id (name), [])
-    | None | Some (HintArray) -> Id (w "null")
+    | None | Some (HintArray) -> Id [w "null"]
     | _ -> failwith "fake params not implemented for extended types"
   ) l
 
@@ -286,8 +286,8 @@ and fake_root env heap =
         let params = make_fake_params m.f_params in
         let e =
           if is_static m.m_modifiers
-          then (Call (Class_get (Id c.c_name, Id m.f_name), params))
-          else (Call (Obj_get (New (Id c.c_name, []), Id m.f_name), params))
+          then (Call (Class_get (Id [c.c_name], Id [m.f_name]), params))
+          else (Call (Obj_get (New (Id [c.c_name], []), Id [m.f_name]), params))
         in
         ignore(expr env heap e)
       ) c.c_methods
@@ -311,12 +311,13 @@ and fake_root env heap =
 and stmt env heap x =
   match x with
   | TypeDef x -> failwith "no support for typedefs for abstract interpreter"
+  | NamespaceDef x -> failwith "no support for namespace yet"
   (* special keywords in the code to debug the abstract interpreter state.
    * I've added var_dump() so that one can easily run a PHP test file
    * with php or aphp and get both run working (show() is an
    * undefined function in HPHP).
    *)
-  | Expr (Call (Id (("show" | "var_dump"),_), [e])) ->
+  | Expr (Call (Id [(("show" | "var_dump"),_)], [e])) ->
       let heap, v = expr env heap e in
       if !show_vardump then begin
         Env.print_locals_and_globals print_string env heap;
@@ -324,7 +325,7 @@ and stmt env heap x =
       end;
       heap
   (* used by unit testing *)
-  | Expr (Call (Id ("checkpoint",_), [])) ->
+  | Expr (Call (Id [("checkpoint",_)], [])) ->
       _checkpoint_heap := Some (heap, !(env.vars));
       heap
 
@@ -363,7 +364,7 @@ and stmt env heap x =
   | Return (e) ->
       let e =
         match e with
-        | None -> Id (w "null")
+        | None -> Id [(w "null")]
         | Some e -> e
       in
       (* the special "*return*" variable is used in call_fun() below *)
@@ -441,7 +442,7 @@ and stmtl env heap stl = List.fold_left (stmt env) heap stl
 
 and global env heap v =
   match v with
-  | Id (x,_) ->
+  | Id [(x,_)] ->
       let heap, new_, gv = Var.get_global env heap x in
       Var.set env x gv;
       heap
@@ -495,8 +496,8 @@ and expr env heap x =
  *)
 and expr_ env heap x =
   match x with
-  | Id ("true",_)  -> heap, Vbool true
-  | Id ("false",_) -> heap, Vbool false
+  | Id [("true",_)]  -> heap, Vbool true
+  | Id [("false",_)] -> heap, Vbool false
   | Int s     -> heap, Vint   (int_of_string s)
   | Double s  -> heap, Vfloat (float_of_string s)
 
@@ -512,10 +513,10 @@ and expr_ env heap x =
       let v = Taint.fold_slist vl in
       heap, v
 
-  | Id ("null",_)  -> heap, Vnull
-  | Id ("NULL",_)  -> heap, Vnull
+  | Id [("null",_)]  -> heap, Vnull
+  | Id [("NULL",_)]  -> heap, Vnull
 
-  | Id (s,_)  ->
+  | Id [(s,_)]  ->
       (* Must be a constant. Functions and classes are not in the heap;
        * they are managed through the env.db instead and we handle
        * them at the Call (Id ...) and New (Id ...) cases.
@@ -532,6 +533,7 @@ and expr_ env heap x =
          heap, Vany
        )
 
+  | Id _ -> failwith "no namespace support yet"
 
   (* will probably return some Vabstr (Tint|Tbool|...) *)
   | Binop (bop, e1, e2) ->
@@ -602,7 +604,7 @@ and expr_ env heap x =
   | ConsArray (_, []) ->
       heap, Varray []
   | ConsArray (_, avl) ->
-      let id = Id (w "*array*") in
+      let id = Id [(w "*array*")] in
       let heap = List.fold_left (array_value env id) heap avl in
       let heap, _, v = Var.get env heap "*array*" in
       let heap, v = Ptr.get heap v in
@@ -611,9 +613,9 @@ and expr_ env heap x =
   | Collection _ -> failwith "Collection not implemented - complain to pieter@"
 
   (* hardcoded special case, not sure why we need that *)
-  | Call (Id ("id",_), [x]) -> expr env heap x
+  | Call (Id [("id",_)], [x]) -> expr env heap x
 
-  | Call (Id ("call_user_func", tok), e :: el) ->
+  | Call (Id [("call_user_func", tok)], e :: el) ->
       let heap, v = expr env heap e in
       Taint.check_danger env heap "call_user_func" tok !(env.path) v;
       (try
@@ -625,7 +627,7 @@ and expr_ env heap x =
           heap, Vany
       )
   (* simple function call or $x() call *)
-  | Call (Id (s,_), el) ->
+  | Call (Id [(s,_)], el) ->
       (try
         let heap, def = get_function env heap s in
         call_fun def env heap el
@@ -726,7 +728,7 @@ and lvalue env heap x =
    * and return the pointer to pointer for $x from env.vars.
    * See also assign() below.
    *)
-  | Id (s,_) ->
+  | Id [(s,_)] ->
       if !strict
       then failwith ("lvalue should be variables, not Id: " ^ s);
       (* this may create a new variable in env.vars, which is
@@ -753,7 +755,7 @@ and lvalue env heap x =
       heap, true, v
 
   (* will return the field reference or Vmethod depending on s *)
-  | Obj_get (e, Id (s,_)) ->
+  | Obj_get (e, Id [(s,_)]) ->
       let heap, v = expr env heap e in
       let heap, v' = Ptr.get heap v in
       let members = obj_get_members ISet.empty env heap [v'] in
@@ -786,7 +788,7 @@ and lvalue env heap x =
           heap, true, k
       )
   (* will return a classvar reference or Vmethod depending on s *)
-  | Class_get (e, Id (s,_)) ->
+  | Class_get (e, Id [(s,_)]) ->
       let str = get_class env heap e in
       let heap = lazy_class env heap str in
       let heap, _, v = Var.get_global env heap str in
@@ -881,7 +883,7 @@ and get_function env heap id =
     try heap, env.db.funs id
     with Not_found -> raise (UnknownFunction id)
   else
-    let heap, v = expr env heap (Id (w id)) in
+    let heap, v = expr env heap (Id [(w id)]) in
     get_dynamic_function env heap v
 
 (* in PHP functions are passed via strings *)
@@ -1003,7 +1005,7 @@ and sum_call env heap v el =
       (* todo: 's' could reference a static method as in
        * $x = 'A::foo'; $x();
        *)
-      let heap, r = expr env heap (Call (Id (w s), el)) in
+      let heap, r = expr env heap (Call (Id [(w s)], el)) in
       heap, r
   | Vmethod (_, fm) :: _ ->
       let fl = IMap.fold (fun _ y acc -> y :: acc) fm [] in
@@ -1151,7 +1153,7 @@ and xml env heap x =
   let heap = List.fold_left (xhp env) heap x.xml_body in
   (* todo? args = ? *)
   let args = [] in
-  new_ env heap (Id x.xml_tag) args
+  new_ env heap (Id [x.xml_tag]) args
 
 and encaps env heap x = expr env heap x
 
@@ -1170,8 +1172,8 @@ and new_ env heap e el =
    * *myobj->__construct(el);
    *)
     Expr (Assign (None, Var (w "*myobj*"),
-                 Call (Class_get (Id (w str), Id (w "*BUILD*")), [])));
-    Expr (Call (Obj_get (Var (w "*myobj*"), Id (w "__construct")), el));
+                 Call (Class_get (Id [(w str)], Id [(w "*BUILD*")]), [])));
+    Expr (Call (Obj_get (Var (w "*myobj*"), Id [(w "__construct")]), el));
   ] in
   let heap = stmtl env heap stl in
   let heap, _, v = Var.get env heap "*myobj*" in
@@ -1204,9 +1206,9 @@ and obj_get_members mem env heap v =
 and get_class env heap e =
   match e with
   (* pad: ???? *)
-  | Id ("",_) -> ""
+  | Id [("",_)] -> ""
 
-  | Id (s,_) when s.[0] <> '$' -> s
+  | Id [(s,_)] when s.[0] <> '$' -> s
   | Id _ ->
       let env, v = expr env heap e in
       let heap, v = Ptr.get heap v in

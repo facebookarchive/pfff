@@ -41,6 +41,7 @@ module Deps = struct
     List.fold_left stmt acc stl
 
   and stmt acc = function
+    | NamespaceDef _ -> failwith "no namespace support yet"
     (* adding names of entities *)
     | ClassDef c -> SSet.add (unwrap c.c_name) acc
     | FuncDef f -> SSet.add (unwrap f.f_name) acc
@@ -87,7 +88,8 @@ module Deps = struct
   and expr_opt acc = function None -> acc | Some e -> expr acc e
 
   and expr acc = function
-    | Id (s, _) -> SSet.add s acc
+    | Id [(s, _)] -> SSet.add s acc
+    | Id _ -> failwith "no namespace support yet"
     | Var _ -> acc
 
     | Int _ | Double _ | String _ -> acc
@@ -110,9 +112,10 @@ module Deps = struct
         let name = Ast.unwrap x.xml_tag in
         SSet.add name acc
     | ConsArray (_, avl) -> array_valuel acc avl
-    | Collection ((n,_), mel) -> 
+    | Collection ([(n,_)], mel) -> 
       let acc = SSet.add n acc in
       array_valuel acc mel
+    | Collection (_, mel) -> failwith "no namespace support yet"
     | List el -> exprl acc el
     | New (e, el) -> exprl (expr acc e) el
     | CondExpr (e1, e2, e3) ->
@@ -164,7 +167,8 @@ module Deps = struct
   and hint_type acc = function None -> acc | Some x -> hint_type_ acc x
   and hint_type_ acc = function
     (* not sure a type hints counts as a dependency *)
-    | Hint (s, _) -> SSet.add s acc
+    | Hint [(s, _)] -> SSet.add s acc
+    | Hint _ -> failwith "no namespace support yet"
     | HintArray -> acc
     | HintQuestion t -> hint_type_ acc t
     | HintTuple t -> List.fold_left (fun accp x -> SSet.union accp (hint_type_ accp x)) acc t

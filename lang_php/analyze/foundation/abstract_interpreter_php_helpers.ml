@@ -484,7 +484,7 @@ module NullNewVars = struct
     (* todo? enough? what about deeply nested assignements?
      * what if had some 'global' directives in previous statements?
      *)
-    | Expr (Assign (_, Id (s,_), _)) when not (SMap.mem s !(env.vars)) ->
+    | Expr (Assign (_, Id [s,_], _)) when not (SMap.mem s !(env.vars)) ->
         let heap, _, _ = Var.get env heap s in
         heap
     | _ -> heap

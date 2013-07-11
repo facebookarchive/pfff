@@ -177,7 +177,7 @@ type env = {
    *)
   db: Entity_php.entity_finder option;
   (* when analyze $this->method_call(), we need to know the enclosing class *)
-  in_class: name option;
+  in_class: ident option;
 
   (* for better error message when the variable was inside a lambda *)
   in_lambda: bool;
@@ -208,8 +208,8 @@ let unused_ok s =
 let lookup_opt s vars =
   Common2.optionise (fun () -> Map_poly.find s vars)
 
-let s_tok_of_name name =
-  A.str_of_name name, A.tok_of_name name
+let s_tok_of_ident name =
+  A.str_of_ident name, A.tok_of_ident name
 
 (* to help debug *)
 let str_of_any any =
@@ -235,9 +235,9 @@ let funcdef_of_call_or_new_opt env e =
   | None -> None
   | Some find_entity ->
       (match e with
-      | Id name ->
+      | Id [name] ->
           (* simple function call *)
-            let (s, tok) = s_tok_of_name name in
+            let (s, tok) = s_tok_of_ident name in
             (match find_entity (Ent.Function, s) with
             | [Ast_php.FunctionE def] -> Some def
             (* normally those errors should be triggered in
@@ -280,11 +280,11 @@ let funcdef_of_call_or_new_opt env e =
        *
        * todo: special case also id(new ...)-> ?
        *)
-      | Obj_get (This _, Id name2) ->
+      | Obj_get (This _, Id [name2]) ->
           (match env.in_class with
           | Some name1 ->
-              let aclass = A.str_of_name name1 in
-              let amethod = A.str_of_name name2 in
+              let aclass = A.str_of_ident name1 in
+              let amethod = A.str_of_ident name2 in
               (try
                 Some (Class_php.lookup_method ~case_insensitive:true
                     (aclass, amethod) find_entity)
@@ -306,7 +306,7 @@ let funcdef_of_call_or_new_opt env e =
 (*****************************************************************************)
 
 let check_defined env name ~incr_count =
-  let (s, tok) = s_tok_of_name name in
+  let (s, tok) = s_tok_of_ident name in
   match lookup_opt s !(env.vars) with
   | None ->
       (* todo? could still issue an error but with the information that
@@ -324,7 +324,7 @@ let check_defined env name ~incr_count =
             let suggest = Suggest_fix_php.suggest s allvars in
             E.UseOfUndefinedVariable (s, suggest)
         in
-        E.fatal (A.tok_of_name name) err
+        E.fatal (A.tok_of_ident name) err
 
   | Some (_tok, scope, access_count) ->
       Hashtbl.add env.scope_vars_used tok scope;
@@ -346,7 +346,7 @@ let check_used env vars =
   )
 
 let create_new_local_if_necessary ~incr_count env name =
-  let (s, tok) = s_tok_of_name name in
+  let (s, tok) = s_tok_of_ident name in
   match lookup_opt s !(env.vars) with
   (* new local variable implicit declaration.
    * todo: add in which nested scope? I would argue to add it
@@ -408,7 +408,7 @@ and func_def env def =
     (* fresh new scope, PHP has function scope (not block scope) *)
     vars = ref ((
       (def.f_params +> List.map (fun p ->
-        let (s, tok) = s_tok_of_name p.p_name in
+        let (s, tok) = s_tok_of_ident p.p_name in
         s, (tok, S.Param, ref access_cnt)
       )) ++
       (Env_php.globals_builtins +> List.map (fun s ->
@@ -424,7 +424,7 @@ and func_def env def =
   }
   in
   def.l_uses +> List.iter (fun (is_ref, name) ->
-    let (s, tok) = s_tok_of_name name in
+    let (s, tok) = s_tok_of_ident name in
     check_defined ~incr_count:true { env with vars = ref oldvars} name;
     (* don't reuse same access count reference; the variable has to be used
      * again in this new scope.
@@ -452,6 +452,7 @@ and stmt env = function
   | ClassDef def -> class_def env def
   | ConstantDef def -> constant_def env def
   | TypeDef def -> typedef_def env def
+  | NamespaceDef _ -> failwith "no support for namespace yet"
 
   | Expr e -> expr env e
   (* todo: block scope checking when in strict mode? *)
@@ -488,7 +489,7 @@ and stmt env = function
 
       (match e2 with
       | Var name | Ref (Var name) ->
-          let (s, tok) = s_tok_of_name name in
+          let (s, tok) = s_tok_of_ident name in
           (* todo: if already in scope? shadowing? *)
           (* todo: if strict then introduce new scope here *)
           (* todo: scope_ref := S.LocalIterator; *)
@@ -510,7 +511,7 @@ and stmt env = function
       | Some e3 ->
           (match e3 with
           | Var name | Ref (Var name) ->
-              let (s, tok) = s_tok_of_name name in
+              let (s, tok) = s_tok_of_ident name in
               (* todo: scope_ref := S.LocalIterator; *)
               env.vars := Map_poly.add s (tok, S.LocalIterator, shared_ref)
                 !(env.vars);
@@ -534,7 +535,7 @@ and stmt env = function
   | StaticVars xs ->
       xs +> List.iter (fun (name, eopt) ->
         Common.opt (expr env) eopt;
-        let (s, tok) = s_tok_of_name name in
+        let (s, tok) = s_tok_of_ident name in
         (* less: check if shadows something? *)
         env.vars := Map_poly.add s (tok, S.Static, ref 0) !(env.vars);
       )
@@ -545,7 +546,7 @@ and stmt env = function
          *)
         match e with
         | Var name ->
-            let (s, tok) = s_tok_of_name name in
+            let (s, tok) = s_tok_of_ident name in
             env.vars := Map_poly.add s (tok, S.Global, ref 0) !(env.vars);
         (* todo: E.warning tok E.UglyGlobalDynamic *)
         | _ ->
@@ -562,7 +563,7 @@ and stmt env = function
  * less: could use ref 1, the exception is often not used
  *)
 and catch env (hint_type, name, xs) =
-  let (s, tok) = s_tok_of_name name in
+  let (s, tok) = s_tok_of_ident name in
   env.vars := Map_poly.add s (tok, S.LocalExn, ref 0) !(env.vars);
   stmtl env xs
 
@@ -610,7 +611,7 @@ and expr env = function
           let rec aux = function
             (* should be an lvalue again *)
             | Var name ->
-                let (s, tok) = s_tok_of_name name in
+                let (s, tok) = s_tok_of_ident name in
                 (match lookup_opt s !(env.vars) with
                 | None ->
                     env.vars := Map_poly.add s (tok, S.ListBinded, shared_ref)
@@ -639,9 +640,9 @@ and expr env = function
            *)
           expr env e1
 
-      | Call (Id(("__builtin__eval_var", _) as name), args) ->
+      | Call (Id[(("__builtin__eval_var", _) as name)], args) ->
           env.bailout := true;
-          E.warning (tok_of_name name) E.DynamicCode
+          E.warning (tok_of_ident name) E.DynamicCode
 
       (* can we have another kind of lvalue? *)
       | e ->
@@ -659,7 +660,7 @@ and expr env = function
    * considered as a use of variable. There should be another
    * statement in the function that actually uses the variable.
    *)
-  | Call (Id ("__builtin__unset", tok), args) ->
+  | Call (Id[ ("__builtin__unset", tok)], args) ->
       args +> List.iter (function
         (* should be an lvalue again *)
         (* less: The use of 'unset' on a variable is still not clear to me. *)
@@ -677,7 +678,7 @@ and expr env = function
             raise Todo
       )
   (* special case, could factorize maybe with pass_var_by_ref *)
-  | Call (Id ("sscanf", tok), x::y::vars) ->
+  | Call (Id[ ("sscanf", tok)], x::y::vars) ->
       (* what if no x and y? wrong number of arguments, not our business here*)
       expr env x;
       expr env y;
@@ -693,23 +694,23 @@ and expr env = function
    *  maybe we should have a bailout_vars and skip further errors on $x.
    * todo: could have isset(Array_get(...) there too no?
    *)
-  | Call (Id ("__builtin__isset", tok), [Var (name)]) ->
+  | Call (Id[ ("__builtin__isset", tok)], [Var (name)]) ->
       ()
   (* http://php.net/manual/en/function.empty.php
    * "empty() does not generate a warning if the variable does not exist."
    *)
-  | Call (Id ("__builtin__empty", tok), [Var (name)]) ->
+  | Call (Id[ ("__builtin__empty", tok)], [Var (name)]) ->
       ()
 
 
-  | Call (Id ((("__builtin__eval" | "__builtin__eval_var" |
+  | Call (Id[ ((("__builtin__eval" | "__builtin__eval_var" |
                "extract" | "compact"
-       ), _) as name), _args) ->
+       ), _) as name)], _args) ->
       env.bailout := true;
-      E.warning (tok_of_name name) E.DynamicCode
+      E.warning (tok_of_ident name) E.DynamicCode
 
       (* facebook specific? should be a hook instead to visit_prog? *)
-  | Call(Id("param_post"|"param_get"|"param_request"|"param_cookie"as kind,tok),
+  | Call(Id[("param_post"|"param_get"|"param_request"|"param_cookie"as kind,tok)],
         (ConsArray (_, array_args))::rest_param_xxx_args) ->
 
       (* have passed a 'prefix' arg, or nothing *)
@@ -735,7 +736,7 @@ and expr env = function
           array_args +> List.iter (function
           | Akval(String(param_string, tok_param), _typ_param) ->
               let s = "$" ^ prefix ^ param_string in
-              let tok = A.tok_of_name (param_string, tok_param) in
+              let tok = A.tok_of_ident (param_string, tok_param) in
               env.vars := Map_poly.add s (tok, S.Local, ref 0) !(env.vars);
               (* less: display an error? weird argument to param_xxx func? *)
           | _ -> ()
@@ -823,7 +824,7 @@ and expr env = function
       )
 
   | New (e, es) ->
-      expr env (Call (Class_get(e, Id ("__construct", None)), es))
+      expr env (Call (Class_get(e, Id[ ("__construct", None)]), es))
 
   | InstanceOf (e1, e2) -> exprl env [e1;e2]
 

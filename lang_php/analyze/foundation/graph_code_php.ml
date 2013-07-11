@@ -186,16 +186,16 @@ let add_node_and_edge_if_defs_mode ?(props=[]) env name_node =
   let str =
     match kind with
     | E.ClassConstant | E.Field | E.Method _ ->
-      env.self ^ "." ^ Ast.str_of_name name
+      env.self ^ "." ^ Ast.str_of_ident name
     | _ ->
-      Ast.str_of_name name
+      Ast.str_of_ident name
   in
   let node = (str, kind) in
 
   if env.phase = Defs then begin
     if G.has_node node env.g
     then
-      let file = Parse_info.file_of_info (Ast.tok_of_name name) in
+      let file = Parse_info.file_of_info (Ast.tok_of_ident name) in
       (* todo: look if is_skip_error_file in which case populate
        * a env.dupe_renaming
        *)
@@ -226,7 +226,7 @@ let add_node_and_edge_if_defs_mode ?(props=[]) env name_node =
       env.g +> G.add_edge (env.current, node) G.Has;
 
       let nodeinfo = { Graph_code.
-        pos = Parse_info.token_location_of_info (Ast.tok_of_name name);
+        pos = Parse_info.token_location_of_info (Ast.tok_of_ident name);
         props = props;
       } in
       env.g +> G.add_nodeinfo node nodeinfo;
@@ -267,7 +267,7 @@ let rec add_use_edge env (((str, tok) as name, kind)) =
         Hashtbl.find env.case_insensitive (lowercase_and_underscore str, kind)in
       (*env.pr2_and_log (spf "CASE SENSITIVITY: %s instead of %s at %s"
                          str final_str 
-                         (Parse_info.string_of_info (Ast.tok_of_name name)));
+                         (Parse_info.string_of_info (Ast.tok_of_ident name)));
       *)
       add_use_edge env ((final_str, tok), kind)
 
@@ -315,8 +315,8 @@ let rec add_use_edge env (((str, tok) as name, kind)) =
              -> ()
         (* | E.Method _  | E.ClassConstant ->          () *)
         | _ ->
-            let file = name +> Ast.tok_of_name +> Parse_info.file_of_info in
-            let line = name +> Ast.tok_of_name +> Parse_info.line_of_info in
+            let file = name +> Ast.tok_of_ident +> Parse_info.file_of_info in
+            let line = name +> Ast.tok_of_ident +> Parse_info.line_of_info in
             let f =
               if env.phase = Inheritance
               then env.pr2_and_log
@@ -401,9 +401,10 @@ and stmt_bis env x =
   | ClassDef def -> class_def env def
   | ConstantDef def -> constant_def env def
   | TypeDef def -> type_def env def
+  | NamespaceDef _ -> failwith "no support for namespace yet"
 
   (* old style constant definition, before PHP 5.4 *)
-  | Expr(Call(Id("define", _), [String((name)); v])) ->
+  | Expr(Call(Id[("define", _)], [String((name)); v])) ->
      let node = (name, E.Constant) in
      let env = add_node_and_edge_if_defs_mode env node in
      expr env v
@@ -501,7 +502,7 @@ and class_def env def =
     );
 
   end;
-  let self = Ast.str_of_name def.c_name in
+  let self = Ast.str_of_ident def.c_name in
   let parent =
     match def.c_extends with
     | None -> "NOPARENT"
@@ -542,7 +543,7 @@ and class_def env def =
          | Some c ->
            (match 
                lookup env.g (Ast.str_of_class_name c, 
-                             Ast.str_of_name fld.cv_name) ()
+                             Ast.str_of_ident fld.cv_name) ()
             with
             | None -> ()
             | Some ((s, _), _kind) ->
@@ -589,9 +590,10 @@ and type_def_kind env = function
 (* Types *)
 (* ---------------------------------------------------------------------- *)
 and hint_type env = function
-  | Hint name ->
+  | Hint [name] ->
       let node = (name, E.Class E.RegularClass) in
       add_use_edge env node
+  | Hint _ -> failwith "no support for namespace yet"
   | HintArray -> ()
   | HintQuestion t -> hint_type env t
   | HintTuple xs -> List.iter (hint_type env) xs
@@ -636,8 +638,10 @@ and expr env x =
    * is executed really as a last resort, which usually means when
    * there is the use of a constant.
    *)
-  | Id name ->
+  | Id [name] ->
     add_use_edge env (name, E.Constant)
+  | Id _ ->
+    failwith "no support for namespace yet"
 
   (* a parameter or local variable *)
   | Var ident ->
@@ -647,22 +651,23 @@ and expr env x =
   | Call (e, es) ->
     (match e with
     (* simple function call *)
-    | Id name ->
+    | Id [name] ->
         add_use_edge env (name, E.Function);
         exprl env es
+    | Id _ -> failwith "no support for namespace yet"
 
     (* static method call *)
-    | Class_get (Id ("__special__self", tok), e2) ->
-        expr env (Call (Class_get (Id (env.self, tok), e2), es))
-    | Class_get (Id ("__special__parent", tok), e2) ->
-        expr env (Call (Class_get (Id (env.parent, tok), e2), es))
+    | Class_get (Id[ ("__special__self", tok)], e2) ->
+        expr env (Call (Class_get (Id[ (env.self, tok)], e2), es))
+    | Class_get (Id[ ("__special__parent", tok)], e2) ->
+        expr env (Call (Class_get (Id[ (env.parent, tok)], e2), es))
     (* less: incorrect actually ... but good enough for now for codegraph *)
-    | Class_get (Id ("__special__static", tok), e2) ->
-        expr env (Call (Class_get (Id (env.self, tok), e2), es))
+    | Class_get (Id[ ("__special__static", tok)], e2) ->
+        expr env (Call (Class_get (Id[ (env.self, tok)], e2), es))
 
-    | Class_get (Id name1, Id name2) ->
-         let aclass = Ast.str_of_name name1 in
-         let amethod = Ast.str_of_name name2 in
+    | Class_get (Id [name1], Id [name2]) ->
+         let aclass = Ast.str_of_ident name1 in
+         let amethod = Ast.str_of_ident name2 in
          let tok = snd name2 in
          let node = ((aclass ^ "." ^ amethod, tok), E.Method E.RegularMethod)in
          (* some classes may appear as dead because a 'new X()' is
@@ -690,7 +695,7 @@ and expr env x =
         (match e1 with
         (* handle easy case *)
         | This (_,tok) ->
-          expr env (Call (Class_get (Id (env.self, tok), Id name2), es))
+          expr env (Call (Class_get (Id[ (env.self, tok)], Id name2), es))
         (* need class analysis ... *)
         | _ ->
           (* less: increment dynamic_fails stats *)
@@ -710,17 +715,17 @@ and expr env x =
    *)
   | Class_get (e1, e2) ->
       (match e1, e2 with
-      | Id ("__special__self", tok), _ ->
-        expr env (Class_get (Id (env.self, tok), e2))
-      | Id ("__special__parent", tok), _ ->
-        expr env (Class_get (Id (env.parent, tok), e2))
+      | Id[ ("__special__self", tok)], _ ->
+        expr env (Class_get (Id[ (env.self, tok)], e2))
+      | Id[ ("__special__parent", tok)], _ ->
+        expr env (Class_get (Id[ (env.parent, tok)], e2))
       (* less: incorrect actually ... but good enough for now for codegraph *)
-      | Id ("__special__static", tok), _ ->
-        expr env (Class_get (Id (env.self, tok), e2))
+      | Id[ ("__special__static", tok)], _ ->
+        expr env (Class_get (Id[ (env.self, tok)], e2))
 
-      | Id name1, Id name2 ->
-          let aclass = Ast.str_of_name name1 in
-          let aconstant = Ast.str_of_name name2 in
+      | Id [name1], Id [name2] ->
+          let aclass = Ast.str_of_ident name1 in
+          let aconstant = Ast.str_of_ident name2 in
           let tok = snd name2 in
           (match lookup env.g (aclass, aconstant) tok with
           | None -> 
@@ -731,9 +736,9 @@ and expr env x =
             add_use_edge env n
           )
 
-      | Id name1, Var name2 ->
-          let aclass = Ast.str_of_name name1 in
-          let astatic_var = Ast.str_of_name name2 in
+      | Id [name1], Var name2 ->
+          let aclass = Ast.str_of_ident name1 in
+          let astatic_var = Ast.str_of_ident name2 in
           let tok = snd name2 in
           (match lookup env.g (aclass, astatic_var) tok with
           | None -> 
@@ -747,7 +752,7 @@ and expr env x =
           )
 
      (* less: update dynamic stats *)
-     | Id name1, e2  ->
+     | Id [name1], e2  ->
           add_use_edge env (name1, E.Class E.RegularClass);
           expr env e2;
      | e1, Id name2  ->
@@ -760,9 +765,9 @@ and expr env x =
   | Obj_get (e1, e2) ->
       (match e1, e2 with
       (* handle easy case *)
-      | This (_, tok), Id name2 ->
+      | This (_, tok), Id [name2] ->
           let (s2, tok2) = name2 in
-          expr env (Class_get (Id (env.self, tok), Var ("$" ^ s2, tok2)))
+          expr env (Class_get (Id[ (env.self, tok)], Var ("$" ^ s2, tok2)))
       | _, Id name2  ->
           expr env e1;
       | _ ->
@@ -770,7 +775,7 @@ and expr env x =
       )
 
   | New (e, es) ->
-      expr env (Call (Class_get(e, Id ("__construct", None)), es))
+      expr env (Call (Class_get(e, Id[ ("__construct", None)]), es))
 
   (* -------------------------------------------------- *)
   (* boilerplate *)
@@ -780,8 +785,8 @@ and expr env x =
       expr env e1;
       (match e2 with
       (* less: add deps? *)
-      | Id name ->
-        let node = Ast.str_of_name name, E.Class E.RegularClass in
+      | Id [name] ->
+        let node = Ast.str_of_ident name, E.Class E.RegularClass in
           if not (G.has_node node env.g) 
           then 
             env.log (spf "PB: instanceof unknown class: %s"
@@ -800,9 +805,10 @@ and expr env x =
   | Guil xs -> exprl env xs
   | Ref e -> expr env e
   | ConsArray (_, xs) -> array_valuel env xs
-  | Collection (name, xs) ->
+  | Collection ([name], xs) ->
     add_use_edge env (name, E.Class E.RegularClass);
     array_valuel env xs
+  | Collection (_, _) -> failwith "no support for namespace yet"
   | Xhp x -> xml env x
   | CondExpr (e1, e2, e3) -> exprl env [e1; e2; e3]
   (* less: again, add deps for type? *)
@@ -821,9 +827,9 @@ and map_value env (e1, e2) = exprl env [e1; e2]
 and xml env x =
  (* todo: dependency on field? *)
   add_use_edge env (x.xml_tag, E.Class E.RegularClass);
-  let aclass = Ast.str_of_name x.xml_tag in
+  let aclass = Ast.str_of_ident x.xml_tag in
   x.xml_attrs +> List.iter (fun (name, xhp_attr) ->
-    let afield = Ast.str_of_name name ^ "=" in
+    let afield = Ast.str_of_ident name ^ "=" in
     let tok = snd name in
     let node = ((aclass ^ "." ^ afield, tok), E.Field) in
     (match lookup env.g (aclass, afield) tok with
