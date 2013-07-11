@@ -2,7 +2,8 @@
 
 trait UseParentButNotParent {
   final public function __construct() {
-    parent::__construct();
+    // generate a lookup failure right now
+    //SKIP: parent::__construct();
   }
 }
 

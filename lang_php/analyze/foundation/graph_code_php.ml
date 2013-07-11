@@ -12,14 +12,12 @@
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the file
  * license.txt for more details.
  *)
-open Common2 (* for ==~ *)
 open Common
 
+open Ast_php_simple
+module Ast = Ast_php_simple
 module E = Database_code
 module G = Graph_code
-
-module Ast = Ast_php_simple
-open Ast_php_simple
 
 (*****************************************************************************)
 (* Prelude *)
@@ -50,7 +48,7 @@ open Ast_php_simple
  *  - add tests
  *
  * issues regarding errors in a codebase:
- *  - parse errors, test code
+ *  - parse errors, maybe test code
  *    => skip list, file: or dir:
  *  - nested functions, duped functions defined conditionnally
  *    => use the at_toplevel field below
@@ -125,6 +123,11 @@ type env = {
 (*****************************************************************************)
 (* Helpers *)
 (*****************************************************************************)
+let (==~) = Common2.(==~)
+
+(* if you want to get all the errors in pfff.log, you must set to false
+ * otherwise you'll get only the first lookup failure error
+ *)
 let add_fake_node_when_undefined_entity = ref true
 
 let _hmemo = Hashtbl.create 101
@@ -240,9 +243,11 @@ let add_node_and_edge_if_defs_mode ?(props=[]) env name_node =
     { env with current = node }
 
 let lowercase_and_underscore str = 
-  let lowercase_str = String.lowercase str in
-  let regexp = Str.regexp "-" in
-  Str.global_replace regexp "_" lowercase_str
+  str
+  (* php is case insensitive *)
+  +> String.lowercase
+  (* xhp is "dash" insensitive *)
+  +> Str.global_replace (Str.regexp "-") "_" 
 
 let rec add_use_edge env (((str, tok) as name, kind)) =
   let src = env.current in
@@ -250,16 +255,16 @@ let rec add_use_edge env (((str, tok) as name, kind)) =
   (match () with
   (* maybe nested function, in which case we dont have the def *)
   | _ when not (G.has_node src env.g) ->
-      env.pr2_and_log (spf "LOOKUP SRC FAIL %s --> %s, src doesn't exist (nested func?)"
-              (G.string_of_node src) (G.string_of_node dst));
+      env.pr2_and_log 
+        (spf "LOOKUP SRC FAIL %s --> %s, src doesn't exist (nested func?)"
+           (G.string_of_node src) (G.string_of_node dst));
 
   | _ when G.has_node dst env.g ->
       G.add_edge (src, dst) G.Use env.g
 
-  | _ when Hashtbl.mem env.case_insensitive(lowercase_and_underscore str, kind)
-      ->
+  | _ when Hashtbl.mem env.case_insensitive(lowercase_and_underscore str,kind)->
       let (final_str, _) =
-        Hashtbl.find env.case_insensitive (lowercase_and_underscore str, kind) in
+        Hashtbl.find env.case_insensitive (lowercase_and_underscore str, kind)in
       (*env.pr2_and_log (spf "CASE SENSITIVITY: %s instead of %s at %s"
                          str final_str 
                          (Parse_info.string_of_info (Ast.tok_of_name name)));
@@ -267,47 +272,49 @@ let rec add_use_edge env (((str, tok) as name, kind)) =
       add_use_edge env ((final_str, tok), kind)
 
   | _ ->
-      (match kind with
-      (* if dst is a Class, then try Interface *)
-      (*
+    (match kind with
+      (* if dst is a Class, then try Interface
       | E.Class E.RegularClass ->
           add_use_edge env (name, E.Class E.Interface)
       *)
+      (* not used for now
       | E.Class E.RegularClass ->
           add_use_edge env (name, E.Type)
       (* do not add such a node *)
       | E.Type -> ()
-        
+      *)
       | _  ->
-          let kind_original = kind in
-          let dst = (str, kind_original) in
-          if !add_fake_node_when_undefined_entity then
-            G.add_node dst env.g;
-          let parent_target = G.not_found in
-          (match kind with
-          (* todo: fix those *)
-          | E.Field when (not (str =~ ".*=")) -> ()
-          (* Ignore xhp field:
-           * custom data attribute :
-           * http://www.w3.org/TR/2011/WD-html5-20110525/elements.html
-           * #embedding-custom-non-visible-data-with-the-data-attributes
-           * ARIA : http://dev.w3.org/html5/markup/aria/aria.html 
-           * server side attribute :
-           * flib/markup/xhp/html.php:52
-           *)
-          | E.Field when ((str =~ ".*\\.data-.*=") || (str =~ ".*\\.aria-.*=")
-                          || (str =~ ".*\\.srvr-.*="))
-              -> ()
-          (* todo: handle __call and the dynamicYield idiom *)
-          | E.Method _ when str =~ ".*\\.gen.*" 
-                         || str =~ ".*\\.get.*" 
-                         || str =~ ".*\\.prepare.*" 
-                         (* phabricator LiskDAO *)
-                         || str =~ ".*\\.set[A-Z].*"
-             -> ()
+        let kind_original = kind in
+        let dst = (str, kind_original) in
+        let parent_target = G.not_found in
 
-          (* | E.Method _  | E.ClassConstant ->          () *)
-          | _ ->
+        if !add_fake_node_when_undefined_entity 
+        then G.add_node dst env.g;
+        
+        (match kind with
+        (* todo: fix those *)
+        | E.Field when (not (str =~ ".*=")) -> ()
+        (* Ignore xhp field:
+         * custom data attribute :
+         * http://www.w3.org/TR/2011/WD-html5-20110525/elements.html
+         * #embedding-custom-non-visible-data-with-the-data-attributes
+         * ARIA : http://dev.w3.org/html5/markup/aria/aria.html 
+         * server side attribute :
+         * flib/markup/xhp/html.php:52
+         *)
+        | E.Field when ((str =~ ".*\\.data-.*=") || 
+                        (str =~ ".*\\.aria-.*=") || 
+                        (str =~ ".*\\.srvr-.*="))
+            -> ()
+        (* todo: handle __call and the dynamicYield idiom *)
+        | E.Method _ when str =~ ".*\\.gen.*" 
+                       || str =~ ".*\\.get.*" 
+                       || str =~ ".*\\.prepare.*" 
+                       (* phabricator LiskDAO *)
+                       || str =~ ".*\\.set[A-Z].*"
+             -> ()
+        (* | E.Method _  | E.ClassConstant ->          () *)
+        | _ ->
             let file = name +> Ast.tok_of_name +> Parse_info.file_of_info in
             let line = name +> Ast.tok_of_name +> Parse_info.line_of_info in
             let f =
@@ -318,9 +325,9 @@ let rec add_use_edge env (((str, tok) as name, kind)) =
                 then (fun _s -> ())
                 else 
                   (match kind with
-                  | E.Function 
+                  | E.Function | E.Class _ | E.Constant
                     (* todo: fix those too
-                  | E.Class _ | E.ClassConstant
+                  | E.ClassConstant
                     *)
                     -> env.pr2_and_log
                   | _ -> env.log
@@ -328,11 +335,10 @@ let rec add_use_edge env (((str, tok) as name, kind)) =
             in
             f (spf "PB: lookup fail on %s (at %s:%d)"(G.string_of_node dst) 
                  (env.path file) line);
-            if !add_fake_node_when_undefined_entity then
-              begin
-                env.g +> G.add_edge (parent_target, dst) G.Has;
-                env.g +> G.add_edge (src, dst) G.Use;
-              end
+            if !add_fake_node_when_undefined_entity then begin
+              env.g +> G.add_edge (parent_target, dst) G.Has;
+              env.g +> G.add_edge (src, dst) G.Use;
+            end
           );
       )
   )
