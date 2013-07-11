@@ -115,7 +115,7 @@ let rec increq_expr_of_expr e =
 
   (* ./ffi -dump_php_ml ../tests/require_dirname.php *)
   | (Binary(
-      (Call(Id (XName (Name(("dirname", i_2)))),
+      (Call(Id (XName[QI (Name(("dirname", i_2)))]),
                       (i_3,
                       [Left (Arg(
                         (Sc(C(PreProcess(((File, i_4))))))))],
@@ -127,10 +127,10 @@ let rec increq_expr_of_expr e =
 
   (* ./ffi -dump_php_ml ../tests/require_realpath.php *)
   | (Binary(
-      (Call(Id (XName (Name(("realpath", i_2)))),
+      (Call(Id (XName[QI (Name(("realpath", i_2)))]),
                       (i_3,
                       [Left (Arg(
-                        (Call(Id (XName (Name(("dirname", i_4)))),
+                        (Call(Id (XName[QI (Name(("dirname", i_4)))]),
                                         (i_5,
                                         [Left (Arg(
                                           (Sc(
@@ -147,11 +147,11 @@ let rec increq_expr_of_expr e =
       ConcatRealpathDirname(sfilename)
 
   | (Binary(
-      (Call(Id (XName (Name(("realpath", i_2)))),
+      (Call(Id (XName[QI (Name(("realpath", i_2)))]),
                       (i_3,
                       [Left (Arg(
                         (Binary(
-                          (Call(Id (XName (Name(("dirname", i_4)))),
+                          (Call(Id (XName[QI (Name(("dirname", i_4)))]),
                                           (i_5,
                                           [Left Arg((
                                             (Sc(
@@ -170,11 +170,11 @@ let rec increq_expr_of_expr e =
       ConcatRealpathDirname(sfilename1 ^ sfilename2)
 
   (* ./ffi -dump_php_ml ../tests/require_realpath3.php *)
-  | (Call(Id (XName (Name(("realpath", i_2)))),
+  | (Call(Id (XName[QI (Name(("realpath", i_2)))]),
                     (i_3,
                     [Left (Arg(
                       (Binary(
-                        (Call(Id (XName (Name(("dirname", i_4)))),
+                        (Call(Id (XName[QI (Name(("dirname", i_4)))]),
                                         (i_5,
                                         [Left (Arg(
                                           (Sc(
@@ -194,7 +194,7 @@ let rec increq_expr_of_expr e =
 
 
   (* ./ffi -dump_php_ml ../tests/require_constant_concat.php *)
-  | (Binary((Id(XName(name))),
+  | (Binary((Id(XName[QI (name)])),
            (BinaryConcat, i_4),
            (Sc(C(String((sfilename, i_5)))))))
     ->

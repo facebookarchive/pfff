@@ -122,7 +122,7 @@ let defs_of_any any =
 
     V.kexpr = (fun (k, bigf) x ->
       match x with
-      | Call(Id(XName (Name ("define", tok))), args) ->
+      | Call(Id(XName[QI (Name ("define", tok))]), args) ->
           let args = args +> Ast.unparen +> Ast.uncomma in
           (match args with
           (* Maybe better to have a Define directly in the AST. Note that
@@ -217,10 +217,10 @@ let uses_of_any ?(verbose=false) any =
     V.kxhp_html = (fun (k, _) x ->
       match x with
       | Xhp (xhp_tag, _attrs, _tok, _body, _end) ->
-          Common.push2 (E.Class E.RegularClass, XName(XhpName xhp_tag)) aref;
+          Common.push2 (E.Class E.RegularClass, XName[QI(XhpName xhp_tag)]) aref;
           k x
       | XhpSingleton (xhp_tag, _attrs, _tok) ->
-          Common.push2 (E.Class E.RegularClass, XName(XhpName xhp_tag)) aref;
+          Common.push2 (E.Class E.RegularClass, XName[QI(XhpName xhp_tag)]) aref;
           k x
       (* todo: do it also for xhp attributes ? kxhp_tag then ?
        * (but take care to not include doublon because have

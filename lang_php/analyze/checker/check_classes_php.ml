@@ -235,11 +235,12 @@ let visit_and_check  find_entity prog =
           (match qu with
           | Id (classname) ->
             (match classname with
-            | XName classname ->
+            | XName [QI classname] ->
               let aclass = Ast.str_of_ident classname in
               let amethod = Ast.str_of_name name in
               check_method_call StaticCall
                 (aclass, amethod) (name, args) find_entity
+            | XName _ -> failwith "no namespace support yet"
 
             | (Self _ | Parent _) ->
               if !in_trait

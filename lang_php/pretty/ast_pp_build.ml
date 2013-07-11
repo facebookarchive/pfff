@@ -288,7 +288,8 @@ let rec toplevel env st acc =
   | NotParsedCorrectly _ -> raise Common.Impossible
 
 and (name: env -> name -> string) = fun env -> function
-   | XName fqcn -> ident env fqcn
+   | XName [QI fqcn] -> ident env fqcn
+   | XName _ -> failwith "no namespace support yet"
    | Self _ -> "self"
    | Parent _ -> "parent"
    | LateStatic _ -> "static"

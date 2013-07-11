@@ -364,7 +364,7 @@ let simple_transfo xs =
     let hook = { Visitor_php.default_visitor with
       Visitor_php.kexpr = (fun (k, _) x ->
         match x with
-        | Call(Id(XName (Name ("foo", info_foo))), (lp, args, rp)) ->
+        | Call(Id(XName[QI (Name ("foo", info_foo))]), (lp, args, rp)) ->
             pr2 "found match";
             
             let ii = Lib_parsing_php.ii_of_any (Expr x) in

@@ -116,7 +116,7 @@ let try_auto_fix error =
     let visitor = V.mk_visitor { V.default_visitor with
       V.kexpr = (fun (k,_) e ->
         (match e with
-        | Call(Id(XName(Name((func_name, _)))), (_ , args, right_tok)) ->
+        | Call(Id(XName[QI(Name((func_name, _)))]), (_ , args, right_tok)) ->
           (try
              let n = List.assoc func_name Check_misc_php.printf_like_functions_list in
              fix_format_string_skip_first_n n args

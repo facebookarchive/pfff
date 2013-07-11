@@ -191,9 +191,11 @@ let highlight_funcall_simple ~tag ~hentities f args info =
 
 let rec handle_typehint tag x = match x with
   | Some th -> (match th with
-    | Hint (XName (name), _targsTODO) -> (* TODO: emit info for type args *)
+    (* TODO: emit info for type args *)
+    | Hint (XName [QI (name)], _targsTODO) -> 
        let info = Ast.info_of_ident name in
        tag info (TypeMisc);
+    | Hint (XName _, _) -> failwith "no namespace support yet"
     | Hint ((Self _ | Parent _), _) ->
         ()
     | Hint (LateStatic tok, _) ->

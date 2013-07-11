@@ -163,7 +163,7 @@ let check ast =
         then E.warning tok E.CaseSensitivityKeyword;
         k e
       (* Check the number of argument if the function name is in function_list/function_listn*)
-      | Call(Id(XName(Name((func_name, tok)))), (_ , args, _))
+      | Call(Id(XName[QI(Name((func_name, tok)))]), (_ , args, _))
           when (List.mem_assoc func_name printf_like_functions_list) ->
         let n = List.assoc func_name printf_like_functions_list in
         if (not (check_format_stringn n (unargs args)))

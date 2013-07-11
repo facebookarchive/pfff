@@ -103,7 +103,7 @@ let unsugar_self_parent_any2 any =
       let parent_opt =
         match def.c_extends with
         | None -> None
-        | Some (tok, (Hint (XName classname, _targs))) -> Some classname
+        | Some (tok, (Hint (XName [QI classname], _targs))) -> Some classname
         | _ -> raise Todo
       in
 
@@ -135,7 +135,7 @@ let unsugar_self_parent_any2 any =
             | XhpName (xs, _info_of_referenced_class) ->
                 XhpName (xs, tok_orig)
           in
-          XName (name')
+          XName [QI (name')]
     );
   })
   in

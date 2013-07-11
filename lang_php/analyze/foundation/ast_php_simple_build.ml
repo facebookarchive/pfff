@@ -97,7 +97,8 @@ and toplevel env st acc =
 (* Names *)
 (* ------------------------------------------------------------------------- *)
 and name env = function
-   | XName x -> ident env x
+   | XName [QI x] -> ident env x
+   | XName _ -> failwith "no namespace support yet"
    | Self tok -> (A.special "self", wrap tok)
    | Parent tok -> (A.special "parent", wrap tok)
    | LateStatic tok -> (A.special "static", wrap tok)

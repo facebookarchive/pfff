@@ -800,11 +800,12 @@ and m_type_args a b =
 
 and m_fully_qualified_class_name a b =
   match a, b with
-  (a, b) ->
+  | ([A.QI a], [B.QI b]) ->
     (* iso on class name *)
     m_name_metavar_ok a b >>= (fun (a, b) ->
-      return (a, b)
+      return ([A.QI a], [B.QI b])
     )
+  | _ -> failwith "no namespace support yet"
 
 (*---------------------------------------------------------------------------*)
 (* argument *)
@@ -839,13 +840,13 @@ and m_argument a b =
             ))
       )
   (* an expression metavariable should also match a reference argument *)
-  | A.Arg (A.Id (A.XName (A.Name (name,info_name)))),
+  | A.Arg (A.Id (A.XName [A.QI (A.Name (name,info_name))])),
     B.ArgRef(_,_) when MV.is_metavar_name name ->
 
       X.envf (name, info_name) (B.Argument (b)) >>= (function
       | ((name, info_name), B.Argument (b))  ->
         return (
-          A.Arg (A.Id (A.XName (A.Name (name,info_name)))),
+          A.Arg (A.Id (A.XName [A.QI (A.Name (name,info_name))])),
           b
         )
       | _ -> raise Impossible
@@ -870,12 +871,12 @@ and m_argument a b =
 and m_expr a b =
   match a, b with
   (* special case, metavars !! *)
-  | ((A.Id (A.XName (A.Name (name,info_name)))),
+  | ((A.Id (A.XName [A.QI (A.Name (name,info_name))])),
     e2) when MV.is_metavar_name name ->
       X.envf (name, info_name) (B.Expr (e2)) >>= (function
       | ((name, info_name), B.Expr (e2))  ->
         return (
-          (A.Id (A.XName (A.Name (name,info_name)))),
+          (A.Id (A.XName [A.QI (A.Name (name,info_name))])),
           e2
         )
       | _ -> raise Impossible
@@ -1839,13 +1840,13 @@ and m_list__m_argument (xsa: A.argument A.comma_list) (xsb: B.argument B.comma_l
       ("transformation (minus or plus) on '...' not allowed, " ^
        "rewrite your spatch")
 
-  | [Left (A.Arg ((A.Id (A.XName (A.Name (name,info_name))))))], bbs
+  | [Left (A.Arg ((A.Id (A.XName [A.QI (A.Name (name,info_name))]))))], bbs
     when MV.is_metavar_manyargs_name name ->
 
       X.envf (name, info_name) (B.Arguments (bbs)) >>= (function
       | ((name, info_name), B.Arguments (bbs))  ->
         return (
-          [Left (A.Arg ((A.Id (A.XName (A.Name (name,info_name))))))],
+          [Left (A.Arg ((A.Id (A.XName [A.QI (A.Name (name,info_name))]))))],
           bbs
         )
       | _ -> raise Impossible
@@ -1880,7 +1881,7 @@ and m_list__m_argument (xsa: A.argument A.comma_list) (xsb: B.argument B.comma_l
        "'...'. Rewrite your spatch: put your trailing comma on the line " ^
        "with the '...'. See also " ^ 
        "https://github.com/facebook/pfff/wiki/Spatch#wiki-spacing-issues")
-  | [Right _;Left (A.Arg ((A.Id (A.XName (A.Name (name,info_name))))))],[]
+  | [Right _;Left (A.Arg ((A.Id (A.XName [A.QI (A.Name (name,info_name))]))))],[]
     when MV.is_metavar_manyargs_name name ->
       X.envf (name, info_name) (B.Arguments ([])) >>= (function
       | ((name, info_name), B.Arguments ([]))  ->

@@ -77,7 +77,8 @@ let rec string_of_hint_type h =
      (* TODO: figure out a reasonable respresentation for type args in prolog *)
       | Hint (c, _targsTODO) ->
           (match c with
-          | XName (c) -> Ast.str_of_ident c
+          | XName [QI (c)] -> Ast.str_of_ident c
+          | XName _ -> failwith "no namespace support yet"
           | Self _ -> "self"
           | Parent _ -> "parent"
           | LateStatic _ -> "")
@@ -388,13 +389,14 @@ let visit ~add readable ast =
          (match qu with
          | Id name ->
            (match name with
-           | XName(classname) ->
+           | XName[QI (classname)] ->
              add (P.Misc (spf "use(%s, ('%s','%s'), constant, read)"
                    !current (Ast_php.str_of_ident classname)
                    (Ast_php.str_of_name cstname)))
              (* this should have been desugared while building the
               * code database, except for traits code ...
               *)
+           | XName _ -> failwith "no namespace support yet"
            | Self _| Parent _
            (* can't do much ... *)
            | LateStatic _ -> ()
@@ -432,7 +434,7 @@ let visit ~add readable ast =
         (match classref with
         | Id name ->(* TODO: currently ignoring type args *)
           (match name with
-          | XName name ->
+          | XName [QI name] ->
             let str = Ast_php.str_of_ident name in
           (* use a different namespace than func? *)
             if not (Hashtbl.mem h str)
@@ -441,6 +443,7 @@ let visit ~add readable ast =
               add (P.Misc (spf "docall(%s, '%s', class)"
                     !current str))
             end;
+          | XName _ -> failwith "no namespace support yet"
             
          (* todo: do something here *)
           | Self _

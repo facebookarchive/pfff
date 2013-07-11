@@ -77,8 +77,8 @@ $x = <x:xhp2/>;
       let ast = Parse_php.program_of_string file_content in
       let uses = Defs_uses_php.uses_of_any (Ast.Program ast) in
       let str_of_name = function
-        | Ast.XName (Ast.Name (s, _)) -> s
-        | Ast.XName (Ast.XhpName (xhp_tag, _)) ->
+        | Ast.XName [Ast.QI (Ast.Name (s, _))] -> s
+        | Ast.XName [Ast.QI (Ast.XhpName (xhp_tag, _))] ->
             Common.join ":" xhp_tag
         | _ -> raise Impossible
       in
