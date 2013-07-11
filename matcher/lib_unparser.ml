@@ -93,28 +93,100 @@ let s_of_add = function
   | AddStr s -> s
   | AddNewlineAndIdent -> raise Todo
 
-let elts_of_any ~elt_and_info_of_tok tok =
-  let elt, info = elt_and_info_of_tok tok in
-  match info.token with
-  | Ab | FakeTokStr _ | ExpandedTok _ -> raise Impossible
-  | OriginTok _ -> 
+(* rh = reversed head, tl = tail *)
+let rec add_if_need_comma add_str rh tl =
+  match tl with
+  (* Because this token is right parenthese, there must be
+     something before*)
+  | [] -> failwith "Error with need_comma"
+  | (OrigElt str)::t when ((str = ",") || (str = "(")) ->
+    List.rev_append rh tl
+  | ((OrigElt str) as h)::t ->
+    List.rev_append rh ((Added add_str)::h::t)
+  | ((Removed str) as h)::t -> add_if_need_comma add_str (h::rh) t
+  (* Added is very arbitrary, I'd rather not handle them.
+   * This can be avoided by using AddArgsBefore only
+   *)
+  | (Added str)::t ->
+    failwith "need comma: cannot handle this case!"
+  | ((Esthet _) as h)::t -> add_if_need_comma add_str (h::rh) t
+
+let rec search_prev_elt ?(ws=0) acc =
+  match acc with
+  (* Because this token is right parenthese, there must be
+     something before *)
+  | [] -> failwith "Error with search_prev_real_elt"
+  | (OrigElt str)::t -> (OrigElt str, ws)
+  | (Removed str)::t -> search_prev_elt ~ws t
+  | (Added str)::t ->
+    failwith "search_prev_real_elt: cannot handle this case"
+  | (Esthet(Comment str))::t -> search_prev_elt ~ws t
+  | (Esthet Newline)::t -> (Esthet Newline, ws) 
+  | (Esthet(Space str))::t ->
+    search_prev_elt ~ws:(ws + String.length str) t
+
+
+(* This function decides how to add arguments. 
+ * factors considered:
+ * prepend/append comma around arguments?
+ * new line for each argument?
+ * heuristic:
+ * if previous (real) token is '(' or ',', do not prepend comma
+ * if this token (right parenthese) follows a newline and some space, add newline for
+ * each argument, and append a comma
+*)
+let elts_of_add_args_before acc xs =
+  let (elt, ws) = search_prev_elt acc in
+  (* search_prev_elt will fail if meet Added, which may be inserted
+  during add_if_need_comma.
+  *)
+  if (elt = (Esthet Newline))
+  (* new line for each argument *)
+  then
+    let acc = add_if_need_comma "," [] acc in
+    let sep = xs +> List.map (fun s ->
+      "  " ^ s ^ ",\n" ^ String.make ws ' ') in
+    let add_str = join "" sep in
+    (Added add_str)::acc
+  else
+    let acc = add_if_need_comma ", " [] acc in
+    let add_str = join ", " xs in
+    (Added add_str)::acc
+
+let rec elts_of_any ~elt_and_info_of_tok acc toks =
+  match toks with
+  | [] -> List.rev acc
+  | tok::t -> (
+    let elt, info = elt_and_info_of_tok tok in
+    match info.token with
+    | Ab | FakeTokStr _ | ExpandedTok _ -> raise Impossible
+    | OriginTok _ -> 
       (match info.transfo with
-      | NoTransfo -> [elt]
+      (* acc is reversed! *)
+      | NoTransfo -> elts_of_any ~elt_and_info_of_tok (elt::acc) t
       | Remove -> 
-        [Removed (PI.str_of_info info)]
-      (* could also be 'Added; Removed], but because of heuristics like
+        elts_of_any ~elt_and_info_of_tok (Removed (PI.str_of_info info)::acc) t
+      (* could also be [Added; Removed], but because of heuristics like
        * drop_esthet_between_removed, when people use Replace, they
        * usually prefers this behavior.
        * todo: it actually causes tests/php/spatch/distr_plus.spatch to
        * have a bad spacing
        *)
       | Replace toadd -> 
-        [Removed(PI.str_of_info info);Added (s_of_add toadd);]
+        elts_of_any ~elt_and_info_of_tok 
+          (Added (s_of_add toadd)::Removed (PI.str_of_info info)::acc) t
       | AddAfter toadd -> 
-        [elt; Added (s_of_add toadd)]
+        elts_of_any ~elt_and_info_of_tok 
+          (Added (s_of_add toadd)::elt::acc) t
       | AddBefore toadd -> 
-        [Added (s_of_add toadd); elt]
+        elts_of_any ~elt_and_info_of_tok 
+          (elt::Added (s_of_add toadd)::acc) t
+      | AddArgsBefore xs ->
+        let elt_list = elts_of_add_args_before acc xs in
+        let acc = elt::elt_list in
+        elts_of_any ~elt_and_info_of_tok acc t
       )
+  )
 
 (*****************************************************************************)
 (* Heuristics *)
@@ -181,10 +253,7 @@ let string_of_toks_using_transfo ~elt_and_info_of_tok toks =
   Common2.with_open_stringbuf (fun (_pr_with_nl, buf) ->
     let pp s = Buffer.add_string buf s in
 
-    let xs = toks 
-      +> List.map (fun tok -> elts_of_tok tok) 
-      +> List.flatten
-    in
+    let xs = elts_of_tok [] toks in
 
     if !debug 
     then xs +> List.iter (fun x -> 

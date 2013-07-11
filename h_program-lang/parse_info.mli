@@ -35,6 +35,7 @@ type token_mutable = {
   | AddBefore of add
   | AddAfter of add
   | Replace of add
+  | AddArgsBefore of string list
 
   and add = 
     | AddStr of string
