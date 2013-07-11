@@ -912,5 +912,5 @@ let name_of_class_name x =
 
 let ident_of_class_name x =
   match x with
-  | Hint (XName name, _targs) -> name
+  | Hint (XName [QI name], _targs) -> name
   | _ -> raise Impossible
