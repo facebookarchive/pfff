@@ -1,5 +1,9 @@
 -*- org -*-
 
+* 0.25 (Q3 2013) ()
+
+** php: support for namespace
+
 * 0.24 (Q2 2013) (web-codemap, web-codegraph, generalized sgrep/spatch)
 
 ** web: resume work on ocsigen, port to eliom3, use of js_of_ocaml
