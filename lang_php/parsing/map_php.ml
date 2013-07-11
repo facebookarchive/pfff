@@ -107,16 +107,21 @@ and map_ident =
   | XhpName v1 -> let v1 = map_wrap (map_of_list map_of_string) v1 in
                   XhpName ((v1))
 and map_xhp_tag v = map_of_list map_of_string v
-and map_qualified_ident x = map_ident x
 and map_dname =
   function | DName v1 -> let v1 = map_wrap map_of_string v1 in DName ((v1))
+
+and map_qualified_ident v = map_of_list map_qualified_ident_element v
+and map_qualified_ident_element =
+  function
+  | QI v1 -> let v1 = map_ident v1 in QI ((v1))
+  | QITok v1 -> let v1 = map_tok v1 in QITok ((v1))
 
 and map_name x = map_class_name_or_selfparent x
 and map_class_name_or_selfparent v =
   let k v =
     match v with
     | XName (v1) ->
-        let v1 = map_ident v1 in
+        let v1 = map_qualified_ident v1 in
         XName (v1)
     | Self v1 -> let v1 = map_tok v1 in Self ((v1))
     | Parent v1 -> let v1 = map_tok v1 in Parent ((v1))

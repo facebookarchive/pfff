@@ -1,5 +1,5 @@
 <?php
 
-use name;
+use my\name;
 
-use name as foo;
+use my\name as foo;

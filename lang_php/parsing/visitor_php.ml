@@ -195,7 +195,13 @@ and v_ptype =
 and v_ident = function
   | Name v1 -> let v1 = v_wrap v_string v1 in ()
   | XhpName v1 -> let v1 = v_xhp_tag_wrap v1 in ()
-and v_qualified_ident x = v_ident x
+
+and v_qualified_ident v = v_list v_qualified_ident_element v
+and v_qualified_ident_element =
+  function
+  | QI v1 -> let v1 = v_ident v1 in ()
+  | QITok v1 -> let v1 = v_tok v1 in ()
+
 
 and v_dname = function | DName v1 -> let v1 = v_wrap v_string v1 in ()
 and v_xhp_tag v = v_list v_string v
@@ -208,7 +214,7 @@ and v_class_name_or_selfparent x =
   let rec k x =
     match x with
   | XName (v1) ->
-      let v1 = v_ident v1 in
+      let v1 = v_qualified_ident v1 in
       ()
   | Self v1 -> let v1 = v_tok v1 in ()
   | Parent v1 -> let v1 = v_tok v1 in ()

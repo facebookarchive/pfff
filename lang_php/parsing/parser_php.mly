@@ -1156,7 +1156,7 @@ encaps:
  | T_VARIABLE TOBRA encaps_var_offset TCBRA
      { EncapsVar (ArrayGet (H.mk_var $1,($2,Some $3,$4)))}
  | T_VARIABLE T_OBJECT_OPERATOR T_IDENT
-     { EncapsVar (ObjGet(H.mk_var $1, $2, Id (XName (Name $3))))}
+     { EncapsVar (ObjGet(H.mk_var $1, $2, Id (XName [QI (Name $3)])))}
 
  /*(* for ${beer}s. Note that this rule does not exist in the original PHP
     * grammar. Instead only the case with a TOBRA after the T_STRING_VARNAME
@@ -1337,20 +1337,22 @@ use_declaration:
  | T_USE use_declaration_name TSEMICOLON { NamespaceUse ($1, $2, $3) }
 
 namespace_name:
- | ident { (Name $1) }
- | namespace_name TANTISLASH ident { (Name $3) (* TODO *) }
+ | ident                           { [QI (Name $1)] }
+ | namespace_name TANTISLASH ident { $1 ++ [QITok $2; QI (Name $3)] }
 
 use_declaration_name:
  | namespace_name { ImportNamespace $1 }
  | namespace_name T_AS ident { AliasNamespace ($1, $2, Name $3) }
- | TANTISLASH namespace_name { ImportNamespace ($2) (* TODO *) }
- | TANTISLASH namespace_name T_AS ident { AliasNamespace ($2, $3, Name $4) (* TODO*) }
+ | TANTISLASH namespace_name { ImportNamespace (QITok $1::$2) }
+ | TANTISLASH namespace_name T_AS ident 
+     { AliasNamespace (QITok $1::$2, $3, Name $4) }
 
 
 qualified_name:
- | namespace_name { XName $1 }
- | TANTISLASH namespace_name { XName $2 (* TODO *) } 
- | T_NAMESPACE TANTISLASH namespace_name { XName $3 (* TODO *) }
+ | namespace_name                        { XName $1 }
+ | TANTISLASH namespace_name             { XName (QITok $1::$2) } 
+ | T_NAMESPACE TANTISLASH namespace_name 
+     { XName (QI (Name ("namespace", $1))::QITok $2::$3) }
 
 /*(* Should we have 'ident type_arguments' below? No because
    * we allow type arguments only at a few places, for instance
@@ -1362,15 +1364,13 @@ qualified_name:
 qualified_class_name:
   | qualified_name { $1 }
   /*(* xhp: an XHP element use *)*/
-  | T_XHP_COLONID_DEF { XName(XhpName $1) }
+  | T_XHP_COLONID_DEF { XName [QI (XhpName $1)] }
 
 qualified_class_name_or_array:
  | qualified_class_name { $1 }
- | T_ARRAY { XName(Name ("array", $1)) }
+ | T_ARRAY { XName [QI (Name ("array", $1))] }
 
-/*(* todo? no support for namespace for now *)*/
-qualified_name_for_traits:
-  | ident { XName (Name $1) }
+qualified_name_for_traits: qualified_class_name { $1 }
 
 /*(*************************************************************************)*/
 /*(*1 Name *)*/

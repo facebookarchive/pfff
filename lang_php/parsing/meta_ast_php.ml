@@ -70,7 +70,13 @@ let rec vof_ident =
       let v1 = vof_wrap vof_string v1 in Ocaml.VSum (("Name", [ v1 ]))
   | XhpName v1 ->
       let v1 = vof_wrap vof_xhp_tag v1 in Ocaml.VSum (("XhpName", [ v1 ]))
-and vof_qualified_ident x = vof_ident x
+and vof_qualified_ident v = Ocaml.vof_list vof_qualified_ident_element v
+and vof_qualified_ident_element =
+  function
+  | QI v1 -> let v1 = vof_ident v1 in Ocaml.VSum (("QI", [ v1 ]))
+  | QITok v1 -> let v1 = vof_tok v1 in Ocaml.VSum (("QITok", [ v1 ]))
+
+
 and vof_xhp_tag v = Ocaml.vof_list Ocaml.vof_string v
 and vof_dname =
   function
@@ -84,7 +90,7 @@ and vof_name x = vof_class_name_or_selfparent x
 and vof_class_name_or_selfparent =
   function
   | XName (v1) ->
-      let v1 = vof_ident v1
+      let v1 = vof_qualified_ident v1
       in Ocaml.VSum (("XName", [ v1 ]))
   | Self v1 -> let v1 = vof_tok v1 in Ocaml.VSum (("Self", [ v1 ]))
   | Parent v1 -> let v1 = vof_tok v1 in Ocaml.VSum (("Parent", [ v1 ]))

@@ -112,8 +112,14 @@ type ident =
 type dname =
    | DName of string wrap
 
-(* todo: for namespace *)
-type qualified_ident = ident (* todo: list *)
+(* The antislash is a separator but it can also be in the leading position.
+ * The keyword 'namespace' can also be in a leading position.
+ *)
+type qualified_ident = qualified_ident_element list
+  and qualified_ident_element =
+  | QI of ident (* the ident can be 'namespace' *)
+  | QITok of tok (* '\' *)
+ (* with tarzan *)
 
 type name =
    | XName of qualified_ident
@@ -125,6 +131,7 @@ type name =
    | Parent of tok
    (* php 5.3 late static binding (no idea why it's useful ...) *)
    | LateStatic of tok
+ (* with tarzan *)
 
 (* ------------------------------------------------------------------------- *)
 (* Types *)
@@ -883,13 +890,15 @@ let info_of_dname (DName (x,y)) = y
 
 let info_of_name x =
   match x with
-  | XName x -> info_of_ident x
+  | XName [QI x] -> info_of_ident x
   | Self tok | Parent tok | LateStatic tok -> tok
+  | XName _ -> failwith "TODO: namespace"
 
 let str_of_name x =
   match x with
-  | XName x -> str_of_ident x
+  | XName [QI x] -> str_of_ident x
   | Self tok | Parent tok | LateStatic tok -> Parse_info.str_of_info tok
+  | XName _ -> failwith "TODO: namespace"
 
 let str_of_class_name x =
   match x with
