@@ -125,6 +125,7 @@ SYSLIBS+=$(OCAMLCOMPILERCMA)
 # used for sgrep and other small utilities which I dont want to depend
 # on too much things
 BASICLIBS=commons/lib.cma \
+  $(GRAPHCMA) \
  globals/lib.cma \
  h_files-format/lib.cma \
  h_program-lang/lib.cma \
@@ -143,6 +144,8 @@ BASICLIBS=commons/lib.cma \
  lang_csharp/parsing/lib.cma \
  lang_opa/parsing/lib.cma \
  lang_erlang/parsing/lib.cma \
+ lang_haskell/parsing/lib.cma \
+ lang_lisp/parsing/lib.cma \
  lang_html/parsing/lib.cma \
  lang_js/parsing/lib.cma \
  lang_css/parsing/lib.cma \
@@ -320,10 +323,10 @@ rec.opt:
 	set -e; for i in $(MAKESUBDIRS); do $(MAKE) -C $$i all.opt || exit 1; done 
 
 
-$(TARGET): $(LIBS) $(OBJS)
+$(TARGET): $(BASICLIBS) $(OBJS)
 	$(OCAMLC) $(BYTECODE_STATIC) -o $@ $(SYSLIBS) $^
 
-$(TARGET).opt: $(LIBS:.cma=.cmxa) $(OPTOBJS) 
+$(TARGET).opt: $(BASICLIBS:.cma=.cmxa) $(OPTOBJS) 
 	$(OCAMLOPT) $(STATIC) -o $@ $(SYSLIBS:.cma=.cmxa)  $^
 
 

@@ -73,8 +73,9 @@ let all_actions () =
   Test_parsing_cpp.actions()++
   Test_parsing_objc.actions()++
   Test_parsing_clang.actions()++
-
+(*
   Test_parsing_bytecode.actions()++
+*)
   Test_parsing_java.actions()++
 
   Test_parsing_nw.actions()++
@@ -92,10 +93,12 @@ let all_actions () =
 
   Test_parsing_opa.actions()++
 
+(*
   Test_analyze_cpp.actions () ++
   Test_analyze_php.actions () ++
   Test_analyze_ml.actions () ++
   Test_analyze_clang.actions () ++
+*)
   []
 
 let options () = [
