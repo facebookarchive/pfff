@@ -59,6 +59,7 @@ val with_open_outfile :
 val with_open_infile : 
   filename -> (in_channel -> 'a) -> 'a
 
+exception CmdError of Unix.process_status * string
 val command2 : string -> unit
 val cmd_to_list :  ?verbose:bool -> string -> string list (* alias *)
 
