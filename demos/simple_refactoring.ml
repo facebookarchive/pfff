@@ -148,8 +148,8 @@ let main files_or_dirs =
          *)
         | 
              (Call(
-               ClassGet (Id (XName(Name(("ArgAssert", i_9)))), i_10,
-                         Id (XName (Name(("isString", i_11))))),
+               ClassGet (Id (XName[QI(Name(("ArgAssert", i_9)))]), i_10,
+                         Id (XName[QI(Name(("isString", i_11)))])),
                (i_left_paren,
                [Left(
                  Arg(
@@ -168,8 +168,8 @@ let main files_or_dirs =
          *)
         | 
              (Call(
-               ClassGet (Id (XName(Name(("ArgAssert", i_9)))), i_10,
-                         Id (XName (Name(("isString", i_11))))),
+               ClassGet (Id (XName[QI(Name(("ArgAssert", i_9)))]), i_10,
+                         Id (XName[QI(Name(("isString", i_11)))])),
                (i_left_paren,
                [Left(
                  Arg(
