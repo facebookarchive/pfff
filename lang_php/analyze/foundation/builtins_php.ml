@@ -354,6 +354,11 @@ let generate_builtins idlfile pr_hook =
     "consts", J.Array consts;
     "funcs", J.Array funcs;
     "classes", J.Array classes;
+  ]
+  | J.Object [
+    "consts", J.Array consts;
+    "funcs", J.Array funcs;
+    "classes", J.Array classes;
   ] -> 
 
     (* Constants:

@@ -698,7 +698,7 @@
    (join-string 
     (list 
      "-debugger"
-     (case 1
+     (case 12
        (0 "all")
        (1 "XXX")
        (2 "sgrep")
@@ -711,6 +711,7 @@
        (9 "-type_php /home/pad/pfff/tests/php/typing/test.php")
        (10 "-test_graph_code_ml /home/pad/pfff/commons")
        (11 "prolog:")
+       (12 "-builtins_of_idl  /home/pad/local/fbcode/hphp/facebook/extensions/async_mysql/async_mysql.idl.json")
        )
      ))
    )

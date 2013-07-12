@@ -4,6 +4,8 @@
 function hphpd_install_user_command($cmd, $clsname) { }
 function hphpd_get_user_commands() { }
 function hphpd_break($condition = true) { }
+function hphp_debugger_attached() { }
+function hphp_get_debugger_info() { }
 function hphpd_get_client($name = null) { }
 function hphpd_client_ctrl($name, $op) { }
 class DebuggerProxyCmdUser {
