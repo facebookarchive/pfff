@@ -2,8 +2,6 @@
 
 * 0.25 (Q3 2013) ()
 
-** php: support for namespace
-
 * 0.24 (Q2 2013) (web-codemap, web-codegraph, generalized sgrep/spatch)
 
 ** web: resume work on ocsigen, port to eliom3, use of js_of_ocaml
@@ -28,24 +26,29 @@ don't need OPAM to compile most of pfff)
 
 ** sgrep/spatch
 
-*** partial support for C/C++/OCaml/... via ast_fuzzy 
+*** partial support for C/C++/OCaml/Js/Java/PHP via ast_fuzzy 
 which paved the way for sgrep/spatch support for more languages
 as long as there is an ast_fuzzy generator
 
 *** better error message when try to do transformations not handled well
 (e.g. minus on a '...')
 
-** fuzzy parser for C/C++/...
+** fuzzy parser for C/C++/Js/Java/OCaml/PHP
 
-** internal
+** php
+
+*** many facebook extensions to the language: generics, typedefs, 
+implicit fields, xhp comment syntax
+
+*** better support for namespace
 
 *** huge refactoring on the PHP grammar and AST, unified lvalue and expr,
 got from 7 s/r conflicts to 1, and can now parse more code by being
 more orthogonal.
 
-*** removed cruft, old/ directories, dead subprojects
+** internal
 
-*** better skip list file, more flexible
+*** removed cruft, old/ directories, dead subprojects
 
 * 0.23 (Q1 2013) (clang parser)
 
@@ -63,8 +66,21 @@ making codegraph usable on ugly projects with hundreds of subdirectories
 ** introduce lang_clang/
 a thin wrapper around the clang/llvm ast dumps of clang-check -emit-ast.
 
+*** ast sexp parser
+
+*** patch to clang AST dumper
+
+*** ununcluder/deduper
+
+*** basic compile_database.json generator from make traces
+
 ** introduce lang_objc/
 basic lexer and grammar
+
+** java/bytecode: mapping bytecode to java
+Handle nested classes, generic classes, anon classes
+(understand better how things are bytecompiled, e.g. where 
+does foo$1$bar.class come from?)
 
 * -----------------------------------------------------------
 
@@ -87,6 +103,9 @@ of ocaml code, including pfff code
 
 ** spatch: improved unparser, more flexible, easier to add heuristics
 regarding spacing issues
+
+** skip list file, more flexible, feel less overwhelmed
+can fix bugs one by one
 
 * 0.21 (Q3 2012) (codegraph, java/c parser)
 
