@@ -1,5 +1,5 @@
 Modified Makefile to not require ocamlfind or netstring
-and created a slice of json_io.ml  in json_out.ml
+and created a slice of json_io.ml  in json_out.ml.
 
 Json-wheel is better structured than sexplib. Martin correctly
 realized that people may want to use Json as-is, without the automatic
