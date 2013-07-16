@@ -278,7 +278,7 @@ let string_of_arg = function
             let v =
               match v with
               | "TimeStamp::Current()"
-              | "null_array" | "null_string"
+              | "null_array" | "null_string" | "null_resource"
                   -> "null"
               | "empty_array" -> "array()"
               | _ when v =~ ".*|.*" -> "null"
