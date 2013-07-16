@@ -55,7 +55,7 @@ let is_git_repository basedir =
   Version_control.detect_vcs_source_tree basedir =*= Some (Version_control.Git)
 
 let find_root_from_absolute_path file =
-  let xs = Common.split "/" (Common2.dirname file) in
+  let xs = Common.split "/" file in
   let xxs = Common2.inits xs in
   xxs +> List.rev +> Common.find_some (fun xs ->
     let dir = "/" ^ Common.join "/" xs in

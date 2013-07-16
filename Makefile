@@ -161,12 +161,12 @@ LIBS= commons/lib.cma \
        $(EXTLIBCMA) $(PTCMA) $(ZIPCMA) \
        $(JAVALIBCMA) \
        commons/commons_features.cma \
+    globals/lib.cma \
     h_version-control/lib.cma \
     h_visualization/lib.cma \
     h_files-format/lib.cma \
     h_program-lang/lib.cma \
     h_program-visual/lib.cma \
-    globals/lib.cma \
     matcher/lib.cma \
     lang_ml/parsing/lib.cma \
      lang_ml/analyze/visual/lib.cma \
@@ -220,12 +220,12 @@ MAKESUBDIRS=commons \
   $(GRAPHDIR) \
   $(GUIDIR) $(CAIRODIR) \
   $(ZIPDIR)    $(EXTLIBDIR) $(PTDIR) $(JAVALIBDIR) \
+  globals \
   h_version-control \
   h_visualization \
   h_files-format \
   h_program-lang \
   h_program-visual \
-  globals \
   matcher \
   lang_ml/parsing \
    lang_ml/analyze \
