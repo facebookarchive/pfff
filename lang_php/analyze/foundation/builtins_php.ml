@@ -625,7 +625,7 @@ let actions () = [
     generate_php_stdlib ~src (*~phpmanual_dir*) ~dest);
   "-builtins_of_idl", " <idl>",
   Common.mk_action_1_arg (fun idlfile ->
-    generate_builtins idlfile Common.pr2
+    generate_builtins idlfile Common.pr
   );    
 ]
 (*e: builtins_php.ml *)
