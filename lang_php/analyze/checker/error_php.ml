@@ -103,6 +103,7 @@ type error = {
 
   (* lint *)
   | AssignInBooleanContext
+  | UnnecessaryTernaryIf
 
   (* bail-out constructs *)
   | UglyGlobalDynamic
@@ -231,6 +232,8 @@ to statically analyze. Please avoid using those features."
 
   | AssignInBooleanContext ->
       "use == or add another set of parens around the assignment"
+  | UnnecessaryTernaryIf ->
+      "ternary if (\"?:\") is not necessary here, use the condition or its negation."
 
   | Injection kind ->
       let s =
@@ -450,6 +453,7 @@ let rank_of_error_kind err_kind =
   | IncludeUnresolved -> Less
 
   | AssignInBooleanContext -> Less
+  | UnnecessaryTernaryIf -> Ok
 
   | Injection _ -> ReallyImportant
 

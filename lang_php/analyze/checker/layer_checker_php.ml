@@ -131,7 +131,8 @@ let info_of_error_and_kind err =
       "eOther"
   | FormatStringMismatch _ ->
       "eOther"
-      
+  | UnnecessaryTernaryIf ->
+      "eOther"
   | UseOfUndefinedVariable _ 
   | UseOfUndefinedVariableInLambda _
     -> 

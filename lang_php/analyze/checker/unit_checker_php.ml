@@ -41,6 +41,7 @@ let unittest =
     p "tests/php/scheck/misc.php";
     p "tests/php/scheck/lint.php";
     p "tests/php/scheck/format_string.php";
+    p "tests/php/scheck/ternary_if.php";
   ] 
   in
 
