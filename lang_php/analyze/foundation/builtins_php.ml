@@ -588,7 +588,9 @@ let generate_php_stdlib ~src (* ~phpmanual_dir *) ~dest =
       let (d,b,e) = Common2.dbe_of_filename file in
         (* todo?: skip domdocument? generate undefined field access in www *)
       if b = "domdocument.idl" || 
-         (* parse error on PHP_INT_MAX *)
+         (* parse error on PHP_INT_MAX, which is why it's processed
+          * specially in pfff/data/php_stdlib/Makefile
+          *)
          b = "constants.idl"
       then ()
       else begin

@@ -1,8 +1,9 @@
 <?php
 
-define('false', 0);
-define('true', 0);
-define('null', 0);
+// now in builtins_constants.idl.php
+//define('false', 0);
+//define('true', 0);
+//define('null', 0);
 
 // PHP is case insensitive but pfff is not
 // (now in hphp_constants.php)
