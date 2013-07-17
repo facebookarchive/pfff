@@ -123,6 +123,7 @@ and transformation =
   | AddBefore of add
   | AddAfter of add
   | Replace of add
+  | AddArgsBefore of string list
 
   and add =
     | AddStr of string
@@ -550,6 +551,9 @@ let rec vof_transformation =
   | AddBefore v1 -> let v1 = vof_add v1 in Ocaml.VSum (("AddBefore", [ v1 ]))
   | AddAfter v1 -> let v1 = vof_add v1 in Ocaml.VSum (("AddAfter", [ v1 ]))
   | Replace v1 -> let v1 = vof_add v1 in Ocaml.VSum (("Replace", [ v1 ]))
+  | AddArgsBefore v1 -> let v1 = Ocaml.vof_list Ocaml.vof_string v1 in Ocaml.VSum
+  (("AddArgsBefore", [ v1 ]))
+
 and vof_add =
   function
   | AddStr v1 ->

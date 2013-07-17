@@ -40,8 +40,10 @@ let unittest =
     p "tests/php/scheck/edit_distance.php";
     p "tests/php/scheck/misc.php";
     p "tests/php/scheck/lint.php";
+    p "tests/php/scheck/format_string.php";
   ] 
   in
+
   let builtin_files =
     Lib_parsing_php.find_php_files_of_dir_or_files [p "/data/php_stdlib"]
   in

@@ -365,15 +365,30 @@ class X {
   private  $z = 1;
 }"
   );
-
-
 ]
-
+let unparser_unittest = [
+  "add arguments" >:: (fun () ->
+    let file_content = "function foo() { $x = printf(\"%s %d\", ); }" in
+    let file = Parse_php.tmp_php_file_from_string file_content in
+    let (ast, toks) = Parse_php.ast_and_tokens file in
+    toks +> List.iter (fun tok -> 
+      match tok with
+      | Parser_php.TCPAR info when (Parse_info.str_of_info info = ")") ->
+        info.Parse_info.transfo <- Parse_info.AddArgsBefore ["str"; "1"]
+      | _ -> ());
+    let res = Unparse_php.string_of_program_with_comments_using_transfo 
+      (ast, toks) in
+    assert_equal
+      "<?php\nfunction foo(str, 1) { $x = printf(\"%s %d\", str, 1); }"
+      res;
+  );
+]
+  
 (*****************************************************************************)
 (* Final suite *)
 (*****************************************************************************)
 
 let unittest =
   "matcher_php" >::: (
-    sgrep_unittest ++ spatch_unittest ++ [refactoring_unittest]
+    sgrep_unittest ++ spatch_unittest ++ [refactoring_unittest] ++ unparser_unittest
   )

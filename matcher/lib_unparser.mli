@@ -11,7 +11,8 @@ type elt =
 
 (* helpers *)
 val elts_of_any:
-  elt_and_info_of_tok:('tok -> elt * Parse_info.info) -> 'tok -> elt list
+  elt_and_info_of_tok:
+  ('tok -> elt * Parse_info.info) -> elt list -> 'tok list -> elt list
 
 (* debugging *)
 val vof_elt: elt -> Ocaml.v

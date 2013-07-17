@@ -51,6 +51,8 @@ let printf_like_functions_list = [
   ("invariant", 1);
 ]
 
+exception Argument_swapping
+
 (*****************************************************************************)
 (* Helper *)
 (*****************************************************************************)
@@ -67,6 +69,8 @@ and in_percent_state acc char_list =
   match char_list with
   | [] -> None
   | '%'::t -> start_state acc t
+  | c::'$'::t when (Common2.is_digit c) ->
+    raise Argument_swapping
   | _::t -> start_state (acc+1) t
 
 and in_escape_state acc char_list =
@@ -77,6 +81,7 @@ and in_escape_state acc char_list =
 let check_format_string args =
   match args with
   | [] -> false
+  | ""::t -> true
   | h::t ->
     let char_list = Common2.list_of_string h in
     let acc = start_state 0 char_list in
@@ -166,8 +171,11 @@ let check ast =
       | Call(Id(XName[QI(Name((func_name, tok)))]), (_ , args, _))
           when (List.mem_assoc func_name printf_like_functions_list) ->
         let n = List.assoc func_name printf_like_functions_list in
-        if (not (check_format_stringn n (unargs args)))
-        then E.warning tok (E.FormatStringMismatch func_name);
+        (try
+           if (not (check_format_stringn n (unargs args)))
+           then E.warning tok (E.FormatStringMismatch func_name)
+         with Argument_swapping -> ()
+        );
         k e
       | _ -> ()
       );

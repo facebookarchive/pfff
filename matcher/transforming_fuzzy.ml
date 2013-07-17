@@ -133,7 +133,7 @@ module XMATCH = struct
          PI.AddAfter (subst_metavars env add)
      | PI.Replace add ->
          PI.Replace (subst_metavars env add)
-
+     | PI.AddArgsBefore _ -> raise Todo
   (* propagate the transformation info *)
   let tokenf a b = fun tin ->
     
@@ -231,6 +231,7 @@ module XMATCH = struct
         (* any_ii.PI.transfo <- adjust_transfo_with_env env transfo; *)
     | PI.AddBefore add -> raise Todo
     | PI.AddAfter add -> raise Todo
+    | PI.AddArgsBefore _ -> raise Todo
     )
 
 

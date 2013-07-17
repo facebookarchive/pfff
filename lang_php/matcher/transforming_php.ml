@@ -211,7 +211,7 @@ module XMATCH = struct
          PI.AddAfter (subst_metavars env add)
      | PI.Replace add ->
          PI.Replace (subst_metavars env add)
-
+     | PI.AddArgsBefore _ -> raise Todo
 
   (* 
    * Sometimes a metavariable like X will match an expression made of
@@ -242,6 +242,7 @@ module XMATCH = struct
         any_ii.PI.transfo <- adjust_transfo_with_env env transfo;
     | PI.AddBefore add -> raise Todo
     | PI.AddAfter add -> raise Todo
+    | PI.AddArgsBefore _ -> raise Todo
     )
 
   let (envf: (Metavars_php.mvar Ast_php.wrap, Ast_php.any) matcher) =
