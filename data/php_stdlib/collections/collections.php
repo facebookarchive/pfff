@@ -57,11 +57,10 @@ class MappedIterator implements Iterator {
     $this->it->next();
   }
   public function key() {
-    throw new RuntimeException(
-      "Call to undefined method MappedIterator::key()");
+    return null;
   }
   public function current() {
-    //pad: TODO: parse error return ($this->fn)($this->it->current());
+    return ($this->fn)($this->it->current());
   }
 }
 
@@ -104,7 +103,7 @@ class MappedKeyedIterator implements KeyedIterator {
     return $this->it->key();
   }
   public function current() {
-    //TODO: return ($this->fn)($this->it->current());
+    return ($this->fn)($this->it->current());
   }
 }
 
@@ -154,8 +153,7 @@ class FilteredIterator implements Iterator {
     }
   }
   public function key() {
-    throw new RuntimeException(
-      "Call to undefined method FilteredIterator::key()");
+    return null;
   }
   public function current() {
     return $this->it->current();
@@ -254,11 +252,10 @@ class ZippedIterator implements Iterator {
     $this->it2->next();
   }
   public function key() {
-    throw new RuntimeException(
-      "Call to undefined method ZippedIterator::key()");
+    return null;
   }
   public function current() {
-    //return Pair {$this->it1->current(), $this->it2->current()};
+    return Pair {$this->it1->current(), $this->it2->current()};
   }
 }
 
@@ -305,7 +302,7 @@ class ZippedKeyedIterator implements KeyedIterator {
     return $this->it1->key();
   }
   public function current() {
-    //return Pair {$this->it1->current(), $this->it2->current()};
+    return Pair {$this->it1->current(), $this->it2->current()};
   }
 }
 
@@ -344,8 +341,7 @@ class KeysIterator implements Iterator {
     $this->it->next();
   }
   public function key() {
-    throw new RuntimeException(
-      "Call to undefined method KeysIterator::key()");
+    return null;
   }
   public function current() {
     return $this->it->key();
@@ -384,11 +380,10 @@ class KVZippedIterator implements Iterator {
     $this->it->next();
   }
   public function key() {
-    throw new RuntimeException(
-      "Call to undefined method KVZippedIterator::key()");
+    return null;
   }
   public function current() {
-    //return Pair {$this->it->key(), $this->it->current()};
+    return Pair {$this->it->key(), $this->it->current()};
   }
 }
 
@@ -450,9 +445,13 @@ interface MapAccess extends ConstMapAccess,
                             IndexAccess {
 }
 
+interface Indexish extends KeyedTraversable {
+}
+
 interface ConstVector extends ConstCollection,
                               ConstIndexAccess,
-                              KeyedIterable {
+                              KeyedIterable,
+                              Indexish {
 }
 
 interface MutableVector extends ConstVector,
@@ -462,7 +461,8 @@ interface MutableVector extends ConstVector,
 
 interface ConstMap extends ConstCollection,
                            ConstMapAccess,
-                           KeyedIterable {
+                           KeyedIterable,
+                           Indexish {
 }
 
 interface MutableMap extends ConstMap,
