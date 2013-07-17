@@ -585,9 +585,10 @@ unticked_class_declaration_statement:
          c_attrs = None;
      } }
  | T_TRAIT ident_class_name type_params_opt
+   implements_list
     TOBRACE class_statement_list TCBRACE
      { { c_type = Trait $1; c_name = $2; c_extends = None; c_tparams = $3;
-         c_implements = None; c_body = ($4, $5, $6);
+         c_implements = $4; c_body = ($5, $6, $7);
          c_attrs = None;
        }
      }

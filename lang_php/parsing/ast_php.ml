@@ -563,7 +563,7 @@ and class_def = {
    *)
   c_extends: extend option;
   (* For classes it's a list of interfaces, for interface a list of other
-   * interfaces it extends, and for traits it must be empty.
+   * interfaces it extends. Traits can also now implement interfaces.
    *)
   c_implements: interface option;
   (* The class_stmt for interfaces are restricted to only abstract methods.
