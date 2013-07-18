@@ -50,6 +50,7 @@ val pred: node -> edge -> graph -> node list
 val parent: node -> graph -> node
 val parents: node -> graph -> node list
 val children: node -> graph -> node list
+(* may raise Not_found *)
 val nodeinfo: node -> graph -> nodeinfo
 val file_of_node: node -> graph -> Common.filename
 
