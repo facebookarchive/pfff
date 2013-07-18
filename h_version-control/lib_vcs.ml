@@ -12,8 +12,8 @@
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the file
  * license.txt for more details.
  *)
-open Common2
 open Common
+module Date = Common2
 
 (*****************************************************************************)
 (* Types *)
@@ -53,8 +53,8 @@ let goto_dir basedir =
   else spf "cd \"%s\"; " basedir
 
 let dummy_annotation = 
-  VersionId "dummy", Author "dummy", (DMY (Day 1, Jan, Year 1977))
-
+  VersionId "dummy", Author "dummy", 
+  (Date.DMY (Date.Day 1, Date.Jan, Date.Year 1977))
 
 let s_of_versionid (VersionId s) = s
 

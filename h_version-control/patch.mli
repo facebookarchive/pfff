@@ -1,11 +1,10 @@
-open Common
 
-type patch_raw = string list
+type patch_raw = string list (* use parse_patch() to get patchinfo *)
 
 (* parsing patch related *)
-type patchinfo = (filename, fileinfo) Common.assoc
+type patchinfo = (Common.filename, fileinfo) Common.assoc
   and fileinfo = ((int * int) * hunk) list
-  and hunk = string list 
+  and hunk = string list (* use parse_hunk() to get patchline *)
 
 (* the strings are without the mark *)
 type patchline = 
@@ -17,18 +16,16 @@ type stat = {
   mutable nb_minus: int;
   mutable nb_plus: int
 }
-  
+val string_of_stat: stat -> string
+
 val parse_patch: string list -> patchinfo
 val parse_hunk: string list -> patchline list
 
 val diffstat: patchinfo -> (Common.filename * stat) list
 val diffstat_file: fileinfo -> stat
 
-val string_of_stat: stat -> string
 
-val relevant_part : filename * (int * int) -> patchinfo -> string
-val filter_driver_sound : string list -> string list
-
+val relevant_part : Common.filename * (int * int) -> patchinfo -> string
 
 val hunk_containing_string: string -> patchinfo -> hunk
 val hunks_containing_string: string -> patchinfo -> hunk list
@@ -45,6 +42,3 @@ type edition_cmd =
 val generate_patch: 
   edition_cmd list -> filename_in_project:string -> Common.filename ->
   string list
-
-(* debugging, using sexp *)
-val string_of_patchinfo: patchinfo -> string
