@@ -104,6 +104,21 @@ let rec unargs args =
   | Left(x)::t -> ""::(unargs t)
   | h::t -> unargs t
 
+let expr_is_T_or_F (expr : Ast.expr) =
+  match expr with
+  | Id(XName([QI(Name((str, _)))])) ->
+    let str_l = String.lowercase str in
+    (str_l = "true") || (str_l = "false")
+  | _ -> false
+
+(* check if the expression returns boolean *)
+let rec expr_is_bool (expr : Ast.expr) =
+  match expr with
+  | _ when expr_is_T_or_F expr -> true
+  | Binary(_, (Logical(_), _), _) -> true
+  | ParenExpr(_, new_expr, _) -> expr_is_bool new_expr
+  | _ -> false
+
 (*****************************************************************************)
 (* Main entry point *)
 (*****************************************************************************)
@@ -177,6 +192,16 @@ let check ast =
          with Argument_swapping -> ()
         );
         k e
+      (* Catch clowny "($x>$y)?true:false" *)
+      | CondExpr(cond, tok, Some(expr1),  _, expr2)
+          when (expr_is_T_or_F expr1) &&
+            (expr_is_T_or_F expr2) &&
+            (expr_is_bool cond) ->
+        E.warning tok E.UnnecessaryTernaryIf;
+      | CondExpr(cond, tok, None,  _, expr2)
+          when (expr_is_T_or_F expr2) &&
+            (expr_is_bool cond) ->
+        E.warning tok E.UnnecessaryTernaryIf;
       | _ -> ()
       );
       (* recurse, call continuation *)

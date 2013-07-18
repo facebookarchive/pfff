@@ -42,6 +42,7 @@ type error = {
 
   (* lint *)
   | AssignInBooleanContext
+  | UnnecessaryTernaryIf
 
   (* bail-out constructs *)
   | UglyGlobalDynamic
