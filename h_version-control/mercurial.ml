@@ -174,3 +174,11 @@ let show ~basedir file commitid =
   let cmd = (spf "hg cat -r '%s' %s > %s" str_commit file tmpfile) in
   exec_cmd ~basedir cmd;
   tmpfile
+
+let files_involved_in_diff ~basedir commitid =
+  let str_commit = Lib_vcs.s_of_versionid commitid in
+  let cmd = goto_dir basedir ^
+    spf "hg status --change '%s'" str_commit in
+  let xs = Common.cmd_to_list cmd in
+  xs +> List.map Lib_vcs.parse_file_status
+

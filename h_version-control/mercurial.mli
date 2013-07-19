@@ -16,3 +16,7 @@ val grep:
 (* returns a temporary file containing the content of filename at versionid *)
 val show:
   basedir:string -> Common.filename -> Lib_vcs.versionid -> Common.filename
+
+val files_involved_in_diff:
+  basedir:string -> Lib_vcs.versionid -> 
+  (Lib_vcs.file_commit_status * Common.filename) list

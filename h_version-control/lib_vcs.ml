@@ -94,17 +94,35 @@ let filter_vcs_dir x =
  *)
 let parse_file_status s =
   match s with
-  | _ when s=~ "\\([MADCTUXB]\\)[ \t]+\\([^ \t]+\\)" ->
+  | _ when s=~ "\\([MADCTUXBR]\\)[ \t]+\\([^ \t]+\\)" ->
     let (status, name) = Common.matched2 s in
+    (* coupling: if you add case below, don't forget to update the regexp 
+     * above accordingly.
+     *)
     (match status with
+    (* git and mercurial *)
     | "A" -> Added
-    | "C" -> Copied
-    | "D" -> Deleted
     | "M" -> Modified
+
+    (* git only *)
+    | "D" -> Deleted
+
+    | "C" -> Copied
     | "T" -> FileTypeChanged
     | "U" -> Unmerged
     | "X" -> Unknown
     | "B" -> Broken
+
+    (* mercurial *)
+    | "R" -> Deleted
+    (* todo: mercurial has also those flags but they should not appear
+     *  when one look for the status of a change (e.g. hg status --change .)
+     * '?': Mercurial doesn't know about this file, and has not been
+     *      configured to ignore it
+     * '!': Mercurial is tracking this file, but it's missing - perhaps 
+     *      you've deleted it without telling Mercurial to stop tracking it.
+     *)
+
     | _ -> failwith (spf "unknown file commit status: %s" status)
     ), name
   | _ when s =~ "R\\([0-9]+\\)[ \t]+\\([^ \t]+\\)[ \t]+\\([^ \t]+\\)" ->

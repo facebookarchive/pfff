@@ -144,6 +144,13 @@ let unittest =
          let commit_id = Lib.VersionId "." in
          let previous_id = Lib.VersionId ".^" in
 
+         let xs =
+           Mercurial.files_involved_in_diff ~basedir commit_id in
+         assert_equal 
+           ~msg:"it should find all added files in a diff"
+           [Lib.Added, "bar.txt"; Lib.Added, "foo.txt"]
+           (Common.sort xs);
+
          let xs = 
            Mercurial.grep ~basedir "ba" in
          assert_equal
@@ -171,6 +178,18 @@ let unittest =
            ["bar"]
            xs;
 
+         exec_cmds ~basedir [
+           "echo new_content > foo.txt";
+           "hg remove bar.txt";
+           "hg commit -m'second modif' > /dev/null";
+         ];
+
+         let xs =
+           Mercurial.files_involved_in_diff ~basedir commit_id in
+         assert_equal 
+           ~msg:"it should find modified and removed files in a diff"
+           [Lib.Deleted, "bar.txt"; Lib.Modified, "foo.txt"]
+           (Common.sort xs);
 
        )
     );
