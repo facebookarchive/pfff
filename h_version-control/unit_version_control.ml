@@ -193,4 +193,33 @@ let unittest =
 
        )
     );
+
+(*****************************************************************************)
+(* OO interface *)
+(*****************************************************************************)
+    "generic vcs" >:: (fun () ->
+       with_tmp_directory (fun basedir ->
+         Flag_version_control.verbose := false;
+
+         exec_cmds ~basedir [
+           "git init > /dev/null";
+           "echo 'foo' > foo.txt";
+           "echo 'bar' > bar.txt";
+           "git add bar.txt foo.txt";
+           "git commit -m 'first commit' > /dev/null";
+         ];
+         let commit_id = Lib.VersionId "HEAD" in
+         let _previous_id = Lib.VersionId "HEAD^" in
+
+         let vcs = Generic_vcs.mk_vcs ~basedir in
+
+         let xs =
+           vcs#files_involved_in_diff commit_id in
+         assert_equal 
+           ~msg:"it should find all added files in a diff via generic interface"
+           [Lib.Added, "bar.txt"; Lib.Added, "foo.txt"]
+           (Common.sort xs);
+       )
+    );
+
   ]
