@@ -36,6 +36,14 @@ let pr2, pr2_once = Common2.mk_pr2_wrappers Flag_version_control.verbose
 (* Helpers *)
 (*****************************************************************************)
 
+(* less: factorize with Git.exec_cmd *)
+let exec_cmd ~basedir s =
+  let cmd = Lib_vcs.goto_dir basedir^ s in
+  pr2 (spf "executing: %s" s);
+  let ret = Sys.command cmd in
+  if (ret <> 0) 
+  then failwith ("pb with command: " ^ s)
+
 (*****************************************************************************)
 (* Commands *)
 (*****************************************************************************)
@@ -159,3 +167,10 @@ let grep ~basedir str =
   in
   let xs = Common.cmd_to_list cmd in
   xs
+
+let show ~basedir file commitid =
+  let tmpfile = Common.new_temp_file "hg_cat" ".cat" in
+  let str_commit = Lib_vcs.s_of_versionid commitid in
+  let cmd = (spf "hg cat -r '%s' %s > %s" str_commit file tmpfile) in
+  exec_cmd ~basedir cmd;
+  tmpfile

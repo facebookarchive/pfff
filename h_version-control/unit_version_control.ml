@@ -141,8 +141,8 @@ let unittest =
            "hg add bar.txt foo.txt";
            "hg commit -m 'first commit' > /dev/null";
          ];
-         let _commit_id = Lib.VersionId "HEAD" in
-         let _previous_id = Lib.VersionId "HEAD^" in
+         let commit_id = Lib.VersionId "." in
+         let previous_id = Lib.VersionId ".^" in
 
          let xs = 
            Mercurial.grep ~basedir "ba" in
@@ -150,6 +150,27 @@ let unittest =
            ~msg:"it should find files containing ba with hg grep"
            ["bar.txt"]
            xs;
+
+         exec_cmds ~basedir [
+           "echo new_content > bar.txt";
+           "hg commit -m'first modif' > /dev/null";
+         ];
+
+         let tmpfile =
+           Mercurial.show ~basedir "bar.txt" commit_id in
+         let xs = Common.cat tmpfile in
+         assert_equal
+           ~msg:"it should show the current content of the file"
+           ["new_content"]
+           xs;
+         let tmpfile =
+           Mercurial.show ~basedir "bar.txt" previous_id in
+         let xs = Common.cat tmpfile in
+         assert_equal
+           ~msg:"it should show the past content of the file"
+           ["bar"]
+           xs;
+
 
        )
     );
