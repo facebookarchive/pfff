@@ -126,4 +126,31 @@ let unittest =
 
        );
     );
+
+(*****************************************************************************)
+(* Mercurial *)
+(*****************************************************************************)
+    "mercurial" >:: (fun () ->
+       with_tmp_directory (fun basedir ->
+         Flag_version_control.verbose := false;
+
+         exec_cmds ~basedir [
+           "hg init > /dev/null";
+           "echo 'foo' > foo.txt";
+           "echo 'bar' > bar.txt";
+           "hg add bar.txt foo.txt";
+           "hg commit -m 'first commit' > /dev/null";
+         ];
+         let _commit_id = Lib.VersionId "HEAD" in
+         let _previous_id = Lib.VersionId "HEAD^" in
+
+         let xs = 
+           Mercurial.grep ~basedir "ba" in
+         assert_equal
+           ~msg:"it should find files containing ba with hg grep"
+           ["bar.txt"]
+           xs;
+
+       )
+    );
   ]

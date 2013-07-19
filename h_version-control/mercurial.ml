@@ -1,6 +1,6 @@
 (* Yoann Padioleau
  * 
- * Copyright (C) 2009 Yoann Padioleau
+ * Copyright (C) 2009, 2013 Yoann Padioleau
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public License
@@ -12,10 +12,29 @@
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the file
  * license.txt for more details.
  *)
-
 open Common
 
 open Lib_vcs 
+
+(*****************************************************************************)
+(* Prelude *)
+(*****************************************************************************)
+(* 
+ * less: could use a converter like maybe a git-hg if it exists?
+ * 
+ * history: 
+ *  - done for aComment to study the history of repo in under mercurial.
+ *  - extended for cmf --deadcode
+ *)
+
+(*****************************************************************************)
+(* Wrappers *)
+(*****************************************************************************)
+let pr2, pr2_once = Common2.mk_pr2_wrappers Flag_version_control.verbose
+
+(*****************************************************************************)
+(* Helpers *)
+(*****************************************************************************)
 
 (*****************************************************************************)
 (* Commands *)
@@ -36,7 +55,6 @@ let annotate_regexp =
     "\\([0-9]+\\)" ^ "[ \t]" ^ "-" ^ (* year *)
     ".*" (* rest of line *)
 
-    
 let annotate2 ?(basedir="") filename = 
   (* 
      can add -f to follow rename and copy, in that case maybe add to add
@@ -67,7 +85,6 @@ let annotate2 ?(basedir="") filename =
   in
   (* files lines are 1_based, so add this dummy 0 entry *)
   Array.of_list (dummy_annotation::annots)
-
 
 let annotate ?basedir a = 
   Common.profile_code "Hg.annotate" (fun () -> annotate2 ?basedir a)
@@ -131,3 +148,14 @@ let date_file_creation2 ?(basedir="") file =
 
 let date_file_creation ?basedir a = 
   Common.profile_code "Hg.date_file" (fun() -> date_file_creation2 ?basedir a)
+
+(*****************************************************************************)
+(* Repository operations *)
+(*****************************************************************************)
+
+let grep ~basedir str =
+  let cmd = (goto_dir basedir ^
+            (spf "hg locate -0 | xargs -0 grep --files-with-matches %s" str)) 
+  in
+  let xs = Common.cmd_to_list cmd in
+  xs

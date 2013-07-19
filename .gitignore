@@ -53,6 +53,7 @@ config.status
 #vcs
 _darcs
 .svn
+.hg
 
 Fig_graph_ml.pdf
 

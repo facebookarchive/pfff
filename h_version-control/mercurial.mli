@@ -1,5 +1,4 @@
-
-(* could also use a converter like maybe a git-hg if it exists *)
+(* filename below is assumed to be the path of the file relative to basedir *)
 
 (* operations on a singular file *)
 
@@ -9,3 +8,8 @@ val date_file_creation:
   ?basedir:string -> Common.filename -> Common2.date_dmy
 val annotate_raw : 
   ?basedir:string -> Common.filename -> string array
+
+(* repository operations *)
+
+val grep:
+  basedir:string -> string -> Common.filename list
