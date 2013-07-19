@@ -4,7 +4,7 @@ TOP=..
 ##############################################################################
 TARGET=lib
 
-SRC= patch.ml lib_vcs.ml  \
+SRC= flag_version_control.ml patch.ml lib_vcs.ml  \
      version_control.ml \
      git.ml  cvs.ml  mercurial.ml \
      test_version_control.ml unit_version_control.ml

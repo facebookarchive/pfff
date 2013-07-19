@@ -30,6 +30,9 @@ val parse_skip_revs_file:
 
 val grep:
   basedir:string -> string -> Common.filename list
+(* returns a temporary file containing the content of filename at versionid *)
+val show:
+  basedir:string -> Common.filename -> Lib_vcs.versionid -> Common.filename
 
 (* commitids operations *)
 

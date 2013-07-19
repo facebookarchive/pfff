@@ -78,6 +78,8 @@ let unittest =
 
     "git" >:: (fun () ->
        with_tmp_directory (fun basedir ->
+         Flag_version_control.verbose := false;
+
          exec_cmds ~basedir [
            "git init > /dev/null";
            "echo 'foo' > foo.txt";
@@ -86,6 +88,7 @@ let unittest =
            "git commit -m 'first commit' > /dev/null";
          ];
          let commit_id = Lib.VersionId "HEAD" in
+         let previous_id = Lib.VersionId "HEAD^" in
 
          let xs =
            Git.files_involved_in_diff ~basedir commit_id in
@@ -99,7 +102,28 @@ let unittest =
          assert_equal
            ~msg:"it should find files containing ba with git grep"
            ["bar.txt"]
-           xs
+           xs;
+
+         exec_cmds ~basedir [
+           "echo new_content > bar.txt";
+           "git commit -a -m'first modif' > /dev/null";
+         ];
+
+         let tmpfile =
+           Git.show ~basedir "bar.txt" commit_id in
+         let xs = Common.cat tmpfile in
+         assert_equal
+           ~msg:"it should show the current content of the file"
+           ["new_content"]
+           xs;
+         let tmpfile =
+           Git.show ~basedir "bar.txt" previous_id in
+         let xs = Common.cat tmpfile in
+         assert_equal
+           ~msg:"it should show the past content of the file"
+           ["bar"]
+           xs;
+
        );
     );
   ]
