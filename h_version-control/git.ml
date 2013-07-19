@@ -13,10 +13,14 @@
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the file
  * license.txt for more details.
  *)
-open Common2
 open Common
 
+module Date = Common2
 open Lib_vcs 
+
+(*****************************************************************************)
+(* Prelude *)
+(*****************************************************************************)
 
 (*****************************************************************************)
 (* Types, globals *)
@@ -219,9 +223,9 @@ let date_file_creation2 ?(basedir="") file =
       if s =~ date_regexp
       then
         let (day, month_str, year) = matched3 s in
-        DMY (Day (s_to_i day),
+        Date.DMY (Date.Day (s_to_i day),
              Common2.month_of_string month_str,
-            Year (s_to_i year)
+            Date.Year (s_to_i year)
         )
       else failwith ("git log wrong line: " ^ s)
   | _ -> 
@@ -348,7 +352,7 @@ let commits_between_commitids ~basedir ~old_id ~recent_id =
 let file_to_commits ~basedir commits = 
   let h = Common2.hash_with_default (fun() -> []) in
   let total = List.length commits in
-  commits +> Common.index_list_1 |> List.iter (fun (vid, cnt) ->
+  commits +> Common.index_list_1 +> List.iter (fun (vid, cnt) ->
     Common2.log2 (spf "patch %d/%d" cnt total);
     try 
       let patch = commit_patch ~basedir vid in
