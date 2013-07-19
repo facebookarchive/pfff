@@ -28,6 +28,9 @@ val refactoring_commits:
 val parse_skip_revs_file:
   Common.filename -> Lib_vcs.versionid list
 
+val grep:
+  basedir:string -> string -> Common.filename list
+
 (* commitids operations *)
 
 val commit_of_relative_time: 

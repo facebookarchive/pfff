@@ -257,6 +257,12 @@ let commits ?(extra_args="") ~basedir () =
   let xs = Common.cmd_to_list cmd in
   xs +> List.map id_and_summary_oneline
 
+let grep ~basedir str =
+  let cmd = (goto_dir basedir ^
+               (spf "git grep --files-with-matches %s" str)) in
+  let xs = Common.cmd_to_list cmd in
+  xs
+
 (*****************************************************************************)
 (* single commit operations  *)
 (*****************************************************************************)

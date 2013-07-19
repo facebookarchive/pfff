@@ -76,7 +76,7 @@ let unittest =
 (* Git *)
 (*****************************************************************************)
 
-    "git files in diff involved" >:: (fun () ->
+    "git" >:: (fun () ->
        with_tmp_directory (fun basedir ->
          exec_cmds ~basedir [
            "git init > /dev/null";
@@ -86,12 +86,20 @@ let unittest =
            "git commit -m 'first commit' > /dev/null";
          ];
          let commit_id = Lib.VersionId "HEAD" in
+
          let xs =
            Git.files_involved_in_diff ~basedir commit_id in
          assert_equal 
            ~msg:"it should find all added files in a diff"
            [Lib.Added, "bar.txt"; Lib.Added, "foo.txt"]
            (Common.sort xs);
+
+         let xs = 
+           Git.grep ~basedir "ba" in
+         assert_equal
+           ~msg:"it should find files containing ba with git grep"
+           ["bar.txt"]
+           xs
        );
     );
   ]
