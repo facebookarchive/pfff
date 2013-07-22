@@ -12,8 +12,8 @@ function abs($number) { }
 function is_finite($val) { }
 function is_infinite($val) { }
 function is_nan($val) { }
-function ceil($value) { }
-function floor($value) { }
+function ceil($number) { }
+function floor($number) { }
 function round($val, $precision = 0, $mode = 1) { }
 function deg2rad($number) { }
 function rad2deg($number) { }

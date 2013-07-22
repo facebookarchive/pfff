@@ -1233,6 +1233,7 @@ define('PATH_SEPARATOR', 0);
 define('PCRE_VERSION', 0);
 define('PEAR_EXTENSION_DIR', 0);
 define('PEAR_INSTALL_DIR', 0);
+define('PHP_BINARY', 0);
 define('PHP_BINARY_READ', 0);
 define('PHP_BINDIR', 0);
 define('PHP_CONFIG_FILE_PATH', 0);

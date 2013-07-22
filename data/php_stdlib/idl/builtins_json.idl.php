@@ -13,5 +13,13 @@ define('JSON_UNESCAPED_UNICODE', 0);
 define('JSON_FB_LOOSE', 0);
 define('JSON_FB_UNLIMITED', 0);
 define('JSON_FB_EXTRA_ESCAPES', 0);
+define('JSON_ERROR_NONE', 0);
+define('JSON_ERROR_DEPTH', 0);
+define('JSON_ERROR_STATE_MISMATCH', 0);
+define('JSON_ERROR_CTRL_CHAR', 0);
+define('JSON_ERROR_SYNTAX', 0);
+define('JSON_ERROR_UTF8', 0);
+function json_last_error() { }
+function json_last_error_msg() { }
 function json_encode($value, $options = 0) { }
 function json_decode($json, $assoc = false, $options = 0) { }
