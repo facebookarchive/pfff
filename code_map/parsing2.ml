@@ -209,11 +209,8 @@ let tokens_with_categ_of_file file hentities =
           ))
          (function Php (ast, toks) -> [ast, toks] | _ -> raise Impossible));
          highlight_visit = (fun ~tag_hook prefs (ast, toks) ->
-           raise Todo
-(*
-          Highlight_php.visit_toplevel ~tag:tag_hook prefs hentities 
+          Highlight_php.visit_program ~tag:tag_hook prefs hentities 
             (ast, toks)
-*)
          );
          info_of_tok = Token_helpers_php.info_of_tok;
          str_of_tok = Token_helpers_php.str_of_tok;

@@ -253,7 +253,7 @@ let rec handle_typehint tag x = match x with
  * number and basic entities. The Ast is better for tagging idents
  * to figure out what kind of ident it is (a function, a class, a constant)
  *)
-let visit_toplevel ~tag prefs  hentities (toplevel, toks) =
+let visit_program ~tag prefs  hentities (ast, toks) =
 
   let already_tagged = Hashtbl.create 101 in
 
@@ -686,7 +686,7 @@ let visit_toplevel ~tag prefs  hentities (toplevel, toks) =
   }
   in
   let visitor = V.mk_visitor hooks in
-  visitor (Toplevel toplevel);
+  visitor (Program ast);
 
   (* -------------------------------------------------------------------- *)
   (* toks phase 2 *)
@@ -966,8 +966,8 @@ let visit_toplevel ~tag prefs  hentities (toplevel, toks) =
   (* -------------------------------------------------------------------- *)
   (* ast phase 2 *)
   (* -------------------------------------------------------------------- *)
-  (match toplevel with
-  | NotParsedCorrectly iis ->
+  (match ast with
+  | NotParsedCorrectly iis::_ ->
       (*
         let (max,min) = Lib_parsing_c.max_min_ii_by_pos ii in
         let i1 = iterline_of_info bufinfo min in
