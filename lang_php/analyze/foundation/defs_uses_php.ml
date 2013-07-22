@@ -47,11 +47,12 @@ module E = Database_code
  * entity_kind for PHP but this will go against the multi-languages
  * factorization we try to do in h_program-lang/
  *)
-type def =
-  Database_code.entity_kind * Ast_php.ident * Ast_php.ident option
 
-type use =
-  Database_code.entity_kind * Ast_php.name
+type def = 
+  Ast_php.ident * Ast_php.ident option * Database_code.entity_kind
+
+type use = 
+  Ast_php.name * Database_code.entity_kind
 
 (*****************************************************************************)
 (* Helpers *)
@@ -74,7 +75,7 @@ let defs_of_any any =
     V.kfunc_def = (fun (k, _) def ->
       (match def.f_type with
       | FunctionRegular -> 
-          Common.push2 (E.Function, def.f_name, None) aref
+          Common.push2 (def.f_name, None, E.Function) aref
       | MethodRegular | MethodAbstract ->
           let classname =
             match !current_class with
@@ -86,7 +87,7 @@ let defs_of_any any =
             then E.StaticMethod
             else E.RegularMethod
           in
-          Common.push2 (E.Method kind, def.f_name, Some classname) aref
+          Common.push2 (def.f_name, Some classname, E.Method kind) aref
       | FunctionLambda ->
           (* the f_name is meaningless *)
           ()
@@ -103,7 +104,7 @@ let defs_of_any any =
         | Interface _ -> E.Interface
         | Trait _ -> E.Trait
       in
-      Common.push2 (E.Class kind, def.c_name, None) aref;
+      Common.push2 (def.c_name, None, E.Class kind) aref;
       Common.save_excursion current_class (Some def.c_name) (fun () ->
           k def;
       );
@@ -112,10 +113,10 @@ let defs_of_any any =
       match x with
       (* const of php 5.3 *)
       | ConstantDef def ->
-          Common.push2 (E.Constant, def.cst_name, None) aref;
+          Common.push2 (def.cst_name, None, E.Constant) aref;
           k x
       | TypeDef def ->
-          Common.push2 (E.Type, def.t_name, None) aref;
+          Common.push2 (def.t_name, None, E.Type) aref;
           k x
       | _ -> k x
     );
@@ -134,7 +135,7 @@ let defs_of_any any =
                * which is not the case for s. See ast_php.ml
                *)
               let info' = Parse_info.rewrap_str (s) info in
-              Common.push2 (E.Constant, (Name (s, info')), None) aref;
+              Common.push2 ((Name (s, info')), None, E.Constant) aref;
               k x
           | _ -> k x
           )
@@ -175,7 +176,7 @@ let uses_of_any ?(verbose=false) any =
       (match x with
       (* todo: what about functions passed as strings? *)
       | Call (Id name, args) ->
-          Common.push2 (E.Function, name) aref;
+          Common.push2 (name, E.Function) aref;
 
     (* This covers
      * - new X, instanceof X 
@@ -188,7 +189,7 @@ let uses_of_any ?(verbose=false) any =
       | AssignNew(_, _, _, _, Id name, _)
       | ClassGet (Id name, _, _) ->
         let kind = E.RegularClass in
-        Common.push2 (E.Class kind, name) aref;
+        Common.push2 (name, E.Class kind) aref;
       | _ -> ()
       );
       k x
@@ -207,7 +208,7 @@ let uses_of_any ?(verbose=false) any =
       let kind = E.RegularClass in
       (match classname with
       | Hint (classname, _targsTODO) ->
-        Common.push2 (E.Class kind, classname) aref;
+        Common.push2 (classname, E.Class kind) aref;
       | _ -> ()
       );
       k classname
@@ -217,10 +218,10 @@ let uses_of_any ?(verbose=false) any =
     V.kxhp_html = (fun (k, _) x ->
       match x with
       | Xhp (xhp_tag, _attrs, _tok, _body, _end) ->
-          Common.push2 (E.Class E.RegularClass, XName[QI(XhpName xhp_tag)]) aref;
+          Common.push2 (XName[QI(XhpName xhp_tag)], E.Class E.RegularClass) aref;
           k x
       | XhpSingleton (xhp_tag, _attrs, _tok) ->
-          Common.push2 (E.Class E.RegularClass, XName[QI(XhpName xhp_tag)]) aref;
+          Common.push2 (XName[QI(XhpName xhp_tag)], E.Class E.RegularClass) aref;
           k x
       (* todo: do it also for xhp attributes ? kxhp_tag then ?
        * (but take care to not include doublon because have

@@ -50,7 +50,7 @@ let tag_of_ident filelines name kind =
 let tags_of_ast ast filelines =
   let defs = Defs_uses_php.defs_of_any (Program ast) in
 
-  defs +> List.map (fun (kind, name, enclosing_name_opt) ->
+  defs +> List.map (fun (name, enclosing_name_opt, kind) ->
     match kind with
     | Db.Class _ ->
         (match name with
