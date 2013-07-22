@@ -92,6 +92,7 @@ type visitor_in = {
 
   kname: (name -> unit) * visitor_out -> name -> unit;
   khint_type: (hint_type -> unit) * visitor_out -> hint_type -> unit;
+  ktparam: (type_param -> unit) * visitor_out -> type_param -> unit;
   karray_pair: (array_pair -> unit) * visitor_out -> array_pair -> unit;
 
   karguments: (argument comma_list paren -> unit) * visitor_out ->
@@ -134,6 +135,7 @@ let default_visitor =
     kxhp_attr_decl = (fun (k,_) x -> k x);
     kxhp_children_decl = (fun (k,_) x -> k x);
     karray_pair =  (fun (k,_) x -> k x);
+    ktparam = (fun (k,_) x -> k x);
   }
 
 
@@ -224,11 +226,14 @@ and v_class_name_or_selfparent x =
 and v_type_args x =
   v_single_angle (v_comma_list v_hint_type) x; ()
 and v_type_params v = v_single_angle (v_comma_list v_type_param) v
-and v_type_param =
-  function
+and v_type_param x =
+  let rec k x =
+    match x with
   | TParam v1 -> let v1 = v_ident v1 in ()
   | TParamConstraint ((v1, v2, v3)) ->
       let v1 = v_ident v1 and v2 = v_tok v2 and v3 = v_class_name v3 in ()
+  in
+  vin.ktparam (k, all_functions) x
 and v_class_name v = v_hint_type v
 
 and v_fully_qualified_class_name v = v_hint_type v

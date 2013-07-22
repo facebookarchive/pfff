@@ -44,6 +44,7 @@ type visitor_in = {
 
   kname: (name -> unit) * visitor_out -> name -> unit;
   khint_type: (hint_type -> unit) * visitor_out -> hint_type -> unit;
+  ktparam: (type_param -> unit) * visitor_out -> type_param -> unit;
   karray_pair: (array_pair -> unit) * visitor_out -> array_pair -> unit;
 
   karguments: (argument comma_list paren -> unit) * visitor_out ->
