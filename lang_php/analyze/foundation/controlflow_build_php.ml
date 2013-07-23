@@ -548,7 +548,6 @@ let rec (cfg_stmt: state -> nodei option -> stmt -> nodei option) =
    | Use (_, _, _)
    | StaticVars (_, _, _)
    | Globals (_, _, _)
-   | TypedDeclaration _
        ->
        let simple_stmt = F.TodoSimpleStmt in
        let newi = state.g#add_node { F.n = F.SimpleStmt simple_stmt;i=i() } in

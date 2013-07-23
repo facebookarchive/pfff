@@ -215,8 +215,6 @@ and stmt env st acc =
   | FuncDefNested fd -> A.FuncDef (func_def env fd) :: acc
   | ClassDefNested cd -> A.ClassDef (class_def env cd) :: acc
 
-   (* this is not yet used in our codebase *)
-  | TypedDeclaration _ -> raise Common.Impossible
   | IfColon (tok, _, _, _, _, _, _, _) -> raise (ObsoleteConstruct tok)
 
 and if_elseif env (_, (_, e, _), st) acc =

@@ -146,7 +146,6 @@ let rec last_info_of_stmt = function
   | InlineHtml (_, x)
   | Use (_, _, x)
   | Unset (_, _, x)
-  | TypedDeclaration (_, _, _, x)
   | FuncDefNested { f_body = (_, _, x); _ }
   | ClassDefNested { c_body = (_, _, x); _ }
    -> x
@@ -374,7 +373,6 @@ and stmt_ env st acc =
       let lp = List.map (lvalue env) lp in
       A.Expr (A.Call (A.Id "unset", lp)) :: acc
   | Declare _ -> raise (TodoConstruct "Declare")
-  | TypedDeclaration _ -> raise (ObsoleteConstruct "TypedDeclaration")
   | IfColon _ -> raise (ObsoleteConstruct "IfColo is old crazy stuff")
   | FuncDefNested fd ->
       A.FuncDef (func_def env fd) :: acc

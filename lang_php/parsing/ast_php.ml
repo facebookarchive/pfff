@@ -452,8 +452,6 @@ and stmt =
     | Use of tok * use_filename * tok
     | Unset of tok * lvalue comma_list paren * tok
     | Declare of tok * declare comma_list paren * colon_stmt
-    (* static-php-ext: *)
-    | TypedDeclaration of hint_type * lvalue * (tok * expr) option * tok
 
     (* nested funcs and classes are mostly used inside if() where the
      * if() actually behaves like an ifdef in C.

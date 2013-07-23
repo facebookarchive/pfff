@@ -638,19 +638,6 @@ and vof_stmt =
       and v3 = vof_colon_stmt v3
       in Ocaml.VSum (("Declare", [ v1; v2; v3 ]))
 
-  | TypedDeclaration ((v1, v2, v3, v4)) ->
-      let v1 = vof_hint_type v1
-      and v2 = vof_lvalue v2
-      and v3 =
-        Ocaml.vof_option
-          (fun (v1, v2) ->
-             let v1 = vof_tok v1
-             and v2 = vof_expr v2
-             in Ocaml.VTuple [ v1; v2 ])
-          v3
-      and v4 = vof_tok v4
-      in Ocaml.VSum (("TypedDeclaration", [ v1; v2; v3; v4 ]))
-
   | FuncDefNested v1 ->
       let v1 = vof_func_def v1 in Ocaml.VSum (("FuncDefNested", [ v1 ]))
   | ClassDefNested v1 ->

@@ -618,16 +618,6 @@ and map_stmt x =
       and v2 = map_paren (map_comma_list map_declare) v2
       and v3 = map_colon_stmt v3
       in Declare ((v1, v2, v3))
-  | TypedDeclaration ((v1, v2, v3, v4)) ->
-      let v1 = map_hint_type v1
-      and v2 = map_lvalue v2
-      and v3 =
-        map_of_option
-          (fun (v1, v2) ->
-             let v1 = map_tok v1 and v2 = map_expr v2 in (v1, v2))
-          v3
-      and v4 = map_tok v4
-      in TypedDeclaration ((v1, v2, v3, v4))
   | FuncDefNested v1 -> let v1 = map_func_def v1 in FuncDefNested ((v1))
   | ClassDefNested v1 -> let v1 = map_class_def v1 in ClassDefNested ((v1))
 

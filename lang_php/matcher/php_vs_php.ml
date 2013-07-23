@@ -2229,9 +2229,6 @@ and m_stmt a b =
     )
     )))
 
-  | A.TypedDeclaration(a1, a2, a3, a4), B.TypedDeclaration(b1, b2, b3, b4) ->
-      fail2 "TypedDeclaration"
-
   | A.FuncDefNested(a1), B.FuncDefNested(b1) ->
       fail2 "FuncDefNested"
 
@@ -2266,7 +2263,6 @@ and m_stmt a b =
   | A.Use _, _
   | A.Unset _, _
   | A.Declare _, _
-  | A.TypedDeclaration _, _
   | A.FuncDefNested _, _
   | A.ClassDefNested _, _
    -> fail ()
