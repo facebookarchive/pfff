@@ -87,10 +87,8 @@ and toplevel env st acc =
   | NotParsedCorrectly _ -> raise Common.Impossible
   (* coming in next diff *)
   | NamespaceDef (_, qi, _) -> A.NamespaceDef (qualified_ident env qi)::acc
-  | NamespaceBracketDef (tok, _, _) ->
-    raise (ObsoleteConstruct tok)
-  | NamespaceUse _ ->
-    raise Todo
+  | NamespaceBracketDef (tok, _, _) -> raise (ObsoleteConstruct tok)
+  | NamespaceUse (tok, _, _) -> raise (TodoConstruct ("NamespaceUse", tok))
 
 (* ------------------------------------------------------------------------- *)
 (* Names *)
@@ -190,7 +188,7 @@ and stmt env st acc =
       A.Expr (A.Call (A.Id [A.builtin "echo", wrap tok],
                      [A.String (s, wrap tok)])) :: acc
   | Use (tok, fn, _) ->
-      raise (TodoConstruct ("use", tok))
+      raise (TodoConstruct ("Use", tok))
   | Unset (tok, (_, lp, _), e) ->
       let lp = comma_list lp in
       let lp = List.map (lvalue env) lp in
