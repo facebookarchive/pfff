@@ -7,8 +7,9 @@ type node = string * Database_code.entity_kind
 type edge = Has | Use
 
 type error =
- | NodeAlreadyPresent
+ | NodeAlreadyPresent of node
 exception Error of error
+val string_of_error: error -> string
 
 (* really an hypergraph actually *)
 type graph

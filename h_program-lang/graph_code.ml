@@ -122,7 +122,7 @@ type graph = {
 }
 
 type error =
- | NodeAlreadyPresent
+ | NodeAlreadyPresent of node
 
 exception Error of error
 
@@ -161,12 +161,12 @@ let add_node n g =
   if G.has_node n g.has
   then begin 
     pr2_gen n;
-    raise (Error NodeAlreadyPresent)
+    raise (Error (NodeAlreadyPresent n))
   end;
   if G.has_node n g.use
   then begin 
     pr2_gen n;
-    raise (Error NodeAlreadyPresent)
+    raise (Error (NodeAlreadyPresent n))
   end;
 
   G.add_vertex_if_not_present n g.has;
@@ -310,6 +310,10 @@ let create_initial_hierarchy g =
 
 let string_of_node (s, kind) =
   E.string_of_entity_kind kind ^ ":" ^ s
+
+let string_of_error = function
+  | NodeAlreadyPresent n -> ("Node already present: " ^ string_of_node n)
+
 
 let node_of_string s =
   if s =~ "\\([^:]*\\):\\(.*\\)"

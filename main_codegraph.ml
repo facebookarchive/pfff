@@ -261,6 +261,7 @@ let build_graph_code lang root =
     else []
   in
   let g =
+    try (
     match lang with
     | "ml"  -> Graph_code_ml.build ~verbose:!verbose root skip_list
     | "cmt"  -> Graph_code_cmt.build ~verbose:!verbose root skip_list
@@ -286,6 +287,10 @@ let build_graph_code lang root =
     | "dot" -> Graph_code.graph_of_dotfile (Filename.concat root "graph.dot")
 
     | _ -> failwith ("language not supported: " ^ lang)
+    )
+    with Graph_code.Error err ->
+      pr2 (Graph_code.string_of_error err);
+      raise (Graph_code.Error err)
   in
   let output_dir =
     match !output_dir with

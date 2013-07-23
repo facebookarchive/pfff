@@ -290,12 +290,12 @@ let extract_defs2 ~g ~file ~graph_code_java ~hjavabasename_to_fullpath ast =
   let node = (name, E.Class E.RegularClass) in
   (try 
       g +> G.add_node node;
-  with Graph_code.Error Graph_code.NodeAlreadyPresent ->
+  with Graph_code.Error (Graph_code.NodeAlreadyPresent node) ->
     let nodeinfo = G.nodeinfo node g in
     pr2 (spf "DUPE: %s" (G.string_of_node node));
     pr2 (spf " orig = %s" (nodeinfo.G.pos.Parse_info.file));
     pr2 (spf " dupe = %s" file);
-    raise (Graph_code.Error Graph_code.NodeAlreadyPresent)
+    raise (Graph_code.Error (Graph_code.NodeAlreadyPresent node))
   );
   let nodeinfo = { G.
     pos = { Parse_info.
