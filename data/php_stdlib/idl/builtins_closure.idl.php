@@ -4,6 +4,3 @@
 class Closure {
   public function __construct() { }
 }
-class DummyClosure {
-  public function __construct() { }
-}

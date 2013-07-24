@@ -4,11 +4,13 @@
 class AsyncMysqlClient {
   public function __construct() { }
   static public function connect($host, $port, $dbname, $user, $password, $timeout_micros = -1) { }
+  static public function adoptConnection($connection) { }
 }
 class AsyncMysqlConnection {
   public function __construct() { }
   public function query($query, $timeout_micros = -1) { }
   public function close() { }
+  public function releaseConnection() { }
   public function host() { }
   public function port() { }
 }

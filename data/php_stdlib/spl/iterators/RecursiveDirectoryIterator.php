@@ -75,12 +75,12 @@ class RecursiveDirectoryIterator extends FilesystemIterator
     if ($this->getFlags() & FilesystemIterator::CURRENT_AS_PATHNAME) {
       return $this->current();
     }
-    $child = new self($this->getPathname(), $this->getFlags());
+    $child = new static($this->getPathname(), $this->getFlags());
     $child->subPath = $this->subPath;
     if ($child->subPath) {
       $child->subPath .= DIRECTORY_SEPARATOR;
     }
-    $child->subPath .= $this->getPathname();
+    $child->subPath .= $this->getBasename();
     return $child;
   }
 
