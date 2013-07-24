@@ -13,6 +13,5 @@ update:
 	make check
 
 check:
-	git diff
 	~/pfff/codegraph -lang php -build .
 	cat pfff.log
