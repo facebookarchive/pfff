@@ -455,3 +455,5 @@ web/var/logs/warnings.log
 /demos/show_function_class_names2.byte
 /data/php_stdlib/array_filter.hhas
 /data/php_stdlib/array_map.hhas
+/data/php_stdlib/DebuggerCommand.php
+/data/php_stdlib/XhprofFrame.php
