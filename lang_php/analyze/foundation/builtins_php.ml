@@ -591,7 +591,9 @@ let generate_php_stdlib ~src (* ~phpmanual_dir *) ~dest =
          (* parse error on PHP_INT_MAX, which is why it's processed
           * specially in pfff/data/php_stdlib/Makefile
           *)
-         b = "constants.idl"
+         b = "constants.idl" ||
+         (* has an 'extension' field *)
+         b = "phar.idl"
       then ()
       else begin
         let target = Common2.filename_of_dbe (dest, "builtins_" ^ b, "php") in
