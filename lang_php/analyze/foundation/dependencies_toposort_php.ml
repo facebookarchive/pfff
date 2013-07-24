@@ -41,7 +41,8 @@ module Deps = struct
     List.fold_left stmt acc stl
 
   and stmt acc = function
-    | NamespaceDef _ -> failwith "no namespace support yet"
+    | NamespaceDef qu -> 
+      raise (Ast_php.TodoNamespace (tok_of_name qu))
     (* adding names of entities *)
     | ClassDef c -> SSet.add (unwrap c.c_name) acc
     | FuncDef f -> SSet.add (unwrap f.f_name) acc
@@ -89,7 +90,7 @@ module Deps = struct
 
   and expr acc = function
     | Id [(s, _)] -> SSet.add s acc
-    | Id _ -> failwith "no namespace support yet"
+    | Id name ->       raise (Ast_php.TodoNamespace (tok_of_name name))
     | Var _ -> acc
 
     | Int _ | Double _ | String _ -> acc
@@ -115,7 +116,8 @@ module Deps = struct
     | Collection ([(n,_)], mel) -> 
       let acc = SSet.add n acc in
       array_valuel acc mel
-    | Collection (_, mel) -> failwith "no namespace support yet"
+    | Collection (name, mel) -> 
+      raise (Ast_php.TodoNamespace (tok_of_name name))
     | List el -> exprl acc el
     | New (e, el) -> exprl (expr acc e) el
     | CondExpr (e1, e2, e3) ->
@@ -168,7 +170,8 @@ module Deps = struct
   and hint_type_ acc = function
     (* not sure a type hints counts as a dependency *)
     | Hint [(s, _)] -> SSet.add s acc
-    | Hint _ -> failwith "no namespace support yet"
+    | Hint name -> raise (Ast_php.TodoNamespace (tok_of_name name))
+
     | HintArray -> acc
     | HintQuestion t -> hint_type_ acc t
     | HintTuple t -> List.fold_left (fun accp x -> SSet.union accp (hint_type_ accp x)) acc t

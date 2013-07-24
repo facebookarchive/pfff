@@ -288,7 +288,7 @@ let rec toplevel env st acc =
 
 and (name: env -> name -> string) = fun env -> function
    | XName [QI fqcn] -> ident env fqcn
-   | XName _ -> failwith "no namespace support yet"
+   | XName qu -> raise (TodoNamespace (Ast_php.info_of_qualified_ident qu))
    | Self _ -> "self"
    | Parent _ -> "parent"
    | LateStatic _ -> "static"

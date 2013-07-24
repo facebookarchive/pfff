@@ -195,7 +195,8 @@ let rec handle_typehint tag x = match x with
     | Hint (XName [QI (name)], _targsTODO) -> 
        let info = Ast.info_of_ident name in
        tag info (TypeMisc);
-    | Hint (XName _, _) -> failwith "no namespace support yet"
+    | Hint (XName qu, _) -> 
+      raise (TodoNamespace (Ast.info_of_qualified_ident qu))
     | Hint ((Self _ | Parent _), _) ->
         ()
     | Hint (LateStatic tok, _) ->

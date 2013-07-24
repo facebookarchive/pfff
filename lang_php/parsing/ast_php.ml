@@ -886,17 +886,26 @@ let info_of_ident e =
 let str_of_dname (DName x) = unwrap x
 let info_of_dname (DName (x,y)) = y
 
+let info_of_qualified_ident = function
+  | [] -> raise Impossible
+  | (QI x)::xs -> info_of_ident x
+  | (QITok tok)::xs -> tok
+
+exception TodoNamespace of tok
+
 let info_of_name x =
   match x with
   | XName [QI x] -> info_of_ident x
   | Self tok | Parent tok | LateStatic tok -> tok
-  | XName _ -> failwith "TODO: namespace"
+  | XName qu -> raise (TodoNamespace (info_of_qualified_ident qu))
 
 let str_of_name x =
   match x with
   | XName [QI x] -> str_of_ident x
   | Self tok | Parent tok | LateStatic tok -> Parse_info.str_of_info tok
-  | XName _ -> failwith "TODO: namespace"
+  | XName qu -> raise (TodoNamespace (info_of_qualified_ident qu))
+
+
 
 let str_of_class_name x =
   match x with

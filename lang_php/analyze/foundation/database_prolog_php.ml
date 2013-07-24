@@ -78,7 +78,8 @@ let rec string_of_hint_type h =
       | Hint (c, _targsTODO) ->
           (match c with
           | XName [QI (c)] -> Ast.str_of_ident c
-          | XName _ -> failwith "no namespace support yet"
+          | XName qu -> 
+            raise (Ast.TodoNamespace (Ast.info_of_qualified_ident qu))
           | Self _ -> "self"
           | Parent _ -> "parent"
           | LateStatic _ -> "")
@@ -396,7 +397,8 @@ let visit ~add readable ast =
              (* this should have been desugared while building the
               * code database, except for traits code ...
               *)
-           | XName _ -> failwith "no namespace support yet"
+          | XName qu -> 
+            raise (Ast.TodoNamespace (Ast.info_of_qualified_ident qu))
            | Self _| Parent _
            (* can't do much ... *)
            | LateStatic _ -> ()
@@ -443,8 +445,9 @@ let visit ~add readable ast =
               add (P.Misc (spf "docall(%s, '%s', class)"
                     !current str))
             end;
-          | XName _ -> failwith "no namespace support yet"
-            
+          | XName qu -> 
+            raise (Ast.TodoNamespace (Ast.info_of_qualified_ident qu))
+           
          (* todo: do something here *)
           | Self _
           | Parent _

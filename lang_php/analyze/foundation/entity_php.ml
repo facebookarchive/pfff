@@ -212,8 +212,10 @@ let ast_php_entity_in_file ~check_dupes (s, kind) g file =
       Some ((Ast.str_of_ident def.c_name, E.Class kind), ClassE def)
     | ConstantDef def ->
       Some ((Ast.str_of_ident def.cst_name, E.Constant), ConstantE def)
-    | NamespaceDef _ | NamespaceBracketDef _ | NamespaceUse _->
-      failwith "no namespace support yet"
+    | NamespaceDef (tok, _, _) 
+    | NamespaceBracketDef (tok, _, _) 
+    | NamespaceUse (tok, _, _) ->
+      raise (TodoNamespace tok)
 
     | NotParsedCorrectly _ | FinalDef _ -> None
     )

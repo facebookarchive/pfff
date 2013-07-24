@@ -446,10 +446,13 @@ let tok_of_ident (s, x) =
 
 let str_of_name = function
   | [id] -> str_of_ident id
-  | _ -> failwith "no namespace support yet"
+  | [] -> raise Common.Impossible
+  | x::xs -> raise (Ast_php.TodoNamespace (tok_of_ident x))
+
 let tok_of_name = function
   | [id] -> tok_of_ident id
-  | _ -> failwith "no namespace support yet"
+  | [] -> raise Common.Impossible
+  | x::xs -> raise (Ast_php.TodoNamespace (tok_of_ident x))
 
 (* we sometimes need to remove the '$' prefix *)
 let remove_first_char s =
@@ -463,5 +466,6 @@ let str_of_class_name x =
 let name_of_class_name x =
   match x with
   | Hint ([name]) -> name
-  | Hint _ -> failwith "no namespace support yet"
+  | Hint [] -> raise Common.Impossible
+  | Hint name -> raise (Ast_php.TodoNamespace (tok_of_name name))
   | _ -> raise Common.Impossible

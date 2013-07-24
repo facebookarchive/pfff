@@ -240,7 +240,7 @@ let visit_and_check  find_entity prog =
               let amethod = Ast.str_of_name name in
               check_method_call StaticCall
                 (aclass, amethod) (name, args) find_entity
-            | XName _ -> failwith "no namespace support yet"
+            | XName qu -> raise (TodoNamespace (Ast.info_of_qualified_ident qu))
 
             | (Self _ | Parent _) ->
               if !in_trait

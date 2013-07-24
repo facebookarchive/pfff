@@ -533,7 +533,8 @@ and expr_ env heap x =
          heap, Vany
        )
 
-  | Id _ -> failwith "no namespace support yet"
+  | Id ((s,tok)::_) -> raise (Ast_php.TodoNamespace (Common2.some tok))
+  | Id [] -> raise Impossible
 
   (* will probably return some Vabstr (Tint|Tbool|...) *)
   | Binop (bop, e1, e2) ->

@@ -805,7 +805,8 @@ and m_fully_qualified_class_name a b =
     m_name_metavar_ok a b >>= (fun (a, b) ->
       return ([A.QI a], [B.QI b])
     )
-  | _ -> failwith "no namespace support yet"
+  | qua, qub -> 
+    raise (Ast_php.TodoNamespace (Ast_php.info_of_qualified_ident qua))
 
 (*---------------------------------------------------------------------------*)
 (* argument *)
