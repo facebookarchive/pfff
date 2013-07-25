@@ -20,6 +20,7 @@ module V = Visitor_php
 module E = Error_php
 module Ent = Database_code
 module Flag = Flag_analyze_php
+module G = Graph_code
 
 (*****************************************************************************)
 (* Prelude *)
@@ -51,7 +52,6 @@ type context_access =
 (*****************************************************************************)
 (* Helpers *)
 (*****************************************************************************)
-
 let check_method_call context (aclass, amethod) (name, args) find_entity =
   let loc = Ast.info_of_name name in
   try
@@ -139,6 +139,69 @@ let check_class_constant (aclass, s) tok find_entity =
       E.fatal tok (E.UndefinedClassWhileLookup s)
   | Multi_found -> ()
 
+let extract_required_fields node graph =
+  let fields = G.succ node G.Has graph in
+  fields +> List.filter (fun node ->
+    try
+      let nodeinfo = G.nodeinfo node graph in
+      let props = nodeinfo.G.props in
+      List.mem Ent.Required props
+    with Not_found -> false)
+  +> List.map (fun (name, _) ->
+    if (name =~ ".*\\.\\(.*\\)=")
+    then matched1 name
+    else failwith "bad field name in check_required_field"
+  )
+
+let visit_f_body f_body current_class graph=
+  let acc = ref [] in
+  let visitor = V.mk_visitor { Visitor_php.default_visitor with
+    V.kexpr = (fun (k, _) e ->
+      match e with
+      | XhpHtml(Xhp((xhp_tag, loc), xhp_attr_list, _, _, _))
+      | XhpHtml(XhpSingleton((xhp_tag, loc), xhp_attr_list, _)) ->
+        let xhp_str = Ast_php_simple.string_of_xhp_tag xhp_tag in
+        let xhp_node = (xhp_str, Ent.Class Ent.RegularClass) in
+        if (G.has_node xhp_node graph)
+        then
+          let required_fields =
+            extract_required_fields xhp_node graph in
+          let has_fields = xhp_attr_list
+            +> List.map (fun ((name, _), _, _) -> name) in
+          let (_common, _only_in_first, only_in_second) =
+            Common2.diff_set_eff has_fields required_fields
+          in
+          let tok_and_error = only_in_second +> Common.map_filter (fun f ->
+            match current_class with
+            | Some class_str ->
+              (match Graph_code_php.lookup graph (class_str, f^"=") () with
+              | Some ((full_name, _), _) ->
+                (* This is most likely correct, see :ui:base::renderAndProcess()
+                   let suggest =
+                   (spf "%s=$this->getAttribute(\'%s\')" f f, 1) in
+                   Some (loc, (E.UndefinedRequiredField (f, suggest)))
+                *)
+                None
+              | None ->
+                Some (loc, (E.UndefinedRequiredField (f, None)))
+              )
+            | None ->
+              Some (loc, (E.UndefinedRequiredField (f, None)))
+          ) in
+          acc := tok_and_error@(!acc);
+          k e
+        else
+          k e
+      | Call(ObjGet(_, _, Id(method_name)), _) ->
+        let method_str = Ast.str_of_name method_name in
+        if (method_str =~ ".*set.*Attribute.*")
+        then acc := []
+        else k e
+      | _ -> k e
+    );
+  } in
+  visitor (Body f_body);
+  List.rev !acc
 
 (*****************************************************************************)
 (* Visitor *)
@@ -288,3 +351,28 @@ let visit_and_check  find_entity prog =
 (*****************************************************************************)
 let check_program a b =
   Common.profile_code "Checker.classes" (fun () -> visit_and_check a b)
+
+let check_required_field graph file =
+  let current_class = ref (None: string option) in
+  let ast = Parse_php.parse_program file in
+
+  let visitor = V.mk_visitor { Visitor_php.default_visitor with
+    V.kclass_def = (fun (k, _) def ->
+      let class_str = Ast.str_of_ident def.c_name in
+      Common.save_excursion current_class
+        (Some class_str)
+        (fun () -> k def)
+    );
+
+    V.kfunc_def = (fun (k, _) def ->
+      let f_body = def.f_body in
+      (* (tok * error) list *)
+      let acc = visit_f_body f_body !current_class graph in
+      acc +> List.iter (fun (tok, error) ->
+        E.warning tok error
+      );
+      k def
+    )    
+  } in
+  visitor (Program ast)
+

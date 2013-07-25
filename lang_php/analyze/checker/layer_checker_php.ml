@@ -133,6 +133,8 @@ let info_of_error_and_kind err =
       "eOther"
   | UnnecessaryTernaryIf ->
       "eOther"
+  | UndefinedRequiredField _ ->
+      "eOther"
   | UseOfUndefinedVariable _ 
   | UseOfUndefinedVariableInLambda _
     -> 

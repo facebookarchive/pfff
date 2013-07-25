@@ -20,5 +20,21 @@ $o = <x:misc
     />;
 $o = <x:misc
     data-x="1"
-    aria-x="2">
+    aria-x="2"
+    srvr-x="3">
     </x:misc>;
+function test_err() {
+     $o = <x:require-field
+     req_str="1"
+     />;
+     $o = <x:require-field
+     req_str="1"
+     req_int={1}
+     />;
+}
+function test_no_err() {
+    $o = <x:require-field
+    req_str="1"
+    />;
+    $o->setAttribute('req_int', 0);
+}

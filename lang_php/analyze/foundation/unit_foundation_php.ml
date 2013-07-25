@@ -264,6 +264,26 @@ class A {
         ["A.test_field", E.Method E.RegularMethod];
     );
 
+    "required xhp field" >:: (fun () ->
+      let file_content = "
+        class :x:required {
+          attribute
+          int req_int @required;
+}
+"
+      in
+      let tmpfile = Parse_php.tmp_php_file_from_string file_content in
+      let g = Graph_code_php.build 
+        ~verbose:false ~logfile:"/dev/null" (Right [tmpfile]) [] in
+      let field = (":x:required.req_int=", E.Field) in
+      let nodeinfo = G.nodeinfo field g in
+      let props = nodeinfo.G.props in
+      assert_equal
+        ~msg:"it should annotate xhp required field"
+        props
+        [Db.Required]
+    );
+
     "regression files" >:: (fun () ->
       let dir = Filename.concat Config_pfff.path "/tests/php/codegraph" in
       let skip_list = Skip_code.load (Filename.concat dir "skip_list.txt") in

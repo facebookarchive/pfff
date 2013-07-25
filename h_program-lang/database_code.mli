@@ -40,6 +40,8 @@ type property =
    | CodeCoverage of int list (* e.g. covered lines by unit tests *)
 
    | Privacy of privacy
+       
+   | Required
   and privacy = Public | Protected | Private
 
 type entity_id = int

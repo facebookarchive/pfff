@@ -215,8 +215,10 @@ type entity = {
    | CodeCoverage of int list (* e.g. covered lines by unit tests *)
 
    | Privacy of privacy
-   (* todo: git info, e.g. Age, Authors, Age_profile (range) *)
 
+   (* used for the xhp @required fields for now *)
+   | Required
+   (* todo: git info, e.g. Age, Authors, Age_profile (range) *)
   and privacy = Public | Protected | Private
 
 (* Note that because we now use indexed entities, you can not
@@ -335,7 +337,7 @@ let json_of_property x =
   | ContainDynamicCall ->    J.Array [J.String "ContainDynamicCall"]
   | ContainReflectionCall -> J.Array [J.String "ContainReflectionCall"]
   | TakeArgNByRef i -> J.Array [J.String "TakeArgNByRef"; J.Int i]
-  | (CodeCoverage _|UseGlobal _|ContainDeadStatements|DeadCode|Privacy _) ->
+  | (CodeCoverage _|UseGlobal _|ContainDeadStatements|DeadCode|Privacy _|Required) ->
       raise Todo
 
 let json_of_entity e = 

@@ -570,11 +570,14 @@ and class_def env def =
     expr env def.cst_body;
   );
   (* See URL: https://github.com/facebook/xhp/wiki "Defining Attributes" *)
-  def.c_xhp_fields +> List.iter (fun def ->
+  def.c_xhp_fields +> List.iter (fun (def, req) ->
     let addpostfix = function
       | (str, tok) -> (str ^ "=", tok) in
     let node = (addpostfix def.cv_name, E.Field) in
-    let env = add_node_and_edge_if_defs_mode env node in
+    let props =
+      if req then [E.Required] else []
+    in
+    let env = add_node_and_edge_if_defs_mode ~props env node in
     Common2.opt (expr env) def.cv_value;
   );
   def.c_variables +> List.iter (fun fld ->
