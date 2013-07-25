@@ -79,6 +79,9 @@ let find_php_files_of_dir_or_files ?(verbose=false) xs =
      * Hence the Sys.file_exists guard.
      *)
     let valid = 
+      (* note that there is still a race between the call to file_exists
+       * and is_php_file, but this one is far shorter :)
+       *)
       Sys.file_exists filename && is_php_file filename 
     in
     if not valid && verbose
