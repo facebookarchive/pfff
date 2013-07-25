@@ -10,7 +10,10 @@
 
 # install opam, take less time
 wget http://www.ocamlpro.com/pub/opam_installer.sh
-yes | sh ./opam_installer.sh /usr/local/bin > /dev/null
+# can't redirect to >/dev/null because travis
+# put 10min timeout on any program that don't output
+# something on the console
+yes | sh ./opam_installer.sh /usr/local/bin
 
 # install packages from opam
 # ??
