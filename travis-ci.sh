@@ -26,6 +26,7 @@ eval `opam config env`
 
 ./configure
 make depend
+source env.sh
 make
 
 #------------------------------
