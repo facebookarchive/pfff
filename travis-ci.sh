@@ -2,7 +2,7 @@
 
 # install ocaml from apt
 #sudo apt-get update -qq
-sudo apt-get install ocaml
+sudo apt-get install ocaml-nox
 
 # install opam
 # TODO
