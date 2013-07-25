@@ -7,8 +7,7 @@
 # Using apt-get is very very slow but only at the beginning apparently.
 # Once it has downloaded the ocaml package, travis will cache it
 # somewhere and different runs of the sandbox can reuse this cache.
-# But the default version is too old anyway. It does not have
-# compiler-libs which are now needed.
+# Note that the default version is pretty old though (ocaml 3.12). 
 
 #sudo apt-get update -qq
 sudo apt-get install -qq ocaml
