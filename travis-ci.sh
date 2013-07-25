@@ -1,8 +1,9 @@
 #!/bin/sh
 
-# install ocaml from apt
+# install ocaml
+#too slow, bandwidth is extremly limited
 #sudo apt-get update -qq
-sudo apt-get install ocaml-nox
+#sudo apt-get install ocaml-nox
 
 # install opam
 # TODO
