@@ -806,7 +806,10 @@ and m_fully_qualified_class_name a b =
       return ([A.QI a], [B.QI b])
     )
   | qua, qub -> 
-    raise (Ast_php.TodoNamespace (Ast_php.info_of_qualified_ident qua))
+    (* subtle: use qub for the diagnostic, qua is the sgrep pattern and it
+     * has no file information usually.
+     *)
+    raise (Ast_php.TodoNamespace (Ast_php.info_of_qualified_ident qub))
 
 (*---------------------------------------------------------------------------*)
 (* argument *)
