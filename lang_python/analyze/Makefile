@@ -14,7 +14,7 @@ SRC= \
 #ifeq ($(FEATURES_PCRE), 1)
 #PCRECMA=pcre.cma
 #PCREINCLUDE= +pcre
-#PCREINCLUDE=$(TOP)/ocamlpcre/lib
+#PCREINCLUDE=$(TOP)/
 #endif
 
 SYSLIBS= str.cma unix.cma $(PCRECMA)
@@ -32,7 +32,7 @@ MAKESUBDIRS=
 INCLUDEDIRS= $(TOP)/commons \
    $(TOP)/commons/ocollection $(TOP)/commons/ocamlextra \
    $(TOP)/commons/lib-json \
-   $(TOP)/external/ocamlpcre/lib \
+   $(TOP)/external/ \
    $(TOP)/h_program-lang $(TOP)/h_version-control  \
    $(TOP)/globals \
    ../parsing \

@@ -25,7 +25,7 @@ SRC= test_analyze_php.ml \
 #ifeq ($(FEATURE_PCRE), 1)
 #PCRECMA=pcre.cma
 #PCREINCLUDE= +pcre
-#PCREINCLUDE=$(TOP)/ocamlpcre/lib
+#PCREINCLUDE=$(TOP)/
 #endif
 
 # h_version-control is used for now only by deadcode_php.ml
@@ -44,7 +44,7 @@ MAKESUBDIRS=foundation tools checker \
 INCLUDEDIRS= $(TOP)/commons \
    $(TOP)/commons/ocollection $(TOP)/commons/ocamlextra \
    $(TOP)/commons/lib-json $(TOP)/commons/lib-xml \
-   $(TOP)/external/ocamlpcre/lib \
+   $(TOP)/external/ \
    $(TOP)/h_program-lang $(TOP)/h_version-control  \
    $(TOP)/globals \
    $(TOP)/matcher \
