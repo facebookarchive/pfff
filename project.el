@@ -639,12 +639,12 @@
    (join-string 
     (list 
      "-debugger"
-     (case 0
+     (case 10
        (0 "-test")
        (1 "--flib-map /home/pad/www/flib/_bin/.flib.map /home/pad/www/flib/buffy/")
        (2 "--strict /home/pad/www/flib/site/tools/pfff/")
        (3 "-test_visualize_dependencies 1 /home/pad/pfff/facebook/tests/mini_www/flib/")
-       (10 "-test")
+       (10 "--tests mini_www")
 
        (20 "--debug --no_autoload /home/pad/www/flib/core/utils/time")
        (30 "/home/pad/www/html/ajax/payment/token_proxy.php")
