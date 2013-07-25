@@ -216,6 +216,7 @@ let sanitize_xdebug_expr_for_parser2 str =
   in
   str
   *)  
+(*
   let str = Pcre.replace ~pat:"\\?\\?\\?"  ~templ:"..." str in
   let str = Pcre.replace ~pat:"class"  ~templ:"class_xdebug" str in
   let str = Pcre.replace 
@@ -226,6 +227,8 @@ let sanitize_xdebug_expr_for_parser2 str =
   (* bug in xdebug output *)
   let str = Pcre.replace ~pat:"([^{ \t])[ \t]+}"   ~itempl:(Pcre.subst "$1;}") str in
   str
+*)
+  failwith "TODO: deprecated code, we removed the dependencies to PCRE"
 
 let sanitize_xdebug_expr_for_parser a = 
   Common.profile_code "sanitize" (fun () -> sanitize_xdebug_expr_for_parser2 a)

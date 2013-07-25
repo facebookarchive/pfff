@@ -66,15 +66,6 @@ CAIROINCLUDE=external/ocamlcairo/src
 endif
 
 
-ifeq ($(FEATURE_PCRE), 1)
-REGEXPDIR=external/ocamlpcre
-REGEXPCMD= $(MAKE) -C $(REGEXPDIR) &&  $(MAKE) regexp -C commons
-REGEXPCMDOPT= $(MAKE) -C $(REGEXPDIR) &&  $(MAKE) regexp.opt -C commons
-REGEXPCMA=external/ocamlpcre/lib/pcre.cma  commons/commons_regexp.cma
-PCREINCLUDE=external/ocamlpcre/lib
-else
-endif
-
 #todo: remove?
 ifeq ($(FEATURE_BACKTRACE), 1)
 BTCMD= $(MAKE) backtrace -C commons
@@ -156,7 +147,6 @@ BASICSYSLIBS=nums.cma bigarray.cma str.cma unix.cma
 
 LIBS= commons/lib.cma \
        $(BTCMA) \
-       $(REGEXPCMA) \
        $(GRAPHCMA) \
        $(EXTLIBCMA) $(PTCMA) $(ZIPCMA) \
        $(JAVALIBCMA) \
@@ -216,7 +206,6 @@ LIBS= commons/lib.cma \
     lang_web/parsing/lib.cma \
 
 MAKESUBDIRS=commons \
-  $(REGEXPDIR) \
   $(GRAPHDIR) \
   $(GUIDIR) $(CAIRODIR) \
   $(ZIPDIR)    $(EXTLIBDIR) $(PTDIR) $(JAVALIBDIR) \
@@ -277,7 +266,7 @@ MAKESUBDIRS=commons \
 INCLUDEDIRS=$(MAKESUBDIRS) \
  commons/ocamlextra commons/ocollection \
  commons/lib-json commons/lib-xml commons/lib-sexp \
- $(GTKINCLUDE) $(CAIROINCLUDE) $(PCREINCLUDE) \
+ $(GTKINCLUDE) $(CAIROINCLUDE) \
  $(EXTLIBDIR) $(PTDIR) $(ZIPDIR) $(JAVALIBDIR) \
  $(OCAMLCOMPILERDIR)
 
@@ -307,7 +296,6 @@ top: $(TARGET).top
 rec:
 	$(MAKE) -C commons 
 	$(BTCMD)
-	$(REGEXPCMD)
 	$(GRAPHCMD)
 	$(GUICMD)
 	$(MAKE) features -C commons 
@@ -316,7 +304,6 @@ rec:
 rec.opt:
 	$(MAKE) all.opt -C commons 
 	$(BTCMDOPT)
-	$(REGEXPCMDOPT)
 	$(GRAPHCMDOPT)
 	$(GUICMDOPT)
 	$(MAKE) features.opt -C commons 
@@ -620,7 +607,7 @@ graph2:
 # TODO: replace with graphviz plugin to codegraph
 
 DSRC=$(SRC)
-DIRS= $(filter-out commons external/ocamlgtk/src external/ocamlpcre external/ocamlcairo external/ocamlgraph facebook, $(MAKESUBDIRS))
+DIRS= $(filter-out commons external/ocamlgtk/src external/ocamlcairo external/ocamlgraph facebook, $(MAKESUBDIRS))
 #DIRS=lang_php/parsing
 DSRC+=$(DIRS:=/*.ml)
 DSRC+=$(wildcard main_*.ml)

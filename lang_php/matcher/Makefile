@@ -23,7 +23,7 @@ INCLUDEDIRS= $(TOP)/commons $(TOP)/commons/ocollection \
    $(TOP)/commons/ocamlextra \
    $(TOP)/h_program-lang $(TOP)/h_version-control  \
    $(TOP)/globals \
-   $(TOP)/external/ocamlpcre/lib \
+   $(TOP)/external/ \
    $(TOP)/matcher \
    ../parsing
 

@@ -10,4 +10,3 @@ ocamlgraph: used by commons/graph.ml and so graph_code, also a bit by
 ocamlzip: used by externals/javalib (used itself by lang_bytecode/)
 extlib: used by externals/javalib (used itself by lang_bytecode/)
 
-ocamlpcre: used by lang_php/ but could be replaced by just Str

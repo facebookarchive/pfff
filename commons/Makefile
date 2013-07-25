@@ -159,7 +159,7 @@ MPISYSLIBS=mpi.cma
 
 #pcre
 MYREGEXPSRC=regexp.ml
-REGEXPINCLUDES=-I ../external/ocamlpcre/lib  -I ../../ocamlpcre/lib
+REGEXPINCLUDES=-I ../external/  -I ../../ocamlpcre/lib
 #REGEXPINCLUDES=-I +pcre
 
 #sexplib

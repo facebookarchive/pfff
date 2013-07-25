@@ -47,12 +47,18 @@ let is_php_script file =
 
     with End_of_file -> false
   )
+
 let is_php_filename filename =
   (filename =~ ".*\\.php$") || (filename =~ ".*\\.phpt$") ||
   (* hotcrp uses this extension *)
   (filename =~ ".*\\.inc") ||
   (* hack uses this extension *)
-(* TODO  (filename =~ ".*\\.hhi") *)
+  (* todo: can not include those files for now because
+   * they conflict with pfff/data/php_stdlib and generate lots
+   * of DUPE in codegraph
+   * 
+   * (filename =~ ".*\\.hhi") 
+   *)
   false
 
 let is_php_file filename =
@@ -67,11 +73,21 @@ let is_php_file filename =
 let find_php_files_of_dir_or_files ?(verbose=false) xs = 
   Common.files_of_dir_or_files_no_vcs_nofilter xs 
   +> List.filter (fun filename ->
-    let valid = is_php_file filename in
+    (* note: there was a possible race here because between the time we
+     * do the 'find' and the time we call is_php_file(), the file may have
+     * disappeared (this happens for instance because of watchman).
+     * Hence the Sys.file_exists guard.
+     *)
+    let valid = 
+      (* note that there is still a race between the call to file_exists
+       * and is_php_file, but this one is far shorter :)
+       *)
+      Sys.file_exists filename && is_php_file filename 
+    in
     if not valid && verbose
     then pr2 ("not analyzing: " ^ filename);
     valid
-  ) +> Common.sort
+   ) +> Common.sort
 
 (*****************************************************************************)
 (* Extract infos *)

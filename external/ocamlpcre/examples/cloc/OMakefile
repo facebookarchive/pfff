@@ -1,3 +1,0 @@
-OCamlMakeProjDefaults(cloc.exe)
-
-InstantiateOCamlEnv()
