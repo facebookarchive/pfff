@@ -77,7 +77,8 @@ let unittest =
   let cg = 
     Graph_code_php.build ~verbose (Right files) skip_code in
   let find_entity = 
-    Some (Entity_php.entity_finder_of_graph_code ~check_dupes:true cg) in
+    Some (Entity_php.entity_finder_of_graph_code ~check_dupes:true
+             cg "/") in
   
   let env = Env_php.mk_env ~php_root:"/" in
 

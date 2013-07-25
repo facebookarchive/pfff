@@ -253,7 +253,7 @@ let ast_php_entity_in_file ~check_dupes (s, kind) g file =
   Hashtbl.find hcache_entities (s, kind)
 
 
-let entity_finder_of_graph_code ?(check_dupes=false) g =
+let entity_finder_of_graph_code ?(check_dupes=false) g root =
   (fun (kind, s) ->
     (* pr2_gen (kind, s); *)
     Common.memoized hcache_entities (s, kind) (fun () ->
@@ -271,7 +271,7 @@ let entity_finder_of_graph_code ?(check_dupes=false) g =
             []
           | _ ->
             let file = G.file_of_node (s, kind) g in
-            let path = (*Filename.concat root*) file in
+            let path = Filename.concat root file in
             ast_php_entity_in_file ~check_dupes (s, kind) g path
           )
         else begin

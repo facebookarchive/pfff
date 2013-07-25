@@ -19,7 +19,8 @@ type entity_finder = (id_kind * string) -> Ast_php.entity list
 (* note: use global hcache_entities, so may need to reset it *)
 val entity_finder_of_graph_code: 
   ?check_dupes:bool ->
-  Graph_code.graph -> entity_finder
+  Graph_code.graph -> 
+  Common.dirname -> entity_finder
 (* use the Hashtbl.find_all property *)
 (* val hcache_entities: (string * id_kind, Ast_php.entity) Hashtbl.t *)
 

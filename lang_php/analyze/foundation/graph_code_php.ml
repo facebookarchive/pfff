@@ -224,9 +224,11 @@ let add_node_and_edge_if_defs_mode ?(props=[]) env name_node =
        * the duplicate are all in a skip_errors dir).
        *)
       env.g +> G.add_edge (env.current, node) G.Has;
-
+      let pos = { (Parse_info.token_location_of_info
+                     (Ast.tok_of_ident name))
+      with Parse_info.file = env.readable } in
       let nodeinfo = { Graph_code.
-        pos = Parse_info.token_location_of_info (Ast.tok_of_ident name);
+        pos = pos;
         props = props;
       } in
       env.g +> G.add_nodeinfo node nodeinfo;
@@ -901,11 +903,14 @@ let build
       flush chan;
     );
     is_skip_error_file = Skip_code.build_filter_errors_file skip_list;
-    path = (fun file ->
+    (* This function is useful for testing. In particular, the paths in
+       tests/php/codegraoph/pfff_test.exp use readable path, so that
+       make test can work from any machine.
+    *)
+    path = (fun file -> 
       if readable_file_format
       then Common.filename_without_leading_path root file
-      else file
-    );
+      else file);
     at_toplevel = true;
   }
   in
@@ -927,18 +932,17 @@ let build
     | _ -> true
   )
   +> List.iter (fun node ->
-    let nodeinfo = G.nodeinfo node g in
-    let orig_file = nodeinfo.G.pos.Parse_info.file in
-    let orig_readable = Common.filename_without_leading_path root orig_file in
+    let orig_file = G.file_of_node node g in
 
     let files = Hashtbl.find_all env.dupes node in
-    let (ex_readable, ex_file) = List.hd files in
+    let (ex_file, _) = List.hd files in
 
-    let dupes = orig_readable::List.map fst files in
+    let dupes = orig_file::List.map fst files in
     let cnt = List.length dupes in
 
     let (in_skip_errors, other) =
       List.partition env.is_skip_error_file dupes in
+
 
     (match List.length in_skip_errors, List.length other with
     (* dupe in regular codebase, bad *)
@@ -946,15 +950,15 @@ let build
       env.pr2_and_log  (spf "DUPE: %s (%d)" (G.string_of_node node) cnt);
       g +> G.remove_edge (G.parent node g, node) G.Has;
       g +> G.add_edge (G.dupe, node) G.Has;
-      env.log (spf " orig = %s" (env.path orig_file));
-      env.log (spf " dupe = %s" (env.path ex_file));
+      env.log (spf " orig = %s" (orig_file));
+      env.log (spf " dupe = %s" (ex_file));
     (* duplicating a regular function, bad, but ok, should have renamed it in
      * our analysis, see env.dupe_renaming
      *)
     | n, 1 when n > 0 ->
       env.log (spf "DUPE BAD STYLE: %s (%d)" (G.string_of_node node) cnt);
-      env.log (spf " orig = %s" (env.path orig_file));
-      env.log (spf " dupe = %s" (env.path ex_file));
+      env.log (spf " orig = %s" (orig_file));
+      env.log (spf " dupe = %s" (ex_file));
     (* probably local functions to a script duplicated in independent files,
      * most should have also been renamed, see env.dupe_renaming *)
     | n, 0 -> ()

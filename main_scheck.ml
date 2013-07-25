@@ -231,9 +231,10 @@ let entity_finder_of_db file =
 
 let entity_finder_of_graph_file graph_file =
   let g = Graph_code.load graph_file in
-  let _root = Filename.dirname graph_file in
+  let root = Filename.dirname graph_file in
+  pr2 (spf "using %s for root" root);
   (* todo: the graph_code contains absolute path?? *)
-  Entity_php.entity_finder_of_graph_code g
+  Entity_php.entity_finder_of_graph_code g root
 
 (*****************************************************************************)
 (* Main action *)
