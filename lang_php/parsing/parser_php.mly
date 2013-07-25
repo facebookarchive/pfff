@@ -719,6 +719,12 @@ xhp_attr_name:
      { let s = PI.str_of_info $1 ^  PI.str_of_info $2 ^ PI.str_of_info $3 in
        PI.rewrap_str s $1
      }
+ /*(* this is used by only one attribute right now, xlink:href which
+    * the w3 spec imposed to have this format *)*/
+ | xhp_attr_name TCOLON ident_xhp_attr_name_atom
+     { let s = PI.str_of_info $1 ^  PI.str_of_info $2 ^ PI.str_of_info $3 in
+       PI.rewrap_str s $1
+     }
 
 /*(*----------------------------*)*/
 /*(*2 XHP children *)*/
