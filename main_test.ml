@@ -92,8 +92,14 @@ let test regexp =
       Common2.some (OUnit.test_filter keep tests)
   in
     
-  OUnit.run_test_tt ~verbose:!verbose suite +> ignore;
-  ()
+  let results = OUnit.run_test_tt ~verbose:!verbose suite in
+  let has_an_error = 
+    results +> List.exists (function
+    | OUnit.RSuccess _ | OUnit.RSkip _ | OUnit.RTodo _ -> false
+    | OUnit.RFailure _ | OUnit.RError _ -> true
+    )
+  in
+  raise (Common.UnixExit (if has_an_error then 1 else 0))
 
 let main_action x = 
   test x
