@@ -1,8 +1,8 @@
 #!/bin/sh
 
 # install ocaml from apt
-sudo apt-get update -qq
-sudo apt-get install -qq ocaml
+#sudo apt-get update -qq
+sudo apt-get install ocaml
 
 # install opam
 # TODO
