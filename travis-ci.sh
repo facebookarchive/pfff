@@ -5,7 +5,7 @@
 #sudo apt-get update -qq
 #sudo apt-get install ocaml-nox
 wget http://www.ocamlpro.com/pub/opam_installer.sh
-yes | sh ./opam_installer.sh /usr/local/bin
+yes | sh ./opam_installer.sh /usr/local/bin > /dev/null
 
 # install opam
 # TODO
@@ -13,6 +13,7 @@ yes | sh ./opam_installer.sh /usr/local/bin
 # install packages from opam
 # TODO
 
+eval `opam config env`
 
 # compile & run tests
 ./configure
