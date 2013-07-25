@@ -1,18 +1,33 @@
 #!/bin/sh
 
-# install ocaml from apt
-#sudo apt-get update -qq
-sudo apt-get install ocaml-nox
+#------------------------------
+# install ocaml
+#------------------------------
 
-# install opam
-# TODO
+# This is too slow, the bandwidth is extremly limited
+#sudo apt-get update -qq
+#sudo apt-get install ocaml-nox
+
+# install opam, take less time
+wget http://www.ocamlpro.com/pub/opam_installer.sh
+# can't redirect to >/dev/null because travis
+# put 10min timeout on any program that don't output
+# something on the console
+yes | sh ./opam_installer.sh /usr/local/bin
 
 # install packages from opam
-# TODO
+# ??
 
+eval `opam config env`
 
-# compile & run tests
+#------------------------------
+# Compile Pfff
+#------------------------------
+
 ./configure
+make depend
 make
 
-
+#------------------------------
+# Run tests
+#------------------------------
