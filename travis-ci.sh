@@ -11,8 +11,8 @@
 # compiler-libs which are now needed.
 
 #sudo apt-get update -qq
-#sudo apt-get install -qq ocaml
-#sudo apt-get install -qq ocaml-compiler-libs
+sudo apt-get install -qq ocaml
+sudo apt-get install -qq ocaml-compiler-libs
 
 # install opam, does not take too much time
 #wget http://www.ocamlpro.com/pub/opam_installer.sh
