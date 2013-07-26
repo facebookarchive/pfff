@@ -188,7 +188,6 @@ let lc_and_underscore str =
   (* xhp is "dash" insensitive *)
   +> Str.global_replace (Str.regexp "-") "_" 
 
-
 (*****************************************************************************)
 (* Add node *)
 (*****************************************************************************)
@@ -304,6 +303,7 @@ let class_exists env aclass tok =
 let rec add_use_edge env ((str, tok), kind) =
   let src = env.current in
   let dst = (str, kind) in
+
   (match () with
   (* maybe nested function, in which case we dont have the def *)
   | _ when not (G.has_node src env.g) ->
@@ -311,6 +311,7 @@ let rec add_use_edge env ((str, tok), kind) =
         (spf "LOOKUP SRC FAIL %s --> %s, src doesn't exist (nested func?)"
            (G.string_of_node src) (G.string_of_node dst));
 
+  (* ok everything is fine, let's add an edge *)
   | _ when G.has_node dst env.g ->
       G.add_edge (src, dst) G.Use env.g
 
@@ -325,7 +326,7 @@ let rec add_use_edge env ((str, tok), kind) =
 
   | _ ->
     (match kind with
-      (* if dst is a Class, then try Interface
+      (* if dst is a Class, then try Interface?
       | E.Class E.RegularClass ->
           add_use_edge env (name, E.Class E.Interface)
       *)
@@ -336,19 +337,14 @@ let rec add_use_edge env ((str, tok), kind) =
       | E.Type -> ()
       *)
     | _  ->
-      let kind_original = kind in
-      let dst = (str, kind_original) in
-
       (match kind with
-        (* todo: fix those *)
+        (* todo: regular fields, fix those at some point! *)
         | E.Field when (not (str =~ ".*=")) -> ()
-        (* Ignore xhp field:
-         * custom data attribute :
-         * http://www.w3.org/TR/2011/WD-html5-20110525/elements.html
-         * #embedding-custom-non-visible-data-with-the-data-attributes
-         * ARIA : http://dev.w3.org/html5/markup/aria/aria.html 
-         * server side attribute :
-         * flib/markup/xhp/html.php:52
+        (* Ignore certain xhp fields, custom data attribute:
+         * http://www.w3.org/TR/2011/WD-html5-20110525/elements.html,
+         * #embedding-custom-non-visible-data-with-the-data-attributes ARIA: 
+         * http://dev.w3.org/html5/markup/aria/aria.html,
+         * server side attribute: flib/markup/xhp/html.php:52
          *)
         | E.Field when ((str =~ ".*\\.data-.*=") || 
                         (str =~ ".*\\.aria-.*=") || 
@@ -361,7 +357,6 @@ let rec add_use_edge env ((str, tok), kind) =
                        (* phabricator LiskDAO *)
                        || str =~ ".*\\.set[A-Z].*"
              -> ()
-        (* | E.Method _  | E.ClassConstant ->          () *)
         | _ ->
           lookup_fail env tok dst;
           if !add_fake_node_when_undefined_entity then begin
@@ -370,7 +365,7 @@ let rec add_use_edge env ((str, tok), kind) =
             env.g +> G.add_edge (parent_target, dst) G.Has;
             env.g +> G.add_edge (src, dst) G.Use;
           end
-        );
+        )
       )
   )
 
@@ -521,7 +516,7 @@ and class_def env def =
   (* opti: could also just push those edges in a _todo ref during Defs *)
   if env.phase = Inheritance then begin
     def.c_extends +> Common.do_option (fun c2 ->
-      (* TODO: also mark as use the generic arguments *)
+      (* todo: also mark as use the generic arguments *)
       let n = Ast.name_of_class_name c2 in
       add_use_edge env (n, E.Class E.RegularClass);
     );
@@ -552,10 +547,7 @@ and class_def env def =
     let env = add_node_and_edge_if_defs_mode env node in
     expr env def.cst_body;
   );
-  (* TODO: need to handle inheritance of attributes.
-     See URL: 
-     https://github.com/facebook/xhp/wiki "Defining Attributes"
-  *)
+  (* See URL: https://github.com/facebook/xhp/wiki "Defining Attributes" *)
   def.c_xhp_fields +> List.iter (fun def ->
     let addpostfix = function
       | (str, tok) -> (str ^ "=", tok) in
@@ -567,7 +559,7 @@ and class_def env def =
     let node = (fld.cv_name, E.Field) in
     let props = [E.Privacy (privacy_of_modifiers fld.cv_modifiers)] in
     let env = add_node_and_edge_if_defs_mode ~props env node in
-    (* PHP allow to refine a field, for instance on can do
+    (* PHP allows to refine a field, for instance on can do
      * 'protected $foo = 42;' in a class B extending A which contains
      * such a field (also this field could have been declared
      * as Public there.
@@ -647,7 +639,7 @@ and expr env x =
   (match x with
   | Int _ | Double _  -> ()
 
-  (* a String in PHP can actually hide a class (or a function) *)
+  (* A String in PHP can actually hide a class (or a function) *)
   | String (s, tok) when look_like_class s ->
     (* less: could also be a class constant or field or method *)
     let entity = Common.matched1 s in
@@ -655,7 +647,7 @@ and expr env x =
     if G.has_node (entity, E.Class E.RegularClass) env.g
     then begin
       (match env.readable with
-      (* less: phabricator/fb specific *)
+      (* phabricator/fb specific *)
       | s when s =~ ".*__phutil_library_map__.php" -> ()
       | s when s =~ ".*autoload_map.php" -> ()
       | _ ->
@@ -699,7 +691,7 @@ and expr env x =
         expr env (Call (Class_get (Id[ (env.self, tok)], e2), es))
     | Class_get (Id[ ("__special__parent", tok)], e2) ->
         expr env (Call (Class_get (Id[ (env.parent, tok)], e2), es))
-    (* less: incorrect actually ... but good enough for now for codegraph *)
+    (* incorrect actually ... but good enough for now for codegraph *)
     | Class_get (Id[ ("__special__static", tok)], e2) ->
         expr env (Call (Class_get (Id[ (env.self, tok)], e2), es))
 
@@ -761,7 +753,7 @@ and expr env x =
         expr env (Class_get (Id[ (env.self, tok)], e2))
       | Id[ ("__special__parent", tok)], _ ->
         expr env (Class_get (Id[ (env.parent, tok)], e2))
-      (* less: incorrect actually ... but good enough for now for codegraph *)
+      (* incorrect actually ... but good enough for now for codegraph *)
       | Id[ ("__special__static", tok)], _ ->
         expr env (Class_get (Id[ (env.self, tok)], e2))
 
@@ -830,6 +822,7 @@ and expr env x =
         (* why not call add_use_edge() and benefit from the error reporting
          * there? because instanceOf check are less important so
          * we special case them?
+         * todo: use add_use_edge I think, not worth the special treatment.
          *)
         let node = Ast.str_of_ident name, E.Class E.RegularClass in
         if not (G.has_node node env.g) 
