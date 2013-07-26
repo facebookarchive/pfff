@@ -1,18 +1,22 @@
 #!/bin/sh
 
 #------------------------------
-# install ocaml
+# Install ocaml
 #------------------------------
 
 # Using apt-get is very very slow but only at the beginning apparently.
 # Once it has downloaded the ocaml package, travis will cache it
 # somewhere and different runs of the sandbox can reuse this cache.
-# Note that the default version is pretty old though (ocaml 3.12). 
+# Note that the default ocaml version is pretty old though (3.12.1). 
 
 #sudo apt-get update -qq
 sudo apt-get install -qq ocaml
 sudo apt-get install -qq ocaml-compiler-libs
 sudo apt-get install -qq ocaml-native-compilers
+
+#------------------------------
+# Install OPAM
+#------------------------------
 
 # install opam, does not take too much time
 #wget http://www.ocamlpro.com/pub/opam_installer.sh
@@ -31,14 +35,13 @@ sudo apt-get install -qq ocaml-native-compilers
 #------------------------------
 
 #todo: make configure detect the use of ocamlc.opt
+#less: or use source env.sh?
 ./configure
 make depend
 make
 
-#less: or use source env.sh?
-
 #------------------------------
 # Run tests
 #------------------------------
-#TODO:
+#todo: need swipl, and fix scheck regressions, also pbs with vcs tests
 #make test
