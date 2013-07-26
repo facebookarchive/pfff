@@ -37,7 +37,6 @@ module G = Graph_code
  *                             -> Function
  *                             -> Constant
  *       -> Dir -> SubDir -> File -> ...
- *       -> Dir -> SubDir -> Module? -> ...
  *
  * less:
  *  - handle static vs non static methods/fields? but at the same time
@@ -48,7 +47,7 @@ module G = Graph_code
  *  - add tests
  *
  * issues regarding errors in a codebase:
- *  - parse errors, maybe test code
+ *  - parse errors, maybe test code?
  *    => skip list, file: or dir:
  *  - nested functions, duped functions defined conditionnally
  *    => use the at_toplevel field below
