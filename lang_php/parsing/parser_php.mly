@@ -520,8 +520,8 @@ parameter_or_dots:
  /*(* varargs extension *)*/
  | TDOTS { Middle3 $1 }
 
-parameter: attributes_opt ctor_modifier_opt type_php_opt     parameter_bis  
-      { { $4 with p_modifier = $2; p_attrs = $1; p_type = $3 } }
+parameter: attributes_opt ctor_modifier_opt at_opt type_php_opt  parameter_bis  
+      { { $5 with p_modifier = $2; p_attrs = $1; p_type = $4; p_soft_type= $3;}}
 
 parameter_bis:
  | T_VARIABLE
@@ -1529,6 +1529,10 @@ attributes_opt:
 
 type_php_opt:
   | type_php      { Some $1 }
+  | /*(*empty*)*/ { None }
+
+at_opt:
+  | T__AT         { Some $1 }
   | /*(*empty*)*/ { None }
 
 ctor_modifier_opt:

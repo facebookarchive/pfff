@@ -521,6 +521,8 @@ and func_def = {
        * can be only Public or Protected or Private (but never Static, etc).
        *)
       p_modifier: modifier wrap option;
+      (* php-facebook-ext: to not generate runtine errors if wrong type hint *)
+      p_soft_type: tok (* @ *) option;
       p_type: hint_type option;
       p_ref: is_ref;
       p_name: dname;

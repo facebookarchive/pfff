@@ -784,6 +784,7 @@ and
   vof_parameter {
                   p_attrs = v_p_attrs;
                   p_modifier = v_p_modifier;
+                  p_soft_type = v_p_soft_type;
                   p_type = v_p_type;
                   p_ref = v_p_ref;
                   p_name = v_p_name;
@@ -802,6 +803,9 @@ and
   let arg = vof_option vof_hint_type v_p_type in
   let bnd = ("p_type", arg) in
   let bnds = bnd :: bnds  in
+  let arg = Ocaml.vof_option vof_tok v_p_soft_type in
+  let bnd = ("p_soft_type", arg) in
+  let bnds = bnd :: bnds in
   let arg = Ocaml.vof_option (vof_wrap vof_modifier) v_p_modifier in
   let bnd = ("p_modifier", arg) in
   let bnds = bnd :: bnds in

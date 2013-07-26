@@ -660,6 +660,8 @@ and method_body env (_, stl, _) =
 and parameter env
  { p_type = t; p_ref = r; p_name = name; p_default = d; p_attrs = a;
    p_modifier = mTODO;
+   (* don't care about the soft type annot, it's useful only for the runtime *)
+   p_soft_type = _;
  } =
   { A.p_type = opt hint_type env t;
     A.p_ref = r <> None;
