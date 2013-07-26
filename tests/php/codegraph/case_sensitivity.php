@@ -12,6 +12,6 @@ function test1() {
 class DynB {
 }
 
-function test_dynamic_class() {
+function test_dynamic_class_bis() {
   echo dynb::$fld;
 }
