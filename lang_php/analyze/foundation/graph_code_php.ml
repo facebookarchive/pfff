@@ -27,7 +27,7 @@ module G = Graph_code
  * for more information. Yet another code database for PHP ...
  *
  * See also old/graph_php.ml, facebook/flib_dependencies/,
- * facebook/check_module/graph_module.ml
+ * and facebook/check_module/graph_module.ml
  *
  * schema:
  *  Root -> Dir -> File (.php) -> Class (used for interfaces and traits too)
@@ -110,6 +110,7 @@ type env = {
   log: string -> unit;
   pr2_and_log: string -> unit;
   is_skip_error_file: Common.filename (* readable *) -> bool;
+  (* to print error in readable format sometimes *)
   path: Common.filename -> string;
 }
   (* We need 3 phases, one to get all the definitions, one to
@@ -124,14 +125,6 @@ type env = {
 (* Helpers *)
 (*****************************************************************************)
 let (==~) = Common2.(==~)
-
-(* The flag below is useful to minimize the number of certain errors.
- * 
- * It has some bad side effects though; in certain contexts,
- * such as scheck, you want to get all the errors and not just
- * the first lookup failure.
- *)
-let add_fake_node_when_undefined_entity = ref true
 
 let _hmemo = Hashtbl.create 101
 let parse2 env file =
@@ -159,6 +152,11 @@ let parse env a =
       Marshal.to_string (parse2 env a) []
      )) 0
 
+(* In PHP people abuse strings to pass classnames or function names.
+ * We want to add use edges for those cases but we need some heuristics
+ * to detect whether the string was really a classname or by coincidence
+ * a regular word that happens to be also a classname.
+ *)
 let look_like_class_sure =
   Str.regexp "^\\([A-Z][A-Za-z_0-9]*\\)\\(::[A-Za-z_0-9]*\\)$"
 let look_like_class_maybe =
@@ -183,7 +181,7 @@ let privacy_of_modifiers modifiers =
   );
   !p
 
-let lowercase_and_underscore str = 
+let lc_and_underscore str = 
   str
   (* php is case insensitive *)
   +> String.lowercase
@@ -191,9 +189,18 @@ let lowercase_and_underscore str =
   +> Str.global_replace (Str.regexp "-") "_" 
 
 
+(*****************************************************************************)
+(* Add node *)
+(*****************************************************************************)
+(* The flag below is useful to minimize the lookup failure errors.
+ * 
+ * It has some bad side effects though; in certain contexts,
+ * such as scheck, you want to get all the errors and not just
+ * the first lookup failure.
+ *)
+let add_fake_node_when_undefined_entity = ref true
 
-let add_node_and_edge_if_defs_mode ?(props=[]) env name_node =
-  let (name, kind) = name_node in
+let add_node_and_edge_if_defs_mode ?(props=[]) env (name, kind) =
   let str =
     match kind with
     | E.ClassConstant | E.Field | E.Method _ ->
@@ -235,9 +242,8 @@ let add_node_and_edge_if_defs_mode ?(props=[]) env name_node =
        * the duplicate are all in a skip_errors dir).
        *)
       env.g +> G.add_edge (env.current, node) G.Has;
-      let pos = { (Parse_info.token_location_of_info
-                     (Ast.tok_of_ident name))
-      with Parse_info.file = env.readable } in
+      let pos = Parse_info.token_location_of_info (Ast.tok_of_ident name) in
+      let pos = { pos with Parse_info.file = env.readable } in
       let nodeinfo = { Graph_code.
         pos = pos;
         props = props;
@@ -252,15 +258,18 @@ let add_node_and_edge_if_defs_mode ?(props=[]) env name_node =
    *)
   if Hashtbl.mem env.dupes node
   then env
-  else
-    { env with current = node }
+  else { env with current = node }
+
+(*****************************************************************************)
+(* Add edge *)
+(*****************************************************************************)
 
 let lookup_fail env tok dst =
   let info = Ast.tok_of_ident ("", tok) in
   let file = Parse_info.file_of_info info in
   let line = Parse_info.line_of_info info in
   let (_, kind) = dst in
-  let f =
+  let fprinter =
     if env.phase = Inheritance
     then env.pr2_and_log
     else
@@ -276,21 +285,20 @@ let lookup_fail env tok dst =
         | _ -> env.log
         )
   in
-  f (spf "PB: lookup fail on %s (at %s:%d)"(G.string_of_node dst) 
+  fprinter (spf "PB: lookup fail on %s (at %s:%d)"(G.string_of_node dst) 
        (env.path file) line)
 
-(* 
- * If someone uses an undefined class constant of an undefined class,
- * we want really to report only the use of an undefined class.
+(* If someone uses an undefined class constant of an undefined class,
+ * we want really to report only the use of undefined class, so don't
+ * forget to guard some calls to add_use_edge() with this function.
  *)
 let class_exists env aclass tok =
-  (* less: do case insensitive? handle conflicts? *)
   let node = (aclass, E.Class E.RegularClass) in
+  let node' = (lc_and_underscore aclass, E.Class E.RegularClass) in
   if (G.has_node node env.g && G.parent node env.g <> G.not_found) ||
-     Hashtbl.mem env.case_insensitive
-     (lowercase_and_underscore aclass, E.Class E.RegularClass)
+     Hashtbl.mem env.case_insensitive node'
   then true
-  else (lookup_fail env tok (node); false)
+  else (lookup_fail env tok node; false)
 
 
 let rec add_use_edge env ((str, tok), kind) =
@@ -306,9 +314,9 @@ let rec add_use_edge env ((str, tok), kind) =
   | _ when G.has_node dst env.g ->
       G.add_edge (src, dst) G.Use env.g
 
-  | _ when Hashtbl.mem env.case_insensitive(lowercase_and_underscore str,kind)->
+  | _ when Hashtbl.mem env.case_insensitive (lc_and_underscore str, kind) ->
       let (final_str, _) =
-        Hashtbl.find env.case_insensitive (lowercase_and_underscore str, kind)in
+        Hashtbl.find env.case_insensitive (lc_and_underscore str, kind) in
       (*env.pr2_and_log (spf "CASE SENSITIVITY: %s instead of %s at %s"
                          str final_str 
                          (Parse_info.string_of_info (Ast.tok_of_ident name)));
@@ -327,11 +335,11 @@ let rec add_use_edge env ((str, tok), kind) =
       (* do not add such a node *)
       | E.Type -> ()
       *)
-      | _  ->
-        let kind_original = kind in
-        let dst = (str, kind_original) in
+    | _  ->
+      let kind_original = kind in
+      let dst = (str, kind_original) in
 
-        (match kind with
+      (match kind with
         (* todo: fix those *)
         | E.Field when (not (str =~ ".*=")) -> ()
         (* Ignore xhp field:
@@ -1003,7 +1011,7 @@ let build
   if not only_defs then begin
     g +> G.iter_nodes (fun (str, kind) ->
       Hashtbl.replace env.case_insensitive
-        (lowercase_and_underscore str, kind) (str, kind)
+        (lc_and_underscore str, kind) (str, kind)
     );
 
     (* step2: creating the 'Use' edges for inheritance *)
