@@ -1,6 +1,6 @@
 (* Yoann Padioleau
  *
- * Copyright (C) 2012 Facebook
+ * Copyright (C) 2012, 2013 Facebook
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public License
@@ -64,6 +64,7 @@ module G = Graph_code
  *  - terminal for the really important one
  *  - pfff.log for less important and to have more details
  *  - in the codegraph itself under the PB directory for all the rest
+ *    when add_fake_node_when_undefined_entity is set to true.
  *)
 
 (*****************************************************************************)
@@ -125,8 +126,11 @@ type env = {
 (*****************************************************************************)
 let (==~) = Common2.(==~)
 
-(* if you want to get all the errors in pfff.log, you must set to false
- * otherwise you'll get only the first lookup failure error
+(* The flag below is useful to minimize the number of certain errors.
+ * 
+ * It has some bad side effects though; in certain contexts,
+ * such as scheck, you want to get all the errors and not just
+ * the first lookup failure.
  *)
 let add_fake_node_when_undefined_entity = ref true
 
@@ -288,11 +292,7 @@ let rec add_use_edge env (((str, tok) as name, kind)) =
       | _  ->
         let kind_original = kind in
         let dst = (str, kind_original) in
-        let parent_target = G.not_found in
 
-        if !add_fake_node_when_undefined_entity 
-        then G.add_node dst env.g;
-        
         (match kind with
         (* todo: fix those *)
         | E.Field when (not (str =~ ".*=")) -> ()
@@ -338,6 +338,8 @@ let rec add_use_edge env (((str, tok) as name, kind)) =
             f (spf "PB: lookup fail on %s (at %s:%d)"(G.string_of_node dst) 
                  (env.path file) line);
             if !add_fake_node_when_undefined_entity then begin
+              G.add_node dst env.g;
+              let parent_target = G.not_found in
               env.g +> G.add_edge (parent_target, dst) G.Has;
               env.g +> G.add_edge (src, dst) G.Use;
             end
@@ -353,6 +355,7 @@ let rec add_use_edge env (((str, tok) as name, kind)) =
 let lookup2 g (aclass, amethod_or_field_or_constant) tok =
   let rec depth current =
     if not (G.has_node current g)
+    (* todo? raise Impossible? the class should exist *)
     then None
     else
       let children = G.children current g in
@@ -367,6 +370,11 @@ let lookup2 g (aclass, amethod_or_field_or_constant) tok =
       match res with
       | Some x -> Some x
       | None ->
+        (* todo? always inheritance? There is no other use of a Class?
+         * Actually some new X() are not linked to the __construct
+         * but to the class sometimes so we should filter here
+         * the nodes that are really Class.
+         *)
         let parents_inheritance = G.succ current G.Use g in
         breath parents_inheritance
   and breath xs = xs +> Common.find_some_opt depth
@@ -543,12 +551,12 @@ and class_def env def =
          (match def.c_extends with
          | None -> ()
          | Some c ->
-           (match 
-               lookup env.g (Ast.str_of_class_name c, 
-                             Ast.str_of_ident fld.cv_name) ()
-            with
+           let aclass, afld = 
+             (Ast.str_of_class_name c, Ast.str_of_ident fld.cv_name) in
+           let fake_tok = () in
+           (match lookup env.g (aclass, afld) fake_tok with
             | None -> ()
-            | Some ((s, _), _kind) ->
+            | Some ((s, _fake_tok), _kind) ->
              (*env.log (spf "REDEFINED protected %s in class %s" s env.self);*)
               let parent = G.parent env.current env.g in
               (* was using env.self for parent node, but in files with
@@ -672,23 +680,26 @@ and expr env x =
          let amethod = Ast.str_of_ident name2 in
          let tok = snd name2 in
          let node = ((aclass ^ "." ^ amethod, tok), E.Method E.RegularMethod)in
-         (* some classes may appear as dead because a 'new X()' is
+         (* Some classes may appear as dead because a 'new X()' is
           * transformed into a 'Call (... "__construct")' and such a method
-          * may not exist, or may have been "lookup"ed in the parent.
+          * may not exist, or may have been "lookup"ed to the parent.
           * So for "__construct" we also create an edge to the class
-          * directly
+          * directly.
+          * todo? but then a Use of a class can then be either a 'new' or
+          * an inheritance? People using G.pred or G.succ must take care to
+          * filter classes.
           *)
-         (match amethod with
-         | "__construct" -> add_use_edge env (name1, E.Class E.RegularClass)
-         | _ -> ()
-         );
+         if amethod =$= "__construct" 
+         then add_use_edge env (name1, E.Class E.RegularClass);
+
          (match lookup env.g (aclass, amethod) tok with
+         | Some n -> add_use_edge env n
          | None ->
            (match amethod with
+           (* todo? create a fake default constructor node? *)
            | "__construct" -> ()
            | _ -> add_use_edge env node
            )
-         | Some n -> add_use_edge env n
          );
          exprl env es
 
