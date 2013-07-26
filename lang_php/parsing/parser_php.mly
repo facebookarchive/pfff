@@ -348,7 +348,7 @@ statement:
  | T_INLINE_HTML			{ InlineHtml($1) }
 
  | T_OPEN_TAG_WITH_ECHO expr T_CLOSE_TAG_OF_ECHO {
-     (* todo? cheat ..., ugly, the 2 tokens will have a wrong string *)
+     (* ugly: the 2 tokens will have a wrong string *)
      Echo ($1, [Left $2], $3)
    }
 
@@ -712,7 +712,7 @@ xhp_attr_name:
     * introducing lots of ambiguities. It's ok for :foo:bar but not
     * for attribute name.
     *
-    * todo? could check that there is no whitespace between those
+    * less: could check that there is no whitespace between those
     * tokens.
     *)*/
  | xhp_attr_name TMINUS ident_xhp_attr_name_atom
