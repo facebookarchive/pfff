@@ -5,7 +5,7 @@ type program2 = Ast_java.program option * Parser_java.token list
 exception Parse_error of Parse_info.info
 
 (* This is the main function *)
-val parse : 
+val parse :
   Common.filename (*javafile*) -> (program2 * Parse_info.parsing_stat)
 
 (* may return "just:pb" exn when program2 was a None *)
@@ -16,6 +16,7 @@ val parse_program:
 val parse_fuzzy:
   Common.filename -> Ast_fuzzy.tree list * Parser_java.token list
 
+val program_of_program2 : program2 -> Ast_java.program
 
 (* internal *)
 val tokens: Common.filename -> Parser_java.token list
