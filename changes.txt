@@ -2,6 +2,11 @@
 
 * 0.25 (Q3 2013) ()
 
+** internal: 
+
+*** use Travis CI for build and test regressions,
+https://travis-ci.org/facebook/pfff
+
 * 0.24 (Q2 2013) (web-codemap, web-codegraph, generalized sgrep/spatch)
 
 ** web: resume work on ocsigen
