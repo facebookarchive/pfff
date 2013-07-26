@@ -37,3 +37,9 @@ function use_A() {
   $o = new A();
   return $o;
 }
+
+function use_undefined_class() {
+  //ERROR:
+  //$o = new UndefinedClass();
+  $x = UndefinedClass::UNDEF_CST_IN_UNDEFINED_CLASS;
+}

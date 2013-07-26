@@ -184,6 +184,14 @@ let privacy_of_modifiers modifiers =
   );
   !p
 
+let lowercase_and_underscore str = 
+  str
+  (* php is case insensitive *)
+  +> String.lowercase
+  (* xhp is "dash" insensitive *)
+  +> Str.global_replace (Str.regexp "-") "_" 
+
+
 
 let add_node_and_edge_if_defs_mode ?(props=[]) env name_node =
   let (name, kind) = name_node in
@@ -248,14 +256,45 @@ let add_node_and_edge_if_defs_mode ?(props=[]) env name_node =
   else
     { env with current = node }
 
-let lowercase_and_underscore str = 
-  str
-  (* php is case insensitive *)
-  +> String.lowercase
-  (* xhp is "dash" insensitive *)
-  +> Str.global_replace (Str.regexp "-") "_" 
+let lookup_fail env tok dst =
+  let info = Ast.tok_of_ident ("", tok) in
+  let file = Parse_info.file_of_info info in
+  let line = Parse_info.line_of_info info in
+  let (_, kind) = dst in
+  let f =
+    if env.phase = Inheritance
+    then env.pr2_and_log
+    else
+      if file =~ ".*third-party" || file =~ ".*third_party"
+      then (fun _s -> ())
+      else 
+        (match kind with
+        | E.Function | E.Class _ | E.Constant
+        (* todo: fix those too
+           | E.ClassConstant
+        *)
+          -> env.pr2_and_log
+        | _ -> env.log
+        )
+  in
+  f (spf "PB: lookup fail on %s (at %s:%d)"(G.string_of_node dst) 
+       (env.path file) line)
 
-let rec add_use_edge env (((str, tok) as name, kind)) =
+(* 
+ * If someone uses an undefined class constant of an undefined class,
+ * we want really to report only the use of an undefined class.
+ *)
+let class_exists env aclass tok =
+  (* less: do case insensitive? handle conflicts? *)
+  let node = (aclass, E.Class E.RegularClass) in
+  if (G.has_node node env.g && G.parent node env.g <> G.not_found) ||
+     Hashtbl.mem env.case_insensitive
+     (lowercase_and_underscore aclass, E.Class E.RegularClass)
+  then true
+  else (lookup_fail env tok (node); false)
+
+
+let rec add_use_edge env ((str, tok), kind) =
   let src = env.current in
   let dst = (str, kind) in
   (match () with
@@ -317,33 +356,14 @@ let rec add_use_edge env (((str, tok) as name, kind)) =
              -> ()
         (* | E.Method _  | E.ClassConstant ->          () *)
         | _ ->
-            let file = name +> Ast.tok_of_ident +> Parse_info.file_of_info in
-            let line = name +> Ast.tok_of_ident +> Parse_info.line_of_info in
-            let f =
-              if env.phase = Inheritance
-              then env.pr2_and_log
-              else
-                if file =~ ".*third-party" || file =~ ".*third_party"
-                then (fun _s -> ())
-                else 
-                  (match kind with
-                  | E.Function | E.Class _ | E.Constant
-                    (* todo: fix those too
-                  | E.ClassConstant
-                    *)
-                    -> env.pr2_and_log
-                  | _ -> env.log
-                  )
-            in
-            f (spf "PB: lookup fail on %s (at %s:%d)"(G.string_of_node dst) 
-                 (env.path file) line);
-            if !add_fake_node_when_undefined_entity then begin
-              G.add_node dst env.g;
-              let parent_target = G.not_found in
-              env.g +> G.add_edge (parent_target, dst) G.Has;
-              env.g +> G.add_edge (src, dst) G.Use;
-            end
-          );
+          lookup_fail env tok dst;
+          if !add_fake_node_when_undefined_entity then begin
+            G.add_node dst env.g;
+            let parent_target = G.not_found in
+            env.g +> G.add_edge (parent_target, dst) G.Has;
+            env.g +> G.add_edge (src, dst) G.Use;
+          end
+        );
       )
   )
 
@@ -355,7 +375,7 @@ let rec add_use_edge env (((str, tok) as name, kind)) =
 let lookup2 g (aclass, amethod_or_field_or_constant) tok =
   let rec depth current =
     if not (G.has_node current g)
-    (* todo? raise Impossible? the class should exist *)
+    (* todo? raise Impossible? the class should exist no? *)
     then None
     else
       let children = G.children current g in
@@ -556,6 +576,7 @@ and class_def env def =
            let fake_tok = () in
            (match lookup env.g (aclass, afld) fake_tok with
             | None -> ()
+            (* redefining an existing field *)
             | Some ((s, _fake_tok), _kind) ->
              (*env.log (spf "REDEFINED protected %s in class %s" s env.self);*)
               let parent = G.parent env.current env.g in
@@ -679,7 +700,17 @@ and expr env x =
          let aclass = Ast.str_of_ident name1 in
          let amethod = Ast.str_of_ident name2 in
          let tok = snd name2 in
-         let node = ((aclass ^ "." ^ amethod, tok), E.Method E.RegularMethod)in
+         (match lookup env.g (aclass, amethod) tok with
+         | Some n -> add_use_edge env n
+         | None ->
+           (match amethod with
+           (* todo? create a fake default constructor node? *)
+           | "__construct" -> ()
+           | _ -> 
+             let node = ((aclass^"."^amethod, tok), E.Method E.RegularMethod)in
+             if class_exists env aclass tok then add_use_edge env node
+           )
+         );
          (* Some classes may appear as dead because a 'new X()' is
           * transformed into a 'Call (... "__construct")' and such a method
           * may not exist, or may have been "lookup"ed to the parent.
@@ -692,15 +723,6 @@ and expr env x =
          if amethod =$= "__construct" 
          then add_use_edge env (name1, E.Class E.RegularClass);
 
-         (match lookup env.g (aclass, amethod) tok with
-         | Some n -> add_use_edge env n
-         | None ->
-           (match amethod with
-           (* todo? create a fake default constructor node? *)
-           | "__construct" -> ()
-           | _ -> add_use_edge env node
-           )
-         );
          exprl env es
 
     (* object call *)
@@ -741,12 +763,11 @@ and expr env x =
           let aconstant = Ast.str_of_ident name2 in
           let tok = snd name2 in
           (match lookup env.g (aclass, aconstant) tok with
+          (* less: assert kind = ClassConstant? *)
+          | Some n -> add_use_edge env n
           | None -> 
             let node = ((aclass ^ "." ^ aconstant, tok), E.ClassConstant) in
-            add_use_edge env node
-          (* less: assert kind = ClassConstant? *)
-          | Some n ->
-            add_use_edge env n
+            if class_exists env aclass tok then add_use_edge env node
           )
 
       | Id [name1], Var name2 ->
@@ -754,14 +775,14 @@ and expr env x =
           let astatic_var = Ast.str_of_ident name2 in
           let tok = snd name2 in
           (match lookup env.g (aclass, astatic_var) tok with
-          | None -> 
-            let node = ((aclass ^ "." ^ astatic_var, tok), E.Field) in
-            add_use_edge env node
           (* less: assert kind = Static variable
            * actually because we convert some Obj_get into Class_get,
            * this could also be a kind = Field here.
            *)
           | Some n -> add_use_edge env n
+          | None -> 
+            let node = ((aclass ^ "." ^ astatic_var, tok), E.Field) in
+            if class_exists env aclass tok then add_use_edge env node
           )
 
      (* less: update dynamic stats *)
@@ -799,11 +820,15 @@ and expr env x =
       (match e2 with
       (* less: add deps? *)
       | Id [name] ->
+        (* why not call add_use_edge() and benefit from the error reporting
+         * there? because instanceOf check are less important so
+         * we special case them?
+         *)
         let node = Ast.str_of_ident name, E.Class E.RegularClass in
-          if not (G.has_node node env.g) 
-          then 
-            env.log (spf "PB: instanceof unknown class: %s"
-                               (G.string_of_node node))
+        if not (G.has_node node env.g) 
+        then 
+          env.log (spf "PB: instanceof unknown class: %s"
+                     (G.string_of_node node))
       | _ ->
           (* less: update dynamic *)
           expr env e2
@@ -838,16 +863,16 @@ and vector_value env e = expr env e
 and map_value env (e1, e2) = exprl env [e1; e2]
 
 and xml env x =
- (* todo: dependency on field? *)
   add_use_edge env (x.xml_tag, E.Class E.RegularClass);
   let aclass = Ast.str_of_ident x.xml_tag in
   x.xml_attrs +> List.iter (fun (name, xhp_attr) ->
     let afield = Ast.str_of_ident name ^ "=" in
     let tok = snd name in
-    let node = ((aclass ^ "." ^ afield, tok), E.Field) in
     (match lookup env.g (aclass, afield) tok with
-    | None -> add_use_edge env node
     | Some n -> add_use_edge env n
+    | None -> 
+      let node = ((aclass ^ "." ^ afield, tok), E.Field) in
+      if class_exists env aclass tok then add_use_edge env node
     );      
     expr env xhp_attr);
   x.xml_body +> List.iter (xhp env)
