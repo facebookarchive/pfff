@@ -332,6 +332,10 @@ let display_with_gv g =
 (* Misc *)
 (*****************************************************************************)
 
+(* todo? assert it's a readable path? graph_code_php.ml is using readable
+ * path now but the other might not yet or it can be sometimes convenient
+ * also to have absolute path here, so not sure if can assert anything.
+ *)
 let file_of_node n g =
   try 
     let info = nodeinfo n g in

@@ -1,18 +1,19 @@
 
 type node = string * Database_code.entity_kind
  type nodeinfo = {
+   (* the filename embedded inside token_location can be a readable path *)
    pos: Parse_info.token_location;
    props: Database_code.property list;
  }
 type edge = Has | Use
 
+(* really an hypergraph actually *)
+type graph
+
 type error =
  | NodeAlreadyPresent of node
 exception Error of error
 val string_of_error: error -> string
-
-(* really an hypergraph actually *)
-type graph
 
 (* moving around directories to have less backward dependencies *)
 type adjust = (string * string)
@@ -53,6 +54,7 @@ val parents: node -> graph -> node list
 val children: node -> graph -> node list
 (* may raise Not_found *)
 val nodeinfo: node -> graph -> nodeinfo
+(* should be readable path if you want your codegraph to be "portable" *)
 val file_of_node: node -> graph -> Common.filename
 
 val all_children: node -> graph -> node list
