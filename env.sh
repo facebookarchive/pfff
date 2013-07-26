@@ -15,6 +15,9 @@ export LD_LIBRARY_PATH=/home/pad/packages/Linux/lib:$LD_LIBRARY_PATH
 echo setting OPTBIN
 export OPTBIN=.opt
 
+# -bin-annot is for codegraph, needs ocaml 4.00
+export OCAMLCFLAGS_EXTRA=-bin-annot
+
 # for exception stack traces
 echo setting OCAMLRUNPARAM
 export OCAMLRUNPARAM="b"

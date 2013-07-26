@@ -30,10 +30,12 @@ sudo apt-get install -qq ocaml-native-compilers
 # Compile Pfff
 #------------------------------
 
+#todo: make configure detect the use of ocamlc.opt
 ./configure
 make depend
-source env.sh # to use the .opt compilers
 make
+
+#less: or use source env.sh?
 
 #------------------------------
 # Run tests
