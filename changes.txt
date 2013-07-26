@@ -381,6 +381,7 @@ update: also useful for codegraph backend.
 * 0.13
 
 first public release!
+https://github.com/facebook/pfff
 
 * 0.12 (Q3 2010) (codemap, light db, tags php, scheck php, ocaml/js parsers)
 
@@ -633,7 +634,7 @@ update: superseded by codemap, a fancy gui using cairo and gtk
 
 * alpha (Nov 2009)
 
-** PHP parser first draft !
+** PHP parser first draft!
 reused Zend flex/bison code.
 
 ** visitor (using ocamltarzan)
