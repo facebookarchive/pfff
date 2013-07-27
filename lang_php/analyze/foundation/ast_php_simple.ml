@@ -452,7 +452,8 @@ let str_of_name = function
 let tok_of_name = function
   | [id] -> tok_of_ident id
   | [] -> raise Common.Impossible
-  | x::xs -> raise (Ast_php.TodoNamespace (tok_of_ident x))
+  (* pick first one *)
+  | x::xs -> tok_of_ident x
 
 (* we sometimes need to remove the '$' prefix *)
 let remove_first_char s =
