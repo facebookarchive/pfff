@@ -671,7 +671,9 @@ and expr env x =
   | Id [name] ->
     add_use_edge env (name, E.Constant)
   | Id name ->
-    raise (Ast_php.TodoNamespace (Ast.tok_of_name name))
+    pr2_once "TODO: namespace";
+    pr2_gen name;
+    (* raise (Ast_php.TodoNamespace (Ast.tok_of_name name)) *)
 
   (* a parameter or local variable *)
   | Var ident ->
