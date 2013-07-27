@@ -433,7 +433,7 @@ and stmt_bis env x =
   | ClassDef def -> class_def env def
   | ConstantDef def -> constant_def env def
   | TypeDef def -> type_def env def
-  | NamespaceDef _ -> failwith "no support for namespace yet"
+  | NamespaceDef qu -> raise (Ast_php.TodoNamespace (Ast.tok_of_name qu))
 
   (* old style constant definition, before PHP 5.4 *)
   | Expr(Call(Id[("define", _)], [String((name)); v])) ->
@@ -623,7 +623,7 @@ and hint_type env = function
   | Hint [name] ->
       let node = (name, E.Class E.RegularClass) in
       add_use_edge env node
-  | Hint _ -> failwith "no support for namespace yet"
+  | Hint name -> raise (Ast_php.TodoNamespace (Ast.tok_of_name name))
   | HintArray -> ()
   | HintQuestion t -> hint_type env t
   | HintTuple xs -> List.iter (hint_type env) xs
@@ -670,8 +670,8 @@ and expr env x =
    *)
   | Id [name] ->
     add_use_edge env (name, E.Constant)
-  | Id _ ->
-    failwith "no support for namespace yet"
+  | Id name ->
+    raise (Ast_php.TodoNamespace (Ast.tok_of_name name))
 
   (* a parameter or local variable *)
   | Var ident ->
@@ -684,7 +684,8 @@ and expr env x =
     | Id [name] ->
         add_use_edge env (name, E.Function);
         exprl env es
-    | Id _ -> failwith "no support for namespace yet"
+    | Id name ->
+      raise (Ast_php.TodoNamespace (Ast.tok_of_name name))
 
     (* static method call *)
     | Class_get (Id[ ("__special__self", tok)], e2) ->
@@ -846,7 +847,8 @@ and expr env x =
   | Collection ([name], xs) ->
     add_use_edge env (name, E.Class E.RegularClass);
     array_valuel env xs
-  | Collection (_, _) -> failwith "no support for namespace yet"
+  | Collection (name, _) -> 
+    raise (Ast_php.TodoNamespace (Ast.tok_of_name name))
   | Xhp x -> xml env x
   | CondExpr (e1, e2, e3) -> exprl env [e1; e2; e3]
   (* less: again, add deps for type? *)
