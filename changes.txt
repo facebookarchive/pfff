@@ -2,6 +2,10 @@
 
 * 0.25 (Q3 2013) ()
 
+** php
+
+*** support for namespace
+
 ** internal: 
 
 *** use Travis CI for build and test regressions,
@@ -67,8 +71,6 @@ adapted each time:
  - sgrep/spatch
  - scheck/cmf 
  - codegraph
-
-*** better support for namespace
 
 *** huge refactoring on the PHP grammar and AST, unified lvalue and expr,
 got from 7 s/r conflicts to 1, and can now parse more code by being
