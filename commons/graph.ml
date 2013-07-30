@@ -71,7 +71,7 @@ open Common
  * of the nodes, and not just integers. 
  * 
  * 
- * So This module is a small wrapper around ocamlgraph, to have 
+ * So, this module is a small wrapper around ocamlgraph, to have 
  * more polymorphic graphs with some defaults that makes sense most
  * of the time (Directed graph, Imperative, vertex ints with mapping
  * to node information), and which can use algorithms defined in 
@@ -79,7 +79,7 @@ open Common
  * to the other (e.g. from my ograph_simple to ocamlgraph, and vice versa).
  * 
  * Note that even if ocamlgraph is really good and even if this file is useful,
- * for quick and dirty trival graph stuff then ograph_simple 
+ * for quick and dirty trivial graph stuff then ograph_simple 
  * should be simpler (less dependencies). You can 
  * use it directly from common.cma. Then with the converter to ocamlgraph,
  * you can start with ograph_simple, and if in a few places you need
@@ -87,12 +87,14 @@ open Common
  * use the adapters.
  * 
  * Alternatives in other languages:
- *  - boost C++ BGL, 
+ *  - boost C++ BGL,
  *    http://www.boost.org/doc/libs/1_45_0/libs/graph/doc/index.html
  *  - quickGraph for .NET, http://quickgraph.codeplex.com/
  *    apparently inspired by the boost one
  *  - c++ GTL, graph template library
  *  - c++ ASTL, automata library
+ *  - See the book by Skienna "Algorithm Design Manual" which gives many
+ *    resources related to graph libraries.
  *)
 
 (*****************************************************************************)
@@ -312,7 +314,7 @@ let add_edge_and_nodes_if_not_present k1 k2 g =
   add_vertex_if_not_present k2 g;
   add_edge k1 k2 g
 
-(* less: could have a let (-->) k1 k2 ? *)
+(* less: could have a let (-->) k1 k2 ? but needs 'g' too *)
 
 (*****************************************************************************)
 (* Graph visit *)
