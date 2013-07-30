@@ -399,7 +399,12 @@ let lookup2 g (aclass, amethod_or_field_or_constant) tok =
       let full_name = (fst current ^ "." ^ amethod_or_field_or_constant) in
       let res =
         children +> Common.find_some_opt (fun (s2, kind) ->
-          if full_name =$= s2
+          if full_name =$= s2 || 
+             (* todo? pass a is_static extra param to lookup? 
+              * also should intercept __get for fields?
+              *)
+             s2 =$= (fst current ^ ".__call") || 
+             s2 =$= (fst current ^ ".__callStatic")
           then Some ((s2, tok), kind)
           else None
         )
