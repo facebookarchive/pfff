@@ -383,8 +383,8 @@ let remove_edge k1 k2 g =
 (*****************************************************************************)
 
 (* todo? make the graph more functional ? it's very imperative right now
- * which force the caller to write in an imperative way and use functions
- * like this 'copy()'. Look at launchbary haskell paper ?
+ * which forces the caller to write in an imperative way and use functions
+ * like this 'copy()'. Look at launchbary haskell paper?
  *)
 let copy oldg = 
 (* 
@@ -400,7 +400,7 @@ let copy oldg =
   cnt = ref !(g.cnt);
      }
   *)
-  (* naive way, enough ? optimize ? all those iter are ugly *)
+  (* naive way, enough? optimize? all those iter are ugly ... *)
   let g = create () in
   let nodes = nodes oldg in
   nodes +> List.iter (fun n -> add_vertex_if_not_present n g);
@@ -412,7 +412,7 @@ let copy oldg =
   g
 
 (*****************************************************************************)
-(* The graph algorithms *)
+(* Graph algorithms *)
 (*****************************************************************************)
 
 let shortest_path k1 k2 g = 
