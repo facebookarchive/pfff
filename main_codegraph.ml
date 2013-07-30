@@ -510,9 +510,8 @@ let test_adhoc_deps graph_file =
 let test_top_down_layer graph_file =
   let g = GC.load graph_file in
   let (scc, hscc) = GC.strongly_connected_components_use_graph g in
-  scc +> Array.to_list +> List.iter (fun xs ->
-    pr2_gen xs
-  )
+  pr2 (spf "#scc = %d" (Array.length scc));
+  ()
 
 
 (* ---------------------------------------------------------------------- *)
