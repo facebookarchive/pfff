@@ -54,7 +54,10 @@ val parents: node -> graph -> node list
 val children: node -> graph -> node list
 (* may raise Not_found *)
 val nodeinfo: node -> graph -> nodeinfo
-(* should be readable path if you want your codegraph to be "portable" *)
+(* Should be readable path if you want your codegraph to be "portable".
+ * todo: this function does not throw Not_found but return instead a string
+ *  explaining the error. Fix that.
+ *)
 val file_of_node: node -> graph -> Common.filename
 
 val all_children: node -> graph -> node list

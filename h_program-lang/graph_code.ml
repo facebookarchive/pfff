@@ -103,7 +103,7 @@ type nodeinfo = {
  * so it's better to separate the two usages.
  * 
  * note: file information are in readable path format in Dir and File
- * nodes.
+ * nodes (and should also be in readable format in the nodeinfo).
  *)
 type graph = {
   (* Actually the Has graph should really be a tree, but we need convenient
@@ -147,6 +147,28 @@ let pb = "PB", E.Dir
  let not_found = "NOT_FOUND", E.Dir
  let dupe = "DUPE", E.Dir
 let _stdlib = "STDLIB", E.Dir
+
+(*****************************************************************************)
+(* Debugging *)
+(*****************************************************************************)
+
+let string_of_node (s, kind) =
+  E.string_of_entity_kind kind ^ ":" ^ s
+
+let string_of_error = function
+  | NodeAlreadyPresent n -> ("Node already present: " ^ string_of_node n)
+
+let node_of_string s =
+  if s =~ "\\([^:]*\\):\\(.*\\)"
+  then 
+    let (s1, s2) = Common.matched2 s in
+    s2, E.entity_kind_of_string s1
+  else 
+    failwith (spf "node_of_string: wrong format '%s'" s)
+
+let display_with_gv g =
+  (* TODO? use different colors for the different kind of edges? *)
+  G.display_with_gv g.has
 
 (*****************************************************************************)
 (* Graph construction *)
@@ -250,6 +272,22 @@ let nb_use_edges g =
 let nodeinfo n g =
   Hashtbl.find g.info n
 
+(* todo? assert it's a readable path? graph_code_php.ml is using readable
+ * path now but the other might not yet or it can be sometimes convenient
+ * also to have absolute path here, so not sure if can assert anything.
+ *)
+let file_of_node n g =
+  try 
+    let info = nodeinfo n g in
+    info.pos.Parse_info.file
+  with Not_found ->
+    (match n with
+    | str, (E.Dir | E.File) -> str
+    | _ -> 
+      (* todo: BAD no? *)
+      spf "NOT_FOUND_FILE (for node %s)" (string_of_node n)
+    )
+
 (*****************************************************************************)
 (* Iteration *)
 (*****************************************************************************)
@@ -305,46 +343,8 @@ let create_initial_hierarchy g =
   ()
 
 (*****************************************************************************)
-(* Debugging *)
-(*****************************************************************************)
-
-let string_of_node (s, kind) =
-  E.string_of_entity_kind kind ^ ":" ^ s
-
-let string_of_error = function
-  | NodeAlreadyPresent n -> ("Node already present: " ^ string_of_node n)
-
-
-let node_of_string s =
-  if s =~ "\\([^:]*\\):\\(.*\\)"
-  then 
-    let (s1, s2) = Common.matched2 s in
-    s2, E.entity_kind_of_string s1
-  else 
-    failwith (spf "node_of_string: wrong format '%s'" s)
-
-
-let display_with_gv g =
-  (* TODO? use different colors for the different kind of edges? *)
-  G.display_with_gv g.has
-
-(*****************************************************************************)
 (* Misc *)
 (*****************************************************************************)
-
-(* todo? assert it's a readable path? graph_code_php.ml is using readable
- * path now but the other might not yet or it can be sometimes convenient
- * also to have absolute path here, so not sure if can assert anything.
- *)
-let file_of_node n g =
-  try 
-    let info = nodeinfo n g in
-    info.pos.Parse_info.file
-  with Not_found ->
-    (match n with
-    | str, (E.Dir | E.File) -> str
-    | _ -> spf "NOT_FOUND_FILE (for node %s)" (string_of_node n)
-    )
 
 let group_edges_by_files_edges xs g =
   xs +> Common2.group_by_mapped_key (fun (n1, n2) ->
