@@ -4,8 +4,7 @@
 update:
 	cd ~/local/fbcode/; git pull
 	~/pfff/pfff_test -generate_php_stdlib ~/local/fbcode/hphp/system/idl idl/
-	~/pfff/pfff_test -generate_php_stdlib ~/local/fbcode/hphp/facebook/extensions/async_mysql idl/
-	~/pfff/pfff_test -generate_php_stdlib ~/local/fbcode/hphp/facebook/extensions/gatehouse idl/
+	~/pfff/pfff_test -generate_php_stdlib ~/local/fbcode/hphp/facebook/extensions facebook/
 	cp -rf ~/local/fbcode/hphp/system/php/* .
 	cp -f ~/local/fbcode/hphp/system/idl/constants.idl.json /tmp/
 	perl -p -i -e 's/9223372036854775807/0/g;' /tmp/constants.idl.json

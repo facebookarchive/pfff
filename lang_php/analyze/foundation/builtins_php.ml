@@ -285,41 +285,7 @@ let string_of_arg = function
               | _ when v =~ ".*\\$\\$" -> "null"
 
               | "INT_MAX" -> "PHP_INT_MAX"
-              (* "RAND_MAX" => "RAND_MAX", *)
-              (* less: just have a generic k_XXX => XXX *)
-              | "k_CURLVERSION_NOW" -> "CURLVERSION_NOW"
-              | "k_E_USER_NOTICE" -> "E_USER_NOTICE"
-              | "k_E_ALL" -> "E_ALL"
-              | "k_SEEK_SET" -> "SEEK_SET"
-              | "k_INI_SCANNER_NORMAL" -> "INI_SCANNER_NORMAL"
-              | "k_GLOBAL_STATE_IGNORE" -> "GLOBAL_STATE_IGNORE"
-              | "k_MW_TransparentOpacity" -> "MW_TransparentOpacity"
-              | "k_OPENSSL_CIPHER_RC2_40" -> "OPENSSL_CIPHER_RC2_40"
-              | "k_PKCS7_DETACHED" -> "PKCS7_DETACHED"
-              | "k_OPENSSL_PKCS1_PADDING" -> "OPENSSL_PKCS1_PADDING"
-              | "k_OPENSSL_ALGO_SHA1" -> "OPENSSL_ALGO_SHA1"
-
-              (* new *)
-              | "k_SQLITE3_TEXT" -> "SQLITE3_TEXT"
-              | "k_SQLITE3_BOTH" -> "SQLITE3_BOTH"
-
-              | "k_HPHP_TRIM_CHARLIST" -> "HPHP_TRIM_CHARLIST"
-              | "k_STR_PAD_RIGHT" -> "STR_PAD_RIGHT"
-              | "k_ENT_COMPAT" -> "ENT_COMPAT"
-              | "k_EXTR_OVERWRITE" -> "EXTR_OVERWRITE"
-
-              | "k_FORCE_GZIP" -> "FORCE_GZIP"
-
-              (*    "k_OCI_DEFAULT" => "OCI_DEFAULT",
-               *    "k_OCI_COMMIT_ON_SUCCESS" => "OCI_COMMIT_ON_SUCCESS",
-               *    "k_OCI_DTYPE_LOB" => "OCI_DTYPE_LOB",
-               *    "k_FORCE_GZIP" => "FORCE_GZIP",
-               *    "k_SQLT_AFC" => "SQLT_AFC",
-               * const q_Collator_SORT_REGULAR = 0;
-               *)
-                
-              | _ when v =~ "^k_" ->
-                failwith ("k_xxx not handled: " ^ v)
+              | _ when v =~ "k_\\(.*\\)" -> Common.matched1 v
 
               | _ -> v
             in
@@ -575,9 +541,9 @@ let generate_php_stdlib ~src (* ~phpmanual_dir *) ~dest =
    * let phpdoc_finder = 
    *   Phpmanual_xml.build_doc_function_finder phpmanual_dir in
    *)
-  (* todo: need also find .idl in hphp/facebook/extensions/ *)
 
-  let files = Common2.glob (spf "%s/*.json" src) in
+  let files = Common.files_of_dir_or_files_no_vcs_nofilter [src] in
+  let files = files +> List.filter (fun f -> f =~ ".*\\.idl\\.json$") in
 
 (*  if not (Common2.command2_y_or_no("rm -rf " ^ dest))
   then failwith "ok we stop";
@@ -586,9 +552,7 @@ let generate_php_stdlib ~src (* ~phpmanual_dir *) ~dest =
   files +> List.iter (fun file -> 
     pr2 (spf "processing: %s" file);
       let (d,b,e) = Common2.dbe_of_filename file in
-        (* todo?: skip domdocument? generate undefined field access in www *)
-      if b = "domdocument.idl" || 
-         (* parse error on PHP_INT_MAX, which is why it's processed
+      if (* parse error on PHP_INT_MAX, which is why it's processed
           * specially in pfff/data/php_stdlib/Makefile
           *)
          b = "constants.idl" ||

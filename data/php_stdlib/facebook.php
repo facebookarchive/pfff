@@ -48,10 +48,6 @@ define('MCC_ARG_FB_SERIALIZE_PREFIXES', 0);
  
 define('MCC_COMPRESSION_THRESHHOLD', 0);
 
-// used to be in flib/utils/strings/ but now is core
-class StringBuffer {
-}
-
 // ------------------------------------------
 // In HPHP idl files ??
 // ------------------------------------------
