@@ -892,7 +892,7 @@ let visit_program ~tag prefs  hentities (ast, toks) =
       | T.T_TRAIT ii -> tag ii KeywordObject
       | T.T_INSTEADOF ii -> tag ii KeywordObject
 
-      | T.T_TYPE ii | T.T_NEWTYPE ii -> tag ii Keyword
+      | T.T_TYPE ii | T.T_NEWTYPE ii | T.T_SHAPE ii -> tag ii Keyword
 
       | T.T_EMPTY ii -> tag ii Builtin
       | T.T_ISSET ii -> tag ii Builtin

@@ -125,7 +125,7 @@ module PI = Parse_info
  /*(* not in original grammar *)*/
  T_SELF T_PARENT
  /*(* facebook extension *)*/
- T_TYPE T_NEWTYPE
+ T_TYPE T_NEWTYPE T_SHAPE
 
 /*(*-----------------------------------------*)*/
 /*(*2 Symbol tokens *)*/
@@ -1086,6 +1086,8 @@ primary_expr:
  | TDOLLAR TOBRACE expr TCBRACE { Deref($1, BraceIdent($2, $3, $4)) }
 
  | T_ARRAY TOPAR array_pair_list TCPAR
+     { ArrayLong($1,($2,$3,$4)) }
+ | T_SHAPE TOPAR array_pair_list TCPAR
      { ArrayLong($1,($2,$3,$4)) }
  | TOBRA array_pair_list TCBRA
      { ArrayShort($1, $2, $3) }

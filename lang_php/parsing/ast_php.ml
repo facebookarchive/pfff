@@ -235,7 +235,7 @@ and expr =
   | AssignList  of tok (* list *)  * list_assign comma_list paren *
         tok (* = *) * expr
 
-  | ArrayLong of tok (* array *) * array_pair  comma_list paren
+  | ArrayLong of tok (* array | shape *) * array_pair  comma_list paren
   (* php 5.4: https://wiki.php.net/rfc/shortsyntaxforarrays *)
   | ArrayShort of array_pair comma_list bracket
   (* facebook-ext: *)
