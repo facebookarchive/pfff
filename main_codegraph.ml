@@ -491,9 +491,8 @@ let test_thrift_alive graph_file =
     end
   done
 
-
 (* quite similar to analyze_backward_deps *)
-let test_pad graph_file =
+let test_adhoc_deps graph_file =
   let g = GC.load graph_file in
   g +> GC.iter_use_edges (fun n1 n2 ->
     let file = GC.file_of_node n2 g in
@@ -507,6 +506,10 @@ let test_pad graph_file =
       end
     end
   )
+
+let test_top_down_layer graph_file =
+  let _g = GC.load graph_file in
+  raise Todo
 
 (* ---------------------------------------------------------------------- *)
 let extra_actions () = [
@@ -530,7 +533,9 @@ let extra_actions () = [
   "-thrift_alive", " <graph>",
   Common.mk_action_1_arg test_thrift_alive;
   "-test_pad", " <graph>",
-  Common.mk_action_1_arg test_pad;
+  Common.mk_action_1_arg test_adhoc_deps;
+  "-test_topdown", " <graph>",
+  Common.mk_action_1_arg test_top_down_layer;
 (*
   "-test_phylomel", " <geno file>",
   Common.mk_action_1_arg test_phylomel;

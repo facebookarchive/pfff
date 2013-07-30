@@ -68,7 +68,6 @@ val nb_nodes: graph -> int
 val nb_use_edges: graph -> int
 
 (* algorithms *)
-
 val group_edges_by_files_edges:
   (node * node) list -> graph ->
   ((Common.filename * Common.filename) * (node * node) list) list
