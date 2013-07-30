@@ -16,9 +16,13 @@ val parse_program:
 val parse_fuzzy:
   Common.filename -> Ast_fuzzy.tree list * Parser_java.token list
 
+val parse_fuzzy_of:
+  string -> Ast_fuzzy.tree list * Parser_java.token list
+
 val program_of_program2 : program2 -> Ast_java.program
 
 (* internal *)
 val tokens: Common.filename -> Parser_java.token list
 (* useful for unit testing, mock *)
 val tmp_file_from_string: string -> Common.filename
+
