@@ -74,10 +74,9 @@ type env = {
   g: Graph_code.graph;
 
   phase: phase;
-
+  current: Graph_code.node;
   readable: Common.filename;
 
-  current: Graph_code.node;
   (* "NOSELF" when outside a class *)
   self: string;
   (* "NOPARENT" when no parent *)
@@ -305,7 +304,13 @@ let class_exists2 env aclass tok =
   in
   if res 
   then true
-  else (lookup_fail env tok node; false)
+  else begin
+    (* todo: we should do check at 'use' time, lazy check or hook checks
+     * to be added in env.
+     *)
+    if aclass <> "NOPARENT_INTRAIT" then lookup_fail env tok node;
+    false
+  end
   
 let class_exists a b c =
   Common.profile_code "Graph_php.class_exits" (fun () -> class_exists2 a b c)
@@ -545,12 +550,14 @@ and class_def env def =
 
   end;
   let self = Ast.str_of_ident def.c_name in
+  let in_trait = match def.c_kind with Trait -> true | _ -> false in
   let parent =
     match def.c_extends with
-    | None -> "NOPARENT"
+    | None -> 
+      if not in_trait then "NOPARENT" else "NOPARENT_INTRAIT"
     | Some c2 -> Ast.str_of_class_name c2
   in
-  let env = { env with self; parent } in
+  let env = { env with self; parent; } in
 
   def.c_constants +> List.iter (fun def ->
     let node = (def.cst_name, E.ClassConstant) in

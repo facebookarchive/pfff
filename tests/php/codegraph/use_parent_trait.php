@@ -1,9 +1,9 @@
 <?php
 
 trait UseParentButNotParent {
-  final public function __construct() {
+  public function foo() {
     // generate a lookup failure right now
-    //SKIP: parent::__construct();
+    parent::foo();
   }
 }
 
