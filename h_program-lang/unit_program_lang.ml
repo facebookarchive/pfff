@@ -101,6 +101,30 @@ let unittest =
         )
       );
 
+      "scc XXX" >:: (fun () ->
+        (* foo() -> bar() -> bar_mutual() -> bar() *)
+        let g = G.create () in
+        let (-->) f1 f2 =
+          let f1 = f1, E.Function in
+          let f2 = f2, E.Function in
+          if not (G.has_node f1 g)
+          then G.add_node f1 g;
+          if not (G.has_node f2 g)
+          then G.add_node f2 g;
+          G.add_edge (f1, f2) G.Use g
+        in
+        "foo" --> "bar";
+        "bar" --> "bar_mutual";
+        "bar_mutual" --> "bar";
+        
+        let (scc, hscc) = G.strongly_connected_components_use_graph g in
+        assert_equal
+          ~msg:"it should find the right strongly connected components"
+          [|[("bar_mutual", E.Function); ("bar", E.Function)];
+            [("foo", E.Function)]|]
+          scc;
+      );
+
     ];
 
     "dm" >::: [

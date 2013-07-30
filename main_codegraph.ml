@@ -508,8 +508,12 @@ let test_adhoc_deps graph_file =
   )
 
 let test_top_down_layer graph_file =
-  let _g = GC.load graph_file in
-  raise Todo
+  let g = GC.load graph_file in
+  let (scc, hscc) = GC.strongly_connected_components_use_graph g in
+  scc +> Array.to_list +> List.iter (fun xs ->
+    pr2_gen xs
+  )
+
 
 (* ---------------------------------------------------------------------- *)
 let extra_actions () = [
