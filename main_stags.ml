@@ -27,6 +27,9 @@ open Common
  * 
  * usage: 
  *  $ stags -lang web -o TAGS *
+ * 
+ * related work:
+ *  - for ocaml: ocp-index, merlin, ocamlspot
  *)
 
 (*****************************************************************************)
