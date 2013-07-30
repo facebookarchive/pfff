@@ -74,6 +74,8 @@ val nb_use_edges: graph -> int
 val group_edges_by_files_edges:
   (node * node) list -> graph ->
   ((Common.filename * Common.filename) * (node * node) list) list
+val strongly_connected_components_use_graph:
+  graph -> (node list array * (node, int) Hashtbl.t)
 
 
 (* debugging support *)

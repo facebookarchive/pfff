@@ -354,6 +354,13 @@ let group_edges_by_files_edges xs g =
     +> List.map snd
 
 (*****************************************************************************)
+(* Graph algorithms *)
+(*****************************************************************************)
+let strongly_connected_components_use_graph g =
+  let (scc, hscc) = G.strongly_connected_components g.use in
+  scc, hscc
+
+(*****************************************************************************)
 (* Graph adjustments *)
 (*****************************************************************************)
 let load_adjust file =
