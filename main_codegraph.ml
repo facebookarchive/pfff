@@ -316,62 +316,6 @@ let build_stdlib lang root dst =
   | _ -> failwith ("language not supported: " ^ lang)
 
 (*****************************************************************************)
-(* Graph adjuster (overlay-ish) *)
-(*****************************************************************************)
-let adjust_graph graph_file adjust_file whitelist_file dest_file =
-  let g = Graph_code.load graph_file in
-  let adjust = Graph_code.load_adjust adjust_file in
-  let whitelist = Graph_code.load_whitelist whitelist_file in
-  Graph_code.adjust_graph g adjust whitelist;
-  Graph_code.save g dest_file;
-  ()
-
-(*****************************************************************************)
-(* Analysis *)
-(*****************************************************************************)
-let analyze_backward_deps graph_file =
-  let g = GC.load graph_file in
-  let gopti = 
-    Common.cache_computation ~verbose:!verbose graph_file ".opti"
-      (fun () -> Graph_code_opti.convert g)
-  in
-  let config = DM.basic_config_opti gopti in
-  (* DM.threshold_pack := 90; *)
-  let config = DM.expand_node_opti (("flib", E.Dir)) config gopti in
-  let dm, gopti = DM.build config None gopti in
-  let n = Array.length dm.DM.matrix in
-  (* todo: filter biggest offenders? *)
-  let res = ref [] in
-  for i = 0 to n - 1 do
-    for j = i + 1 to n - 1 do
-      let n = dm.DM.matrix.(i).(j) in
-      if n > 0 then begin
-        let xs = DM.explain_cell_list_use_edges (i, j) dm gopti in
-        pr2 (spf " (%d, %d) = %d" i j (List.length xs));
-        Common.push2 xs res;
-      end
-    done
-  done;
-  let edges = List.flatten !res in
-  pr2 (spf "total backward deps = %d" (List.length edges));
-  let xxs = Common.group_by_mapped_key (fun (n1, n2) -> n2) edges in
-  pr2 (spf "#dst =%d" (List.length xxs));
-  xxs +> List.map (fun (n, xs) -> (n, xs), List.length xs)
-    +> Common.sort_by_val_highfirst
-    +> Common.take_safe 100
-    +> List.iter (fun ((n, xs), cnt) ->
-        let file = GC.file_of_node n g in
-         pr2 (spf "%-30s = %d (file = %s)" (GC.string_of_node n) cnt
-                file)
-    );
-  let file = graph_file ^ ".whitelist" in
-  pr2 (spf "generating whitelist in %s" file);
-  GC.save_whitelist edges file g;
-  
-  ()
-
-
-(*****************************************************************************)
 (* Main action, viewing the graph *)
 (*****************************************************************************)
 
@@ -456,6 +400,59 @@ let main_action xs =
 (*****************************************************************************)
 (* Extra Actions *)
 (*****************************************************************************)
+
+(* Analysis *)
+let analyze_backward_deps graph_file =
+  let g = GC.load graph_file in
+  let gopti = 
+    Common.cache_computation ~verbose:!verbose graph_file ".opti"
+      (fun () -> Graph_code_opti.convert g)
+  in
+  let config = DM.basic_config_opti gopti in
+  (* DM.threshold_pack := 90; *)
+  let config = DM.expand_node_opti (("flib", E.Dir)) config gopti in
+  let dm, gopti = DM.build config None gopti in
+  let n = Array.length dm.DM.matrix in
+  (* todo: filter biggest offenders? *)
+  let res = ref [] in
+  for i = 0 to n - 1 do
+    for j = i + 1 to n - 1 do
+      let n = dm.DM.matrix.(i).(j) in
+      if n > 0 then begin
+        let xs = DM.explain_cell_list_use_edges (i, j) dm gopti in
+        pr2 (spf " (%d, %d) = %d" i j (List.length xs));
+        Common.push2 xs res;
+      end
+    done
+  done;
+  let edges = List.flatten !res in
+  pr2 (spf "total backward deps = %d" (List.length edges));
+  let xxs = Common.group_by_mapped_key (fun (n1, n2) -> n2) edges in
+  pr2 (spf "#dst =%d" (List.length xxs));
+  xxs +> List.map (fun (n, xs) -> (n, xs), List.length xs)
+    +> Common.sort_by_val_highfirst
+    +> Common.take_safe 100
+    +> List.iter (fun ((n, xs), cnt) ->
+        let file = GC.file_of_node n g in
+         pr2 (spf "%-30s = %d (file = %s)" (GC.string_of_node n) cnt
+                file)
+    );
+  let file = graph_file ^ ".whitelist" in
+  pr2 (spf "generating whitelist in %s" file);
+  GC.save_whitelist edges file g;
+  
+  ()
+
+
+
+(* Graph adjuster (overlay-ish) *)
+let adjust_graph graph_file adjust_file whitelist_file dest_file =
+  let g = Graph_code.load graph_file in
+  let adjust = Graph_code.load_adjust adjust_file in
+  let whitelist = Graph_code.load_whitelist whitelist_file in
+  Graph_code.adjust_graph g adjust whitelist;
+  Graph_code.save g dest_file;
+  ()
 
 (* quite similar to analyze_backward_deps *)
 let test_thrift_alive graph_file =
