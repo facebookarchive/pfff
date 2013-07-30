@@ -287,18 +287,28 @@ let lookup_fail env tok dst =
   fprinter (spf "PB: lookup fail on %s (at %s:%d)"(G.string_of_node dst) 
        (env.path file) line)
 
+(* I think G.parent is extremely slow in ocamlgraph so need memoize *)
+let _hmemo_class_exits = Hashtbl.create 101
 (* If someone uses an undefined class constant of an undefined class,
  * we want really to report only the use of undefined class, so don't
  * forget to guard some calls to add_use_edge() with this function.
  *)
-let class_exists env aclass tok =
+let class_exists2 env aclass tok =
+  assert (env.phase = Uses);
   let node = (aclass, E.Class E.RegularClass) in
   let node' = (lc_and_underscore aclass, E.Class E.RegularClass) in
-  if (G.has_node node env.g && G.parent node env.g <> G.not_found) ||
-     Hashtbl.mem env.case_insensitive node'
+  let res = 
+    Common.memoized _hmemo_class_exits aclass (fun () ->
+      (G.has_node node env.g && G.parent node env.g <> G.not_found) ||
+        Hashtbl.mem env.case_insensitive node'
+    )
+  in
+  if res 
   then true
   else (lookup_fail env tok node; false)
-
+  
+let class_exists a b c =
+  Common.profile_code "Graph_php.class_exits" (fun () -> class_exists2 a b c)
 
 let rec add_use_edge env ((str, tok), kind) =
   let src = env.current in
