@@ -102,7 +102,6 @@ let unittest =
       );
 
       "scc XXX" >:: (fun () ->
-        (* foo() -> bar() -> bar_mutual() -> bar() *)
         let g = G.create () in
         let (-->) f1 f2 =
           let f1 = f1, E.Function in
@@ -116,12 +115,16 @@ let unittest =
         "foo" --> "bar";
         "bar" --> "bar_mutual";
         "bar_mutual" --> "bar";
+        "bar" --> "bar_bis";
         
         let (scc, hscc) = G.strongly_connected_components_use_graph g in
         assert_equal
           ~msg:"it should find the right strongly connected components"
-          [|[("bar_mutual", E.Function); ("bar", E.Function)];
-            [("foo", E.Function)]|]
+          [|
+            [("bar_bis", E.Function)];
+            [("bar_mutual", E.Function); ("bar", E.Function)];
+            [("foo", E.Function)]
+          |]
           scc;
 
         let numbering = G.top_down_numbering g (scc, hscc) in
@@ -130,7 +133,8 @@ let unittest =
           ~msg:"it should find the right ordering of nodes"
           [("foo", E.Function), 0;
            ("bar", E.Function), 1;
-           ("bar_mutual", E.Function), 1; 
+           ("bar_mutual", E.Function), 1;
+           ("bar_bis", E.Function), 2;
           ]
           xs;
       );
