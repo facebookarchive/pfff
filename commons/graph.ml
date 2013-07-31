@@ -317,7 +317,7 @@ let add_edge_and_nodes_if_not_present k1 k2 g =
 (* less: could have a let (-->) k1 k2 ? but needs 'g' too *)
 
 (*****************************************************************************)
-(* Graph visit *)
+(* Graph access *)
 (*****************************************************************************)
 
 let nodes g = 
@@ -361,7 +361,7 @@ let iter_nodes f g =
     f k
   )
 (*****************************************************************************)
-(* Graph deconstruction *)
+(* Graph deletion *)
 (*****************************************************************************)
 
 let remove_vertex k g =
@@ -449,8 +449,18 @@ let strongly_connected_components g =
   scc_array, h
 
 (* http://en.wikipedia.org/wiki/Strongly_connected_component *)
-let strongly_connected_components_condensation g =
-  raise Todo
+let strongly_connected_components_condensation g (scc, hscc) =
+  let g2 = create () in
+  let n = Array.length scc in
+  for i = 0 to n -1 do
+    g2 +> add_vertex_if_not_present i
+  done;
+  g +> iter_edges (fun n1 n2 ->
+    let k1 = Hashtbl.find hscc n1 in
+    let k2 = Hashtbl.find hscc n2 in
+    g2 +> add_edge k1 k2;
+  );
+  g2
 
 (*****************************************************************************)
 (* Graph visualization and debugging *)

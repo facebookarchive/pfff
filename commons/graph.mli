@@ -44,7 +44,7 @@ val transitive_closure:
 val strongly_connected_components:
   'a graph -> ('a list array * ('a, int) Hashtbl.t)
 val strongly_connected_components_condensation:
-  'a graph -> ('a list) graph
+  'a graph -> ('a list array * ('a, int) Hashtbl.t) -> int graph
 
 (* debugging support *)
 val print_graph_generic :
