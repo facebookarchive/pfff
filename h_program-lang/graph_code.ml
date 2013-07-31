@@ -360,6 +360,17 @@ let strongly_connected_components_use_graph g =
   let (scc, hscc) = G.strongly_connected_components g.use in
   scc, hscc
 
+let top_down_numbering g (scc, hscc) =
+  let g2 = G.strongly_connected_components_condensation g.use (scc, hscc) in
+  let hdepth = G.depth_nodes g2 in
+  
+  let hres = Hashtbl.create 101 in
+  hdepth +> Hashtbl.iter (fun k v ->
+    let nodes_at_k = scc.(k) in
+    nodes_at_k +> List.iter (fun n -> Hashtbl.add hres n v)
+  );
+  hres
+
 (*****************************************************************************)
 (* Graph adjustments *)
 (*****************************************************************************)

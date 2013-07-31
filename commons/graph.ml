@@ -458,9 +458,42 @@ let strongly_connected_components_condensation g (scc, hscc) =
   g +> iter_edges (fun n1 n2 ->
     let k1 = Hashtbl.find hscc n1 in
     let k2 = Hashtbl.find hscc n2 in
-    g2 +> add_edge k1 k2;
+    if k1 <> k2
+    then g2 +> add_edge k1 k2;
   );
   g2
+
+let depth_nodes g =
+  if OG.Dfs.has_cycle g.og
+  then failwith "not a DAG";
+
+  let hres = Hashtbl.create 101 in
+
+  (* do in toplogical order *)
+  g.og +> OG.Topological.iter (fun v -> 
+    let ncurrent = 
+      if not (Hashtbl.mem hres v)
+      then 0
+      else Hashtbl.find hres v
+    in
+    Hashtbl.replace hres v ncurrent;
+    let xs = OG.succ g.og v in
+    xs +> List.iter (fun v2 ->
+      let nchild =
+        if not (Hashtbl.mem hres v2)
+        then ncurrent + 1
+        (* todo: max or min? *)
+        else min (Hashtbl.find hres v2) (ncurrent + 1)
+      in
+      Hashtbl.replace hres v2 nchild;
+    );
+  );
+
+  let hfinalres = Hashtbl.create 101 in
+  hres +> Hashtbl.iter (fun v n ->
+    Hashtbl.add hfinalres (key_of_vertex v g) n
+  );
+  hfinalres
 
 (*****************************************************************************)
 (* Graph visualization and debugging *)

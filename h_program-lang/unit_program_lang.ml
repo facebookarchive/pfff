@@ -123,6 +123,16 @@ let unittest =
           [|[("bar_mutual", E.Function); ("bar", E.Function)];
             [("foo", E.Function)]|]
           scc;
+
+        let numbering = G.top_down_numbering g (scc, hscc) in
+        let xs = Common.hash_to_list numbering +> Common.sort_by_val_lowfirst in
+        assert_equal
+          ~msg:"it should find the right ordering of nodes"
+          [("foo", E.Function), 0;
+           ("bar", E.Function), 1;
+           ("bar_mutual", E.Function), 1; 
+          ]
+          xs;
       );
 
     ];

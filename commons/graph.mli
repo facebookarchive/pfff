@@ -45,6 +45,9 @@ val strongly_connected_components:
   'a graph -> ('a list array * ('a, int) Hashtbl.t)
 val strongly_connected_components_condensation:
   'a graph -> ('a list array * ('a, int) Hashtbl.t) -> int graph
+(* assumes a DAG *)
+val depth_nodes:
+  'a graph -> ('a, int) Hashtbl.t
 
 (* debugging support *)
 val print_graph_generic :
