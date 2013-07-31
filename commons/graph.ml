@@ -471,21 +471,29 @@ let strongly_connected_components_condensation a b =
 
 
 let depth_nodes2 g =
+(*
   if OG.Dfs.has_cycle g.og
   then failwith "not a DAG";
+*)
 
   let hres = Hashtbl.create 101 in
 
   (* do in toplogical order *)
   g.og +> OG.Topological.iter (fun v -> 
+(*
     let ncurrent = 
       if not (Hashtbl.mem hres v)
       then 0
       else Hashtbl.find hres v
     in
     Hashtbl.replace hres v ncurrent;
+*)
+(*
     let xs = OG.succ g.og v in
+*)
+    let xs = [] in
     xs +> List.iter (fun v2 ->
+(*
       let nchild =
         if not (Hashtbl.mem hres v2)
         then ncurrent + 1
@@ -493,6 +501,8 @@ let depth_nodes2 g =
         else min (Hashtbl.find hres v2) (ncurrent + 1)
       in
       Hashtbl.replace hres v2 nchild;
+*)
+      ()
     );
   );
 
