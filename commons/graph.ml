@@ -432,7 +432,7 @@ let transitive_closure g =
 
 
 (* http://en.wikipedia.org/wiki/Strongly_connected_component *)
-let strongly_connected_components g =
+let strongly_connected_components2 g =
   let scc_array_vt = OG.Components.scc_array g.og in
   let scc_array = 
     scc_array_vt +> Array.map (fun xs -> xs +> List.map (fun vt -> 
@@ -448,8 +448,11 @@ let strongly_connected_components g =
     ));
   scc_array, h
 
+let strongly_connected_components a =
+  Common.profile_code "Graph.scc" (fun () -> strongly_connected_components2 a)
+
 (* http://en.wikipedia.org/wiki/Strongly_connected_component *)
-let strongly_connected_components_condensation g (scc, hscc) =
+let strongly_connected_components_condensation2 g (scc, hscc) =
   let g2 = create () in
   let n = Array.length scc in
   for i = 0 to n -1 do
@@ -462,8 +465,12 @@ let strongly_connected_components_condensation g (scc, hscc) =
     then g2 +> add_edge k1 k2;
   );
   g2
+let strongly_connected_components_condensation a b =
+  Common.profile_code "Graph.scc_condensation" (fun () ->
+    strongly_connected_components_condensation2 a b)
 
-let depth_nodes g =
+
+let depth_nodes2 g =
   if OG.Dfs.has_cycle g.og
   then failwith "not a DAG";
 
@@ -494,6 +501,9 @@ let depth_nodes g =
     Hashtbl.add hfinalres (key_of_vertex v g) n
   );
   hfinalres
+
+let depth_nodes a =
+  Common.profile_code "Graph.depth_nodes" (fun () -> depth_nodes2 a)
 
 (*****************************************************************************)
 (* Graph visualization and debugging *)
