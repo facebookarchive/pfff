@@ -362,7 +362,7 @@ let strongly_connected_components_use_graph g =
 
 let top_down_numbering g (scc, hscc) =
   let _g2 = G.strongly_connected_components_condensation g.use (scc, hscc) in
-  let _hdepth = G.depth_nodes g.use in
+  let _hdepth = G.depth_nodes g.use (* should be g2 here! *) in
   
   let hres = Hashtbl.create 101 in
 (*
