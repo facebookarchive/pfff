@@ -112,6 +112,10 @@ let unittest =
           then G.add_node f2 g;
           G.add_edge (f1, f2) G.Use g
         in
+        (* foo -> bar <-> bar_mutual
+         *          \
+         *           -> bar_bis
+         *)
         "foo" --> "bar";
         "bar" --> "bar_mutual";
         "bar_mutual" --> "bar";
@@ -135,6 +139,18 @@ let unittest =
            ("bar", E.Function), 1;
            ("bar_mutual", E.Function), 1;
            ("bar_bis", E.Function), 2;
+          ]
+          xs;
+
+        let numbering = G.bottom_up_numbering g in
+        let xs = Common.hash_to_list numbering +> Common.sort_by_val_lowfirst in
+        assert_equal
+          ~msg:"it should find the right ordering of nodes" 
+          [
+            ("bar_bis", E.Function), 0;
+            ("bar", E.Function), 1;
+            ("bar_mutual", E.Function), 1;
+            ("foo", E.Function), 2;
           ]
           xs;
       );

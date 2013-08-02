@@ -198,9 +198,9 @@ DONE    val iter_vertex : (V.t -> unit) -> t -> unit
     val find_vertex : t -> int -> V.t
 
 
-    val transitive_closure : ?reflexive:bool -> t -> t
+DONE    val transitive_closure : ?reflexive:bool -> t -> t
     val add_transitive_closure : ?reflexive:bool -> t -> t
-    val mirror : t -> t
+DONE    val mirror : t -> t
     val complement : t -> t
     val intersect : t -> t -> t
     val union : t -> t -> t
@@ -430,6 +430,10 @@ let transitive_closure g =
   let og' = OG.transitive_closure ~reflexive:false g.og in
   { g with og = og' }
 
+let mirror g = 
+  let og' = OG.mirror g.og in
+  { g with og = og';  }
+
 
 (* http://en.wikipedia.org/wiki/Strongly_connected_component *)
 let strongly_connected_components2 g =
@@ -489,8 +493,11 @@ let depth_nodes2 g =
       let nchild =
         if not (Hashtbl.mem hres v2)
         then ncurrent + 1
-        (* todo: max or min? *)
-        else min (Hashtbl.find hres v2) (ncurrent + 1)
+        (* todo: max or min? can lead to different metrics,
+         * either to know the longest path from the top, or to know some
+         * possible shortest path from the top.
+         *)
+        else max (Hashtbl.find hres v2) (ncurrent + 1)
       in
       Hashtbl.replace hres v2 nchild;
       ()

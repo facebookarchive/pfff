@@ -513,9 +513,13 @@ let test_top_down_layer graph_file =
   pr2 (spf "#scc = %d" (Array.length scc));
   let htopdown = GC.top_down_numbering g in
   pr2 (spf "computed numbering = %d" (Hashtbl.length htopdown));
+  let xs = htopdown +> Common.hash_to_list +> List.map snd in
+  let min = Common2.minimum xs in
+  let max = Common2.maximum xs in
+  pr2 (spf "min = %d, max = %d" min max);
 
   htopdown +> Common.hash_to_list +> Common.sort_by_val_lowfirst
-  +> Common.take_safe 100
+  +> Common.take_safe 10
   +> List.iter pr2_gen;
   ()
 

@@ -41,6 +41,8 @@ val shortest_path:
   'a -> 'a -> 'a graph -> 'a list
 val transitive_closure:
   'a graph -> 'a graph
+val mirror:
+  'a graph -> 'a graph
 val strongly_connected_components:
   'a graph -> ('a list array * ('a, int) Hashtbl.t)
 val strongly_connected_components_condensation:
@@ -48,6 +50,7 @@ val strongly_connected_components_condensation:
 (* assumes a DAG *)
 val depth_nodes:
   'a graph -> ('a, int) Hashtbl.t
+
 
 (* debugging support *)
 val print_graph_generic :

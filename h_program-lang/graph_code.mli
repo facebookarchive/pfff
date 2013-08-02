@@ -76,7 +76,11 @@ val group_edges_by_files_edges:
   ((Common.filename * Common.filename) * (node * node) list) list
 val strongly_connected_components_use_graph:
   graph -> (node list array * (node, int) Hashtbl.t)
+(* top nodes have 0 for their numbering *)
 val top_down_numbering:
+  graph -> (node, int) Hashtbl.t
+(* bottom nodes have 0 for their numbering *)
+val bottom_up_numbering:
   graph -> (node, int) Hashtbl.t
 
 
