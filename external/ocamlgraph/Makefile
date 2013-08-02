@@ -93,10 +93,10 @@ byte: $(CMA)
 opt: $(CMXA)
 
 ocamlgraph.cma: ocamlgraph.cmo
-	$(OCAMLC) $(INCLUDES) -a -o $@ $^
+	$(OCAMLC) $(INCLUDES) -a -g -o $@ $^
 
 ocamlgraph.cmxa: ocamlgraph.cmx
-	$(OCAMLOPT) $(INCLUDES) -a -o $@ $^
+	$(OCAMLOPT) $(INCLUDES) -a -g -o $@ $^
 
 ocamlgraph.cmi: ocamlgraph.cmo
 graph.o: graph.cmx

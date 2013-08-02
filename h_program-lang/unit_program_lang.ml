@@ -127,7 +127,7 @@ let unittest =
           |]
           scc;
 
-        let numbering = G.top_down_numbering g (scc, hscc) in
+        let numbering = G.top_down_numbering g in
         let xs = Common.hash_to_list numbering +> Common.sort_by_val_lowfirst in
         assert_equal
           ~msg:"it should find the right ordering of nodes"

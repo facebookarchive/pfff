@@ -511,7 +511,7 @@ let test_top_down_layer graph_file =
   let g = GC.load graph_file in
   let (scc, hscc) = GC.strongly_connected_components_use_graph g in
   pr2 (spf "#scc = %d" (Array.length scc));
-  let htopdown = GC.top_down_numbering g (scc, hscc) in
+  let htopdown = GC.top_down_numbering g in
   pr2 (spf "computed numbering = %d" (Hashtbl.length htopdown));
 
   htopdown +> Common.hash_to_list +> Common.sort_by_val_lowfirst
