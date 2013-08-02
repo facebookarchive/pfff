@@ -1,7 +1,7 @@
 (**************************************************************************)
 (*                                                                        *)
 (*  Ocamlgraph: a generic graph library for OCaml                         *)
-(*  Copyright (C) 2004-2008                                               *)
+(*  Copyright (C) 2004-2010                                               *)
 (*  Sylvain Conchon, Jean-Christophe Filliatre and Julien Signoles        *)
 (*                                                                        *)
 (*  This software is free software; you can redistribute it and/or        *)
@@ -14,8 +14,6 @@
 (*  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.                  *)
 (*                                                                        *)
 (**************************************************************************)
-
-(* $Id: imperative.mli,v 1.18 2006-05-12 14:07:16 filliatr Exp $ *)
 
 (** Imperative Graph Implementations. *)
 
@@ -34,28 +32,28 @@ module type S = sig
       - Abstract: type of vertices is abstract (in particular it is not equal
       to type of vertex labels
 
-      <b>How to choose between concrete and abstract vertices for my graph 
+      <b>How to choose between concrete and abstract vertices for my graph
       implementation</b>?
 
       Usually, if you fall into one of the following cases, use abstract
-      vertices: 
+      vertices:
       - you cannot provide efficient comparison/hash functions for vertices; or
       - you wish to get two different vertices with the same label.
 
       In other cases, it is certainly easier to use concrete vertices.  *)
 
   (** Imperative Unlabeled Graphs. *)
-  module Concrete (V: COMPARABLE) : 
+  module Concrete (V: COMPARABLE) :
     Sig.I with type V.t = V.t and type V.label = V.t and type E.t = V.t * V.t
 	  and type E.label = unit
 
   (** Abstract Imperative Unlabeled Graphs. *)
-  module Abstract(V: ANY_TYPE) : 
+  module Abstract(V: ANY_TYPE) :
     Sig.IM with type V.label = V.t and type E.label = unit
 
   (** Imperative Labeled Graphs. *)
   module ConcreteLabeled (V: COMPARABLE)(E: ORDERED_TYPE_DFT) :
-    Sig.I with type V.t = V.t and type V.label = V.t 
+    Sig.I with type V.t = V.t and type V.label = V.t
 	    and type E.t = V.t * E.t * V.t and type E.label = E.t
 
   (** Abstract Imperative Labeled Graphs. *)
@@ -65,19 +63,28 @@ module type S = sig
 end
 
 (** Imperative Directed Graphs. *)
-module Digraph : sig 
-  include S   
+module Digraph : sig
 
-  (** Imperative Unlabeled, bidirectional graph. 
+  include S
+
+  (** {2 Bidirectional graphs}
 
       Bidirectional graphs use more memory space (at worse the double) that
       standard concrete directional graphs. But accessing predecessors is in
       O(1) amortized instead of O(max(|V|,|E|)) and removing a vertex is in
       O(D*ln(D)) instead of O(|V|*ln(D)). D is the maximal degree of the
       graph. *)
-  module ConcreteBidirectional (V: COMPARABLE) : 
-    Sig.I with type V.t = V.t and type V.label = V.t and type E.t = V.t * V.t 
+
+  (** Imperative Unlabeled, bidirectional graph. *)
+  module ConcreteBidirectional (V: COMPARABLE) :
+    Sig.I with type V.t = V.t and type V.label = V.t and type E.t = V.t * V.t
           and type E.label = unit
+
+  (** Imperative Labeled and bidirectional graph. *)
+  module ConcreteBidirectionalLabeled(V:COMPARABLE)(E:ORDERED_TYPE_DFT) :
+    Sig.I with type V.t = V.t and type V.label = V.t
+          and type E.t = V.t * E.t * V.t and type E.label = E.t
+
 end
 
 (** Imperative Undirected Graphs. *)
@@ -88,8 +95,8 @@ module Matrix : sig
 
   module type S = sig
 
-    (** Vertices are integers in [0..n-1]. 
-        A vertex label is the vertex itself. 
+    (** Vertices are integers in [0..n-1].
+        A vertex label is the vertex itself.
         Edges are unlabeled. *)
 
     include Sig.I with type V.t = int and type V.label = int
@@ -99,7 +106,8 @@ module Matrix : sig
         Thus [make] must be used instead of [create]. *)
     val make : int -> t
 
-    (** Note: [add_vertex] and [remove_vertex] have no effect. *)
+  (** Note: [add_vertex] and [remove_vertex] have no effect.
+      [clear] only removes edges, not vertices. *)
 
   end
 
@@ -122,7 +130,7 @@ module UV : sig
   (** directed graphs *)
   module Digraph : sig
 
-    module Abstract(V: ANY_TYPE) : 
+    module Abstract(V: ANY_TYPE) :
       Sig.IM with type V.label = V.t and type E.label = unit
 
     module AbstractLabeled (V: ANY_TYPE)(E: ORDERED_TYPE_DFT) :
@@ -133,7 +141,7 @@ module UV : sig
   (** undirected graphs *)
   module Graph : sig
 
-    module Abstract(V: ANY_TYPE) : 
+    module Abstract(V: ANY_TYPE) :
       Sig.IM with type V.label = V.t and type E.label = unit
 
     module AbstractLabeled (V: ANY_TYPE)(E: ORDERED_TYPE_DFT) :
@@ -143,3 +151,9 @@ module UV : sig
 
 end
 ****)
+
+(*
+Local Variables:
+compile-command: "make -C .."
+End:
+*)

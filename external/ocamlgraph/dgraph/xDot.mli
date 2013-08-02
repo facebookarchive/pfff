@@ -2,7 +2,7 @@
 (*                                                                        *)
 (*  This file is part of OcamlGraph.                                      *)
 (*                                                                        *)
-(*  Copyright (C) 2009                                                    *)
+(*  Copyright (C) 2009-2010                                               *)
 (*    CEA (Commissariat à l'Énergie Atomique)                             *)
 (*                                                                        *)
 (*  you can redistribute it and/or modify it under the terms of the GNU   *)
@@ -17,19 +17,20 @@
 (*  See the file ../LICENSE for more details.                             *)
 (*                                                                        *)
 (*  Authors:                                                              *)
-(*    - Jean-Denis Koeck (jdkoeck@gmail.com)                              *)
 (*    - Julien Signoles  (Julien.Signoles@cea.fr)                         *)
+(*    - Jean-Denis Koeck (jdkoeck@gmail.com)                              *)
+(*    - Benoit Bataille  (benoit.bataille@gmail.com)                      *)
 (*                                                                        *)
 (**************************************************************************)
 
 (** Reads layout information from xdot ASTs *)
 
-open Ocamlgraph
+open Graph
 
 (** Simple layout types *)
 
 (** 2D coordinates *)
-type pos = float * float      
+type pos = float * float
 
 (** upper-left and bottom-right corners *)
 type bounding_box = pos * pos
@@ -41,7 +42,7 @@ type bounding_box = pos * pos
    Each node or edge layout thus contains several lists of
    drawing operations.
 
-   See http://www.graphviz.org/doc/info/output.html#d:xdot 
+   See http://www.graphviz.org/doc/info/output.html#d:xdot
    to understand the details of the layout informations.
 
 *)
@@ -57,8 +58,8 @@ type node_layout = {
 
 
 type cluster_layout = {
-  c_pos : pos;                        
-  c_bbox   : bounding_box;            
+  c_pos : pos;
+  c_bbox   : bounding_box;
   c_draw   : XDotDraw.operation list;
   c_ldraw  : XDotDraw.operation list;
 }
@@ -71,14 +72,6 @@ type edge_layout = {
   e_hldraw : XDotDraw.operation list; (** Head label drawing *)
   e_tldraw : XDotDraw.operation list; (** Tail label drawing *)
 }
-
-(** Main layout type *)
-type ('vertex, 'edge, 'cluster) graph_layout = {
-  vertex_layouts  : ('vertex,  node_layout)    Hashtbl.t;
-  edge_layouts    : ('edge,    edge_layout)    Hashtbl.t;
-  cluster_layouts : ('cluster, cluster_layout) Hashtbl.t;
-  bbox : bounding_box;
-} 
 
 (** Creates a node layout *)
 val mk_node_layout :
@@ -112,30 +105,40 @@ val mk_edge_layout :
 exception ParseError of string
 
 (** Instantiates a module which creates graph layouts from xdot files *)
-module Make(G : Ocamlgraph.Graphviz.GraphWithDotAttrs) : sig
+module Make(G : Graph.Graphviz.GraphWithDotAttrs) : sig
 
-  open G
+  module HV: Hashtbl.S with type key = G.V.t
+  module HE: Hashtbl.S with type key = G.E.t
+
+  (** Main layout type *)
+  type graph_layout =
+      { vertex_layouts  : node_layout HV.t;
+	edge_layouts    : edge_layout HE.t;
+	cluster_layouts : (string, cluster_layout) Hashtbl.t;
+	bbox : bounding_box }
 
   exception DotError of string
 
   (** Extracts a layout of an xdot file *)
-  val layout_of_xdot :
-    xdot_file:string -> G.t -> (G.vertex, G.edge, string) graph_layout
+  val layout_of_xdot: xdot_file:string -> G.t -> graph_layout
 
-  (** Using the dot file and graphviz, 
-      create an xdot and extracts its layout. *) 
-  val layout_of_dot :
-    ?cmd:string ->
-    dot_file:string -> G.t -> (G.vertex, G.edge, string) graph_layout
+  (** Using the dot file and graphviz,
+      create an xdot and extracts its layout. *)
+  val layout_of_dot: ?cmd:string -> dot_file:string -> G.t -> graph_layout
 
 end
 
 (** Converts and reads various layout informations *)
 
-(** Converts a coordinate from a dot file to a coordinate on the canvas *)
-val conv_coord : float * float -> float * float
-
+(** [bounding_box pos w h] converts a bounding box of center [pos], 
+    width [w] and height [h] from a Dot file to a pair of corners 
+    (lower left and upper right) in the world coordinate system.
+    @param pos position of the center of the node
+    @param w width of the node
+    @param h height of the node
+*)
 val bounding_box : (float * float) -> float -> float -> bounding_box
+
 val read_bounding_box : string -> bounding_box
 
 (** Reads xdot layouts from the dot ast *)

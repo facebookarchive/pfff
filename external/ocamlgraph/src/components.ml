@@ -1,7 +1,7 @@
 (**************************************************************************)
 (*                                                                        *)
 (*  Ocamlgraph: a generic graph library for OCaml                         *)
-(*  Copyright (C) 2004-2008                                               *)
+(*  Copyright (C) 2004-2010                                               *)
 (*  Sylvain Conchon, Jean-Christophe Filliatre and Julien Signoles        *)
 (*                                                                        *)
 (*  This software is free software; you can redistribute it and/or        *)
@@ -29,7 +29,6 @@ end
 module Make(G: G) = struct
 
   module H = Hashtbl.Make(G.V)
-  module S = Set.Make(G.V)
 
   let scc g =
     let root = H.create 997 in
@@ -37,46 +36,45 @@ module Make(G: G) = struct
     let stack = ref [] in
     let numdfs = ref 0 in
     let numcomp = ref 0 in
-    let rec pop x c = function
-      | (y, w) :: l when y > x -> 
-	  H.add hashcomp w !numcomp; 
-	  pop x (S.add w c) l
-      | l -> c,l
+    let rec pop x = function
+      | (y, w) :: l when y > x ->
+	  H.add hashcomp w !numcomp;
+	  pop x l
+      | l -> l
     in
-    let rec visit v = 
-      if not (H.mem root v) then
-	begin
-	  let n = incr numdfs; !numdfs in
-	  H.add root v n; 
-	  G.iter_succ 
-	    (fun w -> 
-	       visit w;
-	       if not (H.mem hashcomp w) then 
-		 H.replace root v (min (H.find root v) (H.find root w)))
-	    g v;
-	  if H.find root v = n then 
-	    (H.add hashcomp v !numcomp;
-	     let comp,s = pop n (S.add v S.empty) !stack in 
-	     stack:= s;
-	     incr numcomp)
-	  else stack := (n,v)::!stack;
-	end
-    in 
+    let rec visit v =
+      if not (H.mem root v) then begin
+	let n = incr numdfs; !numdfs in
+	H.add root v n;
+	G.iter_succ
+	  (fun w ->
+	    visit w;
+	    if not (H.mem hashcomp w) then
+	      H.replace root v (min (H.find root v) (H.find root w)))
+	  g v;
+	if H.find root v = n then begin
+	  H.add hashcomp v !numcomp;
+	  let s = pop n !stack in
+	  stack:= s;
+	  incr numcomp
+	end else
+          stack := (n,v) :: !stack;
+      end
+    in
     G.iter_vertex visit g;
-    (!numcomp,(fun v -> H.find hashcomp v))
+    !numcomp, (fun v -> H.find hashcomp v)
 
   let scc_array g =
     let n,f = scc g in
     let t = Array.make n [] in
-    G.iter_vertex 
-      (fun v -> let i = f v in t.(i) <- v::t.(i)) g;
+    G.iter_vertex (fun v -> let i = f v in t.(i) <- v :: t.(i)) g;
     t
 
   let scc_list g =
     let _,scc = scc g in
     let tbl = Hashtbl.create 97 in
-    G.iter_vertex 
-      (fun v -> 
+    G.iter_vertex
+      (fun v ->
 	 let n = scc v in
 	 try
 	   let l = Hashtbl.find tbl n in
@@ -85,6 +83,5 @@ module Make(G: G) = struct
 	   Hashtbl.add tbl n (ref [ v ]))
       g;
     Hashtbl.fold (fun _ v l -> !v :: l) tbl []
-
 
 end

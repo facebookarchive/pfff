@@ -2,7 +2,7 @@
 (*                                                                        *)
 (*  This file is part of OcamlGraph.                                      *)
 (*                                                                        *)
-(*  Copyright (C) 2009                                                    *)
+(*  Copyright (C) 2009-2010                                               *)
 (*    CEA (Commissariat à l'Énergie Atomique)                             *)
 (*                                                                        *)
 (*  you can redistribute it and/or modify it under the terms of the GNU   *)
@@ -17,327 +17,300 @@
 (*  See the file ../LICENSE for more details.                             *)
 (*                                                                        *)
 (*  Authors:                                                              *)
-(*    - Jean-Denis Koeck (jdkoeck@gmail.com)                              *)
 (*    - Julien Signoles  (Julien.Signoles@cea.fr)                         *)
+(*    - Jean-Denis Koeck (jdkoeck@gmail.com)                              *)
+(*    - Benoit Bataille  (benoit.bataille@gmail.com)                      *)
 (*                                                                        *)
 (**************************************************************************)
 
 open DGraphViewItem
-open Printf
 
 let ($) f x = f x
 
-(* SIMPLE VIEW CLASS *)
+let distance x y = if x > y then x - y else y - x
 
-(* Widget derived from the Gnome Canvas
-   Supports zooming and scrolling
-*)
-class ['v, 'e, 'c] view obj (model : ('v, 'e, 'c) DGraphModel.abstract_model) =
-  let ((x1,y2),(x2,y1)) = model#bounding_box in
-object(self)
-  inherit GnoCanvas.canvas obj
+class type ['vertex, 'edge, 'cluster] view = object
+  inherit GnoCanvas.canvas
+  method model : ('vertex, 'edge, 'cluster) DGraphModel.abstract_model
+  method get_node : 'vertex -> 'vertex view_item
+  method get_edge : 'edge -> 'edge view_item
+  method get_cluster : 'cluster -> 'cluster view_item
+  method iter_nodes:  ('vertex view_item -> unit) -> unit
+  method iter_edges: ('vertex view_item -> 'vertex view_item -> unit) -> unit
+  method iter_edges_e:  ('edge view_item -> unit) -> unit
+  method iter_clusters: ('cluster view_item -> unit) -> unit
+  method iter_succ: ('vertex view_item -> unit) -> 'vertex view_item -> unit
+  method iter_pred: ('vertex view_item -> unit) -> 'vertex view_item -> unit
+  method iter_succ_e: ('edge view_item -> unit) -> 'vertex view_item -> unit
+  method iter_pred_e: ('edge view_item -> unit) -> 'vertex view_item -> unit
+  method iter_associated_vertex:
+    ('vertex view_item -> unit) -> 'vertex view_item -> unit
+  method mem_edge: 'vertex view_item -> 'vertex view_item -> bool
+  method find_edge: 'vertex view_item -> 'vertex view_item -> 'edge view_item
+  method src: 'edge view_item -> 'vertex view_item
+  method dst: 'edge view_item -> 'vertex view_item
+  method zoom_factor : float
+  method zoom_to : float -> unit
+  method zoom_in : unit -> unit
+  method zoom_out : unit -> unit
+  method adapt_zoom : unit -> unit
+  method center_node: 'vertex view_item -> unit
+  method set_zoom_padding: float -> unit
+  method connect_highlighting_event: unit -> unit
+  method highlight: ?color: int32 * int32 -> 'vertex view_item -> unit
+  method dehighlight: 'vertex view_item -> unit
+end
 
-  method model = model
+module type S = sig
 
-  (* Hash tables from the model to the view items*)
-  val node_hash : ('v, 'v view_node) Hashtbl.t = Hashtbl.create 30
-  val edge_hash : ('e, 'e view_edge) Hashtbl.t = Hashtbl.create 30
-  val cluster_hash : ('c, 'c view_cluster) Hashtbl.t = Hashtbl.create 30
+  type vertex
+  type edge
+  type cluster
 
-  (* Canvas items creation *)
-    
-  method private add_vertex vertex =
-    try
-      let layout = model#get_vertex_layout vertex in
-      let item = DGraphViewItem.view_node ~view:(self:>common_view)
-	~vertex ~layout () in
-      Hashtbl.add node_hash vertex item
-    with Not_found -> ()
+  val view:
+    ?aa:bool (** Anti-aliasing *) ->
+    ?delay_node:(vertex -> bool) ->
+    ?delay_edge:(edge -> bool) ->
+    ?delay_cluster:(cluster -> bool) ->
+    ?border_width:int ->
+    ?width:int ->
+    ?height:int ->
+    ?packing:(GObj.widget -> unit) ->
+    ?show:bool ->
+    (vertex, edge, cluster) DGraphModel.abstract_model ->
+    (vertex, edge, cluster) view
+(** View as a Gnome Canvas.
+    Support zooming and scrolling. *)
 
-  method private add_edge edge =
-    try
-      let layout = model#get_edge_layout edge in
-      let item = DGraphViewItem.view_edge ~view:(self:>common_view)
-	~edge ~layout () in
-      Hashtbl.add edge_hash edge item
-    with Not_found -> ()
+end
 
-  method private add_cluster cluster =
-    let layout = model#get_cluster_layout cluster in
-    let item = DGraphViewItem.view_cluster ~view:(self :> common_view)
-      ~cluster ~layout () in
-    Hashtbl.add cluster_hash cluster item
- 
-  (* From model to view items *)
-  method get_node = Hashtbl.find node_hash
-  method get_edge = Hashtbl.find edge_hash
-  method get_cluster = Hashtbl.find cluster_hash
+(* ************************************************************************* *)
+(** View from a model *)
+(* ************************************************************************* *)
 
-  (* Iterate on nodes and edges *)
-  method iter_nodes f = Hashtbl.iter (fun _ v -> f v) node_hash
-  method iter_edges_e f = Hashtbl.iter (fun _ e -> f e) edge_hash
-  method iter_clusters f = Hashtbl.iter (fun _ c -> f c) cluster_hash
+module Make(V: Sig.HASHABLE)(E: Sig.HASHABLE)(C: Sig.HASHABLE) = struct
 
-  method iter_edges f =
-    model#iter_edges
-      (fun v1 v2 -> f (self#get_node v1) (self#get_node v2))
+  type vertex = V.t
+  type edge = E.t
+  type cluster = C.t
 
-  (* Iterate on successors of a node *)
-  method iter_succ f (node : 'v DGraphViewItem.view_node) =
-    let f' v = f (self#get_node v) in
-    model#iter_succ f' node#vertex
+  module HV = Hashtbl.Make(V)
+  module HE = Hashtbl.Make(E)
+  module HC = Hashtbl.Make(C)
 
-  (* Iterate on predecessors of a node *)
-  method iter_pred f (node : 'v DGraphViewItem.view_node) =
-    let f' v = f (self#get_node v) in
-    model#iter_pred f' node#vertex
+  (* Widget derived from Gnome Canvas.
+     Supports zooming and scrolling *)
+  class view
+    ?delay_node ?delay_edge ?delay_cluster
+    obj
+    (model : (V.t, E.t, C.t) DGraphModel.abstract_model)
+    =
+    let delay f v = match f with None -> false | Some f -> f v in
+    let (x1, y1), (x2, y2) = model#bounding_box in
+  object(self)
 
-  method iter_succ_e f (node : 'v view_node) =
-    let f' e = f (self#get_edge e) in
-    model#iter_succ_e f' node#vertex
+    inherit GnoCanvas.canvas obj
 
-  method iter_pred_e f (node : 'v view_node) =
-    let f' e = f (self#get_edge e) in
-    model#iter_pred_e f' node#vertex
+    method model = model
 
-  (* Membership functions *)
-  method mem_edge (n1:'v DGraphViewItem.view_node)
-                  (n2:'v DGraphViewItem.view_node) =
-    model#mem_edge n1#vertex n2#vertex
-  method find_edge (n1:'v DGraphViewItem.view_node)
-                   (n2:'v DGraphViewItem.view_node) =
-    self#get_edge (model#find_edge n1#vertex n2#vertex)
-  method src (e : 'e DGraphViewItem.view_edge) = self#get_node (model#src e#edge)
-  method dst (e : 'e DGraphViewItem.view_edge) = self#get_node (model#dst e#edge)
+    (* Hash tables from the model to the view items*)
+    val node_hash : V.t view_item HV.t = HV.create 17
+    val edge_hash : E.t view_item HE.t = HE.create 17
+    val cluster_hash : C.t view_item HC.t = HC.create 7
 
-  (* Zoom factor *)
-  val mutable zoom_f = 1.
-  method zoom_factor = zoom_f
+    (* Canvas items creation *)
 
-  method private set_zoom_f x =
-    if x > 1e-10 then zoom_f <- x
+    method private add_vertex vertex =
+      try
+	let layout = model#get_vertex_layout vertex in
+	let item =
+	  view_node
+	    ~delay:(delay delay_node vertex)
+	    ~view:(self :> common_view) ~vertex ~layout ()
+	in
+	HV.add node_hash vertex item
+      with Not_found ->
+	assert false
 
-  (* Zooms the canvas according to the zoom factor *)
-  method private zoom () =
-    self#set_pixels_per_unit zoom_f;
-    let zoom_text t =
-      let new_size = t#init_size *. zoom_f in
-      t#resize new_size in
-    self#iter_nodes (fun n -> List.iter zoom_text n#texts);
-    self#iter_edges_e (fun e -> List.iter zoom_text e#texts);
-    self#iter_clusters (fun c -> List.iter zoom_text c#texts)
+    method private add_edge edge =
+      try
+	let layout = model#get_edge_layout edge in
+	let item =
+	  view_edge
+	    ~delay:(delay delay_edge edge)
+	    ~view:(self:>common_view) ~edge ~layout ()
+	in
+	HE.add edge_hash edge item
+      with Not_found ->
+	assert false
 
-  (* Zoom to a particular factor *)
-  method zoom_to x =
-    self#set_zoom_f x;
-    self#zoom ()
+    method private add_cluster cluster =
+      let layout = model#get_cluster_layout cluster in
+      let item =
+	view_cluster
+	  ~delay:(delay delay_cluster cluster)
+	  ~view:(self :> common_view) ~cluster ~layout ()
+      in
+      HC.add cluster_hash cluster item
 
-  method zoom_in () =
-    self#set_zoom_f (zoom_f +. 0.1);
-    self#zoom ()
+    (* From model to view items *)
 
-  method zoom_out () =
-    self#set_zoom_f (zoom_f -. 0.1);
-    self#zoom ()
+    method get_node n =
+      try HV.find node_hash n with Not_found -> assert false
 
-  method adapt_zoom () =
-    let (x1',y1') = self#w2c ~wx:x1 ~wy:y1 in
-    let (x2',y2') = self#w2c ~wx:x2 ~wy:y2 in
-    let w = self#hadjustment#page_size in 
-    let h = self#vadjustment#page_size in 
-    let w_zoom = 0.9 *. w /. float_of_int (x2' - x1') in
-    let h_zoom = 0.9 *. h /. float_of_int (y2' - y1') in
-    self#zoom_to (min w_zoom h_zoom);
-    ignore $ self#scroll_to ~x:x1' ~y:y1';
+    method get_edge e =
+      try HE.find edge_hash e with Not_found -> assert false
 
-  (* EVENTS *)
+    method get_cluster c =
+      try HC.find cluster_hash c with Not_found -> assert false
 
-  (* Zoom with the keys *)
-  method private zoom_keys_ev ev =
-    match GdkEvent.Key.keyval ev with
+    (* Iterate on nodes and edges *)
+    method iter_nodes f = HV.iter (fun _ v -> f v) node_hash
+    method iter_edges_e f = HE.iter (fun _ e -> f e) edge_hash
+    method iter_clusters f = HC.iter (fun _ c -> f c) cluster_hash
+
+    method iter_edges f =
+      model#iter_edges (fun v1 v2 -> f (self#get_node v1) (self#get_node v2))
+
+    (* Iterate on successors of a node *)
+    method iter_succ f (node: 'v view_item) =
+      let f' v = f (self#get_node v) in
+      model#iter_succ f' node#item
+
+    (* Iterate on predecessors of a node *)
+    method iter_pred f (node: 'v view_item) =
+      let f' v = f (self#get_node v) in
+      model#iter_pred f' node#item
+
+    method iter_succ_e f (node: 'v view_item) =
+      let f' e = f (self#get_edge e) in
+      model#iter_succ_e f' node#item
+
+    method iter_pred_e f (node: 'v view_item) =
+      let f' e = f (self#get_edge e) in
+      model#iter_pred_e f' node#item
+
+    (* Iterate on associated nodes *)
+    method iter_associated_vertex f (node: 'v view_item) =
+      let f' v = f (self#get_node v) in
+      model#iter_associated_vertex f' node#item
+
+    (* Membership functions *)
+
+    method mem_edge (n1:'v view_item) (n2:'v view_item) =
+      model#mem_edge n1#item n2#item
+
+    method find_edge (n1:'v view_item) (n2:'v view_item) =
+      self#get_edge (model#find_edge n1#item n2#item)
+
+    method src (e: 'e view_item) = self#get_node (model#src e#item)
+    method dst (e: 'e view_item) = self#get_node (model#dst e#item)
+
+    (* Zoom factor *)
+    val mutable zoom_f = 1.
+    method zoom_factor = zoom_f
+
+    val mutable zoom_padding = 0.1
+    method set_zoom_padding n = zoom_padding <- n
+
+    method private set_zoom_f x = if x > 1e-10 then zoom_f <- x
+
+    (* Zoom to a particular factor *)
+    method zoom_to x =
+      self#set_zoom_f x;
+      self#set_pixels_per_unit zoom_f;
+      self#iter_clusters (fun c -> c#zoom_text zoom_f);
+      self#iter_nodes (fun n -> n#zoom_text zoom_f);
+      self#iter_edges_e (fun e -> e#zoom_text zoom_f)
+
+    method zoom_in () = self#zoom_to (zoom_f +. zoom_padding *. zoom_f)
+    method zoom_out () = self#zoom_to (zoom_f -. zoom_padding *. zoom_f)
+    method center_node (node:V.t view_item) = 
+      node#center ()
+(*      self#zoom_in ();*)
+
+
+    method adapt_zoom () =
+      let width = self#hadjustment#page_size in
+      let height = self#vadjustment#page_size in
+      let w_zoom = width /. abs_float (x1-.x2) in
+      let h_zoom = height /. abs_float (y1-.y2) in
+      self#zoom_to (min 1. (min w_zoom h_zoom))
+
+    (* EVENTS *)
+
+    (* Zoom with the keys *)
+    method private zoom_keys_ev ev =
+      match GdkEvent.Key.keyval ev with
       | k when k = GdkKeysyms._KP_Subtract -> self#zoom_out (); true
-      | k when k = GdkKeysyms._KP_Add   -> self#zoom_in ();  true
+      | k when k = GdkKeysyms._KP_Add -> self#zoom_in (); true
       | _ -> false
 
-  (* Zoom with the mouse *)
-  method private zoom_mouse_ev ev =
-    match GdkEvent.Scroll.direction ev with
-      | `UP ->   self#zoom_in ();  true
+    (* Zoom with the mouse *)
+    method private zoom_mouse_ev ev =
+      match GdkEvent.Scroll.direction ev with
+      | `UP -> self#zoom_in (); true
       | `DOWN -> self#zoom_out (); true
       | _ -> false
 
-  initializer
-    (* Create and add items from the model vertices, edges and clusters *)
-    model#iter_vertex self#add_vertex;
-    model#iter_edges_e self#add_edge;
-    model#iter_clusters self#add_cluster;
+    method highlight ?color node =
+      let h e = e#highlight ?color () in
+      h node;
+      self#iter_associated_vertex (fun v ->
+	h v;
+	self#iter_succ_e h v;
+	self#iter_pred_e h v)
+	node
 
-    (* Set up scroll region *)
-    ignore $ self#set_scroll_region ~x1 ~y1 ~x2 ~y2;
-    let (x1',y1') = self#w2c ~wx:x1 ~wy:y1 in
-    ignore $ self#scroll_to ~x:x1' ~y:y1';
+    method dehighlight node =
+      let h e = e#dehighlight () in
+      h node;
+      self#iter_associated_vertex (fun v ->
+	h v;
+	self#iter_succ_e h v;
+	self#iter_pred_e h v)
+	node
 
-    (* Attach zoom events *)
-    ignore $ self#event#connect#key_press self#zoom_keys_ev;
-    ignore $ self#event#connect#scroll self#zoom_mouse_ev;
+    method connect_highlighting_event () =
+      let connect node =
+	let callback = function
+	  | `MOTION_NOTIFY _ -> self#highlight node; false
+	  | `LEAVE_NOTIFY _ -> self#dehighlight node; false
+	  | _ -> false
+	in
+	node#connect_event ~callback
+      in
+      self#iter_nodes connect
 
-    (* Set background color *)
-    (*self#misc#modify_bg [`NORMAL, `NAME model#background_color];*)
+    initializer
+      (* Create and add items from the model vertices, edges and clusters *)
+      model#iter_clusters self#add_cluster;
+      model#iter_vertex self#add_vertex;
+      model#iter_edges_e self#add_edge;
+      (* Scroll region management *)
+      ignore $ self#set_center_scroll_region true;
+      ignore $ self#set_scroll_region ~x1 ~y1 ~x2 ~y2 ;
+      (* Attach zoom events *)
+      ignore $ self#event#connect#key_press self#zoom_keys_ev;
+      ignore $ self#event#connect#scroll self#zoom_mouse_ev;
+
+  end
+
+  let view
+      ?(aa=false) ?delay_node ?delay_edge ?delay_cluster
+      ?border_width ?width ?height ?packing ?show
+      (model:(vertex, edge, cluster) DGraphModel.abstract_model) =
+    let canvas = 
+      GnoCanvas.canvas ~aa ?border_width ?width ?height ?show ?packing () 
+    in
+    (* Grab focus to process keyboard input *)
+    ignore $ canvas#event#connect#enter_notify 
+      (fun _ -> canvas#misc#grab_focus () ; false); 
+    let view = 
+      new view ?delay_node ?delay_edge ?delay_cluster
+        (Gobject.unsafe_cast canvas#as_widget) 
+        model 
+    in 
+    view 
+
 end
-
-(* Constructor copied from gnoCanvas.ml *)
-let view ?(aa=false) model =
-  GContainer.pack_container [] ~create:(fun pl ->
-    let w =
-      if aa then GnomeCanvas.Canvas.new_canvas_aa ()
-      else GnomeCanvas.Canvas.new_canvas () in
-    Gobject.set_params w pl;
-    new view w model)
-
-(* VIEW CLASS AUGMENTED WITH HIGHLIGHTING AND FOCUS *)
-
-class ['v, 'e, 'c] highlight_focus_view obj model =
-object(self)
-  inherit ['v, 'e, 'c] view obj model as view
-
-  (* EVENTS *)
-    
-  (* Highlighting *)
-  method private highlight_node_ev node = function
-    | `MOTION_NOTIFY _ ->
-	node#highlight ();
-	(* Highlight successors *)
-	view#iter_succ_e
-	  (fun e -> e#highlight ())
-	  node;
-	false
-    | `LEAVE_NOTIFY _ ->
-	node#dehighlight ();
-	(* De-highlight successors *)
-	view#iter_succ_e
-	  (fun e -> e#dehighlight ())
-	  node;
-	false
-    | _ -> false
-
-  method private center_node_ev node = function
-    | `TWO_BUTTON_PRESS _ -> node#center (); true
-    | _ -> false
-
-  initializer
-    (* Connect highligh events on node shapes *)
-    let connect_node n =
-      let highlight = self#highlight_node_ev n in
-      let center = self#center_node_ev n in
-
-      n#iter_shapes (fun s -> ignore $ s#connect#event ~callback:highlight);
-      n#iter_texts  (fun t -> ignore $ t#connect#event ~callback:highlight);
-
-      n#iter_shapes (fun s -> ignore $ s#connect#event ~callback:center);
-      n#iter_texts  (fun t -> ignore $ t#connect#event ~callback:center) in
-
-    self#iter_nodes connect_node;
-end
-
-let highlight_focus_view ?(aa=false) model =
-  GContainer.pack_container [] ~create:(fun pl ->
-    let w =
-      if aa then GnomeCanvas.Canvas.new_canvas_aa ()
-      else GnomeCanvas.Canvas.new_canvas () in
-    Gobject.set_params w pl;
-    new highlight_focus_view w model)
-
-(* LABELED VIEW *)
-(* View augmented with a label showing the dot name of the node under the pointer *)
-class ['v,'e,'c] labeled_view obj model (label:GMisc.label) =
-object(self)
-  inherit ['v,'e,'c] highlight_focus_view obj model as view
-
-  (* EVENTS *)
-  method private show_node_name node = function
-    | `ENTER_NOTIFY _ ->
-       let layout = model#get_vertex_layout node#vertex in
-       let name = layout.XDot.n_name in
-       label#set_text name;
-       false
-    | `LEAVE_NOTIFY _ ->
-	label#set_text "";
-	false
-    | _ -> false
-
-  initializer
-  let connect_node n =
-    let callback = self#show_node_name n in
-    n#iter_shapes (fun s -> ignore $ s#connect#event ~callback);
-    n#iter_texts  (fun t -> ignore $ t#connect#event ~callback) in
-  self#iter_nodes connect_node
-end
-
-let labeled_view ?(aa=false) model label =
-  GContainer.pack_container [] ~create:(fun pl ->
-    let w =
-      if aa then GnomeCanvas.Canvas.new_canvas_aa ()
-      else GnomeCanvas.Canvas.new_canvas () in
-    Gobject.set_params w pl;
-    new labeled_view w model label)
-
-(* VIEW CLASS AUGMENTED WIDTH DRAGGING *)
-(* Not really working, not exported *)
-class ['v, 'e, 'c] drag_view obj model =
-object(self)
-  inherit ['v, 'e, 'c] highlight_focus_view obj model
-    
-  val mutable drag = false
-  val mutable prev_pos = (0.,0.)
-
-  (* EVENTS *)
-    
-  method private drag_start button =
-    if not drag then begin
-      drag <- true;
-      let wx,wy = GdkEvent.Button.x button, GdkEvent.Button.y button in
-      let x,y = self#w2c_d ~wx ~wy in
-      prev_pos <- x, y
-    end;
-    false
-
-  method private drag_end _button =
-    if drag then begin
-      drag <- false;  
-    end;
-    false
-
-  method private drag_move motion =
-    let wx',wy' = GdkEvent.Motion.x motion, GdkEvent.Motion.y motion in
-    let x',y' = self#w2c_d ~wx:wx' ~wy:wy' in
-
-    if drag then begin
-      let x,y = prev_pos in
-      let dx, dy = (x'-.x) , (y'-.y)  in
-	      
-      let offx, offy = self#hadjustment#value, self#vadjustment#value in
-      let f = self#zoom_factor in
-      let dx_scroll = dx /. f in
-      let dy_scroll = dy /. f in
-      
-      self#hadjustment#set_value (offx -. dx_scroll);
-      self#vadjustment#set_value (offy -. dy_scroll);
-    end;
-
-    prev_pos <- (x',y');
-    false
-
-  initializer
-    (* Attach drag events *)
-    ignore $ self#event#connect#button_press self#drag_start;
-    ignore $ self#event#connect#button_release self#drag_end;
-    ignore $ self#event#connect#motion_notify self#drag_move
-end
-
-let drag_view ?(aa=false) model =
-  GContainer.pack_container [] ~create:(fun pl ->
-    let w =
-      if aa then GnomeCanvas.Canvas.new_canvas_aa ()
-      else GnomeCanvas.Canvas.new_canvas () in
-    Gobject.set_params w pl;
-    new highlight_focus_view w model)

@@ -1,7 +1,7 @@
 (**************************************************************************)
 (*                                                                        *)
 (*  Ocamlgraph: a generic graph library for OCaml                         *)
-(*  Copyright (C) 2004-2008                                               *)
+(*  Copyright (C) 2004-2010                                               *)
 (*  Sylvain Conchon, Jean-Christophe Filliatre and Julien Signoles        *)
 (*                                                                        *)
 (*  This software is free software; you can redistribute it and/or        *)
@@ -15,11 +15,10 @@
 (*                                                                        *)
 (**************************************************************************)
 
-(* $Id: traverse.ml,v 1.17 2004-11-04 13:10:28 filliatr Exp $ *)
-
 (* Graph traversal *)
 
 module type G = sig
+  val is_directed : bool
   type t
   module V : Sig.COMPARABLE
   val iter_vertex : (V.t -> unit) -> t -> unit
@@ -32,7 +31,7 @@ end
 module Dfs(G : G) = struct
   module H = Hashtbl.Make(G.V)
 
-  let iter ?(pre=fun _ -> ()) ?(post=fun _ -> ()) g = 
+  let iter ?(pre=fun _ -> ()) ?(post=fun _ -> ()) g =
     let h = H.create 65537 in
     let rec visit v =
       if not (H.mem h v) then begin
@@ -46,7 +45,7 @@ module Dfs(G : G) = struct
 
   let postfix post g = iter ~post g
 
-  let iter_component ?(pre=fun _ -> ()) ?(post=fun _ -> ()) g v = 
+  let iter_component ?(pre=fun _ -> ()) ?(post=fun _ -> ()) g v =
     let h = H.create 65537 in
     let rec visit v =
       H.add h v ();
@@ -66,17 +65,109 @@ module Dfs(G : G) = struct
     let h = H.create 65537 in
     let rec visit v =
       H.add h v true;
-      G.iter_succ 
-	(fun w -> try if H.find h w then raise Exit with Not_found -> visit w) 
+      G.iter_succ
+	(fun w -> try if H.find h w then raise Exit with Not_found -> visit w)
 	g v;
       H.replace h v false
     in
-    try G.iter_vertex (fun v -> if not (H.mem h v) then visit v) g; false 
+    try G.iter_vertex (fun v -> if not (H.mem h v) then visit v) g; false
     with Exit -> true
+
+  let has_cycle_undirected g =
+    let h = H.create 65537 in
+    let father = H.create 65537 in
+    let is_father u v = (* u is the father of v in the DFS descent *)
+      try G.V.equal (H.find father v) u with Not_found -> false
+    in
+    let rec visit v =
+      H.add h v true;
+      G.iter_succ
+	(fun w ->
+	   try if H.find h w && not (is_father w v) then raise Exit
+	   with Not_found -> H.add father w v; visit w)
+	g v;
+      H.remove father v;
+      H.replace h v false
+    in
+    try G.iter_vertex (fun v -> if not (H.mem h v) then visit v) g; false
+    with Exit -> true
+
+  let has_cycle g =
+    if G.is_directed then has_cycle g else has_cycle_undirected g
 
   module Tail = struct
 
-    let iter f g = 
+    let has_cycle g =
+      let h = H.create 65537 in
+      let stack = Stack.create () in
+      let loop () =
+	while not (Stack.is_empty stack) do
+	  let v = Stack.top stack in
+	  if H.mem h v then begin
+	    (* we are now done with node v *)
+	    (* assert (H.find h v = true); *)
+	    H.replace h v false;
+	    ignore (Stack.pop stack)
+	  end else begin
+	    (* we start DFS from node v *)
+	    H.add h v true;
+	    G.iter_succ
+	      (fun w ->
+		 try if H.find h w then raise Exit
+		 with Not_found -> Stack.push w stack)
+	      g v;
+	  end
+	done
+      in
+      try
+	G.iter_vertex
+	  (fun v ->
+	     if not (H.mem h v) then begin Stack.push v stack; loop () end)
+	  g;
+	false
+      with Exit ->
+	true
+
+    let has_cycle_undirected g =
+      let h = H.create 65537 in
+      let father = H.create 65537 in
+      let is_father u v = (* u is the father of v in the DFS descent *)
+	try G.V.equal (H.find father v) u with Not_found -> false
+      in
+      let stack = Stack.create () in
+      let loop () =
+	while not (Stack.is_empty stack) do
+	  let v = Stack.top stack in
+	  if H.mem h v then begin
+	    (* we are now done with node v *)
+	    (* assert (H.find h v = true); *)
+	    H.remove father v;
+	    H.replace h v false;
+	    ignore (Stack.pop stack)
+	  end else begin
+	    (* we start DFS from node v *)
+	    H.add h v true;
+	    G.iter_succ
+	      (fun w ->
+		 try if H.find h w && not (is_father w v) then raise Exit
+		 with Not_found -> H.add father w v; Stack.push w stack)
+	      g v;
+	  end
+	done
+      in
+      try
+	G.iter_vertex
+	  (fun v ->
+	     if not (H.mem h v) then begin Stack.push v stack; loop () end)
+	  g;
+	false
+      with Exit ->
+	true
+
+    let has_cycle g =
+      if G.is_directed then has_cycle g else has_cycle_undirected g
+
+    let iter f g =
       let h = H.create 65537 in
       let stack = Stack.create () in
       let loop () =
@@ -85,17 +176,17 @@ module Dfs(G : G) = struct
 	  if not (H.mem h v) then begin
 	    H.add h v ();
 	    f v;
-	    G.iter_succ 
+	    G.iter_succ
 	      (fun w -> if not (H.mem h w) then Stack.push w stack) g v
 	  end
 	done
       in
-      G.iter_vertex 
-	(fun v -> 
+      G.iter_vertex
+	(fun v ->
 	  if not (H.mem h v) then begin Stack.push v stack; loop () end)
 	g
 
-    let iter_component f g v0 = 
+    let iter_component f g v0 =
       let h = H.create 65537 in
       let stack = Stack.create () in
       Stack.push v0 stack;
@@ -111,6 +202,7 @@ module Dfs(G : G) = struct
   end
 
   let prefix = Tail.iter
+  let has_cycle = Tail.has_cycle
   let prefix_component = Tail.iter_component
 
   (* step-by-step iterator *)
@@ -129,7 +221,7 @@ module Dfs(G : G) = struct
     | v :: _  -> v
 
   let step (s,st,g) = match st with
-    | [] -> 
+    | [] ->
 	raise Exit
     | v :: st ->
 	let s' = S.add v s in
@@ -146,12 +238,12 @@ end
 module Bfs(G : G) = struct
   module H = Hashtbl.Make(G.V)
 
-  let iter f g = 
+  let iter f g =
     let h = H.create 65537 in
     let q = Queue.create () in
     (* invariant: [h] contains exactly the vertices which have been pushed *)
-    let push v = 
-      if not (H.mem h v) then begin H.add h v (); Queue.add v q end 
+    let push v =
+      if not (H.mem h v) then begin H.add h v (); Queue.add v q end
     in
     let loop () =
       while not (Queue.is_empty q) do
@@ -162,12 +254,12 @@ module Bfs(G : G) = struct
     in
     G.iter_vertex (fun v -> push v; loop ()) g
 
-  let iter_component f g v0 = 
+  let iter_component f g v0 =
     let h = H.create 65537 in
     let q = Queue.create () in
     (* invariant: [h] contains exactly the vertices which have been pushed *)
-    let push v = 
-      if not (H.mem h v) then begin H.add h v (); Queue.add v q end 
+    let push v =
+      if not (H.mem h v) then begin H.add h v (); Queue.add v q end
     in
     push v0;
     while not (Queue.is_empty q) do
@@ -185,11 +277,11 @@ module Bfs(G : G) = struct
     let empty = [], []
     let is_empty = function [], [] -> true | _ -> false
     let push x (i,o) = (x :: i, o)
-    let pop = function 
-      | i, y :: o -> y, (i,o) 
+    let pop = function
+      | i, y :: o -> y, (i,o)
       | [], [] -> raise Empty
-      | i, [] -> match List.rev i with 
-	  | x :: o -> x, ([], o) 
+      | i, [] -> match List.rev i with
+	  | x :: o -> x, ([], o)
 	  | [] -> assert false
     let peek q = fst (pop q)
   end
@@ -203,26 +295,26 @@ module Bfs(G : G) = struct
     let s = G.fold_vertex S.add g S.empty in
     s, Q.empty, g
 
-  let get (s,q,g) = 
+  let get (s,q,g) =
     if Q.is_empty q then
       if S.is_empty s then raise Exit else S.choose s
     else
       Q.peek q
 
   let step (s,q,g) =
-    let push v (s,q as acc) = 
-      if S.mem v s then 
+    let push v (s,q as acc) =
+      if S.mem v s then
 	S.remove v s, Q.push v q
       else
-	acc 
+	acc
     in
-    let v,s',q' = 
+    let v,s',q' =
       if Q.is_empty q then begin
 	if S.is_empty s then raise Exit;
 	let v = S.choose s in
 	v, S.remove v s, q
       end else
-	let v,q' = Q.pop q in 
+	let v,q' = Q.pop q in
 	v, s, q'
     in
     let s'',q'' = G.fold_succ push g v (s',q') in
@@ -266,15 +358,15 @@ module Mark(G : GM) = struct
     G.Mark.clear g;
     let rec visit v =
       G.Mark.set v 1;
-      G.iter_succ 
-	(fun w -> 
+      G.iter_succ
+	(fun w ->
 	   let m = G.Mark.get w in
 	   if m = 1 then raise Exit;
-	   if m = 0 then visit w) 
+	   if m = 0 then visit w)
 	g v;
       G.Mark.set v 2
     in
-    try G.iter_vertex (fun v -> if G.Mark.get v = 0 then visit v) g; false 
+    try G.iter_vertex (fun v -> if G.Mark.get v = 0 then visit v) g; false
     with Exit -> true
 
 end

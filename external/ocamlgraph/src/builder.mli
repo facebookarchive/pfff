@@ -1,7 +1,7 @@
 (**************************************************************************)
 (*                                                                        *)
 (*  Ocamlgraph: a generic graph library for OCaml                         *)
-(*  Copyright (C) 2004-2008                                               *)
+(*  Copyright (C) 2004-2010                                               *)
 (*  Sylvain Conchon, Jean-Christophe Filliatre and Julien Signoles        *)
 (*                                                                        *)
 (*  This software is free software; you can redistribute it and/or        *)
@@ -14,8 +14,6 @@
 (*  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.                  *)
 (*                                                                        *)
 (**************************************************************************)
-
-(* $Id: builder.mli,v 1.13 2004-02-20 14:37:40 signoles Exp $ *)
 
 (** Graph builders in order to persistent/imperative graphs sharing a same
     signature. *)
@@ -35,6 +33,9 @@ module type S = sig
   val add_vertex : G.t -> G.V.t -> G.t
   val add_edge : G.t -> G.V.t -> G.V.t -> G.t
   val add_edge_e : G.t -> G.E.t -> G.t
+  val remove_vertex : G.t -> G.V.t -> G.t
+  val remove_edge : G.t -> G.V.t -> G.V.t -> G.t
+  val remove_edge_e : G.t -> G.E.t -> G.t
 end
 
 module type INT = S with type G.V.label = int
@@ -46,3 +47,9 @@ module P(G : Sig.P) : S with module G = G
 
 module I(G : Sig.I) : S with module G = G
   (** Imperative Graphs Builders. *)
+
+(*
+Local Variables:
+compile-command: "make -C .."
+End:
+*)

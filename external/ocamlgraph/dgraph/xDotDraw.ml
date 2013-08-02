@@ -2,7 +2,7 @@
 (*                                                                        *)
 (*  This file is part of OcamlGraph.                                      *)
 (*                                                                        *)
-(*  Copyright (C) 2009                                                    *)
+(*  Copyright (C) 2009-2010                                               *)
 (*    CEA (Commissariat à l'Énergie Atomique)                             *)
 (*                                                                        *)
 (*  you can redistribute it and/or modify it under the terms of the GNU   *)
@@ -17,8 +17,9 @@
 (*  See the file ../LICENSE for more details.                             *)
 (*                                                                        *)
 (*  Authors:                                                              *)
-(*    - Jean-Denis Koeck (jdkoeck@gmail.com)                              *)
 (*    - Julien Signoles  (Julien.Signoles@cea.fr)                         *)
+(*    - Jean-Denis Koeck (jdkoeck@gmail.com)                              *)
+(*    - Benoit Bataille  (benoit.bataille@gmail.com)                      *)
 (*                                                                        *)
 (**************************************************************************)
 
@@ -61,8 +62,8 @@ type draw_state = {
 let copy_draw_st ds = { ds with fill_color = ds.fill_color }
 
 let default_draw_state () =
-  { fill_color = "white";
-    pen_color = "black";
+  { fill_color = "#FFFFFF";
+    pen_color = "#000000";
     font = 0., "";
     style = [] }
 
@@ -73,17 +74,34 @@ let set_style st s = st.style <- s
 
 (* STRING OPERATIONS *)
 
-let suffix s i = try String.sub s i ((String.length s)-i) 
+let suffix s i = try String.sub s i ((String.length s)-i)
                  with Invalid_argument("String.sub") -> ""
 
 (** Splits a string with a separator
    returns a list of strings *)
-let split c s = 
-  let rec split_from n = 
-    try let p = String.index_from s n c 
-        in (String.sub s n (p-n)) :: (split_from (p+1)) 
-    with Not_found -> [ suffix s n ] 
+let split c s =
+  let rec split_from n =
+    try let p = String.index_from s n c
+        in (String.sub s n (p-n)) :: (split_from (p+1))
+    with Not_found -> [ suffix s n ]
   in if s="" then [] else split_from 0 ;;
+
+
+let string_scale_size font size s = 
+  let context = Gdk.Screen.get_pango_context () in
+  let font_description = Pango.Font.from_string font in
+  Pango.Font.modify font_description
+    ~size:(int_of_float (size *. (float Pango.scale)))
+    ();
+  Pango.Context.set_font_description context font_description;
+  let layout = Pango.Layout.create context in
+  Pango.Layout.set_text layout s;
+  let width, height = Pango.Layout.get_pixel_size layout in
+  let width = float width in
+  let linear_width = size*. (float (String.length s)) in
+  size*.width/.linear_width,
+  float height
+
 
 (* HSV TO RGB CONVERSION *)
 
@@ -241,7 +259,7 @@ let parse_bytes st =
     incr st;
     get_n n st
   end
-  
+
 let parse_ellipse constr state =
   (* pos width height *)
   let pos = get_pos state in
@@ -249,15 +267,17 @@ let parse_ellipse constr state =
   let h = get_float state in
   constr (pos, w, h)
 
+let invert_y_pos (x,y) = (x,-.y)
+  
 let parse_filled_ellipse =
-  parse_ellipse (fun (p,w,h) -> Filled_ellipse (p,w,h))
+  parse_ellipse (fun (p,w,h) -> Filled_ellipse (invert_y_pos p,w,h))
 
 let parse_unfilled_ellipse =
-  parse_ellipse (fun (p,w,h) -> Unfilled_ellipse (p,w,h))
+  parse_ellipse (fun (p,w,h) -> Unfilled_ellipse (invert_y_pos p,w,h))
 
 let parse_points state =
   let n = get_int state in
-  Array.init n (fun _ -> get_pos state)
+  Array.init n (fun _ -> invert_y_pos (get_pos state))
 
 let parse_filled_polygon state =
   Filled_polygon (parse_points state)
@@ -275,7 +295,7 @@ let parse_filled_bspline state =
   Filled_bspline (parse_points state)
 
 let parse_text state =
-  let pos = get_pos state in
+  let pos = invert_y_pos (get_pos state) in
   let anchor = get_anchor state in
   let width = get_float state in
   let str = parse_bytes state in
@@ -301,7 +321,7 @@ let parse_style state =
     | "dashed" ->  Dashed
     | "dotted" ->  Dotted
     | "solid" ->  Solid
-    | "blod" ->  Bold
+    | "bold" ->  Bold
     | s -> StyleString s in
   let str = parse_bytes state in
   Style (List.map read (split ',' str))

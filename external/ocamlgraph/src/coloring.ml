@@ -1,7 +1,7 @@
 (**************************************************************************)
 (*                                                                        *)
 (*  Ocamlgraph: a generic graph library for OCaml                         *)
-(*  Copyright (C) 2004-2008                                               *)
+(*  Copyright (C) 2004-2010                                               *)
 (*  Sylvain Conchon, Jean-Christophe Filliatre and Julien Signoles        *)
 (*                                                                        *)
 (*  This software is free software; you can redistribute it and/or        *)
@@ -16,6 +16,7 @@
 (**************************************************************************)
 
 module type GM = sig
+  val is_directed : bool
   type t
   val nb_vertex : t -> int
   module V : Sig.COMPARABLE
@@ -92,6 +93,7 @@ end
 (** Graph coloring for graphs without marks: we use an external hashtbl *)
 
 module type G = sig
+  val is_directed : bool
   type t
   val nb_vertex : t -> int
   module V : Sig.COMPARABLE

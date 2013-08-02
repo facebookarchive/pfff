@@ -1,7 +1,7 @@
 (**************************************************************************)
 (*                                                                        *)
 (*  Ocamlgraph: a generic graph library for OCaml                         *)
-(*  Copyright (C) 2004-2008                                               *)
+(*  Copyright (C) 2004-2010                                               *)
 (*  Sylvain Conchon, Jean-Christophe Filliatre and Julien Signoles        *)
 (*                                                                        *)
 (*  This software is free software; you can redistribute it and/or        *)
@@ -15,14 +15,12 @@
 (*                                                                        *)
 (**************************************************************************)
 
-(* $Id: util.mli,v 1.12 2005-03-31 13:32:51 filliatr Exp $ *)
-
 (** Some useful operations. *)
 
 open Sig
 
 (** Cartesian product of two ordered types. *)
-module OTProduct(X: ORDERED_TYPE)(Y: ORDERED_TYPE) : 
+module OTProduct(X: ORDERED_TYPE)(Y: ORDERED_TYPE) :
   ORDERED_TYPE with type t = X.t * Y.t
 
 (** Cartesian product of two hashable types. *)
@@ -30,7 +28,7 @@ module HTProduct(X: HASHABLE)(Y: HASHABLE) :
   HASHABLE with type t = X.t * Y.t
 
 (** Cartesian product of two comparable types. *)
-module CMPProduct(X: COMPARABLE)(Y: COMPARABLE) : 
+module CMPProduct(X: COMPARABLE)(Y: COMPARABLE) :
   COMPARABLE with type t = X.t * Y.t
 
 (** Create a vertex type with some data attached to it *)
@@ -46,4 +44,4 @@ module DataV(L : sig type t end)(V : Sig.COMPARABLE) : sig
   val data : t -> data
   val set_data : t -> data -> unit
 end
-  
+

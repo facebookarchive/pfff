@@ -2,7 +2,7 @@
 (*                                                                        *)
 (*  This file is part of OcamlGraph.                                      *)
 (*                                                                        *)
-(*  Copyright (C) 2009                                                    *)
+(*  Copyright (C) 2009-2010                                               *)
 (*    CEA (Commissariat à l'Énergie Atomique)                             *)
 (*                                                                        *)
 (*  you can redistribute it and/or modify it under the terms of the GNU   *)
@@ -17,12 +17,13 @@
 (*  See the file ../LICENSE for more details.                             *)
 (*                                                                        *)
 (*  Authors:                                                              *)
-(*    - Jean-Denis Koeck (jdkoeck@gmail.com)                              *)
 (*    - Julien Signoles  (Julien.Signoles@cea.fr)                         *)
+(*    - Jean-Denis Koeck (jdkoeck@gmail.com)                              *)
+(*    - Benoit Bataille  (benoit.bataille@gmail.com)                      *)
 (*                                                                        *)
 (**************************************************************************)
 
-open Ocamlgraph
+open Graph
 open DGraphView
 open Printf
 
@@ -49,7 +50,7 @@ end
 
 module Edge = struct
   type t = int
-  let compare = compare
+  let compare : int -> int -> int = Pervasives.compare
   let default = 0
 end
 

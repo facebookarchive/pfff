@@ -1,7 +1,7 @@
 (**************************************************************************)
 (*                                                                        *)
 (*  Ocamlgraph: a generic graph library for OCaml                         *)
-(*  Copyright (C) 2004-2008                                               *)
+(*  Copyright (C) 2004-2010                                               *)
 (*  Sylvain Conchon, Jean-Christophe Filliatre and Julien Signoles        *)
 (*                                                                        *)
 (*  This software is free software; you can redistribute it and/or        *)
@@ -17,17 +17,17 @@
 
 (* $Id: pack.ml,v 1.13 2006-05-12 14:07:16 filliatr Exp $ *)
 
-module Generic(G : Sig.IM with type V.label = int and type E.label = int) = 
+module Generic(G : Sig.IM with type V.label = int and type E.label = int) =
 struct
 
   include G
 
   exception Found of V.t
   let find_vertex g i =
-    try 
+    try
       iter_vertex (fun v -> if V.label v = i then raise (Found v)) g;
       raise Not_found
-    with Found v -> 
+    with Found v ->
       v
 
   module Builder = Builder.I(G)
@@ -42,16 +42,19 @@ struct
 
   module Components = Components.Make(G)
 
-  module W = struct 
+  module W = struct
     type label = int
     type t = int
     let weight x = x
     let zero = 0
     let add = (+)
-    let compare = compare
+    let compare : t -> t -> int = Pervasives.compare
   end
 
   include Path.Dijkstra(G)(W)
+
+  module BF = Path.BellmanFord(G)(W)
+  let bellman_ford = BF.find_negative_cycle_from
 
   module F = struct
     type label = int
@@ -61,20 +64,20 @@ struct
     let flow _ = 0
     let add = (+)
     let sub = (-)
-    let compare = compare
+    let compare : t -> t -> int = Pervasives.compare
     let max = max_int
     let min = 0
     let zero = 0
   end
 
   module FF = Flow.Ford_Fulkerson(G)(F)
-  let ford_fulkerson g = 
-    if not G.is_directed then 
+  let ford_fulkerson g =
+    if not G.is_directed then
       invalid_arg "ford_fulkerson: not a directed graph";
     FF.maxflow g
 
   module Goldberg = Flow.Goldberg(G)(F)
-  let goldberg g = 
+  let goldberg g =
     if not G.is_directed then invalid_arg "goldberg: not a directed graph";
     Goldberg.maxflow g
 
@@ -82,11 +85,16 @@ struct
 
   module PathCheck = Path.Check(G)
 
-  module Topological = Topological.Make(G)
+  module Topological = struct
+    include Topological.Make(G)
+    module S = Topological.Make_stable(G)
+    let fold_stable = S.fold
+    let iter_stable = S.iter
+  end
 
   module Int = struct
     type t = int
-    let compare = Pervasives.compare
+    let compare : t -> t -> int = Pervasives.compare
   end
 
   include Kruskal.Make(G)(Int)
@@ -98,13 +106,13 @@ struct
     let default_vertex_attributes _ = []
     let vertex_attributes _ = []
     let default_edge_attributes _ = []
-    let edge_attributes _ = []
+    let edge_attributes e = [ `Label (string_of_int (E.label e) ) ]
     let get_subgraph _ = None
   end
   module Dot_ = Graphviz.Dot(Display)
   module Neato = Graphviz.Neato(Display)
 
-  let dot_output g f = 
+  let dot_output g f =
     let oc = open_out f in
     if is_directed then Dot_.output_graph oc g else Neato.output_graph oc g;
     close_out oc
@@ -115,11 +123,11 @@ struct
     ignore (Sys.command ("dot -Tps " ^ tmp ^ " | gv -"));
     Sys.remove tmp
 
-  module GmlParser = 
+  module GmlParser =
     Gml.Parse
       (Builder)
-      (struct 
-	 let node l = 
+      (struct
+	 let node l =
 	   try match List.assoc "id" l with Gml.Int n -> n | _ -> -1
 	   with Not_found -> -1
 	 let edge _ =
@@ -134,10 +142,10 @@ struct
       (struct
  	 let nodes = Hashtbl.create 97
 	 let new_node = ref 0
-	 let node (id,_) _ = 
-	   try 
+	 let node (id,_) _ =
+	   try
 	     Hashtbl.find nodes id
-	   with Not_found -> 
+	   with Not_found ->
 	     incr new_node;
 	     Hashtbl.add nodes id !new_node;
 	     !new_node
@@ -157,24 +165,63 @@ struct
 	 let edge n = ["label", Gml.Int n]
        end)
 
+  let print_gml = GmlPrinter.print
   let print_gml_file g f =
     let c = open_out f in
     let fmt = formatter_of_out_channel c in
     fprintf fmt "%a@." GmlPrinter.print g;
     close_out c
 
+  let uid h find add =
+    let n = ref 0 in
+    fun x ->
+      try find h x with Not_found -> incr n; add h x !n; !n
+
+(*
+  module GraphmlPrinter =
+    Graphml.Print
+      (G)
+      (struct
+	 let node n = ["label", Gml.Int n]
+	 let edge n = ["label", Gml.Int n]
+         module Vhash = Hashtbl.Make(G.V)
+         let vertex_uid = uid (Vhash.create 17) Vhash.find Vhash.add
+         module Ehash = Hashtbl.Make(G.E)
+         let edge_uid = uid (Ehash.create 17) Ehash.find Ehash.add
+       end)
+
+  let print_gml = GmlPrinter.print
+  let print_gml_file g f =
+    let c = open_out f in
+    let fmt = formatter_of_out_channel c in
+    fprintf fmt "%a@." GmlPrinter.print g;
+    close_out c
+*)
+
 end
 
 module I = struct
-  type t = int 
-  let compare = compare 
-  let hash = Hashtbl.hash 
+  type t = int
+  let compare : t -> t -> int = Pervasives.compare
+  let hash = Hashtbl.hash
   let equal = (=)
   let default = 0
+end
+
+module IW = struct
+  type label = I.t
+  type t = int
+
+  module M = Map.Make(I)
+  let map = M.empty
+
+  let weight lbl = lbl
+  let compare : t -> t -> int = Pervasives.compare
+  let add = (+)
+  let zero = 0
 end
 
 module Digraph = Generic(Imperative.Digraph.AbstractLabeled(I)(I))
 
 module Graph = Generic(Imperative.Graph.AbstractLabeled(I)(I))
-
 

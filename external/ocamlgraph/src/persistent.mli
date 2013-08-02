@@ -1,7 +1,7 @@
 (**************************************************************************)
 (*                                                                        *)
 (*  Ocamlgraph: a generic graph library for OCaml                         *)
-(*  Copyright (C) 2004-2008                                               *)
+(*  Copyright (C) 2004-2010                                               *)
 (*  Sylvain Conchon, Jean-Christophe Filliatre and Julien Signoles        *)
 (*                                                                        *)
 (*  This software is free software; you can redistribute it and/or        *)
@@ -14,8 +14,6 @@
 (*  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.                  *)
 (*                                                                        *)
 (**************************************************************************)
-
-(* $Id: persistent.mli,v 1.13 2006-05-12 14:07:16 filliatr Exp $ *)
 
 (** Persistent Graph Implementations. *)
 
@@ -34,23 +32,23 @@ module type S = sig
       - Abstract: type of vertices is abstract (in particular it is not equal
       to type of vertex labels
 
-      <b>How to choose between concrete and abstract vertices for my graph 
+      <b>How to choose between concrete and abstract vertices for my graph
       implementation</b>?
 
       Usually, if you fall into one of the following cases, use abstract
-      vertices: 
+      vertices:
       - you cannot provide efficient comparison/hash functions for vertices; or
       - you wish to get two different vertices with the same label.
 
       In other cases, it is certainly easier to use concrete vertices.  *)
 
   (** Persistent Unlabeled Graphs. *)
-  module Concrete (V: COMPARABLE) : 
+  module Concrete (V: COMPARABLE) :
     Sig.P with type V.t = V.t and type V.label = V.t and type E.t = V.t * V.t
 	  and type E.label = unit
 
   (** Abstract Persistent Unlabeled Graphs. *)
-  module Abstract(V: ANY_TYPE) : Sig.P with type V.label = V.t 
+  module Abstract(V: ANY_TYPE) : Sig.P with type V.label = V.t
 				       and type E.label = unit
 
   (** Persistent Labeled Graphs. *)
@@ -65,7 +63,33 @@ module type S = sig
 end
 
 (** Persistent Directed Graphs. *)
-module Digraph : S
+module Digraph : sig
+
+  include S
+
+  (** {2 Bidirectional graphs}
+
+      Bidirectional graphs use more memory space (at worse the double) that
+      standard concrete directional graphs. But accessing predecessors and
+      removing a vertex are faster. *)
+
+  (** Imperative Unlabeled, bidirectional graph. *)
+  module ConcreteBidirectional (V: COMPARABLE) :
+    Sig.P with type V.t = V.t and type V.label = V.t and type E.t = V.t * V.t
+          and type E.label = unit
+
+  (** Imperative Labeled and bidirectional graph. *)
+  module ConcreteBidirectionalLabeled(V:COMPARABLE)(E:ORDERED_TYPE_DFT) :
+    Sig.P with type V.t = V.t and type V.label = V.t
+          and type E.t = V.t * E.t * V.t and type E.label = E.t
+
+end
 
 (** Persistent Undirected Graphs. *)
 module Graph : S
+
+(*
+Local Variables:
+compile-command: "make -C .."
+End:
+*)

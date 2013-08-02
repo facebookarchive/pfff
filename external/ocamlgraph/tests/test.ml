@@ -15,6 +15,7 @@
 (*                                                                        *)
 (**************************************************************************)
 
+open Format
 open Graph
 
 module Int = struct 
@@ -25,20 +26,23 @@ module Int = struct
   let default = 0
   let tostring v = string_of_int v
 end
-module G = Imperative.Graph.AbstractLabeled(Int)(Int)
+module G = Imperative.Digraph.AbstractLabeled(Int)(Int)
 
-let () = 
+module T = Traverse.Dfs(G)
+
+let test_hash_cycle n =
   let g = G.create () in
-  let v1 = G.V.create 1 in
-  let v2 = G.V.create 2 in
-  G.add_edge g v1 v2;
-  assert (G.mem_edge g v1 v2);
-  assert (G.mem_edge g v2 v1);
-  let _g' = G.copy g in
-(*  assert (G.mem_edge g' v1 v2);*)
-  (* the assertion is false since the copy of g also copy the abstract vertex:
-     v1 and v2 do not belong to g' but a copy of v1 and a copy of v2 do. *)
-  ()
+  let h = Hashtbl.create 5003 in
+  for i = 0 to n-1 do Hashtbl.add h i (G.V.create i) done;
+  Hashtbl.iter (fun _ v -> G.add_vertex g v) h;
+  let v = Hashtbl.find h in
+  for i = 0 to n-2 do G.add_edge g (v i) (v (i+1)) done;
+  assert (not (T.has_cycle g));
+  G.add_edge g (v (n-1)) (v 0);
+  assert (T.has_cycle g)
+
+let () = test_hash_cycle 1_000
+
 (*
 module Int = struct 
   type t = int 

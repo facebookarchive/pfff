@@ -1,7 +1,7 @@
 ##########################################################################
 #                                                                        #
 #  Ocamlgraph: a generic graph library for OCaml                         #
-#  Copyright (C) 2004-2008                                               #
+#  Copyright (C) 2004-2010                                               #
 #  Sylvain Conchon, Jean-Christophe Filliatre and Julien Signoles        #
 #                                                                        #
 #  This software is free software; you can redistribute it and/or        #
@@ -34,7 +34,7 @@ OCAMLLEX = ocamllex
 OCAMLYACC= ocamlyacc
 OCAMLLIB = /home/pad/packages/stow/godi-3.11/lib/ocaml/std-lib
 OCAMLBEST= opt
-OCAMLVERSION = 3.11.1
+OCAMLVERSION = 4.00.1
 OCAMLWEB = true
 OCAMLWIN32 = no
 OCAMLFIND = ocamlfind
@@ -56,9 +56,8 @@ OFLAGS = $(INCLUDES) -for-pack Ocamlgraph
 
 NAME=ocamlgraph
 
-ifeq (yes,yes)
-all: byte $(OCAMLBEST) 
-#viewer dgraph editor
+ifeq (no,yes)
+all: byte $(OCAMLBEST) viewer dgraph editor
 else
 all: byte $(OCAMLBEST)
 endif
@@ -71,9 +70,10 @@ LIB:=$(patsubst %, $(LIBDIR)/%.cmo, $(LIB))
 
 CMO = 	version util blocks persistent imperative \
 	delaunay builder classic rand oper \
-	path traverse coloring topological components kruskal flow \
-        graphviz gml dot_parser dot_lexer dot pack \
-	gmap minsep cliquetree mcs_m md strat
+	components path nonnegative traverse coloring topological kruskal flow \
+        dominator graphviz gml dot_parser dot_lexer dot pack \
+	gmap minsep cliquetree mcs_m md strat fixpoint leaderlist contraction \
+	graphml merge
 CMO := $(LIB) $(patsubst %, $(SRCDIR)/%.cmo, $(CMO))
 
 CMX = $(CMO:.cmo=.cmx)
@@ -86,6 +86,8 @@ CMI := $(patsubst %, src/%.cmi, $(CMI))
 GENERATED = META \
 	src/gml.ml src/version.ml \
 	src/dot_parser.ml src/dot_parser.mli src/dot_lexer.ml
+
+$(CMX): OFLAGS += #-for-pack Graph
 
 byte: $(CMA)
 opt: $(CMXA)
@@ -105,7 +107,7 @@ ocamlgraph.cmo: $(CMI) $(CMO)
 ocamlgraph.cmx: $(CMI) $(CMX)
 	$(OCAMLOPT) $(INCLUDES) -pack -o $@ $^
 
-VERSION=1.3
+VERSION=1.8.3
 
 src/version.ml: Makefile
 	rm -f $@
@@ -124,12 +126,12 @@ ED_CMO:= $(patsubst %, $(ED_DIR)/%.cmo, $(ED_CMO))
 ED_CMX = $(ED_CMO:.cmo=.cmx)
 ED_CMI = $(ED_CMO:.cmo=.cmi)
 
-ED_INCLUDES = -I +lablgtk2 -I +threads -I $(ED_DIR) $(INCLUDES) -I .
+ED_INCLUDES =  -I +threads -I $(ED_DIR) $(INCLUDES) -I .
 
 $(ED_CMI) $(ED_CMO): BFLAGS+= $(ED_INCLUDES)
-$(ED_CMO): ocamlgraph.cmi
+$(ED_CMI) $(ED_CMO): $(CMA)
 $(ED_CMX): OFLAGS+= $(ED_INCLUDES)
-$(ED_CMX): ocamlgraph.cmi
+$(ED_CMX): $(CMXA)
 
 $(ED_DIR)/editor.byte: $(CMA) $(ED_CMO)
 	$(OCAMLC) -g -o $@ $(ED_INCLUDES) \
@@ -152,21 +154,22 @@ VIEWER_CMX=$(VIEWER_CMO:.cmo=.cmx)
 VIEWER_CMI=$(VIEWER_CMO:.cmo=.cmi)
 VIEWER_MLI=$(VIEWER_CMI:.cmi=.mli)
 
-VIEWER_INCLUDES= -I +lablgtk2 -I $(VIEWER_DIR) $(INCLUDES) -I .
+VIEWER_INCLUDES=  -I $(VIEWER_DIR) $(INCLUDES) -I .
 
 $(VIEWER_CMI) $(VIEWER_CMO): BFLAGS+= $(VIEWER_INCLUDES)
 $(VIEWER_CMX): OFLAGS+= $(VIEWER_INCLUDES) -for-pack Viewgraph
-$(VIEWER_CMI) $(VIEWER_CMO) $(VIEWER_CMX): ocamlgraph.cmi
+$(VIEWER_CMI) $(VIEWER_CMO): $(CMA)
+$(VIEWER_CMX): $(CMXA)
 
 VIEWER_CMOLIB	= $(VIEWER_DIR)/viewgraph.cmo
 VIEWER_CMILIB	= $(VIEWER_DIR)/viewgraph.cmi
 VIEWER_CMXLIB	= $(VIEWER_DIR)/viewgraph.cmx
 
 $(VIEWER_CMOLIB): $(filter-out $(VIEWER_DIR)/viewGraph_test.cmo, $(VIEWER_CMO))
-	ocamlc -o $@ $(VIEWER_INCLUDES) -pack $^
+	$(OCAMLC) -o $@ $(VIEWER_INCLUDES) -pack $^
 
 $(VIEWER_CMXLIB): $(filter-out $(VIEWER_DIR)/viewGraph_test.cmx, $(VIEWER_CMX))
-	ocamlopt -o $@ $(VIEWER_INCLUDES) -pack $^
+	$(OCAMLOPT) -o $@ $(VIEWER_INCLUDES) -pack $^
 
 $(VIEWER_DIR)/viewgraph.byte: $(CMA) $(VIEWER_CMOLIB)
 	$(OCAMLC) -g -o $@ $(VIEWER_INCLUDES) \
@@ -183,34 +186,45 @@ DGRAPH_DIR=dgraph
 
 dgraph: $(DGRAPH_DIR)/dgraph.byte $(DGRAPH_DIR)/dgraph.$(OCAMLBEST)
 
-DGRAPH_CMO=xDotDraw xDot dGraphModel dGraphViewItem \
-	dGraphView dGraphRandModel dGraphViewer
+DGRAPH_CMO=xDotDraw xDot \
+	dGraphModel \
+	dGraphTreeLayout dGraphSubTree dGraphTreeModel \
+	dGraphViewItem dGraphView \
+	dGraphRandModel dGraphContainer \
+	dGraphViewer
 DGRAPH_CMO:=$(patsubst %,$(DGRAPH_DIR)/%.cmo, $(DGRAPH_CMO))
 DGRAPH_CMX=$(DGRAPH_CMO:.cmo=.cmx)
-DGRAPH_CMI=$(DGRAPH_CMO:.cmo=.cmi)
+DGRAPH_CMI=$(filter-out dgraph/dGraphViewer.cmi, $(DGRAPH_CMO:.cmo=.cmi))
 
-DGRAPH_INCLUDES= -I +lablgtk2 -I $(DGRAPH_DIR) $(INCLUDES) -I .
+DGRAPH_INCLUDES=  -I $(DGRAPH_DIR) $(INCLUDES) -I .
 
 $(DGRAPH_CMI) $(DGRAPH_CMO): BFLAGS+= $(DGRAPH_INCLUDES)
 $(DGRAPH_CMX): OFLAGS+= $(DGRAPH_INCLUDES) -for-pack Dgraph
 
-$(DGRAPH_CMI) $(DGRAPH_CMO) $(DGRAPH_CMX): ocamlgraph.cmi
+$(DGRAPH_CMI) $(DGRAPH_CMO): $(CMA)
+$(DGRAPH_CMX): $(CMXA)
 
 DGRAPH_CMOLIB	= $(DGRAPH_DIR)/dgraph.cmo
 DGRAPH_CMILIB	= $(DGRAPH_DIR)/dgraph.cmi
 DGRAPH_CMXLIB	= $(DGRAPH_DIR)/dgraph.cmx
 
-$(DGRAPH_CMOLIB): $(filter-out $(DGRAPH_DIR)/dGraphViewer.cmo, $(DGRAPH_CMO))
-	ocamlc -o $@ $(DGRAPH_INCLUDES) -pack $^
 
-$(DGRAPH_CMXLIB): $(filter-out $(DGRAPH_DIR)/dGraphViewer.cmx, $(DGRAPH_CMX))
-	ocamlopt -o $@ $(DGRAPH_INCLUDES) -pack $^
+dgraph/dGraphViewer.cmo: $(DGRAPH_CMOLIB)
+dgraph/dGraphViewer.cmx: $(DGRAPH_CMXLIB)
 
-$(DGRAPH_DIR)/dgraph.byte: $(CMA) $(DGRAPH_CMOLIB) dgraph/dGraphViewer.cmo
+$(DGRAPH_CMOLIB): $(filter-out dgraph/dGraphViewer.cmo, $(DGRAPH_CMO))
+	$(OCAMLC) -o $@ $(DGRAPH_INCLUDES) -pack $^
+
+$(DGRAPH_CMXLIB): $(filter-out dgraph/dGraphViewer.cmx, $(DGRAPH_CMX))
+	$(OCAMLOPT) -o $@ $(DGRAPH_INCLUDES) -pack $^
+
+$(DGRAPH_DIR)/dgraph.byte: $(CMA) $(DGRAPH_CMOLIB) \
+  $(DGRAPH_DIR)/dGraphViewer.cmo
 	$(OCAMLC) -g -o $@ $(DGRAPH_INCLUDES) \
 		lablgtk.cma gtkInit.cmo lablgnomecanvas.cma $^
 
-$(DGRAPH_DIR)/dgraph.opt: $(CMXA) $(DGRAPH_CMXLIB) dgraph/dGraphViewer.cmx
+$(DGRAPH_DIR)/dgraph.opt: $(CMXA) $(DGRAPH_CMXLIB) \
+  $(DGRAPH_DIR)/dGraphViewer.cmx
 	$(OCAMLOPT) -o $@ $(DGRAPH_INCLUDES) \
 		lablgtk.cmxa gtkInit.cmx lablgnomecanvas.cmxa $^
 
@@ -219,7 +233,7 @@ $(DGRAPH_DIR)/dgraph.opt: $(CMXA) $(DGRAPH_CMXLIB) dgraph/dGraphViewer.cmx
 
 EXAMPLESBIN=bin/demo.$(OCAMLBEST) bin/demo_planar.$(OCAMLBEST) \
   bin/bench.$(OCAMLBEST) bin/color.$(OCAMLBEST) bin/sudoku.$(OCAMLBEST) \
-  bin/test.$(OCAMLBEST) 
+  bin/test.$(OCAMLBEST)
 
 .PHONY: examples
 examples: $(EXAMPLESBIN)
@@ -254,11 +268,32 @@ bin/sudoku.opt: $(CMXA) examples/sudoku.cmx
 test: $(CMA) tests/test.ml
 	ocaml unix.cma graphics.cma $^
 
+test-bf: $(CMA) tests/test_bf.ml
+	ocaml unix.cma graphics.cma $^
+
+bin/test-ts: $(CMXA) tests/test_topsort.ml
+	$(OCAMLOPT) -o $@ unix.cmxa $^
+
+test-ts: bin/test-ts
+	bin/test-ts 10
+
+nonneg: $(CMA) tests/nonneg.ml
+	ocaml unix.cma graphics.cma $^
+
+test-graphml: $(CMA) tests/testgraphml.ml
+	ocaml unix.cma $^
+
 bin/test.byte: $(CMA) tests/test.cmo
 	$(OCAMLC) -g -unsafe -o $@ unix.cma graphics.cma $^
 
 bin/test.opt: $(CMXA) tests/test.cmx
 	$(OCAMLOPT) -unsafe -inline 100 -o $@ unix.cmxa graphics.cmxa $^
+
+bin/test_bf.byte: $(CMA) tests/test_bf.ml
+	$(OCAMLC) -g -o $@ unix.cma graphics.cma $^
+
+bin/nonneg.byte: $(CMA) tests/nonneg.ml
+	$(OCAMLC) -g -o $@ unix.cma graphics.cma $^
 
 bench: bin/bench.$(OCAMLBEST)
 	bin/bench.opt
@@ -266,8 +301,9 @@ bench: bin/bench.$(OCAMLBEST)
 bin/bench.opt: $(CMXA) tests/bench.ml
 	$(OCAMLOPT) -unsafe -inline 100 -o $@ unix.cmxa $^
 
-check: $(CMA) tests/check.ml
-	ocaml $^
+check: $(CMA) tests/check.ml bin/test-ts
+	ocaml $(CMA) tests/check.ml
+	bin/test-ts 10
 
 # Additional rules
 ##################
@@ -293,7 +329,7 @@ INSTALL_LIBDIR=$(DESTDIR)$(OCAMLLIB)/ocamlgraph
 
 install: install-$(OCAMLBEST) install-byte
 	mkdir -p $(BINDIR)
-ifeq (yes,yes)
+ifeq (no,yes)
 ifeq ($(OCAMLBEST),byte)
 	cp -f $(BINDIR)/graph-editor.byte $(BINDIR)/graph-editor$(EXE)
 	cp -f $(BINDIR)/graph-viewer.byte $(BINDIR)/graph-viewer$(EXE)
@@ -303,11 +339,11 @@ else
 endif
 endif
 
-install-byte: 
+install-byte:
 	mkdir -p $(INSTALL_LIBDIR)
 	cp -f ocamlgraph.cmo ocamlgraph.cmi $(CMA) $(INSTALL_LIBDIR)
 	cp -f $(SRCDIR)/*.mli $(INSTALL_LIBDIR)
-ifeq (yes,yes)
+ifeq (no,yes)
 	mkdir -p $(BINDIR)
 	cp -f $(ED_DIR)/editor.byte $(BINDIR)/graph-editor.byte
 	cp -f $(VIEWER_CMILIB) $(VIEWER_CMOLIB) $(INSTALL_LIBDIR)
@@ -320,7 +356,7 @@ install-opt: install-byte
 	mkdir -p $(INSTALL_LIBDIR)
 	cp -f graph$(LIBEXT) ocamlgraph.cmi ocamlgraph.cmx $(CMXA) $(INSTALL_LIBDIR)
 	cp -f $(SRCDIR)/*.mli $(INSTALL_LIBDIR)
-ifeq (yes,yes)
+ifeq (no,yes)
 	mkdir -p $(BINDIR)
 	cp -f $(ED_DIR)/editor.opt $(BINDIR)/graph-editor.opt
 	cp -f $(VIEWER_CMILIB) $(VIEWER_CMXLIB) $(VIEWER_CMXLIB:.cmx=.o) \
@@ -333,11 +369,12 @@ endif
 
 install-findlib: META
 ifdef OCAMLFIND
-ifeq (yes,yes)
+ifeq (no,yes)
 	$(OCAMLFIND) install ocamlgraph META \
 		$(SRCDIR)/*.mli $(VIEWER_DIR)/*.mli $(DGRAPH_DIR)/*.mli \
 		graph$(LIBEXT) graph.cmx graph.cmo graph.cmi $(CMA) $(CMXA) \
-		$(VIEWER_CMX) $(VIEWER_CMO) $(DGRAPH_CMX) $(DGRAPH_CMO)
+		$(VIEWER_CMXLIB) $(VIEWER_CMOLIB) $(DGRAPH_CMXLIB) \
+		$(DGRAPH_CMOLIB)
 else
 	$(OCAMLFIND) install ocamlgraph META \
 		$(SRCDIR)/*.mli $(VIEWER_DIR)/*.mli $(DGRAPH_DIR)/*.mli \
@@ -358,31 +395,38 @@ NODOC	= blocks dot_parser dot_lexer version
 NODOC	:= $(patsubst %, $(SRCDIR)/%.cmo, $(NODOC))
 DOC_CMO	= $(filter-out $(NODOC) $(LIB), $(CMO))
 DOC_SRC	= $(CMI:.cmi=.mli) $(DOC_CMO:.cmo=.mli) $(DOC_CMO:.cmo=.ml)
+ifeq (no,yes)
+DOC_SRC := $(DOC_SRC) $(DGRAPH_CMI:.cmi=.mli)
+endif
 
 .PHONY: doc
 doc: $(DOC_CMO)
 	mkdir -p doc
 	rm -f doc/*
-	$(OCAMLDOC) -d doc -html $(INCLUDES) $(DOC_SRC)
-	$(MAKE) -C $(VIEWER_DIR) doc
+	$(OCAMLDOC) -d doc -html $(DGRAPH_INCLUDES) $(DOC_SRC)
 
 # literate programming
 $(NAME).tex: $(DOC_SRC)
 	$(OCAMLWEB) -o $@ $^
 
 wc:
-	ocamlwc -p $(SRCDIRC)/*.mli $(SRCDIRC)/*.ml
+	ocamlwc -p $(SRCDIR)/*.mli $(SRCDIR)/*.ml
 
 # file headers
 ##############
 
 headers:
-	headache -c misc/headache_config.txt -h misc/header.txt \
-		Makefile.in configure.in README \
-		$(LIBDIR)/*.ml $(LIBDIR)/*.ml[ily] \
-		$(SRCDIR)/*.ml $(SRCDIR)/*.ml[ily] \
-		$(ED_DIR)/*.ml $(ED_DIR)/*.mli \
-
+	headache \
+	   -c misc/headache_config.txt \
+	   -h misc/header.txt \
+	   Makefile.in configure.in README \
+	   $(LIBDIR)/*.ml $(LIBDIR)/*.ml[ily] \
+	   $(SRCDIR)/*.ml $(SRCDIR)/*.ml[ily] \
+	   $(ED_DIR)/*.ml $(ED_DIR)/*.mli
+	headache \
+           -c misc/headache_config.txt \
+	   -h $(DGRAPH_DIR)/headers/CEA_LGPL \
+	   $(DGRAPH_DIR)/*.ml $(DGRAPH_DIR)/*.mli
 # export
 ########
 
@@ -403,7 +447,7 @@ FILES = src/*.ml* lib/*.ml* Makefile.in configure configure.in META.in  \
 
 export: source export-doc export-web export-delaunay
 
-source: 
+source:
 	mkdir -p export
 	cd export; rm -rf $(EXPORTDIR)
 	mkdir -p export/$(EXPORTDIR)/bin
@@ -432,13 +476,13 @@ export-web: www/version.prehtml
 
 export-doc: $(DOC_CMO)
 	rm -f $(WWW)/doc/*
-	-$(OCAMLDOC) -d $(WWW)/doc -html $(INCLUDES) $(DOC_SRC)
+	-$(OCAMLDOC) -d $(WWW)/doc -html $(DGRAPH_INCLUDES) $(DOC_SRC)
 
 MISCFTP = $(HOME)/WWW/ftp/ocaml/misc
 DELAUNAY=delaunay.ml delaunay.mli
 export-delaunay:
 	cd src; cp -f $(DELAUNAY) $(MISCFTP)
-	cd src; caml2html -d $(MISCFTP) $(DELAUNAY)
+	cd src; rm -f delaunay.annot; caml2html -noannot -d $(MISCFTP) $(DELAUNAY)
 
 # generic rules
 ###############
@@ -470,7 +514,7 @@ export-delaunay:
 	latex $< && latex $<
 
 .dvi.ps:
-	dvips $< -o $@ 
+	dvips $< -o $@
 
 .tex.html:
 	hevea $<
@@ -505,7 +549,7 @@ config.status: configure
 	./config.status --recheck
 
 configure: configure.in
-	autoconf 
+	autoconf
 
 # clean
 #######

@@ -19,7 +19,7 @@
 *)
 
 (** This is Ocamlgraph library : see http://ocamlgraph.lri.fr/doc/ *)
-open Ocamlgraph
+open Graph
 
 exception DotError of string
 

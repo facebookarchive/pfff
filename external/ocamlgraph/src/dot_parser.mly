@@ -1,7 +1,7 @@
 /**************************************************************************/
 /*                                                                        */
 /*  Ocamlgraph: a generic graph library for OCaml                         */
-/*  Copyright (C) 2004-2008                                               */
+/*  Copyright (C) 2004-2010                                               */
 /*  Sylvain Conchon, Jean-Christophe Filliatre and Julien Signoles        */
 /*                                                                        */
 /*  This software is free software; you can redistribute it and/or        */
@@ -34,17 +34,20 @@
     | Ident "nw" -> Nw
     | _ -> invalid_arg "compass_pt"
 
-%} 
+%}
 
 %token <Dot_ast.id> ID
 %token COLON COMMA EQUAL SEMICOLON EDGEOP
 %token STRICT GRAPH DIGRAPH LBRA RBRA LSQ RSQ NODE EDGE SUBGRAPH EOF
 
+%nonassoc ID
+%nonassoc LBRA
+
 %type <Dot_ast.file> file
 %start file
 %%
 
-file: 
+file:
 | strict_opt graph_or_digraph id_opt LBRA stmt_list RBRA EOF
     { { strict = $1; digraph = $2; id = $3; stmts = $5 } }
 ;
@@ -108,7 +111,7 @@ edge_rhs_opt:
 node:
 | node_id  { NodeId $1 }
 | subgraph { NodeSub $1 }
-; 
+;
 
 node_id:
 | ID port_opt { $1, $2 }
@@ -122,9 +125,9 @@ port_opt:
 port:
 | COLON ID { try PortC (compass_pt $2)
              with Invalid_argument _ -> PortId ($2, None) }
-| COLON ID COLON ID 
-      { let cp = 
-  	  try compass_pt $4 with Invalid_argument _ -> raise Parse_error 
+| COLON ID COLON ID
+      { let cp =
+  	  try compass_pt $4 with Invalid_argument _ -> raise Parse_error
 	in
 	PortId ($2, Some cp) }
 ;
@@ -159,7 +162,6 @@ comma_opt:
 | COMMA         { () }
 ;
 
-/* one shift/reduce conflict here, which is ok */
 subgraph:
 | SUBGRAPH ID { SubgraphId $2 }
 | SUBGRAPH ID LBRA stmt_list RBRA { SubgraphDef (Some $2, $4) }

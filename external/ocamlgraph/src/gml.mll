@@ -1,7 +1,7 @@
 (**************************************************************************)
 (*                                                                        *)
 (*  Ocamlgraph: a generic graph library for OCaml                         *)
-(*  Copyright (C) 2004-2008                                               *)
+(*  Copyright (C) 2004-2010                                               *)
 (*  Sylvain Conchon, Jean-Christophe Filliatre and Julien Signoles        *)
 (*                                                                        *)
 (*  This software is free software; you can redistribute it and/or        *)
@@ -17,12 +17,12 @@
 
 (* $Id: gml.mll,v 1.3 2005-07-06 13:20:31 conchon Exp $ *)
 
-{ 
+{
 
   open Lexing
 
-  type value = 
-    | Int of int 
+  type value =
+    | Int of int
     | Float of float
     | String of string
     | List of value_list
@@ -34,30 +34,30 @@
 let space = [' ' '\t' '\r' '\n']+
 let ident = ['a'-'z' 'A'-'Z'] ['a'-'z' 'A'-'Z' '0'-'9']*
 let digit = ['0'-'9']
-let sign = '-' | '+' 
+let sign = '-' | '+'
 let integer = sign? digit+
 let mantissa = 'E' sign? digit+
 let real = sign? digit* '.' digit* mantissa?
 let in_string = [^ '"']*
 
 rule file = parse
-  | space 
+  | space
       { file lexbuf }
-  | (ident as key) space 
+  | (ident as key) space
       { let v = value lexbuf in
 	(key, v) :: file lexbuf }
-  | eof 
+  | eof
       { [] }
   | _ as c
       { failwith ("Gml: invalid character " ^ String.make 1 c) }
 
 and value_list = parse
-  | space 
+  | space
       { value_list lexbuf }
-  | (ident as key) space 
+  | (ident as key) space
       { let v = value lexbuf in
 	(key, v) :: value_list lexbuf }
-  | ']' 
+  | ']'
       { [] }
   | _ as c
       { failwith ("Gml: invalid character " ^ String.make 1 c) }
@@ -86,7 +86,7 @@ and value = parse
   module Parse
     (B : Builder.S)
     (L : sig val node : value_list -> B.G.V.label
-	     val edge : value_list -> B.G.E.label end) = 
+	     val edge : value_list -> B.G.E.label end) =
   struct
 
     let create_graph l =
@@ -94,18 +94,18 @@ and value = parse
       let g = B.empty () in
       (* 1st pass: create the nodes *)
       let g =
-	List.fold_left 
+	List.fold_left
 	  (fun g v -> match v with
 	     | "node", List l ->
 		 let n = B.G.V.create (L.node l) in
-		 begin 
-		   try 
+		 begin
+		   try
 		     let id = List.assoc "id" l in Hashtbl.add nodes id n
-		   with Not_found -> 
+		   with Not_found ->
 		     ()
 		 end;
 		 B.add_vertex g n
-	     | _ -> 
+	     | _ ->
 		 g)
 	  g l
       in
@@ -126,12 +126,12 @@ and value = parse
 	   | _ ->
 	       g)
 	g l
-	
+
     let parse f =
       match parse f with
 	| ["graph", List l] -> create_graph l
 	| _ -> invalid_arg "Gml.Parse.parse: not a graph file"
-      
+
   end
 
   module type G = sig
@@ -169,7 +169,7 @@ and value = parse
     let print fmt g =
       let nodes = H.create 97 in
       let cpt = ref 0 in
-      let id n = 
+      let id n =
 	try H.find nodes n
 	with Not_found -> incr cpt; let id = !cpt in H.add nodes n id; id
       in
@@ -185,15 +185,15 @@ and value = parse
 	| (s,v) :: l -> fprintf fmt "%s %a@\n" s value v; value_list fmt l
       in
       G.iter_vertex
-	(fun v -> 
-	   fprintf fmt "  @[node [@\n  id %d@\n  @[%a@]@\n]@]@\n" 
+	(fun v ->
+	   fprintf fmt "  @[node [@\n  id %d@\n  @[%a@]@\n]@]@\n"
 	     (id v) value_list (L.node (G.V.label v)))
 	g;
       G.iter_edges_e
 	(fun e ->
-	   fprintf fmt 
+	   fprintf fmt
 	     "  @[edge [@\n  source %d@\n  target %d@\n  @[%a@]@\n]@]@\n"
-	     (id (G.E.src e)) (id (G.E.dst e)) 
+	     (id (G.E.src e)) (id (G.E.dst e))
 	     value_list (L.edge (G.E.label e)))
 	g;
       fprintf fmt "]@\n"

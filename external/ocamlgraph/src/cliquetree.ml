@@ -1,7 +1,7 @@
 (**************************************************************************)
 (*                                                                        *)
 (*  Ocamlgraph: a generic graph library for OCaml                         *)
-(*  Copyright (C) 2004-2008                                               *)
+(*  Copyright (C) 2004-2010                                               *)
 (*  Sylvain Conchon, Jean-Christophe Filliatre and Julien Signoles        *)
 (*                                                                        *)
 (*  This software is free software; you can redistribute it and/or        *)
@@ -14,8 +14,6 @@
 (*  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.                  *)
 (*                                                                        *)
 (**************************************************************************)
-
-(*i $Id: cliquetree.ml,v 1.6 2005-11-02 13:43:35 filliatr Exp $ i*)
 
 module CliqueTree(Gr : Sig.G) = struct
 
@@ -107,7 +105,7 @@ module CliqueTree(Gr : Sig.G) = struct
       (struct
 	 type t = int
 	 type label = int
-	 let compare x y = Pervasives.compare x y
+         let compare : t -> t -> int = Pervasives.compare
 	 let hash = Hashtbl.hash
 	 let equal x y = x = y
 	 let label x = x
@@ -117,7 +115,7 @@ module CliqueTree(Gr : Sig.G) = struct
   module CliqueTreeE = struct
     type t = int * CVS.t
 	
-    let compare (x, _) (y, _) = Pervasives.compare x y
+    let compare (x, _ : t) (y, _ : t) = Pervasives.compare x y
 
     let default = (0, CVS.empty)
 		    
@@ -168,7 +166,7 @@ module CliqueTree(Gr : Sig.G) = struct
     List.sort
       (fun x y -> 
 	 (*let markx = mark x and marky = mark y in*)
-	 - Pervasives.compare (number x) (number y))
+	 (Pervasives.compare : int -> int -> int) (number y) (number x))
       l
 
   let mcs_clique g =

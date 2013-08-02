@@ -15,22 +15,20 @@
 (*                                                                        *)
 (**************************************************************************)
 
-(*i $Id: check.ml,v 1.46 2006-05-12 14:07:16 filliatr Exp $ i*)
-
 open Graph
 
-module Int = struct 
-  type t = int 
-  let compare = compare 
-  let hash = Hashtbl.hash 
+module Int = struct
+  type t = int
+  let compare = compare
+  let hash = Hashtbl.hash
   let equal = (=)
   let default = 0
 end
 
-module W = struct 
+module W = struct
   type label = int
   type t = int
-  let weight x = x 
+  let weight x = x
   let zero = 0
   let add = (+)
   let compare = compare
@@ -45,7 +43,7 @@ module Generic = struct
   (* Generic tests for imperative graphs *)
   module Make
     (G : Sig.I with type V.label = int)
-    (V : sig val v: int val e: int end) = 
+    (V : sig val v: int val e: int end) =
   struct
 
     module O = Oper.I(G)
@@ -76,7 +74,8 @@ module Generic = struct
       G.remove_vertex g v2;
       assert (G.nb_vertex g = 1 && G.nb_edges g = 0);
       test_mirror g;
-      ()
+      G.clear g;
+      assert (G.nb_vertex g = 0 && G.nb_edges g = 0)
 
   end
 
@@ -113,12 +112,20 @@ module Generic = struct
       (Imperative.Graph.Abstract(Int))
       (struct let v = 3 let e = 3 end)
     in
+    let module A = Make
+      (Imperative.Digraph.ConcreteBidirectional(Int))
+      (struct let v = 3 let e = 4 end)
+    in
+    let module A = Make
+      (Imperative.Digraph.ConcreteBidirectionalLabeled(Int)(Int))
+      (struct let v = 3 let e = 4 end)
+    in
     ()
 
   (* Generic tests for persistent graphs *)
   module MakeP
     (G : Sig.P with type V.label = int)
-    (V : sig val v: int val e: int end) = 
+    (V : sig val v: int val e: int end) =
   struct
 
     module O = Oper.P(G)
@@ -180,12 +187,20 @@ module Generic = struct
       (Persistent.Graph.Abstract(Int))
       (struct let v = 3 let e = 3 end)
     in
+    let module A = MakeP
+      (Persistent.Digraph.ConcreteBidirectional(Int))
+      (struct let v = 3 let e = 4 end)
+    in
+    let module A = MakeP
+      (Persistent.Digraph.ConcreteBidirectionalLabeled(Int)(Int))
+      (struct let v = 3 let e = 4 end)
+    in
     ()
 
   (* find_edge *)
 
   module Make2
-    (G : Sig.I 
+    (G : Sig.I
      with type V.t = int and type E.label = int and type E.t = int * int * int)
     =
   struct
@@ -193,6 +208,7 @@ module Generic = struct
     let g = G.create ()
 
     let test_exn v1 v2 =
+      assert (G.find_all_edges g v1 v2 = []);
       try
 	let _ = G.find_edge g v1 v2 in
 	assert false
@@ -202,17 +218,20 @@ module Generic = struct
     let () =
       let e1 = 1, 0, 2 in
       let e2 = 1, 1, 3 in
+      let e2' = 1, 2, 3 in
       let e3 = 2, 2, 1 in
       G.add_edge_e g e1;
       G.add_edge_e g e2;
+      G.add_edge_e g e2';
       G.add_edge_e g e3;
       G.add_edge_e g e3;
       assert (G.find_edge g 1 2 = e1);
+      assert (List.length (G.find_all_edges g 1 3) = 2);
       test_exn 2 3;
       test_exn 2 4;
       test_exn 5 2;
       G.remove_vertex g 2;
-      assert (G.nb_vertex g = 2 && G.nb_edges g = 1)
+      assert (G.nb_vertex g = 2 && G.nb_edges g = 2)
 
   end
 
@@ -233,21 +252,21 @@ module Dijkstra = struct
 
   module TestDijkstra
     (G : Sig.G with type V.label = int and type E.label = int)
-    (B : Builder.S with module G = G) = 
+    (B : Builder.S with module G = G) =
   struct
 
     let g = B.empty ()
-    let v1 = G.V.create 1 
+    let v1 = G.V.create 1
     let g = B.add_vertex g v1
-    let v2 = G.V.create 2 
+    let v2 = G.V.create 2
     let g = B.add_vertex g v2
-    let v3 = G.V.create 3 
+    let v3 = G.V.create 3
     let g = B.add_vertex g v3
-    let v4 = G.V.create 4 
+    let v4 = G.V.create 4
     let g = B.add_vertex g v4
-    let v5 = G.V.create 5 
+    let v5 = G.V.create 5
     let g = B.add_vertex g v5
-      
+
     let g = B.add_edge_e g (G.E.create v1 10 v2)
     let g = B.add_edge_e g (G.E.create v2 50 v3)
     let g = B.add_edge_e g (G.E.create v1 30 v4)
@@ -260,7 +279,7 @@ module Dijkstra = struct
     module Dfs = Traverse.Dfs(G)
 
     let test g i j w l =
-      let p,w' = Dij.shortest_path g i j in 
+      let p,w' = Dij.shortest_path g i j in
       assert (w' = w && List.length p = l)
     let test_not_found g i j =
       try let _ = Dij.shortest_path g i j in assert false with Not_found -> ()
@@ -268,7 +287,7 @@ module Dijkstra = struct
     let () = test g v1 v5 60 3
     let () = test g v1 v1 0 0
     let () = if G.is_directed then test_not_found g v5 v1
-    let () = if G.is_directed then assert (not (Dfs.has_cycle g))
+    let () = assert (not (Dfs.has_cycle g))
     let gc = B.add_edge_e g (G.E.create v5 10 v1)
     let v6 = G.V.create 6
     let gc = B.add_vertex gc v6
@@ -399,13 +418,13 @@ module FF_Goldberg = struct
   module FF = Flow.Ford_Fulkerson(G)(F)
   module Gold = Flow.Goldberg(G)(F)
 
-  let () = 
+  let () =
     assert (snd (FF.maxflow g 1 6) = 23);
     assert (snd (Gold.maxflow g 1 6) = 23);
     assert (snd (FF.maxflow g 1 1) = 0);
     assert (snd (Gold.maxflow g 1 1) = 0)
 
-  module G2 = 
+  module G2 =
     Persistent.Digraph.ConcreteLabeled
       (Int)
       (struct include Util.OTProduct(Int)(Int) let default = 0, 0 end)
@@ -434,7 +453,7 @@ module FF_Goldberg = struct
   module FF2 = Flow.Ford_Fulkerson(G2)(F2)
   module Gold2 = Flow.Goldberg(G2)(F2)
 
-  let () = 
+  let () =
     assert (snd (FF2.maxflow g 1 4) = 2);
     assert (snd (Gold2.maxflow g 1 4) = 2)
 
@@ -504,7 +523,7 @@ module Minsep = struct
 
     module G = Graph.Imperative.Graph.Abstract(struct type t = unit end)
     open G
-    
+
     let g = create ()
     let v1 = V.create ()
     let v2 = V.create ()
@@ -548,13 +567,13 @@ module type RightSigPack = sig
   val find_vertex : t -> int -> V.t
   include Oper.S with type g = t
   module Dfs : sig
-    val iter : ?pre:(V.t -> unit) -> 
+    val iter : ?pre:(V.t -> unit) ->
                ?post:(V.t -> unit) -> t -> unit
     val prefix : (V.t -> unit) -> t -> unit
     val postfix : (V.t -> unit) -> t -> unit
 
-    val iter_component : 
-               ?pre:(V.t -> unit) -> 
+    val iter_component :
+               ?pre:(V.t -> unit) ->
                ?post:(V.t -> unit) -> t -> V.t -> unit
     val prefix_component : (V.t -> unit) -> t -> V.t -> unit
     val postfix_component : (V.t -> unit) -> t -> V.t -> unit
@@ -577,8 +596,8 @@ module type RightSigPack = sig
   end
   module Rand : sig
     val graph : ?loops:bool -> v:int -> e:int -> unit -> t
-    val labeled : 
-      (V.t -> V.t -> E.label) -> 
+    val labeled :
+      (V.t -> V.t -> E.label) ->
 	?loops:bool -> v:int -> e:int -> unit -> t
   end
   module Components : sig
@@ -589,16 +608,16 @@ module type RightSigPack = sig
   val shortest_path : t -> V.t -> V.t -> E.t list * int
   val ford_fulkerson : t -> V.t -> V.t -> (E.t -> int) * int
   val goldberg : t -> V.t -> V.t -> (E.t -> int) * int
-  val dot_output : t -> string -> unit 
+  val dot_output : t -> string -> unit
 end
 
-module TestSigPack : RightSigPack = struct 
+module TestSigPack : RightSigPack = struct
   include Pack.Digraph
-  type g = t 
+  type g = t
 end
 
 (*
-Local Variables: 
+Local Variables:
 compile-command: "make -C .. check"
-End: 
+End:
 *)

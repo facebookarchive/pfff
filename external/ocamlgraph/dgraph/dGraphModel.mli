@@ -2,7 +2,7 @@
 (*                                                                        *)
 (*  This file is part of OcamlGraph.                                      *)
 (*                                                                        *)
-(*  Copyright (C) 2009                                                    *)
+(*  Copyright (C) 2009-2010                                               *)
 (*    CEA (Commissariat à l'Énergie Atomique)                             *)
 (*                                                                        *)
 (*  you can redistribute it and/or modify it under the terms of the GNU   *)
@@ -17,15 +17,16 @@
 (*  See the file ../LICENSE for more details.                             *)
 (*                                                                        *)
 (*  Authors:                                                              *)
-(*    - Jean-Denis Koeck (jdkoeck@gmail.com)                              *)
 (*    - Julien Signoles  (Julien.Signoles@cea.fr)                         *)
+(*    - Jean-Denis Koeck (jdkoeck@gmail.com)                              *)
+(*    - Benoit Bataille  (benoit.bataille@gmail.com)                      *)
 (*                                                                        *)
 (**************************************************************************)
 
 (** Abstract graph model *)
 
 open XDot
-open Ocamlgraph
+open Graph
 
 exception DotError of string
 
@@ -41,6 +42,7 @@ class type ['vertex, 'edge, 'cluster] abstract_model = object
   method iter_succ_e : ('edge -> unit) -> 'vertex -> unit
   method iter_vertex : ('vertex -> unit) -> unit
   method iter_clusters : ('cluster -> unit) -> unit
+  method iter_associated_vertex : ('vertex -> unit) -> 'vertex -> unit
 
   (** Membership functions *)
   method find_edge : 'vertex -> 'vertex -> 'edge
@@ -58,32 +60,32 @@ class type ['vertex, 'edge, 'cluster] abstract_model = object
 end
 
 (** This functor creates a model from a graph *)
-module Make(G : Ocamlgraph.Graphviz.GraphWithDotAttrs) : sig
+module Make(G : Graph.Graphviz.GraphWithDotAttrs) : sig
 
   open G
 
   type cluster = string
 
-  class model :
-    (G.vertex, G.edge, cluster) XDot.graph_layout -> G.t -> 
-    [G.vertex, G.edge, cluster] abstract_model
+  class model:
+    XDot.Make(G).graph_layout -> G.t -> [G.V.t, G.E.t, cluster] abstract_model
 
-      (** Creates a model using graphviz.
-	  [tmp_name] is the name of the temporary dot files *)
   val from_graph : ?cmd:string -> ?tmp_name:string -> G.t -> model
+(** Creates a model using graphviz.
+    [tmp_name] is the name of the temporary dot files.
+    @raise DotError if issue occurs with the generated dot file *)
 
 end
 
 
-module Vertex : Sig.ANY_TYPE with type t = XDot.node_layout
-module Edge : Sig.ORDERED_TYPE_DFT with type t = XDot.edge_layout
-module DotG : 
-  Sig.G with type t = Ocamlgraph.Imperative.Digraph.AbstractLabeled(Vertex)(Edge).t
+module DotG : Sig.G
+  with type V.label = XDot.node_layout and type E.label = XDot.edge_layout
+
+
 type cluster = string
 type dotg_model = (DotG.vertex, DotG.edge, cluster) abstract_model
 
-(** Creates a model from a dot file *)
-val read_dot : ?cmd:string -> dot_file:string -> dotg_model
+(** Creates a model from a dot file. *)
+val read_dot : ?cmd:string -> string -> dotg_model
 
 (** Creates a model from an xdot file (the layout is not recomputed)*)
-val read_xdot : xdot_file:string -> dotg_model
+val read_xdot : string -> dotg_model

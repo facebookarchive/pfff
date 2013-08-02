@@ -1,7 +1,7 @@
 (**************************************************************************)
 (*                                                                        *)
 (*  Ocamlgraph: a generic graph library for OCaml                         *)
-(*  Copyright (C) 2004-2008                                               *)
+(*  Copyright (C) 2004-2010                                               *)
 (*  Sylvain Conchon, Jean-Christophe Filliatre and Julien Signoles        *)
 (*                                                                        *)
 (*  This software is free software; you can redistribute it and/or        *)
@@ -17,7 +17,7 @@
 
 (* $Id: kruskal.mli,v 1.5 2005-06-30 10:48:55 filliatr Exp $ *)
 
-(** Kruskal's algorithm. *)
+(** Kruskal's minimum-spanning-tree algorithm. *)
 
 (** Minimal graph signature for Kruskal.
     Sub-signature of {!Sig.G}. *)
@@ -35,8 +35,8 @@ module type G = sig
   val iter_edges_e : (E.t -> unit) -> t ->  unit
 end
 
-(** Functor providing an implementation of the Kruskal's algorithm computing
-    spanning trees. 
+(** Functor providing an implementation of Kruskal's minimum-spanning-tree 
+    algorithm. 
     Parameter [W] ensures that label on edges are comparable. *)
 module Make(G: G)(W: Sig.ORDERED_TYPE with type t = G.E.label) : sig
   val spanningtree : G.t -> G.E.t list
@@ -53,8 +53,8 @@ module type UNIONFIND = sig
   val union : elt -> elt -> t -> unit
 end
 
-(** Functor providing an implementation of the Kruskal's algorithm computing
-    spanning trees using an user-defined union-find algorithm.
+(** Functor providing an implementation of Kruskal's minimum-spanning-tree 
+    algorithm using a user-defined union-find algorithm.
     Parameter [W] ensures that label on edges are comparable. *)
 module Generic
   (G: G)

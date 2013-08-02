@@ -1,7 +1,7 @@
 ##########################################################################
 #                                                                        #
 #  Ocamlgraph: a generic graph library for OCaml                         #
-#  Copyright (C) 2004-2008                                               #
+#  Copyright (C) 2004-2010                                               #
 #  Sylvain Conchon, Jean-Christophe Filliatre and Julien Signoles        #
 #                                                                        #
 #  This software is free software; you can redistribute it and/or        #
@@ -20,7 +20,7 @@
 #   OCAMLC        "ocamlc" if present in the path, or a failure
 #                 or "ocamlc.opt" if present with same version number as ocamlc
 #   OCAMLOPT      "ocamlopt" (or "ocamlopt.opt" if present), or "no"
-#   OCAMLBEST     either "byte" if no native compiler was found, 
+#   OCAMLBEST     either "byte" if no native compiler was found,
 #                 or "opt" otherwise
 #   OCAMLDEP      "ocamldep"
 #   OCAMLLEX      "ocamllex" (or "ocamllex.opt" if present)
@@ -31,7 +31,7 @@
 #   OCAMLWIN32    "yes"/"no" depending on Sys.os_type = "Win32"
 #   EXE           ".exe" if OCAMLWIN32=yes, "" otherwise
 
-# check for one particular file of the sources 
+# check for one particular file of the sources
 # ADAPT THE FOLLOWING LINE TO YOUR SOURCES!
 AC_INIT(src/sig.mli)
 
@@ -51,7 +51,7 @@ case $OCAMLVERSION in
   0.*|1.*|2.*|3.0*)
         AC_MSG_ERROR(ocamlgraph needs ocaml version 3.10.0 or higher);;
   *)
-	FORPACK="-for-pack Graph";;
+	;;
 esac
 
 # OCAMLLIB=`$OCAMLC -v | tail -n 1 | cut -f 4 -d " "`
@@ -140,6 +140,17 @@ fi
 AC_CHECK_PROG(OCAMLWEB,ocamlweb,ocamlweb,true)
 
 AC_CHECK_PROG(OCAMLFIND,ocamlfind,ocamlfind)
+if test "$OCAMLFIND" = "" ; then
+   echo "No ocamlfind detected"
+else
+   OCAMLLIB_BY_FINDLIB=`ocamlfind query stdlib | tr -d '\\r'`
+   if test "$OCAMLLIB_BY_FINDLIB" = "$OCAMLLIB" ; then
+      echo "OCamlfind detected and enabled"
+   else
+      echo "OCamlfind detected but disabled. Standard libraries differ."
+      OCAMLFIND=""
+   fi
+fi
 
 if test "$OCAMLBEST" = "opt"; then
   SUFFIX=cmxa;
@@ -148,10 +159,33 @@ else
 fi
 
 # checking for lablgtk2 and lablgnomecanvas
-AC_CHECK_FILE($OCAMLLIB/lablgtk2/lablgtk.$SUFFIX,LABLGTK2=yes,LABLGTK2=no)
+###########################################
+
+# lablgtk2 now uses ocamlfind while older version uses  `ocamlc -where `
+# its installation path is not the same
+if test "$OCAMLFIND" = "" ; then
+  LABLGTK_PATH=+lablgtk2
+  LABLGTKPATH_FOR_CONFIGURE=$OCAMLLIB/lablgtk2
+else
+  LABLGTK_PATH=`ocamlfind query lablgtk2 | tr -d '\\r\\n'`
+  if test "$LABLGTK_PATH" = ""  -o "$LABLGTK_PATH" -ef "$OCAMLLIB/lablgtk2" ; \
+  then
+     LABLGTK_PATH=+lablgtk2
+     LABLGTKPATH_FOR_CONFIGURE=$OCAMLLIB/lablgtk2
+  else
+     LABLGTKPATH_FOR_CONFIGURE=$LABLGTK_PATH
+  fi
+fi
+
+AC_CHECK_FILE($LABLGTKPATH_FOR_CONFIGURE/lablgtk.$SUFFIX,
+  LABLGTK2=yes,
+  LABLGTK2=no)
+
 if test "$LABLGTK2" = yes ; then
-  INCLUDEGTK2="-I +lablgtk2"
-  AC_CHECK_FILE($OCAMLLIB/lablgtk2/lablgnomecanvas.$SUFFIX,LABLGNOMECANVAS=yes,LABLGNOMECANVAS=no)
+  INCLUDEGTK2="-I $LABLGTK_PATH"
+  AC_CHECK_FILE($LABLGTKPATH_FOR_CONFIGURE/lablgnomecanvas.$SUFFIX,
+    LABLGNOMECANVAS=yes,
+    LABLGNOMECANVAS=no)
 else
   LABLGTK2=no
   LABLGNOMECANVAS=no
@@ -164,16 +198,15 @@ if ocaml check_arch.ml | grep -q Win32; then
     AC_MSG_RESULT(yes)
     OCAMLWIN32=yes
     EXE=.exe
-    LIBEXT=.lib
-    OBJEXT=.obj
 else
     AC_MSG_RESULT(no)
     OCAMLWIN32=no
     EXE=
-    LIBEXT=.a
-    OBJEXT=.o
 fi
 rm -f check_arch.ml
+
+LIBEXT=`ocamlc -config | grep ext_lib | sed -e 's/.*\(\..*\)/\1/' `
+OBJEXT=`ocamlc -config | grep ext_obj | sed -e 's/.*\(\..*\)/\1/' `
 
 if test "$LABLGNOMECANVAS" = no ; then
   AC_MSG_WARN([lablgnomecanvas not found: the graph editor and view_graph will not be compiled])
@@ -196,7 +229,6 @@ AC_SUBST(OCAMLWIN32)
 AC_SUBST(EXE)
 AC_SUBST(LIBEXT)
 AC_SUBST(OBJEXT)
-AC_SUBST(FORPACK)
 AC_SUBST(INCLUDEGTK2)
 
 # Finally create the Makefile from Makefile.in

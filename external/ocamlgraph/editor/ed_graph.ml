@@ -1,7 +1,7 @@
 (**************************************************************************)
 (*                                                                        *)
 (*  Ocamlgraph: a generic graph library for OCaml                         *)
-(*  Copyright (C) 2004-2008                                               *)
+(*  Copyright (C) 2004-2010                                               *)
 (*  Sylvain Conchon, Jean-Christophe Filliatre and Julien Signoles        *)
 (*                                                                        *)
 (*  This software is free software; you can redistribute it and/or        *)
@@ -17,7 +17,7 @@
 
 (* This file is a contribution of Benjamin Vadon *)
 
-open Ocamlgraph
+open Graph
 open Ed_hyper
 
 type visibility = Visible | BorderNode | Hidden
@@ -62,7 +62,7 @@ let make_edge_info () =
 
 module EDGE = struct
   type t = edge_info
-  let compare = Pervasives.compare
+  let compare : t -> t -> int = Pervasives.compare
   let default = make_edge_info ()
 end
 

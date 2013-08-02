@@ -1,7 +1,7 @@
 (**************************************************************************)
 (*                                                                        *)
 (*  Ocamlgraph: a generic graph library for OCaml                         *)
-(*  Copyright (C) 2004-2008                                               *)
+(*  Copyright (C) 2004-2010                                               *)
 (*  Sylvain Conchon, Jean-Christophe Filliatre and Julien Signoles        *)
 (*                                                                        *)
 (*  This software is free software; you can redistribute it and/or        *)
@@ -18,8 +18,6 @@
 (* $Id: components.mli,v 1.12 2004-10-22 14:42:06 signoles Exp $ *)
 
 (** Strongly connected components. *)
-
-open Util
 
 (** Minimal graph signature required by {!Make}.
     Sub-signature of {!Sig.G}. *)
@@ -42,7 +40,11 @@ module Make (G: G) : sig
 	number. In particular, [f u = f v] if and only if [u] and
 	[v] are in the same component. Another property of the
 	numbering is that components are numbered in a topological
-	order: if there is an arc from [u] to [v], then [f u >= f u] *)
+	order: if there is an arc from [u] to [v], then [f u >= f u]
+
+        Not tail-recursive.
+        Complexity: O(V+E)
+        The function returned has complexity O(1) *)
 
   val scc_array : G.t -> G.V.t list array
     (** [scc_array] computes the strongly connected components of [g].

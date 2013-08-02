@@ -2,7 +2,7 @@
 (*                                                                        *)
 (*  This file is part of OcamlGraph.                                      *)
 (*                                                                        *)
-(*  Copyright (C) 2009                                                    *)
+(*  Copyright (C) 2009-2010                                               *)
 (*    CEA (Commissariat à l'Énergie Atomique)                             *)
 (*                                                                        *)
 (*  you can redistribute it and/or modify it under the terms of the GNU   *)
@@ -17,8 +17,9 @@
 (*  See the file ../LICENSE for more details.                             *)
 (*                                                                        *)
 (*  Authors:                                                              *)
-(*    - Jean-Denis Koeck (jdkoeck@gmail.com)                              *)
 (*    - Julien Signoles  (Julien.Signoles@cea.fr)                         *)
+(*    - Jean-Denis Koeck (jdkoeck@gmail.com)                              *)
+(*    - Benoit Bataille  (benoit.bataille@gmail.com)                      *)
 (*                                                                        *)
 (**************************************************************************)
 
@@ -65,6 +66,15 @@ type operation =
   | Pen_color of string
   | Font of float * string
   | Style of style_attr list
+
+
+
+val string_scale_size: string -> float -> string -> width*height
+(** [string_scale_size font font_size text].
+    Interpolates the font metrics we have to use to draw the given [text]
+    with the given font but preserving the bounding box of the [text] even
+    with a proportional font.
+    For a fixed width font the result is [font_size*font_size]. *)
 
 (** {2 Parsing and drawing state } *)
 

@@ -1,7 +1,7 @@
 (**************************************************************************)
 (*                                                                        *)
 (*  Ocamlgraph: a generic graph library for OCaml                         *)
-(*  Copyright (C) 2004-2008                                               *)
+(*  Copyright (C) 2004-2010                                               *)
 (*  Sylvain Conchon, Jean-Christophe Filliatre and Julien Signoles        *)
 (*                                                                        *)
 (*  This software is free software; you can redistribute it and/or        *)
@@ -15,13 +15,11 @@
 (*                                                                        *)
 (**************************************************************************)
 
-(* $Id: util.ml,v 1.14 2004-10-19 15:21:45 signoles Exp $ *)
-
 open Sig
 
-module OTProduct(X: ORDERED_TYPE)(Y: ORDERED_TYPE) = struct 
-  type t = X.t * Y.t 
-  let compare (x1, y1) (x2, y2) = 
+module OTProduct(X: ORDERED_TYPE)(Y: ORDERED_TYPE) = struct
+  type t = X.t * Y.t
+  let compare (x1, y1) (x2, y2) =
     let cv = X.compare x1 x2 in
     if cv != 0 then cv else Y.compare y1 y2
 end
@@ -32,7 +30,7 @@ module HTProduct(X: HASHABLE)(Y: HASHABLE) = struct
   let hash (x, y) = Hashtbl.hash (X.hash x, Y.hash y)
 end
 
-module CMPProduct(X: COMPARABLE)(Y: COMPARABLE) = struct 
+module CMPProduct(X: COMPARABLE)(Y: COMPARABLE) = struct
   include HTProduct(X)(Y)
   include (OTProduct(X)(Y): sig val compare : t -> t -> int end)
 end

@@ -1,7 +1,7 @@
 (**************************************************************************)
 (*                                                                        *)
 (*  Ocamlgraph: a generic graph library for OCaml                         *)
-(*  Copyright (C) 2004-2008                                               *)
+(*  Copyright (C) 2004-2010                                               *)
 (*  Sylvain Conchon, Jean-Christophe Filliatre and Julien Signoles        *)
 (*                                                                        *)
 (*  This software is free software; you can redistribute it and/or        *)
@@ -15,19 +15,17 @@
 (*                                                                        *)
 (**************************************************************************)
 
-(* $Id: graphviz.ml,v 1.4 2006-05-09 10:19:37 conchon Exp $ *)
-
 (** Interface with {i GraphViz}
 
     This module provides a basic interface with dot and neato,
     two programs of the GraphViz toolbox.
     These tools are available at the following URLs:
       http://www.graphviz.org/
-      http://www.research.att.com/sw/tools/graphviz/
-
- *)
+      http://www.research.att.com/sw/tools/graphviz/ *)
 
 open Format
+open Pervasives (* for compatibility with ocaml 3.12.0+dev17
+		   (incoming ocaml3.12) *)
 
 (***************************************************************************)
 (** {2 Common stuff} *)
@@ -45,8 +43,16 @@ open Format
 
 type color = int
 
+type color_with_transparency = int32
+
+let color_to_color_with_transparency color =
+  Int32.add (Int32.shift_left (Int32.of_int color) 8) 0xFFl
+
 let fprint_color ppf color =
   fprintf ppf "\"#%06X\"" color
+
+let fprint_color_with_transparency ppf color =
+  fprintf ppf "\"#%08lX\"" color
 
 let fprint_string ppf s = fprintf ppf "\"%s\"" s
 (*  let s' = String.escaped s in
@@ -59,7 +65,7 @@ let fprint_string_user ppf s =
     fprintf ppf "\"%s\"" s
 
 type arrow_style =
-  [ `None | `Normal | `Inv | `Dot | `Odot | `Invdot | `Invodot ] 
+  [ `None | `Normal | `Inv | `Dot | `Odot | `Invdot | `Invodot ]
 
 let fprint_arrow_style ppf = function
     `None -> fprintf ppf "none"
@@ -83,7 +89,7 @@ module type ATTRIBUTES = sig
 
   type edge   (** Attributes of edges. *)
 
-  (** Attributes of (optional) boxes around vertices. *) 
+  (** Attributes of (optional) boxes around vertices. *)
   type subgraph = {
     sg_name : string;            (** Box name. *)
     sg_attributes : vertex list; (** Box attributes. *)
@@ -118,13 +124,16 @@ module CommonAttributes = struct
     | `OrderingOut
         (** Constrains  order of out-edges in a subgraph according to
           their file sequence *)
-    ] 
+    ]
 
   (** Attributes of nodes. *)
   type vertex =
     [ `Color of color
         (** Sets the color of the border of the node. Default value is [black]
          *)
+    | `ColorWithTransparency of color_with_transparency
+        (** Sets the color of the border of the vertex with a transparency
+            component. Default value is fully opaque [black] *)
     | `Fontcolor of color
         (** Sets the label font color.  Default value is [black]. *)
     | `Fontname of string
@@ -138,7 +147,7 @@ module CommonAttributes = struct
         (** Sets the label printed in the node. The string may include escaped
             newlines [\n], [\l], or [\r] for center, left, and right justified
 	    lines.
-            Record labels may contain recursive box lists delimited by { | }. 
+            Record labels may contain recursive box lists delimited by { | }.
 	*)
     | `Orientation of float
         (** Node rotation angle, in degrees.  Default value is [0.0]. *)
@@ -159,15 +168,18 @@ module CommonAttributes = struct
             simultaneously. *)
     | `Width of float
         (** Sets the minimum width.  Default value is [0.75]. *)
-    ]     
+    ]
 
   (** Attributes of edges. *)
   type edge =
     [ `Color of color
         (** Sets the edge stroke color.  Default value is [black]. *)
+    | `ColorWithTransparency of color_with_transparency
+        (** Sets the color of the border of the vertex with a transparency
+            component. Default value is fully opaque [black] *)
     | `Decorate of bool
         (** If [true], draws a line connecting labels with their edges. *)
-    | `Dir of [ `Forward | `Back | `Both | `None ] 
+    | `Dir of [ `Forward | `Back | `Both | `None ]
         (** Sets arrow direction.  Default value is [`Forward]. *)
     | `Fontcolor of color
         (** Sets the label font color.  Default value is [black]. *)
@@ -187,12 +199,12 @@ module CommonAttributes = struct
         (** Sets the font family name for head and tail labels.  Default
             value is ["Times-Roman"]. *)
     | `Labelfontsize of int
-        (** Sets the font size for head and tail labels (in points). 
+        (** Sets the font size for head and tail labels (in points).
             Default value is [14]. *)
     | `Style of [ `Solid | `Dashed | `Dotted | `Bold | `Invis ]
         (** Sets the layout style of the edge.  Several styles may be combined
             simultaneously. *)
-    ]     
+    ]
 
   (** Pretty-print. *)
 
@@ -231,7 +243,9 @@ module CommonAttributes = struct
     | `Invis -> fprintf ppf "invis"
 
   let fprint_vertex ppf = function
-      `Color a -> fprintf ppf "color=%a" fprint_color a
+    | `Color a -> fprintf ppf "color=%a" fprint_color a
+    | `ColorWithTransparency a ->
+        fprintf ppf "color=%a" fprint_color_with_transparency a
     | `Fontcolor a -> fprintf ppf "fontcolor=%a" fprint_color a
     | `Fontname s -> fprintf ppf "fontname=%a"  fprint_string s
     | `Fontsize i -> fprintf ppf "fontsize=%i" i
@@ -244,7 +258,7 @@ module CommonAttributes = struct
     | `Style a -> fprintf ppf "style=%a" fprint_node_style a
     | `Width f -> fprintf ppf "width=%f" f
 
-  let fprint_edge_style = 
+  let fprint_edge_style =
     fprint_node_style
 
   let fprint_arrow_direction ppf = function
@@ -254,7 +268,9 @@ module CommonAttributes = struct
     | `None -> fprintf ppf "none"
 
   let fprint_edge ppf = function
-      `Color a -> fprintf ppf "color=%a" fprint_color a
+    | `Color a -> fprintf ppf "color=%a" fprint_color a
+    | `ColorWithTransparency a ->
+        fprintf ppf "color=%a" fprint_color_with_transparency a
     | `Decorate b -> fprintf ppf "decorate=%b" b
     | `Dir a -> fprintf ppf "dir=%a" fprint_arrow_direction a
     | `Fontcolor a -> fprintf ppf "fontcolor=%a" fprint_color a
@@ -262,7 +278,7 @@ module CommonAttributes = struct
     | `Fontsize i -> fprintf ppf "fontsize=%i" i
     | `Label s -> fprintf ppf "label=%a" fprint_string_user s
     | `Labelfontcolor a -> fprintf ppf "labelfontcolor=%a" fprint_color a
-    | `Labelfontname s -> fprintf ppf "labelfontname=\"%s\"" s 
+    | `Labelfontname s -> fprintf ppf "labelfontname=\"%s\"" s
 	(* (String.escaped s) *)
     | `Labelfontsize i -> fprintf ppf "labelfontsize=%i" i
     | `Style a -> fprintf ppf "style=%a" fprint_edge_style a
@@ -277,13 +293,13 @@ end
 module type ENGINE = sig
 
   module Attributes : sig
-    include ATTRIBUTES 
+    include ATTRIBUTES
     val fprint_graph:formatter -> graph -> unit
     val fprint_vertex: formatter -> vertex -> unit
     val fprint_edge: formatter -> edge -> unit
   end
 
-  (** The litteral name of the engine. *)      
+  (** The litteral name of the engine. *)
   val name: string
 
   (** The keyword for graphs ("digraph" for dot, "graph" for neato) *)
@@ -304,7 +320,7 @@ module MakeEngine
      type t
      module V : sig type t end
      module E : sig type t val src : t -> V.t val dst : t -> V.t end
-       
+
      val iter_vertex : (V.t -> unit) -> t -> unit
      val iter_edges_e : (E.t -> unit) -> t -> unit
 
@@ -327,16 +343,16 @@ struct
   exception Error of string
 
   let handle_error f arg =
-    try 
+    try
       f arg
-    with 
+    with
 	Error msg ->
 	  Printf.eprintf "%s: %s failure\n   %s\n"
 	  Sys.argv.(0) EN.name msg;
 	  flush stderr;
 	  exit 2
 
-    (** [fprint_graph_attributes ppf list] pretty prints a list of 
+    (** [fprint_graph_attributes ppf list] pretty prints a list of
         graph attributes on the formatter [ppf].  Attributes are separated
         by a ";". *)
     let fprint_graph_attributes ppf list =
@@ -344,7 +360,7 @@ struct
 	 fprintf ppf "%a;@ " EN.Attributes.fprint_graph att
        ) list
 
-   (** [fprint_graph_attribute printer ppf list] pretty prints a list of 
+   (** [fprint_graph_attribute printer ppf list] pretty prints a list of
        attributes on the formatter [ppf], using the printer [printer] for
        each attribute.  The list appears between brackets and attributes
        are speparated by ",".  If the list is empty, nothing is printed. *)
@@ -354,7 +370,7 @@ struct
 	  let rec fprint_attributes_rec ppf = function
 	      [] -> ()
 	    | hd' :: tl' ->
-		fprintf ppf ",@ %a%a" 
+		fprintf ppf ",@ %a%a"
 		  fprint_attribute hd'
 		  fprint_attributes_rec tl'
 	  in
@@ -362,12 +378,12 @@ struct
 	    fprint_attribute hd
 	    fprint_attributes_rec tl
 
-    (** [fprint_graph_attributes ppf list] pretty prints a list of 
+    (** [fprint_graph_attributes ppf list] pretty prints a list of
         node attributes using the format of [fprint_attributes]. *)
-    let fprint_node_attributes ppf list = 
+    let fprint_node_attributes ppf list =
       fprint_attributes EN.Attributes.fprint_vertex ppf list
-	 
-    (** [fprint_graph_attributes ppf list] pretty prints a list of 
+
+    (** [fprint_graph_attributes ppf list] pretty prints a list of
         edge attributes using the format of [fprint_attributes]. *)
     let fprint_edge_attributes ppf list =
       fprint_attributes EN.Attributes.fprint_edge ppf list
@@ -375,7 +391,7 @@ struct
     (** [fprint_graph ppf graph] pretty prints the graph [graph] in
         the CGL language on the formatter [ppf]. *)
     let fprint_graph ppf graph =
-      let subgraphs = Hashtbl.create 7 in 
+      let subgraphs = Hashtbl.create 7 in
 
       (* Printing nodes. *)
 
@@ -383,61 +399,61 @@ struct
 
 	let default_node_attributes = X.default_vertex_attributes graph in
 	if default_node_attributes  <> [] then
-	  fprintf ppf "node%a;@ " 
+	  fprintf ppf "node%a;@ "
 	    fprint_node_attributes default_node_attributes;
 
-	X.iter_vertex 
+	X.iter_vertex
           (function node ->
-             begin match X.get_subgraph node with 
+             begin match X.get_subgraph node with
              | None -> ()
-             | Some sg -> 
-                 try 
-                   let (sg,nodes) = 
-		     Hashtbl.find subgraphs sg.EN.Attributes.sg_name 
+             | Some sg ->
+                 try
+                   let (sg,nodes) =
+		     Hashtbl.find subgraphs sg.EN.Attributes.sg_name
 		   in
-                   Hashtbl.replace subgraphs 
+                   Hashtbl.replace subgraphs
 		     sg.EN.Attributes.sg_name (sg,node::nodes)
-                 with Not_found -> 
-                   Hashtbl.add subgraphs sg.EN.Attributes.sg_name (sg,[node]) 
+                 with Not_found ->
+                   Hashtbl.add subgraphs sg.EN.Attributes.sg_name (sg,[node])
              end;
-	     fprintf ppf "%s%a;@ " 
+	     fprintf ppf "%s%a;@ "
 	       (X.vertex_name node)
-	       fprint_node_attributes (X.vertex_attributes node)) 
+	       fprint_node_attributes (X.vertex_attributes node))
           graph
 
       in
 
       (* Printing subgraphs *)
 
-      let print_subgraphs ppf = 
+      let print_subgraphs ppf =
 
         Hashtbl.iter
-          (fun name (sg,nodes) -> 
+          (fun name (sg,nodes) ->
              fprintf ppf "@[<v 2>subgraph cluster_%s { %t%t };@]@\n"
                name
-               
-               (fun ppf -> 
-                  (List.iter 
-                     (fun n -> 
+
+               (fun ppf ->
+                  (List.iter
+                     (fun n ->
 			fprintf ppf "%a;@\n" EN.Attributes.fprint_vertex n)
                      sg.EN.Attributes.sg_attributes))
 
-               (fun ppf -> 
-                  (List.iter 
+               (fun ppf ->
+                  (List.iter
 		     (fun n -> fprintf ppf "%s;" (X.vertex_name n))
                      nodes))
           )
-          subgraphs 
-        
+          subgraphs
+
       in
 
       (* Printing edges *)
 
       let print_edges ppf =
-	
+
 	let default_edge_attributes = X.default_edge_attributes graph in
 	if default_edge_attributes <> [] then
-	  fprintf ppf "edge%a;@ " 
+	  fprintf ppf "edge%a;@ "
 	    fprint_edge_attributes default_edge_attributes;
 
 	X.iter_edges_e (function edge ->
@@ -461,7 +477,6 @@ struct
     (** [output_graph oc graph] pretty prints the graph [graph] in the dot
 	language on the channel [oc]. *)
     let output_graph oc graph =
-
       let ppf = formatter_of_out_channel oc in
       fprint_graph ppf graph;
       pp_print_flush ppf ()
@@ -485,6 +500,9 @@ module DotAttributes = struct
     [ CommonAttributes.graph
     | `Bgcolor of color
         (** Sets the background color and the inital fill color. *)
+    | `BgcolorWithTransparency of color_with_transparency
+        (** Sets the background color and the inital fill color with
+            a transparency component. *)
     | `Comment of string
         (** Comment string. *)
     | `Concentrate of bool
@@ -521,7 +539,7 @@ module DotAttributes = struct
 	    Default value is [8]. *)
     | `Url of string
         (** URL associated with graph (format-dependent). *)
-    ] 
+    ]
 
   (** Attributes of nodes.  They include all common node attributes and
       several specific ones.  All attributes described in the "dot User's
@@ -537,6 +555,9 @@ module DotAttributes = struct
     | `Fillcolor of color
         (** Sets the fill color (used when `Style filled).  Default value
             is [lightgrey]. *)
+    | `FillcolorWithTransparency of color_with_transparency
+        (** Sets the fill color (used when `Style filled) with a transparency
+            component.  Default value is fully opaque [lightgrey]. *)
     | `Fixedsize of bool
         (** If [true], forces the given dimensions to be the actual ones.
             Default value is [false]. *)
@@ -548,7 +569,7 @@ module DotAttributes = struct
 	    Distiller 3.0 and up. *)
     | `Z of float
         (** z coordinate for VRML output. *)
-    ] 
+    ]
 
   (** Attributes of edges.  They include all common edge attributes and
       several specific ones.  All attributes described in the "dot User's
@@ -564,8 +585,8 @@ module DotAttributes = struct
         (** Sets the style of the tail arrow.  Default value is [`Normal]. *)
     | `Comment of string
         (** Comment string. *)
-    | `Constraints of bool
-        (** If [false], causes an edge to be ignored for rank assignment. 
+    | `Constraint of bool
+        (** If [false], causes an edge to be ignored for rank assignment.
             Default value is [true]. *)
     | `Headlabel of string
         (** Sets the label attached to the head arrow. *)
@@ -574,13 +595,13 @@ module DotAttributes = struct
     | `Headurl of string
         (** Url attached to head label if output format is ismap. *)
     | `Labelangle of float
-        (** Angle in degrees which head or tail label is rotated off edge. 
+        (** Angle in degrees which head or tail label is rotated off edge.
             Default value is [-25.0]. *)
     | `Labeldistance of float
-        (** Scaling factor for distance of head or tail label from node. 
+        (** Scaling factor for distance of head or tail label from node.
             Default value is [1.0]. *)
     | `Labelfloat of bool
-        (** If [true], lessen constraints on edge label placement. 
+        (** If [true], lessen constraints on edge label placement.
             Default value is [false]. *)
     | `Layer of string
         (** Overlay. *)
@@ -601,7 +622,7 @@ module DotAttributes = struct
     | `Weight of int
         (** Sets the integer cost of stretching the edge.  Default value is
             [1]. *)
-    ] 
+    ]
 
     type subgraph = {
       sg_name : string;
@@ -624,6 +645,8 @@ module DotAttributes = struct
     let fprint_graph ppf = function
 	#CommonAttributes.graph as att -> CommonAttributes.fprint_graph ppf att
       | `Bgcolor a -> fprintf ppf "bgcolor=%a" fprint_color a
+      | `BgcolorWithTransparency a ->
+          fprintf ppf "bcolor=%a" fprint_color_with_transparency a
       | `Comment s -> fprintf ppf "comment=%a" fprint_string s
       | `Concentrate b -> fprintf ppf "concentrate=%b" b
       | `Fontpath s -> fprintf ppf "fontpath=%a" fprint_string s
@@ -641,11 +664,13 @@ module DotAttributes = struct
       | `Url s -> fprintf ppf "URL=\"%s\"" s (*(String.escaped s)*)
 
     let fprint_vertex ppf = function
-	#CommonAttributes.vertex as att -> 
+	#CommonAttributes.vertex as att ->
 	  CommonAttributes.fprint_vertex ppf att
       | `Comment s -> fprintf ppf "comment=%a" fprint_string s
       | `Distortion f -> fprintf ppf "distortion=%f" f
       | `Fillcolor a -> fprintf ppf "fillcolor=%a" fprint_color a
+      | `FillcolorWithTransparency a ->
+          fprintf ppf "fillcolor=%a" fprint_color_with_transparency a
       | `Fixedsize b -> fprintf ppf "fixedsize=%b" b
       | `Layer s -> fprintf ppf "layer=%a" fprint_string s
       | `Url s -> fprintf ppf "URL=\"%s\"" s (*(String.escaped s)*)
@@ -667,7 +692,7 @@ module DotAttributes = struct
       | `Arrowsize f -> fprintf ppf "arrowsize=%f" f
       | `Arrowtail a -> fprintf ppf "arrowtail=%a" fprint_arrow_style a
       | `Comment s -> fprintf ppf "comment=%a" fprint_string s
-      | `Constraints b -> fprintf ppf "constraints=%b" b
+      | `Constraint b -> fprintf ppf "constraint=%b" b
       | `Headlabel s -> fprintf ppf "headlabel=%a" fprint_string s
       | `Headport a -> fprintf ppf "headport=%a" fprint_port a
       | `Headurl s -> fprintf ppf "headURL=%a" fprint_string s
@@ -707,7 +732,7 @@ module type GraphWithDotAttrs = sig
 	   attributes. *)
 end
 
-module Dot = 
+module Dot =
   MakeEngine (struct
 		module Attributes = DotAttributes
 		let name = "dot"
@@ -738,9 +763,9 @@ module NeatoAttributes = struct
 	(** [true] makes edge splines if nodes don't overlap.
 	    Default value is [false]. *)
     | `Sep of float
-	(** Edge spline separation factor from nodes.  Default value 
+	(** Edge spline separation factor from nodes.  Default value
 	    is [0.0]. *)
-    ] 
+    ]
 
   (** Attributes of nodes.  They include all common node attributes and
       several specific ones.  All attributes described in the "Neato User's
@@ -749,7 +774,7 @@ module NeatoAttributes = struct
     [ CommonAttributes.vertex
     | `Pos of float * float
         (** Initial coordinates of the node. *)
-    ] 
+    ]
 
   (** Attributes of edges.  They include all common edge attributes and
       several specific ones.  All attributes described in the "Neato User's
@@ -762,7 +787,7 @@ module NeatoAttributes = struct
         (** Preferred length of edge.  Default value is [1.0]. *)
     | `Weight of float
         (** Strength of edge spring.  Default value is [1.0]. *)
-    ] 
+    ]
 
     type subgraph = {
       sg_name : string;
@@ -780,7 +805,7 @@ module NeatoAttributes = struct
       | `Sep f -> fprintf ppf "sep=%f" f
 
     let fprint_vertex ppf = function
-	#CommonAttributes.vertex as att -> 
+	#CommonAttributes.vertex as att ->
 	  CommonAttributes.fprint_vertex ppf att
       | `Pos (f1, f2) -> fprintf ppf "pos=\"%f,%f\"" f1 f2
 
@@ -792,10 +817,16 @@ module NeatoAttributes = struct
 
 end
 
-module Neato = 
+module Neato =
   MakeEngine (struct
 		module Attributes = NeatoAttributes
 		let name = "neato"
 		let opening = "graph"
 		let edge_arrow = "--"
 	      end)
+
+(*
+Local Variables:
+compile-command: "make -C .."
+End:
+*)

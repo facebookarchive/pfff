@@ -1,7 +1,7 @@
 (**************************************************************************)
 (*                                                                        *)
 (*  Ocamlgraph: a generic graph library for OCaml                         *)
-(*  Copyright (C) 2004-2008                                               *)
+(*  Copyright (C) 2004-2010                                               *)
 (*  Sylvain Conchon, Jean-Christophe Filliatre and Julien Signoles        *)
 (*                                                                        *)
 (*  This software is free software; you can redistribute it and/or        *)
@@ -14,8 +14,6 @@
 (*  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.                  *)
 (*                                                                        *)
 (**************************************************************************)
-
-(* $Id: gmap.mli,v 1.1 2004-10-20 09:59:56 signoles Exp $ *)
 
 (** Graph mapping. Map a graph to another one. *)
 
@@ -43,6 +41,11 @@ module Vertex(G_Src : V_SRC)(G_Dst : V_DST) : sig
     (** [map f g] applies [f] to each vertex of [g] and so builds a new graph
 	based on [g] *)
 
+  val filter_map : (G_Src.V.t -> G_Dst.vertex option) -> G_Src.t -> G_Dst.t
+    (** [filter_map f g] applies [f] to each vertex of [g] and so
+        builds a new graph based on [g]; if [None] is returned by [f]
+        the vertex is omitted in the new graph. *)
+
 end
 
 (** {2 Mapping of edges} *)
@@ -50,7 +53,7 @@ end
 (** Signature for the source graph. *)
 module type E_SRC = sig
   type t
-  module E : Sig.HASHABLE
+  module E : Sig.ORDERED_TYPE
   val fold_edges_e : (E.t -> 'a -> 'a) -> t -> 'a -> 'a
 end
 
@@ -68,5 +71,10 @@ module Edge(G_Src: E_SRC)(G_Dst: E_DST) : sig
   val map : (G_Src.E.t -> G_Dst.edge) -> G_Src.t -> G_Dst.t
     (** [map f g] applies [f] to each edge of [g] and so builds a new graph
 	based on [g] *)
+
+  val filter_map : (G_Src.E.t -> G_Dst.edge option) -> G_Src.t -> G_Dst.t
+    (** [filter_map f g] applies [f] to each edge of [g] and so builds
+        a new graph based on [g]; if [None] is returned by [f] the
+        edge is omitted in the new graph. *)
 
 end
