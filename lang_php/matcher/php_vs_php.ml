@@ -2535,12 +2535,18 @@ and m_modifier a b =
        A.Final,
        B.Final
     )
+  | A.Async, B.Async ->
+    return (
+       A.Async,
+       B.Async
+    )
   | A.Public, _
   | A.Private, _
   | A.Protected, _
   | A.Static, _
   | A.Abstract, _
   | A.Final, _
+  | A.Async, _
    -> fail ()
 
 and m_class_var_modifier a b =

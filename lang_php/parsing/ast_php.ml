@@ -613,7 +613,7 @@ and class_def = {
         and method_def = func_def
           and modifier =
             | Public  | Private | Protected
-            | Static  | Abstract | Final
+            | Static  | Abstract | Final | Async
  and xhp_decl =
     | XhpAttributesDecl of
         tok (* attribute *) * xhp_attribute_decl comma_list * tok (*;*)

@@ -111,7 +111,7 @@ module PI = Parse_info
    *)*/
  T_ECHO  T_PRINT
  /*(* pad: was declared via right ... ??? mean token ? *)*/
- T_STATIC  T_ABSTRACT  T_FINAL  T_PRIVATE T_PROTECTED T_PUBLIC
+ T_ASYNC T_STATIC  T_ABSTRACT  T_FINAL  T_PRIVATE T_PROTECTED T_PUBLIC 
  T_UNSET T_ISSET T_EMPTY
  T_CLASS   T_INTERFACE  T_EXTENDS T_IMPLEMENTS
  T_TRAIT T_INSTEADOF
@@ -494,20 +494,24 @@ function_declaration_statement:
      { { $2 with f_attrs = Some $1 } }
 
 unticked_function_declaration_statement:
- T_FUNCTION is_reference ident type_params_opt
+ async_opt T_FUNCTION is_reference ident type_params_opt
    TOPAR parameter_list TCPAR
    return_type_opt
    TOBRACE inner_statement_list TCBRACE
    {
-    let params = ($5, $6, $7) in
-    let body = ($9, $10, $11) in
-    ({ f_tok = $1; f_ref = $2; f_name = Name $3; f_params = params;
-       f_tparams = $4;
-       f_return_type = $8;f_body = body;
+    let params = ($6, $7, $8) in
+    let body = ($10, $11, $12) in
+    ({ f_tok = $2; f_ref = $3; f_name = Name $4; f_params = params;
+       f_tparams = $5;
+       f_return_type = $9;f_body = body;
        f_attrs = None;
-       f_type = FunctionRegular; f_modifiers = [];
+       f_type = FunctionRegular; f_modifiers = $1;
     })
    }
+
+async_opt:
+ | /*(*empty*)*/ { [] }
+ | T_ASYNC { [Async,($1)] }
 
 parameter_list:
  | /*(*empty*)*/              { [] }
@@ -671,6 +675,7 @@ member_modifier:
  | T_PRIVATE   { Private,($1) }
  | T_STATIC    { Static,($1) }
  | T_ABSTRACT { Abstract,($1) } | T_FINAL{ Final,($1) }
+ | T_ASYNC { Async,($1) }
 
 method_body:
  | TOBRACE inner_statement_list TCBRACE	{ ($1, $2, $3), MethodRegular }
@@ -1002,16 +1007,16 @@ expr:
  | T_CLONE expr { Clone($1,$2) }
 
  /*(* PHP 5.3 *)*/
- | T_FUNCTION is_reference TOPAR parameter_list TCPAR return_type_opt
+ | async_opt T_FUNCTION is_reference TOPAR parameter_list TCPAR return_type_opt
    lexical_vars
    TOBRACE inner_statement_list TCBRACE
-     { let params = ($3, $4, $5) in
-       let body = ($8, $9, $10) in
-       Lambda ($7, { f_tok = $1;f_ref = $2;f_params = params; f_body = body;
+     { let params = ($4, $5, $6) in
+       let body = ($9, $10, $11) in
+       Lambda ($8, { f_tok = $2;f_ref = $3;f_params = params; f_body = body;
                      f_tparams = None;
-                     f_name = Name("__lambda__", $1);
-                     f_return_type = $6; f_type = FunctionLambda;
-                     f_modifiers = [];
+                     f_name = Name("__lambda__", $2);
+                     f_return_type = $7; f_type = FunctionLambda;
+                     f_modifiers = $1;
                      f_attrs = None;
        })
      }

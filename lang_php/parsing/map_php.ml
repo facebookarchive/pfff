@@ -999,6 +999,7 @@ and map_modifier =
   | Static -> Static
   | Abstract -> Abstract
   | Final -> Final
+  | Async -> Async
 
 and map_global_var =
   function

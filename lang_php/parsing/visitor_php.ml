@@ -934,6 +934,7 @@ and v_modifier =
   | Static -> ()
   | Abstract -> ()
   | Final -> ()
+  | Async -> ()
 and v_xhp_attribute_decl x =
   let rec k x = match x with
   | XhpAttrInherit v1 -> let v1 = v_xhp_tag_wrap v1 in ()

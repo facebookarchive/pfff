@@ -648,7 +648,7 @@ and visibility env = function
   | Public :: _ -> A.Public
   | Private :: _ -> A.Private
   | Protected :: _ -> A.Protected
-  | (Static | Abstract | Final) :: rl -> visibility env rl
+  | (Static | Abstract | Final | Async) :: rl -> visibility env rl
 
 and static env = function
   | [] -> false

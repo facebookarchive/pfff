@@ -905,6 +905,7 @@ let visit_program ~tag prefs  hentities (ast, toks) =
       | T.T_FINAL ii | T.T_ABSTRACT ii -> tag ii KeywordObject
 
       | T.T_STATIC ii -> tag ii Keyword
+      | T.T_ASYNC ii -> tag ii Keyword
       | T.T_CONST ii -> tag ii Keyword
 
       (* could be for func or method or lambda so tagged via ast *)

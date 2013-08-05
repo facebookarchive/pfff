@@ -991,6 +991,7 @@ and vof_modifier =
   | Static -> Ocaml.VSum (("Static", []))
   | Abstract -> Ocaml.VSum (("Abstract", []))
   | Final -> Ocaml.VSum (("Final", []))
+  | Async -> Ocaml.VSum (("Async", []))
 and vof_xhp_decl =
   function
   | XhpAttributesDecl ((v1, v2, v3)) ->
