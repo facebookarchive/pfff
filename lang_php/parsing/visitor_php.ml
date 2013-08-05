@@ -343,6 +343,7 @@ and v_expr (x: expr) =
   | RequireOnce ((v1, v2)) -> let v1 = v_tok v1 and v2 = v_expr v2 in ()
   | Yield ((v1, v2)) -> let v1 = v_tok v1 and v2 = v_expr v2 in ()
   | YieldBreak ((v1, v2)) -> let v1 = v_tok v1 and v2 = v_tok v2 in ()
+  | Await ((v1, v2)) -> let v1 = v_tok v1 and v2 = v_expr v2 in ()
   | Empty ((v1, v2)) ->
       let v1 = v_tok v1 and v2 = v_paren v_lvalue v2 in ()
   | Isset ((v1, v2)) ->

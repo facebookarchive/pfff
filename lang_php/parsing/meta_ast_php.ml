@@ -296,6 +296,10 @@ and vof_expr = function
       let v1 = vof_tok v1
       and v2 = vof_tok v2
       in Ocaml.VSum (("YieldBreak", [ v1; v2 ]))
+  | Await ((v1, v2)) ->
+      let v1 = vof_tok v1
+      and v2 = vof_expr v2
+      in Ocaml.VSum (("Await", [ v1; v2 ]))
   | Empty ((v1, v2)) ->
       let v1 = vof_tok v1
       and v2 = vof_paren vof_lvalue v2

@@ -944,6 +944,7 @@ let visit_program ~tag prefs  hentities (ast, toks) =
           tag ii (Class (Use2 fake_no_use2));
 
       | T.T_YIELD ii -> tag ii Keyword
+      | T.T_AWAIT ii -> tag ii Keyword
 
       (* should have been handled in field *)
       | T.T_STRING_VARNAME ii -> ()

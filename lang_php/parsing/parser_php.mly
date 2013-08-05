@@ -176,6 +176,7 @@ module PI = Parse_info
 /*(*2 PHP language extensions: *)*/
 /*(*-----------------------------------------*)*/
 %token <Ast_php.info> T_YIELD
+%token <Ast_php.info> T_AWAIT
 
 /*(* phpext: for hack and also for sgrep *)*/
 %token <Ast_php.info> TDOTS
@@ -254,6 +255,7 @@ module PI = Parse_info
 %left      T_ELSE
 %left      T_ENDIF
 %nonassoc  T_YIELD
+%nonassoc  T_AWAIT
 
 /*(* not in original grammar *)*/
 %left TCOLCOL
@@ -1024,6 +1026,8 @@ expr:
     * and are restricted to a few forms *)*/
  | T_YIELD expr { Yield ($1, $2) }
  | T_YIELD T_BREAK { YieldBreak ($1, $2) }
+ /*(* php-facebook-ext: Just like yield, await is at the statement level *) */
+ | T_AWAIT expr { Await ($1, $2) }
 
  /*(* sgrep_ext: *)*/
  | TDOTS { H.sgrep_guard (SgrepExprDots $1) }

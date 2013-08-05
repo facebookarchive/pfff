@@ -278,6 +278,11 @@ and expr =
    *)
   | Yield of tok * expr
   | YieldBreak of tok * tok
+  (* php-facebook-ext:
+   *
+   * Just like yield, this should be at the statement level 
+   *)
+  | Await of tok * expr
 
   (* only appear when process sgrep patterns *)
   | SgrepExprDots of tok

@@ -226,6 +226,7 @@ let info_of_tok = function
   | T_XHP_PCDATA (ii) -> ii
 
   | T_YIELD (ii) -> ii
+  | T_AWAIT (ii) -> ii
   | T_SELF(ii) -> ii
   | T_PARENT(ii) -> ii
 
@@ -422,6 +423,7 @@ let visitor_info_of_tok f = function
   | T_XHP_PCDATA (ii) -> T_XHP_PCDATA (f ii)
 
   | T_YIELD (ii) -> T_YIELD (f ii)
+  | T_AWAIT (ii) -> T_AWAIT (f ii)
   | T_SELF (ii) -> T_SELF (f ii)
   | T_PARENT (ii) -> T_PARENT (f ii)
 

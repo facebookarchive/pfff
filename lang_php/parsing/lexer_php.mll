@@ -186,6 +186,7 @@ let keyword_table = Common.hash_of_list [
 
   (* php-facebook-ext: *)
   "yield", (fun ii -> lang_ext_or_t_ident ii (fun x -> T_YIELD x));
+  "await", (fun ii -> lang_ext_or_t_ident ii (fun x -> T_AWAIT x));
 
   (* php-facebook-ext: *)
   "type",    (fun ii -> lang_ext_or_t_ident ii (fun x -> T_TYPE x));
