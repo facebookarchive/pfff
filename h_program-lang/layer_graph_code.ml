@@ -26,6 +26,15 @@ module G = Graph_code
  *)
 
 (*****************************************************************************)
+(* Helpers *)
+(*****************************************************************************)
+let kind_of_rank ~max_total n =
+  let percent = Common2.pourcent n max_total in
+  let percent_round = (percent / 10) * 10 in
+  spf "cover %d%%" percent_round
+  
+
+(*****************************************************************************)
 (* Main entry point *)
 (*****************************************************************************)
 
@@ -54,20 +63,15 @@ in the Use graph";
         nodes_and_rank +> List.map snd +> Common2.maximum
       in
 
-     let percent =
-        try 
-          Common2.pourcent max_file max_total
-       with Division_by_zero -> 0
-     in
-
       file, 
       { Layer_code.
-        micro_level = [];
+        micro_level = nodes_and_rank +> List.map (fun (n, v) ->
+          let info = G.nodeinfo n g in
+          let line = info.Graph_code.pos.Parse_info.line in
+          line, kind_of_rank v ~max_total
+        );
         macro_level = [
-          (let percent_round = (percent / 10) * 10 in
-           spf "cover %d%%" percent_round
-          ),
-          1.
+          kind_of_rank max_file ~max_total, 1.
         ];
       }
     );

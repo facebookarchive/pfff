@@ -507,20 +507,28 @@ let test_adhoc_deps graph_file =
     end
   )
 
-let test_top_down_layer graph_file =
+let test_layering graph_file =
   let g = GC.load graph_file in
   let (scc, hscc) = GC.strongly_connected_components_use_graph g in
   pr2 (spf "#scc = %d" (Array.length scc));
-  let htopdown = GC.top_down_numbering g in
+  let htopdown = GC.bottom_up_numbering g in
   pr2 (spf "computed numbering = %d" (Hashtbl.length htopdown));
   let xs = htopdown +> Common.hash_to_list +> List.map snd in
   let min = Common2.minimum xs in
+  assert(min = 0);
   let max = Common2.maximum xs in
-  pr2 (spf "min = %d, max = %d" min max);
+  pr2 (spf "max = %d" max);
+  
+  let file = "/tmp/rank_code.txt" in
+  pr2 (spf "ranks in %s" file);
+  Common.with_open_outfile file (fun (pr, _chan) ->
+    let pr s = pr (s ^ "\n") in
+    htopdown +> Common.hash_to_list +> Common.sort_by_val_lowfirst
+    +> List.iter (fun (node, v) -> 
+      pr (spf "%s: %d" (GC.string_of_node node) v)
+    )
+  );
 
-  htopdown +> Common.hash_to_list +> Common.sort_by_val_lowfirst
-  +> Common.take_safe 10
-  +> List.iter pr2_gen;
   let (d,_,_) = Common2.dbe_of_filename graph_file in
   let output = Common2.filename_of_dbe (d, "layer_graph_code", "json") in
   Layer_graph_code.gen_heatmap_layer g htopdown output;
@@ -550,8 +558,8 @@ let extra_actions () = [
   Common.mk_action_1_arg test_thrift_alive;
   "-test_pad", " <graph>",
   Common.mk_action_1_arg test_adhoc_deps;
-  "-test_topdown", " <graph>",
-  Common.mk_action_1_arg test_top_down_layer;
+  "-test_layering", " <graph>",
+  Common.mk_action_1_arg test_layering;
 (*
   "-test_phylomel", " <geno file>",
   Common.mk_action_1_arg test_phylomel;
