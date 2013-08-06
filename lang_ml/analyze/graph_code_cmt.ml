@@ -58,9 +58,9 @@ type env = {
   g: Graph_code.graph;
 
   phase: phase;
-  (* the .cmt *)
+  (* the .cmt, used mostly for error reporting, in readable path format *)
   file: Common.filename;
-  (* the file the .cmt is supposed to come from *)
+  (* the file the .cmt is supposed to come from, in readable path format *)
   source_file: Common.filename;
   
   current: Graph_code.node;
@@ -167,18 +167,7 @@ let add_node_and_edge_if_defs_mode ?(dupe_ok=false) env name_node loc =
             line = lexing_pos.Lexing.pos_lnum; 
             charpos = lexing_pos.Lexing.pos_cnum;
             column = lexing_pos.Lexing.pos_cnum - lexing_pos.Lexing.pos_bol;
-            file =
-             (* ugly: the ocaml distribution does not comes with .cmt for
-              * its standard library, so I had to generate them manually 
-              * and put them in pfff/external/core. The problem is that
-              * those cmt files have hardcoded paths to my ocaml installation
-              * for their source, hence this hack below to reconvert
-              * those paths.
-              *)
-             if file =~ ".*/ocaml-4.00.1"
-             then spf "%s/external/core/%s" Config_pfff.path
-                   (Filename.basename file)
-             else file;
+            file;
          };
          props = [];
       } in
@@ -440,7 +429,7 @@ let optional env x = ()
 (* Defs/Uses *)
 (*****************************************************************************)
 let rec extract_defs_uses 
-   ~phase ~g ~ast ~readable
+   ~phase ~g ~ast ~readable ~root
    ~module_aliases ~type_aliases =
   let current =
     (* Module names are supposed to be unique for the ocaml linker,
@@ -461,11 +450,25 @@ let rec extract_defs_uses
     current;
     current_entity = [fst current];
     file = readable;
-    (* less: it's in absolute format, should we use instead a readable format?*)
-    source_file = Filename.concat ast.cmt_builddir
-      (match ast.cmt_sourcefile with
-      | None -> failwith (spf "no cmt_source_file for %s" readable)
-      | Some file -> file
+    (* we want a readable format here *)
+    source_file =
+      (let fullpath =
+         Filename.concat ast.cmt_builddir
+           (match ast.cmt_sourcefile with
+           | None -> failwith (spf "no cmt_source_file for %s" readable)
+           | Some file -> file
+           )
+       in
+       (* ugly: the OCaml distribution does not comes with .cmt for
+        * its standard library, so I had to generate them manually 
+        * and put them in pfff/external/core. The problem is that
+        * those cmt files have hardcoded paths to my ocaml installation
+        * for their source, hence this hack below to reconvert
+        * those paths.
+        *)
+       if fullpath =~ ".*/ocaml-4.00.1"
+       then spf "external/core/%s" (Filename.basename fullpath)
+       else Common.filename_without_leading_path root fullpath
       );
     locals = [];
     full_path_local_value = ref [];
@@ -1015,7 +1018,7 @@ let build ?(verbose=false) dir_or_file skip_list =
       k();
       let ast = parse file in
       let readable = Common.filename_without_leading_path root file in
-      extract_defs_uses ~g ~ast ~phase:Defs ~readable 
+      extract_defs_uses ~g ~ast ~phase:Defs ~readable ~root
         ~module_aliases ~type_aliases;
       ()
     ));
@@ -1029,7 +1032,7 @@ let build ?(verbose=false) dir_or_file skip_list =
       let readable = Common.filename_without_leading_path root file in
       if readable =~ "^external" || readable =~ "^EXTERNAL"
       then ()
-      else extract_defs_uses ~g ~ast ~phase:Uses ~readable
+      else extract_defs_uses ~g ~ast ~phase:Uses ~readable ~root
              ~module_aliases ~type_aliases
     ));
   if verbose then begin
