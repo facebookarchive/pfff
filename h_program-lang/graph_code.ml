@@ -285,12 +285,15 @@ let file_of_node n g =
     let info = nodeinfo n g in
     info.pos.Parse_info.file
   with Not_found ->
+    raise Not_found
+(*
     (match n with
     | str, (E.Dir | E.File) -> str
     | _ -> 
       (* todo: BAD no? *)
       spf "NOT_FOUND_FILE (for node %s)" (string_of_node n)
     )
+*)
 
 (*****************************************************************************)
 (* Iteration *)
