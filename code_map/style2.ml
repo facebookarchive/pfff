@@ -34,7 +34,7 @@ let zoom_factor_incruste_mode = 10. (* was 18 *)
 
 (*s: threshold_draw_dark_background_font_size_real *)
 (* CONFIG *)
-let threshold_draw_dark_background_font_size_real = 1.
+let threshold_draw_dark_background_font_size_real = 3.
 (*e: threshold_draw_dark_background_font_size_real *)
 
 let font_size_filename_cursor = 30.
