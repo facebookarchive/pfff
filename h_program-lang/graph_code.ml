@@ -157,7 +157,7 @@ let _stdlib = "STDLIB", E.Dir
 (*****************************************************************************)
 
 let string_of_node (s, kind) =
-  E.string_of_entity_kind kind ^ ":" ^ s
+  E.string_of_entity_kind kind ^ ": " ^ s
 
 let string_of_error = function
   | NodeAlreadyPresent n -> ("Node already present: " ^ string_of_node n)
