@@ -521,6 +521,9 @@ let test_top_down_layer graph_file =
   htopdown +> Common.hash_to_list +> Common.sort_by_val_lowfirst
   +> Common.take_safe 10
   +> List.iter pr2_gen;
+  let (d,_,_) = Common2.dbe_of_filename graph_file in
+  let output = Common2.filename_of_dbe (d, "layer_graph_code", "json") in
+  Layer_graph_code.gen_heatmap_layer g htopdown output;
   ()
 
 
