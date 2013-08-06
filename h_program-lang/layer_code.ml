@@ -195,14 +195,16 @@ let heat_map_properties = [
   "cover 70%", "yellow";
   "cover 60%", "YellowGreen";
   "cover 50%", "green";
-  "cover 40%", "aquamarine3";
-  "cover 30%", "cyan";
+  "cover 40%", "cyan";
+  "cover 30%", "cyan3";
   "cover 20%", "DeepSkyBlue1";
   "cover 10%", "blue";
-  (* we use "white" for 0 and not dark-blue (as it is the case usually with
-   * heatmaps) because ... the picture would be too blue otherwise.
+  (* Should we use a dark blue for 0, as it is the case usually with
+   * heatmaps? The picture can become very blue then.
+   * Do not use white though because draw_macrolevel use white when nothing
+   * was found so we want to differentiate such cases
    *)
-  "cover 0%", "white";
+  "cover 0%", "blue4"; (* alternative: snow4 *)
 
   (* when we zoom on a file we just show red/green coverage, no heat color *)
   "ok", "green";
