@@ -45,7 +45,9 @@ module Model = Model2
  *    visual feedback
  * 
  * related work:
- *  - TODO http://www.kickstarter.com/projects/296054304/zeta-code
+ *  - todo: http://www.kickstarter.com/projects/296054304/zeta-code
+ *  - todo: light table
+ *  - todo? sublime, textmate, etc
  *)
 
 (*****************************************************************************)
@@ -62,6 +64,7 @@ let legend = ref true
 let db_file    = ref (None: Common.filename option)
 let layer_file = ref (None: Common.filename option)
 let layer_dir  = ref (None: Common.dirname option)
+let graph_file = ref (None: Common.filename option)
 
 (* See also Gui.synchronous_actions *)
 let test_mode = ref (None: string option)
@@ -148,18 +151,34 @@ let treemap_generator paths =
 (*e: treemap_generator *)
 
 (*s: build_model *)
-let build_model2 root dbfile_opt =   
+let build_model2 root dbfile_opt graphfile_opt =   
+
   let db_opt = Common2.fmap Database_code.load_database dbfile_opt in
+
   let hentities = Model.hentities root db_opt in
   let hfiles_entities = Model.hfiles_and_top_entities root db_opt in
   let all_entities = Model.all_entities db_opt root in
-  let idx = Completion2.build_completion_defs_index all_entities in
+
+  let big_grep_idx = Completion2.build_completion_defs_index all_entities in
+
+
+  let g_opt =
+    match graphfile_opt with
+    | None -> None
+    | Some file -> Some (Graph_code.load file)
+  in
+  let huses_of_file, husers_of_file =
+    match g_opt with
+    | None -> Hashtbl.create 0, Hashtbl.create 0
+    | Some g ->
+      raise Todo
+  in
   
   let model = { Model.
         db = db_opt;
-        hentities = hentities;
-        hfiles_entities = hfiles_entities;
-        big_grep_idx = idx;
+        hentities; hfiles_entities; big_grep_idx;
+        g =  g_opt;
+        huses_of_file; husers_of_file;
   }
   in
   (*
@@ -187,7 +206,7 @@ let build_model a b =
  * not parse *)
 let layers_in_dir dir =
   Common2.readdir_to_file_list dir +> Common.map_filter (fun file ->
-    if file =~ "layer.*marshall"
+    if file =~ "layer.*json"
     then Some (Filename.concat dir file)
     else None
   )
@@ -259,11 +278,11 @@ let main_action xs =
   (if Cairo_helpers.is_old_cairo() 
   then
     Thread.create (fun () ->
-      Async.async_set (build_model root db_file) model;
+      Async.async_set (build_model root db_file !graph_file) model;
     ) ()
     +> ignore
    else 
-    Async.async_set (build_model root db_file) model;
+    Async.async_set (build_model root db_file !graph_file) model;
    (*
     GMain.Timeout.add ~ms:2000 ~callback:(fun () ->
       Model.async_set (build_model root dbfile_opt) model;
@@ -392,6 +411,8 @@ let options () = [
 
     "-with_info", Arg.String (fun s -> db_file := Some s),
     " <db_light_file>";
+    "-with_graph", Arg.String (fun s -> graph_file := Some s),
+    " <graph_file>";
     "-with_layer", Arg.String (fun s -> layer_file := Some s),
     " <layer_file>";
     "-with_layers", Arg.String (fun s -> layer_dir := Some s),

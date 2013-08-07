@@ -3,7 +3,6 @@
 (*s: type model *)
 type model = {
   db: Database_code.database option;
- 
   (*s: model fields hook *)
     (* fast accessors *)
     hentities : (string, Database_code.entity) Hashtbl.t;
@@ -12,6 +11,11 @@ type model = {
   (*x: model fields hook *)
     big_grep_idx: Big_grep.index;
   (*e: model fields hook *)
+
+  g: Graph_code.graph option;
+  (* fast accessors *)
+  huses_of_file: (Common.filename, Common.filename list) Hashtbl.t;
+  husers_of_file: (Common.filename, Common.filename list) Hashtbl.t;
  }
 (*e: type model *)
 
