@@ -106,5 +106,4 @@ let actions () = [
   Common.mk_action_0_arg test_graph_code;
   "-test_dsm", " <file>",
   Common.mk_action_1_arg test_dsm;
-  
 ]

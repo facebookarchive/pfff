@@ -79,3 +79,18 @@ in the Use graph";
   }
   in
   Layer_code.save_layer layer output
+
+(*****************************************************************************)
+(* Actions *)
+(*****************************************************************************)
+
+let actions () = [
+  "-gen_bottomup_layer", " <graph_file> <output>",
+  Common.mk_action_2_arg (fun graph_file output ->
+    let g = G.load graph_file in
+    let hrank = G.bottom_up_numbering g in
+    let (d,_,_) = Common2.dbe_of_filename graph_file in
+    let output = Common2.filename_of_dbe (d, "layer_graph_code", "json") in
+    gen_heatmap_layer g hrank output;
+  );
+]

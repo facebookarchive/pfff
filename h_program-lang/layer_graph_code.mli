@@ -4,3 +4,5 @@ val gen_heatmap_layer:
   (Graph_code.node, int) Hashtbl.t ->
   output:Common.filename ->
   unit
+
+val actions : unit -> Common.cmdline_actions

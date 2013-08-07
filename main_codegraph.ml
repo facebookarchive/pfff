@@ -572,6 +572,7 @@ let extra_actions () = [
 
 let all_actions () = 
   extra_actions () ++
+  Layer_graph_code.actions() ++
   Test_program_lang.actions() ++
   []
 
@@ -604,12 +605,11 @@ let options () = [
   ), " ";
 
   "-no_fake_node", Arg.Clear Graph_code_php.add_fake_node_when_undefined_entity,
-  "Do not add fake nodes when use-def mismatches happen";
+  " no fake nodes when use-def mismatches";
 
   ] ++
   Common.options_of_actions action (all_actions()) ++
   Common2.cmdline_flags_devel () ++
-  Common2.cmdline_flags_verbose () ++
   [
     "-version",   Arg.Unit (fun () -> 
       pr2 (spf "CodeGraph version: %s" Config_pfff.version);
