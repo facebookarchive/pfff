@@ -155,6 +155,55 @@ let unittest =
           xs;
       );
 
+      "uses and users of file XXX" >:: (fun () ->
+        let g = G.create () in
+        let nodeinfo f =
+          { G.
+            props = [];
+            pos = { Parse_info.
+              str = ""; charpos = -1; line = 1; column = 0;
+              file = fst f ^ ".php";
+            };
+          }
+        in
+        let (-->) f1 f2 =
+          let f1 = f1, E.Function in
+          let f2 = f2, E.Function in
+          if not (G.has_node f1 g)
+          then begin 
+            G.add_node f1 g;
+            G.add_nodeinfo f1 (nodeinfo f1) g;
+          end;
+          if not (G.has_node f2 g)
+          then begin 
+            G.add_node f2 g;
+            G.add_nodeinfo f2 (nodeinfo f2) g;
+          end;
+          G.add_edge (f1, f2) G.Use g
+        in
+        (* foo.php -> bar.php <-> bar_mutial.php
+         *  \
+         *   -> bar_bis.php
+         *)
+        "foo" --> "bar";
+        "bar" --> "bar_mutual";
+        "bar_mutual" --> "bar";
+        "bar" --> "bar_bis";
+
+        let huses_of_file, husers_of_file =
+          Graph_code_analysis.build_uses_and_users_of_file g in
+        let uses = Hashtbl.find huses_of_file "bar.php" in
+        let users = Hashtbl.find husers_of_file "bar.php" in
+        assert_equal
+          ~msg:"it should find all uses"
+          ["bar_mutual.php"; "bar_bis.php"]
+          uses;
+        assert_equal
+          ~msg:"it should find all users"
+          ["bar_mutual.php"; "foo.php"]
+          users;
+      );
+
     ];
 
     "dm" >::: [
