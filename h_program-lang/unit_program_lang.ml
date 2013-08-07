@@ -190,13 +190,13 @@ let unittest =
         "bar_mutual" --> "bar";
         "bar" --> "bar_bis";
 
-        let huses_of_file, husers_of_file =
+        let uses_of_file, users_of_file =
           Graph_code_analysis.build_uses_and_users_of_file g in
-        let uses = Hashtbl.find huses_of_file "bar.php" in
-        let users = Hashtbl.find husers_of_file "bar.php" in
+        let uses = List.assoc "bar.php" uses_of_file in
+        let users = List.assoc "bar.php" users_of_file in
         assert_equal
           ~msg:"it should find all uses"
-          ["bar_mutual.php"; "bar_bis.php"]
+          ["bar_bis.php"; "bar_mutual.php"]
           uses;
         assert_equal
           ~msg:"it should find all users"

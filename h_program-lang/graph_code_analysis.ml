@@ -97,4 +97,19 @@ let protected_to_private g =
 
 
 let build_uses_and_users_of_file g =
-  raise Todo
+
+  (* we use the 'find_all' property of those hashes *)
+  let huses = Hashtbl.create 101 in
+  let husers = Hashtbl.create 101 in
+
+  g +> G.iter_use_edges (fun n1 n2 ->
+    try 
+      let file1 = G.file_of_node n1 g in
+      let file2 = G.file_of_node n2 g in
+      Hashtbl.add huses file1 file2;
+      Hashtbl.add husers file2 file1;
+    with Not_found -> ()
+  );
+
+  Common2.hkeys huses +> List.map (fun k -> k, Hashtbl.find_all huses k),
+  Common2.hkeys husers +> List.map (fun k -> k, Hashtbl.find_all husers k)

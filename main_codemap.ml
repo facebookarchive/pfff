@@ -171,7 +171,8 @@ let build_model2 root dbfile_opt graphfile_opt =
     match g_opt with
     | None -> Hashtbl.create 0, Hashtbl.create 0
     | Some g ->
-      Graph_code_analysis.build_uses_and_users_of_file g
+      let a, b = Graph_code_analysis.build_uses_and_users_of_file g in
+      Common.hash_of_list a, Common.hash_of_list b
   in
   
   let model = { Model.
