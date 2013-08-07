@@ -101,7 +101,7 @@ let unittest =
         )
       );
 
-      "scc XXX" >:: (fun () ->
+      "scc" >:: (fun () ->
         let g = G.create () in
         let (-->) f1 f2 =
           let f1 = f1, E.Function in
