@@ -94,3 +94,7 @@ let protected_to_private g =
       end
     | _ -> ()
   )
+
+
+let build_uses_and_users_of_file g =
+  raise Todo
