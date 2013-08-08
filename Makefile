@@ -548,15 +548,14 @@ prolog:
 	mv facts.pl facts_pl
 
 db:
-	./pfff_db -verbose  -lang ml -o DB_LIGHT.marshall .
+	./pfff_db -verbose  -lang ml .
 layers:
 	./pfff_db_heavy -gen_age_layer /home/pad/local/pfff-for-layers \
           layer_age.marshall
 	./pfff_db_heavy -gen_age_layer /home/pad/local/pfff-for-layers \
           layer_age.json
 visual:
-	./codemap -no_legend -profile -ss 2 \
-	   -with_info DB_LIGHT.marshall -with_layers . -filter pfff .
+	./codemap -no_legend -profile -ss 2 -filter pfff .
 
 tests:
 	$(MAKE) rec && $(MAKE) pfff_test
