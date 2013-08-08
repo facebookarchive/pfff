@@ -75,7 +75,7 @@ TEX=Treemap.tex
 
 # user oriented, public API in some sense + ml that share code with mli
 LPSRC1=treemap.mli treemap.ml treemap_json.mli treemap_json.ml \
- treemap_graphics.mli treemap_graphics.ml \
+ graphics/treemap_graphics.mli graphics/treemap_graphics.ml \
  main_treemap.ml 
 LPSRCSHARED=
 # internal oriented 
