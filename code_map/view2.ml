@@ -62,7 +62,7 @@ let pr2, pr2_once = Common2.mk_pr2_wrappers Flag.verbose_visual
 
 (* ugly *)
 let root_orig () = 
-  (Common2.list_last !Controller.dw_stack).M.root
+  (Common2.list_last !Controller.dw_stack).M.current_root
 
 (*e: view globals *)
 
@@ -278,7 +278,7 @@ let mk_gui ~screen_size ~legend test_mode (root, model, dw, dbfile_opt) =
 
                   let final_file = 
                     Model2.readable_to_absolute_filename_under_root file 
-                      ~root:!dw.root in
+                      ~root:!dw.current_root in
 
                   !Controller._go_dirs_or_file 
                     ~current_entity:(Some e) dw [final_file];
@@ -312,7 +312,7 @@ let mk_gui ~screen_size ~legend test_mode (root, model, dw, dbfile_opt) =
 
           let res = Ui_search.dialog_search_def !dw.dw_model in
           res +> Common.do_option (fun s ->
-            let root = !dw.root in
+            let root = !dw.current_root in
             let matching_files = Ui_search.run_tbgs_query ~root s in
             let files = matching_files +> List.map fst +> Common2.uniq in
             let current_grep_query = 
@@ -350,7 +350,7 @@ let mk_gui ~screen_size ~legend test_mode (root, model, dw, dbfile_opt) =
         (* todo? open Db ? *)
 
         fc#add_item "_Refresh" ~key:K._R ~callback:(fun () -> 
-          let current_root = !dw.root in
+          let current_root = !dw.current_root in
           let _old_dw = Common2.pop2 Controller.dw_stack in
           (* have to disable the AST caching.
            * todo? disable all entries in the cache ?
@@ -443,7 +443,8 @@ let mk_gui ~screen_size ~legend test_mode (root, model, dw, dbfile_opt) =
 
           let final_paths = 
             readable_paths +> List.map 
-              (Model2.readable_to_absolute_filename_under_root ~root:!dw.root)
+              (Model2.readable_to_absolute_filename_under_root 
+                 ~root:!dw.current_root)
           in
 
           pr2 (spf "e= %s, final_paths= %s" str(Common.join "|" final_paths));
@@ -504,7 +505,7 @@ let mk_gui ~screen_size ~legend test_mode (root, model, dw, dbfile_opt) =
 
       tb#insert_widget (G.mk (GButton.button ~stock:`GO_UP) (fun b -> 
         b#connect#clicked ~callback:(fun () -> 
-          let current_root = !dw.root in
+          let current_root = !dw.current_root in
           !Controller._go_dirs_or_file dw [Common2.dirname current_root];
         )
       ));

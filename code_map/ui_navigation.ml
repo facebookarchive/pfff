@@ -45,7 +45,7 @@ let go_back dw_ref =
   let old_dw = Common2.pop2 Controller.dw_stack in
   dw_ref := old_dw;
   
-  let path = !dw_ref.root in
+  let path = !dw_ref.current_root in
   !Controller._set_title (Controller.title_of_path path);
 
   !Controller._refresh_da();

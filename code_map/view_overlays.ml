@@ -55,10 +55,10 @@ let draw_label_overlay ~cr_overlay ~dw ~x ~y r =
   let txt = r.T.tr_label in
 
   let readable_txt = 
-    if dw.root = txt (* when we are fully zoomed on one file *)
+    if dw.current_root = txt (* when we are fully zoomed on one file *)
     then "root"
     else 
-      Common.filename_without_leading_path dw.root txt in
+      Common.filename_without_leading_path dw.current_root txt in
 
   let readable_txt =
     if String.length readable_txt > 25

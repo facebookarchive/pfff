@@ -177,6 +177,7 @@ let build_model2 root dbfile_opt graphfile_opt =
   in
   
   let model = { Model.
+        root = root;
         db = db_opt;
         hentities; hfiles_entities; big_grep_idx;
         g =  g_opt;

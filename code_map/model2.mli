@@ -2,6 +2,8 @@
 
 (*s: type model *)
 type model = {
+  root: Common.dirname;
+
   db: Database_code.database option;
   (*s: model fields hook *)
     (* fast accessors *)
@@ -13,7 +15,7 @@ type model = {
   (*e: model fields hook *)
 
   g: Graph_code.graph option;
-  (* fast accessors *)
+  (* fast accessors, contain readable paths *)
   huses_of_file: (Common.filename, Common.filename list) Hashtbl.t;
   husers_of_file: (Common.filename, Common.filename list) Hashtbl.t;
  }
@@ -36,7 +38,7 @@ type drawing = {
   treemap_func: Common.path list -> Treemap.treemap_rendering;
 
   (* This is to display readable paths. When fully zoomed it's a filename *)
-  root: Common.path;
+  current_root: Common.path;
 
   (* computed lazily *)
   dw_model: model Async.t;

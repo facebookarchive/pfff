@@ -32,6 +32,8 @@ module Flag = Flag_visual
 
 (*s: type model *)
 type model = {
+  root: Common.dirname;
+
   db: Database_code.database option;
  
   (*s: model fields hook *)
@@ -72,7 +74,7 @@ type drawing = {
   treemap_func: Common.path list -> Treemap.treemap_rendering;
 
   (* This is to display readable paths. When fully zoomed it's a filename *)
-  root: Common.path;
+  current_root: Common.path;
 
   (* computed lazily *)
   dw_model: model Async.t;
@@ -170,7 +172,7 @@ let init_drawing
   {
     treemap = treemap;
     nb_rects = List.length treemap;
-    root = root;
+    current_root = root;
     treemap_func = func;
 
     dw_model = model;
