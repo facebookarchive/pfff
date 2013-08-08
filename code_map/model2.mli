@@ -5,6 +5,7 @@ type model = {
   root: Common.dirname;
 
   db: Database_code.database option;
+ 
   (*s: model fields hook *)
     (* fast accessors *)
     hentities : (string, Database_code.entity) Hashtbl.t;
@@ -15,7 +16,7 @@ type model = {
   (*e: model fields hook *)
 
   g: Graph_code.graph option;
-  (* fast accessors, contain readable paths *)
+  (* fast accessors *)
   huses_of_file: (Common.filename, Common.filename list) Hashtbl.t;
   husers_of_file: (Common.filename, Common.filename list) Hashtbl.t;
  }
