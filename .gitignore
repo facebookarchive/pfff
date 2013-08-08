@@ -6,17 +6,24 @@
 *.cm*
 *.annot
 
+# c object files
 *.a
 *.so
 *.o
 *.exe
+
+# java object files
 *.class
 
+# clang pfff parser
 *.clang2
 *.clang
 
 # codegraph
 pfff.log
+
+# syncweb
+.md5sum_*
 
 # ocamldoc
 *.out
@@ -74,20 +81,14 @@ web/var/dbs
 /pfff
 /pfff_db
 /pfff_db_light
-/pfff_browser
-/pfff_visual
-/pfff_tags
-/pfff_db_light
 /pfff_misc
 /ppp
 /sgrep
 /spatch
 /scheck
 
-
 /meta/ffi
 /meta/gen_code
-
 
 # ocaml code using OCamlMakefile
 ._d/
@@ -110,18 +111,6 @@ gen-ocaml/
 gen-php/
 
 #not imported everything
-external/ocamlR
-external/ocamlsqlite
-external/ocamlmpi2
-external/ocamlmpi1
-external/ocamlirc
-external/ocamlthrift-old
-external/ocamlimages
-external/ocamlpxp
-external/ocamlllvm
-/external/ocamlhtree/htree
-ocamltarzan
-
 external/ocamlgtk
 
 /external/ocamlgraph/META
@@ -140,11 +129,8 @@ external/ocamlgtk
 /external/ocamlcairo/autom4te.cache/traces.3
 /external/ocamlancient/mmalloc/config.status
 
-/external/ocamlancient/META
-/external/ocamlancient/mmalloc/Makefile
-
 #magit interactively added with 'i' 
-/score.org
+/h_program-lang/archi_code_lexer.ml
 
 /lang_php/parsing/lexer_php.ml
 /lang_php/parsing/parser_php.ml
@@ -166,37 +152,55 @@ external/ocamlgtk
 /lang_cpp/parsing/parser_cpp.ml
 /lang_cpp/parsing/parser_cpp.mli
 /lang_cpp/parsing/parser_cpp.output
+/lang_nw/parsing/lexer_nw.ml
+/lang_nw/parsing/parser_nw.output
+/lang_nw/parsing/parser_nw.mli
+/lang_nw/parsing/parser_nw.ml
+/lang_java/parsing/lexer_java.ml
+/lang_java/parsing/parser_java.ml
+/lang_java/parsing/parser_java.mli
+/lang_java/parsing/parser_java.output
+/lang_lisp/parsing/lexer_lisp.ml
+/lang_haskell/parsing/lexer_hs.ml
+/lang_python/parsing/lexer_python.ml
+/lang_python/parsing/parser_python.ml
+/lang_python/parsing/parser_python.mli
+/lang_python/parsing/parser_python.output
+/lang_csharp/parsing/lexer_csharp.ml
+/lang_csharp/parsing/parser_csharp.ml
+/lang_csharp/parsing/parser_csharp.mli
+/lang_csharp/parsing/parser_csharp.output
+/lang_erlang/parsing/parse_erlang.ml
+/lang_erlang/parsing/parse_erlang.mli
+/lang_erlang/parsing/lexer_erlang.ml
+/lang_erlang/parsing/parser_erlang.ml
+/lang_erlang/parsing/parser_erlang.mli
+/lang_erlang/parsing/parser_erlang.output
+/lang_html/parsing/lexer_html.ml
+/lang_html/parsing/parser_html.ml
+/lang_html/parsing/parser_html.mli
+/lang_html/parsing/parser_html.output
+/lang_css/parsing/lexer_css.ml
+/lang_css/parsing/parser_css.ml
+/lang_css/parsing/parser_css.mli
+/lang_css/parsing/parser_css.output
+/lang_clang/parsing/lexer_clang.ml
+/lang_clang/parsing/parser_clang.ml
+/lang_clang/parsing/parser_clang.mli
+/lang_clang/parsing/parser_clang.output
 
-/h_program-lang/archi_code_lexer.ml
 
-external/ocamltarzan/lib-sexp/lexer.ml
-external/ocamltarzan/lib-sexp/parser.ml
-external/ocamltarzan/lib-sexp/parser.mli
-external/ocamltarzan/lib-sexp/parser.output
-
-external/ocamlbdb/bdb.ml
-external/ocamlbdb/bdb_stubs.c
-external/ocamlbdb/libcamlbdb.a
+/lang_php/parsing/show_function_calls1
+/lang_php/parsing/show_function_calls2
+/lang_php/parsing/show_function_calls3
+/h_version-control/vcs
+/h_visualization/treemap_viewer
 
 /docs/Hackathon--2009_11--Files--closures_php.ppt
 /docs/ocaml/Makefile.template
 /docs/ocaml/OCaml.out
 
-/lang_php/parsing/show_function_calls1
-/lang_php/parsing/show_function_calls2
-/lang_php/parsing/show_function_calls3
-/compile_php/phpcc
-/h_program-visual/visual_pl
-/h_program-visual/visual_pl1
-/h_program-visual/visual_pl2
-/h_program-visual/visual_pl3
-/h_program-visual/visual_pl4
-/h_program-visual/visual_pl5
-/h_program-visual/visual_pl6
-/h_version-control/vcs
-/h_visualization/treemap_viewer
 /demos/commons
-/demos/parsing_php
 /demos/send_mail_pattern.php
 /h_visualization/Treemap.brf
 /h_visualization/Treemap.out
@@ -231,40 +235,20 @@ external/ocamlbdb/libcamlbdb.a
 
 /docs/for_alok.txt
 
-/place_home_fb
-
 /external/ocamlcairo/test/basket.png
 /external/ocamlcairo/test/basket.ppm
 /external/ocamlcairo/test/kapow.png
 
 /commons/lib-xml/xml_parser.output
 
-/lang_nw/parsing/lexer_nw.ml
-/lang_nw/parsing/parser_nw.output
-/lang_nw/parsing/parser_nw.mli
-/lang_nw/parsing/parser_nw.ml
-/lang_java/parsing/lexer_java.ml
-/lang_java/parsing/parser_java.ml
-/lang_java/parsing/parser_java.mli
-/lang_java/parsing/parser_java.output
 /visual/Visual.out
 /lang_php/analyze/database_php_storage.ml
 
-/lang_lisp/parsing/lexer_lisp.ml
-/lang_haskell/parsing/lexer_hs.ml
 /pfff.top
 /demos/simple_refactoring
 /stags
 /h_program-visual/visual
 /codemap
-/lang_python/parsing/lexer_python.ml
-/lang_python/parsing/parser_python.ml
-/lang_python/parsing/parser_python.mli
-/lang_python/parsing/parser_python.output
-/lang_csharp/parsing/lexer_csharp.ml
-/lang_csharp/parsing/parser_csharp.ml
-/lang_csharp/parsing/parser_csharp.mli
-/lang_csharp/parsing/parser_csharp.output
 /pfff_test
 /ocamldoc.out
 /pfff_db_heavy
@@ -273,62 +257,7 @@ external/ocamlbdb/libcamlbdb.a
 /lang_php/meta/ffi
 /lang_php/meta/gen_code
 /DB_LIGHT.marshall
-/lang_erlang/parsing/parse_erlang.ml
-/lang_erlang/parsing/parse_erlang.mli
-/lang_erlang/parsing/lexer_erlang.ml
-/lang_erlang/parsing/parser_erlang.ml
-/lang_erlang/parsing/parser_erlang.mli
-/lang_erlang/parsing/parser_erlang.output
 /lang_php/analyze/Analyze_php.out
-/external/ocamlnet/netstring/depend
-/external/ocamlnet/netsys/depend
-/external/ocamlnet/netstring/tools/unimap_to_ocaml/unimap_to_ocaml
-/external/ocamlnet/netstring/tools_done
-/external/ocamlnet/netstring/netconst.ml
-/external/ocamlnet/netstring/netdate.ml
-/external/ocamlnet/netstring/netdb.ml
-/external/ocamlnet/netstring/netmappings_iso.ml
-/external/ocamlnet/netstring/netmappings_jp.ml
-/external/ocamlnet/netstring/netmappings_kr.ml
-/external/ocamlnet/netstring/netmappings_other.ml
-/external/ocamlnet/netsys/configtests/atfunctions.err
-/external/ocamlnet/netsys/configtests/fchdir
-/external/ocamlnet/netsys/configtests/fchdir.err
-/external/ocamlnet/netsys/configtests/fdopendir.err
-/external/ocamlnet/netsys/configtests/ocaml_fancy_page_tables
-/external/ocamlnet/netsys/configtests/ocaml_fancy_page_tables.err
-/external/ocamlnet/netsys/configtests/posix_fadvise.err
-/external/ocamlnet/netsys/configtests/posix_fallocate.err
-/external/ocamlnet/netsys/configtests/posix_memalign
-/external/ocamlnet/netsys/configtests/posix_memalign.err
-/external/ocamlnet/netsys/configtests/posix_pthread
-/external/ocamlnet/netsys/configtests/posix_pthread.err
-/external/ocamlnet/netsys/configtests/posix_sem
-/external/ocamlnet/netsys/configtests/posix_sem.err
-/external/ocamlnet/netsys/configtests/posix_shm
-/external/ocamlnet/netsys/configtests/posix_shm.err
-/external/ocamlnet/netsys/configtests/printexc_register_printer.err
-/external/ocamlnet/netsys/configtests/syslog
-/external/ocamlnet/netsys/configtests/syslog.err
-/external/ocamlnet/netsys/netsys_types.ml
-/external/ocamlnet/netsys/Makefile.conf
-/external/ocamlnet/netsys/config.h
-/external/ocamlnet/netsys/configtests/atfunctions
-/external/ocamlnet/netsys/configtests/fdopendir
-/external/ocamlnet/netsys/configtests/posix_fadvise
-/external/ocamlnet/netsys/configtests/posix_fadvise.tmp
-/external/ocamlnet/netsys/configtests/posix_fallocate
-/external/ocamlnet/netsys/configtests/posix_fallocate.tmp
-/external/ocamlnet/netstring/nethtml_scanner.ml
-/external/ocamlnet/netsys/netsys_conf.ml
-/lang_html/parsing/lexer_html.ml
-/lang_html/parsing/parser_html.ml
-/lang_html/parsing/parser_html.mli
-/lang_html/parsing/parser_html.output
-/lang_css/parsing/lexer_css.ml
-/lang_css/parsing/parser_css.ml
-/lang_css/parsing/parser_css.mli
-/lang_css/parsing/parser_css.output
 /web/app_codemap.type.mli
 /web/app_codemap_client.ml
 /web/app_codemap_server.ml
@@ -355,55 +284,7 @@ external/ocamlbdb/libcamlbdb.a
 
 
 #TODO maybe reput some
-.md5sum_main_codemap.ml
 TODO.txt
-code_map/.md5sum_async.ml
-code_map/.md5sum_async.mli
-code_map/.md5sum_cairo_helpers.ml
-code_map/.md5sum_cairo_helpers.mli
-code_map/.md5sum_completion2.ml
-code_map/.md5sum_completion2.mli
-code_map/.md5sum_controller2.ml
-code_map/.md5sum_controller2.mli
-code_map/.md5sum_draw2.ml
-code_map/.md5sum_draw2.mli
-code_map/.md5sum_draw_basics.ml
-code_map/.md5sum_draw_basics.mli
-code_map/.md5sum_draw_common.ml
-code_map/.md5sum_draw_common.mli
-code_map/.md5sum_draw_labels.ml
-code_map/.md5sum_draw_labels.mli
-code_map/.md5sum_draw_legend.ml
-code_map/.md5sum_draw_legend.mli
-code_map/.md5sum_draw_macrolevel.ml
-code_map/.md5sum_draw_macrolevel.mli
-code_map/.md5sum_draw_microlevel.ml
-code_map/.md5sum_draw_microlevel.mli
-code_map/.md5sum_editor_connection.ml
-code_map/.md5sum_editor_connection.mli
-code_map/.md5sum_flag_visual.ml
-code_map/.md5sum_help.ml
-code_map/.md5sum_help.mli
-code_map/.md5sum_model2.ml
-code_map/.md5sum_model2.mli
-code_map/.md5sum_parsing2.ml
-code_map/.md5sum_parsing2.mli
-code_map/.md5sum_style2.ml
-code_map/.md5sum_style2.mli
-code_map/.md5sum_ui_layers.ml
-code_map/.md5sum_ui_layers.mli
-code_map/.md5sum_ui_navigation.ml
-code_map/.md5sum_ui_navigation.mli
-code_map/.md5sum_ui_search.ml
-code_map/.md5sum_ui_search.mli
-code_map/.md5sum_view2.ml
-code_map/.md5sum_view2.mli
-code_map/.md5sum_view_mainmap.ml
-code_map/.md5sum_view_mainmap.mli
-code_map/.md5sum_view_minimap.ml
-code_map/.md5sum_view_minimap.mli
-code_map/.md5sum_view_overlays.ml
-code_map/.md5sum_view_overlays.mli
 code_map/Visual.tex
 code_map/thread_bug_ml
 commons/Commons.aux
@@ -442,10 +323,6 @@ web/var/logs/warnings.log
 /demos/find_methods_return_this
 /globals/config_pfff.ml
 /facts_pl
-/lang_clang/parsing/lexer_clang.ml
-/lang_clang/parsing/parser_clang.ml
-/lang_clang/parsing/parser_clang.mli
-/lang_clang/parsing/parser_clang.output
 /web/scripts/stat_web
 /demos/php_transducer.byte
 /demos/show_function_calls1.byte
