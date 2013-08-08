@@ -72,7 +72,7 @@ let go_dirs_or_file ?(current_entity=None) ?(current_grep_query=None)
   !dw_ref.in_dragging <- false;
   
   Common.push2 !dw_ref Controller.dw_stack;
-  let root = raise Todo in
+  let root = (Async.async_get dw.dw_model).root in
 
   dw_ref := 
     Model2.init_drawing 
