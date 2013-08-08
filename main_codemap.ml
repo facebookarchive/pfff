@@ -63,6 +63,7 @@ let legend = ref true
 
 let db_file    = ref (None: Common.filename option)
 let layer_file = ref (None: Common.filename option)
+(* if not specified, codemap will try to use the current directory *)
 let layer_dir  = ref (None: Common.dirname option)
 let graph_file = ref (None: Common.filename option)
 
@@ -305,7 +306,7 @@ let main_action xs =
 (*****************************************************************************)
 
 (*s: visual_commitid() action *)
-let visual_commitid id =
+let test_visual_commitid id =
   let files = Common.cmd_to_list
     (spf "git show --pretty=\"format:\" --name-only %s"
         id) 
@@ -369,10 +370,10 @@ let test_cairo () =
 (*---------------------------------------------------------------------------*)
 let extra_actions () = [
  (*s: actions *)
-   "-commitid", " <id>",
-   Common.mk_action_1_arg (visual_commitid);
    "-test_cairo", " ",
    Common.mk_action_0_arg (test_cairo);
+   "-test_commitid", " <id>",
+   Common.mk_action_1_arg (test_visual_commitid);
  (*e: actions *)
 ]
  
