@@ -24,6 +24,9 @@ type whitelist = dependency list
 val save: graph -> Common.filename -> unit
 val load: Common.filename -> graph
 
+val default_graphcode_filename: string
+
+
 val root: node
  val pb: node
   val not_found: node

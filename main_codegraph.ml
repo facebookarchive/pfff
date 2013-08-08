@@ -210,7 +210,7 @@ let constraints_of_info_txt info_txt =
 (*****************************************************************************)
 
 let dep_file_of_dir dir = 
-  Filename.concat dir "graph_code.marshall"
+  Filename.concat dir Graph_code.default_graphcode_filename
 
 let skip_file_of_dir dir = 
   Filename.concat dir "skip_list.txt"

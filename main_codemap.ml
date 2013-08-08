@@ -61,11 +61,11 @@ module Model = Model2
 let screen_size = ref 1
 let legend = ref true
 
+(* if not specified, codemap will try to use files in the current directory *)
 let db_file    = ref (None: Common.filename option)
-let layer_file = ref (None: Common.filename option)
-(* if not specified, codemap will try to use the current directory *)
-let layer_dir  = ref (None: Common.dirname option)
 let graph_file = ref (None: Common.filename option)
+let layer_file = ref (None: Common.filename option)
+let layer_dir  = ref (None: Common.dirname option)
 
 (* See also Gui.synchronous_actions *)
 let test_mode = ref (None: string option)
@@ -73,8 +73,8 @@ let test_mode = ref (None: string option)
 
 let filter = ref Treemap_pl.ex_filter_file
 
-(* todo? config file ? 
- * GtkMain.Rc.add_default_file "/home/pad/c-pfff/data/pfff_browser.rc"; 
+(* less: a config file:
+ *  GtkMain.Rc.add_default_file "/home/pad/c-pfff/data/pfff_browser.rc"; 
  *)
 
 (* action mode *)
@@ -221,8 +221,9 @@ let layers_in_dir dir =
 let main_action xs = 
   set_gc ();
   Logger.log Config_pfff.logger "codemap" None;
-  let _locale = GtkMain.Main.init () in
 
+  let _locale = GtkMain.Main.init () in
+  pr2 (spf "Using Cairo version: %s" Cairo.compile_time_version_string);
 
   let root = Common2.common_prefix_of_files_or_dirs xs in
   pr2 (spf "Using root = %s" root);
@@ -247,31 +248,41 @@ let main_action xs =
       )
   in
 
-  let dw = Model.init_drawing treemap_generator model layers_with_index xs in
-
-  pr2 (spf "Using Cairo version: %s" Cairo.compile_time_version_string);
   let db_file = 
-    (* todo: do as for layers, put this logic of marshall vs json elsewhere? *)
     match !db_file, xs with
+    | Some file, _ -> Some file
     | None, [dir] ->
-        let db = Filename.concat dir Database_code.default_db_name in
-        if Sys.file_exists db 
-        then begin 
-          pr2 (spf "Using pfff light db: %s" db);
-          Some db
-        end
-        else
-         let db = Filename.concat dir Database_code.default_db_name ^ ".json" in
-         if Sys.file_exists db 
-         then begin 
-           pr2 (spf "Using pfff light db: %s" db);
-           Some db
-         end
-         else
-           !db_file
-    | _ -> !db_file
+      let candidates = [
+          Filename.concat dir Database_code.default_db_name;
+          Filename.concat dir Database_code.default_db_name ^ ".json";
+      ] in
+      (try 
+        Some (candidates +> List.find (fun file -> Sys.file_exists file))
+      with Not_found -> None
+      )
+      | _ -> None
   in
+  db_file +> Common.do_option (fun db -> 
+    pr2 (spf "Using pfff light db: %s" db)
+  );
+  let graph_file = 
+    match !graph_file, xs with
+    | Some file, _ -> Some file
+    | None, [dir] ->
+      let candidates = [
+          Filename.concat dir Graph_code.default_graphcode_filename;
+      ] in
+      (try 
+        Some (candidates +> List.find (fun file -> Sys.file_exists file))
+      with Not_found -> None
+      )
+    | _ -> None
+  in
+  graph_file +> Common.do_option (fun db -> 
+    pr2 (spf "Using graphcode: %s" db)
+  );
 
+  let dw = Model.init_drawing treemap_generator model layers_with_index xs in
 
   (* This can require lots of stack. Make sure to have ulimit -s 40000.
    * This thread also cause some Bus error on MacOS :(
@@ -280,11 +291,11 @@ let main_action xs =
   (if Cairo_helpers.is_old_cairo() 
   then
     Thread.create (fun () ->
-      Async.async_set (build_model root db_file !graph_file) model;
+      Async.async_set (build_model root db_file graph_file) model;
     ) ()
     +> ignore
    else 
-    Async.async_set (build_model root db_file !graph_file) model;
+    Async.async_set (build_model root db_file graph_file) model;
    (*
     GMain.Timeout.add ~ms:2000 ~callback:(fun () ->
       Model.async_set (build_model root dbfile_opt) model;

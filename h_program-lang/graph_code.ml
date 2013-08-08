@@ -232,6 +232,9 @@ let load file =
   Ocamlgraph.Blocks.after_unserialization serialized_cpt_vertex;
   g
 
+let default_graphcode_filename =
+  "graph_code.marshall"
+
 (*****************************************************************************)
 (* Graph access *)
 (*****************************************************************************)
