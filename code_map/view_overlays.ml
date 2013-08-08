@@ -126,7 +126,27 @@ let draw_rectangle_overlay ~cr_overlay ~dw (r, middle, r_englobing) =
     Draw_labels.draw_treemap_rectangle_label_maybe 
       ~cr:cr_overlay ~color:(Some color) ~zoom:dw.zoom r;
   );
-    
+  let model = Async.async_get dw.dw_model in
+  let file = r.T.tr_label in
+  let readable = Common.filename_without_leading_path model.root file in
+
+  let uses = 
+    try Hashtbl.find model.huses_of_file readable with Not_found -> [] in
+  let users = 
+    try Hashtbl.find model.husers_of_file readable with Not_found -> [] in
+  uses +> List.iter (fun file ->
+    try 
+      let r = Hashtbl.find dw.readable_file_to_rect file in
+      CairoH.draw_rectangle_figure ~cr:cr_overlay ~color:"green" r.T.tr_rect;
+    with Not_found -> ()
+  );
+  users +> List.iter (fun file ->
+    try 
+      let r = Hashtbl.find dw.readable_file_to_rect file in
+      CairoH.draw_rectangle_figure ~cr:cr_overlay ~color:"red" r.T.tr_rect;
+    with Not_found -> ()
+  );
+
   Cairo.restore cr_overlay;
   ()
 (*e: draw_rectangle_overlay *)

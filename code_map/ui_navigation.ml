@@ -72,6 +72,7 @@ let go_dirs_or_file ?(current_entity=None) ?(current_grep_query=None)
   !dw_ref.in_dragging <- false;
   
   Common.push2 !dw_ref Controller.dw_stack;
+  let root = raise Todo in
 
   dw_ref := 
     Model2.init_drawing 
@@ -82,7 +83,8 @@ let go_dirs_or_file ?(current_entity=None) ?(current_grep_query=None)
       dw.treemap_func 
       dw.dw_model 
       dw.layers
-      paths;
+      paths
+      root;
   !dw_ref.current_entity <- current_entity;
   (match current_grep_query with
   | Some h ->

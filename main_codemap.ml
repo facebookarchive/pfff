@@ -283,7 +283,8 @@ let main_action xs =
     pr2 (spf "Using graphcode: %s" db)
   );
 
-  let dw = Model.init_drawing treemap_generator model layers_with_index xs in
+  let dw = 
+    Model.init_drawing treemap_generator model layers_with_index xs root in
 
   (* This can require lots of stack. Make sure to have ulimit -s 40000.
    * This thread also cause some Bus error on MacOS :(

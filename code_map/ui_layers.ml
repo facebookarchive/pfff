@@ -51,7 +51,8 @@ let choose_layer ~root layer_title_opt dw_ref =
       dw.treemap_func 
       dw.dw_model 
       layers_idx
-      [root];
+      [root]
+      root;
   View_mainmap.paint !dw_ref;
   !Controller._refresh_da ();
   !Controller._refresh_legend ();

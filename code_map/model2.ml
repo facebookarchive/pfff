@@ -69,6 +69,9 @@ type drawing = {
   treemap: Treemap.treemap_rendering;
   (* coupling: = List.length treemap *)
   nb_rects: int; 
+  (* generated from treemap, contains readable path relative to model.root *)
+  readable_file_to_rect: 
+    (Common.filename, Treemap.treemap_rectangle) Hashtbl.t;
   
   (* to compute zoomed treemap when double click *)
   treemap_func: Common.path list -> Treemap.treemap_rendering;
@@ -159,20 +162,32 @@ let init_drawing
   model
   layers
   paths
+  root
  =
 
   let paths = paths +> List.map Common2.relative_to_absolute in
-  let root = Common2.common_prefix_of_files_or_dirs paths in
+  let current_root = Common2.common_prefix_of_files_or_dirs paths in
   pr2_gen root;
 
   let treemap = 
-   Common.profile_code "Visual.building the treemap" (fun () -> func paths) in
+    Common.profile_code "Visual.building the treemap" (fun () -> func paths) in
   let pm = new_pixmap ~width ~height in
+  let readable_file_to_rect =
+    treemap +> Common.map_filter (fun rect ->
+      if not rect.T.tr_is_node
+      then 
+        let file  = rect.T.tr_label in
+        let readable = Common.filename_without_leading_path root file in
+        Some (readable, rect)
+      else None
+    ) +> Common.hash_of_list
+  in
 
   {
     treemap = treemap;
     nb_rects = List.length treemap;
-    current_root = root;
+    readable_file_to_rect;
+    current_root;
     treemap_func = func;
 
     dw_model = model;

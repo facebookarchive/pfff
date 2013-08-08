@@ -33,6 +33,9 @@ type drawing = {
   treemap: Treemap.treemap_rendering;
   (* coupling: = List.length treemap *)
   nb_rects: int; 
+  (* generated from treemap, contains readable path relative to model.root *)
+  readable_file_to_rect: 
+    (Common.filename, Treemap.treemap_rectangle) Hashtbl.t;
   
   (* to compute zoomed treemap when double click *)
   treemap_func: Common.path list -> Treemap.treemap_rendering;
@@ -127,6 +130,7 @@ val init_drawing :
   model Async.t ->
   Layer_code.layers_with_index ->
   Common.filename list -> 
+  Common.dirname ->
   drawing
 (*e: init_drawing sig *)
 
