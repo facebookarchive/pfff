@@ -464,7 +464,7 @@ let main () =
 
   let usage_msg = 
     spf "Usage: %s [options] <file or dir> \nDoc: %s\nOptions:"
-      (Common2.basename Sys.argv.(0))
+      (Filename.basename Sys.argv.(0))
       "https://github.com/facebook/pfff/wiki/Codemap"
   in
   let args = Common.parse_options (options()) usage_msg Sys.argv in
