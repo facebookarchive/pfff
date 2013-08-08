@@ -2,6 +2,13 @@
 
 * 0.25 (Q3 2013) ()
 
+** codemap
+
+*** graph_code integration, highlight users and uses of a file
+
+*** bottom up and topdown layer using graph_code
+associate a depth in the use graph to each file and entities.
+
 ** php
 
 *** support for namespace
