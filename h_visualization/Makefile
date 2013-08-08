@@ -83,15 +83,6 @@ LPSRC2=
 LPSRC=$(LPSRC1) $(LPSRCSHARED) $(LPSRC2)
 
 #------------------------------------------------------------------------------
-SYNCFLAGS=-md5sum_in_auxfile -less_marks
-
-SYNCWEB=~/c__syncweb/syncweb $(SYNCFLAGS)
-NOWEB=~/c__syncweb/scripts/noweblatex
-OCAMLDOC=ocamldoc $(INCLUDES)
-
-PDFLATEX=pdflatex --shell-escape 
-
-#------------------------------------------------------------------------------
 sync:
 	for i in $(LPSRC); do $(SYNCWEB) $(SRCNW) $$i || exit 1; done 
 
