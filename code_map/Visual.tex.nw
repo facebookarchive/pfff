@@ -5323,6 +5323,27 @@ let _ =
 \subsection{[[flag_visual.ml]]}
 
 
+\subsection{[[model_graph_code.mli]]}
+
+<<model_graph_code.mli>>=
+@ 
+
+\subsection{[[model_database_code.mli]]}
+
+<<model_database_code.mli>>=
+@ 
+
+\subsection{[[model_graph_code.ml]]}
+
+<<model_graph_code.ml>>=
+@ 
+
+\subsection{[[model_database_code.ml]]}
+
+<<model_database_code.ml>>=
+@ 
+
+
 \subsection{[[model2.mli]]}
 
 <<model2.mli>>=

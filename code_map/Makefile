@@ -8,6 +8,7 @@ SRC=cairo_helpers.ml custom_list_generic.ml async.ml \
     flag_visual.ml style2.ml help.ml \
     parsing2.ml \
     editor_connection.ml \
+    model_database_code.ml model_graph_code.ml \
     model2.ml controller2.ml \
     completion2.ml \
     draw_common.ml draw_labels.ml draw_legend.ml \
