@@ -21,13 +21,14 @@ let unittest =
   let p path = Filename.concat Config_pfff.path path in
 
   let test_files = [
+    p "tests/php/scheck/php_stdlib.php";
     p "tests/php/scheck/common.php";
+    p "tests/php/scheck/builtins.php";
     p "tests/php/scheck/includes.php";
     p "tests/php/scheck/variables.php";
     p "tests/php/scheck/variables_fp.php";
     p "tests/php/scheck/arrays.php";
     p "tests/php/scheck/functions.php";
-    p "tests/php/scheck/builtins.php";
     p "tests/php/scheck/static_methods.php";
     p "tests/php/scheck/methods.php";
     p "tests/php/scheck/classes.php";
@@ -45,6 +46,10 @@ let unittest =
   ] 
   in
 
+  (* need also now a tests/php/scheck/php_stdlib.php because data/php_stdlib
+   * is now mostly auto generated from idl files, and data/php_stdlib
+   * contains only pfff internal builtins
+   *)
   let builtin_files =
     Lib_parsing_php.find_php_files_of_dir_or_files [p "/data/php_stdlib"]
   in
@@ -105,7 +110,12 @@ let unittest =
     pr2 (spf "this one error is missing: %s:%d" src l);
   );
   only_in_actual +> List.iter (fun (src, l) ->
-    pr2 (spf "this one error was not expected: %s:%d" src l);
+    pr2 (spf "this one error was not expected: %s:%d (%s)" src l
+           (!Error_php._errors +> List.find (fun err ->
+             let info = err.Error_php.loc in
+             src =$= Parse_info.file_of_info info &&
+             l   =|= Parse_info.line_of_info info
+            ) +> Error_php.string_of_error));
   );
   assert_bool
     ~msg:(spf "it should find all reported errors and no more (%d errors)"
