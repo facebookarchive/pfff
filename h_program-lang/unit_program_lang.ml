@@ -155,6 +155,7 @@ let unittest =
           xs;
       );
 
+(*
       "uses and users of file XXX" >:: (fun () ->
         let g = G.create () in
         let nodeinfo f =
@@ -203,6 +204,7 @@ let unittest =
           ["bar_mutual.php"; "foo.php"]
           users;
       );
+*)
 
     ];
 
