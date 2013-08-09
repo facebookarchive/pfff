@@ -75,10 +75,10 @@ type drawing = {
    *)
   pos_and_line: (Treemap.treemap_rectangle, pos_and_line) Hashtbl.t;
 
-  (* generated from treemap, contains readable path relative to model.root *)
+  (* generated from dw.treemap, contains readable path relative to model.root *)
   readable_file_to_rect: 
     (Common.filename, Treemap.treemap_rectangle) Hashtbl.t;
-  
+
   (* to compute zoomed treemap when double click *)
   treemap_func: Common.path list -> Treemap.treemap_rendering;
 
@@ -95,7 +95,7 @@ type drawing = {
     mutable current_query: string;
     mutable current_searched_rectangles: Treemap.treemap_rectangle list;
     mutable current_entity: Database_code.entity option;
-    mutable current_grep_query:  (Common.filename, int) Hashtbl.t;
+    mutable current_grep_query: (Common.filename, int) Hashtbl.t;
   (*e: fields drawing query stuff *)
 
   dw_settings: settings;

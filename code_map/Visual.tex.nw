@@ -473,11 +473,11 @@ type model = {
   root: Common.dirname;
 
   db: Database_code.database option;
- 
   <<model fields hook>>
 
+  (* for microlevel *)
   g: Graph_code.graph option;
-  (* fast accessors *)
+  (* fast accessors, for macrolevel  *)
   huses_of_file: (Common.filename, Common.filename list) Hashtbl.t;
   husers_of_file: (Common.filename, Common.filename list) Hashtbl.t;
  }
@@ -565,10 +565,16 @@ type drawing = {
   treemap: Treemap.treemap_rendering;
   (* coupling: = List.length treemap *)
   nb_rects: int; 
-  (* generated from treemap, contains readable path relative to model.root *)
+
+  (* when we render content at the microlevel, we then need to know to which
+   * line corresponds a position and vice versa.
+   *)
+  pos_and_line: (Treemap.treemap_rectangle, pos_and_line) Hashtbl.t;
+
+  (* generated from dw.treemap, contains readable path relative to model.root *)
   readable_file_to_rect: 
     (Common.filename, Treemap.treemap_rectangle) Hashtbl.t;
-  
+
   (* to compute zoomed treemap when double click *)
   treemap_func: Common.path list -> Treemap.treemap_rendering;
 
@@ -591,6 +597,10 @@ type drawing = {
   <<fields drawing minimap>>
 }
   <<type settings>>
+  and pos_and_line = {
+    pos_to_line: Cairo.point -> int;
+    line_to_pos: int -> Cairo.point;
+  }
 @
 
 \subsection{The microlevel specific model}
@@ -790,6 +800,8 @@ let init_drawing
 
     dw_model = model;
     layers = layers;
+
+    pos_and_line = Hashtbl.create 0;
 
     current_query = "";
     current_searched_rectangles = [];
@@ -1749,7 +1761,7 @@ val draw_treemap_rectangle_content_maybe :
   clipping:Figures.rectangle ->
   context:Model2.context ->
   Treemap.treemap_rectangle -> 
-  unit
+  Model2.pos_and_line option
 @ 
 
 \subsection{Entities size}
@@ -2060,7 +2072,7 @@ let draw_treemap_rectangle_content_maybe2 ~cr ~clipping ~context rect  =
   let file = rect.T.tr_label in
 
   if F.intersection_rectangles r clipping = None
-  then (* pr2 ("not drawing: " ^ file) *) ()
+  then (* pr2 ("not drawing: " ^ file) *) None
   else begin
 
   let w = F.rect_width r in
@@ -2129,17 +2141,22 @@ let draw_treemap_rectangle_content_maybe2 ~cr ~clipping ~context rect  =
     } 
     in
 
-    if font_size_real > !Flag.threshold_draw_content_font_size_real 
+    let pos_and_line = pos_and_line_from_layout r layout in
+
+    (if font_size_real > !Flag.threshold_draw_content_font_size_real 
        && not (is_big_file_with_few_lines ~nblines file)
        && nblines < !Flag.threshold_draw_content_nblines
     then draw_content ~cr ~layout ~context ~file rect
     else 
-     if context.settings.draw_summary 
-     then 
-       raise Todo
-         (* draw_summary_content ~cr ~layout ~context ~file  rect *)
+      if context.settings.draw_summary 
+      (* draw_summary_content ~cr ~layout ~context ~file  rect *)
+      then raise Todo
+    );
+    Some pos_and_line
     end
+    else None
   end
+  else None
   end
 let draw_treemap_rectangle_content_maybe ~cr ~clipping ~context rect = 
   Common.profile_code "View.draw_content_maybe" (fun () ->
@@ -2164,8 +2181,12 @@ let paint_content_maybe_rect ~user_rect dw rect =
 
   let context = Model2.context_of_drawing dw in
 
-  Draw_microlevel.draw_treemap_rectangle_content_maybe 
-    ~cr  ~clipping:user_rect  ~context rect;
+  let pos_and_line_opt = 
+    Draw_microlevel.draw_treemap_rectangle_content_maybe
+      ~cr  ~clipping:user_rect  ~context rect in
+  pos_and_line_opt +> Common.do_option (fun pos_and_line ->
+    Hashtbl.replace dw.pos_and_line rect pos_and_line
+  );
 
   (* have to redraw the label *)
   Draw_labels.draw_treemap_rectangle_label_maybe 
@@ -2553,8 +2574,8 @@ let find_filepos_in_rectangle_at_user_point user_pt dw r =
   let context = { context with Model2.nb_rects_on_screen = 1 } in
   
   (* does side effect on Draw.text_with_user_pos *)
-  Draw_microlevel.draw_treemap_rectangle_content_maybe 
-    ~cr ~clipping:user_rect ~context r;
+  let _TODO = Draw_microlevel.draw_treemap_rectangle_content_maybe 
+    ~cr ~clipping:user_rect ~context r in
   let xs = !Draw_microlevel.text_with_user_pos in
 
   let scores = xs
@@ -3143,8 +3164,7 @@ let run_tbgs_query ~root s =
   mutable current_query: string;
   mutable current_searched_rectangles: Treemap.treemap_rectangle list;
   mutable current_entity: Database_code.entity option;
-  mutable current_grep_query : 
-    (Common.filename, int) Hashtbl.t;
+  mutable current_grep_query: (Common.filename, int) Hashtbl.t;
 @
 
 \subsection{Definition search}
@@ -3782,8 +3802,9 @@ let zoomed_surface_of_rectangle dw r =
 
   Draw_macrolevel.draw_treemap_rectangle 
     ~cr ~alpha:0.9 r';
-  Draw_microlevel.draw_treemap_rectangle_content_maybe 
-    ~cr ~context ~clipping:user_rect r';
+  let _pos_and_file_TODO = 
+    Draw_microlevel.draw_treemap_rectangle_content_maybe 
+      ~cr ~context ~clipping:user_rect r' in
 
   sur, device_width, device_height
   )
@@ -3851,6 +3872,15 @@ let motion_refresher ev dw () =
   let r_opt = M.find_rectangle_at_user_point dw user in
   r_opt +> Common.do_option (fun (r, middle, r_englobing) ->
     let txt = r.T.tr_label in
+
+    let txt =
+      if Hashtbl.mem dw.pos_and_line r
+      then
+        let translate = Hashtbl.find dw.pos_and_line r in
+        let line = translate.pos_to_line user in
+        spf "%s:%d" txt line
+      else txt
+    in
     !Controller._statusbar_addtext txt;
     
     draw_label_overlay ~cr_overlay ~dw ~x ~y r;
@@ -5826,6 +5856,25 @@ let text_with_user_pos = ref []
 let is_big_file_with_few_lines ~nblines fullpath = 
   nblines < 20. && 
   Common2.filesize_eff fullpath > 4000
+
+let pos_and_line_from_layout r layout =
+  { line_to_pos = (fun line ->
+      raise Todo
+    );
+    pos_to_line = (fun pt ->
+
+      let x = pt.Cairo.x - r.p.x in
+      let y = pt.Cairo.y - r.p.y in
+
+      let line_in_column = floor (y / layout.space_per_line) in
+      let column = floor (x / layout.w_per_column) in
+
+      let nblines_per_column = 
+        (layout.nblines / layout.split_nb_columns) +> ceil in
+
+     (column * nblines_per_column + line_in_column + 1.) +> int_of_float
+    );
+  }
 
 (*****************************************************************************)
 (* Anamorphic entities *)

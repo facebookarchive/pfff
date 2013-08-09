@@ -16,7 +16,7 @@ type model = {
 
   (* for microlevel *)
   g: Graph_code.graph option;
-  (* fast accessors, for macrolevel *)
+  (* fast accessors, for macrolevel  *)
   huses_of_file: (Common.filename, Common.filename list) Hashtbl.t;
   husers_of_file: (Common.filename, Common.filename list) Hashtbl.t;
  }
