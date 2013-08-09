@@ -70,12 +70,22 @@ let is_big_file_with_few_lines ~nblines fullpath =
   nblines < 20. && 
   Common2.filesize_eff fullpath > 4000
 
-let pos_and_line_from_layout rect layout =
+let pos_and_line_from_layout r layout =
   { line_to_pos = (fun line ->
       raise Todo
     );
-    pos_to_line = (fun pos ->
-      42
+    pos_to_line = (fun pt ->
+
+      let x = pt.Cairo.x - r.p.x in
+      let y = pt.Cairo.y - r.p.y in
+
+      let line_in_column = floor (y / layout.space_per_line) in
+      let column = floor (x / layout.w_per_column) in
+
+      let nblines_per_column = 
+        (layout.nblines / layout.split_nb_columns) +> ceil in
+
+     (column * nblines_per_column + line_in_column + 1.) +> int_of_float
     );
   }
 
@@ -498,7 +508,7 @@ let draw_treemap_rectangle_content_maybe2 ~cr ~clipping ~context rect  =
     } 
     in
 
-    let pos_and_line = pos_and_line_from_layout rect layout in
+    let pos_and_line = pos_and_line_from_layout r layout in
 
     (if font_size_real > !Flag.threshold_draw_content_font_size_real 
        && not (is_big_file_with_few_lines ~nblines file)

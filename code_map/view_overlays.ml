@@ -311,7 +311,7 @@ let motion_refresher ev dw () =
       if Hashtbl.mem dw.pos_and_line r
       then
         let translate = Hashtbl.find dw.pos_and_line r in
-        let line = translate.pos_to_line user.Cairo.x in
+        let line = translate.pos_to_line user in
         spf "%s:%d" txt line
       else txt
     in

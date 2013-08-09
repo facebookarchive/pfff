@@ -146,8 +146,8 @@ type drawing = {
    }
   (*e: type settings *)
   and pos_and_line = {
-    pos_to_line: float -> int;
-    line_to_pos: int -> float;
+    pos_to_line: Cairo.point -> int;
+    line_to_pos: int -> Cairo.point;
   }
 (*e: type drawing *)
 
