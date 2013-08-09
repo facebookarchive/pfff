@@ -156,9 +156,12 @@ let build_model2 root dbfile_opt graphfile_opt =
 
   let db_opt = Common2.fmap Database_code.load_database dbfile_opt in
 
-  let hentities = Model.hentities root db_opt in
-  let hfiles_entities = Model.hfiles_and_top_entities root db_opt in
-  let all_entities = Model.all_entities db_opt root in
+  let hentities = 
+    Model_database_code.hentities root db_opt in
+  let hfiles_entities = 
+    Model_database_code.hfiles_and_top_entities root db_opt in
+  let all_entities = 
+    Model_database_code.all_entities db_opt root in
 
   let big_grep_idx = Completion2.build_completion_defs_index all_entities in
 

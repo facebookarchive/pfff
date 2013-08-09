@@ -5361,16 +5361,56 @@ let _ =
 \subsection{[[model_database_code.mli]]}
 
 <<model_database_code.mli>>=
+
+<<hentities sig>>
+
+<<hfiles_and_top_entities sig>>
+
+<<all_entities sig>>
+
+<<actual_root_of_db sig>>
+
+<<readable_to_absolute_filename_under_root sig>>
+
 @ 
 
 \subsection{[[model_graph_code.ml]]}
 
 <<model_graph_code.ml>>=
+<<Facebook copyright>>
 @ 
 
 \subsection{[[model_database_code.ml]]}
 
 <<model_database_code.ml>>=
+<<Facebook copyright>>
+open Common
+
+module Db = Database_code
+
+(*****************************************************************************)
+(* Filenames *)
+(*****************************************************************************)
+
+<<readable_to_absolute_filename_under_root>>
+
+<<actual_root_of_db>>
+
+(*****************************************************************************)
+(* Entities info *)
+(*****************************************************************************)
+
+<<hentities()>>
+
+<<hfiles_and_top_entities()>>
+
+(*****************************************************************************)
+(* Completion data *)
+(*****************************************************************************)
+
+<<all_entities>>
+
+
 @ 
 
 
@@ -5390,18 +5430,6 @@ val context_of_drawing: drawing -> context
 <<new_pixmap sig>>
 
 <<find_rectangle_at_user_point sig>>
-
-
-<<hentities sig>>
-
-<<hfiles_and_top_entities sig>>
-
-<<all_entities sig>>
-
-
-<<readable_to_absolute_filename_under_root sig>>
-
-<<actual_root_of_db sig>>
 
 @ 
 
@@ -5457,28 +5485,6 @@ let context_of_drawing dw = {
 (*****************************************************************************)
 
 <<find_rectangle_at_user_point()>>
-
-(*****************************************************************************)
-(* Filenames *)
-(*****************************************************************************)
-
-<<readable_to_absolute_filename_under_root>>
-
-<<actual_root_of_db>>
-
-(*****************************************************************************)
-(* Entities info *)
-(*****************************************************************************)
-
-<<hentities()>>
-
-<<hfiles_and_top_entities()>>
-
-(*****************************************************************************)
-(* Completion data *)
-(*****************************************************************************)
-
-<<all_entities>>
 
 @ 
 

@@ -277,8 +277,8 @@ let mk_gui ~screen_size ~legend test_mode (root, model, dw, dbfile_opt) =
                   let file = e.Db.e_file in
 
                   let final_file = 
-                    Model2.readable_to_absolute_filename_under_root file 
-                      ~root:!dw.current_root in
+                    Model_database_code.readable_to_absolute_filename_under_root
+                      file ~root:!dw.current_root in
 
                   !Controller._go_dirs_or_file 
                     ~current_entity:(Some e) dw [final_file];
@@ -443,7 +443,7 @@ let mk_gui ~screen_size ~legend test_mode (root, model, dw, dbfile_opt) =
 
           let final_paths = 
             readable_paths +> List.map 
-              (Model2.readable_to_absolute_filename_under_root 
+              (Model_database_code.readable_to_absolute_filename_under_root 
                  ~root:!dw.current_root)
           in
 
