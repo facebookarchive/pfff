@@ -42,6 +42,39 @@ module M = Model2
  *)
 
 (*****************************************************************************)
+(* Helpers *)
+(*****************************************************************************)
+
+let readable_txt_for_label txt current_root =
+  let readable_txt = 
+    if current_root =$= txt (* when we are fully zoomed on one file *)
+    then "root"
+    else Common.filename_without_leading_path current_root txt 
+  in
+
+  if String.length readable_txt > 25
+  then 
+    let dirs = Filename.dirname readable_txt +> Common.split "/" in
+    let file = Filename.basename readable_txt in
+    spf "%s/.../%s" (List.hd dirs) file
+  else readable_txt
+
+let uses_and_users_rect_of_file file dw =
+  let model = Async.async_get dw.dw_model in
+  let readable = Common.filename_without_leading_path model.root file in
+
+  let uses = 
+    try Hashtbl.find model.huses_of_file readable with Not_found -> [] in
+  let users = 
+    try Hashtbl.find model.husers_of_file readable with Not_found -> [] in
+  uses +> Common.map_filter (fun file -> 
+    Common2.optionise (fun () -> Hashtbl.find dw.readable_file_to_rect file)
+  ),
+  users +> Common.map_filter (fun file ->
+    Common2.optionise (fun () ->Hashtbl.find dw.readable_file_to_rect file)
+  )
+
+(*****************************************************************************)
 (* The overlays *)
 (*****************************************************************************)
 
@@ -53,21 +86,7 @@ module M = Model2
 let draw_label_overlay ~cr_overlay ~dw ~x ~y r =
 
   let txt = r.T.tr_label in
-
-  let readable_txt = 
-    if dw.current_root = txt (* when we are fully zoomed on one file *)
-    then "root"
-    else 
-      Common.filename_without_leading_path dw.current_root txt in
-
-  let readable_txt =
-    if String.length readable_txt > 25
-    then 
-      let dirs = Filename.dirname readable_txt +> Common.split "/" in
-      let file = Filename.basename readable_txt in
-      spf "%s/.../%s" (List.hd dirs) file
-    else readable_txt
-  in
+  let readable_txt = readable_txt_for_label txt dw.current_root in
 
   Cairo.select_font_face cr_overlay "serif" 
     Cairo.FONT_SLANT_NORMAL Cairo.FONT_WEIGHT_NORMAL;
@@ -126,25 +145,14 @@ let draw_rectangle_overlay ~cr_overlay ~dw (r, middle, r_englobing) =
     Draw_labels.draw_treemap_rectangle_label_maybe 
       ~cr:cr_overlay ~color:(Some color) ~zoom:dw.zoom r;
   );
-  let model = Async.async_get dw.dw_model in
-  let file = r.T.tr_label in
-  let readable = Common.filename_without_leading_path model.root file in
 
-  let uses = 
-    try Hashtbl.find model.huses_of_file readable with Not_found -> [] in
-  let users = 
-    try Hashtbl.find model.husers_of_file readable with Not_found -> [] in
-  uses +> List.iter (fun file ->
-    try 
-      let r = Hashtbl.find dw.readable_file_to_rect file in
-      CairoH.draw_rectangle_figure ~cr:cr_overlay ~color:"green" r.T.tr_rect;
-    with Not_found -> ()
+  let file = r.T.tr_label in
+  let uses_rect, users_rect = uses_and_users_rect_of_file file dw in
+  uses_rect +> List.iter (fun r ->
+    CairoH.draw_rectangle_figure ~cr:cr_overlay ~color:"green" r.T.tr_rect;
   );
-  users +> List.iter (fun file ->
-    try 
-      let r = Hashtbl.find dw.readable_file_to_rect file in
-      CairoH.draw_rectangle_figure ~cr:cr_overlay ~color:"red" r.T.tr_rect;
-    with Not_found -> ()
+  users_rect +> List.iter (fun r ->
+    CairoH.draw_rectangle_figure ~cr:cr_overlay ~color:"red" r.T.tr_rect;
   );
 
   Cairo.restore cr_overlay;

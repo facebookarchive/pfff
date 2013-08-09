@@ -171,12 +171,13 @@ let build_model2 root dbfile_opt graphfile_opt =
     | None -> None
     | Some file -> Some (Graph_code.load file)
   in
-  let huses_of_file, husers_of_file =
+  let huses_of_file, husers_of_file, hentities_of_file =
     match g_opt with
-    | None -> Hashtbl.create 0, Hashtbl.create 0
+    | None -> Hashtbl.create 0, Hashtbl.create 0, Hashtbl.create 0
     | Some g ->
       let a, b = Model_graph_code.build_uses_and_users_of_file g in
-      Common.hash_of_list a, Common.hash_of_list b
+      let c = Model_graph_code.build_entities_of_file g in
+      Common.hash_of_list a, Common.hash_of_list b, Common.hash_of_list c
   in
   
   let model = { Model.
@@ -185,6 +186,7 @@ let build_model2 root dbfile_opt graphfile_opt =
         hentities; hfiles_entities; big_grep_idx;
         g =  g_opt;
         huses_of_file; husers_of_file;
+        hentities_of_file;
   }
   in
   (*

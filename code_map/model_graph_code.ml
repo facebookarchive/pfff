@@ -50,3 +50,6 @@ let build_uses_and_users_of_file g =
 
   Common2.hkeys huses +> List.map (fun k -> k, Hashtbl.find_all huses k),
   Common2.hkeys husers +> List.map (fun k -> k, Hashtbl.find_all husers k)
+
+let build_entities_of_file g =
+  raise Todo

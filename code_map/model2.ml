@@ -49,6 +49,9 @@ type model = {
   (* fast accessors, for macrolevel  *)
   huses_of_file: (Common.filename, Common.filename list) Hashtbl.t;
   husers_of_file: (Common.filename, Common.filename list) Hashtbl.t;
+
+  hentities_of_file: 
+    (Common.filename, (int * Database_code.entity) list) Hashtbl.t;
  }
 (*e: type model *)
 
