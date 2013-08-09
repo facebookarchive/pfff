@@ -21,7 +21,7 @@ type model = {
   husers_of_file: (Common.filename, Common.filename list) Hashtbl.t;
   
   hentities_of_file: 
-    (Common.filename, (int * Database_code.entity) list) Hashtbl.t;
+    (Common.filename, (int * Graph_code.node) list) Hashtbl.t;
  }
 (*e: type model *)
 

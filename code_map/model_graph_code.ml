@@ -52,5 +52,21 @@ let build_uses_and_users_of_file g =
   Common2.hkeys husers +> List.map (fun k -> k, Hashtbl.find_all husers k)
 
 let build_entities_of_file g =
-  []
+
+  (* we use the 'find_all' property of those hashes *)
+  let h = Hashtbl.create 101 in
+
+  g +> G.iter_nodes (fun n ->
+    try 
+      let info = G.nodeinfo n g in
+      let file = info.G.pos.Parse_info.file in
+      let line = info.G.pos.Parse_info.line in
+
+      Hashtbl.add h file (line, n);
+    with Not_found -> ()
+  );
+  Common2.hkeys h +> List.map (fun k ->
+    let xs = Hashtbl.find_all h k in
+    k, Common.sort_by_key_lowfirst xs
+  )
 

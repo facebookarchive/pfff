@@ -72,6 +72,17 @@ let uses_and_users_rect_of_file file dw =
     Common2.optionise (fun () ->Hashtbl.find dw.readable_file_to_rect file)
   )
 
+let entity_at_line line r dw =
+  let model = Async.async_get dw.dw_model in
+  let file = r.T.tr_label in
+  let readable = Common.filename_without_leading_path model.root file in
+
+  try 
+    let xs = Hashtbl.find model.hentities_of_file readable in
+    xs +> List.rev +> Common.find_some_opt (fun (line2, n) ->
+      if line >= line2 then Some n else None
+    )
+  with Not_found -> None
 (*****************************************************************************)
 (* The overlays *)
 (*****************************************************************************)
@@ -319,7 +330,13 @@ let motion_refresher ev dw () =
       then
         let translate = Hashtbl.find dw.pos_and_line r in
         let line = translate.pos_to_line user in
-        spf "%s:%d" txt line
+
+        let entity_opt = entity_at_line line r dw in
+        spf "%s:%d%s" txt line
+          (match entity_opt with 
+          | None -> "" 
+          | Some e -> " (" ^ Graph_code.string_of_node e ^ ")"
+          )
       else txt
     in
     !Controller._statusbar_addtext txt;
