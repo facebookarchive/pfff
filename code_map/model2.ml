@@ -44,8 +44,9 @@ type model = {
     big_grep_idx: Big_grep.index;
   (*e: model fields hook *)
 
+  (* for microlevel *)
   g: Graph_code.graph option;
-  (* fast accessors *)
+  (* fast accessors, for macrolevel  *)
   huses_of_file: (Common.filename, Common.filename list) Hashtbl.t;
   husers_of_file: (Common.filename, Common.filename list) Hashtbl.t;
  }
