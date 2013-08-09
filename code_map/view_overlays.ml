@@ -234,8 +234,9 @@ let zoomed_surface_of_rectangle dw r =
 
   Draw_macrolevel.draw_treemap_rectangle 
     ~cr ~alpha:0.9 r';
-  Draw_microlevel.draw_treemap_rectangle_content_maybe 
-    ~cr ~context ~clipping:user_rect r';
+  let _pos_and_file_TODO = 
+    Draw_microlevel.draw_treemap_rectangle_content_maybe 
+      ~cr ~context ~clipping:user_rect r' in
 
   sur, device_width, device_height
   )
@@ -305,6 +306,15 @@ let motion_refresher ev dw () =
   let r_opt = M.find_rectangle_at_user_point dw user in
   r_opt +> Common.do_option (fun (r, middle, r_englobing) ->
     let txt = r.T.tr_label in
+
+    let txt =
+      if Hashtbl.mem dw.pos_and_line r
+      then
+        let translate = Hashtbl.find dw.pos_and_line r in
+        let line = translate.pos_to_line user.Cairo.x in
+        spf "%s:%d" txt line
+      else txt
+    in
     !Controller._statusbar_addtext txt;
     
     draw_label_overlay ~cr_overlay ~dw ~x ~y r;

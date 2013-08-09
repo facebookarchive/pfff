@@ -105,8 +105,12 @@ let paint_content_maybe_rect ~user_rect dw rect =
 
   let context = Model2.context_of_drawing dw in
 
-  Draw_microlevel.draw_treemap_rectangle_content_maybe 
-    ~cr  ~clipping:user_rect  ~context rect;
+  let pos_and_line_opt = 
+    Draw_microlevel.draw_treemap_rectangle_content_maybe
+      ~cr  ~clipping:user_rect  ~context rect in
+  pos_and_line_opt +> Common.do_option (fun pos_and_line ->
+    Hashtbl.replace dw.pos_and_line rect pos_and_line
+  );
 
   (* have to redraw the label *)
   Draw_labels.draw_treemap_rectangle_label_maybe 
@@ -284,8 +288,8 @@ let find_filepos_in_rectangle_at_user_point user_pt dw r =
   let context = { context with Model2.nb_rects_on_screen = 1 } in
   
   (* does side effect on Draw.text_with_user_pos *)
-  Draw_microlevel.draw_treemap_rectangle_content_maybe 
-    ~cr ~clipping:user_rect ~context r;
+  let _TODO = Draw_microlevel.draw_treemap_rectangle_content_maybe 
+    ~cr ~clipping:user_rect ~context r in
   let xs = !Draw_microlevel.text_with_user_pos in
 
   let scores = xs

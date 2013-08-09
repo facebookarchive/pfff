@@ -35,7 +35,6 @@ type model = {
   root: Common.dirname;
 
   db: Database_code.database option;
- 
   (*s: model fields hook *)
     (* fast accessors *)
     hentities : (string, Database_code.entity) Hashtbl.t;
@@ -69,6 +68,12 @@ type drawing = {
   treemap: Treemap.treemap_rendering;
   (* coupling: = List.length treemap *)
   nb_rects: int; 
+
+  (* when we render content at the microlevel, we then need to know to which
+   * line corresponds a position and vice versa.
+   *)
+  pos_and_line: (Treemap.treemap_rectangle, pos_and_line) Hashtbl.t;
+
   (* generated from treemap, contains readable path relative to model.root *)
   readable_file_to_rect: 
     (Common.filename, Treemap.treemap_rectangle) Hashtbl.t;
@@ -89,8 +94,7 @@ type drawing = {
     mutable current_query: string;
     mutable current_searched_rectangles: Treemap.treemap_rectangle list;
     mutable current_entity: Database_code.entity option;
-    mutable current_grep_query : 
-      (Common.filename, int) Hashtbl.t;
+    mutable current_grep_query:  (Common.filename, int) Hashtbl.t;
   (*e: fields drawing query stuff *)
 
   dw_settings: settings;
@@ -141,6 +145,10 @@ type drawing = {
      mutable draw_searched_rectangles: bool;
    }
   (*e: type settings *)
+  and pos_and_line = {
+    pos_to_line: float -> int;
+    line_to_pos: int -> float;
+  }
 (*e: type drawing *)
 
 (*s: new_pixmap() *)
@@ -192,6 +200,8 @@ let init_drawing
 
     dw_model = model;
     layers = layers;
+
+    pos_and_line = Hashtbl.create 0;
 
     current_query = "";
     current_searched_rectangles = [];

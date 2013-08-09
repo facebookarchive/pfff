@@ -70,6 +70,15 @@ let is_big_file_with_few_lines ~nblines fullpath =
   nblines < 20. && 
   Common2.filesize_eff fullpath > 4000
 
+let pos_and_line_from_layout rect layout =
+  { line_to_pos = (fun line ->
+      raise Todo
+    );
+    pos_to_line = (fun pos ->
+      42
+    );
+  }
+
 (*****************************************************************************)
 (* Anamorphic entities *)
 (*****************************************************************************)
@@ -420,7 +429,7 @@ let draw_treemap_rectangle_content_maybe2 ~cr ~clipping ~context rect  =
   let file = rect.T.tr_label in
 
   if F.intersection_rectangles r clipping = None
-  then (* pr2 ("not drawing: " ^ file) *) ()
+  then (* pr2 ("not drawing: " ^ file) *) None
   else begin
 
   let w = F.rect_width r in
@@ -489,17 +498,22 @@ let draw_treemap_rectangle_content_maybe2 ~cr ~clipping ~context rect  =
     } 
     in
 
-    if font_size_real > !Flag.threshold_draw_content_font_size_real 
+    let pos_and_line = pos_and_line_from_layout rect layout in
+
+    (if font_size_real > !Flag.threshold_draw_content_font_size_real 
        && not (is_big_file_with_few_lines ~nblines file)
        && nblines < !Flag.threshold_draw_content_nblines
     then draw_content ~cr ~layout ~context ~file rect
     else 
-     if context.settings.draw_summary 
-     then 
-       raise Todo
-         (* draw_summary_content ~cr ~layout ~context ~file  rect *)
+      if context.settings.draw_summary 
+      (* draw_summary_content ~cr ~layout ~context ~file  rect *)
+      then raise Todo
+    );
+    Some pos_and_line
     end
+    else None
   end
+  else None
   end
 let draw_treemap_rectangle_content_maybe ~cr ~clipping ~context rect = 
   Common.profile_code "View.draw_content_maybe" (fun () ->

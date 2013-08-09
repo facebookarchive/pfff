@@ -7,7 +7,7 @@ val draw_treemap_rectangle_content_maybe :
   clipping:Figures.rectangle ->
   context:Model2.context ->
   Treemap.treemap_rectangle -> 
-  unit
+  Model2.pos_and_line option
 (*e: draw_treemap_rectangle_content_maybe sig *)
 
 (*s: text_with_user_pos sig *)
