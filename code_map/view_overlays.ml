@@ -34,11 +34,10 @@ module M = Model2
 (*****************************************************************************)
 (* Prelude *)
 (*****************************************************************************)
-
 (* This module mainly modifies the dw.overlay cairo surface. It also
  * triggers the refresh_da which triggers itself the expose event
  * which triggers the View2.assemble_layers composition of dw.pm with
- * dw.overlay
+ * dw.overlay.
  *)
 
 (*****************************************************************************)
@@ -51,7 +50,6 @@ let readable_txt_for_label txt current_root =
     then "root"
     else Common.filename_without_leading_path current_root txt 
   in
-
   if String.length readable_txt > 25
   then 
     let dirs = Filename.dirname readable_txt +> Common.split "/" in
@@ -83,6 +81,7 @@ let uses_and_users_rect_of_file file dw =
 (* ---------------------------------------------------------------------- *)
 
 (*s: draw_label_overlay *)
+(* assumes cr_overlay has not been zoom_pan_scale *)
 let draw_label_overlay ~cr_overlay ~dw ~x ~y r =
 
   let txt = r.T.tr_label in
@@ -329,24 +328,20 @@ let motion_refresher ev dw () =
     draw_rectangle_overlay ~cr_overlay ~dw (r, middle, r_englobing);
     
     if dw.dw_settings.draw_searched_rectangles;
-    then
-        draw_searched_rectangles ~cr_overlay ~dw;
+    then draw_searched_rectangles ~cr_overlay ~dw;
     
     Controller.current_r := Some r;
     
     (* it has been computed, use it then *)
     if Hashtbl.mem _hmemo_surface (r.T.tr_label, dw.zoom) &&
-      dw.in_zoom_incruste
-    then
-      draw_zoomed_overlay ~cr_overlay ~user ~dw ~x ~y r;
-      
+       dw.in_zoom_incruste
+    then draw_zoomed_overlay ~cr_overlay ~user ~dw ~x ~y r;
   );
   !Controller._refresh_da ();
   false
 
 
 let motion_notify (da, da2) dw ev =
-
   !Controller.current_motion_refresher +> Common.do_option (fun x ->
     GMain.Idle.remove x;
   );
