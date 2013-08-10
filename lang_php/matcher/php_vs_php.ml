@@ -1284,6 +1284,14 @@ and m_expr a b =
        B.YieldBreak(b1, b2)
     )
     ))
+  | A.Await(a1, a2), B.Await(b1, b2) ->
+    m_tok a1 b1 >>= (fun (a1, b1) ->
+    m_expr a2 b2 >>= (fun (a2, b2) ->
+    return (
+       A.Await(a1, a2),
+       B.Await(b1, b2)
+    )
+    ))
   | A.Empty(a1, a2), B.Empty(b1, b2) ->
     m_tok a1 b1 >>= (fun (a1, b1) ->
     m_paren m_lvalue a2 b2 >>= (fun (a2, b2) ->
@@ -1355,6 +1363,7 @@ and m_expr a b =
   | A.ParenExpr _, _
   | A.Yield _, _
   | A.YieldBreak _, _
+  | A.Await _, _
    -> fail ()
 
 (* ---------------------------------------------------------------------- *)
@@ -2535,12 +2544,18 @@ and m_modifier a b =
        A.Final,
        B.Final
     )
+  | A.Async, B.Async ->
+    return (
+       A.Async,
+       B.Async
+    )
   | A.Public, _
   | A.Private, _
   | A.Protected, _
   | A.Static, _
   | A.Abstract, _
   | A.Final, _
+  | A.Async, _
    -> fail ()
 
 and m_class_var_modifier a b =

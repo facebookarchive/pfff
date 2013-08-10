@@ -68,7 +68,7 @@ let string_of_modifier = function
   | Public    -> "is_public"
   | Private   -> "is_private"
   | Protected -> "is_protected"
-  | Static -> "static"  | Abstract -> "abstract" | Final -> "final"
+  | Static -> "static"  | Abstract -> "abstract" | Final -> "final" | Async -> "async"
 
 let rec string_of_hint_type h =
   match h with

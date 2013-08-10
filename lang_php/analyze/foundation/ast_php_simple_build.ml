@@ -371,6 +371,8 @@ and expr env = function
   | YieldBreak (tok, tok2) ->
       A.Call (A.Id [A.builtin "yield", wrap tok],
              [A.Id [A.builtin "yield_break", wrap tok2]])
+  | Await (tok, e) ->
+      A.Call (A.Id [A.builtin "await", wrap tok], [expr env e])
   | SgrepExprDots _ ->
       (* should never use the abstract interpreter on a sgrep pattern *)
       raise Common.Impossible

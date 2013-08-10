@@ -278,6 +278,11 @@ and expr =
    *)
   | Yield of tok * expr
   | YieldBreak of tok * tok
+  (* php-facebook-ext:
+   *
+   * Just like yield, this should be at the statement level 
+   *)
+  | Await of tok * expr
 
   (* only appear when process sgrep patterns *)
   | SgrepExprDots of tok
@@ -613,7 +618,7 @@ and class_def = {
         and method_def = func_def
           and modifier =
             | Public  | Private | Protected
-            | Static  | Abstract | Final
+            | Static  | Abstract | Final | Async
  and xhp_decl =
     | XhpAttributesDecl of
         tok (* attribute *) * xhp_attribute_decl comma_list * tok (*;*)

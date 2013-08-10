@@ -90,6 +90,7 @@ let info_of_tok = function
   | T_STATIC ii -> ii
   | T_ABSTRACT ii -> ii
   | T_FINAL ii -> ii
+  | T_ASYNC ii -> ii
   | T_PRIVATE ii -> ii
   | T_PROTECTED ii -> ii
   | T_PUBLIC ii -> ii
@@ -225,6 +226,7 @@ let info_of_tok = function
   | T_XHP_PCDATA (ii) -> ii
 
   | T_YIELD (ii) -> ii
+  | T_AWAIT (ii) -> ii
   | T_SELF(ii) -> ii
   | T_PARENT(ii) -> ii
 
@@ -286,6 +288,7 @@ let visitor_info_of_tok f = function
   | T_STATIC ii -> T_STATIC(f ii)
   | T_ABSTRACT ii -> T_ABSTRACT(f ii)
   | T_FINAL ii -> T_FINAL(f ii)
+  | T_ASYNC ii -> T_ASYNC(f ii)
   | T_PRIVATE ii -> T_PRIVATE(f ii)
   | T_PROTECTED ii -> T_PROTECTED(f ii)
   | T_PUBLIC ii -> T_PUBLIC(f ii)
@@ -420,6 +423,7 @@ let visitor_info_of_tok f = function
   | T_XHP_PCDATA (ii) -> T_XHP_PCDATA (f ii)
 
   | T_YIELD (ii) -> T_YIELD (f ii)
+  | T_AWAIT (ii) -> T_AWAIT (f ii)
   | T_SELF (ii) -> T_SELF (f ii)
   | T_PARENT (ii) -> T_PARENT (f ii)
 

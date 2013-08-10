@@ -493,6 +493,7 @@ and expr env = function
   | XhpHtml xhp -> A.Xhp (xhp_html env xhp)
   | Yield (_, e) -> A.Call (A.Id "yield", [expr env e])
   | YieldBreak _ -> A.Call (A.Id "yield", [A.Id "break"])
+  | Await (_, e) -> A.Call (A.Id "await", [expr env e])
   (* only appear in sgrep pattern *)
   | SgrepExprDots _ -> raise Common.Impossible
   | ParenExpr (_, e, _) -> expr env e
@@ -648,7 +649,7 @@ and visibility env = function
   | Public :: _ -> A.Public
   | Private :: _ -> A.Private
   | Protected :: _ -> A.Protected
-  | (Static | Abstract | Final) :: rl -> visibility env rl
+  | (Static | Abstract | Final | Async) :: rl -> visibility env rl
 
 and static env = function
   | [] -> false
