@@ -151,7 +151,7 @@ type drawing = {
   (*e: type settings *)
   and pos_and_line = {
     pos_to_line: Cairo.point -> int;
-    line_to_pos: int -> Cairo.point;
+    line_to_rectangle: int -> Figures.rectangle;
   }
 (*e: type drawing *)
 

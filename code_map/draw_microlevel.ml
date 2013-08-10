@@ -71,8 +71,20 @@ let is_big_file_with_few_lines ~nblines fullpath =
   Common2.filesize_eff fullpath > 4000
 
 let pos_and_line_from_layout r layout =
-  { line_to_pos = (fun line ->
-      raise Todo
+  let nblines_per_column = 
+    (layout.nblines / layout.split_nb_columns) +> ceil in
+
+  { line_to_rectangle = (fun line ->
+      let line = (float_of_int line) - 1. in
+      let column = floor (line / nblines_per_column) in
+      let line_in_column = 
+        line - (column * nblines_per_column) in
+
+      let x = r.p.x + (column * layout.w_per_column) in
+      let y = r.p.y + (line_in_column * layout.space_per_line) in
+      { p = { x; y };
+        q = { x = x + layout.w_per_column; y = y + layout.space_per_line };
+      }
     );
     pos_to_line = (fun pt ->
 
@@ -81,9 +93,6 @@ let pos_and_line_from_layout r layout =
 
       let line_in_column = floor (y / layout.space_per_line) in
       let column = floor (x / layout.w_per_column) in
-
-      let nblines_per_column = 
-        (layout.nblines / layout.split_nb_columns) +> ceil in
 
      (column * nblines_per_column + line_in_column + 1.) +> int_of_float
     );

@@ -83,6 +83,35 @@ let entity_at_line line r dw =
       if line >= line2 then Some n else None
     )
   with Not_found -> None
+
+let uses_or_users_of_node_visible_here node dw fsucc =
+  let model = Async.async_get dw.dw_model in
+  (match model.g with
+  | None -> []
+  | Some g ->
+    let succ = fsucc node g in
+    succ +> Common.map_filter (fun n ->
+      try 
+        let file = Graph_code.file_of_node n g in
+        let rect = Hashtbl.find dw.readable_file_to_rect file in
+        let xs = Hashtbl.find model.hentities_of_file file in
+        let (line, _n2) = xs +> List.find (fun (_, n2) -> n2 =*= n) in
+        let pos_and_line = Hashtbl.find dw.pos_and_line rect in
+        let rect = pos_and_line.line_to_rectangle line in
+        Some rect
+      with Not_found -> None
+    )
+  )
+
+let uses_of_node_visible_here node dw =
+  uses_or_users_of_node_visible_here node dw (fun node g ->
+    Graph_code.succ node Graph_code.Use g)
+
+let users_of_node_visible_here node dw =
+  uses_or_users_of_node_visible_here node dw (fun node g ->
+    Graph_code.pred node Graph_code.Use g)
+
+  
 (*****************************************************************************)
 (* The overlays *)
 (*****************************************************************************)
@@ -128,6 +157,7 @@ let draw_label_overlay ~cr_overlay ~dw ~x ~y r =
   *)
   ()
 (*e: draw_label_overlay *)
+
 (* ---------------------------------------------------------------------- *)
 (* The current rectangles *)
 (* ---------------------------------------------------------------------- *)
@@ -168,6 +198,17 @@ let draw_rectangle_overlay ~cr_overlay ~dw (r, middle, r_englobing) =
   Cairo.restore cr_overlay;
   ()
 (*e: draw_rectangle_overlay *)
+
+(* ---------------------------------------------------------------------- *)
+(* The rectangles of referenced entities *)
+(* ---------------------------------------------------------------------- *)
+let draw_rectangle_entity ~cr_overlay ~dw ~color rectangle =
+  Cairo.save cr_overlay;
+  View_mainmap.zoom_pan_scale_map cr_overlay dw;
+  CairoH.draw_rectangle_figure ~cr:cr_overlay ~color rectangle;
+  Cairo.restore cr_overlay;
+  ()
+
 (* ---------------------------------------------------------------------- *)
 (* The selected rectangles *)
 (* ---------------------------------------------------------------------- *)
@@ -325,7 +366,7 @@ let motion_refresher ev dw () =
   r_opt +> Common.do_option (fun (r, middle, r_englobing) ->
     let txt = r.T.tr_label in
 
-    let txt =
+    let txt, entity_opt =
       if Hashtbl.mem dw.pos_and_line r
       then
         let translate = Hashtbl.find dw.pos_and_line r in
@@ -336,13 +377,26 @@ let motion_refresher ev dw () =
           (match entity_opt with 
           | None -> "" 
           | Some e -> " (" ^ Graph_code.string_of_node e ^ ")"
-          )
-      else txt
+          ), entity_opt
+      else txt, None
     in
     !Controller._statusbar_addtext txt;
     
     draw_label_overlay ~cr_overlay ~dw ~x ~y r;
     draw_rectangle_overlay ~cr_overlay ~dw (r, middle, r_englobing);
+
+    (match entity_opt with
+    | None -> ()
+    | Some n ->
+      let rectangle_uses = uses_of_node_visible_here n dw in
+      rectangle_uses +> List.iter (fun rectangle ->
+        draw_rectangle_entity ~cr_overlay ~dw ~color:"green" rectangle;
+      );
+      let rectangle_users = users_of_node_visible_here n dw in
+      rectangle_users +> List.iter (fun rectangle ->
+        draw_rectangle_entity ~cr_overlay ~dw ~color:"red" rectangle;
+      );
+    );
     
     if dw.dw_settings.draw_searched_rectangles;
     then draw_searched_rectangles ~cr_overlay ~dw;
