@@ -1,4 +1,4 @@
-core:
+core: used by everthing
 
 ocamlcairo: used by codemap/codegraph, core graphics library.
 ocamlgtk:   used by codemap/codegraph, mostly for interactive menus and basic
