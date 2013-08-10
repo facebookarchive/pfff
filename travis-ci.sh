@@ -46,4 +46,6 @@ make
 # Run tests
 #------------------------------
 #todo: need swipl, need hg
-#make test
+sudo apt-get install -qq ocaml
+sudo apt-get install -qq swipl
+make test
