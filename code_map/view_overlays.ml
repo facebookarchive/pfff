@@ -80,7 +80,9 @@ let entity_at_line line r dw =
   try 
     let xs = Hashtbl.find model.hentities_of_file readable in
     xs +> List.rev +> Common.find_some_opt (fun (line2, n) ->
-      if line >= line2 then Some n else None
+      if line >= line2 && abs (line -.. line2) <= 3
+      then Some n 
+      else None
     )
   with Not_found -> None
 

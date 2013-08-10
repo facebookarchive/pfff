@@ -1,10 +1,14 @@
 -*- org -*-
 
-* 0.25 (Q3 2013) ()
+* 0.25 (Q3 2013) (codemap/codegraph integration)
 
 ** codemap
 
-*** graph_code integration, highlight users and uses of a file
+*** highlight users and uses of the file under the cursor
+via graph_code
+
+*** highlight users and uses of the entity under the cursor
+via graph_code
 
 *** bottom up and topdown layer using graph_code
 associate a depth in the use graph to each file and entities.
