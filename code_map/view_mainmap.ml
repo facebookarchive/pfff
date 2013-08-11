@@ -340,6 +340,27 @@ let button_action da dw_ref ev =
           r_opt +> Common.do_option (fun (r, _, _r_englobing) ->
             let file = r.T.tr_label in
             pr2 (spf "clicking on %s" file);
+
+            let model = Async.async_get dw.dw_model in
+            let readable = Common.filename_without_leading_path model.root file in
+            
+            let uses = 
+              try Hashtbl.find model.huses_of_file readable with Not_found -> [] in
+            let users = 
+              try Hashtbl.find model.husers_of_file readable with Not_found -> [] in
+            let xs = (uses ++ users ++ [readable])
+              +> List.sort Pervasives.compare in
+
+            (* todo: tfidf to filter files like common2.ml *)
+            let xs = xs +> Common.exclude (fun readable ->
+              readable =$= "commons/common2.ml"
+            )
+            in
+            
+            let paths = xs +> List.map (fun s -> 
+              Filename.concat model.root s)
+            in
+            !Ctl._go_dirs_or_file dw_ref paths;
           );
           true
       | 2 ->
