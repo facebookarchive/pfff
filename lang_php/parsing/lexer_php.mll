@@ -156,7 +156,9 @@ let keyword_table = Common.hash_of_list [
   "use",             (fun ii -> T_USE ii);
 
   "abstract", (fun ii -> T_ABSTRACT ii); "final", (fun ii -> T_FINAL ii);
+(* pad: there are code using ASYNC as a constant, what do we do for that?
   "async", (fun ii -> T_ASYNC ii);
+*)
 
   "public",          (fun ii -> T_PUBLIC ii);
   "protected",       (fun ii -> T_PROTECTED ii);
