@@ -383,10 +383,10 @@ let button_action da dw_ref ev =
           `I ("deps inout", (fun () -> 
             !Ctl._go_dirs_or_file dw_ref (paths_of_readables 
                                             (uses ++ users ++ [readable]))));
-          `I ("deps in", (fun () -> 
+          `I ("deps in (users)", (fun () -> 
             !Ctl._go_dirs_or_file dw_ref (paths_of_readables 
                                             (users ++ [readable]))));
-          `I ("deps out", (fun () -> 
+          `I ("deps out (uses)", (fun () -> 
             !Ctl._go_dirs_or_file dw_ref (paths_of_readables 
                                             (uses ++ [readable]))));
         ] ~button:3 ~time:(GtkMain.Main.get_current_event_time());
