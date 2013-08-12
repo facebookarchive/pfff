@@ -14,9 +14,9 @@ dist : doc
         mv cairo-ocaml-$(VERSION) $$DIRNAME
 
 
-configure : configure.ac
-	aclocal -I support
-	autoconf
+#configure : configure.ac
+#	aclocal -I support
+#	autoconf
 config.make : config.make.in configure
 	$(error run ./configure)
 include config.make
