@@ -1337,7 +1337,7 @@ ident_xhp_attr_name_atom:
  | T_INCLUDE { $1 } | T_INCLUDE_ONCE { $1 } | T_REQUIRE { $1 }
  | T_REQUIRE_ONCE { $1 } | T_EVAL { $1 } | T_SELF { $1 } | T_PARENT { $1 }
  | T_TRAIT { $1 } | T_INSTEADOF { $1 } | T_TRAIT_C { $1 }
- | T_NAMESPACE { $1 } | T_NAMESPACE_C { $1 }
+ | T_NAMESPACE { $1 } | T_NAMESPACE_C { $1 } | T_ASYNC { $1 }
 
 /*(*************************************************************************)*/
 /*(*1 Namespace *)*/
