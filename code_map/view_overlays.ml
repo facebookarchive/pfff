@@ -56,63 +56,6 @@ let readable_txt_for_label txt current_root =
     let file = Filename.basename readable_txt in
     spf "%s/.../%s" (List.hd dirs) file
   else readable_txt
-
-let uses_and_users_rect_of_file file dw =
-  let model = Async.async_get dw.dw_model in
-  let readable = Common.filename_without_leading_path model.root file in
-
-  let uses = 
-    try Hashtbl.find model.huses_of_file readable with Not_found -> [] in
-  let users = 
-    try Hashtbl.find model.husers_of_file readable with Not_found -> [] in
-  uses +> Common.map_filter (fun file -> 
-    Common2.optionise (fun () -> Hashtbl.find dw.readable_file_to_rect file)
-  ),
-  users +> Common.map_filter (fun file ->
-    Common2.optionise (fun () ->Hashtbl.find dw.readable_file_to_rect file)
-  )
-
-let entity_at_line line r dw =
-  let model = Async.async_get dw.dw_model in
-  let file = r.T.tr_label in
-  let readable = Common.filename_without_leading_path model.root file in
-
-  try 
-    let xs = Hashtbl.find model.hentities_of_file readable in
-    xs +> List.rev +> Common.find_some_opt (fun (line2, n) ->
-      if line >= line2 && abs (line -.. line2) <= 3
-      then Some n 
-      else None
-    )
-  with Not_found -> None
-
-let uses_or_users_of_node_visible_here node dw fsucc =
-  let model = Async.async_get dw.dw_model in
-  (match model.g with
-  | None -> []
-  | Some g ->
-    let succ = fsucc node g in
-    succ +> Common.map_filter (fun n ->
-      try 
-        let file = Graph_code.file_of_node n g in
-        let rect = Hashtbl.find dw.readable_file_to_rect file in
-        let xs = Hashtbl.find model.hentities_of_file file in
-        let (line, _n2) = xs +> List.find (fun (_, n2) -> n2 =*= n) in
-        let pos_and_line = Hashtbl.find dw.pos_and_line rect in
-        let rect = pos_and_line.line_to_rectangle line in
-        Some rect
-      with Not_found -> None
-    )
-  )
-
-let uses_of_node_visible_here node dw =
-  uses_or_users_of_node_visible_here node dw (fun node g ->
-    Graph_code.succ node Graph_code.Use g)
-
-let users_of_node_visible_here node dw =
-  uses_or_users_of_node_visible_here node dw (fun node g ->
-    Graph_code.pred node Graph_code.Use g)
-
   
 (*****************************************************************************)
 (* The overlays *)
@@ -124,16 +67,13 @@ let users_of_node_visible_here node dw =
 
 (*s: draw_label_overlay *)
 (* assumes cr_overlay has not been zoom_pan_scale *)
-let draw_label_overlay ~cr_overlay ~dw ~x ~y r =
-
-  let txt = r.T.tr_label in
-  let readable_txt = readable_txt_for_label txt dw.current_root in
+let draw_label_overlay ~cr_overlay ~dw ~x ~y txt =
 
   Cairo.select_font_face cr_overlay "serif" 
     Cairo.FONT_SLANT_NORMAL Cairo.FONT_WEIGHT_NORMAL;
   Cairo.set_font_size cr_overlay Style2.font_size_filename_cursor;
       
-  let extent = CairoH.text_extents cr_overlay readable_txt in
+  let extent = CairoH.text_extents cr_overlay txt in
   let tw = extent.Cairo.text_width in
   let th = extent.Cairo.text_height in
 
@@ -149,7 +89,7 @@ let draw_label_overlay ~cr_overlay ~dw ~x ~y r =
 
   Cairo.move_to cr_overlay refx refy;
   Cairo.set_source_rgba cr_overlay 1. 1. 1.    1.0;
-  CairoH.show_text cr_overlay readable_txt;
+  CairoH.show_text cr_overlay txt;
   
   (*
   Cairo.set_source_rgb cr_overlay 0.3 0.3 0.3;
@@ -189,7 +129,7 @@ let draw_rectangle_overlay ~cr_overlay ~dw (r, middle, r_englobing) =
   );
 
   let file = r.T.tr_label in
-  let uses_rect, users_rect = uses_and_users_rect_of_file file dw in
+  let uses_rect, users_rect = M.uses_and_users_rect_of_file file dw in
   uses_rect +> List.iter (fun r ->
     CairoH.draw_rectangle_figure ~cr:cr_overlay ~color:"green" r.T.tr_rect;
   );
@@ -353,48 +293,52 @@ let draw_zoomed_overlay ~cr_overlay ~user ~dw ~x ~y r =
 (*****************************************************************************)
 
 (*s: motion_refresher *)
-(* todo: deadclock   M.locked (fun () ->    ) dw.M.model.m *)
 let motion_refresher ev dw () =
   let cr_overlay = Cairo.create dw.overlay in
   CairoH.clear cr_overlay;
 
-  let x = GdkEvent.Motion.x ev in
-  let y = GdkEvent.Motion.y ev in
-
+  let x, y = GdkEvent.Motion.x ev, GdkEvent.Motion.y ev in
   let pt = { Cairo. x = x; y = y } in
   let user = View_mainmap.with_map dw (fun cr -> Cairo.device_to_user cr pt) in
 
   let r_opt = M.find_rectangle_at_user_point dw user in
   r_opt +> Common.do_option (fun (r, middle, r_englobing) ->
-    let txt = r.T.tr_label in
-
-    let txt, entity_opt =
+    let line_opt, entity_opt =
       if Hashtbl.mem dw.pos_and_line r
       then
         let translate = Hashtbl.find dw.pos_and_line r in
         let line = translate.pos_to_line user in
-
-        let entity_opt = entity_at_line line r dw in
-        spf "%s:%d%s" txt line
-          (match entity_opt with 
-          | None -> "" 
-          | Some e -> " (" ^ Graph_code.string_of_node e ^ ")"
-          ), entity_opt
-      else txt, None
+        let entity_opt = M.find_entity_at_line line r dw in
+        Some line, entity_opt
+      else None, None
     in
-    !Controller._statusbar_addtext txt;
+    let statusbar_txt = 
+      r.T.tr_label ^
+      (match line_opt with None -> "" | Some i -> spf ":%d" i) ^
+      (match entity_opt with None -> "" | Some n -> 
+        " (" ^ Graph_code.string_of_node n ^ ")"
+      )
+    in
+    !Controller._statusbar_addtext statusbar_txt;
+
+    let label_txt = 
+      match entity_opt with
+      | None -> readable_txt_for_label r.T.tr_label dw.current_root
+      | Some n -> Graph_code.string_of_node n
+    in
     
-    draw_label_overlay ~cr_overlay ~dw ~x ~y r;
+    draw_label_overlay ~cr_overlay ~dw ~x ~y label_txt;
     draw_rectangle_overlay ~cr_overlay ~dw (r, middle, r_englobing);
 
     (match entity_opt with
     | None -> ()
     | Some n ->
-      let rectangle_uses = uses_of_node_visible_here n dw in
+      let rectangle_uses, rectangle_users = 
+        uses_and_users_of_node n dw 
+      in
       rectangle_uses +> List.iter (fun rectangle ->
         draw_rectangle_entity ~cr_overlay ~dw ~color:"green" rectangle;
       );
-      let rectangle_users = users_of_node_visible_here n dw in
       rectangle_users +> List.iter (fun rectangle ->
         draw_rectangle_entity ~cr_overlay ~dw ~color:"red" rectangle;
       );

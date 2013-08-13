@@ -19,7 +19,7 @@ type model = {
   (* fast accessors, for macrolevel  *)
   huses_of_file: (Common.filename, Common.filename list) Hashtbl.t;
   husers_of_file: (Common.filename, Common.filename list) Hashtbl.t;
-  
+  (* for microlevel *)
   hentities_of_file: 
     (Common.filename, (int * Graph_code.node) list) Hashtbl.t;
  }
@@ -156,11 +156,23 @@ val new_pixmap :
 val find_rectangle_at_user_point :
   drawing ->
   Cairo.point ->
-  (Treemap.treemap_rectangle * 
-   Treemap.treemap_rectangle list * 
-   Treemap.treemap_rectangle
+  (Treemap.treemap_rectangle * (* most precise *)
+   Treemap.treemap_rectangle list * (* englobbing ones *)
+   Treemap.treemap_rectangle (* top one *)
   )
   option
 (*e: find_rectangle_at_user_point sig *)
+
+val find_entity_at_line:
+  int (* line *) -> Treemap.treemap_rectangle -> drawing -> 
+  Graph_code.node option
+
+val uses_and_users_rect_of_file:
+  Common.filename -> drawing -> 
+  Treemap.treemap_rectangle list * Treemap.treemap_rectangle list
+
+val uses_and_users_of_node:
+  Graph_code.node -> drawing -> 
+  Figures.rectangle list * Figures.rectangle list
 
 (*e: model2.mli *)
