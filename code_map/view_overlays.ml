@@ -124,16 +124,13 @@ let users_of_node_visible_here node dw =
 
 (*s: draw_label_overlay *)
 (* assumes cr_overlay has not been zoom_pan_scale *)
-let draw_label_overlay ~cr_overlay ~dw ~x ~y r =
-
-  let txt = r.T.tr_label in
-  let readable_txt = readable_txt_for_label txt dw.current_root in
+let draw_label_overlay ~cr_overlay ~dw ~x ~y txt =
 
   Cairo.select_font_face cr_overlay "serif" 
     Cairo.FONT_SLANT_NORMAL Cairo.FONT_WEIGHT_NORMAL;
   Cairo.set_font_size cr_overlay Style2.font_size_filename_cursor;
       
-  let extent = CairoH.text_extents cr_overlay readable_txt in
+  let extent = CairoH.text_extents cr_overlay txt in
   let tw = extent.Cairo.text_width in
   let th = extent.Cairo.text_height in
 
@@ -149,7 +146,7 @@ let draw_label_overlay ~cr_overlay ~dw ~x ~y r =
 
   Cairo.move_to cr_overlay refx refy;
   Cairo.set_source_rgba cr_overlay 1. 1. 1.    1.0;
-  CairoH.show_text cr_overlay readable_txt;
+  CairoH.show_text cr_overlay txt;
   
   (*
   Cairo.set_source_rgb cr_overlay 0.3 0.3 0.3;
@@ -353,38 +350,41 @@ let draw_zoomed_overlay ~cr_overlay ~user ~dw ~x ~y r =
 (*****************************************************************************)
 
 (*s: motion_refresher *)
-(* todo: deadclock   M.locked (fun () ->    ) dw.M.model.m *)
 let motion_refresher ev dw () =
   let cr_overlay = Cairo.create dw.overlay in
   CairoH.clear cr_overlay;
 
-  let x = GdkEvent.Motion.x ev in
-  let y = GdkEvent.Motion.y ev in
-
+  let x, y = GdkEvent.Motion.x ev, GdkEvent.Motion.y ev in
   let pt = { Cairo. x = x; y = y } in
   let user = View_mainmap.with_map dw (fun cr -> Cairo.device_to_user cr pt) in
 
   let r_opt = M.find_rectangle_at_user_point dw user in
   r_opt +> Common.do_option (fun (r, middle, r_englobing) ->
-    let txt = r.T.tr_label in
-
-    let txt, entity_opt =
+    let line_opt, entity_opt =
       if Hashtbl.mem dw.pos_and_line r
       then
         let translate = Hashtbl.find dw.pos_and_line r in
         let line = translate.pos_to_line user in
-
         let entity_opt = entity_at_line line r dw in
-        spf "%s:%d%s" txt line
-          (match entity_opt with 
-          | None -> "" 
-          | Some e -> " (" ^ Graph_code.string_of_node e ^ ")"
-          ), entity_opt
-      else txt, None
+        Some line, entity_opt
+      else None, None
     in
-    !Controller._statusbar_addtext txt;
+    let statusbar_txt = 
+      r.T.tr_label ^
+      (match line_opt with None -> "" | Some i -> spf ":%d" i) ^
+      (match entity_opt with None -> "" | Some n -> 
+        " (" ^ Graph_code.string_of_node n ^ ")"
+      )
+    in
+    !Controller._statusbar_addtext statusbar_txt;
+
+    let label_txt = 
+      match entity_opt with
+      | None -> readable_txt_for_label r.T.tr_label dw.current_root
+      | Some n -> Graph_code.string_of_node n
+    in
     
-    draw_label_overlay ~cr_overlay ~dw ~x ~y r;
+    draw_label_overlay ~cr_overlay ~dw ~x ~y label_txt;
     draw_rectangle_overlay ~cr_overlay ~dw (r, middle, r_englobing);
 
     (match entity_opt with
