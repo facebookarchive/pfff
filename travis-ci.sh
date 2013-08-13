@@ -25,7 +25,7 @@ wget http://www.ocamlpro.com/pub/opam_installer.sh
 # redirecting to >/dev/null is not always good because travis
 # has a 10min timeout on any program that don't output
 # something on the console
-yes | sh ./opam_installer.sh /usr/local/bin > /dev/null
+yes | sh ./opam_installer.sh /usr/local/bin
 
 # install packages from opam
 # ??
@@ -51,13 +51,10 @@ sudo apt-get install -qq mercurial
 sudo apt-get install -qq swi-prolog
 # set PFFF_HOME for many tests to be able to find their data
 source env.sh
-
 # for removing some warnings when unit testing git
 git config --global user.email "you@example.com"
 git config --global user.name "Pad"
-# mercurial requires this
+# same but for mercurial
 printf '[ui]\nusername = Pad<you@example.com>\n' > ~/.hgrc
-cat ~/.hgrc
-
 
 make test
