@@ -292,6 +292,9 @@ let find_rectangle_at_user_point2 dw user =
       && r.T.tr_depth > 1
     ) 
     +> List.map (fun r -> r, r.T.tr_depth) 
+    (* opti: this should be far faster by using a quad tree to represent
+     * the treemap
+     *)
     +> Common.sort_by_val_highfirst 
     +> List.map fst
    in
@@ -304,5 +307,64 @@ let find_rectangle_at_user_point a b =
   Common.profile_code "Model.find_rectangle_at_point" (fun () ->
     find_rectangle_at_user_point2 a b)
 (*e: find_rectangle_at_user_point() *)
+
+(*****************************************************************************)
+(* Graph code integration *)
+(*****************************************************************************)
+
+let uses_and_users_rect_of_file file dw =
+  let model = Async.async_get dw.dw_model in
+  let readable = Common.filename_without_leading_path model.root file in
+
+  let uses = 
+    try Hashtbl.find model.huses_of_file readable with Not_found -> [] in
+  let users = 
+    try Hashtbl.find model.husers_of_file readable with Not_found -> [] in
+  uses +> Common.map_filter (fun file -> 
+    Common2.optionise (fun () -> Hashtbl.find dw.readable_file_to_rect file)
+  ),
+  users +> Common.map_filter (fun file ->
+    Common2.optionise (fun () ->Hashtbl.find dw.readable_file_to_rect file)
+  )
+
+let find_entity_at_line line r dw =
+  let model = Async.async_get dw.dw_model in
+  let file = r.T.tr_label in
+  let readable = Common.filename_without_leading_path model.root file in
+
+  try 
+    let xs = Hashtbl.find model.hentities_of_file readable in
+    xs +> List.rev +> Common.find_some_opt (fun (line2, n) ->
+      if line >= line2 && abs (line - line2) <= 4
+      then Some n 
+      else None
+    )
+  with Not_found -> None
+
+let uses_or_users_of_node_visible_here node dw fsucc =
+  let model = Async.async_get dw.dw_model in
+  (match model.g with
+  | None -> []
+  | Some g ->
+    let succ = fsucc node g in
+    succ +> Common.map_filter (fun n ->
+      try 
+        let file = Graph_code.file_of_node n g in
+        let rect = Hashtbl.find dw.readable_file_to_rect file in
+        let xs = Hashtbl.find model.hentities_of_file file in
+        let (line, _n2) = xs +> List.find (fun (_, n2) -> n2 =*= n) in
+        let pos_and_line = Hashtbl.find dw.pos_and_line rect in
+        let rect = pos_and_line.line_to_rectangle line in
+        Some rect
+      with Not_found -> None
+    )
+  )
+
+let uses_and_users_of_node node dw =
+  uses_or_users_of_node_visible_here node dw (fun node g ->
+    Graph_code.succ node Graph_code.Use g),
+  uses_or_users_of_node_visible_here node dw (fun node g ->
+    Graph_code.pred node Graph_code.Use g)
+
 
 (*e: model2.ml *)

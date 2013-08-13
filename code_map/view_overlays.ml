@@ -56,63 +56,6 @@ let readable_txt_for_label txt current_root =
     let file = Filename.basename readable_txt in
     spf "%s/.../%s" (List.hd dirs) file
   else readable_txt
-
-let uses_and_users_rect_of_file file dw =
-  let model = Async.async_get dw.dw_model in
-  let readable = Common.filename_without_leading_path model.root file in
-
-  let uses = 
-    try Hashtbl.find model.huses_of_file readable with Not_found -> [] in
-  let users = 
-    try Hashtbl.find model.husers_of_file readable with Not_found -> [] in
-  uses +> Common.map_filter (fun file -> 
-    Common2.optionise (fun () -> Hashtbl.find dw.readable_file_to_rect file)
-  ),
-  users +> Common.map_filter (fun file ->
-    Common2.optionise (fun () ->Hashtbl.find dw.readable_file_to_rect file)
-  )
-
-let entity_at_line line r dw =
-  let model = Async.async_get dw.dw_model in
-  let file = r.T.tr_label in
-  let readable = Common.filename_without_leading_path model.root file in
-
-  try 
-    let xs = Hashtbl.find model.hentities_of_file readable in
-    xs +> List.rev +> Common.find_some_opt (fun (line2, n) ->
-      if line >= line2 && abs (line -.. line2) <= 3
-      then Some n 
-      else None
-    )
-  with Not_found -> None
-
-let uses_or_users_of_node_visible_here node dw fsucc =
-  let model = Async.async_get dw.dw_model in
-  (match model.g with
-  | None -> []
-  | Some g ->
-    let succ = fsucc node g in
-    succ +> Common.map_filter (fun n ->
-      try 
-        let file = Graph_code.file_of_node n g in
-        let rect = Hashtbl.find dw.readable_file_to_rect file in
-        let xs = Hashtbl.find model.hentities_of_file file in
-        let (line, _n2) = xs +> List.find (fun (_, n2) -> n2 =*= n) in
-        let pos_and_line = Hashtbl.find dw.pos_and_line rect in
-        let rect = pos_and_line.line_to_rectangle line in
-        Some rect
-      with Not_found -> None
-    )
-  )
-
-let uses_of_node_visible_here node dw =
-  uses_or_users_of_node_visible_here node dw (fun node g ->
-    Graph_code.succ node Graph_code.Use g)
-
-let users_of_node_visible_here node dw =
-  uses_or_users_of_node_visible_here node dw (fun node g ->
-    Graph_code.pred node Graph_code.Use g)
-
   
 (*****************************************************************************)
 (* The overlays *)
@@ -186,7 +129,7 @@ let draw_rectangle_overlay ~cr_overlay ~dw (r, middle, r_englobing) =
   );
 
   let file = r.T.tr_label in
-  let uses_rect, users_rect = uses_and_users_rect_of_file file dw in
+  let uses_rect, users_rect = M.uses_and_users_rect_of_file file dw in
   uses_rect +> List.iter (fun r ->
     CairoH.draw_rectangle_figure ~cr:cr_overlay ~color:"green" r.T.tr_rect;
   );
@@ -365,7 +308,7 @@ let motion_refresher ev dw () =
       then
         let translate = Hashtbl.find dw.pos_and_line r in
         let line = translate.pos_to_line user in
-        let entity_opt = entity_at_line line r dw in
+        let entity_opt = M.find_entity_at_line line r dw in
         Some line, entity_opt
       else None, None
     in
@@ -390,11 +333,12 @@ let motion_refresher ev dw () =
     (match entity_opt with
     | None -> ()
     | Some n ->
-      let rectangle_uses = uses_of_node_visible_here n dw in
+      let rectangle_uses, rectangle_users = 
+        uses_and_users_of_node n dw 
+      in
       rectangle_uses +> List.iter (fun rectangle ->
         draw_rectangle_entity ~cr_overlay ~dw ~color:"green" rectangle;
       );
-      let rectangle_users = users_of_node_visible_here n dw in
       rectangle_users +> List.iter (fun rectangle ->
         draw_rectangle_entity ~cr_overlay ~dw ~color:"red" rectangle;
       );
