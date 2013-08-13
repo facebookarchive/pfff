@@ -56,6 +56,7 @@ source env.sh
 git config --global user.email "you@example.com"
 git config --global user.name "Pad"
 # mercurial requires this
-echo "[ui]\nusername = Pad<you@example.com>" > ~/.hgrc
+printf '[ui]\nusername = Pad<you@example.com>\n' > ~/.hgrc
+cat ~/.hgrc
 
 make test
