@@ -55,5 +55,7 @@ source env.sh
 # for removing some warnings when unit testing git
 git config --global user.email "you@example.com"
 git config --global user.name "Pad"
+# mercurial requires this
+echo "[ui]\nusername = Pad<you@example.com>" > ~/.hgrc
 
 make test
