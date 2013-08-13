@@ -297,11 +297,12 @@ let motion_refresher ev dw () =
   let cr_overlay = Cairo.create dw.overlay in
   CairoH.clear cr_overlay;
 
+  (* some similarity with View_mainmap.button_action handler *)
   let x, y = GdkEvent.Motion.x ev, GdkEvent.Motion.y ev in
   let pt = { Cairo. x = x; y = y } in
   let user = View_mainmap.with_map dw (fun cr -> Cairo.device_to_user cr pt) in
-
   let r_opt = M.find_rectangle_at_user_point dw user in
+
   r_opt +> Common.do_option (fun (r, middle, r_englobing) ->
     let line_opt, entity_opt =
       if Hashtbl.mem dw.pos_and_line r
@@ -328,14 +329,13 @@ let motion_refresher ev dw () =
     in
     
     draw_label_overlay ~cr_overlay ~dw ~x ~y label_txt;
+    (* draws also the uses and users of the file *)
     draw_rectangle_overlay ~cr_overlay ~dw (r, middle, r_englobing);
 
     (match entity_opt with
     | None -> ()
     | Some n ->
-      let rectangle_uses, rectangle_users = 
-        uses_and_users_of_node n dw 
-      in
+      let rectangle_uses, rectangle_users = uses_and_users_of_node n dw  in
       rectangle_uses +> List.iter (fun rectangle ->
         draw_rectangle_entity ~cr_overlay ~dw ~color:"green" rectangle;
       );

@@ -20,16 +20,15 @@ open Common
 (* floats are the norm in graphics *)
 open Common2.ArithFloatInfix
 
+module CairoH = Cairo_helpers
 module K = GdkKeysyms
-
 
 module F = Figures
 module T = Treemap
-module CairoH = Cairo_helpers
-
 
 module Flag = Flag_visual
 open Model2
+module M = Model2
 module Ctl = Controller2
 
 (*****************************************************************************)
@@ -103,7 +102,7 @@ let paint_content_maybe_rect ~user_rect dw rect =
   let cr = Cairo_lablgtk.create dw.pm#pixmap in
   zoom_pan_scale_map cr dw;
 
-  let context = Model2.context_of_drawing dw in
+  let context = M.context_of_drawing dw in
 
   let pos_and_line_opt = 
     Draw_microlevel.draw_treemap_rectangle_content_maybe
@@ -285,7 +284,7 @@ let find_filepos_in_rectangle_at_user_point user_pt dw r =
   let user_rect = device_to_user_area dw in
 
   let context = context_of_drawing dw in
-  let context = { context with Model2.nb_rects_on_screen = 1 } in
+  let context = { context with M.nb_rects_on_screen = 1 } in
   
   (* does side effect on Draw.text_with_user_pos *)
   let _TODO = Draw_microlevel.draw_treemap_rectangle_content_maybe 
@@ -315,82 +314,90 @@ let find_filepos_in_rectangle_at_user_point user_pt dw r =
 let button_action da dw_ref ev =
   let dw = !dw_ref in
 
-  let pt = { Cairo. x = GdkEvent.Button.x ev; y = GdkEvent.Button.y ev;} in
+  let x, y = GdkEvent.Button.x ev, GdkEvent.Button.y ev in
+  let pt = { Cairo. x = x; y = y } in
   let user = with_map dw (fun cr -> Cairo.device_to_user cr pt) in
-
-  let r_opt = Model2.find_rectangle_at_user_point dw user in
+  let r_opt = M.find_rectangle_at_user_point dw user in
 
   match GdkEvent.get_type ev with
   | `BUTTON_PRESS ->
-
       let button = GdkEvent.Button.button ev in
       pr2 (spf "button %d pressed" button);
-
       (match button with
       | 1 -> 
-
-(* DISABLED FOR NOW
-          dw.drag_pt <- { 
-            Cairo.x = GdkEvent.Button.x ev; 
-            Cairo.y = GdkEvent.Button.y ev; 
-          };
-          dw.in_dragging <- true;
-*)
-
-          r_opt +> Common.do_option (fun (r, _, _r_englobing) ->
-            let file = r.T.tr_label in
-            pr2 (spf "clicking on %s" file);
-          );
-          true
+        (* DISABLED FOR NOW
+         * dw.drag_pt <- { 
+         * Cairo.x = GdkEvent.Button.x ev; 
+         * Cairo.y = GdkEvent.Button.y ev; 
+         * };
+         * dw.in_dragging <- true;
+         *)
+        r_opt +> Common.do_option (fun (r, _, _r_englobing) ->
+          let file = r.T.tr_label in
+          pr2 (spf "clicking on %s" file);
+        );
+        true
       | 2 ->
-          r_opt +> Common.do_option (fun (r, _, _r_englobing) ->
-            let file = r.T.tr_label in
-            pr2 (spf "opening %s" file);
-            let line =
-              match find_filepos_in_rectangle_at_user_point user dw r with
-              | None -> 0
-              | Some fpos ->fpos.Common2.l
-            in
-            Editor_connection.open_file_in_current_editor ~file ~line;
-          );
-          true
+        r_opt +> Common.do_option (fun (r, _, _r_englobing) ->
+          let file = r.T.tr_label in
+          pr2 (spf "opening %s" file);
+          let line =
+            match find_filepos_in_rectangle_at_user_point user dw r with
+            | None -> 0
+            | Some fpos ->fpos.Common2.l
+          in
+          Editor_connection.open_file_in_current_editor ~file ~line;
+        );
+        true
 
       | 3 ->
 
-        (* todo: detect if at entity hover *)
         r_opt +> Common.do_option (fun (r, _, _r_englobing) ->
-          let file = r.T.tr_label in
-          
-          let model = Async.async_get dw.dw_model in
-          let readable = Common.filename_without_leading_path model.root file in
-            
-          let uses = 
-            try Hashtbl.find model.huses_of_file readable with Not_found->[] in
-          let users = 
-            try Hashtbl.find model.husers_of_file readable with Not_found->[] in
-
-          let paths_of_readables xs = 
-          xs 
-          +> List.sort Pervasives.compare
-          (* todo: tfidf to filter files like common2.ml *)
-          +> Common.exclude (fun readable -> readable =$= "commons/common2.ml")
-          +> List.map (fun s -> Filename.concat model.root s)
+          (* similar to View_overlays.motion.refresher *)
+          let entity_opt =
+            if Hashtbl.mem dw.pos_and_line r
+            then
+              let translate = Hashtbl.find dw.pos_and_line r in
+              let line = translate.pos_to_line user in
+              M.find_entity_at_line line r dw
+            else None
           in
 
-        GToolbox.popup_menu ~entries:[
-          `I ("go to file", (fun () -> 
-            !Ctl._go_dirs_or_file dw_ref (paths_of_readables [readable]);));
-          `I ("deps inout", (fun () -> 
-            !Ctl._go_dirs_or_file dw_ref (paths_of_readables 
-                                            (uses ++ users ++ [readable]))));
-          `I ("deps in (users)", (fun () -> 
-            !Ctl._go_dirs_or_file dw_ref (paths_of_readables 
-                                            (users ++ [readable]))));
-          `I ("deps out (uses)", (fun () -> 
-            !Ctl._go_dirs_or_file dw_ref (paths_of_readables 
+          let file = r.T.tr_label in
+          
+          let uses, users = 
+            match entity_opt with
+            | None -> M.uses_and_users_readable_files_of_file file dw
+            | Some n -> M.uses_and_users_readable_files_of_node n dw
+          in
+
+          let model = Async.async_get dw.dw_model in
+          let paths_of_readables xs = 
+            xs 
+            +> List.sort Pervasives.compare
+            +> Common2.uniq
+            (* todo: tfidf to filter files like common2.ml *)
+            +> Common.exclude (fun readable -> 
+              readable =$= "commons/common2.ml")
+            +> List.map (fun s -> Filename.concat model.root s)
+          in
+
+          let readable = Common.filename_without_leading_path model.root file in
+
+          GToolbox.popup_menu ~entries:[
+            `I ("go to file", (fun () -> 
+              !Ctl._go_dirs_or_file dw_ref (paths_of_readables [readable]);));
+            `I ("deps inout", (fun () -> 
+              !Ctl._go_dirs_or_file dw_ref (paths_of_readables 
+                                              (uses ++ users ++ [readable]))));
+            `I ("deps in (users)", (fun () -> 
+              !Ctl._go_dirs_or_file dw_ref (paths_of_readables 
+                                              (users ++ [readable]))));
+            `I ("deps out (uses)", (fun () -> 
+              !Ctl._go_dirs_or_file dw_ref (paths_of_readables 
                                             (uses ++ [readable]))));
-        ] ~button:3 ~time:(GtkMain.Main.get_current_event_time());
-       );
+          ] ~button:3 ~time:(GtkMain.Main.get_current_event_time());
+        );
         true
       | _ -> false
       )

@@ -312,7 +312,7 @@ let find_rectangle_at_user_point a b =
 (* Graph code integration *)
 (*****************************************************************************)
 
-let uses_and_users_rect_of_file file dw =
+let uses_and_users_readable_files_of_file file dw =
   let model = Async.async_get dw.dw_model in
   let readable = Common.filename_without_leading_path model.root file in
 
@@ -320,6 +320,24 @@ let uses_and_users_rect_of_file file dw =
     try Hashtbl.find model.huses_of_file readable with Not_found -> [] in
   let users = 
     try Hashtbl.find model.husers_of_file readable with Not_found -> [] in
+  uses, users
+
+let uses_and_users_readable_files_of_node node dw =
+  let model = Async.async_get dw.dw_model in
+  match model.g with
+  | None -> [], []
+  | Some g ->
+    let succ = Graph_code.succ node Graph_code.Use g in
+    let pred = Graph_code.pred node Graph_code.Use g in
+    succ +> Common.map_filter (fun n ->
+      try Some (Graph_code.file_of_node n g) with Not_found -> None
+    ),
+    pred +> Common.map_filter (fun n ->
+      try Some (Graph_code.file_of_node n g) with Not_found -> None
+    )
+
+let uses_and_users_rect_of_file file dw =
+  let uses, users = uses_and_users_readable_files_of_file file dw in
   uses +> Common.map_filter (fun file -> 
     Common2.optionise (fun () -> Hashtbl.find dw.readable_file_to_rect file)
   ),
@@ -365,6 +383,7 @@ let uses_and_users_of_node node dw =
     Graph_code.succ node Graph_code.Use g),
   uses_or_users_of_node_visible_here node dw (fun node g ->
     Graph_code.pred node Graph_code.Use g)
+
 
 
 (*e: model2.ml *)
