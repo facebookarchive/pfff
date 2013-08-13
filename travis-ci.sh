@@ -45,6 +45,15 @@ make
 #------------------------------
 # Run tests
 #------------------------------
+
+# some tests are using hg or swipl
 sudo apt-get install -qq mercurial
 sudo apt-get install -qq swi-prolog
+# set PFFF_HOME for many tests to be able to find their data
+source env.sh
+
+# for removing some warnings when unit testing git
+git config --global user.email "you@example.com"
+git config --global user.name "Pad"
+
 make test
