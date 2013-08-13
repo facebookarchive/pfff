@@ -45,7 +45,6 @@ make
 #------------------------------
 # Run tests
 #------------------------------
-#todo: need swipl, need hg
 sudo apt-get install -qq mercurial
-sudo apt-get install -qq swipl
+sudo apt-get install -qq swi-prolog
 make test
