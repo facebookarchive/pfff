@@ -261,7 +261,7 @@ let main_action xs =
     with Not_found -> "/"
   in
   pr (spf "using %s for php_root" root);
-  let _env = Env_php.mk_env root in
+  let env = Env_php.mk_env root in
 
   let (find_entity, graph_opt) =
     match () with
@@ -284,7 +284,7 @@ let main_action xs =
     k();
     try 
       pr2_dbg (spf "processing: %s" file);
-      (*Check_all_php.check_file ~find_entity env file;*)
+      Check_all_php.check_file ~find_entity env file;
       (match graph_opt with
       | None -> ()
       | Some graph ->
@@ -301,7 +301,7 @@ let main_action xs =
       in
       if not !rank 
       then begin 
-        errs +> List.iter (fun err -> pr2 (Error_php.string_of_error err));
+        errs +> List.iter (fun err -> pr (Error_php.string_of_error err));
         if !auto_fix then errs +> List.iter Auto_fix_php.try_auto_fix;
         Error_php._errors := []
       end
