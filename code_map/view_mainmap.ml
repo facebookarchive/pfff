@@ -378,7 +378,9 @@ let button_action da dw_ref ev =
             +> Common2.uniq
             (* todo: tfidf to filter files like common2.ml *)
             +> Common.exclude (fun readable -> 
-              readable =$= "commons/common2.ml")
+              readable =~ "commons/.*" || 
+              readable =~ "external/.*" 
+            )
             +> List.map (fun s -> Filename.concat model.root s)
           in
 
