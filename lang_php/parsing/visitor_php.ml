@@ -1076,7 +1076,7 @@ and v_toplevel x =
       in ()
   | NamespaceUse ((v1, v2, v3)) ->
       let v1 = v_tok v1
-      and v2 = v_namespace_use_rule v2
+      and v2 = v_comma_list v_namespace_use_rule v2
       and v3 = v_tok v3
       in ()
   in

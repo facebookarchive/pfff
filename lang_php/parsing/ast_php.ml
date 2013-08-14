@@ -738,7 +738,7 @@ and toplevel =
     (* the qualified_ident below can not have a leading '\' *)
     | NamespaceDef of tok * qualified_ident * tok (* ; *)
     | NamespaceBracketDef of tok * qualified_ident option * toplevel list brace
-    | NamespaceUse of tok * namespace_use_rule * tok (* ; *)
+    | NamespaceUse of tok * namespace_use_rule comma_list * tok (* ; *)
     (* old:  | Halt of tok * unit paren * tok (* __halt__ ; *) *)
     | NotParsedCorrectly of tok list (* when Flag.error_recovery = true *)
     | FinalDef of tok (* EOF *)
