@@ -16,7 +16,7 @@ module DM = Dependencies_matrix_code
 (* Purpose *)
 (*****************************************************************************)
 (* 
- * Main entry point of codegraph, a package/module/type/function/...
+ * This is the main entry point of codegraph, a package/module/type/function/...
  * hierarchical dependency visualizer using mainly a Dependency
  * Structure Matrix (DSM).
  * A node-link display of hierarchical graphs (or hypergraphs) would be nice
@@ -67,6 +67,10 @@ module DM = Dependencies_matrix_code
  *   and Prolog :)
  * - http://infotectonica.com/juliet/tour/, seems more oriented on
  *   query, anserwing questions like who uses this field.
+ * 
+ *  - visual studion dependency graph visualizer:
+ *    http://msdn.microsoft.com/en-us/library/vstudio/dd409365.aspx
+ *    http://channel9.msdn.com/Series/Visual-Studio-2012-Premium-and-Ultimate-Overview/Visual-Studio-Ultimate-2012-Understand-your-code-dependencies-through-visualization
  * 
  * - google search images: dependency+graph+visualization, get many
  *   links from there 

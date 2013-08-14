@@ -14,7 +14,7 @@ module Model = Model2
 (* Prelude *)
 (*****************************************************************************)
 (* 
- * Main entry point of codemap, a semantic source code visualizer
+ * This is the main entry point of codemap, a semantic source code visualizer
  * using treemaps and code thumbnails.
  * 
  * requirements:
@@ -45,8 +45,8 @@ module Model = Model2
  *    visual feedback
  * 
  * related work:
- *  - todo: http://www.kickstarter.com/projects/296054304/zeta-code
  *  - todo: light table
+ *  - todo: http://www.kickstarter.com/projects/296054304/zeta-code
  *  - todo? sublime, textmate, etc
  *)
 
@@ -154,8 +154,12 @@ let treemap_generator paths =
 (*s: build_model *)
 let build_model2 root dbfile_opt graphfile_opt =   
 
-  let db_opt = Common2.fmap Database_code.load_database dbfile_opt in
-
+  let db_opt = 
+    match dbfile_opt with
+    | None -> None
+    | Some file -> Database_code.load_database file
+  in
+  (* todo: do like for graph_code below, let hentities, hfiles_entities = ...*)
   let hentities = 
     Model_database_code.hentities root db_opt in
   let hfiles_entities = 
@@ -164,7 +168,6 @@ let build_model2 root dbfile_opt graphfile_opt =
     Model_database_code.all_entities db_opt root in
 
   let big_grep_idx = Completion2.build_completion_defs_index all_entities in
-
 
   let g_opt =
     match graphfile_opt with
