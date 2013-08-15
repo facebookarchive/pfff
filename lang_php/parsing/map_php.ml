@@ -1121,7 +1121,7 @@ and map_toplevel =
       in NamespaceBracketDef ((v1, v2, v3))
   | NamespaceUse ((v1, v2, v3)) ->
       let v1 = map_tok v1
-      and v2 = map_namespace_use_rule v2
+      and v2 = map_comma_list map_namespace_use_rule v2
       and v3 = map_tok v3
       in NamespaceUse ((v1, v2, v3))
 and map_program v = map_of_list map_toplevel v

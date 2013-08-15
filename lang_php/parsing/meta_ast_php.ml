@@ -1209,7 +1209,7 @@ and vof_toplevel =
       in Ocaml.VSum (("NamespaceBracketDef", [ v1; v2; v3 ]))
   | NamespaceUse ((v1, v2, v3)) ->
       let v1 = vof_tok v1
-      and v2 = vof_namespace_use_rule v2
+      and v2 = vof_comma_list vof_namespace_use_rule v2
       and v3 = vof_tok v3
       in Ocaml.VSum (("NamespaceUse", [ v1; v2; v3 ]))
 

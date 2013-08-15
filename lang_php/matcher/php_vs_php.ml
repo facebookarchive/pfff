@@ -1788,10 +1788,11 @@ and m_constant a b =
 *)
       if sb =~ s
       then
+        m_info info_name info_sb >>= (fun (info_name, info_sb) ->
         return (
           A.String(name, info_name),
           B.String(sb, info_sb)
-        )
+        ))
       else fail ()
 
   | A.String(a1), B.String(b1) ->

@@ -666,10 +666,10 @@ rule st_in_scripting = parse
            * Usually having a '<' after a punctuation means XHP.
            * Indeed '<' is a binary operator which excepts scalar.
            *
-           * todo? TCPAR ? no, because it's ok to do (1) < (2) !
+           * TCPAR? no, because it's ok to do (1) < (2)!
            *)
           | Some (
-                TOPAR _ | TCPAR _
+                TOPAR _
               | T_ECHO _ | T_PRINT _ | T_CLONE _
               | TSEMICOLON _ | TCOMMA _
               | TOBRACE _ | TCBRACE _

@@ -20,4 +20,4 @@ function func_get_args(...) { }
 
 function SQL(...) { }
 
-
+function dirname(...) { }

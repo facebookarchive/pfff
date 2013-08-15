@@ -1,13 +1,15 @@
-(*****************************************************************************)
-(* Bug study:
-   Gather a few simple metrics that would help better anylyse the
-   repository
-   - # diffs that have 0-10 lines
-   - # diffs that have 10-100 lines
-   - # diffs that have more than 100 lines
-   - # diffs that have either "bug", "fatal", "bugfix" in the summary        *)
-(*****************************************************************************)
 open Common
+
+(*****************************************************************************)
+(* Prelude *)
+(*****************************************************************************)
+(* Bug study:Gather a few simple metrics that would help better anylyse the
+ * repository:
+ * - # diffs that have 0-10 lines
+ * - # diffs that have 10-100 lines
+ * - # diffs that have more than 100 lines
+ * - # diffs that have either "bug", "fatal", "bugfix" in the summary
+*)
 
 (*****************************************************************************)
 (* Types *)

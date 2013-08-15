@@ -518,6 +518,9 @@ srctar:
 	cd $(TMP); tar cvfz $(PACKAGE).tgz  --exclude=CVS --exclude=_darcs  $(PACKAGE)
 	rm -rf  $(TMP)/$(PACKAGE)
 
+#todo? automatically build binaries for Linux, Windows, etc?
+#http://stackoverflow.com/questions/2689813/cross-compile-windows-64-bit-exe-from-linux
+
 ##############################################################################
 # Website rules
 ##############################################################################
