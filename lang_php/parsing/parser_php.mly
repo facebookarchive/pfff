@@ -353,6 +353,10 @@ statement:
      (* ugly: the 2 tokens will have a wrong string *)
      Echo ($1, [Left $2], $3)
    }
+ /*(* ugly: php allows that too  *)*/
+ | T_OPEN_TAG_WITH_ECHO expr TSEMICOLON T_CLOSE_TAG_OF_ECHO {
+     Echo ($1, [Left $2], $4)
+   }
 
  | T_GLOBAL global_var_list TSEMICOLON { Globals($1,$2,$3) }
  | T_STATIC static_var_list TSEMICOLON { StaticVars($1,$2,$3) }
