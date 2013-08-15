@@ -36,6 +36,13 @@ function test_isset_implicit_declaration() {
   }
 }
 
+function test_isset_considered_as_a_use() {
+  //ERROR: unused local variable
+  $a = "foo";
+  //todo? consider this as a use? https://github.com/facebook/pfff/issues/42
+  echo isset($a);
+}
+
 function test_undefined_ok_if_empty() {
   if (empty($undefined_variable_but_arg_to_empty_so_ok)) {
     return 1;
