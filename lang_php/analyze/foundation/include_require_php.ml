@@ -124,6 +124,10 @@ let rec increq_expr_of_expr e =
       (Sc(C(String((sfilename, i_10)))))))
     ->
       ConcatDirname(sfilename)
+  (* __DIR__ . 'file' *)
+  | Binary(Sc(C(PreProcess((Dir, i_13)))), (BinaryConcat, i_14),
+          Sc(C(String((sfilename, i_15)))))
+    -> ConcatDirname(sfilename)
 
   (* ./ffi -dump_php_ml ../tests/require_realpath.php *)
   | (Binary(
