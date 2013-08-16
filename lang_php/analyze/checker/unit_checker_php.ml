@@ -89,7 +89,8 @@ let unittest =
 
   (* run the bugs finders *)
   test_files +> List.iter (fun file ->
-    Check_all_php.check_file ~verbose ~find_entity env file
+    Check_all_php.check_file ~verbose ~find_entity env file;
+    Check_classes_php.check_required_field cg file
   );
   if verbose then begin
     !Error_php._errors +> List.iter (fun e -> pr (Error_php.string_of_error e))

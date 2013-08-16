@@ -149,7 +149,6 @@ let cache_parse = ref false
 let layer_file = ref (None: filename option)
 
 
-
 let verbose = ref false
 let show_progress = ref true
 
@@ -229,12 +228,11 @@ let entity_finder_of_db file =
   Database_php_build.build_entity_finder db
 *)
 
-let entity_finder_of_graph_file graph_file =
+let entity_finder_of_graph_file graph_file root =
   let g = Graph_code.load graph_file in
-  let root = Filename.dirname graph_file in
   pr2 (spf "using %s for root" root);
   (* todo: the graph_code contains absolute path?? *)
-  Entity_php.entity_finder_of_graph_code g root
+  (Entity_php.entity_finder_of_graph_code g root, g)
 
 (*****************************************************************************)
 (* Main action *)
@@ -253,19 +251,6 @@ let main_action xs =
   Flag_parsing_php.show_parsing_error := false;
   Flag_parsing_php.verbose_lexing := false;
   Error_php.strict := !strict_scope;
-
-  let find_entity =
-    match () with
-    | _ when !heavy ->
-      Some (entity_finder_of_db (List.hd files))
-    | _ when !graph_code <> None ->
-      Some (entity_finder_of_graph_file (Common2.some !graph_code))
-        (* old: main_scheck_heavy:
-         * Database_php.with_db ~metapath:!metapath (fun db ->
-         *  Database_php_build.build_entity_finder db
-         *) 
-        | _ -> None
-  in
   (* less: use a VCS.find... that is more general ?
    * infer PHP_ROOT? or take a --php_root?
   *)
@@ -277,6 +262,21 @@ let main_action xs =
   in
   pr (spf "using %s for php_root" root);
   let env = Env_php.mk_env root in
+
+  let (find_entity, graph_opt) =
+    match () with
+    | _ when !heavy ->
+      Some (entity_finder_of_db (List.hd files)), None
+    | _ when !graph_code <> None ->
+      let (e, g) = 
+        entity_finder_of_graph_file (Common2.some !graph_code) root in
+      Some e, Some g
+        (* old: main_scheck_heavy:
+         * Database_php.with_db ~metapath:!metapath (fun db ->
+         *  Database_php_build.build_entity_finder db
+         *) 
+    | _ -> None, None
+  in
   
   Common.save_excursion Flag_parsing_php.caching_parsing !cache_parse (fun ()->
   files +> Common_extra.progress ~show:!show_progress (fun k -> 
@@ -285,7 +285,12 @@ let main_action xs =
     try 
       pr2_dbg (spf "processing: %s" file);
       Check_all_php.check_file ~find_entity env file;
-      let errs = 
+      (match graph_opt with
+      | None -> ()
+      | Some graph ->
+        Check_classes_php.check_required_field graph file
+      );
+     let errs = 
         !Error_php._errors 
         +> List.rev 
         +> List.filter (fun x -> 

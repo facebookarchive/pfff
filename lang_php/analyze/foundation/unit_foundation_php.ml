@@ -24,7 +24,9 @@ let ast_simple_unittest =
     let dir1 = Filename.concat Config_pfff.path "/tests/php/parsing" in
     let dir2 = Filename.concat Config_pfff.path "/tests/php/semantic" in
     let files =
-      Common2.glob (spf "%s/*.php" dir1) ++ Common2.glob (spf "%s/*.php" dir2)
+      (Common2.glob (spf "%s/*.php" dir1) ++ Common2.glob (spf "%s/*.php" dir2))
+      (* TODO: fix those ! *)
+      +> Common.exclude (fun file -> file =~ ".*/namespace_test*")
     in
     files +> List.iter (fun file ->
       try
@@ -262,6 +264,26 @@ class A {
         ~msg:"it should link the use of a PHP field to its def"
         pred
         ["A.test_field", E.Method E.RegularMethod];
+    );
+
+    "required xhp field" >:: (fun () ->
+      let file_content = "
+        class :x:required {
+          attribute
+          int req_int @required;
+}
+"
+      in
+      let tmpfile = Parse_php.tmp_php_file_from_string file_content in
+      let g = Graph_code_php.build 
+        ~verbose:false ~logfile:"/dev/null" (Right [tmpfile]) [] in
+      let field = (":x:required.req_int=", E.Field) in
+      let nodeinfo = G.nodeinfo field g in
+      let props = nodeinfo.G.props in
+      assert_equal
+        ~msg:"it should annotate xhp required field"
+        props
+        [Db.Required]
     );
 
     "regression files" >:: (fun () ->

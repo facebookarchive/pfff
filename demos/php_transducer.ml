@@ -1,7 +1,6 @@
 open Common
 
 open Ast_php
-
 module Ast = Ast_php
 module Flag = Flag_parsing_php
 module V = Visitor_php
@@ -11,14 +10,14 @@ module V = Visitor_php
 (*****************************************************************************)
 (* 
  * To automatically extract all function names from a PHP file. It's useful
- * to show a simple example of a program using pfff library. It's also
- * useful for my LogicFileSystem to make it possible to do in a shell 
+ * to show a simple example of a program using the pfff library. It's also
+ * useful for my LogicFileSystem to make it possible to do in a shell:
  * 
  *   $ cd function:debug_rlog/ 
  * 
  * and get to the place where this function is defined.
- * 
  *)
+
 (*****************************************************************************)
 (* Flags *)
 (*****************************************************************************)
@@ -68,7 +67,7 @@ let options () =
   [
   (* this can not be factorized in Common *)
   "-version",   Arg.Unit (fun () -> 
-    pr2 "version: $Date: 2008/06/08 12:32:06 $";
+    pr2 "version: $Date: 2010/06/08 12:32:06 $";
     raise (Common.UnixExit 0)
   ), 
   "   guess what";

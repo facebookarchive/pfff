@@ -6,5 +6,8 @@
 
 include "cfg.php";
 
+include dirname(__FILE__). "includes.php";
+include __DIR__ . "includes.php";
+
 //ERROR: file not found
 include "unknown.php";

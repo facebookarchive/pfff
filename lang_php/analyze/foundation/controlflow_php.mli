@@ -71,7 +71,10 @@ type node = {
   (*e: node_kind constructors *)
   (*s: node_kind aux types *)
      and simple_stmt = 
-         | ExprStmt of expr * tok
+         | ExprStmt of expr
+         | SpecialMaybeUnused of expr
+         | SpecialUse of expr
+
          | TodoSimpleStmt
          (* TODO? expr includes Exit, Eval, Include, etc which
           * also have an influence on the control flow ...

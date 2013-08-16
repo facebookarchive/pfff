@@ -353,6 +353,10 @@ statement:
      (* ugly: the 2 tokens will have a wrong string *)
      Echo ($1, [Left $2], $3)
    }
+ /*(* ugly: php allows that too  *)*/
+ | T_OPEN_TAG_WITH_ECHO expr TSEMICOLON T_CLOSE_TAG_OF_ECHO {
+     Echo ($1, [Left $2], $4)
+   }
 
  | T_GLOBAL global_var_list TSEMICOLON { Globals($1,$2,$3) }
  | T_STATIC static_var_list TSEMICOLON { StaticVars($1,$2,$3) }
@@ -1353,7 +1357,7 @@ namespace_declaration:
      { NamespaceBracketDef ($1, None, ($2, H.squash_stmt_list $3, $4)) }
 
 use_declaration:
- | T_USE use_declaration_name TSEMICOLON { NamespaceUse ($1, $2, $3) }
+ | T_USE use_declaration_name_list TSEMICOLON { NamespaceUse ($1, $2, $3) }
 
 namespace_name:
  | ident                           { [QI (Name $1)] }
@@ -1458,7 +1462,11 @@ expr_list:
  | expr				   { [Left $1] }
  | expr_list TCOMMA expr      { $1 ++ [Right $2; Left $3] }
 
-
+use_declaration_name_list:
+ | use_declaration_name			  
+     { [Left $1] }
+ | use_declaration_name_list TCOMMA use_declaration_name 
+     { $1++[Right $2;Left $3] }
 
 declare_list:
  | declare                    	{ [Left $1] }

@@ -356,7 +356,7 @@ and class_def = {
 
   c_attrs: attribute list;
   (* xhp attributes. less: other xhp decl, e.g. children, @required, etc *)
-  c_xhp_fields: class_var list; 
+  c_xhp_fields: xhp_field list; 
   c_xhp_attr_inherit: class_name list;
   c_constants: constant_def list;
   c_variables: class_var list;
@@ -368,7 +368,7 @@ and class_def = {
     | ClassRegular | ClassFinal | ClassAbstract
     | Interface
     | Trait
-
+  and xhp_field = class_var * bool 
   and class_var = {
     (* note that the name will contain a $ *)
     cv_name: var;

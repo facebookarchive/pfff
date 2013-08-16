@@ -563,7 +563,7 @@ and xhp_fields env st acc =
   | XhpDecl (XhpAttributesDecl (_ , xal, _)) ->
     (comma_list xal) +> List.fold_left (fun acc xhp_attr ->
       match xhp_attr with
-      | XhpAttrDecl (attr_type, attr_name, eopt, _) ->
+      | XhpAttrDecl (attr_type, attr_name, eopt, req_tok_opt) ->
         let ht =
           match attr_type with
           | XhpAttrType attr_type -> Some(hint_type env attr_type)
@@ -575,16 +575,21 @@ and xhp_fields env st acc =
           | None -> None
           | Some (_tok,sc) -> Some(static_scalar env sc)
         in
+        let required =
+          match req_tok_opt with
+          | None -> false
+          | Some _ -> true
+        in
         let attr_name =
           match attr_name with
           | (str, tok) -> (str, wrap tok)
         in
-        {
+        ({
           A.cv_name = attr_name;
           A.cv_value = value;
           A.cv_modifiers = [];
           A.cv_type = ht;
-        }::acc
+        }, required)::acc
       | XhpAttrInherit _ -> acc
      ) acc
   | _ -> acc

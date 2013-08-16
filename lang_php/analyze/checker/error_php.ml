@@ -96,6 +96,7 @@ type error = {
 
   (* classes (could be put in UndefinedEntity (ClassMember)) *)
   | UseOfUndefinedMember of string (* name *) * suggest option
+  | UndefinedRequiredField of string (* name *) * suggest option
 
   (* wrong include/require *)
   | FileNotFound of Common.filename
@@ -198,6 +199,8 @@ let string_of_error_kind error_kind =
     parameters). You may have misspelled this variable name.
 "
 *)
+  | UndefinedRequiredField (dname, x) ->
+      spf "Undefined required xhp field %s%s. " dname (string_of_suggest_opt x)
 
   | UseOfUndefinedVariableInLambda (dname) ->
       spf "Use of undeclared variable %s in lambda. " dname ^
@@ -393,7 +396,8 @@ let rank_of_error_kind err_kind =
           | _ -> Less
           )
       )
-
+        
+  | UndefinedRequiredField (_, _) -> Less
   | UseOfUndefinedVariableInLambda _ -> Important
   | WrongLvalue -> Important
           
@@ -426,7 +430,7 @@ let rank_of_error_kind err_kind =
       (* some dead break and return are ok (too many FP for now) *)
       | Controlflow_php.Break | Controlflow_php.Return _ -> OnlyStrict
       | Controlflow_php.Throw  -> Never
-      | Controlflow_php.SimpleStmt (Controlflow_php.ExprStmt (e, _tok)) ->
+      | Controlflow_php.SimpleStmt (Controlflow_php.ExprStmt e) ->
           (match e with
           | (Call(Id (XName[QI (Name(
               ( "invariant_violation" | "_piranha_rollback_log"), _))]), _args)

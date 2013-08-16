@@ -35,6 +35,7 @@ type error = {
 
   (* classes (could be put in UndefinedEntity (ClassMember)) *)
   | UseOfUndefinedMember of string (* name *) * suggest option
+  | UndefinedRequiredField of string (* name *) * suggest option
 
   (* wrong include/require *)
   | FileNotFound of Common.filename

@@ -159,6 +159,17 @@ let rec intvalue_of_expr e =
  * subtle: try/throw. The current algo is not very precise, but 
  * it's probably good enough for many analysis.
  *)
+let expr_stmt expr = F.ExprStmt expr
+let maybe_unused expr = F.SpecialMaybeUnused expr
+let use expr = F.SpecialUse expr
+
+let cfg_expr state kind previ expr =
+  let i = Some (List.hd (Lib_parsing_php.ii_of_any (Expr expr))) in
+  let simple_stmt = kind expr in
+  let newi = state.g#add_node { F.n = F.SimpleStmt simple_stmt; i=i } in
+  state.g +> add_arc_opt (previ, newi);
+  Some newi
+
 let rec (cfg_stmt: state -> nodei option -> stmt -> nodei option) = 
  fun state previ stmt ->
 
@@ -166,10 +177,7 @@ let rec (cfg_stmt: state -> nodei option -> stmt -> nodei option) =
 
    match stmt with
    | ExprStmt (e, tok) ->
-       let simple_stmt = F.ExprStmt (e, tok) in
-       let newi = state.g#add_node { F.n = F.SimpleStmt simple_stmt; i=i() } in
-       state.g +> add_arc_opt (previ, newi);
-       Some newi
+       cfg_expr state expr_stmt previ e
 
    | EmptyStmt _
    | Echo (_, _, _)
@@ -184,30 +192,96 @@ let rec (cfg_stmt: state -> nodei option -> stmt -> nodei option) =
        let stmts = stmts_of_stmt_or_defs (Ast.unbrace xs) in
        cfg_stmt_list state previ stmts
 
-   | For _ | Foreach _  | While _ ->
-     (* previ -> newi ---> newfakethen -> ... -> finalthen -
-      *             |---|-----------------------------------|
-      *                 |-> newfakelse 
+   | While (t1, e, colon_stmt) ->
+     (* previ -> newi -> ei ---> newfakethen -> ... -> finalthen
+      *             |------|----------------------------------|
+      *                    |-> newfakelse 
       *)
-       let node, colon_stmt = 
-         (match stmt with 
-         | While (t1, e, colon_stmt) ->
-             F.WhileHeader, colon_stmt
-         | For (t1, t2, e1, t3, e2, t4, e5, t6, colon_stmt) ->
-             F.ForHeader, colon_stmt
-         | Foreach (t1, t2, e1, t3, v, arrow_opt, t4, colon_stmt) ->
-             F.ForeachHeader, colon_stmt
-         | _ -> raise Impossible
-         )
-       in
+       let node = F.WhileHeader in
 
        let newi = state.g#add_node { F.n = node; i=i() } in
        state.g +> add_arc_opt (previ, newi);
 
+       let node = F.SimpleStmt (F.SpecialMaybeUnused (Ast.unparen e)) in
+       let ei = state.g#add_node { F.n = node; i=i() } in
+       state.g +> add_arc (newi, ei);
+       
        let newfakethen = state.g#add_node { F.n = F.TrueNode;i=None } in
        let newfakeelse = state.g#add_node { F.n = F.FalseNode;i=None } in
-       state.g +> add_arc (newi, newfakethen);
-       state.g +> add_arc (newi, newfakeelse);
+       state.g +> add_arc (ei, newfakethen);
+       state.g +> add_arc (ei, newfakeelse);
+
+       let state = { state with
+         ctx = LoopCtx (newi, newfakeelse)::state.ctx;
+       }
+       in
+       let finalthen = 
+         cfg_colon_stmt state (Some newfakethen) colon_stmt
+       in
+       state.g +> add_arc_opt (finalthen, newi);
+       Some newfakeelse
+
+   | For (t1, t2, e1, t3, e2, t4, e5, t6, colon_stmt) ->
+     (* previ -> e1i ->newi -> e2i --> newfakethen -> ... -> finalthen -> e5i
+      *                  |--------|----------------------------------------|
+      *                           |-> newfakelse 
+      *)
+       let exprs = Ast.uncomma e1 in
+       let e1i = List.fold_left (cfg_expr state maybe_unused)
+         previ exprs in
+
+       let node = F.ForHeader in
+       let newi = state.g#add_node { F.n = node; i=i() } in
+       state.g +> add_arc_opt (e1i, newi);
+
+       let exprs = Ast.uncomma e2 in
+       let e2i = List.fold_left (cfg_expr state maybe_unused)
+         (Some newi) exprs in
+
+       let newfakethen = state.g#add_node { F.n = F.TrueNode;i=None } in
+       state.g +> add_arc_opt (e2i, newfakethen);
+       let newfakeelse = state.g#add_node { F.n = F.FalseNode;i=None } in
+       state.g +> add_arc_opt (e2i, newfakeelse);
+
+       let state = { state with
+         ctx = LoopCtx (newi, newfakeelse)::state.ctx;
+       }
+       in
+       let finalthen = 
+         cfg_colon_stmt state (Some newfakethen) colon_stmt
+       in
+       let exprs = Ast.uncomma e5 in
+       let e5i = List.fold_left (cfg_expr state expr_stmt) finalthen exprs in
+
+       state.g +> add_arc_opt (e5i, newi);
+       Some newfakeelse
+
+   | Foreach (t1, t2, e1, t3, v, arrow_opt, t4, colon_stmt) -> 
+     (* previ -> e1i ->newi -> vi --> newfakethen -> ... -> finalthen
+      *                  |--------|----------------------------------|
+      *                           |-> newfakelse 
+      *)
+       let e1i = cfg_expr state use previ e1 in
+
+       let node = F.ForeachHeader in
+       let newi = state.g#add_node { F.n = node; i=i() } in
+       state.g +> add_arc_opt (e1i, newi);
+
+       let names = (match v with
+         | Left (_, name)
+         | Right (name) ->
+           [name])
+         ++ (match arrow_opt with
+         | None -> []
+         | Some (_, (_, name)) -> [name]) in
+       
+       let e2i = List.fold_left (cfg_expr state maybe_unused)
+         (Some newi) names in
+
+       let newfakethen = state.g#add_node { F.n = F.TrueNode;i=None } in
+       state.g +> add_arc_opt (e2i, newfakethen);
+       let newfakeelse = state.g#add_node { F.n = F.FalseNode;i=None } in
+       state.g +> add_arc_opt (e2i, newfakeelse);
 
        let state = { state with
          ctx = LoopCtx (newi, newfakeelse)::state.ctx;
@@ -224,17 +298,21 @@ let rec (cfg_stmt: state -> nodei option -> stmt -> nodei option) =
    * sign of buggy code.
    *)
    | Do (t1, st, t2, e, t3) ->
-     (* previ -> doi ---> ... ---> finalthen (opt) ---> taili
-      *             |--------- newfakethen ---------------|  |---> newfakelse
+     (* previ -> doi ---> ... ---> finalthen (opt) ---> taili -> ei
+      *             |--------- newfakethen ---------------------|  |---> newfakelse
       *)
        let doi = state.g#add_node { F.n = F.DoHeader;i=i() } in
        state.g +> add_arc_opt (previ, doi);
        let taili = state.g#add_node { F.n = F.DoWhileTail;i=None } in
 
+       let node = F.SimpleStmt (F.SpecialMaybeUnused (Ast.unparen e)) in
+       let ei = state.g#add_node { F.n = node; i=i() } in
+       state.g +> add_arc (taili, ei);
+
        let newfakethen = state.g#add_node { F.n = F.TrueNode;i=None } in
        let newfakeelse = state.g#add_node { F.n = F.FalseNode;i=None } in
-       state.g +> add_arc (taili, newfakethen);
-       state.g +> add_arc (taili, newfakeelse);
+       state.g +> add_arc (ei, newfakethen);
+       state.g +> add_arc (ei, newfakeelse);
        state.g +> add_arc (newfakethen, doi);
 
        let state = { state with
@@ -258,9 +336,9 @@ let rec (cfg_stmt: state -> nodei option -> stmt -> nodei option) =
        raise (Error (ColonSyntax, tok))
 
    | If (t, e, st_then, st_elseifs, st_else_opt) ->
-     (* previ  -> newi --->   newfakethen -> ... -> finalthen --> lasti
-      *                  |                                      |
-      *                  |->   newfakeelse -> ... -> finalelse -|
+     (* previ  -> newi -> ei--->   newfakethen -> ... -> finalthen --> lasti
+      *                     |                                      |
+      *                     |->   newfakeelse -> ... -> finalelse -|
       * 
       * Can generate either special nodes for elseif, or just consider
       * elseif as syntactic sugar that translates into regular ifs, which
@@ -269,10 +347,14 @@ let rec (cfg_stmt: state -> nodei option -> stmt -> nodei option) =
        let newi = state.g#add_node { F.n = F.IfHeader;i=i() } in
        state.g +> add_arc_opt (previ, newi);
        
+       let node = F.SimpleStmt (F.SpecialMaybeUnused (Ast.unparen e)) in
+       let ei = state.g#add_node { F.n = node; i=i() } in
+       state.g +> add_arc (newi, ei);
+
        let newfakethen = state.g#add_node { F.n = F.TrueNode;i=None } in
        let newfakeelse = state.g#add_node { F.n = F.FalseNode;i=None } in
-       state.g +> add_arc (newi, newfakethen);
-       state.g +> add_arc (newi, newfakeelse);
+       state.g +> add_arc (ei, newfakethen);
+       state.g +> add_arc (ei, newfakeelse);
 
        let finalthen = cfg_stmt state (Some newfakethen) st_then in
 
@@ -365,7 +447,10 @@ let rec (cfg_stmt: state -> nodei option -> stmt -> nodei option) =
        | CaseList (_obrace, _colon_opt, cases, _cbrace) ->
            let newi = state.g#add_node { F.n = F.SwitchHeader;i=i() } in
            state.g +> add_arc_opt (previ, newi);
-
+           let node = F.SimpleStmt (F.SpecialMaybeUnused (Ast.unparen e)) in
+           let ei = state.g#add_node { F.n = node; i=i() } in
+           state.g +> add_arc (newi, ei);
+           
            (* note that if all cases have return, then we will remove
             * this endswitch node later.
             *)
@@ -377,11 +462,11 @@ let rec (cfg_stmt: state -> nodei option -> stmt -> nodei option) =
            if (not (cases +> List.exists 
                        (function Ast.Default _ -> true | _ -> false)))
            then begin
-             state.g +> add_arc (newi, endi);
+             state.g +> add_arc (ei, endi);
            end;
            (* let's process all cases *)
            let last_stmt_opt = 
-             cfg_cases (newi, endi) state (None) cases
+             cfg_cases (ei, endi) state (None) cases
            in
            state.g +> add_arc_opt (last_stmt_opt, endi);
            

@@ -348,7 +348,7 @@ and
   let arg = Ocaml.vof_list vof_class_var v_c_variables in
   let bnd = ("c_variables", arg) in
   let bnds = bnd :: bnds in
-  let arg = Ocaml.vof_list vof_class_var v_c_xhp_fields in
+  let arg = Ocaml.vof_list vof_xhp_field v_c_xhp_fields in
   let bnd = ("c_xhp_fields", arg) in
   let bnds = bnd :: bnds in
   let arg = Ocaml.vof_list vof_class_name v_c_xhp_attr_inherit in
@@ -381,6 +381,10 @@ and vof_class_type =
   | ClassAbstract -> Ocaml.VSum (("ClassAbstract", []))
   | Interface -> Ocaml.VSum (("Interface", []))
   | Trait -> Ocaml.VSum (("Trait", []))
+and vof_xhp_field (v1, v2) =
+  let v1 = vof_class_var v1 in
+  let v2 = Ocaml.VBool v2 in
+  Ocaml.VSum (("Xhp_field", [ v1; v2 ]))
 and
   vof_class_var {
                   cv_name = v_cv_name;

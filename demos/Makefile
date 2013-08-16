@@ -22,30 +22,6 @@ simple_refactoring: simple_refactoring.ml
 clean::
 	rm -f simple_refactoring
 
-# just using $@ and $^ to shorten the command a bit
-check_is_static_literal: check_is_static_literal.cmo
-	ocamlc -g -o $@ \
-         -I ../commons -I ../lang_php/parsing -I ../h_program-lang \
-          str.cma unix.cma nums.cma bigarray.cma \
-	  ../commons/lib.cma ../h_program-lang/lib.cma \
-          ../lang_php/parsing/lib.cma \
-          $^
-clean::
-	rm -f check_is_static_literal
-
-DEPS1=../commons ../h_program-lang \
-  ../lang_php/parsing ../lang_php/analyze/foundation
-
-INCLUDES1=$(DEPS1:%=-I %)
-CMAS1=$(DEPS1:%=%/lib.cma)
-SYSCMAS1=str.cma unix.cma nums.cma bigarray.cma
-
-find_methods_return_this: find_methods_return_this.ml
-	ocamlc -g -annot -o $@ $(INCLUDES1) $(SYSCMAS1) $(CMAS1) $^
-
-clean::
-	rm -f find_methods_return_this
-
 ##############################################################################
 # Variables
 ##############################################################################
@@ -58,13 +34,12 @@ LIBS= ../commons/lib.cma \
       ../h_version-control/lib.cma \
       ../h_program-lang/lib.cma \
       ../matcher/lib.cma \
-      ../lang_php/parsing/lib.cma \
-      $(ANALYZECMA)
+      ../lang_php/parsing/lib.cma
+
 INCLUDEDIRS=../commons ../commons/lib-sexp ../commons/lib-json \
             ../h_program-lang ../lang_php/parsing ../h_version-control
 
 SYSLIBS= str.cma unix.cma nums.cma bigarray.cma
-
 
 # If you want to embed pfff in your own application, uncomment the following
 # instead of the previous settings
@@ -90,7 +65,6 @@ OCAMLCFLAGS=-g -dtypes # -w A
 # This flag is also used in subdirectories so don't change its name here.
 OPTFLAGS=
 
-
 OCAMLC=ocamlc$(OPTBIN) $(OCAMLCFLAGS)  $(INCLUDES) -thread
 OCAMLOPT=ocamlopt$(OPTBIN) $(OPTFLAGS) $(INCLUDES) -thread
 OCAMLLEX=ocamllex #-ml # -ml for debugging lexer, but slightly slower
@@ -106,7 +80,10 @@ OCAMLMKTOP=ocamlmktop -g -custom $(INCLUDES) -thread
 # so dont forget to do a 'make sync' in parsing_php/ before doing make
 # in this directory.
 PROGS=php_transducer.byte \
- show_function_calls1.byte show_function_calls2.byte show_function_calls3.byte  show_function_class_names.byte show_function_class_names2.byte simple_metrics.byte
+ show_function_calls1.byte show_function_calls2.byte show_function_calls3.byte\
+ show_function_class_names.byte show_function_class_names2.byte \
+ simple_metrics.byte \
+ simple_code_search.byte
 
 # simple_zero_to_null.byte count_elseifs.byte
 

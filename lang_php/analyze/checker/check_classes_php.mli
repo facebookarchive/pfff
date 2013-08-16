@@ -6,5 +6,8 @@
 val check_program: 
   Entity_php.entity_finder -> Ast_php.program -> unit
 
+val check_required_field:
+  Graph_code.graph ->
+  Common.filename -> unit
 (*x: checking_php.mli *)
 (*e: checking_php.mli *)

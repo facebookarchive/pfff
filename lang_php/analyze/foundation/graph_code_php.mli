@@ -1,6 +1,10 @@
 
 val add_fake_node_when_undefined_entity: bool ref
-
+val lookup:
+  Graph_code.graph ->
+  (string * string) ->
+  'a ->
+  ((string * 'a) * Database_code.entity_kind) option
 val build:
   ?verbose:bool -> 
   ?logfile:Common.filename ->

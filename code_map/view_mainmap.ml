@@ -322,6 +322,7 @@ let button_action da dw_ref ev =
   match GdkEvent.get_type ev with
   | `BUTTON_PRESS ->
       let button = GdkEvent.Button.button ev in
+      let state = GdkEvent.Button.state ev in
       pr2 (spf "button %d pressed" button);
       (match button with
       | 1 -> 
@@ -353,6 +354,12 @@ let button_action da dw_ref ev =
       | 3 ->
 
         r_opt +> Common.do_option (fun (r, _, _r_englobing) ->
+          let file = r.T.tr_label in
+
+          if not (Gdk.Convert.test_modifier `SHIFT state)
+          then !Ctl._go_dirs_or_file dw_ref [file]
+          else begin
+
           (* similar to View_overlays.motion.refresher *)
           let entity_opt =
             if Hashtbl.mem dw.pos_and_line r
@@ -363,7 +370,6 @@ let button_action da dw_ref ev =
             else None
           in
 
-          let file = r.T.tr_label in
           
           let uses, users = 
             match entity_opt with
@@ -378,7 +384,9 @@ let button_action da dw_ref ev =
             +> Common2.uniq
             (* todo: tfidf to filter files like common2.ml *)
             +> Common.exclude (fun readable -> 
-              readable =$= "commons/common2.ml")
+              readable =~ "commons/.*" || 
+              readable =~ "external/.*" 
+            )
             +> List.map (fun s -> Filename.concat model.root s)
           in
 
@@ -397,6 +405,7 @@ let button_action da dw_ref ev =
               !Ctl._go_dirs_or_file dw_ref (paths_of_readables 
                                             (uses ++ [readable]))));
           ] ~button:3 ~time:(GtkMain.Main.get_current_event_time());
+          end
         );
         true
       | _ -> false
