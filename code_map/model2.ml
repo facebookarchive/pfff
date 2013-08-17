@@ -74,7 +74,7 @@ type drawing = {
   (* Microlevel. When we render content at the microlevel, we then need to
    * know to which line corresponds a position and vice versa.
    *)
-  microlevel: (Treemap.treemap_rectangle, pos_and_line) Hashtbl.t;
+  microlevel: (Treemap.treemap_rectangle, microlevel) Hashtbl.t;
 
   (* generated from dw.treemap, contains readable path relative to model.root *)
   readable_file_to_rect: 
@@ -140,7 +140,7 @@ type drawing = {
      mutable draw_searched_rectangles: bool;
    }
   (*e: type settings *)
-  and pos_and_line = {
+  and microlevel = {
     pos_to_line: Cairo.point -> int;
     line_to_rectangle: int -> Figures.rectangle;
   }
