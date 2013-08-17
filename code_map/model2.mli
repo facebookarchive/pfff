@@ -41,7 +41,7 @@ type drawing = {
   (* when we render content at the microlevel, we then need to know to which
    * line corresponds a position and vice versa.
    *)
-  pos_and_line: (Treemap.treemap_rectangle, pos_and_line) Hashtbl.t;
+  microlevel: (Treemap.treemap_rectangle, pos_and_line) Hashtbl.t;
 
   (* generated from dw.treemap, contains readable path relative to model.root *)
   readable_file_to_rect: 

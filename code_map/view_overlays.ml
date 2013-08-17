@@ -305,9 +305,9 @@ let motion_refresher ev dw () =
 
   r_opt +> Common.do_option (fun (r, middle, r_englobing) ->
     let line_opt, entity_opt =
-      if Hashtbl.mem dw.pos_and_line r
+      if Hashtbl.mem dw.microlevel r
       then
-        let translate = Hashtbl.find dw.pos_and_line r in
+        let translate = Hashtbl.find dw.microlevel r in
         let line = translate.pos_to_line user in
         let entity_opt = M.find_entity_at_line line r dw in
         Some line, entity_opt

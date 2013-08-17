@@ -108,7 +108,7 @@ let paint_content_maybe_rect ~user_rect dw rect =
     Draw_microlevel.draw_treemap_rectangle_content_maybe
       ~cr  ~clipping:user_rect  ~context rect in
   pos_and_line_opt +> Common.do_option (fun pos_and_line ->
-    Hashtbl.replace dw.pos_and_line rect pos_and_line
+    Hashtbl.replace dw.microlevel rect pos_and_line
   );
 
   (* have to redraw the label *)
@@ -362,9 +362,9 @@ let button_action da dw_ref ev =
 
           (* similar to View_overlays.motion.refresher *)
           let entity_opt =
-            if Hashtbl.mem dw.pos_and_line r
+            if Hashtbl.mem dw.microlevel r
             then
-              let translate = Hashtbl.find dw.pos_and_line r in
+              let translate = Hashtbl.find dw.microlevel r in
               let line = translate.pos_to_line user in
               M.find_entity_at_line line r dw
             else None

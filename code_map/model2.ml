@@ -74,7 +74,7 @@ type drawing = {
   (* Microlevel. When we render content at the microlevel, we then need to
    * know to which line corresponds a position and vice versa.
    *)
-  pos_and_line: (Treemap.treemap_rectangle, pos_and_line) Hashtbl.t;
+  microlevel: (Treemap.treemap_rectangle, pos_and_line) Hashtbl.t;
 
   (* generated from dw.treemap, contains readable path relative to model.root *)
   readable_file_to_rect: 
@@ -194,7 +194,7 @@ let init_drawing
     layers = layers;
 
     readable_file_to_rect;
-    pos_and_line = Hashtbl.create 0;
+    microlevel = Hashtbl.create 0;
 
     current_query = "";
     current_searched_rectangles = [];
@@ -368,7 +368,7 @@ let uses_or_users_of_node node dw fsucc =
         let rect = Hashtbl.find dw.readable_file_to_rect file in
         let xs = Hashtbl.find model.hentities_of_file file in
         let (line, _n2) = xs +> List.find (fun (_, n2) -> n2 =*= n) in
-        let pos_and_line = Hashtbl.find dw.pos_and_line rect in
+        let pos_and_line = Hashtbl.find dw.microlevel rect in
         let rect = pos_and_line.line_to_rectangle line in
         Some rect
       with Not_found -> None
