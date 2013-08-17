@@ -108,13 +108,6 @@ type drawing = {
     mutable pm: GDraw.pixmap;
     mutable overlay: [ `Any ] Cairo.surface;
 
-    (* todo: going from a point to the enclosing rectangle via pixel color
-     *  trick. Kind of ugly.
-     * mutable pm_color_trick: GDraw.pixmap;
-     * mutable pm_color_trick_info: (string) array.
-     * alternative: just find pixel by iterating over all the rectangles
-     * and check if he's inside
-     *)
   (*e: fields drawing main view *)
 
   (*s: fields drawing viewport *)
@@ -122,8 +115,8 @@ type drawing = {
     mutable width: int;
     mutable height: int;
 
+    (* to delete? *)
     mutable zoom: float;
-
     (* in user coordinates *)
     mutable xtrans: float;
     mutable ytrans: float;
@@ -179,11 +172,8 @@ let init_drawing
 
   let paths = paths +> List.map Common2.relative_to_absolute in
   let current_root = Common2.common_prefix_of_files_or_dirs paths in
-  pr2_gen root;
-
   let treemap = 
     Common.profile_code "Visual.building the treemap" (fun () -> func paths) in
-  let pm = new_pixmap ~width ~height in
   let readable_file_to_rect =
     treemap +> Common.map_filter (fun rect ->
       if not rect.T.tr_is_node
@@ -194,17 +184,18 @@ let init_drawing
       else None
     ) +> Common.hash_of_list
   in
+  let pm = new_pixmap ~width ~height in
 
   {
-    treemap = treemap;
+    treemap;
     nb_rects = List.length treemap;
-    readable_file_to_rect;
     current_root;
     treemap_func = func;
 
     dw_model = model;
     layers = layers;
 
+    readable_file_to_rect;
     pos_and_line = Hashtbl.create 0;
 
     current_query = "";
@@ -212,11 +203,11 @@ let init_drawing
     current_entity = None;
     current_grep_query = Hashtbl.create 0;
 
-    pm = pm;
+    pm;
     overlay = Cairo.surface_create_similar (CairoH.surface_of_pixmap pm) 
       Cairo.CONTENT_COLOR_ALPHA width height;
-    width = width;
-    height = height;
+    width;
+    height;
 
     dw_settings = {
       (* todo: too fuzzy for now *)
@@ -271,9 +262,17 @@ let context_of_drawing dw = {
 (*****************************************************************************)
 
 (*s: find_rectangle_at_user_point() *)
-(* alt: could use Cairo_bigarray and the pixel trick if
+(* alt: could use Cairo_bigarray and the pixel trick below if
  * it takes too long to detect which rectangle is under the cursor.
  * coud also sort the rectangles ... or have some kind of BSP.
+ * 
+ * going from a point to the enclosing rectangle via pixel color trick. 
+ * Kind of ugly. Add this in the model:
+ *   mutable pm_color_trick: GDraw.pixmap;
+ *   mutable pm_color_trick_info: (string) array.
+ * 
+ * Current solution: just find pixel by iterating over all the rectangles
+ * and check if he's inside.
  *)
 let find_rectangle_at_user_point2 dw user =
   let user = CairoH.cairo_point_to_point user in
@@ -359,7 +358,7 @@ let find_entity_at_line line r dw =
     )
   with Not_found -> None
 
-let uses_or_users_of_node_visible_here node dw fsucc =
+let uses_or_users_of_node node dw fsucc =
   let model = Async.async_get dw.dw_model in
   (match model.g with
   | None -> []
@@ -379,9 +378,9 @@ let uses_or_users_of_node_visible_here node dw fsucc =
   )
 
 let uses_and_users_of_node node dw =
-  uses_or_users_of_node_visible_here node dw (fun node g ->
+  uses_or_users_of_node node dw (fun node g ->
     Graph_code.succ node Graph_code.Use g),
-  uses_or_users_of_node_visible_here node dw (fun node g ->
+  uses_or_users_of_node node dw (fun node g ->
     Graph_code.pred node Graph_code.Use g)
 
 
