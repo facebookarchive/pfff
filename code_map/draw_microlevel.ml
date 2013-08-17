@@ -312,25 +312,25 @@ let draw_content2 ~cr ~layout ~context ~file rect =
   text_with_user_pos := [];
 
   let use_fancy_highlighting =
-  match FT.file_type_of_file file with
-  | ( FT.PL (FT.Web (FT.Php _))
-    | FT.PL (FT.Web (FT.Js))
-    | FT.PL (FT.Web (FT.Html))
-    | FT.PL (FT.ML _)
-    | FT.PL (FT.Cplusplus _ | FT.C _)
-    | FT.PL (FT.Thrift)
-    | FT.Text ("nw" | "tex"  | "texi" | "web" | "org")
-    | FT.PL (FT.Lisp _)
-    | FT.PL (FT.Haskell _)
-    | FT.PL (FT.Python)
-    | FT.PL (FT.Csharp)
-    | FT.PL (FT.Java)
-(*    | FT.PL (FT.Prolog _) *)
-    | FT.PL (FT.Erlang)
-    | FT.PL (FT.Opa)
+    match FT.file_type_of_file file with
+    | ( FT.PL (FT.Web (FT.Php _))
+          | FT.PL (FT.Web (FT.Js))
+          | FT.PL (FT.Web (FT.Html))
+          | FT.PL (FT.ML _)
+          | FT.PL (FT.Cplusplus _ | FT.C _)
+          | FT.PL (FT.Thrift)
+          | FT.Text ("nw" | "tex"  | "texi" | "web" | "org")
+          | FT.PL (FT.Lisp _)
+          | FT.PL (FT.Haskell _)
+          | FT.PL (FT.Python)
+          | FT.PL (FT.Csharp)
+          | FT.PL (FT.Java)
+    (*    | FT.PL (FT.Prolog _) *)
+          | FT.PL (FT.Erlang)
+          | FT.PL (FT.Opa)
     ) -> true
-  | (FT.Text "txt") when Common2.basename file =$= "info.txt" -> true
-  | _ -> false
+    | (FT.Text "txt") when Common2.basename file =$= "info.txt" -> true
+    | _ -> false
   in
 
   (* coupling: with parsing2.ml *)
@@ -341,7 +341,7 @@ let draw_content2 ~cr ~layout ~context ~file rect =
 
     let x = r.p.x + (float_of_int !column) * layout.w_per_column in
     let y = r.p.y + (layout.space_per_line * (float_of_int !line_in_column)) in
-        
+    
     Cairo.move_to cr x y;
 
     let model = Async.async_get context.model in
@@ -360,78 +360,78 @@ let draw_content2 ~cr ~layout ~context ~file rect =
       
       xs +> List.iter (function
       | Common2.Left s -> 
-          let pt = Cairo.get_current_point cr in
-          Common.push2 (s, filepos, pt) text_with_user_pos;
+        let pt = Cairo.get_current_point cr in
+        Common.push2 (s, filepos, pt) text_with_user_pos;
 
-          CairoH.show_text cr s
+        CairoH.show_text cr s
       | Common2.Right () ->
-          
-          incr line_in_column;
-          incr line;
+        
+        incr line_in_column;
+        incr line;
 
-          if !line_in_column > nblines_per_column
-          then begin 
-            incr column;
-            line_in_column := 1;
-          end;
+        if !line_in_column > nblines_per_column
+        then begin 
+          incr column;
+          line_in_column := 1;
+        end;
 
-          let x = r.p.x + 
-            (float_of_int !column) * layout.w_per_column in
-          let y = r.p.y + 
-            (layout.space_per_line * (float_of_int !line_in_column)) in
+        let x = r.p.x + 
+          (float_of_int !column) * layout.w_per_column in
+        let y = r.p.y + 
+          (layout.space_per_line * (float_of_int !line_in_column)) in
 
           (* must be done before the move_to below ! *)
-          (match Common2.hfind_option !line hmatching_lines with
-          | None -> ()
-          | Some color ->
-              CairoH.fill_rectangle ~cr 
-                ~alpha:0.25
-                ~color
-                ~x 
-                ~y:(y - layout.space_per_line) 
-                ~w:layout.w_per_column 
-                ~h:(layout.space_per_line * 3.)
-                ()
-          );
-          Cairo.move_to cr x y;
-          
-          
+        (match Common2.hfind_option !line hmatching_lines with
+        | None -> ()
+        | Some color ->
+          CairoH.fill_rectangle ~cr 
+            ~alpha:0.25
+            ~color
+            ~x 
+            ~y:(y - layout.space_per_line) 
+            ~w:layout.w_per_column 
+            ~h:(layout.space_per_line * 3.)
+            ()
+        );
+        Cairo.move_to cr x y;
+        
+        
       );
     )
   end else begin
-  match FT.file_type_of_file file with
-  | FT.PL _ | FT.Text _ ->      
-   (* This was causing some "out_of_memory" cairo error on linux. Not
-    * sure why.
-    *)
+    match FT.file_type_of_file file with
+    | FT.PL _ | FT.Text _ ->      
+    (* This was causing some "out_of_memory" cairo error on linux. Not
+     * sure why.
+     *)
 
-    Cairo.set_font_size cr font_size ;
-    Cairo.set_source_rgba cr 0.0 0.0 0.0 0.9;
+      Cairo.set_font_size cr font_size ;
+      Cairo.set_source_rgba cr 0.0 0.0 0.0 0.9;
       
-    let xs = Common.cat file in
-    let xxs = Common2.pack_safe nblines_per_column xs in
+      let xs = Common.cat file in
+      let xxs = Common2.pack_safe nblines_per_column xs in
 
     (* I start at 0 for the column because the x displacement
      * is null at the beginning, but at 1 for the line because
      * the y displacement must be more than 0 at the
      * beginning
      *)
-    Common.index_list_0 xxs +> List.iter (fun (xs, column) ->
-      Common.index_list_1 xs +> List.iter (fun (s, line_in_column) ->
-      
-        let x = r.p.x + 
-          (float_of_int column) * layout.w_per_column in
-        let y = r.p.y + 
-          (layout.space_per_line * (float_of_int line_in_column)) in
-        
-        Cairo.move_to cr x y;
-        CairoH.show_text cr s;
+      Common.index_list_0 xxs +> List.iter (fun (xs, column) ->
+        Common.index_list_1 xs +> List.iter (fun (s, line_in_column) ->
+          
+          let x = r.p.x + 
+            (float_of_int column) * layout.w_per_column in
+          let y = r.p.y + 
+            (layout.space_per_line * (float_of_int line_in_column)) in
+          
+          Cairo.move_to cr x y;
+          CairoH.show_text cr s;
 
-        incr line;
+          incr line;
+        );
       );
-    );
       ()
-  | _ ->
+    | _ ->
       ()
   end
 
@@ -451,88 +451,88 @@ let draw_treemap_rectangle_content_maybe2 ~cr ~clipping ~context rect  =
   then (* pr2 ("not drawing: " ^ file) *) None
   else begin
 
-  let w = F.rect_width r in
-  let h = F.rect_height r in
+    let w = F.rect_width r in
+    let h = F.rect_height r in
 
-  (* if the file is not textual, or contain weird characters, then
-   * it confuses cairo which then can confuse computation done in gtk
-   * idle callbacks
-   *)
-  if Common2.lfile_exists_eff file && File_type.is_textual_file file
-  then begin
-    let font_size_estimate = h / 100. in
-    let font_size_real_estimate = 
-      CairoH.user_to_device_font_size cr font_size_estimate in
-    if font_size_real_estimate > 0.4
+    (* if the file is not textual, or contain weird characters, then
+     * it confuses cairo which then can confuse computation done in gtk
+     * idle callbacks
+     *)
+    if Common2.lfile_exists_eff file && File_type.is_textual_file file
     then begin
-
-    (* Common.nblines_with_wc was really slow. fork sucks.
-     * alternative: we could store the nblines of a file in the db but
-     * we would need a fast absolute_to_readable then.
-     *)
-    let nblines = Common2.nblines_eff file +> float_of_int in
-
-    (* assume our code follow certain conventions. Could infer from file. 
-     * we should put 80, but a font is higher than large, so 
-     * I manually readjust things. todo: should readjust something
-     * else.
-     *)
-    let chars_per_column = 41.0 in
+      let font_size_estimate = h / 100. in
+      let font_size_real_estimate = 
+        CairoH.user_to_device_font_size cr font_size_estimate in
+      if font_size_real_estimate > 0.4
+      then begin
+        
+       (* Common.nblines_with_wc was really slow. fork sucks.
+        * alternative: we could store the nblines of a file in the db but
+        * we would need a fast absolute_to_readable then.
+        *)
+        let nblines = Common2.nblines_eff file +> float_of_int in
+        
+       (* assume our code follow certain conventions. Could infer from file. 
+        * we should put 80, but a font is higher than large, so 
+        * I manually readjust things. todo: should readjust something
+        * else.
+        *)
+        let chars_per_column = 41.0 in
     
-    let split_nb_columns = 
-      optimal_nb_columns ~nblines ~chars_per_column ~h ~w in
-    let font_size = 
-      font_size_when_have_x_columns ~nblines ~chars_per_column ~h ~w 
-        ~with_n_columns:split_nb_columns in
-    let w_per_column = 
-      w / split_nb_columns in
-    let space_per_line = 
-      font_size in
+        let split_nb_columns = 
+          optimal_nb_columns ~nblines ~chars_per_column ~h ~w in
+        let font_size = 
+          font_size_when_have_x_columns ~nblines ~chars_per_column ~h ~w 
+            ~with_n_columns:split_nb_columns in
+        let w_per_column = 
+          w / split_nb_columns in
+        let space_per_line = 
+          font_size in
+        
+        draw_column_bars ~cr ~split_nb_columns ~font_size ~w_per_column r;
+        
+       (* todo: does not work :(
+          let font_option = Cairo.Font_Options.make [`ANTIALIAS_SUBPIXEL] in
+       
+       (try 
+         Cairo.set_font_options cr font_option;
+       with exn ->
+         let status = Cairo.status cr in
+         let s2 = Cairo.string_of_status status in
+         failwith s2;
+       );
+       *)
+        Cairo.select_font_face cr Style.font_text
+          Cairo.FONT_SLANT_NORMAL Cairo.FONT_WEIGHT_NORMAL;
     
-    draw_column_bars ~cr ~split_nb_columns ~font_size ~w_per_column r;
-
-    (* todo: does not work :(
-    let font_option = Cairo.Font_Options.make [`ANTIALIAS_SUBPIXEL] in
+        let font_size_real = CairoH.user_to_device_font_size cr font_size in
+       (*pr2 (spf "file: %s, font_size_real = %f" file font_size_real);*)
     
-    (try 
-      Cairo.set_font_options cr font_option;
-    with exn ->
-      let status = Cairo.status cr in
-      let s2 = Cairo.string_of_status status in
-      failwith s2;
-    );
-    *)
-    Cairo.select_font_face cr Style.font_text
-      Cairo.FONT_SLANT_NORMAL Cairo.FONT_WEIGHT_NORMAL;
-    
-    let font_size_real = CairoH.user_to_device_font_size cr font_size in
-    (*pr2 (spf "file: %s, font_size_real = %f" file font_size_real);*)
-    
-    let layout = {
-      font_size = font_size;
-      split_nb_columns = split_nb_columns;
-      w_per_column = w_per_column;
-      space_per_line = space_per_line;
-      nblines = nblines;
-    } 
-    in
-
-    let pos_and_line = pos_and_line_from_layout r layout in
-
-    (if font_size_real > !Flag.threshold_draw_content_font_size_real 
-       && not (is_big_file_with_few_lines ~nblines file)
-       && nblines < !Flag.threshold_draw_content_nblines
-    then draw_content ~cr ~layout ~context ~file rect
-    else 
-      if context.settings.draw_summary 
-      (* draw_summary_content ~cr ~layout ~context ~file  rect *)
-      then raise Todo
-    );
-    Some pos_and_line
+        let layout = {
+          font_size = font_size;
+          split_nb_columns = split_nb_columns;
+          w_per_column = w_per_column;
+          space_per_line = space_per_line;
+          nblines = nblines;
+        } 
+        in
+        
+        let pos_and_line = pos_and_line_from_layout r layout in
+        
+        (if font_size_real > !Flag.threshold_draw_content_font_size_real 
+            && not (is_big_file_with_few_lines ~nblines file)
+            && nblines < !Flag.threshold_draw_content_nblines
+         then draw_content ~cr ~layout ~context ~file rect
+         else 
+            if context.settings.draw_summary 
+           (* draw_summary_content ~cr ~layout ~context ~file  rect *)
+            then raise Todo
+        );
+        Some pos_and_line
+      end
+      else None
     end
     else None
-  end
-  else None
   end
 let draw_treemap_rectangle_content_maybe ~cr ~clipping ~context rect = 
   Common.profile_code "View.draw_content_maybe" (fun () ->
