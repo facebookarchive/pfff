@@ -157,7 +157,7 @@ let build_model2 root dbfile_opt graphfile_opt =
   let db_opt = 
     match dbfile_opt with
     | None -> None
-    | Some file -> Database_code.load_database file
+    | Some file -> Some (Database_code.load_database file)
   in
   (* todo: do like for graph_code below, let hentities, hfiles_entities = ...*)
   let hentities = 
