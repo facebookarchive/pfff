@@ -73,13 +73,6 @@ type drawing = {
     mutable pm: GDraw.pixmap;
     mutable overlay: [ `Any ] Cairo.surface;
 
-    (* todo: going from a point to the enclosing rectangle via pixel color
-     *  trick. Kind of ugly.
-     * mutable pm_color_trick: GDraw.pixmap;
-     * mutable pm_color_trick_info: (string) array.
-     * alternative: just find pixel by iterating over all the rectangles
-     * and check if he's inside
-     *)
   (*e: fields drawing main view *)
 
   (*s: fields drawing viewport *)
