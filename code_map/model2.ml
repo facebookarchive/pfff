@@ -22,8 +22,6 @@ module CairoH = Cairo_helpers
 module F = Figures
 module T = Treemap
 
-module Db = Database_code
-
 module Flag = Flag_visual
 
 (*****************************************************************************)
@@ -44,14 +42,14 @@ type model = {
     big_grep_idx: Big_grep.index;
   (*e: model fields hook *)
 
-  (* for microlevel *)
+  (* for microlevel use/def information *)
   g: Graph_code.graph option;
-  (* fast accessors, for macrolevel  *)
+  (* fast accessors, for macrolevel use/def information  *)
   huses_of_file: (Common.filename, Common.filename list) Hashtbl.t;
   husers_of_file: (Common.filename, Common.filename list) Hashtbl.t;
-
+  (* the lists are sorted by line number *)
   hentities_of_file: 
-    (Common.filename, (int * Graph_code.node) list) Hashtbl.t;
+    (Common.filename, (int (* line *) * Graph_code.node) list)  Hashtbl.t;
  }
 (*e: type model *)
 
@@ -66,15 +64,15 @@ type model = {
  *)
 type drawing = {
 
-  (* In user coordinates from 0 to T.xy_ratio and 1 for respectivey x and y.
-   * Assumes the treemap contains absolute paths.
-  *)
+  (* Macrolevel. In user coordinates from 0 to T.xy_ratio for 'x' and 0 to 1
+   * for 'y'. Assumes the treemap contains absolute paths (tr.tr_label).
+   *)
   treemap: Treemap.treemap_rendering;
   (* coupling: = List.length treemap *)
   nb_rects: int; 
 
-  (* when we render content at the microlevel, we then need to know to which
-   * line corresponds a position and vice versa.
+  (* Microlevel. When we render content at the microlevel, we then need to
+   * know to which line corresponds a position and vice versa.
    *)
   pos_and_line: (Treemap.treemap_rectangle, pos_and_line) Hashtbl.t;
 
