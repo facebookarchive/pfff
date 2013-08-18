@@ -25,6 +25,7 @@ module Color = Simple_color
 module CairoH = Cairo_helpers
 
 open Model2 (* for the fields *)
+module M = Model2
 
 module Flag = Flag_visual
 module Style = Style2
@@ -180,6 +181,49 @@ let color_of_categ categ =
         Some (s)
     | _ -> None
   )
+
+let glyphs_of_file ~context ~font_size ~font_size_real file 
+  : glyph list array option =
+
+  if use_fancy_highlighting file then begin
+
+    let model = Async.async_get context.model in
+    let entities = model.Model2.hentities in
+
+    let nblines = Common2.nblines_eff file in
+    (* we use nblines + 1 so the array starts at 1, the first entry is fake *)
+    let arr = Array.create (nblines +.. 1) [] in
+    let tokens_with_categ = Parsing.tokens_with_categ_of_file file entities in
+
+    let line = ref 1 in
+    let acc = ref [] in
+    tokens_with_categ +> List.iter (fun (s, categ, filepos) ->
+      let final_font_size = 
+        final_font_size_of_categ ~font_size ~font_size_real categ in
+      let color = color_of_categ categ in
+
+      let xs = Common2.lines_with_nl_either s in
+      xs +> List.iter (function
+      | Common2.Left str ->
+        Common.push2 { M. str; font_size = final_font_size; color } acc;
+      | Common2.Right () ->
+        arr.(!line) <- List.rev !acc;
+        acc := [];
+        incr line;
+      )
+    );
+    arr.(!line) <- List.rev !acc;
+    Some arr
+  end else
+    (match FT.file_type_of_file file with
+    | FT.PL _ | FT.Text _ ->      
+      let xs = 
+       Common.cat file 
+       +> List.map (fun str -> [{ M. str; font_size; color = "black" }])
+      in
+      Some (Array.of_list xs)
+    | _ -> None
+    )
 
 (*****************************************************************************)
 (* Columns *)

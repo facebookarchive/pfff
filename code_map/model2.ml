@@ -149,6 +149,7 @@ type drawing = {
    and glyph = {
      str: string;
      font_size: float;
+     color: Simple_color.emacs_color;
    }
 (*e: type drawing *)
 
