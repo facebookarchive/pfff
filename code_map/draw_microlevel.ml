@@ -48,13 +48,18 @@ module Parsing = Parsing2
  *)
 type draw_content_layout = {
   font_size: float;
-  split_nb_columns: float;
+  split_nb_columns: float; (* int *)
   w_per_column:float;
   space_per_line: float;
-  nblines: float;
-  nblines_per_column: float;
+  nblines: float; (* int *)
+  nblines_per_column: float; (* int *)
 }
 (*e: type draw_content_layout *)
+
+type line_in_column = {
+  column: float; (* int *)
+  line_in_column: float; (* int *)
+}
 
 (*****************************************************************************)
 (* globals *)
@@ -92,17 +97,23 @@ let use_fancy_highlighting file =
   | (FT.Text "txt") when Common2.basename file =$= "info.txt" -> true
   | _ -> false
 
+let line_in_column_to_pos lc r layout =
+  let x = r.p.x + (lc.column * layout.w_per_column) in
+  let y = r.p.y + (lc.line_in_column * layout.space_per_line) in
+  x, y
+
+let line_to_line_in_column line layout =
+  let line = (float_of_int line) - 1. in
+  let column = floor (line / layout.nblines_per_column) in
+  let line_in_column = 
+    line - (column * layout.nblines_per_column) in
+  { column; line_in_column }
 
 let pos_and_line_from_layout r layout =
 
   { line_to_rectangle = (fun line ->
-      let line = (float_of_int line) - 1. in
-      let column = floor (line / layout.nblines_per_column) in
-      let line_in_column = 
-        line - (column * layout.nblines_per_column) in
-
-      let x = r.p.x + (column * layout.w_per_column) in
-      let y = r.p.y + (line_in_column * layout.space_per_line) in
+      let lc = line_to_line_in_column line layout in
+      let x, y = line_in_column_to_pos lc r layout in
       { p = { x; y };
         q = { x = x + layout.w_per_column; y = y + layout.space_per_line };
       }
