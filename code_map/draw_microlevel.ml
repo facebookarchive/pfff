@@ -185,6 +185,7 @@ let glyphs_of_file ~context ~font_size ~font_size_real file
     let model = Async.async_get context.model in
     let entities = model.Model2.hentities in
 
+    (* can't use nblines_eff here, we don't want to memoize *)
     let nblines = Common2.nblines_eff file in
     (* we use nblines + 1 so the array starts at 1 (the first entry is fake) *)
     let arr = Array.create (nblines +.. 1) [] in
@@ -193,7 +194,8 @@ let glyphs_of_file ~context ~font_size ~font_size_real file
 
     let line = ref 1 in
     let acc = ref [] in
-    tokens_with_categ +> List.iter (fun (s, categ, _filepos) ->
+    (try (
+     tokens_with_categ +> List.iter (fun (s, categ, _filepos) ->
       let final_font_size = 
         final_font_size_of_categ ~font_size ~font_size_real categ in
       let color = 
@@ -212,6 +214,9 @@ let glyphs_of_file ~context ~font_size ~font_size_real file
     if !acc <> []
     then arr.(!line) <- List.rev !acc;
     Some arr
+    ) with Invalid_argument("index out of bounds") ->
+      failwith (spf "try on %s, nblines = %d, line = %d" file nblines !line)
+    )
 
   | FT.PL _ | FT.Text _ ->      
     (""::Common.cat file)
