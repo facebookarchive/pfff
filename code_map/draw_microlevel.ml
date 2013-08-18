@@ -89,6 +89,7 @@ let text_with_user_pos = ref []
 let is_big_file_with_few_lines ~nblines file = 
   nblines < 20. && Common2.filesize_eff file > 4000
 
+(* coupling: with parsing2.ml *)
 let use_fancy_highlighting file =
   match FT.file_type_of_file file with
   | ( FT.PL (FT.Web (FT.Php _))
@@ -183,24 +184,27 @@ let color_of_categ categ =
   )
 
 let glyphs_of_file ~context ~font_size ~font_size_real file 
-  : glyph list array option =
+  : (glyph list) array option =
 
-  if use_fancy_highlighting file then begin
+  match FT.file_type_of_file file with
+  | _ when use_fancy_highlighting file ->
 
     let model = Async.async_get context.model in
     let entities = model.Model2.hentities in
 
     let nblines = Common2.nblines_eff file in
-    (* we use nblines + 1 so the array starts at 1, the first entry is fake *)
+    (* we use nblines + 1 so the array starts at 1 (the first entry is fake) *)
     let arr = Array.create (nblines +.. 1) [] in
+
     let tokens_with_categ = Parsing.tokens_with_categ_of_file file entities in
 
     let line = ref 1 in
     let acc = ref [] in
-    tokens_with_categ +> List.iter (fun (s, categ, filepos) ->
+    tokens_with_categ +> List.iter (fun (s, categ, _filepos) ->
       let final_font_size = 
         final_font_size_of_categ ~font_size ~font_size_real categ in
-      let color = color_of_categ categ in
+      let color = 
+        color_of_categ categ in
 
       let xs = Common2.lines_with_nl_either s in
       xs +> List.iter (function
@@ -212,18 +216,16 @@ let glyphs_of_file ~context ~font_size ~font_size_real file
         incr line;
       )
     );
-    arr.(!line) <- List.rev !acc;
+    if !acc <> []
+    then arr.(!line) <- List.rev !acc;
     Some arr
-  end else
-    (match FT.file_type_of_file file with
-    | FT.PL _ | FT.Text _ ->      
-      let xs = 
-       Common.cat file 
-       +> List.map (fun str -> [{ M. str; font_size; color = "black" }])
-      in
-      Some (Array.of_list xs)
-    | _ -> None
-    )
+
+  | FT.PL _ | FT.Text _ ->      
+    (""::Common.cat file)
+    +> List.map (fun str -> [{ M. str; font_size; color = "black" }])
+    +> Array.of_list
+    +> (fun x -> Some x)
+  | _ -> None
 
 (*****************************************************************************)
 (* Columns *)
@@ -329,7 +331,6 @@ let draw_content2 ~cr ~layout ~context tr =
     try Hashtbl.find context.layers_microlevel file
     with Not_found -> Hashtbl.create 0
   in
-
   (* todo: make sgrep_query a form of layer *)
   let matching_grep_lines = 
     try Hashtbl.find_all context.grep_query file
@@ -339,130 +340,67 @@ let draw_content2 ~cr ~layout ~context tr =
     Hashtbl.add hmatching_lines line "purple"
   );
 
-  let line = ref 1 in
-
-  (* ugly *)
-  text_with_user_pos := [];
-
-  (* coupling: with parsing2.ml *)
-  (if use_fancy_highlighting file then begin
+  let glyphs_opt = glyphs_of_file ~context ~font_size ~font_size_real file in
+  glyphs_opt +> Common.do_option (fun glyphs ->
 
     let column = ref 0 in
     let line_in_column = ref 1 in
 
-    let x, y = 
-      line_in_column_to_pos 
-        { column = float_of_int !column; 
-          line_in_column = float_of_int !line_in_column
-        } r layout in
-
-    Cairo.move_to cr x y;
-
-    let model = Async.async_get context.model in
-    let entities = model.Model2.hentities in
-
-    let tokens_with_categ = Parsing.tokens_with_categ_of_file file entities in
-
-    tokens_with_categ +> List.iter (fun (s, categ, filepos) ->
-
-      let final_font_size = 
-        final_font_size_of_categ ~font_size ~font_size_real categ in
-      Cairo.set_font_size cr final_font_size;
-
-      let color = color_of_categ categ in
-      let alpha = 1. in
-      (* old:
-       *   if CairoH.is_old_cairo () then
-       *     match () with
-       *     | _ when final_font_size_real < 1. -> 0.2
-       *     | _ when final_font_size_real < 3. -> 0.4
-       *     | _ when final_font_size_real < 5. -> 0.9
-       *         
-       *     | _ when final_font_size_real < 8. 
-       *           -> 1. (* TODO - alpha_adjust, do that only when not in
-       *                    fully zoomed mode *)
-       *     | _ -> 1.
-       *   else 1.
-       *)
-      (let (r,g,b) = Color.rgbf_of_string color in
-       Cairo.set_source_rgba cr r g b alpha;
-      );
-
-      let xs = Common2.lines_with_nl_either s in
+    for line = 1 to Array.length glyphs -.. 1 do
+    
+      let x, y = 
+        line_in_column_to_pos 
+          { column = float_of_int !column; 
+            line_in_column = float_of_int !line_in_column
+          } r layout 
+      in
+      Cairo.move_to cr x y;
       
-      xs +> List.iter (function
-      | Common2.Left s -> 
-        let pt = Cairo.get_current_point cr in
-        Common.push2 (s, filepos, pt) text_with_user_pos;
+      glyphs.(line) +> List.iter (fun glyph ->
+        Cairo.set_font_size cr glyph.M.font_size;
 
-        CairoH.show_text cr s
-      | Common2.Right () ->
-        
-        incr line_in_column;
-        incr line;
-
-        if !line_in_column > int_of_float layout.nblines_per_column
-        then begin 
-          incr column;
-          line_in_column := 1;
-        end;
-
-        let x, y = 
-          line_in_column_to_pos 
-            { column = float_of_int !column; 
-              line_in_column = float_of_int !line_in_column
-            } r layout in
-
-          (* must be done before the move_to below ! *)
-        (match Common2.hfind_option !line hmatching_lines with
-        | None -> ()
-        | Some color ->
-          CairoH.fill_rectangle ~cr 
-            ~alpha:0.25
-            ~color
-            ~x 
-            ~y:(y - layout.height_per_line) 
-            ~w:layout.width_per_column 
-            ~h:(layout.height_per_line * 3.)
-            ()
-        );
-        Cairo.move_to cr x y;
+        let (r,g,b) = Color.rgbf_of_string glyph.color in
+        let alpha = 1. in
+        (* old:
+         *   if CairoH.is_old_cairo () then
+         *     match () with
+         *     | _ when final_font_size_real < 1. -> 0.2
+         *     | _ when final_font_size_real < 3. -> 0.4
+         *     | _ when final_font_size_real < 5. -> 0.9
+         *         
+         *     | _ when final_font_size_real < 8. 
+         *           -> 1. (* TODO - alpha_adjust, do that only when not in
+         *                    fully zoomed mode *)
+         *     | _ -> 1.
+         *   else 1.
+         *)
+        Cairo.set_source_rgba cr r g b alpha;
+        CairoH.show_text cr glyph.M.str;
       );
-    )
-  end else begin
-    match FT.file_type_of_file file with
-    | FT.PL _ | FT.Text _ ->      
-    (* This was causing some "out_of_memory" cairo error on linux. Not
-     * sure why.
-     *)
-
-      Cairo.set_font_size cr font_size ;
-      Cairo.set_source_rgba cr 0.0 0.0 0.0 0.9;
       
-      let xs = Common.cat file in
-      let xxs = Common2.pack_safe (int_of_float layout.nblines_per_column) xs in
+      incr line_in_column;
+      if !line_in_column > int_of_float layout.nblines_per_column
+      then begin 
+        incr column;
+        line_in_column := 1;
+      end;
 
-    (* I start at 0 for the column because the x displacement
-     * is null at the beginning, but at 1 for the line because
-     * the y displacement must be more than 0 at the
-     * beginning
-     *)
-      Common.index_list_0 xxs +> List.iter (fun (xs, column) ->
-        Common.index_list_1 xs +> List.iter (fun (s, line_in_column) ->
-          let x, y = 
-            line_in_column_to_pos 
-              { column = float_of_int column; 
-                line_in_column = float_of_int line_in_column
-              } r layout in
-
-          Cairo.move_to cr x y;
-          CairoH.show_text cr s;
-        );
+      (* still? must be done before the move_to below ! *)
+      (match Common2.hfind_option line hmatching_lines with
+      | None -> ()
+      | Some color ->
+        CairoH.fill_rectangle ~cr 
+          ~alpha:0.25
+          ~color
+          ~x 
+          ~y:(y - layout.height_per_line) 
+          ~w:layout.width_per_column 
+          ~h:(layout.height_per_line * 3.)
+          ()
       );
-      ()
-    | _ ->
-      ()
-  end);
+    done
+  );
+
   { line_to_rectangle = 
       (fun line -> line_to_rectangle line r layout);
     pos_to_line = 
