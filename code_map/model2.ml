@@ -397,7 +397,26 @@ let uses_and_users_of_node node dw =
     Graph_code.pred node Graph_code.Use g)
 
 
-let lines_where_used node startl microlevel =
-  []
+let lines_where_used_node node startl microlevel =
+  let (fullstr, kind) = node in
+  let xs = Common.split "\\." fullstr in
+  let s = Common2.list_last xs in
+  
+  match microlevel.content with
+  | None -> []
+  | Some glypys ->
+    
+    let res = ref [] in
+    for line = startl to Array.length glypys - 1 do
+      let xs = glypys.(line) in
+      if xs +> List.exists (fun glyph ->
+        match kind, glyph.categ with
+        (* todo *)
+        | _ ->
+            glyph.str =$= s
+      )
+      then Common.push2 line res
+    done;
+    !res
 
 (*e: model2.ml *)

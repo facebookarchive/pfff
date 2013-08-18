@@ -164,7 +164,7 @@ let draw_uses_users_entities ~dw n =
      let rectangle = microlevel.line_to_rectangle line in
      CairoH.draw_rectangle_figure ~cr:cr_overlay ~color:"red" rectangle;
      
-     let lines_used = M.lines_where_used n line microlevel in
+     let lines_used = M.lines_where_used_node n line microlevel in
      lines_used +> List.iter (fun line ->
        let rectangle = microlevel.line_to_rectangle line in
        CairoH.draw_rectangle_figure ~cr:cr_overlay ~color:"purple" rectangle;
