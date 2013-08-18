@@ -202,7 +202,7 @@ let glyphs_of_file ~context ~font_size ~font_size_real file
       let xs = Common2.lines_with_nl_either s in
       xs +> List.iter (function
       | Common2.Left str ->
-        Common.push2 { M. str; font_size = final_font_size; color } acc;
+        Common.push2 { M. str; font_size = final_font_size; color; categ } acc;
       | Common2.Right () ->
         arr.(!line) <- List.rev !acc;
         acc := [];
@@ -215,7 +215,7 @@ let glyphs_of_file ~context ~font_size ~font_size_real file
 
   | FT.PL _ | FT.Text _ ->      
     (""::Common.cat file)
-    +> List.map (fun str -> [{ M. str; font_size; color = "black" }])
+    +> List.map (fun str -> [{ M.str; font_size; color = "black"; categ=None }])
     +> Array.of_list
     +> (fun x -> Some x)
   | _ -> None

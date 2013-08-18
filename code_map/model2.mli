@@ -25,19 +25,36 @@ type model = {
  }
 (*e: type model *)
 
+type macrolevel = Treemap.treemap_rendering
+
+type microlevel = {
+  pos_to_line: Cairo.point -> int;
+  line_to_rectangle: int -> Figures.rectangle;
+    (* the array starts at 1 *)
+  content: (glyph list) array option;
+}
+  and glyph = {
+  str: string;
+  categ: Highlight_code.category option;
+  font_size: float;
+  color: Simple_color.emacs_color;
+}
+
 (*s: type drawing *)
 (* All the 'float' below are to be intepreted as user coordinates except when
  * explicitely mentioned. All the 'int' are usually device coordinates.
  *)
 type drawing = {
 
+  (* computed lazily *)
+  dw_model: model Async.t;
+  (* to compute zoomed treemap when double click *)
+  treemap_func: Common.path list -> Treemap.treemap_rendering;
+
   (* In user coordinates from 0 to T.xy_ratio and 1 for respectivey x and y.
    * Assumes the treemap contains absolute paths.
   *)
   treemap: Treemap.treemap_rendering;
-  (* coupling: = List.length treemap *)
-  nb_rects: int; 
-
   (* when we render content at the microlevel, we then need to know to which
    * line corresponds a position and vice versa.
    *)
@@ -46,15 +63,10 @@ type drawing = {
   (* generated from dw.treemap, contains readable path relative to model.root *)
   readable_file_to_rect: 
     (Common.filename, Treemap.treemap_rectangle) Hashtbl.t;
-
-  (* to compute zoomed treemap when double click *)
-  treemap_func: Common.path list -> Treemap.treemap_rendering;
-
+  (* coupling: = List.length treemap *)
+  nb_rects: int; 
   (* This is to display readable paths. When fully zoomed it's a filename *)
   current_root: Common.path;
-
-  (* computed lazily *)
-  dw_model: model Async.t;
 
   mutable layers: Layer_code.layers_with_index;
 
@@ -107,17 +119,6 @@ type drawing = {
      mutable draw_searched_rectangles: bool;
    }
   (*e: type settings *)
-  and microlevel = {
-    pos_to_line: Cairo.point -> int;
-    line_to_rectangle: int -> Figures.rectangle;
-    (* the array starts at 1 *)
-    content: (glyph list) array option;
-  }
-   and glyph = {
-     str: string;
-     font_size: float;
-     color: Simple_color.emacs_color;
-   }
 (*e: type drawing *)
 
 (*s: type context *)
@@ -162,8 +163,7 @@ val find_rectangle_at_user_point :
   (Treemap.treemap_rectangle * (* most precise *)
    Treemap.treemap_rectangle list * (* englobbing ones *)
    Treemap.treemap_rectangle (* top one *)
-  )
-  option
+  ) option
 (*e: find_rectangle_at_user_point sig *)
 
 val find_line_in_rectangle_at_user_point:
@@ -176,6 +176,8 @@ val find_entity_at_line:
   int (* line *) -> Treemap.treemap_rectangle -> drawing -> 
   Graph_code.node option
 
+
+(* graph code integration *)
 
 (* macrolevel uses and users *)
 val uses_and_users_readable_files_of_file:

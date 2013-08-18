@@ -58,19 +58,36 @@ type model = {
 (* The drawing model *)
 (*****************************************************************************)
 
+type macrolevel = Treemap.treemap_rendering
+
+type microlevel = {
+  pos_to_line: Cairo.point -> int;
+  line_to_rectangle: int -> Figures.rectangle;
+    (* the array starts at 1 *)
+  content: (glyph list) array option;
+}
+  and glyph = {
+  str: string;
+  categ: Highlight_code.category option;
+  font_size: float;
+  color: Simple_color.emacs_color;
+}
+
 (*s: type drawing *)
 (* All the 'float' below are to be intepreted as user coordinates except when
  * explicitely mentioned. All the 'int' are usually device coordinates.
  *)
 type drawing = {
 
+  (* computed lazily, semantic information about the code *)
+  dw_model: model Async.t;
+  (* to compute a new treemap based on user's action *)
+  treemap_func: Common.path list -> Treemap.treemap_rendering;
+
   (* Macrolevel. In user coordinates from 0 to T.xy_ratio for 'x' and 0 to 1
    * for 'y'. Assumes the treemap contains absolute paths (tr.tr_label).
    *)
   treemap: Treemap.treemap_rendering;
-  (* coupling: = List.length treemap *)
-  nb_rects: int; 
-
   (* Microlevel. When we render content at the microlevel, we then need to
    * know to which line corresponds a position and vice versa.
    *)
@@ -79,15 +96,10 @@ type drawing = {
   (* generated from dw.treemap, contains readable path relative to model.root *)
   readable_file_to_rect: 
     (Common.filename, Treemap.treemap_rectangle) Hashtbl.t;
-
-  (* to compute zoomed treemap when double click *)
-  treemap_func: Common.path list -> Treemap.treemap_rendering;
-
+  (* coupling: = List.length treemap *)
+  nb_rects: int; 
   (* This is to display readable paths. When fully zoomed it's a filename *)
   current_root: Common.path;
-
-  (* computed lazily *)
-  dw_model: model Async.t;
 
   mutable layers: Layer_code.layers_with_index;
 
@@ -140,17 +152,6 @@ type drawing = {
      mutable draw_searched_rectangles: bool;
    }
   (*e: type settings *)
-  and microlevel = {
-    pos_to_line: Cairo.point -> int;
-    line_to_rectangle: int -> Figures.rectangle;
-    (* the array starts at 1 *)
-    content: (glyph list) array option;
-  }
-   and glyph = {
-     str: string;
-     font_size: float;
-     color: Simple_color.emacs_color;
-   }
 (*e: type drawing *)
 
 (*s: new_pixmap() *)
@@ -263,7 +264,7 @@ let context_of_drawing dw = {
 }
 
 (*****************************************************************************)
-(* Point -> treemap info *)
+(* Point -> (rectangle, line, entity) *)
 (*****************************************************************************)
 
 (*s: find_rectangle_at_user_point() *)
@@ -324,6 +325,20 @@ let find_line_in_rectangle_at_user_point dw user_pt r =
 (* Graph code integration *)
 (*****************************************************************************)
 
+let find_entity_at_line line r dw =
+  let model = Async.async_get dw.dw_model in
+  let file = r.T.tr_label in
+  let readable = Common.filename_without_leading_path model.root file in
+  try 
+    let xs = Hashtbl.find model.hentities_of_file readable in
+    xs +> List.rev +> Common.find_some_opt (fun (line2, n) ->
+      if line >= line2 && abs (line - line2) <= 4
+      then Some n 
+      else None
+    )
+  with Not_found -> None
+
+
 let uses_and_users_readable_files_of_file file dw =
   let model = Async.async_get dw.dw_model in
   let readable = Common.filename_without_leading_path model.root file in
@@ -357,19 +372,6 @@ let uses_and_users_rect_of_file file dw =
     Common2.optionise (fun () ->Hashtbl.find dw.readable_file_to_rect file)
   )
 
-let find_entity_at_line line r dw =
-  let model = Async.async_get dw.dw_model in
-  let file = r.T.tr_label in
-  let readable = Common.filename_without_leading_path model.root file in
-
-  try 
-    let xs = Hashtbl.find model.hentities_of_file readable in
-    xs +> List.rev +> Common.find_some_opt (fun (line2, n) ->
-      if line >= line2 && abs (line - line2) <= 4
-      then Some n 
-      else None
-    )
-  with Not_found -> None
 
 let uses_or_users_of_node node dw fsucc =
   let model = Async.async_get dw.dw_model in
@@ -397,5 +399,8 @@ let uses_and_users_of_node node dw =
     Graph_code.pred node Graph_code.Use g)
 
 
+let lines_users_of_node node dw =
+  let _model = Async.async_get dw.dw_model in
+  raise Todo
 
 (*e: model2.ml *)
