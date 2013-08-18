@@ -2,19 +2,18 @@
 
 open Figures
 
+type ('dir, 'file) tree = 
+  ('dir, 'file) Common2.tree
+
 (*s: type treemap *)
 type ('dir, 'file) treemap = 
- (treemap_rect * 'dir, treemap_rect * 'file) Common2.tree
-    and treemap_rect = { 
+ (treemap_data * 'dir, treemap_data * 'file) tree
+    and treemap_data = { 
       size : int; 
       color : Simple_color.color; 
       label: string;
     }
 (*e: type treemap *)
-
-val xy_ratio : float
-
-val rect_ortho: rectangle
 
 type treemap_rendering = treemap_rectangle list
  and treemap_rectangle = {
@@ -38,6 +37,10 @@ type screen_dim = {
   w_legend: int;
 }
 (*e: type screen_dim *)
+
+val xy_ratio : float
+
+val rect_ortho: rectangle
 
 (*s: type algorithm *)
 type algorithm = 
@@ -66,7 +69,7 @@ val layoutf_of_algo: algorithm -> ('a, 'b) layout_func
 
 (*e: signature algos *)
 
-val render_treemap_algo: 
+val render_treemap: 
   ?algo:algorithm -> 
   ?big_borders:bool ->
   ('dir, 'file) treemap -> treemap_rendering
@@ -81,7 +84,7 @@ val treemap_of_tree :
   color_of_leaf:('file -> Simple_color.color) ->
   ?label_of_file:('file -> string) ->
   ?label_of_dir:('dir -> string) ->
-  ('dir, 'file) Common2.tree ->
+  ('dir, 'file) tree ->
   ('dir, 'file) treemap
 (*e: signature treemap_of_tree *)
 
@@ -100,7 +103,7 @@ val tree_of_dir:
   ?sort:directory_sort ->
   file_hook:(Common.filename -> 'a) -> 
   Common.dirname -> 
-  (Common.dirname, Common.filename * 'a) Common2.tree
+  (Common.dirname, Common.filename * 'a) tree
 (*e: signature tree_of_dir *)
 
 val tree_of_dir_or_file:
@@ -109,7 +112,7 @@ val tree_of_dir_or_file:
   ?sort:directory_sort ->
   file_hook:(Common.filename -> 'a) -> 
   Common2.path -> 
-  (Common.dirname, Common.filename * 'a) Common2.tree
+  (Common.dirname, Common.filename * 'a) tree
 
 val tree_of_dirs_or_files:
   ?filter_file:(Common.filename -> bool) ->
@@ -117,11 +120,11 @@ val tree_of_dirs_or_files:
   ?sort:directory_sort ->
   file_hook:(Common.filename -> 'a) -> 
   Common2.path list -> 
-  (Common.dirname, Common.filename * 'a) Common2.tree
+  (Common.dirname, Common.filename * 'a) tree
 
 val remove_singleton_subdirs:
-  (Common.dirname, Common.filename * 'a) Common2.tree ->
-  (Common.dirname, Common.filename * 'a) Common2.tree
+  (Common.dirname, Common.filename * 'a) tree ->
+  (Common.dirname, Common.filename * 'a) tree
 
 
 (* internal functions *)
@@ -142,8 +145,8 @@ val algo_of_s: string -> algorithm
 val treemap_rectangles_ex:
    ((float * float) list * (float * float) list * (float * float * float)) list
 
-val tree_ex_shneiderman_1991 : (unit, int) Common2.tree
-val tree_ex_wijk_1999: (unit, int) Common2.tree
+val tree_ex_shneiderman_1991 : (unit, int) tree
+val tree_ex_wijk_1999: (unit, int) tree
 val treemap_ex_ordered_2001: (unit, unit) treemap
 (*e: signature tree and treemap examples *)
 

@@ -20,15 +20,14 @@ open Common2.ArithFloatInfix
 
 open Figures (* for the fields *)
 module F = Figures
+module T = Treemap
 module Color = Simple_color
+module CairoH = Cairo_helpers
 
 open Model2 (* for the fields *)
 
 module Flag = Flag_visual
 module Style = Style2
-
-module T = Treemap
-module CairoH = Cairo_helpers
 
 module FT = File_type
 module Parsing = Parsing2

@@ -31,10 +31,12 @@ module Color = Simple_color
 (* Types *)
 (*****************************************************************************)
 
+type ('dir, 'file) tree = ('dir, 'file) Common2.tree
+
 (*s: type treemap *)
 type ('dir, 'file) treemap = 
- (treemap_rect * 'dir, treemap_rect * 'file) Common2.tree
-    and treemap_rect = { 
+ (treemap_data * 'dir, treemap_data * 'file) Common2.tree
+    and treemap_data = { 
       size : int; 
       color : Simple_color.color; 
       label: string;
@@ -103,7 +105,9 @@ let xy_ratio = 1.6
 let rect_ortho = 
   { p = {x = 0.0; y = 0.0; }; q = { x = xy_ratio; y = 1.0} }
 
-(* the dimentions are in a  [0.0-1.0] range *)
+(* the dimentions are in a  [0.0-1.0] range
+ * opti? have a quad tree instead of a list, can improve search time
+ *)
 type treemap_rendering = treemap_rectangle list
  and treemap_rectangle = {
    tr_rect: rectangle;
@@ -871,7 +875,7 @@ let render_treemap_algo2 = fun ?(algo=Classic) ?(big_borders=false) treemap ->
   
   List.rev !treemap_rects
 
-let render_treemap_algo ?algo ?big_borders x = 
+let render_treemap ?algo ?big_borders x = 
   Common.profile_code "Treemap.render_treemap" (fun () -> 
     render_treemap_algo2 ?algo ?big_borders x)
 
