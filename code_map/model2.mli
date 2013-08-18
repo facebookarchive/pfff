@@ -195,6 +195,7 @@ val uses_and_users_readable_files_of_node:
 
 val uses_and_users_of_node:
   Graph_code.node -> drawing -> 
-  Figures.rectangle list * Figures.rectangle list
+  (Graph_code.node * int * microlevel) list * 
+  (Graph_code.node * int * microlevel) list
 
 (*e: model2.mli *)

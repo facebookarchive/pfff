@@ -375,7 +375,7 @@ let uses_and_users_rect_of_file file dw =
 
 let uses_or_users_of_node node dw fsucc =
   let model = Async.async_get dw.dw_model in
-  (match model.g with
+  match model.g with
   | None -> []
   | Some g ->
     let succ = fsucc node g in
@@ -386,11 +386,9 @@ let uses_or_users_of_node node dw fsucc =
         let xs = Hashtbl.find model.hentities_of_file file in
         let (line, _n2) = xs +> List.find (fun (_, n2) -> n2 =*= n) in
         let microlevel = Hashtbl.find dw.microlevel rect in
-        let rect = microlevel.line_to_rectangle line in
-        Some rect
+        Some (n, line, microlevel)
       with Not_found -> None
     )
-  )
 
 let uses_and_users_of_node node dw =
   uses_or_users_of_node node dw (fun node g ->
