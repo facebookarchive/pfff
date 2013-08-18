@@ -1,6 +1,7 @@
 (*s: treemap.mli *)
-
 open Figures
+
+(* tree -> treemap -> treemap_rendering *)
 
 type ('dir, 'file) tree = 
   ('dir, 'file) Common2.tree
@@ -23,6 +24,8 @@ type treemap_rendering = treemap_rectangle list
    tr_depth: int;
    tr_is_node: bool;
  }
+
+
 
 (*s: type screen_dim *)
 type screen_dim = {
