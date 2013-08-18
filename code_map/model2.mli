@@ -198,4 +198,7 @@ val uses_and_users_of_node:
   (Graph_code.node * int * microlevel) list * 
   (Graph_code.node * int * microlevel) list
 
+val lines_where_used:
+  Graph_code.node -> int -> microlevel -> int list
+
 (*e: model2.mli *)

@@ -397,8 +397,7 @@ let uses_and_users_of_node node dw =
     Graph_code.pred node Graph_code.Use g)
 
 
-let lines_users_of_node node dw =
-  let _model = Async.async_get dw.dw_model in
-  raise Todo
+let lines_where_used node startl microlevel =
+  []
 
 (*e: model2.ml *)

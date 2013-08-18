@@ -156,13 +156,19 @@ let draw_uses_users_files ~dw r =
 let draw_uses_users_entities ~dw n =
  with_overlay dw (fun cr_overlay ->
    let uses, users = uses_and_users_of_node n dw  in
-   uses +> List.iter (fun (_n, line, microlevel) ->
+   uses +> List.iter (fun (_n2, line, microlevel) ->
      let rectangle = microlevel.line_to_rectangle line in
      CairoH.draw_rectangle_figure ~cr:cr_overlay ~color:"green" rectangle;
    );
-   users +> List.iter (fun (_n, line, microlevel) ->
+   users +> List.iter (fun (_n2, line, microlevel) ->
      let rectangle = microlevel.line_to_rectangle line in
      CairoH.draw_rectangle_figure ~cr:cr_overlay ~color:"red" rectangle;
+     
+     let lines_used = M.lines_where_used n line microlevel in
+     lines_used +> List.iter (fun line ->
+       let rectangle = microlevel.line_to_rectangle line in
+       CairoH.draw_rectangle_figure ~cr:cr_overlay ~color:"purple" rectangle;
+     );
    );
  )
 
