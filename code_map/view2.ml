@@ -485,15 +485,12 @@ let mk_gui ~screen_size ~legend test_mode (root, model, dw, dbfile_opt) =
             end;
             let cr_overlay = Cairo.create !dw.overlay in
             CairoH.clear cr_overlay;
-            View_overlays.draw_searched_rectangles ~cr_overlay ~dw:!dw;
+            View_overlays.draw_searched_rectangles ~dw:!dw;
             !Controller._refresh_da();
           end
         )
         idx
-        ;
-
       in
-
 
       tb#insert_widget (G.with_label "Search:" entry#coerce);
 

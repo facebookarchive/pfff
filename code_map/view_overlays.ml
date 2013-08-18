@@ -56,7 +56,12 @@ let readable_txt_for_label txt current_root =
     let file = Filename.basename readable_txt in
     spf "%s/.../%s" (List.hd dirs) file
   else readable_txt
-  
+
+let with_overlay dw f =
+  let cr_overlay = Cairo.create dw.overlay in
+  View_mainmap.zoom_pan_scale_map cr_overlay dw;
+  f cr_overlay
+
 (*****************************************************************************)
 (* The overlays *)
 (*****************************************************************************)
@@ -105,13 +110,13 @@ let draw_label_overlay ~cr_overlay ~dw ~x ~y txt =
 (* ---------------------------------------------------------------------- *)
 
 (*s: draw_rectangle_overlay *)
-let draw_rectangle_overlay ~cr_overlay ~dw (r, middle, r_englobing) =
-  Cairo.save cr_overlay;
-  View_mainmap.zoom_pan_scale_map cr_overlay dw;
-  CairoH.draw_rectangle_figure ~cr:cr_overlay ~color:"white" r.T.tr_rect;
-
+let draw_englobing_rectangles_overlay ~dw (r, middle, r_englobing) =
+ with_overlay dw (fun cr_overlay ->
+  CairoH.draw_rectangle_figure 
+    ~cr:cr_overlay ~color:"white" r.T.tr_rect;
   CairoH.draw_rectangle_figure
     ~cr:cr_overlay ~color:"blue" r_englobing.T.tr_rect;
+
   Draw_labels.draw_treemap_rectangle_label_maybe 
     ~cr:cr_overlay ~color:(Some "red") ~zoom:dw.zoom r_englobing;
 
@@ -127,42 +132,47 @@ let draw_rectangle_overlay ~cr_overlay ~dw (r, middle, r_englobing) =
     Draw_labels.draw_treemap_rectangle_label_maybe 
       ~cr:cr_overlay ~color:(Some color) ~zoom:dw.zoom r;
   );
-
-  let file = r.T.tr_label in
-  let uses_rect, users_rect = M.uses_and_users_rect_of_file file dw in
-  uses_rect +> List.iter (fun r ->
-    CairoH.draw_rectangle_figure ~cr:cr_overlay ~color:"green" r.T.tr_rect;
-  );
-  users_rect +> List.iter (fun r ->
-    CairoH.draw_rectangle_figure ~cr:cr_overlay ~color:"red" r.T.tr_rect;
-  );
-
-  Cairo.restore cr_overlay;
-  ()
+ )
 (*e: draw_rectangle_overlay *)
 
 (* ---------------------------------------------------------------------- *)
-(* The rectangles of referenced entities *)
+(* Uses and users macrolevel *)
 (* ---------------------------------------------------------------------- *)
-let draw_rectangle_entity ~cr_overlay ~dw ~color rectangle =
-  Cairo.save cr_overlay;
-  View_mainmap.zoom_pan_scale_map cr_overlay dw;
-  CairoH.draw_rectangle_figure ~cr:cr_overlay ~color rectangle;
-  Cairo.restore cr_overlay;
-  ()
+let draw_uses_users_files ~dw r =
+ with_overlay dw (fun cr_overlay ->
+   let file = r.T.tr_label in
+   let uses_rect, users_rect = M.uses_and_users_rect_of_file file dw in
+   uses_rect +> List.iter (fun r ->
+     CairoH.draw_rectangle_figure ~cr:cr_overlay ~color:"green" r.T.tr_rect;
+   );
+   users_rect +> List.iter (fun r ->
+     CairoH.draw_rectangle_figure ~cr:cr_overlay ~color:"red" r.T.tr_rect;
+   )
+ )
+
+(* ---------------------------------------------------------------------- *)
+(* Uses and users microlevel *)
+(* ---------------------------------------------------------------------- *)
+let draw_uses_users_entities ~dw n =
+ with_overlay dw (fun cr_overlay ->
+   let rectangle_uses, rectangle_users = uses_and_users_of_node n dw  in
+   rectangle_uses +> List.iter (fun rectangle ->
+     CairoH.draw_rectangle_figure ~cr:cr_overlay ~color:"green" rectangle;
+   );
+   rectangle_users +> List.iter (fun rectangle ->
+     CairoH.draw_rectangle_figure ~cr:cr_overlay ~color:"red" rectangle;
+   );
+ )
 
 (* ---------------------------------------------------------------------- *)
 (* The selected rectangles *)
 (* ---------------------------------------------------------------------- *)
 
 (*s: draw_searched_rectangles *)
-let draw_searched_rectangles ~cr_overlay ~dw =
-  Cairo.save cr_overlay;
-  View_mainmap.zoom_pan_scale_map cr_overlay dw;
-
+let draw_searched_rectangles ~dw =
+ with_overlay dw (fun cr_overlay ->
   dw.current_searched_rectangles +> List.iter (fun r ->
-    CairoH.draw_rectangle_figure ~cr:cr_overlay 
-      ~color:"yellow" r.T.tr_rect
+    CairoH.draw_rectangle_figure ~cr:cr_overlay ~color:"yellow" r.T.tr_rect
   );
   (* 
    * would also like to draw not matching rectangles
@@ -176,8 +186,7 @@ let draw_searched_rectangles ~cr_overlay ~dw =
    * ~color ~alpha:0.3
    * r
    *)
-  Cairo.restore cr_overlay;
-  ()
+ )
 (*e: draw_searched_rectangles *)
 
 (* ---------------------------------------------------------------------- *)
@@ -307,12 +316,13 @@ let motion_refresher ev dw () =
     let line_opt, entity_opt =
       if Hashtbl.mem dw.microlevel r
       then
-        let translate = Hashtbl.find dw.microlevel r in
-        let line = translate.pos_to_line user in
+        let microlevel = Hashtbl.find dw.microlevel r in
+        let line = microlevel.pos_to_line user in
         let entity_opt = M.find_entity_at_line line r dw in
         Some line, entity_opt
       else None, None
     in
+
     let statusbar_txt = 
       r.T.tr_label ^
       (match line_opt with None -> "" | Some i -> spf ":%d" i) ^
@@ -327,25 +337,17 @@ let motion_refresher ev dw () =
       | None -> readable_txt_for_label r.T.tr_label dw.current_root
       | Some n -> Graph_code.string_of_node n
     in
-    
     draw_label_overlay ~cr_overlay ~dw ~x ~y label_txt;
-    (* draws also the uses and users of the file *)
-    draw_rectangle_overlay ~cr_overlay ~dw (r, middle, r_englobing);
 
-    (match entity_opt with
-    | None -> ()
-    | Some n ->
-      let rectangle_uses, rectangle_users = uses_and_users_of_node n dw  in
-      rectangle_uses +> List.iter (fun rectangle ->
-        draw_rectangle_entity ~cr_overlay ~dw ~color:"green" rectangle;
-      );
-      rectangle_users +> List.iter (fun rectangle ->
-        draw_rectangle_entity ~cr_overlay ~dw ~color:"red" rectangle;
-      );
+    draw_englobing_rectangles_overlay ~dw (r, middle, r_englobing);
+
+    draw_uses_users_files ~dw r;
+    entity_opt +> Common.do_option (fun n->
+      draw_uses_users_entities ~dw n;
     );
-    
+     
     if dw.dw_settings.draw_searched_rectangles;
-    then draw_searched_rectangles ~cr_overlay ~dw;
+    then draw_searched_rectangles ~dw;
     
     Controller.current_r := Some r;
     
@@ -365,8 +367,7 @@ let motion_notify (da, da2) dw ev =
 
   let dw = !dw in
 
-  let x = GdkEvent.Motion.x ev in
-  let y = GdkEvent.Motion.y ev in
+  let x, y = GdkEvent.Motion.x ev, GdkEvent.Motion.y ev in
   pr2 (spf "motion: %f, %f" x y);
 
   if dw.in_dragging then begin
