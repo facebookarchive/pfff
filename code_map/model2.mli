@@ -110,7 +110,13 @@ type drawing = {
   and microlevel = {
     pos_to_line: Cairo.point -> int;
     line_to_rectangle: int -> Figures.rectangle;
+    (* the array starts at 1 *)
+    content: (glyph list) array;
   }
+   and glyph = {
+     str: string;
+     font_size: float;
+   }
 (*e: type drawing *)
 
 (*s: type context *)

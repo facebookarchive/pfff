@@ -34,12 +34,12 @@ type model = {
 
   db: Database_code.database option;
   (*s: model fields hook *)
-    (* fast accessors *)
-    hentities : (string, Database_code.entity) Hashtbl.t;
+  (* fast accessors *)
+  hentities : (string, Database_code.entity) Hashtbl.t;
   (*x: model fields hook *)
-    hfiles_entities : (Common.filename, Database_code.entity list) Hashtbl.t;
+  hfiles_entities : (Common.filename, Database_code.entity list) Hashtbl.t;
   (*x: model fields hook *)
-    big_grep_idx: Big_grep.index;
+  big_grep_idx: Big_grep.index;
   (*e: model fields hook *)
 
   (* for microlevel use/def information *)
@@ -143,7 +143,13 @@ type drawing = {
   and microlevel = {
     pos_to_line: Cairo.point -> int;
     line_to_rectangle: int -> Figures.rectangle;
+    (* the array starts at 1 *)
+    content: (glyph list) array;
   }
+   and glyph = {
+     str: string;
+     font_size: float;
+   }
 (*e: type drawing *)
 
 (*s: new_pixmap() *)
@@ -168,7 +174,7 @@ let init_drawing
   root
  =
 
-  let paths = paths +> List.map Common2.relative_to_absolute in
+  let paths = List.map Common2.relative_to_absolute paths in
   let current_root = Common2.common_prefix_of_files_or_dirs paths in
   let treemap = 
     Common.profile_code "Visual.building the treemap" (fun () -> func paths) in

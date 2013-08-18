@@ -47,6 +47,10 @@ module Parsing = Parsing2
  *  - x,y position relative to the current treemap rectangle
  *  - x,y position on the screen
  * We have many functions below to go from one to the other.
+ * 
+ * note: some types below could be 'int' but it's more convenient to have
+ * everything as a float because arithmetic with OCaml sucks when have
+ * multiple numeric types.
  *)
 
 type line = int
@@ -58,11 +62,9 @@ type line_in_column = {
 
 type pos = float (* x *) * float (* y *)
 
+type point = Cairo.point
+
 (*s: type draw_content_layout *)
-(* note: some types below could be 'int' but it's more convenient to have
- * everything as a float because arithmetic with OCaml sucks when have
- * multiple numeric types.
- *)
 type draw_content_layout = {
   font_size: float;
   split_nb_columns: float; (* int *)
@@ -84,9 +86,8 @@ let text_with_user_pos = ref []
 (* Helpers *)
 (*****************************************************************************)
 
-let is_big_file_with_few_lines ~nblines fullpath = 
-  nblines < 20. && 
-  Common2.filesize_eff fullpath > 4000
+let is_big_file_with_few_lines ~nblines file = 
+  nblines < 20. && Common2.filesize_eff file > 4000
 
 let use_fancy_highlighting file =
   match FT.file_type_of_file file with
@@ -125,26 +126,19 @@ let line_to_line_in_column line layout =
     line - (column * layout.nblines_per_column) in
   { column; line_in_column }
 
-let pos_and_line_from_layout r layout =
-
-  { line_to_rectangle = (fun line ->
-      let lc = line_to_line_in_column line layout in
-      let x, y = line_in_column_to_pos lc r layout in
-      { p = { x; y };
-        q = { x = x + layout.w_per_column; y = y + layout.space_per_line };
-      }
-    );
-    pos_to_line = (fun pt ->
-
-      let x = pt.Cairo.x - r.p.x in
-      let y = pt.Cairo.y - r.p.y in
-
-      let line_in_column = floor (y / layout.space_per_line) in
-      let column = floor (x / layout.w_per_column) in
-
-     (column * layout.nblines_per_column + line_in_column + 1.) +> int_of_float
-    );
+let line_to_rectangle line r layout =
+  let lc = line_to_line_in_column line layout in
+  let x, y = line_in_column_to_pos lc r layout in
+  { p = { x; y };
+    q = { x = x + layout.w_per_column; y = y + layout.space_per_line };
   }
+
+let point_to_line pt r layout =
+  let x = pt.Cairo.x - r.p.x in
+  let y = pt.Cairo.y - r.p.y in
+  let line_in_column = floor (y / layout.space_per_line) in
+  let column = floor (x / layout.w_per_column) in
+  (column * layout.nblines_per_column + line_in_column + 1.) +> int_of_float
 
 (*****************************************************************************)
 (* Anamorphic entities *)
@@ -354,7 +348,7 @@ let draw_content2 ~cr ~layout ~context ~file rect =
   text_with_user_pos := [];
 
   (* coupling: with parsing2.ml *)
-  if use_fancy_highlighting file then begin
+  (if use_fancy_highlighting file then begin
 
     let column = ref 0 in
     let line_in_column = ref 1 in
@@ -450,14 +444,19 @@ let draw_content2 ~cr ~layout ~context ~file rect =
 
           Cairo.move_to cr x y;
           CairoH.show_text cr s;
-
-          incr line;
         );
       );
       ()
     | _ ->
       ()
-  end
+  end);
+  { line_to_rectangle = 
+      (fun line -> line_to_rectangle line r layout);
+    pos_to_line = 
+      (fun pt -> point_to_line pt r layout);
+    content = [||];
+  }
+
 
 
 let draw_content ~cr ~layout ~context ~file rect =
@@ -537,19 +536,15 @@ let draw_treemap_rectangle_content_maybe2 ~cr ~clipping ~context rect  =
         let font_size_real = CairoH.user_to_device_font_size cr font_size in
        (*pr2 (spf "file: %s, font_size_real = %f" file font_size_real);*)
     
-        
-        let pos_and_line = pos_and_line_from_layout r layout in
-        
-        (if font_size_real > !Flag.threshold_draw_content_font_size_real 
+        if font_size_real > !Flag.threshold_draw_content_font_size_real 
             && not (is_big_file_with_few_lines ~nblines file)
             && nblines < !Flag.threshold_draw_content_nblines
-         then draw_content ~cr ~layout ~context ~file rect
-         else 
-            if context.settings.draw_summary 
-           (* draw_summary_content ~cr ~layout ~context ~file  rect *)
-            then raise Todo
-        );
-        Some pos_and_line
+        then Some (draw_content ~cr ~layout ~context ~file rect)
+        else 
+          if context.settings.draw_summary 
+            (* draw_summary_content ~cr ~layout ~context ~file  rect *)
+          then raise Todo
+          else None
       end
       else None
     end
