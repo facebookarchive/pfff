@@ -21,6 +21,10 @@ open Common
 (* Prelude *)
 (*****************************************************************************)
 
+(*****************************************************************************)
+(* Type *)
+(*****************************************************************************)
+
 (*s: type async *)
 type 'a t = {
   m: Mutex.t; 
@@ -29,6 +33,10 @@ type 'a t = {
   }
 (*e: type async *)
 
+(*****************************************************************************)
+(* Functions *)
+(*****************************************************************************)
+
 (*s: async functions *)
 let async_make () = {
   m = Mutex.create (); 
@@ -36,7 +44,7 @@ let async_make () = {
   v = ref None;
 }
 
-let locked f l =
+let with_lock f l =
   Mutex.lock l;
   try 
     let x = f () in 
@@ -55,10 +63,10 @@ let async_get a =
         go a
     | Some v -> v
   in
-  locked (fun () -> go a) a.m
+  with_lock (fun () -> go a) a.m
 
 let async_set v a = 
-  locked (fun () ->
+  with_lock (fun () ->
     a.v := Some v;
     Condition.signal a.c;
   ) a.m

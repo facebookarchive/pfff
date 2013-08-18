@@ -12,7 +12,7 @@ val async_get: 'a t -> 'a
 val async_make: unit -> 'a t
 val async_set: 'a -> 'a t -> unit
 
-val locked: (unit -> 'a) -> Mutex.t -> 'a
+val with_lock: (unit -> 'a) -> Mutex.t -> 'a
 (*e: async functions sig *)
 
 (*e: async.mli *)
