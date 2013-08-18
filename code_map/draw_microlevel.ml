@@ -276,7 +276,7 @@ let draw_column_bars2 ~cr layout r =
     let font_size_real = CairoH.user_to_device_font_size cr layout.font_size in
     let width = 
       if font_size_real > 5.
-      then  (layout.font_size / 10.)
+      then layout.font_size / 10.
       else layout.font_size
     in
     Cairo.set_line_width cr width;
@@ -296,9 +296,10 @@ let draw_column_bars ~cr layout rect =
 (*****************************************************************************)
 
 (*s: draw_content *)
-let draw_content2 ~cr ~layout ~context ~file rect =
+let draw_content2 ~cr ~layout ~context tr =
 
-  let r = rect.T.tr_rect in
+  let r = tr.T.tr_rect in
+  let file = tr.T.tr_label in
 
   let font_size = layout.font_size in
   let font_size_real = CairoH.user_to_device_font_size cr font_size in
@@ -309,7 +310,7 @@ let draw_content2 ~cr ~layout ~context ~file rect =
     (* erase what was done at the macrolevel *)
     if Hashtbl.length context.layers_microlevel > 0 then begin
       Draw_macrolevel.draw_treemap_rectangle ~cr ~color:(Some "white") 
-        ~alpha:1.0 rect;
+        ~alpha:1.0 tr;
     end;
 
     let alpha = 
@@ -320,14 +321,13 @@ let draw_content2 ~cr ~layout ~context ~file rect =
       | _ -> 0.3
     in
     (* unset when used when debugging the layering display *)
-    if Hashtbl.length context.layers_microlevel = 0 || true
-    then begin
-      Draw_macrolevel.draw_treemap_rectangle ~cr ~color:(Some "DarkSlateGray") 
-        ~alpha rect;
-      (* draw a thin rectangle with aspect color *)
-      CairoH.draw_rectangle_bis ~cr ~color:(rect.T.tr_color) 
-        ~line_width:(font_size / 2.) rect.T.tr_rect;
-    end
+    (* if Hashtbl.length context.layers_microlevel = 0 *)
+
+    Draw_macrolevel.draw_treemap_rectangle ~cr ~color:(Some "DarkSlateGray") 
+      ~alpha tr;
+    (* draw a thin rectangle with aspect color *)
+    CairoH.draw_rectangle_bis ~cr ~color:(tr.T.tr_color) 
+      ~line_width:(font_size / 2.) tr.T.tr_rect;
   end;
 
   (* highlighting layers (and grep-like queries at one point) *)
@@ -415,8 +415,6 @@ let draw_content2 ~cr ~layout ~context ~file rect =
             ()
         );
         Cairo.move_to cr x y;
-        
-        
       );
     )
   end else begin
@@ -460,23 +458,21 @@ let draw_content2 ~cr ~layout ~context ~file rect =
     content = [||];
   }
 
-
-
-let draw_content ~cr ~layout ~context ~file rect =
+let draw_content ~cr ~layout ~context tr =
   Common.profile_code "View.draw_content" (fun () ->
-    draw_content2 ~cr ~layout ~context ~file rect)
+    draw_content2 ~cr ~layout ~context tr)
 (*e: draw_content *)
 
 
 (*s: draw_treemap_rectangle_content_maybe *)
-let draw_treemap_rectangle_content_maybe2 ~cr ~clipping ~context rect  =
-  let r = rect.T.tr_rect in
+let draw_treemap_rectangle_content_maybe2 ~cr ~clipping ~context tr  =
+  let r = tr.T.tr_rect in
 
   if F.intersection_rectangles r clipping = None
   then (* pr2 ("not drawing: " ^ file) *) None
   else begin
 
-    let file = rect.T.tr_label in
+    let file = tr.T.tr_label in
 
     (* if the file is not textual, or contain weird characters, then
      * it confuses cairo which then can confuse computation done in gtk
@@ -542,10 +538,10 @@ let draw_treemap_rectangle_content_maybe2 ~cr ~clipping ~context rect  =
         if font_size_real > !Flag.threshold_draw_content_font_size_real 
             && not (is_big_file_with_few_lines ~nblines file)
             && nblines < !Flag.threshold_draw_content_nblines
-        then Some (draw_content ~cr ~layout ~context ~file rect)
+        then Some (draw_content ~cr ~layout ~context tr)
         else 
           if context.settings.draw_summary 
-            (* draw_summary_content ~cr ~layout ~context ~file  rect *)
+            (* draw_summary_content ~cr ~layout ~context tr *)
           then raise Todo
           else None
       end
