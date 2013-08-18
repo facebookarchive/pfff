@@ -359,9 +359,12 @@ let draw_content2 ~cr ~layout ~context ~file rect =
     let column = ref 0 in
     let line_in_column = ref 1 in
 
-    let x = r.p.x + (float_of_int !column) * layout.w_per_column in
-    let y = r.p.y + (layout.space_per_line * (float_of_int !line_in_column)) in
-    
+    let x, y = 
+      line_in_column_to_pos 
+        { column = float_of_int !column; 
+          line_in_column = float_of_int !line_in_column
+        } r layout in
+
     Cairo.move_to cr x y;
 
     let model = Async.async_get context.model in
@@ -395,10 +398,11 @@ let draw_content2 ~cr ~layout ~context ~file rect =
           line_in_column := 1;
         end;
 
-        let x = r.p.x + 
-          (float_of_int !column) * layout.w_per_column in
-        let y = r.p.y + 
-          (layout.space_per_line * (float_of_int !line_in_column)) in
+        let x, y = 
+          line_in_column_to_pos 
+            { column = float_of_int !column; 
+              line_in_column = float_of_int !line_in_column
+            } r layout in
 
           (* must be done before the move_to below ! *)
         (match Common2.hfind_option !line hmatching_lines with
@@ -438,12 +442,12 @@ let draw_content2 ~cr ~layout ~context ~file rect =
      *)
       Common.index_list_0 xxs +> List.iter (fun (xs, column) ->
         Common.index_list_1 xs +> List.iter (fun (s, line_in_column) ->
-          
-          let x = r.p.x + 
-            (float_of_int column) * layout.w_per_column in
-          let y = r.p.y + 
-            (layout.space_per_line * (float_of_int line_in_column)) in
-          
+          let x, y = 
+            line_in_column_to_pos 
+              { column = float_of_int column; 
+                line_in_column = float_of_int line_in_column
+              } r layout in
+
           Cairo.move_to cr x y;
           CairoH.show_text cr s;
 
