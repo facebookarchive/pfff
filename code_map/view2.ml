@@ -60,7 +60,7 @@ let pr2, pr2_once = Common2.mk_pr2_wrappers Flag.verbose_visual
  * initialized by including gtkInit.cmo earlier in the linking command.
  *)
 
-(* ugly *)
+(* ugly, todo use model.root instead? *)
 let root_orig () = 
   (Common2.list_last !Controller.dw_stack).M.current_root
 
