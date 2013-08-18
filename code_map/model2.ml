@@ -312,6 +312,14 @@ let find_rectangle_at_user_point a b =
     find_rectangle_at_user_point2 a b)
 (*e: find_rectangle_at_user_point() *)
 
+
+let find_line_in_rectangle_at_user_point user_pt dw r =
+  try 
+    let microlevel = Hashtbl.find dw.microlevel r in
+    let line = microlevel.pos_to_line user_pt in
+    Some line
+  with Not_found -> None
+
 (*****************************************************************************)
 (* Graph code integration *)
 (*****************************************************************************)

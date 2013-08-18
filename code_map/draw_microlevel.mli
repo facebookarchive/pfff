@@ -11,12 +11,6 @@ val draw_treemap_rectangle_content_maybe:
 (*e: draw_treemap_rectangle_content_maybe sig *)
 
 (*s: text_with_user_pos sig *)
-(* ugly: used when middle-clicking on the drawing area to know 
- * how to translate a point into a filepos so that we can open
- * the file at the right position.
- *)
-val text_with_user_pos:
-  (string * Common2.filepos * Cairo.point) Common.stack ref
 (*e: text_with_user_pos sig *)
 
 (*e: draw_microlevel.mli *)

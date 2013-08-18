@@ -163,6 +163,12 @@ val find_rectangle_at_user_point :
   option
 (*e: find_rectangle_at_user_point sig *)
 
+val find_line_in_rectangle_at_user_point:
+  Cairo.point -> 
+  drawing ->
+  Treemap.treemap_rectangle ->
+  int option
+
 val find_entity_at_line:
   int (* line *) -> Treemap.treemap_rectangle -> drawing -> 
   Graph_code.node option

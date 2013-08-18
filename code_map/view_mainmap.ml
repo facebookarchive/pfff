@@ -267,46 +267,6 @@ let key_pressed (da, da2) dw_ref ev =
 (*e: key_pressed *)
 
 (*s: find_filepos_in_rectangle_at_user_point *)
-(* Cannot move this to model.ml because we abuse the drawing function
- * and the Draw.text_with_user_pos 100.
- *)
-let find_filepos_in_rectangle_at_user_point user_pt dw r = 
-  (* ugly, but if use dw.pm#pixmap directly then it has
-   * weird side effects like darking the label
-   *)
-  let sur =
-    Cairo.surface_create_similar (CairoH.surface_of_pixmap dw.pm)
-      Cairo.CONTENT_COLOR_ALPHA dw.width dw.height
-  in
-  let cr = Cairo.create sur in
-           
-  zoom_pan_scale_map cr dw;
-  let user_rect = device_to_user_area dw in
-
-  let context = context_of_drawing dw in
-  let context = { context with M.nb_rects_on_screen = 1 } in
-  
-  (* does side effect on Draw.text_with_user_pos *)
-  let _TODO = Draw_microlevel.draw_treemap_rectangle_content_maybe 
-    ~cr ~clipping:user_rect ~context r in
-  let xs = !Draw_microlevel.text_with_user_pos in
-
-  let scores = xs
-    +> List.map (fun (s, filepos, pt) ->
-      (s, filepos), CairoH.distance_points user_pt pt
-    )
-    +> Common.sort_by_val_lowfirst 
-    +> List.map fst
-  in
-  (match scores with
-  | [] -> 
-      pr2 ("no filepos found");
-      None
-  | (s, filepos)::xs ->
-      pr2 (spf "closest point is: %s at %d:%d"
-              s filepos.Common2.l filepos.Common2.c);
-      Some filepos
-  )
 (*e: find_filepos_in_rectangle_at_user_point *)
             
 
@@ -343,9 +303,9 @@ let button_action da dw_ref ev =
           let file = r.T.tr_label in
           pr2 (spf "opening %s" file);
           let line =
-            match find_filepos_in_rectangle_at_user_point user dw r with
+            match M.find_line_in_rectangle_at_user_point user dw r with
             | None -> 0
-            | Some fpos ->fpos.Common2.l
+            | Some l -> l
           in
           Editor_connection.open_file_in_current_editor ~file ~line;
         );
