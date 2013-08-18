@@ -133,6 +133,7 @@ type context = {
 (*e: type context *)
 val context_of_drawing: drawing -> context
 
+
 (*s: init_drawing sig *)
 val init_drawing :
   ?width:int ->
@@ -152,6 +153,7 @@ val new_pixmap :
   width:int -> height:int -> GDraw.pixmap
 (*e: new_pixmap sig *)
 
+
 (*s: find_rectangle_at_user_point sig *)
 val find_rectangle_at_user_point :
   drawing ->
@@ -164,8 +166,8 @@ val find_rectangle_at_user_point :
 (*e: find_rectangle_at_user_point sig *)
 
 val find_line_in_rectangle_at_user_point:
-  Cairo.point -> 
   drawing ->
+  Cairo.point -> 
   Treemap.treemap_rectangle ->
   int option
 

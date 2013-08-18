@@ -313,7 +313,7 @@ let find_rectangle_at_user_point a b =
 (*e: find_rectangle_at_user_point() *)
 
 
-let find_line_in_rectangle_at_user_point user_pt dw r =
+let find_line_in_rectangle_at_user_point dw user_pt r =
   try 
     let microlevel = Hashtbl.find dw.microlevel r in
     let line = microlevel.pos_to_line user_pt in

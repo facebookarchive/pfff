@@ -303,7 +303,7 @@ let button_action da dw_ref ev =
           let file = r.T.tr_label in
           pr2 (spf "opening %s" file);
           let line =
-            match M.find_line_in_rectangle_at_user_point user dw r with
+            match M.find_line_in_rectangle_at_user_point dw user r with
             | None -> 0
             | Some l -> l
           in
