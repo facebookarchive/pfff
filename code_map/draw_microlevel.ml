@@ -65,11 +65,11 @@ type pos = float (* x *) * float (* y *)
 type point = Cairo.point
 
 (*s: type draw_content_layout *)
-type draw_content_layout = {
+type layout = {
   font_size: float;
   split_nb_columns: float; (* int *)
-  w_per_column:float;
-  space_per_line: float;
+  width_per_column:float;
+  height_per_line: float;
   nblines: float; (* int *)
   nblines_per_column: float; (* int *)
 }
@@ -115,8 +115,8 @@ let use_fancy_highlighting file =
 (*****************************************************************************)
 
 let line_in_column_to_pos lc r layout =
-  let x = r.p.x + (lc.column * layout.w_per_column) in
-  let y = r.p.y + (lc.line_in_column * layout.space_per_line) in
+  let x = r.p.x + (lc.column * layout.width_per_column) in
+  let y = r.p.y + (lc.line_in_column * layout.height_per_line) in
   x, y
 
 let line_to_line_in_column line layout =
@@ -130,14 +130,14 @@ let line_to_rectangle line r layout =
   let lc = line_to_line_in_column line layout in
   let x, y = line_in_column_to_pos lc r layout in
   { p = { x; y };
-    q = { x = x + layout.w_per_column; y = y + layout.space_per_line };
+    q = { x = x + layout.width_per_column; y = y + layout.height_per_line };
   }
 
 let point_to_line pt r layout =
   let x = pt.Cairo.x - r.p.x in
   let y = pt.Cairo.y - r.p.y in
-  let line_in_column = floor (y / layout.space_per_line) in
-  let column = floor (x / layout.w_per_column) in
+  let line_in_column = floor (y / layout.height_per_line) in
+  let column = floor (x / layout.width_per_column) in
   (column * layout.nblines_per_column + line_in_column + 1.) +> int_of_float
 
 (*****************************************************************************)
@@ -229,6 +229,10 @@ let set_source_rgba_and_font_size_of_categ
   ()
 
 (*****************************************************************************)
+(* Content properties *)
+(*****************************************************************************)
+
+(*****************************************************************************)
 (* Columns *)
 (*****************************************************************************)
 
@@ -278,8 +282,8 @@ let draw_column_bars2 ~cr layout r =
     in
     Cairo.set_line_width cr width;
 
-    Cairo.move_to cr (r.p.x + layout.w_per_column * i) r.p.y;
-    Cairo.line_to cr (r.p.x + layout.w_per_column * i) r.q.y;
+    Cairo.move_to cr (r.p.x + layout.width_per_column * i) r.p.y;
+    Cairo.line_to cr (r.p.x + layout.width_per_column * i) r.q.y;
     Cairo.stroke cr ;
   done
 let draw_column_bars ~cr layout rect =
@@ -406,9 +410,9 @@ let draw_content2 ~cr ~layout ~context ~file rect =
             ~alpha:0.25
             ~color
             ~x 
-            ~y:(y - layout.space_per_line) 
-            ~w:layout.w_per_column 
-            ~h:(layout.space_per_line * 3.)
+            ~y:(y - layout.height_per_line) 
+            ~w:layout.width_per_column 
+            ~h:(layout.height_per_line * 3.)
             ()
         );
         Cairo.move_to cr x y;
@@ -511,8 +515,8 @@ let draw_treemap_rectangle_content_maybe2 ~cr ~clipping ~context rect  =
           nblines;
           font_size;
           split_nb_columns;
-          w_per_column = w / split_nb_columns;
-          space_per_line = font_size;
+          width_per_column = w / split_nb_columns;
+          height_per_line = font_size;
           nblines_per_column = (nblines / split_nb_columns) +> ceil;
         } 
         in
