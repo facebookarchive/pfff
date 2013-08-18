@@ -144,7 +144,7 @@ type drawing = {
     pos_to_line: Cairo.point -> int;
     line_to_rectangle: int -> Figures.rectangle;
     (* the array starts at 1 *)
-    content: (glyph list) array;
+    content: (glyph list) array option;
   }
    and glyph = {
      str: string;

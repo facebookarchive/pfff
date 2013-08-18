@@ -342,7 +342,6 @@ let draw_content2 ~cr ~layout ~context tr =
 
   let glyphs_opt = glyphs_of_file ~context ~font_size ~font_size_real file in
   glyphs_opt +> Common.do_option (fun glyphs ->
-
     glyphs +> Array.iteri (fun line glyph ->
       let lc = line_to_line_in_column line layout in
       let x, y = line_in_column_to_pos lc r layout in
@@ -389,7 +388,7 @@ let draw_content2 ~cr ~layout ~context tr =
       (fun line -> line_to_rectangle line r layout);
     pos_to_line = 
       (fun pt -> point_to_line pt r layout);
-    content = [||];
+    content = glyphs_opt;
   }
 
 let draw_content ~cr ~layout ~context tr =
