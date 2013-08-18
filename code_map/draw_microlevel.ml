@@ -44,7 +44,7 @@ module Parsing = Parsing2
 (*s: type draw_content_layout *)
 (* note: some types below could be 'int' but it's more convenient to have
  * everything as a float because arithmetic with OCaml sucks when have
- * multiple numeric types
+ * multiple numeric types.
  *)
 type draw_content_layout = {
   font_size: float;
@@ -52,7 +52,7 @@ type draw_content_layout = {
   w_per_column:float;
   space_per_line: float;
   nblines: float;
-  nblines_per_column: int;
+  nblines_per_column: float;
 }
 (*e: type draw_content_layout *)
 
@@ -71,15 +71,35 @@ let is_big_file_with_few_lines ~nblines fullpath =
   nblines < 20. && 
   Common2.filesize_eff fullpath > 4000
 
+let use_fancy_highlighting file =
+  match FT.file_type_of_file file with
+  | ( FT.PL (FT.Web (FT.Php _))
+    | FT.PL (FT.Web (FT.Js))
+    | FT.PL (FT.Web (FT.Html))
+    | FT.PL (FT.ML _)
+    | FT.PL (FT.Cplusplus _ | FT.C _)
+    | FT.PL (FT.Thrift)
+    | FT.Text ("nw" | "tex"  | "texi" | "web" | "org")
+    | FT.PL (FT.Lisp _)
+    | FT.PL (FT.Haskell _)
+    | FT.PL (FT.Python)
+    | FT.PL (FT.Csharp)
+    | FT.PL (FT.Java)
+    (*    | FT.PL (FT.Prolog _) *)
+    | FT.PL (FT.Erlang)
+    | FT.PL (FT.Opa)
+    ) -> true
+  | (FT.Text "txt") when Common2.basename file =$= "info.txt" -> true
+  | _ -> false
+
+
 let pos_and_line_from_layout r layout =
-  let nblines_per_column = 
-    (layout.nblines / layout.split_nb_columns) +> ceil in
 
   { line_to_rectangle = (fun line ->
       let line = (float_of_int line) - 1. in
-      let column = floor (line / nblines_per_column) in
+      let column = floor (line / layout.nblines_per_column) in
       let line_in_column = 
-        line - (column * nblines_per_column) in
+        line - (column * layout.nblines_per_column) in
 
       let x = r.p.x + (column * layout.w_per_column) in
       let y = r.p.y + (line_in_column * layout.space_per_line) in
@@ -95,7 +115,7 @@ let pos_and_line_from_layout r layout =
       let line_in_column = floor (y / layout.space_per_line) in
       let column = floor (x / layout.w_per_column) in
 
-     (column * nblines_per_column + line_in_column + 1.) +> int_of_float
+     (column * layout.nblines_per_column + line_in_column + 1.) +> int_of_float
     );
   }
 
@@ -309,30 +329,8 @@ let draw_content2 ~cr ~layout ~context ~file rect =
   (* ugly *)
   text_with_user_pos := [];
 
-  let use_fancy_highlighting =
-    match FT.file_type_of_file file with
-    | ( FT.PL (FT.Web (FT.Php _))
-          | FT.PL (FT.Web (FT.Js))
-          | FT.PL (FT.Web (FT.Html))
-          | FT.PL (FT.ML _)
-          | FT.PL (FT.Cplusplus _ | FT.C _)
-          | FT.PL (FT.Thrift)
-          | FT.Text ("nw" | "tex"  | "texi" | "web" | "org")
-          | FT.PL (FT.Lisp _)
-          | FT.PL (FT.Haskell _)
-          | FT.PL (FT.Python)
-          | FT.PL (FT.Csharp)
-          | FT.PL (FT.Java)
-    (*    | FT.PL (FT.Prolog _) *)
-          | FT.PL (FT.Erlang)
-          | FT.PL (FT.Opa)
-    ) -> true
-    | (FT.Text "txt") when Common2.basename file =$= "info.txt" -> true
-    | _ -> false
-  in
-
   (* coupling: with parsing2.ml *)
-  if use_fancy_highlighting then begin
+  if use_fancy_highlighting file then begin
 
     let column = ref 0 in
     let line_in_column = ref 1 in
@@ -367,7 +365,7 @@ let draw_content2 ~cr ~layout ~context ~file rect =
         incr line_in_column;
         incr line;
 
-        if !line_in_column > layout.nblines_per_column
+        if !line_in_column > int_of_float layout.nblines_per_column
         then begin 
           incr column;
           line_in_column := 1;
@@ -407,7 +405,7 @@ let draw_content2 ~cr ~layout ~context ~file rect =
       Cairo.set_source_rgba cr 0.0 0.0 0.0 0.9;
       
       let xs = Common.cat file in
-      let xxs = Common2.pack_safe layout.nblines_per_column xs in
+      let xxs = Common2.pack_safe (int_of_float layout.nblines_per_column) xs in
 
     (* I start at 0 for the column because the x displacement
      * is null at the beginning, but at 1 for the line because
@@ -488,8 +486,7 @@ let draw_treemap_rectangle_content_maybe2 ~cr ~clipping ~context rect  =
           split_nb_columns;
           w_per_column = w / split_nb_columns;
           space_per_line = font_size;
-          nblines_per_column = 
-            (nblines / split_nb_columns) +> ceil +> int_of_float;
+          nblines_per_column = (nblines / split_nb_columns) +> ceil;
         } 
         in
         
