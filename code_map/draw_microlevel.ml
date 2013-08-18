@@ -41,6 +41,23 @@ module Parsing = Parsing2
 (* Types *)
 (*****************************************************************************)
 
+(* There are many different coordinates relevant to the lines of a file:
+ *  - line number in the file
+ *  - column and line in column for the file when rendered in multiple columns
+ *  - x,y position relative to the current treemap rectangle
+ *  - x,y position on the screen
+ * We have many functions below to go from one to the other.
+ *)
+
+type line = int
+
+type line_in_column = {
+  column: float; (* int *)
+  line_in_column: float; (* int *)
+}
+
+type pos = float (* x *) * float (* y *)
+
 (*s: type draw_content_layout *)
 (* note: some types below could be 'int' but it's more convenient to have
  * everything as a float because arithmetic with OCaml sucks when have
@@ -55,11 +72,6 @@ type draw_content_layout = {
   nblines_per_column: float; (* int *)
 }
 (*e: type draw_content_layout *)
-
-type line_in_column = {
-  column: float; (* int *)
-  line_in_column: float; (* int *)
-}
 
 (*****************************************************************************)
 (* globals *)
@@ -96,6 +108,10 @@ let use_fancy_highlighting file =
     ) -> true
   | (FT.Text "txt") when Common2.basename file =$= "info.txt" -> true
   | _ -> false
+
+(*****************************************************************************)
+(* Coordinate conversion *)
+(*****************************************************************************)
 
 let line_in_column_to_pos lc r layout =
   let x = r.p.x + (lc.column * layout.w_per_column) in
@@ -149,7 +165,6 @@ let final_font_size_of_categ ~font_size ~font_size_real categ =
     | n when n < 10. -> 1.
     | _ -> 0.5
   in
-
   Draw_common.final_font_size_when_multiplier 
     ~multiplier
     ~size_font_multiplier_multiplier
@@ -157,12 +172,10 @@ let final_font_size_of_categ ~font_size ~font_size_real categ =
     ~font_size_real
 (*e: final_font_size_of_categ *)
 
-
 let set_source_rgba_and_font_size_of_categ 
   ~cr ~font_size ~font_size_real ~is_matching_line
  categ 
  =
-
   let attrs =
     match categ with
     | None -> Highlight_code.info_of_category Highlight_code.Normal
