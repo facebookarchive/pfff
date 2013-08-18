@@ -153,6 +153,7 @@ val new_pixmap :
   width:int -> height:int -> GDraw.pixmap
 (*e: new_pixmap sig *)
 
+(* point -> rectangle -> line -> entity *)
 
 (*s: find_rectangle_at_user_point sig *)
 val find_rectangle_at_user_point :
@@ -175,18 +176,20 @@ val find_entity_at_line:
   int (* line *) -> Treemap.treemap_rectangle -> drawing -> 
   Graph_code.node option
 
+
+(* macrolevel uses and users *)
 val uses_and_users_readable_files_of_file:
   Common.filename (* absolute *) -> drawing -> 
   Common.filename list (* readable *) * Common.filename list (* readable *)
 
-val uses_and_users_readable_files_of_node:
-  Graph_code.node -> drawing -> 
-  Common.filename list (* readable *) * Common.filename list (* readable *)
-
-
 val uses_and_users_rect_of_file:
   Common.filename -> drawing -> 
   Treemap.treemap_rectangle list * Treemap.treemap_rectangle list
+
+(* microlevel uses and users *)
+val uses_and_users_readable_files_of_node:
+  Graph_code.node -> drawing -> 
+  Common.filename list (* readable *) * Common.filename list (* readable *)
 
 val uses_and_users_of_node:
   Graph_code.node -> drawing -> 

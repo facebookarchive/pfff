@@ -383,8 +383,8 @@ let uses_or_users_of_node node dw fsucc =
         let rect = Hashtbl.find dw.readable_file_to_rect file in
         let xs = Hashtbl.find model.hentities_of_file file in
         let (line, _n2) = xs +> List.find (fun (_, n2) -> n2 =*= n) in
-        let pos_and_line = Hashtbl.find dw.microlevel rect in
-        let rect = pos_and_line.line_to_rectangle line in
+        let microlevel = Hashtbl.find dw.microlevel rect in
+        let rect = microlevel.line_to_rectangle line in
         Some rect
       with Not_found -> None
     )
