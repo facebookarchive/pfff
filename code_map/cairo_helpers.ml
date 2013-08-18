@@ -15,7 +15,6 @@
  * license.txt for more details.
  *)
 (*e: Facebook copyright *)
-open Common2
 open Common
 (* floats are the norm in graphics *)
 open Common2.ArithFloatInfix
@@ -27,6 +26,11 @@ module Color = Simple_color
 (*****************************************************************************)
 (* Prelude *)
 (*****************************************************************************)
+
+(*****************************************************************************)
+(* Helpers *)
+(*****************************************************************************)
+let (==~) = Common2.(==~)
 
 (*****************************************************************************)
 (* Text related *)
@@ -85,6 +89,7 @@ let text_extents cr s =
     Cairo.text_extents cr s
   )
 
+(* just wrap it here so that we can profile it *)
 let set_font_size cr font_size =
   Common.profile_code "CairoH.set_font_size" (fun () ->
     Cairo.set_font_size cr font_size
@@ -130,9 +135,8 @@ let cairo_point_to_point p =
   }
 
 let distance_points p1 p2 =
-  abs_float (p2.Cairo.x - p1.Cairo.x) +
-  abs_float (p2.Cairo.y - p1.Cairo.y) +
-    0.
+  abs_float (p2.Cairo.x - p1.Cairo.x) + 
+  abs_float (p2.Cairo.y - p1.Cairo.y)
 
 (*****************************************************************************)
 (* Surface *)
