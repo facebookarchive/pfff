@@ -343,22 +343,13 @@ let draw_content2 ~cr ~layout ~context tr =
   let glyphs_opt = glyphs_of_file ~context ~font_size ~font_size_real file in
   glyphs_opt +> Common.do_option (fun glyphs ->
 
-    let column = ref 0 in
-    let line_in_column = ref 1 in
-
-    for line = 1 to Array.length glyphs -.. 1 do
-    
-      let x, y = 
-        line_in_column_to_pos 
-          { column = float_of_int !column; 
-            line_in_column = float_of_int !line_in_column
-          } r layout 
-      in
+    glyphs +> Array.iteri (fun line glyph ->
+      let lc = line_to_line_in_column line layout in
+      let x, y = line_in_column_to_pos lc r layout in
       Cairo.move_to cr x y;
       
       glyphs.(line) +> List.iter (fun glyph ->
         Cairo.set_font_size cr glyph.M.font_size;
-
         let (r,g,b) = Color.rgbf_of_string glyph.color in
         let alpha = 1. in
         (* old:
@@ -378,13 +369,6 @@ let draw_content2 ~cr ~layout ~context tr =
         CairoH.show_text cr glyph.M.str;
       );
       
-      incr line_in_column;
-      if !line_in_column > int_of_float layout.nblines_per_column
-      then begin 
-        incr column;
-        line_in_column := 1;
-      end;
-
       (* still? must be done before the move_to below ! *)
       (match Common2.hfind_option line hmatching_lines with
       | None -> ()
@@ -398,7 +382,7 @@ let draw_content2 ~cr ~layout ~context tr =
           ~h:(layout.height_per_line * 3.)
           ()
       );
-    done
+    );
   );
 
   { line_to_rectangle = 
