@@ -140,9 +140,10 @@ let point_to_line pt r layout =
   (column * layout.nblines_per_column + line_in_column + 1.) +> int_of_float
 
 (*****************************************************************************)
-(* Anamorphic entities *)
+(* Content properties *)
 (*****************************************************************************)
 
+(* Anamorphic entities *)
 (*s: final_font_size_of_categ *)
 let final_font_size_of_categ ~font_size ~font_size_real categ = 
 
@@ -165,71 +166,20 @@ let final_font_size_of_categ ~font_size ~font_size_real categ =
     ~font_size_real
 (*e: final_font_size_of_categ *)
 
-let set_source_rgba_and_font_size_of_categ 
-  ~cr ~font_size ~font_size_real ~is_matching_line
- categ 
- =
+let color_of_categ categ =
   let attrs =
     match categ with
-    | None -> Highlight_code.info_of_category Highlight_code.Normal
+    | None ->       Highlight_code.info_of_category Highlight_code.Normal
     | Some categ -> Highlight_code.info_of_category categ
   in
-  
-  let final_font_size = 
-    final_font_size_of_categ ~font_size ~font_size_real categ in
-  let final_font_size = 
-    if is_matching_line
-    then final_font_size * 1.
-    else final_font_size
-  in
-  
-  let _alpha_adjust =
-    let ratio = final_font_size / font_size in
-    match ratio with
-    | _ when ratio > 4. -> 0.
-    | _ when ratio > 2. -> 0.3
-    | _ when ratio >= 1. -> 0.5
-    | _ -> 0.3
-  in
-  
-  Cairo.set_font_size cr final_font_size;
-  
-  let final_font_size_real = 
-    CairoH.user_to_device_font_size cr final_font_size in
-  
-  attrs +> List.iter (fun attr ->
+  attrs +> Common.find_some (fun attr ->
     match attr with
     | `FOREGROUND s 
     | `BACKGROUND s (* todo: should really draw the background of the text *)
       -> 
-        let (r,g,b) = Color.rgbf_of_string s in
-        (* this seems needed only on old version of Cario, or at least
-         * on the cairo I am using under Linux. Under Mac I don't need
-         * this; I put alpha = 1. for everything and the rendering
-         * is fine.
-         *)
-        let alpha = 
-          if CairoH.is_old_cairo () then
-            match () with
-            | _ when final_font_size_real < 1. -> 0.2
-            | _ when final_font_size_real < 3. -> 0.4
-            | _ when final_font_size_real < 5. -> 0.9
-                
-            | _ when final_font_size_real < 8. 
-                  -> 1. (* TODO - alpha_adjust, do that only when not in
-                           fully zoomed mode *)
-                    
-            | _ -> 1.
-          else 1.
-        in
-        Cairo.set_source_rgba cr r g b alpha;
-    | _ -> ()
-  );
-  ()
-
-(*****************************************************************************)
-(* Content properties *)
-(*****************************************************************************)
+        Some (s)
+    | _ -> None
+  )
 
 (*****************************************************************************)
 (* Columns *)
@@ -371,11 +321,29 @@ let draw_content2 ~cr ~layout ~context tr =
 
     tokens_with_categ +> List.iter (fun (s, categ, filepos) ->
 
-      set_source_rgba_and_font_size_of_categ 
-        ~cr ~font_size ~font_size_real
-        ~is_matching_line:(Hashtbl.mem hmatching_lines !line)
-        categ;
-      
+      let final_font_size = 
+        final_font_size_of_categ ~font_size ~font_size_real categ in
+      Cairo.set_font_size cr final_font_size;
+
+      let color = color_of_categ categ in
+      let alpha = 1. in
+      (* old:
+       *   if CairoH.is_old_cairo () then
+       *     match () with
+       *     | _ when final_font_size_real < 1. -> 0.2
+       *     | _ when final_font_size_real < 3. -> 0.4
+       *     | _ when final_font_size_real < 5. -> 0.9
+       *         
+       *     | _ when final_font_size_real < 8. 
+       *           -> 1. (* TODO - alpha_adjust, do that only when not in
+       *                    fully zoomed mode *)
+       *     | _ -> 1.
+       *   else 1.
+       *)
+      (let (r,g,b) = Color.rgbf_of_string color in
+       Cairo.set_source_rgba cr r g b alpha;
+      );
+
       let xs = Common2.lines_with_nl_either s in
       
       xs +> List.iter (function
