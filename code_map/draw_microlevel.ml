@@ -492,5 +492,18 @@ let draw_treemap_rectangle_content_maybe ~cr ~clipping ~context rect =
     draw_treemap_rectangle_content_maybe2 ~cr ~clipping ~context rect)
 (*e: draw_treemap_rectangle_content_maybe *)
     
+(*****************************************************************************)
+(* Magnifyer Content *)
+(*****************************************************************************)
+let draw_magnify_line cr line microlevel =
+  raise Todo
+(*
+  match microlevel.content with
+  | None -> ()
+  | Some glyphs ->
+    let xs = glyphs.(line) in
+    let pos = microlevel.line_to_rectangle
+  raise Todo
+*)
 
 (*e: draw_microlevel.ml *)

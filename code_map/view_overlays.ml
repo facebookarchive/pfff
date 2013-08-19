@@ -152,6 +152,11 @@ let draw_uses_users_files ~dw r =
 (* ---------------------------------------------------------------------- *)
 (* Uses and users microlevel *)
 (* ---------------------------------------------------------------------- *)
+let draw_magnify_line_overlay dw line microlevel =
+  with_overlay dw (fun cr_overlay ->
+    Draw_microlevel.draw_magnify_line cr_overlay line microlevel
+  )
+
 let draw_uses_users_entities ~dw n =
  with_overlay dw (fun cr_overlay ->
    let uses, users = uses_and_users_of_node n dw  in
@@ -339,17 +344,21 @@ let motion_refresher ev dw () =
     in
     !Controller._statusbar_addtext statusbar_txt;
 
-    let label_txt = 
+    let _label_txt = 
       match entity_opt with
       | None -> readable_txt_for_label r.T.tr_label dw.current_root
       | Some n -> Graph_code.string_of_node n
     in
-    draw_label_overlay ~cr_overlay ~dw ~x ~y label_txt;
+    (* draw_label_overlay ~cr_overlay ~dw ~x ~y label_txt;*)
+    line_opt +> Common.do_option (fun line ->
+      let microlevel = Hashtbl.find dw.microlevel r in
+      draw_magnify_line_overlay dw line microlevel
+    );
 
     draw_englobing_rectangles_overlay ~dw (r, middle, r_englobing);
 
     draw_uses_users_files ~dw r;
-    entity_opt +> Common.do_option (fun n->
+    entity_opt +> Common.do_option (fun n ->
       draw_uses_users_entities ~dw n;
     );
      
