@@ -475,37 +475,47 @@ type model = {
   db: Database_code.database option;
   <<model fields hook>>
 
-  (* for microlevel *)
+  (* for microlevel use/def information *)
   g: Graph_code.graph option;
-  (* fast accessors, for macrolevel  *)
+  (* fast accessors, for macrolevel use/def information  *)
   huses_of_file: (Common.filename, Common.filename list) Hashtbl.t;
   husers_of_file: (Common.filename, Common.filename list) Hashtbl.t;
+  (* the lists are sorted by line number *)
+  hentities_of_file: 
+    (Common.filename, (int (* line *) * Graph_code.node) list)  Hashtbl.t;
  }
 @
 
 <<build_model>>=
 let build_model2 root dbfile_opt graphfile_opt =   
 
-  let db_opt = Common2.fmap Database_code.load_database dbfile_opt in
-
-  let hentities = Model.hentities root db_opt in
-  let hfiles_entities = Model.hfiles_and_top_entities root db_opt in
-  let all_entities = Model.all_entities db_opt root in
+  let db_opt = 
+    match dbfile_opt with
+    | None -> None
+    | Some file -> Some (Database_code.load_database file)
+  in
+  (* todo: do like for graph_code below, let hentities, hfiles_entities = ...*)
+  let hentities = 
+    Model_database_code.hentities root db_opt in
+  let hfiles_entities = 
+    Model_database_code.hfiles_and_top_entities root db_opt in
+  let all_entities = 
+    Model_database_code.all_entities db_opt root in
 
   let big_grep_idx = Completion2.build_completion_defs_index all_entities in
-
 
   let g_opt =
     match graphfile_opt with
     | None -> None
     | Some file -> Some (Graph_code.load file)
   in
-  let huses_of_file, husers_of_file =
+  let huses_of_file, husers_of_file, hentities_of_file =
     match g_opt with
-    | None -> Hashtbl.create 0, Hashtbl.create 0
+    | None -> Hashtbl.create 0, Hashtbl.create 0, Hashtbl.create 0
     | Some g ->
-      let a, b = Graph_code_analysis.build_uses_and_users_of_file g in
-      Common.hash_of_list a, Common.hash_of_list b
+      let a, b = Model_graph_code.build_uses_and_users_of_file g in
+      let c = Model_graph_code.build_entities_of_file g in
+      Common.hash_of_list a, Common.hash_of_list b, Common.hash_of_list c
   in
   
   let model = { Model.
@@ -514,6 +524,7 @@ let build_model2 root dbfile_opt graphfile_opt =
         hentities; hfiles_entities; big_grep_idx;
         g =  g_opt;
         huses_of_file; husers_of_file;
+        hentities_of_file;
   }
   in
   (*
@@ -544,8 +555,7 @@ let build_model a b =
 let treemap_generator paths = 
   let treemap = Treemap_pl.code_treemap ~filter_file:!filter paths in
   let algo = Treemap.Ordered Treemap.PivotByMiddle in
-  let rects = Treemap.render_treemap_algo 
-    ~algo ~big_borders:!Flag.boost_label_size
+  let rects = Treemap.render_treemap ~algo ~big_borders:!Flag.boost_label_size
     treemap in
   Common.pr2 (spf "%d rectangles to draw" (List.length rects));
   rects
@@ -559,30 +569,27 @@ let treemap_generator paths =
  *)
 type drawing = {
 
-  (* In user coordinates from 0 to T.xy_ratio and 1 for respectivey x and y.
-   * Assumes the treemap contains absolute paths.
-  *)
-  treemap: Treemap.treemap_rendering;
-  (* coupling: = List.length treemap *)
-  nb_rects: int; 
+  (* computed lazily, semantic information about the code *)
+  dw_model: model Async.t;
+  (* to compute a new treemap based on user's action *)
+  treemap_func: Common.path list -> Treemap.treemap_rendering;
 
-  (* when we render content at the microlevel, we then need to know to which
-   * line corresponds a position and vice versa.
+  (* Macrolevel. In user coordinates from 0 to T.xy_ratio for 'x' and 0 to 1
+   * for 'y'. Assumes the treemap contains absolute paths (tr.tr_label).
    *)
-  pos_and_line: (Treemap.treemap_rectangle, pos_and_line) Hashtbl.t;
+  treemap: Treemap.treemap_rendering;
+  (* Microlevel. When we render content at the microlevel, we then need to
+   * know to which line corresponds a position and vice versa.
+   *)
+  microlevel: (Treemap.treemap_rectangle, microlevel) Hashtbl.t;
 
   (* generated from dw.treemap, contains readable path relative to model.root *)
   readable_file_to_rect: 
     (Common.filename, Treemap.treemap_rectangle) Hashtbl.t;
-
-  (* to compute zoomed treemap when double click *)
-  treemap_func: Common.path list -> Treemap.treemap_rendering;
-
+  (* coupling: = List.length treemap *)
+  nb_rects: int; 
   (* This is to display readable paths. When fully zoomed it's a filename *)
   current_root: Common.path;
-
-  (* computed lazily *)
-  dw_model: model Async.t;
 
   mutable layers: Layer_code.layers_with_index;
 
@@ -597,10 +604,6 @@ type drawing = {
   <<fields drawing minimap>>
 }
   <<type settings>>
-  and pos_and_line = {
-    pos_to_line: Cairo.point -> int;
-    line_to_pos: int -> Cairo.point;
-  }
 @
 
 \subsection{The microlevel specific model}
@@ -706,8 +709,8 @@ val hentities :
   (string, Database_code.entity) Hashtbl.t
 @
 <<model fields hook>>=
-  (* fast accessors *)
-  hentities : (string, Database_code.entity) Hashtbl.t;
+(* fast accessors *)
+hentities : (string, Database_code.entity) Hashtbl.t;
 @ 
 
 
@@ -773,13 +776,10 @@ let init_drawing
   root
  =
 
-  let paths = paths +> List.map Common2.relative_to_absolute in
+  let paths = List.map Common2.relative_to_absolute paths in
   let current_root = Common2.common_prefix_of_files_or_dirs paths in
-  pr2_gen root;
-
   let treemap = 
     Common.profile_code "Visual.building the treemap" (fun () -> func paths) in
-  let pm = new_pixmap ~width ~height in
   let readable_file_to_rect =
     treemap +> Common.map_filter (fun rect ->
       if not rect.T.tr_is_node
@@ -790,29 +790,30 @@ let init_drawing
       else None
     ) +> Common.hash_of_list
   in
+  let pm = new_pixmap ~width ~height in
 
   {
-    treemap = treemap;
+    treemap;
     nb_rects = List.length treemap;
-    readable_file_to_rect;
     current_root;
     treemap_func = func;
 
     dw_model = model;
     layers = layers;
 
-    pos_and_line = Hashtbl.create 0;
+    readable_file_to_rect;
+    microlevel = Hashtbl.create 0;
 
     current_query = "";
     current_searched_rectangles = [];
     current_entity = None;
     current_grep_query = Hashtbl.create 0;
 
-    pm = pm;
+    pm;
     overlay = Cairo.surface_create_similar (CairoH.surface_of_pixmap pm) 
       Cairo.CONTENT_COLOR_ALPHA width height;
-    width = width;
-    height = height;
+    width;
+    height;
 
     dw_settings = {
       (* todo: too fuzzy for now *)
@@ -873,7 +874,7 @@ val mk_gui :
  * initialized by including gtkInit.cmo earlier in the linking command.
  *)
 
-(* ugly *)
+(* ugly, todo use model.root instead? *)
 let root_orig () = 
   (Common2.list_last !Controller.dw_stack).M.current_root
 
@@ -977,8 +978,8 @@ let mk_gui ~screen_size ~legend test_mode (root, model, dw, dbfile_opt) =
                   let file = e.Db.e_file in
 
                   let final_file = 
-                    Model2.readable_to_absolute_filename_under_root file 
-                      ~root:!dw.current_root in
+                    Model_database_code.readable_to_absolute_filename_under_root
+                      file ~root:!dw.current_root in
 
                   !Controller._go_dirs_or_file 
                     ~current_entity:(Some e) dw [final_file];
@@ -1143,7 +1144,7 @@ let mk_gui ~screen_size ~legend test_mode (root, model, dw, dbfile_opt) =
 
           let final_paths = 
             readable_paths +> List.map 
-              (Model2.readable_to_absolute_filename_under_root 
+              (Model_database_code.readable_to_absolute_filename_under_root 
                  ~root:!dw.current_root)
           in
 
@@ -1185,15 +1186,12 @@ let mk_gui ~screen_size ~legend test_mode (root, model, dw, dbfile_opt) =
             end;
             let cr_overlay = Cairo.create !dw.overlay in
             CairoH.clear cr_overlay;
-            View_overlays.draw_searched_rectangles ~cr_overlay ~dw:!dw;
+            View_overlays.draw_searched_rectangles ~dw:!dw;
             !Controller._refresh_da();
           end
         )
         idx
-        ;
-
       in
-
 
       tb#insert_widget (G.with_label "Search:" entry#coerce);
 
@@ -1740,28 +1738,17 @@ let expose_legend da dw_ref ev =
 \subsection{Drawing}
 
 <<type draw_content_layout>>=
-(* note: some types below could be 'int' but it's more convenient to have
- * everything as a float because arithmetic with OCaml sucks when have
- * multiple numeric types
- *)
-type draw_content_layout = {
-  font_size: float;
-  split_nb_columns: float;
-  w_per_column:float;
-  space_per_line: float;
-  nblines: float;
-}
 @ 
 
 
 <<draw_treemap_rectangle_content_maybe sig>>=
-(* will render (maybe) the filecontent of treemap_rectangle.tr_label *)
-val draw_treemap_rectangle_content_maybe :
+(* will render (maybe) the file content of treemap_rectangle.tr_label *)
+val draw_treemap_rectangle_content_maybe:
   cr:Cairo.t ->
   clipping:Figures.rectangle ->
   context:Model2.context ->
   Treemap.treemap_rectangle -> 
-  Model2.pos_and_line option
+  Model2.microlevel option
 @ 
 
 \subsection{Entities size}
@@ -1804,7 +1791,6 @@ let final_font_size_of_categ ~font_size ~font_size_real categ =
     | n when n < 10. -> 1.
     | _ -> 0.5
   in
-
   Draw_common.final_font_size_when_multiplier 
     ~multiplier
     ~size_font_multiplier_multiplier
@@ -1849,27 +1835,27 @@ let optimal_nb_columns ~nblines ~chars_per_column ~w ~h =
 
 
 <<draw_column_bars>>=
-let draw_column_bars2 ~cr ~split_nb_columns ~font_size ~w_per_column r = 
-  for i = 1 to int_of_float (split_nb_columns - 1.) do
+let draw_column_bars2 ~cr layout r = 
+  for i = 1 to int_of_float (layout.split_nb_columns - 1.) do
     let i = float_of_int i in
       
     Cairo.set_source_rgba cr 0.0 0.0 1. 0.2;
 
-    let font_size_real = CairoH.user_to_device_font_size cr font_size in
+    let font_size_real = CairoH.user_to_device_font_size cr layout.lfont_size in
     let width = 
       if font_size_real > 5.
-      then  (font_size / 10.)
-      else font_size
+      then layout.lfont_size / 10.
+      else layout.lfont_size
     in
     Cairo.set_line_width cr width;
 
-    Cairo.move_to cr (r.p.x + w_per_column * i) r.p.y;
-    Cairo.line_to cr (r.p.x + w_per_column * i) r.q.y;
+    Cairo.move_to cr (r.p.x + layout.width_per_column * i) r.p.y;
+    Cairo.line_to cr (r.p.x + layout.width_per_column * i) r.q.y;
     Cairo.stroke cr ;
   done
-let draw_column_bars ~cr ~split_nb_columns ~font_size ~w_per_column rect =
+let draw_column_bars ~cr layout rect =
   Common.profile_code "View.draw_bars" (fun () ->
-    draw_column_bars2 ~cr ~split_nb_columns ~font_size ~w_per_column rect)
+    draw_column_bars2 ~cr layout rect)
 @ 
 
 
@@ -1878,11 +1864,12 @@ let draw_column_bars ~cr ~split_nb_columns ~font_size ~w_per_column rect =
 % thumbnails and actual source is same code! not like in visual studio
 
 <<draw_content>>=
-let draw_content2 ~cr ~layout ~context ~file rect =
+let draw_content2 ~cr ~layout ~context tr =
 
-  let r = rect.T.tr_rect in
+  let r = tr.T.tr_rect in
+  let file = tr.T.tr_label in
 
-  let font_size = layout.font_size in
+  let font_size = layout.lfont_size in
   let font_size_real = CairoH.user_to_device_font_size cr font_size in
 
   if font_size_real > Style.threshold_draw_dark_background_font_size_real
@@ -1891,7 +1878,7 @@ let draw_content2 ~cr ~layout ~context ~file rect =
     (* erase what was done at the macrolevel *)
     if Hashtbl.length context.layers_microlevel > 0 then begin
       Draw_macrolevel.draw_treemap_rectangle ~cr ~color:(Some "white") 
-        ~alpha:1.0 rect;
+        ~alpha:1.0 tr;
     end;
 
     let alpha = 
@@ -1902,14 +1889,13 @@ let draw_content2 ~cr ~layout ~context ~file rect =
       | _ -> 0.3
     in
     (* unset when used when debugging the layering display *)
-    if Hashtbl.length context.layers_microlevel = 0 || true
-    then begin
-      Draw_macrolevel.draw_treemap_rectangle ~cr ~color:(Some "DarkSlateGray") 
-        ~alpha rect;
-      (* draw a thin rectangle with aspect color *)
-      CairoH.draw_rectangle_bis ~cr ~color:(rect.T.tr_color) 
-        ~line_width:(font_size / 2.) rect.T.tr_rect;
-    end
+    (* if Hashtbl.length context.layers_microlevel = 0 *)
+
+    Draw_macrolevel.draw_treemap_rectangle ~cr ~color:(Some "DarkSlateGray") 
+      ~alpha tr;
+    (* draw a thin rectangle with aspect color *)
+    CairoH.draw_rectangle_bis ~cr ~color:(tr.T.tr_color) 
+      ~line_width:(font_size / 2.) tr.T.tr_rect;
   end;
 
   (* highlighting layers (and grep-like queries at one point) *)
@@ -1917,7 +1903,6 @@ let draw_content2 ~cr ~layout ~context ~file rect =
     try Hashtbl.find context.layers_microlevel file
     with Not_found -> Hashtbl.create 0
   in
-
   (* todo: make sgrep_query a form of layer *)
   let matching_grep_lines = 
     try Hashtbl.find_all context.grep_query file
@@ -1927,236 +1912,149 @@ let draw_content2 ~cr ~layout ~context ~file rect =
     Hashtbl.add hmatching_lines line "purple"
   );
 
-  let nblines_per_column = 
-    (layout.nblines / layout.split_nb_columns) +> ceil +> int_of_float in
-
-  let line = ref 1 in
-
-  (* ugly *)
-  text_with_user_pos := [];
-
-  let use_fancy_highlighting =
-  match FT.file_type_of_file file with
-  | ( FT.PL (FT.Web (FT.Php _))
-    | FT.PL (FT.Web (FT.Js))
-    | FT.PL (FT.Web (FT.Html))
-    | FT.PL (FT.ML _)
-    | FT.PL (FT.Cplusplus _ | FT.C _)
-    | FT.PL (FT.Thrift)
-    | FT.Text ("nw" | "tex"  | "texi" | "web" | "org")
-    | FT.PL (FT.Lisp _)
-    | FT.PL (FT.Haskell _)
-    | FT.PL (FT.Python)
-    | FT.PL (FT.Csharp)
-    | FT.PL (FT.Java)
-(*    | FT.PL (FT.Prolog _) *)
-    | FT.PL (FT.Erlang)
-    | FT.PL (FT.Opa)
-    ) -> true
-  | (FT.Text "txt") when Common2.basename file =$= "info.txt" -> true
-  | _ -> false
-  in
-
-  (* coupling: with parsing2.ml *)
-  if use_fancy_highlighting then begin
-
-    let column = ref 0 in
-    let line_in_column = ref 1 in
-
-    let x = r.p.x + (float_of_int !column) * layout.w_per_column in
-    let y = r.p.y + (layout.space_per_line * (float_of_int !line_in_column)) in
-        
-    Cairo.move_to cr x y;
-
-    let model = Async.async_get context.model in
-    let entities = model.Model2.hentities in
-
-    let tokens_with_categ = Parsing.tokens_with_categ_of_file file entities in
-
-    tokens_with_categ +> List.iter (fun (s, categ, filepos) ->
-
-      set_source_rgba_and_font_size_of_categ 
-        ~cr ~font_size ~font_size_real
-        ~is_matching_line:(Hashtbl.mem hmatching_lines !line)
-        categ;
+  let glyphs_opt = glyphs_of_file ~context ~font_size ~font_size_real file in
+  glyphs_opt +> Common.do_option (fun glyphs ->
+    glyphs +> Array.iteri (fun line glyph ->
+      let lc = line_to_line_in_column line layout in
+      let x, y = line_in_column_to_bottom_pos lc r layout in
+      Cairo.move_to cr x y;
       
-      let xs = Common2.lines_with_nl_either s in
-      
-      xs +> List.iter (function
-      | Common2.Left s -> 
-          let pt = Cairo.get_current_point cr in
-          Common.push2 (s, filepos, pt) text_with_user_pos;
-
-          CairoH.show_text cr s
-      | Common2.Right () ->
-          
-          incr line_in_column;
-          incr line;
-
-          if !line_in_column > nblines_per_column
-          then begin 
-            incr column;
-            line_in_column := 1;
-          end;
-
-          let x = r.p.x + 
-            (float_of_int !column) * layout.w_per_column in
-          let y = r.p.y + 
-            (layout.space_per_line * (float_of_int !line_in_column)) in
-
-          (* must be done before the move_to below ! *)
-          (match Common2.hfind_option !line hmatching_lines with
-          | None -> ()
-          | Some color ->
-              CairoH.fill_rectangle ~cr 
-                ~alpha:0.25
-                ~color
-                ~x 
-                ~y:(y - layout.space_per_line) 
-                ~w:layout.w_per_column 
-                ~h:(layout.space_per_line * 3.)
-                ()
-          );
-          Cairo.move_to cr x y;
-          
-          
+      glyphs.(line) +> List.iter (fun glyph ->
+        Cairo.set_font_size cr glyph.M.font_size;
+        let (r,g,b) = Color.rgbf_of_string glyph.color in
+        let alpha = 1. in
+        (* old:
+         *   if CairoH.is_old_cairo () then
+         *     match () with
+         *     | _ when final_font_size_real < 1. -> 0.2
+         *     | _ when final_font_size_real < 3. -> 0.4
+         *     | _ when final_font_size_real < 5. -> 0.9
+         *         
+         *     | _ when final_font_size_real < 8. 
+         *           -> 1. (* TODO - alpha_adjust, do that only when not in
+         *                    fully zoomed mode *)
+         *     | _ -> 1.
+         *   else 1.
+         *)
+        Cairo.set_source_rgba cr r g b alpha;
+        CairoH.show_text cr glyph.M.str;
       );
-    )
-  end else begin
-  match FT.file_type_of_file file with
-  | FT.PL _ | FT.Text _ ->      
-   (* This was causing some "out_of_memory" cairo error on linux. Not
-    * sure why.
-    *)
-
-    Cairo.set_font_size cr font_size ;
-    Cairo.set_source_rgba cr 0.0 0.0 0.0 0.9;
       
-    let xs = Common.cat file in
-    let xxs = Common2.pack_safe nblines_per_column xs in
-
-    (* I start at 0 for the column because the x displacement
-     * is null at the beginning, but at 1 for the line because
-     * the y displacement must be more than 0 at the
-     * beginning
-     *)
-    Common.index_list_0 xxs +> List.iter (fun (xs, column) ->
-      Common.index_list_1 xs +> List.iter (fun (s, line_in_column) ->
-      
-        let x = r.p.x + 
-          (float_of_int column) * layout.w_per_column in
-        let y = r.p.y + 
-          (layout.space_per_line * (float_of_int line_in_column)) in
-        
-        Cairo.move_to cr x y;
-        CairoH.show_text cr s;
-
-        incr line;
+      (* still? must be done before the move_to below ! *)
+      (match Common2.hfind_option line hmatching_lines with
+      | None -> ()
+      | Some color ->
+        CairoH.fill_rectangle ~cr 
+          ~alpha:0.25
+          ~color
+          ~x 
+          ~y:(y - layout.height_per_line) 
+          ~w:layout.width_per_column 
+          ~h:(layout.height_per_line * 3.)
+          ()
       );
     );
-      ()
-  | _ ->
-      ()
-  end
+  );
 
+  { line_to_rectangle = 
+      (fun line -> line_to_rectangle line r layout);
+    pos_to_line = 
+      (fun pt -> point_to_line pt r layout);
+    layout;
+    container = tr;
+    content = glyphs_opt;
+  }
 
-let draw_content ~cr ~layout ~context ~file rect =
+let draw_content ~cr ~layout ~context tr =
   Common.profile_code "View.draw_content" (fun () ->
-    draw_content2 ~cr ~layout ~context ~file rect)
+    draw_content2 ~cr ~layout ~context tr)
 @
 
 
 <<draw_treemap_rectangle_content_maybe>>=
-let draw_treemap_rectangle_content_maybe2 ~cr ~clipping ~context rect  =
-  let r = rect.T.tr_rect in
-  let file = rect.T.tr_label in
+let draw_treemap_rectangle_content_maybe2 ~cr ~clipping ~context tr  =
+  let r = tr.T.tr_rect in
 
   if F.intersection_rectangles r clipping = None
   then (* pr2 ("not drawing: " ^ file) *) None
   else begin
 
-  let w = F.rect_width r in
-  let h = F.rect_height r in
+    let file = tr.T.tr_label in
 
-  (* if the file is not textual, or contain weird characters, then
-   * it confuses cairo which then can confuse computation done in gtk
-   * idle callbacks
-   *)
-  if Common2.lfile_exists_eff file && File_type.is_textual_file file
-  then begin
-    let font_size_estimate = h / 100. in
-    let font_size_real_estimate = 
-      CairoH.user_to_device_font_size cr font_size_estimate in
-    if font_size_real_estimate > 0.4
+    (* if the file is not textual, or contain weird characters, then
+     * it confuses cairo which then can confuse computation done in gtk
+     * idle callbacks
+     *)
+    if Common2.lfile_exists_eff file && File_type.is_textual_file file
     then begin
+      let w = F.rect_width r in
+      let h = F.rect_height r in
 
-    (* Common.nblines_with_wc was really slow. fork sucks.
-     * alternative: we could store the nblines of a file in the db but
-     * we would need a fast absolute_to_readable then.
-     *)
-    let nblines = Common2.nblines_eff file +> float_of_int in
+      let font_size_estimate = h / 100. in
+      let font_size_real_estimate = 
+        CairoH.user_to_device_font_size cr font_size_estimate in
+      if font_size_real_estimate > 0.4
+      then begin
+        
+       (* Common.nblines_with_wc was really slow. Forking sucks.
+        * alt: we could store the nblines of a file in the db.
+        *)
+        let nblines = Common2.nblines_eff file +> float_of_int in
+        
+       (* Assume our code follow certain conventions. Could infer from file. 
+        * We should put 80, but a font is higher than large, so I 
+        * manually readjust things.
+        *)
+        let chars_per_column = 41.0 in
+    
+        let split_nb_columns = 
+          optimal_nb_columns ~nblines ~chars_per_column ~h ~w in
+        let font_size = 
+          font_size_when_have_x_columns ~nblines ~chars_per_column ~h ~w 
+            ~with_n_columns:split_nb_columns in
 
-    (* assume our code follow certain conventions. Could infer from file. 
-     * we should put 80, but a font is higher than large, so 
-     * I manually readjust things. todo: should readjust something
-     * else.
-     *)
-    let chars_per_column = 41.0 in
+        let layout = {
+          nblines;
+          lfont_size = font_size;
+          split_nb_columns;
+          width_per_column = w / split_nb_columns;
+          height_per_line = font_size;
+          nblines_per_column = (nblines / split_nb_columns) +> ceil;
+        } 
+        in
+        
+        draw_column_bars ~cr layout r;
+        
+       (* todo: does not work :(
+          let font_option = Cairo.Font_Options.make [`ANTIALIAS_SUBPIXEL] in
+       
+       (try 
+         Cairo.set_font_options cr font_option;
+       with exn ->
+         let status = Cairo.status cr in
+         let s2 = Cairo.string_of_status status in
+         failwith s2;
+       );
+       *)
+        Cairo.select_font_face cr Style.font_text
+          Cairo.FONT_SLANT_NORMAL Cairo.FONT_WEIGHT_NORMAL;
     
-    let split_nb_columns = 
-      optimal_nb_columns ~nblines ~chars_per_column ~h ~w in
-    let font_size = 
-      font_size_when_have_x_columns ~nblines ~chars_per_column ~h ~w 
-        ~with_n_columns:split_nb_columns in
-    let w_per_column = 
-      w / split_nb_columns in
-    let space_per_line = 
-      font_size in
+        let font_size_real = CairoH.user_to_device_font_size cr font_size in
+       (*pr2 (spf "file: %s, font_size_real = %f" file font_size_real);*)
     
-    draw_column_bars ~cr ~split_nb_columns ~font_size ~w_per_column r;
-
-    (* todo: does not work :(
-    let font_option = Cairo.Font_Options.make [`ANTIALIAS_SUBPIXEL] in
-    
-    (try 
-      Cairo.set_font_options cr font_option;
-    with exn ->
-      let status = Cairo.status cr in
-      let s2 = Cairo.string_of_status status in
-      failwith s2;
-    );
-    *)
-    Cairo.select_font_face cr Style.font_text
-      Cairo.FONT_SLANT_NORMAL Cairo.FONT_WEIGHT_NORMAL;
-    
-    let font_size_real = CairoH.user_to_device_font_size cr font_size in
-    (*pr2 (spf "file: %s, font_size_real = %f" file font_size_real);*)
-    
-    let layout = {
-      font_size = font_size;
-      split_nb_columns = split_nb_columns;
-      w_per_column = w_per_column;
-      space_per_line = space_per_line;
-      nblines = nblines;
-    } 
-    in
-
-    let pos_and_line = pos_and_line_from_layout r layout in
-
-    (if font_size_real > !Flag.threshold_draw_content_font_size_real 
-       && not (is_big_file_with_few_lines ~nblines file)
-       && nblines < !Flag.threshold_draw_content_nblines
-    then draw_content ~cr ~layout ~context ~file rect
-    else 
-      if context.settings.draw_summary 
-      (* draw_summary_content ~cr ~layout ~context ~file  rect *)
-      then raise Todo
-    );
-    Some pos_and_line
+        if font_size_real > !Flag.threshold_draw_content_font_size_real 
+            && not (is_big_file_with_few_lines ~nblines file)
+            && nblines < !Flag.threshold_draw_content_nblines
+        then Some (draw_content ~cr ~layout ~context tr)
+        else 
+          if context.settings.draw_summary 
+            (* draw_summary_content ~cr ~layout ~context tr *)
+          then raise Todo
+          else None
+      end
+      else None
     end
     else None
-  end
-  else None
   end
 let draw_treemap_rectangle_content_maybe ~cr ~clipping ~context rect = 
   Common.profile_code "View.draw_content_maybe" (fun () ->
@@ -2179,13 +2077,13 @@ let paint_content_maybe_rect ~user_rect dw rect =
   let cr = Cairo_lablgtk.create dw.pm#pixmap in
   zoom_pan_scale_map cr dw;
 
-  let context = Model2.context_of_drawing dw in
+  let context = M.context_of_drawing dw in
 
   let pos_and_line_opt = 
     Draw_microlevel.draw_treemap_rectangle_content_maybe
       ~cr  ~clipping:user_rect  ~context rect in
   pos_and_line_opt +> Common.do_option (fun pos_and_line ->
-    Hashtbl.replace dw.pos_and_line rect pos_and_line
+    Hashtbl.replace dw.microlevel rect pos_and_line
   );
 
   (* have to redraw the label *)
@@ -2397,7 +2295,7 @@ let hfiles_and_top_entities root db_opt =
 @
 
 <<model fields hook>>=
-  hfiles_entities : (Common.filename, Database_code.entity list) Hashtbl.t;
+hfiles_entities : (Common.filename, Database_code.entity list) Hashtbl.t;
 @ 
 
 \section{Layers}
@@ -2554,55 +2452,9 @@ let key_pressed (da, da2) dw_ref ev =
 
 
 <<find_filepos_in_rectangle_at_user_point>>=
-(* Cannot move this to model.ml because we abuse the drawing function
- * and the Draw.text_with_user_pos 100.
- *)
-let find_filepos_in_rectangle_at_user_point user_pt dw r = 
-  (* ugly, but if use dw.pm#pixmap directly then it has
-   * weird side effects like darking the label
-   *)
-  let sur =
-    Cairo.surface_create_similar (CairoH.surface_of_pixmap dw.pm)
-      Cairo.CONTENT_COLOR_ALPHA dw.width dw.height
-  in
-  let cr = Cairo.create sur in
-           
-  zoom_pan_scale_map cr dw;
-  let user_rect = device_to_user_area dw in
-
-  let context = context_of_drawing dw in
-  let context = { context with Model2.nb_rects_on_screen = 1 } in
-  
-  (* does side effect on Draw.text_with_user_pos *)
-  let _TODO = Draw_microlevel.draw_treemap_rectangle_content_maybe 
-    ~cr ~clipping:user_rect ~context r in
-  let xs = !Draw_microlevel.text_with_user_pos in
-
-  let scores = xs
-    +> List.map (fun (s, filepos, pt) ->
-      (s, filepos), CairoH.distance_points user_pt pt
-    )
-    +> Common.sort_by_val_lowfirst 
-    +> List.map fst
-  in
-  (match scores with
-  | [] -> 
-      pr2 ("no filepos found");
-      None
-  | (s, filepos)::xs ->
-      pr2 (spf "closest point is: %s at %d:%d"
-              s filepos.Common2.l filepos.Common2.c);
-      Some filepos
-  )
 @ 
 
 <<text_with_user_pos sig>>=
-(* ugly: used when middle-clicking on the drawing area to know 
- * how to translate a point into a filepos so that we can open
- * the file at the right position.
- *)
-val text_with_user_pos :
-  (string * Common2.filepos * Cairo.point) Common.stack ref
 @ 
 
 
@@ -2610,55 +2462,101 @@ val text_with_user_pos :
 let button_action da dw_ref ev =
   let dw = !dw_ref in
 
-  let pt = { Cairo. x = GdkEvent.Button.x ev; y = GdkEvent.Button.y ev;} in
+  let x, y = GdkEvent.Button.x ev, GdkEvent.Button.y ev in
+  let pt = { Cairo. x = x; y = y } in
   let user = with_map dw (fun cr -> Cairo.device_to_user cr pt) in
-
-  let r_opt = Model2.find_rectangle_at_user_point dw user in
+  let r_opt = M.find_rectangle_at_user_point dw user in
 
   match GdkEvent.get_type ev with
   | `BUTTON_PRESS ->
-
       let button = GdkEvent.Button.button ev in
+      let state = GdkEvent.Button.state ev in
       pr2 (spf "button %d pressed" button);
-
       (match button with
       | 1 -> 
-
-(* DISABLED FOR NOW
-          dw.drag_pt <- { 
-            Cairo.x = GdkEvent.Button.x ev; 
-            Cairo.y = GdkEvent.Button.y ev; 
-          };
-          dw.in_dragging <- true;
-*)
-
-          r_opt +> Common.do_option (fun (r, _, _r_englobing) ->
-            let file = r.T.tr_label in
-            pr2 (spf "clicking on %s" file);
-          );
-          true
+        (* DISABLED FOR NOW
+         * dw.drag_pt <- { 
+         * Cairo.x = GdkEvent.Button.x ev; 
+         * Cairo.y = GdkEvent.Button.y ev; 
+         * };
+         * dw.in_dragging <- true;
+         *)
+        r_opt +> Common.do_option (fun (r, _, _r_englobing) ->
+          let file = r.T.tr_label in
+          pr2 (spf "clicking on %s" file);
+        );
+        true
       | 2 ->
-          r_opt +> Common.do_option (fun (r, _, _r_englobing) ->
-            let file = r.T.tr_label in
-            pr2 (spf "opening %s" file);
-
-            match find_filepos_in_rectangle_at_user_point user dw r with
-            | None ->
-                Editor_connection.open_file_in_current_editor ~file ~line:0;
-            | Some (fpos) ->
-                Editor_connection.open_file_in_current_editor ~file 
-                  ~line:fpos.Common2.l;
-          );
-          true
+        r_opt +> Common.do_option (fun (r, _, _r_englobing) ->
+          let file = r.T.tr_label in
+          pr2 (spf "opening %s" file);
+          let line =
+            match M.find_line_in_rectangle_at_user_point dw user r with
+            | None -> 1
+            (* emacs line numbers start at 1 *)
+            | Some l -> l +.. 1
+          in
+          Editor_connection.open_file_in_current_editor ~file ~line;
+        );
+        true
 
       | 3 ->
-          
-      r_opt +> Common.do_option (fun (r, _, _r_englobing) ->
-        let path = r.T.tr_label in
 
-        !Ctl._go_dirs_or_file dw_ref [path];
-      );
-      true
+        r_opt +> Common.do_option (fun (r, _, _r_englobing) ->
+          let file = r.T.tr_label in
+
+          if not (Gdk.Convert.test_modifier `SHIFT state)
+          then !Ctl._go_dirs_or_file dw_ref [file]
+          else begin
+
+          (* similar to View_overlays.motion.refresher *)
+          let entity_opt =
+            if Hashtbl.mem dw.microlevel r
+            then
+              let translate = Hashtbl.find dw.microlevel r in
+              let line = translate.pos_to_line user in
+              M.find_entity_at_line line r dw
+            else None
+          in
+
+          
+          let uses, users = 
+            match entity_opt with
+            | None -> M.uses_and_users_readable_files_of_file file dw
+            | Some n -> M.uses_and_users_readable_files_of_node n dw
+          in
+
+          let model = Async.async_get dw.dw_model in
+          let paths_of_readables xs = 
+            xs 
+            +> List.sort Pervasives.compare
+            +> Common2.uniq
+            (* todo: tfidf to filter files like common2.ml *)
+            +> Common.exclude (fun readable -> 
+              readable =~ "commons/.*" || 
+              readable =~ "external/.*" 
+            )
+            +> List.map (fun s -> Filename.concat model.root s)
+          in
+
+          let readable = Common.filename_without_leading_path model.root file in
+
+          GToolbox.popup_menu ~entries:[
+            `I ("go to file", (fun () -> 
+              !Ctl._go_dirs_or_file dw_ref (paths_of_readables [readable]);));
+            `I ("deps inout", (fun () -> 
+              !Ctl._go_dirs_or_file dw_ref (paths_of_readables 
+                                              (uses ++ users ++ [readable]))));
+            `I ("deps in (users)", (fun () -> 
+              !Ctl._go_dirs_or_file dw_ref (paths_of_readables 
+                                              (users ++ [readable]))));
+            `I ("deps out (uses)", (fun () -> 
+              !Ctl._go_dirs_or_file dw_ref (paths_of_readables 
+                                            (uses ++ [readable]))));
+          ] ~button:3 ~time:(GtkMain.Main.get_current_event_time());
+          end
+        );
+        true
       | _ -> false
       )
   | `BUTTON_RELEASE ->
@@ -2745,17 +2643,24 @@ let go_dirs_or_file ?(current_entity=None) ?(current_grep_query=None)
 val find_rectangle_at_user_point :
   drawing ->
   Cairo.point ->
-  (Treemap.treemap_rectangle * 
-   Treemap.treemap_rectangle list * 
-   Treemap.treemap_rectangle
-  )
-  option
+  (Treemap.treemap_rectangle * (* most precise *)
+   Treemap.treemap_rectangle list * (* englobbing ones *)
+   Treemap.treemap_rectangle (* top one *)
+  ) option
 @
 
 <<find_rectangle_at_user_point()>>=
-(* alt: could use Cairo_bigarray and the pixel trick if
+(* alt: could use Cairo_bigarray and the pixel trick below if
  * it takes too long to detect which rectangle is under the cursor.
  * coud also sort the rectangles ... or have some kind of BSP.
+ * 
+ * going from a point to the enclosing rectangle via pixel color trick. 
+ * Kind of ugly. Add this in the model:
+ *   mutable pm_color_trick: GDraw.pixmap;
+ *   mutable pm_color_trick_info: (string) array.
+ * 
+ * Current solution: just find pixel by iterating over all the rectangles
+ * and check if he's inside.
  *)
 let find_rectangle_at_user_point2 dw user =
   let user = CairoH.cairo_point_to_point user in
@@ -2774,6 +2679,9 @@ let find_rectangle_at_user_point2 dw user =
       && r.T.tr_depth > 1
     ) 
     +> List.map (fun r -> r, r.T.tr_depth) 
+    (* opti: this should be far faster by using a quad tree to represent
+     * the treemap
+     *)
     +> Common.sort_by_val_highfirst 
     +> List.map fst
    in
@@ -3061,8 +2969,8 @@ let zoom_pan_scale_map cr dw =
   mutable width: int;
   mutable height: int;
 
+  (* to delete? *)
   mutable zoom: float;
-
   (* in user coordinates *)
   mutable xtrans: float;
   mutable ytrans: float;
@@ -3227,7 +3135,7 @@ val my_entry_completion_eff :
 @ 
 
 <<model fields hook>>=
-  big_grep_idx: Big_grep.index;
+big_grep_idx: Big_grep.index;
 @ 
 
 \begin{verbatim}
@@ -3609,25 +3517,18 @@ Here low level graphics layers.
   mutable pm: GDraw.pixmap;
   mutable overlay: [ `Any ] Cairo.surface;
 
-  (* todo: going from a point to the enclosing rectangle via pixel color
-   *  trick. Kind of ugly.
-   * mutable pm_color_trick: GDraw.pixmap;
-   * mutable pm_color_trick_info: (string) array.
-   * alternative: just find pixel by iterating over all the rectangles
-   * and check if he's inside
-   *)
 @
 
 \subsection{Rectangle overlay}
 
 <<draw_rectangle_overlay>>=
-let draw_rectangle_overlay ~cr_overlay ~dw (r, middle, r_englobing) =
-  Cairo.save cr_overlay;
-  View_mainmap.zoom_pan_scale_map cr_overlay dw;
-  CairoH.draw_rectangle_figure ~cr:cr_overlay ~color:"white" r.T.tr_rect;
-
+let draw_englobing_rectangles_overlay ~dw (r, middle, r_englobing) =
+ with_overlay dw (fun cr_overlay ->
+  CairoH.draw_rectangle_figure 
+    ~cr:cr_overlay ~color:"white" r.T.tr_rect;
   CairoH.draw_rectangle_figure
     ~cr:cr_overlay ~color:"blue" r_englobing.T.tr_rect;
+
   Draw_labels.draw_treemap_rectangle_label_maybe 
     ~cr:cr_overlay ~color:(Some "red") ~zoom:dw.zoom r_englobing;
 
@@ -3643,59 +3544,21 @@ let draw_rectangle_overlay ~cr_overlay ~dw (r, middle, r_englobing) =
     Draw_labels.draw_treemap_rectangle_label_maybe 
       ~cr:cr_overlay ~color:(Some color) ~zoom:dw.zoom r;
   );
-  let model = Async.async_get dw.dw_model in
-  let file = r.T.tr_label in
-  let readable = Common.filename_without_leading_path model.root file in
-
-  let uses = 
-    try Hashtbl.find model.huses_of_file readable with Not_found -> [] in
-  let users = 
-    try Hashtbl.find model.husers_of_file readable with Not_found -> [] in
-  uses +> List.iter (fun file ->
-    try 
-      let r = Hashtbl.find dw.readable_file_to_rect file in
-      CairoH.draw_rectangle_figure ~cr:cr_overlay ~color:"green" r.T.tr_rect;
-    with Not_found -> ()
-  );
-  users +> List.iter (fun file ->
-    try 
-      let r = Hashtbl.find dw.readable_file_to_rect file in
-      CairoH.draw_rectangle_figure ~cr:cr_overlay ~color:"red" r.T.tr_rect;
-    with Not_found -> ()
-  );
-
-  Cairo.restore cr_overlay;
-  ()
+ )
 @ 
 
 
 \subsection{Label overlay}
 
 <<draw_label_overlay>>=
-let draw_label_overlay ~cr_overlay ~dw ~x ~y r =
-
-  let txt = r.T.tr_label in
-
-  let readable_txt = 
-    if dw.current_root = txt (* when we are fully zoomed on one file *)
-    then "root"
-    else 
-      Common.filename_without_leading_path dw.current_root txt in
-
-  let readable_txt =
-    if String.length readable_txt > 25
-    then 
-      let dirs = Filename.dirname readable_txt +> Common.split "/" in
-      let file = Filename.basename readable_txt in
-      spf "%s/.../%s" (List.hd dirs) file
-    else readable_txt
-  in
+(* assumes cr_overlay has not been zoom_pan_scale *)
+let draw_label_overlay ~cr_overlay ~dw ~x ~y txt =
 
   Cairo.select_font_face cr_overlay "serif" 
     Cairo.FONT_SLANT_NORMAL Cairo.FONT_WEIGHT_NORMAL;
   Cairo.set_font_size cr_overlay Style2.font_size_filename_cursor;
       
-  let extent = CairoH.text_extents cr_overlay readable_txt in
+  let extent = CairoH.text_extents cr_overlay txt in
   let tw = extent.Cairo.text_width in
   let th = extent.Cairo.text_height in
 
@@ -3711,7 +3574,7 @@ let draw_label_overlay ~cr_overlay ~dw ~x ~y r =
 
   Cairo.move_to cr_overlay refx refy;
   Cairo.set_source_rgba cr_overlay 1. 1. 1.    1.0;
-  CairoH.show_text cr_overlay readable_txt;
+  CairoH.show_text cr_overlay txt;
   
   (*
   Cairo.set_source_rgb cr_overlay 0.3 0.3 0.3;
@@ -3725,13 +3588,10 @@ let draw_label_overlay ~cr_overlay ~dw ~x ~y r =
 \subsection{Searched files overlay}
 
 <<draw_searched_rectangles>>=
-let draw_searched_rectangles ~cr_overlay ~dw =
-  Cairo.save cr_overlay;
-  View_mainmap.zoom_pan_scale_map cr_overlay dw;
-
+let draw_searched_rectangles ~dw =
+ with_overlay dw (fun cr_overlay ->
   dw.current_searched_rectangles +> List.iter (fun r ->
-    CairoH.draw_rectangle_figure ~cr:cr_overlay 
-      ~color:"yellow" r.T.tr_rect
+    CairoH.draw_rectangle_figure ~cr:cr_overlay ~color:"yellow" r.T.tr_rect
   );
   (* 
    * would also like to draw not matching rectangles
@@ -3745,8 +3605,7 @@ let draw_searched_rectangles ~cr_overlay ~dw =
    * ~color ~alpha:0.3
    * r
    *)
-  Cairo.restore cr_overlay;
-  ()
+ )
 @ 
 
 \subsection{Zoom overlay}
@@ -3858,61 +3717,82 @@ let draw_zoomed_overlay ~cr_overlay ~user ~dw ~x ~y r =
 \subsection{Assembling overlays}
 
 <<motion_refresher>>=
-(* todo: deadclock   M.locked (fun () ->    ) dw.M.model.m *)
 let motion_refresher ev dw () =
   let cr_overlay = Cairo.create dw.overlay in
   CairoH.clear cr_overlay;
 
-  let x = GdkEvent.Motion.x ev in
-  let y = GdkEvent.Motion.y ev in
-
+  (* some similarity with View_mainmap.button_action handler *)
+  let x, y = GdkEvent.Motion.x ev, GdkEvent.Motion.y ev in
   let pt = { Cairo. x = x; y = y } in
   let user = View_mainmap.with_map dw (fun cr -> Cairo.device_to_user cr pt) in
-
   let r_opt = M.find_rectangle_at_user_point dw user in
-  r_opt +> Common.do_option (fun (r, middle, r_englobing) ->
-    let txt = r.T.tr_label in
 
-    let txt =
-      if Hashtbl.mem dw.pos_and_line r
+  r_opt +> Common.do_option (fun (r, middle, r_englobing) ->
+    let line_opt, entity_opt =
+      if Hashtbl.mem dw.microlevel r
       then
-        let translate = Hashtbl.find dw.pos_and_line r in
-        let line = translate.pos_to_line user in
-        spf "%s:%d" txt line
-      else txt
+        let microlevel = Hashtbl.find dw.microlevel r in
+        let line = microlevel.pos_to_line user in
+        let entity_opt = M.find_entity_at_line line r dw in
+        Some line, entity_opt
+      else None, None
     in
-    !Controller._statusbar_addtext txt;
-    
-    draw_label_overlay ~cr_overlay ~dw ~x ~y r;
-    draw_rectangle_overlay ~cr_overlay ~dw (r, middle, r_englobing);
-    
+
+    let statusbar_txt = 
+      r.T.tr_label ^
+      (match line_opt with None -> "" | Some i -> spf ":%d" i) ^
+      (match entity_opt with None -> "" | Some n -> 
+        " (" ^ Graph_code.string_of_node n ^ ")"
+      )
+    in
+    !Controller._statusbar_addtext statusbar_txt;
+
+    (match line_opt with
+    | None ->
+      let label_txt = readable_txt_for_label r.T.tr_label dw.current_root in
+      draw_label_overlay ~cr_overlay ~dw ~x ~y label_txt
+    | Some line ->
+       let microlevel = Hashtbl.find dw.microlevel r in
+       draw_magnify_line_overlay_maybe dw line microlevel
+    );
+
+    draw_englobing_rectangles_overlay ~dw (r, middle, r_englobing);
+
+    draw_uses_users_files ~dw r;
+
+    (match line_opt, entity_opt with
+    | Some line, Some n ->
+      let microlevel = Hashtbl.find dw.microlevel r in
+      let rectangle = microlevel.line_to_rectangle line in
+      with_overlay dw (fun cr ->
+        CairoH.draw_rectangle_figure ~cr ~color:"white" rectangle
+      );
+      draw_uses_users_entities ~dw n;
+    | _ -> ()
+    );
+     
     if dw.dw_settings.draw_searched_rectangles;
-    then
-        draw_searched_rectangles ~cr_overlay ~dw;
+    then draw_searched_rectangles ~dw;
     
     Controller.current_r := Some r;
     
     (* it has been computed, use it then *)
     if Hashtbl.mem _hmemo_surface (r.T.tr_label, dw.zoom) &&
-      dw.in_zoom_incruste
-    then
-      draw_zoomed_overlay ~cr_overlay ~user ~dw ~x ~y r;
-      
+       dw.in_zoom_incruste
+    then draw_zoomed_overlay ~cr_overlay ~user ~dw ~x ~y r;
   );
   !Controller._refresh_da ();
   false
 
 
 let motion_notify (da, da2) dw ev =
-
   !Controller.current_motion_refresher +> Common.do_option (fun x ->
     GMain.Idle.remove x;
   );
 
   let dw = !dw in
 
-  let x = GdkEvent.Motion.x ev in
-  let y = GdkEvent.Motion.y ev in
+  let x, y = GdkEvent.Motion.x ev, GdkEvent.Motion.y ev in
   pr2 (spf "motion: %f, %f" x y);
 
   if dw.in_dragging then begin
@@ -4072,17 +3952,17 @@ diagram where see events, functions,  draw vs paint vs overlays.
 
 <<parsing2.mli>>=
 
-(* internally memoize the highlight information in _hmemo_file *)
-val tokens_with_categ_of_file :
+(* internally memoize the parsing part in _hmemo_file *)
+val tokens_with_categ_of_file:
   Common.filename ->
   (string, Database_code.entity) Hashtbl.t ->
   (string * Highlight_code.category option * Common2.filepos) list
 
-val disable_file_in_cache : 
+val disable_file_in_cache: 
   Common.filename -> unit
 
 (* helpers *)
-val use_arity_of_use_count : 
+val use_arity_of_use_count: 
   int -> Highlight_code.use_arity
 
 @ 
@@ -4503,7 +4383,7 @@ val async_get: 'a t -> 'a
 val async_make: unit -> 'a t
 val async_set: 'a -> 'a t -> unit
 
-val locked: (unit -> 'a) -> Mutex.t -> 'a
+val with_lock: (unit -> 'a) -> Mutex.t -> 'a
 @
 
 <<async functions>>=
@@ -4513,7 +4393,7 @@ let async_make () = {
   v = ref None;
 }
 
-let locked f l =
+let with_lock f l =
   Mutex.lock l;
   try 
     let x = f () in 
@@ -4532,10 +4412,10 @@ let async_get a =
         go a
     | Some v -> v
   in
-  locked (fun () -> go a) a.m
+  with_lock (fun () -> go a) a.m
 
 let async_set v a = 
-  locked (fun () ->
+  with_lock (fun () ->
     a.v := Some v;
     Condition.signal a.c;
   ) a.m
@@ -4737,7 +4617,7 @@ let zoom_factor_incruste_mode = 10. (* was 18 *)
 
 <<threshold_draw_dark_background_font_size_real>>=
 (* CONFIG *)
-let threshold_draw_dark_background_font_size_real = 3.
+let threshold_draw_dark_background_font_size_real = 5.
 @
 
 
@@ -4947,6 +4827,7 @@ let text_extents cr s =
     Cairo.text_extents cr s
   )
 
+(* just wrap it here so that we can profile it *)
 let set_font_size cr font_size =
   Common.profile_code "CairoH.set_font_size" (fun () ->
     Cairo.set_font_size cr font_size
@@ -4992,9 +4873,8 @@ let cairo_point_to_point p =
   }
 
 let distance_points p1 p2 =
-  abs_float (p2.Cairo.x - p1.Cairo.x) +
-  abs_float (p2.Cairo.y - p1.Cairo.y) +
-    0.
+  abs_float (p2.Cairo.x - p1.Cairo.x) + 
+  abs_float (p2.Cairo.y - p1.Cairo.y)
 
 (*****************************************************************************)
 (* Surface *)
@@ -5089,7 +4969,7 @@ module Model = Model2
 (* Prelude *)
 (*****************************************************************************)
 (* 
- * Main entry point of codemap, a semantic source code visualizer
+ * This is the main entry point of codemap, a semantic source code visualizer
  * using treemaps and code thumbnails.
  * 
  * requirements:
@@ -5120,8 +5000,8 @@ module Model = Model2
  *    visual feedback
  * 
  * related work:
- *  - todo: http://www.kickstarter.com/projects/296054304/zeta-code
  *  - todo: light table
+ *  - todo: http://www.kickstarter.com/projects/296054304/zeta-code
  *  - todo? sublime, textmate, etc
  *)
 
@@ -5356,6 +5236,15 @@ let _ =
 \subsection{[[model_graph_code.mli]]}
 
 <<model_graph_code.mli>>=
+val build_uses_and_users_of_file: 
+  Graph_code.graph ->
+  (Common.filename, Common.filename list) Common.assoc * (* uses_of_file *)
+  (Common.filename, Common.filename list) Common.assoc   (* husers_of_file *) 
+
+(* the nodes are sorted by line numbers *)
+val build_entities_of_file:
+  Graph_code.graph ->
+  (Common.filename, (int * Graph_code.node) list) Common.assoc
 @ 
 
 \subsection{[[model_database_code.mli]]}
@@ -5378,6 +5267,61 @@ let _ =
 
 <<model_graph_code.ml>>=
 <<Facebook copyright>>
+open Common
+
+module G = Graph_code
+
+(*****************************************************************************)
+(* Prelude *)
+(*****************************************************************************)
+
+(*****************************************************************************)
+(* Main entry point *)
+(*****************************************************************************)
+
+let build_uses_and_users_of_file g =
+
+  (* we use the 'find_all' property of those hashes *)
+  let huses = Hashtbl.create 101 in
+  let husers = Hashtbl.create 101 in
+
+  let halready = Hashtbl.create 101 in
+
+  g +> G.iter_use_edges (fun n1 n2 ->
+    try 
+      let file1 = G.file_of_node n1 g in
+      let file2 = G.file_of_node n2 g in
+      if file1 <> file2 && not (Hashtbl.mem halready (file1, file2)) then begin
+        Hashtbl.replace halready (file1, file2) true;
+        Hashtbl.add huses file1 file2;
+        Hashtbl.add husers file2 file1;
+      end;
+    with Not_found -> ()
+  );
+
+  Common2.hkeys huses +> List.map (fun k -> k, Hashtbl.find_all huses k),
+  Common2.hkeys husers +> List.map (fun k -> k, Hashtbl.find_all husers k)
+
+let build_entities_of_file g =
+
+  (* we use the 'find_all' property of those hashes *)
+  let h = Hashtbl.create 101 in
+
+  g +> G.iter_nodes (fun n ->
+    try 
+      let info = G.nodeinfo n g in
+      let file = info.G.pos.Parse_info.file in
+      (* codemap use line numbers starting at 0 *)
+      let line = info.G.pos.Parse_info.line - 1 in
+
+      Hashtbl.add h file (line, n);
+    with Not_found -> ()
+  );
+  Common2.hkeys h +> List.map (fun k ->
+    let xs = Hashtbl.find_all h k in
+    k, Common.sort_by_key_lowfirst xs
+  )
+
 @ 
 
 \subsection{[[model_database_code.ml]]}
@@ -5386,6 +5330,7 @@ let _ =
 <<Facebook copyright>>
 open Common
 
+module Flag = Flag_visual
 module Db = Database_code
 
 (*****************************************************************************)
@@ -5420,16 +5365,78 @@ module Db = Database_code
 
 <<type model>>
 
+type macrolevel = Treemap.treemap_rendering
+
+type microlevel = {
+  pos_to_line: Cairo.point -> int;
+  line_to_rectangle: int -> Figures.rectangle;
+  layout: layout;
+  container: Treemap.treemap_rectangle;
+  content: (glyph list) array option;
+}
+  and glyph = {
+    str: string;
+    categ: Highlight_code.category option;
+    font_size: float;
+    color: Simple_color.emacs_color;
+  }
+  and layout = {
+    lfont_size: float;
+    split_nb_columns: float; (* int *)
+    width_per_column:float;
+    height_per_line: float;
+    nblines: float; (* int *)
+    nblines_per_column: float; (* int *)
+  }
+
 <<type drawing>>
 
 <<type context>>
 val context_of_drawing: drawing -> context
 
+
 <<init_drawing sig>>
 
 <<new_pixmap sig>>
 
+(* point -> rectangle -> line -> entity *)
+
 <<find_rectangle_at_user_point sig>>
+
+val find_line_in_rectangle_at_user_point:
+  drawing ->
+  Cairo.point -> 
+  Treemap.treemap_rectangle ->
+  int option
+
+val find_entity_at_line:
+  int (* line *) -> Treemap.treemap_rectangle -> drawing -> 
+  Graph_code.node option
+
+
+(* graph code integration *)
+
+(* macrolevel uses and users *)
+val uses_and_users_readable_files_of_file:
+  Common.filename (* absolute *) -> drawing -> 
+  Common.filename list (* readable *) * Common.filename list (* readable *)
+
+val uses_and_users_rect_of_file:
+  Common.filename -> drawing -> 
+  Treemap.treemap_rectangle list * Treemap.treemap_rectangle list
+
+(* microlevel uses and users *)
+val uses_and_users_readable_files_of_node:
+  Graph_code.node -> drawing -> 
+  Common.filename list (* readable *) * Common.filename list (* readable *)
+
+val uses_and_users_of_node:
+  Graph_code.node -> drawing -> 
+  (Graph_code.node * int * microlevel) list * 
+  (Graph_code.node * int * microlevel) list
+
+val lines_where_used_node:
+  Graph_code.node -> int -> microlevel -> int list
 
 @ 
 
@@ -5445,8 +5452,6 @@ module CairoH = Cairo_helpers
 module F = Figures
 module T = Treemap
 
-module Db = Database_code
-
 module Flag = Flag_visual
 
 (*****************************************************************************)
@@ -5459,6 +5464,31 @@ module Flag = Flag_visual
 (*****************************************************************************)
 (* The drawing model *)
 (*****************************************************************************)
+
+type macrolevel = Treemap.treemap_rendering
+
+type microlevel = {
+  pos_to_line: Cairo.point -> int;
+  line_to_rectangle: int -> Figures.rectangle;
+  layout: layout;
+  container: Treemap.treemap_rectangle;
+  content: (glyph list) array option;
+}
+  and glyph = {
+    str: string;
+    categ: Highlight_code.category option;
+    font_size: float;
+    color: Simple_color.emacs_color;
+  }
+  and layout = {
+    lfont_size: float;
+    split_nb_columns: float; (* int *)
+    width_per_column:float;
+    height_per_line: float;
+    nblines: float; (* int *)
+    nblines_per_column: float; (* int *)
+  }
+
 
 <<type drawing>>
 
@@ -5481,10 +5511,138 @@ let context_of_drawing dw = {
 }
 
 (*****************************************************************************)
-(* Point -> treemap info *)
+(* Point -> (rectangle, line, entity) *)
 (*****************************************************************************)
 
 <<find_rectangle_at_user_point()>>
+
+
+let find_line_in_rectangle_at_user_point dw user_pt r =
+  try 
+    let microlevel = Hashtbl.find dw.microlevel r in
+    let line = microlevel.pos_to_line user_pt in
+    Some line
+  with Not_found -> None
+
+(*****************************************************************************)
+(* Graph code integration *)
+(*****************************************************************************)
+
+let find_entity_at_line line r dw =
+  let model = Async.async_get dw.dw_model in
+  let file = r.T.tr_label in
+  let readable = Common.filename_without_leading_path model.root file in
+  try 
+    let xs = Hashtbl.find model.hentities_of_file readable in
+    xs +> List.rev +> Common.find_some_opt (fun (line2, n) ->
+      if line = line2 (* && abs (line - line2) <= 4 *)
+      then Some n 
+      else None
+    )
+  with Not_found -> None
+
+
+let uses_and_users_readable_files_of_file file dw =
+  let model = Async.async_get dw.dw_model in
+  let readable = Common.filename_without_leading_path model.root file in
+
+  let uses = 
+    try Hashtbl.find model.huses_of_file readable with Not_found -> [] in
+  let users = 
+    try Hashtbl.find model.husers_of_file readable with Not_found -> [] in
+  uses, users
+
+let uses_and_users_readable_files_of_node node dw =
+  let model = Async.async_get dw.dw_model in
+  match model.g with
+  | None -> [], []
+  | Some g ->
+    let succ = Graph_code.succ node Graph_code.Use g in
+    let pred = Graph_code.pred node Graph_code.Use g in
+    succ +> Common.map_filter (fun n ->
+      try Some (Graph_code.file_of_node n g) with Not_found -> None
+    ),
+    pred +> Common.map_filter (fun n ->
+      try Some (Graph_code.file_of_node n g) with Not_found -> None
+    )
+
+let uses_and_users_rect_of_file file dw =
+  let uses, users = uses_and_users_readable_files_of_file file dw in
+  uses +> Common.map_filter (fun file -> 
+    Common2.optionise (fun () -> Hashtbl.find dw.readable_file_to_rect file)
+  ),
+  users +> Common.map_filter (fun file ->
+    Common2.optionise (fun () ->Hashtbl.find dw.readable_file_to_rect file)
+  )
+
+
+let uses_or_users_of_node node dw fsucc =
+  let model = Async.async_get dw.dw_model in
+  match model.g with
+  | None -> []
+  | Some g ->
+    let succ = fsucc node g in
+    succ +> Common.map_filter (fun n ->
+      try 
+        let file = Graph_code.file_of_node n g in
+        let rect = Hashtbl.find dw.readable_file_to_rect file in
+        let xs = Hashtbl.find model.hentities_of_file file in
+        let (line, _n2) = xs +> List.find (fun (_, n2) -> n2 =*= n) in
+        let microlevel = Hashtbl.find dw.microlevel rect in
+        Some (n, line, microlevel)
+      with Not_found -> None
+    )
+
+let uses_and_users_of_node node dw =
+  uses_or_users_of_node node dw (fun node g ->
+    Graph_code.succ node Graph_code.Use g),
+  uses_or_users_of_node node dw (fun node g ->
+    Graph_code.pred node Graph_code.Use g)
+
+
+let lines_where_used_node node startl microlevel =
+  let (fullstr, kind) = node in
+  let xs = Common.split "\\." fullstr in
+  let s = Common2.list_last xs in
+  
+  match microlevel.content with
+  | None -> []
+  | Some glypys ->
+    
+    let res = ref [] in
+    for line = startl to Array.length glypys - 1 do
+      let xs = glypys.(line) in
+      if xs +> List.exists (fun glyph ->
+        let categ =
+          match glyph.categ with
+          | Some x -> x
+          | _ -> Highlight_code.Normal
+        in
+        glyph.str =$= s &&
+          
+        (* see the code of the different highlight_code_xxx.ml to
+         * know the different possible pairs
+         *)
+        (match kind, categ with
+        | Database_code.Function, Highlight_code.Function _
+        | Database_code.Field, Highlight_code.Field _
+        | Database_code.Constructor, Highlight_code.ConstructorUse _
+        | Database_code.Global, Highlight_code.Global _
+
+        (* tofix at some point, wrong tokenizer *)
+        | Database_code.Constant, Highlight_code.Local _
+        | Database_code.Global, Highlight_code.Local _
+        | Database_code.Function, Highlight_code.Local _
+
+        | Database_code.Global, Highlight_code.UseOfRef
+         -> true
+
+        | _ -> false
+        )
+      )
+      then Common.push2 line res
+    done;
+    !res
 
 @ 
 
@@ -5814,6 +5972,8 @@ let draw_trect_using_layers ~cr layers_with_index rect =
 
 <<text_with_user_pos sig>>
 
+val draw_magnify_line:
+  Cairo.t -> int -> Model2.microlevel -> unit
 @ 
 
 \subsection{[[draw_microlevel.ml]]}
@@ -5825,15 +5985,15 @@ open Common2.ArithFloatInfix
 
 open Figures (* for the fields *)
 module F = Figures
+module T = Treemap
 module Color = Simple_color
+module CairoH = Cairo_helpers
 
 open Model2 (* for the fields *)
+module M = Model2
 
 module Flag = Flag_visual
 module Style = Style2
-
-module T = Treemap
-module CairoH = Cairo_helpers
 
 module FT = File_type
 module Parsing = Parsing2
@@ -5846,111 +6006,169 @@ module Parsing = Parsing2
 (* Types *)
 (*****************************************************************************)
 
+(* There are many different coordinates relevant to the lines of a file:
+ *  - line number in the file
+ *  - column and line in column for the file when rendered in multiple columns
+ *  - x,y position relative to the current treemap rectangle
+ *  - x,y position on the screen
+ * We have many functions below to go from one to the other.
+ * 
+ * note: some types below could be 'int' but it's more convenient to have
+ * everything as a float because arithmetic with OCaml sucks when have
+ * multiple numeric types.
+ * 
+ * Below line numbers starts at 0, not at 1 as in emacs.
+ *)
+
+type line = int
+
+type line_in_column = {
+  column: float; (* int *)
+  line_in_column: float; (* int *)
+}
+
+type pos = float (* x *) * float (* y *)
+
+type point = Cairo.point
+
 <<type draw_content_layout>>
-
-(*****************************************************************************)
-(* globals *)
-(*****************************************************************************)
-
-(* ugly, see mli for explanation *)
-let text_with_user_pos = ref []
 
 (*****************************************************************************)
 (* Helpers *)
 (*****************************************************************************)
 
-let is_big_file_with_few_lines ~nblines fullpath = 
-  nblines < 20. && 
-  Common2.filesize_eff fullpath > 4000
+let is_big_file_with_few_lines ~nblines file = 
+  nblines < 20. && Common2.filesize_eff file > 4000
 
-let pos_and_line_from_layout r layout =
-  { line_to_pos = (fun line ->
-      raise Todo
-    );
-    pos_to_line = (fun pt ->
+(* coupling: with parsing2.ml *)
+let use_fancy_highlighting file =
+  match FT.file_type_of_file file with
+  | ( FT.PL (FT.Web (FT.Php _))
+    | FT.PL (FT.Web (FT.Js))
+    | FT.PL (FT.Web (FT.Html))
+    | FT.PL (FT.ML _)
+    | FT.PL (FT.Cplusplus _ | FT.C _)
+    | FT.PL (FT.Thrift)
+    | FT.Text ("nw" | "tex"  | "texi" | "web" | "org")
+    | FT.PL (FT.Lisp _)
+    | FT.PL (FT.Haskell _)
+    | FT.PL (FT.Python)
+    | FT.PL (FT.Csharp)
+    | FT.PL (FT.Java)
+    (*    | FT.PL (FT.Prolog _) *)
+    | FT.PL (FT.Erlang)
+    | FT.PL (FT.Opa)
+    ) -> true
+  | (FT.Text "txt") when Common2.basename file =$= "info.txt" -> true
+  | _ -> false
 
-      let x = pt.Cairo.x - r.p.x in
-      let y = pt.Cairo.y - r.p.y in
+(*****************************************************************************)
+(* Coordinate conversion *)
+(*****************************************************************************)
 
-      let line_in_column = floor (y / layout.space_per_line) in
-      let column = floor (x / layout.w_per_column) in
+let line_in_column_to_bottom_pos lc r layout =
+  let x = r.p.x + (lc.column * layout.width_per_column) in
+  (* to draw text in cairo we need to be one line below, hence the +1
+   * as y goes down but the text is drawn above
+   *)
+  let y = r.p.y + ((lc.line_in_column + 1.) * layout.height_per_line) in
+  x, y
 
-      let nblines_per_column = 
-        (layout.nblines / layout.split_nb_columns) +> ceil in
+let line_to_line_in_column line layout =
+  let line = float_of_int line in
+  let column = floor (line / layout.nblines_per_column) in
+  let line_in_column = 
+    line - (column * layout.nblines_per_column) in
+  { column; line_in_column }
 
-     (column * nblines_per_column + line_in_column + 1.) +> int_of_float
-    );
+let line_to_rectangle line r layout =
+  let lc = line_to_line_in_column line layout in
+  (* this is the bottom pos, so we need to substract height_per_line
+   * if we want to draw above the bottom pos
+   *)
+  let x, y = line_in_column_to_bottom_pos lc r layout in
+  { p = { x; 
+          y = y - layout.height_per_line };
+    q = { x = x + layout.width_per_column; 
+          y = y + 0.2 * layout.height_per_line };
   }
 
+let point_to_line pt r layout =
+  let x = pt.Cairo.x - r.p.x in
+  let y = pt.Cairo.y - r.p.y in
+  let line_in_column = floor (y / layout.height_per_line) in
+  let column = floor (x / layout.width_per_column) in
+  (column * layout.nblines_per_column + line_in_column) +> int_of_float
+
 (*****************************************************************************)
-(* Anamorphic entities *)
+(* Content properties *)
 (*****************************************************************************)
 
+(* Anamorphic entities *)
 <<final_font_size_of_categ>>
 
-
-let set_source_rgba_and_font_size_of_categ 
-  ~cr ~font_size ~font_size_real ~is_matching_line
- categ 
- =
-
+let color_of_categ categ =
   let attrs =
     match categ with
-    | None -> Highlight_code.info_of_category Highlight_code.Normal
+    | None ->       Highlight_code.info_of_category Highlight_code.Normal
     | Some categ -> Highlight_code.info_of_category categ
   in
-  
-  let final_font_size = 
-    final_font_size_of_categ ~font_size ~font_size_real categ in
-  let final_font_size = 
-    if is_matching_line
-    then final_font_size * 1.
-    else final_font_size
-  in
-  
-  let _alpha_adjust =
-    let ratio = final_font_size / font_size in
-    match ratio with
-    | _ when ratio > 4. -> 0.
-    | _ when ratio > 2. -> 0.3
-    | _ when ratio >= 1. -> 0.5
-    | _ -> 0.3
-  in
-  
-  Cairo.set_font_size cr final_font_size;
-  
-  let final_font_size_real = 
-    CairoH.user_to_device_font_size cr final_font_size in
-  
-  attrs +> List.iter (fun attr ->
+  attrs +> Common.find_some (fun attr ->
     match attr with
     | `FOREGROUND s 
     | `BACKGROUND s (* todo: should really draw the background of the text *)
       -> 
-        let (r,g,b) = Color.rgbf_of_string s in
-        (* this seems needed only on old version of Cario, or at least
-         * on the cairo I am using under Linux. Under Mac I don't need
-         * this; I put alpha = 1. for everything and the rendering
-         * is fine.
-         *)
-        let alpha = 
-          if CairoH.is_old_cairo () then
-            match () with
-            | _ when final_font_size_real < 1. -> 0.2
-            | _ when final_font_size_real < 3. -> 0.4
-            | _ when final_font_size_real < 5. -> 0.9
-                
-            | _ when final_font_size_real < 8. 
-                  -> 1. (* TODO - alpha_adjust, do that only when not in
-                           fully zoomed mode *)
-                    
-            | _ -> 1.
-          else 1.
-        in
-        Cairo.set_source_rgba cr r g b alpha;
-    | _ -> ()
-  );
-  ()
+        Some (s)
+    | _ -> None
+  )
+
+let glyphs_of_file ~context ~font_size ~font_size_real file 
+  : (glyph list) array option =
+
+  match FT.file_type_of_file file with
+  | _ when use_fancy_highlighting file ->
+
+    let model = Async.async_get context.model in
+    let entities = model.Model2.hentities in
+
+    (* can't use nblines_eff here, we don't want to memoize *)
+    let nblines = Common2.nblines_eff file in
+    let arr = Array.create nblines [] in
+
+    let tokens_with_categ = Parsing.tokens_with_categ_of_file file entities in
+
+    let line = ref 0 in
+    let acc = ref [] in
+    (try (
+     tokens_with_categ +> List.iter (fun (s, categ, _filepos) ->
+      let final_font_size = 
+        final_font_size_of_categ ~font_size ~font_size_real categ in
+      let color = 
+        color_of_categ categ in
+
+      let xs = Common2.lines_with_nl_either s in
+      xs +> List.iter (function
+      | Common2.Left str ->
+        Common.push2 { M. str; font_size = final_font_size; color; categ } acc;
+      | Common2.Right () ->
+        arr.(!line) <- List.rev !acc;
+        acc := [];
+        incr line;
+      )
+    );
+    if !acc <> []
+    then arr.(!line) <- List.rev !acc;
+    Some arr
+    ) with Invalid_argument("index out of bounds") ->
+      failwith (spf "try on %s, nblines = %d, line = %d" file nblines !line)
+    )
+
+  | FT.PL _ | FT.Text _ ->      
+    (Common.cat file)
+    +> List.map (fun str -> [{ M.str; font_size; color = "black"; categ=None }])
+    +> Array.of_list
+    +> (fun x -> Some x)
+  | _ -> None
 
 (*****************************************************************************)
 (* Columns *)
@@ -5972,6 +6190,30 @@ let set_source_rgba_and_font_size_of_categ
 
 <<draw_treemap_rectangle_content_maybe>>
     
+(*****************************************************************************)
+(* Magnifyer Content *)
+(*****************************************************************************)
+
+(* alt: digital zoom? good enough? need rendering at better resolution? *)
+let draw_magnify_line cr line microlevel =
+  match microlevel.content with
+  | None -> ()
+  | Some glyphs ->
+    let r = microlevel.container.T.tr_rect in
+    let layout = microlevel.layout in
+
+    let lc = line_to_line_in_column line layout in
+    let x, y = line_in_column_to_bottom_pos lc r layout in
+    Cairo.move_to cr x y;
+    
+    glyphs.(line) +> List.iter (fun glyph ->
+      let font_size = glyph.M.font_size * 3. in
+      Cairo.set_font_size cr font_size;
+      let (r,g,b) = Color.rgbf_of_string glyph.color in
+      let alpha = 1. in
+      Cairo.set_source_rgba cr r g b alpha;
+      CairoH.show_text cr glyph.M.str;
+    )
 
 @ 
 
@@ -6108,16 +6350,15 @@ open Common
 (* floats are the norm in graphics *)
 open Common2.ArithFloatInfix
 
+module CairoH = Cairo_helpers
 module K = GdkKeysyms
-
 
 module F = Figures
 module T = Treemap
-module CairoH = Cairo_helpers
-
 
 module Flag = Flag_visual
 open Model2
+module M = Model2
 module Ctl = Controller2
 
 (*****************************************************************************)
@@ -6235,7 +6476,7 @@ module Controller = Controller2
 <<view_overlays.mli>>=
 
 val draw_searched_rectangles:
-  cr_overlay:Cairo.t -> dw:Model2.drawing -> unit
+  dw:Model2.drawing -> unit
 
 val motion_notify:
   < as_widget : [> `widget ] Gtk.obj; .. > *
@@ -6268,12 +6509,33 @@ module M = Model2
 (*****************************************************************************)
 (* Prelude *)
 (*****************************************************************************)
-
 (* This module mainly modifies the dw.overlay cairo surface. It also
  * triggers the refresh_da which triggers itself the expose event
  * which triggers the View2.assemble_layers composition of dw.pm with
- * dw.overlay
+ * dw.overlay.
  *)
+
+(*****************************************************************************)
+(* Helpers *)
+(*****************************************************************************)
+
+let readable_txt_for_label txt current_root =
+  let readable_txt = 
+    if current_root =$= txt (* when we are fully zoomed on one file *)
+    then "root"
+    else Common.filename_without_leading_path current_root txt 
+  in
+  if String.length readable_txt > 25
+  then 
+    let dirs = Filename.dirname readable_txt +> Common.split "/" in
+    let file = Filename.basename readable_txt in
+    spf "%s/.../%s" (List.hd dirs) file
+  else readable_txt
+
+let with_overlay dw f =
+  let cr_overlay = Cairo.create dw.overlay in
+  View_mainmap.zoom_pan_scale_map cr_overlay dw;
+  f cr_overlay
 
 (*****************************************************************************)
 (* The overlays *)
@@ -6282,13 +6544,63 @@ module M = Model2
 (* ---------------------------------------------------------------------- *)
 (* The current filename *)
 (* ---------------------------------------------------------------------- *)
-
 <<draw_label_overlay>>
+
 (* ---------------------------------------------------------------------- *)
 (* The current rectangles *)
 (* ---------------------------------------------------------------------- *)
 
 <<draw_rectangle_overlay>>
+
+(* ---------------------------------------------------------------------- *)
+(* Uses and users macrolevel *)
+(* ---------------------------------------------------------------------- *)
+let draw_uses_users_files ~dw r =
+ with_overlay dw (fun cr_overlay ->
+   let file = r.T.tr_label in
+   let uses_rect, users_rect = M.uses_and_users_rect_of_file file dw in
+   uses_rect +> List.iter (fun r ->
+     CairoH.draw_rectangle_figure ~cr:cr_overlay ~color:"green" r.T.tr_rect;
+   );
+   users_rect +> List.iter (fun r ->
+     CairoH.draw_rectangle_figure ~cr:cr_overlay ~color:"red" r.T.tr_rect;
+   )
+ )
+
+(* ---------------------------------------------------------------------- *)
+(* Uses and users microlevel *)
+(* ---------------------------------------------------------------------- *)
+let draw_magnify_line_overlay_maybe dw line microlevel =
+  with_overlay dw (fun cr_overlay ->
+    let font_size = microlevel.layout.lfont_size in
+    let font_size_real = CairoH.user_to_device_font_size cr_overlay font_size in
+
+    (* todo: put in style *)
+    if font_size_real < 5.
+    then Draw_microlevel.draw_magnify_line cr_overlay line microlevel
+  )
+
+let draw_uses_users_entities ~dw n =
+ with_overlay dw (fun cr_overlay ->
+   let uses, users = uses_and_users_of_node n dw  in
+   uses +> List.iter (fun (_n2, line, microlevel) ->
+     let rectangle = microlevel.line_to_rectangle line in
+     CairoH.draw_rectangle_figure ~cr:cr_overlay ~color:"green" rectangle;
+   );
+   users +> List.iter (fun (_n2, line, microlevel) ->
+     let rectangle = microlevel.line_to_rectangle line in
+     CairoH.draw_rectangle_figure ~cr:cr_overlay ~color:"red" rectangle;
+     
+     let lines_used = M.lines_where_used_node n line microlevel in
+     lines_used +> List.iter (fun line ->
+       let rectangle = microlevel.line_to_rectangle line in
+       CairoH.draw_rectangle_figure ~cr:cr_overlay ~color:"purple" rectangle;
+
+       draw_magnify_line_overlay_maybe dw line microlevel;
+     );
+   );
+ )
+
 (* ---------------------------------------------------------------------- *)
 (* The selected rectangles *)
 (* ---------------------------------------------------------------------- *)
@@ -6498,7 +6810,15 @@ open Common
 (* Prelude *)
 (*****************************************************************************)
 
+(*****************************************************************************)
+(* Type *)
+(*****************************************************************************)
+
 <<type async>>
+
+(*****************************************************************************)
+(* Functions *)
+(*****************************************************************************)
 
 <<async functions>>
 
@@ -6516,7 +6836,6 @@ open Common
 
 <<cairo_helpers.ml>>=
 <<Facebook copyright>>
-open Common2
 open Common
 (* floats are the norm in graphics *)
 open Common2.ArithFloatInfix
@@ -6528,6 +6847,11 @@ module Color = Simple_color
 (*****************************************************************************)
 (* Prelude *)
 (*****************************************************************************)
+
+(*****************************************************************************)
+(* Helpers *)
+(*****************************************************************************)
+let (==~) = Common2.(==~)
 
 (*****************************************************************************)
 (* Text related *)

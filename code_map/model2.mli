@@ -6,22 +6,22 @@ type model = {
 
   db: Database_code.database option;
   (*s: model fields hook *)
-    (* fast accessors *)
-    hentities : (string, Database_code.entity) Hashtbl.t;
+  (* fast accessors *)
+  hentities : (string, Database_code.entity) Hashtbl.t;
   (*x: model fields hook *)
-    hfiles_entities : (Common.filename, Database_code.entity list) Hashtbl.t;
+  hfiles_entities : (Common.filename, Database_code.entity list) Hashtbl.t;
   (*x: model fields hook *)
-    big_grep_idx: Big_grep.index;
+  big_grep_idx: Big_grep.index;
   (*e: model fields hook *)
 
-  (* for microlevel *)
+  (* for microlevel use/def information *)
   g: Graph_code.graph option;
-  (* fast accessors, for macrolevel  *)
+  (* fast accessors, for macrolevel use/def information  *)
   huses_of_file: (Common.filename, Common.filename list) Hashtbl.t;
   husers_of_file: (Common.filename, Common.filename list) Hashtbl.t;
-  (* for microlevel *)
+  (* the lists are sorted by line number *)
   hentities_of_file: 
-    (Common.filename, (int * Graph_code.node) list) Hashtbl.t;
+    (Common.filename, (int (* line *) * Graph_code.node) list)  Hashtbl.t;
  }
 (*e: type model *)
 
@@ -55,17 +55,17 @@ type microlevel = {
  *)
 type drawing = {
 
-  (* computed lazily *)
+  (* computed lazily, semantic information about the code *)
   dw_model: model Async.t;
-  (* to compute zoomed treemap when double click *)
+  (* to compute a new treemap based on user's action *)
   treemap_func: Common.path list -> Treemap.treemap_rendering;
 
-  (* In user coordinates from 0 to T.xy_ratio and 1 for respectivey x and y.
-   * Assumes the treemap contains absolute paths.
-  *)
+  (* Macrolevel. In user coordinates from 0 to T.xy_ratio for 'x' and 0 to 1
+   * for 'y'. Assumes the treemap contains absolute paths (tr.tr_label).
+   *)
   treemap: Treemap.treemap_rendering;
-  (* when we render content at the microlevel, we then need to know to which
-   * line corresponds a position and vice versa.
+  (* Microlevel. When we render content at the microlevel, we then need to
+   * know to which line corresponds a position and vice versa.
    *)
   microlevel: (Treemap.treemap_rectangle, microlevel) Hashtbl.t;
 
@@ -101,8 +101,8 @@ type drawing = {
     mutable width: int;
     mutable height: int;
 
+    (* to delete? *)
     mutable zoom: float;
-
     (* in user coordinates *)
     mutable xtrans: float;
     mutable ytrans: float;

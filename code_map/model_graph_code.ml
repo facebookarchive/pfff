@@ -15,7 +15,6 @@
  * license.txt for more details.
  *)
 (*e: Facebook copyright *)
-(*e: model_graph_code.ml *)
 open Common
 
 module G = Graph_code
@@ -71,3 +70,4 @@ let build_entities_of_file g =
     k, Common.sort_by_key_lowfirst xs
   )
 
+(*e: model_graph_code.ml *)

@@ -6,7 +6,7 @@ The syncweb masters are in ~/pfff on macbook (MAC) or linux dev machine (DEV):
  - docs/ocaml/ MAC
 
  - h_visualization/ MAC
- - visual/ MAC
+ - code_map/ MAC
 
  - lang_php/parsing/ DEV
  - lang_php/analyze/ DEV
