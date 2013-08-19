@@ -435,6 +435,7 @@ let lines_where_used_node node startl microlevel =
 
         (* tofix at some point, wrong tokenizer *)
         | Database_code.Constant, Highlight_code.Local _
+        | Database_code.Global, Highlight_code.Local _
         | Database_code.Function, Highlight_code.Local _
          -> true
 
