@@ -1,5 +1,7 @@
 #!/bin/sh
 
+# See https://travis-ci.org/facebook/pfff
+
 #------------------------------
 # Install ocaml
 #------------------------------
