@@ -61,21 +61,20 @@ type node = {
       | BlockEnd of tok (* } *)
     *)
   (*x: node_kind constructors *)
-      (* TODO add appropriate info for each of those nodes *)
-      | IfHeader
+      | IfHeader of expr
       (* not used for now
       | Else
       | Elsif
       *) 
   (*x: node_kind constructors *)
-      | WhileHeader
+      | WhileHeader of expr
       | DoHeader
-      | DoWhileTail
+      | DoWhileTail of expr
       | ForHeader
-      | ForeachHeader
+      | ForeachHeader of foreach_variable list
 
   (*x: node_kind constructors *)
-      | SwitchHeader
+      | SwitchHeader of expr
       | SwitchEnd
       | Case
       | Default
@@ -90,9 +89,10 @@ type node = {
       | CatchStart
       | Catch
       | TryEnd
-      | Throw
+      | Throw of expr
   (*x: node_kind constructors *)
       | Join
+      | Parameter of dname
       (* statements without multiple outgoing or ingoing edges, such
        * as echo, expression statements, etc.
        *)
@@ -102,7 +102,6 @@ type node = {
      and simple_stmt = 
          | ExprStmt of expr
          | SpecialMaybeUnused of expr
-         | SpecialUse of expr
 
          | TodoSimpleStmt
          (* TODO? expr includes Exit, Eval, Include, etc which
@@ -148,29 +147,28 @@ let short_string_of_node_kind nkind =
   match nkind with
   | Enter -> "<enter>"
   | Exit -> "<exit>"
-
   | SimpleStmt _ -> "<simplestmt>"
-
-  | WhileHeader -> "while(...)"
+  | Parameter _ -> "<parameter>"
+  | WhileHeader _ -> "while(...)"
 
   | TrueNode -> "TRUE path"
   | FalseNode -> "FALSE path"
 
-  | IfHeader -> "if(...)"
+  | IfHeader _ -> "if(...)"
   | Join -> "<join>"
 
   | Return _ -> "return ...;"
 
   | DoHeader -> "do"
-  | DoWhileTail -> "while(...);"
+  | DoWhileTail _ -> "while(...);"
 
   | Continue -> "continue;"
   | Break -> "break;"
 
   | ForHeader -> "for(...)"
-  | ForeachHeader -> "foreach(...)"
+  | ForeachHeader _ -> "foreach(...)"
 
-  | SwitchHeader -> "switch(...)"
+  | SwitchHeader _ -> "switch(...)"
   | SwitchEnd -> "<endswitch>"
 
   | Case -> "case: ..."
@@ -181,9 +179,10 @@ let short_string_of_node_kind nkind =
   | Catch -> "catch(...)"
   | TryEnd -> "<endtry>"
 
-  | Throw -> "throw ...;"
+  | Throw _ -> "throw ...;"
 (*e: function short_string_of_node *)
-
+let short_string_of_node node =
+  short_string_of_node_kind node.n 
 (*****************************************************************************)
 (* Accessors *)
 (*****************************************************************************)

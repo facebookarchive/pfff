@@ -19,6 +19,7 @@ SRC+= pil.ml
 SRC+= defs_uses_php.ml \
       builtins_php.ml \
       controlflow_php.ml  controlflow_build_php.ml \
+      dataflow_php.ml \
       callgraph_php2.ml \
 # used to be in facebook/static_analysis/
 SRC+= env_interpreter_php.ml \

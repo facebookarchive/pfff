@@ -429,7 +429,7 @@ let rank_of_error_kind err_kind =
       (match stmt with
       (* some dead break and return are ok (too many FP for now) *)
       | Controlflow_php.Break | Controlflow_php.Return _ -> OnlyStrict
-      | Controlflow_php.Throw  -> Never
+      | Controlflow_php.Throw _  -> Never
       | Controlflow_php.SimpleStmt (Controlflow_php.ExprStmt e) ->
           (match e with
           | (Call(Id (XName[QI (Name(

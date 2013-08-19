@@ -385,6 +385,40 @@ let test () =
   OUnit.run_test_tt suite +> ignore;
   ()
 
+(* Dataflow analysis *)
+let dflow file_or_dir =
+  let file_or_dir = Common.realpath file_or_dir in
+  let files = 
+    Lib_parsing_php.find_php_files_of_dir_or_files [file_or_dir]
+    +> Skip_code.filter_files_if_skip_list ~verbose:!verbose
+  in
+  let dflow_of_func_def def =
+    (try
+       let flow = Controlflow_build_php.cfg_of_func def in
+       let mapping = Dataflow_php.reaching_fixpoint flow in
+       Dataflow_php.display_reaching_dflow flow mapping;
+     with
+     | Controlflow_build_php.Error err ->
+       Controlflow_build_php.report_error err
+     | Todo -> ()
+     | Failure _ -> ()
+    )
+  in
+  List.iter (fun file ->
+    (try
+       let ast = Parse_php.parse_program file in
+       ast +> List.iter (function
+       | Ast_php.FuncDef def ->
+         dflow_of_func_def def
+       | Ast_php.ClassDef def ->
+         Ast_php.unbrace def.Ast_php.c_body +> List.iter
+           (function
+           | Ast_php.Method def -> dflow_of_func_def def
+           | _ -> ())
+       | _ -> ())
+     with _ -> pr2 (spf "fail: %s" file)
+    )) files
+      
 (*---------------------------------------------------------------------------*)
 (* the command line flags *)
 (*---------------------------------------------------------------------------*)
@@ -393,6 +427,8 @@ let extra_actions () = [
   Common.mk_action_1_arg type_inference;
   "-test", " run regression tests",
   Common.mk_action_0_arg test;
+  "-dflow", " <file/folder> run dataflow analysis",
+  Common.mk_action_1_arg dflow;
   "-unprogress", " ",
   Common.mk_action_1_arg (fun file ->
     Common.cat file +> List.iter (fun s ->

@@ -84,8 +84,35 @@ let test_cfg_php file =
       )
   | _ -> ()
   )
-
 (*e: test_cfg_php *)
+
+let test_dflow_php file =
+  let dflow_of_func_def def =
+    (try
+       let flow = Controlflow_build_php.cfg_of_func def in
+       let mapping = Dataflow_php.reaching_fixpoint flow in
+       Dataflow_php.display_reaching_dflow flow mapping;
+     with
+     | Controlflow_build_php.Error err ->
+       Controlflow_build_php.report_error err
+     | Todo -> pr "skip: todo"
+    )
+  in
+  let ast = Parse_php.parse_program file in
+  ast +> List.iter (function
+  | Ast_php.FuncDef def ->
+    dflow_of_func_def def
+  | Ast_php.ClassDef def ->
+    Ast_php.unbrace def.Ast_php.c_body +> List.iter
+      (function
+      | Ast_php.Method def -> dflow_of_func_def def
+      | _ -> ())
+  | _ -> ()
+  )
+
+
+
+
 (*s: test_cyclomatic_php *)
 let test_cyclomatic_php file =
 (*
@@ -342,6 +369,9 @@ let actions () = [
   (*s: test_analyze_php actions *)
     "-cfg_php",  " <file>",
     Common.mk_action_1_arg test_cfg_php;
+
+    "-dflow_php",  " <file>",
+    Common.mk_action_1_arg test_dflow_php;
   (*x: test_analyze_php actions *)
     "-cyclomatic_php", " <file>",
     Common.mk_action_1_arg test_cyclomatic_php;

@@ -34,20 +34,20 @@ type node = {
     *)
   (*x: node_kind constructors *)
       (* TODO add appropriate info for each of those nodes *)
-      | IfHeader
+      | IfHeader of Ast_php.expr
       (* not used for now
       | Else
       | Elsif
       *) 
   (*x: node_kind constructors *)
-      | WhileHeader
+      | WhileHeader of Ast_php.expr
       | DoHeader
-      | DoWhileTail
+      | DoWhileTail of Ast_php.expr
       | ForHeader
-      | ForeachHeader
+      | ForeachHeader of Ast_php.foreach_variable list
 
   (*x: node_kind constructors *)
-      | SwitchHeader
+      | SwitchHeader of Ast_php.expr
       | SwitchEnd
       | Case
       | Default
@@ -61,9 +61,10 @@ type node = {
       | CatchStart
       | Catch
       | TryEnd
-      | Throw
+      | Throw of expr
   (*x: node_kind constructors *)
       | Join
+      | Parameter of dname
       (* statements without multiple outgoing or ingoing edges, such
        * as echo, expression statements, etc.
        *)
@@ -73,7 +74,6 @@ type node = {
      and simple_stmt = 
          | ExprStmt of expr
          | SpecialMaybeUnused of expr
-         | SpecialUse of expr
 
          | TodoSimpleStmt
          (* TODO? expr includes Exit, Eval, Include, etc which
@@ -125,6 +125,7 @@ val display_flow: flow -> unit
 (*e: function display_flow signature *)
 
 val short_string_of_node_kind: node_kind -> string
+val short_string_of_node: node -> string
 
 (*x: controlflow_php.mli *)
 (*e: controlflow_php.mli *)
