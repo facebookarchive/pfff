@@ -123,8 +123,10 @@ let line_to_rectangle line r layout =
    * if we want to draw above the bottom pos
    *)
   let x, y = line_in_column_to_bottom_pos lc r layout in
-  { p = { x; y = y - layout.height_per_line };
-    q = { x = x + layout.width_per_column; y };
+  { p = { x; 
+          y = y - layout.height_per_line };
+    q = { x = x + layout.width_per_column; 
+          y = y + 0.2 * layout.height_per_line };
   }
 
 let point_to_line pt r layout =
