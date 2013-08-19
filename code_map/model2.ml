@@ -420,10 +420,23 @@ let lines_where_used_node node startl microlevel =
     for line = startl to Array.length glypys - 1 do
       let xs = glypys.(line) in
       if xs +> List.exists (fun glyph ->
-        match kind, glyph.categ with
-        (* todo *)
-        | _ ->
-            glyph.str =$= s
+        let categ =
+          match glyph.categ with
+          | Some x -> x
+          | _ -> Highlight_code.Normal
+        in
+        glyph.str =$= s &&
+          
+        (match kind, categ with
+        | Database_code.Function,
+          Highlight_code.Function _
+
+        | Database_code.Field,
+          Highlight_code.Field _
+         -> true
+
+        | _ -> false
+        )
       )
       then Common.push2 line res
     done;

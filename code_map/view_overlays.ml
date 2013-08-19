@@ -152,9 +152,14 @@ let draw_uses_users_files ~dw r =
 (* ---------------------------------------------------------------------- *)
 (* Uses and users microlevel *)
 (* ---------------------------------------------------------------------- *)
-let draw_magnify_line_overlay dw line microlevel =
+let draw_magnify_line_overlay_maybe dw line microlevel =
   with_overlay dw (fun cr_overlay ->
-    Draw_microlevel.draw_magnify_line cr_overlay line microlevel
+    let font_size = microlevel.layout.lfont_size in
+    let font_size_real = CairoH.user_to_device_font_size cr_overlay font_size in
+
+    (* todo: put in style *)
+    if font_size_real < 5.
+    then Draw_microlevel.draw_magnify_line cr_overlay line microlevel
   )
 
 let draw_uses_users_entities ~dw n =
@@ -173,7 +178,7 @@ let draw_uses_users_entities ~dw n =
        let rectangle = microlevel.line_to_rectangle line in
        CairoH.draw_rectangle_figure ~cr:cr_overlay ~color:"purple" rectangle;
 
-       draw_magnify_line_overlay dw line microlevel;
+       draw_magnify_line_overlay_maybe dw line microlevel;
      );
    );
  )
@@ -346,15 +351,13 @@ let motion_refresher ev dw () =
     in
     !Controller._statusbar_addtext statusbar_txt;
 
-    let _label_txt = 
-      match entity_opt with
-      | None -> readable_txt_for_label r.T.tr_label dw.current_root
-      | Some n -> Graph_code.string_of_node n
-    in
-    (* draw_label_overlay ~cr_overlay ~dw ~x ~y label_txt;*)
-    line_opt +> Common.do_option (fun line ->
-      let microlevel = Hashtbl.find dw.microlevel r in
-      draw_magnify_line_overlay dw line microlevel
+    (match line_opt with
+    | None ->
+      let label_txt = readable_txt_for_label r.T.tr_label dw.current_root in
+      draw_label_overlay ~cr_overlay ~dw ~x ~y label_txt
+    | Some line ->
+       let microlevel = Hashtbl.find dw.microlevel r in
+       draw_magnify_line_overlay_maybe dw line microlevel
     );
 
     draw_englobing_rectangles_overlay ~dw (r, middle, r_englobing);

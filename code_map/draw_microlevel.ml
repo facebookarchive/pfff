@@ -489,6 +489,8 @@ let draw_treemap_rectangle_content_maybe ~cr ~clipping ~context rect =
 (*****************************************************************************)
 (* Magnifyer Content *)
 (*****************************************************************************)
+
+(* alt: digital zoom? good enough? need rendering at better resolution? *)
 let draw_magnify_line cr line microlevel =
   match microlevel.content with
   | None -> ()
