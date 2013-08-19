@@ -12,7 +12,8 @@ For codemap:
 For codequery:
  $ sudo brew install swi-prolog
 
-=> can configure and build all pfff tools :)
+=> can configure and build all pfff tools :) 
+See install.txt for the remaining steps.
 
 Troubles?
 ---------

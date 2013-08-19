@@ -1,19 +1,11 @@
 
 You must first install a recent version of 
- - OCaml (at least 3.11), 
+ - OCaml (at least 4.00.1), 
    see http://caml.inria.fr/download.en.html
- - Pcre
-   if you want stuff I don't remember.
  - GTK (at least gtk 2.10) and Cairo
-   if you want codemap, the fancy graphics code visualizer.
- - Berkeley DB (at least 4.3)
-   if you need to process huge codebase
+   if you want codemap and codegraph, the fancy graphics code visualizer.
  - SWI-prolog
    if you want the interactive code query tool
-
-You will need both the runtime and the development library for
-those packages (e.g. pcre and pcre-devel packages under most Linux
-distributions).
 
 If you want most of the good things just type:
 
@@ -25,11 +17,6 @@ If you want most of the good things just type:
 This should generate a few binaries at the toplevel directory such
 as pfff or codemap.
 
-
 If you just want to compile the parsing frontend, then type 
 
-   $ ./configure -nogui -novisual -nobdb
-
-If you want the parsing frontend and the analysis framework then type
-
-  $ ./configure -nogui -novisual
+   $ ./configure -novisual
