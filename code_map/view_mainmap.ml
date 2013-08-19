@@ -304,8 +304,9 @@ let button_action da dw_ref ev =
           pr2 (spf "opening %s" file);
           let line =
             match M.find_line_in_rectangle_at_user_point dw user r with
-            | None -> 0
-            | Some l -> l
+            | None -> 1
+            (* emacs line numbers start at 1 *)
+            | Some l -> l +.. 1
           in
           Editor_connection.open_file_in_current_editor ~file ~line;
         );

@@ -51,6 +51,8 @@ module Parsing = Parsing2
  * note: some types below could be 'int' but it's more convenient to have
  * everything as a float because arithmetic with OCaml sucks when have
  * multiple numeric types.
+ * 
+ * Below line numbers starts at 0, not at 1 as in emacs.
  *)
 
 type line = int
@@ -108,13 +110,16 @@ let use_fancy_highlighting file =
 (* Coordinate conversion *)
 (*****************************************************************************)
 
-let line_in_column_to_pos lc r layout =
+let line_in_column_to_bottom_pos lc r layout =
   let x = r.p.x + (lc.column * layout.width_per_column) in
-  let y = r.p.y + (lc.line_in_column * layout.height_per_line) in
+  (* to draw text in cairo we need to be one line below, hence the +1
+   * as y goes down but the text is drawn above
+   *)
+  let y = r.p.y + ((lc.line_in_column + 1.) * layout.height_per_line) in
   x, y
 
 let line_to_line_in_column line layout =
-  let line = (float_of_int line) - 1. in
+  let line = float_of_int line in
   let column = floor (line / layout.nblines_per_column) in
   let line_in_column = 
     line - (column * layout.nblines_per_column) in
@@ -122,9 +127,12 @@ let line_to_line_in_column line layout =
 
 let line_to_rectangle line r layout =
   let lc = line_to_line_in_column line layout in
-  let x, y = line_in_column_to_pos lc r layout in
-  { p = { x; y };
-    q = { x = x + layout.width_per_column; y = y + layout.height_per_line };
+  (* this is the bottom pos, so we need to substract height_per_line
+   * if we want to draw above the bottom pos
+   *)
+  let x, y = line_in_column_to_bottom_pos lc r layout in
+  { p = { x; y = y - layout.height_per_line };
+    q = { x = x + layout.width_per_column; y };
   }
 
 let point_to_line pt r layout =
@@ -132,7 +140,7 @@ let point_to_line pt r layout =
   let y = pt.Cairo.y - r.p.y in
   let line_in_column = floor (y / layout.height_per_line) in
   let column = floor (x / layout.width_per_column) in
-  (column * layout.nblines_per_column + line_in_column + 1.) +> int_of_float
+  (column * layout.nblines_per_column + line_in_column) +> int_of_float
 
 (*****************************************************************************)
 (* Content properties *)
@@ -187,12 +195,11 @@ let glyphs_of_file ~context ~font_size ~font_size_real file
 
     (* can't use nblines_eff here, we don't want to memoize *)
     let nblines = Common2.nblines_eff file in
-    (* we use nblines + 1 so the array starts at 1 (the first entry is fake) *)
-    let arr = Array.create (nblines +.. 1) [] in
+    let arr = Array.create nblines [] in
 
     let tokens_with_categ = Parsing.tokens_with_categ_of_file file entities in
 
-    let line = ref 1 in
+    let line = ref 0 in
     let acc = ref [] in
     (try (
      tokens_with_categ +> List.iter (fun (s, categ, _filepos) ->
@@ -219,7 +226,7 @@ let glyphs_of_file ~context ~font_size ~font_size_real file
     )
 
   | FT.PL _ | FT.Text _ ->      
-    (""::Common.cat file)
+    (Common.cat file)
     +> List.map (fun str -> [{ M.str; font_size; color = "black"; categ=None }])
     +> Array.of_list
     +> (fun x -> Some x)
@@ -342,7 +349,7 @@ let draw_content2 ~cr ~layout ~context tr =
   glyphs_opt +> Common.do_option (fun glyphs ->
     glyphs +> Array.iteri (fun line glyph ->
       let lc = line_to_line_in_column line layout in
-      let x, y = line_in_column_to_pos lc r layout in
+      let x, y = line_in_column_to_bottom_pos lc r layout in
       Cairo.move_to cr x y;
       
       glyphs.(line) +> List.iter (fun glyph ->

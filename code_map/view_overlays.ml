@@ -69,7 +69,6 @@ let with_overlay dw f =
 (* ---------------------------------------------------------------------- *)
 (* The current filename *)
 (* ---------------------------------------------------------------------- *)
-
 (*s: draw_label_overlay *)
 (* assumes cr_overlay has not been zoom_pan_scale *)
 let draw_label_overlay ~cr_overlay ~dw ~x ~y txt =
