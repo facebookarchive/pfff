@@ -185,7 +185,7 @@ rule category = parse
   | "inetutils"
       { Regular }
 
-  | "stdlib" { Core }
+(*  | "stdlib" { Core } *)
   | "util" { Utils }
 (*  | "/base" { Utils } *)
   | "common" { Utils }
