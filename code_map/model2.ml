@@ -428,11 +428,14 @@ let lines_where_used_node node startl microlevel =
         glyph.str =$= s &&
           
         (match kind, categ with
-        | Database_code.Function,
-          Highlight_code.Function _
+        | Database_code.Function, Highlight_code.Function _
+        | Database_code.Field, Highlight_code.Field _
+        | Database_code.Constructor, Highlight_code.ConstructorUse _
+        | Database_code.Global, Highlight_code.Global _
 
-        | Database_code.Field,
-          Highlight_code.Field _
+        (* tofix at some point, wrong tokenizer *)
+        | Database_code.Constant, Highlight_code.Local _
+        | Database_code.Function, Highlight_code.Local _
          -> true
 
         | _ -> false
