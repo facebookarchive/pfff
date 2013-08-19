@@ -67,14 +67,6 @@ type pos = float (* x *) * float (* y *)
 type point = Cairo.point
 
 (*s: type draw_content_layout *)
-type layout = {
-  font_size: float;
-  split_nb_columns: float; (* int *)
-  width_per_column:float;
-  height_per_line: float;
-  nblines: float; (* int *)
-  nblines_per_column: float; (* int *)
-}
 (*e: type draw_content_layout *)
 
 (*****************************************************************************)
@@ -274,11 +266,11 @@ let draw_column_bars2 ~cr layout r =
       
     Cairo.set_source_rgba cr 0.0 0.0 1. 0.2;
 
-    let font_size_real = CairoH.user_to_device_font_size cr layout.font_size in
+    let font_size_real = CairoH.user_to_device_font_size cr layout.lfont_size in
     let width = 
       if font_size_real > 5.
-      then layout.font_size / 10.
-      else layout.font_size
+      then layout.lfont_size / 10.
+      else layout.lfont_size
     in
     Cairo.set_line_width cr width;
 
@@ -302,7 +294,7 @@ let draw_content2 ~cr ~layout ~context tr =
   let r = tr.T.tr_rect in
   let file = tr.T.tr_label in
 
-  let font_size = layout.font_size in
+  let font_size = layout.lfont_size in
   let font_size_real = CairoH.user_to_device_font_size cr font_size in
 
   if font_size_real > Style.threshold_draw_dark_background_font_size_real
@@ -393,6 +385,8 @@ let draw_content2 ~cr ~layout ~context tr =
       (fun line -> line_to_rectangle line r layout);
     pos_to_line = 
       (fun pt -> point_to_line pt r layout);
+    layout;
+    container = tr;
     content = glyphs_opt;
   }
 
@@ -446,7 +440,7 @@ let draw_treemap_rectangle_content_maybe2 ~cr ~clipping ~context tr  =
 
         let layout = {
           nblines;
-          font_size;
+          lfont_size = font_size;
           split_nb_columns;
           width_per_column = w / split_nb_columns;
           height_per_line = font_size;
@@ -496,14 +490,23 @@ let draw_treemap_rectangle_content_maybe ~cr ~clipping ~context rect =
 (* Magnifyer Content *)
 (*****************************************************************************)
 let draw_magnify_line cr line microlevel =
-  raise Todo
-(*
   match microlevel.content with
   | None -> ()
   | Some glyphs ->
-    let xs = glyphs.(line) in
-    let pos = microlevel.line_to_rectangle
-  raise Todo
-*)
+    let r = microlevel.container.T.tr_rect in
+    let layout = microlevel.layout in
+
+    let lc = line_to_line_in_column line layout in
+    let x, y = line_in_column_to_bottom_pos lc r layout in
+    Cairo.move_to cr x y;
+    
+    glyphs.(line) +> List.iter (fun glyph ->
+      let font_size = glyph.M.font_size * 3. in
+      Cairo.set_font_size cr font_size;
+      let (r,g,b) = Color.rgbf_of_string glyph.color in
+      let alpha = 1. in
+      Cairo.set_source_rgba cr r g b alpha;
+      CairoH.show_text cr glyph.M.str;
+    )
 
 (*e: draw_microlevel.ml *)

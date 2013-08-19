@@ -63,14 +63,25 @@ type macrolevel = Treemap.treemap_rendering
 type microlevel = {
   pos_to_line: Cairo.point -> int;
   line_to_rectangle: int -> Figures.rectangle;
+  layout: layout;
+  container: Treemap.treemap_rectangle;
   content: (glyph list) array option;
 }
   and glyph = {
-  str: string;
-  categ: Highlight_code.category option;
-  font_size: float;
-  color: Simple_color.emacs_color;
-}
+    str: string;
+    categ: Highlight_code.category option;
+    font_size: float;
+    color: Simple_color.emacs_color;
+  }
+  and layout = {
+    lfont_size: float;
+    split_nb_columns: float; (* int *)
+    width_per_column:float;
+    height_per_line: float;
+    nblines: float; (* int *)
+    nblines_per_column: float; (* int *)
+  }
+
 
 (*s: type drawing *)
 (* All the 'float' below are to be intepreted as user coordinates except when
