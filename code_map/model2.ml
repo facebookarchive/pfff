@@ -427,6 +427,9 @@ let lines_where_used_node node startl microlevel =
         in
         glyph.str =$= s &&
           
+        (* see the code of the different highlight_code_xxx.ml to
+         * know the different possible pairs
+         *)
         (match kind, categ with
         | Database_code.Function, Highlight_code.Function _
         | Database_code.Field, Highlight_code.Field _
@@ -437,6 +440,8 @@ let lines_where_used_node node startl microlevel =
         | Database_code.Constant, Highlight_code.Local _
         | Database_code.Global, Highlight_code.Local _
         | Database_code.Function, Highlight_code.Local _
+
+        | Database_code.Global, Highlight_code.UseOfRef
          -> true
 
         | _ -> false
