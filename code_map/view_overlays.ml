@@ -363,8 +363,16 @@ let motion_refresher ev dw () =
     draw_englobing_rectangles_overlay ~dw (r, middle, r_englobing);
 
     draw_uses_users_files ~dw r;
-    entity_opt +> Common.do_option (fun n ->
+
+    (match line_opt, entity_opt with
+    | Some line, Some n ->
+      let microlevel = Hashtbl.find dw.microlevel r in
+      let rectangle = microlevel.line_to_rectangle line in
+      with_overlay dw (fun cr ->
+        CairoH.draw_rectangle_figure ~cr ~color:"white" rectangle
+      );
       draw_uses_users_entities ~dw n;
+    | _ -> ()
     );
      
     if dw.dw_settings.draw_searched_rectangles;
