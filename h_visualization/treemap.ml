@@ -35,7 +35,7 @@ type ('dir, 'file) tree = ('dir, 'file) Common2.tree
 
 (*s: type treemap *)
 type ('dir, 'file) treemap = 
- (treemap_data * 'dir, treemap_data * 'file) Common2.tree
+ (treemap_data * 'dir, treemap_data * 'file) tree
     and treemap_data = { 
       size : int; 
       color : Simple_color.color; 
