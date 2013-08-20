@@ -344,7 +344,7 @@ let motion_refresher ev dw () =
 
     let statusbar_txt = 
       r.T.tr_label ^
-      (match line_opt with None -> "" | Some i -> spf ":%d" i) ^
+      (match line_opt with None -> "" | Some (Line i) -> spf ":%d" i) ^
       (match entity_opt with None -> "" | Some n -> 
         " (" ^ Graph_code.string_of_node n ^ ")"
       )

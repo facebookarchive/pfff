@@ -28,6 +28,11 @@ module Flag = Flag_visual
 (* The code model *)
 (*****************************************************************************)
 
+(* 0-indexed line number, which is different from most tools, but
+ * programs prefer 0-based index
+ *)
+type line = Line of int
+
 (*s: type model *)
 type model = {
   root: Common.dirname;
@@ -49,7 +54,7 @@ type model = {
   husers_of_file: (Common.filename, Common.filename list) Hashtbl.t;
   (* the lists are sorted by line number *)
   hentities_of_file: 
-    (Common.filename, (int (* line *) * Graph_code.node) list)  Hashtbl.t;
+    (Common.filename, (line * Graph_code.node) list)  Hashtbl.t;
  }
 (*e: type model *)
 
@@ -61,8 +66,8 @@ type model = {
 type macrolevel = Treemap.treemap_rendering
 
 type microlevel = {
-  pos_to_line: Cairo.point -> int;
-  line_to_rectangle: int -> Figures.rectangle;
+  pos_to_line: Cairo.point -> line;
+  line_to_rectangle: line -> Figures.rectangle;
   layout: layout;
   container: Treemap.treemap_rectangle;
   content: (glyph list) array option;
@@ -81,7 +86,6 @@ type microlevel = {
     nblines: float; (* int *)
     nblines_per_column: float; (* int *)
   }
-
 
 (*s: type drawing *)
 (* All the 'float' below are to be intepreted as user coordinates except when
@@ -118,7 +122,7 @@ type drawing = {
     mutable current_query: string;
     mutable current_searched_rectangles: Treemap.treemap_rectangle list;
     mutable current_entity: Database_code.entity option;
-    mutable current_grep_query: (Common.filename, int) Hashtbl.t;
+    mutable current_grep_query: (Common.filename, line) Hashtbl.t;
   (*e: fields drawing query stuff *)
 
   dw_settings: settings;
@@ -259,7 +263,7 @@ type context = {
   model: model Async.t;
   settings:settings;
   nb_rects_on_screen: int;
-  grep_query: (Common.filename, int) Hashtbl.t;
+  grep_query: (Common.filename, line) Hashtbl.t;
   layers_microlevel: 
    (Common.filename, (int, Simple_color.emacs_color) Hashtbl.t) Hashtbl.t;
 }
@@ -412,6 +416,7 @@ let lines_where_used_node node startl microlevel =
   let xs = Common.split "\\." fullstr in
   let s = Common2.list_last xs in
   
+  let (Line startl) = startl in
   match microlevel.content with
   | None -> []
   | Some glypys ->
@@ -448,7 +453,7 @@ let lines_where_used_node node startl microlevel =
         | _ -> false
         )
       )
-      then Common.push2 line res
+      then Common.push2 (Line line) res
     done;
     !res
 

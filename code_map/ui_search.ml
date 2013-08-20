@@ -16,10 +16,9 @@
  *)
 (*e: Facebook copyright *)
 open Common
-(* floats are the norm in graphics *)
-open Common2.ArithFloatInfix
 
 module G = Gui
+module M = Model2
 
 (*****************************************************************************)
 (* Prelude *)
@@ -83,7 +82,7 @@ let run_grep_query ~root s =
       let (filename, lineno) = Common.matched2 s in
       let lineno = s_to_i lineno in
       let fullpath = Filename.concat root filename in
-      fullpath, lineno
+      fullpath, (M.Line (lineno - 1))
     else 
       failwith ("wrong git grep line: " ^ s)
   ) in
@@ -102,7 +101,7 @@ let run_tbgs_query ~root s =
       let (filename, lineno) = Common.matched2 s in
       let lineno = s_to_i lineno in
       let fullpath = Filename.concat root filename in
-      fullpath, lineno
+      fullpath, (M.Line (lineno - 1))
     else 
       failwith ("wrong tbgs line: " ^ s)
   ) in

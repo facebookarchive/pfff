@@ -1,5 +1,10 @@
 (*s: model2.mli *)
 
+(* 0-indexed line number, which is different from most tools, but
+ * programs prefer 0-based index
+ *)
+type line = Line of int
+
 (*s: type model *)
 type model = {
   root: Common.dirname;
@@ -21,17 +26,18 @@ type model = {
   husers_of_file: (Common.filename, Common.filename list) Hashtbl.t;
   (* the lists are sorted by line number *)
   hentities_of_file: 
-    (Common.filename, (int (* line *) * Graph_code.node) list)  Hashtbl.t;
+    (Common.filename, (line * Graph_code.node) list)  Hashtbl.t;
  }
 (*e: type model *)
 
 type macrolevel = Treemap.treemap_rendering
 
 type microlevel = {
-  pos_to_line: Cairo.point -> int;
-  line_to_rectangle: int -> Figures.rectangle;
+  pos_to_line: Cairo.point -> line;
+  line_to_rectangle: line -> Figures.rectangle;
   layout: layout;
   container: Treemap.treemap_rectangle;
+  (* the lines of the files, 0-based indexed line, see line type below *)
   content: (glyph list) array option;
 }
   and glyph = {
@@ -84,7 +90,7 @@ type drawing = {
     mutable current_query: string;
     mutable current_searched_rectangles: Treemap.treemap_rectangle list;
     mutable current_entity: Database_code.entity option;
-    mutable current_grep_query: (Common.filename, int) Hashtbl.t;
+    mutable current_grep_query: (Common.filename, line) Hashtbl.t;
   (*e: fields drawing query stuff *)
 
   dw_settings: settings;
@@ -136,7 +142,7 @@ type context = {
   model: model Async.t;
   settings:settings;
   nb_rects_on_screen: int;
-  grep_query: (Common.filename, int) Hashtbl.t;
+  grep_query: (Common.filename, line) Hashtbl.t;
   layers_microlevel: 
    (Common.filename, (int, Simple_color.emacs_color) Hashtbl.t) Hashtbl.t;
 }
@@ -179,10 +185,10 @@ val find_line_in_rectangle_at_user_point:
   drawing ->
   Cairo.point -> 
   Treemap.treemap_rectangle ->
-  int option
+  line option
 
 val find_entity_at_line:
-  int (* line *) -> Treemap.treemap_rectangle -> drawing -> 
+  line -> Treemap.treemap_rectangle -> drawing -> 
   Graph_code.node option
 
 
@@ -204,10 +210,10 @@ val uses_and_users_readable_files_of_node:
 
 val uses_and_users_of_node:
   Graph_code.node -> drawing -> 
-  (Graph_code.node * int * microlevel) list * 
-  (Graph_code.node * int * microlevel) list
+  (Graph_code.node * line * microlevel) list * 
+  (Graph_code.node * line * microlevel) list
 
 val lines_where_used_node:
-  Graph_code.node -> int -> microlevel -> int list
+  Graph_code.node -> line -> microlevel -> line list
 
 (*e: model2.mli *)

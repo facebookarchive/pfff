@@ -55,7 +55,7 @@ module Parsing = Parsing2
  * Below line numbers starts at 0, not at 1 as in emacs.
  *)
 
-type line = int
+type line = Model2.line
 
 type line_in_column = {
   column: float; (* int *)
@@ -111,6 +111,7 @@ let line_in_column_to_bottom_pos lc r layout =
   x, y
 
 let line_to_line_in_column line layout =
+  let (Line line) = line in
   let line = float_of_int line in
   let column = floor (line / layout.nblines_per_column) in
   let line_in_column = 
@@ -134,7 +135,7 @@ let point_to_line pt r layout =
   let y = pt.Cairo.y - r.p.y in
   let line_in_column = floor (y / layout.height_per_line) in
   let column = floor (x / layout.width_per_column) in
-  (column * layout.nblines_per_column + line_in_column) +> int_of_float
+  Line ((column * layout.nblines_per_column + line_in_column) +> int_of_float)
 
 (*****************************************************************************)
 (* Content properties *)
@@ -336,13 +337,14 @@ let draw_content2 ~cr ~layout ~context tr =
     with Not_found -> []
   in
   matching_grep_lines +> List.iter (fun line ->
-    Hashtbl.add hmatching_lines line "purple"
+    let (Line iline) = line in
+    Hashtbl.add hmatching_lines (iline+..1) "purple"
   );
 
   let glyphs_opt = glyphs_of_file ~context ~font_size ~font_size_real file in
   glyphs_opt +> Common.do_option (fun glyphs ->
     glyphs +> Array.iteri (fun line glyph ->
-      let lc = line_to_line_in_column line layout in
+      let lc = line_to_line_in_column (Line line) layout in
       let x, y = line_in_column_to_bottom_pos lc r layout in
       Cairo.move_to cr x y;
       
@@ -504,7 +506,8 @@ let draw_magnify_line cr line microlevel =
     let x, y = line_in_column_to_bottom_pos lc r layout in
     Cairo.move_to cr x y;
     
-    glyphs.(line) +> List.iter (fun glyph ->
+    let (Line iline) = line in
+    glyphs.(iline) +> List.iter (fun glyph ->
       let font_size = glyph.M.font_size * 3. in
       Cairo.set_font_size cr font_size;
       let (r,g,b) = Color.rgbf_of_string glyph.color in

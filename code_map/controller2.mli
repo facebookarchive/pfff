@@ -7,7 +7,7 @@ val _go_back:
   (Model2.drawing ref -> unit) ref
 val _go_dirs_or_file: 
   (?current_entity: Database_code.entity option ->
-   ?current_grep_query: (string, int) Hashtbl.t option ->
+   ?current_grep_query: (string, Model2.line) Hashtbl.t option ->
     Model2.drawing ref -> Common.path list -> unit
   ) ref
 
