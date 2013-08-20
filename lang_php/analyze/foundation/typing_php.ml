@@ -263,18 +263,21 @@ and stmt env= function
   | Switch (e, cl) ->
       let t = expr env e in
       casel env t cl
-  | Foreach (e1, e2, eopt, stl) ->
+  | Foreach (e1, pat, stl) ->
       let a = expr env e1 in
       let a' =
-        match eopt with
+        match pat with
+          (*
         | None -> array (Tvar (fresh()), expr env e2)
         | Some v -> array (expr env e2, expr env v)
+          *)
+        | _ -> raise Todo
       in
       let _ = Unify.unify env a a' in
       stmtl env stl
   | Return (None) -> ()
-  | Return (Some (ConsArray (id, avl))) ->
-      let e = ConsArray(id, avl) in
+  | Return (Some (ConsArray (avl))) ->
+      let e = ConsArray(avl) in
       let id = AEnv.create_ai env e in
       let ti = (pi, Env_typing_php.ReturnValue) in
       let _ = AEnv.set env id ti in
@@ -530,15 +533,15 @@ and expr_ env lv = function
     let t = Unify.unify env t1 t2 in
     t
 
-  | Assign (None, Id [("$;return", tok)], ConsArray(i, avl))  -> (
+  | Assign (None, Id [("$;return", tok)], ConsArray(avl))  -> (
     let e1 = Id [("$;return", tok)] in
-    let e2 = ConsArray(Some(e1), avl) in
+    let e2 = ConsArray(avl) in
       let t1 = expr env e1 in
       let t2 = expr env e2 in
       let t = Unify.unify env t1 t2 in
       match pi with
       | Some(p) ->
-          let e = ConsArray(i, avl) in
+          let e = ConsArray(avl) in
           let id = AEnv.create_ai env e in
           let tl = List.map (array_declaration env id pi) avl in
           let ti = (pi, Env_typing_php.Declaration(tl)) in
@@ -547,8 +550,8 @@ and expr_ env lv = function
       | None -> t
   )
 
-  | Assign (None, e1, ConsArray(_, avl)) ->
-      let e2 = ConsArray (Some(e1), avl) in
+  | Assign (None, e1, ConsArray(avl)) ->
+      let e2 = ConsArray (avl) in
       let t1 = expr env e1 in
       let t2 = expr env e2 in
       let t = Unify.unify env t1 t2 in
@@ -563,9 +566,21 @@ and expr_ env lv = function
   | Assign (Some bop, e1, e2) ->
       expr env (Assign (None, e1, Binop (bop, e1, e2)))
 
-  | ConsArray (id, avl) ->
+  | ConsArray (avl) ->
       let t = Tvar (fresh()) in
       let t = List.fold_left (array_value env) t avl in
+      (match pi with
+	| Some(p) ->
+          let e = ConsArray(avl) in
+          let id = AEnv.create_ai env e in
+          let tl  = List.map (array_declaration env id pi) avl in
+	  let ti = (pi, Env_typing_php.Declaration(tl)) in
+          let _ = AEnv.set env id ti in
+          t
+	| None -> t 
+      )
+
+(* old code of julien's intern? still needed?
       (match id with
       | None ->(
 	match pi with
@@ -584,7 +599,10 @@ and expr_ env lv = function
 	let ti = (pi, Env_typing_php.Declaration(tl)) in
         let _ = AEnv.set env id ti in
         t)
+*)
   | Collection _ -> failwith "Collection is not implemented - complain to pieter@"
+
+  | Arrow (e1, e2) -> failwith "Todo: Arrow"
   | List el ->
       let t = Tvar (fresh()) in
       let el = List.map (expr env) el in
@@ -637,28 +655,28 @@ and encaps env e =
   ignore (Unify.unify env t string)
 
 and array_value env t = function
-  | Aval e ->
-      let t' = array (int, expr env e) in
-      Unify.unify env t t'
-  | Akval (String (s,_), e) ->
+  | Arrow (String (s,_), e) ->
       let t' = srecord (s, (expr env e)) in
       Unify.unify env t t'
-  | Akval (e1, e2) ->
+  | Arrow (e1, e2) ->
       let t' = array (expr env e1, expr env e2) in
+      Unify.unify env t t'
+  | e ->
+      let t' = array (int, expr env e) in
       Unify.unify env t t'
 
 and array_declaration env id pi = function
-  | Aval e ->
-      let t = expr env e in
-      let aa = (pi, DeclarationValue (t)) in
-      AEnv.set env id aa;
-      t
-  | Akval (e1, e2) ->
+  | Arrow (e1, e2) ->
       let t1 = expr env e1 in
       let t2 = expr env e2 in
       let aa = (pi, DeclarationKValue(t1, t2)) in
       AEnv.set env id aa;
       t2
+  | e ->
+      let t = expr env e in
+      let aa = (pi, DeclarationValue (t)) in
+      AEnv.set env id aa;
+      t
 
 and ptype env = function
   | Ast_php.BoolTy -> bool
@@ -764,7 +782,7 @@ and parameter env p =
           expr env (New (Id [(x, tok)], [])))
     | Some (Hint _) -> failwith "no support for namespace yet"
     | Some (HintArray) ->
-        expr env (ConsArray (None, []))
+        expr env (ConsArray ([]))
 
     (* don't handle type extensions *)
     | Some (HintQuestion _)
@@ -773,9 +791,8 @@ and parameter env p =
   in
   (match p.p_default with
   | None -> ()
-  | Some (ConsArray(id, avl)) ->
-      let id = Some(Id [(p.p_name)]) in
-      let e = ConsArray(id, avl) in
+  | Some (ConsArray(avl)) ->
+      let e = ConsArray(avl) in
       ignore (Unify.unify env pval (expr env e))
   | Some e -> ignore (Unify.unify env pval (expr env e))
   );
@@ -926,9 +943,8 @@ and class_vars static env acc c =
     let ((s, _tok), e) = (c.cv_name, c.cv_value) in
     let t = match e with
       | None -> Tvar (fresh())
-      | Some (ConsArray(_, avl)) ->
-          let ex = Id [((s), _tok)] in
-          expr env (ConsArray(Some(ex), avl))
+      | Some (ConsArray(avl)) ->
+          expr env (ConsArray(avl))
       | Some x -> expr env x
     in
     let s = if static then s else A.remove_first_char s in

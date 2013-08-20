@@ -391,7 +391,9 @@ and stmt env heap x =
       let heap = List.fold_left (case env) heap cl in
       heap
   (* todo: explain *)
-  | Foreach (a, k, vopt, stl) ->
+  | Foreach (a, k(*, vopt*), stl) ->
+    raise Todo
+(*
       let heap, a = expr env heap a in
       let heap, _, k = lvalue env heap k in
       let heap, k, v =
@@ -408,6 +410,7 @@ and stmt env heap x =
       let heap, a = Unify.value heap a a' in
       let heap = stmtl env heap stl in
       heap
+*)
   | Continue e | Break e ->
       let heap, _ = Utils.opt (expr env) heap e in
       heap
@@ -602,9 +605,9 @@ and expr_ env heap x =
       (* pad: why vnull? *)
       heap, Vsum [Vnull; Vabstr Tbool]
 
-  | ConsArray (_, []) ->
+  | ConsArray ([]) ->
       heap, Varray []
-  | ConsArray (_, avl) ->
+  | ConsArray (avl) ->
       let id = Id [(w "*array*")] in
       let heap = List.fold_left (array_value env id) heap avl in
       let heap, _, v = Var.get env heap "*array*" in
@@ -612,6 +615,7 @@ and expr_ env heap x =
       Var.unset env "*array*";
       heap, v
   | Collection _ -> failwith "Collection not implemented - complain to pieter@"
+  | Arrow _ -> failwith "should be handled in caller, in array_value"
 
   (* hardcoded special case, not sure why we need that *)
   | Call (Id [("id",_)], [x]) -> expr env heap x
@@ -749,7 +753,7 @@ and lvalue env heap x =
   | Array_get (e, k) ->
       array_get env heap e k
 
-  | ConsArray (_, l) as e ->
+  | ConsArray (l) as e ->
       let heap, a = expr env heap e in
       let heap, v = Ptr.new_ heap in
       let heap, _ = assign env heap true v a in
@@ -1034,6 +1038,8 @@ and call_method env el (heap, v) f =
 (* Arrays *)
 (* ---------------------------------------------------------------------- *)
 and array_value env id heap x =
+  raise Todo
+(*
   match x with
   | Aval e ->
       let heap, new_, ar = lvalue env heap id in
@@ -1080,6 +1086,7 @@ and array_value env id heap x =
             expr env heap (Assign (None, Array_get (id, Some e1), e2)) in
           heap
       )
+*)
 
 (* could be moved in helper *)
 and array_new_entry env heap ar a k m =

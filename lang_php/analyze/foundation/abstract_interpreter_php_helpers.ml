@@ -531,21 +531,23 @@ module IsLvalue = struct
 
   let rec expr e =
     match e with
-    | Id _ -> true
-    | Var _ -> true
-    | This _ -> true
+    | Id _
+    | Var _
+    | This _
     | Infix _
     | Postfix _
-    | Array_get _ -> true
-    | Obj_get _ -> true
-    | Class_get _ -> true
-    | List _ -> true
+    | Array_get _
+    | Obj_get _
+    | Class_get _
+    | List _ 
+      -> true
 
     | Lambda _
-    | (Cast (_, _)|CondExpr (_, _, _)|InstanceOf (_, _)|New (_, _)|ConsArray _|
-      Collection _ |
-      Xhp _|Ref _|Call (_, _)|Unop (_, _)|Binop (_, _, _)|Assign (_, _, _)|
-      Guil _|String _|Double _|Int _) ->
+    | (Cast (_, _)|CondExpr (_, _, _)|InstanceOf (_, _)|New (_, _)|ConsArray _
+      | Collection _ |Arrow _
+      | Xhp _|Ref _|Call (_, _)|Unop (_, _)|Binop (_, _, _)|Assign (_, _, _)
+      | Guil _|String _|Double _|Int _
+      ) ->
         false
 end
 

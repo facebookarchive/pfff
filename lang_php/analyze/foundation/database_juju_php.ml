@@ -75,7 +75,7 @@ let juju_db_of_files ?(show_progress=false) xs =
         | (Global _|StaticVars _
           |Try (_, _, _)|Throw _
           |Continue _|Break _|Return _
-          |Foreach (_, _, _, _)|For (_, _, _, _)|Do (_, _)|While (_, _)
+          |Foreach (_, _, _)|For (_, _, _, _)|Do (_, _)|While (_, _)
           |Switch (_, _)|If (_, _, _)
           |Block _|Expr _
           ) -> ()

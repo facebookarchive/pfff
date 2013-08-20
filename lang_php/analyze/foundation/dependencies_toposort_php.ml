@@ -60,10 +60,9 @@ module Deps = struct
         let acc = exprl acc el3 in
         stmtl acc stl
     | Switch (e, cl) -> casel (expr acc e) cl
-    | Foreach (e1, e2, e3, stl) ->
+    | Foreach (e1, e2, stl) ->
         let acc = expr acc e1 in
         let acc = expr acc e2 in
-        let acc = expr_opt acc e3 in
         stmtl acc stl
     | Return e | Break e | Continue e -> expr_opt acc e
     | Try (stl, c, cl) ->
@@ -101,6 +100,7 @@ module Deps = struct
     | Binop (_, e1, e2)
     | Class_get (e1, e2)
     | InstanceOf (e1, e2)
+    | Arrow(e1, e2)
     | Assign (_, e1, e2) -> expr (expr acc e1) e2
     | Infix (_, e)
     | Postfix (_, e)
@@ -112,7 +112,7 @@ module Deps = struct
         let acc = xml acc x in
         let name = Ast.unwrap x.xml_tag in
         SSet.add name acc
-    | ConsArray (_, avl) -> array_valuel acc avl
+    | ConsArray (avl) -> array_valuel acc avl
     | Collection ([(n,_)], mel) -> 
       let acc = SSet.add n acc in
       array_valuel acc mel
@@ -127,9 +127,7 @@ module Deps = struct
   and array_valuel acc l = List.fold_left array_value acc l
   and vector_eltl acc l = List.fold_left vector_elt acc l
   and map_eltl acc l = List.fold_left map_elt acc l
-  and array_value acc = function
-    | Aval e -> expr acc e
-    | Akval (e1, e2) -> expr (expr acc e1) e2
+  and array_value acc e = expr acc e
 
   and vector_elt acc e = expr acc e
   and map_elt acc (e1, e2) =
