@@ -461,13 +461,13 @@ let rec extract_defs_uses
        in
        (* ugly: the OCaml distribution does not comes with .cmt for
         * its standard library, so I had to generate them manually 
-        * and put them in pfff/external/core. The problem is that
+        * and put them in pfff/external/stdlib. The problem is that
         * those cmt files have hardcoded paths to my ocaml installation
         * for their source, hence this hack below to reconvert
         * those paths.
         *)
        if fullpath =~ ".*/ocaml-4.00.1"
-       then spf "external/core/%s" (Filename.basename fullpath)
+       then spf "external/stdlib/%s" (Filename.basename fullpath)
        else Common.filename_without_leading_path root fullpath
       );
     locals = [];
