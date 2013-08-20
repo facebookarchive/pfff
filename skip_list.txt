@@ -18,7 +18,7 @@ dir: tests/ml/db/parsing_errors
 # cmt
 # -------------------------------------------------------------------------
 
-#dupes with external/core and ok to skip because they are test files
+#dupes with external/stdlib and ok to skip because they are test files
 dir: tests/ml/cmt
 
 #less: dupes with external/extlib/, remove them
@@ -30,7 +30,7 @@ file: lang_ml/analyze/meta_ast_cmt.cmt
 file: lang_ml/analyze/graph_code_cmt.cmt
 
 # complex cmt
-file: external/core/dynlinkaux.cmt
+file: external/stdlib/dynlinkaux.cmt
 
 #had some 'include', but got de-includized
 #dir: commons/lib-sexp

@@ -1,1 +1,1 @@
-see external/core/
+see external/stdlib/
