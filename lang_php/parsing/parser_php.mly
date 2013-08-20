@@ -378,11 +378,16 @@ for_expr:
  | /*(*empty*)*/    	{ [] }
  | non_empty_for_expr	{ $1 }
 
-foreach_variable: is_reference expr { ($1, $2) }
+/*(* can not factorize with a is_reference otherwise s/r conflict on LIST *)*/
+foreach_variable: 
+ |  expr      { None, $1 }
+ | TAND expr  { Some $1, $2 }
 
 foreach_pattern: 
   | foreach_variable                                 { ForeachVar $1 }
   | foreach_variable T_DOUBLE_ARROW foreach_variable { ForeachArrow($1,$2,$3) }
+  | T_LIST TOPAR assignment_list TCPAR
+     { ForeachList($1,($2,$3,$4)) }
 
 switch_case_list:
  | TOBRACE            case_list TCBRACE

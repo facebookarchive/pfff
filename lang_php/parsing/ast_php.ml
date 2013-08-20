@@ -482,6 +482,7 @@ and stmt =
     and foreach_pattern =
      | ForeachVar of foreach_variable
      | ForeachArrow of foreach_variable * tok * foreach_variable
+     | ForeachList of tok (* list *)  * list_assign comma_list paren
      and foreach_variable = is_ref * lvalue
     and catch =
       tok * (class_name * dname) paren * stmt_and_def list brace

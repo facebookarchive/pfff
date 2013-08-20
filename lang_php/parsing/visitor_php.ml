@@ -685,6 +685,10 @@ and v_foreach_pattern =
       and v2 = v_tok v2
       and v3 = v_foreach_variable v3
       in ()
+  | ForeachList ((v1, v2)) ->
+      let v1 = v_tok v1
+      and v2 = v_paren (v_comma_list v_list_assign) v2
+      in ()
 and v_foreach_variable (v1, v2) =
   let v1 = v_is_ref v1 and v2 = v_lvalue v2 in ()
 and v_switch_case_list =

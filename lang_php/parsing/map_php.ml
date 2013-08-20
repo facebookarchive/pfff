@@ -662,6 +662,10 @@ and map_foreach_pattern =
       and v2 = map_tok v2
       and v3 = map_foreach_variable v3
       in ForeachArrow ((v1, v2, v3))
+  | ForeachList ((v1, v2)) ->
+      let v1 = map_tok v1
+      and v2 = map_paren (map_comma_list map_list_assign) v2
+      in ForeachList ((v1, v2))
 and map_foreach_variable (v1, v2) =
   let v1 = map_is_ref v1 and v2 = map_lvalue v2 in (v1, v2)
 and map_catch (v1, v2, v3) =
