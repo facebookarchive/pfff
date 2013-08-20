@@ -1,6 +1,6 @@
 (* Julien Verlaguet, Yoann Padioleau
  *
- * Copyright (C) 2011, 2012 Facebook
+ * Copyright (C) 2011-2013 Facebook
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public License
@@ -65,13 +65,15 @@
  *  - a simpler If. 'elseif' are transformed in nested If, and empty 'else'
  *    in an empty Block.
  *  - a simpler Foreach, foreach_var_either and foreach_arrow are transformed
- *    into expressions (maybe not good idea)
+ *    into expressions with a new Arrow constructor (maybe not good idea)
 
  *  - some special constructs like AssignRef were transformed into
  *    composite calls to Assign and Ref. Same for AssignList, AssignNew.
  *    Same for arguments passed by reference, no Arg, ArgRef.
  *    Same for refs in arrays, no ArrayRef, ArrayArrowRef. Also no ListVar,
- *    ListList, ListEmpty. More orthogonal.
+ *    ListList, ListEmpty. No ForeachVar, ForeachList.
+ *    Array value are also decomposed in regular expr or Arrow, no
+ *    ArrayArrowExpr, no ForeachArrow. More orthogonal.
 
  *  - a unified Call. No FunCallSimple, FunCallVar, MethodCallSimple,
  *    StaticMethodCallSimple, StaticMethodCallVar
@@ -143,10 +145,8 @@ and stmt =
   | While of expr * stmt list
   | Do of stmt list * expr
   | For of expr list * expr list * expr list * stmt list
-  (* 'foreach ($xs as $k)' or 'foreach ($xs as $k => $v)'
-   * so the second and third expr are almost always a Var
-   *)
-  | Foreach of expr * expr * expr option * stmt list
+  (* 'foreach ($xs as $k)', '... ($xs as $k => $v)', '... ($xs as list($...))'*)
+  | Foreach of expr * foreach_pattern * stmt list
 
   | Return of expr option
   | Break of expr option | Continue of expr option
@@ -181,7 +181,7 @@ and stmt =
 (* ------------------------------------------------------------------------- *)
 
 (* lvalue and expr has been mixed in this AST, but an lvalue should be
- * an expr restricted to: Var $var, Array_get, Obj_get, Class_get, List.
+ * an expr restricted to: Var $var, Array_get, Obj_get, Class_get, or List.
  *)
 and expr =
   (* booleans are really just Int in PHP :( *)
@@ -232,8 +232,18 @@ and expr =
    * must be an lvalue (e.g. a variable).
    *)
   | Assign of Ast_php.binaryOp option * expr * expr
-  (* really a destructuring tuple let; always used as part of an Assign *)
+  (* really a destructuring tuple let; always used as part of an Assign or
+   * in foreach_pattern.
+   *)
   | List of expr list
+  (* used only inside array_value or foreach_pattern *)
+  | Arrow of expr * expr
+
+  (* $y =& $x is transformed into an Assign(Var "$y", Ref (Var "$x")). In
+   * PHP refs are always used in an Assign context.
+   *)
+  | Ref of expr
+
 
   | Call of expr * expr list
 
@@ -244,12 +254,7 @@ and expr =
   | Unop of Ast_php.unaryOp * expr
   | Guil of expr list
 
-  (* $y =& $x is transformed into an Assign(Var "$y", Ref (Var "$x")). In
-   * PHP refs are always used in an Assign context.
-   *)
-  | Ref of expr
-
-  | ConsArray of expr option * array_value list
+  | ConsArray of array_value list
   | Collection of name * array_value list
   | Xhp of xml
 
@@ -258,15 +263,6 @@ and expr =
 
   (* yeah! PHP 5.3 is becoming a real language *)
   | Lambda of func_def
-
-  and map_kind =
-    | Map
-    | StableMap
-  and array_value =
-    | Aval of expr
-    | Akval of expr * expr
-  and vector_value = expr
-  and map_value = expr * expr
 
   (* pad: do we need that? could convert into something more basic *)
   and xhp =
@@ -281,6 +277,12 @@ and expr =
     }
      and xhp_attr = expr
 
+(* only Var, List, or Arrow, and apparently also Array_get is ok, so
+ * basically any lvalue
+ *)
+and foreach_pattern = expr
+(* often an Arrow *)
+and array_value = expr
 (* ------------------------------------------------------------------------- *)
 (* Types *)
 (* ------------------------------------------------------------------------- *)

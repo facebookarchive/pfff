@@ -477,7 +477,7 @@ and stmt env = function
       exprl env (es1 ++ es2 ++ es3);
       stmtl env xs
 
-  | Foreach (e1, e2, e3opt, xs) ->
+  | Foreach (e1, pattern, xs) ->
       expr env e1;
 
       (* People often use only one of the iterator when
@@ -488,7 +488,13 @@ and stmt env = function
        *)
       let shared_ref = ref 0 in
 
-      (match e2 with
+      let (e1, e2opt) =
+        match pattern with
+        | Arrow(e1, e2) -> e1, Some e2
+        | e1 -> e1, None
+      in
+
+      (match e1 with
       | Var name | Ref (Var name) ->
           let (s, tok) = s_tok_of_ident name in
           (* todo: if already in scope? shadowing? *)
@@ -496,18 +502,19 @@ and stmt env = function
           (* todo: scope_ref := S.LocalIterator; *)
           env.vars := Map_poly.add s (tok, S.LocalIterator, shared_ref)
             !(env.vars);
+
       (* other kinds of lvalue are permitted too, but it's a little bit wierd
        * and very rarely used in www
        *)
-      | Array_get _ -> expr env e2
+      | Array_get _ -> expr env pattern
 
       (* todo: E.warning tok E.WeirdForeachNoIteratorVar *)
       | _ ->
-          pr2 (str_of_any (Expr2 e2));
+          pr2 (str_of_any (Expr2 pattern));
           raise Todo
       );
 
-      (match e3opt with
+      (match e2opt with
       | None -> ()
       | Some e3 ->
           (match e3 with
@@ -522,6 +529,7 @@ and stmt env = function
               raise Todo
           )
       );
+
       stmtl env xs
 
   | Return eopt
@@ -656,6 +664,8 @@ and expr env = function
       exprl env [e1;e2]
   | List xs ->
       failwith "list(...) should be used only in an Assign context"
+  | Arrow (e1, e2) ->
+      failwith "... => ... should be used only in ConsArray or Foreach context"
 
   (* A mention of a variable in a unset() should not be really
    * considered as a use of variable. There should be another
@@ -712,7 +722,7 @@ and expr env = function
 
       (* facebook specific? should be a hook instead to visit_prog? *)
   | Call(Id[("param_post"|"param_get"|"param_request"|"param_cookie"as kind,tok)],
-        (ConsArray (_, array_args))::rest_param_xxx_args) ->
+        (ConsArray (array_args))::rest_param_xxx_args) ->
 
       (* have passed a 'prefix' arg, or nothing *)
       if List.length rest_param_xxx_args <= 1
@@ -735,7 +745,7 @@ and expr env = function
         in
         prefix_opt +> Common.do_option (fun prefix ->
           array_args +> List.iter (function
-          | Akval(String(param_string, tok_param), _typ_param) ->
+          | Arrow(String(param_string, tok_param), _typ_param) ->
               let s = "$" ^ prefix ^ param_string in
               let tok = A.tok_of_ident (param_string, tok_param) in
               env.vars := Map_poly.add s (tok, S.Local, ref 0) !(env.vars);
@@ -835,7 +845,7 @@ and expr env = function
 
   | Ref e -> expr env e
 
-  | ConsArray (_, xs) -> array_valuel env xs
+  | ConsArray (xs) -> array_valuel env xs
   | Collection (_n, xs) -> 
     array_valuel env xs
   | Xhp x -> xml env x
@@ -846,12 +856,12 @@ and expr env = function
   | Lambda def ->
       func_def { env with in_lambda = true } def
 
-and array_value env = function
-  | Aval e -> expr env e
-  | Akval (e1, e2) -> exprl env [e1; e2]
+and array_value env x = 
+  match x with
+  | Arrow (e1, e2) -> exprl env [e1; e2]
+  | e -> expr env e
 
 and vector_value env e = expr env e
-
 and map_value env (e1, e2) = exprl env [e1; e2]
 
 and xml env x =

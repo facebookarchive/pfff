@@ -267,18 +267,14 @@ let rec (cfg_stmt: state -> nodei option -> stmt -> nodei option) =
        let newi = state.g#add_node { F.n = node; i=i() } in
        state.g +> add_arc_opt (e1i, newi);
 
-       let names = match v_arrow_opt with
-         | _ -> raise Todo
-(*
-         | Left (_, name)
-         | Right (name) ->
-           [name])
-         ++ (match arrow_opt with
-         | None -> []
-         | Some (_, (_, name)) -> [name]) 
-*)
-in
-       
+       let names = 
+         match v_arrow_opt with
+         | ForeachVar (_is_ref, name) -> [name]
+         | ForeachArrow ((_is_ref1, e1), _, (_is_ref2, e2)) ->
+           [e1;e2]
+         | ForeachList (_, xs) ->
+           raise Todo
+       in
        let e2i = List.fold_left (cfg_expr state maybe_unused)
          (Some newi) names in
 

@@ -475,9 +475,8 @@ and stmt_bis env x =
   | For (es1, es2, es3, xs) ->
       exprl env (es1 ++ es2 ++ es3);
       stmtl env xs
-  | Foreach (e1, e2, e3opt, xs) ->
+  | Foreach (e1, e2, xs) ->
       exprl env [e1;e2];
-      Common2.opt (expr env) e3opt;
       stmtl env xs;
   | Return eopt  | Break eopt | Continue eopt ->
       Common2.opt (expr env) eopt
@@ -840,6 +839,7 @@ and expr env x =
 
   (* -------------------------------------------------- *)
   (* boilerplate *)
+  | Arrow(e1, e2) -> exprl env [e1;e2]
   | List xs -> exprl env xs
   | Assign (_, e1, e2) -> exprl env [e1;e2]
   | InstanceOf (e1, e2) ->
@@ -870,7 +870,7 @@ and expr env x =
   | Binop (_, e1, e2) -> exprl env [e1; e2]
   | Guil xs -> exprl env xs
   | Ref e -> expr env e
-  | ConsArray (_, xs) -> array_valuel env xs
+  | ConsArray (xs) -> array_valuel env xs
   | Collection ([name], xs) ->
     add_use_edge env (name, E.Class E.RegularClass);
     array_valuel env xs
@@ -883,12 +883,8 @@ and expr env x =
   | Lambda def -> func_def env def
   )
 
-and array_value env = function
-  | Aval e -> expr env e
-  | Akval (e1, e2) -> exprl env [e1; e2]
-
+and array_value env x = expr env x
 and vector_value env e = expr env e
-
 and map_value env (e1, e2) = exprl env [e1; e2]
 
 and xml env x =

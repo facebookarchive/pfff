@@ -164,9 +164,9 @@ and stmt env st acc =
       A.Switch (e, scl) :: acc
   | Foreach (_, _, e, _, pat, _, cst) ->
       let e = expr env e in
-      let fve, fao = foreach_pattern env pat in
+      let pat = foreach_pattern env pat in
       let cst = colon_stmt env cst in
-      A.Foreach (e, fve, fao, cst) :: acc
+      A.Foreach (e, pat, cst) :: acc
   | Break (_, e, _) -> A.Break (opt expr env e) :: acc
   | Continue (_, eopt, _) -> A.Continue (opt expr env eopt) :: acc
   | Return (_, eopt, _) -> A.Return (opt expr env eopt) :: acc
@@ -295,7 +295,7 @@ and expr env = function
   | ArrayShort (tok, apl, _) ->
       let apl = comma_list apl in
       let apl = List.map (array_pair env) apl in
-      A.ConsArray (None, apl)
+      A.ConsArray (apl)
   | Collection (n, (_, vel, _)) ->
       let n = name env n in
       let vel = comma_list vel in
@@ -722,10 +722,10 @@ and encaps env = function
   | EncapsExpr (_, e, _) -> expr env e
 
 and array_pair env = function
-  | ArrayExpr e -> A.Aval (expr env e)
-  | ArrayRef (_, lv) -> A.Aval (A.Ref (lvalue env lv))
-  | ArrayArrowExpr (e1, _, e2) -> A.Akval (expr env e1, expr env e2)
-  | ArrayArrowRef (e1, _, _, lv) -> A.Akval (expr env e1, A.Ref (lvalue env lv))
+  | ArrayExpr e -> expr env e
+  | ArrayRef (_, lv) -> A.Ref (lvalue env lv)
+  | ArrayArrowExpr (e1, _, e2) -> A.Arrow (expr env e1, expr env e2)
+  | ArrayArrowRef (e1, _, _, lv) -> A.Arrow (expr env e1, A.Ref (lvalue env lv))
 
 and for_expr env el = List.map (expr env) (comma_list el)
 
@@ -753,11 +753,15 @@ and foreach_variable env (r, lv) =
   e
 
 and foreach_pattern env pat =
-  raise Common.Todo
+  match pat with
+  | ForeachVar v -> foreach_variable env v
+  | ForeachArrow (v1, _, v2) ->
+    A.Arrow(foreach_variable env v1, foreach_variable env v2)
+  | ForeachList (_, (_, xs, _)) ->
+    let xs = comma_list xs in
+    let xs = List.fold_right (list_assign env) xs [] in
+    A.List xs
 
-and foreach_var_either env = function
-  | Common.Left fv -> foreach_variable env fv
-  | Common.Right lv -> lvalue env lv
 
 and catch env (_, (_, (fq, dn), _), (_, stdl, _)) =
   let stdl = List.fold_right (stmt_and_def env) stdl [] in

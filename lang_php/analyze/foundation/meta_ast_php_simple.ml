@@ -39,12 +39,11 @@ and vof_stmt =
       let v1 = vof_expr v1
       and v2 = Ocaml.vof_list vof_case v2
       in Ocaml.VSum (("Switch", [ v1; v2 ]))
-  | Foreach ((v1, v2, v3, v4)) ->
+  | Foreach ((v1, v2, v3)) ->
       let v1 = vof_expr v1
-      and v2 = vof_expr v2
-      and v3 = Ocaml.vof_option vof_expr v3
-      and v4 = Ocaml.vof_list vof_stmt v4
-      in Ocaml.VSum (("Foreach", [ v1; v2; v3; v4 ]))
+      and v2 = vof_pattern v2
+      and v3 = Ocaml.vof_list vof_stmt v3
+      in Ocaml.VSum (("Foreach", [ v1; v2; v3 ]))
   | Return (v1) ->
       let v1 = Ocaml.vof_option vof_expr v1
       in Ocaml.VSum (("Return", [ v1 ]))
@@ -165,7 +164,7 @@ and vof_expr =
       in Ocaml.VSum (("Call", [ v1; v2 ]))
   | Ref v1 -> let v1 = vof_expr v1 in Ocaml.VSum (("Ref", [ v1 ]))
   | Xhp v1 -> let v1 = vof_xml v1 in Ocaml.VSum (("Xhp", [ v1 ]))
-  | ConsArray (_, v1) ->
+  | ConsArray (v1) ->
       let v1 = Ocaml.vof_list vof_array_value v1
       in Ocaml.VSum (("ConsArray", [ v1 ]))
   | Collection (v1, v2) ->
@@ -174,6 +173,10 @@ and vof_expr =
       Ocaml.VSum (("Collection", [ v1 ; v2 ]))
   | List v1 ->
       let v1 = Ocaml.vof_list vof_expr v1 in Ocaml.VSum (("List", [ v1 ]))
+  | Arrow ((v1, v2)) ->
+      let v1 = vof_expr v1
+      and v2 = vof_expr v2
+      in Ocaml.VSum (("Arrow", [ v1; v2 ]))
   | New ((v1, v2)) ->
       let v1 = vof_expr v1
       and v2 = Ocaml.vof_list vof_expr v2
@@ -192,18 +195,7 @@ and vof_expr =
       and v2 = vof_expr v2
       in Ocaml.VSum (("Cast", [ v1; v2 ]))
   | Lambda v1 -> let v1 = vof_func_def v1 in Ocaml.VSum (("Lambda", [ v1 ]))
-and vof_array_value =
-  function
-  | Aval v1 -> let v1 = vof_expr v1 in Ocaml.VSum (("Aval", [ v1 ]))
-  | Akval ((v1, v2)) ->
-      let v1 = vof_expr v1
-      and v2 = vof_expr v2
-      in Ocaml.VSum (("Akval", [ v1; v2 ]))
 and vof_vector_elt e = vof_expr e
-and vof_map_kind =
-  function
-  | StableMap -> Ocaml.VSum (("StableMap", []))
-  | Map       -> Ocaml.VSum (("Map", []))
 and vof_map_elt (e1, e2) =
   Ocaml.VTuple ([ vof_expr e1; vof_expr e2])
 and vof_encaps x = vof_expr x
@@ -407,6 +399,8 @@ and
 and vof_modifier x = Ast_php.vof_modifier x
 and vof_attribute v = vof_expr v
 and vof_method_def x = vof_func_def x
+and vof_pattern x = vof_expr x
+and vof_array_value x = vof_expr x
 
 let vof_any =
   function
