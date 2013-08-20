@@ -120,7 +120,7 @@ let rec last_info_of_stmt = function
       last_info_of_stmt (last l)
   | While (_, _, (SingleStmt st)) -> last_info_of_stmt st
   | For (_, _, _, _, _, _, _, _, (SingleStmt st)) -> last_info_of_stmt st
-  | Foreach (_, _, _, _, _, _, _, (SingleStmt st)) -> last_info_of_stmt st
+  | Foreach (_, _, _, _, _, _, (SingleStmt st)) -> last_info_of_stmt st
   | Declare (_, _, (SingleStmt st)) -> last_info_of_stmt st
   | Try (_, _, (_, _, (_, _, x)), []) -> x
   | Try (_, _, _, l) ->
@@ -128,7 +128,7 @@ let rec last_info_of_stmt = function
       x
   | While (_, _, (ColonStmt (_, _, _, x)))
   | For (_, _, _, _, _, _, _, _, (ColonStmt (_, _, _, x)))
-  | Foreach (_, _, _, _, _, _, _, (ColonStmt (_, _, _, x)))
+  | Foreach (_, _, _, _, _, _, (ColonStmt (_, _, _, x)))
   | Declare (_, _, ColonStmt (_, _, _, x)) -> x
   | ExprStmt (_, x)
   | EmptyStmt x
@@ -343,10 +343,9 @@ and stmt_ env st acc =
       let line = PI.line_of_info x in
       let scl = add_case_comments env scl line in
       A.Switch (e, scl) :: acc
-  | Foreach (_, _, e, _, fve, fao, _, cst) ->
+  | Foreach (_, _, e, _, fve_fao, _, cst) ->
       let e = expr env e in
-      let fve = foreach_var_either env fve in
-      let fao = opt foreach_arrow env fao in
+      let fve, fao = foreach_pattern env fve_fao in
       let cst = colon_stmt env cst in
       A.Foreach (e, fve, fao, cst) :: acc
   | Break (_, e, _) -> A.Break (opt expr env e) :: acc
@@ -379,6 +378,9 @@ and stmt_ env st acc =
   | ClassDefNested cd ->
       A.ClassDef (class_def env cd) :: acc
 
+
+and foreach_pattern env pat =
+  raise Common.Todo
 
 and use_filename env = function
   | UseDirect (s, _) -> s
@@ -848,10 +850,6 @@ and foreach_variable env (r, lv) =
   let e = lvalue env lv in
   let e = if r <> None then A.Ref e else e in
   e
-
-and foreach_var_either env = function
-  | Common.Left fv -> foreach_variable env fv
-  | Common.Right lv -> lvalue env lv
 
 and catch env (_, (_, (fq, dn), _), (_, stdl, _)) =
   let stdl = List.fold_right (stmt_and_def env) stdl [] in

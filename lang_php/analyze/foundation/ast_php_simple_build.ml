@@ -162,10 +162,9 @@ and stmt env st acc =
       let e = expr env e in
       let scl = switch_case_list env scl in
       A.Switch (e, scl) :: acc
-  | Foreach (_, _, e, _, fve, fao, _, cst) ->
+  | Foreach (_, _, e, _, pat, _, cst) ->
       let e = expr env e in
-      let fve = foreach_var_either env fve in
-      let fao = opt foreach_arrow env fao in
+      let fve, fao = foreach_pattern env pat in
       let cst = colon_stmt env cst in
       A.Foreach (e, fve, fao, cst) :: acc
   | Break (_, e, _) -> A.Break (opt expr env e) :: acc
@@ -752,6 +751,9 @@ and foreach_variable env (r, lv) =
   let e = lvalue env lv in
   let e = if r <> None then A.Ref e else e in
   e
+
+and foreach_pattern env pat =
+  raise Common.Todo
 
 and foreach_var_either env = function
   | Common.Left fv -> foreach_variable env fv

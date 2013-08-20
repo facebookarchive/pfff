@@ -2121,20 +2121,19 @@ and m_stmt a b =
        B.Switch(b1, b2, b3)
     )
     )))
-  | A.Foreach(a1, a2, a3, a4, a5, a6, a7, a8), B.Foreach(b1, b2, b3, b4, b5, b6, b7, b8) ->
+  | A.Foreach(a1, a2, a3, a4, a5, a6, a7), B.Foreach(b1, b2, b3, b4, b5, b6, b7) ->
     m_tok a1 b1 >>= (fun (a1, b1) ->
     m_tok a2 b2 >>= (fun (a2, b2) ->
     m_expr a3 b3 >>= (fun (a3, b3) ->
     m_tok a4 b4 >>= (fun (a4, b4) ->
-    m_foreach_var_either a5 b5 >>= (fun (a5, b5) ->
-    (m_option m_foreach_arrow) a6 b6 >>= (fun (a6, b6) ->
-    m_tok a7 b7 >>= (fun (a7, b7) ->
-    m_colon_stmt a8 b8 >>= (fun (a8, b8) ->
+    m_foreach_pattern a5 b5 >>= (fun (a5, b5) ->
+    m_tok a6 b6 >>= (fun (a6, b6) ->
+    m_colon_stmt a7 b7 >>= (fun (a7, b7) ->
     return (
-       A.Foreach(a1, a2, a3, a4, a5, a6, a7, a8),
-       B.Foreach(b1, b2, b3, b4, b5, b6, b7, b8)
+       A.Foreach(a1, a2, a3, a4, a5, a6, a7),
+       B.Foreach(b1, b2, b3, b4, b5, b6, b7)
     )
-    ))))))))
+    )))))))
   | A.Break(a1, a2, a3), B.Break(b1, b2, b3) ->
     m_tok a1 b1 >>= (fun (a1, b1) ->
     (m_option m_expr) a2 b2 >>= (fun (a2, b2) ->
@@ -2313,8 +2312,9 @@ and m_colon_stmt a b =
 (* stmt auxilaries *)
 (* ---------------------------------------------------------------------- *)
 
-and m_foreach_var_either a b =
-  m_either m_foreach_variable m_lvalue a b
+
+and m_foreach_pattern a b =
+  raise Todo
 
 and m_foreach_variable a b =
   match a, b with

@@ -597,15 +597,14 @@ and v_stmt xxx =
       and v2 = v_paren v_expr v2
       and v3 = v_switch_case_list v3
       in ()
-  | Foreach ((v1, v2, v3, v4, v5, v6, v7, v8)) ->
+  | Foreach ((v1, v2, v3, v4, v5, v6, v7)) ->
       let v1 = v_tok v1
       and v2 = v_tok v2
       and v3 = v_expr v3
       and v4 = v_tok v4
-      and v5 = Ocaml.v_either v_foreach_variable v_lvalue v5
-      and v6 = v_option v_foreach_arrow v6
-      and v7 = v_tok v7
-      and v8 = v_colon_stmt v8
+      and v5 = v_foreach_pattern v5
+      and v6 = v_tok v6
+      and v7 = v_colon_stmt v7
       in ()
   | Break ((v1, v2, v3)) ->
       let v1 = v_tok v1 and v2 = v_option v_expr v2 and v3 = v_tok v3 in ()
@@ -678,8 +677,14 @@ and v_new_elseif (v1, v2, v3, v4) =
 and v_new_else (v1, v2, v3) =
   let v1 = v_tok v1 and v2 = v_tok v2 and v3 = v_stmt_and_def_list_scope v3 in ()
 and v_for_expr v = v_comma_list v_expr v
-and v_foreach_arrow (v1, v2) =
-  let v1 = v_tok v1 and v2 = v_foreach_variable v2 in ()
+and v_foreach_pattern =
+  function
+  | ForeachVar v1 -> let v1 = v_foreach_variable v1 in ()
+  | ForeachArrow ((v1, v2, v3)) ->
+      let v1 = v_foreach_variable v1
+      and v2 = v_tok v2
+      and v3 = v_foreach_variable v3
+      in ()
 and v_foreach_variable (v1, v2) =
   let v1 = v_is_ref v1 and v2 = v_lvalue v2 in ()
 and v_switch_case_list =

@@ -323,9 +323,8 @@ statement:
  | T_SWITCH TOPAR expr TCPAR	switch_case_list
      { Switch($1,($2,$3,$4),$5) }
 
- | T_FOREACH TOPAR expr T_AS foreach_variable foreach_optional_arg TCPAR
-     foreach_statement
-     { Foreach($1,$2,$3,$4,Left $5,$6,$7,$8)  }
+ | T_FOREACH TOPAR expr T_AS foreach_pattern TCPAR foreach_statement
+     { Foreach($1,$2,$3,$4,$5,$6,$7) }
 
  | T_BREAK      TSEMICOLON     	{ Break($1,None,$2) }
  | T_BREAK expr TSEMICOLON	{ Break($1,Some $2, $3) }
@@ -379,11 +378,11 @@ for_expr:
  | /*(*empty*)*/    	{ [] }
  | non_empty_for_expr	{ $1 }
 
-foreach_optional_arg:
-  | /*(*empty*)*/			{ None }
-  | T_DOUBLE_ARROW foreach_variable	{ Some($1,$2) }
-
 foreach_variable: is_reference expr { ($1, $2) }
+
+foreach_pattern: 
+  | foreach_variable                                 { ForeachVar $1 }
+  | foreach_variable T_DOUBLE_ARROW foreach_variable { ForeachArrow($1,$2,$3) }
 
 switch_case_list:
  | TOBRACE            case_list TCBRACE

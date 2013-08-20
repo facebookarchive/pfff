@@ -573,16 +573,15 @@ and vof_stmt =
       and v2 = vof_paren vof_expr v2
       and v3 = vof_switch_case_list v3
       in Ocaml.VSum (("Switch", [ v1; v2; v3 ]))
-  | Foreach ((v1, v2, v3, v4, v5, v6, v7, v8)) ->
+  | Foreach ((v1, v2, v3, v4, v5, v6, v7)) ->
       let v1 = vof_tok v1
       and v2 = vof_tok v2
       and v3 = vof_expr v3
       and v4 = vof_tok v4
-      and v5 = Ocaml.vof_either vof_foreach_variable vof_lvalue v5
-      and v6 = vof_option vof_foreach_arrow v6
-      and v7 = vof_tok v7
-      and v8 = vof_colon_stmt v8
-      in Ocaml.VSum (("Foreach", [ v1; v2; v3; v4; v5; v6; v7; v8 ]))
+      and v5 = vof_foreach_pattern v5
+      and v6 = vof_tok v6
+      and v7 = vof_colon_stmt v7
+      in Ocaml.VSum (("Foreach", [ v1; v2; v3; v4; v5; v6; v7 ]))
   | Break ((v1, v2, v3)) ->
       let v1 = vof_tok v1
       and v2 = vof_option vof_expr v2
@@ -676,10 +675,15 @@ and vof_case =
       and v3 = vof_list vof_stmt_and_def v3
       in Ocaml.VSum (("Default", [ v1; v2; v3 ]))
 and vof_for_expr v = vof_comma_list vof_expr v
-and vof_foreach_arrow (v1, v2) =
-  let v1 = vof_tok v1
-  and v2 = vof_foreach_variable v2
-  in Ocaml.VTuple [ v1; v2 ]
+and vof_foreach_pattern =
+  function
+  | ForeachVar v1 ->
+      let v1 = vof_foreach_variable v1 in Ocaml.VSum (("ForeachVar", [ v1 ]))
+  | ForeachArrow ((v1, v2, v3)) ->
+      let v1 = vof_foreach_variable v1
+      and v2 = vof_tok v2
+      and v3 = vof_foreach_variable v3
+      in Ocaml.VSum (("ForeachArrow", [ v1; v2; v3 ]))
 and vof_foreach_variable (v1, v2) =
   let v1 = vof_is_ref v1 and v2 = vof_lvalue v2 in Ocaml.VTuple [ v1; v2 ]
 and vof_catch (v1, v2, v3) =

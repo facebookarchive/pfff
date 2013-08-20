@@ -439,11 +439,11 @@ and stmt =
     (* if it's a expr_without_variable, the second arg must be a Right variable,
      * otherwise if it's a variable then it must be a foreach_variable
      *)
-    | Foreach of tok * tok * expr * tok * foreach_var_either *
-        foreach_arrow option * tok *
-        colon_stmt
-      (* example: foreach(expr as $lvalue) { colon_stmt }
-       *          foreach(expr as $foreach_varialbe => $lvalue) { colon_stmt}
+    | Foreach of tok * tok (*'('*) * expr * tok (* as *) * foreach_pattern *
+        tok (*')'*) * colon_stmt
+      (* example: foreach(expr as $lvalue) { ... }
+       *          foreach(expr as $foreach_varialbe => $lvalue) { ... }
+       *          foreach(expr as list($x, $y)) { ... }
        *)
     | Break    of tok * expr option * tok
     | Continue of tok * expr option * tok
@@ -479,9 +479,10 @@ and stmt =
    and if_elseif = tok * expr paren * stmt
    and if_else = (tok * stmt)
     and for_expr = expr comma_list (* can be empty *)
-    and foreach_arrow = tok * foreach_variable
-    and foreach_variable = is_ref * lvalue
-    and foreach_var_either = (foreach_variable, lvalue) Common.either
+    and foreach_pattern =
+     | ForeachVar of foreach_variable
+     | ForeachArrow of foreach_variable * tok * foreach_variable
+     and foreach_variable = is_ref * lvalue
     and catch =
       tok * (class_name * dname) paren * stmt_and_def list brace
     and use_filename =

@@ -256,7 +256,7 @@ let rec (cfg_stmt: state -> nodei option -> stmt -> nodei option) =
        state.g +> add_arc_opt (e5i, newi);
        Some newfakeelse
 
-   | Foreach (t1, t2, e1, t3, v, arrow_opt, t4, colon_stmt) -> 
+   | Foreach (t1, t2, e1, t3, v_arrow_opt, t4, colon_stmt) -> 
      (* previ -> e1i ->newi -> vi --> newfakethen -> ... -> finalthen
       *                  |--------|----------------------------------|
       *                           |-> newfakelse 
@@ -267,13 +267,17 @@ let rec (cfg_stmt: state -> nodei option -> stmt -> nodei option) =
        let newi = state.g#add_node { F.n = node; i=i() } in
        state.g +> add_arc_opt (e1i, newi);
 
-       let names = (match v with
+       let names = match v_arrow_opt with
+         | _ -> raise Todo
+(*
          | Left (_, name)
          | Right (name) ->
            [name])
          ++ (match arrow_opt with
          | None -> []
-         | Some (_, (_, name)) -> [name]) in
+         | Some (_, (_, name)) -> [name]) 
+*)
+in
        
        let e2i = List.fold_left (cfg_expr state maybe_unused)
          (Some newi) names in

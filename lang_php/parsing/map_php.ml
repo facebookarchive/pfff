@@ -548,21 +548,20 @@ and map_stmt x =
       and v8 = map_tok v8
       and v9 = map_colon_stmt v9
       in For ((v1, v2, v3, v4, v5, v6, v7, v8, v9))
+  | Foreach ((v1, v2, v3, v4, v5, v6, v7)) ->
+      let v1 = map_tok v1
+      and v2 = map_tok v2
+      and v3 = map_expr v3
+      and v4 = map_tok v4
+      and v5 = map_foreach_pattern v5
+      and v6 = map_tok v6
+      and v7 = map_colon_stmt v7
+      in Foreach ((v1, v2, v3, v4, v5, v6, v7))
   | Switch ((v1, v2, v3)) ->
       let v1 = map_tok v1
       and v2 = map_paren map_expr v2
       and v3 = map_switch_case_list v3
       in Switch ((v1, v2, v3))
-  | Foreach ((v1, v2, v3, v4, v5, v6, v7, v8)) ->
-      let v1 = map_tok v1
-      and v2 = map_tok v2
-      and v3 = map_expr v3
-      and v4 = map_tok v4
-      and v5 = Ocaml.map_of_either map_foreach_variable map_lvalue v5
-      and v6 = map_of_option map_foreach_arrow v6
-      and v7 = map_tok v7
-      and v8 = map_colon_stmt v8
-      in Foreach ((v1, v2, v3, v4, v5, v6, v7, v8))
   | Break ((v1, v2, v3)) ->
       let v1 = map_tok v1
       and v2 = map_of_option map_expr v2
@@ -655,8 +654,14 @@ and map_case =
       and v3 = map_of_list map_stmt_and_def v3
       in Default ((v1, v2, v3))
 and map_for_expr v = map_comma_list map_expr v
-and map_foreach_arrow (v1, v2) =
-  let v1 = map_tok v1 and v2 = map_foreach_variable v2 in (v1, v2)
+and map_foreach_pattern =
+  function
+  | ForeachVar v1 -> let v1 = map_foreach_variable v1 in ForeachVar ((v1))
+  | ForeachArrow ((v1, v2, v3)) ->
+      let v1 = map_foreach_variable v1
+      and v2 = map_tok v2
+      and v3 = map_foreach_variable v3
+      in ForeachArrow ((v1, v2, v3))
 and map_foreach_variable (v1, v2) =
   let v1 = map_is_ref v1 and v2 = map_lvalue v2 in (v1, v2)
 and map_catch (v1, v2, v3) =
