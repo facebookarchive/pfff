@@ -1,7 +1,7 @@
 
 type location_elt =
-  | File of Common.filename * int * int
-  | Line of int * int
+  | File of Common.filename * int (* line *) * int (* col *)
+  | Line of int (* line *) * int (* col *)
   | Col of int
   | Other
 
