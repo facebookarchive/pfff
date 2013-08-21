@@ -73,21 +73,21 @@ type env = {
   current: Graph_code.node;
 
   root: Common.dirname;
-
   (* readable path *)
-  current_c_file: Common.filename;
+  c_file: Common.filename;
+
+  (*current_c_file_line: int ref; *)
 
   (* for error reports *)
-  current_clang2_file: Common.filename;
+  clang2_file: Common.filename;
   (* line number in .clang file (not .c file) *)
-  line: int;
+  clang_line: int;
 
   at_toplevel: bool;
   (* we don't need to store also the params as they are marked specially
    * as ParamVar in the AST.
    *)
   locals: string list ref;
-
   (* static functions and globals and main renaming *)
   local_rename: (string, string) Hashtbl.t;
 
@@ -127,13 +127,13 @@ let str env s =
   else s
 
 let loc_of_env env =
-  env.current_clang2_file, env.line
+  env.clang2_file, env.clang_line
 
 let error env s =
   Errors_clang.error (loc_of_env env) s
 
 let str_of_angle_loc env loc =
-  Location_clang.str_of_angle_loc env.line loc env.current_clang2_file
+  Location_clang.str_of_angle_loc env.clang_line loc env.clang2_file
 
 (*****************************************************************************)
 (* Add Node *)
@@ -168,13 +168,13 @@ let add_node_and_edge_if_defs_mode env node =
               | "T__dev_t" | "T__mode_t"
             )
               -> ()
-          | _ when env.current_clang2_file =~ ".*EXTERNAL" -> ()
+          | _ when env.clang2_file =~ ".*EXTERNAL" -> ()
           | _ ->
               env.pr2_and_log (spf "DUPE entity: %s" (G.string_of_node node));
               let nodeinfo = G.nodeinfo node env.g in
               let orig_file = nodeinfo.G.pos.Parse_info.file in
               env.log (spf " orig = %s" orig_file);
-              env.log (spf " dupe = %s" env.current_clang2_file);
+              env.log (spf " dupe = %s" env.clang2_file);
           )
       (* todo: have no Use for now for those so skip errors *) 
       | E.Prototype | E.GlobalExtern -> ()
@@ -189,7 +189,7 @@ let add_node_and_edge_if_defs_mode env node =
             str = "";
             charpos = -1;
             line = line; column = -1;
-            file = env.current_c_file;
+            file = env.c_file;
           };
           props = [];
         } in
@@ -220,7 +220,7 @@ let rec add_use_edge env (s, kind) =
     | E.Function -> add_use_edge env (s, E.Prototype)
     (* look for GlobalExtern if no Global *)
     | E.Global -> add_use_edge env (s, E.GlobalExtern)
-    | _ when env.current_clang2_file =~ ".*EXTERNAL" -> ()
+    | _ when env.clang2_file =~ ".*EXTERNAL" -> ()
     (* todo? if we use 'b' in the 'a':'b' type string, still need code below?*)
     | E.Type when s =~ "S__\\(.*\\)" ->
         add_use_edge env ("T__" ^ Common.matched1 s, E.Type)
@@ -231,8 +231,8 @@ let rec add_use_edge env (s, kind) =
     | _ ->
         env.pr2_and_log (spf "Lookup failure on %s (%s:%d)"
                             (G.string_of_node dst)
-                            env.current_clang2_file
-                            env.line
+                            env.clang2_file
+                            env.clang_line
         )
     )
       
@@ -278,7 +278,7 @@ let add_type_deps env typ =
 (*****************************************************************************)
 let rec extract_defs_uses env ast =
   let readable_clang = 
-    Common.filename_without_leading_path env.root env.current_clang2_file in
+    Common.filename_without_leading_path env.root env.clang2_file in
   let readable =
     if readable_clang =~ "\\(.*\\).clang2"
     then Common.matched1 readable_clang
@@ -294,7 +294,7 @@ let rec extract_defs_uses env ast =
   end;
   let env = { env with 
     current = (readable, E.File);
-    current_c_file = readable;
+    c_file = readable;
   } in
   match ast with
   | Paren (TranslationUnitDecl, l, _loc::xs) ->
@@ -306,7 +306,7 @@ let rec extract_defs_uses env ast =
 and sexp_toplevel env x =
   match x with
   | Paren (enum, l, xs) ->
-      let env = { env with line = l } in
+      let env = { env with clang_line = l } in
 
       (* dispatcher *)
       (match enum with
@@ -368,7 +368,7 @@ and decl env (enum, l, xs) =
            * some unresolvev lookup in the c files.
            *)
           | T (TLowerIdent "static")::T (TLowerIdent "inline")::_rest ->
-              env.current_clang2_file =~ ".*\\.[cm]\\.clang2"
+              env.clang2_file =~ ".*\\.[cm]\\.clang2"
           | T (TLowerIdent "static")::_rest -> true
           | _ when s = "main" -> true
           | _ -> false
@@ -397,7 +397,7 @@ and decl env (enum, l, xs) =
            * some unresolved lookup in the c files.
            *)
           | T (TLowerIdent "static")::_rest ->
-              env.current_clang2_file =~ ".*\\.[cm]\\.clang2"
+              env.clang2_file =~ ".*\\.[cm]\\.clang2"
           | _ -> false
         in
         let env =
@@ -544,7 +544,7 @@ and expr env (enum, l, xs) =
                  _address;(Paren (enum2, l2, xs))] ->
       if env.phase = Uses
       then
-        let loc = env.current_clang2_file, l2 in
+        let loc = env.clang2_file, l2 in
         let typ_expr = 
           Type_clang.extract_canonical_type_of_sexp loc (Paren(enum2, l2, xs))
         in
@@ -623,10 +623,10 @@ let build ?(verbose=true) dir skip_list =
     phase = Defs;
     current = unknown_location;
 
-    current_c_file = "__filled_later__";
-    current_clang2_file = "__filled_later__";
+    c_file = "__filled_later__";
+    clang2_file = "__filled_later__";
 
-    line = -1;
+    clang_line = -1;
     cnt = ref 0;
     root = root;
     at_toplevel = true;
@@ -658,7 +658,7 @@ let build ?(verbose=true) dir skip_list =
       Hashtbl.add local_renames file h;
       extract_defs_uses { env with 
         phase = Defs; 
-        current_clang2_file = file;
+        clang2_file = file;
         local_rename = h;
       } ast
    ));
@@ -671,7 +671,7 @@ let build ?(verbose=true) dir skip_list =
       let ast = parse file in
       extract_defs_uses { env with 
         phase = Uses; 
-        current_clang2_file = file;
+        clang2_file = file;
         local_rename = Hashtbl.find local_renames file;
       } ast
     ));
