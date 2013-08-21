@@ -41,6 +41,8 @@ type env = {
   (* for readable_filename *)
   root: Common.dirname;
   current_c_file: Common.filename ref;
+
+  (* for error report *)
   current_clang_file: Common.filename;
 }
  and variant = Proto | Def | Misc
@@ -56,6 +58,21 @@ let str_of_angle_loc env l loc =
    *)
   Location_clang.str_of_angle_loc l loc !(env.current_c_file)
 
+let update_current_c_file env (enum, l, xs) =
+  (* less: dupe with below *)
+  let file_opt = 
+    Loc.readable_filename_location_of_paren_opt 
+      env.root env.current_clang_file (enum, l, xs) 
+  in
+  file_opt +> Common.do_option (fun f ->
+    env.current_c_file := f;
+    if not (Hashtbl.mem env.hfile f)
+    then begin
+      Hashtbl.add env.hfile f (Hashtbl.create 10);
+      Hashtbl.add env.hfile_data f [];
+    end;
+  )
+  
 (*****************************************************************************)
 (* Accumulating *)
 (*****************************************************************************)
@@ -105,18 +122,7 @@ and dispatch_sexp env exp =
 
 
 and decl env (enum, l, xs) =
-  (* less: dupe with below *)
-  let file_opt = 
-    Loc.readable_filename_location_of_paren_opt 
-      env.root env.current_clang_file (enum, l, xs) in
-  file_opt +> Common.do_option (fun f ->
-    env.current_c_file := f;
-    if not (Hashtbl.mem env.hfile f)
-    then begin
-      Hashtbl.add env.hfile f (Hashtbl.create 10);
-      Hashtbl.add env.hfile_data f [];
-    end;
-  );
+  update_current_c_file env (enum, l, xs);
   let sexp = Paren (enum, l, xs) in
   (* a bit similar to graph_code_clang decl, but without embeded defs like
    * fields or enum constants as we care only about toplevel decls here.
@@ -174,20 +180,8 @@ and decl env (enum, l, xs) =
 and sexp env x =
   match x with
   | Paren (enum, l, xs) ->
-      let file_opt = 
-        Loc.readable_filename_location_of_paren_opt 
-          env.root env.current_clang_file (enum, l, xs) 
-      in
-      file_opt +> Common.do_option (fun f ->
-        env.current_c_file := f;
-        if not (Hashtbl.mem env.hfile f)
-        then begin
-          Hashtbl.add env.hfile f (Hashtbl.create 10);
-          Hashtbl.add env.hfile_data f [];
-        end;
-      );
+      update_current_c_file env (enum, l, xs);
       sexps env xs
-
   | Angle xs | Anchor xs | Bracket xs ->
       sexps env xs
   | Brace (toks, _) -> ()
