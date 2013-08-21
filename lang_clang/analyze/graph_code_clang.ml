@@ -139,7 +139,7 @@ let str_of_angle_loc env loc =
 (* Add Node *)
 (*****************************************************************************)
 
-let add_node_and_edge_if_defs_mode env node _loc =
+let add_node_and_edge_if_defs_mode env node =
   let (str, kind) = node in
   let str' =
     match kind, env.current with
@@ -277,12 +277,12 @@ let add_type_deps env typ =
 (* Defs/Uses *)
 (*****************************************************************************)
 let rec extract_defs_uses env ast =
-  let readable = 
+  let readable_clang = 
     Common.filename_without_leading_path env.root env.current_clang2_file in
   let readable =
-    if readable =~ "\\(.*\\).clang2"
-    then Common.matched1 readable
-    else readable
+    if readable_clang =~ "\\(.*\\).clang2"
+    then Common.matched1 readable_clang
+    else failwith "not a clang2 file?"
   in
 
   if env.phase = Defs then begin
@@ -378,7 +378,7 @@ and decl env (enum, l, xs) =
           then new_str_if_defs env s
           else s
         in
-        let env = add_node_and_edge_if_defs_mode env (s, kind) loc in
+        let env = add_node_and_edge_if_defs_mode env (s, kind) in
         add_type_deps env typ;
         { env with locals = ref [] }
 
@@ -408,7 +408,7 @@ and decl env (enum, l, xs) =
               then new_str_if_defs env s
               else s
             in
-            add_node_and_edge_if_defs_mode env (s, kind) loc
+            add_node_and_edge_if_defs_mode env (s, kind)
           else begin 
             env.locals := s::!(env.locals);
             env
@@ -420,12 +420,12 @@ and decl env (enum, l, xs) =
 
     (* I am not sure about the namespaces, so I prepend strings *)
     | TypedefDecl, loc::(T (TLowerIdent s | TUpperIdent s))::typ::_rest ->
-        let env = add_node_and_edge_if_defs_mode env ("T__" ^ s, E.Type) loc in
+        let env = add_node_and_edge_if_defs_mode env ("T__" ^ s, E.Type) in
         add_type_deps env typ;
         env
         
     | EnumDecl, loc::(T (TLowerIdent s | TUpperIdent s))::_rest ->
-        add_node_and_edge_if_defs_mode env ("E__" ^ s, E.Type) loc
+        add_node_and_edge_if_defs_mode env ("E__" ^ s, E.Type) 
 
     (* ignore forward decl, to avoid duped entities *)
     | RecordDecl, loc::(T (TLowerIdent "struct"))
@@ -434,34 +434,34 @@ and decl env (enum, l, xs) =
           
     | RecordDecl, loc::(T (TLowerIdent "struct"))
         ::(T (TLowerIdent s | TUpperIdent s))::_rest ->
-        add_node_and_edge_if_defs_mode env ("S__" ^ s, E.Type) loc
+        add_node_and_edge_if_defs_mode env ("S__" ^ s, E.Type)
     | RecordDecl, loc::(T (TLowerIdent "union"))
         ::(T (TLowerIdent s | TUpperIdent s))::_rest ->
-        add_node_and_edge_if_defs_mode env ("U__" ^ s, E.Type) loc
+        add_node_and_edge_if_defs_mode env ("U__" ^ s, E.Type)
           
     (* usually embedded struct *)
     | RecordDecl, loc::(T (TLowerIdent "struct"))::_rest ->
         add_node_and_edge_if_defs_mode env 
-          (spf "S__anon__%s" (str_of_angle_loc env loc), E.Type) loc
+          (spf "S__anon__%s" (str_of_angle_loc env loc), E.Type)
           
     (* todo: usually there is a typedef just behind *)
     | EnumDecl, loc::_rest ->
         add_node_and_edge_if_defs_mode env 
-          (spf "E__anon__%s" (str_of_angle_loc env loc), E.Type) loc
+          (spf "E__anon__%s" (str_of_angle_loc env loc), E.Type)
     | RecordDecl, loc::(T (TLowerIdent "union"))::_rest ->
         add_node_and_edge_if_defs_mode env 
-          (spf "U__anon__%s" (str_of_angle_loc env loc), E.Type) loc
+          (spf "U__anon__%s" (str_of_angle_loc env loc), E.Type)
 
     | FieldDecl, loc::(T (TLowerIdent s | TUpperIdent s))::typ::_rest ->
-        let env = add_node_and_edge_if_defs_mode env (s, E.Field) loc in 
+        let env = add_node_and_edge_if_defs_mode env (s, E.Field) in 
         add_type_deps env typ;
         env
 
     | FieldDecl, loc::_rest ->
         add_node_and_edge_if_defs_mode env 
-          (spf "F__anon__%s" (str_of_angle_loc env loc), E.Field) loc
+          (spf "F__anon__%s" (str_of_angle_loc env loc), E.Field)
     | EnumConstantDecl, loc::(T (TLowerIdent s | TUpperIdent s))::_rest ->
-        add_node_and_edge_if_defs_mode env (s, E.Constant) loc
+        add_node_and_edge_if_defs_mode env (s, E.Constant)
         
     | _ -> error env "wrong Decl line" 
   in
