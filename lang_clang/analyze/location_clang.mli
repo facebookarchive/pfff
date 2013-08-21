@@ -9,6 +9,11 @@ val locations_of_angle:
   int * Common.filename (* for error report, line x file in .clang *) -> 
   Ast_clang.sexp list -> location_elt list
 
+val locations_of_paren:
+  Common.filename (* for error report, line x file in .clang *) ->
+  (Ast_clang.enum * int * Ast_clang.sexp list) -> location_elt list
+
+
 val readable_of_filename:
   root:Common.dirname ->
   Common.filename -> Common.filename

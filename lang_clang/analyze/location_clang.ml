@@ -66,6 +66,23 @@ let locations_of_angle (line, file) xs =
           failwith (spf "wrong location format at line %d in %s"  line file)
       )
 
+let locations_of_paren clang_file (enum, l, xs) =
+  match enum, xs with
+  | (Misc__Null__ | Misc__Capture__ | Misc__Cleanup__Block
+      (* TODO: when under IndirectDecl *)
+        | Field 
+      (* CXXCtorInitializer *)
+      | TodoAst _
+      ), _ 
+    -> 
+    [Other]
+  | _, Angle xs::_rest ->
+    locations_of_angle (l, clang_file) xs
+  | _ -> 
+    failwith (spf "%s:%d: no location" clang_file l)
+          
+  
+
 let readable_of_filename ~root f =
   let xs = Common.split "/" f in
   let xs = 
@@ -100,22 +117,8 @@ let readable_of_filename ~root f =
   Common.join "/" xs
 
 let readable_filename_location_of_paren_opt ~root clang_file (enum, l, xs) =
-  let location =
-    match enum, xs with
-    | (Misc__Null__ | Misc__Capture__ | Misc__Cleanup__Block
-      (* TODO: when under IndirectDecl *)
-      | Field 
-      (* CXXCtorInitializer *)
-      | TodoAst _
-      ), _ 
-      -> 
-      [Other]
-    | _, Angle xs::_rest ->
-      locations_of_angle (l, clang_file) xs
-    | _ -> 
-      failwith (spf "%s:%d: no location" clang_file l)
-          
-  in
+  let locations = locations_of_paren clang_file (enum, l, xs) in
+
   (* Because of some macro expansions, sometimes one can have multiple
    * 'File' locations in one Angle, for instance when use 'bool' from stdbool.h
    * or with macro like '#define RETSIGTYPE void' in which case
@@ -131,7 +134,7 @@ let readable_filename_location_of_paren_opt ~root clang_file (enum, l, xs) =
    * location, hence the List.rev below.
    * update: now that use ExpansionLoc, can get rid of List.rev?
    *)
-  location +> Common.find_some_opt (function 
+  locations +> Common.find_some_opt (function 
   | File (f, _,_) ->
       let readable = readable_of_filename ~root f in
       (* ugly: stdbool.h contains some macros that then confused
