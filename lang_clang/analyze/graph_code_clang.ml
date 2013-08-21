@@ -74,8 +74,12 @@ type env = {
 
   root: Common.dirname;
 
+  (* readable path *)
+  current_c_file: Common.filename;
+
   (* for error reports *)
   current_clang2_file: Common.filename;
+  (* line number in .clang file (not .c file) *)
   line: int;
 
   at_toplevel: bool;
@@ -135,7 +139,7 @@ let str_of_angle_loc env loc =
 (* Add Node *)
 (*****************************************************************************)
 
-let add_node_and_edge_if_defs_mode env node =
+let add_node_and_edge_if_defs_mode env node _loc =
   let (str, kind) = node in
   let str' =
     match kind, env.current with
@@ -179,12 +183,13 @@ let add_node_and_edge_if_defs_mode env node =
       )
     else begin
       try
+        let line = - 1 in
         let nodeinfo = { Graph_code.
           pos = { Parse_info.
             str = "";
             charpos = -1;
-            line = -1; column = -1;
-            file = env.current_clang2_file;
+            line = line; column = -1;
+            file = env.current_c_file;
           };
           props = [];
         } in
@@ -287,7 +292,10 @@ let rec extract_defs_uses env ast =
     env.g +> G.add_node node;
     env.g +> G.add_edge ((dir, E.Dir), node) G.Has;
   end;
-  let env = { env with current = (readable, E.File) } in
+  let env = { env with 
+    current = (readable, E.File);
+    current_c_file = readable;
+  } in
   match ast with
   | Paren (TranslationUnitDecl, l, _loc::xs) ->
       List.iter (sexp_toplevel env) xs
@@ -342,7 +350,7 @@ and sexps env xs = List.iter (sexp env) xs
 and decl env (enum, l, xs) =
   let env =
     match enum, xs with
-    | FunctionDecl, _loc::(T (TLowerIdent s | TUpperIdent s))::typ::rest->
+    | FunctionDecl, loc::(T (TLowerIdent s | TUpperIdent s))::typ::rest->
         let kind = 
           if rest +> List.exists (function 
           | Paren (CompoundStmt, _, _) -> true
@@ -370,11 +378,11 @@ and decl env (enum, l, xs) =
           then new_str_if_defs env s
           else s
         in
-        let env = add_node_and_edge_if_defs_mode env (s, kind) in
+        let env = add_node_and_edge_if_defs_mode env (s, kind) loc in
         add_type_deps env typ;
         { env with locals = ref [] }
 
-    | VarDecl, _loc::(T (TLowerIdent s | TUpperIdent s))::typ::rest ->
+    | VarDecl, loc::(T (TLowerIdent s | TUpperIdent s))::typ::rest ->
         let kind =
           match rest with
           | T (TLowerIdent "extern")::_ -> E.GlobalExtern
@@ -400,7 +408,7 @@ and decl env (enum, l, xs) =
               then new_str_if_defs env s
               else s
             in
-            add_node_and_edge_if_defs_mode env (s, kind)
+            add_node_and_edge_if_defs_mode env (s, kind) loc
           else begin 
             env.locals := s::!(env.locals);
             env
@@ -411,49 +419,49 @@ and decl env (enum, l, xs) =
         
 
     (* I am not sure about the namespaces, so I prepend strings *)
-    | TypedefDecl, _loc::(T (TLowerIdent s | TUpperIdent s))::typ::_rest ->
-        let env = add_node_and_edge_if_defs_mode env ("T__" ^ s, E.Type) in
+    | TypedefDecl, loc::(T (TLowerIdent s | TUpperIdent s))::typ::_rest ->
+        let env = add_node_and_edge_if_defs_mode env ("T__" ^ s, E.Type) loc in
         add_type_deps env typ;
         env
         
-    | EnumDecl, _loc::(T (TLowerIdent s | TUpperIdent s))::_rest ->
-        add_node_and_edge_if_defs_mode env ("E__" ^ s, E.Type)
+    | EnumDecl, loc::(T (TLowerIdent s | TUpperIdent s))::_rest ->
+        add_node_and_edge_if_defs_mode env ("E__" ^ s, E.Type) loc
 
     (* ignore forward decl, to avoid duped entities *)
-    | RecordDecl, _loc::(T (TLowerIdent "struct"))
+    | RecordDecl, loc::(T (TLowerIdent "struct"))
         ::(T (TLowerIdent s | TUpperIdent s))::[] ->
         env
           
-    | RecordDecl, _loc::(T (TLowerIdent "struct"))
+    | RecordDecl, loc::(T (TLowerIdent "struct"))
         ::(T (TLowerIdent s | TUpperIdent s))::_rest ->
-        add_node_and_edge_if_defs_mode env ("S__" ^ s, E.Type)
-    | RecordDecl, _loc::(T (TLowerIdent "union"))
+        add_node_and_edge_if_defs_mode env ("S__" ^ s, E.Type) loc
+    | RecordDecl, loc::(T (TLowerIdent "union"))
         ::(T (TLowerIdent s | TUpperIdent s))::_rest ->
-        add_node_and_edge_if_defs_mode env ("U__" ^ s, E.Type)
+        add_node_and_edge_if_defs_mode env ("U__" ^ s, E.Type) loc
           
     (* usually embedded struct *)
     | RecordDecl, loc::(T (TLowerIdent "struct"))::_rest ->
         add_node_and_edge_if_defs_mode env 
-          (spf "S__anon__%s" (str_of_angle_loc env loc), E.Type)
+          (spf "S__anon__%s" (str_of_angle_loc env loc), E.Type) loc
           
     (* todo: usually there is a typedef just behind *)
     | EnumDecl, loc::_rest ->
         add_node_and_edge_if_defs_mode env 
-          (spf "E__anon__%s" (str_of_angle_loc env loc), E.Type)
+          (spf "E__anon__%s" (str_of_angle_loc env loc), E.Type) loc
     | RecordDecl, loc::(T (TLowerIdent "union"))::_rest ->
         add_node_and_edge_if_defs_mode env 
-          (spf "U__anon__%s" (str_of_angle_loc env loc), E.Type)
+          (spf "U__anon__%s" (str_of_angle_loc env loc), E.Type) loc
 
-    | FieldDecl, _loc::(T (TLowerIdent s | TUpperIdent s))::typ::_rest ->
-        let env = add_node_and_edge_if_defs_mode env (s, E.Field) in
+    | FieldDecl, loc::(T (TLowerIdent s | TUpperIdent s))::typ::_rest ->
+        let env = add_node_and_edge_if_defs_mode env (s, E.Field) loc in 
         add_type_deps env typ;
         env
 
     | FieldDecl, loc::_rest ->
         add_node_and_edge_if_defs_mode env 
-          (spf "F__anon__%s" (str_of_angle_loc env loc), E.Field)
-    | EnumConstantDecl, _loc::(T (TLowerIdent s | TUpperIdent s))::_rest ->
-        add_node_and_edge_if_defs_mode env (s, E.Constant)
+          (spf "F__anon__%s" (str_of_angle_loc env loc), E.Field) loc
+    | EnumConstantDecl, loc::(T (TLowerIdent s | TUpperIdent s))::_rest ->
+        add_node_and_edge_if_defs_mode env (s, E.Constant) loc
         
     | _ -> error env "wrong Decl line" 
   in
@@ -615,6 +623,7 @@ let build ?(verbose=true) dir skip_list =
     phase = Defs;
     current = unknown_location;
 
+    current_c_file = "__filled_later__";
     current_clang2_file = "__filled_later__";
 
     line = -1;
