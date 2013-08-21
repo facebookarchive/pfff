@@ -74,7 +74,7 @@ type env = {
 
   root: Common.dirname;
   (* readable path *)
-  c_file: Common.filename;
+  c_file_readable: Common.filename;
 
   current_c_file_line: int ref;
   (* this is there in support for current_c_file_line, see update_line() *)
@@ -139,6 +139,35 @@ let error env s =
 let str_of_angle_loc env loc =
   Location_clang.str_of_angle_loc env.clang_line loc env.clang2_file
 
+let update_current_c_file_line env (enum, l, xs) =
+  let locations = 
+    Loc.locations_of_paren env.clang2_file (enum, l, xs) in
+  let update_line_if_same_file l =
+    if !(env.current_c_file) =$= env.target_c_file
+    then env.current_c_file_line := l
+  in
+
+  let rec aux = function
+    | [] -> ()
+    (* for range, we care about the first position, so discard second Line *)
+    | [Loc.File (file, l, _col);Loc.Line _] ->
+      env.current_c_file := file;
+      update_line_if_same_file l
+    | [Loc.Line (l, _col);Loc.Line _] ->
+      update_line_if_same_file l
+    | x::xs ->
+      (match x with
+      | Loc.File (file, l, _col) ->
+        env.current_c_file := file;
+        update_line_if_same_file l
+      | Loc.Line (l, _col) ->
+        update_line_if_same_file l
+      | Loc.Col _ | Loc.Other -> ()
+      );
+      aux xs
+  in
+  aux locations
+
 (*****************************************************************************)
 (* Add Node *)
 (*****************************************************************************)
@@ -187,13 +216,12 @@ let add_node_and_edge_if_defs_mode env node =
       )
     else begin
       try
-        let line = 1 in
         let nodeinfo = { Graph_code.
           pos = { Parse_info.
             str = "";
-            charpos = -1;
-            line = line; column = -1;
-            file = env.c_file;
+            charpos = -1; column = -1;
+            line = !(env.current_c_file_line); 
+            file = env.c_file_readable;
           };
           props = [];
         } in
@@ -281,24 +309,28 @@ let add_type_deps env typ =
 (* Defs/Uses *)
 (*****************************************************************************)
 let rec extract_defs_uses env ast =
-  let readable_clang = 
-    Common.filename_without_leading_path env.root env.clang2_file in
-  let readable =
-    if readable_clang =~ "\\(.*\\).clang2"
-    then Common.matched1 readable_clang
+
+  let c_file =
+    if env.clang2_file =~ "\\(.*\\).clang2"
+    then Common.matched1 env.clang2_file
     else failwith "not a clang2 file?"
   in
+  let c_file_readable = Common.filename_without_leading_path env.root c_file in
 
   if env.phase = Defs then begin
-    let dir = Common2.dirname readable in
+    let dir = Common2.dirname c_file_readable in
     G.create_intermediate_directories_if_not_present env.g dir;
-    let node = (readable, E.File) in
+    let node = (c_file_readable, E.File) in
     env.g +> G.add_node node;
     env.g +> G.add_edge ((dir, E.Dir), node) G.Has;
   end;
   let env = { env with 
-    current = (readable, E.File);
-    c_file = readable;
+    current = (c_file_readable, E.File);
+    c_file_readable;
+    current_c_file_line = ref 1;
+
+    target_c_file = c_file;
+    current_c_file = ref c_file;
   } in
   match ast with
   | Paren (TranslationUnitDecl, l, _loc::xs) ->
@@ -311,6 +343,7 @@ and sexp_toplevel env x =
   match x with
   | Paren (enum, l, xs) ->
       let env = { env with clang_line = l } in
+      update_current_c_file_line env (enum, l, xs);
 
       (* dispatcher *)
       (match enum with
@@ -627,7 +660,7 @@ let build ?(verbose=true) dir skip_list =
     phase = Defs;
     current = unknown_location;
 
-    c_file = "__filled_later__";
+    c_file_readable = "__filled_later__";
     clang2_file = "__filled_later__";
 
     current_c_file_line = ref 1;
