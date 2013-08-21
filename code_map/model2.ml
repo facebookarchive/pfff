@@ -415,6 +415,12 @@ let lines_where_used_node node startl microlevel =
   let (fullstr, kind) = node in
   let xs = Common.split "\\." fullstr in
   let s = Common2.list_last xs in
+  let s =
+    (* ugly: see Graph_code_clang.new_str_if_defs() where we rename dupes *)
+    if (s =~ "\\(.*\\)__[0-9]+$")
+    then Common.matched1 s
+    else s
+  in
   
   let (Line startl) = startl in
   match microlevel.content with
