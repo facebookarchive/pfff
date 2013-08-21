@@ -76,7 +76,11 @@ type env = {
   (* readable path *)
   c_file: Common.filename;
 
-  (*current_c_file_line: int ref; *)
+  current_c_file_line: int ref;
+  (* this is there in support for current_c_file_line, see update_line() *)
+  current_c_file: Common.filename ref;
+  (* absolute path, as mentionned in the .clang *)
+  target_c_file: Common.filename;
 
   (* for error reports *)
   clang2_file: Common.filename;
@@ -625,6 +629,10 @@ let build ?(verbose=true) dir skip_list =
 
     c_file = "__filled_later__";
     clang2_file = "__filled_later__";
+
+    current_c_file_line = ref 1;
+    current_c_file = ref "__filled_later__";
+    target_c_file = "__filled_later__";
 
     clang_line = -1;
     cnt = ref 0;
