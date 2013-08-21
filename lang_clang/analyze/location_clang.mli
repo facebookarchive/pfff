@@ -1,18 +1,19 @@
 
-type location =
+type location_elt =
   | File of Common.filename * int * int
   | Line of int * int
   | Col of int
   | Other
 
-val location_of_angle:
-  int * string -> Ast_clang.sexp list -> location list
+val locations_of_angle:
+  int * Common.filename (* for error report, line x file in .clang *) -> 
+  Ast_clang.sexp list -> location_elt list
 
 val readable_of_filename:
   root:Common.dirname ->
   Common.filename -> Common.filename
 
-val location_of_paren_opt:
+val readable_filename_location_of_paren_opt:
   root:Common.dirname ->
   Common.filename ->
   (Ast_clang.enum * int * Ast_clang.sexp list) -> 

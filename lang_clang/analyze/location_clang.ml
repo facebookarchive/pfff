@@ -31,7 +31,7 @@ module Ast = Ast_clang
 (*****************************************************************************)
 
 (* references a source (C/C++/...) code location  *)
-type location =
+type location_elt =
   | File of Common.filename * int * int
   | Line of int * int
   | Col of int
@@ -44,7 +44,7 @@ let unknown_loc_angle =
 (* Helpers *)
 (*****************************************************************************)
 
-let location_of_angle (line, file) xs =
+let locations_of_angle (line, file) xs =
   match xs with
   | [Angle [T (TLowerIdent "invalid"); T (TLowerIdent "sloc")]] ->
       [Other]
@@ -70,35 +70,36 @@ let readable_of_filename ~root f =
   let xs = Common.split "/" f in
   let xs = 
     match xs with
+    (* linux *)
     | "usr"::"include"::rest -> 
         "EXTERNAL"::"CORE"::rest
     | "usr"::"X11"::"include"::"X11"::rest ->
         "EXTERNAL"::"X11"::rest
 
-    (* macos specific *)
+    (* macos *)
     | "System"::"Library"::"Frameworks"::rest -> 
         "EXTERNAL"::"MACOS"::rest
     | "opt"::"local"::rest ->
         "EXTERNAL"::"OPT"::rest
 
-    (* llvm install specific on macos *)
+    (* llvm install on macos *)
     | "Users"::"yoann.padioleau"::"local"::"clang_ast"::"clang-llvm"
       ::"llvm"::"Debug+Asserts"::"lib"::"clang"
       ::"3.3"::"include"::rest
-    | "data"::"users"::"pad"::"clang"::"build"::"lib"::"clang"
-      ::"3.3"::"include"::rest
     | "Users"::"yoann.padioleau"::"local"::"clang"::"build"::"lib"::"clang"
+      ::"3.3"::"include"::rest
+    (* llvm install on linux *)
+    | "data"::"users"::"pad"::"clang"::"build"::"lib"::"clang"
       ::"3.3"::"include"::rest
       ->
         "EXTERNAL"::"CLANG"::rest
-
 
     | _ ->
         Common.split "/" (Common.filename_without_leading_path root f)
   in
   Common.join "/" xs
 
-let location_of_paren_opt ~root clang_file (enum, l, xs) =
+let readable_filename_location_of_paren_opt ~root clang_file (enum, l, xs) =
   let location =
     match enum, xs with
     | (Misc__Null__ | Misc__Capture__ | Misc__Cleanup__Block
@@ -106,12 +107,14 @@ let location_of_paren_opt ~root clang_file (enum, l, xs) =
       | Field 
       (* CXXCtorInitializer *)
       | TodoAst _
-      ), _ -> [Other]
+      ), _ 
+      -> 
+      [Other]
     | _, Angle xs::_rest ->
-        location_of_angle (l, clang_file) xs
+      locations_of_angle (l, clang_file) xs
     | _ -> 
-        failwith (spf "%s:%d: no location" clang_file l)
-
+      failwith (spf "%s:%d: no location" clang_file l)
+          
   in
   (* Because of some macro expansions, sometimes one can have multiple
    * 'File' locations in one Angle, for instance when use 'bool' from stdbool.h
@@ -139,7 +142,7 @@ let location_of_paren_opt ~root clang_file (enum, l, xs) =
       then None
       else 
       *)
-        Some readable
+      Some readable
   | _ -> None
   )
 
@@ -153,7 +156,7 @@ let str_of_angle_loc line paren current_clang_file =
   let loc =
     match paren with
     | Angle xs ->
-        location_of_angle (line, current_clang_file) xs
+        locations_of_angle (line, current_clang_file) xs
     | _ ->
         failwith (spf "%s:%d: no location" current_clang_file line)
   in

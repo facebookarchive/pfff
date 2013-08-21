@@ -107,7 +107,8 @@ and dispatch_sexp env exp =
 and decl env (enum, l, xs) =
   (* less: dupe with below *)
   let file_opt = 
-    Loc.location_of_paren_opt env.root env.current_clang_file (enum, l, xs) in
+    Loc.readable_filename_location_of_paren_opt 
+      env.root env.current_clang_file (enum, l, xs) in
   file_opt +> Common.do_option (fun f ->
     env.current_c_file := f;
     if not (Hashtbl.mem env.hfile f)
@@ -174,7 +175,8 @@ and sexp env x =
   match x with
   | Paren (enum, l, xs) ->
       let file_opt = 
-        Loc.location_of_paren_opt env.root env.current_clang_file (enum, l, xs) 
+        Loc.readable_filename_location_of_paren_opt 
+          env.root env.current_clang_file (enum, l, xs) 
       in
       file_opt +> Common.do_option (fun f ->
         env.current_c_file := f;
