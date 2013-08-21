@@ -161,9 +161,9 @@ type enum =
 (*****************************************************************************)
 
 type sexp = 
-  | Paren of enum * int (* location *) * sexp list
+  | Paren of enum * int (* line number in .clang file *) * sexp list
   | Angle of sexp list
-  (* usually for position *)
+  (* usually for location information in the original .c file *)
   | Anchor of sexp list
   | Bracket of sexp list
   (* for types, original type and final types *)

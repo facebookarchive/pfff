@@ -1,4 +1,5 @@
-CLANG=/home/pad/local/clang_ast/clang-llvm/llvm/Debug+Asserts/bin/clang-check
+CLANG=clang-check
+#CLANG=/home/pad/local/clang_ast/clang-llvm/llvm/Debug+Asserts/bin/clang-check
 CG=../../../codegraph
 PFFF=../../../pfff
 
@@ -10,7 +11,7 @@ SRC=foo.c bar.c typedef.c struct.c enum.c define.c global.c add.c \
 OBJS=$(SRC:.c=.clang)
 
 all: $(OBJS)
-	$(PFFF) -uninclude_clang
+	$(PFFF)_test -uninclude_clang
 	$(CG) -lang clang2 -build .
 	cat pfff.log
 
@@ -22,4 +23,4 @@ all: $(OBJS)
 	$(CLANG) --ast-dump $^ > $@
 
 clean:
-	rm -f *.clang
+	rm -f *.clang *.clang2
