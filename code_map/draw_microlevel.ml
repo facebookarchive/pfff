@@ -343,12 +343,12 @@ let draw_content2 ~cr ~layout ~context tr =
 
   let glyphs_opt = glyphs_of_file ~context ~font_size ~font_size_real file in
   glyphs_opt +> Common.do_option (fun glyphs ->
-    glyphs +> Array.iteri (fun line glyph ->
-      let lc = line_to_line_in_column (Line line) layout in
+    glyphs +> Array.iteri (fun line_0_indexed glyph ->
+      let lc = line_to_line_in_column (Line line_0_indexed) layout in
       let x, y = line_in_column_to_bottom_pos lc r layout in
       Cairo.move_to cr x y;
       
-      glyphs.(line) +> List.iter (fun glyph ->
+      glyphs.(line_0_indexed) +> List.iter (fun glyph ->
         Cairo.set_font_size cr glyph.M.font_size;
         let (r,g,b) = Color.rgbf_of_string glyph.color in
         let alpha = 1. in
@@ -368,8 +368,9 @@ let draw_content2 ~cr ~layout ~context tr =
         Cairo.set_source_rgba cr r g b alpha;
         CairoH.show_text cr glyph.M.str;
       );
-      
-      (* still? must be done before the move_to below ! *)
+
+      (* hmatching_lines comes from layer_microlevel which is 1-index based *)
+      let line = line_0_indexed +.. 1 in
       (match Common2.hfind_option line hmatching_lines with
       | None -> ()
       | Some color ->
@@ -377,7 +378,10 @@ let draw_content2 ~cr ~layout ~context tr =
           ~alpha:0.25
           ~color
           ~x 
-          ~y:(y - layout.height_per_line) 
+          (* 'y' is from line_in_column_to_bottom_pos() so it's a bottom pos
+           * and we want to show 3 lines centered, hence the * 2 below
+           *)
+          ~y:(y - (layout.height_per_line * 2.) )
           ~w:layout.width_per_column 
           ~h:(layout.height_per_line * 3.)
           ()
