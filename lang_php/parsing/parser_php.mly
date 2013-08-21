@@ -1311,6 +1311,7 @@ ident_method_name:
  | ident { $1 }
  | T_PARENT { "parent", $1 }
  | T_SELF   { "self", $1 }
+ | T_ASYNC  { "async", $1 }
 
 ident_xhp_attr_name_atom:
  /*(* could put T_IDENT but even XHP keywords are accepted as XHP attributes*)*/

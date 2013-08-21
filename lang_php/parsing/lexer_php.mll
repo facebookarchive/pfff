@@ -156,9 +156,9 @@ let keyword_table = Common.hash_of_list [
   "use",             (fun ii -> T_USE ii);
 
   "abstract", (fun ii -> T_ABSTRACT ii); "final", (fun ii -> T_FINAL ii);
-(* pad: there are code using ASYNC as a constant, what do we do for that?
-  "async", (fun ii -> T_ASYNC ii);
-*)
+  (* ugly: need a special lexing trick for async, see some code below
+   * "async", (fun ii -> T_ASYNC ii);
+   *)
 
   "public",          (fun ii -> T_PUBLIC ii);
   "protected",       (fun ii -> T_PROTECTED ii);
@@ -710,9 +710,17 @@ rule st_in_scripting = parse
      *)
     | "SELF"   { T_IDENT (case_str (tok lexbuf), tokinfo lexbuf) }
     | "PARENT" { T_IDENT (case_str (tok lexbuf), tokinfo lexbuf) }
-    (* Collection literals are case sensitive, so put these here
-       before the main (case insensitive) keyword lookup
-    *)
+
+    (* ugly: some code is using ASYNC as a constant, so one way to fix
+     * the conflict is to return the T_ASYNC only when it's used
+     * as lowercase. Note that because some code is using 'async'
+     * as a method we then need to extend ident_method_name
+     * in parser_php.mly. The alternative would be to lex
+     * "async" as a T_ASYNC only when it's followed by a T_FUNCTION
+     * but this is also ugly.
+     *)
+    | "async" { T_ASYNC (tokinfo lexbuf) }
+
     | LABEL
         { let info = tokinfo lexbuf in
           let s = tok lexbuf in
