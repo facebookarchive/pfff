@@ -59,9 +59,7 @@ let build_entities_of_file g =
     try 
       let info = G.nodeinfo n g in
       let file = info.G.pos.Parse_info.file in
-      (* codemap use line numbers starting at 0 *)
-      let line = info.G.pos.Parse_info.line - 1 in
-
+      let line = info.G.pos.Parse_info.line in
       Hashtbl.add h file (line, n);
     with Not_found -> ()
   );
