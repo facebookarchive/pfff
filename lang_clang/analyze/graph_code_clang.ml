@@ -183,7 +183,7 @@ let add_node_and_edge_if_defs_mode env node _loc =
       )
     else begin
       try
-        let line = - 1 in
+        let line = 1 in
         let nodeinfo = { Graph_code.
           pos = { Parse_info.
             str = "";
