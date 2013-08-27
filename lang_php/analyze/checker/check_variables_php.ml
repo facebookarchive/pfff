@@ -452,7 +452,7 @@ and stmt env = function
   | ClassDef def -> class_def env def
   | ConstantDef def -> constant_def env def
   | TypeDef def -> typedef_def env def
-  | NamespaceDef qu -> 
+  | NamespaceDef qu ->
     raise (Ast_php.TodoNamespace (A.tok_of_name qu))
 
   | Expr e -> expr env e
@@ -510,9 +510,8 @@ and stmt env = function
 
       (* todo: E.warning tok E.WeirdForeachNoIteratorVar *)
       | _ ->
-          pr2 (str_of_any (Expr2 pattern));
-          raise Todo
-      );
+          pr2 ("Warning: saw unexpected `foreach` value " ^ (str_of_any (Expr2 pattern)))
+    );
 
       (match e2opt with
       | None -> ()
@@ -846,7 +845,7 @@ and expr env = function
   | Ref e -> expr env e
 
   | ConsArray (xs) -> array_valuel env xs
-  | Collection (_n, xs) -> 
+  | Collection (_n, xs) ->
     array_valuel env xs
   | Xhp x -> xml env x
 
@@ -856,7 +855,7 @@ and expr env = function
   | Lambda def ->
       func_def { env with in_lambda = true } def
 
-and array_value env x = 
+and array_value env x =
   match x with
   | Arrow (e1, e2) -> exprl env [e1; e2]
   | e -> expr env e
