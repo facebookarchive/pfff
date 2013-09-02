@@ -52,6 +52,7 @@ SRC+= tags_php.ml normalize_php.ml \
 
 SYSLIBS= str.cma unix.cma
 LIBS=$(TOP)/commons/lib.cma \
+     $(TOP)/lang_ml/parsing/lib.cma \
 
 INCLUDEDIRS= $(TOP)/commons \
   $(TOP)/commons/ocollection $(TOP)/commons/ocamlextra \
@@ -61,6 +62,7 @@ INCLUDEDIRS= $(TOP)/commons \
    $(TOP)/globals \
    $(TOP)/matcher \
    $(TOP)/lang_php/parsing \
+   $(TOP)/lang_ml/parsing \
 
 ##############################################################################
 # Generic variables
