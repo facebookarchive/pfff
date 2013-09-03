@@ -1,21 +1,21 @@
 (*s: controlflow_build_php.ml *)
 (*s: Facebook copyright *)
 (* Yoann Padioleau
- * 
+ *
  * Copyright (C) 2009, 2010, 2011 Facebook
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public License
  * version 2.1 as published by the Free Software Foundation, with the
  * special exception on linking described in file license.txt.
- * 
+ *
  * This library is distributed in the hope that it will be useful, but
  * WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the file
  * license.txt for more details.
  *)
 (*e: Facebook copyright *)
-open Common 
+open Common
 
 open Ast_php
 
@@ -32,7 +32,7 @@ module F = Controlflow_php
 
 (*s: type nodei *)
 (* an int representing the index of a node in the graph *)
-type nodei = Ograph_extended.nodei 
+type nodei = Ograph_extended.nodei
 (*e: type nodei *)
 
 (*s: type state *)
@@ -46,16 +46,16 @@ type state = {
   (* When there is a 'return' we need to know the exit node to link to *)
   exiti: nodei;
 
-  (* Sometimes when there is a 'continue' or 'break' we must know where 
+  (* Sometimes when there is a 'continue' or 'break' we must know where
    * to jump and so we must know the node index for the end of the loop.
    * The same kind of information is needed for 'switch' or 'try/throw'.
-   * 
+   *
    * Because loops can be inside switch or try, and vice versa, you need
    * a stack of context.
    *)
   ctx: context Common.stack;
 }
- and context = 
+ and context =
   | NoCtx
   | LoopCtx   of nodei (* head *) * nodei (* end *)
   | SwitchCtx of nodei (* end *)
@@ -64,7 +64,7 @@ type state = {
 
 (*s: type Controlflow_build_php.error *)
 type error = error_kind * Ast_php.info
- and error_kind = 
+ and error_kind =
   | DeadCode of Controlflow_php.node_kind
   | NoEnclosingLoop
   | ColonSyntax
@@ -78,7 +78,7 @@ exception Error of error
 (*****************************************************************************)
 
 (*s: controlflow_php helpers *)
-let stmts_of_stmt_or_defs xs = 
+let stmts_of_stmt_or_defs xs =
   xs +> Common.map_filter (fun stmt_or_def ->
     match stmt_or_def with
     | FuncDefNested _ | ClassDefNested _ ->
@@ -87,39 +87,39 @@ let stmts_of_stmt_or_defs xs =
     | st -> Some st
   )
 
-let stmts_of_colon_stmt colon = 
+let stmts_of_colon_stmt colon =
   match colon with
   | SingleStmt stmt -> [stmt]
   | ColonStmt (tok, _, _, _) -> raise (Error (ColonSyntax, tok))
 (*x: controlflow_php helpers *)
-let add_arc (starti, nodei) g = 
+let add_arc (starti, nodei) g =
   g#add_arc ((starti, nodei), F.Direct)
- 
-let add_arc_opt (starti_opt, nodei) g = 
-  starti_opt +> Common.do_option (fun starti -> 
+
+let add_arc_opt (starti_opt, nodei) g =
+  starti_opt +> Common.do_option (fun starti ->
     g#add_arc ((starti, nodei), F.Direct)
   )
 
-(* 
- * When there is a 'break', 'continue', or 'throw', we need to look up in the 
+(*
+ * When there is a 'break', 'continue', or 'throw', we need to look up in the
  * stack of contexts whether there is an appropriate one. In the case
  * of 'break/continue', because PHP allows statements like 'break 2;', we also
  * need to know how many upper contexts we need to look for.
  *)
-let rec (lookup_some_ctx: 
+let rec (lookup_some_ctx:
   ?level:int ->
-  ctx_filter:(context -> 'a option) -> 
-  context list -> 'a option) = 
+  ctx_filter:(context -> 'a option) ->
+  context list -> 'a option) =
  fun ?(level=1) ~ctx_filter xs ->
 
-   let rec aux depth xs = 
+   let rec aux depth xs =
      match xs with
      | [] -> None
      | x::xs ->
          (match ctx_filter x with
          | None -> aux depth xs
          | Some a ->
-             if depth = level 
+             if depth = level
              then (Some a)
              else
                aux (depth+1) xs
@@ -142,21 +142,21 @@ let rec intvalue_of_expr e =
 
 (*s: controlflow_php main algorithm *)
 (*
- * The CFG building algorithm works by iteratively visiting the 
+ * The CFG building algorithm works by iteratively visiting the
  * statements in the AST of a function. At each statement,
  * the cfg_stmt function is called, and passed the index of the
- * previous node (if there is one), and returns the index of 
+ * previous node (if there is one), and returns the index of
  * the created node (if there is one).
- * 
+ *
  * history:
- * 
+ *
  * ver1: old code was returning a nodei, but break has no end, so
  * cfg_stmt should return a nodei option.
- * 
+ *
  * ver2: old code was taking a nodei, but should also take a nodei
  * option. There can be deadcode in the function.
- * 
- * subtle: try/throw. The current algo is not very precise, but 
+ *
+ * subtle: try/throw. The current algo is not very precise, but
  * it's probably good enough for many analysis.
  *)
 let expr_stmt expr = F.ExprStmt expr
@@ -175,7 +175,7 @@ let cfg_var_def state previ dname =
   state.g +> add_arc_opt (previ, vari);
   Some vari
 
-let rec (cfg_stmt: state -> nodei option -> stmt -> nodei option) = 
+let rec (cfg_stmt: state -> nodei option -> stmt -> nodei option) =
  fun state previ stmt ->
 
    let i () = Some (List.hd (Lib_parsing_php.ii_of_any (Stmt2 stmt))) in
@@ -188,7 +188,7 @@ let rec (cfg_stmt: state -> nodei option -> stmt -> nodei option) =
      let var_list = Ast.uncomma static_vars +>
        List.map (fun (v, _) -> v) in
      List.fold_left (cfg_var_def state) previ var_list
-       
+
    | EmptyStmt _
    | Echo (_, _, _)
    | InlineHtml _
@@ -205,13 +205,13 @@ let rec (cfg_stmt: state -> nodei option -> stmt -> nodei option) =
    | While (t1, e, colon_stmt) ->
      (* previ -> newi ---> newfakethen -> ... -> finalthen
       *             |--|---------------------------------|
-      *                |-> newfakelse 
+      *                |-> newfakelse
       *)
        let node = F.WhileHeader (Ast.unparen e) in
 
        let newi = state.g#add_node { F.n = node; i=i() } in
        state.g +> add_arc_opt (previ, newi);
-       
+
        let newfakethen = state.g#add_node { F.n = F.TrueNode;i=None } in
        let newfakeelse = state.g#add_node { F.n = F.FalseNode;i=None } in
        state.g +> add_arc (newi, newfakethen);
@@ -221,7 +221,7 @@ let rec (cfg_stmt: state -> nodei option -> stmt -> nodei option) =
          ctx = LoopCtx (newi, newfakeelse)::state.ctx;
        }
        in
-       let finalthen = 
+       let finalthen =
          cfg_colon_stmt state (Some newfakethen) colon_stmt
        in
        state.g +> add_arc_opt (finalthen, newi);
@@ -230,7 +230,7 @@ let rec (cfg_stmt: state -> nodei option -> stmt -> nodei option) =
    | For (t1, t2, e1, t3, e2, t4, e5, t6, colon_stmt) ->
      (* previ -> e1i ->newi -> e2i --> newfakethen -> ... -> finalthen -> e5i
       *                  |--------|----------------------------------------|
-      *                           |-> newfakelse 
+      *                           |-> newfakelse
       *)
        let exprs = Ast.uncomma e1 in
        let e1i = List.fold_left (cfg_expr state maybe_unused)
@@ -253,7 +253,7 @@ let rec (cfg_stmt: state -> nodei option -> stmt -> nodei option) =
          ctx = LoopCtx (newi, newfakeelse)::state.ctx;
        }
        in
-       let finalthen = 
+       let finalthen =
          cfg_colon_stmt state (Some newfakethen) colon_stmt
        in
        let exprs = Ast.uncomma e5 in
@@ -262,20 +262,20 @@ let rec (cfg_stmt: state -> nodei option -> stmt -> nodei option) =
        state.g +> add_arc_opt (e5i, newi);
        Some newfakeelse
 
-   | Foreach (t1, t2, e1, t3, v_arrow_opt, t4, colon_stmt) -> 
+   | Foreach (t1, t2, e1, t3, v_arrow_opt, t4, colon_stmt) ->
      (* previ -> e1i ->newi ---> newfakethen -> ... -> finalthen
       *                  |---|----------------------------------|
-      *                      |-> newfakelse 
+      *                      |-> newfakelse
       *)
        let e1i = cfg_expr state expr_stmt previ e1 in
 
-       let names = 
+       let names =
          match v_arrow_opt with
          | ForeachVar (var) -> [var]
          | ForeachArrow (var1, _, var2) ->
            [var1;var2]
          | ForeachList (_, xs) ->
-           raise Todo
+           (pr2 "Warning: list foreach"; [])
        in
        let node = F.ForeachHeader names in
        let newi = state.g#add_node { F.n = node; i=i() } in
@@ -290,14 +290,14 @@ let rec (cfg_stmt: state -> nodei option -> stmt -> nodei option) =
          ctx = LoopCtx (newi, newfakeelse)::state.ctx;
        }
        in
-       let finalthen = 
+       let finalthen =
          cfg_colon_stmt state (Some newfakethen) colon_stmt
        in
        state.g +> add_arc_opt (finalthen, newi);
        Some newfakeelse
 
   (* This time, may return None, for instance if return in body of dowhile
-   * (whereas While cant return None). But if return None, certainly 
+   * (whereas While cant return None). But if return None, certainly
    * sign of buggy code.
    *)
    | Do (t1, st, t2, e, t3) ->
@@ -319,11 +319,11 @@ let rec (cfg_stmt: state -> nodei option -> stmt -> nodei option) =
          ctx = LoopCtx (taili, newfakeelse)::state.ctx;
        }
        in
-       let finalthen = 
+       let finalthen =
          cfg_stmt state (Some doi) st
        in
        (match finalthen with
-       | None -> 
+       | None ->
            (* weird, probably wrong code *)
            None
        | Some finalthen ->
@@ -354,15 +354,15 @@ let rec (cfg_stmt: state -> nodei option -> stmt -> nodei option) =
 
        let finalthen = cfg_stmt state (Some newfakethen) st_then in
 
-       let finalelse = 
+       let finalelse =
          (match st_elseifs, st_else_opt with
-         | [], None -> 
+         | [], None ->
              Some newfakeelse
          | [], Some (tok, st_else) ->
              cfg_stmt state (Some newfakeelse) st_else
          | (t', e', st_then')::xs, else_opt ->
              (* syntactic unsugaring  *)
-             cfg_stmt state (Some newfakeelse) 
+             cfg_stmt state (Some newfakeelse)
                (If (t', e', st_then', xs, else_opt))
          )
        in
@@ -379,7 +379,7 @@ let rec (cfg_stmt: state -> nodei option -> stmt -> nodei option) =
            state.g +> add_arc (n2, lasti);
            Some lasti
        )
-        
+
    | Return (t1, eopt, t2) ->
        let newi = state.g#add_node { F.n = F.Return eopt;i=i() } in
        state.g +> add_arc_opt (previ, newi);
@@ -391,7 +391,7 @@ let rec (cfg_stmt: state -> nodei option -> stmt -> nodei option) =
 
    | Continue (t1, e, t2) | Break (t1, e, t2) ->
 
-       let is_continue, node = 
+       let is_continue, node =
          match stmt with
          | Continue _ -> true, F.Continue
          | Break _ -> false, F.Break
@@ -412,18 +412,18 @@ let rec (cfg_stmt: state -> nodei option -> stmt -> nodei option) =
        let newi = state.g#add_node { F.n = node;i=i() } in
        state.g +> add_arc_opt (previ, newi);
 
-       let nodei_to_jump_to = 
+       let nodei_to_jump_to =
          state.ctx +> lookup_some_ctx
            ~level:depth
-           ~ctx_filter:(function 
-           | LoopCtx (headi, endi) -> 
-               if is_continue 
+           ~ctx_filter:(function
+           | LoopCtx (headi, endi) ->
+               if is_continue
                then Some (headi)
                else Some (endi)
 
-           | SwitchCtx (endi) -> 
+           | SwitchCtx (endi) ->
                (* it's ugly but PHP allows to 'continue' inside 'switch' (even
-                * when the switch is not inside a loop) in which case 
+                * when the switch is not inside a loop) in which case
                 * it has the same semantic than 'break'.
                 *)
                Some endi
@@ -444,7 +444,7 @@ let rec (cfg_stmt: state -> nodei option -> stmt -> nodei option) =
            let newi = state.g#add_node
              { F.n = F.SwitchHeader (Ast.unparen e);i=i() } in
            state.g +> add_arc_opt (previ, newi);
-           
+
            (* note that if all cases have return, then we will remove
             * this endswitch node later.
             *)
@@ -453,48 +453,48 @@ let rec (cfg_stmt: state -> nodei option -> stmt -> nodei option) =
            (* if no default: then must add path from start to end directly
             * todo? except if the cases cover the full spectrum ?
             *)
-           if (not (cases +> List.exists 
+           if (not (cases +> List.exists
                        (function Ast.Default _ -> true | _ -> false)))
            then begin
              state.g +> add_arc (newi, endi);
            end;
            (* let's process all cases *)
-           let last_stmt_opt = 
+           let last_stmt_opt =
              cfg_cases (newi, endi) state (None) cases
            in
            state.g +> add_arc_opt (last_stmt_opt, endi);
-           
+
            (* remove endi if for instance all branches contained a return *)
            if (state.g#predecessors endi)#null then begin
              state.g#del_node endi;
              None
-           end else 
+           end else
              Some endi
 
        | CaseColonList (tok, _, _, _, _) ->
            raise (Error (ColonSyntax, tok))
        )
 
-   (* 
-    * Handling try part 1. See the case for Throw below and the 
+   (*
+    * Handling try part 1. See the case for Throw below and the
     * cfg_catches function for the second part.
-    * 
-    * Any function call in the body of the try could potentially raise 
-    * an exception, so should we add edges to the catch nodes ? 
-    * In the same way any function call could potentially raise 
-    * a divide by zero or call exit(). 
-    * For now we don't add all those edges. We do it only for explicit throw. 
-    * 
-    * todo? Maybe later the CFG could be extended with information 
+    *
+    * Any function call in the body of the try could potentially raise
+    * an exception, so should we add edges to the catch nodes ?
+    * In the same way any function call could potentially raise
+    * a divide by zero or call exit().
+    * For now we don't add all those edges. We do it only for explicit throw.
+    *
+    * todo? Maybe later the CFG could be extended with information
     * computed by a global bottom-up analysis (so that we would add certain
     * edges)
-    * 
+    *
     * todo? Maybe better to just add edges for all the nodes in the body
     * of the try to all the catches ?
-    * 
-    * So for now, we mostly consider catches as a serie of elseifs, 
+    *
+    * So for now, we mostly consider catches as a serie of elseifs,
     * and add some goto to be conservative at a few places. For instance
-    * 
+    *
     *   try {
     *     ...;
     *   } catch (E1 $x) {
@@ -503,9 +503,9 @@ let rec (cfg_stmt: state -> nodei option -> stmt -> nodei option) =
     *     ...
     *   }
     *   ...
-    * 
+    *
     * is rougly considered as this code:
-    * 
+    *
     *   <tryheader> {
     *    if(true) goto catchstart;
     *    else {
@@ -522,7 +522,7 @@ let rec (cfg_stmt: state -> nodei option -> stmt -> nodei option) =
     *   } else {
     *     goto exit; /* or next handler if nested try */
     *   }
-    *   
+    *
     *   <tryend>
     *)
 
@@ -534,38 +534,38 @@ let rec (cfg_stmt: state -> nodei option -> stmt -> nodei option) =
        (* may have to delete it later if nobody connected to it *)
        let endi = state.g#add_node { F.n = F.TryEnd;i=None } in
 
-       (* for now we add a direct edge between the try and catch, 
+       (* for now we add a direct edge between the try and catch,
         * as even the first statement in the body of the try could
         * be a function raising internally an exception.
-        * 
-        * I just don't want certain analysis like the deadcode-path 
+        *
+        * I just don't want certain analysis like the deadcode-path
         * to report that the code in catch are never executed. I want
-        * the catch nodes to have at least one parent. So I am 
+        * the catch nodes to have at least one parent. So I am
         * kind of conservative.
         *)
        state.g +> add_arc (newi, catchi);
-       
+
        let state' = { state with
          ctx = TryCtx (catchi)::state.ctx;
        }
        in
-       
+
        let stmts = stmts_of_stmt_or_defs (Ast.unbrace body) in
        let last_stmt_opt = cfg_stmt_list state' (Some newi) stmts in
        state.g +> add_arc_opt (last_stmt_opt, endi);
 
-      (* note that we use state, not state' here, as we want the possible 
-       * throws inside catches to be themselves link to a possible surrounding 
+      (* note that we use state, not state' here, as we want the possible
+       * throws inside catches to be themselves link to a possible surrounding
        * try.
        *)
-       let last_false_node = 
+       let last_false_node =
          cfg_catches state catchi endi (catch::other_catches) in
 
-       (* we want to connect the end of the catch list with 
-        * the next handler, if try are nested, or to the exit if 
+       (* we want to connect the end of the catch list with
+        * the next handler, if try are nested, or to the exit if
         * there is no more handler in this context
         *)
-       let nodei_to_jump_to = 
+       let nodei_to_jump_to =
          state.ctx +> lookup_some_ctx ~ctx_filter:(function
          | TryCtx (nextcatchi) -> Some nextcatchi
          | LoopCtx _ | SwitchCtx _ | NoCtx -> None
@@ -585,18 +585,18 @@ let rec (cfg_stmt: state -> nodei option -> stmt -> nodei option) =
          state.g#del_node endi;
          None
        end
-       else 
+       else
         Some endi
 
-   (* 
+   (*
     * For now we don't do any fancy analysis to statically detect
     * which exn handler a throw should go to. The argument of throw can
     * be static as in 'throw new ExnXXX' but it could also be dynamic. So for
     * now we just branch to the first catch and make edges between
     * the different catches in cfg_catches below
     * (which is probably what is done at runtime by the PHP interpreter).
-    * 
-    * todo? Again maybe later the CFG could be sharpened with 
+    *
+    * todo? Again maybe later the CFG could be sharpened with
     * path sensitive analysis to be more precise (so that we would remove
     * certain edges)
     *)
@@ -604,12 +604,12 @@ let rec (cfg_stmt: state -> nodei option -> stmt -> nodei option) =
        let newi = state.g#add_node { F.n = F.Throw e; i=i() } in
        state.g +> add_arc_opt (previ, newi);
 
-       let nodei_to_jump_to = 
-         state.ctx +> lookup_some_ctx 
+       let nodei_to_jump_to =
+         state.ctx +> lookup_some_ctx
            ~ctx_filter:(function
            | TryCtx (catchi) ->
                Some catchi
-           | LoopCtx _ | SwitchCtx _ | NoCtx -> 
+           | LoopCtx _ | SwitchCtx _ | NoCtx ->
                None
            )
        in
@@ -634,10 +634,10 @@ let rec (cfg_stmt: state -> nodei option -> stmt -> nodei option) =
    (* should be filtered *)
    | FuncDefNested _ | ClassDefNested _ ->
        raise Impossible
-     
+
 
 and cfg_stmt_list state previ xs =
-  xs +> List.fold_left (fun previ stmt -> 
+  xs +> List.fold_left (fun previ stmt ->
     cfg_stmt state previ stmt
   ) previ
 
@@ -645,22 +645,22 @@ and cfg_colon_stmt state previ colon =
   let stmts = stmts_of_colon_stmt colon in
   cfg_stmt_list state previ stmts
 
-(* 
- * Creating the CFG nodes and edges for the cases of a switch. 
- * 
+(*
+ * Creating the CFG nodes and edges for the cases of a switch.
+ *
  * PHP allows to write code like  case X: case Y: ... This is
  * parsed as a [Case (X, []); Case (Y, ...)] which means
  * the statement list of the X case is empty. In this situation we just
- * want to link the node for X directly to the node for Y. 
- * 
- * So cfg_cases works like cfg_stmt by optionally taking the index of 
+ * want to link the node for X directly to the node for Y.
+ *
+ * So cfg_cases works like cfg_stmt by optionally taking the index of
  * the previous node (here for instance the node of X), and optionally
- * returning a node (if the case contains a break, then this will be 
+ * returning a node (if the case contains a break, then this will be
  * None)
  *)
 
-and (cfg_cases: 
-    (nodei * nodei) -> state -> 
+and (cfg_cases:
+    (nodei * nodei) -> state ->
     nodei option -> Ast_php.case list -> nodei option) =
  fun (switchi, endswitchi) state previ cases ->
 
@@ -670,7 +670,7 @@ and (cfg_cases:
    in
 
    cases +> List.fold_left (fun previ case ->
-     let node, stmt_or_defs = 
+     let node, stmt_or_defs =
        match case with
        | Case (t1, e, t2, stmt_or_defs) ->
            F.Case, stmt_or_defs
@@ -679,26 +679,26 @@ and (cfg_cases:
      in
 
      let i () = Some (List.hd (Lib_parsing_php.ii_of_any (Case2 case))) in
-     
+
      let newi = state.g#add_node { F.n = node; i=i() } in
      state.g +> add_arc_opt (previ, newi);
      (* connect SwitchHeader to Case node *)
      state.g +> add_arc (switchi, newi);
-     
+
      let stmts = stmts_of_stmt_or_defs stmt_or_defs in
      (* the stmts can contain 'break' that will be linked to the endswitch *)
      cfg_stmt_list state (Some newi) stmts
    ) previ
 
-(* 
+(*
  * Creating the CFG nodes and edges for the catches of a try.
- * 
- * We will conside catch(Exn $e) as a kind of if, with a TrueNode for 
- * the case the thrown exn matched the specified class, 
+ *
+ * We will conside catch(Exn $e) as a kind of if, with a TrueNode for
+ * the case the thrown exn matched the specified class,
  * and FalseNode otherwise.
- * 
- * cfg_catches takes the nodei of the previous catch nodes (or false node 
- * of the previous catch node), process the catch body, and return 
+ *
+ * cfg_catches takes the nodei of the previous catch nodes (or false node
+ * of the previous catch node), process the catch body, and return
  * a new False Node.
  *)
 
@@ -714,9 +714,9 @@ and (cfg_catches: state -> nodei -> nodei -> Ast_php.catch list -> nodei) =
      let falsei = state.g#add_node { F.n = F.FalseNode;i=None } in
      state.g +> add_arc_opt (ei, truei);
      state.g +> add_arc_opt (ei, falsei);
-     
+
      let stmts = stmts_of_stmt_or_defs (Ast.unbrace stmt_or_defs) in
-     (* the stmts can contain 'throw' that will be linked to an upper try or 
+     (* the stmts can contain 'throw' that will be linked to an upper try or
       * exit node *)
      let last_stmt_opt = cfg_stmt_list state (Some truei) stmts in
      state.g +> add_arc_opt (last_stmt_opt, tryendi);
@@ -724,9 +724,9 @@ and (cfg_catches: state -> nodei -> nodei -> Ast_php.catch list -> nodei) =
      (* we chain the catches together, like elseifs *)
      falsei
    ) previ
-  
+
 (*e: controlflow_php main algorithm *)
-  
+
 (*****************************************************************************)
 (* Main entry point *)
 (*****************************************************************************)
@@ -736,7 +736,7 @@ let (control_flow_graph_of_stmts: dname list -> stmt list -> F.flow) =
   fun params xs ->
   (* yes, I sometimes use objects, and even mutable objects in OCaml ... *)
   let g = new Ograph_extended.ograph_mutable in
-  
+
   let enteri = g#add_node { F.n = F.Enter;i=None } in
   let exiti = g#add_node { F.n = F.Exit;i=None } in
   let newi = List.fold_left (fun previ param ->
@@ -750,7 +750,7 @@ let (control_flow_graph_of_stmts: dname list -> stmt list -> F.flow) =
     ctx = [NoCtx]; (* could also remove NoCtx and use an empty list *)
   }
   in
-  let last_node_opt = 
+  let last_node_opt =
     cfg_stmt_list state (Some newi) xs
   in
   (* maybe the body does not contain a single 'return', so by default
@@ -778,9 +778,9 @@ let cfg_of_stmts = control_flow_graph_of_stmts
 
 (*s: function deadcode_detection *)
 let (deadcode_detection : F.flow -> unit) = fun flow ->
-  flow#nodes#iter (fun (k, node) -> 
+  flow#nodes#iter (fun (k, node) ->
     let pred = flow#predecessors k in
-    if pred#null then 
+    if pred#null then
       (match node.F.n with
       | F.Enter -> ()
       | _ ->
@@ -815,13 +815,13 @@ let string_of_error_kind error_kind =
 (* note that the output is emacs compile-mode compliant *)
 let string_of_error (error_kind, info) =
   let info = Parse_info.token_location_of_info info in
-  spf "%s:%d:%d: FLOW %s" 
+  spf "%s:%d:%d: FLOW %s"
     info.Parse_info.file info.Parse_info.line info.Parse_info.column
     (string_of_error_kind error_kind)
  (* old:
-  let error_from_info info = 
+  let error_from_info info =
     let pinfo = Ast.parse_info_of_info info in
-    Parse_info.error_message_short 
+    Parse_info.error_message_short
       pinfo.Parse_info.file ("", pinfo.Parse_info.charpos)
   in
  *)
