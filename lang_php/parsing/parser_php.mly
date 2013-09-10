@@ -837,6 +837,7 @@ type_params_list:
 
 type_param:
   | ident                 { TParam (Name $1) }
+  | ident T_AS TQUESTION class_name { TParamConstraint (Name $1, $2, HintQuestion ($3, $4)) }
   | ident T_AS class_name { TParamConstraint (Name $1, $2, $3) }
 
 /*(*************************************************************************)*/
