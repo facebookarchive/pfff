@@ -112,7 +112,7 @@ let unsugar_self_parent_any2 any =
 *)
         | Some x -> 
           failwith ("Warning: unknown extends clause\n" ^
-                       (Export_ast_ml.string_of_v 
+                       (Ocaml.string_of_v 
                           (Meta_ast_php.vof_any (Hint2 (snd x)))))
       in
 
