@@ -506,18 +506,17 @@ function_declaration_statement:
 unticked_function_declaration_statement:
  async_opt T_FUNCTION is_reference ident type_params_opt
    TOPAR parameter_list TCPAR
-   return_type_opt
-   TOBRACE inner_statement_list TCBRACE
-   {
-    let params = ($6, $7, $8) in
-    let body = ($10, $11, $12) in
-    ({ f_tok = $2; f_ref = $3; f_name = Name $4; f_params = params;
+   return_type_opt function_body
+   { { f_tok = $2; f_ref = $3; f_name = Name $4; f_params = ($6, $7, $8);
        f_tparams = $5;
-       f_return_type = $9;f_body = body;
+       f_return_type = $9; f_body = $10;
        f_attrs = None;
        f_type = FunctionRegular; f_modifiers = $1;
-    })
-   }
+    } }
+
+function_body:
+ | TOBRACE inner_statement_list TCBRACE     { ($1, $2, $3)  }
+ | TSEMICOLON { (* ugly: *) (Ast.fakeInfo"", [], $1) }
 
 async_opt:
  | /*(*empty*)*/ { [] }
