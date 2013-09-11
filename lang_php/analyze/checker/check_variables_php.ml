@@ -510,7 +510,7 @@ and stmt env = function
 
       (* todo: E.warning tok E.WeirdForeachNoIteratorVar *)
       | _ ->
-          pr2 ("Warning: saw unexpected `foreach` value " ^ (str_of_any (Expr2 pattern)))
+          failwith ("Warning: saw unexpected `foreach` value " ^ (str_of_any (Expr2 pattern)))
     );
 
       (match e2opt with
