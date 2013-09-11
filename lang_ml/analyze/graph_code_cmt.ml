@@ -364,6 +364,8 @@ let add_use_edge_lid_bis env lid texpr =
           | "StringSetOrig" | "IntMap" | "IntIntMap" | "StringSet" | "StrMap"
           | "SetTestPath" | "Elt_Set"  | "AMap"
           | "Build" | "PMap"
+          (* in dataflow_php.ml *)
+          | "VarMap" | "VarSet" | "NodeiSet"
           (* todo: need handle argument to functor *)
           | "MODEL" | "column_list"
           | "Taint"  | "MATCH" | "X" | "PHP_VS_PHP" | "Interp"
