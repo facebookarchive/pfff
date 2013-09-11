@@ -275,7 +275,7 @@ let rec (cfg_stmt: state -> nodei option -> stmt -> nodei option) =
          | ForeachArrow (var1, _, var2) ->
            [var1;var2]
          | ForeachList (_, xs) ->
-           (pr2 "Warning: list foreach"; [])
+           failwith "Warning: list foreach"
        in
        let node = F.ForeachHeader names in
        let newi = state.g#add_node { F.n = node; i=i() } in
