@@ -21,7 +21,6 @@ let unittest =
   let p path = Filename.concat Config_pfff.path path in
 
   let test_files = [
-    p "tests/php/scheck/php_stdlib.php";
     p "tests/php/scheck/common.php";
     p "tests/php/scheck/builtins.php";
     p "tests/php/scheck/includes.php";
@@ -46,12 +45,16 @@ let unittest =
   ] 
   in
 
-  (* need also now a tests/php/scheck/php_stdlib.php because data/php_stdlib
+  (* old: Lib_parsing_php.find_php_files_of_dir_or_files [p "/data/php_stdlib"]
+   * we need a tests/php/scheck/php_stdlib.php because data/php_stdlib
    * is now mostly auto generated from idl files, and data/php_stdlib
-   * contains only pfff internal builtins
+   * contains only pfff internal builtins.
+   * data/php_stdlib is not anymore in the pfff repo.
    *)
-  let builtin_files =
-    Lib_parsing_php.find_php_files_of_dir_or_files [p "/data/php_stdlib"]
+  let builtin_files = [
+    p "tests/php/scheck/php_stdlib.php";
+  ]
+
   in
   let files = builtin_files ++ test_files in
 
