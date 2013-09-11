@@ -104,12 +104,16 @@ let unsugar_self_parent_any2 any =
         match def.c_extends with
         | None -> None
         | Some (tok, (Hint (XName [QI classname], _targs))) -> Some classname
+(*
         | Some (tok, (Hint (XName elts, _targs))) ->
             let names = List.map (function QI x -> str_of_ident x | QITok tok -> "\\") elts in
             let namestr = String.concat "" names in
             Some (Name (namestr, fakeInfo namestr))
-        | Some x -> (pr2 ("Warning: unknown extends clause\n" ^
-                (Export_ast_ml.string_of_v (Meta_ast_php.vof_any (Hint2 (snd x))))); None)
+*)
+        | Some x -> 
+          failwith ("Warning: unknown extends clause\n" ^
+                       (Export_ast_ml.string_of_v 
+                          (Meta_ast_php.vof_any (Hint2 (snd x)))))
       in
 
       match def.c_type with
