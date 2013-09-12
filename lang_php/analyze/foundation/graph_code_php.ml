@@ -46,7 +46,7 @@ module G = Graph_code
  *    and just pass the PHP specificities.
  *  - add tests
  *
- * issues regarding errors in a codebase:
+ * issues regarding errors in a codebase and how to handle them:
  *  - parse errors, maybe test code?
  *    => skip list, file: or dir:
  *  - nested functions, duped functions defined conditionnally
@@ -137,17 +137,14 @@ let parse2 env file =
   with
   | Timeout -> raise Timeout
   | exn ->
-    env.pr2_and_log 
-      (spf "PARSE ERROR with %s, exn = %s" (env.path file)
-         (Common.exn_to_s exn));
+    env.pr2_and_log (spf "PARSE ERROR with %s, exn = %s" (env.path file)
+                       (Common.exn_to_s exn));
     []
-
+      
+(* On a huge codebase naive memoization stresses too much the GC.
+ * We marshall a la juju so the heap graph is smaller at least. *)
 let parse env a =
-  (* on huge codebase naive memoization stresses too much the GC.
-   * We marshall a la juju so the heap graph is smaller at least.
-   *)
-  Marshal.from_string
-    (Common.memoized _hmemo a (fun () ->
+  Marshal.from_string (Common.memoized _hmemo a (fun () ->
       Marshal.to_string (parse2 env a) []
      )) 0
 
@@ -180,7 +177,7 @@ let privacy_of_modifiers modifiers =
   );
   !p
 
-let lc_and_underscore str = 
+let normalize str = 
   str
   (* php is case insensitive *)
   +> String.lowercase
@@ -264,8 +261,7 @@ let add_node_and_edge_if_defs_mode ?(props=[]) env (name, kind) =
 
 let lookup_fail env tok dst =
   let info = Ast.tok_of_ident ("", tok) in
-  let file = Parse_info.file_of_info info in
-  let line = Parse_info.line_of_info info in
+  let file, line = Parse_info.file_of_info info, Parse_info.line_of_info info in
   let (_, kind) = dst in
   let fprinter =
     if env.phase = Inheritance
@@ -295,7 +291,7 @@ let _hmemo_class_exits = Hashtbl.create 101
 let class_exists2 env aclass tok =
   assert (env.phase = Uses);
   let node = (aclass, E.Class E.RegularClass) in
-  let node' = (lc_and_underscore aclass, E.Class E.RegularClass) in
+  let node' = (normalize aclass, E.Class E.RegularClass) in
   let res = 
     Common.memoized _hmemo_class_exits aclass (fun () ->
       (G.has_node node env.g && G.parent node env.g <> G.not_found) ||
@@ -330,9 +326,9 @@ let rec add_use_edge env ((str, tok), kind) =
   | _ when G.has_node dst env.g ->
       G.add_edge (src, dst) G.Use env.g
 
-  | _ when Hashtbl.mem env.case_insensitive (lc_and_underscore str, kind) ->
+  | _ when Hashtbl.mem env.case_insensitive (normalize str, kind) ->
       let (final_str, _) =
-        Hashtbl.find env.case_insensitive (lc_and_underscore str, kind) in
+        Hashtbl.find env.case_insensitive (normalize str, kind) in
       (*env.pr2_and_log (spf "CASE SENSITIVITY: %s instead of %s at %s"
                          str final_str 
                          (Parse_info.string_of_info (Ast.tok_of_ident name)));
@@ -1028,8 +1024,7 @@ let build
   );
   if not only_defs then begin
     g +> G.iter_nodes (fun (str, kind) ->
-      Hashtbl.replace env.case_insensitive
-        (lc_and_underscore str, kind) (str, kind)
+      Hashtbl.replace env.case_insensitive (normalize str, kind) (str, kind)
     );
 
     (* step2: creating the 'Use' edges for inheritance *)
