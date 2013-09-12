@@ -70,3 +70,13 @@ function test_dynamic_break_ok() {
     break (1);
   }
 }
+
+function test_for_continue_ok() {
+  // this is ok, there is no deadcode, the $i++ is reached by the 'continue'
+  for ($i = 0; $i < 3; $i++) {
+    if($i === 1) {
+      continue;
+    }
+    return 1;
+  }
+}

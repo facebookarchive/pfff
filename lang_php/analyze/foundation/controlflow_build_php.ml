@@ -146,22 +146,6 @@ let rec (lookup_some_ctx:
 (* Algorithm *)
 (*****************************************************************************)
 
-let cfg_expr state kind previ expr =
-  let i = Some (List.hd (Lib_parsing_php.ii_of_any (Expr expr))) in
-  let newi = state.g#add_node { 
-    F.n = F.SimpleStmt (F.ExprStmt (expr, kind)); 
-    i=i 
-  } in
-  state.g +> add_arc_opt (previ, newi);
-  Some newi
-
-let cfg_var_def state previ dname =
-  let i = Ast.info_of_dname dname in
-  let vari = state.g#add_node { F.n = F.Parameter dname; i=Some i } in
-  state.g +> add_arc_opt (previ, vari);
-  Some vari
-
-
 (*s: controlflow_php main algorithm *)
 (*
  * The CFG building algorithm works by iteratively visiting the
@@ -191,27 +175,53 @@ let rec (cfg_stmt: state -> nodei option -> stmt -> nodei option) =
        cfg_expr state F.Normal previ e
 
    | StaticVars (_, static_vars, _) ->
-     let var_list = Ast.uncomma static_vars +>
-       List.map (fun (v, _) -> v) in
+     let var_list = Ast.uncomma static_vars +> List.map (fun (v, _) -> v) in
      List.fold_left (cfg_var_def state) previ var_list
-
-   | EmptyStmt _
-   | Echo (_, _, _)
-   | InlineHtml _
-      ->
-       let simple_stmt = F.TodoSimpleStmt in
-       let newi = state.g#add_node { F.n = F.SimpleStmt simple_stmt; i=i() } in
-       state.g +> add_arc_opt (previ, newi);
-       Some newi
 
    | Block xs ->
        let stmts = stmts_of_stmt_or_defs (Ast.unbrace xs) in
        cfg_stmt_list state previ stmts
 
+   | For _ | Foreach _  | While _ ->
+     (* previ -> newi ---> newfakethen -> ... -> finalthen -
+      *             |---|-----------------------------------|
+      *                 |-> newfakelse 
+      *)
+       let node, colon_stmt = 
+         (match stmt with 
+         | While (t1, e, colon_stmt) ->
+             F.WhileHeader (Ast.unparen e), colon_stmt
+         | For (t1, t2, e1, t3, e2, t4, e5, t6, colon_stmt) ->
+             F.ForHeader, colon_stmt
+         | Foreach (t1, t2, e1, t3, v_arrow_opt, t4, colon_stmt) ->
+             F.ForeachHeader, colon_stmt
+         | _ -> raise Impossible
+         )
+       in
+
+       let newi = state.g#add_node { F.n = node; i=i() } in
+       state.g +> add_arc_opt (previ, newi);
+
+       let newfakethen = state.g#add_node { F.n = F.TrueNode;i=None } in
+       let newfakeelse = state.g#add_node { F.n = F.FalseNode;i=None } in
+       state.g +> add_arc (newi, newfakethen);
+       state.g +> add_arc (newi, newfakeelse);
+
+       let state = { state with
+         ctx = LoopCtx (newi, newfakeelse)::state.ctx;
+       }
+       in
+       let finalthen = 
+         cfg_colon_stmt state (Some newfakethen) colon_stmt
+       in
+       state.g +> add_arc_opt (finalthen, newi);
+       Some newfakeelse
+
+(*
    | While (t1, e, colon_stmt) ->
      (* previ -> newi ---> newfakethen -> ... -> finalthen
       *             |--|---------------------------------|
-      *                |-> newfakelse
+      *                |-> newfakelse -> <rest>
       *)
        let node = F.WhileHeader (Ast.unparen e) in
 
@@ -227,16 +237,15 @@ let rec (cfg_stmt: state -> nodei option -> stmt -> nodei option) =
          ctx = LoopCtx (newi, newfakeelse)::state.ctx;
        }
        in
-       let finalthen =
-         cfg_colon_stmt state (Some newfakethen) colon_stmt
-       in
+       let finalthen = cfg_colon_stmt state (Some newfakethen) colon_stmt in
+       (* let's loop *)
        state.g +> add_arc_opt (finalthen, newi);
        Some newfakeelse
 
    | For (t1, t2, e1, t3, e2, t4, e5, t6, colon_stmt) ->
      (* previ -> e1i ->newi -> e2i --> newfakethen -> ... -> finalthen -> e5i
       *                  |--------|----------------------------------------|
-      *                           |-> newfakelse
+      *                           |-> newfakelse -> <rest>
       *)
        let exprs = Ast.uncomma e1 in
        let e1i = List.fold_left (cfg_expr state F.SpecialMaybeUnused)
@@ -251,17 +260,19 @@ let rec (cfg_stmt: state -> nodei option -> stmt -> nodei option) =
          (Some newi) exprs in
 
        let newfakethen = state.g#add_node { F.n = F.TrueNode;i=None } in
-       state.g +> add_arc_opt (e2i, newfakethen);
        let newfakeelse = state.g#add_node { F.n = F.FalseNode;i=None } in
+       state.g +> add_arc_opt (e2i, newfakethen);
        state.g +> add_arc_opt (e2i, newfakeelse);
 
+       (* todo: the head should not be newi but the node just before
+        * the increment, see tests/php/controlflow/continue_for.php
+        *)
        let state = { state with
          ctx = LoopCtx (newi, newfakeelse)::state.ctx;
        }
        in
-       let finalthen =
-         cfg_colon_stmt state (Some newfakethen) colon_stmt
-       in
+       let finalthen = cfg_colon_stmt state (Some newfakethen) colon_stmt in
+
        let exprs = Ast.uncomma e5 in
        let e5i = List.fold_left (cfg_expr state F.Normal) finalthen exprs in
 
@@ -271,7 +282,7 @@ let rec (cfg_stmt: state -> nodei option -> stmt -> nodei option) =
    | Foreach (t1, t2, e1, t3, v_arrow_opt, t4, colon_stmt) ->
      (* previ -> e1i ->newi ---> newfakethen -> ... -> finalthen
       *                  |---|----------------------------------|
-      *                      |-> newfakelse
+      *                      |-> newfakelse -> <rest>
       *)
        let e1i = cfg_expr state F.Normal previ e1 in
 
@@ -288,8 +299,8 @@ let rec (cfg_stmt: state -> nodei option -> stmt -> nodei option) =
        state.g +> add_arc_opt (e1i, newi);
 
        let newfakethen = state.g#add_node { F.n = F.TrueNode;i=None } in
-       state.g +> add_arc (newi, newfakethen);
        let newfakeelse = state.g#add_node { F.n = F.FalseNode;i=None } in
+       state.g +> add_arc (newi, newfakethen);
        state.g +> add_arc (newi, newfakeelse);
 
        let state = { state with
@@ -301,20 +312,21 @@ let rec (cfg_stmt: state -> nodei option -> stmt -> nodei option) =
        in
        state.g +> add_arc_opt (finalthen, newi);
        Some newfakeelse
+*)
 
-  (* This time, may return None, for instance if return in body of dowhile
-   * (whereas While cant return None). But if return None, certainly
+  (* This time, we may return None, for instance if return in body of dowhile
+   * (whereas While can't return None). But if we return None, certainly
    * sign of buggy code.
    *)
    | Do (t1, st, t2, e, t3) ->
      (* previ -> doi ---> ... ---> finalthen (opt) ---> taili
-      *             |--------- newfakethen -------------|  |---> newfakelse
+      *           |--------- newfakethen ----------------| |-> newfakelse <rest>
       *)
        let doi = state.g#add_node { F.n = F.DoHeader;i=i() } in
        state.g +> add_arc_opt (previ, doi);
+
        let taili = state.g#add_node
          { F.n = F.DoWhileTail (Ast.unparen e);i=None } in
-
        let newfakethen = state.g#add_node { F.n = F.TrueNode;i=None } in
        let newfakeelse = state.g#add_node { F.n = F.FalseNode;i=None } in
        state.g +> add_arc (taili, newfakethen);
@@ -325,9 +337,7 @@ let rec (cfg_stmt: state -> nodei option -> stmt -> nodei option) =
          ctx = LoopCtx (taili, newfakeelse)::state.ctx;
        }
        in
-       let finalthen =
-         cfg_stmt state (Some doi) st
-       in
+       let finalthen = cfg_stmt state (Some doi) st in
        (match finalthen with
        | None ->
            (* weird, probably wrong code *)
@@ -337,18 +347,18 @@ let rec (cfg_stmt: state -> nodei option -> stmt -> nodei option) =
            Some newfakeelse
        )
 
-
    | IfColon (_t1, _e, tok, _st, _elseifs, _else, _t2, _t3)  ->
        raise (Error (ColonSyntax, tok))
 
    | If (t, e, st_then, st_elseifs, st_else_opt) ->
-     (* previ  -> newi --->   newfakethen -> ... -> finalthen --> lasti
-      *                |                                      |
-      *                |->   newfakeelse -> ... -> finalelse -|
+     (* previ -> newi --->  newfakethen -> ... -> finalthen --> lasti -> <rest>
+      *                |                                     |
+      *                |->  newfakeelse -> ... -> finalelse -|
       *
       * Can generate either special nodes for elseif, or just consider
       * elseif as syntactic sugar that translates into regular ifs, which
       * is what I do for now.
+      * The lasti can be a Join when there is no return in either branch.
       *)
        let newi = state.g#add_node { F.n = F.IfHeader (Ast.unparen e);i=i() } in
        state.g +> add_arc_opt (previ, newi);
@@ -390,7 +400,6 @@ let rec (cfg_stmt: state -> nodei option -> stmt -> nodei option) =
        let newi = state.g#add_node { F.n = F.Return eopt;i=i() } in
        state.g +> add_arc_opt (previ, newi);
        state.g +> add_arc (newi, state.exiti);
-
        (* the next statement if there is one will not be linked to
         * this new node *)
        None
@@ -399,8 +408,8 @@ let rec (cfg_stmt: state -> nodei option -> stmt -> nodei option) =
 
        let is_continue, node =
          match stmt with
-         | Continue _ -> true, F.Continue
-         | Break _ -> false, F.Break
+         | Continue _ -> true,  F.Continue
+         | Break _    -> false, F.Break
          | _ -> raise Impossible
        in
        let depth =
@@ -628,6 +637,10 @@ let rec (cfg_stmt: state -> nodei option -> stmt -> nodei option) =
        );
        None
 
+   | EmptyStmt _
+   | Echo (_, _, _)
+   | InlineHtml _
+
    | Declare (_, _, _)
    | Unset (_, _, _)
    | Use (_, _, _)
@@ -637,6 +650,7 @@ let rec (cfg_stmt: state -> nodei option -> stmt -> nodei option) =
        let newi = state.g#add_node { F.n = F.SimpleStmt simple_stmt;i=i() } in
        state.g +> add_arc_opt (previ, newi);
        Some newi
+
    (* should be filtered *)
    | FuncDefNested _ | ClassDefNested _ ->
        raise Impossible
@@ -664,7 +678,6 @@ and cfg_colon_stmt state previ colon =
  * returning a node (if the case contains a break, then this will be
  * None)
  *)
-
 and (cfg_cases:
     (nodei * nodei) -> state ->
     nodei option -> Ast_php.case list -> nodei option) =
@@ -731,6 +744,21 @@ and (cfg_catches: state -> nodei -> nodei -> Ast_php.catch list -> nodei) =
      falsei
    ) previ
 
+and cfg_expr state kind previ expr =
+  let i = Some (List.hd (Lib_parsing_php.ii_of_any (Expr expr))) in
+  let newi = state.g#add_node { 
+    F.n = F.SimpleStmt (F.ExprStmt (expr, kind)); 
+    i=i 
+  } in
+  state.g +> add_arc_opt (previ, newi);
+  Some newi
+
+and cfg_var_def state previ dname =
+  let i = Ast.info_of_dname dname in
+  let vari = state.g#add_node { F.n = F.Parameter dname; i=Some i } in
+  state.g +> add_arc_opt (previ, vari);
+  Some vari
+
 (*e: controlflow_php main algorithm *)
 
 (*****************************************************************************)
@@ -744,12 +772,13 @@ let (control_flow_graph_of_stmts: dname list -> stmt list -> F.flow) =
   let g = new Ograph_extended.ograph_mutable in
 
   let enteri = g#add_node { F.n = F.Enter;i=None } in
-  let exiti = g#add_node { F.n = F.Exit;i=None } in
-  let newi = List.fold_left (fun previ param ->
+  let exiti  = g#add_node { F.n = F.Exit; i=None } in
+  let newi = params +> List.fold_left (fun previ param ->
     let parami = g#add_node { F.n = F.Parameter param; i=None } in
     g +> add_arc (previ, parami);
-    parami)
-    enteri params in
+    parami
+    ) enteri 
+  in
   let state = {
     g = g;
     exiti = exiti;
@@ -768,9 +797,11 @@ let (control_flow_graph_of_stmts: dname list -> stmt list -> F.flow) =
 (*x: controlflow builders *)
 let (cfg_of_func: func_def -> F.flow) = fun def ->
   let stmts = stmts_of_stmt_or_defs (Ast.unbrace def.f_body) in
-  let params = Ast.uncomma_dots (Ast.unparen def.f_params) +>
-    List.map (fun p -> p.p_name) in
-  (* todo? could create a node with function name ? *)
+  let params = 
+    def.f_params +> Ast.unparen +> Ast.uncomma_dots 
+    +> List.map (fun p -> p.p_name)
+  in
+  (* less: could create a node with function name ? *)
   control_flow_graph_of_stmts params stmts
 
 (*x: controlflow builders *)
@@ -800,7 +831,6 @@ let (deadcode_detection : F.flow -> unit) = fun flow ->
       )
   )
 (*e: function deadcode_detection *)
-
 
 (*****************************************************************************)
 (* Error management *)

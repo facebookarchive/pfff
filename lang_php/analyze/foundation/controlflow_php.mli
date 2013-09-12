@@ -40,7 +40,7 @@ type node = {
       | DoHeader
       | DoWhileTail of Ast_php.expr
       | ForHeader (* the exprs are put in extra nodes around *)
-      | ForeachHeader of Ast_php.foreach_variable list
+      | ForeachHeader (* TODO  of Ast_php.foreach_variable list *)
 
   (*x: node_kind constructors *)
       | SwitchHeader of Ast_php.expr

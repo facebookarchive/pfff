@@ -397,13 +397,16 @@ fun fold_env node acc -> match node with
           -> expr_fold fold_env false expr acc
       | F.Parameter (DName(name, _)) ->
         fold_env.fold_fn name true acc
-      | F.ForeachHeader var_list ->
+      | F.ForeachHeader (*var_list *) ->
+        raise Todo
+(*
         List.fold_left (fun acc' var ->
           match var with
           | (Some _, _) -> raise Todo
           | (None, IdVar(DName(s, _), _)) ->
             fold_env.fold_fn s true acc'
           | _ -> acc') acc var_list
+*)
           
 let (flow_fold: 'a fold_fn -> VarSet.t -> 'a -> F.flow -> 'a) =
 fun fold_fn vars acc flow -> flow#nodes#fold

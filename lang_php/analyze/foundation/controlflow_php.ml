@@ -71,7 +71,7 @@ type node = {
       | DoHeader
       | DoWhileTail of expr
       | ForHeader
-      | ForeachHeader of foreach_variable list
+      | ForeachHeader (* TODO  of foreach_variable list *)
 
   (*x: node_kind constructors *)
       | SwitchHeader of expr
@@ -152,7 +152,7 @@ let short_string_of_node_kind nkind =
   | Break -> "break;"
 
   | ForHeader -> "for(...)"
-  | ForeachHeader _ -> "foreach(...)"
+  | ForeachHeader  -> "foreach(...)"
 
   | SwitchHeader _ -> "switch(...)"
   | SwitchEnd -> "<endswitch>"
