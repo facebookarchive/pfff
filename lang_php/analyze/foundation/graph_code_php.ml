@@ -77,10 +77,8 @@ type env = {
   current: Graph_code.node;
   readable: Common.filename;
 
-  (* "NOSELF" when outside a class *)
-  self: string;
-  (* "NOPARENT" when no parent *)
-  parent: string;
+  self:   string; (* "NOSELF" when outside a class *)
+  parent: string; (* "NOPARENT" when no parent *)
 
   at_toplevel: bool;
 
@@ -109,7 +107,7 @@ type env = {
   log: string -> unit;
   pr2_and_log: string -> unit;
   is_skip_error_file: Common.filename (* readable *) -> bool;
-  (* to print error in readable format sometimes *)
+  (* to print file paths in readable format or absolute *)
   path: Common.filename -> string;
 }
   (* We need 3 phases, one to get all the definitions, one to
@@ -147,6 +145,24 @@ let parse env a =
   Marshal.from_string (Common.memoized _hmemo a (fun () ->
       Marshal.to_string (parse2 env a) []
      )) 0
+    
+let xhp_field str = 
+  (str =~ ".*=")
+
+(* Ignore certain xhp fields, custom data attribute:
+ * http://www.w3.org/TR/2011/WD-html5-20110525/elements.html,
+ * #embedding-custom-non-visible-data-with-the-data-attributes ARIA: 
+ * http://dev.w3.org/html5/markup/aria/aria.html,
+ * server side attribute: flib/markup/xhp/html.php:52 *)
+let xhp_data_field str =
+  (str =~ ".*\\.\\(data|aria|srvr\\)-.*=")
+
+(* todo: handle __call and the dynamicYield idiom instead of this whitelist *)
+let magic_methods str =
+ (* facebook specific, dynamicYield *)
+ str =~ ".*\\.gen.*" || str =~ ".*\\.get.*" || str =~ ".*\\.prepare.*" ||
+ (* phabricator LiskDAO *)
+ str =~ ".*\\.set[A-Z].*"
 
 (* In PHP people abuse strings to pass classnames or function names.
  * We want to add use edges for those cases but we need some heuristics
@@ -167,7 +183,7 @@ let look_like_class s =
   | _ -> false
 
 let privacy_of_modifiers modifiers =
-  (* yes, default is public ... love PHP *)
+  (* yes, default is public ... I love PHP *)
   let p = ref E.Public in
   modifiers +> List.iter (function
   | Ast_php.Public -> p := E.Public
@@ -179,10 +195,8 @@ let privacy_of_modifiers modifiers =
 
 let normalize str = 
   str
-  (* php is case insensitive *)
-  +> String.lowercase
-  (* xhp is "dash" insensitive *)
-  +> Str.global_replace (Str.regexp "-") "_" 
+  +> String.lowercase                         (* php is case insensitive *)
+  +> Str.global_replace (Str.regexp "-") "_"  (* xhp is "dash" insensitive *)
 
 (*****************************************************************************)
 (* Add node *)
@@ -197,11 +211,10 @@ let add_fake_node_when_undefined_entity = ref true
 
 let add_node_and_edge_if_defs_mode ?(props=[]) env (name, kind) =
   let str =
-    match kind with
-    | E.ClassConstant | E.Field | E.Method _ ->
-      env.self ^ "." ^ Ast.str_of_ident name
-    | _ ->
-      Ast.str_of_ident name
+    (match kind with
+    | E.ClassConstant | E.Field | E.Method _ -> env.self ^ "."
+    | _ -> ""
+    ) ^ Ast.str_of_ident name
   in
   let node = (str, kind) in
 
@@ -214,8 +227,7 @@ let add_node_and_edge_if_defs_mode ?(props=[]) env (name, kind) =
        *)
       (match kind with
       (* less: log at least? *)
-      | E.Class _ | E.Function | E.Constant when not env.at_toplevel ->
-        ()
+      | E.Class _ | E.Function | E.Constant when not env.at_toplevel -> ()
 
       (* If the class was dupe, of course all its members are also duped.
        * But actually we also need to add it to env.dupes, so below,
@@ -224,7 +236,7 @@ let add_node_and_edge_if_defs_mode ?(props=[]) env (name, kind) =
        *)
       | E.ClassConstant | E.Field | E.Method _
         when Hashtbl.mem env.dupes (env.self, E.Class E.RegularClass) ->
-        Hashtbl.add env.dupes node (env.readable, file)
+          Hashtbl.add env.dupes node (env.readable, file)
       | E.ClassConstant | E.Field | E.Method _ ->
         env.pr2_and_log (spf "DUPE METHOD: %s" (G.string_of_node node));
       | _ ->
@@ -239,10 +251,7 @@ let add_node_and_edge_if_defs_mode ?(props=[]) env (name, kind) =
       env.g +> G.add_edge (env.current, node) G.Has;
       let pos = Parse_info.token_location_of_info (Ast.tok_of_ident name) in
       let pos = { pos with Parse_info.file = env.readable } in
-      let nodeinfo = { Graph_code.
-        pos = pos;
-        props = props;
-      } in
+      let nodeinfo = { Graph_code. pos; props } in
       env.g +> G.add_nodeinfo node nodeinfo;
     end
   end;
@@ -272,9 +281,7 @@ let lookup_fail env tok dst =
       else 
         (match kind with
         | E.Function | E.Class _ | E.Constant
-        (* todo: fix those too
-           | E.ClassConstant
-        *)
+        (* todo: fix those too | E.ClassConstant *)
           -> env.pr2_and_log
         | _ -> env.log
         )
@@ -314,8 +321,7 @@ let class_exists a b c =
 let rec add_use_edge env ((str, tok), kind) =
   let src = env.current in
   let dst = (str, kind) in
-
-  (match () with
+  match () with
   (* maybe nested function, in which case we dont have the def *)
   | _ when not (G.has_node src env.g) ->
       env.pr2_and_log 
@@ -327,7 +333,7 @@ let rec add_use_edge env ((str, tok), kind) =
       G.add_edge (src, dst) G.Use env.g
 
   | _ when Hashtbl.mem env.case_insensitive (normalize str, kind) ->
-      let (final_str, _) =
+      let (final_str, _) = 
         Hashtbl.find env.case_insensitive (normalize str, kind) in
       (*env.pr2_and_log (spf "CASE SENSITIVITY: %s instead of %s at %s"
                          str final_str 
@@ -350,23 +356,9 @@ let rec add_use_edge env ((str, tok), kind) =
     | _  ->
       (match kind with
         (* todo: regular fields, fix those at some point! *)
-        | E.Field when (not (str =~ ".*=")) -> ()
-        (* Ignore certain xhp fields, custom data attribute:
-         * http://www.w3.org/TR/2011/WD-html5-20110525/elements.html,
-         * #embedding-custom-non-visible-data-with-the-data-attributes ARIA: 
-         * http://dev.w3.org/html5/markup/aria/aria.html,
-         * server side attribute: flib/markup/xhp/html.php:52
-         *)
-        | E.Field when ((str =~ ".*\\.data-.*=") || 
-                        (str =~ ".*\\.aria-.*=") || 
-                        (str =~ ".*\\.srvr-.*="))
-            -> ()
-        (* todo: handle __call and the dynamicYield idiom *)
-        | E.Method _ when str =~ ".*\\.gen.*" 
-                       || str =~ ".*\\.get.*" 
-                       || str =~ ".*\\.prepare.*" 
-                       (* phabricator LiskDAO *)
-                       || str =~ ".*\\.set[A-Z].*"
+        | E.Field when not (xhp_field str) -> ()
+        | E.Field when xhp_data_field str -> ()
+        | E.Method _ when magic_methods str
              -> ()
         | _ ->
           lookup_fail env tok dst;
@@ -377,8 +369,7 @@ let rec add_use_edge env ((str, tok), kind) =
             env.g +> G.add_edge (src, dst) G.Use;
           end
         )
-      )
-  )
+    )
 
 (*****************************************************************************)
 (* Lookup *)
@@ -989,17 +980,20 @@ let build
     | _ -> true
   )
   +> List.iter (fun node ->
-    let orig_file = G.file_of_node node g in
-
     let files = Hashtbl.find_all env.dupes node in
     let (ex_file, _) = List.hd files in
+    let orig_file = 
+      try G.file_of_node node g 
+      with Not_found ->
+        failwith (spf "PB with %s, no file found, dupes = %s"
+                    (G.string_of_node node) (Common.dump files))
+    in
 
     let dupes = orig_file::List.map fst files in
     let cnt = List.length dupes in
 
     let (in_skip_errors, other) =
       List.partition env.is_skip_error_file dupes in
-
 
     (match List.length in_skip_errors, List.length other with
     (* dupe in regular codebase, bad *)
