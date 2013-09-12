@@ -392,8 +392,7 @@ fun fold_env node acc -> match node with
       | F.DoWhileTail expr
       | F.SwitchHeader expr
       | F.Throw expr
-      | F.SimpleStmt (F.ExprStmt expr)
-      | F.SimpleStmt (F.SpecialMaybeUnused expr)
+      | F.SimpleStmt (F.ExprStmt (expr, _(*use_status*)))
       | F.Return (Some expr)
           -> expr_fold fold_env false expr acc
       | F.Parameter (DName(name, _)) ->
