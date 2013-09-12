@@ -1,14 +1,11 @@
 (*s: controlflow_php.mli *)
 
-open Ast_php
-
 (*s: type node *)
 type node = {
   (* For now we just have node_kind, but later if we want to do some data-flow
    * analysis or use temporal logic, we may want to add extra information
-   * in each CFG nodes. We could also record such extra
-   * information in an external table that maps Ograph_extended.nodei, 
-   * that is nodeid, to some information.
+   * in each CFG nodes. We could also record such extra information in an
+   * external table that maps Ograph_extended.nodei to whatever information.
    *)
   n: node_kind;
   (* for error report *)
@@ -33,7 +30,6 @@ type node = {
       | BlockEnd of tok (* } *)
     *)
   (*x: node_kind constructors *)
-      (* TODO add appropriate info for each of those nodes *)
       | IfHeader of Ast_php.expr
       (* not used for now
       | Else
@@ -43,7 +39,7 @@ type node = {
       | WhileHeader of Ast_php.expr
       | DoHeader
       | DoWhileTail of Ast_php.expr
-      | ForHeader
+      | ForHeader (* the exprs are put in extra nodes around *)
       | ForeachHeader of Ast_php.foreach_variable list
 
   (*x: node_kind constructors *)
@@ -61,10 +57,13 @@ type node = {
       | CatchStart
       | Catch
       | TryEnd
-      | Throw of expr
+      | Throw of Ast_php.expr
   (*x: node_kind constructors *)
       | Join
-      | Parameter of dname
+      (* for the dataflow, it's convenient to have parameters as
+       * nodes.
+       *)
+      | Parameter of Ast_php.dname
       (* statements without multiple outgoing or ingoing edges, such
        * as echo, expression statements, etc.
        *)
@@ -72,8 +71,8 @@ type node = {
   (*e: node_kind constructors *)
   (*s: node_kind aux types *)
      and simple_stmt = 
-         | ExprStmt of expr
-         | SpecialMaybeUnused of expr
+         | ExprStmt of Ast_php.expr
+         | SpecialMaybeUnused of Ast_php.expr
 
          | TodoSimpleStmt
          (* TODO? expr includes Exit, Eval, Include, etc which
@@ -81,21 +80,6 @@ type node = {
           * We may want to uplift those constructors here and have
           * a better expr type
           *)
-         (*
-
-         | EmptyStmt of expr * tok
-           
-         | Echo of tok * expr list * tok
-           
-         | Globals    of tok * global_var list * tok
-         | StaticVars of tok * static_var list * tok
-           
-         | InlineHtml of string wrap
-           
-         | Use of tok * use_filename * tok
-         | Unset of tok * variable list paren * tok
-         | Declare of tok * declare list paren * colon_stmt
-         *)
   (*e: node_kind aux types *)
 (*e: type node_kind *)
 
@@ -120,7 +104,7 @@ val mk_node: node_kind -> node
 (*e: controlflow helpers signatures *)
 
 (*s: function display_flow signature *)
-(* using internally graphviz dot and ghostview on X11 *)
+(* using internally graphviz 'dot' and ghostview 'gv' on X11 *)
 val display_flow: flow -> unit
 (*e: function display_flow signature *)
 

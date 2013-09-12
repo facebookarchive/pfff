@@ -109,21 +109,6 @@ type node = {
           * We may want to uplift those constructors here and have
           * a better expr type
           *)
-         (*
-
-         | EmptyStmt of expr * tok
-           
-         | Echo of tok * expr list * tok
-           
-         | Globals    of tok * global_var list * tok
-         | StaticVars of tok * static_var list * tok
-           
-         | InlineHtml of string wrap
-           
-         | Use of tok * use_filename * tok
-         | Unset of tok * variable list paren * tok
-         | Declare of tok * declare list paren * colon_stmt
-         *)
   (*e: node_kind aux types *)
 (*e: type node_kind *)
 
