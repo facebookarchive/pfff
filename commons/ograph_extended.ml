@@ -297,11 +297,13 @@ let generate_ograph_xxx g filename =
 let launch_gv_cmd filename =
   let _status = 
     Unix.system ("dot " ^ filename ^ " -Tps  -o " ^ filename ^ ".ps;") in
-  let _status = Unix.system ("gv " ^ filename ^ ".ps &")
+  let _status = 
+    Unix.system ("gv " ^ filename ^ ".ps")
   in
-  (* zarb: I need this when I launch the program via eshell, otherwise gv
-     do not get the chance to be launched *)
-  Unix.sleep 1; 
+  (* zarb: I needed this when I launch the program with '&' via eshell, 
+   * otherwise gv did not get the chance to be launched 
+   * Unix.sleep 1; 
+   *)
   ()
 
 let print_ograph_extended g filename launchgv = 
