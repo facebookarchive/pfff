@@ -155,7 +155,7 @@ let xhp_field str =
  * http://dev.w3.org/html5/markup/aria/aria.html,
  * server side attribute: flib/markup/xhp/html.php:52 *)
 let xhp_data_field str =
-  (str =~ ".*\\.\\(data|aria|srvr\\)-.*=")
+  (str =~ ".*\\.\\(data\\|aria\\|srvr\\)-.*=")
 
 (* todo: handle __call and the dynamicYield idiom instead of this whitelist *)
 let magic_methods str =
@@ -477,7 +477,7 @@ and stmt_bis env x =
   (* could add entity for that? *)
   | Global xs -> exprl env xs
 
-(* less: add deps to type hint? *)
+(* todo: add deps to type hint? *)
 and catch env (_hint_type, _name, xs) =
   stmtl env xs
 
