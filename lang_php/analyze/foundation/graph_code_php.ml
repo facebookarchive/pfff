@@ -630,7 +630,9 @@ and type_def_kind env = function
 (* ---------------------------------------------------------------------- *)
 (* Types *)
 (* ---------------------------------------------------------------------- *)
-and hint_type env = function
+and hint_type env t = 
+  if env.phase = Uses then
+  (match t with 
   | Hint [name] ->
       let node = (name, E.Class E.RegularClass) in
       add_use_edge env node
@@ -641,6 +643,7 @@ and hint_type env = function
   | HintCallback (tparams, tret_opt) ->
       List.iter (hint_type env) tparams;
       Common.opt (hint_type env) tret_opt
+  )
 
 (* ---------------------------------------------------------------------- *)
 (* Expr *)
