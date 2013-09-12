@@ -71,15 +71,17 @@ type node = {
   (*e: node_kind constructors *)
   (*s: node_kind aux types *)
      and simple_stmt = 
-         | ExprStmt of Ast_php.expr
-         | SpecialMaybeUnused of Ast_php.expr
-
+         | ExprStmt of Ast_php.expr * use_status
          | TodoSimpleStmt
          (* TODO? expr includes Exit, Eval, Include, etc which
           * also have an influence on the control flow ...
           * We may want to uplift those constructors here and have
           * a better expr type
           *)
+       and use_status = 
+       | Normal
+       | SpecialMaybeUnused
+
   (*e: node_kind aux types *)
 (*e: type node_kind *)
 
