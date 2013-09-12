@@ -217,7 +217,8 @@ let rec (cfg_stmt: state -> nodei option -> stmt -> nodei option) =
        state.g +> add_arc_opt (finalthen, newi);
        Some newfakeelse
 
-(*
+(* this was a tentative by jiao to work with dataflow_php.ml but it
+   has some regression so I've commented it out
    | While (t1, e, colon_stmt) ->
      (* previ -> newi ---> newfakethen -> ... -> finalthen
       *             |--|---------------------------------|
