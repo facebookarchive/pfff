@@ -18,13 +18,18 @@
 open Common
 
 open Ast_php
-
 module Ast = Ast_php
 module F = Controlflow_php
 
 (*****************************************************************************)
 (* Prelude *)
 (*****************************************************************************)
+(*
+ * less: start from ast_php_simple? would not need those stmts_of_colon_stmt()
+ * functions then. But we need to have position information for the nodes
+ * for good error reports and right now ast_php_simple keep position
+ * information only for identifiers so let's stay with ast_php for now.
+ *)
 
 (*****************************************************************************)
 (* Types *)
@@ -91,6 +96,14 @@ let stmts_of_colon_stmt colon =
   match colon with
   | SingleStmt stmt -> [stmt]
   | ColonStmt (tok, _, _, _) -> raise (Error (ColonSyntax, tok))
+
+let rec intvalue_of_expr e =
+  match e with
+  | (Sc (C (Int (i_str, _)))) -> Some (s_to_i i_str)
+  | ParenExpr (_, e, _)       -> intvalue_of_expr e
+  | _ -> None
+
+
 (*x: controlflow_php helpers *)
 let add_arc (starti, nodei) g =
   g#add_arc ((starti, nodei), F.Direct)
@@ -127,18 +140,27 @@ let rec (lookup_some_ctx:
    in
    aux 1 xs
 
-let rec intvalue_of_expr e =
-  match e with
-  | (Sc (C (Int (i_str, _)))) ->
-      Some (s_to_i i_str)
-  | ParenExpr (_, e, _) -> intvalue_of_expr e
-  | _ -> None
-
 (*e: controlflow_php helpers *)
 
 (*****************************************************************************)
 (* Algorithm *)
 (*****************************************************************************)
+
+let cfg_expr state kind previ expr =
+  let i = Some (List.hd (Lib_parsing_php.ii_of_any (Expr expr))) in
+  let newi = state.g#add_node { 
+    F.n = F.SimpleStmt (F.ExprStmt (expr, kind)); 
+    i=i 
+  } in
+  state.g +> add_arc_opt (previ, newi);
+  Some newi
+
+let cfg_var_def state previ dname =
+  let i = Ast.info_of_dname dname in
+  let vari = state.g#add_node { F.n = F.Parameter dname; i=Some i } in
+  state.g +> add_arc_opt (previ, vari);
+  Some vari
+
 
 (*s: controlflow_php main algorithm *)
 (*
@@ -159,22 +181,6 @@ let rec intvalue_of_expr e =
  * subtle: try/throw. The current algo is not very precise, but
  * it's probably good enough for many analysis.
  *)
-let expr_stmt expr = F.ExprStmt expr
-let maybe_unused expr = F.SpecialMaybeUnused expr
-
-let cfg_expr state kind previ expr =
-  let i = Some (List.hd (Lib_parsing_php.ii_of_any (Expr expr))) in
-  let simple_stmt = kind expr in
-  let newi = state.g#add_node { F.n = F.SimpleStmt simple_stmt; i=i } in
-  state.g +> add_arc_opt (previ, newi);
-  Some newi
-
-let cfg_var_def state previ dname =
-  let i = Ast.info_of_dname dname in
-  let vari = state.g#add_node { F.n = F.Parameter dname; i=Some i } in
-  state.g +> add_arc_opt (previ, vari);
-  Some vari
-
 let rec (cfg_stmt: state -> nodei option -> stmt -> nodei option) =
  fun state previ stmt ->
 
@@ -182,7 +188,7 @@ let rec (cfg_stmt: state -> nodei option -> stmt -> nodei option) =
 
    match stmt with
    | ExprStmt (e, tok) ->
-       cfg_expr state expr_stmt previ e
+       cfg_expr state F.Normal previ e
 
    | StaticVars (_, static_vars, _) ->
      let var_list = Ast.uncomma static_vars +>
@@ -233,7 +239,7 @@ let rec (cfg_stmt: state -> nodei option -> stmt -> nodei option) =
       *                           |-> newfakelse
       *)
        let exprs = Ast.uncomma e1 in
-       let e1i = List.fold_left (cfg_expr state maybe_unused)
+       let e1i = List.fold_left (cfg_expr state F.SpecialMaybeUnused)
          previ exprs in
 
        let node = F.ForHeader in
@@ -241,7 +247,7 @@ let rec (cfg_stmt: state -> nodei option -> stmt -> nodei option) =
        state.g +> add_arc_opt (e1i, newi);
 
        let exprs = Ast.uncomma e2 in
-       let e2i = List.fold_left (cfg_expr state expr_stmt)
+       let e2i = List.fold_left (cfg_expr state F.Normal)
          (Some newi) exprs in
 
        let newfakethen = state.g#add_node { F.n = F.TrueNode;i=None } in
@@ -257,7 +263,7 @@ let rec (cfg_stmt: state -> nodei option -> stmt -> nodei option) =
          cfg_colon_stmt state (Some newfakethen) colon_stmt
        in
        let exprs = Ast.uncomma e5 in
-       let e5i = List.fold_left (cfg_expr state expr_stmt) finalthen exprs in
+       let e5i = List.fold_left (cfg_expr state F.Normal) finalthen exprs in
 
        state.g +> add_arc_opt (e5i, newi);
        Some newfakeelse
@@ -267,7 +273,7 @@ let rec (cfg_stmt: state -> nodei option -> stmt -> nodei option) =
       *                  |---|----------------------------------|
       *                      |-> newfakelse
       *)
-       let e1i = cfg_expr state expr_stmt previ e1 in
+       let e1i = cfg_expr state F.Normal previ e1 in
 
        let names =
          match v_arrow_opt with
