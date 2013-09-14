@@ -55,29 +55,31 @@ module M = Map_php
  * the name by the referenced class because ii_of_any and range_of_ii
  * could get confused by having some ASTs that contains "foreign" ii.
  *)
-let resolve_class_name qu in_class =
-  match qu, in_class with
-  | (Self (tok1)), Some (name, _parent) ->
-      name, tok1
-  | (Parent (tok1)), (Some (_, Some parent)) ->
+let resolve_class_name classname in_class =
+  match classname, in_class with
+  | Self tok1, Some (name, _parent) ->
+      [QI name], tok1
+  | Parent tok1, Some (_, Some parent) ->
       parent, tok1
-  | (Self (tok1)), None ->
+  | Self tok1, None ->
       (* I used to failwith, but our codebase contains such crap
        * and we don't want all of our analysis to fail on one file
        * just because of those wrong self/parent. Turns them
        * into regular unknown class so get the same benefits.
        *)
       pr2 ("PB: Use of self:: outside of a class");
-      Name ("UnkwnownUseOfSelf", tok1), tok1
-  | (Parent (tok1)), _ ->
+      [QI (Name ("UnkwnownUseOfSelf", tok1))], tok1
+  | Parent tok1, _ ->
       pr2 "PB: Use of parent:: in a class without a parent";
-      Name ("UnkwnownUseOfParent", tok1), tok1
-  (* this should never be reached, the caller will special case LateStatic
-   * before calling resolve_class_name
+      [QI (Name ("UnkwnownUseOfParent", tok1))], tok1
+  (* This should never be reached, the caller will special case LateStatic
+   * before calling resolve_class_name.
    *)
   | (LateStatic tok1), _ ->
-      failwith "LateStatic"
-  | _ -> raise Impossible
+    failwith "LateStatic"
+  | _ -> 
+    raise Impossible
+
 
 let contain_self_or_parent def =
   let aref = ref false in
@@ -92,13 +94,28 @@ let contain_self_or_parent def =
   visitor (Toplevel (ClassDef def));
   !aref
 
+(* less: reusing the same pos for all idents may go against
+ * certain assumptions in the code using this file?
+ *)
+let subtitute_pos_info qualified_ident newpos =
+  qualified_ident +> List.map (function
+  | QI name ->
+    QI (match name with
+    | Name (s, _info_of_referenced_class) ->
+      Name (s, newpos)
+    | XhpName (xs, _info_of_referenced_class) ->
+      XhpName (xs, newpos)
+    )
+  | QITok _tok -> QITok newpos
+  )
+
 (*****************************************************************************)
 (* Main entry point *)
 (*****************************************************************************)
 let unsugar_self_parent_any2 any =
 
   (* dupe: this is also done in check_module/uses_module.ml *)
-  let in_class = ref (None: (Ast.ident * Ast.ident option) option) in
+  let in_class = ref (None: (Ast.ident * Ast.qualified_ident option) option) in
 
   let visitor = M.mk_visitor ({ M.default_visitor with
 
@@ -107,15 +124,10 @@ let unsugar_self_parent_any2 any =
       let parent_opt =
         match def.c_extends with
         | None -> None
-        | Some (tok, (Hint (XName [QI classname], _targs))) -> Some classname
-(*
-        | Some (tok, (Hint (XName elts, _targs))) ->
-            let names = List.map (function QI x -> str_of_ident x | QITok tok -> "\\") elts in
-            let namestr = String.concat "" names in
-            Some (Name (namestr, fakeInfo namestr))
-*)
+        | Some (tok, (Hint (XName qualified_classname, _targs))) -> 
+            Some qualified_classname
         | Some x -> 
-          failwith ("Warning: unknown extends clause\n" ^
+            failwith ("Warning: unknown extends clause\n" ^
                        (Ocaml.string_of_v 
                           (Meta_ast_php.vof_any (Hint2 (snd x)))))
       in
@@ -137,18 +149,12 @@ let unsugar_self_parent_any2 any =
     M.kname = (fun (k, bigf) qu ->
       match qu with
       | LateStatic tok -> LateStatic tok
-      | XName name -> XName name
+      | XName name     -> XName name
       | Self _ | Parent _ ->
           let (unsugar_name, tok_orig) =
-            resolve_class_name qu !in_class in
-          let name' =
-            match unsugar_name with
-            | Name (s, _info_of_referenced_class) ->
-                Name (s, tok_orig)
-            | XhpName (xs, _info_of_referenced_class) ->
-                XhpName (xs, tok_orig)
+            resolve_class_name qu !in_class 
           in
-          XName [QI (name')]
+          XName (subtitute_pos_info unsugar_name tok_orig)
     );
   })
   in
