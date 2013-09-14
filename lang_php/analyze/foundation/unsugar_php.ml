@@ -15,7 +15,6 @@
 open Common
 
 open Ast_php
-
 module Ast = Ast_php
 module V = Visitor_php
 module M = Map_php
@@ -28,11 +27,12 @@ module M = Map_php
  * that makes certain analysis more tedious to write. The goal of this
  * module is just to unsugar those features.
  *
- * If you want a really unsugared AST you should use pil.ml.
+ * Note that if you want a really unsugared AST you should use pil.ml
+ * instead.
  *
- * note that even if people use self::foo(), the foo() method may
+ * Note also that even if people use self::foo(), the foo() method may
  * actually not be in self but possibly in its parents; so we need
- * a lookup ancestor anyway ...
+ * too lookup ancestors anyway ...
  *
  * todo? turns out people also use self:: or parent:: or static::
  * in strings, to pass callbacks, so may have to unsugar the strings
@@ -40,6 +40,10 @@ module M = Map_php
  *
  * todo: have a unsugar_traits() that do the inlining of the mixins.
  * This requires an entity_finder.
+ * 
+ * todo: handle namespace? resolve to final names? maybe time
+ * to deprecate this file, graph_code_php.ml is better. This file
+ * just handle self/parent and not even in a complete way.
  *)
 
 (*****************************************************************************)
