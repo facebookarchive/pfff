@@ -25,27 +25,34 @@ let unittest =
     p "tests/php/scheck/common.php";
 
     p "tests/php/scheck/includes.php";
+
     p "tests/php/scheck/variables.php";
     p "tests/php/scheck/variables_fp.php";
     p "tests/php/scheck/arrays.php";
+    p "tests/php/scheck/foreach.php";
+    p "tests/php/scheck/edit_distance.php";
+
     p "tests/php/scheck/functions.php";
     p "tests/php/scheck/static_methods.php";
     p "tests/php/scheck/methods.php";
+
     p "tests/php/scheck/classes.php";
     p "tests/php/scheck/traits.php";
 (*
     p "tests/php/scheck/namespaces.php";
     p "tests/php/scheck/namespaces_uses.php";
 *)
+
     p "tests/php/scheck/cfg.php";
     p "tests/php/scheck/references.php";
     p "tests/php/scheck/xhp.php";
-    p "tests/php/scheck/endpoint.php";
+
     p "tests/php/scheck/dynamic_bailout.php";
-    p "tests/php/scheck/edit_distance.php";
+
     p "tests/php/scheck/format_string.php";
     p "tests/php/scheck/ternary_if.php";
     p "tests/php/scheck/misc.php";
+
     p "tests/php/scheck/lint.php";
   ] 
   in

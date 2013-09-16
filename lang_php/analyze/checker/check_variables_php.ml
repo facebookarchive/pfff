@@ -479,56 +479,7 @@ and stmt env = function
 
   | Foreach (e1, pattern, xs) ->
       expr env e1;
-
-      (* People often use only one of the iterator when
-       * they do foreach like   foreach(... as $k => $v).
-       * We want to make sure that at least one of
-       * the iterator variables is used, hence this trick to
-       * make them share the same access count reference.
-       *)
-      let shared_ref = ref 0 in
-
-      let (e1, e2opt) =
-        match pattern with
-        | Arrow(e1, e2) -> e1, Some e2
-        | e1 -> e1, None
-      in
-
-      (match e1 with
-      | Var name | Ref (Var name) ->
-          let (s, tok) = s_tok_of_ident name in
-          (* todo: if already in scope? shadowing? *)
-          (* todo: if strict then introduce new scope here *)
-          (* todo: scope_ref := S.LocalIterator; *)
-          env.vars := Map_poly.add s (tok, S.LocalIterator, shared_ref)
-            !(env.vars);
-
-      (* other kinds of lvalue are permitted too, but it's a little bit wierd
-       * and very rarely used in www
-       *)
-      | Array_get _ -> expr env pattern
-
-      (* todo: E.warning tok E.WeirdForeachNoIteratorVar *)
-      | _ ->
-          failwith ("Warning: saw unexpected `foreach` value " ^ (str_of_any (Expr2 pattern)))
-    );
-
-      (match e2opt with
-      | None -> ()
-      | Some e3 ->
-          (match e3 with
-          | Var name | Ref (Var name) ->
-              let (s, tok) = s_tok_of_ident name in
-              (* todo: scope_ref := S.LocalIterator; *)
-              env.vars := Map_poly.add s (tok, S.LocalIterator, shared_ref)
-                !(env.vars);
-              (* todo: E.warning tok E.WeirdForeachNoIteratorVar *)
-          | _ ->
-              pr2 (str_of_any (Expr2 e3));
-              raise Todo
-          )
-      );
-
+      foreach_pattern env pattern;
       stmtl env xs
 
   | Return eopt
@@ -585,6 +536,42 @@ and case env = function
 and stmtl env xs = List.iter (stmt env) xs
 and casel env xs = List.iter (case env) xs
 and catches env xs = List.iter (catch env) xs
+
+and foreach_pattern env pattern =
+
+ (* People often use only one of the iterator when
+  * they do foreach like   foreach(... as $k => $v).
+  * We want to make sure that at least one of
+  * the iterator variables is used, hence this trick to
+  * make them share the same access count reference.
+  *)
+  let shared_ref = ref 0 in
+
+  let rec aux e =
+    (* look Ast_php.foreach_pattern to see the kinds of constructs allowed *)
+    match e with
+    | Var name ->
+      let (s, tok) = s_tok_of_ident name in
+      (* todo: if already in scope? shadowing? *)
+      (* todo: if strict then introduce new scope here *)
+      (* todo: scope_ref := S.LocalIterator; *)
+      env.vars := Map_poly.add s (tok, S.LocalIterator, shared_ref) !(env.vars)
+    | Ref x -> aux x
+    | Arrow (e1, e2) -> aux e1; aux e2
+    | List xs -> List.iter aux xs
+    (* other kinds of lvalue are permitted too, but it's a little bit wierd
+     * and very rarely used in www
+     *)
+    | Array_get (e, eopt) ->
+      aux e;
+      eopt +> Common.do_option (expr env)
+    (* todo: E.warning tok E.WeirdForeachNoIteratorVar *)
+    | _ ->
+      failwith ("Warning: unexpected `foreach` value " ^ 
+                   (str_of_any (Expr2 pattern)))
+  in
+  aux pattern
+  
 
 (* ---------------------------------------------------------------------- *)
 (* Expr *)
