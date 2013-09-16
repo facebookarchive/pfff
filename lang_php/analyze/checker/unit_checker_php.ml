@@ -21,8 +21,9 @@ let unittest =
   let p path = Filename.concat Config_pfff.path path in
 
   let test_files = [
-    p "tests/php/scheck/common.php";
     p "tests/php/scheck/builtins.php";
+    p "tests/php/scheck/common.php";
+
     p "tests/php/scheck/includes.php";
     p "tests/php/scheck/variables.php";
     p "tests/php/scheck/variables_fp.php";
@@ -42,10 +43,10 @@ let unittest =
     p "tests/php/scheck/endpoint.php";
     p "tests/php/scheck/dynamic_bailout.php";
     p "tests/php/scheck/edit_distance.php";
-    p "tests/php/scheck/misc.php";
-    p "tests/php/scheck/lint.php";
     p "tests/php/scheck/format_string.php";
     p "tests/php/scheck/ternary_if.php";
+    p "tests/php/scheck/misc.php";
+    p "tests/php/scheck/lint.php";
   ] 
   in
 
