@@ -32,8 +32,10 @@ let unittest =
     p "tests/php/scheck/methods.php";
     p "tests/php/scheck/classes.php";
     p "tests/php/scheck/traits.php";
+(*
     p "tests/php/scheck/namespaces.php";
     p "tests/php/scheck/namespaces_uses.php";
+*)
     p "tests/php/scheck/cfg.php";
     p "tests/php/scheck/references.php";
     p "tests/php/scheck/xhp.php";
