@@ -387,7 +387,7 @@ class X {
     let file = Parse_php.tmp_php_file_from_string file_content in
     let ast_and_toks = Parse_php.ast_and_tokens file in
     let res = Refactoring_code_php.refactor [refactoring] ast_and_toks in
-    assert_equal "<?php\nclass X implements  B { }" res;
+    assert_equal "<?php\nclass X implements B { }" res;
   );
 ]]
 

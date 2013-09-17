@@ -173,13 +173,10 @@ let rec elts_of_any ~elt_and_info_of_tok acc toks =
       | NoTransfo -> elts_of_any ~elt_and_info_of_tok (elt::acc) t
       | Remove -> 
         elts_of_any ~elt_and_info_of_tok (Removed (PI.str_of_info info)::acc) t
-      (* could also be [Added; Removed], but because of heuristics like
-       * drop_esthet_between_removed, when people use Replace, they
-       * usually prefers this behavior.
-       * todo: it actually causes tests/php/spatch/distr_plus.spatch to
-       * have a bad spacing
-       *)
       | Replace toadd -> 
+        (* could also be Removed::Added::_, now that we have
+         * drop_useless_space(), this should not matter anymore
+         *)
         elts_of_any ~elt_and_info_of_tok 
           (Added (s_of_add toadd)::Removed (PI.str_of_info info)::acc) t
       | AddAfter toadd -> 
@@ -239,6 +236,34 @@ let drop_whole_line_if_only_removed xs =
   before_first_newline ++ 
     (xxs +> List.map (fun (elt, elts) -> elt::elts) +> List.flatten)
 
+let rec drop_removed xs =
+  xs +> Common.exclude (function
+  | Removed _ -> true
+  | _ -> false
+  )
+
+(* When removing code, it's quite common as a result to have double
+ * spacing. For instance when in 'class X implements I {' we remove
+ * the interface 'I', as a result we naively get 'class X  {'.
+ * The function below then detect those cases and remove the double spacing.
+ *
+ * We can have double space only as a result of a transformation on that line.
+ * Otherwise the spacing will have been agglomerated by the parser. So we
+ * don't risk to remove too much spaces here.
+ *)
+let rec drop_useless_space xs  =
+  match xs with
+  | [] -> []
+  | Esthet (Space s)::Esthet (Space s2)::rest ->
+    drop_useless_space ((Esthet (Space s))::rest)
+  (* see tests/php/spatch/distr_plus.spatch, just like we can have
+   * double spaces, we can also have space before comma that are 
+   * useless 
+   *)
+  | Esthet (Space s)::OrigElt ","::rest ->
+    drop_useless_space (OrigElt ","::rest)
+  | x::xs -> x::drop_useless_space xs
+
 (*****************************************************************************)
 (* Main entry point *)
 (*****************************************************************************)
@@ -268,10 +293,13 @@ let string_of_toks_using_transfo ~elt_and_info_of_tok toks =
     );
     let xs = drop_esthet_between_removed xs in
     let xs = drop_whole_line_if_only_removed xs in
+    (* must be after drop_whole_line_if_only_removed *)
+    let xs = drop_removed xs in
+    let xs = drop_useless_space xs in
     
     xs +> List.iter (function
     | OrigElt s | Added s | Esthet (Comment s | Space s) -> pp s
-    | Removed _ -> ()
+    | Removed _ -> raise Impossible (* see drop_removed *)
     | Esthet Newline -> pp "\n"
     )
   )

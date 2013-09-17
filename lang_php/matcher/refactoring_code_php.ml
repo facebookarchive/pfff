@@ -214,7 +214,6 @@ let refactor refactorings (ast, tokens) =
           V.kclass_def = (fun (k, _) def ->
             let tok = Ast.info_of_ident def.c_name in
             let str = Ast.str_of_ident def.c_name in
-            let (obrace, _, _) = def.c_body in
             if tok_pos_equal_refactor_pos tok pos_opt &&
                (match class_opt with
                | None -> true
@@ -232,10 +231,6 @@ let refactor refactorings (ast, tokens) =
                   (Hint2 classname) 
                   +> Lib_parsing_php.ii_of_any 
                   +> List.iter (fun tok -> tok.PI.transfo <- PI.Remove);
-                  (* ugly, but to force the remove_space_between_removed_tokens
-                   * so that we also remove the space before the {
-                   *)
-                  obrace.PI.transfo <- PI.Replace (PI.AddStr "{");
                   was_modifed := true;
                 | xs ->
                   let rec aux xs = 
