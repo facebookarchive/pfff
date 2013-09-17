@@ -764,6 +764,7 @@ let test () =
       )
     ++
     Unit_matcher_php.spatch_unittest ++
+    Unit_matcher_php.refactoring_unittest ++
     []
   ) in
   OUnit.run_test_tt suite +> ignore;

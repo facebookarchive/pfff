@@ -273,7 +273,7 @@ let spatch_unittest = [
 (*****************************************************************************)
 (* Generic refactorings *)
 (*****************************************************************************)
-let refactoring_unittest = 
+let refactoring_unittest = [
   "refactoring php" >::: [
     "adding return type" >:: (fun () ->
     let file_content = "function foo() { }" in
@@ -349,7 +349,27 @@ class X {
   private  $z = 1;
 }"
   );
-]
+
+  "add interface" >:: (fun () ->
+    let file_content = "class X { }" in
+    let refactoring = Refactoring_code.AddInterface (Some "X", "I"), None in
+
+    let file = Parse_php.tmp_php_file_from_string file_content in
+    let ast_and_toks = Parse_php.ast_and_tokens file in
+    let res = Refactoring_code_php.refactor [refactoring] ast_and_toks in
+    assert_equal res "<?php\nclass X implements I { }";
+
+    let file_content = "class X implements B { }" in
+    let refactoring = Refactoring_code.AddInterface (Some "X", "I"), None in
+
+    let file = Parse_php.tmp_php_file_from_string file_content in
+    let ast_and_toks = Parse_php.ast_and_tokens file in
+    let res = Refactoring_code_php.refactor [refactoring] ast_and_toks in
+    assert_equal res "<?php\nclass X implements B, I { }";
+
+  );    
+]]
+
 let unparser_unittest = [
   "add arguments" >:: (fun () ->
     let file_content = "function foo() { $x = printf(\"%s %d\", ); }" in
@@ -374,5 +394,6 @@ let unparser_unittest = [
 
 let unittest =
   "matcher_php" >::: (
-    sgrep_unittest ++ spatch_unittest ++ [refactoring_unittest] ++ unparser_unittest
+    sgrep_unittest ++ spatch_unittest ++ 
+    refactoring_unittest ++ unparser_unittest
   )

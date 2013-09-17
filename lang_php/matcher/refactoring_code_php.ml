@@ -41,7 +41,16 @@ let string_of_class_var_modifier modifiers =
   | VModifiers xs -> xs +> List.map (fun (modifier, tok) ->
       PI.str_of_info tok) +> Common.join " "
 
-
+let last_token_classes classnames =
+  match Common2.list_last classnames with
+  | Right comma ->
+    (* we do allow trailing commas in interface list? *)
+    raise Impossible
+  | Left classname ->
+    let any = Ast_php.Hint2 classname in
+    let toks = Lib_parsing_php.ii_of_any any in
+    Common2.list_last toks
+      
 (*****************************************************************************)
 (* Main entry point *)
 (*****************************************************************************)
@@ -175,7 +184,31 @@ let refactor refactorings (ast, tokens) =
                 ) -> k x
             );
           }
-
+      | R.AddInterface (class_opt, interface) ->
+        { V.default_visitor with
+          V.kclass_def = (fun (k, _) def ->
+            let tok = Ast.info_of_ident def.c_name in
+            let str = Ast.str_of_ident def.c_name in
+            let (obrace, _, _) = def.c_body in
+            if tok_pos_equal_refactor_pos tok pos_opt &&
+               (match class_opt with
+               | None -> true
+               | Some classname -> classname =$= str
+               )
+            then begin
+              match def.c_implements with
+              | None ->
+                obrace.PI.transfo <-
+                  PI.AddBefore (PI.AddStr (spf "implements %s " interface));
+                was_modifed := true;
+              | Some (tok, interfaces) ->
+                let last_elt = last_token_classes interfaces in
+                last_elt.PI.transfo <-
+                  PI.AddAfter (PI.AddStr (spf ", %s" interface));
+                was_modifed := true;
+            end
+          );
+        }
     in
     (V.mk_visitor visitor) (Program ast);
     if not !was_modifed

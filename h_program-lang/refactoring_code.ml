@@ -1,6 +1,6 @@
 (* Yoann Padioleau
  *
- * Copyright (C) 2012 Facebook
+ * Copyright (C) 2012, 2013 Facebook
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public License
@@ -24,11 +24,16 @@ open Common
 
 
 type refactoring_kind =
+  | AddInterface of string option (* specific class *) 
+                  * string (* the interface to add *)
+
   | SplitMembers
+
+  (* type related *)
   | AddReturnType of string
   | AddTypeHintParameter of string
-  | AddTypeMember of string
   | OptionizeTypeParameter
+  | AddTypeMember of string
 
 type position = { 
   file: Common.filename;

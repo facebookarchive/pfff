@@ -1,10 +1,15 @@
 
 type refactoring_kind =
+  | AddInterface of string option (* specific class *) 
+                  * string (* the interface to add *)
+
   | SplitMembers
+
+  (* type related *)
   | AddReturnType of string
   | AddTypeHintParameter of string
-  | AddTypeMember of string
   | OptionizeTypeParameter
+  | AddTypeMember of string
 
 type position = { 
   file: Common.filename;
