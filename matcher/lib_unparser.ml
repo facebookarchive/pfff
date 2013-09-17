@@ -93,6 +93,10 @@ let s_of_add = function
   | AddStr s -> s
   | AddNewlineAndIdent -> raise Todo
 
+(*****************************************************************************)
+(* AddArgsBefore helpers *)
+(*****************************************************************************)
+
 (* rh = reversed head, tl = tail *)
 let rec add_if_need_comma add_str rh tl =
   match tl with
@@ -153,6 +157,9 @@ let elts_of_add_args_before acc xs =
     let add_str = join ", " xs in
     (Added add_str)::acc
 
+(*****************************************************************************)
+(* Elts of any *)
+(*****************************************************************************)
 let rec elts_of_any ~elt_and_info_of_tok acc toks =
   match toks with
   | [] -> List.rev acc
