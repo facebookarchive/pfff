@@ -10,6 +10,7 @@ open Common
 
 open Parse_info
 module PI = Parse_info
+module R = Refactoring_code
 
 (*****************************************************************************)
 (* Purpose *)
@@ -339,6 +340,17 @@ let apply_transfo transfo xs =
   ));
   !pbs +> List.iter Common.pr2
 
+let apply_refactoring refactoring file =
+  let ast_and_toks = Parse_php.ast_and_tokens file in
+  let s = Refactoring_code_php.refactor [refactoring] ast_and_toks in
+  let tmpfile = Common.new_temp_file "trans" ".spatch" in
+  Common.write_file ~file:tmpfile s;
+  let diff = Common2.unix_diff file tmpfile in
+  diff +> List.iter pr;
+  if !apply_patch 
+  then Common.write_file ~file:file (Common.read_file tmpfile);
+  ()
+  
 (*****************************************************************************)
 (* Extra actions *)
 (*****************************************************************************)
@@ -791,6 +803,24 @@ let spatch_extra_actions () = [
   Common.mk_action_1_arg case_refactoring;
   "-remove_undefined_xhp_field", " <file>",
   Common.mk_action_1_arg read_log_undefined_xhp_field;
+  "-add_interface", " <class>:<interface> <file>",
+  Common.mk_action_2_arg (fun str file ->
+    if str =~ "\\(.*\\):\\(.*\\)"
+    then 
+      let (classname, interface) = Common.matched2 str in
+      let refactoring = R.AddInterface (Some classname, interface), None in
+      apply_refactoring refactoring file
+    else failwith "use the CLASS:INTERFACE format for -add_interface"
+  );
+  "-remove_interface", " <class>:<interface> <file>",
+  Common.mk_action_2_arg (fun str file ->
+    if str =~ "\\(.*\\):\\(.*\\)"
+    then 
+      let (classname, interface) = Common.matched2 str in
+      let refactoring = R.RemoveInterface (Some classname, interface), None in
+      apply_refactoring refactoring file;
+    else failwith "use the CLASS:INTERFACE format for -remove_interface"
+  );
 
   "-test", " run regression tests",
   Common.mk_action_0_arg test;
