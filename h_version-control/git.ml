@@ -269,8 +269,16 @@ let commits ?(extra_args="") ~basedir () =
 let grep ~basedir str =
   let cmd = (goto_dir basedir ^
                (spf "git grep --files-with-matches %s" str)) in
-  let xs = Common.cmd_to_list cmd in
-  xs
+  let (xs, status) = Common2.cmd_to_list_and_status cmd in
+  (* According to git grep man page, non-zero exit code is expected when
+   * there are no matches
+   *)
+  match xs, status with
+  | [], Unix.WEXITED 1 -> []
+  | xs, Unix.WEXITED 0 -> xs
+  | _ -> 
+    raise (CmdError (status, (spf "CMD = %s, RESULT = %s"
+                                cmd (String.concat "\n" xs))))
 
 let show ~basedir file commitid =
   let tmpfile = Common.new_temp_file "git_show" ".cat" in

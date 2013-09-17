@@ -104,6 +104,13 @@ let unittest =
            ["bar.txt"]
            xs;
 
+         let xs = 
+           Git.grep ~basedir "nothing" in
+         assert_equal
+           ~msg:"it should return an empty list when git grep found nothing"
+           []
+           xs;
+
          exec_cmds ~basedir [
            "echo new_content > bar.txt";
            "git commit -a -m'first modif' > /dev/null";
@@ -156,6 +163,13 @@ let unittest =
          assert_equal
            ~msg:"it should find files containing ba with hg grep"
            ["bar.txt"]
+           xs;
+
+         let xs = 
+           Mercurial.grep ~basedir "nothing" in
+         assert_equal
+           ~msg:"it should return an empty list when hg grep found nothing"
+           []
            xs;
 
          exec_cmds ~basedir [
