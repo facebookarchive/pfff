@@ -366,8 +366,29 @@ class X {
     let ast_and_toks = Parse_php.ast_and_tokens file in
     let res = Refactoring_code_php.refactor [refactoring] ast_and_toks in
     assert_equal res "<?php\nclass X implements B, I { }";
-
   );    
+  "remove interface" >:: (fun () ->
+    let file_content = "class X implements I { }" in
+    let refactoring = Refactoring_code.RemoveInterface (Some "X", "I"), None in
+    let file = Parse_php.tmp_php_file_from_string file_content in
+    let ast_and_toks = Parse_php.ast_and_tokens file in
+    let res = Refactoring_code_php.refactor [refactoring] ast_and_toks in
+    assert_equal "<?php\nclass X { }" res;
+
+    let file_content = "class X implements B, I { }" in
+    let refactoring = Refactoring_code.RemoveInterface (Some "X", "I"), None in
+    let file = Parse_php.tmp_php_file_from_string file_content in
+    let ast_and_toks = Parse_php.ast_and_tokens file in
+    let res = Refactoring_code_php.refactor [refactoring] ast_and_toks in
+    assert_equal "<?php\nclass X implements B { }" res;
+
+    let file_content = "class X implements I, B { }" in
+    let refactoring = Refactoring_code.RemoveInterface (Some "X", "I"), None in
+    let file = Parse_php.tmp_php_file_from_string file_content in
+    let ast_and_toks = Parse_php.ast_and_tokens file in
+    let res = Refactoring_code_php.refactor [refactoring] ast_and_toks in
+    assert_equal "<?php\nclass X implements  B { }" res;
+  );
 ]]
 
 let unparser_unittest = [

@@ -2,6 +2,7 @@
 type refactoring_kind =
   | AddInterface of string option (* specific class *) 
                   * string (* the interface to add *)
+  | RemoveInterface of string option * string
 
   | SplitMembers
 
