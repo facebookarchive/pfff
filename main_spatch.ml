@@ -16,7 +16,8 @@ module PI = Parse_info
 (*****************************************************************************)
 (* 
  * A syntactical patch. https://github.com/facebook/pfff/wiki/Spatch
- * Right now there is support only for PHP and C/C++/ObjectiveC.
+ * Right now there is support for PHP, C/C++/ObjectiveC, OCaml, Java, and 
+ * Javascript.
  * 
  * opti: git grep xxx | xargs spatch -e 's/foo()/bar()/'
  * 
@@ -591,8 +592,13 @@ let juju_refactoring spec_file =
    * that refers to the original file
    *)
   let xxs = 
-    xs +> List.map (fun x -> x.Refactoring_code.file, x)
-      +> Common.group_assoc_bykey_eff
+    xs +> List.map (fun x -> 
+      match x with
+      | (a, Some pos) -> 
+        pos.Refactoring_code.file, x
+      | _ -> failwith "no file position"
+    )
+    +> Common.group_assoc_bykey_eff
   in
   xxs +> List.iter (fun (file, refactorings) ->
     let (ast2, _stat) = Parse_php.parse file in

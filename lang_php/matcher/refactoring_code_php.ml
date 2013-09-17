@@ -28,10 +28,13 @@ module R = Refactoring_code
 (* Helpers *)
 (*****************************************************************************)
 
-let tok_pos_equal_refactor_pos tok refactoring =
-  PI.line_of_info tok = refactoring.R.line &&
-  PI.col_of_info tok = refactoring.R.col
-
+let tok_pos_equal_refactor_pos tok refactoring_opt =
+  match refactoring_opt with
+  | None -> true
+  | Some refactoring ->
+    PI.line_of_info tok = refactoring.R.line &&
+    PI.col_of_info tok = refactoring.R.col
+  
 let string_of_class_var_modifier modifiers =
   match modifiers with
   | NoModifiers _ -> "var"
@@ -44,17 +47,17 @@ let string_of_class_var_modifier modifiers =
 (*****************************************************************************)
 
 let refactor refactorings (ast, tokens) =
-  refactorings +> List.iter (fun r ->
+  refactorings +> List.iter (fun (kind, pos_opt) ->
     let was_modifed = ref false in
     let visitor =
-      match r.R.action with
+      match kind with
       | R.AddReturnType str ->
           { V.default_visitor with
             V.kfunc_def = (fun (k, _) def ->
               (match def.f_type with
               | FunctionRegular | MethodRegular | MethodAbstract ->
                   let tok = Ast.info_of_ident def.f_name in
-                  if tok_pos_equal_refactor_pos tok r then begin
+                  if tok_pos_equal_refactor_pos tok pos_opt then begin
                     let tok_close_paren =
                       let (a,b,c) = def.f_params in c
                     in
@@ -75,7 +78,7 @@ let refactor refactorings (ast, tokens) =
           { V.default_visitor with
             V.kparameter = (fun (k, _) p ->
               let tok = Ast.info_of_dname p.p_name in
-              if tok_pos_equal_refactor_pos tok r then begin
+              if tok_pos_equal_refactor_pos tok pos_opt then begin
                 tok.PI.transfo <-
                   PI.AddBefore (PI.AddStr (str ^ " "));
                 was_modifed := true;
@@ -97,7 +100,7 @@ let refactor refactorings (ast, tokens) =
                     | HintTuple (t, _, _) -> t
                     | HintCallback (lparen,_,_) -> lparen
                   in
-                  if tok_pos_equal_refactor_pos tok r then begin
+                  if tok_pos_equal_refactor_pos tok pos_opt then begin
                     tok.PI.transfo <-
                       PI.AddBefore (PI.AddStr ("?"));
                     was_modifed := true;
@@ -115,7 +118,7 @@ let refactor refactorings (ast, tokens) =
                   (match xs with
                   | [Left (dname, affect_opt)] ->
                       let tok = Ast.info_of_dname dname in
-                      if tok_pos_equal_refactor_pos tok r then begin
+                      if tok_pos_equal_refactor_pos tok pos_opt then begin
                         tok.PI.transfo <-
                           PI.AddBefore (PI.AddStr (str ^ " "));
                         was_modifed := true;
@@ -124,7 +127,7 @@ let refactor refactorings (ast, tokens) =
                   | xs ->
                       xs +> Ast.uncomma +> List.iter (fun (dname, _) ->
                       let tok = Ast.info_of_dname dname in
-                      if tok_pos_equal_refactor_pos tok r then begin
+                      if tok_pos_equal_refactor_pos tok pos_opt then begin
                         failwith "Do a SPLIT_MEMBERS refactoring first"
                       end;
                       );
@@ -143,7 +146,7 @@ let refactor refactorings (ast, tokens) =
                   (* $x *)
                   | Left (dname, affect_opt)::rest ->
                       let tok = Ast.info_of_dname dname in
-                      if tok_pos_equal_refactor_pos tok r then begin
+                      if tok_pos_equal_refactor_pos tok pos_opt then begin
 
                         let rec aux rest =
                           match rest with
@@ -177,7 +180,7 @@ let refactor refactorings (ast, tokens) =
     (V.mk_visitor visitor) (Program ast);
     if not !was_modifed
     then begin
-      pr2_gen r;
+      pr2_gen (kind, pos_opt);
       failwith ("refactoring didn't apply");
     end
   );

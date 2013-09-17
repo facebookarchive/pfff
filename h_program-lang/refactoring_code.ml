@@ -22,19 +22,21 @@ open Common
 (* Types *)
 (*****************************************************************************)
 
-type refactoring = { 
+
+type refactoring_kind =
+  | SplitMembers
+  | AddReturnType of string
+  | AddTypeHintParameter of string
+  | AddTypeMember of string
+  | OptionizeTypeParameter
+
+type position = { 
   file: Common.filename;
   line: int;
   col: int;
-  action: refactoring_kind;
 }
-  and refactoring_kind =
-    | SplitMembers
-    | AddReturnType of string
-    | AddTypeHintParameter of string
-    (* this requires to have done a SplitMembers first *)
-    | AddTypeMember of string
-    | OptionizeTypeParameter
+
+type refactoring = refactoring_kind * position option
 
 (*****************************************************************************)
 (* IO *)
@@ -50,18 +52,17 @@ let load file =
           (List.mem action [
             "RETURN";"PARAM";"MEMBER"; "MAKE_OPTION_TYPE"; "SPLIT_MEMBERS";
           ]) ->
+      (match action with
+      | "RETURN" -> AddReturnType value
+      | "PARAM" -> AddTypeHintParameter value
+      | "MEMBER" -> AddTypeMember value
+      | "MAKE_OPTION_TYPE" -> OptionizeTypeParameter
+      | "SPLIT_MEMBERS" -> SplitMembers
+      | _ -> raise Impossible
+      ), Some 
         { file;
           line = int_of_string line;
           col = int_of_string col;
-          action =
-            (match action with
-            | "RETURN" -> AddReturnType value
-            | "PARAM" -> AddTypeHintParameter value
-            | "MEMBER" -> AddTypeMember value
-            | "MAKE_OPTION_TYPE" -> OptionizeTypeParameter
-            | "SPLIT_MEMBERS" -> SplitMembers
-            | _ -> raise Impossible
-            )
         }
 
     | _ -> failwith ("wrong format for refactoring action: " ^ s)
