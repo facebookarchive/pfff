@@ -75,7 +75,7 @@ let rects_of_project_and_path (project, path) =
   (* less: generate readable path directly *)
   let treemap = Treemap_pl.code_treemap ~filter_file:filter paths in
   let algo = Treemap.Ordered Treemap.PivotByMiddle in
-  let rects = Treemap.render_treemap_algo 
+  let rects = Treemap.render_treemap 
     ~algo ~big_borders:false
     treemap in
 
