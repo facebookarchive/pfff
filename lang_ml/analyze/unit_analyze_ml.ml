@@ -1,8 +1,7 @@
 open Common
+open OUnit
 
 open Ast_ml
-module Db = Database_light_ml
-open OUnit
 
 (*****************************************************************************)
 (* Prelude *)
@@ -67,7 +66,7 @@ let unittest =
 (*****************************************************************************)
   "building light database" >:: (fun () ->
     let data_dir = Config_pfff.path ^ "/tests/ml/db" in
-    let _db = Db.compute_database ~verbose [data_dir] in
+    let _db = Database_light_ml.compute_database ~verbose [data_dir] in
     ()
   );
 
