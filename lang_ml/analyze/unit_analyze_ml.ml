@@ -101,8 +101,36 @@ let c = 1   (* line 3 *)
        ["3"]  (prolog_query ~files "at(('Foo','c'), _, X), writeln(X)");
    );
 
- ])
+ ]);
 
+(*****************************************************************************)
+(* Coverage *)
+(*****************************************************************************)
+   "coverage_ml" >::: ([
+     
+     "basename to readable" >:: (fun () ->
+       let dummy_coverage = { Coverage_code.
+                              covered_sites = []; all_sites = []
+                            }
+       in
+       let cover = [
+         ("unit_analyze_ml.ml", dummy_coverage);
+         ("coverage_ml.ml", dummy_coverage);
+       ]
+       in
+       let root = Filename.concat Config_pfff.path "lang_ml" in
+       let cover' = 
+         Coverage_ml.basename_coverage_to_readable_coverage cover root
+         +> List.map fst
+       in
+       assert_equal
+         ~msg:"it should map basename'd files to readable paths"
+         ["analyze/unit_analyze_ml.ml";
+          "analyze/coverage_ml.ml";
+         ]
+         cover'
+     );
+   ]);
 (*****************************************************************************)
 (* Postlude *)
 (*****************************************************************************)
