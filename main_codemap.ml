@@ -419,13 +419,14 @@ let options () = [
     " <int> (1 = small, 2 = big)";
     "-ss" , Arg.Set_int screen_size,
     " alias for -screen_size";
+    "-no_legend" , Arg.Clear legend,
+    " ";
+
     "-ft", Arg.Set_float Flag.threshold_draw_content_font_size_real,
     " ";
     "-boost_lbl" , Arg.Set Flag.boost_label_size,
     " ";
     "-no_boost_lbl" , Arg.Clear Flag.boost_label_size,
-    " ";
-    "-no_legend" , Arg.Clear legend,
     " ";
 
     "-symlinks", Arg.Unit (fun () -> 
@@ -435,14 +436,14 @@ let options () = [
       Treemap.follow_symlinks := false;
     ), " ";
 
-    "-with_info", Arg.String (fun s -> db_file := Some s),
-    " <db_light_file>";
     "-with_graph", Arg.String (fun s -> graph_file := Some s),
     " <graph_file>";
+    "-with_db", Arg.String (fun s -> db_file := Some s),
+    " <db_file>";
     "-with_layer", Arg.String (fun s -> layer_file := Some s),
     " <layer_file>";
     "-with_layers", Arg.String (fun s -> layer_dir := Some s),
-    " <layer_dir>";
+    " <dir_with_layers>";
 
     "-filter", Arg.String (fun s -> filter := List.assoc s filters;), 
      spf " filter certain files (available = %s)" 
