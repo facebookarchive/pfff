@@ -351,20 +351,21 @@ let draw_content2 ~cr ~layout ~context tr =
       glyphs.(line_0_indexed) +> List.iter (fun glyph ->
         Cairo.set_font_size cr glyph.M.font_size;
         let (r,g,b) = Color.rgbf_of_string glyph.color in
+
         let alpha = 1. in
-        (* old:
-         *   if CairoH.is_old_cairo () then
-         *     match () with
-         *     | _ when final_font_size_real < 1. -> 0.2
-         *     | _ when final_font_size_real < 3. -> 0.4
-         *     | _ when final_font_size_real < 5. -> 0.9
-         *         
-         *     | _ when final_font_size_real < 8. 
-         *           -> 1. (* TODO - alpha_adjust, do that only when not in
-         *                    fully zoomed mode *)
-         *     | _ -> 1.
-         *   else 1.
+        (*
+         * if CairoH.is_old_cairo () then
+         *   match () with
+         *   | _ when glyph.M.font_size < 1. -> 0.2
+         *   | _ when glyph.M.font_size  < 3. -> 0.4
+         *   | _ when glyph.M.font_size  < 5. -> 0.9
+         *   | _ when glyph.M.font_size  < 8. 
+         *       -> 1. (* TODO - alpha_adjust, do that only when not in
+         *                fully zoomed mode *)
+         *   | _ -> 1.
+         * else 1.
          *)
+         
         Cairo.set_source_rgba cr r g b alpha;
         CairoH.show_text cr glyph.M.str;
       );
