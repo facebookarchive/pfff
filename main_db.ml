@@ -152,6 +152,19 @@ let main_action xs =
 (*****************************************************************************)
 
 (*---------------------------------------------------------------------------*)
+(* Build db from graph_code *)
+(*---------------------------------------------------------------------------*)
+let db_of_graph_code file =
+  let g = Graph_code.load file in
+  let db = Graph_code_database.db_of_graph_code g in
+  let (d,b,e) = Common2.dbe_of_filename file in
+  let target = Common2.filename_of_dbe (d,Database_code.default_db_name, "json") in
+  let res = Common2.y_or_no (spf "writing data in %s" target) in
+  if not res 
+  then failwith "ok I stop";
+  Database_code.save_database db target
+
+(*---------------------------------------------------------------------------*)
 (* Pleac *)
 (*---------------------------------------------------------------------------*)
 
@@ -227,6 +240,8 @@ let gen_pleac pleac_src =
 (* the command line flags *)
 (*---------------------------------------------------------------------------*)
 let extra_actions () = [
+  "-db_of_graph_code", " <graph_file>",
+  Common.mk_action_1_arg (db_of_graph_code);
   "-gen_pleac", " <pleac_src>; works with -lang",
   Common.mk_action_1_arg (gen_pleac);
 ]
