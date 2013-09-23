@@ -507,8 +507,12 @@ let rec extract_defs_uses
 and binary_annots env = function
   | Implementation s -> 
       structure env s
-  (* todo? for core lib we actually may prefer to process the .mli *)
-  | Interface _
+  (* sometimes we have just the .cmti, no .cmt, so we need to process those,
+   * e.g. asttypes.cmti in ocaml source 
+   * todo? also for core lib we actually may prefer to process the .mli?
+   *)
+  | Interface s ->
+     signature env s
 
   | Packed _ 
   | Partial_implementation _ | Partial_interface _ ->
@@ -521,10 +525,12 @@ and structure env
 and structure_item env 
  { str_desc = v_str_desc; str_loc = loc; str_env = _ } =
   structure_item_desc env loc v_str_desc
+
 and  pattern env
   { pat_desc = v_pat_desc; pat_type = v_pat_type; 
     pat_loc = v_pat_loc; pat_extra = _v_pat_extra; pat_env = v_pat_env } =
   pattern_desc v_pat_type env v_pat_desc
+
 and expression env
     { exp_desc = v_exp_desc; exp_loc = v_exp_loc;  exp_extra = __v_exp_extra;
       exp_type = v_exp_type; exp_env = v_exp_env } =
@@ -534,6 +540,13 @@ and module_expr env
       mod_type = v_mod_type; mod_env = v_mod_env  } =
   module_expr_desc env v_mod_desc;
   Types.module_type env v_mod_type
+
+and signature env
+  { sig_items = v_sig_items; sig_type = _v_sig_type; sig_final_env = _env } =
+  List.iter (sig_item env) v_sig_items
+and sig_item env
+    { sig_desc = v_sig_desc; sig_env = _; sig_loc = loc } =
+  sig_item_desc env loc v_sig_desc
 
 (* ---------------------------------------------------------------------- *)
 (* Structure *)
@@ -705,6 +718,13 @@ and exception_declaration env
   let _ = List.iter (core_type env) v_exn_params in
   let _ = Types.exception_declaration env v_exn_exn in
   ()
+
+(* ---------------------------------------------------------------------- *)
+(* Signature *)
+(* ---------------------------------------------------------------------- *)
+and sig_item_desc env loc = function
+  | Tsig_type xs -> structure_item_desc env loc (Tstr_type xs)
+  | _ -> pr2_once "TODO: sig_item_desc"
 
 (* ---------------------------------------------------------------------- *)
 (* Pattern *)
