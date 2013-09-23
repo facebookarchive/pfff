@@ -46,6 +46,8 @@ open Typedtree
  *  - typerex
  *  - ocamlspotter
  *  - oug/odb http://odb-serv.forge.ocamlcore.org/
+ *  - merlin
+ *  - whole program analysis done by ocamlpro recently?
  * 
  * todo: nested let module X = Y in, ocaml 4.00 feature
  *)
@@ -358,14 +360,18 @@ let add_use_edge_lid_bis env lid texpr =
           (* pfff specific *)
           if name +> List.exists (function
           (* todo: need better n_of_s, or avoid n_of_s and have n_of_path *)
-          | "ArithFloatInfix" | "|"
+          | "ArithFloatInfix" | "|" -> true
           (* todo: need handle functor *)
+          | "Set" | "Map"
           | "SMap" | "IMap" | "ISet" | "SSet" 
           | "StringSetOrig" | "IntMap" | "IntIntMap" | "StringSet" | "StrMap"
           | "SetTestPath" | "Elt_Set"  | "AMap"
           | "Build" | "PMap"
           (* in dataflow_php.ml *)
           | "VarMap" | "VarSet" | "NodeiSet"
+              -> true
+          | s when s =~ ".*Set" -> true
+          | s when s =~ ".*Map" -> true
           (* todo: need handle argument to functor *)
           | "MODEL" | "column_list"
           | "Taint"  | "MATCH" | "X" | "PHP_VS_PHP" | "Interp"
@@ -374,6 +380,7 @@ let add_use_edge_lid_bis env lid texpr =
           (* todo: misc *)
           | "LIST" | "M_01_01"
               -> true
+
           | _ -> false
           ) then ()
           else pr2 (spf "%s IN %s" (Common.dump node) env.file)
