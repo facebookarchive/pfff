@@ -50,9 +50,21 @@ let db_of_graph_code root g =
       ->
       let nodeinfo = G.nodeinfo node g in
       let pos = nodeinfo.G.pos in
+      let file = pos.Parse_info.file in
 
+      (* select users that are outside! that are not in the same file *)
       let pred = G.pred node G.Use g in
-      let nb_users = List.length pred in
+      let extern = pred +> List.filter (fun n ->
+        try
+          let nodeinfo = G.nodeinfo n g in
+          let pos = nodeinfo.G.pos in
+          let file2 = pos.Parse_info.file in
+          file <> file2
+        with
+          Not_found -> false
+      ) 
+      in
+      let nb_users = List.length extern in
 
       let xs = Common.split "\\." s in
       let e = { Database_code.
