@@ -48,6 +48,10 @@ type entity_id = int
 
 type entity = {
   e_kind: entity_kind;
+  (* needs to be a shortname, e.g. "map", not "List.map", otherwise the
+   * highlighter (which uses only a lexer/parser) will not enlarge the
+   * corresponding token in the file.
+   *)
   e_name: string;
   e_fullname: string; (* can be empty *)
   e_file: Common.filename;
