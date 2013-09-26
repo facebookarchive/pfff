@@ -14,5 +14,6 @@ val draw_treemap_rectangle_content_maybe:
 (*e: text_with_user_pos sig *)
 
 val draw_magnify_line:
+  ?honor_color:bool ->
   Cairo.t -> Model2.line -> Model2.microlevel -> unit
 (*e: draw_microlevel.mli *)

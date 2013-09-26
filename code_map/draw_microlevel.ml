@@ -146,22 +146,26 @@ let point_to_line pt r layout =
 let final_font_size_of_categ ~font_size ~font_size_real categ = 
 
   let multiplier = Style.size_font_multiplier_of_categ ~font_size_real categ in
-  (* as we zoom in, we don't want to be as big, and as
-   * we zoom out we want to be bigger
+  (* as we zoom in, we don't want to be as big, and as we zoom out we want
+   * to be bigger
    *)
-  let size_font_multiplier_multiplier = 
+  let multiplier = 
      (*- 0.2 * font_size_real + 2. *)
     match font_size_real with
-    | n when n < 3. -> 2.
-    | n when n < 8. -> 1.5
-    | n when n < 10. -> 1.
-    | _ -> 0.5
+    | n when n < 3. -> 2.0 * multiplier
+    | n when n < 8. -> 0.8 * multiplier
+    | n when n < 10. -> 0.7 * multiplier
+    | _ -> 0.5 * multiplier
   in
+(*
   Draw_common.final_font_size_when_multiplier 
     ~multiplier
-    ~size_font_multiplier_multiplier
+    ~size_font_adjuster
     ~font_size
     ~font_size_real
+*)
+  Common2.borne ~min:font_size ~max:(font_size * 30.) (font_size * multiplier)
+
 (*e: final_font_size_of_categ *)
 
 let color_of_categ categ =
@@ -500,7 +504,7 @@ let draw_treemap_rectangle_content_maybe ~cr ~clipping ~context rect =
 (*****************************************************************************)
 
 (* alt: digital zoom? good enough? need rendering at better resolution? *)
-let draw_magnify_line cr line microlevel =
+let draw_magnify_line ?(honor_color=true) cr line microlevel =
   match microlevel.content with
   | None -> ()
   | Some glyphs ->
@@ -512,10 +516,25 @@ let draw_magnify_line cr line microlevel =
     Cairo.move_to cr x y;
     
     let (Line iline) = line in
-    glyphs.(iline) +> List.iter (fun glyph ->
-      let font_size = glyph.M.font_size * 3. in
+    glyphs.(iline) 
+    +> (fun xs ->
+      match xs with
+      | [] -> []
+      | x::xs ->
+        if x.M.str =~ "[ \t]+" then xs
+        else x::xs
+    )
+    +> List.iter (fun glyph ->
+      (* let font_size = glyph.M.font_size * 3. in *)
+      let font_size_real = 15. in
+      let font_size = CairoH.device_to_user_size cr font_size_real in
       Cairo.set_font_size cr font_size;
-      let (r,g,b) = Color.rgbf_of_string glyph.color in
+      let color = 
+        if honor_color 
+        then glyph.color
+        else "wheat"
+      in
+      let (r,g,b) = Color.rgbf_of_string color in
       let alpha = 1. in
       Cairo.set_source_rgba cr r g b alpha;
       CairoH.show_text cr glyph.M.str;
