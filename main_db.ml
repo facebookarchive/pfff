@@ -159,7 +159,11 @@ let db_of_graph_code file =
   let root = Filename.dirname file in
   let db = Graph_code_database.db_of_graph_code root g in
   let (d,b,e) = Common2.dbe_of_filename file in
-  let target = Common2.filename_of_dbe (d,Database_code.default_db_name, "json") in
+  let target = 
+    (* Common2.filename_of_dbe (d,Database_code.default_db_name, "json")  *)
+    Filename.concat d (Database_code.default_db_name)
+  in
+  
   let res = Common2.y_or_no (spf "writing data in %s" target) in
   if not res 
   then failwith "ok I stop";

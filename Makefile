@@ -549,14 +549,13 @@ graph:
 prolog:
 	./codequery.opt -lang cmt -build .
 	mv facts.pl facts_pl
-
 db:
-	./pfff_db -verbose  -lang ml .
+	./pfff_db.opt -db_of_graph_code graph_code.marshall
 layers:
-	./pfff_db_heavy -gen_age_layer /home/pad/local/pfff-for-layers \
-          layer_age.marshall
-	./pfff_db_heavy -gen_age_layer /home/pad/local/pfff-for-layers \
-          layer_age.json
+	./codegraph.opt -gen_bottomup_layer graph_code.marshall layer_graph_code.json
+#./pfff_db_heavy -gen_age_layer /home/pad/local/pfff-for-layers layer_age.marshall
+#./pfff_db_heavy -gen_age_layer /home/pad/local/pfff-for-layers layer_age.json
+
 visual:
 	./codemap -no_legend -profile -ss 2 -filter pfff .
 
