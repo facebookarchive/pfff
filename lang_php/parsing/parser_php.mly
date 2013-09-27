@@ -567,6 +567,17 @@ lexical_vars:
      | Left (a,b) -> Left (LexicalVar (a,b)))), $4)) 
    }
 
+non_empty_lexical_var_list:
+ | non_empty_lexical_var_list_bis { $1 }
+ /*(* php-facebook-ext: trailing comma *)*/
+ | non_empty_lexical_var_list_bis TCOMMA { $1 ++ [Right $2] }
+
+non_empty_lexical_var_list_bis:
+ | lexical_var                         
+     { [Left $1] }
+ | non_empty_lexical_var_list_bis TCOMMA lexical_var  
+     { $1 ++ [Right $2; Left $3] }
+
 lexical_var:
  |      T_VARIABLE  { (None, DName $1) }
  | TAND T_VARIABLE  { (Some $1, DName $2) }
@@ -861,7 +872,7 @@ type_php:
 type_php_or_dots_list:
  | /*(*empty*)*/                     { [] }
  | non_empty_type_php_or_dots_list   { $1 }
- /*(* php-facebook-ext: *)*/
+ /*(* php-facebook-ext: trailing comma *)*/
  | non_empty_type_php_or_dots_list TCOMMA { $1 ++ [Right3 $2] }
 
 type_php_or_dots:
@@ -1515,10 +1526,6 @@ class_variable_declaration:
  /*(*e: repetitive class_variable_declaration with comma *)*/
 
 
-non_empty_lexical_var_list:
- | lexical_var                          { [Left $1] }
- | non_empty_lexical_var_list TCOMMA lexical_var  { $1 ++ [Right $2; Left $3] }
-
 non_empty_parameter_list:
  | parameter_or_dots                                  { [$1] }
  | non_empty_parameter_list TCOMMA parameter_or_dots  { $1 ++ [Right3 $2; $3] }
@@ -1569,7 +1576,7 @@ ctor_modifier_opt:
 function_call_argument_list:
  | /*(*empty*)*/                              { [] }
  | non_empty_function_call_argument_list      { $1 }
- /*(* php-facebook-ext: *)*/
+ /*(* php-facebook-ext: trailing comma *)*/
  | non_empty_function_call_argument_list TCOMMA  { $1 ++ [Right $2] }
 
 non_empty_function_call_argument_list:

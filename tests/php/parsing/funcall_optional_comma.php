@@ -1,9 +1,11 @@
 <?php
 
-foo(1,
-    2,
-    3,
-   );
+function test_optional_comma_call() {
+  foo(1,
+      2,
+      3,
+     );
+}
 
 
 
