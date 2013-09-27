@@ -2401,6 +2401,7 @@ and m_hint_type a b =
   | A.HintTuple v1, B.HintTuple v2 ->
     (m_paren (m_comma_list m_hint_type)) v1 v2 >>= (fun (v1, v2) ->
       return (A.HintTuple v1, B.HintTuple v2))
+
   | A.HintCallback (lp1, (tok1, args1, ret1), rp1),
     B.HintCallback (lp2, (tok2, args2, ret2), rp2) ->
     (m_tok lp1 lp2) >>= (fun (lp1, lp2) ->
@@ -2410,17 +2411,33 @@ and m_hint_type a b =
             return (A.HintCallback (lp1, (tok1, args1, ret1), rp1),
                     B.HintCallback (lp2, (tok2, args2, ret2), rp2))
            ))))
+  | A.HintShape(a1, a2), B.HintShape(b1, b2) ->
+    m_tok a1 b1 >>= (fun (a1, b1) ->
+    m_paren (m_comma_list m_shape_field) a2 b2 >>= (fun (a2, b2) ->
+      return (A.HintShape(a1, a2),
+              B.HintShape(b1, b2)
+      )))
+
+
   | A.Hint _, _
   | A.HintArray _, _
   | A.HintQuestion _, _
   | A.HintTuple _, _
   | A.HintCallback _, _
+  | A.HintShape _, _
    -> fail ()
 and m_hint_type_ret (a1, a2) (b1, b2) =
   m_tok a1 b1 >>= (fun (a1, b1) ->
   m_hint_type a2 b2 >>= (fun (a2, b2) ->
     return ((a1, a2), (b1, b2))
   ))
+
+and m_shape_field (a1, a2, a3) (b1, b2, b3) =
+  m_wrap m_string a1 b1 >>= (fun (a1, b1) ->
+  m_tok a2 b2 >>= (fun (a2, b2) ->
+  m_hint_type a3 b3 >>= (fun (a3, b3) ->
+    return ((a1, a2, a3), (b1, b2, b3))
+  )))
 
 (* ------------------------------------------------------------------------- *)
 (* Class definition *)

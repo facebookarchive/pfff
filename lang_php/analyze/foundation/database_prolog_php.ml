@@ -92,6 +92,7 @@ let rec string_of_hint_type h =
           in
           "(" ^ (String.concat ", " elts) ^ ")"
       | HintCallback _ -> "callback"
+      | HintShape _ -> "shape"
       )
   | None -> ""
 

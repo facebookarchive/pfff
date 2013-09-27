@@ -822,6 +822,18 @@ and v_hint_type x =
              in ())
           v1
       in ()
+  | HintShape ((v1, v2)) ->
+      let v1 = v_tok v1
+      and v2 =
+        v_paren
+          (v_comma_list
+             (fun (v1, v2, v3) ->
+                let v1 = v_wrap v_string v1
+                and v2 = v_tok v2
+                and v3 = v_hint_type v3
+                in ()))
+          v2
+      in ()
   in
   vin.khint_type (k, all_functions) x
 

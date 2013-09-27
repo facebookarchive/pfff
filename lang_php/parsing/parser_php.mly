@@ -827,15 +827,21 @@ trait_alias_rule_method:
 /*(*1 Type definitions *)*/
 /*(*************************************************************************)*/
 type_declaration:
- | T_TYPE    ident type_params_opt TEQ type_php TSEMICOLON 
+ | T_TYPE    ident type_params_opt TEQ type_php_or_shape TSEMICOLON 
      { { t_tok = $1; t_name = Name $2; t_tparams = $3; t_tokeq = $4;
          t_kind = Alias $5; t_sc = $6; } 
      }
- | T_NEWTYPE ident type_params_opt TEQ type_php TSEMICOLON 
+ | T_NEWTYPE ident type_params_opt TEQ type_php_or_shape TSEMICOLON 
      { { t_tok = $1; t_name = Name $2; t_tparams = $3; t_tokeq = $4;
          t_kind = Newtype $5; t_sc = $6; } 
      }
 
+type_php_or_shape:
+ | type_php { $1 }
+ | T_SHAPE TOPAR shape_field_list TCPAR { HintShape ($1, ($2, $3, $4)) }
+
+shape_field: T_CONSTANT_ENCAPSED_STRING T_DOUBLE_ARROW type_php { $1, $2, $3 }
+ 
 /*(*************************************************************************)*/
 /*(*1 Generics parameters *)*/
 /*(*************************************************************************)*/
@@ -1589,6 +1595,15 @@ non_empty_function_call_argument_list:
 assignment_list:
  | assignment_list_element                        { [Left $1] }
  | assignment_list TCOMMA assignment_list_element { $1 ++ [Right $2; Left $3] }
+
+shape_field_list:
+ | /*(*empty*)*/ { [] }
+ | non_empty_shape_field_list { $1 }
+ | non_empty_shape_field_list TCOMMA { $1 ++ [Right $2] }
+
+non_empty_shape_field_list:
+ | shape_field   { [Left $1] }
+ | non_empty_shape_field_list TCOMMA shape_field  { $1 ++ [Right $2; Left $3] }
 
 non_empty_array_pair_list_rev:
  | array_pair { [Left $1] }

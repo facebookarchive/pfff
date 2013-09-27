@@ -147,6 +147,8 @@ type hint_type =
       * (hint_type comma_list_dots paren) (* params *)
       * (tok * hint_type) option                  (* return type *)
      ) paren
+ | HintShape of tok (* "shape" *) * 
+                (string wrap * tok (* '=>' *) * hint_type) comma_list paren
 
  and type_args = hint_type comma_list single_angle
 

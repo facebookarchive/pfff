@@ -108,6 +108,7 @@ let refactor refactorings (ast, tokens) =
                     | HintQuestion (tok, t) -> tok
                     | HintTuple (t, _, _) -> t
                     | HintCallback (lparen,_,_) -> lparen
+                    | HintShape (tok, _) -> tok
                   in
                   if tok_pos_equal_refactor_pos tok pos_opt then begin
                     tok.PI.transfo <-

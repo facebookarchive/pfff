@@ -188,7 +188,7 @@ let highlight_funcall_simple ~tag ~hentities f args info =
   );
   ()
 
-
+(* todo? move in khint_type? *)
 let rec handle_typehint tag x = match x with
   | Some th -> (match th with
     (* TODO: emit info for type args *)
@@ -222,6 +222,9 @@ let rec handle_typehint tag x = match x with
           handle_typehint tag (Some ret);
         );
         tag rp (TypeMisc)
+    | HintShape (tok, xs) ->
+      (* todo: colorize as record the keys? *)
+      ()
   )
   | None -> ()
 

@@ -601,6 +601,9 @@ and hint_type env = function
         (unbrace v1)
     in
     A.HintCallback (args, ret)
+  | HintShape _ ->
+    failwith "no support shape"
+
 
 and class_name_reference env a = expr env a
 
