@@ -384,8 +384,10 @@ foreach_variable:
  | TAND expr  { Some $1, $2 }
 
 foreach_pattern: 
-  | foreach_variable                                 { ForeachVar $1 }
-  | foreach_variable T_DOUBLE_ARROW foreach_variable { ForeachArrow($1,$2,$3) }
+  | foreach_variable                                 
+      { ForeachVar $1 }
+  | foreach_variable T_DOUBLE_ARROW foreach_pattern 
+      { ForeachArrow(ForeachVar $1,$2,$3) }
   | T_LIST TOPAR assignment_list TCPAR
      { ForeachList($1,($2,$3,$4)) }
 

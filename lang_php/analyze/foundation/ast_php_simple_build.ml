@@ -756,7 +756,7 @@ and foreach_pattern env pat =
   match pat with
   | ForeachVar v -> foreach_variable env v
   | ForeachArrow (v1, _, v2) ->
-    A.Arrow(foreach_variable env v1, foreach_variable env v2)
+    A.Arrow(foreach_pattern env v1, foreach_pattern env v2)
   | ForeachList (_, (_, xs, _)) ->
     let xs = comma_list xs in
     let xs = List.fold_right (list_assign env) xs [] in

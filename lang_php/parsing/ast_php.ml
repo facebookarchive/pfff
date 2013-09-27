@@ -481,7 +481,7 @@ and stmt =
     and for_expr = expr comma_list (* can be empty *)
     and foreach_pattern =
      | ForeachVar of foreach_variable
-     | ForeachArrow of foreach_variable * tok * foreach_variable
+     | ForeachArrow of foreach_pattern * tok * foreach_pattern
      | ForeachList of tok (* list *)  * list_assign comma_list paren
      and foreach_variable = is_ref * lvalue
     and catch =

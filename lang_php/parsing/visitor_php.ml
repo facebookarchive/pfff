@@ -681,9 +681,9 @@ and v_foreach_pattern =
   function
   | ForeachVar v1 -> let v1 = v_foreach_variable v1 in ()
   | ForeachArrow ((v1, v2, v3)) ->
-      let v1 = v_foreach_variable v1
+      let v1 = v_foreach_pattern v1
       and v2 = v_tok v2
-      and v3 = v_foreach_variable v3
+      and v3 = v_foreach_pattern v3
       in ()
   | ForeachList ((v1, v2)) ->
       let v1 = v_tok v1
