@@ -273,13 +273,12 @@ and vof_pattern_desc =
   | Tpat_tuple v1 ->
       let v1 = Ocaml.vof_list vof_pattern v1
       in Ocaml.VSum (("Tpat_tuple", [ v1 ]))
-  | Tpat_construct ((v1, v2, v3, v4, v5)) ->
-      let v1 = Path.vof_t v1
-      and v2 = vof_loc Longident.vof_t v2
-      and v3 = vof_constructor_description v3
-      and v4 = Ocaml.vof_list vof_pattern v4
-      and v5 = Ocaml.vof_bool v5
-      in Ocaml.VSum (("Tpat_construct", [ v1; v2; v3; v4; v5 ]))
+  | Tpat_construct ((v1, v2, v3, v4)) ->
+      let v1 = vof_loc Longident.vof_t v1
+      and v2 = vof_constructor_description v2
+      and v3 = Ocaml.vof_list vof_pattern v3
+      and v4 = Ocaml.vof_bool v4
+      in Ocaml.VSum (("Tpat_construct", [ v1; v2; v3; v4 ]))
   | Tpat_variant ((v1, v2, v3)) ->
       let v1 = vof_label v1
       and v2 = Ocaml.vof_option vof_pattern v2
@@ -288,12 +287,11 @@ and vof_pattern_desc =
   | Tpat_record ((v1, v2)) ->
       let v1 =
         Ocaml.vof_list
-          (fun (v1, v2, v3, v4) ->
-             let v1 = Path.vof_t v1
-             and v2 = vof_loc Longident.vof_t v2
-             and v3 = vof_label_description v3
-             and v4 = vof_pattern v4
-             in Ocaml.VTuple [ v1; v2; v3; v4 ])
+          (fun (v1, v2, v3) ->
+             let v1 = vof_loc Longident.vof_t v1
+             and v2 = vof_label_description v2
+             and v3 = vof_pattern v3
+             in Ocaml.VTuple [ v1; v2; v3 ])
           v1
       and v2 = vof_closed_flag v2
       in Ocaml.VSum (("Tpat_record", [ v1; v2 ]))
@@ -346,11 +344,12 @@ and vof_exp_extra =
       let v1 = Ocaml.vof_option vof_core_type v1
       and v2 = Ocaml.vof_option vof_core_type v2
       in Ocaml.VSum (("Texp_constraint", [ v1; v2 ]))
-  | Texp_open ((v1, v2, v3)) ->
-      let v1 = Path.vof_t v1
-      and v2 = vof_loc Longident.vof_t v2
-      and v3 = Env.vof_t v3
-      in Ocaml.VSum (("Texp_open", [ v1; v2; v3 ]))
+  | Texp_open ((v1, v2, v3, v4)) ->
+      let v1 = vof_override_flag v1
+      and v2 = Path.vof_t v2
+      and v3 = vof_loc Longident.vof_t v3
+      and v4 = Env.vof_t v4
+      in Ocaml.VSum (("Texp_open", [ v1; v2; v3; v4 ]))
   | Texp_poly v1 ->
       let v1 = Ocaml.vof_option vof_core_type v1
       in Ocaml.VSum (("Texp_poly", [ v1 ]))
@@ -422,13 +421,12 @@ and vof_expression_desc =
   | Texp_tuple v1 ->
       let v1 = Ocaml.vof_list vof_expression v1
       in Ocaml.VSum (("Texp_tuple", [ v1 ]))
-  | Texp_construct ((v1, v2, v3, v4, v5)) ->
-      let v1 = Path.vof_t v1
-      and v2 = vof_loc Longident.vof_t v2
-      and v3 = vof_constructor_description v3
-      and v4 = Ocaml.vof_list vof_expression v4
-      and v5 = Ocaml.vof_bool v5
-      in Ocaml.VSum (("Texp_construct", [ v1; v2; v3; v4; v5 ]))
+  | Texp_construct ((v1, v2, v3, v4)) ->
+      let v1 = vof_loc Longident.vof_t v1
+      and v2 = vof_constructor_description v2
+      and v3 = Ocaml.vof_list vof_expression v3
+      and v4 = Ocaml.vof_bool v4
+      in Ocaml.VSum (("Texp_construct", [ v1; v2; v3; v4 ]))
   | Texp_variant ((v1, v2)) ->
       let v1 = vof_label v1
       and v2 = Ocaml.vof_option vof_expression v2
@@ -436,28 +434,25 @@ and vof_expression_desc =
   | Texp_record ((v1, v2)) ->
       let v1 =
         Ocaml.vof_list
-          (fun (v1, v2, v3, v4) ->
-             let v1 = Path.vof_t v1
-             and v2 = vof_loc Longident.vof_t v2
-             and v3 = vof_label_description v3
-             and v4 = vof_expression v4
-             in Ocaml.VTuple [ v1; v2; v3; v4 ])
+          (fun (v1, v2, v3) ->
+             let v1 = vof_loc Longident.vof_t v1
+             and v2 = vof_label_description v2
+             and v3 = vof_expression v3
+             in Ocaml.VTuple [ v1; v2; v3 ])
           v1
       and v2 = Ocaml.vof_option vof_expression v2
       in Ocaml.VSum (("Texp_record", [ v1; v2 ]))
-  | Texp_field ((v1, v2, v3, v4)) ->
+  | Texp_field ((v1, v2, v3)) ->
       let v1 = vof_expression v1
-      and v2 = Path.vof_t v2
-      and v3 = vof_loc Longident.vof_t v3
-      and v4 = vof_label_description v4
-      in Ocaml.VSum (("Texp_field", [ v1; v2; v3; v4 ]))
-  | Texp_setfield ((v1, v2, v3, v4, v5)) ->
+      and v2 = vof_loc Longident.vof_t v2
+      and v3 = vof_label_description v3
+      in Ocaml.VSum (("Texp_field", [ v1; v2; v3 ]))
+  | Texp_setfield ((v1, v2, v3, v4)) ->
       let v1 = vof_expression v1
-      and v2 = Path.vof_t v2
-      and v3 = vof_loc Longident.vof_t v3
-      and v4 = vof_label_description v4
-      and v5 = vof_expression v5
-      in Ocaml.VSum (("Texp_setfield", [ v1; v2; v3; v4; v5 ]))
+      and v2 = vof_loc Longident.vof_t v2
+      and v3 = vof_label_description v3
+      and v4 = vof_expression v4
+      in Ocaml.VSum (("Texp_setfield", [ v1; v2; v3; v4 ]))
   | Texp_array v1 ->
       let v1 = Ocaml.vof_list vof_expression v1
       in Ocaml.VSum (("Texp_array", [ v1 ]))
@@ -859,10 +854,11 @@ and vof_structure_item_desc =
       and v2 = vof_loc Ocaml.vof_string v2
       and v3 = vof_module_type v3
       in Ocaml.VSum (("Tstr_modtype", [ v1; v2; v3 ]))
-  | Tstr_open ((v1, v2)) ->
-      let v1 = Path.vof_t v1
-      and v2 = vof_loc Longident.vof_t v2
-      in Ocaml.VSum (("Tstr_open", [ v1; v2 ]))
+  | Tstr_open ((v1, v2, v3)) ->
+      let v1 = vof_override_flag v1
+      and v2 = Path.vof_t v2
+      and v3 = vof_loc Longident.vof_t v3
+      in Ocaml.VSum (("Tstr_open", [ v1; v2; v3 ]))
   | Tstr_class v1 ->
       let v1 =
         Ocaml.vof_list
@@ -885,7 +881,7 @@ and vof_structure_item_desc =
       in Ocaml.VSum (("Tstr_class_type", [ v1 ]))
   | Tstr_include ((v1, v2)) ->
       let v1 = vof_module_expr v1
-      and v2 = Ocaml.vof_list Ident.vof_t v2
+      and v2 = Types.vof_signature v2
       in Ocaml.VSum (("Tstr_include", [ v1; v2 ]))
 and vof_module_coercion =
   function
@@ -1032,10 +1028,11 @@ and vof_signature_item_desc =
       and v2 = vof_loc Ocaml.vof_string v2
       and v3 = vof_modtype_declaration v3
       in Ocaml.VSum (("Tsig_modtype", [ v1; v2; v3 ]))
-  | Tsig_open ((v1, v2)) ->
-      let v1 = Path.vof_t v1
-      and v2 = vof_loc Longident.vof_t v2
-      in Ocaml.VSum (("Tsig_open", [ v1; v2 ]))
+  | Tsig_open ((v1, v2, v3)) ->
+      let v1 = vof_override_flag v1
+      and v2 = Path.vof_t v2
+      and v3 = vof_loc Longident.vof_t v3
+      in Ocaml.VSum (("Tsig_open", [ v1; v2; v3 ]))
   | Tsig_include ((v1, v2)) ->
       let v1 = vof_module_type v1
       and v2 = Types.vof_signature v2
