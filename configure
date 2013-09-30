@@ -46,7 +46,6 @@ my $facebook=0;
 
 #my $opt=".opt"; # also set in env.sh
 
-
 my $man = 0;
 my $help = 0;
 
@@ -174,11 +173,13 @@ my $arch = `uname`;
 #---------------------------------------------------------------------
 # We need 3.12 because I use the forall 'a. new typing feature 
 # as well as the '_' pattern in records (in my code but also in lib-sexp/)
+# We need 4.00 because of codegraph for ocaml code using the .cmt
+# We need 4.01 because of changes in the .cmt format
 $error += 
     check_config("echo \"1;;\\n\" | ocaml |",
-                 "(Objective|OCaml)(.*) (3\.12|4\.*)",
+                 "(Objective|OCaml)(.*) (4\.01\.*)",
                  "OCaml (the wonderful language) is present.",
-                 "The program ocaml is missing or is not a good version. We need at least 3.12",
+                 "The program ocaml is missing or is not a good version. We need at least 4.01",
                  );
 show_error_msg_and_exit_if_error($error);
 
