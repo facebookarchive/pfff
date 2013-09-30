@@ -1,6 +1,6 @@
 (* Yoann Padioleau
  *
- * Copyright (C) 2012 Facebook
+ * Copyright (C) 2012, 2013 Facebook
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public License
@@ -90,6 +90,9 @@ type env = {
   module_aliases: (name * name) list ref;
   type_aliases: (name * name) list ref;
 }
+ (* todo: what about names which are applications of functor? 
+  * See Longident.t
+  *)
  and name = string list
  and phase = Defs | Uses
 
@@ -110,6 +113,9 @@ let parse file =
 (*****************************************************************************)
 let unwrap x = 
   x.Asttypes.loc
+
+let name_of_longident_loc lid =
+  raise Todo
 
 (*****************************************************************************)
 (* Add edges *)
@@ -187,10 +193,11 @@ let add_node_and_edge_if_defs_mode ?(dupe_ok=false) env name_node loc =
 (*****************************************************************************)
 
 (* f --> A.f,  and Nested.f -> A.Nested.f *)
-let rec path_resolve_locals env p kind =
+let rec path_resolve_locals env name kind =
+(*
   let s = Path.name p in
   let xs = n_of_s s in
-
+*)
   let rec aux xs =
     match xs with
     | [] -> raise Impossible
@@ -206,7 +213,7 @@ let rec path_resolve_locals env p kind =
         then List.assoc x !table ++ xs
         else x::xs
   in
-  aux xs
+  aux name
 
 (*****************************************************************************)
 (* Path resolution, aliases *)
@@ -314,6 +321,8 @@ let kind_of_value_descr vd =
 (*****************************************************************************)
 
 let rec typename_of_texpr x =
+  raise Todo
+(*
   (* pr2 (Ocaml.string_of_v (Meta_ast_cmt.vof_type_expr_show_all x)); *)
   match x.Types.desc with
   | Types.Tconstr(path, xs, aref) -> path
@@ -321,11 +330,13 @@ let rec typename_of_texpr x =
   | _ ->
       pr2 (Ocaml.string_of_v (Meta_ast_cmt.vof_type_expr_show_all x));
       raise Todo
+*)
 
-let add_use_edge_lid env lid texpr kind =
+let add_use_edge_lid env (lid: Longident.t Asttypes.loc) texpr kind =
  if env.phase = Uses then begin
   (* the typename already contains the qualifier *)
-  let str = Common2.list_last (path_resolve_locals env lid kind) in
+  let name = name_of_longident_loc lid in
+  let str = Common2.list_last (path_resolve_locals env name kind) in
   let tname = path_resolve_locals env (typename_of_texpr texpr) E.Type in
   let tname = path_type_resolve_aliases env tname in
   let full_ident = tname ++ [str] in
@@ -621,9 +632,10 @@ and structure_item_desc env loc = function
         let env = add_node_and_edge_if_defs_mode env node (unwrap loc) in
 
         (match td.typ_kind, td.typ_manifest with
-        | Ttype_abstract, Some ({ctyp_desc=Ttyp_constr (path, _loc, _xs); _}) ->
+        | Ttype_abstract, Some ({ctyp_desc=Ttyp_constr (_path, lid, _xs); _}) ->
           if env.phase = Defs then
-            Common.push2 (full_ident, path_resolve_locals env path E.Type)
+            let name = name_of_longident_loc lid in
+            Common.push2 (full_ident, path_resolve_locals env name E.Type)
               env.type_aliases
         | _ -> ()
         );
@@ -644,10 +656,11 @@ and structure_item_desc env loc = function
       let full_ident = env.current_entity ++ [Ident.name id] in
       let node = (full_ident, E.Module) in
       (match modexpr.mod_desc with
-      | Tmod_ident (path, _loc) ->
+      | Tmod_ident (_path, lid) ->
           (* do not add nodes for module aliases in the graph, just *)
           if env.phase = Defs then begin
-            Common.push2 (full_ident, path_resolve_locals env path E.Module) 
+            let name = name_of_longident_loc lid in
+            Common.push2 (full_ident, path_resolve_locals env name E.Module) 
               env.module_aliases
           end;
           add_full_path_local env (Ident.name id, full_ident) E.Module
@@ -669,7 +682,7 @@ and structure_item_desc env loc = function
       in ()
 
   (* opened names are resolved, no need to handle that I think *)
-  | Tstr_open ((v1, _loc)) ->
+  | Tstr_open ((_override, v1, _loc)) ->
       path_t env v1 
   | Tstr_include ((v1, v2)) ->
       let _ = module_expr env v1 and _ = List.iter (Ident.t env) v2 in ()
@@ -740,8 +753,9 @@ and pattern_desc t env = function
       constant env v1
   | Tpat_tuple xs -> 
       List.iter (pattern env) xs
-  | Tpat_construct ((lid, _loc_longident, v3, v4, v5)) ->
-      add_use_edge_lid env lid t E.Constructor;
+  | Tpat_construct ((lid, v3, v4, v5)) ->
+      let name = name_of_longident_loc lid in
+      add_use_edge_lid env name t E.Constructor;
       let _ = constructor_description env v3
       and _ = List.iter (pattern env) v4
       in ()
@@ -751,10 +765,11 @@ and pattern_desc t env = function
       and _ = v_ref (row_desc env) v3
       in ()
   | Tpat_record ((xs, _closed_flag)) ->
-      List.iter (fun (lid, _loc_longident, v3, v4) ->
-        add_use_edge_lid env lid t E.Field;
+      List.iter (fun (lid, v2, v3) ->
+        let name = name_of_longident_loc lid in
+        add_use_edge_lid env name t E.Field;
         let _ = label_description env v3
-        and _ = pattern env v4
+        and _ = pattern env v3
         in ()
       ) xs
   | Tpat_array xs -> 
@@ -772,11 +787,12 @@ and pattern_desc t env = function
 (* ---------------------------------------------------------------------- *)
 and expression_desc t env =
   function
-  | Texp_ident ((lid, _loc_longident, vd)) ->
-      let str = Path.name lid in
+  | Texp_ident (_path, lid, vd) ->
+      let name = name_of_longident_loc lid in
+      let str = s_of_n name in
       if List.mem str env.locals
       then ()
-      else add_use_edge_lid_bis env lid t
+      else add_use_edge_lid_bis env name t
   | Texp_constant v1 -> 
       constant env v1
   | Texp_let ((rec_flag, xs, v3)) ->
@@ -833,32 +849,35 @@ and expression_desc t env =
           v2
       in ()
   | Texp_tuple v1 -> let _ = List.iter (expression env) v1 in ()
-  | Texp_construct ((lid, _loc_longident, v3, v4, _bool)) ->
-      add_use_edge_lid env lid t E.Constructor;
-      constructor_description env v3;
-      List.iter (expression env) v4;
+  | Texp_construct (lid, v2, v3, _bool) ->
+      let name = name_of_longident_loc lid in
+      add_use_edge_lid env name t E.Constructor;
+      constructor_description env v2;
+      List.iter (expression env) v3;
 
   | Texp_variant ((v1, v2)) ->
       let _ = label env v1 and _ = v_option (expression env) v2 in ()
   (* ?? *)
   | Texp_record ((v1, v2)) ->
-      List.iter (fun (lid, _loc_longident, v3, v4) ->
+      List.iter (fun (lid, v2, v3) ->
         path_t env lid;
-        let _ = label_description env v3
-        and _ = expression env v4
+        let _ = label_description env v2
+        and _ = expression env v3
         in ()
       ) v1;
       v_option (expression env) v2
-  | Texp_field ((v1, lid, _loc_longident, v4)) ->
+  | Texp_field ((v1, lid, v2)) ->
       expression env v1;
-      add_use_edge_lid env lid v1.exp_type E.Field;
-      label_description env v4
+      let name = name_of_longident_loc lid in
+      add_use_edge_lid env name v1.exp_type E.Field;
+      label_description env v2
 
-  | Texp_setfield ((v1, lid, _loc_longident, v4, v5)) ->
+  | Texp_setfield ((v1, lid, v3, v4)) ->
       expression env v1;
-      add_use_edge_lid env lid v1.exp_type E.Field;
-      label_description env v4;
-      expression env v5;
+      let name = name_of_longident_loc lid in
+      add_use_edge_lid env name v1.exp_type E.Field;
+      label_description env v3;
+      expression env v4;
 
   | Texp_array xs -> 
       List.iter (expression env) xs
@@ -925,8 +944,8 @@ and exp_extra env = function
       let _ = v_option (core_type env) v1
       and _ = v_option (core_type env) v2
       in ()
-  | Texp_open ((v1, _loc_longident, _env)) ->
-      path_t env v1
+  | Texp_open (_override, path, lid, _env) ->
+      path_t env path
   | Texp_poly v1 -> let _ = v_option (core_type env) v1 in ()
   | Texp_newtype v1 -> let _ = v_string v1 in ()
 
