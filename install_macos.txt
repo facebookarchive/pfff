@@ -22,7 +22,7 @@ Troubles?
   ocamlcairo. First You need to 
      export PKG_CONFIG_PATH /usr/X11/lib/pkgconfig 
   so that configure can find one cairo.pc (the cairo of brew is keg-only),
-  but then you want to force to linkink with the new cairo library in
+  but then you want to force to linking with the new cairo library in
   homebrew because the default one of MacOS is causing a segfault.
   So add -L/usr/local/opt/cairo/lib in the generated config.make
   of ocamlcairo for the CAIRO_LIBS variable.
