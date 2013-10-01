@@ -1,0 +1,82 @@
+diff -u -r ocaml-4.00.1/Makefile ocaml-4.00.1-binannot/Makefile
+--- ocaml-4.00.1/Makefile	2012-09-17 09:23:06.000000000 -0700
++++ ocaml-4.00.1-binannot/Makefile	2012-12-07 11:26:01.000000000 -0800
+@@ -19,7 +19,7 @@
+ 
+ CAMLC=boot/ocamlrun boot/ocamlc -nostdlib -I boot
+ CAMLOPT=boot/ocamlrun ./ocamlopt -nostdlib -I stdlib -I otherlibs/dynlink
+-COMPFLAGS= -strict-sequence -warn-error A $(INCLUDES)
++COMPFLAGS= -bin-annot -strict-sequence -warn-error A $(INCLUDES)
+ LINKFLAGS=
+ 
+ CAMLYACC=boot/ocamlyacc
+diff -u -r ocaml-4.00.1/debugger/Makefile.shared ocaml-4.00.1-binannot/debugger/Makefile.shared
+--- ocaml-4.00.1/debugger/Makefile.shared	2012-05-31 05:41:49.000000000 -0700
++++ ocaml-4.00.1-binannot/debugger/Makefile.shared	2013-09-22 13:53:14.000000000 -0700
+@@ -15,6 +15,7 @@
+ include ../config/Makefile
+ 
+ CAMLC=../ocamlcomp.sh
++#-bin-annot but conflict names, lexer, parser
+ COMPFLAGS=-warn-error A $(INCLUDES)
+ LINKFLAGS=-linkall -I $(UNIXDIR)
+ CAMLYACC=../boot/ocamlyacc
+diff -u -r ocaml-4.00.1/lex/Makefile ocaml-4.00.1-binannot/lex/Makefile
+--- ocaml-4.00.1/lex/Makefile	2011-07-27 07:17:02.000000000 -0700
++++ ocaml-4.00.1-binannot/lex/Makefile	2013-09-22 16:08:07.000000000 -0700
+@@ -15,6 +15,7 @@
+ # The lexer generator
+ CAMLC=../boot/ocamlrun ../boot/ocamlc -strict-sequence -nostdlib -I ../boot
+ CAMLOPT=../boot/ocamlrun ../ocamlopt -nostdlib -I ../stdlib
++#-bin-annot but conflict names, lexer, parser
+ COMPFLAGS=-warn-error A
+ CAMLYACC=../boot/ocamlyacc
+ YACCFLAGS=-v
+diff -u -r ocaml-4.00.1/ocamldoc/Makefile ocaml-4.00.1-binannot/ocamldoc/Makefile
+--- ocaml-4.00.1/ocamldoc/Makefile	2012-07-13 04:23:13.000000000 -0700
++++ ocaml-4.00.1-binannot/ocamldoc/Makefile	2013-09-22 16:08:25.000000000 -0700
+@@ -75,7 +75,7 @@
+ 
+ INCLUDES=$(INCLUDES_DEP) $(INCLUDES_NODEP)
+ 
+-COMPFLAGS=$(INCLUDES) -warn-error A
++COMPFLAGS=$(INCLUDES)  -bin-annot -warn-error A
+ LINKFLAGS=$(INCLUDES) -nostdlib
+ 
+ CMOFILES= odoc_config.cmo \
+diff -u -r ocaml-4.00.1/otherlibs/Makefile.shared ocaml-4.00.1-binannot/otherlibs/Makefile.shared
+--- ocaml-4.00.1/otherlibs/Makefile.shared	2011-07-27 07:17:02.000000000 -0700
++++ ocaml-4.00.1-binannot/otherlibs/Makefile.shared	2013-09-22 16:06:09.000000000 -0700
+@@ -21,7 +21,7 @@
+ # Compilation options
+ CC=$(BYTECC)
+ CAMLRUN=$(ROOTDIR)/boot/ocamlrun
+-COMPFLAGS=-warn-error A -g $(EXTRACAMLFLAGS)
++COMPFLAGS= -bin-annot -warn-error A -g $(EXTRACAMLFLAGS)
+ MKLIB=$(CAMLRUN) $(ROOTDIR)/tools/ocamlmklib
+ 
+ # Variables to be defined by individual libraries:
+diff -u -r ocaml-4.00.1/stdlib/Makefile.shared ocaml-4.00.1-binannot/stdlib/Makefile.shared
+--- ocaml-4.00.1/stdlib/Makefile.shared	2012-04-19 06:12:23.000000000 -0700
++++ ocaml-4.00.1-binannot/stdlib/Makefile.shared	2012-12-07 11:37:31.000000000 -0800
+@@ -17,7 +17,7 @@
+ RUNTIME=../boot/ocamlrun
+ COMPILER=../ocamlc
+ CAMLC=$(RUNTIME) $(COMPILER)
+-COMPFLAGS=-strict-sequence -g -warn-error A -nostdlib
++COMPFLAGS= -bin-annot -strict-sequence -g -warn-error A -nostdlib
+ OPTCOMPILER=../ocamlopt
+ CAMLOPT=$(RUNTIME) $(OPTCOMPILER)
+ OPTCOMPFLAGS=-warn-error A -nostdlib -g
+diff -u -r ocaml-4.00.1/tools/Makefile.shared ocaml-4.00.1-binannot/tools/Makefile.shared
+--- ocaml-4.00.1/tools/Makefile.shared	2012-05-31 05:41:49.000000000 -0700
++++ ocaml-4.00.1-binannot/tools/Makefile.shared	2013-09-22 16:08:58.000000000 -0700
+@@ -20,7 +20,7 @@
+ CAMLLEX=$(CAMLRUN) ../boot/ocamllex
+ INCLUDES=-I ../utils -I ../parsing -I ../typing -I ../bytecomp -I ../asmcomp \
+ 	 -I ../driver
+-COMPFLAGS= -warn-error A $(INCLUDES)
++COMPFLAGS= -bin-annot -warn-error A $(INCLUDES)
+ LINKFLAGS=$(INCLUDES)
+ 
+ all: ocamldep ocamlprof ocamlcp ocamloptp ocamlmktop ocamlmklib dumpobj \
