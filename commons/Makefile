@@ -515,7 +515,7 @@ clean::
 
 clean::
 	for i in $(SUBDIRS); do (cd $$i; \
-        rm -f *.cm[iox] *.o *.a *.cma *.cmxa *.annot *~ .*~ ; \
+        rm -f *.cm[iox] *.cmt* *.o *.a *.cma *.cmxa *.annot *~ .*~ ; \
         cd ..; ) \
 	done
 
