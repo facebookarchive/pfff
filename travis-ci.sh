@@ -18,6 +18,9 @@
 #sudo apt-get install -qq ocaml-compiler-libs
 #sudo apt-get install -qq ocaml-native-compilers
 
+#alternative: special packages for recent version of ocaml and opam, see:
+# http://anil.recoil.org/2013/09/30/travis-and-ocaml.html
+
 #------------------------------
 # Install OPAM
 #------------------------------
@@ -29,10 +32,10 @@ wget http://www.ocamlpro.com/pub/opam_installer.sh
 # something on the console
 yes | sh ./opam_installer.sh /usr/local/bin
 
-# install packages from opam
-# ??
-
 eval `opam config env`
+
+# install packages from opam:
+#  pfff is battery included so no need for external packages
 
 #------------------------------
 # Compile Pfff
