@@ -97,7 +97,6 @@ type env = {
  and name = string list
  and phase = Defs | Uses
 
-let n_of_s s = Common.split "\\." s
 let s_of_n xs = Common.join "." xs
 
 (*****************************************************************************)
@@ -115,11 +114,13 @@ let parse file =
 let unwrap x = 
   x.Asttypes.loc
 
-let (name_of_longident_loc: Longident.t Asttypes.loc -> name) = fun lid ->
-  raise Todo
+let (name_of_longident_loc: Longident.t Asttypes.loc -> name) = fun lidloc ->
+  let lid = lidloc.Asttypes.txt in
+  Longident.flatten lid
 
 let (name_of_path: Path.t -> name) = fun path ->
-  raise Todo
+  let s = Path.name path in
+  Common.split "\\." s
 
 (*****************************************************************************)
 (* Add edges *)
