@@ -105,7 +105,11 @@ let s_of_n xs = Common.join "." xs
 let _hmemo = Hashtbl.create 101
 let parse file =
   Common.memoized _hmemo file (fun () ->
-    Cmt_format.read_cmt file
+    try 
+      Cmt_format.read_cmt file
+    with
+      (Cmi_format.Error _) as exn ->
+        failwith (spf "PB with %s, exn = %s" file (Common.exn_to_s exn))
   )
 
 (*****************************************************************************)
