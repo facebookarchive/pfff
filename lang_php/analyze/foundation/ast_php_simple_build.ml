@@ -423,8 +423,11 @@ and hint_type env = function
       let args = List.map (hint_type env) (comma_list_dots (brace args)) in
       let ret  = Common2.fmap (fun (_, t) -> hint_type env t) ret in
       A.HintCallback (args, ret)
-  | HintShape _ ->
-    raise Todo
+  | HintShape (_tok, xs) ->
+    A.HintShape (
+      xs +> brace +> comma_list +> List.map (fun ((key,tok), _tok, t) ->
+        (key, wrap tok), hint_type env t
+      ))
 
 (* ------------------------------------------------------------------------- *)
 (* Definitions *)

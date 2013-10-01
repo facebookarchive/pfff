@@ -179,6 +179,10 @@ module Deps = struct
                          | None -> acc
         in
         List.fold_left (fun accp x -> SSet.union accp (hint_type_ accp x)) acc_u_ret args
+    | HintShape xs ->
+      List.fold_left (fun accp (_s,x) -> 
+        SSet.union accp (hint_type_ accp x)) acc xs
+      
 
   and class_def acc c =
     (* todo? implements? traits? *)

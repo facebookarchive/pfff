@@ -788,6 +788,7 @@ and parameter env p =
     | Some (HintQuestion _)
     | Some (HintTuple _)
     | Some (HintCallback _) -> Tvar (fresh())
+    | Some (HintShape _) -> failwith "no support for shape yet"
   in
   (match p.p_default with
   | None -> ()

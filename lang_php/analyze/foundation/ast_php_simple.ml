@@ -293,6 +293,7 @@ and hint_type =
  | HintQuestion of hint_type
  | HintTuple of hint_type list
  | HintCallback of hint_type list * (hint_type option)
+ | HintShape of (string wrap * hint_type) list
 
 and class_name = hint_type
 

@@ -318,6 +318,15 @@ and vof_hint_type =
       Ocaml.VSum (("HintCallback",
                    [ Ocaml.VList (List.map vof_hint_type args);
                      Ocaml.vof_option vof_hint_type ret ]))
+  | HintShape v1 ->
+      let v1 =
+        Ocaml.vof_list
+          (fun (v1, v2) ->
+             let v1 = vof_wrapped_string v1
+             and v2 = vof_hint_type v2
+             in Ocaml.VTuple [ v1; v2 ])
+          v1
+      in Ocaml.VSum (("HintShape", [ v1 ]))
 
 and
   vof_class_def {
