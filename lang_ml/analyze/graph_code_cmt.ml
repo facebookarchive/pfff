@@ -115,7 +115,10 @@ let parse file =
 let unwrap x = 
   x.Asttypes.loc
 
-let name_of_longident_loc lid =
+let (name_of_longident_loc: Longident.t Asttypes.loc -> name) = fun lid ->
+  raise Todo
+
+let (name_of_path: Path.t -> name) = fun path ->
   raise Todo
 
 (*****************************************************************************)
@@ -322,16 +325,17 @@ let kind_of_value_descr vd =
 (*****************************************************************************)
 
 let rec typename_of_texpr x =
-  raise Todo
-(*
   (* pr2 (Ocaml.string_of_v (Meta_ast_cmt.vof_type_expr_show_all x)); *)
-  match x.Types.desc with
-  | Types.Tconstr(path, xs, aref) -> path
-  | Types.Tlink t -> typename_of_texpr t
-  | _ ->
+  let rec aux x = 
+    match x.Types.desc with
+    | Types.Tconstr(path, xs, aref) -> path
+    | Types.Tlink t -> aux t
+    | _ ->
       pr2 (Ocaml.string_of_v (Meta_ast_cmt.vof_type_expr_show_all x));
       raise Todo
-*)
+  in
+  let path = aux x in
+  name_of_path path
 
 let add_use_edge_lid env (lid: Longident.t Asttypes.loc) texpr kind =
  if env.phase = Uses then begin
@@ -714,8 +718,7 @@ and pattern_desc t env = function
   | Tpat_tuple xs -> 
       List.iter (pattern env) xs
   | Tpat_construct ((lid, v3, v4, v5)) ->
-      let name = name_of_longident_loc lid in
-      add_use_edge_lid env name t E.Constructor;
+      add_use_edge_lid env lid t E.Constructor;
       let _ = constructor_description env v3
       and _ = List.iter (pattern env) v4
       in ()
@@ -726,8 +729,7 @@ and pattern_desc t env = function
       in ()
   | Tpat_record ((xs, _closed_flag)) ->
       List.iter (fun (lid, v2, v3) ->
-        let name = name_of_longident_loc lid in
-        add_use_edge_lid env name t E.Field;
+        add_use_edge_lid env lid t E.Field;
         let _ = label_description env v3
         and _ = pattern env v3
         in ()
@@ -810,8 +812,7 @@ and expression_desc t env =
       in ()
   | Texp_tuple v1 -> let _ = List.iter (expression env) v1 in ()
   | Texp_construct (lid, v2, v3, _bool) ->
-      let name = name_of_longident_loc lid in
-      add_use_edge_lid env name t E.Constructor;
+      add_use_edge_lid env lid t E.Constructor;
       constructor_description env v2;
       List.iter (expression env) v3;
 
@@ -828,14 +829,12 @@ and expression_desc t env =
       v_option (expression env) v2
   | Texp_field ((v1, lid, v2)) ->
       expression env v1;
-      let name = name_of_longident_loc lid in
-      add_use_edge_lid env name v1.exp_type E.Field;
+      add_use_edge_lid env lid v1.exp_type E.Field;
       label_description env v2
 
   | Texp_setfield ((v1, lid, v3, v4)) ->
       expression env v1;
-      let name = name_of_longident_loc lid in
-      add_use_edge_lid env name v1.exp_type E.Field;
+      add_use_edge_lid env lid v1.exp_type E.Field;
       label_description env v3;
       expression env v4;
 
