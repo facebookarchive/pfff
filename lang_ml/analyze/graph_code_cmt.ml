@@ -364,10 +364,10 @@ let add_use_edge_lid env (lid: Longident.t Asttypes.loc) texpr kind =
   end
  end
 
-let add_use_edge_lid_bis env lid texpr =
+let add_use_edge_name_bis env name texpr =
   if env.phase = Uses then begin
     let kind = kind_of_type_expr texpr in
-    let name = path_resolve_locals env lid kind in
+    let name = path_resolve_locals env name kind in
     let name = path_resolve_aliases env name in
     let node = (s_of_n name, kind) in
     if G.has_node node env.g
@@ -601,9 +601,9 @@ and structure_item_desc env loc = function
         let env = add_node_and_edge_if_defs_mode env node (unwrap loc) in
 
         (match td.typ_kind, td.typ_manifest with
-        | Ttype_abstract, Some ({ctyp_desc=Ttyp_constr (_path, lid, _xs); _}) ->
+        | Ttype_abstract, Some ({ctyp_desc=Ttyp_constr (path, lid, _xs); _}) ->
           if env.phase = Defs then
-            let name = name_of_longident_loc lid in
+            let name = name_of_path path in
             Common.push2 (full_ident, path_resolve_locals env name E.Type)
               env.type_aliases
         | _ -> ()
@@ -625,10 +625,10 @@ and structure_item_desc env loc = function
       let full_ident = env.current_entity ++ [Ident.name id] in
       let node = (full_ident, E.Module) in
       (match modexpr.mod_desc with
-      | Tmod_ident (_path, lid) ->
+      | Tmod_ident (path, lid) ->
           (* do not add nodes for module aliases in the graph, just *)
           if env.phase = Defs then begin
-            let name = name_of_longident_loc lid in
+            let name = name_of_path path in
             Common.push2 (full_ident, path_resolve_locals env name E.Module) 
               env.module_aliases
           end;
@@ -754,12 +754,12 @@ and pattern_desc t env = function
 (* ---------------------------------------------------------------------- *)
 and expression_desc t env =
   function
-  | Texp_ident (_path, lid, vd) ->
-      let name = name_of_longident_loc lid in
+  | Texp_ident (path, lid, vd) ->
+      let name = name_of_path path in
       let str = s_of_n name in
       if List.mem str env.locals
       then ()
-      else add_use_edge_lid_bis env name t
+      else add_use_edge_name_bis env name t
   | Texp_constant v1 -> 
       constant env v1
   | Texp_let ((rec_flag, xs, v3)) ->
