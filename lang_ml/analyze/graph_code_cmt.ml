@@ -455,7 +455,7 @@ let rec extract_defs_uses
         * for their source, hence this hack below to reconvert
         * those paths.
         *)
-       if fullpath =~ ".*/ocaml-4.00.1"
+       if fullpath =~ ".*/ocaml-4.01.0"
        then spf "external/stdlib/%s" (Filename.basename fullpath)
        else Common.filename_without_leading_path root fullpath
       );
