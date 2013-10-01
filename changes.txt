@@ -1,5 +1,11 @@
 -*- org -*-
 
+* 0.26 (Q4 2013) (??)
+
+** internal:
+
+*** port to 4.01 graph_code_cmt
+
 * 0.25 (Q3 2013) (codemap/codegraph integration)
 
 ** codemap
