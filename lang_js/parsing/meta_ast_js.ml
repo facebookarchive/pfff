@@ -41,8 +41,7 @@ let rec
       "line", Ocaml.VInt (PI.line_of_info x);
       "col", Ocaml.VInt (PI.col_of_info x);
     ]
-  else 
-    Parse_info.vof_info x
+  else Parse_info.vof_info x
 
 and vof_tok v = vof_info v
 and vof_wrap _of_a (v1, v2) =
@@ -385,7 +384,7 @@ and vof_program_orig v = Ocaml.vof_list vof_toplevel v
 
 (* end auto generation *)
 
-let vof_program precision x = 
+let vof_program ?(precision=M.default_precision) x = 
   Common.save_excursion _current_precision precision (fun () ->
     vof_program_orig x
   )

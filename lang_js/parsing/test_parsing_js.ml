@@ -43,7 +43,8 @@ let test_parse_js xs  =
 
 let test_dump_js file =
   let ast = Parse_js.parse_program file in
-  let s = Export_ast_js.ml_pattern_string_of_program ast in
+  let v = Meta_ast_js.vof_program ast in
+  let s = Ocaml.string_of_v v in
   pr s
 
 let test_json_js file = 

@@ -26,7 +26,8 @@ let ml_pattern_string_of_web_document webdoc =
   in
   let s_js =
     webdoc.js +> List.map (fun (s, js) ->
-      Export_ast_js.ml_pattern_string_of_program js
+      let v = Meta_ast_js.vof_program js in
+      Ocaml.string_of_v v
     ) +> Common2.unlines
   in
   s_html ^ "\n" ^ s_css ^ "\n" ^ s_js

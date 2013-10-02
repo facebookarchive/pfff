@@ -41,7 +41,8 @@ let test_parse_ml_or_mli xs =
 
 let test_dump_ml file =
   let ast = Parse_ml.parse_program file in
-  let s = Export_ast_ml.ml_pattern_string_of_program ast in
+  let v = Meta_ast_ml.vof_program ast in
+  let s = Ocaml.string_of_v v in
   pr s
 
 
