@@ -67,11 +67,3 @@ let unittest =
     );
 *)
   ]
-
-(*****************************************************************************)
-(* Main entry for Arg *)
-(*****************************************************************************)
-let actions () = [
-    "-unittest_parsing_js", "   ", 
-    Common.mk_action_0_arg (fun () -> OUnit.run_test_tt unittest +> ignore);
-]
