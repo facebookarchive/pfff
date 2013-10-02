@@ -1,10 +1,10 @@
 -*- org -*-
 
-* 0.26 (Q4 2013) (??)
+* 0.26 (Q4 2013) (??zamcov tomography?? OPAM packages?)
 
 ** internal:
 
-*** port to 4.01 graph_code_cmt
+*** port to 4.01 graph_code_cmt.ml
 
 * 0.25 (Q3 2013) (codemap/codegraph integration)
 
@@ -25,6 +25,12 @@ associate a depth in the use graph to each file and entities.
 ** php
 
 *** support for namespace
+
+** ocaml
+
+*** started to play with zamcov
+refresh to 4.01, fix many bugs, cleanup makefiles, added some builtins,
+added debugging support, better error message, stack trace, etc.
 
 ** internal: 
 
