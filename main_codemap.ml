@@ -71,7 +71,7 @@ let layer_dir  = ref (None: Common.dirname option)
 let test_mode = ref (None: string option)
 (*e: main flags *)
 
-let filter = ref Treemap_pl.ex_filter_file
+let filter = ref (fun file -> true)
 
 (* less: a config file:
  *  GtkMain.Rc.add_default_file "/home/pad/c-pfff/data/pfff_browser.rc"; 
@@ -85,18 +85,10 @@ let action = ref ""
 (*****************************************************************************)
 
 let filters = [
-  "ocaml", Treemap_pl.ocaml_filter_file;
-  "mli", Treemap_pl.ocaml_mli_filter_file;
-  "php", Treemap_pl.php_filter_file;
-  "nw", (fun file -> 
-    match FT.file_type_of_file file with
-    | FT.Text "nw" -> true | _ -> false
-  );
   "pfff", (fun file ->
     match FT.file_type_of_file file with
     | FT.PL (
-       (FT.ML _) | FT.Makefile | FT.Opa | FT.Prolog _ | FT.Web (FT.Php _))
-      -> 
+       (FT.ML _) | FT.Makefile | FT.Opa | FT.Prolog _ | FT.Web (FT.Php _)) -> 
         (* todo: should be done in file_type_of_file *)
         not (FT.is_syncweb_obj_file file)
         && not ( 
@@ -105,12 +97,43 @@ let filters = [
                 file =~ ".*_build/")
     | _ -> false
   );
+  "ocaml", (fun file ->
+    match File_type.file_type_of_file file with
+    | FT.PL (FT.ML _) | FT.PL (FT.Makefile)  -> 
+      (* todo: should be done in file_type_of_file *)
+      not (File_type.is_syncweb_obj_file file)
+    | _ -> false
+  );
+  "mli", (fun file ->
+    match File_type.file_type_of_file file with
+    | FT.PL (FT.ML "mli") | FT.PL (FT.Makefile)   -> 
+    (* todo: should be done in file_type_of_file *)
+      not (File_type.is_syncweb_obj_file file) &&
+      not (file =~ ".*/commons/")
+    | _ -> false
+  );
+  "nw", (fun file -> 
+    match FT.file_type_of_file file with
+    | FT.Text "nw" -> true | _ -> false
+  );
+
+
+  "php", (fun file ->
+    match File_type.file_type_of_file file with
+    | FT.PL (FT.Web (FT.Php _)) -> true  | _ -> false
+  );
+  "js", (fun file ->
+    match File_type.file_type_of_file file with
+    | FT.PL (FT.Web (FT.Js)) -> true  | _ -> false
+  );
+
   "cpp", (let x = ref false in (fun file ->
     Common2.once x (fun () -> Parse_cpp.init_defs !Flag_parsing_cpp.macros_h);
     match FT.file_type_of_file file with
     | FT.PL (FT.C _ | FT.Cplusplus _) -> true 
     | _ -> false
   ));
+
   "opa", (fun file -> 
     match FT.file_type_of_file file with
     | FT.PL (FT.Opa) (* | FT.PL (FT.ML _) *)  -> true
@@ -119,8 +142,7 @@ let filters = [
   );
   "rs", (fun file -> 
     match FT.file_type_of_file file with
-    | FT.PL (FT.Rust) -> true
-    | _ -> false
+    | FT.PL (FT.Rust) -> true  | _ -> false
   );
 ]
 

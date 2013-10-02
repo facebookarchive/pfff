@@ -269,43 +269,7 @@ let treemap_file_size_hook ~root file =
       treemap_file_size_hook2 ~root file
   ))
 
-
-let no_filter_file file = true
-
-let ex_filter_file file = 
-  (* simple example of filtering *)
-  let (d,b,e) = Common2.dbe_of_filename_noext_ok file in
-  match e with
-  | "output" -> false
-  | _ -> true
-
-let ocaml_filter_file file = 
-  match File_type.file_type_of_file file with
-  | PL (ML _)
-  | PL (Makefile) 
-      -> 
-      (* todo: should be done in file_type_of_file *)
-      not (File_type.is_syncweb_obj_file file)
-  | _ -> false
-
-let ocaml_mli_filter_file file = 
-  match File_type.file_type_of_file file with
-  | PL (ML "mli")
-  | PL (Makefile) 
-      -> 
-      (* todo: should be done in file_type_of_file *)
-      not (File_type.is_syncweb_obj_file file) &&
-      not (file =~ ".*/commons/")
-  | _ -> false
-
-let php_filter_file file = 
-  match File_type.file_type_of_file file with
-  | PL (Web (Php _)) -> true
-  | _ -> false
-
-let pad_filter_file file = 
-  raise Todo
-      
+    
 
 let code_treemap2 ~filter_file paths =
   let root = Common2.common_prefix_of_files_or_dirs paths in

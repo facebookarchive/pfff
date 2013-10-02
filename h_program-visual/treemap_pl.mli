@@ -9,13 +9,6 @@ val anamorphic_diviser_of_file:
   root:Common.dirname ->
   Common.filename -> float
 
-val no_filter_file: Common.filename -> bool
-val ex_filter_file: Common.filename -> bool
-val ocaml_filter_file: Common.filename -> bool
-val ocaml_mli_filter_file: Common.filename -> bool
-val pad_filter_file: Common.filename -> bool
-val php_filter_file: Common.filename -> bool
-
 (* default treemap *)
 val code_treemap: 
   filter_file: (Common.filename -> bool) ->
