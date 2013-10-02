@@ -1,7 +1,7 @@
 {
 (* Yoann Padioleau
  *
- * Copyright (C) 2010 Facebook
+ * Copyright (C) 2010, 2013 Facebook
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public License
@@ -27,34 +27,30 @@ module Flag = Flag_parsing_js
 
 exception Lexical of string
 
-(* pad: hack around ocamllex to emulate the yyless of flex. It seems
- * to work.
- *)
-let yyless n lexbuf = 
-  lexbuf.Lexing.lex_curr_pos <- lexbuf.Lexing.lex_curr_pos - n;
-  let currp = lexbuf.Lexing.lex_curr_p in
-  lexbuf.Lexing.lex_curr_p <- { currp with
-    Lexing.pos_cnum = currp.Lexing.pos_cnum - n;
-  }
-
 let tok     lexbuf  = 
   Lexing.lexeme lexbuf
 let tokinfo lexbuf  = 
   Parse_info.tokinfo_str_pos (Lexing.lexeme lexbuf) (Lexing.lexeme_start lexbuf)
 
+let error s =
+  if !Flag.exn_when_lexical_error
+  then raise (Lexical (s))
+  else 
+    if !Flag.verbose_lexing
+    then pr2_once ("LEXER: " ^ s)
+    else ()
+
+(* ---------------------------------------------------------------------- *)
+(* Keywords *)
 (* ---------------------------------------------------------------------- *)
 let keyword_table = Common.hash_of_list [
 
-   (* todo? had some special handling in lexer of marcel *)
   "catch",      (fun ii -> T_CATCH ii);
   "finally",    (fun ii -> T_FINALLY ii);
   "in",         (fun ii -> T_IN ii);
   "instanceof", (fun ii -> T_INSTANCEOF ii);
-  
-  (* todo? had some special handling in lexer of marcel *)
   "else",       (fun ii -> T_ELSE ii);
   "while",      (fun ii -> T_WHILE ii);
-
   "break",      (fun ii -> T_BREAK ii);
   "case",       (fun ii -> T_CASE ii);
   "continue",   (fun ii -> T_CONTINUE ii);
@@ -84,11 +80,6 @@ let keyword_table = Common.hash_of_list [
 
 (* ---------------------------------------------------------------------- *)
 
-type state_mode = 
-  | INITIAL
-
-let default_state = INITIAL
-
 (* The logic to modify _last_non_whitespace_like_token is in the 
  * caller of the lexer, that is in Parse_js.tokens.
  * Used for ambiguity between / as a divisor and start of regexp.
@@ -103,10 +94,14 @@ let reset () =
 } 
 
 (*****************************************************************************)
+(* Regexp aliases *)
+(*****************************************************************************)
 let _WHITESPACE = [' ' '\n' '\r' '\t']+
 let TABS_AND_SPACES = [' ''\t']*
 let NEWLINE = ("\r"|"\n"|"\r\n")
 
+(*****************************************************************************)
+(* Rule initial *)
 (*****************************************************************************)
 
 rule initial = parse
@@ -133,11 +128,9 @@ rule initial = parse
   (* symbols *)
   (* ----------------------------------------------------------------------- *)
   
-   (* todo? marcel does some stack push/pop on that *)
   | "{" { T_LCURLY (tokinfo lexbuf); }
   | "}" { T_RCURLY (tokinfo lexbuf); }
 
-   (* todo? marcel does some stack push/pop on that *)
   | "(" { T_LPAREN (tokinfo lexbuf); }
   | ")" { T_RPAREN (tokinfo lexbuf); }
 
@@ -295,10 +288,12 @@ rule initial = parse
   | eof { EOF (tokinfo lexbuf) }
 
   | _ { 
-      if !Flag.verbose_lexing 
-      then pr2_once ("LEXER:unrecognised symbol, in token rule:"^tok lexbuf);
+      error ("unrecognised symbol, in token rule:"^tok lexbuf);
       TUnknown (tokinfo lexbuf)
     }
+
+(*****************************************************************************)
+(* Rule string *)
 (*****************************************************************************)
 and string_quote = parse
   | "'"            { "" }
@@ -310,7 +305,7 @@ and string_quote = parse
       );
       x ^ string_quote lexbuf
     }
-  | eof { pr2 "LEXER: WIERD end of file in quoted string"; ""}
+  | eof { error "WIERD end of file in quoted string"; ""}
 
 and string_double_quote  = parse
   | '"'            { "" }
@@ -322,8 +317,10 @@ and string_double_quote  = parse
       );
       x ^ string_double_quote lexbuf
     }
-  | eof { pr2 "LEXER: WIERD end of file in double quoted string"; ""}
+  | eof { error "WIERD end of file in double quoted string"; ""}
 
+(*****************************************************************************)
+(* Rule regexp *)
 (*****************************************************************************)
 and regexp = parse
   | '/'            { "/" ^ regexp_maybe_ident lexbuf }
@@ -335,11 +332,13 @@ and regexp = parse
       );
       x ^ regexp lexbuf
     }
-  | eof { pr2 "LEXER: WIERD end of file in regexp"; ""}
+  | eof { error "WIERD end of file in regexp"; ""}
 
 and regexp_maybe_ident = parse
   | ['A'-'Z''a'-'z']* { tok lexbuf }
 
+(*****************************************************************************)
+(* Rule comment *)
 (*****************************************************************************)
 
 and st_comment = parse 
@@ -349,10 +348,10 @@ and st_comment = parse
   | [^'*']+ { let s = tok lexbuf in s ^ st_comment lexbuf } 
   | "*"     { let s = tok lexbuf in s ^ st_comment lexbuf }
 
-  | eof { pr2 "LEXER: end of file in comment"; "*/"}
+  | eof { error "end of file in comment"; "*/"}
   | _  { 
       let s = tok lexbuf in
-      pr2 ("LEXER: unrecognised symbol in comment:"^s);
+      error ("unrecognised symbol in comment:"^s);
       s ^ st_comment lexbuf
     }
 
@@ -364,10 +363,8 @@ and st_one_line_comment = parse
 
   | NEWLINE { tok lexbuf }
 
-  | eof { pr2 "LEXER: end of file in comment"; "\n" }
+  | eof { error "end of file in comment"; "\n" }
   | _ { 
-      if !Flag.verbose_lexing 
-      then pr2_once 
-        ("LEXER:unrecognised symbol, in st_one_line_comment rule:"^tok lexbuf);
-      tok lexbuf
+    error ("unrecognised symbol, in st_one_line_comment rule:"^tok lexbuf);
+    tok lexbuf
     }
