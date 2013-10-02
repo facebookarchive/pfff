@@ -1,6 +1,6 @@
 (* Yoann Padioleau
  *
- * Copyright (C) 2010, 2012 Facebook
+ * Copyright (C) 2010, 2012, 2013 Facebook
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public License
@@ -32,7 +32,7 @@ module PI = Parse_info
 (* ------------------------------------------------------------------------- *)
 
 (* Contains among other things the position of the token through
- * the Common.parse_info embedded inside it, as well as the
+ * the Parse_info.token_location embedded inside it, as well as the
  * the transformation field that makes possible spatch on javascript code.
  *)
 type tok = Parse_info.info
@@ -242,14 +242,6 @@ let uncomma xs = Common.map_filter (function
   | Left e -> Some e
   | Right info -> None
   ) xs
-
-let map_paren f (lp, x, rp) = (lp, f x, rp)
-let map_comma_list f xs = List.map (fun x ->
-  match x with
-  | Left e -> Left (f e)
-  | Right tok -> Right tok
-  )
-  xs
 
 let info_of_name (s, info) = info
 
