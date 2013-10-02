@@ -11,7 +11,6 @@ SRC= flag_parsing_js.ml \
      meta_ast_js.ml \
      export_ast_js.ml \
      visitor_js.ml lib_parsing_js.ml \
-     map_js.ml \
      parser_js.ml lexer_js.ml \
      token_helpers_js.ml \
      parse_js.ml \

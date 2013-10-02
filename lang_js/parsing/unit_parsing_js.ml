@@ -4,7 +4,6 @@ open OUnit
 open Ast_js
 module Ast = Ast_js
 module V = Visitor_js
-module M = Map_js
 module Flag = Flag_parsing_js
 
 (*****************************************************************************)
@@ -35,7 +34,7 @@ let unittest =
         )
       with Parse_js.Parse_error _ -> ()
     );
-
+(*
     "the javascript AST mapper" >:: (fun () ->
       let js_ex = "foo(42, 101);" in
       Common2.with_tmp_file ~str:js_ex ~ext:".js" (fun file ->
@@ -66,6 +65,7 @@ let unittest =
           [43; 102] integers;
       )
     );
+*)
   ]
 
 (*****************************************************************************)
