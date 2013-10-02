@@ -33,15 +33,16 @@ module Type_js = struct
       Ocaml.VTODO ""
 end
  
-let rec
-  vof_info x = 
-  if not !_current_precision.M.full_info
-  then 
-    Ocaml.VDict [
-      "line", Ocaml.VInt (PI.line_of_info x);
-      "col", Ocaml.VInt (PI.col_of_info x);
-    ]
-  else Parse_info.vof_info x
+let rec vof_info x = 
+  if !_current_precision.M.full_info
+  then Parse_info.vof_info x
+  else if !_current_precision.M.token_info
+       then 
+        Ocaml.VDict [
+          "line", Ocaml.VInt (PI.line_of_info x);
+          "col", Ocaml.VInt (PI.col_of_info x);
+        ]
+      else Ocaml.VUnit
 
 and vof_tok v = vof_info v
 and vof_wrap _of_a (v1, v2) =
