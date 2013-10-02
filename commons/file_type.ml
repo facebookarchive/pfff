@@ -167,6 +167,7 @@ let file_type_of_file2 file =
 
   | "php" | "phpt" -> PL (Web (Php e))
   | "css" -> PL (Web Css)
+  (* "javascript" | "es" | ? *)
   | "js" -> PL (Web Js)
   | "html" | "htm" -> PL (Web Html)
   | "xml" -> PL (Web Xml)
