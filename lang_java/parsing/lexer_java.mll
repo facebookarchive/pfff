@@ -15,6 +15,7 @@
 open Common 
 
 open Parser_java
+module Flag = Flag_parsing_java
 
 (*****************************************************************************)
 (* Prelude *)
@@ -26,6 +27,14 @@ open Parser_java
 
 exception Lexical of string
 (*exception Unterminated_comment*)
+
+let error s =
+  if !Flag.exn_when_lexical_error
+  then raise (Lexical (s))
+  else 
+    if !Flag.verbose_lexing
+    then pr2_once ("LEXER: " ^ s)
+    else ()
 
 let tok     lexbuf  = 
   Lexing.lexeme lexbuf
@@ -334,12 +343,10 @@ rule token = parse
 
 | SUB? eof { EOF (tokinfo lexbuf +> Parse_info.rewrap_str "") }
 
-| _ 
-      { 
-        if !Flag_parsing_java.verbose_lexing 
-        then pr2_once ("LEXER:unrecognised symbol, in token rule:"^tok lexbuf);
-        TUnknown (tokinfo lexbuf)
-      }
+| _ { 
+  error ("unrecognised symbol, in token rule:"^tok lexbuf);
+  TUnknown (tokinfo lexbuf)
+  }
 
 (*****************************************************************************)
 (* Comments *)
@@ -351,15 +358,12 @@ and comment = parse
   (* noteopti: *)
   | [^ '*']+ { let s = tok lexbuf in s ^ comment lexbuf }
   | [ '*']   { let s = tok lexbuf in s ^ comment lexbuf }
-  | eof  { 
-      pr2 ("LEXER: Unterminated_comment");
-      ""
-    }
-  | _  
-      { let s = tok lexbuf in
-        pr2 ("LEXER: unrecognised symbol in comment:"^s);
-        s ^ comment lexbuf
-      }
+  | eof  { error ("Unterminated_comment");  ""  }
+  | _  {
+    let s = tok lexbuf in
+    error ("unrecognised symbol in comment:"^s);
+    s ^ comment lexbuf
+  }
 (* old:
 and comment = parse
   "*/" { end_comment lexbuf }
