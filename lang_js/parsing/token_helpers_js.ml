@@ -131,6 +131,7 @@ let info_of_tok = function
   | T_TYPEOF ii -> ii
   | T_VOID ii -> ii
   | T_VIRTUAL_SEMICOLON ii -> ii
+  | T_CLASS ii | T_EXTENDS ii | T_STATIC ii -> ii
 
 (* generated via emacs macro from type definition in parse_js.ml *)
 let visitor_info_of_tok f = function
@@ -223,6 +224,9 @@ let visitor_info_of_tok f = function
   | T_TYPEOF ii -> T_TYPEOF(f ii)
   | T_VOID ii -> T_VOID (f ii)
   | T_VIRTUAL_SEMICOLON ii -> T_VIRTUAL_SEMICOLON (f ii)
+  | T_CLASS ii  -> T_CLASS (f ii)
+  | T_EXTENDS ii -> T_EXTENDS (f ii)
+  | T_STATIC ii -> T_STATIC (f ii)
 
 (*****************************************************************************)
 (* Accessors *)

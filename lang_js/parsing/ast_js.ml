@@ -262,6 +262,8 @@ let al_info x =
 (* Helpers, could also be put in lib_parsing.ml instead *)
 (*****************************************************************************)
 
+let todoAST = NotParsedCorrectly []
+
 let fakeInfoAttach info = 
   let info = PI.rewrap_str "FAKE" info in
   let pinfo = PI.token_location_of_info info in

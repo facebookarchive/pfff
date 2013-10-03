@@ -18,12 +18,18 @@
  * extracted from the official ECMAscript specification at:
  *  http://www.ecma-international.org/publications/standards/ecma-262.htm
  * 
- * see also http://en.wikipedia.org/wiki/ECMAScript_syntax
+ * See also http://en.wikipedia.org/wiki/ECMAScript_syntax
  * 
  * related work:
  *  - http://marijnhaverbeke.nl/parse-js/, js parser in common lisp
  *    (which has been since ported to javascript by nodejs people)
+ *  - http://esprima.org/, js parser in js
  *  - jslint
+ * 
+ * updates:
+ *  - add support for ES6 class
+ *   http://people.mozilla.org/~jorendorff/es6-draft.html#sec-class-definitions
+ * 
  *)
 
 open Common
@@ -60,6 +66,7 @@ let uop op a b = e(U((op,a), b))
  T_FUNCTION T_IF T_IN T_INSTANCEOF T_RETURN T_SWITCH T_THIS T_THROW T_TRY
  T_VAR T_WHILE T_WITH T_CONST T_NULL T_FALSE T_TRUE
  T_BREAK T_CASE T_CATCH T_CONTINUE T_DEFAULT T_DO T_FINALLY T_FOR
+ T_CLASS T_EXTENDS T_STATIC
 
 %token <Ast_js.tok> T_ELSE
 
@@ -156,10 +163,14 @@ program: statement_list { $1 }
 
 source_element:
  | statement            { St $1 }
+ | declaration { $1 }
+
+declaration:
  | function_declaration { FunDecl $1 }
+ | class_declaration { todoAST }
 
 /*(*************************************************************************)*/
-/*(*1 statement *)*/
+/*(*1 Statement *)*/
 /*(*************************************************************************)*/
 
 statement:
@@ -343,8 +354,39 @@ function_body:
  | /*(* empty *)*/ { [] }
  | statement_list  { $1 }
 
+/*(*http://people.mozilla.org/~jorendorff/es6-draft.html#sec-class-definitions*)*/
+
 /*(*************************************************************************)*/
-/*(*1 expression *)*/
+/*(*1 Class declaration *)*/
+/*(*************************************************************************)*/
+class_declaration: T_CLASS binding_identifier class_tail { }
+
+class_tail: class_heritage_opt T_LCURLY class_body_opt T_RCURLY { }
+
+/*(* was T_EXTENDS assignment_expression in original grammar, but weird *)*/
+class_heritage: T_EXTENDS identifier { }
+
+class_body: class_element_list { }
+
+class_element:
+ | method_definition { }
+ | T_STATIC method_definition { }
+ | semicolon { }
+
+binding_identifier: identifier { $1 }
+
+/*(*----------------------------*)*/
+/*(*2 class element *)*/
+/*(*----------------------------*)*/
+
+method_definition: 
+  identifier T_LPAREN formal_parameter_list_opt T_RPAREN 
+     T_LCURLY function_body T_RCURLY  { }
+
+
+
+/*(*************************************************************************)*/
+/*(*1 Expression *)*/
 /*(*************************************************************************)*/
 
 expression:
@@ -682,6 +724,11 @@ statement_list:
  | source_element { [$1] }
  | statement_list source_element { $1 ++ [$2] }
 
+class_element_list:
+ | class_element { [$1] }
+ | class_element_list class_element { $1 ++ [$2] }
+
+
 case_clauses:
  | case_clause { [$1] }
  | case_clauses case_clause { $1 ++ [$2] }
@@ -701,7 +748,6 @@ variable_declaration_list_no_in:
      { $1 ++ [Right $2; Left $3] }
 
 
-
 expression_opt:
  | /*(* empty *)*/ { None }
  | expression      { Some $1 }
@@ -710,6 +756,19 @@ expression_no_in_opt:
  | /*(* empty *)*/  { None }
  | expression_no_in { Some $1 }
 
+class_heritage_opt:
+ | /*(*empty*)*/   { None }
+ | class_heritage { Some $1 }
+
+class_body_opt:
+ | /*(*empty*)*/   { None }
+ | class_body { Some $1 }
+
+formal_parameter_list_opt:
+ | /*(*empty*)*/   { [] }
+ | formal_parameter_list { $1 }
+
 case_clauses_opt:
  | /*(* empty *)*/ { [] }
  | case_clauses    { $1 }
+

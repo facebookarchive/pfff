@@ -247,6 +247,12 @@ let visit_program
     | T.T_FINALLY (ii)
         -> tag ii KeywordExn
 
+    | T.T_CLASS ii
+    | T.T_EXTENDS ii 
+        -> tag ii KeywordObject
+
+    | T.T_STATIC ii -> tag ii Keyword
+
     | T.T_WHILE (ii)
     | T.T_DO (ii)
     | T.T_FOR (ii)

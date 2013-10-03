@@ -84,6 +84,10 @@ let keyword_table = Common.hash_of_list [
   "this",       (fun ii -> T_THIS ii);
   "typeof",     (fun ii -> T_TYPEOF ii);
   "with",       (fun ii -> T_WITH ii);
+
+  "class",      (fun ii -> T_CLASS ii);
+  "extends",    (fun ii -> T_EXTENDS ii);
+  "static",     (fun ii -> T_STATIC ii);
 ]
 
 (* ---------------------------------------------------------------------- *)
