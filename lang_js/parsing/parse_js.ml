@@ -122,7 +122,7 @@ let parse2 filename =
   let filelines = Common2.cat_array filename in
 
   let toks_orig = tokens filename in
-  let toks = Parsing_hacks_js.adjust_tokens toks_orig in
+  let toks = Parsing_hacks_js.fix_tokens toks_orig in
 
   let tr = PI.mk_tokens_state toks in
 
