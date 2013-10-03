@@ -13,6 +13,7 @@ SRC= flag_parsing_js.ml \
      visitor_js.ml lib_parsing_js.ml \
      parser_js.ml lexer_js.ml \
      token_helpers_js.ml \
+     parsing_hacks_js.ml \
      parse_js.ml \
      test_parsing_js.ml unit_parsing_js.ml
 
