@@ -31,8 +31,8 @@
 (* ------------------------------------------------------------------------- *)
 (* Token/info *)
 (* ------------------------------------------------------------------------- *)
-type info = Parse_info.info
-and 'a wrap  = 'a * info
+type tok = Parse_info.info
+and 'a wrap  = 'a * tok
   (* with tarzan *)
 
 type 'a list1 = 'a list (* really should be 'a * 'a list *)

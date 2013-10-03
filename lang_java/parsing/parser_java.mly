@@ -114,82 +114,82 @@ let constructor_invocation name args =
    * because ocamllex may generate them, or some intermediate phases may also
    * generate them (like some functions in parsing_hacks.ml).
    *)*/
-%token <Ast_java.info> TComment TCommentNewline TCommentSpace 
+%token <Parse_info.info> TComment TCommentNewline TCommentSpace 
 
 /*(*-----------------------------------------*)*/
 /*(*2 The normal tokens *)*/
 /*(*-----------------------------------------*)*/
 
 /*(* tokens with "values" *)*/
-%token <string * Ast_java.info> TInt
-%token <string * Ast_java.info> TFloat
-%token <string * Ast_java.info> TChar
-%token <string * Ast_java.info> TString
+%token <string * Parse_info.info> TInt
+%token <string * Parse_info.info> TFloat
+%token <string * Parse_info.info> TChar
+%token <string * Parse_info.info> TString
 
-%token <(string * Ast_java.info)> LITERAL
+%token <(string * Parse_info.info)> LITERAL
 
-%token <(string * Ast_java.info)> IDENTIFIER
-%token <(string * Ast_java.info)> PRIMITIVE_TYPE
+%token <(string * Parse_info.info)> IDENTIFIER
+%token <(string * Parse_info.info)> PRIMITIVE_TYPE
 
 /*
  * 3.11 Separators
  */
-%token <Ast_java.info> LP		/* ( */
-%token <Ast_java.info> RP		/* ) */
-%token <Ast_java.info> LC		/* { */
-%token <Ast_java.info> RC		/* } */
-%token <Ast_java.info> LB		/* [ */
-%token <Ast_java.info> RB		/* ] */
-%token <Ast_java.info> SM		/* ; */
-%token <Ast_java.info> CM		/* , */
-%token <Ast_java.info> DOT		/* . */
+%token <Parse_info.info> LP		/* ( */
+%token <Parse_info.info> RP		/* ) */
+%token <Parse_info.info> LC		/* { */
+%token <Parse_info.info> RC		/* } */
+%token <Parse_info.info> LB		/* [ */
+%token <Parse_info.info> RB		/* ] */
+%token <Parse_info.info> SM		/* ; */
+%token <Parse_info.info> CM		/* , */
+%token <Parse_info.info> DOT		/* . */
 
 /*
  * 3.12 Operators
  */
-%token <Ast_java.info> EQ		/* = */
-%token <Ast_java.info> GT		/* > */
-%token <Ast_java.info> LT		/* < */
-%token <Ast_java.info> NOT		/* ! */
-%token <Ast_java.info> COMPL		/* ~ */
-%token <Ast_java.info> COND		/* ? */
-%token <Ast_java.info> COLON		/* : */
-%token <Ast_java.info> EQ_EQ		/* == */
-%token <Ast_java.info> LE		/* <= */
-%token <Ast_java.info> GE		/* >= */
-%token <Ast_java.info> NOT_EQ		/* != */
-%token <Ast_java.info> AND_AND		/* && */
-%token <Ast_java.info> OR_OR		/* || */
-%token <Ast_java.info> INCR		/* ++ */
-%token <Ast_java.info> DECR		/* -- */
-%token <Ast_java.info> PLUS		/* + */
-%token <Ast_java.info> MINUS		/* - */
-%token <Ast_java.info> TIMES		/* * */
-%token <Ast_java.info> DIV		/* / */
-%token <Ast_java.info> AND		/* & */
-%token <Ast_java.info> OR		/* | */
-%token <Ast_java.info> XOR		/* ^ */
-%token <Ast_java.info> MOD		/* % */
-%token <Ast_java.info> LS		/* << */
-%token <Ast_java.info> SRS		/* >> */
-%token <Ast_java.info> URS		/* >>> */
+%token <Parse_info.info> EQ		/* = */
+%token <Parse_info.info> GT		/* > */
+%token <Parse_info.info> LT		/* < */
+%token <Parse_info.info> NOT		/* ! */
+%token <Parse_info.info> COMPL		/* ~ */
+%token <Parse_info.info> COND		/* ? */
+%token <Parse_info.info> COLON		/* : */
+%token <Parse_info.info> EQ_EQ		/* == */
+%token <Parse_info.info> LE		/* <= */
+%token <Parse_info.info> GE		/* >= */
+%token <Parse_info.info> NOT_EQ		/* != */
+%token <Parse_info.info> AND_AND		/* && */
+%token <Parse_info.info> OR_OR		/* || */
+%token <Parse_info.info> INCR		/* ++ */
+%token <Parse_info.info> DECR		/* -- */
+%token <Parse_info.info> PLUS		/* + */
+%token <Parse_info.info> MINUS		/* - */
+%token <Parse_info.info> TIMES		/* * */
+%token <Parse_info.info> DIV		/* / */
+%token <Parse_info.info> AND		/* & */
+%token <Parse_info.info> OR		/* | */
+%token <Parse_info.info> XOR		/* ^ */
+%token <Parse_info.info> MOD		/* % */
+%token <Parse_info.info> LS		/* << */
+%token <Parse_info.info> SRS		/* >> */
+%token <Parse_info.info> URS		/* >>> */
 
-%token <Ast_java.info> AT		/* @ */
-%token <Ast_java.info> DOTS		/* ... */
+%token <Parse_info.info> AT		/* @ */
+%token <Parse_info.info> DOTS		/* ... */
 
 /*(* to avoid some conflicts *)*/
-%token <Ast_java.info> LB_RB
+%token <Parse_info.info> LB_RB
 
 /*(* Those fresh tokens are created in parsing_hacks_java.ml *)*/
-%token <Ast_java.info> LT2		/* < */
+%token <Parse_info.info> LT2		/* < */
 
-%token <(string * Ast_java.info)> OPERATOR_EQ	/* += -= *= /= &= |= ^= %= <<= >>= >>>= */
+%token <(string * Parse_info.info)> OPERATOR_EQ	/* += -= *= /= &= |= ^= %= <<= >>= >>>= */
 
 /*(* keywords tokens *)*/
 /*
  * 3.9 Keywords
  */
-%token <Ast_java.info> 
+%token <Parse_info.info> 
  ABSTRACT BOOLEAN BREAK BYTE CASE CATCH CHAR CLASS CONST CONTINUE
  DEFAULT DO DOUBLE ELSE EXTENDS FINAL FINALLY FLOAT FOR GOTO
  IF IMPLEMENTS IMPORT INSTANCEOF INT INTERFACE LONG
@@ -205,8 +205,8 @@ let constructor_invocation name args =
 /*(*-----------------------------------------*)*/
 
 /*(* classic *)*/
-%token <Ast_java.info> TUnknown
-%token <Ast_java.info> EOF
+%token <Parse_info.info> TUnknown
+%token <Parse_info.info> EOF
 
 /*(*************************************************************************)*/
 /*(*1 Priorities *)*/
