@@ -33,9 +33,7 @@ module PI = Parse_info
 (*****************************************************************************)
 
 (* the token list contains also the comment-tokens *)
-type program2 = Ast_java.program option * Parser_java.token list
-
-let program_of_program2 x = Common2.some (fst x)
+type program_and_tokens = Ast_java.program option * Parser_java.token list
 
 (*****************************************************************************)
 (* Wrappers *)
@@ -197,8 +195,8 @@ let parse a =
   Common.profile_code "Parse_java.parse" (fun () -> parse2 a)
 
 let parse_program file =
-  let (ast2, _stat) = parse file in
-  program_of_program2 ast2
+  let ((ast, _toks), _stat) = parse file in
+  Common2.some ast
 
 (* use program_of_string when you can *)
 let tmp_file_from_string s =
