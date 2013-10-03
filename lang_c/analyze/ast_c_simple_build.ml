@@ -56,8 +56,9 @@ let empty_env () = {
 (*****************************************************************************)
 
 let rec debug any =
-  let _ii = Lib_parsing_cpp.ii_of_any any in
-  pr2 (Export_ast_cpp.ml_pattern_string_of_any any)
+  let v = Meta_ast_cpp.vof_any any in
+  let s = Ocaml.string_of_v v in
+  pr2 s
 
 (*****************************************************************************)
 (* Main entry point *)
