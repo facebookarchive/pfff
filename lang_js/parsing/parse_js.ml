@@ -208,17 +208,10 @@ let parse_program file =
 (* Sub parsers *)
 (*****************************************************************************)
 
-(* use program_of_string when you can *)
-let tmp_file_from_string s =
-  let tmp_file = Common.new_temp_file "test" ".js" in
-  Common.write_file ~file:tmp_file s;
-  tmp_file
-
 let (program_of_string: string -> Ast_js.program) = fun s -> 
-  let tmpfile = tmp_file_from_string s in
-  let ((ast, _), _stat) = parse tmpfile in
-  Common.erase_this_temp_file tmpfile;
-  ast
+  Common2.with_tmp_file ~str:s ~ext:"js" (fun file ->
+    parse_program file
+  )
 
 (*****************************************************************************)
 (* Fuzzy parsing *)
