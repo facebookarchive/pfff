@@ -23,7 +23,6 @@ module PI = Parse_info
 (*****************************************************************************)
 (* Prelude *)
 (*****************************************************************************)
-
 (* Lots of copy paste with my other parsers (e.g. C++, PHP, sql) but
  * copy paste is sometimes ok.
  *)
@@ -36,20 +35,8 @@ module PI = Parse_info
 type program_and_tokens = Ast_java.program option * Parser_java.token list
 
 (*****************************************************************************)
-(* Wrappers *)
-(*****************************************************************************)
-let pr2_err, pr2_once = Common2.mk_pr2_wrappers Flag.verbose_parsing
-
-(*****************************************************************************)
-(* Helpers *)
-(*****************************************************************************)
-let lexbuf_to_strpos lexbuf     =
-  (Lexing.lexeme lexbuf, Lexing.lexeme_start lexbuf)
-
-(*****************************************************************************)
 (* Error diagnostic *)
 (*****************************************************************************)
-
 let error_msg_tok tok =
   Parse_info.error_message_info (TH.info_of_tok tok)
 
@@ -88,7 +75,7 @@ let tokens2 file =
   with
     | Lexer_java.Lexical s ->
         failwith ("lexical error " ^ s ^ "\n =" ^
-                  (PI.error_message file (lexbuf_to_strpos lexbuf)))
+                  (PI.error_message file (PI.lexbuf_to_strpos lexbuf)))
     | e -> raise e
  )
 
