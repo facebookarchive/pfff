@@ -116,7 +116,7 @@ let extract_uses ~g ~ast ~readable =
 
 let build ?(verbose=true) dir skip_list =
   let root = Common.realpath dir in
-  let all_files = Lib_parsing_cpp.find_cpp_files_of_dir_or_files [root] in
+  let all_files = Lib_parsing_cpp.find_source_files_of_dir_or_files [root] in
 
   (* step0: filter noisy modules/files *)
   let files = Skip_code.filter_files skip_list root all_files in

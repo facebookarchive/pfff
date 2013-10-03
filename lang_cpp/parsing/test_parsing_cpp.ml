@@ -19,7 +19,7 @@ let test_tokens_cpp file =
   ()
 
 let test_parse_cpp ?lang xs  =
-  let fullxs = Lib_parsing_cpp.find_cpp_files_of_dir_or_files xs in
+  let fullxs = Lib_parsing_cpp.find_source_files_of_dir_or_files xs in
   let fullxs =
     match xs with
     | [dir] when Common2.is_directory dir ->
@@ -112,7 +112,7 @@ let test_dump_cpp_fuzzy file =
   pr2 s
 
 let test_parse_cpp_fuzzy dir_or_file =
-  let fullxs = Lib_parsing_cpp.find_cpp_files_of_dir_or_files [dir_or_file] in
+  let fullxs = Lib_parsing_cpp.find_source_files_of_dir_or_files [dir_or_file]in
 
   let file = Filename.concat dir_or_file "skip_list.txt" in
   let fullxs = 
