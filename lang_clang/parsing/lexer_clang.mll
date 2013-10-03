@@ -31,9 +31,19 @@ exception Lexical of string
 let tok     lexbuf  = 
   Lexing.lexeme lexbuf
 
+let error s =
+  if !Flag.exn_when_lexical_error
+  then raise (Lexical (s))
+  else 
+    if !Flag.verbose_lexing
+    then pr2_once ("LEXER: " ^ s)
+    else ()
+
 let line = ref 0
 
 }
+(*****************************************************************************)
+(* Regexp aliases *)
 (*****************************************************************************)
 
 let letter = ['A'-'Z' 'a'-'z']
@@ -59,7 +69,8 @@ let exp  = ['e''E'] sign? dec+
 let real = pent exp | ((pent? '.' pfract | pent '.' pfract? ) exp?)
 
 (*****************************************************************************)
-
+(* Rule token *)
+(*****************************************************************************)
 
 rule token = parse
 
@@ -134,14 +145,11 @@ rule token = parse
   (* ----------------------------------------------------------------------- *)
   (* eof *)
   (* ----------------------------------------------------------------------- *)
-
   | eof { EOF }
 
   | _ { 
-      if !Flag.verbose_lexing 
-      then pr2_once ("LEXER:unrecognised symbol, in token rule:"^tok lexbuf);
-      (* TUnknown (tok lexbuf) *)
-      raise (Lexical (tok lexbuf))
+    error ("unrecognised symbol, in token rule:"^tok lexbuf);
+    (* TUnknown (tok lexbuf) *)
+    raise (Lexical (tok lexbuf))
     }
 
-(*****************************************************************************)
