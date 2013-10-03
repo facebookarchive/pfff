@@ -21,6 +21,4 @@ val parse_fuzzy_of:
 
 (* internal *)
 val tokens: Common.filename -> Parser_java.token list
-(* useful for unit testing, mock *)
-val tmp_file_from_string: string -> Common.filename
 
