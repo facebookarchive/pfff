@@ -7,7 +7,7 @@ fi
 
 # To compile the source, using pad installation.
 echo setting OPAM
-eval `~/packages/Linux/bin/opam config env`
+eval `~pad/packages/Linux/bin/opam config env`
 
 # for faster compiler
 echo setting OPTBIN
