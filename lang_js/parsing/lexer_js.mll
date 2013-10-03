@@ -45,37 +45,45 @@ let error s =
 (* ---------------------------------------------------------------------- *)
 let keyword_table = Common.hash_of_list [
 
+  "if",         (fun ii -> T_IF ii);
+  "else",       (fun ii -> T_ELSE ii);
+
+  "while",      (fun ii -> T_WHILE ii);
+  "do",         (fun ii -> T_DO ii);
+  "for",        (fun ii -> T_FOR ii);
+
+  "switch",     (fun ii -> T_SWITCH ii);
+  "case",       (fun ii -> T_CASE ii);
+  "default",    (fun ii -> T_DEFAULT ii);
+
+  "break",      (fun ii -> T_BREAK ii);
+  "continue",   (fun ii -> T_CONTINUE ii);
+
+  "return",     (fun ii -> T_RETURN ii);
+
+  "throw",      (fun ii -> T_THROW ii);
+  "try",        (fun ii -> T_TRY ii);
   "catch",      (fun ii -> T_CATCH ii);
+
+  "var",        (fun ii -> T_VAR ii);
+  "function",   (fun ii -> T_FUNCTION ii);
+  "const",      (fun ii -> T_CONST ii);
+
+  "delete",     (fun ii -> T_DELETE ii);
+  "new",        (fun ii -> T_NEW ii);
+
+  "void",       (fun ii -> T_VOID ii);
+  "null",       (fun ii -> T_NULL ii);
+
+  "false",      (fun ii -> T_FALSE ii);
+  "true",       (fun ii -> T_TRUE ii);
+
   "finally",    (fun ii -> T_FINALLY ii);
   "in",         (fun ii -> T_IN ii);
   "instanceof", (fun ii -> T_INSTANCEOF ii);
-  "else",       (fun ii -> T_ELSE ii);
-  "while",      (fun ii -> T_WHILE ii);
-  "break",      (fun ii -> T_BREAK ii);
-  "case",       (fun ii -> T_CASE ii);
-  "continue",   (fun ii -> T_CONTINUE ii);
-  "default",    (fun ii -> T_DEFAULT ii);
-  "delete",     (fun ii -> T_DELETE ii);
-  "do",         (fun ii -> T_DO ii);
-  "else",       (fun ii -> T_ELSE ii);
-  "for",        (fun ii -> T_FOR ii);
-  "function",   (fun ii -> T_FUNCTION ii);
-  "if",         (fun ii -> T_IF ii);
-  "new",        (fun ii -> T_NEW ii);
-  "return",     (fun ii -> T_RETURN ii);
-  "switch",     (fun ii -> T_SWITCH ii);
   "this",       (fun ii -> T_THIS ii);
-  "throw",      (fun ii -> T_THROW ii);
-  "try",        (fun ii -> T_TRY ii);
   "typeof",     (fun ii -> T_TYPEOF ii);
-  "var",        (fun ii -> T_VAR ii);
-  "void",       (fun ii -> T_VOID ii);
-  "while",      (fun ii -> T_WHILE ii);
   "with",       (fun ii -> T_WITH ii);
-  "const",      (fun ii -> T_CONST ii);
-  "null",       (fun ii -> T_NULL ii);
-  "false",      (fun ii -> T_FALSE ii);
-  "true",       (fun ii -> T_TRUE ii);
 ]
 
 (* ---------------------------------------------------------------------- *)

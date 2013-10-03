@@ -1,6 +1,6 @@
 /* Yoann Padioleau
  *
- * Copyright (C) 2010 Facebook
+ * Copyright (C) 2010, 2013 Facebook
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public License
@@ -40,13 +40,13 @@ let uop op a b = e(U((op,a), b))
 /*(*************************************************************************)*/
 
 /*(*-----------------------------------------*)*/
-/*(*2 the comment tokens *)*/
+/*(*2 The comment tokens *)*/
 /*(*-----------------------------------------*)*/
 /*(* coupling: Token_helpers.is_real_comment *)*/
 %token <Ast_js.tok> TCommentSpace TCommentNewline   TComment
 
 /*(*-----------------------------------------*)*/
-/*(*2 the normal tokens *)*/
+/*(*2 The normal tokens *)*/
 /*(*-----------------------------------------*)*/
 
 /*(* tokens with a value *)*/
@@ -96,7 +96,7 @@ let uop op a b = e(U((op,a), b))
  T_NOT T_BIT_NOT T_INCR T_DECR T_DELETE T_TYPEOF T_VOID
 
 /*(*-----------------------------------------*)*/
-/*(*2 extra tokens: *)*/
+/*(*2 Extra tokens: *)*/
 /*(*-----------------------------------------*)*/
 
 %token <Ast_js.tok> T_VIRTUAL_SEMICOLON
@@ -106,7 +106,7 @@ let uop op a b = e(U((op,a), b))
 %token <Ast_js.tok> EOF
 
 /*(*-----------------------------------------*)*/
-/*(*2 priorities *)*/
+/*(*2 Priorities *)*/
 /*(*-----------------------------------------*)*/
 
 /*(* must be at the top so that it has the lowest priority *)*/
@@ -309,7 +309,7 @@ default_clause:
  | T_DEFAULT T_COLON statement_list { Default ($1, $2, $3) }
 
 /*(*************************************************************************)*/
-/*(*1 function declaration *)*/
+/*(*1 Function declaration *)*/
 /*(*************************************************************************)*/
 
 function_declaration:
