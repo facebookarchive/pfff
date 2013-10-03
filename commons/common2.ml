@@ -3376,7 +3376,7 @@ let timeout_function_opt timeoutvalopt f =
 
 
 let with_tmp_file ~str ~ext f =
-  let tmpfile = Common.new_temp_file "tmp" ext in
+  let tmpfile = Common.new_temp_file "tmp" ("." ^ ext) in
   write_file ~file:tmpfile str;
   f tmpfile
 
