@@ -46,11 +46,6 @@ module Ast = Ast_cpp
  *)
 
 (*****************************************************************************)
-(* Wrappers *)
-(*****************************************************************************)
-let pr2, pr2_once = Common2.mk_pr2_wrappers Flag.verbose_lexing
-
-(*****************************************************************************)
 (* Helpers *)
 (*****************************************************************************)
 exception Lexical of string
@@ -58,7 +53,10 @@ exception Lexical of string
 let error s =
   if !Flag.strict_lexer
   then raise (Lexical s)
-  else pr2 ("LEXER: " ^ s)
+  else 
+    if !Flag.verbose_lexing 
+    then pr2 ("LEXER: " ^ s)
+    else ()
 
 let tok     lexbuf = 
   Lexing.lexeme lexbuf
