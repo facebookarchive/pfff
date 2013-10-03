@@ -13,8 +13,8 @@
  *)
 open Common 
 
-module Ast = Ast_ml
 module Flag = Flag_parsing_ml
+module Ast = Ast_ml
 module T = Parser_ml
 module TH   = Token_helpers_ml
 module PI = Parse_info
@@ -83,35 +83,6 @@ let tokens2 file =
           
 let tokens a = 
   Common.profile_code "Parse_ml.tokens" (fun () -> tokens2 a)
-
-(*****************************************************************************)
-(* Fuzzy parsing *)
-(*****************************************************************************)
-
-(* This is similar to what I did for OPA. This is also similar
- * to what I do for parsing hacks for C++, but this fuzzy AST can be useful
- * on its own, e.g. for a not too bad sgrep/spatch.
- *)
-let parse_fuzzy file =
-  let toks_orig = tokens file in
-  let toks = 
-    toks_orig +> Common.exclude (fun x ->
-      Token_helpers_ml.is_comment x ||
-      Token_helpers_ml.is_eof x
-    )
-  in
-  let trees = Lib_parser.mk_trees { Lib_parser.
-     tokf = TH.info_of_tok;
-     kind = (function
-      | T.TOBrace _ -> Lib_parser.LBrace
-      | T.TCBrace _ -> Lib_parser.RBrace
-      | T.TOParen _ -> Lib_parser.LPar
-      | T.TCParen _ -> Lib_parser.RPar
-      | _ -> Lib_parser.Other
-     );
-  } toks 
-  in
-  trees, toks_orig
 
 (*****************************************************************************)
 (* Helper for main entry point *)
@@ -228,3 +199,32 @@ let parse a =
 let parse_program file = 
   let ((ast, toks), _stat) = parse file in
   ast
+
+(*****************************************************************************)
+(* Fuzzy parsing *)
+(*****************************************************************************)
+
+(* This is similar to what I did for OPA. This is also similar
+ * to what I do for parsing hacks for C++, but this fuzzy AST can be useful
+ * on its own, e.g. for a not too bad sgrep/spatch.
+ *)
+let parse_fuzzy file =
+  let toks_orig = tokens file in
+  let toks = 
+    toks_orig +> Common.exclude (fun x ->
+      Token_helpers_ml.is_comment x ||
+      Token_helpers_ml.is_eof x
+    )
+  in
+  let trees = Lib_parser.mk_trees { Lib_parser.
+     tokf = TH.info_of_tok;
+     kind = (function
+      | T.TOBrace _ -> Lib_parser.LBrace
+      | T.TCBrace _ -> Lib_parser.RBrace
+      | T.TOParen _ -> Lib_parser.LPar
+      | T.TCParen _ -> Lib_parser.RPar
+      | _ -> Lib_parser.Other
+     );
+  } toks 
+  in
+  trees, toks_orig
