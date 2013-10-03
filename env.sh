@@ -6,8 +6,13 @@ Are you sure you ran this script from the source directory of pfff?
 fi
 
 # To compile the source, using pad installation.
-echo setting OPAM
-eval `~pad/packages/Linux/bin/opam config env`
+#echo setting OPAM
+#eval `~pad/packages/Linux/bin/opam config env`
+export CAML_LD_LIBRARY_PATH=/home/pad/.opam/4.01.0/lib/stublibs
+export OCAML_TOPLEVEL_PATH=/home/pad/.opam/4.01.0/lib/toplevel
+export MANPATH=/home/pad/.opam/4.01.0/man:
+export PATH=/home/pad/.opam/4.01.0/bin:/home/pad/packages/sbin:/home/pad/packages/bin:/home/pad/bin:/usr/kerberos/bin:/opt/local/bin:/usr/local/bin:/bin:/usr/bin:/usr/facebook/ops/scripts:/usr/facebook/scripts:/usr/facebook/scripts:/usr/facebook/scripts/db:/usr/local/sbin:/usr/sbin:/sbin:/mnt/vol/engshare/svnroot/tfb/trunk/www/scripts/bin:/mnt/vol/engshare/admin/scripts/hg:/mnt/vol/engshare/admin/scripts/git:/mnt/vol/engshare/admin/scripts:/home/pad/www/scripts/bin:/home/pad/packages/Linux/bin
+
 
 # for faster compiler
 echo setting OPTBIN
