@@ -1,6 +1,6 @@
 (* Yoann Padioleau
  *
- * Copyright (C) 2010 Facebook
+ * Copyright (C) 2010, 2013 Facebook
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public License
@@ -14,8 +14,8 @@
  *)
 open Common 
 
-module Ast = Ast_js
 module Flag = Flag_parsing_js
+module Ast = Ast_js
 module TH   = Token_helpers_js
 module T = Parser_js
 module PI = Parse_info
@@ -58,23 +58,22 @@ let tokens2 file =
       in
       let rec tokens_aux acc = 
         let tok = jstoken lexbuf in
-
         if !Flag.debug_lexer then Common.pr2_gen tok;
+
         if not (TH.is_comment tok)
         then Lexer_js._last_non_whitespace_like_token := Some tok;
 
         let tok = tok +> TH.visitor_info_of_tok (fun ii -> 
-        { ii with Parse_info.token=
+        { ii with PI.token =
           (* could assert pinfo.filename = file ? *)
-               match ii.Parse_info.token with
-               | Parse_info.OriginTok pi ->
-                   Parse_info.OriginTok 
-                     (Parse_info.complete_token_location_large file table pi)
-               | Parse_info.FakeTokStr _
-               | Parse_info.Ab  
-               | Parse_info.ExpandedTok _
-                        -> raise Impossible
-                  })
+            match ii.PI.token with
+            | PI.OriginTok pi ->
+              PI.OriginTok (PI.complete_token_location_large file table pi)
+            | PI.FakeTokStr _
+            | PI.Ab  
+            | PI.ExpandedTok _
+              -> raise Impossible
+        })
         in
 
         if TH.is_eof tok
@@ -84,8 +83,8 @@ let tokens2 file =
     tokens_aux []
   with
   | Lexer_js.Lexical s -> 
-      failwith ("lexical error " ^ s ^ "\n =" ^ 
-                (PI.error_message file (PI.lexbuf_to_strpos lexbuf)))
+    failwith ("lexical error " ^ s ^ "\n =" ^ 
+                 (PI.error_message file (PI.lexbuf_to_strpos lexbuf)))
   | e -> raise e
  )
 
@@ -271,13 +270,13 @@ exception Parse_error of Parse_info.info
 
 let parse2 filename =
 
-  let stat = Parse_info.default_stat filename in
+  let stat = PI.default_stat filename in
   let filelines = Common2.cat_array filename in
 
   let toks_orig = tokens filename in
   let toks = adjust_tokens toks_orig in
 
-  let tr = Parse_info.mk_tokens_state toks in
+  let tr = PI.mk_tokens_state toks in
 
   let checkpoint = TH.line_of_tok tr.PI.current in
 
@@ -342,7 +341,7 @@ let parse2 filename =
       let checkpoint2 = Common.cat filename +> List.length in
 
       if !Flag.show_parsing_error
-      then Parse_info.print_bad line_error (checkpoint, checkpoint2) filelines;
+      then PI.print_bad line_error (checkpoint, checkpoint2) filelines;
 
       stat.PI.bad     <- Common.cat filename +> List.length;
 
