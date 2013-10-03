@@ -33,7 +33,10 @@ let test_parse_js xs  =
     then pr2_once "IGNORING third party directory, bad unicode chars"
     else begin
       let (xs, stat) = 
+      Common.save_excursion Flag.error_recovery true (fun () ->
+      Common.save_excursion Flag.exn_when_lexical_error false (fun () ->
         Parse_js.parse file 
+      ))
       in
       Common.push2 stat stat_list;
     end
