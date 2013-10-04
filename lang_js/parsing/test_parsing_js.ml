@@ -43,7 +43,9 @@ let test_parse_js xs  =
   ));
   Parse_info.print_parsing_stat_list !stat_list;
   ()
-
+(* see also:
+ * /home/engshare/third-party-tools/node/bin/node tools/generate-test-fixture.js "foo();"
+ *)
 let test_dump_js file =
   let ast = Parse_js.parse_program file in
   let v = Meta_ast_js.vof_program ast in
