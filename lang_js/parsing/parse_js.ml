@@ -54,7 +54,13 @@ let tokens2 file =
     Lexer_js.reset();
     try 
       let jstoken lexbuf = 
-        Lexer_js.initial lexbuf
+        match Lexer_js.current_mode() with
+        | Lexer_js.ST_IN_CODE ->
+            Lexer_js.initial lexbuf
+        | Lexer_js.ST_IN_XHP_TAG current_tag ->
+            Lexer_js.st_in_xhp_tag current_tag lexbuf
+        | Lexer_js.ST_IN_XHP_TEXT current_tag ->
+            Lexer_js.st_in_xhp_text current_tag lexbuf
       in
       let rec tokens_aux acc = 
         let tok = jstoken lexbuf in

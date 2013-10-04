@@ -251,6 +251,14 @@ let visit_program
     | T.T_EXTENDS ii 
         -> tag ii KeywordObject
 
+      | T.T_XHP_TEXT (_, ii) -> tag ii String
+      | T.T_XHP_ATTR (_, ii) -> tag ii (Field (Use2 fake_no_use2))
+
+      | T.T_XHP_CLOSE_TAG (_, ii) -> tag ii EmbededHtml
+      | T.T_XHP_SLASH_GT ii -> tag ii EmbededHtml
+      | T.T_XHP_GT ii -> tag ii EmbededHtml
+      | T.T_XHP_OPEN_TAG (_, ii) -> tag ii EmbededHtml
+
     | T.T_STATIC ii -> tag ii Keyword
 
     | T.T_WHILE (ii)

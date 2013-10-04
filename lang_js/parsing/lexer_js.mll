@@ -22,9 +22,19 @@ module Ast = Ast_js
 module Flag = Flag_parsing_js
 
 (*****************************************************************************)
+(* Prelude *)
+(*****************************************************************************)
+(* The Javascript lexer.
+ *
+ * There are a few tricks to go around ocamllex restrictions
+ * because recent Javascripts have different lexing rules depending on some
+ * "contexts", especially for JSX/XHP
+ * (this is similar to Perl, e.g. the <<<END context).
+ *)
+
+(*****************************************************************************)
 (* Helpers *)
 (*****************************************************************************)
-
 exception Lexical of string
 
 let tok     lexbuf  = 
@@ -39,6 +49,20 @@ let error s =
     if !Flag.verbose_lexing
     then pr2_once ("LEXER: " ^ s)
     else ()
+
+(* pad: hack around ocamllex to emulate the yyless() of flex. The semantic
+ * is not exactly the same than yyless(), so I use yyback() instead.
+ * http://my.safaribooksonline.com/book/programming/flex/9780596805418/a-reference-for-flex-specifications/yyless
+ *)
+let yyback n lexbuf =
+  lexbuf.Lexing.lex_curr_pos <- lexbuf.Lexing.lex_curr_pos - n;
+  let currp = lexbuf.Lexing.lex_curr_p in
+  lexbuf.Lexing.lex_curr_p <- { currp with
+    Lexing.pos_cnum = currp.Lexing.pos_cnum - n;
+  }
+
+let tok_add_s s ii  =
+  PI.rewrap_str ((PI.str_of_info ii) ^ s) ii
 
 (* ---------------------------------------------------------------------- *)
 (* Keywords *)
@@ -91,6 +115,25 @@ let keyword_table = Common.hash_of_list [
 ]
 
 (* ---------------------------------------------------------------------- *)
+(* Lexer State *)
+(* ---------------------------------------------------------------------- *)
+(* note: mostly a copy paste of the trick used in the lexer for PHP *)
+
+type state_mode =
+  (* Regular Javascript mode *)
+  | ST_IN_CODE
+  (* started with <xx when preceded by a certain token (e.g. 'return' '<xx'),
+   * finished by '>' by transiting to ST_IN_XHP_TEXT, or really finished
+   * by '/>'.
+   *)
+  | ST_IN_XHP_TAG of string (* the current tag, e,g, "x_frag" *)
+  (* started with the '>' of an opening tag, finished when '</x>' *)
+  | ST_IN_XHP_TEXT of string (* the current tag *)
+
+let default_state = ST_IN_CODE
+
+let _mode_stack =
+  ref [default_state]
 
 (* The logic to modify _last_non_whitespace_like_token is in the 
  * caller of the lexer, that is in Parse_js.tokens.
@@ -100,8 +143,43 @@ let _last_non_whitespace_like_token =
   ref (None: Parser_js.token option)
 
 let reset () = 
+  _mode_stack := [default_state];
    _last_non_whitespace_like_token := None;
   ()
+
+let rec current_mode () =
+  try
+    Common2.top !_mode_stack
+  with Failure("hd") ->
+    error("mode_stack is empty, defaulting to INITIAL");
+    reset();
+    current_mode ()
+
+let push_mode mode = Common.push2 mode _mode_stack
+let pop_mode () = ignore(Common2.pop2 _mode_stack)
+let set_mode mode =
+  pop_mode();
+  push_mode mode;
+  ()
+
+(* Here is an example of state transition. Given a js file like:
+ *
+ *   return <x>foo<y>bar</y></x>;
+ *
+ * we start with the stack in [ST_IN_CODE]. The transitions are then:
+ *
+ * 'return' -> [IN_CODE]
+ * '<x'     -> [IN_XHP_TAG "x"; IN_CODE], via push_mode()
+ * '>'      -> [IN_XHP_TEXT "x"; IN_CODE], via set_mode()
+ * 'foo'    -> [IN_XHP_TEXT "x"; IN_CODE]
+ * '<y'     -> [IN_XHP_TAG "y";IN_XHP_TEXT "x"; IN_CODE], via push_mode()
+ * '>'      -> [IN_XHP_TEXT "y"; IN_XHP_TEXT "x";IN_CODE], via set_mode()
+ * 'bar'    -> [IN_XHP_TEXT "y"; IN_XHP_TEXT "x"; IN_CODE]
+ * '</y>'   -> [IN_XHP_TEXT "x"; IN_CODE], via pop_mode()
+ * '</x>'   -> [IN_CODE], via pop_mode()
+ * ';'      -> [IN_CODE]
+ *
+ *)
 
 } 
 
@@ -111,6 +189,10 @@ let reset () =
 let _WHITESPACE = [' ' '\n' '\r' '\t']+
 let TABS_AND_SPACES = [' ''\t']*
 let NEWLINE = ("\r"|"\n"|"\r\n")
+
+let XHPLABEL =	['a'-'z''A'-'Z''_']['a'-'z''A'-'Z''0'-'9''_''-']*
+let XHPTAG = XHPLABEL (* (":" XHPLABEL)* *)
+let XHPATTR = XHPLABEL
 
 (*****************************************************************************)
 (* Rule initial *)
@@ -140,8 +222,14 @@ rule initial = parse
   (* symbols *)
   (* ----------------------------------------------------------------------- *)
   
-  | "{" { T_LCURLY (tokinfo lexbuf); }
-  | "}" { T_RCURLY (tokinfo lexbuf); }
+  | "{" { 
+    push_mode ST_IN_CODE;
+    T_LCURLY (tokinfo lexbuf); 
+  }
+  | "}" { 
+    pop_mode ();
+    T_RCURLY (tokinfo lexbuf); 
+  }
 
   | "(" { T_LPAREN (tokinfo lexbuf); }
   | ")" { T_RPAREN (tokinfo lexbuf); }
@@ -177,6 +265,7 @@ rule initial = parse
   | "&=" { T_BIT_AND_ASSIGN (tokinfo lexbuf); }
   | "|=" { T_BIT_OR_ASSIGN (tokinfo lexbuf); }
   | "^=" { T_BIT_XOR_ASSIGN (tokinfo lexbuf); }
+  (* see also xhp code for handling "< XHPTAG" below *)
   | "<" { T_LESS_THAN (tokinfo lexbuf); }
   | ">" { T_GREATER_THAN (tokinfo lexbuf); }
   | "+" { T_PLUS (tokinfo lexbuf); }
@@ -267,6 +356,7 @@ rule initial = parse
   (* todo? marcel was changing of state context condition there *)
   | "/=" { T_DIV_ASSIGN (tokinfo lexbuf); }
 
+(*
   | "/" { 
       let info = tokinfo lexbuf in 
 
@@ -288,6 +378,43 @@ rule initial = parse
           let s = regexp lexbuf in 
           T_REGEX ("/" ^ s, info +> PI.tok_add_s (s))
     }
+*)
+
+  (* ----------------------------------------------------------------------- *)
+  (* XHP *)
+  (* ----------------------------------------------------------------------- *)
+
+  (* xhp: we need to disambiguate the different use of '<' to know whether
+   * we are in a position where an XHP construct can be started. Knowing
+   * what was the previous token seems enough; no need to hack the
+   * grammar to have a global shared by the lexer and parser.
+   *
+   * We could maybe even return a TSMALLER in both cases and still
+   * not generate any conflict in the grammar, but it feels cleaner to
+   * generate a different token, because we will really change the lexing
+   * mode when we will see a '>' which makes the parser enter in the
+   * ST_IN_XHP_TEXT state where it's ok to write "I don't like you"
+   * in which the quote does not need to be ended.
+   *)
+  | "<" (XHPTAG as tag) {
+    
+    match !_last_non_whitespace_like_token with
+    | Some (
+        T_LPAREN _
+      | T_SEMICOLON _ | T_COMMA _
+      | T_LCURLY _ | T_RCURLY _
+      | T_RETURN _
+      | T_ASSIGN _ 
+(*      | T_DOUBLE_ARROW _ *)
+      | T_PLING _ | T_COLON _
+    )
+      ->
+      push_mode (ST_IN_XHP_TAG tag);
+      T_XHP_OPEN_TAG(tag, tokinfo lexbuf)
+    | _ ->
+      yyback (String.length tag) lexbuf;
+      T_LESS_THAN(tokinfo lexbuf)
+  }
 
   (* ----------------------------------------------------------------------- *)
   (* Misc *)
@@ -380,3 +507,124 @@ and st_one_line_comment = parse
     error ("unrecognised symbol, in st_one_line_comment rule:"^tok lexbuf);
     tok lexbuf
     }
+
+(*****************************************************************************)
+(* Rules for XHP *)
+(*****************************************************************************)
+(* XHP lexing states and rules *)
+
+and st_in_xhp_tag current_tag = parse
+
+  (* The original XHP parser have some special handlings of
+   * whitespace and enforce to use certain whitespace at
+   * certain places. Not sure I need to enforce this too.
+   * Simpler to ignore whitespaces.
+   *
+   * todo? factorize with st_in_scripting rule?
+   *)
+  | [' ' '\t']+ { TCommentSpace(tokinfo lexbuf) }
+  | ['\n' '\r'] { TCommentNewline(tokinfo lexbuf) }
+  | "/*" {
+        let info = tokinfo lexbuf in
+        let com = st_comment lexbuf in
+        TComment(info +> tok_add_s com)
+      }
+  | "/**/" { TComment(tokinfo lexbuf) }
+
+  | "//" {
+      let info = tokinfo lexbuf in
+      let com = st_one_line_comment lexbuf in
+      TComment(info +> tok_add_s com)
+    }
+
+
+  (* attribute management *)
+  | XHPATTR { T_XHP_ATTR(tok lexbuf, tokinfo lexbuf) }
+  | "="     { T_ASSIGN(tokinfo lexbuf) }
+
+  | ['"'] {
+      let info = tokinfo lexbuf in
+      let s = string_double_quote lexbuf in 
+      T_STRING (s, info +> PI.tok_add_s (s ^ "\""))
+  }
+  | "{" {
+      push_mode ST_IN_CODE;
+      T_LCURLY(tokinfo lexbuf)
+    }
+
+  (* a singleton tag *)
+  | "/>" {
+      pop_mode ();
+      T_XHP_SLASH_GT (tokinfo lexbuf)
+    }
+
+  (* When we see a ">", it means it's just the end of
+   * the opening tag. Transit to IN_XHP_TEXT.
+   *)
+  | ">" {
+      set_mode (ST_IN_XHP_TEXT current_tag);
+      T_XHP_GT (tokinfo lexbuf)
+    }
+
+  | eof { EOF (tokinfo lexbuf +> PI.rewrap_str "") }
+  | _  {
+        error("unrecognised symbol, in XHP tag:"^tok lexbuf);
+        TUnknown (tokinfo lexbuf)
+    }
+
+(* ----------------------------------------------------------------------- *)
+and st_in_xhp_text current_tag = parse
+
+  (* a nested xhp construct *)
+  | "<" (XHPTAG as tag) {
+
+      push_mode (ST_IN_XHP_TAG tag);
+      T_XHP_OPEN_TAG(tag, tokinfo lexbuf)
+    }
+
+  | "<" "/" (XHPTAG as tag) ">" {
+      if (tag <> current_tag)
+      then error (spf "XHP: wrong closing tag for, %s != %s" tag current_tag);
+      pop_mode ();
+      T_XHP_CLOSE_TAG(Some tag, tokinfo lexbuf)
+
+    }
+  (* shortcut for closing tag ? *)
+  | "<" "/" ">" {
+      (* no check :( *)
+      pop_mode ();
+      T_XHP_CLOSE_TAG(None, tokinfo lexbuf)
+    }
+  | "<!--" {
+      let info = tokinfo lexbuf in
+      let com = st_xhp_comment lexbuf in
+      (* less: make a special token T_XHP_COMMENT? *)
+      TComment(info +> tok_add_s com)
+  }
+
+  (* PHP interpolation. How the user can produce a { ? &;something ? *)
+  | "{" {
+      push_mode ST_IN_CODE;
+      T_LCURLY(tokinfo lexbuf)
+    }
+
+  (* opti: *)
+  | [^'<' '{']+ { T_XHP_TEXT (tok lexbuf, tokinfo lexbuf) }
+
+
+  | eof { EOF (tokinfo lexbuf +> PI.rewrap_str "") }
+  | _  {
+      error ("unrecognised symbol, in XHP text:"^tok lexbuf);
+      TUnknown (tokinfo lexbuf)
+    }
+
+and st_xhp_comment = parse
+  | "-->" { tok lexbuf }
+  | [^'-']+ { let s = tok lexbuf in s ^ st_xhp_comment lexbuf }
+  | "-"     { let s = tok lexbuf in s ^ st_xhp_comment lexbuf }
+  | eof { error "end of file in xhp comment"; "-->"}
+  | _  {
+    let s = tok lexbuf in
+    error("unrecognised symbol in xhp comment:"^s);
+    s ^ st_xhp_comment lexbuf
+  }

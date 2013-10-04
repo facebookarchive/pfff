@@ -29,6 +29,7 @@
  * updates:
  *  - add support for ES6 class
  *   http://people.mozilla.org/~jorendorff/es6-draft.html#sec-class-definitions
+ *  - add support for JSX, mostly imitating what was done for XHP in lang_php/
  * 
  *)
 
@@ -101,6 +102,18 @@ let uop op a b = e(U((op,a), b))
  T_PLUS T_MINUS
  T_DIV T_MULT T_MOD
  T_NOT T_BIT_NOT T_INCR T_DECR T_DELETE T_TYPEOF T_VOID
+
+/*(*-----------------------------------------*)*/
+/*(*2 XHP tokens *)*/
+/*(*-----------------------------------------*)*/
+%token <string * Parse_info.info> T_XHP_OPEN_TAG
+/*(* The 'option' is for closing tags like </> *)*/
+%token <string option * Parse_info.info> T_XHP_CLOSE_TAG
+
+/*(* ending part of the opening tag *)*/
+%token <Parse_info.info> T_XHP_GT T_XHP_SLASH_GT
+
+%token <string * Parse_info.info> T_XHP_ATTR T_XHP_TEXT
 
 /*(*-----------------------------------------*)*/
 /*(*2 Extra tokens: *)*/
