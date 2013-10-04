@@ -525,6 +525,89 @@ primary_expression_no_statement:
  | xhp_html { XhpHtml $1 }
 
 /*(*----------------------------*)*/
+/*(*2 scalar *)*/
+/*(*----------------------------*)*/
+null_literal:
+ | T_NULL { $1 }
+
+boolean_literal:
+ | T_TRUE  { true, $1 }
+ | T_FALSE { false, $1 }
+
+numeric_literal:
+ | T_NUMBER { $1 }
+
+regex_literal:
+ | T_REGEX { $1 }
+
+string_literal:
+ | T_STRING { $1 }
+
+/*(*----------------------------*)*/
+/*(*2 array *)*/
+/*(*----------------------------*)*/
+
+array_literal:
+ | T_LBRACKET elison T_RBRACKET              { Array($1, $2, $3) }
+ | T_LBRACKET        T_RBRACKET              { Array($1, [], $2) }
+ | T_LBRACKET element_list T_RBRACKET        { Array($1, $2, $3) }
+ | T_LBRACKET element_list elison T_RBRACKET { Array($1, $2 ++ $3, $4) }
+
+element_list:
+ | elison   assignment_expression { $1 ++ [Left $2] }
+ |          assignment_expression { [Left $1] }
+ | element_list   elison   assignment_expression { $1 ++ $2 ++ [Left $3] }
+
+object_literal:
+ | T_LCURLY T_RCURLY 
+     { ($1, [], $2) }
+ | T_LCURLY property_name_and_value_list T_VIRTUAL_SEMICOLON T_RCURLY 
+     { ($1, $2, $4) }
+
+
+property_name_and_value_list:
+ | property_name T_COLON assignment_expression 
+     { [Left ($1, $2, $3)] }
+ | property_name_and_value_list T_COMMA 
+     property_name T_COLON assignment_expression
+     { $1 ++ [Right $2; Left ($3, $4, $5)] }
+
+/*(*----------------------------*)*/
+/*(*2 function call *)*/
+/*(*----------------------------*)*/
+
+arguments:
+ | T_LPAREN               T_RPAREN { ($1, [], $2) }
+ | T_LPAREN argument_list T_RPAREN { ($1, $2, $3) }
+
+argument_list:
+ | assignment_expression 
+     { [Left $1] }
+ | argument_list T_COMMA assignment_expression 
+     { $1 ++ [Right $2; Left $3] }
+
+/*(*----------------------------*)*/
+/*(*2 XHP embeded html *)*/
+/*(*----------------------------*)*/
+xhp_html:
+ | T_XHP_OPEN_TAG xhp_attributes T_XHP_GT xhp_children T_XHP_CLOSE_TAG
+     { Xhp ($1, $2, $3, $4, $5)  }
+ | T_XHP_OPEN_TAG xhp_attributes T_XHP_SLASH_GT
+     { XhpSingleton ($1, $2, $3) }
+
+xhp_child:
+ | T_XHP_TEXT           { XhpText $1 }
+ | xhp_html             { XhpNested $1 }
+ | T_LCURLY expression semicolon T_RCURLY { XhpExpr ($1, $2, $4) (*TODO$3*) }
+
+xhp_attribute:
+ | T_XHP_ATTR T_ASSIGN xhp_attribute_value { $1, $2, $3 }
+
+xhp_attribute_value:
+ | T_STRING { XhpAttrString ($1) }
+ | T_LCURLY expression semicolon T_RCURLY    { XhpAttrExpr ($1, $2, $4)(*TODO$3*) }
+
+/*(*----------------------------*)*/
 /*(*2 no in *)*/
 /*(*----------------------------*)*/
 expression_no_in:
@@ -645,101 +728,6 @@ member_expression_no_statement:
  | member_expression_no_statement T_PERIOD identifier              { e(Period ($1, $2, $3)) }
  | T_NEW member_expression arguments                               { e(Apply(uop U_new $1 $2, $3)) }
 
-/*(*----------------------------*)*/
-/*(*2 scalar *)*/
-/*(*----------------------------*)*/
-null_literal:
- | T_NULL { $1 }
-
-boolean_literal:
- | T_TRUE  { true, $1 }
- | T_FALSE { false, $1 }
-
-numeric_literal:
- | T_NUMBER { $1 }
-
-regex_literal:
- | T_REGEX { $1 }
-
-string_literal:
- | T_STRING { $1 }
-
-/*(*----------------------------*)*/
-/*(*2 array *)*/
-/*(*----------------------------*)*/
-
-array_literal:
- | T_LBRACKET elison T_RBRACKET              { Array($1, $2, $3) }
- | T_LBRACKET        T_RBRACKET              { Array($1, [], $2) }
- | T_LBRACKET element_list T_RBRACKET        { Array($1, $2, $3) }
- | T_LBRACKET element_list elison T_RBRACKET { Array($1, $2 ++ $3, $4) }
-
-
-element_list:
- | elison   assignment_expression { $1 ++ [Left $2] }
- |          assignment_expression { [Left $1] }
- | element_list   elison   assignment_expression { $1 ++ $2 ++ [Left $3] }
-
-
-
-object_literal:
- | T_LCURLY T_RCURLY 
-     { ($1, [], $2) }
- | T_LCURLY property_name_and_value_list T_VIRTUAL_SEMICOLON T_RCURLY 
-     { ($1, $2, $4) }
-
-
-
-
-property_name_and_value_list:
- | property_name T_COLON assignment_expression 
-     { [Left ($1, $2, $3)] }
- | property_name_and_value_list T_COMMA 
-     property_name T_COLON assignment_expression
-     { $1 ++ [Right $2; Left ($3, $4, $5)] }
-
-/*(*----------------------------*)*/
-/*(*2 variable *)*/
-/*(*----------------------------*)*/
-
-/*(*----------------------------*)*/
-/*(*2 function call *)*/
-/*(*----------------------------*)*/
-
-arguments:
- | T_LPAREN               T_RPAREN { ($1, [], $2) }
- | T_LPAREN argument_list T_RPAREN { ($1, $2, $3) }
-
-argument_list:
- | assignment_expression 
-     { [Left $1] }
- | argument_list T_COMMA assignment_expression 
-     { $1 ++ [Right $2; Left $3] }
-
-/*(*----------------------------*)*/
-/*(*2 auxillary bis *)*/
-/*(*----------------------------*)*/
-
-/*(*----------------------------*)*/
-/*(*2 XHP embeded html *)*/
-/*(*----------------------------*)*/
-xhp_html:
- | T_XHP_OPEN_TAG xhp_attributes T_XHP_GT xhp_children T_XHP_CLOSE_TAG
-     { Xhp ($1, $2, $3, $4, $5)  }
- | T_XHP_OPEN_TAG xhp_attributes T_XHP_SLASH_GT
-     { XhpSingleton ($1, $2, $3) }
-
-xhp_child:
- | T_XHP_TEXT           { XhpText $1 }
- | xhp_html             { XhpNested $1 }
- | T_LCURLY expression semicolon T_RCURLY { XhpExpr ($1, $2, $4) (*TODO$3*) }
-
-xhp_attribute:
- | T_XHP_ATTR T_ASSIGN xhp_attribute_value { $1, $2, $3 }
-
-xhp_attribute_value:
- | T_STRING { XhpAttrString ($1) }
- | T_LCURLY expression semicolon T_RCURLY    { XhpAttrExpr ($1, $2, $4)(*TODO$3*) }
 
 /*(*************************************************************************)*/
 /*(*1 Entities, names *)*/
