@@ -22,6 +22,10 @@ module PI = Parse_info
 (* spec: http://www.ecmascript.org/ and the ecma-262 document.
  *
  * See also http://en.wikipedia.org/wiki/ECMAScript
+ * 
+ * todo: 
+ *  - try to imitate a bit:
+ *    https://developer.mozilla.org/en-US/docs/SpiderMonkey/Parser_API
  *)
 
 (*****************************************************************************)
