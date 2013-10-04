@@ -1,1 +1,1 @@
-var x = <fbt desc='a description'>indeed</dec>;
+var x = <fbt desc='a description'>indeed</fbt>;
