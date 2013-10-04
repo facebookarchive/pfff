@@ -228,57 +228,59 @@ rule initial = parse
   }
   | "}" { 
     pop_mode ();
-    T_RCURLY (tokinfo lexbuf); 
+    T_RCURLY (tokinfo lexbuf);
   }
 
-  | "(" { T_LPAREN (tokinfo lexbuf); }
-  | ")" { T_RPAREN (tokinfo lexbuf); }
+  | "(" { T_LPAREN (tokinfo lexbuf) }
+  | ")" { T_RPAREN (tokinfo lexbuf) }
 
-  | "[" { T_LBRACKET (tokinfo lexbuf); }
-  | "]" { T_RBRACKET (tokinfo lexbuf); }
-  | "." { T_PERIOD (tokinfo lexbuf); }
-  | ";" { T_SEMICOLON (tokinfo lexbuf); }
-  | "," { T_COMMA (tokinfo lexbuf); }
-  | ":" { T_COLON (tokinfo lexbuf); }
-  | "?" { T_PLING (tokinfo lexbuf); }
-  | "&&" { T_AND (tokinfo lexbuf); }
-  | "||" { T_OR (tokinfo lexbuf); }
-  | "===" { T_STRICT_EQUAL (tokinfo lexbuf); }
-  | "!==" { T_STRICT_NOT_EQUAL (tokinfo lexbuf); }
-  | "<=" { T_LESS_THAN_EQUAL (tokinfo lexbuf); }
-  | ">=" { T_GREATER_THAN_EQUAL (tokinfo lexbuf); }
-  | "==" { T_EQUAL (tokinfo lexbuf); }
-  | "!=" { T_NOT_EQUAL (tokinfo lexbuf); }
-  | "++" { T_INCR (tokinfo lexbuf); }
-  | "--" { T_DECR (tokinfo lexbuf); }
-  | "<<=" { T_LSHIFT_ASSIGN (tokinfo lexbuf); }
-  | "<<" { T_LSHIFT (tokinfo lexbuf); }
-  | ">>=" { T_RSHIFT_ASSIGN (tokinfo lexbuf); }
-  | ">>>=" { T_RSHIFT3_ASSIGN (tokinfo lexbuf); }
-  | ">>>" { T_RSHIFT3 (tokinfo lexbuf); }
-  | ">>" { T_RSHIFT (tokinfo lexbuf); }
-  | "+=" { T_PLUS_ASSIGN (tokinfo lexbuf); }
-  | "-=" { T_MINUS_ASSIGN (tokinfo lexbuf); }
+  | "[" { T_LBRACKET (tokinfo lexbuf) }
+  | "]" { T_RBRACKET (tokinfo lexbuf) }
+  | "." { T_PERIOD (tokinfo lexbuf) }
+  | ";" { T_SEMICOLON (tokinfo lexbuf) }
+  | "," { T_COMMA (tokinfo lexbuf) }
+  | ":" { T_COLON (tokinfo lexbuf) }
+  | "?" { T_PLING (tokinfo lexbuf) }
+  | "&&" { T_AND (tokinfo lexbuf) }
+  | "||" { T_OR (tokinfo lexbuf) }
+  | "===" { T_STRICT_EQUAL (tokinfo lexbuf) }
+  | "!==" { T_STRICT_NOT_EQUAL (tokinfo lexbuf) }
+  | "<=" { T_LESS_THAN_EQUAL (tokinfo lexbuf) }
+  | ">=" { T_GREATER_THAN_EQUAL (tokinfo lexbuf) }
+  | "==" { T_EQUAL (tokinfo lexbuf) }
+  | "!=" { T_NOT_EQUAL (tokinfo lexbuf) }
+  | "++" { T_INCR (tokinfo lexbuf) }
+  | "--" { T_DECR (tokinfo lexbuf) }
+  | "<<=" { T_LSHIFT_ASSIGN (tokinfo lexbuf) }
+  | "<<" { T_LSHIFT (tokinfo lexbuf) }
+  | ">>=" { T_RSHIFT_ASSIGN (tokinfo lexbuf) }
+  | ">>>=" { T_RSHIFT3_ASSIGN (tokinfo lexbuf) }
+  | ">>>" { T_RSHIFT3 (tokinfo lexbuf) }
+  | ">>" { T_RSHIFT (tokinfo lexbuf) }
+  | "+=" { T_PLUS_ASSIGN (tokinfo lexbuf) }
+  | "-=" { T_MINUS_ASSIGN (tokinfo lexbuf) }
 
-  | "*=" { T_MULT_ASSIGN (tokinfo lexbuf); }
-  | "%=" { T_MOD_ASSIGN (tokinfo lexbuf); }
-  | "&=" { T_BIT_AND_ASSIGN (tokinfo lexbuf); }
-  | "|=" { T_BIT_OR_ASSIGN (tokinfo lexbuf); }
-  | "^=" { T_BIT_XOR_ASSIGN (tokinfo lexbuf); }
+  | "*=" { T_MULT_ASSIGN (tokinfo lexbuf) }
+  | "%=" { T_MOD_ASSIGN (tokinfo lexbuf) }
+  | "&=" { T_BIT_AND_ASSIGN (tokinfo lexbuf) }
+  | "|=" { T_BIT_OR_ASSIGN (tokinfo lexbuf) }
+  | "^=" { T_BIT_XOR_ASSIGN (tokinfo lexbuf) }
   (* see also xhp code for handling "< XHPTAG" below *)
-  | "<" { T_LESS_THAN (tokinfo lexbuf); }
-  | ">" { T_GREATER_THAN (tokinfo lexbuf); }
-  | "+" { T_PLUS (tokinfo lexbuf); }
-  | "-" { T_MINUS (tokinfo lexbuf); }
-  | "*" { T_MULT (tokinfo lexbuf); }
+  | "<" { T_LESS_THAN (tokinfo lexbuf) }
+  | ">" { T_GREATER_THAN (tokinfo lexbuf) }
+  | "+" { T_PLUS (tokinfo lexbuf) }
+  | "-" { T_MINUS (tokinfo lexbuf) }
+  | "*" { T_MULT (tokinfo lexbuf) }
   (* for '/' see below the regexp handling *)
-  | "%" { T_MOD (tokinfo lexbuf); }
-  | "|" { T_BIT_OR (tokinfo lexbuf); }
-  | "&" { T_BIT_AND (tokinfo lexbuf); }
-  | "^" { T_BIT_XOR (tokinfo lexbuf); }
-  | "!" { T_NOT (tokinfo lexbuf); }
-  | "~" { T_BIT_NOT (tokinfo lexbuf); }
-  | "=" { T_ASSIGN (tokinfo lexbuf); }
+  | "%" { T_MOD (tokinfo lexbuf) }
+  | "|" { T_BIT_OR (tokinfo lexbuf) }
+  | "&" { T_BIT_AND (tokinfo lexbuf) }
+  | "^" { T_BIT_XOR (tokinfo lexbuf) }
+  | "!" { T_NOT (tokinfo lexbuf) }
+  | "~" { T_BIT_NOT (tokinfo lexbuf) }
+  | "=" { T_ASSIGN (tokinfo lexbuf) }
+
+  | "=>" { T_ARROW (tokinfo lexbuf) }
 
   (* ----------------------------------------------------------------------- *)
   (* Keywords and ident *)

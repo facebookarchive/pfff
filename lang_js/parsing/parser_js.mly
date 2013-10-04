@@ -16,20 +16,22 @@
 (* 
  * src: ocamlyaccified from Marcel Laverdet 'fbjs2' via emacs macros, itself
  * extracted from the official ECMAscript specification at:
- *  http://www.ecma-international.org/publications/standards/ecma-262.htm
+ * http://www.ecma-international.org/publications/standards/ecma-262.htm
  * 
  * See also http://en.wikipedia.org/wiki/ECMAScript_syntax
  * 
  * related work:
+ *  - http://esprima.org/, js parser in js
  *  - http://marijnhaverbeke.nl/parse-js/, js parser in common lisp
  *    (which has been since ported to javascript by nodejs people)
- *  - http://esprima.org/, js parser in js
  *  - jslint
  * 
  * updates:
  *  - add support for ES6 class
  *   http://people.mozilla.org/~jorendorff/es6-draft.html#sec-class-definitions
  *  - add support for JSX, mostly imitating what was done for XHP in lang_php/
+ *  - add support for type annotation a la TypeScript
+ *    http://en.wikipedia.org/wiki/TypeScript
  * 
  *)
 
@@ -81,6 +83,7 @@ let uop op a b = e(U((op,a), b))
  T_SEMICOLON 
  T_COMMA
  T_PERIOD
+ T_ARROW
 
 /*(* operators *)*/
 %token <Ast_js.tok>  
@@ -213,13 +216,17 @@ variable_statement:
  /*(* pad: not in original grammar *)*/
  | T_CONST variable_declaration_list semicolon { Const ($1, $2, $3) }
 
+/*(* can't factorize rules with annotation_opt and initializeur_opt otherwize
+   * get r/r conflicts on ',', ';'
+   *)*/
 variable_declaration:
- | identifier initializeur { $1, Some $2 }
- | identifier { $1, None }
+ | identifier annotation initializeur { $1, Some $3 }
+ | identifier annotation              { $1, None }
+ | identifier            initializeur { $1, Some $2 }
+ | identifier                         { $1, None }
 
 initializeur:
  | T_ASSIGN assignment_expression { $1, $2 }
-
 
 empty_statement:
  | semicolon { Nop $1 }
@@ -337,31 +344,26 @@ default_clause:
 /*(*************************************************************************)*/
 
 function_declaration:
- | T_FUNCTION identifier T_LPAREN formal_parameter_list T_RPAREN 
+ | T_FUNCTION identifier T_LPAREN formal_parameter_list_opt T_RPAREN 
+     annotation_opt
      T_LCURLY function_body T_RCURLY 
-     { Some $1, Some $2, ($3, $4, $5), ($6, $7, $8) }
- | T_FUNCTION identifier T_LPAREN T_RPAREN 
-     T_LCURLY function_body T_RCURLY 
-     { Some $1, Some $2, ($3, [], $4), ($5, $6, $7) }
-
+     { Some $1, Some $2, ($3, $4, $5), ($7, $8, $9) }
 
 function_expression:
- | T_FUNCTION identifier T_LPAREN formal_parameter_list T_RPAREN 
+ | T_FUNCTION identifier T_LPAREN formal_parameter_list_opt T_RPAREN 
      T_LCURLY function_body T_RCURLY 
      { e(Function (Some $1, Some $2, ($3, $4, $5), ($6, $7, $8))) }
- | T_FUNCTION identifier T_LPAREN T_RPAREN 
-     T_LCURLY function_body T_RCURLY 
-     { e(Function (Some $1, Some $2, ($3, [], $4), ($5, $6, $7))) }
- | T_FUNCTION T_LPAREN formal_parameter_list T_RPAREN 
+ | T_FUNCTION T_LPAREN formal_parameter_list_opt T_RPAREN 
      T_LCURLY function_body T_RCURLY 
      { e(Function (Some $1, None, ($2, $3, $4), ($5, $6, $7))) }
- | T_FUNCTION T_LPAREN T_RPAREN 
-     T_LCURLY function_body T_RCURLY 
-     { e(Function (Some $1, None, ($2, [], $3), ($4, $5, $6))) }
+
+formal_parameter: 
+ | identifier { $1 }
+ | identifier annotation { $1 }
 
 formal_parameter_list:
- | identifier                                { [Left $1] }
- | formal_parameter_list T_COMMA identifier  { $1 ++ [Right $2; Left $3] }
+ | formal_parameter                                { [Left $1] }
+ | formal_parameter_list T_COMMA formal_parameter  { $1 ++ [Right $2; Left $3] }
 
 function_body:
  | /*(* empty *)*/ { [] }
@@ -403,7 +405,31 @@ method_definition:
     (None, Some $1, ($2, $3, $4), ($5, $6, $7))
   }
 
+/*(*************************************************************************)*/
+/*(*1 Type *)*/
+/*(*************************************************************************)*/
 
+annotation: T_COLON type_ { }
+
+type_:
+ | T_VOID { }
+ | T_IDENTIFIER { }
+ | T_PLING type_ { }
+ | T_IDENTIFIER T_LESS_THAN type_ T_GREATER_THAN  { }
+ | T_LPAREN type_list T_RPAREN T_ARROW type_ {  }
+ | T_LPAREN T_RPAREN           T_ARROW type_ {  }
+ | T_LCURLY type_field_list T_RCURLY { }
+ | T_LCURLY T_RCURLY { }
+
+type_field: T_IDENTIFIER T_COLON type_ {  }
+
+type_field_list:
+ | type_field { }
+ | type_field_list T_SEMICOLON  type_field { }
+
+type_list:
+ | type_ { }
+ | type_list T_COMMA  type_ { }
 
 /*(*************************************************************************)*/
 /*(*1 Expression *)*/
@@ -812,4 +838,8 @@ formal_parameter_list_opt:
 case_clauses_opt:
  | /*(* empty *)*/ { [] }
  | case_clauses    { $1 }
+
+annotation_opt:
+ | /*(* empty *)*/ { None }
+ | annotation    { Some $1 }
 

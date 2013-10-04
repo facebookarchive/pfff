@@ -134,6 +134,7 @@ let info_of_tok = function
   | T_CLASS ii | T_EXTENDS ii | T_STATIC ii -> ii
   | T_XHP_OPEN_TAG (_,ii) | T_XHP_CLOSE_TAG (_,ii) | T_XHP_GT ii
   | T_XHP_SLASH_GT ii | T_XHP_ATTR (_,ii) | T_XHP_TEXT (_,ii)
+  | T_ARROW ii
     -> ii
 
 (* generated via emacs macro from type definition in parse_js.ml *)
@@ -236,6 +237,7 @@ let visitor_info_of_tok f = function
   | T_XHP_SLASH_GT ii -> T_XHP_SLASH_GT (f ii)
   | T_XHP_ATTR (s,ii) -> T_XHP_ATTR (s, f ii)
   | T_XHP_TEXT (s,ii) -> T_XHP_TEXT (s, f ii)
+  | T_ARROW ii -> T_ARROW (f ii)
 
 (*****************************************************************************)
 (* Accessors *)

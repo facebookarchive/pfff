@@ -319,6 +319,8 @@ let visit_program
     | T.T_COLON (ii)
         -> tag ii Punctuation
 
+    | T.T_ARROW ii -> tag ii Punctuation
+
     | T.T_OR (ii)
     | T.T_AND (ii)
     | T.T_BIT_OR (ii)
