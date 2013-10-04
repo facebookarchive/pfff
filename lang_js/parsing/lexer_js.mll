@@ -356,7 +356,6 @@ rule initial = parse
   (* todo? marcel was changing of state context condition there *)
   | "/=" { T_DIV_ASSIGN (tokinfo lexbuf); }
 
-(*
   | "/" { 
       let info = tokinfo lexbuf in 
 
@@ -378,7 +377,6 @@ rule initial = parse
           let s = regexp lexbuf in 
           T_REGEX ("/" ^ s, info +> PI.tok_add_s (s))
     }
-*)
 
   (* ----------------------------------------------------------------------- *)
   (* XHP *)
@@ -547,6 +545,13 @@ and st_in_xhp_tag current_tag = parse
       let s = string_double_quote lexbuf in 
       T_STRING (s, info +> PI.tok_add_s (s ^ "\""))
   }
+  | "'" { 
+      let info = tokinfo lexbuf in 
+      let s = string_quote lexbuf in
+      (* s does not contain the enclosing "'" but the info does *)
+      T_STRING (s, info +> PI.tok_add_s (s ^ "'"))
+    }
+
   | "{" {
       push_mode ST_IN_CODE;
       T_LCURLY(tokinfo lexbuf)
