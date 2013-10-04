@@ -101,8 +101,9 @@ and v_paren10 _of_a (v1, v2, v3) =
   let v1 = v_tok v1 and v2 = _of_a v2 and v3 = v_tok v3 in ()
 
 
-and v_brace _of_a (v1, v2, v3) =
+and v_brace: 'a. ('a -> unit) -> 'a brace -> unit = fun _of_a (v1, v2, v3) ->
   let v1 = v_tok v1 and v2 = _of_a v2 and v3 = v_tok v3 in ()
+
 and v_brace2 _of_a (v1, v2, v3) =
   let v1 = v_tok v1 and v2 = _of_a v2 and v3 = v_tok v3 in ()
 and v_brace3 _of_a (v1, v2, v3) =
@@ -382,7 +383,7 @@ and v_case_clause =
       in ()
 and v_arg v = v_wrap v_string v
 and v_func_decl (v1, v2, v3, v4) =
-  let v1 = v_tok v1
+  let v1 = v_option v_tok v1
   and v2 = v_option v_name v2
   and v3 = v_paren4 (v_comma_list4 v_name) v3
   and v4 = v_brace4 (v_list v_toplevel) v4
@@ -392,10 +393,33 @@ and v_variable_declaration (v1, v2) =
   and v2 =
     v_option (fun (v1, v2) -> let v1 = v_tok v1 and v2 = v_expr v2 in ()) v2
   in ()
+and
+  v_class_decl {
+                 c_tok = v_c_tok;
+                 c_name = v_c_name;
+                 c_extends = v_c_extends;
+                 c_body = v_c_body
+               } =
+  let arg = v_tok v_c_tok in
+  let arg = v_name v_c_name in
+  let arg =
+    v_option
+      (fun (v1, v2) -> let v1 = v_tok v1 and v2 = v_inherit_expr v2 in ())
+      v_c_extends in
+  let arg = v_brace (v_list v_class_stmt) v_c_body in 
+  ()
+and v_class_stmt =
+  function
+  | Method ((v1, v2)) ->
+      let v1 = v_option v_tok v1 and v2 = v_func_decl v2 in ()
+  | ClassExtraSemiColon v1 -> let v1 = v_sc v1 in ()
+and v_inherit_expr v = v_expr v
+
 and v_toplevel =
   function
   | St v1 -> let v1 = v_st v1 in ()
   | FunDecl v1 -> let v1 = v_func_decl v1 in ()
+  | ClassDecl v1 -> let v1 = v_class_decl v1 in ()
   | NotParsedCorrectly v1 -> let v1 = v_list v_info v1 in ()
   | FinalDef v1 -> let v1 = v_info v1 in ()
 and v_program v = v_list v_toplevel v

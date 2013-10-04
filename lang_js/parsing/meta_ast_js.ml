@@ -359,7 +359,7 @@ and vof_case_clause =
       in Ocaml.VSum (("Case", [ v1; v2; v3; v4 ]))
 and vof_arg v = vof_wrap Ocaml.vof_string v
 and vof_func_decl (v1, v2, v3, v4) =
-  let v1 = vof_tok v1
+  let v1 = Ocaml.vof_option vof_tok v1
   and v2 = Ocaml.vof_option vof_name v2
   and v3 = vof_paren (vof_comma_list vof_name) v3
   and v4 = vof_brace (Ocaml.vof_list vof_toplevel) v4
@@ -377,10 +377,47 @@ and vof_toplevel =
   | St v1 -> let v1 = vof_st v1 in Ocaml.VSum (("St", [ v1 ]))
   | FunDecl v1 ->
       let v1 = vof_func_decl v1 in Ocaml.VSum (("FunDecl", [ v1 ]))
+  | ClassDecl v1 ->
+      let v1 = vof_class_decl v1 in Ocaml.VSum (("ClassDecl", [ v1 ]))
   | NotParsedCorrectly v1 ->
       let v1 = Ocaml.vof_list vof_info v1
       in Ocaml.VSum (("NotParsedCorrectly", [ v1 ]))
   | FinalDef v1 -> let v1 = vof_info v1 in Ocaml.VSum (("FinalDef", [ v1 ]))
+and  vof_class_decl {
+                   c_tok = v_c_tok;
+                   c_name = v_c_name;
+                   c_extends = v_c_extends;
+                   c_body = v_c_body
+                 } =
+  let bnds = [] in
+  let arg = vof_brace (Ocaml.vof_list vof_class_stmt) v_c_body in
+  let bnd = ("c_body", arg) in
+  let bnds = bnd :: bnds in
+  let arg =
+    Ocaml.vof_option
+      (fun (v1, v2) ->
+         let v1 = vof_tok v1
+         and v2 = vof_inherit_expr v2
+         in Ocaml.VTuple [ v1; v2 ])
+      v_c_extends in
+  let bnd = ("c_extends", arg) in
+  let bnds = bnd :: bnds in
+  let arg = vof_name v_c_name in
+  let bnd = ("c_name", arg) in
+  let bnds = bnd :: bnds in
+  let arg = vof_tok v_c_tok in
+  let bnd = ("c_tok", arg) in let bnds = bnd :: bnds in Ocaml.VDict bnds
+
+and vof_class_stmt =
+  function
+  | Method ((v1, v2)) ->
+      let v1 = Ocaml.vof_option vof_tok v1
+      and v2 = vof_func_decl v2
+      in Ocaml.VSum (("Method", [ v1; v2 ]))
+  | ClassExtraSemiColon v1 ->
+      let v1 = vof_sc v1 in Ocaml.VSum (("ClassExtraSemiColon", [ v1 ]))
+and vof_inherit_expr v = vof_expr v
+
 and vof_program_orig v = Ocaml.vof_list vof_toplevel v
 
 (* end auto generation *)

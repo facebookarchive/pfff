@@ -194,7 +194,8 @@ and st =
 (* Function definition *)
 (* ------------------------------------------------------------------------- *)
 (* todo: use a record *)
-and func_decl = tok * name option * name comma_list paren * toplevel list brace
+and func_decl = 
+  tok option * name option * name comma_list paren * toplevel list brace
 
 (* ------------------------------------------------------------------------- *)
 (* Variables definition *)
@@ -203,11 +204,28 @@ and func_decl = tok * name option * name comma_list paren * toplevel list brace
 and variable_declaration = name * (tok (*=*) * expr) option
 
 (* ------------------------------------------------------------------------- *)
+(* Class definition *)
+(* ------------------------------------------------------------------------- *)
+and class_decl = {
+  c_tok: tok;
+  c_name: name;
+  c_extends: (tok (* extends *) * inherit_expr) option;
+  c_body: class_stmt list brace;
+}
+
+  and class_stmt =
+  | Method of tok option (* static *) * func_decl
+  | ClassExtraSemiColon of sc
+
+and inherit_expr = expr
+
+(* ------------------------------------------------------------------------- *)
 (* The toplevels elements *)
 (* ------------------------------------------------------------------------- *)
 and toplevel =
   | St of st
   | FunDecl of func_decl
+  | ClassDecl of class_decl
 
   | NotParsedCorrectly of tok list
   | FinalDef of tok (* EOF *)

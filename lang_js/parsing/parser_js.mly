@@ -180,7 +180,7 @@ source_element:
 
 declaration:
  | function_declaration { FunDecl $1 }
- | class_declaration { todoAST }
+ | class_declaration { ClassDecl $1 }
 
 /*(*************************************************************************)*/
 /*(*1 Statement *)*/
@@ -339,25 +339,25 @@ default_clause:
 function_declaration:
  | T_FUNCTION identifier T_LPAREN formal_parameter_list T_RPAREN 
      T_LCURLY function_body T_RCURLY 
-     { $1, Some $2, ($3, $4, $5), ($6, $7, $8) }
+     { Some $1, Some $2, ($3, $4, $5), ($6, $7, $8) }
  | T_FUNCTION identifier T_LPAREN T_RPAREN 
      T_LCURLY function_body T_RCURLY 
-     { $1, Some $2, ($3, [], $4), ($5, $6, $7) }
+     { Some $1, Some $2, ($3, [], $4), ($5, $6, $7) }
 
 
 function_expression:
  | T_FUNCTION identifier T_LPAREN formal_parameter_list T_RPAREN 
      T_LCURLY function_body T_RCURLY 
-     { e(Function ($1, Some $2, ($3, $4, $5), ($6, $7, $8))) }
+     { e(Function (Some $1, Some $2, ($3, $4, $5), ($6, $7, $8))) }
  | T_FUNCTION identifier T_LPAREN T_RPAREN 
      T_LCURLY function_body T_RCURLY 
-     { e(Function ($1, Some $2, ($3, [], $4), ($5, $6, $7))) }
+     { e(Function (Some $1, Some $2, ($3, [], $4), ($5, $6, $7))) }
  | T_FUNCTION T_LPAREN formal_parameter_list T_RPAREN 
      T_LCURLY function_body T_RCURLY 
-     { e(Function ($1, None, ($2, $3, $4), ($5, $6, $7))) }
+     { e(Function (Some $1, None, ($2, $3, $4), ($5, $6, $7))) }
  | T_FUNCTION T_LPAREN T_RPAREN 
      T_LCURLY function_body T_RCURLY 
-     { e(Function ($1, None, ($2, [], $3), ($4, $5, $6))) }
+     { e(Function (Some $1, None, ($2, [], $3), ($4, $5, $6))) }
 
 formal_parameter_list:
  | identifier                                { [Left $1] }
@@ -372,19 +372,23 @@ function_body:
 /*(*************************************************************************)*/
 /*(*1 Class declaration *)*/
 /*(*************************************************************************)*/
-class_declaration: T_CLASS binding_identifier class_tail { }
+class_declaration: T_CLASS binding_identifier class_tail 
+   { 
+     let (extends, body) = $3 in
+     { c_tok = $1; c_name = $2; c_extends =extends; c_body = body }
+   }
 
-class_tail: class_heritage_opt T_LCURLY class_body_opt T_RCURLY { }
+class_tail: class_heritage_opt T_LCURLY class_body_opt T_RCURLY { $1,($2,$3,$4)}
 
-/*(* was T_EXTENDS assignment_expression in original grammar, but weird *)*/
-class_heritage: T_EXTENDS identifier { }
+/*(* extends arguments can be any expression, yep *)*/
+class_heritage: T_EXTENDS assignment_expression { ($1, $2) }
 
-class_body: class_element_list { }
+class_body: class_element_list { $1 }
 
 class_element:
- | method_definition { }
- | T_STATIC method_definition { }
- | semicolon { }
+ | method_definition          { Method (None, $1) }
+ | T_STATIC method_definition { Method (Some $1, $2) }
+ | semicolon { ClassExtraSemiColon $1 }
 
 binding_identifier: identifier { $1 }
 
@@ -394,7 +398,10 @@ binding_identifier: identifier { $1 }
 
 method_definition: 
   identifier T_LPAREN formal_parameter_list_opt T_RPAREN 
-     T_LCURLY function_body T_RCURLY  { }
+    T_LCURLY function_body T_RCURLY  
+  { 
+    (None, Some $1, ($2, $3, $4), ($5, $6, $7))
+  }
 
 
 
@@ -807,8 +814,8 @@ class_heritage_opt:
  | class_heritage { Some $1 }
 
 class_body_opt:
- | /*(*empty*)*/   { None }
- | class_body { Some $1 }
+ | /*(*empty*)*/   { [] }
+ | class_body { $1 }
 
 formal_parameter_list_opt:
  | /*(*empty*)*/   { [] }
