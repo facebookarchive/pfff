@@ -220,10 +220,14 @@ variable_statement:
    * get r/r conflicts on ',', ';'
    *)*/
 variable_declaration:
- | identifier annotation initializeur { $1, Some $3 }
- | identifier annotation              { $1, None }
- | identifier            initializeur { $1, Some $2 }
- | identifier                         { $1, None }
+ | identifier annotation initializeur 
+     { { v_name = $1; v_type = Some $2; v_init = Some $3 } }
+ | identifier annotation              
+     { { v_name = $1; v_type = Some $2; v_init = None } }
+ | identifier            initializeur 
+     { { v_name = $1; v_type = None; v_init = Some $2 } }
+ | identifier                         
+     { { v_name = $1; v_type = None; v_init = None } }
 
 initializeur:
  | T_ASSIGN assignment_expression { $1, $2 }
@@ -267,8 +271,10 @@ iteration_statement:
      { ForIn ($1, $2, Vars ($3, $4), $5, $6, $7, $8) }
 
 variable_declaration_no_in:
- | identifier initializer_no_in { $1, Some $2 }
- | identifier { $1, None }
+ | identifier initializer_no_in 
+     { { v_name = $1; v_init = Some $2; v_type =None } }
+ | identifier                   
+     { { v_name = $1; v_init = None; v_type = None } }
 
 initializer_no_in:
  | T_ASSIGN assignment_expression_no_in { $1, $2 }
@@ -347,19 +353,23 @@ function_declaration:
  | T_FUNCTION identifier T_LPAREN formal_parameter_list_opt T_RPAREN 
      annotation_opt
      T_LCURLY function_body T_RCURLY 
-     { Some $1, Some $2, ($3, $4, $5), ($7, $8, $9) }
+     { { f_tok = Some $1; f_name= Some $2; f_params= ($3, $4, $5);
+         f_return_type = $6; f_body = ($7, $8, $9)
+     } }
 
 function_expression:
  | T_FUNCTION identifier T_LPAREN formal_parameter_list_opt T_RPAREN 
      T_LCURLY function_body T_RCURLY 
-     { e(Function (Some $1, Some $2, ($3, $4, $5), ($6, $7, $8))) }
+     { e(Function { f_tok = Some $1; f_name= Some $2; f_params= ($3, $4, $5);
+                    f_return_type = None; f_body = ($6, $7, $8) }) }
  | T_FUNCTION T_LPAREN formal_parameter_list_opt T_RPAREN 
      T_LCURLY function_body T_RCURLY 
-     { e(Function (Some $1, None, ($2, $3, $4), ($5, $6, $7))) }
+     { e(Function { f_tok = Some $1; f_name= None; f_params = ($2, $3, $4);
+                    f_return_type = None; f_body = ($5, $6, $7)}) }
 
 formal_parameter: 
- | identifier { $1 }
- | identifier annotation { $1 }
+ | identifier            { {p_name= $1; p_type = None; } }
+ | identifier annotation { {p_name = $1; p_type = Some $2; } }
 
 formal_parameter_list:
  | formal_parameter                                { [Left $1] }
@@ -399,37 +409,38 @@ binding_identifier: identifier { $1 }
 /*(*----------------------------*)*/
 
 method_definition: 
-  identifier T_LPAREN formal_parameter_list_opt T_RPAREN 
+  identifier T_LPAREN formal_parameter_list_opt T_RPAREN annotation_opt
     T_LCURLY function_body T_RCURLY  
-  { 
-    (None, Some $1, ($2, $3, $4), ($5, $6, $7))
-  }
+  { { f_tok = None; f_name = Some $1; f_params = ($2, $3, $4); 
+      f_return_type = $5; f_body =  ($6, $7, $8) 
+  } }
 
 /*(*************************************************************************)*/
 /*(*1 Type *)*/
 /*(*************************************************************************)*/
 
-annotation: T_COLON type_ { }
+annotation: T_COLON type_ { $1, $2 }
 
 type_:
- | T_VOID { }
- | T_IDENTIFIER { }
- | T_PLING type_ { }
- | T_IDENTIFIER T_LESS_THAN type_ T_GREATER_THAN  { }
- | T_LPAREN type_list T_RPAREN T_ARROW type_ {  }
- | T_LPAREN T_RPAREN           T_ARROW type_ {  }
- | T_LCURLY type_field_list T_RCURLY { }
- | T_LCURLY T_RCURLY { }
+ | T_VOID        { TName ("void", $1) }
+ | T_IDENTIFIER  { TName $1 }
+ | T_PLING type_ { TQuestion ($1, $2) }
+ | T_IDENTIFIER T_LESS_THAN type_ T_GREATER_THAN  
+     { assert(fst($1) = "Array"); TArray (snd $1, ($2, $3, $4)) }
+ | T_LPAREN type_list T_RPAREN T_ARROW type_ { TFun (($1, $2, $3), $4, $5) }
+ | T_LPAREN T_RPAREN           T_ARROW type_ { TFun (($1, [], $2), $3, $4) }
+ | T_LCURLY type_field_list T_RCURLY         { TObj ($1, $2, $3) }
+ | T_LCURLY T_RCURLY                         { TObj ($1, [], $2) }
 
-type_field: T_IDENTIFIER T_COLON type_ {  }
+type_field: T_IDENTIFIER T_COLON type_ { ($1, $2, $3) }
 
 type_field_list:
- | type_field { }
- | type_field_list T_SEMICOLON  type_field { }
+ | type_field { [Left $1] }
+ | type_field_list T_SEMICOLON  type_field { $1 ++ [Right $2; Left $3] }
 
 type_list:
- | type_ { }
- | type_list T_COMMA  type_ { }
+ | type_                    { [Left $1] }
+ | type_list T_COMMA  type_ { $1 ++ [Right $2; Left $3] }
 
 /*(*************************************************************************)*/
 /*(*1 Expression *)*/

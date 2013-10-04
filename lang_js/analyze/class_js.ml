@@ -78,8 +78,8 @@ let extract_complete_name_of_info ast =
     V.kstmt = (fun (k, _) st ->
       match st with
       (* var Foo = { ... } *)
-      | Variable(i_1, [Left(((class_name, info_class), 
-          Some((i_3, (Object(body_object))))))], scopt) ->
+      | Variable(i_1, [Left { v_name = (class_name, info_class); v_type = _;
+          v_init = Some((i_3, (Object(body_object))))}], scopt) ->
        (* could restrict to only toplevel first column var declarations ? *)
 
           Hashtbl.add h info_class 
@@ -89,13 +89,12 @@ let extract_complete_name_of_info ast =
           Common.save_excursion in_members true (fun () ->
             k st
           ))
-
       (* var Foo = (function() { ... })() *)
-      | Variable(i_1, [Left(((class_name, info_class),
-         Some((i_3,
+      | Variable(i_1, [Left{ v_name = (class_name, info_class); v_type = _;
+         v_init = Some((i_3,
                (Apply(
                   (Paren((i_4, (Function(body_func)), i_11))), 
-                 (i_13, [], i_14)))))))], scopt) ->
+                 (i_13, [], i_14)))))}], scopt) ->
 
           Hashtbl.add h info_class 
             (Db.Class Db.RegularClass, spf "Misc.%s" class_name);
@@ -103,7 +102,6 @@ let extract_complete_name_of_info ast =
           Common.save_excursion in_members true (fun () ->
             k st
           ))
-            
       | _ -> k st
     );
 

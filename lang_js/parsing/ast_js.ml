@@ -47,6 +47,7 @@ and 'a wrap = 'a * tok
 and 'a paren   = tok * 'a * tok
 and 'a brace   = tok * 'a * tok
 and 'a bracket = tok * 'a * tok 
+and 'a angle = tok * 'a * tok
 and 'a comma_list = ('a, tok (* the comma *)) Common.either list
 
 (* semicolon. Can be None when was implicitely inserted during parsing *)
@@ -210,17 +211,42 @@ and st =
   and arg = string wrap
 
 (* ------------------------------------------------------------------------- *)
+(* Type *)
+(* ------------------------------------------------------------------------- *)
+and type_ =
+  (* used for builtin types like 'void', 'number', 'string', 'any/mixed' *)
+  | TName of name
+  | TQuestion of tok * type_
+  | TArray of tok * type_ angle
+  | TFun of type_ comma_list paren * tok (* => *) * type_
+  (* comma_list or semicolons_list ?*)
+  | TObj of (name * tok (* : *) * type_) comma_list brace
+
+and type_opt = (tok (* : *) * type_) option
+
+(* ------------------------------------------------------------------------- *)
 (* Function definition *)
 (* ------------------------------------------------------------------------- *)
-(* todo: use a record *)
-and func_decl = 
-  tok option * name option * name comma_list paren * toplevel list brace
+and func_decl = {
+  f_tok: tok option; (* None for methods *)
+  f_name: name option; (* None for anonymous functions *)
+  f_params: parameter comma_list paren;
+  f_return_type: type_opt;
+  f_body: toplevel list brace;
+}
+  and parameter = {
+   p_name: name;
+   p_type: type_opt;
+  }
 
 (* ------------------------------------------------------------------------- *)
 (* Variables definition *)
 (* ------------------------------------------------------------------------- *)
-(* todo: use a record *)
-and variable_declaration = name * (tok (*=*) * expr) option
+and variable_declaration = { 
+  v_name: name;
+  v_init: (tok (*=*) * expr) option;
+  v_type: type_opt;
+}
 
 (* ------------------------------------------------------------------------- *)
 (* Class definition *)

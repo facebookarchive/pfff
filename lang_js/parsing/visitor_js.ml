@@ -69,6 +69,9 @@ and v_tok v = v_info v
 and v_wrap: 'a. ('a -> unit) -> 'a wrap -> unit = fun _of_a (v1, v2) ->
   let v1 = _of_a v1 and v2 = v_info v2 in ()
 
+and v_angle _of_a (v1, v2, v3) =
+  let v1 = v_tok v1 and v2 = _of_a v2 and v3 = v_tok v3 in ()
+
 and v_wrap2 _of_a (v1, v2) = let v1 = _of_a v1 and v2 = v_info v2 in ()
 and v_wrap3 _of_a (v1, v2) = let v1 = _of_a v1 and v2 = v_info v2 in ()
 and v_wrap4 _of_a (v1, v2) = let v1 = _of_a v1 and v2 = v_info v2 in ()
@@ -81,7 +84,7 @@ and v_wrap10 _of_a (v1, v2) = let v1 = _of_a v1 and v2 = v_info v2 in ()
 and v_wrap11 _of_a (v1, v2) = let v1 = _of_a v1 and v2 = v_info v2 in ()
 
 
-and v_paren _of_a (v1, v2, v3) =
+and v_paren: 'a. ('a -> unit) -> 'a paren -> unit = fun _of_a (v1, v2, v3) ->
   let v1 = v_tok v1 and v2 = _of_a v2 and v3 = v_tok v3 in ()
 and v_paren2 _of_a (v1, v2, v3) =
   let v1 = v_tok v1 and v2 = _of_a v2 and v3 = v_tok v3 in ()
@@ -125,7 +128,10 @@ and v_bracket2 _of_a (v1, v2, v3) =
 
 and v_comma x = v_tok x
 
-and v_comma_list _of_a = v_list (CommonX.v_either _of_a v_tok)
+and v_comma_list: 'a. ('a -> unit) -> 'a comma_list -> unit = fun _of_a xs ->
+  xs +> List.iter (function | Left x -> _of_a x | Right info -> v_comma info)
+
+
 and v_comma_list2 _of_a xs = 
   xs +> List.iter (function | Left x -> _of_a x | Right info -> v_comma info)
 
@@ -415,17 +421,56 @@ and v_case_clause =
       and v4 = v_list v_toplevel v4
       in ()
 and v_arg v = v_wrap v_string v
-and v_func_decl (v1, v2, v3, v4) =
-  let v1 = v_option v_tok v1
-  and v2 = v_option v_name v2
-  and v3 = v_paren4 (v_comma_list4 v_name) v3
-  and v4 = v_brace4 (v_list v_toplevel) v4
-  in ()
-and v_variable_declaration (v1, v2) =
-  let v1 = v_name v1
-  and v2 =
-    v_option (fun (v1, v2) -> let v1 = v_tok v1 and v2 = v_expr v2 in ()) v2
-  in ()
+and v_type_ =
+  function
+  | TName v1 -> let v1 = v_name v1 in ()
+  | TQuestion ((v1, v2)) -> let v1 = v_tok v1 and v2 = v_type_ v2 in ()
+  | TArray ((v1, v2)) -> let v1 = v_tok v1 and v2 = v_angle v_type_ v2 in ()
+  | TFun ((v1, v2, v3)) ->
+      let v1 = v_paren (v_comma_list v_type_) v1
+      and v2 = v_tok v2
+      and v3 = v_type_ v3
+      in ()
+  | TObj v1 ->
+      let v1 =
+        v_brace
+          (v_comma_list
+             (fun (v1, v2, v3) ->
+                let v1 = v_name v1
+                and v2 = v_tok v2
+                and v3 = v_type_ v3
+                in ()))
+          v1
+      in ()
+and v_type_opt v =
+  v_option (fun (v1, v2) -> let v1 = v_tok v1 and v2 = v_type_ v2 in ()) v
+and  v_func_decl {
+                f_tok = v_f_tok;
+                f_name = v_f_name;
+                f_params = v_f_params;
+                f_return_type = v_f_return_type;
+                f_body = v_f_body
+              } =
+  let arg = v_option v_tok v_f_tok in
+  let arg = v_option v_name v_f_name in
+  let arg = v_paren (v_comma_list v_parameter) v_f_params in
+  let arg = v_type_opt v_f_return_type in
+  let arg = v_brace (v_list v_toplevel) v_f_body in ()
+
+and v_parameter { p_name = v_p_name; p_type = v_p_type } =
+  let arg = v_name v_p_name in let arg = v_type_opt v_p_type in ()
+and v_variable_declaration {
+                           v_name = v_v_name;
+                           v_init = v_v_init;
+                           v_type = v_v_type
+                         } =
+  let arg = v_name v_v_name in
+  let arg =
+    v_option (fun (v1, v2) -> let v1 = v_tok v1 and v2 = v_expr v2 in ())
+      v_v_init in
+  let arg = v_type_opt v_v_type in ()
+
+
 and
   v_class_decl {
                  c_tok = v_c_tok;

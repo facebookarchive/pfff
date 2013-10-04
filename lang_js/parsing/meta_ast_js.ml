@@ -68,6 +68,11 @@ and vof_bracket _of_a (v1, v2, v3) =
   and v3 = vof_tok v3
   in Ocaml.VTuple [ v1; v2; v3 ]
   else _of_a v2
+and vof_angle _of_a (v1, v2, v3) =
+  let v1 = vof_tok v1
+  and v2 = _of_a v2
+  and v3 = vof_tok v3
+  in Ocaml.VTuple [ v1; v2; v3 ]
 and vof_comma_list _of_a xs = 
   if !_current_precision.M.token_info
   then Ocaml.vof_list (Ocaml.vof_either _of_a vof_tok) xs
@@ -397,20 +402,88 @@ and vof_case_clause =
       and v4 = Ocaml.vof_list vof_toplevel v4
       in Ocaml.VSum (("Case", [ v1; v2; v3; v4 ]))
 and vof_arg v = vof_wrap Ocaml.vof_string v
-and vof_func_decl (v1, v2, v3, v4) =
-  let v1 = Ocaml.vof_option vof_tok v1
-  and v2 = Ocaml.vof_option vof_name v2
-  and v3 = vof_paren (vof_comma_list vof_name) v3
-  and v4 = vof_brace (Ocaml.vof_list vof_toplevel) v4
-  in Ocaml.VTuple [ v1; v2; v3; v4 ]
-and vof_variable_declaration (v1, v2) =
-  let v1 = vof_name v1
-  and v2 =
+and vof_type_ =
+  function
+  | TName v1 -> let v1 = vof_name v1 in Ocaml.VSum (("TName", [ v1 ]))
+  | TQuestion ((v1, v2)) ->
+      let v1 = vof_tok v1
+      and v2 = vof_type_ v2
+      in Ocaml.VSum (("TQuestion", [ v1; v2 ]))
+  | TArray ((v1, v2)) ->
+      let v1 = vof_tok v1
+      and v2 = vof_angle vof_type_ v2
+      in Ocaml.VSum (("TArray", [ v1; v2 ]))
+  | TFun ((v1, v2, v3)) ->
+      let v1 = vof_paren (vof_comma_list vof_type_) v1
+      and v2 = vof_tok v2
+      and v3 = vof_type_ v3
+      in Ocaml.VSum (("TFun", [ v1; v2; v3 ]))
+  | TObj v1 ->
+      let v1 =
+        vof_brace
+          (vof_comma_list
+             (fun (v1, v2, v3) ->
+                let v1 = vof_name v1
+                and v2 = vof_tok v2
+                and v3 = vof_type_ v3
+                in Ocaml.VTuple [ v1; v2; v3 ]))
+          v1
+      in Ocaml.VSum (("TObj", [ v1 ]))
+and vof_type_opt v =
+  Ocaml.vof_option
+    (fun (v1, v2) ->
+       let v1 = vof_tok v1 and v2 = vof_type_ v2 in Ocaml.VTuple [ v1; v2 ])
+    v
+and
+  vof_func_decl {
+                  f_tok = v_f_tok;
+                  f_name = v_f_name;
+                  f_params = v_f_params;
+                  f_return_type = v_f_return_type;
+                  f_body = v_f_body
+                } =
+  let bnds = [] in
+  let arg = vof_brace (Ocaml.vof_list vof_toplevel) v_f_body in
+  let bnd = ("f_body", arg) in
+  let bnds = bnd :: bnds in
+  let arg = vof_type_opt v_f_return_type in
+  let bnd = ("f_return_type", arg) in
+  let bnds = bnd :: bnds in
+  let arg = vof_paren (vof_comma_list vof_parameter) v_f_params in
+  let bnd = ("f_params", arg) in
+  let bnds = bnd :: bnds in
+  let arg = Ocaml.vof_option vof_name v_f_name in
+  let bnd = ("f_name", arg) in
+  let bnds = bnd :: bnds in
+  let arg = Ocaml.vof_option vof_tok v_f_tok in
+  let bnd = ("f_tok", arg) in let bnds = bnd :: bnds in Ocaml.VDict bnds
+and vof_parameter { p_name = v_p_name; p_type = v_p_type } =
+  let bnds = [] in
+  let arg = vof_type_opt v_p_type in
+  let bnd = ("p_type", arg) in
+  let bnds = bnd :: bnds in
+  let arg = vof_name v_p_name in
+  let bnd = ("p_name", arg) in let bnds = bnd :: bnds in Ocaml.VDict bnds
+and
+  vof_variable_declaration {
+                             v_name = v_v_name;
+                             v_init = v_v_init;
+                             v_type = v_v_type
+                           } =
+  let bnds = [] in
+  let arg = vof_type_opt v_v_type in
+  let bnd = ("v_type", arg) in
+  let bnds = bnd :: bnds in
+  let arg =
     Ocaml.vof_option
       (fun (v1, v2) ->
          let v1 = vof_tok v1 and v2 = vof_expr v2 in Ocaml.VTuple [ v1; v2 ])
-      v2
-  in Ocaml.VTuple [ v1; v2 ]
+      v_v_init in
+  let bnd = ("v_init", arg) in
+  let bnds = bnd :: bnds in
+  let arg = vof_name v_v_name in
+  let bnd = ("v_name", arg) in let bnds = bnd :: bnds in Ocaml.VDict bnds
+
 and vof_toplevel =
   function
   | St v1 -> let v1 = vof_st v1 in Ocaml.VSum (("St", [ v1 ]))
