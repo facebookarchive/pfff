@@ -28,6 +28,12 @@ let test_dump_simple file =
     | _ -> raise exn
     )
 
+let test_pp_simple file =
+  let cst = Parse_php.parse_program file in
+  let ast = Ast_php_simple_build.program cst in
+  let s = Pretty_print_php_simple.string_of_program ast in
+  pr s
+
 (*****************************************************************************)
 (* Scope annotations *)
 (*****************************************************************************)
@@ -360,6 +366,8 @@ let test_php_serialize file =
 let actions () = [
   "-dump_php_simple", "   <file>",
   Common.mk_action_1_arg test_dump_simple;
+  "-pp_php_simple", "   <file>",
+  Common.mk_action_1_arg test_pp_simple;
 
   "-scope_php", " <file>",
   Common.mk_action_1_arg test_scope_php;

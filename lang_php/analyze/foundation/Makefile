@@ -38,6 +38,7 @@ SRC+= tags_php.ml normalize_php.ml \
      database_light_php.ml \
      database_prolog_php.ml \
      statistics_php.ml \
+     pretty_print_php_simple.ml \
      unit_foundation_php.ml \
      unit_static_analysis_php.ml   unit_typeinfer_php.ml \
      unit_prolog_php.ml
