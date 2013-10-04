@@ -20,10 +20,10 @@ more documentation on how to use or extend pfff.
 pfff is also made of few tools:
  - pfff, which allows to test the different parsers on a single file
  - pfff_db, which does some global analysis on a set of source files and
-   store the data in a marshalled form in a file somewhere (e.g. /tmp/db.json)
+   store the data in a marshalled form in a file somewhere (e.g. ```/tmp/db.json```)
  - pfff_db_heavy, which does some heavy language specific global analysis 
    on a set of source files and store the data in a database somewhere
-   (e.g. /tmp/pfff_db/)
+   (e.g. ```/tmp/pfff_db/```)
  - codemap, which is a gtk and cairo based source code 
    visualizer/navigator/searcher leveraging
    the information computed previously by pfff_db
@@ -87,4 +87,4 @@ do some analysis as in:
 More information
 ----------------------
 
-Look at the pfff wiki (here)[http://github.com/facebook/pfff/wiki/Main]
+Look at the pfff wiki [here](http://github.com/facebook/pfff/wiki/Main)
