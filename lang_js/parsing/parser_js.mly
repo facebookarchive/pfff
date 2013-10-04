@@ -522,7 +522,7 @@ primary_expression_no_statement:
  /*(* xhp: do not put in 'expr', otherwise can't have xhp
     * in function arguments
     *)*/
- | xhp_html { (* TODO *) Extra DanglingComma (*XhpHtml $1*) }
+ | xhp_html { XhpHtml $1 }
 
 /*(*----------------------------*)*/
 /*(*2 no in *)*/
@@ -725,21 +725,21 @@ argument_list:
 /*(*----------------------------*)*/
 xhp_html:
  | T_XHP_OPEN_TAG xhp_attributes T_XHP_GT xhp_children T_XHP_CLOSE_TAG
-     { (*Xhp ($1, $2, $3, $4, $5)*)  }
+     { Xhp ($1, $2, $3, $4, $5)  }
  | T_XHP_OPEN_TAG xhp_attributes T_XHP_SLASH_GT
-     { (*XhpSingleton ($1, $2, $3)*) }
+     { XhpSingleton ($1, $2, $3) }
 
 xhp_child:
- | T_XHP_TEXT           { (*XhpText $1*) }
- | xhp_html             { (*XhpNested $1*) }
- | T_LCURLY expression semicolon T_RCURLY { (*XhpExpr ($1, $2, $3)*) }
+ | T_XHP_TEXT           { XhpText $1 }
+ | xhp_html             { XhpNested $1 }
+ | T_LCURLY expression semicolon T_RCURLY { XhpExpr ($1, $2, $4) (*TODO$3*) }
 
 xhp_attribute:
- | T_XHP_ATTR T_ASSIGN xhp_attribute_value { (*$1, $2, $3*) }
+ | T_XHP_ATTR T_ASSIGN xhp_attribute_value { $1, $2, $3 }
 
 xhp_attribute_value:
- | T_STRING { (*XhpAttrString ($1, $2, $3)*) }
- | T_LCURLY expression semicolon T_RCURLY    { (*XhpAttrExpr ($1, $2, $3)*) }
+ | T_STRING { XhpAttrString ($1) }
+ | T_LCURLY expression semicolon T_RCURLY    { XhpAttrExpr ($1, $2, $4)(*TODO$3*) }
 
 /*(*************************************************************************)*/
 /*(*1 Entities, names *)*/

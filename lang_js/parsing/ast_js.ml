@@ -60,6 +60,8 @@ and sc = tok option
 type name = string wrap
  (* with tarzan *)
 
+type xhp_tag = string
+
 (* ------------------------------------------------------------------------- *)
 (* Expression *)
 (* ------------------------------------------------------------------------- *)
@@ -91,6 +93,8 @@ type expr =
    (* unparser: *)
    | Extra of extra
    | Paren of expr paren
+
+   | XhpHtml of xhp_html
 
      and extra = 
        (* ??? *)
@@ -139,6 +143,21 @@ type expr =
              
    and field =
       (property_name * tok (* : *) * expr)
+
+ and xhp_html =
+   | Xhp of xhp_tag wrap * xhp_attribute list * tok (* > *) *
+       xhp_body list * xhp_tag option wrap
+   | XhpSingleton of xhp_tag wrap * xhp_attribute list * tok (* /> *)
+
+   and xhp_attribute = xhp_attr_name * tok (* = *) * xhp_attr_value
+    and xhp_attr_name = string wrap (* e.g. task-bar *)
+    and xhp_attr_value =
+      | XhpAttrString of string wrap
+      | XhpAttrExpr of expr brace
+   and xhp_body =
+     | XhpText of string wrap
+     | XhpExpr of expr brace
+     | XhpNested of xhp_html
 
 (* ------------------------------------------------------------------------- *)
 (* Statement *)

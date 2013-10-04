@@ -66,7 +66,9 @@ let rec v_info x =
 
 and v_tok v = v_info v
 
-and v_wrap _of_a (v1, v2) = let v1 = _of_a v1 and v2 = v_info v2 in ()
+and v_wrap: 'a. ('a -> unit) -> 'a wrap -> unit = fun _of_a (v1, v2) ->
+  let v1 = _of_a v1 and v2 = v_info v2 in ()
+
 and v_wrap2 _of_a (v1, v2) = let v1 = _of_a v1 and v2 = v_info v2 in ()
 and v_wrap3 _of_a (v1, v2) = let v1 = _of_a v1 and v2 = v_info v2 in ()
 and v_wrap4 _of_a (v1, v2) = let v1 = _of_a v1 and v2 = v_info v2 in ()
@@ -197,6 +199,7 @@ and v_expr (x: expr) =
   | Function v1 -> let v1 = v_func_decl v1 in ()
   | Extra v1 -> let v1 = v_extra v1 in ()
   | Paren v1 -> let v1 = v_paren2 v_expr v1 in ()
+  | XhpHtml v1 -> let v1 = v_xhp_html v1 in ()
   in
   vin.kexpr (k, all_functions) x 
 
@@ -278,6 +281,36 @@ and v_assignment_operator =
   | A_and -> ()
   | A_xor -> ()
   | A_or -> ()
+and v_xhp_html =
+  function
+  | Xhp ((v1, v2, v3, v4, v5)) ->
+      let v1 = v_wrap v_xhp_tag v1
+      and v2 = v_list v_xhp_attribute v2
+      and v3 = v_tok v3
+      and v4 = v_list v_xhp_body v4
+      and v5 = v_wrap (v_option v_xhp_tag) v5
+      in ()
+  | XhpSingleton ((v1, v2, v3)) ->
+      let v1 = v_wrap v_xhp_tag v1
+      and v2 = v_list v_xhp_attribute v2
+      and v3 = v_tok v3
+      in ()
+and v_xhp_attribute (v1, v2, v3) =
+  let v1 = v_xhp_attr_name v1
+  and v2 = v_tok v2
+  and v3 = v_xhp_attr_value v3
+  in ()
+and v_xhp_attr_name v = v_wrap v_string v
+and v_xhp_attr_value =
+  function
+  | XhpAttrString v1 -> let v1 = v_wrap v_string v1 in ()
+  | XhpAttrExpr v1 -> let v1 = v_brace v_expr v1 in ()
+and v_xhp_body =
+  function
+  | XhpText v1 -> let v1 = v_wrap v_string v1 in ()
+  | XhpExpr v1 -> let v1 = v_brace v_expr v1 in ()
+  | XhpNested v1 -> let v1 = v_xhp_html v1 in ()
+and v_xhp_tag x = v_string x
 and v_st x =
   let rec k x = match x with
   | Variable ((v1, v2, v3)) ->

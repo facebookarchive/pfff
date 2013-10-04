@@ -140,6 +140,8 @@ let rec vof_expr =
   | Extra v1 -> let v1 = vof_extra v1 in Ocaml.VSum (("Extra", [ v1 ]))
   | Paren v1 ->
       let v1 = vof_paren vof_expr v1 in Ocaml.VSum (("Paren", [ v1 ]))
+  | XhpHtml v1 ->
+      let v1 = vof_xhp_html v1 in Ocaml.VSum (("XhpHtml", [ v1 ]))
 and vof_extra =
   function | DanglingComma -> Ocaml.VSum (("DanglingComma", []))
 and vof_litteral =
@@ -218,6 +220,43 @@ and vof_assignment_operator =
   | A_and -> Ocaml.VSum (("A_and", []))
   | A_xor -> Ocaml.VSum (("A_xor", []))
   | A_or -> Ocaml.VSum (("A_or", []))
+and vof_xhp_tag x = Ocaml.vof_string x
+and vof_xhp_html =
+  function
+  | Xhp ((v1, v2, v3, v4, v5)) ->
+      let v1 = vof_wrap vof_xhp_tag v1
+      and v2 = Ocaml.vof_list vof_xhp_attribute v2
+      and v3 = vof_tok v3
+      and v4 = Ocaml.vof_list vof_xhp_body v4
+      and v5 = vof_wrap (Ocaml.vof_option vof_xhp_tag) v5
+      in Ocaml.VSum (("Xhp", [ v1; v2; v3; v4; v5 ]))
+  | XhpSingleton ((v1, v2, v3)) ->
+      let v1 = vof_wrap vof_xhp_tag v1
+      and v2 = Ocaml.vof_list vof_xhp_attribute v2
+      and v3 = vof_tok v3
+      in Ocaml.VSum (("XhpSingleton", [ v1; v2; v3 ]))
+and vof_xhp_attribute (v1, v2, v3) =
+  let v1 = vof_xhp_attr_name v1
+  and v2 = vof_tok v2
+  and v3 = vof_xhp_attr_value v3
+  in Ocaml.VTuple [ v1; v2; v3 ]
+and vof_xhp_attr_name v = vof_wrap Ocaml.vof_string v
+and vof_xhp_attr_value =
+  function
+  | XhpAttrString v1 ->
+      let v1 = vof_wrap Ocaml.vof_string v1
+      in Ocaml.VSum (("XhpAttrString", [ v1 ]))
+  | XhpAttrExpr v1 ->
+      let v1 = vof_brace vof_expr v1 in Ocaml.VSum (("XhpAttrExpr", [ v1 ]))
+and vof_xhp_body =
+  function
+  | XhpText v1 ->
+      let v1 = vof_wrap Ocaml.vof_string v1
+      in Ocaml.VSum (("XhpText", [ v1 ]))
+  | XhpExpr v1 ->
+      let v1 = vof_brace vof_expr v1 in Ocaml.VSum (("XhpExpr", [ v1 ]))
+  | XhpNested v1 ->
+      let v1 = vof_xhp_html v1 in Ocaml.VSum (("XhpNested", [ v1 ]))
 and vof_st =
   function
   | Variable ((v1, v2, v3)) ->
