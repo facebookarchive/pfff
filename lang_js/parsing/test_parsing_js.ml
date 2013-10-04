@@ -44,6 +44,10 @@ let test_parse_js xs  =
   Parse_info.print_parsing_stat_list !stat_list;
   ()
 (* see also:
+ * git clone github.com/facebook/esprima
+ * cd esprima/
+ * git checkout fb-harmony
+ * /home/engshare/third-party-tools/node/bin/node tools/generate-test-fixture.js "foo();"
  * /home/engshare/third-party-tools/node/bin/node tools/generate-test-fixture.js "foo();"
  *)
 let test_dump_js file =
