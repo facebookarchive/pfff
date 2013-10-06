@@ -776,6 +776,7 @@ property_name:
  | identifier      { PN_String $1 }
  | string_literal  { PN_String $1 }
  | numeric_literal { PN_Num $1 }
+ | T_CLASS         { PN_String ("class", $1) }
 
 /*(*************************************************************************)*/
 /*(*1 xxx_opt, xxx_list *)*/
