@@ -651,8 +651,13 @@ and structure_item_desc env loc = function
       in ()
 
   (* opened names are resolved, no need to handle that I think *)
+#if OCAML_VERSION >= 4010
   | Tstr_open ((_override, v1, _loc)) ->
       path_t env v1 
+#else
+  | Tstr_open ((v1, _loc)) ->
+      path_t env v1 
+#endif
   | Tstr_include ((v1, v2)) ->
       let _ = module_expr env v1 and _ = List.iter (Ident.t env) v2 in ()
 
@@ -722,7 +727,12 @@ and pattern_desc t env = function
       constant env v1
   | Tpat_tuple xs -> 
       List.iter (pattern env) xs
-  | Tpat_construct ((lid, v3, v4, v5)) ->
+#if OCAML_VERSION >= 4010
+  | Tpat_construct (lid, v3, v4, v5)
+#else
+  | Tpat_construct (_path, lid, v3, v4, v5) 
+#endif
+    ->
       add_use_edge_lid env lid t E.Constructor;
       let _ = constructor_description env v3
       and _ = List.iter (pattern env) v4
@@ -733,7 +743,13 @@ and pattern_desc t env = function
       and _ = v_ref (row_desc env) v3
       in ()
   | Tpat_record ((xs, _closed_flag)) ->
-      List.iter (fun (lid, v2, v3) ->
+      List.iter (fun 
+#if OCAML_VERSION >= 4010
+        (lid, v2, v3) 
+#else
+       (_path, lid, v2, v3)
+#endif
+      ->
         add_use_edge_lid env lid t E.Field;
         let _ = label_description env v3
         and _ = pattern env v3
@@ -816,7 +832,12 @@ and expression_desc t env =
           v2
       in ()
   | Texp_tuple v1 -> let _ = List.iter (expression env) v1 in ()
-  | Texp_construct (lid, v2, v3, _bool) ->
+#if OCAML_VERSION >= 4010
+  | Texp_construct (lid, v2, v3, _bool) 
+#else
+  | Texp_construct (_path, lid, v2, v3, _bool) 
+#endif
+    ->
       add_use_edge_lid env lid t E.Constructor;
       constructor_description env v2;
       List.iter (expression env) v3;
@@ -825,19 +846,35 @@ and expression_desc t env =
       let _ = label env v1 and _ = v_option (expression env) v2 in ()
   (* ?? *)
   | Texp_record ((v1, v2)) ->
-      List.iter (fun (lid, v2, v3) ->
+      List.iter (fun 
+#if OCAML_VERSION >= 4010
+        (lid, v2, v3) 
+#else
+        (_path, lid, v2, v3) 
+#endif
+      ->
         path_t env lid;
         let _ = label_description env v2
         and _ = expression env v3
         in ()
       ) v1;
       v_option (expression env) v2
-  | Texp_field ((v1, lid, v2)) ->
+#if OCAML_VERSION >= 4010
+  | Texp_field ((v1, lid, v2)) 
+#else
+  | Texp_field ((v1, _path, lid, v2)) 
+#endif
+    ->
       expression env v1;
       add_use_edge_lid env lid v1.exp_type E.Field;
       label_description env v2
 
-  | Texp_setfield ((v1, lid, v3, v4)) ->
+#if OCAML_VERSION >= 4010
+  | Texp_setfield ((v1, lid, v3, v4)) 
+#else
+  | Texp_setfield ((v1, _path, lid, v3, v4)) 
+#endif
+    ->
       expression env v1;
       add_use_edge_lid env lid v1.exp_type E.Field;
       label_description env v3;
@@ -908,7 +945,12 @@ and exp_extra env = function
       let _ = v_option (core_type env) v1
       and _ = v_option (core_type env) v2
       in ()
-  | Texp_open (_override, path, lid, _env) ->
+#if OCAML_VERSION >= 4010
+  | Texp_open (_override, path, lid, _env) 
+#else
+  | Texp_open (path, lid, _env)
+#endif
+   ->
       path_t env path
   | Texp_poly v1 -> let _ = v_option (core_type env) v1 in ()
   | Texp_newtype v1 -> let _ = v_string v1 in ()

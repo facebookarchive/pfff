@@ -173,8 +173,8 @@ my $arch = `uname`;
 #---------------------------------------------------------------------
 # We need 3.12 because I use the forall 'a. new typing feature 
 # as well as the '_' pattern in records (in my code but also in lib-sexp/)
-# We need 4.00 because of codegraph for ocaml code using the .cmt
-# We need 4.01 because of changes in the .cmt format
+# We need 4.00 for codegraph for ocaml code using the .cmt
+# We need 4.01 for changes in the .cmt format
 $error += 
     check_config("echo \"1;;\\n\" | ocaml |",
                  "(Objective|OCaml)(.*) (4\.01\.*)",
