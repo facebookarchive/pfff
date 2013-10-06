@@ -91,19 +91,19 @@ clean::
 	rm -f $(TARGET).top
 
 
-CPP=-pp 'cpp -DOCAML_VERSION=4000'
+PP=-pp "cpp -DOCAML_VERSION=$(OCAMLVERSION)"
 
 meta_ast_cmt.cmo: meta_ast_cmt.ml
-	$(OCAMLC) $(CPP)  -c $<
+	$(OCAMLC) $(PP)  -c $<
 
 meta_ast_cmt.cmx: meta_ast_cmt.ml
-	$(OCAMLOPT) $(CPP) -c $<
+	$(OCAMLOPT) $(PP) -c $<
 
 graph_code_cmt.cmo: graph_code_cmt.ml
-	$(OCAMLC) $(CPP)  -c $<
+	$(OCAMLC) $(PP)  -c $<
 
 graph_code_cmt.cmx: graph_code_cmt.ml
-	$(OCAMLOPT) $(CPP) $<
+	$(OCAMLOPT) $(PP) $<
 
 ##############################################################################
 # Literate Programming rules
