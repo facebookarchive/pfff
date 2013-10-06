@@ -1,4 +1,7 @@
 
+On my devbox recent version of ocamlnet don't compile, so you'll have
+to 'opam install ocamlnet.3.6.5'
+
 I'm using Eliom right now only to pass marshalled object conveniently
 to the (js_of_ocaml compiled) client via the %xxx camlp4 extension.
 I try to minimize the number of .eliom file given that tools

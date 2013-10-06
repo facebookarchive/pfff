@@ -53,7 +53,7 @@ type ast =
   | Cpp of Parse_cpp.program2
 
   | Csharp of Parse_csharp.program_and_tokens
-  | Java of Parse_java.program2
+  | Java of Parse_java.program_and_tokens
 
   | Lisp of Parse_lisp.program2
   | Erlang of Parse_erlang.program2

@@ -32,7 +32,7 @@ module Parsing = Parsing2
 (* Flags *)
 (*****************************************************************************)
 
-let filter = ref Treemap_pl.ex_filter_file
+let filter = ref (fun file -> true)
 
 (*****************************************************************************)
 (* Macro view server helpers *)
