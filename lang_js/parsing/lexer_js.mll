@@ -407,6 +407,7 @@ rule initial = parse
       | T_ASSIGN _ 
 (*      | T_DOUBLE_ARROW _ *)
       | T_PLING _ | T_COLON _
+      | T_LBRACKET _ | T_AND _
     )
       ->
       push_mode (ST_IN_XHP_TAG tag);
