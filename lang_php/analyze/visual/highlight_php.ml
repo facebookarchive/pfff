@@ -460,13 +460,17 @@ let visit_program ~tag prefs  hentities (ast, toks) =
 
     (* -------------------------------------------------------------------- *)
     V.kexpr = (fun (k,vx) expr ->
-      k expr;
+      (* do not call k expr; here, let each case call it, because
+       * we assume an order of execution
+       *)
       (match expr with
       | Cast (((cast, v1), v2)) ->
-          tag v1 TypeMisc
-
+          tag v1 TypeMisc;
+          k expr;
+ 
       | This (tok) ->
-          tag tok (Class (Use2 fake_no_use2))
+          tag tok (Class (Use2 fake_no_use2));
+          k expr;
 
       | ArrayGet (var, exprbracket) ->
           (match Ast.unbracket exprbracket with
@@ -508,6 +512,7 @@ let visit_program ~tag prefs  hentities (ast, toks) =
         ->
           let ii = Lib_parsing_php.ii_of_any (Expr lval) in
           ii +> List.iter (fun info -> tag info PointerCall);
+          k expr;
 
       | Call (ObjGet(lval, tok, Id name), args) ->
           let info = Ast.info_of_name name in
@@ -519,7 +524,8 @@ let visit_program ~tag prefs  hentities (ast, toks) =
           (* function pointer call !!! put in big font *)
           let ii = Lib_parsing_php.ii_of_any (Expr e) in
           ii +> List.iter (fun info -> tag info PointerCall);
-
+          k expr;
+      
       | ClassGet (qualif, _tok, Id name) ->
           k expr;
           let info = Ast.info_of_name name in
@@ -528,7 +534,8 @@ let visit_program ~tag prefs  hentities (ast, toks) =
       | ClassGet (qu, _, IdVar (dname, _)) ->
           let info = Ast.info_of_dname dname in
           (* todo? special category for class variables ? *)
-          tag info (Global (Use2 fake_no_use2))
+          tag info (Global (Use2 fake_no_use2));
+          k expr;
 
 
       | ClassGet (v1, t2, v2) ->
@@ -536,8 +543,8 @@ let visit_program ~tag prefs  hentities (ast, toks) =
           let info = Ast.info_of_dname dname in
           tag info BadSmell
           *)
-          tag t2 BadSmell
-
+          tag t2 BadSmell;
+        k expr;
 
       | Id name ->
           (* cf also typing_php.ml *)
@@ -550,19 +557,15 @@ let visit_program ~tag prefs  hentities (ast, toks) =
               tag info Boolean
           | "null" ->
               tag info Null
-
           | _ ->
-              (* TODO *)
-              tag info (Macro (Use2 fake_no_use2))
+            if not (Hashtbl.mem already_tagged info)
+            then tag info (Macro (Use2 fake_no_use2))
           )
 
 (* TODO
       | ClassNameRefStatic (ClassName (name,_)) -> 
           let info = Ast.info_of_name name in
           tag info (Class (Use2 fake_no_use2));
-
-      | (IdSelf _ | IdParent _) ->
-          ()
       | (IdStatic tok) ->
           tag tok BadSmell
 *)
