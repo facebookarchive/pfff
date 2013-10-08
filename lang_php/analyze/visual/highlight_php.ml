@@ -410,13 +410,14 @@ let visit_program ~tag prefs  hentities (ast, toks) =
 
     (* -------------------------------------------------------------------- *)
     V.kexpr = (fun (k,vx) expr ->
-      (* do not call k expr; here, let each case call it *)
+      (* do not call k expr; here, let each case call it. Also
+       * remember that tag() will not retag something already tagged,
+       * so it simplifies a bit the logic where you can visit
+       * the children without being scared it will retag things.
+       *)
       (match expr with
-      | Cast (((cast, v1), v2)) ->
-        tag v1 TypeMisc;
-        k expr;
-        
-      | This (tok) ->
+
+      | This tok ->
         tag tok (Class (Use2 fake_no_use2))
 
       | ArrayGet (var, exprbracket) ->
@@ -435,62 +436,67 @@ let visit_program ~tag prefs  hentities (ast, toks) =
           )
         )
 
+      (* Call *)
+      | Call (a, args) ->
+        (match a with
+        | Id callname ->
+          let info = Ast.info_of_name callname in
+          let f = Ast.str_of_name callname in
+          let args = args +> Ast.unparen +> Ast.uncomma in
+          highlight_funcall_simple ~tag ~hentities f args info;
+        | ClassGet (lval, _, Id name) ->
+          let info = Ast.info_of_name name in
+          tag info (StaticMethod (Use2 fake_no_use2));
+        | ClassGet (lval, _, _var) ->
+          let ii = Lib_parsing_php.ii_of_any (Expr lval) in
+          ii +> List.iter (fun info -> tag info PointerCall);
+        | ObjGet(lval, tok, Id name) ->
+          let info = Ast.info_of_name name in
+          tag info (Method (Use2 fake_no_use2));
+        | e ->
+          (* function pointer call !!! put in big font *)
+          let ii = Lib_parsing_php.ii_of_any (Expr e) in
+          ii +> List.iter (fun info -> tag info PointerCall);
+        );
+        k expr
 
+      (* ObjGet *)
       | ObjGet (lval, tok, Id name) ->
         let info = Ast.info_of_name name in
         tag info (Field (Use2 fake_no_use2));
         k expr
 
-      | Call (Id callname, args) ->
-        let info = Ast.info_of_name callname in
-        let f = Ast.str_of_name callname in
-        let args = args +> Ast.unparen +> Ast.uncomma in
-        highlight_funcall_simple ~tag ~hentities f args info;
-        k expr
-
-      | Call (ClassGet (lval, _, Id name), _args) ->
-        let info = Ast.info_of_name name in
-        tag info (StaticMethod (Use2 fake_no_use2));
-        k expr
-
-      | Call (ClassGet (lval, _, _var), _args) ->
-        let ii = Lib_parsing_php.ii_of_any (Expr lval) in
-        ii +> List.iter (fun info -> tag info PointerCall);
-        k expr;
-
-      | Call (ObjGet(lval, tok, Id name), args) ->
-        let info = Ast.info_of_name name in
-        tag info (Method (Use2 fake_no_use2));
-        k expr
-
-
-      | Call (e, args) ->
-          (* function pointer call !!! put in big font *)
-        let ii = Lib_parsing_php.ii_of_any (Expr e) in
-        ii +> List.iter (fun info -> tag info PointerCall);
-        k expr;
+      (* ClassGet *)
+      | ClassGet (qualif, tok, b) ->
+        (* todo: qualif! *)
+      (* TODO
+         | ClassNameRefStatic (ClassName (name,_)) -> 
+         let info = Ast.info_of_name name in
+         tag info (Class (Use2 fake_no_use2));
+         | (IdStatic tok) ->
+         tag tok BadSmell
+      *)
         
-      | ClassGet (qualif, _tok, Id name) ->
-        k expr;
-        let info = Ast.info_of_name name in
-        tag info (MacroVar (Use2 fake_no_use2))
-
-      | ClassGet (qu, _, IdVar (dname, _)) ->
-        let info = Ast.info_of_dname dname in
+        (match b with
+        | Id name ->
+          let info = Ast.info_of_name name in
+          tag info (MacroVar (Use2 fake_no_use2))
+        | IdVar (dname, _) ->
+          let info = Ast.info_of_dname dname in
           (* todo? special category for class variables ? *)
-        tag info (Global (Use2 fake_no_use2));
-        k expr;
+          tag info (Global (Use2 fake_no_use2));
 
-      | ClassGet (v1, t2, v2) ->
-          (* todo? colorize v1? bad to use dynamic variable ...
+        | v2 ->
+          (* todo? colorize qualif? bad to use dynamic variable ...
              let info = Ast.info_of_dname dname in
              tag info BadSmell
           *)
-        tag t2 BadSmell;
-        k expr;
+          tag tok BadSmell;
+        );
+        k expr
 
       | Id name ->
-          (* cf also typing_php.ml *)
+        (* cf also typing_php.ml *)
         let s = Ast.str_of_name name in
         let info = Ast.info_of_name name in
         (match s with
@@ -505,17 +511,8 @@ let visit_program ~tag prefs  hentities (ast, toks) =
           then tag info (MacroVar (Use2 fake_no_use2))
         )
 
-      (* TODO
-         | ClassNameRefStatic (ClassName (name,_)) -> 
-         let info = Ast.info_of_name name in
-         tag info (Class (Use2 fake_no_use2));
-         | (IdStatic tok) ->
-         tag tok BadSmell
-      *)
-
       | IdVar (dname, aref) ->
-          (* see check_variables_php.ml *)
-
+        (* see check_variables_php.ml *)
         let info = Ast.info_of_dname dname in
         (match !aref with
         | S.Local ->
@@ -542,6 +539,11 @@ let visit_program ~tag prefs  hentities (ast, toks) =
         | S.NoScope ->
           tag info (NoType)
         )
+
+      | Cast (((cast, v1), v2)) ->
+        tag v1 TypeMisc;
+        k expr;
+        
       | _ ->
         k expr
       )
