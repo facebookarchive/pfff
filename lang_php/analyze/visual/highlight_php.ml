@@ -180,47 +180,6 @@ let highlight_funcall_simple ~tag ~hentities f args info =
   );
   ()
 
-(* todo? move in khint_type? *)
-let rec handle_typehint tag x = match x with
-  | Some th -> (match th with
-    (* TODO: emit info for type args *)
-    | Hint (XName [QI (name)], _targsTODO) -> 
-       let info = Ast.info_of_ident name in
-       tag info (TypeMisc);
-    | Hint (XName qu, _) -> 
-      raise (TodoNamespace (Ast.info_of_qualified_ident qu))
-    | Hint ((Self _ | Parent _), _) ->
-        ()
-    | Hint (LateStatic tok, _) ->
-        tag tok BadSmell
-    | HintArray tok ->
-        tag tok (TypeMisc);
-    | HintQuestion (tok,t) ->
-        tag tok (TypeMisc);
-        handle_typehint tag (Some t)
-    | HintTuple (vl, elts, vr) ->
-        tag vl (TypeMisc);
-        List.iter (fun x -> handle_typehint tag (Some x)) (Ast.uncomma elts);
-        tag vr (TypeMisc)
-    | HintCallback (lp, (tok, (lap, args, rap), ret), rp) ->
-        tag lp (TypeMisc);
-        tag tok (TypeMisc);
-        tag lap (TypeMisc);
-        List.iter (fun x -> handle_typehint tag (Some x)) (Ast.uncomma_dots args);
-        tag rap (TypeMisc);
-        (match ret with
-        | None -> ()
-        | Some (_, ret) ->
-          handle_typehint tag (Some ret);
-        );
-        tag rp (TypeMisc)
-    | HintShape (tok, xs) ->
-      (* todo: colorize as record the keys? *)
-      ()
-  )
-  | None -> ()
-
-
 (*****************************************************************************)
 (* PHP Code highlighter *)
 (*****************************************************************************)
@@ -329,8 +288,7 @@ let visit_program ~tag prefs  hentities (ast, toks) =
       | _ -> k top
     );
     V.kfunc_def = (fun (k, vx) def ->
-      let name = def.f_name in
-      let info = Ast.info_of_ident name in
+      let info = Ast.info_of_ident def.f_name in
       let kind =
         match def.f_type with
         | FunctionRegular | FunctionLambda ->
@@ -348,8 +306,7 @@ let visit_program ~tag prefs  hentities (ast, toks) =
     );
 
     V.kclass_def = (fun (k, vx) def ->
-      let name = def.c_name in
-      let info = Ast.info_of_ident name in
+      let info = Ast.info_of_ident def.c_name in
       tag info (Class (Def2 fake_no_def2));
       def.c_extends +> Common.do_option (fun (tok, name) ->
         let name = name_of_class_name name in
@@ -365,13 +322,10 @@ let visit_program ~tag prefs  hentities (ast, toks) =
       );
       k def
     );
-    (* less: constant_def? *)
 
     (* -------------------------------------------------------------------- *)
     V.kparameter = (fun (k, _) param ->
-
       let info = Ast.info_of_dname param.p_name in
-
       (* we highlight parameters passed by ref elsewhere *)
       if not (Hashtbl.mem already_tagged info)
       then begin
@@ -380,15 +334,14 @@ let visit_program ~tag prefs  hentities (ast, toks) =
          else tag info ParameterRef
         );
       end;
-      param.p_type +> handle_typehint tag;
+      k param
     );
 
     (* -------------------------------------------------------------------- *)
     V.kclass_stmt = (fun (k, bigf) x ->
       match x with
-      | Ast.Method def ->
-          (* done in kfunc_def *)
-        k x
+      (* done in kfunc_def *)
+      | Ast.Method def -> k x
 
       | Ast.XhpDecl d ->
         (match d with
@@ -413,6 +366,7 @@ let visit_program ~tag prefs  hentities (ast, toks) =
           tag info (Field (Def2 fake_no_def2));
         );
         k x
+
       | Ast.UseTrait (tok, names, rules_or_tok) ->
         ()
     );
@@ -619,7 +573,6 @@ let visit_program ~tag prefs  hentities (ast, toks) =
       k x
     );
 
-    (* -------------------------------------------------------------------- *)
     V.kxhp_attr_decl = (fun (k, _) x ->
       match x with
       | XhpAttrInherit (xhp_tag, ii) ->
@@ -648,7 +601,6 @@ let visit_program ~tag prefs  hentities (ast, toks) =
         ()
     );
 
-    (* -------------------------------------------------------------------- *)
     V.kencaps = (fun (k, vx) e ->
       match e with
       | EncapsString (s, ii) ->
@@ -659,10 +611,35 @@ let visit_program ~tag prefs  hentities (ast, toks) =
     (* -------------------------------------------------------------------- *)
     V.khint_type = (fun (k, vx) x ->
       (match x with
-      | Hint (x, _) ->
-        let info = Ast.info_of_name x in
+      (* TODO: emit info for type args *)
+      | Hint (XName [QI (name)], _targsTODO) -> 
+        let info = Ast.info_of_ident name in
+        tag info (TypeMisc);
+      | Hint (XName qu, _) -> 
+        (* raise (TodoNamespace (Ast.info_of_qualified_ident qu)) *)
+        let info = Ast.info_of_name (XName qu) in
         tag info (Class (Use2 fake_no_use2));
-      | _ -> ()
+      | Hint ((Self _ | Parent _), _) ->
+        ()
+      | Hint (LateStatic tok, _) ->
+        tag tok BadSmell
+
+      | HintArray tok ->
+        tag tok (TypeMisc);
+      | HintQuestion (tok,t) ->
+        tag tok (TypeMisc);
+      | HintTuple (vl, elts, vr) ->
+        tag vl (TypeMisc);
+        tag vr (TypeMisc);
+      | HintCallback (lp, (tok, (lap, args, rap), ret), rp) ->
+        tag lp (TypeMisc);
+        tag tok (TypeMisc);
+        tag lap (TypeMisc);
+        tag rap (TypeMisc);
+        tag rp (TypeMisc)
+      | HintShape (tok, xs) ->
+        (* todo: colorize as record the keys? *)
+        ()
       );
       k x
     );
