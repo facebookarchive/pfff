@@ -15,14 +15,12 @@
 open Common
 
 open Ast_php
+open Highlight_code
 module Ast = Ast_php
 module V = Visitor_php
-
-open Highlight_code
+module T = Parser_php
 module S = Scope_code
 module Db = Database_code
-
-module T = Parser_php
 
 (*****************************************************************************)
 (* Prelude *)
@@ -68,8 +66,6 @@ let place_ids current_file ids db =
         then PlaceSameDir
         else PlaceExternal
 
-
-
 (* obsolete: this is now computed generically in pfff_visual via the light_db
  * in rewrite_categ_using_entities using x.e_number_external_users.
  *)
@@ -79,6 +75,7 @@ let arity_of_number nbuses =
   | 1 -> UniqueUse
   | n when n < 50 -> MultiUse
   | _ -> LotsOfUse
+
 let use_arity_ident_function_or_macro s db =
   let ids = 
     (* DbPHP.function_ids__of_string s db *)
@@ -98,7 +95,6 @@ let use_arity_ident_function_or_macro s db =
   in
   arity_of_number nbuses
 
-
 (* we generate fake value here because the real one are computed in a
  * later phase in rewrite_categ_using_entities in pfff_visual.
  *)
@@ -109,22 +105,20 @@ let fake_no_use2 = (NoInfoPlace, UniqueDef, MultiUse)
 (* Helpers *)
 (*****************************************************************************)
 
-(* strings are more than just strings in PHP and webapps in general *)
+(* strings are more than just strings in PHP (and webapps in general) *)
 let tag_string ~tag s ii =
   match s with
-  | s when s =~ "/.*" -> tag ii EmbededUrl
+  | s when s =~ "/.*"       -> tag ii EmbededUrl
   | s when s =~ "[a-z]+://" -> tag ii EmbededUrl
-      (* security: html in strings is BAD ! *)
+  (* security: html in strings is BAD ! *)
   | s when s =~ "<" -> tag ii BadSmell
   | _ -> tag ii String
-
 
 (*****************************************************************************)
 (* Properties highlighter *)
 (*****************************************************************************)
 
 let highlight_funcall_simple ~tag ~hentities f args info =
-
   if Hashtbl.mem Env_php.hdynamic_call_wrappers f
   then begin
     match args with
@@ -137,13 +131,11 @@ let highlight_funcall_simple ~tag ~hentities f args info =
          *)
         let ii = Lib_parsing_php.ii_of_any (Argument x) in
         ii +> List.iter (fun info -> tag info PointerCall);
-
   end;
   (match () with
   (* security: *)
   | _ when Hashtbl.mem Env_php.hbad_functions f ->
       tag info BadSmell
-
   | _ ->
       (match Hashtbl.find_all hentities f with
       | [e] ->
@@ -245,12 +237,12 @@ let rec handle_typehint tag x = match x with
  *
  * design: Can do either a single function that do all, or multiple independent
  * functions that repeatedly visit the same ast and tokens. The
- * former is faster (no forest) but less flexible. If for instance want
+ * former is faster (no forest) but less flexible. If for instance want you
  * to impose an order between the coloring, such as first keywords and
- * then yacfe specific coloring such as "expanded", then need extra
- * stuff such as priority list. If have separate functions for those then
+ * then yacfe specific coloring such as "expanded", then you need extra
+ * stuff such as priority lists. If you have separate functions for those then
  * the caller can simply choose to call them in the order he wants so that
- * the last color win. Thus can easily separate concern.
+ * the last color win. Thus one can easily separate concerns.
  *
  * The idea of the code below is to visit the program either through its
  * AST or its list of tokens. The tokens are easier for tagging keywords,
@@ -262,7 +254,6 @@ let visit_program ~tag prefs  hentities (ast, toks) =
   let already_tagged = Hashtbl.create 101 in
 
   let tag = (fun ii categ ->
-
   (* with xhp lots of tokens such as 'var' can also be used
    * as attribute name so we must highlight them with their
    * generic keyword category only if there were not already
@@ -316,7 +307,6 @@ let visit_program ~tag prefs  hentities (ast, toks) =
         aux_toks xs
   in
   aux_toks toks;
-
 
   (* -------------------------------------------------------------------- *)
   (* ast phase 1 *)
@@ -382,9 +372,7 @@ let visit_program ~tag prefs  hentities (ast, toks) =
         else tag info ParameterRef
         );
       end;
-
       param.p_type +> handle_typehint tag;
-
     );
 
     (* -------------------------------------------------------------------- *)
@@ -460,17 +448,14 @@ let visit_program ~tag prefs  hentities (ast, toks) =
 
     (* -------------------------------------------------------------------- *)
     V.kexpr = (fun (k,vx) expr ->
-      (* do not call k expr; here, let each case call it, because
-       * we assume an order of execution
-       *)
+      (* do not call k expr; here, let each case call it *)
       (match expr with
       | Cast (((cast, v1), v2)) ->
           tag v1 TypeMisc;
           k expr;
  
       | This (tok) ->
-          tag tok (Class (Use2 fake_no_use2));
-          k expr;
+          tag tok (Class (Use2 fake_no_use2))
 
       | ArrayGet (var, exprbracket) ->
           (match Ast.unbracket exprbracket with
@@ -497,9 +482,7 @@ let visit_program ~tag prefs  hentities (ast, toks) =
       | Call (Id callname, args) ->
           let info = Ast.info_of_name callname in
           let f = Ast.str_of_name callname in
-
           let args = args +> Ast.unparen +> Ast.uncomma in
-
           highlight_funcall_simple ~tag ~hentities f args info;
           k expr
 
@@ -508,8 +491,7 @@ let visit_program ~tag prefs  hentities (ast, toks) =
           tag info (StaticMethod (Use2 fake_no_use2));
           k expr
 
-      | Call (ClassGet (lval, _, _var), _args)
-        ->
+      | Call (ClassGet (lval, _, _var), _args) ->
           let ii = Lib_parsing_php.ii_of_any (Expr lval) in
           ii +> List.iter (fun info -> tag info PointerCall);
           k expr;
@@ -537,14 +519,13 @@ let visit_program ~tag prefs  hentities (ast, toks) =
           tag info (Global (Use2 fake_no_use2));
           k expr;
 
-
       | ClassGet (v1, t2, v2) ->
           (* todo? colorize v1? bad to use dynamic variable ...
           let info = Ast.info_of_dname dname in
           tag info BadSmell
           *)
           tag t2 BadSmell;
-        k expr;
+          k expr;
 
       | Id name ->
           (* cf also typing_php.ml *)
@@ -569,7 +550,6 @@ let visit_program ~tag prefs  hentities (ast, toks) =
       | (IdStatic tok) ->
           tag tok BadSmell
 *)
-
 
       | IdVar (dname, aref) ->
           (* see check_variables_php.ml *)
@@ -600,9 +580,6 @@ let visit_program ~tag prefs  hentities (ast, toks) =
           | S.NoScope ->
               tag info (NoType)
           )
-
-
-
       | _ ->
           ()
       )
@@ -645,7 +622,6 @@ let visit_program ~tag prefs  hentities (ast, toks) =
           k x
     );
 
-
     (* -------------------------------------------------------------------- *)
     V.kconstant = (fun (k, vx) e ->
       match e with
@@ -662,14 +638,6 @@ let visit_program ~tag prefs  hentities (ast, toks) =
           tag (snd v1) Builtin
       | XdebugClass (_, _) | XdebugResource ->
           ()
-    );
-    (* -------------------------------------------------------------------- *)
-    V.kscalar = (fun (k, vx) sc ->
-      match sc with
-      | C cst ->
-          k sc
-      | Guil _ | HereDoc _ ->
-          k sc
     );
 
     (* -------------------------------------------------------------------- *)
@@ -729,53 +697,10 @@ let visit_program ~tag prefs  hentities (ast, toks) =
 
 
     | T.T_COMMENT (ii)  | T.T_DOC_COMMENT (ii)  ->
-
         assert(Parse_info.is_origintok ii);
-
         tag ii Comment;
-
         let _s = Parse_info.str_of_info ii in
         let _start_pos = Parse_info.pos_of_info ii in
-        (*
-        let toks = Parse_comments.tokens_string s in
-
-        toks +> List.iter (fun tok ->
-          match tok with
-          | Token_comments.TWord (s, pi) ->
-              let startp = start_pos + pi.Common.charpos in
-              let endp = startp + String.length s in
-
-              (match s with
-              | _ when List.mem (String.lowercase s)
-                    ["interrupts"; "interrupt";
-                     "irq"; "irqs";
-                     "lock";"locking";"locks";"locked";
-                    ] ->
-                  pr2_gen (startp, endp);
-                  let (i1, i2) = iter_range_of_range bufinfo (startp, endp) in
-                  buffer#apply_tag_by_name
-                    (stag buffer CommentWordImportantNotion) i1 i2
-
-              | _ when List.mem (String.lowercase s)
-                    ["must";
-                     "should";
-
-                     "hold"; "held";
-                     "enabled";"enable";"enables";
-                     "disabled";"disable";"disables";
-                    ] ->
-                  pr2_gen (startp, endp);
-                  let (i1, i2) = iter_range_of_range bufinfo (startp, endp) in
-                  buffer#apply_tag_by_name
-                    (stag buffer CommentWordImportantModal) i1 i2
-
-              | _ -> ()
-              )
-
-          | _ -> ()
-        );
-        *)
-
         ()
 
       | T.T_XHP_PCDATA ii | T.T_XHP_ANY ii
@@ -977,12 +902,7 @@ let visit_program ~tag prefs  hentities (ast, toks) =
   (* -------------------------------------------------------------------- *)
   (match ast with
   | NotParsedCorrectly iis::_ ->
-      (*
-        let (max,min) = Lib_parsing_c.max_min_ii_by_pos ii in
-        let i1 = iterline_of_info bufinfo min in
-        let i2 = iterline_of_info bufinfo max in
-      *)
-      iis +> List.iter (fun ii -> tag ii NotParsed)
+    iis +> List.iter (fun ii -> tag ii NotParsed)
   | _ -> ()
   );
   ()
