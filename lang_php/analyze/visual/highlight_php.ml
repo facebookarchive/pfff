@@ -320,6 +320,14 @@ let visit_program ~tag prefs  hentities (ast, toks) =
   let hooks = { V.default_visitor with
 
     (* -------------------------------------------------------------------- *)
+    V.ktop = (fun (k, _) top ->
+      match top with
+      | ConstantDef def ->
+        let info = Ast.info_of_ident def.cst_name in
+        tag info (MacroVar (Def2 fake_no_def2));
+        k top
+      | _ -> k top
+    );
     V.kfunc_def = (fun (k, vx) def ->
       let name = def.f_name in
       let info = Ast.info_of_ident name in
@@ -395,7 +403,7 @@ let visit_program ~tag prefs  hentities (ast, toks) =
       | Ast.ClassConstants (tok, vars, tok2) ->
         vars +> Ast.uncomma +> List.iter (fun (name, _opt) ->
           let info = Ast.info_of_ident name in
-          tag info (Macro (Def2 NoUse));
+          tag info (MacroVar (Def2 NoUse));
         );
         k x;
 
@@ -511,7 +519,7 @@ let visit_program ~tag prefs  hentities (ast, toks) =
       | ClassGet (qualif, _tok, Id name) ->
         k expr;
         let info = Ast.info_of_name name in
-        tag info (Macro (Use2 fake_no_use2))
+        tag info (MacroVar (Use2 fake_no_use2))
 
       | ClassGet (qu, _, IdVar (dname, _)) ->
         let info = Ast.info_of_dname dname in
@@ -540,7 +548,7 @@ let visit_program ~tag prefs  hentities (ast, toks) =
           tag info Null
         | _ ->
           if not (Hashtbl.mem already_tagged info)
-          then tag info (Macro (Use2 fake_no_use2))
+          then tag info (MacroVar (Use2 fake_no_use2))
         )
 
       (* TODO
@@ -581,7 +589,7 @@ let visit_program ~tag prefs  hentities (ast, toks) =
           tag info (NoType)
         )
       | _ ->
-        ()
+        k expr
       )
     );
     (* -------------------------------------------------------------------- *)
