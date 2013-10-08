@@ -457,7 +457,11 @@ let rec extract_defs_uses
         *)
        if fullpath =~ ".*/ocaml-4.01.0" || fullpath =~ ".*/ocaml-4.00.1"
        then spf "external/stdlib/%s" (Filename.basename fullpath)
-       else Common.filename_without_leading_path root fullpath
+       else 
+         let readable = Common.filename_without_leading_path root fullpath in
+         if readable =~ "_build/\\(.*\\)"
+         then Common.matched1 readable
+         else readable
       );
     locals = [];
     full_path_local_value = ref [];
