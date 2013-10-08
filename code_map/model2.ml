@@ -417,16 +417,16 @@ let lines_where_used_node node startl microlevel =
   let s = Common2.list_last xs in
   let s =
     (* ugly: see Graph_code_clang.new_str_if_defs() where we rename dupes *)
-    if (s =~ "\\(.*\\)__[0-9]+$")
-    then Common.matched1 s
-    else s
+    match s with
+    | _ when (s =~ "\\(.*\\)__[0-9]+$") -> Common.matched1 s
+    | _ when (s =~ "^\\$\\(.*\\)") -> Common.matched1 s
+    | _ -> s
   in
   
   let (Line startl) = startl in
   match microlevel.content with
   | None -> []
   | Some glypys ->
-    
     let res = ref [] in
     for line = startl to Array.length glypys - 1 do
       let xs = glypys.(line) in
@@ -437,7 +437,6 @@ let lines_where_used_node node startl microlevel =
           | _ -> Highlight_code.Normal
         in
         glyph.str =$= s &&
-          
         (* see the code of the different highlight_code_xxx.ml to
          * know the different possible pairs
          *)
@@ -447,6 +446,7 @@ let lines_where_used_node node startl microlevel =
         | Database_code.Constructor, Highlight_code.ConstructorUse _
         | Database_code.Constructor, Highlight_code.ConstructorMatch _
         | Database_code.Global, Highlight_code.Global _
+        | Database_code.Method _, Highlight_code.Method _
 
         (* tofix at some point, wrong tokenizer *)
         | Database_code.Constant, Highlight_code.Local _
