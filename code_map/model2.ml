@@ -129,8 +129,13 @@ type drawing = {
 
   (*s: fields drawing main view *)
     (* device coordinates *)
+    (* first cairo layer, for heavy computation e.g. the treemap and content*)
     mutable pm: GDraw.pixmap;
+    (* second cairo layer, when move the mouse *)
     mutable overlay: [ `Any ] Cairo.surface;
+    (* todo? third cairo layer? for animations and time related graphics such
+     * as tooltips, glowing rectangles, etc?
+     *)
 
   (*e: fields drawing main view *)
 
