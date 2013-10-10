@@ -15,6 +15,7 @@ SRC= flag_parsing_js.ml \
      token_helpers_js.ml \
      parsing_hacks_js.ml \
      parse_js.ml \
+     esprima.ml \
      test_parsing_js.ml unit_parsing_js.ml
 
 

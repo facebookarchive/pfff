@@ -62,6 +62,13 @@ let test_json_js file =
   pr s;
   ()
 
+let test_esprima file = 
+  let json = Json_in.load_json file in
+  let ast = Esprima.convert json in
+  let v = Meta_ast_js.vof_program ast in
+  let s = Ocaml.string_of_v v in
+  pr s
+
 (*****************************************************************************)
 (* Main entry for Arg *)
 (*****************************************************************************)
@@ -76,4 +83,6 @@ let actions () = [
 
   "-json_js", "   <file> export the AST of file into JSON", 
   Common.mk_action_1_arg test_json_js;
+  "-parse_esprima_json", " <file> ",
+  Common.mk_action_1_arg test_esprima;
 ]
