@@ -1,0 +1,17 @@
+html/js/modules/Alice.js
+html/js/third_party/selection/DOMSelection.js
+html/js/third_party/tinymce/TinyMCE.js
+html/js/ufi/modules/OneClickSpamEducation.js
+html/js/desktop/client/socialfox/worker/mqttbridge/MqttWebsocketBridgeManager.js
+html/js/ads/lib/AdsClusterUploadHandler.js
+html/js/downstream/data/compat/bolt_compat_model.js
+html/js/mobile/downstream/data/compat/bolt_compat_model.js
+html/js/mobile/privacy/MComposerAudienceButton.js
+html/js/swfobject.js
+html/js/cavalry/logger-detailed.js
+html/js/giftcredits/giftcredits-dealspot.js
+html/js/mobile/platform/dialog/jsdialog/MPlatformJSDialogRuntime.js
+html/js/support/FusionCharts.js
+html/js/third_party/raphael/raphael.js
+html/js/third_party/wysihtml5/wysihtml5-0.3.0.min.js
+html/js/brands/components/BrandRoleSelector.brands.js

@@ -5,10 +5,11 @@ TOP=../..
 TARGET=lib
 
 SRC= \
-  module_js.ml class_js.ml comment_js.ml annotation_js.ml \
+  class_js.ml comment_js.ml annotation_js.ml \
   highlight_js.ml \
   database_light_js.ml \
   tags_js.ml \
+  utils_js.ml module_js.ml toplevel_js.ml link_js.ml stats_js.ml \
   test_analyze_js.ml unit_analyze_js.ml
 
 -include $(TOP)/Makefile.config
@@ -44,15 +45,15 @@ all:: rec $(TARGET).cma
 all.opt:: rec.opt $(TARGET).cmxa
 
 rec:
-	set -e; for i in $(MAKESUBDIRS); do $(MAKE) -C $$i all || exit 1; done 
+	set -e; for i in $(MAKESUBDIRS); do $(MAKE) -C $$i all || exit 1; done
 
 rec.opt:
-	set -e; for i in $(MAKESUBDIRS); do $(MAKE) -C $$i all.opt || exit 1; done 
+	set -e; for i in $(MAKESUBDIRS); do $(MAKE) -C $$i all.opt || exit 1; done
 
 clean::
-	set -e; for i in $(MAKESUBDIRS); do $(MAKE) -C $$i clean; done 
+	set -e; for i in $(MAKESUBDIRS); do $(MAKE) -C $$i clean; done
 depend::
-	set -e; for i in $(MAKESUBDIRS); do $(MAKE) -C $$i depend; done 
+	set -e; for i in $(MAKESUBDIRS); do $(MAKE) -C $$i depend; done
 
 
 $(TARGET).cma: $(OBJS)

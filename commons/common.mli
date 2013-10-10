@@ -228,3 +228,8 @@ val files_of_dir_or_files_no_vcs_nofilter:
 
 (* do some finalize, signal handling, unix exit conversion, etc *)
 val main_boilerplate : (unit -> unit) -> unit
+
+(* type of maps from string to `a *)
+module SMap : Map.S with type key = String.t
+type 'a smap = 'a SMap.t
+
