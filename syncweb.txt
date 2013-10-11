@@ -15,6 +15,8 @@ The syncweb masters are in ~/pfff on macbook (MAC) or linux dev machine (DEV):
  - facebook/check_module/ DEV
 
 
+commons/ is partially copied in fork-zamcov/ and hack/src/pfff/commons
+
 The darcs masters are in ~/mobile/commons/ and here are the clones:
 
  - commons/ DEV and MAC
