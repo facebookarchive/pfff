@@ -68,7 +68,8 @@ let string_of_modifier = function
   | Public    -> "is_public"
   | Private   -> "is_private"
   | Protected -> "is_protected"
-  | Static -> "static"  | Abstract -> "abstract" | Final -> "final" | Async -> "async"
+  | Static -> "static"  | Abstract -> "abstract" | Final -> "final"
+  | Async -> "async"
 
 let rec string_of_hint_type h =
   match h with
@@ -150,6 +151,9 @@ let visit ~add readable ast =
         add (P.Misc (spf "arity(%s, %d)" !current
              (List.length (def.f_params +> Ast.unparen +> Ast.uncomma_dots))));
         add_function_params !current def add;
+        def.f_modifiers +> List.iter (fun (m, _) ->
+          add (P.Misc (spf "%s(%s)" (string_of_modifier m) !current));
+        );
 
         k x
       | ConstantDef {cst_toks =(tok, _, _); cst_name=id; _} ->
@@ -535,6 +539,7 @@ let build2 ?(show_progress=true) dir_or_files skip_list =
    add (P.Misc ":- discontiguous docall/3, use/4");
    add (P.Misc ":- discontiguous docall2/3");
    add (P.Misc ":- discontiguous static/1, abstract/1, final/1");
+   add (P.Misc ":- discontiguous async/1");
    add (P.Misc ":- discontiguous arity/2");
    add (P.Misc ":- discontiguous parameter/4");
    add (P.Misc ":- discontiguous include/2, require_module/2");

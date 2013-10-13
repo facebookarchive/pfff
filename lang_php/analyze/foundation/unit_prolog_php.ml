@@ -385,5 +385,27 @@ class :x:frag {
         xs
     );
     (* todo: handle also children, inherit, etc *)
+
+
+
+(*****************************************************************************)
+(* Generator *)
+(*****************************************************************************)
+    "generator" >:: (fun () ->
+      let file = "
+async function foo() { }
+class A {
+  async function bar() { }
+}
+function not_async() { }
+"in
+      let xs = prolog_query ~file "async(X), writeln(X), fail" in
+      assert_equal ~msg:"it should understand async functions/methods"
+        (["foo"; "A,bar"])
+        xs
+    );
+
+(*****************************************************************************)
   ]
   )
+
