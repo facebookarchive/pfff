@@ -20,7 +20,6 @@ module Ast = Ast_php
 module EC = Entity_php
 module V = Visitor_php
 module E = Database_code
-module G = Graph_code
 module CG = Callgraph_php2
 module P = Graph_code_prolog
 module PI = Parse_info
@@ -44,6 +43,7 @@ module PI = Parse_info
  *    previously pathup/pathdown)
  *
  * todo:
+ *  - get rid of P.Misc, generate precise facts, see graph_code_prolog.ml
  *  - precise datagraph
  *  - types, refs
  *
