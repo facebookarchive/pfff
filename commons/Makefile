@@ -419,13 +419,13 @@ install: all all.opt
           $(DESTDIR)
 
 
-find-install:
+install-findlib:
 	ocamlfind install pfff-commons META \
           lib.cma lib.cmxa \
           dlllib.so lib.a liblib.a \
           common.mli ocaml.mli
 
-find-uninstall:
+uninstall-findlib:
 	ocamlfind remove pfff-commons
 
 ##############################################################################
