@@ -131,7 +131,6 @@ val v_either3:
   ('a, 'b, 'c) Common.either3 -> unit
 
 (* sexp related stuff *)
-(*
 type loc = string
 val stag_incorrect_n_args: loc -> string -> v -> 'a
 val unexpected_stag: loc -> v -> 'a
@@ -141,4 +140,3 @@ val record_extra_fields: loc -> string list -> v -> 'a
 val record_undefined_elements: loc -> v -> 'b -> 'a
 val record_list_instead_atom: loc -> v -> 'a
 val tuple_of_size_n_expected: loc -> int -> v -> 'a
-*)

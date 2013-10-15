@@ -363,6 +363,8 @@ and vof_kind v = Ocaml.vof_string v
 let emacs_color_ofv v = Ocaml.string_ofv v
 let filename_ofv v = Ocaml.string_ofv v
 
+let record_check_extra_fields = ref true
+
 let rec layer_ofv__ =
   let _loc = "Xxx.layer"
   in
@@ -418,7 +420,7 @@ let rec layer_ofv__ =
                           in kinds_field := Some fvalue
                       | Some _ -> duplicates := field_name :: !duplicates)
                  | _ ->
-                     if !Conv.record_check_extra_fields
+                     if !record_check_extra_fields
                      then extra := field_name :: !extra
                      else ());
                 iter tail)
@@ -493,7 +495,7 @@ and file_info_ofv__ =
                           in macro_level_field := Some fvalue
                       | Some _ -> duplicates := field_name :: !duplicates)
                  | _ ->
-                     if !Conv.record_check_extra_fields
+                     if !record_check_extra_fields
                      then extra := field_name :: !extra
                      else ());
                 iter tail)
