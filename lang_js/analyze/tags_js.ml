@@ -43,9 +43,10 @@ let tags_of_files_or_dirs ?(verbose=false) xs =
 
     let ((ast, toks), _) = 
       Common.save_excursion Flag_parsing_js.show_parsing_error false (fun ()->
+      Common.save_excursion Flag_parsing_js.exn_when_lexical_error false(fun()->
       Common.save_excursion Flag_parsing_js.error_recovery true (fun ()->
         Parse_js.parse file 
-      ))
+      )))
     in
 
     let filelines = Common2.cat_array file in
