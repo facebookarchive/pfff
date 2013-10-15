@@ -108,10 +108,10 @@ endif
 
 ifeq ($(FEATURE_SEXP_BUILTIN_COMMONS),1)
 SRC+=sexp_common.ml
-SRC+=ocaml.ml
+SRC+=
 endif
 
-
+SRC+=ocaml.ml
 
 OBJS = $(SRC:.ml=.cmo)
 OPTOBJS = $(SRC:.ml=.cmx)
@@ -404,6 +404,29 @@ commons_features.cma: features.cmo
 commons_features.cmxa: features.cmx
 	$(OCAMLOPT) -a -o $@ $^
 
+
+##############################################################################
+# install
+##############################################################################
+OCAMLSTDLIB=`ocamlc -where`
+DESTDIR=$(OCAMLSTDLIB)/pfff-commons
+
+install: all all.opt
+	mkdir -p $(DESTDIR)
+	cp lib.cma lib.cmxa \
+          dlllib.so lib.a liblib.a \
+          common.mli ocaml.mli \
+          $(DESTDIR)
+
+
+find-install:
+	ocamlfind install pfff-commons META \
+          lib.cma lib.cmxa \
+          dlllib.so lib.a liblib.a \
+          common.mli ocaml.mli
+
+find-uninstall:
+	ocamlfind remove pfff-commons
 
 ##############################################################################
 # Literate Programming rules
