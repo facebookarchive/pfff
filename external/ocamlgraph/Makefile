@@ -570,8 +570,9 @@ clean:
 	rm -f *.haux *.aux *.log $(NAME).tex $(NAME).dvi $(DOCFILES)
 	rm -f $(EXAMPLESBIN)
 
+#Makefile
 dist-clean distclean:: clean
-	rm -f Makefile config.cache config.log config.status *.byte *.opt
+	rm -f config.cache config.log config.status *.byte *.opt
 
 svnclean svn-clean:: dist-clean
 	rm -f config.* configure configure.lineno
