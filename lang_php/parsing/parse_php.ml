@@ -222,6 +222,7 @@ let parse2 ?(pp=(!Flag.pp_default)) filename =
     then toks
     else Pp_php.adapt_tokens_pp ~tokenizer:tokens ~orig_filename toks
   in
+  let toks = Parsing_hacks_php.fix_tokens toks in
 
   let tr = PI.mk_tokens_state toks in
 

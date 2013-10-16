@@ -149,35 +149,6 @@ let sgrep_guard v =
 (* todo: xdebug_guard *)
 
 (*****************************************************************************)
-(* generics *)
-(*****************************************************************************)
-
-(* Split a single (assumed to be 2-chars wide) info and turn it
-   into a (1-char) lhs and rhs. Used to convert `>>` into two `>`
-*)
-let split_two_char pi =
-  let lhs = { pi with Parse_info.str = String.sub pi.Parse_info.str 0 1 } in
-  let rhs = { pi with Parse_info.str = String.sub pi.Parse_info.str 1 1;
-                     Parse_info.charpos = pi.Parse_info.charpos + 1;
-                     Parse_info.column = pi.Parse_info.column + 1 } in
-  (lhs, rhs)
-
-let split_two_char_info i =
-  let tok = match i.Parse_info.token with
-    | Parse_info.OriginTok t -> t
-    | _ -> failwith "Parse error..."
-  in
-
-  let lhspi, rhspi = split_two_char tok in
-  let lhs = { Parse_info.token = Parse_info.OriginTok lhspi;
-              Parse_info.transfo = Parse_info.NoTransfo
-            } in
-  let rhs = { Parse_info.token = Parse_info.OriginTok rhspi;
-              Parse_info.transfo = Parse_info.NoTransfo
-            } in
-  (lhs, rhs)
-
-(*****************************************************************************)
 (* shortcuts *)
 (*****************************************************************************)
 (*s: AST builder *)

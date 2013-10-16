@@ -150,7 +150,6 @@ module PI = Parse_info
  T_AND_EQUAL T_OR_EQUAL T_XOR_EQUAL T_SL_EQUAL T_SR_EQUAL
  T_INC    T_DEC
  T_BOOLEAN_OR   T_BOOLEAN_AND
- /*(* T_SR is (ab)used for types/generics, as in vector<list<int>> *)*/
  T_SL    T_SR
  T_IS_SMALLER_OR_EQUAL    T_IS_GREATER_OR_EQUAL
  T_BOOL_CAST T_INT_CAST T_DOUBLE_CAST T_STRING_CAST T_ARRAY_CAST T_OBJECT_CAST
@@ -893,23 +892,13 @@ type_php_or_dots:
    *)*/
 type_arguments:
   | /*(*empty*)*/             { None }
-  | TSMALLER type_arg_list_gt { Some ($1, fst $2, snd $2) }
+  | TSMALLER type_arg_list TGREATER { Some ($1, $2, $3) }
 
-/*(* A dirty hack to get A<A<...>> to work without an additional space *)*/
-type_arg_list_gt:
-  | type_php TGREATER 
-      { [Left $1], $2 }
-  | type_php TCOMMA type_arg_list_gt 
-      { (Left $1)::(Right $2)::(fst $3), snd $3}
-
-  | qualified_class_name_or_array TSMALLER non_empty_type_php_list T_SR 
-      { let lhs, rhs = H.split_two_char_info $4 in
-       ([Left(Hint(($1), Some ($2, $3, lhs)))], rhs)
-      }
-  | TQUESTION qualified_class_name_or_array TSMALLER non_empty_type_php_list T_SR     
-   { let lhs, rhs = H.split_two_char_info $5 in
-    ([Left(HintQuestion($1, Hint(($2), Some ($3, $4, lhs))))], rhs) 
-   }
+type_arg_list:
+  | type_php 
+      { [Left $1]}
+  | type_php TCOMMA type_arg_list 
+      { (Left $1)::(Right $2):: $3 }
 
 return_type: TCOLON type_php                 { $1, $2 }
 

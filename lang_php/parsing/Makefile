@@ -13,7 +13,7 @@ SRC= flag_parsing_php.ml \
      parser_php_mly_helper.ml \
      parser_php.ml lexer_php.ml \
      token_helpers_php.ml \
-     pp_php.ml \
+     pp_php.ml parsing_hacks_php.ml \
      parse_php.ml \
      unparse_php.ml \
      test_parsing_php.ml unit_parsing_php.ml
