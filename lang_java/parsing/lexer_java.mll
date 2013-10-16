@@ -311,7 +311,7 @@ rule token = parse
 
 (* 3.12 Operators *)
 | "="  { EQ(tokinfo lexbuf) }
-(* relational operator also now used for generics *)
+(* relational operator also now used for generics, can be transformed in LT2 *)
 | "<"  { LT(tokinfo lexbuf) } | ">"  { GT(tokinfo lexbuf) }
 | "!"  { NOT(tokinfo lexbuf) }
 | "~"  { COMPL(tokinfo lexbuf) }
@@ -327,7 +327,9 @@ rule token = parse
 | "&"  { AND(tokinfo lexbuf) } | "|"  { OR(tokinfo lexbuf) }
 | "^"  { XOR(tokinfo lexbuf) }
 | "%"  { MOD(tokinfo lexbuf) }
-| "<<"  { LS(tokinfo lexbuf) } | ">>"  { SRS(tokinfo lexbuf) }
+| "<<"  { LS(tokinfo lexbuf) } 
+(* this may be split in two tokens in fix_tokens_java.ml *)
+| ">>"  { SRS(tokinfo lexbuf) }
 | ">>>"  { URS(tokinfo lexbuf) }
 
 (* ext: annotations *)
