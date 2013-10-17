@@ -231,8 +231,10 @@ let (strtok_of_name: env -> Ast.name -> resolved_name Ast.wrap) =
  fun env name ->
   match name with
   | [ident] -> R (Ast.str_of_ident ident), snd ident
-  (* TODO *)
-  | x::xs -> R (Ast.str_of_ident x), snd x
+  | x::xs -> 
+    let tok = snd x in
+    let str = (x::xs) +> List.map Ast.str_of_ident +> Common.join "\\" in
+    R str, tok
   | [] -> raise Impossible
 
 let str_of_name env x =

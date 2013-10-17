@@ -1,6 +1,5 @@
 <?php
 
-class UseNamespace 
-//TODOextends N\AInN 
+class UseNamespace extends N\AInN 
 {
 }
