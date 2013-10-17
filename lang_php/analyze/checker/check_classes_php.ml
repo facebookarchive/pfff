@@ -174,7 +174,8 @@ let visit_f_body f_body current_class graph=
           let tok_and_error = only_in_second +> Common.map_filter (fun f ->
             match current_class with
             | Some class_str ->
-              (match Graph_code_php.lookup graph (class_str, f^"=") () with
+              (match Graph_code_php.lookup_inheritance graph (class_str, f^"=")
+                  () with
               | Some ((full_name, _), _) ->
                 (* This is most likely correct, see :ui:base::renderAndProcess()
                    let suggest =

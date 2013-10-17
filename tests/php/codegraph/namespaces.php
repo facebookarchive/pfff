@@ -1,5 +1,5 @@
 <?php
 
 namespace N;
-class A {
+class AInN {
 }

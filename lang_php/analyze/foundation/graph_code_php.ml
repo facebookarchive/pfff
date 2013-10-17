@@ -77,6 +77,7 @@ type env = {
   current: Graph_code.node;
   readable: Common.filename;
 
+  current_qualifier: Ast_php_simple.qualified_ident;
   self:   string; (* "NOSELF" when outside a class *)
   parent: string; (* "NOPARENT" when no parent *)
 
@@ -117,6 +118,8 @@ type env = {
    * computed as we may need to lookup entities up in the parents.
    *)
   and phase = Defs | Inheritance | Uses
+
+type resolved_name = R of string
 
 (*****************************************************************************)
 (* Helpers *)
@@ -198,6 +201,27 @@ let normalize str =
   +> String.lowercase                         (* php is case insensitive *)
   +> Str.global_replace (Str.regexp "-") "_"  (* xhp is "dash" insensitive *)
 
+let (name_of_class_name: Ast.hint_type -> name) = fun x ->
+  match x with
+  | Hint name -> name
+  | _ -> raise Common.Impossible
+
+let (str_of_class_name: Ast.hint_type -> string) = fun x ->
+  let name = name_of_class_name x in
+  match name with
+  | [ident] -> Ast.str_of_ident ident
+  (* TODO *)
+  | x::xs -> Ast.str_of_ident x
+  | [] -> raise Impossible
+
+let (lookup_namespace: env -> Ast.name -> Ast.ident) = fun env name ->
+  match name with
+  | [ident] -> ident
+  (* TODO *)
+  | x::xs -> x
+  | [] -> raise Impossible
+
+
 (*****************************************************************************)
 (* Add node *)
 (*****************************************************************************)
@@ -209,19 +233,19 @@ let normalize str =
  *)
 let add_fake_node_when_undefined_entity = ref true
 
-let add_node_and_edge_if_defs_mode ?(props=[]) env (name, kind) =
+let add_node_and_edge_if_defs_mode ?(props=[]) env (ident, kind) =
   let str =
     (match kind with
     | E.ClassConstant | E.Field | E.Method _ -> env.self ^ "."
     | _ -> ""
-    ) ^ Ast.str_of_ident name
+    ) ^ Ast.str_of_ident ident
   in
   let node = (str, kind) in
 
   if env.phase = Defs then begin
     if G.has_node node env.g
     then
-      let file = Parse_info.file_of_info (Ast.tok_of_ident name) in
+      let file = Parse_info.file_of_info (Ast.tok_of_ident ident) in
       (* todo: look if is_skip_error_file in which case populate
        * a env.dupe_renaming
        *)
@@ -249,7 +273,7 @@ let add_node_and_edge_if_defs_mode ?(props=[]) env (name, kind) =
        * the duplicate are all in a skip_errors dir).
        *)
       env.g +> G.add_edge (env.current, node) G.Has;
-      let pos = Parse_info.token_location_of_info (Ast.tok_of_ident name) in
+      let pos = Parse_info.token_location_of_info (Ast.tok_of_ident ident) in
       let pos = { pos with Parse_info.file = env.readable } in
       let nodeinfo = { Graph_code. pos; props } in
       env.g +> G.add_nodeinfo node nodeinfo;
@@ -375,8 +399,10 @@ let rec add_use_edge env ((str, tok), kind) =
 (* Lookup *)
 (*****************************************************************************)
 
-(* less: handle privacy? *)
-let lookup2 g (aclass, amethod_or_field_or_constant) tok =
+(* less: handle privacy? 
+ * assume namespace have been resolved so aclass is fully resolved
+ *)
+let lookup_inheritance2 g (aclass, amethod_or_field_or_constant) tok =
   let rec depth current =
     if not (G.has_node current g)
     (* todo? raise Impossible? the class should exist no? *)
@@ -410,8 +436,8 @@ let lookup2 g (aclass, amethod_or_field_or_constant) tok =
   in
   depth (aclass, E.Class E.RegularClass)
 
-let lookup g a =
-  Common.profile_code "Graph_php.lookup" (fun () -> lookup2 g a)
+let lookup_inheritance g a =
+  Common.profile_code "Graph_php.lookup" (fun () -> lookup_inheritance2 g a)
 
 (*****************************************************************************)
 (* Defs/Uses *)
@@ -424,7 +450,19 @@ let rec extract_defs_uses env ast readable =
     env.g +> G.add_node (env.readable, E.File);
     env.g +> G.add_edge ((dir, E.Dir), (env.readable, E.File))  G.Has;
   end;
-  List.iter (stmt_toplevel env) ast;
+  stmt_toplevel_list env ast
+
+and stmt_toplevel_list env xs =
+  match xs with
+  | [] -> ()
+  | x::xs ->
+    (match x with
+    | NamespaceDef qu -> 
+      stmt_toplevel_list {env with current_qualifier = qu; } xs
+    | _ ->
+      stmt_toplevel env x;
+      stmt_toplevel_list env xs
+    )
 
 (* ---------------------------------------------------------------------- *)
 (* Stmt/toplevel *)
@@ -440,7 +478,8 @@ and stmt_bis env x =
   | ClassDef def -> class_def env def
   | ConstantDef def -> constant_def env def
   | TypeDef def -> type_def env def
-  | NamespaceDef qu -> raise (Ast_php.TodoNamespace (Ast.tok_of_name qu))
+  (* handled in stmt_toplevel_list *)
+  | NamespaceDef qu -> ()
 
   (* old style constant definition, before PHP 5.4 *)
   | Expr(Call(Id[("define", _)], [String((name)); v])) ->
@@ -523,19 +562,23 @@ and class_def env def =
   if env.phase = Inheritance then begin
     def.c_extends +> Common.do_option (fun c2 ->
       (* todo: also mark as use the generic arguments *)
-      let n = Ast.name_of_class_name c2 in
+      let n = name_of_class_name c2 in
+      let n = lookup_namespace env n in
       add_use_edge env (n, E.Class E.RegularClass);
     );
     def.c_implements +> List.iter (fun c2 ->
-      let n = Ast.name_of_class_name c2 in
+      let n = name_of_class_name c2 in
+      let n = lookup_namespace env n in
       add_use_edge env (n, E.Class E.RegularClass (*E.Interface*));
     );
     def.c_uses +> List.iter (fun c2 ->
-      let n = Ast.name_of_class_name c2 in
+      let n = name_of_class_name c2 in
+      let n = lookup_namespace env n in
       add_use_edge env (n, E.Class E.RegularClass (*E.Trait*));
     );
     def.c_xhp_attr_inherit +> List.iter (fun c2 ->
-      let n = Ast.name_of_class_name c2 in
+      let n = name_of_class_name c2 in
+      let n = lookup_namespace env n in
       add_use_edge env (n, E.Class E.RegularClass);
     );
 
@@ -543,10 +586,13 @@ and class_def env def =
   let self = Ast.str_of_ident def.c_name in
   let in_trait = match def.c_kind with Trait -> true | _ -> false in
   let parent =
-    match def.c_extends with
-    | None -> 
-      if not in_trait then "NOPARENT" else "NOPARENT_INTRAIT"
-    | Some c2 -> Ast.str_of_class_name c2
+    if env.phase = Uses
+    then
+      match def.c_extends with
+      | None -> 
+        if not in_trait then "NOPARENT" else "NOPARENT_INTRAIT"
+      | Some c2 -> str_of_class_name c2
+    else env.parent
   in
   let env = { env with self; parent; } in
 
@@ -582,9 +628,9 @@ and class_def env def =
          | None -> ()
          | Some c ->
            let aclass, afld = 
-             (Ast.str_of_class_name c, Ast.str_of_ident fld.cv_name) in
+             (str_of_class_name c, Ast.str_of_ident fld.cv_name) in
            let fake_tok = () in
-           (match lookup env.g (aclass, afld) fake_tok with
+           (match lookup_inheritance env.g (aclass, afld) fake_tok with
             | None -> ()
             (* redefining an existing field *)
             | Some ((s, _fake_tok), _kind) ->
@@ -721,7 +767,7 @@ and expr env x =
          let aclass = Ast.str_of_ident name1 in
          let amethod = Ast.str_of_ident name2 in
          let tok = snd name2 in
-         (match lookup env.g (aclass, amethod) tok with
+         (match lookup_inheritance env.g (aclass, amethod) tok with
          | Some n -> add_use_edge env n
          | None ->
            (match amethod with
@@ -783,7 +829,7 @@ and expr env x =
           let aclass = Ast.str_of_ident name1 in
           let aconstant = Ast.str_of_ident name2 in
           let tok = snd name2 in
-          (match lookup env.g (aclass, aconstant) tok with
+          (match lookup_inheritance env.g (aclass, aconstant) tok with
           (* less: assert kind = ClassConstant? *)
           | Some n -> add_use_edge env n
           | None -> 
@@ -795,7 +841,7 @@ and expr env x =
           let aclass = Ast.str_of_ident name1 in
           let astatic_var = Ast.str_of_ident name2 in
           let tok = snd name2 in
-          (match lookup env.g (aclass, astatic_var) tok with
+          (match lookup_inheritance env.g (aclass, astatic_var) tok with
           (* less: assert kind = Static variable
            * actually because we convert some Obj_get into Class_get,
            * this could also be a kind = Field here.
@@ -888,7 +934,7 @@ and xml env x =
   x.xml_attrs +> List.iter (fun (name, xhp_attr) ->
     let afield = Ast.str_of_ident name ^ "=" in
     let tok = snd name in
-    (match lookup env.g (aclass, afield) tok with
+    (match lookup_inheritance env.g (aclass, afield) tok with
     | Some n -> add_use_edge env n
     | None -> 
       let node = ((aclass ^ "." ^ afield, tok), E.Field) in
@@ -945,6 +991,7 @@ let build
     phase = Defs;
     current = ("filled_later", E.File);
     readable = "filled_later";
+    current_qualifier = [];
     self = "NOSELF"; parent = "NOPARENT";
     dupes = Hashtbl.create 101;
     (* set after the defs phase *)

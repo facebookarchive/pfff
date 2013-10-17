@@ -1,6 +1,6 @@
 
 val add_fake_node_when_undefined_entity: bool ref
-val lookup:
+val lookup_inheritance:
   Graph_code.graph ->
   (string * string) ->
   'a ->
