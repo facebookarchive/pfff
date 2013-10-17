@@ -79,7 +79,7 @@ type env = {
 
   current_qualifier: Ast_php_simple.qualified_ident;
   self:   string; (* "NOSELF" when outside a class *)
-  parent: string; (* "NOPARENT" when no parent *)
+  parent: resolved_name; (* "NOPARENT" when no parent *)
 
   at_toplevel: bool;
 
@@ -119,7 +119,8 @@ type env = {
    *)
   and phase = Defs | Inheritance | Uses
 
-type resolved_name = R of string
+ (* for namespace *)
+ and resolved_name = R of string
 
 (*****************************************************************************)
 (* Helpers *)
@@ -201,26 +202,53 @@ let normalize str =
   +> String.lowercase                         (* php is case insensitive *)
   +> Str.global_replace (Str.regexp "-") "_"  (* xhp is "dash" insensitive *)
 
+(*****************************************************************************)
+(* Namespace *)
+(*****************************************************************************)
+
+(* todo: move to Ast_php_simple.name_of_class_name at some point *)
 let (name_of_class_name: Ast.hint_type -> name) = fun x ->
   match x with
   | Hint name -> name
   | _ -> raise Common.Impossible
 
-let (str_of_class_name: Ast.hint_type -> string) = fun x ->
-  let name = name_of_class_name x in
-  match name with
-  | [ident] -> Ast.str_of_ident ident
-  (* TODO *)
-  | x::xs -> Ast.str_of_ident x
-  | [] -> raise Impossible
-
+(*
 let (lookup_namespace: env -> Ast.name -> Ast.ident) = fun env name ->
   match name with
   | [ident] -> ident
   (* TODO *)
   | x::xs -> x
   | [] -> raise Impossible
+*)
 
+let (strtok_of_name: env -> Ast.name -> resolved_name Ast.wrap) = 
+ fun env name ->
+  match name with
+  | [ident] -> R (Ast.str_of_ident ident), snd ident
+  (* TODO *)
+  | x::xs -> R (Ast.str_of_ident x), snd x
+  | [] -> raise Impossible
+
+let str_of_name env x =
+  fst (strtok_of_name env x)
+
+let (strtok_of_class_name: env -> Ast.hint_type -> resolved_name Ast.wrap) =
+  fun env x ->
+    let name = name_of_class_name x in
+    strtok_of_name env name
+
+let str_of_class_name env x =
+  fst (strtok_of_class_name env x)
+
+let name_of_parent env tok =
+  let name = 
+    let (R parent) = env.parent in
+    [parent, tok]
+  in
+  name
+
+let name_concat (R aclass) fld =
+  R (aclass^"."^fld)
 
 (*****************************************************************************)
 (* Add node *)
@@ -289,7 +317,7 @@ let add_node_and_edge_if_defs_mode ?(props=[]) env (ident, kind) =
   else { env with current = node }
 
 (*****************************************************************************)
-(* Add edge *)
+(* Add edge helpers *)
 (*****************************************************************************)
 
 let lookup_fail env tok dst =
@@ -319,7 +347,7 @@ let _hmemo_class_exits = Hashtbl.create 101
  * we want really to report only the use of undefined class, so don't
  * forget to guard some calls to add_use_edge() with this function.
  *)
-let class_exists2 env aclass tok =
+let class_exists2 env (R aclass) tok =
   assert (env.phase = Uses);
   let node = (aclass, E.Class E.RegularClass) in
   let node' = (normalize aclass, E.Class E.RegularClass) in
@@ -342,7 +370,11 @@ let class_exists2 env aclass tok =
 let class_exists a b c =
   Common.profile_code "Graph_php.class_exits" (fun () -> class_exists2 a b c)
 
-let rec add_use_edge env ((str, tok), kind) =
+(*****************************************************************************)
+(* Add edge *)
+(*****************************************************************************)
+
+let rec add_use_edge env ((R str, tok), kind) =
   let src = env.current in
   let dst = (str, kind) in
   match () with
@@ -363,7 +395,7 @@ let rec add_use_edge env ((str, tok), kind) =
                          str final_str 
                          (Parse_info.string_of_info (Ast.tok_of_ident name)));
       *)
-      add_use_edge env ((final_str, tok), kind)
+      add_use_edge env ((R final_str, tok), kind)
 
   | _ ->
     (match kind with
@@ -402,7 +434,7 @@ let rec add_use_edge env ((str, tok), kind) =
 (* less: handle privacy? 
  * assume namespace have been resolved so aclass is fully resolved
  *)
-let lookup_inheritance2 g (aclass, amethod_or_field_or_constant) tok =
+let lookup_inheritance2 g (R aclass, amethod_or_field_or_constant) tok =
   let rec depth current =
     if not (G.has_node current g)
     (* todo? raise Impossible? the class should exist no? *)
@@ -418,7 +450,7 @@ let lookup_inheritance2 g (aclass, amethod_or_field_or_constant) tok =
               *)
              s2 =$= (fst current ^ ".__call") || 
              s2 =$= (fst current ^ ".__callStatic")
-          then Some ((s2, tok), kind)
+          then Some ((R s2, tok), kind)
           else None
         )
       in
@@ -562,24 +594,20 @@ and class_def env def =
   if env.phase = Inheritance then begin
     def.c_extends +> Common.do_option (fun c2 ->
       (* todo: also mark as use the generic arguments *)
-      let n = name_of_class_name c2 in
-      let n = lookup_namespace env n in
-      add_use_edge env (n, E.Class E.RegularClass);
+      let x = strtok_of_class_name env c2 in
+      add_use_edge env (x, E.Class E.RegularClass);
     );
     def.c_implements +> List.iter (fun c2 ->
-      let n = name_of_class_name c2 in
-      let n = lookup_namespace env n in
-      add_use_edge env (n, E.Class E.RegularClass (*E.Interface*));
+      let x = strtok_of_class_name env c2 in
+      add_use_edge env (x, E.Class E.RegularClass (*E.Interface*));
     );
     def.c_uses +> List.iter (fun c2 ->
-      let n = name_of_class_name c2 in
-      let n = lookup_namespace env n in
-      add_use_edge env (n, E.Class E.RegularClass (*E.Trait*));
+      let x = strtok_of_class_name env c2 in
+      add_use_edge env (x, E.Class E.RegularClass (*E.Trait*));
     );
     def.c_xhp_attr_inherit +> List.iter (fun c2 ->
-      let n = name_of_class_name c2 in
-      let n = lookup_namespace env n in
-      add_use_edge env (n, E.Class E.RegularClass);
+      let x = strtok_of_class_name env c2 in
+      add_use_edge env (x, E.Class E.RegularClass);
     );
 
   end;
@@ -590,8 +618,8 @@ and class_def env def =
     then
       match def.c_extends with
       | None -> 
-        if not in_trait then "NOPARENT" else "NOPARENT_INTRAIT"
-      | Some c2 -> str_of_class_name c2
+        if not in_trait then R "NOPARENT" else R "NOPARENT_INTRAIT"
+      | Some c2 -> str_of_class_name env c2
     else env.parent
   in
   let env = { env with self; parent; } in
@@ -628,7 +656,7 @@ and class_def env def =
          | None -> ()
          | Some c ->
            let aclass, afld = 
-             (str_of_class_name c, Ast.str_of_ident fld.cv_name) in
+             (str_of_class_name env c, Ast.str_of_ident fld.cv_name) in
            let fake_tok = () in
            (match lookup_inheritance env.g (aclass, afld) fake_tok with
             | None -> ()
@@ -679,10 +707,10 @@ and type_def_kind env = function
 and hint_type env t = 
   if env.phase = Uses then
   (match t with 
-  | Hint [name] ->
-      let node = (name, E.Class E.RegularClass) in
+  | Hint name ->
+      let x = strtok_of_name env name in
+      let node = (x, E.Class E.RegularClass) in
       add_use_edge env node
-  | Hint name -> raise (Ast_php.TodoNamespace (Ast.tok_of_name name))
   | HintArray -> ()
   | HintQuestion t -> hint_type env t
   | HintTuple xs -> List.iter (hint_type env) xs
@@ -717,7 +745,7 @@ and expr env x =
       | s when s =~ ".*autoload_map.php" -> ()
       | _ ->
         (*env.log (spf "DYNCALL_STR:%s (at %s)" s env.readable);*)
-        add_use_edge env ((entity, tok), E.Class E.RegularClass)
+        add_use_edge env ((R entity, tok), E.Class E.RegularClass)
       );
     end
   (* todo? also look for functions? but has more FPs with regular
@@ -733,12 +761,9 @@ and expr env x =
    * is executed really as a last resort, which usually means when
    * there is the use of a constant.
    *)
-  | Id [name] ->
-    add_use_edge env (name, E.Constant)
   | Id name ->
-    pr2_once "TODO: namespace";
-    pr2_gen name;
-    (* raise (Ast_php.TodoNamespace (Ast.tok_of_name name)) *)
+    let x = strtok_of_name env name in
+    add_use_edge env (x, E.Constant)
 
   (* a parameter or local variable *)
   | Var ident ->
@@ -748,23 +773,23 @@ and expr env x =
   | Call (e, es) ->
     (match e with
     (* simple function call *)
-    | Id [name] ->
-        add_use_edge env (name, E.Function);
-        exprl env es
     | Id name ->
-      raise (Ast_php.TodoNamespace (Ast.tok_of_name name))
+        let x = strtok_of_name env name in
+        add_use_edge env (x, E.Function);
+        exprl env es
 
     (* static method call *)
     | Class_get (Id[ ("__special__self", tok)], e2) ->
         expr env (Call (Class_get (Id[ (env.self, tok)], e2), es))
     | Class_get (Id[ ("__special__parent", tok)], e2) ->
-        expr env (Call (Class_get (Id[ (env.parent, tok)], e2), es))
+        let name = name_of_parent env tok in
+        expr env (Call (Class_get (Id name, e2), es))
     (* incorrect actually ... but good enough for now for codegraph *)
     | Class_get (Id[ ("__special__static", tok)], e2) ->
         expr env (Call (Class_get (Id[ (env.self, tok)], e2), es))
 
-    | Class_get (Id [name1], Id [name2]) ->
-         let aclass = Ast.str_of_ident name1 in
+    | Class_get (Id name1, Id [name2]) ->
+         let aclass = str_of_name env name1 in
          let amethod = Ast.str_of_ident name2 in
          let tok = snd name2 in
          (match lookup_inheritance env.g (aclass, amethod) tok with
@@ -774,7 +799,8 @@ and expr env x =
            (* todo? create a fake default constructor node? *)
            | "__construct" -> ()
            | _ -> 
-             let node = ((aclass^"."^amethod, tok), E.Method E.RegularMethod)in
+             let x = name_concat aclass amethod, tok in
+             let node = (x, E.Method E.RegularMethod) in
              if class_exists env aclass tok then add_use_edge env node
            )
          );
@@ -788,7 +814,9 @@ and expr env x =
           * filter classes.
           *)
          if amethod =$= "__construct" 
-         then add_use_edge env (name1, E.Class E.RegularClass);
+         then 
+           let x = strtok_of_name env name1 in
+           add_use_edge env (x, E.Class E.RegularClass);
 
          exprl env es
 
@@ -820,25 +848,27 @@ and expr env x =
       | Id[ ("__special__self", tok)], _ ->
         expr env (Class_get (Id[ (env.self, tok)], e2))
       | Id[ ("__special__parent", tok)], _ ->
-        expr env (Class_get (Id[ (env.parent, tok)], e2))
+        let name = name_of_parent env tok in
+        expr env (Class_get (Id name, e2))
       (* incorrect actually ... but good enough for now for codegraph *)
       | Id[ ("__special__static", tok)], _ ->
         expr env (Class_get (Id[ (env.self, tok)], e2))
 
-      | Id [name1], Id [name2] ->
-          let aclass = Ast.str_of_ident name1 in
+      | Id name1, Id [name2] ->
+          let aclass = str_of_name env name1 in
           let aconstant = Ast.str_of_ident name2 in
           let tok = snd name2 in
           (match lookup_inheritance env.g (aclass, aconstant) tok with
           (* less: assert kind = ClassConstant? *)
           | Some n -> add_use_edge env n
           | None -> 
-            let node = ((aclass ^ "." ^ aconstant, tok), E.ClassConstant) in
-            if class_exists env aclass tok then add_use_edge env node
+             let x = name_concat aclass aconstant, tok in
+             let node = (x, E.ClassConstant) in
+             if class_exists env aclass tok then add_use_edge env node
           )
 
-      | Id [name1], Var name2 ->
-          let aclass = Ast.str_of_ident name1 in
+      | Id name1, Var name2 ->
+          let aclass = str_of_name env name1 in
           let astatic_var = Ast.str_of_ident name2 in
           let tok = snd name2 in
           (match lookup_inheritance env.g (aclass, astatic_var) tok with
@@ -848,13 +878,15 @@ and expr env x =
            *)
           | Some n -> add_use_edge env n
           | None -> 
-            let node = ((aclass ^ "." ^ astatic_var, tok), E.Field) in
+            let x = name_concat aclass astatic_var, tok in
+            let node = (x, E.Field) in
             if class_exists env aclass tok then add_use_edge env node
           )
 
      (* less: update dynamic stats *)
-     | Id [name1], e2  ->
-          add_use_edge env (name1, E.Class E.RegularClass);
+     | Id name1, e2  ->
+          let x = strtok_of_name env name1 in
+          add_use_edge env (x, E.Class E.RegularClass);
           expr env e2;
      | e1, Id name2  ->
        expr env e1;
@@ -912,11 +944,10 @@ and expr env x =
   | Guil xs -> exprl env xs
   | Ref e -> expr env e
   | ConsArray (xs) -> array_valuel env xs
-  | Collection ([name], xs) ->
-    add_use_edge env (name, E.Class E.RegularClass);
-    array_valuel env xs
-  | Collection (name, _) -> 
-    raise (Ast_php.TodoNamespace (Ast.tok_of_name name))
+  | Collection (name, xs) ->
+      let x = strtok_of_name env name in
+      add_use_edge env (x, E.Class E.RegularClass);
+      array_valuel env xs
   | Xhp x -> xml env x
   | CondExpr (e1, e2, e3) -> exprl env [e1; e2; e3]
   (* less: again, add deps for type? *)
@@ -929,15 +960,17 @@ and vector_value env e = expr env e
 and map_value env (e1, e2) = exprl env [e1; e2]
 
 and xml env x =
-  add_use_edge env (x.xml_tag, E.Class E.RegularClass);
-  let aclass = Ast.str_of_ident x.xml_tag in
+  let y = strtok_of_name env [x.xml_tag] in
+  add_use_edge env (y, E.Class E.RegularClass);
+  let aclass = str_of_name env [x.xml_tag] in
   x.xml_attrs +> List.iter (fun (name, xhp_attr) ->
     let afield = Ast.str_of_ident name ^ "=" in
     let tok = snd name in
     (match lookup_inheritance env.g (aclass, afield) tok with
     | Some n -> add_use_edge env n
     | None -> 
-      let node = ((aclass ^ "." ^ afield, tok), E.Field) in
+      let x = name_concat aclass afield, tok in
+      let node = (x, E.Field) in
       if class_exists env aclass tok then add_use_edge env node
     );      
     expr env xhp_attr);
@@ -992,7 +1025,7 @@ let build
     current = ("filled_later", E.File);
     readable = "filled_later";
     current_qualifier = [];
-    self = "NOSELF"; parent = "NOPARENT";
+    self = "NOSELF"; parent = R "NOPARENT";
     dupes = Hashtbl.create 101;
     (* set after the defs phase *)
     case_insensitive = Hashtbl.create 101;
