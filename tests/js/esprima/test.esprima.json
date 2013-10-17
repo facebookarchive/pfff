@@ -11872,11 +11872,702 @@
           "column": 4
         }
       }
+    },
+    {
+      "type": "ClassDeclaration",
+      "id": {
+        "type": "Identifier",
+        "name": "Foo",
+        "range": [
+          2687,
+          2690
+        ],
+        "loc": {
+          "start": {
+            "line": 222,
+            "column": 6
+          },
+          "end": {
+            "line": 222,
+            "column": 9
+          }
+        }
+      },
+      "superClass": null,
+      "body": {
+        "type": "ClassBody",
+        "body": [],
+        "range": [
+          2690,
+          2692
+        ],
+        "loc": {
+          "start": {
+            "line": 222,
+            "column": 9
+          },
+          "end": {
+            "line": 222,
+            "column": 11
+          }
+        }
+      },
+      "range": [
+        2681,
+        2692
+      ],
+      "loc": {
+        "start": {
+          "line": 222,
+          "column": 0
+        },
+        "end": {
+          "line": 222,
+          "column": 11
+        }
+      }
+    },
+    {
+      "type": "ClassDeclaration",
+      "id": {
+        "type": "Identifier",
+        "name": "Foo",
+        "range": [
+          2699,
+          2702
+        ],
+        "loc": {
+          "start": {
+            "line": 223,
+            "column": 6
+          },
+          "end": {
+            "line": 223,
+            "column": 9
+          }
+        }
+      },
+      "superClass": null,
+      "body": {
+        "type": "ClassBody",
+        "body": [
+          {
+            "type": "MethodDefinition",
+            "key": {
+              "type": "Identifier",
+              "name": "bar",
+              "range": [
+                2703,
+                2706
+              ],
+              "loc": {
+                "start": {
+                  "line": 223,
+                  "column": 10
+                },
+                "end": {
+                  "line": 223,
+                  "column": 13
+                }
+              }
+            },
+            "value": {
+              "type": "FunctionExpression",
+              "id": null,
+              "params": [],
+              "defaults": [],
+              "body": {
+                "type": "BlockStatement",
+                "body": [],
+                "range": [
+                  2708,
+                  2710
+                ],
+                "loc": {
+                  "start": {
+                    "line": 223,
+                    "column": 15
+                  },
+                  "end": {
+                    "line": 223,
+                    "column": 17
+                  }
+                }
+              },
+              "rest": null,
+              "generator": false,
+              "expression": false,
+              "range": [
+                2708,
+                2710
+              ],
+              "loc": {
+                "start": {
+                  "line": 223,
+                  "column": 15
+                },
+                "end": {
+                  "line": 223,
+                  "column": 17
+                }
+              }
+            },
+            "kind": "",
+            "static": false,
+            "range": [
+              2703,
+              2710
+            ],
+            "loc": {
+              "start": {
+                "line": 223,
+                "column": 10
+              },
+              "end": {
+                "line": 223,
+                "column": 17
+              }
+            }
+          }
+        ],
+        "range": [
+          2702,
+          2711
+        ],
+        "loc": {
+          "start": {
+            "line": 223,
+            "column": 9
+          },
+          "end": {
+            "line": 223,
+            "column": 18
+          }
+        }
+      },
+      "range": [
+        2693,
+        2711
+      ],
+      "loc": {
+        "start": {
+          "line": 223,
+          "column": 0
+        },
+        "end": {
+          "line": 223,
+          "column": 18
+        }
+      }
+    },
+    {
+      "type": "ClassDeclaration",
+      "id": {
+        "type": "Identifier",
+        "name": "Foo",
+        "range": [
+          2718,
+          2721
+        ],
+        "loc": {
+          "start": {
+            "line": 224,
+            "column": 6
+          },
+          "end": {
+            "line": 224,
+            "column": 9
+          }
+        }
+      },
+      "superClass": null,
+      "body": {
+        "type": "ClassBody",
+        "body": [
+          {
+            "type": "MethodDefinition",
+            "key": {
+              "type": "Identifier",
+              "name": "bar",
+              "range": [
+                2729,
+                2732
+              ],
+              "loc": {
+                "start": {
+                  "line": 224,
+                  "column": 17
+                },
+                "end": {
+                  "line": 224,
+                  "column": 20
+                }
+              }
+            },
+            "value": {
+              "type": "FunctionExpression",
+              "id": null,
+              "params": [],
+              "defaults": [],
+              "body": {
+                "type": "BlockStatement",
+                "body": [],
+                "range": [
+                  2734,
+                  2736
+                ],
+                "loc": {
+                  "start": {
+                    "line": 224,
+                    "column": 22
+                  },
+                  "end": {
+                    "line": 224,
+                    "column": 24
+                  }
+                }
+              },
+              "rest": null,
+              "generator": false,
+              "expression": false,
+              "range": [
+                2734,
+                2736
+              ],
+              "loc": {
+                "start": {
+                  "line": 224,
+                  "column": 22
+                },
+                "end": {
+                  "line": 224,
+                  "column": 24
+                }
+              }
+            },
+            "kind": "",
+            "static": true,
+            "range": [
+              2722,
+              2736
+            ],
+            "loc": {
+              "start": {
+                "line": 224,
+                "column": 10
+              },
+              "end": {
+                "line": 224,
+                "column": 24
+              }
+            }
+          }
+        ],
+        "range": [
+          2721,
+          2737
+        ],
+        "loc": {
+          "start": {
+            "line": 224,
+            "column": 9
+          },
+          "end": {
+            "line": 224,
+            "column": 25
+          }
+        }
+      },
+      "range": [
+        2712,
+        2737
+      ],
+      "loc": {
+        "start": {
+          "line": 224,
+          "column": 0
+        },
+        "end": {
+          "line": 224,
+          "column": 25
+        }
+      }
+    },
+    {
+      "type": "ClassDeclaration",
+      "id": {
+        "type": "Identifier",
+        "name": "Foo",
+        "range": [
+          2744,
+          2747
+        ],
+        "loc": {
+          "start": {
+            "line": 225,
+            "column": 6
+          },
+          "end": {
+            "line": 225,
+            "column": 9
+          }
+        }
+      },
+      "superClass": null,
+      "body": {
+        "type": "ClassBody",
+        "body": [
+          {
+            "type": "MethodDefinition",
+            "key": {
+              "type": "Identifier",
+              "name": "bar",
+              "range": [
+                2748,
+                2751
+              ],
+              "loc": {
+                "start": {
+                  "line": 225,
+                  "column": 10
+                },
+                "end": {
+                  "line": 225,
+                  "column": 13
+                }
+              }
+            },
+            "value": {
+              "type": "FunctionExpression",
+              "id": null,
+              "params": [],
+              "defaults": [],
+              "body": {
+                "type": "BlockStatement",
+                "body": [],
+                "range": [
+                  2753,
+                  2755
+                ],
+                "loc": {
+                  "start": {
+                    "line": 225,
+                    "column": 15
+                  },
+                  "end": {
+                    "line": 225,
+                    "column": 17
+                  }
+                }
+              },
+              "rest": null,
+              "generator": false,
+              "expression": false,
+              "range": [
+                2753,
+                2755
+              ],
+              "loc": {
+                "start": {
+                  "line": 225,
+                  "column": 15
+                },
+                "end": {
+                  "line": 225,
+                  "column": 17
+                }
+              }
+            },
+            "kind": "",
+            "static": false,
+            "range": [
+              2748,
+              2755
+            ],
+            "loc": {
+              "start": {
+                "line": 225,
+                "column": 10
+              },
+              "end": {
+                "line": 225,
+                "column": 17
+              }
+            }
+          },
+          {
+            "type": "MethodDefinition",
+            "key": {
+              "type": "Identifier",
+              "name": "baz",
+              "range": [
+                2756,
+                2759
+              ],
+              "loc": {
+                "start": {
+                  "line": 225,
+                  "column": 18
+                },
+                "end": {
+                  "line": 225,
+                  "column": 21
+                }
+              }
+            },
+            "value": {
+              "type": "FunctionExpression",
+              "id": null,
+              "params": [],
+              "defaults": [],
+              "body": {
+                "type": "BlockStatement",
+                "body": [],
+                "range": [
+                  2761,
+                  2763
+                ],
+                "loc": {
+                  "start": {
+                    "line": 225,
+                    "column": 23
+                  },
+                  "end": {
+                    "line": 225,
+                    "column": 25
+                  }
+                }
+              },
+              "rest": null,
+              "generator": false,
+              "expression": false,
+              "range": [
+                2761,
+                2763
+              ],
+              "loc": {
+                "start": {
+                  "line": 225,
+                  "column": 23
+                },
+                "end": {
+                  "line": 225,
+                  "column": 25
+                }
+              }
+            },
+            "kind": "",
+            "static": false,
+            "range": [
+              2756,
+              2763
+            ],
+            "loc": {
+              "start": {
+                "line": 225,
+                "column": 18
+              },
+              "end": {
+                "line": 225,
+                "column": 25
+              }
+            }
+          }
+        ],
+        "range": [
+          2747,
+          2764
+        ],
+        "loc": {
+          "start": {
+            "line": 225,
+            "column": 9
+          },
+          "end": {
+            "line": 225,
+            "column": 26
+          }
+        }
+      },
+      "range": [
+        2738,
+        2764
+      ],
+      "loc": {
+        "start": {
+          "line": 225,
+          "column": 0
+        },
+        "end": {
+          "line": 225,
+          "column": 26
+        }
+      }
+    },
+    {
+      "type": "ClassDeclaration",
+      "id": {
+        "type": "Identifier",
+        "name": "Foo",
+        "range": [
+          2771,
+          2774
+        ],
+        "loc": {
+          "start": {
+            "line": 226,
+            "column": 6
+          },
+          "end": {
+            "line": 226,
+            "column": 9
+          }
+        }
+      },
+      "superClass": {
+        "type": "Identifier",
+        "name": "Bar",
+        "range": [
+          2783,
+          2786
+        ],
+        "loc": {
+          "start": {
+            "line": 226,
+            "column": 18
+          },
+          "end": {
+            "line": 226,
+            "column": 21
+          }
+        }
+      },
+      "body": {
+        "type": "ClassBody",
+        "body": [],
+        "range": [
+          2786,
+          2788
+        ],
+        "loc": {
+          "start": {
+            "line": 226,
+            "column": 21
+          },
+          "end": {
+            "line": 226,
+            "column": 23
+          }
+        }
+      },
+      "range": [
+        2765,
+        2788
+      ],
+      "loc": {
+        "start": {
+          "line": 226,
+          "column": 0
+        },
+        "end": {
+          "line": 226,
+          "column": 23
+        }
+      }
+    },
+    {
+      "type": "ClassDeclaration",
+      "id": {
+        "type": "Identifier",
+        "name": "Foo",
+        "range": [
+          2795,
+          2798
+        ],
+        "loc": {
+          "start": {
+            "line": 227,
+            "column": 6
+          },
+          "end": {
+            "line": 227,
+            "column": 9
+          }
+        }
+      },
+      "superClass": {
+        "type": "CallExpression",
+        "callee": {
+          "type": "Identifier",
+          "name": "Bar",
+          "range": [
+            2807,
+            2810
+          ],
+          "loc": {
+            "start": {
+              "line": 227,
+              "column": 18
+            },
+            "end": {
+              "line": 227,
+              "column": 21
+            }
+          }
+        },
+        "arguments": [],
+        "range": [
+          2807,
+          2812
+        ],
+        "loc": {
+          "start": {
+            "line": 227,
+            "column": 18
+          },
+          "end": {
+            "line": 227,
+            "column": 23
+          }
+        }
+      },
+      "body": {
+        "type": "ClassBody",
+        "body": [],
+        "range": [
+          2812,
+          2814
+        ],
+        "loc": {
+          "start": {
+            "line": 227,
+            "column": 23
+          },
+          "end": {
+            "line": 227,
+            "column": 25
+          }
+        }
+      },
+      "range": [
+        2789,
+        2814
+      ],
+      "loc": {
+        "start": {
+          "line": 227,
+          "column": 0
+        },
+        "end": {
+          "line": 227,
+          "column": 25
+        }
+      }
     }
   ],
   "range": [
     17,
-    2659
+    2814
   ],
   "loc": {
     "start": {
@@ -11884,8 +12575,8 @@
       "column": 0
     },
     "end": {
-      "line": 219,
-      "column": 4
+      "line": 227,
+      "column": 25
     }
   }
 }

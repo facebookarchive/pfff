@@ -217,3 +217,11 @@ null;
 1;
 1.1;
 /a/;
+
+// ClassDeclaration
+class Foo{}
+class Foo{bar(){}}
+class Foo{static bar(){}}
+class Foo{bar(){} baz(){}}
+class Foo extends Bar{}
+class Foo extends Bar(){}

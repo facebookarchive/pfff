@@ -172,8 +172,8 @@ let rec convert json =
 
 and toplevel json =
   match json with
-  | J.Object node ->
-      (match node with
+  | J.Object node -> (
+      match node with
       | [
           ("type", J.String "FunctionDeclaration");
           ("id", J.Object([
@@ -202,7 +202,80 @@ and toplevel json =
           f_return_type=None; (* TODO *)
           f_body=(t, List.map toplevel body, t);
         })
-      | _ -> St(stmnt node))
+      | [
+          ("type", J.String "ClassDeclaration");
+          ("id", J.Object([
+            ("type", J.String "Identifier");
+            ("name", J.String name);
+            nameRangeProp;
+            nameLocProp;
+          ]));
+          ("superClass", superClass);
+          ("body", J.Object([
+            ("type", J.String "ClassBody");
+            ("body", J.Array elements);
+            bodyRangeProp;
+            bodyLocProp;
+          ]));
+          rangeProp;
+          locProp;
+        ] -> ClassDecl({
+          c_tok=t;
+          c_name=(name, t);
+          c_extends=super_class_or_none superClass;
+          c_body=(t, List.map class_element elements, t);
+        })
+      | _ -> St(stmnt node)
+    )
+  | _ -> raise Todo
+
+and super_class_or_none node =
+  match node with
+  | J.Null -> None
+  | J.Object expr -> Some(t (* TODO: `extends` token *), expression expr)
+  | _ -> raise Todo
+
+and class_element node =
+  match node with
+  | J.Object([
+      ("type", J.String "MethodDefinition");
+      ("key", J.Object([
+        ("type", J.String "Identifier");
+        ("name", J.String name);
+        nameRangeProp;
+        nameLocProp;
+      ]));
+      ("value", J.Object([
+        ("type", J.String "FunctionExpression");
+        ("id", J.Null);
+        ("params", J.Array params);
+        ("defaults", J.Array defaults);
+        ("body", J.Object([
+          ("type", J.String "BlockStatement");
+          ("body", J.Array body);
+          bodyRangeProp;
+          locRangeProp;
+        ]));
+        ("rest", J.Null);
+        ("generator", J.Bool isGenerator);
+        ("expression", J.Bool wtfIsThis);
+        funcRangeProp;
+        funcLocProp;
+      ]));
+      ("kind", J.String ""); (* TODO: If we ever support get/set methods *)
+      ("static", J.Bool isStatic);
+      rangeProp;
+      locProp;
+    ]) -> Method(
+      (if isStatic then Some(t) (* TODO: `static` token *) else None),
+      {
+        f_tok=None;
+        f_name=Some((name, t));
+        f_params=(t, comma_sep_list func_param params, t);
+        f_return_type=None; (* TODO *)
+        f_body=(t, List.map toplevel body, t);
+      }
+    )
   | _ -> raise Todo
 
 and stmnt node =
