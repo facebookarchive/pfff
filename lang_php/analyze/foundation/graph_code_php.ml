@@ -212,6 +212,12 @@ let (name_of_class_name: Ast.hint_type -> name) = fun x ->
   | Hint name -> name
   | _ -> raise Common.Impossible
 
+let add_prefix qu =
+  match qu with
+  | [] -> ""
+  | x::xs -> ((x::xs) +> List.map Ast.str_of_ident +> Common.join "\\")^"\\"
+
+
 (*
 let (lookup_namespace: env -> Ast.name -> Ast.ident) = fun env name ->
   match name with
@@ -263,10 +269,12 @@ let add_fake_node_when_undefined_entity = ref true
 
 let add_node_and_edge_if_defs_mode ?(props=[]) env (ident, kind) =
   let str =
+    add_prefix env.current_qualifier ^
     (match kind with
     | E.ClassConstant | E.Field | E.Method _ -> env.self ^ "."
     | _ -> ""
-    ) ^ Ast.str_of_ident ident
+    ) ^ 
+    Ast.str_of_ident ident
   in
   let node = (str, kind) in
 
