@@ -919,13 +919,14 @@ and expr env x =
       expr env e1;
       (match e2 with
       (* less: add deps? *)
-      | Id [name] ->
+      | Id name ->
         (* why not call add_use_edge() and benefit from the error reporting
          * there? because instanceOf check are less important so
          * we special case them?
          * todo: use add_use_edge I think, not worth the special treatment.
          *)
-        let node = Ast.str_of_ident name, E.Class E.RegularClass in
+        let (R x) = str_of_name env name in
+        let node = x, E.Class E.RegularClass in
         if not (G.has_node node env.g) 
         then 
           env.log (spf "PB: instanceof unknown class: %s"
