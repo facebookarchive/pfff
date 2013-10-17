@@ -149,7 +149,6 @@ let func_param param =
     ] -> {p_name=(name, t); p_type=None (* TODO *)}
   | _ -> raise Todo
 
-
 (*****************************************************************************)
 (* Main entry point *)
 (*****************************************************************************)
@@ -772,6 +771,126 @@ and expression node =
       rangeProp;
       locProp;
     ] -> Period(expression obj, t, (prop, t))
+  | ("type", J.String "XJSElement")::xs -> XhpHtml(jsx_element node)
+  | _ -> raise Todo
+
+and jsx_element node =
+  match node with
+  | [
+      ("type", J.String "XJSElement");
+      ("name", J.Object redundantIdentifier); (* sigh *)
+      ("selfClosing", J.Bool redundantClosingFlag); (* sigh *)
+      ("openingElement", J.Object([
+        ("type", J.String "XJSOpeningElement");
+        ("name", J.Object([
+          ("type", J.String "XJSIdentifier");
+          ("name", J.String tagName);
+          nameRangeProp;
+          nameLocProp;
+        ]));
+        ("selfClosing", J.Bool true);
+        ("attributes", J.Array attributes);
+        openingElRangeProp;
+        openingElLocProp;
+      ]));
+      ("attributes", J.Array redundantAttributes); (* sigh *)
+      ("children", J.Array children);
+      rangeProp;
+      locProp;
+    ] -> XhpSingleton(
+      (tagName, t),
+      List.map jsx_attribute attributes,
+      t (* /> *)
+    )
+  | [
+      ("type", J.String "XJSElement");
+      ("name", J.Object redundantIdentifier); (* sigh *)
+      ("selfClosing", J.Bool redundantClosingFlag); (* sigh *)
+      ("openingElement", J.Object([
+        ("type", J.String "XJSOpeningElement");
+        ("name", J.Object([
+          ("type", J.String "XJSIdentifier");
+          ("name", J.String tagName);
+          nameRangeProp;
+          nameLocProp;
+        ]));
+        ("selfClosing", J.Bool false);
+        ("attributes", J.Array attributes);
+        openingElRangeProp;
+        openingElLocProp;
+      ]));
+      ("closingElement", J.Object([
+        ("type", J.String "XJSClosingElement");
+        ("name", J.Object secondRedundantIdentifier); (* sigh *)
+        closingElRangeProp;
+        closingElLocProp;
+      ]));
+      ("attributes", J.Array redundantAttributes); (* sigh *)
+      ("children", J.Array children);
+      rangeProp;
+      locProp;
+    ] -> Xhp(
+      (tagName, t),
+      List.map jsx_attribute attributes,
+      t, (* /> *)
+      List.map jsx_child children,
+      (Some(tagName), t)
+    )
+  | _ -> raise Todo
+
+and jsx_child child =
+  match child with
+  | J.Object(node) -> (
+      match node with
+      | [
+          ("type", J.String "XJSExpressionContainer");
+          ("expression", J.Object expr);
+          rangeProp;
+          locProp;
+        ] -> XhpExpr((t, expression expr, t))
+      | [
+          ("type", J.String "Literal");
+          ("value", J.String value);
+          ("raw", J.String raw);
+          rangeProp;
+          locProp;
+        ] -> XhpText((value, t))
+      | ("type", J.String "XJSElement")::xs -> XhpNested(jsx_element node)
+      | _ -> raise Todo
+    )
+  | _ -> raise Todo
+      
+
+and jsx_attribute attribute =
+  match attribute with
+  | J.Object([
+      ("type", J.String "XJSAttribute");
+      ("name", J.Object([
+        ("type", J.String "XJSIdentifier");
+        ("name", J.String name);
+        nameRangeProp;
+        nameLocProp;
+      ]));
+      ("value", J.Object value);
+      rangeProp;
+      locProp;
+    ]) -> (
+      match value with
+      | [
+          ("type", J.String "XJSExpressionContainer");
+          ("expression", J.Object expr);
+          rangeProp;
+          locProp;
+        ] -> ((name, t), t, XhpAttrExpr((t, expression expr, t)))
+      | [
+          ("type", J.String "Literal");
+          ("value", J.String value);
+          ("raw", J.String raw);
+          rangeProp;
+          locProp;
+        ] -> ((name, t), t, XhpAttrString((value, t)))
+      | _ -> raise Todo
+    )
   | _ -> raise Todo
 
 and recursive_seq exprs =
