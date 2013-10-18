@@ -4,7 +4,11 @@
 
 ** internal:
 
-*** port to 4.01 graph_code_cmt.ml
+*** port to 4.01 graph_code_cmt.ml, make it configurable
+
+** php
+
+*** support for namespace part2 (graph_code)
 
 * 0.25 (Q3 2013) (codemap/codegraph integration)
 
@@ -24,7 +28,7 @@ associate a depth in the use graph to each file and entities.
 
 ** php
 
-*** support for namespace
+*** support for namespace part1 (parsing)
 
 ** ocaml
 
