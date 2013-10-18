@@ -251,17 +251,31 @@ class A {
  public function test_field() {
    return $this->fld;
  }
-}"
+}
+function test_useA() {
+  $o = new A();
+}
+"
       in
       let tmpfile = Parse_php.tmp_php_file_from_string file_content in
       let g = Graph_code_php.build 
         ~verbose:false ~logfile:"/dev/null" (Right [tmpfile]) [] in
+
       let src = ("A.$fld", E.Field) in
       let pred = G.pred src G.Use g in
       assert_equal
         ~msg:"it should link the use of a PHP field to its def"
         pred
         ["A.test_field", E.Method E.RegularMethod];
+
+      let src = ("A", E.Class E.RegularClass) in
+      let pred = G.pred src G.Use g in
+      assert_equal
+        ~msg:"it should link the use of a class to its use"
+        pred
+        ["test_useA", E.Function];
+
+
     );
 
     "required xhp field" >:: (fun () ->

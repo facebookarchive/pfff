@@ -539,22 +539,18 @@ let add_use_edge_inheritance ?(xhp=false) env (name, ident) kind =
         let node = ([str ^ "." ^ afld, tok], kind) in
         add_use_edge env node
     )
-  )
-(*
-         (* Some classes may appear as dead because a 'new X()' is
-          * transformed into a 'Call (... "__construct")' and such a method
-          * may not exist, or may have been "lookup"ed to the parent.
-          * So for "__construct" we also create an edge to the class
-          * directly.
-          * todo? but then a Use of a class can then be either a 'new' or
-          * an inheritance? People using G.pred or G.succ must take care to
-          * filter classes.
-          *)
-         if amethod =$= "__construct" 
-         then 
-           let x = strtok_of_name env name1 in
-           add_use_edge env (x, E.Class E.RegularClass);
-*)
+  );
+  (* Some classes may appear as dead because a 'new X()' is
+   * transformed into a 'Call (... "__construct")' and such a method
+   * may not exist, or may have been "lookup"ed to the parent.
+   * So for "__construct" we also create an edge to the class
+   * directly.
+   * todo? but then a Use of a class can then be either a 'new' or
+   * an inheritance? People using G.pred or G.succ must take care to
+   * filter classes.
+   *)
+  if afld =$= "__construct" 
+  then add_use_edge env (name, E.Class E.RegularClass)
 
 (*****************************************************************************)
 (* Defs/Uses *)
