@@ -534,7 +534,10 @@ let add_use_edge_inheritance ?(xhp=false) env (name, ident) kind =
 (* Defs/Uses *)
 (*****************************************************************************)
 let rec extract_defs_uses env ast readable =
-  let env = { env with current = (readable, E.File); readable } in
+  let env = { env with 
+    current = (readable, E.File); 
+    readable 
+  } in
   if env.phase = Defs then begin
     let dir = Common2.dirname env.readable in
     G.create_intermediate_directories_if_not_present env.g dir;
@@ -549,19 +552,19 @@ and stmt_toplevel_list env xs =
   | x::xs ->
     (match x with
     | NamespaceDef qu -> 
-      stmt_toplevel_list {env with current_qualifier = qu; } xs
+        stmt_toplevel_list {env with current_qualifier = qu; } xs
     | _ ->
-      stmt_toplevel env x;
-      stmt_toplevel_list env xs
+        stmt_toplevel env x;
+        stmt_toplevel_list env xs
     )
 
 (* ---------------------------------------------------------------------- *)
 (* Stmt/toplevel *)
 (* ---------------------------------------------------------------------- *)
-and stmt env x =
-  stmt_bis { env with at_toplevel = false } x
 and stmt_toplevel env x =
   stmt_bis env x
+and stmt env x =
+  stmt_bis { env with at_toplevel = false } x
 and stmt_bis env x =
   match x with
   (* boilerplate *)
