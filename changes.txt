@@ -21,7 +21,7 @@ via graph_code
 via graph_code
 
 *** treemap focus on users and uses of the file under the cursor
-via graph_code
+via graph_code, great!
 
 *** bottom up and topdown layer using graph_code
 associate a depth in the use graph to each file and entities.
