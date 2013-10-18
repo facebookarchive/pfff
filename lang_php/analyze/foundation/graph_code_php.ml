@@ -152,6 +152,8 @@ let parse env a =
     
 let xhp_field str = 
   (str =~ ".*=")
+let addpostfix = function
+  | (str, tok) -> (str ^ "=", tok)
 
 (* Ignore certain xhp fields, custom data attribute:
  * http://www.w3.org/TR/2011/WD-html5-20110525/elements.html,
@@ -641,12 +643,8 @@ and class_def env def =
   );
   (* See URL: https://github.com/facebook/xhp/wiki "Defining Attributes" *)
   def.c_xhp_fields +> List.iter (fun (def, req) ->
-    let addpostfix = function
-      | (str, tok) -> (str ^ "=", tok) in
     let node = (addpostfix def.cv_name, E.Field) in
-    let props =
-      if req then [E.Required] else []
-    in
+    let props = if req then [E.Required] else [] in
     let env = add_node_and_edge_if_defs_mode ~props env node in
     Common2.opt (expr env) def.cv_value;
   );
@@ -690,10 +688,7 @@ and class_def env def =
     (* less: be more precise at some point *)
     let kind = E.RegularMethod in
     let node = (def.f_name, E.Method kind) in
-    let props = [
-      E.Privacy (privacy_of_modifiers def.m_modifiers)
-    ]
-    in
+    let props = [E.Privacy (privacy_of_modifiers def.m_modifiers)] in
     let env = add_node_and_edge_if_defs_mode ~props env node in
     stmtl env def.f_body
   )
