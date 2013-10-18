@@ -41,7 +41,7 @@ module Deps = struct
     List.fold_left stmt acc stl
 
   and stmt acc = function
-    | NamespaceDef qu -> 
+    | NamespaceDef qu | NamespaceUse (qu, _) -> 
       raise (Ast_php.TodoNamespace (tok_of_name qu))
     (* adding names of entities *)
     | ClassDef c -> SSet.add (unwrap c.c_name) acc

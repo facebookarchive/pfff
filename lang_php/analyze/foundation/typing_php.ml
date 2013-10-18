@@ -241,7 +241,7 @@ and stmtl env l =
 
 and stmt env= function
   | TypeDef _ -> failwith "no support for typedefs in type inferencer"
-  | NamespaceDef _ -> failwith "no support for namespace yet"
+  | NamespaceDef _ | NamespaceUse _ -> failwith "no support for namespace yet"
   | Expr e -> iexpr env e
   | Block stl -> stmtl env stl
   | If (e, st1, st2) ->

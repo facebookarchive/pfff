@@ -162,6 +162,7 @@ and stmt =
   | TypeDef of type_def
   (* the qualified_ident below can not have a leading '\' *)
   | NamespaceDef of qualified_ident
+  | NamespaceUse of qualified_ident * ident option (* when alias *)
 
   (* Note that there is no LocalVars constructor. Variables in PHP are
    * declared when they are first assigned. *)

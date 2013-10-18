@@ -69,7 +69,7 @@ let juju_db_of_files ?(show_progress=false) xs =
         | ConstantDef c -> add db.constants_juju c.cst_name c
         | TypeDef t -> 
           failwith "no support for typedefs in juju database"
-        | NamespaceDef _ ->
+        | NamespaceDef _ | NamespaceUse _ ->
           failwith "no support for namespace yet"
 
         | (Global _|StaticVars _

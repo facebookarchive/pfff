@@ -80,6 +80,10 @@ and vof_stmt =
   | NamespaceDef v1 ->
       let v1 = vof_qualified_ident v1
       in Ocaml.VSum (("NamespaceDef", [ v1 ]))
+  | NamespaceUse ((v1, v2)) ->
+      let v1 = vof_qualified_ident v1
+      and v2 = Ocaml.vof_option vof_ident v2
+      in Ocaml.VSum (("NamespaceUse", [ v1; v2 ]))
 
 
 and vof_type_def { t_name = v_t_name; t_kind = v_t_kind } =

@@ -574,6 +574,9 @@ and stmt_toplevel_list env xs =
     (match x with
     | NamespaceDef qu -> 
         stmt_toplevel_list {env with current_qualifier = qu; } xs
+    | NamespaceUse _ ->
+      (* TODO *)
+      ()
     | _ ->
         stmt_toplevel env x;
         stmt_toplevel_list env xs
@@ -594,7 +597,7 @@ and stmt_bis env x =
   | ConstantDef def -> constant_def env def
   | TypeDef def -> type_def env def
   (* handled in stmt_toplevel_list *)
-  | NamespaceDef qu -> ()
+  | NamespaceDef _ | NamespaceUse _ -> ()
 
   (* old style constant definition, before PHP 5.4 *)
   | Expr(Call(Id[("define", _)], [String((name)); v])) ->

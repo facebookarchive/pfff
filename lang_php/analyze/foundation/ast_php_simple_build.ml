@@ -88,7 +88,13 @@ and toplevel env st acc =
   (* coming in next diff *)
   | NamespaceDef (_, qi, _) -> A.NamespaceDef (qualified_ident env qi)::acc
   | NamespaceBracketDef (tok, _, _) -> raise (ObsoleteConstruct tok)
-  | NamespaceUse (tok, _, _) -> raise (TodoConstruct ("NamespaceUse", tok))
+  | NamespaceUse (tok, xs, _) -> 
+    xs +> uncomma +> List.map (function
+    | ImportNamespace qu -> 
+        A.NamespaceUse (qualified_ident env qu, None)
+    | AliasNamespace (qu, _tok, id) -> 
+        A.NamespaceUse (qualified_ident env qu, Some (ident env id))
+    ) ++ acc
 
 (* ------------------------------------------------------------------------- *)
 (* Names *)

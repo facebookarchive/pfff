@@ -11,6 +11,24 @@ module V = Visitor_php
 (*****************************************************************************)
 (* Simple AST *)
 (*****************************************************************************)
+let test_parse_simple xs =
+  let fullxs = Lib_parsing_php.find_php_files_of_dir_or_files xs in
+  fullxs +> List.iter (fun file ->
+    try 
+      let ast = Parse_php.parse_program file in
+      let _ast = Ast_php_simple_build.program ast in
+      ()
+    with exn ->
+      (match exn with
+      | Ast_php_simple_build.TodoConstruct (_, tok)
+      | Ast_php_simple_build.ObsoleteConstruct tok
+        ->
+        pr2 (Parse_info.error_message_info tok);
+
+      | _ -> raise exn
+      )
+  )
+
 let test_dump_simple file =
   try 
     let ast = Parse_php.parse_program file in
@@ -364,6 +382,8 @@ let test_php_serialize file =
  *  - database_php_build.ml
  *)
 let actions () = [
+  "-parse_php_simple", "   <files or dirs>",
+  Common.mk_action_n_arg test_parse_simple;
   "-dump_php_simple", "   <file>",
   Common.mk_action_1_arg test_dump_simple;
   "-pp_php_simple", "   <file>",
