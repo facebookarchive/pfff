@@ -78,6 +78,7 @@ type env = {
   readable: Common.filename;
 
   current_qualifier: Ast_php_simple.qualified_ident;
+  import_rules: (string * Ast_php_simple.qualified_ident) list;
   self:   string; (* "NOSELF" when outside a class *)
   parent: resolved_name; (* "NOPARENT" when no parent *)
 
@@ -222,14 +223,22 @@ let add_prefix qu =
   | x::xs -> ((x::xs) +> List.map Ast.str_of_ident +> Common.join "\\")^"\\"
 
 
-(*
-let (lookup_namespace: env -> Ast.name -> Ast.ident) = fun env name ->
+(* http://www.php.net/manual/en/language.namespaces.rules.php *)
+let fully_qualified_candidates env name kind =
   match name with
-  | [ident] -> ident
-  (* TODO *)
-  | x::xs -> x
   | [] -> raise Impossible
-*)
+  | ("__special__ROOT",_)::xs -> [xs]
+  | ("__special__namespace",_)::xs ->
+      failwith "namespace keyword not handled in qualifier"
+  | (str, tok)::xs  ->
+    try 
+      let qu = List.assoc str env.import_rules in
+      [ qu ++ xs ]
+    with Not_found ->
+      [name;
+       env.current_qualifier ++ name;
+      ]
+    
 
 let (strtok_of_name: env -> Ast.name -> Database_code.entity_kind -> 
      resolved_name Ast.wrap) = 
@@ -239,11 +248,7 @@ let (strtok_of_name: env -> Ast.name -> Database_code.entity_kind ->
      | (ident,tok)::rest -> tok
      | [] -> raise Impossible
    in
-   let candidates = [
-     name;
-     env.current_qualifier ++ name;
-   ]
-   in
+   let candidates = fully_qualified_candidates env name kind in
    try 
     candidates +> Common.find_some (fun fullname ->
      let str = fullname +> List.map Ast.str_of_ident +> Common.join "\\" in
@@ -574,8 +579,15 @@ and stmt_toplevel_list env xs =
     (match x with
     | NamespaceDef qu -> 
         stmt_toplevel_list {env with current_qualifier = qu; } xs
-    | NamespaceUse _ ->
-        stmt_toplevel_list env xs
+    | NamespaceUse (qu, sopt) ->
+        let new_name =
+          match sopt, List.rev qu with
+          | Some (str, _tok), _ -> str
+          | None, [] -> raise Impossible
+          | None, (str,_tok)::rest -> str
+        in
+        let import_rules = (new_name, qu)::env.import_rules in
+        stmt_toplevel_list { env with import_rules } xs
     | _ ->
         stmt_toplevel env x;
         stmt_toplevel_list env xs
@@ -1023,6 +1035,7 @@ let build
     current = ("filled_later", E.File);
     readable = "filled_later";
     current_qualifier = [];
+    import_rules = [];
     self = "NOSELF"; parent = R "NOPARENT";
     dupes = Hashtbl.create 101;
     (* set after the defs phase *)
