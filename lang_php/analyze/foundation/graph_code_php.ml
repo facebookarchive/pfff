@@ -231,23 +231,38 @@ let (lookup_namespace: env -> Ast.name -> Ast.ident) = fun env name ->
   | [] -> raise Impossible
 *)
 
-let (strtok_of_name: env -> Ast.name -> resolved_name Ast.wrap) = 
- fun env name ->
-  match name with
-  | [ident] -> R (Ast.str_of_ident ident), snd ident
-  | x::xs -> 
-    let tok = snd x in
-    let str = (x::xs) +> List.map Ast.str_of_ident +> Common.join "\\" in
-    R str, tok
-  | [] -> raise Impossible
+let (strtok_of_name: env -> Ast.name -> Database_code.entity_kind -> 
+     resolved_name Ast.wrap) = 
+ fun env name kind ->
+   let tok =
+     match name with
+     | (ident,tok)::rest -> tok
+     | [] -> raise Impossible
+   in
+   let candidates = [
+     name;
+     env.current_qualifier ++ name;
+   ]
+   in
+   try 
+    candidates +> Common.find_some (fun fullname ->
+     let str = fullname +> List.map Ast.str_of_ident +> Common.join "\\" in
+     if G.has_node (str, kind) env.g
+     then Some (R str, tok)
+     else None
+   )
+   with Not_found ->
+     let str = name +> List.map Ast.str_of_ident +> Common.join "\\" in
+     R str, tok
+     
 
-let str_of_name env x =
-  fst (strtok_of_name env x)
+let str_of_name env x kind =
+  fst (strtok_of_name env x kind)
 
 let (strtok_of_class_name: env -> Ast.hint_type -> resolved_name Ast.wrap) =
   fun env x ->
     let name = name_of_class_name x in
-    strtok_of_name env name
+    strtok_of_name env name (E.Class E.RegularClass)
 
 let str_of_class_name env x =
   fst (strtok_of_class_name env x)
@@ -258,9 +273,6 @@ let name_of_parent env tok =
     [parent, tok]
   in
   name
-
-let name_concat (R aclass) fld =
-  R (aclass^"."^fld)
 
 (*****************************************************************************)
 (* Add node *)
@@ -393,7 +405,7 @@ let class_exists a b c =
 (*****************************************************************************)
 
 let rec add_use_edge2 env (name, kind) =
-  let (R str, tok) = strtok_of_name env name in
+  let (R str, tok) = strtok_of_name env name kind in
   let src = env.current in
   let dst = (str, kind) in
   match () with
@@ -496,7 +508,7 @@ let lookup_inheritance g a =
 
 let add_use_edge_inheritance ?(xhp=false) env (name, ident) kind =
 
-  let aclass = str_of_name env name in
+  let aclass = str_of_name env name (E.Class E.RegularClass) in
   let afld = Ast.str_of_ident ident ^ (if xhp then "=" else "") in
   let tok = snd ident in
 
@@ -913,7 +925,7 @@ and expr env x =
          * we special case them?
          * todo: use add_use_edge I think, not worth the special treatment.
          *)
-        let (R x) = str_of_name env name in
+        let (R x) = str_of_name env name (E.Class E.RegularClass) in
         let node = x, E.Class E.RegularClass in
         if not (G.has_node node env.g) 
         then 
