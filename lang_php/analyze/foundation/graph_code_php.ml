@@ -575,8 +575,7 @@ and stmt_toplevel_list env xs =
     | NamespaceDef qu -> 
         stmt_toplevel_list {env with current_qualifier = qu; } xs
     | NamespaceUse _ ->
-      (* TODO *)
-      ()
+        stmt_toplevel_list env xs
     | _ ->
         stmt_toplevel env x;
         stmt_toplevel_list env xs

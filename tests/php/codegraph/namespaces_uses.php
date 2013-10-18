@@ -3,3 +3,4 @@
 class UseNamespace extends N\AInN 
 {
 }
+
