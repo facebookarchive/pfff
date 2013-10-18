@@ -180,7 +180,7 @@ and stmt =
 (* Expression *)
 (* ------------------------------------------------------------------------- *)
 
-(* lvalue and expr has been mixed in this AST, but an lvalue should be
+(* lvalue and expr have been mixed in this AST, but an lvalue should be
  * an expr restricted to: Var $var, Array_get, Obj_get, Class_get, or List.
  *)
 and expr =
@@ -195,13 +195,12 @@ and expr =
   | String of string wrap
 
   (* Id is valid for "entities" (functions, classes, constants). Id is also
-   * used for class methods/fields/constants. It Can also contain 
+   * used for class methods/fields/constants. It can also contain 
    * "self/parent" or "static". It can be "true", "false", "null" and many
    * other builtin constants. See builtin() and special() below.
    *
    * todo: For field name, if in the code they are referenced like $this->fld,
    * we should prepend a $ to fld to match their definition.
-   *
    *)
   | Id of name
 
