@@ -386,7 +386,8 @@ let class_exists a b c =
 (* Add edge *)
 (*****************************************************************************)
 
-let rec add_use_edge env ((R str, tok), kind) =
+let rec add_use_edge env (name, kind) =
+  let (R str, tok) = strtok_of_name env name in
   let src = env.current in
   let dst = (str, kind) in
   match () with
@@ -407,7 +408,7 @@ let rec add_use_edge env ((R str, tok), kind) =
                          str final_str 
                          (Parse_info.string_of_info (Ast.tok_of_ident name)));
       *)
-      add_use_edge env ((R final_str, tok), kind)
+      add_use_edge env ([final_str, tok], kind)
 
   | _ ->
     (match kind with
@@ -482,6 +483,52 @@ let lookup_inheritance2 g (R aclass, amethod_or_field_or_constant) tok =
 
 let lookup_inheritance g a =
   Common.profile_code "Graph_php.lookup" (fun () -> lookup_inheritance2 g a)
+
+
+let add_use_edge_inheritance ?(xhp=false) env (name, ident) kind =
+
+  let aclass = str_of_name env name in
+  let afld = Ast.str_of_ident ident ^ (if xhp then "=" else "") in
+  let tok = snd ident in
+
+  (match lookup_inheritance env.g (aclass, afld) tok with
+  (* less: assert kind = kind2? 
+   * actually because we convert some Obj_get into Class_get,
+   * this could also be a kind = Field even when asked for a StaticVar
+   *)
+  | Some ((R str, tok), kind2) -> 
+    add_use_edge env ([str, tok], kind2)
+  | None ->
+    (match afld with
+    (* todo? create a fake default constructor node? *)
+    | "__construct" -> ()
+    | _ -> 
+      if class_exists env aclass (tok)
+      then 
+        let (R str) = aclass in
+(*
+        let node = (str ^ "." ^ afld, kind) in
+        lookup_fail env (Some tok) node 
+*)
+        let node = ([str ^ "." ^ afld, tok], kind) in
+        add_use_edge env node
+    )
+  )
+(*
+         (* Some classes may appear as dead because a 'new X()' is
+          * transformed into a 'Call (... "__construct")' and such a method
+          * may not exist, or may have been "lookup"ed to the parent.
+          * So for "__construct" we also create an edge to the class
+          * directly.
+          * todo? but then a Use of a class can then be either a 'new' or
+          * an inheritance? People using G.pred or G.succ must take care to
+          * filter classes.
+          *)
+         if amethod =$= "__construct" 
+         then 
+           let x = strtok_of_name env name1 in
+           add_use_edge env (x, E.Class E.RegularClass);
+*)
 
 (*****************************************************************************)
 (* Defs/Uses *)
@@ -606,20 +653,16 @@ and class_def env def =
   if env.phase = Inheritance then begin
     def.c_extends +> Common.do_option (fun c2 ->
       (* todo: also mark as use the generic arguments *)
-      let x = strtok_of_class_name env c2 in
-      add_use_edge env (x, E.Class E.RegularClass);
+      add_use_edge env (name_of_class_name c2, E.Class E.RegularClass);
     );
     def.c_implements +> List.iter (fun c2 ->
-      let x = strtok_of_class_name env c2 in
-      add_use_edge env (x, E.Class E.RegularClass (*E.Interface*));
+      add_use_edge env (name_of_class_name c2, E.Class E.RegularClass (*E.Interface*));
     );
     def.c_uses +> List.iter (fun c2 ->
-      let x = strtok_of_class_name env c2 in
-      add_use_edge env (x, E.Class E.RegularClass (*E.Trait*));
+      add_use_edge env (name_of_class_name c2, E.Class E.RegularClass (*E.Trait*));
     );
     def.c_xhp_attr_inherit +> List.iter (fun c2 ->
-      let x = strtok_of_class_name env c2 in
-      add_use_edge env (x, E.Class E.RegularClass);
+      add_use_edge env (name_of_class_name c2, E.Class E.RegularClass);
     );
 
   end;
@@ -713,9 +756,7 @@ and hint_type env t =
   if env.phase = Uses then
   (match t with 
   | Hint name ->
-      let x = strtok_of_name env name in
-      let node = (x, E.Class E.RegularClass) in
-      add_use_edge env node
+      add_use_edge env (name, E.Class E.RegularClass)
   | HintArray -> ()
   | HintQuestion t -> hint_type env t
   | HintTuple xs -> List.iter (hint_type env) xs
@@ -750,7 +791,7 @@ and expr env x =
       | s when s =~ ".*autoload_map.php" -> ()
       | _ ->
         (*env.log (spf "DYNCALL_STR:%s (at %s)" s env.readable);*)
-        add_use_edge env ((R entity, tok), E.Class E.RegularClass)
+        add_use_edge env ([entity, tok], E.Class E.RegularClass)
       );
     end
   (* todo? also look for functions? but has more FPs with regular
@@ -767,8 +808,7 @@ and expr env x =
    * there is the use of a constant.
    *)
   | Id name ->
-    let x = strtok_of_name env name in
-    add_use_edge env (x, E.Constant)
+    add_use_edge env (name, E.Constant)
 
   (* a parameter or local variable *)
   | Var ident ->
@@ -779,8 +819,7 @@ and expr env x =
     (match e with
     (* simple function call *)
     | Id name ->
-        let x = strtok_of_name env name in
-        add_use_edge env (x, E.Function);
+        add_use_edge env (name, E.Function);
         exprl env es
 
     (* static method call *)
@@ -794,35 +833,7 @@ and expr env x =
         expr env (Call (Class_get (Id[ (env.self, tok)], e2), es))
 
     | Class_get (Id name1, Id [name2]) ->
-         let aclass = str_of_name env name1 in
-         let amethod = Ast.str_of_ident name2 in
-         let tok = snd name2 in
-         (match lookup_inheritance env.g (aclass, amethod) tok with
-         | Some n -> add_use_edge env n
-         | None ->
-           (match amethod with
-           (* todo? create a fake default constructor node? *)
-           | "__construct" -> ()
-           | _ -> 
-             let x = name_concat aclass amethod, tok in
-             let node = (x, E.Method E.RegularMethod) in
-             if class_exists env aclass tok then add_use_edge env node
-           )
-         );
-         (* Some classes may appear as dead because a 'new X()' is
-          * transformed into a 'Call (... "__construct")' and such a method
-          * may not exist, or may have been "lookup"ed to the parent.
-          * So for "__construct" we also create an edge to the class
-          * directly.
-          * todo? but then a Use of a class can then be either a 'new' or
-          * an inheritance? People using G.pred or G.succ must take care to
-          * filter classes.
-          *)
-         if amethod =$= "__construct" 
-         then 
-           let x = strtok_of_name env name1 in
-           add_use_edge env (x, E.Class E.RegularClass);
-
+         add_use_edge_inheritance env (name1, name2) (E.Method E.RegularMethod);
          exprl env es
 
     (* object call *)
@@ -860,43 +871,19 @@ and expr env x =
         expr env (Class_get (Id[ (env.self, tok)], e2))
 
       | Id name1, Id [name2] ->
-          let aclass = str_of_name env name1 in
-          let aconstant = Ast.str_of_ident name2 in
-          let tok = snd name2 in
-          (match lookup_inheritance env.g (aclass, aconstant) tok with
-          (* less: assert kind = ClassConstant? *)
-          | Some n -> add_use_edge env n
-          | None -> 
-             let x = name_concat aclass aconstant, tok in
-             let node = (x, E.ClassConstant) in
-             if class_exists env aclass tok then add_use_edge env node
-          )
+          add_use_edge_inheritance env (name1, name2) E.ClassConstant
 
       | Id name1, Var name2 ->
-          let aclass = str_of_name env name1 in
-          let astatic_var = Ast.str_of_ident name2 in
-          let tok = snd name2 in
-          (match lookup_inheritance env.g (aclass, astatic_var) tok with
-          (* less: assert kind = Static variable
-           * actually because we convert some Obj_get into Class_get,
-           * this could also be a kind = Field here.
-           *)
-          | Some n -> add_use_edge env n
-          | None -> 
-            let x = name_concat aclass astatic_var, tok in
-            let node = (x, E.Field) in
-            if class_exists env aclass tok then add_use_edge env node
-          )
+          add_use_edge_inheritance env (name1, name2) E.Field
 
      (* less: update dynamic stats *)
      | Id name1, e2  ->
-          let x = strtok_of_name env name1 in
-          add_use_edge env (x, E.Class E.RegularClass);
+          add_use_edge env (name1, E.Class E.RegularClass);
           expr env e2;
      | e1, Id name2  ->
-       expr env e1;
+         expr env e1;
      | _ ->
-       exprl env [e1; e2]
+         exprl env [e1; e2]
       )
 
   (* same, should be executed only for field access *)
@@ -951,8 +938,7 @@ and expr env x =
   | Ref e -> expr env e
   | ConsArray (xs) -> array_valuel env xs
   | Collection (name, xs) ->
-      let x = strtok_of_name env name in
-      add_use_edge env (x, E.Class E.RegularClass);
+      add_use_edge env (name, E.Class E.RegularClass);
       array_valuel env xs
   | Xhp x -> xml env x
   | CondExpr (e1, e2, e3) -> exprl env [e1; e2; e3]
@@ -966,20 +952,11 @@ and vector_value env e = expr env e
 and map_value env (e1, e2) = exprl env [e1; e2]
 
 and xml env x =
-  let y = strtok_of_name env [x.xml_tag] in
-  add_use_edge env (y, E.Class E.RegularClass);
-  let aclass = str_of_name env [x.xml_tag] in
-  x.xml_attrs +> List.iter (fun (name, xhp_attr) ->
-    let afield = Ast.str_of_ident name ^ "=" in
-    let tok = snd name in
-    (match lookup_inheritance env.g (aclass, afield) tok with
-    | Some n -> add_use_edge env n
-    | None -> 
-      let x = name_concat aclass afield, tok in
-      let node = (x, E.Field) in
-      if class_exists env aclass tok then add_use_edge env node
-    );      
-    expr env xhp_attr);
+  add_use_edge env ([x.xml_tag], E.Class E.RegularClass);
+  x.xml_attrs +> List.iter (fun (ident, xhp_attr) ->
+    add_use_edge_inheritance ~xhp:true env ([x.xml_tag], ident) E.Field;
+    expr env xhp_attr
+  );
   x.xml_body +> List.iter (xhp env)
 
 and xhp env = function
@@ -987,10 +964,10 @@ and xhp env = function
   | XhpExpr e -> expr env e
   | XhpXml x -> xml env x
 
-and exprl env xs = List.iter (expr env) xs
-and array_valuel env xs = List.iter (array_value env) xs
+and exprl         env xs = List.iter (expr env) xs
+and array_valuel  env xs = List.iter (array_value env) xs
 and vector_valuel env xs = List.iter (vector_value env) xs
-and map_valuel env xs = List.iter (map_value env) xs
+and map_valuel    env xs = List.iter (map_value env) xs
 
 (*****************************************************************************)
 (* Main entry point *)
