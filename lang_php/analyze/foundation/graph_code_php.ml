@@ -1111,7 +1111,7 @@ let build
 
     (* step3: creating the 'Use' edges, the uses *)
     env.pr2_and_log "\nstep3: extract uses";
-    Common.profile_code "Graph_php.step2" (fun () ->
+    Common.profile_code "Graph_php.step3" (fun () ->
     files +> Common_extra.progress ~show:verbose (fun k ->
       List.iter (fun file ->
         k();
