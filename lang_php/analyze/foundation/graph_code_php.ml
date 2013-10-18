@@ -577,8 +577,7 @@ and stmt_bis env x =
 
   (* old style constant definition, before PHP 5.4 *)
   | Expr(Call(Id[("define", _)], [String((name)); v])) ->
-     let node = (name, E.Constant) in
-     let env = add_node_and_edge_if_defs_mode env node in
+     let env = add_node_and_edge_if_defs_mode env (name, E.Constant) in
      expr env v
 
   | Expr e -> expr env e
@@ -629,11 +628,10 @@ and catches env xs = List.iter (catch env) xs
 (* Defs *)
 (* ---------------------------------------------------------------------- *)
 and func_def env def =
-  let node = (def.f_name, E.Function) in
   let env =
     match def.f_kind with
     | AnonLambda -> env
-    | Function -> add_node_and_edge_if_defs_mode env node
+    | Function -> add_node_and_edge_if_defs_mode env (def.f_name, E.Function)
     | Method -> raise Impossible
   in
   def.f_params +> List.iter (fun p ->
@@ -649,8 +647,7 @@ and class_def env def =
     | Interface -> (*E.Interface*) E.RegularClass
     | Trait -> (*E.Trait*) E.RegularClass
   in
-  let node = (def.c_name, E.Class kind) in
-  let env = add_node_and_edge_if_defs_mode env node in
+  let env = add_node_and_edge_if_defs_mode env (def.c_name, E.Class kind) in
 
   (* opti: could also just push those edges in a _todo ref during Defs *)
   if env.phase = Inheritance then begin
@@ -675,16 +672,15 @@ and class_def env def =
     if env.phase = Uses
     then
       match def.c_extends with
-      | None -> 
-        if not in_trait then R "NOPARENT" else R "NOPARENT_INTRAIT"
+      | None -> if not in_trait then R "NOPARENT" else R "NOPARENT_INTRAIT"
       | Some c2 -> str_of_class_name env c2
     else env.parent
   in
   let env = { env with self; parent; } in
 
   def.c_constants +> List.iter (fun def ->
-    let node = (def.cst_name, E.ClassConstant) in
-    let env = add_node_and_edge_if_defs_mode env node in
+    let env = 
+      add_node_and_edge_if_defs_mode env (def.cst_name, E.ClassConstant) in
     expr env def.cst_body;
   );
   (* See URL: https://github.com/facebook/xhp/wiki "Defining Attributes" *)
@@ -695,9 +691,8 @@ and class_def env def =
     Common2.opt (expr env) def.cv_value;
   );
   def.c_variables +> List.iter (fun fld ->
-    let node = (fld.cv_name, E.Field) in
     let props = [E.Privacy (privacy_of_modifiers fld.cv_modifiers)] in
-    let env = add_node_and_edge_if_defs_mode ~props env node in
+    let env = add_node_and_edge_if_defs_mode ~props env (fld.cv_name, E.Field)in
     (* PHP allows to refine a field, for instance on can do
      * 'protected $foo = 42;' in a class B extending A which contains
      * such a field (also this field could have been declared
@@ -709,6 +704,7 @@ and class_def env def =
          (match def.c_extends with
          | None -> ()
          | Some c ->
+           (* TODO factorize with add_use_edge_inheritance ? *)
            let aclass, afld = 
              (str_of_class_name env c, Ast.str_of_ident fld.cv_name) in
            let fake_tok = () in
@@ -733,20 +729,18 @@ and class_def env def =
   def.c_methods +> List.iter (fun def ->
     (* less: be more precise at some point *)
     let kind = E.RegularMethod in
-    let node = (def.f_name, E.Method kind) in
     let props = [E.Privacy (privacy_of_modifiers def.m_modifiers)] in
-    let env = add_node_and_edge_if_defs_mode ~props env node in
+    let env = 
+      add_node_and_edge_if_defs_mode ~props env (def.f_name, E.Method kind) in
     stmtl env def.f_body
   )
 
 and constant_def env def =
-  let node = (def.cst_name, E.Constant) in
-  let env = add_node_and_edge_if_defs_mode env node in
+  let env = add_node_and_edge_if_defs_mode env (def.cst_name, E.Constant) in
   expr env def.cst_body
 
 and type_def env def =
- let node = (def.t_name, E.Type) in
- let env = add_node_and_edge_if_defs_mode env node in
+ let env = add_node_and_edge_if_defs_mode env (def.t_name, E.Type) in
  type_def_kind env def.t_kind
 
 and type_def_kind env = function
@@ -758,8 +752,7 @@ and type_def_kind env = function
 and hint_type env t = 
   if env.phase = Uses then
   (match t with 
-  | Hint name ->
-      add_use_edge env (name, E.Class E.RegularClass)
+  | Hint name -> add_use_edge env (name, E.Class E.RegularClass)
   | HintArray -> ()
   | HintQuestion t -> hint_type env t
   | HintTuple xs -> List.iter (hint_type env) xs
@@ -771,7 +764,6 @@ and hint_type env t =
       hint_type env t
     )
   )
-    
 
 (* ---------------------------------------------------------------------- *)
 (* Expr *)
@@ -810,12 +802,9 @@ and expr env x =
    * is executed really as a last resort, which usually means when
    * there is the use of a constant.
    *)
-  | Id name ->
-    add_use_edge env (name, E.Constant)
-
+  | Id name -> add_use_edge env (name, E.Constant)
   (* a parameter or local variable *)
-  | Var ident ->
-    ()
+  | Var ident -> ()
 
   (* -------------------------------------------------- *)
   | Call (e, es) ->
@@ -875,7 +864,6 @@ and expr env x =
 
       | Id name1, Id [name2] ->
           add_use_edge_inheritance env (name1, name2) E.ClassConstant
-
       | Id name1, Var name2 ->
           add_use_edge_inheritance env (name1, name2) E.Field
 
@@ -906,10 +894,6 @@ and expr env x =
       expr env (Call (Class_get(e, Id[ ("__construct", None)]), es))
 
   (* -------------------------------------------------- *)
-  (* boilerplate *)
-  | Arrow(e1, e2) -> exprl env [e1;e2]
-  | List xs -> exprl env xs
-  | Assign (_, e1, e2) -> exprl env [e1;e2]
   | InstanceOf (e1, e2) ->
       expr env e1;
       (match e2 with
@@ -930,6 +914,11 @@ and expr env x =
           (* less: update dynamic *)
           expr env e2
       )
+
+  (* boilerplate *)
+  | Arrow(e1, e2) -> exprl env [e1;e2]
+  | List xs -> exprl env xs
+  | Assign (_, e1, e2) -> exprl env [e1;e2]
 
   | This _ -> ()
   | Array_get (e, eopt) ->
