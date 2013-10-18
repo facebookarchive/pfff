@@ -149,7 +149,6 @@ let func_param param =
     ] -> {p_name=(name, t); p_type=None (* TODO *)}
   | _ -> raise Todo
 
-
 (*****************************************************************************)
 (* Main entry point *)
 (*****************************************************************************)
@@ -172,8 +171,8 @@ let rec convert json =
 
 and toplevel json =
   match json with
-  | J.Object node ->
-      (match node with
+  | J.Object node -> (
+      match node with
       | [
           ("type", J.String "FunctionDeclaration");
           ("id", J.Object([
@@ -202,7 +201,80 @@ and toplevel json =
           f_return_type=None; (* TODO *)
           f_body=(t, List.map toplevel body, t);
         })
-      | _ -> St(stmnt node))
+      | [
+          ("type", J.String "ClassDeclaration");
+          ("id", J.Object([
+            ("type", J.String "Identifier");
+            ("name", J.String name);
+            nameRangeProp;
+            nameLocProp;
+          ]));
+          ("superClass", superClass);
+          ("body", J.Object([
+            ("type", J.String "ClassBody");
+            ("body", J.Array elements);
+            bodyRangeProp;
+            bodyLocProp;
+          ]));
+          rangeProp;
+          locProp;
+        ] -> ClassDecl({
+          c_tok=t;
+          c_name=(name, t);
+          c_extends=super_class_or_none superClass;
+          c_body=(t, List.map class_element elements, t);
+        })
+      | _ -> St(stmnt node)
+    )
+  | _ -> raise Todo
+
+and super_class_or_none node =
+  match node with
+  | J.Null -> None
+  | J.Object expr -> Some(t (* TODO: `extends` token *), expression expr)
+  | _ -> raise Todo
+
+and class_element node =
+  match node with
+  | J.Object([
+      ("type", J.String "MethodDefinition");
+      ("key", J.Object([
+        ("type", J.String "Identifier");
+        ("name", J.String name);
+        nameRangeProp;
+        nameLocProp;
+      ]));
+      ("value", J.Object([
+        ("type", J.String "FunctionExpression");
+        ("id", J.Null);
+        ("params", J.Array params);
+        ("defaults", J.Array defaults);
+        ("body", J.Object([
+          ("type", J.String "BlockStatement");
+          ("body", J.Array body);
+          bodyRangeProp;
+          locRangeProp;
+        ]));
+        ("rest", J.Null);
+        ("generator", J.Bool isGenerator);
+        ("expression", J.Bool wtfIsThis);
+        funcRangeProp;
+        funcLocProp;
+      ]));
+      ("kind", J.String ""); (* TODO: If we ever support get/set methods *)
+      ("static", J.Bool isStatic);
+      rangeProp;
+      locProp;
+    ]) -> Method(
+      (if isStatic then Some(t) (* TODO: `static` token *) else None),
+      {
+        f_tok=None;
+        f_name=Some((name, t));
+        f_params=(t, comma_sep_list func_param params, t);
+        f_return_type=None; (* TODO *)
+        f_body=(t, List.map toplevel body, t);
+      }
+    )
   | _ -> raise Todo
 
 and stmnt node =
@@ -699,6 +771,126 @@ and expression node =
       rangeProp;
       locProp;
     ] -> Period(expression obj, t, (prop, t))
+  | ("type", J.String "XJSElement")::xs -> XhpHtml(jsx_element node)
+  | _ -> raise Todo
+
+and jsx_element node =
+  match node with
+  | [
+      ("type", J.String "XJSElement");
+      ("name", J.Object redundantIdentifier); (* sigh *)
+      ("selfClosing", J.Bool redundantClosingFlag); (* sigh *)
+      ("openingElement", J.Object([
+        ("type", J.String "XJSOpeningElement");
+        ("name", J.Object([
+          ("type", J.String "XJSIdentifier");
+          ("name", J.String tagName);
+          nameRangeProp;
+          nameLocProp;
+        ]));
+        ("selfClosing", J.Bool true);
+        ("attributes", J.Array attributes);
+        openingElRangeProp;
+        openingElLocProp;
+      ]));
+      ("attributes", J.Array redundantAttributes); (* sigh *)
+      ("children", J.Array children);
+      rangeProp;
+      locProp;
+    ] -> XhpSingleton(
+      (tagName, t),
+      List.map jsx_attribute attributes,
+      t (* /> *)
+    )
+  | [
+      ("type", J.String "XJSElement");
+      ("name", J.Object redundantIdentifier); (* sigh *)
+      ("selfClosing", J.Bool redundantClosingFlag); (* sigh *)
+      ("openingElement", J.Object([
+        ("type", J.String "XJSOpeningElement");
+        ("name", J.Object([
+          ("type", J.String "XJSIdentifier");
+          ("name", J.String tagName);
+          nameRangeProp;
+          nameLocProp;
+        ]));
+        ("selfClosing", J.Bool false);
+        ("attributes", J.Array attributes);
+        openingElRangeProp;
+        openingElLocProp;
+      ]));
+      ("closingElement", J.Object([
+        ("type", J.String "XJSClosingElement");
+        ("name", J.Object secondRedundantIdentifier); (* sigh *)
+        closingElRangeProp;
+        closingElLocProp;
+      ]));
+      ("attributes", J.Array redundantAttributes); (* sigh *)
+      ("children", J.Array children);
+      rangeProp;
+      locProp;
+    ] -> Xhp(
+      (tagName, t),
+      List.map jsx_attribute attributes,
+      t, (* /> *)
+      List.map jsx_child children,
+      (Some(tagName), t)
+    )
+  | _ -> raise Todo
+
+and jsx_child child =
+  match child with
+  | J.Object(node) -> (
+      match node with
+      | [
+          ("type", J.String "XJSExpressionContainer");
+          ("expression", J.Object expr);
+          rangeProp;
+          locProp;
+        ] -> XhpExpr((t, expression expr, t))
+      | [
+          ("type", J.String "Literal");
+          ("value", J.String value);
+          ("raw", J.String raw);
+          rangeProp;
+          locProp;
+        ] -> XhpText((value, t))
+      | ("type", J.String "XJSElement")::xs -> XhpNested(jsx_element node)
+      | _ -> raise Todo
+    )
+  | _ -> raise Todo
+      
+
+and jsx_attribute attribute =
+  match attribute with
+  | J.Object([
+      ("type", J.String "XJSAttribute");
+      ("name", J.Object([
+        ("type", J.String "XJSIdentifier");
+        ("name", J.String name);
+        nameRangeProp;
+        nameLocProp;
+      ]));
+      ("value", J.Object value);
+      rangeProp;
+      locProp;
+    ]) -> (
+      match value with
+      | [
+          ("type", J.String "XJSExpressionContainer");
+          ("expression", J.Object expr);
+          rangeProp;
+          locProp;
+        ] -> ((name, t), t, XhpAttrExpr((t, expression expr, t)))
+      | [
+          ("type", J.String "Literal");
+          ("value", J.String value);
+          ("raw", J.String raw);
+          rangeProp;
+          locProp;
+        ] -> ((name, t), t, XhpAttrString((value, t)))
+      | _ -> raise Todo
+    )
   | _ -> raise Todo
 
 and recursive_seq exprs =

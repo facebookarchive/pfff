@@ -254,15 +254,13 @@ and variable_declaration = {
 and class_decl = {
   c_tok: tok;
   c_name: name;
-  c_extends: (tok (* extends *) * inherit_expr) option;
+  c_extends: (tok (* extends *) * expr) option;
   c_body: class_stmt list brace;
 }
 
   and class_stmt =
   | Method of tok option (* static *) * func_decl
   | ClassExtraSemiColon of sc
-
-and inherit_expr = expr
 
 (* ------------------------------------------------------------------------- *)
 (* The toplevels elements *)

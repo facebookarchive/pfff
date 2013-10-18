@@ -1,3 +1,4 @@
+/*
 // EmptyStatment
 ;
 
@@ -217,3 +218,24 @@ null;
 1;
 1.1;
 /a/;
+
+// ClassDeclaration
+class Foo{}
+class Foo{bar(){}}
+class Foo{static bar(){}}
+class Foo{bar(){} baz(){}}
+class Foo extends Bar{}
+class Foo extends Bar(){}
+*/
+
+// XJS
+//<a/>; // Broken in pfff
+a=<a/>; // Workaround until pfff supports jsx in an expression statement
+a=<a b="1"/>;
+a=<a b={c()}/>;
+a=<a>text</a>;
+a=<a>"text"</a>;
+a=<a><b/></a>;
+a=<a><b></b></a>;
+a=<a>{b()}</a>;
+//a=<a>begin{middle()}end</a>; // Broken in pfff
