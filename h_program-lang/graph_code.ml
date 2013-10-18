@@ -184,6 +184,7 @@ let create () =
   }
 
 let add_node n g =
+  Common.profile_code "Graph_code.add_node" (fun () ->
   if G.has_node n g.has
   then begin 
     pr2_gen n;
@@ -198,12 +199,14 @@ let add_node n g =
   G.add_vertex_if_not_present n g.has;
   G.add_vertex_if_not_present n g.use;
   ()
+  )
 
 let add_edge (n1, n2) e g =
+  Common.profile_code "Graph_code.add_edge" (fun () ->
   match e with
   | Has -> G.add_edge n1 n2 g.has
   | Use -> G.add_edge n1 n2 g.use
-
+  )
 let remove_edge (n1, n2) e g =
   match e with
   | Has -> G.remove_edge n1 n2 g.has
@@ -254,12 +257,15 @@ let succ n e g =
 
 
 let parent n g =
+  Common.profile_code "Graph_code.parent" (fun () ->
   let xs = G.pred n g.has in
   Common2.list_to_single_or_exn xs
+  )
 
 let parents n g =
+  Common.profile_code "Graph_code.parents" (fun () ->
   G.pred n g.has
-
+  )
 let children n g =
   G.succ n g.has
 

@@ -146,9 +146,11 @@ let parse2 env file =
 (* On a huge codebase naive memoization stresses too much the GC.
  * We marshall a la juju so the heap graph is smaller at least. *)
 let parse env a =
+  Common.profile_code "Graph_php.parse" (fun() ->
   Marshal.from_string (Common.memoized _hmemo a (fun () ->
       Marshal.to_string (parse2 env a) []
      )) 0
+  )
     
 let xhp_field str = 
   (str =~ ".*=")
@@ -271,7 +273,7 @@ let name_concat (R aclass) fld =
  *)
 let add_fake_node_when_undefined_entity = ref true
 
-let add_node_and_edge_if_defs_mode ?(props=[]) env (ident, kind) =
+let add_node_and_edge_if_defs_mode2 ?(props=[]) env (ident, kind) =
   let str =
     add_prefix env.current_qualifier ^
     (match kind with
@@ -327,6 +329,10 @@ let add_node_and_edge_if_defs_mode ?(props=[]) env (ident, kind) =
   if Hashtbl.mem env.dupes node
   then env
   else { env with current = node }
+
+let add_node_and_edge_if_defs_mode ?props a b =
+  Common.profile_code "Graph_php.add_node" (fun () ->
+    add_node_and_edge_if_defs_mode2 ?props a b)
 
 (*****************************************************************************)
 (* Add edge helpers *)
@@ -386,7 +392,7 @@ let class_exists a b c =
 (* Add edge *)
 (*****************************************************************************)
 
-let rec add_use_edge env (name, kind) =
+let rec add_use_edge2 env (name, kind) =
   let (R str, tok) = strtok_of_name env name in
   let src = env.current in
   let dst = (str, kind) in
@@ -408,7 +414,7 @@ let rec add_use_edge env (name, kind) =
                          str final_str 
                          (Parse_info.string_of_info (Ast.tok_of_ident name)));
       *)
-      add_use_edge env ([final_str, tok], kind)
+      add_use_edge2 env ([final_str, tok], kind)
 
   | _ ->
     (match kind with
@@ -439,6 +445,9 @@ let rec add_use_edge env (name, kind) =
           end
         )
     )
+
+let add_use_edge a b =
+  Common.profile_code "Graph_php.add_edge" (fun() -> add_use_edge2 a b)
 
 (*****************************************************************************)
 (* Lookup *)
@@ -1028,6 +1037,7 @@ let build
 
   (* step1: creating the nodes and 'Has' edges, the defs *)
   env.pr2_and_log "\nstep1: extract defs";
+  Common.profile_code "Graph_php.step1" (fun () ->
   files +> Common_extra.progress ~show:verbose (fun k ->
     List.iter (fun file ->
       k();
@@ -1036,6 +1046,8 @@ let build
       (* will modify env.dupes instead of raise Graph_code.NodeAlreadyPresent *)
       extract_defs_uses { env with phase = Defs} ast readable;
    ));
+  );
+  Common.profile_code "Graph_php.step dupes" (fun () ->
   Common2.hkeys env.dupes
   +> List.filter (fun (_, kind) ->
     match kind with
@@ -1079,6 +1091,7 @@ let build
     | _ -> raise Impossible
     )
   );
+  );
   if not only_defs then begin
     g +> G.iter_nodes (fun (str, kind) ->
       Hashtbl.replace env.case_insensitive (normalize str, kind) (str, kind)
@@ -1086,6 +1099,7 @@ let build
 
     (* step2: creating the 'Use' edges for inheritance *)
     env.pr2_and_log "\nstep2: extract inheritance";
+    Common.profile_code "Graph_php.step2" (fun () ->
     files +> Common_extra.progress ~show:verbose (fun k ->
       List.iter (fun file ->
         k();
@@ -1093,16 +1107,18 @@ let build
         let ast = parse env file in
         extract_defs_uses { env with phase = Inheritance} ast readable
       ));
+    );
 
     (* step3: creating the 'Use' edges, the uses *)
     env.pr2_and_log "\nstep3: extract uses";
+    Common.profile_code "Graph_php.step2" (fun () ->
     files +> Common_extra.progress ~show:verbose (fun k ->
       List.iter (fun file ->
         k();
         let readable = Common.filename_without_leading_path root file in
         let ast = parse env file in
         extract_defs_uses {env with phase = Uses} ast readable
-   ));
+   )));
   end;
   close_out chan;
   g
