@@ -3,6 +3,8 @@
 # and this causes the json parsing of the file to fail.
 update:
 	cd ~/local/fbcode/; git pull
+	mkdir -p idl facebook
+	rm -f idl/* facebook/*
 	~/pfff/pfff_test -generate_php_stdlib ~/local/fbcode/hphp/system/idl idl/
 	~/pfff/pfff_test -generate_php_stdlib ~/local/fbcode/hphp/facebook/extensions facebook/
 	cp -rf ~/local/fbcode/hphp/system/php/* .
