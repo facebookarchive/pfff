@@ -917,18 +917,18 @@ let str_of_name x =
   | XName qu -> raise (TodoNamespace (info_of_qualified_ident qu))
 
 
-
-let str_of_class_name x =
-  match x with
-  | Hint (name, _targs) -> str_of_name name
-  | _ -> raise Impossible
-
 let name_of_class_name x =
   match x with
   | Hint (name, _targs) -> name
   | _ -> raise Impossible
 
+let str_of_class_name x =
+  let name = name_of_class_name x in
+  str_of_name name
+
 let ident_of_class_name x =
-  match x with
-  | Hint (XName [QI name], _targs) -> name
-  | _ -> raise Impossible
+  let name = name_of_class_name x in
+  match name with
+  | XName [QI x] -> x
+  | XName qu -> raise (TodoNamespace (info_of_qualified_ident qu))
+  | Self tok | Parent tok | LateStatic tok -> raise Impossible
