@@ -19,10 +19,10 @@ open Common
 (*****************************************************************************)
 (*
  * This module defines an Abstract Syntax Tree for PHP 5.2 with
- * a few PHP 5.3 (e.g. closures, namespace, const) and 5.4 (e.g. traits) 
- * extensions as well as support for many Facebook extensions (XHP, generators,
- * annotations, generics, collections, type definitions, implicit fields
- * via constructor parameters).
+ * a few extensions from PHP 5.3 (e.g. closures, namespace, const) and 
+ * PHP 5.4 (e.g. traits) as well as support for many Facebook 
+ * extensions (XHP, generators, annotations, generics, collections,
+ * type definitions, implicit fields via constructor parameters).
  *
  * This is actually more a concrete syntax tree (CST) than an AST. This
  * is convenient in a refactoring context or code visualization
@@ -43,12 +43,11 @@ open Common
  * of a type definition.
  *
  * COUPLING: some programs in other languages (e.g. Python) may
- * use some of the pfff binding, or JSON/sexp exporters, so if you
+ * use some of the pfff binding, or json/sexp exporters, so if you
  * change the name of constructors in this file, don't forget
- * to regenerate the JSON/sexp exporters, but also to modify the
+ * to regenerate the json/sexp exporters, but also to modify the
  * dependent programs !!!! An easier solution is to not change this
  * file, or to only add new constructors.
- *
  *)
 
 (*****************************************************************************)
@@ -87,9 +86,9 @@ and 'a comma_list_dots =
  * classes. Moreover there is two syntax for xhp: :x:base for 'defs'
  * and <x:base for 'uses', so having this xhp_tag allow us to easily do
  * comparison between xhp identifiers.
- * (was called T_STRING in Zend, which are really just LABEL, see the lexer)
  *)
 type ident =
+    (* was called T_STRING in Zend, which are really just LABEL, see lexer.mll*)
     | Name of string wrap
     (* xhp: for :x:foo the list is ["x";"foo"] *)
     | XhpName of xhp_tag wrap
@@ -103,13 +102,12 @@ type ident =
  * even if in the text it appears as a name.
  * So this token is kind of a FakeTok sometimes.
  *
- * So if at some point you want to do some program transformation,
- * you may have to normalize this string wrap before moving it
- * in another context !!!
- * 
- * (D for dollar. Was called T_VARIABLE in the original PHP parser/lexer)
+ * If at some point you want to do some program transformation,
+ * you may have to normalize this 'string wrap' before moving it
+ * to another context !!!
  *)
 type dname =
+   (* D for dollar. Was called T_VARIABLE in the original PHP parser/lexer *)
    | DName of string wrap
 
 (* The antislash is a separator but it can also be in the leading position.
@@ -145,7 +143,7 @@ type hint_type =
  | HintCallback of
      (tok                                 (* "function" *)
       * (hint_type comma_list_dots paren) (* params *)
-      * (tok * hint_type) option                  (* return type *)
+      * (tok * hint_type) option          (* return type *)
      ) paren
  | HintShape of tok (* "shape" *) * 
                 (string wrap * tok (* '=>' *) * hint_type) comma_list paren
@@ -175,12 +173,12 @@ and ptype =
 (* ------------------------------------------------------------------------- *)
 (* I used to have a 'type expr = exprbis * exp_type_info' but it complicates
  * many patterns when working on expressions, and it turns out I never
- * implemented the type annotater. It's easier to do such annotater on
+ * implemented the type annotater. It's easier to do such an annotater on
  * a real AST like the PIL. So just have this file be a simple concrete
  * syntax tree and no more.
  *)
 and expr =
-  (* cst/function/class/method/field/class_cst name.
+  (* constant/function/class/method/field/class_cst name.
    *  
    * Now that we've unified lvalue and expr, the use of Id is more
    * ambiguous; it can refer to a classname, a function name,
@@ -201,9 +199,9 @@ and expr =
    *)
   | Id of name
 
-  (* less: maybe could unify 
+  (* less: maybe could unify.
    * note that IdVar is used not only for local variables
-   * but also globals, class variables, parameters, etc.
+   * but also for globals, class variables, parameters, etc.
    *)
   | IdVar of dname * Scope_php.phpscope ref
   | This of tok
@@ -226,7 +224,7 @@ and expr =
   | AssignOp  of lvalue * assignOp wrap * expr
   | Postfix of rw_variable   * fixOp wrap
   | Infix   of fixOp wrap    * rw_variable
-  (* PHP 5.3 allow 'expr ?: expr' hence the 'option' type below
+  (* PHP 5.3 allows 'expr ?: expr' hence the 'option' type below
    * from www.php.net/manual/en/language.operators.comparison.php#language.operators.comparison.ternary:
    * "Since PHP 5.3, it is possible to leave out the middle part of the
    * ternary operator. Expression
@@ -280,10 +278,7 @@ and expr =
    *)
   | Yield of tok * expr
   | YieldBreak of tok * tok
-  (* php-facebook-ext:
-   *
-   * Just like yield, this should be at the statement level 
-   *)
+  (* php-facebook-ext: Just like yield, this should be at the statement level *)
   | Await of tok * expr
 
   (* only appear when process sgrep patterns *)
@@ -298,7 +293,6 @@ and expr =
           tok (* < < < EOF, or b < < < EOF *) *
           encaps list *
           tok  (* EOF; *)
-      (* | StringVarName??? *)
 
        and constant =
         | Int of string wrap
@@ -328,8 +322,7 @@ and expr =
           | EncapsExpr of tok * expr * tok
 
    and fixOp    = Dec | Inc
-   and binaryOp    = Arith of arithOp | Logical of logicalOp
-      | BinaryConcat (* . *)
+   and binaryOp = Arith of arithOp | Logical of logicalOp | BinaryConcat (* . *)
          and arithOp   =
            | Plus | Minus | Mul | Div | Mod
            | DecLeft | DecRight
@@ -358,16 +351,10 @@ and expr =
      | ArrayRef of tok (* & *) * lvalue
      | ArrayArrowExpr of expr * tok (* => *) * expr
      | ArrayArrowRef of expr * tok (* => *) * tok (* & *) * lvalue
-   and vector_elt =
-     | VectorExpr of expr
-     | VectorRef of tok (* & *) * lvalue
-   and map_elt =
-     | MapArrowExpr of expr * tok (* => *) * expr
-     | MapArrowRef of expr * tok (* => *) * tok (* & *) * lvalue
 
  and xhp_html =
    | Xhp of xhp_tag wrap * xhp_attribute list * tok (* > *) *
-       xhp_body list * xhp_tag option wrap
+            xhp_body list * xhp_tag option wrap
    | XhpSingleton of xhp_tag wrap * xhp_attribute list * tok (* /> *)
 
    and xhp_attribute = xhp_attr_name * tok (* = *) * xhp_attr_value
@@ -400,10 +387,10 @@ and w_variable = lvalue
  * and visitors more complicated because stuff like "+ 1" could
  * be an expr or a static_scalar. We don't need this "isomorphism".
  * I never leveraged the specificities of static_scalar (maybe a compiler
- * would, but my checker/refactorers/... don't).
+ * would, but my checker/refactorers/... didn't).
  *
  * Note that it's not 'type static_scalar = scalar' because static_scalar
- * actually allows arrays (why the heck they called it a scalar then ....)
+ * actually allows arrays (why the heck they called it a scalar then ...)
  * and plus/minus which are only in expr.
  *)
  and static_scalar = expr
@@ -497,6 +484,13 @@ and stmt =
       | ColonStmt of tok (* : *) * stmt_and_def list * tok (* endxxx *) * tok (* ; *)
     and new_elseif = tok * expr paren * tok * stmt_and_def list
     and new_else = tok * tok * stmt_and_def list
+
+(* stmt_and_def used to be a special type allowing Stmt or nested functions
+ * or classes but it was introducing yet another, not so useful, intermediate
+ * type.
+ *)
+and stmt_and_def = stmt
+
 (* ------------------------------------------------------------------------- *)
 (* Function (and method) definition *)
 (* ------------------------------------------------------------------------- *)
@@ -530,7 +524,7 @@ and func_def = {
        * can be only Public or Protected or Private (but never Static, etc).
        *)
       p_modifier: modifier wrap option;
-      (* php-facebook-ext: to not generate runtine errors if wrong type hint *)
+      (* php-facebook-ext: to not generate runtime errors if wrong type hint *)
       p_soft_type: tok (* @ *) option;
       p_type: hint_type option;
       p_ref: is_ref;
@@ -560,7 +554,7 @@ and constant_def = {
  * didn't allow certain forms of statements (methods with a body), but
  * with the introduction of traits, it does not make that much sense
  * to be so specific, so I factorized things. Classes/interfaces/traits
- * are not that different. Interfaces are really just abstract traits.
+ * are not that different; interfaces are really just abstract traits.
  *)
 and class_def = {
   c_attrs: attributes option;
@@ -571,13 +565,13 @@ and class_def = {
    * but we use the c_implements field for that (because it can be a list).
    *)
   c_extends: extend option;
-  (* For classes it's a list of interfaces, for interface a list of other
+  (* For classes it's a list of interfaces, for interfaces a list of other
    * interfaces it extends. Traits can also now implement interfaces.
    *)
   c_implements: interface option;
   (* The class_stmt for interfaces are restricted to only abstract methods.
-   * The class_stmt seems to be unrestricted for traits; can even
-   * have some 'use' *)
+   * The class_stmt seems to be unrestricted for traits (it can even
+   * contain some 'use') *)
   c_body: class_stmt list brace;
 }
     and class_type =
@@ -589,7 +583,6 @@ and class_def = {
       (* PHP 5.4 traits: http://php.net/manual/en/language.oop5.traits.php
        * Allow to mixin behaviors and data so it's really just
        * multiple inheritance with a cooler name.
-       *
        * note: traits are allowed only at toplevel.
        *)
       | Trait of tok (* trait *)
@@ -603,7 +596,6 @@ and class_def = {
           hint_type option *
         class_variable comma_list * tok (* ; *)
     | Method of method_def
-
     | XhpDecl of xhp_decl
     (* php 5.4, 'use' can appear in classes/traits (but not interface) *)
     | UseTrait of tok (*use*) * class_name comma_list *
@@ -672,10 +664,10 @@ and trait_rule =
   | As of (ident, name * tok * ident) Common.either * tok (* as *) *
           modifier wrap list * ident option * tok (* ; *)
 
-
 (* ------------------------------------------------------------------------- *)
 (* Type definition *)
 (* ------------------------------------------------------------------------- *)
+(* facebook-ext: *)
 and type_def = {
   t_tok: tok; (* type/newtype *)
   t_name: ident;
@@ -685,7 +677,7 @@ and type_def = {
   t_sc: tok; (* ; *)
 }
   and type_def_kind =
-  | Alias of hint_type
+  | Alias   of hint_type
   | Newtype of hint_type
 
 (* ------------------------------------------------------------------------- *)
@@ -697,11 +689,6 @@ and global_var =
   | GlobalDollarExpr of tok * expr brace
 and static_var = dname * static_scalar_affect option
    and static_scalar_affect = tok (* = *) * static_scalar
-(* stmt_and_def used to be a special type allowing Stmt or nested functions
- * or classes but it was introducing yet another, not so useful, intermediate
- * type.
- *)
-and stmt_and_def = stmt
 
 (* the qualified_ident can have a leading '\' *)
 and namespace_use_rule =
@@ -709,7 +696,7 @@ and namespace_use_rule =
  | AliasNamespace of qualified_ident * tok (* as *) * ident
 
 (* ------------------------------------------------------------------------- *)
-(* phpext: *)
+(* User attributes, a.k.a annotations *)
 (* ------------------------------------------------------------------------- *)
 (* HPHP extension similar to http://en.wikipedia.org/wiki/Java_annotation *)
 and attribute =
@@ -728,7 +715,7 @@ and attributes = attribute comma_list angle
  * so that in the database later they share the same id.
  *
  * Note that nested functions are usually under a if(defined(...)) at
- * the toplevel. There is no ifdef in PHP so they reuse if.
+ * the toplevel. There is no ifdef in PHP so they reuse 'if'.
  *)
 and toplevel =
     | StmtList of stmt list
@@ -744,8 +731,10 @@ and toplevel =
     | NamespaceBracketDef of tok * qualified_ident option * toplevel list brace
     | NamespaceUse of tok * namespace_use_rule comma_list * tok (* ; *)
     (* old:  | Halt of tok * unit paren * tok (* __halt__ ; *) *)
+
     | NotParsedCorrectly of tok list (* when Flag.error_recovery = true *)
     | FinalDef of tok (* EOF *)
+
  and program = toplevel list
   (* with tarzan *)
 
@@ -773,6 +762,7 @@ type entity =
   | XhpAttrE of xhp_attribute_decl
 
   | MiscE of tok list
+
 type any =
   | Expr of expr
   | Stmt2 of stmt
@@ -804,7 +794,6 @@ type any =
 
   | Ident2 of ident
   | Hint2 of hint_type
-
  (* with tarzan *)
 
 (*****************************************************************************)
@@ -821,7 +810,6 @@ let fakeInfo ?(next_to=None) str = { Parse_info.
 (*****************************************************************************)
 
 let unwrap = fst
-
 let unparen (a,b,c) = b
 let unbrace = unparen
 let unbracket = unparen
@@ -830,11 +818,24 @@ let uncomma xs = Common.map_filter (function
   | Left e -> Some e
   | Right info -> None
   ) xs
-
 let uncomma_dots xs = Common.map_filter (function
   | Left3 e -> Some e
   | Right3 info | Middle3 info -> None
   ) xs
+
+let unarg arg =
+  match arg with
+  | Arg e -> e
+  | ArgRef _ -> failwith "Found a ArgRef"
+let unargs xs =
+  uncomma xs +> Common.partition_either (function
+  | Arg e -> Left e
+  | ArgRef (t, e) -> Right (e)
+  )
+let unmodifiers class_vars =
+  match class_vars with
+  | NoModifiers _ -> []
+  | VModifiers xs -> List.map unwrap xs
 
 let map_paren f (lp, x, rp) = (lp, f x, rp)
 let map_comma_list f xs = List.map (fun x ->
@@ -844,29 +845,13 @@ let map_comma_list f xs = List.map (fun x ->
   )
   xs
 
-let unarg arg =
-  match arg with
-  | Arg e -> e
-  | ArgRef _ -> failwith "Found a ArgRef"
-
-let unargs xs =
-  uncomma xs +> Common.partition_either (function
-  | Arg e -> Left e
-  | ArgRef (t, e) -> Right (e)
-  )
-
-let unmodifiers class_vars =
-  match class_vars with
-  | NoModifiers _ -> []
-  | VModifiers xs -> List.map unwrap xs
-
 (*****************************************************************************)
 (* Abstract line *)
 (*****************************************************************************)
 
 (* When we have extended the AST to add some info about the tokens,
  * such as its line number in the file, we can not use anymore the
- * ocaml '=' to compare Ast elements. To overcome this problem, to be
+ * ocaml '=' to compare AST elements. To overcome this problem, to be
  * able to use again '=', we just have to get rid of all those extra
  * information, to "abstract those line" (al) information.
  *)
@@ -882,13 +867,12 @@ let al_info x =
  *)
 
 (*****************************************************************************)
-(* Helpers, could also be put in lib_parsing.ml instead *)
+(* Helpers (could also be put in lib_parsing.ml) *)
 (*****************************************************************************)
 let str_of_ident e =
   match e with
   | Name x -> unwrap x
-  | XhpName (xs, _tok) ->
-      ":" ^ (Common.join ":" xs)
+  | XhpName (xs, _tok) -> ":" ^ (Common.join ":" xs)
 let info_of_ident e =
   match e with
   | (Name (x,y)) -> y
@@ -915,7 +899,6 @@ let str_of_name x =
   | XName [QI x] -> str_of_ident x
   | Self tok | Parent tok | LateStatic tok -> Parse_info.str_of_info tok
   | XName qu -> raise (TodoNamespace (info_of_qualified_ident qu))
-
 
 let name_of_class_name x =
   match x with
