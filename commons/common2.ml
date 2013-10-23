@@ -4615,7 +4615,8 @@ let hash_to_list_unsorted h =
 let hash_of_list xs =
   let h = Hashtbl.create 101 in
   begin
-    xs +> List.iter (fun (k, v) -> Hashtbl.add h k v);
+    (* replace or add? depends the semantic of hashtbl you want *)
+    xs +> List.iter (fun (k, v) -> Hashtbl.replace h k v);
     h
   end
 
@@ -4736,7 +4737,7 @@ let test_group_assoc () =
 let uniq_eff xs =
   let h = Hashtbl.create 101 in
   xs +> List.iter (fun k ->
-    Hashtbl.add h k true
+    Hashtbl.replace h k true
   );
   hkeys h
 

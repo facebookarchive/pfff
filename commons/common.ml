@@ -1069,7 +1069,7 @@ let hash_to_list h =
 let hash_of_list xs =
   let h = Hashtbl.create 101 in
   begin
-    xs +> List.iter (fun (k, v) -> Hashtbl.add h k v);
+    xs +> List.iter (fun (k, v) -> Hashtbl.replace h k v);
     h
   end
 
