@@ -386,10 +386,10 @@ let visit_program ~tag prefs  hentities (ast, toks) =
       (* do not call k expr; here, let each case call it. Also
        * remember that tag() will not retag something already tagged,
        * so it simplifies a bit the logic where you can visit
-       * the children without being scared it will retag things.
+       * the children without being scared it will retag things
+       * (compared to check_variables_php or graph_code_php).
        *)
       (match expr with
-
       | This tok ->
         tag tok (Class (Use2 fake_no_use2))
 
@@ -458,7 +458,6 @@ let visit_program ~tag prefs  hentities (ast, toks) =
           let info = Ast.info_of_dname dname in
           (* todo? special category for class variables ? *)
           tag info (Global (Use2 fake_no_use2));
-
         | v2 ->
           (* todo? colorize qualif? bad to use dynamic variable ...
              let info = Ast.info_of_dname dname in
@@ -473,12 +472,8 @@ let visit_program ~tag prefs  hentities (ast, toks) =
         let s = Ast.str_of_name name in
         let info = Ast.info_of_name name in
         (match s with
-        | "true" ->
-          tag info Boolean
-        | "false" ->
-          tag info Boolean
-        | "null" ->
-          tag info Null
+        | "true" | "false" -> tag info Boolean
+        | "null" -> tag info Null
         | _ ->
           if not (Hashtbl.mem already_tagged info)
           then tag info (Constant (Use2 fake_no_use2))
@@ -488,35 +483,20 @@ let visit_program ~tag prefs  hentities (ast, toks) =
         (* see check_variables_php.ml *)
         let info = Ast.info_of_dname dname in
         (match !aref with
-        | S.Local ->
-          tag info (Local Use)
-        | S.Param ->
-          tag info (Parameter Use)
-
-        | S.Class ->
-          tag info (Field (Use2 fake_no_use2))
-
-        | S.Global | S.Closed ->
-              (* TODO, need global_used table *)
-          tag info (Global (Use2 fake_no_use2));
-
-        | S.Static ->
-              (* less: could invent a Static in highlight_code ? *)
-          tag info (Global (Use2 fake_no_use2))
-
-        | S.ListBinded
-        | S.LocalIterator
-        | S.LocalExn ->
-          tag info (Local Use)
-
-        | S.NoScope ->
-          tag info (NoType)
+        | S.Local -> tag info (Local Use)
+        | S.Param -> tag info (Parameter Use)
+        | S.Class -> tag info (Field (Use2 fake_no_use2))
+        (* TODO, need global_used table *)
+        | S.Global | S.Closed -> tag info (Global (Use2 fake_no_use2));
+        (* less: could invent a Static in highlight_code ? *)
+        | S.Static -> tag info (Global (Use2 fake_no_use2))
+        | S.ListBinded | S.LocalIterator | S.LocalExn -> tag info (Local Use)
+        | S.NoScope -> tag info (NoType)
         )
 
       | Cast (((cast, v1), v2)) ->
         tag v1 TypeMisc;
         k expr;
-        
       | _ ->
         k expr
       )
@@ -524,7 +504,6 @@ let visit_program ~tag prefs  hentities (ast, toks) =
     (* -------------------------------------------------------------------- *)
     V.kxhp_attribute = (fun (k, _) x ->
       let ((attr_name, ii_attr_name), tok_eq, attr_val) = x in
-
       (match attr_name with
       | "href" | "src" ->
         (match attr_val with
@@ -534,11 +513,9 @@ let visit_program ~tag prefs  hentities (ast, toks) =
           xs +> List.iter (function
           | EncapsString (s, ii) ->
             tag ii EmbededUrl
-          | EncapsExpr (_, _, _)
-          | EncapsDollarCurly (_, _, _)
-          | EncapsCurly (_, _, _)
-          | EncapsVar _ ->
-            ()
+          | EncapsExpr (_, _, _) | EncapsDollarCurly (_, _, _)
+          | EncapsCurly (_, _, _) | EncapsVar _ 
+            -> ()
           );
         | XhpAttrExpr e -> ()
         | SgrepXhpAttrValueMvar _ -> ()
@@ -552,7 +529,6 @@ let visit_program ~tag prefs  hentities (ast, toks) =
       match x with
       | XhpAttrInherit (xhp_tag, ii) ->
         tag ii (Class (Use2 (fake_no_use2)));
-
       | XhpAttrDecl ((attr_type, (attr_name, iiname), affect_opt, tok_opt)) ->
         tag iiname (Field (Use2 fake_no_use2));
         k x
@@ -565,15 +541,11 @@ let visit_program ~tag prefs  hentities (ast, toks) =
         tag (snd v1) Number
 
       | Ast.String (s, ii) ->
-          (* this can be sometimes tagged as url, or field access in array *)
+        (* this can be sometimes tagged as url, or field access in array *)
         if not (Hashtbl.mem already_tagged ii)
-        then
-          tag_string ~tag s ii
-
-      | PreProcess v1 ->
-        tag (snd v1) Builtin
-      | XdebugClass (_, _) | XdebugResource ->
-        ()
+        then tag_string ~tag s ii
+      | PreProcess v1 -> tag (snd v1) Builtin
+      | XdebugClass (_, _) | XdebugResource -> ()
     );
 
     V.kencaps = (fun (k, vx) e ->
@@ -627,18 +599,19 @@ let visit_program ~tag prefs  hentities (ast, toks) =
   (* toks phase 2 *)
   (* -------------------------------------------------------------------- *)
   toks +> List.iter (fun tok ->
-    (* all the name and varname should have been tagged by now. *)
     match tok with
     | T.EOF ii | T.TNewline ii | T.TSpaces ii -> ()
     | T.TCommentPP ii -> ()
-
+    (* less: could highlight certain words in the comment? *)
+    | T.T_COMMENT (ii)  | T.T_DOC_COMMENT (ii)  -> tag ii Comment
     | T.TUnknown ii -> tag ii Error
 
-    (* they should have been covered before *)
-    | T.T_VARIABLE (_, ii) ->
+    (* all the name and varname should have been tagged by now. *)
+    | T.T_IDENT (_, ii) ->
       if not (Hashtbl.mem already_tagged ii)
       then tag ii Error
-    | T.T_IDENT (_, ii) ->
+    (* they should have been covered before *)
+    | T.T_VARIABLE (_, ii) ->
       if not (Hashtbl.mem already_tagged ii)
       then tag ii Error
 
@@ -649,10 +622,6 @@ let visit_program ~tag prefs  hentities (ast, toks) =
     | T.TOBRACE ii | T.TCBRACE ii
     | T.TOBRA ii   | T.TCBRA ii
       ->tag ii Punctuation
-
-
-    (* less: could highlight certain words in the comment? *)
-    | T.T_COMMENT (ii)  | T.T_DOC_COMMENT (ii)  -> tag ii Comment
 
     | T.T_XHP_PCDATA ii | T.T_XHP_ANY ii
     | T.T_XHP_REQUIRED ii | T.T_XHP_ENUM ii
@@ -668,12 +637,10 @@ let visit_program ~tag prefs  hentities (ast, toks) =
     | T.T_XHP_GT ii -> tag ii EmbededHtml
     | T.T_XHP_OPEN_TAG (_, ii) -> tag ii EmbededHtml
 
-      (* should have been transformed into a XhpName or XhpInherit in Ast *)
-
+    (* should have been transformed into a XhpName or XhpInherit in Ast *)
     | T.T_XHP_PERCENTID_DEF (_, ii) ->
       if not (Hashtbl.mem already_tagged ii)
       then tag ii Error
-
     | T.T_XHP_COLONID_DEF (_, ii) ->
       if not (Hashtbl.mem already_tagged ii)
       then tag ii Error
@@ -739,12 +706,8 @@ let visit_program ~tag prefs  hentities (ast, toks) =
     | T.T_CURLY_OPEN ii -> tag ii Punctuation
     | T.T_DOLLAR_OPEN_CURLY_BRACES ii -> tag ii Punctuation
 
-    | T.T_END_HEREDOC ii -> tag ii Punctuation
-    | T.T_START_HEREDOC ii -> tag ii Punctuation
-
-    | T.T_CLOSE_TAG_OF_ECHO ii -> tag ii Punctuation
-    | T.T_OPEN_TAG_WITH_ECHO ii -> tag ii Punctuation
-
+    | T.T_END_HEREDOC ii | T.T_START_HEREDOC ii -> tag ii Punctuation
+    | T.T_CLOSE_TAG_OF_ECHO ii | T.T_OPEN_TAG_WITH_ECHO ii -> tag ii Punctuation
     | T.T_CLOSE_TAG ii -> tag ii Punctuation
 
       (* done in PreProcess *)
@@ -756,18 +719,14 @@ let visit_program ~tag prefs  hentities (ast, toks) =
       (* can be a type hint *)
     | T.T_ARRAY ii ->
       if not (Hashtbl.mem already_tagged ii)
-      then
-        tag ii Builtin
+      then tag ii Builtin
     | T.T_LIST ii -> tag ii Builtin
 
-    | T.T_DOUBLE_ARROW ii ->
-      tag ii Punctuation
-    | T.T_OBJECT_OPERATOR ii ->
-      tag ii Punctuation
+    | T.T_DOUBLE_ARROW ii ->  tag ii Punctuation
+    | T.T_OBJECT_OPERATOR ii -> tag ii Punctuation
 
-    | T.T_IMPLEMENTS ii -> tag ii KeywordObject
-    | T.T_EXTENDS ii -> tag ii KeywordObject
-    | T.T_INTERFACE ii -> tag ii KeywordObject
+    | T.T_IMPLEMENTS ii | T.T_EXTENDS ii | T.T_INTERFACE ii -> 
+      tag ii KeywordObject
 
     | T.T_CLASS ii -> tag ii KeywordObject
     | T.T_TRAIT ii -> tag ii KeywordObject
@@ -775,14 +734,10 @@ let visit_program ~tag prefs  hentities (ast, toks) =
 
     | T.T_TYPE ii | T.T_NEWTYPE ii | T.T_SHAPE ii -> tag ii Keyword
 
-    | T.T_EMPTY ii -> tag ii Builtin
-    | T.T_ISSET ii -> tag ii Builtin
-    | T.T_UNSET ii -> tag ii Builtin
+    | T.T_EMPTY ii  | T.T_ISSET ii | T.T_UNSET ii -> tag ii Builtin
 
     | T.T_VAR ii -> tag ii Keyword
-    | T.T_PUBLIC ii | T.T_PROTECTED ii | T.T_PRIVATE ii
-      -> tag ii Keyword
-
+    | T.T_PUBLIC ii | T.T_PROTECTED ii | T.T_PRIVATE ii -> tag ii Keyword
     | T.T_FINAL ii | T.T_ABSTRACT ii -> tag ii KeywordObject
 
     | T.T_STATIC ii -> tag ii Keyword
@@ -802,11 +757,8 @@ let visit_program ~tag prefs  hentities (ast, toks) =
     | T.T_EXIT ii -> tag ii Keyword
 
     | T.T_THROW ii | T.T_CATCH ii | T.T_TRY ii -> tag ii KeywordExn
-
     | T.T_RETURN ii | T.T_CONTINUE ii | T.T_BREAK ii -> tag ii Keyword
-
     | T.T_DEFAULT ii | T.T_CASE ii -> tag ii Keyword
-
     | T.T_ENDSWITCH ii | T.T_SWITCH ii -> tag ii KeywordConditional
 
     | T.T_ENDFOREACH ii | T.T_FOREACH ii
@@ -818,20 +770,17 @@ let visit_program ~tag prefs  hentities (ast, toks) =
     | T.T_IF ii | T.T_ELSEIF ii  | T.T_ELSE ii | T.T_ENDIF ii
       -> tag ii KeywordConditional
 
-    | T.T_PRINT ii -> tag ii Builtin
-    | T.T_ECHO ii -> tag ii Builtin
+    | T.T_PRINT ii | T.T_ECHO ii -> tag ii Builtin
 
     | T.T_SELF ii | T.T_PARENT ii ->
       tag ii (Class (Use2 fake_no_use2));
 
-    | T.T_YIELD ii -> tag ii Keyword
-    | T.T_AWAIT ii -> tag ii Keyword
+    | T.T_YIELD ii | T.T_AWAIT ii -> tag ii Keyword
 
-      (* should have been handled in field *)
+    (* should have been handled in field *)
     | T.T_STRING_VARNAME ii -> ()
 
     | T.T_INLINE_HTML (_, ii) -> tag ii EmbededHtml
-
     | T.T_NUM_STRING ii -> ()
 
     | T.T_ENCAPSED_AND_WHITESPACE (s, ii) ->
@@ -843,8 +792,7 @@ let visit_program ~tag prefs  hentities (ast, toks) =
       then tag_string ~tag s ii
 
       (* should been handled in Constant *)
-    | T.T_DNUMBER ii -> ()
-    | T.T_LNUMBER ii -> ()
+    | T.T_DNUMBER ii | T.T_LNUMBER ii -> ()
   );
 
   (* -------------------------------------------------------------------- *)
