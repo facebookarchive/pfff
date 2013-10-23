@@ -37,10 +37,7 @@ let place_ids current_file ids db =
   match ids with
   | [] -> NoInfoPlace
   | [x] ->
-      let other_file = 
-        (* DbPHP.filename_of_id x db *)
-        "TODO"
-      in
+      let other_file = (* DbPHP.filename_of_id x db *) "TODO" in
       if other_file = current_file
       then PlaceLocal
       else
@@ -49,17 +46,15 @@ let place_ids current_file ids db =
         else PlaceExternal
   | x::y::xs ->
       let other_files =
-        List.map (fun id -> 
-          "TODO"
-          (* DbPHP.filename_of_id id db *)
-        ) ids +> Common2.uniq
+        List.map (fun id -> "TODO" (* DbPHP.filename_of_id id db *)) ids 
+        +> Common2.uniq
       in
       if List.mem current_file other_files
       then PlaceLocal
       else
-        if List.exists (fun other_file ->
+        if other_files +> List.exists (fun other_file ->
           Common2.dirname current_file = Common2.dirname other_file
-        ) other_files
+        ) 
         then PlaceSameDir
         else PlaceExternal
 
@@ -68,23 +63,17 @@ let place_ids current_file ids db =
  *)
 let arity_of_number nbuses =
   match nbuses with
-  | 0 -> NoUse
-  | 1 -> UniqueUse
+  | 0             -> NoUse
+  | 1             -> UniqueUse
   | n when n < 50 -> MultiUse
-  | _ -> LotsOfUse
+  | _             -> LotsOfUse
 
 let use_arity_ident_function_or_macro s db =
-  let ids = 
-    (* DbPHP.function_ids__of_string s db *)
-    []
-  in
+  let ids = (* DbPHP.function_ids__of_string s db *) [] in
   let nbuses =
     ids +> List.map (fun id ->
       try
-        let callers =
-          (* db.DbPHP.uses.DbPHP.callers_of_f#assoc id in*)
-          []
-        in
+        let callers = (* db.DbPHP.uses.DbPHP.callers_of_f#assoc id in*) [] in
         List.length callers
       with Not_found -> 0
     )
@@ -97,23 +86,6 @@ let use_arity_ident_function_or_macro s db =
  *)
 let fake_no_def2 = NoUse
 let fake_no_use2 = (NoInfoPlace, UniqueDef, MultiUse)
-
-(*****************************************************************************)
-(* Helpers *)
-(*****************************************************************************)
-
-(* strings are more than just strings in PHP (and webapps in general) *)
-let tag_string ~tag s ii =
-  match s with
-  | s when s =~ "/.*"       -> tag ii EmbededUrl
-  | s when s =~ "[a-z]+://" -> tag ii EmbededUrl
-  (* security: html in strings is BAD ! *)
-  | s when s =~ "<" -> tag ii BadSmell
-  | _ -> tag ii String
-
-(*****************************************************************************)
-(* Properties highlighter *)
-(*****************************************************************************)
 
 let highlight_funcall_simple ~tag ~hentities f args info =
   if Hashtbl.mem Env_php.hdynamic_call_wrappers f
@@ -172,18 +144,27 @@ let highlight_funcall_simple ~tag ~hentities f args info =
   ()
 
 (*****************************************************************************)
+(* Helpers *)
+(*****************************************************************************)
+
+(* strings are more than just strings in PHP (and webapps in general) *)
+let tag_string ~tag s ii =
+  match s with
+  | s when s =~ "/.*"       -> tag ii EmbededUrl
+  | s when s =~ "[a-z]+://" -> tag ii EmbededUrl
+  (* security: html in strings is BAD ! *)
+  | s when s =~ "<" -> tag ii BadSmell
+  | _ -> tag ii String
+
+(*****************************************************************************)
 (* PHP Code highlighter *)
 (*****************************************************************************)
 
 (*
  * Visitor to help write an emacs-like PHP mode. It offers some
  * additional coloring and categories compared to font-lock-mode.
- * Offer also now also some semantic coloring and global-information
+ * It offers also now also some semantic coloring and global-information
  * semantic feedback coloring!
- *
- * history:
- *  - I was using emacs_mode_xxx before but now have inlined the code
- *    and extended it.
  *
  * design: Can do either a single function that do all, or multiple independent
  * functions that repeatedly visit the same ast and tokens. The
@@ -198,11 +179,14 @@ let highlight_funcall_simple ~tag ~hentities f args info =
  * AST or its list of tokens. The tokens are easier for tagging keywords,
  * number and basic entities. The Ast is better for tagging idents
  * to figure out what kind of ident it is (a function, a class, a constant)
+ * 
+ * history:
+ *  - I was using emacs_mode_xxx before but now have inlined the code
+ *    and extended it.
  *)
 let visit_program ~tag prefs  hentities (ast, toks) =
 
   let already_tagged = Hashtbl.create 101 in
-
   let tag = (fun ii categ ->
     (* with xhp lots of tokens such as 'var' can also be used
      * as attribute name so we must highlight them with their
@@ -289,8 +273,8 @@ let visit_program ~tag prefs  hentities (ast, toks) =
         | MethodRegular | MethodAbstract ->
           tag def.f_tok KeywordObject;
           if Class_php.is_static_method def
-          then (StaticMethod (Def2 fake_no_def2))
-          else (Method (Def2 fake_no_def2))
+          then StaticMethod (Def2 fake_no_def2)
+          else Method (Def2 fake_no_def2)
       in
       tag info kind;
       k def
@@ -318,13 +302,12 @@ let visit_program ~tag prefs  hentities (ast, toks) =
     V.kparameter = (fun (k, _) param ->
       let info = Ast.info_of_dname param.p_name in
       (* we highlight parameters passed by ref elsewhere *)
-      if not (Hashtbl.mem already_tagged info)
-      then begin
-        (if param.p_ref = None
-         then tag info (Parameter Def)
-         else tag info ParameterRef
-        );
-      end;
+      (if not (Hashtbl.mem already_tagged info)
+      then
+        if param.p_ref = None
+        then tag info (Parameter Def)
+        else tag info ParameterRef
+      );
       k param
     );
 
@@ -385,7 +368,6 @@ let visit_program ~tag prefs  hentities (ast, toks) =
         );
         ()
       | _ -> ()
-
     );
     (* -------------------------------------------------------------------- *)
     V.kcatch = (fun (k,bigf) c ->
