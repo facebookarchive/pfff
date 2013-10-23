@@ -10,6 +10,10 @@
 
 *** support for namespace part2 (graph_code)
 
+** javascript
+
+*** support new class syntax, JSX (xhp)
+
 * 0.25 (Q3 2013) (codemap/codegraph integration)
 
 ** codemap
