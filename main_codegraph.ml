@@ -561,14 +561,15 @@ let test_transitive_deps xs =
     match xs with
     | [] -> ()
     | n::xs ->
-        (if Hashtbl.mem hdone n || depth > 3
+        (if Hashtbl.mem hdone n || depth > 2
         then ()
         else begin
           Hashtbl.add hdone n true;
           let uses = GC.succ n GC.Use g in
           dfs (depth + 1) uses;
           let children = GC.children n g in
-          dfs (depth + 1) children
+          (* we want all children, especially subdirectories *)
+          dfs (depth + 0) children
         end);
         dfs depth xs
       
