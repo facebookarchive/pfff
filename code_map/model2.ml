@@ -452,6 +452,7 @@ let lines_where_used_node node startl microlevel =
         | Database_code.Constructor, Highlight_code.ConstructorMatch _
         | Database_code.Global,      Highlight_code.Global _
         | Database_code.Method _,    Highlight_code.Method _
+        | Database_code.Method _,    Highlight_code.StaticMethod _
         | Database_code.Class _,     Highlight_code.Class _
 
         (* tofix at some point, wrong tokenizer *)
