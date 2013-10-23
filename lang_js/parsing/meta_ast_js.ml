@@ -532,7 +532,22 @@ and vof_inherit_expr v = vof_expr v
 
 and vof_program_orig v = Ocaml.vof_list vof_toplevel v
 
+let vof_any_orig =
+  function
+  | Expr v1 -> let v1 = vof_expr v1 in Ocaml.VSum (("Expr", [ v1 ]))
+  | Stmt v1 -> let v1 = vof_st v1 in Ocaml.VSum (("Stmt", [ v1 ]))
+  | Func v1 -> let v1 = vof_func_decl v1 in Ocaml.VSum (("Func", [ v1 ]))
+  | Toplevel v1 ->
+      let v1 = vof_toplevel v1 in Ocaml.VSum (("Toplevel", [ v1 ]))
+  | Program v1 -> let v1 = vof_program_orig v1 in Ocaml.VSum (("Program", [ v1 ]))
+
+
 (* end auto generation *)
+
+let vof_any ?(precision=M.default_precision) x = 
+  Common.save_excursion _current_precision precision (fun () ->
+    vof_any_orig x
+  )
 
 let vof_program ?(precision=M.default_precision) x = 
   Common.save_excursion _current_precision precision (fun () ->
