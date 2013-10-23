@@ -572,7 +572,7 @@ update: not used for now
 ** internals
 reorganized json/sexp output, factorize code and use more ocaml.ml
 
-* 0.8 (Q1 2010) (sgrep php, treemap, xdebug dynamic analysis)
+* 0.8  (Q1 2010) (sgrep php, treemap, xdebug dynamic analysis)
 
 ** xdebug trace parsing, can now do dynamic analysis! 
 Done for type "inference/extraction" at the beginnning and useful
