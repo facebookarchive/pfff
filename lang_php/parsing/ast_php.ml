@@ -136,7 +136,8 @@ type name =
 (* ------------------------------------------------------------------------- *)
 
 type hint_type =
- | Hint of name (* only self/parent, no static *) * type_args option
+ | Hint of name (* only self/parent, no static *) * 
+           type_args option
  | HintArray of tok
  | HintQuestion of (tok * hint_type)
  | HintTuple of hint_type comma_list paren

@@ -25,6 +25,12 @@ module Db = Database_code
 (*****************************************************************************)
 (* Prelude *)
 (*****************************************************************************)
+(*
+ * Visitor to help write an emacs-like PHP mode. It offers some
+ * additional coloring and categories compared to font-lock-mode.
+ * It offers also now also some semantic coloring and global-information
+ * semantic feedback coloring!
+ *)
 
 (*****************************************************************************)
 (* Helpers when have global analysis information *)
@@ -156,16 +162,25 @@ let tag_string ~tag s ii =
   | s when s =~ "<" -> tag ii BadSmell
   | _ -> tag ii String
 
+let tag_name ~tag name =
+  match name with
+  | XName qu ->
+    let info = Ast.info_of_qualified_ident qu in
+    tag info (Class (Use2 fake_no_use2));
+  | Self tok | Parent tok -> ()
+  | LateStatic tok ->
+    tag tok BadSmell
+
+let tag_class_name_reference ~tag qualif =
+  match qualif with
+  | Id name -> tag_name ~tag name
+  | _ -> ()
+
 (*****************************************************************************)
 (* PHP Code highlighter *)
 (*****************************************************************************)
 
 (*
- * Visitor to help write an emacs-like PHP mode. It offers some
- * additional coloring and categories compared to font-lock-mode.
- * It offers also now also some semantic coloring and global-information
- * semantic feedback coloring!
- *
  * design: Can do either a single function that do all, or multiple independent
  * functions that repeatedly visit the same ast and tokens. The
  * former is faster (no forest) but less flexible. If for instance you want
@@ -326,23 +341,25 @@ let visit_program ~tag prefs  hentities (ast, toks) =
             tag ii TypeMisc
           );
         )
-
       | Ast.ClassConstants (tok, vars, tok2) ->
         vars +> Ast.uncomma +> List.iter (fun (name, _opt) ->
           let info = Ast.info_of_ident name in
           tag info (Constant (Def2 NoUse));
         );
         k x;
-
       | Ast.ClassVariables (modifiers, _opt_ty, vars, tok) ->
         vars +> Ast.uncomma +> List.iter (fun (dname, _opt) ->
           let info = Ast.info_of_dname dname in
           tag info (Field (Def2 fake_no_def2));
         );
         k x
-
       | Ast.UseTrait (tok, names, rules_or_tok) ->
-        ()
+         names +> Ast.uncomma +> List.iter (fun name ->
+          let name = name_of_class_name name in
+          let info = Ast.info_of_name name in
+          tag info (Class (Use2 fake_no_use2));
+         );
+        k x
     );
 
     (* -------------------------------------------------------------------- *)
@@ -441,23 +458,15 @@ let visit_program ~tag prefs  hentities (ast, toks) =
 
       (* ClassGet *)
       | ClassGet (qualif, tok, b) ->
-        (* todo: qualif! *)
-      (* TODO
-         | ClassNameRefStatic (ClassName (name,_)) -> 
-         let info = Ast.info_of_name name in
-         tag info (Class (Use2 fake_no_use2));
-         | (IdStatic tok) ->
-         tag tok BadSmell
-      *)
-        
+        tag_class_name_reference ~tag qualif;
         (match b with
         | Id name ->
-          let info = Ast.info_of_name name in
-          tag info (Constant (Use2 fake_no_use2))
+            let info = Ast.info_of_name name in
+            tag info (Constant (Use2 fake_no_use2))
         | IdVar (dname, _) ->
-          let info = Ast.info_of_dname dname in
-          (* todo? special category for class variables ? *)
-          tag info (Global (Use2 fake_no_use2));
+            let info = Ast.info_of_dname dname in
+            (* todo? special category for class variables ? *)
+            tag info (Global (Use2 fake_no_use2));
         | v2 ->
           (* todo? colorize qualif? bad to use dynamic variable ...
              let info = Ast.info_of_dname dname in
@@ -465,6 +474,11 @@ let visit_program ~tag prefs  hentities (ast, toks) =
           *)
           tag tok BadSmell;
         );
+        k expr
+      | New (_, qualif, _) | AssignNew (_, _, _, _, qualif, _) 
+      | InstanceOf (_, _, qualif)
+        ->
+        tag_class_name_reference ~tag qualif;
         k expr
 
       | Id name ->
@@ -559,33 +573,13 @@ let visit_program ~tag prefs  hentities (ast, toks) =
     V.khint_type = (fun (k, vx) x ->
       (match x with
       (* TODO: emit info for type args *)
-      | Hint (XName [QI (name)], _targsTODO) -> 
-        let info = Ast.info_of_ident name in
-        tag info (TypeMisc);
-      | Hint (XName qu, _) -> 
-        (* raise (TodoNamespace (Ast.info_of_qualified_ident qu)) *)
-        let info = Ast.info_of_name (XName qu) in
-        tag info (Class (Use2 fake_no_use2));
-      | Hint ((Self _ | Parent _), _) ->
-        ()
-      | Hint (LateStatic tok, _) ->
-        tag tok BadSmell
-
-      | HintArray tok ->
-        tag tok (TypeMisc);
-      | HintQuestion (tok,t) ->
-        tag tok (TypeMisc);
-      | HintTuple (vl, elts, vr) ->
-        tag vl (TypeMisc);
-        tag vr (TypeMisc);
-      | HintCallback (lp, (tok, (lap, args, rap), ret), rp) ->
-        tag lp (TypeMisc);
-        tag tok (TypeMisc);
-        tag lap (TypeMisc);
-        tag rap (TypeMisc);
-        tag rp (TypeMisc)
-      | HintShape (tok, xs) ->
+      | Hint (name, _targsTODO) -> 
+        tag_name ~tag name
+      | HintArray _ | HintQuestion _ | HintTuple _ 
+      | HintCallback _
         (* todo: colorize as record the keys? *)
+      | HintShape _ 
+        ->
         ()
       );
       k x
