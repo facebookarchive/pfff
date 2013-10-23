@@ -40,6 +40,8 @@ let db_of_graph_code root g =
    * node to index first.
    *)
   let res = ref [] in
+  let hnot_found = G.all_children G.not_found g +> Common.hashset_of_list in
+  
 
   g +> G.iter_nodes (fun node ->
     let (s, kind) = node in
@@ -48,41 +50,50 @@ let db_of_graph_code root g =
     | E.Constructor | E.Field | E.Method _ | E.ClassConstant 
     | E.Macro
       ->
-      let nodeinfo = G.nodeinfo node g in
-      let pos = nodeinfo.G.pos in
-      let file = pos.Parse_info.file in
+      if Hashtbl.mem hnot_found node
+      then ()
+      else begin
+        let nodeinfo = 
+          try 
+            G.nodeinfo node g 
+          with Not_found ->
+            failwith (spf "No nodeinfo for %s" (G.string_of_node node))
+        in
+        let pos = nodeinfo.G.pos in
+        let file = pos.Parse_info.file in
 
       (* select users that are outside! that are not in the same file *)
-      let pred = G.pred node G.Use g in
-      let extern = pred +> List.filter (fun n ->
-        try
-          let nodeinfo = G.nodeinfo n g in
-          let pos = nodeinfo.G.pos in
-          let file2 = pos.Parse_info.file in
-          file <> file2
-        with
-          Not_found -> false
-      ) 
-      in
-      let nb_users = List.length extern in
+        let pred = G.pred node G.Use g in
+        let extern = pred +> List.filter (fun n ->
+          try
+            let nodeinfo = G.nodeinfo n g in
+            let pos = nodeinfo.G.pos in
+            let file2 = pos.Parse_info.file in
+            file <> file2
+          with
+            Not_found -> false
+        ) 
+        in
+        let nb_users = List.length extern in
 
-      let xs = Common.split "\\." s in
-      let e = { Database_code.
-        e_kind = kind;
-        e_name = Common2.list_last xs;
-        e_fullname = s;
-        e_file = pos.Parse_info.file;
-        e_pos = { Common2.
-          l = pos.Parse_info.line;
-          c = pos.Parse_info.column;
-        };
-        e_number_external_users = nb_users;
+        let xs = Common.split "\\." s in
+        let e = { Database_code.
+                  e_kind = kind;
+                  e_name = Common2.list_last xs;
+                  e_fullname = s;
+                  e_file = pos.Parse_info.file;
+                  e_pos = { Common2.
+                            l = pos.Parse_info.line;
+                            c = pos.Parse_info.column;
+                          };
+                  e_number_external_users = nb_users;
         (* todo *)
-        e_good_examples_of_use = [];
-        e_properties = [];
-      }
-      in
-      Common.push2 e res
+                  e_good_examples_of_use = [];
+                  e_properties = [];
+                }
+        in
+        Common.push2 e res
+      end
 
     | E.TopStmts 
     | E.Module | E.Package
