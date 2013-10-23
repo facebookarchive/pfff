@@ -1,6 +1,6 @@
 (* Yoann Padioleau
  *
- * Copyright (C) 2010 Facebook
+ * Copyright (C) 2010, 2013 Facebook
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public License
@@ -44,11 +44,9 @@ let place_ids current_file ids db =
       if other_file = current_file
       then PlaceLocal
       else
-        if Common2.dirname current_file =
-           Common2.dirname other_file
+        if Common2.dirname current_file = Common2.dirname other_file
         then PlaceSameDir
         else PlaceExternal
-
   | x::y::xs ->
       let other_files =
         List.map (fun id -> 
@@ -60,8 +58,7 @@ let place_ids current_file ids db =
       then PlaceLocal
       else
         if List.exists (fun other_file ->
-          Common2.dirname current_file =
-          Common2.dirname other_file
+          Common2.dirname current_file = Common2.dirname other_file
         ) other_files
         then PlaceSameDir
         else PlaceExternal
@@ -140,16 +137,13 @@ let highlight_funcall_simple ~tag ~hentities f args info =
       (match Hashtbl.find_all hentities f with
       | [e] ->
           let ps = e.Db.e_properties in
-
           (* dynamic call *)
           (if List.mem Db.ContainDynamicCall ps
-          then
             (* todo: should try to find instead which arguments
              * is called dynamically using dataflow analysis
              *)
-            tag info PointerCall
-            else
-              tag info (Function (Use2 fake_no_use2))
+           then tag info PointerCall
+           else tag info (Function (Use2 fake_no_use2))
           );
 
           (* args by ref *)
@@ -162,15 +156,12 @@ let highlight_funcall_simple ~tag ~hentities f args info =
               with exn ->
                 pr2_once ("highlight_php: pb with TakeArgNByRef for " ^ f);
               )
-
           | Db.ContainDynamicCall -> ()
           | _ -> raise Todo
           );
           ()
-
       | x::y::xs ->
           pr2_once ("highlight_php: multiple entities for: " ^ f);
-
           (* todo: place of id *)
           tag info (Function (Use2 fake_no_use2));
       | [] ->
@@ -185,7 +176,7 @@ let highlight_funcall_simple ~tag ~hentities f args info =
 (*****************************************************************************)
 
 (*
- * Visitor to help write an emacs-like php mode. Offer some
+ * Visitor to help write an emacs-like PHP mode. It offers some
  * additional coloring and categories compared to font-lock-mode.
  * Offer also now also some semantic coloring and global-information
  * semantic feedback coloring!
@@ -196,12 +187,12 @@ let highlight_funcall_simple ~tag ~hentities f args info =
  *
  * design: Can do either a single function that do all, or multiple independent
  * functions that repeatedly visit the same ast and tokens. The
- * former is faster (no forest) but less flexible. If for instance want you
+ * former is faster (no forest) but less flexible. If for instance you want
  * to impose an order between the coloring, such as first keywords and
  * then yacfe specific coloring such as "expanded", then you need extra
  * stuff such as priority lists. If you have separate functions for those then
  * the caller can simply choose to call them in the order he wants so that
- * the last color win. Thus one can easily separate concerns.
+ * the last color win. This last strategy can easily separate concerns.
  *
  * The idea of the code below is to visit the program either through its
  * AST or its list of tokens. The tokens are easier for tagging keywords,
@@ -705,8 +696,7 @@ let visit_program ~tag prefs  hentities (ast, toks) =
       if not (Hashtbl.mem already_tagged ii)
       then tag ii Error
 
-    | T.T_RESOURCE_XDEBUG ii -> ()
-    | T.T_CLASS_XDEBUG ii -> ()
+    | T.T_RESOURCE_XDEBUG ii | T.T_CLASS_XDEBUG ii -> ()
 
     | T.TDOTS ii -> tag ii Punctuation
     | T.TANTISLASH ii -> tag ii KeywordModule
