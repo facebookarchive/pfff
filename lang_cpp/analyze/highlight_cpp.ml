@@ -245,7 +245,7 @@ let visit_toplevel ~tag_hook prefs (*db_opt *) (toplevel, toks) =
              (* the FunCall case might have already tagged it with something *)
               not (Hashtbl.mem already_tagged ii)
             then 
-              tag ii (MacroVar (Use2 fake_no_use2))
+              tag ii (Constant (Use2 fake_no_use2))
             else 
               (match idinfo.Ast.i_scope with
               | S.Local -> 
@@ -524,7 +524,7 @@ MemberField _|MemberDecl _ | Access (_, _))
 
     (* todo: could be also a MacroFunc *)
     | T.TIdent_Define (_, ii) ->
-        tag ii (MacroVar (Def2 NoUse))
+        tag ii (Constant (Def2 NoUse))
 
     (* TODO: have 2 tokens? 
     | T.TInclude_Filename (_, ii) ->

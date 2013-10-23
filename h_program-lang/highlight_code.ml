@@ -194,7 +194,7 @@ type category =
   | StaticMethod of usedef2
 
   | Macro of usedef2
-  | MacroVar of usedef2
+  | Constant of usedef2
 
   | StructName of usedef
   (* ClassName of place ... *)
@@ -586,7 +586,7 @@ let info_of_category = function
       ]
 
 
-  | MacroVar (Def2 _) ->   
+  | Constant (Def2 _) ->   
       [`FOREGROUND "pink"; 
        `WEIGHT `BOLD; 
        `STYLE `ITALIC;
@@ -642,7 +642,7 @@ let info_of_category = function
       ) ++ info_of_def_arity def_arity
 
 
-  | MacroVar (Use2 (defplace, def_arity, use_arity)) -> 
+  | Constant (Use2 (defplace, def_arity, use_arity)) -> 
       (match defplace with
       | PlaceLocal -> [`FOREGROUND "pink";]
       | PlaceSameDir -> [`FOREGROUND "LightPink";]
@@ -869,7 +869,7 @@ let is_entity_def_category categ =
   | StaticMethod (Def2 _) 
 
   | Macro (Def2 _) 
-  | MacroVar (Def2 _) 
+  | Constant (Def2 _) 
 
   (* Def *)
   | Module (Def)
@@ -893,7 +893,7 @@ let rewrap_arity_def2_category arity categ =
   | StaticMethod (Def2 _) -> StaticMethod (Def2 arity)
         
   | Macro (Def2 _) -> Macro (Def2 arity)
-  | MacroVar (Def2 _) -> MacroVar (Def2 arity)
+  | Constant (Def2 _) -> Constant (Def2 arity)
 
   (* todo? *)
   | Module Def ->

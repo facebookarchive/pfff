@@ -274,7 +274,7 @@ let visit_program ~tag prefs  hentities (ast, toks) =
       match top with
       | ConstantDef def ->
         let info = Ast.info_of_ident def.cst_name in
-        tag info (MacroVar (Def2 fake_no_def2));
+        tag info (Constant (Def2 fake_no_def2));
         k top
       | _ -> k top
     );
@@ -347,7 +347,7 @@ let visit_program ~tag prefs  hentities (ast, toks) =
       | Ast.ClassConstants (tok, vars, tok2) ->
         vars +> Ast.uncomma +> List.iter (fun (name, _opt) ->
           let info = Ast.info_of_ident name in
-          tag info (MacroVar (Def2 NoUse));
+          tag info (Constant (Def2 NoUse));
         );
         k x;
 
@@ -471,7 +471,7 @@ let visit_program ~tag prefs  hentities (ast, toks) =
         (match b with
         | Id name ->
           let info = Ast.info_of_name name in
-          tag info (MacroVar (Use2 fake_no_use2))
+          tag info (Constant (Use2 fake_no_use2))
         | IdVar (dname, _) ->
           let info = Ast.info_of_dname dname in
           (* todo? special category for class variables ? *)
@@ -499,7 +499,7 @@ let visit_program ~tag prefs  hentities (ast, toks) =
           tag info Null
         | _ ->
           if not (Hashtbl.mem already_tagged info)
-          then tag info (MacroVar (Use2 fake_no_use2))
+          then tag info (Constant (Use2 fake_no_use2))
         )
 
       | IdVar (dname, aref) ->

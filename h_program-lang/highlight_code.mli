@@ -17,7 +17,7 @@ type category =
   | Method of usedef2
   | StaticMethod of usedef2
   | Macro of usedef2
-  | MacroVar of usedef2
+  | Constant of usedef2
 
   | StructName of usedef
   | EnumName of usedef

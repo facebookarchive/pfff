@@ -518,7 +518,7 @@ let entity_kind_of_highlight_category_def categ =
   | HC.Field (HC.Def2 _) -> Field
   | HC.StaticMethod (HC.Def2 _) -> Method StaticMethod
   | HC.Macro (HC.Def2 _) -> Macro (* todo? want agglomerate ? *)
-  | HC.MacroVar (HC.Def2 _) -> Macro
+  | HC.Constant (HC.Def2 _) -> Macro
 
   | HC.Module HC.Def -> Module
   | HC.TypeDef HC.Def -> Type
@@ -536,7 +536,7 @@ let entity_kind_of_highlight_category_use categ =
   | HC.Field (HC.Use2 _) -> Field
   | HC.StaticMethod (HC.Use2 _) -> Method StaticMethod
   | HC.Macro (HC.Use2 _) -> Macro (* todo? want agglomerate ? *)
-  | HC.MacroVar (HC.Use2 _) -> Macro
+  | HC.Constant (HC.Use2 _) -> Macro
 
   | HC.Module HC.Use -> Module
   | HC.TypeDef HC.Use -> Type
@@ -711,7 +711,7 @@ let files_and_dirs_database_from_root root =
       0); (* TODO *)
     files = files +> List.map (fun f -> 
       Common.filename_without_leading_path root f
-      , 0); (* TODO *)
+, 0); (* TODO *)
 
     entities = [| |];
   }

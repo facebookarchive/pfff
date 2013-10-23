@@ -102,7 +102,7 @@ let visit_toplevel ~tag_hook prefs  (toplevel, toks) =
         | "defun" -> 
             tag ii3 (Function (Def2 NoUse))
         | "defconst" ->
-            tag ii3 (MacroVar (Def2 NoUse))
+            tag ii3 (Constant (Def2 NoUse))
         | _ -> ()
         );
         aux_toks xs

@@ -74,7 +74,7 @@ let size_font_multiplier_of_categ ~font_size_real categ =
     | Some (SH.Global (SH.Def2 use)) -> 3. *. multiplier_use use
     | Some (SH.FunctionDecl use) -> 2.5 *. multiplier_use use
     | Some (SH.Macro (SH.Def2 use)) -> 2. *. multiplier_use use
-    | Some (SH.MacroVar (SH.Def2 use)) -> 2. *. multiplier_use use
+    | Some (SH.Constant (SH.Def2 use)) -> 2. *. multiplier_use use
     | Some (SH.Method (SH.Def2 use)) -> 3.5 *. multiplier_use use
     | Some (SH.StaticMethod (SH.Def2 use)) -> 3.5 *. multiplier_use use
     | Some (SH.Field (SH.Def2 use)) -> 1.7 *. multiplier_use use

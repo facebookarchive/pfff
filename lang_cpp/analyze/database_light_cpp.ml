@@ -116,7 +116,7 @@ let compute_database ?(verbose=false) files_or_dirs =
           | HC.Class (HC.Def2 _) 
           | HC.Method (HC.Def2 _) 
           | HC.Field (HC.Def2 _) 
-          | HC.MacroVar (HC.Def2 _) 
+          | HC.Constant (HC.Def2 _) 
           | HC.Macro (HC.Def2 _) 
             ->
               Hashtbl.add hdefs_pos info true;
@@ -159,7 +159,7 @@ let compute_database ?(verbose=false) files_or_dirs =
           (*| HC.Method (HC.Use2 _) *)
           | HC.Field (HC.Use2 _)
           | HC.Macro (HC.Use2 _)
-          | HC.MacroVar (HC.Use2 _)
+          | HC.Constant (HC.Use2 _)
             ->
               let s = Ast.str_of_info info in
               Hashtbl.find_all hdefs s +> List.iter (fun entity ->
@@ -200,10 +200,10 @@ let compute_database ?(verbose=false) files_or_dirs =
 
     dirs = dirs +> List.map (fun d -> 
       d
-      , 0); (* TODO *)
+, 0); (* TODO *)
     files = files +> List.map (fun f -> 
       Common.filename_without_leading_path root f
-      , 0); (* TODO *)
+, 0); (* TODO *)
 
     entities = entities_arr;
   }
