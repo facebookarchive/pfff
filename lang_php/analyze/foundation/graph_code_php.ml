@@ -216,12 +216,12 @@ let add_prefix qu =
   | [] -> ""
   | x::xs -> ((x::xs) +> List.map Ast.str_of_ident +> Common.join "\\")^"\\"
 
-
 (* http://www.php.net/manual/en/language.namespaces.rules.php *)
 let fully_qualified_candidates env name kind =
   match name with
   | [] -> raise Impossible
-  | ("__special__ROOT",_)::xs -> [xs]
+  | ("__special__ROOT",_)::xs -> 
+      [xs]
   | ("__special__namespace",_)::xs ->
       failwith "namespace keyword not handled in qualifier"
   | (str, tok)::xs  ->
@@ -1009,6 +1009,7 @@ let build
     dir_or_files skip_list 
  =
   let root, files =
+    Common.profile_code "Graph_php.step0" (fun () ->
     match dir_or_files with
     | Left dir ->
       let root = Common.realpath dir in
@@ -1024,6 +1025,7 @@ let build
     (* useful when build codegraph from test code *)
     | Right files ->
       "/", files
+    )
   in
       
   let g = G.create () in
