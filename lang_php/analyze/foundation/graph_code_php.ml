@@ -74,12 +74,21 @@ type env = {
   g: Graph_code.graph;
 
   phase: phase;
+  (* We need 3 phases, one to get all the definitions, one to
+   * get the inheritance information, and one to get all the Uses.
+   * The inheritance is a kind of use, but certain uses like using
+   * a field or method need the full inheritance tree to already be
+   * computed as we may need to lookup entities up in the parents.
+   *)
+  phase_inheritance: (unit -> unit) list ref;
+  phase_use:         (unit -> unit) list ref;
+
   current: Graph_code.node;
   readable: Common.filename;
 
   current_qualifier: Ast_php_simple.qualified_ident;
   import_rules: (string * Ast_php_simple.qualified_ident) list;
-  self:   string; (* "NOSELF" when outside a class *)
+  self:   string;        (* "NOSELF" when outside a class *)
   parent: resolved_name; (* "NOPARENT" when no parent *)
 
   at_toplevel: bool;
@@ -112,13 +121,7 @@ type env = {
   (* to print file paths in readable format or absolute *)
   path: Common.filename -> string;
 }
-  (* We need 3 phases, one to get all the definitions, one to
-   * get the inheritance information, and one to get all the Uses.
-   * The inheritance is a kind of use, but certain uses like using
-   * a field or method need the full inheritance tree to already be
-   * computed as we may need to lookup entities up in the parents.
-   *)
-  and phase = Defs | Inheritance | Uses
+ and phase = Defs | Inheritance | Uses
 
  (* for namespace *)
  and resolved_name = R of string
@@ -128,8 +131,7 @@ type env = {
 (*****************************************************************************)
 let (==~) = Common2.(==~)
 
-let _hmemo = Hashtbl.create 101
-let parse2 env file =
+let parse env file =
   try
     Common.save_excursion Ast_php_simple_build.store_position true (fun () ->
     Common.save_excursion Flag_parsing_php.strict_lexer true (fun () ->
@@ -144,15 +146,7 @@ let parse2 env file =
                        (Common.exn_to_s exn));
     []
       
-(* On a huge codebase naive memoization stresses too much the GC.
- * We marshall a la juju so the heap graph is smaller at least. *)
-let parse env a =
-  Common.profile_code "Graph_php.parse" (fun() ->
-  Marshal.from_string (Common.memoized _hmemo a (fun () ->
-      Marshal.to_string (parse2 env a) []
-     )) 0
-  )
-    
+  
 let xhp_field str = 
   (str =~ ".*=")
 let addpostfix = function
@@ -290,7 +284,7 @@ let name_of_parent env tok =
  *)
 let add_fake_node_when_undefined_entity = ref true
 
-let add_node_and_edge_if_defs_mode2 ?(props=[]) env (ident, kind) =
+let add_node_and_has_edge2 ?(props=[]) env (ident, kind) =
   let str =
     add_prefix env.current_qualifier ^
     (match kind with
@@ -301,43 +295,41 @@ let add_node_and_edge_if_defs_mode2 ?(props=[]) env (ident, kind) =
   in
   let node = (str, kind) in
 
-  if env.phase = Defs then begin
-    if G.has_node node env.g
-    then
-      let file = Parse_info.file_of_info (Ast.tok_of_ident ident) in
-      (* todo: look if is_skip_error_file in which case populate
-       * a env.dupe_renaming
-       *)
-      (match kind with
-      (* less: log at least? *)
-      | E.Class _ | E.Function | E.Constant when not env.at_toplevel -> ()
+  (if G.has_node node env.g
+  then
+    let file = Parse_info.file_of_info (Ast.tok_of_ident ident) in
+    (* todo: look if is_skip_error_file in which case populate
+     * a env.dupe_renaming
+     *)
+    (match kind with
+    (* less: log at least? *)
+    | E.Class _ | E.Function | E.Constant when not env.at_toplevel -> ()
 
-      (* If the class was dupe, of course all its members are also duped.
-       * But actually we also need to add it to env.dupes, so below,
-       * we dont set env.current to this node, otherwise we may
-       * pollute the callees of the original node.
-       *)
-      | E.ClassConstant | E.Field | E.Method _
+    (* If the class was dupe, of course all its members are also duped.
+     * But actually we also need to add it to env.dupes, so below,
+     * we dont set env.current to this node, otherwise we may
+     * pollute the callees of the original node.
+     *)
+    | E.ClassConstant | E.Field | E.Method _
         when Hashtbl.mem env.dupes (env.self, E.Class E.RegularClass) ->
           Hashtbl.add env.dupes node (env.readable, file)
-      | E.ClassConstant | E.Field | E.Method _ ->
+    | E.ClassConstant | E.Field | E.Method _ ->
         env.pr2_and_log (spf "DUPE METHOD: %s" (G.string_of_node node));
-      | _ ->
+    | _ ->
         Hashtbl.add env.dupes node (env.readable, file)
-      )
-    else begin
-      env.g +> G.add_node node;
-      (* if we later find a duplicate for node, we will
-       * redirect this edge in build() to G.dupe (unless
-       * the duplicate are all in a skip_errors dir).
-       *)
-      env.g +> G.add_edge (env.current, node) G.Has;
-      let pos = Parse_info.token_location_of_info (Ast.tok_of_ident ident) in
-      let pos = { pos with Parse_info.file = env.readable } in
-      let nodeinfo = { Graph_code. pos; props } in
-      env.g +> G.add_nodeinfo node nodeinfo;
-    end
-  end;
+    )
+  else begin
+    env.g +> G.add_node node;
+    (* if we later find a duplicate for node, we will
+     * redirect this edge in build() to G.dupe (unless
+     * the duplicate are all in a skip_errors dir).
+     *)
+    env.g +> G.add_edge (env.current, node) G.Has;
+    let pos = Parse_info.token_location_of_info (Ast.tok_of_ident ident) in
+    let pos = { pos with Parse_info.file = env.readable } in
+    let nodeinfo = { Graph_code. pos; props } in
+    env.g +> G.add_nodeinfo node nodeinfo;
+  end);
   (* for dupes like main(), but also dupe classes, or methods of dupe
    * classe, it's better to keep 'current' as the current File so
    * at least we will avoid to add in the wrong node some relations
@@ -347,9 +339,9 @@ let add_node_and_edge_if_defs_mode2 ?(props=[]) env (ident, kind) =
   then env
   else { env with current = node }
 
-let add_node_and_edge_if_defs_mode ?props a b =
+let add_node_and_has_edge ?props a b =
   Common.profile_code "Graph_php.add_node" (fun () ->
-    add_node_and_edge_if_defs_mode2 ?props a b)
+    add_node_and_has_edge2 ?props a b)
 
 (*****************************************************************************)
 (* Add edge helpers *)
@@ -409,7 +401,8 @@ let class_exists a b c =
 (* Add edge *)
 (*****************************************************************************)
 
-let rec add_use_edge2 env (name, kind) =
+let rec add_use_edge2 ?(phase=Uses) env (name, kind) =
+
   let (R str, tok) = strtok_of_name env name kind in
   let src = env.current in
   let dst = (str, kind) in
@@ -463,8 +456,8 @@ let rec add_use_edge2 env (name, kind) =
         )
     )
 
-let add_use_edge a b =
-  Common.profile_code "Graph_php.add_edge" (fun() -> add_use_edge2 a b)
+let add_use_edge ?phase a b =
+  Common.profile_code "Graph_php.add_edge" (fun() -> add_use_edge2 ?phase a b)
 
 (*****************************************************************************)
 (* Lookup *)
@@ -608,7 +601,7 @@ and stmt_bis env x =
 
   (* old style constant definition, before PHP 5.4 *)
   | Expr(Call(Id[("define", _)], [String((name)); v])) ->
-     let env = add_node_and_edge_if_defs_mode env (name, E.Constant) in
+     let env = add_node_and_has_edge env (name, E.Constant) in
      expr env v
 
   | Expr e -> expr env e
@@ -662,7 +655,7 @@ and func_def env def =
   let env =
     match def.f_kind with
     | AnonLambda -> env
-    | Function -> add_node_and_edge_if_defs_mode env (def.f_name, E.Function)
+    | Function -> add_node_and_has_edge env (def.f_name, E.Function)
     | Method -> raise Impossible
   in
   def.f_params +> List.iter (fun p ->
@@ -678,25 +671,21 @@ and class_def env def =
     | Interface -> (*E.Interface*) E.RegularClass
     | Trait -> (*E.Trait*) E.RegularClass
   in
-  let env = add_node_and_edge_if_defs_mode env (def.c_name, E.Class kind) in
-
-  (* opti: could also just push those edges in a _todo ref during Defs *)
-  if env.phase = Inheritance then begin
-    def.c_extends +> Common.do_option (fun c2 ->
+  let env = add_node_and_has_edge env (def.c_name, E.Class kind) in
+  def.c_extends +> Common.do_option (fun c2 ->
       (* todo: also mark as use the generic arguments *)
-      add_use_edge env (name_of_class_name c2, E.Class E.RegularClass);
-    );
-    def.c_implements +> List.iter (fun c2 ->
-      add_use_edge env (name_of_class_name c2, E.Class E.RegularClass (*E.Interface*));
-    );
-    def.c_uses +> List.iter (fun c2 ->
-      add_use_edge env (name_of_class_name c2, E.Class E.RegularClass (*E.Trait*));
-    );
-    def.c_xhp_attr_inherit +> List.iter (fun c2 ->
-      add_use_edge env (name_of_class_name c2, E.Class E.RegularClass);
-    );
+    add_use_edge ~phase:Inheritance env (name_of_class_name c2, E.Class E.RegularClass);
+  );
+  def.c_implements +> List.iter (fun c2 ->
+    add_use_edge ~phase:Inheritance env (name_of_class_name c2, E.Class E.RegularClass (*E.Interface*));
+  );
+  def.c_uses +> List.iter (fun c2 ->
+    add_use_edge ~phase:Inheritance env (name_of_class_name c2, E.Class E.RegularClass (*E.Trait*));
+  );
+  def.c_xhp_attr_inherit +> List.iter (fun c2 ->
+    add_use_edge ~phase:Inheritance env (name_of_class_name c2, E.Class E.RegularClass);
+  );
 
-  end;
   let self = Ast.str_of_ident def.c_name in
   let in_trait = match def.c_kind with Trait -> true | _ -> false in
   let parent =
@@ -710,25 +699,25 @@ and class_def env def =
   let env = { env with self; parent; } in
 
   def.c_constants +> List.iter (fun def ->
-    let env = 
-      add_node_and_edge_if_defs_mode env (def.cst_name, E.ClassConstant) in
+    let env = add_node_and_has_edge env (def.cst_name, E.ClassConstant) in
     expr env def.cst_body;
   );
   (* See URL: https://github.com/facebook/xhp/wiki "Defining Attributes" *)
   def.c_xhp_fields +> List.iter (fun (def, req) ->
     let node = (addpostfix def.cv_name, E.Field) in
     let props = if req then [E.Required] else [] in
-    let env = add_node_and_edge_if_defs_mode ~props env node in
+    let env = add_node_and_has_edge ~props env node in
     Common2.opt (expr env) def.cv_value;
   );
   def.c_variables +> List.iter (fun fld ->
     let props = [E.Privacy (privacy_of_modifiers fld.cv_modifiers)] in
-    let env = add_node_and_edge_if_defs_mode ~props env (fld.cv_name, E.Field)in
+    let env = add_node_and_has_edge ~props env (fld.cv_name, E.Field)in
     (* PHP allows to refine a field, for instance on can do
      * 'protected $foo = 42;' in a class B extending A which contains
      * such a field (also this field could have been declared
      * as Public there.
      *)
+(* TODO
     if env.phase = Inheritance && 
        privacy_of_modifiers fld.cv_modifiers =*= E.Protected then begin
          (* todo? handle trait and interface here? can redefine field? *)
@@ -754,6 +743,7 @@ and class_def env def =
            )
          )   
       end;
+*)
 
     Common2.opt (expr env) fld.cv_value
   );
@@ -761,17 +751,16 @@ and class_def env def =
     (* less: be more precise at some point *)
     let kind = E.RegularMethod in
     let props = [E.Privacy (privacy_of_modifiers def.m_modifiers)] in
-    let env = 
-      add_node_and_edge_if_defs_mode ~props env (def.f_name, E.Method kind) in
+    let env = add_node_and_has_edge ~props env (def.f_name, E.Method kind) in
     stmtl env def.f_body
   )
 
 and constant_def env def =
-  let env = add_node_and_edge_if_defs_mode env (def.cst_name, E.Constant) in
+  let env = add_node_and_has_edge env (def.cst_name, E.Constant) in
   expr env def.cst_body
 
 and type_def env def =
- let env = add_node_and_edge_if_defs_mode env (def.t_name, E.Type) in
+ let env = add_node_and_has_edge env (def.t_name, E.Type) in
  type_def_kind env def.t_kind
 
 and type_def_kind env = function
@@ -1028,6 +1017,8 @@ let build
   let env = {
     g;
     phase = Defs;
+    phase_inheritance = ref [];
+    phase_use = ref [];
     current = ("filled_later", E.File);
     readable = "filled_later";
     current_qualifier = [];
@@ -1123,6 +1114,8 @@ let build
     (* step2: creating the 'Use' edges for inheritance *)
     env.pr2_and_log "\nstep2: extract inheritance";
     Common.profile_code "Graph_php.step2" (fun () ->
+
+
     files +> Common_extra.progress ~show:verbose (fun k ->
       List.iter (fun file ->
         k();
