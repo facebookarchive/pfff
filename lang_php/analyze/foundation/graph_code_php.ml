@@ -484,6 +484,23 @@ let add_use_edge_instanceof env (name, kind) =
     then env.log (spf "PB: instanceof unknown class: %s"(G.string_of_node node))
   )
 
+(* todo: add unit test for that *)
+let add_use_edge_maybe_class env entity tok =
+  let env = { env with phase = Uses } in
+  env.phase_use +> Common.push2 (fun () ->
+    (* less: do case insensitive? handle conflicts? *)
+    if G.has_node (entity, E.Class E.RegularClass) env.g
+    then
+      (match env.readable with
+      (* phabricator/fb specific *)
+      | s when s =~ ".*__phutil_library_map__.php" -> ()
+      | s when s =~ ".*autoload_map.php" -> ()
+      | _ ->
+        (*env.log (spf "DYNCALL_STR:%s (at %s)" s env.readable);*)
+        add_use_edge env ([entity, tok], E.Class E.RegularClass)
+      )
+  )
+
 (*****************************************************************************)
 (* Lookup *)
 (*****************************************************************************)
@@ -574,6 +591,34 @@ let add_use_edge_lookup ?xhp env a b =
   let env = { env with phase = Uses } in
   env.phase_use +> Common.push2 (fun () ->
     add_use_edge_lookup2 ?xhp env a b)
+
+(* todo: add unit test for this *)
+let adjust_edge_protected env fld parent =
+  let env = { env with phase = Inheritance } in
+  env.phase_inheritance +> Common.push2 (fun () ->
+    (* todo? handle trait and interface here? can redefine field? *)
+    (match parent with
+    | None -> ()
+    | Some c ->
+       (* todo: factorize with add_use_edge_inheritance ? *)
+      let aclass, afld = 
+        (str_of_class_name env c, Ast.str_of_ident fld.cv_name) in
+      let fake_tok = () in
+      (match lookup_inheritance env.g (aclass, afld) fake_tok with
+      | None -> ()
+            (* redefining an existing field *)
+      | Some ((s, _fake_tok), _kind) ->
+        (*env.log (spf "REDEFINED protected %s in class %s" s env.self);*)
+        let parent = G.parent env.current env.g in
+        (* was using env.self for parent node, but in files with
+         * duplicated classes, the parent may be the File so
+         * let's use G.parent, safer.
+         *)
+        env.g +> G.remove_edge (parent, env.current) G.Has;
+        env.g +> G.add_edge (G.dupe, env.current) G.Has;
+      )
+    )
+  )
 
 (*****************************************************************************)
 (* Defs/Uses *)
@@ -744,34 +789,8 @@ and class_def env def =
      * such a field (also this field could have been declared
      * as Public there.
      *)
-(* TODO
-    if env.phase = Inheritance && 
-       privacy_of_modifiers fld.cv_modifiers =*= E.Protected then begin
-         (* todo? handle trait and interface here? can redefine field? *)
-         (match def.c_extends with
-         | None -> ()
-         | Some c ->
-           (* TODO factorize with add_use_edge_inheritance ? *)
-           let aclass, afld = 
-             (str_of_class_name env c, Ast.str_of_ident fld.cv_name) in
-           let fake_tok = () in
-           (match lookup_inheritance env.g (aclass, afld) fake_tok with
-            | None -> ()
-            (* redefining an existing field *)
-            | Some ((s, _fake_tok), _kind) ->
-             (*env.log (spf "REDEFINED protected %s in class %s" s env.self);*)
-              let parent = G.parent env.current env.g in
-              (* was using env.self for parent node, but in files with
-               * duplicated classes, the parent may be the File so
-               * let's use G.parent, safer.
-               *)
-              env.g +> G.remove_edge (parent, env.current) G.Has;
-              env.g +> G.add_edge (G.dupe, env.current) G.Has;
-           )
-         )   
-      end;
-*)
-
+    if privacy_of_modifiers fld.cv_modifiers =*= E.Protected
+    then adjust_edge_protected env fld def.c_extends;
     Common2.opt (expr env) fld.cv_value
   );
   def.c_methods +> List.iter (fun def ->
@@ -819,23 +838,10 @@ and expr env x =
 
   (* A String in PHP can actually hide a class (or a function) *)
   | String (s, tok) when look_like_class s ->
-(* TODO
     (* less: could also be a class constant or field or method *)
     let entity = Common.matched1 s in
-    (* less: do case insensitive? handle conflicts? *)
-    if G.has_node (entity, E.Class E.RegularClass) env.g
-    then begin
-      (match env.readable with
-      (* phabricator/fb specific *)
-      | s when s =~ ".*__phutil_library_map__.php" -> ()
-      | s when s =~ ".*autoload_map.php" -> ()
-      | _ ->
-        (*env.log (spf "DYNCALL_STR:%s (at %s)" s env.readable);*)
-        add_use_edge env ([entity, tok], E.Class E.RegularClass)
-      );
-    end
-*)
-    ()
+    add_use_edge_maybe_class env entity tok
+
   (* todo? also look for functions? but has more FPs with regular
    * fields. Need to avoid this FP either by not calling
    * the String visitor when inside an array where all fields are
