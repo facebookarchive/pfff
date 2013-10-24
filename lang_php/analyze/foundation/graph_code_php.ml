@@ -142,9 +142,9 @@ let parse env file =
   with
   | Timeout -> raise Timeout
   | exn ->
-    env.pr2_and_log (spf "PARSE ERROR with %s, exn = %s" (env.path file)
-                       (Common.exn_to_s exn));
-    []
+     env.pr2_and_log (spf "PARSE ERROR with %s, exn = %s" (env.path file)
+                        (Common.exn_to_s exn));
+     []
       
   
 let xhp_field str = 
