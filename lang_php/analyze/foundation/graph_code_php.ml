@@ -89,7 +89,7 @@ type env = {
   current_qualifier: Ast_php_simple.qualified_ident;
   import_rules: (string * Ast_php_simple.qualified_ident) list;
   self:   string;        (* "NOSELF" when outside a class *)
-  parent: resolved_name; (* "NOPARENT" when no parent *)
+  parent: unit -> resolved_name; (* "NOPARENT" when no parent *)
 
   at_toplevel: bool;
 
@@ -268,7 +268,7 @@ let str_of_class_name env x =
 
 let name_of_parent env tok =
   let name = 
-    let (R parent) = env.parent in
+    let (R parent) = env.parent () in
     [parent, tok]
   in
   name
@@ -294,8 +294,7 @@ let add_node_and_has_edge2 ?(props=[]) env (ident, kind) =
     Ast.str_of_ident ident
   in
   let node = (str, kind) in
-
-  if env.phase = Defs then begin
+  begin
    if G.has_node node env.g
    then
     let file = Parse_info.file_of_info (Ast.tok_of_ident ident) in
@@ -465,9 +464,25 @@ let add_use_edge ?(phase=Uses) env n =
   match phase with
   | Defs -> raise Impossible
   | Inheritance ->
+      let env = { env with phase = Inheritance } in
       env.phase_inheritance +> Common.push2 (fun () -> add_use_edge_bis env n)
   | Uses ->
-      add_use_edge_bis env n
+      let env = { env with phase = Uses } in
+     env.phase_use +> Common.push2 (fun () -> add_use_edge_bis env n)
+
+
+(* why not call add_use_edge() and benefit from the error reporting
+ * there? because instanceOf check are less important so
+ * we special case them?
+ *)
+let add_use_edge_instanceof env (name, kind) =
+  let env = { env with phase = Uses } in
+  env.phase_use +> Common.push2 (fun () ->
+    let (R x) = str_of_name env name kind in
+    let node = x, kind in
+    if not (G.has_node node env.g) 
+    then env.log (spf "PB: instanceof unknown class: %s"(G.string_of_node node))
+  )
 
 (*****************************************************************************)
 (* Lookup *)
@@ -514,7 +529,7 @@ let lookup_inheritance g a =
   Common.profile_code "Graph_php.lookup" (fun () -> lookup_inheritance2 g a)
 
 
-let add_use_edge_inheritance ?(xhp=false) env (name, ident) kind =
+let add_use_edge_lookup2 ?(xhp=false) env (name, ident) kind =
 
   let aclass = str_of_name env name (E.Class E.RegularClass) in
   let afld = Ast.str_of_ident ident ^ (if xhp then "=" else "") in
@@ -526,7 +541,7 @@ let add_use_edge_inheritance ?(xhp=false) env (name, ident) kind =
    * this could also be a kind = Field even when asked for a StaticVar
    *)
   | Some ((R str, tok), kind2) -> 
-    add_use_edge env ([str, tok], kind2)
+    add_use_edge_bis env ([str, tok], kind2)
   | None ->
     (match afld with
     (* todo? create a fake default constructor node? *)
@@ -540,7 +555,7 @@ let add_use_edge_inheritance ?(xhp=false) env (name, ident) kind =
         lookup_fail env (Some tok) node 
 *)
         let node = ([str ^ "." ^ afld, tok], kind) in
-        add_use_edge env node
+        add_use_edge_bis env node
     )
   );
   (* Some classes may appear as dead because a 'new X()' is
@@ -553,7 +568,12 @@ let add_use_edge_inheritance ?(xhp=false) env (name, ident) kind =
    * filter classes.
    *)
   if afld =$= "__construct" 
-  then add_use_edge env (name, E.Class E.RegularClass)
+  then add_use_edge_bis env (name, E.Class E.RegularClass)
+
+let add_use_edge_lookup ?xhp env a b =
+  let env = { env with phase = Uses } in
+  env.phase_use +> Common.push2 (fun () ->
+    add_use_edge_lookup2 ?xhp env a b)
 
 (*****************************************************************************)
 (* Defs/Uses *)
@@ -563,7 +583,7 @@ let rec extract_defs_uses env ast readable =
     current = (readable, E.File); 
     readable 
   } in
-  if env.phase = Defs then begin
+  begin
     let dir = Common2.dirname env.readable in
     G.create_intermediate_directories_if_not_present env.g dir;
     env.g +> G.add_node (env.readable, E.File);
@@ -698,13 +718,10 @@ and class_def env def =
 
   let self = Ast.str_of_ident def.c_name in
   let in_trait = match def.c_kind with Trait -> true | _ -> false in
-  let parent =
-    if env.phase = Uses
-    then
-      match def.c_extends with
-      | None -> if not in_trait then R "NOPARENT" else R "NOPARENT_INTRAIT"
-      | Some c2 -> str_of_class_name env c2
-    else env.parent
+  let parent () =
+    match def.c_extends with
+    | None -> if not in_trait then R "NOPARENT" else R "NOPARENT_INTRAIT"
+    | Some c2 -> str_of_class_name env c2
   in
   let env = { env with self; parent; } in
 
@@ -780,8 +797,7 @@ and type_def_kind env = function
 (* Types *)
 (* ---------------------------------------------------------------------- *)
 and hint_type env t = 
-  if env.phase = Uses then
-  (match t with 
+  match t with 
   | Hint name -> add_use_edge env (name, E.Class E.RegularClass)
   | HintArray -> ()
   | HintQuestion t -> hint_type env t
@@ -793,18 +809,17 @@ and hint_type env t =
     xs +> List.iter (fun (_ket, t) ->
       hint_type env t
     )
-  )
 
 (* ---------------------------------------------------------------------- *)
 (* Expr *)
 (* ---------------------------------------------------------------------- *)
 and expr env x =
-  if env.phase = Uses then
-  (match x with
+  match x with
   | Int _ | Double _  -> ()
 
   (* A String in PHP can actually hide a class (or a function) *)
   | String (s, tok) when look_like_class s ->
+(* TODO
     (* less: could also be a class constant or field or method *)
     let entity = Common.matched1 s in
     (* less: do case insensitive? handle conflicts? *)
@@ -819,6 +834,8 @@ and expr env x =
         add_use_edge env ([entity, tok], E.Class E.RegularClass)
       );
     end
+*)
+    ()
   (* todo? also look for functions? but has more FPs with regular
    * fields. Need to avoid this FP either by not calling
    * the String visitor when inside an array where all fields are
@@ -855,7 +872,7 @@ and expr env x =
         expr env (Call (Class_get (Id[ (env.self, tok)], e2), es))
 
     | Class_get (Id name1, Id [name2]) ->
-         add_use_edge_inheritance env (name1, name2) (E.Method E.RegularMethod);
+         add_use_edge_lookup env (name1, name2) (E.Method E.RegularMethod);
          exprl env es
 
     (* object call *)
@@ -893,9 +910,9 @@ and expr env x =
         expr env (Class_get (Id[ (env.self, tok)], e2))
 
       | Id name1, Id [name2] ->
-          add_use_edge_inheritance env (name1, name2) E.ClassConstant
+          add_use_edge_lookup env (name1, name2) E.ClassConstant
       | Id name1, Var name2 ->
-          add_use_edge_inheritance env (name1, name2) E.Field
+          add_use_edge_lookup env (name1, name2) E.Field
 
      (* less: update dynamic stats *)
      | Id name1, e2  ->
@@ -928,18 +945,7 @@ and expr env x =
       expr env e1;
       (match e2 with
       (* less: add deps? *)
-      | Id name ->
-        (* why not call add_use_edge() and benefit from the error reporting
-         * there? because instanceOf check are less important so
-         * we special case them?
-         * todo: use add_use_edge I think, not worth the special treatment.
-         *)
-        let (R x) = str_of_name env name (E.Class E.RegularClass) in
-        let node = x, E.Class E.RegularClass in
-        if not (G.has_node node env.g) 
-        then 
-          env.log (spf "PB: instanceof unknown class: %s"
-                     (G.string_of_node node))
+      | Id name -> add_use_edge_instanceof env (name, E.Class E.RegularClass)
       | _ ->
           (* less: update dynamic *)
           expr env e2
@@ -967,7 +973,7 @@ and expr env x =
   (* less: again, add deps for type? *)
   | Cast (_, e) -> expr env e
   | Lambda def -> func_def env def
-  )
+  
 
 and array_value env x = expr env x
 and vector_value env e = expr env e
@@ -976,7 +982,7 @@ and map_value env (e1, e2) = exprl env [e1; e2]
 and xml env x =
   add_use_edge env ([x.xml_tag], E.Class E.RegularClass);
   x.xml_attrs +> List.iter (fun (ident, xhp_attr) ->
-    add_use_edge_inheritance ~xhp:true env ([x.xml_tag], ident) E.Field;
+    add_use_edge_lookup ~xhp:true env ([x.xml_tag], ident) E.Field;
     expr env xhp_attr
   );
   x.xml_body +> List.iter (xhp env)
@@ -1033,7 +1039,7 @@ let build
     readable = "filled_later";
     current_qualifier = [];
     import_rules = [];
-    self = "NOSELF"; parent = R "NOPARENT";
+    self = "NOSELF"; parent = (fun () -> R "NOPARENT");
     dupes = Hashtbl.create 101;
     (* set after the defs phase *)
     case_insensitive = Hashtbl.create 101;
@@ -1124,20 +1130,13 @@ let build
     (* step2: creating the 'Use' edges for inheritance *)
     env.pr2_and_log "\nstep2: extract inheritance";
     Common.profile_code "Graph_php.step2" (fun () ->
-      let env = { env with phase = Inheritance } in
-      !(env.phase_inheritance) +> List.iter (fun f -> f());
+      !(env.phase_inheritance) +> List.rev +> List.iter (fun f -> f());
     );
-
     (* step3: creating the 'Use' edges, the uses *)
     env.pr2_and_log "\nstep3: extract uses";
     Common.profile_code "Graph_php.step3" (fun () ->
-    files +> Common_extra.progress ~show:verbose (fun k ->
-      List.iter (fun file ->
-        k();
-        let readable = Common.filename_without_leading_path root file in
-        let ast = parse env file in
-        extract_defs_uses {env with phase = Uses} ast readable
-   )));
+      !(env.phase_use) +> List.rev +> List.iter (fun f -> f());
+    );
   end;
   close_out chan;
   g
