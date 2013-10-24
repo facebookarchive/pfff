@@ -295,8 +295,9 @@ let add_node_and_has_edge2 ?(props=[]) env (ident, kind) =
   in
   let node = (str, kind) in
 
-  (if G.has_node node env.g
-  then
+  if env.phase = Defs then begin
+   if G.has_node node env.g
+   then
     let file = Parse_info.file_of_info (Ast.tok_of_ident ident) in
     (* todo: look if is_skip_error_file in which case populate
      * a env.dupe_renaming
@@ -318,7 +319,7 @@ let add_node_and_has_edge2 ?(props=[]) env (ident, kind) =
     | _ ->
         Hashtbl.add env.dupes node (env.readable, file)
     )
-  else begin
+   else begin
     env.g +> G.add_node node;
     (* if we later find a duplicate for node, we will
      * redirect this edge in build() to G.dupe (unless
@@ -329,7 +330,8 @@ let add_node_and_has_edge2 ?(props=[]) env (ident, kind) =
     let pos = { pos with Parse_info.file = env.readable } in
     let nodeinfo = { Graph_code. pos; props } in
     env.g +> G.add_nodeinfo node nodeinfo;
-  end);
+   end
+  end;
   (* for dupes like main(), but also dupe classes, or methods of dupe
    * classe, it's better to keep 'current' as the current File so
    * at least we will avoid to add in the wrong node some relations
@@ -401,7 +403,7 @@ let class_exists a b c =
 (* Add edge *)
 (*****************************************************************************)
 
-let rec add_use_edge2 ?(phase=Uses) env (name, kind) =
+let rec add_use_edge2 env (name, kind) =
 
   let (R str, tok) = strtok_of_name env name kind in
   let src = env.current in
@@ -456,8 +458,16 @@ let rec add_use_edge2 ?(phase=Uses) env (name, kind) =
         )
     )
 
-let add_use_edge ?phase a b =
-  Common.profile_code "Graph_php.add_edge" (fun() -> add_use_edge2 ?phase a b)
+let add_use_edge_bis a b =
+  Common.profile_code "Graph_php.add_edge" (fun() -> add_use_edge2 a b)
+
+let add_use_edge ?(phase=Uses) env n =
+  match phase with
+  | Defs -> raise Impossible
+  | Inheritance ->
+      env.phase_inheritance +> Common.push2 (fun () -> add_use_edge_bis env n)
+  | Uses ->
+      add_use_edge_bis env n
 
 (*****************************************************************************)
 (* Lookup *)
@@ -1114,15 +1124,8 @@ let build
     (* step2: creating the 'Use' edges for inheritance *)
     env.pr2_and_log "\nstep2: extract inheritance";
     Common.profile_code "Graph_php.step2" (fun () ->
-
-
-    files +> Common_extra.progress ~show:verbose (fun k ->
-      List.iter (fun file ->
-        k();
-        let readable = Common.filename_without_leading_path root file in
-        let ast = parse env file in
-        extract_defs_uses { env with phase = Inheritance} ast readable
-      ));
+      let env = { env with phase = Inheritance } in
+      !(env.phase_inheritance) +> List.iter (fun f -> f());
     );
 
     (* step3: creating the 'Use' edges, the uses *)

@@ -265,17 +265,15 @@ function test_useA() {
       let pred = G.pred src G.Use g in
       assert_equal
         ~msg:"it should link the use of a PHP field to its def"
-        pred
-        ["A.test_field", E.Method E.RegularMethod];
+        ["A.test_field", E.Method E.RegularMethod]
+        pred;
 
       let src = ("A", E.Class E.RegularClass) in
       let pred = G.pred src G.Use g in
       assert_equal
         ~msg:"it should link the use of a class to its use"
-        pred
-        ["test_useA", E.Function];
-
-
+        ["test_useA", E.Function]
+        pred;
     );
 
     "required xhp field" >:: (fun () ->

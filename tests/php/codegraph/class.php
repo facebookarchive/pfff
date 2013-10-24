@@ -38,6 +38,8 @@ function use_A() {
   return $o;
 }
 
+class TestUndefinedClass extends UndefinedExtendedClass {
+}
 function use_undefined_class() {
   //ERROR:
   //$o = new UndefinedClass();
