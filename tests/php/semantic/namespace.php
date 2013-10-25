@@ -7,3 +7,4 @@ function foo() {
 class A {
 }
 
+const CST = 42;
