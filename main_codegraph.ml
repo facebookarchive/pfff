@@ -677,10 +677,8 @@ let options () = [
 let main () = 
   Gc.set {(Gc.get ()) with Gc.stack_limit = 1000 * 1024 * 1024};
   (* see http://www.elehack.net/michael/blog/2010/06/ocaml-memory-tuning *)
-(*
   Gc.set { (Gc.get()) with Gc.minor_heap_size = 2_000_000 };
   Gc.set { (Gc.get()) with Gc.space_overhead = 200 };
-*)
 
   (* Common_extra.set_link(); *)
   let usage_msg = 
