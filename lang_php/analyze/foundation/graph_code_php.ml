@@ -515,10 +515,11 @@ let lookup_inheritance2 g (R aclass, amethod_or_field_or_constant) tok =
       match res with
       | Some x -> Some x
       | None ->
-        (* todo? always inheritance? There is no other use of a Class?
-         * Actually some new X() are not linked to the __construct
-         * but to the class sometimes so we should filter here
-         * the nodes that are really Class.
+        (* Always inheritance? There is no other use of a Class?
+         * Some new X() are not linked to the __construct
+         * but to the class, but then it is in the 'pred', not the 'succ'
+         * so we are fine.
+         * less: assert all parents are indeed E.Class.
          *)
         let parents_inheritance = G.succ current G.Use g in
         breath parents_inheritance
