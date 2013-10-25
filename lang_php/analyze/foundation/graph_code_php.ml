@@ -375,22 +375,10 @@ let class_exists2 env (R aclass) tok =
   assert (env.phase = Uses);
   let node = (aclass, E.Class E.RegularClass) in
   let node' = (normalize aclass, E.Class E.RegularClass) in
-  let res = 
-    Common.memoized _hmemo_class_exits aclass (fun () ->
-      (G.has_node node env.g && G.parent node env.g <> G.not_found) ||
-        Hashtbl.mem env.case_insensitive node'
-    )
-  in
-  if res 
-  then true
-  else begin
-    (* todo: we should do check at 'use' time, lazy check or hook checks
-     * to be added in env.
-     *)
-    if aclass <> "NOPARENT_INTRAIT" then lookup_fail env tok node;
-    false
-  end
-  
+  Common.memoized _hmemo_class_exits aclass (fun () ->
+    (G.has_node node env.g && G.parent node env.g <> G.not_found) ||
+      Hashtbl.mem env.case_insensitive node'
+  )
 let class_exists a b c =
   Common.profile_code "Graph_php.class_exits" (fun () -> class_exists2 a b c)
 
@@ -566,7 +554,13 @@ let add_use_edge_lookup2 ?(xhp=false) env (name, ident) kind =
       *)
       if not (class_exists env aclass (tok))
       (* should have been reported when we visit the Class_get *)
-      then ()
+      then 
+        (* todo: we should do check at 'use' time, lazy check or hook checks
+         * to be added in env.
+         *)
+        if aclass <> (R "NOPARENT_INTRAIT")
+        then () (* lookup_fail env tok node *)
+        else ()
       else 
         let (R str) = aclass in
 (*
