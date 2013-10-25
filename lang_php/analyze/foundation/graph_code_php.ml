@@ -371,10 +371,6 @@ let lookup_fail env tok dst =
 
 (* I think G.parent is extremely slow in ocamlgraph so need memoize *)
 let _hmemo_class_exits = Hashtbl.create 101
-(* If someone uses an undefined class constant of an undefined class,
- * we want really to report only the use of undefined class, so don't
- * forget to guard some calls to add_use_edge() with this function.
- *)
 let class_exists2 env (R aclass) tok =
   assert (env.phase = Uses);
   let node = (aclass, E.Class E.RegularClass) in
@@ -558,14 +554,20 @@ let add_use_edge_lookup2 ?(xhp=false) env (name, ident) kind =
    * this could also be a kind = Field even when asked for a StaticVar
    *)
   | Some ((R str, tok), kind2) -> 
-    add_use_edge_bis env ([str, tok], kind2)
+      add_use_edge_bis env ([str, tok], kind2)
   | None ->
     (match afld with
     (* todo? create a fake default constructor node? *)
     | "__construct" -> ()
     | _ -> 
-      if class_exists env aclass (tok)
-      then 
+     (* If someone uses an undefined class constant of an undefined class,
+      * we want really to report only the use of undefined class, so don't
+      * forget to guard some calls to add_use_edge() with this function.
+      *)
+      if not (class_exists env aclass (tok))
+      (* should have been reported when we visit the Class_get *)
+      then ()
+      else 
         let (R str) = aclass in
 (*
         let node = (str ^ "." ^ afld, kind) in
