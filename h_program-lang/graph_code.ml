@@ -208,10 +208,11 @@ let add_edge (n1, n2) e g =
   | Use -> G.add_edge n1 n2 g.use
   )
 let remove_edge (n1, n2) e g =
+  Common.profile_code "Graph_code.remove_edge" (fun () ->
   match e with
   | Has -> G.remove_edge n1 n2 g.has
   | Use -> G.remove_edge n1 n2 g.use
-
+  )
 let add_nodeinfo n info g =
   if not (G.has_node n g.has)
   then failwith "unknown node";
@@ -243,18 +244,23 @@ let default_graphcode_filename =
 (*****************************************************************************)
 
 let has_node n g =
+  Common.profile_code "Graph_code.has_node" (fun () ->
   G.has_node n g.has
+  )
 
 let pred n e g =
+  Common.profile_code "Graph_code.pred" (fun () ->
   match e with
   | Has -> G.pred n g.has
   | Use -> G.pred n g.use
+  )
 
 let succ n e g =
+  Common.profile_code "Graph_code.succ" (fun () ->
   match e with
   | Has -> G.succ n g.has
   | Use -> G.succ n g.use
-
+  )
 
 let parent n g =
   Common.profile_code "Graph_code.parent" (fun () ->
