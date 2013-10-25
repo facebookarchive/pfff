@@ -341,7 +341,7 @@ let add_node_and_has_edge2 ?(props=[]) env (ident, kind) =
   else { env with current = node }
 
 let add_node_and_has_edge ?props a b =
-  Common.profile_code "Graph_php.add_node" (fun () ->
+  Common.profile_code "Graph_php.add_node_and_has_edge" (fun () ->
     add_node_and_has_edge2 ?props a b)
 
 (*****************************************************************************)
@@ -442,7 +442,7 @@ let rec add_use_edge2 env (name, kind) =
     )
 
 let add_use_edge_bis a b =
-  Common.profile_code "Graph_php.add_edge" (fun() -> add_use_edge2 a b)
+  Common.profile_code "Graph_php.add_use_edge" (fun() -> add_use_edge2 a b)
 
 let add_use_edge ?(phase=Uses) env n =
   match phase with
@@ -559,7 +559,8 @@ let add_use_edge_lookup2 ?(xhp=false) env (name, ident) kind =
          * to be added in env.
          *)
         if aclass <> (R "NOPARENT_INTRAIT")
-        then () (* lookup_fail env tok node *)
+        (* this will create a fake node for this class *)
+        then add_use_edge_bis env (name, E.Class E.RegularClass)
         else ()
       else 
         let (R str) = aclass in
