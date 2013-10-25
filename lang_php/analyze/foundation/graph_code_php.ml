@@ -529,8 +529,8 @@ let lookup_inheritance2 g (R aclass, amethod_or_field_or_constant) tok =
   in
   depth (aclass, E.Class E.RegularClass)
 
-let lookup_inheritance g a =
-  Common.profile_code "Graph_php.lookup" (fun () -> lookup_inheritance2 g a)
+let lookup_inheritance g a b =
+  Common.profile_code "Graph_php.lookup" (fun () -> lookup_inheritance2 g a b)
 
 
 let add_use_edge_lookup2 ?(xhp=false) env (name, ident) kind =
@@ -590,7 +590,10 @@ let add_use_edge_lookup2 ?(xhp=false) env (name, ident) kind =
 let add_use_edge_lookup ?xhp env a b =
   let env = { env with phase = Uses } in
   env.phase_use +> Common.push2 (fun () ->
-    add_use_edge_lookup2 ?xhp env a b)
+    Common.profile_code "Graph_php.add_use_edge_lookup" (fun () ->
+      add_use_edge_lookup2 ?xhp env a b
+    )
+  )
 
 (* todo: add unit test for this *)
 let adjust_edge_protected env fld parent =
