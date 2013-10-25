@@ -761,8 +761,10 @@ and class_def env def =
 
   let self = Ast.str_of_ident def.c_name in
   let in_trait = match def.c_kind with Trait -> true | _ -> false in
+  (* opti? do not capture def, otherwise can lead to memory leak *)
+  let extend = def.c_extends in
   let parent () =
-    match def.c_extends with
+    match extend with
     | None -> if not in_trait then R "NOPARENT" else R "NOPARENT_INTRAIT"
     | Some c2 -> str_of_class_name env c2
   in
@@ -1137,11 +1139,14 @@ let build
     env.pr2_and_log "\nstep2: extract inheritance";
     Common.profile_code "Graph_php.step2" (fun () ->
       !(env.phase_inheritance) +> List.rev +> List.iter (fun f -> f());
+      (env.phase_inheritance) := [];
     );
     (* step3: creating the 'Use' edges, the uses *)
     env.pr2_and_log "\nstep3: extract uses";
     Common.profile_code "Graph_php.step3" (fun () ->
-      !(env.phase_use) +> List.rev +> List.iter (fun f -> f());
+      let xs = !(env.phase_use) in
+      (env.phase_use) := [];
+      xs +> List.rev +> List.iter (fun f -> f());
     );
   end;
   close_out chan;
