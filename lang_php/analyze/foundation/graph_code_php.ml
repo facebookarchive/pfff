@@ -462,19 +462,16 @@ let add_use_edge ?(phase=Uses) env n =
 let add_use_edge_instanceof env (name, kind) =
   let env = { env with phase = Uses } in
   env.phase_use +> Common.push2 (fun () ->
-   Common.profile_code "Graph_php.add_use_edge_instanceof" (fun () ->
     let (R x) = str_of_name env name kind in
     let node = x, kind in
     if not (G.has_node node env.g) 
     then env.log (spf "PB: instanceof unknown class: %s"(G.string_of_node node))
-   )
   )
 
 (* todo: add unit test for that *)
 let add_use_edge_maybe_class env entity tok =
   let env = { env with phase = Uses } in
   env.phase_use +> Common.push2 (fun () ->
-    Common.profile_code "Graph_php.add_use_edge_maybe_class" (fun () ->
     (* less: do case insensitive? handle conflicts? *)
     if G.has_node (entity, E.Class E.RegularClass) env.g
     then
@@ -486,7 +483,7 @@ let add_use_edge_maybe_class env entity tok =
         (*env.log (spf "DYNCALL_STR:%s (at %s)" s env.readable);*)
         add_use_edge_bis env ([entity, tok], E.Class E.RegularClass)
       )
-  ))
+  )
 
 (*****************************************************************************)
 (* Lookup *)
@@ -590,9 +587,7 @@ let add_use_edge_lookup2 ?(xhp=false) env (name, ident) kind =
 let add_use_edge_lookup ?xhp env a b =
   let env = { env with phase = Uses } in
   env.phase_use +> Common.push2 (fun () ->
-    Common.profile_code "Graph_php.add_use_edge_lookup" (fun () ->
-      add_use_edge_lookup2 ?xhp env a b
-    )
+    add_use_edge_lookup2 ?xhp env a b
   )
 
 (* todo: add unit test for this *)
