@@ -591,7 +591,10 @@ let add_use_edge_lookup ?xhp env a b =
     add_use_edge_lookup2 ?xhp env a b
   )
 
-(* todo: add unit test for this *)
+(* todo: add unit test for this 
+ * todo: this is buggy, you can't use lookup_inheritance in the
+ * inheritance phase! have a phase_inheristance2!
+*)
 let adjust_edge_protected env fld parent =
   let env = { env with phase = Inheritance } in
   env.phase_inheritance +> Common.push2 (fun () ->
@@ -790,8 +793,10 @@ and class_def env def =
      * such a field (also this field could have been declared
      * as Public there.
      *)
+(* TODO this is buggy, and maybe slow
     if privacy_of_modifiers fld.cv_modifiers =*= E.Protected
     then adjust_edge_protected env fld def.c_extends;
+*)
     Common2.opt (expr env) fld.cv_value
   );
   def.c_methods +> List.iter (fun def ->
