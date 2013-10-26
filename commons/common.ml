@@ -1188,7 +1188,10 @@ let main_boilerplate f =
         ))
        (fun()->
          if !profile <> PNONE
-         then pr2 (profile_diagnostic ());
+         then begin 
+           pr2 (profile_diagnostic ());
+           Gc.print_stat stderr;
+         end;
          erase_temp_files ();
        )
     )
