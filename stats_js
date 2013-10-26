@@ -1,0 +1,4 @@
+#!/bin/bash
+
+export STATS_JS_PREFIX=~/www
+./pfff_test -stats_js $STATS_JS_PREFIX/$1

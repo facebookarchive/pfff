@@ -174,6 +174,7 @@ let all_actions () =
   pfff_extra_actions() ++
  Test_parsing_php.actions()++
  Test_analyze_php.actions()++
+ Test_analyze_js.actions()++
  Test_analyze_ml.actions()++
  Test_analyze_clang.actions()++
  Test_program_lang.actions()++

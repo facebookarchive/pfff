@@ -9,8 +9,8 @@ module Flag = Flag_parsing_js
 (* Subsystem testing *)
 (*****************************************************************************)
 
-let test_tokens_js file = 
-  if not (file =~ ".*\\.js") 
+let test_tokens_js file =
+  if not (file =~ ".*\\.js")
   then pr2 "warning: seems not a .js file";
 
   Flag.verbose_lexing := true;
@@ -21,21 +21,21 @@ let test_tokens_js file =
   ()
 
 let test_parse_js xs  =
-  let fullxs = 
+  let fullxs =
     Lib_parsing_js.find_source_files_of_dir_or_files ~include_scripts:false xs
   in
   let stat_list = ref [] in
 
-  fullxs +> Common_extra.progress (fun k -> List.iter (fun file -> 
+  fullxs +> Common_extra.progress (fun k -> List.iter (fun file ->
     k();
 
     if file =~ ".*/third_party" || file =~ ".*/wiki/extensions"
     then pr2_once "IGNORING third party directory, bad unicode chars"
     else begin
-      let (xs, stat) = 
+      let (xs, stat) =
       Common.save_excursion Flag.error_recovery true (fun () ->
       Common.save_excursion Flag.exn_when_lexical_error false (fun () ->
-        Parse_js.parse file 
+        Parse_js.parse file
       ))
       in
       Common.push2 stat stat_list;
@@ -56,7 +56,7 @@ let test_dump_js file =
   let s = Ocaml.string_of_v v in
   pr s
 
-let test_json_js file = 
+let test_json_js file =
   let ast = Parse_js.parse_program file in
   let s = Export_ast_js.string_json_of_program ast in
   pr s;
@@ -74,14 +74,14 @@ let test_esprima file =
 (*****************************************************************************)
 
 let actions () = [
-  "-tokens_js", "   <file>", 
+  "-tokens_js", "   <file>",
   Common.mk_action_1_arg test_tokens_js;
-  "-parse_js", "   <file or dir>", 
+  "-parse_js", "   <file or dir>",
   Common.mk_action_n_arg test_parse_js;
-  "-dump_js", "   <file>", 
+  "-dump_js", "   <file>",
   Common.mk_action_1_arg test_dump_js;
 
-  "-json_js", "   <file> export the AST of file into JSON", 
+  "-json_js", "   <file> export the AST of file into JSON",
   Common.mk_action_1_arg test_json_js;
   "-parse_esprima_json", " <file> ",
   Common.mk_action_1_arg test_esprima;
