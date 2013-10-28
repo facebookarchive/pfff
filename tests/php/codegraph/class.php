@@ -31,6 +31,10 @@ class A {
     //ERROR: undefined class constant
     return self::UNDEFINED_CLASS_CONSTANT;
   }
+
+  public function test_field_function() {
+    ($this->fld)();
+  }
 }
 
 function use_A() {

@@ -12,10 +12,10 @@ DUPE BAD STYLE: Function: __builtin__echo (2)
  dupe = scripts/redefine_regular_function.php
 
 step2: extract inheritance
-PB: lookup fail on Class: UndefinedExtendedClass (at class.php:41)
+PB: lookup fail on Class: UndefinedExtendedClass (at class.php:45)
 
 step3: extract uses
 PB: lookup fail on ClassConstant: A.UNDEFINED_CLASS_CONSTANT (at class.php:32)
-PB: lookup fail on Class: UndefinedClass (at class.php:46)
+PB: lookup fail on Class: UndefinedClass (at class.php:50)
 PB: instanceof unknown class: Class: UNKNOWN_CLASS
 PB: lookup fail on Field: :x:misc.xnosuchstr= (at xhp_use.php:9)
