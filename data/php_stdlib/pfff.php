@@ -36,3 +36,4 @@ const __builtin____LINE__ = 1;
 const __builtin____CLASS__ = 1;
 const __builtin____FUNCTION__ = 1;
 const __builtin____METHOD__ = 1;
+const __builtin____NAMESPACE__ = 1;
