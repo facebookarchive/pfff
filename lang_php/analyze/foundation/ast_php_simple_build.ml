@@ -246,6 +246,14 @@ and expr env = function
   | IdVar (dn, scope) -> A.Var (dname dn)
   | This tok -> A.This ("$this", wrap tok)
 
+  (* ($o->fn)(...) ==> call_user_func($o->fn, ...) *)
+  | Call (ParenExpr(tok, ObjGet (e1, _arrow, Id fld), _), (_lp, args, _rp)) ->
+      let e1 = expr env e1 in
+      let fld = name env fld in
+      let args = comma_list args in
+      let args = List.map (argument env) args in
+      A.Call (A.Id ["call_user_func", wrap tok],
+              (A.Obj_get (e1, A.Id fld))::args)
 
   | Call (e, (_lp, args, _rp)) ->
       let e = expr env e in

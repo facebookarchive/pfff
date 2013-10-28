@@ -89,7 +89,7 @@
  *    etc.
  *    (update: same in ast_php.ml now)
  *  - unified eval_var, some constructs were transformed into calls to
- *    "eval_var" builtin, e.g. no GlobalDollar, no VBrace, no Indirect.
+ *    "eval_var" builtin, e.g. no GlobalDollar, no VBrace, no Indirect/Deref.
  *
  *  - a simpler 'name' for identifiers, xhp names and regular names are merged,
  *    the special keyword self/parent/static are merged,
