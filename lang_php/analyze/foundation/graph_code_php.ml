@@ -216,6 +216,11 @@ let add_prefix qu =
   | [] -> ""
   | x::xs -> ((x::xs) +> List.map Ast.str_of_ident +> Common.join "\\")^"\\"
 
+let prune_special_root xs =
+  match xs with
+  | ("__special__ROOT", _)::xs -> xs
+  | _ -> xs
+
 (* http://www.php.net/manual/en/language.namespaces.rules.php *)
 let fully_qualified_candidates env name kind =
   match name with
@@ -227,7 +232,7 @@ let fully_qualified_candidates env name kind =
   | (str, tok)::xs  ->
     try 
       let qu = List.assoc str env.import_rules in
-      [ qu ++ xs ]
+      [ prune_special_root qu ++ xs ]
     with Not_found ->
       [name;
        env.current_qualifier ++ name;

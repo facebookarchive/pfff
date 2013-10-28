@@ -13,3 +13,8 @@ use N\AInN as Bar;
 function test_namespace_alias() {
   $o = new Bar();
 }
+
+use \N\AInN;
+function test_namespace_absolute() {
+  $o = new AInN();
+}
