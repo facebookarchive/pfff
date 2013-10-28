@@ -4,22 +4,42 @@ let verbose = ref true
 
 let use_facebook = ref true
 
+module FT = File_type
 module T = Treemap
 
 (*****************************************************************************)
 (* Projects *)
 (*****************************************************************************)
 
+let filters = [
+  "ocaml", (fun file ->
+    match File_type.file_type_of_file file with
+    | FT.PL (FT.ML _) | FT.PL (FT.Makefile)  -> 
+      (* todo: should be done in file_type_of_file *)
+      not (File_type.is_syncweb_obj_file file)
+    | _ -> false
+  );
+  "php", (fun file ->
+    match File_type.file_type_of_file file with
+    | FT.PL (FT.Web (FT.Php _)) -> true  | _ -> false
+  );
+  "js", (fun file ->
+    match File_type.file_type_of_file file with
+    | FT.PL (FT.Web (FT.Js)) -> true  | _ -> false
+  );
+]
+
+
 (* type repo = Pfff | ... ? *)
 let info_projects = [
-  "pfff", ("/home/pad/pfff", Treemap_pl.ocaml_filter_file);
+  "pfff", ("/home/pad/pfff", (List.assoc "ocaml" filters));
 
-  "www", ("/home/pad/www", Treemap_pl.php_filter_file);
-  "flib", ("/home/pad/www/flib", Treemap_pl.php_filter_file);
-  "hack", ("/home/pad/www/flib", Treemap_pl.php_filter_file);
+  "www", ("/home/pad/www", (List.assoc "php" filters));
+  "flib", ("/home/pad/www/flib", (List.assoc "php" filters));
+  "hack", ("/home/pad/www/flib", (List.assoc "php" filters));
 
-  "fbcode", ("/home/pad/local/fbcode", Treemap_pl.no_filter_file);
-  "fb4a", ("/home/pad/local/fb4a", Treemap_pl.no_filter_file);
+  "fbcode", ("/home/pad/local/fbcode", (fun _ -> true));
+  "fb4a", ("/home/pad/local/fb4a", (fun _ -> true));
 ]
 
 let dimensions_of_size = function
