@@ -97,6 +97,7 @@ let icon_of_kind kind has_test =
   | Db.MultiDirs -> `QUIT
 
   (* todo *)
+  | Db.ClassConstant -> `CONNECT
   | Db.Field -> `CONNECT
   | Db.Macro -> `CONNECT
   | Db.Exception -> `CONNECT
@@ -104,7 +105,7 @@ let icon_of_kind kind has_test =
   | Db.Prototype -> `CONNECT
   | Db.GlobalExtern -> `CONNECT
 
-  | (Db.TopStmts | Db.Other _ | Db.ClassConstant) -> raise Todo
+  | (Db.TopStmts | Db.Other _ ) -> raise Todo
 
 
 module L=struct
@@ -302,9 +303,8 @@ let my_entry_completion_eff2 ~callback_selected ~callback_changed fn_idx =
       );
       current_timeout :=
         Some 
-          (GMain.Timeout.add ~ms:250
+          (G.gmain_timeout_add ~ms:250
            ~callback:(fun _ -> 
-
             pr2 "changing model";
             let idx = fn_idx () in
             model := model_col_of_prefix s idx;

@@ -12,13 +12,11 @@
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the file
  * license.txt for more details.
  *)
-
 open Common
 
 (*****************************************************************************)
 (* Prelude *)
 (*****************************************************************************)
-
 (*   
  * old: 
  * This file was named gCommon.ml to be coherent with the other lalbgtk files.
@@ -66,7 +64,6 @@ open Common
  * you ensure that you separate concern clearly and then add in the gui
  * just the gui specific stuff.
  *)
-
 
 (*###########################################################################*)
 (*  *)
@@ -150,7 +147,6 @@ open Common
  * 
  *)
 
-
 let mk widget f = 
   let widget = widget () in
   f widget;
@@ -172,7 +168,6 @@ let mk_menu menu_item f =
   let menu = GMenu.menu ~packing:menu_item#set_submenu () in
   f menu;
   menu_item
-
 
 (*---------------------------------------------------------------------------*)
 
@@ -200,7 +195,6 @@ let add_menu menu_item f w =
   f menu;
   w#add menu_item
 
-
 (*---------------------------------------------------------------------------*)
 let rec paneds orientation xs = 
   match xs with
@@ -216,8 +210,6 @@ let rec paneds orientation xs =
       hp#add2 (paneds orientation xs);
       hp#coerce
 
-
-
 (*****************************************************************************)
 (* Widget wrappers *)
 (*****************************************************************************)
@@ -229,7 +221,6 @@ let with_frame widget =
   let frame = GBin.frame  (*~width:100*) () in
   frame#add widget#coerce;
   frame#coerce
-
 
 let with_label text widget = 
   let box =  GPack.hbox () in
@@ -256,9 +247,6 @@ let with_viewport2 widget =
   scrw#add_with_viewport widget;
   scrw#coerce
 
-
-
-
 (*****************************************************************************)
 (* Keyboards/Mouse *)
 (*****************************************************************************)
@@ -272,7 +260,6 @@ let pos_of_ev ev =
   let y = int_of_float (GdkEvent.Button.y ev) in
   x,y
 
-
 (*---------------------------------------------------------------------------*)
 (* Keyboard (key and also entry completion) *)
 (*---------------------------------------------------------------------------*)
@@ -281,9 +268,6 @@ let key_press_escape_quit key =
   if GdkEvent.Key.keyval key = GdkKeysyms._Escape then
     GMain.Main.quit();
   false
-
-
-
 
 (*****************************************************************************)
 (* Models (used by completion entry code) *)
@@ -338,21 +322,9 @@ let entry_with_completion_eff ~text ~model_col ?minimum_key_length () =
   c#set_text_column col;
   entry
 
-
-
-
-
-
-
-
-
 (*###########################################################################*)
 (* Special bigger widgets *)
 (*###########################################################################*)
-
-
-
-
 
 (*****************************************************************************)
 (* CList widget Helpers *)
@@ -403,7 +375,6 @@ let clist_update_multicol xs widget =
     );
   )
 
-
 (*****************************************************************************)
 (* GTree (model based) widget helpers *)
 (*****************************************************************************)
@@ -424,14 +395,10 @@ let sort_col column (model : #GTree.model) it_a it_b =
 (* (String.length a) (String.length b) *)
 
 
-
-
 let view_column ~title ~renderer ()  = 
   let col = GTree.view_column ~title ~renderer () in
   col#set_resizable true;
   col
-
-
 
 let view_expand_level (view: GTree.view) depth_limit = 
   view#collapse_all();
@@ -443,11 +410,9 @@ let view_expand_level (view: GTree.view) depth_limit =
     false
   )
 
-
 (*****************************************************************************)
 (* GEdit and GSourceView *)
 (*****************************************************************************)
-
 
 (*****************************************************************************)
 (* Html related *)
@@ -455,19 +420,9 @@ let view_expand_level (view: GTree.view) depth_limit =
 
 (* todo? gHTML ? gtk_xmhtml ? but apparently only for gtk1.2 :( *)
 
-
-
-
-
 (*###########################################################################*)
 (*  *)
 (*###########################################################################*)
-
-
-
-
-
-
 
 (*****************************************************************************)
 (* Menu *)
@@ -500,9 +455,6 @@ let mk_right_click_menu_on_store view fpath =
     end
     else false (* not a right click *)
   )
-
-
-
 
 (*****************************************************************************)
 (* Dialogs *)
@@ -562,9 +514,6 @@ let dialog_ask_with_y_or_no_bis ~text ~title callerw =
   )
 
 
-
-
-
 (* Note that polymorphism and inference works very well here.
  * The 'answer' can be of any type.
  *)
@@ -600,7 +549,6 @@ let dialog_ask_generic_bis ~title callerw fbuild fget_val  =
   | `YES -> Some answer
   | `NO | `DELETE_EVENT -> None
   )
-
 
 
 (*---------------------------------------------------------------------------*)
@@ -653,8 +601,6 @@ let dialog_ask_generic ?width ~title fbuild fget_val  =
   GMain.Main.main ();
   !res
 
-
-
 (*---------------------------------------------------------------------------*)
 (* Dialog_ask_generic users *)
 (*---------------------------------------------------------------------------*)
@@ -684,8 +630,6 @@ let dialog_ask_y_or_no ~text ~title  =
   match res with
   | Some () -> true
   | None -> false
-
-
 
 (*---------------------------------------------------------------------------*)
 (* dialog_ask_filename *)
@@ -727,8 +671,6 @@ let about () =
   md#destroy()
 *)
 
-
-
 (*---------------------------------------------------------------------------*)
 
 let dialog_text_large ~text ~title = 
@@ -746,7 +688,6 @@ let dialog_text_large ~text ~title =
     (fun () -> 
       ()
     )
-
 
 
 (*****************************************************************************)
@@ -780,7 +721,6 @@ let create_menu m label =
  *)
 let synchronous_actions = ref false
 
-
 let gmain_idle_add ~prio callback =
   if not !synchronous_actions
   then
@@ -798,6 +738,21 @@ let gmain_idle_add ~prio callback =
     done;
     GMain.Idle.add ~prio (fun () -> false)
   end
+
+let gmain_timeout_add ~ms ~callback =
+  if not !synchronous_actions
+  then
+    GMain.Timeout.add ~ms ~callback:(fun _ -> 
+      try 
+        callback ()
+      with exn ->
+        pr2 (Common2.exn_to_s_with_backtrace exn);
+        raise exn
+    )
+  else begin
+    raise Todo
+  end
+
 
 (*****************************************************************************)
 (* Main widget and loop *)
