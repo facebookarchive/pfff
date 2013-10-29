@@ -3,8 +3,22 @@
 open Ast_php_simple
 module Ast_php = Meta_ast_php
 
+(* very very ugly *)
+let visit_mode = ref false
+let visited_toks = ref []
+
 let rec vof_program v = Ocaml.vof_list vof_stmt v
 and vof_wrapped_string (s, tok) =
+  if !visit_mode
+  then 
+    (match tok with
+    | None -> 
+      (* todo? failwith "no info, use Ast_php_simple_build.store_position" *)
+      (* maybe fake tok? *)
+      ()
+    | Some tok ->
+      visited_toks := tok :: !visited_toks;
+    );
   Ocaml.VString s
 and vof_name x = Ocaml.vof_list vof_wrapped_string x
 and vof_qualified_ident x = Ocaml.vof_list vof_wrapped_string x
@@ -421,3 +435,13 @@ let vof_any =
   | Stmt v1 -> let v1 = vof_stmt v1 in Ocaml.VSum (("Stmt", [ v1 ]))
   | Expr2 v1 -> let v1 = vof_expr v1 in Ocaml.VSum (("Expr2", [ v1 ]))
   | Param v1 -> let v1 = vof_parameter v1 in Ocaml.VSum (("Param", [ v1 ]))
+
+(* very ugly, should have a real visitor_php_simple.ml *)
+let toks_of_any any =
+  Common.save_excursion visit_mode true (fun () ->
+    visited_toks := [];
+    let _ = vof_any any in
+    let res = !visited_toks in
+    visited_toks := [];
+    res
+  )
