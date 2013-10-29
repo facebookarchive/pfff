@@ -103,7 +103,7 @@ graph_code_cmt.cmo: graph_code_cmt.ml
 	$(OCAMLC) $(PP)  -c $<
 
 graph_code_cmt.cmx: graph_code_cmt.ml
-	$(OCAMLOPT) $(PP) $<
+	$(OCAMLOPT) $(PP) -c $<
 
 ##############################################################################
 # Literate Programming rules
