@@ -17,6 +17,10 @@ val string_of_error: error -> string
 
 type statistics = {
   parse_errors: Common.filename list ref;
+  lookup_fail: (Parse_info.info * node) list ref; 
+  unresolved_method_calls: Parse_info.info list ref;
+  resolved_method_calls: Parse_info.info list ref;
+  unresolved_calls: Parse_info.info list ref;
 }
 val empty_statistics: unit -> statistics
 

@@ -64,6 +64,7 @@ module G = Graph_code
  *  - pfff.log for less important and to have more details
  *  - in the codegraph itself under the PB directory for all the rest
  *    when add_fake_node_when_undefined_entity is set to true.
+ *  - in a layer, see layer_graph_code.ml, for errors but also statistics
  *)
 
 (*****************************************************************************)
@@ -87,7 +88,7 @@ type env = {
   current_qualifier: Ast_php_simple.qualified_ident;
   readable: Common.filename;
   import_rules: (string * Ast_php_simple.qualified_ident) list;
-  self:   string;        (* "NOSELF" when outside a class *)
+  self:   string;                (* "NOSELF" when outside a class *)
   parent: unit -> resolved_name; (* "NOPARENT" when no parent *)
   at_toplevel: bool;
 
@@ -142,6 +143,7 @@ let parse env file =
   with
   | Timeout -> raise Timeout
   | exn ->
+     env.stats.G.parse_errors +> Common.push2 file;
      env.pr2_and_log (spf "PARSE ERROR with %s, exn = %s" (env.path file)
                         (Common.exn_to_s exn));
      []
@@ -356,7 +358,6 @@ let add_node_and_has_edge ?props a b =
 let lookup_fail env tok dst =
   let info = Ast.tok_of_ident ("", tok) in
   let file, line = Parse_info.file_of_info info, Parse_info.line_of_info info in
-  let (_, kind) = dst in
   let fprinter =
     if env.phase = Inheritance
     then env.pr2_and_log
@@ -364,15 +365,15 @@ let lookup_fail env tok dst =
       if file =~ ".*third-party" || file =~ ".*third_party"
       then (fun _s -> ())
       else 
-        (match kind with
-        | E.Function | E.Class _ | E.Constant
+        (match snd dst with
         (* todo: fix those too | E.ClassConstant *)
-          -> env.pr2_and_log
+        | E.Function | E.Class _ | E.Constant -> env.pr2_and_log
         | _ -> env.log
         )
   in
-  fprinter (spf "PB: lookup fail on %s (at %s:%d)"(G.string_of_node dst) 
-       (env.path file) line)
+  env.stats.G.lookup_fail +> Common.push2 (info, dst);
+  fprinter (spf "PB: lookup fail on %s (at %s:%d)" (G.string_of_node dst) 
+              (env.path file) line)
 
 (* I think G.parent is extremely slow in ocamlgraph so need memoize *)
 let _hmemo_class_exits = Hashtbl.create 101
@@ -715,7 +716,7 @@ and stmt_bis env x =
       catches env (c1::cs)
 
   | StaticVars xs ->
-      xs +> List.iter (fun (name, eopt) -> Common2.opt (expr env) eopt;)
+      xs +> List.iter (fun (name, eopt) -> Common2.opt (expr env) eopt)
   (* could add entity for that? *)
   | Global xs -> exprl env xs
 
@@ -759,7 +760,7 @@ and class_def env def =
   in
   let env = add_node_and_has_edge env (def.c_name, E.Class kind) in
   def.c_extends +> Common.do_option (fun c2 ->
-      (* todo: also mark as use the generic arguments *)
+    (* todo: also mark as use the generic arguments *)
     add_use_edge ~phase:Inheritance env (name_of_class_name c2, E.Class E.RegularClass);
   );
   def.c_implements +> List.iter (fun c2 ->
@@ -832,7 +833,9 @@ and type_def_kind env = function
 (* ---------------------------------------------------------------------- *)
 and hint_type env t = 
   match t with 
-  | Hint name -> add_use_edge env (name, E.Class E.RegularClass)
+  | Hint name -> 
+    (* todo: handle basic types, could also add them in php_stdlib/ *)
+    add_use_edge env (name, E.Class E.RegularClass)
   | HintArray -> ()
   | HintQuestion t -> hint_type env t
   | HintTuple xs -> List.iter (hint_type env) xs
@@ -904,12 +907,14 @@ and expr env x =
           expr env (Call (Class_get (Id[ (env.self, tok)], Id name2), es))
         (* need class analysis ... *)
         | _ ->
-          (* less: increment dynamic_fails stats *)
+          let tok = Ast.tok_of_name name2 in
+          env.stats.G.unresolved_method_calls +> Common.push2 tok;
           expr env e1;
           exprl env es
         )
-    (* less: increment dynamic_fails stats *)
     | _ ->
+      let tok = Meta_ast_php_simple.toks_of_any (Expr2 e) +> List.hd in
+      env.stats.G.unresolved_calls +> Common.push2 tok;
       expr env e;
       exprl env es
     (* less: increment dynamic_fails stats also when use func_call_args() *)
