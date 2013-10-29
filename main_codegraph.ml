@@ -260,20 +260,22 @@ let build_graph_code lang root =
     end
     else []
   in
-  let g =
+  let empty = Graph_code.empty_statistics () in
+  let g, stats =
     try (
     match lang with
-    | "ml"  -> Graph_code_ml.build ~verbose:!verbose root skip_list
-    | "cmt"  -> Graph_code_cmt.build ~verbose:!verbose root skip_list
+    | "ml"  -> Graph_code_ml.build ~verbose:!verbose root skip_list, empty
 
-    | "php" -> Graph_code_php.build ~verbose:!verbose (Left root) skip_list+>fst
+    | "cmt"  -> Graph_code_cmt.build ~verbose:!verbose root skip_list, empty
+
+    | "php" -> Graph_code_php.build ~verbose:!verbose (Left root) skip_list
     | "web" -> raise Todo
 
-    | "c" -> Graph_code_c.build ~verbose:!verbose root skip_list
-    | "objc" -> Graph_code_objc.build ~verbose:!verbose root skip_list
-    | "clang2" -> Graph_code_clang.build ~verbose:!verbose root skip_list
+    | "c" -> Graph_code_c.build ~verbose:!verbose root skip_list, empty
+    | "objc" -> Graph_code_objc.build ~verbose:!verbose root skip_list, empty
+    | "clang2" -> Graph_code_clang.build ~verbose:!verbose root skip_list, empty
 
-    | "java" -> Graph_code_java.build ~verbose:!verbose root skip_list
+    | "java" -> Graph_code_java.build ~verbose:!verbose root skip_list, empty
     | "bytecode" -> 
       let graph_code_java = 
         None 
@@ -282,9 +284,10 @@ let build_graph_code lang root =
 *)
       in
       Graph_code_bytecode.build ~verbose:!verbose ~graph_code_java
-        root skip_list
+        root skip_list, empty
 
-    | "dot" -> Graph_code.graph_of_dotfile (Filename.concat root "graph.dot")
+    | "dot" -> 
+      Graph_code.graph_of_dotfile (Filename.concat root "graph.dot"), empty
 
     | _ -> failwith ("language not supported: " ^ lang)
     )
@@ -293,7 +296,9 @@ let build_graph_code lang root =
       raise (Graph_code.Error err)
   in
   let output_dir = !output_dir ||| pwd in
-  Graph_code.save g (dep_file_of_dir output_dir)
+  Graph_code.save g (dep_file_of_dir output_dir);
+  (* todo: save also TAGS, prolog, light db, and layers *)
+  ()
 
 (*****************************************************************************)
 (* Language specific, building stdlib *)
