@@ -209,6 +209,21 @@ let constraints_of_info_txt info_txt =
   aux "" info_txt;
   h
 
+let print_stats g stats =
+  pr (spf "nb nodes = %d, nb edges = %d" (GC.nb_nodes g) (GC.nb_use_edges g));
+  pr (spf "parse errors = %d" (!(stats.GC.parse_errors) +> List.length));
+  pr (spf "lookup fail = %d" (!(stats.GC.lookup_fail) +> List.length));
+  pr (spf "unresolved method calls = %d" 
+        (!(stats.GC.unresolved_method_calls) +> List.length));
+  pr (spf "(resolved method calls = %d)" 
+        (!(stats.GC.resolved_method_calls) +> List.length));
+  pr (spf "unresolved class access = %d" 
+        (!(stats.GC.unresolved_class_access) +> List.length));
+  pr (spf "unresolved calls = %d" 
+        (!(stats.GC.unresolved_calls) +> List.length));
+  ()
+
+
 (*****************************************************************************)
 (* Model Helpers *)
 (*****************************************************************************)
@@ -297,7 +312,17 @@ let build_graph_code lang root =
   in
   let output_dir = !output_dir ||| pwd in
   Graph_code.save g (dep_file_of_dir output_dir);
-  (* todo: save also TAGS, prolog, light db, and layers *)
+  (* todo: save also TAGS, light db, prolog?, layers *)
+  print_stats g stats;
+  let defs = Graph_code_tags.defs_of_graph_code g in
+  Tags_file.generate_TAGS_file 
+    (Filename.concat output_dir "TAGS") defs;
+(* slow
+  let db = Graph_code_database.db_of_graph_code root g in
+  Database_code.save_database db 
+    (Filename.concat output_dir "PFFF_db.marshall");
+*)
+                                  
   ()
 
 (*****************************************************************************)

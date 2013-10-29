@@ -263,9 +263,11 @@ let has_node n g =
   G.has_node n g.has
 
 let pred n e g =
+  Common.profile_code "Graph_code.pred" (fun () ->
   match e with
   | Has -> G.pred n g.has
   | Use -> G.pred n g.use
+  )
 
 let succ n e g =
   match e with
