@@ -270,7 +270,7 @@ let build_graph_code lang root =
     | "ml"  -> Graph_code_ml.build ~verbose:!verbose root skip_list
     | "cmt"  -> Graph_code_cmt.build ~verbose:!verbose root skip_list
 
-    | "php" -> Graph_code_php.build ~verbose:!verbose (Left root) skip_list
+    | "php" -> Graph_code_php.build ~verbose:!verbose (Left root) skip_list+>fst
     | "web" -> raise Todo
 
     | "c" -> Graph_code_c.build ~verbose:!verbose root skip_list

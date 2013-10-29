@@ -258,7 +258,7 @@ function test_useA() {
 "
       in
       let tmpfile = Parse_php.tmp_php_file_from_string file_content in
-      let g = Graph_code_php.build 
+      let (g, _stat) = Graph_code_php.build 
         ~verbose:false ~logfile:"/dev/null" (Right [tmpfile]) [] in
 
       let src = ("A.$fld", E.Field) in
@@ -285,7 +285,7 @@ function test_useA() {
 "
       in
       let tmpfile = Parse_php.tmp_php_file_from_string file_content in
-      let g = Graph_code_php.build 
+      let (g, _) = Graph_code_php.build 
         ~verbose:false ~logfile:"/dev/null" (Right [tmpfile]) [] in
       let field = (":x:required.req_int=", E.Field) in
       let nodeinfo = G.nodeinfo field g in
@@ -301,7 +301,7 @@ function test_useA() {
       let skip_list = Skip_code.load (Filename.concat dir "skip_list.txt") in
       let logfile = Filename.concat dir "pfff_test.log" in
       let expected_logfile = Filename.concat dir "pfff_test.exp" in
-      let g = Graph_code_php.build 
+      let (g, _) = Graph_code_php.build 
         ~verbose:false ~readable_file_format:true ~logfile
         (Left dir) skip_list in
 

@@ -1185,4 +1185,4 @@ let build
     );
   end;
   close_out chan;
-  g
+  g, env.stats

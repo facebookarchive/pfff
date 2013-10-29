@@ -8,7 +8,7 @@ val build:
   ?only_defs:bool -> 
   (Common.dirname, Common.filename list) Common.either ->
   Skip_code.skip list ->
-  Graph_code.graph
+  Graph_code.graph * Graph_code.statistics
 
 (* used by scheck *)
 type resolved_name = R of string
