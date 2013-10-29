@@ -1,12 +1,13 @@
-core: used by everthing
+stdlib/: used by everthing
 
 ocamlcairo: used by codemap/codegraph, core graphics library.
 ocamlgtk:   used by codemap/codegraph, mostly for interactive menus and basic
  UI chrome.
 
-ocamlgraph: used by commons/graph.ml and so graph_code, also a bit by 
+ocamlgraph: used by commons/graph.ml and so graph_code, also a bit by
  lang_html/? TODO why dependencies to codegraph is now shown in cg?
 
 ocamlzip: used by externals/javalib (used itself by lang_bytecode/)
 extlib: used by externals/javalib (used itself by lang_bytecode/)
 
+ptrees??
