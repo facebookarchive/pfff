@@ -21,8 +21,8 @@ module G = Graph_code
 (*****************************************************************************)
 (*
  * Module to help visualize dependencies: is an entity an entry
- * point of the program or one of its leaves.
- * 
+ * point of the program or one of its leaves. It also help visualize
+ * all the errors in codegraph (lookup failures, unresolved method calls, etc)
  *)
 
 (*****************************************************************************)
@@ -38,7 +38,7 @@ let kind_of_rank ~max_total n =
 (* Main entry point *)
 (*****************************************************************************)
 
-let gen_heatmap_layer g hentity_to_rank  ~output =
+let gen_rank_heatmap_layer g hentity_to_rank  ~output =
 
   let group_by_file =
     hentity_to_rank 
@@ -80,6 +80,38 @@ in the Use graph";
   in
   Layer_code.save_layer layer output
 
+let gen_statistics_layer ~root stats ~output =
+  (* there is a priority order here, see simple_layer_of_parse_infos
+   * that leverage this order
+   *)
+  let kinds = [
+    "unresolved calls", "red3";
+    "unresolved class access", "orange";
+    "unresolved method calls", "yellow";
+    "lookup fail", "purple";
+  ]
+  in
+  let infos =
+    (!(stats.G.unresolved_calls) 
+     +> List.map (fun x -> x, "unresolved calls")) ++
+    (!(stats.G.unresolved_class_access) 
+     +> List.map (fun x -> x, "unresolved class access")) ++
+    (!(stats.G.unresolved_method_calls) 
+     +> List.map (fun x -> x, "unresolved method calls")) ++
+    (!(stats.G.lookup_fail) 
+     +> List.map (fun (x, (_str, _kind)) -> x, "lookup fail")) ++
+
+      []
+  in
+  let layer = Layer_code.simple_layer_of_parse_infos ~root
+    ~title:"Graph code error statistics"
+    ~description:""
+    infos
+    kinds
+  in
+  Layer_code.save_layer layer output;
+  ()
+
 (*****************************************************************************)
 (* Actions *)
 (*****************************************************************************)
@@ -91,6 +123,6 @@ let actions () = [
     let hrank = G.bottom_up_numbering g in
     let (d,_,_) = Common2.dbe_of_filename graph_file in
     let output = Common2.filename_of_dbe (d, "layer_graph_code", "json") in
-    gen_heatmap_layer g hrank output;
+    gen_rank_heatmap_layer g hrank output;
   );
 ]

@@ -597,7 +597,8 @@ let simple_layer_of_parse_infos ~root ~title ?(description="") xs kinds =
 
        macro_level =  
           (* todo: we are supposed to give a percentage per kind but
-           * for now we give the same number to every kinds
+           * for now we give the same number to every kinds.
+           * todo: at least give highest priority of kind?
            *)
           all_kinds_in_file +> List.map (fun kind -> (kind, 1.));
       })

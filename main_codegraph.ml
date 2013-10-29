@@ -265,6 +265,7 @@ let package_node xs =
 (*****************************************************************************)
 
 let build_graph_code lang root =
+  let root = Common.realpath root in
   let pwd = Sys.getcwd () in
   let skip_file = !skip_list ||| skip_file_of_dir pwd in
   let skip_list =
@@ -312,8 +313,9 @@ let build_graph_code lang root =
   in
   let output_dir = !output_dir ||| pwd in
   Graph_code.save g (dep_file_of_dir output_dir);
-  (* todo: save also TAGS, light db, prolog?, layers *)
   print_stats g stats;
+
+  (* save also TAGS, light db (TODO), prolog (TODO), layers *)
   let defs = Graph_code_tags.defs_of_graph_code g in
   Tags_file.generate_TAGS_file 
     (Filename.concat output_dir "TAGS") defs;
@@ -323,9 +325,12 @@ let build_graph_code lang root =
     (Filename.concat output_dir "PFFF_db.marshall");
 *)
   let layers = GC.bottom_up_numbering g in
-  Layer_graph_code.gen_heatmap_layer g layers 
+  Layer_graph_code.gen_rank_heatmap_layer g layers 
     (Filename.concat output_dir "layer_bottomup.json");
-                                  
+
+  Layer_graph_code.gen_statistics_layer ~root stats 
+    ~output:(Filename.concat output_dir "layer_graphcode_stats.json");
+                                 
   ()
 
 (*****************************************************************************)
@@ -560,7 +565,7 @@ let test_layering graph_file =
 
   let (d,_,_) = Common2.dbe_of_filename graph_file in
   let output = Common2.filename_of_dbe (d, "layer_graph_code", "json") in
-  Layer_graph_code.gen_heatmap_layer g htopdown output;
+  Layer_graph_code.gen_rank_heatmap_layer g htopdown output;
   ()
 
 let test_transitive_deps xs =
