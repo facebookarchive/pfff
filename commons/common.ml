@@ -636,6 +636,7 @@ let (=*=) = (=)
 
 (* type 'a maybe  = Just of 'a | None *)
 
+(* not sure why but can't use let (?:) a b = ... then at use time ocaml yells*)
 let (|||) a b =
   match a with
   | Some x -> x
