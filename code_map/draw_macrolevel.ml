@@ -107,12 +107,12 @@ let draw_trect_using_layers ~cr layers_with_index rect =
       try Hashtbl.find layers_with_index.Layer_code.macro_index file
       with Not_found -> []
     in
-    (* What to draw ? 
-     * TODO a splitted rectangle ? 
-     * For now the last win ...
-     * todo? could use the quantitative information in the float ?
+    (* What to draw ? TODO a splitted rectangle ? 
      *)
-    color_info +> List.iter (fun (float, color) -> 
+    let sorted = Common2.sort_by_key_highfirst color_info in
+    (match sorted with
+    | [] -> ()
+    | (_float, color)::_rest ->
       draw_treemap_rectangle ~cr ~color:(Some color) rect;
     );
   end

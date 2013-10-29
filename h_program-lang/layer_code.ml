@@ -17,13 +17,12 @@ open Common
 (*****************************************************************************)
 (* Prelude *)
 (*****************************************************************************)
-
 (*
  * The goal of this module is to provide a data-structure to represent
  * code "layers" (a.k.a. code "aspects"). The idea is to imitate google
  * earth layers (e.g. the wikipedia layer, panoramio layer, etc), but
- * for code. One could have a deadcode layer, a test coverage layer,
- * and then display those layers or not on an existing codebase in 
+ * for code. One can have a deadcode layer, a test coverage layer,
+ * and then can display those layers or not on an existing codebase in 
  * codemap. The layer is basically some mapping from files to a 
  * set of lines with a specific color code. 
  * 
@@ -214,7 +213,6 @@ let heat_map_properties = [
   "no_info", "white";
 ]
 
-
 (*****************************************************************************)
 (* Multi layers indexing *)
 (*****************************************************************************)
@@ -244,19 +242,18 @@ let build_index_of_layers ~root layers =
        * The caller would have to first recompute the sum of all those
        * floats to recompute the actual multi-layer percentage.
        *)
-      let color_macro_level = finfo.macro_level +> 
-        Common.map_filter (fun (kind, v) ->
-        try 
-          Some (v, Hashtbl.find hkind kind)
-        with
-        Not_found -> 
-          (* I was originally doing a failwith, but it can be convenient
-           * to be able to filter kinds in codemap by just editing the
-           * JSON file and removing certain kind definitions
-           *)
-          pr2_once (spf "PB: kind %s was not defined" kind);
-          None
-      ) 
+      let color_macro_level = 
+        finfo.macro_level +> Common.map_filter (fun (kind, v) ->
+          (* some sanity checking *)
+          try Some (v, Hashtbl.find hkind kind)
+          with Not_found -> 
+            (* I was originally doing a failwith, but it can be convenient
+             * to be able to filter kinds in codemap by just editing the
+             * JSON file and removing certain kind definitions
+             *)
+            pr2_once (spf "PB: kind %s was not defined" kind);
+            None
+        ) 
       in
       hmacro#update file (fun old -> color_macro_level ++ old);
 
@@ -523,7 +520,6 @@ and file_info_ofv sexp = file_info_ofv__ sexp
 and kind_ofv__ = let _loc = "Xxx.kind" in fun sexp -> Ocaml.string_ofv sexp
 and kind_ofv sexp = kind_ofv__ sexp
 
-
 (*****************************************************************************)
 (* Json *)
 (*****************************************************************************)
@@ -562,6 +558,10 @@ let save_layer layer file =
  * subdirs and so on.
  *)
 let simple_layer_of_parse_infos ~root ~title ?(description="") xs kinds =
+  let ranks_kinds = 
+    kinds +> List.map (fun (k, _color) -> k) 
+    +> Common.index_list_1 +> Common.hash_of_list
+  in
 
   (* group by file, group by line, uniq categ *)
   let files_and_lines = xs +> List.map (fun (tok, kind) ->
@@ -596,11 +596,13 @@ let simple_layer_of_parse_infos ~root ~title ?(description="") xs kinds =
           ) +> List.flatten;
 
        macro_level =  
-          (* todo: we are supposed to give a percentage per kind but
-           * for now we give the same number to every kinds.
-           * todo: at least give highest priority of kind?
+          (* we could give a percentage per kind but right now
+           * we instead give a priority based on the rank of the kinds
+           * in the kind list
            *)
-          all_kinds_in_file +> List.map (fun kind -> (kind, 1.));
+          all_kinds_in_file +> List.map (fun kind -> 
+            (kind, 1. /. (float_of_int (Hashtbl.find ranks_kinds kind)))
+          )
       })
     );
   }

@@ -85,10 +85,11 @@ let gen_statistics_layer ~root stats ~output =
    * that leverage this order
    *)
   let kinds = [
+    "lookup fail", "purple";
     "unresolved calls", "red3";
     "unresolved class access", "orange";
     "unresolved method calls", "yellow";
-    "lookup fail", "purple";
+    "resolved method calls", "green";
   ]
   in
   let infos =
@@ -100,6 +101,8 @@ let gen_statistics_layer ~root stats ~output =
      +> List.map (fun x -> x, "unresolved method calls")) ++
     (!(stats.G.lookup_fail) 
      +> List.map (fun (x, (_str, _kind)) -> x, "lookup fail")) ++
+    (!(stats.G.resolved_method_calls) 
+     +> List.map (fun x -> x, "resolved method calls")) ++
 
       []
   in
