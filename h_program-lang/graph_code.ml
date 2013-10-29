@@ -135,8 +135,9 @@ type statistics = {
  (* could be Parse_info.token_location*)
   lookup_fail: (Parse_info.info * node) list ref; 
   unresolved_method_calls: Parse_info.info list ref;
-  resolved_method_calls: Parse_info.info list ref;
+  unresolved_class_access: Parse_info.info list ref;
   unresolved_calls: Parse_info.info list ref;
+  resolved_method_calls: Parse_info.info list ref;
 }
 let empty_statistics () = {
   parse_errors = ref [];
@@ -144,6 +145,7 @@ let empty_statistics () = {
   unresolved_method_calls = ref [];
   resolved_method_calls = ref [];
   unresolved_calls = ref [];
+  unresolved_class_access = ref [];
 }
 
 (* we sometimes want to collapse unimportant directories under a "..."

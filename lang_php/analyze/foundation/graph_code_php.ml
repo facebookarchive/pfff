@@ -396,9 +396,8 @@ let class_exists a b c =
 (*****************************************************************************)
 
 let rec add_use_edge2 env (name, kind) =
-
-  let (R str, tok) = strtok_of_name env name kind in
   let src = env.current in
+  let (R str, tok) = strtok_of_name env name kind in
   let dst = (str, kind) in
   match () with
   (* maybe nested function, in which case we dont have the def *)
@@ -437,8 +436,9 @@ let rec add_use_edge2 env (name, kind) =
         (* todo: regular fields, fix those at some point! *)
         | E.Field when not (xhp_field str) -> ()
         | E.Field when xhp_data_field str -> ()
-        | E.Method _ when magic_methods str
-             -> ()
+        | E.Method _ when magic_methods str -> 
+           (* less: env.stat.G.unresolved_method_calls *)
+           ()
         | _ ->
           lookup_fail env tok dst;
           if !add_fake_node_when_undefined_entity then begin
@@ -903,9 +903,11 @@ and expr env x =
     | Obj_get (e1, Id name2) ->
         (match e1 with
         (* handle easy case *)
-        | This (_,tok) ->
+        | This ((x, tok)) ->
+          let tok2 = Ast.tok_of_ident (x, tok) in
+          env.stats.G.resolved_method_calls +> Common.push2 tok2;
           expr env (Call (Class_get (Id[ (env.self, tok)], Id name2), es))
-        (* need class analysis ... *)
+        (* TODO: need class analysis ... *)
         | _ ->
           let tok = Ast.tok_of_name name2 in
           env.stats.G.unresolved_method_calls +> Common.push2 tok;
@@ -927,26 +929,31 @@ and expr env x =
   | Class_get (e1, e2) ->
       (match e1, e2 with
       | Id[ ("__special__self", tok)], _ ->
-        expr env (Class_get (Id[ (env.self, tok)], e2))
+          expr env (Class_get (Id[(env.self, tok)], e2))
       | Id[ ("__special__parent", tok)], _ ->
-        let name = name_of_parent env tok in
-        expr env (Class_get (Id name, e2))
+          let name = name_of_parent env tok in
+          expr env (Class_get (Id name, e2))
       (* incorrect actually ... but good enough for now for codegraph *)
       | Id[ ("__special__static", tok)], _ ->
-        expr env (Class_get (Id[ (env.self, tok)], e2))
+          expr env (Class_get (Id[ (env.self, tok)], e2))
 
       | Id name1, Id [name2] ->
           add_use_edge_lookup env (name1, name2) E.ClassConstant
       | Id name1, Var name2 ->
           add_use_edge_lookup env (name1, name2) E.Field
 
-     (* less: update dynamic stats *)
      | Id name1, e2  ->
-          add_use_edge env (name1, E.Class E.RegularClass);
-          expr env e2;
+         let tok = Ast.tok_of_name name1 in
+         env.stats.G.unresolved_class_access +> Common.push2 tok;
+         add_use_edge env (name1, E.Class E.RegularClass);
+         expr env e2;
      | e1, Id name2  ->
+         let tok = Ast.tok_of_name name2 in
+         env.stats.G.unresolved_class_access +> Common.push2 tok;
          expr env e1;
      | _ ->
+         let tok = Meta_ast_php_simple.toks_of_any (Expr2 e1) +> List.hd in
+         env.stats.G.unresolved_class_access +> Common.push2 tok;
          exprl env [e1; e2]
       )
 
@@ -958,13 +965,18 @@ and expr env x =
           let (s2, tok2) = name2 in
           expr env (Class_get (Id[ (env.self, tok)], Var ("$" ^ s2, tok2)))
       | _, Id name2  ->
+          let tok = Ast.tok_of_name name2 in
+          env.stats.G.unresolved_class_access +> Common.push2 tok;
           expr env e1;
       | _ ->
+          let tok = Meta_ast_php_simple.toks_of_any (Expr2 e1) +> List.hd in
+          env.stats.G.unresolved_class_access +> Common.push2 tok;
           exprl env [e1; e2]
       )
 
   | New (e, es) ->
-      expr env (Call (Class_get(e, Id[ ("__construct", None)]), es))
+      let tok = Meta_ast_php_simple.toks_of_any (Expr2 e) +> List.hd in
+      expr env (Call (Class_get(e, Id[ ("__construct", Some tok)]), es))
 
   (* -------------------------------------------------- *)
   | InstanceOf (e1, e2) ->
@@ -973,7 +985,8 @@ and expr env x =
       (* less: add deps? *)
       | Id name -> add_use_edge_instanceof env (name, E.Class E.RegularClass)
       | _ ->
-          (* less: update dynamic *)
+          let tok = Meta_ast_php_simple.toks_of_any (Expr2 e1) +> List.hd in
+          env.stats.G.unresolved_class_access +> Common.push2 tok;
           expr env e2
       )
 
