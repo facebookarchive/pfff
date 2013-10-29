@@ -322,6 +322,9 @@ let build_graph_code lang root =
   Database_code.save_database db 
     (Filename.concat output_dir "PFFF_db.marshall");
 *)
+  let layers = GC.bottom_up_numbering g in
+  Layer_graph_code.gen_heatmap_layer g layers 
+    (Filename.concat output_dir "layer_bottomup.json");
                                   
   ()
 
