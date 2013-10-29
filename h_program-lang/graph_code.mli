@@ -1,14 +1,16 @@
 
 type node = string * Database_code.entity_kind
- type nodeinfo = {
-   (* the filename embedded inside token_location can be a readable path *)
-   pos: Parse_info.token_location;
-   props: Database_code.property list;
- }
+  type nodeinfo = {
+    (* the filename embedded inside token_location can be a readable path *)
+    pos: Parse_info.token_location;
+    props: Database_code.property list;
+  }
 type edge = Has | Use
 
-(* really an hypergraph actually *)
+(* !! the main type!! really an hypergraph actually *)
 type graph
+
+
 
 type error =
  | NodeAlreadyPresent of node
@@ -30,6 +32,9 @@ type adjust = (string * string)
 (* skip certain edges that are marked as ok regarding backward dependencies *)
 type dependency = (node * node)
 type whitelist = dependency list
+
+
+
 
 val save: graph -> Common.filename -> unit
 val load: Common.filename -> graph
@@ -65,13 +70,13 @@ val pred: node -> edge -> graph -> node list
 val parent: node -> graph -> node
 val parents: node -> graph -> node list
 val children: node -> graph -> node list
+val all_children: node -> graph -> node list
 (* may raise Not_found *)
 val nodeinfo: node -> graph -> nodeinfo
 (* should be in readable path if you want your codegraph to be "portable" *)
 val file_of_node: node -> graph -> Common.filename
 
-val all_children: node -> graph -> node list
-
+(* iteration *)
 val iter_use_edges: (node -> node -> unit) -> graph -> unit
 val iter_nodes: (node -> unit) -> graph -> unit
 val all_use_edges: graph -> (node * node) list
@@ -93,6 +98,9 @@ val bottom_up_numbering:
 val top_down_numbering:
   graph -> (node, int) Hashtbl.t
 
+(* example builder *)
+val graph_of_dotfile: Common.filename -> graph
+
 
 (* debugging support *)
 val string_of_node: node -> string
@@ -105,7 +113,5 @@ val save_whitelist: whitelist -> Common.filename -> graph -> unit
 (* does side effect on the graph *)
 val adjust_graph: graph -> adjust list -> whitelist -> unit
 
-(* example builder *)
-val graph_of_dotfile: Common.filename -> graph
 
 (* internals *)
