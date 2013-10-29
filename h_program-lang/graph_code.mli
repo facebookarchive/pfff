@@ -1,4 +1,5 @@
 
+(* the main types *)
 type node = string * Database_code.entity_kind
   type nodeinfo = {
     (* the filename embedded inside token_location can be a readable path *)
@@ -6,12 +7,11 @@ type node = string * Database_code.entity_kind
     props: Database_code.property list;
   }
 type edge = Has | Use
-
 (* !! the main type!! really an hypergraph actually *)
 type graph
 
 
-
+(* error and statistics *)
 type error =
  | NodeAlreadyPresent of node
 exception Error of error
@@ -35,10 +35,9 @@ type whitelist = dependency list
 
 
 
-
-val save: graph -> Common.filename -> unit
+(* IO *)
 val load: Common.filename -> graph
-
+val save: graph -> Common.filename -> unit
 val default_graphcode_filename: string
 
 
@@ -113,5 +112,3 @@ val save_whitelist: whitelist -> Common.filename -> graph -> unit
 (* does side effect on the graph *)
 val adjust_graph: graph -> adjust list -> whitelist -> unit
 
-
-(* internals *)
