@@ -130,6 +130,13 @@ type error =
 
 exception Error of error
 
+type statistics = {
+  parse_errors: Common.filename list ref;
+}
+let empty_statistics () = {
+  parse_errors = ref [];
+}
+
 (* we sometimes want to collapse unimportant directories under a "..."
  * fake intermediate directory. So one can create an adjust file with
  * for instance:

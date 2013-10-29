@@ -84,13 +84,11 @@ type env = {
   phase_use:         (unit -> unit) list ref;
 
   current: Graph_code.node;
-  readable: Common.filename;
-
   current_qualifier: Ast_php_simple.qualified_ident;
+  readable: Common.filename;
   import_rules: (string * Ast_php_simple.qualified_ident) list;
   self:   string;        (* "NOSELF" when outside a class *)
   parent: unit -> resolved_name; (* "NOPARENT" when no parent *)
-
   at_toplevel: bool;
 
   (* right now used in extract_uses phase to transform a src like main()
@@ -115,7 +113,7 @@ type env = {
    *)
   case_insensitive: (Graph_code.node, Graph_code.node) Hashtbl.t;
 
-  (* less: dynamic_fails stats *)
+  stats: Graph_code.statistics;
 
   log: string -> unit;
   pr2_and_log: string -> unit;
@@ -1069,6 +1067,7 @@ let build
     (* set after the defs phase *)
     case_insensitive = Hashtbl.create 101;
     not_found = Hashtbl.create 101;
+    stats = Graph_code.empty_statistics ();
     log = (fun s ->
         output_string chan (s ^ "\n");
         flush chan;

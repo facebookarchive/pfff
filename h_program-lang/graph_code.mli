@@ -15,6 +15,11 @@ type error =
 exception Error of error
 val string_of_error: error -> string
 
+type statistics = {
+  parse_errors: Common.filename list ref;
+}
+val empty_statistics: unit -> statistics
+
 (* moving around directories to have less backward dependencies *)
 type adjust = (string * string)
 (* skip certain edges that are marked as ok regarding backward dependencies *)
