@@ -289,8 +289,8 @@ let add_vertex_if_not_present key g =
   else begin
     incr g.cnt;
     let v = OG.V.create !(g.cnt) in 
-    Hashtbl.add g.key_of_vertex v key;
-    Hashtbl.add g.vertex_of_key key v;
+    Hashtbl.replace g.key_of_vertex v key;
+    Hashtbl.replace g.vertex_of_key key v;
     (* not necessary as add_edge automatically do that *)
     OG.add_vertex g.og v; 
   end
