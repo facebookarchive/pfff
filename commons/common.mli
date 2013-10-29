@@ -104,6 +104,7 @@ val hashset_to_list : 'a hashset -> 'a list
 
 val opt: ('a -> unit) -> 'a option -> unit
 val do_option : ('a -> unit) -> 'a option -> unit
+val (|||): 'a option -> 'a -> 'a
 
 
 type ('a, 'b) either = Left of 'a | Right of 'b

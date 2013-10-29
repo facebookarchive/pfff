@@ -251,11 +251,7 @@ let package_node xs =
 
 let build_graph_code lang root =
   let pwd = Sys.getcwd () in
-  let skip_file = 
-    match !skip_list with
-    | None -> skip_file_of_dir pwd 
-    | Some f -> f
-  in
+  let skip_file = !skip_list ||| skip_file_of_dir pwd in
   let skip_list =
     if Sys.file_exists skip_file
     then begin 
@@ -296,11 +292,7 @@ let build_graph_code lang root =
       pr2 (Graph_code.string_of_error err);
       raise (Graph_code.Error err)
   in
-  let output_dir =
-    match !output_dir with
-    | None -> pwd
-    | Some d -> d
-  in
+  let output_dir = !output_dir ||| pwd in
   Graph_code.save g (dep_file_of_dir output_dir)
 
 (*****************************************************************************)

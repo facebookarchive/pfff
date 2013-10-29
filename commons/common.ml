@@ -636,6 +636,11 @@ let (=*=) = (=)
 
 (* type 'a maybe  = Just of 'a | None *)
 
+let (|||) a b =
+  match a with
+  | Some x -> x
+  | None -> b
+
 type ('a,'b) either = Left of 'a | Right of 'b
   (* with sexp *)
 type ('a, 'b, 'c) either3 = Left3 of 'a | Middle3 of 'b | Right3 of 'c
