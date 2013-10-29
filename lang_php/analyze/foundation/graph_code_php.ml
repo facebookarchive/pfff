@@ -99,6 +99,8 @@ type env = {
    * The pair of filenames is readable * fullpath
    *)
   dupes: (Graph_code.node, (Common.filename * Common.filename)) Hashtbl.t;
+  (* to optimize things, to avoid calling G.Parent *)
+  not_found: (Graph_code.node, bool) Hashtbl.t;
 
   (* in many files like scripts/ people reuse the same function name. This
    * is annoying for global analysis, so when we detect such files,
@@ -381,7 +383,10 @@ let class_exists2 env (R aclass) tok =
   let node = (aclass, E.Class E.RegularClass) in
   let node' = (normalize aclass, E.Class E.RegularClass) in
   Common.memoized _hmemo_class_exits aclass (fun () ->
-    (G.has_node node env.g && G.parent node env.g <> G.not_found) ||
+    (G.has_node node env.g && 
+       (* opti: this is super slow: G.parent node env.g <> G.not_found *)
+       Hashtbl.mem env.not_found node
+    ) ||
       Hashtbl.mem env.case_insensitive node'
   )
 let class_exists a b c =
@@ -441,6 +446,7 @@ let rec add_use_edge2 env (name, kind) =
             G.add_node dst env.g;
             let parent_target = G.not_found in
             env.g +> G.add_edge (parent_target, dst) G.Has;
+            Hashtbl.replace env.not_found dst true;
             env.g +> G.add_edge (src, dst) G.Use;
           end
         )
@@ -1062,6 +1068,7 @@ let build
     dupes = Hashtbl.create 101;
     (* set after the defs phase *)
     case_insensitive = Hashtbl.create 101;
+    not_found = Hashtbl.create 101;
     log = (fun s ->
         output_string chan (s ^ "\n");
         flush chan;
