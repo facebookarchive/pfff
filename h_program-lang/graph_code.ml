@@ -130,22 +130,25 @@ type error =
 
 exception Error of error
 
+(* coupling: see print_statistics below *)
 type statistics = {
   parse_errors: Common.filename list ref;
  (* could be Parse_info.token_location*)
   lookup_fail: (Parse_info.info * node) list ref; 
-  unresolved_method_calls: Parse_info.info list ref;
+  method_calls: (Parse_info.info * resolved) list ref;
+  field_access: (Parse_info.info * resolved) list ref;
   unresolved_class_access: Parse_info.info list ref;
   unresolved_calls: Parse_info.info list ref;
-  resolved_method_calls: Parse_info.info list ref;
 }
+ and resolved = bool
+
 let empty_statistics () = {
   parse_errors = ref [];
   lookup_fail = ref [];
-  unresolved_method_calls = ref [];
-  resolved_method_calls = ref [];
+  method_calls = ref [];
   unresolved_calls = ref [];
   unresolved_class_access = ref [];
+  field_access = ref [];
 }
 
 (* we sometimes want to collapse unimportant directories under a "..."
@@ -191,6 +194,7 @@ let node_of_string s =
 let display_with_gv g =
   (* TODO? use different colors for the different kind of edges? *)
   G.display_with_gv g.has
+
 
 (*****************************************************************************)
 (* Graph construction *)
@@ -526,3 +530,27 @@ let graph_of_dotfile dotfile =
   );
   g
 
+
+(*****************************************************************************)
+(* Statistics *)
+(*****************************************************************************)
+let print_statistics stats g =
+  pr (spf "nb nodes = %d, nb edges = %d" (nb_nodes g) (nb_use_edges g));
+  pr (spf "parse errors = %d" (!(stats.parse_errors) +> List.length));
+  pr (spf "lookup fail = %d" (!(stats.lookup_fail) +> List.length));
+
+  pr (spf "unresolved method calls = %d" 
+   (!(stats.method_calls) +> List.filter (fun (_, x) -> not x) +> List.length));
+  pr (spf "(resolved method calls = %d)" 
+   (!(stats.method_calls) +> List.filter (fun (_, x) -> x ) +> List.length));
+
+  pr (spf "unresolved field access = %d" 
+   (!(stats.field_access) +> List.filter (fun (_, x) -> not x) +> List.length));
+  pr (spf "(resolved field access) = %d)" 
+   (!(stats.field_access) +> List.filter (fun (_, x) -> x ) +> List.length));
+
+  pr (spf "unresolved class access = %d" 
+        (!(stats.unresolved_class_access) +> List.length));
+  pr (spf "unresolved calls = %d" 
+        (!(stats.unresolved_calls) +> List.length));
+  ()

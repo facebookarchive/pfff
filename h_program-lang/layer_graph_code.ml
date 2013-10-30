@@ -88,21 +88,30 @@ let gen_statistics_layer ~root stats ~output =
     "lookup fail", "purple";
     "unresolved calls", "red3";
     "unresolved class access", "orange";
+
     "unresolved method calls", "yellow";
+    "unresolved field access", "blue";
     "resolved method calls", "green";
+    "resolved field access", "green3";
   ]
   in
+  let pre b s =
+    if b 
+    then "resolved " ^ s
+    else "unresolved " ^ s
+  in
+      
   let infos =
     (!(stats.G.unresolved_calls) 
      +> List.map (fun x -> x, "unresolved calls")) ++
     (!(stats.G.unresolved_class_access) 
      +> List.map (fun x -> x, "unresolved class access")) ++
-    (!(stats.G.unresolved_method_calls) 
-     +> List.map (fun x -> x, "unresolved method calls")) ++
+    (!(stats.G.field_access) 
+     +> List.map (fun (x, b) -> x, pre b "field access")) ++
+    (!(stats.G.method_calls) 
+     +> List.map (fun (x, b) -> x, pre b "method calls")) ++
     (!(stats.G.lookup_fail) 
      +> List.map (fun (x, (_str, _kind)) -> x, "lookup fail")) ++
-    (!(stats.G.resolved_method_calls) 
-     +> List.map (fun x -> x, "resolved method calls")) ++
 
       []
   in

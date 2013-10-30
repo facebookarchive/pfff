@@ -19,12 +19,14 @@ val string_of_error: error -> string
 
 type statistics = {
   parse_errors: Common.filename list ref;
+ (* could be Parse_info.token_location*)
   lookup_fail: (Parse_info.info * node) list ref; 
-  unresolved_method_calls: Parse_info.info list ref;
+  method_calls: (Parse_info.info * resolved) list ref;
+  field_access: (Parse_info.info * resolved) list ref;
   unresolved_class_access: Parse_info.info list ref;
   unresolved_calls: Parse_info.info list ref;
-  resolved_method_calls: Parse_info.info list ref;
 }
+ and resolved = bool
 val empty_statistics: unit -> statistics
 
 (* moving around directories to have less backward dependencies *)
@@ -83,6 +85,8 @@ val all_nodes: graph -> node list
 
 val nb_nodes: graph -> int
 val nb_use_edges: graph -> int
+
+val print_statistics: statistics -> graph -> unit
 
 (* algorithms *)
 val group_edges_by_files_edges:
