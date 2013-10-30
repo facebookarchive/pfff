@@ -384,11 +384,11 @@ let draw_content2 ~cr ~layout ~context tr =
           ~color
           ~x 
           (* 'y' is from line_in_column_to_bottom_pos() so it's a bottom pos
-           * and we want to show 3 lines centered, hence the * 2 below
+           * todo? do we want to show 3 lines centered, hence the * 2 below?
            *)
-          ~y:(y - (layout.height_per_line * 2.) )
+          ~y:(y - (layout.height_per_line (* * 2. *)) )
           ~w:layout.width_per_column 
-          ~h:(layout.height_per_line * 3.)
+          ~h:(layout.height_per_line (* * 3. *))
           ()
       );
     );
