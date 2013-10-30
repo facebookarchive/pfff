@@ -572,7 +572,7 @@ let simple_layer_of_parse_infos ~root ~title ?(description="") xs kinds =
   )
   in
 
-  let (group: (Common.filename * (int * kind) list) list) = 
+  let (group_by_file: (Common.filename * (int * kind) list) list) = 
     Common.group_assoc_bykey_eff files_and_lines 
   in
 
@@ -580,20 +580,28 @@ let simple_layer_of_parse_infos ~root ~title ?(description="") xs kinds =
     title = title;
     description = description;
     kinds = kinds;
-    files = group +> List.map (fun (file, lines_and_kinds) ->
+    files = group_by_file +> List.map (fun (file, lines_and_kinds) ->
 
-      let (group: (int * kind list) list) = 
+      let (group_by_line: (int * kind list) list) = 
         Common.group_assoc_bykey_eff lines_and_kinds 
       in
       let all_kinds_in_file = 
-        group +> List.map snd +> List.flatten +> Common2.uniq in
+        group_by_line +> List.map snd +> List.flatten +> Common2.uniq in
 
       (file, { 
        micro_level = 
-          group +> List.map (fun (line, kinds) -> 
+          group_by_line +> List.map (fun (line, kinds) -> 
             let kinds = Common2.uniq kinds in
-            kinds +> List.map (fun kind -> line, kind)
-          ) +> List.flatten;
+            (* many kinds om same line, keep highest prio *)
+            match kinds with
+            | [] -> raise Impossible
+            | [x] -> line, x
+            | _ ->
+              let sorted = kinds +> List.map (fun x -> 
+                x, Hashtbl.find ranks_kinds x) +> Common.sort_by_val_lowfirst
+              in
+              line, List.hd sorted +> fst
+          );
 
        macro_level =  
           (* we could give a percentage per kind but right now
