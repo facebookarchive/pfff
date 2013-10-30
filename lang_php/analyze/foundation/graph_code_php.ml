@@ -74,6 +74,8 @@ module G = Graph_code
 type env = {
   g: Graph_code.graph;
 
+  cur: current;
+
   phase: phase;
   (* We need 3 phases, one to get all the definitions, one to
    * get the inheritance information, and one to get all the Uses.
@@ -83,14 +85,6 @@ type env = {
    *)
   phase_inheritance: (unit -> unit) list ref;
   phase_use:         (unit -> unit) list ref;
-
-  current: Graph_code.node;
-  current_qualifier: Ast_php_simple.qualified_ident;
-  readable: Common.filename;
-  import_rules: (string * Ast_php_simple.qualified_ident) list;
-  self:   string;                (* "NOSELF" when outside a class *)
-  parent: unit -> resolved_name; (* "NOPARENT" when no parent *)
-  at_toplevel: bool;
 
   (* right now used in extract_uses phase to transform a src like main()
    * into its File, and also to give better error messages.
@@ -123,6 +117,16 @@ type env = {
   path: Common.filename -> string;
 }
  and phase = Defs | Inheritance | Uses
+
+ and current = {
+   node: Graph_code.node;
+   qualifier: Ast_php_simple.qualified_ident;
+   readable: Common.filename;
+   import_rules: (string * Ast_php_simple.qualified_ident) list;
+   self:   string;                (* "NOSELF" when outside a class *)
+   parent: unit -> resolved_name; (* "NOPARENT" when no parent *)
+   at_toplevel: bool;
+ }
 
  (* for namespace *)
  and resolved_name = R of string
@@ -233,11 +237,11 @@ let fully_qualified_candidates env name kind =
       failwith "namespace keyword not handled in qualifier"
   | (str, _tokopt)::xs  ->
     try 
-      let qu = List.assoc str env.import_rules in
+      let qu = List.assoc str env.cur.import_rules in
       [ prune_special_root qu ++ xs ]
     with Not_found ->
       [name;
-       env.current_qualifier ++ name;
+       env.cur.qualifier ++ name;
       ]
     
 
@@ -275,7 +279,7 @@ let str_of_class_name env x =
 
 let name_of_parent env tokopt =
   let name = 
-    let (R parent) = env.parent () in
+    let (R parent) = env.cur.parent () in
     [parent, tokopt]
   in
   name
@@ -293,9 +297,9 @@ let add_fake_node_when_undefined_entity = ref true
 
 let add_node_and_has_edge2 ?(props=[]) env (ident, kind) =
   let str =
-    add_prefix env.current_qualifier ^
+    add_prefix env.cur.qualifier ^
     (match kind with
-    | E.ClassConstant | E.Field | E.Method _ -> env.self ^ "."
+    | E.ClassConstant | E.Field | E.Method _ -> env.cur.self ^ "."
     | _ -> ""
     ) ^ 
     Ast.str_of_ident ident
@@ -310,7 +314,7 @@ let add_node_and_has_edge2 ?(props=[]) env (ident, kind) =
      *)
     (match kind with
     (* less: log at least? *)
-    | E.Class _ | E.Function | E.Constant when not env.at_toplevel -> ()
+    | E.Class _ | E.Function | E.Constant when not env.cur.at_toplevel -> ()
 
     (* If the class was dupe, of course all its members are also duped.
      * But actually we also need to add it to env.dupes, so below,
@@ -318,12 +322,12 @@ let add_node_and_has_edge2 ?(props=[]) env (ident, kind) =
      * pollute the callees of the original node.
      *)
     | E.ClassConstant | E.Field | E.Method _
-        when Hashtbl.mem env.dupes (env.self, E.Class E.RegularClass) ->
-          Hashtbl.add env.dupes node (env.readable, file)
+        when Hashtbl.mem env.dupes (env.cur.self, E.Class E.RegularClass) ->
+          Hashtbl.add env.dupes node (env.cur.readable, file)
     | E.ClassConstant | E.Field | E.Method _ ->
         env.pr2_and_log (spf "DUPE METHOD: %s" (G.string_of_node node));
     | _ ->
-        Hashtbl.add env.dupes node (env.readable, file)
+        Hashtbl.add env.dupes node (env.cur.readable, file)
     )
    else begin
     env.g +> G.add_node node;
@@ -331,9 +335,9 @@ let add_node_and_has_edge2 ?(props=[]) env (ident, kind) =
      * redirect this edge in build() to G.dupe (unless
      * the duplicate are all in a skip_errors dir).
      *)
-    env.g +> G.add_edge (env.current, node) G.Has;
+    env.g +> G.add_edge (env.cur.node, node) G.Has;
     let pos = Parse_info.token_location_of_info (Ast.tok_of_ident ident) in
-    let pos = { pos with Parse_info.file = env.readable } in
+    let pos = { pos with Parse_info.file = env.cur.readable } in
     let nodeinfo = { Graph_code. pos; props } in
     env.g +> G.add_nodeinfo node nodeinfo;
    end
@@ -345,7 +349,7 @@ let add_node_and_has_edge2 ?(props=[]) env (ident, kind) =
    *)
   if Hashtbl.mem env.dupes node
   then env
-  else { env with current = node }
+  else { env with cur = { env.cur with node = node } }
 
 let add_node_and_has_edge ?props a b =
   Common.profile_code "Graph_php.add_node_and_has_edge" (fun () ->
@@ -396,7 +400,7 @@ let class_exists a b c =
 (*****************************************************************************)
 
 let rec add_use_edge2 env (name, kind) =
-  let src = env.current in
+  let src = env.cur.node in
   let (R str, tokopt) = strtok_of_name env name kind in
   let dst = (str, kind) in
   match () with
@@ -485,7 +489,7 @@ let add_use_edge_maybe_class env entity tokopt =
     (* less: do case insensitive? handle conflicts? *)
     if G.has_node (entity, E.Class E.RegularClass) env.g
     then
-      (match env.readable with
+      (match env.cur.readable with
       (* phabricator/fb specific *)
       | s when s =~ ".*__phutil_library_map__.php" -> ()
       | s when s =~ ".*autoload_map.php" -> ()
@@ -626,13 +630,13 @@ let adjust_edge_protected env fld parent =
             (* redefining an existing field *)
       | Some ((s, _fake_tok), _kind) ->
         (*env.log (spf "REDEFINED protected %s in class %s" s env.self);*)
-        let parent = G.parent env.current env.g in
+        let parent = G.parent env.cur.node env.g in
         (* was using env.self for parent node, but in files with
          * duplicated classes, the parent may be the File so
          * let's use G.parent, safer.
          *)
-        env.g +> G.remove_edge (parent, env.current) G.Has;
-        env.g +> G.add_edge (G.dupe, env.current) G.Has;
+        env.g +> G.remove_edge (parent, env.cur.node) G.Has;
+        env.g +> G.add_edge (G.dupe, env.cur.node) G.Has;
       )
     )
   )
@@ -641,15 +645,15 @@ let adjust_edge_protected env fld parent =
 (* Defs/Uses *)
 (*****************************************************************************)
 let rec extract_defs_uses env ast readable =
-  let env = { env with 
-    current = (readable, E.File); 
+  let env = { env with cur = { env.cur with
+    node = (readable, E.File); 
     readable 
-  } in
+  }} in
   begin
-    let dir = Common2.dirname env.readable in
+    let dir = Common2.dirname env.cur.readable in
     G.create_intermediate_directories_if_not_present env.g dir;
-    env.g +> G.add_node (env.readable, E.File);
-    env.g +> G.add_edge ((dir, E.Dir), (env.readable, E.File))  G.Has;
+    env.g +> G.add_node (env.cur.readable, E.File);
+    env.g +> G.add_edge ((dir, E.Dir), (env.cur.readable, E.File))  G.Has;
   end;
   stmt_toplevel_list env ast
 
@@ -659,7 +663,8 @@ and stmt_toplevel_list env xs =
   | x::xs ->
     (match x with
     | NamespaceDef qu -> 
-        stmt_toplevel_list {env with current_qualifier = qu; } xs
+        stmt_toplevel_list 
+          {env with cur = { env.cur with qualifier = qu; }} xs
     | NamespaceUse (qu, sopt) ->
         let new_name =
           match sopt, List.rev qu with
@@ -667,8 +672,8 @@ and stmt_toplevel_list env xs =
           | None, [] -> raise Impossible
           | None, (str,_tok)::rest -> str
         in
-        let import_rules = (new_name, qu)::env.import_rules in
-        stmt_toplevel_list { env with import_rules } xs
+        let import_rules = (new_name, qu)::env.cur.import_rules in
+        stmt_toplevel_list { env with cur = { env.cur with import_rules }} xs
     | _ ->
         stmt_toplevel env x;
         stmt_toplevel_list env xs
@@ -680,7 +685,7 @@ and stmt_toplevel_list env xs =
 and stmt_toplevel env x =
   stmt_bis env x
 and stmt env x =
-  stmt_bis { env with at_toplevel = false } x
+  stmt_bis { env with cur = {env.cur with at_toplevel = false }} x
 and stmt_bis env x =
   match x with
   (* boilerplate *)
@@ -787,7 +792,7 @@ and class_def env def =
     | None -> if not in_trait then R "NOPARENT" else R "NOPARENT_INTRAIT"
     | Some c2 -> str_of_class_name env c2
   in
-  let env = { env with self; parent; } in
+  let env = { env with cur = { env.cur with self; parent; }} in
 
   def.c_constants +> List.iter (fun def ->
     let env = add_node_and_has_edge env (def.cst_name, E.ClassConstant) in
@@ -892,13 +897,13 @@ and expr env x =
 
     (* static method call *)
     | Class_get (Id[ ("__special__self", tokopt)], e2) ->
-        expr env (Call (Class_get (Id[ (env.self, tokopt)], e2), es))
+        expr env (Call (Class_get (Id[ (env.cur.self, tokopt)], e2), es))
     | Class_get (Id[ ("__special__parent", tokopt)], e2) ->
         let name = name_of_parent env tokopt in
         expr env (Call (Class_get (Id name, e2), es))
     (* incorrect actually ... but good enough for now for codegraph *)
     | Class_get (Id[ ("__special__static", tokopt)], e2) ->
-        expr env (Call (Class_get (Id[ (env.self, tokopt)], e2), es))
+        expr env (Call (Class_get (Id[ (env.cur.self, tokopt)], e2), es))
 
     | Class_get (Id name1, Id [name2]) ->
          (* can be static or regular method as transform $this->foo()
@@ -912,7 +917,7 @@ and expr env x =
         (match e1 with
         (* handle easy case *)
         | This ((x, tokopt)) ->
-          expr env (Call (Class_get (Id[ (env.self, tokopt)], Id name2), es))
+          expr env (Call (Class_get (Id[ (env.cur.self, tokopt)], Id name2), es))
         (* TODO: need class analysis ... *)
         | _ ->
           let tok = Ast.tok_of_name name2 in
@@ -935,13 +940,13 @@ and expr env x =
   | Class_get (e1, e2) ->
       (match e1, e2 with
       | Id[ ("__special__self", tokopt)], _ ->
-          expr env (Class_get (Id[(env.self, tokopt)], e2))
+          expr env (Class_get (Id[(env.cur.self, tokopt)], e2))
       | Id[ ("__special__parent", tokopt)], _ ->
           let name = name_of_parent env tokopt in
           expr env (Class_get (Id name, e2))
       (* incorrect actually ... but good enough for now for codegraph *)
       | Id[ ("__special__static", tokopt)], _ ->
-          expr env (Class_get (Id[ (env.self, tokopt)], e2))
+          expr env (Class_get (Id[ (env.cur.self, tokopt)], e2))
 
       | Id name1, Id [name2] ->
           add_use_edge_lookup env (name1, name2) E.ClassConstant
@@ -969,7 +974,7 @@ and expr env x =
       (* handle easy case *)
       | This (_, tokopt), Id [name2] ->
           let (s2, tok2) = name2 in
-          expr env (Class_get (Id[ (env.self, tokopt)], Var ("$" ^ s2, tok2)))
+          expr env (Class_get (Id[ (env.cur.self, tokopt)], Var ("$" ^ s2, tok2)))
       | _, Id name2  ->
           let tok = Ast.tok_of_name name2 in
           env.stats.G.field_access +> Common.push2 (tok, false);
@@ -1082,11 +1087,15 @@ let build
     phase = Defs;
     phase_inheritance = ref [];
     phase_use = ref [];
-    current = ("filled_later", E.File);
-    readable = "filled_later";
-    current_qualifier = [];
-    import_rules = [];
-    self = "NOSELF"; parent = (fun () -> R "NOPARENT");
+    cur = {
+      node = ("filled_later", E.File);
+      readable = "filled_later";
+      qualifier = [];
+      import_rules = [];
+      self = "NOSELF"; 
+      parent = (fun () -> R "NOPARENT");
+      at_toplevel = true;
+    };
     dupes = Hashtbl.create 101;
     (* set after the defs phase *)
     case_insensitive = Hashtbl.create 101;
@@ -1110,7 +1119,6 @@ let build
       if readable_file_format
       then Common.filename_without_leading_path root file
       else file);
-    at_toplevel = true;
   }
   in
 
