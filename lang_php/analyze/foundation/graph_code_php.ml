@@ -85,6 +85,8 @@ type env = {
    *)
   phase_inheritance: (current * (Ast.name * E.entity_kind)) list ref;
   phase_use:         (current * (Ast.name * E.entity_kind)) list ref;
+  phase_use_lookup:  
+    (current * (bool * (Ast.name * Ast.ident) * E.entity_kind)) list ref;
   phase_use_other:         (unit -> unit) list ref;
 
   (* right now used in extract_uses phase to transform a src like main()
@@ -541,7 +543,7 @@ let lookup_inheritance g a b =
   Common.profile_code "Graph_php.lookup" (fun () -> lookup_inheritance2 g a b)
 
 
-let add_use_edge_lookup2 ?(xhp=false) env (name, ident) kind =
+let add_use_edge_lookup2 xhp env (name, ident) kind =
 
   let aclass = str_of_name env name (E.Class E.RegularClass) in
   let afld = Ast.str_of_ident ident ^ (if xhp then "=" else "") in
@@ -600,11 +602,8 @@ let add_use_edge_lookup2 ?(xhp=false) env (name, ident) kind =
   if afld =$= "__construct" 
   then add_use_edge_bis env (name, E.Class E.RegularClass)
 
-let add_use_edge_lookup ?xhp env a b =
-  let env = { env with phase = Uses } in
-  env.phase_use_other +> Common.push2 (fun () ->
-    add_use_edge_lookup2 ?xhp env a b
-  )
+let add_use_edge_lookup ?(xhp=false) env a b =
+  env.phase_use_lookup +> Common.push2 (env.cur, (xhp, a, b))
 
 (* todo: add unit test for this 
  * todo: this is buggy, you can't use lookup_inheritance in the
@@ -1086,6 +1085,7 @@ let build
     phase = Defs;
     phase_inheritance = ref [];
     phase_use = ref [];
+    phase_use_lookup = ref [];
     phase_use_other = ref [];
     cur = {
       node = ("filled_later", E.File);
@@ -1202,6 +1202,12 @@ let build
         add_use_edge_bis env n
       );
       env.phase_use := [];
+
+      !(env.phase_use_lookup) +> List.rev +> List.iter (fun (cur, (xhp, a, b))->
+        let env = { env with phase = Uses; cur } in
+        add_use_edge_lookup2 xhp env a b
+      );
+      env.phase_use_lookup := [];
 
       let xs = !(env.phase_use_other) in
       (env.phase_use_other) := [];
