@@ -231,7 +231,7 @@ let prune_special_root xs =
   | _ -> xs
 
 (* http://www.php.net/manual/en/language.namespaces.rules.php *)
-let fully_qualified_candidates env name kind =
+let fully_qualified_candidates cur name kind =
   match name with
   | [] -> raise Impossible
   | ("__special__ROOT",_)::xs -> 
@@ -240,11 +240,11 @@ let fully_qualified_candidates env name kind =
       failwith "namespace keyword not handled in qualifier"
   | (str, _tokopt)::xs  ->
     try 
-      let qu = List.assoc str env.cur.import_rules in
+      let qu = List.assoc str cur.import_rules in
       [ prune_special_root qu ++ xs ]
     with Not_found ->
       [name;
-       env.cur.qualifier ++ name;
+       cur.qualifier ++ name;
       ]
     
 
@@ -256,7 +256,7 @@ let (strtok_of_name: env -> Ast.name -> Database_code.entity_kind ->
      | (ident, tokopt)::rest -> tokopt
      | [] -> raise Impossible
    in
-   let candidates = fully_qualified_candidates env name kind in
+   let candidates = fully_qualified_candidates env.cur name kind in
    try 
     candidates +> Common.find_some (fun fullname ->
      let str = fullname +> List.map Ast.str_of_ident +> Common.join "\\" in
