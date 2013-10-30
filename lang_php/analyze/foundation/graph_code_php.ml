@@ -231,7 +231,7 @@ let fully_qualified_candidates env name kind =
       [xs]
   | ("__special__namespace",_)::xs ->
       failwith "namespace keyword not handled in qualifier"
-  | (str, tok)::xs  ->
+  | (str, _tokopt)::xs  ->
     try 
       let qu = List.assoc str env.import_rules in
       [ prune_special_root qu ++ xs ]
@@ -244,9 +244,9 @@ let fully_qualified_candidates env name kind =
 let (strtok_of_name: env -> Ast.name -> Database_code.entity_kind -> 
      resolved_name Ast.wrap) = 
  fun env name kind ->
-   let tok =
+   let tokopt =
      match name with
-     | (ident,tok)::rest -> tok
+     | (ident, tokopt)::rest -> tokopt
      | [] -> raise Impossible
    in
    let candidates = fully_qualified_candidates env name kind in
@@ -254,12 +254,12 @@ let (strtok_of_name: env -> Ast.name -> Database_code.entity_kind ->
     candidates +> Common.find_some (fun fullname ->
      let str = fullname +> List.map Ast.str_of_ident +> Common.join "\\" in
      if G.has_node (str, kind) env.g
-     then Some (R str, tok)
+     then Some (R str, tokopt)
      else None
    )
    with Not_found ->
      let str = name +> List.map Ast.str_of_ident +> Common.join "\\" in
-     R str, tok
+     R str, tokopt
      
 
 let str_of_name env x kind =
@@ -273,10 +273,10 @@ let (strtok_of_class_name: env -> Ast.hint_type -> resolved_name Ast.wrap) =
 let str_of_class_name env x =
   fst (strtok_of_class_name env x)
 
-let name_of_parent env tok =
+let name_of_parent env tokopt =
   let name = 
     let (R parent) = env.parent () in
-    [parent, tok]
+    [parent, tokopt]
   in
   name
 
@@ -355,8 +355,8 @@ let add_node_and_has_edge ?props a b =
 (* Add edge helpers *)
 (*****************************************************************************)
 
-let lookup_fail env tok dst =
-  let info = Ast.tok_of_ident ("", tok) in
+let lookup_fail env tokopt dst =
+  let info = Ast.tok_of_ident ("", tokopt) in
   let file, line = Parse_info.file_of_info info, Parse_info.line_of_info info in
   let fprinter =
     if env.phase = Inheritance
@@ -377,7 +377,7 @@ let lookup_fail env tok dst =
 
 (* I think G.parent is extremely slow in ocamlgraph so need memoize *)
 let _hmemo_class_exits = Hashtbl.create 101
-let class_exists2 env (R aclass) tok =
+let class_exists2 env (R aclass) _tokopt =
   assert (env.phase = Uses);
   let node = (aclass, E.Class E.RegularClass) in
   let node' = (normalize aclass, E.Class E.RegularClass) in
@@ -397,7 +397,7 @@ let class_exists a b c =
 
 let rec add_use_edge2 env (name, kind) =
   let src = env.current in
-  let (R str, tok) = strtok_of_name env name kind in
+  let (R str, tokopt) = strtok_of_name env name kind in
   let dst = (str, kind) in
   match () with
   (* maybe nested function, in which case we dont have the def *)
@@ -417,7 +417,7 @@ let rec add_use_edge2 env (name, kind) =
                          str final_str 
                          (Parse_info.string_of_info (Ast.tok_of_ident name)));
       *)
-      add_use_edge2 env ([final_str, tok], kind)
+      add_use_edge2 env ([final_str, tokopt], kind)
 
   | _ ->
     (match kind with
@@ -440,7 +440,7 @@ let rec add_use_edge2 env (name, kind) =
            (* less: env.stat.G.unresolved_method_calls *)
            ()
         | _ ->
-          lookup_fail env tok dst;
+          lookup_fail env tokopt dst;
           if !add_fake_node_when_undefined_entity then begin
             G.add_node dst env.g;
             let parent_target = G.not_found in
@@ -479,7 +479,7 @@ let add_use_edge_instanceof env (name, kind) =
   )
 
 (* todo: add unit test for that *)
-let add_use_edge_maybe_class env entity tok =
+let add_use_edge_maybe_class env entity tokopt =
   let env = { env with phase = Uses } in
   env.phase_use +> Common.push2 (fun () ->
     (* less: do case insensitive? handle conflicts? *)
@@ -491,7 +491,7 @@ let add_use_edge_maybe_class env entity tok =
       | s when s =~ ".*autoload_map.php" -> ()
       | _ ->
         (*env.log (spf "DYNCALL_STR:%s (at %s)" s env.readable);*)
-        add_use_edge_bis env ([entity, tok], E.Class E.RegularClass)
+        add_use_edge_bis env ([entity, tokopt], E.Class E.RegularClass)
       )
   )
 
@@ -502,7 +502,7 @@ let add_use_edge_maybe_class env entity tok =
 (* less: handle privacy? 
  * assume namespace have been resolved so aclass is fully resolved
  *)
-let lookup_inheritance2 g (R aclass, amethod_or_field_or_constant) tok =
+let lookup_inheritance2 g (R aclass, amethod_or_field_or_constant) tokopt =
   let rec depth current =
     if not (G.has_node current g)
     (* todo? raise Impossible? the class should exist no? *)
@@ -518,7 +518,7 @@ let lookup_inheritance2 g (R aclass, amethod_or_field_or_constant) tok =
               *)
              s2 =$= (fst current ^ ".__call") || 
              s2 =$= (fst current ^ ".__callStatic")
-          then Some ((R s2, tok), kind)
+          then Some ((R s2, tokopt), kind)
           else None
         )
       in
@@ -545,15 +545,24 @@ let add_use_edge_lookup2 ?(xhp=false) env (name, ident) kind =
 
   let aclass = str_of_name env name (E.Class E.RegularClass) in
   let afld = Ast.str_of_ident ident ^ (if xhp then "=" else "") in
-  let tok = snd ident in
+  let tokopt = snd ident in
 
-  (match lookup_inheritance env.g (aclass, afld) tok with
+  (match lookup_inheritance env.g (aclass, afld) tokopt with
   (* less: assert kind = kind2? 
    * actually because we convert some Obj_get into Class_get,
    * this could also be a kind = Field even when asked for a StaticVar
    *)
-  | Some ((R str, tok), kind2) -> 
-      add_use_edge_bis env ([str, tok], kind2)
+  | Some ((R str, tokopt), kind2) -> 
+      let tok = Ast.tok_of_ident ident in
+      (match kind2 with
+      | E.Method _ -> 
+        env.stats.G.method_calls +> Common.push2 (tok, true)
+      | E.Field -> 
+        env.stats.G.field_access +> Common.push2 (tok, true)
+      | E.ClassConstant -> ()
+      | _ -> raise Impossible
+      );
+      add_use_edge_bis env ([str, tokopt], kind2)
   | None ->
     (match afld with
     (* todo? create a fake default constructor node? *)
@@ -563,7 +572,7 @@ let add_use_edge_lookup2 ?(xhp=false) env (name, ident) kind =
       * we want really to report only the use of undefined class, so don't
       * forget to guard some calls to add_use_edge() with this function.
       *)
-      if not (class_exists env aclass (tok))
+      if not (class_exists env aclass tokopt)
       (* should have been reported when we visit the Class_get *)
       then 
         (* todo: we should do check at 'use' time, lazy check or hook checks
@@ -575,11 +584,7 @@ let add_use_edge_lookup2 ?(xhp=false) env (name, ident) kind =
         else ()
       else 
         let (R str) = aclass in
-(*
-        let node = (str ^ "." ^ afld, kind) in
-        lookup_fail env (Some tok) node 
-*)
-        let node = ([str ^ "." ^ afld, tok], kind) in
+        let node = ([str ^ "." ^ afld, tokopt], kind) in
         add_use_edge_bis env node
     )
   );
@@ -855,10 +860,10 @@ and expr env x =
   | Int _ | Double _  -> ()
 
   (* A String in PHP can actually hide a class (or a function) *)
-  | String (s, tok) when look_like_class s ->
+  | String (s, tokopt) when look_like_class s ->
     (* less: could also be a class constant or field or method *)
     let entity = Common.matched1 s in
-    add_use_edge_maybe_class env entity tok
+    add_use_edge_maybe_class env entity tokopt
 
   (* todo? also look for functions? but has more FPs with regular
    * fields. Need to avoid this FP either by not calling
@@ -886,16 +891,19 @@ and expr env x =
         exprl env es
 
     (* static method call *)
-    | Class_get (Id[ ("__special__self", tok)], e2) ->
-        expr env (Call (Class_get (Id[ (env.self, tok)], e2), es))
-    | Class_get (Id[ ("__special__parent", tok)], e2) ->
-        let name = name_of_parent env tok in
+    | Class_get (Id[ ("__special__self", tokopt)], e2) ->
+        expr env (Call (Class_get (Id[ (env.self, tokopt)], e2), es))
+    | Class_get (Id[ ("__special__parent", tokopt)], e2) ->
+        let name = name_of_parent env tokopt in
         expr env (Call (Class_get (Id name, e2), es))
     (* incorrect actually ... but good enough for now for codegraph *)
-    | Class_get (Id[ ("__special__static", tok)], e2) ->
-        expr env (Call (Class_get (Id[ (env.self, tok)], e2), es))
+    | Class_get (Id[ ("__special__static", tokopt)], e2) ->
+        expr env (Call (Class_get (Id[ (env.self, tokopt)], e2), es))
 
     | Class_get (Id name1, Id [name2]) ->
+         (* can be static or regular method as transform $this->foo()
+          * in env.self::foo() below
+          *)
          add_use_edge_lookup env (name1, name2) (E.Method E.RegularMethod);
          exprl env es
 
@@ -903,14 +911,12 @@ and expr env x =
     | Obj_get (e1, Id name2) ->
         (match e1 with
         (* handle easy case *)
-        | This ((x, tok)) ->
-          let tok2 = Ast.tok_of_ident (x, tok) in
-          env.stats.G.resolved_method_calls +> Common.push2 tok2;
-          expr env (Call (Class_get (Id[ (env.self, tok)], Id name2), es))
+        | This ((x, tokopt)) ->
+          expr env (Call (Class_get (Id[ (env.self, tokopt)], Id name2), es))
         (* TODO: need class analysis ... *)
         | _ ->
           let tok = Ast.tok_of_name name2 in
-          env.stats.G.unresolved_method_calls +> Common.push2 tok;
+          env.stats.G.method_calls +> Common.push2 (tok, false);
           expr env e1;
           exprl env es
         )
@@ -928,14 +934,14 @@ and expr env x =
    *)
   | Class_get (e1, e2) ->
       (match e1, e2 with
-      | Id[ ("__special__self", tok)], _ ->
-          expr env (Class_get (Id[(env.self, tok)], e2))
-      | Id[ ("__special__parent", tok)], _ ->
-          let name = name_of_parent env tok in
+      | Id[ ("__special__self", tokopt)], _ ->
+          expr env (Class_get (Id[(env.self, tokopt)], e2))
+      | Id[ ("__special__parent", tokopt)], _ ->
+          let name = name_of_parent env tokopt in
           expr env (Class_get (Id name, e2))
       (* incorrect actually ... but good enough for now for codegraph *)
-      | Id[ ("__special__static", tok)], _ ->
-          expr env (Class_get (Id[ (env.self, tok)], e2))
+      | Id[ ("__special__static", tokopt)], _ ->
+          expr env (Class_get (Id[ (env.self, tokopt)], e2))
 
       | Id name1, Id [name2] ->
           add_use_edge_lookup env (name1, name2) E.ClassConstant
@@ -961,12 +967,12 @@ and expr env x =
   | Obj_get (e1, e2) ->
       (match e1, e2 with
       (* handle easy case *)
-      | This (_, tok), Id [name2] ->
+      | This (_, tokopt), Id [name2] ->
           let (s2, tok2) = name2 in
-          expr env (Class_get (Id[ (env.self, tok)], Var ("$" ^ s2, tok2)))
+          expr env (Class_get (Id[ (env.self, tokopt)], Var ("$" ^ s2, tok2)))
       | _, Id name2  ->
           let tok = Ast.tok_of_name name2 in
-          env.stats.G.unresolved_class_access +> Common.push2 tok;
+          env.stats.G.field_access +> Common.push2 (tok, false);
           expr env e1;
       | _ ->
           let tok = Meta_ast_php_simple.toks_of_any (Expr2 e1) +> List.hd in
