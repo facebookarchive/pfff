@@ -83,8 +83,9 @@ type env = {
    * a field or method need the full inheritance tree to already be
    * computed as we may need to lookup entities up in the parents.
    *)
-  phase_inheritance: (unit -> unit) list ref;
-  phase_use:         (unit -> unit) list ref;
+  phase_inheritance: (current * (Ast.name * E.entity_kind)) list ref;
+  phase_use:         (current * (Ast.name * E.entity_kind)) list ref;
+  phase_use_other:         (unit -> unit) list ref;
 
   (* right now used in extract_uses phase to transform a src like main()
    * into its File, and also to give better error messages.
@@ -461,13 +462,8 @@ let add_use_edge_bis a b =
 let add_use_edge ?(phase=Uses) env n =
   match phase with
   | Defs -> raise Impossible
-  | Inheritance ->
-      let env = { env with phase = Inheritance } in
-      env.phase_inheritance +> Common.push2 (fun () -> add_use_edge_bis env n)
-  | Uses ->
-      let env = { env with phase = Uses } in
-     env.phase_use +> Common.push2 (fun () -> add_use_edge_bis env n)
-
+  | Inheritance -> env.phase_inheritance +> Common.push2 (env.cur, n)
+  | Uses -> env.phase_use +> Common.push2 (env.cur, n)
 
 (* why not call add_use_edge() and benefit from the error reporting
  * there? because instanceOf check are less important so
@@ -475,7 +471,7 @@ let add_use_edge ?(phase=Uses) env n =
  *)
 let add_use_edge_instanceof env (name, kind) =
   let env = { env with phase = Uses } in
-  env.phase_use +> Common.push2 (fun () ->
+  env.phase_use_other +> Common.push2 (fun () ->
     let (R x) = str_of_name env name kind in
     let node = x, kind in
     if not (G.has_node node env.g) 
@@ -485,7 +481,7 @@ let add_use_edge_instanceof env (name, kind) =
 (* todo: add unit test for that *)
 let add_use_edge_maybe_class env entity tokopt =
   let env = { env with phase = Uses } in
-  env.phase_use +> Common.push2 (fun () ->
+  env.phase_use_other +> Common.push2 (fun () ->
     (* less: do case insensitive? handle conflicts? *)
     if G.has_node (entity, E.Class E.RegularClass) env.g
     then
@@ -606,7 +602,7 @@ let add_use_edge_lookup2 ?(xhp=false) env (name, ident) kind =
 
 let add_use_edge_lookup ?xhp env a b =
   let env = { env with phase = Uses } in
-  env.phase_use +> Common.push2 (fun () ->
+  env.phase_use_other +> Common.push2 (fun () ->
     add_use_edge_lookup2 ?xhp env a b
   )
 
@@ -615,6 +611,8 @@ let add_use_edge_lookup ?xhp env a b =
  * inheritance phase! have a phase_inheristance2!
 *)
 let adjust_edge_protected env fld parent =
+  raise Todo
+(*
   let env = { env with phase = Inheritance } in
   env.phase_inheritance +> Common.push2 (fun () ->
     (* todo? handle trait and interface here? can redefine field? *)
@@ -640,6 +638,7 @@ let adjust_edge_protected env fld parent =
       )
     )
   )
+*)
 
 (*****************************************************************************)
 (* Defs/Uses *)
@@ -1087,6 +1086,7 @@ let build
     phase = Defs;
     phase_inheritance = ref [];
     phase_use = ref [];
+    phase_use_other = ref [];
     cur = {
       node = ("filled_later", E.File);
       readable = "filled_later";
@@ -1187,14 +1187,24 @@ let build
     (* step2: creating the 'Use' edges for inheritance *)
     env.pr2_and_log "\nstep2: extract inheritance";
     Common.profile_code "Graph_php.step2" (fun () ->
-      !(env.phase_inheritance) +> List.rev +> List.iter (fun f -> f());
-      (env.phase_inheritance) := [];
+      !(env.phase_inheritance) +> List.rev +> List.iter (fun (cur, n) ->
+        let env = { env with phase = Inheritance; cur } in
+        add_use_edge_bis env n
+      );
+      env.phase_inheritance := [];
     );
     (* step3: creating the 'Use' edges, the uses *)
     env.pr2_and_log "\nstep3: extract uses";
     Common.profile_code "Graph_php.step3" (fun () ->
-      let xs = !(env.phase_use) in
-      (env.phase_use) := [];
+
+      !(env.phase_use) +> List.rev +> List.iter (fun (cur, n) ->
+        let env = { env with phase = Uses; cur } in
+        add_use_edge_bis env n
+      );
+      env.phase_use := [];
+
+      let xs = !(env.phase_use_other) in
+      (env.phase_use_other) := [];
       xs +> List.rev +> List.iter (fun f -> f());
     );
   end;
