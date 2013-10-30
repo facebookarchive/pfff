@@ -31,11 +31,7 @@ let show_function_calls file =
             )
           )
         (*e: iter on stmts *)
-
-      | (ConstantDef _|FuncDef _|ClassDef _ |TypeDef _
-        |NotParsedCorrectly _| FinalDef _
-        )
-        -> ()
+      | _ -> ()
     )
   (*e: iter on asts manually *)
 (*e: show_function_calls v1 *)

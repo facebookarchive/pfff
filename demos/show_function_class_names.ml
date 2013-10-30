@@ -28,10 +28,7 @@ let show_function_calls file =
               pr_func_def func_def
             | _ -> ()
          )
-      | (ConstantDef _|TypeDef _
-        |NotParsedCorrectly _| FinalDef _ | StmtList _
-        )
-        -> ()
+      | _ -> ()
     )
 
 let main =
