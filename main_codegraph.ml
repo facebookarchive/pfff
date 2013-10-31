@@ -168,6 +168,8 @@ let deps_style = ref DM.DepsInOut
 
 let skip_list = ref None
 let output_dir = ref None
+(* generate also tags, light db, layers, etc *)
+let gen_derived_data = ref false
 
 (* action mode *)
 let action = ref ""
@@ -301,21 +303,20 @@ let build_graph_code lang root =
   Graph_code.print_statistics stats g;
 
   (* save also TAGS, light db (TODO), prolog (TODO), layers *)
-  let defs = Graph_code_tags.defs_of_graph_code g in
-  Tags_file.generate_TAGS_file 
-    (Filename.concat output_dir "TAGS") defs;
-(* slow
-  let db = Graph_code_database.db_of_graph_code root g in
-  Database_code.save_database db 
-    (Filename.concat output_dir "PFFF_db.marshall");
+  if !gen_derived_data then begin
+    Layer_graph_code.gen_rank_heatmap_layer g (GC.bottom_up_numbering g) 
+      (Filename.concat output_dir "layer_bottomup.json");
+    Layer_graph_code.gen_statistics_layer ~root stats 
+      ~output:(Filename.concat output_dir "layer_graphcode_stats.json");
+    let defs = Graph_code_tags.defs_of_graph_code g in
+    Tags_file.generate_TAGS_file 
+      (Filename.concat output_dir "TAGS") defs;
+(* too slow for now
+    let db = Graph_code_database.db_of_graph_code root g in
+    Database_code.save_database db 
+      (Filename.concat output_dir "PFFF_db.marshall");
 *)
-  let layers = GC.bottom_up_numbering g in
-  Layer_graph_code.gen_rank_heatmap_layer g layers 
-    (Filename.concat output_dir "layer_bottomup.json");
-
-  Layer_graph_code.gen_statistics_layer ~root stats 
-    ~output:(Filename.concat output_dir "layer_graphcode_stats.json");
-                                 
+  end;
   ()
 
 (*****************************************************************************)
@@ -661,6 +662,8 @@ let options () = [
   " ";
   "-o", Arg.String (fun s -> output_dir := Some s), 
   " ";
+  "-derived_data", Arg.Set gen_derived_data, 
+  " generate also TAGS, layers, light db, etc";
 
   "-symlinks", Arg.Unit (fun () -> 
       Common.follow_symlinks := true;
