@@ -311,11 +311,10 @@ let build_graph_code lang root =
     let defs = Graph_code_tags.defs_of_graph_code g in
     Tags_file.generate_TAGS_file 
       (Filename.concat output_dir "TAGS") defs;
-(* too slow for now
+   (* very very slow *)
     let db = Graph_code_database.db_of_graph_code root g in
     Database_code.save_database db 
-      (Filename.concat output_dir "PFFF_db.marshall");
-*)
+      (Filename.concat output_dir "PFFF_DB.marshall");
   end;
   ()
 
@@ -600,6 +599,14 @@ let test_transitive_deps xs =
   ) +> Common.hashset_of_list +> Common.hashset_to_list in
   (*pr2 (spf "%d" (List.length files));*)
   files +> List.iter pr;
+  !output_dir +> Common.do_option (fun dir ->
+    Common.command2 (spf "mkdir -p %s" dir);
+    files +> List.iter (fun file ->
+      let subdir = Filename.dirname file in
+      Common.command2 (spf "mkdir -p %s/%s" dir subdir);
+      Common.command2 (spf "cp %s %s/%s" file dir subdir);
+    )
+  );
   ()
 
 (* ---------------------------------------------------------------------- *)
@@ -627,7 +634,7 @@ let extra_actions () = [
   Common.mk_action_1_arg test_adhoc_deps;
   "-test_layering", " <graph>",
   Common.mk_action_1_arg test_layering;
-  "-test_transitive_deps", " <dirs or files>",
+  "-test_transitive_deps", " <dirs or files> (works with -o)",
   Common.mk_action_n_arg test_transitive_deps;
 (*
   "-test_phylomel", " <geno file>",
