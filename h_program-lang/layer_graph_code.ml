@@ -46,6 +46,11 @@ let gen_rank_heatmap_layer g hentity_to_rank  ~output =
     +> Common.map_filter (fun (node, v) ->
       try 
         let file = G.file_of_node node g in
+        (* we want to make sure this node has a line, some
+         * E.File could be there because file_of_node works for them
+         * but they have no line, so let's filter them here
+         *)
+        let _line = G.nodeinfo node g in
         Some (file, (node, v))
       with Not_found -> None
     ) 
