@@ -499,6 +499,14 @@ install: all
 uninstall:
 	rm -rf $(DESTDIR)$(SHAREDIR)/data
 
+INSTALLSUBDIRS=commons h_program-lang matcher lang_js/parsing
+install-findlib: all all.opt
+	set -e; for i in $(INSTALLSUBDIRS); do echo $$i; $(MAKE) -C $$i install-findlib; done
+
+uninstall-findlib:
+	set -e; for i in $(INSTALLSUBDIRS); do echo $$i; $(MAKE) -C $$i uninstall-findlib; done
+
+
 version:
 	@echo $(VERSION)
 

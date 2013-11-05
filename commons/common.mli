@@ -62,6 +62,8 @@ val with_open_infile :
 exception CmdError of Unix.process_status * string
 val command2 : string -> unit
 val cmd_to_list :  ?verbose:bool -> string -> string list (* alias *)
+val cmd_to_list_and_status:
+  ?verbose:bool -> string -> string list * Unix.process_status
 
 val ( ++ ) : 'a list -> 'a list -> 'a list
 val null : 'a list -> bool
@@ -71,6 +73,7 @@ val sort : 'a list -> 'a list
 val map_filter : ('a -> 'b option) -> 'a list -> 'b list
 val find_some : ('a -> 'b option) -> 'a list -> 'b
 val find_some_opt : ('a -> 'b option) -> 'a list -> 'b option
+val filter_some: 'a option list -> 'a list
 
 val take : int -> 'a list -> 'a list
 val take_safe : int -> 'a list -> 'a list

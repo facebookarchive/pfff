@@ -408,22 +408,23 @@ commons_features.cmxa: features.cmx
 ##############################################################################
 # install
 ##############################################################################
-OCAMLSTDLIB=`ocamlc -where`
-DESTDIR=$(OCAMLSTDLIB)/pfff-commons
+LIBNAME=pfff-commons
+EXPORTSRC=common.mli ocaml.mli ocamlextra/oUnit.mli
 
+OCAMLSTDLIB=`ocamlc -where`
 install: all all.opt
-	mkdir -p $(DESTDIR)
+	mkdir -p $(OCAMLSTDLIB)/$(LIBNAME)
 	cp lib.cma lib.cmxa \
           dlllib.so lib.a liblib.a \
           common.mli ocaml.mli \
-          $(DESTDIR)
+          $(OCAMLSTDLIB)/$(LIBNAME)
 
 
-install-findlib:
-	ocamlfind install pfff-commons META \
-          lib.cma lib.cmxa \
-          dlllib.so lib.a liblib.a \
-          common.mli ocaml.mli
+install-findlib: all all.opt
+	ocamlfind install $(LIBNAME) META \
+          lib.cma lib.cmxa lib.a \
+          dlllib.so liblib.a \
+          $(EXPORTSRC) $(EXPORTSRC:%.mli=%.cmi)
 
 uninstall-findlib:
 	ocamlfind remove pfff-commons

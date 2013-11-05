@@ -72,10 +72,23 @@ beforedepend:: parser_js.ml parser_js.mli
 visitor_js.cmo: visitor_js.ml
 	$(OCAMLC) -w y -c $<
 
-##############################################################################
-# Generic rules
-##############################################################################
 
 ##############################################################################
-# Literate Programming rules
+# install
 ##############################################################################
+OCAMLSTDLIB=`ocamlc -where`
+LIBNAME=pfff-lang_js
+DESTDIR=$(OCAMLSTDLIB)/$(LIBNAME)
+
+EXPORTSRC=meta_ast_js.mli \
+   parser_js.mli parse_js.mli \
+   lib_parsing_js.mli visitor_js.mli \
+
+install-findlib:
+	ocamlfind install $(LIBNAME) META \
+          lib.cma lib.cmxa lib.a \
+          ast_js.ml ast_js.cmi \
+          $(EXPORTSRC) $(EXPORTSRC:%.mli=%.cmi)
+
+uninstall-findlib:
+	ocamlfind remove $(LIBNAME)

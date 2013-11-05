@@ -3,7 +3,7 @@
 # This is to show how to build a simple Makefile from scratch
 # to people who wants to use pfff in their own application.
 
-all: simple_refactoring
+all:: simple_refactoring
 
 ##############################################################################
 # Simple compilation
@@ -50,6 +50,7 @@ SYSLIBS= str.cma unix.cma nums.cma bigarray.cma
 #	set -e; for i in $(MAKESUBDIRS); do $(MAKE) -C $$i all || exit 1; done
 #clean::
 #	set -e; for i in $(MAKESUBDIRS); do $(MAKE) -C $$i clean || exit 1; done
+
 ##############################################################################
 # Generic variables
 ##############################################################################
@@ -91,7 +92,7 @@ PROGS=php_transducer.byte \
 #PROGS+=kaplan.byte
 #endif
 
-all: rec  $(PROGS)
+all:: rec  $(PROGS)
 opt: $(PROGS:.byte=.opt)
 all.opt: opt
 
@@ -111,8 +112,21 @@ clean::
 
 
 ##############################################################################
-# Developer rules
+# Compilation once installed
 ##############################################################################
+
+LIBS2= \
+ $(shell ocamlfind query pfff-commons) \
+ $(shell ocamlfind query pfff-h_program-lang) \
+ $(shell ocamlfind query pfff-matcher) \
+ $(shell ocamlfind query pfff-lang_js) \
+
+test_install: pfff_linking.ml
+	ocamlc $(SYSLIBS) $(LIBS2:%=%/lib.cma) $(LIBS2:%=-I %) pfff_linking.ml -o pfff_linking
+
+test_install.opt: pfff_linking.ml
+	ocamlopt $(SYSLIBS:%.cma=%.cmxa) $(LIBS2:%=%/lib.cmxa) $(LIBS2:%=-I %) pfff_linking.ml -o pfff_linking
+
 
 ##############################################################################
 # Generic ocaml rules

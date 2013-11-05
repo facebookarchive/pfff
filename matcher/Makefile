@@ -46,7 +46,17 @@ $(TARGET).top: $(OBJS) $(LIBS)
 clean::
 	rm -f $(TARGET).top
 
+##############################################################################
+# install
+##############################################################################
+OCAMLSTDLIB=`ocamlc -where`
+LIBNAME=pfff-matcher
+DESTDIR=$(OCAMLSTDLIB)/$(LIBNAME)
 
-##############################################################################
-# Literate Programming rules
-##############################################################################
+install-findlib: all all.opt
+	ocamlfind install $(LIBNAME) META \
+          lib.cma lib.cmxa lib.a \
+
+uninstall-findlib:
+	ocamlfind remove $(LIBNAME)
+
