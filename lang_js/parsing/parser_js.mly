@@ -398,6 +398,7 @@ class_heritage: T_EXTENDS assignment_expression { ($1, $2) }
 class_body: class_element_list { $1 }
 
 class_element:
+ | formal_parameter semicolon { Field ($1, $2) }
  | method_definition          { Method (None, $1) }
  | T_STATIC method_definition { Method (Some $1, $2) }
  | semicolon { ClassExtraSemiColon $1 }
