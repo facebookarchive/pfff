@@ -260,6 +260,7 @@ and class_decl = {
 
   and class_stmt =
   | Method of tok option (* static *) * func_decl
+  | Field of parameter * sc
   | ClassExtraSemiColon of sc
 
 and inherit_expr = expr

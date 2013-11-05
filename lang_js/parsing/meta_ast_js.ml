@@ -522,6 +522,10 @@ and  vof_class_decl {
 
 and vof_class_stmt =
   function
+  | Field ((v1, v2)) ->
+      let v1 = vof_parameter v1
+      and v2 = vof_sc v2
+      in Ocaml.VSum (("Field", [ v1; v2 ]))
   | Method ((v1, v2)) ->
       let v1 = Ocaml.vof_option vof_tok v1
       and v2 = vof_func_decl v2
