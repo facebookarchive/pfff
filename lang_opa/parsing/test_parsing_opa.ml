@@ -74,6 +74,25 @@ let translate_opa dir1 dir2 =
     Common.command2(spf "mkdir -p %s/%s" dir2 dirname);
     try 
       Common.timeout_function 200 (fun () ->
+(* otr script:
+#!/bin/sh
+
+rm -rf /tmp/opa-translate
+
+~/local/opalang/_build/opa/syntaxHelper.native \
+ --parser classic --printer js-like \
+ $1 --build-dir /tmp/opa-translate 2> /tmp/translation-report.txt
+
+#cat /tmp/opa-translate/*
+#cat /tmp/translation-report.txt
+~/local/opa/scripts/import_comment/import_comment --src $1 --dst /tmp/opa-translate/* --out /tmp/res.opa >>/tmp/translation-report.txt 2>&1 
+
+cat /tmp/res.opa
+
+rm -f error.log
+rm -rf _tracks
+#~/pfff/pfff -dump_opa /tmp/res.opa
+*)
         Common.command2(spf "otr %s > %s" src dest);
 
         let (_, toks) = Parse_opa.parse_just_tokens dest in
