@@ -352,14 +352,7 @@ let mk_gui ~screen_size ~legend test_mode (root, model, dw, dbfile_opt) =
         fc#add_item "_Refresh" ~key:K._R ~callback:(fun () -> 
           let current_root = !dw.current_root in
           let _old_dw = Common2.pop2 Controller.dw_stack in
-          (* have to disable the AST caching.
-           * todo? disable all entries in the cache ?
-           *)
-          if Common2.is_file current_root
-          then Parsing2.disable_file_in_cache current_root;
-
           !Controller._go_dirs_or_file dw [current_root];
-
         ) +> ignore;
 
         fc#add_item "_Zoom" ~key:K._Z ~callback:(fun () -> 

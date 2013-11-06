@@ -38,8 +38,7 @@ open Highlight_code
 (*****************************************************************************)
 
 (* This type is needed if we want to use a single hashtbl to memoize
- * all the parsed file. Having a single hash helps for 
- * disable_file_in_cache below.
+ * all the parsed file.
  *)
 type ast = 
   | ML  of Parse_ml.program_and_tokens
@@ -67,16 +66,25 @@ type ast =
 
 let _hmemo_file = Hashtbl.create 101
 
-(* This is useful when we want to refresh the content of a file,
- * because it has changed on the disk. 
- * todo? could also look at the date of the file ...
- *)
-let disable_file_in_cache file =
-  Hashtbl.remove _hmemo_file file
-
 let parse_cache parse_in extract file =
   Common.profile_code "View.parse_cache" (fun () ->
-    let ast = Common.memoized _hmemo_file file (fun () -> parse_in file) in
+    let mtime = Common2.filemtime file in
+    let recompute = 
+      if Hashtbl.mem _hmemo_file file
+      then
+        let (oldmtime, ast) = Hashtbl.find _hmemo_file file in
+        mtime > oldmtime
+      else true
+    in
+    let ast =
+      if recompute
+      then begin
+        let ast = parse_in file in
+        Hashtbl.replace _hmemo_file file (mtime, ast);
+        ast
+      end
+      else Hashtbl.find _hmemo_file file +> snd
+    in
     extract ast
   )
 

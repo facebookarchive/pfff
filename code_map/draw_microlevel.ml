@@ -192,10 +192,13 @@ let glyphs_of_file ~context ~font_size ~font_size_real file
     let model = Async.async_get context.model in
     let entities = model.Model2.hentities in
 
-    (* can't use nblines_eff here, we don't want to memoize *)
+    (* if you have some cache in tokens_with_categ_of_file, then it
+     * must be invalidated when a file has changed on the disk, otherwise
+     * we can get some Array out of bound exceptions as the number of lines
+     * returned by nblines_eff may be different
+     *)
     let nblines = Common2.nblines_eff file in
     let arr = Array.create nblines [] in
-
     let tokens_with_categ = Parsing.tokens_with_categ_of_file file entities in
 
     let line = ref 0 in
@@ -498,7 +501,7 @@ let draw_treemap_rectangle_content_maybe ~cr ~clipping ~context rect =
   Common.profile_code "View.draw_content_maybe" (fun () ->
     draw_treemap_rectangle_content_maybe2 ~cr ~clipping ~context rect)
 (*e: draw_treemap_rectangle_content_maybe *)
-    
+
 (*****************************************************************************)
 (* Magnifyer Content *)
 (*****************************************************************************)
@@ -539,5 +542,4 @@ let draw_magnify_line ?(honor_color=true) cr line microlevel =
       Cairo.set_source_rgba cr r g b alpha;
       CairoH.show_text cr glyph.M.str;
     )
-
 (*e: draw_microlevel.ml *)
