@@ -1,6 +1,6 @@
 <?php
 
-function test_variable_parameter($param1) {
+function test_variables_and_parameters($param1) {
   echo $param1;
   $local1 = 1;
   echo $local1;
@@ -30,9 +30,13 @@ function test_dynamic_calls($b) {
   a_foo();
   $a = 'a_foo';
   $a();
-
   $b();
   call_user_func($a, array());
+}
+
+function test_dynamic_class() {
+  $class = 'Foo';
+  $o = new $class();
 }
 
 function test_call_a_dynamic_caller() {

@@ -15,10 +15,11 @@
 open Common
 
 open Ast_php
-open Highlight_code
 module Ast = Ast_php
 module V = Visitor_php
 module T = Parser_php
+
+open Highlight_code
 module S = Scope_code
 module Db = Database_code
 
@@ -26,10 +27,10 @@ module Db = Database_code
 (* Prelude *)
 (*****************************************************************************)
 (*
- * Visitor to help write an emacs-like PHP mode. It offers some
- * additional coloring and categories compared to font-lock-mode.
- * It offers also now also some semantic coloring and global-information
- * semantic feedback coloring!
+ * Visitor to help write an emacs-like PHP font lock mode. It actually
+ * offers many  additional coloring and categories compared to font-lock-mode.
+ * It offers also now also some semantic coloring using global information
+ * computed by codegraph and pfff_db!
  *)
 
 (*****************************************************************************)
@@ -165,16 +166,20 @@ let tag_string ~tag s ii =
 let tag_name ~tag name =
   match name with
   | XName qu ->
-    let info = Ast.info_of_qualified_ident qu in
-    tag info (Class (Use2 fake_no_use2));
+      let info = Ast.info_of_qualified_ident qu in
+      tag info (Class (Use2 fake_no_use2));
+  (* will be highlighted by the 'toks phase 2' *)
   | Self tok | Parent tok -> ()
   | LateStatic tok ->
-    tag tok BadSmell
+      tag tok BadSmell
 
 let tag_class_name_reference ~tag qualif =
   match qualif with
   | Id name -> tag_name ~tag name
-  | _ -> ()
+  | _ -> 
+    let ii = Lib_parsing_php.ii_of_any (Expr qualif) in
+    ii +> List.iter (fun info -> tag info PointerCall)
+
 
 (*****************************************************************************)
 (* PHP Code highlighter *)
@@ -594,10 +599,10 @@ let visit_program ~tag prefs  hentities (ast, toks) =
   (* -------------------------------------------------------------------- *)
   toks +> List.iter (fun tok ->
     match tok with
-    | T.EOF ii | T.TNewline ii | T.TSpaces ii -> ()
-    | T.TCommentPP ii -> ()
+    | T.TNewline ii | T.TSpaces ii | T.EOF ii -> ()
     (* less: could highlight certain words in the comment? *)
     | T.T_COMMENT (ii)  | T.T_DOC_COMMENT (ii)  -> tag ii Comment
+    | T.TCommentPP ii -> ()
     | T.TUnknown ii -> tag ii Error
 
     (* all the name and varname should have been tagged by now. *)
@@ -609,37 +614,10 @@ let visit_program ~tag prefs  hentities (ast, toks) =
       if not (Hashtbl.mem already_tagged ii)
       then tag ii Error
 
-    | T.T_OPEN_TAG ii ->
-      tag ii Keyword
-
     | T.TOPAR ii   | T.TCPAR ii
     | T.TOBRACE ii | T.TCBRACE ii
     | T.TOBRA ii   | T.TCBRA ii
       ->tag ii Punctuation
-
-    | T.T_XHP_PCDATA ii | T.T_XHP_ANY ii
-    | T.T_XHP_REQUIRED ii | T.T_XHP_ENUM ii
-    | T.T_XHP_CATEGORY ii | T.T_XHP_CHILDREN ii
-    | T.T_XHP_ATTRIBUTE ii
-      -> tag ii KeywordObject
-
-    | T.T_XHP_TEXT (_, ii) -> tag ii String
-    | T.T_XHP_ATTR (_, ii) -> tag ii (Field (Use2 fake_no_use2))
-
-    | T.T_XHP_CLOSE_TAG (_, ii) -> tag ii EmbededHtml
-    | T.T_XHP_SLASH_GT ii -> tag ii EmbededHtml
-    | T.T_XHP_GT ii -> tag ii EmbededHtml
-    | T.T_XHP_OPEN_TAG (_, ii) -> tag ii EmbededHtml
-
-    (* should have been transformed into a XhpName or XhpInherit in Ast *)
-    | T.T_XHP_PERCENTID_DEF (_, ii) ->
-      if not (Hashtbl.mem already_tagged ii)
-      then tag ii Error
-    | T.T_XHP_COLONID_DEF (_, ii) ->
-      if not (Hashtbl.mem already_tagged ii)
-      then tag ii Error
-
-    | T.T_RESOURCE_XDEBUG ii | T.T_CLASS_XDEBUG ii -> ()
 
     | T.TDOTS ii -> tag ii Punctuation
     | T.TANTISLASH ii -> tag ii KeywordModule
@@ -654,13 +632,15 @@ let visit_program ~tag prefs  hentities (ast, toks) =
       (* we want to highlight code using eval! *)
     | T.T_EVAL ii -> tag ii BadSmell
 
+    | T.T_OPEN_TAG ii ->
+      tag ii Keyword
+
     | T.T_REQUIRE_ONCE ii | T.T_REQUIRE ii
     | T.T_INCLUDE_ONCE ii | T.T_INCLUDE ii
       -> tag ii Include
 
+    | T.T_NEW ii | T.T_CLONE ii -> tag ii KeywordObject
     | T.T_INSTANCEOF ii -> tag ii KeywordObject
-    | T.T_CLONE ii -> tag ii KeywordObject
-    | T.T_NEW ii -> tag ii KeywordObject
 
     | T.T__AT ii -> tag ii Builtin
 
@@ -719,11 +699,11 @@ let visit_program ~tag prefs  hentities (ast, toks) =
     | T.T_DOUBLE_ARROW ii ->  tag ii Punctuation
     | T.T_OBJECT_OPERATOR ii -> tag ii Punctuation
 
+    | T.T_CLASS ii | T.T_TRAIT ii -> tag ii KeywordObject
+
     | T.T_IMPLEMENTS ii | T.T_EXTENDS ii | T.T_INTERFACE ii -> 
       tag ii KeywordObject
 
-    | T.T_CLASS ii -> tag ii KeywordObject
-    | T.T_TRAIT ii -> tag ii KeywordObject
     | T.T_INSTEADOF ii -> tag ii KeywordObject
 
     | T.T_TYPE ii | T.T_NEWTYPE ii | T.T_SHAPE ii -> tag ii Keyword
@@ -735,8 +715,10 @@ let visit_program ~tag prefs  hentities (ast, toks) =
     | T.T_FINAL ii | T.T_ABSTRACT ii -> tag ii KeywordObject
 
     | T.T_STATIC ii -> tag ii Keyword
-    | T.T_ASYNC ii -> tag ii Keyword
     | T.T_CONST ii -> tag ii Keyword
+
+    | T.T_SELF ii | T.T_PARENT ii ->
+      tag ii (Class (Use2 fake_no_use2));
 
       (* could be for func or method or lambda so tagged via ast *)
     | T.T_FUNCTION ii ->
@@ -766,10 +748,8 @@ let visit_program ~tag prefs  hentities (ast, toks) =
 
     | T.T_PRINT ii | T.T_ECHO ii -> tag ii Builtin
 
-    | T.T_SELF ii | T.T_PARENT ii ->
-      tag ii (Class (Use2 fake_no_use2));
 
-    | T.T_YIELD ii | T.T_AWAIT ii -> tag ii Keyword
+    | T.T_YIELD ii | T.T_AWAIT ii | T.T_ASYNC ii -> tag ii Keyword
 
     (* should have been handled in field *)
     | T.T_STRING_VARNAME ii -> ()
@@ -787,6 +767,30 @@ let visit_program ~tag prefs  hentities (ast, toks) =
 
       (* should been handled in Constant *)
     | T.T_DNUMBER ii | T.T_LNUMBER ii -> ()
+
+    | T.T_XHP_PCDATA ii | T.T_XHP_ANY ii
+    | T.T_XHP_REQUIRED ii | T.T_XHP_ENUM ii
+    | T.T_XHP_CATEGORY ii | T.T_XHP_CHILDREN ii
+    | T.T_XHP_ATTRIBUTE ii
+      -> tag ii KeywordObject
+
+    | T.T_XHP_TEXT (_, ii) -> tag ii String
+    | T.T_XHP_ATTR (_, ii) -> tag ii (Field (Use2 fake_no_use2))
+
+    | T.T_XHP_OPEN_TAG (_, ii) | T.T_XHP_CLOSE_TAG (_, ii) 
+    | T.T_XHP_SLASH_GT ii | T.T_XHP_GT ii 
+      -> tag ii EmbededHtml
+
+    (* should have been transformed into a XhpName or XhpInherit in Ast *)
+    | T.T_XHP_PERCENTID_DEF (_, ii) ->
+      if not (Hashtbl.mem already_tagged ii)
+      then tag ii Error
+    | T.T_XHP_COLONID_DEF (_, ii) ->
+      if not (Hashtbl.mem already_tagged ii)
+      then tag ii Error
+
+    | T.T_RESOURCE_XDEBUG ii | T.T_CLASS_XDEBUG ii -> ()
+
   );
 
   (* -------------------------------------------------------------------- *)
