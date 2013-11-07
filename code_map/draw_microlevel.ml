@@ -519,8 +519,14 @@ let draw_magnify_line ?(honor_color=true) cr line microlevel =
     Cairo.move_to cr x y;
     
     let (Line iline) = line in
-    glyphs.(iline) 
-    +> (fun xs ->
+    (* because of the way we layout code in multiple columns with different
+     * fonts, we may not use the whole rectangle to draw the content of
+     * a file and so the cursor could be far below the last line of
+     * the file
+     *)
+    if iline < Array.length glyphs then begin
+     glyphs.(iline) 
+     +> (fun xs ->
       match xs with
       | [] -> []
       | x::xs ->
@@ -542,4 +548,5 @@ let draw_magnify_line ?(honor_color=true) cr line microlevel =
       Cairo.set_source_rgba cr r g b alpha;
       CairoH.show_text cr glyph.M.str;
     )
+    end
 (*e: draw_microlevel.ml *)
