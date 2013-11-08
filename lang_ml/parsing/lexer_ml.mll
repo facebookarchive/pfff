@@ -199,6 +199,11 @@ rule token = parse
   | "#directory" space+ [^'\n']+ 
       { TSharpDirective (tokinfo lexbuf) }
 
+  (* many people use sometimes -pp cpp so let's support simple cpp idioms *)
+  | "#if" [^ '\n']* { TCommentMisc (tokinfo lexbuf) }
+  | "#else" [^ '\n']* { TCommentMisc (tokinfo lexbuf) }
+  | "#endif" [^ '\n']* { TCommentMisc (tokinfo lexbuf) }
+
   (* ----------------------------------------------------------------------- *)
   (* symbols *)
   (* ----------------------------------------------------------------------- *)
