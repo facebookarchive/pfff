@@ -7,7 +7,7 @@ let verbose_visual = ref false
  * Linux machine
  *)
 let threshold_draw_content_font_size_real = ref 
-  0.6
+  0.9
 
 (* big and auto-generated files can take too much time to render *)
 let threshold_draw_content_nblines = 
