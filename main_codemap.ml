@@ -15,7 +15,11 @@ module Model = Model2
 (*****************************************************************************)
 (* 
  * This is the main entry point of codemap, a semantic source code visualizer
- * using treemaps and code thumbnails.
+ * using treemaps and code thumbnails. The focus here is code understanding
+ * not editing, so for instance even if features like autocompletion are
+ * great, they do not help understand an existing codebase. What can help
+ * is completion to help navigate and go from one place to another, and this
+ * is one of the feature of this tool.
  * 
  * requirements:
  *  - get a bird's eye view of all the code (hence treemaps)
