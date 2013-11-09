@@ -26,9 +26,7 @@ open Typedtree
 (*****************************************************************************)
 (*
  * Graph of dependencies for OCaml typed AST files (.cmt). See graph_code.ml
- * and main_codegraph.ml for more information.
- * 
- * See also notes_cmt.txt.
+ * and main_codegraph.ml for more information. See also notes_cmt.txt.
  * 
  * schema:
  *  Root -> Dir -> Module -> Function
@@ -125,6 +123,32 @@ let (name_of_longident_loc: Longident.t Asttypes.loc -> name) = fun lidloc ->
 let (name_of_path: Path.t -> name) = fun path ->
   let s = Path.name path in
   Common.split "\\." s
+
+let readable_path_of_ast ast root readable =
+  let fullpath =
+    Filename.concat ast.cmt_builddir
+      (match ast.cmt_sourcefile with
+      | None -> failwith (spf "no cmt_source_file for %s" readable)
+      | Some file -> file
+      )
+  in
+  (* ugly: the OCaml distribution does not comes with .cmt for
+   * its standard library, so I had to generate them manually 
+   * and put them in pfff/external/stdlib. The problem is that
+   * those cmt files have hardcoded paths to my ocaml installation
+   * for their source, hence this hack below to reconvert
+   * those paths.
+   *)
+  try 
+    let readable = Common.filename_without_leading_path root fullpath in
+    if readable =~ "_build/\\(.*\\)"
+    then Common.matched1 readable
+    else readable
+  with Failure _ ->
+    let dirname, basename = 
+      Filename.dirname fullpath, Filename.basename fullpath in
+    let subdir = Filename.basename dirname in
+    spf "external/%s/%s" subdir basename
 
 (*****************************************************************************)
 (* Add edges *)
@@ -443,29 +467,7 @@ let rec extract_defs_uses
     current_entity = [fst current];
     file = readable;
     (* we want a readable format here *)
-    source_file =
-      (let fullpath =
-         Filename.concat ast.cmt_builddir
-           (match ast.cmt_sourcefile with
-           | None -> failwith (spf "no cmt_source_file for %s" readable)
-           | Some file -> file
-           )
-       in
-       (* ugly: the OCaml distribution does not comes with .cmt for
-        * its standard library, so I had to generate them manually 
-        * and put them in pfff/external/stdlib. The problem is that
-        * those cmt files have hardcoded paths to my ocaml installation
-        * for their source, hence this hack below to reconvert
-        * those paths.
-        *)
-       if fullpath =~ ".*/ocaml-4.01.0" || fullpath =~ ".*/ocaml-4.00.1"
-       then spf "external/stdlib/%s" (Filename.basename fullpath)
-       else 
-         let readable = Common.filename_without_leading_path root fullpath in
-         if readable =~ "_build/\\(.*\\)"
-         then Common.matched1 readable
-         else readable
-      );
+    source_file = readable_path_of_ast ast root readable;
     locals = [];
     full_path_local_value = ref [];
     full_path_local_type = ref [];
