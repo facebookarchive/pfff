@@ -18,11 +18,15 @@ module DM = Dependencies_matrix_code
 (* 
  * This is the main entry point of codegraph, a package/module/type/function/...
  * hierarchical dependency visualizer using mainly a Dependency
- * Structure Matrix (DSM).
+ * Structure Matrix (DSM). This should help understand the "software
+ * architecture" of a project and assist in refactoring it.
  * A node-link display of hierarchical graphs (or hypergraphs) would be nice
  * too, but it is far more complex to draw than matrices and does
  * not scale as well visually apparently.
  * See http://en.wikipedia.org/wiki/Design_structure_matrix
+ * A great introduction on the use of DSM for improving a codebase is
+ * http://codebetter.com/patricksmacchia/2009/08/24/identify-code-structure-patterns-at-a-glance/
+ * 
  * 
  * It seems there are a few commercial projects using DSM (Ndepend,
  * Structure101, Intellij), so this looks like a viable direction to pursue
