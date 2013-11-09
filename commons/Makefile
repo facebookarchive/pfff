@@ -424,7 +424,7 @@ install-findlib: all all.opt
 	ocamlfind install $(LIBNAME) META \
           lib.cma lib.cmxa lib.a \
           dlllib.so liblib.a \
-          $(EXPORTSRC) $(EXPORTSRC:%.mli=%.cmi)
+          $(EXPORTSRC) $(EXPORTSRC:%.mli=%.cmi) $(EXPORTSRC:%.mli=%.cmt)
 
 uninstall-findlib:
 	ocamlfind remove pfff-commons
