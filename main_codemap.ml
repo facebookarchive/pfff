@@ -52,6 +52,29 @@ module Model = Model2
  *  - todo: light table
  *  - todo: http://www.kickstarter.com/projects/296054304/zeta-code
  *  - todo? sublime, textmate, etc
+ * 
+ * features of IDE we do want (e.g. see the list at http://xamarin.com/studio):
+ *  - TODO go to definition (=~ TAGS)
+ *  - unified search (files, entities, TODO but also content)
+ *  - code navigation (directory, files, but also "hypertext" go to def/uses)
+ *  - find uses (tricky for TODO methods in dynamic languages)
+ *  - smart syntax highlighting
+ *  - folding? hmm thumbnails should makes this less important
+ *  - TODO code tooltip, hover on use of an entity to display information about
+ *    this entity (type, comments, number of uses, age, etc)
+ *  - auto completion? no. One nice thing of autocomplete though is that
+ *    it proposes all the possible methods of an object, the overriden
+ *    as well as not overriden parent methods.  We don't want autocomplete
+ *    but we want the ability to understand a class by TODO "inlining" parent 
+ *    methods that are relevant to understand the local code of the class
+ *    (e.g. the short command of Eiffel)
+ *  - debugger? it helps understand code so a coverage layer or TODO live
+ *    coverage tracing would be nice.
+ *  - source control? extract age, number of authors, churn information in
+ *    layers
+ *  - refactoring? no
+ *  - UI designer? no
+ *  - deploy assistant, cloud assistant? no
  *)
 
 (*****************************************************************************)
