@@ -348,6 +348,8 @@ let button_action da dw_ref ev =
               (*readable =~ "external/.*"  *)
             )
             +> List.map (fun s -> Filename.concat model.root s)
+            (* less: print a warning when does not exist? *)
+            +> List.filter Sys.file_exists
           in
 
           let readable = Common.filename_without_leading_path model.root file in
