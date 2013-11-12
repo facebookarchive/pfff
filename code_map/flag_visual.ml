@@ -4,10 +4,13 @@ let verbose_visual = ref false
 
 (* was 0.4, but on linux the anti-aliasing seems to not be as good
  * as on mac (possibly because I have only an old cairo lib on my 
- * Linux machine
+ * Linux machine. I've recently raised this number because
+ * when too low it's just too much noise on the screen.
+ * let's draw content when you can actually read things and
+ * when things don't overlap too much.
  *)
 let threshold_draw_content_font_size_real = ref 
-  0.9
+  2.0
 
 (* big and auto-generated files can take too much time to render *)
 let threshold_draw_content_nblines = 
