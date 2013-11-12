@@ -15,22 +15,23 @@ for ocaml tools like stags, codemap, codegraph, etc.
 
 ** bad example of style
 
-huge files
-no mli
-no comment on general idea of the algorithm or module
-no comment at all
-no comment especially when the function is tricky and does complex
- side effects
+main problems:
+- huge .ml files
+- no .mli, and usually less types for concepts
+- no comment on general idea of the algorithm or module
+- no comment especially when the function is tricky and does complex
+  side effects
+- no comment at all
+- no unit tests, no tests, no examples
+- put too many things in one file, e.g. ast.ml should just contain
+  the definition of the AST, not thousands of helpers and visitors.
+- use of many globals
 
-put old code in comment to test stuff, or some && false for
- debugging instead of using command line flags like -verbose
+less:
+- put old code in comment to test stuff, or some && false for
+  debugging instead of using command line flags like -verbose
+- many dead functions
 
-no unit tests, no tests, no examples
-
-many dead functions
-
-put too many things in one file, e.g. ast.ml should just contain
-the definition of the AST, not thousands of helpers and visitors.
 
 ** bad example of style: ocamlnet/netstring/nethtml.ml.
 
@@ -83,7 +84,6 @@ unindented mutually recursive types. When have lots of type definitions,
 use more than 80 columns!
 
 don't use TABS, use space, and indent 2 space, not 4 (and especially not 8!)
-
 
 * Style
 
