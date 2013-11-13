@@ -71,11 +71,17 @@ beforedepend:: parser_css.ml parser_css.mli
 visitor_css.cmo: visitor_css.ml
 	$(OCAMLC) -w y -c $<
 
+##############################################################################
+# install
+##############################################################################
+LIBNAME=pfff-lang_css
+EXPORTSRC=meta_ast_css.mli \
+   parser_css.mli parse_css.mli \
+   lib_parsing_css.mli
 
-##############################################################################
-# Generic rules
-##############################################################################
+# visitor_css.mli \
 
-##############################################################################
-# Literate Programming rules
-##############################################################################
+install-findlib:
+	ocamlfind install $(LIBNAME) META   lib.cma lib.cmxa lib.a \
+          $(EXPORTSRC) $(EXPORTSRC:%.mli=%.cmi) $(EXPORTSRC:%.mli=%.cmt) \
+          ast_css.ml ast_css.cmi

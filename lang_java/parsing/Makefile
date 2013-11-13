@@ -14,8 +14,6 @@ SRC= flag_parsing_java.ml \
      visitor_java.ml \
      test_parsing_java.ml unit_parsing_java.ml
 
-
-
 SYSLIBS= str.cma unix.cma
 
 LIBS= $(TOP)/commons/lib.cma \
@@ -25,7 +23,6 @@ INCLUDEDIRS= $(TOP)/commons $(TOP)/commons/ocamlextra \
   $(TOP)/h_program-lang \
   $(TOP)/matcher \
   $(TOP)/globals \
-
 
 ##############################################################################
 # Generic variables
@@ -69,5 +66,14 @@ visitor_java.cmo: visitor_java.ml
 	$(OCAMLC) -w y -c $<
 
 ##############################################################################
-# Generic rules
+# install
 ##############################################################################
+LIBNAME=pfff-lang_java
+EXPORTSRC=meta_ast_java.mli \
+   parser_java.mli parse_java.mli \
+   lib_parsing_java.mli visitor_java.mli \
+
+install-findlib:
+	ocamlfind install $(LIBNAME) META   lib.cma lib.cmxa lib.a \
+          $(EXPORTSRC) $(EXPORTSRC:%.mli=%.cmi) $(EXPORTSRC:%.mli=%.cmt) \
+          ast_java.ml ast_java.cmi

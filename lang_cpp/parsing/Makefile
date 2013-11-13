@@ -86,9 +86,14 @@ parsing_hacks_typedef.cmo: parsing_hacks_typedef.ml
 
 
 ##############################################################################
-# Generic rules
+# install
 ##############################################################################
+LIBNAME=pfff-lang_cpp
+EXPORTSRC=meta_ast_cpp.mli \
+   parser_cpp.mli parse_cpp.mli \
+   lib_parsing_cpp.mli visitor_cpp.mli \
 
-##############################################################################
-# Literate Programming rules
-##############################################################################
+install-findlib:
+	ocamlfind install $(LIBNAME) META   lib.cma lib.cmxa lib.a \
+          $(EXPORTSRC) $(EXPORTSRC:%.mli=%.cmi) $(EXPORTSRC:%.mli=%.cmt) \
+          ast_cpp.ml ast_cpp.cmi

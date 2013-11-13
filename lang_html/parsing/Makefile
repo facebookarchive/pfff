@@ -80,9 +80,14 @@ visitor_html.cmo: visitor_html.ml
 
 
 ##############################################################################
-# Generic rules
+# install
 ##############################################################################
+LIBNAME=pfff-lang_html
+EXPORTSRC=meta_ast_html.mli \
+   parser_html.mli parse_html.mli \
+   lib_parsing_html.mli visitor_html.mli \
 
-##############################################################################
-# Literate Programming rules
-##############################################################################
+install-findlib:
+	ocamlfind install $(LIBNAME) META   lib.cma lib.cmxa lib.a \
+          $(EXPORTSRC) $(EXPORTSRC:%.mli=%.cmi) $(EXPORTSRC:%.mli=%.cmt) \
+          ast_html.ml ast_html.cmi

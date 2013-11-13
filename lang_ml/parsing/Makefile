@@ -70,9 +70,14 @@ visitor_ml.cmo: visitor_ml.ml
 	$(OCAMLC) -w y -c $<
 
 ##############################################################################
-# Generic rules
+# install
 ##############################################################################
+LIBNAME=pfff-lang_ml
+EXPORTSRC=meta_ast_ml.mli \
+   parser_ml.mli parse_ml.mli \
+   lib_parsing_ml.mli visitor_ml.mli \
 
-##############################################################################
-# Literate Programming rules
-##############################################################################
+install-findlib:
+	ocamlfind install $(LIBNAME) META   lib.cma lib.cmxa lib.a \
+          $(EXPORTSRC) $(EXPORTSRC:%.mli=%.cmi) $(EXPORTSRC:%.mli=%.cmt) \
+          ast_ml.ml ast_ml.cmi

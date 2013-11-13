@@ -72,10 +72,18 @@ visitor_php.cmo: visitor_php.ml
 pretty_print_php.cmo: pretty_print_php.ml
 	$(OCAMLC) -w y -c $<
 
+##############################################################################
+# install
+##############################################################################
+LIBNAME=pfff-lang_php
+EXPORTSRC=meta_ast_php.mli \
+   parser_php.mli parse_php.mli \
+   lib_parsing_php.mli visitor_php.mli \
 
-##############################################################################
-# Generic rules
-##############################################################################
+install-findlib:
+	ocamlfind install $(LIBNAME) META   lib.cma lib.cmxa lib.a \
+          $(EXPORTSRC) $(EXPORTSRC:%.mli=%.cmi) $(EXPORTSRC:%.mli=%.cmt) \
+          ast_php.ml ast_php.cmi
 
 ##############################################################################
 # Literate Programming rules
