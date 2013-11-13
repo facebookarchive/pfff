@@ -3,7 +3,6 @@ Install brew http://mxcl.github.io/homebrew/
 
 Then
  $ sudo brew install ocaml
- $ sudo brew install pcre
 
 For codemap:
  $ sudo brew install gtk
@@ -12,13 +11,13 @@ For codemap:
 For codequery:
  $ sudo brew install swi-prolog
 
-=> can configure and build all pfff tools :) 
+=> you can now run './configure' and build the many pfff tools :) 
 See install.txt for the remaining steps.
 
 Troubles?
 ---------
 
-- If you are using homebrew you may have pbs compiling ocamlgtk and 
+- If you are using homebrew you may have problems compiling ocamlgtk and 
   ocamlcairo. First You need to 
      export PKG_CONFIG_PATH /usr/X11/lib/pkgconfig 
   so that configure can find one cairo.pc (the cairo of brew is keg-only),
