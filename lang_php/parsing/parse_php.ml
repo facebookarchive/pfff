@@ -25,6 +25,14 @@ module PI = Parse_info
 (* Prelude *)
 (*****************************************************************************)
 
+(* A PHP parser.
+ *
+ * related work:
+ *  - miamide, also in ocaml, but didn't support all of PHP
+ *  - https://github.com/sfindeisen/phphard, also written in ocaml, but
+ *    seems pretty rudimentary
+ *)
+
 (*****************************************************************************)
 (* Types *)
 (*****************************************************************************)
