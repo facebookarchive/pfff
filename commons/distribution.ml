@@ -22,6 +22,10 @@ open Common
 
 (* See the distribution.ml.nw literate document for the documentation *)
 
+(* related work:
+ * - https://github.com/cryptosense/procord/blob/master/examples/minimal.ml
+ *)
+
 (*****************************************************************************)
 (* Globals *)
 (*****************************************************************************)
