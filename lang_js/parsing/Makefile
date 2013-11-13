@@ -76,19 +76,12 @@ visitor_js.cmo: visitor_js.ml
 ##############################################################################
 # install
 ##############################################################################
-OCAMLSTDLIB=`ocamlc -where`
 LIBNAME=pfff-lang_js
-DESTDIR=$(OCAMLSTDLIB)/$(LIBNAME)
-
 EXPORTSRC=meta_ast_js.mli \
    parser_js.mli parse_js.mli \
    lib_parsing_js.mli visitor_js.mli \
 
 install-findlib:
-	ocamlfind install $(LIBNAME) META \
-          lib.cma lib.cmxa lib.a \
-          ast_js.ml ast_js.cmi \
-          $(EXPORTSRC) $(EXPORTSRC:%.mli=%.cmi)
-
-uninstall-findlib:
-	ocamlfind remove $(LIBNAME)
+	ocamlfind install $(LIBNAME) META   lib.cma lib.cmxa lib.a \
+          $(EXPORTSRC) $(EXPORTSRC:%.mli=%.cmi) $(EXPORTSRC:%.mli=%.cmt) \
+          ast_js.ml ast_js.cmi

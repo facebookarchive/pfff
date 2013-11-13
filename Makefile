@@ -478,10 +478,14 @@ INSTALL_SUBDIRS= \
   commons h_program-lang matcher \
   lang_js/parsing
 
-install-findlib: all all.opt
+LIBNAME=pfff
+install-findlib::
+	ocamlfind install $(LIBNAME) META    \
+
+install-findlib:: all all.opt
 	set -e; for i in $(INSTALL_SUBDIRS); do echo $$i; $(MAKE) -C $$i install-findlib; done
 
-uninstall-findlib:
+uninstall-findlib::
 	set -e; for i in $(INSTALL_SUBDIRS); do echo $$i; $(MAKE) -C $$i uninstall-findlib; done
 
 version:

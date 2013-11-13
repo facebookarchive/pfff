@@ -20,7 +20,8 @@ use Pod::Usage;
 #   we could make it a configuration option
 # - lang_ml/ also requires compiler-libs and with the many changes in the
 #   .cmt format, this can easily break compilations, maybe we could also
-#    make it a configuration option
+#    make it a configuration option. In the same way we should not force
+#    to use -bin-annot
 # - findutils? we need a good gnu find, not the macos find
 #   which adds some extra '//' in paths which bothers pfff
 # - sharutils still?, for obrowser/ocsigen use of uuencode

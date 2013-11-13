@@ -112,7 +112,7 @@ clean::
 
 
 ##############################################################################
-# Compilation once installed
+# Simple compilation once installed
 ##############################################################################
 
 LIBS2= \
@@ -121,11 +121,14 @@ LIBS2= \
  $(shell ocamlfind query pfff-matcher) \
  $(shell ocamlfind query pfff-lang_js) \
 
+STUBDIR=$(shell ocamlfind query pfff-commons)/../stublibs \
+
+# -custom so that don't need to find the dlllib.so
 test_install: pfff_linking.ml
-	ocamlc $(SYSLIBS) $(LIBS2:%=%/lib.cma) $(LIBS2:%=-I %) pfff_linking.ml -o pfff_linking
+	ocamlc -custom $(SYSLIBS) $(LIBS2:%=%/lib.cma) $(LIBS2:%=-I %) -I $(STUBDIR) pfff_linking.ml -o pfff_linking
 
 test_install.opt: pfff_linking.ml
-	ocamlopt $(SYSLIBS:%.cma=%.cmxa) $(LIBS2:%=%/lib.cmxa) $(LIBS2:%=-I %) pfff_linking.ml -o pfff_linking
+	ocamlopt $(SYSLIBS:%.cma=%.cmxa) $(LIBS2:%=%/lib.cmxa) $(LIBS2:%=-I %) -I $(STUBDIR) pfff_linking.ml -o pfff_linking.opt
 
 
 ##############################################################################

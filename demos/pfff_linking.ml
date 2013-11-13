@@ -1,5 +1,8 @@
 open Common
 
+(* usage: ./pfff_linking ../demos/foo.js which will dump the AST of a
+ * javascript program
+ *)
 let main () =
   let file = Sys.argv.(1) in
   let ((ast, _toks), _) = Parse_js.parse file in

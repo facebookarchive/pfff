@@ -63,7 +63,6 @@ clean::
 	rm -f $(TARGET).top
 
 
-
 archi_code_lexer.ml: archi_code_lexer.mll
 	$(OCAMLLEX) $<
 clean::
@@ -73,15 +72,10 @@ beforedepend:: archi_code_lexer.ml
 ##############################################################################
 # install
 ##############################################################################
-OCAMLSTDLIB=`ocamlc -where`
 LIBNAME=pfff-h_program-lang
-DESTDIR=$(OCAMLSTDLIB)/$(LIBNAME)
+EXPORTSRC=parse_info.mli
 
 install-findlib: all all.opt
 	ocamlfind install $(LIBNAME) META \
           lib.cma lib.cmxa lib.a \
-          parse_info.mli parse_info.cmi
-
-uninstall-findlib:
-	ocamlfind remove $(LIBNAME)
-
+          $(EXPORTSRC) $(EXPORTSRC:%.mli=%.cmi) $(EXPORTSRC:%.mli=%.cmt)

@@ -49,14 +49,10 @@ clean::
 ##############################################################################
 # install
 ##############################################################################
-OCAMLSTDLIB=`ocamlc -where`
 LIBNAME=pfff-matcher
-DESTDIR=$(OCAMLSTDLIB)/$(LIBNAME)
+EXPORTSRC=
 
 install-findlib: all all.opt
 	ocamlfind install $(LIBNAME) META \
           lib.cma lib.cmxa lib.a \
-
-uninstall-findlib:
-	ocamlfind remove $(LIBNAME)
 
