@@ -1,17 +1,17 @@
 To build pfff you will need several development packages usually
 not shipped in a default install.
 
-Install pcre-devel, gtk2-devel, atk-devel, pango-devel, and cairo-devel,
+Install gtk2-devel, atk-devel, pango-devel, and cairo-devel,
 swi-prolog, ncurses-devel, and binutils-gold.
 
 For instance:
-for RedHat: sudo yum install pcre-devel
-for Gentoo: sudo emerge pcre
+for RedHat: sudo yum install gtk2-devel
+for Gentoo: sudo emerge gtk2
 for Arch: I don't remember
 
 For Ubuntu/Debian, packages are named differently, usually with a 'lib'
 prefix, so you will want to install:
-libpcre3-dev, libgtk2.0-dev, libcairo2-dev, libpango1.0-dev and finally
+libgtk2.0-dev, libcairo2-dev, libpango1.0-dev and finally
 the binutils-gold package.
 
 On Fedora you may need to install the camlp4 packages too: 
