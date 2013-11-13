@@ -333,3 +333,4 @@ web/var/logs/warnings.log
 /data/php_stdlib/
 /demos/pfff_linking
 /demos/pfff_linking
+/tests/php/codegraph/pfff_test.log
