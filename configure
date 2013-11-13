@@ -15,11 +15,17 @@ use Pod::Usage;
 # - make, perl, bash
 # - diffutils, fileutils, findutils, grep, patchutils, sh-utils
 
-# - TODO findutils ?? need good gnu find, not macos find
+#todo:
+# - lang_bytecode/ brings many dependencies (extlib, ptrees, etc), maybe
+#   we could make it a configuration option
+# - lang_ml/ also requires compiler-libs and with the many changes in the
+#   .cmt format, this can easily break compilations, maybe we could also
+#    make it a configuration option
+# - findutils? we need a good gnu find, not the macos find
 #   which adds some extra '//' in paths which bothers pfff
-# - STILL? sharutils, for obrowser/ocsigen  use of uuencode
+# - sharutils still?, for obrowser/ocsigen use of uuencode
 
-# If want to run the tests need also:
+# If want to run the tests you need also:
 # - swipl
 # - javac 
 
@@ -34,16 +40,7 @@ my $projectcmdline =
 
 my $prefix="/usr/local";
 
-my $bt=0;
-
-my $visual=1; # cairo, codemap
-my $graphics=0; # X11 graphics.cma
-my $gui=1; # gtk, pfff_browser
-
-my $opt= ""; # ocamlc.opt ?
-my $ocamlc_flags = ""; #ocamlc -?
-my $ocaml_version = 3112;
-
+my $visual=1; # cairo/gtk, for codemap, codegraph
 my $facebook=0; 
 
 my $man = 0;
@@ -56,21 +53,16 @@ my $help = 0;
 GetOptions (
     "prefix=s" => \$prefix,
 
-    "bt!" => \$bt,
-
     "visual!" => \$visual,
-    "gui!" => \$gui,
-    "graphics!" => \$graphics,
 
     "with-all" => sub { 
         $facebook = 0;
-        $gui = 1; $visual = 1; 
-        #$graphics = 1; conflict when $visual
+        $visual = 1;
     },
 
     "facebook" => sub { 
         $facebook = 1;
-        $gui = 0; $visual = 0; #really ?
+        $visual = 0;
     },
 
     'help|?' => \$help, 
@@ -83,13 +75,12 @@ pod2usage(-exitstatus => 0, -verbose => 2) if $man;
 
 my $src="$prefix/share/$project";
 
-# Dependencies:
-if ($visual) { $gui = 1; }
-if ($facebook) { }
+my $opt= ""; # ocamlc.opt ?
+my $ocamlc_flags = ""; #ocamlc -?
+my $ocaml_version = 3112;
 
-######################################################################
-# Side effects
-######################################################################
+# Implicit dependencies:
+if ($facebook) { }
 
 ######################################################################
 # Helpers
@@ -163,7 +154,9 @@ Have a look at the install_xxx.txt corresponding to your OS.
 
 pr2 "Checking your configuration.\n";
 
+# hard error, missing programs
 my $error = 0;
+# soft error, missing libraries, can not probably compile every pfff components
 my $error2 = 0;
 
 my $arch = `uname`;
@@ -179,7 +172,7 @@ $error +=
     check_config("echo \"1;;\\n\" | ocaml |",
                  "(Objective|OCaml)(.*) ([34]\.*.*)",
                  "OCaml (the wonderful language) is present.",
-                 "The program ocaml is missing or is not a good version. We need at least 4.01",
+                 "The program ocaml is missing or is not a good version. We need at least 4.00",
                  );
 show_error_msg_and_exit_if_error($error);
 
@@ -198,8 +191,6 @@ if ($res =~ /(Objective|OCaml)(.*) ([34])\.([0-9]+).([0-9]+)/) {
 #---------------------------------------------------------------
 # Developers tools
 #---------------------------------------------------------------
-
-pr2 "";
 
 my $MAKE_PROGRAM = "make";
 if($arch =~ /FreeBSD/) {
@@ -248,19 +239,16 @@ if( ($arch =~ /FreeBSD/) || (($arch =~ /Darwin/) && ($BREW_PROGRAM)) ) {
     $prefix_distrib = "/opt/local";
 }
 
-
 # The default ocamlgraph configure generate Makefiles that uses some -pack
 # and certain module names like Graph that conflicts with other pfff modules
 # so right now the Makefile is hand-crafted.
 
-if($gui) {
+if($visual) {
     pr2 "";
     pr2 "Configuring ocamlgtk";
     my $err = system("cd external/ocamlgtk; ./configure");
-    if ($err) { $gui = 0; $error2++; }
-}
+    if ($err) { $visual = 0; $error2++; }
 
-if($visual) {
     pr2 "";
     pr2 "Configuring ocamlcairo";
     my $err = system("cd external/ocamlcairo; 
@@ -269,46 +257,12 @@ if($visual) {
 }
 
 ######################################################################
-# Generate config files (platform/portability issues)
-######################################################################
-
-######################################################################
-# Generate globals files (features issues)
-######################################################################
-
-######################################################################
-# Diagnostic 
-######################################################################
-
-if($error2) { 
-    show_missing_package_error_msg($error2);
-} else {
-    pr2 "
-All seems fine for $project.
-";
-}
-
-pr2 "
-----------------------------------------------------------------------
-To compile $project type:
-  \$ $MAKE_PROGRAM depend
-  \$ $MAKE_PROGRAM 
-
-Then, to test $project simply type:
-  \$ $projectcmdline
-
-If you want to use the analysis framework and code visualization tool
-see install.txt or type ./configure --help
-----------------------------------------------------------------------
-";
-
-######################################################################
 # Generating the configuration
 ######################################################################
 
+pr2 "";
 pr2 "$project target prefix: $prefix (you can use --prefix to override it)";
-pr2 "Generating Makefile.config (BT=$bt, GUI=$gui, VISUAL=$visual)";
-pr2 " (see also configure --help)";
+pr2 "Generating Makefile.config (VISUAL=$visual) (see also configure --help)";
 open(CONFIG, ">Makefile.config");
 print CONFIG "# autogenerated by configure
 
@@ -325,20 +279,15 @@ LIBDIR=$prefix/lib
 SHAREDIR=$src
 
 # Common features, cf commons/Makefile
-FEATURE_SEXP_BUILTIN_COMMONS=0
 FEATURE_JSON_BUILTIN_COMMONS=1
 FEATURE_XML_BUILTIN_COMMONS=1
+FEATURE_SEXP_BUILTIN_COMMONS=0
 
 # not worth it, because does not work well for native code
 #FEATURE_SYSLIB_BUILTIN_COMMONS=1
 
 # Features
-FEATURE_BACKTRACE=$bt
-
-FEATURE_GUI=$gui
-FEATURE_GRAPHICS=$graphics
 FEATURE_VISUAL=$visual
-
 FEATURE_FACEBOOK=$facebook
 
 OPTBIN=$opt
@@ -348,10 +297,11 @@ OCAMLVERSION=$ocaml_version
 
 
 pr2 "Generating commons/features.ml";
-`cpp -DFEATURE_GUI=$gui -DFEATURE_BACKTRACE=$bt commons/features.ml.in > commons/features.ml`;
+`cpp -DFEATURE_VISUAL=$visual commons/features.ml.in > commons/features.ml`;
 
 pr2 "Generating globals/config_pfff.ml";
 `perl -p -e 's#Not_found1.\*#Not_found->\\\"$src\\\"#' globals/config_pfff.ml.in > globals/config_pfff.ml`;
+
 if($facebook) {
     my ($server) = `cat facebook/pfff_logger.config`;
     `perl -p -i -e 's#Not_found2.\*#Not_found-> Some \\\"$server\\\"#' globals/config_pfff.ml`;
@@ -363,10 +313,34 @@ if($error || $error2) {
 }
 
 ######################################################################
-# Documentation
+# Diagnostic 
 ######################################################################
 
-# TODO add docs for -fb ?
+if($error2) { 
+    show_missing_package_error_msg($error2);
+} else {
+    pr2 "All seems fine for $project.";
+}
+
+pr2 "
+----------------------------------------------------------------------
+To compile $project type:
+  \$ $MAKE_PROGRAM depend
+  \$ $MAKE_PROGRAM 
+
+Then, to test $project simply type:
+  \$ $projectcmdline
+
+If you want to use the analysis framework and code visualization tools
+see install.txt or type ./configure --help
+----------------------------------------------------------------------
+";
+
+
+
+######################################################################
+# Documentation
+######################################################################
 
 __END__
 
@@ -380,8 +354,6 @@ configure [options] [--prefix=/path/to/install]
 
 Options are:
 --prefix
---[no]bt
---[no]gui
 --[no]visual
 --with-all
 --facebook
@@ -389,10 +361,6 @@ Options are:
 =head1 OPTIONS
 
 =over 8
-
-
-
-
 
 
 =item B<-help>

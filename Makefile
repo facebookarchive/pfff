@@ -21,13 +21,12 @@ PROGS=pfff \
  sgrep spatch \
  stags \
  scheck \
- pfff_db \
  codequery \
+ pfff_db \
  pfff_test
 
 ifeq ($(FEATURE_VISUAL), 1)
-PROGS+=codemap
-PROGS+=codegraph
+PROGS+=codemap codegraph
 endif
 
 OPTPROGS= $(PROGS:=.opt)
@@ -51,27 +50,16 @@ OPTPROGS= $(PROGS:=.opt)
 #  endif
 
 
-# cf also below the target for pfff_browser
-ifeq ($(FEATURE_GUI),1)
+ifeq ($(FEATURE_VISUAL),1)
 GUIDIR=external/ocamlgtk
 GUICMD= $(MAKE) all -C $(GUIDIR) && $(MAKE) gui       -C commons 
 GUICMDOPT= $(MAKE) opt -C $(GUIDIR) && $(MAKE) gui.opt       -C commons;
 GTKINCLUDE=external/ocamlgtk/src
-endif
 
-# cf also below for target pfff_visual
-ifeq ($(FEATURE_VISUAL),1)
 CAIRODIR=external/ocamlcairo
 CAIROINCLUDE=external/ocamlcairo/src
-endif
 
-
-#todo: remove?
-ifeq ($(FEATURE_BACKTRACE), 1)
-BTCMD= $(MAKE) backtrace -C commons
-BTCMDOPT= $(MAKE) backtrace.opt -C commons
-BTCMA=commons/commons_backtrace.cma
-else
+VISUALDIRS=code_map code_graph
 endif
 
 #------------------------------------------------------------------------------
@@ -84,23 +72,12 @@ GRAPHCMDOPT= $(MAKE) all.opt -C $(GRAPHDIR) && $(MAKE) graph.opt -C commons
 
 ZIPDIR=external/ocamlzip
 ZIPCMA=external/ocamlzip/zip.cma
-
 EXTLIBDIR=external/extlib
 EXTLIBCMA=external/extlib/extLib.cma
-
 PTDIR=external/ptrees
 PTCMA=external/ptrees/ptrees.cma
-
 JAVALIBDIR=external/javalib/src
 JAVALIBCMA=external/javalib/src/lib.cma
-
-ifeq ($(FEATURE_GRAPHICS), 1)
-#GRAPHICSCMXA=graphics.cmxa
-endif
-
-ifeq ($(FEATURE_VISUAL),1)
-VISUALDIRS=code_map code_graph
-endif
 
 OCAMLCOMPILERDIR=$(shell ocamlc -where)/compiler-libs
 OCAMLCOMPILERCMA=ocamlcommon.cma
@@ -111,7 +88,6 @@ OCAMLCOMPILERCMA=ocamlcommon.cma
 SYSLIBS=nums.cma bigarray.cma str.cma unix.cma
 
 SYSLIBS+=$(OCAMLCOMPILERCMA)
-
 
 # used for sgrep and other small utilities which I dont want to depend
 # on too much things
@@ -146,7 +122,6 @@ BASICLIBS=commons/lib.cma \
 BASICSYSLIBS=nums.cma bigarray.cma str.cma unix.cma
 
 LIBS= commons/lib.cma \
-       $(BTCMA) \
        $(GRAPHCMA) \
        $(EXTLIBCMA) $(PTCMA) $(ZIPCMA) \
        $(JAVALIBCMA) \
@@ -208,7 +183,7 @@ LIBS= commons/lib.cma \
 MAKESUBDIRS=commons \
   $(GRAPHDIR) \
   $(GUIDIR) $(CAIRODIR) \
-  $(ZIPDIR)    $(EXTLIBDIR) $(PTDIR) $(JAVALIBDIR) \
+  $(ZIPDIR) $(EXTLIBDIR) $(PTDIR) $(JAVALIBDIR) \
   globals \
   h_version-control \
   h_visualization \
@@ -295,7 +270,6 @@ top: $(TARGET).top
 
 rec:
 	$(MAKE) -C commons 
-	$(BTCMD)
 	$(GRAPHCMD)
 	$(GUICMD)
 	$(MAKE) features -C commons 
@@ -303,7 +277,6 @@ rec:
 
 rec.opt:
 	$(MAKE) all.opt -C commons 
-	$(BTCMDOPT)
 	$(GRAPHCMDOPT)
 	$(GUICMDOPT)
 	$(MAKE) features.opt -C commons 
@@ -329,7 +302,6 @@ clean::
 	rm -f $(TARGET).top
 clean::
 	set -e; for i in $(MAKESUBDIRS); do $(MAKE) -C $$i clean; done 
-
 clean::
 	rm -f *.opt
 
@@ -361,7 +333,6 @@ purebytecode:
 	rm -f $(EXEC).opt $(EXEC)
 	$(MAKE) BYTECODE_STATIC="" $(EXEC)
 
-
 #------------------------------------------------------------------------------
 # stags targets (was pfff_tags)
 #------------------------------------------------------------------------------
@@ -381,7 +352,6 @@ sgrep: $(BASICLIBS) main_sgrep.cmo
 	$(OCAMLC) $(CUSTOM) -o $@ $(BASICSYSLIBS) $^
 sgrep.opt: $(BASICLIBS:.cma=.cmxa) main_sgrep.cmx
 	$(OCAMLOPT) $(STATIC) -o $@ $(BASICSYSLIBS:.cma=.cmxa) $^
-
 clean::
 	rm -f sgrep
 
@@ -428,20 +398,22 @@ clean::
 #------------------------------------------------------------------------------
 # codemap target (was pfff_visual)
 #------------------------------------------------------------------------------
-SYSLIBS3= \
+SYSLIBS_CM= \
  external/ocamlgtk/src/lablgtk.cma \
  external/ocamlcairo/src/cairo.cma \
  external/ocamlcairo/src/cairo_lablgtk.cma \
 
-OBJS3=code_map/lib.cma
+OBJS_CM=code_map/lib.cma
 
 GTKLOOP=gtkThread.cmo
 
-codemap: $(LIBS) commons/commons_gui.cma $(OBJS3) main_codemap.cmo
-	$(OCAMLC) -thread $(CUSTOM) -o $@ $(SYSLIBS) threads.cma  $(SYSLIBS3) $(GTKLOOP) $^
+codemap: $(LIBS) commons/commons_gui.cma $(OBJS_CM) main_codemap.cmo
+	$(OCAMLC) -thread $(CUSTOM) -o $@ $(SYSLIBS) threads.cma \
+            $(SYSLIBS_CM) $(GTKLOOP) $^
 
-codemap.opt: $(LIBS:.cma=.cmxa) commons/commons_gui.cmxa $(OBJS3:.cma=.cmxa) main_codemap.cmx
-	$(OCAMLOPT) -thread $(STATIC) -o $@ $(SYSLIBS:.cma=.cmxa) threads.cmxa  $(SYSLIBS3:.cma=.cmxa) $(GTKLOOP:.cmo=.cmx)  $^
+codemap.opt: $(LIBS:.cma=.cmxa) commons/commons_gui.cmxa $(OBJS_CM:.cma=.cmxa) main_codemap.cmx
+	$(OCAMLOPT) -thread $(STATIC) -o $@ $(SYSLIBS:.cma=.cmxa) threads.cmxa\
+          $(SYSLIBS_CM:.cma=.cmxa) $(GTKLOOP:.cmo=.cmx)  $^
 
 clean::
 	rm -f codemap
@@ -450,14 +422,16 @@ clean::
 # codegraph (was pm_depend)
 #------------------------------------------------------------------------------
 
-#SYSLIBS_PM= external/phylomel/src/lib.cma
-OBJS4=code_graph/lib.cma
+SYSLIBS_CG=$(SYSLIBS_CM)
+OBJS_CG=code_graph/lib.cma
 
-codegraph: $(LIBS) commons/commons_gui.cma $(OBJS4) main_codegraph.cmo
-	$(OCAMLC) -thread $(CUSTOM) -o $@ $(SYSLIBS) threads.cma  $(SYSLIBS3) $(GTKLOOP) $^
+codegraph: $(LIBS) commons/commons_gui.cma $(OBJS_CG) main_codegraph.cmo
+	$(OCAMLC) -thread $(CUSTOM) -o $@ $(SYSLIBS) threads.cma \
+           $(SYSLIBS_CG) $(GTKLOOP) $^
 
-codegraph.opt: $(LIBS:.cma=.cmxa) commons/commons_gui.cmxa $(OBJS4:.cma=.cmxa) main_codegraph.cmx
-	$(OCAMLOPT) -thread $(STATIC) -o $@ $(SYSLIBS:.cma=.cmxa) threads.cmxa  $(SYSLIBS3:.cma=.cmxa) $(GTKLOOP:.cmo=.cmx)  $^
+codegraph.opt: $(LIBS:.cma=.cmxa) commons/commons_gui.cmxa $(OBJS_CG:.cma=.cmxa) main_codegraph.cmx
+	$(OCAMLOPT) -thread $(STATIC) -o $@ $(SYSLIBS:.cma=.cmxa) threads.cmxa\
+          $(SYSLIBS_CG:.cma=.cmxa) $(GTKLOOP:.cmo=.cmx)  $^
 
 clean::
 	rm -f codegraph
@@ -499,13 +473,16 @@ install: all
 uninstall:
 	rm -rf $(DESTDIR)$(SHAREDIR)/data
 
-INSTALLSUBDIRS=commons h_program-lang matcher lang_js/parsing
+
+INSTALL_SUBDIRS= \
+  commons h_program-lang matcher \
+  lang_js/parsing
+
 install-findlib: all all.opt
-	set -e; for i in $(INSTALLSUBDIRS); do echo $$i; $(MAKE) -C $$i install-findlib; done
+	set -e; for i in $(INSTALL_SUBDIRS); do echo $$i; $(MAKE) -C $$i install-findlib; done
 
 uninstall-findlib:
-	set -e; for i in $(INSTALLSUBDIRS); do echo $$i; $(MAKE) -C $$i uninstall-findlib; done
-
+	set -e; for i in $(INSTALL_SUBDIRS); do echo $$i; $(MAKE) -C $$i uninstall-findlib; done
 
 version:
 	@echo $(VERSION)
@@ -598,8 +575,6 @@ fbdepend:
 	$(MAKE) depend -C facebook
 
 
-
-
 visual2:
 	./codemap -no_legend -profile -ss 2 \
 	   -with_info DB_LIGHT.marshall -with_layers . .
@@ -609,12 +584,10 @@ visualhead:
 graph2:
 	./codegraph.opt -lang ml -build .
 
-
 #refactoring:
 # git grep -l Source_high | xargs perl -p -i -e 's/Source_highlight/Highlight_code/g'
 
 # TODO: replace with graphviz plugin to codegraph
-
 DSRC=$(SRC)
 DIRS= $(filter-out commons external/ocamlgtk/src external/ocamlcairo external/ocamlgraph facebook, $(MAKESUBDIRS))
 #DIRS=lang_php/parsing
