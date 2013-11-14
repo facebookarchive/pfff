@@ -40,8 +40,10 @@ OPTOBJS?= $(SRC:.ml=.cmx)
 #-w +9 is for better warning on records, needs ocaml 3.12
 OCAMLCFLAGS=-g -dtypes $(OCAMLCFLAGS_EXTRA) -thread -w +9 -w -21 -warn-error +a
 
-# This flag is also used in subdirectories so don't change its name here.
-OPTFLAGS?=-thread -g
+# This flag is also used in subdirectories so don't change its name here
+# the -w y is to silence errors on the visitor_xxx files with the unused
+# variable false positive
+OPTFLAGS?=-thread -g -w y
 
 OCAMLC=ocamlc$(OPTBIN) $(OCAMLCFLAGS)  $(INCLUDES)
 OCAMLOPT=ocamlopt$(OPTBIN) $(OPTFLAGS) $(INCLUDES)
