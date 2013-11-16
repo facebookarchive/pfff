@@ -38,7 +38,7 @@
  *  - support for extra tools is removed. No XdebugXxx, SgrepXxx.
  *  - support for features we don't really use in our code is removed
  *    e.g. unset cast. No Use, UseDirect, UseParen. No CastUnset.
- *    Also no StaticObjCallVar. Also no NamespaceBracketDef.
+ *    Also no StaticObjCallVar.
  *  - some known directives like 'declare(ticks=1);' or 'declare(strict=1);'
  *    are skipped because they don't have a useful semantic for
  *    the abstract interpreter or the type inference engine. No Declare.
@@ -52,6 +52,8 @@
  *    to __builtin__require (maybe not a good idea)
  *  - some special keywords, for instance 'self', are transformed in
  *    "__special__self". See special() below.
+ *  - the different ways to define namespaces are merged, no
+ *    NamespaceBracketDef.
  *
  *  - a simpler stmt type; no extra toplevel and stmt_and_def types,
  *    no FuncDefNested, no ClassDefNested. No StmtList.
@@ -160,8 +162,9 @@ and stmt =
   (* only at toplevel *)
   | ConstantDef of constant_def
   | TypeDef of type_def
-  (* the qualified_ident below can not have a leading '\' *)
-  | NamespaceDef of qualified_ident
+  (* the qualified_ident below can not have a leading '\', it can also
+   * be the root namespace *)
+  | NamespaceDef of qualified_ident * stmt list
   | NamespaceUse of qualified_ident * ident option (* when alias *)
 
   (* Note that there is no LocalVars constructor. Variables in PHP are

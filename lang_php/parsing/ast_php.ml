@@ -729,6 +729,7 @@ and toplevel =
     (* PHP 5.3, see http://www.php.net/manual/en/language.namespaces.rules.php*)
     (* the qualified_ident below can not have a leading '\' *)
     | NamespaceDef of tok * qualified_ident * tok (* ; *)
+    (* when there is no qualified_ident, this means global scope *)
     | NamespaceBracketDef of tok * qualified_ident option * toplevel list brace
     | NamespaceUse of tok * namespace_use_rule comma_list * tok (* ; *)
     (* old:  | Halt of tok * unit paren * tok (* __halt__ ; *) *)

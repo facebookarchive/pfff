@@ -14,3 +14,7 @@ function f2_in_N() {
 
 f1_in_N();
 
+namespace {
+  class GlobalClass {
+  }
+}

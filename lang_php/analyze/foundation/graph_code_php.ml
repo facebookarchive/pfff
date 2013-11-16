@@ -660,9 +660,6 @@ and stmt_toplevel_list env xs =
   | [] -> ()
   | x::xs ->
     (match x with
-    | NamespaceDef qu -> 
-        stmt_toplevel_list 
-          {env with cur = { env.cur with qualifier = qu; }} xs
     | NamespaceUse (qu, sopt) ->
         let new_name =
           match sopt, List.rev qu with
@@ -691,8 +688,11 @@ and stmt_bis env x =
   | ClassDef def -> class_def env def
   | ConstantDef def -> constant_def env def
   | TypeDef def -> type_def env def
+  | NamespaceDef (qu, xs) -> 
+    stmt_toplevel_list 
+      {env with cur = { env.cur with qualifier = prune_special_root qu; }} xs
   (* handled in stmt_toplevel_list *)
-  | NamespaceDef _ | NamespaceUse _ -> ()
+  | NamespaceUse _ -> ()
 
   (* old style constant definition, before PHP 5.4 *)
   | Expr(Call(Id[("define", _)], [String((name)); v])) ->

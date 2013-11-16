@@ -452,7 +452,7 @@ and stmt env = function
   | ClassDef def -> class_def env def
   | ConstantDef def -> constant_def env def
   | TypeDef def -> typedef_def env def
-  | NamespaceDef qu | NamespaceUse (qu, _) ->
+  | NamespaceDef (qu, _) | NamespaceUse (qu, _) ->
     raise (Ast_php.TodoNamespace (A.tok_of_name qu))
 
   | Expr e -> expr env e

@@ -18,3 +18,7 @@ use \N\AInN;
 function test_namespace_absolute() {
   $o = new AInN();
 }
+
+function test_namespace_global() {
+  $o = new GlobalClass();
+}

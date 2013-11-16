@@ -73,28 +73,54 @@ let noop = A.Block []
 
 let rec program top_l =
   let env = empty_env () in
-  List.fold_right (toplevel env) top_l []
+  toplevels env top_l
 
-and toplevel env st acc =
+and toplevels env xs =
+  match xs with
+  | [] -> []
+  | x::xs ->
+    (match x with
+    | NamespaceDef (_, qi, _) ->
+      let (xs, rest) = xs +> Common.span (function
+        (* less: actually I'm not sure you can mix NamespaceDef and BracketDef*)
+        | NamespaceDef _ | NamespaceBracketDef _ -> false
+        | _ -> true
+      )
+      in
+      let body = toplevels env xs in
+      let rest = toplevels env rest in
+      A.NamespaceDef (qualified_ident env qi, body)::rest
+                      
+    | _ ->
+      (toplevel env x) ++ toplevels env xs
+    )
+
+and toplevel env st =
   match st with
-  | StmtList stmtl -> List.fold_right (stmt env) stmtl acc
-  | FuncDef fd -> A.FuncDef (func_def env fd) :: acc
-  | ClassDef cd -> A.ClassDef (class_def env cd) :: acc
-  | ConstantDef x -> A.ConstantDef (constant_def env x) :: acc
-  | TypeDef x -> A.TypeDef (type_def env x) :: acc
-  | FinalDef _ -> acc
+  | StmtList stmtl -> List.fold_right (stmt env) stmtl []
+  | FuncDef fd -> [A.FuncDef (func_def env fd)]
+  | ClassDef cd -> [A.ClassDef (class_def env cd)]
+  | ConstantDef x -> [A.ConstantDef (constant_def env x)]
+  | TypeDef x -> [A.TypeDef (type_def env x)]
+  | FinalDef _ -> []
   (* error recovery is off by default now *)
   | NotParsedCorrectly _ -> raise Common.Impossible
-  (* coming in next diff *)
-  | NamespaceDef (_, qi, _) -> A.NamespaceDef (qualified_ident env qi)::acc
-  | NamespaceBracketDef (tok, _, _) -> raise (ObsoleteConstruct tok)
+  (* should be handled by toplevel above *)
+  | NamespaceDef (_, qi, _) -> raise Impossible
+  | NamespaceBracketDef (tok, qu_opt, xs) ->
+      let qi =
+        match qu_opt with
+        | Some qu -> qualified_ident env qu
+        | None -> [A.special "ROOT", wrap tok]
+      in
+      [A.NamespaceDef (qi, toplevels env (unbrace xs))]
   | NamespaceUse (tok, xs, _) -> 
-    xs +> uncomma +> List.map (function
-    | ImportNamespace qu -> 
-        A.NamespaceUse (qualified_ident env qu, None)
-    | AliasNamespace (qu, _tok, id) -> 
-        A.NamespaceUse (qualified_ident env qu, Some (ident env id))
-    ) ++ acc
+      xs +> uncomma +> List.map (function
+      | ImportNamespace qu -> 
+          A.NamespaceUse (qualified_ident env qu, None)
+      | AliasNamespace (qu, _tok, id) -> 
+          A.NamespaceUse (qualified_ident env qu, Some (ident env id))
+      )
 
 (* ------------------------------------------------------------------------- *)
 (* Names *)
