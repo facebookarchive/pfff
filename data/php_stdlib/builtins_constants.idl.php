@@ -374,6 +374,7 @@ define('ENCQUOTEDPRINTABLE', 0);
 define('ENT_COMPAT', 0);
 define('ENT_NOQUOTES', 0);
 define('ENT_QUOTES', 0);
+define('ENT_SUBSTITUTE', 0);
 define('ENT_FB_UTF8', 0);
 define('ENT_FB_UTF8_ONLY', 0);
 define('ERA', 0);
