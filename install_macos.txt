@@ -19,7 +19,7 @@ Troubles?
 
 - If you are using homebrew you may have problems compiling ocamlgtk and 
   ocamlcairo. First You need to 
-     export PKG_CONFIG_PATH /usr/X11/lib/pkgconfig 
+     export PKG_CONFIG_PATH=/opt/X11/lib/pkgconfig
   so that configure can find one cairo.pc (the cairo of brew is keg-only),
   but then you want to force to linking with the new cairo library in
   homebrew because the default one of MacOS is causing a segfault.
