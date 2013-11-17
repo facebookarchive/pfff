@@ -66,8 +66,10 @@ val remove_edge: (node * node) -> edge -> graph -> unit
 (* graph access *)
 val has_node: node -> graph -> bool
 val succ: node -> edge -> graph -> node list
+(* this is slow, take care, or use mk_eff_use_pred below *)
 val pred: node -> edge -> graph -> node list
-(* can raise exception *)
+val mk_eff_use_pred: graph -> (node -> node list)
+(* can raise a Not_found exception *)
 val parent: node -> graph -> node
 val parents: node -> graph -> node list
 val children: node -> graph -> node list
@@ -83,9 +85,9 @@ val iter_nodes: (node -> unit) -> graph -> unit
 val all_use_edges: graph -> (node * node) list
 val all_nodes: graph -> node list
 
+(* statistics *)
 val nb_nodes: graph -> int
 val nb_use_edges: graph -> int
-
 val print_statistics: statistics -> graph -> unit
 
 (* algorithms *)

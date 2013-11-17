@@ -306,7 +306,10 @@ let build_graph_code lang root =
   Graph_code.save g (dep_file_of_dir output_dir);
   Graph_code.print_statistics stats g;
 
-  (* save also TAGS, light db (TODO), prolog (TODO), layers *)
+  (* Save also TAGS, light db, prolog (TODO), layers. We could also do
+   * that on demand when we run codemap and there is only a 
+   * graph_code.marshall file.
+   *)
   if !gen_derived_data then begin
     Layer_graph_code.gen_rank_heatmap_layer g (GC.bottom_up_numbering g) 
       (Filename.concat output_dir "layer_bottomup.json");
@@ -315,7 +318,6 @@ let build_graph_code lang root =
     let defs = Graph_code_tags.defs_of_graph_code g in
     Tags_file.generate_TAGS_file 
       (Filename.concat output_dir "TAGS") defs;
-   (* very very slow *)
     let db = Graph_code_database.db_of_graph_code root g in
     Database_code.save_database db 
       (Filename.concat output_dir "PFFF_DB.marshall");

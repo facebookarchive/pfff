@@ -20,8 +20,9 @@ module E = Database_code
 (*****************************************************************************)
 (* Prelude *)
 (*****************************************************************************)
-(* Generating a database from a graph_code.
-*)
+(* 
+ * Generating a (light) database from a graph_code.
+ *)
 
 (*****************************************************************************)
 (* Helpers *)
@@ -33,16 +34,20 @@ module E = Database_code
   
 let db_of_graph_code root g =
 
-  (* todo: if at some point want to also leverage the 
+  (* todo: if at some point we want to also leverage the 
    * cross entity functionality of Database_code, e.g.
-   * its e_good_examples_of_use then need to
+   * its e_good_examples_of_use field, then we need to
    * do something a bit different here and map
-   * node to index first.
+   * nodes to indices first.
    *)
   let res = ref [] in
-  let hnot_found = G.all_children G.not_found g +> Common.hashset_of_list in
-  
 
+  (* opti: using G.parent and check if G.not_found is slow *)
+  let hnot_found = G.all_children G.not_found g +> Common.hashset_of_list in
+
+  (* opti: using G.pred is super slow *)
+  let use_pred = G.mk_eff_use_pred g in
+  
   g +> G.iter_nodes (fun node ->
     let (s, kind) = node in
     match kind with
@@ -63,7 +68,7 @@ let db_of_graph_code root g =
         let file = pos.Parse_info.file in
 
       (* select users that are outside! that are not in the same file *)
-        let pred = G.pred node G.Use g in
+        let pred = use_pred node in
         let extern = pred +> List.filter (fun n ->
           try
             let nodeinfo = G.nodeinfo n g in

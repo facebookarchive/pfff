@@ -382,6 +382,20 @@ let create_initial_hierarchy g =
 (* Misc *)
 (*****************************************************************************)
 
+let mk_eff_use_pred g =
+  (* we use its find_all property *)
+  let h = Hashtbl.create 101 in
+  
+  g +> iter_nodes (fun n1 ->
+    let uses = succ n1 Use g in
+    uses +> List.iter (fun n2 ->
+      Hashtbl.add h n2 n1
+    )
+  );
+  (fun n ->
+    Hashtbl.find_all h n
+  )
+
 let group_edges_by_files_edges xs g =
   xs +> Common2.group_by_mapped_key (fun (n1, n2) ->
     (file_of_node n1 g, file_of_node n2 g)
