@@ -760,7 +760,7 @@ let read_log_undefined_xhp_field pfff_log =
 open OUnit
 let test () =
 
-  let suite = "spatch" >::: (
+  let suite = "spatch" >::: [
   (* ugly: todo: use a toy fuzzy parser instead of the one in lang_cpp/ *)
     Unit_matcher.spatch_unittest
       ~ast_fuzzy_of_string:(fun str ->
@@ -774,11 +774,11 @@ let test () =
       ~elt_and_info_of_tok:(fun tok ->
         Token_helpers_cpp.elt_of_tok tok, Token_helpers_cpp.info_of_tok tok
       )
-    ++
-    Unit_matcher_php.spatch_unittest ++
-    Unit_matcher_php.refactoring_unittest ++
-    []
-  ) in
+    ;
+    Unit_matcher_php.spatch_unittest;
+    Unit_matcher_php.refactoring_unittest;
+  ]
+  in
   OUnit.run_test_tt suite +> ignore;
   ()
 

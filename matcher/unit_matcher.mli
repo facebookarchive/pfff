@@ -11,17 +11,17 @@ val unittest: OUnit.test
  * matcher/ and matcher unit tests needs a fuzzy parser and so
  * needs lang_cpp/. At some point we could have a toy fuzzy parser
  * that simply use GenLex. For now we break the circular dependency
- * by passing arounds the necessary functions in main_sgrep.ml and
- * main_spatch.ml.
+ * by passing arounds the necessary functions in main_sgrep.ml,
+ * main_spatch.ml and main_test.ml.
  *)
 
 (* subsystems unittest *)
 val sgrep_unittest: 
   ast_fuzzy_of_string:(string -> Ast_fuzzy.trees) -> 
-  OUnit.test list
+  OUnit.test
 
 val spatch_unittest: 
   ast_fuzzy_of_string:(string -> Spatch_fuzzy.pattern) ->
   parse_file:(string -> Ast_fuzzy.trees * 'tok list) ->
   elt_and_info_of_tok:('tok -> Lib_unparser.elt * Parse_info.info) ->
-  OUnit.test list
+  OUnit.test

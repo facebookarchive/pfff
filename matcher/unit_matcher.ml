@@ -8,7 +8,7 @@ open OUnit
 (* See https://github.com/facebook/pfff/wiki/Sgrep *)
 
 (* run by sgrep -test *)
-let sgrep_unittest ~ast_fuzzy_of_string = [
+let sgrep_unittest ~ast_fuzzy_of_string =
   "sgrep features" >:: (fun () ->
 
     (* spec: pattern string, code string, should_match boolean *)
@@ -111,8 +111,7 @@ let sgrep_unittest ~ast_fuzzy_of_string = [
         assert_bool (spf "pattern:|%s| should not match |%s" spattern scode)
           (matches_with_env = [])
     )
-  );
-]
+  )
 
 (*****************************************************************************)
 (* Spatch Unit tests *)
@@ -123,7 +122,6 @@ let sgrep_unittest ~ast_fuzzy_of_string = [
 (* run by spatch -test *)
 let spatch_unittest 
     ~ast_fuzzy_of_string ~parse_file ~elt_and_info_of_tok = 
-  [
   "spatch regressions files" >:: (fun () ->
 
     let testdir = Filename.concat Config_pfff.path "tests/fuzzy/spatch/" in
@@ -179,7 +177,7 @@ let spatch_unittest
       else failwith ("wrong format for expfile: " ^ expfile)
     )
   )
-]
+
 
 (*****************************************************************************)
 (* Misc unit tests *)

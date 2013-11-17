@@ -12,7 +12,8 @@ module Flag = Flag_parsing_php
 (* See https://github.com/facebook/pfff/wiki/Sgrep *)
 
 (* run by sgrep -test *)
-let sgrep_unittest = [
+let sgrep_unittest = 
+  "sgrep php" >::: [
 
   "sgrep features" >:: (fun () ->
     (* spec: pattern string, code string (statement), should_match boolean *)
@@ -224,7 +225,7 @@ let sgrep_unittest = [
 (* See https://github.com/facebook/pfff/wiki/Spatch *)
 
 (* run by spatch -test *)
-let spatch_unittest = [
+let spatch_unittest =
   "spatch regressions files" >:: (fun () ->
 
     let testdir = Filename.concat Config_pfff.path "tests/php/spatch/" in
@@ -268,12 +269,11 @@ let spatch_unittest = [
       else failwith ("wrong format for expfile: " ^ expfile)
     )
   )
-]
 
 (*****************************************************************************)
 (* Generic refactorings *)
 (*****************************************************************************)
-let refactoring_unittest = [
+let refactoring_unittest =
   "refactoring php" >::: [
     "adding return type" >:: (fun () ->
     let file_content = "function foo() { }" in
@@ -389,9 +389,9 @@ class X {
     let res = Refactoring_code_php.refactor [refactoring] ast_and_toks in
     assert_equal "<?php\nclass X implements B { }" res;
   );
-]]
+]
 
-let unparser_unittest = [
+let unparser_unittest =
   "add arguments" >:: (fun () ->
     let file_content = "function foo() { $x = printf(\"%s %d\", ); }" in
     let file = Parse_php.tmp_php_file_from_string file_content in
@@ -406,15 +406,14 @@ let unparser_unittest = [
     assert_equal
       "<?php\nfunction foo(str, 1) { $x = printf(\"%s %d\", str, 1); }"
       res;
-  );
-]
+  )
   
 (*****************************************************************************)
 (* Final suite *)
 (*****************************************************************************)
 
 let unittest =
-  "matcher_php" >::: (
-    sgrep_unittest ++ spatch_unittest ++ 
-    refactoring_unittest ++ unparser_unittest
-  )
+  "matcher_php" >::: [
+    sgrep_unittest; spatch_unittest;
+    refactoring_unittest; unparser_unittest;
+  ]

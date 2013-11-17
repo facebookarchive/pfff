@@ -6,6 +6,6 @@
 val unittest: OUnit.test
 
 (* subsystems unittest *)
-val sgrep_unittest: OUnit.test list
-val spatch_unittest: OUnit.test list
-val refactoring_unittest: OUnit.test list
+val sgrep_unittest: OUnit.test
+val spatch_unittest: OUnit.test
+val refactoring_unittest: OUnit.test

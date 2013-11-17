@@ -19,11 +19,19 @@ open OUnit
  * full list of options in the "the options" section below), this 
  * program also depends on external files ?
  *)
-
 let verbose = ref false
 
 (* action mode *)
 let action = ref ""
+
+(*****************************************************************************)
+(* Helpers *)
+(*****************************************************************************)
+
+let ast_fuzzy_of_string str =
+  Common2.with_tmp_file ~str ~ext:"cpp" (fun tmpfile ->
+    Parse_cpp.parse_fuzzy tmpfile +> fst
+  )
 
 (*****************************************************************************)
 (* Main action *)
@@ -33,7 +41,6 @@ let action = ref ""
 (* regression testing *)
 (*---------------------------------------------------------------------------*)
 
-
 let test regexp = 
 
   (* There is no reflection in OCaml so the unit test framework OUnit requires
@@ -42,12 +49,20 @@ let test regexp =
   let tests = 
     "all" >::: [
 
-      (* PHP related tests *)
+      (* general tests *)
+      Unit_program_lang.unittest;
+      Unit_graph_code.unittest;
+      Unit_version_control.unittest;
+      Unit_matcher.sgrep_unittest ~ast_fuzzy_of_string;
+      (* todo: Unit_matcher.spatch_unittest ~xxx *)
 
+      (* PHP related tests *)
       Unit_parsing_php.unittest;
       Unit_pretty_print_php.unittest;
       Unit_matcher_php.unittest;
-
+      Unit_matcher_php.sgrep_unittest;
+      Unit_matcher_php.spatch_unittest;
+      Unit_matcher_php.refactoring_unittest;
       Unit_foundation_php.unittest;
       Unit_static_analysis_php.unittest;
       Unit_typeinfer_php.unittest;
@@ -62,20 +77,15 @@ let test regexp =
 
       Unit_parsing_ml.unittest;
       Unit_analyze_ml.unittest;
-
       Unit_parsing_java.unittest;
       Unit_analyze_java.unittest;
       Unit_analyze_bytecode.unittest;
-
       Unit_parsing_js.unittest;
       Unit_analyze_js.unittest;
       Unit_parsing_html.unittest;
       Unit_parsing_opa.unittest;
       Unit_parsing_cpp.unittest;
       Unit_parsing_objc.unittest;
-
-      Unit_version_control.unittest;
-      Unit_program_lang.unittest;
     ]
   in
   let suite = 
