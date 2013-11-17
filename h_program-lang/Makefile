@@ -4,6 +4,7 @@ TOP=..
 ##############################################################################
 TARGET=lib
 
+# see also graph_code/graph_code.ml! closely related to h_program-lang
 SRC= parse_info.ml \
      ast_fuzzy.ml \
      meta_ast_generic.ml \
@@ -13,10 +14,7 @@ SRC= parse_info.ml \
      skip_code.ml \
      refactoring_code.ml \
      layer_code.ml database_code.ml \
-     graph_code.ml graph_code_opti.ml dependencies_matrix_code.ml \
-     graph_code_prolog.ml tags_file.ml graph_code_tags.ml \
-     graph_code_database.ml \
-     graph_code_analysis.ml layer_graph_code.ml \
+     tags_file.ml \
      statistics_parsing.ml layer_parse_errors.ml \
      coverage_code.ml layer_coverage.ml \
      overlay_code.ml big_grep.ml pleac.ml info_code.ml \
@@ -28,7 +26,6 @@ LIBS=../commons/lib.cma
 INCLUDEDIRS= $(TOP)/commons \
  $(TOP)/commons/lib-json \
  $(TOP)/commons/ocamlextra \
- $(TOP)/external/ocamlgraph $(TOP)/external/ocamlgraph/src \
  $(TOP)/h_files-format
 
 #$(TOP)/commons/lib-sexp

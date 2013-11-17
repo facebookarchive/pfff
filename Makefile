@@ -96,6 +96,7 @@ BASICLIBS=commons/lib.cma \
  globals/lib.cma \
  h_files-format/lib.cma \
  h_program-lang/lib.cma \
+ graph_code/lib.cma \
  matcher/lib.cma \
  lang_ml/parsing/lib.cma \
  lang_nw/parsing/lib.cma \
@@ -131,6 +132,7 @@ LIBS= commons/lib.cma \
     h_visualization/lib.cma \
     h_files-format/lib.cma \
     h_program-lang/lib.cma \
+    graph_code/lib.cma \
     h_program-visual/lib.cma \
     matcher/lib.cma \
     lang_ml/parsing/lib.cma \
@@ -189,6 +191,7 @@ MAKESUBDIRS=commons \
   h_visualization \
   h_files-format \
   h_program-lang \
+  graph_code \
   h_program-visual \
   matcher \
   lang_ml/parsing \

@@ -1,34 +1,26 @@
-TOP=../..
+TOP=..
 ##############################################################################
 # Variables
 ##############################################################################
 TARGET=lib
 
-SRC= ast_c_simple.ml ast_c_simple_build.ml \
-     graph_code_c.ml \
-     test_analyze_c.ml
+SRC= graph_code.ml graph_code_opti.ml dependencies_matrix_code.ml \
+     graph_code_tags.ml  graph_code_database.ml graph_code_prolog.ml \
+     graph_code_analysis.ml layer_graph_code.ml \
+     test_graph_code.ml unit_graph_code.ml
 
--include $(TOP)/Makefile.config
-
-SYSLIBS= str.cma unix.cma $(PCRECMA)
-LIBS=$(TOP)/commons/lib.cma \
-     $(TOP)/h_program-lang/lib.cma \
-     $(TOP)/h_version-control/lib.cma \
-     ../parsing/lib.cma \
-
+SYSLIBS= str.cma unix.cma
+LIBS=../commons/lib.cma
 INCLUDEDIRS= $(TOP)/commons \
-   $(TOP)/commons/ocollection $(TOP)/commons/ocamlextra \
-   $(TOP)/commons/lib-json \
-   $(TOP)/external/ \
-   $(TOP)/h_program-lang $(TOP)/h_version-control  \
-   $(TOP)/graph_code \
-   $(TOP)/globals \
-   $(TOP)/lang_cpp/parsing \
-   ../parsing \
+ $(TOP)/commons/lib-json \
+ $(TOP)/commons/ocamlextra \
+ $(TOP)/h_program-lang \
+ $(TOP)/external/ocamlgraph $(TOP)/external/ocamlgraph/src \
 
 ##############################################################################
 # Generic variables
 ##############################################################################
+
 -include $(TOP)/Makefile.common
 
 ##############################################################################
@@ -49,7 +41,13 @@ $(TARGET).top: $(OBJS) $(LIBS)
 clean::
 	rm -f $(TARGET).top
 
+##############################################################################
+# install
+##############################################################################
+LIBNAME=pfff-graph_code
+EXPORTSRC=
 
-##############################################################################
-# Literate Programming rules
-##############################################################################
+install-findlib: all all.opt
+	ocamlfind install $(LIBNAME) META \
+          lib.cma lib.cmxa lib.a \
+          $(EXPORTSRC) $(EXPORTSRC:%.mli=%.cmi) $(EXPORTSRC:%.mli=%.cmt)

@@ -32,6 +32,7 @@ INCLUDEDIRS= $(TOP)/commons \
    $(TOP)/globals \
    $(TOP)/external/ \
    $(TOP)/h_program-lang \
+   $(TOP)/graph_code \
    $(TOP)/h_version-control  \
    $(TOP)/h_visualization  \
    $(TOP)/globals \

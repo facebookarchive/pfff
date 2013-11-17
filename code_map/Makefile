@@ -27,6 +27,7 @@ LIBS=$(TOP)/commons/lib.cma $(TOP)/commons/commons_gui.cma \
 
 INCLUDEDIRS=$(TOP)/commons $(TOP)/globals \
 	$(TOP)/h_program-lang \
+	$(TOP)/graph_code \
 	$(TOP)/h_visualization \
 	$(TOP)/h_program-visual \
 	$(TOP)/lang_php/parsing \

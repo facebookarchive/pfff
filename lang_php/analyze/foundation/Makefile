@@ -60,6 +60,7 @@ INCLUDEDIRS= $(TOP)/commons \
    $(TOP)/commons/lib-json $(TOP)/commons/lib-xml \
    $(TOP)/external/ \
    $(TOP)/h_program-lang $(TOP)/h_version-control  \
+   $(TOP)/graph_code \
    $(TOP)/globals \
    $(TOP)/matcher \
    $(TOP)/lang_php/parsing \

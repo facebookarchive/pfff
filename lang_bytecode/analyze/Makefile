@@ -23,6 +23,7 @@ INCLUDEDIRS= $(TOP)/commons \
    $(TOP)/external/ \
    $(TOP)/external/extlib \
    $(TOP)/h_program-lang $(TOP)/h_version-control  \
+   $(TOP)/graph_code \
    $(TOP)/globals \
    $(TOP)/external/javalib/src \
    $(TOP)/lang_java/parsing \
