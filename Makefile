@@ -92,11 +92,9 @@ SYSLIBS+=$(OCAMLCOMPILERCMA)
 # used for sgrep and other small utilities which I dont want to depend
 # on too much things
 BASICLIBS=commons/lib.cma \
-  $(GRAPHCMA) \
  globals/lib.cma \
  h_files-format/lib.cma \
  h_program-lang/lib.cma \
- graph_code/lib.cma \
  matcher/lib.cma \
  lang_ml/parsing/lib.cma \
  lang_nw/parsing/lib.cma \
