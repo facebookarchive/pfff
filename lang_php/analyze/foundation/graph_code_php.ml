@@ -79,8 +79,8 @@ type env = {
   phase: phase;
   (* We need 3 phases, one to get all the definitions, one to
    * get the inheritance information, and one to get all the Uses.
-   * The inheritance is a kind of use, but certain uses like using
-   * a field or method need the full inheritance tree to already be
+   * The inheritance is a kind of use, but certain uses like accessing
+   * a field or calling a method need the full inheritance tree to already be
    * computed as we may need to lookup entities up in the parents.
    *)
   phase_inheritance: (current * (Ast.name * E.entity_kind)) list ref;
@@ -88,6 +88,7 @@ type env = {
   phase_use_lookup:  
     (current * (bool * (Ast.name * Ast.ident) * E.entity_kind)) list ref;
   phase_use_other:         (unit -> unit) list ref;
+  phase_class_analysis: (current * Ast.name) list ref;
 
   (* right now used in extract_uses phase to transform a src like main()
    * into its File, and also to give better error messages.
@@ -444,7 +445,7 @@ let rec add_use_edge2 env (name, kind) =
         | E.Field when not (xhp_field str) -> ()
         | E.Field when xhp_data_field str -> ()
         | E.Method _ when magic_methods str -> 
-           (* less: env.stat.G.unresolved_method_calls *)
+           (* less: env.stat.G.method_calls false unresolved *)
            ()
         | _ ->
           lookup_fail env tokopt dst;
@@ -916,10 +917,9 @@ and expr env x =
         (* handle easy case *)
         | This ((x, tokopt)) ->
           expr env (Call (Class_get (Id[ (env.cur.self, tokopt)], Id name2), es))
-        (* TODO: need class analysis ... *)
+        (* need class analysis ... *)
         | _ ->
-          let tok = Ast.tok_of_name name2 in
-          env.stats.G.method_calls +> Common.push2 (tok, false);
+          env.phase_class_analysis +> Common.push2 (env.cur, name2);
           expr env e1;
           exprl env es
         )
@@ -1087,6 +1087,7 @@ let build
     phase_use = ref [];
     phase_use_lookup = ref [];
     phase_use_other = ref [];
+    phase_class_analysis = ref [];
     cur = {
       node = ("filled_later", E.File);
       readable = "filled_later";
@@ -1213,6 +1214,37 @@ let build
       (env.phase_use_other) := [];
       xs +> List.rev +> List.iter (fun f -> f());
     );
+    env.pr2_and_log "\nstep4: class analysis";
+    Common.profile_code "Graph_php.step4" (fun () ->
+      let htoplevels = Graph_code_class_analysis.toplevel_methods g in
+      !(env.phase_class_analysis) +> List.iter (fun (cur, name) ->
+          let kind = E.Method E.RegularMethod in
+          let (R method_str) = str_of_name env name kind in
+          let tok = Ast.tok_of_name name in
+
+          let candidates = Hashtbl.find_all htoplevels method_str in
+          (match candidates with
+          | [] -> 
+              (match method_str with
+              | _ when method_str =~ "get.*" -> ()
+              | _ when method_str =~ "set.*" -> ()
+              | _ ->
+                  lookup_fail env (Some tok) (method_str, kind);
+              )
+          (* cool *)
+          | [n] ->
+              (* todo: actual dispatch to all possible method in this
+               * hierarchy
+               *)
+              let env = { env with phase = Uses; cur } in
+              add_use_edge_bis env (name, kind);
+              env.stats.G.method_calls +> Common.push2 (tok, true);
+          | _ ->
+              env.stats.G.method_calls +> Common.push2 (tok, false);
+          )
+      )
+    )
   end;
   close_out chan;
   g, env.stats
+      
