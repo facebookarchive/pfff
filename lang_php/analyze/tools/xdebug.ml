@@ -336,7 +336,7 @@ let iter_dumpfile2
   pr2 (spf "nb lines = %d" nblines);
   let nb_fails = ref 0 in
 
-  Common2.execute_and_show_progress ~show:show_progress nblines (fun k ->
+  Console.execute_and_show_progress ~show:show_progress nblines (fun k ->
   Common.with_open_infile file (fun (chan) ->
 
     let stack = ref [] in

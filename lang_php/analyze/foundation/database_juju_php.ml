@@ -49,7 +49,7 @@ let juju_db_of_files ?(show_progress=false) xs =
     constants_juju = ref SMap.empty;
   }
   in
-  xs +> Common_extra.progress ~show:show_progress (fun k -> 
+  xs +> Console.progress ~show:show_progress (fun k -> 
    List.iter (fun file ->
     k();
     try

@@ -691,7 +691,7 @@ let build ?(verbose=true) dir skip_list =
   
   (* step1: creating the nodes and 'Has' edges, the defs *)
   env.pr2_and_log "\nstep1: extract defs";
-  files +> Common_extra.progress ~show:verbose (fun k ->
+  files +> Console.progress ~show:verbose (fun k ->
     List.iter (fun file ->
       k();
       let ast = parse file in
@@ -706,7 +706,7 @@ let build ?(verbose=true) dir skip_list =
 
   (* step2: creating the 'Use' edges *)
   env.pr2_and_log "\nstep2: extract Uses";
-  files +> Common_extra.progress ~show:verbose (fun k ->
+  files +> Console.progress ~show:verbose (fun k ->
     List.iter (fun file ->
       k();
       let ast = parse file in

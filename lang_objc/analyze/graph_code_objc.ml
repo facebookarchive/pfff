@@ -126,7 +126,7 @@ let build ?(verbose=true) dir skip_list =
 
   (* step1: creating the nodes and 'Has' edges, the defs *)
   if verbose then pr2 "\nstep1: extract defs";
-  files +> Common_extra.progress ~show:verbose (fun k -> 
+  files +> Console.progress ~show:verbose (fun k -> 
     List.iter (fun file ->
       k();
       let readable = Common.filename_without_leading_path root file in
@@ -136,7 +136,7 @@ let build ?(verbose=true) dir skip_list =
 
   (* step2: creating the 'Use' edges, the uses *)
   if verbose then pr2 "\nstep2: extract uses";
-  files +> Common_extra.progress ~show:verbose (fun k -> 
+  files +> Console.progress ~show:verbose (fun k -> 
    List.iter (fun file ->
      k();
      let readable = Common.filename_without_leading_path root file in

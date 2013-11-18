@@ -194,7 +194,6 @@ let options () = [
 (*****************************************************************************)
 
 let main () = 
-  Common_extra.set_link();
   Gc.set {(Gc.get ()) with Gc.stack_limit = 200 * 1024 * 1024};
   Flag_analyze_php.verbose_database := false;
 

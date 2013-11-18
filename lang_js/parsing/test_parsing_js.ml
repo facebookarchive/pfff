@@ -26,7 +26,7 @@ let test_parse_js xs  =
   in
   let stat_list = ref [] in
 
-  fullxs +> Common_extra.progress (fun k -> List.iter (fun file ->
+  fullxs +> Console.progress (fun k -> List.iter (fun file ->
     k();
 
     if file =~ ".*/third_party" || file =~ ".*/wiki/extensions"

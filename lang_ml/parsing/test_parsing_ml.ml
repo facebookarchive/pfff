@@ -26,7 +26,7 @@ let test_parse_ml_or_mli xs =
   let fullxs = Lib_parsing_ml.find_ml_files_of_dir_or_files xs in
   let stat_list = ref [] in
 
-  fullxs +> Common_extra.progress (fun k -> List.iter (fun file -> 
+  fullxs +> Console.progress (fun k -> List.iter (fun file -> 
     k();
 
     let (xs, stat) = 
@@ -58,7 +58,7 @@ let test_parse_ml_fuzzy dir_or_file =
     else fullxs
   in
 
-  fullxs +> Common_extra.progress (fun k -> List.iter (fun file -> 
+  fullxs +> Console.progress (fun k -> List.iter (fun file -> 
      k ();
       try 
         let _fuzzy = Parse_ml.parse_fuzzy file in

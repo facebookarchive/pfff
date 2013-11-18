@@ -123,7 +123,7 @@ let test_parse_cpp_fuzzy dir_or_file =
     else fullxs
   in
 
-  fullxs +> Common_extra.progress (fun k -> List.iter (fun file -> 
+  fullxs +> Console.progress (fun k -> List.iter (fun file -> 
      k ();
     Common.save_excursion Flag_parsing_cpp.strict_lexer true (fun () ->
       try 

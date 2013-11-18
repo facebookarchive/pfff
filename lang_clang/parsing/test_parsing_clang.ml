@@ -109,7 +109,7 @@ let stat_clang_constructors xs =
   let fullxs = Lib_parsing_clang.find_source_files_of_dir_or_files xs in
   let h = Common2.hash_with_default (fun () -> 0) in
   
-  fullxs +> Common_extra.progress (fun k ->
+  fullxs +> Console.progress (fun k ->
     List.iter (fun file ->
       k();
       let ast = Parse_clang.parse file in

@@ -781,4 +781,3 @@ let mk_gui_main ~title ?(width=800) ?(height=600) f =
 
   w#show ();
   GMain.Main.main ()
-

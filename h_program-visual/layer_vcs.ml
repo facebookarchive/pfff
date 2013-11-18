@@ -119,7 +119,7 @@ let gen_nbauthors_layer ?(verbose=false) ~skip_revs dir ~output =
   let layer = { Layer_code.
      title = "Number of authors";
      description = "Use information from git blame";           
-     files = files +> Common_extra.progress ~show:verbose (fun k ->
+     files = files +> Console.progress ~show:verbose (fun k ->
       List.map (fun file ->
         k();
         let readable_file = Common.filename_without_leading_path dir file in
@@ -171,7 +171,7 @@ let gen_age_layer ?(verbose=false) ~line_granularity ~skip_revs dir ~output =
   let layer = { Layer_code.
      title = "Age of code";
      description = "Use information from git blame";
-     files = files +> Common_extra.progress ~show:verbose (fun k ->
+     files = files +> Console.progress ~show:verbose (fun k ->
       List.map (fun file ->
         k();
         let readable_file = Common.filename_without_leading_path dir file in

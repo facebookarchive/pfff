@@ -24,10 +24,6 @@ module E = Database_code
 (*****************************************************************************)
 (* Helpers *)
 (*****************************************************************************)
-let pred a b c =
-  Common.profile_code "G.pred" (fun () -> G.pred a b c)
-let nodeinfo a b =
-  Common.profile_code "G.nodeinfo" (fun () -> G.nodeinfo a b)
 
 (*****************************************************************************)
 (* Main entry point *)
@@ -51,7 +47,7 @@ let protected_to_private g =
       if !found then begin
       let props =
         try 
-          let info = nodeinfo node g in
+          let info = G.nodeinfo node g in
           info.G.props 
         with Not_found ->
           pr2 (spf "No nodeinfo for %s" (G.string_of_node node));
@@ -65,7 +61,7 @@ let protected_to_private g =
       in
       (match privacy with
       | E.Private ->
-        let users = pred node G.Use g in
+        let users = G.pred node G.Use g in
         if null users
         then pr2 (spf "DEAD private field: %s" (G.string_of_node node))
       | E.Protected ->
@@ -78,7 +74,7 @@ let protected_to_private g =
         else begin
           let classname = fst class_ in
         
-          let users = pred node G.Use g in
+          let users = G.pred node G.Use g in
           if null users
           then pr2 (spf "DEAD protected field: %s" (G.string_of_node node))
           else 

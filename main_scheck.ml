@@ -279,7 +279,7 @@ let main_action xs =
   in
   
   Common.save_excursion Flag_parsing_php.caching_parsing !cache_parse (fun ()->
-  files +> Common_extra.progress ~show:!show_progress (fun k -> 
+  files +> Console.progress ~show:!show_progress (fun k -> 
    List.iter (fun file ->
     k();
     try 
@@ -510,8 +510,6 @@ let options () =
 (*****************************************************************************)
 
 let main () =
-
-  Common_extra.set_link();
 
   let usage_msg =
     spf "Usage: %s [options] <file or dir> \nDoc: %s\nOptions:"

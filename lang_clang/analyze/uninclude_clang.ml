@@ -209,7 +209,7 @@ let uninclude ?(verbose=true) dir skip_list dst =
   
 
   (* step1: extract files info *)
-  files +> Common_extra.progress ~show:verbose (fun k ->
+  files +> Console.progress ~show:verbose (fun k ->
     List.iter (fun file ->
       k();
       let ast = Parse_clang.parse file in

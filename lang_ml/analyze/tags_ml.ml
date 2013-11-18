@@ -57,7 +57,7 @@ let entity_of_highlight_category_opt x =
 let defs_of_files_or_dirs ?(verbose=false) xs =
   let files = Lib_parsing_ml.find_ml_files_of_dir_or_files xs in
 
-  files +> Common_extra.progress ~show:verbose (fun k -> 
+  files +> Console.progress ~show:verbose (fun k -> 
    List.map (fun file ->
     k();
      let (ast, toks) = 

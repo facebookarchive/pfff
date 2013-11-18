@@ -12,7 +12,6 @@
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the file
  * license.txt for more details.
  *)
-
 open Common
 
 (*****************************************************************************)
@@ -27,6 +26,3 @@ open Common
  *  - opengl (cf opengl.ml)
  *  - SDL
  *)
-
-
-

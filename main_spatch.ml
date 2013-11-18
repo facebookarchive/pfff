@@ -244,7 +244,7 @@ let main_action xs =
   let pattern = parse_pattern spatch_file in
   let files = find_source_files_of_dir_or_files xs in
 
-  files +> Common_extra.progress ~show:!verbose (fun k -> 
+  files +> Console.progress ~show:!verbose (fun k -> 
    List.iter (fun file->
     k();
     let resopt = spatch pattern file in
@@ -293,7 +293,7 @@ let apply_transfo transfo xs =
   Flag_parsing_php.show_parsing_error := false;
   Flag_parsing_php.verbose_lexing := false;
 
-  files +> Common_extra.progress (fun k -> List.iter (fun file ->
+  files +> Console.progress (fun k -> List.iter (fun file ->
     let file = Common2.relative_to_absolute file in
     pr2 (spf "processing: %s" file);
     k();
@@ -876,7 +876,6 @@ let options () =
 (*****************************************************************************)
 
 let main () = 
-  Common_extra.set_link ();
 
   let usage_msg = 
     spf "Usage: %s [options] <file or dir> \nDoc: %s\nOptions:"

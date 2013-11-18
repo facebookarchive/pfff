@@ -1125,7 +1125,7 @@ let build
   (* step1: creating the nodes and 'Has' edges, the defs *)
   env.pr2_and_log "\nstep1: extract defs";
   Common.profile_code "Graph_php.step1" (fun () ->
-  files +> Common_extra.progress ~show:verbose (fun k ->
+  files +> Console.progress ~show:verbose (fun k ->
     List.iter (fun file ->
       k();
       let readable = Common.filename_without_leading_path root file in

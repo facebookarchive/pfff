@@ -500,7 +500,7 @@ let adjust_graph g xs whitelist =
     | _ -> failwith (spf "multiple entities with %s as a name" s1)
     )
   );
-  whitelist +> Common_extra.progress ~show:true (fun k ->
+  whitelist +> Console.progress ~show:true (fun k ->
     List.iter (fun (n1, n2) ->
       k();
       remove_edge (n1, n2) Use g;

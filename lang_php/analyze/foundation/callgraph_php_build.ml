@@ -35,7 +35,7 @@ let create_graph ?(show_progress=false) ?(strict=false) files db =
   Common.save_excursion Abstract_interpreter_php.strict strict (fun()->
     Abstract_interpreter_php.graph := Map_poly.empty;
 
-    files +> Common_extra.progress ~show:show_progress (fun k ->
+    files +> Console.progress ~show:show_progress (fun k ->
      List.iter (fun file ->
        k();
        try 

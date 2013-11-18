@@ -91,7 +91,7 @@ let compute_database ?(verbose=false) files_or_dirs =
 
   let (hdefs_pos: (Ast.info, bool) Hashtbl.t) = Hashtbl.create 1001 in
 
-  files +> Common_extra.progress ~show:verbose (fun k -> 
+  files +> Console.progress ~show:verbose (fun k -> 
    List.iter (fun file ->
     k ();
     let (ast2, _stat) = Parse_cpp.parse file in
@@ -135,7 +135,7 @@ let compute_database ?(verbose=false) files_or_dirs =
   (* step2: collecting uses *)
   if verbose then pr2 "\nphase 2: collecting uses";
 
-  files +> Common_extra.progress ~show:verbose (fun k -> 
+  files +> Console.progress ~show:verbose (fun k -> 
    List.iter (fun file ->
     k();
     let (ast2, _stat) = Parse_cpp.parse file in

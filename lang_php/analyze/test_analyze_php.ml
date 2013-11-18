@@ -253,7 +253,7 @@ let test_stat_php xs =
   let files = Lib_parsing_php.find_php_files_of_dir_or_files xs in
   let h = Common2.hash_with_default (fun () -> 0) in
 
-  files +> Common_extra.progress (fun k -> List.iter (fun file ->
+  files +> Console.progress (fun k -> List.iter (fun file ->
     k();
     try 
       let ast = Parse_php.parse_program file in

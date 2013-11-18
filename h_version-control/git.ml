@@ -389,7 +389,7 @@ let refactoring_commits ?(since="--since='1 year ago'") ?(threshold=50) repo =
   pr2 (spf "#commits = %d" (List.length commits));
   
   let refactoring_ids = 
-  commits +> Common_extra.progress (fun k -> List.filter (fun (id, x) ->
+  commits +> Console.progress (fun k -> List.filter (fun (id, x) ->
     k ();
     let (Lib_vcs.VersionId scommit) = id in
     let cmd = (spf "cd %s; git show --oneline --no-color --stat %s"

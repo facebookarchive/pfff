@@ -534,7 +534,6 @@ let options () = [
 (* The main entry point *)
 (*****************************************************************************)
 let main () = 
-  Common_extra.set_link ();
 
   let usage_msg = 
     spf "Usage: %s [options] <file or dir> \nDoc: %s\nOptions:"

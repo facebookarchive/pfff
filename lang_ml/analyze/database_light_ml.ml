@@ -132,7 +132,7 @@ let compute_database ?(verbose=false) files_or_dirs =
   let (hfile_to_entities: (filename, entity_poor_id) Hashtbl.t) = 
     Hashtbl.create 1001 in
 
-  files +> Common_extra.progress ~show:verbose (fun k -> 
+  files +> Console.progress ~show:verbose (fun k -> 
    List.iter (fun file ->
     k();
     let ((ast, toks), _stat) = 
@@ -259,7 +259,7 @@ let compute_database ?(verbose=false) files_or_dirs =
   in
 
 
-  files +> Common_extra.progress ~show:verbose (fun k -> 
+  files +> Console.progress ~show:verbose (fun k -> 
    List.iter (fun file ->
     k ();
 
