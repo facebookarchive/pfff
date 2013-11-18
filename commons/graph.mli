@@ -33,6 +33,8 @@ val nb_edges: 'a graph -> int
 val iter_edges: ('a -> 'a -> unit) -> 'a graph -> unit
 val iter_nodes: ('a -> unit) -> 'a graph -> unit
 
+val entry_nodes: 'a graph -> 'a list
+
 (* internal vertex number *)
 val ivertex: 'a -> 'a graph -> int
 

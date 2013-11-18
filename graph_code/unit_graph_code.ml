@@ -210,8 +210,15 @@ let unittest ~graph_of_string =
    
       "class analysis" >:: (fun () ->
         let file_content = "
-class A { }
-class B extends A { }
+class A { 
+public function foo() { }
+}
+class B extends A { 
+public function foo() { }
+}
+class C {
+public function foo() { }
+}
 " in
         let g = graph_of_string file_content in
         let dag = Graph_code_class_analysis.class_hierarchy g in
@@ -221,7 +228,12 @@ class B extends A { }
         assert_equal ~msg:"it should find the direct children of a class"
           ["B"]
           (children +> List.map fst);
-        
+
+        let hmethods = Graph_code_class_analysis.toplevel_methods g in
+        let xs = Hashtbl.find_all hmethods "foo" in
+        assert_equal ~msg:"it should find the toplevel methods"
+            ["C.foo";"A.foo"]
+            (xs +> List.map fst);
       );
    
     ];

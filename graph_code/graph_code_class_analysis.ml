@@ -17,6 +17,8 @@ open Common
 module G = Graph_code
 module E = Database_code
 
+module Set = Set_poly
+
 (*****************************************************************************)
 (* Prelude *)
 (*****************************************************************************)
@@ -56,3 +58,51 @@ let class_hierarchy g =
   );
   dag
 
+
+let toplevel_methods g =
+  let dag = class_hierarchy g in
+  let start = Graph.entry_nodes dag in
+
+  let env = Set.empty in
+  let h = Hashtbl.create 101 in
+
+  let rec aux env n = 
+
+    let methods_public_here =
+      G.children n g +> Common.map_filter (fun n2 ->
+          match snd n2 with
+          | E.Method _ -> 
+              let xs = Common.split "\\." (fst n2) in
+              let method_str = Common2.list_last xs in
+              let info = G.nodeinfo n2 g in
+              let props = info.G.props in
+              let privacy = props +> Common.find_some (function
+                | E.Privacy p -> Some p
+                | _ -> None
+              )
+              in
+              if privacy = E.Public
+              then Some (method_str, n2)
+              else None
+          | _ -> None
+      )
+    in
+    methods_public_here +> List.iter (fun (s, n2) ->
+      if Set.mem s env
+      then ()
+      else begin
+        Hashtbl.add h s n2
+      end
+    );
+    let children_classes = Graph.succ n dag in
+    let env = methods_public_here +> List.fold_left (fun acc (s, _) ->
+        Set.add s acc) env
+    in
+    children_classes +> List.iter (aux env)
+  in
+  start +> List.iter (aux env);
+  h
+
+  
+  
+  
