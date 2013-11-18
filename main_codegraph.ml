@@ -615,6 +615,15 @@ let test_transitive_deps xs =
   );
   ()
 
+let test_xta graph_file = 
+  let g = Graph_code.load graph_file in
+  let dag = Graph_code_class_analysis.class_hierarchy g in
+  let hdepth = Graph.depth_nodes dag in
+  hdepth +> Hashtbl.iter (fun k v ->
+    pr2 (spf "%s = %d" (Graph_code.string_of_node k) v);
+  );
+  ()
+  
 (* ---------------------------------------------------------------------- *)
 let extra_actions () = [
 
@@ -625,16 +634,16 @@ let extra_actions () = [
   "-adjust_graph", " <graph> <adjust_file> <whitelist> <dstfile>",
   Common.mk_action_4_arg (fun graph file file2 dst -> 
     adjust_graph graph file file2 dst);
-  "-analyze", " <graph>",
+  "-test_backward_deps", " <graph>",
   Common.mk_action_1_arg (fun graph_file -> 
     analyze_backward_deps graph_file
   );
-  "-protected_to_private", " <graph>",
+  "-test_protected_to_private", " <graph>",
   Common.mk_action_1_arg (fun graph_file ->
     let g = Graph_code.load graph_file in
     Graph_code_analysis.protected_to_private g
   );
-  "-thrift_alive", " <graph>",
+  "-test_thrift_alive", " <graph>",
   Common.mk_action_1_arg test_thrift_alive;
   "-test_pad", " <graph>",
   Common.mk_action_1_arg test_adhoc_deps;
@@ -642,6 +651,8 @@ let extra_actions () = [
   Common.mk_action_1_arg test_layering;
   "-test_transitive_deps", " <dirs or files> (works with -o)",
   Common.mk_action_n_arg test_transitive_deps;
+  "-test_xta", " <graph>",
+  Common.mk_action_1_arg test_xta;
 (*
   "-test_phylomel", " <geno file>",
   Common.mk_action_1_arg test_phylomel;
@@ -653,8 +664,8 @@ let extra_actions () = [
 (*****************************************************************************)
 
 let all_actions () = 
-  extra_actions () ++
   Layer_graph_code.actions() ++
+  extra_actions () ++
   Test_program_lang.actions() ++
   []
 
@@ -662,12 +673,16 @@ let options () = [
   "-lang", Arg.Set_string lang, 
   (spf " <str> choose language (default = %s)" !lang);
 
-  "-deps_in", Arg.Unit (fun () -> deps_style := DM.DepsIn), 
-  " ";
-  "-deps_out", Arg.Unit (fun () -> deps_style := DM.DepsOut), 
-  " ";
-  "-deps_inout", Arg.Unit (fun () -> deps_style := DM.DepsInOut), 
-  " ";
+  "-deps", Arg.String (fun s -> 
+    deps_style := 
+      (match s with
+      | "in" -> DM.DepsIn
+      | "out" -> DM.DepsOut
+      | "inout" -> DM.DepsInOut
+      | _ -> failwith "wrong parameter for --deps"
+      )
+  ), 
+  " <in|out|inout>";
 
   "-dots_threshold", Arg.Int (fun i -> DM.threshold_pack := i),
   " ";

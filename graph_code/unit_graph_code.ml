@@ -214,10 +214,13 @@ class A { }
 class B extends A { }
 " in
         let g = graph_of_string file_content in
-        let _dag = Graph_code_class_analysis.class_hierarchy g in
+        let dag = Graph_code_class_analysis.class_hierarchy g in
         
-        let _children = raise Todo in
-        raise Todo
+        let node = ("A", E.Class E.RegularClass) in
+        let children = Graph.succ node dag in
+        assert_equal ~msg:"it should find the direct children of a class"
+          ["B"]
+          (children +> List.map fst);
         
       );
    
