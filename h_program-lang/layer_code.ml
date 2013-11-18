@@ -114,6 +114,8 @@ open Common
 (* Type *)
 (*****************************************************************************)
 
+type color = string (* Simple_color.emacs_color *)
+
 (* note: the filenames must be in readable format so layer files can be reused
  * by multiple users.
  * 
@@ -139,7 +141,7 @@ type layer = {
   title: string;
   description: string;
   files: (filename * file_info) list;
-  kinds: (kind * Simple_color.emacs_color) list;
+  kinds: (kind * color) list;
  }
  and file_info = {
 
@@ -172,9 +174,9 @@ type layers_with_index = {
   layers: (layer * bool (* is active *)) list;
 
   micro_index:
-    (filename, (int, Simple_color.emacs_color) Hashtbl.t) Hashtbl.t;
+    (filename, (int, color) Hashtbl.t) Hashtbl.t;
   macro_index:
-    (filename, (float * Simple_color.emacs_color) list) Hashtbl.t;
+    (filename, (float * color) list) Hashtbl.t;
 }
 
 (*****************************************************************************)

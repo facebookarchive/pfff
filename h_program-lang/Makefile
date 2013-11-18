@@ -4,7 +4,6 @@ TOP=..
 ##############################################################################
 TARGET=lib
 
-# see also graph_code/graph_code.ml! closely related to h_program-lang
 SRC= parse_info.ml \
      ast_fuzzy.ml \
      meta_ast_generic.ml \
@@ -13,13 +12,15 @@ SRC= parse_info.ml \
      archi_code.ml archi_code_lexer.ml archi_code_parse.ml \
      skip_code.ml \
      refactoring_code.ml \
-     layer_code.ml database_code.ml \
+     database_code.ml \
+     layer_code.ml \
      tags_file.ml \
      statistics_parsing.ml layer_parse_errors.ml \
      coverage_code.ml layer_coverage.ml \
      overlay_code.ml big_grep.ml pleac.ml info_code.ml \
      pretty_print_code.ml \
      test_program_lang.ml unit_program_lang.ml
+# see also graph_code/graph_code.ml! closely related to h_program-lang/
 
 SYSLIBS= str.cma unix.cma
 LIBS=../commons/lib.cma

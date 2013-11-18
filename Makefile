@@ -7,7 +7,7 @@
 ##############################################################################
 # Variables
 ##############################################################################
-TOP=$(shell pwd)
+TOP:=$(shell pwd)
 
 SRC=main.ml 
 
@@ -22,8 +22,9 @@ PROGS=pfff \
  stags \
  scheck \
  codequery \
- pfff_db \
- pfff_test
+ pfff_db
+
+PROGS+=pfff_test
 
 ifeq ($(FEATURE_VISUAL), 1)
 PROGS+=codemap codegraph
@@ -49,11 +50,10 @@ OPTPROGS= $(PROGS:=.opt)
 #  XXXCMDOPT=
 #  endif
 
-
 ifeq ($(FEATURE_VISUAL),1)
 GUIDIR=external/ocamlgtk
-GUICMD= $(MAKE) all -C $(GUIDIR) && $(MAKE) gui       -C commons 
-GUICMDOPT= $(MAKE) opt -C $(GUIDIR) && $(MAKE) gui.opt       -C commons;
+GUICMD= $(MAKE) all -C $(GUIDIR) && $(MAKE) gui -C commons 
+GUICMDOPT= $(MAKE) opt -C $(GUIDIR) && $(MAKE) gui.opt -C commons;
 GTKINCLUDE=external/ocamlgtk/src
 
 CAIRODIR=external/ocamlcairo
@@ -62,14 +62,13 @@ CAIROINCLUDE=external/ocamlcairo/src
 VISUALDIRS=code_map code_graph
 endif
 
-#------------------------------------------------------------------------------
-
 # should be FEATURE_OCAMLGRAPH, or should give dependencies between features
 GRAPHCMA=external/ocamlgraph/ocamlgraph.cma commons/commons_graph.cma
 GRAPHDIR=external/ocamlgraph
 GRAPHCMD= $(MAKE) all -C $(GRAPHDIR) && $(MAKE) graph -C commons
 GRAPHCMDOPT= $(MAKE) all.opt -C $(GRAPHDIR) && $(MAKE) graph.opt -C commons
 
+# should be FEATURE_BYTECODE
 ZIPDIR=external/ocamlzip
 ZIPCMA=external/ocamlzip/zip.cma
 EXTLIBDIR=external/extlib
@@ -79,6 +78,7 @@ PTCMA=external/ptrees/ptrees.cma
 JAVALIBDIR=external/javalib/src
 JAVALIBCMA=external/javalib/src/lib.cma
 
+# should be FEATURE_CMT
 OCAMLCOMPILERDIR=$(shell ocamlc -where)/compiler-libs
 OCAMLCOMPILERCMA=ocamlcommon.cma
 
@@ -120,18 +120,18 @@ BASICLIBS=commons/lib.cma \
 
 BASICSYSLIBS=nums.cma bigarray.cma str.cma unix.cma
 
+# use for the other programs
 LIBS= commons/lib.cma \
        $(GRAPHCMA) \
-       $(EXTLIBCMA) $(PTCMA) $(ZIPCMA) \
-       $(JAVALIBCMA) \
+       $(EXTLIBCMA) $(PTCMA) $(ZIPCMA)   $(JAVALIBCMA) \
        commons/commons_features.cma \
     globals/lib.cma \
-    h_version-control/lib.cma \
-    h_visualization/lib.cma \
     h_files-format/lib.cma \
+    h_version-control/lib.cma \
     h_program-lang/lib.cma \
-    graph_code/lib.cma \
+    h_visualization/lib.cma \
     h_program-visual/lib.cma \
+    graph_code/lib.cma \
     matcher/lib.cma \
     lang_ml/parsing/lib.cma \
      lang_ml/analyze/visual/lib.cma \
