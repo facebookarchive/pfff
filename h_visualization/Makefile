@@ -10,29 +10,26 @@ TOP=..
 ##############################################################################
 TARGET=lib
 
-SRC= figures.ml \
+SRC= figures.ml simple_color.ml \
      jgraph.ml graph_gephi.ml \
      treemap.ml treemap_json.ml
-#now in commons/ simple_color.ml 
 
 #todo: empty for now
-SRC+=gnuplot.ml html.ml latex.ml 
-#dot.ml
+SRC+=gnuplot.ml html.ml latex.ml #dot.ml
 
 LIBS=$(TOP)/commons/lib.cma
-INCLUDEDIRS= $(TOP)/commons $(TOP)/commons/lib-json $(TOP)/commons/lib-xml
-
+INCLUDEDIRS= $(TOP)/commons \
+ $(TOP)/commons/lib-json $(TOP)/commons/lib-xml
 
 SYSLIBS= nums.cma bigarray.cma str.cma unix.cma
 
 # graphics is not included by default because it can conflict with
-# applications using lablgtk instead
+# applications using lablgtk
 ifeq ($(FEATURE_GRAPHICS),1)
 SRC2+=graphics/treemap_graphics.ml
 SYSLIBS+=graphics.cma
 PROGS+=treemap_viewer
 endif
-
 
 ##############################################################################
 # Generic variables
@@ -65,7 +62,6 @@ clean::
 ##############################################################################
 # Literate Programming rules
 ##############################################################################
-
 
 # must be in the same order of the #include for syncweb multi files support
 # to work

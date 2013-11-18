@@ -22,7 +22,7 @@ MYSRC=common.ml common2.ml console.ml \
       ofullcommon.ml \
       math.ml \
       unicode.ml \
-      simple_color.ml file_type.ml file_format.ml \
+      file_type.ml file_format.ml \
       glimpse.ml parser_combinators.ml \
       concurrency.ml parallel.ml \
 
