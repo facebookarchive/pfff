@@ -1232,12 +1232,11 @@ let build
                   lookup_fail env (Some tok) (method_str, kind);
               )
           (* cool *)
-          | [n] ->
+          | [dst] ->
               (* todo: actual dispatch to all possible method in this
                * hierarchy
                *)
-              let env = { env with phase = Uses; cur } in
-              add_use_edge_bis env (name, kind);
+              G.add_edge (cur.node, dst) G.Use env.g;
               env.stats.G.method_calls +> Common.push2 (tok, true);
           | _ ->
               env.stats.G.method_calls +> Common.push2 (tok, false);

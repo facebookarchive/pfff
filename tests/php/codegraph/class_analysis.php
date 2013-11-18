@@ -11,8 +11,7 @@ class Complex2 {
 
 
 function test_class_analysis($o) {
-  //TODO: this should be ok
-  //$o->unique();
+  $o->unique();
   $o->ambiguous();
   $o->unknown_method();
 }
