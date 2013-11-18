@@ -4,9 +4,11 @@ TOP=..
 ##############################################################################
 TARGET=lib
 
-SRC= graph_code.ml graph_code_opti.ml dependencies_matrix_code.ml \
+SRC= graph_code.ml \
+     graph_code_opti.ml dependencies_matrix_code.ml \
      graph_code_tags.ml  graph_code_database.ml graph_code_prolog.ml \
-     graph_code_analysis.ml layer_graph_code.ml \
+     graph_code_analysis.ml graph_code_class_analysis.ml \
+     layer_graph_code.ml \
      test_graph_code.ml unit_graph_code.ml
 
 SYSLIBS= str.cma unix.cma

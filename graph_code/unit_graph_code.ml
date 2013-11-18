@@ -69,14 +69,14 @@ let build_g_and_dm () =
 (* Unit tests *)
 (*****************************************************************************)
 
-let unittest =
+let unittest ~graph_of_string =
   "graph_code" >::: [
 
 (*---------------------------------------------------------------------------*)
 (* The graph *)
 (*---------------------------------------------------------------------------*)
     "graph" >::: [
-
+      
       "adjust graph" >:: (fun () ->
         let (g, _dm) = build_g_and_dm () in
         let adjust = [("a", "EXTRA_DIR")] in
@@ -207,7 +207,20 @@ let unittest =
           users;
       );
 *)
-
+   
+      "class analysis" >:: (fun () ->
+        let file_content = "
+class A { }
+class B extends A { }
+" in
+        let g = graph_of_string file_content in
+        let _dag = Graph_code_class_analysis.class_hierarchy g in
+        
+        let _children = raise Todo in
+        raise Todo
+        
+      );
+   
     ];
 
 (*---------------------------------------------------------------------------*)
