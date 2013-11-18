@@ -21,4 +21,4 @@ PB: lookup fail on Field: :x:misc.xnosuchstr= (at xhp_use.php:9)
 PB: instanceof unknown class: Class: UNKNOWN_CLASS
 
 step4: class analysis
-PB: lookup fail on Method: unknown_method (at class_analysis.php:17)
+PB: lookup fail on Method: unknown_method (at class_analysis.php:16)
