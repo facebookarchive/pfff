@@ -64,11 +64,11 @@ let toplevel_methods g =
   let start = Graph.entry_nodes dag in
 
   let env = Set.empty in
-  let h = Hashtbl.create 101 in
+  let htoplevels = Hashtbl.create 101 in
 
   let rec aux env n = 
 
-    let methods_public_here =
+    let methods_here =
       G.children n g +> Common.map_filter (fun n2 ->
           match snd n2 with
           | E.Method _ -> 
@@ -81,27 +81,33 @@ let toplevel_methods g =
                 | _ -> None
               )
               in
-              if privacy = E.Public
-              then Some (method_str, n2)
-              else None
+              Some (method_str, privacy, n2)
           | _ -> None
       )
     in
-    methods_public_here +> List.iter (fun (s, n2) ->
+    methods_here +> List.iter (fun (s, priv, n2) ->
       if Set.mem s env
       then ()
-      else begin
-        Hashtbl.add h s n2
-      end
+      else
+        (* We care only about toplevel public methods. Private or protected
+         * methods can be used only via $this-> and so should be resolved.
+         * Only calls like $o->foo() are unresolved and those methods
+         * must be public methods.
+         *)
+        if priv = E.Public
+        then Hashtbl.add htoplevels s n2
+        else ()
     );
     let children_classes = Graph.succ n dag in
-    let env = methods_public_here +> List.fold_left (fun acc (s, _) ->
-        Set.add s acc) env
+    let env = methods_here +> List.fold_left (fun acc (s, _p, _) ->
+        (* todo? what if public overriding a private? *)
+        Set.add s acc
+    ) env
     in
     children_classes +> List.iter (aux env)
   in
   start +> List.iter (aux env);
-  h
+  htoplevels
 
   
   

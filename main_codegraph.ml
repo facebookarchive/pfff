@@ -622,6 +622,13 @@ let test_xta graph_file =
   hdepth +> Hashtbl.iter (fun k v ->
     pr2 (spf "%s = %d" (Graph_code.string_of_node k) v);
   );
+  let htoplevels = Graph_code_class_analysis.toplevel_methods g in
+  htoplevels +> Common2.hkeys +> List.iter (fun k ->
+      let xs = Hashtbl.find_all htoplevels k in
+      pr2 (spf "%s -> %d (e.g. %s)" 
+               k (List.length xs) (Graph_code.string_of_node (List.hd xs)));
+  );
+  
   ()
   
 (* ---------------------------------------------------------------------- *)
