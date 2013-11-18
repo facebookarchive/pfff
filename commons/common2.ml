@@ -5692,23 +5692,7 @@ let add_in_scope_h x (k,v) =
 (* Terminal *)
 (*****************************************************************************)
 
-(* let ansi_terminal = ref true *)
-
-let (_execute_and_show_progress_func:
-   (show:bool ->
-    int (* length *) -> ((unit -> unit) -> 'a) -> 'a) ref)
- = ref
-  (fun ~show a b ->
-    failwith "no execute  yet, have you included common_extra.cmo?"
-  )
-
-let execute_and_show_progress ?(show=true) len f =
-    !_execute_and_show_progress_func ~show len f
-
-
-(* now in common_extra.ml:
- * let execute_and_show_progress len f = ...
- *)
+(* See console.ml *)
 
 (*****************************************************************************)
 (* Gc optimisation (pfff) *)

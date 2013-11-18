@@ -9,7 +9,7 @@ TARGET=lib
 # Here are the sources without any external dependencies. The core of commons!
 
 # note: if you add a file (a .mli or .ml), dont forget to redo a 'make depend'
-MYSRC=common.ml common2.ml common_extra.ml \
+MYSRC=common.ml common2.ml console.ml \
       interfaces.ml objet.ml \
       int.ml \
       ocollection.ml \
@@ -176,15 +176,6 @@ MYGRAPHSRC=graph.ml
 GRAPHINCLUDES=-I ../external/ocamlgraph
 GRAPHSYSLIBS=graph.cma
 
-#-----------------------------------------------------------------------------
-# Other stuff
-#-----------------------------------------------------------------------------
-
-#backtrace
-MYBACKTRACESRC=backtrace.ml
-BACKTRACEINCLUDES=-I $(shell ocamlc -where)
-
-
 ##############################################################################
 # Generic variables
 ##############################################################################
@@ -248,7 +239,7 @@ clean::
 # Other commons libs target
 ##############################################################################
 
-all_libs: gdbm bdb gui mpi regexp backtrace
+all_libs: gdbm bdb gui mpi regexp
 
 #-----------------------------------------------------------------------------
 gdbm: commons_gdbm.cma
@@ -335,25 +326,8 @@ commons_regexp.cmxa: $(MYREGEXPSRC:.ml=.cmx)
 
 
 #-----------------------------------------------------------------------------
-backtrace: commons_backtrace.cma
-backtrace.opt: commons_backtrace.cmxa
-
-backtrace_c.o: backtrace_c.c
-	$(CC) $(BACKTRACEINCLUDES) -c $^
-
-commons_backtrace.cma: $(MYBACKTRACESRC:.ml=.cmo) backtrace_c.o
-	$(OCAMLMKLIB) -o commons_backtrace $^
-
-commons_backtrace.cmxa: $(MYBACKTRACESRC:.ml=.cmx) backtrace_c.o
-	$(OCAMLMKLIB) -o commons_backtrace  $^
-
 realpath.o: ocamlextra/realpath.c
 	$(OCAMLC) -c $^ -o $@
-
-clean::
-	rm -f dllcommons_backtrace.so
-
-
 
 #-----------------------------------------------------------------------------
 sexp:
@@ -533,7 +507,7 @@ dependencygraph2:
 	$(OCAMLOPT)  -c $<
 
 clean::
-	rm -f *.cm[iox] *.o *.a *.cma *.cmxa *.annot *.cmt *.cmti
+	rm -f *.cm[iox] *.o *.a *.cma *.cmxa *.annot *.cmt *.cmti *.so
 	rm -f *~ .*~ #*#
 
 clean::

@@ -2011,14 +2011,7 @@ val add_in_scope_h : ('a, 'b) scoped_h_env ref -> 'a * 'b -> unit
 (*****************************************************************************)
 (* Terminal (LFS) *)
 (*****************************************************************************)
-
-(* don't forget to call Common_extra.set_link () *)
-
-val _execute_and_show_progress_func :
-  (show:bool -> int (* length *) -> ((unit -> unit) -> unit) -> unit)
-  ref 
-val execute_and_show_progress : 
- ?show:bool -> int (* length *) -> ((unit -> unit) -> unit) -> unit
+(* see console.ml *)
 
 (*e: common.mli misc *)
 
