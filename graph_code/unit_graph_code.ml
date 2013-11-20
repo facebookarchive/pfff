@@ -236,6 +236,12 @@ public function foo() { }
         assert_equal ~msg:"it should find the toplevel methods"
             ["C.foo";"A.foo"]
             (xs +> List.map fst);
+
+        let node = ("A.foo", E.Method E.RegularMethod) in
+        let methods = Graph_code_class_analysis.dispatched_methods g dag node in
+        assert_equal ~msg:"it should find the dispatched methods"
+            ["B.foo"]
+            (methods +> List.map fst);
       );
     ];
 

@@ -167,3 +167,5 @@ let toplevel_methods g dag =
   htoplevels
 
 
+let dispatched_methods g dag node =
+  raise Todo

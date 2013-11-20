@@ -13,6 +13,11 @@ val toplevel_methods:
   Graph_code.graph -> class_hierarchy -> 
   (string, Graph_code.node(*list*)) Hashtbl.t
 
+(* Return the possible dispatched methods. *)
+val dispatched_methods:
+  Graph_code.graph -> class_hierarchy -> Graph_code.node (* a method *) ->
+  Graph_code.node list
+
 
 (* print optimization opportunities, also print dead fields *)
 val protected_to_private_candidates: Graph_code.graph -> unit
