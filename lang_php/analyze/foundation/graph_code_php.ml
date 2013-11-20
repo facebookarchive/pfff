@@ -27,7 +27,7 @@ module G = Graph_code
  * for more information. Yet another code database for PHP ...
  *
  * See also old/graph_php.ml, facebook/flib_dependencies/,
- * and facebook/check_module/graph_module.ml
+ * and facebook/check_module/graph_module.ml.
  *
  * schema:
  *  Root -> Dir -> File (.php) -> Class (used for interfaces and traits too)
@@ -44,7 +44,6 @@ module G = Graph_code
  *    maybe simpler not make difference between static and non static
  *  - reuse env, most of of build() and put it in graph_code.ml
  *    and just pass the PHP specificities.
- *  - add tests
  *
  * issues regarding errors in a codebase and how to handle them:
  *  - parse errors, maybe test code?
@@ -64,7 +63,7 @@ module G = Graph_code
  *  - pfff.log for less important and to have more details
  *  - in the codegraph itself under the PB directory for all the rest
  *    when add_fake_node_when_undefined_entity is set to true.
- *  - in a layer, see layer_graph_code.ml, for errors but also statistics
+ *  - in a layer, see layer_graph_code.ml, for errors but also statistics.
  *)
 
 (*****************************************************************************)
@@ -83,17 +82,19 @@ type env = {
    * a field or calling a method need the full inheritance tree to already be
    * computed as we may need to lookup entities up in the parents.
    *)
+  (* phase_defs: ... list ref; *)
   phase_inheritance: (current * (Ast.name * E.entity_kind)) list ref;
   phase_use:         (current * (Ast.name * E.entity_kind)) list ref;
   phase_use_lookup:  
-    (current * (bool * (Ast.name * Ast.ident) * E.entity_kind)) list ref;
-  phase_use_other:         (unit -> unit) list ref;
+    (current * (bool(*xhp*) * (Ast.name * Ast.ident) * E.entity_kind)) list ref;
+  phase_use_other:  (unit -> unit) list ref;
+  (* post processing phase, try to resolve $o->foo() method calls *)
   phase_class_analysis: (current * Ast.name) list ref;
 
   (* right now used in extract_uses phase to transform a src like main()
    * into its File, and also to give better error messages.
    * We use the Hashtbl.find_all property of the hashtbl below.
-   * The pair of filenames is readable * fullpath
+   * The pair of filenames is readable * fullpath.
    *)
   dupes: (Graph_code.node, (Common.filename * Common.filename)) Hashtbl.t;
   (* to optimize things, to avoid calling G.Parent *)
@@ -124,16 +125,18 @@ type env = {
 
  and current = {
    node: Graph_code.node;
-   qualifier: Ast_php_simple.qualified_ident;
    readable: Common.filename;
+   (* namespace *)
+   qualifier: Ast_php_simple.qualified_ident;
    import_rules: (string * Ast_php_simple.qualified_ident) list;
+   (* oo *)
    self:   string;                (* "NOSELF" when outside a class *)
    parent: unit -> resolved_name; (* "NOPARENT" when no parent *)
+   (* misc *)
    at_toplevel: bool;
  }
-
  (* for namespace *)
- and resolved_name = R of string
+ and resolved_name = R of string (* fully resolved name, namespace-wise *)
 
 (*****************************************************************************)
 (* Helpers *)
@@ -159,9 +162,6 @@ let parse env file =
   
 let xhp_field str = 
   (str =~ ".*=")
-let addpostfix = function
-  | (str, tok) -> (str ^ "=", tok)
-
 (* Ignore certain xhp fields, custom data attribute:
  * http://www.w3.org/TR/2011/WD-html5-20110525/elements.html,
  * #embedding-custom-non-visible-data-with-the-data-attributes ARIA: 
@@ -169,6 +169,9 @@ let addpostfix = function
  * server side attribute: flib/markup/xhp/html.php:52 *)
 let xhp_data_field str =
   (str =~ ".*\\.\\(data\\|aria\\|srvr\\)-.*=")
+
+let addpostfix (str, tok) =
+  (str ^ "=", tok)
 
 (* todo: handle __call and the dynamicYield idiom instead of this whitelist *)
 let magic_methods str =
@@ -240,14 +243,13 @@ let fully_qualified_candidates cur name kind =
   | ("__special__namespace",_)::xs ->
       failwith "namespace keyword not handled in qualifier"
   | (str, _tokopt)::xs  ->
-    try 
+    try
       let qu = List.assoc str cur.import_rules in
       [ prune_special_root qu ++ xs ]
     with Not_found ->
       [name;
        cur.qualifier ++ name;
       ]
-    
 
 let (strtok_of_name: env -> Ast.name -> Database_code.entity_kind -> 
      resolved_name Ast.wrap) = 
@@ -270,23 +272,18 @@ let (strtok_of_name: env -> Ast.name -> Database_code.entity_kind ->
      R str, tokopt
      
 
-let str_of_name env x kind =
-  fst (strtok_of_name env x kind)
-
 let (strtok_of_class_name: env -> Ast.hint_type -> resolved_name Ast.wrap) =
   fun env x ->
-    let name = name_of_class_name x in
-    strtok_of_name env name (E.Class E.RegularClass)
+   strtok_of_name env (name_of_class_name x) (E.Class E.RegularClass)
 
+let str_of_name env x kind =
+  fst (strtok_of_name env x kind)
 let str_of_class_name env x =
   fst (strtok_of_class_name env x)
 
 let name_of_parent env tokopt =
-  let name = 
-    let (R parent) = env.cur.parent () in
-    [parent, tokopt]
-  in
-  name
+  let (R parent) = env.cur.parent () in
+  [parent, tokopt]
 
 (*****************************************************************************)
 (* Add node *)
@@ -325,11 +322,10 @@ let add_node_and_has_edge2 ?(props=[]) env (ident, kind) =
      * we dont set env.current to this node, otherwise we may
      * pollute the callees of the original node.
      *)
-    | E.ClassConstant | E.Field | E.Method _
-        when Hashtbl.mem env.dupes (env.cur.self, E.Class E.RegularClass) ->
-          Hashtbl.add env.dupes node (env.cur.readable, file)
     | E.ClassConstant | E.Field | E.Method _ ->
-        env.pr2_and_log (spf "DUPE METHOD: %s" (G.string_of_node node));
+        if Hashtbl.mem env.dupes (env.cur.self, E.Class E.RegularClass)
+        then Hashtbl.add env.dupes node (env.cur.readable, file)
+        else env.pr2_and_log (spf "DUPE METHOD: %s" (G.string_of_node node));
     | _ ->
         Hashtbl.add env.dupes node (env.cur.readable, file)
     )
@@ -383,18 +379,16 @@ let lookup_fail env tokopt dst =
   fprinter (spf "PB: lookup fail on %s (at %s:%d)" (G.string_of_node dst) 
               (env.path file) line)
 
-(* I think G.parent is extremely slow in ocamlgraph so need memoize *)
+(* G.parent is extremely slow in ocamlgraph so need memoize *)
 let _hmemo_class_exits = Hashtbl.create 101
 let class_exists2 env (R aclass) _tokopt =
   assert (env.phase = Uses);
   let node = (aclass, E.Class E.RegularClass) in
   let node' = (normalize aclass, E.Class E.RegularClass) in
   Common.memoized _hmemo_class_exits aclass (fun () ->
-    (G.has_node node env.g && 
-       (* opti: this is super slow: G.parent node env.g <> G.not_found *)
-       Hashtbl.mem env.not_found node
-    ) ||
-      Hashtbl.mem env.case_insensitive node'
+    (* opti: this is super slow: G.parent node env.g <> G.not_found *)
+    (G.has_node node env.g && Hashtbl.mem env.not_found node) ||
+    Hashtbl.mem env.case_insensitive node'
   )
 let class_exists a b c =
   Common.profile_code "Graph_php.class_exits" (fun () -> class_exists2 a b c)
@@ -448,14 +442,14 @@ let rec add_use_edge2 env (name, kind) =
            (* less: env.stat.G.method_calls false unresolved *)
            ()
         | _ ->
-          lookup_fail env tokopt dst;
-          if !add_fake_node_when_undefined_entity then begin
-            G.add_node dst env.g;
-            let parent_target = G.not_found in
-            env.g +> G.add_edge (parent_target, dst) G.Has;
-            Hashtbl.replace env.not_found dst true;
-            env.g +> G.add_edge (src, dst) G.Use;
-          end
+            lookup_fail env tokopt dst;
+            if !add_fake_node_when_undefined_entity then begin
+              G.add_node dst env.g;
+              let parent_target = G.not_found in
+              env.g +> G.add_edge (parent_target, dst) G.Has;
+              Hashtbl.replace env.not_found dst true;
+              env.g +> G.add_edge (src, dst) G.Use;
+            end
         )
     )
 
@@ -476,7 +470,7 @@ let add_use_edge_instanceof env (name, kind) =
   let env = { env with phase = Uses } in
   env.phase_use_other +> Common.push2 (fun () ->
     let (R x) = str_of_name env name kind in
-    let node = x, kind in
+    let node = (x, kind) in
     if not (G.has_node node env.g) 
     then env.log (spf "PB: instanceof unknown class: %s"(G.string_of_node node))
   )
@@ -502,8 +496,8 @@ let add_use_edge_maybe_class env entity tokopt =
 (* Lookup *)
 (*****************************************************************************)
 
-(* less: handle privacy? 
- * assume namespace have been resolved so aclass is fully resolved
+(* assume namespace has been resolved so aclass is fully resolved
+ * less: handle privacy? 
  *)
 let lookup_inheritance2 g (R aclass, amethod_or_field_or_constant) tokopt =
   let rec depth current =
@@ -559,9 +553,9 @@ let add_use_edge_lookup2 xhp env (name, ident) kind =
       let tok = Ast.tok_of_ident ident in
       (match kind2 with
       | E.Method _ -> 
-        env.stats.G.method_calls +> Common.push2 (tok, true)
+          env.stats.G.method_calls +> Common.push2 (tok, true)
       | E.Field -> 
-        env.stats.G.field_access +> Common.push2 (tok, true)
+          env.stats.G.field_access +> Common.push2 (tok, true)
       | E.ClassConstant -> ()
       | _ -> raise Impossible
       );
@@ -641,7 +635,7 @@ let adjust_edge_protected env fld parent =
 *)
 
 (*****************************************************************************)
-(* Defs/Uses *)
+(* Defs/Uses, AST visit *)
 (*****************************************************************************)
 let rec extract_defs_uses env ast readable =
   let env = { env with cur = { env.cur with
@@ -693,7 +687,7 @@ and stmt_bis env x =
     stmt_toplevel_list 
       {env with cur = { env.cur with qualifier = prune_special_root qu; }} xs
   (* handled in stmt_toplevel_list *)
-  | NamespaceUse _ -> ()
+  | NamespaceUse _ -> raise Impossible
 
   (* old style constant definition, before PHP 5.4 *)
   | Expr(Call(Id[("define", _)], [String((name)); v])) ->
@@ -784,7 +778,7 @@ and class_def env def =
 
   let self = Ast.str_of_ident def.c_name in
   let in_trait = match def.c_kind with Trait -> true | _ -> false in
-  (* opti? do not capture def, otherwise can lead to memory leak *)
+  (* opti: do not capture def in parent(), otherwise gc can't collect def *)
   let extend = def.c_extends in
   let parent () =
     match extend with
@@ -843,7 +837,7 @@ and type_def_kind env = function
 and hint_type env t = 
   match t with 
   | Hint name -> 
-    (* todo: handle basic types, could also add them in php_stdlib/ *)
+    (* todo: handle basic types? could also add them in php_stdlib/ *)
     add_use_edge env (name, E.Class E.RegularClass)
   | HintArray -> ()
   | HintQuestion t -> hint_type env t
@@ -863,7 +857,11 @@ and expr env x =
   match x with
   | Int _ | Double _  -> ()
 
-  (* A String in PHP can actually hide a class (or a function) *)
+  (* A String in PHP can actually hide a class (or a function).
+   * todo: do a post phase where try to detect all those higher
+   * order functions or methods taking function/classes/methods
+   * as strings.
+   *)
   | String (s, tokopt) when look_like_class s ->
     (* less: could also be a class constant or field or method *)
     let entity = Common.matched1 s in
@@ -883,7 +881,10 @@ and expr env x =
    * there is the use of a constant.
    *)
   | Id name -> add_use_edge env (name, E.Constant)
-  (* a parameter or local variable *)
+  (* a parameter or local variable, see check_variables_php.ml for
+   * relevant analysis of such identifiers, here we care more about Id
+   * dependencies.
+   *)
   | Var ident -> ()
 
   (* -------------------------------------------------- *)
@@ -891,6 +892,7 @@ and expr env x =
     (match e with
     (* simple function call *)
     | Id name ->
+        (* less: increment dynamic_fails stats also when use func_call_args() *)
         add_use_edge env (name, E.Function);
         exprl env es
 
@@ -900,23 +902,26 @@ and expr env x =
     | Class_get (Id[ ("__special__parent", tokopt)], e2) ->
         let name = name_of_parent env tokopt in
         expr env (Call (Class_get (Id name, e2), es))
-    (* incorrect actually ... but good enough for now for codegraph *)
+    (* Incorrect actually ... but good enough for codegraph.
+     * todo: should put that in the phase_dispatch
+     *)
     | Class_get (Id[ ("__special__static", tokopt)], e2) ->
         expr env (Call (Class_get (Id[ (env.cur.self, tokopt)], e2), es))
 
     | Class_get (Id name1, Id [name2]) ->
-         (* can be static or regular method as transform $this->foo()
-          * in env.self::foo() below
-          *)
-         add_use_edge_lookup env (name1, name2) (E.Method E.RegularMethod);
-         exprl env es
+       (* can be static or regular method as transform $this->foo()
+        * in env.self::foo() below
+        *)
+        add_use_edge_lookup env (name1, name2) (E.Method E.RegularMethod);
+        exprl env es
 
     (* object call *)
     | Obj_get (e1, Id name2) ->
         (match e1 with
         (* handle easy case *)
         | This ((x, tokopt)) ->
-          expr env (Call (Class_get (Id[ (env.cur.self, tokopt)], Id name2), es))
+            expr env 
+                (Call (Class_get (Id[ (env.cur.self, tokopt)], Id name2), es))
         (* need class analysis ... *)
         | _ ->
           env.phase_class_analysis +> Common.push2 (env.cur, name2);
@@ -928,7 +933,6 @@ and expr env x =
       env.stats.G.unresolved_calls +> Common.push2 tok;
       expr env e;
       exprl env es
-    (* less: increment dynamic_fails stats also when use func_call_args() *)
     )
 
   (* -------------------------------------------------- *)
@@ -952,9 +956,9 @@ and expr env x =
           add_use_edge_lookup env (name1, name2) E.Field
 
      | Id name1, e2  ->
+         add_use_edge env (name1, E.Class E.RegularClass);
          let tok = Ast.tok_of_name name1 in
          env.stats.G.unresolved_class_access +> Common.push2 tok;
-         add_use_edge env (name1, E.Class E.RegularClass);
          expr env e2;
      | e1, Id name2  ->
          let tok = Ast.tok_of_name name2 in
@@ -972,7 +976,7 @@ and expr env x =
       (* handle easy case *)
       | This (_, tokopt), Id [name2] ->
           let (s2, tok2) = name2 in
-          expr env (Class_get (Id[ (env.cur.self, tokopt)], Var ("$" ^ s2, tok2)))
+          expr env (Class_get (Id[ (env.cur.self, tokopt)], Var("$"^s2, tok2)))
       | _, Id name2  ->
           let tok = Ast.tok_of_name name2 in
           env.stats.G.field_access +> Common.push2 (tok, false);
@@ -1054,25 +1058,23 @@ let build
     ?(logfile=(Filename.concat (Sys.getcwd()) "pfff.log"))
     ?(readable_file_format=false)
     ?(only_defs=false)
-    dir_or_files skip_list 
+    dir_or_files 
+    skip_list
  =
   let root, files =
     Common.profile_code "Graph_php.step0" (fun () ->
     match dir_or_files with
     | Left dir ->
-      let root = Common.realpath dir in
-      let all_files = Lib_parsing_php.find_php_files_of_dir_or_files [root] in
-
-      (* step0: filter noisy modules/files *)
-      let files = 
-        Skip_code.filter_files skip_list root all_files in
-      (* step0: reorder files *)
-      let files = 
-        Skip_code.reorder_files_skip_errors_last skip_list root files in
-      root, files
+        let root = Common.realpath dir in
+        let files = 
+          Lib_parsing_php.find_php_files_of_dir_or_files [root]
+          +> Skip_code.filter_files skip_list root
+          +> Skip_code.reorder_files_skip_errors_last skip_list root
+        in
+        root, files
     (* useful when build codegraph from test code *)
     | Right files ->
-      "/", files
+        "/", files
     )
   in
       
@@ -1082,12 +1084,14 @@ let build
   let chan = open_out logfile in
   let env = {
     g;
+
     phase = Defs;
     phase_inheritance = ref [];
     phase_use = ref [];
     phase_use_lookup = ref [];
     phase_use_other = ref [];
     phase_class_analysis = ref [];
+
     cur = {
       node = ("filled_later", E.File);
       readable = "filled_later";
@@ -1097,29 +1101,30 @@ let build
       parent = (fun () -> R "NOPARENT");
       at_toplevel = true;
     };
+
     dupes = Hashtbl.create 101;
-    (* set after the defs phase *)
+    (* set after the Defs phase *)
     case_insensitive = Hashtbl.create 101;
     not_found = Hashtbl.create 101;
+
     stats = Graph_code.empty_statistics ();
-    log = (fun s ->
-        output_string chan (s ^ "\n");
-        flush chan;
+    log = (fun s ->  
+        output_string chan (s ^ "\n"); flush chan;
     );
     pr2_and_log = (fun s ->
       if verbose then pr2 s;
-      output_string chan (s ^ "\n");
-      flush chan;
+      output_string chan (s ^ "\n"); flush chan;
     );
     is_skip_error_file = Skip_code.build_filter_errors_file skip_list;
     (* This function is useful for testing. In particular, the paths in
-       tests/php/codegraoph/pfff_test.exp use readable path, so that
-       make test can work from any machine.
-    *)
+     * tests/php/codegraoph/pfff_test.exp use readable path, so that
+     * 'make test' can work from any machine.
+     *)
     path = (fun file -> 
       if readable_file_format
       then Common.filename_without_leading_path root file
-      else file);
+      else file
+    );
   }
   in
 
@@ -1178,8 +1183,7 @@ let build
     | n, 0 -> ()
     | _ -> raise Impossible
     )
-  );
-  );
+  ));
   if not only_defs then begin
     g +> G.iter_nodes (fun (str, kind) ->
       Hashtbl.replace env.case_insensitive (normalize str, kind) (str, kind)
@@ -1197,7 +1201,6 @@ let build
     (* step3: creating the 'Use' edges, the uses *)
     env.pr2_and_log "\nstep3: extract uses";
     Common.profile_code "Graph_php.step3" (fun () ->
-
       !(env.phase_use) +> List.rev +> List.iter (fun (cur, n) ->
         let env = { env with phase = Uses; cur } in
         add_use_edge_bis env n
@@ -1234,7 +1237,7 @@ let build
           (* cool *)
           | [dst] ->
               (* todo: actual dispatch to all possible method in this
-               * hierarchy
+               * hierarchy!
                *)
               G.add_edge (cur.node, dst) G.Use env.g;
               env.stats.G.method_calls +> Common.push2 (tok, true);
