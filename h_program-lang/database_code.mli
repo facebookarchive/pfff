@@ -1,24 +1,31 @@
 
 type entity_kind = 
+  (* very high level entities *)
+  | Package | Dir
+  | Module | File
+
+  (* toplevel entities *)
   | Function
   | Class of class_type
-  | Module | Package
   | Type 
-  | Constant | Global
+  | Constant 
+  | Global
   | Macro
   | Exception
   | TopStmts
 
+  (* class member entities *)
   | Field
-  | Constructor
   | Method of method_type 
   | ClassConstant
+  (* ocaml variants (not oo ctor, see Method for that *)
+  | Constructor
 
+  (* misc *)
   | Prototype | GlobalExtern
-
+  | MultiDirs
   | Other of string
 
-  | File | Dir | MultiDirs
   and class_type = RegularClass (* or Struct *) | Interface | Trait
   and method_type = RegularMethod | StaticMethod
 
@@ -40,8 +47,9 @@ type property =
    | CodeCoverage of int list (* e.g. covered lines by unit tests *)
 
    | Privacy of privacy
-       
+   (* used for the xhp @required fields for now *)
    | Required
+
   and privacy = Public | Protected | Private
 
 type entity_id = int
@@ -91,24 +99,24 @@ val save_database: database -> Common.filename -> unit
 (* when we want to analyze multi-languages projets *)
 val merge_databases: database -> database -> database
 
-(* helpers *)
+(* build database helpers *)
 
 val alldirs_and_parent_dirs_of_relative_dirs: 
   Common.dirname list -> Common.dirname list
+val files_and_dirs_database_from_root:
+  Common.dirname -> database
+val adjust_method_or_field_external_users:
+  verbose:bool -> entity array -> unit
+
+(* algorithms *)
 
 (* for displaying a summary of the important functions in a file *)
 val build_top_k_sorted_entities_per_file:
   k:int -> entity array -> (Common.filename, entity list) Hashtbl.t
 
-val files_and_dirs_database_from_root:
-  Common.dirname -> database
-
 val files_and_dirs_and_sorted_entities_for_completion:
   threshold_too_many_entities:int -> database -> entity list
 
-
-val adjust_method_or_field_external_users:
-  verbose:bool -> entity array -> unit
 
 val entity_kind_of_highlight_category_def: 
   Highlight_code.category -> entity_kind

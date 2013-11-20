@@ -28,7 +28,6 @@ module HC = Highlight_code
  * is the test coverage of a file', etc. This is mainly used by codemap
  * to give semantic visual feedback on the code.
  * 
- * 
  * update: database_code.pl and Prolog may now be the prefered way to
  * represent a code database, but for codemap it's still good to use
  * this database.
@@ -91,18 +90,27 @@ module HC = Highlight_code
 (* Type *)
 (*****************************************************************************)
 
-(* Yet another entity type. Could perhaps factorize code with 
- * highlight_code.ml.
- * 
- * If you add a constructor don't forget to modify entity_kind_of_string.
- * 
+(* 
+ * Code entities.
  * See also http://ctags.sourceforge.net/FORMAT and the doc on 'kind'
  * note: if you change this, you may have to bump graph_code.version.
+ * coupling: If you add a constructor modify also entity_kind_of_string()!
+ * 
+ * less: could perhaps factorize code with highlight_code.ml? see 
+ *  entity_kind_of_highlight_category_def|use
  *)
 type entity_kind = 
+  | Package
+  (* when we use the database for completion purpose, then files/dirs
+   * are also useful "entities" to get completion for.
+   *)
+  | Dir
+
+  | Module 
+  | File 
+
   | Function
   | Class of class_type
-  | Module | Package
   | Type
   | Constant | Global
   | Macro
@@ -111,25 +119,20 @@ type entity_kind =
 
   (* nested entities *)
   | Field (* todo? could also be static or not *)
-  | Constructor (* for ml *)
   | Method of method_type
   | ClassConstant
+  | Constructor (* for ml *)
 
   (* forward decl *)
   | Prototype | GlobalExtern
 
-  (* todo: constructor *)
-
-  | Other of string
-
-  (* when we use the database for completion purpose, then files/dirs
-   * are also useful "entities" to get completion for.
-   *)
-  | File | Dir
   (* people often spread the same component in multiple dirs with the same
    * name (hmm could be merged now with Package)
    *)
   | MultiDirs
+
+  | Other of string
+
 
   (* todo? could also abuse property below to encode such information *)
   and class_type = RegularClass | Interface | Trait
