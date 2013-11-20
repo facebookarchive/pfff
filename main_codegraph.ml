@@ -649,7 +649,7 @@ let extra_actions () = [
   "-test_protected_to_private", " <graph>",
   Common.mk_action_1_arg (fun graph_file ->
     let g = Graph_code.load graph_file in
-    Graph_code_analysis.protected_to_private g
+    Graph_code_class_analysis.protected_to_private_candidates g
   );
   "-test_thrift_alive", " <graph>",
   Common.mk_action_1_arg test_thrift_alive;

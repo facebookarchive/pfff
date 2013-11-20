@@ -6,8 +6,8 @@ TARGET=lib
 
 SRC= graph_code.ml \
      graph_code_opti.ml dependencies_matrix_code.ml \
-     graph_code_tags.ml  graph_code_database.ml graph_code_prolog.ml \
-     graph_code_analysis.ml graph_code_class_analysis.ml \
+     graph_code_tags.ml graph_code_database.ml graph_code_prolog.ml \
+     graph_code_class_analysis.ml \
      layer_graph_code.ml \
      test_graph_code.ml unit_graph_code.ml
 
@@ -16,8 +16,8 @@ LIBS=../commons/lib.cma
 INCLUDEDIRS= $(TOP)/commons \
  $(TOP)/commons/lib-json \
  $(TOP)/commons/ocamlextra \
- $(TOP)/h_program-lang \
  $(TOP)/external/ocamlgraph $(TOP)/external/ocamlgraph/src \
+ $(TOP)/h_program-lang
 
 ##############################################################################
 # Generic variables
@@ -36,12 +36,6 @@ $(TARGET).cma: $(OBJS)
 
 $(TARGET).cmxa: $(OPTOBJS) $(LIBS:.cma=.cmxa)
 	$(OCAMLOPT) -a -o $(TARGET).cmxa $(OPTOBJS)
-
-$(TARGET).top: $(OBJS) $(LIBS)
-	$(OCAMLMKTOP) -o $(TARGET).top $(SYSLIBS) $(LIBS) $(OBJS)
-
-clean::
-	rm -f $(TARGET).top
 
 ##############################################################################
 # install

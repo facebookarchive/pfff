@@ -78,6 +78,7 @@ val all_children: node -> graph -> node list
 val nodeinfo: node -> graph -> nodeinfo
 (* should be in readable path if you want your codegraph to be "portable" *)
 val file_of_node: node -> graph -> Common.filename
+val privacy_of_node: node -> graph -> Database_code.privacy
 
 (* iteration *)
 val iter_use_edges: (node -> node -> unit) -> graph -> unit

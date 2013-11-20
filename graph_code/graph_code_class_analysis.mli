@@ -12,3 +12,7 @@ val class_hierarchy: Graph_code.graph -> class_hierarchy
 val toplevel_methods: 
   Graph_code.graph -> class_hierarchy -> 
   (string, Graph_code.node(*list*)) Hashtbl.t
+
+
+(* print optimization opportunities, also print dead fields *)
+val protected_to_private_candidates: Graph_code.graph -> unit

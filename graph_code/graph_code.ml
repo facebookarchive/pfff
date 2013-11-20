@@ -324,6 +324,15 @@ let file_of_node n g =
       (* spf "NOT_FOUND_FILE (for node %s)" (string_of_node n) *)
     )
 
+let privacy_of_node n g =
+  let info = nodeinfo n g in
+  let props = info.props in
+  props +> Common.find_some (function
+  | E.Privacy x -> Some x
+  | _ -> None
+  )
+    
+
 (*****************************************************************************)
 (* Iteration *)
 (*****************************************************************************)

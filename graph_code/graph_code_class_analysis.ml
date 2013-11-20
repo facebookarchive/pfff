@@ -34,6 +34,63 @@ type class_hierarchy = Graph_code.node Graph.graph
 (*****************************************************************************)
 
 (*****************************************************************************)
+(* One off analysis *)
+(*****************************************************************************)
+
+(* Finding protected fields that could be private.
+ * This was done for Oravec to possibliy optimize code as protected field
+ * have an overhead in HPHP.
+ * 
+ * It can be difficult to trace the use of a field in languages like
+ * PHP because one can do $o->fld and you don't know the type of $o
+ * and so its class. But for the protected_to_private analysis,
+ * it means the field is protected and so it can be used only
+ * via a $this->xxx expression, which is easy to statically 
+ * analyze.
+ *)
+let protected_to_private_candidates g =
+  g +> G.iter_nodes (fun node ->
+    match node with
+    | (s, E.Field) ->
+
+      let privacy = 
+        try G.privacy_of_node node g 
+        with Not_found ->
+          pr2 (spf "No nodeinfo for %s" (G.string_of_node node));
+          E.Private
+      in
+      (match privacy with
+      | E.Private ->
+          let users = G.pred node G.Use g in
+          if null users
+          then pr2 (spf "DEAD private field: %s" (G.string_of_node node))
+      | E.Protected ->
+          let parents = G.parents node g in
+          if List.length parents > 1
+          then begin pr2_gen node; pr2_gen parents end;
+          let class_ = G.parent node g in
+          if class_ =*= G.dupe 
+          then pr2 (spf "Redefined field: %s" (G.string_of_node node))
+          else begin
+            let classname = fst class_ in
+        
+            let users = G.pred node G.Use g in
+            if null users
+            then pr2 (spf "DEAD protected field: %s" (G.string_of_node node))
+            else 
+              if users +> List.for_all (fun (s, kind) -> 
+                s =~ (spf "^%s\\." classname)
+              )
+              then pr2 (spf "Protected to private candidate: %s"
+                          (G.string_of_node node))
+              else ()
+          end
+      | _ -> ()
+      )
+    | _ -> ()
+  )
+
+(*****************************************************************************)
 (* Main entry point *)
 (*****************************************************************************)
 
@@ -66,6 +123,7 @@ let class_hierarchy g =
 
 
 let toplevel_methods g dag =
+  (* in a clean language we could just start from the Object class *)
   let start = Graph.entry_nodes dag in
 
   let env = Set.empty in
@@ -79,13 +137,7 @@ let toplevel_methods g dag =
           | E.Method _ -> 
               let xs = Common.split "\\." (fst n2) in
               let method_str = Common2.list_last xs in
-              let info = G.nodeinfo n2 g in
-              let props = info.G.props in
-              let privacy = props +> Common.find_some (function
-                | E.Privacy p -> Some p
-                | _ -> None
-              )
-              in
+              let privacy = G.privacy_of_node n2 g in
               Some (method_str, privacy, n2)
           | _ -> None
       )
@@ -103,13 +155,15 @@ let toplevel_methods g dag =
         then Hashtbl.add htoplevels s n2
         else ()
     );
-    let children_classes = Graph.succ n dag in
-    let env = methods_here +> List.fold_left (fun acc (s, _p, _) ->
-        (* todo? what if public overriding a private? *)
-        Set.add s acc
-    ) env
-    in
+    let children_classes = 
+      Graph.succ n dag in
+    (* todo? what if public overriding a private? *)
+    let env = 
+      methods_here +> List.fold_left (fun acc (s, _p, _) ->Set.add s acc) env in
+
     children_classes +> List.iter (aux env)
   in
   start +> List.iter (aux env);
   htoplevels
+
+
