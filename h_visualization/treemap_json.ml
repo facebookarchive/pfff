@@ -186,7 +186,8 @@ let json_of_treemap_rendering rendering =
 (*s: function test_json_of *)
 let test_json_of dir = 
   let maxc = 256 in
-  let tree = tree_of_dir ~file_hook:(fun file -> Common2.filesize file) dir in
+  let tree = tree_of_dirs_or_files 
+    ~file_hook:(fun file -> Common2.filesize file) [dir] in
   let treemap = treemap_of_tree
     ~size_of_leaf:(fun (f, intleaf) -> intleaf) 
     ~color_of_leaf:(fun (f, intleaf) -> 

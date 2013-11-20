@@ -72,16 +72,14 @@ val layoutf_of_algo: algorithm -> ('a, 'b) layout_func
 
 (*e: signature algos *)
 
+(* treemap -> treemap_rendering *)
 val render_treemap: 
   ?algo:algorithm -> 
   ?big_borders:bool ->
   ('dir, 'file) treemap -> treemap_rendering
 
-
-
-
-(* treemap maker, see also treemap_json.ml *)
 (*s: signature treemap_of_tree *)
+(* tree -> treemap (see also treemap_json.ml) *)
 val treemap_of_tree :
   size_of_leaf:('file -> int) ->
   color_of_leaf:('file -> Simple_color.color) ->
@@ -91,7 +89,6 @@ val treemap_of_tree :
   ('dir, 'file) treemap
 (*e: signature treemap_of_tree *)
 
-(* tree maker, see also Common.tree2_of_files *)
 (*s: signature tree_of_dir *)
 type directory_sort = 
   | NoSort
@@ -99,24 +96,9 @@ type directory_sort =
   | SortDirAndFiles
   | SortDirAndFilesCaseInsensitive
 val follow_symlinks: bool ref
-
-val tree_of_dir:
-  ?filter_file:(Common.filename -> bool) ->
-  ?filter_dir:(Common.dirname -> bool) ->
-  ?sort:directory_sort ->
-  file_hook:(Common.filename -> 'a) -> 
-  Common.dirname -> 
-  (Common.dirname, Common.filename * 'a) tree
 (*e: signature tree_of_dir *)
 
-val tree_of_dir_or_file:
-  ?filter_file:(Common.filename -> bool) ->
-  ?filter_dir:(Common.dirname -> bool) ->
-  ?sort:directory_sort ->
-  file_hook:(Common.filename -> 'a) -> 
-  Common2.path -> 
-  (Common.dirname, Common.filename * 'a) tree
-
+(* paths -> tree (see also Common.tree2_of_files) *)
 val tree_of_dirs_or_files:
   ?filter_file:(Common.filename -> bool) ->
   ?filter_dir:(Common.dirname -> bool) ->
@@ -124,6 +106,8 @@ val tree_of_dirs_or_files:
   file_hook:(Common.filename -> 'a) -> 
   Common2.path list -> 
   (Common.dirname, Common.filename * 'a) tree
+
+
 
 val remove_singleton_subdirs:
   (Common.dirname, Common.filename * 'a) tree ->
