@@ -24,6 +24,12 @@ module Set = Set_poly
 (*****************************************************************************)
 
 (*****************************************************************************)
+(* Types *)
+(*****************************************************************************)
+
+type class_hierarchy = Graph_code.node Graph.graph
+
+(*****************************************************************************)
 (* Helpers *)
 (*****************************************************************************)
 
@@ -43,14 +49,14 @@ let class_hierarchy g =
         (* explore if its extends/implements/uses another class/interf/trait *)
         let succ = g +> G.succ n1 G.Use in
         succ +> List.iter (fun n2 ->
-          dag +> Graph.add_vertex_if_not_present n2;
           (match snd n2 with
           | E.Class _ ->
-            (* from parent to children *)
-            dag +> Graph.add_edge n2 n1
+              dag +> Graph.add_vertex_if_not_present n2;
+              (* from parent to children *)
+              dag +> Graph.add_edge n2 n1
           | _ -> 
-            failwith (spf "class_hierarchy: impossible edge %s --> %s"
-                        (G.string_of_node n1) (G.string_of_node n2))
+              failwith (spf "class_hierarchy: impossible edge %s --> %s"
+                          (G.string_of_node n1) (G.string_of_node n2))
           )
         )
     | _ -> ()
@@ -59,8 +65,7 @@ let class_hierarchy g =
   dag
 
 
-let toplevel_methods g =
-  let dag = class_hierarchy g in
+let toplevel_methods g dag =
   let start = Graph.entry_nodes dag in
 
   let env = Set.empty in
@@ -108,7 +113,3 @@ let toplevel_methods g =
   in
   start +> List.iter (aux env);
   htoplevels
-
-  
-  
-  

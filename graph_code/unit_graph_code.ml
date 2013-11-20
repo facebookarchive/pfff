@@ -77,32 +77,6 @@ let unittest ~graph_of_string =
 (*---------------------------------------------------------------------------*)
     "graph" >::: [
       
-      "adjust graph" >:: (fun () ->
-        let (g, _dm) = build_g_and_dm () in
-        let adjust = [("a", "EXTRA_DIR")] in
-        Graph_code.adjust_graph g adjust [];
-        let gopti = Graph_code_opti.convert g in
-        let config = DM.basic_config g in
-        let _dm = DM.build config None gopti in
-        ()
-      );
-
-      "create fake dotdotdot entries" >:: (fun () ->
-        let (g, _dm) = build_g_and_dm () in
-        let gopti = Graph_code_opti.convert g in
-        Common.save_excursion DM.threshold_pack 2 (fun () ->
-          let config = DM.basic_config_opti gopti in
-          let dm, gopti = DM.build config None gopti in
-          let config2 = 
-            DM.expand_node_opti ("./...", E.Dir) dm.config gopti in
-          let dm, gopti = DM.build config2 None gopti in
-          (* pr2_gen dm; *)
-          let _xs = DM.explain_cell_list_use_edges (1, 0) dm gopti in
-          (* pr2_gen xs *)
-          ()
-        )
-      );
-
       "scc" >:: (fun () ->
         let g = G.create () in
         let (-->) f1 f2 =
@@ -155,6 +129,33 @@ let unittest ~graph_of_string =
             ("foo", E.Function), 2;
           ]
           xs;
+      );
+
+
+      "adjust graph" >:: (fun () ->
+        let (g, _dm) = build_g_and_dm () in
+        let adjust = [("a", "EXTRA_DIR")] in
+        Graph_code.adjust_graph g adjust [];
+        let gopti = Graph_code_opti.convert g in
+        let config = DM.basic_config g in
+        let _dm = DM.build config None gopti in
+        ()
+      );
+
+      "create fake dotdotdot entries" >:: (fun () ->
+        let (g, _dm) = build_g_and_dm () in
+        let gopti = Graph_code_opti.convert g in
+        Common.save_excursion DM.threshold_pack 2 (fun () ->
+          let config = DM.basic_config_opti gopti in
+          let dm, gopti = DM.build config None gopti in
+          let config2 = 
+            DM.expand_node_opti ("./...", E.Dir) dm.config gopti in
+          let dm, gopti = DM.build config2 None gopti in
+          (* pr2_gen dm; *)
+          let _xs = DM.explain_cell_list_use_edges (1, 0) dm gopti in
+          (* pr2_gen xs *)
+          ()
+        )
       );
 
 (*
@@ -229,13 +230,13 @@ public function foo() { }
           ["B"]
           (children +> List.map fst);
 
-        let hmethods = Graph_code_class_analysis.toplevel_methods g in
+        let dag = Graph_code_class_analysis.class_hierarchy g in
+        let hmethods = Graph_code_class_analysis.toplevel_methods g dag in
         let xs = Hashtbl.find_all hmethods "foo" in
         assert_equal ~msg:"it should find the toplevel methods"
             ["C.foo";"A.foo"]
             (xs +> List.map fst);
       );
-   
     ];
 
 (*---------------------------------------------------------------------------*)
@@ -276,6 +277,7 @@ public function foo() { }
         assert_equal 
           false (DM.is_internal_helper 2 dm);
       );
+
       "explain cell" >:: (fun () ->
         let (g, dm) = build_g_and_dm () in
         let gopti = Graph_code_opti.convert g in

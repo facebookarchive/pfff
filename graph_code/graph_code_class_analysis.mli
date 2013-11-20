@@ -2,10 +2,13 @@
 (* It can actually be a DAG, as with interfaces and traits one can fake
  * multiple inheritance.
  *)
-val class_hierarchy: Graph_code.graph -> Graph_code.node Graph.graph
+type class_hierarchy = Graph_code.node Graph.graph
+
+val class_hierarchy: Graph_code.graph -> class_hierarchy
 
 (* Return the toplevel methods for each method name in the graph.
- * The returned hashtbl use the Hashtbl.find_all property 
+ * The returned hashtbl uses the Hashtbl.find_all property.
  *)
 val toplevel_methods: 
-  Graph_code.graph -> (string, Graph_code.node) Hashtbl.t
+  Graph_code.graph -> class_hierarchy -> 
+  (string, Graph_code.node(*list*)) Hashtbl.t

@@ -1219,12 +1219,12 @@ let build
     );
     env.pr2_and_log "\nstep4: class analysis";
     Common.profile_code "Graph_php.step4" (fun () ->
-      let htoplevels = Graph_code_class_analysis.toplevel_methods g in
+      let dag = Graph_code_class_analysis.class_hierarchy g in
+      let htoplevels = Graph_code_class_analysis.toplevel_methods g dag in
       !(env.phase_class_analysis) +> List.iter (fun (cur, name) ->
           let kind = E.Method E.RegularMethod in
           let (R method_str) = str_of_name env name kind in
           let tok = Ast.tok_of_name name in
-
           let candidates = Hashtbl.find_all htoplevels method_str in
           (match candidates with
           | [] -> 
