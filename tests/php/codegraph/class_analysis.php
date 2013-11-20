@@ -5,6 +5,10 @@ class Complex {
   public function ambiguous() { }
 }
 
+class ComplexChild extends Complex {
+  public function unique() { }
+}
+
 class Complex2 {
   public function ambiguous() { }
 }

@@ -1236,10 +1236,14 @@ let build
               )
           (* cool *)
           | [dst] ->
-              (* todo: actual dispatch to all possible method in this
-               * hierarchy!
-               *)
               G.add_edge (cur.node, dst) G.Use env.g;
+              (* actual dispatch to all possible method in this hierarchy!
+               * will get a huge graph? do that just for methods with no prev?
+               *)
+              let xs = Graph_code_class_analysis.dispatched_methods g dag dst in
+              xs +> List.iter (fun m ->
+                G.add_edge (cur.node, m) G.Use env.g;
+              );
               env.stats.G.method_calls +> Common.push2 (tok, true);
           | _ ->
               env.stats.G.method_calls +> Common.push2 (tok, false);

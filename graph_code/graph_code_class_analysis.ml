@@ -188,6 +188,7 @@ let dispatched_methods2 g dag node =
   let res = ref [] in
   let rec aux (current_class, class_kind) =
     let node = (string_of_class_method (current_class, m), kind) in
+    (* todo? need get public and protected there too *)
     (if G.has_node node g
     then Common.push2 node res
     );
