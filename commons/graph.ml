@@ -345,8 +345,10 @@ let has_node k g =
     true
   with Not_found -> false
 
-let entry_nodes g = 
+let entry_nodes2 g = 
   nodes g +> List.filter (fun n -> pred n g = [])
+let entry_nodes a =
+  Common.profile_code "Graph.entry_nodes" (fun () -> entry_nodes2 a)
   
 (*****************************************************************************)
 (* Iteration *)

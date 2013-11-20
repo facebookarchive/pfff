@@ -33,6 +33,18 @@ type class_hierarchy = Graph_code.node Graph.graph
 (* Helpers *)
 (*****************************************************************************)
 
+let class_method_of_string str =
+  if str =~ "^\\(.*\\)\\.\\([^\\.]+\\)$"
+  then Common.matched2 str
+  else failwith (spf "not a method: %s" str)
+(* alt:
+ * let xs = Common.split "\\." (fst n2) in
+ * let method_str = Common2.list_last xs in
+ *)
+
+let string_of_class_method (c, m) =
+  c ^ "." ^ m
+
 (*****************************************************************************)
 (* One off analysis *)
 (*****************************************************************************)
@@ -135,8 +147,7 @@ let toplevel_methods g dag =
       G.children n g +> Common.map_filter (fun n2 ->
           match snd n2 with
           | E.Method _ -> 
-              let xs = Common.split "\\." (fst n2) in
-              let method_str = Common2.list_last xs in
+              let (_, method_str) = class_method_of_string (fst n2) in
               let privacy = G.privacy_of_node n2 g in
               Some (method_str, privacy, n2)
           | _ -> None
@@ -167,5 +178,28 @@ let toplevel_methods g dag =
   htoplevels
 
 
-let dispatched_methods g dag node =
-  raise Todo
+(* the inverse of lookup, go down in the children instead of up in the parent *)
+let dispatched_methods2 g dag node =
+  let (str, kind) = node in
+  assert (kind =*= E.Method E.RegularMethod);
+  
+  let (c, m) = class_method_of_string str in
+
+  let res = ref [] in
+  let rec aux (current_class, class_kind) =
+    let node = (string_of_class_method (current_class, m), kind) in
+    (if G.has_node node g
+    then Common.push2 node res
+    );
+    let children = Graph.succ (current_class, class_kind) dag in
+    children +> List.iter aux
+  in
+  (* todo: could be a trait or interface *)
+  let node = (c, E.Class E.RegularClass) in
+  Graph.succ node dag +> List.iter aux;
+
+  !res
+
+let dispatched_methods a b c =
+  Common.profile_code "GCCA.dispatched_methods" (fun () ->
+    dispatched_methods2 a b c)
