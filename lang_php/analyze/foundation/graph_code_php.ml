@@ -90,6 +90,7 @@ type env = {
   phase_use_other:  (unit -> unit) list ref;
   (* post processing phase, try to resolve $o->foo() method calls *)
   phase_class_analysis: (current * Ast.name) list ref;
+  phase_dispatch: (current * Ast.name) list ref;
 
   (* right now used in extract_uses phase to transform a src like main()
    * into its File, and also to give better error messages.
@@ -921,7 +922,8 @@ and expr env x =
         (* handle easy case *)
         | This ((x, tokopt)) ->
             expr env 
-                (Call (Class_get (Id[ (env.cur.self, tokopt)], Id name2), es))
+                (Call (Class_get (Id[ (env.cur.self, tokopt)], Id name2), es));
+            env.phase_dispatch +> Common.push2 (env.cur, name2);
         (* need class analysis ... *)
         | _ ->
           env.phase_class_analysis +> Common.push2 (env.cur, name2);
@@ -1091,6 +1093,7 @@ let build
     phase_use_lookup = ref [];
     phase_use_other = ref [];
     phase_class_analysis = ref [];
+    phase_dispatch = ref [];
 
     cur = {
       node = ("filled_later", E.File);
@@ -1248,6 +1251,15 @@ let build
           | _ ->
               env.stats.G.method_calls +> Common.push2 (tok, false);
           )
+      );
+      !(env.phase_dispatch) +> List.iter (fun (cur, name) ->
+        let kind = E.Method E.RegularMethod in
+        let (R method_str) = str_of_name env name kind in
+        let dst = (cur.self ^ "." ^ method_str, kind) in
+        let xs = Graph_code_class_analysis.dispatched_methods g dag dst in
+        xs +> List.iter (fun m ->
+          G.add_edge (cur.node, m) G.Use env.g;
+        )
       )
     )
   end;
