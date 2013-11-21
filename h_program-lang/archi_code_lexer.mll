@@ -236,6 +236,8 @@ rule category = parse
 
   | "external" { ThirdParty }
   | "legacy" { ThirdParty }
+  (* opam src *)
+  | "src_ext" { ThirdParty }
   | "deprecated" { Legacy }
   | "/attic/" { Legacy }
 
