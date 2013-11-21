@@ -583,7 +583,7 @@ let test_transitive_deps xs =
     | [] -> ()
     | ("flib_init", E.Function)::xs -> dfs depth xs
     | n::xs ->
-        (if Hashtbl.mem hdone n || depth > 3
+        (if Hashtbl.mem hdone n || depth > 4
         then ()
         else begin
           Hashtbl.add hdone n true;
