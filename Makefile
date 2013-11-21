@@ -539,7 +539,7 @@ website:
 tags:
 	./stags.opt -lang cmt .
 graph:
-	./codegraph.opt -lang cmt -build .
+	./codegraph.opt -derived_data -lang cmt -build .
 prolog:
 	./codequery.opt -lang cmt -build .
 	mv facts.pl facts_pl
