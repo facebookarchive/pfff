@@ -197,7 +197,11 @@ let dispatched_methods2 g dag node =
   in
   (* todo: could be a trait or interface *)
   let node = (c, E.Class E.RegularClass) in
-  Graph.succ node dag +> List.iter aux;
+  (if G.has_node node g 
+  then Graph.succ node dag +> List.iter aux
+  else 
+      failwith (spf "could not find class %s" c)
+  );
 
   !res
 

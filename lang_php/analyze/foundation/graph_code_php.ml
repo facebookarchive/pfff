@@ -131,6 +131,7 @@ type env = {
    qualifier: Ast_php_simple.qualified_ident;
    import_rules: (string * Ast_php_simple.qualified_ident) list;
    (* oo *)
+   (* this is not resolved, so use also qualifier for this *)
    self:   string;                (* "NOSELF" when outside a class *)
    parent: unit -> resolved_name; (* "NOPARENT" when no parent *)
    (* misc *)
@@ -224,6 +225,12 @@ let (name_of_class_name: Ast.hint_type -> name) = fun x ->
   match x with
   | Hint name -> name
   | _ -> raise Common.Impossible
+
+(* methods or fields are necessarily simple idents *)
+let (ident_of_name: Ast.name -> Ast.ident) = function
+  | [id] -> id
+  | x -> failwith (spf "was expecting an ident not a qualified ident at %s"
+                     (Ast.tok_of_name x +> Parse_info.string_of_info))
 
 let add_prefix qu =
   match qu with
@@ -1191,42 +1198,47 @@ let build
     g +> G.iter_nodes (fun (str, kind) ->
       Hashtbl.replace env.case_insensitive (normalize str, kind) (str, kind)
     );
+    let envold = env in
+    (* to prevent using env by mistake in the closures below *)
+    let env = () in
+    ignore(env);
 
     (* step2: creating the 'Use' edges for inheritance *)
-    env.pr2_and_log "\nstep2: extract inheritance";
+    envold.pr2_and_log "\nstep2: extract inheritance";
     Common.profile_code "Graph_php.step2" (fun () ->
-      !(env.phase_inheritance) +> List.rev +> List.iter (fun (cur, n) ->
-        let env = { env with phase = Inheritance; cur } in
+      !(envold.phase_inheritance) +> List.rev +> List.iter (fun (cur, n) ->
+        let env = { envold with phase = Inheritance; cur } in
         add_use_edge_bis env n
       );
-      env.phase_inheritance := [];
+      envold.phase_inheritance := [];
     );
     (* step3: creating the 'Use' edges, the uses *)
-    env.pr2_and_log "\nstep3: extract uses";
+    envold.pr2_and_log "\nstep3: extract uses";
     Common.profile_code "Graph_php.step3" (fun () ->
-      !(env.phase_use) +> List.rev +> List.iter (fun (cur, n) ->
-        let env = { env with phase = Uses; cur } in
+      !(envold.phase_use) +> List.rev +> List.iter (fun (cur, n) ->
+        let env = { envold with phase = Uses; cur } in
         add_use_edge_bis env n
       );
-      env.phase_use := [];
+      envold.phase_use := [];
 
-      !(env.phase_use_lookup) +> List.rev +> List.iter (fun (cur, (xhp, a, b))->
-        let env = { env with phase = Uses; cur } in
+      !(envold.phase_use_lookup) +> List.rev +> List.iter (fun (cur, (xhp, a, b))->
+        let env = { envold with phase = Uses; cur } in
         add_use_edge_lookup2 xhp env a b
       );
-      env.phase_use_lookup := [];
+      envold.phase_use_lookup := [];
 
-      let xs = !(env.phase_use_other) in
-      (env.phase_use_other) := [];
+      let xs = !(envold.phase_use_other) in
+      (envold.phase_use_other) := [];
       xs +> List.rev +> List.iter (fun f -> f());
     );
-    env.pr2_and_log "\nstep4: class analysis";
+    envold.pr2_and_log "\nstep4: class analysis";
     Common.profile_code "Graph_php.step4" (fun () ->
       let dag = Graph_code_class_analysis.class_hierarchy g in
       let htoplevels = Graph_code_class_analysis.toplevel_methods g dag in
-      !(env.phase_class_analysis) +> List.iter (fun (cur, name) ->
+      !(envold.phase_class_analysis) +> List.iter (fun (cur, name) ->
           let kind = E.Method E.RegularMethod in
-          let (R method_str) = str_of_name env name kind in
+          let ident = ident_of_name name in
+          let method_str = Ast.str_of_ident ident in
           let tok = Ast.tok_of_name name in
           let candidates = Hashtbl.find_all htoplevels method_str in
           (match candidates with
@@ -1235,30 +1247,32 @@ let build
               | _ when method_str =~ "get.*" -> ()
               | _ when method_str =~ "set.*" -> ()
               | _ ->
-                  lookup_fail env (Some tok) (method_str, kind);
+                  lookup_fail envold (Some tok) (method_str, kind);
               )
           (* cool *)
           | [dst] ->
-              G.add_edge (cur.node, dst) G.Use env.g;
+              G.add_edge (cur.node, dst) G.Use envold.g;
               (* actual dispatch to all possible method in this hierarchy!
                * will get a huge graph? do that just for methods with no prev?
                *)
               let xs = Graph_code_class_analysis.dispatched_methods g dag dst in
               xs +> List.iter (fun m ->
-                G.add_edge (cur.node, m) G.Use env.g;
+                G.add_edge (cur.node, m) G.Use envold.g;
               );
-              env.stats.G.method_calls +> Common.push2 (tok, true);
+              envold.stats.G.method_calls +> Common.push2 (tok, true);
           | _ ->
-              env.stats.G.method_calls +> Common.push2 (tok, false);
+              envold.stats.G.method_calls +> Common.push2 (tok, false);
           )
       );
-      !(env.phase_dispatch) +> List.iter (fun (cur, name) ->
+      !(envold.phase_dispatch) +> List.iter (fun (cur, name) ->
         let kind = E.Method E.RegularMethod in
-        let (R method_str) = str_of_name env name kind in
-        let dst = (cur.self ^ "." ^ method_str, kind) in
+        let ident = ident_of_name name in
+        let method_str = Ast.str_of_ident ident in
+        let self = add_prefix cur.qualifier ^ cur.self in
+        let dst = (self ^ "." ^ method_str, kind) in
         let xs = Graph_code_class_analysis.dispatched_methods g dag dst in
         xs +> List.iter (fun m ->
-          G.add_edge (cur.node, m) G.Use env.g;
+          G.add_edge (cur.node, m) G.Use envold.g;
         )
       )
     )
