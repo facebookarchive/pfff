@@ -101,7 +101,12 @@ open Common
 (* Types *)
 (*****************************************************************************)
 
-(* OG for ocamlgraph *)
+(* OG for ocamlgraph.
+ *
+ * todo: maybe time to use the non generic implementation and
+ * use something more efficient, especially for G.pred,
+ * see Imperative.ConcreteBidirectional for instance
+ *)
 module OG = Ocamlgraph.Pack.Digraph
 
 (* Polymorphic graph *)
@@ -149,7 +154,7 @@ module OG :
       end
     type edge = E.t
 
-    val is_directed : bool
+NA    val is_directed : bool
 DONE    val create : ?size:int -> unit -> t
     val copy : t -> t
 DONE    val add_vertex : t -> V.t -> unit

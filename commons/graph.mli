@@ -22,9 +22,9 @@ val copy:
 (* graph access *)
 val nodes: 'a graph -> 'a list
 val succ: 'a -> 'a graph -> 'a list
-val pred: 'a -> 'a graph -> 'a list
+val pred: 'a -> 'a graph -> 'a list (* slow! *)
 val out_degree: 'a -> 'a graph -> int
-val in_degree: 'a -> 'a graph -> int
+val in_degree: 'a -> 'a graph -> int (* slow! *)
 val has_node: 'a -> 'a graph -> bool
 
 val nb_nodes: 'a graph -> int
@@ -67,12 +67,6 @@ val display_with_gv:
 val display_strongly_connected_components :
   str_of_key:('a -> string) -> ('a, int) Hashtbl.t -> 'a graph -> unit
 
-
 (* internals *)
 val stat: 
   'a graph -> unit
-
-(*
-val vertex_of_key : 'a -> 'a graph -> OG.V.t
-val key_of_vertex : OG.V.t -> 'a graph -> 'a
-*)
