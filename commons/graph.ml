@@ -351,7 +351,25 @@ let has_node k g =
   with Not_found -> false
 
 let entry_nodes2 g = 
-  nodes g +> List.filter (fun n -> pred n g = [])
+  (* old: slow: nodes g +> List.filter (fun n -> pred n g = [])
+   * Once I use a better underlying graph implementation maybe I
+   * will not need this kind of things.
+   *)
+  let res = ref [] in
+  let hdone = Hashtbl.create 101 in
+  let finished = ref false in
+  g.og +> OG.Topological.iter (fun v ->
+    if !finished || Hashtbl.mem hdone v
+    then finished := true
+    else begin
+      let xs = OG.succ g.og v in
+      xs +> List.iter (fun n -> Hashtbl.replace hdone n true);
+      Common.push2 v res;
+    end
+  );
+  !res +> List.map (fun i -> key_of_vertex i g) +> List.rev
+
+
 let entry_nodes a =
   Common.profile_code "Graph.entry_nodes" (fun () -> entry_nodes2 a)
   
