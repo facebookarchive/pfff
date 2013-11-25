@@ -30,6 +30,7 @@ module R = Refactoring_code
  * 
  * related: 
  *  - http://www.jetbrains.com/idea/documentation/ssr.html
+ *  - go has a replace option in its formating tool http://golang.org/cmd/gofmt/
  *)
 
 (*****************************************************************************)
