@@ -16,7 +16,7 @@ val parse_program:
 val parse_fuzzy:
   Common.filename -> Ast_fuzzy.tree list * Parser_java.token list
 
-val parse_fuzzy_of:
+val parse_fuzzy_of_string:
   string -> Ast_fuzzy.tree list * Parser_java.token list
 
 (* internal *)
