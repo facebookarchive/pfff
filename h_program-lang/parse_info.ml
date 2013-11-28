@@ -131,9 +131,27 @@ and transformation =
 
  (* with tarzan *)
 
+type token_kind =
+  (* this is mostly for the fuzzy parser and sgrep/spatch ast fuzzy *)
+  | LPar
+  | RPar
+  | LBrace
+  | RBrace
+
+  (* mostly for the lexer helpers *)
+  | Eof 
+  | Other
+
+  (* this is mostly for the unparser helpers in spatch *)
+  | Esthet of esthet
+
+  and esthet =
+   | Comment
+   | Newline
+   | Space
+
 (* shortcut *)
 type info = token_mutable
-
 
 (*
 let info_start_file file = {
