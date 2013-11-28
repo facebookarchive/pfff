@@ -225,7 +225,7 @@ let (program_of_string: string -> Ast_js.program) = fun s ->
 
 let parse_fuzzy file =
   let toks = tokens file in
-  let trees = Lib_parser.mk_trees { Lib_parser.
+  let trees = Parse_fuzzy.mk_trees { Parse_fuzzy.
      tokf = TH.info_of_tok;
      kind = TH.token_kind_of_tok;
   } toks 
