@@ -41,18 +41,22 @@ type token_mutable = {
     | AddStr of string
     | AddNewlineAndIdent
 
+(* shortcut *)
+type info = token_mutable
+
+
 type token_kind =
-  (* this is mostly for the fuzzy parser and sgrep/spatch ast fuzzy *)
+  (* for the fuzzy parser and sgrep/spatch ast fuzzy *)
   | LPar
   | RPar
   | LBrace
   | RBrace
 
-  (* mostly for the lexer helpers *)
+  (* for the lexer helpers *)
   | Eof 
   | Other
 
-  (* this is mostly for the unparser helpers in spatch *)
+  (* for the unparser/pretty-printer helpers in spatch *)
   | Esthet of esthet
 
   and esthet =
@@ -60,9 +64,6 @@ type token_kind =
    | Newline
    | Space
 
-
-(* shortcut *)
-type info = token_mutable
 
 val fake_token_location : token_location
 
@@ -127,5 +128,3 @@ type changen = unit -> (in_channel * int * Common.filename)
 (* Create filename-arged functions from changen-type ones *)
 val file_wrap_changen : (changen -> 'a) -> (Common.filename -> 'a)
 val full_charpos_to_pos_large_from_changen : changen -> (int -> (int * int))
-
-
