@@ -308,7 +308,8 @@ let tokens_with_categ_of_file file hentities =
           | _ -> raise Impossible));
         highlight_visit = Highlight_java.visit_toplevel;
         info_of_tok = Token_helpers_java.info_of_tok;
-        str_of_tok = Token_helpers_java.str_of_tok;
+        str_of_tok = (fun x -> 
+            x +> Token_helpers_java.info_of_tok +> PI.str_of_info);
         }
         file prefs hentities
 

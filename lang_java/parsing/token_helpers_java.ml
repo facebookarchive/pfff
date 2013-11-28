@@ -271,12 +271,10 @@ let linecol_of_tok tok =
   let info = info_of_tok tok in
   PI.line_of_info info, PI.col_of_info info
 
-let col_of_tok x = snd (linecol_of_tok x)
+(* todo: remove, just use by parse_java.ml checkpoint mechanism that
+ * we actually don't use
+ *)
 let line_of_tok x = fst (linecol_of_tok x)
-
-let str_of_tok x =  PI.str_of_info (info_of_tok x)
-let file_of_tok x =  PI.file_of_info (info_of_tok x)
-let pos_of_tok x =  PI.pos_of_info (info_of_tok x)
 
 (*****************************************************************************)
 (* For unparsing *)
@@ -285,7 +283,8 @@ let pos_of_tok x =  PI.pos_of_info (info_of_tok x)
 open Lib_unparser
 
 let elt_of_tok tok =
-  let str = str_of_tok tok in
+  let info = info_of_tok tok in
+  let str = PI.str_of_info info in
   match tok with
   | TComment _ -> Esthet (Comment str)
   | TCommentSpace _ -> Esthet (Space str)
