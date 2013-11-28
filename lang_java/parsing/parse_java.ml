@@ -209,8 +209,3 @@ let parse_fuzzy file =
   } toks
   in
   trees, toks_orig
-
-let parse_fuzzy_of_string w =
- Common2.with_tmp_file ~str:w ~ext:"java" (fun file ->
-   parse_fuzzy file
- )
