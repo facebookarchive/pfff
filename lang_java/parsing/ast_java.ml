@@ -371,12 +371,12 @@ let fakeInfo ?(next_to=None) str = { Parse_info.
 let ast_todo = []
 let ast_todo2 = ()
 
-let info_of_ident ident = snd ident
+let info_of_ident ident =
+  snd ident
 
 let is_final xs =
   let xs = List.map fst xs in
   List.mem Final xs
-
 let is_final_static xs =
   let xs = List.map fst xs in
   List.mem Final xs && List.mem Static xs
