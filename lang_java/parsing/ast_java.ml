@@ -3,9 +3,8 @@
  * Released under the GNU General Public License
  *
  * Yoann Padioleau:
- * 2010, port to the pfff infrastructure.
- * 2012, heavily modified to support annotations, generics, enum,
- *       foreach, etc
+ * 2010 port to the pfff infrastructure.
+ * 2012 heavily modified to support annotations, generics, enum, foreach, etc
  *)
 
 (*****************************************************************************)
@@ -82,12 +81,12 @@ type type_parameter =
 (* ------------------------------------------------------------------------- *)
 
 type modifier =
-  | Public   | Protected   | Private
+  | Public | Protected | Private
   | Abstract
   | Static
   | Final
   | StrictFP
-  | Transient   | Volatile
+  | Transient | Volatile
   | Synchronized
   | Native
 
@@ -100,10 +99,10 @@ type modifier =
 (* Expressions *)
 (* ------------------------------------------------------------------------- *)
 
-(* When do we need to have a name using type arguments?
- * For certain calls like List.<Int>of(), which is rare.
- * Do a NameGeneric instead? the type_argument could then be
- * only at the end?
+(* When do we need to have a name with actual type_argument?
+ * For certain calls like List.<Int>of(), which are rare.
+ * less: do a NameGeneric instead? the type_argument could then be
+ *  only at the end?
  *)
 type name = (type_argument list * ident) list1
  (* with tarzan *)
@@ -128,13 +127,14 @@ type expr =
   (* Xxx.class *)
   | ClassLiteral of typ
 
-  (* the decls option is for anon classes *)
+  (* the 'decls option' is for anon classes *)
   | NewClass of typ * arguments * decls option
   | NewArray of typ * arguments * int * init option
   (* see tests/java/parsing/NewQualified.java *)
   | NewQualifiedClass of expr * ident * arguments * decls option
 
   | Call of expr * arguments
+
   (* How is parsed X.y ? Could be a Name [X;y] or Dot (Name [X], y)?
    * The static part should be a Name and the more dynamic part a Dot.
    * So variable.field and variable.method should be parsed as
@@ -153,6 +153,7 @@ type expr =
    * that requires semantic information about the type of x and y.
    *)
   | Dot of expr * ident
+
   | ArrayAccess of expr * expr
 
   | Postfix of expr * op
