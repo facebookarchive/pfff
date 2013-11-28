@@ -229,7 +229,7 @@ let test_include_require file =
     match incexpr with
     | Include_require_php.SimpleVar _
     | Include_require_php.Other _ ->
-        Lib_matcher.print_match [tok]
+        Matching_report.print_match [tok]
     | _ -> ()
   );
   ()

@@ -5,7 +5,7 @@ TOP=..
 TARGET=lib
 
 SRC= flag_matcher.ml \
-     lib_parser.ml lib_matcher.ml lib_unparser.ml \
+     lib_parser.ml matching_report.ml lib_unparser.ml \
      metavars_fuzzy.ml fuzzy_vs_fuzzy.ml \
      matching_fuzzy.ml transforming_fuzzy.ml \
      sgrep_fuzzy.ml spatch_fuzzy.ml \

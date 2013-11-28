@@ -186,7 +186,7 @@ let misc_unittest =
   "misc" >::: [
     "join_with_space" >:: (fun () ->
       assert_equal
-        (Lib_matcher.join_with_space_if_needed ["$x";"=";"print";"FOO"])
+        (Matching_report.join_with_space_if_needed ["$x";"=";"print";"FOO"])
         "$x=print FOO"
     )
   ]

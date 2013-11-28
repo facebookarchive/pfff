@@ -38,7 +38,7 @@ let pattern_string = ref ""
 let lang = ref "php"
 
 let case_sensitive = ref false
-let match_format = ref Lib_matcher.Normal
+let match_format = ref Matching_report.Normal
 
 let mvars = ref ([]: Metavars_fuzzy.mvar list)
 
@@ -61,7 +61,7 @@ let _matching_tokens = ref []
 let print_match mvars mvar_binding ii_of_any tokens_matched_code = 
   (match mvars with
   | [] ->
-      Lib_matcher.print_match ~format:!match_format tokens_matched_code
+      Matching_report.print_match ~format:!match_format tokens_matched_code
   | xs ->
       (* similar to the code of Lib_matcher.print_match, maybe could
        * factorize code a bit.
@@ -81,7 +81,7 @@ let print_match mvars mvar_binding ii_of_any tokens_matched_code =
           | Some any ->
               ii_of_any any
               +> List.map PI.str_of_info 
-              +> Lib_matcher.join_with_space_if_needed
+              +> Matching_report.join_with_space_if_needed
           | None ->
               failwith (spf "the metavariable '%s' was not binded" x)
           )
@@ -320,9 +320,9 @@ let options () =
     "-case_sensitive", Arg.Set case_sensitive, 
     " match code in a case sensitive manner";
 
-    "-emacs", Arg.Unit (fun () -> match_format := Lib_matcher.Emacs ),
+    "-emacs", Arg.Unit (fun () -> match_format := Matching_report.Emacs ),
     " print matches on the same line than the match position";
-    "-oneline", Arg.Unit (fun () -> match_format := Lib_matcher.OneLine),
+    "-oneline", Arg.Unit (fun () -> match_format := Matching_report.OneLine),
     " print matches on one line, in normalized form";
 
     "-pvar", Arg.String (fun s -> mvars := Common.split "," s),
