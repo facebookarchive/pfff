@@ -392,17 +392,17 @@ let vof_program v = vof_compilation_unit v
 
 let vof_any =
   function
-  | Ident i -> let v1 = vof_ident i in Ocaml.VSum (("Ident", [ v1 ]))
-  | Expr2 v1 -> let v1 = vof_expr v1 in Ocaml.VSum (("Expr2", [ v1 ]))
-  | Stmt v1 -> let v1 = vof_stmt v1 in Ocaml.VSum (("Stmt", [ v1 ]))
-  | Typ v1 -> let v1 = vof_typ v1 in Ocaml.VSum (("Typ", [ v1 ]))
-  | Var v1 -> let v1 = vof_var v1 in Ocaml.VSum (("Var", [ v1 ]))
-  | Init2 v1 -> let v1 = vof_init v1 in Ocaml.VSum (("Init2", [ v1 ]))
-  | Method2 v1 ->
-      let v1 = vof_method_decl v1 in Ocaml.VSum (("Method2", [ v1 ]))
-  | Field2 v1 -> let v1 = vof_field v1 in Ocaml.VSum (("Field2", [ v1 ]))
-  | Class2 v1 ->
-      let v1 = vof_class_decl v1 in Ocaml.VSum (("Class2", [ v1 ]))
-  | Decl v1 -> let v1 = vof_decl v1 in Ocaml.VSum (("Decl", [ v1 ]))
-  | Program v1 -> let v1 = vof_program v1 in Ocaml.VSum (("Program", [ v1 ]))
+  | AIdent i -> let v1 = vof_ident i in Ocaml.VSum (("AIdent", [ v1 ]))
+  | AExpr v1 -> let v1 = vof_expr v1 in Ocaml.VSum (("AExpr", [ v1 ]))
+  | AStmt v1 -> let v1 = vof_stmt v1 in Ocaml.VSum (("AStmt", [ v1 ]))
+  | ATyp v1 -> let v1 = vof_typ v1 in Ocaml.VSum (("ATyp", [ v1 ]))
+  | AVar v1 -> let v1 = vof_var v1 in Ocaml.VSum (("AVar", [ v1 ]))
+  | AInit v1 -> let v1 = vof_init v1 in Ocaml.VSum (("AInit", [ v1 ]))
+  | AMethod v1 ->
+      let v1 = vof_method_decl v1 in Ocaml.VSum (("AMethod", [ v1 ]))
+  | AField v1 -> let v1 = vof_field v1 in Ocaml.VSum (("AField", [ v1 ]))
+  | AClass v1 ->
+      let v1 = vof_class_decl v1 in Ocaml.VSum (("AClass", [ v1 ]))
+  | ADecl v1 -> let v1 = vof_decl v1 in Ocaml.VSum (("ADecl", [ v1 ]))
+  | AProgram v1 -> let v1 = vof_program v1 in Ocaml.VSum (("AProgram", [ v1 ]))
 

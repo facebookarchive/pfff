@@ -74,7 +74,7 @@ let test_lexer file =
 
 let test_dump file =
   let ast = Parse_java.parse_program file in
-  let v = Meta_ast_java.vof_any (Ast_java.Program ast) in
+  let v = Meta_ast_java.vof_any (Ast_java.AProgram ast) in
   let str = Ocaml.string_of_v v in
   pr str
 
@@ -93,7 +93,7 @@ let test_visitor file =
   } in
 
   let ast = Parse_java.parse_program file in
-  visitor (Program ast);
+  visitor (AProgram ast);
   ()
 
 (*****************************************************************************)

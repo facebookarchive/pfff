@@ -136,7 +136,7 @@ let visit_toplevel ~tag_hook prefs (ast, toks) =
     );
   }
   in
-  visitor (Program ast);
+  visitor (AProgram ast);
 
   (* -------------------------------------------------------------------- *)
   (* toks phase 1 *)

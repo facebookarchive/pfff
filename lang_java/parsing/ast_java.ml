@@ -345,17 +345,17 @@ type program = compilation_unit
 (*****************************************************************************)
 
 type any =
-  | Ident of ident
-  | Expr2 of expr
-  | Stmt of stmt
-  | Typ of typ
-  | Var of var
-  | Init2 of init
-  | Method2 of method_decl
-  | Field2 of field
-  | Class2 of class_decl
-  | Decl of decl
-  | Program of program
+  | AIdent of ident
+  | AExpr of expr
+  | AStmt of stmt
+  | ATyp of typ
+  | AVar of var
+  | AInit of init
+  | AMethod of method_decl
+  | AField of field
+  | AClass of class_decl
+  | ADecl of decl
+  | AProgram of program
  (* with tarzan *)
 
 (*****************************************************************************)

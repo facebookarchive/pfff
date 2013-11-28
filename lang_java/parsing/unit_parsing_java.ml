@@ -58,7 +58,7 @@ let unittest =
                   ~ext:"java"
                   Parse_java.parse_program in
 
-      vis (Program ast);
+      vis (AProgram ast);
 
       OUnit.assert_equal ~msg:"Expecting two anonymous class definitions"
         2 !count;
