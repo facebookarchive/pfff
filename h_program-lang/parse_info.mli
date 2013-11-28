@@ -18,7 +18,7 @@ type token_origin =
   | Ab (* abstract token, see parse_info.ml comment *)
 
 (* to allow source to source transformation via token "annotations", 
- * see the documentation for spatch.
+ * see the documentation for spatch
  *)
 type token_mutable = {
   (* contains the position of the token through the token_location embedded
