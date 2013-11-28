@@ -190,22 +190,10 @@ let parse_program file =
 (*****************************************************************************)
 
 let parse_fuzzy file =
-  let toks_orig = tokens file in
-  let toks =
-    toks_orig +> Common.exclude (fun x ->
-      Token_helpers_java.is_comment x ||
-      Token_helpers_java.is_eof x
-    )
-  in
+  let toks = tokens file in
   let trees = Lib_parser.mk_trees { Lib_parser.
      tokf = TH.info_of_tok;
-     kind = (function
-      | T.LC _ -> Lib_parser.LBrace
-      | T.RC _ -> Lib_parser.RBrace
-      | T.LP _ -> Lib_parser.LPar
-      | T.RP _ -> Lib_parser.RPar
-      | _ -> Lib_parser.Other
-     );
+     kind = TH.token_kind_of_tok;
   } toks
   in
-  trees, toks_orig
+  trees, toks

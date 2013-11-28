@@ -15,6 +15,7 @@
 open Common
 
 open Parser_js
+module PI = Parse_info
 
 (*****************************************************************************)
 (* Token Helpers *)
@@ -31,6 +32,15 @@ let is_comment = function
 let is_just_comment = function
   | TComment _ -> true
   | _ -> false 
+
+let token_kind_of_tok t =
+  match t with
+  | T_LCURLY _ -> PI.LBrace
+  | T_RCURLY _ -> PI.RBrace
+  | T_LPAREN _ -> PI.LPar
+  | T_RPAREN _ -> PI.RPar
+  | _ -> PI.Other
+
 
 (*****************************************************************************)
 (* Visitors *)

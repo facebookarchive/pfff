@@ -224,22 +224,10 @@ let (program_of_string: string -> Ast_js.program) = fun s ->
 (*****************************************************************************)
 
 let parse_fuzzy file =
-  let toks_orig = tokens file in
-  let toks = 
-    toks_orig +> Common.exclude (fun x ->
-      Token_helpers_js.is_comment x ||
-      Token_helpers_js.is_eof x
-    )
-  in
+  let toks = tokens file in
   let trees = Lib_parser.mk_trees { Lib_parser.
      tokf = TH.info_of_tok;
-     kind = (function
-      | T.T_LCURLY _ -> Lib_parser.LBrace
-      | T.T_RCURLY _ -> Lib_parser.RBrace
-      | T.T_LPAREN _ -> Lib_parser.LPar
-      | T.T_RPAREN _ -> Lib_parser.RPar
-      | _ -> Lib_parser.Other
-     );
+     kind = TH.token_kind_of_tok;
   } toks 
   in
-  trees, toks_orig
+  trees, toks

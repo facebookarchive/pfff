@@ -15,30 +15,20 @@
 open Common
 
 module PI = Parse_info
+
 (*****************************************************************************)
 (* Prelude *)
 (*****************************************************************************)
 (* A few helpers function to build Ast_fuzzy tree from a list of tokens.
- * It factorizes the language-independent part of those ast fuzzy builder
+ * It factorizes the language-independent part of those ast fuzzy builder.
  *)
 
 (*****************************************************************************)
 (* Types *)
 (*****************************************************************************)
 
-(* todo: factorize code with lib_unparser.esthet type to have
- * for each language a token_kind_of_tok. We then can avoid all those
- * is_eof, is_comment, elt_of_tok, and hooks.kind in all the fuzzy parsers.
- *)
-type token_kind =
-  | LPar
-  | RPar
-  | LBrace
-  | RBrace
-  | Other
-
 type 'tok hooks = {
-  kind: 'tok -> token_kind;
+  kind: 'tok -> Parse_info.token_kind;
   tokf: 'tok -> Parse_info.info;
 }
 
@@ -47,8 +37,6 @@ type 'tok hooks = {
 (*****************************************************************************)
 
 (*
- * Assumes work on a list of tokens without comments.
- * 
  * less: I should also factorize with Parse_cpp.parse_fuzzy. 
  * put here also generic parts of  token_views_of_xxx?
  * 
@@ -58,12 +46,21 @@ type 'tok hooks = {
 
 let mk_trees h xs =
 
+ (* filter comment tokens *)
+  let xs = xs +> Common.exclude (fun t ->
+      let kind = h.kind t in
+      match kind with
+      | PI.Esthet _ | PI.Eof -> true
+      | _ -> false
+  )
+  in
+
   let rec consume x xs =
     match x with
-    | tok when h.kind tok = LBrace -> 
+    | tok when h.kind tok = PI.LBrace -> 
         let body, closing, rest = look_close_brace x [] xs in
         Ast_fuzzy.Braces (h.tokf x, body, h.tokf closing), rest
-    | tok when h.kind tok = LPar ->
+    | tok when h.kind tok = PI.LPar ->
         let body, closing, rest = look_close_paren x [] xs in
         let body' = split_comma body in
         Ast_fuzzy.Parens (h.tokf x, body', h.tokf closing), rest
@@ -90,7 +87,7 @@ let mk_trees h xs =
                     (PI.line_of_info (h.tokf tok_start)))
     | x::xs -> 
         (match x with
-        | tok when h.kind tok = RBrace-> 
+        | tok when h.kind tok = PI.RBrace-> 
           List.rev accbody, x, xs
 
         | _ -> let (x', xs') = consume x xs in
@@ -104,7 +101,7 @@ let mk_trees h xs =
                      (PI.line_of_info (h.tokf tok_start)))
     | x::xs -> 
         (match x with
-        | tok when h.kind tok = RPar -> 
+        | tok when h.kind tok = PI.RPar -> 
             List.rev accbody, x, xs
         | _ -> 
             let (x', xs') = consume x xs in

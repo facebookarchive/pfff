@@ -36,6 +36,14 @@ let is_just_comment = function
   | TComment _ -> true
   | _ -> false 
 
+let token_kind_of_tok t =
+  match t with
+  | TOBrace _ -> PI.LBrace
+  | TCBrace _ -> PI.RBrace
+  | TOParen _ -> PI.LPar
+  | TCParen _ -> PI.RPar
+  | _ -> PI.Other
+
 (*****************************************************************************)
 (* Visitors *)
 (*****************************************************************************)

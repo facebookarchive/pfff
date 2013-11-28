@@ -209,22 +209,10 @@ let parse_program file =
  * on its own, e.g. for a not too bad sgrep/spatch.
  *)
 let parse_fuzzy file =
-  let toks_orig = tokens file in
-  let toks = 
-    toks_orig +> Common.exclude (fun x ->
-      Token_helpers_ml.is_comment x ||
-      Token_helpers_ml.is_eof x
-    )
-  in
+  let toks = tokens file in
   let trees = Lib_parser.mk_trees { Lib_parser.
      tokf = TH.info_of_tok;
-     kind = (function
-      | T.TOBrace _ -> Lib_parser.LBrace
-      | T.TCBrace _ -> Lib_parser.RBrace
-      | T.TOParen _ -> Lib_parser.LPar
-      | T.TCParen _ -> Lib_parser.RPar
-      | _ -> Lib_parser.Other
-     );
+     kind = TH.token_kind_of_tok;
   } toks 
   in
-  trees, toks_orig
+  trees, toks

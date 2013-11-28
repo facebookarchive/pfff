@@ -529,22 +529,10 @@ let parse_fast file =
 (*****************************************************************************)
 
 let parse_fuzzy file =
-  let toks_orig = tokens file in
-  let toks = 
-    toks_orig +> Common.exclude (fun x ->
-      Token_helpers_php.is_comment x ||
-      Token_helpers_php.is_eof x
-    )
-  in
+  let toks = tokens file in
   let trees = Lib_parser.mk_trees { Lib_parser.
      tokf = TH.info_of_tok;
-     kind = (function
-      | T.TOBRACE _ -> Lib_parser.LBrace
-      | T.TCBRACE _ -> Lib_parser.RBrace
-      | T.TOPAR _ -> Lib_parser.LPar
-      | T.TCPAR _ -> Lib_parser.RPar
-      | _ -> Lib_parser.Other
-     );
+     kind = TH.token_kind_of_tok;
   } toks 
   in
-  trees, toks_orig
+  trees, toks
