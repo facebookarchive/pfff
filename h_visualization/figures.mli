@@ -1,7 +1,6 @@
 
 (* float coordinates *)
 type point = { x: float; y: float }
-
 type rectangle = { p: point; q: point; }
 
 val rect_width: rectangle -> float
@@ -14,9 +13,7 @@ val point_is_in_rectangle: point -> rectangle -> bool
 val intersection_rectangles: rectangle -> rectangle -> rectangle option
 
 (* pixel coordinates *)
-
 type point_pixel = { xpix:int; ypix:int }
-
 type rect_pixel = { lower_left:  point_pixel;  upper_right: point_pixel; }
 
 val rect_pixel_width: rect_pixel -> int
