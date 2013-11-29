@@ -23,5 +23,5 @@ val sgrep_unittest:
 val spatch_unittest: 
   ast_fuzzy_of_string:(string -> Spatch_fuzzy.pattern) ->
   parse_file:(string -> Ast_fuzzy.trees * 'tok list) ->
-  elt_and_info_of_tok:('tok -> Lib_unparser.elt * Parse_info.info) ->
+  kind_and_info_of_tok:('tok -> Parse_info.token_kind * Parse_info.info) ->
   OUnit.test

@@ -154,19 +154,6 @@ let string_of_expr x = string_of_any (Expr x)
 (*****************************************************************************)
 (* Transformation-aware unparser (using the tokens) *)
 (*****************************************************************************)
-
-open Lib_unparser
-
-let elt_of_tok tok =
-  let str = TH.str_of_tok tok in
-  match tok with
-  | T_COMMENT _ | T_DOC_COMMENT _ -> Esthet (Comment str)
-  | TSpaces _ -> Esthet (Space str)
-  | TNewline _ -> Esthet Newline
-  (* just after a ?>, the newline are not anymore TNewline but that *)
-  | T_INLINE_HTML ("\n", _) -> Esthet Newline
-  | _ -> OrigElt str
-
 (* less:
  * - use a AddedBefore where should use a AddedAfter on bar.spatch
  * - put some newline in the Added of a spatch, add_statement.spatch
@@ -174,8 +161,8 @@ let elt_of_tok tok =
  *)
 
 let string_of_program_with_comments_using_transfo (ast, toks) =
- toks +> Lib_unparser.string_of_toks_using_transfo 
-   ~elt_and_info_of_tok:(fun tok ->
-     elt_of_tok tok, TH.info_of_tok tok
-   )
+  toks +> Lib_unparser.string_of_toks_using_transfo 
+    ~kind_and_info_of_tok:(fun tok ->
+      TH.token_kind_of_tok tok, TH.info_of_tok tok
+    )
 (*e: unparse_php.ml *)

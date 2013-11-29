@@ -121,7 +121,7 @@ let sgrep_unittest ~ast_fuzzy_of_string =
 
 (* run by spatch -test *)
 let spatch_unittest 
-    ~ast_fuzzy_of_string ~parse_file ~elt_and_info_of_tok = 
+    ~ast_fuzzy_of_string ~parse_file ~kind_and_info_of_tok = 
   "spatch regressions files" >:: (fun () ->
 
     let testdir = Filename.concat Config_pfff.path "tests/fuzzy/spatch/" in
@@ -149,7 +149,7 @@ let spatch_unittest
         let was_modified = Spatch_fuzzy.spatch pattern trees in
 
         let unparse toks = 
-          Lib_unparser.string_of_toks_using_transfo ~elt_and_info_of_tok toks
+          Lib_unparser.string_of_toks_using_transfo ~kind_and_info_of_tok toks
         in
         let resopt =
           if was_modified

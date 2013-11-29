@@ -39,8 +39,12 @@ let token_kind_of_tok t =
   | T_RCURLY _ -> PI.RBrace
   | T_LPAREN _ -> PI.LPar
   | T_RPAREN _ -> PI.RPar
-  | _ -> PI.Other
 
+  | TComment _ -> PI.Esthet PI.Comment
+  | TCommentSpace _ -> PI.Esthet PI.Space
+  | TCommentNewline _ -> PI.Esthet PI.Newline
+
+  | _ -> PI.Other
 
 (*****************************************************************************)
 (* Visitors *)
@@ -263,17 +267,3 @@ let line_of_tok x = fst (linecol_of_tok x)
 let str_of_tok  x = Parse_info.str_of_info  (info_of_tok x)
 let file_of_tok x = Parse_info.file_of_info (info_of_tok x)
 let pos_of_tok  x = Parse_info.pos_of_info  (info_of_tok x)
-
-(*****************************************************************************)
-(* For unparsing *)
-(*****************************************************************************)
-
-open Lib_unparser
-
-let elt_of_tok tok =
-  let str = str_of_tok tok in
-  match tok with
-  | TComment _ -> Esthet (Comment str)
-  | TCommentSpace _ -> Esthet (Space str)
-  | TCommentNewline _ -> Esthet Newline
-  | _ -> OrigElt str

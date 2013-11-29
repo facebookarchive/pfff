@@ -118,11 +118,11 @@ let spatch pattern file =
     in
     let was_modified = Spatch_fuzzy.spatch pattern trees in
 
-    let elt_and_info_of_tok tok =
-      Token_helpers_cpp.elt_of_tok tok, Token_helpers_cpp.info_of_tok  tok
+    let kind_and_info_of_tok tok =
+      Token_helpers_cpp.token_kind_of_tok tok, Token_helpers_cpp.info_of_tok tok
     in
     let unparse toks = 
-      Lib_unparser.string_of_toks_using_transfo ~elt_and_info_of_tok toks
+      Lib_unparser.string_of_toks_using_transfo ~kind_and_info_of_tok toks
     in
     if was_modified
     then Some (unparse toks)
@@ -137,11 +137,11 @@ let spatch pattern file =
     in
     let was_modified = Spatch_fuzzy.spatch pattern trees in
 
-    let elt_and_info_of_tok tok =
-      Token_helpers_ml.elt_of_tok tok, Token_helpers_ml.info_of_tok  tok
+    let kind_and_info_of_tok tok =
+      Token_helpers_ml.token_kind_of_tok tok, Token_helpers_ml.info_of_tok tok
     in
     let unparse toks = 
-      Lib_unparser.string_of_toks_using_transfo ~elt_and_info_of_tok toks
+      Lib_unparser.string_of_toks_using_transfo ~kind_and_info_of_tok toks
     in
     if was_modified
     then Some (unparse toks)
@@ -157,11 +157,11 @@ let spatch pattern file =
     in
     let was_modified = Spatch_fuzzy.spatch pattern trees in
 
-    let elt_and_info_of_tok tok =
-      Token_helpers_php.elt_of_tok tok, Token_helpers_php.info_of_tok  tok
+    let kind_and_info_of_tok tok =
+      Token_helpers_php.token_kind_of_tok tok, Token_helpers_php.info_of_tok tok
     in
     let unparse toks = 
-      Lib_unparser.string_of_toks_using_transfo ~elt_and_info_of_tok toks
+      Lib_unparser.string_of_toks_using_transfo ~kind_and_info_of_tok toks
     in
     if was_modified
     then Some (unparse toks)
@@ -177,11 +177,12 @@ let spatch pattern file =
     in
     let was_modified = Spatch_fuzzy.spatch pattern trees in
 
-    let elt_and_info_of_tok tok =
-      Token_helpers_java.elt_of_tok tok, Token_helpers_java.info_of_tok  tok
+    let kind_and_info_of_tok tok =
+      Token_helpers_java.token_kind_of_tok tok, 
+      Token_helpers_java.info_of_tok tok
     in
     let unparse toks = 
-      Lib_unparser.string_of_toks_using_transfo ~elt_and_info_of_tok toks
+      Lib_unparser.string_of_toks_using_transfo ~kind_and_info_of_tok toks
     in
     if was_modified
     then Some (unparse toks)
@@ -197,11 +198,11 @@ let spatch pattern file =
     in
     let was_modified = Spatch_fuzzy.spatch pattern trees in
 
-    let elt_and_info_of_tok tok =
-      Token_helpers_js.elt_of_tok tok, Token_helpers_js.info_of_tok  tok
+    let kind_and_info_of_tok tok =
+      Token_helpers_js.token_kind_of_tok tok, Token_helpers_js.info_of_tok tok
     in
     let unparse toks = 
-      Lib_unparser.string_of_toks_using_transfo ~elt_and_info_of_tok toks
+      Lib_unparser.string_of_toks_using_transfo ~kind_and_info_of_tok toks
     in
     if was_modified
     then Some (unparse toks)
@@ -772,8 +773,9 @@ let test () =
         Common.save_excursion Flag_parsing_cpp.verbose_lexing false (fun () ->
           Parse_cpp.parse_fuzzy file
         ))
-      ~elt_and_info_of_tok:(fun tok ->
-        Token_helpers_cpp.elt_of_tok tok, Token_helpers_cpp.info_of_tok tok
+      ~kind_and_info_of_tok:(fun tok ->
+        Token_helpers_cpp.token_kind_of_tok tok, 
+        Token_helpers_cpp.info_of_tok tok
       )
     ;
     Unit_matcher_php.spatch_unittest;

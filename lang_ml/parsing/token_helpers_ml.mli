@@ -13,6 +13,3 @@ val line_of_tok  : Parser_ml.token -> int
 val str_of_tok   : Parser_ml.token -> string
 val file_of_tok  : Parser_ml.token -> Common.filename
 val pos_of_tok   : Parser_ml.token -> int
-
-(* for unparsing *)
-val elt_of_tok: Parser_ml.token -> Lib_unparser.elt

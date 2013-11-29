@@ -21,7 +21,7 @@ open Parse_info
 (* Prelude *)
 (*****************************************************************************)
 (*
- * There are multiple ways to unparse code:
+ * There are multiple ways to unparse/pretty-print code:
  *  - one can iterate over an AST (or better CST), and print its leaves, but 
  *    comments and spaces are usually not in the CST (and for a good reason)
  *    so you need  some extra code that also visits the tokens and try 
@@ -50,17 +50,12 @@ type elt =
  | OrigElt of string
  | Removed of string
  | Added of string
- | Esthet of esthet
- and esthet =
-  | Comment of string
-  | Newline
-  | Space of string
+ | Esthet of (Parse_info.esthet * string)
  (* with tarzan *)
 
 (*****************************************************************************)
 (* Globals *)
 (*****************************************************************************)
-
 let debug = ref false
 
 (*****************************************************************************)
@@ -76,14 +71,18 @@ let rec vof_elt =
       let v1 = Ocaml.vof_string v1 in Ocaml.VSum (("Removed", [ v1 ]))
   | Added v1 ->
       let v1 = Ocaml.vof_string v1 in Ocaml.VSum (("Added", [ v1 ]))
-  | Esthet v1 -> let v1 = vof_esthet v1 in Ocaml.VSum (("Esthet", [ v1 ]))
+  | Esthet (v1, v2) -> 
+      let v1 = vof_esthet v1 in
+      let v2 = Ocaml.vof_string v2 in
+      Ocaml.VSum (("Esthet", [ v1; v2 ]))
 and vof_esthet =
   function
-  | Comment v1 ->
-      let v1 = Ocaml.vof_string v1 in Ocaml.VSum (("Comment", [ v1 ]))
-  | Newline -> Ocaml.VSum (("Newline", []))
-  | Space v1 ->
-      let v1 = Ocaml.vof_string v1 in Ocaml.VSum (("Space", [ v1 ]))
+  | Comment ->
+      Ocaml.VSum (("Comment", []))
+  | Newline -> 
+      Ocaml.VSum (("Newline", []))
+  | Space ->
+      Ocaml.VSum (("Space", []))
 
 (*****************************************************************************)
 (* Helpers *)
@@ -124,9 +123,9 @@ let rec search_prev_elt ?(ws=0) acc =
   | (Removed str)::t -> search_prev_elt ~ws t
   | (Added str)::t ->
     failwith "search_prev_real_elt: cannot handle this case"
-  | (Esthet(Comment str))::t -> search_prev_elt ~ws t
-  | (Esthet Newline)::t -> (Esthet Newline, ws) 
-  | (Esthet(Space str))::t ->
+  | (Esthet(Comment, str))::t -> search_prev_elt ~ws t
+  | (Esthet(Newline, str))::t -> (Esthet (Newline,str), ws)
+  | (Esthet(Space,str))::t ->
     search_prev_elt ~ws:(ws + String.length str) t
 
 
@@ -144,53 +143,67 @@ let elts_of_add_args_before acc xs =
   (* search_prev_elt will fail if meet Added, which may be inserted
   during add_if_need_comma.
   *)
-  if (elt = (Esthet Newline))
+  match elt with
+  | Esthet (Newline, _) ->
   (* new line for each argument *)
-  then
-    let acc = add_if_need_comma "," [] acc in
-    let sep = xs +> List.map (fun s ->
-      "  " ^ s ^ ",\n" ^ String.make ws ' ') in
-    let add_str = join "" sep in
-    (Added add_str)::acc
-  else
-    let acc = add_if_need_comma ", " [] acc in
-    let add_str = join ", " xs in
-    (Added add_str)::acc
+      let acc = add_if_need_comma "," [] acc in
+      let sep = xs +> List.map (fun s ->
+          "  " ^ s ^ ",\n" ^ String.make ws ' ') in
+      let add_str = join "" sep in
+      (Added add_str)::acc
+  | _ ->
+      let acc = add_if_need_comma ", " [] acc in
+      let add_str = join ", " xs in
+      (Added add_str)::acc
 
 (*****************************************************************************)
 (* Elts of any *)
 (*****************************************************************************)
-let rec elts_of_any ~elt_and_info_of_tok acc toks =
-  match toks with
-  | [] -> List.rev acc
-  | tok::t -> (
-    let elt, info = elt_and_info_of_tok tok in
-    match info.token with
-    | Ab | FakeTokStr _ | ExpandedTok _ -> raise Impossible
-    | OriginTok _ -> 
-      (match info.transfo with
-      (* acc is reversed! *)
-      | NoTransfo -> elts_of_any ~elt_and_info_of_tok (elt::acc) t
-      | Remove -> 
-        elts_of_any ~elt_and_info_of_tok (Removed (PI.str_of_info info)::acc) t
-      | Replace toadd -> 
-        (* could also be Removed::Added::_, now that we have
-         * drop_useless_space(), this should not matter anymore
-         *)
-        elts_of_any ~elt_and_info_of_tok 
-          (Added (s_of_add toadd)::Removed (PI.str_of_info info)::acc) t
-      | AddAfter toadd -> 
-        elts_of_any ~elt_and_info_of_tok 
-          (Added (s_of_add toadd)::elt::acc) t
-      | AddBefore toadd -> 
-        elts_of_any ~elt_and_info_of_tok 
-          (elt::Added (s_of_add toadd)::acc) t
-      | AddArgsBefore xs ->
-        let elt_list = elts_of_add_args_before acc xs in
-        let acc = elt::elt_list in
-        elts_of_any ~elt_and_info_of_tok acc t
+let elt_and_info_of_tok ~kind_and_info_of_tok tok =
+  let (kind, info) = kind_and_info_of_tok tok in
+  let str = PI.str_of_info info in
+  let elt = 
+    match kind with
+      | PI.Esthet x -> Esthet (x, str)
+      | _ -> OrigElt (str)
+  in
+  elt, info
+
+let elts_of_any ~kind_and_info_of_tok toks =
+  let rec aux acc toks =
+    match toks with
+    | [] -> List.rev acc
+    | tok::t -> 
+        let elt, info = elt_and_info_of_tok ~kind_and_info_of_tok tok in
+        (match info.token with
+        | Ab | FakeTokStr _ | ExpandedTok _ ->
+            raise Impossible
+        | OriginTok _ -> 
+            (match info.transfo with
+            (* acc is reversed! *)
+            | NoTransfo -> 
+                aux (elt::acc) t
+            | Remove -> 
+                aux (Removed (PI.str_of_info info)::acc) t
+            | Replace toadd -> 
+              (* could also be Removed::Added::_, now that we have
+               * drop_useless_space(), this should not matter anymore
+               *)
+                aux (Added (s_of_add toadd)::Removed (PI.str_of_info info)::acc)
+                  t
+            | AddAfter toadd -> 
+                aux (Added (s_of_add toadd)::elt::acc) t
+            | AddBefore toadd -> 
+                aux (elt::Added (s_of_add toadd)::acc) t
+
+            | AddArgsBefore xs ->
+                let elt_list = elts_of_add_args_before acc xs in
+                let acc = elt::elt_list in
+                aux acc t
+          )
       )
-  )
+  in
+  aux [] toks
 
 (*****************************************************************************)
 (* Heuristics *)
@@ -218,7 +231,7 @@ let drop_esthet_between_removed xs =
  *)
 let drop_whole_line_if_only_removed xs =
   let (before_first_newline, xxs) = xs +> Common2.group_by_pre (function
-    | Esthet Newline -> true | _ -> false)
+    | Esthet (Newline, _) -> true | _ -> false)
   in
   let xxs = xxs +> Common.exclude (fun (newline, elts_after_newline) ->
     let has_a_remove = 
@@ -254,13 +267,13 @@ let rec drop_removed xs =
 let rec drop_useless_space xs  =
   match xs with
   | [] -> []
-  | Esthet (Space s)::Esthet (Space s2)::rest ->
-    drop_useless_space ((Esthet (Space s))::rest)
+  | Esthet (Space,s)::Esthet (Space,s2)::rest ->
+    drop_useless_space ((Esthet (Space, s))::rest)
   (* see tests/php/spatch/distr_plus.spatch, just like we can have
    * double spaces, we can also have space before comma that are 
    * useless 
    *)
-  | Esthet (Space s)::OrigElt ","::rest ->
+  | Esthet (Space, s)::OrigElt ","::rest ->
     drop_useless_space (OrigElt ","::rest)
   | x::xs -> x::drop_useless_space xs
 
@@ -276,21 +289,16 @@ let rec drop_useless_space xs  =
  * also want to remove the spaces between so we need a few heuristics
  * to maintain some good style.
  *)
-let string_of_toks_using_transfo ~elt_and_info_of_tok toks =
-
-  let elts_of_tok tok =
-    elts_of_any ~elt_and_info_of_tok tok
-  in
+let string_of_toks_using_transfo ~kind_and_info_of_tok toks =
 
   Common2.with_open_stringbuf (fun (_pr_with_nl, buf) ->
     let pp s = Buffer.add_string buf s in
 
-    let xs = elts_of_tok [] toks in
+    let xs = elts_of_any ~kind_and_info_of_tok toks in
 
     if !debug 
-    then xs +> List.iter (fun x -> 
-      pr2 (Ocaml.string_of_v (vof_elt x))
-    );
+    then xs +> List.iter (fun x -> pr2 (Ocaml.string_of_v (vof_elt x)));
+
     let xs = drop_esthet_between_removed xs in
     let xs = drop_whole_line_if_only_removed xs in
     (* must be after drop_whole_line_if_only_removed *)
@@ -298,8 +306,8 @@ let string_of_toks_using_transfo ~elt_and_info_of_tok toks =
     let xs = drop_useless_space xs in
     
     xs +> List.iter (function
-    | OrigElt s | Added s | Esthet (Comment s | Space s) -> pp s
+    | OrigElt s | Added s | Esthet ((Comment | Space), s) -> pp s
     | Removed _ -> raise Impossible (* see drop_removed *)
-    | Esthet Newline -> pp "\n"
+    | Esthet (Newline, _) -> pp "\n"
     )
   )

@@ -2,7 +2,7 @@ open Common
 
 (* tokens *)
 open Parser_cpp
-
+module PI = Parse_info
 module Ast = Ast_cpp
 
 (*****************************************************************************)
@@ -263,6 +263,16 @@ let is_privacy_keyword = function
   | Tpublic _ | Tprivate _ | Tprotected _
         -> true
   | _ -> false
+
+
+let token_kind_of_tok t =
+  match t with
+  (* todo: ( ) { } ... *)
+
+  | TComment _ | TComment_Pp _ | TComment_Cpp _ -> PI.Esthet PI.Comment
+  | TCommentSpace _ -> PI.Esthet PI.Space
+  | TCommentNewline _ -> PI.Esthet PI.Newline
+  | _ -> PI.Other
 
 (*****************************************************************************)
 (* Visitors *)
@@ -788,19 +798,3 @@ let line_of_tok x = fst (linecol_of_tok x)
 let str_of_tok tok = Parse_info.str_of_info (info_of_tok tok)
 let pos_of_tok tok = Parse_info.pos_of_info (info_of_tok tok)
 let file_of_tok tok = Parse_info.file_of_info (info_of_tok tok)
-(*****************************************************************************)
-(* For unparsing *)
-(*****************************************************************************)
-
-open Lib_unparser
-
-let elt_of_tok tok =
-  let info = info_of_tok tok in
-  let str = Parse_info.str_of_info info in
-  match tok with
-  | TComment _ | TComment_Pp _ | TComment_Cpp _ -> Esthet (Comment str)
-  | TCommentSpace _ -> Esthet (Space str)
-  | TCommentNewline _ -> Esthet Newline
-  (* just after a ?>, the newline are not anymore TNewline but that *)
-  (*| T_INLINE_HTML ("\n", _) -> Esthet Newline *)
-  | _ -> OrigElt str

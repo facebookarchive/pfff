@@ -12,7 +12,6 @@
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the file
  * license.txt for more details.
  *)
-
 open Common
 
 open Parser_php
@@ -42,6 +41,14 @@ let token_kind_of_tok t =
   | TCBRACE _ -> PI.RBrace
   | TOPAR _ -> PI.LPar
   | TCPAR _ -> PI.RPar
+
+  | T_COMMENT _ | T_DOC_COMMENT _ | TCommentPP _ -> PI.Esthet PI.Comment
+  | TSpaces _ -> PI.Esthet PI.Space
+  | TNewline _ -> PI.Esthet PI.Newline
+
+  (* just after a ?>, the newline are not anymore TNewline but that *)
+  | T_INLINE_HTML ("\n", _) -> PI.Esthet PI.Newline
+
   | _ -> PI.Other
 
 (*****************************************************************************)
@@ -463,17 +470,3 @@ let line_of_tok x = fst (linecol_of_tok x)
 let str_of_tok  x = PI.str_of_info  (info_of_tok x)
 let file_of_tok x = PI.file_of_info (info_of_tok x)
 let pos_of_tok  x = PI.pos_of_info  (info_of_tok x)
-
-(*****************************************************************************)
-(* For unparsing *)
-(*****************************************************************************)
-
-open Lib_unparser
-
-let elt_of_tok tok =
-  let str = str_of_tok tok in
-  match tok with
-  | T_COMMENT _ | T_DOC_COMMENT _ | TCommentPP _ -> Esthet (Comment str)
-  | TSpaces _ -> Esthet (Space str)
-  | TNewline _ -> Esthet Newline
-  | _ -> OrigElt str

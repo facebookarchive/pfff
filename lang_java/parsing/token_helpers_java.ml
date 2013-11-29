@@ -27,6 +27,9 @@ let token_kind_of_tok t =
   | RC _ -> PI.RBrace
   | LP _ -> PI.LPar
   | RP _ -> PI.RPar
+  | TComment _ -> PI.Esthet PI.Comment
+  | TCommentSpace _ -> PI.Esthet PI.Space
+  | TCommentNewline _ -> PI.Esthet PI.Newline
   | _ -> PI.Other
 
 (*****************************************************************************)
@@ -283,18 +286,3 @@ let linecol_of_tok tok =
  * we actually don't use
  *)
 let line_of_tok x = fst (linecol_of_tok x)
-
-(*****************************************************************************)
-(* For unparsing *)
-(*****************************************************************************)
-
-open Lib_unparser
-
-let elt_of_tok tok =
-  let info = info_of_tok tok in
-  let str = PI.str_of_info info in
-  match tok with
-  | TComment _ -> Esthet (Comment str)
-  | TCommentSpace _ -> Esthet (Space str)
-  | TCommentNewline _ -> Esthet Newline
-  | _ -> OrigElt str
