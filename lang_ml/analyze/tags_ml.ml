@@ -87,7 +87,7 @@ let defs_of_files_or_dirs ?(verbose=false) xs =
     toks +> List.iter (fun tok -> 
 
         let info = Token_helpers_ml.info_of_tok tok in
-        let s = Token_helpers_ml.str_of_tok tok in
+        let s = Parse_info.str_of_info info in
 
         let categ = Common2.hfind_option info h in
         
