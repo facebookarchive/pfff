@@ -34,7 +34,7 @@ open Common
  *      (pos.pos_cnum - pos.pos_bol) in
  *
  * Hence those types and functions below to overcome the previous limitation,
- * especially see complete_token_location_large().
+ * (see especially complete_token_location_large()).
  *)
 type token_location = {
     str: string;
@@ -51,13 +51,6 @@ let fake_token_location = {
   charpos = -1; str = ""; line = -1; column = -1; file = "";
 }
 
-(* The token type below is used to represent the leaves of ASTs, the tokens.
- *
- * To be perfectly correct this is not really a token as a token usually
- * also have a category, e.g. TNumber or TIdent, but this would
- * be specific to a programming language and lexer, which is
- * what we try to avoid here.
- *)
 type token_origin =
     (* Present both in the AST and list of tokens *)
     | OriginTok  of token_location

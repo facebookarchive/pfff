@@ -1,5 +1,5 @@
 
-(* 'token_location' < 'token_origin' < 'token_mutable' *)
+(* ('token_location' < 'token_origin' < 'token_mutable') * token_kind *)
 
 (* to report errors, regular position information *)
 type token_location = {
