@@ -21,9 +21,6 @@ type token_origin =
  * see the documentation for spatch
  *)
 type token_mutable = {
-  (* contains the position of the token through the token_location embedded
-   * inside the token_origin type.
-   *)
   token: token_origin; 
   (* for spatch *)
   mutable transfo: transformation;
@@ -44,21 +41,13 @@ type token_mutable = {
 (* shortcut *)
 type info = token_mutable
 
-
+(* mostly for the fuzzy AST builder *)
 type token_kind =
-  (* for the fuzzy parser and sgrep/spatch ast fuzzy *)
-  | LPar
-  | RPar
-  | LBrace
-  | RBrace
-
-  (* for the lexer helpers *)
-  | Eof 
-  | Other
-
-  (* for the unparser/pretty-printer helpers in spatch *)
+  | LPar | RPar
+  | LBrace | RBrace
   | Esthet of esthet
-
+  | Eof
+  | Other
   and esthet =
    | Comment
    | Newline

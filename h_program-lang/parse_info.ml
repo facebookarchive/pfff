@@ -125,18 +125,19 @@ and transformation =
  (* with tarzan *)
 
 type token_kind =
-  (* this is mostly for the fuzzy parser and sgrep/spatch ast fuzzy *)
+  (* for the fuzzy parser and sgrep/spatch fuzzy AST *)
   | LPar
   | RPar
   | LBrace
   | RBrace
-
-  (* mostly for the lexer helpers *)
-  | Eof 
-  | Other
-
-  (* this is mostly for the unparser helpers in spatch *)
+  (* for the unparser helpers in spatch, and to filter
+   * irrelevant tokens in the fuzzy parser
+   *)
   | Esthet of esthet
+  (* mostly for the lexer helpers, and for fuzzy parser *)
+  | Eof
+
+  | Other
 
   and esthet =
    | Comment
