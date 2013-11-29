@@ -16,6 +16,7 @@
 open Common
 
 module TH = Token_helpers_cpp
+module PI = Parse_info
 
 module Parser = Parser_cpp
 
@@ -98,8 +99,9 @@ and find_next_synchro_orig next already_passed =
       pr2_err "ERROR-RECOV: end of file while in recovery mode"; 
       already_passed, []
 
-  | (Parser.TCBrace i as v)::xs when TH.col_of_tok v = 0 -> 
-      pr2_err ("ERROR-RECOV: found sync '}' at line "^i_to_s (TH.line_of_tok v));
+  | (Parser.TCBrace i as v)::xs when PI.col_of_info i = 0 -> 
+      pr2_err ("ERROR-RECOV: found sync '}' at line "^
+                  i_to_s (PI.line_of_info i));
 
       (match xs with
       | [] -> raise Impossible (* there is a EOF token normally *)
@@ -127,10 +129,14 @@ and find_next_synchro_orig next already_passed =
       | _ -> 
           v::already_passed, xs
       )
-  | v::xs when TH.col_of_tok v = 0 && TH.is_start_of_something v  -> 
-      pr2_err ("ERROR-RECOV: found sync col 0 at line "^ i_to_s(TH.line_of_tok v));
-      already_passed, v::xs
-        
-  | v::xs -> 
-      find_next_synchro_orig xs (v::already_passed)
+  | v::xs ->
+      let info = TH.info_of_tok v in
+      if PI.col_of_info info = 0 && TH.is_start_of_something v 
+      then begin
+        pr2_err ("ERROR-RECOV: found sync col 0 at line "^ 
+                    i_to_s(PI.line_of_info info));
+        already_passed, v::xs
+      end
+      else find_next_synchro_orig xs (v::already_passed)
+      
 

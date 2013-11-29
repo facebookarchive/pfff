@@ -3,7 +3,6 @@ open Common
 (* tokens *)
 open Parser_cpp
 module PI = Parse_info
-module Ast = Ast_cpp
 
 (*****************************************************************************)
 (* Is_xxx, categories *)
@@ -272,6 +271,7 @@ let token_kind_of_tok t =
   | TComment _ | TComment_Pp _ | TComment_Cpp _ -> PI.Esthet PI.Comment
   | TCommentSpace _ -> PI.Esthet PI.Space
   | TCommentNewline _ -> PI.Esthet PI.Newline
+
   | _ -> PI.Other
 
 (*****************************************************************************)
@@ -788,13 +788,6 @@ let visitor_info_of_tok f = function
 (* Accessors *)
 (*****************************************************************************)
 
-let linecol_of_tok tok =
+let line_of_tok tok =
   let info = info_of_tok tok in
-  Ast.line_of_info info, Ast.col_of_info info
-
-let col_of_tok x = snd (linecol_of_tok x)
-let line_of_tok x = fst (linecol_of_tok x)
-
-let str_of_tok tok = Parse_info.str_of_info (info_of_tok tok)
-let pos_of_tok tok = Parse_info.pos_of_info (info_of_tok tok)
-let file_of_tok tok = Parse_info.file_of_info (info_of_tok tok)
+  PI.line_of_info info

@@ -39,9 +39,4 @@ val info_of_tok :
 val visitor_info_of_tok : 
   (Ast_cpp.info -> Ast_cpp.info) -> Parser_cpp.token -> Parser_cpp.token
 
-val linecol_of_tok : Parser_cpp.token -> int * int
-val col_of_tok     : Parser_cpp.token -> int
 val line_of_tok    : Parser_cpp.token -> int
-val str_of_tok     : Parser_cpp.token -> string
-val pos_of_tok     : Parser_cpp.token -> int
-val file_of_tok    : Parser_cpp.token -> Common.filename

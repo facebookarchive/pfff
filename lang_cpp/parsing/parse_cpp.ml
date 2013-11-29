@@ -16,10 +16,10 @@ open Common
 module Ast = Ast_cpp
 module Flag = Flag_parsing_cpp
 module TH = Token_helpers_cpp
+module PI = Parse_info
 module T = Parser_cpp
 module Lexer = Lexer_cpp
 module Semantic = Semantic_cpp
-module PI = Parse_info
 module Stat = Statistics_parsing
 module Hack = Parsing_hacks_lib
 
@@ -348,19 +348,20 @@ let parse2 ?(lang=Flag_parsing_cpp.Cplusplus) file =
 
   let rec loop () =
 
+    let info = TH.info_of_tok tr.PI.current in
     (* todo?: I am not sure that it represents current_line, cos maybe
      * tr.current partipated in the previous parsing phase, so maybe tr.current
      * is not the first token of the next parsing phase. Same with checkpoint2.
      * It would be better to record when we have a } or ; in parser.mly,
      *  cos we know that they are the last symbols of external_declaration2.
      *)
-    let checkpoint = TH.line_of_tok tr.PI.current in
+    let checkpoint = PI.line_of_info info in
 
     (* bugfix: may not be equal to 'file' as after macro expansions we can
      * start to parse a new entity from the body of a macro, for instance
      * when parsing a define_machine() body, cf standard.h
      *)
-    let checkpoint_file = TH.file_of_tok tr.PI.current in
+    let checkpoint_file = PI.file_of_info info in
 
     tr.PI.passed <- [];
     (* for some statistics *)
@@ -397,7 +398,12 @@ let parse2 ?(lang=Flag_parsing_cpp.Cplusplus) file =
               +> List.filter (is_same_line_or_close line_error)
               +> List.filter TH.is_ident_like
             in
-            let error_info =(pbline +> List.map TH.str_of_tok), line_error in
+            let error_info =
+              (pbline +> List.map (fun tok -> 
+                let info = TH.info_of_tok tok in
+                PI.str_of_info info)), 
+              line_error 
+            in
             stat.Stat.problematic_lines <-
               error_info::stat.Stat.problematic_lines;
 
@@ -410,8 +416,9 @@ let parse2 ?(lang=Flag_parsing_cpp.Cplusplus) file =
             tr.PI.current <- List.hd passed';
 
             (* <> line_error *)
-            let checkpoint2 = TH.line_of_tok tr.PI.current in 
-            let checkpoint2_file = TH.file_of_tok tr.PI.current in
+            let info = TH.info_of_tok tr.PI.current in
+            let checkpoint2 = PI.line_of_info info in 
+            let checkpoint2_file = PI.file_of_info info in
 
             (* was a define ? *)
             let xs = tr.PI.passed +> List.rev +> Common.exclude TH.is_comment in
@@ -445,8 +452,9 @@ let parse2 ?(lang=Flag_parsing_cpp.Cplusplus) file =
     in
 
     (* again not sure if checkpoint2 corresponds to end of bad region *)
-    let checkpoint2 = TH.line_of_tok tr.PI.current in
-    let checkpoint2_file = TH.file_of_tok tr.PI.current in
+    let info = TH.info_of_tok tr.PI.current in
+    let checkpoint2 = PI.line_of_info info in
+    let checkpoint2_file = PI.file_of_info info in
 
     let diffline = 
       if (checkpoint_file = checkpoint2_file) && (checkpoint_file = file)

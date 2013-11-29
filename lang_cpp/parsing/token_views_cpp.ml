@@ -15,6 +15,7 @@
 open Common
 
 module Flag = Flag_parsing_cpp
+module PI = Parse_info
 module TH = Token_helpers_cpp
 
 open Parser_cpp
@@ -132,7 +133,8 @@ exception UnclosedSymbol of string
 (*****************************************************************************)
 
 let mk_token_extended x = 
-  let (line, col) = TH.linecol_of_tok x in
+  let info = TH.info_of_tok x in
+  let (line, col) = PI.line_of_info info, PI.col_of_info info in
   { t = x; 
     line = line; col = col; 
     (* we use List.hd at a few places, so convenient to have a sentinel *)
@@ -739,7 +741,9 @@ let set_context_tag xs =
 (*****************************************************************************)
 
 let vof_token_extended t =
-  Ocaml.VString (TH.str_of_tok t.t)
+  let info = TH.info_of_tok t.t in
+  let str = PI.str_of_info info in
+  Ocaml.VString str
 
 let rec vof_multi_grouped =
   function

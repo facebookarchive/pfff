@@ -152,7 +152,8 @@ let visit_toplevel ~tag_hook prefs (*db_opt *) (toplevel, toks) =
 
 
     (* heuristic for function definitions *)
-    | t1::xs when TH.col_of_tok t1 = 0 && TH.is_not_comment t1 ->
+    | t1::xs when (t1 +> TH.info_of_tok +> PI.col_of_info = 0) && 
+                   TH.is_not_comment t1 ->
         let line_t1 = TH.line_of_tok t1 in
         let rec find_ident_paren xs =
           match xs with
