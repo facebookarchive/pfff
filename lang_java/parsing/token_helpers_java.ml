@@ -155,8 +155,6 @@ let info_of_tok = function
 
   | EOF (ii) -> ii
 
-
-
 (* used by tokens to complete the parse_info with filename, line, col infos *)
 let visitor_info_of_tok f = function
 
@@ -278,11 +276,9 @@ let visitor_info_of_tok f = function
 (* Accessors *)
 (*****************************************************************************)
 
-let linecol_of_tok tok =
-  let info = info_of_tok tok in
-  PI.line_of_info info, PI.col_of_info info
-
 (* todo: remove, just use by parse_java.ml checkpoint mechanism that
  * we actually don't use
  *)
-let line_of_tok x = fst (linecol_of_tok x)
+let line_of_tok tok =
+  let info = info_of_tok tok in
+  PI.line_of_info info
