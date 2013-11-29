@@ -135,6 +135,9 @@ type token_kind =
    *)
   | Esthet of esthet
   (* mostly for the lexer helpers, and for fuzzy parser *)
+  (* less: want to factorize all those TH.is_eof to use that?
+   * but extra cost? same for TH.is_comment?
+   *)
   | Eof
 
   | Other
