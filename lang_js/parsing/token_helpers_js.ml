@@ -257,13 +257,6 @@ let visitor_info_of_tok f = function
 (* Accessors *)
 (*****************************************************************************)
 
-let linecol_of_tok tok =
+let line_of_tok tok = 
   let info = info_of_tok tok in
-  Parse_info.line_of_info info, Parse_info.col_of_info info
-
-let col_of_tok x  = snd (linecol_of_tok x)
-let line_of_tok x = fst (linecol_of_tok x)
-
-let str_of_tok  x = Parse_info.str_of_info  (info_of_tok x)
-let file_of_tok x = Parse_info.file_of_info (info_of_tok x)
-let pos_of_tok  x = Parse_info.pos_of_info  (info_of_tok x)
+  Parse_info.line_of_info info
