@@ -12,13 +12,14 @@
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the file
  * license.txt for more details.
  *)
-
 open Common
+
+module PI = Parse_info
+module TH = Token_helpers_php
 
 (*****************************************************************************)
 (* Prelude *)
 (*****************************************************************************)
-
 (* 
  * A few types and helpers related to comment analysis. 
  * Should perhaps at one point parse even more comments and have 
@@ -117,9 +118,7 @@ let (parse_comment: string -> comment) = fun s ->
                 | _ -> raise Impossible
                 )
             end
-
         )
-      
   | _ -> 
       pr2 ("unknown comment format: " ^ s);
       OtherStyle s
@@ -176,7 +175,6 @@ let (index_comment: comment -> (int * string) list) = fun m ->
       Common.index_list_1 xs +> List.map (fun (s, i) -> (i, s))
   | _ -> raise Todo
 
-
 (*
 let _ = example(index_comment (SingleLineSlashSlash "foo") = [0, "foo"])
 let _ = example(index_comment (DocBlock (["foo"],true)) = [1, "foo"])
@@ -198,7 +196,8 @@ let comment_before tok all_toks =
   let pos = Parse_info.pos_of_info tok in
   let before = 
     all_toks +> Common2.take_while (fun tok2 ->
-      let pos2 = Token_helpers_php.pos_of_tok tok2 in
+      let info = TH.info_of_tok tok2 in
+      let pos2 = PI.pos_of_info info in
       pos2 < pos
     )
   in
@@ -215,10 +214,11 @@ let comment_before tok all_toks =
 
 
 let comment_after tok all_toks =
-  let pos = Parse_info.pos_of_info tok in
+  let pos = PI.pos_of_info tok in
   let after = 
     all_toks +> Common2.drop_while (fun tok2 ->
-      let pos2 = Token_helpers_php.pos_of_tok tok2 in
+      let info = TH.info_of_tok tok2 in
+      let pos2 = PI.pos_of_info info in
       pos2 <= pos
     )
   in

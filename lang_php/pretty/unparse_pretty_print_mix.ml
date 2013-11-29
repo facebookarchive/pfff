@@ -16,6 +16,7 @@ open Common
 
 module Ast = Ast_php
 module TH = Token_helpers_php
+module PI = Parse_info
 
 (*****************************************************************************)
 (* Prelude *)
@@ -68,14 +69,15 @@ let toks_before_after_ii ii toks =
   let toks_before_max, toks_after = 
     Common.profile_code "spanning tokens" (fun () ->
       toks +> Common2.span_tail_call (fun tok ->
-        match Parse_info.compare_pos (TH.info_of_tok tok) max with
+        let info = TH.info_of_tok tok in
+        match Parse_info.compare_pos info max with
         | -1 | 0 -> true
         | 1 -> 
             (* do exception for newline that we also include with the
              * chunk
              *)
             let pos_max = Parse_info.pos_of_info max in
-            let pos_here = TH.pos_of_tok tok in
+            let pos_here = PI.pos_of_info info in
             (match tok with
             | Parser_php.TNewline _ when pos_here = pos_max + 1 ->
                 true
@@ -193,8 +195,9 @@ let unparse buf (_chunk, toks) =
   let pp s = Buffer.add_string buf s in
 
   let pp_tok tok = 
-      match (TH.info_of_tok tok).Parse_info.token with
-      | Parse_info.OriginTok _ -> pp (TH.str_of_tok tok)
+    let info = TH.info_of_tok tok in
+      match info.Parse_info.token with
+      | Parse_info.OriginTok _ -> pp (PI.str_of_info info)
       | Parse_info.ExpandedTok _ -> ()
       | Parse_info.FakeTokStr ("fake_token", _) -> ()
       | Parse_info.Ab | Parse_info.FakeTokStr _ -> raise Impossible

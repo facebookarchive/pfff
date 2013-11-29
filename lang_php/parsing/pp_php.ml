@@ -74,10 +74,12 @@ let group_tokens_by_line toks =
     | [] -> 
         [current_line,  List.rev current_toks]
     | x::xs ->
-        let line = TH.line_of_tok x in
+        let info = TH.info_of_tok x in
+        let line = PI.line_of_info info in
         (match line <=> current_line with
         | Common2.Inf -> 
-            failwith ("Impossible: wrong order of tokens: " ^ TH.str_of_tok x)
+            failwith ("Impossible: wrong order of tokens: " ^ 
+                         PI.str_of_info info)
         | Common2.Equal ->
             aux current_line (x::current_toks) xs
         | Common2.Sup -> 
@@ -95,8 +97,10 @@ let comment_pp_ize toks =
 
 let mark_as_expanded last_orig_parse_info toks =
   let cnt = ref (String.length (last_orig_parse_info.Parse_info.str)) in
-  toks +> List.map (fun tok -> 
-    let len = String.length (TH.str_of_tok tok) in
+  toks +> List.map (fun tok ->
+    let info = TH.info_of_tok tok in
+    let str = PI.str_of_info info in
+    let len = String.length str in
     cnt := !cnt + len;
     tok +> TH.visitor_info_of_tok (fun info -> 
       let parse_info_in_pp = Parse_info.token_location_of_info info in
