@@ -23,4 +23,3 @@ let get_position elt ev =
       Dom_html.document##documentElement##scrollTop 
       - elt##offsetTop in
   x, y
-
