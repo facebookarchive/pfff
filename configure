@@ -53,19 +53,11 @@ my $help = 0;
 #  (or use LP).
 GetOptions (
     "prefix=s" => \$prefix,
-
     "visual!" => \$visual,
-
-    "with-all" => sub { 
-        $facebook = 0;
-        $visual = 1;
-    },
-
     "facebook" => sub { 
         $facebook = 1;
         $visual = 0;
     },
-
     'help|?' => \$help, 
     'man' => \$man
     ) or pod2usage(2);
@@ -245,15 +237,13 @@ if( ($arch =~ /FreeBSD/) || (($arch =~ /Darwin/) && ($BREW_PROGRAM)) ) {
 # so right now the Makefile is hand-crafted.
 
 if($visual) {
-    pr2 "";
-    pr2 "Configuring ocamlgtk";
-    my $err = system("cd external/ocamlgtk; ./configure");
+    pr2 "Configuring ocamlgtk (see /tmp/ocamlgtk.log).";
+    my $err = system("cd external/ocamlgtk; ./configure &> /tmp/ocamlgtk.log");
     if ($err) { $visual = 0; $error2++; }
 
-    pr2 "";
-    pr2 "Configuring ocamlcairo";
+    pr2 "Configuring ocamlcairo (see /tmp/ocamlcairo.log).";
     my $err = system("cd external/ocamlcairo; 
-            LABLGTKDIR=../../ocamlgtk/src ./configure --with-gtk");
+            LABLGTKDIR=../../ocamlgtk/src ./configure --with-gtk &> /tmp/ocamlcairo.log");
     if ($err) { $visual = 0; $error2++; }
 }
 
@@ -324,7 +314,6 @@ if($error2) {
 }
 
 pr2 "
-----------------------------------------------------------------------
 To compile $project type:
   \$ $MAKE_PROGRAM depend
   \$ $MAKE_PROGRAM 
@@ -334,7 +323,6 @@ Then, to test $project simply type:
 
 If you want to use the analysis framework and code visualization tools
 see install.txt or type ./configure --help
-----------------------------------------------------------------------
 ";
 
 
