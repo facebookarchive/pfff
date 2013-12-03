@@ -56,7 +56,7 @@ let _ =
       (H.html 
           (H.head (H.title (H.pcdata "Codemap")) [ 
           ])
-	  (H.body [
+          (H.body [
             H.div ~a:[H.a_id "output";] [];
             H.canvas 
               ~a:[H.a_id "main_canvas"; H.a_width width; H.a_height height] [];
@@ -99,7 +99,7 @@ let test_codemap_micro =
       (H.html 
           (H.head (H.title (H.pcdata "Micro")) [ 
           ])
-	  (H.body [
+          (H.body [
             H.div 
               ~a:[H.a_id "output";] [];
             H.canvas 
