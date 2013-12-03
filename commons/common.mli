@@ -105,6 +105,7 @@ type 'a hashset = ('a, bool) Hashtbl.t
 val hashset_of_list : 'a list -> 'a hashset
 val hashset_to_list : 'a hashset -> 'a list
 
+val map_opt: ('a -> 'b) -> 'a option -> 'b option
 val opt: ('a -> unit) -> 'a option -> unit
 val do_option : ('a -> unit) -> 'a option -> unit
 val (|||): 'a option -> 'a -> 'a

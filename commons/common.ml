@@ -636,6 +636,15 @@ let (=*=) = (=)
 
 (* type 'a maybe  = Just of 'a | None *)
 
+let map_opt f = function
+  | None -> None
+  | Some x -> Some (f x)
+
+let do_option f = function
+  | None -> ()
+  | Some x -> f x
+let opt = do_option
+
 (* not sure why but can't use let (?:) a b = ... then at use time ocaml yells*)
 let (|||) a b =
   match a with
@@ -647,10 +656,6 @@ type ('a,'b) either = Left of 'a | Right of 'b
 type ('a, 'b, 'c) either3 = Left3 of 'a | Middle3 of 'b | Right3 of 'c
   (* with sexp *)
 
-let do_option f = function
-  | None -> ()
-  | Some x -> f x
-let opt = do_option
 
 let partition_either f l =
   let rec part_either left right = function
