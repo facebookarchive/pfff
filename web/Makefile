@@ -118,12 +118,15 @@ _client/test.cmo: test.eliom
 	$(ELIOMC)  -infer $(INCLUDES) $^
 	$(JS_OF_ELIOM) $(JSOPT) -c $(INCLUDES) $^
 
+# you can add -V, this helps sometimes
+OCFLAGS=
+
 run: all
-	LD_LIBRARY_PATH=../commons ocsigenserver -c ocsigen.conf
+	LD_LIBRARY_PATH=../commons ocsigenserver $(OCFLAGS) -c ocsigen.conf
 
 rerun: 
 	pkill ocsigenserver
-	LD_LIBRARY_PATH=../commons ocsigenserver -c ocsigen.conf
+	make run
 
 annot:
 	rm -f *.annot
