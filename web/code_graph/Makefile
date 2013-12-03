@@ -10,6 +10,7 @@ TOP=../..
 INCLUDEDIRS= $(TOP)/commons \
   $(TOP)/web/commons \
   $(TOP)/h_program-lang/ \
+  $(TOP)/graph_code/ \
   $(TOP)/h_visualization/ \
   $(TOP)/h_program-visual/ \
 
