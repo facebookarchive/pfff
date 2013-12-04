@@ -1,11 +1,14 @@
 open Common
 
-let verbose = ref true
-
-let use_facebook = ref true
-
 module FT = File_type
 module T = Treemap
+
+(*****************************************************************************)
+(* Flags *)
+(*****************************************************************************)
+
+let verbose = ref true
+let use_facebook = ref true
 
 (*****************************************************************************)
 (* Projects *)
@@ -138,6 +141,8 @@ let rects_of_project_and_path (a,b) =
 (*****************************************************************************)
 
 let _ = begin
+  (* only relevant in bytecode, in native the stacklimit is the os stacklimit*)
+  Gc.set {(Gc.get ()) with Gc.stack_limit = 1000 * 1024 * 1024};
   (* let _ = rects_of_project_and_path ("hack", "") in *)
   pr2 "READY";
 end

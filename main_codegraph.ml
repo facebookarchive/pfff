@@ -215,6 +215,16 @@ let constraints_of_info_txt info_txt =
   aux "" info_txt;
   h
 
+let set_gc () =
+  (* only relevant in bytecode, in native the stacklimit is the os stacklimit*)
+  Gc.set {(Gc.get ()) with Gc.stack_limit = 1000 * 1024 * 1024};
+  (* see http://www.elehack.net/michael/blog/2010/06/ocaml-memory-tuning *)
+  Gc.set { (Gc.get()) with Gc.minor_heap_size = 4_000_000 };
+  (* goes from 5300s to 3000s for building db for www *)
+  Gc.set { (Gc.get()) with Gc.major_heap_increment = 8_000_000 };
+  Gc.set { (Gc.get()) with Gc.space_overhead = 300 };
+  ()
+  
 (*****************************************************************************)
 (* Model Helpers *)
 (*****************************************************************************)
@@ -356,6 +366,7 @@ let build_stdlib lang root dst =
  * same for the dependency matrix that we can cache too.
  *)
 let main_action xs =
+  set_gc ();
   Logger.log Config_pfff.logger "codegraph" None;
   let _locale = GtkMain.Main.init () in
 
@@ -730,12 +741,6 @@ let options () = [
 (*****************************************************************************)
 
 let main () = 
-  Gc.set {(Gc.get ()) with Gc.stack_limit = 1000 * 1024 * 1024};
-  (* see http://www.elehack.net/michael/blog/2010/06/ocaml-memory-tuning *)
-  Gc.set { (Gc.get()) with Gc.minor_heap_size = 4_000_000 };
-  (* goes from 5300s to 3000s for building db for www *)
-  Gc.set { (Gc.get()) with Gc.major_heap_increment = 8_000_000 };
-  Gc.set { (Gc.get()) with Gc.space_overhead = 300 };
 
   (* Common_extra.set_link(); *)
   let usage_msg = 

@@ -12,7 +12,6 @@
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the file
  * license.txt for more details.
  *)
-
 open Common
 
 module FT = File_type
@@ -26,7 +25,6 @@ open Highlight_code
 (*****************************************************************************)
 (* Prelude *)
 (*****************************************************************************)
-
 (* 
  * The main entry point of this module is tokens_with_categ_of_file
  * which is called in Draw_microlevel to "render" the content of a file.
@@ -147,11 +145,10 @@ type ('ast, 'token) for_helper = {
                    Highlight_code.highlighter_preferences ->
                    'ast * 'token list -> unit);
   info_of_tok:('token -> Parse_info.info);
-  str_of_tok:('token -> string);
 }
 
-let tokens_with_categ_of_file_helper {parse;highlight_visit;
-  info_of_tok;str_of_tok} file prefs hentities =
+let tokens_with_categ_of_file_helper 
+  {parse; highlight_visit; info_of_tok} file prefs hentities =
   
   let h = Hashtbl.create 101 in
   if !Flag.verbose_visual_server then pr2 (spf "Parsing: %s" file);
@@ -167,14 +164,15 @@ let tokens_with_categ_of_file_helper {parse;highlight_visit;
     (* getting the text *)
     toks +> Common.map_filter (fun tok -> 
       let info = info_of_tok tok in
-      let s = str_of_tok tok in
-      if not (Parse_info.is_origintok info)
+      let s = PI.str_of_info info in
+      if not (PI.is_origintok info)
       then None
       else 
         let categ = Common2.hfind_option info h +> Common2.fmap (fun categ ->
           rewrite_categ_using_entities s categ file hentities
         ) in
-        Some (s, categ,{ Common2.l = PI.line_of_info info; c = PI.col_of_info info; })
+        Some (s, categ,
+              { Common2.l = PI.line_of_info info; c = PI.col_of_info info; })
     )) +> List.flatten
 
 (*****************************************************************************)
@@ -217,7 +215,6 @@ let tokens_with_categ_of_file file (* hentities *) =
 *)
          );
          info_of_tok = Token_helpers_php.info_of_tok;
-         str_of_tok = Token_helpers_php.str_of_tok;
         }
         file prefs hentities
 
@@ -231,7 +228,6 @@ let tokens_with_categ_of_file file (* hentities *) =
         highlight_visit = (fun ~tag_hook prefs (ast, toks) -> 
           Highlight_ml.visit_program ~tag_hook prefs (ast, toks));
         info_of_tok = Token_helpers_ml.info_of_tok;
-        str_of_tok = Token_helpers_ml.str_of_tok;
         }
         file prefs hentities
 
@@ -243,7 +239,6 @@ let tokens_with_categ_of_file file (* hentities *) =
         highlight_visit = (fun ~tag_hook prefs (ast, toks) -> 
           Highlight_hs.visit_toplevel ~tag_hook prefs (ast, toks));
         info_of_tok = Parser_hs.info_of_tok;
-        str_of_tok = Parser_hs.str_of_tok;
         }
         file prefs hentities
 
@@ -255,7 +250,6 @@ let tokens_with_categ_of_file file (* hentities *) =
         highlight_visit = (fun ~tag_hook prefs (ast, toks) -> 
           Highlight_python.visit_toplevel ~tag_hook prefs (ast, toks));
         info_of_tok = Token_helpers_python.info_of_tok;
-        str_of_tok = Token_helpers_python.str_of_tok;
         }
         file prefs hentities
 
@@ -267,7 +261,6 @@ let tokens_with_categ_of_file file (* hentities *) =
         highlight_visit = (fun ~tag_hook prefs (ast, toks) -> 
           Highlight_csharp.visit_program ~tag_hook prefs (ast, toks));
         info_of_tok = Token_helpers_csharp.info_of_tok;
-        str_of_tok = Token_helpers_csharp.str_of_tok;
         }
         file prefs hentities
 
@@ -280,7 +273,6 @@ let tokens_with_categ_of_file file (* hentities *) =
          | _ -> raise Impossible));
         highlight_visit = Highlight_opa.visit_toplevel;
         info_of_tok = Token_helpers_opa.info_of_tok;
-        str_of_tok = Token_helpers_opa.str_of_tok;
         }
         file prefs hentities
 
@@ -291,7 +283,6 @@ let tokens_with_categ_of_file file (* hentities *) =
          (function Erlang x -> x | _ -> raise Impossible));
         highlight_visit = Highlight_erlang.visit_toplevel;
         info_of_tok = Token_helpers_erlang.info_of_tok;
-        str_of_tok = Token_helpers_erlang.str_of_tok;
         }
         file prefs hentities
 
@@ -304,7 +295,6 @@ let tokens_with_categ_of_file file (* hentities *) =
           | _ -> raise Impossible));
         highlight_visit = Highlight_java.visit_toplevel;
         info_of_tok = Token_helpers_java.info_of_tok;
-        str_of_tok = Token_helpers_java.str_of_tok;
         }
         file prefs hentities
 
@@ -315,7 +305,6 @@ let tokens_with_categ_of_file file (* hentities *) =
          (function Lisp x -> x | _ -> raise Impossible));
         highlight_visit = Highlight_lisp.visit_toplevel;
         info_of_tok = Parser_lisp.info_of_tok;
-        str_of_tok = Parser_lisp.str_of_tok;
         }
         file prefs hentities
 
@@ -326,7 +315,6 @@ let tokens_with_categ_of_file file (* hentities *) =
          (function Noweb x -> x | _ -> raise Impossible));
         highlight_visit = Highlight_nw.visit_toplevel;
         info_of_tok = Token_helpers_nw.info_of_tok;
-        str_of_tok = Token_helpers_nw.str_of_tok;
         }
         file prefs hentities
 
@@ -344,7 +332,6 @@ let tokens_with_categ_of_file file (* hentities *) =
          (function Cpp x -> x | _ -> raise Impossible));
         highlight_visit = Highlight_cpp.visit_toplevel;
         info_of_tok = Token_helpers_cpp.info_of_tok;
-        str_of_tok = Token_helpers_cpp.str_of_tok;
         }
         file prefs hentities
 
@@ -357,11 +344,11 @@ let tokens_with_categ_of_file file (* hentities *) =
           )
          (function Js (ast, toks) -> [ast, toks] | _ -> raise Impossible));
         highlight_visit = Highlight_js.visit_program;
-        info_of_tok = Token_helpers_js.info_of_tok;
-        str_of_tok = (fun tok -> 
+(* TODO?
           let s = Token_helpers_js.str_of_tok tok in
           Ast_js.remove_quotes_if_present s
-        );
+*)
+        info_of_tok = Token_helpers_js.info_of_tok;
         }
         file prefs hentities
 (*

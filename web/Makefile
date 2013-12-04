@@ -9,6 +9,7 @@ TOP=..
 
 INCLUDEDIRS= $(TOP)/commons \
  $(TOP)/h_program-lang/ \
+ $(TOP)/graph_code/ \
  $(TOP)/h_visualization/ \
  $(TOP)/h_program-visual/ \
  $(TOP)/lang_php/parsing \
@@ -52,6 +53,7 @@ LIBS_CLIENT2= $(TOP)/commons/lib.cma \
   $(TOP)/external/ocamlgraph/ocamlgraph.cma \
   $(TOP)/commons/commons_graph.cma \
   $(TOP)/h_program-lang/lib.cma \
+  $(TOP)/graph_code/lib.cma \
   $(TOP)/h_visualization/lib.cma \
   $(TOP)/web/commons/lib_client.cma \
   $(TOP)/web/code_map/lib_client.cma \
@@ -59,6 +61,7 @@ LIBS_CLIENT2= $(TOP)/commons/lib.cma \
 
 SYSLIBS_CLIENT=str.cma unix.cma
 
+# see ocsigen.conf eliom module section
 LIBS_SERVER2=
 SYSLIBS_SERVER=
 
@@ -115,12 +118,15 @@ _client/test.cmo: test.eliom
 	$(ELIOMC)  -infer $(INCLUDES) $^
 	$(JS_OF_ELIOM) $(JSOPT) -c $(INCLUDES) $^
 
+# you can add -V, this helps sometimes
+OCFLAGS=
+
 run: all
-	LD_LIBRARY_PATH=../commons ocsigenserver -c ocsigen.conf
+	LD_LIBRARY_PATH=../commons ocsigenserver $(OCFLAGS) -c ocsigen.conf
 
 rerun: 
 	pkill ocsigenserver
-	LD_LIBRARY_PATH=../commons ocsigenserver -c ocsigen.conf
+	make run
 
 annot:
 	rm -f *.annot

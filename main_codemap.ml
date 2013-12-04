@@ -56,7 +56,7 @@ module Model = Model2
  * features of IDE we do want (e.g. see the list at http://xamarin.com/studio):
  *  - TODO go to definition (=~ TAGS)
  *  - unified search (files, entities, TODO but also content)
- *  - code navigation (directory, files, but also "hypertext" go to def/uses)
+ *  - code navigation (directory, files, also TODO "hypertext" go to def/uses)
  *  - find uses (tricky for TODO methods in dynamic languages)
  *  - smart syntax highlighting
  *  - folding? hmm thumbnails should makes this less important
@@ -98,6 +98,7 @@ let layer_dir  = ref (None: Common.dirname option)
 let test_mode = ref (None: string option)
 (*e: main flags *)
 
+(* see filters below, which files we are interested in *)
 let filter = ref (fun file -> true)
 
 (* less: a config file:
@@ -112,6 +113,7 @@ let action = ref ""
 (*****************************************************************************)
 
 let filters = [
+  (* pad specific, ocaml related *)
   "pfff", (fun file ->
     match FT.file_type_of_file file with
     | FT.PL (
@@ -144,7 +146,7 @@ let filters = [
     | FT.Text "nw" -> true | _ -> false
   );
 
-
+  (* other languages *)
   "php", (fun file ->
     match File_type.file_type_of_file file with
     | FT.PL (FT.Web (FT.Php _)) -> true  | _ -> false
@@ -161,6 +163,7 @@ let filters = [
     | _ -> false
   ));
 
+  (* exotic languages *)
   "opa", (fun file -> 
     match FT.file_type_of_file file with
     | FT.PL (FT.Opa) (* | FT.PL (FT.ML _) *)  -> true
@@ -180,9 +183,12 @@ let filters = [
 let set_gc () =
   if !Flag.debug_gc
   then Gc.set { (Gc.get()) with Gc.verbose = 0x01F };
+  (* only relevant in bytecode, in native the stacklimit is the os stacklimit*)
+  Gc.set {(Gc.get ()) with Gc.stack_limit = 1000 * 1024 * 1024};
   (* see http://www.elehack.net/michael/blog/2010/06/ocaml-memory-tuning *)
-  Gc.set { (Gc.get()) with Gc.minor_heap_size = 2_000_000 };
-  Gc.set { (Gc.get()) with Gc.space_overhead = 200 };
+  Gc.set { (Gc.get()) with Gc.minor_heap_size = 4_000_000 };
+  Gc.set { (Gc.get()) with Gc.major_heap_increment = 8_000_000 };
+  Gc.set { (Gc.get()) with Gc.space_overhead = 300 };
   ()
 
 (*****************************************************************************)
@@ -193,8 +199,8 @@ let set_gc () =
 let treemap_generator paths = 
   let treemap = Treemap_pl.code_treemap ~filter_file:!filter paths in
   let algo = Treemap.Ordered Treemap.PivotByMiddle in
-  let rects = Treemap.render_treemap ~algo ~big_borders:!Flag.boost_label_size
-    treemap in
+  let big_borders = !Flag.boost_label_size in
+  let rects = Treemap.render_treemap ~algo ~big_borders treemap in
   Common.pr2 (spf "%d rectangles to draw" (List.length rects));
   rects
 (*e: treemap_generator *)
@@ -202,11 +208,8 @@ let treemap_generator paths =
 (*s: build_model *)
 let build_model2 root dbfile_opt graphfile_opt =   
 
-  let db_opt = 
-    match dbfile_opt with
-    | None -> None
-    | Some file -> Some (Database_code.load_database file)
-  in
+  let db_opt = dbfile_opt +> Common.map_opt Database_code.load_database in
+
   (* todo: do like for graph_code below, let hentities, hfiles_entities = ...*)
   let hentities = 
     Model_database_code.hentities root db_opt in
@@ -217,11 +220,8 @@ let build_model2 root dbfile_opt graphfile_opt =
 
   let big_grep_idx = Completion2.build_completion_defs_index all_entities in
 
-  let g_opt =
-    match graphfile_opt with
-    | None -> None
-    | Some file -> Some (Graph_code.load file)
-  in
+  let g_opt = graphfile_opt +> Common.map_opt Graph_code.load in
+
   let huses_of_file, husers_of_file, hentities_of_file =
     match g_opt with
     | None -> Hashtbl.create 0, Hashtbl.create 0, Hashtbl.create 0
@@ -425,6 +425,8 @@ let test_draw cr =
   ()
 
 let test_cairo () =
+  let _locale = GtkMain.Main.init () in
+
   let w = GWindow.window ~title:"test" () in
   ignore (w#connect#destroy GMain.quit);
   let px = GDraw.pixmap ~width ~height ~window:w () in
@@ -501,6 +503,9 @@ let options () = [
     "-extra_filter", Arg.String (fun s -> Flag.extra_filter := Some s),
     " ";
 
+    "-with_info", Arg.String (fun _s -> ()),
+    " obsolete"; (* for codemap_www in engshare/admin/scripts *)
+
   (*-------------------------------------------------------------------------*)
   (* debugging helpers *)
   (*-------------------------------------------------------------------------*)
@@ -521,7 +526,6 @@ let options () = [
   ] ++
   Common.options_of_actions action (all_actions()) ++
   Common2.cmdline_flags_devel () ++
-  Common2.cmdline_flags_verbose () ++
   [
   "-version",   Arg.Unit (fun () -> 
     pr2 (spf "CodeMap version: %s" Config_pfff.version);
