@@ -296,8 +296,10 @@ let test () =
 (* the command line flags *)
 (*---------------------------------------------------------------------------*)
 let sgrep_extra_actions () = [
+(*
   "-dump_php_pattern", " <file> (internal)",
   Common.mk_action_1_arg dump_sgrep_php_pattern;
+*)
   "-test", " run regression tests",
   Common.mk_action_0_arg test;
 ]
@@ -312,6 +314,9 @@ let all_actions () =
 
 let options () = 
   [
+    "-lang", Arg.Set_string lang, 
+    (spf " <str> choose language (default = %s)" !lang);
+
     "-e", Arg.Set_string pattern_string, 
     " <pattern> expression pattern";
     "-f", Arg.Set_string pattern_file, 
@@ -328,11 +333,8 @@ let options () =
     "-pvar", Arg.String (fun s -> mvars := Common.split "," s),
     " <metavars> print the metavariables, not the matched code";
 
-    "-lang", Arg.Set_string lang, 
-    (spf " <str> choose language (default = %s)" !lang);
-
     "-gen_layer", Arg.String (fun s -> layer_file := Some s),
-    " <file> save result in a pfff layer file";
+    " <file> save result in a pfff layer file\n";
 
     "-verbose", Arg.Unit (fun () -> 
       verbose := true;
@@ -390,8 +392,7 @@ let main () =
     (* empty entry *)
     (* --------------------------------------------------------- *)
     | [] -> 
-        Common.usage usage_msg (options()); 
-        failwith "too few arguments"
+        Common.usage usage_msg (options())
     )
   )
 
