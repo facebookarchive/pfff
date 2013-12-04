@@ -158,19 +158,17 @@ let options () =
     " ";
     "-emacs", Arg.Unit (fun () -> format := Emacs),
     " ";
-    "-symlinks", Arg.Unit (fun () -> 
-      Common.follow_symlinks := true;
-    ), " ";
-    "-verbose", Arg.Set verbose, 
-    " ";
+    "-symlinks", Arg.Unit (fun () -> Common.follow_symlinks := true;), 
+    " follow symlinks";
     "-heavy_tagging", Arg.Set heavy_tagging, 
-    " generates some extra tags with semantic prefix: F_, C_, M_";
+    " generates some extra tags with semantic prefix: F_, C_, M_\n";
 
   ] ++
   Common.options_of_actions action (all_actions()) ++
   Common2.cmdline_flags_devel () ++
-  Common2.cmdline_flags_other () ++
   [
+    "-verbose", Arg.Set verbose, 
+    " ";
     "-version",   Arg.Unit (fun () -> 
       pr2 (spf "stags version: %s" Config_pfff.version);
       exit 0;
@@ -218,8 +216,7 @@ let main () =
     (* empty entry *)
     (* --------------------------------------------------------- *)
     | [] -> 
-        Common.usage usage_msg (options()); 
-        failwith "too few arguments"
+        Common.usage usage_msg (options())
     )
   )
 
