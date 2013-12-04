@@ -48,8 +48,6 @@ let action = ref ""
 
 let lang = ref "web"
 
-let with_php_db = ref ""
-
 (*****************************************************************************)
 (* Some  debugging functions *)
 (*****************************************************************************)
@@ -247,7 +245,7 @@ let gen_pleac pleac_src =
 let extra_actions () = [
   "-db_of_graph_code", " <graph_file>",
   Common.mk_action_1_arg (db_of_graph_code);
-  "-gen_pleac", " <pleac_src>; works with -lang",
+  "-gen_pleac", " <pleac_src> (works with -lang and -output_dir)\n",
   Common.mk_action_1_arg (gen_pleac);
 ]
 
@@ -263,38 +261,25 @@ let all_actions () =
 
 let options () = 
   [
-    "-verbose", Arg.Set verbose, 
-    " ";
     "-lang", Arg.Set_string lang, 
     (spf " <str> choose language (default = %s)" !lang);
-
     "-o", Arg.String (fun s -> db_file := Some s),
     (spf " <file> output file (default = %s)" Database_code.default_db_name);
-
-    "-with_php_db", Arg.Set_string with_php_db, 
-    (" <metapath>");
-
     "-output_dir", Arg.Set_string pleac_dir, 
-    (spf " <dir> output file (default = %s)" !pleac_dir);
+    (spf " <dir> output file for -gen_pleac (default = %s)" !pleac_dir);
 
   ] ++
-  Flag_parsing_cpp.cmdline_flags_macrofile() ++
   Common.options_of_actions action (all_actions()) ++
+  Flag_parsing_cpp.cmdline_flags_macrofile() ++
   Common2.cmdline_flags_devel () ++
-  Common2.cmdline_flags_other () ++
   [
+    "-verbose", Arg.Set verbose, 
+    " ";
     "-version",   Arg.Unit (fun () -> 
-      pr2 (spf "pfff (console) version: %s" Config_pfff.version);
+      pr2 (spf "pfff_db version: %s" Config_pfff.version);
       exit 0;
     ), 
     "  guess what";
-
-    (* this can not be factorized in Common *)
-    "-date",   Arg.Unit (fun () -> 
-      pr2 "version: $Date: 2008/10/26 00:44:57 $";
-      raise (Common.UnixExit 0)
-    ), 
-    "   guess what";
   ] ++
   []
 
@@ -336,8 +321,7 @@ let main () =
     (* empty entry *)
     (* --------------------------------------------------------- *)
     | [] -> 
-        Common.usage usage_msg (options()); 
-        failwith "too few arguments"
+        Common.usage usage_msg (options())
     )
   )
 

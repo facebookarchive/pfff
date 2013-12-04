@@ -842,6 +842,9 @@ let all_actions () =
 
 let options () = 
   [
+    "-lang", Arg.Set_string lang, 
+    (spf " <str> choose language (default = %s)" !lang);
+
     "-f", Arg.Set_string spatch_file, 
     " <spatch_file>";
     "-e", Arg.Set_string sed_string,
@@ -853,25 +856,21 @@ let options () =
     " reindent the modified code (fragile)";
 
     "--case-sensitive", Arg.Set case_sensitive, 
-    " match code in a case sensitive manner";
+    " match code in a case sensitive manner\n";
 
-    "--verbose", Arg.Set verbose, 
-    " ";
-
-    "-lang", Arg.Set_string lang, 
-    (spf " <str> choose language (default = %s)" !lang);
-
-    "-v", Arg.Set verbose, 
-    " shortcut for --verbose";
   ] ++
   (* Flag_parsing_php.cmdline_flags_pp () ++ *)
   Common.options_of_actions action (all_actions()) ++
   Common2.cmdline_flags_devel () ++
   [
-  "-version",   Arg.Unit (fun () -> 
-    Common.pr2 (spf "spatch version: %s" Config_pfff.version);
-    exit 0;
-  ), 
+    "--verbose", Arg.Set verbose, 
+    " ";
+    "-v", Arg.Set verbose, 
+    " shortcut for --verbose";
+    "-version",   Arg.Unit (fun () -> 
+      Common.pr2 (spf "spatch version: %s" Config_pfff.version);
+      exit 0;
+    ), 
     "  guess what";
   ]
 
@@ -913,8 +912,7 @@ let main () =
     (* empty entry *)
     (* --------------------------------------------------------- *)
     | [] -> 
-        Common.usage usage_msg (options()); 
-        failwith "too few arguments"
+        Common.usage usage_msg (options())
     )
   )
 

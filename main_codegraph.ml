@@ -719,7 +719,7 @@ let options () = [
   " follow symlinks (for -build) ";
  
   "-no_fake_node", Arg.Clear Graph_code_php.add_fake_node_when_undefined_entity,
-  " no fake nodes when use-def mismatches";
+  " no fake nodes when use-def mismatches\n";
 
   ] ++
   Common.options_of_actions action (all_actions()) ++
