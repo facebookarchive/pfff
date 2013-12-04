@@ -16,13 +16,12 @@ type file_type =
   | Script of string
   | C of string | Cplusplus of string | ObjectiveC of string | Java | Csharp
   | Perl | Python | Ruby
-  | Erlang
+  | Erlang | Go | Rust
   | Beta
   | Pascal
   | Haxe | Opa
-  | Rust
   | Web of webpl_type
-   | Bytecode of string
+  | Bytecode of string
   | Asm
   | Thrift
   | MiscPL of string

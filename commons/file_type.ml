@@ -43,11 +43,10 @@ type file_type =
   | C of string | Cplusplus of string | ObjectiveC of string 
   | Java | Csharp
   | Perl | Python | Ruby
-  | Erlang
+  | Erlang | Go | Rust
   | Beta
   | Pascal
   | Haxe | Opa
-  | Rust
   | Web of webpl_type
   | Bytecode of string
   | Asm
@@ -263,6 +262,7 @@ let file_type_of_file2 file =
   | "mk" -> PL Makefile
 
   | "rs" -> PL Rust
+  | "go" -> PL Go
 
   | _ when Common2.is_executable file -> Binary e
 
