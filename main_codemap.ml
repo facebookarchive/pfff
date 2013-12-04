@@ -469,28 +469,19 @@ let options () = [
     "-screen_size" , Arg.Set_int screen_size,
     " <int> (1 = small, 2 = big)";
     "-ss" , Arg.Set_int screen_size,
-    " alias for -screen_size";
+    " <int> alias for -screen_size";
     "-no_legend" , Arg.Clear legend,
-    " ";
+    " do not display the legend";
 
-    "-ft", Arg.Set_float Flag.threshold_draw_content_font_size_real,
-    " ";
-    "-boost_lbl" , Arg.Set Flag.boost_label_size,
-    " ";
-    "-no_boost_lbl" , Arg.Clear Flag.boost_label_size,
-    " ";
-
-    "-symlinks", Arg.Unit (fun () -> 
-      Treemap.follow_symlinks := true;
-    ), " ";
-    "-no_symlinks", Arg.Unit (fun () ->
-      Treemap.follow_symlinks := false;
-    ), " ";
+    "-symlinks", Arg.Unit (fun () -> Treemap.follow_symlinks := true;),
+    " follow symlinks";
+    "-no_symlinks", Arg.Unit (fun () -> Treemap.follow_symlinks := false),
+    " do not follow symlinks";
 
     "-with_graph", Arg.String (fun s -> graph_file := Some s),
-    " <graph_file>";
+    " <graph_file> dependency semantic information";
     "-with_db", Arg.String (fun s -> db_file := Some s),
-    " <db_file>";
+    " <db_file> generic semantic information";
     "-with_layer", Arg.String (fun s -> layer_file := Some s),
     " <layer_file>";
     "-with_layers", Arg.String (fun s -> layer_dir := Some s),
@@ -504,7 +495,15 @@ let options () = [
     " ";
 
     "-with_info", Arg.String (fun _s -> ()),
-    " obsolete"; (* for codemap_www in engshare/admin/scripts *)
+    " obsolete\n"; (* for codemap_www in engshare/admin/scripts *)
+
+    "-ft", Arg.Set_float Flag.threshold_draw_content_font_size_real,
+    " <float> threshold to draw content";
+    "-boost_lbl" , Arg.Set Flag.boost_label_size,
+    " boost size of labels";
+    "-no_boost_lbl" , Arg.Clear Flag.boost_label_size,
+    " do not boost labels\n";
+
 
   (*-------------------------------------------------------------------------*)
   (* debugging helpers *)
@@ -531,7 +530,7 @@ let options () = [
     pr2 (spf "CodeMap version: %s" Config_pfff.version);
     exit 0;
   ), 
-    "  guess what";
+    " guess what";
   ]
 
 (*****************************************************************************)
