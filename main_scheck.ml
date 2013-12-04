@@ -423,13 +423,13 @@ let dflow file_or_dir =
 (* the command line flags *)
 (*---------------------------------------------------------------------------*)
 let extra_actions () = [
-  "-type_inference", " <file> (experimental)",
-  Common.mk_action_1_arg type_inference;
   "-test", " run regression tests",
   Common.mk_action_0_arg test;
-  "-dflow", " <file/folder> run dataflow analysis",
+  "-test_type_inference", " <file> (experimental)",
+  Common.mk_action_1_arg type_inference;
+  "-test_dflow", " <file/folder> run dataflow analysis",
   Common.mk_action_1_arg dflow;
-  "-unprogress", " ",
+  "-test_unprogress", " ",
   Common.mk_action_1_arg (fun file ->
     Common.cat file +> List.iter (fun s ->
       if s =~ ".*\\(flib/[^ ]+ CHECK: [^\n]+\\)"
@@ -449,22 +449,16 @@ let all_actions () =
 
 let options () =
   [
-    "-verbose", Arg.Unit (fun () -> 
-      verbose := true;
-      Flag_analyze_php.verbose_entity_finder := true;
-    ),
-    " guess what";
-
-    "-with_graph_code", Arg.String (fun s ->
-      graph_code := Some s
-    ), " <file> use graph_code file for heavy analysis";
-
+    "-with_graph_code", Arg.String (fun s -> graph_code := Some s), 
+    " <file> use graph_code file for heavy analysis";
     "-heavy", Arg.Set heavy,
     " process included files for heavy analysis";
     "-depth_limit", Arg.Int (fun i -> depth_limit := Some i), 
     " <int> limit the number of includes to process";
-     "-php_stdlib", Arg.Set_string php_stdlib, 
-     (spf " <dir> path to builtins (default = %s)" !php_stdlib);
+    "-caching", Arg.Clear cache_parse, 
+    " cache parsed ASTs\n";
+    "-php_stdlib", Arg.Set_string php_stdlib, 
+    (spf " <dir> path to builtins (default = %s)" !php_stdlib);
 
     "-strict", Arg.Set strict_scope,
     " emulate block scope instead of function scope";
@@ -476,31 +470,27 @@ let options () =
     "-rank", Arg.Set rank,
     " rank errors and display the 20 most important";
 
-    "-caching", Arg.Clear cache_parse, 
-    " cache parsed ASTs";
-
+    "-emacs", Arg.Unit (fun () -> show_progress := false;), 
+    " emacs friendly output";
     "-gen_layer", Arg.String (fun s -> layer_file := Some s),
     " <file> save result in pfff layer file";
 
-    "-emacs", Arg.Unit (fun () ->
-      show_progress := false;
-    ), " emacs friendly output";
-
     "-auto_fix", Arg.Set auto_fix,
-    " try to auto fix the error"
+    " try to auto fix the error";
+
 
   ] ++
   Common.options_of_actions action (all_actions()) ++
   Common2.cmdline_flags_devel () ++
   [
-  "-version",   Arg.Unit (fun () ->
-    pr2 (spf "scheck version: %s" Config_pfff.version);
-    exit 0;
-  ), " guess what";
-  (* this can not be factorized in Common *)
-  "-date",   Arg.Unit (fun () ->
-    pr2 "version: $Date: 2013/03/26 00:44:57 $";
-    raise (Common.UnixExit 0)
+    "-verbose", Arg.Unit (fun () -> 
+      verbose := true;
+      Flag_analyze_php.verbose_entity_finder := true;
+    ),
+    " guess what";
+    "-version",   Arg.Unit (fun () ->
+      pr2 (spf "scheck version: %s" Config_pfff.version);
+      exit 0;
     ), " guess what";
   ] ++
   []
@@ -543,8 +533,7 @@ let main () =
     (* empty entry *)
     (* --------------------------------------------------------- *)
     | [] ->
-        Common.usage usage_msg (options());
-        failwith "too few arguments"
+        Common.usage usage_msg (options())
     )
   )
 
