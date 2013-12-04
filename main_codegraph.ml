@@ -650,9 +650,11 @@ let extra_actions () = [
   Common.mk_action_1_arg (fun dir -> build_graph_code !lang dir);
   "-build_stdlib", " <src> <dst>",
   Common.mk_action_2_arg (fun dir dst -> build_stdlib !lang dir dst);
-  "-adjust_graph", " <graph> <adjust_file> <whitelist> <dstfile>",
+  "-adjust_graph", " <graph> <adjust_file> <whitelist> <dstfile>\n",
   Common.mk_action_4_arg (fun graph file file2 dst -> 
     adjust_graph graph file file2 dst);
+
+
   "-test_backward_deps", " <graph>",
   Common.mk_action_1_arg (fun graph_file -> 
     analyze_backward_deps graph_file
@@ -704,24 +706,18 @@ let options () = [
   " <in|out|inout>";
 
   "-dots_threshold", Arg.Int (fun i -> DM.threshold_pack := i),
-  " ";
+  " <int> when do we introduce '...' entries";
 
   "-skip_list", Arg.String (fun s -> skip_list := Some s), 
-  " ";
+  " <file>";
   "-o", Arg.String (fun s -> output_dir := Some s), 
-  " ";
+  " <dir>";
   "-derived_data", Arg.Set gen_derived_data, 
   " generate also TAGS, layers, light db, etc";
 
-  "-symlinks", Arg.Unit (fun () -> 
-      Common.follow_symlinks := true;
-    ), " ";
+  "-symlinks", Arg.Unit (fun () -> Common.follow_symlinks := true;), 
+  " follow symlinks (for -build) ";
  
-  "-verbose", Arg.Unit (fun () ->
-    verbose := true;
-    DM.verbose := true;
-  ), " ";
-
   "-no_fake_node", Arg.Clear Graph_code_php.add_fake_node_when_undefined_entity,
   " no fake nodes when use-def mismatches";
 
@@ -729,6 +725,11 @@ let options () = [
   Common.options_of_actions action (all_actions()) ++
   Common2.cmdline_flags_devel () ++
   [
+  "-verbose", Arg.Unit (fun () ->
+    verbose := true;
+    DM.verbose := true;
+  ), " ";
+
     "-version",   Arg.Unit (fun () -> 
       pr2 (spf "CodeGraph version: %s" Config_pfff.version);
       exit 0;
@@ -773,8 +774,7 @@ let main () =
     (* empty entry *)
     (* --------------------------------------------------------- *)
     | [] -> 
-        Common.usage usage_msg (options()); 
-        failwith "too few arguments"
+        Common.usage usage_msg (options())
     )
   )
 
