@@ -52,6 +52,10 @@ module Model = Model2
  *  - todo: light table
  *  - todo: http://www.kickstarter.com/projects/296054304/zeta-code
  *  - todo? sublime, textmate, etc
+ *  - http://www.hello2morrow.com/products/sotoarc
+ *  - http://scg.unibe.ch/codemap
+ *  - http://scg.unibe.ch/wiki/projects/rbcrawler
+ *  - moose http://youtu.be/yvXm9LC17vk at 14min
  * 
  * features of IDE we do want (e.g. see the list at http://xamarin.com/studio):
  *  - TODO go to definition (=~ TAGS)
