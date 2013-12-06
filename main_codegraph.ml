@@ -646,7 +646,7 @@ let test_xta graph_file =
 (* ---------------------------------------------------------------------- *)
 let extra_actions () = [
 
-  "-build", " <dir>",
+  "-build", " <dir> build a graph_code.marshall database",
   Common.mk_action_1_arg (fun dir -> build_graph_code !lang dir);
   "-build_stdlib", " <src> <dst>",
   Common.mk_action_2_arg (fun dir dst -> build_stdlib !lang dir dst);
@@ -691,9 +691,6 @@ let all_actions () =
   []
 
 let options () = [
-  "-lang", Arg.Set_string lang, 
-  (spf " <str> choose language (default = %s)" !lang);
-
   "-deps", Arg.String (fun s -> 
     deps_style := 
       (match s with
@@ -708,18 +705,20 @@ let options () = [
   "-dots_threshold", Arg.Int (fun i -> DM.threshold_pack := i),
   " <int> when do we introduce '...' entries";
 
+  "-lang", Arg.Set_string lang, 
+  (spf " <str> choose language (default = %s) (for -build)" !lang);
   "-skip_list", Arg.String (fun s -> skip_list := Some s), 
-  " <file>";
+  " <file> skip files or directories (for -build)";
   "-o", Arg.String (fun s -> output_dir := Some s), 
-  " <dir>";
+  " <dir> save graph_code.marshall in another dir (for -build)";
   "-derived_data", Arg.Set gen_derived_data, 
-  " generate also TAGS, layers, light db, etc";
+  " generate also TAGS, layers, light db, etc (for -build)";
 
   "-symlinks", Arg.Unit (fun () -> Common.follow_symlinks := true;), 
   " follow symlinks (for -build) ";
  
   "-no_fake_node", Arg.Clear Graph_code_php.add_fake_node_when_undefined_entity,
-  " no fake nodes when use-def mismatches\n";
+  " no fake nodes when use-def mismatches (for -build)\n";
 
   ] ++
   Common.options_of_actions action (all_actions()) ++
