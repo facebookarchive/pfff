@@ -19,7 +19,7 @@ let actions () = [
     let json = Compile_commands_clang.sanitize_compile_commands json in
     pr (Json_out.string_of_json json);
   );
-  "-uninclude_clang", "",
+  "-uninclude_clang", " ",
   Common.mk_action_0_arg (fun () ->
     let skip_file = "skip_list.txt" in
     let skip_list =
