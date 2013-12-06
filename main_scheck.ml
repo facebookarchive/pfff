@@ -425,7 +425,7 @@ let dflow file_or_dir =
 let extra_actions () = [
   "-test", " run regression tests",
   Common.mk_action_0_arg test;
-  "-test_type_inference", " <file> (experimental)",
+  "-test_type_inference", " <file>",
   Common.mk_action_1_arg type_inference;
   "-test_dflow", " <file/folder> run dataflow analysis",
   Common.mk_action_1_arg dflow;
@@ -456,7 +456,7 @@ let options () =
     "-depth_limit", Arg.Int (fun i -> depth_limit := Some i), 
     " <int> limit the number of includes to process";
     "-caching", Arg.Clear cache_parse, 
-    " cache parsed ASTs\n";
+    " cache parsed ASTs";
     "-php_stdlib", Arg.Set_string php_stdlib, 
     (spf " <dir> path to builtins (default = %s)" !php_stdlib);
 
@@ -476,7 +476,7 @@ let options () =
     " <file> save result in pfff layer file";
 
     "-auto_fix", Arg.Set auto_fix,
-    " try to auto fix the error";
+    " try to auto fix the error\n";
 
 
   ] ++
