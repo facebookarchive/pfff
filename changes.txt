@@ -1,10 +1,23 @@
 -*- org -*-
 
-* 0.26 (Q4 2013) (??zamcov tomography?? OPAM packages?)
+* 0.26 (Q4 2013) (??zamcov tomography?? OPAM package)
 
 ** internal:
 
+*** opam package (just the parsers and commons)
+
 *** port to 4.01 graph_code_cmt.ml, make it configurable
+simplified configure output too
+
+*** split h_program-lang, introduce graph_code/
+
+** codegraph
+
+*** new -derived_data option (generate TAGS, layers, prolog, light db)
+
+*** build light db from graph_code, and make it fast enough
+
+*** new -test_transitive_deps action to extract parts of huge codebase
 
 ** php
 
@@ -13,6 +26,11 @@
 ** javascript
 
 *** support new class syntax, JSX (xhp)
+
+** doc
+
+*** talk codemap/codegraph ocaml workshop
+ http://ocaml.org/meetings/ocaml/2013/program.html
 
 * 0.25 (Q3 2013) (codemap/codegraph integration)
 
@@ -34,11 +52,21 @@ associate a depth in the use graph to each file and entities.
 
 *** support for namespace part1 (parsing)
 
+*** support shape
+
 ** ocaml
 
 *** started to play with zamcov
 refresh to 4.01, fix many bugs, cleanup makefiles, added some builtins,
 added debugging support, better error message, stack trace, etc.
+
+** spatch
+
+*** better heuristics to preserve space around commas
+ 
+** vcs
+
+*** support for mercurial, help diff analysis on mercurial repo
 
 ** internal: 
 
