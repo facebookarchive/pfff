@@ -69,7 +69,8 @@ let rec light_db_of_files_or_dirs lang xs =
         Database_light_ml.compute_database ~verbose xs
 
     | "php" ->
-      raise Todo
+      failwith 
+        "pfff_db is obsolete, use 'codegraph -lang php -derived_data -build <dir>'"
 (*
         (match xs with
         | [_x] ->
