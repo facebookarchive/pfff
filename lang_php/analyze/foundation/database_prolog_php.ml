@@ -114,6 +114,13 @@ let add_function_params current def add =
       ))
     )
 
+(* todo: also extract if decl/strict/regular? *)
+let is_hack_file toks =
+  match toks with
+  | Parser_php.T_OPEN_TAG info::_rest ->
+    Parse_info.str_of_info info =$= "<?hh"
+  | _ -> false
+
 (*****************************************************************************)
 (* Defs/uses *)
 (*****************************************************************************)
@@ -546,6 +553,7 @@ let build2 ?(show_progress=true) dir_or_files skip_list =
    add (P.Misc ":- discontiguous throw/2, catch/2");
    add (P.Misc ":- discontiguous problem/2");
 
+   add (P.Misc ":- discontiguous hh/1");
    (* see the comment on newv in add_uses() above *)
    add (P.Misc ":- discontiguous special/1");
    add (P.Misc "special('newv')");
@@ -559,7 +567,10 @@ let build2 ?(show_progress=true) dir_or_files skip_list =
            (parts +> List.map (fun s -> spf "'%s'" s) +> Common.join ",")));
 
      try 
-       let ast = Parse_php.parse_program file in
+       let (ast, toks) = Parse_php.ast_and_tokens file in
+       let is_hh = is_hack_file toks in
+       if is_hh 
+       then add (P.Misc (spf "hh('%s')" readable));
        let ast = Unsugar_php.unsugar_self_parent_program ast in
        visit ~add readable ast;
      with Parse_php.Parse_error _ | Ast_php.TodoNamespace _ ->
