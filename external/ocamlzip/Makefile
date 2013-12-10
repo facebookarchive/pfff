@@ -9,6 +9,8 @@ ZLIB_LIBDIR=/usr/local/lib
 # The directory containing the Zlib header file (zlib.h)
 ZLIB_INCLUDE=/usr/local/include
 
+OCAML_INCLUDE=$(shell ocamlc -where)
+
 # Where to install the library.  By default: sub-directory 'zip' of
 # OCaml's standard library directory.
 INSTALLDIR=`$(OCAMLC) -where`/zip
@@ -51,7 +53,7 @@ libcamlzip.a: $(C_OBJS)
 .ml.cmx:
 	$(OCAMLOPT) -c $<
 .c.o:
-	$(OCAMLC) -c -ccopt -g -ccopt -I$(ZLIB_INCLUDE) $<
+	$(OCAMLC) -c -ccopt -g -ccopt -I$(ZLIB_INCLUDE) -ccopt -I$(OCAML_INCLUDE) $<
 
 clean:
 	rm -f *.cm*
@@ -76,7 +78,7 @@ install-findlib:
 	ocamlfind install zip META *.mli *.a *.cmi *.cma $(wildcard *.cmxa) $(wildcard *.so)
 
 depend:
-	gcc -MM -I$(ZLIB_INCLUDE) *.c > .depend
+	gcc -MM -I$(ZLIB_INCLUDE) -I$(OCAML_INCLUDE) *.c > .depend
 	ocamldep *.mli *.ml >> .depend
 
 -include .depend
