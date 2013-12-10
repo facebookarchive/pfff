@@ -64,10 +64,15 @@ let yyback n lexbuf =
     Lexing.pos_cnum = currp.Lexing.pos_cnum - n;
   }
 
+(* less: should use Buffer and not ^ so we should not need that *)
 let tok_add_s s ii  =
   PI.rewrap_str ((PI.str_of_info ii) ^ s) ii
-let tok_set_s s ii  =
-  PI.rewrap_str s ii
+
+let hexa_to_int = function
+  | '0'..'9' as x -> Char.code x - Char.code '0'
+  | 'a'..'f' as x -> Char.code x - Char.code 'a' + 10
+  | 'A'..'F' as x -> Char.code x - Char.code 'A' + 10
+  | _ -> assert false;;
 
 (* ---------------------------------------------------------------------- *)
 (* Keywords *)
@@ -213,7 +218,7 @@ rule initial = parse
       let buf = Buffer.create 127 in
       Buffer.add_string buf "/*";
       st_comment buf lexbuf;
-      TComment(info +> tok_set_s (Buffer.contents buf))
+      TComment(info +> PI.rewrap_str (Buffer.contents buf))
     }
 
   | "//" {
@@ -221,7 +226,7 @@ rule initial = parse
       let buf = Buffer.create 127 in
       Buffer.add_string buf "//";
       st_one_line_comment buf lexbuf;
-      TComment(info +> tok_set_s (Buffer.contents buf))
+      TComment(info +> PI.rewrap_str (Buffer.contents buf))
     }
 
   | [' ' '\t']+   { TCommentSpace(tokinfo lexbuf) }
@@ -335,17 +340,17 @@ rule initial = parse
   (* ----------------------------------------------------------------------- *)
   (* Strings *)
   (* ----------------------------------------------------------------------- *)
-  | "'" { 
-      let info = tokinfo lexbuf in 
-      let s = string_quote lexbuf in
-      (* s does not contain the enclosing "'" but the info does *)
-      T_STRING (s, info +> PI.tok_add_s (s ^ "'"))
-    }
-
-  | '"' { 
+  | ("'"|'"') as quote {
       let info = tokinfo lexbuf in
-      let s = string_double_quote lexbuf in 
-      T_STRING (s, info +> PI.tok_add_s (s ^ "\""))
+      let buf = Buffer.create 127 in
+      string_quote quote buf lexbuf;
+      let s = Buffer.contents buf in
+      let buf2 = Buffer.create 127 in
+      Buffer.add_char buf2 quote; 
+      Buffer.add_string buf2 s; 
+      Buffer.add_char buf2 quote;
+      (* s does not contain the enclosing "'" but the info does *)
+      T_STRING (s, info +> PI.rewrap_str (Buffer.contents buf2))
     }
 
   (* ----------------------------------------------------------------------- *)
@@ -389,7 +394,7 @@ rule initial = parse
           Buffer.add_char buf '/';
           regexp buf lexbuf;
           let s = Buffer.contents buf in
-          T_REGEX (s, info +> tok_set_s s)
+          T_REGEX (s, info +> PI.rewrap_str s)
     }
 
   (* ----------------------------------------------------------------------- *)
@@ -444,29 +449,39 @@ rule initial = parse
 (* Rule string *)
 (*****************************************************************************)
 
-and string_quote = parse
-  | "'"            { "" }
-  | (_ as x)       { Common2.string_of_char x^string_quote lexbuf}
-  | ("\\" (_ as v)) as x { 
-      (* check char ? *)
-      (match v with
-      | _ -> ()
-      );
-      x ^ string_quote lexbuf
-    }
-  | eof { error "WIERD end of file in quoted string"; ""}
+and string_escape quote buf = parse
+  | '\\'{ Buffer.add_string buf "\\\\" }
+  | 'x' (HEXA as a) (HEXA as b)
+    { let code = hexa_to_int a * 16 + hexa_to_int b in
+      if code > 127
+      then
+        let c1 = code lsr 6 + 0xC0
+        and c2 = code land 0x3f + 0x80 in
+        Buffer.add_char buf (Char.chr c1);
+        Buffer.add_char buf (Char.chr c2)
+      else Buffer.add_char buf (Char.chr code) }
+  | 'u' HEXA HEXA HEXA HEXA {
+      Buffer.add_char buf '\\';
+      Buffer.add_string buf (Lexing.lexeme lexbuf) }
+  | (_ as c)
+    { Buffer.add_char buf '\\'; Buffer.add_char buf c }
+      (* if c = quote *)
+      (* then Buffer.add_char buf quote *)
+      (* else Buffer.add_char buf c } *)
 
-and string_double_quote  = parse
-  | '"'            { "" }
-  | (_ as x)       { Common2.string_of_char x^string_double_quote lexbuf}
-  | ("\\" (_ as v)) as x { 
-      (* check char ? *)
-      (match v with
-      | _ -> ()
-      );
-      x ^ string_double_quote lexbuf
+
+
+and string_quote q buf = parse
+  | ("'"|'"') as q' {
+    if q = q'
+    then ()
+    else (Buffer.add_char buf q'; string_quote q buf lexbuf) }
+  | '\\' {
+      string_escape q buf lexbuf;
+      string_quote q buf lexbuf
     }
-  | eof { error "WIERD end of file in double quoted string"; ""}
+  | (_ as x) { Buffer.add_char buf x; string_quote q buf lexbuf }
+  | eof      { error "WIERD end of file in quoted string" }
 
 (*****************************************************************************)
 (* Rule regexp *)
@@ -498,13 +513,11 @@ and regexp_maybe_ident buf = parse
 (*****************************************************************************)
 
 and st_comment buf = parse 
-  | "*/" { Buffer.add_string buf (tok lexbuf) }
-
+  | "*/"    { Buffer.add_string buf (tok lexbuf) }
   (* noteopti: *)
   | [^'*']+ { Buffer.add_string buf (tok lexbuf); st_comment buf lexbuf } 
-  | "*"     { Buffer.add_string buf "*"; st_comment buf lexbuf }
-
-  | eof { error "end of file in comment"}
+  | "*"     { Buffer.add_string buf (tok lexbuf); st_comment buf lexbuf }
+  | eof     { error "end of file in comment" }
   | _  { 
       let s = tok lexbuf in
       error ("unrecognised symbol in comment:"^s);
@@ -517,13 +530,9 @@ and st_one_line_comment buf = parse
       Buffer.add_string buf (tok lexbuf); 
       st_one_line_comment buf lexbuf
     }
-
   | NEWLINE { Buffer.add_string buf (tok lexbuf) }
-
   | eof { error "end of file in comment" }
-  | _ { 
-    error ("unrecognised symbol, in st_one_line_comment rule:"^tok lexbuf);
-    }
+  | _   { error ("unrecognised symbol, in st_one_line_comment:"^tok lexbuf) }
 
 (*****************************************************************************)
 (* Rules for XHP *)
@@ -546,7 +555,7 @@ and st_in_xhp_tag current_tag = parse
         let buf = Buffer.create 127 in
         Buffer.add_string buf "/*";
         st_comment buf lexbuf;
-        TComment(info +> tok_set_s (Buffer.contents buf))
+        TComment(info +> PI.rewrap_str (Buffer.contents buf))
      }
   | "/**/" { TComment(tokinfo lexbuf) }
 
@@ -555,7 +564,7 @@ and st_in_xhp_tag current_tag = parse
       let buf = Buffer.create 127 in
       Buffer.add_string buf "//";
       st_one_line_comment buf lexbuf;
-      TComment(info +> tok_set_s (Buffer.contents buf))
+      TComment(info +> PI.rewrap_str (Buffer.contents buf))
     }
 
 
@@ -563,16 +572,17 @@ and st_in_xhp_tag current_tag = parse
   | XHPATTR { T_XHP_ATTR(tok lexbuf, tokinfo lexbuf) }
   | "="     { T_ASSIGN(tokinfo lexbuf) }
 
-  | ['"'] {
+  | ("'"|'"') as quote {
       let info = tokinfo lexbuf in
-      let s = string_double_quote lexbuf in 
-      T_STRING (s, info +> PI.tok_add_s (s ^ "\""))
-  }
-  | "'" { 
-      let info = tokinfo lexbuf in 
-      let s = string_quote lexbuf in
+      let buf = Buffer.create 127 in
+      string_quote quote buf lexbuf;
+      let s = Buffer.contents buf in
+      let buf2 = Buffer.create 127 in
+      Buffer.add_char buf2 quote; 
+      Buffer.add_string buf2 s; 
+      Buffer.add_char buf2 quote;
       (* s does not contain the enclosing "'" but the info does *)
-      T_STRING (s, info +> PI.tok_add_s (s ^ "'"))
+      T_STRING (s, info +> PI.rewrap_str (Buffer.contents buf2))
     }
 
   | "{" {
