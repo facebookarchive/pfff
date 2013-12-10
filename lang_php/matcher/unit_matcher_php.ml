@@ -417,7 +417,14 @@ let unparser_unittest =
     assert_equal
       "<?php\n$x = <div a=\"1\" b=\"2\">foo</div>;"
       res;
-  )
+  );
+
+  "string_of_any" >:: (fun () ->
+    let str = "foo(<div a=\"1\">bar</div>)" in
+    let e = Parse_php.expr_of_string str in
+    let str2 = Unparse_php.string_of_expr e in
+    assert_equal str str2;
+  );      
 
  ]
   

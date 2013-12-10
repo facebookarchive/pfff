@@ -52,16 +52,18 @@ module PI = Parse_info
  *)
 
 (*****************************************************************************)
-(* Types *)
+(* Helpers *)
 (*****************************************************************************)
+let is_ident s =
+  s =~ "^[a-zA-Z_]"
 
 (*****************************************************************************)
 (* Unparsing using AST visitor *)
 (*****************************************************************************)
 
-(* This will not preserve space and comments but it's useful
+(* This will not preserve spaces and comments but it's useful
  * and good enough for printing small chunk of PHP code for debugging
- * purpose. We try to preserve the line numbers.
+ * purpose. We also try to preserve the line numbers.
  *)
 let string_of_program ast = 
   Common2.with_open_stringbuf (fun (_pr_with_nl, buf) ->
@@ -105,49 +107,49 @@ let string_of_program ast =
 (* Even simpler unparser using AST visitor *)
 (*****************************************************************************)
 
-let mk_unparser_visitor pp = 
-  let hooks = { V.default_visitor with
-    V.kinfo = (fun (k, _) info ->
-      match info.Parse_info.token with
-      | Parse_info.OriginTok p ->
-          let s =  p.Parse_info.str in
-          (match s with
-          | "new" ->
-              pp s; pp " "
-          | _ -> 
-              pp s;
-          )
-      | Parse_info.FakeTokStr (s, _opt) ->
-          pp s; pp " ";
-          if s = ";" || s = "{" || s = "}"
-          then begin
-            pp "\n";
-          end
-
-      | Parse_info.Ab
-        ->
-          ()
-      | Parse_info.ExpandedTok _ -> raise Todo
-    );
-  }
-  in
-  (V.mk_visitor hooks)
+(* This function is used notably in spatch to pretty print matched code
+ * in metavariables.
+ *)
    
-
-let string_of_infos ii = 
-  (* todo: keep space, keep comments *)
-  ii +> List.map (fun info -> PI.str_of_info info) +> Common.join ""
-
-let string_of_expr_old e = 
-  let ii = Lib_parsing_php.ii_of_any (Expr e) in
-  string_of_infos ii
 
 let string_of_any any = 
   Common2.with_open_stringbuf (fun (_pr_with_nl, buf) ->
     let pp s = Buffer.add_string buf s in
-    (mk_unparser_visitor pp) any
-  )
+    
+    let toks = ref [] in
+    
+    let hooks = { V.default_visitor with
+      V.kinfo = (fun (k, _) info ->
+        match info.Parse_info.token with
+        | Parse_info.OriginTok p ->
+          let s =  p.Parse_info.str in
+          Common.push2 s toks
+        | Parse_info.FakeTokStr (s, _opt) ->
+          Common.push2 s toks
+        | Parse_info.Ab -> ()
+        | Parse_info.ExpandedTok _ -> 
+          failwith "unparse_php: should not have ExpandedTok"
+      );
+    }
+    in
+    (V.mk_visitor hooks) any;
 
+    let rec aux xs =
+      match xs with
+      | [] -> ()
+      | [x] -> pp x
+      | x::y::xs ->
+        (match is_ident x, is_ident y, x with
+        | true, true, _ -> pp x; pp " "
+        | _, _, (";" | "{" | "}") -> pp x; pp "\n"
+        | false, true, _ when x =~ "^<[a-zA-Z_]" -> pp x; pp " "
+        | _ , _, _ -> pp x
+        );
+        aux (y::xs)
+    in
+    aux (List.rev !toks)
+  )
+    
 (* convenient shortcut *)
 let string_of_expr x = string_of_any (Expr x)
 

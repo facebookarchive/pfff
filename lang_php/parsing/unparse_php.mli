@@ -7,8 +7,6 @@ val string_of_program: Ast_php.program -> string
 val string_of_any: Ast_php.any -> string
 val string_of_expr: Ast_php.expr -> string
 
-val string_of_infos: Ast_php.info list -> string
-
 (* preserve space and comments and handle the transfo annotation
  * (this function is called by spatch)
  *)
