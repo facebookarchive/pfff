@@ -179,7 +179,6 @@ let visit ~add readable ast =
         let tok = Ast.info_of_ident def.c_name in
         add (P.At (P.entity_of_str s, readable, PI.line_of_info tok));
 
-
         (match def.c_type with
         | ClassAbstract _ -> add (P.Misc (spf "abstract(%s)" !current))
         | ClassFinal _ -> add (P.Misc (spf "final(%s)" !current))
@@ -215,7 +214,7 @@ let visit ~add readable ast =
 
         def.c_body +> Ast.unbrace +> List.iter (fun class_stmt ->
           match class_stmt with
-        | Method def ->
+          | Method def ->
 
           let s2 = Ast.str_of_ident def.f_name in
           current := spf "('%s', '%s')" s s2;
@@ -331,7 +330,6 @@ let visit ~add readable ast =
 
           | _ -> ()
           );
-
           if not (Hashtbl.mem h str)
           then begin
             Hashtbl.replace h str true;
@@ -350,8 +348,8 @@ let visit ~add readable ast =
           end;
           k x
 
-      | Call (ObjGet (_, _, Id name), args)
-      | Call (ClassGet (_, _, Id name), args)
+      | Call (ObjGet (e, _, Id name), args)
+      | Call (ClassGet (e, _, Id name), args)
         ->
           let str = Ast_php.str_of_name name in
           (* use a different namespace than func? *)
@@ -384,10 +382,11 @@ let visit ~add readable ast =
           | _ -> raise Impossible
           );
 
-          (* todo: don't recurse on x, because we don't want to
-           * process the ObjGet and ClassGet
+          (* don't recurse on x, because we don't want to process the
+           * ObjGet and ClassGet
            *)
-          k x
+          vx (Expr e);
+          vx (Arguments (Ast.unparen args))
 
 
       (* the context should be anything except Call *)
