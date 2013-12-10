@@ -27,10 +27,10 @@
  *  - jslint
  * 
  * updates:
- *  - add support for ES6 class
- *   http://people.mozilla.org/~jorendorff/es6-draft.html#sec-class-definitions
- *  - add support for JSX, mostly imitating what was done for XHP in lang_php/
- *  - add support for type annotation a la TypeScript
+ *  - support for ES6 class
+ *    http://people.mozilla.org/~jorendorff/es6-draft.html#sec-class-definitions
+ *  - support for JSX, mostly imitating what was done for XHP in lang_php/
+ *  - support for type annotation a la TypeScript
  *    http://en.wikipedia.org/wiki/TypeScript, 
  *    see also D911357 for the esprima related extension
  * 

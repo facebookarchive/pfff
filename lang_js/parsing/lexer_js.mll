@@ -26,10 +26,13 @@ module Flag = Flag_parsing_js
 (*****************************************************************************)
 (* The Javascript lexer.
  *
+ * src: ocamllexified from Marcel Laverdet 'fbjs2'?
+ *
  * There are a few tricks to go around ocamllex restrictions
  * because recent Javascripts have different lexing rules depending on some
  * "contexts", especially for JSX/XHP
  * (this is similar to Perl, e.g. the <<<END context).
+ * 
  *)
 
 (*****************************************************************************)
@@ -186,9 +189,9 @@ let set_mode mode =
 (*****************************************************************************)
 (* Regexp aliases *)
 (*****************************************************************************)
-let _WHITESPACE = [' ' '\n' '\r' '\t']+
-let TABS_AND_SPACES = [' ''\t']*
+
 let NEWLINE = ("\r"|"\n"|"\r\n")
+let HEXA = ['0'-'9''a'-'f''A'-'F']
 
 let XHPLABEL =	['a'-'z''A'-'Z''_']['a'-'z''A'-'Z''0'-'9''_''-']*
 let XHPTAG = XHPLABEL (* (":" XHPLABEL)* *)
@@ -215,8 +218,8 @@ rule initial = parse
       TComment(info +> PI.tok_add_s com)
     }
 
-  | [' ']+            { TCommentSpace(tokinfo lexbuf) }
-  | ['\n' '\r' '\t']+ { TCommentNewline(tokinfo lexbuf) }
+  | [' ' '\t']+   { TCommentSpace(tokinfo lexbuf) }
+  | NEWLINE       { TCommentNewline(tokinfo lexbuf) }
 
   (* ----------------------------------------------------------------------- *)
   (* symbols *)
@@ -299,7 +302,7 @@ rule initial = parse
   (* Constant *)
   (* ----------------------------------------------------------------------- *)
 
-  | "0x"['a'-'f''A'-'F''0'-'9']+ {
+  | "0" ['X''x'] HEXA+ {
       let s = tok lexbuf in
       let info = tokinfo lexbuf in
       T_NUMBER (s, info)
@@ -418,10 +421,6 @@ rule initial = parse
   }
 
   (* ----------------------------------------------------------------------- *)
-  (* Misc *)
-  (* ----------------------------------------------------------------------- *)
-
-  (* ----------------------------------------------------------------------- *)
   (* eof *)
   (* ----------------------------------------------------------------------- *)
 
@@ -435,6 +434,7 @@ rule initial = parse
 (*****************************************************************************)
 (* Rule string *)
 (*****************************************************************************)
+
 and string_quote = parse
   | "'"            { "" }
   | (_ as x)       { Common2.string_of_char x^string_quote lexbuf}
