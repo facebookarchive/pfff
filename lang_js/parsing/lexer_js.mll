@@ -210,14 +210,18 @@ rule initial = parse
   (* ----------------------------------------------------------------------- *)
   | "/*" { 
       let info = tokinfo lexbuf in 
-      let com = st_comment lexbuf in
-      TComment(info +> PI.tok_add_s com)
+      let buf = Buffer.create 127 in
+      Buffer.add_string buf "/*";
+      st_comment buf lexbuf;
+      TComment(info +> tok_set_s (Buffer.contents buf))
     }
 
   | "//" {
       let info = tokinfo lexbuf in
-      let com = st_one_line_comment lexbuf in
-      TComment(info +> PI.tok_add_s com)
+      let buf = Buffer.create 127 in
+      Buffer.add_string buf "//";
+      st_one_line_comment buf lexbuf;
+      TComment(info +> tok_set_s (Buffer.contents buf))
     }
 
   | [' ' '\t']+   { TCommentSpace(tokinfo lexbuf) }
@@ -493,32 +497,32 @@ and regexp_maybe_ident buf = parse
 (* Rule comment *)
 (*****************************************************************************)
 
-and st_comment = parse 
-  | "*/" { tok lexbuf }
+and st_comment buf = parse 
+  | "*/" { Buffer.add_string buf (tok lexbuf) }
 
   (* noteopti: *)
-  | [^'*']+ { let s = tok lexbuf in s ^ st_comment lexbuf } 
-  | "*"     { let s = tok lexbuf in s ^ st_comment lexbuf }
+  | [^'*']+ { Buffer.add_string buf (tok lexbuf); st_comment buf lexbuf } 
+  | "*"     { Buffer.add_string buf "*"; st_comment buf lexbuf }
 
-  | eof { error "end of file in comment"; "*/"}
+  | eof { error "end of file in comment"}
   | _  { 
       let s = tok lexbuf in
       error ("unrecognised symbol in comment:"^s);
-      s ^ st_comment lexbuf
+      Buffer.add_string buf s;
+      st_comment buf lexbuf
     }
 
-and st_one_line_comment = parse
+and st_one_line_comment buf = parse
   | [^'\n' '\r']* { 
-      let s = tok lexbuf in
-      s ^ st_one_line_comment lexbuf
+      Buffer.add_string buf (tok lexbuf); 
+      st_one_line_comment buf lexbuf
     }
 
-  | NEWLINE { tok lexbuf }
+  | NEWLINE { Buffer.add_string buf (tok lexbuf) }
 
-  | eof { error "end of file in comment"; "\n" }
+  | eof { error "end of file in comment" }
   | _ { 
     error ("unrecognised symbol, in st_one_line_comment rule:"^tok lexbuf);
-    tok lexbuf
     }
 
 (*****************************************************************************)
@@ -538,16 +542,20 @@ and st_in_xhp_tag current_tag = parse
   | [' ' '\t']+ { TCommentSpace(tokinfo lexbuf) }
   | ['\n' '\r'] { TCommentNewline(tokinfo lexbuf) }
   | "/*" {
-        let info = tokinfo lexbuf in
-        let com = st_comment lexbuf in
-        TComment(info +> tok_add_s com)
-      }
+        let info = tokinfo lexbuf in 
+        let buf = Buffer.create 127 in
+        Buffer.add_string buf "/*";
+        st_comment buf lexbuf;
+        TComment(info +> tok_set_s (Buffer.contents buf))
+     }
   | "/**/" { TComment(tokinfo lexbuf) }
 
   | "//" {
       let info = tokinfo lexbuf in
-      let com = st_one_line_comment lexbuf in
-      TComment(info +> tok_add_s com)
+      let buf = Buffer.create 127 in
+      Buffer.add_string buf "//";
+      st_one_line_comment buf lexbuf;
+      TComment(info +> tok_set_s (Buffer.contents buf))
     }
 
 
