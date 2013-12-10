@@ -392,6 +392,7 @@ class X {
 ]
 
 let unparser_unittest =
+ "unparser_php" >::: [
   "add arguments" >:: (fun () ->
     let file_content = "function foo() { $x = printf(\"%s %d\", ); }" in
     let file = Parse_php.tmp_php_file_from_string file_content in
@@ -406,7 +407,19 @@ let unparser_unittest =
     assert_equal
       "<?php\nfunction foo(str, 1) { $x = printf(\"%s %d\", str, 1); }"
       res;
+  );
+  "unparsing xhp" >:: (fun () ->
+    let file_content = "$x = <div a=\"1\" b=\"2\">foo</div>;" in
+    let file = Parse_php.tmp_php_file_from_string file_content in
+    let (ast, toks) = Parse_php.ast_and_tokens file in
+    let res = Unparse_php.string_of_program_with_comments_using_transfo 
+      (ast, toks) in
+    assert_equal
+      "<?php\n$x = <div a=\"1\" b=\"2\">foo</div>;"
+      res;
   )
+
+ ]
   
 (*****************************************************************************)
 (* Final suite *)
