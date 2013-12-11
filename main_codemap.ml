@@ -26,7 +26,7 @@ module Model = Model2
  *  - get a bird's eye view of a file (hence code thumbnails)
  *  - better syntax highlighting than Emacs, using real parsers so
  *    we can colorize differently identifiers (a function vs a field vs
- *    a constant etc)
+ *    a constant)
  *  - important code should be bigger. Just like in google maps
  *    the important roads are more visible. So need some sort of
  *    global analysis.
@@ -56,6 +56,10 @@ module Model = Model2
  *  - http://scg.unibe.ch/codemap
  *  - http://scg.unibe.ch/wiki/projects/rbcrawler
  *  - moose http://youtu.be/yvXm9LC17vk at 14min
+ *  - http://redotheweb.com/CodeFlower/
+ *  - code swarm (visualize git history, people focus)
+ *    https://code.google.com/p/gource/ 
+ *    http://artzub.com/ghv/#repo=d3&climit=100&user=mbostock
  * 
  * features of IDE we do want (e.g. see the list at http://xamarin.com/studio):
  *  - TODO go to definition (=~ TAGS)
