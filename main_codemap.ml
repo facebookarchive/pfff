@@ -57,7 +57,9 @@ module Model = Model2
  *  - http://scg.unibe.ch/wiki/projects/rbcrawler
  *  - moose http://youtu.be/yvXm9LC17vk at 14min
  *  - http://redotheweb.com/CodeFlower/
- *  - https://code.google.com/p/gource/ (visualize git history, people focus)
+ *  - code swarm (visualize git history, people focus)
+ *    https://code.google.com/p/gource/ 
+ *    http://artzub.com/ghv/#repo=d3&climit=100&user=mbostock
  * 
  * features of IDE we do want (e.g. see the list at http://xamarin.com/studio):
  *  - TODO go to definition (=~ TAGS)

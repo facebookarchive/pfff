@@ -135,6 +135,8 @@ module DM = Dependencies_matrix_code
  *    scale better.
  *  - generate a node-link graph for the current matrix configuration; use
  *    graphviz as a first step.
+ *  - http://redotheweb.com/DependencyWheel/?
+ * 
  * 
  * (comments that were in graph_modules_packages_ml.ml)
  * alternatives:
