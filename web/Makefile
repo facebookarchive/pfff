@@ -8,6 +8,7 @@ TOP=..
 ##############################################################################
 
 INCLUDEDIRS= $(TOP)/commons \
+ $(TOP)/commons/lib-json \
  $(TOP)/h_program-lang/ \
  $(TOP)/graph_code/ \
  $(TOP)/h_visualization/ \
@@ -35,6 +36,7 @@ LIBS_CLIENT= -package js_of_ocaml,eliom,eliom.client \
 OBJS_SERVER= \
  _server/globals.cmo \
  _server/dump_server.cmo \
+ _server/blueprint_server.cmo \
  _server/codemap.cmo \
  _server/codegraph.cmo \
  _server/test.cmo \
@@ -131,6 +133,7 @@ rerun:
 annot:
 	rm -f *.annot
 	ocamlfind ocamlc -dtypes -c $(INCLUDES) $(LIBS_SERVER) dump_server.ml
+	ocamlfind ocamlc -dtypes -c $(INCLUDES) $(LIBS_SERVER) blueprint_server.ml
 	ocamlfind ocamlc -dtypes -c $(INCLUDES) $(LIBS_SERVER) globals.ml
 	$(ELIOMC) -annot -c $(INCLUDES) test.eliom
 	ln -s _server/test.annot
