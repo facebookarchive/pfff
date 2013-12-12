@@ -331,6 +331,11 @@ let privacy_of_node n g =
   | E.Privacy x -> Some x
   | _ -> None
   )
+
+(* see also Graph_code_class_analysis.class_method_of_string *)
+let shortname_of_node (s, _kind) =
+  let xs = Common.split "[.]" s in
+  Common2.list_last xs
     
 
 (*****************************************************************************)
