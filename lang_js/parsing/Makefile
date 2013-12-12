@@ -84,4 +84,4 @@ EXPORTSRC=meta_ast_js.mli \
 install-findlib:
 	ocamlfind install $(LIBNAME) META   lib.cma lib.cmxa lib.a \
           $(EXPORTSRC) $(EXPORTSRC:%.mli=%.cmi) $(EXPORTSRC:%.mli=%.cmt) \
-          ast_js.ml ast_js.cmi
+          ast_js.ml ast_js.cmi ast_js.cmo ast_js.cmx
