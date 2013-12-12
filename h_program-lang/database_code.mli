@@ -23,10 +23,12 @@ type entity_kind =
 
   (* misc *)
   | Prototype | GlobalExtern
-  | MultiDirs
+  | MultiDirs (* computed on the fly from many Dir by codemap *)
   | Other of string
 
+  (* todo: could be put as a property? *)
   and class_type = RegularClass (* or Struct *) | Interface | Trait
+  (* todo: could be put as a property? *)
   and method_type = RegularMethod | StaticMethod
 
 val string_of_entity_kind: entity_kind -> string
@@ -81,7 +83,7 @@ val json_of_entity: entity -> Json_type.t
 type database = {
   root: Common.dirname;
 
-  (* the int is for the total number of times this files is
+  (* the int are for the total number of times this file or dir is
    * externally referenced.
    *)
   dirs: (Common.filename * int) list;
