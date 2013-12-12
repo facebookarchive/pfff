@@ -24,7 +24,7 @@ let int_of_layer = function
   | Property -> 4
 
 (*****************************************************************************)
-(* main entry point *)
+(* Globals *)
 (*****************************************************************************)
 
 let _hmemo = Hashtbl.create 101
@@ -34,6 +34,55 @@ let g_and_pred () =
     let pred = G.mk_eff_use_pred g in
     g, pred
  )
+
+(*****************************************************************************)
+(* Helpers *)
+(*****************************************************************************)
+
+let layer_of_node shortname node g =
+  match shortname, snd node with
+  | "__construct", _ -> Init
+  | s, E.Method _ when s =~ "set.*" || s =~ "get.*" -> Accessor
+  | _, E.Field -> Property
+  | _, E.ClassConstant -> Property (* todo: skip them *)
+  | _, E.Method _ ->
+    let privacy = G.privacy_of_node node g in
+    (match privacy with
+    | E.Public -> Interface
+    | E.Private | E.Protected -> Implementation
+    )
+  | _ -> failwith (spf "unexpected member: %s" 
+                     (G.string_of_node node))
+
+(* very crude way to count the LOC, but should be good enough *)
+let mk_loc_members classnode members g =
+  let positions = members +> List.map (fun node ->
+    let info = G.nodeinfo node g in
+    let line = info.G.pos.Parse_info.line in
+    line, node
+  )
+  in
+  let sorted = Common.sort_by_key_lowfirst positions in
+  
+  let hloc = Hashtbl.create 101 in
+  let rec aux = function
+    | [] -> ()
+    (* TODO: need get size of file, or store range in graph_code *)
+    | [(line, node)] -> Hashtbl.add hloc node 5 (* hmmm *)
+    | (line, node)::(line2, node2)::xs ->
+      if (line >= line2)
+      then failwith (spf "line not sorted, %s:%d and %d"
+                       (G.string_of_node node) line
+                       line2);
+      Hashtbl.add hloc node (line2 - line);
+      aux ((line2, node2)::xs)
+  in
+  aux sorted;
+  hloc
+
+(*****************************************************************************)
+(* main entry point *)
+(*****************************************************************************)
 
 let main_service = Eliom_registration.String.register_service 
   ~path:["blueprint"]
@@ -48,36 +97,23 @@ let main_service = Eliom_registration.String.register_service
 
     let members = g +> G.children node in
     let hmembers = Common.hashset_of_list members in
+    let hloc = mk_loc_members node members g in
     
     let json = 
       J.Object [
         "nodes", J.Array (
           members +> List.map (fun node ->
             let shortname = G.shortname_of_node node in
-            let layer =
-              match shortname, snd node with
-              | "__construct", _ -> Init
-              | s, E.Method _ when s =~ "set.*" || s =~ "get.*" -> Accessor
-              | _, E.Field -> Property
-              | _, E.ClassConstant -> Property (* todo: skip them *)
-              | _, E.Method _ ->
-                let privacy = G.privacy_of_node node g in
-                (match privacy with
-                | E.Public -> Interface
-                | E.Private | E.Protected -> Implementation
-                )
-              | _ -> failwith (spf "unexpected member: %s" 
-                                 (G.string_of_node node))
-            in
+            let layer = layer_of_node shortname node g in
             (* #callers *)
-            let width = List.length (pred node) in
+            let nb_callers = List.length (pred node) in
             (* #loc *)
-            let height = 3 in
+            let loc = Hashtbl.find hloc node in
             
             J.Object [
               "name", J.String shortname;
-              "width", J.Int width;
-              "height", J.Int 3;
+              "nb_callers", J.Int nb_callers;
+              "loc", J.Int loc;
               "layer", J.Int (int_of_layer layer);
               "tooltip", J.String "TODO";
           ];
