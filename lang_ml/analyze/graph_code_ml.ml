@@ -25,8 +25,10 @@ module Ast = Ast_ml
 (* Prelude *)
 (*****************************************************************************)
 (*
- * Graph of dependencies for OCaml. See graph_code.ml and main_codegraph.ml
- * for more information.
+ * Obsolete file: see graph_code_cmt.ml for a more complete graph.
+ * 
+ * Partial graph of dependencies for OCaml using essentially just the
+ * open directives. 
  * 
  * todo? if give edges a weight, then we need to modulate it depending on
  * the type of the reference. Two references to a function in another
@@ -84,9 +86,8 @@ let lookup_module_name h_module_aliases s =
 (*****************************************************************************)
 
 (* 
- * For now we just create the Dir, File, and Module entities.
- * 
- * TODO: extract Function, Type, Constructor, Field, etc.
+ * We just create the Dir, File, and Module entities.
+ * See graph_code_cmt.ml if you want Function, Type, etc.
  *)
 let extract_defs ~g ~duplicate_modules ~ast ~readable ~file =
   let dir = Common2.dirname readable in
