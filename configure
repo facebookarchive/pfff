@@ -238,12 +238,12 @@ if( ($arch =~ /FreeBSD/) || (($arch =~ /Darwin/) && ($BREW_PROGRAM)) ) {
 
 if($visual) {
     pr2 "Configuring ocamlgtk (see /tmp/ocamlgtk.log).";
-    my $err = system("cd external/ocamlgtk; ./configure &> /tmp/ocamlgtk.log");
+    my $err = system("cd external/ocamlgtk; ./configure > /tmp/ocamlgtk.log");
     if ($err) { $visual = 0; $error2++; }
 
     pr2 "Configuring ocamlcairo (see /tmp/ocamlcairo.log).";
     my $err = system("cd external/ocamlcairo; 
-            LABLGTKDIR=../../ocamlgtk/src ./configure --with-gtk &> /tmp/ocamlcairo.log");
+            LABLGTKDIR=../../ocamlgtk/src ./configure --with-gtk > /tmp/ocamlcairo.log");
     if ($err) { $visual = 0; $error2++; }
 }
 
