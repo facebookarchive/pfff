@@ -23,7 +23,11 @@ module PI = Parse_info
 (*****************************************************************************)
 (* Prelude *)
 (*****************************************************************************)
-(* Light database building for OCaml code (mainly used by the codemap
+(* 
+ * Obsolete file: see the -db_of_graph_code option of codegraph and
+ * graph_code_cmt.ml for a more complete implementation.
+ * 
+ * Light database building for OCaml code (mainly used by the codemap
  * semantic code visualizer). We currently abuse the code highlighter
  * to extract the entity defintions, and for the uses we are mainly using
  * the list of tokens ... not the AST.
