@@ -464,7 +464,7 @@ VERSION=$(shell cat globals/config_pfff.ml.in |grep version |perl -p -e 's/.*"(.
 install: all
 	mkdir -p $(DESTDIR)$(BINDIR)
 	mkdir -p $(DESTDIR)$(SHAREDIR)
-	cp -a $(PROGS) $(BINDIR)
+	cp -a $(PROGS) $(DESTDIR)$(BINDIR)
 	cp -a data $(DESTDIR)$(SHAREDIR)
 	@echo ""
 	@echo "You can also install pfff by copying the programs"
