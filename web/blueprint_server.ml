@@ -28,17 +28,19 @@ let int_of_layer = function
 (*****************************************************************************)
 
 let _hmemo = Hashtbl.create 101
-let g () =
+let g_and_pred () =
   Common.memoized _hmemo "www" (fun () ->
-    G.load "/home/pad/www/graph_code.marshall"
-  )
+    let g = G.load "/home/pad/www/graph_code.marshall" in
+    let pred = G.mk_eff_use_pred g in
+    g, pred
+ )
 
 let main_service = Eliom_registration.String.register_service 
   ~path:["blueprint"]
   ~get_params:(Eliom_parameter.string "class")
   (fun (classname) () ->
 
-    let g = g () in
+    let g, pred = g_and_pred () in
     
     let node = classname, E.Class E.RegularClass in
     if not (g +> G.has_node node)
@@ -67,10 +69,14 @@ let main_service = Eliom_registration.String.register_service
               | _ -> failwith (spf "unexpected member: %s" 
                                  (G.string_of_node node))
             in
+            (* #callers *)
+            let width = List.length (pred node) in
+            (* #loc *)
+            let height = 3 in
             
             J.Object [
               "name", J.String shortname;
-              "width", J.Int 2;
+              "width", J.Int width;
               "height", J.Int 3;
               "layer", J.Int (int_of_layer layer);
               "tooltip", J.String "TODO";
