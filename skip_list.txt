@@ -45,12 +45,11 @@ file: external/stdlib/dynlinkaux.cmt
 # contain dupes
 dir: external/ocamlgtk/examples
 dir: external/ocamlgtk/applications
-#someone use parmap?
-dir: facebook/external/parmap/tests/
 
-file: facebook/external/archimedes/src/utils.ml
 file: external/ocamlgraph/src/util.ml
 file: external/ocamlgraph/src/util.mli
+
+file: facebook/external/archimedes/src/utils.ml
 
 # -------------------------------------------------------------------------
 # old/
