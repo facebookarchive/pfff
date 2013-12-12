@@ -109,6 +109,7 @@ let main_service = Eliom_registration.String.register_service
             let nb_callers = List.length (pred node) in
             (* #loc *)
             let loc = Hashtbl.find hloc node in
+            let code_graph_rank = 42 in
             
             J.Object [
               "name", J.String shortname;
@@ -116,9 +117,10 @@ let main_service = Eliom_registration.String.register_service
               "loc", J.Int loc;
               "layer", J.Int (int_of_layer layer);
               "tooltip", J.String "TODO";
+              "rank", J.Int code_graph_rank;
           ];
           ));
-        "links", J.Array (
+        "edges", J.Array (
           members +> List.map (fun node ->
             (g +> G.succ node G.Use)
               +> List.filter (fun node -> Hashtbl.mem hmembers node)
