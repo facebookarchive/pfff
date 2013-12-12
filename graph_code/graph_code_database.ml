@@ -42,6 +42,7 @@ let db_of_graph_code root g =
    *)
   let (res: E.entity list ref) = ref [] in
   let hfiles = Hashtbl.create 101 in
+  let hdirs = Hashtbl.create 101 in
 
   (* opti: using G.parent and check if G.not_found is slow *)
   let hnot_found = G.all_children G.not_found g +> Common.hashset_of_list in
@@ -69,6 +70,7 @@ let db_of_graph_code root g =
         let file = pos.Parse_info.file in
         (* they should be in readable path format *)
         Hashtbl.replace hfiles file true;
+        Hashtbl.replace hdirs (Filename.dirname file) true;
 
       (* select users that are outside! that are not in the same file *)
         let pred = use_pred node in
@@ -109,11 +111,12 @@ let db_of_graph_code root g =
   );
   
   let arr = Array.of_list !res in
+  (* MultiDirs entities? they are done by codemap on the fly *)
   
   { Database_code.
     root = root;
-    dirs = [];
     files = Common2.hkeys hfiles +> List.map (fun file -> file, 0);
+    dirs = Common2.hkeys hdirs +> List.map (fun dir -> dir, 1);
     entities = arr;
   }
 
