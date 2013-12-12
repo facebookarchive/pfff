@@ -43,6 +43,8 @@ let info_projects = [
 
   "fbcode", ("/home/pad/local/fbcode", (fun _ -> true));
   "fb4a", ("/home/pad/local/fb4a", (fun _ -> true));
+
+  "epriestley", ("/home/pad/local/epriestley", (List.assoc "php" filters));
 ]
 
 let dimensions_of_size = function
