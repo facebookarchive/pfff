@@ -81,6 +81,9 @@ val json_of_entity: entity -> Json_type.t
 type database = {
   root: Common.dirname;
 
+  (* the int is for the total number of times this files is
+   * externally referenced.
+   *)
   dirs: (Common.filename * int) list;
   files: (Common.filename * int) list;
 

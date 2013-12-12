@@ -4,13 +4,13 @@
  *)
 open Common
 
-module Model = Model3
-module View = View3
-
 module E = Database_code
 module GC = Graph_code
 module GC2 = Graph_code_opti
 module DM = Dependencies_matrix_code
+
+module Model = Model3
+module View = View3
 
 (*****************************************************************************)
 (* Purpose *)
@@ -323,16 +323,15 @@ let build_graph_code lang root =
    * graph_code.marshall file.
    *)
   if !gen_derived_data then begin
+    let p f = Filename.concat output_dir f in
     Layer_graph_code.gen_rank_heatmap_layer g (GC.bottom_up_numbering g) 
-      (Filename.concat output_dir "layer_bottomup.json");
+      (p "layer_bottomup.json");
     Layer_graph_code.gen_statistics_layer ~root stats 
-      ~output:(Filename.concat output_dir "layer_graphcode_stats.json");
+      ~output:(p "layer_graphcode_stats.json");
     let defs = Graph_code_tags.defs_of_graph_code g in
-    Tags_file.generate_TAGS_file 
-      (Filename.concat output_dir "TAGS") defs;
+    Tags_file.generate_TAGS_file (p "TAGS") defs;
     let db = Graph_code_database.db_of_graph_code root g in
-    Database_code.save_database db 
-      (Filename.concat output_dir "PFFF_DB.marshall");
+    Database_code.save_database db (p "PFFF_DB.marshall");
   end;
   ()
 

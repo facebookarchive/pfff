@@ -40,7 +40,8 @@ let db_of_graph_code root g =
    * do something a bit different here and map
    * nodes to indices first.
    *)
-  let res = ref [] in
+  let (res: E.entity list ref) = ref [] in
+  let hfiles = Hashtbl.create 101 in
 
   (* opti: using G.parent and check if G.not_found is slow *)
   let hnot_found = G.all_children G.not_found g +> Common.hashset_of_list in
@@ -66,14 +67,14 @@ let db_of_graph_code root g =
         in
         let pos = nodeinfo.G.pos in
         let file = pos.Parse_info.file in
+        (* they should be in readable path format *)
+        Hashtbl.replace hfiles file true;
 
       (* select users that are outside! that are not in the same file *)
         let pred = use_pred node in
         let extern = pred +> List.filter (fun n ->
           try
-            let nodeinfo = G.nodeinfo n g in
-            let pos = nodeinfo.G.pos in
-            let file2 = pos.Parse_info.file in
+            let file2 = G.file_of_node n g in
             file <> file2
           with
             Not_found -> false
@@ -81,10 +82,9 @@ let db_of_graph_code root g =
         in
         let nb_users = List.length extern in
 
-        let xs = Common.split "\\." s in
         let e = { Database_code.
                   e_kind = kind;
-                  e_name = Common2.list_last xs;
+                  e_name = G.shortname_of_node node;
                   e_fullname = s;
                   e_file = pos.Parse_info.file;
                   e_pos = { Common2.
@@ -113,7 +113,7 @@ let db_of_graph_code root g =
   { Database_code.
     root = root;
     dirs = [];
-    files = [];
+    files = Common2.hkeys hfiles +> List.map (fun file -> file, 0);
     entities = arr;
   }
 
