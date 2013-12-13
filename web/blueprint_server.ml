@@ -28,21 +28,36 @@ let int_of_layer = function
 (*****************************************************************************)
 
 let _hmemo = Hashtbl.create 101
-let g_and_pred () =
+let g_and_pred_and_rank () =
   Common.memoized _hmemo "www" (fun () ->
-    let g = G.load "/home/pad/www/graph_code.marshall" in
+    let graph_file = "/home/pad/www/graph_code.marshall" in
+    let g = G.load graph_file in
     let pred = G.mk_eff_use_pred g in
-    g, pred
+    let hrank =
+      Common.cache_computation graph_file ".rank.marshall" (fun () ->
+        G.bottom_up_numbering g
+      )
+    in
+    g, pred, hrank
  )
 
 (*****************************************************************************)
 (* Helpers *)
 (*****************************************************************************)
+let look_like_accessor node g =
+  let uses = G.succ node G.Use g in
+  uses +> List.for_all (fun (_str, kind) ->
+    match kind with
+    | E.ClassConstant | E.Field -> true
+    | _ -> false
+  )
+
 
 let layer_of_node shortname node g =
   match shortname, snd node with
   | "__construct", _ -> Init
-  | s, E.Method _ when s =~ "set.*" || s =~ "get.*" -> Accessor
+  | s, E.Method _ when (s =~ "set.*" || s =~ "get.*") && 
+                       look_like_accessor node g -> Accessor
   | _, E.Field -> Property
   | _, E.ClassConstant -> Property (* todo: skip them *)
   | _, E.Method _ ->
@@ -89,7 +104,7 @@ let main_service = Eliom_registration.String.register_service
   ~get_params:(Eliom_parameter.string "class")
   (fun (classname) () ->
 
-    let g, pred = g_and_pred () in
+    let g, pred, hrank = g_and_pred_and_rank () in
     
     let node = classname, E.Class E.RegularClass in
     if not (g +> G.has_node node)
@@ -109,7 +124,7 @@ let main_service = Eliom_registration.String.register_service
             let nb_callers = List.length (pred node) in
             (* #loc *)
             let loc = Hashtbl.find hloc node in
-            let code_graph_rank = 42 in
+            let code_graph_rank = Hashtbl.find hrank node in
             
             J.Object [
               "name", J.String shortname;
