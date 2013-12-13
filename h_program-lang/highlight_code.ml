@@ -72,6 +72,9 @@ open Common
  * perhaps define helpers so not redo each time same things ?
  * 
  * estet?: redundant with - place_code ?  - entity_c ?
+ * 
+ * related work:
+ *  - http://pygments.org/
  *)
 
 (*****************************************************************************)
