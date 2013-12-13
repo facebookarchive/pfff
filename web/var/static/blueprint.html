@@ -1,13 +1,325 @@
 <html>
 <head>
 <script src="http://d3js.org/d3.v3.min.js" charset="utf-8"></script>
+<script src="/my_layout.js" charset="utf-8"></script>
+<style>
+    .layer text {
+        font-family: Helvetica;
+        fill: black;
+        stroke: none;
+    }
+    .layer {
+        stroke: black;
+        stroke-width: 1;
+        fill: white;
+    }
+    .node {
+        stroke: black;
+        stroke-width: 1;
+        fill: lightgray;
+    }
+    .node:hover {
+        fill: cyan;
+    }
+    .link {
+        stroke: black;
+        stroke-width: 1;
+        stroke-opacity: 0.5;
+    }
+
+    .link.inbound {
+        stroke: red;
+    }
+    .link.outbound {
+        stroke: red;
+    }
+    .node .caller {
+        fill: cyan;
+    }
+    .node .callee {
+        fill: cyan;
+    }
+
+</style>
+<title>Class Blueprint</title>
 </head>
 <body>
 <script>
 
-        d3.json('data.json', function(data) {
+// Example data
 
+function example() {
+    return {
+      classes: [
+        {
+          name: 'Example',
+          nodes: [
+            { name: '__construct', loc: 12, nb_callers: 4, layer: 0, rank: 1 },
+            { name: 'a', loc: 6, nb_callers: 4, layer: 1, rank: 1 },
+            { name: 'b', loc: 7, nb_callers: 4, layer: 2, rank: 1 },
+            { name: 'c', loc: 1, nb_callers: 4, layer: 3, rank: 1 },
+            { name: 'foo', loc: 2, nb_callers: 2, layer: 2, rank: 2 },
+            { name: 'bar', loc: 1, nb_callers: 4, layer: 2, rank: 1 },
+            { name: 'd', loc: 4, nb_callers: 4, layer: 4, rank: 1 },
+          ],
+        }
+      ],
+      edges: [
+        ['__construct','a'],
+        ['a','b'],
+        ['b','c'],
+        ['c','d'],
+        ['foo','foo'],
+        ['bar','c'],
+      ],
+    };
+}
+
+function blueprint(data) {
+
+    // -- Data munging ---------------------------------------------------------
+
+    // Mark all nodes with their containing class
+
+    data.classes.forEach(function(c) {
+        c.nodes.forEach(function(n) {
+            n.class = c.name;
+        })
+    })
+
+    // Flatten all nodes
+
+    data.nodes = Array.prototype.concat
+        .apply([], data.classes.map(function(c) { return c.nodes }));
+
+    // Create { source, target } links
+
+    data.name2node = d3.map();
+    data.nodes.forEach(function(d) { data.name2node.set(d.name, d) });
+
+    data.links = data.edges.map(function(edge) {
+        return {
+            source: data.name2node.get(edge[0]),
+            target: data.name2node.get(edge[1])
+        };
+    })
+
+    // Group all nodes by class, layer and rank
+
+    var blueprints = d3.nest()
+        .key(function(d) { return d.class })
+        .sortKeys(d3.ascending)
+        .key(function(d) { return d.layer })
+        .sortKeys(d3.ascending)
+        .key(function(d) { return d.rank })
+        .sortKeys(d3.ascending)
+        .entries(data.nodes);
+
+    // Establish canonical ordering of layers
+
+    blueprints.forEach(function(b) {
+        b.layers = [
+            b.key,
+            'Interface',
+            'Implementation',
+            'Accessor',
+            'Attribute'
+        ].map(function(d,n) { return { name: d, values: [] }});
+        b.values.forEach(function(d) { b.layers[d.key].values = d.values });
+    });
+
+    // -- Metrics --------------------------------------------------------------
+
+    var width_metric = function(d) { return 4 + 4 * d.nb_callers };
+    var heigth_metric = function(d) { return 4 + 0.5 * d.loc };
+
+    var color_scheme = function(d) {
+
+        // Unused. pseudocodeish.
+
+        if (d.is_attribute) return 'blue';
+        if (d.is_abstract) return 'cyan';
+        if (d.calls_super) return 'orange';
+        if (d.delegates) return 'yellow';
+        if (d.returns_constant) return 'grey';
+        if (d.layer == 'Accessor' && d.getter) return 'red';
+        if (d.layer == 'Accessor' && d.setter) return 'organge';
+        return 'white';
+    }
+
+    // -- Layout ---------------------------------------------------------------
+
+    data.nodes.forEach(function(d) {
+        d.w = width_metric(d);
+        d.h = heigth_metric(d);
+    });
+
+    var layout = my.layout();
+
+    layout
+        .padding(40)
+        .belowEachOther()
+        .alignCenter()
+      .group('layers')
+        .besideEachOther()
+        .nodes(function(d) { return d.layers })
+      .group('within layer ranks')
+        .minWidth(120)
+        .margin(8)
+        .padding(12)
+        .besideEachOther()
+        .nodes(function(d) { return d.values })
+      .group('methods')
+        .padding(4)
+        .belowEachOther()
+        .nodes(function(d) { return d.values });
+      // .group()
+      //   .width(width_metric)
+      //   .height(height_metric);
+
+    layout(blueprints);
+
+    blueprints.forEach(function(b) {
+        b.layers.forEach(function(l) {
+            l.h = b.h;
+        })
+    })
+
+    // -- Visualization --------------------------------------------------------
+
+    var width = blueprints.w + 80,
+        height = blueprints.h + 40;
+
+    var svg = d3.select("body")
+        .append("svg")
+        .attr("width", width)
+        .attr("height", height);
+
+    var pre = d3.select("body")
+        .append('pre');
+
+    var layers = svg
+        .append('g')
+        .attr('transform', 'translate(10,30)')
+        .selectAll('.blueprints')
+        .data(blueprints)
+      .enter()
+        .append('g')
+        .attr('transform', layout.transform)
+        .selectAll('.layer')
+        .data(function(d) { return d.layers })
+      .enter()
+        .append('g')
+        .attr('class', 'layer')
+        .attr('transform', layout.transform);
+
+    layers
+        .append('text')
+        .attr('y', -4)
+        .text(function(d) { return d.name });
+
+    layers
+        .append('rect')
+        .attr('width', layout.w)
+        .attr('height', layout.h);
+
+    var nodes = layers
+        .append('g')
+        .selectAll('.rank')
+        .data(function(d) { return d.values })
+      .enter()
+        .append('g')
+        .attr('class', 'rank')
+        .attr('transform', layout.transform)
+        .selectAll('.node')
+        .data(function(d) { return d.values})
+      .enter()
+        .append('g')
+        .attr('class', 'node')
+        .attr('transform', layout.transform)
+        .append('rect')
+        .attr('width', layout.w)
+        .attr('height', layout.h);
+
+    nodes
+        .append('title')
+        .text(function(d) { return d.name });
+
+    // Compute absolute coordinates for linking
+
+    nodes
+        .each(function(d) {
+            var matrix = this.getCTM();
+            // ASSUME translate only, no scaling or rotation
+            d.ax = matrix.e;
+            d.ay = matrix.f;
         });
 
+    var links = svg.selectAll('line')
+        .data(data.links)
+      .enter()
+      .append('line')
+        .attr('class', 'link')
+        .attr('x1', function(l) { return l.source.ax + l.source.w })
+        .attr('y1', function(l) { return l.source.ay + l.source.h / 2 })
+        .attr('x2', function(l) { return l.target.ax })
+        .attr('y2', function(l) { return l.target.ay + l.target.h / 2});
+
+    // -- Interaction ----------------------------------------------------------
+
+    nodes
+        .on('mouseover', mouseovered)
+        .on('mouseout', mouseouted);
+
+    function mouseovered(d) {
+        nodes.each(function(n) { n.caller = n.callee = false });
+        links.each(function(l) {
+            if (l.target == d) l.source.caller = true;
+            if (l.source == d) l.target.callee = true;
+        });
+        links
+            .classed('inbound', function(l) { return l.target == d })
+            .classed('outbound', function(l) { return l.source == d });
+        nodes
+            .classed('caller', function(n) { return n.caller })
+            .classed('callee', function(n) { return n.callee });
+        pre
+            .text(
+                d.name+"\n"+
+                "\nCallers:\n\t" +
+                data.nodes
+                    .filter(function(n) { return n.caller })
+                    .map(function(n) { return n.name })
+                    .sort(d3.ascending)
+                    .join("\n\t") +
+                "\nCallees:\n\t" +
+                data.nodes
+                    .filter(function(n) { return n.callee })
+                    .map(function(n) { return n.name })
+                    .sort(d3.ascending)
+                    .join("\n\t") +
+                "");
+    }
+
+    function mouseouted(d) {
+        links
+            .classed('inbound', false)
+            .classed('outbound', false);
+        nodes
+            .classed('callee', false)
+            .classed('caller', false);
+    }
+
+    // -- Done, remove example text --------------------------------------------
+
+    d3.select("body p.example").remove();
+
+}
+
+// blueprint(example());
+
+d3.json('/blueprint' + location.search, blueprint);
+
 </script>
+<p class="example">Try this example: <a href="?class=LoginHandler&amp;hierarchy=down&amp;depth_limit=1">LoginHandler hierarchy</a>
 </body>
