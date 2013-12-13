@@ -3,6 +3,12 @@
 <script src="http://d3js.org/d3.v3.min.js" charset="utf-8"></script>
 <script src="/my_layout.js" charset="utf-8"></script>
 <style>
+
+    body {
+        margin: 0;
+        padding: 0;
+    }
+
     .layer text {
         font-family: Helvetica;
         fill: black;
@@ -31,19 +37,41 @@
         stroke: red;
     }
     .link.outbound {
-        stroke: red;
+        stroke: green;
     }
     .node .caller {
-        fill: cyan;
+        fill: red;
     }
     .node .callee {
-        fill: cyan;
+        fill: green;
+    }
+
+    .panel {
+        position: absolute;
+        top: 0;
+        right: 0;
+        width:  20%;
+        color: lightblue;
+        height: 100%;
+        background-color: #3B5998;
+        overflow: scroll;
+        padding-left: 8pt;
+    }
+
+    .panel pre {
+        font: 8pt Menlo;
+    }
+
+    .overlay {
+        fill: none;
+        pointer-events: all;
     }
 
 </style>
 <title>Class Blueprint</title>
 </head>
 <body>
+<p class="example">Try this example: <a href="?class=LoginHandler&amp;hierarchy=down&amp;depth_limit=1">LoginHandler hierarchy</a>
 <script>
 
 // Example data
@@ -76,6 +104,10 @@ function example() {
 }
 
 function blueprint(data) {
+
+    if (!data) return;
+
+    d3.select('p.example').text('Received data, creating visualization...');
 
     // -- Data munging ---------------------------------------------------------
 
@@ -192,10 +224,34 @@ function blueprint(data) {
 
     var svg = d3.select("body")
         .append("svg")
+        .attr("width", '80%')
+        .attr("height", '100%')
+
+    // Zoom begin
+
+      .append("g")
+        .attr('fill', 'blue')
+        .call(d3.behavior.zoom()
+            .scaleExtent([0.1, 2])
+            // .translate([blueprints.w / 2, 0])
+            .on("zoom", zoom))
+      .append("g");
+
+    function zoom() {
+        svg.attr("transform",
+            "translate("+d3.event.translate+")scale("+d3.event.scale+")");
+    }
+
+    svg.append("rect")
+        .attr("class", "overlay")
         .attr("width", width)
         .attr("height", height);
 
+    // Zoom end
+
     var pre = d3.select("body")
+        .append('div')
+        .attr('class', 'panel')
         .append('pre');
 
     var layers = svg
@@ -286,18 +342,18 @@ function blueprint(data) {
         pre
             .text(
                 d.name+"\n"+
-                "\nCallers:\n\t" +
+                "\nCallers:\n  " +
                 data.nodes
                     .filter(function(n) { return n.caller })
                     .map(function(n) { return n.name })
                     .sort(d3.ascending)
-                    .join("\n\t") +
-                "\nCallees:\n\t" +
+                    .join("\n  ") +
+                "\nCallees:\n  " +
                 data.nodes
                     .filter(function(n) { return n.callee })
                     .map(function(n) { return n.name })
                     .sort(d3.ascending)
-                    .join("\n\t") +
+                    .join("\n  ") +
                 "");
     }
 
@@ -312,14 +368,18 @@ function blueprint(data) {
 
     // -- Done, remove example text --------------------------------------------
 
-    d3.select("body p.example").remove();
+    d3.select('p.example').remove();
 
 }
 
 // blueprint(example());
 
-d3.json('/blueprint' + location.search, blueprint);
+if (location.search.length > 0) {
+    var endpoint = '/blueprint' + location.search;
+    d3.select('p.example')
+        .text('Fetching '+endpoint+' this may take a while...');
+    d3.json(endpoint, blueprint);
+}
 
 </script>
-<p class="example">Try this example: <a href="?class=LoginHandler&amp;hierarchy=down&amp;depth_limit=1">LoginHandler hierarchy</a>
 </body>
