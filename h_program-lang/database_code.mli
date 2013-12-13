@@ -49,8 +49,13 @@ type property =
    | CodeCoverage of int list (* e.g. covered lines by unit tests *)
 
    | Privacy of privacy
-   (* used for the xhp @required fields for now *)
+
+   (* facebook specific: used for the xhp @required fields for now *)
    | Required
+   | Async
+
+   | Static
+   | Abstract
 
   and privacy = Public | Protected | Private
 

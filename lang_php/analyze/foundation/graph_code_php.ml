@@ -211,6 +211,15 @@ let privacy_of_modifiers modifiers =
   );
   !p
 
+let property_of_modifiers modifiers =
+  modifiers +> Common.map_filter (function
+  | Ast_php.Public | Ast_php.Private | Ast_php.Protected -> None
+  | Ast_php.Static -> Some E.Static
+  | Ast_php.Abstract -> Some E.Abstract
+  | Ast_php.Async -> Some E.Async
+  | Ast_php.Final -> None
+  )
+
 let normalize str = 
   str
   +> String.lowercase                         (* php is case insensitive *)
@@ -823,7 +832,9 @@ and class_def env def =
   def.c_methods +> List.iter (fun def ->
     (* less: be more precise at some point *)
     let kind = E.RegularMethod in
-    let props = [E.Privacy (privacy_of_modifiers def.m_modifiers)] in
+    let props = property_of_modifiers def.m_modifiers @ 
+                [E.Privacy (privacy_of_modifiers def.m_modifiers)]
+    in
     let env = add_node_and_has_edge ~props env (def.f_name, E.Method kind) in
     stmtl env def.f_body
   )

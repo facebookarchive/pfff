@@ -221,6 +221,10 @@ type entity = {
 
    (* used for the xhp @required fields for now *)
    | Required
+   | Async
+
+   | Static
+   | Abstract
    (* todo: git info, e.g. Age, Authors, Age_profile (range) *)
   and privacy = Public | Protected | Private
 
@@ -342,8 +346,7 @@ let json_of_property x =
   | ContainDynamicCall ->    J.Array [J.String "ContainDynamicCall"]
   | ContainReflectionCall -> J.Array [J.String "ContainReflectionCall"]
   | TakeArgNByRef i -> J.Array [J.String "TakeArgNByRef"; J.Int i]
-  | (CodeCoverage _|UseGlobal _|ContainDeadStatements|DeadCode|Privacy _|Required) ->
-      raise Todo
+  | _ -> raise Todo
 
 let json_of_entity e = 
   J.Object [
