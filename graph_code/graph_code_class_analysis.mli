@@ -1,6 +1,9 @@
 
 (* It can actually be a DAG, as with interfaces and traits one can fake
  * multiple inheritance.
+ * The direction of the graph is efficient to get the children
+ * of a class: Parent -> Children.
+ * 
  *)
 type class_hierarchy = Graph_code.node Graph.graph
 
