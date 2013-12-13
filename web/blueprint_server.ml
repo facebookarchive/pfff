@@ -16,12 +16,18 @@ type layer =
   | Accessor
   | Property
 
-let int_of_layer = function
-  | Init -> 0
-  | Interface -> 1
-  | Implementation -> 2
-  | Accessor -> 3
-  | Property -> 4
+type kind =
+ | Attribute (* <=> property layer *)
+ | Setter | Getter (* only for Accessor layer *)
+
+ | Async
+ | Abstract
+
+ | CallSuper
+ | Delegate
+ | ReturnConstant
+
+ | Nothing
 
 type db = {
   g: Graph_code.graph;
@@ -32,6 +38,28 @@ type db = {
   (* from parent to children *)
   children: Graph_code_class_analysis.class_hierarchy;
 }
+
+(*****************************************************************************)
+(* Boilerplate *)
+(*****************************************************************************)
+
+let int_of_layer = function
+  | Init -> 0
+  | Interface -> 1
+  | Implementation -> 2
+  | Accessor -> 3
+  | Property -> 4
+
+let string_of_kind = function
+ | Attribute -> "Attribute"
+ | Setter  -> "Setter "
+ | Getter -> "Getter"
+ | Async -> "Async"
+ | Abstract -> "Abstract"
+ | CallSuper -> "CallSuper"
+ | Delegate -> "Delegate"
+ | ReturnConstant -> "ReturnConstant"
+ | Nothing -> ""
 
 (*****************************************************************************)
 (* Globals *)
@@ -62,25 +90,49 @@ let look_like_accessor node g =
   uses +> List.for_all (fun (_str, kind) ->
     match kind with
     | E.ClassConstant | E.Field -> true
+    (* todo: or just call functions like invariant_violation *)
     | _ -> false
   )
 
-
 let layer_of_node shortname node g =
   match shortname, snd node with
-  | "__construct", _ -> Init
+  | "__construct", _   -> Init
   | s, E.Method _ when (s =~ "set.*" || s =~ "get.*") && 
                        look_like_accessor node g -> Accessor
-  | _, E.Field -> Property
+  | _, E.Field         -> Property
   | _, E.ClassConstant -> Property (* todo: skip them *)
-  | _, E.Method _ ->
-    let privacy = G.privacy_of_node node g in
-    (match privacy with
-    | E.Public -> Interface
-    | E.Private | E.Protected -> Implementation
-    )
+  | _, E.Method _      ->
+      let privacy = G.privacy_of_node node g in
+      (match privacy with
+      | E.Public                -> Interface
+      | E.Private | E.Protected -> Implementation
+      )
   | _ -> failwith (spf "unexpected member: %s" 
                      (G.string_of_node node))
+
+let kind_of_node layer shorname node g =
+  match () with
+  | _ when layer =*= Property -> Attribute
+  | _ when layer =*= Accessor ->
+      if shorname =~ "set.*"
+      then Setter
+      else Getter
+  (* todo: should have such a property in the nodeinfo *)
+  | _ when shorname =~ "gen.*" -> Async
+  | _ ->
+    let info = G.nodeinfo node g in
+    let props = info.G.props in
+    let is_async = ref false in
+    let is_abstract = ref false in
+    props +> List.iter (function
+    | E.Async -> is_async := true
+    | E.Abstract -> is_abstract := true
+    | _ -> ()
+    );
+    if !is_async then Async
+    else 
+      if !is_abstract then Abstract
+      else Nothing
 
 (* very crude way to count the LOC, but should be good enough *)
 let mk_loc_members members g =
@@ -204,6 +256,7 @@ let main_service = Eliom_registration.String.register_service
                   (* #loc *)
                   let loc = Hashtbl.find hloc node in
                   let code_graph_rank = Hashtbl.find hrank node in
+                  let kind = kind_of_node layer shortname node g in
             
                   J.Object [
                     "name", J.String name;
@@ -212,6 +265,7 @@ let main_service = Eliom_registration.String.register_service
                     "layer", J.Int (int_of_layer layer);
                     "tooltip", J.String "TODO";
                     "rank", J.Int code_graph_rank;
+                    "kind", J.String (string_of_kind kind);
                   ];
                 ))
             ]

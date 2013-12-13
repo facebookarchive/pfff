@@ -128,6 +128,7 @@ run: all
 
 rerun: 
 	pkill ocsigenserver
+	sleep 1
 	make run
 
 annot:
