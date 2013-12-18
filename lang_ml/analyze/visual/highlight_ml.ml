@@ -27,9 +27,10 @@ module PI = Parse_info
 (* 
  * Syntax highlighting for OCaml code for codemap.
  * 
- * This code is also actually abused to generate the light database 
+ * This code can also be abused to generate the light database 
  * and the TAGS file (because codemap needs to know about
- * def and use of entities).
+ * def and use of entities), but you should now prefer to
+ * base such analysis on graph_code_cmt.ml instead of this file.
  *)
 
 (*****************************************************************************)
@@ -101,7 +102,7 @@ let visit_program
 
       match x with
       | Val (tok, name, tok2, ty) 
-      | External (tok, name, tok2, ty, _, _) 
+      | External (tok, name, tok2, ty, _, _)
          ->
           let info = Ast.info_of_name name in
           (match ty with
@@ -120,13 +121,39 @@ let visit_program
           tag info (TypeDef Def);
           k x
 
+      | Open (_tok, lname) ->
+          let name = Ast.name_of_long_name lname in
+          let info = Ast.info_of_name name in
+          tag info (Module Use);
+          k x
+
+      | Ast.Module (_tok, uname, _tok2, mod_expr) ->
+          let ii = Ast.info_of_name uname in
+          tag ii (Module Def);
+          k x
+
       | Let _
       | Type _ 
-      | Open _
-      | Ast.Module _
       | ItemTodo _
          ->
           k x
+    );
+
+    V.kqualifier = (fun (k, bigf) qu ->
+      let module_infos = Ast.module_infos_of_long_name (qu, ()) in
+      module_infos +> List.iter (fun ii ->
+        tag ii (Module Use)
+      )
+    );
+    V.kmodule_expr = (fun (k, bigf) mod_expr ->
+      (match mod_expr with
+      | ModuleName lname -> 
+          let name = Ast.name_of_long_name lname in
+          let info = Ast.info_of_name name in
+          tag info (Module Use);
+      | _ -> ()
+      );
+      k mod_expr
     );
 
     V.klet_binding = (fun (k, bigf) x ->

@@ -2,7 +2,23 @@
 
 open Ast_ml
 
-let rec vof_info v = Parse_info.vof_info v
+module M = Meta_ast_generic
+module PI = Parse_info
+
+let _current_precision = ref M.default_precision
+
+let rec vof_info x =
+  if !_current_precision.M.full_info
+  then Parse_info.vof_info x
+  else if !_current_precision.M.token_info
+       then 
+        Ocaml.VDict [
+          "line", Ocaml.VInt (PI.line_of_info x);
+          "col", Ocaml.VInt (PI.col_of_info x);
+        ]
+      else Ocaml.VUnit
+
+
 and vof_tok v = vof_info v
 and vof_wrap _of_a (v1, v2) =
   let v1 = _of_a v1 and v2 = vof_info v2 in Ocaml.VTuple [ v1; v2 ]
