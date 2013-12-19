@@ -225,9 +225,9 @@ let to_item xs =
 /*(*1 Toplevel, compilation units *)*/
 /*(*************************************************************************)*/
 
-interface:      signature EOF                        { $1 ++ [FinalDef $2] }
+interface:      signature EOF                        { $1 }
 
-implementation: structure EOF                        { $1 ++ [FinalDef $2] }
+implementation: structure EOF                        { $1 }
 
 /*(*************************************************************************)*/
 /*(*1 Signature *)*/
@@ -340,32 +340,15 @@ val_ident:
  | TOParen operator TCParen                   { ("TODOOPERATOR", $1) }
 
 operator:
- | TPrefixOperator      { }
- | TInfixOperator       { }
- | TStar     { }
- | TEq       { }
- | Tor       { }
+ | TPrefixOperator      { } | TInfixOperator       { }
+ | TStar     { } | TEq       { } | TAssign   { } | TBang     { }
   /*(* but not Tand, because of conflict ? *)*/
- | TAnd      { }
- | TAssign   { }
- | Tmod      { }
- | Tland     { }
- | Tlor      { }
- | Tlxor     { }
- | Tlsl      { } 
- | Tlsr      { }
- | Tasr      { }
-
- | TBang     { }
- | TPlus     { }
- | TPlusDot  { }
- | TMinus    { }
- | TMinusDot { }
- | TLess     { }
- | TGreater  { }
-
- | TAndAnd { }
- | TBangEq { }
+ | Tor       { } | TAnd      { }
+ | Tmod      { } | Tland     { } | Tlor      { } | Tlxor     { }
+ | Tlsl      { } | Tlsr      { } | Tasr      { }
+ | TPlus     { } | TPlusDot  { } | TMinus    { } | TMinusDot { }
+ | TLess     { } | TGreater  { }
+ | TAndAnd { } | TBangEq { }
 
 /*(* for polymorphic types both 'a and 'A is valid. Same for module types. *)*/
 ident:
@@ -1071,10 +1054,10 @@ let_bindings:
 let_binding:
  | val_ident fun_binding
       { 
-        let (args, (teq, body)) = $2 in
+        let (params, (teq, body)) = $2 in
         LetClassic {
           l_name = Name $1;
-          l_args = args;
+          l_params = params;
           l_tok = teq;
           l_body = body;
         }
@@ -1099,18 +1082,9 @@ fun_def:
  | labeled_simple_pattern fun_def  { let (args, body) = $2 in $1::args, body }
 
 
-
 labeled_simple_pattern:
-  | simple_pattern
-      { }
-  | label_pattern
-      { }
-
-label_let_pattern:
- | label_var
-      { }
- | label_var TColon core_type
-      { }
+  | simple_pattern { ParamPat $1 }
+  | label_pattern  { $1 }
 
 opt_default:
  | /*(*empty*)*/           { None  }
@@ -1126,16 +1100,20 @@ rec_flag:
 
 label_pattern:
   | TTilde label_var
-      { }
+      { ParamTodo }
   /*(* ex: let x ~foo:a *)*/
   | TLabelDecl simple_pattern
-      { }
+      { ParamTodo }
   | TTilde TOParen label_let_pattern TCParen
-      { }
+      { ParamTodo }
   | TQuestion TOParen label_let_pattern opt_default TCParen
-      { }
+      { ParamTodo }
   | TQuestion label_var
-      { }
+      { ParamTodo }
+
+label_let_pattern:
+ | label_var                   { }
+ | label_var TColon core_type  { }
 
 /*(*************************************************************************)*/
 /*(*1 Classes *)*/

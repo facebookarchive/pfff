@@ -137,6 +137,9 @@ type token_kind =
   (* mostly for the lexer helpers, and for fuzzy parser *)
   (* less: want to factorize all those TH.is_eof to use that?
    * but extra cost? same for TH.is_comment?
+   * todo: could maybe get rid of that now that we don't really use
+   * berkeley DB and prefer Prolog, and so we don't need a sentinel
+   * ast elements to associate the comments with it
    *)
   | Eof
 

@@ -388,8 +388,13 @@ and vof_pattern =
   | ParenPat v1 ->
       let v1 = vof_paren vof_pattern v1 in Ocaml.VSum (("ParenPat", [ v1 ]))
   | PatTodo -> Ocaml.VSum (("PatTodo", []))
-and vof_labeled_simple_pattern v = Ocaml.vof_unit v
-and vof_parameter v = vof_labeled_simple_pattern v
+and vof_labeled_simple_pattern v = vof_parameter v
+and vof_parameter =
+  function
+  | ParamPat v1 ->
+      let v1 = vof_pattern v1 in Ocaml.VSum (("ParamPat", [ v1 ]))
+  | ParamTodo -> Ocaml.VSum (("ParamTodo", []))
+
 and vof_signed_constant =
   function
   | C2 v1 -> let v1 = vof_constant v1 in Ocaml.VSum (("C2", [ v1 ]))
@@ -413,7 +418,7 @@ and vof_let_binding =
 and
   vof_let_def {
                 l_name = v_l_name;
-                l_args = v_l_args;
+                l_params = v_l_args;
                 l_tok = v_l_tok;
                 l_body = v_l_body
               } =
@@ -500,7 +505,6 @@ and vof_toplevel =
   | NotParsedCorrectly v1 ->
       let v1 = Ocaml.vof_list vof_info v1
       in Ocaml.VSum (("NotParsedCorrectly", [ v1 ]))
-  | FinalDef v1 -> let v1 = vof_info v1 in Ocaml.VSum (("FinalDef", [ v1 ]))
 and vof_program v = Ocaml.vof_list vof_toplevel v
   
 let vof_any =

@@ -36,13 +36,11 @@ and 'a bracket = tok * 'a * tok
 
 and 'a comma_list = ('a, tok (* ',' *)) Common.either list
 and 'a and_list = ('a, tok (* 'and' *)) Common.either list
-
+and 'a star_list = ('a, tok (* '*' *)) Common.either list
 (* optional first | *)
-and 'a pipe_list = ('a, tok (* '*' *)) Common.either list
+and 'a pipe_list = ('a, tok (* '|' *)) Common.either list
 (* optional final ; *)
 and 'a semicolon_list = ('a, tok (* ';' *)) Common.either list
-
-and 'a star_list = ('a, tok (* '*' *)) Common.either list
 
  (* with tarzan *)
 
@@ -84,7 +82,9 @@ and type_declaration =
 
  and type_def_kind =
    | TyCore of ty
+   (* or type *)
    | TyAlgebric of constructor_declaration pipe_list
+   (* and type *)
    | TyRecord   of field_declaration semicolon_list brace
 
  (* OR type: algebric data type *)
@@ -174,8 +174,8 @@ and seq_expr = expr semicolon_list
    | String of string wrap
 
  and record_expr =
-   | RecordNormal of            field_and_expr semicolon_list
-   | RecordWith of expr * tok * field_and_expr semicolon_list
+   | RecordNormal of                         field_and_expr semicolon_list
+   | RecordWith of expr * tok (* "with" *) * field_and_expr semicolon_list
    and field_and_expr = 
      | FieldExpr of long_name * tok (* = *) * expr
      (* new 3.12 feature *)
@@ -227,10 +227,7 @@ and pattern =
   | ParenPat of pattern paren
   | PatTodo
     
- and labeled_simple_pattern = unit
-
- and parameter = labeled_simple_pattern
-
+ (* todo: merge with expr, no need for too precise AST, remember ast_php.ml *)
  and signed_constant = 
     | C2 of constant
     (* actually only valid for the Int and Float case, not Char and String
@@ -251,11 +248,17 @@ and let_binding =
  (* was called fun_binding in the grammar *)
  and let_def = {
    l_name: name; (* val_ident *)
-   l_args: parameter list; (* can be empty *)
+   l_params: parameter list; (* can be empty *)
    l_tok: tok; (* = *)
    l_body: seq_expr;
    (* todo: l_type: ty option *)
  }
+
+ and parameter = 
+   | ParamPat of pattern
+   | ParamTodo
+
+ and labeled_simple_pattern = unit
 
 (* ------------------------------------------------------------------------- *)
 (* Module *)
@@ -315,11 +318,6 @@ and toplevel =
   | TopDirective of tok
 
   | NotParsedCorrectly of tok list
-  (* todo: could maybe get rid of that now that we don't really use
-   * berkeley DB and prefer Prolog, and so we don't need a sentinel
-   * ast elements to associate the comments with it
-   *)
-  | FinalDef of tok (* EOF *)
 
  and program = toplevel list
 

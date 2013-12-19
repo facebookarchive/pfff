@@ -155,6 +155,16 @@ let visit_program
       );
       k mod_expr
     );
+    V.kparameter = (fun (k, bigf) x ->
+      (match x with
+      | ParamPat (PatVar name) ->
+        let info = Ast.info_of_name name in
+        tag info (Parameter Def);
+      | _ ->
+        ()
+      );
+      k x
+    );
 
     V.klet_binding = (fun (k, bigf) x ->
       match x with
@@ -163,14 +173,13 @@ let visit_program
           let info = Ast.info_of_name name in
 
           if not !in_let then begin
-            if List.length let_def.l_args > 0 || 
+            if List.length let_def.l_params > 0 || 
               Lib_parsing_ml.is_function_body let_def.l_body
             then tag info (Function (Def2 NoUse))
             else tag info (Global (Def2 NoUse))
           end else begin
             tag info (Local (Def))
           end;
-
           Common.save_excursion in_let true (fun () ->
             k x
           )
@@ -287,6 +296,9 @@ let visit_program
           else tag info (ConstructorMatch fake_no_use2);
           );
           k x
+      | PatVar name ->
+          let info = Ast.info_of_name name in
+          tag info (Parameter Def)
       | _ -> k x
     );
 

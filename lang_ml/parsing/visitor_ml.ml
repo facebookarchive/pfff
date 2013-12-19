@@ -44,6 +44,7 @@ type visitor_in = {
   kqualifier: qualifier vin;
   kmodule_expr: module_expr vin;
   ktoplevel: toplevel vin;
+  kparameter: parameter vin;
 }
   and 'a vin = ('a  -> unit) * visitor_out -> 'a  -> unit
 
@@ -64,6 +65,7 @@ let default_visitor = {
   kqualifier = (fun (k,_) x -> k x);
   kmodule_expr = (fun (k,_) x -> k x);
   ktoplevel = (fun (k,_) x -> k x);
+  kparameter = (fun (k,_) x -> k x);
 }
 
 
@@ -416,8 +418,13 @@ and v_pattern x =
    vin.kpattern (k, all_functions) x
 
 and v_simple_pattern v = Ocaml.v_unit v
-and v_labeled_simple_pattern v = Ocaml.v_unit v
-and v_parameter v = v_labeled_simple_pattern v
+and v_labeled_simple_pattern v = v_parameter v
+and v_parameter x =
+  let k x = match x with
+    | ParamPat v1 -> let v1 = v_pattern v1 in () 
+    | ParamTodo -> ()
+  in
+  vin.kparameter (k, all_functions) x
 
 and v_signed_constant =
   function
@@ -439,7 +446,7 @@ and
     match x with
  {
               l_name = v_l_name;
-              l_args = v_l_args;
+              l_params = v_l_args;
               l_tok = v_l_tok;
               l_body = v_l_body
             } ->
@@ -519,7 +526,6 @@ and v_toplevel x =
   | ScSc v1 -> let v1 = v_info v1 in ()
   | TopSeqExpr v1 -> let v1 = v_seq_expr v1 in ()
   | NotParsedCorrectly v1 -> let v1 = Ocaml.v_list v_info v1 in ()
-  | FinalDef v1 -> let v1 = v_info v1 in ()
   | TopDirective v1 -> let v1 = v_info v1 in ()
   in
   vin.ktoplevel (k, all_functions) x
