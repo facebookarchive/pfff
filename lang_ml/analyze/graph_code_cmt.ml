@@ -59,10 +59,14 @@ type env = {
   g: Graph_code.graph;
 
   phase: phase;
+
+
   (* the .cmt, used mostly for error reporting, in readable path format *)
-  file: Common.filename;
+  cmt_file: Common.filename;
   (* the file the .cmt is supposed to come from, in readable path format *)
-  source_file: Common.filename;
+  ml_file: Common.filename;
+
+  source_finder: string (* basename *) -> Common.filename list;
   
   current: Graph_code.node;
   current_entity: name;
@@ -124,31 +128,35 @@ let (name_of_path: Path.t -> name) = fun path ->
   let s = Path.name path in
   Common.split "\\." s
 
-let readable_path_of_ast ast root readable =
+let readable_path_of_ast ast root readable_cmt source_finder =
   let fullpath =
     Filename.concat ast.cmt_builddir
       (match ast.cmt_sourcefile with
-      | None -> failwith (spf "no cmt_source_file for %s" readable)
       | Some file -> file
+      | None -> failwith (spf "no cmt_source_file for %s" readable_cmt)
       )
   in
   (* ugly: the OCaml distribution does not comes with .cmt for
    * its standard library, so I had to generate them manually 
    * and put them in pfff/external/stdlib. The problem is that
    * those cmt files have hardcoded paths to my ocaml installation
-   * for their source, hence this hack below to reconvert
+   * for their source, hence those hacks below to reconvert
    * those paths.
    *)
-  try 
-    let readable = Common.filename_without_leading_path root fullpath in
-    if readable =~ "_build/\\(.*\\)"
-    then Common.matched1 readable
-    else readable
-  with Failure _ ->
-    let dirname, basename = 
-      Filename.dirname fullpath, Filename.basename fullpath in
-    let subdir = Filename.basename dirname in
-    spf "external/%s/%s" subdir basename
+  let readable_opt = 
+    try Some (Common.filename_without_leading_path root fullpath)
+    with Failure _ -> None
+  in 
+  match readable_opt with
+  | Some readable when Sys.file_exists fullpath -> readable
+  | _ ->
+    (match source_finder (Filename.basename fullpath) with
+    | [readable] -> readable
+    | xs -> 
+      pr2 (spf "no matching source for %s, candidates = [%s]"
+                  readable_cmt (xs +> Common.join ", "));
+      "TODO"
+    )
 
 (*****************************************************************************)
 (* Add edges *)
@@ -203,7 +211,7 @@ let add_node_and_edge_if_defs_mode ?(dupe_ok=false) env name_node loc =
       env.g +> G.add_edge (env.current, node) G.Has;
 
       let lexing_pos = loc.Location.loc_start in
-      let file = env.source_file in
+      let file = env.ml_file in
       let nodeinfo = { Graph_code.
          pos = { Parse_info.
             str ="";
@@ -386,7 +394,7 @@ let add_use_edge_lid env (lid: Longident.t Asttypes.loc) texpr kind =
       (* todo: pfff specific, tofix *)
     | _ when tname +> List.exists (function 
       "LIST" | "Array_id" | "dbty" -> true |_->false) -> ()
-    | _ -> pr2 (spf "%s in %s" (Common.dump node) env.file)
+    | _ -> pr2 (spf "%s in %s" (Common.dump node) env.cmt_file)
     )
   end
  end
@@ -431,7 +439,7 @@ let add_use_edge_name_bis env name texpr =
 
           | _ -> false
           ) then ()
-          else pr2 (spf "%s IN %s" (Common.dump node) env.file)
+          else pr2 (spf "%s IN %s" (Common.dump node) env.cmt_file)
       )
   end
 
@@ -444,9 +452,8 @@ open Graph_code_cmt_helpers
 (*****************************************************************************)
 (* Defs/Uses *)
 (*****************************************************************************)
-let rec extract_defs_uses 
-   ~phase ~g ~ast ~readable ~root
-   ~module_aliases ~type_aliases =
+let rec extract_defs_uses ~root env ast readable_cmt =
+
   let current =
     (* Module names are supposed to be unique for the ocaml linker,
      * but it's common to have multiple main.ml files that are linked
@@ -458,30 +465,28 @@ let rec extract_defs_uses
      * less: could also mark those as a dupe module and generate a File 
      *)
     if ast.cmt_modname =~ "Main.*"
-    then (readable, E.File)
+    then (readable_cmt, E.File)
     else (ast.cmt_modname, E.Module)
   in
-  let env = {
-    g; phase;
+  let env = { env with
     current;
     current_entity = [fst current];
-    file = readable;
+    cmt_file = readable_cmt;
     (* we want a readable format here *)
-    source_file = readable_path_of_ast ast root readable;
+    ml_file = readable_path_of_ast ast root readable_cmt env.source_finder;
     locals = [];
     full_path_local_value = ref [];
     full_path_local_type = ref [];
     full_path_local_module = ref [];
-    module_aliases; type_aliases;
   }
   in
-  if phase = Defs then begin
-    let dir = Common2.dirname readable in
-    G.create_intermediate_directories_if_not_present g dir;
-    g +> G.add_node env.current;
-    g +> G.add_edge ((dir, E.Dir), env.current) G.Has;
+  if env.phase = Defs then begin
+    let dir = Common2.dirname readable_cmt in
+    G.create_intermediate_directories_if_not_present env.g dir;
+    env.g +> G.add_node env.current;
+    env.g +> G.add_edge ((dir, E.Dir), env.current) G.Has;
   end;
-  if phase = Uses then begin
+  if env.phase = Uses then begin
     ast.cmt_imports +> List.iter (fun (s, digest) ->
       (* old: add_use_edge env (s, E.Module)
        * actually ocaml list as dependencies many things which are not.
@@ -1028,7 +1033,7 @@ and core_type_desc env =
   | Ttyp_poly ((v1, v2)) ->
       let _ = List.iter v_string v1 and _ = core_type env v2 in ()
   | Ttyp_package v1 -> 
-    pr2_once (spf "TODO: Ttyp_package, %s" env.file)
+    pr2_once (spf "TODO: Ttyp_package, %s" env.cmt_file)
 
 and core_field_type env { field_desc = v_field_desc; field_loc = v_field_loc }=
   let _ = core_field_desc env v_field_desc in ()
@@ -1064,15 +1069,31 @@ and
 let build ?(verbose=false) dir_or_file skip_list =
   let root = Common.realpath dir_or_file in
   let all_files = Lib_parsing_ml.find_cmt_files_of_dir_or_files [root] in
-
+  let all_ml_files = Lib_parsing_ml.find_ml_files_of_dir_or_files [root] in
+  
   (* step0: filter noisy modules/files *)
   let files = Skip_code.filter_files skip_list root all_files in
+  let ml_files = Skip_code.filter_files skip_list root all_ml_files in
 
   let g = G.create () in
   G.create_initial_hierarchy g;
 
-  let module_aliases = ref [] in
-  let type_aliases = ref [] in
+  let env = { 
+    g;
+    module_aliases = ref [];
+    type_aliases = ref [];
+    phase = Defs;
+    cmt_file = "filled_later";
+    ml_file = "filled later";
+    source_finder = 
+      Graph_code.basename_to_readable_disambiguator ~root ml_files;
+    current = ("filled_later", E.File);
+    current_entity = [];
+    locals = [];
+    full_path_local_type = ref [];
+    full_path_local_value = ref [];
+    full_path_local_module = ref [];
+  } in
 
   (* step1: creating the nodes and 'Has' edges, the defs *)
   if verbose then pr2 "\nstep1: extract defs";
@@ -1080,10 +1101,8 @@ let build ?(verbose=false) dir_or_file skip_list =
     List.iter (fun file ->
       k();
       let ast = parse file in
-      let readable = Common.filename_without_leading_path root file in
-      extract_defs_uses ~g ~ast ~phase:Defs ~readable ~root
-        ~module_aliases ~type_aliases;
-      ()
+      let readable_cmt = Common.filename_without_leading_path root file in
+      extract_defs_uses ~root { env with phase = Defs } ast readable_cmt
     ));
 
   (* step2: creating the 'Use' edges *)
@@ -1092,18 +1111,17 @@ let build ?(verbose=false) dir_or_file skip_list =
     List.iter (fun file ->
       k();
       let ast = parse file in
-      let readable = Common.filename_without_leading_path root file in
-      if readable =~ "^external" || readable =~ "^EXTERNAL"
+      let readable_cmt = Common.filename_without_leading_path root file in
+      if readable_cmt =~ "^external" || readable_cmt =~ "^EXTERNAL"
       then ()
-      else extract_defs_uses ~g ~ast ~phase:Uses ~readable ~root
-             ~module_aliases ~type_aliases
+      else extract_defs_uses ~root { env with phase = Uses} ast readable_cmt
     ));
   if verbose then begin
     pr2 "";
     pr2 "module aliases";
-    !module_aliases +> List.iter pr2_gen;
+    !(env.module_aliases) +> List.iter pr2_gen;
     pr2 "type aliases";
-    !type_aliases +> List.iter pr2_gen;
+    !(env.type_aliases) +> List.iter pr2_gen;
   end;
 
   g

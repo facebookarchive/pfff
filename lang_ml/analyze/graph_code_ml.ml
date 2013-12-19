@@ -199,7 +199,7 @@ let extract_uses ~g ~ast ~readable ~dupes =
 
 let build ?(verbose=true) dir skip_list =
   let root = Common.realpath dir in
-  let all_files = Lib_parsing_ml.find_ml_files_of_dir_or_files [root] in
+  let all_files = Lib_parsing_ml.find_source_files_of_dir_or_files [root] in
 
   (* step0: filter noisy modules/files *)
   let files = Skip_code.filter_files skip_list root all_files in

@@ -23,7 +23,7 @@ let test_tokens_ml file =
 
 let test_parse_ml_or_mli xs =
 
-  let fullxs = Lib_parsing_ml.find_ml_files_of_dir_or_files xs in
+  let fullxs = Lib_parsing_ml.find_source_files_of_dir_or_files xs in
   let stat_list = ref [] in
 
   fullxs +> Console.progress (fun k -> List.iter (fun file -> 
@@ -47,7 +47,7 @@ let test_dump_ml file =
 
 
 let test_parse_ml_fuzzy dir_or_file =
-  let fullxs = Lib_parsing_ml.find_ml_files_of_dir_or_files [dir_or_file] in
+  let fullxs = Lib_parsing_ml.find_source_files_of_dir_or_files [dir_or_file] in
 
   let file = Filename.concat dir_or_file "skip_list.txt" in
   let fullxs = 

@@ -392,8 +392,16 @@ let create_initial_hierarchy g =
 (*  g +> add_edge (root, stdlib) Has;*)
   ()
 
-let basename_to_readable_disambiguator xs =
-  raise Todo
+let basename_to_readable_disambiguator xs ~root =
+  let xs = xs +> List.map (Common.filename_without_leading_path root) in
+  (* use the Hashtbl.find_all property of this hash *)
+  let h = Hashtbl.create 101 in
+  xs +> List.iter (fun file ->
+    Hashtbl.add h (Filename.basename file) file
+  );
+  (fun file ->
+    Hashtbl.find_all h file
+  )
 
 (*****************************************************************************)
 (* Misc *)

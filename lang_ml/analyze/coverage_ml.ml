@@ -35,21 +35,14 @@ open Common
 (*****************************************************************************)
 
 let basename_coverage_to_readable_coverage xs root =
-  
   let files = Lib_parsing_ml.find_ml_files_of_dir_or_files [root] in
-  let files = files +> List.map (Common.filename_without_leading_path root) in
-  (* use the Hashtbl.find_all property of this hash *)
-  let h = Hashtbl.create 101 in
-  files +> List.iter (fun file ->
-    Hashtbl.add h (Filename.basename file) file
-  );
-
+  let finder = Graph_code.basename_to_readable_disambiguator ~root files in
   xs +> List.map (fun (file, cover) ->
-    match Hashtbl.find_all h file with
+    match finder file with
     | [] ->
-      failwith (spf "could not find basename %s in directory %s" file root)
+        failwith (spf "could not find basename %s in directory %s" file root)
     | [x] -> x, cover
     | x::y::xs ->
-      failwith (spf "ambiguity on %s (%s, %s, ...)" file x y)
+        failwith (spf "ambiguity on %s (%s, %s, ...)" file x y)
   )
 
