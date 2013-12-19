@@ -71,7 +71,7 @@ beforedepend:: archi_code_lexer.ml
 # install
 ##############################################################################
 LIBNAME=pfff-h_program-lang
-EXPORTSRC=parse_info.mli
+EXPORTSRC=parse_info.mli scope_code.mli
 
 install-findlib: all all.opt
 	ocamlfind install $(LIBNAME) META \
