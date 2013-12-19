@@ -87,8 +87,10 @@ module S = Scope_code
  *   - TODO main_linter.ml (require_strict() stuff), 
  *   - TODO main_checker.ml (flib-aware  checker),
  * 
- * todo: make it possible to take a db in parameter so
- * for other functions, we can also get their prototype.
+ * todo: 
+ *  - make it possible to take a db in parameter so
+ *    for other functions, we can also get their prototype.
+ *  - https://github.com/php-fig/fig-standards/blob/master/accepted/PSR-2-coding-style-guide.md
  * 
  * The checks leverage also info about builtins, so when one calls preg_match(),
  * we know that this function takes things by reference which avoids
