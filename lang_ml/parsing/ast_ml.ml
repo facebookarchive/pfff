@@ -217,6 +217,7 @@ and pattern =
   | PatTuple of pattern comma_list
   | PatList of pattern semicolon_list bracket
   | PatUnderscore of tok
+  | PatRecord of field_pattern semicolon_list brace
 
   | PatAs of pattern * tok (* as *) * name
   (* ocaml disjunction patterns extension *)
@@ -236,6 +237,11 @@ and pattern =
      *)
     | CMinus of tok * constant
     | CPlus of tok * constant
+
+ and field_pattern =
+  | PatField of long_name * tok (* = *) * pattern
+  (* new 3.12 feature *)
+  | PatImplicitField of long_name
 
 (* ------------------------------------------------------------------------- *)
 (* Let binding *)

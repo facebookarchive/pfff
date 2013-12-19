@@ -1,6 +1,6 @@
 (* Yoann Padioleau
  *
- * Copyright (C) 2010 Facebook
+ * Copyright (C) 2010, 2013 Facebook
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public License
@@ -17,9 +17,10 @@ open Common
 open Ast_ml
 module Ast = Ast_ml
 module V = Visitor_ml
+
 open Highlight_code
-module T = Parser_ml
 module PI = Parse_info
+module T = Parser_ml
 
 (*****************************************************************************)
 (* Prelude *)
@@ -85,7 +86,6 @@ let visit_program
   )
   in
 
-
   (* -------------------------------------------------------------------- *)
   (* ast phase 1 *) 
   (* -------------------------------------------------------------------- *)
@@ -99,57 +99,38 @@ let visit_program
   let v = V.mk_visitor { V.default_visitor with
 
     V.kitem = (fun (k, _) x ->
-
-      match x with
-      | Val (tok, name, tok2, ty) 
-      | External (tok, name, tok2, ty, _, _)
-         ->
+      (match x with
+      | Val (tok, name, tok2, ty) | External (tok, name, tok2, ty, _, _)  ->
           let info = Ast.info_of_name name in
           (match ty with
           (* todo: actually it can be a typedef alias to a function too
            * but this would require some analysis
            *)
-          | TyFunction _ ->
-              tag info (FunctionDecl NoUse)
-          | _ ->
-              tag info (Global (Def2 NoUse))
+          | TyFunction _ -> tag info (FunctionDecl NoUse)
+          | _ -> tag info (Global (Def2 NoUse))
           );
-          k x
-
       | Exception (tok, name, args) ->
           let info = Ast.info_of_name name in
           tag info (TypeDef Def);
-          k x
-
       | Open (_tok, lname) ->
-          let name = Ast.name_of_long_name lname in
-          let info = Ast.info_of_name name in
+          let info = Ast.info_of_name (Ast.name_of_long_name lname) in
           tag info (Module Use);
-          k x
-
       | Ast.Module (_tok, uname, _tok2, mod_expr) ->
           let ii = Ast.info_of_name uname in
           tag ii (Module Def);
-          k x
-
-      | Let _
-      | Type _ 
-      | ItemTodo _
-         ->
-          k x
+      | Let _ | Type _ | ItemTodo _ -> ()
+      );
+      k x
     );
 
     V.kqualifier = (fun (k, bigf) qu ->
       let module_infos = Ast.module_infos_of_long_name (qu, ()) in
-      module_infos +> List.iter (fun ii ->
-        tag ii (Module Use)
-      )
+      module_infos +> List.iter (fun ii -> tag ii (Module Use))
     );
     V.kmodule_expr = (fun (k, bigf) mod_expr ->
       (match mod_expr with
       | ModuleName lname -> 
-          let name = Ast.name_of_long_name lname in
-          let info = Ast.info_of_name name in
+          let info = Ast.info_of_name (Ast.name_of_long_name lname) in
           tag info (Module Use);
       | _ -> ()
       );
@@ -160,8 +141,7 @@ let visit_program
       | ParamPat (PatVar name) ->
         let info = Ast.info_of_name name in
         tag info (Parameter Def);
-      | _ ->
-        ()
+      | _ ->()
       );
       k x
     );
@@ -195,23 +175,17 @@ let visit_program
               end else begin
                 tag info (Local (Def))
           end;
-
-          | _ -> 
-              ()
+          | _ -> ()
           );
           Common.save_excursion in_let true (fun () ->
             k x
           )
-
     );
 
     V.kexpr = (fun (k, bigf) x ->
       match x with
       | L long_name ->
-
-          let name = Ast.name_of_long_name long_name in
-          let info = Ast.info_of_name name in
-
+          let info = Ast.info_of_name (Ast.name_of_long_name long_name) in
           (* could have been tagged as a function name in the rule below *)
           if not (Hashtbl.mem already_tagged info)
           then begin 
@@ -234,12 +208,11 @@ let visit_program
           (match () with
           | _ when s = "ref" -> tag info UseOfRef
           | _ when Hashtbl.mem h_builtin_modules module_name ->
-            module_infos +> List.iter (fun ii -> tag ii BuiltinCommentColor);
-            tag info Builtin;
+              module_infos +> List.iter (fun ii -> tag ii BuiltinCommentColor);
+              tag info Builtin;
           | _ ->
-            tag info (Function (Use2 fake_no_use2));
+              tag info (Function (Use2 fake_no_use2));
           );
-
           k x
 
       (* disambiguate "with" which can be used for match, try, or record *)
@@ -249,20 +222,15 @@ let visit_program
 
       | Try (try_tok, e, tok_with, match_cases) ->
           tag tok_with (KeywordExn);
-
           k (Try (try_tok, e, tok_with, []));
-
           Common.save_excursion in_try_with true (fun () ->
             match_cases +> Ast.unpipe +> List.iter (fun match_case ->
               bigf (MatchCase match_case)
             )
           )
 
-      | FieldAccess (e, _tok, long_name) 
-      | FieldAssign (e, _tok, long_name, _, _) 
-        ->
-          let name = Ast.name_of_long_name long_name in
-          let info = Ast.info_of_name name in
+      | FieldAccess (e, _tok,long_name) | FieldAssign (e, _tok,long_name,_,_) ->
+          let info = Ast.info_of_name (Ast.name_of_long_name long_name) in
           tag info (Field (Use2 fake_no_use2));
           k x
 
@@ -272,8 +240,7 @@ let visit_program
           k x
 
       | Constr (long_name, eopt) ->
-          let name = Ast.name_of_long_name long_name in
-          let info = Ast.info_of_name name in
+          let info = Ast.info_of_name (Ast.name_of_long_name long_name) in
           tag info (ConstructorUse fake_no_use2);
           k x
 
@@ -286,72 +253,54 @@ let visit_program
     );
 
     V.kpattern = (fun (k, _) x ->
-      match x with
+      (match x with
       | PatConstr (long_name, popt) ->
-          let name = Ast.name_of_long_name long_name in
-          let info = Ast.info_of_name name in
-
-          (if !in_try_with 
+          let info = Ast.info_of_name (Ast.name_of_long_name long_name) in
+          if !in_try_with 
           then tag info (KeywordExn)
-          else tag info (ConstructorMatch fake_no_use2);
-          );
-          k x
+          else tag info (ConstructorMatch fake_no_use2)
       | PatVar name ->
           let info = Ast.info_of_name name in
           tag info (Parameter Def)
-      | _ -> k x
+      | _ -> ()
+      );
+      k x
     );
 
     V.kty = (fun (k, _) t ->
-      match t with
+      (match t with
       | TyName long_name ->
-          let name = Ast.name_of_long_name long_name in
-          let info = Ast.info_of_name name in
+          let info = Ast.info_of_name (Ast.name_of_long_name long_name) in
           tag info TypeMisc;
-          k t
-
       | TyApp (ty_args, long_name) ->
           let name = Ast.name_of_long_name long_name in
           let info = Ast.info_of_name name in
           (* different color for higher-order types *)
           tag info TypeVoid;
-
           (* todo: ty_args *)
-
-          k t
-
       | TyVar (_tok, name) ->
           let info = Ast.info_of_name name in
-
           tag info TypeVoid;
-          k t
-
           
-      | TyTuple _
-      | TyTuple2 _
-      | TyFunction _
-      | TyTodo
-          -> k t
+      | TyTuple _ | TyTuple2 _ | TyFunction _ | TyTodo -> ()
+      );
+      k t
     );
 
     V.ktype_declaration = (fun (k, _) x ->
       match x with
       | TyDef (ty_params, name, tok, type_kind) ->
-
           let info = Ast.info_of_name name in
           tag info (TypeDef Def);
           (* todo: ty_params *)
-
           (match type_kind with
           | TyAlgebric xs ->
               xs +> Ast.unpipe +> List.iter (fun (name, args) ->
                 let info = Ast.info_of_name name in
                 tag info (ConstructorDef fake_no_def2)
               );
-
           | TyCore _ | TyRecord _ -> ()
           );
-
           k x
           
       | TyAbstract _ ->
@@ -359,19 +308,22 @@ let visit_program
     );
 
     V.kfield_decl = (fun (k, _) fld ->
-      let name = fld.fld_name in
-      let info = Ast.info_of_name name in
+      let info = Ast.info_of_name fld.fld_name in
       tag info (Field (Def2 fake_no_def2));
-      
       k fld
     );
 
     V.kfield_expr = (fun (k, _) x ->
       match x with
-      | FieldExpr (long_name, _, _)
-      | FieldImplicitExpr long_name
-          ->
-
+      | FieldExpr (long_name, _, _) | FieldImplicitExpr long_name ->
+          let name = Ast.name_of_long_name long_name in
+          let info = Ast.info_of_name name in
+          tag info (Field (Use2 fake_no_use2));
+          k x
+    );
+    V.kfield_pat = (fun (k, _) x ->
+      match x with
+      | PatField (long_name, _, _) | PatImplicitField long_name ->
           let name = Ast.name_of_long_name long_name in
           let info = Ast.info_of_name name in
           tag info (Field (Use2 fake_no_use2));
@@ -436,7 +388,6 @@ let visit_program
 
         if not (Hashtbl.mem already_tagged ii3) && lexer_based_tagger
         then tag ii3 (Global (Def2 NoUse));
-
         aux_toks xs;
 
     | T.Tlet(ii)::T.TLowerIdent(s, ii3)::xs
@@ -444,7 +395,6 @@ let visit_program
 
         if not (Hashtbl.mem already_tagged ii3) && lexer_based_tagger
         then tag ii3 (Function (Def2 NoUse));
-
         aux_toks xs;
 
     | (T.Tval(ii)|T.Texternal(ii))::T.TLowerIdent(s, ii3)::xs
@@ -483,7 +433,6 @@ let visit_program
       ::T.TUpperIdent(_,ii_mod)
       ::T.TEq (_)
       ::T.Tstruct (_)::xs ->
-
         tag ii_mod (Module Def);
         aux_toks xs
 
@@ -491,11 +440,8 @@ let visit_program
       ::T.TUpperIdent(_,ii_mod)
       ::T.TColon (_)
       ::T.Tsig (_)::xs ->
-
         tag ii_mod (Module Def);
         aux_toks xs
-
-
 
     (* bad smell, use of ref *)
 
@@ -514,7 +460,6 @@ let visit_program
         tag ii1 (UseOfRef);
         tag ii2 (UseOfRef);
         aux_toks xs
-
 
     (* module use, and function call! *)
 
@@ -544,12 +489,10 @@ let visit_program
 
     (* grammar rules in ocamlyacc *)
     | T.TLowerIdent (s, ii1)::T.TColon _::xs 
-      when PI.col_of_info ii1 = 0
-        ->
+      when PI.col_of_info ii1 = 0 ->
         tag ii1 GrammarRule;
         aux_toks xs
-        
-
+       
     | x::xs ->
         aux_toks xs
   in
@@ -565,7 +508,7 @@ let visit_program
   (* -------------------------------------------------------------------- *)
 
   if not disable_token_phase2 then
-  toks +> List.iter (fun tok -> 
+   toks +> List.iter (fun tok -> 
     match tok with
     | T.TComment ii ->
         if not (Hashtbl.mem already_tagged ii)
@@ -586,16 +529,10 @@ let visit_program
           | _ -> tag ii Comment
           )
 
-    | T.TCommentMisc ii ->
-        tag ii Comment
-
-    | T.TCommentNewline ii | T.TCommentSpace ii 
-      -> ()
-
-    | T.TUnknown ii 
-      -> tag ii Error
-    | T.EOF ii
-      -> ()
+    | T.TCommentMisc ii -> tag ii Comment
+    | T.TCommentNewline ii | T.TCommentSpace ii -> ()
+    | T.TUnknown ii -> tag ii Error
+    | T.EOF ii-> ()
 
     | T.TSharpDirective ii -> tag ii Ifdef
 
@@ -604,30 +541,17 @@ let visit_program
         if not (Hashtbl.mem already_tagged ii)
         then tag ii String
 
-    | T.TChar (s, ii) ->
-        tag ii String
-    | T.TFloat (s,ii) | T.TInt (s,ii) ->
-        tag ii Number
-
-    | T.Tfalse ii | T.Ttrue ii -> 
-        tag ii Boolean
-
-
+    | T.TChar (s, ii) -> tag ii String
+    | T.TFloat (s,ii) | T.TInt (s,ii) -> tag ii Number
+    | T.Tfalse ii | T.Ttrue ii -> tag ii Boolean
 
     | T.Tlet ii | T.Tin ii | T.Tand ii | T.Trec ii 
     | T.Tval ii | T.Texternal ii
         -> tag ii Keyword
 
-    | T.Tfun ii | T.Tfunction ii ->
-        tag ii Keyword
+    | T.Tfun ii | T.Tfunction ii -> tag ii Keyword
 
-    | T.Ttype ii
-    | T.Tof ii
-      -> tag ii Keyword
-
-
-
-
+    | T.Ttype ii | T.Tof ii -> tag ii Keyword
 
     | T.Tif ii | T.Tthen ii | T.Telse ii ->
         tag ii KeywordConditional
@@ -637,40 +561,28 @@ let visit_program
     | T.Twhen ii -> (* TODO: should also colorize it's with, when parser *)
         tag ii KeywordConditional
 
-    | T.Ttry ii  ->
-        tag ii KeywordExn
-
+    | T.Ttry ii  -> tag ii KeywordExn
 
     | T.Twith ii ->
         if not (Hashtbl.mem already_tagged ii)
-        then
-          tag ii Keyword
+        then tag ii Keyword
 
     | T.Tfor ii | T.Tdo ii | T.Tdone ii | T.Twhile ii
     | T.Tto ii
     | T.Tdownto ii
       -> tag ii KeywordLoop
 
-    | T.Tbegin ii | T.Tend ii ->
-        tag ii KeywordLoop (* TODO: better categ ? *)
+    | T.Tbegin ii | T.Tend ii -> tag ii KeywordLoop (* TODO: better categ ? *)
 
-
-    | T.TBang ii 
-    | T.TAssign ii 
-    | T.TAssignMutable ii 
-      ->
+    | T.TBang ii | T.TAssign ii | T.TAssignMutable ii ->
         if not (Hashtbl.mem already_tagged ii)
-        then
-          tag ii UseOfRef;
+        then tag ii UseOfRef
 
     | T.TEq ii ->
         if not (Hashtbl.mem already_tagged ii)
-        then
-          tag ii Punctuation
+        then tag ii Punctuation
         
-
     | T.TSemiColon ii | T.TPipe ii | T.TComma ii
-
     | T.TOBracket ii | T.TCBracket ii
     | T.TOBrace ii | T.TCBrace ii
     | T.TOParen ii | T.TCParen ii
@@ -684,19 +596,13 @@ let visit_program
         ->
         tag ii Punctuation
 
-
     | T.TUpperIdent (s, ii) ->
         if not (Hashtbl.mem already_tagged ii)
-        then
-          ()
-          (* tag ii Constructor *)
+        then () (* tag ii Constructor *)
 
-    | T.TLabelDecl (s, ii) ->
-        tag ii (Parameter Def)
+    | T.TLabelDecl (s, ii) ->tag ii (Parameter Def)
 
-
-    | T.Topen ii  ->
-        tag ii BadSmell
+    | T.Topen ii  -> tag ii BadSmell
 
     | T.Tmodule ii | T.Tstruct ii | T.Tsig ii | T.Tinclude ii | T.Tfunctor ii
         -> tag ii KeywordModule
@@ -706,28 +612,15 @@ let visit_program
     | T.Tconstraint ii
         -> tag ii KeywordObject
 
-    | T.Tmutable ii
-        -> tag ii KeywordLoop
+    | T.Tmutable ii -> tag ii KeywordLoop
+    | T.Tas ii -> tag ii Keyword
+    | T.Texception ii -> tag ii KeywordExn
 
-    | T.Tas ii
-        -> tag ii Keyword
+    | T.Tlazy ii | T.Tassert ii -> tag ii Keyword
 
-    | T.Texception ii
-        -> tag ii KeywordExn
-
-    | T.Tlazy ii
-    | T.Tassert ii
-
-        -> tag ii Keyword
-
-    | T.TUnderscore ii
-
-    | T.TTilde ii
-
-    | T.TStar ii
-    | T.TSemiColonSemiColon ii
+    | T.TUnderscore ii | T.TTilde ii
+    | T.TStar ii | T.TSemiColonSemiColon ii
       -> tag ii Punctuation
-
 
     | T.Tland ii  | T.Tasr ii | T.Tlxor ii | T.Tlsr ii | T.Tlsl ii
     | T.Tlor ii | T.Tmod ii | T.Tor ii ->
@@ -741,13 +634,10 @@ let visit_program
     | T.TAnd ii | T.TAndAnd ii
       -> tag ii Punctuation
 
-    | T.TPrefixOperator (_, ii) ->
-        tag ii Operator
-    | T.TInfixOperator (_, ii) ->
+    | T.TPrefixOperator (_, ii) | T.TInfixOperator (_, ii) ->
         tag ii Operator
 
-    | T.TMinusDot ii
-    | T.TPlusDot ii
+    | T.TMinusDot ii | T.TPlusDot ii
 
     | T.TArrow ii | T.TBangEq ii
     | T.TOBracketGreater ii | T.TGreaterCBrace ii
@@ -771,10 +661,4 @@ let visit_program
             tag ii KeywordExn
         | _ ->
             ()
-
-  );
-
-  (* -------------------------------------------------------------------- *)
-  (* ast phase 2 *)  
-
-  ()
+  )

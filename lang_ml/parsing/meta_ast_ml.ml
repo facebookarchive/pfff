@@ -368,6 +368,9 @@ and vof_pattern =
       in Ocaml.VSum (("PatList", [ v1 ]))
   | PatUnderscore v1 ->
       let v1 = vof_tok v1 in Ocaml.VSum (("PatUnderscore", [ v1 ]))
+  | PatRecord v1 ->
+      let v1 = vof_brace (vof_semicolon_list vof_field_pattern) v1
+      in Ocaml.VSum (("PatRecord", [ v1 ]))
   | PatAs ((v1, v2, v3)) ->
       let v1 = vof_pattern v1
       and v2 = vof_tok v2
@@ -406,6 +409,15 @@ and vof_signed_constant =
       let v1 = vof_tok v1
       and v2 = vof_constant v2
       in Ocaml.VSum (("CPlus", [ v1; v2 ]))
+and vof_field_pattern =
+  function
+  | PatField ((v1, v2, v3)) ->
+      let v1 = vof_long_name v1
+      and v2 = vof_tok v2
+      and v3 = vof_pattern v3
+      in Ocaml.VSum (("PatField", [ v1; v2; v3 ]))
+  | PatImplicitField v1 ->
+      let v1 = vof_long_name v1 in Ocaml.VSum (("PatImplicitField", [ v1 ]))
 and vof_let_binding =
   function
   | LetClassic v1 ->

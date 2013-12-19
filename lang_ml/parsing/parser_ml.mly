@@ -790,7 +790,7 @@ simple_pattern:
       { PatConstant $1 }
 
  | TOBrace lbl_pattern_list record_pattern_end TCBrace
-      { PatTodo }
+      { PatRecord ($1, $2, (* $3 *) $4) }
  | TOBracket pattern_semi_list opt_semi4 TCBracket
       { PatList (($1, $2 ++ $3, $4)) }
 
@@ -815,15 +815,18 @@ simple_pattern:
 
 
 lbl_pattern_list:
- | label_longident TEq pattern               { }
- | label_longident                             { }
- | lbl_pattern_list TSemiColon label_longident TEq pattern { }
- | lbl_pattern_list TSemiColon label_longident       { }
+ | label_longident TEq pattern               {[Left (PatField ($1, $2, $3))] }
+ | label_longident                           {[Left (PatImplicitField ($1))]  }
+ | lbl_pattern_list TSemiColon   label_longident TEq pattern 
+     { $1 ++ [Right $2; Left (PatField ($3, $4, $5))] }
+ | lbl_pattern_list TSemiColon   label_longident       
+     { $1 ++ [Right $2; Left (PatImplicitField ($3))] }
+
 
 record_pattern_end:
- |  opt_semi                                    { }
+ | opt_semi                                    { }
  /*(* new 3.12 feature! *)*/
- | TSemiColon TUnderscore opt_semi                    { }
+ | TSemiColon TUnderscore opt_semi              { }
 
 
 pattern_semi_list:

@@ -31,20 +31,26 @@ open Ast_ml
 
 (* hooks *)
 type visitor_in = {
-  kinfo: tok vin;
+  kitem: item vin;
+  ktoplevel: toplevel vin;
+
   kexpr: expr vin;
+  kpattern: pattern vin;
+  kty: ty vin;
+
+
   kfield_decl: field_declaration vin;
   kfield_expr: field_and_expr vin;
-  kty: ty vin;
+  kfield_pat: field_pattern vin;
+
   ktype_declaration: type_declaration vin;
-  kpattern: pattern vin;
-  kitem: item vin;
   klet_def: let_def vin;
   klet_binding: let_binding vin;
   kqualifier: qualifier vin;
   kmodule_expr: module_expr vin;
-  ktoplevel: toplevel vin;
   kparameter: parameter vin;
+
+  kinfo: tok vin;
 }
   and 'a vin = ('a  -> unit) * visitor_out -> 'a  -> unit
 
@@ -66,6 +72,7 @@ let default_visitor = {
   kmodule_expr = (fun (k,_) x -> k x);
   ktoplevel = (fun (k,_) x -> k x);
   kparameter = (fun (k,_) x -> k x);
+  kfield_pat = (fun (k,_) x -> k x);
 }
 
 
@@ -401,6 +408,8 @@ and v_pattern x =
   | PatTuple v1 -> let v1 = v_comma_list11 v_pattern v1 in ()
   | PatList v1 -> let v1 = v_bracket (v_semicolon_list v_pattern) v1 in ()
   | PatUnderscore v1 -> let v1 = v_tok v1 in ()
+  | PatRecord v1 ->
+      let v1 = v_brace (v_semicolon_list v_field_pattern) v1 in ()
   | PatAs ((v1, v2, v3)) ->
       let v1 = v_pattern v1 and v2 = v_tok v2 and v3 = v_name v3 in ()
   | PatDisj ((v1, v2, v3)) ->
@@ -425,6 +434,14 @@ and v_parameter x =
     | ParamTodo -> ()
   in
   vin.kparameter (k, all_functions) x
+
+and v_field_pattern x =
+  let k x = match x with
+  | PatField ((v1, v2, v3)) ->
+      let v1 = v_long_name v1 and v2 = v_tok v2 and v3 = v_pattern v3 in ()
+  | PatImplicitField v1 -> let v1 = v_long_name v1 in ()
+  in
+  vin.kfield_pat (k, all_functions) x
 
 and v_signed_constant =
   function
