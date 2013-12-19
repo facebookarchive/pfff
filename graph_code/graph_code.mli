@@ -40,7 +40,7 @@ type whitelist = dependency list
 (* IO *)
 val load: Common.filename -> graph
 val save: graph -> Common.filename -> unit
-val default_graphcode_filename: string
+val default_filename: string
 
 
 val root: node
@@ -48,8 +48,6 @@ val root: node
   val not_found: node
   val dupe: node
 (* val stdlib: node *)
-
-val create_initial_hierarchy: graph -> unit
 
 (* similar API to graph.ml *)
 
@@ -59,9 +57,14 @@ val create: unit -> graph
 val add_node: node -> graph -> unit
 val add_nodeinfo: node -> nodeinfo -> graph -> unit
 val add_edge: (node * node) -> edge -> graph -> unit
+val remove_edge: (node * node) -> edge -> graph -> unit
+
+(* graph construction helpers *)
+val create_initial_hierarchy: graph -> unit
 val create_intermediate_directories_if_not_present: 
   graph -> Common.dirname -> unit
-val remove_edge: (node * node) -> edge -> graph -> unit
+val basename_to_readable_disambiguator: 
+  (Common.filename list) -> (string (* basename *) -> Common.filename option)
 
 (* graph access *)
 val has_node: node -> graph -> bool

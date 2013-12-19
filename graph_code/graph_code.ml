@@ -256,7 +256,7 @@ let load file =
   Ocamlgraph.Blocks.after_unserialization serialized_cpt_vertex;
   g
 
-let default_graphcode_filename =
+let default_filename =
   "graph_code.marshall"
 
 (*****************************************************************************)
@@ -391,6 +391,9 @@ let create_initial_hierarchy g =
   g +> add_edge (pb, not_found) Has;
 (*  g +> add_edge (root, stdlib) Has;*)
   ()
+
+let basename_to_readable_disambiguator xs =
+  raise Todo
 
 (*****************************************************************************)
 (* Misc *)

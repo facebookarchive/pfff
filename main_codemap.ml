@@ -339,7 +339,7 @@ let main_action xs =
     | Some file, _ -> Some file
     | None, [dir] ->
       let candidates = [
-          Filename.concat dir Graph_code.default_graphcode_filename;
+          Filename.concat dir Graph_code.default_filename;
       ] in
       (try 
         Some (candidates +> List.find (fun file -> Sys.file_exists file))

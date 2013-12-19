@@ -232,7 +232,7 @@ let set_gc () =
 (*****************************************************************************)
 
 let dep_file_of_dir dir = 
-  Filename.concat dir Graph_code.default_graphcode_filename
+  Filename.concat dir Graph_code.default_filename
 
 let skip_file_of_dir dir = 
   Filename.concat dir "skip_list.txt"
@@ -326,6 +326,8 @@ let build_graph_code lang root =
     let p f = Filename.concat output_dir f in
     Layer_graph_code.gen_rank_heatmap_layer g (GC.bottom_up_numbering g) 
       (p "layer_bottomup.json");
+    Layer_graph_code.gen_rank_heatmap_layer g (GC.top_down_numbering g) 
+      (p "layer_topdown.json");
     Layer_graph_code.gen_statistics_layer ~root stats 
       ~output:(p "layer_graphcode_stats.json");
     let defs = Graph_code_tags.defs_of_graph_code g in
