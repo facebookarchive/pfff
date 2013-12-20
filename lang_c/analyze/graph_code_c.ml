@@ -56,9 +56,9 @@ module Flag = Flag_parsing_cpp
 (*****************************************************************************)
 (* for the extract_uses visitor *)
 type env = {
-  current: Graph_code.node;
   g: Graph_code.graph;
 
+  current: Graph_code.node;
   mutable params_locals: string list;
 
   (* error reporting *)
