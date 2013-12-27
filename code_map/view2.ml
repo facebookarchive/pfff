@@ -206,10 +206,10 @@ let mk_gui ~screen_size ~legend test_mode (root, model, dw, dbfile_opt) =
     ~allow_grow:true
     () 
   in
+  Controller._set_title := (fun s -> w#set_title s);
+
   let statusbar = GMisc.statusbar () in
   let ctx = statusbar#new_context "main" in
-
-  Controller._set_title := (fun s -> w#set_title s);
   Controller._statusbar_addtext := (fun s -> ctx#push s +> ignore);
 
   let accel_group = GtkData.AccelGroup.create () in
@@ -230,11 +230,12 @@ let mk_gui ~screen_size ~legend test_mode (root, model, dw, dbfile_opt) =
    * to draw stuff :(
    *)
   let vbox = GPack.vbox ~packing:w#add () in
+  let hbox = GPack.hbox ~packing:(vbox#pack ~expand:false ~fill:false) () in
 
     (*-------------------------------------------------------------------*)
     (* Menu *)
     (*-------------------------------------------------------------------*)
-    vbox#pack (G.mk (GMenu.menu_bar) (fun m -> 
+    hbox#pack (G.mk (GMenu.menu_bar) (fun m -> 
       
       let factory = new GMenu.factory m in
 
@@ -388,8 +389,7 @@ let mk_gui ~screen_size ~legend test_mode (root, model, dw, dbfile_opt) =
     (*-------------------------------------------------------------------*)
     (* toolbar *)
     (*-------------------------------------------------------------------*)
-
-    vbox#pack (G.mk (GButton.toolbar) (fun tb ->
+    hbox#pack ~padding:10 (G.mk (GButton.toolbar) (fun tb ->
 
 (*
       tb#insert_widget (G.mk (GButton.button ~stock:`OPEN) (fun b -> 
@@ -598,7 +598,8 @@ let mk_gui ~screen_size ~legend test_mode (root, model, dw, dbfile_opt) =
     (* status bar *)
     (*-------------------------------------------------------------------*)
     (* the statusbar widget is defined in beginning of this file because *)
-    vbox#pack (*~from: `END*) statusbar#coerce;
+
+(*TODO    vbox#pack (*~from: `END*) statusbar#coerce; *)
 
   (*  )); *)
 

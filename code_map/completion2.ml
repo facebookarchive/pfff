@@ -244,7 +244,7 @@ let fake_entity = {Database_code.
 
 let my_entry_completion_eff2 ~callback_selected ~callback_changed fn_idx = 
   
-  let entry = GEdit.entry ~width:900 () in
+  let entry = GEdit.entry ~width:500 () in
   let completion = GEdit.entry_completion () in
   entry#set_completion completion;
 
