@@ -1223,8 +1223,9 @@ let files_of_dir_or_files_no_vcs_nofilter xs =
   xs +> List.map (fun x ->
     if is_directory x
     then
-      let cmd = ("find "^arg_symlink()^x^" -noleaf -type f " ^
-            grep_dash_v_str) in
+      (* todo: should escape x *)
+      let cmd = (spf "find %s '%s' -noleaf -type f %s"
+            (arg_symlink()) x grep_dash_v_str) in
       let (xs, status) =
         cmd_to_list_and_status cmd in
       (match status with
