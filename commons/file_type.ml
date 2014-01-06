@@ -199,6 +199,7 @@ let file_type_of_file2 file =
   | "tex" | "texi" -> Text e
   | "txt" | "doc" -> Text e
   | "nw" | "web" -> Text e
+  | "ms" -> Text e
 
   | "org" 
   | "md" | "rest" | "textile" | "wiki" | "rst"
