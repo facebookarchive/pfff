@@ -61,6 +61,10 @@ let locations_of_angle (line, file) xs =
             File (f, s_to_i i1, s_to_i i2)
         | [Angle _; T TColon; T (TInt _);T TColon; T (TInt _)] ->
             Other
+        (* in yacc.lang in kencc *)
+        | [Angle [T (TLowerIdent "invalid"); T (TLowerIdent "sloc")]] ->
+            Other
+
         | xs -> 
           pr2_gen xs;
           failwith (spf "wrong location format at line %d in %s"  line file)
