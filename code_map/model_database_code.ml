@@ -146,7 +146,7 @@ let hfiles_and_top_entities root db_opt =
  * todo: what do do when the root of the db is not the root
  * of the treemap ?
  *)
-let all_entities db_opt root =
+let all_entities root db_opt =
   match db_opt with
   | None -> 
       let db = Database_code.files_and_dirs_database_from_root root in

@@ -30,6 +30,8 @@ module Model = Model2
  *  - important code should be bigger. Just like in google maps
  *    the important roads are more visible. So need some sort of
  *    global analysis.
+ *  - show the data (the source code), but also show the relations
+ *    (hence codegraph integration)
  * 
  * history:
  *  - saw Aspect Browser while working on aspects as an intern at IRISA
@@ -47,6 +49,8 @@ module Model = Model2
  *  - saw talk at CC about improving javadoc by putting in bigger fonts
  *    really often used API functions => idea of light db and semantic
  *    visual feedback
+ *  - read hierarchical edge bundling paper and its d3 implementation to 
+ *    visualize on top of a treemap the call graph
  * 
  * related work:
  *  - todo: light table
@@ -77,7 +81,7 @@ module Model = Model2
  *    methods that are relevant to understand the local code of the class
  *    (e.g. the short command of Eiffel)
  *  - debugger? it helps understand code so a coverage layer or TODO live
- *    coverage tracing would be nice.
+ *    coverage tracing would be nice (as is tracegl)
  *  - source control? extract age, number of authors, churn information in
  *    layers
  *  - refactoring? no
@@ -178,10 +182,6 @@ let filters = [
 (*    | FT.PL (FT.Web (_)) -> true *)
     | _ -> false
   );
-  "rs", (fun file -> 
-    match FT.file_type_of_file file with
-    | FT.PL (FT.Rust) -> true  | _ -> false
-  );
 ]
 
 (*****************************************************************************)
@@ -218,13 +218,11 @@ let build_model2 root dbfile_opt graphfile_opt =
 
   let db_opt = dbfile_opt +> Common.map_opt Database_code.load_database in
 
-  (* todo: do like for graph_code below, let hentities, hfiles_entities = ...*)
-  let hentities = 
-    Model_database_code.hentities root db_opt in
-  let hfiles_entities = 
-    Model_database_code.hfiles_and_top_entities root db_opt in
-  let all_entities = 
-    Model_database_code.all_entities db_opt root in
+  let hentities, hfiles_entities, all_entities =
+    Model_database_code.hentities               root db_opt,
+    Model_database_code.hfiles_and_top_entities root db_opt,
+    Model_database_code.all_entities            root db_opt 
+  in
 
   let big_grep_idx = Completion2.build_completion_defs_index all_entities in
 
@@ -252,20 +250,6 @@ let build_model2 root dbfile_opt graphfile_opt =
         hentities_of_file;
   }
   in
-  (*
-    let model = Ancient2.mark model in
-    Gc.compact ();
-  *)
-(*
-  (* sanity check *)
-  let hentities = (Ancient2.follow model).Model.hentities in
-  let n = Hashtbl.length hentities in
-  pr2 (spf "before = %d" n);
-  let cnt = ref 0 in
-  Hashtbl.iter (fun k v -> pr2 k; incr cnt) hentities;
-  pr2 (spf "after = %d" !cnt);
-  (* let _x = Hashtbl.find hentities "kill" in *)
-*)
   model
 
 let build_model a b = 
@@ -291,13 +275,14 @@ let main_action xs =
   set_gc ();
   Logger.log Config_pfff.logger "codemap" None;
 
+  (* thi used to be done by linking with gtkInit.cmo, but better like this *)
   let _locale = GtkMain.Main.init () in
   pr2 (spf "Using Cairo version: %s" Cairo.compile_time_version_string);
 
   let root = Common2.common_prefix_of_files_or_dirs xs in
   pr2 (spf "Using root = %s" root);
 
-  let model = Async.async_make () in
+  let async_model = Async.async_make () in
 
   let layers = 
     match !layer_file, !layer_dir, xs with
@@ -352,7 +337,8 @@ let main_action xs =
   );
 
   let dw = 
-    Model.init_drawing treemap_generator model layers_with_index xs root in
+    Model.init_drawing treemap_generator async_model layers_with_index xs root
+  in
 
   (* This can require lots of stack. Make sure to have ulimit -s 40000.
    * This thread also cause some Bus error on MacOS :(
@@ -361,11 +347,11 @@ let main_action xs =
   (if Cairo_helpers.is_old_cairo() 
   then
     Thread.create (fun () ->
-      Async.async_set (build_model root db_file graph_file) model;
+      Async.async_set (build_model root db_file graph_file) async_model;
     ) ()
     +> ignore
    else 
-    Async.async_set (build_model root db_file graph_file) model;
+    Async.async_set (build_model root db_file graph_file) async_model;
    (*
     GMain.Timeout.add ~ms:2000 ~callback:(fun () ->
       Model.async_set (build_model root dbfile_opt) model;
@@ -374,12 +360,11 @@ let main_action xs =
    *)
   );
 
-  (* the GMain.Main.init () is done by linking with gtkInit.cmo *)
   View2.mk_gui 
     ~screen_size:!screen_size
     ~legend:!legend
     !test_mode
-    (root, model, dw, db_file)
+    (root, async_model, dw, db_file)
 (*e: main_action() *)
   
 (*****************************************************************************)
@@ -404,7 +389,7 @@ let width = 500
 let height = 500
 
 let test_draw cr =
-  (* [0,0][1,1] world *)
+  (* [0,0][1,1] world scaled to a width x height screen *)
   Cairo.scale cr (float_of_int width) (float_of_int height);
 
   Cairo.set_source_rgba cr ~red:0.5 ~green:0.5 ~blue:0.5 ~alpha:0.5;
@@ -434,16 +419,14 @@ let test_draw cr =
 
 let test_cairo () =
   let _locale = GtkMain.Main.init () in
-
   let w = GWindow.window ~title:"test" () in
-  ignore (w#connect#destroy GMain.quit);
+  (w#connect#destroy GMain.quit) +> ignore;
   let px = GDraw.pixmap ~width ~height ~window:w () in
   px#set_foreground `WHITE;
   px#rectangle ~x:0 ~y:0 ~width ~height ~filled:true ();
   let cr = Cairo_lablgtk.create px#pixmap in
   test_draw cr;
-  
-  ignore(GMisc.pixmap px ~packing:w#add ());
+  (GMisc.pixmap px ~packing:w#add ()) +> ignore;
   w#show ();
   GMain.main();
   ()
@@ -575,7 +558,7 @@ let main () =
     (* --------------------------------------------------------- *)
     (* empty entry *)
     (* --------------------------------------------------------- *)
-    | _ -> Arg.usage (Arg.align (options())) usage_msg; 
+    | [] -> Arg.usage (Arg.align (options())) usage_msg; 
     );
   )
 

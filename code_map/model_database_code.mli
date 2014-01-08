@@ -17,7 +17,7 @@ val hfiles_and_top_entities :
  * an extra entity when have a fullname that is not empty
  *)
 val all_entities :
-  Database_code.database option -> Common.dirname ->
+  Common.dirname -> Database_code.database option ->
   Database_code.entity list
 (*e: all_entities sig *)
 
