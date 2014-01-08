@@ -1,6 +1,10 @@
 -*- org -*-
 
-* 0.26 (Q4 2013) (??zamcov tomography?? OPAM package)
+* 0.27 (Q1 2014) (?edge bundle?better codemap?)
+
+* -----------------------------------------------------------
+
+* 0.26 (Q4 2013) (basic OPAM package)
 
 ** internal:
 
