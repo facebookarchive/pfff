@@ -136,8 +136,7 @@ let hfiles_and_top_entities root db_opt =
 (*****************************************************************************)
 
 (*s: all_entities *)
-(* We want to provide completion not only for functions/class/methods
- * but also for files and directory themselves.
+(* To get completion for functions/class/methods/files/directories.
  * 
  * We pass the root in addition to the db_opt because sometimes we 
  * don't have a db but we still want to provide completion for the 
@@ -158,6 +157,14 @@ let all_entities root db_opt =
       let nb_entities = Array.length db.Db.entities in
       let nb_files = List.length db.Db.files in
       pr2 (spf "We got %d entities in %d files" nb_entities nb_files);
+
+      (* the db passed might be just about .ml files but we could be
+       * called on a directory with non .ml files that we would
+       * still want to quicky jump too hence the need to include
+       * other regular files and dirs
+       *)
+      let db2 = Database_code.files_and_dirs_database_from_root root in
+      let db = Database_code.merge_databases db db2 in
 
       Database_code.files_and_dirs_and_sorted_entities_for_completion
         ~threshold_too_many_entities:!Flag.threshold_too_many_entities
