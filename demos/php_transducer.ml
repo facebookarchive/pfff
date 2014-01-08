@@ -63,15 +63,8 @@ let transduce  file =
 (* The options *)
 (*****************************************************************************)
 
-let options () = 
-  [
-  (* this can not be factorized in Common *)
-  "-version",   Arg.Unit (fun () -> 
-    pr2 "version: $Date: 2010/06/08 12:32:06 $";
-    raise (Common.UnixExit 0)
-  ), 
-  "   guess what";
-  ]
+let options () = [
+]
 
 (*****************************************************************************)
 (* Main entry point *)
@@ -102,7 +95,7 @@ let main () =
     (* --------------------------------------------------------- *)
     | _  -> 
         Common.usage usage_msg (options()); 
-        failwith "too few arguments"
+        failwith "too few or too many arguments"
           
     )
   )

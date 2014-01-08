@@ -3,7 +3,7 @@ open Common
 (*****************************************************************************)
 (* Prelude *)
 (*****************************************************************************)
-(* Bug study:Gather a few simple metrics that would help better anylyse the
+(* Bug study: gather a few simple metrics that would help better analyze the
  * repository:
  * - # diffs that have 0-10 lines
  * - # diffs that have 10-100 lines

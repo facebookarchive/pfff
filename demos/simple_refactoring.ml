@@ -14,7 +14,9 @@ module PI = Parse_info
  * This file contains the implementation of a simple refactoring where we
  * remove the second argument in all calls to ArgAssert::isString() and
  * ArgAssert::isArray(). The goal is to provide a tutorial on how
- * to write PHP refactorings using the Pfff infrastructure.
+ * to write PHP refactorings using the low level Pfff infrastructure.
+ * For most refactoring, spatch should be fine, 
+ * see https://github.com/facebook/pfff/wiki/Spatch
  * 
  * To compile this file do:
  * 
@@ -50,24 +52,16 @@ module PI = Parse_info
  * default for ease of prototyping.
  * 
  * 
- * Future work:
- * At some point we want to have a DSL for expressing "semantic patches" 
- * like coccinelle (http://coccinelle.lip6.fr) and express it simply with:
- * 
- *  @@ @@
+ * (the equivalent semantic patch is simply:
  * - ArgAssert::isString(X, Y)
  * + ArgAssert::isString(X)
  * 
  * or
  * 
- *  @@ @@
  *   ArgAssert::isString(X
  * -                     ,Y
  *                       )
- * 
- * but we are not there yet. In the mean time we have to program
- * "manually" those refactoring using the OCaml internal API 
- * to manipulate the AST.
+ * )
  * 
  * Timing: 25 minutes
  * 
@@ -141,10 +135,7 @@ let main files_or_dirs =
          * on the "ArgAssert" in the file. This token contain information
          * such as the line position of the token and also the
          * 'transfo' annotation that we can modify to remove the token
-         * for instance. See Ast_php.ml
-         * 
-         * The t_<num> are type information about the expression or lvalue
-         * that we don't currently use.
+         * for instance.
          *)
         | 
              (Call(

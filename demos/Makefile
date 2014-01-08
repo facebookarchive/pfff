@@ -2,6 +2,8 @@
 # This file is intentionnaly not using ../Makefile.common.
 # This is to show how to build a simple Makefile from scratch
 # to people who wants to use pfff in their own application.
+# update: with OPAM now being almost standard, this file is less useful.
+#  just use ocamlfind as described in section "Compilation once installed"
 
 all:: simple_refactoring
 
@@ -15,8 +17,7 @@ simple_refactoring: simple_refactoring.ml
 	ocamlc -g -o simple_refactoring \
          -I ../commons -I ../lang_php/parsing -I ../h_program-lang \
           str.cma unix.cma nums.cma bigarray.cma \
-	  ../commons/lib.cma ../h_program-lang/lib.cma \
-          ../matcher/lib.cma \
+	  ../commons/lib.cma ../h_program-lang/lib.cma ../matcher/lib.cma \
           ../lang_php/parsing/lib.cma \
           simple_refactoring.ml
 clean::
@@ -57,9 +58,6 @@ SYSLIBS= str.cma unix.cma nums.cma bigarray.cma
 
 INCLUDES=$(INCLUDEDIRS:%=-I %)
 
-OBJS=    $(SRC:.ml=.cmo)
-OPTOBJS= $(SRC:.ml=.cmx)
-
 #dont use -custom, it makes the bytecode unportable.
 OCAMLCFLAGS=-g -dtypes # -w A
 
@@ -83,20 +81,11 @@ OCAMLMKTOP=ocamlmktop -g -custom $(INCLUDES) -thread
 PROGS=php_transducer.byte \
  show_function_calls1.byte show_function_calls2.byte show_function_calls3.byte\
  show_function_class_names.byte show_function_class_names2.byte \
- simple_metrics.byte \
- simple_code_search.byte
+ simple_git_metrics.byte simple_code_search.byte
 
-# simple_zero_to_null.byte count_elseifs.byte
-
-#ifeq ($(FEATURE_BDB),1)
-#PROGS+=kaplan.byte
-#endif
-
-all:: rec  $(PROGS)
+all:: $(PROGS)
 opt: $(PROGS:.byte=.opt)
 all.opt: opt
-
-rec::
 
 .SUFFIXES: .byte .opt
 
@@ -106,13 +95,11 @@ rec::
 %.opt: %.cmx
 	$(OCAMLOPT) -o $@ $(SYSLIBS:.cma=.cmxa) $(LIBS:.cma=.cmxa)  $^
 
-
 clean::
 	rm -f *.opt *.byte
 
-
 ##############################################################################
-# Simple compilation once installed
+# Compilation once installed
 ##############################################################################
 
 LIBS2= \
@@ -130,6 +117,8 @@ test_install: pfff_linking.ml
 test_install.opt: pfff_linking.ml
 	ocamlopt $(SYSLIBS:%.cma=%.cmxa) $(LIBS2:%=%/lib.cmxa) $(LIBS2:%=-I %) -I $(STUBDIR) pfff_linking.ml -o pfff_linking.opt
 
+clean::
+	rm -f pfff_linking
 
 ##############################################################################
 # Generic ocaml rules
