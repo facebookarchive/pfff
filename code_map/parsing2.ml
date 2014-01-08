@@ -209,9 +209,12 @@ let tokens_with_categ_of_file file hentities =
              *)
             let find_entity = None in
             (* work by side effect on ast2 too *)
+            (try 
             Check_variables_php.check_and_annotate_program
               find_entity
-              ast;
+              ast
+             with Ast_php.TodoNamespace _ | Common.Impossible -> ()
+            );
             Php ((ast, toks))
           ))
          (function Php (ast, toks) -> [ast, toks] | _ -> raise Impossible));

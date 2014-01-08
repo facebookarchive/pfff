@@ -592,7 +592,10 @@ let visit_program ~tag prefs  hentities (ast, toks) =
   }
   in
   let visitor = V.mk_visitor hooks in
-  visitor (Program ast);
+  (try 
+    visitor (Program ast)
+  with Ast_php.TodoNamespace _ -> ()
+  );
 
   (* -------------------------------------------------------------------- *)
   (* toks phase 2 *)
