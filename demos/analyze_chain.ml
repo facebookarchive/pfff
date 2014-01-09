@@ -9,6 +9,9 @@ module PI = Parse_info
 (*****************************************************************************)
 (*
  * Toy static analysis to analyze method call chains.
+ * usage:
+ *  $ ./analyze_chain.byte chain.php
+ *  ["foo"; "bar"; "foobar"]
  *)
 
 (*****************************************************************************)
