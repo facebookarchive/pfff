@@ -1244,5 +1244,3 @@ let files_of_dir_or_files_no_vcs_nofilter xs =
 
 module SMap = Map.Make (String)
 type 'a smap = 'a SMap.t
-
-
