@@ -17,9 +17,9 @@ module Model = Model2
  * This is the main entry point of codemap, a semantic source code visualizer
  * using treemaps and code thumbnails. The focus here is code understanding
  * not editing, so for instance even if features like autocompletion are
- * great, they do not help understand an existing codebase. What can help
- * is completion to help navigate and go from one place to another, and this
- * is one of the feature of this tool.
+ * great for editing, they do not really help for understanding an existing
+ * codebase. What can help is completion to help navigate and go from one
+ * place to another, and this is one of the feature of this tool.
  * 
  * requirements:
  *  - get a bird's eye view of all the code (hence treemaps)
@@ -32,6 +32,7 @@ module Model = Model2
  *    global analysis.
  *  - show the data (the source code), but also show the relations
  *    (hence codegraph integration)
+ *  - look at the code through different views (hence layers)
  * 
  * history:
  *  - saw Aspect Browser while working on aspects as an intern at IRISA
@@ -53,12 +54,14 @@ module Model = Model2
  *    visualize on top of a treemap the call graph
  * 
  * related work:
- *  - todo: light table
- *  - todo: http://www.kickstarter.com/projects/296054304/zeta-code
- *  - todo? sublime, textmate, etc
+ *  - http://peaker.github.io/lamdu/, focused more on AST pretty printing
+ *  - light table, nice live programming, and interesting visualization slice
+ *  - http://www.kickstarter.com/projects/296054304/zeta-code, relations
+ *  - sublime has thumbnail, but people don't really care about it
+ *  - textmate
  *  - http://www.hello2morrow.com/products/sotoarc
  *  - http://scg.unibe.ch/codemap
- *  - http://scg.unibe.ch/wiki/projects/rbcrawler
+ *  - http://scg.unibe.ch/wiki/projects/rbcrawler, class blueprint
  *  - moose http://youtu.be/yvXm9LC17vk at 14min
  *  - http://redotheweb.com/CodeFlower/
  *  - code swarm (visualize git history, people focus)
@@ -66,10 +69,10 @@ module Model = Model2
  *    http://artzub.com/ghv/#repo=d3&climit=100&user=mbostock
  * 
  * features of IDE we do want (e.g. see the list at http://xamarin.com/studio):
- *  - TODO go to definition (=~ TAGS)
+ *  - go to definition (=~ TAGS, light db and search bar completion provides it)
  *  - unified search (files, entities, TODO but also content)
  *  - code navigation (directory, files, also TODO "hypertext" go to def/uses)
- *  - find uses (tricky for TODO methods in dynamic languages)
+ *  - find uses (funcs, classes, TODO tricky for methods in dynamic languages)
  *  - smart syntax highlighting
  *  - folding? hmm thumbnails should makes this less important
  *  - TODO code tooltip, hover on use of an entity to display information about
@@ -494,7 +497,6 @@ let options () = [
     " boost size of labels";
     "-no_boost_lbl" , Arg.Clear Flag.boost_label_size,
     " do not boost labels\n";
-
 
   (*-------------------------------------------------------------------------*)
   (* debugging helpers *)
