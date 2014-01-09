@@ -1843,6 +1843,19 @@ and m_list__m_argument (xsa: A.argument A.comma_list) (xsb: B.argument B.comma_l
   | [], [] ->
       return ([], [])
 
+  (* iso on trailing comma *)
+  | [Right comma], [] ->
+    if is_NoTransfo comma || is_Remove comma
+    then return  ([Right comma], [])
+    else failwith
+     "'+' transformation on trailing comma is not allowed, rewrite your spatch"
+  (* todo: what if previous elt in spatch was to remove, we should
+   * then remove this comma too no? right now this forces the spatch
+   * write to use the trailing comma in his pattern.
+   *)
+  | [], [Right comma] ->
+     return  ([], [Right comma])
+
   (* iso on ... *)
   | [Left (A.Arg (A.SgrepExprDots i))], bbs ->
     (* todo: if remove could apply the transfo on bbs *)

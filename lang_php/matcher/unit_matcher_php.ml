@@ -108,6 +108,13 @@ let sgrep_unittest =
       (* isomorphism on "keyword" arguments *)
       "foo(true);", "foo($x=true);", true;
       "foo(true);", "foo(true);", true;
+
+      (* isomorphisms on trailing comma *)
+      "foo(true);", "foo(true,);", true;
+      "foo(true,);", "foo(true);", true;
+      (* interaction of ... and trailing comma *)
+      "foo(A, ...);", "foo(1);", true;
+      "foo(A, ...);", "foo(1,);", true;
   
       (* we want sgrep/spatch to be case insensitive, like PHP *)
       "foo(...);", "Foo(true);", true;
