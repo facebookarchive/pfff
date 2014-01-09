@@ -81,7 +81,8 @@ OCAMLMKTOP=ocamlmktop -g -custom $(INCLUDES) -thread
 PROGS=php_transducer.byte \
  show_function_calls1.byte show_function_calls2.byte show_function_calls3.byte\
  show_function_class_names.byte show_function_class_names2.byte \
- simple_git_metrics.byte simple_code_search.byte
+ simple_git_metrics.byte simple_code_search.byte \
+ analyze_chain.byte
 
 all:: $(PROGS)
 opt: $(PROGS:.byte=.opt)
