@@ -1,6 +1,6 @@
 (* Yoann Padioleau
  *
- * Copyright (C) 2010-2012 Facebook
+ * Copyright (C) 2010-2014 Facebook
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public License
@@ -29,15 +29,16 @@ open Common
  * using OCaml pad-style reflection (see commons/ocaml.ml) on
  * parsing_php/ast_php.ml.
  *
- * todo: an alternative would be to transform ast_php.ml
+ * An alternative is be to transform ast_php.ml
  * in a very simple term language and do the 1-vs-1 match
  * on this term language. But depending on the construct, a PHP variable,
- * a string, we may want to do special things so is it better to work
+ * a string, we may want to do special things so maybe it is better to work
  * on the full AST? Working on a term language would be like working
  * in an untyped language? But I have to constantly update sgrep to
  * handle more patterns e.g. X::foo() should match AClass::foo(), 
  * which would not happenif I just went with the simpler term language
  * from the beginning.
+ * See pfff/matcher/fuzzy_vs_fuzzy.ml for another approach.
  *
  * I then hardcoded a few isomorphisms by abusing some existing constructs,
  * for instance constants starting with a big X are considered metavars
@@ -284,11 +285,12 @@ let m_xxx_scope a b =
 (* ---------------------------------------------------------------------- *)
 (* tokens *)
 (* ---------------------------------------------------------------------- *)
+(* we dont care about position, space/indent/comment isomorphism
+ * so we could just do  'return (a, b)'
+ * but we need to propagate transformation at least.
+ *)
 let m_info a b =
   X.tokenf a b
-  (* old: dont care about position, space/indent/comment isomorphism
-   * return (a, b)
-   *)
 
 let m_comma_list f a b =
   m_list (m_either f m_info) a b
@@ -1830,9 +1832,8 @@ and m_constant a b =
 (*---------------------------------------------------------------------------*)
 (* arguments list iso *)
 (*---------------------------------------------------------------------------*)
-(* todo: comma handling is probably not good enough.
- * todo: make this code generic ? but I need to dig into the element
- *  to find the SgrepExprDots so it have not be that easy to factorize.
+(* todo: make this code generic ? but I need to dig into the element
+ *  to find the SgrepExprDots so it is not be that easy to factorize.
  * update: actually can use the comma_list_dots technique which avoid
  *  digging and help factorize code!
  *)
@@ -1851,8 +1852,7 @@ and m_list__m_argument (xsa: A.argument A.comma_list) (xsb: B.argument B.comma_l
         xsb
       )
     else failwith 
-      ("transformation (minus or plus) on '...' not allowed, " ^
-       "rewrite your spatch")
+      ("transformation (- or +) on '...' not allowed, rewrite your spatch")
 
   | [Left (A.Arg ((A.Id (A.XName [A.QI (A.Name (name,info_name))]))))], bbs
     when MV.is_metavar_manyargs_name name ->
@@ -1891,7 +1891,7 @@ and m_list__m_argument (xsa: A.argument A.comma_list) (xsb: B.argument B.comma_l
         xsb
       )
     else failwith 
-      ("transformation (minus or plus) on ',' not allowed when used with " ^
+      ("transformation (- or +) on ',' not allowed when used with " ^
        "'...'. Rewrite your spatch: put your trailing comma on the line " ^
        "with the '...'. See also " ^ 
        "https://github.com/facebook/pfff/wiki/Spatch#wiki-spacing-issues")
@@ -1906,13 +1906,14 @@ and m_list__m_argument (xsa: A.argument A.comma_list) (xsb: B.argument B.comma_l
       | _ -> raise Impossible
       )
 
-
   | [Right _; Left (A.Arg (A.SgrepExprDots i))], bbs ->
       raise Impossible
 
   | Left (A.Arg (A.SgrepExprDots i))::xs, bbs ->
-      failwith "... is allowed for now only at the end. Give money to pad to get this feature"
+      failwith 
+        "... is allowed only at the end. Give money to pad to get this feature"
 
+  (* the general case *)
   | xa::aas, xb::bbs ->
       (m_either m_argument m_info) xa xb >>= (fun (xa, xb) ->
       m_list__m_argument aas bbs >>= (fun (aas, bbs) ->
@@ -1966,7 +1967,8 @@ and m_list__m_array_pair (xsa: A.array_pair A.comma_list) (xsb: B.array_pair B.c
       )
 
   | Left (A.ArrayExpr (A.SgrepExprDots i))::xs, bbs ->
-      failwith "... is allowed for now only at the end. Give money to pad to get this feature"
+      failwith 
+        "... is allowed only at the end. Give money to pad to get this feature"
 
   | xa::aas, xb::bbs ->
       (m_either m_array_pair m_info) xa xb >>= (fun (xa, xb) ->
@@ -2306,12 +2308,9 @@ and m_colon_stmt a b =
   | A.ColonStmt _, _
    -> fail ()
 
-
-
 (* ---------------------------------------------------------------------- *)
 (* stmt auxilaries *)
 (* ---------------------------------------------------------------------- *)
-
 
 and m_foreach_pattern a b =
   raise Todo
@@ -2330,11 +2329,8 @@ and m_foreach_variable a b =
 and m_is_ref a b =
   m_option m_tok a b
 
-
 and m_foreach_arrow a b =
   fail2 "m_foreach_arrow"
-
-
 
 and m_if_elseif a b =
   fail2 "m_if_elseif"
@@ -2363,7 +2359,6 @@ and m_use_filename a b =
   fail2 "m_use_filename"
 and m_declare a b =
   fail2 "m_declare"
-
 
 
 and m_modifiers x = m_list (m_wrap m_modifier) x
@@ -2595,9 +2590,6 @@ and m_class_var_modifier a b =
   | A.NoModifiers _, _
   | A.VModifiers _, _
    -> fail ()
-
-
-
 
 (* ------------------------------------------------------------------------- *)
 (* Other declarations *)
