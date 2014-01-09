@@ -66,10 +66,7 @@ let test regexp =
       (* PHP related tests *)
       Unit_parsing_php.unittest;
       Unit_pretty_print_php.unittest;
-      Unit_matcher_php.unittest;
-      Unit_matcher_php.sgrep_unittest;
-      Unit_matcher_php.spatch_unittest;
-      Unit_matcher_php.refactoring_unittest;
+      Unit_matcher_php.unittest; (* sgrep, spatch, refactoring, unparsing *)
       Unit_foundation_php.unittest;
       Unit_static_analysis_php.unittest;
       Unit_typeinfer_php.unittest;
