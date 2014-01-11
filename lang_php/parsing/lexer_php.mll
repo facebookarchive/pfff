@@ -673,7 +673,7 @@ rule st_in_scripting = parse
               | T_ECHO _ | T_PRINT _ | T_CLONE _
               | TSEMICOLON _ | TCOMMA _
               | TOBRACE _ | TCBRACE _
-              | T_RETURN _
+              | T_RETURN _ | T_YIELD _ | T_AWAIT _
               | TEQ _ | T_CONCAT_EQUAL _
               | T_DOUBLE_ARROW _
               | TQUESTION _ | TCOLON _
