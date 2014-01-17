@@ -46,7 +46,12 @@ let line = ref 0
 (* Regexp aliases *)
 (*****************************************************************************)
 
-let letter = ['A'-'Z' 'a'-'z']
+let letter_ascii = ['A'-'Z' 'a'-'z']
+(* hardcoded list of letters used in plan9, todo: use wlex instead *)
+let letter_unicode =  ("Â" | "µ" )
+let letter = letter_ascii | letter_unicode
+
+
 let digit  = ['0'-'9']
 
 let upper_letter = ['A'-'Z']
