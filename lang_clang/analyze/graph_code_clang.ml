@@ -43,7 +43,7 @@ module Typ = Type_clang
  * 
  * procedure to analyze a project:
  *  $ make V=1 > make_trace.txt
- *  $ ~/pfff/pfff -analyze_make_trace make_trace.txt > compile_commands.json
+ *  $ ~/pfff/pfff_test -analyze_make_trace make_trace.txt > compile_commands.json
  *  $ ~/pfff/pfff -gen_clang compile_commands.json 
  *  $ ~/pfff/pfff_test -uninclude_clang
  *  $ ~/pfff/codegraph -lang clang2 -build .
