@@ -332,6 +332,7 @@ web/var/logs/warnings.log
 /demos/show_function_class_names2.byte
 /data/php_stdlib/hni
 /data/php_stdlib/idl
+/data/php_stdlib/stdlib
 /data/php_stdlib/system
 /demos/pfff_linking
 /demos/pfff_linking

@@ -13,6 +13,19 @@ update:
 	perl -p -i -e 's/9223372036854775807/0/g;' /tmp/constants.idl.json
 	~/pfff/pfff_test -builtins_of_idl /tmp/constants.idl.json > idl/builtins_constants.idl.php
 
+stdlib: update
+	rm -rf stdlib/
+	mkdir -p stdlib
+	cp -r hni idl stdlib/
+	for file in `find stdlib/ -name '*.php'`; do nn=`echo $$file | sed s/php/hhi/`; mv $$file $$nn; done
+	# For one reason or another, we hand-roll these.
+	rm stdlib/idl/builtins_asio.idl.hhi
+	rm stdlib/idl/builtins_collections.idl.hhi
+	rm stdlib/idl/builtins_continuation.idl.hhi
+	rm stdlib/idl/builtins_domdocument.idl.hhi
+	rm stdlib/idl/builtins_xmlreader.idl.hhi
+	rm stdlib/idl/facebook/builtins_string_buffer.idl.hhi
+
 check:
 	~/pfff/codegraph -lang php -build .
 	cat pfff.log
