@@ -7,6 +7,20 @@ module G = Graph_code
 module J = Json_type
 
 (*****************************************************************************)
+(* Prelude *)
+(*****************************************************************************)
+(*
+ * Prototype blueprint backend.
+ * 
+ * todo:
+ *  - store range of methods in graph_code
+ *  - the comment associated with it?
+ *    (hmmm the graph will be significantly bigger on disk then no?)
+ *  - inline mode where inline parent methods?
+ *  - less: improve layer, detect constructor calling initialisation function?
+ *)
+
+(*****************************************************************************)
 (* Types *)
 (*****************************************************************************)
 type layer =
