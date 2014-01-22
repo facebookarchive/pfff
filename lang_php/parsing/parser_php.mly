@@ -215,6 +215,10 @@ module PI = Parse_info
 /*(* must be at the top so that it has the lowest priority *)*/
 %nonassoc LOW_PRIORITY_RULE
 
+/*(* those are low priority, especially lower than ?: *)*/
+%nonassoc  T_YIELD
+%nonassoc  T_AWAIT
+
 /*(* http://www.php.net/manual/en/language.operators.precedence.php *)*/
 %left      T_INCLUDE T_INCLUDE_ONCE T_EVAL T_REQUIRE T_REQUIRE_ONCE
 %left      TCOMMA
@@ -253,8 +257,6 @@ module PI = Parse_info
 %left      T_ELSEIF
 %left      T_ELSE
 %left      T_ENDIF
-%nonassoc  T_YIELD
-%nonassoc  T_AWAIT
 
 /*(* not in original grammar *)*/
 %left TCOLCOL
