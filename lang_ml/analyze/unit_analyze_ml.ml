@@ -15,7 +15,7 @@ module G = Graph_code
 
 let verbose = false
 
-let prolog_query ~files query =
+let with_graph ~files f =
   Common2.with_tmp_dir (fun tmp_dir ->
 
     (* generating .cmt files *)
@@ -34,6 +34,12 @@ let prolog_query ~files query =
                        (files +> List.map fst +> Common.join " "));
     let skip_list = [] in
     let g = Graph_code_cmt.build ~verbose:verbose tmp_dir skip_list in
+    f tmp_dir g
+  )
+
+
+let prolog_query ~files query =
+  with_graph ~files (fun tmp_dir g ->
     let facts = Graph_code_prolog.build tmp_dir g in
     let facts_pl_file = Filename.concat tmp_dir "facts.pl" in
     Common.with_open_outfile facts_pl_file (fun (pr_no_nl, _chan) ->
@@ -136,12 +142,7 @@ let foo () = ()
 let bar () = foo ()
 "
        in
-       Common2.with_tmp_dir (fun tmp_dir ->
-         let file = Filename.concat tmp_dir "foo.ml" in
-         Common.write_file ~file file_content;
-         Common.command2 (spf "cd %s; ocamlc -c -bin-annot %s" tmp_dir file);
-
-         let g = Graph_code_cmt.build ~verbose:false tmp_dir [] in
+       with_graph ~files:["foo.ml", file_content] (fun tmp_dir g ->
 
          let src = ("Foo.foo", E.Function) in
          let pred = G.pred src G.Use g in
@@ -149,7 +150,7 @@ let bar () = foo ()
            ~msg:"it should link the use of a function to its def"
            ["Foo.bar", E.Function]
            pred;
-       )          
+       )
      );
    ];
 
