@@ -104,6 +104,28 @@ let c = 1   (* line 3 *)
  ]);
 
 (*****************************************************************************)
+(* Codegraph *)
+(*****************************************************************************)
+   "codegraph_ml" >::: [
+     "basic def/uses" >:: (fun () ->
+       let file_content = "
+let foo () = ()
+let bar () = foo ()
+"
+       in
+       with_graph ~files:["foo.ml", file_content] (fun tmp_dir g ->
+
+         let src = ("Foo.foo", E.Function) in
+         let pred = G.pred src G.Use g in
+         assert_equal
+           ~msg:"it should link the use of a function to its def"
+           ["Foo.bar", E.Function]
+           pred;
+       )
+     );
+   ];
+
+(*****************************************************************************)
 (* Coverage *)
 (*****************************************************************************)
    "coverage_ml" >::: ([
@@ -132,27 +154,6 @@ let c = 1   (* line 3 *)
      );
    ]);
 
-(*****************************************************************************)
-(* Codegraph *)
-(*****************************************************************************)
-   "codegraph_ml" >::: [
-     "basic def/uses" >:: (fun () ->
-       let file_content = "
-let foo () = ()
-let bar () = foo ()
-"
-       in
-       with_graph ~files:["foo.ml", file_content] (fun tmp_dir g ->
-
-         let src = ("Foo.foo", E.Function) in
-         let pred = G.pred src G.Use g in
-         assert_equal
-           ~msg:"it should link the use of a function to its def"
-           ["Foo.bar", E.Function]
-           pred;
-       )
-     );
-   ];
 
 (*****************************************************************************)
 (* Postlude *)
