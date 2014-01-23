@@ -104,9 +104,9 @@ let analyze_make_trace file =
         )::_rest -> 
           None
 
-      | ("8c")::xs ->
+      | ("8c" | "8^c")::xs ->
           xs +> Common.find_some_opt (fun file ->
-            let s = Str.global_replace (Str.regexp "8c") "cc" s in
+            let s = Str.global_replace (Str.regexp "8c\\|8^c") "cc" s in
             if file =~ ".*\\.c$"
             then Some (file, s ^ " " ^ (Common.join " " [
 

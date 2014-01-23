@@ -119,6 +119,8 @@ let readable_of_filename ~root f =
     | "Users"::"yoann.padioleau"::"github"::"xix"::"xix-plan9"
        ::"386"::"include"::rest -> "include"::"386"::rest
     | "Users"::"yoann.padioleau"::"github"::"xix"::"xix-plan9"
+       ::"mips"::"include"::rest -> "include"::"mips"::rest
+    | "Users"::"yoann.padioleau"::"github"::"xix"::"xix-plan9"
        ::"sys"::"include"::rest -> "include"::rest
 
     | _ ->
