@@ -549,8 +549,7 @@ and structure_item_desc env loc = function
   | Tstr_eval v1 -> 
     let full_ident = env.current_entity ++ ["__toplevel__"] in
     let node = (full_ident, E.TopStmts) in
-    let env = 
-      add_node_and_edge_if_defs_mode ~dupe_ok:true env node loc in
+    let env = add_node_and_edge_if_defs_mode ~dupe_ok:true env node loc in
     expression env v1
 
   | Tstr_value ((rec_flag, xs)) ->
@@ -573,10 +572,16 @@ and structure_item_desc env loc = function
             let full_ident = env.current_entity ++ [Ident.name id] in
             let node = (full_ident, kind_of_type_expr v2.exp_type) in
             (* some people do let foo = ... let foo = ... in the same file *)
-            let env = 
-              add_node_and_edge_if_defs_mode ~dupe_ok:true env node 
-                (unwrap loc) in
+            let env = add_node_and_edge_if_defs_mode ~dupe_ok:true env node 
+              (unwrap loc) in
             expression env v2
+        | Tpat_construct(p, loc, ctor, [], false) when name_of_path p = ["()"]->
+          let full_ident = env.current_entity ++ ["__toplevel__"] in
+          let node = (full_ident, E.TopStmts) in
+          let env = 
+            add_node_and_edge_if_defs_mode ~dupe_ok:true env node (unwrap loc)in
+          expression env v2
+         
         | Tpat_tuple xs ->
             let xdone = ref false in
             xs +> List.iter (fun p ->

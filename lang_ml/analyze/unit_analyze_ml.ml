@@ -2,6 +2,8 @@ open Common
 open OUnit
 
 open Ast_ml
+module E = Database_code
+module G = Graph_code
 
 (*****************************************************************************)
 (* Prelude *)
@@ -13,13 +15,8 @@ open Ast_ml
 
 let verbose = false
 
-let prolog_query ~files query =
-
-  let tmp_dir = Filename.temp_file (spf "prolog_ml-%d" (Unix.getpid())) "" in
-  Unix.unlink tmp_dir;
-  (* who cares about race *)
-  Unix.mkdir tmp_dir 0o755;
-  Common.finalize (fun () ->
+let with_graph ~files f =
+  Common2.with_tmp_dir (fun tmp_dir ->
 
     (* generating .cmt files *)
     files +> List.iter (fun (filename, content) ->
@@ -37,6 +34,12 @@ let prolog_query ~files query =
                        (files +> List.map fst +> Common.join " "));
     let skip_list = [] in
     let g = Graph_code_cmt.build ~verbose:verbose tmp_dir skip_list in
+    f tmp_dir g
+  )
+
+
+let prolog_query ~files query =
+  with_graph ~files (fun tmp_dir g ->
     let facts = Graph_code_prolog.build tmp_dir g in
     let facts_pl_file = Filename.concat tmp_dir "facts.pl" in
     Common.with_open_outfile facts_pl_file (fun (pr_no_nl, _chan) ->
@@ -53,9 +56,6 @@ let prolog_query ~files query =
     in
     let xs = Common.cmd_to_list cmd in
     xs
-  ) (fun () ->
-    Common.command2 (spf "rm -f %s/*" tmp_dir);
-    Unix.rmdir tmp_dir
   )
 
 let unittest = 
@@ -104,6 +104,28 @@ let c = 1   (* line 3 *)
  ]);
 
 (*****************************************************************************)
+(* Codegraph *)
+(*****************************************************************************)
+   "codegraph_ml" >::: [
+     "basic def/uses" >:: (fun () ->
+       let file_content = "
+let foo () = ()
+let bar () = foo ()
+"
+       in
+       with_graph ~files:["foo.ml", file_content] (fun tmp_dir g ->
+
+         let src = ("Foo.foo", E.Function) in
+         let pred = G.pred src G.Use g in
+         assert_equal
+           ~msg:"it should link the use of a function to its def"
+           ["Foo.bar", E.Function]
+           pred;
+       )
+     );
+   ];
+
+(*****************************************************************************)
 (* Coverage *)
 (*****************************************************************************)
    "coverage_ml" >::: ([
@@ -131,6 +153,8 @@ let c = 1   (* line 3 *)
          cover'
      );
    ]);
+
+
 (*****************************************************************************)
 (* Postlude *)
 (*****************************************************************************)

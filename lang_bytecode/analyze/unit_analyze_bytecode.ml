@@ -16,12 +16,7 @@ let verbose = false
  * factorize stuff and put in h_program-lang/prolog_code.ml at some point
  *)
 let prolog_query ~files query =
-
-  let tmp_dir = Filename.temp_file (spf "prolog_class-%d" (Unix.getpid())) "" in
-  Unix.unlink tmp_dir;
-  (* who cares about race *)
-  Unix.mkdir tmp_dir 0o755;
-  Common.finalize (fun () ->
+  Common2.with_tmp_dir (fun tmp_dir ->
 
     (* generating .class files *)
     files +> List.iter (fun (filename, content) ->
@@ -60,9 +55,6 @@ let prolog_query ~files query =
     in
     let xs = Common.cmd_to_list cmd in
     xs
-  ) (fun () ->
-    Common.command2 (spf "rm -f %s/*" tmp_dir);
-    Unix.rmdir tmp_dir
   )
 
 let unittest = 

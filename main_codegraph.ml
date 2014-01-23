@@ -274,7 +274,7 @@ let build_graph_code lang root =
   let skip_list =
     if Sys.file_exists skip_file
     then begin 
-      if !verbose then  pr2 (spf "Using skip file: %s" skip_file);
+      pr2 (spf "Using skip file: %s" skip_file);
       Skip_code.load skip_file
     end
     else []
