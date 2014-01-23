@@ -181,13 +181,13 @@ let pfff_extra_actions () = [
 
   "-action2", "<files>", Common.mk_action_n_arg (fun xs ->
     xs +> List.iter (fun file ->
-      let (d,b,e) = Common2.dbe_of_filename file in
-      let (d,b,e) = "/home/pad/plan9/sys/src/9/pc", b, "8" in
+      let (_d,b,_e) = Common2.dbe_of_filename file in
+      let (d,b,e) = "/home/pad/plan9/sys/src/include", b, "h.clang2" in
       let file = Common2.filename_of_dbe (d,b,e) in
       if Sys.file_exists file
       then ()
       else (* pr2 (spf "file %s not there" file); *)
-        print_string (spf "%s.c " b)
+        print_string (spf "%s " b)
     );
     print_string "\n";
   );
