@@ -32,6 +32,7 @@ module R = Refactoring_code
  *  - http://www.jetbrains.com/idea/documentation/ssr.html
  *  - go has a replace option in its formating tool http://golang.org/cmd/gofmt/
  *    it has even an automatic API rewriter: http://golang.org/cmd/fix
+ *    can do: gofmt -w -r 'x[i:len(x)] -> x[i:]' *.go
  *  - clang-format http://llvm.org/devmtg/2013-04/jasper-slides.pdf
  *  - todo: http://www.refactory.com/tools/refactoring-browser/rewrite-tool
  *)
