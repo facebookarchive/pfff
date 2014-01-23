@@ -32,7 +32,7 @@ module J = Json_type
  *  - analyzing the make compilation trace a posteriori
  *  - processing the xcodebuild trace, 
  *    http://docs.oclint.org/en/dev/usage/oclint-xcodebuild.html
- *  - intercept system calls while compiling a project, the coverity approach
+ *  - intercept system calls while compiling a project, a la coverity
  *    * https://github.com/rizsotto/Bear (just started)
  *    * https://github.com/pgbovine/CDE/
  *    * ??
@@ -82,7 +82,7 @@ let sanitize_compile_commands json =
       ))
   | _ -> failwith "wrong compile_commands.json format"
 
-
+(* analyzing the make compilation trace a posteriori *)
 let analyze_make_trace file =
   let dir = ref None in
 
@@ -97,11 +97,43 @@ let analyze_make_trace file =
             else None
           )
       | ("clang"|"gcc"|"cc")::xs when List.mem "-o" xs -> None
+
       | ("flex" | "bison" | "yacc"
         |"ar"
         |"sh" | "sed" | "mv"
         )::_rest -> 
           None
+
+      | ("8c" | "8^c")::xs ->
+          xs +> Common.find_some_opt (fun file ->
+            let s = Str.global_replace (Str.regexp "8c\\|8^c") "cc" s in
+            if file =~ ".*\\.c$"
+            then Some (file, s ^ " " ^ (Common.join " " [
+
+              (* for libs *)
+              "-Wno-incompatible-library-redeclaration";
+              "-Wno-missing-declarations";
+              "-Wno-incompatible-pointer-types";
+              "-Wno-main-return-type";
+              "-Wno-dangling-else";
+              "-Wno-incompatible-pointer-types-discards-qualifiers";
+              "-Wno-implicit-function-declaration";
+              "-Wno-parentheses";
+              "-Wno-logical-op-parentheses";
+              "-Wno-gnu-designator";
+              "-Wno-comment";
+              "-Wno-switch";
+
+              (* for kernel *)
+              "-Wno-typedef-redefinition";
+
+              "-fno-builtin"; "-nostdinc";
+              "-Qunused-arguments"
+            ]),
+                       !dir)
+            else None
+          )
+
       (* special for plan9-userspace make_target *)
       | ["DIR:";s] ->
           dir := Some s;

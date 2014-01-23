@@ -115,6 +115,14 @@ let readable_of_filename ~root f =
       ->
         "EXTERNAL"::"CLANG"::rest
 
+    (* plan9 *)
+    | "Users"::"yoann.padioleau"::"github"::"xix"::"xix-plan9"
+       ::"386"::"include"::rest -> "include"::"386"::rest
+    | "Users"::"yoann.padioleau"::"github"::"xix"::"xix-plan9"
+       ::"mips"::"include"::rest -> "include"::"mips"::rest
+    | "Users"::"yoann.padioleau"::"github"::"xix"::"xix-plan9"
+       ::"sys"::"include"::rest -> "include"::rest
+
     | _ ->
         Common.split "/" (Common.filename_without_leading_path root f)
   in

@@ -418,6 +418,16 @@ let test_draw cr =
   Cairo.line_to cr 0.1 0.2;
   Cairo.stroke cr;
 
+  let start = ref 0.0 in
+
+  for i = 0 to 3 do
+    let end_ = !start +. 0.5 in
+    Cairo.arc cr ~xc:0.5 ~yc:0.5 ~radius:0.3 ~angle1:!start
+      ~angle2:end_;
+    Cairo.stroke cr;
+    start := end_;
+  done;
+
   ()
 
 let test_cairo () =
@@ -431,7 +441,12 @@ let test_cairo () =
   test_draw cr;
   (GMisc.pixmap px ~packing:w#add ()) +> ignore;
   w#show ();
+
+
+
   GMain.main();
+
+
   ()
   
 (*---------------------------------------------------------------------------*)

@@ -575,13 +575,15 @@ and structure_item_desc env loc = function
             let env = add_node_and_edge_if_defs_mode ~dupe_ok:true env node 
               (unwrap loc) in
             expression env v2
+#if OCAML_VERSION >= 4010
+#else
         | Tpat_construct(p, loc, ctor, [], false) when name_of_path p = ["()"]->
           let full_ident = env.current_entity ++ ["__toplevel__"] in
           let node = (full_ident, E.TopStmts) in
           let env = 
             add_node_and_edge_if_defs_mode ~dupe_ok:true env node (unwrap loc)in
           expression env v2
-         
+#endif         
         | Tpat_tuple xs ->
             let xdone = ref false in
             xs +> List.iter (fun p ->
