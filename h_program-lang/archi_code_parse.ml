@@ -46,10 +46,8 @@ let is_auto_generated file =
   let (d,b,e) = Common2.dbe_of_filename_noext_ok file in
   match e with
   | "ml"->
-      Sys.file_exists (Common2.filename_of_dbe (d,b, "mll"))
-      || 
-      Sys.file_exists (Common2.filename_of_dbe (d,b, "mly"))
-      ||
+      Sys.file_exists (Common2.filename_of_dbe (d,b, "mll")) || 
+      Sys.file_exists (Common2.filename_of_dbe (d,b, "mly")) ||
       Sys.file_exists (Common2.filename_of_dbe (d,b, "mlb"))
 
   | "mli" ->
@@ -66,6 +64,7 @@ let is_auto_generated file =
       Sys.file_exists (Common2.filename_of_dbe (d,b, "am"))
 
   | "c" ->
+      b =$= "y.tab" ||
       Sys.file_exists (Common2.filename_of_dbe (d,b, "y")) ||
       Sys.file_exists (Common2.filename_of_dbe (d,b, "l")) ||
       (* bigloo *)
