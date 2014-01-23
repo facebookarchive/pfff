@@ -3384,11 +3384,24 @@ let with_tmp_file ~str ~ext f =
   write_file ~file:tmpfile str;
   f tmpfile
 
+let with_tmp_dir f =
+  let tmp_dir = Filename.temp_file (spf "with-tmp-dir-%d" (Unix.getpid())) "" in
+  Unix.unlink tmp_dir;
+  (* who cares about race *)
+  Unix.mkdir tmp_dir 0o755;
+  Common.finalize (fun () ->
+    f tmp_dir
+  ) (fun () ->
+    command2 (spf "rm -f %s/*" tmp_dir);
+    Unix.rmdir tmp_dir
+  )
+
+
+
 (* now in prelude: exception UnixExit of int *)
 let exn_to_real_unixexit f =
   try f ()
   with UnixExit x -> exit x
-
 
 
 

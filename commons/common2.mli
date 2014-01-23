@@ -1151,6 +1151,7 @@ val timeout_function_opt : int option -> (unit -> 'a) -> 'a
 
 
 val with_tmp_file: str:string -> ext:string -> (filename -> 'a) -> 'a
+val with_tmp_dir: (dirname -> 'a) -> 'a
 
 (* If the user use some exit 0 in his code, then no one can intercept this
  * exit and do something before exiting. There is exn handler for exit 0

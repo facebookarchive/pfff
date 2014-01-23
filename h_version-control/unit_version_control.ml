@@ -7,20 +7,16 @@ module Lib = Lib_vcs
 (* Helpers *)
 (*****************************************************************************)
 let with_tmp_directory f =
-  let tmp_dir = Filename.temp_file (spf "vcs-test-%d" (Unix.getpid())) "" in
-  Unix.unlink tmp_dir;
-  (* who cares about race *)
-  Unix.mkdir tmp_dir 0o755;
-  Common.finalize (fun () ->
-    f tmp_dir
-  )
-    (fun () ->
-      (* yep, rm -rf, I'm not scared *)
-      Common.command2 (spf "rm -rf %s/.git" tmp_dir);
-      Common.command2 (spf "rm -rf %s/.hg" tmp_dir);
-      Common.command2 (spf "rm -f %s/*" tmp_dir);
-      Unix.rmdir tmp_dir
+  Common2.with_tmp_dir (fun tmp_dir ->
+    Common.finalize (fun () ->
+      f tmp_dir
     )
+      (fun () ->
+      (* yep, rm -rf, I'm not scared *)
+        Common.command2 (spf "rm -rf %s/.git" tmp_dir);
+        Common.command2 (spf "rm -rf %s/.hg" tmp_dir);
+      )
+  )
 
 let exec_cmds ~basedir xs =
   xs +> List.iter (fun cmd ->

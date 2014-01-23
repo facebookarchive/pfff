@@ -14,12 +14,7 @@ open Ast_ml
 let verbose = false
 
 let prolog_query ~files query =
-
-  let tmp_dir = Filename.temp_file (spf "prolog_ml-%d" (Unix.getpid())) "" in
-  Unix.unlink tmp_dir;
-  (* who cares about race *)
-  Unix.mkdir tmp_dir 0o755;
-  Common.finalize (fun () ->
+  Common2.with_tmp_dir (fun tmp_dir ->
 
     (* generating .cmt files *)
     files +> List.iter (fun (filename, content) ->
@@ -53,9 +48,6 @@ let prolog_query ~files query =
     in
     let xs = Common.cmd_to_list cmd in
     xs
-  ) (fun () ->
-    Common.command2 (spf "rm -f %s/*" tmp_dir);
-    Unix.rmdir tmp_dir
   )
 
 let unittest = 
