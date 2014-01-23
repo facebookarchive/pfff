@@ -18,20 +18,18 @@ more documentation on how to use or extend pfff.
 
 pfff is also made of few tools:
  - pfff, which allows to test the different parsers on a single file
- - pfff_db, which does some global analysis on a set of source files and
-   store the data in a marshalled form in a file somewhere (e.g. /tmp/db.json)
- - pfff_db_heavy, which does some heavy language specific global analysis 
-   on a set of source files and store the data in a database somewhere
-   (e.g. /tmp/pfff_db/)
- - codemap, which is a gtk and cairo based source code 
-   visualizer/navigator/searcher leveraging
-   the information computed previously by pfff_db
+ - scheck, a bug finder
+ - stags, an Emacs tag generator
  - sgrep, a syntactical grep
  - spatch, a syntactical patch
- - scheck, a bug finder
- - scheck_heavy, a bug finder leveraging the information computed previously
-   by pfff_db_heavy
- - stags, an Emacs tag generator
+ - codemap, which is a gtk and cairo based source code
+   visualizer/navigator/searcher leveraging
+   the information computed previously by pfff_db and codegraph.
+ - codegraph, apackage/module/class dependency visualizer
+ - codequery, an interactive tool a la SQL to query information
+   about the structure of a codebase using Prolog as the query engine
+ - pfff_db, which does some global analysis on a set of source files and
+   store the data in a marshalled form in a file somewhere (e.g. /tmp/db.json)
 
 For more information, look at the pfff wiki here:
  http://github.com/facebook/pfff/wiki/Main
