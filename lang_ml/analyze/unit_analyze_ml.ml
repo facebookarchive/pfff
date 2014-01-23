@@ -2,6 +2,8 @@ open Common
 open OUnit
 
 open Ast_ml
+module E = Database_code
+module G = Graph_code
 
 (*****************************************************************************)
 (* Prelude *)
@@ -123,6 +125,34 @@ let c = 1   (* line 3 *)
          cover'
      );
    ]);
+
+(*****************************************************************************)
+(* Codegraph *)
+(*****************************************************************************)
+   "codegraph_ml" >::: [
+     "basic def/uses" >:: (fun () ->
+       let file_content = "
+let foo () = ()
+let bar () = foo ()
+"
+       in
+       Common2.with_tmp_dir (fun tmp_dir ->
+         let file = Filename.concat tmp_dir "foo.ml" in
+         Common.write_file ~file file_content;
+         Common.command2 (spf "cd %s; ocamlc -c -bin-annot %s" tmp_dir file);
+
+         let g = Graph_code_cmt.build ~verbose:false tmp_dir [] in
+
+         let src = ("Foo.foo", E.Function) in
+         let pred = G.pred src G.Use g in
+         assert_equal
+           ~msg:"it should link the use of a function to its def"
+           ["Foo.bar", E.Function]
+           pred;
+       )          
+     );
+   ];
+
 (*****************************************************************************)
 (* Postlude *)
 (*****************************************************************************)
