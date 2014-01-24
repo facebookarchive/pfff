@@ -36,9 +36,9 @@ module Style = Style2
 (*****************************************************************************)
 (* Helpers *)
 (*****************************************************************************)
-let filename_without_leading_path ~prefix str =
-  String.sub str (String.length prefix) 
-    (String.length str -.. String.length prefix)
+let readable ~root str =
+  String.sub str (String.length root) 
+    (String.length str -.. String.length root)
 
 (*****************************************************************************)
 (* The overlays *)
@@ -56,7 +56,7 @@ let draw_label_overlay (ctx: Canvas_helpers.context) w ~x ~y r =
   let readable_txt = 
     if w.M.root = txt (* when we are fully zoomed on one file *)
     then "root"
-    else filename_without_leading_path ~prefix:w.M.root txt
+    else readable ~root:w.M.root txt
   in
 (*
   let readable_txt =

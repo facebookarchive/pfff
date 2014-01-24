@@ -163,9 +163,7 @@ let compute_database ?(verbose=false) files_or_dirs =
               let l = PI.line_of_info info in
               let c = PI.col_of_info info in
 
-              let file =
-                Parse_info.file_of_info info +> 
-                  Common.filename_without_leading_path root
+              let file = Parse_info.file_of_info info +> Common.readable ~root 
               in
 
               let module_name = Module_ml.module_name_of_filename file in
@@ -279,7 +277,7 @@ let compute_database ?(verbose=false) files_or_dirs =
 
     let ((ast, toks), _stat) = parse file in
 
-    let file = Common.filename_without_leading_path root file in
+    let file = Common.readable ~root file in
 
     (* try to resolve function use more precisely instead of incrementing 
      * all entities that have xxx as a name. Look if the module name
@@ -357,19 +355,12 @@ let compute_database ?(verbose=false) files_or_dirs =
       rank_and_filter_examples_of_use ~root ids entities_arr;
   );
 
-  let dirs = dirs +> List.map (fun s -> 
-    Common.filename_without_leading_path root s) in
+  let dirs = dirs +> List.map (fun s -> Common.readable ~root s) in
   let dirs = Db.alldirs_and_parent_dirs_of_relative_dirs dirs in
 
   { Db.
     root = root;
-
-    dirs = dirs +> List.map (fun d -> 
-      d,
-      0); (* TODO *)
-    files = files +> List.map (fun f -> 
-      Common.filename_without_leading_path root f
-      , 0); (* TODO *)
-
+    dirs = dirs +> List.map (fun d -> d, 0); (* TODO *)
+    files = files +> List.map (fun f -> Common.readable ~root f, 0); (* TODO *)
     entities = entities_arr;
   }

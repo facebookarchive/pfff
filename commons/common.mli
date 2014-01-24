@@ -226,6 +226,7 @@ val cache_computation :
   (unit -> 'a) -> 'a
 
 val filename_without_leading_path : string -> filename -> filename
+val readable: root:string -> filename -> filename
 
 val follow_symlinks: bool ref
 val files_of_dir_or_files_no_vcs_nofilter:

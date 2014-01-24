@@ -204,7 +204,7 @@ let init_drawing
       if not rect.T.tr_is_node
       then 
         let file  = rect.T.tr_label in
-        let readable = Common.filename_without_leading_path root file in
+        let readable = Common.readable ~root file in
         Some (readable, rect)
       else None
     ) +> Common.hash_of_list
@@ -347,7 +347,7 @@ let find_line_in_rectangle_at_user_point dw user_pt r =
 let find_entity_at_line line r dw =
   let model = Async.async_get dw.dw_model in
   let file = r.T.tr_label in
-  let readable = Common.filename_without_leading_path model.root file in
+  let readable = Common.readable ~root:model.root file in
   try 
     let xs = Hashtbl.find model.hentities_of_file readable in
     xs +> List.rev +> Common.find_some_opt (fun (line2, n) ->
@@ -360,7 +360,7 @@ let find_entity_at_line line r dw =
 
 let uses_and_users_readable_files_of_file file dw =
   let model = Async.async_get dw.dw_model in
-  let readable = Common.filename_without_leading_path model.root file in
+  let readable = Common.readable ~root:model.root file in
 
   let uses = 
     try Hashtbl.find model.huses_of_file readable with Not_found -> [] in

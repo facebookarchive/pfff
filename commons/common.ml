@@ -769,6 +769,9 @@ let filename_without_leading_path prj_path s =
     failwith
       (spf "cant find filename_without_project_path: %s  %s" prj_path s)
 
+let readable ~root s =
+  filename_without_leading_path root s
+
 let is_directory file =
   (Unix.stat file).Unix.st_kind =*= Unix.S_DIR
 

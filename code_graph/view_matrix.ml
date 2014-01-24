@@ -567,8 +567,7 @@ let button_action da w ev =
                 let str = 
                   grouped_deps +> List.map (fun ((f1, f2), deps) ->
                     let final_file f =
-                      try 
-                        Common.filename_without_leading_path w.model.root f
+                      try  Common.readable ~root:w.model.root f
                       with Failure _ -> f
                     in
                     let f1 = final_file f1 in

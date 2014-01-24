@@ -858,7 +858,7 @@ let build ?(verbose=true) ?(only_defs=false) dir_or_file skip_list =
   files +> Console.progress ~show:verbose (fun k -> 
     List.iter (fun file ->
       k();
-      let readable = Common.filename_without_leading_path root file in
+      let readable = Common.readable ~root file in
       let ast = parse ~show_parse_error:true file in
      extract_defs_uses ~phase:Defs ~g ~ast ~readable ~lookup_fails;
     ));
@@ -869,7 +869,7 @@ let build ?(verbose=true) ?(only_defs=false) dir_or_file skip_list =
   files +> Console.progress ~show:verbose (fun k -> 
    List.iter (fun file ->
      k();
-     let readable = Common.filename_without_leading_path root file in
+     let readable = Common.readable ~root file in
      let ast = parse ~show_parse_error:false file in
      extract_defs_uses ~phase:Inheritance ~g ~ast ~readable ~lookup_fails;
    ));
@@ -879,7 +879,7 @@ let build ?(verbose=true) ?(only_defs=false) dir_or_file skip_list =
   files +> Console.progress ~show:verbose (fun k -> 
    List.iter (fun file ->
      k();
-     let readable = Common.filename_without_leading_path root file in
+     let readable = Common.readable ~root file in
      let ast = parse ~show_parse_error:false file in
      extract_defs_uses ~phase:Uses ~g ~ast ~readable ~lookup_fails;
    ));

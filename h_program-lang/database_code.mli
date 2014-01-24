@@ -113,8 +113,8 @@ val merge_databases: database -> database -> database
 
 val alldirs_and_parent_dirs_of_relative_dirs: 
   Common.dirname list -> Common.dirname list
-val files_and_dirs_database_from_root:
-  Common.dirname -> database
+val files_and_dirs_database_from_files:
+  root:Common.dirname -> Common.filename list -> database
 val adjust_method_or_field_external_users:
   verbose:bool -> entity array -> unit
 

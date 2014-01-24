@@ -122,7 +122,7 @@ let gen_nbauthors_layer ?(verbose=false) ~skip_revs dir ~output =
      files = files +> Console.progress ~show:verbose (fun k ->
       List.map (fun file ->
         k();
-        let readable_file = Common.filename_without_leading_path dir file in
+        let readable_file = Common.readable ~root:dir file in
         
         let annots = Git.annotate 
           ~basedir:dir ~use_cache:true 
@@ -174,7 +174,7 @@ let gen_age_layer ?(verbose=false) ~line_granularity ~skip_revs dir ~output =
      files = files +> Console.progress ~show:verbose (fun k ->
       List.map (fun file ->
         k();
-        let readable_file = Common.filename_without_leading_path dir file in
+        let readable_file = Common.readable ~root:dir file in
         
         let annots = Git.annotate 
           ~basedir:dir ~use_cache:true 

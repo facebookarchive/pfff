@@ -561,7 +561,7 @@ let build2 ?(show_progress=true) dir_or_files skip_list =
 
    files +> List.iter (fun file ->
 
-     let readable = Common.filename_without_leading_path root file in
+     let readable = Common.readable root file in
      let parts = Common.split "/" readable in 
      add (P.Misc (spf "file('%s', [%s])" readable
            (parts +> List.map (fun s -> spf "'%s'" s) +> Common.join ",")));

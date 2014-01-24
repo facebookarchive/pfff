@@ -315,7 +315,7 @@ let rec extract_defs_uses env ast =
     then Common.matched1 env.clang2_file
     else failwith "not a clang2 file?"
   in
-  let c_file_readable = Common.filename_without_leading_path env.root c_file in
+  let c_file_readable = Common.readable ~root:env.root c_file in
 
   if env.phase = Defs then begin
     let dir = Common2.dirname c_file_readable in

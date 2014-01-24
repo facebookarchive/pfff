@@ -57,8 +57,7 @@ let treemap_generator paths =
 (* optimize and filter very small rectangles so that we send less data *)
 let optimize_rects root rects =
   let rects = rects +> Common.map_filter (fun rect ->
-    let readable = 
-      Common.filename_without_leading_path root rect.T.tr_label in
+    let readable = Common.readable ~root rect.T.tr_label in
     let rect = { rect with T.tr_label = readable } in
     let r = rect.Treemap.tr_rect in
     let w = Figures.rect_width r in

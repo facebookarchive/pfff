@@ -48,7 +48,7 @@ let readable_txt_for_label txt current_root =
   let readable_txt = 
     if current_root =$= txt (* when we are fully zoomed on one file *)
     then "root"
-    else Common.filename_without_leading_path current_root txt 
+    else Common.readable ~root:current_root txt 
   in
   if String.length readable_txt > 25
   then 

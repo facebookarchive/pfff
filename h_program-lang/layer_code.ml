@@ -570,7 +570,7 @@ let simple_layer_of_parse_infos ~root ~title ?(description="") xs kinds =
     let file = Parse_info.file_of_info tok in
     let line = Parse_info.line_of_info tok in
     let file' = Common2.relative_to_absolute file in 
-    Common.filename_without_leading_path root file', (line, kind)
+    Common.readable ~root file', (line, kind)
   )
   in
 

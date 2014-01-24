@@ -143,8 +143,8 @@ let overlay_equivalences ~dir_orig ~dir_overlay  =
   equiv +> Common.map_filter (fun (overlay, orig) ->
     try 
       Some (
-        Common.filename_without_leading_path dir_overlay overlay,
-        Common.filename_without_leading_path dir_orig orig
+        Common.readable ~root:dir_overlay overlay,
+        Common.readable ~root:dir_orig orig
       )
     with exn ->
       pr2 (spf "PB with %s, exn = %s" orig (Common.exn_to_s exn));

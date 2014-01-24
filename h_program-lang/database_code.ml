@@ -701,24 +701,16 @@ let multi_dirs_entities_of_dirs es =
     else None
   )
 
-let files_and_dirs_database_from_root root =
+let files_and_dirs_database_from_files ~root files =
 
   (* quite similar to what we first do in a database_light_xxx.ml *)
-  let files = Common.files_of_dir_or_files_no_vcs_nofilter [root] in
   let dirs = files +> List.map Filename.dirname +> Common2.uniq_eff in
-
-  let dirs = dirs +> List.map (fun s -> 
-    Common.filename_without_leading_path root s) in
+  let dirs = dirs +> List.map (fun s -> Common.readable ~root s) in
   let dirs = alldirs_and_parent_dirs_of_relative_dirs dirs in
 
   { root = root;
-    dirs = dirs +> List.map (fun d -> 
-      d,
-      0); (* TODO *)
-    files = files +> List.map (fun f -> 
-      Common.filename_without_leading_path root f
-, 0); (* TODO *)
-
+    dirs =  dirs  +> List.map (fun d -> d, 0); (* TODO *)
+    files = files +> List.map (fun f -> Common.readable ~root f, 0); (* TODO *)
     entities = [| |];
   }
 

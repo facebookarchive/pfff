@@ -144,7 +144,7 @@ let readable_path_of_ast ast root readable_cmt source_finder =
    * those paths.
    *)
   let readable_opt = 
-    try Some (Common.filename_without_leading_path root fullpath)
+    try Some (Common.readable ~root fullpath)
     with Failure _ -> None
   in 
   match readable_opt with
@@ -1108,7 +1108,7 @@ let build ?(verbose=false) dir_or_file skip_list =
     List.iter (fun file ->
       k();
       let ast = parse file in
-      let readable_cmt = Common.filename_without_leading_path root file in
+      let readable_cmt = Common.readable ~root file in
       extract_defs_uses ~root { env with phase = Defs } ast readable_cmt
     ));
 
@@ -1118,7 +1118,7 @@ let build ?(verbose=false) dir_or_file skip_list =
     List.iter (fun file ->
       k();
       let ast = parse file in
-      let readable_cmt = Common.filename_without_leading_path root file in
+      let readable_cmt = Common.readable ~root file in
       if readable_cmt =~ "^external" || readable_cmt =~ "^EXTERNAL"
       then ()
       else extract_defs_uses ~root { env with phase = Uses} ast readable_cmt

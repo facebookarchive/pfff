@@ -455,7 +455,7 @@ let build ?(verbose=true) dir skip_list =
   files +> Console.progress ~show:verbose (fun k -> 
     List.iter (fun file ->
       k();
-      let readable = Common.filename_without_leading_path root file in
+      let readable = Common.readable ~root file in
       let ast = parse ~show_parse_error:true file in
       extract_defs ~g ~dupes ~ast ~readable;
     ));
@@ -471,7 +471,7 @@ let build ?(verbose=true) dir skip_list =
   files +> Console.progress ~show:verbose (fun k -> 
    List.iter (fun file ->
      k();
-     let readable = Common.filename_without_leading_path root file in
+     let readable = Common.readable ~root file in
      let ast = parse ~show_parse_error:false file in
      extract_uses ~g ~dupes ~ast ~readable ~lookup_fails;
    ));

@@ -605,7 +605,7 @@ let build ?(verbose=true) ?(graph_code_java=None) dir_or_file skip_list =
   files +> Console.progress ~show:verbose (fun k -> 
    List.iter (fun file ->
      k();
-     let readable = Common.filename_without_leading_path root file in
+     let readable = Common.readable ~root file in
      if readable =~ "^external" || readable =~ "^EXTERNAL"
      then ()
      else 

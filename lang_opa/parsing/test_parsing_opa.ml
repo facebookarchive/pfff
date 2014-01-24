@@ -68,7 +68,7 @@ let translate_opa dir1 dir2 =
   Common.command2(spf "mkdir -p %s" dir2);
   fullxs +> List.iter (fun src ->
     pr2 (spf "processing %s" src);
-    let readable = Common.filename_without_leading_path dir1 src in
+    let readable = Common.readable ~root:dir1 src in
     let dirname = Filename.dirname readable in
     let dest = spf "%s/%s" dir2 readable in
     Common.command2(spf "mkdir -p %s/%s" dir2 dirname);

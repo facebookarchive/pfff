@@ -145,10 +145,10 @@ let hfiles_and_top_entities root db_opt =
  * todo: what do do when the root of the db is not the root
  * of the treemap ?
  *)
-let all_entities root db_opt =
+let all_entities ~root files db_opt =
   match db_opt with
   | None -> 
-      let db = Database_code.files_and_dirs_database_from_root root in
+      let db = Database_code.files_and_dirs_database_from_files ~root files in
       Database_code.files_and_dirs_and_sorted_entities_for_completion
         ~threshold_too_many_entities:!Flag.threshold_too_many_entities
         db
@@ -163,7 +163,7 @@ let all_entities root db_opt =
        * still want to quicky jump too hence the need to include
        * other regular files and dirs
        *)
-      let db2 = Database_code.files_and_dirs_database_from_root root in
+      let db2 = Database_code.files_and_dirs_database_from_files ~root files in
       let db = Database_code.merge_databases db db2 in
 
       Database_code.files_and_dirs_and_sorted_entities_for_completion

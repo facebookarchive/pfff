@@ -82,7 +82,7 @@ let filter_files skip_list root xs =
     ) 
   in
   xs +> Common.exclude (fun file ->
-    let readable = Common.filename_without_leading_path root file in
+    let readable = Common.readable ~root file in
     (Hashtbl.mem skip_files readable) ||
     (skip_dirs +> List.exists 
        (fun dir -> readable =~ (dir ^ ".*"))) ||
@@ -151,7 +151,7 @@ let reorder_files_skip_errors_last skip_list root xs =
   let is_file_want_to_skip_error = build_filter_errors_file skip_list in
   let (skip_errors, ok) = 
     xs +> List.partition (fun file ->
-      let readable = Common.filename_without_leading_path root file in
+      let readable = Common.readable ~root file in
       is_file_want_to_skip_error readable
     )
   in

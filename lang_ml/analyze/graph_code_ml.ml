@@ -219,7 +219,7 @@ let build ?(verbose=true) dir skip_list =
   files +> Console.progress ~show:verbose (fun k -> 
    List.iter (fun file ->
     k();
-    let readable = Common.filename_without_leading_path root file in
+    let readable = Common.readable ~root file in
     let ast = (* parse file *) () in
     extract_defs ~g ~duplicate_modules ~ast ~readable ~file;
   ));
@@ -229,7 +229,7 @@ let build ?(verbose=true) dir skip_list =
   files +> Console.progress ~show:verbose (fun k -> 
    List.iter (fun file ->
      k();
-     let readable = Common.filename_without_leading_path root file in
+     let readable = Common.readable ~root file in
      (* skip files under external/ for now *)
      if readable =~ ".*external/" || readable =~ "web/.*" then ()
      else begin

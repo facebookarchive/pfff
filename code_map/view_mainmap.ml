@@ -352,7 +352,7 @@ let button_action da dw_ref ev =
             +> List.filter Sys.file_exists
           in
 
-          let readable = Common.filename_without_leading_path model.root file in
+          let readable = Common.readable ~root:model.root file in
 
           GToolbox.popup_menu ~entries:[
             `I ("go to file", (fun () -> 

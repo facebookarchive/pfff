@@ -1143,7 +1143,7 @@ let build
      *)
     path = (fun file -> 
       if readable_file_format
-      then Common.filename_without_leading_path root file
+      then Common.readable root file
       else file
     );
   }
@@ -1155,7 +1155,7 @@ let build
   files +> Console.progress ~show:verbose (fun k ->
     List.iter (fun file ->
       k();
-      let readable = Common.filename_without_leading_path root file in
+      let readable = Common.readable root file in
       let ast = parse env file in
       (* will modify env.dupes instead of raise Graph_code.NodeAlreadyPresent *)
       extract_defs_uses { env with phase = Defs} ast readable;

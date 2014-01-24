@@ -45,8 +45,7 @@ let gen_red_green_layer ~root ~output stats =
     description = "";
     files = stats +> List.map (fun stat ->
      let file = 
-       stat.filename +> Common2.relative_to_absolute
-         +> Common.filename_without_leading_path root
+       stat.filename +> Common2.relative_to_absolute +> Common.readable ~root
      in
       
       file,
@@ -73,8 +72,7 @@ let gen_heatmap_layer ~root ~output stats =
     description = "lower is better";
     files = stats +> List.map (fun stat ->
      let file = 
-       stat.filename +> Common2.relative_to_absolute
-         +> Common.filename_without_leading_path root
+       stat.filename +> Common2.relative_to_absolute +> Common.readable ~root
      in
      let covered = stat.correct in
      let not_covered = stat.bad in

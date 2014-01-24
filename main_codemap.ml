@@ -207,8 +207,10 @@ let set_gc () =
 (*****************************************************************************)
 
 (*s: treemap_generator *)
-let treemap_generator paths = 
-  let treemap = Treemap_pl.code_treemap ~filter_file:!filter paths in
+(* this is called each time we go in a new directory (or set of dirs) *)
+let treemap_generator ~filter_file = 
+ fun paths ->
+  let treemap = Treemap_pl.code_treemap ~filter_file paths in
   let algo = Treemap.Ordered Treemap.PivotByMiddle in
   let big_borders = !Flag.boost_label_size in
   let rects = Treemap.render_treemap ~algo ~big_borders treemap in
@@ -217,14 +219,16 @@ let treemap_generator paths =
 (*e: treemap_generator *)
 
 (*s: build_model *)
+(* this is currently called in the background *)
 let build_model2 root dbfile_opt graphfile_opt =   
 
   let db_opt = dbfile_opt +> Common.map_opt Database_code.load_database in
+  let files = Common.files_of_dir_or_files_no_vcs_nofilter [root] in
 
   let hentities, hfiles_entities, all_entities =
     Model_database_code.hentities               root db_opt,
     Model_database_code.hfiles_and_top_entities root db_opt,
-    Model_database_code.all_entities            root db_opt 
+    Model_database_code.all_entities            ~root files db_opt 
   in
 
   let big_grep_idx = Completion2.build_completion_defs_index all_entities in
@@ -340,7 +344,8 @@ let main_action xs =
   );
 
   let dw = 
-    Model.init_drawing treemap_generator async_model layers_with_index xs root
+    Model.init_drawing (treemap_generator ~filter_file:!filter) async_model
+      layers_with_index xs root
   in
 
   (* This can require lots of stack. Make sure to have ulimit -s 40000.

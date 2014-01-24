@@ -50,11 +50,8 @@ let mk_entity ~root ~hcomplete_name_of_info info categ =
               
   { Database_code.
     e_name = name;
-    e_fullname = 
-      if fullname <> name then fullname else "";
-    e_file = 
-      Ast.file_of_info info +> 
-        Common.filename_without_leading_path root;
+    e_fullname = if fullname <> name then fullname else "";
+    e_file = Ast.file_of_info info +> Common.readable ~root;
     e_pos = { Common2.l = l; c };
     e_kind = Database_code.entity_kind_of_highlight_category_def categ;
 
@@ -186,24 +183,16 @@ let compute_database ?(verbose=false) files_or_dirs =
   (* step3: adding cross reference information *)
   if verbose then pr2 "\nphase 3: last fixes";
 
-  let entities_arr = 
-    Common.hash_to_list hdefs +> List.map snd +> Array.of_list
+  let entities_arr = Common.hash_to_list hdefs +> List.map snd +> Array.of_list
   in
   Db.adjust_method_or_field_external_users ~verbose entities_arr;
 
-  let dirs = dirs +> List.map (fun s -> 
-    Common.filename_without_leading_path root s) in
+  let dirs = dirs +> List.map (fun s -> Common.readable ~root s) in
   let dirs = Db.alldirs_and_parent_dirs_of_relative_dirs dirs in
 
   { Db.
     root = root;
-
-    dirs = dirs +> List.map (fun d -> 
-      d
-, 0); (* TODO *)
-    files = files +> List.map (fun f -> 
-      Common.filename_without_leading_path root f
-, 0); (* TODO *)
-
+    dirs = dirs +> List.map (fun d -> d, 0); (* TODO *)
+    files = files +> List.map (fun f -> Common.readable ~root f, 0); (* TODO *)
     entities = entities_arr;
   }
