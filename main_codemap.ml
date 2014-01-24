@@ -223,7 +223,12 @@ let treemap_generator ~filter_file =
 let build_model2 root dbfile_opt graphfile_opt =   
 
   let db_opt = dbfile_opt +> Common.map_opt Database_code.load_database in
-  let files = Common.files_of_dir_or_files_no_vcs_nofilter [root] in
+  (* todo: and skip_list?
+   * todo: opti by factorizing the 'find' with treemap_generator?
+  *)
+  let files = 
+    Common.files_of_dir_or_files_no_vcs_nofilter [root] +> List.filter !filter
+  in
 
   let hentities, hfiles_entities, all_entities =
     Model_database_code.hentities               root db_opt,
