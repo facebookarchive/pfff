@@ -498,7 +498,9 @@ rule category = parse
   | "/th/"
   | "/tr/"
   | "/uk/"
+(* plan9 exception mips emulator 
   | "/vi/"
+*)
   | "/zh/"
   | "/zh-tw/"
   | "/la/"
