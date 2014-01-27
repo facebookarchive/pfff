@@ -115,10 +115,8 @@ let test_mode = ref (None: string option)
 
 (* see filters below, which files we are interested in *)
 let filter = ref (fun file -> true)
-
-(* less: a config file:
- *  GtkMain.Rc.add_default_file "/home/pad/c-pfff/data/pfff_browser.rc"; 
- *)
+let skip_file  = ref (None: Common.filename option)
+(* less: a config file: GtkMain.Rc.add_default_file "/.../pfff_browser.rc"; *)
 
 (* action mode *)
 let action = ref ""
@@ -347,9 +345,23 @@ let main_action xs =
   graph_file +> Common.do_option (fun db -> 
     pr2 (spf "Using graphcode: %s" db)
   );
+  let skip_file = !skip_file ||| Filename.concat root "skip_list.txt" in
+  let skip_list =
+    if Sys.file_exists skip_file
+    then begin
+      pr2 (spf "Using skip file: %s" skip_file);
+      Skip_code.load skip_file
+    end
+    else []
+  in
+  let filter_files_skip_list = Skip_code.filter_files skip_list root in
+  let filter_file = (fun file -> 
+    !filter file && 
+    (skip_list = [] || filter_files_skip_list [file] <> []))
+  in
 
   let dw = 
-    Model.init_drawing (treemap_generator ~filter_file:!filter) async_model
+    Model.init_drawing (treemap_generator ~filter_file) async_model
       layers_with_index xs root
   in
 
@@ -509,9 +521,10 @@ let options () = [
     "-filter", Arg.String (fun s -> filter := List.assoc s filters;), 
      spf " filter certain files (available = %s)" 
       (filters +> List.map fst +> Common.join ", ");
-
     "-extra_filter", Arg.String (fun s -> Flag.extra_filter := Some s),
     " ";
+    "-skip_list", Arg.String (fun s -> skip_file := Some s), 
+    " <file> skip files or directories";
 
     "-with_info", Arg.String (fun _s -> ()),
     " obsolete\n"; (* for codemap_www in engshare/admin/scripts *)
