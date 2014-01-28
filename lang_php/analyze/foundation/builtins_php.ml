@@ -258,6 +258,12 @@ let do_not_decl = [
   "__halt_compiler";
   "echo";
   "print";
+]
+
+(* todo: need to have a flag for that. Doing that by default breaks
+ * regression tests in cmf as many builtins become unknown.
+ *)
+let do_not_decl_hack = [
   (* Manually typed in functions.hhi *)
   "array_fill";
   "array_key_exists";
@@ -301,7 +307,6 @@ let do_not_decl = [
 ]
 
 let ns_regexp = Str.regexp "\\"
-
 
 (*****************************************************************************)
 (* Helpers *)
