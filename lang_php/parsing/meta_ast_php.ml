@@ -943,6 +943,12 @@ and vof_interface (v1, v2) =
 
 and vof_class_stmt =
   function
+  | TraitConstraint ((v1, v2, v3, v4)) ->
+      let v1 = vof_tok v1
+      and v2 = vof_wrap vof_trait_constraint_kind v2
+      and v3 = vof_hint_type v3
+      and v4 = vof_tok v4
+      in Ocaml.VSum (("TraitConstraint", [ v1; v2; v3; v4 ]))
   | ClassConstants ((v1, v2, v3)) ->
       let v1 = vof_tok v1
       and v2 = vof_comma_list vof_class_constant v2
@@ -965,6 +971,10 @@ and vof_class_stmt =
       let v3 = Ocaml.vof_either vof_tok (vof_brace (vof_list vof_trait_rule)) v3
       in
       Ocaml.VSum (("UseTrait", [v1; v2; v3]))
+and vof_trait_constraint_kind =
+  function
+  | MustExtend -> Ocaml.VSum (("MustExtend", []))
+  | MustImplement -> Ocaml.VSum (("MustImplement", []))
 
 and vof_trait_rule =
   function

@@ -365,6 +365,8 @@ let visit_program ~tag prefs  hentities (ast, toks) =
           tag info (Class (Use2 fake_no_use2));
          );
         k x
+      | Ast.TraitConstraint (tok1, kind, ty, tok2) ->
+        k x
     );
 
     (* -------------------------------------------------------------------- *)

@@ -302,6 +302,7 @@ let visit ~add readable ast =
           )
 
         | UseTrait _ -> ()
+        | TraitConstraint _ -> ()
         )
       | _ -> k x
 

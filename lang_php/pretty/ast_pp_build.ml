@@ -718,6 +718,7 @@ and class_body env st acc =
       A.CEconst consts :: acc
   | XhpDecl _ -> acc (* TODO xhp decl *)
   | UseTrait _ -> raise (TodoConstruct "UseTrait")
+  | TraitConstraint _ -> raise (TodoConstruct "TraitConstraint")
 
 and method_def env m =
   let acc = [] in

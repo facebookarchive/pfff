@@ -180,9 +180,7 @@ let refactor refactorings (ast, tokens) =
                       k x
                   | _ -> raise Impossible
                   )
-              | (UseTrait (_, _, _)|XhpDecl _|Method _
-                |ClassConstants (_, _, _)
-                ) -> k x
+              | _ -> k x
             );
           }
       | R.AddInterface (class_opt, interface) ->

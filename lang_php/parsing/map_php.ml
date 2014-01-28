@@ -881,6 +881,12 @@ and map_interface (v1, v2) =
 
 and map_class_stmt =
   function
+  | TraitConstraint ((v1, v2, v3, v4)) ->
+      let v1 = map_tok v1
+      and v2 = map_wrap map_trait_constraint_kind v2
+      and v3 = map_hint_type v3
+      and v4 = map_tok v4
+      in TraitConstraint ((v1, v2, v3, v4))
   | ClassConstants ((v1, v2, v3)) ->
       let v1 = map_tok v1
       and v2 = map_comma_list map_class_constant v2
@@ -925,6 +931,9 @@ and map_trait_rule =
       and v4 = map_of_option map_ident v4
       and v5 = map_tok v5
       in As ((v1, v2, v3, v4, v5))
+
+and map_trait_constraint_kind =
+  function | MustExtend -> MustExtend | MustImplement -> MustImplement
 
 and map_xhp_decl =
   function

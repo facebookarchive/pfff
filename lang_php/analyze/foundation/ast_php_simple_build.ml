@@ -658,7 +658,7 @@ and class_body env st (mets, flds) =
     met::mets, more_flds @ flds
 
   | ClassVariables (_, _, _, _) | ClassConstants (_, _, _) | UseTrait _
-  | XhpDecl _
+  | XhpDecl _ | TraitConstraint _
     -> (mets, flds)
 
 and method_def env m =

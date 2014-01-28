@@ -601,6 +601,9 @@ and class_def = {
     (* php 5.4, 'use' can appear in classes/traits (but not interface) *)
     | UseTrait of tok (*use*) * class_name comma_list *
         (tok (* ; *), trait_rule list brace) Common.either
+    (* facebook-ext: 'require' can appear only in traits *)
+    | TraitConstraint of 
+        tok (* require *) * trait_constraint_kind wrap * hint_type * tok (* ; *)
 
         and class_constant = ident * static_scalar_affect
         and class_variable = dname * static_scalar_affect option
@@ -664,6 +667,10 @@ and trait_rule =
                 class_name comma_list * tok (* ; *)
   | As of (ident, name * tok * ident) Common.either * tok (* as *) *
           modifier wrap list * ident option * tok (* ; *)
+
+and trait_constraint_kind =
+  | MustExtend
+  | MustImplement
 
 (* ------------------------------------------------------------------------- *)
 (* Type definition *)

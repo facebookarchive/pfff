@@ -2518,14 +2518,32 @@ and m_class_stmt a b =
     )
     )))
 
+  | A.TraitConstraint(a1, a2, a3, a4), B.TraitConstraint(b1, b2, b3, b4) ->
+    m_tok a1 b1 >>= (fun (a1, b1) ->
+    m_wrap m_trait_constraint_kind a2 b2 >>= (fun (a2, b2) ->
+    m_hint_type a3 b3 >>= (fun (a3, b3) ->
+    m_tok a4 b4 >>= (fun (a4, b4) ->
+      return (
+        A.TraitConstraint(a1, a2, a3, a4), 
+        B.TraitConstraint(b1, b2, b3, b4)
+      )
+    ))))
+
   | A.ClassConstants _, _
   | A.ClassVariables _, _
   | A.Method _, _
   | A.XhpDecl _, _
   | A.UseTrait _, _
+  | A.TraitConstraint _, _
    -> fail ()
 
 and m_trait_rule = m_unit
+
+and m_trait_constraint_kind a b =
+  match (a, b) with
+  | A.MustExtend, B.MustExtend
+  | A.MustImplement, B.MustImplement -> return (a, b)
+  | _ -> fail ()
 
 and m_class_variable a b =
   match a, b with

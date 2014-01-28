@@ -281,9 +281,7 @@ let is_phpunit_derived_class_heuristics def =
         | Method def -> 
             let s = Ast.str_of_ident def.f_name in 
             s =~ "^test[A-Za-z_]+"
-        | ClassConstants _  | ClassVariables _ -> false
-        | XhpDecl _ -> false
-        | UseTrait _ -> false
+        | _ -> false
       ))
 
 (*

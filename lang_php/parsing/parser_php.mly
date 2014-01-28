@@ -666,6 +666,9 @@ class_statement:
      { UseTrait ($1, $2, Left $3) }
  | T_USE class_name_list TOBRACE trait_rules TCBRACE
      { UseTrait ($1, $2, Right ($3, $4, $5)) }
+/*(* facebook-ext: *)*/
+ | T_REQUIRE trait_constraint_kind type_php TSEMICOLON
+     { TraitConstraint ($1, $2, $3, $4) }
 
 method_declaration:
      method_modifiers T_FUNCTION is_reference ident_method_name type_params_opt
@@ -821,6 +824,10 @@ trait_alias_rule:
 trait_alias_rule_method:
  | qualified_name_for_traits TCOLCOL T_IDENT { Right ($1, $2, Name $3) }
  | T_IDENT { Left (Name $1) }
+
+trait_constraint_kind:
+ | T_EXTENDS    { MustExtend, $1 }
+ | T_IMPLEMENTS { MustImplement, $1 }
 
 /*(*************************************************************************)*/
 /*(*1 Type definitions *)*/

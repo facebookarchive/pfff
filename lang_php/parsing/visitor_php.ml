@@ -874,6 +874,12 @@ and v_interface (v1, v2) =
 
 and v_class_stmt x =
   let k x = match x with
+  | TraitConstraint ((v1, v2, v3, v4)) ->
+      let v1 = v_tok v1
+      and v2 = v_wrap v_trait_constraint_kind v2
+      and v3 = v_hint_type v3
+      and v4 = v_tok v4
+      in ()
   | ClassConstants ((v1, v2, v3)) ->
       let v1 = v_tok v1
       and v2 = v_comma_list v_class_constant v2
@@ -895,6 +901,8 @@ and v_class_stmt x =
       ()
   in
   vin.kclass_stmt (k, all_functions) x
+and v_trait_constraint_kind =
+  function | MustExtend -> () | MustImplement -> ()
 
 and v_trait_rule =
   function

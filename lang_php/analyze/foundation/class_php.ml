@@ -130,9 +130,8 @@ let get_public_or_protected_vars_of_class def =
          Some dnames
        else None
 
-  | (XhpDecl _|Method _|ClassConstants (_, _, _) | UseTrait _) ->
-      (* could maybe do something with XhpDecl ? *)
-      None
+  (* could maybe do something with XhpDecl ? *)
+  | _ -> None
   ) +> List.flatten
 
 (* This is useful when one needs to add class variables in scope.
@@ -180,8 +179,7 @@ let traits c =
       | Right _ -> failwith "not handling rewrite rules in traits"
       );
       Some (Ast.uncomma names)
-  | (XhpDecl _|Method _|ClassVariables (_, _, _, _)|ClassConstants (_, _, _))
-      -> None
+  | _ -> None
   ) +> List.flatten
 
 (*****************************************************************************)
