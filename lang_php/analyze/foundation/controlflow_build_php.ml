@@ -542,7 +542,9 @@ let rec (cfg_stmt: state -> nodei option -> stmt -> nodei option) =
     *   <tryend>
     *)
 
-   | Try(t1, body, catch, other_catches) ->
+   | Try(t1, body, catches, finallys) ->
+       (* TODO Task #3622443: Update the logic below to account for "finally"
+          clauses *)
        let newi = state.g#add_node { F.n = F.TryHeader;i=i() } in
        let catchi = state.g#add_node { F.n = F.CatchStart;i=None } in
        state.g +> add_arc_opt (previ, newi);
@@ -575,7 +577,7 @@ let rec (cfg_stmt: state -> nodei option -> stmt -> nodei option) =
        * try.
        *)
        let last_false_node =
-         cfg_catches state catchi endi (catch::other_catches) in
+         cfg_catches state catchi endi (catches) in
 
        (* we want to connect the end of the catch list with
         * the next handler, if try are nested, or to the exit if

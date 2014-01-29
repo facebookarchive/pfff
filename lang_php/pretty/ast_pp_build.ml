@@ -122,9 +122,11 @@ let rec last_info_of_stmt = function
   | For (_, _, _, _, _, _, _, _, (SingleStmt st)) -> last_info_of_stmt st
   | Foreach (_, _, _, _, _, _, (SingleStmt st)) -> last_info_of_stmt st
   | Declare (_, _, (SingleStmt st)) -> last_info_of_stmt st
-  | Try (_, _, (_, _, (_, _, x)), []) -> x
-  | Try (_, _, _, l) ->
-      let (_, _, (_, _, x)) = last l in
+  | Try (_, _, [], fl) ->
+      let (_, (_, _, x)) = last fl in
+      x
+  | Try (_, _, cl, _) ->
+      let (_, _, (_, _, x)) = last cl in
       x
   | While (_, _, (ColonStmt (_, _, _, x)))
   | For (_, _, _, _, _, _, _, _, (ColonStmt (_, _, _, x)))
@@ -352,11 +354,11 @@ and stmt_ env st acc =
   | Continue (_, eopt, _) -> A.Continue (opt expr env eopt) :: acc
   | Return (_, eopt, _) -> A.Return (opt expr env eopt) :: acc
   | Throw (_, e, _) -> A.Throw (expr env e) :: acc
-  | Try (_, (_, stl, _), c, cl) ->
+  | Try (_, (_, stl, _), cl, fl) ->
       let stl = List.fold_right (stmt_and_def env) stl [] in
-      let c = catch env c in
       let cl = List.map (catch env) cl in
-      A.Try (stl, c, cl) :: acc
+      let fl = List.map (finally env) fl in
+      A.Try (stl, cl, fl) :: acc
   | Echo (_, el, _) ->
       A.Expr (A.Call (A.Id "echo", (List.map (expr env) (comma_list el))))
       :: acc
@@ -860,6 +862,10 @@ and catch env (_, (_, (fq, dn), _), (_, stdl, _)) =
   let fq = hint_type env fq in
   let dn = dname dn in
   fq, dn, stdl
+
+and finally env (_, (_, stdl, _)) =
+  let stdl = List.fold_right (stmt_and_def env) stdl [] in
+  stdl
 
 and static_var env (x, e) =
   dname x, opt static_scalar_affect env e

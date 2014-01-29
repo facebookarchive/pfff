@@ -69,8 +69,8 @@ and vof_stmt =
   | Throw v1 -> let v1 = vof_expr v1 in Ocaml.VSum (("Throw", [ v1 ]))
   | Try ((v1, v2, v3)) ->
       let v1 = Ocaml.vof_list vof_stmt v1
-      and v2 = vof_catch v2
-      and v3 = Ocaml.vof_list vof_catch v3
+      and v2 = Ocaml.vof_list vof_catch v2
+      and v3 = Ocaml.vof_list vof_finally v3
       in Ocaml.VSum (("Try", [ v1; v2; v3 ]))
   | StaticVars v1 ->
       let v1 =
@@ -127,6 +127,9 @@ and vof_catch (v1, v2, v3) =
   and v2 = vof_var v2
   and v3 = Ocaml.vof_list vof_stmt v3
   in Ocaml.VTuple [ v1; v2; v3 ]
+and vof_finally (v1) =
+  let v1 = Ocaml.vof_list vof_stmt v1
+  in Ocaml.VTuple [ v1 ]
 and vof_expr =
   function
   | Int v1 -> let v1 = Ocaml.vof_string v1 in Ocaml.VSum (("Int", [ v1 ]))

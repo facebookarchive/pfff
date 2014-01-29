@@ -65,10 +65,10 @@ module Deps = struct
         let acc = expr acc e2 in
         stmtl acc stl
     | Return e | Break e | Continue e -> expr_opt acc e
-    | Try (stl, c, cl) ->
+    | Try (stl, cl, fl) ->
         let acc = stmtl acc stl in
-        let acc = catch acc c in
         let acc = catchl acc cl in
+        let acc = finallyl acc fl in
         acc
     | StaticVars svl -> List.fold_left static_var acc svl
     | Global el -> exprl acc el
@@ -83,6 +83,9 @@ module Deps = struct
 
   and catchl acc l = List.fold_left catch acc l
   and catch acc (_, _, stl) = stmtl acc stl
+
+  and finallyl acc l = List.fold_left finally acc l
+  and finally acc (stl) = stmtl acc stl
 
   and exprl acc l = List.fold_left expr acc l
   and expr_opt acc = function None -> acc | Some e -> expr acc e

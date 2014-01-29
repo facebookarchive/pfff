@@ -495,8 +495,8 @@ let visit ~add readable ast =
       | Throw (_, New (_, (Id (name)), _), _) ->
           add (P.Misc (spf "throw(%s, '%s')"
                  !current (Ast.str_of_name name)))
-      | Try (_, _, c1, cs) ->
-          (c1::cs) +> List.iter (fun (_, (_, (classname, dname), _), _) ->
+      | Try (_, _, cs, _) ->
+          (cs) +> List.iter (fun (_, (_, (classname, dname), _), _) ->
             add (P.Misc (spf "catch(%s, '%s')"
                    !current (Ast.str_of_class_name classname)))
           );

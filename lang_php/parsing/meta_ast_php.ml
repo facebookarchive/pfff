@@ -605,8 +605,8 @@ and vof_stmt =
   | Try ((v1, v2, v3, v4)) ->
       let v1 = vof_tok v1
       and v2 = vof_brace (vof_list vof_stmt_and_def) v2
-      and v3 = vof_catch v3
-      and v4 = vof_list vof_catch v4
+      and v3 = vof_list vof_catch v3
+      and v4 = vof_list vof_finally v4
       in Ocaml.VSum (("Try", [ v1; v2; v3; v4 ]))
   | Echo ((v1, v2, v3)) ->
       let v1 = vof_tok v1
@@ -701,6 +701,10 @@ and vof_catch (v1, v2, v3) =
       v2
   and v3 = vof_brace (vof_list vof_stmt_and_def) v3
   in Ocaml.VTuple [ v1; v2; v3 ]
+and vof_finally (v1, v2) =
+  let v1 = vof_tok v1
+  and v2 = vof_brace (vof_list vof_stmt_and_def) v2
+  in Ocaml.VTuple [ v1; v2 ]
 and vof_use_filename =
   function
   | UseDirect v1 ->

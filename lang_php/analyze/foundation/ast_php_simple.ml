@@ -156,7 +156,7 @@ and stmt =
   | Break of expr option | Continue of expr option
 
   | Throw of expr
-  | Try of stmt list * catch * catch list
+  | Try of stmt list * catch list * finally list
 
   (* only at toplevel in most of our code *)
   | ClassDef of class_def
@@ -181,6 +181,7 @@ and stmt =
 
   (* catch(Exception $exn) { ... } => ("Exception", "$exn", [...]) *)
   and catch = hint_type  * var * stmt list
+  and finally = stmt list
 
 (* ------------------------------------------------------------------------- *)
 (* Expression *)

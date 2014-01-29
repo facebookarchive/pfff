@@ -2188,8 +2188,8 @@ and m_stmt a b =
   | A.Try(a1, a2, a3, a4), B.Try(b1, b2, b3, b4) ->
     m_tok a1 b1 >>= (fun (a1, b1) ->
     (m_brace (m_list m_stmt_and_def)) a2 b2 >>= (fun (a2, b2) ->
-    m_catch a3 b3 >>= (fun (a3, b3) ->
-    (m_list m_catch) a4 b4 >>= (fun (a4, b4) ->
+    (m_list m_catch) a3 b3 >>= (fun (a3, b3) ->
+    (m_list m_finally) a4 b4 >>= (fun (a4, b4) ->
     return (
        A.Try(a1, a2, a3, a4),
        B.Try(b1, b2, b3, b4)
@@ -2364,6 +2364,8 @@ and m_case a b =
 
 and m_catch a b =
   fail2 "m_catch"
+and m_finally a b =
+  fail2 "m_finally"
 and m_global_var a b =
   fail2 "m_global_var"
 and m_static_var a b =

@@ -203,11 +203,11 @@ and stmt env st acc =
   | Continue (_, eopt, _) -> A.Continue (opt expr env eopt) :: acc
   | Return (_, eopt, _) -> A.Return (opt expr env eopt) :: acc
   | Throw (_, e, _) -> A.Throw (expr env e) :: acc
-  | Try (_, (_, stl, _), c, cl) ->
+  | Try (_, (_, stl, _), cl, fl) ->
       let stl = List.fold_right (stmt_and_def env) stl [] in
-      let c = catch env c in
       let cl = List.map (catch env) cl in
-      A.Try (stl, c, cl) :: acc
+      let fl = List.map (finally env) fl in
+      A.Try (stl, cl, fl) :: acc
   | Echo (tok, el, _) ->
       A.Expr (A.Call (A.Id [A.builtin "echo", wrap tok],
                      (List.map (expr env) (comma_list el)))) :: acc
@@ -813,6 +813,10 @@ and catch env (_, (_, (fq, dn), _), (_, stdl, _)) =
   let fq = hint_type env fq in
   let dn = dname dn in
   fq, dn, stdl
+
+and finally env (_, (_, stdl, _)) =
+  let stdl = List.fold_right (stmt_and_def env) stdl [] in
+  stdl
 
 and static_var env (x, e) =
   dname x, opt static_scalar_affect env e

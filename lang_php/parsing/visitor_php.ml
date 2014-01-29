@@ -68,6 +68,7 @@ type visitor_in = {
   kparameter: (parameter -> unit) * visitor_out -> parameter -> unit;
   kargument: (argument -> unit) * visitor_out -> argument -> unit;
   kcatch: (catch -> unit) * visitor_out -> catch -> unit;
+  kfinally: (finally -> unit) * visitor_out -> finally -> unit;
 
   kxhp_html:
     (xhp_html -> unit) * visitor_out -> xhp_html -> unit;
@@ -116,6 +117,7 @@ let default_visitor =
     kargument = (fun (k,_) x -> k x);
     karguments = (fun (k,_) x -> k x);
     kcatch = (fun (k,_) x -> k x);
+    kfinally = (fun (k,_) x -> k x);
 
     kstmt_and_def_list_scope    = (fun (k,_) x -> k x);
 
@@ -617,8 +619,8 @@ and v_stmt xxx =
   | Try ((v1, v2, v3, v4)) ->
       let v1 = v_tok v1
       and v2 = v_brace (v_stmt_and_def_list_scope) v2
-      and v3 = v_catch v3
-      and v4 = v_list v_catch v4
+      and v3 = v_list v_catch v3
+      and v4 = v_list v_finally v4
       in ()
   | Echo ((v1, v2, v3)) ->
       let v1 = v_tok v1 and v2 = v_comma_list v_expr v2 and v3 = v_tok v3 in ()
@@ -730,6 +732,15 @@ and v_catch x =
     in ()
   in
   vin.kcatch (k, all_functions) x
+and v_finally x =
+  let k x =
+    let (v1, v2) = x in
+
+    let v1 = v_tok v1
+    and v2 = v_brace (v_stmt_and_def_list_scope) v2
+    in ()
+  in
+  vin.kfinally (k, all_functions) x
 
 and v_use_filename =
   function

@@ -731,9 +731,10 @@ and stmt_bis env x =
   | Return eopt  | Break eopt | Continue eopt ->
       Common2.opt (expr env) eopt
   | Throw e -> expr env e
-  | Try (xs, c1, cs) ->
+  | Try (xs, cs, fs) ->
       stmtl env xs;
-      catches env (c1::cs)
+      catches env (cs);
+      finallys env (fs)
 
   | StaticVars xs ->
       xs +> List.iter (fun (name, eopt) -> Common2.opt (expr env) eopt)
@@ -742,6 +743,9 @@ and stmt_bis env x =
 
 (* todo: add deps to type hint? *)
 and catch env (_hint_type, _name, xs) =
+  stmtl env xs
+
+and finally env (xs) =
   stmtl env xs
 
 and case env = function
@@ -754,6 +758,7 @@ and case env = function
 and stmtl env xs = List.iter (stmt env) xs
 and casel env xs = List.iter (case env) xs
 and catches env xs = List.iter (catch env) xs
+and finallys env xs = List.iter (finally env) xs
 
 (* ---------------------------------------------------------------------- *)
 (* Defs *)
