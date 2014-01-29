@@ -93,9 +93,7 @@ let unittest =
    *  let db = Database_php_build.db_of_files_or_dirs files in
    *  let find_entity = Some (Database_php_build.build_entity_finder db) in
    *)
-  let skip_code = [] in
-  let (cg, _stat) = 
-    Graph_code_php.build ~verbose (Right files) skip_code in
+  let (cg, _stat) = Graph_code_php.build ~verbose "/" files in
   let find_entity = 
     Some (Entity_php.entity_finder_of_graph_code ~check_dupes:true
              cg "/") in

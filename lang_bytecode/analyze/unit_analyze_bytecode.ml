@@ -17,6 +17,7 @@ let verbose = false
  *)
 let prolog_query ~files query =
   Common2.with_tmp_dir (fun tmp_dir ->
+    let root = tmp_dir in
 
     (* generating .class files *)
     files +> List.iter (fun (filename, content) ->
@@ -31,14 +32,17 @@ let prolog_query ~files query =
                         * files first and main files at the end.
                         *)
                        (files +> List.map fst +> Common.join " "));
-    let skip_list = [] in
+
+    let cfiles = 
+      Lib_parsing_bytecode.find_source_files_of_dir_or_files [root] in
+    let jfiles = 
+      Lib_parsing_java.find_source_files_of_dir_or_files [root] in
+    let only_defs = true in
     let graph_code_java = 
-      Some (Graph_code_java.build ~verbose:verbose ~only_defs:true 
-              tmp_dir skip_list) 
-    in
+      Some (Graph_code_java.build ~verbose:verbose ~only_defs root jfiles) in
     let g = 
-      Graph_code_bytecode.build ~verbose:verbose ~graph_code_java 
-        tmp_dir skip_list in
+      Graph_code_bytecode.build ~verbose:verbose ~graph_code_java root cfiles in
+
     let facts = Graph_code_prolog.build tmp_dir g in
     let facts_pl_file = Filename.concat tmp_dir "facts.pl" in
     Common.with_open_outfile facts_pl_file (fun (pr_no_nl, _chan) ->

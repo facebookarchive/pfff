@@ -193,12 +193,7 @@ and sexps env xs = List.iter (sexp env) xs
 (* Main entry point *)
 (*****************************************************************************)
 
-let uninclude ?(verbose=true) dir skip_list dst =
-  let root = Common.realpath dir in
-  let all_files = Lib_parsing_clang.find_source_files_of_dir_or_files [root] in
-
-  (* step0: filter noisy modules/files *)
-  let files = Skip_code.filter_files skip_list root all_files in
+let uninclude ?(verbose=true) root files dst =
   let env = {
     hfile = Common.hash_of_list [unknown_loc, Hashtbl.create 101];
     hfile_data = Common.hash_of_list [unknown_loc, []];

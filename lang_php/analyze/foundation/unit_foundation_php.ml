@@ -259,7 +259,7 @@ function test_useA() {
       in
       let tmpfile = Parse_php.tmp_php_file_from_string file_content in
       let (g, _stat) = Graph_code_php.build 
-        ~verbose:false ~logfile:"/dev/null" (Right [tmpfile]) [] in
+        ~verbose:false ~logfile:"/dev/null" "/" [tmpfile] in
 
       let src = ("A.$fld", E.Field) in
       let pred = G.pred src G.Use g in
@@ -286,7 +286,7 @@ function test_useA() {
       in
       let tmpfile = Parse_php.tmp_php_file_from_string file_content in
       let (g, _) = Graph_code_php.build 
-        ~verbose:false ~logfile:"/dev/null" (Right [tmpfile]) [] in
+        ~verbose:false ~logfile:"/dev/null" "/" [tmpfile] in
       let field = (":x:required.req_int=", E.Field) in
       let nodeinfo = G.nodeinfo field g in
       let props = nodeinfo.G.props in
@@ -297,13 +297,19 @@ function test_useA() {
     );
 
     "regression files" >:: (fun () ->
-      let dir = Filename.concat Config_pfff.path "/tests/php/codegraph" in
-      let skip_list = Skip_code.load (Filename.concat dir "skip_list.txt") in
-      let logfile = Filename.concat dir "pfff_test.log" in
-      let expected_logfile = Filename.concat dir "pfff_test.exp" in
+      let root = Filename.concat Config_pfff.path "/tests/php/codegraph" in
+      let skip_list = Skip_code.load (Filename.concat root "skip_list.txt") in
+      let files = 
+        Lib_parsing_php.find_php_files_of_dir_or_files [root] 
+        +> Skip_code.filter_files skip_list root
+        +> Skip_code.reorder_files_skip_errors_last skip_list root
+      in
+      let is_skip_error_file = Skip_code.build_filter_errors_file skip_list in
+      let logfile = Filename.concat root "pfff_test.log" in
+      let expected_logfile = Filename.concat root "pfff_test.exp" in
       let (g, _) = Graph_code_php.build 
-        ~verbose:false ~readable_file_format:true ~logfile
-        (Left dir) skip_list in
+        ~verbose:false ~readable_file_format:true ~logfile ~is_skip_error_file
+        root files in
 
       let xs = Common2.unix_diff logfile expected_logfile in
       assert_bool

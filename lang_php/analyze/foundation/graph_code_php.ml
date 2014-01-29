@@ -1083,25 +1083,10 @@ let build
     ?(logfile=(Filename.concat (Sys.getcwd()) "pfff.log"))
     ?(readable_file_format=false)
     ?(only_defs=false)
-    dir_or_files 
-    skip_list
- =
-  let root, files =
-    Common.profile_code "Graph_php.step0" (fun () ->
-    match dir_or_files with
-    | Left dir ->
-        let root = Common.realpath dir in
-        let files = 
-          Lib_parsing_php.find_php_files_of_dir_or_files [root]
-          +> Skip_code.filter_files skip_list root
-          +> Skip_code.reorder_files_skip_errors_last skip_list root
-        in
-        root, files
-    (* useful when build codegraph from test code *)
-    | Right files ->
-        "/", files
-    )
-  in
+    ?(is_skip_error_file=(fun _ -> false))
+    root
+    files
+  =
       
   let g = G.create () in
   G.create_initial_hierarchy g;
@@ -1141,7 +1126,7 @@ let build
       if verbose then pr2 s;
       output_string chan (s ^ "\n"); flush chan;
     );
-    is_skip_error_file = Skip_code.build_filter_errors_file skip_list;
+    is_skip_error_file = is_skip_error_file;
     (* This function is useful for testing. In particular, the paths in
      * tests/php/codegraoph/pfff_test.exp use readable path, so that
      * 'make test' can work from any machine.

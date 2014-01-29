@@ -3,8 +3,8 @@
  * the class definitions from src. Useful to build pfff/data/java_stdlib
  *)
 val extract_from_sources: 
- skip_list:Skip_code.skip list ->
  src:Common.dirname -> dst:Common.dirname ->
+ Common.filename list ->
  unit
 
 

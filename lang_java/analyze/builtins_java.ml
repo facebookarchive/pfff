@@ -58,8 +58,8 @@ let gen_package_file_with_class_defs pr xs g =
 (* Main entry point *)
 (*****************************************************************************)
 
-let extract_from_sources ~skip_list ~src ~dst =
-  let g = Graph_code_java.build ~verbose:false ~only_defs:true src skip_list in
+let extract_from_sources ~src ~dst files =
+  let g = Graph_code_java.build ~verbose:false ~only_defs:true src files in
 
   Common.command2("mkdir -p " ^ dst);
 

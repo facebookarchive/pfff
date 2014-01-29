@@ -36,7 +36,7 @@ let ast_fuzzy_of_string str =
 let graph_of_string str =
   let tmpfile = Parse_php.tmp_php_file_from_string str in
   let (g, _stat) = Graph_code_php.build 
-    ~verbose:false ~logfile:"/dev/null" (Right [tmpfile]) [] in
+    ~verbose:false ~logfile:"/dev/null" "/" [tmpfile] in
   g
   
 

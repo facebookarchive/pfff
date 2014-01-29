@@ -1,5 +1,5 @@
 
 val build:
   ?verbose:bool -> 
-  Common.path -> Skip_code.skip list ->
+  Common.path -> Common.filename list ->
   Graph_code.graph

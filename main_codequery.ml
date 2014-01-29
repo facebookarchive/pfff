@@ -27,8 +27,6 @@ let verbose = ref false
 
 let lang = ref "php"
 
-let skip_file dir = 
-  Filename.concat dir "skip_list.txt"
 (* todo: swipl (SWI-Prolog) is not in PATH by default on our machines *)
 let swipl_fb = "/home/pad/packages/Linux/bin/swipl"
 let swipl =
@@ -53,11 +51,8 @@ let action = ref ""
 (* Language specific, building the prolog db *)
 (*****************************************************************************)
 let build_prolog_db lang root =
-  let skip_list =
-    if Sys.file_exists (skip_file root)
-    then Skip_code.load (skip_file root)
-    else []
-  in
+  let root = Common.realpath root +> Common2.chop_dirsymbol in
+  let files = Find_source.files_of_root ~lang:"lang" root in
   match lang with
   | "php" ->
       (* 
@@ -67,7 +62,6 @@ let build_prolog_db lang root =
        * prolog facts. It currently takes 41min on www and I hope
        * we can reduce that to a few minutes.
        *)
-       let dir = Common.realpath root +> Common2.chop_dirsymbol in
        (* so many errors that is better to hide them for now *)
        Flag_analyze_php.show_errors := false;
 
@@ -77,8 +71,7 @@ let build_prolog_db lang root =
        let file = Filename.concat !metapath facts_pl_file in
        pr2 (spf "generating prolog facts in %s" file);
        let facts =
-         Database_prolog_php.build ~show_progress:!verbose 
-           (Left dir) skip_list in
+         Database_prolog_php.build ~show_progress:!verbose root files in
        Common.command2 (spf "mkdir -p %s" !metapath);
        Common.with_open_outfile file (fun (pr_no_nl, _chan) ->
          let pr s = pr_no_nl (s ^ "\n") in
@@ -98,10 +91,10 @@ let build_prolog_db lang root =
                !metapath prolog_compiled_db);
 
   | "cmt" | "bytecode" | "clang2" ->
+      
       let g = 
         match lang with
-        | "cmt" -> 
-          Graph_code_cmt.build ~verbose:!verbose root skip_list 
+        | "cmt" -> Graph_code_cmt.build ~verbose:!verbose root files
         | "bytecode" -> 
           let graph_code_java =  
 (*           Some (Graph_code_java.build ~verbose:!verbose ~only_defs:true
@@ -110,10 +103,8 @@ let build_prolog_db lang root =
             None
           in
           Graph_code_bytecode.build ~verbose:!verbose ~graph_code_java 
-            root skip_list 
-        | "clang2" -> 
-          Graph_code_clang.build ~verbose:!verbose root skip_list 
-
+            root files 
+        | "clang2" -> Graph_code_clang.build ~verbose:!verbose root files
         | _ -> raise Impossible
       in
       let facts = Graph_code_prolog.build root g in

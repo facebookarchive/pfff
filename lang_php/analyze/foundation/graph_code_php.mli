@@ -6,8 +6,8 @@ val build:
   ?logfile:Common.filename ->
   ?readable_file_format:bool ->
   ?only_defs:bool -> 
-  (Common.dirname, Common.filename list) Common.either ->
-  Skip_code.skip list ->
+  ?is_skip_error_file: (Common.filename -> bool) ->
+  Common.dirname -> Common.filename list ->
   Graph_code.graph * Graph_code.statistics
 
 (* used by scheck *)

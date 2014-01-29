@@ -21,16 +21,9 @@ let actions () = [
   );
   "-uninclude_clang", " ",
   Common.mk_action_0_arg (fun () ->
-    let skip_file = "skip_list.txt" in
-    let skip_list =
-      if Sys.file_exists skip_file
-      then begin 
-        pr2 (spf "Using skip file: %s" skip_file);
-        Skip_code.load skip_file
-      end
-      else []
-    in
-    Uninclude_clang.uninclude ~verbose:true "." skip_list ".";
+    let root = Common.realpath "." in
+    let files = Lib_parsing_clang.find_source_files_of_dir_or_files [root] in
+    Uninclude_clang.uninclude ~verbose:true root files root;
   );
   
 ]

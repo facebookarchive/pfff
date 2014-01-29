@@ -32,8 +32,8 @@ let with_graph ~files f =
                         * files first and main files at the end.
                         *)
                        (files +> List.map fst +> Common.join " "));
-    let skip_list = [] in
-    let g = Graph_code_cmt.build ~verbose:verbose tmp_dir skip_list in
+    let files = Lib_parsing_ml.find_cmt_files_of_dir_or_files [tmp_dir] in
+    let g = Graph_code_cmt.build ~verbose:verbose tmp_dir files in
     f tmp_dir g
   )
 

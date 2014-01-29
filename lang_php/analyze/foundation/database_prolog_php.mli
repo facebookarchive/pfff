@@ -1,8 +1,7 @@
 
 val build:
   ?show_progress:bool ->
-  (Common.dirname, Common.filename list) Common.either ->
-  Skip_code.skip list ->
+  Common.dirname -> Common.filename list ->
   Graph_code_prolog.fact list
 
 val append_callgraph_to_prolog_db:

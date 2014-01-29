@@ -551,18 +551,10 @@ let extract_uses ~g ast =
 (* Main entry point *)
 (*****************************************************************************)
 
-let build ?(verbose=true) ?(graph_code_java=None) dir_or_file skip_list =
-  let root = Common.realpath dir_or_file in
-  let all_files = 
-    Lib_parsing_bytecode.find_source_files_of_dir_or_files [root] in
-  let all_java_files =
-    Lib_parsing_java.find_source_files_of_dir_or_files [root] in
+let build ?(verbose=true) ?(graph_code_java=None) root files =
+  let java_files = Lib_parsing_java.find_source_files_of_dir_or_files [root] in
 
-  (* step0: filter noisy modules/files *)
-  let files = 
-    Skip_code.filter_files skip_list root all_files in
-  let java_files = 
-    Skip_code.filter_files skip_list root all_java_files in
+  (* less? Skip_code.filter_files skip_list root all_java_files in *)
   let hjavabasename_to_fullpath =
     java_files 
     +> List.map (fun file -> Filename.basename file, file)

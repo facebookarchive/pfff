@@ -1073,15 +1073,10 @@ and
 (* Main entry point *)
 (*****************************************************************************)
 
-let build ?(verbose=false) dir_or_file skip_list =
-  let root = Common.realpath dir_or_file in
-  let all_files = Lib_parsing_ml.find_cmt_files_of_dir_or_files [root] in
-  let all_ml_files = Lib_parsing_ml.find_ml_files_of_dir_or_files [root] in
+let build ?(verbose=false) root files =
+  (* todo: Skip_code.filter_files skip_list root all_ml_files in *)
+  let ml_files = Lib_parsing_ml.find_ml_files_of_dir_or_files [root] in
   
-  (* step0: filter noisy modules/files *)
-  let files = Skip_code.filter_files skip_list root all_files in
-  let ml_files = Skip_code.filter_files skip_list root all_ml_files in
-
   let g = G.create () in
   G.create_initial_hierarchy g;
 

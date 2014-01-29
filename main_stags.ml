@@ -62,9 +62,6 @@ let format = ref Emacs
 (* Helpers *)
 (*****************************************************************************)
 
-let skip_file dir = 
-  Filename.concat dir "skip_list.txt"
-
 (*****************************************************************************)
 (* Language specific *)
 (*****************************************************************************)
@@ -72,12 +69,6 @@ let skip_file dir =
 let rec defs_of_files_or_dirs lang xs = 
   let verbose = !verbose in
   let _heavy_tagging = !heavy_tagging in
-  let skip_list =
-    match xs with
-    | [root] when Sys.file_exists (skip_file root) -> 
-      Skip_code.load (skip_file root)
-    | _ -> []
-  in
 
   match lang with
   | "php" ->
@@ -94,15 +85,13 @@ let rec defs_of_files_or_dirs lang xs =
   | ("cmt" | "java" | "php2") ->
       (match xs with
       | [root] -> 
+          let files = Find_source.files_of_root ~lang root in
+          let only_defs = true in
           let g = 
             match lang with
-            | "cmt" -> 
-              Graph_code_cmt.build root skip_list
-            | "java" -> 
-              Graph_code_java.build ~verbose ~only_defs:true root skip_list
-            | "php2" -> 
-              Graph_code_php.build ~verbose ~only_defs:true 
-                (Left root) skip_list +> fst
+            | "cmt" -> Graph_code_cmt.build root files
+            | "java" -> Graph_code_java.build ~verbose ~only_defs root files
+            | "php2" -> Graph_code_php.build ~verbose ~only_defs root files+>fst
             | _ -> raise Impossible
           in
           Graph_code_tags.defs_of_graph_code ~verbose g

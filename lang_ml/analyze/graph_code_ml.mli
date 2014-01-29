@@ -1,6 +1,3 @@
 
 val build:
-  ?verbose:bool -> Common.dirname -> Skip_code.skip list ->
-  Graph_code.graph
-
-(* internal *)
+  ?verbose:bool -> Common.dirname -> Common.filename list -> Graph_code.graph

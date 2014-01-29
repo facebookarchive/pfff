@@ -515,25 +515,7 @@ let visit ~add readable ast =
 (* Build db *)
 (*****************************************************************************)
 
-let build2 ?(show_progress=true) dir_or_files skip_list =
-
-  let root, files =
-    match dir_or_files with
-    | Left dir ->
-      let root = Common.realpath dir in
-      let all_files = Lib_parsing_php.find_php_files_of_dir_or_files [root] in
-
-      (* step0: filter noisy modules/files *)
-      let files = 
-        Skip_code.filter_files skip_list root all_files in
-      (* step0: reorder files *)
-      let files = 
-        Skip_code.reorder_files_skip_errors_last skip_list root files in
-      root, files
-    (* useful when build from test code *)
-    | Right files ->
-      "/", files
-  in
+let build2 ?(show_progress=true) root files =
 
   let res = ref [] in
   let add x = Common.push2 x res in
@@ -677,7 +659,7 @@ let prolog_query ?(verbose=false) ~source_file ~query =
   in
 *)
 
-  let facts = build ~show_progress (Right [source_file]) [] in
+  let facts = build ~show_progress "/" [source_file] in
   Common.with_open_outfile facts_pl_file (fun (pr_no_nl, _chan) ->
     let pr s = pr_no_nl (s ^ "\n") in
     facts +> List.iter (fun fact ->

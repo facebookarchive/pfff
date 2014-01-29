@@ -172,7 +172,6 @@ let verbose = ref false
 let lang = ref "ml"
 let deps_style = ref DM.DepsInOut
 
-let skip_list = ref None
 let output_dir = ref None
 (* generate also tags, light db, layers, etc *)
 let gen_derived_data = ref false
@@ -234,9 +233,6 @@ let set_gc () =
 let dep_file_of_dir dir = 
   Filename.concat dir Graph_code.default_filename
 
-let skip_file_of_dir dir = 
-  Filename.concat dir "skip_list.txt"
-
 let build_model root =
   let file = dep_file_of_dir root in
   let g = Graph_code.load file in
@@ -269,41 +265,41 @@ let package_node xs =
 
 let build_graph_code lang root =
   let root = Common.realpath root in
-  let pwd = Sys.getcwd () in
-  let skip_file = !skip_list ||| skip_file_of_dir pwd in
-  let skip_list =
-    if Sys.file_exists skip_file
-    then begin 
-      pr2 (spf "Using skip file: %s" skip_file);
-      Skip_code.load skip_file
-    end
-    else []
-  in
+  let files = Find_source.files_of_root ~lang root in
+
   let empty = Graph_code.empty_statistics () in
   let g, stats =
     try (
     match lang with
-    | "ml"  -> Graph_code_ml.build ~verbose:!verbose root skip_list, empty
+    | "ml"  -> Graph_code_ml.build ~verbose:!verbose root files, empty
 
-    | "cmt"  -> Graph_code_cmt.build ~verbose:!verbose root skip_list, empty
+    | "cmt"  -> Graph_code_cmt.build ~verbose:!verbose root files, empty
 
-    | "php" -> Graph_code_php.build ~verbose:!verbose (Left root) skip_list
+    | "php" -> 
+      (* todo: better factorize *)
+      let skip_file = Filename.concat root "skip_list.txt" in
+      let skip_list =
+        if Sys.file_exists skip_file
+        then Skip_code.load skip_file
+        else []
+      in
+      let is_skip_error_file = Skip_code.build_filter_errors_file skip_list in
+      Graph_code_php.build ~verbose:!verbose ~is_skip_error_file root files
     | "web" -> raise Todo
 
-    | "c" -> Graph_code_c.build ~verbose:!verbose root skip_list, empty
-    | "objc" -> Graph_code_objc.build ~verbose:!verbose root skip_list, empty
-    | "clang2" -> Graph_code_clang.build ~verbose:!verbose root skip_list, empty
+    | "c" -> Graph_code_c.build ~verbose:!verbose root files, empty
+    | "objc" -> Graph_code_objc.build ~verbose:!verbose root files, empty
+    | "clang2" -> Graph_code_clang.build ~verbose:!verbose root files, empty
 
-    | "java" -> Graph_code_java.build ~verbose:!verbose root skip_list, empty
+    | "java" -> Graph_code_java.build ~verbose:!verbose root files, empty
     | "bytecode" -> 
-      let graph_code_java = 
-        None 
+      let graph_code_java =  None 
 (*        Some (Graph_code_java.build ~verbose:!verbose ~only_defs:true 
                  root skip_list)
 *)
       in
-      Graph_code_bytecode.build ~verbose:!verbose ~graph_code_java
-        root skip_list, empty
+      Graph_code_bytecode.build ~verbose:!verbose ~graph_code_java root files,
+      empty
 
     | "dot" -> 
       Graph_code.graph_of_dotfile (Filename.concat root "graph.dot"), empty
@@ -314,7 +310,7 @@ let build_graph_code lang root =
       pr2 (Graph_code.string_of_error err);
       raise (Graph_code.Error err)
   in
-  let output_dir = !output_dir ||| pwd in
+  let output_dir = !output_dir ||| root in
   Graph_code.save g (dep_file_of_dir output_dir);
   Graph_code.print_statistics stats g;
 
@@ -341,16 +337,12 @@ let build_graph_code lang root =
 (* Language specific, building stdlib *)
 (*****************************************************************************)
 let build_stdlib lang root dst =
-  let skip_list =
-    if Sys.file_exists (skip_file_of_dir root)
-    then Skip_code.load (skip_file_of_dir root)
-    else []
-  in
+  let files = Find_source.files_of_root ~lang root in
   match lang with
   | "java" ->
-      Builtins_java.extract_from_sources ~skip_list ~src:root ~dst
+      Builtins_java.extract_from_sources ~src:root ~dst files
   | "clang" ->
-      Uninclude_clang.uninclude ~verbose:!verbose root skip_list dst
+      Uninclude_clang.uninclude ~verbose:!verbose root files dst
   | _ -> failwith ("language not supported: " ^ lang)
 
 (*****************************************************************************)
@@ -710,8 +702,6 @@ let options () = [
 
   "-lang", Arg.Set_string lang, 
   (spf " <str> choose language (default = %s) (for -build)" !lang);
-  "-skip_list", Arg.String (fun s -> skip_list := Some s), 
-  " <file> skip files or directories (for -build)";
   "-o", Arg.String (fun s -> output_dir := Some s), 
   " <dir> save graph_code.marshall in another dir (for -build)";
   "-derived_data", Arg.Set gen_derived_data, 

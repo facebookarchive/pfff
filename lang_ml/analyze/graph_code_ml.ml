@@ -197,13 +197,8 @@ let extract_uses ~g ~ast ~readable ~dupes =
 (* Main entry point *)
 (*****************************************************************************)
 
-let build ?(verbose=true) dir skip_list =
-  let root = Common.realpath dir in
-  let all_files = Lib_parsing_ml.find_source_files_of_dir_or_files [root] in
+let build ?(verbose=true) root files =
 
-  (* step0: filter noisy modules/files *)
-  let files = Skip_code.filter_files skip_list root all_files in
-  
   let g = G.create () in
   G.create_initial_hierarchy g;
 

@@ -638,21 +638,14 @@ and expr env (enum, l, xs) =
 (* Main entry point *)
 (*****************************************************************************)
 
-let build ?(verbose=true) dir skip_list =
-  let root = Common.realpath dir in
-  let all_files = Lib_parsing_clang.find_source2_files_of_dir_or_files [root] in
-  if null all_files 
+let build ?(verbose=true) root files =
+  if null files 
   then failwith "no .clang2 files, run pfff -uninclude_clang";
-
-  (* step0: filter noisy modules/files *)
-  let files = Skip_code.filter_files skip_list root all_files in
-  (* step0: reorder files *)
-  let files = Skip_code.reorder_files_skip_errors_last skip_list root files in
 
   let g = G.create () in
   G.create_initial_hierarchy g;
 
-  let chan = open_out (Filename.concat (Sys.getcwd()) "pfff.log") in
+  let chan = open_out (Filename.concat root "pfff.log") in
   let local_renames = Hashtbl.create 101 in
 
   let env = {
