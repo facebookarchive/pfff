@@ -104,7 +104,7 @@ module PI = Parse_info
  T_IF T_ELSE T_ELSEIF T_ENDIF
  T_DO  T_WHILE   T_ENDWHILE  T_FOR     T_ENDFOR T_FOREACH T_ENDFOREACH
  T_SWITCH  T_ENDSWITCH T_CASE T_DEFAULT    T_BREAK T_CONTINUE
- T_RETURN  T_TRY  T_CATCH T_THROW
+ T_RETURN  T_TRY  T_CATCH  T_FINALLY  T_THROW
  T_EXIT T_DECLARE T_ENDDECLARE T_USE T_GLOBAL T_AS T_FUNCTION T_CONST T_VAR
 /*(* ugly: because of my hack around the implicit echo when use <?=,
    * this T_ECHO might have a string different than "echo"
@@ -338,11 +338,15 @@ statement:
  | T_TRY   TOBRACE inner_statement_list TCBRACE
    T_CATCH TOPAR class_name  T_VARIABLE TCPAR
      TOBRACE inner_statement_list TCBRACE
-     additional_catches
+     additional_catches optional_finally_clause
      { let try_block = ($2,$3,$4) in
        let catch_block = ($10, $11, $12) in
        let catch = ($5, ($6, ($7, DName $8), $9), catch_block) in
-       Try($1, try_block, catch, $13)
+       Try($1, try_block, [catch] ++ $13, $14)
+     }
+ | T_TRY TOBRACE inner_statement_list TCBRACE finally_clause
+     { let try_block = ($2,$3,$4) in
+       Try($1, try_block, [], [$5])
      }
  | T_THROW expr TSEMICOLON { Throw($1,$2,$3) }
 
@@ -462,6 +466,11 @@ additional_catch:
        let catch = ($1, ($2, ($3, DName $4), $5), catch_block) in
        catch
      }
+
+finally_clause:
+ | T_FINALLY TOBRACE inner_statement_list TCBRACE
+     { ($1, ($2, $3, $4)) }
+
 /*(*----------------------------*)*/
 /*(*2 auxillary bis *)*/
 /*(*----------------------------*)*/
@@ -1350,12 +1359,12 @@ ident_xhp_attr_name_atom:
  | T_ENDWHILE { $1 } | T_FOR { $1 } | T_ENDFOR { $1 } | T_FOREACH { $1 }
  | T_ENDFOREACH { $1 } | T_SWITCH { $1 } | T_ENDSWITCH { $1 } | T_CASE { $1 }
  | T_DEFAULT { $1 } | T_BREAK { $1 } | T_CONTINUE { $1 } | T_RETURN { $1 }
- | T_TRY { $1 } | T_CATCH { $1 } | T_THROW { $1 } | T_EXIT { $1 }
- | T_DECLARE { $1 } | T_ENDDECLARE { $1 } | T_USE { $1 } | T_GLOBAL { $1 }
- | T_AS { $1 } | T_FUNCTION { $1 } | T_CONST { $1 } | T_STATIC { $1 }
- | T_ABSTRACT { $1 } | T_FINAL { $1 } | T_PRIVATE { $1 } | T_PROTECTED { $1 }
- | T_PUBLIC { $1 } | T_VAR { $1 } | T_UNSET { $1 } | T_ISSET { $1 }
- | T_EMPTY { $1 } | T_CLASS { $1 }
+ | T_TRY { $1 } | T_CATCH { $1 } | T_FINALLY { $1 } | T_THROW { $1 }
+ | T_EXIT { $1 } | T_DECLARE { $1 } | T_ENDDECLARE { $1 } | T_USE { $1 }
+ | T_GLOBAL { $1 } | T_AS { $1 } | T_FUNCTION { $1 } | T_CONST { $1 }
+ | T_STATIC { $1 } | T_ABSTRACT { $1 } | T_FINAL { $1 } | T_PRIVATE { $1 }
+ | T_PROTECTED { $1 } | T_PUBLIC { $1 } | T_VAR { $1 } | T_UNSET { $1 }
+ | T_ISSET { $1 } | T_EMPTY { $1 } | T_CLASS { $1 }
  | T_INTERFACE { $1 } | T_EXTENDS { $1 } | T_IMPLEMENTS { $1 } | T_LIST { $1 }
  | T_ARRAY { $1 } | T_CLASS_C { $1 } | T_METHOD_C { $1 } | T_FUNC_C { $1 }
  | T_LINE { $1 } | T_FILE { $1 } | T_LOGICAL_OR { $1 } | T_LOGICAL_AND { $1 }
@@ -1457,6 +1466,10 @@ additional_catches:
 non_empty_additional_catches:
  | additional_catch                              { [$1] }
  | non_empty_additional_catches additional_catch { $1 ++ [$2] }
+
+optional_finally_clause:
+ | finally_clause { [$1] }
+ | /*(*empty*)*/  { [] }
 
 method_modifiers:
  | /*(*empty*)*/				{ [] }

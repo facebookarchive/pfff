@@ -125,8 +125,8 @@ let keyword_table = Common.hash_of_list [
 
   "return",     (fun ii -> T_RETURN ii);
 
-  "try",        (fun ii -> T_TRY ii); "catch",      (fun ii -> T_CATCH ii);
-  "throw",      (fun ii -> T_THROW ii);
+  "try",        (fun ii -> T_TRY ii);     "catch",   (fun ii -> T_CATCH ii);
+  "finally",    (fun ii -> T_FINALLY ii); "throw",   (fun ii -> T_THROW ii);
 
   "exit",       (fun ii -> T_EXIT ii); "die",        (fun ii -> T_EXIT ii);
 

@@ -30,7 +30,6 @@ open Common
 
 (* the filename are in readable path format *)
 type skip =
-  (* mostly to avoid parsing errors messages *)
   | Dir of Common.dirname
   | File of Common.filename
   | DirElement of Common.dirname
@@ -92,7 +91,7 @@ let filter_files skip_list root xs =
 
 
 (* copy paste of h_version_control/git.ml *)
-let find_root_from_absolute_path file =
+let find_vcs_root_from_absolute_path file =
   let xs = Common.split "/" (Common2.dirname file) in
   let xxs = Common2.inits xs in
   xxs +> List.rev +> Common.find_some (fun xs ->
@@ -125,13 +124,12 @@ let filter_files_if_skip_list ?(verbose=false) xs =
   | [] -> []
   | x::_ ->
       try 
-        let root = find_root_from_absolute_path x in
+        let root = find_vcs_root_from_absolute_path x in
         let skip_file = find_skip_file_from_root root in
         let skip_list = load skip_file in
         if verbose then pr2 (spf "using skip list in %s" skip_file);
         filter_files skip_list root xs
-      with
-      Not_found -> xs
+      with Not_found -> xs
 
 (*****************************************************************************)
 (* Helpers *)

@@ -289,10 +289,10 @@ and stmt env= function
       iexpr env (Assign (None, Id [(wrap "$;return")], e))
   | Break eopt | Continue eopt -> expr_opt env eopt
   | Throw e -> iexpr env e
-  | Try (stl, c, cl) ->
+  | Try (stl, cl, fl) ->
       stmtl env stl;
-      catch env c;
-      catchl env cl
+      catchl env cl;
+      finallyl env fl
   | StaticVars svarl ->
       List.iter (fun (s, e) ->
         match e with
@@ -331,6 +331,9 @@ and case env t = function
 
 and catchl env l = List.iter (catch env) l
 and catch env (_, _, stl) = stmtl env stl
+
+and finallyl env l = List.iter (finally env) l
+and finally env (stl) = stmtl env stl
 
 and exprl env l = List.map (expr env) l
 and iexprl env l = ignore (exprl env l)

@@ -68,7 +68,7 @@ and stmt =
   | Break of expr option | Continue of expr option
 
   | Throw of expr
-  | Try of stmt list * catch * catch list
+  | Try of stmt list * catch list * finally list
 
   | InlineHtml of string
 
@@ -87,7 +87,8 @@ and stmt =
   | Default of stmt list
 
   (* catch(Exception $exn) { ... } => ("Exception", "$exn", [...]) *)
-  and catch = hint_type  * string * stmt list
+  and catch = hint_type * string * stmt list
+  and finally = stmt list
 
 (* ------------------------------------------------------------------------- *)
 (* Expression *)

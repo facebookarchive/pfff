@@ -14,6 +14,7 @@ type visitor_in = {
   kparameter: (parameter -> unit) * visitor_out -> parameter -> unit;
   kargument: (argument -> unit) * visitor_out -> argument -> unit;
   kcatch: (catch -> unit) * visitor_out -> catch -> unit;
+  kfinally: (finally -> unit) * visitor_out -> finally -> unit;
 
   (* xhp: *)
   kxhp_html: (xhp_html -> unit) * visitor_out -> xhp_html -> unit;
