@@ -89,18 +89,6 @@ let parse_pattern file =
                 file)
   | _ -> failwith ("unsupported language: " ^ !lang)
 
-(* less: factorize with main_sgrep *)
-let find_source_files_of_dir_or_files xs =
-  let xs = List.map Common.realpath xs in
-  (match !lang with
-  | "php" | "phpfuzzy" -> Lib_parsing_php.find_php_files_of_dir_or_files xs
-  | "c++" -> Lib_parsing_cpp.find_source_files_of_dir_or_files xs
-  | "ml" -> Lib_parsing_ml.find_source_files_of_dir_or_files xs
-  | "java" -> Lib_parsing_java.find_source_files_of_dir_or_files xs
-  | "js"  -> Lib_parsing_js.find_source_files_of_dir_or_files xs
-  | _ -> failwith ("unsupported language: " ^ !lang)
-  ) +> Skip_code.filter_files_if_skip_list ~verbose:!verbose
-
 let spatch pattern file =
   match !lang, pattern with
   | "php", Left pattern -> 
@@ -248,7 +236,8 @@ let main_action xs =
   Logger.log Config_pfff.logger "spatch" (Some (Common.read_file spatch_file));
 
   let pattern = parse_pattern spatch_file in
-  let files = find_source_files_of_dir_or_files xs in
+  let files =
+    Find_source.files_of_dir_or_files ~lang:!lang ~verbose:!verbose xs in
 
   files +> Console.progress ~show:!verbose (fun k -> 
    List.iter (fun file->

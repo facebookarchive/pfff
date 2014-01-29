@@ -9,7 +9,7 @@
 ##############################################################################
 TOP:=$(shell pwd)
 
-SRC=main.ml 
+SRC=find_source.ml
 
 TARGET=pfff
 
@@ -284,10 +284,10 @@ rec.opt:
 	set -e; for i in $(MAKESUBDIRS); do $(MAKE) -C $$i all.opt || exit 1; done 
 
 
-$(TARGET): $(BASICLIBS) $(OBJS)
+$(TARGET): $(BASICLIBS) $(OBJS) main.cmo
 	$(OCAMLC) $(BYTECODE_STATIC) -o $@ $(SYSLIBS) $^
 
-$(TARGET).opt: $(BASICLIBS:.cma=.cmxa) $(OPTOBJS) 
+$(TARGET).opt: $(BASICLIBS:.cma=.cmxa) $(OPTOBJS) main.cmx
 	$(OCAMLOPT) $(STATIC) -o $@ $(SYSLIBS:.cma=.cmxa)  $^
 
 
@@ -338,9 +338,9 @@ purebytecode:
 # stags targets (was pfff_tags)
 #------------------------------------------------------------------------------
 
-stags: $(LIBS) main_stags.cmo 
+stags: $(LIBS) $(OBJS) main_stags.cmo 
 	$(OCAMLC) $(CUSTOM) -o $@ $(SYSLIBS) $^
-stags.opt: $(LIBS:.cma=.cmxa) main_stags.cmx
+stags.opt: $(LIBS:.cma=.cmxa) $(OPTOBJS) main_stags.cmx
 	$(OCAMLOPT) $(STATIC) -o $@ $(SYSLIBS:.cma=.cmxa) $^
 clean::
 	rm -f stags
@@ -349,16 +349,16 @@ clean::
 # sgrep/spatch targets
 #------------------------------------------------------------------------------
 
-sgrep: $(BASICLIBS) main_sgrep.cmo 
+sgrep: $(BASICLIBS) $(OBJS) main_sgrep.cmo 
 	$(OCAMLC) $(CUSTOM) -o $@ $(BASICSYSLIBS) $^
-sgrep.opt: $(BASICLIBS:.cma=.cmxa) main_sgrep.cmx
+sgrep.opt: $(BASICLIBS:.cma=.cmxa) $(OPTOBJS) main_sgrep.cmx
 	$(OCAMLOPT) $(STATIC) -o $@ $(BASICSYSLIBS:.cma=.cmxa) $^
 clean::
 	rm -f sgrep
 
-spatch: $(BASICLIBS) main_spatch.cmo 
+spatch: $(BASICLIBS) $(OBJS) main_spatch.cmo 
 	$(OCAMLC) $(CUSTOM) -o $@ $(BASICSYSLIBS) $^
-spatch.opt: $(BASICLIBS:.cma=.cmxa) main_spatch.cmx
+spatch.opt: $(BASICLIBS:.cma=.cmxa) $(OPTOBJS) main_spatch.cmx
 	$(OCAMLOPT) $(STATIC) -o $@ $(BASICSYSLIBS:.cma=.cmxa) $^
 clean::
 	rm -f spatch
@@ -367,9 +367,9 @@ clean::
 # scheck targets
 #------------------------------------------------------------------------------
 
-scheck: $(LIBS) main_scheck.cmo 
+scheck: $(LIBS) $(OBJS) main_scheck.cmo 
 	$(OCAMLC) $(CUSTOM) -o $@ $(SYSLIBS) $^
-scheck.opt: $(LIBS:.cma=.cmxa) main_scheck.cmx
+scheck.opt: $(LIBS:.cma=.cmxa) $(OPTOBJS) main_scheck.cmx
 	$(OCAMLOPT) $(STATIC) -o $@ $(SYSLIBS:.cma=.cmxa) $^
 clean::
 	rm -f scheck
@@ -378,9 +378,9 @@ clean::
 # codequery targets
 #------------------------------------------------------------------------------
 
-codequery: $(LIBS) main_codequery.cmo 
+codequery: $(LIBS) $(OBJS) main_codequery.cmo 
 	$(OCAMLC) $(CUSTOM) -o $@ $(SYSLIBS) $^
-codequery.opt: $(LIBS:.cma=.cmxa) $(LIBS2:.cma=.cmxa) $(OBJS2:.cmo=.cmx) main_codequery.cmx
+codequery.opt: $(LIBS:.cma=.cmxa) $(LIBS2:.cma=.cmxa) $(OBJS2:.cmo=.cmx) $(OPTOBJS) main_codequery.cmx
 	$(OCAMLOPT) $(STATIC) -o $@ $(SYSLIBS:.cma=.cmxa)   $^ 
 clean:: 
 	rm -f codequery
@@ -389,9 +389,9 @@ clean::
 # pfff_db targets
 #------------------------------------------------------------------------------
 
-pfff_db: $(LIBS) main_db.cmo 
+pfff_db: $(LIBS) $(OBJS) main_db.cmo 
 	$(OCAMLC) $(CUSTOM) -o $@ $(SYSLIBS) $^
-pfff_db.opt: $(LIBS:.cma=.cmxa) $(LIBS2:.cma=.cmxa) $(OBJS2:.cmo=.cmx) main_db.cmx
+pfff_db.opt: $(LIBS:.cma=.cmxa) $(LIBS2:.cma=.cmxa) $(OBJS2:.cmo=.cmx) $(OPTOBJS) main_db.cmx
 	$(OCAMLOPT) $(STATIC) -o $@ $(SYSLIBS:.cma=.cmxa)   $^ 
 clean:: 
 	rm -f pfff_db
@@ -402,17 +402,16 @@ clean::
 SYSLIBS_CM= \
  external/ocamlgtk/src/lablgtk.cma \
  external/ocamlcairo/src/cairo.cma \
- external/ocamlcairo/src/cairo_lablgtk.cma \
-
+ external/ocamlcairo/src/cairo_lablgtk.cma
 OBJS_CM=code_map/lib.cma
 
 GTKLOOP=gtkThread.cmo
 
-codemap: $(LIBS) commons/commons_gui.cma $(OBJS_CM) main_codemap.cmo
+codemap: $(LIBS) commons/commons_gui.cma $(OBJS_CM) $(OBJS) main_codemap.cmo
 	$(OCAMLC) -thread $(CUSTOM) -o $@ $(SYSLIBS) threads.cma \
             $(SYSLIBS_CM) $(GTKLOOP) $^
 
-codemap.opt: $(LIBS:.cma=.cmxa) commons/commons_gui.cmxa $(OBJS_CM:.cma=.cmxa) main_codemap.cmx
+codemap.opt: $(LIBS:.cma=.cmxa) commons/commons_gui.cmxa $(OBJS_CM:.cma=.cmxa) $(OPTOBJS) main_codemap.cmx
 	$(OCAMLOPT) -thread $(STATIC) -o $@ $(SYSLIBS:.cma=.cmxa) threads.cmxa\
           $(SYSLIBS_CM:.cma=.cmxa) $(GTKLOOP:.cmo=.cmx)  $^
 
@@ -426,11 +425,11 @@ clean::
 SYSLIBS_CG=$(SYSLIBS_CM)
 OBJS_CG=code_graph/lib.cma
 
-codegraph: $(LIBS) commons/commons_gui.cma $(OBJS_CG) main_codegraph.cmo
+codegraph: $(LIBS) commons/commons_gui.cma $(OBJS_CG) $(OBJS) main_codegraph.cmo
 	$(OCAMLC) -thread $(CUSTOM) -o $@ $(SYSLIBS) threads.cma \
            $(SYSLIBS_CG) $(GTKLOOP) $^
 
-codegraph.opt: $(LIBS:.cma=.cmxa) commons/commons_gui.cmxa $(OBJS_CG:.cma=.cmxa) main_codegraph.cmx
+codegraph.opt: $(LIBS:.cma=.cmxa) commons/commons_gui.cmxa $(OBJS_CG:.cma=.cmxa) $(OPTOBJS) main_codegraph.cmx
 	$(OCAMLOPT) -thread $(STATIC) -o $@ $(SYSLIBS:.cma=.cmxa) threads.cmxa\
           $(SYSLIBS_CG:.cma=.cmxa) $(GTKLOOP:.cmo=.cmx)  $^
 
@@ -441,9 +440,9 @@ clean::
 # pfff_test targets
 #------------------------------------------------------------------------------
 
-pfff_test: $(LIBS) main_test.cmo 
+pfff_test: $(LIBS) $(OBJS) main_test.cmo 
 	$(OCAMLC) $(CUSTOM) -o $@ $(SYSLIBS) $^
-pfff_test.opt: $(LIBS:.cma=.cmxa) main_test.cmx
+pfff_test.opt: $(LIBS:.cma=.cmxa) $(OPTOBJS) main_test.cmx
 	$(OCAMLOPT) $(STATIC) -o $@ $(SYSLIBS:.cma=.cmxa) $^
 clean::
 	rm -f pfff_test
