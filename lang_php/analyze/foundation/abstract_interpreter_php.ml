@@ -417,10 +417,10 @@ and stmt env heap x =
   | Throw e ->
       let heap, _ = expr env heap e in
       heap
-  | Try (stl, c, cl) ->
+  | Try (stl, cl, fl) ->
       let heap = stmtl env heap stl in
-      let heap = catch env heap c in
       let heap = List.fold_left (catch env) heap cl in
+      let heap = List.fold_left (finally env) heap fl in
       heap
 
   | Global idl -> List.fold_left (global env) heap idl
@@ -483,6 +483,8 @@ and case env heap x =
       heap
 
 and catch env heap (_, _, stl) =
+  stmtl env heap stl
+and finally env heap (stl) =
   stmtl env heap stl
 
 (* ---------------------------------------------------------------------- *)

@@ -93,6 +93,7 @@ let info_of_tok = function
   | T_RETURN ii -> ii
   | T_TRY ii -> ii
   | T_CATCH ii -> ii
+  | T_FINALLY ii -> ii
   | T_THROW ii -> ii
   | T_DECLARE ii -> ii
   | T_ENDDECLARE ii -> ii
@@ -291,6 +292,7 @@ let visitor_info_of_tok f = function
   | T_RETURN ii -> T_RETURN(f ii)
   | T_TRY ii -> T_TRY(f ii)
   | T_CATCH ii -> T_CATCH(f ii)
+  | T_FINALLY ii -> T_FINALLY(f ii)
   | T_THROW ii -> T_THROW(f ii)
   | T_DECLARE ii -> T_DECLARE(f ii)
   | T_ENDDECLARE ii -> T_ENDDECLARE(f ii)

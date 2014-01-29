@@ -439,7 +439,7 @@ and stmt =
     | Continue of tok * expr option * tok
     | Return of tok * expr option * tok
     | Throw of tok * expr * tok
-    | Try of tok * stmt_and_def list brace * catch * catch list
+    | Try of tok * stmt_and_def list brace * catch list * finally list
     | Echo of tok * expr comma_list * tok
     | Globals    of tok * global_var comma_list * tok
     | StaticVars of tok * static_var comma_list * tok
@@ -476,6 +476,8 @@ and stmt =
      and foreach_variable = is_ref * lvalue
     and catch =
       tok * (class_name * dname) paren * stmt_and_def list brace
+    and finally =
+      tok * stmt_and_def list brace
     and use_filename =
       | UseDirect of string wrap
       | UseParen  of string wrap paren

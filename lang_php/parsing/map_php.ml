@@ -585,8 +585,8 @@ and map_stmt x =
   | Try ((v1, v2, v3, v4)) ->
       let v1 = map_tok v1
       and v2 = map_brace (map_of_list map_stmt_and_def) v2
-      and v3 = map_catch v3
-      and v4 = map_of_list map_catch v4
+      and v3 = map_of_list map_catch v3
+      and v4 = map_of_list map_finally v4
       in Try ((v1, v2, v3, v4))
   | Echo ((v1, v2, v3)) ->
       let v1 = map_tok v1
@@ -679,6 +679,10 @@ and map_catch (v1, v2, v3) =
       v2
   and v3 = map_brace (map_of_list map_stmt_and_def) v3
   in (v1, v2, v3)
+and map_finally (v1, v2) =
+  let v1 = map_tok v1
+  and v2 = map_brace (map_of_list map_stmt_and_def) v2
+  in (v1, v2)
 and map_use_filename =
   function
   | UseDirect v1 -> let v1 = map_wrap map_of_string v1 in UseDirect ((v1))

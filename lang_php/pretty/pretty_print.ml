@@ -341,10 +341,11 @@ and stmt_ env = function
           expr env e);
       Pp.print env ") ";
       stmt_block_nl env stl
-  | Try (stl, c, cl) ->
+  | Try (stl, cl, fl) ->
       Pp.print env "try ";
       stmt_block env stl;
-      List.iter (catch env) (c :: cl);
+      List.iter (catch env) (cl);
+      List.iter (finally env) (fl);
       Pp.newline env
   | InlineHtml s -> Pp.print env s
   | Expr (Assign (bop, e1, e2)) ->
@@ -437,6 +438,10 @@ and catch env (c, v, stl) =
   Pp.print env " ";
   Pp.print env v;
   Pp.print env ") ";
+  stmt_block env stl
+
+and finally env (stl) =
+  Pp.print env " finally ";
   stmt_block env stl
 
 and stmt_simple env = function

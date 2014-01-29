@@ -487,9 +487,10 @@ and stmt env = function
       Common.opt (expr env) eopt
 
   | Throw e -> expr env e
-  | Try (xs, c1, cs) ->
+  | Try (xs, cs, fs) ->
       stmtl env xs;
-      catches env (c1::cs)
+      catches env (cs);
+      finallys env (fs)
 
   | StaticVars xs ->
       xs +> List.iter (fun (name, eopt) ->
@@ -526,6 +527,9 @@ and catch env (hint_type, name, xs) =
   env.vars := Map_poly.add s (tok, S.LocalExn, ref 0) !(env.vars);
   stmtl env xs
 
+and finally env (xs) =
+  stmtl env xs
+
 and case env = function
   | Case (e, xs) ->
       expr env e;
@@ -536,6 +540,7 @@ and case env = function
 and stmtl env xs = List.iter (stmt env) xs
 and casel env xs = List.iter (case env) xs
 and catches env xs = List.iter (catch env) xs
+and finallys env xs = List.iter (finally env) xs
 
 and foreach_pattern env pattern =
 
