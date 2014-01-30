@@ -15,6 +15,8 @@ let finder lang =
     Lib_parsing_java.find_source_files_of_dir_or_files
   | "js"  -> 
     Lib_parsing_js.find_source_files_of_dir_or_files ~include_scripts:false
+  | "clang2" ->
+    Lib_parsing_clang.find_source2_files_of_dir_or_files    
   | _ -> failwith ("unsupported language: " ^ lang)
 
 let skip_file dir = 
@@ -34,7 +36,10 @@ let files_of_root ~lang root =
 
   let skip_list =
     if Sys.file_exists (skip_file root)
-    then Skip_code.load (skip_file root)
+    then begin 
+      pr2 (spf "Using skip file: %s" (skip_file root));
+      Skip_code.load (skip_file root);
+    end
     else []
   in
   let files = Skip_code.filter_files skip_list root files in
