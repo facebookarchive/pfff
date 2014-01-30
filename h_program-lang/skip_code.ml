@@ -119,7 +119,7 @@ let find_skip_file_from_root root =
     else None
   )
 
-let filter_files_if_skip_list ?(verbose=false) xs =
+let filter_files_if_skip_list ?(verbose=true) xs =
   match xs with
   | [] -> []
   | x::_ ->
