@@ -5,7 +5,7 @@ val is_php_filename: Common.filename -> bool
 val is_php_file: Common.filename -> bool
 val is_php_script: Common.filename -> bool
 
-val find_php_files_of_dir_or_files: 
+val find_source_files_of_dir_or_files: 
   ?verbose:bool ->
   Common.path list -> Common.filename list
 

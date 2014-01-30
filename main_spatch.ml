@@ -280,7 +280,7 @@ type transformation = {
 
 let apply_transfo transfo xs =
 
-  let files = Lib_parsing_php.find_php_files_of_dir_or_files xs in
+  let files = Lib_parsing_php.find_source_files_of_dir_or_files xs in
   let pbs = ref [] in
   (* xhp and transformation was not mixing well, but now it's better
    * thanks to builtin xhp support
@@ -360,7 +360,7 @@ module V = Visitor_php
 (* see also demos/simple_refactoring.ml *)
 let simple_transfo xs = 
 
-  let files = Lib_parsing_php.find_php_files_of_dir_or_files xs in
+  let files = Lib_parsing_php.find_source_files_of_dir_or_files xs in
 
   Flag_parsing_php.show_parsing_error := false;
   Flag_parsing_php.verbose_lexing := false;

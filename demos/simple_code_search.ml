@@ -54,7 +54,7 @@ module PI = Parse_info
 (*****************************************************************************)
 
 let main files_or_dirs = 
-  let files = Lib_parsing_php.find_php_files_of_dir_or_files files_or_dirs in
+  let files = Lib_parsing_php.find_source_files_of_dir_or_files files_or_dirs in
 
   files +> List.iter (fun file ->
 

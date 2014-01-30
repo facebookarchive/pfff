@@ -12,7 +12,7 @@ module V = Visitor_php
 (* Simple AST *)
 (*****************************************************************************)
 let test_parse_simple xs =
-  let fullxs = Lib_parsing_php.find_php_files_of_dir_or_files xs in
+  let fullxs = Lib_parsing_php.find_source_files_of_dir_or_files xs in
   fullxs +> List.iter (fun file ->
     try 
       let ast = Parse_php.parse_program file in
@@ -250,7 +250,7 @@ let test_prolog_php file query =
 
 let test_stat_php xs =
 
-  let files = Lib_parsing_php.find_php_files_of_dir_or_files xs in
+  let files = Lib_parsing_php.find_source_files_of_dir_or_files xs in
   let h = Common2.hash_with_default (fun () -> 0) in
 
   files +> Console.progress (fun k -> List.iter (fun file ->

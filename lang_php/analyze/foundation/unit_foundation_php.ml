@@ -300,7 +300,7 @@ function test_useA() {
       let root = Filename.concat Config_pfff.path "/tests/php/codegraph" in
       let skip_list = Skip_code.load (Filename.concat root "skip_list.txt") in
       let files = 
-        Lib_parsing_php.find_php_files_of_dir_or_files [root] 
+        Lib_parsing_php.find_source_files_of_dir_or_files [root] 
         +> Skip_code.filter_files skip_list root
         +> Skip_code.reorder_files_skip_errors_last skip_list root
       in

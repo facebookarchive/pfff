@@ -388,7 +388,7 @@ let test () =
 (* Dataflow analysis *)
 let dflow file_or_dir =
   let file_or_dir = Common.realpath file_or_dir in
-  let files = Lib_parsing_php.find_php_files_of_dir_or_files [file_or_dir] in
+  let files = Lib_parsing_php.find_source_files_of_dir_or_files [file_or_dir] in
   let dflow_of_func_def def =
     (try
        let flow = Controlflow_build_php.cfg_of_func def in

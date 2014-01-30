@@ -82,7 +82,7 @@ let apply_patch = ref false
 (*****************************************************************************)
 
 let main files_or_dirs = 
-  let files = Lib_parsing_php.find_php_files_of_dir_or_files files_or_dirs in
+  let files = Lib_parsing_php.find_source_files_of_dir_or_files files_or_dirs in
 
   Flag_parsing_php.show_parsing_error := false;
   Flag_parsing_php.verbose_lexing := false;

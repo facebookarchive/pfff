@@ -4,7 +4,7 @@ open Common
 let finder lang = 
   match lang with
   | "php" | "phpfuzzy" | "php2" -> 
-    Lib_parsing_php.find_php_files_of_dir_or_files ~verbose:false
+    Lib_parsing_php.find_source_files_of_dir_or_files ~verbose:false
   | "c++" -> 
     Lib_parsing_cpp.find_source_files_of_dir_or_files
   | "ml" -> 

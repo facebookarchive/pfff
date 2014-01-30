@@ -70,7 +70,7 @@ let is_php_file filename =
  * We want the same with pfff, hence this small helper function that
  * transform such files_or_dirs into a flag set of filenames.
  *)
-let find_php_files_of_dir_or_files ?(verbose=false) xs = 
+let find_source_files_of_dir_or_files ?(verbose=false) xs = 
   Common.files_of_dir_or_files_no_vcs_nofilter xs 
   +> List.filter (fun filename ->
     (* note: there was a possible race here because between the time we
