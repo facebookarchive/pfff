@@ -94,7 +94,10 @@ let build_prolog_db lang root =
       
       let g = 
         match lang with
-        | "cmt" -> Graph_code_cmt.build ~verbose:!verbose root files
+        | "cmt" -> 
+          let ml_files = Find_source.files_of_root ~lang:"ml" root in
+          let cmt_files = files in
+          Graph_code_cmt.build ~verbose:!verbose ~root ~cmt_files ~ml_files
         | "bytecode" -> 
           let graph_code_java =  
 (*           Some (Graph_code_java.build ~verbose:!verbose ~only_defs:true

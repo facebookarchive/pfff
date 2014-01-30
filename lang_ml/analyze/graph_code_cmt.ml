@@ -1073,10 +1073,9 @@ and
 (* Main entry point *)
 (*****************************************************************************)
 
-let build ?(verbose=false) root files =
-  (* todo: Skip_code.filter_files skip_list root all_ml_files in *)
-  let ml_files = Lib_parsing_ml.find_ml_files_of_dir_or_files [root] in
-  
+let build ?(verbose=false) ~root ~cmt_files ~ml_files  =
+
+  let files = cmt_files in
   let g = G.create () in
   G.create_initial_hierarchy g;
 

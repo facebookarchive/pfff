@@ -17,7 +17,7 @@ let verbose = false
 
 let with_graph ~files f =
   Common2.with_tmp_dir (fun tmp_dir ->
-
+    let root = tmp_dir in
     (* generating .cmt files *)
     files +> List.iter (fun (filename, content) ->
       Common.write_file ~file:(Filename.concat tmp_dir filename) content
@@ -32,8 +32,9 @@ let with_graph ~files f =
                         * files first and main files at the end.
                         *)
                        (files +> List.map fst +> Common.join " "));
-    let files = Lib_parsing_ml.find_cmt_files_of_dir_or_files [tmp_dir] in
-    let g = Graph_code_cmt.build ~verbose:verbose tmp_dir files in
+    let cmt_files = Lib_parsing_ml.find_cmt_files_of_dir_or_files [tmp_dir] in
+    let ml_files = [] in
+    let g = Graph_code_cmt.build ~verbose:verbose ~root ~cmt_files ~ml_files in
     f tmp_dir g
   )
 

@@ -273,7 +273,11 @@ let build_graph_code lang root =
     match lang with
     | "ml"  -> Graph_code_ml.build ~verbose:!verbose root files, empty
 
-    | "cmt"  -> Graph_code_cmt.build ~verbose:!verbose root files, empty
+    | "cmt"  -> 
+          let ml_files = Find_source.files_of_root ~lang:"ml" root in
+          let cmt_files = files in
+          Graph_code_cmt.build ~verbose:!verbose ~root ~cmt_files ~ml_files, 
+          empty
 
     | "php" -> 
       (* todo: better factorize *)

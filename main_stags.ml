@@ -89,7 +89,10 @@ let rec defs_of_files_or_dirs lang xs =
           let only_defs = true in
           let g = 
             match lang with
-            | "cmt" -> Graph_code_cmt.build root files
+            | "cmt" -> 
+              let cmt_files = files in
+              let ml_files = Find_source.files_of_root ~lang:"ml" root in
+              Graph_code_cmt.build ~verbose ~root ~cmt_files ~ml_files
             | "java" -> Graph_code_java.build ~verbose ~only_defs root files
             | "php2" -> Graph_code_php.build ~verbose ~only_defs root files+>fst
             | _ -> raise Impossible

@@ -1,5 +1,7 @@
 
 val build:
   ?verbose:bool -> 
-  Common.path -> Common.filename list ->
+  root:Common.path ->
+  cmt_files:Common.filename list -> 
+  ml_files:Common.filename list ->
   Graph_code.graph
