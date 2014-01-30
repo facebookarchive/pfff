@@ -5941,6 +5941,7 @@ let format_to_string f =
 (* Directories part 2 *)
 (*---------------------------------------------------------------------------*)
 
+(* todo? vs common_prefix_of_files_or_dirs? *)
 let find_common_root files =
   let dirs_part = files +> List.map fst in
 

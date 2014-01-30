@@ -263,9 +263,19 @@ let package_node xs =
 (* Language specific, building the graph *)
 (*****************************************************************************)
 
-let build_graph_code lang root =
-  let root = Common.realpath root in
-  let files = Find_source.files_of_root ~lang root in
+let build_graph_code lang xs =
+  let root, files = 
+    match xs with
+    | [root] -> 
+      let root = Common.realpath root in
+      let files = Find_source.files_of_root ~lang root in
+      root, files
+    | _ ->
+      let xs = List.map Common.realpath xs in
+      let root = Common2.common_prefix_of_files_or_dirs xs in
+      let files = Find_source.files_of_dir_or_files ~lang ~verbose:!verbose xs in
+      root, files
+  in
 
   let empty = Graph_code.empty_statistics () in
   let g, stats =
@@ -645,8 +655,8 @@ let test_xta graph_file =
 (* ---------------------------------------------------------------------- *)
 let extra_actions () = [
 
-  "-build", " <dir> build a graph_code.marshall database",
-  Common.mk_action_1_arg (fun dir -> build_graph_code !lang dir);
+  "-build", " <dirs> build a graph_code.marshall database",
+  Common.mk_action_n_arg (fun dirs -> build_graph_code !lang dirs);
   "-build_stdlib", " <src> <dst>",
   Common.mk_action_2_arg (fun dir dst -> build_stdlib !lang dir dst);
   "-adjust_graph", " <graph> <adjust_file> <whitelist> <dstfile>\n",
