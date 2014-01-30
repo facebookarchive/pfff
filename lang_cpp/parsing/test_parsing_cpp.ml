@@ -19,19 +19,10 @@ let test_tokens_cpp file =
   ()
 
 let test_parse_cpp ?lang xs  =
-  let fullxs = Lib_parsing_cpp.find_source_files_of_dir_or_files xs in
-  let fullxs =
-    match xs with
-    | [dir] when Common2.is_directory dir ->
-      let file = Filename.concat dir "skip_list.txt" in
-      if Sys.file_exists file
-      then 
-        let skip_list = Skip_code.load file in
-        Skip_code.filter_files skip_list dir fullxs
-      else fullxs
-    | _ -> fullxs
+  let fullxs = 
+    Lib_parsing_cpp.find_source_files_of_dir_or_files xs
+    +> Skip_code.filter_files_if_skip_list
   in
-
   Parse_cpp.init_defs !Flag.macros_h;
 
   let stat_list = ref [] in
@@ -112,15 +103,9 @@ let test_dump_cpp_fuzzy file =
   pr2 s
 
 let test_parse_cpp_fuzzy dir_or_file =
-  let fullxs = Lib_parsing_cpp.find_source_files_of_dir_or_files [dir_or_file]in
-
-  let file = Filename.concat dir_or_file "skip_list.txt" in
   let fullxs = 
-    if Sys.file_exists file
-    then 
-      let skip_list = Skip_code.load file in
-      Skip_code.filter_files skip_list dir_or_file fullxs
-    else fullxs
+    Lib_parsing_cpp.find_source_files_of_dir_or_files [dir_or_file]
+    +> Skip_code.filter_files_if_skip_list
   in
 
   fullxs +> Console.progress (fun k -> List.iter (fun file -> 

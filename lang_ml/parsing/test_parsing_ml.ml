@@ -47,17 +47,10 @@ let test_dump_ml file =
 
 
 let test_parse_ml_fuzzy dir_or_file =
-  let fullxs = Lib_parsing_ml.find_source_files_of_dir_or_files [dir_or_file] in
-
-  let file = Filename.concat dir_or_file "skip_list.txt" in
   let fullxs = 
-    if Sys.file_exists file
-    then 
-      let skip_list = Skip_code.load file in
-      Skip_code.filter_files skip_list dir_or_file fullxs
-    else fullxs
+    Lib_parsing_ml.find_source_files_of_dir_or_files [dir_or_file] 
+    +> Skip_code.filter_files_if_skip_list
   in
-
   fullxs +> Console.progress (fun k -> List.iter (fun file -> 
      k ();
       try 

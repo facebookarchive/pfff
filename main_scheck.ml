@@ -245,9 +245,7 @@ let main_action xs =
   Logger.log Config_pfff.logger "scheck" None;
 
   let xs = List.map Common.realpath xs in
-  let files = 
-    Lib_parsing_php.find_php_files_of_dir_or_files xs
-    +> Skip_code.filter_files_if_skip_list ~verbose:!verbose
+  let files = Find_source.files_of_dir_or_files ~lang:"php" ~verbose:!verbose xs
   in
 
   Flag_parsing_php.show_parsing_error := false;
@@ -390,10 +388,7 @@ let test () =
 (* Dataflow analysis *)
 let dflow file_or_dir =
   let file_or_dir = Common.realpath file_or_dir in
-  let files = 
-    Lib_parsing_php.find_php_files_of_dir_or_files [file_or_dir]
-    +> Skip_code.filter_files_if_skip_list ~verbose:!verbose
-  in
+  let files = Lib_parsing_php.find_php_files_of_dir_or_files [file_or_dir] in
   let dflow_of_func_def def =
     (try
        let flow = Controlflow_build_php.cfg_of_func def in
