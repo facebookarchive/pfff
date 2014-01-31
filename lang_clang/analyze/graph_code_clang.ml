@@ -107,6 +107,8 @@ let unknown_location = "Unknown_Location", E.File
 
 type kind_file = Source | Header
 
+let typedefs_dependencies = true
+
 (*****************************************************************************)
 (* Parsing *)
 (*****************************************************************************)
@@ -293,9 +295,14 @@ let add_type_deps env typ =
    * final type? Depends if we want to create dependencies to typedefs.
    * In the plan9 context where typedefs are used for forward declaring
    * it's better to look at the final type.
-   * todo: flag
+   * 
    *)
-  | Brace (toks, _toks_final) ->
+  | Brace (toks_origin, toks_after_typedef_expansion) ->
+    let toks = 
+      if typedefs_dependencies
+      then toks_origin
+      else toks_after_typedef_expansion ||| toks_origin
+    in
       if env.phase = Uses then begin
         let t = Type_clang.extract_type_of_tokens (loc_of_env env) toks in
         let rec aux t = 
