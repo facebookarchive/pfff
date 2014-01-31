@@ -179,6 +179,7 @@ let pfff_extra_actions () = [
   );
   "-action1", "", Common.mk_action_0_arg action1;
 
+  (* TODO: move this outside pfff :) *)
   "-action2", "<files>", Common.mk_action_n_arg (fun xs ->
     xs +> List.iter (fun file ->
       let (_d,b,_e) = Common2.dbe_of_filename file in
@@ -190,6 +191,26 @@ let pfff_extra_actions () = [
         print_string (spf "%s " b)
     );
     print_string "\n";
+  );
+  "-mv_kernel", "<file1> <dirdst>", Common.mk_action_2_arg (fun file dirdst ->
+    let file = Common.realpath file in
+    let kerneldir = "/home/pad/plan9/sys/src/9" in
+    let candidates = Common.cmd_to_list (spf "find %s -type l" kerneldir) in
+    let fcandidates =
+      Graph_code.basename_to_readable_disambiguator ~root:"" candidates in
+    match fcandidates (Filename.basename file) with
+    | [] -> failwith "No candidate found"
+    | [x] -> 
+      let x = "/" ^ x in
+      let cmd s = Sys.command s +> ignore in
+      cmd (spf "cp %s /tmp" x);
+      cmd (spf "rm -f %s" x);
+      cmd (spf "mv %s %s" file dirdst);
+      let file = Filename.concat dirdst (Filename.basename file) in
+      let file = Common.realpath file in
+      cmd (spf "ln -s %s %s" file x);
+      pr2 (spf "ln -s %s %s" file x);
+    | _ -> failwith "too many candidates"
   );
 
 ]
