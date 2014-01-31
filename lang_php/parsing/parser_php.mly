@@ -132,7 +132,7 @@ module PI = Parse_info
 /*(*-----------------------------------------*)*/
 
 %token <Ast_php.info>
- T_OBJECT_OPERATOR T_DOUBLE_ARROW
+ T_OBJECT_OPERATOR T_ARROW T_DOUBLE_ARROW
  T_OPEN_TAG  T_CLOSE_TAG T_OPEN_TAG_WITH_ECHO T_CLOSE_TAG_OF_ECHO
  T_START_HEREDOC    T_END_HEREDOC
  T_DOLLAR_OPEN_CURLY_BRACES T_CURLY_OPEN
@@ -218,6 +218,7 @@ module PI = Parse_info
 /*(* those are low priority, especially lower than ?: *)*/
 %nonassoc  T_YIELD
 %nonassoc  T_AWAIT
+
 
 /*(* http://www.php.net/manual/en/language.operators.precedence.php *)*/
 %left      T_INCLUDE T_INCLUDE_ONCE T_EVAL T_REQUIRE T_REQUIRE_ONCE
@@ -391,7 +392,7 @@ foreach_variable:
 foreach_pattern: 
   | foreach_variable                                 
       { ForeachVar $1 }
-  | foreach_variable T_DOUBLE_ARROW foreach_pattern 
+  | foreach_variable T_ARROW foreach_pattern 
       { ForeachArrow(ForeachVar $1,$2,$3) }
   | T_LIST TOPAR assignment_list TCPAR
      { ForeachList($1,($2,$3,$4)) }
@@ -857,7 +858,7 @@ type_php_or_shape:
  | type_php { $1 }
  | T_SHAPE TOPAR shape_field_list TCPAR { HintShape ($1, ($2, $3, $4)) }
 
-shape_field: T_CONSTANT_ENCAPSED_STRING T_DOUBLE_ARROW type_php { $1, $2, $3 }
+shape_field: T_CONSTANT_ENCAPSED_STRING T_ARROW type_php { $1, $2, $3 }
  
 /*(*************************************************************************)*/
 /*(*1 Generics parameters *)*/
@@ -1056,6 +1057,19 @@ expr:
                      f_attrs = None;
        })
      }
+
+ /*(* facebook-ext: short lambdas, as in ($x ==> $x + 1) *)*/
+ | T_VARIABLE T_DOUBLE_ARROW short_lambda_body 
+     { This $2 }
+ | TOPAR TCPAR T_DOUBLE_ARROW short_lambda_body 
+     { This $1 }
+ /*(* can not factorize with TOPAR parameter_list TCPAR, see conflicts.txt *)*/
+ | TOPAR expr TCPAR T_DOUBLE_ARROW short_lambda_body 
+     { This $1 }
+ | TOPAR T_VARIABLE TCOMMA non_empty_parameter_list TCPAR T_DOUBLE_ARROW
+     short_lambda_body 
+     { This $1 }
+
  /*(* php-facebook-ext: in hphp.y yield are at the statement level
     * and are restricted to a few forms *)*/
  | T_YIELD expr { Yield ($1, $2) }
@@ -1089,7 +1103,6 @@ simple_expr:
   */
  | qualified_class_name TOBRACE array_pair_list TCBRACE
      { Collection ($1, ($2, $3, $4)) }
-
 new_expr:
  | member_expr { $1 }
  | T_NEW member_expr { New ($1, $2, None) }
@@ -1155,8 +1168,6 @@ primary_expr:
 
  | TOPAR expr TCPAR     { ParenExpr($1,$2,$3) }
 
-
-
 constant:
  | T_LNUMBER 			{ Int($1) }
  | T_DNUMBER 			{ Double($1) }
@@ -1183,8 +1194,8 @@ array_pair_list: array_pair_list_rev { List.rev $1 }
 array_pair:
  | expr 			       { (ArrayExpr $1) }
  | TAND expr 		       { (ArrayRef ($1,$2)) }
- | expr T_DOUBLE_ARROW expr	       { (ArrayArrowExpr($1,$2,$3)) }
- | expr T_DOUBLE_ARROW TAND expr { (ArrayArrowRef($1,$2,$3,$4)) }
+ | expr T_ARROW expr	       { (ArrayArrowExpr($1,$2,$3)) }
+ | expr T_ARROW TAND expr { (ArrayArrowRef($1,$2,$3,$4)) }
 
 /*(*----------------------------*)*/
 /*(*2 Calls *)*/
@@ -1284,6 +1295,14 @@ xhp_attribute_value:
     *)*/
  /*(* sgrep_ext: *)*/
  | T_XHP_ATTR { H.sgrep_guard (SgrepXhpAttrValueMvar ($1)) }
+
+/*(*----------------------------*)*/
+/*(*2 Short lambda *)*/
+/*(*----------------------------*)*/
+short_lambda_body: 
+ | TOBRACE inner_statement_list TCBRACE { }
+ /*(* see conflicts.txt for why the %prec *)*/
+ | expr  %prec LOW_PRIORITY_RULE { }
 
 /*(*----------------------------*)*/
 /*(*2 auxillary bis *)*/

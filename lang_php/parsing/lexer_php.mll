@@ -542,7 +542,7 @@ rule st_in_scripting = parse
     | ','  { TCOMMA(tokinfo lexbuf) }
     | '@'  { T__AT(tokinfo lexbuf) }
 
-    | "=>" { T_DOUBLE_ARROW(tokinfo lexbuf) }
+    | "=>" { T_ARROW(tokinfo lexbuf) }
     | "~"  { TTILDE(tokinfo lexbuf) }
     | ";"  { TSEMICOLON(tokinfo lexbuf) }
     | "!"  { TBANG(tokinfo lexbuf) }
@@ -556,6 +556,9 @@ rule st_in_scripting = parse
     | "?" { TQUESTION(tokinfo lexbuf) }
     (* semantic grep or var args extension *)
     | "..." { TDOTS(tokinfo lexbuf) }
+
+    (* facebook-ext: short lambdas *)
+    | "==>" { T_DOUBLE_ARROW(tokinfo lexbuf) }
 
     (* we may come from a st_looking_for_xxx context, like in string
      * interpolation, so seeing a } we pop_mode!
@@ -675,7 +678,7 @@ rule st_in_scripting = parse
               | TOBRACE _ | TCBRACE _
               | T_RETURN _ | T_YIELD _ | T_AWAIT _
               | TEQ _ | T_CONCAT_EQUAL _
-              | T_DOUBLE_ARROW _
+              | T_ARROW _ | T_DOUBLE_ARROW _
               | TQUESTION _ | TCOLON _
             )
           | None (* when in sgrep/spatch mode, < is the first token *)

@@ -74,4 +74,26 @@ we can not factorize with a ext_type_hint_opt because seing an IDENT,
 one does not know if it should reduce ext_type_hint because it's
 the ident of a type or shift because maybe it's the ident of the const.
 
+* short lambdas
+
+When we parse '_ ==> $x + 1' it could potentially be parsed as
+'( _ ==> $x + 1)' or '(_ ==> $x) + 1' but we don't
+want the second one, so we prefer to shift than reduce
+hence the %prec (just like for the dangling else) attached
+to expr in
+
+short_lambda_body: 
+ | TOBRACE inner_statement_list TCBRACE { }
+ | expr  %prec LOW_PRIORITY_RULE { }
+
+
+The other conflict is that when we see '($x)' in '($x) ==> ...'
+there is no way to know whether this is an expression (reduce) or
+the parameter specification of a lambda (shift). To solve the conflict
+one has to be more general and do:
+
+ | TOPAR expr TCPAR T_DOUBLE_ARROW short_lambda_body 
+     { This $1 }
+
+but make sure that expr can only be a T_VARIABLE.
 
