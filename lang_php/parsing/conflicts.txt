@@ -29,10 +29,12 @@ to indicate what you want.
 
 * xhp
 
-'<' is overloaded in PHP. Can be the start of an xhp element
-or comparison.
+'<' is overloaded in PHP. It can be the start of an xhp element
+or a comparison. We use tricks in the lexer to generate
+two different tokens (as in my CC'09 paper, see the notion of "fresh tokens").
 
-':' is also overloaded.
+% and ':' are also overloaded but when they are followed directly
+by some letters we can lex them correctly.
 
 * attributes
 
