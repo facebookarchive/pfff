@@ -58,6 +58,7 @@ module Typ = Type_clang
  * related:
  *  - http://code.google.com/p/include-what-you-use/wiki/WhyIWYU
  * 
+ * todo: Type is a bit overloaded maybe
  *)
 
 (*****************************************************************************)
@@ -68,6 +69,7 @@ type env = {
   g: Graph_code.graph;
   phase: phase;
 
+  (* for gensym *)
   cnt: int ref;
 
   current: Graph_code.node;
@@ -75,12 +77,12 @@ type env = {
   root: Common.dirname;
   (* readable path *)
   c_file_readable: Common.filename;
-
-  current_c_file_line: int ref;
-  (* this is there in support for current_c_file_line, see update_line() *)
-  current_c_file: Common.filename ref;
   (* absolute path, as mentionned in the .clang *)
-  target_c_file: Common.filename;
+  c_file_absolute: Common.filename;
+
+  current_c_line: int ref;
+  (* this is there in support for current_c_line, see update_line() *)
+  current_c_file: Common.filename ref;
 
   (* for error reports *)
   clang2_file: Common.filename;
@@ -88,11 +90,11 @@ type env = {
   clang_line: int;
 
   at_toplevel: bool;
-  (* we don't need to store also the params as they are marked specially
+  (* we don't need to store also the 'params' as they are marked specially
    * as ParamVar in the AST.
    *)
   locals: string list ref;
-  (* static functions and globals and main renaming *)
+  (* static functions, globals and 'main' renaming *)
   local_rename: (string, string) Hashtbl.t;
 
   log: string -> unit;
@@ -101,6 +103,8 @@ type env = {
  and phase = Defs | Uses
 
 let unknown_location = "Unknown_Location", E.File
+
+type kind_file = Source | Header
 
 (*****************************************************************************)
 (* Parsing *)
@@ -139,12 +143,16 @@ let error env s =
 let str_of_angle_loc env loc =
   Location_clang.str_of_angle_loc env.clang_line loc env.clang2_file
 
+(* The .clang2 even after -uninclude can contain reference to other files.
+ * For instance all macro expanded code may refer to the original location
+ * in a header file.
+ *)
 let update_current_c_file_line env (enum, l, xs) =
   let locations = 
     Loc.locations_of_paren env.clang2_file (enum, l, xs) in
   let update_line_if_same_file l =
-    if !(env.current_c_file) =$= env.target_c_file
-    then env.current_c_file_line := l
+    if !(env.current_c_file) =$= env.c_file_absolute
+    then env.current_c_line := l
   in
 
   let rec aux = function
@@ -168,6 +176,12 @@ let update_current_c_file_line env (enum, l, xs) =
   in
   aux locations
 
+let kind_file env =
+  match env.clang2_file with
+  | s when s =~ ".*\\.[cm]\\.clang2" -> Source
+  | s when s =~ ".*\\.[h]\\.clang2" -> Header
+  | s -> failwith ("unknown kind of file: " ^ s)
+
 (*****************************************************************************)
 (* Add Node *)
 (*****************************************************************************)
@@ -187,8 +201,7 @@ let add_node_and_edge_if_defs_mode env node =
     then
       (match kind with
       | E.Function | E.Global | E.Constant 
-      | E.Type
-      | E.Field
+      | E.Type | E.Field
           ->
           (match kind, str with
           | E.Type, (
@@ -208,6 +221,7 @@ let add_node_and_edge_if_defs_mode env node =
               let orig_file = nodeinfo.G.pos.Parse_info.file in
               env.log (spf " orig = %s" orig_file);
               env.log (spf " dupe = %s" env.clang2_file);
+              (* todo: if typedef then maybe ok if have same content *)
           )
       (* todo: have no Use for now for those so skip errors *) 
       | E.Prototype | E.GlobalExtern -> ()
@@ -220,7 +234,7 @@ let add_node_and_edge_if_defs_mode env node =
           pos = { Parse_info.
             str = "";
             charpos = -1; column = -1;
-            line = !(env.current_c_file_line); 
+            line = !(env.current_c_line); 
             file = env.c_file_readable;
           };
           props = [];
@@ -270,8 +284,11 @@ let rec add_use_edge env (s, kind) =
       
 let add_type_deps env typ =
   match typ with
-  (* in a codegraph context we want to use the original type, not the
-   * final type as we want to create dependencies to typedefs
+  (* In a codegraph context do we want to use the original type, or the
+   * final type? Depends if we want to create dependencies to typedefs.
+   * In the plan9 context where typedefs are used for forward declaring
+   * it's better to look at the final type.
+   * todo: flag
    *)
   | Brace (toks, _toks_final) ->
       if env.phase = Uses then begin
@@ -326,10 +343,9 @@ let rec extract_defs_uses env ast =
   end;
   let env = { env with 
     current = (c_file_readable, E.File);
+    current_c_line = ref 1;
     c_file_readable;
-    current_c_file_line = ref 1;
-
-    target_c_file = c_file;
+    c_file_absolute = c_file;
     current_c_file = ref c_file;
   } in
   match ast with
@@ -402,19 +418,15 @@ and decl env (enum, l, xs) =
            * the inline static function because of uninclude_clang which
            * splitted in different files, and so with different
            * local_rename hash. Renaming in the header file would lead to
-           * some unresolvev lookup in the c files.
+           * some unresolved lookup in the c files.
            *)
           | T (TLowerIdent "static")::T (TLowerIdent "inline")::_rest ->
-              env.clang2_file =~ ".*\\.[cm]\\.clang2"
+              kind_file env =*= Source
           | T (TLowerIdent "static")::_rest -> true
           | _ when s = "main" -> true
           | _ -> false
         in
-        let s = 
-          if static && kind = E.Function
-          then new_str_if_defs env s
-          else s
-        in
+        let s = if static&& kind=E.Function then new_str_if_defs env s else s in
         let env = add_node_and_edge_if_defs_mode env (s, kind) in
         add_type_deps env typ;
         { env with locals = ref [] }
@@ -427,24 +439,13 @@ and decl env (enum, l, xs) =
         in
         let static = 
           match rest with
-          (* if we are in an header file, then we don't want to rename
-           * the static global because of uninclude_clang which
-           * splitted in different files, and so with different
-           * local_rename hash. Renaming in the header file would lead to
-           * some unresolved lookup in the c files.
-           *)
-          | T (TLowerIdent "static")::_rest ->
-              env.clang2_file =~ ".*\\.[cm]\\.clang2"
+          | T (TLowerIdent "static")::_rest -> kind_file env =*= Source
           | _ -> false
         in
         let env =
           if env.at_toplevel 
           then 
-            let s = 
-              if static
-              then new_str_if_defs env s
-              else s
-            in
+            let s = if static then new_str_if_defs env s else s in
             add_node_and_edge_if_defs_mode env (s, kind)
           else begin 
             env.locals := s::!(env.locals);
@@ -453,7 +454,6 @@ and decl env (enum, l, xs) =
         in
         add_type_deps env typ;
         env
-        
 
     (* I am not sure about the namespaces, so I prepend strings *)
     | TypedefDecl, loc::(T (TLowerIdent s | TUpperIdent s))::typ::_rest ->
@@ -468,14 +468,13 @@ and decl env (enum, l, xs) =
     | RecordDecl, loc::(T (TLowerIdent "struct"))
         ::(T (TLowerIdent s | TUpperIdent s))::[] ->
         env
-          
+    (* regular defs *)
     | RecordDecl, loc::(T (TLowerIdent "struct"))
         ::(T (TLowerIdent s | TUpperIdent s))::_rest ->
         add_node_and_edge_if_defs_mode env ("S__" ^ s, E.Type)
     | RecordDecl, loc::(T (TLowerIdent "union"))
         ::(T (TLowerIdent s | TUpperIdent s))::_rest ->
         add_node_and_edge_if_defs_mode env ("U__" ^ s, E.Type)
-          
     (* usually embedded struct *)
     | RecordDecl, loc::(T (TLowerIdent "struct"))::_rest ->
         add_node_and_edge_if_defs_mode env 
@@ -493,10 +492,11 @@ and decl env (enum, l, xs) =
         let env = add_node_and_edge_if_defs_mode env (s, E.Field) in 
         add_type_deps env typ;
         env
-
     | FieldDecl, loc::_rest ->
         add_node_and_edge_if_defs_mode env 
           (spf "F__anon__%s" (str_of_angle_loc env loc), E.Field)
+
+    (* todo: rename if in Source file *)
     | EnumConstantDecl, loc::(T (TLowerIdent s | TUpperIdent s))::_rest ->
         add_node_and_edge_if_defs_mode env (s, E.Constant)
         
@@ -507,6 +507,9 @@ and decl env (enum, l, xs) =
 (* ---------------------------------------------------------------------- *)
 (* Stmt *)
 (* ---------------------------------------------------------------------- *)
+(* stmts define nor uses any entities (expression do), so the regular
+ * visitor will go through them without doing anything.
+ *)
 
 (* ---------------------------------------------------------------------- *)
 (* Expr *)
@@ -515,8 +518,8 @@ and decl env (enum, l, xs) =
 (* coupling: must add constructor in dispatcher above if add one here *)
 and expr env (enum, l, xs) =
   (match enum, xs with
-  | CallExpr, _loc::_typ::
-      (Paren (ImplicitCastExpr, _l2, 
+  | CallExpr, _loc::_typ
+      ::(Paren (ImplicitCastExpr, _l2, 
              _loc2::_typ2::Angle _::
                (Paren (DeclRefExpr, _l3,
                       _loc3::_typ3::T (TUpperIdent "Function")::T (THexInt _)
@@ -527,16 +530,16 @@ and expr env (enum, l, xs) =
         let s = str env s in
         add_use_edge env (s, E.Function)
 
-  (* todo: unexpected form of call? function pointer call? *)
+  (* todo: unexpected form of call? function pointer call? add to stats *)
   | CallExpr, _ ->
       ()
-
-
 
   | DeclRefExpr, _loc::_typ::T (TUpperIdent "EnumConstant")::_address
       ::T (TString s)::_rest ->
       if env.phase = Uses
-      then add_use_edge env (s, E.Constant)
+      then 
+        (* todo: possible renaming here *)
+        add_use_edge env (s, E.Constant)
 
   | DeclRefExpr, _loc::_typ::_lval::T (TUpperIdent "Var")::_address
       ::T (TString s)::_rest ->
@@ -548,8 +551,8 @@ and expr env (enum, l, xs) =
           let s = str env s in
           add_use_edge env (s, E.Global)
 
-  | DeclRefExpr, _loc::_typ::_lval::T (TUpperIdent "ParmVar")::_rest ->
-      ()
+  | DeclRefExpr, _loc::_typ::_lval::T (TUpperIdent "ParmVar")::_rest -> 
+    ()
 
   | DeclRefExpr, _loc::_typ::T (TUpperIdent "Function")::_address
       ::T (TString s)::_rest 
@@ -567,7 +570,6 @@ and expr env (enum, l, xs) =
       -> pr2_once "TODO: CXXMethod"
      
   | DeclRefExpr, _ -> error env "DeclRefExpr to handle"
-
 
 
   | MemberExpr, [_loc;_typ;_(*lval*);T (TDot|TArrow);
@@ -656,9 +658,9 @@ let build ?(verbose=true) root files =
     c_file_readable = "__filled_later__";
     clang2_file = "__filled_later__";
 
-    current_c_file_line = ref 1;
+    current_c_line = ref 1;
     current_c_file = ref "__filled_later__";
-    target_c_file = "__filled_later__";
+    c_file_absolute = "__filled_later__";
 
     clang_line = -1;
     cnt = ref 0;
