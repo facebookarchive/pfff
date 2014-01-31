@@ -96,6 +96,7 @@ type env = {
   locals: string list ref;
   (* static functions, globals and 'main' renaming *)
   local_rename: (string, string) Hashtbl.t;
+  dupes: (Graph_code.node, bool) Hashtbl.t;
 
   log: string -> unit;
   pr2_and_log: string -> unit;
@@ -221,6 +222,7 @@ let add_node_and_edge_if_defs_mode env node =
               let orig_file = nodeinfo.G.pos.Parse_info.file in
               env.log (spf " orig = %s" orig_file);
               env.log (spf " dupe = %s" env.clang2_file);
+              Hashtbl.replace env.dupes node true;
               (* todo: if typedef then maybe ok if have same content *)
           )
       (* todo: have no Use for now for those so skip errors *) 
@@ -255,12 +257,15 @@ let add_node_and_edge_if_defs_mode env node =
 let rec add_use_edge env (s, kind) =
   let src = env.current in
   let dst = (s, kind) in
-  if not (G.has_node src env.g)
-  then error env ("SRC FAIL:" ^ G.string_of_node src);
-
-  if G.has_node dst env.g
-  then G.add_edge (src, dst) G.Use env.g
-  else 
+  match () with
+  | _ when not (G.has_node src env.g) ->
+    error env ("SRC FAIL:" ^ G.string_of_node src);
+  | _ when Hashtbl.mem env.dupes src || Hashtbl.mem env.dupes dst ->
+      (* todo: stats *)
+      ()
+  | _ when G.has_node dst env.g ->
+    G.add_edge (src, dst) G.Use env.g
+  | _ ->
     (match kind with
     (* look for Prototype if no Function *)
     | E.Function -> add_use_edge env (s, E.Prototype)
@@ -648,6 +653,7 @@ let build ?(verbose=true) root files =
   G.create_initial_hierarchy g;
 
   let chan = open_out (Filename.concat root "pfff.log") in
+  (* file -> (string, string) Hashtbl *)
   let local_renames = Hashtbl.create 101 in
 
   let env = {
@@ -667,6 +673,7 @@ let build ?(verbose=true) root files =
     root = root;
     at_toplevel = true;
     local_rename = Hashtbl.create 0;
+    dupes = Hashtbl.create 101;
     locals = ref [];
 
     log = (fun s ->
