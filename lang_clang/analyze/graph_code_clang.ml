@@ -107,7 +107,7 @@ let unknown_location = "Unknown_Location", E.File
 
 type kind_file = Source | Header
 
-let typedefs_dependencies = true
+let typedefs_dependencies = false
 
 (*****************************************************************************)
 (* Parsing *)
@@ -199,9 +199,14 @@ let add_node_and_edge_if_defs_mode env node =
   in
   let node = (str', kind) in
 
-  if env.phase = Defs then begin
-    if G.has_node node env.g
-    then
+  if env.phase = Defs then
+    (match () with
+    (* if parent is a dupe, then don't want to attach yourself to the
+     * original parent, mark this child as a dupe too.
+     *)
+    | _ when Hashtbl.mem env.dupes env.current ->
+        Hashtbl.replace env.dupes node true
+    | _ when G.has_node node env.g ->
       (match kind with
       | E.Function | E.Global | E.Constant 
       | E.Type | E.Field
@@ -232,7 +237,7 @@ let add_node_and_edge_if_defs_mode env node =
       | _ ->
           failwith (spf "Unhandled category: %s" (G.string_of_node node))
       )
-    else begin
+    | _ ->
       try
         let nodeinfo = { Graph_code.
           pos = { Parse_info.
@@ -248,8 +253,7 @@ let add_node_and_edge_if_defs_mode env node =
         env.g +> G.add_nodeinfo node nodeinfo;
       with Not_found ->
         error env ("Not_found:" ^ str)
-    end
-  end;
+    );
   { env with current = node }
 
 (*****************************************************************************)
@@ -260,11 +264,11 @@ let rec add_use_edge env (s, kind) =
   let src = env.current in
   let dst = (s, kind) in
   match () with
-  | _ when not (G.has_node src env.g) ->
-    error env ("SRC FAIL:" ^ G.string_of_node src);
   | _ when Hashtbl.mem env.dupes src || Hashtbl.mem env.dupes dst ->
       (* todo: stats *)
       ()
+  | _ when not (G.has_node src env.g) ->
+    error env ("SRC FAIL:" ^ G.string_of_node src);
   | _ when G.has_node dst env.g ->
     G.add_edge (src, dst) G.Use env.g
   | _ ->
@@ -470,7 +474,8 @@ and decl env (enum, l, xs) =
     (* I am not sure about the namespaces, so I prepend strings *)
     | TypedefDecl, loc::(T (TLowerIdent s | TUpperIdent s))::typ::_rest ->
         let env = add_node_and_edge_if_defs_mode env ("T__" ^ s, E.Type) in
-        add_type_deps env typ;
+        if typedefs_dependencies
+        then add_type_deps env typ;
         env
         
     | EnumDecl, loc::(T (TLowerIdent s | TUpperIdent s))::_rest ->
@@ -508,9 +513,9 @@ and decl env (enum, l, xs) =
         add_node_and_edge_if_defs_mode env 
           (spf "F__anon__%s" (str_of_angle_loc env loc), E.Field)
 
-    (* todo: rename if in Source file *)
     | EnumConstantDecl, loc::(T (TLowerIdent s | TUpperIdent s))::_rest ->
-        add_node_and_edge_if_defs_mode env (s, E.Constant)
+      let s = if kind_file env =*= Source then new_str_if_defs env s else s in
+      add_node_and_edge_if_defs_mode env (s, E.Constant)
         
     | _ -> error env "wrong Decl line" 
   in
@@ -550,7 +555,7 @@ and expr env (enum, l, xs) =
       ::T (TString s)::_rest ->
       if env.phase = Uses
       then 
-        (* todo: possible renaming here *)
+        let s = str env s in
         add_use_edge env (s, E.Constant)
 
   | DeclRefExpr, _loc::_typ::_lval::T (TUpperIdent "Var")::_address
