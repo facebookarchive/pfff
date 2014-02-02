@@ -230,17 +230,27 @@ let add_node_and_edge_if_defs_mode env node =
             )
               -> ()
           | _ when env.clang2_file =~ ".*EXTERNAL" -> ()
+          (* todo: if typedef then maybe ok if have same content *)
+          | _ when not typedefs_dependencies && str =~ "T__.*" -> 
+              Hashtbl.replace env.dupes node true;
           | _ ->
               env.pr2_and_log (spf "DUPE entity: %s" (G.string_of_node node));
               let nodeinfo = G.nodeinfo node env.g in
               let orig_file = nodeinfo.G.pos.Parse_info.file in
               env.log (spf " orig = %s" orig_file);
-              env.log (spf " dupe = %s" env.clang2_file);
+              env.log (spf " dupe = %s" env.c_file_readable);
               Hashtbl.replace env.dupes node true;
-              (* todo: if typedef then maybe ok if have same content *)
           )
       (* todo: have no Use for now for those so skip errors *) 
-      | E.Prototype | E.GlobalExtern -> ()
+      | E.Prototype | E.GlobalExtern -> 
+        (* It's common to have multiple times the same prototype declared.
+         * It can also happen that the same prototype have
+         * different types (e.g. in plan9 newword() had an argument with type
+         * 'Word' and another 'word'). We don't want to add to the same
+         * entity dependencies to this different types so we need to mark
+         * the prototype as a dupe too!
+         *)
+        Hashtbl.replace env.dupes node true;
       | _ ->
           failwith (spf "Unhandled category: %s" (G.string_of_node node))
       )
@@ -327,6 +337,10 @@ let add_type_deps env typ =
           | Typ.EnumName s ->
               add_use_edge env ("E__"^s, E.Type)
           | Typ.Typename s ->
+            (* todo:
+              if not typedefs_dependencies
+              then env.pr2_and_log ("impossible, typedef not expanded:" ^ s);
+              *)
               add_use_edge env ("T__"^s, E.Type)
 
            (* less: use the canonical type in that case? *)
