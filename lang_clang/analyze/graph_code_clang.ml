@@ -185,9 +185,12 @@ let update_current_c_file_line env (enum, l, xs) =
 
 let kind_file env =
   match env.clang2_file with
-  | s when s =~ ".*\\.[cm]\\.clang2" -> Source
   | s when s =~ ".*\\.[h]\\.clang2" -> Header
-  | s -> failwith ("unknown kind of file: " ^ s)
+  | s when s =~ ".*\\.[cm]\\.clang2" -> Source
+  | s  ->
+   (* failwith ("unknown kind of file: " ^ s) *)
+    Source
+
 
 (*****************************************************************************)
 (* Add Node *)
