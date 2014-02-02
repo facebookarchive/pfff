@@ -474,6 +474,8 @@ and decl env (enum, l, xs) =
         let kind =
           match rest with
           | T (TLowerIdent "extern")::_ -> E.GlobalExtern
+          (* todo: print a warning they should put extern decl *)
+          | _ when kind_file env = Header -> E.GlobalExtern
           | _ -> E.Global
         in
         let static = 
