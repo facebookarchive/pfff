@@ -58,7 +58,11 @@ module Typ = Type_clang
  * related:
  *  - http://code.google.com/p/include-what-you-use/wiki/WhyIWYU
  * 
- * todo: Type is a bit overloaded maybe
+ * todo: 
+ *  - Type is a bit overloaded maybe
+ *  - The management of typedef_dependencies and dupes is a bit complicated.
+ *    Easy to miss some cases where we then add the wrong deps to the 
+ *    original entity.
  *)
 
 (*****************************************************************************)
