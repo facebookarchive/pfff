@@ -284,6 +284,8 @@ let rec add_use_edge env (s, kind) =
   | _ when Hashtbl.mem env.dupes src || Hashtbl.mem env.dupes dst ->
       (* todo: stats *)
       ()
+  (* plan9 *)
+  | _ when s =$= "USED" || s =$= "SET" -> ()
   | _ when not (G.has_node src env.g) ->
     error env ("SRC FAIL:" ^ G.string_of_node src);
   | _ when G.has_node dst env.g ->
