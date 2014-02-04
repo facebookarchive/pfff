@@ -79,9 +79,8 @@ type env = {
   current: Graph_code.node;
 
   root: Common.dirname;
-  (* readable path *)
   c_file_readable: Common.filename;
-  (* absolute path, as mentionned in the .clang *)
+  (* as mentionned in the .clang *)
   c_file_absolute: Common.filename;
 
   current_c_line: int ref;
@@ -90,7 +89,7 @@ type env = {
 
   (* for error reports *)
   clang2_file: Common.filename;
-  (* line number in .clang file (not .c file) *)
+  (* line number in .clang file (not .c file, nor .clang2 file) *)
   clang_line: int;
 
   at_toplevel: bool;
@@ -98,7 +97,7 @@ type env = {
    * as ParamVar in the AST.
    *)
   locals: string list ref;
-  (* static functions, globals and 'main' renaming *)
+  (* static functions, globals, 'main', and local enums renaming *)
   local_rename: (string, string) Hashtbl.t;
   dupes: (Graph_code.node, bool) Hashtbl.t;
 
@@ -669,14 +668,6 @@ and expr env (enum, l, xs) =
   | _ -> raise Impossible
   );
   sexps env xs
-
-(* ---------------------------------------------------------------------- *)
-(* Types *)
-(* ---------------------------------------------------------------------- *)
-
-(* ---------------------------------------------------------------------- *)
-(* Misc *)
-(* ---------------------------------------------------------------------- *)
 
 (*****************************************************************************)
 (* Main entry point *)
