@@ -363,6 +363,8 @@ let parse file =
   | [T Error] -> 
       pr2 (spf "PB not data at all with %s" file);
       T Error
+  | [] -> 
+      failwith (spf "empty file %s" file)
   | xs -> 
       pr2_gen (Common2.list_last xs);
       failwith (spf "noise after sexp, length list = %d" (List.length xs))
