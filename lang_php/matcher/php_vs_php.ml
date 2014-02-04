@@ -1182,6 +1182,8 @@ and m_expr a b =
     ))
   | A.Lambda(a1), B.Lambda(b1) ->
       raise Todo
+  | A.ShortLambda(a1), B.ShortLambda(b1) ->
+      raise Todo
 
   | A.XhpHtml(a1), B.XhpHtml(b1) ->
     m_xhp_html a1 b1 >>= (fun (a1, b1) ->
@@ -1362,6 +1364,7 @@ and m_expr a b =
   | A.Isset _, _
   | A.XhpHtml _, _
   | A.Lambda _, _
+  | A.ShortLambda _, _
   | A.ParenExpr _, _
   | A.Yield _, _
   | A.YieldBreak _, _

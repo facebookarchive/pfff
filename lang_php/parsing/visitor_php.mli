@@ -27,10 +27,12 @@ type visitor_in = {
   kxhp_children_decl:
     (xhp_children_decl -> unit) * visitor_out -> xhp_children_decl -> unit;
 
-  (* Helps abstracting away whether a function/class... is defined in
-   * nested way or at the toplevel (e.g. FuncDefNested vs FuncDef).
-   * Note that kfunc_def is also run for methods now!! look in
+  (* kfunc_def helps abstracting away whether a function/class... is defined
+   * in a nested way or at the toplevel (e.g. FuncDefNested vs FuncDef).
+   * Note that kfunc_def is also run for methods now. Look in
    * def.f_type to decide what to do if you want to filter methods.
+   * !note! short lambdas are currently not in func_def, so take care
+   * to visit also this case in kexpr.
    *)
   kfunc_def:  (func_def -> unit) * visitor_out -> func_def -> unit;
   kclass_def:  (class_def -> unit) * visitor_out -> class_def -> unit;

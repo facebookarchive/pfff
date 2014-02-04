@@ -324,7 +324,7 @@ and func_def = {
   f_ref: bool;
   (* only for methods; always empty for functions *)
   m_modifiers: modifier list;
-  (* only for lambdas (could also abuse parameter) *)
+  (* only for AnonLambda (could also abuse parameter), not for ShortLambda *)
   l_uses: (bool (* is_ref *) * var) list;
   f_attrs: attribute list;
 
@@ -333,6 +333,7 @@ and func_def = {
    and function_kind =
      | Function
      | AnonLambda
+     | ShortLambda (* they have different scoping rules for free variables *)
      | Method
 
    and parameter = {

@@ -766,7 +766,7 @@ and finallys env xs = List.iter (finally env) xs
 and func_def env def =
   let env =
     match def.f_kind with
-    | AnonLambda -> env
+    | AnonLambda | ShortLambda -> env
     | Function -> add_node_and_has_edge env (def.f_name, E.Function)
     | Method -> raise Impossible
   in

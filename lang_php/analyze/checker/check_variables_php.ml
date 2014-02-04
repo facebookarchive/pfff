@@ -390,7 +390,7 @@ and func_def env def =
 
   let access_cnt =
     match def.f_kind with
-    | Function  | AnonLambda -> 0
+    | Function  | AnonLambda | ShortLambda -> 0
     (* Don't report UnusedParameter for parameters of methods;
      * people sometimes override a method and don't use all
      * the parameters, hence the 1 value below.
@@ -403,6 +403,7 @@ and func_def env def =
     | Method -> 1
   in
   let oldvars = !(env.vars) in
+  (* todo: for ShortLambda we must close free variables *)
 
   let env = { env with
     (* fresh new scope, PHP has function scope (not block scope) *)

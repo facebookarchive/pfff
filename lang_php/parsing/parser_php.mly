@@ -1060,15 +1060,32 @@ expr:
 
  /*(* facebook-ext: short lambdas, as in ($x ==> $x + 1) *)*/
  | T_VARIABLE T_DOUBLE_ARROW short_lambda_body 
-     { This $2 }
+     { let sl_params = SLSingleParam (H.mk_param $1) in
+       ShortLambda { sl_params; sl_tok = $2; sl_body = $3 } 
+     }
  | TOPAR TCPAR T_DOUBLE_ARROW short_lambda_body 
-     { This $1 }
+     { let sl_params = SLParams ($1, [], $2) in 
+       ShortLambda { sl_params; sl_tok = $3; sl_body = $4 } 
+     }
  /*(* can not factorize with TOPAR parameter_list TCPAR, see conflicts.txt *)*/
  | TOPAR expr TCPAR T_DOUBLE_ARROW short_lambda_body 
-     { This $1 }
+     { let sl_params = 
+         match $2 with
+         | IdVar (DName swrap, _scope) -> 
+           let param = H.mk_param swrap in
+           SLParams ($1, [Left3 param], $3)
+         | _ -> raise (Parsing.Parse_error)
+       in
+       ShortLambda { sl_params; sl_tok = $4; sl_body = $5 } 
+     }
  | TOPAR T_VARIABLE TCOMMA non_empty_parameter_list TCPAR T_DOUBLE_ARROW
      short_lambda_body 
-     { This $1 }
+     { let sl_params =
+         let param1 = H.mk_param $2 in
+         SLParams ($1, Left3 param1::Right3 $3::$4, $5)
+       in
+       ShortLambda { sl_params; sl_tok = $6; sl_body = $7 } 
+     }
 
  /*(* php-facebook-ext: in hphp.y yield are at the statement level
     * and are restricted to a few forms *)*/
@@ -1300,9 +1317,9 @@ xhp_attribute_value:
 /*(*2 Short lambda *)*/
 /*(*----------------------------*)*/
 short_lambda_body: 
- | TOBRACE inner_statement_list TCBRACE { }
+ | TOBRACE inner_statement_list TCBRACE { SLBody ($1, $2, $3) }
  /*(* see conflicts.txt for why the %prec *)*/
- | expr  %prec LOW_PRIORITY_RULE { }
+ | expr  %prec LOW_PRIORITY_RULE { SLExpr $1 }
 
 /*(*----------------------------*)*/
 /*(*2 auxillary bis *)*/

@@ -372,6 +372,8 @@ and expr env = function
       A.Call (A.Id [A.builtin "eval", wrap tok], [expr env e])
   | Lambda ld ->
       A.Lambda (lambda_def env ld)
+  | ShortLambda def ->
+      A.Lambda (short_lambda_def env def)
   | Exit (tok, e) ->
       let arg =
         match e with
@@ -515,6 +517,28 @@ and lambda_def env (l_use, ld) =
       );
   }
 
+and short_lambda_def env def =
+  { A.
+    f_ref = false;
+    f_name = (A.special "_lambda", wrap def.sl_tok);
+    f_params = 
+      (match def.sl_params with
+      | SLSingleParam p -> [parameter env p]
+      | SLParams (_, xs, _) -> 
+        let xs = comma_list_dots xs in
+        List.map (parameter env) xs
+      );
+    f_return_type = None;
+    f_body = 
+      (match def.sl_body with
+      | SLExpr e -> [A.Expr (expr env e)]
+      | SLBody (_, body, _) -> List.fold_right (stmt_and_def env) body []
+      );
+    f_kind = A.ShortLambda;
+    m_modifiers = [];
+    f_attrs = [];
+    l_uses = [];
+  }
 
 and type_def env def =
   { A.t_name = ident env def.t_name;

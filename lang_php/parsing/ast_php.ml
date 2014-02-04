@@ -255,6 +255,7 @@ and expr =
   | Eval of tok * expr paren
   (* Woohoo, viva PHP 5.3 *)
   | Lambda of lambda_def
+  | ShortLambda of short_lambda_def
   (* should be a statement ... *)
   | Exit of tok * (expr option paren) option
   | At of tok (* @ *) * expr
@@ -539,6 +540,23 @@ and func_def = {
 and lambda_def = (lexical_vars option * func_def)
   and lexical_vars = tok (* use *) * lexical_var comma_list paren
   and lexical_var = LexicalVar of is_ref * dname
+
+(* todo? could factorize with func_def, but this will require many
+ * elements to be fake token, e.g. the parenthesis for parameters
+ * when have only one parameter, the brace and semicolon when the body
+ * is a simple expression
+ *)
+and short_lambda_def = {
+  sl_params: short_lambda_params;
+  sl_tok: tok (* => *);
+  sl_body: short_lambda_body;
+ }
+ and short_lambda_params =
+ | SLSingleParam of parameter
+ | SLParams of parameter comma_list_dots paren
+ and short_lambda_body =
+ | SLExpr of expr
+ | SLBody of stmt_and_def list brace
 
 (* ------------------------------------------------------------------------- *)
 (* Constant definition *)
