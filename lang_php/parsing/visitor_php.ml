@@ -337,6 +337,7 @@ and v_expr (x: expr) =
   | At ((v1, v2)) -> let v1 = v_tok v1 and v2 = v_expr v2 in ()
   | Print ((v1, v2)) -> let v1 = v_tok v1 and v2 = v_expr v2 in ()
   | Lambda v1 -> let v1 = v_lambda_def v1 in ()
+  | ShortLambda v1 -> let v1 = v_short_lambda_def v1 in ()
   | BackQuote ((v1, v2, v3)) ->
       let v1 = v_tok v1 and v2 = v_list v_encaps v2 and v3 = v_tok v3 in ()
   | Include ((v1, v2)) -> let v1 = v_tok v1 and v2 = v_expr v2 in ()
@@ -361,6 +362,23 @@ and v_expr (x: expr) =
   vin.kexpr (k, all_functions) x
 and v_lambda_def (v1, v2) =
   let v1 = v_option v_lexical_vars v1 and v2 = v_func_def v2 in ()
+and
+  v_short_lambda_def {
+                       sl_params = v_sl_params;
+                       sl_tok = v_sl_tok;
+                       sl_body = v_sl_body
+                     } =
+  let arg = v_short_lambda_params v_sl_params in
+  let arg = v_tok v_sl_tok in let arg = v_short_lambda_body v_sl_body in ()
+and v_short_lambda_params =
+  function
+  | SLSingleParam v1 -> let v1 = v_parameter v1 in ()
+  | SLParams v1 -> let v1 = v_paren (v_comma_list_dots v_parameter) v1 in ()
+and v_short_lambda_body =
+  function
+  | SLExpr v1 -> let v1 = v_expr v1 in ()
+  | SLBody v1 -> let v1 = v_brace (v_list v_stmt_and_def) v1 in ()
+and v_stmt_and_def x = v_stmt x
 and v_parameters x =
     v_paren (v_comma_list_dots v_parameter) x
 

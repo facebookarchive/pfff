@@ -274,6 +274,7 @@ and map_expr (x) =
   | Eval ((v1, v2)) ->
       let v1 = map_tok v1 and v2 = map_paren map_expr v2 in Eval ((v1, v2))
   | Lambda v1 -> let v1 = map_lambda_def v1 in Lambda ((v1))
+  | ShortLambda v1 -> let v1 = map_short_lambda_def v1 in ShortLambda ((v1))
   | Exit ((v1, v2)) ->
       let v1 = map_tok v1
       and v2 = map_of_option (map_paren (map_of_option map_expr)) v2
@@ -1058,6 +1059,31 @@ and map_static_scalar_affect (v1, v2) =
 and map_stmt_and_def def =
   let rec k x = map_stmt x in
   vin.kstmt_and_def (k, all_functions) def
+
+and
+  map_short_lambda_def {
+                         sl_params = v_sl_params;
+                         sl_tok = v_sl_tok;
+                         sl_body = v_sl_body
+                       } =
+  let v_sl_body = map_short_lambda_body v_sl_body in
+  let v_sl_tok = map_tok v_sl_tok in
+  let v_sl_params = map_short_lambda_params v_sl_params in 
+  { sl_body = v_sl_body;
+    sl_tok = v_sl_tok;
+    sl_params = v_sl_params;
+  }
+and map_short_lambda_params =
+  function
+  | SLSingleParam v1 -> let v1 = map_parameter v1 in SLSingleParam ((v1))
+  | SLParams v1 ->
+      let v1 = map_paren (map_comma_list_dots map_parameter) v1
+      in SLParams ((v1))
+and map_short_lambda_body =
+  function
+  | SLExpr v1 -> let v1 = map_expr v1 in SLExpr ((v1))
+  | SLBody v1 ->
+      let v1 = map_brace (map_of_list map_stmt_and_def) v1 in SLBody ((v1))
 
 and  map_constant_def {
                      cst_toks = v_cst_toks;

@@ -701,8 +701,9 @@ let visit_program ~tag prefs  hentities (ast, toks) =
       then tag ii Builtin
     | T.T_LIST ii -> tag ii Builtin
 
-    | T.T_DOUBLE_ARROW ii ->  tag ii Punctuation
+    | T.T_ARROW ii ->  tag ii Punctuation
     | T.T_OBJECT_OPERATOR ii -> tag ii Punctuation
+    | T.T_DOUBLE_ARROW ii -> tag ii Punctuation
 
     | T.T_CLASS ii | T.T_TRAIT ii -> tag ii KeywordObject
 

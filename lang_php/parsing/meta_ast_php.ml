@@ -255,6 +255,9 @@ and vof_expr = function
       in Ocaml.VSum (("Eval", [ v1; v2 ]))
   | Lambda v1 ->
       let v1 = vof_lambda_def v1 in Ocaml.VSum (("Lambda", [ v1 ]))
+  | ShortLambda v1 ->
+      let v1 = vof_short_lambda_def v1
+      in Ocaml.VSum (("ShortLambda", [ v1 ]))
   | Exit ((v1, v2)) ->
       let v1 = vof_tok v1
       and v2 = vof_option (vof_paren (vof_option vof_expr)) v2
@@ -1131,6 +1134,35 @@ and vof_static_scalar_affect (v1, v2) =
   and v2 = vof_static_scalar v2
   in Ocaml.VTuple [ v1; v2 ]
 and vof_stmt_and_def x = vof_stmt x
+
+and  vof_short_lambda_def {
+                         sl_params = v_sl_params;
+                         sl_tok = v_sl_tok;
+                         sl_body = v_sl_body
+                       } =
+  let bnds = [] in
+  let arg = vof_short_lambda_body v_sl_body in
+  let bnd = ("sl_body", arg) in
+  let bnds = bnd :: bnds in
+  let arg = vof_tok v_sl_tok in
+  let bnd = ("sl_tok", arg) in
+  let bnds = bnd :: bnds in
+  let arg = vof_short_lambda_params v_sl_params in
+  let bnd = ("sl_params", arg) in let bnds = bnd :: bnds in Ocaml.VDict bnds
+and vof_short_lambda_params =
+  function
+  | SLSingleParam v1 ->
+      let v1 = vof_parameter v1 in Ocaml.VSum (("SLSingleParam", [ v1 ]))
+  | SLParams v1 ->
+      let v1 = vof_paren (vof_comma_list_dots vof_parameter) v1
+      in Ocaml.VSum (("SLParams", [ v1 ]))
+and vof_short_lambda_body =
+  function
+  | SLExpr v1 -> let v1 = vof_expr v1 in Ocaml.VSum (("SLExpr", [ v1 ]))
+  | SLBody v1 ->
+      let v1 = vof_brace (Ocaml.vof_list vof_stmt_and_def) v1
+      in Ocaml.VSum (("SLBody", [ v1 ]))
+
 and
   vof_constant_def {
                      cst_toks = v_cst_toks;

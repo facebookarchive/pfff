@@ -468,6 +468,9 @@ and expr env = function
   | Eval (_, (_, e, _)) -> A.Call (A.Id "eval", [expr env e])
   | Lambda ld ->
       A.Lambda (lambda_def env ld)
+  | ShortLambda ld ->
+    failwith "no support short lambda"
+
   | Exit (_, e) ->
       let arg =
         match e with

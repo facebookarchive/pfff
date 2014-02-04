@@ -338,6 +338,7 @@ let rec expr_fold fold_env lhs expr acc =
   | InstanceOf(e, _, e1) -> recr e (recr e1 acc)
   | Eval(_, e) -> raise Todo
   | Lambda _ -> raise Todo
+  | ShortLambda _ -> raise Todo
   | Exit(_, eopt) ->
     (match eopt with
     | Some(_, Some e, _) -> recr e acc

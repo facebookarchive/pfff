@@ -118,6 +118,7 @@ let info_of_tok = function
   | T_EXTENDS ii -> ii
   | T_IMPLEMENTS ii -> ii
   | T_OBJECT_OPERATOR ii -> ii
+  | T_ARROW ii -> ii
   | T_DOUBLE_ARROW ii -> ii
   | T_LIST ii -> ii
   | T_ARRAY ii -> ii
@@ -317,6 +318,7 @@ let visitor_info_of_tok f = function
   | T_EXTENDS ii -> T_EXTENDS(f ii)
   | T_IMPLEMENTS ii -> T_IMPLEMENTS(f ii)
   | T_OBJECT_OPERATOR ii -> T_OBJECT_OPERATOR(f ii)
+  | T_ARROW ii -> T_ARROW(f ii)
   | T_DOUBLE_ARROW ii -> T_DOUBLE_ARROW(f ii)
   | T_LIST ii -> T_LIST(f ii)
   | T_ARRAY ii -> T_ARRAY(f ii)
