@@ -182,7 +182,7 @@ let mk_gui w =
 
         fc#add_item "_Order" ~callback:(fun () ->
           let dm = w.m in
-          Dependencies_matrix_code.info_orders dm;
+          Dependencies_matrix_build.info_orders dm;
         ) +> ignore;
         fc#add_item "_PrintTree" ~callback:(fun () ->
           let dm = w.m in

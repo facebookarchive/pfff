@@ -499,12 +499,11 @@ let paint w =
 (*****************************************************************************)
 
 let recompute_matrix w =
-  let config, gopti = DM.config_of_path w.path w.model.gopti in
+  let config, gopti = DMBuild.config_of_path w.path w.model.gopti in
   w.model.gopti <- gopti;
   let m, gopti = 
     Common.profile_code "Model.building matrix" (fun () -> 
-      Dependencies_matrix_code.build config 
-        (Some w.model.constraints) w.model.gopti
+      DMBuild.build config (Some w.model.constraints) w.model.gopti
     )
   in
   w.model.gopti <- gopti;

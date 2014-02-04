@@ -18,6 +18,7 @@ open Common2.ArithFloatInfix
 
 module CairoH = Cairo_helpers3
 module DM = Dependencies_matrix_code
+module DMBuild = Dependencies_matrix_build
 
 (*****************************************************************************)
 (* Prelude *)
@@ -101,12 +102,11 @@ let new_surface ~alpha ~width ~height =
  * coupling: with View_matrix.recompute_matrix
  *)
 let init_world ?(width = 600) ?(height = 600) path model =
-  let config, gopti = DM.config_of_path path model.gopti in
+  let config, gopti = DMBuild.config_of_path path model.gopti in
   model.gopti <- gopti;
   let m, gopti = 
     Common.profile_code "Model.building matrix" (fun () -> 
-      Dependencies_matrix_code.build config 
-        (Some model.constraints) model.gopti
+      DMBuild.build config (Some model.constraints) model.gopti
     )
   in
   model.gopti <- gopti;

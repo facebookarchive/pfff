@@ -17,17 +17,6 @@ type cell_coord =
 
 val verbose: bool ref
 
-(* pack less relevant directories under an intermediate "..." subdirectory *)
-val threshold_pack: int ref
-
-(* we now return also a new graph because we may have modified the
- * input graph to add some extra "..." nodes
- *)
-val build:
-  config -> partition_constraints option -> Graph_code_opti.graph -> 
-  dm * Graph_code_opti.graph
-
-
 val explain_cell_list_use_edges: 
   cell_coord -> dm -> Graph_code_opti.graph ->
   (Graph_code.node * Graph_code.node) list
@@ -55,9 +44,6 @@ val expand_node_opti:
 val focus_on_node:
   Graph_code.node -> deps_style -> tree -> dm -> tree
 
-(* we return a gopti because of threshold_pack that may alter the graph *)
-val config_of_path: config_path -> Graph_code_opti.graph ->
-  config * Graph_code_opti.graph
 
 (* matrix analysis *)
 val is_dead_column: 
@@ -66,9 +52,6 @@ val is_dead_line:
   int -> dm -> bool
 val is_internal_helper:
   int -> dm -> bool
-
-val info_orders:
- dm -> unit
 
 val score_upper_triangle:
   dm -> Graph_code.node list (* exclude list *) -> int

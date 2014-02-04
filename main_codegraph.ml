@@ -8,6 +8,7 @@ module E = Database_code
 module GC = Graph_code
 module GC2 = Graph_code_opti
 module DM = Dependencies_matrix_code
+module DMBuild = Dependencies_matrix_build
 
 module Model = Model3
 module View = View3
@@ -456,7 +457,7 @@ let analyze_backward_deps graph_file =
   let config = DM.basic_config_opti gopti in
   (* DM.threshold_pack := 90; *)
   let config = DM.expand_node_opti (("flib", E.Dir)) config gopti in
-  let dm, gopti = DM.build config None gopti in
+  let dm, gopti = DMBuild.build config None gopti in
   let n = Array.length dm.DM.matrix in
   (* todo: filter biggest offenders? *)
   let res = ref [] in
@@ -507,11 +508,11 @@ let test_thrift_alive graph_file =
       (fun () -> Graph_code_opti.convert g)
   in
   let config = DM.basic_config_opti gopti in
-  DM.threshold_pack := max_int;
+  DMBuild.threshold_pack := max_int;
   let config = DM.expand_node_opti (("lib", E.Dir)) config gopti in
   let config = DM.expand_node_opti (("lib/thrift", E.Dir)) config gopti in
   let config = DM.expand_node_opti (("lib/thrift/packages", E.Dir)) config gopti in
-  let dm, gopti = DM.build config None gopti in
+  let dm, gopti = DMBuild.build config None gopti in
   let n = Array.length dm.DM.matrix in
 
   let kflib = Hashtbl.find dm.DM.name_to_i ("flib", E.Dir) in
@@ -711,7 +712,7 @@ let options () = [
   ), 
   " <in|out|inout>";
 
-  "-dots_threshold", Arg.Int (fun i -> DM.threshold_pack := i),
+  "-dots_threshold", Arg.Int (fun i -> DMBuild.threshold_pack := i),
   " <int> when do we introduce '...' entries";
 
   "-lang", Arg.Set_string lang, 
