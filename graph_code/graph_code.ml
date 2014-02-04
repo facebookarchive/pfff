@@ -407,6 +407,11 @@ let basename_to_readable_disambiguator xs ~root =
 (* Misc *)
 (*****************************************************************************)
 
+(* the default implementation of a graph in ocamlgraph is good to
+ * get the successor but not good at all for the predecessors
+ * so if you need to use pred many times, use this precomputation
+ * function.
+ *)
 let mk_eff_use_pred g =
   (* we use its find_all property *)
   let h = Hashtbl.create 101 in
