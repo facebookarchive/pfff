@@ -324,7 +324,7 @@ let build_graph_code lang xs =
       pr2 (Graph_code.string_of_error err);
       raise (Graph_code.Error err)
   in
-  let output_dir = !output_dir ||| root in
+  let output_dir = !output_dir ||| (Sys.getcwd()) in
   Graph_code.save g (dep_file_of_dir output_dir);
   Graph_code.print_statistics stats g;
 
