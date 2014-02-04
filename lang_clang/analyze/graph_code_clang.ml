@@ -741,4 +741,6 @@ let build ?(verbose=true) root files =
         local_rename = Hashtbl.find local_renames file;
       } ast
     ));
+
+  G.remove_empty_nodes g [unknown_location; G.not_found; G.dupe; G.pb];
   g

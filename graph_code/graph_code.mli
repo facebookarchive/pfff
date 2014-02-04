@@ -63,6 +63,7 @@ val remove_edge: (node * node) -> edge -> graph -> unit
 val create_initial_hierarchy: graph -> unit
 val create_intermediate_directories_if_not_present: 
   graph -> Common.dirname -> unit
+val remove_empty_nodes: graph -> node list -> unit
 (* useful for bytecode <-> source file heuristic matching *)
 val basename_to_readable_disambiguator: 
   (Common.filename list) -> root:Common.dirname ->

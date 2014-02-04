@@ -260,6 +260,25 @@ let default_filename =
   "graph_code.marshall"
 
 (*****************************************************************************)
+(* Iteration *)
+(*****************************************************************************)
+let iter_use_edges f g =
+  G.iter_edges f g.use
+
+let iter_nodes f g =
+  G.iter_nodes f g.has
+
+let all_use_edges g =
+  let res = ref [] in
+  G.iter_edges (fun n1 n2 -> Common.push2 (n1, n2) res) g.use;
+  !res
+
+let all_nodes g =
+  let res = ref [] in
+  G.iter_nodes (fun n -> Common.push2 n res) g.has;
+  !res
+
+(*****************************************************************************)
 (* Graph access *)
 (*****************************************************************************)
 
@@ -277,6 +296,26 @@ let succ n e g =
   match e with
   | Has -> G.succ n g.has
   | Use -> G.succ n g.use
+
+(* the default implementation of a graph in ocamlgraph is good to
+ * get the successor but not good at all for the predecessors
+ * so if you need to use pred many times, use this precomputation
+ * function.
+ *)
+let mk_eff_use_pred g =
+  (* we use its find_all property *)
+  let h = Hashtbl.create 101 in
+  
+  g +> iter_nodes (fun n1 ->
+    let uses = succ n1 Use g in
+    uses +> List.iter (fun n2 ->
+      Hashtbl.add h n2 n1
+    )
+  );
+  (fun n ->
+    Hashtbl.find_all h n
+  )
+
 
 let parent n g =
   Common.profile_code "Graph_code.parent" (fun () ->
@@ -297,6 +336,7 @@ let rec all_children n g =
   then [n]
   else 
     n::(xs +> List.map (fun n -> all_children n g) +> List.flatten)
+
 
 
 let nb_nodes g = 
@@ -339,25 +379,6 @@ let shortname_of_node (s, _kind) =
     
 
 (*****************************************************************************)
-(* Iteration *)
-(*****************************************************************************)
-let iter_use_edges f g =
-  G.iter_edges f g.use
-
-let iter_nodes f g =
-  G.iter_nodes f g.has
-
-let all_use_edges g =
-  let res = ref [] in
-  G.iter_edges (fun n1 n2 -> Common.push2 (n1, n2) res) g.use;
-  !res
-
-let all_nodes g =
-  let res = ref [] in
-  G.iter_nodes (fun n -> Common.push2 n res) g.has;
-  !res
-
-(*****************************************************************************)
 (* Helpers *)
 (*****************************************************************************)
 
@@ -392,6 +413,19 @@ let create_initial_hierarchy g =
 (*  g +> add_edge (root, stdlib) Has;*)
   ()
 
+let remove_empty_nodes g xs =
+  let use_pred = mk_eff_use_pred g in
+  xs +> List.iter (fun n ->
+    if succ n Use g = [] &&
+       use_pred n = []
+    then begin
+     (* less: could also remove the node? but slow? removing the edge
+      * should be enough for what we want (avoid clutter in codegraph)
+      *)
+      remove_edge (parent n g, n) Has g;
+    end
+  )
+
 let basename_to_readable_disambiguator xs ~root =
   let xs = xs +> List.map (Common.readable ~root) in
   (* use the Hashtbl.find_all property of this hash *)
@@ -406,25 +440,6 @@ let basename_to_readable_disambiguator xs ~root =
 (*****************************************************************************)
 (* Misc *)
 (*****************************************************************************)
-
-(* the default implementation of a graph in ocamlgraph is good to
- * get the successor but not good at all for the predecessors
- * so if you need to use pred many times, use this precomputation
- * function.
- *)
-let mk_eff_use_pred g =
-  (* we use its find_all property *)
-  let h = Hashtbl.create 101 in
-  
-  g +> iter_nodes (fun n1 ->
-    let uses = succ n1 Use g in
-    uses +> List.iter (fun n2 ->
-      Hashtbl.add h n2 n1
-    )
-  );
-  (fun n ->
-    Hashtbl.find_all h n
-  )
 
 let group_edges_by_files_edges xs g =
   xs +> Common2.group_by_mapped_key (fun (n1, n2) ->
