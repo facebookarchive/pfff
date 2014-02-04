@@ -178,8 +178,7 @@ let count_column j m dm =
   let cnt = ref 0 in
   for i = 0 to n - 1 do
     if m.(i).(j) > 0 && i <> j
-    then (* incr cnt *) 
-      cnt := !cnt + formula (m.(i).(j))
+    then cnt := !cnt + formula (m.(i).(j))
   done;
   !cnt
 
@@ -191,7 +190,7 @@ let count_row i m dm =
   let cnt = ref 0 in
   for j = 0 to n - 1 do
     if m.(i).(j) > 0 && i <> j
-    then (* incr cnt *) cnt := !cnt + formula (m.(i).(j))
+    then cnt := !cnt + formula (m.(i).(j))
   done;
   !cnt
 
