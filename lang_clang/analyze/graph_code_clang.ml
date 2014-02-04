@@ -690,13 +690,12 @@ let build ?(verbose=true) root files =
     current = unknown_location;
 
     c_file_readable = "__filled_later__";
-    clang2_file = "__filled_later__";
-
+    c_file_absolute = "__filled_later__";
     current_c_line = ref 1;
     current_c_file = ref "__filled_later__";
-    c_file_absolute = "__filled_later__";
-
+    clang2_file = "__filled_later__";
     clang_line = -1;
+
     cnt = ref 0;
     root = root;
     at_toplevel = true;
@@ -704,15 +703,11 @@ let build ?(verbose=true) root files =
     dupes = Hashtbl.create 101;
     locals = ref [];
 
-    log = (fun s ->
-        output_string chan (s ^ "\n");
-        flush chan;
-    );
+    log = (fun s -> output_string chan (s ^ "\n"); flush chan;);
     pr2_and_log = (fun s ->
       (*if verbose then *)
       pr2 s;
-      output_string chan (s ^ "\n");
-      flush chan;
+      output_string chan (s ^ "\n"); flush chan;
     );
   } in
 
