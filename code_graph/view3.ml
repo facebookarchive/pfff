@@ -13,13 +13,9 @@
  * license.txt for more details.
  *)
 open Common
-(* floats are the norm in graphics *)
-open Common2.ArithFloatInfix
 
 module G = Gui
 module K = GdkKeysyms
-
-module CairoH = Cairo_helpers3
 
 open Model3
 module Model = Model3
