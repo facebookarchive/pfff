@@ -235,29 +235,35 @@ let switch k1 k2 (a,m) =
   a', m'
   
 
+(* less: simulated anneahiling? *)
 let hill_climbing nodes dm =
   let a, m = reduced_matrix nodes dm in
   let n = Array.length a in
   let current_score = score_upper_triangle m dm in
   pr2 (spf "current score = %d" current_score);
 
-  let rec aux (a, m) current_score i =
-    if i = n - 1
-    then (a, m)
+  let rec aux (a, m) current_score i ~jump =
+    let j = i + jump in
+    if j >= n
+    then 
+      if jump = (Array.length m - 1)
+      then (a, m) 
+      else aux (a, m) current_score 0 ~jump:(jump + 1)
     else
-      let (a1,m1) = switch i (i+1) (a,m) in
+      let (a1,m1) = switch i j (a,m) in
       let new_score = score_upper_triangle m1 dm in
       if new_score < current_score
       then begin
-        pr2 (spf "found improvment! %s <-> %s, before = %d, after = %d"
+        pr2 (spf "found improvment! %s <-> %s, before = %d, after = %d (jmp=%d)"
                (G.string_of_node a.(i))
-               (G.string_of_node a.(i+1))
-               current_score new_score);
-        aux (a1, m1) new_score 0
+               (G.string_of_node a.(j))
+               current_score new_score
+               jump);
+        aux (a1, m1) new_score 0 ~jump:1
       end
-      else aux (a, m) current_score (i+1)
+      else aux (a, m) current_score (i+1) ~jump
   in
-  let (a, _m) = aux (a, m) current_score 0 in
+  let (a, _m) = aux (a, m) current_score 0 ~jump:1 in
   Array.to_list a
 
 (*****************************************************************************)
