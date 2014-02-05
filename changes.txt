@@ -1,6 +1,25 @@
 -*- org -*-
 
-* 0.27 (Q1 2014) (?edge bundle?better codemap?)
+* 0.27 (Q1 2014) (edge bundle? "hyper" codemap?)
+
+** codegraph
+
+*** improve automatic layering by using hill climbing algorithm
+
+** codemap
+
+*** handle skip list 
+
+*** improve completion box by considering not only files mentions in the
+light db (while still filtering object files and skip list files)
+
+** clang
+
+*** improve codegraph for clang, less dupes, less false edges due to dupes
+
+** php
+
+*** support for short lambda, require traits, try finally
 
 * -----------------------------------------------------------
 
