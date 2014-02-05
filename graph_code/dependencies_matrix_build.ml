@@ -36,23 +36,23 @@ open Dependencies_matrix_code
  *  - full matrix pre-computation optimisation
  *  - compute lazily deep rows using only a subset of the edges
  *  - graph code opti, because using arrays is far more efficient than
- *    hashtbl and/or memoized hashtbl
+ *    hashtbl and/or memoized hashtbl (hmmm)
  *  - remove full matrix, not anymore needed
  *  - better layout algorithm, minimize more backward dependencies
  *  - packing in "..." intermediate directories
+ *  - TODO even better layout algorithm, hill climbing
  *)
 
 (*****************************************************************************)
 (* Types *)
 (*****************************************************************************)
 
-(* Phantom types for safer array access between the graph_opti, dm, and
- * the full matrix dm. Not really used, but could one day.
- *)
+(* Phantom types for safer array access between the graph_opti, dm *)
 type 'a idx = int
 
 type idm
 type igopti
+(* old: type ifull, but full matrix concept is not needed anymore *)
 
 (*****************************************************************************)
 (* Helpers *)
@@ -72,7 +72,7 @@ let hashtbl_find h n =
     raise Not_found
 
 (*****************************************************************************)
-(* Ordering the rows/columns, "layering" *)
+(* Ordering the rows/columns helpers *)
 (*****************************************************************************)
 
 let formula x =
@@ -80,7 +80,7 @@ let formula x =
   (* 1 + (int_of_float (log10 (float_of_int x))) *)
   x
 
-let count_column j m dm =
+let count_column j m =
   let n = Array.length m in
   let cnt = ref 0 in
   for i = 0 to n - 1 do
@@ -90,9 +90,9 @@ let count_column j m dm =
   !cnt
 
 let is_empty_column n m dm =
-  count_column (hashtbl_find_node dm.name_to_i n) m dm = 0
+  count_column (hashtbl_find_node dm.name_to_i n) m = 0
 
-let count_row i m dm =
+let count_row i m =
   let n = Array.length m in
   let cnt = ref 0 in
   for j = 0 to n - 1 do
@@ -102,7 +102,7 @@ let count_row i m dm =
   !cnt
 
 let is_empty_row n m dm = 
-  count_row (hashtbl_find_node dm.name_to_i n) m dm = 0
+  count_row (hashtbl_find_node dm.name_to_i n) m = 0
 
 let empty_all_cells_relevant_to_node m dm n =
   let i = hashtbl_find_node dm.name_to_i n in
@@ -112,13 +112,17 @@ let empty_all_cells_relevant_to_node m dm n =
     m.(x).(i) <- 0;
   done
 
+(*****************************************************************************)
+(* Ordering the rows/columns heuristics *)
+(*****************************************************************************)
+
 let sort_by_count_rows_low_first xs m dm =
-  xs +> List.map (fun n -> n, count_row (hashtbl_find_node dm.name_to_i n) m dm)
+  xs +> List.map (fun n -> n, count_row (hashtbl_find_node dm.name_to_i n) m)
      +> Common.sort_by_val_lowfirst
      +> List.map fst
 
 let sort_by_count_columns_high_first xs m dm =
-  xs +> List.map (fun n -> n, count_column (hashtbl_find_node dm.name_to_i n) m dm)
+  xs +> List.map (fun n -> n, count_column (hashtbl_find_node dm.name_to_i n) m)
      +> Common.sort_by_val_highfirst
      +> List.map fst
 
@@ -133,9 +137,9 @@ let sort_by_count_rows_low_columns_high_first xs m dm =
   xs +> List.map (fun n ->
     let idx = hashtbl_find_node dm.name_to_i n in
     let h =
-      float_of_int (count_row idx m dm) 
+      float_of_int (count_row idx m) 
       /. 
-        (1. +. float_of_int (count_column idx m dm))
+        (1. +. float_of_int (count_column idx m))
     in
     n, h
   ) +> Common.sort_by_val_lowfirst
@@ -175,7 +179,8 @@ let partition_matrix nodes dm =
      *)
     let elts_with_empty_columns, rest = 
       nodes +> List.partition (fun node -> is_empty_column node m dm) in
-    let xs = sort_by_count_rows_low_first elts_with_empty_columns m dm in
+    let xs = 
+      sort_by_count_rows_low_first elts_with_empty_columns dm.matrix dm in
     xs +> List.iter (empty_all_cells_relevant_to_node m dm);
     right := xs ++ !right;
     (* pr2 (spf "step1: %s" (Common2.dump xs)); *)
@@ -193,7 +198,10 @@ let partition_matrix nodes dm =
      *)
     let elts_with_empty_lines, rest = 
       nodes +> List.partition (fun node -> is_empty_row node m dm) in
-    let xs = sort_by_count_columns_high_first elts_with_empty_lines m dm in
+    (* I use dm.matrix here and not the current matrix m because I want
+     * to sort by looking globally at whether this item uses very few things
+     *)
+    let xs = sort_by_count_rows_low_first elts_with_empty_lines dm.matrix dm in
     xs+> List.iter (empty_all_cells_relevant_to_node m dm);
     (* pr2 (spf "step2: %s" (Common2.dump xs)); *)
     left := !left ++ xs;
@@ -211,6 +219,7 @@ let partition_matrix nodes dm =
     pr2_gen rest;
 *)
     let rest = sort_by_count_rows_low_columns_high_first rest m dm in
+    (* todo: let rest = hill_climbing rest m dm in *)
     (* TODO merge and iterate *)
     !left ++ rest ++ !right
   end
@@ -218,8 +227,8 @@ let partition_matrix nodes dm =
 (* to debug the heuristics *)
 let info_orders dm =
   dm.matrix +> Array.mapi  (fun i _ ->
-    let nrow = (count_row i dm.matrix dm) in
-    let ncol = (count_column i dm.matrix dm) in
+    let nrow = (count_row i dm.matrix) in
+    let ncol = (count_column i dm.matrix) in
     let h = float_of_int nrow /. (1. +. float_of_int ncol) in
     h,
     (spf "%-20s: count lines = %d, count columns = %d, H = %.2f"
@@ -418,8 +427,7 @@ let adjust_gopti_if_needed_lazily tree gopti =
           let score = children_nodes +> List.map (fun n ->
             let idx = hashtbl_find_node dm.name_to_i n in
             let m = dm.matrix in
-            n, count_column idx m dm 
-               + count_row idx m dm
+            n, count_column idx m + count_row idx m
             (* + m.(idx).(idx) / 3 *)
           ) +> Common.sort_by_val_highfirst
             +> List.map fst
@@ -469,11 +477,15 @@ let build tree constraints_opt gopti =
           let config_depth1 = 
             Node (n,xs +> List.map (function (Node (n2,_)) -> (Node (n2, []))))
           in
-          (* first draft *)
-          let dm = build_with_tree config_depth1 gopti in
-
           let children_nodes = 
             xs +> List.map (function (Node (n2, _)) -> n2) in
+          let h_children_of_children_nodes = 
+            xs +> List.map (function (Node (n2, xs)) -> n2, xs) +> 
+              Common.hash_of_list
+          in
+
+          (* first draft *)
+          let dm = build_with_tree config_depth1 gopti in
           
           (* Now we need to reorder to minimize the number of dependencies in
            * the top right corner of the matrix (of the submatrix actually)
@@ -482,11 +494,6 @@ let build tree constraints_opt gopti =
             partition_matrix children_nodes dm in
           let nodes_reordered = 
             optional_manual_reordering n nodes_reordered constraints_opt in
-
-          let h_children_of_children_nodes = 
-            xs +> List.map (function (Node (n2, xs)) -> n2, xs) +> 
-              Common.hash_of_list
-          in
           
           Node (n,
                nodes_reordered +> List.map (fun n2 ->
@@ -506,7 +513,6 @@ let build tree constraints_opt gopti =
 (*****************************************************************************)
 (* Path manipulation *)
 (*****************************************************************************)
-
 
 (* less: could be put in dependencies_matrix_code.ml *)
 let put_expand_just_before_last_focus_if_not_children n xs g =

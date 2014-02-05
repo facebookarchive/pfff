@@ -107,7 +107,6 @@ type 'a idx = int
 
 type idm
 type igopti
-(* type ifull *)
 
 type cell_coord = int * int
 
