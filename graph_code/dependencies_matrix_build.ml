@@ -72,6 +72,78 @@ let hashtbl_find h n =
     raise Not_found
 
 (*****************************************************************************)
+(* Building a matrix (given a specific config) *)
+(*****************************************************************************)
+
+let build_with_tree2 tree gopti =
+
+  (* todo? when we expand do we create a line for the expanded? if no
+   * then it will have no projection so the test below is not enough.
+   * but may make sense to create a line for it which corresponds to
+   * the difference with the children so for all edges that link
+   * directly to this one?
+   * 
+   *)
+  let nodes = final_nodes_of_tree tree in
+  let n = List.length nodes in
+  let n_nodes = G2.nb_nodes gopti in
+
+  let name_to_idm = Hashtbl.create (n / 2) in
+  let idm_to_name = Array.create n ("", E.Dir) in
+  let igopti_to_idm = Array.create n_nodes (-1) in
+
+  let (i: idm idx ref) = ref 0 in
+  nodes +> List.iter (fun node ->
+    Hashtbl.add name_to_idm node !i;
+    idm_to_name.(!i) <- node;
+    igopti_to_idm.(hashtbl_find_node gopti.G2.name_to_i node) <- !i;
+    incr i;
+  );
+
+  let dm = {
+    matrix = Common2.make_matrix_init ~nrow:n ~ncolumn:n (fun i j -> 0);
+    name_to_i = name_to_idm;
+    i_to_name = idm_to_name;
+    config = tree;
+  }
+  in
+  let (projected_parent_of_igopti: idm idx array) = Array.create n_nodes (-1) in
+  let (iroot: igopti idx) = hashtbl_find_node gopti.G2.name_to_i G.root in
+  let rec depth parent igopti =
+    let children = gopti.G2.has_children.(igopti) in
+    let idm = igopti_to_idm.(igopti) in
+    let project = 
+      if idm = -1 
+      then parent
+      else idm
+    in
+    projected_parent_of_igopti.(igopti) <- project;
+    children +> List.iter (depth project);
+  in
+  depth (-1) iroot;
+
+  gopti.G2.use +> Array.iteri (fun i xs ->
+    let parent_i = projected_parent_of_igopti.(i) in
+    xs +> List.iter (fun j ->
+      let parent_j = projected_parent_of_igopti.(j) in
+      (* It's possible we operate on a slice of the original dsm, 
+       * for instance when we focus on a node, in which case
+       * the projection of an edge can not project on anything
+       * in the current matrix.
+       *)
+      if parent_i <> -1 && parent_j <> -1
+      then 
+        dm.matrix.(parent_i).(parent_j) <- 
+          dm.matrix.(parent_i).(parent_j) + 1
+    )
+  );
+  dm
+
+let build_with_tree a b = 
+  Common.profile_code "DM.build_with_tree" (fun () -> build_with_tree2 a b)
+
+
+(*****************************************************************************)
 (* Ordering the rows/columns helpers *)
 (*****************************************************************************)
 
@@ -272,77 +344,6 @@ let optional_manual_reordering (s, node_kind) nodes constraints_opt =
         pr2 (spf "didn't find entry in constraints for %s" s);
         nodes
       end
-
-(*****************************************************************************)
-(* Building a matrix *)
-(*****************************************************************************)
-
-let build_with_tree2 tree gopti =
-
-  (* todo? when we expand do we create a line for the expanded? if no
-   * then it will have no projection so the test below is not enough.
-   * but may make sense to create a line for it which corresponds to
-   * the difference with the children so for all edges that link
-   * directly to this one?
-   * 
-   *)
-  let nodes = final_nodes_of_tree tree in
-  let n = List.length nodes in
-  let n_nodes = G2.nb_nodes gopti in
-
-  let name_to_idm = Hashtbl.create (n / 2) in
-  let idm_to_name = Array.create n ("", E.Dir) in
-  let igopti_to_idm = Array.create n_nodes (-1) in
-
-  let (i: idm idx ref) = ref 0 in
-  nodes +> List.iter (fun node ->
-    Hashtbl.add name_to_idm node !i;
-    idm_to_name.(!i) <- node;
-    igopti_to_idm.(hashtbl_find_node gopti.G2.name_to_i node) <- !i;
-    incr i;
-  );
-
-  let dm = {
-    matrix = Common2.make_matrix_init ~nrow:n ~ncolumn:n (fun i j -> 0);
-    name_to_i = name_to_idm;
-    i_to_name = idm_to_name;
-    config = tree;
-  }
-  in
-  let (projected_parent_of_igopti: idm idx array) = Array.create n_nodes (-1) in
-  let (iroot: igopti idx) = hashtbl_find_node gopti.G2.name_to_i G.root in
-  let rec depth parent igopti =
-    let children = gopti.G2.has_children.(igopti) in
-    let idm = igopti_to_idm.(igopti) in
-    let project = 
-      if idm = -1 
-      then parent
-      else idm
-    in
-    projected_parent_of_igopti.(igopti) <- project;
-    children +> List.iter (depth project);
-  in
-  depth (-1) iroot;
-
-  gopti.G2.use +> Array.iteri (fun i xs ->
-    let parent_i = projected_parent_of_igopti.(i) in
-    xs +> List.iter (fun j ->
-      let parent_j = projected_parent_of_igopti.(j) in
-      (* It's possible we operate on a slice of the original dsm, 
-       * for instance when we focus on a node, in which case
-       * the projection of an edge can not project on anything
-       * in the current matrix.
-       *)
-      if parent_i <> -1 && parent_j <> -1
-      then 
-        dm.matrix.(parent_i).(parent_j) <- 
-          dm.matrix.(parent_i).(parent_j) + 1
-    )
-  );
-  dm
-
-let build_with_tree a b = 
-  Common.profile_code "DM.build_with_tree" (fun () -> build_with_tree2 a b)
 
 (*****************************************************************************)
 (* Create fake "a/b/..." directories *)
