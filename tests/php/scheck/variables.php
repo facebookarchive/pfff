@@ -142,6 +142,19 @@ function test_undefined_in_lambda($a) {
   return $f;
 }
 
+function test_automatic_closing_short_lambda() {
+  $a = 42;
+  // this is ok
+  $f = () ==> $a;
+  return $f;
+}
+
+function test_automatic_closing_short_lambda() {
+  //ERROR: use of undefined
+  $f42 = () ==> $a;
+  return $f42;
+}
+
 function test_lambda_bis() {
   $a = 1;
   $f = (function ($b) use($a) {

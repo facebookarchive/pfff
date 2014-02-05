@@ -179,8 +179,8 @@ type env = {
   (* when analyze $this->method_call(), we need to know the enclosing class *)
   in_class: ident option;
 
-  (* for better error message when the variable was inside a lambda *)
-  in_lambda: bool;
+  (* for better error message when the variable was inside a long lambda *)
+  in_long_lambda: bool;
 
   (* when the body of a function contains eval/extract/... we bailout
    * because we don't want to report false positives
@@ -316,7 +316,7 @@ let check_defined env name ~incr_count =
       then ()
       else
         let err =
-          if env.in_lambda
+          if env.in_long_lambda
           then E.UseOfUndefinedVariableInLambda s
           else
             let allvars =
@@ -403,15 +403,13 @@ and func_def env def =
     | Method -> 1
   in
   let oldvars = !(env.vars) in
-  (* todo: for ShortLambda we must close free variables *)
 
-  let env = { env with
-    (* fresh new scope, PHP has function scope (not block scope) *)
-    vars = ref ((
-      (def.f_params +> List.map (fun p ->
-        let (s, tok) = s_tok_of_ident p.p_name in
-        s, (tok, S.Param, ref access_cnt)
-      )) ++
+  let enclosing_vars =
+    match def.f_kind with
+    (* for ShortLambda enclosing variables can be accessed  *)
+    | ShortLambda -> Map_poly.to_list oldvars
+    (* fresh new scope *)
+    | _ ->
       (Env_php.globals_builtins +> List.map (fun s ->
        "$" ^ s, (Ast_php.fakeInfo s, S.Global, ref 1)
       )) ++
@@ -419,7 +417,17 @@ and func_def env def =
       (try ["$this", Map_poly.find "$this" oldvars]
        with Not_found -> []
       )
+  in
+
+  let env = { env with
+    vars = ref ((
+      (def.f_params +> List.map (fun p ->
+        let (s, tok) = s_tok_of_ident p.p_name in
+        s, (tok, S.Param, ref access_cnt)
+      )) ++
+      enclosing_vars
       ) +> Map_poly.of_list);
+
     (* reinitialize bailout for each function/method *)
     bailout = ref false;
   }
@@ -443,7 +451,11 @@ and func_def env def =
   end;
 
   List.iter (stmt env) def.f_body;
-  check_used env !(env.vars)
+  let newvars = 
+    enclosing_vars +> List.fold_left (fun acc (x, _) -> Map_poly.remove x acc)
+      !(env.vars)
+  in
+  check_used env newvars
 
 (* ---------------------------------------------------------------------- *)
 (* Stmt *)
@@ -846,7 +858,10 @@ and expr env = function
   | Cast (_, e) -> expr env e
 
   | Lambda def ->
-      func_def { env with in_lambda = true } def
+      let in_long_lambda = 
+        match def.f_kind with ShortLambda -> false | _ -> true
+      in
+      func_def { env with in_long_lambda } def
 
 and array_value env x =
   match x with
@@ -913,7 +928,7 @@ let check_and_annotate_program2 find_entity prog =
        ) +> Map_poly.of_list);
     db = find_entity;
     in_class = None;
-    in_lambda = false;
+    in_long_lambda = false;
     bailout = ref false;
     scope_vars_used = Hashtbl.create 101;
   }
