@@ -19,6 +19,7 @@ module G = Graph_code
 module G2 = Graph_code_opti
 
 open Dependencies_matrix_code
+module DM = Dependencies_matrix_code
 
 (*****************************************************************************)
 (* Prelude *)
@@ -185,6 +186,81 @@ let empty_all_cells_relevant_to_node m dm n =
   done
 
 (*****************************************************************************)
+(* Hill climbing! *)
+(*****************************************************************************)
+
+let reduced_matrix nodes dm =
+  let n = List.length nodes in
+  let m = Common2.make_matrix_init ~nrow:n ~ncolumn:n (fun i j -> 0) in
+
+  let a = Array.of_list nodes in
+  
+  for i = 0 to n - 1 do
+    for j = 0 to n - 1 do
+      let ni = a.(i) in
+      let nj = a.(j) in
+      let xi = hashtbl_find_node dm.name_to_i ni in
+      let xj = hashtbl_find_node dm.name_to_i nj in
+      if i <> j then begin
+        m.(i).(j) <- dm.matrix.(xi).(xj);
+      end
+    done
+  done;
+  a, m
+
+let score_upper_triangle m dm =
+  DM.score_upper_triangle { dm with matrix = m } []
+
+(* less: there has to be a more efficient way ... *)
+let switch k1 k2 (a,m) =
+  let a' = Array.copy a in
+  let m' = Array.map Array.copy m in
+  let n = Array.length a in
+
+  let f idx =
+    match () with
+    | _ when idx = k1 -> k2
+    | _ when idx = k2 -> k1
+    | _ -> idx
+  in
+  for i = 0 to n - 1 do
+    a'.(i) <- a.(f i)
+  done;
+  
+  for i = 0 to n - 1 do
+    for j = 0 to n - 1 do
+      m'.(i).(j) <- m.(f i).(f j)
+    done
+  done;
+  a', m'
+  
+
+let hill_climbing nodes dm =
+  let a, m = reduced_matrix nodes dm in
+  let n = Array.length a in
+  let current_score = score_upper_triangle m dm in
+  pr2 (spf "current score = %d" current_score);
+
+  let rec aux (a, m) current_score i =
+    if i = n - 1
+    then (a, m)
+    else
+      let (a1,m1) = switch i (i+1) (a,m) in
+      let new_score = score_upper_triangle m1 dm in
+      if new_score < current_score
+      then begin
+        pr2 (spf "found improvment! %s <-> %s, before = %d, after = %d"
+               (G.string_of_node a.(i))
+               (G.string_of_node a.(i+1))
+               current_score new_score);
+        aux (a1, m1) new_score 0
+      end
+      else aux (a, m) current_score (i+1)
+  in
+  let (a, _m) = aux (a, m) current_score 0 in
+  Array.to_list a
+
+(*****************************************************************************)
 (* Ordering the rows/columns heuristics *)
 (*****************************************************************************)
 
@@ -271,7 +347,9 @@ let partition_matrix nodes dm =
     let elts_with_empty_lines, rest = 
       nodes +> List.partition (fun node -> is_empty_row node m dm) in
     (* I use dm.matrix here and not the current matrix m because I want
-     * to sort by looking globally at whether this item uses very few things
+     * to sort by looking globally at whether this item uses very few things.
+     * todo: maybe don't need this 'm dm' to pass around to all those sort_xxx
+     * functions. Just pass dm.
      *)
     let xs = sort_by_count_rows_low_first elts_with_empty_lines dm.matrix dm in
     xs+> List.iter (empty_all_cells_relevant_to_node m dm);
@@ -291,8 +369,7 @@ let partition_matrix nodes dm =
     pr2_gen rest;
 *)
     let rest = sort_by_count_rows_low_columns_high_first rest m dm in
-    (* todo: let rest = hill_climbing rest m dm in *)
-    (* TODO merge and iterate *)
+    let rest = hill_climbing rest dm in
     !left ++ rest ++ !right
   end
 
