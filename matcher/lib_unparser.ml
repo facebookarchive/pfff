@@ -249,6 +249,20 @@ let drop_whole_line_if_only_removed xs =
   before_first_newline ++ 
     (xxs +> List.map (fun (elt, elts) -> elt::elts) +> List.flatten)
 
+(* people often write s/foo(X,Y)/.../ but some calls to foo may have
+ * a trailing comma that we also want to remove automatically
+ *)
+let drop_trailing_comma_between_removed xs =
+  let rec aux xs = 
+    match xs with
+    | Removed s1::OrigElt ","::Removed ")"::rest ->
+      Removed s1::Removed ","::Removed ")"::aux rest
+    | x::xs -> x::aux xs
+    | [] -> []
+  in
+  aux xs
+  
+
 let rec drop_removed xs =
   xs +> Common.exclude (function
   | Removed _ -> true
@@ -300,6 +314,7 @@ let string_of_toks_using_transfo ~kind_and_info_of_tok toks =
     then xs +> List.iter (fun x -> pr2 (Ocaml.string_of_v (vof_elt x)));
 
     let xs = drop_esthet_between_removed xs in
+    let xs = drop_trailing_comma_between_removed xs in
     let xs = drop_whole_line_if_only_removed xs in
     (* must be after drop_whole_line_if_only_removed *)
     let xs = drop_removed xs in
