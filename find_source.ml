@@ -17,6 +17,7 @@ let finder lang =
     Lib_parsing_js.find_source_files_of_dir_or_files ~include_scripts:false
   | "clang2" ->
     Lib_parsing_clang.find_source2_files_of_dir_or_files    
+  | "dot" -> (fun _ -> [])
   | _ -> failwith ("unsupported language: " ^ lang)
 
 let skip_file dir = 

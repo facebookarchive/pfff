@@ -555,6 +555,7 @@ let adjust_graph g xs whitelist =
 (*****************************************************************************)
 (* Example *)
 (*****************************************************************************)
+(* assumes a "path/to/file.x" -> "path/to/file2.x" format *)
 let graph_of_dotfile dotfile =
   let xs = Common.cat dotfile in
   let deps =
@@ -573,16 +574,28 @@ let graph_of_dotfile dotfile =
   create_initial_hierarchy g;
   (* step1: defs *)
   deps +> List.iter (fun (src, dst) ->
+    let srcdir = Filename.dirname src in
+    let dstdir = Filename.dirname dst in
     try 
-      create_intermediate_directories_if_not_present g src;
-      create_intermediate_directories_if_not_present g dst;
+      create_intermediate_directories_if_not_present g srcdir;
+      create_intermediate_directories_if_not_present g dstdir;
+      if not (has_node (src, E.File) g) then begin
+        g +> add_node (src, E.File);
+        g +> add_edge ((srcdir, E.Dir), (src, E.File)) Has;
+      end;
+      if not (has_node (dst, E.File) g) then begin
+        g +> add_node (dst, E.File);
+        g +> add_edge ((dstdir, E.Dir), (dst, E.File)) Has;
+      end;
+
     with Assert_failure _ ->
       pr2_gen (src, dst);
   );
   (* step2: use *)
   deps +> List.iter (fun (src, dst) ->
-    let src_node = (src, E.Dir) in
-    let dst_node = (dst, E.Dir) in
+    let src_node = (src, E.File) in
+    let dst_node = (dst, E.File) in
+    
     g +> add_edge (src_node, dst_node) Use;
   );
   g
