@@ -136,8 +136,6 @@ let actions () = [
     Common.mk_action_1_arg test_tokens_cpp;
     "-dump_cpp", "   <file>", 
     Common.mk_action_1_arg test_dump_cpp;
-    "-dump_cpp_ml", "   <file>", 
-    Common.mk_action_1_arg test_dump_cpp;
     "-dump_cpp_full", "   <file>", 
     Common.mk_action_1_arg test_dump_cpp_full;
 
