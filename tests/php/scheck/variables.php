@@ -146,6 +146,9 @@ function test_automatic_closing_short_lambda() {
   $a = 42;
   // this is ok
   $f = () ==> $a;
+
+  list($b, $c) = array();
+  $f = () ==> $b;
   return $f;
 }
 
