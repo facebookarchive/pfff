@@ -19,7 +19,7 @@ type visitor_in = {
   kblock_decl: block_declaration vin;
   ktoplevel: toplevel vin;
   
-  kinfo: info vin;
+  kinfo: tok vin;
 }
 and visitor_out = any -> unit
 and 'a vin = ('a  -> unit) * visitor_out -> 'a  -> unit

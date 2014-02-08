@@ -35,12 +35,12 @@ module PI = Parse_info
 (* ------------------------------------------------------------------------- *)
 (* Token/info *)
 (* ------------------------------------------------------------------------- *)
-type info = Parse_info.info
-and tok = info
+type tok = Parse_info.info
+and info = tok
 
 (* a shortcut to annotate some information with token/position information *)
-and 'a wrap  = 'a * info list (* TODO CHANGE to 'a * info *)
-and 'a wrap2  = 'a * info
+and 'a wrap  = 'a * tok list (* TODO CHANGE to 'a * info *)
+and 'a wrap2  = 'a * tok
 
 and 'a paren   = tok * 'a * tok
 and 'a brace   = tok * 'a * tok
@@ -695,7 +695,7 @@ and declaration =
          
   | NotParsedCorrectly of tok list
 
-  | FinalDef of info (* EOF *)
+  | FinalDef of tok (* EOF *)
 
 
  and template_parameter = parameter (* todo? more? *)
@@ -738,8 +738,8 @@ and any =
   | Body of compound
   | OneDecl of onedecl
 
-  | Info of info
-  | InfoList of info list
+  | Info of tok
+  | InfoList of tok list
 
  (* with tarzan *)
 
@@ -805,7 +805,7 @@ let (string_of_name_tmp: name -> string) = fun name ->
       (* raise Todo *)
 
 
-let (ii_of_id_name: name -> info list) = fun name ->
+let (ii_of_id_name: name -> tok list) = fun name ->
   let (_opt, _qu, id) = name in
   match id with
   | IdIdent (s,ii) -> [ii]
