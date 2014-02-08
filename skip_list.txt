@@ -6,6 +6,7 @@
 
 # ignore for now
 dir: web
+dir: facebook
 
 # -------------------------------------------------------------------------
 # parse errors
