@@ -254,7 +254,7 @@ let hill_climbing nodes dm =
       let new_score = score_upper_triangle m1 dm in
       if new_score < current_score
       then begin
-        pr2 (spf "found improvment! %s <-> %s, before = %d, after = %d (jmp=%d)"
+        pr2 (spf " %s <-> %s, before = %d, after = %d (jmp=%d)"
                (G.string_of_node a.(i))
                (G.string_of_node a.(j))
                current_score new_score

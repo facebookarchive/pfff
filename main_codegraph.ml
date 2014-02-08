@@ -186,7 +186,7 @@ let action = ref ""
 
 let constraints_of_info_txt info_txt =
   let h = Hashtbl.create 101 in
-  pr2_gen info_txt;
+  (* pr2_gen info_txt; *)
   let rec aux current node =
     match node with
     | Common2.Tree (node, xs) ->
@@ -204,7 +204,7 @@ let constraints_of_info_txt info_txt =
       )
       in
       if not (null children) then begin
-        pr2_gen (entry, children);
+        (* pr2_gen (entry, children); *)
         Hashtbl.add h entry children;
         let new_current =
           match entry with
