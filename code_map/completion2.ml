@@ -157,6 +157,11 @@ let model_of_list_pair_string_with_icon2 query xs =
       List.length e.Db.e_good_examples_of_use >= 1
     in
     let name = e.Db.e_name in
+    (* if the string is too long, we will not see the other properties *)
+    let final_name = 
+      try (String.sub name 0 30) ^ "..."
+      with Invalid_argument _ -> name
+    in
     custom_list#insert {L. 
       entity = e;                     
 
@@ -171,7 +176,7 @@ let model_of_list_pair_string_with_icon2 query xs =
        * Maybe we should just not use Entrycompletion at all and build
        * our own popup.
        *)
-      text = name;
+      text = final_name;
 
 
       file = e.Db.e_file;
