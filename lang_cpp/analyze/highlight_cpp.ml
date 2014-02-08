@@ -1,6 +1,6 @@
 (* Yoann Padioleau
  *
- * Copyright (C) 2010 Facebook
+ * Copyright (C) 2010, 2014 Facebook
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public License
@@ -12,33 +12,30 @@
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the file
  * license.txt for more details.
  *)
-open Common2
 open Common
 
 open Ast_cpp
+open Highlight_code
+
+module S = Scope_code
 
 module Ast = Ast_cpp
 module V = Visitor_cpp
 module Lib = Lib_parsing_cpp
-
-open Highlight_code
-
 module T = Parser_cpp
 module TH = Token_helpers_cpp
-
-module S = Scope_code
-
 module Type = Type_cpp
 
 (*****************************************************************************)
 (* Prelude *)
 (*****************************************************************************)
-
 (*
  * TODO:
  *  - take into account class qualifier as a use
  *  - take inheritance as a class use
  *)
+
+let (==~) = Common2.(==~)
 
 (*****************************************************************************)
 (* Helpers when have global analysis information *)
@@ -197,18 +194,17 @@ let visit_toplevel ~tag_hook prefs (*db_opt *) (toplevel, toks) =
       | DeclList (xs_comma, ii) ->
           let xs = Ast.uncomma xs_comma in
           xs +> List.iter (fun onedecl ->
-
             onedecl.v_namei +> Common.do_option (fun (name, ini_opt) ->
-
+              let storage = fst (unwrap onedecl.v_storage) in
               let categ = 
-                if Type.is_function_type onedecl.v_type
-                then FunctionDecl NoUse
-                else
+                match storage with
+                | StoTypedef -> TypeDef Def
+                | _ when Type.is_function_type onedecl.v_type-> 
+                    FunctionDecl NoUse
                  (* could be a global too when the decl is at the top *)
-                  if !is_at_toplevel  || 
-                     fst (unwrap onedecl.v_storage) = (Sto Extern)
-                  then (Global (Def2 fake_no_def2))
-                  else (Local Def)
+                | Sto Extern -> Global (Def2 fake_no_def2)
+                | _ when !is_at_toplevel -> Global (Def2 fake_no_def2)
+                | _ -> Local Def
               in
               Ast.ii_of_id_name name +>List.iter (fun ii -> tag ii categ)
             );
@@ -217,9 +213,10 @@ let visit_toplevel ~tag_hook prefs (*db_opt *) (toplevel, toks) =
       | MacroDecl _ ->
            k x
 
-      |   (Asm (_, _, _, _) 
+      | ( Asm (_, _, _, _) 
         | NameSpaceAlias (_, _, _, _, _) | UsingDirective (_, _, _, _)
-        | UsingDecl _) -> ()
+        | UsingDecl _
+        ) -> ()
     );
 
     V.kstmt = (fun (k, _) x ->
