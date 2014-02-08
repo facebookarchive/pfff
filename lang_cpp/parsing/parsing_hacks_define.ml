@@ -21,6 +21,7 @@ module Ast = Ast_cpp
 module Parser = Parser_cpp
 module TH = Token_helpers_cpp
 module Hack = Parsing_hacks_lib
+module PI = Parse_info
 
 (*****************************************************************************)
 (* Prelude  *)
@@ -78,7 +79,7 @@ let mark_end_define ii =
       token = Parse_info.OriginTok { 
         (Parse_info.token_location_of_info ii) with 
           Parse_info.str = ""; 
-          Parse_info.charpos = Ast.pos_of_info ii + 1
+          Parse_info.charpos = PI.pos_of_info ii + 1
       };
       transfo = Parse_info.NoTransfo;
     } 
@@ -96,7 +97,7 @@ let rec define_line_1 xs =
   match xs with
   | [] -> []
   | TDefine ii::xs -> 
-      let line = Ast.line_of_info ii in
+      let line = PI.line_of_info ii in
       TDefine ii::define_line_2 line ii xs
   | TCppEscapedNewline ii::xs -> 
       pr2 (spf "WEIRD: a \\ outside a #define at %s" (pos ii));

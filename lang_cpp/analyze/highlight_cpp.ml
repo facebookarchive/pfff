@@ -18,6 +18,7 @@ open Ast_cpp
 open Highlight_code
 
 module S = Scope_code
+module PI = Parse_info
 
 module Ast = Ast_cpp
 module V = Visitor_cpp
@@ -75,8 +76,8 @@ let visit_toplevel ~tag_hook prefs (*db_opt *) (toplevel, toks) =
       ::T.TCommentNewline (ii4)
       ::T.TComment(ii5)
       ::xs ->
-        let s = Ast.str_of_info ii in
-        let s5 =  Ast.str_of_info ii5 in
+        let s = PI.str_of_info ii in
+        let s5 =  PI.str_of_info ii5 in
         (match () with
         | _ when s =~ ".*\\*\\*\\*\\*" && s5 =~ ".*\\*\\*\\*\\*" ->
           tag ii CommentEstet;
@@ -93,13 +94,9 @@ let visit_toplevel ~tag_hook prefs (*db_opt *) (toplevel, toks) =
         | _ ->
             ()
         );
-        aux_toks xs
-
-    (* a little bit hphp specific *)
-    | T.TComment ii::T.TCommentSpace ii2::T.TComment ii3::xs 
-      ->
-        let s = Ast.str_of_info ii in
-        let s2 = Ast.str_of_info ii3 in
+        aux_toks xs;
+        let s = PI.str_of_info ii in
+        let s2 = PI.str_of_info ii3 in
         (match () with
         | _ when s =~ "//////////.*" 
             && s2 =~ "// .*" 
@@ -142,7 +139,7 @@ let visit_toplevel ~tag_hook prefs (*db_opt *) (toplevel, toks) =
       ::T.TCommentSpace ii4
       ::T.TOBrace ii5
       ::xs
-        when Ast.col_of_info ii = 0 ->
+        when PI.col_of_info ii = 0 ->
 
         tag ii3 (Class (Def2 fake_no_def2));
         aux_toks xs;

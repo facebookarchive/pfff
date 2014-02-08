@@ -20,6 +20,7 @@ module Ast = Ast_cpp
 
 module TH = Token_helpers_cpp
 module Parser = Parser_cpp
+module PI = Parse_info
 
 open Parser_cpp
 open Token_views_cpp
@@ -103,7 +104,7 @@ let msg_change_tok tok =
   (* cppext: *)
 
   | TComment_Pp (directive, ii) ->
-      let s = Ast.str_of_info ii in
+      let s = PI.str_of_info ii in
       (match directive, s with
       | Token_cpp.CppMacro, _ ->
           pr2_pp (spf "MACRO: commented at %s" (pos ii))
@@ -127,7 +128,7 @@ let msg_change_tok tok =
       pr2_pp (spf "DEFINE: initializer at %s" (pos ii))
 
   | TIdent_MacroString ii ->
-      let s = Ast.str_of_info ii in
+      let s = PI.str_of_info ii in
       s +> msg_gen (fun s -> 
         match s with 
         | "REVISION" | "UTS_RELEASE" | "SIZE_STR" | "DMA_STR"
@@ -176,7 +177,7 @@ let msg_change_tok tok =
 
   (* c++ext: *)
   | TComment_Cpp (directive, ii) ->
-      let s = Ast.str_of_info ii in
+      let s = PI.str_of_info ii in
       (match directive, s with
       | Token_cpp.CplusplusTemplate, _ ->
           pr2_cplusplus (spf "COM-TEMPLATE: commented at %s" (pos ii))

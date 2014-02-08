@@ -21,6 +21,7 @@ module Ast = Ast_cpp
 module TH = Token_helpers_cpp
 module TV = Token_views_cpp
 module Parser = Parser_cpp
+module PI = Parse_info
 
 open Parser_cpp
 open Token_views_cpp
@@ -40,8 +41,8 @@ open Parsing_hacks_lib
 (*****************************************************************************)
 
 let no_space_between i1 i2 =
-  (Ast.line_of_info i1 = Ast.line_of_info i2) &&
-  (Ast.col_of_info i1 + String.length (Ast.str_of_info i1))= Ast.col_of_info i2
+  (PI.line_of_info i1 = PI.line_of_info i2) &&
+  (PI.col_of_info i1 + String.length (PI.str_of_info i1))= PI.col_of_info i2
 
 (*****************************************************************************)
 (* Template inference *)

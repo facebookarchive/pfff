@@ -21,6 +21,7 @@ module Ast = Ast_cpp
 module TH = Token_helpers_cpp
 module TV = Token_views_cpp
 module Parser = Parser_cpp
+module PI = Parse_info
 
 open Parser_cpp
 open Token_views_cpp
@@ -439,7 +440,7 @@ let rec find_macro_lineparen xs =
         ))::xs 
     when (s ==~ regexp_macro) -> 
       let info = TH.info_of_tok macro.t in
-      change_tok macro (TIdent_MacroDecl (Ast.str_of_info info, info));
+      change_tok macro (TIdent_MacroDecl (PI.str_of_info info, info));
 
       find_macro_lineparen (xs)
 
@@ -458,7 +459,7 @@ let rec find_macro_lineparen xs =
     ::xs 
     when (s ==~ regexp_macro) -> 
       let info = TH.info_of_tok macro.t in
-      change_tok macro (TIdent_MacroDecl (Ast.str_of_info info, info));
+      change_tok macro (TIdent_MacroDecl (PI.str_of_info info, info));
       
       (* need retag this const, otherwise ambiguity in grammar 
          21: shift/reduce conflict (shift 121, reduce 137) on Tconst
@@ -485,7 +486,7 @@ let rec find_macro_lineparen xs =
     when s ==~ regexp_macro -> 
 
       let info = TH.info_of_tok macro.t in
-      change_tok macro (TIdent_MacroDecl (Ast.str_of_info info, info));
+      change_tok macro (TIdent_MacroDecl (PI.str_of_info info, info));
 
       find_macro_lineparen (xs)
 
@@ -507,7 +508,7 @@ let rec find_macro_lineparen xs =
         )::xs 
     when (s ==~ regexp_macro) -> 
       let info = TH.info_of_tok macro.t in
-      change_tok macro (TIdent_MacroDecl (Ast.str_of_info info, info));
+      change_tok macro (TIdent_MacroDecl (PI.str_of_info info, info));
 
       find_macro_lineparen xs
 
@@ -533,7 +534,7 @@ let rec find_macro_lineparen xs =
     when (s ==~ regexp_declare) -> 
 
       let info = TH.info_of_tok macro.t in
-      change_tok macro (TIdent_MacroDecl (Ast.str_of_info info, info));
+      change_tok macro (TIdent_MacroDecl (PI.str_of_info info, info));
 
       find_macro_lineparen xs
 

@@ -71,7 +71,7 @@ let commentized xs = xs +> Common.map_filter (function
       then 
         (match cppkind with
         | Token_cpp.CppOther -> 
-            let s = Ast.str_of_info ii in
+            let s = PI.str_of_info ii in
             (match s with
             | s when s =~ "KERN_.*" -> None
             | s when s =~ "__.*" -> None
@@ -125,10 +125,10 @@ let fix_tokens_for_language lang xs =
     match tok, lang with
     | x, Flag.C when TH.is_cpp_keyword x || TH.is_objectivec_keyword x ->
       let ii = TH.info_of_tok x in
-      T.TIdent (Ast.str_of_info ii, ii)
+      T.TIdent (PI.str_of_info ii, ii)
     | x, Flag.ObjectiveC when TH.is_cpp_keyword x ->
       let ii = TH.info_of_tok x in
-      T.TIdent (Ast.str_of_info ii, ii)
+      T.TIdent (PI.str_of_info ii, ii)
     | x, _ -> x
   )
 
@@ -192,7 +192,7 @@ and multi_grouped = function
   | Token_views_cpp.Angle (tok1, xs, (Some tok2)) ->
       Ast_fuzzy.Angle (tokext tok1, multi_grouped_list xs, tokext tok2)
   | Token_views_cpp.Tok (tok) ->
-    (match Ast.str_of_info (tokext tok) with
+    (match PI.str_of_info (tokext tok) with
     | "..." -> Ast_fuzzy.Dots (tokext tok)
     | s when Ast_fuzzy.is_metavar s -> Ast_fuzzy.Metavar (s, tokext tok)
     | s -> Ast_fuzzy.Tok (s, tokext tok)
@@ -209,7 +209,7 @@ and multi_grouped_list_comma xs =
       else [Left (acc +> List.rev +> multi_grouped_list)]
   | (x::xs) ->
       (match x with
-      | Token_views_cpp.Tok tok when Ast.str_of_info (tokext tok) = "," ->
+      | Token_views_cpp.Tok tok when PI.str_of_info (tokext tok) = "," ->
           let before = acc +> List.rev +> multi_grouped_list in
           if null before
           then aux [] xs

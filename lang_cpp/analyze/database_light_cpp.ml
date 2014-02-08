@@ -18,6 +18,7 @@ module Ast = Ast_cpp
 module Db = Database_code
 module HC = Highlight_code
 module T = Parser_cpp
+module PI = Parse_info
 
 (*****************************************************************************)
 (* Prelude *)
@@ -36,11 +37,11 @@ module T = Parser_cpp
  *)
 let mk_entity ~root ~hcomplete_name_of_info info categ =
 
-  let s = Ast.str_of_info info in
+  let s = PI.str_of_info info in
   (*pr2 (spf "mk_entity %s" s);*)
 
-  let l = Ast.line_of_info info in
-  let c = Ast.col_of_info info in
+  let l = PI.line_of_info info in
+  let c = PI.col_of_info info in
   
   let name = s in
   let fullname = 
@@ -51,7 +52,7 @@ let mk_entity ~root ~hcomplete_name_of_info info categ =
   { Database_code.
     e_name = name;
     e_fullname = if fullname <> name then fullname else "";
-    e_file = Ast.file_of_info info +> Common.readable ~root;
+    e_file = PI.file_of_info info +> Common.readable ~root;
     e_pos = { Common2.l = l; c };
     e_kind = Database_code.entity_kind_of_highlight_category_def categ;
 
@@ -104,7 +105,7 @@ let compute_database ?(verbose=false) files_or_dirs =
       Highlight_cpp.visit_toplevel ~tag_hook:(fun info categ -> 
 
         (* todo? could look at the info of the origintok of the expanded? *)
-        if not (Ast.is_origintok info) then ()
+        if not (PI.is_origintok info) then ()
         else 
           (* todo: use is_entity_def_category ? *)
           match categ with
@@ -146,7 +147,7 @@ let compute_database ?(verbose=false) files_or_dirs =
       let prefs = Highlight_code.default_highlighter_preferences in
 
       Highlight_cpp.visit_toplevel ~tag_hook:(fun info categ -> 
-        if not (Ast.is_origintok info) then ()
+        if not (PI.is_origintok info) then ()
         else 
           match categ with
           | HC.Function (HC.Use2 _) 
@@ -158,7 +159,7 @@ let compute_database ?(verbose=false) files_or_dirs =
           | HC.Macro (HC.Use2 _)
           | HC.Constant (HC.Use2 _)
             ->
-              let s = Ast.str_of_info info in
+              let s = PI.str_of_info info in
               Hashtbl.find_all hdefs s +> List.iter (fun entity ->
                 let file_entity = entity.Db.e_file in
 

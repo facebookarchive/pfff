@@ -22,6 +22,7 @@ open Ast_cpp (* to factorise tokens with OpAssign, ... *)
 
 module Flag = Flag_parsing_cpp
 module Ast = Ast_cpp
+module PI = Parse_info
 
 (*****************************************************************************)
 (* Prelude *)
@@ -607,7 +608,7 @@ rule token = parse
  | ['0'-'1']+'b' { TInt (((tok lexbuf)<!!>(0,-2)) +> int_of_stringbits) } 
 *)
   (*------------------------------------------------------------------------ *)
-  | eof { EOF (tokinfo lexbuf +> Ast.rewrap_str "") }
+  | eof { EOF (tokinfo lexbuf +> PI.rewrap_str "") }
 
   | _ { 
       error("unrecognised symbol, in token rule:" ^ tok lexbuf);

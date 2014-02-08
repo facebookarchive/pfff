@@ -433,15 +433,15 @@ and block_declaration =
   *   
   * Before I had a Typedef constructor, but why make this special case and not
   * have StructDef, EnumDef, so that 'struct t {...} v' will generate 2 
-  * declarations? So I try to generalise and not have not Typedef. This
-  * requires more work in parsing. Better to separate concern.
-  * Before the need for unparser, I didn't have a DeclList but just a Decl.
+  * declarations? So I try to generalise and not have Typedef. This
+  * requires more work in parsing. But it's better to separate concerns.
+  * note: before the need for unparser, I didn't have a DeclList but just 
+  * a Decl.
   *
   * I am not sure what it means to declare a prototype inline, but gcc
   * accepts it. 
   * 
-  * note: var_declaration include prototype declaration,
-  * and class_declaration.
+  * note: var_declaration include prototype declaration, and class_declaration.
   *)
   | DeclList of onedecl comma_list * tok (*;*)
   (* cppext: todo? now factorize with MacroTop ?  *)
@@ -760,14 +760,11 @@ let fakeInfo pi  =
 (* Wrappers *)
 (*****************************************************************************)
 let unwrap = fst
-let untype = fst
 let uncomma xs = List.map fst xs
-let unwrap_typeC (qu, (typeC, ii)) = typeC
 let unparen (_, x, _) = x
 let unbrace (_, x, _) = x
 
-let rewrap_str = PI.rewrap_str
-let str_of_info = PI.str_of_info
+let unwrap_typeC (qu, (typeC, ii)) = typeC
 
 (* When want add some info in ast that does not correspond to 
  * an existing C element.
@@ -780,15 +777,6 @@ let make_expanded ii =
   let (a, b) = noVirtPos in
   { ii with PI.token = PI.ExpandedTok 
       (PI.get_original_token_location ii.PI.token, a, b) }
-
-
-(* used by token_helpers *)
-
-let line_of_info       = PI.line_of_info
-let col_of_info        = PI.col_of_info
-let file_of_info       = PI.file_of_info
-let pos_of_info        = PI.pos_of_info
-let is_origintok       = PI.is_origintok
 
 (* used by parsing hacks *)
 let rewrap_pinfo pi ii =  

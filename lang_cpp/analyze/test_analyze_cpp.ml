@@ -33,7 +33,7 @@ let test_highlight_cpp file =
       let info = Token_helpers_cpp.info_of_tok tok in
       let s = PI.str_of_info info in
 
-      if not (Ast_cpp.is_origintok info)
+      if not (PI.is_origintok info)
       then None
       else 
         let categ = Common2.hfind_option info h in
@@ -45,8 +45,8 @@ let test_highlight_cpp file =
         )
         in
         Some (s, categ,
-              { Common2.l = Ast_cpp.line_of_info info;
-                c = Ast_cpp.col_of_info info;
+              { Common2.l = PI.line_of_info info;
+                c = PI.col_of_info info;
               })
     )
     in

@@ -19,6 +19,7 @@ module Ast = Ast_cpp
 module Parser = Parser_cpp
 module TH = Token_helpers_cpp
 module TV = Token_views_cpp
+module PI = Parse_info
 
 (*****************************************************************************)
 (* Prelude *)
@@ -74,7 +75,7 @@ let filter_comment_stuff xs =
   xs +> List.filter (fun x -> not (TH.is_comment x.TV.t))
           
 let insert_virtual_positions l =
-  let strlen x = String.length (Ast.str_of_info x) in
+  let strlen x = String.length (PI.str_of_info x) in
   let rec loop prev offset = function
       [] -> []
     | x::xs ->
