@@ -355,6 +355,13 @@ let visit_toplevel ~tag_hook prefs (*db_opt *) (toplevel, toks) =
           Ast.ii_of_id_name name +> List.iter (fun ii -> tag ii (TypeDef Use));
           k x
 
+      | Enum (_tok, _sopt, xs) ->
+          xs +> unbrace +> uncomma +> List.iter (fun enum_elem ->
+            let (_, ii) = enum_elem.e_name in
+            tag ii (ConstructorDef fake_no_def2)
+          );
+          k x
+
       | _ -> k x
     );
 
@@ -411,11 +418,11 @@ let visit_toplevel ~tag_hook prefs (*db_opt *) (toplevel, toks) =
           Ast.ii_of_id_name name +> List.iter (fun ii -> 
             tag ii (Method (Def2 fake_no_def2))
           );
-      | 
-(EmptyField _|UsingDeclInClass _|TemplateDeclInClass _|
-QualifiedIdInClass (_, _)|
-MemberField _|MemberDecl _ | Access (_, _))
-          -> ()
+      | (EmptyField _|UsingDeclInClass _|TemplateDeclInClass _
+        |QualifiedIdInClass (_, _)
+        |MemberField _|MemberDecl _ | Access (_, _)
+        )
+        -> ()
       );
       k def
     );
