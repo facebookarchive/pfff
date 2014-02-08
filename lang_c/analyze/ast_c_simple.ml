@@ -44,7 +44,8 @@ open Common2.Infix
  *  - no Case/Default in statement but instead a focused 'case' type
  * 
  * todo: ast_c_simple_build.ml is probably very incomplete, but for now
- *  good enough for codegraph purposes on xv6 and other small C projects.
+ * good enough for codegraph purposes on xv6, plan9 and other small C
+ * projects.
  * 
  * related: 
  *  - CIL

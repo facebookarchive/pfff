@@ -39,7 +39,7 @@ type error = {
   loc: Ast_cpp.info;
   sev: severity;
 }
- (* todo? Advise | Noisy | Meticulous ? *)
+ (* todo? Advice | Noisy | Meticulous ? *)
  and severity = Fatal | Warning
 
  and error_kind = 

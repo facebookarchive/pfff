@@ -28,6 +28,9 @@ module Flag = Flag_parsing_cpp
 (*
  * Graph of dependencies for C. See graph_code.ml and main_codegraph.ml
  * for more information.
+ * See also lang_clang/analyze/graph_code_clang.ml to get a more
+ * precise and correct graphcode (if you can afford yourself to 
+ * use clang).
  * 
  * todo: there is different namespace in C: 
  *  - functions/locals,

@@ -29,7 +29,6 @@ module S = Scope_code
 (*****************************************************************************)
 (* Prelude *)
 (*****************************************************************************)
-
 (*
  * This file mostly deals with scoping issues. Scoping is different
  * from typing! Those are 2 orthogonal programming language notions.

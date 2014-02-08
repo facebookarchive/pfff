@@ -48,8 +48,7 @@ let unittest =
    
    "rejecting bad code" >:: (fun () ->
      let dir = Filename.concat Config_pfff.path "/tests/cpp/parsing_errors" in
-     let files = 
-       Common2.glob (spf "%s/*.cpp" dir) in
+     let files = Common2.glob (spf "%s/*.cpp" dir) in
      files +> List.iter (fun file ->
        try 
          let _ast = parse file in
