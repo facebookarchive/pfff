@@ -23,7 +23,6 @@ open Parser_cpp
 (*****************************************************************************)
 (* Prelude  *)
 (*****************************************************************************)
-
 (* 
  * This module makes it easier to write some fuzzy parsing heuristics
  * by offering different "views" over the same set of tokens.
