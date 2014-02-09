@@ -7,6 +7,8 @@ let finder lang =
     Lib_parsing_php.find_source_files_of_dir_or_files ~verbose:false
   | "c++" -> 
     Lib_parsing_cpp.find_source_files_of_dir_or_files
+  | "c" -> 
+    Lib_parsing_c.find_source_files_of_dir_or_files
   | "ml" -> 
     Lib_parsing_ml.find_source_files_of_dir_or_files
   | "cmt"  -> 
@@ -18,7 +20,7 @@ let finder lang =
   | "clang2" ->
     Lib_parsing_clang.find_source2_files_of_dir_or_files    
   | "dot" -> (fun _ -> [])
-  | _ -> failwith ("unsupported language: " ^ lang)
+  | _ -> failwith ("Find_source: unsupported language: " ^ lang)
 
 let skip_file dir = 
   Filename.concat dir "skip_list.txt"
