@@ -15,7 +15,7 @@
 open Common
 
 open Ast_cpp
-module A = Ast_c_simple
+module A = Ast_c
 
 (*****************************************************************************)
 (* Prelude *)

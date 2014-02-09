@@ -17,8 +17,8 @@ open Common
 module E = Database_code
 module G = Graph_code
 
-open Ast_c_simple
-module Ast = Ast_c_simple
+open Ast_c
+module Ast = Ast_c
 
 module Flag = Flag_parsing_cpp
 
@@ -84,9 +84,7 @@ let parse ~show_parse_error file =
     Common.save_excursion Flag.error_recovery true (fun () ->
     Common.save_excursion Flag.show_parsing_error show_parse_error (fun () ->
     Common.save_excursion Flag.verbose_parsing show_parse_error (fun () ->
-    let cst = Parse_c.parse_program file in
-    let ast = Ast_c_simple_build.program cst in
-    ast
+    Parse_c.parse_program file
     )))
   with 
   | Timeout -> raise Timeout

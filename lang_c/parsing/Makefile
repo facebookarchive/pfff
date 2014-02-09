@@ -6,7 +6,8 @@ TARGET=lib
 
 -include $(TOP)/Makefile.config
 
-SRC= ast_c.ml \
+SRC= ast_c.ml meta_ast_c.ml \
+     ast_c_simple_build.ml \
      lib_parsing_c.ml \
      parse_c.ml \
      test_parsing_c.ml unit_parsing_c.ml \

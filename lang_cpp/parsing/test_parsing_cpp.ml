@@ -28,18 +28,16 @@ let test_parse_cpp ?lang xs  =
   let stat_list = ref [] in
   let newscore  = Common2.empty_score () in
 
-  fullxs +> List.iter (fun file -> 
-    pr2 ("PARSING: " ^ file);
-    
+  fullxs +> Console.progress (fun k -> List.iter (fun file -> 
+    k();
     let (xs, stat) = Parse_cpp.parse ?lang file in
-
     Common.push2 stat stat_list;
 
     let s = spf "bad = %d" stat.Stat.bad in
     if stat.Stat.bad = 0
     then Hashtbl.add newscore file (Common2.Ok)
     else Hashtbl.add newscore file (Common2.Pb s)
-  );
+  ));
 
   Stat.print_recurring_problematic_tokens !stat_list;
   (match xs with 

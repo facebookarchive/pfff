@@ -1,6 +1,7 @@
 
 (* the token list contains also the comment-tokens *)
-type program_and_tokens = Ast_java.program option * Parser_java.token list
+type program_and_tokens = 
+    Ast_java.program option * Parser_java.token list
 
 exception Parse_error of Parse_info.info
 
