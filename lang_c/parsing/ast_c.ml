@@ -65,6 +65,7 @@ type 'a wrap = 'a * Ast_cpp.tok
 (* ------------------------------------------------------------------------- *)
 
 type name = string wrap
+ (* with tarzan *)
 
 (* ------------------------------------------------------------------------- *)
 (* Types *)
@@ -90,6 +91,7 @@ type type_ =
   }
 
  and struct_kind = Struct | Union
+ (* with tarzan *)
 
 (* ------------------------------------------------------------------------- *)
 (* Expression *)
@@ -131,6 +133,7 @@ type expr =
   | InitList of expr list
   (* gccext: *)
   | GccConstructor  of type_ * expr (* always an InitList *)
+ (* with tarzan *)
 
 (* ------------------------------------------------------------------------- *)
 (* Statement *)
@@ -175,6 +178,8 @@ and var_decl = {
  and initialiser = expr
  and storage = Extern | Static | DefaultStorage
 
+ (* with tarzan *)
+
 (* ------------------------------------------------------------------------- *)
 (* Definitions *)
 (* ------------------------------------------------------------------------- *)
@@ -184,6 +189,7 @@ type func_def = {
   f_type: function_type;
   f_body: stmt list;
 }
+ (* with tarzan *)
 
 
 type struct_def = {
@@ -198,12 +204,15 @@ type struct_def = {
     fld_name: name;
     fld_type: type_;
   }
+ (* with tarzan *)
 
 (* todo: use a record *)
-and enum_def = name * (name * expr option) list
+type enum_def = name * (name * expr option) list
+ (* with tarzan *)
 
 (* todo: use a record *)
-and type_def = name * type_
+type type_def = name * type_
+ (* with tarzan *)
 
 (* ------------------------------------------------------------------------- *)
 (* Cpp *)
@@ -215,6 +224,7 @@ type define_body =
   | CppStmt of stmt
   (* usually used only for ifdefs *)
   | CppEmpty
+ (* with tarzan *)
 
 (* ------------------------------------------------------------------------- *)
 (* Program *)
@@ -233,12 +243,21 @@ type toplevel =
   | Global of var_decl
   | Prototype of func_def (* empty body *)
   (* todo: ForwardStructDecl of name ? *)
+ (* with tarzan *)
 
 type program = toplevel list
+ (* with tarzan *)
 
 (* ------------------------------------------------------------------------- *)
 (* Any *)
 (* ------------------------------------------------------------------------- *)
+type any =
+  | Expr2 of expr
+  | Stmt of stmt
+  | Type of type_
+  | Toplevel of toplevel
+  | Program of program
+ (* with tarzan *)
 
 (*****************************************************************************)
 (* Helpers *)

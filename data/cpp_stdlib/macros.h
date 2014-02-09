@@ -1,7 +1,7 @@
 // ****************************************************************************
 // Prelude
 // ****************************************************************************
-// this file must be passed to the -macros option of the C/C++ parsers in pfff
+// This file must be passed to the -macros option of the C/C++ parsers in pfff
 
 // ****************************************************************************
 // MacroString
@@ -202,3 +202,10 @@
 
 #define JSON_INLINE
 #define json_object_foreach(a,b,c) for(;;)
+
+// ****************************************************************************
+// Plan9
+// ****************************************************************************
+#define ARGBEGIN switch(1) 
+#define ARGEND 
+#define EXTERN extern
