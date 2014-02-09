@@ -13,7 +13,7 @@
  *)
 open Common
 
-module Stat = Statistics_parsing
+module Stat = Parse_info
 
 (*****************************************************************************)
 (* Prelude *)

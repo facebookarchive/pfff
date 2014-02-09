@@ -20,7 +20,7 @@ module PI = Parse_info
 module T = Parser_cpp
 module Lexer = Lexer_cpp
 module Semantic = Semantic_cpp
-module Stat = Statistics_parsing
+module Stat = Parse_info
 module Hack = Parsing_hacks_lib
 
 (*****************************************************************************)
@@ -323,7 +323,7 @@ exception Parse_error of Parse_info.info
  *)
 let parse2 ?(lang=Flag_parsing_cpp.Cplusplus) file = 
 
-  let stat = Statistics_parsing.default_stat file in
+  let stat = Parse_info.default_stat file in
   let filelines = Common2.cat_array file in
 
   (* -------------------------------------------------- *)

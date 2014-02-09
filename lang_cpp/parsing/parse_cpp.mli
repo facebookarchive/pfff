@@ -10,7 +10,7 @@ exception Parse_error of Parse_info.info
  *)
 val parse:
   ?lang:Flag_parsing_cpp.language ->
-  Common.filename -> (program2 * Statistics_parsing.parsing_stat)
+  Common.filename -> (program2 * Parse_info.parsing_stat)
 
 val parse_program:  
   Common.filename -> Ast_cpp.program

@@ -15,7 +15,7 @@
 
 open Common
 
-open Statistics_parsing
+open Parse_info
 
 (*****************************************************************************)
 (* Prelude *)
