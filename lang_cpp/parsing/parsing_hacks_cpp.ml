@@ -339,7 +339,7 @@ let look_like_only_idents xs =
  * - comments and cpp directives 
  * - TODO public/protected/... ?
  *)
-let set_context_tag groups =
+let set_context_tag_cplus groups =
   let rec aux xs =
   match xs with
   | [] -> ()

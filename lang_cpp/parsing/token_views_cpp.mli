@@ -7,15 +7,14 @@ type token_extended = {
   col : int;
 }
  and context =
-    | InTopLevel
-    | InFunction 
-    | InClassStruct of string 
-    | InStructAnon
-    | InEnum 
-    | InInitializer 
-    | InParameter
-    | InArgument
-    | InTemplateParam
+   | InTopLevel
+   | InFunction 
+   | InClassStruct of string | InStructAnon
+   | InEnum 
+   | InInitializer 
+   | InParameter
+   | InArgument
+   | InTemplateParam
 
 val mk_token_extended : Parser_cpp.token -> token_extended
 val mk_token_fake : Parser_cpp.token -> token_extended
@@ -69,4 +68,4 @@ val tokens_of_multi_grouped: multi_grouped list -> token_extended list
 
 val set_context_tag: brace_grouped list -> unit
 
-val string_of_multi_grouped: multi_grouped list -> string
+val vof_multi_grouped_list: multi_grouped list -> Ocaml.v

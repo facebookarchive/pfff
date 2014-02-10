@@ -7,7 +7,7 @@ val find_template_commentize:
 val find_qualifier_commentize:
   Token_views_cpp.token_extended list -> unit
 
-val set_context_tag:
+val set_context_tag_cplus:
   Token_views_cpp.multi_grouped list -> unit
 
 val filter_for_typedef:

@@ -117,6 +117,7 @@ type body_function_grouped =
   | BodyFunction of token_extended list
   | NotBodyLine  of token_extended list
 
+(* quite similar to ast_fuzzy.ml but with extended token *)
 type multi_grouped =
   | Braces of token_extended * multi_grouped list * token_extended option
   | Parens of token_extended * multi_grouped list * token_extended option
@@ -739,10 +740,23 @@ let set_context_tag xs =
 (* vof  *)
 (*****************************************************************************)
 
+let vof_context = function
+  | InTopLevel -> Ocaml.VSum ("T", [])
+  | InFunction -> Ocaml.VSum ("F", [])
+  | InClassStruct string -> Ocaml.VSum ("C", [])
+  | InStructAnon -> Ocaml.VSum ("SA", [])
+  | InEnum  -> Ocaml.VSum ("E", [])
+  | InInitializer -> Ocaml.VSum ("I", [])
+  | InParameter -> Ocaml.VSum ("P", [])
+  | InArgument -> Ocaml.VSum ("A", [])
+  | InTemplateParam -> Ocaml.VSum ("<>", [])
+
+
 let vof_token_extended t =
   let info = TH.info_of_tok t.t in
   let str = PI.str_of_info info in
-  Ocaml.VString str
+  let xs = List.map vof_context t.where in
+  Ocaml.VTuple [Ocaml.VString str; Ocaml.VList xs]
 
 let rec vof_multi_grouped =
   function
@@ -763,6 +777,7 @@ let rec vof_multi_grouped =
       in Ocaml.VSum (("Angle", [ v1; v2; v3 ]))
   | Tok v1 -> let v1 = vof_token_extended v1 in Ocaml.VSum (("Tok", [ v1 ]))
 
-let string_of_multi_grouped xs =
+
+let vof_multi_grouped_list xs =
   let v = Ocaml.VList (xs +> List.map vof_multi_grouped) in
-  Ocaml.string_of_v v
+  v

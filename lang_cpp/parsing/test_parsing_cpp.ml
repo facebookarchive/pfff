@@ -94,6 +94,27 @@ let test_dump_cpp_full file =
   );
   ()
 
+let test_dump_cpp_view file =
+  Parse_cpp.init_defs !Flag.macros_h;
+  let toks_orig = Parse_cpp.tokens file in
+  let toks = 
+    toks_orig +> Common.exclude (fun x ->
+      Token_helpers_cpp.is_comment x ||
+      Token_helpers_cpp.is_eof x
+    )
+  in
+  let extended = toks +> List.map Token_views_cpp.mk_token_extended in
+  Parsing_hacks_cpp.find_template_inf_sup extended;
+
+  let brace_grouped = Token_views_cpp.mk_braceised extended in
+  Token_views_cpp.set_context_tag   brace_grouped;
+
+  let groups = Token_views_cpp.mk_multi extended in
+  let v = Token_views_cpp.vof_multi_grouped_list groups in
+  let s = Ocaml.string_of_v v in
+  pr s
+
+
 let test_parse_cpp_fuzzy dir_or_file =
   let fullxs = 
     Lib_parsing_cpp.find_source_files_of_dir_or_files [dir_or_file]
@@ -135,6 +156,8 @@ let actions () = [
     Common.mk_action_1_arg test_dump_cpp;
     "-dump_cpp_full", "   <file>", 
     Common.mk_action_1_arg test_dump_cpp_full;
+    "-dump_cpp_view", "   <file>", 
+    Common.mk_action_1_arg test_dump_cpp_view;
 
     "-parse_cpp_fuzzy", "   <file or dir>", 
     Common.mk_action_1_arg test_parse_cpp_fuzzy;
