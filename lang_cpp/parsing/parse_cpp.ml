@@ -22,6 +22,7 @@ module Lexer = Lexer_cpp
 module Semantic = Semantic_cpp
 module Stat = Parse_info
 module Hack = Parsing_hacks_lib
+module FT = File_type
 
 (*****************************************************************************)
 (* Prelude *)
@@ -483,7 +484,18 @@ let parse_with_lang ?(lang=Flag_parsing_cpp.Cplusplus) file =
   (v, stat)
 
 let parse2 file =
-  raise Todo
+  match File_type.file_type_of_file file with
+  | FT.PL (FT.C _) ->
+    (try 
+      parse_with_lang ~lang:Flag.C file
+    with exn ->
+      parse_with_lang ~lang:Flag.Cplusplus file
+    )
+  | FT.PL (FT.Cplusplus _) ->
+    parse_with_lang ~lang:Flag.Cplusplus file
+  | FT.PL (FT.ObjectiveC _) ->
+    parse_with_lang ~lang:Flag.ObjectiveC file
+  | _ -> failwith (spf "not a C/C++ file: %s" file)
     
 
 let parse file  = 
