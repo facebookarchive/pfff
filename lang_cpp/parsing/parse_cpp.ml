@@ -337,7 +337,6 @@ let parse2 ?(lang=Flag_parsing_cpp.Cplusplus) file =
   in
 
   let tr = Parse_info.mk_tokens_state toks in
-
   let lexbuf_fake = Lexing.from_function (fun buf n -> raise Impossible) in
 
   let rec loop () =
@@ -499,6 +498,6 @@ let parse ?lang file  =
       }
   )
 
-let parse_program file = 
-  let (ast2, _stat) = parse file in
+let parse_program ?lang file = 
+  let (ast2, _stat) = parse ?lang file in
   program_of_program2 ast2

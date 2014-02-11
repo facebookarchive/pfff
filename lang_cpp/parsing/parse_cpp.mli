@@ -13,6 +13,7 @@ val parse:
   Common.filename -> (program2 * Parse_info.parsing_stat)
 
 val parse_program:  
+  ?lang:Flag_parsing_cpp.language ->
   Common.filename -> Ast_cpp.program
 
 val parse_fuzzy:
