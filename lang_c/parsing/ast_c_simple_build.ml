@@ -644,24 +644,22 @@ and fieldkind env x =
         (match ni, sto with
         | Some (n, None), NoSto ->
             { A.
-              fld_name = name env n;
+              fld_name = Some (name env n);
               fld_type = full_type env ft;
             }
+        | None, NoSto ->
+            { A.
+              fld_name = None;
+              fld_type = full_type env ft;
+            }
+
         | _ -> debug (OneDecl decl); raise Todo
         )
       )
   | BitField (name_opt, tok, ft, e) -> 
       let _ = expr env e in
-      let name =
-        match name_opt with
-        | None ->
-            incr cnt;
-            let s = spf "__anon_bitfield_%d" !cnt in
-            s, tok
-        | Some name -> name
-      in
       { A.
-        fld_name = name;
+        fld_name = name_opt;
         fld_type = full_type env ft;
       }
 

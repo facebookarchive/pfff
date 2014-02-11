@@ -258,7 +258,7 @@ and vof_field_def { fld_name = v_fld_name; fld_type = v_fld_type } =
   let arg = vof_type_ v_fld_type in
   let bnd = ("fld_type", arg) in
   let bnds = bnd :: bnds in
-  let arg = vof_name v_fld_name in
+  let arg = Ocaml.vof_option vof_name v_fld_name in
   let bnd = ("fld_name", arg) in let bnds = bnd :: bnds in Ocaml.VDict bnds
   
 let vof_enum_def (v1, v2) =
@@ -293,14 +293,8 @@ let rec
   let bnds = bnd :: bnds in
   let arg = vof_name v_s_name in
   let bnd = ("s_name", arg) in let bnds = bnd :: bnds in Ocaml.VDict bnds
-and vof_field_def { fld_name = v_fld_name; fld_type = v_fld_type } =
-  let bnds = [] in
-  let arg = vof_type_ v_fld_type in
-  let bnd = ("fld_type", arg) in
-  let bnds = bnd :: bnds in
-  let arg = vof_name v_fld_name in
-  let bnd = ("fld_name", arg) in let bnds = bnd :: bnds in Ocaml.VDict bnds
-  
+
+ 
 let vof_toplevel =
   function
   | Define ((v1, v2)) ->

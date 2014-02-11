@@ -75,11 +75,6 @@ let look_like_declaration tok =
 (* Better View *)
 (*****************************************************************************)
 
-(* 
- * TODO: right now this is less useful because we actually
- *  comment template args in a previous pass, but at some point this
- *  will be useful.
-*)
 let rec filter_for_typedef multi_groups = 
 
   (* a sentinel, which helps a few typedef heuristics which look
@@ -91,13 +86,13 @@ let rec filter_for_typedef multi_groups =
 
   let _template_args = ref [] in
 
-  (* remove template *)
+  (* remove template and other things
+   * TODO: right now this is less useful because we actually
+   *  comment template args in a previous pass, but at some point this
+   *  will be useful.
+   *)
   let rec aux xs =
     xs +> Common.map_filter (function
-    | TV.Braces (t1, xs, t2) ->
-        Some (TV.Braces (t1, aux xs, t2))
-    | TV.Parens  (t1, xs, t2) ->
-        Some (TV.Parens (t1, aux xs, t2))
     | TV.Angle (t1, xs, t2) ->
         (* todo: analayze xs!! add in _template_args 
          * todo: add the t1,t2 around xs to have
@@ -105,6 +100,10 @@ let rec filter_for_typedef multi_groups =
          *  who often look for the token just before the typedef.
          *)
         None
+    | TV.Braces (t1, xs, t2) ->
+        Some (TV.Braces (t1, aux xs, t2))
+    | TV.Parens  (t1, xs, t2) ->
+        Some (TV.Parens (t1, aux xs, t2))
 
     (* remove other noise for the typedef inference *)
     | TV.Tok t1 -> 
@@ -128,7 +127,9 @@ let rec filter_for_typedef multi_groups =
         | Tvirtual _ | Tfriend _ | Tinline _ | Tmutable _
           -> None
 
-        (* let's transform all '&' into '*' *)
+        (* let's transform all '&' into '*'
+         * todo: need propagate also the where?
+         *)
         | TAnd ii -> Some (TV.Tok (mk_token_extended (TMul ii)))
 
         (* and operator into TIdent 
@@ -149,10 +150,10 @@ let rec filter_for_typedef multi_groups =
 (* Main heuristics *)
 (*****************************************************************************)
 
-(* assumes a view without:
+(* 
+ * Below we assume a view without:
  *  - comments and cpp-directives
- *  - template stuff and qualifiers
- *   (but not TIdent_ClassnameAsQualifier)
+ *  - template stuff and qualifiers (but not TIdent_ClassnameAsQualifier)
  *  - const/volatile/restrict
  *  - & => *
  *  - etc, see Prelude
@@ -162,6 +163,9 @@ let rec filter_for_typedef multi_groups =
  * Note that qualifiers are slightly less important to filter because
  * most of the heuristics below look for tokens after the ident
  * and qualifiers are usually before.
+ * 
+ * todo: do it on multi view? all those rules with TComma and TOPar
+ * are ugly.
  *)
 let find_typedefs xxs = 
 
@@ -179,14 +183,12 @@ let find_typedefs xxs =
       change_tok tok1 (TIdent_Typedef (s, i1));
       aux xs
 
-  (* xx * yy  with a token before like ., return, etc 
-   * probably mean it's a mulitplication
-   *)
+  (* xx * yy  with a token before like return (probably a mulitplication) *)
   | {t=tok_before}::{t=TIdent (s,i1)}::{t=TMul _}::{t=TIdent _}::xs
     when look_like_multiplication tok_before ->
       aux xs
 
-  (* { xx * yy,  probably declaration *)
+  (* { xx * yy,  (probably declaration) *)
   | {t=tok_before}::({t=TIdent (s,i1)} as tok1)::{t=TMul _}::{t=TIdent _}::xs
     when look_like_declaration tok_before ->
       change_tok tok1 (TIdent_Typedef (s, i1));
@@ -214,7 +216,6 @@ let find_typedefs xxs =
   | ({t=TIdent (s,i1)} as tok1)::{t=TMul _}::{t=TMul _}::{t=TIdent _}::xs ->
       change_tok tok1 (TIdent_Typedef (s, i1));
       aux xs
-
 
   (* (xx) yy   and not a if/while before (, and yy can also be a constant *)
   | {t=tok1}::{t=TOPar info1}::({t=TIdent(s, i1)} as tok3)::{t=TCPar info2}
@@ -253,10 +254,21 @@ let find_typedefs xxs =
       change_tok tok1 (TIdent_Typedef (s, i1));
       aux (x::xs)
 
+
   (* [(,] xx [),] where InParameter *)
   | {t=(TOPar _ | TComma _)}::({t=TIdent (s, i1); where=InParameter::_} as tok1)
     ::({t=(TCPar _ | TComma _)} as tok2)::xs ->
       change_tok tok1 (TIdent_Typedef (s, i1));
+      aux (tok2::xs)
+
+  (* kencc-ext: [;{] xx ;  where InStruct *)
+  | {t=tok_before}::({t=TIdent (s, i1)} as tok1)::({t=TPtVirg _} as tok2)::xs 
+      when look_like_declaration tok_before ->
+      (match tok1.where with
+      | (InClassStruct _ | InStructAnon)::_ ->
+        change_tok tok1 (TIdent_Typedef (s, i1));
+      | _ -> ()
+      );
       aux (tok2::xs)
 
 

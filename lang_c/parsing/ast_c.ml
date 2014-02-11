@@ -199,9 +199,11 @@ type struct_def = {
 }
   (* less: could merge with var_decl, but field have no storage normally.
    * todo: bitfield annotation
+   * kencc-ext: the option on fld_name can be a kencc extension
+   * or a bitfield.
    *)
   and field_def = { 
-    fld_name: name;
+    fld_name: name option;
     fld_type: type_;
   }
  (* with tarzan *)
