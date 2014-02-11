@@ -14,31 +14,27 @@
  *)
 open Common
 
-module Flag = Flag_parsing_cpp
-module Ast = Ast_cpp
-module Parser = Parser_cpp
 module TH = Token_helpers_cpp
 module TV = Token_views_cpp
-module PI = Parse_info
 
 (*****************************************************************************)
 (* Prelude *)
 (*****************************************************************************)
 (* 
- * This module tries to detect some CPP, C, or C++ idioms so that we can
+ * This module tries to detect some cpp, C, or C++ idioms so that we can
  * parse as-is files by adjusting or commenting some tokens.
  * 
  * Sometime we use some name conventions, sometimes indentation information, 
  * sometimes we do some kind of lalr(k) by finding patterns. We often try to
  * work on a better token representation, like ifdef-paren-ized, brace-ized,
  * paren-ized, so that we can pattern-match more easily
- * complex idioms (cf token_views_cpp.ml).
+ * complex idioms (see token_views_cpp.ml).
  * We also try to get more contextual information such as whether the
  * token is in an initializer because many idioms are different
- * depending on the context.
+ * depending on the context (see token_views_context.ml).
  * 
- * Example of CPP idioms:
- *  - if 0 for commenting stuff (not always code, sometimes just real comments)
+ * Examples of cpp idioms:
+ *  - if 0 for commenting stuff (not always code, sometimes any text)
  *  - ifdef old version
  *  - ifdef funheader
  *  - ifdef statements, ifdef expression, ifdef-mid
@@ -51,17 +47,17 @@ module PI = Parse_info
  *  - macro string, and macro function string taking param and ##
  *  - macro attribute
  * 
- * Example of typedef idioms:
+ * Examples of C typedef idioms:
  *  - x * y
  * 
- * Example of c++ idioms:
+ * Examples of C++ idioms:
  *  - x<...> for templates. People rarely do x < y > z to express 
  *    relational expressions, so a < followed later by a > is probably a
  *    template.
  * 
  * See the TIdent_MacroXxx in parser_cpp.mly and MacroXxx in ast_cpp.ml
  * 
- * We also do other stuff involving CPP like expanding macros,
+ * We also do other stuff involving cpp like expanding macros,
  * and we try to parse define body by finding the end of define virtual
  * end-of-line token. But now most of the code is actually in pp_token.ml
  * It is related to what is in the yacfe configuration file (e.g. standard.h)
@@ -73,15 +69,16 @@ module PI = Parse_info
 
 let filter_comment_stuff xs =
   xs +> List.filter (fun x -> not (TH.is_comment x.TV.t))
-          
+
+(* to do at the very very end *)          
 let insert_virtual_positions l =
-  let strlen x = String.length (PI.str_of_info x) in
+  let strlen x = String.length (Parse_info.str_of_info x) in
   let rec loop prev offset = function
       [] -> []
     | x::xs ->
         let ii = TH.info_of_tok x in
         let inject pi =
-          TH.visitor_info_of_tok (function ii -> Ast.rewrap_pinfo pi ii) x in
+          TH.visitor_info_of_tok (function ii -> Ast_cpp.rewrap_pinfo pi ii)x in
         match ii.Parse_info.token with
           Parse_info.OriginTok pi ->
             let prev = Parse_info.token_location_of_info ii in
@@ -117,12 +114,12 @@ let insert_virtual_positions l =
  * first the ifdef heuristic.
  * 
  * Note that the functions below work on a list of token_extended
- * or on views on top of a list of token_extended. token_extended
- * contains mutable field which explains the (ugly but working) imperative
+ * or on views on top of a list of token_extended. The token_extended record
+ * contains mutable fields which explains the (ugly but working) imperative
  * style of the code below.
  * 
  * I recompute multiple times 'cleaner' cos the mutable
- * can have be changed and so may have more comments
+ * can have be changed and so we may have more comments
  * in the token original list.
  *)
 let fix_tokens2 ~macro_defs tokens = 
@@ -144,7 +141,7 @@ let fix_tokens2 ~macro_defs tokens =
    * which is wrong without it.
    * 
    * todo? expand macro first? some expand to lexical_cast ...
-   * but need correct parenthized view to expand macros => deadlock.
+   * but need correct parenthized view to expand macros => mutually recursive :(
    *)
   Parsing_hacks_cpp.find_template_inf_sup cleaner;
   
@@ -159,11 +156,9 @@ let fix_tokens2 ~macro_defs tokens =
   
   (* tagging contextual info (InFunc, InStruct, etc). Better to do
    * that after the "ifdef-simplification" phase.
-   * 
-   * TODO: use multi view here instead, and make it more complete.
    *)
-  let brace_grouped = TV.mk_braceised cleaner in
-  Token_views_context.set_context_tag   brace_grouped;
+  let multi_grouped = TV.mk_multi cleaner in
+  Token_views_context.set_context_tag_multi multi_grouped;
   
   (* macro part 2 *)
   let cleaner = !tokens2 +> Parsing_hacks_pp.filter_pp_or_comment_stuff in
@@ -175,8 +170,6 @@ let fix_tokens2 ~macro_defs tokens =
   Parsing_hacks_pp.find_macro_lineparen    line_paren_grouped;
   Parsing_hacks_pp.find_macro_paren        paren_grouped;
   
-  let multi_grouped = TV.mk_multi cleaner in
-
   (* todo: at some point we need to remove that and use
    * a better filter_for_typedef that also
    * works on the nested template arguments.
@@ -194,6 +187,7 @@ let fix_tokens2 ~macro_defs tokens =
   Token_views_context.set_context_tag_cplus multi_grouped;
 
   Parsing_hacks_cpp.find_constructor cleaner;
+
   let xxs = Parsing_hacks_typedef.filter_for_typedef multi_grouped in
   Parsing_hacks_typedef.find_typedefs xxs;
 

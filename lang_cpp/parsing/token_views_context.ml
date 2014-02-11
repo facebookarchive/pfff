@@ -36,12 +36,12 @@ let is_braceised = function
 
 let look_like_argument tok_before xs =
 
+  (* normalize for C++ *)
   let xs = xs +> List.map (function
     | Tok ({t=TAnd ii} as record) -> Tok ({record with t=TMul ii})
     | x -> x
   )
   in
-
   (* split by comma so can easily check if have stuff like '*xx'
    * that takes the full argument
    *)
@@ -50,15 +50,11 @@ let look_like_argument tok_before xs =
   let aux1 xs =
     match xs with
     | [] -> false
-
     (* *xx *)
     | [Tok{t=TMul _}; Tok{t=TIdent _}] -> true
-
     (* *(xx) *)
     | [Tok{t=TMul _}; Parens _] -> true
-
     (* TODO: xx * yy  and space = 1 between the 2 :) *)
-
     | _ -> false
   in
   
@@ -103,13 +99,15 @@ let look_like_argument tok_before xs =
  * Many patterns should mimic some heuristics in parsing_hack_typedef.ml
  *)
 let look_like_parameter tok_before xs =
+
+  (* normalize for C++ *)
   let xs = xs +> List.map (function
     | Tok ({t=TAnd ii} as record) -> Tok ({record with t=TMul ii})
     | x -> x
   )
   in
-
   let xxs = split_comma xs in
+
   let aux1 xs =
     match xs with
     | [] -> false
@@ -182,10 +180,171 @@ let look_like_only_idents xs =
   )
 
 (*****************************************************************************)
+(* Main heuristics *)
+(*****************************************************************************)
+(* 
+ * Most of the important contexts are introduced via some '{' '}'. To
+ * disambiguate is it often enough to just look at a few tokens before the
+ * '{'.
+ * 
+ * assumes a view without: 
+ * - comments and cpp directives 
+ * 
+ * TODO handle more C++ (right now I did it mostly to be able to parse plan9)
+ * 
+ * TODO harder now that have c++, can have function inside struct so need
+ * handle all together. 
+ * 
+ * TODO So change token but do not recurse in
+ * nested Braceised. maybe do via accumulator, don't use iter_token_brace.
+ * 
+ * TODO Also need remove the qualifier as they make
+ * the sequence pattern matching more difficult.
+ *)
+let set_context_tag_multi groups = 
+  let rec aux xs =
+    match xs with
+    | [] -> ()
+
+  (* struct Foo {, also valid for struct (and union, hmmm) *)
+  | Tok{t=(Tstruct _ | Tunion _ | Tclass _)}::Tok{t=TIdent(s,_)}
+    ::(Braces(t1, body, t2) as braces)::xs
+    ->
+      [braces] +> TV.iter_token_multi (fun tok ->
+        tok.TV.where <- (TV.InClassStruct s)::tok.TV.where;
+      );
+      aux (braces::xs)
+
+(*
+  | BToken ({t=tokstruct; _})::BToken ({t= TIdent (s,_); _})
+    ::Braceised(body, tok1, tok2)::xs when TH.is_classkey_keyword tokstruct -> 
+      body +> List.iter (iter_token_brace (fun tok -> 
+        tok.where <- (InClassStruct s)::tok.where;
+      ));
+      set_in_other xs
+
+  (* struct/union/class x : ... { } *)
+  | BToken ({t= tokstruct; _})::BToken ({t=TIdent _; _})
+    ::BToken ({t=TCol _;_})::xs when TH.is_classkey_keyword tokstruct -> 
+
+      (try 
+        let (before, elem, after) = Common2.split_when is_braceised xs in
+        (match elem with 
+        | Braceised(body, tok1, tok2) -> 
+            body +> List.iter (iter_token_brace (fun tok -> 
+              tok.where <- InInitializer::tok.where;
+            ));
+            set_in_other after
+        | _ -> raise Impossible
+        )
+      with Not_found ->
+        pr2 ("PB: could not find braces after struct/union/class x : ...");
+      )
+
+    *)
+
+  (* = { } *)
+  | Tok ({t=TEq _; _})::(Braces(t1, body, t2) as braces)::xs -> 
+      [braces] +> TV.iter_token_multi (fun tok -> 
+        tok.TV.where <- InInitializer::tok.TV.where;
+      );
+      aux (braces::xs)
+
+
+  (* enum xxx { InEnum *)
+  | Tok{t=Tenum _}::Tok{t=TIdent(_,_)}::(Braces(t1, body, t2) as braces)::xs
+  | Tok{t=Tenum _}::(Braces(t1, body, t2) as braces)::xs
+    ->
+      [braces] +> TV.iter_token_multi (fun tok ->
+        tok.TV.where <- TV.InEnum::tok.TV.where;
+      );
+      aux (braces::xs)
+
+  (* TODO xx(...) {  InFunction (can have some try or const or throw after 
+   * the paren *)
+
+ (* could try: ) { } but it can be the ) of a if or while, so 
+  * better to base the heuristic on the position in column zero.
+  * Note that some struct or enum or init put also their { in first column
+  * but set_in_other will overwrite the previous InFunction tag.
+  *)
+
+(*TODOC++ext: now can have some const or throw between 
+  => do a view that filter them first ?
+*)
+
+(*
+
+  (* ) { and the closing } is in column zero, then certainly a function *)
+(*TODO1 col 0 not valid anymore with c++ nestedness of method *)
+  | BToken ({t=TCPar _;_})::(Braceised (body, tok1, Some tok2))::xs 
+      when tok1.col <> 0 && tok2.col = 0 -> 
+      body +> List.iter (iter_token_brace (fun tok -> 
+        tok.where <- InFunction::tok.where;
+      ));
+      aux xs
+
+  | (BToken x)::xs -> aux xs
+
+(*TODO1 not valid anymore with c++ nestedness of method *)
+  | (Braceised (body, tok1, Some tok2))::xs 
+      when tok1.col = 0 && tok2.col = 0 -> 
+      body +> List.iter (iter_token_brace (fun tok -> 
+        tok.where <- InFunction::tok.where;
+      ));
+      aux xs
+  | Braceised (body, tok1, tok2)::xs -> 
+      aux xs
+ in
+
+
+  *)
+  (* need to look what was before to help the look_like_xxx heuristics 
+   *
+   * The order of the 3 rules below is important. We must first try
+   * look_like_argument which has less FP than look_like_parameter
+  *)
+  | x::(Parens(t1, body, t2) as parens)::xs 
+    when look_like_argument x body ->
+      (*msg_context t1.t (TV.InArgument); *)
+      [parens] +> TV.iter_token_multi (fun tok ->
+        tok.TV.where <- (TV.InArgument)::tok.TV.where;
+      );
+      (* todo? recurse on body? *)
+      aux [x];
+      aux (parens::xs)
+
+
+  | x::(Parens(t1, body, t2) as parens)::xs 
+    when look_like_parameter x body ->
+      (* msg_context t1.t (TV.InParameter); *)
+      [parens] +> TV.iter_token_multi (fun tok ->
+        tok.TV.where <- (TV.InParameter)::tok.TV.where;
+      );
+      (* recurse on body? hmm if InParameter should not have nested 
+       * stuff except when pass function pointer 
+       *)
+      aux [x];
+      aux (parens::xs)
+
+  | x::xs ->
+      (match x with
+      | Tok t -> ()
+      | Parens (t1, xs, t2)
+      | Braces (t1, xs, t2)
+      | Angle  (t1, xs, t2)
+         ->
+          aux xs
+      );
+      aux xs
+  in
+  aux groups
+
+(*****************************************************************************)
 (* Main heuristics C++ *)
 (*****************************************************************************)
-
-(* assumes a view without: 
+(* 
+ * assumes a view without: 
  * - template arguments, qualifiers, 
  * - comments and cpp directives 
  * - TODO public/protected/... ?
@@ -204,7 +363,6 @@ let set_context_tag_cplus groups =
       aux (braces::xs)
 
   (* class Foo : ... { *)
-
   | Tok{t=Tclass _ | Tstruct _;_}::Tok{t=TIdent(s,_);_}
     ::Tok{t= TCol ii}::xs
     ->
@@ -225,14 +383,7 @@ let set_context_tag_cplus groups =
       aux [braces];
       aux after
 
-  (* TODO = {   InInitializer *)
-
   (* TODO <...> InTemplateParam *)
-
-  (* TODO enum xxx { InEnum *)
-
-  (* TODO xx(...) {  InFunction (can have some try or const or throw after 
-   * the paren *)
 
   (* need to look what was before to help the look_like_xxx heuristics 
    *
@@ -286,7 +437,6 @@ let set_context_tag_cplus groups =
       (* todo? recurse on body? *)
       aux (parens::xs)
 
-
   (* could be a cast too ... or what else? *)
   | x::(Parens(t1, body, t2) as parens)::xs ->
       (* let's default to something? hmm, no, got lots of regressions then 
@@ -294,7 +444,6 @@ let set_context_tag_cplus groups =
        *)
       aux [x];
       aux (parens::xs)
-      
 
   | x::xs ->
       (match x with
@@ -309,122 +458,3 @@ let set_context_tag_cplus groups =
   in
   aux groups
 
-
-
-(*****************************************************************************)
-(* Context *)
-(*****************************************************************************)
-(* 
- * Most of the important contexts are introduced via some '{' '}'. To
- * disambiguate is it often enough to just look at a few tokens before the
- * '{'.
- * 
- * TODO harder now that have c++, can have function inside struct so need
- * handle all together. 
- * 
- * TODO So change token but do not recurse in
- * nested Braceised. maybe do via accumulator, don't use iter_token_brace.
- * 
- * TODO Also need remove the qualifier as they make
- * the sequence pattern matching more difficult.
- *)
-
-let rec set_in_function_tag xs = 
- (* could try: ) { } but it can be the ) of a if or while, so 
-  * better to base the heuristic on the position in column zero.
-  * Note that some struct or enum or init put also their { in first column
-  * but set_in_other will overwrite the previous InFunction tag.
-  *)
- let rec aux xs = 
-  match xs with
-  | [] -> ()
-(*TODOC++ext: now can have some const or throw between 
-  => do a view that filter them first ?
-*)
-
-  (* ) { and the closing } is in column zero, then certainly a function *)
-(*TODO1 col 0 not valid anymore with c++ nestedness of method *)
-  | BToken ({t=TCPar _;_})::(Braceised (body, tok1, Some tok2))::xs 
-      when tok1.col <> 0 && tok2.col = 0 -> 
-      body +> List.iter (iter_token_brace (fun tok -> 
-        tok.where <- InFunction::tok.where;
-      ));
-      aux xs
-
-  | (BToken x)::xs -> aux xs
-
-(*TODO1 not valid anymore with c++ nestedness of method *)
-  | (Braceised (body, tok1, Some tok2))::xs 
-      when tok1.col = 0 && tok2.col = 0 -> 
-      body +> List.iter (iter_token_brace (fun tok -> 
-        tok.where <- InFunction::tok.where;
-      ));
-      aux xs
-  | Braceised (body, tok1, tok2)::xs -> 
-      aux xs
- in
- aux xs
-
-let rec set_in_other xs = 
-  match xs with 
-  | [] -> ()
-
-  (* enum x { } *)
-  | BToken ({t=Tenum _;_})::BToken ({t=TIdent _;_})
-    ::Braceised(body, tok1, tok2)::xs 
-  | BToken ({t=Tenum _;_})
-    ::Braceised(body, tok1, tok2)::xs 
-    -> 
-      body +> List.iter (iter_token_brace (fun tok -> 
-        tok.where <- InEnum::tok.where;
-      ));
-      set_in_other xs
-
-  (* struct/union/class x { } *)
-  | BToken ({t=tokstruct; _})::BToken ({t= TIdent (s,_); _})
-    ::Braceised(body, tok1, tok2)::xs when TH.is_classkey_keyword tokstruct -> 
-      body +> List.iter (iter_token_brace (fun tok -> 
-        tok.where <- (InClassStruct s)::tok.where;
-      ));
-      set_in_other xs
-
-  (* struct/union/class x : ... { } *)
-  | BToken ({t= tokstruct; _})::BToken ({t=TIdent _; _})
-    ::BToken ({t=TCol _;_})::xs when TH.is_classkey_keyword tokstruct -> 
-
-      (try 
-        let (before, elem, after) = Common2.split_when is_braceised xs in
-        (match elem with 
-        | Braceised(body, tok1, tok2) -> 
-            body +> List.iter (iter_token_brace (fun tok -> 
-              tok.where <- InInitializer::tok.where;
-            ));
-            set_in_other after
-        | _ -> raise Impossible
-        )
-      with Not_found ->
-        pr2 ("PB: could not find braces after struct/union/class x : ...");
-      )
-
-  (* = { } *)
-  | BToken ({t=TEq _; _})
-    ::Braceised(body, tok1, tok2)::xs -> 
-      body +> List.iter (iter_token_brace (fun tok -> 
-        tok.where <- InInitializer::tok.where;
-      ));
-      set_in_other xs
-
-
-  (* recurse *)
-  | BToken _::xs -> set_in_other xs
-  | Braceised(body, tok1, tok2)::xs -> 
-      body +> List.iter set_in_other;
-      set_in_other xs
-
-(* TODO: handle C++ context for real, and Parameter, and etc *)
-let set_context_tag xs = 
-  begin
-    (* order is important *)
-    set_in_function_tag xs;
-    set_in_other xs;
-  end

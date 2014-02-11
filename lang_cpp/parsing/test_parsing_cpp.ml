@@ -106,11 +106,9 @@ let test_dump_cpp_view file =
   let extended = toks +> List.map Token_views_cpp.mk_token_extended in
   Parsing_hacks_cpp.find_template_inf_sup extended;
 
-  let brace_grouped = Token_views_cpp.mk_braceised extended in
-  Token_views_context.set_context_tag   brace_grouped;
-
-  let groups = Token_views_cpp.mk_multi extended in
-  let v = Token_views_cpp.vof_multi_grouped_list groups in
+  let multi = Token_views_cpp.mk_multi extended in
+  Token_views_context.set_context_tag_multi multi;
+  let v = Token_views_cpp.vof_multi_grouped_list multi in
   let s = Ocaml.string_of_v v in
   pr s
 
