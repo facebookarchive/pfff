@@ -43,12 +43,6 @@ type program2 = toplevel2 list
 let program_of_program2 xs = 
   xs +> List.map fst
 
-let with_program2 f program2 = 
-  program2 
-  +> Common2.unzip 
-  +> (fun (program, infos) -> f program, infos)
-  +> Common2.uncurry Common2.zip
-
 (*****************************************************************************)
 (* Wrappers *)
 (*****************************************************************************)
@@ -487,7 +481,6 @@ let parse2 ?(lang=Flag_parsing_cpp.Cplusplus) file =
     )
   in
   let v = loop() in
-  let v = with_program2 Parsing_consistency_cpp.consistency_checking v in
   (v, stat)
 
 let parse ?lang file  = 

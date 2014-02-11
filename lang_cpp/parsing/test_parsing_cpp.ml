@@ -148,6 +148,8 @@ let test_dump_cpp_fuzzy file =
 let actions () = [
     "-parse_cpp", "   <file or dir>", 
     Common.mk_action_n_arg test_parse_cpp;
+    "-parse_cpp_c", "   <file or dir>", 
+    Common.mk_action_n_arg (test_parse_cpp ~lang:Flag.C);
     "-tokens_cpp", "   <file>", 
     Common.mk_action_1_arg test_tokens_cpp;
     "-dump_cpp", "   <file>", 

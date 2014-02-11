@@ -17,7 +17,7 @@ SRC= flag_parsing_cpp.ml \
      parsing_hacks_pp.ml parsing_hacks_cpp.ml parsing_hacks_typedef.ml \
      parsing_hacks_define.ml \
      parsing_hacks.ml \
-     parsing_recovery_cpp.ml parsing_consistency_cpp.ml \
+     parsing_recovery_cpp.ml \
      parse_cpp.ml \
      test_parsing_cpp.ml unit_parsing_cpp.ml \
 
