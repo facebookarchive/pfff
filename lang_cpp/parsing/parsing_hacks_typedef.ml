@@ -66,7 +66,8 @@ let look_like_multiplication tok =
 
 let look_like_declaration tok =
   match tok with
-  | TOBrace _ | TCBrace _
+  | TOBrace _ 
+ (* no!! | TCBrace _ *)
   | TPtVirg _
       -> true
   | _ -> false

@@ -5,4 +5,7 @@ struct Lock {
 struct Bar {
   Lock;
   int v;
+
+  struct X {
+  } v;
 };
