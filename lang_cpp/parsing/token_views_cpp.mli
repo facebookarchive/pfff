@@ -66,6 +66,4 @@ val tokens_of_paren:         paren_grouped list -> token_extended list
 val tokens_of_paren_ordered: paren_grouped list -> token_extended list
 val tokens_of_multi_grouped: multi_grouped list -> token_extended list
 
-val set_context_tag: brace_grouped list -> unit
-
 val vof_multi_grouped_list: multi_grouped list -> Ocaml.v

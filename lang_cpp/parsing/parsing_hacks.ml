@@ -163,7 +163,7 @@ let fix_tokens2 ~macro_defs tokens =
    * TODO: use multi view here instead, and make it more complete.
    *)
   let brace_grouped = TV.mk_braceised cleaner in
-  Token_views_cpp.set_context_tag   brace_grouped;
+  Token_views_context.set_context_tag   brace_grouped;
   
   (* macro part 2 *)
   let cleaner = !tokens2 +> Parsing_hacks_pp.filter_pp_or_comment_stuff in

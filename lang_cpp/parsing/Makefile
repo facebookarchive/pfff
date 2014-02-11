@@ -12,7 +12,7 @@ SRC= flag_parsing_cpp.ml \
      meta_ast_cpp.ml export_ast_cpp.ml \
      visitor_cpp.ml lib_parsing_cpp.ml \
      parser_cpp_mly_helper.ml parser_cpp.ml lexer_cpp.ml \
-     token_helpers_cpp.ml token_views_cpp.ml \
+     token_helpers_cpp.ml token_views_cpp.ml token_views_context.ml \
      parsing_hacks_lib.ml pp_token.ml \
      parsing_hacks_pp.ml parsing_hacks_cpp.ml parsing_hacks_typedef.ml \
      parsing_hacks_define.ml \

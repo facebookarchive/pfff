@@ -25,6 +25,10 @@ open Common
  * Like most other ASTs in pfff, it's actually more a Concrete Syntax Tree.
  * Some stuff are tagged 'semantic:' which means that they are computed
  * after parsing. 
+ * 
+ * todo: 
+ *  - migrate everything to wrap2, e.g. no more expressionbis, statementbis
+ *  - support C++0x11, e.g. lambdas
  *)
 
 (*****************************************************************************)
