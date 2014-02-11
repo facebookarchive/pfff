@@ -209,3 +209,4 @@
 #define ARGBEGIN switch(1) 
 #define ARGEND 
 #define EXTERN extern
+#define Extern extern
