@@ -177,7 +177,8 @@ let is_classkey_keyword = function
 let is_cpp_keyword = function
   | Tclass _ | Tthis _
  
-  | Tnew _ | Tdelete _
+  | Tnew _ 
+  | Tdelete _
  
   | Ttemplate _ | Ttypeid _ | Ttypename _
  
