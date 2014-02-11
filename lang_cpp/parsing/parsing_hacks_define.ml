@@ -26,7 +26,6 @@ module PI = Parse_info
 (*****************************************************************************)
 (* Prelude  *)
 (*****************************************************************************)
-
 (* 
  * To parse macro definitions I need to do some tricks 
  * as some information can be computed only at the lexing level. For instance

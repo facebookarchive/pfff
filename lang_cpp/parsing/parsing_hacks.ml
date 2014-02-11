@@ -191,10 +191,10 @@ let fix_tokens2 ~macro_defs tokens =
   let cleaner = !tokens2 +> Parsing_hacks_pp.filter_pp_or_comment_stuff in
 
   let multi_grouped = TV.mk_multi cleaner in
-  Parsing_hacks_cpp.set_context_tag_cplus multi_grouped;
+  Token_views_context.set_context_tag_cplus multi_grouped;
 
   Parsing_hacks_cpp.find_constructor cleaner;
-  let xxs = Parsing_hacks_cpp.filter_for_typedef multi_grouped in
+  let xxs = Parsing_hacks_typedef.filter_for_typedef multi_grouped in
   Parsing_hacks_typedef.find_typedefs xxs;
 
   (* must be done after the typedef inference *)

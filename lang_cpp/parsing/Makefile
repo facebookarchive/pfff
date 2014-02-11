@@ -83,6 +83,8 @@ parsing_hacks_pp.cmo: parsing_hacks_pp.ml
 	$(OCAMLC) -w -9 -c $<
 parsing_hacks_typedef.cmo: parsing_hacks_typedef.ml
 	$(OCAMLC) -w -9 -c $<
+token_views_context.cmo: token_views_context.ml
+	$(OCAMLC) -w -9 -c $<
 
 
 ##############################################################################

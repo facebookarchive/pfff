@@ -17,6 +17,7 @@ open Common
 
 module TV = Token_views_cpp
 module TH = Token_helpers_cpp
+module Ast = Ast_cpp
 
 open Parser_cpp
 open Token_views_cpp
@@ -26,10 +27,17 @@ open Parsing_hacks_lib
 (*****************************************************************************)
 (* Prelude *)
 (*****************************************************************************)
-
 (* 
+ * This file gathers parsing heuristics related to the typedefs.
+ * C is not context-free sensitive; it requires to know when
+ * an ident corresponds to a typedef or ident. This normally means that
+ * we must call cpp on the file and have the lexer and parser cooperates
+ * to remember what is what. In lang_cpp/ we want to parse as-is,
+ * which means we need to infer back whether an identifier is
+ * a typedef or not.
+ * 
  * In this module we use a view that is more convenient for 
- * typedefs detection. We get rid of:
+ * typedefs detection. We got rid of:
  *  - template arguments, 
  *  - qualifiers, 
  *  - differences between & and *, 
@@ -37,8 +45,8 @@ open Parsing_hacks_lib
  *  - const, volatile, restrict keywords
  *  - TODO merge multiple ** or *& or whatever
  * 
- * See Parsing_hacks_cpp.filter_for_typedef and the 
- * find_template_commentize and find_qualifier_commentize
+ * See find_template_commentize() and find_qualifier_commentize() in
+ * parsing_hacks_cpp.ml
  * 
  * todo? at the same time certain tokens like const are strong
  * signals towards a typedef ident, so maybe could do a first
@@ -75,6 +83,80 @@ let look_like_declaration tok =
   | TPtVirg _
       -> true
   | _ -> false
+
+(*****************************************************************************)
+(* Better View *)
+(*****************************************************************************)
+
+(* 
+ * TODO: right now this is less useful because we actually
+ *  comment template args in a previous pass, but at some point this
+ *  will be useful.
+*)
+let rec filter_for_typedef multi_groups = 
+
+  (* a sentinel, which helps a few typedef heuristics which look
+   * for a token before which would not work for the first toplevel
+   * declaration.
+   *)
+  let multi_groups = 
+    Tok(mk_token_fake (TPtVirg (Ast.fakeInfo())))::multi_groups in
+
+  let _template_args = ref [] in
+
+  (* remove template *)
+  let rec aux xs =
+    xs +> Common.map_filter (function
+    | TV.Braces (t1, xs, t2) ->
+        Some (TV.Braces (t1, aux xs, t2))
+    | TV.Parens  (t1, xs, t2) ->
+        Some (TV.Parens (t1, aux xs, t2))
+    | TV.Angle (t1, xs, t2) ->
+        (* todo: analayze xs!! add in _template_args 
+         * todo: add the t1,t2 around xs to have
+         *  some sentinel for the typedef heuristics patterns
+         *  who often look for the token just before the typedef.
+         *)
+        None
+
+    (* remove other noise for the typedef inference *)
+    | TV.Tok t1 -> 
+        match t1.TV.t with
+        (* const is a strong signal for having a typedef, so why skip it?
+         * because it forces to duplicate rules. We need to infer
+         * the type anyway even when there is no const around.
+         * todo? maybe could do a special pass first that infer typedef
+         * using only const rules, and then remove those const so 
+         * have best of both worlds.
+         *)
+        | Tconst _ | Tvolatile _
+        | Trestrict _
+          -> None
+
+        | Tregister _ | Tstatic _ | Tauto _ | Textern _
+        | Ttypedef _
+        | Tunion _
+          -> None
+
+        | Tvirtual _ | Tfriend _ | Tinline _ | Tmutable _
+          -> None
+
+        (* let's transform all '&' into '*' *)
+        | TAnd ii -> Some (TV.Tok (mk_token_extended (TMul ii)))
+
+        (* and operator into TIdent 
+         * TODO: skip the token just after the operator keyword?
+         * could help some heuristics too
+        *)
+        | Toperator ii -> 
+            Some (TV.Tok (mk_token_extended (TIdent ("operator", ii))))
+
+        | _ -> Some (TV.Tok t1)
+    )
+  in
+  let xs = aux multi_groups in
+  (* todo: look also for _template_args *)
+  [TV.tokens_of_multi_grouped xs]
 
 (*****************************************************************************)
 (* Main heuristics *)
