@@ -18,30 +18,6 @@ int foo(foo10_t, foo11_t);
 
 int foo(foo10* x);
 
-void main() {
-  try {
-  } 
-  // this must be inferred as a typedef, and so is also kind of InParameter
-  catch (foo10& x) {
-  }
-}
-
-
-
-Foo::Foo(foo10* x) {
-}
-
-ostream& operator<<(ostream &ostream, Node* node) {
-}
-
-
-struct PerUserLimitCacheKey
-{
-  friend std::ostream& operator<<(std::ostream& os,
-                                   const PerUserLimitCacheKey& k);
-};
-
-
 //TODO: void (*x)(foo10* x);
 
 extern size_t strbuf_fread(struct strbuf *, size_t, FILE *);
@@ -51,6 +27,3 @@ void* dlrealloc(void*, size_t);
 
 static int64_t normalizeTimestamp(int64_t timestamp, int timeUnit = 60);
 
-class Util {
-  static int64_t normalizeTimestamp(int64_t timestamp, int timeUnit = 60);
-};
