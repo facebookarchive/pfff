@@ -33,8 +33,7 @@ let parse file =
     Parse_cpp.init_defs !Flag_parsing_cpp.macros_h;
     _done_init := true
   end;
-  Parse_cpp.parse ~lang:Flag_parsing_cpp.ObjectiveC file
-
+  Parse_cpp.parse_with_lang ~lang:Flag_parsing_cpp.ObjectiveC file
 
 let parse_program file =
   let (program2, _stat) = parse file in

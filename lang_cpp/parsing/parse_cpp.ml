@@ -315,7 +315,7 @@ exception Parse_error of Parse_info.info
  * !!!This function use refs, and is not reentrant !!! so take care.
  * It uses the _defs global defined above!!!!
  *)
-let parse2 ?(lang=Flag_parsing_cpp.Cplusplus) file = 
+let parse_with_lang ?(lang=Flag_parsing_cpp.Cplusplus) file = 
 
   let stat = Parse_info.default_stat file in
   let filelines = Common2.cat_array file in
@@ -482,10 +482,14 @@ let parse2 ?(lang=Flag_parsing_cpp.Cplusplus) file =
   let v = loop() in
   (v, stat)
 
-let parse ?lang file  = 
+let parse2 file =
+  raise Todo
+    
+
+let parse file  = 
   Common.profile_code "Parse_cpp.parse" (fun () -> 
     try 
-      parse2 ?lang file
+      parse2 file
     with Stack_overflow ->
       pr2 (spf "PB stack overflow in %s" file);
       [(Ast.NotParsedCorrectly [], ([]))], {Stat.
@@ -498,6 +502,6 @@ let parse ?lang file  =
       }
   )
 
-let parse_program ?lang file = 
-  let (ast2, _stat) = parse ?lang file in
+let parse_program file = 
+  let (ast2, _stat) = parse file in
   program_of_program2 ast2

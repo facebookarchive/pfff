@@ -73,14 +73,15 @@ type token_extended = {
  (* The strategy to tag is mostly to look at the token(s) before the '{' *)
   and context = 
     | InTopLevel
-    | InFunction 
-    (* knowing the name is useful to recognize constructors *)
-    | InClassStruct of string  (* TODO *)
-    | InStructAnon (* TODO *)
+    | InClassStruct of string
     | InEnum
     | InInitializer
-    | InParameter (* TODO *)
+    | InParameter
     | InArgument
+
+    | InFunction (* TODO *)
+    (* knowing the name is useful to recognize constructors *)
+    | InStructAnon (* TODO *)
     | InTemplateParam (* TODO *)
 
 (* InCondition ? InParenExpr ? *)

@@ -7,14 +7,15 @@ type token_extended = {
   col : int;
 }
  and context =
-   | InTopLevel
-   | InFunction 
-   | InClassStruct of string | InStructAnon
-   | InEnum 
-   | InInitializer 
-   | InParameter
-   | InArgument
-   | InTemplateParam
+    | InTopLevel
+    | InClassStruct of string
+    | InEnum
+    | InInitializer
+    | InParameter
+    | InArgument
+    | InFunction
+    | InStructAnon
+    | InTemplateParam
 
 val mk_token_extended : Parser_cpp.token -> token_extended
 val mk_token_fake : Parser_cpp.token -> token_extended

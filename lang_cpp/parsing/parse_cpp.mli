@@ -9,12 +9,14 @@ exception Parse_error of Parse_info.info
  * from a standard.h macro file 
  *)
 val parse:
-  ?lang:Flag_parsing_cpp.language ->
   Common.filename -> (program2 * Parse_info.parsing_stat)
 
 val parse_program:  
-  ?lang:Flag_parsing_cpp.language ->
   Common.filename -> Ast_cpp.program
+
+val parse_with_lang:
+  ?lang:Flag_parsing_cpp.language ->
+  Common.filename -> (program2 * Parse_info.parsing_stat)
 
 val parse_fuzzy:
   Common.filename -> Ast_fuzzy.tree list * Parser_cpp.token list

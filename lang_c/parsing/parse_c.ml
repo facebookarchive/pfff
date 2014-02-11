@@ -43,7 +43,7 @@ let parse file =
     Parse_cpp.init_defs !Flag_parsing_cpp.macros_h;
     _done_init := true
   end;
-  let (ast2, stat) = Parse_cpp.parse ~lang:Flag_parsing_cpp.C file in
+  let (ast2, stat) = Parse_cpp.parse_with_lang ~lang:Flag_parsing_cpp.C file in
   let ast = ast2 +> List.map fst in
   let toks = ast2 +> List.map snd +> List.flatten in
   let ast_opt, stat = 
