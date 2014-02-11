@@ -27,7 +27,7 @@ module G = Graph_code
 (* Main entry point *)
 (*****************************************************************************)
 
-let build_uses_and_users_of_file g =
+let build_deps_of_file g =
 
   (* we use the 'find_all' property of those hashes *)
   let huses = Hashtbl.create 101 in

@@ -1,8 +1,8 @@
 (*s: model_graph_code.mli *)
-val build_uses_and_users_of_file: 
+val build_deps_of_file: 
   Graph_code.graph ->
-  (Common.filename, Common.filename list) Common.assoc * (* uses_of_file *)
-  (Common.filename, Common.filename list) Common.assoc   (* husers_of_file *) 
+  (Common.filename, Common.filename list) Common.assoc * (* uses *)
+  (Common.filename, Common.filename list) Common.assoc   (* users *) 
 
 (* the nodes are sorted by line numbers *)
 val build_entities_of_file:
