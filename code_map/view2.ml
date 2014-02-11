@@ -599,7 +599,7 @@ let mk_gui ~screen_size ~legend test_mode (root, model, dw, dbfile_opt) =
     (*-------------------------------------------------------------------*)
     (* the statusbar widget is defined in beginning of this file because *)
 
-(*TODO    vbox#pack (*~from: `END*) statusbar#coerce; *)
+    vbox#pack (*~from: `END*) statusbar#coerce;
 
   (*  )); *)
 

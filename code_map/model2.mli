@@ -22,6 +22,9 @@ type model = {
   (* for microlevel use/def information *)
   g: Graph_code.graph option;
   (* fast accessors, for macrolevel use/def information  *)
+  (* todo: what about huses_of_dir? scalable spirit, should have deps
+   * of dirs, files, entities, even locals
+   *)
   huses_of_file: (Common.filename, Common.filename list) Hashtbl.t;
   husers_of_file: (Common.filename, Common.filename list) Hashtbl.t;
   (* the lists are sorted by line number *)
@@ -29,6 +32,8 @@ type model = {
     (Common.filename, (line * Graph_code.node) list)  Hashtbl.t;
  }
 (*e: type model *)
+type 'a deps = 'a list (* uses *) * 'a list (* users *)
+
 
 type macrolevel = Treemap.treemap_rendering
 
@@ -195,23 +200,18 @@ val find_entity_at_line:
 (* graph code integration *)
 
 (* macrolevel uses and users *)
-val uses_and_users_readable_files_of_file:
-  Common.filename (* absolute *) -> drawing -> 
-  Common.filename list (* readable *) * Common.filename list (* readable *)
+val deps_readable_files_of_file:
+  Common.filename (* abs *) -> drawing -> Common.filename (* readable *) deps
 
-val uses_and_users_rect_of_file:
-  Common.filename -> drawing -> 
-  Treemap.treemap_rectangle list * Treemap.treemap_rectangle list
+val deps_rect_of_file: 
+  Common.filename -> drawing -> Treemap.treemap_rectangle deps
 
 (* microlevel uses and users *)
-val uses_and_users_readable_files_of_node:
-  Graph_code.node -> drawing -> 
-  Common.filename list (* readable *) * Common.filename list (* readable *)
+val deps_readable_files_of_node:
+  Graph_code.node -> drawing -> Common.filename (* readable *) deps
 
-val uses_and_users_of_node:
-  Graph_code.node -> drawing -> 
-  (Graph_code.node * line * microlevel) list * 
-  (Graph_code.node * line * microlevel) list
+val deps_of_node:
+  Graph_code.node -> drawing -> (Graph_code.node * line * microlevel) deps
 
 val lines_where_used_node:
   Graph_code.node -> line -> microlevel -> line list

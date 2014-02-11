@@ -333,8 +333,8 @@ let button_action da dw_ref ev =
           
           let uses, users = 
             match entity_opt with
-            | None -> M.uses_and_users_readable_files_of_file file dw
-            | Some n -> M.uses_and_users_readable_files_of_node n dw
+            | None -> M.deps_readable_files_of_file file dw
+            | Some n -> M.deps_readable_files_of_node n dw
           in
 
           let model = Async.async_get dw.dw_model in

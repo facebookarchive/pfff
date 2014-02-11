@@ -18,11 +18,9 @@
 open Common
 
 module CairoH = Cairo_helpers
-
+module Flag = Flag_visual
 module F = Figures
 module T = Treemap
-
-module Flag = Flag_visual
 
 (*****************************************************************************)
 (* The code model *)
@@ -57,7 +55,7 @@ type model = {
     (Common.filename, (line * Graph_code.node) list)  Hashtbl.t;
  }
 (*e: type model *)
-
+type 'a deps = 'a list (* uses *) * 'a list (* users *)
 
 (*****************************************************************************)
 (* The drawing model *)
@@ -358,7 +356,7 @@ let find_entity_at_line line r dw =
   with Not_found -> None
 
 
-let uses_and_users_readable_files_of_file file dw =
+let deps_readable_files_of_file file dw =
   let model = Async.async_get dw.dw_model in
   let readable = Common.readable ~root:model.root file in
 
@@ -368,7 +366,7 @@ let uses_and_users_readable_files_of_file file dw =
     try Hashtbl.find model.husers_of_file readable with Not_found -> [] in
   uses, users
 
-let uses_and_users_readable_files_of_node node dw =
+let deps_readable_files_of_node node dw =
   let model = Async.async_get dw.dw_model in
   match model.g with
   | None -> [], []
@@ -382,8 +380,8 @@ let uses_and_users_readable_files_of_node node dw =
       try Some (Graph_code.file_of_node n g) with Not_found -> None
     )
 
-let uses_and_users_rect_of_file file dw =
-  let uses, users = uses_and_users_readable_files_of_file file dw in
+let deps_rect_of_file file dw =
+  let uses, users = deps_readable_files_of_file file dw in
   uses +> Common.map_filter (fun file -> 
     Common2.optionise (fun () -> Hashtbl.find dw.readable_file_to_rect file)
   ),
@@ -409,7 +407,7 @@ let uses_or_users_of_node node dw fsucc =
       with Not_found -> None
     )
 
-let uses_and_users_of_node node dw =
+let deps_of_node node dw =
   uses_or_users_of_node node dw (fun node g ->
     Graph_code.succ node Graph_code.Use g),
   uses_or_users_of_node node dw (fun node g ->

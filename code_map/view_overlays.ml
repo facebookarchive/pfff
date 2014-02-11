@@ -140,7 +140,7 @@ let draw_englobing_rectangles_overlay ~dw (r, middle, r_englobing) =
 let draw_uses_users_files ~dw r =
  with_overlay dw (fun cr_overlay ->
    let file = r.T.tr_label in
-   let uses_rect, users_rect = M.uses_and_users_rect_of_file file dw in
+   let uses_rect, users_rect = M.deps_rect_of_file file dw in
    uses_rect +> List.iter (fun r ->
      CairoH.draw_rectangle_figure ~cr:cr_overlay ~color:"green" r.T.tr_rect;
    );
@@ -165,7 +165,7 @@ let draw_magnify_line_overlay_maybe ?honor_color dw line microlevel =
 
 let draw_uses_users_entities ~dw n =
  with_overlay dw (fun cr_overlay ->
-   let uses, users = uses_and_users_of_node n dw  in
+   let uses, users = deps_of_node n dw  in
    uses +> List.iter (fun (_n2, line, microlevel) ->
      let rectangle = microlevel.line_to_rectangle line in
      CairoH.draw_rectangle_figure ~cr:cr_overlay ~color:"green" rectangle;
