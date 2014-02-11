@@ -102,7 +102,7 @@
    (join-string 
     (list 
      "-debugger"
-     (case 7
+     (case 203
 
        (0 "-tokens_php /home/pad/pfff/tests/php/parsing/heredoc4.php")
 
@@ -135,6 +135,7 @@
 
        (200 "-parse_cpp /home/pad/pfff/tests/cpp/foo.h")
        (201 "-parse_cpp /tmp/test.cpp")
+       (203 "-parse_cpp /home/pad/pfff/tests/c/parsing/typedef_proto.c")
 
        (300 "-pfff_gephi_dependencies /home/pad/pfff /tmp/pfff.gexf")
        (400 "-dump_cmt2 /home/pad/pfff/tests/ml/cmt/foo.cmt")

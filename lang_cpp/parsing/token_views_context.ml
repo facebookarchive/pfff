@@ -33,6 +33,9 @@ let is_braceised = function
   | Braceised   _ -> true
   | BToken _ -> false
 
+(*****************************************************************************)
+(* Argument vs Parameter *)
+(*****************************************************************************)
 
 let look_like_argument tok_before xs =
 
@@ -82,7 +85,7 @@ let look_like_argument tok_before xs =
         | Tok {t=(Tnew _ )} -> true
         | Tok {t= tok} when TH.is_binary_operator_except_star tok -> true
         | Tok {t=(TInc _ | TDec _)} -> true
-        | Tok {t = (TDot _ | TPtrOp _ | TPtrOpStar _ | TDotStar _);_} -> true
+        | Tok {t = (TDot _ | TPtrOp _ | TPtrOpStar _ | TDotStar _)} -> true
         | Tok {t = (TOCro _)} -> true
         | Tok {t = (TWhy _ | TBang _)} -> true
         | _ -> aux xs
@@ -171,6 +174,7 @@ let look_like_parameter tok_before xs =
 
   xxs +> List.exists aux1 || aux xs
 
+
 let look_like_only_idents xs =
   xs +> List.for_all (function
   | Tok {t=(TComma _ | TIdent _)} -> true
@@ -224,7 +228,7 @@ let set_context_tag_multi groups =
 
   (* struct/union/class x : ... { } *)
   | BToken ({t= tokstruct; _})::BToken ({t=TIdent _; _})
-    ::BToken ({t=TCol _;_})::xs when TH.is_classkey_keyword tokstruct -> 
+    ::BToken ({t=TCol _})::xs when TH.is_classkey_keyword tokstruct -> 
 
       (try 
         let (before, elem, after) = Common2.split_when is_braceised xs in
@@ -243,7 +247,7 @@ let set_context_tag_multi groups =
     *)
 
   (* C++: class Foo : ... { *)
-  | Tok{t=Tclass _ | Tstruct _;_}::Tok{t=TIdent(s,_);_}
+  | Tok{t=Tclass _ | Tstruct _}::Tok{t=TIdent(s,_)}
     ::Tok{t= TCol ii}::xs
     ->
       let (before, braces, after) =
@@ -298,7 +302,7 @@ let set_context_tag_multi groups =
 
   (* ) { and the closing } is in column zero, then certainly a function *)
 (*TODO1 col 0 not valid anymore with c++ nestedness of method *)
-  | BToken ({t=TCPar _;_})::(Braceised (body, tok1, Some tok2))::xs 
+  | BToken ({t=TCPar _})::(Braceised (body, tok1, Some tok2))::xs 
       when tok1.col <> 0 && tok2.col = 0 -> 
       body +> List.iter (iter_token_brace (fun tok -> 
         tok.where <- InFunction::tok.where;
@@ -395,6 +399,9 @@ let set_context_tag_multi groups =
       );
       aux xs
   in
+  groups +> TV.iter_token_multi (fun tok ->
+    tok.TV.where <- [TV.InTopLevel];
+  );
   aux groups
 
 (*****************************************************************************)

@@ -1,7 +1,7 @@
 (* Yoann Padioleau
  *
  * Copyright (C) 2002-2008 Yoann Padioleau
- * Copyright (C) 2011 Facebook
+ * Copyright (C) 2011, 2014 Facebook
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License (GPL)
@@ -12,7 +12,6 @@
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * file license.txt for more details.
  *)
-
 open Common
 
 module TV = Token_views_cpp
@@ -31,22 +30,19 @@ open Parsing_hacks_lib
  * This file gathers parsing heuristics related to the typedefs.
  * C is not context-free sensitive; it requires to know when
  * an ident corresponds to a typedef or ident. This normally means that
- * we must call cpp on the file and have the lexer and parser cooperates
+ * we must call cpp on the file and have the lexer and parser cooperate
  * to remember what is what. In lang_cpp/ we want to parse as-is,
  * which means we need to infer back whether an identifier is
  * a typedef or not.
  * 
  * In this module we use a view that is more convenient for 
  * typedefs detection. We got rid of:
- *  - template arguments, 
- *  - qualifiers, 
- *  - differences between & and *, 
+ *  - template arguments (see find_template_commentize())
+ *  - qualifiers (see find_qualifier_commentize)
+ *  - differences between & and * (filter_for_typedef() below)
  *  - differences between TIdent and TOperator, 
  *  - const, volatile, restrict keywords
  *  - TODO merge multiple ** or *& or whatever
- * 
- * See find_template_commentize() and find_qualifier_commentize() in
- * parsing_hacks_cpp.ml
  * 
  * todo? at the same time certain tokens like const are strong
  * signals towards a typedef ident, so maybe could do a first
@@ -56,15 +52,6 @@ open Parsing_hacks_lib
 (*****************************************************************************)
 (* Helpers *)
 (*****************************************************************************)
-
-(*
-let is_top_or_struct = function
-  | TV.InTopLevel
-  | TV.InClassStruct _ 
-  | TV.InStructAnon
-      -> true
-  | _ -> false
-*)
 
 let look_like_multiplication tok =
   match tok with
@@ -182,8 +169,9 @@ let find_typedefs xxs =
   match xs with
   | [] -> ()
 
-  (* those identifiers (called tags) must not be transformed in typedefs *)
-  | {t=(Tstruct _ | Tunion _ | Tenum _ | Tclass _);_}::{t=TIdent _}::xs ->
+  (* struct x ... 
+   * those identifiers (called tags) must not be transformed in typedefs *)
+  | {t=(Tstruct _ | Tunion _ | Tenum _ | Tclass _)}::{t=TIdent _}::xs ->
       aux xs
 
   (* xx yy *)
@@ -191,16 +179,14 @@ let find_typedefs xxs =
       change_tok tok1 (TIdent_Typedef (s, i1));
       aux xs
 
-  (* xx * yy  with a token before like ., return, etc that probably mean
-   * it's a mulitplication
+  (* xx * yy  with a token before like ., return, etc 
+   * probably mean it's a mulitplication
    *)
   | {t=tok_before}::{t=TIdent (s,i1)}::{t=TMul _}::{t=TIdent _}::xs
     when look_like_multiplication tok_before ->
       aux xs
 
-  (* { xx * yy,  probably declaration
-   * TODO if first declaration in file?
-   *)
+  (* { xx * yy,  probably declaration *)
   | {t=tok_before}::({t=TIdent (s,i1)} as tok1)::{t=TMul _}::{t=TIdent _}::xs
     when look_like_declaration tok_before ->
       change_tok tok1 (TIdent_Typedef (s, i1));
@@ -214,9 +200,7 @@ let find_typedefs xxs =
       aux xs
 
   (* xx * yy
-   *
-   * could be a multiplication too, so cf rule before and guard
-   * with InParameter.
+   * could be a multiplication too, so need InParameter guard/
    *)
   | ({t=TIdent (s,i1);where=InParameter::_} as tok1)::{t=TMul _}
     ::{t=TIdent _}::xs 
@@ -224,14 +208,12 @@ let find_typedefs xxs =
       change_tok tok1 (TIdent_Typedef (s, i1));
       aux xs
 
-
   (* xx ** yy
-   * TODO: could be a multiplication too, but with less probability
+   * TODO? could be a multiplication too, but with less probability
   *)
   | ({t=TIdent (s,i1)} as tok1)::{t=TMul _}::{t=TMul _}::{t=TIdent _}::xs ->
       change_tok tok1 (TIdent_Typedef (s, i1));
       aux xs
-
 
 
   (* (xx) yy   and not a if/while before (, and yy can also be a constant *)
@@ -257,16 +239,19 @@ let find_typedefs xxs =
       change_tok tok3 (TIdent_Typedef (s, i1));
       aux xs
 
-  (* xx* [,)] *)
-  | ({t=TIdent(s, i1)} as tok1)::{t=TMul _}::{t=(TComma _| TCPar _)}::xs ->
+  (* xx* [,)] 
+   * don't forget to recurse by reinjecting the comma or closing paren
+   *)
+  | ({t=TIdent(s, i1)} as tok1)::{t=TMul _}
+    ::({t=(TComma _| TCPar _)} as x)::xs ->
       change_tok tok1 (TIdent_Typedef (s, i1));
-      aux xs
+      aux (x::xs)
 
   (* xx** [,)] *)
   | ({t=TIdent(s, i1)} as tok1)::{t=TMul _}::{t=TMul _}
-    ::{t=(TComma _| TCPar _)}::xs ->
+    ::({t=(TComma _| TCPar _)} as x)::xs ->
       change_tok tok1 (TIdent_Typedef (s, i1));
-      aux xs
+      aux (x::xs)
 
   (* [(,] xx [),] where InParameter *)
   | {t=(TOPar _ | TComma _)}::({t=TIdent (s, i1); where=InParameter::_} as tok1)
