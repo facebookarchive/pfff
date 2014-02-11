@@ -187,19 +187,18 @@ let look_like_only_idents xs =
  * disambiguate is it often enough to just look at a few tokens before the
  * '{'.
  * 
- * assumes a view without: 
- * - comments and cpp directives 
+ * Below we assume a view without: 
+ * - comments 
+ * - cpp directives 
  * 
- * TODO handle more C++ (right now I did it mostly to be able to parse plan9)
- * 
- * TODO harder now that have c++, can have function inside struct so need
- * handle all together. 
- * 
- * TODO So change token but do not recurse in
- * nested Braceised. maybe do via accumulator, don't use iter_token_brace.
- * 
- * TODO Also need remove the qualifier as they make
- * the sequence pattern matching more difficult.
+ * todo 
+ *  - handle more C++ (right now I did it mostly to be able to parse plan9)
+ *  - harder now that have c++, can have function inside struct so need
+ *    handle all together. 
+ *  - change token but do not recurse in
+ *    nested Braceised. maybe do via accumulator, don't use iter_token_brace?
+ *  - need remove the qualifier as they make the sequence pattern matching
+ *    more difficult?
  *)
 let set_context_tag_multi groups = 
   let rec aux xs =
@@ -242,6 +241,28 @@ let set_context_tag_multi groups =
       )
 
     *)
+
+  (* C++: class Foo : ... { *)
+  | Tok{t=Tclass _ | Tstruct _;_}::Tok{t=TIdent(s,_);_}
+    ::Tok{t= TCol ii}::xs
+    ->
+      let (before, braces, after) =
+        try 
+          xs +> Common2.split_when (function
+          | Braces _ -> true
+          | _ -> false
+          )
+        with Not_found ->
+          raise (UnclosedSymbol (spf "PB with split_when at %s"
+                                    (Parse_info.string_of_info ii)))
+      in
+      aux before;
+      [braces] +> TV.iter_token_multi (fun tok ->
+        tok.TV.where <- (TV.InClassStruct s)::tok.TV.where;
+      );
+      aux [braces];
+      aux after
+
 
   (* = { } *)
   | Tok ({t=TEq _; _})::(Braces(t1, body, t2) as braces)::xs -> 
@@ -298,6 +319,8 @@ let set_context_tag_multi groups =
  in
 
 
+  (* TODO <...> InTemplateParam *)
+
   *)
   (* need to look what was before to help the look_like_xxx heuristics 
    *
@@ -314,6 +337,19 @@ let set_context_tag_multi groups =
       aux [x];
       aux (parens::xs)
 
+  (* C++: special cases *)
+  | (Tok{t=Toperator _} as tok1)::tok2::(Parens(t1, body, t2) as parens)::xs 
+    when look_like_parameter tok1 body ->
+      (* msg_context t1.t (TV.InParameter); *)
+      [parens] +> TV.iter_token_multi (fun tok ->
+        tok.TV.where <- (TV.InParameter)::tok.TV.where;
+      );
+      (* recurse on body? hmm if InParameter should not have nested 
+       * stuff except when pass function pointer 
+       *)
+      aux [tok1;tok2];
+      aux (parens::xs)
+
 
   | x::(Parens(t1, body, t2) as parens)::xs 
     when look_like_parameter x body ->
@@ -326,6 +362,27 @@ let set_context_tag_multi groups =
        *)
       aux [x];
       aux (parens::xs)
+
+  (* C++: second tentative on InArgument, if xx(xx, yy, ww) where have only
+   * identifiers, it's probably a constructed object!
+   *)
+  | Tok{t=TIdent _}::(Parens(t1, body, t2) as parens)::xs 
+    when List.length body > 0 && look_like_only_idents body ->
+      (* msg_context t1.t (TV.InArgument); *)
+      [parens] +> TV.iter_token_multi (fun tok ->
+        tok.TV.where <- (TV.InArgument)::tok.TV.where;
+      );
+      (* todo? recurse on body? *)
+      aux (parens::xs)
+
+  (* could be a cast too ... or what else? *)
+  | x::(Parens(t1, body, t2) as parens)::xs ->
+      (* let's default to something? hmm, no, got lots of regressions then 
+       *  old: msg_context t1.t (TV.InArgument); ...
+       *)
+      aux [x];
+      aux (parens::xs)
+
 
   | x::xs ->
       (match x with
@@ -350,111 +407,4 @@ let set_context_tag_multi groups =
  * - TODO public/protected/... ?
  *)
 let set_context_tag_cplus groups =
-  let rec aux xs =
-  match xs with
-  | [] -> ()
-  (* class Foo {, also valid for struct (and union, hmmm) *)
-  | Tok{t=(Tclass _ | Tstruct _ | Tunion _);_}::Tok{t=TIdent(s,_);_}
-    ::(Braces(t1, body, t2) as braces)::xs
-    ->
-      [braces] +> TV.iter_token_multi (fun tok ->
-        tok.TV.where <- (TV.InClassStruct s)::tok.TV.where;
-      );
-      aux (braces::xs)
-
-  (* class Foo : ... { *)
-  | Tok{t=Tclass _ | Tstruct _;_}::Tok{t=TIdent(s,_);_}
-    ::Tok{t= TCol ii}::xs
-    ->
-      let (before, braces, after) =
-        try 
-          xs +> Common2.split_when (function
-          | Braces _ -> true
-          | _ -> false
-          )
-        with Not_found ->
-          raise (UnclosedSymbol (spf "PB with split_when at %s"
-                                    (Parse_info.string_of_info ii)))
-      in
-      aux before;
-      [braces] +> TV.iter_token_multi (fun tok ->
-        tok.TV.where <- (TV.InClassStruct s)::tok.TV.where;
-      );
-      aux [braces];
-      aux after
-
-  (* TODO <...> InTemplateParam *)
-
-  (* need to look what was before to help the look_like_xxx heuristics 
-   *
-   * The order of the 3 rules below is important. We must first try
-   * look_like_argument which has less FP than look_like_parameter
-  *)
-  | x::(Parens(t1, body, t2) as parens)::xs 
-    when look_like_argument x body ->
-      (*msg_context t1.t (TV.InArgument); *)
-      [parens] +> TV.iter_token_multi (fun tok ->
-        tok.TV.where <- (TV.InArgument)::tok.TV.where;
-      );
-      (* todo? recurse on body? *)
-      aux [x];
-      aux (parens::xs)
-
-  (* special cases *)
-  | (Tok{t=Toperator _} as tok1)::tok2::(Parens(t1, body, t2) as parens)::xs 
-    when look_like_parameter tok1 body ->
-      (* msg_context t1.t (TV.InParameter); *)
-      [parens] +> TV.iter_token_multi (fun tok ->
-        tok.TV.where <- (TV.InParameter)::tok.TV.where;
-      );
-      (* recurse on body? hmm if InParameter should not have nested 
-       * stuff except when pass function pointer 
-       *)
-      aux [tok1;tok2];
-      aux (parens::xs)
-
-  | x::(Parens(t1, body, t2) as parens)::xs 
-    when look_like_parameter x body ->
-      (* msg_context t1.t (TV.InParameter); *)
-      [parens] +> TV.iter_token_multi (fun tok ->
-        tok.TV.where <- (TV.InParameter)::tok.TV.where;
-      );
-      (* recurse on body? hmm if InParameter should not have nested 
-       * stuff except when pass function pointer 
-       *)
-      aux [x];
-      aux (parens::xs)
-
-  (* second tentative on InArgument, if xx(xx, yy, ww) where have only
-   * identifiers, it's probably a constructed object!
-   *)
-  | Tok{t=TIdent _}::(Parens(t1, body, t2) as parens)::xs 
-    when List.length body > 0 && look_like_only_idents body ->
-      (* msg_context t1.t (TV.InArgument); *)
-      [parens] +> TV.iter_token_multi (fun tok ->
-        tok.TV.where <- (TV.InArgument)::tok.TV.where;
-      );
-      (* todo? recurse on body? *)
-      aux (parens::xs)
-
-  (* could be a cast too ... or what else? *)
-  | x::(Parens(t1, body, t2) as parens)::xs ->
-      (* let's default to something? hmm, no, got lots of regressions then 
-       *  old: msg_context t1.t (TV.InArgument); ...
-       *)
-      aux [x];
-      aux (parens::xs)
-
-  | x::xs ->
-      (match x with
-      | Tok t -> ()
-      | Parens (t1, xs, t2)
-      | Braces (t1, xs, t2)
-      | Angle  (t1, xs, t2)
-         ->
-          aux xs
-      );
-      aux xs
-  in
-  aux groups
-
+  set_context_tag_multi groups
