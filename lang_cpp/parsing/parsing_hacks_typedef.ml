@@ -182,6 +182,7 @@ let find_typedefs xxs =
   match xs with
   | [] -> ()
 
+  (* those identifiers (called tags) must not be transformed in typedefs *)
   | {t=(Tstruct _ | Tunion _ | Tenum _ | Tclass _);_}::{t=TIdent _}::xs ->
       aux xs
 
@@ -256,9 +257,6 @@ let find_typedefs xxs =
       change_tok tok3 (TIdent_Typedef (s, i1));
       aux xs
 
-  (* TODO: xx [,)]   only if InParameter *)
- 
-
   (* xx* [,)] *)
   | ({t=TIdent(s, i1)} as tok1)::{t=TMul _}::{t=(TComma _| TCPar _)}::xs ->
       change_tok tok1 (TIdent_Typedef (s, i1));
@@ -270,7 +268,7 @@ let find_typedefs xxs =
       change_tok tok1 (TIdent_Typedef (s, i1));
       aux xs
 
-  (* [(,] xx [),] *)
+  (* [(,] xx [),] where InParameter *)
   | {t=(TOPar _ | TComma _)}::({t=TIdent (s, i1); where=InParameter::_} as tok1)
     ::({t=(TCPar _ | TComma _)} as tok2)::xs ->
       change_tok tok1 (TIdent_Typedef (s, i1));

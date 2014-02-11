@@ -50,6 +50,7 @@ let filter_classic_passed = ref false
 let filter_define_error = ref true
 
 let cmdline_flags_verbose () = [
+  "-verbose_parsing_cpp", Arg.Set verbose_parsing, " ";
 ]
 
 (*****************************************************************************)
