@@ -12,7 +12,6 @@
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * file license.txt for more details.
  *)
-open Common2
 open Common
 
 module Flag = Flag_parsing_cpp
@@ -33,6 +32,8 @@ let pr2, pr2_once = Common2.mk_pr2_wrappers Flag_parsing_cpp.verbose_parsing
 (*****************************************************************************)
 (* Helpers  *)
 (*****************************************************************************)
+
+let (==~) = Common2.(==~)
 
 (* 
  * In the following, there are some harcoded names of types or macros
@@ -217,8 +218,6 @@ let msg_change_tok tok =
       pr2_typedef (spf "RECLASSIF class in qualifier %s at %s" s (pos ii))
   | TIdent_TemplatenameInQualifier_BeforeTypedef (s, ii) ->
       pr2_typedef (spf "RECLASSIF template in qualifier %s at %s" s (pos ii))
-
-
 
   | _ -> 
       raise Todo

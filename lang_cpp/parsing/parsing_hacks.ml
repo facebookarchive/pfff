@@ -70,6 +70,10 @@ module TV = Token_views_cpp
 let filter_comment_stuff xs =
   xs +> List.filter (fun x -> not (TH.is_comment x.TV.t))
 
+(*****************************************************************************)
+(* Post processing *)
+(*****************************************************************************)
+
 (* to do at the very very end *)          
 let insert_virtual_positions l =
   let strlen x = String.length (Parse_info.str_of_info x) in
@@ -193,7 +197,7 @@ let fix_tokens2 ~macro_defs tokens =
 
   (* must be done after the typedef inference *)
   Parsing_hacks_cpp.find_constructed_object_and_more cleaner;
-  
+  (* the pending of find_qualifier_comentize *)
   Parsing_hacks_cpp.reclassify_tokens_before_idents_or_typedefs multi_grouped;
   
   insert_virtual_positions (!tokens2 +> Common2.acc_map (fun x -> x.TV.t))
