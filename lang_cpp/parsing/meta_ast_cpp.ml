@@ -29,8 +29,8 @@ let rec vof_info x =
   else if !_current_precision.M.token_info
        then 
         Ocaml.VDict [
-          "line", Ocaml.VInt (PI.line_of_info x);
-          "col", Ocaml.VInt (PI.col_of_info x);
+          "line", Ocaml.VInt (Parse_info.line_of_info x);
+          "col", Ocaml.VInt (Parse_info.col_of_info x);
         ]
       else Ocaml.VUnit
 

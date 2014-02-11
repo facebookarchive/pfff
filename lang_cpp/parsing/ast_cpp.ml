@@ -16,8 +16,6 @@
  *)
 open Common
 
-module PI = Parse_info
-
 (*****************************************************************************)
 (* Prelude *)
 (*****************************************************************************)
@@ -753,8 +751,10 @@ let noii = []
 let noQscope = []
 let noTypedefDef () = None
 
-let fakeInfo pi  = 
-  { PI.token = PI.FakeTokStr ("",None); transfo = PI.NoTransfo;}
+let fakeInfo pi  = { Parse_info.
+    token = Parse_info.FakeTokStr ("",None); 
+    transfo = Parse_info.NoTransfo;
+  }
 
 (*****************************************************************************)
 (* Wrappers *)
@@ -773,14 +773,14 @@ let unwrap_typeC (qu, (typeC, ii)) = typeC
  * used by parsing hacks
  *)
 let make_expanded ii =
-  let noVirtPos = ({PI.str="";charpos=0;line=0;column=0;file=""},-1) in
+  let noVirtPos = ({Parse_info.str="";charpos=0;line=0;column=0;file=""},-1) in
   let (a, b) = noVirtPos in
-  { ii with PI.token = PI.ExpandedTok 
-      (PI.get_original_token_location ii.PI.token, a, b) }
+  { ii with Parse_info.token = Parse_info.ExpandedTok 
+      (Parse_info.get_original_token_location ii.Parse_info.token, a, b) }
 
 (* used by parsing hacks *)
 let rewrap_pinfo pi ii =  
-  {ii with PI.token = pi}
+  {ii with Parse_info.token = pi}
 
 
 (* used while migrating the use of 'string' to 'name' *)
