@@ -50,8 +50,8 @@ type model = {
   (* fast accessors, for macrolevel use/def information  *)
   huses_of_file: (Common.filename, Common.filename list) Hashtbl.t;
   husers_of_file: (Common.filename, Common.filename list) Hashtbl.t;
-  hentities_of_file: 
-    (Common.filename, (line (* not used *) * Graph_code.node) list) Hashtbl.t;
+  (* we used to store line information there, but the file may have changed *)
+  hentities_of_file: (Common.filename, Graph_code.node list) Hashtbl.t;
  }
 (*e: type model *)
 type 'a deps = 'a list (* uses *) * 'a list (* users *)
@@ -84,12 +84,13 @@ type microlevel = {
   layout: layout;
   container: Treemap.treemap_rectangle;
   content: (glyph list) array option;
-  (* Sorted list of entities by line. Note that I don't use G.node for the 
-   * (string * entity_kind) pair because the string is not fully qualified
-   * here so one must use an extra function to convert to a real node.
-   *)
-  defs: (line * (string * Database_code.entity_kind)) list;
+  (* sorted list of entities by line *)
+  defs: (line * short_node) list;
 }
+ (* Note that I don't use G.node because the string below is not fully
+  * qualified so one must use match_short_vs_node when comparing with nodes.
+  *)
+  and short_node = (string * Database_code.entity_kind)
   and glyph = {
     str: string;
     categ: Highlight_code.category option;
@@ -362,6 +363,10 @@ let find_line_in_rectangle_at_user_point dw user_pt r =
 (* Graph code integration *)
 (*****************************************************************************)
 
+let match_short_vs_node (str, kind) node =
+  snd node =*= kind && 
+  Graph_code.shortname_of_node node =$= str
+
 (* We used to just look in hentities_of_file for the line mentioned
  * in the graph_code database, but the file may have changed so better
  * instead to rely on microlevel.defs.
@@ -373,11 +378,10 @@ let find_def_entity_at_line_opt line r dw =
   try 
     let nodes = Hashtbl.find model.hentities_of_file readable in
     let microlevel = Hashtbl.find dw.microlevel r in
-    let (str, kind) = List.assoc line microlevel.defs in
+    let short_node = List.assoc line microlevel.defs in
     (* try to match the possible shortname str with a fully qualified node *)
-    nodes +> Common.find_some_opt (fun (_line, node) ->
-      if snd node =*= kind && 
-         Graph_code.shortname_of_node node =$= str
+    nodes +> Common.find_some_opt (fun node ->
+      if match_short_vs_node short_node node
       then Some node
       else None
     )
@@ -427,10 +431,14 @@ let uses_or_users_of_node node dw fsucc =
     succ +> Common.map_filter (fun n ->
       try 
         let file = Graph_code.file_of_node n g in
+        (* rectangles not on the screen will be automatically "clipped"
+         * as this may raise Not_found 
+         *)
         let rect = Hashtbl.find dw.readable_file_to_rect file in
-        let xs = Hashtbl.find model.hentities_of_file file in
-        let (line, _n2) = xs +> List.find (fun (_, n2) -> n2 =*= n) in
         let microlevel = Hashtbl.find dw.microlevel rect in
+        let line = microlevel.defs +> List.find (fun (line, snode) ->
+          match_short_vs_node snode n
+        ) +> fst in
         Some (n, line, microlevel)
       with Not_found -> None
     )

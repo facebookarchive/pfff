@@ -8,7 +8,11 @@
 
 ** codemap
 
-*** handle skip list 
+*** match defs and uses even when the file has been modified
+(do not use the probaly obsolete line information in graph_code, trust
+more the lexer/parser/highlighter)
+
+*** handle skip list
 
 *** improve completion box by considering not only files mentions in the
 light db (while still filtering object files and skip list files)
@@ -19,11 +23,13 @@ light db (while still filtering object files and skip list files)
 
 ** php
 
-*** support for short lambda, require traits, try finally
+*** support for short lambda, require traits, and try finally facebook
+extensions
 
 ** internal
 
-*** find_source.ml
+*** find_source.ml, also many things works now with multiple dirs and
+skip list
 
 * -----------------------------------------------------------
 

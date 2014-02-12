@@ -27,9 +27,7 @@ type model = {
    *)
   huses_of_file: (Common.filename, Common.filename list) Hashtbl.t;
   husers_of_file: (Common.filename, Common.filename list) Hashtbl.t;
-  (* the lists are sorted by line number *)
-  hentities_of_file: 
-    (Common.filename, (line * Graph_code.node) list)  Hashtbl.t;
+  hentities_of_file: (Common.filename, Graph_code.node list)  Hashtbl.t;
  }
 (*e: type model *)
 type 'a deps = 'a list (* uses *) * 'a list (* users *)

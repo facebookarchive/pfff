@@ -245,7 +245,7 @@ let build_model2 root dbfile_opt graphfile_opt =
       let a, b = Model_graph_code.build_deps_of_file g in
       let c = Model_graph_code.build_entities_of_file g in
       let c = c +> List.map (fun (file, xs) ->
-        file, xs +> List.map (fun (line, n) -> Model2.Line (line - 1), n)
+        file, xs +> List.map (fun (line, n) -> n)
       )
       in
       Common.hash_of_list a, Common.hash_of_list b, Common.hash_of_list c
