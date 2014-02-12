@@ -203,15 +203,12 @@ type category =
   (* ClassName of place ... *)
 
   | EnumName of usedef
-  | EnumValue of usedef
-
 
   (* types *)
   | TypeDef of usedef
 
   (* ocaml *)
-  | ConstructorDef of def_info
-  | ConstructorUse of use_info
+  | Constructor of usedef2
   | ConstructorMatch of use_info
 
   | Module of usedef
@@ -684,9 +681,6 @@ let info_of_category = function
       ) ++ info_of_def_arity def_arity
 
 
-  | EnumValue usedef -> 
-      [`FOREGROUND "plum";] ++
-      info_of_usedef usedef         
   (* | FunCallMultiDef ->[`FOREGROUND "LightGoldenrod";] *)
 
   | Method (Use2 _) -> 
@@ -716,9 +710,9 @@ let info_of_category = function
   | TypeInt ->  [`FOREGROUND "chartreuse";]
   | TypeMisc -> [`FOREGROUND "chartreuse";]
 
-  | ConstructorDef _ -> [`FOREGROUND "tomato1";]
+  | Constructor(Def2 _ ) -> [`FOREGROUND "tomato1";]
+  | Constructor(Use2 _) -> [`FOREGROUND "pink3";]
   | ConstructorMatch _ -> [`FOREGROUND "pink1";]
-  | ConstructorUse _ -> [`FOREGROUND "pink3";]
 
   | FunctionEquation -> [`FOREGROUND "LightSkyBlue";]
 

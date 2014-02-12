@@ -26,7 +26,8 @@ module HC = Highlight_code
  * information computed by a set of global static or dynamic analysis
  * such as 'what are the number of callers to a certain function', 'what
  * is the test coverage of a file', etc. This is mainly used by codemap
- * to give semantic visual feedback on the code.
+ * to give semantic visual feedback on the code. See also layer_code.ml
+ * for complementary semantic information about a codebase.
  * 
  * update: database_code.pl and Prolog may now be the prefered way to
  * represent a code database, but for codemap it's still good to use
@@ -89,7 +90,6 @@ module HC = Highlight_code
 (*****************************************************************************)
 (* Type *)
 (*****************************************************************************)
-
 (* 
  * Code entities.
  * See also http://ctags.sourceforge.net/FORMAT and the doc on 'kind'
@@ -256,11 +256,6 @@ type database = {
 
   (* indexed by entity_id *)
   entities: entity array;
-
-  (* TODO: leverage git information *)
-  (* TODO: leverage dynamic information *)
-  (* TODO: leverage owners information *)
-  (* TODO: leverage test information *)
 }
 
 let empty_database () = {

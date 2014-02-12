@@ -446,7 +446,7 @@ let lines_where_used_node node startl microlevel =
         (match kind, categ with
         | Database_code.Function,    Highlight_code.Function _
         | Database_code.Field,       Highlight_code.Field _
-        | Database_code.Constructor, Highlight_code.ConstructorUse _
+        | Database_code.Constructor, Highlight_code.Constructor _
         | Database_code.Constructor, Highlight_code.ConstructorMatch _
         | Database_code.Global,      Highlight_code.Global _
         | Database_code.Method _,    Highlight_code.Method _

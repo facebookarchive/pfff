@@ -352,7 +352,7 @@ let visit_toplevel ~tag_hook prefs (*db_opt *) (toplevel, toks) =
       | Enum (_tok, _sopt, xs) ->
           xs +> unbrace +> uncomma +> List.iter (fun enum_elem ->
             let (_, ii) = enum_elem.e_name in
-            tag ii (ConstructorDef fake_no_def2)
+            tag ii (Constructor(Def2 fake_no_def2))
           );
           k x
 
@@ -404,7 +404,7 @@ let visit_toplevel ~tag_hook prefs (*db_opt *) (toplevel, toks) =
           let def =
             match x with
             | FunctionOrMethod def
-            | Constructor (def)
+            | Ast.Constructor (def)
             | Destructor def
               -> def
           in

@@ -21,11 +21,9 @@ type category =
 
   | StructName of usedef
   | EnumName of usedef
-  | EnumValue of usedef
   | TypeDef of usedef
 
-  | ConstructorDef of def_info
-  | ConstructorUse of use_info
+  | Constructor of usedef2
   | ConstructorMatch of use_info
 
   | Module of usedef
@@ -71,9 +69,12 @@ type category =
   | Normal
 
 and usedef = Use | Def
+
 and usedef2 = Use2 of use_info | Def2 of def_info
+
  and def_info = use_arity
   and use_arity = NoUse | UniqueUse | SomeUse | MultiUse | LotsOfUse | HugeUse
+
  and use_info = place * def_arity * use_arity
   and place = PlaceLocal | PlaceSameDir | PlaceExternal | NoInfoPlace
   and def_arity = UniqueDef | DoubleDef | MultiDef | NoDef
@@ -96,10 +97,6 @@ val info_of_category :
    | `UNDERLINE of [> `DOUBLE | `SINGLE ]
    | `WEIGHT of [> `BOLD ] ]
   list
-
-val is_entity_def_category: category -> bool
-val rewrap_arity_def2_category: def_info -> category -> category
-
 (* use the same polymorphic variants than in ocamlgtk *)
 val info_of_usedef : 
   usedef -> 
@@ -110,3 +107,5 @@ val info_of_def_arity :
 val info_of_place : 'a -> 'b
 
 val arity_ids : 'a list -> def_arity
+val rewrap_arity_def2_category: def_info -> category -> category
+

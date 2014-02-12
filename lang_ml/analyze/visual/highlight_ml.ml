@@ -241,7 +241,7 @@ let visit_program
 
       | Constr (long_name, eopt) ->
           let info = Ast.info_of_name (Ast.name_of_long_name long_name) in
-          tag info (ConstructorUse fake_no_use2);
+          tag info (Constructor(Use2 fake_no_use2));
           k x
 
       (* very pad specific ... *)
@@ -297,7 +297,7 @@ let visit_program
           | TyAlgebric xs ->
               xs +> Ast.unpipe +> List.iter (fun (name, args) ->
                 let info = Ast.info_of_name name in
-                tag info (ConstructorDef fake_no_def2)
+                tag info (Constructor(Def2 fake_no_def2))
               );
           | TyCore _ | TyRecord _ -> ()
           );

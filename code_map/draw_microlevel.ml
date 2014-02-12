@@ -19,17 +19,15 @@ open Common
 open Common2.ArithFloatInfix
 
 open Figures (* for the fields *)
+open Model2 (* for the fields *)
 module F = Figures
+module M = Model2
 module T = Treemap
 module Color = Simple_color
 module CairoH = Cairo_helpers
-
-open Model2 (* for the fields *)
-module M = Model2
-
+module HC = Highlight_code
 module Flag = Flag_visual
 module Style = Style2
-
 module FT = File_type
 module Parsing = Parsing2
 
@@ -76,7 +74,7 @@ type point = Cairo.point
 let is_big_file_with_few_lines ~nblines file = 
   nblines < 20. && Common2.filesize_eff file > 4000
 
-(* coupling: with parsing2.ml *)
+(* coupling: with parsing2.ml, todo move in parsing2.ml? *)
 let use_fancy_highlighting file =
   match FT.file_type_of_file file with
   | ( FT.PL (FT.Web (FT.Php _))
