@@ -720,6 +720,9 @@ val while_some: gen:(unit-> 'a option) -> f:('a -> 'b) -> unit -> 'b list
 
 val (||=): 'a option ref -> (unit -> 'a) -> unit
 
+val (>>=): 'a option -> ('a -> 'b option) -> 'b option
+val (|?):'a option -> 'a Lazy.t -> 'a
+
 (*x: common.mli for basic types *)
 (*****************************************************************************)
 (* TriBool *)

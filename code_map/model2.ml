@@ -52,7 +52,7 @@ type model = {
   husers_of_file: (Common.filename, Common.filename list) Hashtbl.t;
   (* the lists are sorted by line number *)
   hentities_of_file: 
-    (Common.filename, (line * Graph_code.node) list)  Hashtbl.t;
+    (Common.filename, (line (* not used *) * Graph_code.node) list) Hashtbl.t;
  }
 (*e: type model *)
 type 'a deps = 'a list (* uses *) * 'a list (* users *)
@@ -347,15 +347,23 @@ let find_line_in_rectangle_at_user_point dw user_pt r =
 (* Graph code integration *)
 (*****************************************************************************)
 
-let find_entity_at_line line r dw =
+(* We used to just look in hentities_of_file for the line mentioned
+ * in the graph_code database, but the file may have changed so better
+ * instead to rely on microlevel.defs.
+ *)
+let find_def_entity_at_line_opt line r dw =
   let model = Async.async_get dw.dw_model in
   let file = r.T.tr_label in
   let readable = Common.readable ~root:model.root file in
   try 
-    let xs = Hashtbl.find model.hentities_of_file readable in
-    xs +> List.rev +> Common.find_some_opt (fun (line2, n) ->
-      if line = line2 (* && abs (line - line2) <= 4 *)
-      then Some n 
+    let nodes = Hashtbl.find model.hentities_of_file readable in
+    let microlevel = Hashtbl.find dw.microlevel r in
+    let (str, kind) = List.assoc line microlevel.defs in
+    (* try to match the possible shortname str with a fully qualified node *)
+    nodes +> Common.find_some_opt (fun (_line, node) ->
+      if snd node =*= kind && 
+         Graph_code.shortname_of_node node =$= str
+      then Some node
       else None
     )
   with Not_found -> None

@@ -185,7 +185,8 @@ let compute_database ?(verbose=false) files_or_dirs =
                 e_fullname = spf "%s.%s" module_name s;
                 e_file = file;
                 e_pos = { Common2.l = l; c };
-                e_kind = Db.entity_kind_of_highlight_category_def categ;
+                e_kind = Common2.some 
+                  (Db.entity_kind_of_highlight_category_def categ);
                 (* filled in step 2 *)
                 e_number_external_users = 0;
                 e_good_examples_of_use = [];

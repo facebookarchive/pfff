@@ -506,78 +506,52 @@ let save_database database file =
 (* Entities categories *)
 (*****************************************************************************)
 
-let entity_kind_of_highlight_category_def categ = 
-  match categ with
-  | HC.Function (HC.Def2 _) -> Function
-  | HC.FunctionDecl _ -> Function
-  | HC.Global (HC.Def2 _) -> Global
-  (* todo? interface? traits?*)
-  | HC.Class (HC.Def2 _) -> Class RegularClass
-  | HC.Method (HC.Def2 _) -> Method RegularMethod
-  (* TODO: constant *)
-
-  | HC.Field (HC.Def2 _) -> Field
-  | HC.StaticMethod (HC.Def2 _) -> Method StaticMethod
-  | HC.Macro (HC.Def2 _) -> Macro (* todo? want agglomerate ? *)
-  | HC.Constant (HC.Def2 _) -> Macro
-
-  | HC.Module HC.Def -> Module
-  | HC.TypeDef HC.Def -> Type
-  | _ -> 
-      failwith "this category has no Database_code counterpart"
-
 (* coupling: if you add a new kind of entity, then 
- * don't forget to modify size_font_multiplier_of_categ in pfff_visual
- * code
+ * don't forget to modify size_font_multiplier_of_categ
  * 
  * How sure this list is exhaustive ? C-c for usedef2
  *)
-let is_entity_def_category categ = 
-  let open HC in 
+let entity_kind_of_highlight_category_def categ = 
   match categ with
-  | Function (Def2 _) 
-  (* also ? *)
-  | FunctionDecl _ 
+  | HC.Function (HC.Def2 _) -> Some Function
+  | HC.FunctionDecl _ -> Some Function
+  | HC.Global (HC.Def2 _) -> Some Global
+  (* todo? interface? traits?*)
+  | HC.Class (HC.Def2 _) -> Some (Class RegularClass)
+  | HC.Method (HC.Def2 _) -> Some (Method RegularMethod)
+  (* TODO: constant *)
 
-  | Global (Def2 _) 
+  | HC.Field (HC.Def2 _) -> (Some Field)
+  | HC.StaticMethod (HC.Def2 _) -> Some (Method StaticMethod)
+  | HC.Macro (HC.Def2 _) -> Some Macro (* todo? want agglomerate ? *)
+  | HC.Constant (HC.Def2 _) -> Some Constant
 
-  | Class (Def2 _) 
-  | Method (Def2 _) 
-  | Field (Def2 _) 
-  | StaticMethod (Def2 _) 
-
-  | Macro (Def2 _) 
-  | Constant (Def2 _) 
-
-  (* Def *)
-  | Module (Def)
-  | TypeDef Def 
+  | HC.Module HC.Def -> Some Module
+  | HC.TypeDef HC.Def -> Some Type
 
   (* todo: what about other Def ? like Label, Parameter, etc ? *)
-    -> true
-  | _ -> false
+  | _ -> None
 
+let is_entity_def_category categ = 
+  entity_kind_of_highlight_category_def categ <> None
 
 (* less: merge with other function? *)
 let entity_kind_of_highlight_category_use categ = 
   match categ with
-  | HC.Function (HC.Use2 _) -> Function
-  | HC.FunctionDecl _ -> Function
-  | HC.Global (HC.Use2 _) -> Global
-  | HC.Class (HC.Use2 _) -> Class RegularClass
-  | HC.Method (HC.Use2 _) -> Method RegularMethod
-  | HC.Field (HC.Use2 _) -> Field
-  | HC.StaticMethod (HC.Use2 _) -> Method StaticMethod
-  | HC.Macro (HC.Use2 _) -> Macro (* todo? want agglomerate ? *)
-  | HC.Constant (HC.Use2 _) -> Macro
-
-  | HC.Module HC.Use -> Module
-  | HC.TypeDef HC.Use -> Type
-
-  | HC.StructName HC.Use -> Class RegularClass
+  | HC.Function (HC.Use2 _) -> Some Function
+  | HC.FunctionDecl _ -> Some Function
+  | HC.Global (HC.Use2 _) -> Some Global
+  | HC.Class (HC.Use2 _) -> Some (Class RegularClass)
+  | HC.Method (HC.Use2 _) -> Some (Method RegularMethod)
+  | HC.Field (HC.Use2 _) -> Some Field
+  | HC.StaticMethod (HC.Use2 _) -> Some (Method StaticMethod)
+  | HC.Macro (HC.Use2 _) -> Some Macro
+  | HC.Constant (HC.Use2 _) -> Some Constant
+  | HC.Module HC.Use -> Some Module
+  | HC.TypeDef HC.Use -> Some Type
   (* TODO? Interface ? *)
-  | _ -> 
-      failwith "this category has no Database_code counterpart"
+  | HC.StructName HC.Use -> Some (Class RegularClass)
+  | _ -> None
 
 (* see the code of the different highlight_code_xxx.ml to
  * know the different possible pairs
@@ -615,7 +589,8 @@ let matching_use_categ_kind categ kind =
  * non valid entities.
  *)
 let entity_and_highlight_category_correpondance entity categ =
-  let entity_kind_use = entity_kind_of_highlight_category_use categ in
+  let entity_kind_use = 
+    Common2.some (entity_kind_of_highlight_category_use categ) in
   entity.e_kind = entity_kind_use
 
 (*****************************************************************************)

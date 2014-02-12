@@ -108,11 +108,7 @@ let use_arity_of_use_count n =
 
 let rewrite_categ_using_entities s categ file entities =
 
-  let e_kind_opt = 
-    try Some (Db.entity_kind_of_highlight_category_def categ)
-    with _ -> None
-  in
-  match e_kind_opt with
+  match Db.entity_kind_of_highlight_category_def categ with
   | None -> categ
   | Some e_kind ->
 

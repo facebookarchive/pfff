@@ -127,11 +127,10 @@ val build_top_k_sorted_entities_per_file:
 val files_and_dirs_and_sorted_entities_for_completion:
   threshold_too_many_entities:int -> database -> entity list
 
-
 val entity_kind_of_highlight_category_def: 
-  Highlight_code.category -> entity_kind
+  Highlight_code.category -> entity_kind option
 val entity_kind_of_highlight_category_use: 
-  Highlight_code.category -> entity_kind
+  Highlight_code.category -> entity_kind option
 val is_entity_def_category: 
   Highlight_code.category -> bool
 val matching_use_categ_kind:

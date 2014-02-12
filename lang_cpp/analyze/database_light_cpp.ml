@@ -54,7 +54,8 @@ let mk_entity ~root ~hcomplete_name_of_info info categ =
     e_fullname = if fullname <> name then fullname else "";
     e_file = PI.file_of_info info +> Common.readable ~root;
     e_pos = { Common2.l = l; c };
-    e_kind = Database_code.entity_kind_of_highlight_category_def categ;
+    e_kind = 
+      Common2.some (Database_code.entity_kind_of_highlight_category_def categ);
 
     (* filled in step 2 *)
     e_number_external_users = 0;

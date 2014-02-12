@@ -234,12 +234,16 @@ let glyphs_of_file ~context ~font_size ~font_size_real file
 
 let defs_of_glyphs glyphs =
   let res = ref [] in
-  glyphs +> Array.iteri (fun line_0_indexed glyph ->
-    pr2 "TODO";
+  glyphs +> Array.iteri (fun line_0_indexed glyphs ->
+    glyphs +> List.iter (fun glyph ->
+      glyph.categ 
+      +> Common.do_option (fun categ ->
+        Database_code.entity_kind_of_highlight_category_def categ 
+        +> Common.do_option (fun kind ->
+            Common.push2 (Line line_0_indexed, (glyph.str, kind)) res
+        )))
   );
   !res
-
-    
 
 (*****************************************************************************)
 (* Columns *)

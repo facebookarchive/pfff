@@ -193,7 +193,7 @@ val find_line_in_rectangle_at_user_point:
   Treemap.treemap_rectangle ->
   line option
 
-val find_entity_at_line:
+val find_def_entity_at_line_opt:
   line -> Treemap.treemap_rectangle -> drawing -> 
   Graph_code.node option
 

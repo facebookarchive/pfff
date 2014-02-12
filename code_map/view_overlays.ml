@@ -338,7 +338,7 @@ let motion_refresher ev dw () =
       then
         let microlevel = Hashtbl.find dw.microlevel r in
         let line = microlevel.pos_to_line user in
-        let entity_opt = M.find_entity_at_line line r dw in
+        let entity_opt = M.find_def_entity_at_line_opt line r dw in
         Some line, entity_opt
       else None, None
     in

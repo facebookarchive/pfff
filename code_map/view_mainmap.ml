@@ -19,6 +19,7 @@
 open Common
 (* floats are the norm in graphics *)
 open Common2.ArithFloatInfix
+open Common2
 
 module CairoH = Cairo_helpers
 module K = GdkKeysyms
@@ -322,14 +323,9 @@ let button_action da dw_ref ev =
 
           (* similar to View_overlays.motion.refresher *)
           let entity_opt =
-            if Hashtbl.mem dw.microlevel r
-            then
-              let translate = Hashtbl.find dw.microlevel r in
-              let line = translate.pos_to_line user in
-              M.find_entity_at_line line r dw
-            else None
+            M.find_line_in_rectangle_at_user_point dw user r >>= (fun line ->
+              M.find_def_entity_at_line_opt line r dw)
           in
-
           
           let uses, users = 
             match entity_opt with
