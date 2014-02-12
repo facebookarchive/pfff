@@ -513,21 +513,21 @@ let save_database database file =
  *)
 let entity_kind_of_highlight_category_def categ = 
   match categ with
+  | HC.Constant (HC.Def2 _) -> Some Constant
+  | HC.Macro (HC.Def2 _) -> Some Macro (* todo? want agglomerate ? *)
   | HC.Function (HC.Def2 _) -> Some Function
   | HC.FunctionDecl _ -> Some Function
   | HC.Global (HC.Def2 _) -> Some Global
   (* todo? interface? traits?*)
   | HC.Class (HC.Def2 _) -> Some (Class RegularClass)
-  | HC.Method (HC.Def2 _) -> Some (Method RegularMethod)
-  (* TODO: constant *)
 
-  | HC.Field (HC.Def2 _) -> (Some Field)
+  | HC.Method (HC.Def2 _) -> Some (Method RegularMethod)
   | HC.StaticMethod (HC.Def2 _) -> Some (Method StaticMethod)
-  | HC.Macro (HC.Def2 _) -> Some Macro (* todo? want agglomerate ? *)
-  | HC.Constant (HC.Def2 _) -> Some Constant
+  | HC.Field (HC.Def2 _) -> (Some Field)
 
   | HC.Module HC.Def -> Some Module
   | HC.TypeDef HC.Def -> Some Type
+  | HC.Constructor (HC.Def2 _) -> Some Constructor
 
   (* todo: what about other Def ? like Label, Parameter, etc ? *)
   | _ -> None
@@ -538,23 +538,28 @@ let is_entity_def_category categ =
 (* less: merge with other function? *)
 let entity_kind_of_highlight_category_use categ = 
   match categ with
+  | HC.Constant (HC.Use2 _) -> Some Constant
+  | HC.Macro (HC.Use2 _) -> Some Macro
   | HC.Function (HC.Use2 _) -> Some Function
   | HC.FunctionDecl _ -> Some Function
   | HC.Global (HC.Use2 _) -> Some Global
+  (* TODO? Interface ? *)
   | HC.Class (HC.Use2 _) -> Some (Class RegularClass)
+
   | HC.Method (HC.Use2 _) -> Some (Method RegularMethod)
-  | HC.Field (HC.Use2 _) -> Some Field
   | HC.StaticMethod (HC.Use2 _) -> Some (Method StaticMethod)
-  | HC.Macro (HC.Use2 _) -> Some Macro
-  | HC.Constant (HC.Use2 _) -> Some Constant
+  | HC.Field (HC.Use2 _) -> Some Field
+
   | HC.Module HC.Use -> Some Module
   | HC.TypeDef HC.Use -> Some Type
-  (* TODO? Interface ? *)
+  | HC.Constructor (HC.Use2 _) -> Some Constructor
+
   | HC.StructName HC.Use -> Some (Class RegularClass)
   | _ -> None
 
-(* see the code of the different highlight_code_xxx.ml to
- * know the different possible pairs
+(* See the code of the different highlight_code_xxx.ml to
+ * know the different possible pairs.
+ * todo: merge with other functions too?
  *)
 let matching_use_categ_kind categ kind =
   match kind, categ with
@@ -569,7 +574,7 @@ let matching_use_categ_kind categ kind =
   | Constant,    HC.Constant _
   | ClassConstant,  HC.Constant _
     
-        (* tofix at some point, wrong tokenizer *)
+  (* tofix at some point, wrong tokenizer *)
   | Constant, HC.Local _
   | Global,   HC.Local _
   | Function, HC.Local _

@@ -38,8 +38,11 @@ module Typ = Type_clang
  *                              -> Type (for Typedef)
  *                              -> Type (struct|enum|union) TODO use Class?
  *                                 -> Field
- *                                 -> Constant (enum)
+ *                                 -> Constructor (enum)
  *       -> Dir -> SubDir -> ...
+ * 
+ * Note that there is no Constant here as #define are not in clang ASTs
+ * as the preprocessor has been called already on the file.
  * 
  * procedure to analyze a project:
  *  $ make V=1 > make_trace.txt
@@ -212,7 +215,7 @@ let add_node_and_edge_if_defs_mode env node =
         Hashtbl.replace env.dupes node true
     | _ when G.has_node node env.g ->
       (match kind with
-      | E.Function | E.Global | E.Constant 
+      | E.Function | E.Global | E.Constructor
       | E.Type | E.Field
           ->
           (match kind, str with
@@ -537,7 +540,7 @@ and decl env (enum, l, xs) =
 
     | EnumConstantDecl, loc::(T (TLowerIdent s | TUpperIdent s))::_rest ->
       let s = if kind_file env =*= Source then new_str_if_defs env s else s in
-      add_node_and_edge_if_defs_mode env (s, E.Constant)
+      add_node_and_edge_if_defs_mode env (s, E.Constructor)
         
     | _ -> error env "wrong Decl line" 
   in
@@ -578,7 +581,7 @@ and expr env (enum, l, xs) =
       if env.phase = Uses
       then 
         let s = str env s in
-        add_use_edge env (s, E.Constant)
+        add_use_edge env (s, E.Constructor)
 
   | DeclRefExpr, _loc::_typ::_lval::T (TUpperIdent "Var")::_address
       ::T (TString s)::_rest ->
