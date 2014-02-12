@@ -578,6 +578,7 @@ let matching_use_categ_kind categ kind =
   | Constant, HC.Local _
   | Global,   HC.Local _
   | Function, HC.Local _
+  | Constructor, HC.Global _
     
   | Global,   HC.UseOfRef
     -> true
