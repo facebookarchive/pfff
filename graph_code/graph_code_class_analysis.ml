@@ -37,10 +37,7 @@ let class_method_of_string str =
   if str =~ "^\\(.*\\)\\.\\([^\\.]+\\)$"
   then Common.matched2 str
   else failwith (spf "not a method: %s" str)
-(* alt:
- * let xs = Common.split "\\." (fst n2) in
- * let method_str = Common2.list_last xs in
- *)
+(* alt: Graph_code.shortname_of_node *)
 
 let string_of_class_method (c, m) =
   c ^ "." ^ m

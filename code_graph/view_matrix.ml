@@ -79,9 +79,7 @@ let txt_of_node (s, kind) =
   | E.Field | E.Constructor | E.Method _  | E.ClassConstant
   | E.Function | E.Type | E.Constant | E.Global
   | E.Exception 
-    ->
-      let xs = Common.split "[.]" s in
-      Common2.list_last xs
+    -> Graph_code.shortname_of_node (s, kind)
   | _ -> s
 
 (* todo: style/font_of_node_kind? so put in bold directories *)

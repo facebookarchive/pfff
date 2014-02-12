@@ -32,10 +32,9 @@ module G = Graph_code
 let gen_package_file_with_class_defs pr xs g =
 
   let rec aux depth ((str, kind) as current) =
-    let xs = Common.split "\\." str in
+    let str = Graph_code.shortname_of_node current in
     match kind with
     | E.Class _ ->
-        let str = Common2.list_last xs in
         pr (spf "%sclass %s {" (Common2.n_space depth) str);
         List.iter (aux (depth + 2)) (G.children current g);
         pr (spf "%s}" (Common2.n_space depth));
@@ -43,9 +42,7 @@ let gen_package_file_with_class_defs pr xs g =
         List.iter (aux depth) (G.children current g)
     | E.Constant
     | E.Field ->
-        let str = Common2.list_last xs in
         pr (spf "%sint %s;" (Common2.n_space depth) str);
-
     | E.Method _ 
     | E.ClassConstant
         -> ()

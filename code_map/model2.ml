@@ -443,9 +443,7 @@ let deps_of_node node dw =
 
 
 let lines_where_used_node node startl microlevel =
-  let (fullstr, kind) = node in
-  let xs = Common.split "\\." fullstr in
-  let s = Common2.list_last xs in
+  let s = Graph_code.shortname_of_node node in
   let s =
     (* ugly: see Graph_code_clang.new_str_if_defs() where we rename dupes *)
     match s with
@@ -468,7 +466,7 @@ let lines_where_used_node node startl microlevel =
           | _ -> Highlight_code.Normal
         in
         glyph.str =$= s &&
-        Database_code.matching_use_categ_kind categ kind
+        Database_code.matching_use_categ_kind categ (snd node)
       )
       then Common.push2 (Line line) res
     done;
