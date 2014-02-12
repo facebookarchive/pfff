@@ -376,15 +376,20 @@ let privacy_of_node n g =
 let shortname_of_node (s, _kind) =
   let xs = Common.split "[.]" s in
   let s = Common2.list_last xs in
-  (* when we have static entities, or main, we rename them locally
-   * and add a unique __xxx suffix, to avoid DUPES, but here
-   * we need to undo that, otherwise codemap for instance will
+  (* undo what was possibly done below, otherwise codemap for instance will
    * not recognize the entity as one hovers on its name in a file.
    *)
   if s =~ "\\(.*\\)__[0-9]+"
   then Common.matched1 s
   else s
-   
+
+let cnt = ref 0
+(* when we have static entities, or main(), we rename them locally
+ * and add a unique __xxx suffix, to avoid DUPES.
+ *)
+let gensym s =
+  incr cnt;
+  spf "%s__%d" s !cnt
 
 (*****************************************************************************)
 (* Helpers *)

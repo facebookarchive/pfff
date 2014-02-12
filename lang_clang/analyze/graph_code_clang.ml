@@ -73,8 +73,7 @@ type env = {
   g: Graph_code.graph;
   phase: phase;
 
-  (* for gensym *)
-  cnt: int ref;
+  (* now in Graph_code.gensym:  cnt: int ref; *)
 
   current: Graph_code.node;
 
@@ -128,8 +127,7 @@ let parse a =
 let new_str_if_defs env s =
   if env.phase = Defs
   then begin
-    incr env.cnt;
-    let s2 = spf "%s__%d" s !(env.cnt) in
+    let s2 = Graph_code.gensym s in
     Hashtbl.add env.local_rename s s2;
     s2
   end
@@ -696,7 +694,6 @@ let build ?(verbose=true) root files =
     clang2_file = "__filled_later__";
     clang_line = -1;
 
-    cnt = ref 0;
     root = root;
     at_toplevel = true;
     local_rename = Hashtbl.create 0;

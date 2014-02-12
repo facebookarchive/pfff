@@ -86,6 +86,7 @@ val nodeinfo: node -> graph -> nodeinfo
 val file_of_node: node -> graph -> Common.filename
 val privacy_of_node: node -> graph -> Database_code.privacy
 val shortname_of_node: node -> string
+val gensym: string -> string
 
 (* iteration *)
 val iter_use_edges: (node -> node -> unit) -> graph -> unit
