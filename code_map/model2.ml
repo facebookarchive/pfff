@@ -443,7 +443,7 @@ let uses_or_users_of_node node dw fsucc =
       with Not_found -> None
     )
 
-let deps_of_node node dw =
+let deps_of_node_clipped node dw =
   uses_or_users_of_node node dw (fun node g ->
     Graph_code.succ node Graph_code.Use g),
   uses_or_users_of_node node dw (fun node g ->

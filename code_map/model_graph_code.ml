@@ -59,8 +59,8 @@ let build_entities_of_file g =
     try 
       let info = G.nodeinfo n g in
       let file = info.G.pos.Parse_info.file in
-      let line = info.G.pos.Parse_info.line in
-      Hashtbl.add h file (line, n);
+      (* old: let line = info.G.pos.Parse_info.line in *)
+      Hashtbl.add h file n;
     with Not_found -> ()
   );
   Common2.hkeys h +> List.map (fun k ->

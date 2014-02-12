@@ -48,11 +48,6 @@ module Ctl = Controller2
  *)
 
 (*****************************************************************************)
-(* Types, globals *)
-(*****************************************************************************)
-
-
-(*****************************************************************************)
 (* Scaling *)
 (*****************************************************************************)
 
@@ -340,17 +335,15 @@ let button_action da dw_ref ev =
             +> Common2.uniq
             (* todo: tfidf to filter files like common2.ml *)
             +> Common.exclude (fun readable -> 
-              readable =~ "commons/common2.ml"
-              (*readable =~ "external/.*"  *)
+                readable =~ "commons/common2.ml"
+                (*readable =~ "external/.*"  *)
             )
             +> List.map (fun s -> Filename.concat model.root s)
             (* less: print a warning when does not exist? *)
             +> List.filter Sys.file_exists
           in
-
           let readable = Common.readable ~root:model.root file in
-
-          GToolbox.popup_menu ~entries:[
+          let entries = [
             `I ("go to file", (fun () -> 
               !Ctl._go_dirs_or_file dw_ref (paths_of_readables [readable]);));
             `I ("deps inout", (fun () -> 
@@ -362,7 +355,25 @@ let button_action da dw_ref ev =
             `I ("deps out (uses)", (fun () -> 
               !Ctl._go_dirs_or_file dw_ref (paths_of_readables 
                                             (uses ++ [readable]))));
-          ] ~button:3 ~time:(GtkMain.Main.get_current_event_time());
+          ] in
+          let entries = 
+            entries ++
+            (match entity_opt, model.g with
+            | None, _ -> []
+            | Some e, Some g -> 
+                [`I ("info entity", (fun () ->
+                  let users = Graph_code.pred e (Graph_code.Use) g in
+                  let str =
+                    users +> List.map Graph_code.string_of_node 
+                    +> Common.join "\n"
+                  in
+                  Gui.dialog_text ~text:str ~title:"Info entity";
+                ))]
+            | _ -> raise Impossible
+            )
+          in
+          GToolbox.popup_menu ~entries ~button:3 
+            ~time:(GtkMain.Main.get_current_event_time());
           end
         );
         true

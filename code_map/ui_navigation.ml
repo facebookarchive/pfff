@@ -19,9 +19,8 @@ open Common
 (* floats are the norm in graphics *)
 open Common2.ArithFloatInfix
 
-module G = Gui
-
 open Model2
+module G = Gui
 module Controller = Controller2
 
 (*****************************************************************************)

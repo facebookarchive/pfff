@@ -1,6 +1,6 @@
 (* Yoann Padioleau
  *
- * Copyright (C) 2010-2012 Facebook
+ * Copyright (C) 2010-2014 Facebook
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public License
@@ -469,12 +469,10 @@ The big principles for the colors, fonts, and strikes are:
 "
 
 
-
 let info_of_usedef usedef = 
   match usedef with
   | Def -> [`STYLE `ITALIC]
   | Use -> []
-
 
 let info_of_def_arity defarity = 
   match defarity with
@@ -484,12 +482,8 @@ let info_of_def_arity defarity =
 
   | NoDef -> [`STRIKETHROUGH true] 
 
-
-
-
 let info_of_place defplace = 
   raise Todo
-
 
 (*****************************************************************************)
 (* Main entry point *)
@@ -824,15 +818,6 @@ let info_of_category = function
 
   | Normal -> [`FOREGROUND "wheat";]
 
-
-
-
-
-(*****************************************************************************)
-(* Str_of_xxx *)
-(*****************************************************************************)
-
-
 (*****************************************************************************)
 (* Generic helpers *)
 (*****************************************************************************)
@@ -850,15 +835,14 @@ let rewrap_arity_def2_category arity categ =
   | Function (Def2 _) -> Function (Def2 arity)
   | FunctionDecl _ ->  FunctionDecl (arity)
   | Global (Def2 _) ->  Global (Def2 arity)
-
-  | Class (Def2 _) ->  Class (Def2 arity)
-  | Method (Def2 _) ->  Method (Def2 arity)
-  | Field (Def2 _) -> Field (Def2 arity)
-  | StaticMethod (Def2 _) -> StaticMethod (Def2 arity)
-        
-  | Macro (Def2 _) -> Macro (Def2 arity)
   | Constant (Def2 _) -> Constant (Def2 arity)
+  | Macro (Def2 _) -> Macro (Def2 arity)
+  | Class (Def2 _) ->  Class (Def2 arity)
 
+  | Method (Def2 _) ->  Method (Def2 arity)
+  | StaticMethod (Def2 _) -> StaticMethod (Def2 arity)
+  | Field (Def2 _) -> Field (Def2 arity)
+        
   (* todo? *)
   | Module Def ->
       pr2_once "No arity for Module Def yet";
@@ -866,5 +850,6 @@ let rewrap_arity_def2_category arity categ =
   | TypeDef Def  ->  
       pr2_once "No arity for Typedef Def yet";
       TypeDef Def
+  | Constructor (Def2 _) -> Constructor (Def2 arity)
 
   | _ -> failwith "not a Def2-kind categoriy"

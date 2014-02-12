@@ -209,7 +209,7 @@ val deps_rect_of_file:
 val deps_readable_files_of_node:
   Graph_code.node -> drawing -> Common.filename (* readable *) deps
 
-val deps_of_node:
+val deps_of_node_clipped:
   Graph_code.node -> drawing -> (Graph_code.node * line * microlevel) deps
 
 val lines_where_used_node:

@@ -165,7 +165,7 @@ let draw_magnify_line_overlay_maybe ?honor_color dw line microlevel =
 
 let draw_uses_users_entities ~dw n =
  with_overlay dw (fun cr_overlay ->
-   let uses, users = deps_of_node n dw  in
+   let uses, users = deps_of_node_clipped n dw  in
    uses +> List.iter (fun (_n2, line, microlevel) ->
      let rectangle = microlevel.line_to_rectangle line in
      CairoH.draw_rectangle_figure ~cr:cr_overlay ~color:"green" rectangle;
