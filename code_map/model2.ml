@@ -17,8 +17,8 @@
 (*e: Facebook copyright *)
 open Common
 
-module CairoH = Cairo_helpers
 module Flag = Flag_visual
+module CairoH = Cairo_helpers
 module F = Figures
 module T = Treemap
 
@@ -50,7 +50,6 @@ type model = {
   (* fast accessors, for macrolevel use/def information  *)
   huses_of_file: (Common.filename, Common.filename list) Hashtbl.t;
   husers_of_file: (Common.filename, Common.filename list) Hashtbl.t;
-  (* the lists are sorted by line number *)
   hentities_of_file: 
     (Common.filename, (line (* not used *) * Graph_code.node) list) Hashtbl.t;
  }
@@ -62,6 +61,22 @@ type 'a deps = 'a list (* uses *) * 'a list (* users *)
 (*****************************************************************************)
 
 type macrolevel = Treemap.treemap_rendering
+
+(* We use different sources to provide fine grained semantic visualization:
+ * - the source code itself, lexed and parsed in parsing2.ml by language
+ *   specific parsers, with the ASTs stored in a global cache
+ * - a language agnostic 'glyph list array' computed from the AST by
+ *   the language specific highlighter
+ * - a language agnostic defs/uses classifier going through the glyphs
+ * - the graph code computed for the whole project, usually not up to
+ *   date with the most recent modifications, but containing useful
+ *   global information
+ * - the light database (but could be replaced by the graph code)
+ * 
+ * We then try to match specific glyph to the right entity, use
+ * the graph code to find users and uses of this entity, and then going
+ * back from those entities to their right glyph.
+ *)
 
 type microlevel = {
   pos_to_line: Cairo.point -> line;
