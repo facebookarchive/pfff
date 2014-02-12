@@ -375,8 +375,16 @@ let privacy_of_node n g =
 (* see also Graph_code_class_analysis.class_method_of_string *)
 let shortname_of_node (s, _kind) =
   let xs = Common.split "[.]" s in
-  Common2.list_last xs
-    
+  let s = Common2.list_last xs in
+  (* when we have static entities, or main, we rename them locally
+   * and add a unique __xxx suffix, to avoid DUPES, but here
+   * we need to undo that, otherwise codemap for instance will
+   * not recognize the entity as one hovers on its name in a file.
+   *)
+  if s =~ "\\(.*\\)__[0-9]+"
+  then Common.matched1 s
+  else s
+   
 
 (*****************************************************************************)
 (* Helpers *)
