@@ -526,7 +526,39 @@ let entity_kind_of_highlight_category_def categ =
   | _ -> 
       failwith "this category has no Database_code counterpart"
 
-(* TODO? merge with other function? *)
+(* coupling: if you add a new kind of entity, then 
+ * don't forget to modify size_font_multiplier_of_categ in pfff_visual
+ * code
+ * 
+ * How sure this list is exhaustive ? C-c for usedef2
+ *)
+let is_entity_def_category categ = 
+  let open HC in 
+  match categ with
+  | Function (Def2 _) 
+  (* also ? *)
+  | FunctionDecl _ 
+
+  | Global (Def2 _) 
+
+  | Class (Def2 _) 
+  | Method (Def2 _) 
+  | Field (Def2 _) 
+  | StaticMethod (Def2 _) 
+
+  | Macro (Def2 _) 
+  | Constant (Def2 _) 
+
+  (* Def *)
+  | Module (Def)
+  | TypeDef Def 
+
+  (* todo: what about other Def ? like Label, Parameter, etc ? *)
+    -> true
+  | _ -> false
+
+
+(* less: merge with other function? *)
 let entity_kind_of_highlight_category_use categ = 
   match categ with
   | HC.Function (HC.Use2 _) -> Function
@@ -546,6 +578,33 @@ let entity_kind_of_highlight_category_use categ =
   (* TODO? Interface ? *)
   | _ -> 
       failwith "this category has no Database_code counterpart"
+
+(* see the code of the different highlight_code_xxx.ml to
+ * know the different possible pairs
+ *)
+let matching_use_categ_kind categ kind =
+  match kind, categ with
+  | Function,    HC.Function _
+  | Field,       HC.Field _
+  | Constructor, HC.Constructor _
+  | Constructor, HC.ConstructorMatch _
+  | Global,      HC.Global _
+  | Method _,    HC.Method _
+  | Method _,    HC.StaticMethod _
+  | Class _,     HC.Class _
+  | Constant,    HC.Constant _
+  | ClassConstant,  HC.Constant _
+    
+        (* tofix at some point, wrong tokenizer *)
+  | Constant, HC.Local _
+  | Global,   HC.Local _
+  | Function, HC.Local _
+    
+  | Global,   HC.UseOfRef
+    -> true
+    
+  | _ -> false
+
 
 
 (* In database_light_xxx we sometimes need, given a 'use', to increment

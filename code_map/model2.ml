@@ -69,6 +69,11 @@ type microlevel = {
   layout: layout;
   container: Treemap.treemap_rectangle;
   content: (glyph list) array option;
+  (* Sorted list of entities by line. Note that I don't use G.node for the 
+   * (string * entity_kind) pair because the string is not fully qualified
+   * here so one must use an extra function to convert to a real node.
+   *)
+  defs: (line * (string * Database_code.entity_kind)) list;
 }
   and glyph = {
     str: string;
@@ -440,31 +445,7 @@ let lines_where_used_node node startl microlevel =
           | _ -> Highlight_code.Normal
         in
         glyph.str =$= s &&
-        (* see the code of the different highlight_code_xxx.ml to
-         * know the different possible pairs
-         *)
-        (match kind, categ with
-        | Database_code.Function,    Highlight_code.Function _
-        | Database_code.Field,       Highlight_code.Field _
-        | Database_code.Constructor, Highlight_code.Constructor _
-        | Database_code.Constructor, Highlight_code.ConstructorMatch _
-        | Database_code.Global,      Highlight_code.Global _
-        | Database_code.Method _,    Highlight_code.Method _
-        | Database_code.Method _,    Highlight_code.StaticMethod _
-        | Database_code.Class _,     Highlight_code.Class _
-        | Database_code.Constant,    Highlight_code.Constant _
-        | Database_code.ClassConstant,  Highlight_code.Constant _
-
-        (* tofix at some point, wrong tokenizer *)
-        | Database_code.Constant, Highlight_code.Local _
-        | Database_code.Global,   Highlight_code.Local _
-        | Database_code.Function, Highlight_code.Local _
-
-        | Database_code.Global,   Highlight_code.UseOfRef
-         -> true
-
-        | _ -> false
-        )
+        Database_code.matching_use_categ_kind categ kind
       )
       then Common.push2 (Line line) res
     done;

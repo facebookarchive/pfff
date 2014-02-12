@@ -232,6 +232,15 @@ let glyphs_of_file ~context ~font_size ~font_size_real file
     +> (fun x -> Some x)
   | _ -> None
 
+let defs_of_glyphs glyphs =
+  let res = ref [] in
+  glyphs +> Array.iteri (fun line_0_indexed glyph ->
+    pr2 "TODO";
+  );
+  !res
+
+    
+
 (*****************************************************************************)
 (* Columns *)
 (*****************************************************************************)
@@ -402,6 +411,7 @@ let draw_content2 ~cr ~layout ~context tr =
     layout;
     container = tr;
     content = glyphs_opt;
+    defs = (match glyphs_opt with None -> [] | Some x -> defs_of_glyphs x);
   }
 
 let draw_content ~cr ~layout ~context tr =

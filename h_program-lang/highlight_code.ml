@@ -844,39 +844,6 @@ let arity_ids ids  =
   | [x;y] -> DoubleDef
   | x::y::z::xs -> MultiDef
 
-
-
-(* coupling: if you add a new kind of entity, then 
- * don't forget to modify size_font_multiplier_of_categ in pfff_visual
- * code
- * 
- * How sure this list is exhaustive ? C-c for usedef2
- *)
-let is_entity_def_category categ = 
-  match categ with
-  | Function (Def2 _) 
-  (* also ? *)
-  | FunctionDecl _ 
-
-  | Global (Def2 _) 
-
-  | Class (Def2 _) 
-  | Method (Def2 _) 
-  | Field (Def2 _) 
-  | StaticMethod (Def2 _) 
-
-  | Macro (Def2 _) 
-  | Constant (Def2 _) 
-
-  (* Def *)
-  | Module (Def)
-  | TypeDef Def 
-
-  (* todo: what about other Def ? like Label, Parameter, etc ? *)
-    -> true
-  | _ -> false
-
-
 let rewrap_arity_def2_category arity categ = 
 
   match categ with

@@ -132,6 +132,10 @@ val entity_kind_of_highlight_category_def:
   Highlight_code.category -> entity_kind
 val entity_kind_of_highlight_category_use: 
   Highlight_code.category -> entity_kind
+val is_entity_def_category: 
+  Highlight_code.category -> bool
+val matching_use_categ_kind:
+  Highlight_code.category -> entity_kind -> bool
 
 (* use vs def *)
 val entity_and_highlight_category_correpondance:

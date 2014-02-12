@@ -137,7 +137,7 @@ let rewrite_categ_using_entities s categ file entities =
   | [e] ->
       let use_cnt = e.Db.e_number_external_users in
       let arity = use_arity_of_use_count use_cnt in
-      if HC.is_entity_def_category categ
+      if Database_code.is_entity_def_category categ
       then HC.rewrap_arity_def2_category arity categ 
       else categ
   | x::y::xs ->

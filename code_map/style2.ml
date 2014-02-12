@@ -124,7 +124,7 @@ let size_font_multiplier_of_categ ~font_size_real categ =
     | _ -> 
         (* the cases above should have covered all the cases *)
         categ +> Common.do_option (fun categ ->
-          if Highlight_code.is_entity_def_category categ
+          if Database_code.is_entity_def_category categ
           then failwith "You should update size_font_multiplier_of_categ";
         );
 
