@@ -29,7 +29,6 @@ const __builtin__yield_break = 1;
 
 function __builtin__exec($cmd) { }
 
-
 const __builtin____FILE__ = 1;
 const __builtin____DIR__ = 1;
 const __builtin____LINE__ = 1;

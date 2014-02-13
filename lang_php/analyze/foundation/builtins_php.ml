@@ -392,8 +392,13 @@ let generate_builtins idlfile pr_hook =
        * put '0' here
        * 
        * todo: use the 'type' field to type those constants.
+       * 
+       * update: many constants are no more defined in .idl files so
+       * let's skip them here. pfff/data/php_stdlib/builtin_constants.php
+       * is now used instead.
        *)
-      pr_hook (spf "define('%s', 0);" name)
+      (* pr_hook (spf "define('%s', 0);" name) *)
+      ()
     | _ -> failwith "wrong json format"
     );
 
