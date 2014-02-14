@@ -31,7 +31,7 @@ let ext_git_annot_cache = ".git_annot"
 (*****************************************************************************)
 (* Wrappers *)
 (*****************************************************************************)
-let pr2, pr2_once = Common2.mk_pr2_wrappers Flag_version_control.verbose
+let pr2, _pr2_once = Common2.mk_pr2_wrappers Flag_version_control.verbose
 
 (*****************************************************************************)
 (* Helpers *)
@@ -219,7 +219,7 @@ let date_file_creation2 ?(basedir="") file =
   (* pr2 cmd; *)
   let xs = Common.cmd_to_list cmd in
   match xs with
-  | s::xs -> 
+  | s::_xs -> 
       if s =~ date_regexp
       then
         let (day, month_str, year) = matched3 s in
@@ -364,7 +364,7 @@ let file_to_commits ~basedir commits =
     Common2.log2 (spf "patch %d/%d" cnt total);
     try 
       let patch = commit_patch ~basedir vid in
-      let (strs, patchinfo) = patch in
+      let (_strs, patchinfo) = patch in
       
       patchinfo +> List.iter (fun (filename, fileinfo) ->
         (* TODO use fileinfo *)
@@ -389,7 +389,7 @@ let refactoring_commits ?(since="--since='1 year ago'") ?(threshold=50) repo =
   pr2 (spf "#commits = %d" (List.length commits));
   
   let refactoring_ids = 
-  commits +> Console.progress (fun k -> List.filter (fun (id, x) ->
+  commits +> Console.progress (fun k -> List.filter (fun (id, _x) ->
     k ();
     let (Lib_vcs.VersionId scommit) = id in
     let cmd = (spf "cd %s; git show --oneline --no-color --stat %s"
@@ -493,7 +493,7 @@ let get_2_best_blamers_of_lines
 
   let toblame = 
     lines_to_remove +> Common.map_filter (fun i ->
-      let (version, Lib_vcs.Author author, date) = annots.(i) in
+      let (version, Lib_vcs.Author author, _date) = annots.(i) in
       (* todo: commitid string sometimes are specified by their full
        * length, somtimes only by its first 8 characters. Maybe should
        * have a commitid_equal and use that. Right now
@@ -509,7 +509,7 @@ let get_2_best_blamers_of_lines
   let hblame = Common.hashset_of_list toblame in
   let other_authors = 
     annots +> Array.to_list +> Common.map_filter (fun x ->
-      let (version, Lib_vcs.Author author, date) = x in
+      let (version, Lib_vcs.Author author, _date) = x in
       if is_valid_author author 
          && not (Common2.hmem author hblame) 
          && not (List.mem version skip_revs)
@@ -535,7 +535,7 @@ let max_date_of_lines ~basedir ?use_cache ?(skip_revs=[])
    * decide of the "date" of the patch ? *)
   let toblame = 
     lines_to_remove +> Common.map_filter (fun i -> 
-      let (version, Lib_vcs.Author author, date) = annots.(i) in
+      let (version, Lib_vcs.Author _author, date) = annots.(i) in
       if not (List.mem version skip_revs)
       then Some date
       else None

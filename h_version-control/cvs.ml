@@ -12,7 +12,6 @@
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the file
  * license.txt for more details.
  *)
-open Common2
 open Common
 
 (*****************************************************************************)
@@ -39,7 +38,7 @@ let annotate2 ?(basedir="") filename =
 
   let today = Common2.today () in
   let dmy = today +> Common2.floattime_to_unixtime +> Common2.unixtime_to_dmy in
-  let (DMY (_,_,Year this_year)) = dmy in
+  let (Common2.DMY (_,_,Common2.Year this_year)) = dmy in
 
   (* TODO????: compute it from file directly ? *)
   (* ??? let date = "-D \"12 Feb\"" in *)
@@ -182,7 +181,7 @@ let find_all_date cmd =
 let find_date cmd = 
   let xs' = find_all_date cmd in
   match xs' with
-  | x::xs -> Some x
+  | x::_xs -> Some x
   | [] -> None
 
 let find_date_min cmd = 

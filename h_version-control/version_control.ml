@@ -14,8 +14,6 @@
  * license.txt for more details.
  *)
 
-open Common
-
 type vcs_kind = Git | CVS | Mercurial | Subversion
 
 let string_of_vcs_kind k =

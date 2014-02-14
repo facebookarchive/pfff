@@ -94,7 +94,7 @@ type patchline =
   | Plus of string
 
 
-let mark_regexp = "^[-+ ]"
+let _mark_regexp = "^[-+ ]"
 let regexp_mark_and_line = "^\\([-+ ]\\)\\(.*\\)"
 let str_regexp_no_mark = "^[-+ ]\\(.*\\)"
 
@@ -147,7 +147,7 @@ let rec mark_file_boundary_and_normalize_with_xxx xs =
       then
         let has_minus_and_plus =
           match xs with
-          | y::z::xs ->
+          | y::z::_xs ->
               y =~ "--- \\(.*\\)" &&
               z =~ "\\+\\+\\+ \\(.*\\)"
           | _ -> false
@@ -274,9 +274,9 @@ let (parse_patch: (string list) -> patchinfo) = fun lines ->
 (*****************************************************************************)
 
 let hunk_containing_string s (pinfos: patchinfo) = 
-  pinfos +> Common.find_some (fun (file, fileinfo) -> 
+  pinfos +> Common.find_some (fun (_file, fileinfo) -> 
     Common2.optionise (fun () -> 
-      fileinfo +> Common.find_some (fun (limits, hunk) -> 
+      fileinfo +> Common.find_some (fun (_limits, hunk) -> 
         let hunk' = hunk +> List.map remove_prefix_mark in
         if List.mem s hunk'
         then Some hunk
@@ -285,9 +285,9 @@ let hunk_containing_string s (pinfos: patchinfo) =
   )
 
 let hunks_containing_string s (pinfos: patchinfo) = 
-  pinfos +> Common.map_filter (fun (file, fileinfo) -> 
+  pinfos +> Common.map_filter (fun (_file, fileinfo) -> 
     let res = 
-      (fileinfo +> Common.map_filter (fun (limits, hunk) -> 
+      (fileinfo +> Common.map_filter (fun (_limits, hunk) -> 
         let hunk' = hunk +> List.map remove_prefix_mark in
         if List.mem s hunk'
         then Some hunk
@@ -344,7 +344,7 @@ let string_of_stat stat =
 
  
 let (relevant_part: (filename * (int * int)) -> patchinfo -> string) = 
- fun (filename, (startl, endl)) patchinfo ->
+ fun (_filename, (_startl, _endl)) _patchinfo ->
    raise Todo
 (*
   try 
@@ -362,7 +362,7 @@ let (relevant_part: (filename * (int * int)) -> patchinfo -> string) =
   with Not_found -> ("NO MODIF in patch file for:" ^ filename)
 *)
 
-let (filter_driver_sound: string list -> string list) = fun lines -> 
+let (_filter_driver_sound: string list -> string list) = fun _lines -> 
   raise Todo
 
 (*
@@ -420,7 +420,7 @@ let (generate_patch:
      match edition_cmd with
      | RemoveLines index_lines -> 
          indexed_lines
-         +> Common.exclude (fun (line, idx) -> List.mem idx index_lines)
+         +> Common.exclude (fun (_line, idx) -> List.mem idx index_lines)
      | PreAddAt (lineno, lines_to_add) 
      | PostAddAt (lineno, lines_to_add) ->
          let lines_to_add_fake_indexed = 

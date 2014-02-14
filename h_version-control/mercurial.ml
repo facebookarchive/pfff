@@ -30,7 +30,7 @@ open Lib_vcs
 (*****************************************************************************)
 (* Wrappers *)
 (*****************************************************************************)
-let pr2, pr2_once = Common2.mk_pr2_wrappers Flag_version_control.verbose
+let pr2, _pr2_once = Common2.mk_pr2_wrappers Flag_version_control.verbose
 
 (*****************************************************************************)
 (* Helpers *)
