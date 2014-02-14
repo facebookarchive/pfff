@@ -37,8 +37,12 @@ OPTOBJS?= $(SRC:.ml=.cmx)
 
 #dont use -custom, it makes the bytecode unportable.
 
-#-w +9 is for better warning on records, needs ocaml 3.12
-OCAMLCFLAGS=-g -dtypes $(OCAMLCFLAGS_EXTRA) -thread -w +9 -w -21 -warn-error +a
+#-4  allow | _ patterns in match
+#-6  allow omit labels
+#-29 alow multiline strings
+WARNING_FLAGS?=-w +A-4-29-6 -warn-error +a
+
+OCAMLCFLAGS=-g -thread -dtypes $(OCAMLCFLAGS_EXTRA) $(WARNING_FLAGS)
 
 # This flag is also used in subdirectories so don't change its name here
 # the -w y is to silence errors on the visitor_xxx files with the unused
