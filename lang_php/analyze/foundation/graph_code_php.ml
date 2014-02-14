@@ -975,6 +975,9 @@ and expr env x =
       | Id[ ("__special__static", tokopt)], _ ->
           expr env (Class_get (Id[ (env.cur.self, tokopt)], e2))
 
+      | Id name1, Id ["__special__class", tokopt] ->
+        ()
+
       | Id name1, Id [name2] ->
           add_use_edge_lookup env (name1, name2) E.ClassConstant
       | Id name1, Var name2 ->

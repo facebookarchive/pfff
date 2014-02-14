@@ -1142,6 +1142,9 @@ member_expr:
  | member_expr T_OBJECT_OPERATOR TOBRACE expr TCBRACE 
      { ObjGet($1,$2, (BraceIdent ($3, $4, $5))) }
  | member_expr TCOLCOL primary_expr { ClassGet($1, $2, $3) }
+ /*(* php 5.5 extension *)*/
+ | member_expr TCOLCOL T_CLASS 
+     { ClassGet($1, $2, Id (XName [QI (Name("class", $3))])) }
 
 
 primary_expr:

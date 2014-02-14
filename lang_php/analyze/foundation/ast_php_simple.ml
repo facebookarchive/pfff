@@ -203,8 +203,8 @@ and expr =
 
   (* Id is valid for "entities" (functions, classes, constants). Id is also
    * used for class methods/fields/constants. It can also contain 
-   * "self/parent" or "static". It can be "true", "false", "null" and many
-   * other builtin constants. See builtin() and special() below.
+   * "self/parent" or "static", "class". It can be "true", "false", "null" 
+   * and many other builtin constants. See builtin() and special() below.
    *
    * todo: For field name, if in the code they are referenced like $this->fld,
    * we should prepend a $ to fld to match their definition.
@@ -434,7 +434,9 @@ let wrap s = s, Some (Ast_php.fakeInfo s)
  *  used in patterns too.
  *)
 let builtin x = "__builtin__" ^ x
-(* for 'self'/'parent', 'static', 'lambda', 'namespace', root namespace '\' *)
+(* for 'self'/'parent', 'static', 'lambda', 'namespace', root namespace '\',
+ * 'class' as in C::class
+ *)
 let special x = "__special__" ^ x
 
 (* AST helpers *)

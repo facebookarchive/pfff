@@ -126,10 +126,11 @@ and toplevel env st =
 (* Names *)
 (* ------------------------------------------------------------------------- *)
 and name env = function
-   | XName qi -> qualified_ident env qi
-   | Self tok -> [A.special "self", wrap tok]
-   | Parent tok -> [A.special "parent", wrap tok]
-   | LateStatic tok -> [A.special "static", wrap tok]
+  | XName [QI (Name ("class", tok))] -> [A.special "class", wrap tok]
+  | XName qi -> qualified_ident env qi
+  | Self tok -> [A.special "self", wrap tok]
+  | Parent tok -> [A.special "parent", wrap tok]
+  | LateStatic tok -> [A.special "static", wrap tok]
 
 and ident env = function
   | Name (s, tok) -> s, wrap tok

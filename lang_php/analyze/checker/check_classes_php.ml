@@ -323,6 +323,9 @@ let visit_and_check  find_entity prog =
 
 
 
+      | ClassGet (Id (classname), tok, Id (XName [QI (Name("class", _))])) ->
+        ()
+
       | ClassGet (Id (classname), tok, Id name) ->
           check_class_constant (Ast.str_of_name classname, Ast.str_of_name name) tok
             find_entity

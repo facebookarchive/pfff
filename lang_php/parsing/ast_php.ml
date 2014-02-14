@@ -191,7 +191,7 @@ and expr =
    * - method: Call (ObjGet (_, Id), _),   Call (ClassGet (_, Id), _)
    * - class: ClassGet (Id, _), New (Id, _), AssignNew(Id,_, InstanceOf(_, Id)
    *   and also extends, implements, catch, type
-   * - class_constant: ClassGet (_, Id)
+   * - class_constant: ClassGet (_, Id) (including the special C::class)
    * - field: ObjGet(_, Id)
    * - constant: Id 
    * 

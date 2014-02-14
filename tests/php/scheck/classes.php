@@ -42,6 +42,9 @@ function test_unknown_class_constant() {
 
   //ERROR: not defined
   echo CB::UnknownConstant;
+
+  // this is ok
+  echo CB::class;
 }
 
 function test_unknown_class_variable() {
