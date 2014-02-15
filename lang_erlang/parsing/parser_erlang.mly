@@ -18,9 +18,6 @@
  * src: http://www.erlang.org/download/erl_spec47.ps.gz appendix E
  * and erlang-otp/lib/compiler/src/core_parse.yrl
  *)
-open Common
-
-open Ast_erlang
 
 %}
 

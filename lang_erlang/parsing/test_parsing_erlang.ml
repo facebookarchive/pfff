@@ -1,10 +1,7 @@
 open Common
 
-open Ast_erlang
 module Ast = Ast_erlang
 module Flag = Flag_parsing_erlang
-
-open OUnit
 
 (*****************************************************************************)
 (* Subsystem testing *)
@@ -29,7 +26,7 @@ let test_parse_erlang xs =
   fullxs +> List.iter (fun file -> 
     pr2 ("PARSING: " ^ file);
 
-    let (xs, stat) = Parse_erlang.parse file in
+    let (_xs, stat) = Parse_erlang.parse file in
     Common.push2 stat stat_list;
   );
   Parse_info.print_parsing_stat_list !stat_list;

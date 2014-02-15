@@ -12,16 +12,10 @@
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the file
  * license.txt for more details.
  *)
-
 open Common
 
-open Ast_erlang
-
-module Ast = Ast_erlang
-(*module V = Visitor_erlang *)
-
 open Highlight_code
-
+module Ast = Ast_erlang
 module T = Parser_erlang
 module TH = Token_helpers_erlang
 
@@ -39,8 +33,6 @@ module TH = Token_helpers_erlang
 let fake_no_def2 = NoUse
 let fake_no_use2 = (NoInfoPlace, UniqueDef, MultiUse)
 
-let lexer_based_tagger = true
-
 (*****************************************************************************)
 (* Code highlighter *)
 (*****************************************************************************)
@@ -53,9 +45,9 @@ let lexer_based_tagger = true
 
 let visit_toplevel 
     ~tag_hook
-    prefs 
+    _prefs 
     (*db_opt *)
-    (toplevel, toks)
+    (_toplevel, toks)
   =
   let already_tagged = Hashtbl.create 101 in
   let atom_already_tagged = Hashtbl.create 101 in
@@ -77,9 +69,9 @@ let visit_toplevel
     | [] -> ()
     (* a little bit pad specific *)
     |   T.TComment(ii)
-      ::T.TCommentNewline (ii2)
+      ::T.TCommentNewline (_ii2)
       ::T.TComment(ii3)
-      ::T.TCommentNewline (ii4)
+      ::T.TCommentNewline (_ii4)
       ::T.TComment(ii5)
       ::xs ->
         let s = Parse_info.str_of_info ii in
@@ -117,11 +109,11 @@ let visit_toplevel
         aux_toks xs
 
     (* uses *)
-    | T.TIdent(s, ii1)::T.TColon (ii2)::xs ->
+    | T.TIdent(_s, ii1)::T.TColon _::xs ->
         tag ii1 (Module Use);
         aux_toks xs
 
-    | T.TIdent(s, ii1)::T.TOParen (ii2)::xs ->
+    | T.TIdent(_s, ii1)::T.TOParen _::xs ->
         tag ii1 (Function (Use2 fake_no_use2));
         aux_toks xs
 
@@ -158,7 +150,7 @@ let visit_toplevel
         aux_toks (T.TIdent (s3, ii3)::T.TDot ii4::xs)
 *)        
 
-    | x::xs ->
+    | _x::xs ->
         aux_toks xs
   in
   let toks' = toks +> Common.exclude (function
@@ -182,16 +174,16 @@ let visit_toplevel
         if not (Hashtbl.mem already_tagged ii)
         then ()
         else ()
-    | T.TCommentNewline ii | T.TCommentMisc ii -> ()
+    | T.TCommentNewline _ii | T.TCommentMisc _ii -> ()
     | T.TUnknown ii -> tag ii Error
-    | T.EOF ii-> ()
+    | T.EOF _ii -> ()
  
     (* values  *)
-    | T.TString (s,ii) ->
+    | T.TString (_s,ii) ->
         tag ii String
-    | T.TChar (s, ii) ->
+    | T.TChar (_s, ii) ->
         tag ii String
-    | T.TFloat (s,ii) | T.TInt (s,ii) ->
+    | T.TFloat (_s,ii) | T.TInt (_s,ii) ->
         tag ii Number
 
     (* keywords  *)
@@ -279,9 +271,9 @@ let visit_toplevel
         -> tag ii Punctuation
 
 
-    | T.TIdent (s, ii) -> 
+    | T.TIdent (_s, _ii) -> 
         ()
-    | T.TVariable (s, ii) ->
+    | T.TVariable (_s, ii) ->
         if not (Hashtbl.mem already_tagged ii)
         then tag ii (Local Use)
 
