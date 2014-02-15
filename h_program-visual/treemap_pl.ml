@@ -283,8 +283,8 @@ let code_treemap2 ~filter_file paths =
   let tree = Treemap.remove_singleton_subdirs tree in
 
   tree +> Treemap.treemap_of_tree
-    ~size_of_leaf:(fun (f, intleaf) -> intleaf) 
-    ~color_of_leaf:(fun (f, intleaf) -> 
+    ~size_of_leaf:(fun (_f, intleaf) -> intleaf) 
+    ~color_of_leaf:(fun (f, _intleaf) -> 
       let kind = source_archi_of_filename ~root f in
       let color = color_of_source_archi kind in
 
@@ -297,7 +297,7 @@ let code_treemap2 ~filter_file paths =
       Color.degrade color d
     )
     ~label_of_dir:(fun d -> d)
-    ~label_of_file:(fun (f, intleaf (*, aref *)) -> f)
+    ~label_of_file:(fun (f, _intleaf (*, aref *)) -> f)
 
 let code_treemap ~filter_file a = 
   Common.profile_code "Treemap_pl.code_treemap" (fun () ->
