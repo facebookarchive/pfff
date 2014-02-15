@@ -12,15 +12,10 @@
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the file
  * license.txt for more details.
  *)
-
 open Common
-
-open Ast_css
 
 module Ast = Ast_css
 module Flag = Flag_parsing_css
-
-(* module V = Visitor_erlang *)
 
 (*****************************************************************************)
 (* Wrappers *)

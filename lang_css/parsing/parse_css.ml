@@ -39,9 +39,6 @@ exception Parse_error of Parse_info.info
 (*****************************************************************************)
 (* Helpers *)
 (*****************************************************************************)
-let lexbuf_to_strpos lexbuf     = 
-  (Lexing.lexeme lexbuf, Lexing.lexeme_start lexbuf)    
-
 let token_to_strpos tok = 
   (TH.str_of_tok tok, TH.pos_of_tok tok)
 
@@ -125,7 +122,7 @@ let parse2 filename =
   let toks = tokens filename in
 
   let tr = Parse_info.mk_tokens_state toks in
-  let lexbuf_fake = Lexing.from_function (fun buf n -> raise Impossible) in
+  let lexbuf_fake = Lexing.from_function (fun _buf _n -> raise Impossible) in
 
   (* -------------------------------------------------- *)
   (* Call parser *)
@@ -151,7 +148,7 @@ let parse2 filename =
             (* | Semantic_java.Semantic (s, i) -> 
                pr2 ("semantic error " ^s^ "\n ="^ error_msg_tok tr.current)
             *)
-      | e -> raise Impossible
+      | _e -> raise Impossible
       );
     [], toks
 

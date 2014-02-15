@@ -1,10 +1,7 @@
 open Common
 
-open Ast_css
 module Ast = Ast_css
 module Flag = Flag_parsing_css
-
-open OUnit
 
 (*****************************************************************************)
 (* Subsystem testing *)
@@ -27,7 +24,7 @@ let test_parse_css xs =
   fullxs +> List.iter (fun file -> 
     pr2 ("PARSING: " ^ file);
     Common.save_excursion Flag_parsing_css.error_recovery true (fun () ->
-      let (ast, toks) = Parse_css.parse file in
+      let (ast, _toks) = Parse_css.parse file in
       pr2_gen ast;
     )
   );
