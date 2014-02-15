@@ -41,7 +41,9 @@ OPTOBJS?= $(SRC:.ml=.cmx)
 #-6  allow omit labels
 #-29 alow multiline strings
 #-45 allow shadowing open (TODO: fix them though)
-WARNING_FLAGS?=-w +A-4-29-6-45 -warn-error +a
+#-41 allow ambiguous constructor in 2 opned modules (TODO: fix them though)
+#-44 allow shadow module identifier (TODO: fix them)
+WARNING_FLAGS?=-w +A-4-29-6-45-41-44 -warn-error +a
 
 OCAMLCFLAGS=-g -thread -dtypes $(WARNING_FLAGS) $(OCAMLCFLAGS_EXTRA) 
 
