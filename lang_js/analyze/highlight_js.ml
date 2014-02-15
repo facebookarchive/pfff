@@ -14,12 +14,12 @@
  *)
 open Common
 
-open Ast_js
-module Ast = Ast_js
 open Highlight_code
+module Ast = Ast_js
 module T = Parser_js
 module TH = Token_helpers_js
 module Db = Database_code
+module HC = Highlight_code
 
 (*****************************************************************************)
 (* Prelude *)
@@ -38,7 +38,7 @@ let fake_no_use2 = (NoInfoPlace, UniqueDef, MultiUse)
 
 let visit_program
     ~tag_hook
-    prefs 
+    _prefs 
     (*db_opt *)
     (ast, toks)
   =
@@ -89,17 +89,17 @@ let visit_program
               );
               raise Not_found
           | T.T_STRING (_, ii)::_ -> ii
-          | x::xs -> find_first_string xs
+          | _x::xs -> find_first_string xs
         in
         (try 
             let ii_string = find_first_string xs in
-            tag ii_string (Method (Def2 fake_no_def2));
+            tag ii_string (HC.Method (Def2 fake_no_def2));
           with Not_found -> ()
         );
         aux_toks xs
 
     | T.T_IDENTIFIER (_, ii2)
-      ::T.T_COLON(ii3)
+      ::T.T_COLON(_ii3)
       ::T.T_FUNCTION _
       ::xs 
        (* todo? when Parse_info.col_of_info ii1 = 0 *)
@@ -107,7 +107,7 @@ let visit_program
         tag ii2 (Method (Def2 NoUse));
         aux_toks xs
 
-    | T.T_FUNCTION(ii1)
+    | T.T_FUNCTION(_ii1)
       ::T.T_IDENTIFIER (_, ii2)
       ::T.T_LPAREN(_)
       ::xs 
@@ -137,7 +137,7 @@ let visit_program
 
     | T.T_IDENTIFIER ("JX", ii1)
       ::T.T_PERIOD(_)
-      ::T.T_IDENTIFIER (_, ii2)
+      ::T.T_IDENTIFIER (_, _ii2)
       ::T.T_PERIOD(_)
       ::T.T_IDENTIFIER (_, ii_last)
       ::T.T_LPAREN(_)
@@ -146,7 +146,7 @@ let visit_program
         tag ii_last (Global (Def2 NoUse));
         aux_toks xs
 
-    | x::xs ->
+    | _x::xs ->
         aux_toks xs
   in
   aux_toks toks';
@@ -164,8 +164,8 @@ let visit_program
         then
           tag ii Comment
 
-    | T.TCommentSpace (ii)
-    | T.TCommentNewline (ii)
+    | T.TCommentSpace (_ii)
+    | T.TCommentNewline (_ii)
         -> ()
 
     | T.T_NUMBER (_, ii) ->
@@ -181,7 +181,7 @@ let visit_program
             Common2.hfind_option ii hcomplete_name_of_info 
           in
           (match kind_name_opt with
-          | Some (Db.Class _, fullname) ->
+          | Some (Db.Class _, _fullname) ->
             
               (* rewrite ii to remove the enclosing "" ?
                * but the Parsing2 then use the full info as
@@ -207,11 +207,11 @@ let visit_program
           Common2.hfind_option ii hcomplete_name_of_info 
         in
         (match kind_name_opt with
-        | Some (Db.Class _, fullname) ->
+        | Some (Db.Class _, _fullname) ->
             tag ii (Class (Def2 fake_no_def2))
-        | Some (Db.Method Db.RegularMethod, fullname) ->
+        | Some (Db.Method Db.RegularMethod, _fullname) ->
             tag ii (Method (Def2 fake_no_def2))
-        | Some (Db.Method Db.StaticMethod, fullname) ->
+        | Some (Db.Method Db.StaticMethod, _fullname) ->
             tag ii (StaticMethod (Def2 fake_no_def2))
         | Some (_) ->
             failwith ("WEIRD: a identfier is not a class or method at " ^ 
@@ -357,11 +357,11 @@ let visit_program
     | T.T_VOID (ii) ->
         tag ii TypeVoid
 
-    | T.T_VIRTUAL_SEMICOLON (ii)
+    | T.T_VIRTUAL_SEMICOLON (_ii)
         -> ()
 
-    | T.TUnknown (ii)
-    | T.EOF (ii)
+    | T.TUnknown (_ii)
+    | T.EOF (_ii)
       -> ()
   );
 

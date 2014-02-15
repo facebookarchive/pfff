@@ -12,7 +12,6 @@
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the file
  * license.txt for more details.
  *)
-open Common
 
 open Parser_js
 module PI = Parse_info
@@ -62,10 +61,10 @@ let info_of_tok = function
   | TComment ii -> ii
   | EOF ii -> ii
 
-  | T_NUMBER (s, ii) -> ii
-  | T_IDENTIFIER (s, ii) -> ii
-  | T_STRING (s, ii) -> ii
-  | T_REGEX (s, ii) -> ii
+  | T_NUMBER (_s, ii) -> ii
+  | T_IDENTIFIER (_s, ii) -> ii
+  | T_STRING (_s, ii) -> ii
+  | T_REGEX (_s, ii) -> ii
 
   | T_FUNCTION ii -> ii
   | T_IF ii -> ii

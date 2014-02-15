@@ -72,31 +72,6 @@ let local = ref {
 	local_bindings = SMap.singleton "exports" (new_object SMap.empty);
 }
 
-(*************)
-(* functions *)
-(*************)
-
-type block = shape smap ref
-type env = block list ref
-
-let env = ref [ref !local.local_bindings]
-
-let push_env block =
-	env := block :: !env
-
-let pop_env () =
-	env := List.tl !env
-
-let peek_env () =
-	List.hd !env
-
-let find_env x =
-	let rec loop = function
-		| [] -> failwith "variable not declared"
-		| block::blocks -> if (SMap.mem x !block) then block else loop blocks
-	in
-	loop (!env)	
-
 (**************************)
 (* manipulation of locals *)
 (**************************)
@@ -116,7 +91,7 @@ let get_local s =
 (********************)
 
 let get_property mapr x =
-	let (_,map,maps) = !mapr in
+	let (_,map,_maps) = !mapr in
 	try 
 		SMap.find x map 
 	with _ -> 
@@ -255,7 +230,7 @@ let rec analyze_expression = function
 			| _ -> failwith "unable to create"
 		)
 
-	| Apply(Period(o,_,(s,_)),_) when List.mem s global_methods ->
+	| Apply(Period(_o,_,(s,_)),_) when List.mem s global_methods ->
 		new_class() (* TODO *)
 
 	| Apply(U((U_new,_),c),_) ->
@@ -270,7 +245,7 @@ let rec analyze_expression = function
 	| Array _ ->
 		ArrayShape
 
-	| Function finfo -> 
+	| Function _finfo -> 
 		new_function()
 
 	| L _ ->
@@ -327,8 +302,6 @@ let rec analyze_expression = function
 	| e ->
 		failwith (Utils_js.string_of_any (Expr e))
 
-
-and analyze_function f = ()	
 
 
 and shapes_of_props props =
@@ -418,7 +391,7 @@ let analyze_toplevel t = match t with
 						set_local x (UnknownShape "uninitialized variable")
 		)
 
-	| FunDecl finfo -> ()
+	| FunDecl _finfo -> ()
 
 	| St (ExprStmt (e,_)) ->
 		ignore(analyze_expression e)
@@ -457,7 +430,7 @@ let parse_comment comment =
 			local := { !local with module_ = m }
 		| ("@providesLegacy", [m]) ->
 			local := { !local with module_ = ("LEGACY::" ^ m) }
-		| (key,value) ->
+		| (_key,_value) ->
 			()
 	)
 
@@ -491,7 +464,7 @@ let analyze file (ast,toks) =
 	ast +> List.iter analyze_toplevel;
 	get_local "exports"
 
-let export_module shape modules =
+let export_module _shape modules =
 	modules +> SMap.add !local.module_ !local
 
 

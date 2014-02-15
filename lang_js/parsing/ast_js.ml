@@ -293,16 +293,16 @@ type any =
 
 let unwrap = fst
 
-let unparen (a,b,c) = b
+let unparen (_,x,_) = x
 let unbrace = unparen
 let unbracket = unparen
 
 let uncomma xs = Common.map_filter (function
   | Left e -> Some e
-  | Right info -> None
+  | Right _info -> None
   ) xs
 
-let info_of_name (s, info) = info
+let info_of_name (_s, info) = info
 
 (*****************************************************************************)
 (* Abstract line *)

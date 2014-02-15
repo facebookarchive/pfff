@@ -1,7 +1,5 @@
 open Common
-open OUnit
 
-open Ast_js
 module Ast = Ast_js
 module Flag = Flag_parsing_js
 
@@ -32,7 +30,7 @@ let test_parse_js xs  =
     if file =~ ".*/third_party" || file =~ ".*/wiki/extensions"
     then pr2_once "IGNORING third party directory, bad unicode chars"
     else begin
-      let (xs, stat) =
+      let (_xs, stat) =
       Common.save_excursion Flag.error_recovery true (fun () ->
       Common.save_excursion Flag.exn_when_lexical_error false (fun () ->
         Parse_js.parse file
@@ -62,12 +60,14 @@ let test_json_js file =
   pr s;
   ()
 
+(*
 let test_esprima file = 
   let json = Json_in.load_json file in
   let ast = Esprima.convert json in
   let v = Meta_ast_js.vof_program ast in
   let s = Ocaml.string_of_v v in
   pr s
+*)
 
 (*****************************************************************************)
 (* Main entry for Arg *)
@@ -83,6 +83,8 @@ let actions () = [
 
   "-json_js", "   <file> export the AST of file into JSON",
   Common.mk_action_1_arg test_json_js;
+(*
   "-parse_esprima_json", " <file> ",
   Common.mk_action_1_arg test_esprima;
+*)
 ]

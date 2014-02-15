@@ -78,8 +78,8 @@ let extract_complete_name_of_info ast =
     V.kstmt = (fun (k, _) st ->
       match st with
       (* var Foo = { ... } *)
-      | Variable(i_1, [Left { v_name = (class_name, info_class); v_type = _;
-          v_init = Some((i_3, (Object(body_object))))}], scopt) ->
+      | Variable(_i_1, [Left { v_name = (class_name, info_class); v_type = _;
+          v_init = Some((_i_3, (Object(_body_object))))}], _scopt) ->
        (* could restrict to only toplevel first column var declarations ? *)
 
           Hashtbl.add h info_class 
@@ -90,11 +90,11 @@ let extract_complete_name_of_info ast =
             k st
           ))
       (* var Foo = (function() { ... })() *)
-      | Variable(i_1, [Left{ v_name = (class_name, info_class); v_type = _;
-         v_init = Some((i_3,
+      | Variable(_i_1, [Left{ v_name = (class_name, info_class); v_type = _;
+         v_init = Some((_i_3,
                (Apply(
-                  (Paren((i_4, (Function(body_func)), i_11))), 
-                 (i_13, [], i_14)))))}], scopt) ->
+                  (Paren((_i_4, (Function(_body_func)), _i_11))), 
+                 (_i_13, [], _i_14)))))}], _scopt) ->
 
           Hashtbl.add h info_class 
             (Db.Class Db.RegularClass, spf "Misc.%s" class_name);
@@ -110,9 +110,9 @@ let extract_complete_name_of_info ast =
 
       (* Foo.prototype = { ... } *)
       | Assign(
-          (Period((V((class_name, info_class))), i_3, ("prototype", i_4))), 
-          (A_eq, i_6), 
-          (Object(body_object))) ->
+          (Period((V((class_name, info_class))), _i_3, ("prototype", _i_4))), 
+          (A_eq, _i_6), 
+          (Object(_body_object))) ->
 
           Hashtbl.add h info_class 
             (Db.Class Db.RegularClass, spf "Prototype.%s" class_name);
@@ -124,8 +124,8 @@ let extract_complete_name_of_info ast =
       (* Foo = { } *)
       | Assign(
           (V((class_name, info_class))), 
-          (A_eq, i_56), 
-          (Object(body_object))) ->
+          (A_eq, _i_56), 
+          (Object(_body_object))) ->
        (* could restrict to only toplevel first column var declarations ? *)
 
           Hashtbl.add h info_class 
@@ -141,10 +141,10 @@ let extract_complete_name_of_info ast =
 
       (* JX.install('Foo', { ... } ) *)
       | Apply(
-          (Period((V(("JX", i_1))), i_3, ("install", i_4))),
-          (i_6,
-          (Left((L(String((class_name, info_class)))))::Right(i_9)::rest_args),
-          i_13)) ->
+          (Period((V(("JX", _i_1))), _i_3, ("install", _i_4))),
+          (_i_6,
+          (Left((L(String((class_name, info_class)))))::Right(_i_9)::_rest_args),
+          _i_13)) ->
 
           Hashtbl.add h info_class 
             (Db.Class Db.RegularClass, spf "JX.%s" class_name);
@@ -157,12 +157,12 @@ let extract_complete_name_of_info ast =
           )
       (* JX.copy(Foo.prototype, { ... }) *)
       | Apply(
-          (Period((V(("JX", i_1))), i_3, ("copy", i_4))),
-          (i_6,
-           [Left((Period((V((class_name, info_class))),i_9,
-                        ("prototype", i_10)))); 
-            Right(i_12); 
-            Left((Object(object_body)))], i_16)) ->
+          (Period((V(("JX", _i_1))), _i_3, ("copy", _i_4))),
+          (_i_6,
+           [Left((Period((V((class_name, info_class))),_i_9,
+                        ("prototype", _i_10)))); 
+            Right(_i_12); 
+            Left((Object(_object_body)))], _i_16)) ->
 
           Hashtbl.add h info_class 
             (Db.Class Db.RegularClass, spf "JX.%s" class_name);
@@ -173,10 +173,10 @@ let extract_complete_name_of_info ast =
 
       (* Foo.mixin('Arbitrer', { ... }) *)
       | Apply(
-         (Period((V((class_name, info_class))), i_3, ("mixin", i_4))),
-         (i_6,
-          [Left((L(String((mixin_name, info_mixin))))); Right(i_9);
-           Left((Object(body_object)))], i_13)) ->
+         (Period((V((class_name, info_class))), _i_3, ("mixin", _i_4))),
+         (_i_6,
+          [Left((L(String((mixin_name, _info_mixin))))); Right(_i_9);
+           Left((Object(_body_object)))], _i_13)) ->
 
           Hashtbl.add h info_class 
             (Db.Class Db.RegularClass, spf "%s<%s" class_name mixin_name);
@@ -187,11 +187,11 @@ let extract_complete_name_of_info ast =
 
       (* FB.subclass('FB.ApiClient', 'FB.Class', { }); *)
       | Apply(
-         (Period((V(("FB", i_1))), i_3, ("subclass", i_4))),
-         (i_6,
-          [Left((L(String((class_name, info_class))))); Right(i_9);
-           Left((L(String((parent_class, i_10))))); Right(i_12);
-           Left((Object(body_object)))], i_16)) ->
+         (Period((V(("FB", _i_1))), _i_3, ("subclass", _i_4))),
+         (_i_6,
+          [Left((L(String((class_name, info_class))))); Right(_i_9);
+           Left((L(String((_parent_class, _i_10))))); Right(_i_12);
+           Left((Object(_body_object)))], _i_16)) ->
 
           Hashtbl.add h info_class
             (Db.Class Db.RegularClass, spf "%s" class_name);
@@ -202,10 +202,10 @@ let extract_complete_name_of_info ast =
 
       (* FB.provide('FBIntern.Cookie', { } ); *)
       | Apply(
-         (Period((V(("FB", i_19))), i_21, ("provide", i_22))),
-         (i_24,
-          [Left((L(String((class_name, info_class))))); Right(i_27);
-           Left((Object(body_object)))], i_31)) ->
+         (Period((V(("FB", _i_19))), _i_21, ("provide", _i_22))),
+         (_i_24,
+          [Left((L(String((class_name, info_class))))); Right(_i_27);
+           Left((Object(_body_object)))], _i_31)) ->
 
           Hashtbl.add h info_class
             (Db.Class Db.RegularClass, spf "%s" class_name);
@@ -221,10 +221,10 @@ let extract_complete_name_of_info ast =
 
       (* copy_properties(Foo, { ... } ) *)
       | Apply(
-          (V(("copy_properties", i_16))),
-          (i_18,
-          [Left((V((class_name, info_class)))); Right(i_21);
-           Left((Object(body_object)))], i_25)) ->
+          (V(("copy_properties", _i_16))),
+          (_i_18,
+          [Left((V((class_name, info_class)))); Right(_i_21);
+           Left((Object(_body_object)))], _i_25)) ->
 
           Hashtbl.add h info_class 
             (Db.Class Db.RegularClass, spf "Copy_properties.%s" class_name);
@@ -236,10 +236,10 @@ let extract_complete_name_of_info ast =
       (* copy_properties(Foo.prototype, { ... } ) *)
       | Apply(
           (V(("copy_properties", info_class))),
-          (i_3,
-          [Left((Period((V((class_name, i_4))), i_6, ("prototype", i_7)))); 
-           Right(i_9); 
-           Left((Object(body_object)))], i_13)) ->
+          (_i_3,
+          [Left((Period((V((class_name, _i_4))), _i_6, ("prototype", _i_7)))); 
+           Right(_i_9); 
+           Left((Object(_body_object)))], _i_13)) ->
 
           Hashtbl.add h info_class 
             (Db.Class Db.RegularClass, spf "Copy_properties.%s" class_name);
@@ -258,13 +258,13 @@ let extract_complete_name_of_info ast =
       match e with
 
       (* Javelin specifics ? *)
-      | (PN_String(("statics", i_20)), i_21, body) ->
+      | (PN_String(("statics", _i_20)), _i_21, _body) ->
           Common.save_excursion in_statics true (fun () -> k e)
-      | (PN_String(("members", i_20)), i_21, body) ->
+      | (PN_String(("members", _i_20)), _i_21, _body) ->
           Common.save_excursion in_members true (fun () -> k e)
 
       (* fld: function (...) { ... } *)
-      | (PN_String((method_name, info_method_name)), i_40, (Function(_))) ->
+      | (PN_String((method_name, info_method_name)), _i_40, (Function(_))) ->
 
           let fullname = 
           (match !in_class, !in_statics, !in_members with
@@ -272,7 +272,7 @@ let extract_complete_name_of_info ast =
               spf "%s::%s" classname method_name
           | Some classname, false, true ->
               spf "%s->%s" classname method_name
-          | Some classname, true, true ->
+          | Some _classname, true, true ->
               pr2 ("WEIRD: both statics and members at " ^
                       Parse_info.string_of_info info_method_name);
               ""

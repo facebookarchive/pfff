@@ -157,7 +157,7 @@ let compute_database ?(verbose=false) files_or_dirs =
     then pr2 (spf "skipping external file: %s" file)
     else begin
 
-    let ((ast, toks), _stat) = Parse_js.parse file in
+    let ((_ast, toks), _stat) = Parse_js.parse file in
 
       let toks = toks +> Common.exclude (function
         | T.TCommentSpace _ -> true
@@ -179,7 +179,7 @@ let compute_database ?(verbose=false) files_or_dirs =
 
         | T.T_IDENTIFIER ("JX", ii1)
           ::T.T_PERIOD(_)
-          ::T.T_IDENTIFIER (s, ii_last)
+          ::T.T_IDENTIFIER (s, _ii_last)
           ::T.T_LPAREN(_)
           ::xs when PI.col_of_info ii1 <> 0 ->
 
@@ -196,7 +196,7 @@ let compute_database ?(verbose=false) files_or_dirs =
             aux_toks xs
 
         | T.T_PERIOD _
-          ::T.T_IDENTIFIER(s, ii)
+          ::T.T_IDENTIFIER(s, _ii)
           ::T.T_LPAREN(_)
           ::xs
           ->
@@ -237,7 +237,7 @@ let compute_database ?(verbose=false) files_or_dirs =
            aux_toks xs
 
         | [] -> ()
-        | x::xs ->
+        | _x::xs ->
             aux_toks xs
       in
       aux_toks toks;

@@ -50,7 +50,7 @@ let rparens_of_if toks =
 
 (* UGLYYYYYYYYYYYYYYYYYYY. Better would be to read section 7.6.2.
 *)
-let rec fix_tokens xs =
+let fix_tokens xs =
 
   let rparens_if = rparens_of_if xs in
   let hrparens_if = Common.hashset_of_list rparens_if in

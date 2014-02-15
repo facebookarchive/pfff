@@ -14,7 +14,6 @@
  *)
 open Common
 
-open Ast_js
 module Flag = Flag_parsing_js
 module Ast = Ast_js
 module V = Visitor_js
@@ -52,7 +51,7 @@ let find_source_files_of_dir_or_files ?(include_scripts=true)xs =
 let extract_info_visitor recursor = 
   let globals = ref [] in
   let hooks = { V.default_visitor with
-    V.kinfo = (fun (k, _) i -> Common.push2 i globals)
+    V.kinfo = (fun (_k, _) i -> Common.push2 i globals)
   } in
   begin
     let vout = V.mk_visitor hooks in

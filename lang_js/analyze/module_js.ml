@@ -196,8 +196,8 @@ let rec string_of_shape_ n stack shape =
 		(mk_indent n "[...]") ^
 		(string_of_shape_ (n+1) stack _array)
 
-let rec string_of_shape n shape =
-	string_of_shape_ n [] shape
+let string_of_shape n shape =
+  string_of_shape_ n [] shape
 
 type parseinfo = (Ast_js.program * Parser_js.token list)
 

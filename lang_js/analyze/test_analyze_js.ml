@@ -1,7 +1,3 @@
-open Common
-open OUnit
-
-open Ast_js
 module Ast = Ast_js
 module Flag = Flag_parsing_js
 

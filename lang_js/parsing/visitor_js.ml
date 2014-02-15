@@ -20,14 +20,6 @@ open Ast_js
 (* Prelude *)
 (*****************************************************************************)
 
-module CommonX = struct
-    let v_parse_info x = ()
-    let v_either of_a of_b x = 
-      match x with
-      | Common.Left a -> of_a a
-      | Common.Right b -> of_b b
-end 
-
 (* hooks *)
 type visitor_in = {
 
@@ -53,7 +45,7 @@ let (mk_visitor: visitor_in -> visitor_out) = fun vin ->
 
 let rec v_info x =
   let k x = match x with { Parse_info.
-     token = v_pinfox; transfo = v_transfo 
+     token = _v_pinfox; transfo = _v_transfo 
     } ->
 (*
     let arg = Parse_info.v_pinfo v_pinfox in
@@ -210,7 +202,7 @@ and v_expr (x: expr) =
   vin.kexpr (k, all_functions) x 
 
 and v_field x = 
-  let rec k x = 
+  let k x = 
     let (v1, v2, v3) = x in
 
     let v1 = v_property_name v1
@@ -318,7 +310,7 @@ and v_xhp_body =
   | XhpNested v1 -> let v1 = v_xhp_html v1 in ()
 and v_xhp_tag x = v_string x
 and v_st x =
-  let rec k x = match x with
+  let k x = match x with
   | Variable ((v1, v2, v3)) ->
       let v1 = v_tok v1
       and v2 = v_comma_list3 v_variable_declaration v2

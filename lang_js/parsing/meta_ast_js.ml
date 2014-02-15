@@ -17,22 +17,13 @@
 
 (* pad: few tweaks because of module limitations in ocamltarzan. *)
 
-open Common
 open Ast_js
 module M = Meta_ast_generic
 module Ast = Ast_js
 
 let _current_precision = ref M.default_precision
 
-module Common2 = struct
-let vof_filename v = Ocaml.vof_string v
-end
 
-module Type_js = struct
-    let vof_jstype x = 
-      Ocaml.VTODO ""
-end
- 
 let rec vof_info x = 
   if !_current_precision.M.full_info
   then Parse_info.vof_info x
