@@ -136,14 +136,14 @@ type tree =
 (*****************************************************************************)
 (* Helpers *)
 (*****************************************************************************)
-let info_of_name (Name (s, ii)) = ii
-let str_of_name (Name (s, ii))  = s
+let info_of_name (Name (_s, ii)) = ii
+let str_of_name (Name (s, _ii))  = s
 
 let is_module_name s =
   s =~ "[A-Z].*"
 
 (* skipping comments, qualifiers, annotations *)
-let rec toks_for_ast_fuzzy toks =
+let toks_for_ast_fuzzy toks =
   let toks = toks +> Common.exclude TH.is_comment in
   let rec aux toks =
     match toks with
@@ -155,7 +155,7 @@ let rec toks_for_ast_fuzzy toks =
       | T.Tprotected _ | T.Texposed _
       )::xs -> aux xs
     (* similar to what I do for c++, skipping templates and qualifiers *)
-    | T.TIdent (s, i)::T.TDot i2::xs when is_module_name s ->
+    | T.TIdent (s, _i)::T.TDot _::xs when is_module_name s ->
         aux xs
     | T.TAt _::T.TIdent _::xs ->
         aux xs
@@ -185,7 +185,7 @@ let (mk_tree: TV.tree list -> tree list) = fun xs ->
   | TV.Bracket xxs ->
       let xxs = xxs +> List.map (tree_list ctx) in
       Bracket xxs
-  | TV.Xml ((v1, v2)) ->
+  | TV.Xml ((_, _)) ->
       raise Todo
 
   and tree_list ctx xs = 
@@ -266,7 +266,7 @@ let (mk_tree: TV.tree list -> tree list) = fun xs ->
     (* type x = { ... } *)
     |   (TV.T T.Ttype _)
       ::(TV.T (T.TIdent (s, ii1)))
-      ::(TV.T (T.TEq ii2))
+      ::(TV.T (T.TEq _))
       ::TV.Brace bodytype
       ::xs ->
         (TypeDef (Name (s, ii1),
@@ -411,7 +411,7 @@ let (mk_tree: TV.tree list -> tree list) = fun xs ->
     match body with
     | [] -> []
     | [xs] -> tree_list ctx xs
-    | x::y::xs -> failwith "the body should have no comma"
+    | _::_::_ -> failwith "the body should have no comma"
   in
 
   tree_list top_ctx xs

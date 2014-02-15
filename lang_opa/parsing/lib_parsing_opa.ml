@@ -15,12 +15,8 @@
 
 open Common
 
-open Ast_opa
-
 module Ast = Ast_opa
 module Flag = Flag_parsing_opa
-
-(* module V = Visitor_opa *)
 
 (*****************************************************************************)
 (* Wrappers *)

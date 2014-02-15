@@ -11,7 +11,6 @@
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * file license.txt for more details.
  *)
-open Common
 
 open Parser_opa
 module TH = Token_helpers_opa
@@ -71,26 +70,26 @@ let rec mk_tree xs =
   | x::xs ->
       (match x with
 
-      | TOParen ii ->
+      | TOParen _ii ->
           let body, xs = mk_comma_group x [] xs in
           (Paren body)::mk_tree xs
-      | TOBrace ii ->
+      | TOBrace _ii ->
           let body, xs = mk_comma_group x [] xs in
           (Brace body)::mk_tree xs
-      | TOBracket ii ->
+      | TOBracket _ii ->
           let body, xs = mk_comma_group x [] xs in
           (Bracket body)::mk_tree xs
 
       (* todo *)
-      | T_XML_OPEN_TAG ii ->
+      | T_XML_OPEN_TAG _ii ->
           (T x)::mk_tree xs
           
 
-      | TCParen ii | TCBrace ii | TCBracket ii ->
+      | TCParen _ii | TCBrace _ii | TCBracket _ii ->
           failwith ("wrongly parenthised code: " ^ error x)
 
       (* todo *)
-      | T_XML_CLOSE_TAG (_, ii)
+      | T_XML_CLOSE_TAG (_, _ii)
           -> 
           (T x)::mk_tree xs
 
@@ -105,7 +104,7 @@ and mk_comma_group start acc_before_sep xs =
       | x when is_closing_of start x ->
           [List.rev acc_before_sep], xs
 
-      | TCParen ii | TCBrace ii | TCBracket ii -> 
+      | TCParen _ii | TCBrace _ii | TCBracket _ii -> 
           failwith ("wrongly parenthised code: " ^ error x)
 
       | TComma _ ->
@@ -113,18 +112,18 @@ and mk_comma_group start acc_before_sep xs =
           (List.rev acc_before_sep)::body, xs
 
       (* recurse. todo? factorize with code above? *)
-      | TOParen ii ->
+      | TOParen _ii ->
           let body, xs = mk_comma_group x [] xs in
           mk_comma_group start ((Paren body)::acc_before_sep) xs
-      | TOBrace ii ->
+      | TOBrace _ii ->
           let body, xs = mk_comma_group x [] xs in
           mk_comma_group start ((Brace body)::acc_before_sep) xs
-      | TOBracket ii ->
+      | TOBracket _ii ->
           let body, xs = mk_comma_group x [] xs in
           mk_comma_group start ((Bracket body)::acc_before_sep) xs
 
       (* todo *)
-      | T_XML_CLOSE_TAG (_, ii) ->
+      | T_XML_CLOSE_TAG (_, _ii) ->
           mk_comma_group start ((T x)::acc_before_sep) xs
 
       | _ ->

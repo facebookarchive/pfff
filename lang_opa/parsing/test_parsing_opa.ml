@@ -1,11 +1,8 @@
 open Common
 
-open Ast_opa
 module Ast = Ast_opa
 module Flag = Flag_parsing_opa
 module TH = Token_helpers_opa
-
-open OUnit
 
 (*****************************************************************************)
 (* Subsystem testing *)

@@ -37,11 +37,6 @@ type program_with_tokens =
   Ast_opa.program * Parser_opa.token list
 
 (*****************************************************************************)
-(* Wrappers *)
-(*****************************************************************************)
-let pr2_err, pr2_once = Common2.mk_pr2_wrappers Flag.verbose_parsing 
-
-(*****************************************************************************)
 (* Helpers *)
 (*****************************************************************************)
 let lexbuf_to_strpos lexbuf     = 
@@ -145,7 +140,7 @@ let parse2 filename =
   let toks = tokens filename in
 
   let tr = Parse_info.mk_tokens_state toks in
-  let lexbuf_fake = Lexing.from_function (fun buf n -> raise Impossible) in
+  let lexbuf_fake = Lexing.from_function (fun _buf _n -> raise Impossible) in
 
   (* -------------------------------------------------- *)
   (* Call parser *)
@@ -171,7 +166,7 @@ let parse2 filename =
             (* | Semantic_java.Semantic (s, i) -> 
                pr2 ("semantic error " ^s^ "\n ="^ error_msg_tok tr.current)
             *)
-      | e -> raise Impossible
+      | _e -> raise Impossible
       );
     [], toks
 

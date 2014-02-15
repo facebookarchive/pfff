@@ -46,8 +46,6 @@ module V = Visitor_opa
 let fake_no_def2 = NoUse
 let fake_no_use2 = (NoInfoPlace, UniqueDef, MultiUse)
 
-let lexer_based_tagger = true
-
 let is_module_name s =
   s =~ "[A-Z].*"
 
@@ -101,7 +99,7 @@ let default_ctx = {
  * number and basic entities. The Ast is better for tagging idents,
  * to figure out what kind of ident it is (a field, a function, a type, etc).
  *)
-let visit_toplevel ~tag_hook prefs  (toplevel, toks) =
+let visit_toplevel ~tag_hook _prefs  (_toplevel, toks) =
   let already_tagged = Hashtbl.create 101 in
   let tag = (fun ii categ ->
     tag_hook ii categ;
@@ -155,23 +153,23 @@ let visit_toplevel ~tag_hook prefs  (toplevel, toks) =
         else tag info (Local Def)
 
     | TreeTodo -> ()
-    | T tok -> ()
+    | T _ -> ()
     | Paren xxs ->
         xxs +> List.iter (tree_list ctx)
     | Brace xxs ->
         xxs +> List.iter (tree_list ctx)
     | Bracket xxs ->
         xxs +> List.iter (tree_list ctx)
-    | Xml ((v1, v2)) ->
+    | Xml ((_, _)) ->
         raise Todo
   and type_ ctx = function
-    | TyName (qu, name) ->
+    | TyName (_qu, name) ->
         let info = info_of_name name in
         (* todo: different color for int/bool/list/void etc? *)
         tag info TypeMisc
         
-    | TyVar name -> ()
-    | TyApp (long_name, xs) ->
+    | TyVar _name -> ()
+    | TyApp (_long_name, xs) ->
         List.iter (type_ ctx) xs
     | TyOther xs -> tree_list ctx xs
   and type_def ctx = function
@@ -206,7 +204,7 @@ let visit_toplevel ~tag_hook prefs  (toplevel, toks) =
     match xs with
     | [] -> ()
 
-    | (T (T.TIdent (s, info)))::(Paren parens)::xs ->
+    | (T (T.TIdent (_s, info)))::(Paren parens)::xs ->
         tag info (Function (Use2 fake_no_use2));
         tree_list ctx ((Paren parens)::xs)
 
@@ -239,7 +237,7 @@ let visit_toplevel ~tag_hook prefs  (toplevel, toks) =
         
 
 
-    | (Ast.VarDef (typ, name) as x)::xs ->
+    | (Ast.VarDef (_typ, name) as x)::xs ->
         let s = str_of_name name in
         tree ctx x;
         let ctx = 
@@ -271,9 +269,9 @@ let visit_toplevel ~tag_hook prefs  (toplevel, toks) =
     | [] -> ()
     (* a little bit pad specific *)
     |   T.TComment(ii)
-      ::T.TCommentNewline (ii2)
+      ::T.TCommentNewline (_ii2)
       ::T.TComment(ii3)
-      ::T.TCommentNewline (ii4)
+      ::T.TCommentNewline (_ii4)
       ::T.TComment(ii5)
       ::xs ->
         let s = Parse_info.str_of_info ii in
@@ -319,33 +317,33 @@ let visit_toplevel ~tag_hook prefs  (toplevel, toks) =
         aux_toks xs
     *)
 
-    | (T.Ttype ii1 | T.Tand ii1)::T.TIdent (s, ii2)::xs ->
+    | (T.Ttype _ii1 | T.Tand _ii1)::T.TIdent (_s, ii2)::xs ->
         tag ii2 (TypeDef Def);
         aux_toks xs
 
      (* can't put (Function Def) here because the function keyword
       * can also be followed by the return type.
       *)
-    | T.TIdent (s, ii1)::T.TEq _::T.Tparser _::xs ->
+    | T.TIdent (_s, ii1)::T.TEq _::T.Tparser _::xs ->
         tag ii1 (Function (Def2 fake_no_def2));
         aux_toks xs
 
-    | T.T_XML_ATTR("id", _)::T.TEq(_)::T.TSharpIdent(s, ii)::xs ->
+    | T.T_XML_ATTR("id", _)::T.TEq(_)::T.TSharpIdent(_s, ii)::xs ->
         tag ii (Global (Def2 fake_no_def2));
         aux_toks xs
 
     | T.T_XML_ATTR("id", _)::T.TEq(_)
-      ::T.TGUIL(ii)::T.T_ENCAPSED(_, ii1)::xs ->
+      ::T.TGUIL(_ii)::T.T_ENCAPSED(_, _ii1)::xs ->
         (* this is for style, not for modification *)
         aux_toks xs
 
     | T.T_XML_ATTR(("class"|"style"), _)::T.TEq(_)
-        ::T.TGUIL(ii)::T.T_ENCAPSED(_, ii1)::xs ->
+        ::T.TGUIL(_ii)::T.T_ENCAPSED(_, ii1)::xs ->
         tag ii1 EmbededStyle;
         aux_toks xs
 
     | T.T_XML_ATTR(("href"|"src"|"xmlns"), _)::T.TEq(_)
-        ::T.TGUIL(ii)::T.T_ENCAPSED(_, ii1)::xs ->
+        ::T.TGUIL _::T.T_ENCAPSED(_, ii1)::xs ->
         tag ii1 EmbededUrl;
         aux_toks xs
 
@@ -354,33 +352,33 @@ let visit_toplevel ~tag_hook prefs  (toplevel, toks) =
         aux_toks xs
 
     (* uses *)
-    | T.TIdent(s, ii1)::T.TColon ii2::xs ->
+    | T.TIdent(_s, ii1)::T.TColon _::xs ->
         tag ii1 (Field (Use2 fake_no_use2));
         aux_toks xs
 
-    | T.TTilde(ii1)::T.TIdent (_,ii2)::xs ->
+    | T.TTilde _::T.TIdent (_,ii2)::xs ->
         tag ii2 (Field (Use2 fake_no_use2));
         aux_toks xs
 
-    |   T.TIdent (s1, ii1)::T.TDot ii2::xs ->
+    |   T.TIdent (s1, ii1)::T.TDot _::xs ->
         if is_module_name s1 
         then tag ii1 (Module (Use));
         aux_toks xs
 
-    | T.TSharp _::T.TIdent(s1, ii1)::xs ->
+    | T.TSharp _::T.TIdent(_s1, ii1)::xs ->
         tag ii1 (Global (Use2 fake_no_use2));
         aux_toks xs
 
-    | x::T.TDiv _::T.TIdent(s1, ii1)::xs ->
+    | _x::T.TDiv _::T.TIdent(_s1, ii1)::xs ->
         if not (Hashtbl.mem already_tagged ii1)
         then tag ii1 (Global (Use2 fake_no_use2));
         aux_toks xs
 
-    | T.TAt _::T.TIdent(s1, ii1)::xs ->
+    | T.TAt _::T.TIdent(_s1, ii1)::xs ->
         tag ii1 CppOther;
         aux_toks xs
 
-    | x::xs ->
+    | _x::xs ->
         aux_toks xs
   in
   let toks' = toks +> Common.exclude (function
@@ -402,10 +400,10 @@ let visit_toplevel ~tag_hook prefs  (toplevel, toks) =
         if not (Hashtbl.mem already_tagged ii) (* could be Estet tagged *)
         then tag ii Comment
 
-    | T.TCommentSpace ii | T.TCommentNewline ii | T.TCommentMisc ii -> ()
+    | T.TCommentSpace _ii | T.TCommentNewline _ii | T.TCommentMisc _ii -> ()
 
     | T.TUnknown ii -> tag ii Error
-    | T.EOF ii-> ()
+    | T.EOF _ii -> ()
 
     (* values  *)
 
@@ -414,7 +412,7 @@ let visit_toplevel ~tag_hook prefs  (toplevel, toks) =
     | T.TIdent(("none"), ii) -> 
         tag ii Null
 
-    | T.TInt (s,ii) | T.TFloat (s,ii) ->
+    | T.TInt (_s,ii) | T.TFloat (_s,ii) ->
         tag ii Number
     | T.TGUIL ii | T.T_ENCAPSED (_, ii) ->
         if not (Hashtbl.mem already_tagged ii)
@@ -479,15 +477,15 @@ let visit_toplevel ~tag_hook prefs  (toplevel, toks) =
         -> tag ii Keyword
 
     (* xml  *)
-    | T.T_XML_OPEN_TAG (s, ii) ->
+    | T.T_XML_OPEN_TAG (_s, ii) ->
         (* todo: match s with ...? look html highlighter in lang_html/ ? *)
         tag ii EmbededHtml
 
-    | T.T_XML_CLOSE_TAG (sopt, ii) ->
+    | T.T_XML_CLOSE_TAG (_sopt, ii) ->
         (* todo: match s with ... *)
         tag ii EmbededHtml
 
-    | T.T_XML_ATTR (s, ii) ->
+    | T.T_XML_ATTR (_s, ii) ->
         (* todo: match s with ...? look html highlighter in lang_html/ ? *)
         if not (Hashtbl.mem already_tagged ii)
         then tag ii EmbededHtmlAttr
@@ -496,10 +494,10 @@ let visit_toplevel ~tag_hook prefs  (toplevel, toks) =
         tag ii EmbededHtml
     | T.T_XML_SLASH_GT ii ->
         tag ii EmbededHtml
-    | T.T_XML_TEXT (s, ii) -> tag ii String
+    | T.T_XML_TEXT (_s, ii) -> tag ii String
 
     (* css *)
-    | T.TSharpIdent (s, ii) ->
+    | T.TSharpIdent (_s, _ii) ->
         ()
 
     (* ?? *)
@@ -557,9 +555,9 @@ let visit_toplevel ~tag_hook prefs  (toplevel, toks) =
 
     (* rest *)
 
-    | T.TExternalIdent (s, ii) ->
+    | T.TExternalIdent (_s, _ii) ->
         ()
-    | T.TIdent (s, ii) ->
+    | T.TIdent (_s, _ii) ->
         ()
   );
   (* -------------------------------------------------------------------- *)

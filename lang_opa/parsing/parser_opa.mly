@@ -25,9 +25,7 @@
  * ambiguities I was not able to resolve when adding other rules
  * (e.g. local bindings).
  *)
-open Common
 
-open Ast_opa
 %}
 
 /*(*************************************************************************)*/

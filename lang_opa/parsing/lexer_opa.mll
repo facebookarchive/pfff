@@ -341,7 +341,7 @@ rule initial = parse
       | Some f -> 
           let res = f info in
           (match res, !_last_non_whitespace_like_token with
-          | Tparser ii, Some (TEq _) -> 
+          | Tparser _ii, Some (TEq _) -> 
               push_mode (ST_IN_PARSER);
               ()
           | _ -> ()

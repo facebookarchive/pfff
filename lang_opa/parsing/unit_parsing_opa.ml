@@ -1,7 +1,6 @@
 open Common
 open OUnit
 
-open Ast_fuzzy_opa
 module Ast = Ast_fuzzy_opa
 module Flag = Flag_parsing_opa
 
