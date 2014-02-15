@@ -93,7 +93,3 @@ let parse2 filename =
 
 let parse a = 
   Common.profile_code "Parse_csharp.parse" (fun () -> parse2 a)
-
-let parse_program file = 
-  let ((ast, toks), _stat) = parse file in
-  ast

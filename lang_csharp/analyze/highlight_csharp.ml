@@ -14,7 +14,6 @@
  *)
 open Common
 
-open Ast_csharp
 module Ast = Ast_csharp
 (*module V = Visitor_csharp *)
 open Highlight_code
@@ -52,7 +51,7 @@ let is_module_name s =
 
 let visit_program
     ~tag_hook
-    prefs 
+    _prefs 
     (*db_opt *)
     (_ast, toks)
   =
@@ -74,9 +73,9 @@ let visit_program
     | [] -> ()
     (* a little bit pad specific *)
     |   T.TComment(ii)
-      ::T.TCommentNewline (ii2)
+      ::T.TCommentNewline (_ii2)
       ::T.TComment(ii3)
-      ::T.TCommentNewline (ii4)
+      ::T.TCommentNewline (_ii4)
       ::T.TComment(ii5)
       ::xs ->
         let s = Parse_info.str_of_info ii in
@@ -102,21 +101,21 @@ let visit_program
     (* poor's man identifier tagger *)
 
     (* defs *)
-    | T.Tclass ii1::T.TIdent (s, ii2)::xs ->
+    | T.Tclass _ii1::T.TIdent (_s, ii2)::xs ->
         if not (Hashtbl.mem already_tagged ii2) && lexer_based_tagger
         then tag ii2 (Class (Def2 fake_no_def2));
         aux_toks xs
 
-    | (T.Tvoid ii | T.Tint ii)
-      ::T.TIdent (s, ii2)
-      ::T.TOParen (ii3)
+    | (T.Tvoid _ii | T.Tint _ii)
+      ::T.TIdent (_s, ii2)
+      ::T.TOParen _
       ::xs ->
         if not (Hashtbl.mem already_tagged ii2) && lexer_based_tagger
         then tag ii2 (Method (Def2 fake_no_def2));
         aux_toks xs
 
-    |   T.TIdent (s1, ii1)::T.TDot ii2
-      ::T.TIdent (s3, ii3)::T.TIdent (s4,ii4)::xs 
+    |   T.TIdent (s1, ii1)::T.TDot _
+      ::T.TIdent (_s3, ii3)::T.TIdent (_s4,ii4)::xs 
        ->
         if not (Hashtbl.mem already_tagged ii4) && lexer_based_tagger
         then begin 
@@ -130,8 +129,8 @@ let visit_program
 
     (* uses *)
 
-    |   T.TIdent (s1, ii1)::T.TDot ii2
-      ::T.TIdent (s3, ii3)::T.TOParen(ii4)::xs ->
+    |   T.TIdent (s1, ii1)::T.TDot _
+      ::T.TIdent (_s3, ii3)::T.TOParen _::xs ->
         if not (Hashtbl.mem already_tagged ii3) && lexer_based_tagger
         then begin 
           tag ii3 (Method (Use2 fake_no_use2));
@@ -143,8 +142,8 @@ let visit_program
         end;
         aux_toks xs
 
-    |   T.TIdent (s1, ii1)::T.TDot ii2
-      ::T.TIdent (s3, ii3)::T.TEq ii4::xs ->
+    |   T.TIdent (s1, ii1)::T.TDot _
+      ::T.TIdent (_s3, ii3)::T.TEq _::xs ->
         if not (Hashtbl.mem already_tagged ii3) && lexer_based_tagger
         then begin 
           tag ii3 (Field (Use2 fake_no_use2));
@@ -153,7 +152,7 @@ let visit_program
         aux_toks xs
 
 
-    |  T.TIdent (s1, ii1)::T.TDot ii2
+    |  T.TIdent (s1, ii1)::T.TDot _
      ::T.TIdent (s3, ii3)::T.TDot ii4::xs ->
         if not (Hashtbl.mem already_tagged ii1) && lexer_based_tagger
         then begin 
@@ -162,7 +161,7 @@ let visit_program
         aux_toks (T.TIdent (s3, ii3)::T.TDot ii4::xs)
         
 
-    | x::xs ->
+    | _x::xs ->
         aux_toks xs
   in
   let toks' = toks +> Common.exclude (function
@@ -190,18 +189,18 @@ let visit_program
         then ()
         else ()
 
-    | T.TCommentNewline ii | T.TCommentMisc ii -> ()
+    | T.TCommentNewline _ii | T.TCommentMisc _ii -> ()
 
     | T.TUnknown ii -> tag ii Error
-    | T.EOF ii-> ()
+    | T.EOF _ii -> ()
 
     (* values  *)
 
-    | T.TString (s,ii) ->
+    | T.TString (_s,ii) ->
         tag ii String
-    | T.TChar (s, ii) ->
+    | T.TChar (_s, ii) ->
         tag ii String
-    | T.TFloat (s,ii) | T.TInt (s,ii) ->
+    | T.TFloat (_s,ii) | T.TInt (_s,ii) ->
         tag ii Number
 
     (* keywords  *)
@@ -384,7 +383,7 @@ let visit_program
     | T.TSemiColon ii
         -> tag ii Punctuation
 
-    | T.TIdent (s, ii) -> 
+    | T.TIdent (_s, _ii) -> 
         ()
   );
   (* -------------------------------------------------------------------- *)

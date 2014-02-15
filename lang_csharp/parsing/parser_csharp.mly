@@ -17,9 +17,6 @@
 (*
  * http://www.jaggersoft.com/csharp_grammar.html
  *)
-open Common
-
-open Ast_csharp
 
 %}
 

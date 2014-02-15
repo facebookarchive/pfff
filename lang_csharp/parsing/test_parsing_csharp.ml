@@ -1,10 +1,7 @@
 open Common
 
-open Ast_csharp
 module Ast = Ast_csharp
 module Flag = Flag_parsing_csharp
-
-open OUnit
 
 (*****************************************************************************)
 (* Subsystem testing *)
@@ -29,7 +26,7 @@ let test_parse_csharp xs =
   fullxs +> List.iter (fun file -> 
     pr2 ("PARSING: " ^ file);
 
-    let (xs, stat) = Parse_csharp.parse file in
+    let (_xs, stat) = Parse_csharp.parse file in
     Common.push2 stat stat_list;
   );
   Parse_info.print_parsing_stat_list !stat_list;
