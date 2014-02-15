@@ -43,7 +43,7 @@ let prolog_query ~files query =
     let g = 
       Graph_code_bytecode.build ~verbose:verbose ~graph_code_java root cfiles in
 
-    let facts = Graph_code_prolog.build tmp_dir g in
+    let facts = Graph_code_prolog.build g in
     let facts_pl_file = Filename.concat tmp_dir "facts.pl" in
     Common.with_open_outfile facts_pl_file (fun (pr_no_nl, _chan) ->
       let pr s = pr_no_nl (s ^ "\n") in

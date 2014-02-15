@@ -136,7 +136,7 @@ let java_class_name_of_bytecode_class_name x =
    (* todo: need look in original java file, or have a more compatible
     * convention of how I name anon class entities in graph_code_java.ml
     *)
-   | DollarAnonClass i -> raise Todo
+   | DollarAnonClass _ -> raise Todo
    | DollarNestedClass s -> "." ^ s
    ) +> Common.join ""
   )
@@ -250,7 +250,7 @@ let lookup g n s =
 (* Bytecode<->Java connection *)
 (*****************************************************************************)
 
-let unmangle graph_java (full_str_bytecode_name, kind) =
+let unmangle _graph_java (full_str_bytecode_name, kind) =
 
   let class_ = bytecode_class_name_of_string full_str_bytecode_name in
   
@@ -469,7 +469,7 @@ and code env x =
   | AttributeCode _ -> failwith "code in c_attributes?"
   | _ -> ()
   );
-  x.c_code +> Array.iteri (fun i op ->
+  x.c_code +> Array.iteri (fun _i op ->
     match op with
     | OpNew i | OpANewArray i ->
         (match env.consts.(i) with
@@ -480,7 +480,7 @@ and code env x =
           pr2_gen x;
         );
     | OpNewArray _java_basic_type -> ()
-    | OpAMultiNewArray (i, _) ->
+    | OpAMultiNewArray (_i, _) ->
       pr2_once "TODO OpAMultiNewArray"
 
 
@@ -535,9 +535,9 @@ and code env x =
           JDumpBasics.dump_constant ch x;
         );
 
-    | OpInvokeInterface (i1, i2) ->
+    | OpInvokeInterface (_i1, _i2) ->
       pr2_once "TODO OpInvokeInterface";
-    | OpCheckCast i | OpInstanceOf i ->
+    | OpCheckCast _i | OpInstanceOf _i ->
       ()
     | _ -> ()
   );
