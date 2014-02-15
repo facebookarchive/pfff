@@ -87,7 +87,7 @@ let detect_comment_style file =
   +> Common2.return_when (fun s ->
     if s =~ regexp_section_pleac_data
     then 
-      let (s1, s2, s3) = Common.matched3 s in
+      let (s1, _s2, s3) = Common.matched3 s in
       Some (s1, s3)
     else None
   )

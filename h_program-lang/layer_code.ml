@@ -229,8 +229,8 @@ let build_index_of_layers ~root layers =
   let hmacro = Common2.hash_with_default (fun () -> []) in
   
   layers 
-   +> List.filter (fun (layer, active) -> active) 
-   +> List.iter (fun (layer, active) ->
+   +> List.filter (fun (_layer, active) -> active) 
+   +> List.iter (fun (layer, _active) ->
     let hkind = Common.hash_of_list layer.kinds in
 
     layer.files +> List.iter (fun (file, finfo) ->
@@ -653,8 +653,10 @@ let simple_layer_of_parse_infos ~root ~title ?(description="") xs kinds =
  * Take a list of files with a percentage and possibly micro_level
  * information.
  *)
+(*
 let layer_red_green_and_heatmap ~root ~output xs =
   raise Todo
+*)
 
 (*****************************************************************************)
 (* Layer stat *)
@@ -669,7 +671,7 @@ let stat_of_layer layer =
   layer.kinds +> List.iter (fun (kind, _color) -> 
     h#add kind 0
   );
-  layer.files +> List.iter (fun (file, finfo) ->
+  layer.files +> List.iter (fun (_file, finfo) ->
     finfo.micro_level +> List.iter (fun (_line, kind) ->
       h#update kind (fun old -> old + 1)
     )

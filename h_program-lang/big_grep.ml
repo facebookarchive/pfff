@@ -161,7 +161,7 @@ let top_n_search2 ~top_n ~query idx =
   let words = Str.split (Str.regexp "[ \t]+") query in
   let re =
     match words with
-    | [q] -> Str.regexp (".*" ^ query)
+    | [_] -> Str.regexp (".*" ^ query)
     | [a;b] -> 
         Str.regexp (spf 
                        ".*\\(%s.*%s\\)\\|\\(%s.*%s\\)"

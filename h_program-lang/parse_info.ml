@@ -259,7 +259,7 @@ let token_location_of_info ii =
   match ii.token with
   | OriginTok pinfo -> pinfo
   (* TODO ? dangerous ? *)
-  | ExpandedTok (pinfo_pp, pinfo_orig, offset) -> pinfo_pp
+  | ExpandedTok (pinfo_pp, _pinfo_orig, _offset) -> pinfo_pp
   | FakeTokStr (_, (Some (pi, _))) -> pi
 
   | FakeTokStr (_, None)
@@ -289,7 +289,7 @@ let pinfo_of_info ii = ii.token
 
 let is_origintok ii =
   match ii.token with
-  | OriginTok pi -> true
+  | OriginTok _ -> true
   | _ -> false
 
 (*
@@ -381,7 +381,7 @@ let compare_pos ii1 ii2 =
     | FakeTokStr _
     | Ab
       -> failwith "get_pos: Ab or FakeTok"
-    | ExpandedTok (pi_pp, pi_orig, offset) ->
+    | ExpandedTok (_pi_pp, pi_orig, offset) ->
         Virt (pi_orig, offset)
   in
   let pos1 = get_pos (pinfo_of_info ii1) in
@@ -592,7 +592,7 @@ and vof_add =
       let v1 = Ocaml.vof_string v1 in Ocaml.VSum (("AddStr", [ v1 ]))
   | AddNewlineAndIdent -> Ocaml.VSum (("AddNewlineAndIdent", []))
 
-let rec vof_info
+let vof_info
  { token = v_token; transfo = v_transfo } =
   let bnds = [] in
   let arg = vof_transformation v_transfo in
@@ -940,10 +940,10 @@ let print_parsing_stat_list ?(verbose=false)statxs =
   (spf "NB total lines = %d; " total_lines) ^
   (spf "perfect = %d; " perfect) ^
   (spf "pbs = %d; "     (statxs +> List.filter (function 
-      {have_timeout = b; bad = n; _} when n > 0 -> true | _ -> false) 
+      {bad = n; _} when n > 0 -> true | _ -> false) 
                                +> List.length)) ^
   (spf "timeout = %d; " (statxs +> List.filter (function 
-      {have_timeout = true; bad = n; _} -> true | _ -> false) 
+      {have_timeout = true; _} -> true | _ -> false) 
                                +> List.length)) ^
   (spf "=========> %d" ((100 * perfect) / total)) ^ "%"
                                                           
@@ -991,7 +991,7 @@ let print_recurring_problematic_tokens xs =
   pr2 ("maybe 10 most problematic tokens");
   Common2.pr2_xxxxxxxxxxxxxxxxx();
   Common.hash_to_list h
-  +> List.sort (fun (k1,(v1,_)) (k2,(v2,_)) -> compare v2 v1)
+  +> List.sort (fun (_k1,(v1,_)) (_k2,(v2,_)) -> compare v2 v1)
   +> Common.take_safe 10
   +> List.iter (fun (k,(i, (file_ex, line_ex))) ->
     pr2 (spf "%s: present in %d parsing errors" k i);

@@ -103,7 +103,7 @@ let print env x =
   else env.print x
 
 let spaces env =
-  for i = 1 to List.hd env.margin do
+  for _i = 1 to List.hd env.margin do
     print env " ";
   done
 
@@ -269,7 +269,7 @@ let nested_arg env f opar l sep cpar =
     fun env ->
       print env opar;
       nestc env (
-        fun env ->
+        fun _env ->
           elt l;
       );
       spaces env;
@@ -413,7 +413,7 @@ let first_char_escape env s =
   if s = "" then 0 else
     match s.[0] with
     | 'A' .. 'Z' | 'a' .. 'z' | '&' | ' ' | '\n' | '<' | '>' -> 0
-    | c ->
+    | _c ->
         print env "{'";
         let size = ref 1 in
         while !size < String.length s && not (char_is_space s.[!size]) do incr size done;

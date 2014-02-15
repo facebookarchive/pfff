@@ -82,13 +82,14 @@ let string_of_tag t =
     t.byte_offset
 
 (* of tests/misc/functions.php *)
+(*
 let fake_defs = [
   mk_tag "function a() {" "a" 3 7;
   mk_tag "function b() {" "b" 7 32;
   mk_tag "function c() {" "c" 14 65;
   mk_tag "function d() {" "d" 20 107;
 ]
-
+*)
 
 (* helpers used externally by language taggers *)
 let tag_of_info filelines info kind =
@@ -132,7 +133,7 @@ let add_method_tags_when_unambiguous files_and_defs =
 
   (* step1: global analysis on all defs, remember all names and methods *)
   let h_toplevel_names = 
-    files_and_defs +> List.map (fun (file, tags) ->
+    files_and_defs +> List.map (fun (_file, tags) ->
       tags +> Common.map_filter (fun t ->
         match t.kind with
         | Db.Class _ | Db.Function | Db.Constant -> Some t.tagname
@@ -141,7 +142,7 @@ let add_method_tags_when_unambiguous files_and_defs =
     ) +> List.flatten +> Common.hashset_of_list
   in
   let h_grouped_methods =
-    files_and_defs +> List.map (fun (file, tags) ->
+    files_and_defs +> List.map (fun (_file, tags) ->
       tags +> Common.map_filter (fun t ->
         match t.kind with
         | Db.Method _ ->
@@ -214,7 +215,7 @@ let generate_vi_tags_file tags_file files_and_defs =
       +> List.flatten
       +> Common.sort_by_key_lowfirst
     in
-    all_tags +> List.iter (fun (tagname, (tag, file)) ->
+    all_tags +> List.iter (fun (_tagname, (tag, file)) ->
       (* {tagname}<Tab>{tagfile}<Tab>{tagaddress} 
        * "The two characters semicolon and double quote [...] are
        * interpreted by Vi as the start of a comment, which makes the

@@ -482,7 +482,7 @@ let info_of_def_arity defarity =
 
   | NoDef -> [`STRIKETHROUGH true] 
 
-let info_of_place defplace = 
+let info_of_place _defplace = 
   raise Todo
 
 (*****************************************************************************)
@@ -825,9 +825,9 @@ let info_of_category = function
 let arity_ids ids  = 
   match ids with
   | [] -> NoDef
-  | [x] -> UniqueDef
-  | [x;y] -> DoubleDef
-  | x::y::z::xs -> MultiDef
+  | [_] -> UniqueDef
+  | [_;_] -> DoubleDef
+  | _::_::_::_ -> MultiDef
 
 let rewrap_arity_def2_category arity categ = 
 

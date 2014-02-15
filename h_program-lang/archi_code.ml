@@ -200,7 +200,9 @@ let find_duplicate_dirname dir =
 (* actions *)
 (*****************************************************************************)
 
+(*
 let actions () = [
   "-test_dup_dir", "<dir>",
   Common.mk_action_1_arg (find_duplicate_dirname);
 ]
+*)

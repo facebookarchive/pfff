@@ -93,7 +93,7 @@ let check_overlay ~dir_orig ~dir_overlay =
     Hashtbl.add h file true;
   );
 
-  let (common, only_in_orig, only_in_overlay) = 
+  let (_common, only_in_orig, only_in_overlay) = 
     Common2.diff_set_eff files files2 in
 
 

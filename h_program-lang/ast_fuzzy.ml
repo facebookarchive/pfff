@@ -153,7 +153,7 @@ let (default_visitor : visitor_in) =
 let (mk_visitor: visitor_in -> visitor_out) = fun vin ->
 
   let rec v_tree x =
-    let rec k x = match x with
+    let k x = match x with
       | Braces ((v1, v2, v3)) ->
         let _v1 = v_tok v1 and _v2 = v_trees v2 and _v3 = v_tok v3 in ()
       | Parens ((v1, v2, v3)) ->
@@ -170,7 +170,7 @@ let (mk_visitor: visitor_in -> visitor_out) = fun vin ->
     in
     vin.ktree (k, all_functions) x
  and v_trees a = 
-    let rec k xs =
+    let k xs =
       match xs with
       | [] -> ()
       | x::xs ->
@@ -179,10 +179,10 @@ let (mk_visitor: visitor_in -> visitor_out) = fun vin ->
     in
     vin.ktrees (k, all_functions) a
 
- and v_wrap (s, x) = v_tok x
+ and v_wrap (_s, x) = v_tok x
         
  and v_tok x =
-    let rec k x = () in
+    let k _x = () in
     vin.ktok (k, all_functions) x
 
   and all_functions x = v_trees x in
@@ -196,7 +196,7 @@ type map_visitor = {
   mtok: (tok -> tok) -> tok -> tok;
 }
 
-let rec (mk_mapper: map_visitor -> (trees -> trees)) = fun hook ->
+let (mk_mapper: map_visitor -> (trees -> trees)) = fun hook ->
   let rec map_tree =
     function
     | Braces ((v1, v2, v3)) ->
@@ -232,7 +232,7 @@ let rec (mk_mapper: map_visitor -> (trees -> trees)) = fun hook ->
 let (ii_of_trees: trees -> Parse_info.info list) = fun trees ->
   let globals = ref [] in
   let hooks = { default_visitor with
-    ktok = (fun (k, _) i -> Common.push2 i globals)
+    ktok = (fun (_k, _) i -> Common.push2 i globals)
   } in
   begin
     let vout = mk_visitor hooks in
@@ -246,7 +246,7 @@ let (ii_of_trees: trees -> Parse_info.info list) = fun trees ->
 
 let abstract_position_trees trees = 
   let hooks = { 
-    mtok = (fun (k) i -> 
+    mtok = (fun (_k) i -> 
       { i with Parse_info.token = Parse_info.Ab }
     )
   } in
@@ -281,6 +281,6 @@ let rec vof_multi_grouped =
   | Metavar v1 -> let v1 = vof_wrap v1 in Ocaml.VSum (("Metavar", [ v1 ]))
   | Dots v1 -> let v1 = vof_token v1 in Ocaml.VSum (("Dots", [ v1 ]))
   | Tok v1 -> let v1 = vof_wrap v1 in Ocaml.VSum (("Tok", [ v1 ]))
-and vof_wrap (s, x) = Ocaml.VString s
+and vof_wrap (s, _x) = Ocaml.VString s
 and vof_trees xs =
   Ocaml.VList (xs +> List.map vof_multi_grouped)
