@@ -592,7 +592,7 @@ simple_expr:
      { match $2 with
      | [] -> Sequence ($1, $2, $3) 
      | [Left x] -> ParenExpr ($1, x, $3)
-     | [Right x] -> raise Impossible
+     | [Right _] -> raise Impossible
      | _ -> Sequence ($1, $2, $3) 
      }
 

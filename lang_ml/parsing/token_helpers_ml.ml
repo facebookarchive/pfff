@@ -12,7 +12,6 @@
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the file
  * license.txt for more details.
  *)
-open Common
 
 open Parser_ml
 module PI = Parse_info
@@ -30,9 +29,11 @@ let is_comment = function
   | TCommentMisc _ -> true
   | _ -> false 
 
+(*
 let is_just_comment = function
   | TComment _ -> true
   | _ -> false 
+*)
 
 let token_kind_of_tok t =
   match t with
@@ -59,19 +60,19 @@ let info_of_tok = function
 
   | TSharpDirective ii -> ii
 
-  | TInt  (s, ii) -> ii
-  | TFloat  (s, ii) -> ii
-  | TChar  (s, ii) -> ii
-  | TString  (s, ii) -> ii
-  | TLowerIdent  (s, ii) -> ii
-  | TUpperIdent  (s, ii) -> ii
-  | TLabelUse  (s, ii) -> ii
-  | TLabelDecl  (s, ii) -> ii
-  | TOptLabelUse  (s, ii) -> ii
-  | TOptLabelDecl  (s, ii) -> ii
+  | TInt  (_s, ii) -> ii
+  | TFloat  (_s, ii) -> ii
+  | TChar  (_s, ii) -> ii
+  | TString  (_s, ii) -> ii
+  | TLowerIdent  (_s, ii) -> ii
+  | TUpperIdent  (_s, ii) -> ii
+  | TLabelUse  (_s, ii) -> ii
+  | TLabelDecl  (_s, ii) -> ii
+  | TOptLabelUse  (_s, ii) -> ii
+  | TOptLabelDecl  (_s, ii) -> ii
 
-  | TPrefixOperator (s, ii) -> ii
-  | TInfixOperator (s, ii) -> ii
+  | TPrefixOperator (_s, ii) -> ii
+  | TInfixOperator (_s, ii) -> ii
 
   | Tfun ii -> ii
   | Tfunction ii -> ii

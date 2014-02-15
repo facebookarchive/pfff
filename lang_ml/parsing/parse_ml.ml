@@ -122,7 +122,7 @@ let parse2 filename =
 
   let checkpoint = TH.line_of_tok tr.PI.current in
 
-  let lexbuf_fake = Lexing.from_function (fun buf n -> raise Impossible) in
+  let lexbuf_fake = Lexing.from_function (fun _buf _n -> raise Impossible) in
 
   let elems = 
     try (
@@ -180,7 +180,7 @@ let parse2 filename =
               (* | Semantic_java.Semantic (s, i) -> 
                  pr2 ("semantic error " ^s^ "\n ="^ error_msg_tok tr.current)
           *)
-        | e -> raise Impossible
+        | _e -> raise Impossible
         );
       let checkpoint2 = Common.cat filename +> List.length in
 
@@ -197,7 +197,7 @@ let parse a =
   Common.profile_code "Parse_ml.parse" (fun () -> parse2 a)
 
 let parse_program file = 
-  let ((ast, toks), _stat) = parse file in
+  let ((ast, _toks), _stat) = parse file in
   ast
 
 (*****************************************************************************)

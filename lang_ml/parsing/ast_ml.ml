@@ -367,7 +367,7 @@ let info_of_name (Name (_,info)) = info
 
 let uncomma xs = Common.map_filter (function
   | Left e -> Some e
-  | Right info -> None
+  | Right _info -> None
   ) xs
 let unpipe xs = uncomma xs
 

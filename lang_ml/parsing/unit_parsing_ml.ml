@@ -38,7 +38,7 @@ module A = Foo2
          let visitor = V.mk_visitor { V.default_visitor with
            V.kmodule_expr = (fun (k, _) x ->
              (match x with
-             | ModuleName ((qu, name)) ->
+             | ModuleName ((_qu, _name)) ->
                  incr cnt
              | _ -> ()
              );
@@ -46,13 +46,13 @@ module A = Foo2
            );
            V.kitem = (fun (k, _) x ->
              (match x with
-             | Open (_tok, (qu, name)) ->
+             | Open (_tok, (_qu, _name)) ->
                  incr cnt;
              | _ -> ()
              );
              k x
            );
-           V.kqualifier = (fun (k, _) xs ->
+           V.kqualifier = (fun (_k, _) xs ->
              (match xs with 
              | [Name (s, _), _tok] ->
                  pr2 s;

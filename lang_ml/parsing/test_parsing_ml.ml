@@ -1,7 +1,5 @@
 open Common
-open OUnit
 
-open Ast_ml
 module Ast = Ast_ml
 module Flag = Flag_parsing_ml
 
@@ -29,7 +27,7 @@ let test_parse_ml_or_mli xs =
   fullxs +> Console.progress (fun k -> List.iter (fun file -> 
     k();
 
-    let (xs, stat) = 
+    let (_xs, stat) = 
       Common.save_excursion Flag_parsing_ml.error_recovery true (fun () ->
         Parse_ml.parse file 
       )
@@ -56,7 +54,7 @@ let test_parse_ml_fuzzy dir_or_file =
       try 
         let _fuzzy = Parse_ml.parse_fuzzy file in
         ()
-      with exn ->
+      with _exn ->
         (* pr2 (spf "PB with: %s, exn = %s" file (Common.exn_to_s exn)); *)
         pr2 file;
   ));

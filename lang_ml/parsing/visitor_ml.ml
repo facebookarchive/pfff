@@ -12,8 +12,6 @@
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the file
  * license.txt for more details.
  *)
-open Common
-
 open Ast_ml
 
 (*****************************************************************************)
@@ -82,7 +80,7 @@ let (mk_visitor: visitor_in -> visitor_out) = fun vin ->
 
 let rec v_info x =
   let k x = match x with { Parse_info.
-     token = v_pinfox; transfo = v_transfo 
+     token = _v_pinfox; transfo = _v_transfo 
     } ->
 (*
     let _arg = Parse_info.v_pinfo v_pinfox in
@@ -177,13 +175,13 @@ and v_uname v = v_name v
 and v_long_name (v1, v2) =
   let v1 = v_qualifier v1 and v2 = v_name v2 in ()
 and v_qualifier v =
-  let k x = 
+  let k _x = 
     Ocaml.v_list (fun (v1, v2) -> let v1 = v_name v1 and v2 = v_tok v2 in ()) v
   in
   vin.kqualifier (k, all_functions) v
   
 and v_ty x =
-  let rec k x = 
+  let k x = 
     match x with
   | TyName v1 -> let v1 = v_long_name v1 in ()
   | TyVar ((v1, v2)) -> let v1 = v_tok v1 and v2 = v_name v2 in ()
@@ -197,7 +195,7 @@ and v_ty x =
   vin.kty (k, all_functions) x
 
 and v_type_declaration x =
-  let rec k x =
+  let k x =
     match x with
   | TyAbstract ((v1, v2)) -> let v1 = v_ty_params v1 and v2 = v_name v2 in ()
   | TyDef ((v1, v2, v3, v4)) ->
@@ -223,7 +221,7 @@ and v_constructor_arguments =
   | Of ((v1, v2)) -> let v1 = v_tok v1 and v2 = v_star_list1 v_ty v2 in ()
 and
   v_label_declaration x = 
-   let rec k x = 
+   let k x = 
      match x with {
        fld_mutable = v_fld_mutable;
        fld_name = v_fld_name;
@@ -250,7 +248,7 @@ and v_ty_parameter (v1, v2) = let v1 = v_tok v1 and v2 = v_name v2 in ()
 
 
 and v_expr v =
-  let rec k x = 
+  let k x = 
     match x with
 
   | C v1 -> let v1 = v_constant v1 in ()
@@ -361,7 +359,7 @@ and v_record_expr =
       and v3 = v_semicolon_list11 v_field_and_expr v3
       in ()
 and v_field_and_expr v =
-  let rec k x = 
+  let k x = 
     match x with
   | FieldExpr ((v1, v2, v3)) ->
       let v1 = v_long_name v1 and v2 = v_tok v2 and v3 = v_expr v3 in ()
@@ -459,7 +457,7 @@ and v_let_binding x =
 
 and
   v_let_def x =
-  let rec k x =
+  let k x =
     match x with
  {
               l_name = v_l_name;
@@ -476,7 +474,7 @@ and
 and v_function_def v = Ocaml.v_unit v
 and v_module_type v = Ocaml.v_unit v
 and v_module_expr v = 
-  let rec k v = 
+  let k v = 
   match v with
   | ModuleName v1 ->
       let v1 = v_long_name v1 in
@@ -492,7 +490,7 @@ and v_module_expr v =
   vin.kmodule_expr (k, all_functions) v
 
 and v_item x =
-  let rec k x =
+  let k x =
     match x with
   | Type ((v1, v2)) ->
       let v1 = v_tok v1 and v2 = v_and_list2 v_type_declaration v2 in ()
@@ -538,7 +536,7 @@ and v_rec_opt v = Ocaml.v_option v_tok v
 
 
 and v_toplevel x =
-  let rec k = function
+  let k = function
   | Item v1 -> let v1 = v_item v1 in ()
   | ScSc v1 -> let v1 = v_info v1 in ()
   | TopSeqExpr v1 -> let v1 = v_seq_expr v1 in ()
@@ -574,9 +572,11 @@ v_any
 (* Helpers *)
 (*****************************************************************************)
 
+(*
 let do_visit_with_ref mk_hooks = fun any ->
   let res = ref [] in
   let hooks = mk_hooks res in
   let vout = mk_visitor hooks in
   vout any;
   List.rev !res
+*)

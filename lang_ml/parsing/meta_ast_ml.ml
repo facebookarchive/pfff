@@ -48,7 +48,7 @@ let rec vof_name =
   function
   | Name v1 ->
       let v1 = vof_wrap Ocaml.vof_string v1 in Ocaml.VSum (("Name", [ v1 ]))
-and vof_lname v = vof_name v
+and _vof_lname v = vof_name v
 and vof_uname v = vof_name v
   
 let rec vof_long_name (v1, v2) =
@@ -391,7 +391,7 @@ and vof_pattern =
   | ParenPat v1 ->
       let v1 = vof_paren vof_pattern v1 in Ocaml.VSum (("ParenPat", [ v1 ]))
   | PatTodo -> Ocaml.VSum (("PatTodo", []))
-and vof_labeled_simple_pattern v = vof_parameter v
+and _vof_labeled_simple_pattern v = vof_parameter v
 and vof_parameter =
   function
   | ParamPat v1 ->
@@ -446,8 +446,8 @@ and
   let bnds = bnd :: bnds in
   let arg = vof_name v_l_name in
   let bnd = ("l_name", arg) in let bnds = bnd :: bnds in Ocaml.VDict bnds
-and vof_function_def v = Ocaml.vof_unit v
-and vof_module_type v = Ocaml.vof_unit v
+and _vof_function_def v = Ocaml.vof_unit v
+and _vof_module_type v = Ocaml.vof_unit v
 and vof_module_expr = function
   | ModuleName v1 ->
       let v1 = vof_long_name v1 in
@@ -503,8 +503,8 @@ and vof_item =
       
 
   | ItemTodo v1 -> let v1 = vof_info v1 in Ocaml.VSum (("ItemTodo", [ v1 ]))
-and vof_sig_item v = vof_item v
-and vof_struct_item v = vof_item v
+and _vof_sig_item v = vof_item v
+and _vof_struct_item v = vof_item v
 and vof_rec_opt v = Ocaml.vof_option vof_tok v
 and vof_toplevel =
   function
