@@ -1,4 +1,3 @@
-open Common
 
 (*****************************************************************************)
 (* Pretty-printer Main *)
@@ -7,7 +6,7 @@ open Common
 (* Main entry point for the pretty printer *)
 (* Takes in php files, spits out their pretty printed version on stdout *)
 
-let usage s =
+let usage _s =
   Printf.fprintf stderr "Usage: %s files\n" Sys.argv.(0);
   exit 2
 

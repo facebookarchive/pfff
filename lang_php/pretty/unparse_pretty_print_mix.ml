@@ -65,7 +65,7 @@ type diff = Match | BnotinA | AnotinB
 (*****************************************************************************)
 
 let toks_before_after_ii ii toks =
-  let (min, max) = Parse_info.min_max_ii_by_pos ii in
+  let (_min, max) = Parse_info.min_max_ii_by_pos ii in
   let toks_before_max, toks_after = 
     Common.profile_code "spanning tokens" (fun () ->
       toks +> Common2.span_tail_call (fun tok ->
@@ -91,7 +91,7 @@ let toks_before_after_ii ii toks =
 let rec diff xs ys =
   match xs, ys with
   | [], [] -> []
-  | ((a1, a2, sa) as a)::xs, ((b1, b2, sb) as b)::ys ->
+  | ((_a1, _a2, sa) as a)::xs, ((_b1, _b2, sb) as b)::ys ->
       if sa =$= sb
       then (Match, b)::diff xs ys
       else
@@ -119,9 +119,9 @@ let split_chunks tokens ast =
           (Stmts stmts, toks_before_max)::aux xs toks_after
       | Ast_php.FuncDef def ->
           (Func def, toks_before_max)::aux xs toks_after
-      | Ast_php.ConstantDef def ->
+      | Ast_php.ConstantDef _ ->
           raise Common.Todo
-      | Ast_php.TypeDef def ->
+      | Ast_php.TypeDef _ ->
           raise Common.Todo
       | Ast_php.NamespaceDef _  | Ast_php.NamespaceBracketDef _
       | Ast_php.NamespaceUse _
@@ -153,7 +153,7 @@ let split_chunks tokens ast =
             ) ([], toks)
           in
           let ii_footer = cbrace in
-          let toks_footer, toks =
+          let toks_footer, _toks =
             toks_before_after_ii [ii_footer] toks in
           
           let rest = aux xs toks_after_class in
@@ -169,7 +169,7 @@ let split_chunks tokens ast =
   aux ast tokens
 
 
-let pretty_print buf env chunk =
+let pretty_print _buf env chunk =
   let (chunk, toks) = chunk in
   match chunk with
   | Func def ->
@@ -183,7 +183,7 @@ let pretty_print buf env chunk =
       let ast = Ast_pp_build.toplevels toks [Ast_php.ClassDef def] in
       Pretty_print.class_header env ast
 
-  | ClassFooter info -> 
+  | ClassFooter _ -> 
       Pretty_print.class_footer env ()
 
   | ClassStmt x -> 
@@ -241,11 +241,11 @@ let pretty_print_when_need_it ~oldfile ~newfile =
 
   let diffs = diff chunks_old chunks_new in
   diffs +> List.iter (function
-  | Match, (bchunk, btoks, bstr) ->
+  | Match, (bchunk, btoks, _bstr) ->
       (* if no change then use conservative unparser *)
       unparse buf (bchunk, btoks)
   (* new stuff *)
-  | BnotinA, (bchunk, btoks, bstr) ->
+  | BnotinA, (bchunk, btoks, _bstr) ->
       pretty_print buf env (bchunk, btoks);
   | AnotinB, _ ->
       ()

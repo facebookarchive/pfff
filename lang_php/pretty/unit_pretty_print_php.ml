@@ -72,7 +72,7 @@ function bar() { }
     (match chunks with
     | [(Unparse_pretty_print_mix.Func def1, toks1);
        (Unparse_pretty_print_mix.Func def2, toks2);
-       (Unparse_pretty_print_mix.FinalDef _, toks3);
+       (Unparse_pretty_print_mix.FinalDef _, _toks3);
       ] ->
         let ast1 = Ast_pp_build.toplevels toks1 [Ast_php.FuncDef def1] in
         let ast2 = Ast_pp_build.toplevels toks2 [Ast_php.FuncDef def2] in

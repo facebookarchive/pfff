@@ -84,8 +84,6 @@ let rec comma_list_dots = function
   | Common.Left3 x :: rl -> x :: comma_list_dots rl
   | (Common.Middle3 _ | Common.Right3 _) :: rl -> comma_list_dots rl
 
-let brace (_, x, _) = x
-
 let rec last = function
   | [] -> assert false
   | [x] -> x
@@ -154,11 +152,6 @@ let rec last_info_of_stmt = function
 
 let last_line_of_stmt x = Parse_info.line_of_info (last_info_of_stmt x)
 
-let rec last_line_of_stmtl = function
-  | [] -> assert false
-  | [st] -> last_line_of_stmt st
-  | _ :: rl -> last_line_of_stmtl rl
-
 let rec last_line_of_stmt_and_defl = function
   | [] -> assert false
   | [st] -> last_line_of_stmt st
@@ -166,7 +159,7 @@ let rec last_line_of_stmt_and_defl = function
 
 
 (* pad: ?? *)
-let rec pop_env stack line =
+let pop_env stack line =
   match !stack with
   | [] -> None
   | (x, v) :: rl when x >= line ->
@@ -179,7 +172,7 @@ let rec get_comments env acc line =
   | None   -> acc
   | Some x -> get_comments env (x :: acc) line
 
-let rec add_comments convert env acc line =
+let add_comments convert env acc line =
   let comments = get_comments env [] line in
   let comments = List.map convert comments in
   comments @ acc
@@ -295,7 +288,7 @@ and (name: env -> name -> string) = fun env -> function
    | Parent _ -> "parent"
    | LateStatic _ -> "static"
 
-and ident env = function
+and ident _env = function
   | Name (s, _) -> s
   | XhpName (rl, _) ->
       List.fold_left (fun x y -> x^":"^y) "" rl
@@ -318,7 +311,7 @@ and stmt_ env st acc =
       let e = expr env e in
       A.Expr e :: acc
   | EmptyStmt _ -> A.Noop :: acc
-  | Block (start, stdl, end_) ->
+  | Block (start, stdl, _end_) ->
       let acc = List.fold_right (stmt_and_def env) stdl acc in
       let acc = add_stmt_comments env acc (PI.line_of_info start) in
       acc
@@ -369,7 +362,7 @@ and stmt_ env st acc =
   | InlineHtml (s, _) -> A.InlineHtml s :: acc
   | Use (_, fn, _) ->
       A.Expr (A.Call (A.Id "use", [A.String (use_filename env fn)])) :: acc
-  | Unset (_, (_, lp, _), e) ->
+  | Unset (_, (_, lp, _), _e) ->
       let lp = comma_list lp in
       let lp = List.map (lvalue env) lp in
       A.Expr (A.Call (A.Id "unset", lp)) :: acc
@@ -381,10 +374,10 @@ and stmt_ env st acc =
       A.ClassDef (class_def env cd) :: acc
 
 
-and foreach_pattern env pat =
+and foreach_pattern _env _pat =
   raise Common.Todo
 
-and use_filename env = function
+and use_filename _env = function
   | UseDirect (s, _) -> s
   | UseParen (_, (s, _), _) -> s
 
@@ -398,7 +391,7 @@ and if_else env = function
   | Some (_, (If _ as st)) ->
       (match stmt env st [] with
       | [x] -> x
-      | l -> assert false)
+      | _ -> assert false)
   | Some (_, st) ->
       let acc = [] in
       let line = last_line_of_stmt st in
@@ -468,7 +461,7 @@ and expr env = function
   | Eval (_, (_, e, _)) -> A.Call (A.Id "eval", [expr env e])
   | Lambda ld ->
       A.Lambda (lambda_def env ld)
-  | ShortLambda ld ->
+  | ShortLambda _ ->
     failwith "no support short lambda"
 
   | Exit (_, e) ->
@@ -482,7 +475,7 @@ and expr env = function
   | At _ -> A.Id "@" (* TODO look at this *)
   | Print (_, e) ->
       A.Call (A.Id "print", [expr env e])
-  | BackQuote (_, el, _) ->
+  | BackQuote (_, _el, _) ->
       raise (TodoConstruct "BackQuote")
       (* A.Call (A.Id "exec", [A.Guil (List.map (encaps env) el)]) *)
   | Include (_, e) ->
@@ -507,8 +500,8 @@ and expr env = function
 
   | Id n -> A.Id (name env n)
 
-  | IdVar (dn, scope) -> A.Id (dname dn)
-  | This tok -> A.This 
+  | IdVar (dn, _scope) -> A.Id (dname dn)
+  | This _tok -> A.This 
 
 
   | Call (e, (_lp, args, _rp)) ->
@@ -535,7 +528,7 @@ and expr env = function
       A.Array_get (e1, e2opt)
   | BraceIdent (_l, e, _r) -> 
       expr env e
-  | Deref (tok, e) ->
+  | Deref (_tok, e) ->
       A.Call (A.Id ("eval_var"), [expr env e])
 
 
@@ -556,7 +549,7 @@ and lambda_def env (l_use, ld) =
     A.l_body = List.fold_right (stmt_and_def env) body [];
   }
 
-and lexical_var env = function
+and lexical_var _env = function
   | LexicalVar (is_ref, name) ->
       { A.p_type = None;
         A.p_ref = is_ref <> None;
@@ -582,7 +575,7 @@ and constant env = function
   | XdebugClass _ -> raise Common.Impossible
   | XdebugResource -> raise Common.Impossible
 
-and cpp_directive env = function
+and cpp_directive _env = function
   | Line      -> A.Id "__LINE__"
   | File      -> A.Id "__FILE__"
   | ClassC    -> A.Id "__CLASS__"
@@ -596,7 +589,7 @@ and cpp_directive env = function
 and hint_type env = function
   | Hint (q, _targsTODO) -> A.Hint (name env q)
   | HintArray _ -> A.HintArray
-  | HintQuestion (i, t) -> A.HintQuestion (hint_type env t)
+  | HintQuestion (_i, t) -> A.HintQuestion (hint_type env t)
   | HintTuple (v1)      -> A.HintTuple (List.map (hint_type env) (comma_list (unbrace v1)))
   | HintCallback v1 ->
     let args, ret = 
@@ -636,7 +629,7 @@ and class_def env c =
     A.c_body = acc;
   }
 
-and class_type env = function
+and class_type _env = function
   | ClassRegular _  -> A.ClassRegular
   | ClassFinal _    -> A.ClassFinal
   | ClassAbstract _ -> A.ClassAbstract
@@ -649,10 +642,6 @@ and interfaces env (_, intfs) =
 
 and static_scalar_affect env (_, ss) = static_scalar env ss
 and static_scalar env a = expr env a
-
-and class_variables env st acc =
-  match st with
-  | _ -> acc
 
 and visibility env = function
   | [] -> (* TODO CHECK *) A.Novis
@@ -746,7 +735,7 @@ and method_def env m =
     A.m_body = acc;
   }
 
-and method_body env ftype x acc =
+and method_body env _ftype x acc =
   let (_, stl, _) = x in
   List.fold_right (stmt_and_def env) stl acc
 
@@ -854,12 +843,6 @@ and case env x acc =
       let stl = List.fold_right (stmt_and_def env) stl [] in
       A.Default stl :: acc
 
-and foreach_arrow env (_, fv) = foreach_variable env fv
-and foreach_variable env (r, lv) =
-  let e = lvalue env lv in
-  let e = if r <> None then A.Ref e else e in
-  e
-
 and catch env (_, (_, (fq, dn), _), (_, stdl, _)) =
   let stdl = List.fold_right (stmt_and_def env) stdl [] in
   let fq = hint_type env fq in
@@ -882,11 +865,11 @@ and list_assign env x acc =
       A.List la :: acc
   | ListEmpty -> acc
 
-and assignOp env = function
+and assignOp _env = function
   | AssignOpArith aop -> Arith aop
   | AssignConcat -> BinaryConcat
 
-and global_var env = function
+and global_var _env = function
   | GlobalVar dn -> A.Id (dname dn)
   | GlobalDollar _ -> raise (TodoConstruct "GlobalDollar")
   | GlobalDollarExpr _ -> raise (TodoConstruct "GlobalDollarExpr")

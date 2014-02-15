@@ -12,10 +12,8 @@
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the file
  * license.txt for more details.
  *)
-open Common
-
-open Ast_php
 open Ast_pp
+
 module A = Ast_pp
 module Pp = Pretty_print_code
 
@@ -48,11 +46,6 @@ module Pp = Pretty_print_code
 (* Helpers *)
 (*****************************************************************************)
 
-let maybe f env x =
-  match x with
-  | None -> ()
-  | Some x -> f env x
-
 let rec escape_quotes buf s i =
   if i >= String.length s
   then Buffer.contents buf
@@ -84,51 +77,43 @@ type assoc =
   | Right
   | NonAssoc
 
-(* new is a reserved keyword hence the _ *)
-let new_ = 24, NonAssoc
-let clone = 24, NonAssoc
-let instance_of = 20, NonAssoc
-let assign = 7, Left
-let question = 8, Left
-let cast = 21, Right
-
 let rec binaryOp = function
-  | Arith aop    -> arithOp aop
-  | Logical lop  -> logicalOp lop
-  | BinaryConcat -> 17 , Left
+  | Ast_php.Arith aop    -> arithOp aop
+  | Ast_php.Logical lop  -> logicalOp lop
+  | Ast_php.BinaryConcat -> 17 , Left
 
 and arithOp = function
-  | Plus
-  | Minus        -> 17 , Left
-  | Mul
-  | Div
-  | Mod          -> 18 , Left
-  | DecLeft
-  | DecRight     -> 16 , Left
-  | And          -> 13 , Left
-  | Or           -> 11 , Left
-  | Xor          -> 12 , Left
+  | Ast_php.Plus
+  | Ast_php.Minus        -> 17 , Left
+  | Ast_php.Mul
+  | Ast_php.Div
+  | Ast_php.Mod          -> 18 , Left
+  | Ast_php.DecLeft
+  | Ast_php.DecRight     -> 16 , Left
+  | Ast_php.And          -> 13 , Left
+  | Ast_php.Or           -> 11 , Left
+  | Ast_php.Xor          -> 12 , Left
 
 and logicalOp = function
-  | Inf
-  | Sup
-  | InfEq
-  | SupEq        -> 15 , NonAssoc
-  | Eq
-  | NotEq
-  | Identical
-  | NotIdentical -> 14 , NonAssoc
-  | AndLog       -> 5  , Left
-  | OrLog        -> 3  , Left
-  | XorLog       -> 4  , Left
-  | AndBool      -> 10 , Left
-  | OrBool       -> 9  , Left
+  | Ast_php.Inf
+  | Ast_php.Sup
+  | Ast_php.InfEq
+  | Ast_php.SupEq        -> 15 , NonAssoc
+  | Ast_php.Eq
+  | Ast_php.NotEq
+  | Ast_php.Identical
+  | Ast_php.NotIdentical -> 14 , NonAssoc
+  | Ast_php.AndLog       -> 5  , Left
+  | Ast_php.OrLog        -> 3  , Left
+  | Ast_php.XorLog       -> 4  , Left
+  | Ast_php.AndBool      -> 10 , Left
+  | Ast_php.OrBool       -> 9  , Left
 
 and unaryOp = function
-  | UnPlus       -> 21 , Right
-  | UnMinus      -> 21 , Right
-  | UnBang       -> 19 , Right
-  | UnTilde      -> 21 , Right
+  | Ast_php.UnPlus       -> 21 , Right
+  | Ast_php.UnMinus      -> 21 , Right
+  | Ast_php.UnBang       -> 19 , Right
+  | Ast_php.UnTilde      -> 21 , Right
 
 let expr_priority = function
   | A.Int _ | A.Double _ | A.String _ | A.Id _
@@ -154,35 +139,35 @@ let expr_priority = function
 (*****************************************************************************)
 
 let rec binaryOp = function
-  | Arith aop    -> arithOp aop
-  | Logical lop  -> logicalOp lop
-  | BinaryConcat -> "."
+  | Ast_php.Arith aop    -> arithOp aop
+  | Ast_php.Logical lop  -> logicalOp lop
+  | Ast_php.BinaryConcat -> "."
 
 and arithOp = function
-  | Plus         -> "+"  | Minus        -> "-"
-  | Mul          -> "*"  | Div          -> "/"
-  | Mod          -> "%"
-  | DecLeft      -> "<<" | DecRight     -> ">>"
-  | And          -> "&"  | Or           -> "|"
-  | Xor          -> "^"
+  | Ast_php.Plus         -> "+"  | Ast_php.Minus        -> "-"
+  | Ast_php.Mul          -> "*"  | Ast_php.Div          -> "/"
+  | Ast_php.Mod          -> "%"
+  | Ast_php.DecLeft      -> "<<" | Ast_php.DecRight     -> ">>"
+  | Ast_php.And          -> "&"  | Ast_php.Or           -> "|"
+  | Ast_php.Xor          -> "^"
 
 and logicalOp = function
-  | Inf          -> "<"  | Sup          -> ">"
-  | InfEq        -> "<=" | SupEq        -> ">="
-  | Eq           -> "==" | NotEq        -> "!="
-  | Identical    -> "===" | NotIdentical -> "!=="
-  | AndLog       -> "AND" | OrLog        -> "OR"
-  | XorLog       -> "XOR"
-  | AndBool      -> "&&" | OrBool       -> "||"
+  | Ast_php.Inf          -> "<"   | Ast_php.Sup          -> ">"
+  | Ast_php.InfEq        -> "<="  | Ast_php.SupEq        -> ">="
+  | Ast_php.Eq           -> "=="  | Ast_php.NotEq        -> "!="
+  | Ast_php.Identical    -> "===" | Ast_php.NotIdentical -> "!=="
+  | Ast_php.AndLog       -> "AND" | Ast_php.OrLog        -> "OR"
+  | Ast_php.AndBool      -> "&&"  | Ast_php.OrBool       -> "||"
+  | Ast_php.XorLog       -> "XOR"
 
 let unaryOp = function
-  | UnPlus       -> ""
-  | UnMinus      -> "-"
-  | UnBang       -> "!"
-  | UnTilde      -> "~"
+  | Ast_php.UnPlus       -> ""
+  | Ast_php.UnMinus      -> "-"
+  | Ast_php.UnBang       -> "!"
+  | Ast_php.UnTilde      -> "~"
 
 
-let visibility env = function
+let visibility _env = function
   | A.Novis        -> ""
   | A.Public       -> "public"
   | A.Private      -> "private"
@@ -205,12 +190,12 @@ let rec hint_type env = function
       Printf.sprintf "(function%s%s)" args ret
 
 let ptype = function
-  | BoolTy   -> "bool"
-  | IntTy    -> "int"
-  | DoubleTy -> "double"
-  | StringTy -> "string"
-  | ArrayTy  -> "array"
-  | ObjectTy -> "object"
+  | Ast_php.BoolTy   -> "bool"
+  | Ast_php.IntTy    -> "int"
+  | Ast_php.DoubleTy -> "double"
+  | Ast_php.StringTy -> "string"
+  | Ast_php.ArrayTy  -> "array"
+  | Ast_php.ObjectTy -> "object"
 
 (*****************************************************************************)
 (* Main entry point *)
@@ -539,7 +524,7 @@ and expr_ env = function
       assignOp env bop;
       Pp.print env " ";
       expr env e2
-  | Binop (BinaryConcat, e1, e2) ->
+  | Binop (Ast_php.BinaryConcat, e1, e2) ->
       Pp.nestc env (fun env ->
       Pp.choice_left env (
         fun env ->
@@ -679,7 +664,7 @@ and expr_ env = function
       );
       (match def.l_use with
       | [] -> ()
-      | x::xs ->
+      | _x::_xs ->
           Pp.nest env (fun env ->
             Pp.choice_left env (fun env ->
               Pp.print env " use(";
@@ -703,8 +688,8 @@ and expr_ env = function
 
 
 and fixop env = function
-  | Inc -> Pp.print env "++"
-  | Dec -> Pp.print env "--"
+  | Ast_php.Inc -> Pp.print env "++"
+  | Ast_php.Dec -> Pp.print env "--"
 
 and array_value pad env = function
   | Aval e ->
@@ -713,7 +698,7 @@ and array_value pad env = function
       Pp.nest env (
         fun env ->
           expr env e;
-          for i = 1 to pad - String.length s do
+          for _i = 1 to pad - String.length s do
             Pp.print env " ";
           done;
           Pp.print env " =>";
@@ -732,13 +717,6 @@ and array_value pad env = function
       expr env e1;
       Pp.print env " => ";
       expr env e2
-
-and vector_elt env = expr env
-
-and map_elt env (k,v) =
-  expr env k;
-  Pp.print env " => ";
-  expr env v
 
 and class_def env c =
   (match c.c_type with

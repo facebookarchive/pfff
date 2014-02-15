@@ -276,7 +276,7 @@ let rec is_string_key = function
   | Akval (String _, _) :: rl -> is_string_key rl
   | _ -> false
 
-let rec key_length_acc c = function
+let key_length_acc c = function
   | Aval _ -> c
   | Akval (String s, _) -> max (String.length s + 2) c
   | _ -> c
