@@ -90,6 +90,7 @@ let lookup_module_name h_module_aliases s =
  * See graph_code_cmt.ml if you want Function, Type, etc.
  *)
 let extract_defs ~g ~duplicate_modules ~ast ~readable ~file =
+  ignore(ast);
   let dir = Common2.dirname readable in
   G.create_intermediate_directories_if_not_present g dir;
   let m = Module_ml.module_name_of_filename file in
@@ -171,7 +172,7 @@ let extract_uses ~g ~ast ~readable ~dupes =
      *)
     V.kitem = (fun (k, _) x ->
       (match x with
-      | Open (_tok, (qu, (Name (s,_)))) ->
+      | Open (_tok, (_qu, (Name (s,_)))) ->
           add_edge_if_existing_module s
 
       | Module (_, Name (s,_), _, (ModuleName ([], Name (s2,__)))) ->
@@ -184,7 +185,7 @@ let extract_uses ~g ~ast ~readable ~dupes =
     V.kqualifier = (fun (k,_) qu ->
       (match qu with
       | [] -> ()
-      | (Name (s, _), _tok)::rest ->
+      | (Name (s, _), _tok)::_rest ->
           add_edge_if_existing_module s
       );
       k qu
@@ -205,7 +206,7 @@ let build ?(verbose=true) root files =
   let duplicate_modules =
     files 
     +> Common.group_by_mapped_key (fun f -> Common2.basename f)
-    +> List.filter (fun (k, xs) -> List.length xs >= 2)
+    +> List.filter (fun (_k, xs) -> List.length xs >= 2)
     +> List.map (fun (k, xs) -> Module_ml.module_name_of_filename k, xs)
   in
 

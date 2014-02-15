@@ -42,7 +42,7 @@ let basename_coverage_to_readable_coverage xs root =
     | [] ->
         failwith (spf "could not find basename %s in directory %s" file root)
     | [x] -> x, cover
-    | x::y::xs ->
+    | x::y::_xs ->
         failwith (spf "ambiguity on %s (%s, %s, ...)" file x y)
   )
 

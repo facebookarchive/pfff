@@ -236,27 +236,24 @@ let add_node_and_edge_if_defs_mode ?(dupe_ok=false) env name_node loc =
 (*****************************************************************************)
 
 (* f --> A.f,  and Nested.f -> A.Nested.f *)
-let rec path_resolve_locals env name kind =
+let path_resolve_locals env name kind =
 (*
   let s = Path.name p in
   let xs = n_of_s s in
 *)
-  let rec aux xs =
-    match xs with
-    | [] -> raise Impossible
-    | [x] -> 
+  match name with
+  | [] -> raise Impossible
+  | [x] -> 
         let table = full_path_local_of_kind env kind in
         if List.mem_assoc x !table
         then List.assoc x !table
         else [x]
-    | x::xs ->
+  | x::xs ->
         let kind = E.Module in
         let table = full_path_local_of_kind env kind in
         if List.mem_assoc x !table
         then List.assoc x !table ++ xs
         else x::xs
-  in
-  aux name
 
 (*****************************************************************************)
 (* Path resolution, aliases *)
@@ -294,7 +291,7 @@ let rec path_type_resolve_aliases env pt =
   then path_type_resolve_aliases env (List.assoc pt !(env.type_aliases))
   else pt
 
-let rec path_resolve_aliases env p =
+let path_resolve_aliases env p =
   let rec aux module_aliases_candidates acc pt =
   match pt with
   | [] -> raise Impossible
@@ -334,7 +331,7 @@ let rec kind_of_type_desc x =
       (* less: potentially anything with a mutable field *)
       E.Global
   (* todo: what if it is an alias to a function type? need resolve here? *)
-  | Types.Tconstr (path, xs, aref) -> 
+  | Types.Tconstr (_path, _xs, _aref) -> 
       E.Constant
   | Types.Ttuple _ | Types.Tvariant _ -> 
       E.Constant
@@ -350,7 +347,7 @@ and kind_of_type_expr x =
   kind_of_type_desc x.Types.desc
     
 (* used only for primitives *)
-let rec kind_of_core_type x =
+let kind_of_core_type x =
   match x.ctyp_desc with
   | Ttyp_arrow _ -> E.Function
   | Ttyp_any  | Ttyp_var _
@@ -364,11 +361,11 @@ let kind_of_value_descr vd =
 (* Uses with name resolution *)
 (*****************************************************************************)
 
-let rec typename_of_texpr x =
+let typename_of_texpr x =
   (* pr2 (Ocaml.string_of_v (Meta_ast_cmt.vof_type_expr_show_all x)); *)
   let rec aux x = 
     match x.Types.desc with
-    | Types.Tconstr(path, xs, aref) -> path
+    | Types.Tconstr(path, _xs, _aref) -> path
     | Types.Tlink t -> aux t
     | _ ->
       pr2 (Ocaml.string_of_v (Meta_ast_cmt.vof_type_expr_show_all x));
@@ -487,7 +484,7 @@ let rec extract_defs_uses ~root env ast readable_cmt =
     env.g +> G.add_edge ((dir, E.Dir), env.current) G.Has;
   end;
   if env.phase = Uses then begin
-    ast.cmt_imports +> List.iter (fun (s, digest) ->
+    ast.cmt_imports +> List.iter (fun (_s, _digest) ->
       (* old: add_use_edge env (s, E.Module)
        * actually ocaml list as dependencies many things which are not.
        * Most modules will have in their import for instance Sexp,
@@ -522,16 +519,16 @@ and structure_item env
 
 and  pattern env
   { pat_desc = v_pat_desc; pat_type = v_pat_type; 
-    pat_loc = v_pat_loc; pat_extra = _v_pat_extra; pat_env = v_pat_env } =
+    pat_loc = _v_pat_loc; pat_extra = _v_pat_extra; pat_env = _v_pat_env } =
   pattern_desc v_pat_type env v_pat_desc
 
 and expression env
-    { exp_desc = v_exp_desc; exp_loc = v_exp_loc;  exp_extra = __v_exp_extra;
-      exp_type = v_exp_type; exp_env = v_exp_env } =
+    { exp_desc = v_exp_desc; exp_loc = _v_exp_loc;  exp_extra = __v_exp_extra;
+      exp_type = v_exp_type; exp_env = _v_exp_env } =
   expression_desc v_exp_type env v_exp_desc
 and module_expr env
-    { mod_desc = v_mod_desc; mod_loc = v_mod_loc;
-      mod_type = v_mod_type; mod_env = v_mod_env  } =
+    { mod_desc = v_mod_desc; mod_loc = _v_mod_loc;
+      mod_type = v_mod_type; mod_env = _v_mod_env  } =
   module_expr_desc env v_mod_desc;
   Types.module_type env v_mod_type
 
@@ -622,7 +619,7 @@ and structure_item_desc env loc = function
         let env = add_node_and_edge_if_defs_mode env node (unwrap loc) in
 
         (match td.typ_kind, td.typ_manifest with
-        | Ttype_abstract, Some ({ctyp_desc=Ttyp_constr (path, lid, _xs); _}) ->
+        | Ttype_abstract, Some ({ctyp_desc=Ttyp_constr (path, _lid, _xs); _}) ->
           if env.phase = Defs then
             let name = name_of_path path in
             Common.push2 (full_ident, path_resolve_locals env name E.Type)
@@ -646,7 +643,7 @@ and structure_item_desc env loc = function
       let full_ident = env.current_entity ++ [Ident.name id] in
       let node = (full_ident, E.Module) in
       (match modexpr.mod_desc with
-      | Tmod_ident (path, lid) ->
+      | Tmod_ident (path, _lid) ->
           (* do not add nodes for module aliases in the graph, just *)
           if env.phase = Defs then begin
             let name = name_of_path path in
@@ -690,7 +687,7 @@ and type_declaration env
     { typ_params = __v_typ_params; typ_type = v_typ_type;
       typ_cstrs = v_typ_cstrs; typ_kind = v_typ_kind;
       typ_private = _v_typ_private; typ_manifest = v_typ_manifest;
-      typ_variance = v_typ_variance; typ_loc = v_typ_loc
+      typ_variance = v_typ_variance; typ_loc = _v_typ_loc
     } =
   let _ = Types.type_declaration env v_typ_type in
   let _ =
@@ -749,7 +746,7 @@ and pattern_desc t env = function
   | Tpat_tuple xs -> 
       List.iter (pattern env) xs
 #if OCAML_VERSION >= 4010
-  | Tpat_construct (lid, v3, v4, v5)
+  | Tpat_construct (lid, v3, v4, _v5)
 #else
   | Tpat_construct (_path, lid, v3, v4, v5) 
 #endif
@@ -766,7 +763,7 @@ and pattern_desc t env = function
   | Tpat_record ((xs, _closed_flag)) ->
       List.iter (fun 
 #if OCAML_VERSION >= 4010
-        (lid, v2, v3) 
+        (lid, _v2, v3) 
 #else
        (_path, lid, v2, v3)
 #endif
@@ -791,7 +788,7 @@ and pattern_desc t env = function
 (* ---------------------------------------------------------------------- *)
 and expression_desc t env =
   function
-  | Texp_ident (path, lid, vd) ->
+  | Texp_ident (path, _lid, _vd) ->
       let name = name_of_path path in
       let str = s_of_n name in
       if List.mem str env.locals
@@ -802,7 +799,7 @@ and expression_desc t env =
   | Texp_let ((rec_flag, xs, v3)) ->
       (* first pass *)
       if rec_flag = Asttypes.Recursive then begin
-        xs +> List.iter (fun (v1, v2) ->
+        xs +> List.iter (fun (v1, _v2) ->
           match v1.pat_desc with
           | Tpat_var (id, _loc) | Tpat_alias (_, id, _loc) ->
               env.locals <- Ident.name id:: env.locals
@@ -961,6 +958,7 @@ and expression_desc t env =
       let _ = class_structure env v1 and _ = List.iter v_string v2 in ()
   | Texp_pack v1 -> let _ = module_expr env v1 in ()
 
+(*
 and exp_extra env = function
   | Texp_constraint ((v1, v2)) ->
       let _ = v_option (core_type env) v1
@@ -975,6 +973,7 @@ and exp_extra env = function
       path_t env path
   | Texp_poly v1 -> let _ = v_option (core_type env) v1 in ()
   | Texp_newtype v1 -> let _ = v_string v1 in ()
+*)
 
 (* ---------------------------------------------------------------------- *)
 (* Module *)
@@ -1009,7 +1008,7 @@ and module_expr_desc env =
 (* ---------------------------------------------------------------------- *)
 and core_type env
     { ctyp_desc = v_ctyp_desc; ctyp_type = __v_ctyp_type;
-      ctyp_env = v_ctyp_env; ctyp_loc = v_ctyp_loc } =
+      ctyp_env = _v_ctyp_env; ctyp_loc = _v_ctyp_loc } =
   core_type_desc env v_ctyp_desc
 and core_type_desc env =
   function
@@ -1039,10 +1038,10 @@ and core_type_desc env =
       in ()
   | Ttyp_poly ((v1, v2)) ->
       let _ = List.iter v_string v1 and _ = core_type env v2 in ()
-  | Ttyp_package v1 -> 
+  | Ttyp_package _v1 -> 
     pr2_once (spf "TODO: Ttyp_package, %s" env.cmt_file)
 
-and core_field_type env { field_desc = v_field_desc; field_loc = v_field_loc }=
+and core_field_type env { field_desc = v_field_desc; field_loc = _v_field_loc }=
   let _ = core_field_desc env v_field_desc in ()
   
 and core_field_desc env =
@@ -1062,7 +1061,7 @@ and
                       val_desc = v_val_desc;
                       val_val = v_val_val;
                       val_prim = v_val_prim;
-                      val_loc = v_val_loc
+                      val_loc = _v_val_loc;
                     } =
   let _ = core_type env v_val_desc in
   let _ = Types.value_description env v_val_val in

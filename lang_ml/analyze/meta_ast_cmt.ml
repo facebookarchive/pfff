@@ -10,7 +10,7 @@ module Ident = struct
       Ocaml.VString (Ident.name x)
 end
 module Longident = struct
-    let vof_t x = Ocaml.VString "LongIdent"
+    let vof_t _x = Ocaml.VString "LongIdent"
 end
 module Path = struct
     let vof_t x = 
@@ -19,50 +19,49 @@ module Path = struct
 end
 
 module Location = struct
-    let vof_t x = Ocaml.VUnit
+    let vof_t _x = Ocaml.VUnit
 end
 
 module Env = struct
-    let vof_t x = Ocaml.VUnit
+    let vof_t _x = Ocaml.VUnit
 end
 
 module Concr = struct
-    let vof_t x = Ocaml.VUnit
+    let vof_t _x = Ocaml.VUnit
 end
 module Meths = struct
-    let vof_t f x = Ocaml.VUnit
+    let vof_t _f _x = Ocaml.VUnit
 end
 module Primitive = struct
-    let vof_description x = Ocaml.VUnit
+    let vof_description _x = Ocaml.VUnit
 end
 module Types = struct
-    let vof_value_description x = Ocaml.VUnit
-    let vof_class_declaration x = Ocaml.VUnit
-    let vof_class_type x = Ocaml.VUnit
-    let vof_class_signature x = Ocaml.VUnit
-    let vof_module_type x = Ocaml.VUnit
-    let vof_signature x = Ocaml.VUnit
-    let vof_type_declaration x = Ocaml.VUnit
-    let vof_exception_declaration x = Ocaml.VUnit
-    let vof_class_type_declaration x = Ocaml.VUnit
+    let vof_value_description _x = Ocaml.VUnit
+    let vof_class_declaration _x = Ocaml.VUnit
+    let vof_class_type _x = Ocaml.VUnit
+    let vof_class_signature _x = Ocaml.VUnit
+    let vof_module_type _x = Ocaml.VUnit
+    let vof_signature _x = Ocaml.VUnit
+    let vof_type_declaration _x = Ocaml.VUnit
+    let vof_exception_declaration _x = Ocaml.VUnit
+    let vof_class_type_declaration _x = Ocaml.VUnit
 end
 
-let vof_loc f x = Ocaml.VUnit
-let vof_constant x = Ocaml.VUnit
-let vof_constructor_description x = Ocaml.VUnit
-let vof_label x = Ocaml.VUnit
-let vof_row_desc x = Ocaml.VUnit
-let vof_label_description x = Ocaml.VUnit
-let vof_closed_flag x = Ocaml.VUnit
-let vof_rec_flag x = Ocaml.VUnit
-let vof_partial x =  Ocaml.VUnit
-let vof_optional x = Ocaml.VUnit
+let vof_loc _f _x = Ocaml.VUnit
+let vof_constant _x = Ocaml.VUnit
+let vof_constructor_description _x = Ocaml.VUnit
+let vof_label _x = Ocaml.VUnit
+let vof_label_description _x = Ocaml.VUnit
+let vof_closed_flag _x = Ocaml.VUnit
+let vof_rec_flag _x = Ocaml.VUnit
+let vof_partial _x =  Ocaml.VUnit
+let vof_optional _x = Ocaml.VUnit
 
-let vof_direction_flag x = Ocaml.VUnit
-let vof_override_flag x = Ocaml.VUnit
-let vof_mutable_flag x = Ocaml.VUnit
-let vof_private_flag x = Ocaml.VUnit
-let vof_virtual_flag x = Ocaml.VUnit
+let vof_direction_flag _x = Ocaml.VUnit
+let vof_override_flag _x = Ocaml.VUnit
+let vof_mutable_flag _x = Ocaml.VUnit
+let vof_private_flag _x = Ocaml.VUnit
+let vof_virtual_flag _x = Ocaml.VUnit
 
 
 
@@ -212,15 +211,15 @@ and vof_commutable =
 
 let vof_type_expr_show_all x = vof_type_expr x
 
-let vof_type_expr x = ()
+let vof_type_expr _x = ()
 
 let rec
   vof_pattern {
                 pat_desc = v_pat_desc;
-                pat_loc = v_pat_loc;
-                pat_extra = v_pat_extra;
-                pat_type = v_pat_type;
-                pat_env = v_pat_env
+                pat_loc = _v_pat_loc;
+                pat_extra = _v_pat_extra;
+                pat_type = _v_pat_type;
+                pat_env = _v_pat_env
               } =
 (*
   let bnds = [] in
@@ -333,10 +332,10 @@ and vof_pattern_desc =
 and
   vof_expression {
                    exp_desc = v_exp_desc;
-                   exp_loc = v_exp_loc;
-                   exp_extra = v_exp_extra;
-                   exp_type = v_exp_type;
-                   exp_env = v_exp_env
+                   exp_loc = _v_exp_loc;
+                   exp_extra = _v_exp_extra;
+                   exp_type = _v_exp_type;
+                   exp_env = _v_exp_env
                  } =
 (*
   let bnds = [] in
@@ -615,9 +614,9 @@ and vof_meth =
 and
   vof_class_expr {
                    cl_desc = v_cl_desc;
-                   cl_loc = v_cl_loc;
-                   cl_type = v_cl_type;
-                   cl_env = v_cl_env
+                   cl_loc = _v_cl_loc;
+                   cl_type = _v_cl_type;
+                   cl_env = _v_cl_env
                  } =
 (*
   let bnds = [] in
@@ -715,7 +714,7 @@ and
   let bnds = bnd :: bnds in
   let arg = vof_pattern v_cstr_pat in
   let bnd = ("cstr_pat", arg) in let bnds = bnd :: bnds in Ocaml.VDict bnds
-and vof_class_field { cf_desc = v_cf_desc; cf_loc = v_cf_loc } =
+and vof_class_field { cf_desc = v_cf_desc; cf_loc = _v_cf_loc } =
 (*
   let bnds = [] in
   let arg = Location.vof_t v_cf_loc in
@@ -777,9 +776,9 @@ and vof_class_field_desc =
 and
   vof_module_expr {
                     mod_desc = v_mod_desc;
-                    mod_loc = v_mod_loc;
-                    mod_type = v_mod_type;
-                    mod_env = v_mod_env
+                    mod_loc = _v_mod_loc;
+                    mod_type = _v_mod_type;
+                    mod_env = _v_mod_env
                   } =
 (*
   let bnds = [] in
@@ -850,8 +849,8 @@ and
 and
   vof_structure_item {
                        str_desc = v_str_desc;
-                       str_loc = v_str_loc;
-                       str_env = v_str_env
+                       str_loc = _v_str_loc;
+                       str_env = _v_str_env
                      } =
 (*
   let bnds = [] in
@@ -997,9 +996,9 @@ and vof_module_coercion =
 and
   vof_module_type {
                     mty_desc = v_mty_desc;
-                    mty_type = v_mty_type;
-                    mty_env = v_mty_env;
-                    mty_loc = v_mty_loc
+                    mty_type = _v_mty_type;
+                    mty_env = _v_mty_env;
+                    mty_loc = _v_mty_loc
                   } =
 (*
   let bnds = [] in
@@ -1062,8 +1061,8 @@ and
 and
   vof_signature_item {
                        sig_desc = v_sig_desc;
-                       sig_env = v_sig_env;
-                       sig_loc = v_sig_loc
+                       sig_env = _v_sig_env;
+                       sig_loc = _v_sig_loc
                      } =
 (*
   let bnds = [] in
@@ -1168,9 +1167,9 @@ and vof_with_constraint =
 and
   vof_core_type {
                   ctyp_desc = v_ctyp_desc;
-                  ctyp_type = v_ctyp_type;
-                  ctyp_env = v_ctyp_env;
-                  ctyp_loc = v_ctyp_loc
+                  ctyp_type = _v_ctyp_type;
+                  ctyp_env = _v_ctyp_env;
+                  ctyp_loc = _v_ctyp_loc
                 } =
 (*
   let bnds = [] in
@@ -1256,7 +1255,7 @@ and
   let arg = Path.vof_t v_pack_name in
   let bnd = ("pack_name", arg) in let bnds = bnd :: bnds in Ocaml.VDict bnds
 and
-  vof_core_field_type { field_desc = v_field_desc; field_loc = v_field_loc }
+  vof_core_field_type { field_desc = v_field_desc; field_loc = _v_field_loc }
                       =
 (*
   let bnds = [] in
@@ -1287,9 +1286,9 @@ and vof_row_field =
 and
   vof_value_description {
                           val_desc = v_val_desc;
-                          val_val = v_val_val;
-                          val_prim = v_val_prim;
-                          val_loc = v_val_loc
+                          val_val = _v_val_val;
+                          val_prim = _v_val_prim;
+                          val_loc = _v_val_loc
                         } =
 (*
   let bnds = [] in
@@ -1399,9 +1398,9 @@ and
 and
   vof_class_type {
                    cltyp_desc = v_cltyp_desc;
-                   cltyp_type = v_cltyp_type;
-                   cltyp_env = v_cltyp_env;
-                   cltyp_loc = v_cltyp_loc
+                   cltyp_type = _v_cltyp_type;
+                   cltyp_env = _v_cltyp_env;
+                   cltyp_loc = _v_cltyp_loc
                  } =
 (*
   let bnds = [] in
@@ -1453,7 +1452,7 @@ and
   let bnds = bnd :: bnds in
   let arg = vof_core_type v_csig_self in
   let bnd = ("csig_self", arg) in let bnds = bnd :: bnds in Ocaml.VDict bnds
-and vof_class_type_field { ctf_desc = v_ctf_desc; ctf_loc = v_ctf_loc } =
+and vof_class_type_field { ctf_desc = v_ctf_desc; ctf_loc = _v_ctf_loc } =
 (*
   let bnds = [] in
   let arg = Location.vof_t v_ctf_loc in

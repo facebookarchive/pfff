@@ -14,11 +14,10 @@
  *)
 open Common
 
-open Ast_ml
+open Highlight_code
 module Ast = Ast_ml
 module Tags = Tags_file
 module Db = Database_code
-open Highlight_code
 
 (*****************************************************************************)
 (* Prelude *)
@@ -43,7 +42,7 @@ let tag_of_name filelines name =
 
 let entity_of_highlight_category_opt x =
   match x with
-  | Function (Def2 _) -> Some Db.Function
+  | Highlight_code.Function (Def2 _) -> Some Db.Function
   | Global (Def2 _) -> Some Db.Global
   | Module Def -> Some Db.Module
   | TypeDef Def -> Some Db.Type

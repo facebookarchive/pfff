@@ -276,7 +276,7 @@ let compute_database ?(verbose=false) files_or_dirs =
     then pr2 (spf "skipping external file: %s" file)
     else begin
 
-    let ((ast, toks), _stat) = parse file in
+    let ((_ast, toks), _stat) = parse file in
 
     let file = Common.readable ~root file in
 
@@ -301,9 +301,9 @@ let compute_database ?(verbose=false) files_or_dirs =
       let rec aux_toks toks = 
         match toks with
         | T.Tmodule _
-          ::T.TUpperIdent(s, ii)
+          ::T.TUpperIdent(s, _ii)
           ::T.TEq _
-          ::T.TUpperIdent(s2, ii2)::xs
+          ::T.TUpperIdent(s2, _ii2)::xs
           ->
             (* we want to transform every occurence of s  into s2,
              * to remove the alias sugar
@@ -311,7 +311,7 @@ let compute_database ?(verbose=false) files_or_dirs =
             Hashtbl.add hmodule_aliases s s2;
             aux_toks xs
 
-        | T.TUpperIdent(s, ii)::T.TDot ii2::T.TLowerIdent(s2, ii3)::xs ->
+        | T.TUpperIdent(s, _ii)::T.TDot _ii2::T.TLowerIdent(s2, _ii3)::xs ->
           
             Hashtbl.find_all hdefs s2 +> List.iter (fun entity ->
               let file_entity = entity.Db.e_file in
@@ -339,7 +339,7 @@ let compute_database ?(verbose=false) files_or_dirs =
             aux_toks xs
 
         | [] -> ()
-        | x::xs ->
+        | _x::xs ->
             aux_toks xs
       in
       aux_toks toks;

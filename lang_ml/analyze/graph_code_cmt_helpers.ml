@@ -3,44 +3,44 @@
 (*****************************************************************************)
 
 module Ident = struct
-    let t env x =  ()
+    let t _env _x =  ()
     let name = Ident.name
 end
 module Longident = struct
-    let t env x = ()
+    let t _env _x = ()
 end
 
-let path_t env x = ()
+let path_t _env _x = ()
 
 module TypesOld = Types
 module Types = struct
-    let value_description env x = ()
-    let class_declaration env x = ()
-    let class_type env x = ()
-    let class_signature env x = ()
-    let module_type env x = ()
-    let signature env x = ()
-    let type_declaration env x = ()
-    let exception_declaration env x = ()
-    let class_type_declaration env x = ()
+    let value_description _env _x = ()
+    let class_declaration _env _x = ()
+    let class_type _env _x = ()
+    let class_signature _env _x = ()
+    let module_type _env _x = ()
+    let signature _env _x = ()
+    let type_declaration _env _x = ()
+    let exception_declaration _env _x = ()
+    let class_type_declaration _env _x = ()
 end
 
 let v_option f xs = Common.do_option f xs
 
-let v_string x = ()
-let v_ref f x = ()
+let v_string _x = ()
+let v_ref _f _x = ()
 
-let meth env x = ()
-let class_structure env x = ()
+let meth _env _x = ()
+let class_structure _env _x = ()
 
-let module_type env x = ()
-let module_coercion env x = ()
-let module_type_constraint env x = ()
+let module_type _env _x = ()
+let module_coercion _env _x = ()
+let module_type_constraint _env _x = ()
 
-let constant env x = ()
-let constructor_description env x = ()
-let label env x = ()
-let row_desc env x = ()
-let label_description env x = ()
-let partial env x =  ()
-let optional env x = ()
+let constant _env _x = ()
+let constructor_description _env _x = ()
+let label _env _x = ()
+let row_desc _env _x = ()
+let label_description _env _x = ()
+let partial _env _x =  ()
+let optional _env _x = ()

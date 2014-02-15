@@ -1,7 +1,6 @@
 open Common
 open OUnit
 
-open Ast_ml
 module E = Database_code
 module G = Graph_code
 
@@ -41,7 +40,7 @@ let with_graph ~files f =
 
 let prolog_query ~files query =
   with_graph ~files (fun tmp_dir g ->
-    let facts = Graph_code_prolog.build tmp_dir g in
+    let facts = Graph_code_prolog.build g in
     let facts_pl_file = Filename.concat tmp_dir "facts.pl" in
     Common.with_open_outfile facts_pl_file (fun (pr_no_nl, _chan) ->
       let pr s = pr_no_nl (s ^ "\n") in
@@ -114,7 +113,7 @@ let foo () = ()
 let bar () = foo ()
 "
        in
-       with_graph ~files:["foo.ml", file_content] (fun tmp_dir g ->
+       with_graph ~files:["foo.ml", file_content] (fun _tmp_dir g ->
 
          let src = ("Foo.foo", E.Function) in
          let pred = G.pred src G.Use g in

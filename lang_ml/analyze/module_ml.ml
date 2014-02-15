@@ -16,6 +16,6 @@
 (* meant to be in a analyze_ml/basic/ at some point *)
 
 let module_name_of_filename file = 
-  let (d,b,e) = Common2.dbe_of_filename file in
+  let (_d,b,_e) = Common2.dbe_of_filename file in
   let module_name = String.capitalize b in
   module_name
