@@ -15,8 +15,6 @@
 
 open Common
 
-open Ast_python
-
 module Ast = Ast_python
 module Flag = Flag_parsing_python
 

@@ -18,9 +18,6 @@
  * src: http://inst.eecs.berkeley.edu/~cs164/sp10/python-grammar.html
  * src: http://docs.python.org/release/2.5.2/ref/grammar.txt
  *)
-open Common
-
-open Ast_python
 
 %}
 

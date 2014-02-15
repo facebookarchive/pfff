@@ -15,8 +15,6 @@
 
 open Common
 
-open Ast_python
-
 module Ast = Ast_python
 (*module V = Visitor_python *)
 
@@ -32,12 +30,6 @@ module TH = Token_helpers_python
 (*****************************************************************************)
 (* Helpers *)
 (*****************************************************************************)
-
-let tag_all_tok_with ~tag categ xs = 
-  xs +> List.iter (fun tok ->
-    let info = TH.info_of_tok tok in
-    tag info categ
-  )
 
 (* we generate fake value here because the real one are computed in a
  * later phase in rewrite_categ_using_entities in pfff_visual.
@@ -65,9 +57,9 @@ let builtin_functions = Common.hashset_of_list [
 
 let visit_toplevel 
     ~tag_hook
-    prefs 
+    _prefs 
     (*db_opt *)
-    (toplevel, toks)
+    (_toplevel, toks)
   =
   let already_tagged = Hashtbl.create 101 in
   let tag = (fun ii categ ->
@@ -87,9 +79,9 @@ let visit_toplevel
     | [] -> ()
     (* a little bit pad specific *)
     |   T.TComment(ii)
-      ::T.TCommentNewline (ii2)
+      ::T.TCommentNewline (_ii2)
       ::T.TComment(ii3)
-      ::T.TCommentNewline (ii4)
+      ::T.TCommentNewline (_ii4)
       ::T.TComment(ii5)
       ::xs ->
         let s = Parse_info.str_of_info ii in
@@ -115,12 +107,12 @@ let visit_toplevel
     (* poor's man identifier tagger *)
 
     (* defs *)
-    | T.Tclass ii1::T.TIdent (s, ii2)::xs ->
+    | T.Tclass _ii1::T.TIdent (_s, ii2)::xs ->
         if not (Hashtbl.mem already_tagged ii2) && lexer_based_tagger
         then tag ii2 (Class (Def2 fake_no_def2));
         aux_toks xs
 
-    | T.Tdef ii1::T.TIdent (s, ii2)::xs ->
+    | T.Tdef _ii1::T.TIdent (_s, ii2)::xs ->
         (* todo: actually could be a method if in class scope *)
         if not (Hashtbl.mem already_tagged ii2) && lexer_based_tagger
         then tag ii2 (Function (Def2 fake_no_def2));
@@ -129,7 +121,7 @@ let visit_toplevel
 
     (* uses *)
 
-    | T.TIdent (s, ii1)::T.TDot ii2::T.TIdent (s3, ii3)::T.TOParen(ii4)::xs ->
+    | T.TIdent (_s, ii1)::T.TDot _::T.TIdent (_s3, ii3)::T.TOParen _::xs ->
         if not (Hashtbl.mem already_tagged ii3) && lexer_based_tagger
         then begin 
           tag ii3 (Method (Use2 fake_no_use2));
@@ -138,7 +130,7 @@ let visit_toplevel
         end;
         aux_toks xs
 
-    | T.TIdent (s, ii1)::T.TOParen(ii2)::xs ->
+    | T.TIdent (s, ii1)::T.TOParen _::xs ->
         if not (Hashtbl.mem already_tagged ii1) && lexer_based_tagger
         then 
           (if Hashtbl.mem builtin_functions s
@@ -147,7 +139,7 @@ let visit_toplevel
           );
         aux_toks xs
 
-    | T.TIdent (s, ii1)::T.TDot ii2::T.TIdent (s3, ii3)::xs ->
+    | T.TIdent (_s, ii1)::T.TDot _::T.TIdent (s3, ii3)::xs ->
         (match xs with
         | (T.TDot _)::_ ->
 
@@ -170,7 +162,7 @@ let visit_toplevel
             aux_toks xs
         )
 
-    | T.TIdent (s, ii1)::xs ->
+    | T.TIdent (_s, _ii1)::xs ->
         (*
         if s =~ "[a-z]" then begin
           if not (Hashtbl.mem already_tagged ii1) && lexer_based_tagger
@@ -181,7 +173,7 @@ let visit_toplevel
         
         
 
-    | x::xs ->
+    | _x::xs ->
         aux_toks xs
   in
   let toks' = toks +> Common.exclude (function
@@ -210,25 +202,25 @@ let visit_toplevel
         then ()
         else ()
 
-    | T.TCommentNewline ii | T.TCommentMisc ii -> ()
+    | T.TCommentNewline _ii | T.TCommentMisc _ii -> ()
 
     | T.TUnknown ii -> tag ii Error
-    | T.EOF ii-> ()
+    | T.EOF _ii -> ()
 
     (* values  *)
 
-    | T.TString (s,ii) ->
+    | T.TString (_s,ii) ->
         tag ii String
-    | T.TChar (s, ii) ->
+    | T.TChar (_s, ii) ->
         tag ii String
-    | T.TFloat (s,ii) | T.TInt (s,ii) ->
+    | T.TFloat (_s,ii) | T.TInt (_s,ii) ->
         tag ii Number
 
     | T.TComplex (_, ii) ->
         tag ii Number
 
 
-    | T.TLongString (s,ii) ->
+    | T.TLongString (_s,ii) ->
         (* most of the time they are used as documentation strings *)
         tag ii Comment
 
