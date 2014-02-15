@@ -12,10 +12,7 @@
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the file
  * license.txt for more details.
  *)
-
 open Common
-
-open Ast_hs
 
 module Ast = Ast_hs
 module PI = Parse_info
@@ -29,17 +26,10 @@ module T = Parser_hs
 (*****************************************************************************)
 
 (*****************************************************************************)
-(* Helpers when have global analysis information *)
-(*****************************************************************************)
-
-let fake_no_def2 = NoUse
-let fake_no_use2 = (NoInfoPlace, UniqueDef, MultiUse)
-
-(*****************************************************************************)
 (* Code highlighter *)
 (*****************************************************************************)
 
-let visit_toplevel ~tag_hook prefs  (toplevel, toks) =
+let visit_toplevel ~tag_hook _prefs  (_toplevel, toks) =
 
   let already_tagged = Hashtbl.create 101 in
   let tag = (fun ii categ ->
@@ -65,7 +55,7 @@ let visit_toplevel ~tag_hook prefs  (toplevel, toks) =
 
     (* a little bit pad specific *)
     |   T.TComment(ii)
-      ::T.TCommentNewline (ii2)
+      ::T.TCommentNewline (_ii2)
       ::T.TComment(ii3)
       ::T.TCommentNewline (ii4)
       ::T.TComment(ii5)
@@ -94,13 +84,13 @@ let visit_toplevel ~tag_hook prefs  (toplevel, toks) =
     (* Poor's man semantic tagger. Infer if ident is a func, or variable,
      * based on the few tokens around and the column information.
      *)
-    | T.TIdent (s, ii1)::T.TSymbol ("::", ii3)::xs 
+    | T.TIdent (_s, ii1)::T.TSymbol ("::", _ii3)::xs 
         when PI.col_of_info ii1 = 0 ->
 
         tag ii1 (Function (Def2 NoUse));
         aux_toks xs
 
-    | (T.Ttype _ | T.Tdata _ | T.Tnewtype _)::T.TIdent (s, ii1)::xs ->
+    | (T.Ttype _ | T.Tdata _ | T.Tnewtype _)::T.TIdent (_s, ii1)::xs ->
         tag ii1 (TypeDef Def);
         aux_toks xs
         
@@ -109,19 +99,19 @@ let visit_toplevel ~tag_hook prefs  (toplevel, toks) =
     (* a few false positives, for instance local typed variable
      * and method definitions in type class
      *)
-    | T.TIdent (s, ii1)::T.TSymbol ("::", ii3)::xs 
+    | T.TIdent (_s, ii1)::T.TSymbol ("::", _ii3)::xs 
         when PI.col_of_info ii1 > 0 ->
 
         tag ii1 (Field (Def2 NoUse));
         aux_toks xs
 
-    | T.TIdent (s, ii1)::xs 
+    | T.TIdent (_s, ii1)::xs 
         when PI.col_of_info ii1 = 0 ->
 
         tag ii1 FunctionEquation;
         aux_toks xs
 
-    | T.TIdent (s, ii1)::T.TSymbol ("<-", ii3)::xs  ->
+    | T.TIdent (_s, ii1)::T.TSymbol ("<-", _ii3)::xs  ->
         tag ii1 UseOfRef;
         aux_toks xs
 
@@ -131,15 +121,15 @@ let visit_toplevel ~tag_hook prefs  (toplevel, toks) =
         aux_toks xs
 *)
 
-    | T.TIdent (s, ii1)::T.TSymbol ("@", ii2)::xs  ->
+    | T.TIdent (_s, ii1)::T.TSymbol ("@", _ii2)::xs  ->
         tag ii1 (Local Def);
         aux_toks xs
 
-    | T.TSymbol ("\\", ii1)::T.TIdent (s, ii2)::xs  ->
+    | T.TSymbol ("\\", _ii1)::T.TIdent (_s, ii2)::xs  ->
         tag ii2 (Parameter Def);
         aux_toks xs
 
-    | x::xs ->
+    | _x::xs ->
         aux_toks xs
   in
   let toks' = toks +> Common.exclude (function
@@ -163,21 +153,21 @@ let visit_toplevel ~tag_hook prefs  (toplevel, toks) =
           then tag ii CommentSyncweb
           else tag ii Comment
 
-    | T.TCommentNewline ii | T.TCommentSpace ii 
+    | T.TCommentNewline _ii | T.TCommentSpace _ii 
       -> ()
 
     | T.TUnknown ii 
       -> tag ii Error
-    | T.EOF ii
+    | T.EOF _ii
       -> ()
 
-    | T.TString (s,ii) ->
+    | T.TString (_s,ii) ->
         tag ii String
 
-    | T.TChar (s,ii) ->
+    | T.TChar (_s,ii) ->
         tag ii String
 
-    | T.TNumber (s,ii) ->
+    | T.TNumber (_s,ii) ->
         tag ii Number
 
     | T.TCBracket ii
@@ -245,7 +235,7 @@ let visit_toplevel ~tag_hook prefs  (toplevel, toks) =
         | _ -> ()
         )
 
-    | T.TUpperIdent (s, ii)
+    | T.TUpperIdent (_s, ii)
         -> 
         (* could be a type or a constructor *)
         tag ii TypeMisc
