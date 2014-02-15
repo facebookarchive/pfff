@@ -15,8 +15,6 @@
 
 open Common
 
-open Ast_lisp
-
 module Ast = Ast_lisp
 module PI = Parse_info
 
@@ -29,17 +27,10 @@ module T = Parser_lisp
 (*****************************************************************************)
 
 (*****************************************************************************)
-(* Helpers when have global analysis information *)
-(*****************************************************************************)
-
-let fake_no_def2 = NoUse
-let fake_no_use2 = (NoInfoPlace, UniqueDef, MultiUse)
-
-(*****************************************************************************)
 (* Code highlighter *)
 (*****************************************************************************)
 
-let visit_toplevel ~tag_hook prefs  (toplevel, toks) =
+let visit_toplevel ~tag_hook _prefs  (_toplevel, toks) =
 
   let already_tagged = Hashtbl.create 101 in
   let tag = (fun ii categ ->
@@ -65,7 +56,7 @@ let visit_toplevel ~tag_hook prefs  (toplevel, toks) =
 
     (* a little bit pad specific *)
     |   T.TComment(ii)
-      ::T.TCommentNewline (ii2)
+      ::T.TCommentNewline (_ii2)
       ::T.TComment(ii3)
       ::T.TCommentNewline (ii4)
       ::T.TComment(ii5)
@@ -94,7 +85,7 @@ let visit_toplevel ~tag_hook prefs  (toplevel, toks) =
     (* Poor's man semantic tagger. Infer if ident is a func, or variable,
      * based on the few tokens around and the column information.
      *)
-    | T.TOParen ii1::T.TIdent (s2, ii2)::T.TIdent (s3, ii3)::xs 
+    | T.TOParen ii1::T.TIdent (s2, _ii2)::T.TIdent (_s3, ii3)::xs 
         when PI.col_of_info ii1 = 0 ->
         (match s2 with
         | "setq" | "defvar" ->
@@ -108,8 +99,8 @@ let visit_toplevel ~tag_hook prefs  (toplevel, toks) =
         aux_toks xs
 
     (* scheme/racket *)
-    | T.TOParen ii1::T.TIdent (s2, ii2)
-      ::T.TOParen iibis::T.TIdent (s3, ii3)::xs 
+    | T.TOParen ii1::T.TIdent (s2, _ii2)
+      ::T.TOParen _iibis::T.TIdent (_s3, ii3)::xs 
         when PI.col_of_info ii1 = 0 ->
         (match s2 with
         | "define" -> 
@@ -119,7 +110,7 @@ let visit_toplevel ~tag_hook prefs  (toplevel, toks) =
         aux_toks xs
         
 
-    | x::xs ->
+    | _x::xs ->
         aux_toks xs
   in
   let toks' = toks +> Common.exclude (function
@@ -143,18 +134,18 @@ let visit_toplevel ~tag_hook prefs  (toplevel, toks) =
           then tag ii CommentSyncweb
           else tag ii Comment
 
-    | T.TCommentNewline ii | T.TCommentSpace ii 
+    | T.TCommentNewline _ii | T.TCommentSpace _ii 
       -> ()
 
     | T.TUnknown ii 
       -> tag ii Error
-    | T.EOF ii
+    | T.EOF _ii
       -> ()
 
-    | T.TString (s,ii) ->
+    | T.TString (_s,ii) ->
         tag ii String
 
-    | T.TNumber (s,ii) ->
+    | T.TNumber (_s,ii) ->
         tag ii Number
 
     | T.TIdent (s, ii) ->

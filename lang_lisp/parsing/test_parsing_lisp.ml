@@ -1,10 +1,7 @@
 open Common
 
-open Ast_lisp
 module Ast = Ast_lisp
 module Flag = Flag_parsing_lisp
-
-open OUnit
 
 (*****************************************************************************)
 (* Subsystem testing *)
@@ -31,7 +28,7 @@ let test_parse_lisp xs =
   fullxs +> List.iter (fun file -> 
     pr2 ("PARSING: " ^ file);
 
-    let (xs, stat) = Parse_lisp.parse file in
+    let (_xs, stat) = Parse_lisp.parse file in
     Common.push2 stat stat_list;
   );
   Parse_info.print_parsing_stat_list !stat_list;

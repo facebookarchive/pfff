@@ -40,14 +40,6 @@ type program2 = toplevel2 list
      (* the token list contains also the comment-tokens *)
  and toplevel2 = Ast_lisp.toplevel * Parser_lisp.token list
 
-let program_of_program2 xs = 
-  xs +> List.map fst
-
-(*****************************************************************************)
-(* Wrappers *)
-(*****************************************************************************)
-let pr2_err, pr2_once = Common2.mk_pr2_wrappers Flag.verbose_parsing 
-
 (*****************************************************************************)
 (* Helpers *)
 (*****************************************************************************)
@@ -116,7 +108,3 @@ let parse2 filename =
 
 let parse a = 
   Common.profile_code "Parse_lisp.parse" (fun () -> parse2 a)
-
-let parse_program file = 
-  let (ast2, _stat) = parse file in
-  program_of_program2 ast2
