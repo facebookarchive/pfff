@@ -47,6 +47,7 @@ type env = {
 (*****************************************************************************)
 
 let parse ~show_parse_error file =
+  ignore(show_parse_error);
   try 
     Common.save_excursion Flag.verbose_lexing false (fun () ->
       Parse_cpp.tokens file
@@ -79,6 +80,7 @@ let add_use_edge env (name, kind) =
 (*****************************************************************************)
 
 let extract_defs ~g ~ast ~readable =
+  ignore(ast);
   let dir = Common2.dirname readable in
   G.create_intermediate_directories_if_not_present g dir;
   g +> G.add_node (readable, E.File);
