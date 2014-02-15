@@ -34,7 +34,7 @@ exception Parse_error of Parse_info.info
 (*****************************************************************************)
 
 let parse2 filename = 
-  let (ast, toks) = Parse_html.parse filename in
+  let (ast, _toks) = Parse_html.parse filename in
 
   let js = ref [] in
   let css = ref [] in
@@ -42,7 +42,7 @@ let parse2 filename =
   let tokens = ref [] in
 
   let rec visit = function
-    | Element ((Tag (s_tag, tok_t)), attrs, xs) ->
+    | Element ((Tag (s_tag, _tok_t)), _attrs, xs) ->
         (match s_tag, xs with
         | "script", [Data (s, tok)] ->
             let tmpfile = Common.new_temp_file "web" ".js" in

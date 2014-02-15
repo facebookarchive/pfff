@@ -1,10 +1,7 @@
 open Common
 
-open Ast_web
 module Ast = Ast_web
 module Flag = Flag_parsing_web
-
-open OUnit
 
 (*****************************************************************************)
 (* Subsystem testing *)
@@ -16,12 +13,12 @@ let test_tokens_web file =
   raise Todo
 
 
-let test_parse_web xs =
+let test_parse_web _xs =
   raise Todo
 
 
 let test_dump_web file =
-  let (ast, toks) = Parse_web.parse file in
+  let (ast, _toks) = Parse_web.parse file in
   let s = Export_web.ml_pattern_string_of_web_document ast in
   pr2 s
 

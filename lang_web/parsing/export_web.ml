@@ -20,12 +20,12 @@ open Ast_web
 let ml_pattern_string_of_web_document webdoc = 
   let s_html = Export_html.ml_pattern_string_of_html_tree webdoc.html in
   let s_css =  
-    webdoc.css +> List.map (fun (s, css) ->
+    webdoc.css +> List.map (fun (_s, css) ->
       Export_ast_css.ml_pattern_string_of_stylesheet css
     ) +> Common2.unlines
   in
   let s_js =
-    webdoc.js +> List.map (fun (s, js) ->
+    webdoc.js +> List.map (fun (_s, js) ->
       let v = Meta_ast_js.vof_program js in
       Ocaml.string_of_v v
     ) +> Common2.unlines
