@@ -1,10 +1,7 @@
 open Common
 
-open Ast_html
 module Ast = Ast_html
 module Flag = Flag_parsing_html
-
-open OUnit
 
 (*****************************************************************************)
 (* Subsystem testing *)
@@ -44,7 +41,7 @@ let test_parse_html xs =
   );
   ()
 
-let test_dump_html_old file =
+let test_dump_html_old _file =
   failwith "ocamlnet not supported anymore"
 (*
   let s = Common.read_file file in 

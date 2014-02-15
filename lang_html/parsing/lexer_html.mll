@@ -16,12 +16,9 @@
  *)
 open Common 
 
-open Ast_html
-
+open Parser_html
 module Ast = Ast_html
 module Flag = Flag_parsing_html
-
-open Parser_html
 
 (*****************************************************************************)
 (* Prelude *)

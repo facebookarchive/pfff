@@ -37,7 +37,7 @@ module T = Parser_html
  * number and basic entities. The Ast is better for tagging idents
  * to figure out what kind of ident it is.
  *)
-let visit_toplevel ~tag_hook prefs (toplevel, toks) =
+let visit_toplevel ~tag_hook _prefs (toplevel, toks) =
 
   let already_tagged = Hashtbl.create 101 in
   let tag = (fun ii categ ->
@@ -51,9 +51,9 @@ let visit_toplevel ~tag_hook prefs (toplevel, toks) =
 
   let rec visit = function
 
-    | Element ((Tag (s_tag, tok_t)), attrs, xs) ->
+    | Element ((Tag (s_tag, _tok_t)), attrs, xs) ->
         attrs +> List.iter 
-          (fun (Attr (s_attr, tok_a), (Val (s_val, tok_v))) ->
+          (fun (Attr (s_attr, _tok_a), (Val (_s_val, tok_v))) ->
             match s_attr with
             | "href" | "xmlns" -> tag tok_v EmbededUrl
             | "id" -> tag tok_v (Local Def)
@@ -63,30 +63,30 @@ let visit_toplevel ~tag_hook prefs (toplevel, toks) =
         | "pre", _ ->
             xs +> List.iter (function
             | Element _ -> raise Impossible
-            | Data (s, tok) -> tag tok Verbatim
+            | Data (_s, tok) -> tag tok Verbatim
             )
         | "script", _ ->
             xs +> List.iter (function
             | Element _ -> raise Impossible
-            | Data (s, tok) -> tag tok EmbededCode
+            | Data (_s, tok) -> tag tok EmbededCode
             )
         | "style", _ ->
             xs +> List.iter (function
             | Element _ -> raise Impossible
-            | Data (s, tok) -> tag tok EmbededStyle
+            | Data (_s, tok) -> tag tok EmbededStyle
             )
 
         | "h1", _ ->
             xs +> List.iter (function
-            | Element _ -> () | Data (s, tok) -> tag tok CommentSection1
+            | Element _ -> () | Data (_s, tok) -> tag tok CommentSection1
             )
         | "h2", _ ->
             xs +> List.iter (function
-            | Element _ -> () | Data (s, tok) -> tag tok CommentSection2
+            | Element _ -> () | Data (_s, tok) -> tag tok CommentSection2
             )
         | "h3", _ ->
             xs +> List.iter (function
-            | Element _ -> () | Data (s, tok) -> tag tok CommentSection3
+            | Element _ -> () | Data (_s, tok) -> tag tok CommentSection3
             )
         | _ -> ()
         );
@@ -114,44 +114,44 @@ let visit_toplevel ~tag_hook prefs (toplevel, toks) =
         then
           tag ii Comment
 
-    | T.Space ii -> ()
-    | T.EOF ii -> ()
+    | T.Space _ii -> ()
+    | T.EOF _ii -> ()
 
     | T.Eq ii -> tag ii Punctuation
 
-    | T.Lelement (ii, s) ->
+    | T.Lelement (ii, _s) ->
         (* todo: different color depending on element ? *)
         tag ii Keyword
 
-    | T.Lelementend (ii, s) ->
+    | T.Lelementend (ii, _s) ->
         (* todo: better category *)
         tag ii (Module Use);
 
-    | T.Name (ii, s) ->
+    | T.Name (ii, _s) ->
         (* todo: different color depending on attr ? *)
         tag ii TypeMisc
 
     | T.Relement ii ->
         if not (Hashtbl.mem already_tagged ii)
         then tag ii Keyword
-    | T.Relement_empty ii ->
+    | T.Relement_empty _ii ->
         ()
 
-    | T.Literal (ii, s) -> 
+    | T.Literal (ii, _s) -> 
         (* can be a href *)
         if not (Hashtbl.mem already_tagged ii)
         then tag ii String
 
     | T.Other (ii) -> tag ii NotParsed
 
-    | T.Cdata (ii, s) | T.CdataSpecial (ii, s) ->
+    | T.Cdata (ii, _s) | T.CdataSpecial (ii, _s) ->
         (* can be js code, css code *)
  
         if not (Hashtbl.mem already_tagged ii)
         then () (* tag ii String ? *)
 
-    | T.TPi (ii)
-    | T.TDoctype (ii)
+    | T.TPi _ii
+    | T.TDoctype _ii
       ->
         ()
   );

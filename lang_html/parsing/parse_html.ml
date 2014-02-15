@@ -35,8 +35,10 @@ module Dtd = Dtd_simple
  * The 2 functions definition below make sure we never use those
  * evil too-generic equality operators
  *)
+(*
 let (=) () () = false
 let (<>) () () = false
+*)
 
 (*****************************************************************************)
 (* Prelude *)
@@ -192,7 +194,7 @@ let parse_atts call_scan =
  *  itself.
  *)
 let parse_special tag call_scan =
-  let (Tag (name, tok1)) = tag in
+  let (Tag (name, _tok1)) = tag in
 
   let first_tok = ref None in
 
@@ -253,7 +255,7 @@ let model_of ~dtd_hash (Tag (element_name, _tok)) =
 let exclusions_of ~dtd_hash (Tag (element_name, _tok)) =
   try
     (match Hashtbl.find dtd_hash element_name with
-    | (eclass, Dtd.Sub_exclusions(l,_)) -> l
+    | (_eclass, Dtd.Sub_exclusions(l,_)) -> l
     | _ -> []
     )
   with Not_found -> []

@@ -80,5 +80,5 @@ let rec json_of_html_tree doc =
       )
   | H.Data (s, _tok) -> J.Array [J.String "DATA"; J.String s]
 
-let json_string_of_html_tree html = 
+let json_string_of_html_tree _html = 
   raise Todo

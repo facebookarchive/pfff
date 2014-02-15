@@ -52,6 +52,6 @@ let get_data_any any =
     )
   }) any
 
-let html_tree_to_html tree =
+let html_tree_to_html _tree =
   raise Todo
 
