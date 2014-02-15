@@ -117,7 +117,7 @@ let draw_green_yellow_dependent_rows ~cr w i =
 (* Assembling overlays *)
 (*****************************************************************************)
 
-let motion_notify_refresher da w ev () =
+let motion_notify_refresher _da w ev () =
 
   let (x, y) = GdkEvent.Motion.x ev, GdkEvent.Motion.y ev in
   let pt = { Cairo. x = x; y = y } in

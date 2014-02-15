@@ -62,7 +62,7 @@ let show_text2 cr s =
   try 
     let s' = prepare_string s in
     Cairo.show_text cr s'
-  with exn ->
+  with _exn ->
     let status = Cairo.status cr in
     let s2 = Cairo.string_of_status status in
     failwith ("Cairo pb: " ^ s2 ^ " s = " ^ s)

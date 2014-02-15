@@ -13,14 +13,14 @@
  * license.txt for more details.
  *)
 
-let _set_title = ref (fun s ->
+let _set_title = ref (fun _s ->
   failwith "_set_title not defined"
 )
-let _statusbar_addtext = ref (fun s ->
+let _statusbar_addtext = ref (fun _s ->
   failwith "_statusbar_addtext not defined"
 )
 
-let _label_settext = ref (fun s ->
+let _label_settext = ref (fun _s ->
   failwith "_label_settext not defined"
 )
 

@@ -59,13 +59,13 @@ let assemble_layers cr_final w =
   Cairo.paint cr_final;
   ()
 
-let expose da w ev = 
+let expose da w _ev = 
   let gwin = da#misc#window in
   let cr = Cairo_lablgtk.create gwin in
   assemble_layers cr w;
   true
 
-let configure da w ev =
+let configure _da w ev =
   let width = GdkEvent.Configure.width ev in
   let height = GdkEvent.Configure.height ev in
 

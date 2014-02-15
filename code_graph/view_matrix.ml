@@ -60,7 +60,7 @@ let color_of_node (_, kind) =
   | E.ClassConstant -> "pink3"
   | E.Constructor -> "pink3"
 
-  | E.Other s -> raise Todo
+  | E.Other _s -> raise Todo
 
   | E.Dir -> "SteelBlue2"
   | E.MultiDirs -> "SteelBlue3"
@@ -122,13 +122,14 @@ let rect_of_column j l =
     q = { x = x + l.width_cell; y = l.y_end_matrix_down }
   }
 
+(*
 let rect_of_line i l =
   let x = l.x_start_matrix_left in
   let y = (float_of_int i) * l.height_cell + l.y_start_matrix_up in
   { p = { x; y };
     q = { x = l.x_end_matrix_right; y = y + l.height_cell }
   }
-
+*)
 
 let rect_of_label_left i l =
   let x = 0.0 in
@@ -363,6 +364,7 @@ let highlight_dead_columns cr w =
     end
   done
 
+(*
 let highlight_dead_lines cr w =
   let l = M.layout_of_w w in
   let mat = w.m.DM.matrix in
@@ -375,6 +377,7 @@ let highlight_dead_lines cr w =
         (rect_of_label_left i l)
     end
   done
+*)
 
 
 let highlight_internal_helpers cr w =
@@ -454,7 +457,7 @@ let draw_matrix cr w =
     DM.score_upper_triangle_nodes w.m 
     +> Common.sort_by_val_highfirst
     +> Common.take_safe 4
-    +> Common.exclude (fun (i, n) -> n = 0)
+    +> Common.exclude (fun (_i, n) -> n = 0)
   in
   let nodes_major = biggest_offenders +> List.map fst in
   highlight_biggest_offenders cr w nodes_major;
@@ -462,7 +465,7 @@ let draw_matrix cr w =
     DM.score_upper_triangle_cells w.m
      +> Common.sort_by_val_highfirst
      +> Common.take_safe 20
-     +> Common.exclude (fun (i, n) -> n = 0)
+     +> Common.exclude (fun (_i, n) -> n = 0)
   in
   highlight_biggest_offenders_cells cr w (biggest_cells +> List.map fst);
     
@@ -512,7 +515,7 @@ let recompute_matrix w =
 
 let add_path x path = path ++ [x]
 
-let button_action da w ev =
+let button_action _da w ev =
   let (x, y) = GdkEvent.Button.x ev, GdkEvent.Button.y ev in
   let pt = { Cairo. x = x; y = y } in
   pr2 (spf "button action device coord: %f, %f" x y);
