@@ -92,6 +92,7 @@ let new_scope() = _scoped_env := []::!_scoped_env
 let del_scope() = _scoped_env := List.tl !_scoped_env
 let top_scope() = List.hd !_scoped_env
 
+(*
 let do_in_new_scope f = 
   begin
     new_scope();
@@ -99,6 +100,7 @@ let do_in_new_scope f =
     del_scope();
     res
   end
+*)
 
 let add_in_scope namedef =
   let (current, older) = Common2.uncons !_scoped_env in
@@ -154,12 +156,12 @@ let visit_prog prog =
   let hooks = { V.default_visitor with
 
     (* 1: scoping management *)
-    V.kcompound =  (fun (k, vx) x ->
+    V.kcompound =  (fun (k, _) x ->
       do_in_new_scope_and_check (fun () -> k x)
     );
 
     (* 2: adding defs of name in environment *)
-    V.kparameter = (fun (k, vx) param ->
+    V.kparameter = (fun (k, _) param ->
 
       param.p_name  +> Common.do_option (fun ident ->
         add_binding (None, noQscope, IdIdent ident) (S.Param, ref 0);
@@ -169,11 +171,11 @@ let visit_prog prog =
     (* -------------------------------------------------------------------- *)
     V.kblock_decl = (fun (k, _) x ->
       match x with
-      | DeclList (xs_comma, ii) ->
+      | DeclList (xs_comma, _) ->
           let xs = Ast.uncomma xs_comma in
           xs +> List.iter (fun onedecl ->
 
-            onedecl.v_namei +> Common.do_option (fun (name, ini_opt) ->
+            onedecl.v_namei +> Common.do_option (fun (name, _ini_opt) ->
 
               let scope = 
                 if is_top_env !_scoped_env || 
@@ -195,7 +197,7 @@ let visit_prog prog =
 
     (* 3: checking uses *)
 
-    V.kexpr = (fun (k, vx) x ->
+    V.kexpr = (fun (k, _) x ->
       match (Ast.unwrap x) with
       | Ident (name, idinfo) ->
           (* assert scope_ref = S.Unknown ? *)
