@@ -1,10 +1,7 @@
 open Common
 
-open Ast_nw
 module Ast = Ast_nw
 module Flag = Flag_parsing_nw
-
-open OUnit
 
 (*****************************************************************************)
 (* Subsystem testing *)

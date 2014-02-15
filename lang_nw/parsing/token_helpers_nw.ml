@@ -32,10 +32,6 @@ let is_comment = function
   | TComment _ | TCommentSpace _ | TCommentNewline _ -> true
   | _ -> false 
 
-let is_just_comment = function
-  | TComment _ -> true
-  | _ -> false 
-
 (*****************************************************************************)
 (* Visitors *)
 (*****************************************************************************)
@@ -79,7 +75,6 @@ let linecol_of_tok tok =
   let info = info_of_tok tok in
   PI.line_of_info info, PI.col_of_info info
 
-let col_of_tok x  = snd (linecol_of_tok x)
 let line_of_tok x = fst (linecol_of_tok x)
 
 let str_of_tok  x = PI.str_of_info  (info_of_tok x)
