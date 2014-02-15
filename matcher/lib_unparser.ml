@@ -50,7 +50,7 @@ type elt =
  | OrigElt of string
  | Removed of string
  | Added of string
- | Esthet of (Parse_info.esthet * string)
+ | Esthet2 of (Parse_info.esthet * string)
  (* with tarzan *)
 
 (*****************************************************************************)
@@ -71,7 +71,7 @@ let rec vof_elt =
       let v1 = Ocaml.vof_string v1 in Ocaml.VSum (("Removed", [ v1 ]))
   | Added v1 ->
       let v1 = Ocaml.vof_string v1 in Ocaml.VSum (("Added", [ v1 ]))
-  | Esthet (v1, v2) -> 
+  | Esthet2 (v1, v2) -> 
       let v1 = vof_esthet v1 in
       let v2 = Ocaml.vof_string v2 in
       Ocaml.VSum (("Esthet", [ v1; v2 ]))
@@ -102,30 +102,30 @@ let rec add_if_need_comma add_str rh tl =
   (* Because this token is right parenthese, there must be
      something before*)
   | [] -> failwith "Error with need_comma"
-  | (OrigElt str)::t when ((str = ",") || (str = "(")) ->
+  | (OrigElt str)::_t when ((str = ",") || (str = "(")) ->
     List.rev_append rh tl
-  | ((OrigElt str) as h)::t ->
+  | ((OrigElt _str) as h)::t ->
     List.rev_append rh ((Added add_str)::h::t)
-  | ((Removed str) as h)::t -> add_if_need_comma add_str (h::rh) t
+  | ((Removed _str) as h)::t -> add_if_need_comma add_str (h::rh) t
   (* Added is very arbitrary, I'd rather not handle them.
    * This can be avoided by using AddArgsBefore only
    *)
-  | (Added str)::t ->
+  | (Added _str)::_t ->
     failwith "need comma: cannot handle this case!"
-  | ((Esthet _) as h)::t -> add_if_need_comma add_str (h::rh) t
+  | ((Esthet2 _) as h)::t -> add_if_need_comma add_str (h::rh) t
 
 let rec search_prev_elt ?(ws=0) acc =
   match acc with
   (* Because this token is right parenthese, there must be
      something before *)
   | [] -> failwith "Error with search_prev_real_elt"
-  | (OrigElt str)::t -> (OrigElt str, ws)
-  | (Removed str)::t -> search_prev_elt ~ws t
-  | (Added str)::t ->
+  | (OrigElt str)::_t -> (OrigElt str, ws)
+  | (Removed _str)::t -> search_prev_elt ~ws t
+  | (Added _str)::_t ->
     failwith "search_prev_real_elt: cannot handle this case"
-  | (Esthet(Comment, str))::t -> search_prev_elt ~ws t
-  | (Esthet(Newline, str))::t -> (Esthet (Newline,str), ws)
-  | (Esthet(Space,str))::t ->
+  | (Esthet2(Comment, _str))::t -> search_prev_elt ~ws t
+  | (Esthet2(Newline, str))::_t -> (Esthet2 (Newline,str), ws)
+  | (Esthet2(Space,str))::t ->
     search_prev_elt ~ws:(ws + String.length str) t
 
 
@@ -144,7 +144,7 @@ let elts_of_add_args_before acc xs =
   during add_if_need_comma.
   *)
   match elt with
-  | Esthet (Newline, _) ->
+  | Esthet2 (Newline, _) ->
   (* new line for each argument *)
       let acc = add_if_need_comma "," [] acc in
       let sep = xs +> List.map (fun s ->
@@ -164,7 +164,7 @@ let elt_and_info_of_tok ~kind_and_info_of_tok tok =
   let str = PI.str_of_info info in
   let elt = 
     match kind with
-      | PI.Esthet x -> Esthet (x, str)
+      | PI.Esthet x -> Esthet2 (x, str)
       | _ -> OrigElt (str)
   in
   elt, info
@@ -220,7 +220,7 @@ let drop_esthet_between_removed xs =
   and in_remove acc = function
     | [] -> List.rev acc
     | Removed s::xs -> Removed s::in_remove [] xs
-    | Esthet x::xs -> in_remove (Esthet x::acc) xs
+    | Esthet2 x::xs -> in_remove (Esthet2 x::acc) xs
     | Added s::xs -> List.rev (Added s::acc) ++ outside_remove xs
     | OrigElt s::xs -> List.rev (OrigElt s::acc) ++ outside_remove xs 
   in
@@ -231,15 +231,15 @@ let drop_esthet_between_removed xs =
  *)
 let drop_whole_line_if_only_removed xs =
   let (before_first_newline, xxs) = xs +> Common2.group_by_pre (function
-    | Esthet (Newline, _) -> true | _ -> false)
+    | Esthet2 (Newline, _) -> true | _ -> false)
   in
-  let xxs = xxs +> Common.exclude (fun (newline, elts_after_newline) ->
+  let xxs = xxs +> Common.exclude (fun (_newline, elts_after_newline) ->
     let has_a_remove = 
       elts_after_newline +> List.exists (function 
       | Removed _ -> true | _ -> false) in
     let only_remove_or_esthet = 
       elts_after_newline +> List.for_all (function
-      | Esthet _ | Removed _ -> true
+      | Esthet2 _ | Removed _ -> true
       | Added _ | OrigElt _ -> false
       )
     in
@@ -263,7 +263,7 @@ let drop_trailing_comma_between_removed xs =
   aux xs
   
 
-let rec drop_removed xs =
+let drop_removed xs =
   xs +> Common.exclude (function
   | Removed _ -> true
   | _ -> false
@@ -281,13 +281,13 @@ let rec drop_removed xs =
 let rec drop_useless_space xs  =
   match xs with
   | [] -> []
-  | Esthet (Space,s)::Esthet (Space,s2)::rest ->
-    drop_useless_space ((Esthet (Space, s))::rest)
+  | Esthet2 (Space,s)::Esthet2 (Space,_s2)::rest ->
+    drop_useless_space ((Esthet2 (Space, s))::rest)
   (* see tests/php/spatch/distr_plus.spatch, just like we can have
    * double spaces, we can also have space before comma that are 
    * useless 
    *)
-  | Esthet (Space, s)::OrigElt ","::rest ->
+  | Esthet2 (Space, _s)::OrigElt ","::rest ->
     drop_useless_space (OrigElt ","::rest)
   | x::xs -> x::drop_useless_space xs
 
@@ -321,8 +321,8 @@ let string_of_toks_using_transfo ~kind_and_info_of_tok toks =
     let xs = drop_useless_space xs in
     
     xs +> List.iter (function
-    | OrigElt s | Added s | Esthet ((Comment | Space), s) -> pp s
+    | OrigElt s | Added s | Esthet2 ((Comment | Space), s) -> pp s
     | Removed _ -> raise Impossible (* see drop_removed *)
-    | Esthet (Newline, _) -> pp "\n"
+    | Esthet2 (Newline, _) -> pp "\n"
     )
   )

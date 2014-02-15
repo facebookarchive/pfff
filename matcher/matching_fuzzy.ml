@@ -27,7 +27,7 @@ module MV = Metavars_fuzzy
 (*****************************************************************************)
 (* Wrappers *)
 (*****************************************************************************)
-let pr2, pr2_once = Common2.mk_pr2_wrappers Flag_matcher.verbose
+let pr2, _pr2_once = Common2.mk_pr2_wrappers Flag_matcher.verbose
 
 (*****************************************************************************)
 (* The functor argument *)
@@ -102,7 +102,7 @@ module XMATCH = struct
     (* old: Some (a,b) *)
     [(a,b), tin]
       
-  let fail = fun tin ->
+  let fail = fun _tin ->
     (* old: None *)
     []
 
@@ -181,7 +181,7 @@ type ('a, 'b) matcher = 'a -> 'b ->
   Metavars_fuzzy.fuzzy_binding list
 
 let (extract_bindings: 'a XMATCH.tout -> MV.fuzzy_binding list) = fun tout ->
-  tout +> List.map (fun (term, binding) -> binding)
+  tout +> List.map (fun (_term, binding) -> binding)
 
 let match_trees_trees pattern x =
   let env = MV.empty_environment () in

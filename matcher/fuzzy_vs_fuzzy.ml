@@ -122,7 +122,7 @@ struct
 type ('a, 'b) matcher = 'a -> 'b  -> X.tin -> ('a * 'b) X.tout
 
 let (>>=) = X.(>>=)
-let (>||>) = X.(>||>)
+(*let (>||>) = X.(>||>) *)
 
 let return =
   X.return
@@ -144,7 +144,7 @@ let rec m_list__m_tree xsa xsb =
       return ([], [])
 
   (* iso: allow "..." to match any list of trees *)
-  | [A.Dots t],  bbs  ->
+  | [A.Dots _t],  _bbs  ->
     (* todo: check no annot on t *)
       return (
         xsa,
@@ -174,7 +174,7 @@ and m_arguments xsa xsb =
       return ([], [])
 
   (* iso on ... *)
-  | [Left [(A.Dots t)]], bbs ->
+  | [Left [(A.Dots t)]], _bbs ->
     (* less: if just Remove, then could apply the transfo on bbs? *)
     if is_NoTransfo t then
       return (
@@ -197,7 +197,7 @@ and m_arguments xsa xsb =
       )
 
   (* '...' can also match no argument *)
-  | [Right a; Left [A.Dots i]], [] ->
+  | [Right a; Left [A.Dots _i]], [] ->
     if is_NoTransfo a || is_Remove a
     then
       return (
@@ -210,10 +210,10 @@ and m_arguments xsa xsb =
        "with the '...'. See also " ^ 
        "https://github.com/facebook/pfff/wiki/Spatch#wiki-spacing-issues")
 
-  | [Right _; Left [A.Dots i]], bbs ->
+  | [Right _; Left [A.Dots _i]], _bbs ->
       raise Impossible
 
-  | Left [A.Dots i]::xs, bbs ->
+  | Left [A.Dots _i]::_xs, _bbs ->
       failwith "... is allowed for now only at the end. Give money to pad to get this feature"
 
   | xa::aas, xb::bbs ->
@@ -233,7 +233,7 @@ and m_either_m_argument a b =
   match a, b with
   | Left [A.Metavar (s, tok)], Left b ->
     X.envf (s, tok) b >>= (function 
-    | ((s, a), b) ->
+    | ((s, _a), b) ->
       return (
         Left [A.Metavar (s, tok)],
         Left b
@@ -263,7 +263,7 @@ and m_tree a b =
 
   | A.Metavar (s, tok), b ->
     X.envf (s, tok) [b] >>= (function 
-    | ((s, a), [b]) ->
+    | ((s, _a), [b]) ->
       return (
         A.Metavar (s, tok),
         b

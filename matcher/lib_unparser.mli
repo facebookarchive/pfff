@@ -3,7 +3,7 @@ type elt =
   | OrigElt of string
   | Removed of string
   | Added of string
-  | Esthet of (Parse_info.esthet * string)
+  | Esthet2 of (Parse_info.esthet * string)
 
 (* helpers *)
 val elts_of_any:
