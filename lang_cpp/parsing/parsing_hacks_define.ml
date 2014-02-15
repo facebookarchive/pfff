@@ -66,7 +66,7 @@ module PI = Parse_info
 (*****************************************************************************)
 (* Wrappers *)
 (*****************************************************************************)
-let pr2, pr2_once = Common2.mk_pr2_wrappers Flag_parsing_cpp.verbose_lexing
+let pr2, _pr2_once = Common2.mk_pr2_wrappers Flag_parsing_cpp.verbose_lexing
 
 (*****************************************************************************)
 (* Helpers  *)

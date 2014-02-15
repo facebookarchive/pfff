@@ -48,44 +48,44 @@ let fake_pi = Parse_info.fake_token_location
 let addStorageD  = function 
   | ((x,ii), ({storageD = (NoSto,[]); _} as v)) -> 
       { v with storageD = (x, [ii]) }
-  | ((x,ii), ({storageD = (y, ii2); _} as v)) ->  
+  | ((x,_ii), ({storageD = (y, _ii2); _} as v)) ->  
       if x = y then warning "duplicate storage classes" v
       else raise (Semantic ("multiple storage classes", fake_pi))
 
 let addInlineD  = function 
   | ((true,ii), ({inlineD = (false,[]); _} as v)) -> 
       { v with inlineD=(true,[ii])}
-  | ((true,ii), ({inlineD = (true, ii2); _} as v)) -> 
+  | ((true,_ii), ({inlineD = (true, _ii2); _} as v)) -> 
       warning "duplicate inline" v
   | _ -> raise Impossible
 
 
 let addTypeD     = function 
-  | ((Left3 Signed,ii)   ,({typeD = ((Some Signed,  b,c),ii2); _} as v)) -> 
+  | ((Left3 Signed,_ii)   ,({typeD = ((Some Signed,  _b,_c),_ii2); _} as v)) -> 
       warning "duplicate 'signed'"   v
-  | ((Left3 UnSigned,ii) ,({typeD = ((Some UnSigned,b,c),ii2); _} as v)) -> 
+  | ((Left3 UnSigned,_ii) ,({typeD = ((Some UnSigned,_b,_c),_ii2); _} as v)) -> 
       warning "duplicate 'unsigned'" v
-  | ((Left3 _,ii),        ({typeD = ((Some _,b,c),ii2); _} as _v)) -> 
+  | ((Left3 _,_ii),        ({typeD = ((Some _,_b,_c),_ii2); _} as _v)) -> 
       raise (Semantic ("both signed and unsigned specified", fake_pi))
   | ((Left3 x,ii),        ({typeD = ((None,b,c),ii2); _} as v))   -> 
       {v with typeD = (Some x,b,c),ii ++ ii2}
 
-  | ((Middle3 Short,ii),  ({typeD = ((a,Some Short,c),ii2); _} as v)) -> 
+  | ((Middle3 Short,_ii),  ({typeD = ((_a,Some Short,_c),_ii2); _} as v)) -> 
       warning "duplicate 'short'" v
 
       
   (* gccext: long long allowed *)
   | ((Middle3 Long,ii),   ({typeD = ((a,Some Long ,c),ii2); _} as v)) -> 
       { v with typeD = (a, Some LongLong, c),ii++ii2 }
-  | ((Middle3 Long,ii),   ({typeD = ((a,Some LongLong ,c),ii2); _} as v)) -> 
+  | ((Middle3 Long,_ii),   ({typeD = ((_a,Some LongLong ,_c),_ii2); _} as v)) -> 
       warning "triplicate 'long'" v
 
-  | ((Middle3 _,ii),      ({typeD = ((a,Some _,c),ii2); _} as _v)) -> 
+  | ((Middle3 _,_ii),      ({typeD = ((_a,Some _,_c),_ii2); _} as _v)) -> 
       raise (Semantic ("both long and short specified", fake_pi))
   | ((Middle3 x,ii),      ({typeD = ((a,None,c),ii2); _} as v))  -> 
       {v with typeD = (a, Some x,c),ii++ii2}
 
-  | ((Right3 t,ii),       ({typeD = ((a,b,Some _),ii2); _} as _v)) -> 
+  | ((Right3 _t,_ii),       ({typeD = ((_a,_b,Some _),_ii2); _} as _v)) -> 
       raise (Semantic ("two or more data types", fake_pi))
   | ((Right3 t,ii),       ({typeD = ((a,b,None),ii2); _} as v))   -> 
       {v with typeD = (a,b, Some t),ii++ii2}
@@ -160,7 +160,7 @@ let (fixDeclSpecForDecl: decl -> (fullType * (storage wrap)))  = function
   )
 
 let fixDeclSpecForParam = function ({storageD = (st,iist); _} as r) -> 
-  let ((qu,ty) as v,_st) = fixDeclSpecForDecl r in
+  let ((_qu,_ty) as v,_st) = fixDeclSpecForDecl r in
   match st with
   | (Sto Register) -> v, Some (List.hd iist)
   | NoSto -> v, None
@@ -180,7 +180,7 @@ let fixDeclSpecForFuncDef x =
   (match fst (unwrap storage) with
   | StoTypedef -> 
       raise (Semantic ("function definition declared 'typedef'", fake_pi))
-  | x -> (returnType, storage)
+  | _x -> (returnType, storage)
   )
 
 (* parameter: this function is used where we give parameters only when
@@ -196,7 +196,7 @@ let fixDeclSpecForFuncDef x =
  *)
 let (fixOldCDecl: fullType -> fullType) = fun ty ->
   match snd ty with
-  | FunctionType ({ft_params=params;_}),iifunc -> 
+  | FunctionType ({ft_params=params;_}),_iifunc -> 
 
       (* stdC: If the prototype declaration declares a parameter for a
        * function that you are defining (it is part of a function
@@ -230,7 +230,7 @@ let (fixOldCDecl: fullType -> fullType) = fun ty ->
 
 (* TODO: this is ugly ... use record! *)
 let fixFunc = function
-  | (name, (aQ, (FunctionType ({ft_params=params; _} as ftyp),iifunc)),sto),cp->
+  | (name, (aQ, (FunctionType ({ft_params=params; _} as ftyp),_iifunc)),sto),cp->
       (* it must be nullQualif, cos parser construct only this *)
       assert (aQ =*= nQ);
 
@@ -244,7 +244,7 @@ let fixFunc = function
           )
       | params -> 
           params +> List.iter (function 
-          | ({p_name = Some s;_}, _) -> ()
+          | ({p_name = Some _s;_}, _) -> ()
 	  | _ -> ()
                 (* failwith "internal errror: fixOldCDecl not good" *)
           )
@@ -262,7 +262,7 @@ let fixFieldOrMethodDecl (xs, semicolon) =
       v_namei = Some (name, ini_opt);
       v_type = (q, (FunctionType ft, ii_ft));
       v_storage = sto;
-    }), noiicomma] ->
+    }), _noiicomma] ->
       (* todo? define another type instead of onedecl? *)
       MemberDecl (MethodDecl ({
         v_namei = Some (name, None);
@@ -287,13 +287,13 @@ let mk_e e ii = (e, ii)
 
 let mk_funcall e1 args = 
   match e1 with
-  | (Ident (name, _idinfo)), ii_empty ->
+  | (Ident (name, _idinfo)), _ii_empty ->
       FunCallSimple (name, args)
   | _ -> 
       FunCallExpr (e1, args)
 
 let mk_constructor id (lp, params, rp) cp =
-  let params, hasdots = 
+  let params, _hasdots = 
     match params with
     | Some (params, ellipsis) ->
         params, ellipsis
@@ -312,7 +312,7 @@ let mk_constructor id (lp, params, rp) cp =
     f_storage = (NoSto, false), noii; f_body = cp
   }
 
-let mk_destructor tilde id (lp, voidopt, rp) exnopt cp =
+let mk_destructor tilde id (lp, _voidopt, rp) exnopt cp =
   let ftyp = {
     ft_ret = nQ, (BaseType Void, noii);
     ft_params= (lp,  [], rp);
@@ -327,7 +327,7 @@ let mk_destructor tilde id (lp, voidopt, rp) exnopt cp =
 
 let opt_to_list_params params =
   match params with
-  | Some (params, ellipsis) ->
+  | Some (params, _ellipsis) ->
       (* todo? raise a warning that should not have ellipsis? *)
       params
   | None -> []

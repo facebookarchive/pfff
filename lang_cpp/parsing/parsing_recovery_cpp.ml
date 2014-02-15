@@ -23,7 +23,7 @@ module Parser = Parser_cpp
 (*****************************************************************************)
 (* Wrappers *)
 (*****************************************************************************)
-let pr2_err, pr2_once = Common2.mk_pr2_wrappers Flag_parsing_cpp.verbose_parsing 
+let pr2_err, _pr2_once = Common2.mk_pr2_wrappers Flag_parsing_cpp.verbose_parsing 
 
 (*****************************************************************************)
 (* Helpers *)
@@ -84,7 +84,7 @@ and find_next_synchro_define next already_passed =
   | [] ->  
       pr2_err "ERROR-RECOV: end of file while in recovery mode"; 
       already_passed, []
-  | (Parser.TCommentNewline_DefineEndOfMacro i as v)::xs  -> 
+  | (Parser.TCommentNewline_DefineEndOfMacro _ as v)::xs  -> 
       pr2_err ("ERROR-RECOV: found sync end of #define "^i_to_s(TH.line_of_tok v));
       v::already_passed, xs
   | v::xs -> 

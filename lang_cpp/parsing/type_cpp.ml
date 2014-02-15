@@ -12,7 +12,6 @@
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the file
  * license.txt for more details.
  *)
-open Common
 
 open Ast_cpp
 
@@ -26,7 +25,7 @@ module Ast = Ast_cpp
 (* Accessors *)
 (*****************************************************************************)
 
-let rec is_function_type x = 
+let is_function_type x = 
   match Ast.unwrap_typeC x with
   | FunctionType _ -> true
   | _ -> false

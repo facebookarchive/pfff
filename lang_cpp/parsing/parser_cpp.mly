@@ -1376,7 +1376,7 @@ member_declarator:
 
  /*(* normally just ident, but ambiguity so solve by inspetcing declarator *)*/
  | declarator TCol const_expr
-     { let (name, partialt) = fixNameForParam $1 in (fun t_ret _stoTODO -> 
+     { let (name, _partialt) = fixNameForParam $1 in (fun t_ret _stoTODO -> 
        BitField (Some name, $2, t_ret, $3))
      }
  | TCol const_expr            
@@ -1794,7 +1794,7 @@ start_fun: decl_spec declarator
 /*(* cppext: *)*/
 cpp_directive: 
  | TInclude 
-     { let (include_str, filename, tok) = $1 in
+     { let (_include_str, filename, tok) = $1 in
        (* redo some lexing work :( *)
        let inc_file = 
          match () with

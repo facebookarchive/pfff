@@ -62,7 +62,7 @@ open Token_views_cpp
 (*****************************************************************************)
 (* Wrappers *)
 (*****************************************************************************)
-let pr2, pr2_once = Common2.mk_pr2_wrappers Flag_parsing_cpp.verbose_parsing 
+let pr2, _pr2_once = Common2.mk_pr2_wrappers Flag_parsing_cpp.verbose_parsing 
 
 (*****************************************************************************)
 (* Types *)
@@ -98,12 +98,12 @@ type define_def = string * define_param * define_body
 (* Thanks to this function many stuff are not anymore hardcoded in 
  * OCaml code (but are now hardcoded in standard.h ...)
  *)
-let rec (cpp_engine: 
+let (cpp_engine: 
   (string , Parser.token list) assoc -> Parser.token list -> Parser.token list)
   = fun env xs ->
   xs +> List.map (fun tok -> 
     match tok with
-    | TIdent (s,i1) when List.mem_assoc s env -> Common2.assoc s env
+    | TIdent (s,_i1) when List.mem_assoc s env -> Common2.assoc s env
     | x -> [x]
   )
   +> List.flatten
@@ -116,14 +116,14 @@ let rec (cpp_engine:
  * that occurs in the macro definition because the macro name is
  * after fix_token_define a TDefineIdent, no more a TIdent.
  *)
-let rec apply_macro_defs defs xs = 
+let apply_macro_defs defs xs = 
 
  let rec apply_macro_defs xs =
   match xs with
   | [] -> ()
 
   (* recognized macro of standard.h (or other) *)
-  | PToken ({t=TIdent (s,i1);_} as id)::Parenthised (xxs,info_parens)::xs 
+  | PToken ({t=TIdent (s,_i1);_} as id)::Parenthised (xxs,info_parens)::xs 
       when Hashtbl.mem defs s -> 
       Hack.pr2_pp ("MACRO: found known macro = " ^ s);
       (match Hashtbl.find defs s with
@@ -160,11 +160,11 @@ let rec apply_macro_defs defs xs =
       );
       apply_macro_defs xs
 
-  | PToken ({t=TIdent (s,i1);_} as id)::xs 
+  | PToken ({t=TIdent (s,_i1);_} as id)::xs 
       when Hashtbl.mem defs s -> 
       Hack.pr2_pp ("MACRO: found known macro = " ^ s);
       (match Hashtbl.find defs s with
-      | Right params, bodymacro -> 
+      | Right _params, _bodymacro -> 
           pr2 ("macro with params but no parens found, wierd: " ^ s);
           (* dont apply the macro, perhaps a redefinition *)
           ()
@@ -183,8 +183,8 @@ let rec apply_macro_defs defs xs =
       apply_macro_defs xs
 
   (* recurse *)
-  | (PToken x)::xs -> apply_macro_defs xs 
-  | (Parenthised (xxs, info_parens))::xs -> 
+  | (PToken _x)::xs -> apply_macro_defs xs 
+  | (Parenthised (xxs, _info_parens))::xs -> 
       xxs +> List.iter apply_macro_defs;
       apply_macro_defs xs
 
@@ -199,7 +199,7 @@ let rec apply_macro_defs defs xs =
 let rec define_parse xs = 
   match xs with
   | [] -> []
-  | TDefine i1::TIdent_Define (s,i2)::TOPar_Define i3::xs -> 
+  | TDefine _i1::TIdent_Define (s,_i2)::TOPar_Define _i3::xs -> 
       let (tokparams, _, xs) = 
         xs +> Common2.split_when (function TCPar _ -> true | _ -> false) in
       let (body, _, xs) = 
@@ -216,7 +216,7 @@ let rec define_parse xs =
       let def = (s, (Right params, body)) in
       def::define_parse xs
 
-  | TDefine i1::TIdent_Define (s,i2)::xs -> 
+  | TDefine _i1::TIdent_Define (s,_i2)::xs -> 
       let (body, _, xs) = 
         xs +> Common2.split_when 
           (function TCommentNewline_DefineEndOfMacro _ -> true | _ -> false) in
@@ -225,9 +225,9 @@ let rec define_parse xs =
       let def = (s, (Left (), body)) in
       def::define_parse xs
 
-  | TDefine i1::_ -> 
+  | TDefine _i1::_ -> 
       raise Impossible
-  | x::xs -> define_parse xs 
+  | _x::xs -> define_parse xs 
       
 
 let extract_macros xs = 

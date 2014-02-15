@@ -27,13 +27,11 @@ open Token_views_cpp
 (*****************************************************************************)
 (* Wrappers  *)
 (*****************************************************************************)
-let pr2, pr2_once = Common2.mk_pr2_wrappers Flag_parsing_cpp.verbose_parsing
+let pr2, _pr2_once = Common2.mk_pr2_wrappers Flag_parsing_cpp.verbose_parsing
 
 (*****************************************************************************)
 (* Helpers  *)
 (*****************************************************************************)
-
-let (==~) = Common2.(==~)
 
 (* 
  * In the following, there are some harcoded names of types or macros
@@ -75,9 +73,9 @@ let msg_change_tok tok =
 
   (* mostly in parsing_hacks_define.ml *)
 
-  | TIdent_Define (s, ii) ->
+  | TIdent_Define (_s, _ii) ->
       ()
-  | TOPar_Define (ii) ->
+  | TOPar_Define (_ii) ->
       ()
   | TCommentNewline_DefineEndOfMacro _ ->
       ()
@@ -163,7 +161,7 @@ let msg_change_tok tok =
             *)
         | _ -> false
       )
-      (fun s -> pr2_pp (spf "MACRO: macro-declare at %s" (pos ii)))
+      (fun _s -> pr2_pp (spf "MACRO: macro-declare at %s" (pos ii)))
 
   | Tconst_MacroDeclConst ii ->
       pr2_pp (spf "MACRO: retag const at %s" (pos ii))
@@ -232,26 +230,6 @@ let msg_context t ctx =
   pr2_cplusplus (spf "CONTEXT: %s at %s" ctx_str (pos (TH.info_of_tok t)))
                     
 
-let msg_foreach s = 
-  pr2_pp ("MACRO: found foreach: " ^ s)
-
-let msg_debug_macro s = 
-  pr2_pp ("MACRO: found debug-macro: " ^ s)
-
-let msg_macro_higher_order s = 
-  msg_gen (fun s -> 
-      (match s with 
-      | "DBGINFO"
-      | "DBGPX"
-      | "DFLOW"
-        -> true
-      | _ -> false
-      )
-    )
-    (fun s -> pr2_pp ("MACRO: found higher ordre macro : " ^ s))
-    s
-(* todo: more msg_xxx from parsing_c/ *)  
-
 
 let change_tok extended_tok tok =
   msg_change_tok tok;
@@ -293,23 +271,8 @@ let regexp_macro =  Str.regexp
   "^[A-Z_][A-Z_0-9]*$"
 
 (* linuxext: *)
-let regexp_annot =  Str.regexp
-  "^__.*$"
-
-(* linuxext: *)
 let regexp_declare =  Str.regexp
   ".*DECLARE.*"
-
-(* linuxext: *)
-let regexp_foreach = Str.regexp_case_fold 
-  ".*\\(for_?each\\|for_?all\\|iterate\\|loop\\|walk\\|scan\\|each\\|for\\)"
-
-let regexp_typedef = Str.regexp
-  ".*_t$"
-
-let false_typedef = [
-  "printk";
-  ]
 
 (* firefoxext: *)
 let regexp_ns_decl_like = Str.regexp
@@ -321,10 +284,4 @@ let regexp_ns_decl_like = Str.regexp
    "ON_\\|EVT_\\|NS_UCONV_\\|NS_GENERIC_\\|NS_COM_" ^
    "\\).*")
 
-
-let ok_typedef s = 
-  not (List.mem s false_typedef)
-
-let not_annot s = 
-  not (s ==~ regexp_annot)
 

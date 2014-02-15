@@ -1,4 +1,3 @@
-open Common
 
 (* tokens *)
 open Parser_cpp
@@ -9,7 +8,7 @@ module PI = Parse_info
 (*****************************************************************************)
 
 let is_eof = function
-  | EOF x -> true
+  | EOF _ -> true
   | _ -> false
 
 (* ---------------------------------------------------------------------- *)
@@ -48,10 +47,12 @@ let is_not_comment x =
   not (is_comment x)
 
 (* ---------------------------------------------------------------------- *)
+(*
 let is_gcc_token = function
   | Tasm _ | Tinline _  | Tattribute _  | Ttypeof _ 
       -> true
   | _ -> false
+*)
 
 let is_pp_instruction = function
   | TInclude _ 
@@ -283,58 +284,58 @@ let token_kind_of_tok t =
  * cant be a pair of a sum type, it must be directly a sum type.
  *)
 let info_of_tok = function
-  | TString ((string, isWchar), i) -> i
-  | TChar  ((string, isWchar), i) -> i
-  | TFloat ((string, floatType), i) -> i
+  | TString ((_s, _isWchar), i) -> i
+  | TChar  ((_s, _isWchar), i) -> i
+  | TFloat ((_s, _floatType), i) -> i
 
-  | TAssign  (assignOp, i) -> i
+  | TAssign  (_assignOp, i) -> i
 
-  | TIdent  (s, i) -> i
-  | TIdent_Typedef  (s, i) -> i
+  | TIdent  (_s, i) -> i
+  | TIdent_Typedef  (_s, i) -> i
 
-  | TInt  (s, i) -> i
+  | TInt  (_s, i) -> i
 
   (*cppext:*) 
   | TDefine (ii) -> ii 
-  | TInclude (includes, filename, i1) ->     i1
+  | TInclude (_includes, _filename, i1) ->     i1
 
-  | TUndef (s, ii) -> ii
+  | TUndef (_s, ii) -> ii
   | TCppDirectiveOther (ii) -> ii
 
   | TCommentNewline_DefineEndOfMacro (i1) ->     i1
   | TOPar_Define (i1) ->     i1
-  | TIdent_Define  (s, i) -> i
+  | TIdent_Define  (_s, i) -> i
   | TOBrace_DefineInit (i1) ->     i1
 
   | TCppEscapedNewline (ii) -> ii
-  | TDefParamVariadic (s, i1) ->     i1
+  | TDefParamVariadic (_s, i1) ->     i1
 
 
   | TUnknown             (i) -> i
 
   | TIdent_MacroStmt             (i) -> i
   | TIdent_MacroString             (i) -> i
-  | TIdent_MacroIterator             (s,i) -> i
-  | TIdent_MacroDecl             (s, i) -> i
+  | TIdent_MacroIterator             (_s,i) -> i
+  | TIdent_MacroDecl             (_s, i) -> i
   | Tconst_MacroDeclConst             (i) -> i
-(*  | TMacroTop             (s,i) -> i *)
+(*  | TMacroTop             (_s,i) -> i *)
   | TCPar_EOL (i1) ->     i1
 
   | TAny_Action             (i) -> i
 
   | TComment             (i) -> i
   | TCommentSpace        (i) -> i
-  | TComment_Pp          (cppkind, i) -> i
-  | TComment_Cpp          (cppkind, i) -> i
+  | TComment_Pp          (_cppkind, i) -> i
+  | TComment_Cpp          (_cppkind, i) -> i
   | TCommentNewline        (i) -> i
 
   | TIfdef               (i) -> i
   | TIfdefelse           (i) -> i
   | TIfdefelif           (i) -> i
   | TEndif               (i) -> i
-  | TIfdefBool           (b, i) -> i
-  | TIfdefMisc           (b, i) -> i
-  | TIfdefVersion           (b, i) -> i
+  | TIfdefBool           (_b, i) -> i
+  | TIfdefMisc           (_b, i) -> i
+  | TIfdefVersion           (_b, i) -> i
 
   | TOPar                (i) -> i
   | TOPar_CplusplusInit                (i) -> i
@@ -464,13 +465,13 @@ let info_of_tok = function
   | TPtrOpStar (i) -> i
   | TDotStar(i) -> i
 
-  | TIdent_ClassnameInQualifier  (s, i) -> i
-  | TIdent_ClassnameInQualifier_BeforeTypedef  (s, i) -> i
-  | TIdent_Templatename  (s, i) -> i
-  | TIdent_Constructor  (s, i) -> i
-  | TIdent_TypedefConstr  (s, i) -> i
-  | TIdent_TemplatenameInQualifier  (s, i) -> i
-  | TIdent_TemplatenameInQualifier_BeforeTypedef  (s, i) -> i
+  | TIdent_ClassnameInQualifier  (_s, i) -> i
+  | TIdent_ClassnameInQualifier_BeforeTypedef  (_s, i) -> i
+  | TIdent_Templatename  (_s, i) -> i
+  | TIdent_Constructor  (_s, i) -> i
+  | TIdent_TypedefConstr  (_s, i) -> i
+  | TIdent_TemplatenameInQualifier  (_s, i) -> i
+  | TIdent_TemplatenameInQualifier_BeforeTypedef  (_s, i) -> i
 
   | TInf_Template                 (i) -> i
   | TSup_Template                 (i) -> i

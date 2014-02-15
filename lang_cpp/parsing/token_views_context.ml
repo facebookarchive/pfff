@@ -26,18 +26,10 @@ module TV = Token_views_cpp
 (*****************************************************************************)
 
 (*****************************************************************************)
-(* Helpers *)
-(*****************************************************************************)
-
-let is_braceised = function
-  | Braceised   _ -> true
-  | BToken _ -> false
-
-(*****************************************************************************)
 (* Argument vs Parameter *)
 (*****************************************************************************)
 
-let look_like_argument tok_before xs =
+let look_like_argument _tok_before xs =
 
   (* normalize for C++ *)
   let xs = xs +> List.map (function
@@ -65,17 +57,17 @@ let look_like_argument tok_before xs =
     match xs with
     | [] -> false
     (* a function call probably *)
-    | Tok{t=TIdent _}::Parens _::xs -> 
+    | Tok{t=TIdent _}::Parens _::_xs -> 
         (* todo? look_like_argument recursively in Parens || aux xs ? *)
         true
     (* if have = ... then must stop, could be default parameter
      * of a method
      *)
-    | Tok{t=TEq _}::xs ->
+    | Tok{t=TEq _}::_xs ->
         false
 
     (* could be part of a type declaration *)
-    | Tok {t=TOCro _}::Tok {t=TCCro _}::xs -> false
+    | Tok {t=TOCro _}::Tok {t=TCCro _}::_xs -> false
 
     | x::xs ->
         (match x with
@@ -160,7 +152,7 @@ let look_like_parameter tok_before xs =
     | [] -> false
 
     (* xx yy *)
-    | Tok {t=TIdent _}::Tok{t=TIdent _}::xs -> true
+    | Tok {t=TIdent _}::Tok{t=TIdent _}::_xs -> true
 
     | x::xs ->
         (match x with
@@ -211,7 +203,7 @@ let set_context_tag_multi groups =
 
   (* struct Foo {, also valid for struct (and union, hmmm) *)
   | Tok{t=(Tstruct _ | Tunion _ | Tclass _)}::Tok{t=TIdent(s,_)}
-    ::(Braces(t1, body, t2) as braces)::xs
+    ::(Braces(_t1, _body, _t2) as braces)::xs
     ->
       [braces] +> TV.iter_token_multi (fun tok ->
         tok.TV.where <- (TV.InClassStruct s)::tok.TV.where;
@@ -269,7 +261,7 @@ let set_context_tag_multi groups =
 
 
   (* = { } *)
-  | Tok ({t=TEq _; _})::(Braces(t1, body, t2) as braces)::xs -> 
+  | Tok ({t=TEq _; _})::(Braces(_t1, _body, _t2) as braces)::xs -> 
       [braces] +> TV.iter_token_multi (fun tok -> 
         tok.TV.where <- InInitializer::tok.TV.where;
       );
@@ -277,8 +269,8 @@ let set_context_tag_multi groups =
 
 
   (* enum xxx { InEnum *)
-  | Tok{t=Tenum _}::Tok{t=TIdent(_,_)}::(Braces(t1, body, t2) as braces)::xs
-  | Tok{t=Tenum _}::(Braces(t1, body, t2) as braces)::xs
+  | Tok{t=Tenum _}::Tok{t=TIdent(_,_)}::(Braces(_t1, _body, _t2) as braces)::xs
+  | Tok{t=Tenum _}::(Braces(_t1, _body, _t2) as braces)::xs
     ->
       [braces] +> TV.iter_token_multi (fun tok ->
         tok.TV.where <- TV.InEnum::tok.TV.where;
@@ -331,7 +323,7 @@ let set_context_tag_multi groups =
    * The order of the 3 rules below is important. We must first try
    * look_like_argument which has less FP than look_like_parameter
   *)
-  | x::(Parens(t1, body, t2) as parens)::xs 
+  | x::(Parens(_t1, body, _t2) as parens)::xs 
     when look_like_argument x body ->
       (*msg_context t1.t (TV.InArgument); *)
       [parens] +> TV.iter_token_multi (fun tok ->
@@ -342,7 +334,7 @@ let set_context_tag_multi groups =
       aux (parens::xs)
 
   (* C++: special cases *)
-  | (Tok{t=Toperator _} as tok1)::tok2::(Parens(t1, body, t2) as parens)::xs 
+  | (Tok{t=Toperator _} as tok1)::tok2::(Parens(_t1, body, _t2) as parens)::xs 
     when look_like_parameter tok1 body ->
       (* msg_context t1.t (TV.InParameter); *)
       [parens] +> TV.iter_token_multi (fun tok ->
@@ -355,7 +347,7 @@ let set_context_tag_multi groups =
       aux (parens::xs)
 
 
-  | x::(Parens(t1, body, t2) as parens)::xs 
+  | x::(Parens(_t1, body, _t2) as parens)::xs 
     when look_like_parameter x body ->
       (* msg_context t1.t (TV.InParameter); *)
       [parens] +> TV.iter_token_multi (fun tok ->
@@ -370,7 +362,7 @@ let set_context_tag_multi groups =
   (* C++: second tentative on InArgument, if xx(xx, yy, ww) where have only
    * identifiers, it's probably a constructed object!
    *)
-  | Tok{t=TIdent _}::(Parens(t1, body, t2) as parens)::xs 
+  | Tok{t=TIdent _}::(Parens(_t1, body, _t2) as parens)::xs 
     when List.length body > 0 && look_like_only_idents body ->
       (* msg_context t1.t (TV.InArgument); *)
       [parens] +> TV.iter_token_multi (fun tok ->
@@ -380,7 +372,7 @@ let set_context_tag_multi groups =
       aux (parens::xs)
 
   (* could be a cast too ... or what else? *)
-  | x::(Parens(t1, body, t2) as parens)::xs ->
+  | x::(Parens(_t1, _body, _t2) as parens)::xs ->
       (* let's default to something? hmm, no, got lots of regressions then 
        *  old: msg_context t1.t (TV.InArgument); ...
        *)
@@ -390,10 +382,10 @@ let set_context_tag_multi groups =
 
   | x::xs ->
       (match x with
-      | Tok t -> ()
-      | Parens (t1, xs, t2)
-      | Braces (t1, xs, t2)
-      | Angle  (t1, xs, t2)
+      | Tok _t -> ()
+      | Parens (_t1, xs, _t2)
+      | Braces (_t1, xs, _t2)
+      | Angle  (_t1, xs, _t2)
          ->
           aux xs
       );

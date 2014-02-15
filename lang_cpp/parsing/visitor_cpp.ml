@@ -13,10 +13,7 @@
  * license.txt for more details.
  *)
 
-open Common
-
 open Ocaml
-
 open Ast_cpp
 
 (*****************************************************************************)
@@ -283,7 +280,7 @@ and v_expressionbis =
   | Throw v1 -> let v1 = v_option v_expression v1 in ()
   | ParenExpr v1 -> let v1 = v_paren v_expression v1 in ()
   | ExprTodo -> ()
-and v_ident_info { i_scope = v_i_scope } =
+and v_ident_info { i_scope = _v_i_scope } =
   (* todo? let arg = Scope_code.v_scope v_i_scope in () *)
   ()
 and v_argument v = Ocaml.v_either v_expression v_weird_argument v
@@ -723,7 +720,7 @@ and v_class_member x =
   vin.kclass_member (k, all_functions) x
 
 and v_fieldkind x =
-  let rec k = function
+  let k = function
   | FieldDecl v1 -> let v1 = v_onedecl v1 in ()
   | BitField ((v1, v2, v3, v4)) ->
       let v1 = v_option (v_wrap2 v_string) v1

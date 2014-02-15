@@ -63,7 +63,7 @@ let rec have_a_tsup_quite_close xs =
   | [] -> false
   | x::xs -> 
       (match x with
-      | {t=TSup i} -> true
+      | {t=TSup _} -> true
 
       (* false positive *)
       | {t=tok} when TH.is_static_cast_like tok -> false
@@ -72,7 +72,7 @@ let rec have_a_tsup_quite_close xs =
       | {t=(TOBrace _ | TPtVirg _ | TCol _ | TAssign _ )} -> 
           false
 
-      | {t=TInf i} -> 
+      | {t=TInf _} -> 
           (* probably nested template, still try
            * TODO: bug when have i < DEG<...>::foo(...)
            *  we should recurse!
@@ -82,7 +82,7 @@ let rec have_a_tsup_quite_close xs =
       (* bugfix: but want allow some binary operator :) like '*' *)
       | {t=tok} when TH.is_binary_operator_except_star tok -> false
 
-      | x -> have_a_tsup_quite_close xs
+      | _ -> have_a_tsup_quite_close xs
       )
 
 
@@ -99,7 +99,7 @@ let rec find_tsup_quite_close tok_open xs =
         | {t=TSup ii} -> 
             List.rev acc, (x,ii), xs
               
-        | {t=TInf ii} -> 
+        | {t=TInf _} -> 
             (* recurse *)
             let (before, (tsuptok,_), after) = find_tsup_quite_close x xs in
             (* we don't care about this one, it will be eventually be 
@@ -150,7 +150,7 @@ let find_template_inf_sup xs =
    * TODO: have_a_tsup_quite_close does not handle a relational < followed
    *  by a regular template.
   *)
-  | {t=TIdent (s,i1)}::({t=TInf i2} as tok2)::xs
+  | {t=TIdent (_,i1)}::({t=TInf i2} as tok2)::xs
     when
       no_space_between i1 i2 && (* safe guard, and good style anyway *)
       have_a_tsup_quite_close (Common.take_safe templateLOOKAHEAD xs) 
@@ -178,7 +178,7 @@ let find_template_inf_sup xs =
    *)
 
   (* recurse *)
-  | x::xs -> aux xs
+  | _::xs -> aux xs
 
   in
   aux xs
@@ -220,7 +220,7 @@ let reclassify_tokens_before_idents_or_typedefs xs =
         aux xs
 
     (* t<...>    where t is a typedef *)
-    | Angle (t1, xs_angle, t2)::Tok({t=TIdent_Typedef (s1, i1)} as tok1)::xs ->
+    | Angle (_, xs_angle, _)::Tok({t=TIdent_Typedef (s1, i1)} as tok1)::xs ->
         aux xs_angle;
         change_tok tok1 (TIdent_Templatename (s1, i1));
         (* recurse with tok1 too! *)
@@ -233,9 +233,9 @@ let reclassify_tokens_before_idents_or_typedefs xs =
     | x::xs -> 
         (match x with
         | Tok _ -> ()
-        | Braces (t1, xs, t2)
-        | Parens (t1, xs, t2)
-        | Angle (t1, xs, t2)
+        | Braces (_, xs, _)
+        | Parens (_, xs, _)
+        | Angle (_, xs, _)
           -> aux (List.rev xs)
         );
         aux xs
@@ -256,11 +256,11 @@ let find_template_commentize groups =
   (* remove template *)
   let rec aux xs =
     xs +> List.iter (function
-    | TV.Braces (t1, xs, t2) ->
+    | TV.Braces (_, xs, _) ->
         aux xs
-    | TV.Parens  (t1, xs, t2) ->
+    | TV.Parens  (_, xs, _) ->
         aux xs
-    | TV.Angle (t1, xs, t2) as angle ->
+    | TV.Angle (_, _xs, _) as angle ->
         (* let's commentize everything *)
         [angle] +> TV.iter_token_multi (fun tok ->
           change_tok tok 
@@ -313,7 +313,7 @@ let find_qualifier_commentize xs =
         aux xs
 
     (* recurse *)
-    | x::xs ->
+    | _::xs ->
         aux xs
   in
   aux xs
@@ -346,7 +346,7 @@ let find_constructor xs =
       aux xs
 
   (* recurse *)
-  | x::xs -> aux xs
+  | _::xs -> aux xs
   in
   aux xs
 
@@ -358,14 +358,14 @@ let find_constructor_outside_class xs =
     match xs with
     | [] -> ()
 
-    | {t=TIdent (s1, i1);_}::{t=TColCol _}::({t=TIdent (s2,i2);_} as tok)::xs 
+    | {t=TIdent (s1, _);_}::{t=TColCol _}::({t=TIdent (s2,i2);_} as tok)::xs 
       when s1 = s2 ->
         change_tok tok (TIdent_Constructor (s2, i2));
         aux (tok::xs)
                         
 
     (* recurse *)
-    | x::xs -> aux xs
+    | _::xs -> aux xs
   in
   aux xs
 
@@ -450,7 +450,7 @@ let find_constructed_object_and_more xs =
         aux xs
 
     (* int(...)  unless it's int( * xxx ) *)
-    | ({t=kind})::{t=TOPar _}::{t=TMul _}::xs ->
+    | ({t=_kind})::{t=TOPar _}::{t=TMul _}::xs ->
       aux xs
     | ({t=kind} as tok1)::{t=TOPar _}::xs 
      when TH.is_basic_type kind ->
@@ -471,6 +471,6 @@ let find_constructed_object_and_more xs =
         aux xs
 
     (* recurse *)
-    | x::xs -> aux xs
+    | _::xs -> aux xs
   in
   aux xs

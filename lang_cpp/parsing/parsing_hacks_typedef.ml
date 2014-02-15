@@ -76,7 +76,7 @@ let look_like_declaration tok =
 (* Better View *)
 (*****************************************************************************)
 
-let rec filter_for_typedef multi_groups = 
+let  filter_for_typedef multi_groups = 
 
   (* a sentinel, which helps a few typedef heuristics which look
    * for a token before which would not work for the first toplevel
@@ -94,7 +94,7 @@ let rec filter_for_typedef multi_groups =
    *)
   let rec aux xs =
     xs +> Common.map_filter (function
-    | TV.Angle (t1, xs, t2) ->
+    | TV.Angle (_, _, _) ->
         (* todo: analayze xs!! add in _template_args 
          * todo: add the t1,t2 around xs to have
          *  some sentinel for the typedef heuristics patterns
@@ -185,7 +185,7 @@ let find_typedefs xxs =
       aux xs
 
   (* xx * yy  with a token before like return (probably a mulitplication) *)
-  | {t=tok_before}::{t=TIdent (s,i1)}::{t=TMul _}::{t=TIdent _}::xs
+  | {t=tok_before}::{t=TIdent (_s,_)}::{t=TMul _}::{t=TIdent _}::xs
     when look_like_multiplication tok_before ->
       aux xs
 
@@ -219,7 +219,7 @@ let find_typedefs xxs =
       aux xs
 
   (* (xx) yy   and not a if/while before (, and yy can also be a constant *)
-  | {t=tok1}::{t=TOPar info1}::({t=TIdent(s, i1)} as tok3)::{t=TCPar info2}
+  | {t=tok1}::{t=TOPar _}::({t=TIdent(s, i1)} as tok3)::{t=TCPar _}
     ::{t = TIdent (_,_) | TInt _ | TString _ | TFloat _ }::xs 
     when not (TH.is_stuff_taking_parenthized tok1) (*  && line are the same ? *)
     ->
@@ -231,12 +231,12 @@ let find_typedefs xxs =
     * TODO: does not really need the closing paren?
     * TODO: check that not InParameter or InArgument?
     *)
-  | {t=TOPar info1}::({t=TIdent(s, i1)} as tok3)::{t=TMul _}::{t=TCPar _}::xs ->
+  | {t=TOPar _}::({t=TIdent(s, i1)} as tok3)::{t=TMul _}::{t=TCPar _}::xs ->
       change_tok tok3 (TIdent_Typedef (s, i1));
       aux xs
 
    (* (xx ** ) *)
-  | {t=TOPar info1}::({t=TIdent(s, i1)} as tok3)
+  | {t=TOPar _}::({t=TIdent(s, i1)} as tok3)
     ::{t=TMul _}::{t=TMul _}::{t=TCPar _}::xs ->
       change_tok tok3 (TIdent_Typedef (s, i1));
       aux xs
@@ -279,6 +279,6 @@ let find_typedefs xxs =
       aux xs
 
   (* recurse *)
-  | x::xs -> aux xs
+  | _::xs -> aux xs
  in
  xxs +> List.iter aux

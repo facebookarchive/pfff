@@ -49,7 +49,7 @@ open Parser_cpp
 (*****************************************************************************)
 (* Some debugging functions  *)
 (*****************************************************************************)
-let pr2, pr2_once = Common2.mk_pr2_wrappers Flag.verbose_parsing 
+let pr2, _pr2_once = Common2.mk_pr2_wrappers Flag.verbose_parsing 
 
 (*****************************************************************************)
 (* Types *)
@@ -336,12 +336,14 @@ and mk_ifdef_parameters extras acc_before_sep xs =
 
 let line_of_paren = function
   | PToken x -> x.line
-  | Parenthised (xxs, info_parens) -> 
+  | Parenthised (_xxs, info_parens) -> 
       (match info_parens with
       | [] -> raise Impossible
-      | x::xs -> x.line
+      | x::_xs -> x.line
       )
 
+
+(* old        
 let rec span_line_paren line = function
   | [] -> [],[]
   | x::xs -> 
@@ -356,7 +358,6 @@ let rec span_line_paren line = function
         else ([], x::xs)
       )
 
-(* old        
 let rec mk_line_parenthised xs = 
   match xs with
   | [] -> []
@@ -368,7 +369,7 @@ let rec mk_line_parenthised xs =
 
 let line_range_of_paren = function
   | PToken x -> x.line, x.line
-  | Parenthised (xxs, info_parens) -> 
+  | Parenthised (_xxs, info_parens) -> 
       (match info_parens with
       | [] -> raise Impossible
       | x::xs -> 
@@ -386,7 +387,7 @@ let rec span_line_paren_range (imin, imax) = function
         if line_of_paren x >= imin && line_of_paren x <= imax
         then
           (* may need to extend *)
-          let (imin', imax') = line_range_of_paren x in
+          let (_imin', imax') = line_range_of_paren x in
           let (l1, l2) = span_line_paren_range (imin, max imax imax') xs in
           (x::l1, l2)
         else ([], x::xs)
@@ -449,7 +450,7 @@ let mk_multi xs =
     | {t=(*TOPar ii*)tok;_} when TH.is_opar tok ->
         let body, closing, rest = look_close_paren x [] xs in
         Parens (x, body, closing), rest
-    | {t=TInf_Template ii;_} ->
+    | {t=TInf_Template _ii;_} ->
         let body, closing, rest = look_close_template x [] xs in
         Angle (x, body, closing), rest
     | x -> Tok x, xs
@@ -468,12 +469,12 @@ let mk_multi xs =
                      (TH.line_of_tok tok_start.t)))
     | x::xs -> 
         (match x with
-        | {t=TCBrace ii;_} -> List.rev accbody, Some x, xs
+        | {t=TCBrace _ii;_} -> List.rev accbody, Some x, xs
 
         (* Many macros have unclosed '{'. An alternative
          * would be to work on a view where define has been filtered
          *)
-        | {t=TCommentNewline_DefineEndOfMacro ii;_} ->
+        | {t=TCommentNewline_DefineEndOfMacro _ii;_} ->
             List.rev accbody, None, x::xs
 
         | _ -> let (x', xs') = consume x xs in
@@ -501,7 +502,7 @@ let mk_multi xs =
                      (TH.line_of_tok tok_start.t)))
     | x::xs -> 
         (match x with
-        | {t=TSup_Template ii;_} -> List.rev accbody, Some x, xs
+        | {t=TSup_Template _ii;_} -> List.rev accbody, Some x, xs
         | _ -> let (x', xs') = consume x xs in
                look_close_template tok_start (x'::accbody) xs'
         )
@@ -622,7 +623,7 @@ let tokens_of_multi_grouped xs =
 let vof_context = function
   | InTopLevel -> Ocaml.VSum ("T", [])
   | InFunction -> Ocaml.VSum ("F", [])
-  | InClassStruct string -> Ocaml.VSum ("C", [])
+  | InClassStruct _s -> Ocaml.VSum ("C", [])
   | InStructAnon -> Ocaml.VSum ("SA", [])
   | InEnum  -> Ocaml.VSum ("E", [])
   | InInitializer -> Ocaml.VSum ("I", [])

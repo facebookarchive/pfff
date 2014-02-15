@@ -84,7 +84,7 @@ let insert_virtual_positions l =
         let inject pi =
           TH.visitor_info_of_tok (function ii -> Ast_cpp.rewrap_pinfo pi ii)x in
         match ii.Parse_info.token with
-          Parse_info.OriginTok pi ->
+          Parse_info.OriginTok _pi ->
             let prev = Parse_info.token_location_of_info ii in
             x::(loop prev (strlen ii) xs)
         | Parse_info.ExpandedTok (pi,_, _) ->
@@ -99,7 +99,7 @@ let insert_virtual_positions l =
     | x::xs ->
         let ii = TH.info_of_tok x in
         match ii.Parse_info.token with
-          Parse_info.OriginTok pi ->
+          Parse_info.OriginTok _pi ->
             let prev = Parse_info.token_location_of_info ii in
             x::(loop prev (strlen ii) xs)
         | _ -> x::skip_fake xs in

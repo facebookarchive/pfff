@@ -14,7 +14,6 @@
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * file license.txt for more details.
  *)
-open Common
 
 (*****************************************************************************)
 (* Prelude *)
@@ -755,7 +754,7 @@ let noii = []
 let noQscope = []
 let noTypedefDef () = None
 
-let fakeInfo pi  = { Parse_info.
+let fakeInfo _pi  = { Parse_info.
     token = Parse_info.FakeTokStr ("",None); 
     transfo = Parse_info.NoTransfo;
   }
@@ -768,7 +767,7 @@ let uncomma xs = List.map fst xs
 let unparen (_, x, _) = x
 let unbrace (_, x, _) = x
 
-let unwrap_typeC (qu, (typeC, ii)) = typeC
+let unwrap_typeC (_qu, (typeC, _ii)) = typeC
 
 (* When want add some info in ast that does not correspond to 
  * an existing C element.
@@ -800,8 +799,8 @@ let (string_of_name_tmp: name -> string) = fun name ->
 let (ii_of_id_name: name -> tok list) = fun name ->
   let (_opt, _qu, id) = name in
   match id with
-  | IdIdent (s,ii) -> [ii]
-  | IdOperator (_, (op, ii)) -> ii
-  | IdConverter (_tok, ft) -> [] (* TODO *)
-  | IdDestructor (tok, (s, ii)) -> [tok;ii]
-  | IdTemplateId ((s, ii), args) -> [ii]
+  | IdIdent (_s,ii) -> [ii]
+  | IdOperator (_, (_op, ii)) -> ii
+  | IdConverter (_tok, _ft) -> [] (* TODO *)
+  | IdDestructor (tok, (_s, ii)) -> [tok;ii]
+  | IdTemplateId ((_s, ii), _args) -> [ii]

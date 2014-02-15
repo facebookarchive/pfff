@@ -1,7 +1,6 @@
 open Common
 open OUnit
 
-open Ast_cpp
 module Ast = Ast_cpp
 module Flag = Flag_parsing_cpp
 

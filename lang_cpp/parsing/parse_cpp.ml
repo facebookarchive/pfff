@@ -47,7 +47,7 @@ let program_of_program2 xs =
 (*****************************************************************************)
 (* Wrappers *)
 (*****************************************************************************)
-let pr2, pr2_once = Common2.mk_pr2_wrappers Flag_parsing_cpp.verbose_parsing
+let pr2, _pr2_once = Common2.mk_pr2_wrappers Flag_parsing_cpp.verbose_parsing
 
 (*****************************************************************************)
 (* Error diagnostic *)
@@ -338,7 +338,7 @@ let parse_with_lang ?(lang=Flag_parsing_cpp.Cplusplus) file =
   in
 
   let tr = Parse_info.mk_tokens_state toks in
-  let lexbuf_fake = Lexing.from_function (fun buf n -> raise Impossible) in
+  let lexbuf_fake = Lexing.from_function (fun _buf _n -> raise Impossible) in
 
   let rec loop () =
 
@@ -380,7 +380,7 @@ let parse_with_lang ?(lang=Flag_parsing_cpp.Cplusplus) file =
                 pr2 ("lexical error " ^s^ "\n =" ^ error_msg_tok tr.PI.current)
               | Parsing.Parse_error -> 
                 pr2 ("parse error \n = " ^ error_msg_tok tr.PI.current)
-              | Semantic.Semantic (s, i) -> 
+              | Semantic.Semantic (s, _i) -> 
                 pr2 ("semantic error " ^s^ "\n ="^ error_msg_tok tr.PI.current)
               | e -> raise e
               );
@@ -467,7 +467,7 @@ let parse_with_lang ?(lang=Flag_parsing_cpp.Cplusplus) file =
     stat.Stat.commentized <- 
       stat.Stat.commentized + count_lines_commentized info;
     (match elem with
-    | Ast.NotParsedCorrectly xs -> 
+    | Ast.NotParsedCorrectly _xs -> 
         if !was_define && !Flag.filter_define_error
         then stat.Stat.commentized <- stat.Stat.commentized + diffline
         else stat.Stat.bad     <- stat.Stat.bad     + diffline
@@ -488,7 +488,7 @@ let parse2 file =
   | FT.PL (FT.C _) ->
     (try 
       parse_with_lang ~lang:Flag.C file
-    with exn ->
+    with _exn ->
       parse_with_lang ~lang:Flag.Cplusplus file
     )
   | FT.PL (FT.Cplusplus _) ->
