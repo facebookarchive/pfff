@@ -43,7 +43,7 @@ OPTOBJS?= $(SRC:.ml=.cmx)
 #-45 allow shadowing open (TODO: fix them though)
 WARNING_FLAGS?=-w +A-4-29-6-45 -warn-error +a
 
-OCAMLCFLAGS=-g -thread -dtypes $(OCAMLCFLAGS_EXTRA) $(WARNING_FLAGS)
+OCAMLCFLAGS=-g -thread -dtypes $(WARNING_FLAGS) $(OCAMLCFLAGS_EXTRA) 
 
 # This flag is also used in subdirectories so don't change its name here
 # the -w y is to silence errors on the visitor_xxx files with the unused
