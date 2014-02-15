@@ -110,7 +110,7 @@ let nodes_of_toplevel x =
       let (name, xs) = def in
       (* todo? add a __enum prefix? *)
       [(Ast.str_of_name name, E.Type)] ++
-      (xs +> List.map (fun (name, eopt) ->
+      (xs +> List.map (fun (name, _eopt) ->
         (Ast.str_of_name name, E.Constant)
       ))
 
@@ -249,9 +249,9 @@ and toplevel env x =
         
   in
   match x with
-  | Define (name, v) ->
+  | Define (_name, v) ->
       define_body env v
-  | Macro (name, params, body) -> 
+  | Macro (_name, params, body) -> 
       let xs =  params +> List.map Ast.str_of_name in
       let env = { env with params_locals = xs } in
       define_body env body
@@ -265,21 +265,21 @@ and toplevel env x =
       let env = { env with params_locals = xs } in
       stmts env def.f_body
 
-  | StructDef { s_name = n; s_kind = _kind; s_flds = flds } -> 
-      flds +> List.iter (fun { fld_name = n; fld_type = t; } ->
+  | StructDef { s_name = _n; s_kind = _kind; s_flds = flds } -> 
+      flds +> List.iter (fun { fld_name = _n; fld_type = t; } ->
         type_ env t
       )
         
-  | EnumDef (name, xs) ->
-      xs +> List.iter (fun (name, eopt) ->
+  | EnumDef (_name, xs) ->
+      xs +> List.iter (fun (_name, eopt) ->
         Common2.opt (expr env) eopt
       )
 
-  | TypeDef (name, t) -> type_ env t
+  | TypeDef (_name, t) -> type_ env t
 
   | Global x -> 
       (match x with
-        { v_name = n; v_type = t; v_storage = _; v_init = eopt } ->
+        { v_name = _n; v_type = t; v_storage = _; v_init = eopt } ->
           (* env.params_locals <- (Ast.str_of_name n)::env.params_locals; *)
           type_ env t;
           Common2.opt (expr env) eopt
@@ -292,7 +292,7 @@ and toplevel env x =
   | Undef _ -> ()
  
   (* less: do we want them? *)
-  | Prototype def -> ()
+  | Prototype _def -> ()
 
 and toplevels env xs = List.iter (toplevel env) xs
 
@@ -328,7 +328,7 @@ and stmt env = function
   | Continue | Break -> ()
   | Label (_name, st) ->
       stmt env st
-  | Goto name ->
+  | Goto _name ->
       ()
 
   | Vars xs ->
@@ -385,15 +385,15 @@ and expr env = function
   | Assign (_, e1, e2) -> exprs env [e1; e2]
   | ArrayAccess (e1, e2) -> exprs env [e1; e2]
   (* todo: determine type of e and make appropriate use link *)
-  | RecordAccess (e, name) -> expr env e
+  | RecordAccess (e, _name) -> expr env e
 
   | Cast (t, e) -> 
       type_ env t;
       expr env e
 
   | Postfix (e, _op) | Infix (e, _op) -> expr env e
-  | Unary (e, op) -> expr env e
-  | Binary (e1, op, e2) -> exprs env [e1;e2]
+  | Unary (e, _op) -> expr env e
+  | Binary (e1, _op, e2) -> exprs env [e1;e2]
 
   | CondExpr (e1, e2, e3) -> exprs env [e1;e2;e3]
   | Sequence (e1, e2) -> exprs env [e1;e2]

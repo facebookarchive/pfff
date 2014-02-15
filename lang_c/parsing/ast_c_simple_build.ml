@@ -55,7 +55,7 @@ let empty_env () = {
 (* Helpers *)
 (*****************************************************************************)
 
-let rec debug any =
+let debug any =
   let v = Meta_ast_cpp.vof_any any in
   let s = Ocaml.string_of_v v in
   pr2 s
@@ -150,7 +150,7 @@ and function_type env x =
   match x with
   { ft_ret = ret;
     ft_params = params;
-    ft_dots = dots; (* todo *)
+    ft_dots = _dots; (* todo *)
     ft_const = const;
     ft_throw = throw;
   } ->
@@ -167,7 +167,7 @@ and parameter env x =
   match x with
   { p_name = n;
     p_type = t;
-    p_register = reg;
+    p_register = _reg;
     p_val = v;
   } ->
     (match v with
@@ -191,7 +191,7 @@ and onedecl env d =
   match d with
   { v_namei = ni;
     v_type = ft;
-    v_storage = ((sto, inline_or_not), _);
+    v_storage = ((sto, _inline_or_not), _);
   } ->
     (match ni, sto with
     | Some (n, iopt), ((NoSto | Sto _) as sto)  ->
@@ -238,7 +238,7 @@ and initialiser env x =
   | InitDesignators _ -> raise Todo
   | InitIndexOld _ | InitFieldOld _ -> raise Todo
 
-and storage env x =
+and storage _env x =
   match x with
   | NoSto -> A.DefaultStorage
   | StoTypedef -> raise Impossible
@@ -254,7 +254,7 @@ and storage env x =
 (* ---------------------------------------------------------------------- *)
   
 and cpp_directive env = function
-  | Define (tok, name, def_kind, def_val) as x ->
+  | Define (_tok, name, def_kind, def_val) as x ->
       let v = cpp_def_val x env def_val in
       (match def_kind with
       | DefineVar ->
@@ -271,7 +271,7 @@ and cpp_directive env = function
         (match inc_file with
         | Local xs -> "\"" ^ Common.join "/" xs ^ "\""
         | Standard xs -> "<" ^ Common.join "/" xs ^ ">"
-        | Wierd s -> 
+        | Wierd _s -> 
             debug (Cpp x); raise Todo
         )
       in
@@ -368,7 +368,7 @@ and statement_sequencable env x =
     []
 
 and cases env x =
-  let (st, ii) = x in
+  let (st, _ii) = x in
   match st with
   | Compound (l, xs, r) ->
       let rec aux xs =
@@ -381,8 +381,8 @@ and cases env x =
               ->
                 let xs', rest =
                   (StmtElem st::xs) +> Common.span (function
-                  | StmtElem ((Labeled (Case (_, st))), _)
-                  | StmtElem ((Labeled (Default st)), _) -> false
+                  | StmtElem ((Labeled (Case (_, _st))), _)
+                  | StmtElem ((Labeled (Default _st)), _) -> false
                   | _ -> true
                   )
                 in
@@ -393,7 +393,7 @@ and cases env x =
                 (match x with
                 | StmtElem ((Labeled (Case (e, _))), _) ->
                     A.Case (expr env e, stmts)
-                | StmtElem ((Labeled (Default st)), _) ->
+                | StmtElem ((Labeled (Default _st)), _) ->
                     A.Default (stmts)
                 | _ -> raise Impossible
                 )::aux rest
@@ -411,7 +411,7 @@ and block_declaration env block_decl =
       A.Vars (Common.map_filter (onedecl env) xs)
 
   (* todo *)
-  | Asm (_tok1, volatile_opt, asmbody, _tok2) -> 
+  | Asm (_tok1, _volatile_opt, _asmbody, _tok2) -> 
       A.Asm []
 
   | MacroDecl _ -> raise Todo
@@ -464,9 +464,9 @@ and expr env e =
       A.Call (expr env e,
              Common.map_filter (argument env) (args +> unparen +> uncomma))
 
-  | SizeOfExpr (tok, e) ->
+  | SizeOfExpr (_tok, e) ->
       A.SizeOf(Left (expr env e))
-  | SizeOfType (tok, (_, ft, _)) ->
+  | SizeOfType (_tok, (_, ft, _)) ->
       A.SizeOf(Right (full_type env ft))
   | GccConstructor ((_, ft, _), xs) ->
       A.GccConstructor (full_type env ft,
@@ -491,7 +491,7 @@ and expr env e =
 
   | ParenExpr (_, e, _) -> expr env e
 
-and constant env toks x = 
+and constant _env toks x = 
   match x with
   | Int s -> A.Int (s, List.hd toks)
   | Float (s, _) -> A.Float (s, List.hd toks)
@@ -504,7 +504,7 @@ and constant env toks x =
 and argument env x =
   match x with
   | Left e -> Some (expr env e)
-  | Right w -> 
+  | Right _w -> 
       pr2 ("type argument, maybe wrong typedef inference!");
       debug (Argument x); 
       None
@@ -560,7 +560,7 @@ and full_type env x =
       (match def with
       { c_kind = (kind, tok);
         c_name = name_opt;
-        c_inherit = inh;
+        c_inherit = _inh;
         c_members = (_, xs, _);
       } ->
         let name =
@@ -639,7 +639,7 @@ and fieldkind env x =
       (match decl with
       { v_namei = ni;
         v_type = ft;
-        v_storage = ((sto, inline_or_not), _);
+        v_storage = ((sto, _inline_or_not), _);
       } ->
         (match ni, sto with
         | Some (n, None), NoSto ->
@@ -656,7 +656,7 @@ and fieldkind env x =
         | _ -> debug (OneDecl decl); raise Todo
         )
       )
-  | BitField (name_opt, tok, ft, e) -> 
+  | BitField (name_opt, _tok, ft, e) -> 
       let _ = expr env e in
       { A.
         fld_name = name_opt;
@@ -667,12 +667,12 @@ and fieldkind env x =
 (* Misc *)
 (* ---------------------------------------------------------------------- *)
 
-and name env x =
+and name _env x =
   match x with
   | (None, [], IdIdent (name)) -> name
   | _ -> debug (Name x); raise CplusplusConstruct
 
-and struct_kind env = function
+and struct_kind _env = function
   | Struct -> A.Struct
   | Union -> A.Union
   | Class -> raise Todo

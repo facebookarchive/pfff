@@ -11,7 +11,7 @@ let test_parse_c xs =
 
   fullxs +> Console.progress (fun k -> List.iter (fun file -> 
     k();
-    let (xs, stat) = 
+    let (_xs, stat) = 
       Parse_c.parse file 
     in
     Common.push2 stat stat_list;

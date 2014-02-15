@@ -29,8 +29,6 @@ module Stat = Parse_info
 type program_and_tokens = 
   Ast_c.program option * Parser_cpp.token list
 
-exception Parse_error of Parse_info.info
-
 (*****************************************************************************)
 (* Main entry point *)
 (*****************************************************************************)
