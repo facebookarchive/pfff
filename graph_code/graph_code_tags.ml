@@ -40,6 +40,7 @@ module E = Database_code
 
 (* quite similar to graph_code_prolog *)
 let defs_of_graph_code ?(verbose=false) g =
+  ignore(verbose);
 
   (* we use the multi-values-to-same-key property of Hashtbl.add and
    * Hashtbl.find_all

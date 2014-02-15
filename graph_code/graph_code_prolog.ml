@@ -157,7 +157,7 @@ let entity_of_str s =
 (* Main entry point *)
 (*****************************************************************************)
 
-let build root g =
+let build g =
 
   let res = ref [] in
   let add x = Common.push2 x res in

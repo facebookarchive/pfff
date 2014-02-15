@@ -139,7 +139,7 @@ let gen_statistics_layer ~root stats ~output =
 
 let actions () = [
   "-gen_bottomup_layer", " <graph_file> <output>",
-  Common.mk_action_2_arg (fun graph_file output ->
+  Common.mk_action_2_arg (fun graph_file _output ->
     let g = G.load graph_file in
     let hrank = G.bottom_up_numbering g in
     let (d,_,_) = Common2.dbe_of_filename graph_file in

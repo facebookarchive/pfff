@@ -98,7 +98,7 @@ let unittest ~graph_of_string =
         "bar_mutual" --> "bar";
         "bar" --> "bar_bis";
         
-        let (scc, hscc) = G.strongly_connected_components_use_graph g in
+        let (scc, _hscc) = G.strongly_connected_components_use_graph g in
         assert_equal
           ~msg:"it should find the right strongly connected components"
           [|

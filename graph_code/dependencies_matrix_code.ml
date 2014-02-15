@@ -98,7 +98,7 @@ type config_path = config_path_elem list
 type partition_constraints = 
   (string, string list) Hashtbl.t
 
-let tasks = ref 16
+(* let tasks = ref 16 *)
 
 (* Phantom types for safer array access between the graph_opti, dm, and
  * the full matrix dm. Not really used, but could one day.
@@ -132,12 +132,6 @@ let hashtbl_find_node h n =
     (* pr2 (spf "PB: %s" (G.string_of_node n));*)
     (* raise Not_found *)
     failwith (spf "Not_found: %s" (G.string_of_node n))
-
-let hashtbl_find h n =
-  try Hashtbl.find h n
-  with Not_found ->
-    pr2_gen ("PB:", n);
-    raise Not_found
 
 (*****************************************************************************)
 (* Display *)
@@ -337,7 +331,7 @@ let parents_of_indexes dm =
   let rec aux acc tree =
     match tree with
     (* a leaf *)
-    | Node (n, []) ->
+    | Node (_, []) ->
       arr.(!i) <- List.rev acc;
       incr i
     (* a node *)

@@ -60,7 +60,7 @@ let string_of_class_method (c, m) =
 let protected_to_private_candidates g =
   g +> G.iter_nodes (fun node ->
     match node with
-    | (s, E.Field) ->
+    | (_s, E.Field) ->
 
       let privacy = 
         try G.privacy_of_node node g 
@@ -87,7 +87,7 @@ let protected_to_private_candidates g =
             if null users
             then pr2 (spf "DEAD protected field: %s" (G.string_of_node node))
             else 
-              if users +> List.for_all (fun (s, kind) -> 
+              if users +> List.for_all (fun (s, _kind) -> 
                 s =~ (spf "^%s\\." classname)
               )
               then pr2 (spf "Protected to private candidate: %s"

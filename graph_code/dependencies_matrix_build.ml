@@ -102,7 +102,7 @@ let build_with_tree2 tree gopti =
   );
 
   let dm = {
-    matrix = Common2.make_matrix_init ~nrow:n ~ncolumn:n (fun i j -> 0);
+    matrix = Common2.make_matrix_init ~nrow:n ~ncolumn:n (fun _i _j -> 0);
     name_to_i = name_to_idm;
     i_to_name = idm_to_name;
     config = tree;
@@ -191,7 +191,7 @@ let empty_all_cells_relevant_to_node m dm n =
 
 let reduced_matrix nodes dm =
   let n = List.length nodes in
-  let m = Common2.make_matrix_init ~nrow:n ~ncolumn:n (fun i j -> 0) in
+  let m = Common2.make_matrix_init ~nrow:n ~ncolumn:n (fun _i _j -> 0) in
 
   let a = Array.of_list nodes in
   
@@ -275,10 +275,12 @@ let sort_by_count_rows_low_first xs m dm =
      +> Common.sort_by_val_lowfirst
      +> List.map fst
 
+(*
 let sort_by_count_columns_high_first xs m dm =
   xs +> List.map (fun n -> n, count_column (hashtbl_find_node dm.name_to_i n) m)
      +> Common.sort_by_val_highfirst
      +> List.map fst
+*)
 
 (* todo: alternatives while discussing with matthieu
  * - find the first row, which should be the lines with the smallest
@@ -401,7 +403,7 @@ let info_orders dm =
 (* Manual ordering *)
 (*****************************************************************************)
 
-let optional_manual_reordering (s, node_kind) nodes constraints_opt =
+let optional_manual_reordering (s, _node_kind) nodes constraints_opt =
   match constraints_opt with
   | None -> nodes
   | Some h ->
@@ -606,7 +608,7 @@ let put_expand_just_before_last_focus_if_not_children n xs g =
     | x::xs ->
         (match x with
         | Expand _ -> x::aux xs
-        | Focus (n2,style) ->
+        | Focus (n2, _style) ->
             let children = Graph_code_opti.all_children n2 g in
             if not (List.mem n children)
             then (Expand n)::x::xs
