@@ -8,10 +8,8 @@
  *)
 open Common
 
-open Ast_php
 module Ast = Ast_php
 module V = Visitor_php
-
 module S = Scope_code
 
 (*****************************************************************************)
@@ -191,7 +189,7 @@ let set_gc () =
  * to know what are the sets of valid protected variable that can be used
  * in a child class.
  *)
-let build_mem_db file =
+let build_mem_db _file =
 (*
 
   (* todo: could infer PHPROOT at least ? just look at
@@ -342,7 +340,7 @@ let main_action xs =
 (* type inference playground *)
 (*---------------------------------------------------------------------------*)
 
-let type_inference file =
+let type_inference _file =
   raise Todo
 (*
 

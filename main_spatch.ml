@@ -227,9 +227,9 @@ let main_action xs =
           tmpfile
         end 
         else failwith ("wrong format, use s/.../.../ not: " ^ s)
-    | s, "" ->
+    | _s, "" ->
         !spatch_file 
-    | s1, s2 ->
+    | _s1, _s2 ->
         failwith "Can't use -f and -e at the same time"
   in
 
@@ -304,7 +304,7 @@ let apply_transfo transfo xs =
     let (ast, toks) = 
       try 
         Parse_php.ast_and_tokens file
-      with Parse_php.Parse_error err ->
+      with Parse_php.Parse_error _err ->
         Common.pr2 (spf "warning: parsing problem in %s" file);
         [], []
     in
@@ -372,7 +372,7 @@ let simple_transfo xs =
     let hook = { Visitor_php.default_visitor with
       Visitor_php.kexpr = (fun (k, _) x ->
         match x with
-        | Call(Id(XName[QI (Name ("foo", info_foo))]), (lp, args, rp)) ->
+        | Call(Id(XName[QI (Name ("foo", info_foo))]), (_, _args, _)) ->
             pr2 "found match";
             
             let ii = Lib_parsing_php.ii_of_any (Expr x) in
@@ -547,7 +547,7 @@ let add_action_ui_form_transfo_func ast =
       | Xhp ((["ui"; "form"], info_tag), attributes, _, _, _) 
         ->
           if not (attributes +> 
-                  List.exists (fun ((attr_name,_), _tok, attr_val) ->
+                  List.exists (fun ((attr_name,_), _tok, _attr_val) ->
                     attr_name = "action"
           )) 
           then begin
@@ -601,7 +601,7 @@ let juju_refactoring spec_file =
   let xxs = 
     xs +> List.map (fun x -> 
       match x with
-      | (a, Some pos) -> 
+      | (_a, Some pos) -> 
         pos.Refactoring_code.file, x
       | _ -> failwith "no file position"
     )
@@ -670,7 +670,7 @@ let case_refactoring pfff_log =
         "%s/spatch -lang phpfuzzy --apply-patch -e 's/%s/%s/' %s" 
         Config_pfff.path
         a1 b1 file);
-    | [a1;a2], [b1;b2] when a1 <> b1 ->
+    | [a1;_a2], [b1;_b2] when a1 <> b1 ->
       (* old:
        *  Common.command2 (spf "perl -p -i -e 's/\\b%s\\b/%s/g' %s" a1 b1 file);
        * but got some FPs when s/crud/Crud/ on certain files because it also

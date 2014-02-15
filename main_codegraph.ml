@@ -473,12 +473,12 @@ let analyze_backward_deps graph_file =
   done;
   let edges = List.flatten !res in
   pr2 (spf "total backward deps = %d" (List.length edges));
-  let xxs = Common.group_by_mapped_key (fun (n1, n2) -> n2) edges in
+  let xxs = Common.group_by_mapped_key (fun (_n1, n2) -> n2) edges in
   pr2 (spf "#dst =%d" (List.length xxs));
   xxs +> List.map (fun (n, xs) -> (n, xs), List.length xs)
     +> Common.sort_by_val_highfirst
     +> Common.take_safe 100
-    +> List.iter (fun ((n, xs), cnt) ->
+    +> List.iter (fun ((n, _xs), cnt) ->
         let file = GC.file_of_node n g in
          pr2 (spf "%-30s = %d (file = %s)" (GC.string_of_node n) cnt
                 file)
@@ -517,7 +517,7 @@ let test_thrift_alive graph_file =
 
   let kflib = Hashtbl.find dm.DM.name_to_i ("flib", E.Dir) in
   for j = 0 to n - 1 do
-    let (s, kind) = dm.DM.i_to_name.(j) in
+    let (s, _kind) = dm.DM.i_to_name.(j) in
     if s =~ "lib/thrift/packages/.*"
     then begin
       let v = dm.DM.matrix.(kflib).(j) in
@@ -555,7 +555,7 @@ let test_adhoc_deps graph_file =
 
 let test_layering graph_file =
   let g = GC.load graph_file in
-  let (scc, hscc) = GC.strongly_connected_components_use_graph g in
+  let (scc, _hscc) = GC.strongly_connected_components_use_graph g in
   pr2 (spf "#scc = %d" (Array.length scc));
   let htopdown = GC.bottom_up_numbering g in
   pr2 (spf "computed numbering = %d" (Hashtbl.length htopdown));

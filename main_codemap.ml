@@ -114,7 +114,7 @@ let test_mode = ref (None: string option)
 (*e: main flags *)
 
 (* see filters below, which files we are interested in *)
-let filter = ref (fun file -> true)
+let filter = ref (fun _file -> true)
 let skip_file  = ref (None: Common.filename option)
 (* less: a config file: GtkMain.Rc.add_default_file "/.../pfff_browser.rc"; *)
 
@@ -438,7 +438,7 @@ let test_draw cr =
 
   let start = ref 0.0 in
 
-  for i = 0 to 3 do
+  for _i = 0 to 3 do
     let end_ = !start +. 0.5 in
     Cairo.arc cr ~xc:0.5 ~yc:0.5 ~radius:0.3 ~angle1:!start
       ~angle2:end_;

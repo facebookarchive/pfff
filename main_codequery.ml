@@ -110,7 +110,7 @@ let build_prolog_db lang root =
         | "clang2" -> Graph_code_clang.build ~verbose:!verbose root files
         | _ -> raise Impossible
       in
-      let facts = Graph_code_prolog.build root g in
+      let facts = Graph_code_prolog.build g in
       let facts_pl_file = Filename.concat root "facts.pl" in
       Common.with_open_outfile facts_pl_file (fun (pr_no_nl, _chan) ->
         let pr s = pr_no_nl (s ^ "\n") in
@@ -128,7 +128,7 @@ let build_prolog_db lang root =
 (* Main action *)
 (*****************************************************************************)
 
-let main_action xs =
+let main_action _xs =
   Logger.log Config_pfff.logger "codequery" None;
   raise Todo
 
@@ -139,7 +139,6 @@ let main_action xs =
 (*---------------------------------------------------------------------------*)
 (* regression testing *)
 (*---------------------------------------------------------------------------*)
-open OUnit
 let test () =
   let suite = Unit_prolog_php.unittest in
   OUnit.run_test_tt suite +> ignore;

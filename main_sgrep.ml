@@ -70,7 +70,7 @@ let print_match mvars mvar_binding ii_of_any tokens_matched_code =
        * for abstract methods and sgrep/spatch do not have metavariables
        * to match such construct so we should be safe.
        *)
-      let (mini, maxi) = 
+      let (mini, _maxi) = 
         PI.min_max_ii_by_pos tokens_matched_code in
       let (file, line) = 
         PI.file_of_info mini, PI.line_of_info mini in
@@ -96,6 +96,7 @@ let print_simple_match tokens_matched_code =
 
 (* a layer need readable path, hence the ~root argument *)
 let gen_layer ~root ~query file =
+  ignore(query);
   pr2 ("generating layer in " ^ file);
 
   let root = Common2.relative_to_absolute root in

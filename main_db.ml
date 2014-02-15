@@ -157,7 +157,7 @@ let db_of_graph_code file =
   let g = Graph_code.load file in
   let root = Filename.dirname file in
   let db = Graph_code_database.db_of_graph_code root g in
-  let (d,b,e) = Common2.dbe_of_filename file in
+  let (d,_b,_e) = Common2.dbe_of_filename file in
   let target = 
     (* Common2.filename_of_dbe (d,Database_code.default_db_name, "json")  *)
     Filename.concat d (Database_code.default_db_name)
@@ -207,7 +207,7 @@ let gen_pleac pleac_src =
          * space
          *)
         (fun s -> " " ^ s),
-        (fun s -> "")
+        (fun _s -> "")
 
     | "php" ->
         "php", "php", 
@@ -216,7 +216,7 @@ let gen_pleac pleac_src =
          *)
         (fun s -> spf "<?php\nfunction pleac_%s() {" s),
         (fun s -> s),
-        (fun s -> "}\n?>\n")
+        (fun _s -> "}\n?>\n")
 
     | _ -> failwith (spf "language %s is not yet supported" !lang)
   in
