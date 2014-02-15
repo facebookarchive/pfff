@@ -36,7 +36,7 @@ module Ent = Database_code
 (*****************************************************************************)
 (* Wrappers *)
 (*****************************************************************************)
-let pr2, pr2_once = Common2.mk_pr2_wrappers Flag_analyze_php.verbose_checking
+let _pr2, pr2_once = Common2.mk_pr2_wrappers Flag_analyze_php.verbose_checking
 
 (*****************************************************************************)
 (* Helpers *)
@@ -78,12 +78,12 @@ let check_args_vs_params (callname, all_args) (defname, all_params) =
         if y.p_default = None 
         then E.fatal info (E.NotEnoughArguments str_def)
         else aux [] ys
-    | x::xs, [] ->
+    | _x::_xs, [] ->
         E.fatal info (E.TooManyArguments str_def)
     | x::xs, y::ys ->
         (match x with
         (* erling's idea of wrong keyword argument check *)
-        | Arg(Assign(IdVar(dn, _),_ , expr)) ->
+        | Arg(Assign(IdVar(dn, _),_ , _expr)) ->
             (match y with
             (* passing a keyword argument for a reference is bad *)
             | { p_ref = Some _; _ } ->
@@ -115,7 +115,7 @@ let check_args_vs_params (callname, all_args) (defname, all_params) =
          * this would generate too many errors right now. At least
          * we should be consistent and do it nowhere or everywhere.
          *)
-        | ArgRef (tok, var) ->
+        | ArgRef (tok, _var) ->
             (match y.p_ref with
             | None -> 
                 E.fatal tok (E.PassingUnexpectedRef)
@@ -134,7 +134,7 @@ let check_args_vs_params (callname, all_args) (defname, all_params) =
 let visit_and_check_funcalls find_entity prog =
   let visitor = V.mk_visitor { V.default_visitor with
 
-    V.kexpr = (fun (k,vx) x ->
+    V.kexpr = (fun (k,_) x ->
       match x with
       | Call (Id callname, args)  ->
          E.find_entity_and_warn find_entity (Ent.Function, callname)

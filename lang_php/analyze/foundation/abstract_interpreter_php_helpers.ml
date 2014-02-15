@@ -73,7 +73,7 @@ module Ptr = struct
     new_val heap Vnull
 
 
-  let rec get_ heap ptr =
+  let get_ heap ptr =
     try
       let v = IMap.find ptr heap.ptrs in
       heap, v
@@ -306,7 +306,7 @@ module Unify = struct
    *)
   and value stack ptrs v1 v2 =
     match v1, v2 with
-    | Vany, x | x, Vany ->
+    | Vany, _x | _x, Vany ->
         ptrs, Vany
     | Vtaint s, _ | _, Vtaint s ->
         ptrs, Vtaint s
@@ -327,7 +327,7 @@ module Unify = struct
             ptrs, Vref s
         )
     | Vptr n1, Vptr n2 ->
-        let ptrs, n = pointers stack ptrs n1 n2 in
+        let ptrs, _n = pointers stack ptrs n1 n2 in
         ptrs, Vptr n1
     | _, _ when v1 == v2 ->
         ptrs, v1
@@ -529,7 +529,7 @@ end
 
 module IsLvalue = struct
 
-  let rec expr e =
+  let expr e =
     match e with
     | Id _
     | Var _

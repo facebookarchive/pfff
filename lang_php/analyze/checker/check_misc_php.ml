@@ -69,7 +69,7 @@ and in_percent_state acc char_list =
   match char_list with
   | [] -> None
   | '%'::t -> start_state acc t
-  | c::'$'::t when (Common2.is_digit c) ->
+  | c::'$'::_t when (Common2.is_digit c) ->
     raise Argument_swapping
   | _::t -> start_state (acc+1) t
 
@@ -81,7 +81,7 @@ and in_escape_state acc char_list =
 let check_format_string args =
   match args with
   | [] -> false
-  | ""::t -> true
+  | ""::_t -> true
   | h::t ->
     let char_list = Common2.list_of_string h in
     let acc = start_state 0 char_list in
@@ -94,15 +94,15 @@ let rec check_format_stringn n args =
   match (n, args) with
   | (n, _) when (n < 0) -> failwith "bad argument for check_format_stringn"
   | (0, args) -> check_format_string args
-  | (n, h::t) -> check_format_stringn (n-1) t
-  | (n, []) -> false
+  | (n, _h::t) -> check_format_stringn (n-1) t
+  | (_n, []) -> false
 
 let rec unargs args =
   match args with
   | [] -> []
   | Left(Arg(Sc(C(String((s , _))))))::t -> s::(unargs t)
-  | Left(x)::t -> ""::(unargs t)
-  | h::t -> unargs t
+  | Left _x::t -> ""::(unargs t)
+  | _h::t -> unargs t
 
 let expr_is_T_or_F (expr : Ast.expr) =
   match expr with
@@ -147,9 +147,9 @@ let check ast =
   let visitor = V.mk_visitor { V.default_visitor with
     V.kstmt = (fun (k, _) st ->
       (match st with
-      | Switch (tok, expr, cases) ->
+      | Switch (_tok, _expr, cases) ->
         (match cases with
-        | CaseList (obrace, tok2, cases, cbrace) ->
+        | CaseList (_obrace, _tok2, cases, _cbrace) ->
           cases +> List.iter (function
           | Case (_, _, case_separator, _)
           | Default (_, case_separator, _) ->
@@ -176,7 +176,7 @@ let check ast =
       (* could do the case sensitivity check on all keywords, but
        * this one in particular seems to happen a lot
        *)
-      | InstanceOf (e, tok, classname) ->
+      | InstanceOf (e, tok, _classname) ->
         let str = Parse_info.str_of_info tok in
         let lower = Common2.lowercase str in
         if not (str =$= lower)

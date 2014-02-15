@@ -41,12 +41,12 @@ let check_boolean_expr expr =
        * todo? but people sometimes put extra parenthesis just to not
        * rely on priority of operators.
        *)
-      | (ParenExpr (lp, ((Assign (lval, tok, subexpr))), rp)) ->
+      | (ParenExpr (_, ((Assign (lval, _, subexpr))), _)) ->
           (* recurse only on subparts to avoid triggering rule below *)
           visitor (Expr lval);
           visitor (Expr subexpr);
           ()
-      | (Assign (lval, tok, _expr)) ->
+      | (Assign (_lval, tok, _expr)) ->
           E.warning tok E.AssignInBooleanContext;
           k e
       | _ -> k e
@@ -58,7 +58,7 @@ let check_boolean_expr expr =
      *)
     V.kargument = (fun (k, visitor) arg ->
       match arg with
-      | Arg (Assign (lval, tok, subexpr)) ->
+      | Arg (Assign (lval, _tok, subexpr)) ->
           visitor (Expr lval);
           visitor (Expr subexpr);
       | _ -> k arg
@@ -69,10 +69,10 @@ let check ast =
   let visitor = V.mk_visitor { V.default_visitor with
     V.kstmt = (fun (k, _) st ->
       (match st with
-      | Do (_, _, _, (lp, expr, rp), _)
-      | If (_, (lp, expr, rp), _, _, _)
-      | Switch (_, (lp, expr, rp), _)
-      | While (_, (lp, expr, rp), _)
+      | Do (_, _, _, (_, expr, _), _)
+      | If (_, (_, expr, _), _, _, _)
+      | Switch (_, (_, expr, _), _)
+      | While (_, (_, expr, _), _)
         ->
           check_boolean_expr expr
       | For (_, _, _for_expr1, _, for_expr2, _, _for_expr3, _, _stmt) ->
@@ -87,7 +87,7 @@ let check ast =
       (* could do the case sensitivity check on all keywords, but
        * this one in particular seems to happen a lot
        *)
-      | InstanceOf (e, tok, classname) ->
+      | InstanceOf (e, tok, _classname) ->
           let str = Parse_info.str_of_info tok in
           let lower = Common2.lowercase str in
           if not (str =$= lower)

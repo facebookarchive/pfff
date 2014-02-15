@@ -61,9 +61,6 @@ let name_of_node = function
   | CG.Method (s1, s2) -> spf "('%s','%s')" s1 s2
   | CG.FakeRoot -> "'__FAKE_ROOT__'"
 
-let string_of_id_kind x =
-  Graph_code_prolog.string_of_entity_kind x
-
 let string_of_modifier = function
   | Public    -> "is_public"
   | Private   -> "is_private"
@@ -194,10 +191,10 @@ let visit ~add readable ast =
         | Interface _
         | Trait _ -> ()
         );
-        def.c_extends +> Common.do_option (fun (tok, x) ->
+        def.c_extends +> Common.do_option (fun (_tok, x) ->
           add (P.Extends (s, (Ast.str_of_class_name x)));
         );
-        def.c_implements +> Common.do_option (fun (tok, interface_list) ->
+        def.c_implements +> Common.do_option (fun (_tok, interface_list) ->
           interface_list +> Ast.uncomma +> List.iter (fun x ->
           (* could put implements instead? it's not really the same
            * kind of extends. Or have a extends_interface/2? maybe
@@ -212,7 +209,7 @@ let visit ~add readable ast =
             )
           ));
         def.c_body +> Ast.unbrace +> List.iter (function
-        | UseTrait (_tok, names, rules_or_tok) ->
+        | UseTrait (_tok, names, _rules_or_tok) ->
           names +> Ast.uncomma +> List.iter (fun name ->
             add (P.Mixins (s, Ast.str_of_class_name name))
           )
@@ -282,9 +279,9 @@ let visit ~add readable ast =
 
         | XhpDecl decl ->
           (match decl with
-          | XhpAttributesDecl (tok, xs, sc) ->
+          | XhpAttributesDecl (tok, xs, _sc) ->
             xs +> Ast.uncomma +> List.iter (function
-            | XhpAttrDecl (_t, (name, _tok), affect_opt, tok_opt) ->
+            | XhpAttrDecl (_t, (name, _tok), _affect_opt, _tok_opt) ->
               let s2 = name in
               current := spf "('%s', '%s')" s s2;
               Hashtbl.clear h;
@@ -327,7 +324,7 @@ let visit ~add readable ast =
            * todo: we should automatically extract the list of all
            * higher-order functions.
            *)
-          | ("newv" | "DT"), Arg ((Sc (C (String (str2,_)))))::rest ->
+          | ("newv" | "DT"), Arg ((Sc (C (String (str2,_)))))::_rest ->
               add (P.Misc (spf "docall(%s, ('%s','%s'), special)"
                      !current str str2))
 
@@ -345,7 +342,7 @@ let visit ~add readable ast =
           end;
           k x
 
-      | ArrayGet (lval, (_, Some((Sc(C(String((fld, i_9)))))), _)) ->
+      | ArrayGet (_lval, (_, Some((Sc(C(String((fld, _)))))), _)) ->
           let str = escape_quote_array_field fld in
           (* use a different namespace than func? *)
           if not (Hashtbl.mem h str)
@@ -369,11 +366,11 @@ let visit ~add readable ast =
           end;
 
           (match x with
-          | Call (ClassGet(qu,_tok, Id name), args) ->
+          | Call (ClassGet(qu,_tok, Id _name), _args) ->
               (match qu with
               | Id (name2) ->
                 (match name2 with
-                | XName (name) ->
+                | XName _name ->
                   add (P.Misc (spf "docall(%s, ('%s','%s'), method)"
                            !current (Ast_php.str_of_name name2) str))
                 (* this should have been desugared while building the
@@ -385,7 +382,7 @@ let visit ~add readable ast =
                 )
               | _ -> ()
               )
-          | Call (ObjGet (_, _, Id name), args) ->
+          | Call (ObjGet (_, _, Id _name), _args) ->
             ()
           | _ -> raise Impossible
           );
@@ -420,7 +417,7 @@ let visit ~add readable ast =
         k x
 
       (* the context should be anything except Call *)
-      | ObjGet (lval, tok, Id name) ->
+      | ObjGet (_, _tok, Id name) ->
           let str = Ast_php.str_of_name name in
           (* use a different namespace than func? *)
           if not (Hashtbl.mem h str)
@@ -442,8 +439,8 @@ let visit ~add readable ast =
           vx (Expr e);
 
 
-      | New (_, classref, args)
-      | AssignNew (_, _, _, _, classref, args) ->
+      | New (_, classref, _args)
+      | AssignNew (_, _, _, _, classref, _args) ->
 
         (match classref with
         | Id name ->(* TODO: currently ignoring type args *)
@@ -496,7 +493,7 @@ let visit ~add readable ast =
           add (P.Misc (spf "throw(%s, '%s')"
                  !current (Ast.str_of_name name)))
       | Try (_, _, cs, _) ->
-          (cs) +> List.iter (fun (_, (_, (classname, dname), _), _) ->
+          (cs) +> List.iter (fun (_, (_, (classname, _dname), _), _) ->
             add (P.Misc (spf "catch(%s, '%s')"
                    !current (Ast.str_of_class_name classname)))
           );
@@ -516,6 +513,7 @@ let visit ~add readable ast =
 (*****************************************************************************)
 
 let build2 ?(show_progress=true) root files =
+  ignore(show_progress);
 
   let res = ref [] in
   let add x = Common.push2 x res in
@@ -588,6 +586,7 @@ let build ?show_progress a b =
  *   generic higher order functions are present in the callgraph
  *)
 let append_callgraph_to_prolog_db2 ?(show_progress=true) g file =
+  ignore(show_progress);
 
   (* look previous information, to avoid introduce duplication
    *

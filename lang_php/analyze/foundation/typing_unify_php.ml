@@ -12,7 +12,6 @@
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the file
  * license.txt for more details.
  *)
-open Common
 
 open Env_typing_php
 open Typing_helpers_php
@@ -61,7 +60,7 @@ let rec unify env t1 t2 =
     | Tvar n1, Tvar n2 -> 
         (* tricky *)
         unify_vars env n1 n2
-    | (Tvar n as x), y | y, (Tvar n as x) ->
+    | (Tvar _n as x), y | y, (Tvar _n as x) ->
         (* TODO Why using a fresh type variable? what is wrong with n? *)
         let n' = fresh() in
         TEnv.set env n' y;

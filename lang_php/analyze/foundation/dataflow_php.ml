@@ -241,7 +241,7 @@ let rec expr_fold fold_env lhs expr acc =
   | AssignOp(e, _, e1) ->
     handle_lhs e (recr e (recr e1 acc))
   | AssignList(_, list_assign, _, expr) ->
-    let rec reclist acc' list_assign' =
+    let rec reclist _acc' list_assign' =
       let list_assign' = Ast.uncomma(Ast.unparen list_assign') in
       List.fold_left 
         (fun acc' -> function
@@ -261,7 +261,7 @@ let rec expr_fold fold_env lhs expr acc =
     (match args with
     | x::y::vars ->
       let acc = recr x (recr y acc) in
-      List.fold_left (fun acc arg ->
+      List.fold_left (fun acc _arg ->
         handle_lhs expr acc) acc vars
     (* Abuse Todo exception *)
     | _ -> raise Todo)
@@ -276,7 +276,7 @@ let rec expr_fold fold_env lhs expr acc =
        acc args)
   | ObjGet(e, _ ,e1) ->
     recl e (recr e1 acc)
-  | ClassGet(e, _, e1) -> recr e acc
+  | ClassGet(e, _, _e1) -> recr e acc
   (* TODO: copy on write *)
   | ArrayGet(e, e1) ->
     recl e
@@ -288,7 +288,7 @@ let rec expr_fold fold_env lhs expr acc =
   | BraceIdent(_, e, _) ->
     recl e acc
   (* Not sure *)
-  | Deref(_, e)->
+  | Deref(_, _e)->
     raise Todo
   | Sc(C _) -> acc
   | Sc(Guil(_, encaps_list, _))
@@ -330,13 +330,13 @@ let rec expr_fold fold_env lhs expr acc =
        (recr e acc) args)
   | Clone _ -> raise Todo
   | AssignRef _ -> raise Todo
-  | AssignNew(e, _, _, _, _, None) -> raise Todo
-  | AssignNew(e, _, _, _, _, Some(args)) ->
-    raise Todo
+  | AssignNew(_e, _, _, _, _, None) -> raise Todo
+  | AssignNew(_e, _, _, _, _, Some(_args)) ->
+      raise Todo
   | Cast(_, e) -> recr e acc
   | CastUnset _ -> raise Todo
   | InstanceOf(e, _, e1) -> recr e (recr e1 acc)
-  | Eval(_, e) -> raise Todo
+  | Eval(_, _e) -> raise Todo
   | Lambda _ -> raise Todo
   | ShortLambda _ -> raise Todo
   | Exit(_, eopt) ->
@@ -425,7 +425,7 @@ let new_node_array (f: F.flow) v =
   let arr = Array.make f#nb_nodes v in
   (* sanity checking *)
   let len = Array.length arr in
-  f#nodes#tolist +> List.iter (fun (ni, nod) ->
+  f#nodes#tolist +> List.iter (fun (ni, _nod) ->
     if ni >= len
     then failwith "the CFG nodei is bigger than the number of nodes"
   );

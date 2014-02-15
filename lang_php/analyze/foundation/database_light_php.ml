@@ -13,12 +13,6 @@
  * license.txt for more details.
  *)
 
-open Common
-
-let database_code_from_graph_code ?(verbose=false) g =
-  raise Todo
-
-
 
 (*
 module Ast = Ast_php

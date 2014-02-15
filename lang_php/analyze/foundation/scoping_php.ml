@@ -13,14 +13,8 @@
  * license.txt for more details.
  *)
 
-open Common
-
-open Ast_php
-
 module Ast = Ast_php
-
 module S = Scope_php
-
 module V = Visitor_php
 
 (*****************************************************************************)

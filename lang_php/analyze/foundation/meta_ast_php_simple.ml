@@ -217,9 +217,6 @@ and vof_expr =
       and v2 = vof_expr v2
       in Ocaml.VSum (("Cast", [ v1; v2 ]))
   | Lambda v1 -> let v1 = vof_func_def v1 in Ocaml.VSum (("Lambda", [ v1 ]))
-and vof_vector_elt e = vof_expr e
-and vof_map_elt (e1, e2) =
-  Ocaml.VTuple ([ vof_expr e1; vof_expr e2])
 and vof_encaps x = vof_expr x
 and vof_xhp =
   function
@@ -359,7 +356,7 @@ and
                   c_attrs = v_c_attrs;
                   c_xhp_fields = v_c_xhp_fields;
                   c_xhp_attr_inherit = v_c_xhp_attr_inherit;
-                  c_uses = v_c_traits;
+                  c_uses = _v_c_traits;
                   c_implements = v_c_implements;
                   c_constants = v_c_constants;
                   c_variables = v_c_variables;

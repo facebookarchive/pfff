@@ -313,7 +313,7 @@ and stmt env= function
       class_def env cd
   | FuncDef fd ->
       func_def env fd
-  | ConstantDef cd ->
+  | ConstantDef _ ->
       raise Common.Todo
 
 and expr_opt env = function
@@ -346,16 +346,7 @@ and iexpr env e = ignore (expr env e)
 and expr env e =
   expr_ env false e
 
-and var_name e =
-  match e with
-  | Id [(n, _)] -> n
-  | _ -> "NONAME"
-
-and ln = function
-  | None -> "line unavailable"
-  | Some (k) -> string_of_int k
-
-and expr_ env lv = function
+and expr_ env _lv = function
 
   | Id [(("true" | "false"),_)] -> bool
   | Int _ -> int
@@ -543,7 +534,7 @@ and expr_ env lv = function
       let t2 = expr env e2 in
       let t = Unify.unify env t1 t2 in
       match pi with
-      | Some(p) ->
+      | Some _p ->
           let e = ConsArray(avl) in
           let id = AEnv.create_ai env e in
           let tl = List.map (array_declaration env id pi) avl in
@@ -573,7 +564,7 @@ and expr_ env lv = function
       let t = Tvar (fresh()) in
       let t = List.fold_left (array_value env) t avl in
       (match pi with
-	| Some(p) ->
+      | Some _p ->
           let e = ConsArray(avl) in
           let id = AEnv.create_ai env e in
           let tl  = List.map (array_declaration env id pi) avl in
@@ -605,7 +596,7 @@ and expr_ env lv = function
 *)
   | Collection _ -> failwith "Collection is not implemented - complain to pieter@"
 
-  | Arrow (e1, e2) -> failwith "Todo: Arrow"
+  | Arrow (_e1, _e2) -> failwith "Todo: Arrow"
   | List el ->
       let t = Tvar (fresh()) in
       let el = List.map (expr env) el in
@@ -681,7 +672,7 @@ and array_declaration env id pi = function
       AEnv.set env id aa;
       t
 
-and ptype env = function
+and ptype _env = function
   | Ast_php.BoolTy -> bool
   | Ast_php.IntTy -> int
   | Ast_php.DoubleTy -> float
@@ -923,7 +914,7 @@ and filter_privates privates obj =
     else SMap.add x t acc
  ) obj SMap.empty
 
-and constant_enum is_enum cname (ien, sen) cst =
+and constant_enum _is_enum cname (ien, sen) cst =
   let x = A.unwrap cst.cst_name in
   let e = cst.cst_body in
   match e with
@@ -1001,12 +992,12 @@ and cheat_method env parent this m =
 (* Main entry point *)
 (*****************************************************************************)
 
-let rec infer_using_topological_sort_dependencies env =
+let infer_using_topological_sort_dependencies env =
   let l = Dependencies_toposort_php.TopoSort.sort env.graph in
   List.iter (infer_type_definition env) l;
   ()
 
-let rec infer_using_topological_sort_dependencies_and_save_typingbin env =
+let infer_using_topological_sort_dependencies_and_save_typingbin env =
   Printf.printf "Topological sort:  "; flush stdout;
   let l = Dependencies_toposort_php.TopoSort.sort env.graph in
   Printf.printf "DONE\n"; flush stdout;

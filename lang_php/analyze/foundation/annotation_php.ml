@@ -298,7 +298,7 @@ let str_debug_of_annotation a =
 (* Main entry point *)
 (*****************************************************************************)
 
-let annotations_of_program_with_comments2 (ast, tokens) =
+let annotations_of_program_with_comments2 (_ast, tokens) =
  tokens +> List.map (function
   | Parser_php.T_COMMENT info
   | Parser_php.T_DOC_COMMENT info 

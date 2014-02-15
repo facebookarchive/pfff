@@ -227,7 +227,7 @@ let lookup_gen aclass find_entity hook =
           )
         )
     | [] -> raise (UndefinedClassWhileLookup aclass)
-    | x::y::xs -> raise Multi_found
+    | _x::_y::_xs -> raise Multi_found
     | [_] -> raise Impossible
   in
   aux aclass
@@ -265,7 +265,7 @@ let lookup_member ?(case_insensitive=false) (aclass, afield) find_entity =
 let lookup_constant (aclass, aconstant) find_entity =
   lookup_gen aclass find_entity 
     (function
-    | ClassConstants (tok, xs, _tok) ->
+    | ClassConstants (_, xs, _) ->
         (try 
           Some (xs +> Ast.uncomma +> Common.find_some 
             (fun (name, affect) ->
@@ -289,7 +289,7 @@ let collect_members aclass find_entity =
   (try 
     let _ = lookup_gen aclass find_entity (function
     | ClassVariables (_, _, class_vars, _) ->
-        class_vars +> Ast.uncomma +> List.iter (fun (dname, affect) ->
+        class_vars +> Ast.uncomma +> List.iter (fun (dname, _affect) ->
           Common.push2 dname res;
         );
         None

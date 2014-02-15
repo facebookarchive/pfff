@@ -2,7 +2,7 @@ open Env_interpreter_php
 
 module Taint = struct
     let taint_mode = ref false
-    let taint_expr a b c d e = failwith "taint_expr: Todo"
+    let taint_expr _a _b _c _d _e = failwith "taint_expr: Todo"
 
     (* If one thing is tainted, then the whole thing is tainted. 
      * todo: if got a single element, can return a precise Vstring
@@ -15,9 +15,9 @@ module Taint = struct
         | _ -> acc
       ) (Vabstr Tstring) sl
 
-    let check_danger a b c d e f = ()
+    let check_danger _a _b _c _d _e _f = ()
 
-    let binary_concat env heap v1 v2 path =
+    let binary_concat _env _heap _v1 _v2 _path =
       Vabstr Tstring
 
     module GetTaint = struct
@@ -52,10 +52,10 @@ module Taint = struct
         | Vfloat _ | Vstring _ -> ()
         | Vrecord m ->
             let vl = SMap.fold (fun x y acc -> (x, y) :: acc) m [] in
-            list (fun (x, v) -> value path ptrs v) vl;
+            list (fun (_x, v) -> value path ptrs v) vl;
         | Vobject m ->
             let vl = SMap.fold (fun x y acc -> (x, y) :: acc) m [] in
-            list (fun (x, v) -> value path ptrs v) vl;
+            list (fun (_x, v) -> value path ptrs v) vl;
         | Varray vl ->
             list (value path ptrs) vl;
         | Vmap (v1, v2) ->

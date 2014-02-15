@@ -13,8 +13,6 @@
  * license.txt for more details.
  *)
 
-open Common
-
 open Ast_php 
 
 (* see also scoping_php.ml.
@@ -41,7 +39,7 @@ let name_to_nameS_wrap name =
   let ii  = Ast_php.info_of_name name in 
   NameS s, ii
 
-let dnameS_of_dname (DName (s,ii)) = DNameS s
+let dnameS_of_dname (DName (s,_ii)) = DNameS s
 
 let nameS x = 
   match x with

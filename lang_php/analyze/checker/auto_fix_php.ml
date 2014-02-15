@@ -47,7 +47,7 @@ and in_percent_state acc string_in_char_list =
   match string_in_char_list with
   | [] -> raise Bad_format_string
   | '%'::t -> start_state acc t
-  | c::'$'::t when (Common2.is_digit c) -> raise Argument_swapping
+  | c::'$'::_t when (Common2.is_digit c) -> raise Argument_swapping
   | 's'::t -> start_state (PercentS::acc) t
   | c::t when is_valid_integer_specifier c -> start_state (PercentD::acc) t
   | _::t -> in_percent_state acc t
@@ -76,7 +76,7 @@ let delete_arguments args =
   | _ -> 
     List.iter delete_arg args
 
-let rec expect_to_string (expect : expected_argument) : string =
+let expect_to_string (expect : expected_argument) : string =
   match expect with
   | PercentS -> "\'\'"
   | PercentD -> "0"
@@ -90,10 +90,10 @@ let rec adjust_argument expect args =
   | ([], [Right _]) -> ()
   | ([], _) -> delete_arguments args
 
-  | (eh::et, [])
-  | (eh::et, [Right _]) -> 
-    raise (Need_more_arguments (List.map expect_to_string expect))
-  | (eh::et, Right _::al::at) -> adjust_argument et at
+  | (_eh::_et, [])
+  | (_eh::_et, [Right _]) -> 
+      raise (Need_more_arguments (List.map expect_to_string expect))
+  | (_eh::et, Right _::_al::at) -> adjust_argument et at
   | _ -> failwith "bad argument for adjust_argument"
 
 let fix_format_string args =
@@ -103,7 +103,7 @@ let fix_format_string args =
     let char_list = Common2.list_of_string h in
     let expect = start_state [] char_list in
     adjust_argument expect t
-  | Left(_)::t -> ()
+  | Left(_)::_t -> ()
   | _ -> failwith "bad argument for fix_format_string"
 
 (* skip first n arguments *)      
@@ -111,8 +111,8 @@ let rec fix_format_string_skip_first_n n args =
   match (n, args) with
   | (n, _) when (n < 0) -> failwith "bad argument for fix_format_string_skip_first_n"
   | (0, args) -> fix_format_string args
-  | (1, [l]) -> raise No_format_string
-  | (n, l::r::t) -> fix_format_string_skip_first_n (n-1) t
+  | (1, [_l]) -> raise No_format_string
+  | (n, _l::_r::t) -> fix_format_string_skip_first_n (n-1) t
   | _ -> failwith "bad argument for fix_format_string_skip_first_n"
 
 let try_auto_fix error =

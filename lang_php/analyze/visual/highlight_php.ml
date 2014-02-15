@@ -40,6 +40,7 @@ module Db = Database_code
 (* todo: should do that generically via the light db.
  * look if def in same file of current file
  *)
+(*
 let place_ids current_file ids db =
   match ids with
   | [] -> NoInfoPlace
@@ -64,17 +65,21 @@ let place_ids current_file ids db =
         ) 
         then PlaceSameDir
         else PlaceExternal
+*)
 
 (* obsolete: this is now computed generically in pfff_visual via the light_db
  * in rewrite_categ_using_entities using x.e_number_external_users.
  *)
+(*
 let arity_of_number nbuses =
   match nbuses with
   | 0             -> NoUse
   | 1             -> UniqueUse
   | n when n < 50 -> MultiUse
   | _             -> LotsOfUse
+*)
 
+(*
 let use_arity_ident_function_or_macro s db =
   let ids = (* DbPHP.function_ids__of_string s db *) [] in
   let nbuses =
@@ -87,6 +92,7 @@ let use_arity_ident_function_or_macro s db =
     +> Common2.sum_int
   in
   arity_of_number nbuses
+*)
 
 (* we generate fake value here because the real one are computed in a
  * later phase in rewrite_categ_using_entities in pfff_visual.
@@ -99,7 +105,7 @@ let highlight_funcall_simple ~tag ~hentities f args info =
   then begin
     match args with
     | [] -> failwith "dynamic call wrappers should have arguments"
-    | x::xs ->
+    | x::_xs ->
         (* alternative: could also have a FunCallVarBuiltins
          * but any wrappers around call_user_func should also
          * be considered as dangerous. Better to use
@@ -132,14 +138,14 @@ let highlight_funcall_simple ~tag ~hentities f args info =
                 let a = List.nth args i in
                 let ii = Lib_parsing_php.ii_of_any (Argument a) in
                 ii +> List.iter (fun info -> tag info CallByRef)
-              with exn ->
+              with _exn ->
                 pr2_once ("highlight_php: pb with TakeArgNByRef for " ^ f);
               )
           | Db.ContainDynamicCall -> ()
           | _ -> raise Todo
           );
           ()
-      | x::y::xs ->
+      | _x::_y::_xs ->
           pr2_once ("highlight_php: multiple entities for: " ^ f);
           (* todo: place of id *)
           tag info (Function (Use2 fake_no_use2));
@@ -169,7 +175,7 @@ let tag_name ~tag name =
       let info = Ast.info_of_qualified_ident qu in
       tag info (Class (Use2 fake_no_use2));
   (* will be highlighted by the 'toks phase 2' *)
-  | Self tok | Parent tok -> ()
+  | Self _tok | Parent _tok -> ()
   | LateStatic tok ->
       tag tok BadSmell
 
@@ -204,7 +210,7 @@ let tag_class_name_reference ~tag qualif =
  *  - I was using emacs_mode_xxx before but now have inlined the code
  *    and extended it.
  *)
-let visit_program ~tag prefs  hentities (ast, toks) =
+let visit_program ~tag _prefs  hentities (ast, toks) =
 
   let already_tagged = Hashtbl.create 101 in
   let tag = (fun ii categ ->
@@ -232,9 +238,9 @@ let visit_program ~tag prefs  hentities (ast, toks) =
 
     (* a little bit pad specific *)
     |   T.T_COMMENT(ii)
-      ::T.TNewline (ii2)
+      ::T.TNewline _ii2
       ::T.T_COMMENT(ii3)
-      ::T.TNewline (ii4)
+      ::T.TNewline _ii4
       ::T.T_COMMENT(ii5)
       ::xs ->
       let s = Parse_info.str_of_info ii in
@@ -257,7 +263,7 @@ let visit_program ~tag prefs  hentities (ast, toks) =
       );
       aux_toks xs
 
-    | x::xs ->
+    | _x::xs ->
       aux_toks xs
   in
   aux_toks toks;
@@ -282,7 +288,7 @@ let visit_program ~tag prefs  hentities (ast, toks) =
         k top
       | _ -> k top
     );
-    V.kfunc_def = (fun (k, vx) def ->
+    V.kfunc_def = (fun (k, _) def ->
       let info = Ast.info_of_ident def.f_name in
       let kind =
         match def.f_type with
@@ -300,15 +306,15 @@ let visit_program ~tag prefs  hentities (ast, toks) =
       k def
     );
 
-    V.kclass_def = (fun (k, vx) def ->
+    V.kclass_def = (fun (k, _) def ->
       let info = Ast.info_of_ident def.c_name in
       tag info (Class (Def2 fake_no_def2));
-      def.c_extends +> Common.do_option (fun (tok, name) ->
+      def.c_extends +> Common.do_option (fun (_, name) ->
         let name = name_of_class_name name in
         let info = Ast.info_of_name name in
         tag info (Class (Use2 fake_no_use2));
       );
-      def.c_implements +> Common.do_option (fun (tok, xs) ->
+      def.c_implements +> Common.do_option (fun (_, xs) ->
         xs +> Ast.uncomma +> List.iter (fun name ->
           let name = name_of_class_name name in
           let info = Ast.info_of_name name in
@@ -332,48 +338,48 @@ let visit_program ~tag prefs  hentities (ast, toks) =
     );
 
     (* -------------------------------------------------------------------- *)
-    V.kclass_stmt = (fun (k, bigf) x ->
+    V.kclass_stmt = (fun (k, _) x ->
       match x with
       (* done in kfunc_def *)
-      | Ast.Method def -> k x
+      | Ast.Method _ -> k x
 
       | Ast.XhpDecl d ->
         (match d with
         | XhpAttributesDecl _ -> k x
         | XhpChildrenDecl _ -> k x
-        | XhpCategoriesDecl (tok, decls, tok2) ->
+        | XhpCategoriesDecl (_, decls, _) ->
           decls +> Ast.uncomma +> List.iter (fun (_tag, ii) ->
             tag ii TypeMisc
           );
         )
-      | Ast.ClassConstants (tok, vars, tok2) ->
+      | Ast.ClassConstants (_, vars, _) ->
         vars +> Ast.uncomma +> List.iter (fun (name, _opt) ->
           let info = Ast.info_of_ident name in
           tag info (Constant (Def2 NoUse));
         );
         k x;
-      | Ast.ClassVariables (modifiers, _opt_ty, vars, tok) ->
+      | Ast.ClassVariables (_modifiers, _opt_ty, vars, _) ->
         vars +> Ast.uncomma +> List.iter (fun (dname, _opt) ->
           let info = Ast.info_of_dname dname in
           tag info (Field (Def2 fake_no_def2));
         );
         k x
-      | Ast.UseTrait (tok, names, rules_or_tok) ->
+      | Ast.UseTrait (_, names, _rules_or_tok) ->
          names +> Ast.uncomma +> List.iter (fun name ->
           let name = name_of_class_name name in
           let info = Ast.info_of_name name in
           tag info (Class (Use2 fake_no_use2));
          );
         k x
-      | Ast.TraitConstraint (tok1, kind, ty, tok2) ->
-        k x
+      | Ast.TraitConstraint (_, _kind, _ty, _) ->
+          k x
     );
 
     (* -------------------------------------------------------------------- *)
-    V.kstmt = (fun (k,bigf) stmt ->
+    V.kstmt = (fun (k,_bigf) stmt ->
       k stmt;
       match stmt with
-      | Globals ((v1, v2, v3)) ->
+      | Globals ((_v1, v2, _v3)) ->
         v2 +> Ast.uncomma +> List.iter (fun x ->
           match x  with
           | GlobalVar dname ->
@@ -384,9 +390,9 @@ let visit_program ~tag prefs  hentities (ast, toks) =
           | GlobalDollar _ -> ()
           | GlobalDollarExpr _ ->  ()
         );
-      | StaticVars ((v1, v2, v3)) ->
+      | StaticVars ((_v1, v2, _v3)) ->
         v2 +> Ast.uncomma +> List.iter (fun svar ->
-          let (dname, affect_opt) = svar in
+          let (dname, _affect_opt) = svar in
           let info = Ast.info_of_dname dname in
           tag info (Local Def);
         );
@@ -394,8 +400,8 @@ let visit_program ~tag prefs  hentities (ast, toks) =
       | _ -> ()
     );
     (* -------------------------------------------------------------------- *)
-    V.kcatch = (fun (k,bigf) c ->
-      let (tok, (lp, (cname, dname), rp), stmts) = c in
+    V.kcatch = (fun (k, _) c ->
+      let (_, (_, (cname, dname), _), _stmts) = c in
       let name = name_of_class_name cname in
       let info_class = Ast.info_of_name name in
       tag info_class (Class (Use2 fake_no_use2));
@@ -423,11 +429,11 @@ let visit_program ~tag prefs  hentities (ast, toks) =
           k expr
         | Some (exprbis) ->
           (match exprbis with
-          | Sc (C (Ast.String (s, info))) ->
+          | Sc (C (Ast.String (_s, info))) ->
             tag info (Field (Use2 fake_no_use2));
             vx (Expr var);
 
-          | Sc (C (Int (s, info))) ->
+          | Sc (C (Int (_s, _info))) ->
             k expr
           | _ -> k expr
           )
@@ -441,13 +447,13 @@ let visit_program ~tag prefs  hentities (ast, toks) =
           let f = Ast.str_of_name callname in
           let args = args +> Ast.unparen +> Ast.uncomma in
           highlight_funcall_simple ~tag ~hentities f args info;
-        | ClassGet (lval, _, Id name) ->
+        | ClassGet (_lval, _, Id name) ->
           let info = Ast.info_of_name name in
           tag info (StaticMethod (Use2 fake_no_use2));
         | ClassGet (lval, _, _var) ->
           let ii = Lib_parsing_php.ii_of_any (Expr lval) in
           ii +> List.iter (fun info -> tag info PointerCall);
-        | ObjGet(lval, tok, Id name) ->
+        | ObjGet(_lval, _tok, Id name) ->
           let info = Ast.info_of_name name in
           tag info (Method (Use2 fake_no_use2));
         | e ->
@@ -458,7 +464,7 @@ let visit_program ~tag prefs  hentities (ast, toks) =
         k expr
 
       (* ObjGet *)
-      | ObjGet (lval, tok, Id name) ->
+      | ObjGet (_lval, _tok, Id name) ->
         let info = Ast.info_of_name name in
         tag info (Field (Use2 fake_no_use2));
         k expr
@@ -474,7 +480,7 @@ let visit_program ~tag prefs  hentities (ast, toks) =
             let info = Ast.info_of_dname dname in
             (* todo? special category for class variables ? *)
             tag info (Global (Use2 fake_no_use2));
-        | v2 ->
+        | _v2 ->
           (* todo? colorize qualif? bad to use dynamic variable ...
              let info = Ast.info_of_dname dname in
              tag info BadSmell
@@ -515,7 +521,7 @@ let visit_program ~tag prefs  hentities (ast, toks) =
         | S.NoScope -> tag info (NoType)
         )
 
-      | Cast (((cast, v1), v2)) ->
+      | Cast (((_cast, v1), _v2)) ->
         tag v1 TypeMisc;
         k expr;
       | _ ->
@@ -524,7 +530,7 @@ let visit_program ~tag prefs  hentities (ast, toks) =
     );
     (* -------------------------------------------------------------------- *)
     V.kxhp_attribute = (fun (k, _) x ->
-      let ((attr_name, ii_attr_name), tok_eq, attr_val) = x in
+      let ((attr_name, _ii_attr_name), _tok_eq, attr_val) = x in
       (match attr_name with
       | "href" | "src" ->
         (match attr_val with
@@ -532,13 +538,13 @@ let visit_program ~tag prefs  hentities (ast, toks) =
           tag tok1 String;
           tag tok2 String;
           xs +> List.iter (function
-          | EncapsString (s, ii) ->
+          | EncapsString (_s, ii) ->
             tag ii EmbededUrl
           | EncapsExpr (_, _, _) | EncapsDollarCurly (_, _, _)
           | EncapsCurly (_, _, _) | EncapsVar _ 
             -> ()
           );
-        | XhpAttrExpr e -> ()
+        | XhpAttrExpr _e -> ()
         | SgrepXhpAttrValueMvar _ -> ()
         )
       | _ -> ()
@@ -548,15 +554,15 @@ let visit_program ~tag prefs  hentities (ast, toks) =
 
     V.kxhp_attr_decl = (fun (k, _) x ->
       match x with
-      | XhpAttrInherit (xhp_tag, ii) ->
-        tag ii (Class (Use2 (fake_no_use2)));
-      | XhpAttrDecl ((attr_type, (attr_name, iiname), affect_opt, tok_opt)) ->
-        tag iiname (Field (Use2 fake_no_use2));
-        k x
+      | XhpAttrInherit (_xhp_tag, ii) ->
+          tag ii (Class (Use2 (fake_no_use2)));
+      | XhpAttrDecl ((_attr_type, (_attr_name, iiname), _affect_opt, _tok_opt))->
+          tag iiname (Field (Use2 fake_no_use2));
+          k x
     );
 
     (* -------------------------------------------------------------------- *)
-    V.kconstant = (fun (k, vx) e ->
+    V.kconstant = (fun (_k, _) e ->
       match e with
       | Int v1 | Double v1 ->
         tag (snd v1) Number
@@ -569,7 +575,7 @@ let visit_program ~tag prefs  hentities (ast, toks) =
       | XdebugClass (_, _) | XdebugResource -> ()
     );
 
-    V.kencaps = (fun (k, vx) e ->
+    V.kencaps = (fun (k, _) e ->
       match e with
       | EncapsString (s, ii) ->
         if not (Hashtbl.mem already_tagged ii)
@@ -577,7 +583,7 @@ let visit_program ~tag prefs  hentities (ast, toks) =
       | _ -> k e
     );
     (* -------------------------------------------------------------------- *)
-    V.khint_type = (fun (k, vx) x ->
+    V.khint_type = (fun (k, _) x ->
       (match x with
       (* TODO: emit info for type args *)
       | Hint (name, _targsTODO) -> 
@@ -604,10 +610,10 @@ let visit_program ~tag prefs  hentities (ast, toks) =
   (* -------------------------------------------------------------------- *)
   toks +> List.iter (fun tok ->
     match tok with
-    | T.TNewline ii | T.TSpaces ii | T.EOF ii -> ()
+    | T.TNewline _ii | T.TSpaces _ii | T.EOF _ii -> ()
     (* less: could highlight certain words in the comment? *)
     | T.T_COMMENT (ii)  | T.T_DOC_COMMENT (ii)  -> tag ii Comment
-    | T.TCommentPP ii -> ()
+    | T.TCommentPP _ii -> ()
     | T.TUnknown ii -> tag ii Error
 
     (* all the name and varname should have been tagged by now. *)
@@ -654,10 +660,10 @@ let visit_program ~tag prefs  hentities (ast, toks) =
       -> tag ii Operator
 
       (* done in Cast *)
-    | T.T_UNSET_CAST ii   | T.T_OBJECT_CAST ii
-    | T.T_ARRAY_CAST ii   | T.T_STRING_CAST ii
-    | T.T_DOUBLE_CAST ii   | T.T_INT_CAST ii
-    | T.T_BOOL_CAST ii
+    | T.T_UNSET_CAST _ii   | T.T_OBJECT_CAST _ii
+    | T.T_ARRAY_CAST _ii   | T.T_STRING_CAST _ii
+    | T.T_DOUBLE_CAST _ii   | T.T_INT_CAST _ii
+    | T.T_BOOL_CAST _ii
       -> ()
 
     | T.T_IS_GREATER_OR_EQUAL ii  | T.T_IS_SMALLER_OR_EQUAL ii
@@ -690,9 +696,9 @@ let visit_program ~tag prefs  hentities (ast, toks) =
     | T.T_CLOSE_TAG ii -> tag ii Punctuation
 
       (* done in PreProcess *)
-    | T.T_FILE ii  | T.T_LINE ii | T.T_DIR ii
-    | T.T_FUNC_C ii | T.T_METHOD_C ii | T.T_CLASS_C ii | T.T_TRAIT_C ii
-    | T.T_NAMESPACE_C ii
+    | T.T_FILE _ii  | T.T_LINE _ii | T.T_DIR _ii
+    | T.T_FUNC_C _ii | T.T_METHOD_C _ii | T.T_CLASS_C _ii | T.T_TRAIT_C _ii
+    | T.T_NAMESPACE_C _ii
       -> ()
 
       (* can be a type hint *)
@@ -759,10 +765,10 @@ let visit_program ~tag prefs  hentities (ast, toks) =
     | T.T_YIELD ii | T.T_AWAIT ii | T.T_ASYNC ii -> tag ii Keyword
 
     (* should have been handled in field *)
-    | T.T_STRING_VARNAME ii -> ()
+    | T.T_STRING_VARNAME _ii -> ()
 
     | T.T_INLINE_HTML (_, ii) -> tag ii EmbededHtml
-    | T.T_NUM_STRING ii -> ()
+    | T.T_NUM_STRING _ii -> ()
 
     | T.T_ENCAPSED_AND_WHITESPACE (s, ii) ->
       if not (Hashtbl.mem already_tagged ii)
@@ -773,7 +779,7 @@ let visit_program ~tag prefs  hentities (ast, toks) =
       then tag_string ~tag s ii
 
       (* should been handled in Constant *)
-    | T.T_DNUMBER ii | T.T_LNUMBER ii -> ()
+    | T.T_DNUMBER _ii | T.T_LNUMBER _ii -> ()
 
     | T.T_XHP_PCDATA ii | T.T_XHP_ANY ii
     | T.T_XHP_REQUIRED ii | T.T_XHP_ENUM ii
@@ -796,7 +802,7 @@ let visit_program ~tag prefs  hentities (ast, toks) =
       if not (Hashtbl.mem already_tagged ii)
       then tag ii Error
 
-    | T.T_RESOURCE_XDEBUG ii | T.T_CLASS_XDEBUG ii -> ()
+    | T.T_RESOURCE_XDEBUG _ii | T.T_CLASS_XDEBUG _ii -> ()
 
   );
 

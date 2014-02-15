@@ -14,7 +14,6 @@
  *)
 open Common
 
-open Ast_php
 module Ast = Ast_php
 module G = Graph_code
 module Flag = Flag_analyze_php
@@ -147,8 +146,7 @@ let string_of_id_kind x =
 
 let vof_filename = Ocaml.vof_string
 
-let rec vof_fullid v = vof_filepos v
-and vof_filepos { file = v_file; line = v_line; column = v_column } =
+let vof_filepos { file = v_file; line = v_line; column = v_column } =
   let bnds = [] in
   let arg = Ocaml.vof_int v_column in
   let bnd = ("column", arg) in
@@ -187,7 +185,7 @@ let hcache_entities = Hashtbl.create 101
  * passed as a parameter to scheck (e.g. flib/). We could cache
  * the parsed AST but it can stress the GC too much.
  *)
-let hdone = Hashtbl.create 101
+let _hdone = Hashtbl.create 101
 let ast_php_entity_in_file ~check_dupes (s, kind) g file =
   (* pr2_dbg (Common.dump (s, kind, file)); *)
 
@@ -201,23 +199,23 @@ let ast_php_entity_in_file ~check_dupes (s, kind) g file =
   let ast2 = Parse_php.parse_program file in
   let entities =
     ast2 +> Common.map_filter (function
-    | StmtList _ -> None
-    | FuncDef def ->
-      Some ((Ast.str_of_ident def.f_name, E.Function), FunctionE def)
-    | TypeDef def ->
-      Some ((Ast.str_of_ident def.t_name, E.Type), TypedefE def)
-    | ClassDef def -> 
-      (* do as in graph_code_php.ml *)
-      let kind = E.RegularClass in
-      Some ((Ast.str_of_ident def.c_name, E.Class kind), ClassE def)
-    | ConstantDef def ->
-      Some ((Ast.str_of_ident def.cst_name, E.Constant), ConstantE def)
-    | NamespaceDef (tok, _, _) 
-    | NamespaceBracketDef (tok, _, _) 
-    | NamespaceUse (tok, _, _) ->
-      raise (TodoNamespace tok)
+    | Ast.StmtList _ -> None
+    | Ast.FuncDef def ->
+        Some ((Ast.str_of_ident def.Ast.f_name, E.Function), Ast.FunctionE def)
+    | Ast.TypeDef def ->
+        Some ((Ast.str_of_ident def.Ast.t_name, E.Type), Ast.TypedefE def)
+    | Ast.ClassDef def -> 
+        (* do as in graph_code_php.ml *)
+        let kind = E.RegularClass in
+        Some ((Ast.str_of_ident def.Ast.c_name, E.Class kind), Ast.ClassE def)
+    | Ast.ConstantDef def ->
+        Some ((Ast.str_of_ident def.Ast.cst_name, E.Constant),Ast.ConstantE def)
+    | Ast.NamespaceDef (tok, _, _) 
+    | Ast.NamespaceBracketDef (tok, _, _) 
+    | Ast.NamespaceUse (tok, _, _) ->
+        raise (Ast.TodoNamespace tok)
 
-    | NotParsedCorrectly _ | FinalDef _ -> None
+    | Ast.NotParsedCorrectly _ | Ast.FinalDef _ -> None
     )
   in
   (* cache all those entities. todo: use marshalled form? for GC? *)

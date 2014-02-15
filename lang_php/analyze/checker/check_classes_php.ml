@@ -35,7 +35,7 @@ module G = Graph_code
 (*****************************************************************************)
 (* Wrappers *)
 (*****************************************************************************)
-let pr2, pr2_once = Common2.mk_pr2_wrappers Flag_analyze_php.verbose_checking
+let _pr2, pr2_once = Common2.mk_pr2_wrappers Flag_analyze_php.verbose_checking
 
 (*****************************************************************************)
 (* Types *)
@@ -177,7 +177,7 @@ let visit_f_body f_body current_class graph=
               (match Graph_code_php.lookup_inheritance graph 
                   (Graph_code_php.R class_str, f^"=")
                   () with
-              | Some ((Graph_code_php.R full_name, _), _) ->
+              | Some ((Graph_code_php.R _full_name, _), _) ->
                 (* This is most likely correct, see :ui:base::renderAndProcess()
                    let suggest =
                    (spf "%s=$this->getAttribute(\'%s\')" f f, 1) in
@@ -226,7 +226,7 @@ let visit_and_check  find_entity prog =
       let is_trait =
         match def.c_type with Trait _ -> true | _ -> false in
 
-      def.c_extends +> Common.do_option (fun (tok, parent) ->
+      def.c_extends +> Common.do_option (fun (_tok, parent) ->
         let parent = name_of_class_name parent in
         E.find_entity_and_warn find_entity (Ent.Class Ent.RegularClass, parent)
           (fun _ ->
@@ -244,11 +244,11 @@ let visit_and_check  find_entity prog =
 
     V.kexpr = (fun (k,vx) x ->
       match x with
-      | New (tok, ((Id (class_name))), args) ->
+      | New (_tok, ((Id (class_name))), _args) ->
           (* todo: use lookup_method *)
           E.find_entity_and_warn find_entity (Ent.Class Ent.RegularClass,
                                              class_name)
-          (function Ast_php.ClassE def ->
+          (function Ast_php.ClassE _def ->
             (*
               Check_functions_php.check_args_vs_params
               (callname,   args +> Ast.unparen +> Ast.uncomma)
@@ -267,7 +267,7 @@ let visit_and_check  find_entity prog =
           );
           k x
 
-      | New (tok, (_ ), args) ->
+      | New (_tok, (_ ), _args) ->
           (* can't do much *)
           k x
 
@@ -323,10 +323,10 @@ let visit_and_check  find_entity prog =
 
 
 
-      | ClassGet (Id (classname), tok, Id (XName [QI (Name("class", _))])) ->
+      | ClassGet (Id _classname, _tok, Id (XName [QI (Name("class", _))])) ->
         ()
 
-      | ClassGet (Id (classname), tok, Id name) ->
+      | ClassGet (Id classname, tok, Id name) ->
           check_class_constant (Ast.str_of_name classname, Ast.str_of_name name) tok
             find_entity
 
@@ -339,7 +339,7 @@ let visit_and_check  find_entity prog =
       | ObjGet (lval, tok, Id name) ->
           let field = Ast.str_of_name name in
           (match lval, !in_class with
-          | This _, Some (aclass, is_abstract) ->
+          | This _, Some (aclass, _is_abstract) ->
               check_member_access ObjAccess (aclass, field) tok find_entity
           (* todo: need dataflow ... *)
           | _, _ -> ()

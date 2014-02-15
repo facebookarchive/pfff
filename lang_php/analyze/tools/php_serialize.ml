@@ -100,11 +100,6 @@ let string_init len f =
   done;
   s
 
-
-let check x y = 
-  if x <> y 
-  then failwith (Printf.sprintf "Php_serialize failed : %u <> %u" x y)
-
 (*****************************************************************************)
 (* Serialized string -> php *)
 (*****************************************************************************)
@@ -156,35 +151,6 @@ let parse stream =
 let parse_string = parse $ Stream.of_string
 
 (*****************************************************************************)
-(* Combinators for easy deconstruction *)
-(*****************************************************************************)
-
-exception Error of string
-
-let fail v str = 
-  raise (Error (Printf.sprintf "%s : %s" str (Common.dump v)))
-
-let int = function I n -> n | x -> fail x "int"
-let str = function S s -> s | x -> fail x "str"
-
-let opt k x = try Some (k x) with Error _ -> None
-
-let values f = function
-  | AS a -> List.map (f $ snd) a
-  | AI a -> List.map (f $ snd) a
-  | x -> fail x "values"
-
-let array f = function
-  | AS a -> List.map (fun (k,v) -> k, f v) a
-  | x -> fail x "array"
-
-let assoc php name =
-  match php with
-  | AS a -> List.assoc name a
-  | _ -> fail php "assoc"
-
-
-(*****************************************************************************)
 (* php -> Serialized string *)
 (*****************************************************************************)
 
@@ -192,94 +158,12 @@ module Out = struct
 
 (** Combinators to build values of [php] type *)
 
-let str s = S s
-let int n = I n
-
 (* pad: from extList.ml *)
-type 'a mut_list =  {
-	hd: 'a; 
-	mutable tl: 'a list
-}
-let dummy_node () = { hd = Obj.magic (); tl = [] }
-external inj : 'a mut_list -> 'a list = "%identity"
-let list_of_enum e =
-	let h = dummy_node() in
-	let _ = Enum.fold (fun x acc ->
-		let r = { hd = x; tl = [] }  in
-		acc.tl <- inj r;
-		r) h e in
-	h.tl
-
-
-
-let  array f e = AI (e >> Enum.mapi (fun i x  -> i, f x) >> list_of_enum)
-let iarray f e = AI (e >> Enum.map (fun (k,v) -> k, f v) >> list_of_enum)
-let sarray f e = AS (e >> Enum.map (fun (k,v) -> k, f v) >> list_of_enum)
 
 (** Serialize [php] value *)
 
 (* pad:from IO.ml *)
-type 'a output = {
-	mutable out_write : char -> unit;
-	mutable out_output : string -> int -> int -> int;
-	mutable out_close : unit -> 'a;
-	mutable out_flush : unit -> unit;
-}
-let output o s p l =
-	let sl = String.length s in
-	if p + l > sl || p < 0 || l < 0 then invalid_arg "IO.output";
-	o.out_output s p l
-let nwrite o s =
-	let p = ref 0 in
-	let l = ref (String.length s) in
-	while !l > 0 do
-		let w = o.out_output s !p !l in
-		if w = 0 then raise Sys_blocked_io;
-		p := !p + w;
-		l := !l - w;
-	done
-let io_write o x = o.out_write x
-let io_printf o fmt =
-	Printf.kprintf (fun s -> nwrite o s) fmt
-let io_output_string () =
-  let b = Buffer.create 0 in
-  {
-    out_write = (fun c ->
-      Buffer.add_char b c
-    );
-    out_output = (fun s p l ->
-      Buffer.add_substring b s p l;
-      l
-    );
-    out_close = (fun () -> Buffer.contents b);
-    out_flush = (fun () -> ());
-  }
-exception Output_closed
-let io_close_out o =
-	let f _ = raise Output_closed in
-	let r = o.out_close() in
-	o.out_write <- f;
-	o.out_output <- f;
-	o.out_close <- f;
-	o.out_flush <- f;
-	r
 
-
-
-let output out v =
-  let put_arr f a = 
-    io_printf out "a:%u:{" (List.length a); List.iter f a; 
-    io_write out '}' in
-  let rec put = function
-    | AS a -> put_arr (fun (k,v) -> put (S k); put v) a
-    | AI a -> put_arr (fun (k,v) -> put (I k); put v) a
-    | I n -> io_printf out "i:%i;" n
-    | B b -> io_printf out "b:%u;" (if b then 1 else 0)
-    | F f -> io_printf out "d:%f;" f
-    | N -> nwrite out "N;"
-    | S s -> io_printf out "s:%u:\"%s\";" (String.length s) s
-  in
-  put v
 
 end
 (*

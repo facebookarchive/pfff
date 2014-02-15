@@ -152,12 +152,12 @@ let stat_of_program ?(hooks=default_hooks) h file ast =
           Common.save_excursion current_node (CG.Method (s, fake))(fun()->
             k x
           )
-      | TypeDef def ->
-        failwith "TODO: support for typedefs"
+      | TypeDef _def ->
+          failwith "TODO: support for typedefs"
       | NamespaceDef _ | NamespaceBracketDef _ 
       | NamespaceUse _
         ->
-        failwith "TODO: support for namespace"
+          failwith "TODO: support for namespace"
 
       | StmtList _ -> 
           k x
@@ -193,7 +193,7 @@ let stat_of_program ?(hooks=default_hooks) h file ast =
           k x
       );
     );
-    V.kname = (fun (k,_) x ->
+    V.kname = (fun (_k,_) x ->
       (match x with
       | Self _ | Parent _ | XName _ -> ()
       | LateStatic _ -> inc "Late static"
@@ -204,21 +204,21 @@ let stat_of_program ?(hooks=default_hooks) h file ast =
       | Eval _ -> inc "Eval"
       | Lambda _ -> inc "lambda"
 
-      | Include (_, e) | IncludeOnce (_, e)
-      | Require (_, e) | RequireOnce (_, e)
+      | Include (_, _e) | IncludeOnce (_, _e)
+      | Require (_, _e) | RequireOnce (_, _e)
           -> 
           inc "include/require"
           (* todo: resolve? *)
 
       | Yield _ | YieldBreak _ -> inc "yield"
 
-      | ObjGet (lval, _, Id name) ->
+      | ObjGet (lval, _, Id _name) ->
           (match lval with
           | This _ -> inc "obj access with $this"
           | _ -> inc "obj access not $this"
           )
 
-      | ClassGet (lval, _, _) ->
+      | ClassGet (_lval, _, _) ->
           inc "DynamicClassVar"
 
       | Call (ClassGet(_, _, Id _), _) -> 
@@ -228,7 +228,7 @@ let stat_of_program ?(hooks=default_hooks) h file ast =
       | Call (ClassGet (_, _, _), _args) ->
           inc "static method call Dynamic"
 
-      | Call (ObjGet(lval, _, Id name), xs) ->
+      | Call (ObjGet(lval, _, Id name), _xs) ->
           (* look at lval if simple form *)
           (match lval with
           | This _ -> 
@@ -260,7 +260,7 @@ let stat_of_program ?(hooks=default_hooks) h file ast =
 (*****************************************************************************)
 
 let stat2_of_program ast =
-  let (funcs, classes, topstmts) = 
+  let (funcs, classes, _topstmts) = 
     Lib_parsing_php.functions_methods_or_topstms_of_program ast in
 
   let _stat = { (default_stat2 ()) with
@@ -271,5 +271,5 @@ let stat2_of_program ast =
   raise Todo
 
 
-let kind_of_file_using_stat stat =
+let kind_of_file_using_stat _stat =
   raise Todo

@@ -75,24 +75,24 @@ type increq =
 let rec increq_expr_of_expr e = 
   match e with
 
-  | (Sc(C(String((sfilemame, i_1))))) ->
+  | (Sc(C(String((sfilemame, _))))) ->
       Direct sfilemame
 
   (* generated from ./ffi -dump_php_ml ../tests/require_classic.php *)
   | (Binary(
       ((
-        (ArrayGet(IdVar(darray, scope_ref),
-                     (i_4, Some((Sc(C(String((sfld, i_5)))))), i_7))
-        ))), (BinaryConcat, i_10),
-      (Sc(C(String((sfilename, i_11)))))))
+        (ArrayGet(IdVar(darray, _scope_ref),
+                     (_, Some((Sc(C(String((sfld, _)))))), _))
+        ))), (BinaryConcat, _0),
+      (Sc(C(String((sfilename, _1)))))))
     -> 
       ConcatArrrayVar (darray, sfld, sfilename)
 
   (* generated from ./ffi -dump_php_ml ../tests/require_classic_bis.php *)
   | (Binary(
-      (IdVar(dvar, scope_ref)),
-      (BinaryConcat, i_5),
-      (Sc(C(String((sfilename, i_6))))
+      (IdVar(dvar, _scope_ref)),
+      (BinaryConcat, _),
+      (Sc(C(String((sfilename, _))))
       )))
     ->
       ConcatVar (dvar, sfilename)
@@ -102,96 +102,96 @@ let rec increq_expr_of_expr e =
       (Binary(
         (ArrayGet(
             (IdVar(darray, _scope)),
-            (i_4,
-            Some((Sc(C(String((sfld, i_5)))))),
-            i_7))
-        ), (BinaryConcat, i_10),
-        (Sc(C(String((sfilename1, i_11))))))), 
-         (BinaryConcat, i_14),
-      (Sc(C(String((sfilename2, i_15))))
+            (_,
+            Some((Sc(C(String((sfld, _)))))),
+            _))
+        ), (BinaryConcat, _0),
+        (Sc(C(String((sfilename1, _1))))))), 
+         (BinaryConcat, _4),
+      (Sc(C(String((sfilename2, _5))))
       )))
     -> 
       ConcatArrrayVar (darray, sfld, sfilename1 ^ sfilename2)
 
   (* ./ffi -dump_php_ml ../tests/require_dirname.php *)
   | (Binary(
-      (Call(Id (XName[QI (Name(("dirname", i_2)))]),
-                      (i_3,
+      (Call(Id (XName[QI (Name(("dirname", _)))]),
+                      (_,
                       [Left (Arg(
-                        (Sc(C(PreProcess(((File, i_4))))))))],
-                      i_6))), 
-        (BinaryConcat, i_9),
-      (Sc(C(String((sfilename, i_10)))))))
+                        (Sc(C(PreProcess(((File, _))))))))],
+                      _))), 
+        (BinaryConcat, _),
+      (Sc(C(String((sfilename, _0)))))))
     ->
       ConcatDirname(sfilename)
   (* __DIR__ . 'file' *)
-  | Binary(Sc(C(PreProcess((Dir, i_13)))), (BinaryConcat, i_14),
-          Sc(C(String((sfilename, i_15)))))
+  | Binary(Sc(C(PreProcess((Dir, _3)))), (BinaryConcat, _4),
+          Sc(C(String((sfilename, _5)))))
     -> ConcatDirname(sfilename)
 
   (* ./ffi -dump_php_ml ../tests/require_realpath.php *)
   | (Binary(
-      (Call(Id (XName[QI (Name(("realpath", i_2)))]),
-                      (i_3,
+      (Call(Id (XName[QI (Name(("realpath", _)))]),
+                      (_,
                       [Left (Arg(
-                        (Call(Id (XName[QI (Name(("dirname", i_4)))]),
-                                        (i_5,
+                        (Call(Id (XName[QI (Name(("dirname", _)))]),
+                                        (_,
                                         [Left (Arg(
                                           (Sc(
-                                            C(PreProcess(((File, i_6)))))
+                                            C(PreProcess(((File, _)))))
                                           )))],
-                                        i_8))
+                                        _))
                         )))],
-                      i_11))
-      ), (BinaryConcat, i_14),
+                      _1))
+      ), (BinaryConcat, _4),
       (Sc(
-        C(String((sfilename, i_15))))
+        C(String((sfilename, _5))))
       ))) 
     ->
       ConcatRealpathDirname(sfilename)
 
   | (Binary(
-      (Call(Id (XName[QI (Name(("realpath", i_2)))]),
-                      (i_3,
+      (Call(Id (XName[QI (Name(("realpath", _)))]),
+                      (_,
                       [Left (Arg(
                         (Binary(
-                          (Call(Id (XName[QI (Name(("dirname", i_4)))]),
-                                          (i_5,
+                          (Call(Id (XName[QI (Name(("dirname", _)))]),
+                                          (_,
                                           [Left Arg((
                                             (Sc(
-                                              C(PreProcess(((File, i_6)))))
+                                              C(PreProcess(((File, _)))))
                                             )))],
-                                          i_8))
-                          ), (BinaryConcat, i_11),
-                          (Sc(C(String((sfilename1, i_12))))))
+                                          _))
+                          ), (BinaryConcat, _1),
+                          (Sc(C(String((sfilename1, _2))))))
                         )))],
-                      i_15))
+                      _5))
         ), 
-      (BinaryConcat, i_18),
-      (Sc(C(String((sfilename2, i_19))))
+      (BinaryConcat, _8),
+      (Sc(C(String((sfilename2, _9))))
       )))
     ->
       ConcatRealpathDirname(sfilename1 ^ sfilename2)
 
   (* ./ffi -dump_php_ml ../tests/require_realpath3.php *)
-  | (Call(Id (XName[QI (Name(("realpath", i_2)))]),
-                    (i_3,
+  | (Call(Id (XName[QI (Name(("realpath", _)))]),
+                    (_,
                     [Left (Arg(
                       (Binary(
-                        (Call(Id (XName[QI (Name(("dirname", i_4)))]),
-                                        (i_5,
+                        (Call(Id (XName[QI (Name(("dirname", _)))]),
+                                        (_,
                                         [Left (Arg(
                                           (Sc(
-                                            C(PreProcess(((File, i_6)))))
+                                            C(PreProcess(((File, _)))))
                                           )))],
-                                        i_8))
-                        ), (BinaryConcat, i_11),
+                                        _))
+                        ), (BinaryConcat, _1),
                         (Sc(
                           C(
-                            String((sfilename, i_12))))
+                            String((sfilename, _2))))
                        ))
                     )))],
-                i_15))
+                _5))
           )
       ->
       ConcatRealpathDirname(sfilename)
@@ -199,16 +199,16 @@ let rec increq_expr_of_expr e =
 
   (* ./ffi -dump_php_ml ../tests/require_constant_concat.php *)
   | (Binary((Id(XName[QI (name)])),
-           (BinaryConcat, i_4),
-           (Sc(C(String((sfilename, i_5)))))))
+           (BinaryConcat, _),
+           (Sc(C(String((sfilename, _)))))))
     ->
       ConcatConstant (name, sfilename)
 
   (* ./ffi -dump_php_ml ../tests/require_classic_bis2.php *)
   | (Sc(
-      Guil(i_3,
+      Guil(_,
           [EncapsVar(IdVar(dname, _scope));
-           EncapsString((sfilename, i_6))], i_7)))
+           EncapsString((sfilename, _))], _)))
     ->
       ConcatVar (dname, sfilename)
 
@@ -246,7 +246,7 @@ let filename_concat dir file =
 
 let all_increq_of_any = 
   V.do_visit_with_ref (fun aref -> { V.default_visitor with
-    V.kexpr = (fun (k, bigf) x ->
+    V.kexpr = (fun (k, _) x ->
       match increq_of_include_stmt x with
       | Some require -> Common.push2 require aref;
       | None -> 
@@ -260,7 +260,7 @@ let top_increq_of_program asts =
   let stmts = Lib_parsing_php.top_statements_of_program asts in
   stmts +> Common.map_filter (fun st ->
     match st with
-    | ExprStmt (e, tok) -> 
+    | ExprStmt (e, _tok) -> 
         increq_of_include_stmt e
     | _ -> None
   )
@@ -319,9 +319,9 @@ let resolve_path (env, pwd) incexpr =
        Some (filename_concat pwd filename)
        
 
-   | SimpleVar dname -> 
+   | SimpleVar _dname -> 
        None
-   | Other e ->
+   | Other _e ->
        None
 
 
@@ -344,6 +344,8 @@ let includes_of_file env file =
 
 type algo = Dfs | Bfs
 let default_algo = Dfs
+
+let _ignore = Bfs
 
 let recursive_included_files_of_file 
  ?(verbose=false)

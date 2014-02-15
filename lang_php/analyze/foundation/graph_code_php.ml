@@ -189,7 +189,7 @@ let magic_methods str =
  *)
 let look_like_class_sure =
   Str.regexp "^\\([A-Z][A-Za-z_0-9]*\\)\\(::[A-Za-z_0-9]*\\)$"
-let look_like_class_maybe =
+let _look_like_class_maybe =
   Str.regexp "^\\([A-Z][A-Za-z_0-9]*[A-Z][A-Za-z_0-9]*\\)$"
 
 let look_like_class s =
@@ -252,12 +252,12 @@ let prune_special_root xs =
   | _ -> xs
 
 (* http://www.php.net/manual/en/language.namespaces.rules.php *)
-let fully_qualified_candidates cur name kind =
+let fully_qualified_candidates cur name _kind =
   match name with
   | [] -> raise Impossible
   | ("__special__ROOT",_)::xs -> 
       [xs]
-  | ("__special__namespace",_)::xs ->
+  | ("__special__namespace",_)::_xs ->
       failwith "namespace keyword not handled in qualifier"
   | (str, _tokopt)::xs  ->
     try
@@ -273,7 +273,7 @@ let (strtok_of_name: env -> Ast.name -> Database_code.entity_kind ->
  fun env name kind ->
    let tokopt =
      match name with
-     | (ident, tokopt)::rest -> tokopt
+     | (_ident, tokopt)::_rest -> tokopt
      | [] -> raise Impossible
    in
    let candidates = fully_qualified_candidates env.cur name kind in
@@ -621,7 +621,7 @@ let add_use_edge_lookup ?(xhp=false) env a b =
  * todo: this is buggy, you can't use lookup_inheritance in the
  * inheritance phase! have a phase_inheristance2!
 *)
-let adjust_edge_protected env fld parent =
+let _adjust_edge_protected _env _fld _parent =
   raise Todo
 (*
   let env = { env with phase = Inheritance } in
@@ -677,7 +677,7 @@ and stmt_toplevel_list env xs =
           match sopt, List.rev qu with
           | Some (str, _tok), _ -> str
           | None, [] -> raise Impossible
-          | None, (str,_tok)::rest -> str
+          | None, (str,_tok)::_rest -> str
         in
         let import_rules = (new_name, qu)::env.cur.import_rules in
         stmt_toplevel_list { env with cur = { env.cur with import_rules }} xs
@@ -737,7 +737,7 @@ and stmt_bis env x =
       finallys env (fs)
 
   | StaticVars xs ->
-      xs +> List.iter (fun (name, eopt) -> Common2.opt (expr env) eopt)
+      xs +> List.iter (fun (_name, eopt) -> Common2.opt (expr env) eopt)
   (* could add entity for that? *)
   | Global xs -> exprl env xs
 
@@ -909,7 +909,7 @@ and expr env x =
    * relevant analysis of such identifiers, here we care more about Id
    * dependencies.
    *)
-  | Var ident -> ()
+  | Var _ident -> ()
 
   (* -------------------------------------------------- *)
   | Call (e, es) ->
@@ -943,7 +943,7 @@ and expr env x =
     | Obj_get (e1, Id name2) ->
         (match e1 with
         (* handle easy case *)
-        | This ((x, tokopt)) ->
+        | This ((_x, tokopt)) ->
             expr env 
                 (Call (Class_get (Id[ (env.cur.self, tokopt)], Id name2), es));
             env.phase_dispatch +> Common.push2 (env.cur, name2);
@@ -975,7 +975,7 @@ and expr env x =
       | Id[ ("__special__static", tokopt)], _ ->
           expr env (Class_get (Id[ (env.cur.self, tokopt)], e2))
 
-      | Id name1, Id ["__special__class", tokopt] ->
+      | Id _name1, Id ["__special__class", _tokopt] ->
         ()
 
       | Id name1, Id [name2] ->
@@ -1056,8 +1056,6 @@ and expr env x =
   
 
 and array_value env x = expr env x
-and vector_value env e = expr env e
-and map_value env (e1, e2) = exprl env [e1; e2]
 
 and xml env x =
   add_use_edge env ([x.xml_tag], E.Class E.RegularClass);
@@ -1068,14 +1066,12 @@ and xml env x =
   x.xml_body +> List.iter (xhp env)
 
 and xhp env = function
-  | XhpText s -> ()
+  | XhpText _s -> ()
   | XhpExpr e -> expr env e
   | XhpXml x -> xml env x
 
 and exprl         env xs = List.iter (expr env) xs
 and array_valuel  env xs = List.iter (array_value env) xs
-and vector_valuel env xs = List.iter (vector_value env) xs
-and map_valuel    env xs = List.iter (map_value env) xs
 
 (*****************************************************************************)
 (* Main entry point *)
@@ -1194,7 +1190,7 @@ let build
       env.log (spf " dupe = %s" (ex_file));
     (* probably local functions to a script duplicated in independent files,
      * most should have also been renamed, see env.dupe_renaming *)
-    | n, 0 -> ()
+    | _n, 0 -> ()
     | _ -> raise Impossible
     )
   ));

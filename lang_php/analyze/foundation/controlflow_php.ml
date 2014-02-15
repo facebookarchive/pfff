@@ -183,10 +183,10 @@ let find_enter cfg = find_node (fun node -> node.n = Enter) cfg
 
 
 (*s: controlflow_php accessors *)
-let (first_node : flow -> Ograph_extended.nodei) = fun flow ->
+let (first_node : flow -> Ograph_extended.nodei) = fun _flow ->
   raise Todo
 
-let (mk_node: node_kind -> node) = fun nk ->
+let (mk_node: node_kind -> node) = fun _nk ->
   raise Todo
 (*e: controlflow_php accessors *)
 
@@ -194,7 +194,7 @@ let (mk_node: node_kind -> node) = fun nk ->
 (* using internally graphviz dot and ghostview on X11 *)
 let (display_flow: flow -> unit) = fun flow ->
   flow +> Ograph_extended.print_ograph_mutable_generic  
-    ~s_of_node:(fun (nodei, node) -> 
+    ~s_of_node:(fun (_nodei, node) -> 
       short_string_of_node_kind node.n, None, None
     )
 (*e: function display_flow *)

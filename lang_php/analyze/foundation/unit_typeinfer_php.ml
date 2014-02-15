@@ -20,12 +20,6 @@ let normalize t =
   let env = Env_typing_php.make_env () in
   InferH.Normalize.normalize env t
 
-let to_string env t =
-  let buf = Buffer.create 256 in
-  let o   = Buffer.add_string buf in
-  let ()  = InferH.Print.show_type env o t in
-  Buffer.contents buf
-
 let get_signature file =
   let ast = 
     Parse_php.tmp_php_file_from_string file

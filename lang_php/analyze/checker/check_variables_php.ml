@@ -432,7 +432,7 @@ and func_def env def =
     bailout = ref false;
   }
   in
-  def.l_uses +> List.iter (fun (is_ref, name) ->
+  def.l_uses +> List.iter (fun (_is_ref, name) ->
     let (s, tok) = s_tok_of_ident name in
     check_defined ~incr_count:true { env with vars = ref oldvars} name;
     (* don't reuse same access count reference; the variable has to be used
@@ -535,7 +535,7 @@ and stmt env = function
  * todo? could use local ? could have a UnusedExceptionParameter ?
  * less: could use ref 1, the exception is often not used
  *)
-and catch env (hint_type, name, xs) =
+and catch env (_hint_type, name, xs) =
   let (s, tok) = s_tok_of_ident name in
   env.vars := Map_poly.add s (tok, S.LocalExn, ref 0) !(env.vars);
   stmtl env xs
@@ -600,7 +600,7 @@ and expr env = function
   | Var name ->
       check_defined ~incr_count:true env name
 
-  | Id name -> ()
+  | Id _name -> ()
 
   | Assign (None, e1, e2) ->
       (* e1 should be an lvalue *)
@@ -629,7 +629,7 @@ and expr env = function
                 | None ->
                     env.vars := Map_poly.add s (tok, S.ListBinded, shared_ref)
                       !(env.vars);
-                | Some (_tok, scope, access_cnt) ->
+                | Some (_tok, _scope, _access_cnt) ->
                     ()
                 )
             | ((Array_get _ | Obj_get _ | Class_get _) as e) ->
@@ -653,7 +653,7 @@ and expr env = function
            *)
           expr env e1
 
-      | Call (Id[(("__builtin__eval_var", _) as name)], args) ->
+      | Call (Id[(("__builtin__eval_var", _) as name)], _args) ->
           env.bailout := true;
           E.warning (tok_of_ident name) E.DynamicCode
 
@@ -666,16 +666,16 @@ and expr env = function
 
   | Assign (Some _, e1, e2) ->
       exprl env [e1;e2]
-  | List xs ->
+  | List _xs ->
       failwith "list(...) should be used only in an Assign context"
-  | Arrow (e1, e2) ->
+  | Arrow (_e1, _e2) ->
       failwith "... => ... should be used only in ConsArray or Foreach context"
 
   (* A mention of a variable in a unset() should not be really
    * considered as a use of variable. There should be another
    * statement in the function that actually uses the variable.
    *)
-  | Call (Id[ ("__builtin__unset", tok)], args) ->
+  | Call (Id[ ("__builtin__unset", _tok)], args) ->
       args +> List.iter (function
         (* should be an lvalue again *)
         (* less: The use of 'unset' on a variable is still not clear to me. *)
@@ -693,7 +693,7 @@ and expr env = function
             raise Todo
       )
   (* special case, could factorize maybe with pass_var_by_ref *)
-  | Call (Id[ ("sscanf", tok)], x::y::vars) ->
+  | Call (Id[ ("sscanf", _tok)], x::y::vars) ->
       (* what if no x and y? wrong number of arguments, not our business here*)
       expr env x;
       expr env y;
@@ -709,12 +709,12 @@ and expr env = function
    *  maybe we should have a bailout_vars and skip further errors on $x.
    * todo: could have isset(Array_get(...) there too no?
    *)
-  | Call (Id[ ("__builtin__isset", tok)], [Var (name)]) ->
+  | Call (Id[ ("__builtin__isset", _tok)], [Var _name]) ->
       ()
   (* http://php.net/manual/en/function.empty.php
    * "empty() does not generate a warning if the variable does not exist."
    *)
-  | Call (Id[ ("__builtin__empty", tok)], [Var (name)]) ->
+  | Call (Id[ ("__builtin__empty", _tok)], [Var _name]) ->
       ()
 
 
@@ -725,7 +725,7 @@ and expr env = function
       E.warning (tok_of_ident name) E.DynamicCode
 
       (* facebook specific? should be a hook instead to visit_prog? *)
-  | Call(Id[("param_post"|"param_get"|"param_request"|"param_cookie"as kind,tok)],
+  | Call(Id[("param_post"|"param_get"|"param_request"|"param_cookie"as kind,_)],
         (ConsArray (array_args))::rest_param_xxx_args) ->
 
       (* have passed a 'prefix' arg, or nothing *)
@@ -776,7 +776,7 @@ and expr env = function
               match args, params with
               | [], [] -> []
               (* more params than arguments, maybe because default parameters *)
-              | [], y::ys -> []
+              | [], _y::_ys -> []
               (* more arguments than params, maybe because func_get_args() *)
               | x::xs, [] -> (x, None)::zip xs []
               | x::xs, y::ys -> (x, Some y)::zip xs ys
@@ -792,7 +792,7 @@ and expr env = function
          * environment in strict mode? and if they are, shout because of
          * bad practice?
          *)
-        | Assign (None, Var name, e2), _ ->
+        | Assign (None, Var _name, e2), _ ->
             expr env e2
         (* a variable passed by reference, this can considered a new decl *)
         | Var name, Some {Ast_php.p_ref = Some _;_} ->
@@ -824,7 +824,7 @@ and expr env = function
       (* with 'echo $o->$v' we have a dynamic field, we need to visit
        * e2 to mark $v as used at least.
        *)
-      | Id name  -> ()
+      | Id _name  -> ()
       | _ -> expr env e2
       )
 
@@ -868,22 +868,17 @@ and array_value env x =
   | Arrow (e1, e2) -> exprl env [e1; e2]
   | e -> expr env e
 
-and vector_value env e = expr env e
-and map_value env (e1, e2) = exprl env [e1; e2]
-
 and xml env x =
-  x.xml_attrs +> List.iter (fun (name, xhp_attr) -> expr env xhp_attr);
+  x.xml_attrs +> List.iter (fun (_name, xhp_attr) -> expr env xhp_attr);
   x.xml_body +> List.iter (xhp env)
 
 and xhp env = function
-  | XhpText s -> ()
+  | XhpText _s -> ()
   | XhpExpr e -> expr env e
   | XhpXml x -> xml env x
 
 and exprl env xs = List.iter (expr env) xs
 and array_valuel env xs = List.iter (array_value env) xs
-and vector_valuel env xs = List.iter (vector_value env) xs
-and map_valuel env xs = List.iter (map_value env) xs
 
 (* ---------------------------------------------------------------------- *)
 (* Misc *)
@@ -908,7 +903,7 @@ and constant_def env def =
   expr env def.cst_body
 
 (* type definitions do not contain any variables *)
-and typedef_def env def =
+and typedef_def _env _def =
   ()
 
 and class_var env v =

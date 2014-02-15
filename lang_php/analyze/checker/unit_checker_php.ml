@@ -117,7 +117,7 @@ let unittest =
   in
   
   (* diff report *)
-  let (common, only_in_expected, only_in_actual) = 
+  let (_common, only_in_expected, only_in_actual) = 
     Common2.diff_set_eff expected_errors actual_errors in
 
   only_in_expected +> List.iter (fun (src, l) ->

@@ -12,10 +12,7 @@
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the file
  * license.txt for more details.
  *)
-
 open Common
-
-open Ast_php
 
 module Xml = Xml_parse
 
@@ -49,7 +46,7 @@ module Xml = Xml_parse
 
 (* e.g. array-intersect.xml -> array_intersect *)
 let function_name_of_xml_filename filename =
-  let (d,b,e) = Common2.dbe_of_filename filename in
+  let (_d,b,e) = Common2.dbe_of_filename filename in
   if e <> "xml" then failwith "not a xml file";
 
   Str.global_replace (Str.regexp "-") "_" b
@@ -85,7 +82,7 @@ let extract_useful_doc xml =
   let programlisting = ref "" in
   let screen = ref "" in
   
-  xml +> Xml_utils.iter_rec (fun (s, attrs, body) ->
+  xml +> Xml_utils.iter_rec (fun (s, _attrs, body) ->
     match s with
     | "refpurpose" -> 
         refpurpose := extract_text_xml_list body

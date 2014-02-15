@@ -119,7 +119,7 @@ module Deps = struct
     | Collection ([(n,_)], mel) -> 
       let acc = SSet.add n acc in
       array_valuel acc mel
-    | Collection (name, mel) -> 
+    | Collection (name, _mel) -> 
       raise (Ast_php.TodoNamespace (tok_of_name name))
     | List el -> exprl acc el
     | New (e, el) -> exprl (expr acc e) el
@@ -274,7 +274,7 @@ module TopoSort = struct
   let rec sort (g: SSet.t SMap.t ref) =
     let g = !g in
     let colors = SMap.empty in
-    let colors, acc =
+    let _colors, acc =
       SMap.fold (
       fun x _ colors_acc ->
         edge g [] colors_acc x

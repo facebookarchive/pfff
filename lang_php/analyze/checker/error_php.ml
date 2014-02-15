@@ -163,7 +163,7 @@ let string_of_error_kind error_kind =
   | UndefinedEntity(kind, name) ->
       spf "Undefined %s %s" (Entity_php.string_of_id_kind kind) name
 
-  | MultiDefinedEntity(kind, name, (ex1, ex2)) ->
+  | MultiDefinedEntity(kind, name, (_ex1, _ex2)) ->
      (* todo? one was declared: %s and the other %s    or use tbgs ... *)
       spf "Multiply defined %s %s"(Entity_php.string_of_id_kind kind)
         name
@@ -172,10 +172,10 @@ let string_of_error_kind error_kind =
   | UndefinedMethodInAbstractClass (name) ->
       spf "Undefined method in abstract class: %s" name
 
-  | TooManyArguments defname ->
+  | TooManyArguments _defname ->
      (* todo? function was declared: %s     or use tbgs ... *)
       "Too many arguments"
-  | NotEnoughArguments defname ->
+  | NotEnoughArguments _defname ->
      (* todo? function was declared: %s    or use tbgs *)
       "Not enough arguments"
   | WrongKeywordArgument(dn, param, severity) ->
@@ -343,7 +343,7 @@ let rank_of_error_kind err_kind =
    * to call code from lib/. This is whitelisted by checkModule
    * but fortunately not by scheck!
    *)
-  | UndefinedEntity (kind, s) -> 
+  | UndefinedEntity (kind, _s) -> 
     (match kind with
     (* todo: too many for now *)
     | Database_code.ClassConstant -> Less
@@ -385,11 +385,11 @@ let rank_of_error_kind err_kind =
   (* have false positives when pass variables by reference, but they 
    * can be reduced by using --heavy.
    *)
-  | UseOfUndefinedVariable (s, suggest) -> 
+  | UseOfUndefinedVariable (_s, suggest) -> 
       (match suggest with
       (* todo: still too many fps, even with --heavy for now :( *)
       | None -> Less
-      | Some (s2, i) ->
+      | Some (_s2, i) ->
           (match i with
           | 1 ->  ReallyImportant
           | 2 -> Less
@@ -439,10 +439,10 @@ let rank_of_error_kind err_kind =
               ( "invariant_violation" | "_piranha_rollback_log"), _))]), _args)
               ) -> Never
 
-          | (Yield(i_1,
-               (Call(Id (XName[QI (Name(("result", i_2)))]),
-                 (i_3, [Left(Arg((Id(XName[QI (Name(("null", i_4)))]))))],
-                i_6))
+          | (Yield(_,
+               (Call(Id (XName[QI (Name(("result", _)))]),
+                 (_, [Left(Arg((Id(XName[QI (Name(("null", _)))]))))],
+                _))
                ))) -> Never
 
           | _ -> Ok
@@ -487,7 +487,7 @@ let show_10_most_recurring_unused_variable_names () =
 
   !_errors +> List.iter (fun err ->
     match err.typ with
-    | UnusedVariable (dname, scope) ->
+    | UnusedVariable (dname, _scope) ->
         hcount_str#update dname (fun old -> old+1);
     | _ -> ()
   );
@@ -498,6 +498,7 @@ let show_10_most_recurring_unused_variable_names () =
       );
   ()
 
+(*
 let filter_false_positives err = 
   err +> Common.exclude (fun x ->
     match x.typ with
@@ -506,6 +507,7 @@ let filter_false_positives err =
     | UnusedVariable (_, Scope_code.Class) -> true
     | _ -> false
   )
+*)
 
 (*****************************************************************************)
 (* Wrappers *)
@@ -525,7 +527,7 @@ let (find_entity_and_warn:
    | [] ->
        fatal (Ast.info_of_name name) (UndefinedEntity (kind, str));
        
-   | x::y::xs ->
+   | x::_::_ ->
        if Hashtbl.mem h_already_error (kind, str)
        then ()
        else begin

@@ -95,15 +95,15 @@ let nblines_with_wc_cached file =
 let get_all_calls ?(is_directive_to_filter= (fun _ -> false)) =
   V.do_visit_with_ref (fun aref -> { V.default_visitor with
 
-    V.kexpr = (fun (k, vx) x ->
+    V.kexpr = (fun (k, _) x ->
       match x with
-      | New (tok, class_name_ref, args_opt) ->
+      | New (tok, _class_name_ref, _args_opt) ->
           (* can not use ')' here, so use the token for new *)
           Common.push2 (None, tok) aref;
 
           k x;
 
-      | Call (Id callname, (lp, args, rp)) ->
+      | Call (Id callname, (_, _args, rp)) ->
           let str = Ast_php.str_of_name callname in
           
           (* filter the require_module stuff that already skip
@@ -115,8 +115,8 @@ let get_all_calls ?(is_directive_to_filter= (fun _ -> false)) =
 
           k x
 
-      | Call (ClassGet(var, t1, Id methname), (lp, args, rp))
-      | Call (ObjGet(var, t1, Id methname), (lp, args, rp)) 
+      | Call (ClassGet(_var, _t1, Id methname), (_lp, _args, rp))
+      | Call (ObjGet(_var, _t1, Id methname), (_lp, _args, rp)) 
         ->
           let str = Ast_php.str_of_name methname in
           Common.push2 (Some str, rp) aref;
@@ -137,8 +137,7 @@ let get_all_call_lines_with_sanity_check
       
   let ast = 
     try Parse_php.parse_program file 
-    with
-    exn ->
+    with _exn ->
       pr2 (spf "PB: cant parse %s" file);
       []
   in
@@ -147,7 +146,7 @@ let get_all_call_lines_with_sanity_check
      
   let lines_calls = 
     calls 
-    +> List.map (fun (sopt, rp) -> Parse_info.line_of_info rp)
+    +> List.map (fun (_sopt, rp) -> Parse_info.line_of_info rp)
     +> Common2.set
   in
   let nb_lines_calls = List.length lines_calls in
@@ -211,7 +210,7 @@ let killall_php_process () =
  *)
 let coverage_tests 
  ?(phpunit_parse_trace = Phpunit.parse_one_trace)
- ?(skip_call = (function call -> false))
+ ?(skip_call = (function _call -> false))
  ~php_cmd_run_test
  ~all_test_files
  ()
@@ -395,7 +394,7 @@ let coverage_tests
  * would be costly. We really need a global here.
  *)
 let lines_coverage_from_tests
- ?(skip_call = (function call -> false))
+ ?(skip_call = (function _call -> false))
  ?is_directive_to_filter (* TODO: merge with skip_call *)
  ~php_cmd_run_test
  ~all_test_files
@@ -480,7 +479,7 @@ let lines_coverage_from_tests
     
   (* some sanity checks *)
   let h_all_files = Common.hashset_of_list all_files in
-  h#to_list +> List.iter (fun (file, hset) ->
+  h#to_list +> List.iter (fun (file, _hset) ->
     if not (Hashtbl.mem h_all_files file)
     then pr2
       (spf "file with coverage information %s not in list of files" file);

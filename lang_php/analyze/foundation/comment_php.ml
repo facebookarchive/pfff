@@ -208,7 +208,7 @@ let comment_before tok all_toks =
     )
   in
   match first_non_space with
-  | (Parser_php.T_COMMENT ii | Parser_php.T_DOC_COMMENT ii)::xs ->
+  | (Parser_php.T_COMMENT ii | Parser_php.T_DOC_COMMENT ii)::_xs ->
       Some ii
   | _ -> None
 
@@ -229,7 +229,7 @@ let comment_after tok all_toks =
     )
   in
   match first_non_space with
-  | (Parser_php.T_COMMENT ii | Parser_php.T_DOC_COMMENT ii)::xs ->
+  | (Parser_php.T_COMMENT ii | Parser_php.T_DOC_COMMENT ii)::_xs ->
       Some ii
   | _ -> None
 

@@ -64,7 +64,7 @@ let rec chain_ptrs heap v =
 let value_of_var s vars heap =
   let v = SMap.find s vars in
   match v with
-  | Vptr n ->
+  | Vptr _n ->
       chain_ptrs heap v
   | _ -> assert_failure "variable is not a Vptr"
 
@@ -84,7 +84,7 @@ let assert_value_at_checkpoint var file fpattern =
 
 let assert_final_value_at_checkpoint var file v =
   assert_value_at_checkpoint var file (function
-  | [Vptr n1; Vptr n2; x] -> x =*= v
+  | [Vptr _n1; Vptr _n2; x] -> x =*= v
   | _ -> false
   )
 
@@ -132,7 +132,7 @@ checkpoint(); // x:42
       let (heap, vars) = heap_of_program_at_checkpoint file in
       match value_of_var "$x" vars heap with
       (* variables in PHP are pointers to a pointer to a value ... *)
-      | [Vptr n1; Vptr n2; Vint 42] -> ()
+      | [Vptr _n1; Vptr _n2; Vint 42] -> ()
       | v -> assert_failure ("wrong value for $x: " ^ info heap v)
     );
 
@@ -145,7 +145,7 @@ checkpoint(); // x:'hello'
 " in
       assert_value_at_checkpoint "$x" file (function
       (* todo? it should maybe be "hello" without the newline *)
-      | [Vptr n1; Vptr n2; Vstring "hello\n"] -> true | _ -> false)
+      | [Vptr _n1; Vptr _n2; Vstring "hello\n"] -> true | _ -> false)
     );
 
     "aliasing" >:: (fun () ->

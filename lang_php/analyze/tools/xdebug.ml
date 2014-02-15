@@ -204,7 +204,7 @@ let php_has_xdebug_extension () =
 (* Helpers *)
 (*****************************************************************************)
 
-let sanitize_xdebug_expr_for_parser2 str = 
+let sanitize_xdebug_expr_for_parser2 _str = 
 
 (* Str is buggy 
   let str = Str.global_replace 
@@ -296,7 +296,7 @@ let regexp_out =
 (* example:
  *   0.0009      99800   -> {main}() /home/pad/mobile/project-facebook/pfff/tests/xdebug/basic_values.php:0
  *)
-let regexp_special_main = 
+let _regexp_special_main = 
   Str.regexp ".*-> {main}()"
 
 

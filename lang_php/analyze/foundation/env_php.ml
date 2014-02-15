@@ -12,9 +12,6 @@
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the file
  * license.txt for more details.
  *)
-open Common
-
-open Ast_php
 
 module Ast = Ast_php
 module V = Visitor_php
@@ -72,7 +69,7 @@ let mk_env ~php_root = {
   ];
   constants = Common.hash_of_list [
   ];
-  globals_specials = (fun s dir -> 
+  globals_specials = (fun _s _dir -> 
     None
   );
 }

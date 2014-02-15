@@ -29,7 +29,7 @@ module A = Ast_php_simple
 (*****************************************************************************)
 
 (* not used for now *)
-type env = unit
+type _env = unit
 
 let empty_env () = ()
 
@@ -106,7 +106,7 @@ and toplevel env st =
   (* error recovery is off by default now *)
   | NotParsedCorrectly _ -> raise Common.Impossible
   (* should be handled by toplevel above *)
-  | NamespaceDef (_, qi, _) -> raise Impossible
+  | NamespaceDef (_, _, _) -> raise Impossible
   | NamespaceBracketDef (tok, qu_opt, xs) ->
       let qi =
         match qu_opt with
@@ -114,7 +114,7 @@ and toplevel env st =
         | None -> [A.special "ROOT", wrap tok]
       in
       [A.NamespaceDef (qi, toplevels env (unbrace xs))]
-  | NamespaceUse (tok, xs, _) -> 
+  | NamespaceUse (_tok, xs, _) -> 
       xs +> uncomma +> List.map (function
       | ImportNamespace qu -> 
           A.NamespaceUse (qualified_ident env qu, None)
@@ -132,7 +132,7 @@ and name env = function
   | Parent tok -> [A.special "parent", wrap tok]
   | LateStatic tok -> [A.special "static", wrap tok]
 
-and ident env = function
+and ident _env = function
   | Name (s, tok) -> s, wrap tok
   | XhpName (tl, tok) ->
       A.string_of_xhp_tag tl, wrap tok
@@ -219,9 +219,9 @@ and stmt env st acc =
   | InlineHtml (s, tok) ->
       A.Expr (A.Call (A.Id [A.builtin "echo", wrap tok],
                      [A.String (s, wrap tok)])) :: acc
-  | Use (tok, fn, _) ->
+  | Use (tok, _fn, _) ->
       raise (TodoConstruct ("Use", tok))
-  | Unset (tok, (_, lp, _), e) ->
+  | Unset (tok, (_, lp, _), _e) ->
       let lp = comma_list lp in
       let lp = List.map (lvalue env) lp in
       A.Expr (A.Call (A.Id [A.builtin "unset", wrap tok], lp)) :: acc
@@ -257,7 +257,8 @@ and if_else env = function
   | Some (_, (If _ as st)) ->
       (match stmt env st [] with
       | [x] -> x
-      | l -> assert false)
+      | _l -> assert false
+      )
   | Some (_, st) -> A.Block (stmt env st [])
 
 and stmt_and_def env st acc = stmt env st acc
@@ -270,7 +271,7 @@ and expr env = function
 
   | Id n -> A.Id (name env n)
 
-  | IdVar (dn, scope) -> A.Var (dname dn)
+  | IdVar (dn, _scope) -> A.Var (dname dn)
   | This tok -> A.This ("$this", wrap tok)
 
   (* ($o->fn)(...) ==> call_user_func($o->fn, ...) *)
@@ -332,8 +333,8 @@ and expr env = function
       let la = List.fold_right (list_assign env) la [] in
       let e = expr env e in
       A.Assign (None, A.List la, e)
-  | ArrayLong (_, (tok, apl, _))
-  | ArrayShort (tok, apl, _) ->
+  | ArrayLong (_, (_tok, apl, _))
+  | ArrayShort (_tok, apl, _) ->
       let apl = comma_list apl in
       let apl = List.map (array_pair env) apl in
       A.ConsArray (apl)
@@ -433,7 +434,7 @@ and constant env = function
   (* no reason to use the abstract interpreter on xdebug traces *)
   | XdebugClass _ | XdebugResource -> raise Common.Impossible
 
-and cpp_directive env tok = function
+and cpp_directive _env tok = function
   | Line      -> A.Id [A.builtin "__LINE__", wrap tok]
   | File      -> A.Id [A.builtin "__FILE__", wrap tok]
   | ClassC    -> A.Id [A.builtin "__CLASS__", wrap tok]
@@ -458,9 +459,9 @@ and static_scalar env a = expr env a
 (* Type *)
 (* ------------------------------------------------------------------------- *)
 and hint_type env = function
-  | Hint (q, typeTODO) -> A.Hint (name env q)
+  | Hint (q, _typeTODO) -> A.Hint (name env q)
   | HintArray _ -> A.HintArray
-  | HintQuestion (i, t) -> A.HintQuestion (hint_type env t)
+  | HintQuestion (_i, t) -> A.HintQuestion (hint_type env t)
   | HintTuple v1 -> A.HintTuple (List.map (hint_type env) (comma_list (brace v1)))
   | HintCallback (_, (_, args, ret), _) ->
       let args = List.map (hint_type env) (comma_list_dots (brace args)) in
@@ -579,7 +580,7 @@ and class_def env c =
     A.c_methods = methods;
   }
 
-and class_type env = function
+and class_type _env = function
   | ClassRegular _ -> A.ClassRegular
   | ClassFinal _ -> A.ClassFinal
   | ClassAbstract _ -> A.ClassAbstract
@@ -636,8 +637,8 @@ and xhp_fields env st acc =
         let ht =
           match attr_type with
           | XhpAttrType attr_type -> Some(hint_type env attr_type)
-          | XhpAttrVar tok -> None
-          | XhpAttrEnum (tok, _) -> None
+          | XhpAttrVar _tok -> None
+          | XhpAttrEnum (_tok, _) -> None
         in
         let value =
           match eopt with
@@ -735,7 +736,7 @@ and method_body env (_, stl, _) =
 
 and parameter env
  { p_type = t; p_ref = r; p_name = name; p_default = d; p_attrs = a;
-   p_modifier = mTODO;
+   p_modifier = _mTODO;
    (* don't care about the soft type annot, it's useful only for the runtime *)
    p_soft_type = _;
  } =
@@ -816,7 +817,6 @@ and case env = function
       let stl = List.fold_right (stmt_and_def env) stl [] in
       A.Default stl
 
-and foreach_arrow env (_, fv) = foreach_variable env fv
 and foreach_variable env (r, lv) =
   let e = lvalue env lv in
   let e = if r <> None then A.Ref e else e in
@@ -855,7 +855,7 @@ and list_assign env x acc =
       A.List la :: acc
   | ListEmpty -> acc
 
-and assignOp env = function
+and assignOp _env = function
   | AssignOpArith aop -> Arith aop
   | AssignConcat -> BinaryConcat
 

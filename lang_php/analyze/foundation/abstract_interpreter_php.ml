@@ -310,7 +310,7 @@ and fake_root env heap =
 
 and stmt env heap x =
   match x with
-  | TypeDef x -> failwith "no support for typedefs for abstract interpreter"
+  | TypeDef _x -> failwith "no support for typedefs for abstract interpreter"
   | NamespaceDef _ | NamespaceUse _ -> failwith "no support for namespace yet"
   (* special keywords in the code to debug the abstract interpreter state.
    * I've added var_dump() so that one can easily run a PHP test file
@@ -391,7 +391,7 @@ and stmt env heap x =
       let heap = List.fold_left (case env) heap cl in
       heap
   (* todo: explain *)
-  | Foreach (a, k(*, vopt*), stl) ->
+  | Foreach (_a, _k(*, vopt*), _stl) ->
     raise Todo
 (*
       let heap, a = expr env heap a in
@@ -446,7 +446,7 @@ and stmtl env heap stl = List.fold_left (stmt env) heap stl
 and global env heap v =
   match v with
   | Id [(x,_)] ->
-      let heap, new_, gv = Var.get_global env heap x in
+      let heap, _new_, gv = Var.get_global env heap x in
       Var.set env x gv;
       heap
   | _ ->
@@ -538,7 +538,7 @@ and expr_ env heap x =
          heap, Vany
        )
 
-  | Id ((s,tok)::_) -> raise (Ast_php.TodoNamespace (Common2.some tok))
+  | Id ((_s,tok)::_) -> raise (Ast_php.TodoNamespace (Common2.some tok))
   | Id [] -> raise Impossible
 
   (* will probably return some Vabstr (Tint|Tbool|...) *)
@@ -679,13 +679,13 @@ and expr_ env heap x =
 (* related to Unify *)
 and binaryOp env heap bop v1 v2 =
   match bop with
-  | Ast_php.Arith aop ->
+  | Ast_php.Arith _aop ->
       (match v1, v2 with
       | (Vint _ | Vabstr Tint), (Vint _ | Vabstr Tint) -> Vabstr Tint
       (* todo: warn on type error? why vnull? *)
       | _ -> Vsum [Vnull; Vabstr Tint]
       )
-  | Ast_php.Logical lop -> Vabstr Tbool
+  | Ast_php.Logical _lop -> Vabstr Tbool
   | Ast_php.BinaryConcat ->
       (* Vabstr Tstring by default *)
       Taint.binary_concat env heap v1 v2 !(env.path)
@@ -705,7 +705,7 @@ and unaryOp uop v =
   | Ast_php.UnTilde, Vabstr Tint -> Vabstr Tint
   | Ast_php.UnTilde, _           -> Vsum [Vnull; Vabstr Tint]
 
-and cast env heap ty v =
+and cast _env _heap ty v =
   match ty, v with
   | Ast_php.BoolTy, (Vbool _ | Vabstr Tbool) -> v
   | Ast_php.IntTy, (Vint _ | Vabstr Tint) -> v
@@ -755,7 +755,7 @@ and lvalue env heap x =
   | Array_get (e, k) ->
       array_get env heap e k
 
-  | ConsArray (l) as e ->
+  | ConsArray _ as e ->
       let heap, a = expr env heap e in
       let heap, v = Ptr.new_ heap in
       let heap, _ = assign env heap true v a in
@@ -823,7 +823,7 @@ and lvalue env heap x =
       heap, false, Vany
 
   | List _ -> failwith "List should be handled in caller"
-  | e ->
+  | _e ->
       if !strict then failwith "lvalue not handled";
       heap, false, Vany
 
@@ -842,7 +842,7 @@ and lvalue env heap x =
  * TODO explain. Why need is_new?
  * note:could be moved in helper
  *)
-and assign env heap is_new root(*lvalue*) v_root(*rvalue*) =
+and assign _env heap is_new root(*lvalue*) v_root(*rvalue*) =
   let heap, ptr = Ptr.get heap root in
   let heap, v = Ptr.get heap v_root in
   match v with
@@ -1039,7 +1039,7 @@ and call_method env el (heap, v) f =
 (* ---------------------------------------------------------------------- *)
 (* Arrays *)
 (* ---------------------------------------------------------------------- *)
-and array_value env id heap x =
+and array_value _env _id _heap _x =
   raise Todo
 (*
   match x with
@@ -1091,14 +1091,14 @@ and array_value env id heap x =
 *)
 
 (* could be moved in helper *)
-and array_new_entry env heap ar a k m =
+and array_new_entry _env heap ar _a k m =
   let heap, v = Ptr.new_ heap in
   let m = SMap.add k v m in
   let heap = Ptr.set heap ar (Vrecord m) in
   heap, v
 
 and array_get env heap e k =
-  let heap, new_, ar = lvalue env heap e in
+  let heap, _new_, ar = lvalue env heap e in
   let heap, ar = Ptr.get heap ar in
   let heap, a = Ptr.get heap ar in
   let heap, k = Utils.opt (expr env) heap k in
@@ -1209,7 +1209,7 @@ and obj_get_members mem env heap v =
       let mem = ISet.add n mem in
       let heap, x = Ptr.get heap x in
       obj_get_members mem env heap (x :: rl)
-  | x :: rl -> obj_get_members mem env heap rl
+  | _x :: rl -> obj_get_members mem env heap rl
   )
 
 (* todo: make it mimic more get_function and get_dynamic_function ? *)
@@ -1220,8 +1220,8 @@ and get_class env heap e =
 
   | Id [(s,_)] when s.[0] <> '$' -> s
   | Id _ ->
-      let env, v = expr env heap e in
-      let heap, v = Ptr.get heap v in
+      let _env, v = expr env heap e in
+      let _heap, v = Ptr.get heap v in
       get_string [v]
   | _ -> ""
 and get_string = function
@@ -1311,7 +1311,7 @@ and build_new env heap pname parent self c m =
  * m contains all the methods, static vars, and constants of this
  * class and parents.
  *)
-and build_new_ env heap pname parent self c m =
+and build_new_ _env _heap _pname parent self c m =
  fun env heap args ->
   (* we should always call *BUILD* without arguments *)
   if args <> [] then raise Common.Impossible;
@@ -1363,7 +1363,7 @@ and class_vars env static (heap, m) cv =
       (class_var env static) (heap, m) (cv.cv_name, cv.cv_value)
   | _ -> heap, m
 
-and class_var env static (heap, m) ((s, tok), e) =
+and class_var env static (heap, m) ((s, _tok), e) =
   (* static variables keep their $, regular fields don't *)
   let s =
     match static with
@@ -1381,7 +1381,7 @@ and class_var env static (heap, m) ((s, tok), e) =
       heap, SMap.add s v1 m
 
 (* todo: factorize with func_def? *)
-and method_def env cname parent self this (heap, acc) def =
+and method_def _env cname parent self this (heap, acc) def =
   let fdef = {
     f_ref = false;
     (* pad: this is ugly, but right now call_fun accepts only

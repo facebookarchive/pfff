@@ -50,7 +50,7 @@ foo1();
       let ast = Parse_php.program_of_string file_content in
       let uses = Defs_uses_php.uses_of_any (Ast.Program ast) in
       let uses_strings =
-        uses +> List.map (fun (name, kind) -> Ast.str_of_name name) in
+        uses +> List.map (fun (name, _kind) -> Ast.str_of_name name) in
       assert_equal
         (sort ["foo1"])
         (sort uses_strings);
@@ -83,7 +83,7 @@ $x = <x:xhp2/>;
         | _ -> raise Impossible
       in
       let uses_strings =
-        uses +> List.map (fun (name, kind) -> str_of_name name) in
+        uses +> List.map (fun (name, _kind) -> str_of_name name) in
 
       let classes =
         (Common2.enum 1 10) +> List.map (fun i -> spf "Foo%d" i) in
@@ -389,7 +389,7 @@ let include_unittest =
         ];
         Env_php.constants = Common.hash_of_list [];
         Env_php.globals = Common.hash_of_list [];
-        Env_php.globals_specials = (fun s dir -> None);
+        Env_php.globals_specials = (fun _s _dir -> None);
       }
       in [
       (* I was previously using Filename.concat in include_require_php.ml

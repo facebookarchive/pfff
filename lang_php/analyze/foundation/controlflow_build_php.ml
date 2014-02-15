@@ -119,7 +119,7 @@ let add_arc_opt (starti_opt, nodei) g =
  * of 'break/continue', because PHP allows statements like 'break 2;', we also
  * need to know how many upper contexts we need to look for.
  *)
-let rec (lookup_some_ctx:
+let (lookup_some_ctx:
   ?level:int ->
   ctx_filter:(context -> 'a option) ->
   context list -> 'a option) =
@@ -171,7 +171,7 @@ let rec (cfg_stmt: state -> nodei option -> stmt -> nodei option) =
    let i () = Some (List.hd (Lib_parsing_php.ii_of_any (Stmt2 stmt))) in
 
    match stmt with
-   | ExprStmt (e, tok) ->
+   | ExprStmt (e, _tok) ->
        cfg_expr state F.Normal previ e
 
    | StaticVars (_, static_vars, _) ->
@@ -189,11 +189,11 @@ let rec (cfg_stmt: state -> nodei option -> stmt -> nodei option) =
       *)
        let node, colon_stmt = 
          (match stmt with 
-         | While (t1, e, colon_stmt) ->
+         | While (_, e, colon_stmt) ->
              F.WhileHeader (Ast.unparen e), colon_stmt
-         | For (t1, t2, e1, t3, e2, t4, e5, t6, colon_stmt) ->
+         | For (_, _, _, _, _, _, _, _, colon_stmt) ->
              F.ForHeader, colon_stmt
-         | Foreach (t1, t2, e1, t3, v_arrow_opt, t4, colon_stmt) ->
+         | Foreach (_, _, _, _, _, _, colon_stmt) ->
              F.ForeachHeader, colon_stmt
          | _ -> raise Impossible
          )
@@ -319,7 +319,7 @@ let rec (cfg_stmt: state -> nodei option -> stmt -> nodei option) =
    * (whereas While can't return None). But if we return None, certainly
    * sign of buggy code.
    *)
-   | Do (t1, st, t2, e, t3) ->
+   | Do (_, st, _, e, _) ->
      (* previ -> doi ---> ... ---> finalthen (opt) ---> taili
       *           |--------- newfakethen ----------------| |-> newfakelse <rest>
       *)
@@ -351,7 +351,7 @@ let rec (cfg_stmt: state -> nodei option -> stmt -> nodei option) =
    | IfColon (_t1, _e, tok, _st, _elseifs, _else, _t2, _t3)  ->
        raise (Error (ColonSyntax, tok))
 
-   | If (t, e, st_then, st_elseifs, st_else_opt) ->
+   | If (_, e, st_then, st_elseifs, st_else_opt) ->
      (* previ -> newi --->  newfakethen -> ... -> finalthen --> lasti -> <rest>
       *                |                                     |
       *                |->  newfakeelse -> ... -> finalelse -|
@@ -375,7 +375,7 @@ let rec (cfg_stmt: state -> nodei option -> stmt -> nodei option) =
          (match st_elseifs, st_else_opt with
          | [], None ->
              Some newfakeelse
-         | [], Some (tok, st_else) ->
+         | [], Some (_, st_else) ->
              cfg_stmt state (Some newfakeelse) st_else
          | (t', e', st_then')::xs, else_opt ->
              (* syntactic unsugaring  *)
@@ -397,7 +397,7 @@ let rec (cfg_stmt: state -> nodei option -> stmt -> nodei option) =
            Some lasti
        )
 
-   | Return (t1, eopt, t2) ->
+   | Return (_, eopt, _) ->
        let newi = state.g#add_node { F.n = F.Return eopt;i=i() } in
        state.g +> add_arc_opt (previ, newi);
        state.g +> add_arc (newi, state.exiti);
@@ -405,7 +405,7 @@ let rec (cfg_stmt: state -> nodei option -> stmt -> nodei option) =
         * this new node *)
        None
 
-   | Continue (t1, e, t2) | Break (t1, e, t2) ->
+   | Continue (t1, e, _) | Break (t1, e, _) ->
 
        let is_continue, node =
          match stmt with
@@ -454,7 +454,7 @@ let rec (cfg_stmt: state -> nodei option -> stmt -> nodei option) =
        );
        None
 
-   | Switch (t1, e, cases) ->
+   | Switch (_, e, cases) ->
        (match cases with
        | CaseList (_obrace, _colon_opt, cases, _cbrace) ->
            let newi = state.g#add_node
@@ -542,7 +542,7 @@ let rec (cfg_stmt: state -> nodei option -> stmt -> nodei option) =
     *   <tryend>
     *)
 
-   | Try(t1, body, catches, finallys) ->
+   | Try(_, body, catches, _finallys) ->
        (* TODO Task #3622443: Update the logic below to account for "finally"
           clauses *)
        let newi = state.g#add_node { F.n = F.TryHeader;i=i() } in
@@ -618,7 +618,7 @@ let rec (cfg_stmt: state -> nodei option -> stmt -> nodei option) =
     * path sensitive analysis to be more precise (so that we would remove
     * certain edges)
     *)
-   | Throw (t1, e, t2) ->
+   | Throw (_, e, _) ->
        let newi = state.g#add_node { F.n = F.Throw e; i=i() } in
        state.g +> add_arc_opt (previ, newi);
 
@@ -694,9 +694,9 @@ and (cfg_cases:
    cases +> List.fold_left (fun previ case ->
      let node, stmt_or_defs =
        match case with
-       | Case (t1, e, t2, stmt_or_defs) ->
+       | Case (_, _e, _, stmt_or_defs) ->
            F.Case, stmt_or_defs
-       | Default (t1, t2, stmt_or_defs) ->
+       | Default (_, _, stmt_or_defs) ->
            F.Default, stmt_or_defs
      in
 

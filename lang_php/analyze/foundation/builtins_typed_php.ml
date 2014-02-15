@@ -67,11 +67,6 @@ let strpos =
 (* Misc *)
 (*-------------------------------------------------------------------*)
 
-let array_keys =
-  let v1 = Tvar (fresh()) in
-  let v2 = Tvar (fresh()) in
-  fun_ [array (v1, v2); v2; bool] v1
-
 let implode =
   fun_ [string; array (any, string)] string
 

@@ -75,12 +75,13 @@ let resolve_class_name classname in_class =
   (* This should never be reached, the caller will special case LateStatic
    * before calling resolve_class_name.
    *)
-  | (LateStatic tok1), _ ->
+  | (LateStatic _tok1), _ ->
     failwith "LateStatic"
   | _ -> 
     raise Impossible
 
 
+(*
 let contain_self_or_parent def =
   let aref = ref false in
   let visitor = V.mk_visitor { V.default_visitor with
@@ -93,6 +94,7 @@ let contain_self_or_parent def =
   in
   visitor (Toplevel (ClassDef def));
   !aref
+*)
 
 (* less: reusing the same pos for all idents may go against
  * certain assumptions in the code using this file?
@@ -124,7 +126,7 @@ let unsugar_self_parent_any2 any =
       let parent_opt =
         match def.c_extends with
         | None -> None
-        | Some (tok, (Hint (XName qualified_classname, _targs))) -> 
+        | Some (_tok, (Hint (XName qualified_classname, _targs))) -> 
             Some qualified_classname
         | Some x -> 
             failwith ("Warning: unknown extends clause\n" ^
@@ -146,7 +148,7 @@ let unsugar_self_parent_any2 any =
          )
     );
 
-    M.kname = (fun (k, bigf) qu ->
+    M.kname = (fun (_k, _) qu ->
       match qu with
       | LateStatic tok -> LateStatic tok
       | XName name     -> XName name

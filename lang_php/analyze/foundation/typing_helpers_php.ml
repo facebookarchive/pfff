@@ -349,7 +349,7 @@ module Print2 = struct
 
   and prim_ty env penv stack depth = function
     | Tabstr s -> Pp.print penv s
-    | Tsstring s -> Pp.print penv "string"
+    | Tsstring _s -> Pp.print penv "string"
     | Tienum _
     | Tsenum _ ->
 (*        let l = SSet.fold (fun x acc -> Tabstr x :: acc) s [] in *)
@@ -671,7 +671,7 @@ module Type_string = struct
 
   and prim_ty env stack depth = function
     | Tabstr s -> s
-    | Tsstring s -> "string"
+    | Tsstring _s -> "string"
     | Tienum _ 
     | Tsenum _ -> "enum"
     | Trecord m -> 
@@ -794,7 +794,7 @@ module Instantiate = struct
         Tvar x
     | Tsum tyl -> Tsum (List.map (prim_ty env stack) tyl)
 
-  and prim_ty env stack = function
+  and prim_ty env _stack = function
     | Tfun (tl, t) ->
         let argl = List.map snd tl in
         let vars = List.fold_left (get_vars env ISet.empty) ISet.empty argl in

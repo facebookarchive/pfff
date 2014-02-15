@@ -138,7 +138,7 @@ let test_dflow_php file =
 
 
 (*s: test_cyclomatic_php *)
-let test_cyclomatic_php file =
+let test_cyclomatic_php _file =
 (*
   let (ast2,_stat) = Parse_php.parse file in
   let ast = Parse_php.program_of_program2 ast2 in
@@ -225,7 +225,7 @@ let test_include_require file =
   let ast = Parse_php.parse_program file in
 
   let increqs = Include_require_php.top_increq_of_program ast in
-  increqs +> List.iter (fun (inckind, tok, incexpr) ->
+  increqs +> List.iter (fun (_inckind, tok, incexpr) ->
     match incexpr with
     | Include_require_php.SimpleVar _
     | Include_require_php.Other _ ->
@@ -306,7 +306,7 @@ let test_php_xdebug file =
     pr (spf "%s:%d: %s" file line str);
   )
 
-let test_type_xdebug_php file =
+let test_type_xdebug_php _file =
   raise Todo
 
 (*
@@ -363,7 +363,7 @@ let test_phpdoc dir =
     try
       let _xml = Phpmanual_xml.parse_xml file in
       ()
-    with exn ->
+    with _exn ->
       pr2 (spf "PB in %s" file);
   )
 

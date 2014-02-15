@@ -34,7 +34,7 @@ SRC+= dependencies_toposort_php.ml \
 SRC+= database_juju_php.ml
 SRC+= graph_code_php.ml
 # used to be in analyze/
-SRC+= tags_php.ml normalize_php.ml \
+SRC+= tags_php.ml \
      database_light_php.ml \
      database_prolog_php.ml \
      statistics_php.ml \

@@ -202,7 +202,6 @@ type test_result = {
 }
  (* with tarzan *)
 
-type test_results = test_result list
  (* with tarzan *)
 
 
@@ -311,7 +310,7 @@ let _ = example
  * less convenient to use sometimes.
  * 
  *)
-let is_phpunit_derived_class def (*db*) =
+let is_phpunit_derived_class _def (*db*) =
   raise Todo
 
 
@@ -401,7 +400,7 @@ let parse_one_trace2 file xs =
     xs +> Common.map_filter (fun s ->
       match s with
       | s when s =~ "^OK (\\([0-9]+\\) tests?, \\([0-9]+\\) assertions?)" ->
-          let (nb_tests, nb_asserts) = 
+          let (nb_tests, _nb_asserts) = 
             Common.matched2 s +> Common2.pair s_to_i 
           in
           Some (Pass (nb_tests, 0))
@@ -409,7 +408,7 @@ let parse_one_trace2 file xs =
        
       (* old: | s when s =~ "There were \\([0-9]+\\) failures:" -> *)
       | s when s =~ "Tests?: \\([0-9]+\\), Assertions?: \\([0-9]+\\), Failures?: \\([0-9]+\\)" ->
-          let (nb_tests, nb_asserts, nb_fail) = 
+          let (nb_tests, _nb_asserts, nb_fail) = 
             Common.matched3 s +> Common2.triple s_to_i
           in
 
@@ -420,21 +419,21 @@ let parse_one_trace2 file xs =
 
       (* TODO: diff between fail and errors ? *)
       | s when s =~ "Tests?: \\([0-9]+\\), Assertions?: \\([0-9]+\\), Errors?: \\([0-9]+\\)" ->
-          let (nb_tests, nb_asserts, nb_fail) = 
+          let (nb_tests, _nb_asserts, nb_fail) = 
             Common.matched3 s +> Common2.triple s_to_i
           in
           Some (Fail (nb_fail, nb_tests - nb_fail))
 
 
       | s when s =~ "Tests?: \\([0-9]+\\), Assertions?: \\([0-9]+\\), Skipped?: \\([0-9]+\\)" ->
-          let (nb_tests, nb_asserts, nb_skip) = 
+          let (nb_tests, _nb_asserts, nb_skip) = 
             Common.matched3 s +> Common2.triple s_to_i
           in
           Some (Pass (nb_tests - nb_skip, nb_skip))
 
       (* maybe facebook specific, with our FacebookTestCase wrapper *)
       | s when s =~ "Tests?: \\([0-9]+\\), Assertions?: \\([0-9]+\\), Incompletes?: \\([0-9]+\\)" ->
-          let (nb_tests, nb_asserts, nb_skip) = 
+          let (nb_tests, _nb_asserts, nb_skip) = 
             Common.matched3 s +> Common2.triple s_to_i
           in
           Some (Pass (nb_tests - nb_skip, nb_skip))
@@ -533,7 +532,7 @@ let parse_one_trace2 file xs =
 
     | [], _ -> 
         failwith ("parse error: could not find time in trace for: " ^ file)
-    | x::y::xs, _ ->
+    | _x::_y::_xs, _ ->
         failwith ("parse error: multiple time entries in trace for: " ^ file)
   in
 
@@ -569,7 +568,7 @@ let final_report ?(report_also_pass=false) tr =
 
   tr +> List.iter (fun t ->
     match t.t_status with
-    | Fail (fail, pass) ->
+    | Fail (fail, _pass) ->
         pr2 (spf "FAIL: %3d,  in %s" fail t.t_file)
     | Fatal s ->
         pr2 (spf "FATAL: in %s, %s" t.t_file s)
@@ -790,7 +789,7 @@ let test_result_ofv =
                         ((!t_trace_nb_lines_field = None),
                          "t_trace_nb_lines");
                         ((!t_shimmed_field = None), "t_shimmed") ]))
-    | sexp -> failwith "was expecting a VDict"
+    | _sexp -> failwith "was expecting a VDict"
 
 
 let test_results_ofv =
@@ -867,9 +866,9 @@ let regression_perf ~regression_file tr =
       (* prefer to not include failing tests. They will be reported already
        * by the other regressions
        *)
-      | Fail (i,j) -> 
+      | Fail (_i,_j) -> 
           None
-      | Fatal s -> 
+      | Fatal _s -> 
           None
     in
     score_opt +> Common.do_option (fun score ->

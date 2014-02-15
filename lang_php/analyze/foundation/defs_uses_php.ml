@@ -121,16 +121,16 @@ let defs_of_any any =
       | _ -> k x
     );
 
-    V.kexpr = (fun (k, bigf) x ->
+    V.kexpr = (fun (k, _) x ->
       match x with
-      | Call(Id(XName[QI (Name ("define", tok))]), args) ->
+      | Call(Id(XName[QI (Name ("define", _tok))]), args) ->
           let args = args +> Ast.unparen +> Ast.uncomma in
           (match args with
           (* Maybe better to have a Define directly in the AST. Note that
            * PHP 5.3 has a new const features that makes the use of define
            * obsolete.
            *)
-          | (Arg ((Sc (C (String (s,info))))))::xs -> 
+          | (Arg ((Sc (C (String (s,info))))))::_xs -> 
               (* by default the info contains the '' or "" around the string,
                * which is not the case for s. See ast_php.ml
                *)
@@ -169,13 +169,14 @@ let defs_of_any any =
  *   are connections to more entities than one can infer statically.
  *)
 let uses_of_any ?(verbose=false) any = 
+  ignore(verbose);
 
   V.do_visit_with_ref (fun aref -> { V.default_visitor with
 
-    V.kexpr = (fun (k, bigf) x ->
+    V.kexpr = (fun (k, _) x ->
       (match x with
       (* todo: what about functions passed as strings? *)
-      | Call (Id name, args) ->
+      | Call (Id name, _args) ->
           Common.push2 (name, E.Function) aref;
 
     (* This covers
@@ -199,7 +200,7 @@ let uses_of_any ?(verbose=false) any =
      * - function foo(X $f)
      *   (via class_name_or_kwd)
      *)
-    V.khint_type = (fun (k, bigf) classname ->
+    V.khint_type = (fun (k, _) classname ->
       (* todo? can interface define constant ? in which case
        * there is some ambiguity when seeing X::cst ...
        * could be the use of a Class or Interface.

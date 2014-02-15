@@ -164,7 +164,7 @@ let unittest = "coverage_php" >::: [
       "should generate exn on bad_trace.json"
       (try let _ = 
         Coverage_code.load_tests_coverage (p "bad_trace.json") in false
-       with exn -> true
+       with _exn -> true
       );
   );
 ]
