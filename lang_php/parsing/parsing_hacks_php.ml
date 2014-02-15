@@ -119,40 +119,40 @@ let fix_tokens2 xs =
         * could be used in a different context as part of an XHP attribute
         * name, see ident_xhp_attr_name_atom rule in parser_php.mly
         *)
-        | (T_CLASS _ | T_TRAIT _ | T_INTERFACE _),        Toplevel::rest ->
+        | (T_CLASS _ | T_TRAIT _ | T_INTERFACE _),        Toplevel::_rest ->
             ClassHeader::env.stack
-        | (T_TYPE _ | T_NEWTYPE _),    Toplevel::rest  ->
+        | (T_TYPE _ | T_NEWTYPE _),    Toplevel::_rest  ->
             TypeHeader::env.stack
-        | T_FUNCTION _, (Toplevel|ClassHeader)::rest ->
+        | T_FUNCTION _, (Toplevel|ClassHeader)::_rest ->
             FunctionHeader::env.stack
-        | T_FUNCTION _, Block::rest ->
+        | T_FUNCTION _, Block::_rest ->
             FunctionHeader::env.stack
 
         (* also FunctionHeader because we can have attributes on parameters *)
-        | T_SL _, (Toplevel | ClassBody | FunctionHeader)::rest ->
+        | T_SL _, (Toplevel | ClassBody | FunctionHeader)::_rest ->
             UserAttribute::env.stack
 
-        | TOBRACE ii, ClassHeader::rest ->
+        | TOBRACE _ii, ClassHeader::rest ->
             ClassBody::rest
         (* subtle: do not do Block::env.stack here otherwise we will
          * not pop up enough to get back to a Toplevel context
          *)
-        | TOBRACE ii, FunctionHeader::rest ->
+        | TOBRACE _ii, FunctionHeader::rest ->
             Block::rest
 
-        | TOBRACE ii, _ ->
+        | TOBRACE _ii, _ ->
             Block::env.stack
 
         | (T_CURLY_OPEN _ | T_DOLLAR_OPEN_CURLY_BRACES _), _ ->
             Block::env.stack
 
-        | TCBRACE ii, x::xs ->
+        | TCBRACE _ii, _x::xs ->
             xs
         | TCBRACE ii, [] ->
             failwith (spf "unmaching closing brace at %s" 
                         (PI.string_of_info ii))
 
-        | TSEMICOLON ii, (FunctionHeader|TypeHeader)::rest ->
+        | TSEMICOLON _ii, (FunctionHeader|TypeHeader)::rest ->
             rest
 
         (* default case *)

@@ -46,15 +46,14 @@ open Ast_php
  *)
 
 module Scope_php = struct
-open Scope_php
 (* TODO ? need visitor for scope ? *)
-let v_phpscope x = ()
+let v_phpscope _x = ()
 end
 
 (* todo? why don't use the one in Ocaml.ml ? because it generates
  * a compilation error :(
  *)
-let v_ref aref x = () (* dont go into ref *)
+let v_ref _aref _x = () (* dont go into ref *)
 
 (* hooks *)
 type visitor_in = {
@@ -146,7 +145,7 @@ let (mk_visitor: visitor_in -> visitor_out) = fun vin ->
 (* start of auto generation *)
 
 let rec v_info x  =
-  let k x = match x with { Parse_info.token = v_pinfo; _ } ->
+  let k x = match x with { Parse_info.token = _v_pinfo; _ } ->
   (* TODO ? not sure what behavior we want with tokens and fake tokens.
   *)
     (*let arg = v_parse_info v_pinfo in *)
@@ -215,7 +214,7 @@ and v_xhp_tag_wrap x =
 
 and v_name x = v_class_name_or_selfparent x
 and v_class_name_or_selfparent x =
-  let rec k x =
+  let k x =
     match x with
   | XName (v1) ->
       let v1 = v_qualified_ident v1 in
@@ -229,7 +228,7 @@ and v_type_args x =
   v_single_angle (v_comma_list v_hint_type) x; ()
 and v_type_params v = v_single_angle (v_comma_list v_type_param) v
 and v_type_param x =
-  let rec k x =
+  let k x =
     match x with
   | TParam v1 -> let v1 = v_ident v1 in ()
   | TParamConstraint ((v1, v2, v3)) ->
@@ -407,7 +406,7 @@ and v_static_scalar_affect (v1, v2) =
   let v1 = v_tok v1 and v2 = v_static_scalar v2 in ()
 and v_constant x =
   let k x =  match x with
-  | Int v1 -> let v1 = v_wrap v_string v1 in ()
+  | Ast_php.Int v1 -> let v1 = v_wrap v_string v1 in ()
   | Double v1 -> let v1 = v_wrap v_string v1 in ()
   | String v1 -> let v1 = v_wrap v_string v1 in ()
   | PreProcess v1 -> let v1 = v_wrap v_cpp_directive v1 in ()
@@ -491,7 +490,7 @@ and v_list_assign =
       let v1 = v_tok v1 and v2 = v_paren (v_comma_list v_list_assign) v2 in ()
   | ListEmpty -> ()
 and v_array_pair x =
-  let rec k x = match x with
+  let k x = match x with
   | ArrayExpr v1 -> let v1 = v_expr v1 in ()
   | ArrayRef ((v1, v2)) -> let v1 = v_tok v1 and v2 = v_lvalue v2 in ()
   | ArrayArrowExpr ((v1, v2, v3)) ->
@@ -505,7 +504,7 @@ and v_array_pair x =
   in
   vin.karray_pair (k, all_functions) x
 and v_xhp_html x =
-  let rec k x =
+  let k x =
     match x with
     | Xhp ((v1, v2, v3, v4, v5)) ->
       let v1 = v_xhp_tag_wrap v1
@@ -523,7 +522,7 @@ and v_xhp_html x =
   vin.kxhp_html (k, all_functions) x
 
 and v_xhp_attribute x =
-  let rec k (v1, v2, v3) =
+  let k (v1, v2, v3) =
   let v1 = v_xhp_attr_name v1
   and v2 = v_tok v2
   and v3 = v_xhp_attr_value v3
@@ -554,7 +553,7 @@ and v_arguments x =
   vin.karguments (k, all_functions) x
 
 and v_argument x =
-  let rec k = function
+  let k = function
   | Arg v1 -> let v1 = v_expr v1 in ()
   | ArgRef ((v1, v2)) -> let v1 = v_tok v1 and v2 = v_w_variable v2 in ()
   in
@@ -768,7 +767,7 @@ and v_declare (v1, v2) =
   let v1 = v_ident v1 and v2 = v_static_scalar_affect v2 in ()
 and
   v_func_def x =
-  let rec k x =
+  let k x =
     match x with {
                f_tok = v_f_tok;
                f_type = v_f_type;
@@ -805,7 +804,7 @@ and v_function_type =
   | MethodAbstract -> ()
 
 and v_parameter x =
-  let rec k x =
+  let k x =
     match x with
     {
       p_attrs = v_p_attrs;
@@ -827,7 +826,7 @@ and v_parameter x =
   in
   vin.kparameter (k, all_functions) x
 and v_hint_type x =
-  let rec k x = match x with
+  let k x = match x with
   | Hint (v1, v2) -> 
     let v1 = v_class_name_or_selfparent v1 in
     let v2 = v_option v_type_args v2 in
@@ -869,7 +868,7 @@ and v_hint_type x =
 and v_is_ref v = v_option v_tok v
 and
   v_class_def x =
-  let rec k {
+  let k {
                 c_type = v_c_type;
                 c_name = v_c_name;
                 c_tparams = v_c_tparams;
@@ -995,7 +994,7 @@ and v_modifier =
   | Final -> ()
   | Async -> ()
 and v_xhp_attribute_decl x =
-  let rec k x = match x with
+  let k x = match x with
   | XhpAttrInherit v1 -> let v1 = v_xhp_tag_wrap v1 in ()
   | XhpAttrDecl ((v1, v2, v3, v4)) ->
       let v1 = v_xhp_attribute_type v1
@@ -1017,7 +1016,7 @@ and v_xhp_value_affect (v1, v2) =
 
 
 and v_xhp_children_decl x =
-  let rec k x = match x with
+  let k x = match x with
   | XhpChild v1 -> let v1 = v_xhp_tag_wrap v1 in ()
   | XhpChildCategory v1 -> let v1 = v_xhp_tag_wrap v1 in ()
   | XhpChildAny v1 -> let v1 = v_tok v1 in ()
@@ -1198,10 +1197,3 @@ let do_visit_with_ref mk_hooks = fun any ->
   let vout = mk_visitor hooks in
   vout any;
   List.rev !res
-
-let do_visit_with_h mk_hooks = fun any ->
-  let h = Hashtbl.create 101 in
-  let hooks = mk_hooks h in
-  let vout = mk_visitor hooks in
-  vout any;
-  h

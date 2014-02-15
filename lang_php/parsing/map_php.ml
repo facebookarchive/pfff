@@ -12,7 +12,6 @@
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the file
  * license.txt for more details.
  *)
-open Common
 
 open Ocaml
 
@@ -60,7 +59,7 @@ let (mk_visitor: visitor_in -> visitor_out) = fun vin ->
 (* start of auto generation *)
 
 let rec map_info x =
-  let rec k x =
+  let k x =
     match x with
     { Parse_info.token = v_pinfo;
       transfo = v_transfo;
@@ -491,7 +490,7 @@ and map_rw_variable v = map_lvalue v
 and map_r_variable v = map_lvalue v
 and map_w_variable v = map_lvalue v
 and map_stmt x =
-  let rec k x =
+  let k x =
     match x with
   | ExprStmt ((v1, v2)) ->
       let v1 = map_expr v1 and v2 = map_tok v2 in ExprStmt ((v1, v2))
@@ -839,7 +838,7 @@ and map_lexical_var =
       let v1 = map_is_ref v1 and v2 = map_dname v2 in LexicalVar ((v1, v2))
 and
   map_class_def x =
-  let rec k {
+  let k {
                   c_type = v_c_type;
                   c_name = v_c_name;
                   c_tparams = v_c_tparams;
@@ -1057,7 +1056,7 @@ and map_static_scalar x = map_expr x
 and map_static_scalar_affect (v1, v2) =
   let v1 = map_tok v1 and v2 = map_static_scalar v2 in (v1, v2)
 and map_stmt_and_def def =
-  let rec k x = map_stmt x in
+  let k x = map_stmt x in
   vin.kstmt_and_def (k, all_functions) def
 
 and

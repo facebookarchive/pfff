@@ -12,7 +12,6 @@
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the file
  * license.txt for more details.
  *)
-open Common2
 open Common 
 
 module Ast  = Ast_php
@@ -64,6 +63,7 @@ module PI = Parse_info
  * where everything is marked as ExpandedTok and TCommentPP.
  *)
 
+let (<=>) = Common2.(<=>)
 
 (* a few helpers *)
 
@@ -165,7 +165,7 @@ let  zip_and_sync ~toks_orig_lines ~toks_pp_lines =
   (* This is used below just in one very ugly situation *)
   let last_orig_tok = ref
     (match toks_orig_lines with
-    | (xline, xtoks)::xs -> 
+    | (_xline, xtoks)::_xs -> 
         List.hd xtoks
     | _ -> failwith  
         "Impossible: if the file is empty then we should not be called at all"
@@ -176,7 +176,7 @@ let  zip_and_sync ~toks_orig_lines ~toks_pp_lines =
     match (xs, ys) with
     | [], [] -> []
 
-    | ((xline, xtoks)::xs), [] -> 
+    | ((_xline, xtoks)::xs), [] -> 
         (* The original can have some comments at the end of the file, which
          * would be removed by XHP
          *
@@ -184,7 +184,7 @@ let  zip_and_sync ~toks_orig_lines ~toks_pp_lines =
          *)
         xtoks::aux xs []
 
-    | [], (yline, ytoks)::ys -> 
+    | [], (_yline, ytoks)::ys -> 
         (* XHP usually cut the space and comments at the end of the file 
          * so the original file should always be longer.
          * 
@@ -207,7 +207,7 @@ let  zip_and_sync ~toks_orig_lines ~toks_pp_lines =
     | (((xline, xtoks)::xs) as a), (((yline, ytoks)::ys) as b) -> 
         last_orig_tok := Common2.list_last xtoks;
         (match xline <=> yline with
-        | Inf ->
+        | Common2.Inf ->
             (* Sometimes XHP just remove certain tokens, like
              * lines with   attribute x y; in which case we must
              * remove them also from the original file. 
@@ -218,10 +218,10 @@ let  zip_and_sync ~toks_orig_lines ~toks_pp_lines =
              *)
             let xtoks' = comment_pp_ize xtoks in
             xtoks'::aux xs b
-        | Equal ->
+        | Common2.Equal ->
             let merged = merge_tokens_line ~orig_toks:xtoks ~pp_toks:ytoks in
             merged::aux xs ys
-        | Sup ->
+        | Common2.Sup ->
             (* sometimes XHP remove some lines ... so have to adjust things 
              *
              *)

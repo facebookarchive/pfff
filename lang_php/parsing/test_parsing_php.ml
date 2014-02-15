@@ -1,7 +1,6 @@
 (*s: test_parsing_php.ml *)
 open Common
 
-open Ast_php
 module Ast = Ast_php
 
 (*****************************************************************************)
@@ -46,7 +45,7 @@ let test_parse_php xs  =
   fullxs +> Console.progress (fun k -> List.iter (fun file -> 
      k ();
 
-    let (xs, stat) = 
+    let (_xs, stat) = 
       Common.save_excursion Flag_parsing_php.error_recovery true (fun () ->
         Parse_php.parse file 
       )
@@ -111,14 +110,14 @@ let test_visit_php file =
   let ast = Parse_php.parse_program file in
 
   let hooks = { Visitor_php.default_visitor with
-    Visitor_php.kinfo = (fun (k, vx) info ->
+    Visitor_php.kinfo = (fun (_k, _) info ->
       let s = Parse_info.str_of_info info in
       pr2 s;
     );
 
-    Visitor_php.kexpr = (fun (k, vx) e -> 
+    Visitor_php.kexpr = (fun (k, _) e -> 
       match e with
-      | Ast_php.Sc x ->
+      | Ast_php.Sc _ ->
           pr2 "scalar";
           k e
       | _ -> k e
@@ -129,7 +128,7 @@ let test_visit_php file =
 (*e: test_visit_php *)
 
 let test_unparse_php file = 
-  let (ast2, stat) = Parse_php.parse file in
+  let (ast2, _stat) = Parse_php.parse file in
   let tmpfile = Common.new_temp_file "unparse_php" ".php" in
   let s = Unparse_php.string_of_program_with_comments_using_transfo ast2 in
   Common.write_file ~file:tmpfile s;

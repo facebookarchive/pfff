@@ -14,7 +14,6 @@
  *)
 open Common 
 
-open Ast_php
 module Ast  = Ast_php
 module Flag = Flag_parsing_php
 module TH   = Token_helpers_php
@@ -236,7 +235,7 @@ let parse2 ?(pp=(!Flag.pp_default)) filename =
 
   let checkpoint = TH.line_of_tok tr.PI.current in
 
-  let lexbuf_fake = Lexing.from_function (fun buf n -> raise Impossible) in
+  let lexbuf_fake = Lexing.from_function (fun _buf _n -> raise Impossible) in
   let elems = 
     try (
       (* -------------------------------------------------- *)
@@ -291,7 +290,7 @@ let parse2 ?(pp=(!Flag.pp_default)) filename =
               (* | Semantic_java.Semantic (s, i) -> 
                  pr2 ("semantic error " ^s^ "\n ="^ error_msg_tok tr.current)
           *)
-        | e -> raise Impossible
+        | _e -> raise Impossible
         );
       let checkpoint2 = Common.cat filename +> List.length in
 
@@ -321,7 +320,7 @@ let parse ?pp a =
   Common.profile_code "Parse_php.parse" (fun () -> parse_memo ?pp a)
 
 let parse_program ?pp file = 
-  let ((ast, toks), _stat) = parse ?pp file in
+  let ((ast, _toks), _stat) = parse ?pp file in
   ast
 
 let ast_and_tokens file =
@@ -336,7 +335,7 @@ let parse_any_from_changen (changen : PI.changen) =
   let toks = tokens_from_changen ~init_state:Lexer_php.ST_IN_SCRIPTING changen  in
 
   let tr = PI.mk_tokens_state toks in
-  let lexbuf_fake = Lexing.from_function (fun buf n -> raise Impossible) in
+  let lexbuf_fake = Lexing.from_function (fun _buf _n -> raise Impossible) in
 
   try 
     Parser_php.sgrep_spatch_pattern (lexer_function tr) lexbuf_fake
@@ -433,23 +432,9 @@ let (tokens_of_string: string -> Parser_php.token list) = fun s ->
   toks
   
 
-(* 
- * The regular lexer 'tokens' at the beginning of this file is quite
- * complicated because it has to maintain a state (for the HereDoc, 
- * interpolated string, HTML switching mode, etc) and it also takes 
- * a file not a string because it annotates tokens with file position.
- * Sometimes we need only a simple and faster lexer and one that can 
- * take a string hence this function.
- *)
-let rec basic_lexer_skip_comments lexbuf = 
-  let tok = Lexer_php.st_in_scripting lexbuf in
-  if TH.is_comment tok 
-  then basic_lexer_skip_comments lexbuf
-  else tok
-
 (* A fast-path parser of xdebug expressions in xdebug dumpfiles. 
  * See xdebug.ml *)
-let (xdebug_expr_of_string: string -> Ast_php.expr) = fun s ->
+let (xdebug_expr_of_string: string -> Ast_php.expr) = fun _s ->
 (*
   let lexbuf = Lexing.from_string s in
   let expr = Parser_php.expr basic_lexer_skip_comments lexbuf in

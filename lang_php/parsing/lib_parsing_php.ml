@@ -31,7 +31,7 @@ module PI = Parse_info
 (*****************************************************************************)
 (* Wrappers *)
 (*****************************************************************************)
-let pr2, pr2_once = Common2.mk_pr2_wrappers Flag.verbose_parsing
+let pr2, _pr2_once = Common2.mk_pr2_wrappers Flag.verbose_parsing
 
 (*****************************************************************************)
 (* Filenames *)
@@ -96,7 +96,7 @@ let find_source_files_of_dir_or_files ?(verbose=false) xs =
 let extract_info_visitor recursor = 
   let globals = ref [] in
   let hooks = { V.default_visitor with
-    V.kinfo = (fun (k, _) i -> 
+    V.kinfo = (fun (_k, _) i -> 
       (* most of the time when you use ii_of_any, you want to use
        * functions like max_min_pos which works only on origin tokens
        * hence the filtering done here.
@@ -127,7 +127,7 @@ let ii_of_any any =
 (*s: abstract infos *)
 let abstract_position_visitor recursor = 
   let hooks = { V2.default_visitor with
-    V2.kinfo = (fun (k, _) i -> 
+    V2.kinfo = (fun (_k, _) i -> 
       { i with Parse_info.token = Parse_info.Ab }
     )
   } in
@@ -145,9 +145,6 @@ let abstract_position_info_any x =
 (*****************************************************************************)
 (*s: max min range *)
 (*x: max min range *)
-let min_max_by_pos xs = 
-  let (i1, i2) = Parse_info.min_max_ii_by_pos xs in
-  (PI.pos_of_info i1, PI.pos_of_info i2)
 
 let (range_of_origin_ii: Ast_php.tok list -> (int * int) option) = 
  fun ii -> 
@@ -164,23 +161,6 @@ let (range_of_origin_ii: Ast_php.tok list -> (int * int) option) =
 (*e: max min range *)
 
 (*****************************************************************************)
-(* Print helpers *)
-(*****************************************************************************)
-
-(* obsolete: now catch Parse_php.Parse_error *)
-let print_warning_if_not_correctly_parsed ast file =
-  if ast +> List.exists (function 
-  | Ast_php.NotParsedCorrectly _ -> true
-  | _ -> false)
-  then begin
-    Common.pr2 (spf "warning: parsing problem in %s" file);
-    Common.pr2_once ("Use -parse_php to diagnose");
-    (* old: 
-     * Common.pr2_once ("Probably because of XHP; -xhp may be helpful"); 
-     *)
-  end
-
-(*****************************************************************************)
 (* Ast getters *)
 (*****************************************************************************)
 (*s: ast getters *)
@@ -189,9 +169,9 @@ let get_funcalls_any any =
   
   let hooks = { V.default_visitor with
     (* TODO if nested function ??? still wants to report ? *)
-    V.kexpr = (fun (k,vx) x ->
+    V.kexpr = (fun (k,_vx) x ->
       match x with
-      | Call (Id callname, args) ->
+      | Call (Id callname, _args) ->
           let str = Ast_php.str_of_name callname in
           Hashtbl.replace h str true;
           k x
@@ -208,15 +188,15 @@ let get_constant_strings_any any =
   let h = Hashtbl.create 101 in
 
   let hooks = { V.default_visitor with
-    V.kconstant = (fun (k,vx) x ->
+    V.kconstant = (fun (k,_vx) x ->
       match x with
-      | String (str,ii) ->
+      | String (str,_ii) ->
           Hashtbl.replace h str true;
       | _ -> k x
     );
-    V.kencaps = (fun (k,vx) x ->
+    V.kencaps = (fun (k,_vx) x ->
       match x with
-      | EncapsString (str, ii) ->
+      | EncapsString (str, _ii) ->
           Hashtbl.replace h str true;
       | _ -> k x
     );
@@ -228,10 +208,10 @@ let get_constant_strings_any any =
 
 let get_static_vars_any any =
   any +> V.do_visit_with_ref (fun aref -> { V.default_visitor with
-    V.kstmt = (fun (k,vx) x ->
+    V.kstmt = (fun (k,_vx) x ->
       match x with
-      | StaticVars (tok, xs, tok2) ->
-          xs +> Ast.uncomma +> List.iter (fun (dname, affect_opt) -> 
+      | StaticVars (_tok, xs, _tok2) ->
+          xs +> Ast.uncomma +> List.iter (fun (dname, _affect_opt) -> 
             Common.push2 dname aref
           );
       | _ -> 
@@ -242,25 +222,25 @@ let get_static_vars_any any =
 (* todo? do last_stmt_is_a_return isomorphism ? *)
 let get_returns_any any = 
   V.do_visit_with_ref (fun aref -> { V.default_visitor with
-    V.kstmt = (fun (k,vx) x ->
+    V.kstmt = (fun (k,_vx) x ->
       match x with
-      | Return (tok1, Some e, tok2) ->
+      | Return (_tok1, Some e, _tok2) ->
           Common.push2 e aref
       | _ -> k x
     )}) any
 
 let get_vars_any any = 
   V.do_visit_with_ref (fun aref -> { V.default_visitor with
-    V.kexpr = (fun (k, vx) x ->
+    V.kexpr = (fun (k, _vx) x ->
       match x with
       | IdVar (dname, _scope) ->
           Common.push2 dname aref
 
       (* todo? sure ?? *)
-      | Lambda (l_use, def) ->
+      | Lambda (l_use, _def) ->
           l_use +> Common.do_option (fun (_tok, xs) ->
             xs +> Ast.unparen +> Ast.uncomma +> List.iter (function
-            | LexicalVar (is_ref, dname) ->
+            | LexicalVar (_is_ref, dname) ->
                 Common.push2 dname aref
             )
           );
@@ -296,7 +276,7 @@ let functions_methods_or_topstms_of_program prog =
   let toplevels = ref [] in
 
   let visitor = V.mk_visitor { V.default_visitor with
-    V.kfunc_def = (fun (k, _) def -> 
+    V.kfunc_def = (fun (_k, _) def -> 
       match def.f_type with
       | FunctionRegular -> Common.push2 def funcs
       | MethodRegular | MethodAbstract -> Common.push2 def methods
@@ -325,9 +305,9 @@ let get_vars_assignements_any recursor =
    * of Ast.dname
    *)
   V.do_visit_with_ref (fun aref -> { V.default_visitor with
-      V.kstmt = (fun (k,vx) x ->
+      V.kstmt = (fun (k,_) x ->
         match x with
-        | StaticVars (tok, xs, tok2) ->
+        | StaticVars (_tok, xs, _tok2) ->
             xs +> Ast.uncomma +> List.iter (fun (dname, affect_opt) -> 
               let s = Ast.str_of_dname dname in
               affect_opt +> Common.do_option (fun (_tok, scalar) ->
@@ -338,7 +318,7 @@ let get_vars_assignements_any recursor =
             k x
       );
 
-      V.kexpr = (fun (k,vx) x ->
+      V.kexpr = (fun (k,_vx) x ->
         match x with
         | Assign (lval, _, e) 
         | AssignOp (lval, _, e) ->

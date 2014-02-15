@@ -202,7 +202,7 @@ let unittest =
        * regarding objects. *)
       let e = Parse_php.expr_of_string "$o->foo" in
       match e with
-      | ObjGet (v, tok, Id name) ->
+      | ObjGet (_v, _tok, Id name) ->
         let info = Ast.info_of_name name in
         assert_equal 4 (Parse_info.col_of_info info)
       | _ -> 
@@ -229,7 +229,7 @@ let unittest =
           ) 
         in
         assert_failure "it should generate an error"
-      with exn ->
+      with _exn ->
         ()
       );
     );

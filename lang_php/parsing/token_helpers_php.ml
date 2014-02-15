@@ -12,7 +12,6 @@
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the file
  * license.txt for more details.
  *)
-open Common
 
 open Parser_php
 module PI = Parse_info
@@ -66,15 +65,15 @@ let info_of_tok = function
   | TSpaces ii -> ii
   | TNewline ii -> ii
   | TCommentPP ii -> ii
-  | T_LNUMBER (s, ii) -> ii
-  | T_DNUMBER (s, ii) -> ii
-  | T_IDENT (s, ii) -> ii
-  | T_STRING_VARNAME (s, ii) -> ii
-  | T_VARIABLE (s, ii) -> ii
-  | T_NUM_STRING (s, ii) -> ii
-  | T_INLINE_HTML (s, ii) -> ii
-  | T_ENCAPSED_AND_WHITESPACE (s, ii) -> ii
-  | T_CONSTANT_ENCAPSED_STRING (s, ii) -> ii
+  | T_LNUMBER (_s, ii) -> ii
+  | T_DNUMBER (_s, ii) -> ii
+  | T_IDENT (_s, ii) -> ii
+  | T_STRING_VARNAME (_s, ii) -> ii
+  | T_VARIABLE (_s, ii) -> ii
+  | T_NUM_STRING (_s, ii) -> ii
+  | T_INLINE_HTML (_s, ii) -> ii
+  | T_ENCAPSED_AND_WHITESPACE (_s, ii) -> ii
+  | T_CONSTANT_ENCAPSED_STRING (_s, ii) -> ii
   | T_ECHO ii -> ii
   | T_PRINT ii -> ii
   | T_DO ii -> ii
@@ -218,17 +217,17 @@ let info_of_tok = function
   | T_CLASS_XDEBUG (ii) -> ii
   | T_RESOURCE_XDEBUG (ii) -> ii
 
-  | T_XHP_COLONID_DEF (s, ii) -> ii
-  | T_XHP_PERCENTID_DEF (s, ii) -> ii
+  | T_XHP_COLONID_DEF (_s, ii) -> ii
+  | T_XHP_PERCENTID_DEF (_s, ii) -> ii
 
-  | T_XHP_OPEN_TAG (xs, ii) -> ii
-  | T_XHP_CLOSE_TAG (xs, ii) -> ii
+  | T_XHP_OPEN_TAG (_xs, ii) -> ii
+  | T_XHP_CLOSE_TAG (_xs, ii) -> ii
 
   | T_XHP_GT (ii) -> ii
   | T_XHP_SLASH_GT (ii) -> ii
 
-  | T_XHP_ATTR (s, ii) -> ii
-  | T_XHP_TEXT (s, ii) -> ii
+  | T_XHP_ATTR (_s, ii) -> ii
+  | T_XHP_TEXT (_s, ii) -> ii
 
   | T_XHP_ATTRIBUTE (ii) -> ii
   | T_XHP_CHILDREN (ii) -> ii

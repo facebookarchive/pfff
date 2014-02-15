@@ -4,21 +4,6 @@ open Common
 
 open Ast_php
 
-(* pad: few tweaks because of module limitations in ocamltarzan.
- *
- * I inlined the vof_of_phptype here
- * (to avoid having multiple meta_of_xxx.ml files)
- *)
-
-module Type_php = struct
-    let vof_phptype x =
-      Ocaml.VTODO ""
-    let vof_phpfunction_type x =
-      Ocaml.VTODO ""
-end
-
-let vof_int = Ocaml.vof_int
-let vof_unit = Ocaml.vof_unit
 let vof_string = Ocaml.vof_string
 let vof_list = Ocaml.vof_list
 let vof_option = Ocaml.vof_option
@@ -82,10 +67,6 @@ and vof_dname =
   function
   | DName v1 ->
       let v1 = vof_wrap vof_string v1 in Ocaml.VSum (("DName", [ v1 ]))
-and vof_qualifier (v1, v2) =
-  let v1 = vof_class_name_or_selfparent v1
-  and v2 = vof_tok v2
-  in Ocaml.VTuple [ v1; v2 ]
 and vof_name x = vof_class_name_or_selfparent x
 and vof_class_name_or_selfparent =
   function

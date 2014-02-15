@@ -839,17 +839,17 @@ let fakeInfo ?(next_to=None) str = { Parse_info.
 (*****************************************************************************)
 
 let unwrap = fst
-let unparen (a,b,c) = b
+let unparen (_a,b,_c) = b
 let unbrace = unparen
 let unbracket = unparen
 
 let uncomma xs = Common.map_filter (function
   | Left e -> Some e
-  | Right info -> None
+  | Right _info -> None
   ) xs
 let uncomma_dots xs = Common.map_filter (function
   | Left3 e -> Some e
-  | Right3 info | Middle3 info -> None
+  | Right3 _info | Middle3 _info -> None
   ) xs
 
 let unarg arg =
@@ -859,7 +859,7 @@ let unarg arg =
 let unargs xs =
   uncomma xs +> Common.partition_either (function
   | Arg e -> Left e
-  | ArgRef (t, e) -> Right (e)
+  | ArgRef (_t, e) -> Right (e)
   )
 let unmodifiers class_vars =
   match class_vars with
@@ -904,16 +904,16 @@ let str_of_ident e =
   | XhpName (xs, _tok) -> ":" ^ (Common.join ":" xs)
 let info_of_ident e =
   match e with
-  | (Name (x,y)) -> y
-  | (XhpName (x,y)) -> y
+  | (Name (_x,y)) -> y
+  | (XhpName (_x,y)) -> y
 
 let str_of_dname (DName x) = unwrap x
-let info_of_dname (DName (x,y)) = y
+let info_of_dname (DName (_x,y)) = y
 
 let info_of_qualified_ident = function
   | [] -> raise Impossible
-  | (QI x)::xs -> info_of_ident x
-  | (QITok tok)::xs -> tok
+  | (QI x)::_xs -> info_of_ident x
+  | (QITok tok)::_xs -> tok
 
 exception TodoNamespace of tok
 
@@ -943,4 +943,4 @@ let ident_of_class_name x =
   match name with
   | XName [QI x] -> x
   | XName qu -> raise (TodoNamespace (info_of_qualified_ident qu))
-  | Self tok | Parent tok | LateStatic tok -> raise Impossible
+  | Self _tok | Parent _tok | LateStatic _tok -> raise Impossible

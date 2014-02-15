@@ -15,7 +15,6 @@
  *)
 open Common
 
-open Ast_php
 open Parser_php
 
 module Ast = Ast_php

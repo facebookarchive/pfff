@@ -18,7 +18,7 @@ let rec squash_stmt_list xs =
           ) -> x,  xs
         | StmtList [st] -> 
             let stmts, rest = xs +> Common.span (function
-              | StmtList st -> true 
+              | StmtList _ -> true 
               | _ -> false
               ) in
             let stmts' = stmts +> List.map (function

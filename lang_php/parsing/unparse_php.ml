@@ -18,9 +18,6 @@
 open Common 
 
 open Ast_php 
-open Parser_php (* the tokens *)
-open Parse_info
-
 module Ast = Ast_php
 module V = Visitor_php
 module TH = Token_helpers_php
@@ -75,7 +72,7 @@ let string_of_program ast =
     incr cur_line;
 
     let visitor = V.mk_visitor { V.default_visitor with
-      V.kinfo = (fun (k, _) info ->
+      V.kinfo = (fun (_k, _) info ->
         match info.Parse_info.token with
         | Parse_info.OriginTok p ->
             let line = p.Parse_info.line in 
@@ -119,7 +116,7 @@ let string_of_any any =
     let toks = ref [] in
     
     let hooks = { V.default_visitor with
-      V.kinfo = (fun (k, _) info ->
+      V.kinfo = (fun (_k, _) info ->
         match info.Parse_info.token with
         | Parse_info.OriginTok p ->
           let s =  p.Parse_info.str in
@@ -162,7 +159,7 @@ let string_of_expr x = string_of_any (Expr x)
  *   too many places where we do ugly hack around newline
  *)
 
-let string_of_program_with_comments_using_transfo (ast, toks) =
+let string_of_program_with_comments_using_transfo (_ast, toks) =
   toks +> Lib_unparser.string_of_toks_using_transfo 
     ~kind_and_info_of_tok:(fun tok ->
       TH.token_kind_of_tok tok, TH.info_of_tok tok
