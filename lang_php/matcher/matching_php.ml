@@ -104,7 +104,7 @@ module XMATCH = struct
     (* old: Some (a,b) *)
     [(a,b), tin]
       
-  let fail = fun tin ->
+  let fail = fun _tin ->
     (* old: None *)
     []
 
@@ -192,7 +192,7 @@ type ('a, 'b) matcher = 'a -> 'b ->
   Metavars_php.metavars_binding list
 
 let (extract_bindings: 'a XMATCH.tout -> MV.metavars_binding list) = fun tout ->
-  tout +> List.map (fun (term, env) -> env)
+  tout +> List.map (fun (_term, env) -> env)
   
 (* todo: should maybe have a match_any_any *)
 let match_e_e pattern e = 

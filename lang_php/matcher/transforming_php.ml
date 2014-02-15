@@ -102,7 +102,7 @@ module XMATCH = struct
     (* old: Some (a,b) *)
     [(a,b), tin]
       
-  let fail = fun tin ->
+  let fail = fun _tin ->
     (* old: None *)
     []
 
@@ -236,12 +236,12 @@ module XMATCH = struct
     (match transfo with
     | PI.NoTransfo -> ()
     | PI.Remove -> ii +> List.iter (fun tok -> tok.PI.transfo <- PI.Remove)
-    | PI.Replace add ->
+    | PI.Replace _add ->
         ii +> List.iter (fun tok -> tok.PI.transfo <- PI.Remove);
         let any_ii = List.hd ii in
         any_ii.PI.transfo <- adjust_transfo_with_env env transfo;
-    | PI.AddBefore add -> raise Todo
-    | PI.AddAfter add -> raise Todo
+    | PI.AddBefore _add -> raise Todo
+    | PI.AddAfter _add -> raise Todo
     | PI.AddArgsBefore _ -> raise Todo
     )
 

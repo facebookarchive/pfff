@@ -390,7 +390,7 @@ let m_name_metavar_ok a b =
        B.Name(b1)
     )
     )
-  | A.XhpName([name], info_name), B.XhpName(b1)
+  | A.XhpName([name], info_name), B.XhpName(_b1)
       when MV.is_metavar_name name ->
 
       X.envf (name, info_name) (B.Ident2 b) >>= (function
@@ -807,7 +807,7 @@ and m_fully_qualified_class_name a b =
     m_name_metavar_ok a b >>= (fun (a, b) ->
       return ([A.QI a], [B.QI b])
     )
-  | qua, qub -> 
+  | _qua, qub -> 
     (* subtle: use qub for the diagnostic, qua is the sgrep pattern and it
      * has no file information usually.
      *)
@@ -821,8 +821,8 @@ and m_argument a b =
   match a, b with
   | A.Arg(a1), B.Arg(b1) ->
       (match a1, b1 with
-      | A.Assign((A.IdVar(aname, ascope)), atok, aexpr),
-        B.Assign((B.IdVar(bname, bscope)), btok, bexpr) ->
+      | A.Assign((A.IdVar(_aname, _ascope)), _atok, _aexpr),
+        B.Assign((B.IdVar(_bname, _bscope)), _btok, _bexpr) ->
           m_expr a1 b1 >>= (fun (a1, b1) ->
             return (
               A.Arg(a1),
@@ -915,7 +915,7 @@ and m_expr a b =
 
   (* pad, iso on variable name *)
   | A.IdVar((A.DName (dname, info_dname)), a2),
-    B.IdVar(b1, b2) when MV.is_metavar_variable_name ("$" ^ dname) ->
+    B.IdVar(_b1, _b2) when MV.is_metavar_variable_name ("$" ^ dname) ->
       (* we don't want expr metavariable and variable metavariable
        * to collide, so X and $X are different keys in the environment
        *)
@@ -1180,9 +1180,9 @@ and m_expr a b =
        B.Eval(b1, b2)
     )
     ))
-  | A.Lambda(a1), B.Lambda(b1) ->
+  | A.Lambda(_a1), B.Lambda(_b1) ->
       raise Todo
-  | A.ShortLambda(a1), B.ShortLambda(b1) ->
+  | A.ShortLambda(_a1), B.ShortLambda(_b1) ->
       raise Todo
 
   | A.XhpHtml(a1), B.XhpHtml(b1) ->
@@ -1415,7 +1415,7 @@ and iso_m_list_m_xhp_body a b =
 
 and sort_xhp_attributes xs =
   xs +> List.map (fun attr ->
-    let ((attr_name, ii), tok, value) = attr in
+    let ((attr_name, _ii), _tok, _value) = attr in
     attr_name, attr
   ) +> Common.sort_by_key_highfirst +> List.map snd
 
@@ -1814,7 +1814,7 @@ and m_constant a b =
        B.PreProcess(b1)
     )
     )
-  | A.XdebugClass(a1, a2), B.XdebugClass(b1, b2) ->
+  | A.XdebugClass(_a1, _a2), B.XdebugClass(_b1, _b2) ->
       (* no php_vs_php for class_stmt yet *)
       raise Todo
   | A.XdebugResource, B.XdebugResource ->
@@ -1860,7 +1860,7 @@ and m_list__m_argument (xsa: A.argument A.comma_list) (xsb: B.argument B.comma_l
      return  ([], [Right comma])
 
   (* iso on ... *)
-  | [Left (A.Arg (A.SgrepExprDots i))], bbs ->
+  | [Left (A.Arg (A.SgrepExprDots i))], _bbs ->
     (* todo: if remove could apply the transfo on bbs *)
     if is_NoTransfo i then
       return (
@@ -1899,7 +1899,7 @@ and m_list__m_argument (xsa: A.argument A.comma_list) (xsb: B.argument B.comma_l
    * or SgrepExprDots could carry some transfo. What should we do?
    * Maybe just print warning.
    *)
-  | [Right a; Left (A.Arg (A.SgrepExprDots i))], [] ->
+  | [Right a; Left (A.Arg (A.SgrepExprDots _i))], [] ->
     if is_NoTransfo a || is_Remove a
     then
       return (
@@ -1914,7 +1914,7 @@ and m_list__m_argument (xsa: A.argument A.comma_list) (xsb: B.argument B.comma_l
   | [Right _;Left (A.Arg ((A.Id (A.XName [A.QI (A.Name (name,info_name))]))))],[]
     when MV.is_metavar_manyargs_name name ->
       X.envf (name, info_name) (B.Arguments ([])) >>= (function
-      | ((name, info_name), B.Arguments ([]))  ->
+      | ((_name, _info_name), B.Arguments ([]))  ->
         return (
           xsa,
           xsb
@@ -1922,10 +1922,10 @@ and m_list__m_argument (xsa: A.argument A.comma_list) (xsb: B.argument B.comma_l
       | _ -> raise Impossible
       )
 
-  | [Right _; Left (A.Arg (A.SgrepExprDots i))], bbs ->
+  | [Right _; Left (A.Arg (A.SgrepExprDots _))], _bbs ->
       raise Impossible
 
-  | Left (A.Arg (A.SgrepExprDots i))::xs, bbs ->
+  | Left (A.Arg (A.SgrepExprDots _))::_, _ ->
       failwith 
         "... is allowed only at the end. Give money to pad to get this feature"
 
@@ -1947,7 +1947,7 @@ and m_list__m_argument (xsa: A.argument A.comma_list) (xsb: B.argument B.comma_l
 and m_option__m_paren__m_list__m_argument a b =
   match a, b with
   (* iso on ... *)
-  | Some (lp, [Left (A.Arg (A.SgrepExprDots i))], rp), None ->
+  | Some (_lp, [Left (A.Arg (A.SgrepExprDots _))], _rp), None ->
       (* todo: for spatch need apply possible transfo *)
       return (
         a,
@@ -1968,21 +1968,21 @@ and m_list__m_array_pair (xsa: A.array_pair A.comma_list) (xsb: B.array_pair B.c
       return ([], [])
 
   (* iso on ... *)
-  | [Left (A.ArrayExpr (A.SgrepExprDots i))], bbs ->
+  | [Left (A.ArrayExpr (A.SgrepExprDots _))], _bbs ->
       (* TODO do different combinaisons *)
       return (
         xsa,
         xsb
       )
 
-  | [Right _; Left (A.ArrayExpr (A.SgrepExprDots i))], bbs ->
+  | [Right _; Left (A.ArrayExpr (A.SgrepExprDots _))], _bbs ->
       (* TODO do different combinaisons *)
       return (
         xsa,
         xsb
       )
 
-  | Left (A.ArrayExpr (A.SgrepExprDots i))::xs, bbs ->
+  | Left (A.ArrayExpr (A.SgrepExprDots _))::_xs, _bbs ->
       failwith 
         "... is allowed only at the end. Give money to pad to get this feature"
 
@@ -2015,18 +2015,18 @@ and m_comma_list_dots :
       return ([], [])
 
   (* iso on ... *)
-  | [Middle3 _infoTodo], bbs ->
+  | [Middle3 _infoTodo], _bbs ->
       (* TODO do different combinaisons, and apply token *)
       return (
         xsa,
         xsb
       )
 
-  | [Right3 _; Middle3 _], bbs ->
+  | [Right3 _; Middle3 _], _bbs ->
       (* TODO do different combinaisons *)
       return (xsa, xsb)
 
-  | (Middle3 _)::xs, bbs ->
+  | (Middle3 _)::_xs, _bbs ->
       failwith "... is allowed for now only at the end. Give money to pad to get this feature"
 
   | xa::aas, xb::bbs ->
@@ -2260,7 +2260,7 @@ and m_stmt a b =
     )
     )))
 
-  | A.FuncDefNested(a1), B.FuncDefNested(b1) ->
+  | A.FuncDefNested(_a1), B.FuncDefNested(_b1) ->
       fail2 "FuncDefNested"
 
   | A.ClassDefNested(a1), B.ClassDefNested(b1) ->
@@ -2328,7 +2328,7 @@ and m_colon_stmt a b =
 (* stmt auxilaries *)
 (* ---------------------------------------------------------------------- *)
 
-and m_foreach_pattern a b =
+and m_foreach_pattern _a _b =
   raise Todo
 
 and m_foreach_variable a b =
@@ -2345,37 +2345,37 @@ and m_foreach_variable a b =
 and m_is_ref a b =
   m_option m_tok a b
 
-and m_foreach_arrow a b =
+and m_foreach_arrow _a _b =
   fail2 "m_foreach_arrow"
 
-and m_if_elseif a b =
+and m_if_elseif _a _b =
   fail2 "m_if_elseif"
-and m_if_else a b =
+and m_if_else _a _b =
   fail2 "m_if_else"
 
-and m_new_elseif a b =
+and m_new_elseif _a _b =
   fail2 "m_new_elseif"
-and m_new_else a b =
+and m_new_else _a _b =
   fail2 "m_new_else"
 
-and m_for_expr a b =
+and m_for_expr _a _b =
   fail2 "m_for_expr"
-and m_switch_case_list a b =
+and m_switch_case_list _a _b =
   fail2 "m_switch_case_list"
-and m_case a b =
+and m_case _a _b =
   fail2 "m_case"
 
-and m_catch a b =
+and m_catch _a _b =
   fail2 "m_catch"
-and m_finally a b =
+and m_finally _a _b =
   fail2 "m_finally"
-and m_global_var a b =
+and m_global_var _a _b =
   fail2 "m_global_var"
-and m_static_var a b =
+and m_static_var _a _b =
   fail2 "m_static_var"
-and m_use_filename a b =
+and m_use_filename _a _b =
   fail2 "m_use_filename"
-and m_declare a b =
+and m_declare _a _b =
   fail2 "m_declare"
 
 
@@ -2383,10 +2383,10 @@ and m_modifiers x = m_list (m_wrap m_modifier) x
 
 and m_type a b = return (a, b)
 
-and m_attributes a b =
+and m_attributes _a _b =
   raise Todo
 
-and m_xhp_children_decl a b =
+and m_xhp_children_decl _a _b =
   raise Todo
 
 and m_hint_type a b =
@@ -2455,16 +2455,16 @@ and m_shape_field (a1, a2, a3) (b1, b2, b3) =
 (* ------------------------------------------------------------------------- *)
 (* Class definition *)
 (* ------------------------------------------------------------------------- *)
-and m_class_def a b =
+and m_class_def _a _b =
   fail2 "m_class_def"
 
-and m_interface_def a b =
+and m_interface_def _a _b =
   fail2 "m_interface_def"
 
-and m_trait_def a b =
+and m_trait_def _a _b =
   fail2 "m_trait_def"
 
-and m_method_def a b =
+and m_method_def _a _b =
   fail2 "m_method_def"
 
 and m_class_constant a b =
@@ -2631,10 +2631,10 @@ and m_class_var_modifier a b =
 (* Other declarations *)
 (* ------------------------------------------------------------------------- *)
 
-and m_xhp_decl a b =
+and m_xhp_decl _a _b =
   fail2 "m_xhp_decl"
 
-and m_xhp_attribute_decl a b =
+and m_xhp_attribute_decl _a _b =
   fail2 "m_xhp_decl"
 
 and m_static_scalar a b = m_expr a b

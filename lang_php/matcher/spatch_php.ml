@@ -53,9 +53,9 @@ module PI = Parse_info
 type pattern = Ast_php.any
 
 type line_kind = 
-  | Context
-  | Plus of string
-  | Minus
+  | XContext
+  | XPlus of string
+  | XMinus
 
 (*****************************************************************************)
 (* Helpers *)
@@ -111,17 +111,17 @@ let parse file =
      *)
     | _ when s =~ "^\\+[ \t]*\\(.*\\)" -> 
         let rest_line = Common.matched1 s in
-        Hashtbl.add hline_env lineno (Plus rest_line);
+        Hashtbl.add hline_env lineno (XPlus rest_line);
         ""
     | _ when s =~ "^\\-\\(.*\\)" ->
         let rest_line = Common.matched1 s in
-        Hashtbl.add hline_env lineno Minus;
+        Hashtbl.add hline_env lineno XMinus;
         rest_line
     | _ when s =~ "^[ \t]+[-+]" ->
         failwith 
           "you must put the minus or plus annotations in the first column"
     | _ ->
-        Hashtbl.add hline_env lineno Context;
+        Hashtbl.add hline_env lineno XContext;
         s
   )
   in
@@ -146,9 +146,9 @@ let parse file =
 
     let annot = Hashtbl.find hline_env line in
     (match annot with
-    | Context -> ()
-    | Minus -> tok.PI.transfo <- PI.Remove;
-    | Plus _ -> 
+    | XContext -> ()
+    | XMinus -> tok.PI.transfo <- PI.Remove;
+    | XPlus _ -> 
         (* normally impossible since we removed the elements in the
          * plus line, except the newline. should assert it's only newline
          *)
@@ -187,7 +187,7 @@ let parse file =
         | None -> 
             (* probably because was last line *) 
             ()
-        | Some (Plus toadd) ->
+        | Some (XPlus toadd) ->
             (* todo? what if there is no token on this line ? *)
             let last_tok = Common2.list_last toks_at_line in
 
@@ -228,7 +228,7 @@ let spatch ?(case_sensitive=false) pattern file =
   let (ast, tokens) = 
     try 
         Parse_php.parse file +> fst
-    with Parse_php.Parse_error err ->
+    with Parse_php.Parse_error _err ->
       Common.pr2 (spf "warning: parsing problem in %s" file);
       [], []
   in

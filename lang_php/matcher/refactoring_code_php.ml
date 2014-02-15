@@ -38,12 +38,12 @@ let tok_pos_equal_refactor_pos tok refactoring_opt =
 let string_of_class_var_modifier modifiers =
   match modifiers with
   | NoModifiers _ -> "var"
-  | VModifiers xs -> xs +> List.map (fun (modifier, tok) ->
+  | VModifiers xs -> xs +> List.map (fun (_modifier, tok) ->
       PI.str_of_info tok) +> Common.join " "
 
 let last_token_classes classnames =
   match Common2.list_last classnames with
-  | Right comma ->
+  | Right _comma ->
     (* we do allow trailing commas in interface list? *)
     raise Impossible
   | Left classname ->
@@ -68,7 +68,7 @@ let refactor refactorings (ast, tokens) =
                   let tok = Ast.info_of_ident def.f_name in
                   if tok_pos_equal_refactor_pos tok pos_opt then begin
                     let tok_close_paren =
-                      let (a,b,c) = def.f_params in c
+                      let (_a,_b,c) = def.f_params in c
                     in
                     tok_close_paren.PI.transfo <-
                       PI.AddAfter (PI.AddStr (": " ^ str));
@@ -105,7 +105,7 @@ let refactor refactorings (ast, tokens) =
                     match x with
                     | HintArray tok -> tok
                     | Hint (name, _typeargs) -> Ast.info_of_name name
-                    | HintQuestion (tok, t) -> tok
+                    | HintQuestion (tok, _t) -> tok
                     | HintTuple (t, _, _) -> t
                     | HintCallback (lparen,_,_) -> lparen
                     | HintShape (tok, _) -> tok
@@ -126,7 +126,7 @@ let refactor refactorings (ast, tokens) =
               match x with
               | ClassVariables (_cmodif, _typ_opt, xs, _tok) ->
                   (match xs with
-                  | [Left (dname, affect_opt)] ->
+                  | [Left (dname, _affect_opt)] ->
                       let tok = Ast.info_of_dname dname in
                       if tok_pos_equal_refactor_pos tok pos_opt then begin
                         tok.PI.transfo <-
@@ -151,17 +151,17 @@ let refactor refactorings (ast, tokens) =
             V.kclass_stmt = (fun (k, _) x ->
               match x with
               (* private $x, $y; *)
-              | ClassVariables (modifiers, _typ_opt, xs, semicolon) ->
+              | ClassVariables (modifiers, _typ_opt, xs, _semicolon) ->
                   (match xs with
                   (* $x *)
-                  | Left (dname, affect_opt)::rest ->
+                  | Left (dname, _affect_opt)::rest ->
                       let tok = Ast.info_of_dname dname in
                       if tok_pos_equal_refactor_pos tok pos_opt then begin
 
                         let rec aux rest =
                           match rest with
                           (* , $y -> ;\n private $y *)
-                          | Right comma::Left (dname, affect_opt)::rest ->
+                          | Right comma::Left (_dname, _affect_opt)::rest ->
                               (* todo: look at col of modifiers? *)
                               let indent = "  " in
                               let str_modifiers =
@@ -185,7 +185,7 @@ let refactor refactorings (ast, tokens) =
           }
       | R.AddInterface (class_opt, interface) ->
         { V.default_visitor with
-          V.kclass_def = (fun (k, _) def ->
+          V.kclass_def = (fun (_k, _) def ->
             let tok = Ast.info_of_ident def.c_name in
             let str = Ast.str_of_ident def.c_name in
             let (obrace, _, _) = def.c_body in
@@ -200,7 +200,7 @@ let refactor refactorings (ast, tokens) =
                 obrace.PI.transfo <-
                   PI.AddBefore (PI.AddStr (spf "implements %s " interface));
                 was_modifed := true;
-              | Some (tok, interfaces) ->
+              | Some (_tok, interfaces) ->
                 let last_elt = last_token_classes interfaces in
                 last_elt.PI.transfo <-
                   PI.AddAfter (PI.AddStr (spf ", %s" interface));
@@ -210,7 +210,7 @@ let refactor refactorings (ast, tokens) =
         }
       | R.RemoveInterface (class_opt, interface) ->
         { V.default_visitor with
-          V.kclass_def = (fun (k, _) def ->
+          V.kclass_def = (fun (_k, _) def ->
             let tok = Ast.info_of_ident def.c_name in
             let str = Ast.str_of_ident def.c_name in
             if tok_pos_equal_refactor_pos tok pos_opt &&
@@ -235,15 +235,15 @@ let refactor refactorings (ast, tokens) =
                   let rec aux xs = 
                     match xs with
                     | [] -> failwith "no interface to remove"
-                    | Left classname::Right comma::rest 
-                    | Right comma::Left classname::rest
+                    | Left classname::Right comma::_rest 
+                    | Right comma::Left classname::_rest
                       when Ast.str_of_class_name classname =$= interface ->
                         (Hint2 classname) 
                         +> Lib_parsing_php.ii_of_any 
                         +> List.iter (fun tok -> tok.PI.transfo <- PI.Remove);
                         comma.PI.transfo <- PI.Remove;
                         was_modifed := true;
-                    | x::xs -> aux xs
+                    | _x::xs -> aux xs
                   in
                   aux xs
                 );

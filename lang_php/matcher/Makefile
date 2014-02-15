@@ -30,6 +30,8 @@ INCLUDEDIRS= $(TOP)/commons $(TOP)/commons/ocollection \
 ##############################################################################
 # Generic variables
 ##############################################################################
+#BUG in ocamlc, false positive on unused value
+WARNING_FLAGS=-w +A-4-29-6-45-32 -warn-error +a
 -include $(TOP)/Makefile.common
 
 ##############################################################################

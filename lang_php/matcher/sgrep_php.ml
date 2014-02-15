@@ -15,7 +15,6 @@
 open Common
 
 open Ast_php
-open Parse_info
 module Ast = Ast_php
 module V = Visitor_php
 module PI = Parse_info
@@ -70,7 +69,7 @@ let sgrep ?(case_sensitive=false) ~hook pattern file =
   let ast = 
     try 
       Parse_php.parse_program file
-    with Parse_php.Parse_error err ->
+    with Parse_php.Parse_error _err ->
       (* we usually do sgrep on a set of files or directories,
        * so we don't want on error in one file to stop the
        * whole process.
