@@ -15,8 +15,6 @@
 
 open Common
 
-open Ast_nw
-
 module Ast = Ast_nw
 (*module V = Visitor_nw *)
 
@@ -61,9 +59,9 @@ let tag_all_tok_with ~tag categ xs =
 
 let visit_toplevel 
     ~tag_hook
-    prefs 
+    _prefs 
     (*db_opt *)
-    (toplevel, toks)
+    (_toplevel, toks)
   =
   let already_tagged = Hashtbl.create 101 in
   let tag = (fun ii categ ->
@@ -82,9 +80,9 @@ let visit_toplevel
     | [] -> ()
     (* a little bit pad specific *)
     |   T.TComment(ii)
-      ::T.TCommentNewline (ii2)
+      ::T.TCommentNewline (_ii2)
       ::T.TComment(ii3)
-      ::T.TCommentNewline (ii4)
+      ::T.TCommentNewline (_ii4)
       ::T.TComment(ii5)
       ::xs ->
         let s = Parse_info.str_of_info ii in
@@ -162,7 +160,7 @@ let visit_toplevel
          aux_toks (rest);
 
     (* pad noweb specific *)
-    | T.TSymbol("#", ii)::T.TWord("include", ii2)::xs ->
+    | T.TSymbol("#", _ii)::T.TWord("include", ii2)::xs ->
         tag ii2 Include;
         aux_toks xs
 
@@ -210,7 +208,7 @@ let visit_toplevel
        (* repass on tokens, in case there are nested tex commands *)
        aux_toks xs
 
-    | x::xs ->
+    | _x::xs ->
         aux_toks xs
   in
   let toks' = toks +> Common.exclude (function
@@ -239,7 +237,7 @@ let visit_toplevel
         then ()
         else ()
 
-    | T.TCommentNewline ii -> ()
+    | T.TCommentNewline _ii -> ()
     | T.TCommand (s, ii) -> 
         let categ = 
           (match s with
@@ -287,7 +285,7 @@ let visit_toplevel
     | T.TOBrace ii | T.TCBrace ii ->  tag ii Punctuation
 
     | T.TUnknown ii -> tag ii Error
-    | T.EOF ii-> ()
+    | T.EOF _ii-> ()
 
   );
 
