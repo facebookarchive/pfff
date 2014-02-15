@@ -98,7 +98,7 @@ let add_if_not_already_there env (enum, s, v) sexp =
 
 let rec process env ast =
   match ast with
-  | Paren (TranslationUnitDecl, l, _loc::xs) ->
+  | Paren (TranslationUnitDecl, _l, _loc::xs) ->
       xs +> List.iter (fun sexp -> dispatch_sexp env sexp)
   | _ -> failwith (spf "%s: not a TranslationDecl" env.current_clang_file)
 
@@ -184,8 +184,8 @@ and sexp env x =
       sexps env xs
   | Angle xs | Anchor xs | Bracket xs ->
       sexps env xs
-  | Brace (toks, _) -> ()
-  | T tok -> ()
+  | Brace (_toks, _) -> ()
+  | T _tok -> ()
 
 and sexps env xs = List.iter (sexp env) xs
 

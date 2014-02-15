@@ -325,12 +325,12 @@ let rec sexp_list env acc ending toks =
       let (body, xs) = sexp_list newenv  [] TCPar xs in
       sexp_list env (Paren (conv "Misc__SKIPPED__", l, body)::acc) ending xs
 
-  | TOBrace l::xs ->
+  | TOBrace _l::xs ->
       let (toks, _, rest) = 
         Common2.split_when (function TCBrace -> true | _ -> false) xs in
       let (toks_opt, rest) =
         (match rest with
-        | TColon::TOBrace l2::xs ->
+        | TColon::TOBrace _l2::xs ->
             let (toks, _, rest) = 
               Common2.split_when (function TCBrace -> true | _ -> false) xs in
             Some toks, rest

@@ -88,7 +88,7 @@ let split_dump file =
       then begin
         let file = Common.matched1 s in
         let file = Str.global_replace (Str.regexp " ") "___" file in
-        let (d,b,e) = Common2.dbe_of_filename file in
+        let (d,b,_e) = Common2.dbe_of_filename file in
         pr2 file;
         Common.command2 (spf "mkdir -p %s" d);
         close_out chan_out;

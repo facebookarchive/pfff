@@ -187,7 +187,7 @@ let kind_file env =
   match env.clang2_file with
   | s when s =~ ".*\\.[h]\\.clang2" -> Header
   | s when s =~ ".*\\.[cm]\\.clang2" -> Source
-  | s  ->
+  | _s  ->
    (* failwith ("unknown kind of file: " ^ s) *)
     Source
 
@@ -356,7 +356,7 @@ let add_type_deps env typ =
         in
         aux t
       end
-  | T (TString s) ->
+  | T (TString _s) ->
       failwith "you're using an old version of the AST dumper, apply patch"
   | _ ->
       error env "wrong type format"
@@ -388,7 +388,7 @@ let rec extract_defs_uses env ast =
     current_c_file = ref c_file;
   } in
   match ast with
-  | Paren (TranslationUnitDecl, l, _loc::xs) ->
+  | Paren (TranslationUnitDecl, _l, _loc::xs) ->
       List.iter (sexp_toplevel env) xs
   | _ -> 
       error env "not a TranslationDecl"
@@ -424,9 +424,9 @@ and sexp_toplevel env x =
       sexps env xs
   | Bracket (xs) ->
       sexps env xs
-  | Brace (xs, _) ->
+  | Brace (_xs, _) ->
       ()
-  | T tok ->
+  | T _tok ->
       ()
 
 and sexp env x =
@@ -439,10 +439,10 @@ and sexps env xs = List.iter (sexp env) xs
 (* ---------------------------------------------------------------------- *)
 
 (* coupling: must add constructor in dispatcher above *)
-and decl env (enum, l, xs) =
+and decl env (enum, _l, xs) =
   let env =
     match enum, xs with
-    | FunctionDecl, loc::(T (TLowerIdent s | TUpperIdent s))::typ::rest->
+    | FunctionDecl, _loc::(T (TLowerIdent s | TUpperIdent s))::typ::rest->
         let kind = 
           if rest +> List.exists (function 
           | Paren (CompoundStmt, _, _) -> true
@@ -470,7 +470,7 @@ and decl env (enum, l, xs) =
         add_type_deps env typ;
         { env with locals = ref [] }
 
-    | VarDecl, loc::(T (TLowerIdent s | TUpperIdent s))::typ::rest ->
+    | VarDecl, _loc::(T (TLowerIdent s | TUpperIdent s))::typ::rest ->
         let kind =
           match rest with
           | T (TLowerIdent "extern")::_ -> E.GlobalExtern
@@ -497,24 +497,24 @@ and decl env (enum, l, xs) =
         env
 
     (* I am not sure about the namespaces, so I prepend strings *)
-    | TypedefDecl, loc::(T (TLowerIdent s | TUpperIdent s))::typ::_rest ->
+    | TypedefDecl, _loc::(T (TLowerIdent s | TUpperIdent s))::typ::_rest ->
         let env = add_node_and_edge_if_defs_mode env ("T__" ^ s, E.Type) in
         if typedefs_dependencies
         then add_type_deps env typ;
         env
         
-    | EnumDecl, loc::(T (TLowerIdent s | TUpperIdent s))::_rest ->
+    | EnumDecl, _loc::(T (TLowerIdent s | TUpperIdent s))::_rest ->
         add_node_and_edge_if_defs_mode env ("E__" ^ s, E.Type) 
 
     (* ignore forward decl, to avoid duped entities *)
-    | RecordDecl, loc::(T (TLowerIdent "struct"))
-        ::(T (TLowerIdent s | TUpperIdent s))::[] ->
+    | RecordDecl, _loc::(T (TLowerIdent "struct"))
+        ::(T (TLowerIdent _s | TUpperIdent _s))::[] ->
         env
     (* regular defs *)
-    | RecordDecl, loc::(T (TLowerIdent "struct"))
+    | RecordDecl, _loc::(T (TLowerIdent "struct"))
         ::(T (TLowerIdent s | TUpperIdent s))::_rest ->
         add_node_and_edge_if_defs_mode env ("S__" ^ s, E.Type)
-    | RecordDecl, loc::(T (TLowerIdent "union"))
+    | RecordDecl, _loc::(T (TLowerIdent "union"))
         ::(T (TLowerIdent s | TUpperIdent s))::_rest ->
         add_node_and_edge_if_defs_mode env ("U__" ^ s, E.Type)
     (* usually embedded struct *)
@@ -530,7 +530,7 @@ and decl env (enum, l, xs) =
         add_node_and_edge_if_defs_mode env 
           (spf "U__anon__%s" (str_of_angle_loc env loc), E.Type)
 
-    | FieldDecl, loc::(T (TLowerIdent s | TUpperIdent s))::typ::_rest ->
+    | FieldDecl, _loc::(T (TLowerIdent s | TUpperIdent s))::typ::_rest ->
         let env = add_node_and_edge_if_defs_mode env (s, E.Field) in 
         add_type_deps env typ;
         env
@@ -538,7 +538,7 @@ and decl env (enum, l, xs) =
         add_node_and_edge_if_defs_mode env 
           (spf "F__anon__%s" (str_of_angle_loc env loc), E.Field)
 
-    | EnumConstantDecl, loc::(T (TLowerIdent s | TUpperIdent s))::_rest ->
+    | EnumConstantDecl, _loc::(T (TLowerIdent s | TUpperIdent s))::_rest ->
       let s = if kind_file env =*= Source then new_str_if_defs env s else s in
       add_node_and_edge_if_defs_mode env (s, E.Constructor)
         
@@ -558,7 +558,7 @@ and decl env (enum, l, xs) =
 (* ---------------------------------------------------------------------- *)
 
 (* coupling: must add constructor in dispatcher above if add one here *)
-and expr env (enum, l, xs) =
+and expr env (enum, _l, xs) =
   (match enum, xs with
   | CallExpr, _loc::_typ
       ::(Paren (ImplicitCastExpr, _l2, 
@@ -644,7 +644,7 @@ and expr env (enum, l, xs) =
             (* use canonical type, should never get there *)
             error env ("impossible")
 
-        | Typ.UnionName s  | Typ.Pointer (Typ.UnionName s) ->
+        | Typ.UnionName _s  | Typ.Pointer (Typ.UnionName _s) ->
             ()
         | Typ.AnonStuff | Typ.Pointer (Typ.AnonStuff) ->
             ()
@@ -661,7 +661,7 @@ and expr env (enum, l, xs) =
 
   (* anon field *)
   | MemberExpr, _loc::_typ::_lval::T (TDot|TArrow)::
-      _address::(Paren (enum2, l2, xs))::[] ->
+      _address::(Paren (_enum2, _l2, _xs))::[] ->
       if env.phase = Uses
       then ()
 

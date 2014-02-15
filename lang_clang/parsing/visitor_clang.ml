@@ -12,7 +12,6 @@
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the file
  * license.txt for more details.
  *)
-open Common
 
 open Ast_clang
 
@@ -31,14 +30,14 @@ type visitor =
 (* Main entry point *)
 (*****************************************************************************)
 
-let rec visit hook x =
+let visit hook x =
 
   let rec sexp x = 
-    let rec k x =
+    let k x =
       match x with
       | Paren (_, _, xs) | Angle xs | Anchor xs | Bracket xs ->
           List.iter sexp xs
-      | Brace (toks, _) -> ()
+      | Brace (_toks, _) -> ()
       | T _ -> ()
     in
     hook k x

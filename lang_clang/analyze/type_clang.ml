@@ -86,11 +86,11 @@ let extract_type_of_tokens loc xs =
      * or just look at preceding type def before the VarDecl,
      * probably the anon struct
      *)
-    | TLowerIdent"struct"::TInf _::TLowerIdent "anonymous"::rest ->
+    | TLowerIdent"struct"::TInf _::TLowerIdent "anonymous"::_rest ->
         AnonStuff
-    | TLowerIdent"union"::TInf _::TLowerIdent "anonymous"::rest ->
+    | TLowerIdent"union"::TInf _::TLowerIdent "anonymous"::_rest ->
         AnonStuff
-    | TLowerIdent"enum"::TInf _::TLowerIdent "anonymous"::rest ->
+    | TLowerIdent"enum"::TInf _::TLowerIdent "anonymous"::_rest ->
         AnonStuff
           
     | TLowerIdent "struct"::(TLowerIdent s | TUpperIdent s)::rest ->
@@ -112,7 +112,7 @@ let extract_type_of_tokens loc xs =
      (* todo: sparse has such code, why clang does not unsugar?
       * it does in 'a':'b' 'b' is unsugared!
       *)
-    | TLowerIdent "typeof"::rest ->
+    | TLowerIdent "typeof"::_rest ->
         TypeofStuff
           
     | (TLowerIdent s | TUpperIdent s)::rest ->
@@ -120,7 +120,7 @@ let extract_type_of_tokens loc xs =
         then Builtin s
         else Typename s
         ) rest
-    | x::xs ->
+    | x::_xs ->
         Errors_clang.error loc (spf "unhandled type prefix: %s" (Common.dump x))
 
   and aux2 acc = function
@@ -130,23 +130,23 @@ let extract_type_of_tokens loc xs =
     (* todo: analyze params? for type deps, analyze the Param in the 
      * mean time
      *)
-    | TOPar _::rest ->
+    | TOPar _::_rest ->
         Function acc
     | TLowerIdent ("const" | "volatile")::rest -> aux2 acc rest
     (* todo: can have 'union Sym::<anonymous at /Users/yoann/...' in tiny-cc 
      * or struct header::<anonymous in umalloc.c
      *)
-    | TColon::TColon::rest ->
+    | TColon::TColon::_rest ->
         AnonStuff
     | TStar::rest ->
         aux2 (Pointer acc) rest
-    | x::xs -> 
+    | x::_xs -> 
         Errors_clang.error loc (spf "unhandled type suffix: %s" (Common.dump x))
 
   and skip_until_closing_bracket acc = function
     | [] -> acc
     | TCBracket::xs -> aux2 (Pointer acc) xs
-    | x::xs -> skip_until_closing_bracket acc xs
+    | _x::xs -> skip_until_closing_bracket acc xs
 
   in  
   aux xs
@@ -154,11 +154,11 @@ let extract_type_of_tokens loc xs =
 
 let extract_canonical_type_of_sexp loc sexp =
   match sexp with
-  | Paren (enum, l, xs) ->
+  | Paren (_enum, _l, xs) ->
       (match xs with
-      | _loc::Brace (toks, toks_opt)::_rest ->
+      | _loc::Brace (toks, _toks_opt)::_rest ->
           extract_type_of_tokens loc toks
-      | _loc::(T (TString s))::_rest ->
+      | _loc::(T (TString _s))::_rest ->
           failwith "use old AST dumper format, apply latest patch"
       | _ -> Errors_clang.error loc "didn't find type"
       )

@@ -65,8 +65,8 @@ let sanitize_compile_commands json =
       J.Array (xs +> List.filter (fun json ->
         (match json with
         | J.Object ([
-            "directory", d;
-            "command", c;
+            "directory", _d;
+            "command", _c;
             "file", J.String filename;
           ]) ->
             if Hashtbl.mem hdone filename
