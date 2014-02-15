@@ -1736,7 +1736,7 @@ val top_undo_option: 'a undo_stack -> 'a option
 (*****************************************************************************)
 (* Binary tree *)
 (*****************************************************************************)
-type 'a bintree = Leaf of 'a | Branch of ('a bintree * 'a bintree)
+(* type 'a bintree = Leaf of 'a | Branch of ('a bintree * 'a bintree) *)
 (*x: common.mli for collection types *)
 (*****************************************************************************)
 (* N-ary tree *)
