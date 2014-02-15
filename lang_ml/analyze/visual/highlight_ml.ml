@@ -15,10 +15,9 @@
 open Common
 
 open Ast_ml
+open Highlight_code
 module Ast = Ast_ml
 module V = Visitor_ml
-
-open Highlight_code
 module PI = Parse_info
 module T = Parser_ml
 
@@ -77,7 +76,7 @@ let disable_token_phase2 = false
  *)
 let visit_program
  ?(lexer_based_tagger=false)
- ~tag_hook prefs  (*db_opt *) (ast, toks) =
+ ~tag_hook _prefs  (*db_opt *) (ast, toks) =
 
   let already_tagged = Hashtbl.create 101 in
   let tag = (fun ii categ ->
@@ -100,7 +99,7 @@ let visit_program
 
     V.kitem = (fun (k, _) x ->
       (match x with
-      | Val (tok, name, tok2, ty) | External (tok, name, tok2, ty, _, _)  ->
+      | Val (_tok, name, _tok2, ty) | External (_tok, name, _tok2, ty, _, _)  ->
           let info = Ast.info_of_name name in
           (match ty with
           (* todo: actually it can be a typedef alias to a function too
@@ -109,13 +108,13 @@ let visit_program
           | TyFunction _ -> tag info (FunctionDecl NoUse)
           | _ -> tag info (Global (Def2 NoUse))
           );
-      | Exception (tok, name, args) ->
+      | Exception (_tok, name, _args) ->
           let info = Ast.info_of_name name in
           tag info (TypeDef Def);
       | Open (_tok, lname) ->
           let info = Ast.info_of_name (Ast.name_of_long_name lname) in
           tag info (Module Use);
-      | Ast.Module (_tok, uname, _tok2, mod_expr) ->
+      | Ast.Module (_tok, uname, _tok2, _mod_expr) ->
           let ii = Ast.info_of_name uname in
           tag ii (Module Def);
       | Let _ | Type _ | ItemTodo _ -> ()
@@ -123,11 +122,11 @@ let visit_program
       k x
     );
 
-    V.kqualifier = (fun (k, bigf) qu ->
+    V.kqualifier = (fun (_k, _bigf) qu ->
       let module_infos = Ast.module_infos_of_long_name (qu, ()) in
       module_infos +> List.iter (fun ii -> tag ii (Module Use))
     );
-    V.kmodule_expr = (fun (k, bigf) mod_expr ->
+    V.kmodule_expr = (fun (k, _bigf) mod_expr ->
       (match mod_expr with
       | ModuleName lname -> 
           let info = Ast.info_of_name (Ast.name_of_long_name lname) in
@@ -136,7 +135,7 @@ let visit_program
       );
       k mod_expr
     );
-    V.kparameter = (fun (k, bigf) x ->
+    V.kparameter = (fun (k, _bigf) x ->
       (match x with
       | ParamPat (PatVar name) ->
         let info = Ast.info_of_name name in
@@ -146,7 +145,7 @@ let visit_program
       k x
     );
 
-    V.klet_binding = (fun (k, bigf) x ->
+    V.klet_binding = (fun (k, _bigf) x ->
       match x with
       | LetClassic let_def -> 
           let name = let_def.l_name in
@@ -197,7 +196,7 @@ let visit_program
           end;
           k x
 
-      | FunCallSimple (long_name, args) ->
+      | FunCallSimple (long_name, _args) ->
           let name = Ast.name_of_long_name long_name in
           let info = Ast.info_of_name name in
 
@@ -229,23 +228,23 @@ let visit_program
             )
           )
 
-      | FieldAccess (e, _tok,long_name) | FieldAssign (e, _tok,long_name,_,_) ->
+      | FieldAccess (_e, _tok,long_name) | FieldAssign (_e, _tok,long_name,_,_) ->
           let info = Ast.info_of_name (Ast.name_of_long_name long_name) in
           tag info (Field (Use2 fake_no_use2));
           k x
 
-      | ObjAccess (e, tok, name) ->
+      | ObjAccess (_e, _tok, name) ->
           let info = Ast.info_of_name name in
           tag info (Method (Use2 fake_no_use2));
           k x
 
-      | Constr (long_name, eopt) ->
+      | Constr (long_name, _eopt) ->
           let info = Ast.info_of_name (Ast.name_of_long_name long_name) in
           tag info (Constructor(Use2 fake_no_use2));
           k x
 
       (* very pad specific ... *)
-      | Infix (l1, ("=~", _), C(Ast.String(s, tok))) ->
+      | Infix (_l1, ("=~", _), C(Ast.String(_s, tok))) ->
           tag tok Regexp;
           k x
 
@@ -254,7 +253,7 @@ let visit_program
 
     V.kpattern = (fun (k, _) x ->
       (match x with
-      | PatConstr (long_name, popt) ->
+      | PatConstr (long_name, _popt) ->
           let info = Ast.info_of_name (Ast.name_of_long_name long_name) in
           if !in_try_with 
           then tag info (KeywordExn)
@@ -272,7 +271,7 @@ let visit_program
       | TyName long_name ->
           let info = Ast.info_of_name (Ast.name_of_long_name long_name) in
           tag info TypeMisc;
-      | TyApp (ty_args, long_name) ->
+      | TyApp (_ty_args, long_name) ->
           let name = Ast.name_of_long_name long_name in
           let info = Ast.info_of_name name in
           (* different color for higher-order types *)
@@ -289,13 +288,13 @@ let visit_program
 
     V.ktype_declaration = (fun (k, _) x ->
       match x with
-      | TyDef (ty_params, name, tok, type_kind) ->
+      | TyDef (_ty_params, name, _tok, type_kind) ->
           let info = Ast.info_of_name name in
           tag info (TypeDef Def);
           (* todo: ty_params *)
           (match type_kind with
           | TyAlgebric xs ->
-              xs +> Ast.unpipe +> List.iter (fun (name, args) ->
+              xs +> Ast.unpipe +> List.iter (fun (name, _args) ->
                 let info = Ast.info_of_name name in
                 tag info (Constructor(Def2 fake_no_def2))
               );
@@ -346,7 +345,7 @@ let visit_program
 
     (* a little bit pad specific *)
     |   T.TComment(ii)
-      ::T.TCommentNewline (ii2)
+      ::T.TCommentNewline (_ii2)
       ::T.TComment(ii3)
       ::T.TCommentNewline (ii4)
       ::T.TComment(ii5)
@@ -383,21 +382,21 @@ let visit_program
      * the default parser because of camlp4 extensions so having
      * a solid token-based tagger is still useful as a last resort.
      *)
-    | T.Tlet(ii)::T.TLowerIdent(s, ii3)::T.TEq ii5::xs
+    | T.Tlet(ii)::T.TLowerIdent(_s, ii3)::T.TEq _ii5::xs
         when PI.col_of_info ii = 0 ->
 
         if not (Hashtbl.mem already_tagged ii3) && lexer_based_tagger
         then tag ii3 (Global (Def2 NoUse));
         aux_toks xs;
 
-    | T.Tlet(ii)::T.TLowerIdent(s, ii3)::xs
+    | T.Tlet(ii)::T.TLowerIdent(_s, ii3)::xs
         when PI.col_of_info ii = 0 ->
 
         if not (Hashtbl.mem already_tagged ii3) && lexer_based_tagger
         then tag ii3 (Function (Def2 NoUse));
         aux_toks xs;
 
-    | (T.Tval(ii)|T.Texternal(ii))::T.TLowerIdent(s, ii3)::xs
+    | (T.Tval(ii)|T.Texternal(ii))::T.TLowerIdent(_s, ii3)::xs
         when PI.col_of_info ii = 0 ->
 
         if not (Hashtbl.mem already_tagged ii3) && lexer_based_tagger
@@ -406,21 +405,21 @@ let visit_program
 
     | T.Tlet(ii)::
       T.Trec(_ii)::
-      T.TLowerIdent(s, ii3)::xs
+      T.TLowerIdent(_s, ii3)::xs
         when PI.col_of_info ii = 0 ->
 
         if not (Hashtbl.mem already_tagged ii3) && lexer_based_tagger
         then tag ii3 (Function (Def2 NoUse));
         aux_toks xs;
 
-    | T.Tand(ii)::T.TLowerIdent(s, ii3)::xs
+    | T.Tand(ii)::T.TLowerIdent(_s, ii3)::xs
         when PI.col_of_info ii = 0 ->
 
         if not (Hashtbl.mem already_tagged ii3) && lexer_based_tagger
         then tag ii3 (Function (Def2 NoUse));
         aux_toks xs;
 
-    | T.Ttype(ii)::T.TLowerIdent(s, ii3)::xs
+    | T.Ttype(ii)::T.TLowerIdent(_s, ii3)::xs
         when PI.col_of_info ii = 0 ->
 
         if not (Hashtbl.mem already_tagged ii3) && lexer_based_tagger
@@ -445,11 +444,11 @@ let visit_program
 
     (* bad smell, use of ref *)
 
-    | T.TBang ii1::T.TLowerIdent(s2, ii2)::xs ->
+    | T.TBang _ii1::T.TLowerIdent(_s2, ii2)::xs ->
         tag ii2 (UseOfRef);
         aux_toks xs
 
-    | T.TBang ii1::T.TUpperIdent(s, ii)::T.TDot _::T.TLowerIdent(s2, ii2)::xs ->
+    | T.TBang _ii1::T.TUpperIdent(_s, ii)::T.TDot _::T.TLowerIdent(_s2, ii2)::xs ->
         tag ii (Module Use);
         tag ii2 (UseOfRef);
         aux_toks xs
@@ -463,11 +462,11 @@ let visit_program
 
     (* module use, and function call! *)
 
-    | T.TUpperIdent(s, ii)::T.TDot ii2::T.TUpperIdent(s2, ii3)::xs ->
+    | T.TUpperIdent(_s, ii)::T.TDot _ii2::T.TUpperIdent(_s2, _ii3)::xs ->
         tag ii (Module Use);
         aux_toks xs;
 
-    | T.TUpperIdent(s, ii)::T.TDot ii2::T.TLowerIdent(s2, ii3)::xs ->
+    | T.TUpperIdent(s, ii)::T.TDot _ii2::T.TLowerIdent(_s2, ii3)::xs ->
         
         (* see my .emacs *)
         if Hashtbl.mem h_builtin_modules s then begin
@@ -481,19 +480,19 @@ let visit_program
         aux_toks xs;
 
     (* labels *)
-    | T.TTilde ii1::T.TLowerIdent (s, ii2)::xs ->
+    | T.TTilde ii1::T.TLowerIdent (_s, ii2)::xs ->
         (* TODO when parser, can also have Use *)
         tag ii1 (Parameter Def);
         tag ii2 (Parameter Def);
         aux_toks xs
 
     (* grammar rules in ocamlyacc *)
-    | T.TLowerIdent (s, ii1)::T.TColon _::xs 
+    | T.TLowerIdent (_s, ii1)::T.TColon _::xs 
       when PI.col_of_info ii1 = 0 ->
         tag ii1 GrammarRule;
         aux_toks xs
        
-    | x::xs ->
+    | _x::xs ->
         aux_toks xs
   in
   let toks' = toks +> Common.exclude (function
@@ -530,19 +529,19 @@ let visit_program
           )
 
     | T.TCommentMisc ii -> tag ii Comment
-    | T.TCommentNewline ii | T.TCommentSpace ii -> ()
+    | T.TCommentNewline _ii | T.TCommentSpace _ii -> ()
     | T.TUnknown ii -> tag ii Error
-    | T.EOF ii-> ()
+    | T.EOF _ii-> ()
 
     | T.TSharpDirective ii -> tag ii Ifdef
 
-    | T.TString (s,ii) ->
+    | T.TString (_s,ii) ->
         (* can have been tagged as a regexp *)
         if not (Hashtbl.mem already_tagged ii)
         then tag ii String
 
-    | T.TChar (s, ii) -> tag ii String
-    | T.TFloat (s,ii) | T.TInt (s,ii) -> tag ii Number
+    | T.TChar (_s, ii) -> tag ii String
+    | T.TFloat (_s,ii) | T.TInt (_s,ii) -> tag ii Number
     | T.Tfalse ii | T.Ttrue ii -> tag ii Boolean
 
     | T.Tlet ii | T.Tin ii | T.Tand ii | T.Trec ii 
@@ -596,11 +595,11 @@ let visit_program
         ->
         tag ii Punctuation
 
-    | T.TUpperIdent (s, ii) ->
+    | T.TUpperIdent (_s, ii) ->
         if not (Hashtbl.mem already_tagged ii)
         then () (* tag ii Constructor *)
 
-    | T.TLabelDecl (s, ii) ->tag ii (Parameter Def)
+    | T.TLabelDecl (_s, ii) ->tag ii (Parameter Def)
 
     | T.Topen ii  -> tag ii BadSmell
 
