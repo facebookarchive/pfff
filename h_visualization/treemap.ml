@@ -16,7 +16,6 @@
  *)
 (*e: Facebook copyright *)
 open Common2
-open Common
 
 module F = Figures
 open Figures
@@ -85,9 +84,11 @@ type screen_dim = {
  * A rectangle is represented by 2 variables called P and Q in the seminal 
  * algorithm.
  *)
+(*
 type rectangle1 = 
   float array (* lower left  coord, P *) *
   float array (* upper right coord, Q *)
+*)
 
 (*e: type rectangle1 *)
 
@@ -653,6 +654,7 @@ let compute_rects_pivotized childs_pivotized rect spread =
 (*e: function compute_rects_pivotized *)
 
 (*s: function balayer_right_wrong *)
+(*
 let rec balayer_right_wrong xs = 
   match xs with
   | [] -> []
@@ -666,6 +668,7 @@ let rec balayer_right_wrong xs =
       let rest = balayer_right_wrong xs in
       let rest' = rest +> List.map (fun (start, theend) -> x::start, theend) in
       [first] ++ rest' ++ [last]
+*)
 
 let balayer_right xs =
   let n = List.length xs in
@@ -685,7 +688,7 @@ let _ = assert (balayer_right [1;2;3;2] =
 (*e: function balayer_right_wrong *)
 
 (*s: function orderify_children *)
-let rec orderify_children ?(pivotf=PivotBySize) xs rect =
+let orderify_children ?(pivotf=PivotBySize) xs rect =
 
   let rec aux xs rect = 
     match xs with
@@ -693,7 +696,7 @@ let rec orderify_children ?(pivotf=PivotBySize) xs rect =
     | [size, x] -> 
         [size, x, rect]
           
-    | x::y::ys ->
+    | _x::_y::_ys ->
         
         let left, pivot, right = 
           match pivotf with
@@ -760,7 +763,7 @@ let test_orderify () =
 
 (*s: layout ordered *)
 let (ordered_layout: ?pivotf:pivot -> ('a, 'b) layout_func) = 
- fun ?pivotf children depth rect ->
+ fun ?pivotf children _depthTODOMAYBE rect ->
   orderify_children ?pivotf children rect
 (*e: layout ordered *)
 
@@ -795,7 +798,7 @@ let render_treemap_algo2 = fun ?(algo=Classic) ?(big_borders=false) treemap ->
     else 
 
     (match root with
-    | Leaf (tnode, fileinfo) ->
+    | Leaf (tnode, _fileinfo) ->
         let color = color_of_treemap_node root in
 
         Common.push2 {
@@ -864,7 +867,7 @@ let render_treemap_algo2 = fun ?(algo=Classic) ?(big_borders=false) treemap ->
         in
         (* less: assert rects_with_info are inside rect ? *)
 
-        rects_with_info +> List.iter (fun (x, child, rect) ->
+        rects_with_info +> List.iter (fun (_x, child, rect) ->
           aux_treemap child rect ~depth:(depth + 1)
         );
 
@@ -898,6 +901,7 @@ type directory_sort =
 let follow_symlinks = ref false
 
 (*s: function tree_of_dir *)
+(*
 let tree_of_dir2 
   ?(filter_file=(fun _ -> true))  
   ?(filter_dir=(fun _ -> true))  
@@ -946,6 +950,7 @@ let tree_of_dir2
     Node(dir, children)
   in
   aux dir
+*)
 (*e: function tree_of_dir *)
 
 
@@ -965,7 +970,7 @@ let tree_of_dir3
     let children = Sys.readdir dir in
     let children = Array.map (fun x -> Common2.lowercase x, x) children in
 
-    Array.fast_sort (fun (a1, b1) (a2, b2) -> compare a1 a2) children;
+    Array.fast_sort (fun (a1, _b1) (a2, _b2) -> compare a1 a2) children;
 
     let res = ref [] in
     
@@ -1008,7 +1013,7 @@ let tree_of_dir ?filter_file ?filter_dir ?sort ~file_hook a =
   Common.profile_code "Treemap.tree_of_dir" (fun () ->
     tree_of_dir3 ?filter_file ?filter_dir ?sort ~file_hook a)
 
-let rec tree_of_dir_or_file
+let tree_of_dir_or_file
   ?filter_file
   ?filter_dir
   ?sort
@@ -1053,10 +1058,10 @@ let add_intermediate_nodes root_path nodes =
   (* now ready to build the tree recursively *)
   let rec aux current_root xs = 
     let files_here, rest = 
-      xs +> List.partition (fun ((dirs, base), _) -> null dirs)
+      xs +> List.partition (fun ((dirs, _base), _) -> null dirs)
     in
     let groups = 
-      rest +> group_by_mapped_key (fun ((dirs, base),_) -> 
+      rest +> group_by_mapped_key (fun ((dirs, _base),_) -> 
         (* would be a file if null dirs *)
         assert(not (null dirs));
         List.hd dirs
@@ -1072,7 +1077,7 @@ let add_intermediate_nodes root_path nodes =
         Node (dirname, aux dirname xs')
       )
     in
-    let leaves = files_here +> List.map (fun ((_dir, base), node) -> 
+    let leaves = files_here +> List.map (fun ((_dir, _base), node) -> 
       node
     ) in
     nodes ++ leaves
@@ -1118,8 +1123,8 @@ let tree_of_dirs_or_files ?filter_file ?filter_dir ?sort ~file_hook x =
  *)
 let rec remove_singleton_subdirs tree = 
   match tree with
-  | Leaf x -> tree
-  | Node (x, [Node (y, ys)]) ->
+  | Leaf _x -> tree
+  | Node (x, [Node (_y, ys)]) ->
       (* todo? merge x and y ? *)
       remove_singleton_subdirs (Node (x, ys))
   | Node (x, ys) ->

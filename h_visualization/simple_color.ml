@@ -1004,7 +1004,7 @@ let degrade_random str =
 
 
 (* does not work very well ... *)
-let degrade_random_bis color = 
+let _degrade_random_bis color = 
   let (r,g,b) = unrgb color in
   let around = 2 in
   let middle = around / 2 in

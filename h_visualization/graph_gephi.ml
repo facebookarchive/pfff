@@ -12,7 +12,6 @@
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the file
  * license.txt for more details.
  *)
-open Common2
 open Common
 
 module G = Graph
@@ -76,17 +75,18 @@ let graph_to_gefx ~str_of_node ~output ~tree ~weight_edges g =
           (* see: http://gexf.net/format/hierarchy.html *)
           let rec aux tree =
             match tree with
-            | Leaf f ->
+            | Common2.Leaf f ->
                 Element ("node", [
                   "id", i_to_s (G.ivertex f g);
                   "label", str_of_node f;
                 ], [])
-            | Node (dir, xs) ->
+            | Common2.Node (dir, xs) ->
                 let children = List.map aux xs in
                 Element ("node", [
                   "id", i_to_s (G.ivertex dir g);
                   "label", String.uppercase (str_of_node dir) ^ "/";
                 ], [
+
                   Element ("nodes", [], children);
                 ])
           in

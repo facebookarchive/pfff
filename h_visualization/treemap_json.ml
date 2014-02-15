@@ -15,7 +15,6 @@
  * license.txt for more details.
  *)
 (*e: Facebook copyright *)
-open Common2
 open Common
 
 module J = Json_type
@@ -53,7 +52,7 @@ let rec treemap_of_json j =
         size = size; 
       }
       in
-      Node ((rect, s), children)
+      Common2.Node ((rect, s), children)
 
   | J.Object [
       "kind", J.String "Leaf";
@@ -67,7 +66,7 @@ let rec treemap_of_json j =
         size = size;
       }
       in
-      Leaf (rect, (lbl, size))
+      Common2.Leaf (rect, (lbl, size))
 
   | _ -> 
       failwith "wrong format"
@@ -87,8 +86,8 @@ let json_of_color c = J.String (Color.string_of_color c)
  *)
 let rec (json_of_treemap: ('a, 'b) Treemap.treemap -> J.json_type) 
  = function
-  | Node (((rect, _a), xs)) ->
-      let { size = v_size; color = v_color; label = v_label } = rect in
+  | Common2.Node (((rect, _a), xs)) ->
+      let { size = _v_sizeTODO; color = _v_colorTODO; label = v_label } = rect in
       
       let bnds = [] in
 
@@ -108,7 +107,7 @@ let rec (json_of_treemap: ('a, 'b) Treemap.treemap -> J.json_type)
 
       J.Object bnds
 
-  | Leaf (rect, _b) ->
+  | Common2.Leaf (rect, _b) ->
       let { size = v_size; color = v_color; label = v_label } = rect in
 
       let bnds = [] in
@@ -189,12 +188,12 @@ let test_json_of dir =
   let tree = tree_of_dirs_or_files 
     ~file_hook:(fun file -> Common2.filesize file) [dir] in
   let treemap = treemap_of_tree
-    ~size_of_leaf:(fun (f, intleaf) -> intleaf) 
-    ~color_of_leaf:(fun (f, intleaf) -> 
+    ~size_of_leaf:(fun (_f, intleaf) -> intleaf) 
+    ~color_of_leaf:(fun (_f, _intleaf) -> 
       Color.rgb (Random.int maxc) (Random.int maxc) (Random.int maxc)
     )
-    ~label_of_dir:(fun dir -> basename dir)
-    ~label_of_file:(fun (f, intleaf) -> f)
+    ~label_of_dir:(fun dir -> Filename.basename dir)
+    ~label_of_file:(fun (f, _intleaf) -> f)
     tree 
   in
   let json = 
