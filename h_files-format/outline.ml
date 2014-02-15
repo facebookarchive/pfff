@@ -1,4 +1,3 @@
-open Common2
 open Common
 
 (*****************************************************************************)
@@ -93,7 +92,7 @@ let parse_outline ?(outline_regexp=outline_default_regexp) file =
           in
           let children_trees = aux_outline children in
 
-          (Tree (node, children_trees))::aux_outline rest
+          (Common2.Tree (node, children_trees))::aux_outline rest
     in
     aux_outline headers
   in
@@ -104,7 +103,7 @@ let parse_outline ?(outline_regexp=outline_default_regexp) file =
 
 
 let write_outline outline file = 
-  Common.with_open_outfile file (fun (pr_no_nl, chan) -> 
+  Common.with_open_outfile file (fun (pr_no_nl, _chan) -> 
     let pr s = pr_no_nl (s ^ "\n") in
     
     outline +> Common2.tree2_iter (fun node -> 

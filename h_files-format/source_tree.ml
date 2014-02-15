@@ -12,8 +12,10 @@ type tree_reorganization = (subsystem * dir list) list
 let dir_to_dirfinal (Dir s) = 
   Str.global_replace (Str.regexp "/") "___" s
   
+(*
 let dirfinal_of_dir s = 
   Dir (Str.global_replace (Str.regexp "___") "/" s)
+*)
 
 
 let all_subsystem reorg = 
@@ -111,7 +113,7 @@ let subsystem_of_dir2 (Dir dir) reorg  =
     index +> List.map (fun (Dir d, sub) -> Common.split "/" d, sub)
   in
   try 
-    index +> List.find (fun (dirsplit2, sub) -> 
+    index +> List.find (fun (dirsplit2, _sub) -> 
       let len = List.length dirsplit2 in
       Common2.take_safe len dirsplit = dirsplit2
     ) +> snd
