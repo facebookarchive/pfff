@@ -116,10 +116,8 @@ let parse2 filename =
   let toks = Parsing_hacks_java.fix_tokens toks in
 
   let tr = Parse_info.mk_tokens_state toks in
-
   let checkpoint = TH.line_of_tok tr.PI.current in
-
-  let lexbuf_fake = Lexing.from_function (fun buf n -> raise Impossible) in
+  let lexbuf_fake = Lexing.from_function (fun _buf _n -> raise Impossible) in
 
   let elems =
     try (
@@ -150,7 +148,7 @@ let parse2 filename =
       stat.PI.correct <- (Common.cat filename +> List.length);
       (Some xs, toks), stat
 
-  | Right (info_of_bads, line_error, cur, exn) ->
+  | Right (_info_of_bads, line_error, cur, exn) ->
 
       if not !Flag.error_recovery
       then raise (Parse_error (TH.info_of_tok cur));
@@ -169,7 +167,7 @@ let parse2 filename =
             pr2 ("lexical error " ^s^ "\n =" ^ error_msg_tok cur)
         | Parsing.Parse_error ->
             pr2 ("parse error \n = " ^ error_msg_tok cur)
-        | e -> raise Impossible
+        | _e -> raise Impossible
         );
       let checkpoint2 = Common.cat filename +> List.length in
 

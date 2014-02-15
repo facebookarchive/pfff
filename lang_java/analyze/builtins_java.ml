@@ -31,7 +31,7 @@ module G = Graph_code
   
 let gen_package_file_with_class_defs pr xs g =
 
-  let rec aux depth ((str, kind) as current) =
+  let rec aux depth ((_str, kind) as current) =
     let str = Graph_code.shortname_of_node current in
     match kind with
     | E.Class _ ->

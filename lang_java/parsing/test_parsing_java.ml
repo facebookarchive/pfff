@@ -30,7 +30,7 @@ let test_parse xs  =
 
   fullxs +> List.iter (fun file -> 
     pr2 ("PARSING: " ^ file);
-    let (xs, stat) = 
+    let (_xs, stat) = 
       Common.save_excursion Flag_parsing_java.error_recovery true (fun () ->
         Parse_java.parse file 
       )
@@ -80,12 +80,12 @@ let test_dump file =
 
 let test_visitor file = 
   let visitor = V.mk_visitor { V.default_visitor with
-    V.kexpr = (fun (k, bigf) e -> 
+    V.kexpr = (fun (k, _) e -> 
       match e with
       | Ast_java.Literal (s,_) -> 
           pr2 ("lit:" ^ s);
           k e
-      | Ast_java.Dot (e, (s,_)) -> 
+      | Ast_java.Dot (e, (_s,_)) -> 
           pr2 "dot: s";
           k e
       | _ -> k e

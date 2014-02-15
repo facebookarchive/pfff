@@ -10,7 +10,6 @@
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the file
  * license.txt for more details.
  *)
-open Common
 open Ocaml
 
 open Ast_java
@@ -57,7 +56,7 @@ let default_visitor = {
 
 let (mk_visitor: visitor_in -> visitor_out) = fun vin ->
 
-let rec v_wrap _of_a (v1, v2) =  _of_a v1; ()
+let rec v_wrap _of_a (v1, _v2) =  _of_a v1; ()
 
 and v_op = v_string
 

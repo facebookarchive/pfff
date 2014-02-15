@@ -15,13 +15,12 @@
 open Common
 
 open Ast_java
+open Highlight_code
 module Ast = Ast_java
 module V = Visitor_java
-
-open Highlight_code
-
 module T = Parser_java
 module TH = Token_helpers_java
+module HC = Highlight_code
 
 (*****************************************************************************)
 (* Prelude *)
@@ -37,8 +36,6 @@ module TH = Token_helpers_java
 let fake_no_def2 = NoUse
 let fake_no_use2 = (NoInfoPlace, UniqueDef, MultiUse)
 
-let lexer_based_tagger = true
-
 (*****************************************************************************)
 (* Code highlighter *)
 (*****************************************************************************)
@@ -49,7 +46,7 @@ let lexer_based_tagger = true
  * to figure out what kind of ident it is.
  *)
 
-let visit_toplevel ~tag_hook prefs (ast, toks) =
+let visit_toplevel ~tag_hook _prefs (ast, toks) =
   let already_tagged = Hashtbl.create 101 in
   let tag = (fun ii categ ->
     tag_hook ii categ;
@@ -87,7 +84,7 @@ let visit_toplevel ~tag_hook prefs (ast, toks) =
       | Ast.Enum x ->
           let ident = x.en_name in
           tag_ident ident (Class (Def2 fake_no_def2))
-      | Ast.Init (_bool, stmt) ->
+      | Ast.Init (_bool, _stmt) ->
           ()
       );
       k d
@@ -106,7 +103,7 @@ let visit_toplevel ~tag_hook prefs (ast, toks) =
     V.kexpr = (fun (k, _) e ->
       (match e with
       | Call (Dot (e, ident), args) ->
-          tag_ident ident (Method (Use2 fake_no_use2));
+          tag_ident ident (HC.Method (Use2 fake_no_use2));
           k e;
           List.iter k args
         
@@ -120,7 +117,7 @@ let visit_toplevel ~tag_hook prefs (ast, toks) =
     V.ktype = (fun (k, _) e ->
       (match e with
       (* done on PRIMITIVE_TYPE below *)
-      | TBasic (s, ii) -> ()
+      | TBasic (_s, _ii) -> ()
       | TClass xs -> 
           (match List.rev xs with
           | [] -> raise Impossible
@@ -145,9 +142,9 @@ let visit_toplevel ~tag_hook prefs (ast, toks) =
     | [] -> ()
     (* a little bit pad specific *)
     |   T.TComment(ii)
-      ::T.TCommentNewline (ii2)
+      ::T.TCommentNewline (_ii2)
       ::T.TComment(ii3)
-      ::T.TCommentNewline (ii4)
+      ::T.TCommentNewline (_ii4)
       ::T.TComment(ii5)
       ::xs ->
         let s = Parse_info.str_of_info ii in
@@ -174,7 +171,7 @@ let visit_toplevel ~tag_hook prefs (ast, toks) =
     (* defs *)
     (* uses *)
 
-    | x::xs ->
+    | _x::xs ->
         aux_toks xs
   in
   let toks' = toks +> Common.exclude (function
@@ -199,18 +196,18 @@ let visit_toplevel ~tag_hook prefs (ast, toks) =
         then ()
         else ()
 
-    | T.TCommentNewline ii -> ()
+    | T.TCommentNewline _ii -> ()
 
     | T.TUnknown ii -> tag ii Error
-    | T.EOF ii-> ()
+    | T.EOF _ii -> ()
 
     (* values  *)
 
-    | T.TString (s,ii) ->
+    | T.TString (_s,ii) ->
         tag ii String
-    | T.TChar (s, ii) ->
+    | T.TChar (_s, ii) ->
         tag ii String
-    | T.TFloat (s,ii) | T.TInt (s,ii) ->
+    | T.TFloat (_s,ii) | T.TInt (_s,ii) ->
         tag ii Number
 
     | T.LITERAL (s, ii) ->
@@ -227,10 +224,10 @@ let visit_toplevel ~tag_hook prefs (ast, toks) =
         | _ -> tag ii TypeMisc
         )
 
-    | T.OPERATOR_EQ (s, ii) ->
+    | T.OPERATOR_EQ (_s, ii) ->
         tag ii Operator
 
-    | T.IDENTIFIER (s, ii) ->
+    | T.IDENTIFIER (_s, _ii) ->
         ()
 
     (* keywords  *)

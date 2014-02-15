@@ -3,7 +3,6 @@
 open Ast_java
 
 let vof_info x = Parse_info.vof_info x
-let vof_tok v = vof_info v
 let vof_wrap _of_a (v1, v2) =
   let v1 = _of_a v1
   and _v2TODO = vof_info v2

@@ -63,7 +63,7 @@ let (name: name_or_class_type -> name) = fun xs ->
       xs, x
   | TypeArgs_then_Id (xs, Id x) -> 
       xs, x
-  | TypeArgs_then_Id (xs, _) -> 
+  | TypeArgs_then_Id (_xs, _) -> 
       raise Parsing.Parse_error
   )
 

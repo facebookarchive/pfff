@@ -177,7 +177,7 @@ let create_intermediate_packages_if_not_present g root xs =
   in
   aux root dirs
 
-let rec add_use_edge env (name, kind) =
+let add_use_edge env (name, kind) =
   let src = env.current in
   let dst = (name, kind) in
   (match () with
@@ -295,6 +295,7 @@ let rec import_of_inherited_classes env n =
  * fully qualified entities so there should be no name conflicts.
  *)
 let rec extract_defs_uses ~phase ~g ~ast ~readable ~lookup_fails =
+  ignore(lookup_fails);
 
   let env = {
     g; phase;
@@ -317,7 +318,7 @@ let rec extract_defs_uses ~phase ~g ~ast ~readable ~lookup_fails =
       | Some long_ident -> [List.map Ast.unwrap long_ident ++ ["*"]]
       | None -> []
       ) ++ 
-     (ast.imports +> List.map (fun (is_static, qualified_ident) ->
+     (ast.imports +> List.map (fun (_is_static, qualified_ident) ->
        List.map Ast.unwrap qualified_ident
      ) ++ [
        (* we automatically import java.lang.* *)
@@ -330,7 +331,7 @@ let rec extract_defs_uses ~phase ~g ~ast ~readable ~lookup_fails =
       match List.rev xs with
       | [] -> raise Impossible
       | ["*", _] -> None
-      | (s, _)::rest -> Some (s, (is_static, xs))
+      | (s, _)::_rest -> Some (s, (is_static, xs))
     );
   }
   in
@@ -356,7 +357,7 @@ let rec extract_defs_uses ~phase ~g ~ast ~readable ~lookup_fails =
         match List.rev qualified_ident with
         | ("*",_)::rest -> List.rev rest
         (* less: just lookup the class for now *)
-        | x::xs when is_static -> List.rev xs
+        | _x::xs when is_static -> List.rev xs
         | _ -> qualified_ident
       in
       let entity = List.map Ast.unwrap qualified_ident_bis in
@@ -421,7 +422,7 @@ and class_decl env def =
     current = node;
     current_qualifier = full_ident;
     (* with anon classes we need to lookup enclosing final parameters/locals *)
-    params_or_locals = env.params_or_locals +> List.filter (fun (x,b) -> b);
+    params_or_locals = env.params_or_locals +> List.filter (fun (_x,b) -> b);
     type_parameters = def.cl_tparams +> List.map (function
     | TParam ((str,_tok), _constraints) -> str
     );
@@ -479,7 +480,7 @@ and method_decl env def =
      (* with methods of anon classes we need to lookup enclosing
       * final parameters/locals 
       *) 
-     (env.params_or_locals +> List.filter (fun (x,b) -> b));
+     (env.params_or_locals +> List.filter (fun (_x,b) -> b));
 
     (* TODO use m_tparams *) 
     type_parameters = [];
@@ -555,10 +556,10 @@ and enum_decl env def =
     }
     in
     (match enum_constant with
-    | EnumSimple ident -> ()
-    | EnumConstructor (ident, args) -> 
+    | EnumSimple _ident -> ()
+    | EnumConstructor (_ident, args) -> 
         exprs env args
-    | EnumWithMethods (ident, xs) -> 
+    | EnumWithMethods (_ident, xs) -> 
         decls env (xs +> List.map (fun x -> Method x))
     )
   )
@@ -674,7 +675,7 @@ and expr env = function
         let str = str_of_name n in
         (match str, n with
         (* TODO: look at the type and continue lookup *)
-        | _, (_,(s,_))::rest when List.mem_assoc s env.params_or_locals -> ()
+        | _, (_,(s,_))::_rest when List.mem_assoc s env.params_or_locals -> ()
         (* TODO *)
         | "super", _ | "this", _ -> 
             ()
@@ -689,19 +690,19 @@ and expr env = function
                     pr2_gen (env.current, n);
                     raise Impossible
                 | (_, (s,_))::_ when List.mem_assoc s env.imported_qualified ->
-                    let (is_static, full_ident) = 
+                    let (_is_static, full_ident) = 
                       List.assoc s env.imported_qualified in
                     let str = str_of_qualified_ident full_ident in
                     add_use_edge env (str, E.Package)
 
-                | [x] when looks_like_enum_constant str -> 
+                | [_x] when looks_like_enum_constant str -> 
                     pr2 ("PB: " ^ Common.dump n);
-                | [x] when looks_like_class_name str ->
+                | [_x] when looks_like_class_name str ->
                     add_use_edge env (str, E.Package)
-                | [x] -> 
+                | [_x] -> 
                     pr2 ("PB: " ^ Common.dump n);
                     (* env.imported_namespace +> List.iter pr2_gen; *)
-                | x::y::xs ->
+                | _x::_y::_xs ->
                     (* unknown package probably *)
                     add_use_edge env (str, E.Package)
                 )
@@ -735,7 +736,7 @@ and expr env = function
           in
           class_decl env cdecl
       )
-  | NewQualifiedClass (e, id, args, decls_opt) ->
+  | NewQualifiedClass (_e, id, args, decls_opt) ->
       (*
       pr2 "NewQualifiedClass";
       pr2_gen (NewQualifiedClass (e, id, args, decls_opt));
@@ -743,7 +744,7 @@ and expr env = function
       (* todo: need to resolve the type of 'e' *)
       expr env (NewClass (TClass ([id, []]), args, decls_opt))
 
-  | NewArray (t, args, i, ini_opt) ->
+  | NewArray (t, args, _i, ini_opt) ->
       typ env t;
       exprs env args;
       init_opt env ini_opt
@@ -751,7 +752,7 @@ and expr env = function
   | Call (e, es) ->
       expr env e;
       exprs env es
-  | Dot (e, idTODO) ->
+  | Dot (e, _idTODO) ->
       (* todo: match e, and try lookup method/field
        * if e is a Name, lookup it, and if a class then
        * lookup children. If local ... then need get its type
@@ -760,10 +761,10 @@ and expr env = function
       expr env e;
 
   | ArrayAccess (e1, e2) -> exprs env [e1;e2]
-  | Postfix (e, op) | Prefix (op, e) -> expr env e
-  | Infix (e1, op, e2) -> exprs env [e1;e2]
+  | Postfix (e, _op) | Prefix (_op, e) -> expr env e
+  | Infix (e1, _op, e2) -> exprs env [e1;e2]
   | Conditional (e1, e2, e3) -> exprs env [e1;e2;e3]
-  | Assignment (e1, op, e2) -> exprs env [e1;e2]
+  | Assignment (e1, _op, e2) -> exprs env [e1;e2]
 
   | Cast (t, e) -> 
       typ env t;
@@ -796,7 +797,7 @@ and typ env = function
       if env.phase = Uses || env.phase = Inheritance then begin
         (match str, reft with
         (* TODO: look at the type and continue lookup *)
-        | _, (((s,_),_))::rest when List.mem s env.type_parameters -> ()
+        | _, (((s,_),_))::_rest when List.mem s env.type_parameters -> ()
         | _ ->
             (match lookup env xs with
             (* TODO: look in type_params_local ! *)
@@ -807,17 +808,17 @@ and typ env = function
                 (match xs with
                 | [] -> raise Impossible
                 | ((s,_))::_ when List.mem_assoc s env.imported_qualified ->
-                    let (is_static, full_ident) = 
+                    let (_is_static, full_ident) = 
                       List.assoc s env.imported_qualified in
                     let str = str_of_qualified_ident full_ident in
                     add_use_edge env (str, E.Package)
                       
-                | [x] -> 
+                | [_x] -> 
                     if looks_like_class_name str
                     then add_use_edge env (str, E.Package)
                     else 
                       pr2 ("PB: " ^ Common.dump reft);
-                | x::y::xs ->
+                | _x::_y::_xs ->
                     (* unknown package probably *)
                     add_use_edge env (str, E.Package)
                 )

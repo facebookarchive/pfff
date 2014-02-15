@@ -1,7 +1,5 @@
 (* Copyright (C) 2008 Yoann Padioleau *)
 
-open Common
-
 module PI = Parse_info
 open Parser_java
 
@@ -45,16 +43,16 @@ let info_of_tok = function
   | TCommentSpace ii -> ii
   | TCommentNewline ii -> ii
 
-  | TInt (s, ii) -> ii
-  | TFloat (s, ii) -> ii
-  | TChar (s, ii) -> ii
-  | TString (s, ii) -> ii
+  | TInt (_s, ii) -> ii
+  | TFloat (_s, ii) -> ii
+  | TChar (_s, ii) -> ii
+  | TString (_s, ii) -> ii
 
-  | IDENTIFIER (id,ii) -> ii
-  | PRIMITIVE_TYPE (s, ii) -> ii
-  | LITERAL (s, ii) -> ii
+  | IDENTIFIER (_id,ii) -> ii
+  | PRIMITIVE_TYPE (_s, ii) -> ii
+  | LITERAL (_s, ii) -> ii
 
-  | OPERATOR_EQ (op, ii) -> ii
+  | OPERATOR_EQ (_op, ii) -> ii
 
   (* 3.11 Separators *)
   | LP (ii) -> ii
