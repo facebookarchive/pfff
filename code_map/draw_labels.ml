@@ -19,7 +19,6 @@ open Common
 open Common2.ArithFloatInfix
 
 open Figures (* for the fields *)
-open Model2 (* for the fields *)
 
 module Flag = Flag_visual
 

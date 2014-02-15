@@ -49,7 +49,7 @@ struct
     val mutable roots : (int,custom_list) H.t = H.create 19
     method private find_opt i = 
       try Some (H.find roots i) with Not_found -> None
-    method custom_flags = [`LIST_ONLY]
+    method! custom_flags = [`LIST_ONLY]
     method custom_get_iter (path:Gtk.tree_path) : custom_list option =
       let indices: int array  = GTree.Path.get_indices path in
       match indices with
@@ -73,7 +73,7 @@ struct
       | None -> self#find_opt 0
       | Some _ -> None
 
-    method custom_iter_has_child (row:custom_list) : bool = false
+    method custom_iter_has_child (_row:custom_list) : bool = false
 
     method custom_iter_n_children (rowopt:custom_list option) : int =
       match rowopt with
@@ -86,7 +86,7 @@ struct
       | None -> self#find_opt n
       | _ -> None 
 
-    method custom_iter_parent (row:custom_list) : custom_list option = None
+    method custom_iter_parent (_row:custom_list) : custom_list option = None
 
     method insert (t:A.t) =
       let e = {finfo=t; fidx= last_idx } in

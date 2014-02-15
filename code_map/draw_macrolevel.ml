@@ -19,7 +19,6 @@ open Common
 open Common2.ArithFloatInfix
 
 open Figures (* for the fields *)
-open Model2 (* for the fields *)
 
 module T = Treemap
 module F = Figures
@@ -126,9 +125,12 @@ let draw_trect_using_layers ~cr layers_with_index rect =
  * Also bad that can not compare function use by just looking
  * at their size :(
 *)
+(*
 let threshold_print_summary_entity_users = 10
 
 let draw_summary_content2 ~cr ~w_per_column ~context ~nblines ~file rect =
+  ignore(nblines);
+  ignore(file);
 
   let r = rect.T.tr_rect in
   let file = rect.T.tr_label in
@@ -221,5 +223,6 @@ let draw_summary_content
  ~cr ~w_per_column ~context ~nblines ~file rect =
   Common.profile_code "View.draw_summary_content" (fun () ->
     draw_summary_content2 ~cr ~w_per_column ~context ~nblines ~file rect)
+*)
 (*e: draw_summary_content *)
 (*e: draw_macrolevel.ml *)

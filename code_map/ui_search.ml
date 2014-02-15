@@ -44,10 +44,10 @@ let dialog_search_def model =
   in
   let entry = 
     Completion2.my_entry_completion_eff 
-      ~callback_selected:(fun entry str file e ->
+      ~callback_selected:(fun _entry _str _file _e ->
         true
       )
-      ~callback_changed:(fun str ->
+      ~callback_changed:(fun _str ->
         ()
       )
       idx

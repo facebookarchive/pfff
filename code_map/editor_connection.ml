@@ -26,8 +26,10 @@ open Common
 (*****************************************************************************)
 
 (*s: emacs configuration *)
+(*
 let emacsclient_path_mac =
   "/home/pad/Dropbox/apps/Emacs.app/Contents/MacOS/bin/emacsclient"
+*)
 
 let emacsclient_path = "emacsclient"
 

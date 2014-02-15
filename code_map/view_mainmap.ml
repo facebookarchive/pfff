@@ -189,6 +189,7 @@ let paint dw =
 (*****************************************************************************)
 
 (*s: key_pressed *)
+(*
 let key_pressed (da, da2) dw_ref ev = 
   let dw = !dw_ref in
 
@@ -260,6 +261,7 @@ let key_pressed (da, da2) dw_ref ev =
     GtkBase.Widget.queue_draw da2#as_widget;
   end;
   b
+*)
 (*e: key_pressed *)
 
 (*s: find_filepos_in_rectangle_at_user_point *)

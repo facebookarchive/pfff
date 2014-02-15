@@ -53,16 +53,16 @@ module Parsing = Parsing2
  * Below line numbers starts at 0, not at 1 as in emacs.
  *)
 
-type line = Model2.line
+type _line = Model2.line
 
 type line_in_column = {
   column: float; (* int *)
   line_in_column: float; (* int *)
 }
 
-type pos = float (* x *) * float (* y *)
+type _pos = float (* x *) * float (* y *)
 
-type point = Cairo.point
+type _point = Cairo.point
 
 (*s: type draw_content_layout *)
 (*e: type draw_content_layout *)
@@ -361,7 +361,7 @@ let draw_content2 ~cr ~layout ~context tr =
 
   let glyphs_opt = glyphs_of_file ~context ~font_size ~font_size_real file in
   glyphs_opt +> Common.do_option (fun glyphs ->
-    glyphs +> Array.iteri (fun line_0_indexed glyph ->
+    glyphs +> Array.iteri (fun line_0_indexed _glyph ->
       let lc = line_to_line_in_column (Line line_0_indexed) layout in
       let x, y = line_in_column_to_bottom_pos lc r layout in
       Cairo.move_to cr x y;

@@ -17,26 +17,18 @@
 (*e: Facebook copyright *)
 open Common2
 open Common
-(* floats are the norm in graphics *)
-open Common2.ArithFloatInfix
 
 module G = Gui
 module K = GdkKeysyms
 module GR = Gdk.Rectangle
-
-open Figures (* for the fields *)
 module F = Figures
 module T = Treemap
-
 module CairoH = Cairo_helpers
-
 open Model2 (* for the fields *)
 module M = Model2
 module Controller = Controller2
-
 module Flag = Flag_visual
 module Style = Style2
-
 module Db = Database_code
 
 (*****************************************************************************)
@@ -46,7 +38,7 @@ module Db = Database_code
 (*****************************************************************************)
 (* Wrappers *)
 (*****************************************************************************)
-let pr2, pr2_once = Common2.mk_pr2_wrappers Flag.verbose_visual
+let pr2, _pr2_once = Common2.mk_pr2_wrappers Flag.verbose_visual
 
 (*****************************************************************************)
 (* Globals *)
@@ -85,6 +77,8 @@ let root_orig () =
  * getting the final result.
  *)
 let assemble_layers cr_final dw ~width ~height =
+  ignore(width);
+  ignore(height);
 
   let surface_src = CairoH.surface_of_pixmap dw.pm in
 
@@ -135,6 +129,7 @@ let expose a b c =
 
 (*s: configure *)
 let configure2_bis da dw_ref ev = 
+  ignore(da);
   let dw = !dw_ref in
 
   let w = GdkEvent.Configure.width ev in
@@ -169,7 +164,7 @@ let configure a b c =
 (* The legend *)
 (* ---------------------------------------------------------------------- *)
 (*s: expose_legend *)
-let expose_legend da dw_ref ev = 
+let expose_legend da dw_ref _ev = 
   let cr = Cairo_lablgtk.create da#misc#window in
 
   (* todo: make the architecture a layer so no need for special case *)
@@ -190,7 +185,7 @@ let expose_legend da dw_ref ev =
 (*****************************************************************************)
 
 (*s: mk_gui() *)
-let mk_gui ~screen_size ~legend test_mode (root, model, dw, dbfile_opt) =
+let mk_gui ~screen_size ~legend test_mode (root, model, dw, _dbfile_opt) =
 
   let dw = ref dw in
   Common.push2 !dw Controller.dw_stack;
@@ -273,7 +268,7 @@ let mk_gui ~screen_size ~legend test_mode (root, model, dw, dbfile_opt) =
           | Some e, Some db ->
               (match e.Db.e_good_examples_of_use with
               | [] -> failwith "no good examples of use for this entity"
-              | x::xs ->
+              | x::_xs ->
                   let e = db.Db.entities.(x) in
                   let file = e.Db.e_file in
 
@@ -336,7 +331,7 @@ let mk_gui ~screen_size ~legend test_mode (root, model, dw, dbfile_opt) =
         in
         (* todo: again, make the architecture a layer so less special cases *)
         let entries = [`R (
-             ("Architecture", true, (fun b ->
+             ("Architecture", true, (fun _b ->
                Ui_layers.choose_layer ~root:(root_orig()) None dw;
              ))::
              layers)
@@ -417,7 +412,7 @@ let mk_gui ~screen_size ~legend test_mode (root, model, dw, dbfile_opt) =
 
       let entry = 
         Completion2.my_entry_completion_eff 
-         ~callback_selected:(fun entry str file e ->
+         ~callback_selected:(fun entry str _file e ->
           (* pb is that we may have run the visualizer on a subdir
            * of what is mentionned in the database code. We have
            * then to find the real root.
@@ -640,7 +635,7 @@ let mk_gui ~screen_size ~legend test_mode (root, model, dw, dbfile_opt) =
   w#show ();
 
   (* test *)
-  test_mode +> Common.do_option (fun s -> 
+  test_mode +> Common.do_option (fun _s -> 
     (* View_test.do_command s model *)
     ()
   );

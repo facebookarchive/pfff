@@ -43,7 +43,7 @@ module Db = Database_code
  * and return a valid fullpath like ~/www/flib/foo.php
  * 
  *)
-let rec readable_to_absolute_filename_under_root ~root filename =
+let readable_to_absolute_filename_under_root ~root filename =
 
   (* the root may be a filename *)
   let root_dir = 

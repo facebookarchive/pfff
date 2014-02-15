@@ -35,19 +35,21 @@ let dw_stack = ref []
 
 
 
-let _go_back = ref (fun dw_ref ->
+let _go_back = ref (fun _dw_ref ->
   failwith "_go_back not defined"
 )
 
 let _go_dirs_or_file = ref 
- (fun ?(current_entity=None) ?(current_grep_query=None)  dw_ref paths ->
+ (fun ?(current_entity=None) ?(current_grep_query=None)  _dw_ref _paths ->
+   ignore current_entity;
+   ignore current_grep_query;
   failwith "_go_dirs_or_file not defined"
 )
 
-let _statusbar_addtext = ref (fun s ->
+let _statusbar_addtext = ref (fun _s ->
   failwith "_statusbar_addtext not defined"
 )
-let _set_title = ref (fun s ->
+let _set_title = ref (fun _s ->
   failwith "_set_title not defined"
 )
 

@@ -72,6 +72,7 @@ let with_overlay dw f =
 (*s: draw_label_overlay *)
 (* assumes cr_overlay has not been zoom_pan_scale *)
 let draw_label_overlay ~cr_overlay ~dw ~x ~y txt =
+  ignore(dw);
 
   Cairo.select_font_face cr_overlay "serif" 
     Cairo.FONT_SLANT_NORMAL Cairo.FONT_WEIGHT_NORMAL;
@@ -431,6 +432,7 @@ let motion_notify (da, da2) dw ev =
 (*e: motion_refresher *)
 
 (*s: idle *)
+(*
 let idle dw () = 
   let dw = !dw in
 
@@ -441,6 +443,7 @@ let idle dw () =
     then zoomed_surface_of_rectangle dw r +> ignore;
   );
   true
+*)
 (*e: idle *)
 
 

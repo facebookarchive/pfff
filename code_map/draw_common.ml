@@ -15,7 +15,6 @@
  * license.txt for more details.
  *)
 (*e: Facebook copyright *)
-open Common
 open Common2.ArithFloatInfix
 module CairoH = Cairo_helpers
 
@@ -32,6 +31,7 @@ let final_font_size_when_multiplier
     ~multiplier ~size_font_multiplier_multiplier 
     ~font_size ~font_size_real 
    = 
+  ignore(font_size_real);
   let size_font_multiplier = multiplier in
   
   let font_size_adjusted = 

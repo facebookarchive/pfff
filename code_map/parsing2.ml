@@ -73,7 +73,7 @@ let parse_cache parse_in extract file =
     let recompute = 
       if Hashtbl.mem _hmemo_file file
       then
-        let (oldmtime, ast) = Hashtbl.find _hmemo_file file in
+        let (oldmtime, _ast) = Hashtbl.find _hmemo_file file in
         mtime > oldmtime
       else true
     in
@@ -136,7 +136,7 @@ let rewrite_categ_using_entities s categ file entities =
       if Database_code.is_entity_def_category categ
       then HC.rewrap_arity_def2_category arity categ 
       else categ
-  | x::y::xs ->
+  | _x::_y::_xs ->
       (* TODO: handle __construct directly *)
       if not (List.mem s ["__construct"])
       then
@@ -197,7 +197,7 @@ let tokens_with_categ_of_file file hentities =
       tokens_with_categ_of_file_helper 
         { parse = (parse_cache (fun file ->
           Common.save_excursion Flag_parsing_php.error_recovery true (fun () ->
-            let ((ast, toks), stat) = Parse_php.parse file in
+            let ((ast, toks), _stat) = Parse_php.parse file in
             (* todo: use database_light if given? we could so that
              * variables are better annotated.
              * note that database_light will be passed in
@@ -326,7 +326,7 @@ let tokens_with_categ_of_file file hentities =
       tokens_with_categ_of_file_helper 
         { parse = (parse_cache 
          (fun file -> 
-           let (ast2, stat) = Parse_cpp.parse file in
+           let (ast2, _stat) = Parse_cpp.parse file in
            let ast = Parse_cpp.program_of_program2 ast2 in
            (* work by side effect on ast2 too *)
            Check_variables_cpp.check_and_annotate_program

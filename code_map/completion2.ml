@@ -40,12 +40,13 @@ open Custom_list_generic
 (* Helpers *)
 (*****************************************************************************)
 
+(*
 let is_prefix2 s1 s2 =
   (String.length s1 <= String.length s2) && 
   (String.sub s2 0 (String.length s1) = s1)
 let is_prefix a b = 
   Common.profile_code "Completion.is_prefix" (fun () -> is_prefix2 a b)
-
+*)
 
 (*****************************************************************************)
 (*  *)
@@ -125,7 +126,7 @@ module L=struct
   let col_text = column_list#add Gobject.Data.string;;
   let col_file = column_list#add Gobject.Data.string;;
   let col_count = column_list#add Gobject.Data.string;;
-  let col_kind = column_list#add Gobject.Data.string;;
+  let _col_kind = column_list#add Gobject.Data.string;;
   let col_icon = column_list#add GtkStock.conv;;
 
   let custom_value _ t ~column = 
@@ -145,7 +146,7 @@ end
 
 module MODEL=MAKE(L)
 
-let model_of_list_pair_string_with_icon2 query xs =
+let model_of_list_pair_string_with_icon2 _query xs =
 
   let custom_list = MODEL.custom_list () in
 
@@ -267,7 +268,7 @@ let my_entry_completion_eff2 ~callback_selected ~callback_changed fn_idx =
    * and the current query which in our case would fail when
    * we use the suffix-search ability of big_grep.
    *)
-  completion#set_match_func (fun key row ->
+  completion#set_match_func (fun _key _row ->
     true
   );
   completion#set_minimum_key_length 2;

@@ -16,18 +16,11 @@
  *)
 (*e: Facebook copyright *)
 
-open Common
-(* floats are the norm in graphics *)
-open Common2.ArithFloatInfix
-
 module GR = Gdk.Rectangle
-
 module F = Figures
 module T = Treemap
 module CairoH = Cairo_helpers
-
 module Flag = Flag_visual
-open Model2
 module Controller = Controller2
 
 (*****************************************************************************)
@@ -35,19 +28,23 @@ module Controller = Controller2
 (*****************************************************************************)
 
 (*s: scale_minimap *)
+(*
 let scale_minimap cr dw =
   (* no zoom, no pan, no clippnig *)
   Cairo.translate cr 0.0 0.0;
   Cairo.scale cr 
     (1.0 * (float_of_int dw.width_minimap / T.xy_ratio))
     (1.0 * (float_of_int dw.height_minimap))
+*)
 (*e: scale_minimap *)
 
 (*s: with_minimap *)
+(*
 let with_minimap dw f =
   let cr = Cairo_lablgtk.create dw.pm_minimap#pixmap in
   scale_minimap cr dw;
   f cr
+*)
 (*e: with_minimap *)
 
 (*****************************************************************************)
@@ -55,6 +52,7 @@ let with_minimap dw f =
 (*****************************************************************************)
 
 (*s: paint_minimap *)
+(*
 let paint_minimap2 dw = 
   let cr = Cairo_lablgtk.create dw.pm_minimap#pixmap in
   dw.pm_minimap#rectangle 
@@ -79,10 +77,12 @@ let paint_minimap2 dw =
   in
   CairoH.draw_rectangle_figure ~cr ~color:"white" user_rect;
   ()
+*)
 
-
+(*
 let paint_minimap dw = 
   Common.profile_code "View.paint minimap" (fun () -> paint_minimap2 dw)
+*)
 (*e: paint_minimap *)
 
 (* ---------------------------------------------------------------------- *)
@@ -90,6 +90,7 @@ let paint_minimap dw =
 (* ---------------------------------------------------------------------- *)
 
 (*s: expose_minimap *)
+(*
 let expose_minimap da dw_ref ev = 
   let dw = !dw_ref in
 
@@ -110,9 +111,11 @@ let expose_minimap da dw_ref ev =
       dw.pm_minimap#pixmap;
   );
   true
+*)
 (*e: expose_minimap *)
 
 (*s: configure_minimap *)
+(*
 let configure_minimap da2 dw_ref ev = 
   let dw = !dw_ref in
 
@@ -122,6 +125,7 @@ let configure_minimap da2 dw_ref ev =
   dw.height_minimap <- h;
   dw.pm_minimap <- new_pixmap dw.width_minimap dw.height_minimap;
   true
+*)
 (*e: configure_minimap *)
 
 (* ---------------------------------------------------------------------- *)
@@ -129,6 +133,7 @@ let configure_minimap da2 dw_ref ev =
 (* ---------------------------------------------------------------------- *)
 
 (*s: motion_notify_minimap *)
+(*
 let motion_notify_minimap (da, da2) dw ev =
   let dw = !dw in
 
@@ -166,9 +171,11 @@ let motion_notify_minimap (da, da2) dw ev =
   end else begin
     true
   end
+*)
 (*e: motion_notify_minimap *)
 
 (*s: button_action_minimap *)
+(*
 let button_action_minimap (da,da2) dw ev =
   let dw = !dw in
 
@@ -197,6 +204,7 @@ let button_action_minimap (da,da2) dw ev =
       GtkBase.Widget.queue_draw da2#as_widget;
       true
   | _ -> false
+*)
 (*e: button_action_minimap *)
 
 

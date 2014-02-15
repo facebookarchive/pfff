@@ -436,7 +436,7 @@ let uses_or_users_of_node node dw fsucc =
          *)
         let rect = Hashtbl.find dw.readable_file_to_rect file in
         let microlevel = Hashtbl.find dw.microlevel rect in
-        let line = microlevel.defs +> List.find (fun (line, snode) ->
+        let line = microlevel.defs +> List.find (fun (_line, snode) ->
           match_short_vs_node snode n
         ) +> fst in
         Some (n, line, microlevel)
