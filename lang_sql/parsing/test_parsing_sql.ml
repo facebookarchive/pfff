@@ -30,7 +30,7 @@ let stress_parse_sql file =
   let bad = ref 0 in 
   let nbtotal = List.length ys in 
 
-  ys +> List.iter (fun (heading, xs) ->
+  ys +> List.iter (fun (_heading, xs) ->
     let s = Common.join " " xs in
     try 
       let _ = 
