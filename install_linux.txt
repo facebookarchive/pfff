@@ -16,6 +16,7 @@ the binutils-gold package.
 
 On Fedora you may need to install the camlp4 packages too: 
  ocaml-camlp4 ocaml-camlp4-devel
+You'll also need to install perl-pod-usage to be able to run configure itself.
 
 Then:
   $ ./configure
