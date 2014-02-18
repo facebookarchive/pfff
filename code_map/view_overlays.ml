@@ -19,17 +19,15 @@ open Common
 (* floats are the norm in graphics *)
 open Common2.ArithFloatInfix
 
+open Model2
+open Figures (* for the fields *)
 module F = Figures
 module T = Treemap
 module CairoH = Cairo_helpers
-
+module M = Model2
 module Flag = Flag_visual
-open Model2
 module Controller = Controller2
 module Style = Style2
-
-open Figures (* for the fields *)
-module M = Model2
 
 (*****************************************************************************)
 (* Prelude *)
@@ -323,7 +321,7 @@ let draw_zoomed_overlay ~cr_overlay ~user ~dw ~x ~y r =
 (*****************************************************************************)
 
 (*s: motion_refresher *)
-let motion_refresher ev dw () =
+let motion_refresher ev dw =
   let cr_overlay = Cairo.create dw.overlay in
   CairoH.clear cr_overlay;
 
@@ -392,12 +390,8 @@ let motion_refresher ev dw () =
 
 
 let motion_notify (da, da2) dw ev =
-  !Controller.current_motion_refresher +> Common.do_option (fun x ->
-    GMain.Idle.remove x;
-  );
-
+  !Controller.current_motion_refresher +> Common.do_option GMain.Idle.remove;
   let dw = !dw in
-
   let x, y = GdkEvent.Motion.x ev, GdkEvent.Motion.y ev in
   pr2 (spf "motion: %f, %f" x y);
 
@@ -426,7 +420,7 @@ let motion_notify (da, da2) dw ev =
     true
   end else begin
     Controller.current_motion_refresher := 
-      Some (Gui.gmain_idle_add ~prio:100 (motion_refresher ev dw));
+      Some (Gui.gmain_idle_add ~prio:100 (fun () -> motion_refresher ev dw));
     true
   end
 (*e: motion_refresher *)
