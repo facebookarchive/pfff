@@ -574,7 +574,7 @@ and structure_item_desc env loc = function
             expression env v2
 #if OCAML_VERSION >= 4010
 #else
-        | Tpat_construct(p, loc, ctor, [], false) when name_of_path p = ["()"]->
+        | Tpat_construct(p, loc, _ctor, [], false) when name_of_path p = ["()"]->
           let full_ident = env.current_entity ++ ["__toplevel__"] in
           let node = (full_ident, E.TopStmts) in
           let env = 
@@ -748,7 +748,7 @@ and pattern_desc t env = function
 #if OCAML_VERSION >= 4010
   | Tpat_construct (lid, v3, v4, _v5)
 #else
-  | Tpat_construct (_path, lid, v3, v4, v5) 
+  | Tpat_construct (_path, lid, v3, v4, _v5) 
 #endif
     ->
       add_use_edge_lid env lid t E.Constructor;
@@ -765,7 +765,7 @@ and pattern_desc t env = function
 #if OCAML_VERSION >= 4010
         (lid, _v2, v3) 
 #else
-       (_path, lid, v2, v3)
+       (_path, lid, _v2, v3)
 #endif
       ->
         add_use_edge_lid env lid t E.Field;
