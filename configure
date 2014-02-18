@@ -16,13 +16,13 @@ use Pod::Usage;
 # - diffutils, fileutils, findutils, grep, patchutils, sh-utils
 
 #todo:
-# - lang_bytecode/ brings many dependencies (extlib, ptrees, etc), maybe
-#   we could make it a configuration option
+# - lang_bytecode/ brings many dependencies (extlib, ptrees, ocamlzip), which
+#   in turns require zlib.h, maybe we could make it a configuration option
 # - lang_ml/ also requires compiler-libs and with the many changes in the
 #   .cmt format, this can easily break compilations, maybe we could also
 #    make it a configuration option. In the same way we should not force
 #    to use -bin-annot
-# - findutils? we need a good gnu find, not the macos find
+# - findutils? we need a good GNU find, not the macos find
 #   which adds some extra '//' in paths which bothers pfff
 # - sharutils still?, for obrowser/ocsigen use of uuencode
 
