@@ -754,8 +754,6 @@ let hentities root db_opt =
 val init_drawing :
   ?width:int ->
   ?height:int ->
-  ?width_minimap:int ->
-  ?height_minimap:int ->
   (Common.path list -> Treemap.treemap_rendering) ->
   model Async.t ->
   Layer_code.layers_with_index ->
@@ -769,8 +767,6 @@ let init_drawing
   (* This is a first guess. The first configure ev will force a resize. *)
   ?(width = 600)
   ?(height = 600)
-  ?(width_minimap = 60)
-  ?(height_minimap = 60)
   func 
   model
   layers
@@ -823,21 +819,6 @@ let init_drawing
 
       draw_searched_rectangles = true;
     };
-
-
-    zoom = 1.;
-    xtrans = 0.;
-    ytrans = 0.;
-
-    drag_pt = { Cairo.x = 0.0; Cairo.y = 0.0 };
-    in_dragging = false;
-    in_zoom_incruste = false;
-
-    width_minimap = width_minimap;
-    height_minimap = height_minimap;
-    pm_minimap = new_pixmap ~width:width_minimap ~height:width_minimap;
-    drag_pt_minimap = { Cairo.x = 0.0; Cairo.y = 0.0 };
-
   }
 @
 
@@ -1057,11 +1038,6 @@ let mk_gui ~screen_size ~legend test_mode (root, model, dw, _dbfile_opt) =
           let current_root = !dw.current_root in
           let _old_dw = Common2.pop2 Controller.dw_stack in
           !Controller._go_dirs_or_file dw [current_root];
-        ) +> ignore;
-
-        fc#add_item "_Zoom" ~key:K._Z ~callback:(fun () -> 
-          !dw.in_zoom_incruste <- not (!dw.in_zoom_incruste);
-          !Controller._refresh_da();
         ) +> ignore;
 
       );
@@ -2096,7 +2072,7 @@ let paint_content_maybe_rect ~user_rect dw rect =
 
   (* have to redraw the label *)
   Draw_labels.draw_treemap_rectangle_label_maybe 
-    ~cr ~zoom:dw.zoom ~color:None rect;
+    ~cr ~zoom:1.0 ~color:None rect;
 
   ()
 
@@ -2129,8 +2105,7 @@ let paint2 dw =
     ~width:dw.width ~height:dw.height 
     ~filled:true () ;
 
-  pr2 (spf "paint, with zoom = %f, xtrans = %f, ytrans = %f" 
-          dw.zoom dw.xtrans dw.ytrans);
+  pr2 (spf "paint");
   let user_rect = device_to_user_area dw in
   pr2 (F.s_of_rectangle user_rect);
 
@@ -2149,10 +2124,10 @@ let paint2 dw =
 
   (* phase 2, draw the labels, if have enough space *)
   rects +> List.iter (Draw_labels.draw_treemap_rectangle_label_maybe 
-                         ~cr ~zoom:dw.zoom  ~color:None);
+                         ~cr ~zoom:1.0  ~color:None);
 
   (* phase 3, draw the content, if have enough space *)
-  if not dw.in_dragging && nb_rects < !Flag.threshold_nb_rects_draw_content
+  if nb_rects < !Flag.threshold_nb_rects_draw_content
     (* draw_content_maybe calls nblines which is quite expensive so
      * want to limit it *)
   then begin
@@ -2176,109 +2151,6 @@ let paint dw =
 \subsection{Mixed view}
 
 <<draw_summary_content>>=
-(* todo: should base this on the current max in the current view.
- * Also bad that can not compare function use by just looking
- * at their size :(
-*)
-(*
-let threshold_print_summary_entity_users = 10
-
-let draw_summary_content2 ~cr ~w_per_column ~context ~nblines ~file rect =
-  ignore(nblines);
-  ignore(file);
-
-  let r = rect.T.tr_rect in
-  let file = rect.T.tr_label in
-
-  let model = Async.async_get context.model in
-
-  let files_entities = model.Model2.hfiles_entities in
-  let entities = 
-    try Hashtbl.find files_entities file
-    with Not_found -> []
-  in
-  let entities = 
-    entities 
-    +> Common.take_safe 5
-    +> List.filter (fun e ->
-      e.Db.e_number_external_users > threshold_print_summary_entity_users
-    )
-  in
-
-  let _w = F.rect_width r in
-  let h = F.rect_height r in
-
-  (* todo: bad to use w cos its give advantage to huge file.
-   * w_per_column on the opposite is rougly the same on a screen.
-   *)
-  let font_size = w_per_column / 2. in
-
-  let font_size_real = CairoH.user_to_device_font_size cr font_size in
-  
-  let space_per_line_summary = 
-    h / 6.
-  in
-  entities +> Common.index_list_1 +> List.iter (fun (e, i) ->
-
-    let nb_use = e.Db.e_number_external_users in
-    (* todo: move this func elsewhere, in database_code ?  *)
-    let use_arity = Parsing.use_arity_of_use_count nb_use in
-    
-    (* would like to reuse code used when drawing content but
-     * I've copy paste to allow specifics anamorphic config
-     *)
-    let font_size_multiplier = 
-      (* should reuse Style2.mulitplier_use ? *)
-      match use_arity with
-      | HC.HugeUse when nb_use > 1000 -> 4.
-      | HC.HugeUse -> 3.
-      | HC.LotsOfUse -> 2.
-      | HC.MultiUse -> 1.1
-      | HC.SomeUse | HC.UniqueUse -> 0.7
-      | HC.NoUse -> 0.5
-    in
-    let size_font_multiplier_multiplier = 
-      (*- 0.2 * font_size_real + 2. *)
-      match font_size_real with
-      | n when n < 3. -> 2.
-      | n when n < 8. -> 1.5
-      | n when n < 10. -> 1.
-      | _ -> 0.5
-    in
-
-    let final_font_size = 
-      Draw_common.final_font_size_when_multiplier 
-        ~multiplier:font_size_multiplier
-        ~size_font_multiplier_multiplier
-        ~font_size
-        ~font_size_real
-    in
-
-  (* TODO use the appropriate color for entity *)
-    (let (r,g,b) = 
-      0.2, 0.0, 0.0
-    in
-    let alpha = 0.5 in
-    Cairo.set_source_rgba cr r g b alpha;
-    );
-    Cairo.set_font_size cr final_font_size;
-    
-    let x = r.p.x in
-    let y = r.p.y + (space_per_line_summary * (float_of_int i)) in
-
-    let str = e.Db.e_name in
-    Cairo.move_to cr x y;
-    CairoH.show_text cr str;
-    let str = spf "(%d)" e.Db.e_number_external_users in
-    CairoH.show_text cr str;
-  );
-  ()
-
-let draw_summary_content 
- ~cr ~w_per_column ~context ~nblines ~file rect =
-  Common.profile_code "View.draw_summary_content" (fun () ->
-    draw_summary_content2 ~cr ~w_per_column ~context ~nblines ~file rect)
-*)
 @ 
 
 
@@ -2371,8 +2243,6 @@ let choose_layer ~root layer_title_opt dw_ref =
     Model2.init_drawing 
       ~width:dw.width
       ~height:dw.height
-      ~width_minimap:dw.width_minimap
-      ~height_minimap:dw.height_minimap
       dw.treemap_func 
       dw.dw_model 
       layers_idx
@@ -2592,8 +2462,6 @@ let button_action da dw_ref ev =
 
       (match button with
       | 1 ->
-          dw.in_dragging <- false;
-
           GtkBase.Widget.queue_draw da#as_widget;
           true
       | _ -> false
@@ -2630,11 +2498,6 @@ let go_dirs_or_file ?(current_entity=None) ?(current_grep_query=None)
   let dw = !dw_ref in
   !Controller._set_title (Controller.title_of_path root);
 
-  (* the release event will arrive later on the new dw so
-   * has to first set the context good for the old dw
-   *)
-  !dw_ref.in_dragging <- false;
-  
   Common.push2 !dw_ref Controller.dw_stack;
   let root = (Async.async_get dw.dw_model).root in
 
@@ -2642,8 +2505,6 @@ let go_dirs_or_file ?(current_entity=None) ?(current_grep_query=None)
     Model2.init_drawing 
       ~width:dw.width
       ~height:dw.height
-      ~width_minimap:dw.width_minimap
-      ~height_minimap:dw.height_minimap
       dw.treemap_func 
       dw.dw_model 
       dw.layers
@@ -2789,18 +2650,6 @@ let go_back dw_ref =
 %Incruste Mode
 
 <<idle>>=
-(*
-let idle dw () = 
-  let dw = !dw in
-
-  (*pr2 "idle";*)
-  !Controller.current_r +> Common.do_option (fun r ->
-    (* will compute and cache *)
-    if dw.in_zoom_incruste 
-    then zoomed_surface_of_rectangle dw r +> ignore;
-  );
-  true
-*)
 @ 
 
 
@@ -2808,185 +2657,32 @@ let idle dw () =
 
 
 <<motion_notify_minimap>>=
-(*
-let motion_notify_minimap (da, da2) dw ev =
-  let dw = !dw in
-
-  let x = GdkEvent.Motion.x ev in
-  let y = GdkEvent.Motion.y ev in
-  pr2 ("motion minimap");
-
-  if dw.in_dragging then begin
-
-    let deltax = x -. dw.drag_pt_minimap.Cairo.x in
-    let deltay = y -. dw.drag_pt_minimap.Cairo.y in
-
-    let deltax_user = 
-      with_minimap dw (fun cr -> CairoH.device_to_user_distance_x cr deltax)
-    in
-    let deltay_user = 
-      with_minimap dw (fun cr -> CairoH.device_to_user_distance_y cr deltay)
-    in
-    dw.xtrans <- dw.xtrans -. deltax_user;
-    dw.ytrans <- dw.ytrans -. deltay_user;
-    
-  
-    (* pr2_gen (deltax, deltay); *)
-    dw.drag_pt_minimap <- { Cairo.x = x ; Cairo.y = y } ;
-    
-    (* TODO: opti, should not recompute when just move! *)
-(* TOREPUT
-    paint dw;
-*)
-
-    GtkBase.Widget.queue_draw da#as_widget;
-    GtkBase.Widget.queue_draw da2#as_widget;
-    
-    true
-  end else begin
-    true
-  end
-*)
 @ 
 
 
 <<button_action_minimap>>=
-(*
-let button_action_minimap (da,da2) dw ev =
-  let dw = !dw in
-
-  match GdkEvent.get_type ev with
-  | `BUTTON_PRESS ->
-      pr2 ("button pressed minimap");
-
-      dw.drag_pt_minimap <- { 
-        Cairo.x = GdkEvent.Button.x ev ; 
-        Cairo.y = GdkEvent.Button.y ev 
-      };
-      dw.in_dragging <- true;
-
-      true
-
-  | `BUTTON_RELEASE ->
-      pr2 ("button released minimap");
-      dw.in_dragging <- false;
-
-      (* TODO: opti *)
-(* TOREPUT
-      paint dw;
-*)
-
-      GtkBase.Widget.queue_draw da#as_widget;
-      GtkBase.Widget.queue_draw da2#as_widget;
-      true
-  | _ -> false
-*)
 @ 
 
 
 <<paint_minimap>>=
-(*
-let paint_minimap2 dw = 
-  let cr = Cairo_lablgtk.create dw.pm_minimap#pixmap in
-  dw.pm_minimap#rectangle 
-    ~x:0 ~y:0 
-    ~width:dw.width_minimap ~height:dw.height_minimap
-    ~filled:true () ;
-
-  scale_minimap cr dw;
-
-  let rects = dw.treemap in
-  (* draw the rectangles *)
-  rects +> List.iter (Draw_macrolevel.draw_treemap_rectangle ~cr);
-
-  (* draw the labels, if have enough space *)
-  rects +> List.iter 
-    (Draw_labels.draw_treemap_rectangle_label_maybe ~cr ~zoom:1.0 ~color:None);
-
-  (* draw the zoom rectangle *)
-  let user_rect = 
-    (* device_to_user_area dw  *)
-     raise Todo
-  in
-  CairoH.draw_rectangle_figure ~cr ~color:"white" user_rect;
-  ()
-*)
-
-(*
-let paint_minimap dw = 
-  Common.profile_code "View.paint minimap" (fun () -> paint_minimap2 dw)
-*)
 @ 
 
 
 <<expose_minimap>>=
-(*
-let expose_minimap da dw_ref ev = 
-  let dw = !dw_ref in
-
-  (* todo? opti? don't paint if not needed ? *)
-  (*paint_minimap dw;*)
-
-  let area = GdkEvent.Expose.area ev in
-  let x = GR.x area in
-  let y = GR.y area in
-  let width = GR.width area in
-  let height = GR.height area in
-
-  let gwin = da#misc#window in
-  let d = new GDraw.drawable gwin in
-
-  Common.profile_code "View.put_pixmap mini" (fun () ->
-    d#put_pixmap ~x ~y ~xsrc:x ~ysrc:y ~width ~height 
-      dw.pm_minimap#pixmap;
-  );
-  true
-*)
 @ 
 
 
 <<configure_minimap>>=
-(*
-let configure_minimap da2 dw_ref ev = 
-  let dw = !dw_ref in
-
-  let w = GdkEvent.Configure.width ev in
-  let h = GdkEvent.Configure.height ev in
-  dw.width_minimap <- w;
-  dw.height_minimap <- h;
-  dw.pm_minimap <- new_pixmap dw.width_minimap dw.height_minimap;
-  true
-*)
 @ 
 
 
 <<with_minimap>>=
-(*
-let with_minimap dw f =
-  let cr = Cairo_lablgtk.create dw.pm_minimap#pixmap in
-  scale_minimap cr dw;
-  f cr
-*)
 @ 
 
 <<fields drawing minimap>>=
-  (* minimap *)
-  mutable pm_minimap: GDraw.pixmap;
-  mutable width_minimap: int;
-  mutable height_minimap: int;
-
-  mutable drag_pt_minimap: Cairo.point;
 @
 
 <<scale_minimap>>=
-(*
-let scale_minimap cr dw =
-  (* no zoom, no pan, no clippnig *)
-  Cairo.translate cr 0.0 0.0;
-  Cairo.scale cr 
-    (1.0 * (float_of_int dw.width_minimap / T.xy_ratio))
-    (1.0 * (float_of_int dw.height_minimap))
-*)
 @ 
 
 
@@ -3003,30 +2699,18 @@ let with_map dw f =
 <<zoom_pan_scale_map>>=
 let zoom_pan_scale_map cr dw =
   Cairo.scale cr 
-    (dw.zoom * (float_of_int dw.width / T.xy_ratio))
-    (dw.zoom * (float_of_int dw.height))
+    (float_of_int dw.width / T.xy_ratio)
+    (float_of_int dw.height)
   ;
   (* I first scale and then translate as the xtrans are in user coordinates *)
-  Cairo.translate cr dw.xtrans dw.ytrans;
-  (* TODO clipping  Cairo.rectangle cr ~x:dw.xtrans ~y: *)
+  Cairo.translate cr 0.0 0.0;
   ()
 @ 
 
 <<fields drawing viewport>>=
-  (* viewport, device coordinates *)
-  mutable width: int;
-  mutable height: int;
-
-  (* to delete? *)
-  mutable zoom: float;
-  (* in user coordinates *)
-  mutable xtrans: float;
-  mutable ytrans: float;
-
-  mutable drag_pt: Cairo.point;
-  mutable in_dragging: bool;
-
-  mutable in_zoom_incruste: bool;
+(* viewport, device coordinates *)
+mutable width: int;
+mutable height: int;
 @
 
 \section{Search}
@@ -3116,11 +2800,11 @@ let run_tbgs_query ~root s =
 
 
 <<fields drawing query stuff>>=
-  (* queries *)
-  mutable current_query: string;
-  mutable current_searched_rectangles: Treemap.treemap_rectangle list;
-  mutable current_entity: Database_code.entity option;
-  mutable current_grep_query: (Common.filename, line) Hashtbl.t;
+(* queries *)
+mutable current_query: string;
+mutable current_searched_rectangles: Treemap.treemap_rectangle list;
+mutable current_entity: Database_code.entity option;
+mutable current_grep_query: (Common.filename, line) Hashtbl.t;
 @
 
 \subsection{Definition search}
@@ -3574,15 +3258,14 @@ Here low level graphics layers.
 \end{verbatim}
 
 <<fields drawing main view>>=
-  (* device coordinates *)
-  (* first cairo layer, for heavy computation e.g. the treemap and content*)
-  mutable pm: GDraw.pixmap;
-  (* second cairo layer, when move the mouse *)
-  mutable overlay: [ `Any ] Cairo.surface;
-  (* todo? third cairo layer? for animations and time related graphics such
-   * as tooltips, glowing rectangles, etc?
-   *)
-
+(* device coordinates *)
+(* first cairo layer, for heavy computation e.g. the treemap and content*)
+mutable pm: GDraw.pixmap;
+(* second cairo layer, when move the mouse *)
+mutable overlay: [ `Any ] Cairo.surface;
+(* todo? third cairo layer? for animations and time related graphics such
+ * as tooltips, glowing rectangles, etc?
+ *)
 @
 
 \subsection{Rectangle overlay}
@@ -3596,7 +3279,7 @@ let draw_englobing_rectangles_overlay ~dw (r, middle, r_englobing) =
     ~cr:cr_overlay ~color:"blue" r_englobing.T.tr_rect;
 
   Draw_labels.draw_treemap_rectangle_label_maybe 
-    ~cr:cr_overlay ~color:(Some "red") ~zoom:dw.zoom r_englobing;
+    ~cr:cr_overlay ~color:(Some "red") ~zoom:1.0 r_englobing;
 
   middle +> Common.index_list_1 +> List.iter (fun (r, i) ->
     let color = 
@@ -3608,7 +3291,7 @@ let draw_englobing_rectangles_overlay ~dw (r, middle, r_englobing) =
     CairoH.draw_rectangle_figure
       ~cr:cr_overlay ~color r.T.tr_rect;
     Draw_labels.draw_treemap_rectangle_label_maybe 
-      ~cr:cr_overlay ~color:(Some color) ~zoom:dw.zoom r;
+      ~cr:cr_overlay ~color:(Some color) ~zoom:1.0 r;
   );
  )
 @ 
@@ -3678,107 +3361,6 @@ let draw_searched_rectangles ~dw =
 \subsection{Zoom overlay}
 
 <<zoomed_surface_of_rectangle>>=
-let _hmemo_surface = Hashtbl.create 101
-let zoomed_surface_of_rectangle dw r =
-  Common.memoized _hmemo_surface (r.T.tr_label, dw.zoom) (fun () ->
-
-  let user_rect = View_mainmap.device_to_user_area dw in
-  
-  let sur =
-    Cairo.surface_create_similar (CairoH.surface_of_pixmap dw.pm)
-      (* subtle: can not use dw.width or dw.height here because at
-       * the zoom level we will proceed, the whole file would probably not
-       * feel on the full screen. If it does not fit, then having a too
-       * small surface mean parts of the rendering of the file will not
-       * be stored.
-       *)
-      Cairo.CONTENT_COLOR_ALPHA 9000 9000;
-  in
-  let cr = Cairo.create sur in
-
-  (* simplify the drawing context, draw on 0 x 0 a rectangle that itself
-   * starts at 0 x 0
-   *)
-  let dw' = { dw with 
-    zoom = dw.zoom * Style.zoom_factor_incruste_mode; (* CONFIG *)
-    xtrans = 0.; ytrans = 0.;
-  } 
-  in
-  View_mainmap.zoom_pan_scale_map cr dw';
-  (* a normalized rectangle that starts at 0 x 0 *)
-  let rect = r.T.tr_rect in
-  let rect' = { 
-    F.p = { F. x = 0.; y = 0.;};
-    F.q = { F. x = F.rect_width rect; y = F.rect_height rect;};
-  }
-  in
-  let r' = { r with T.tr_rect = rect' } in
-
-  let user_width = F.rect_width rect in
-  let user_height = F.rect_height rect in
-
-  let device_width  = CairoH.user_to_device_distance_x cr user_width in
-  let device_height = CairoH.user_to_device_distance_y cr user_height in
-  (* now have on the surface the same thing we would have got if we had
-   * zoomed a lot.
-   *)
-
-  let context = context_of_drawing dw in
-  let context = { context with Model2.nb_rects_on_screen = 1 } in
-
-  Draw_macrolevel.draw_treemap_rectangle 
-    ~cr ~alpha:0.9 r';
-  let _pos_and_file_TODO = 
-    Draw_microlevel.draw_treemap_rectangle_content_maybe 
-      ~cr ~context ~clipping:user_rect r' in
-
-  sur, device_width, device_height
-  )
-
-
-
-let draw_zoomed_overlay ~cr_overlay ~user ~dw ~x ~y r =
-
-  let percent_x = 
-    (user.Cairo.x - r.T.tr_rect.p.F.x) / F.rect_width r.T.tr_rect in
-  let percent_y = 
-    (user.Cairo.y - r.T.tr_rect.p.F.y) / F.rect_height r.T.tr_rect in
-  
-  let zoomed_surface, zoomed_device_width, zoomed_device_height = 
-    zoomed_surface_of_rectangle dw r
-  in
-  Cairo.set_operator cr_overlay Cairo.OPERATOR_OVER;
-  (* old:
-     Cairo.set_source_surface cr_overlay zoomed_surface (x - 100.) (y - 100.);
-     Cairo.paint cr_overlay;
-  *)
-  (* see http://cairographics.org/FAQ/#paint_from_a_surface *)
-  let dest_x = (x + 20.) in
-  let dest_y = (y + 20.) in
-  let width = float_of_int dw.width / 2.5 in
-  let height = float_of_int dw.height / 2.5 in
-  let source_x = 
-    Common2.borne
-      ~min:0. ~max:(zoomed_device_width - width)
-      ((percent_x * zoomed_device_width) - 140.)
-  in
-  let source_y = 
-    Common2.borne
-      ~min:0. ~max:(zoomed_device_height - height)
-      ((percent_y * zoomed_device_height) - 30.)
-  in
-
-  pr2 (spf "at x%%= %.3f, y%% = %.3f, zoom_w = %.3f, zoom_h = %.3f" 
-          percent_x percent_y
-          zoomed_device_width
-          zoomed_device_height
-  );
-
-  Cairo.set_source_surface cr_overlay zoomed_surface
-    (dest_x -. source_x) (dest_y -. source_y);
-  Cairo.rectangle cr_overlay dest_x dest_y width height;
-  Cairo.fill cr_overlay;
-  ()
 @ 
 
 \subsection{Assembling overlays}
@@ -3842,50 +3424,20 @@ let motion_refresher ev dw =
     then draw_searched_rectangles ~dw;
     
     Controller.current_r := Some r;
-    
-    (* it has been computed, use it then *)
-    if Hashtbl.mem _hmemo_surface (r.T.tr_label, dw.zoom) &&
-       dw.in_zoom_incruste
-    then draw_zoomed_overlay ~cr_overlay ~user ~dw ~x ~y r;
   );
   !Controller._refresh_da ();
   false
 
 
-let motion_notify (da, da2) dw ev =
+let motion_notify (_da, _da2) dw ev =
   !Controller.current_motion_refresher +> Common.do_option GMain.Idle.remove;
   let dw = !dw in
   let x, y = GdkEvent.Motion.x ev, GdkEvent.Motion.y ev in
   pr2 (spf "motion: %f, %f" x y);
 
-  if dw.in_dragging then begin
-
-    let deltax = x -. dw.drag_pt.Cairo.x in
-    let deltay = y -. dw.drag_pt.Cairo.y in
-    
-    let deltax_user = 
-      View_mainmap.with_map dw 
-        (fun cr -> CairoH.device_to_user_distance_x cr deltax)
-    in
-    let deltay_user = 
-      View_mainmap.with_map dw 
-        (fun cr -> CairoH.device_to_user_distance_y cr deltay)
-    in
-    
-    dw.xtrans <- dw.xtrans +. deltax_user;
-    dw.ytrans <- dw.ytrans +. deltay_user;
-    
-    dw.drag_pt <- { Cairo.x = x ; Cairo.y = y } ;
-    
-    GtkBase.Widget.queue_draw da#as_widget;
-    GtkBase.Widget.queue_draw da2#as_widget;
-  
-    true
-  end else begin
-    Controller.current_motion_refresher := 
-      Some (Gui.gmain_idle_add ~prio:100 (fun () -> motion_refresher ev dw));
-    true
-  end
+  Controller.current_motion_refresher := 
+    Some (Gui.gmain_idle_add ~prio:100 (fun () -> motion_refresher ev dw));
+  true
 @ 
 
 
@@ -6051,12 +5603,10 @@ open Figures (* for the fields *)
 module T = Treemap
 module F = Figures
 module Color = Simple_color
-
 module Db = Database_code
 module HC = Highlight_code
-
 module CairoH = Cairo_helpers
-module  Parsing = Parsing2
+module Parsing = Parsing2
 
 (*****************************************************************************)
 (* Prelude *)
@@ -6117,10 +5667,6 @@ let draw_trect_using_layers ~cr layers_with_index rect =
       draw_treemap_rectangle ~cr ~color:(Some color) rect;
     );
   end
-
-(*****************************************************************************)
-(* File Summary *)
-(*****************************************************************************)
 
 <<draw_summary_content>>
 @ 
@@ -6616,13 +6162,6 @@ module Ctl = Controller2
 <<view_minimap.ml>>=
 <<Facebook copyright>>
 
-module GR = Gdk.Rectangle
-module F = Figures
-module T = Treemap
-module CairoH = Cairo_helpers
-module Flag = Flag_visual
-module Controller = Controller2
-
 (*****************************************************************************)
 (* Scaling *)
 (*****************************************************************************)
@@ -6653,8 +6192,6 @@ module Controller = Controller2
 
 <<button_action_minimap>>
 
-
-
 @ 
 
 
@@ -6682,7 +6219,6 @@ open Common
 open Common2.ArithFloatInfix
 
 open Model2
-open Figures (* for the fields *)
 module F = Figures
 module T = Treemap
 module CairoH = Cairo_helpers
@@ -6793,10 +6329,6 @@ let draw_uses_users_entities ~dw n =
 
 <<draw_searched_rectangles>>
 
-(* ---------------------------------------------------------------------- *)
-(* The magnifying glass *)
-(* ---------------------------------------------------------------------- *)
-
 <<zoomed_surface_of_rectangle>>
 
 (*****************************************************************************)
@@ -6806,7 +6338,6 @@ let draw_uses_users_entities ~dw n =
 <<motion_refresher>>
 
 <<idle>>
-
 
 @ 
 

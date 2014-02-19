@@ -88,32 +88,30 @@ type drawing = {
   mutable layers: Layer_code.layers_with_index;
 
   (*s: fields drawing query stuff *)
-    (* queries *)
-    mutable current_query: string;
-    mutable current_searched_rectangles: Treemap.treemap_rectangle list;
-    mutable current_entity: Database_code.entity option;
-    mutable current_grep_query: (Common.filename, line) Hashtbl.t;
+  (* queries *)
+  mutable current_query: string;
+  mutable current_searched_rectangles: Treemap.treemap_rectangle list;
+  mutable current_entity: Database_code.entity option;
+  mutable current_grep_query: (Common.filename, line) Hashtbl.t;
   (*e: fields drawing query stuff *)
 
   dw_settings: settings;
 
   (*s: fields drawing main view *)
-    (* device coordinates *)
-    (* first cairo layer, for heavy computation e.g. the treemap and content*)
-    mutable pm: GDraw.pixmap;
-    (* second cairo layer, when move the mouse *)
-    mutable overlay: [ `Any ] Cairo.surface;
-    (* todo? third cairo layer? for animations and time related graphics such
-     * as tooltips, glowing rectangles, etc?
-     *)
-
+  (* device coordinates *)
+  (* first cairo layer, for heavy computation e.g. the treemap and content*)
+  mutable pm: GDraw.pixmap;
+  (* second cairo layer, when move the mouse *)
+  mutable overlay: [ `Any ] Cairo.surface;
+  (* todo? third cairo layer? for animations and time related graphics such
+   * as tooltips, glowing rectangles, etc?
+   *)
   (*e: fields drawing main view *)
 
   (*s: fields drawing viewport *)
-    (* viewport, device coordinates *)
-    mutable width: int;
-    mutable height: int;
-
+  (* viewport, device coordinates *)
+  mutable width: int;
+  mutable height: int;
   (*e: fields drawing viewport *)
 
   (*s: fields drawing minimap *)
