@@ -22,12 +22,10 @@ type model = {
   (* for microlevel use/def information *)
   g: Graph_code.graph option;
   (* fast accessors, for macrolevel use/def information  *)
-  (* todo: what about huses_of_dir? scalable spirit, should have deps
-   * of dirs, files, entities, even locals
-   *)
   huses_of_file: (Common.filename, Common.filename list) Hashtbl.t;
   husers_of_file: (Common.filename, Common.filename list) Hashtbl.t;
-  hentities_of_file: (Common.filename, Graph_code.node list)  Hashtbl.t;
+  (* we used to store line information there, but the file may have changed *)
+  hentities_of_file: (Common.filename, Graph_code.node list) Hashtbl.t;
  }
 (*e: type model *)
 type 'a deps = 'a list (* uses *) * 'a list (* users *)
@@ -101,8 +99,13 @@ type drawing = {
 
   (*s: fields drawing main view *)
     (* device coordinates *)
+    (* first cairo layer, for heavy computation e.g. the treemap and content*)
     mutable pm: GDraw.pixmap;
+    (* second cairo layer, when move the mouse *)
     mutable overlay: [ `Any ] Cairo.surface;
+    (* todo? third cairo layer? for animations and time related graphics such
+     * as tooltips, glowing rectangles, etc?
+     *)
 
   (*e: fields drawing main view *)
 
