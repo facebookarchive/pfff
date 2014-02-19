@@ -46,8 +46,6 @@ let choose_layer ~root layer_title_opt dw_ref =
     Model2.init_drawing 
       ~width:dw.width
       ~height:dw.height
-      ~width_minimap:dw.width_minimap
-      ~height_minimap:dw.height_minimap
       dw.treemap_func 
       dw.dw_model 
       layers_idx

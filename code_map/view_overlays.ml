@@ -20,7 +20,6 @@ open Common
 open Common2.ArithFloatInfix
 
 open Model2
-open Figures (* for the fields *)
 module F = Figures
 module T = Treemap
 module CairoH = Cairo_helpers
@@ -116,7 +115,7 @@ let draw_englobing_rectangles_overlay ~dw (r, middle, r_englobing) =
     ~cr:cr_overlay ~color:"blue" r_englobing.T.tr_rect;
 
   Draw_labels.draw_treemap_rectangle_label_maybe 
-    ~cr:cr_overlay ~color:(Some "red") ~zoom:dw.zoom r_englobing;
+    ~cr:cr_overlay ~color:(Some "red") ~zoom:1.0 r_englobing;
 
   middle +> Common.index_list_1 +> List.iter (fun (r, i) ->
     let color = 
@@ -128,7 +127,7 @@ let draw_englobing_rectangles_overlay ~dw (r, middle, r_englobing) =
     CairoH.draw_rectangle_figure
       ~cr:cr_overlay ~color r.T.tr_rect;
     Draw_labels.draw_treemap_rectangle_label_maybe 
-      ~cr:cr_overlay ~color:(Some color) ~zoom:dw.zoom r;
+      ~cr:cr_overlay ~color:(Some color) ~zoom:1.0 r;
   );
  )
 (*e: draw_rectangle_overlay *)
@@ -208,112 +207,7 @@ let draw_searched_rectangles ~dw =
  )
 (*e: draw_searched_rectangles *)
 
-(* ---------------------------------------------------------------------- *)
-(* The magnifying glass *)
-(* ---------------------------------------------------------------------- *)
-
 (*s: zoomed_surface_of_rectangle *)
-let _hmemo_surface = Hashtbl.create 101
-let zoomed_surface_of_rectangle dw r =
-  Common.memoized _hmemo_surface (r.T.tr_label, dw.zoom) (fun () ->
-
-  let user_rect = View_mainmap.device_to_user_area dw in
-  
-  let sur =
-    Cairo.surface_create_similar (CairoH.surface_of_pixmap dw.pm)
-      (* subtle: can not use dw.width or dw.height here because at
-       * the zoom level we will proceed, the whole file would probably not
-       * feel on the full screen. If it does not fit, then having a too
-       * small surface mean parts of the rendering of the file will not
-       * be stored.
-       *)
-      Cairo.CONTENT_COLOR_ALPHA 9000 9000;
-  in
-  let cr = Cairo.create sur in
-
-  (* simplify the drawing context, draw on 0 x 0 a rectangle that itself
-   * starts at 0 x 0
-   *)
-  let dw' = { dw with 
-    zoom = dw.zoom * Style.zoom_factor_incruste_mode; (* CONFIG *)
-    xtrans = 0.; ytrans = 0.;
-  } 
-  in
-  View_mainmap.zoom_pan_scale_map cr dw';
-  (* a normalized rectangle that starts at 0 x 0 *)
-  let rect = r.T.tr_rect in
-  let rect' = { 
-    F.p = { F. x = 0.; y = 0.;};
-    F.q = { F. x = F.rect_width rect; y = F.rect_height rect;};
-  }
-  in
-  let r' = { r with T.tr_rect = rect' } in
-
-  let user_width = F.rect_width rect in
-  let user_height = F.rect_height rect in
-
-  let device_width  = CairoH.user_to_device_distance_x cr user_width in
-  let device_height = CairoH.user_to_device_distance_y cr user_height in
-  (* now have on the surface the same thing we would have got if we had
-   * zoomed a lot.
-   *)
-
-  let context = context_of_drawing dw in
-  let context = { context with Model2.nb_rects_on_screen = 1 } in
-
-  Draw_macrolevel.draw_treemap_rectangle 
-    ~cr ~alpha:0.9 r';
-  let _pos_and_file_TODO = 
-    Draw_microlevel.draw_treemap_rectangle_content_maybe 
-      ~cr ~context ~clipping:user_rect r' in
-
-  sur, device_width, device_height
-  )
-
-
-
-let draw_zoomed_overlay ~cr_overlay ~user ~dw ~x ~y r =
-
-  let percent_x = 
-    (user.Cairo.x - r.T.tr_rect.p.F.x) / F.rect_width r.T.tr_rect in
-  let percent_y = 
-    (user.Cairo.y - r.T.tr_rect.p.F.y) / F.rect_height r.T.tr_rect in
-  
-  let zoomed_surface, zoomed_device_width, zoomed_device_height = 
-    zoomed_surface_of_rectangle dw r
-  in
-  Cairo.set_operator cr_overlay Cairo.OPERATOR_OVER;
-  (* old:
-     Cairo.set_source_surface cr_overlay zoomed_surface (x - 100.) (y - 100.);
-     Cairo.paint cr_overlay;
-  *)
-  (* see http://cairographics.org/FAQ/#paint_from_a_surface *)
-  let dest_x = (x + 20.) in
-  let dest_y = (y + 20.) in
-  let width = float_of_int dw.width / 2.5 in
-  let height = float_of_int dw.height / 2.5 in
-  let source_x = 
-    Common2.borne
-      ~min:0. ~max:(zoomed_device_width - width)
-      ((percent_x * zoomed_device_width) - 140.)
-  in
-  let source_y = 
-    Common2.borne
-      ~min:0. ~max:(zoomed_device_height - height)
-      ((percent_y * zoomed_device_height) - 30.)
-  in
-
-  pr2 (spf "at x%%= %.3f, y%% = %.3f, zoom_w = %.3f, zoom_h = %.3f" 
-          percent_x percent_y
-          zoomed_device_width
-          zoomed_device_height
-  );
-
-  Cairo.set_source_surface cr_overlay zoomed_surface
-    (dest_x -. source_x) (dest_y -. source_y);
-  Cairo.rectangle cr_overlay dest_x dest_y width height;
-  Cairo.fill cr_overlay;
-  ()
 (*e: zoomed_surface_of_rectangle *)
 
 (*****************************************************************************)
@@ -379,66 +273,23 @@ let motion_refresher ev dw =
     then draw_searched_rectangles ~dw;
     
     Controller.current_r := Some r;
-    
-    (* it has been computed, use it then *)
-    if Hashtbl.mem _hmemo_surface (r.T.tr_label, dw.zoom) &&
-       dw.in_zoom_incruste
-    then draw_zoomed_overlay ~cr_overlay ~user ~dw ~x ~y r;
   );
   !Controller._refresh_da ();
   false
 
 
-let motion_notify (da, da2) dw ev =
+let motion_notify (_da, _da2) dw ev =
   !Controller.current_motion_refresher +> Common.do_option GMain.Idle.remove;
   let dw = !dw in
   let x, y = GdkEvent.Motion.x ev, GdkEvent.Motion.y ev in
   pr2 (spf "motion: %f, %f" x y);
 
-  if dw.in_dragging then begin
-
-    let deltax = x -. dw.drag_pt.Cairo.x in
-    let deltay = y -. dw.drag_pt.Cairo.y in
-    
-    let deltax_user = 
-      View_mainmap.with_map dw 
-        (fun cr -> CairoH.device_to_user_distance_x cr deltax)
-    in
-    let deltay_user = 
-      View_mainmap.with_map dw 
-        (fun cr -> CairoH.device_to_user_distance_y cr deltay)
-    in
-    
-    dw.xtrans <- dw.xtrans +. deltax_user;
-    dw.ytrans <- dw.ytrans +. deltay_user;
-    
-    dw.drag_pt <- { Cairo.x = x ; Cairo.y = y } ;
-    
-    GtkBase.Widget.queue_draw da#as_widget;
-    GtkBase.Widget.queue_draw da2#as_widget;
-  
-    true
-  end else begin
-    Controller.current_motion_refresher := 
-      Some (Gui.gmain_idle_add ~prio:100 (fun () -> motion_refresher ev dw));
-    true
-  end
+  Controller.current_motion_refresher := 
+    Some (Gui.gmain_idle_add ~prio:100 (fun () -> motion_refresher ev dw));
+  true
 (*e: motion_refresher *)
 
 (*s: idle *)
-(*
-let idle dw () = 
-  let dw = !dw in
-
-  (*pr2 "idle";*)
-  !Controller.current_r +> Common.do_option (fun r ->
-    (* will compute and cache *)
-    if dw.in_zoom_incruste 
-    then zoomed_surface_of_rectangle dw r +> ignore;
-  );
-  true
-*)
 (*e: idle *)
-
 
 (*e: view_overlays.ml *)

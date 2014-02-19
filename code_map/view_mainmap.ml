@@ -54,12 +54,11 @@ module Ctl = Controller2
 (*s: zoom_pan_scale_map *)
 let zoom_pan_scale_map cr dw =
   Cairo.scale cr 
-    (dw.zoom * (float_of_int dw.width / T.xy_ratio))
-    (dw.zoom * (float_of_int dw.height))
+    (float_of_int dw.width / T.xy_ratio)
+    (float_of_int dw.height)
   ;
   (* I first scale and then translate as the xtrans are in user coordinates *)
-  Cairo.translate cr dw.xtrans dw.ytrans;
-  (* TODO clipping  Cairo.rectangle cr ~x:dw.xtrans ~y: *)
+  Cairo.translate cr 0.0 0.0;
   ()
 (*e: zoom_pan_scale_map *)
 
@@ -109,7 +108,7 @@ let paint_content_maybe_rect ~user_rect dw rect =
 
   (* have to redraw the label *)
   Draw_labels.draw_treemap_rectangle_label_maybe 
-    ~cr ~zoom:dw.zoom ~color:None rect;
+    ~cr ~zoom:1.0 ~color:None rect;
 
   ()
 
@@ -142,8 +141,7 @@ let paint2 dw =
     ~width:dw.width ~height:dw.height 
     ~filled:true () ;
 
-  pr2 (spf "paint, with zoom = %f, xtrans = %f, ytrans = %f" 
-          dw.zoom dw.xtrans dw.ytrans);
+  pr2 (spf "paint");
   let user_rect = device_to_user_area dw in
   pr2 (F.s_of_rectangle user_rect);
 
@@ -162,10 +160,10 @@ let paint2 dw =
 
   (* phase 2, draw the labels, if have enough space *)
   rects +> List.iter (Draw_labels.draw_treemap_rectangle_label_maybe 
-                         ~cr ~zoom:dw.zoom  ~color:None);
+                         ~cr ~zoom:1.0  ~color:None);
 
   (* phase 3, draw the content, if have enough space *)
-  if not dw.in_dragging && nb_rects < !Flag.threshold_nb_rects_draw_content
+  if nb_rects < !Flag.threshold_nb_rects_draw_content
     (* draw_content_maybe calls nblines which is quite expensive so
      * want to limit it *)
   then begin
@@ -388,8 +386,6 @@ let button_action da dw_ref ev =
 
       (match button with
       | 1 ->
-          dw.in_dragging <- false;
-
           GtkBase.Widget.queue_draw da#as_widget;
           true
       | _ -> false

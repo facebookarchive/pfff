@@ -114,25 +114,9 @@ type drawing = {
     mutable width: int;
     mutable height: int;
 
-    (* to delete? *)
-    mutable zoom: float;
-    (* in user coordinates *)
-    mutable xtrans: float;
-    mutable ytrans: float;
-
-    mutable drag_pt: Cairo.point;
-    mutable in_dragging: bool;
-
-    mutable in_zoom_incruste: bool;
   (*e: fields drawing viewport *)
 
   (*s: fields drawing minimap *)
-    (* minimap *)
-    mutable pm_minimap: GDraw.pixmap;
-    mutable width_minimap: int;
-    mutable height_minimap: int;
-
-    mutable drag_pt_minimap: Cairo.point;
   (*e: fields drawing minimap *)
 }
   (*s: type settings *)
@@ -161,8 +145,6 @@ val context_of_drawing: drawing -> context
 val init_drawing :
   ?width:int ->
   ?height:int ->
-  ?width_minimap:int ->
-  ?height_minimap:int ->
   (Common.path list -> Treemap.treemap_rendering) ->
   model Async.t ->
   Layer_code.layers_with_index ->

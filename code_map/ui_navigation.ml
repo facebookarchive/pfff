@@ -63,11 +63,6 @@ let go_dirs_or_file ?(current_entity=None) ?(current_grep_query=None)
   let dw = !dw_ref in
   !Controller._set_title (Controller.title_of_path root);
 
-  (* the release event will arrive later on the new dw so
-   * has to first set the context good for the old dw
-   *)
-  !dw_ref.in_dragging <- false;
-  
   Common.push2 !dw_ref Controller.dw_stack;
   let root = (Async.async_get dw.dw_model).root in
 
@@ -75,8 +70,6 @@ let go_dirs_or_file ?(current_entity=None) ?(current_grep_query=None)
     Model2.init_drawing 
       ~width:dw.width
       ~height:dw.height
-      ~width_minimap:dw.width_minimap
-      ~height_minimap:dw.height_minimap
       dw.treemap_func 
       dw.dw_model 
       dw.layers

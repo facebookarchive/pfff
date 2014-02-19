@@ -351,11 +351,6 @@ let mk_gui ~screen_size ~legend test_mode (root, model, dw, _dbfile_opt) =
           !Controller._go_dirs_or_file dw [current_root];
         ) +> ignore;
 
-        fc#add_item "_Zoom" ~key:K._Z ~callback:(fun () -> 
-          !dw.in_zoom_incruste <- not (!dw.in_zoom_incruste);
-          !Controller._refresh_da();
-        ) +> ignore;
-
       );
 
       factory#add_submenu "_Help" +> (fun menu -> 

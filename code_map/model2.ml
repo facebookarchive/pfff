@@ -137,51 +137,33 @@ type drawing = {
   mutable layers: Layer_code.layers_with_index;
 
   (*s: fields drawing query stuff *)
-    (* queries *)
-    mutable current_query: string;
-    mutable current_searched_rectangles: Treemap.treemap_rectangle list;
-    mutable current_entity: Database_code.entity option;
-    mutable current_grep_query: (Common.filename, line) Hashtbl.t;
+  (* queries *)
+  mutable current_query: string;
+  mutable current_searched_rectangles: Treemap.treemap_rectangle list;
+  mutable current_entity: Database_code.entity option;
+  mutable current_grep_query: (Common.filename, line) Hashtbl.t;
   (*e: fields drawing query stuff *)
 
   dw_settings: settings;
 
   (*s: fields drawing main view *)
-    (* device coordinates *)
-    (* first cairo layer, for heavy computation e.g. the treemap and content*)
-    mutable pm: GDraw.pixmap;
-    (* second cairo layer, when move the mouse *)
-    mutable overlay: [ `Any ] Cairo.surface;
-    (* todo? third cairo layer? for animations and time related graphics such
-     * as tooltips, glowing rectangles, etc?
-     *)
-
+  (* device coordinates *)
+  (* first cairo layer, for heavy computation e.g. the treemap and content*)
+  mutable pm: GDraw.pixmap;
+  (* second cairo layer, when move the mouse *)
+  mutable overlay: [ `Any ] Cairo.surface;
+  (* todo? third cairo layer? for animations and time related graphics such
+   * as tooltips, glowing rectangles, etc?
+   *)
   (*e: fields drawing main view *)
 
   (*s: fields drawing viewport *)
-    (* viewport, device coordinates *)
-    mutable width: int;
-    mutable height: int;
-
-    (* to delete? *)
-    mutable zoom: float;
-    (* in user coordinates *)
-    mutable xtrans: float;
-    mutable ytrans: float;
-
-    mutable drag_pt: Cairo.point;
-    mutable in_dragging: bool;
-
-    mutable in_zoom_incruste: bool;
+  (* viewport, device coordinates *)
+  mutable width: int;
+  mutable height: int;
   (*e: fields drawing viewport *)
 
   (*s: fields drawing minimap *)
-    (* minimap *)
-    mutable pm_minimap: GDraw.pixmap;
-    mutable width_minimap: int;
-    mutable height_minimap: int;
-
-    mutable drag_pt_minimap: Cairo.point;
   (*e: fields drawing minimap *)
 }
   (*s: type settings *)
@@ -205,8 +187,6 @@ let init_drawing
   (* This is a first guess. The first configure ev will force a resize. *)
   ?(width = 600)
   ?(height = 600)
-  ?(width_minimap = 60)
-  ?(height_minimap = 60)
   func 
   model
   layers
@@ -259,21 +239,6 @@ let init_drawing
 
       draw_searched_rectangles = true;
     };
-
-
-    zoom = 1.;
-    xtrans = 0.;
-    ytrans = 0.;
-
-    drag_pt = { Cairo.x = 0.0; Cairo.y = 0.0 };
-    in_dragging = false;
-    in_zoom_incruste = false;
-
-    width_minimap = width_minimap;
-    height_minimap = height_minimap;
-    pm_minimap = new_pixmap ~width:width_minimap ~height:width_minimap;
-    drag_pt_minimap = { Cairo.x = 0.0; Cairo.y = 0.0 };
-
   }
 (*e: init_drawing() *)
 
