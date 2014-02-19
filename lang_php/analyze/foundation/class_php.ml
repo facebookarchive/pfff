@@ -148,7 +148,7 @@ let class_variables_reorder_first def =
       | _ -> false
       )
     in
-    vars ++ rest
+    vars @ rest
   in
   { def with
     c_body = (lb, body', rb);

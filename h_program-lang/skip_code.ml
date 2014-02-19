@@ -153,6 +153,6 @@ let reorder_files_skip_errors_last skip_list root xs =
       is_file_want_to_skip_error readable
     )
   in
-  ok ++ skip_errors
+  ok @ skip_errors
 
 

@@ -157,7 +157,7 @@ let extra_actions () = [
 (*****************************************************************************)
 
 let all_actions () = 
-  extra_actions () ++
+  extra_actions () @
   []
 
 let options () = [
@@ -171,9 +171,9 @@ let options () = [
     verbose := true;
     Flag_analyze_php.verbose_database := true;
   ), " ";
-  ] ++
-  Common.options_of_actions action (all_actions()) ++
-  Common2.cmdline_flags_devel () ++
+  ] @
+  Common.options_of_actions action (all_actions()) @
+  Common2.cmdline_flags_devel () @
   [
     "-version",   Arg.Unit (fun () -> 
       pr2 (spf "CodeQuery version: %s" Config_pfff.version);

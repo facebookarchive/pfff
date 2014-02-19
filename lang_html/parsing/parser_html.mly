@@ -13,7 +13,6 @@
  * license.txt for more details.
  */
 %{
-open Common
 
 (*************************************************************************)
 (* Prelude *)
@@ -83,10 +82,10 @@ value:
 /*(*************************************************************************)*/
 
 html_list:
- | html_list html { $1 ++ [$2] }
+ | html_list html { $1 @ [$2] }
  | /*(*empty*)*/ { [] }
 
 attr_list:
- | attr_list attr { $1 ++ [$2] }
+ | attr_list attr { $1 @ [$2] }
  | /*(*empty*)*/ { [] }
 

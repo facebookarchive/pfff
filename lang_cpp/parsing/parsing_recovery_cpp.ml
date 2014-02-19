@@ -61,7 +61,7 @@ let rec find_next_synchro ~next ~already_passed =
     | _ -> false
   in
   if is_define 
-  then find_next_synchro_define (last_round ++ next) []
+  then find_next_synchro_define (last_round @ next) []
   else 
 
   let (before, after) = 
@@ -75,7 +75,7 @@ let rec find_next_synchro ~next ~already_passed =
       | _ -> true
     ) 
   in
-  find_next_synchro_orig (after ++ next)  (List.rev before)
+  find_next_synchro_orig (after @ next)  (List.rev before)
 
     
 

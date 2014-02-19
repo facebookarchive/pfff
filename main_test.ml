@@ -220,24 +220,24 @@ let pfff_extra_actions () = [
 (*****************************************************************************)
 
 let all_actions () = 
-  pfff_extra_actions() ++
- Test_parsing_php.actions()++
- Test_analyze_php.actions()++
- Test_analyze_js.actions()++
- Test_analyze_ml.actions()++
- Test_analyze_cpp.actions()++
- Test_analyze_clang.actions()++
- Test_program_lang.actions()++
- Builtins_php.actions()++
+  pfff_extra_actions() @
+ Test_parsing_php.actions()@
+ Test_analyze_php.actions()@
+ Test_analyze_js.actions()@
+ Test_analyze_ml.actions()@
+ Test_analyze_cpp.actions()@
+ Test_analyze_clang.actions()@
+ Test_program_lang.actions()@
+ Builtins_php.actions()@
   []
 
 let options () = [
   "-verbose", Arg.Set verbose, 
   " ";
-  ] ++
-  Common.options_of_actions action (all_actions()) ++
-  Common2.cmdline_flags_devel () ++
-  Common2.cmdline_flags_other () ++
+  ] @
+  Common.options_of_actions action (all_actions()) @
+  Common2.cmdline_flags_devel () @
+  Common2.cmdline_flags_other () @
   [
     "-version",   Arg.Unit (fun () -> 
       pr2 (spf "pfff (test) version: %s" Config_pfff.version);

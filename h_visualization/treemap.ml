@@ -444,16 +444,16 @@ let rec (squarify_orig:
   match children with
   | c::cs ->
       if null current_row ||
-         (worst (floats (current_row ++ [c])) size_side_row)
+         (worst (floats (current_row @ [c])) size_side_row)
           <= 
           (worst (floats current_row)         size_side_row)
       then
         (* not yet optimal row, let's recurse *)
-        squarify_orig cs (current_row ++ [c]) rect
+        squarify_orig cs (current_row @ [c]) rect
       else begin
         (* optimal layout for the left row. We can fix it. *)
         let srow = Common2.sum_float (floats current_row) in
-        let stotal = Common2.sum_float (floats (current_row ++ children)) in
+        let stotal = Common2.sum_float (floats (current_row @ children)) in
         let portion_for_row = srow /. stotal in
 
         let row_rect, remaining_rect = 
@@ -496,7 +496,7 @@ let rec (squarify_orig:
         
         let rects_row = layout current_row row_rect in
         let rects_remain = squarify_orig children [] remaining_rect in
-        rects_row ++ rects_remain
+        rects_row @ rects_remain
       end
   | [] ->
       if verbose then begin
@@ -739,10 +739,10 @@ let orderify_children ?(pivotf=PivotBySize) xs rect =
         let (_score, (rects, childs_pivotized)) = best in
         
         (* pr2_gen rects; *)
-        aux childs_pivotized.left rects.left ++ 
-        aux childs_pivotized.pivot rects.pivot ++
-        aux childs_pivotized.above_pivot rects.above_pivot ++
-        aux childs_pivotized.right rects.right ++ 
+        aux childs_pivotized.left rects.left @ 
+        aux childs_pivotized.pivot rects.pivot @
+        aux childs_pivotized.above_pivot rects.above_pivot @
+        aux childs_pivotized.right rects.right @ 
         []
   in
   aux xs rect
@@ -1080,7 +1080,7 @@ let add_intermediate_nodes root_path nodes =
     let leaves = files_here +> List.map (fun ((_dir, _base), node) -> 
       node
     ) in
-    nodes ++ leaves
+    nodes @ leaves
   in
   aux root_path xs
 

@@ -216,30 +216,30 @@ let special_comment =
 (*****************************************************************************)
 
 let idl_type__str_conv = [
-  Boolean     , "Boolean";
-  Byte        , "Byte";
-  Int16       , "Int16";
-  Int32       , "Int32";
-  Int64       , "Int64";
-  Double      , "Double";
-  String      , "String";
-  Int64Vec    , "Int64Vec";
-  StringVec   , "StringVec";
-  VariantVec  , "VariantVec";
-  Int64Map    , "Int64Map";
-  StringMap   , "StringMap";
-  VariantMap  , "VariantMap";
-  Object      , "Object";
-  Resource    , "Resource";
-  Variant     , "Variant";
-  Numeric     , "Numeric";
-  Primitive   , "Primitive";
-  PlusOperand , "PlusOperand";
-  Sequence    , "Sequence";
-  Any         , "Any";
+  Boolean, "Boolean";
+  Byte, "Byte";
+  Int16, "Int16";
+  Int32, "Int32";
+  Int64, "Int64";
+  Double, "Double";
+  String, "String";
+  Int64Vec, "Int64Vec";
+  StringVec, "StringVec";
+  VariantVec, "VariantVec";
+  Int64Map, "Int64Map";
+  StringMap, "StringMap";
+  VariantMap, "VariantMap";
+  Object, "Object";
+  Resource, "Resource";
+  Variant, "Variant";
+  Numeric, "Numeric";
+  Primitive, "Primitive";
+  PlusOperand, "PlusOperand";
+  Sequence, "Sequence";
+  Any, "Any";
 
-  NULL        ,  "NULL";
-  NULL        ,  "Null";
+  NULL,  "NULL";
+  NULL,  "Null";
 ]
 
 let (idl_type_of_string, _str_of_idl_type) = 
@@ -451,7 +451,7 @@ let generate_builtins idlfile pr_hook =
           in
           let xs =
             if varargs
-            then xs ++ ["..."]
+            then xs @ ["..."]
             else xs
           in
         
@@ -572,7 +572,7 @@ let generate_builtins idlfile pr_hook =
             in
             let xs =
               if varargs
-              then xs ++ ["..."]
+              then xs @ ["..."]
               else xs
             in
         

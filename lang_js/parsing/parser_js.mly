@@ -174,7 +174,7 @@ let uop op a b = e(U((op,a), b))
 /*(*1 Toplevel *)*/
 /*(*************************************************************************)*/
 
-main: program EOF { $1 ++ [FinalDef $2] }
+main: program EOF { $1 @ [FinalDef $2] }
 
 program: statement_list { $1 }
 
@@ -334,7 +334,7 @@ case_block:
  | T_LCURLY case_clauses_opt T_RCURLY 
      { ($1, $2, $3) }
  | T_LCURLY case_clauses_opt default_clause case_clauses_opt T_RCURLY 
-     { ($1, $2 ++ [$3] ++ $4, $5) }
+     { ($1, $2 @ [$3] @ $4, $5) }
 
 
 case_clause:
@@ -374,7 +374,7 @@ formal_parameter:
 
 formal_parameter_list:
  | formal_parameter                                { [Left $1] }
- | formal_parameter_list T_COMMA formal_parameter  { $1 ++ [Right $2; Left $3] }
+ | formal_parameter_list T_COMMA formal_parameter  { $1 @ [Right $2; Left $3] }
 
 function_body:
  | /*(* empty *)*/ { [] }
@@ -438,11 +438,11 @@ type_field: T_IDENTIFIER T_COLON type_ { ($1, $2, $3) }
 
 type_field_list:
  | type_field { [Left $1] }
- | type_field_list T_SEMICOLON  type_field { $1 ++ [Right $2; Left $3] }
+ | type_field_list T_SEMICOLON  type_field { $1 @ [Right $2; Left $3] }
 
 type_list:
  | type_                    { [Left $1] }
- | type_list T_COMMA  type_ { $1 ++ [Right $2; Left $3] }
+ | type_list T_COMMA  type_ { $1 @ [Right $2; Left $3] }
 
 /*(*************************************************************************)*/
 /*(*1 Expression *)*/
@@ -590,12 +590,12 @@ array_literal:
  | T_LBRACKET elison T_RBRACKET              { Array($1, $2, $3) }
  | T_LBRACKET        T_RBRACKET              { Array($1, [], $2) }
  | T_LBRACKET element_list T_RBRACKET        { Array($1, $2, $3) }
- | T_LBRACKET element_list elison T_RBRACKET { Array($1, $2 ++ $3, $4) }
+ | T_LBRACKET element_list elison T_RBRACKET { Array($1, $2 @ $3, $4) }
 
 element_list:
- | elison   assignment_expression { $1 ++ [Left $2] }
+ | elison   assignment_expression { $1 @ [Left $2] }
  |          assignment_expression { [Left $1] }
- | element_list   elison   assignment_expression { $1 ++ $2 ++ [Left $3] }
+ | element_list   elison   assignment_expression { $1 @ $2 @ [Left $3] }
 
 object_literal:
  | T_LCURLY T_RCURLY 
@@ -609,7 +609,7 @@ property_name_and_value_list:
      { [Left ($1, $2, $3)] }
  | property_name_and_value_list T_COMMA 
      property_name T_COLON assignment_expression
-     { $1 ++ [Right $2; Left ($3, $4, $5)] }
+     { $1 @ [Right $2; Left ($3, $4, $5)] }
 
 /*(*----------------------------*)*/
 /*(*2 function call *)*/
@@ -623,7 +623,7 @@ argument_list:
  | assignment_expression 
      { [Left $1] }
  | argument_list T_COMMA assignment_expression 
-     { $1 ++ [Right $2; Left $3] }
+     { $1 @ [Right $2; Left $3] }
 
 /*(*----------------------------*)*/
 /*(*2 XHP embeded html *)*/
@@ -790,43 +790,43 @@ semicolon:
 
 elison:
  | T_COMMA { [Right $1] }
- | elison T_COMMA { $1 ++ [Right $2] }
+ | elison T_COMMA { $1 @ [Right $2] }
 
 
 
 statement_list:
  | source_element { [$1] }
- | statement_list source_element { $1 ++ [$2] }
+ | statement_list source_element { $1 @ [$2] }
 
 class_element_list:
  | class_element { [$1] }
- | class_element_list class_element { $1 ++ [$2] }
+ | class_element_list class_element { $1 @ [$2] }
 
 
 case_clauses:
  | case_clause { [$1] }
- | case_clauses case_clause { $1 ++ [$2] }
+ | case_clauses case_clause { $1 @ [$2] }
 
 xhp_attributes:
  | /*(*empty*)*/ { [] }
- | xhp_attributes xhp_attribute { $1 ++ [$2] }
+ | xhp_attributes xhp_attribute { $1 @ [$2] }
 
 xhp_children:
  | /*(*empty*)*/ { [] }
- | xhp_children xhp_child { $1 ++ [$2] }
+ | xhp_children xhp_child { $1 @ [$2] }
 
 
 variable_declaration_list:
  | variable_declaration 
      { [Left $1]  }
  | variable_declaration_list T_COMMA variable_declaration 
-     { $1 ++ [Right $2; Left $3] }
+     { $1 @ [Right $2; Left $3] }
 
 variable_declaration_list_no_in:
  | variable_declaration_no_in 
      { [Left $1] }
  | variable_declaration_list_no_in T_COMMA variable_declaration_no_in 
-     { $1 ++ [Right $2; Left $3] }
+     { $1 @ [Right $2; Left $3] }
 
 
 expression_opt:

@@ -338,7 +338,7 @@ let partition_matrix nodes dm =
     let xs = 
       sort_by_count_rows_low_first elts_with_empty_columns dm.matrix dm in
     xs +> List.iter (empty_all_cells_relevant_to_node m dm);
-    right := xs ++ !right;
+    right := xs @ !right;
     (* pr2 (spf "step1: %s" (Common2.dump xs)); *)
     if null xs
     then rest
@@ -362,7 +362,7 @@ let partition_matrix nodes dm =
     let xs = sort_by_count_rows_low_first elts_with_empty_lines dm.matrix dm in
     xs+> List.iter (empty_all_cells_relevant_to_node m dm);
     (* pr2 (spf "step2: %s" (Common2.dump xs)); *)
-    left := !left ++ xs;
+    left := !left @ xs;
     if null xs
     then step1 rest
     else step2 rest
@@ -370,7 +370,7 @@ let partition_matrix nodes dm =
   
   let rest = step2 nodes in
   if null rest
-  then !left ++ !right
+  then !left @ !right
   else begin 
 (*
     pr2 "CYCLE";
@@ -378,7 +378,7 @@ let partition_matrix nodes dm =
 *)
     let rest = sort_by_count_rows_low_columns_high_first rest m dm in
     let rest = hill_climbing rest dm in
-    !left ++ rest ++ !right
+    !left @ rest @ !right
   end
 
 (* to debug the heuristics *)
@@ -500,12 +500,12 @@ let adjust_gopti_if_needed_lazily tree gopti =
                 if n1 <> n2 then Some n2 else None
               ) 
             in
-            aux (Node (n1, xs1)) (brothers ++ more_brothers)
+            aux (Node (n1, xs1)) (brothers @ more_brothers)
           ))
         else begin
           let children_nodes = xs +> List.map (fun (Node (n,_)) -> n) in
           let config = (Node (n,
-             (xs +> List.map (fun (Node (n, _)) -> Node (n, []))) ++
+             (xs +> List.map (fun (Node (n, _)) -> Node (n, []))) @
              (brothers +> List.map (fun n -> Node (n, [])))))
           in
           let dm = build_with_tree config !gopti in
@@ -530,7 +530,7 @@ let adjust_gopti_if_needed_lazily tree gopti =
               n to_pack !gopti in
           gopti := new_gopti;
           Node (n,
-             (ok ++ [dotdotdot_entry]) +> List.map (fun n ->
+             (ok @ [dotdotdot_entry]) +> List.map (fun n ->
                (* todo: grab the children of n in the original config? *)
                Node (n, [])
               )
@@ -624,7 +624,7 @@ let fix_path path g =
     | x::xs ->
         (match x with
         | Focus _ -> 
-            aux (acc ++ [x]) xs
+            aux (acc @ [x]) xs
         | Expand (n) ->
             aux (put_expand_just_before_last_focus_if_not_children n acc g) xs
         )

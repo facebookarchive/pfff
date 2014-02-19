@@ -109,7 +109,7 @@ let nodes_of_toplevel x =
 
       let (name, xs) = def in
       (* todo? add a __enum prefix? *)
-      [(Ast.str_of_name name, E.Type)] ++
+      [(Ast.str_of_name name, E.Type)] @
       (xs +> List.map (fun (name, _eopt) ->
         (Ast.str_of_name name, E.Constant)
       ))

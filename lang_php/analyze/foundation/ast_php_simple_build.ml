@@ -92,7 +92,7 @@ and toplevels env xs =
       A.NamespaceDef (qualified_ident env qi, body)::rest
                       
     | _ ->
-      (toplevel env x) ++ toplevels env xs
+      (toplevel env x) @ toplevels env xs
     )
 
 and toplevel env st =
@@ -147,7 +147,7 @@ and qualified_ident env xs =
       [(A.special "namespace", wrap tok)], rest
     | rest -> [], rest
   in
-  leading ++
+  leading @
     (rest +> Common.map_filter (function
     | QITok _ -> None
     | QI id -> Some (ident env id)
@@ -630,7 +630,7 @@ and class_variables env st acc =
 
 and xhp_fields env st acc = 
   match st with
-  | XhpDecl (XhpAttributesDecl (_ , xal, _)) ->
+  | XhpDecl (XhpAttributesDecl (_, xal, _)) ->
     (comma_list xal) +> List.fold_left (fun acc xhp_attr ->
       match xhp_attr with
       | XhpAttrDecl (attr_type, attr_name, eopt, req_tok_opt) ->

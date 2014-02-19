@@ -65,7 +65,6 @@ val cmd_to_list :  ?verbose:bool -> string -> string list (* alias *)
 val cmd_to_list_and_status:
   ?verbose:bool -> string -> string list * Unix.process_status
 
-val ( ++ ) : 'a list -> 'a list -> 'a list
 val null : 'a list -> bool
 val exclude : ('a -> bool) -> 'a list -> 'a list
 val sort : 'a list -> 'a list

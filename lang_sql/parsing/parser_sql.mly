@@ -18,8 +18,6 @@
  *
  *)
 
-open Common
-
 %}
 
 /*(*************************************************************************)*/
@@ -489,15 +487,15 @@ as_expression:
 /*(* comma list *)*/
 scalar_exp_list:
  | scalar_exp                        { [$1] }
- | scalar_exp_list TCOMMA scalar_exp { $1 ++ [$3] }
+ | scalar_exp_list TCOMMA scalar_exp { $1 @ [$3] }
 
 assignment_list:
  | assignment                        { [$1] }
- | assignment_list TCOMMA assignment { $1 ++ [$3] }
+ | assignment_list TCOMMA assignment { $1 @ [$3] }
 
 ordering_spec_list:
  | ordering_spec                        { [$1] }
- | ordering_spec_list TCOMMA ordering_spec { $1 ++ [$3] }
+ | ordering_spec_list TCOMMA ordering_spec { $1 @ [$3] }
 
 table_ref_list:
  | table_ref { }

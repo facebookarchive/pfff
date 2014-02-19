@@ -24,7 +24,7 @@ let ast_simple_unittest =
     let dir1 = Filename.concat Config_pfff.path "/tests/php/parsing" in
     let dir2 = Filename.concat Config_pfff.path "/tests/php/semantic" in
     let files =
-      (Common2.glob (spf "%s/*.php" dir1) ++ Common2.glob (spf "%s/*.php" dir2))
+      (Common2.glob (spf "%s/*.php" dir1) @ Common2.glob (spf "%s/*.php" dir2))
     in
     files +> List.iter (fun file ->
       try
@@ -90,7 +90,7 @@ $x = <x:xhp2/>;
       let xhp_classes =
         (Common2.enum 1 2) +> List.map (fun i -> spf "x:xhp%d" i) in
       assert_equal
-        (sort (classes ++ xhp_classes))
+        (sort (classes @ xhp_classes))
         (sort uses_strings);
     );
   ]

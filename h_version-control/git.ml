@@ -523,7 +523,7 @@ let get_2_best_blamers_of_lines
   let counts' = Common2.count_elements_sorted_highfirst other_authors +>
     List.map fst in
 
-  Common2.take_safe 2 (counts ++ counts')
+  Common2.take_safe 2 (counts @ counts')
 
 
 let max_date_of_lines ~basedir ?use_cache ?(skip_revs=[])

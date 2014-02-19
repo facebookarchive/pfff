@@ -257,7 +257,7 @@ let build_index_of_layers ~root layers =
             None
         ) 
       in
-      hmacro#update file (fun old -> color_macro_level ++ old);
+      hmacro#update file (fun old -> color_macro_level @ old);
 
       finfo.micro_level +> List.iter (fun (line, kind) ->
         try 

@@ -41,18 +41,18 @@ let main_action _xs =
 (*****************************************************************************)
 
 let all_actions () = 
- Test_version_control.actions () ++
+ Test_version_control.actions () @
  []
 
 let options () = 
   [
     "-verbose", Arg.Set verbose, 
     " ";
-  ] ++
-  Common.options_of_actions action (all_actions()) ++
-  Common2.cmdline_flags_devel () ++
-  Common2.cmdline_flags_verbose () ++
-  Common2.cmdline_flags_other () ++
+  ] @
+  Common.options_of_actions action (all_actions()) @
+  Common2.cmdline_flags_devel () @
+  Common2.cmdline_flags_verbose () @
+  Common2.cmdline_flags_other () @
   [
   "-version",   Arg.Unit (fun () -> 
     pr2 (spf "vcs version: %s" version);
@@ -66,7 +66,7 @@ let options () =
     raise (Common2.UnixExit 0)
     ), 
   "   guess what";
-  ] ++
+  ] @
   []
 
 (*****************************************************************************)

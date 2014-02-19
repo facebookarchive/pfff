@@ -97,7 +97,7 @@ module XMATCH = struct
       else xs
 *)
     (* opti? use set instead of list *)
-    m1 tin ++ m2 tin
+    m1 tin @ m2 tin
 
            
   let return (a,b) = fun tin ->

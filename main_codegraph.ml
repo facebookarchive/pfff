@@ -695,9 +695,9 @@ let extra_actions () = [
 (*****************************************************************************)
 
 let all_actions () = 
-  Layer_graph_code.actions() ++
-  extra_actions () ++
-  Test_program_lang.actions() ++
+  Layer_graph_code.actions() @
+  extra_actions () @
+  Test_program_lang.actions() @
   []
 
 let options () = [
@@ -728,9 +728,9 @@ let options () = [
   "-no_fake_node", Arg.Clear Graph_code_php.add_fake_node_when_undefined_entity,
   " no fake nodes when use-def mismatches (for -build)\n";
 
-  ] ++
-  Common.options_of_actions action (all_actions()) ++
-  Common2.cmdline_flags_devel () ++
+  ] @
+  Common.options_of_actions action (all_actions()) @
+  Common2.cmdline_flags_devel () @
   [
   "-verbose", Arg.Unit (fun () ->
     verbose := true;

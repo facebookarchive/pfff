@@ -91,5 +91,5 @@ let tags_of_files_or_dirs ?(verbose=false) xs =
       | _ -> None
       )
     in
-    file, tags_classes ++ tags_modules
+    file, tags_classes @ tags_modules
   ))

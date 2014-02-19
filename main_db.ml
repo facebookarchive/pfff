@@ -256,8 +256,8 @@ let extra_actions () = [
 (*****************************************************************************)
 
 let all_actions () = 
-  extra_actions() ++
-  Test_program_lang.actions () ++
+  extra_actions() @
+  Test_program_lang.actions () @
   []
 
 let options () = 
@@ -269,10 +269,10 @@ let options () =
     "-output_dir", Arg.Set_string pleac_dir, 
     (spf " <dir> output file for -gen_pleac (default = %s)" !pleac_dir);
 
-  ] ++
-  Common.options_of_actions action (all_actions()) ++
-  Flag_parsing_cpp.cmdline_flags_macrofile() ++
-  Common2.cmdline_flags_devel () ++
+  ] @
+  Common.options_of_actions action (all_actions()) @
+  Flag_parsing_cpp.cmdline_flags_macrofile() @
+  Common2.cmdline_flags_devel () @
   [
     "-verbose", Arg.Set verbose, 
     " ";
@@ -281,7 +281,7 @@ let options () =
       exit 0;
     ), 
     "  guess what";
-  ] ++
+  ] @
   []
 
 (*****************************************************************************)

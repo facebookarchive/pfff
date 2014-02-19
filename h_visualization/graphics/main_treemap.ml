@@ -85,8 +85,8 @@ let main_action jsonfile =
 (*****************************************************************************)
 
 let all_actions () = 
- Treemap.actions () ++
- Treemap_json.actions () ++
+ Treemap.actions () @
+ Treemap_json.actions () @
  []
 
 let options () = 
@@ -104,11 +104,11 @@ let options () =
       "-verbose", Arg.Set verbose, 
       " ";
   (*e: treemap_viewer cmdline options *)
-  ] ++
-  Common.options_of_actions action (all_actions()) ++
-  Common.cmdline_flags_devel () ++
-  Common.cmdline_flags_verbose () ++
-  Common.cmdline_flags_other () ++
+  ] @
+  Common.options_of_actions action (all_actions()) @
+  Common.cmdline_flags_devel () @
+  Common.cmdline_flags_verbose () @
+  Common.cmdline_flags_other () @
   [
   "-version",   Arg.Unit (fun () -> 
     pr2 (spf "ocamltreemap version: %s" version);
@@ -122,7 +122,7 @@ let options () =
     raise (Common.UnixExit 0)
     ), 
   "   guess what";
-  ] ++
+  ] @
   []
 
 (*****************************************************************************)

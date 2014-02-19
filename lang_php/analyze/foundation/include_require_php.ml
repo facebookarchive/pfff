@@ -412,7 +412,7 @@ let recursive_included_files_of_file
           if verbose then 
             pr2 (spf "Found %d includes (implicit or explicit) in\n\t%s"
                   (List.length incs) file);
-          current_wave := incs ++ !current_wave;
+          current_wave := incs @ !current_wave;
         end
       );
     done;

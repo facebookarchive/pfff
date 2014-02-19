@@ -112,15 +112,15 @@ let gen_statistics_layer ~root stats ~output =
       
   let infos =
     (!(stats.G.unresolved_calls) 
-     +> List.map (fun x -> x, "unresolved calls")) ++
+     +> List.map (fun x -> x, "unresolved calls")) @
     (!(stats.G.unresolved_class_access) 
-     +> List.map (fun x -> x, "unresolved class access")) ++
+     +> List.map (fun x -> x, "unresolved class access")) @
     (!(stats.G.field_access) 
-     +> List.map (fun (x, b) -> x, pre b "field access")) ++
+     +> List.map (fun (x, b) -> x, pre b "field access")) @
     (!(stats.G.method_calls) 
-     +> List.map (fun (x, b) -> x, pre b "method calls")) ++
+     +> List.map (fun (x, b) -> x, pre b "method calls")) @
     (!(stats.G.lookup_fail) 
-     +> List.map (fun (x, (_str, _kind)) -> x, "lookup fail")) ++
+     +> List.map (fun (x, (_str, _kind)) -> x, "lookup fail")) @
 
       []
   in

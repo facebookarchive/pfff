@@ -68,7 +68,7 @@ let unittest =
   ]
 
   in
-  let files = builtin_files ++ test_files in
+  let files = builtin_files @ test_files in
 
   let (expected_errors :(Common.filename * int (* line *)) list) =
     test_files +> List.map (fun file ->
@@ -133,7 +133,7 @@ let unittest =
   );
   assert_bool
     ~msg:(spf "it should find all reported errors and no more (%d errors)"
-             (List.length (only_in_actual ++ only_in_expected)))
+             (List.length (only_in_actual @ only_in_expected)))
     (null only_in_expected && null only_in_actual);
   )
   ]

@@ -42,7 +42,7 @@ let (qufix: long_name -> tok -> (string wrap) -> long_name) =
  fun longname dottok ident ->
   match longname with
   | xs, Name ident2 ->
-      xs ++ [Name ident2, dottok], Name ident
+      xs @ [Name ident2, dottok], Name ident
 
 let to_item xs =
   xs +> Common.map_filter (function
@@ -235,8 +235,8 @@ implementation: structure EOF                        { $1 }
 
 signature:
  | /* empty */                                  { [] }
- | signature signature_item                     { $1 ++ [Item $2] }
- | signature signature_item TSemiColonSemiColon { $1 ++ [Item $2; ScSc $3] }
+ | signature signature_item                     { $1 @ [Item $2] }
+ | signature signature_item TSemiColonSemiColon { $1 @ [Item $2; ScSc $3] }
 
 signature_item:
  | Ttype type_declarations
@@ -465,7 +465,7 @@ expr:
      }
 
  | Tfunction opt_bar match_cases
-     { Function ($1, $2 ++ $3) }
+     { Function ($1, $2 @ $3) }
 
  | expr_comma_list %prec below_COMMA
      { Tuple $1 }
@@ -514,10 +514,10 @@ expr:
      { If ($1, $2, $3, $4, None) }
 
  | Tmatch seq_expr Twith opt_bar match_cases
-     { Match ($1, $2, $3, $4 ++ $5) }
+     { Match ($1, $2, $3, $4 @ $5) }
 
  | Ttry seq_expr Twith opt_bar match_cases
-     { Try ($1, $2, $3, $4 ++ $5) }
+     { Try ($1, $2, $3, $4 @ $5) }
 
  | Twhile seq_expr Tdo seq_expr Tdone
      { While ($1, $2, $3, $4, $5) }
@@ -614,7 +614,7 @@ simple_expr:
      { Record ($1, $2, $3) }
 
  | TOBracket expr_semi_list opt_semi3 TCBracket
-     { List ($1, $2 ++ $3, $4) }
+     { List ($1, $2 @ $3, $4) }
 
  | TOBracketPipe expr_semi_list opt_semi TPipeCBracket
      { ExprTodo }
@@ -655,7 +655,7 @@ simple_labeled_expr_list:
  | labeled_simple_expr
       { [$1] }
  | simple_labeled_expr_list labeled_simple_expr
-      { $1 ++ [$2] }
+      { $1 @ [$2] }
 
 labeled_simple_expr:
  | simple_expr %prec below_SHARP
@@ -665,31 +665,31 @@ labeled_simple_expr:
 
 
 expr_comma_list:
- | expr_comma_list TComma expr                  { $1 ++ [Right $2; Left $3] }
+ | expr_comma_list TComma expr                  { $1 @ [Right $2; Left $3] }
  | expr TComma expr                             { [Left $1; Right $2; Left $3] }
 
 expr_semi_list:
  | expr                                  { [Left $1] }
- | expr_semi_list TSemiColon expr        { $1 ++ [Right $2; Left $3] }
+ | expr_semi_list TSemiColon expr        { $1 @ [Right $2; Left $3] }
 
 
 
 
 
 record_expr:
- | lbl_expr_list opt_semi                    { RecordNormal ($1 ++ $2) }
- | simple_expr Twith lbl_expr_list opt_semi  { RecordWith ($1, $2, $3 ++ $4) }
+ | lbl_expr_list opt_semi                    { RecordNormal ($1 @ $2) }
+ | simple_expr Twith lbl_expr_list opt_semi  { RecordWith ($1, $2, $3 @ $4) }
 
 lbl_expr_list:
  | label_longident TEq expr
      { [Left (FieldExpr ($1, $2, $3))] }
  | lbl_expr_list TSemiColon     label_longident TEq expr
-     { $1 ++ [Right $2; Left (FieldExpr ($3, $4, $5))] }
+     { $1 @ [Right $2; Left (FieldExpr ($3, $4, $5))] }
  /*(* new 3.12 feature! *)*/
  | label_longident
       { [Left (FieldImplicitExpr ($1))] }
  | lbl_expr_list TSemiColon     label_longident
-     { $1 ++ [Right $2; Left (FieldImplicitExpr $3)] }
+     { $1 @ [Right $2; Left (FieldImplicitExpr $3)] }
 
 
 subtractive:
@@ -747,7 +747,7 @@ field_expr_list:
 
 match_cases:
  | pattern  match_action                     { [Left ($1, $2)] }
- | match_cases TPipe    pattern match_action { $1 ++ [Right $2; Left ($3, $4)] }
+ | match_cases TPipe    pattern match_action { $1 @ [Right $2; Left ($3, $4)] }
 
 match_action:
  | TArrow seq_expr                  { Action ($1, $2) }
@@ -792,7 +792,7 @@ simple_pattern:
  | TOBrace lbl_pattern_list record_pattern_end TCBrace
       { PatRecord ($1, $2, (* $3 *) $4) }
  | TOBracket pattern_semi_list opt_semi4 TCBracket
-      { PatList (($1, $2 ++ $3, $4)) }
+      { PatList (($1, $2 @ $3, $4)) }
 
  | TOBracketPipe pattern_semi_list opt_semi TPipeCBracket
       { PatTodo }
@@ -818,9 +818,9 @@ lbl_pattern_list:
  | label_longident TEq pattern               {[Left (PatField ($1, $2, $3))] }
  | label_longident                           {[Left (PatImplicitField ($1))]  }
  | lbl_pattern_list TSemiColon   label_longident TEq pattern 
-     { $1 ++ [Right $2; Left (PatField ($3, $4, $5))] }
+     { $1 @ [Right $2; Left (PatField ($3, $4, $5))] }
  | lbl_pattern_list TSemiColon   label_longident       
-     { $1 ++ [Right $2; Left (PatImplicitField ($3))] }
+     { $1 @ [Right $2; Left (PatImplicitField ($3))] }
 
 
 record_pattern_end:
@@ -831,10 +831,10 @@ record_pattern_end:
 
 pattern_semi_list:
  | pattern                                     { [Left $1] }
- | pattern_semi_list TSemiColon pattern        { $1 ++[Right $2; Left $3] }
+ | pattern_semi_list TSemiColon pattern        { $1 @[Right $2; Left $3] }
 
 pattern_comma_list:
- | pattern_comma_list TComma pattern            { $1 ++ [Right $2; Left $3] }
+ | pattern_comma_list TComma pattern            { $1 @ [Right $2; Left $3] }
  | pattern TComma pattern                       { [Left $1; Right $2; Left $3] }
 
 
@@ -861,7 +861,7 @@ type_constraint:
 
 type_declarations:
  | type_declaration                            { [Left $1] }
- | type_declarations Tand type_declaration     { $1 ++ [Right $2; Left $3] }
+ | type_declarations Tand type_declaration     { $1 @ [Right $2; Left $3] }
 
 type_declaration:
   type_parameters TLowerIdent type_kind /*(*TODO constraints*)*/
@@ -884,14 +884,14 @@ type_kind:
  | TEq /*(*TODO private_flag*)*/ TPipe constructor_declarations
       { Some ($1, TyAlgebric (Right $2::$3)) }
  | TEq /*(*TODO private_flag*)*/ TOBrace label_declarations opt_semi2 TCBrace
-      { Some ($1, TyRecord ($2, ($3 ++ $4), $5)) }
+      { Some ($1, TyRecord ($2, ($3 @ $4), $5)) }
 
 
 
 constructor_declarations:
  | constructor_declaration                     { [Left $1] }
  | constructor_declarations TPipe constructor_declaration 
-     { $1 ++ [Right $2; Left $3] }
+     { $1 @ [Right $2; Left $3] }
 
 constructor_declaration:
     constr_ident constructor_arguments          { Name $1, $2 }
@@ -908,7 +908,7 @@ type_parameters:
 
 type_parameter_list:
  | type_parameter                               { [Left $1] }
- | type_parameter_list TComma type_parameter    { $1 ++ [Right $2; Left $3] }
+ | type_parameter_list TComma type_parameter    { $1 @ [Right $2; Left $3] }
 
 type_parameter:
   /*(*TODO type_variance*)*/ TQuote ident   { ($1, Name $2) }
@@ -917,7 +917,7 @@ type_parameter:
 
 label_declarations:
  | label_declaration                           { [Left $1] }
- | label_declarations TSemiColon label_declaration   { $1 ++[Right $2; Left $3]}
+ | label_declarations TSemiColon label_declaration   { $1 @[Right $2; Left $3]}
 
 label_declaration:
   mutable_flag label TColon poly_type          
@@ -998,11 +998,11 @@ simple_core_type2:
 
 core_type_comma_list:
  | core_type                                  { [Left $1] }
- | core_type_comma_list TComma core_type      { $1 ++ [Right $2; Left $3] }
+ | core_type_comma_list TComma core_type      { $1 @ [Right $2; Left $3] }
 
 core_type_list:
   | simple_core_type                         { [Left $1] }
-  | core_type_list TStar simple_core_type    { $1 ++ [Right $2; Left $3] }
+  | core_type_list TStar simple_core_type    { $1 @ [Right $2; Left $3] }
 
 meth_list:
   | field TSemiColon meth_list                      { }
@@ -1051,7 +1051,7 @@ amper_type_list:
 
 let_bindings:
  | let_binding                           { [Left $1] }
- | let_bindings Tand let_binding         { $1 ++ [Right $2; Left $3] }
+ | let_bindings Tand let_binding         { $1 @ [Right $2; Left $3] }
 
 
 let_binding:

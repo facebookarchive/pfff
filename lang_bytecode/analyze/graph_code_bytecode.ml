@@ -131,7 +131,7 @@ let bytecode_class_name_of_string name =
       );
     }
 let java_class_name_of_bytecode_class_name x =
-  Common.join "." (x.package ++ [x.baseclass]) ^
+  Common.join "." (x.package @ [x.baseclass]) ^
   (x.nested_or_anon +> List.map (function
    (* todo: need look in original java file, or have a more compatible
     * convention of how I name anon class entities in graph_code_java.ml
@@ -404,7 +404,7 @@ let extract_uses_inheritance2 ~g ast =
   let current = (name, E.Class E.RegularClass) in
   let env = { g; current; consts = jclass.j_consts } in
 
-  let parents = Common2.option_to_list jclass.j_super ++ jclass.j_interfaces in
+  let parents = Common2.option_to_list jclass.j_super @ jclass.j_interfaces in
   parents +> List.iter (fun cname ->
     let node = (JBasics.cn_name cname, E.Class E.RegularClass) in
     add_use_edge env node;

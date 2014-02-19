@@ -513,7 +513,7 @@ let recompute_matrix w =
   paint w;
   ()
 
-let add_path x path = path ++ [x]
+let add_path x path = path @ [x]
 
 let button_action _da w ev =
   let (x, y) = GdkEvent.Button.x ev, GdkEvent.Button.y ev in

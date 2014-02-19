@@ -221,8 +221,8 @@ let drop_esthet_between_removed xs =
     | [] -> List.rev acc
     | Removed s::xs -> Removed s::in_remove [] xs
     | Esthet2 x::xs -> in_remove (Esthet2 x::acc) xs
-    | Added s::xs -> List.rev (Added s::acc) ++ outside_remove xs
-    | OrigElt s::xs -> List.rev (OrigElt s::acc) ++ outside_remove xs 
+    | Added s::xs -> List.rev (Added s::acc) @ outside_remove xs
+    | OrigElt s::xs -> List.rev (OrigElt s::acc) @ outside_remove xs 
   in
   outside_remove xs
 
@@ -246,7 +246,7 @@ let drop_whole_line_if_only_removed xs =
     has_a_remove && only_remove_or_esthet
   )
   in
-  before_first_newline ++ 
+  before_first_newline @ 
     (xxs +> List.map (fun (elt, elts) -> elt::elts) +> List.flatten)
 
 (* people often write s/foo(X,Y)/.../ but some calls to foo may have

@@ -593,7 +593,7 @@ let (test: string -> unit) = fun s ->
 let (++) a b =
   Common.profile_code "++" (fun () -> a @ b)
 
-let _ex = example3 "++" ([1;2]++[3;4;5] = [1;2;3;4;5])
+let _ex = example3 "++" ([1;2]@[3;4;5] = [1;2;3;4;5])
 
 (*-------------------------------------------------------------------*)
 (* Regression testing *)
@@ -2298,28 +2298,28 @@ let int_to_month i =
 
 
 let month_info = [
-  1  , Jan, "Jan", "January", 31;
-  2  , Feb, "Feb", "February", 28;
-  3  , Mar, "Mar", "March", 31;
-  4  , Apr, "Apr", "April", 30;
-  5  , May, "May", "May", 31;
-  6  , Jun, "Jun", "June", 30;
-  7  , Jul, "Jul", "July", 31;
-  8  , Aug, "Aug", "August", 31;
-  9  , Sep, "Sep", "September", 30;
-  10 , Oct, "Oct", "October", 31;
-  11 , Nov, "Nov", "November", 30;
-  12 , Dec, "Dec", "December", 31;
+  1, Jan, "Jan", "January", 31;
+  2, Feb, "Feb", "February", 28;
+  3, Mar, "Mar", "March", 31;
+  4, Apr, "Apr", "April", 30;
+  5, May, "May", "May", 31;
+  6, Jun, "Jun", "June", 30;
+  7, Jul, "Jul", "July", 31;
+  8, Aug, "Aug", "August", 31;
+  9, Sep, "Sep", "September", 30;
+  10, Oct, "Oct", "October", 31;
+  11, Nov, "Nov", "November", 30;
+  12, Dec, "Dec", "December", 31;
 ]
 
 let week_day_info = [
-  0 , Sunday    , "Sun" , "Dim" , "Sunday";
-  1 , Monday    , "Mon" , "Lun" , "Monday";
-  2 , Tuesday   , "Tue" , "Mar" , "Tuesday";
-  3 , Wednesday , "Wed" , "Mer" , "Wednesday";
-  4 , Thursday  , "Thu" ,"Jeu"  ,"Thursday";
-  5 , Friday    , "Fri" , "Ven" , "Friday";
-  6 , Saturday  , "Sat" ,"Sam"  , "Saturday";
+  0, Sunday, "Sun", "Dim", "Sunday";
+  1, Monday, "Mon", "Lun", "Monday";
+  2, Tuesday, "Tue", "Mar", "Tuesday";
+  3, Wednesday, "Wed", "Mer", "Wednesday";
+  4, Thursday, "Thu","Jeu","Thursday";
+  5, Friday, "Fri", "Ven", "Friday";
+  6, Saturday, "Sat","Sam", "Saturday";
 ]
 
 let i_to_month_h =
@@ -3889,7 +3889,7 @@ let rec all_assoc e = function
 let prepare_want_all_assoc l =
   List.map (fun n -> n, uniq (all_assoc n l)) (uniq (List.map fst l))
 
-let rotate list = List.tl list ++ [(List.hd list)]
+let rotate list = List.tl list @ [(List.hd list)]
 
 let or_list  = List.fold_left (||) false
 let and_list = List.fold_left (&&) true
@@ -3909,11 +3909,11 @@ let rec splitAt n xs =
 let pack n xs =
   let rec pack_aux l i = function
     | [] -> failwith "not on a boundary"
-    | [x] -> if i =|= n then [l++[x]] else failwith "not on a boundary"
+    | [x] -> if i =|= n then [l@[x]] else failwith "not on a boundary"
     | x::xs ->
         if i =|= n
-        then (l++[x])::(pack_aux [] 1 xs)
-        else pack_aux (l++[x]) (i+1) xs
+        then (l@[x])::(pack_aux [] 1 xs)
+        else pack_aux (l@[x]) (i+1) xs
   in
   pack_aux [] 1 xs
 
@@ -4015,7 +4015,7 @@ let iter_with_before_after f xs =
 (* kind of cartesian product of x*x  *)
 let rec (get_pair: ('a list) -> (('a * 'a) list)) = function
   | [] -> []
-  | x::xs -> (List.map (fun y -> (x,y)) xs) ++ (get_pair xs)
+  | x::xs -> (List.map (fun y -> (x,y)) xs) @ (get_pair xs)
 
 
 (* retourne le rang dans une liste d'un element *)
@@ -4083,7 +4083,7 @@ let rec uncons_permut_lazy xs =
 let rec map_flatten f l =
   let rec map_flatten_aux accu = function
     | [] -> accu
-    | e :: l -> map_flatten_aux (List.rev (f e) ++ accu) l
+    | e :: l -> map_flatten_aux (List.rev (f e) @ accu) l
   in List.rev (map_flatten_aux [] l)
 
 (* now in prelude: let rec repeat e n *)
@@ -4200,7 +4200,7 @@ let rec realCombinaison = function
   | a::l  ->
       let res  = realCombinaison l in
       let res2 = List.map (function x -> a::x) res in
-      res2 ++ res ++ [[a]]
+      res2 @ res @ [[a]]
 
 (* genere toutes les combinaisons possible de paire      *)
 (* par exemple combinaison [1;2;4] -> [1, 2; 1, 4; 2, 4] *)
@@ -4208,7 +4208,7 @@ let rec combinaison = function
   | [] -> []
   | [a] -> []
   | [a;b] -> [(a, b)]
-  | a::b::l -> (List.map (function elem -> (a, elem)) (b::l)) ++
+  | a::b::l -> (List.map (function elem -> (a, elem)) (b::l)) @
      (combinaison (b::l))
 
 (*----------------------------------*)
@@ -4570,11 +4570,11 @@ let (assoc_map: (('a * 'b) list) -> (('a * 'b) list) -> (('a * 'a) list)) =
   let (l1bis, l2bis) = (assoc_reverse l1, assoc_reverse l2) in
   List.map (fun (x,y) -> (y, List.assoc x l2bis )) l1bis
 
-let rec (lookup_list: 'a -> ('a , 'b) assoc list -> 'b) = fun el -> function
+let rec (lookup_list: 'a -> ('a, 'b) assoc list -> 'b) = fun el -> function
   | [] -> raise Not_found
   | (xs::xxs) -> try List.assoc el xs with Not_found -> lookup_list el xxs
 
-let (lookup_list2: 'a -> ('a , 'b) assoc list -> ('b * int)) = fun el xxs ->
+let (lookup_list2: 'a -> ('a, 'b) assoc list -> ('b * int)) = fun el xxs ->
   let rec lookup_l_aux i = function
   | [] -> raise Not_found
   | (xs::xxs) ->
@@ -5332,7 +5332,7 @@ let (write_ppm: int -> int -> (pixel list) -> string -> unit) = fun
     end
 
 let test_ppm1 () = write_ppm 100 100
-    ((generate (50*100) (1,45,100)) ++ (generate (50*100) (1,1,100)))
+    ((generate (50*100) (1,45,100)) @ (generate (50*100) (1,1,100)))
     "img.ppm"
 
 (*****************************************************************************)
@@ -5819,7 +5819,7 @@ let random_subset_of_list num xs =
  *)
 let cmdline_flags_devel () =
   [
-    "-debugger",         Arg.Set Common.debugger ,
+    "-debugger",         Arg.Set Common.debugger,
     " option to set if launched inside ocamldebug";
     "-profile",          Arg.Unit (fun () -> Common.profile := Common.PALL),
     " output profiling information";
@@ -6084,7 +6084,7 @@ let (tree_of_files: filename list -> (string, (string * filename)) tree) =
     let leaves = files_here +> List.map (fun ((_dir, base), path) ->
       Leaf (base, path)
     ) in
-    nodes ++ leaves
+    nodes @ leaves
   in
   Node (join "/" root,
         aux files)

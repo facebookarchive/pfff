@@ -104,7 +104,7 @@ let rec find_tsup_quite_close tok_open xs =
             let (before, (tsuptok,_), after) = find_tsup_quite_close x xs in
             (* we don't care about this one, it will be eventually be 
              * transformed by the caller *)
-            aux (tsuptok:: (List.rev before) ++(x::acc)) after
+            aux (tsuptok:: (List.rev before) @(x::acc)) after
               
         | x -> aux (x::acc) xs
         )

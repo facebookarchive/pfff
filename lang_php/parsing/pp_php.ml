@@ -155,7 +155,7 @@ let merge_tokens_line ~orig_toks ~pp_toks =
 
     let expanded_b = mark_as_expanded last_orig_parse_info b in
 
-    commented_a ++ expanded_b
+    commented_a @ expanded_b
 
 
 

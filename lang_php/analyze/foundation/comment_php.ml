@@ -138,12 +138,12 @@ let (unparse_comment: ?indent:int -> comment -> string) =
  fun ?(indent=0) m ->
   match m with
   | DocBlock (xs, b) ->
-      (["/**"] ++
+      (["/**"] @
       (xs +> List.map (fun s -> 
         if s = ""
         then " *"
         else 
-          spf "%s * %s" (gen_space indent) s)) ++
+          spf "%s * %s" (gen_space indent) s)) @
       (if b
       then [spf "%s */" (gen_space indent)]
       else [spf "%s **/" (gen_space indent)]

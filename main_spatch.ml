@@ -829,7 +829,7 @@ let spatch_extra_actions () = [
 (*****************************************************************************)
 
 let all_actions () = 
- spatch_extra_actions()++
+ spatch_extra_actions()@
  []
 
 let options () = 
@@ -850,10 +850,10 @@ let options () =
     "--case-sensitive", Arg.Set case_sensitive, 
     " match code in a case sensitive manner\n";
 
-  ] ++
+  ] @
   (* Flag_parsing_php.cmdline_flags_pp () ++ *)
-  Common.options_of_actions action (all_actions()) ++
-  Common2.cmdline_flags_devel () ++
+  Common.options_of_actions action (all_actions()) @
+  Common2.cmdline_flags_devel () @
   [
     "--verbose", Arg.Set verbose, 
     " ";

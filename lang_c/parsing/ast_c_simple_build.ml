@@ -94,9 +94,9 @@ and toplevel env = function
           env.struct_defs_toadd <- [];
           env.enum_defs_toadd <- [];
           env.typedefs_toadd <- [];
-          (structs +> List.map (fun x -> A.StructDef x)) ++
-          (enums +> List.map (fun x -> A.EnumDef x)) ++
-          (typedefs +> List.map (fun x -> A.TypeDef x)) ++
+          (structs +> List.map (fun x -> A.StructDef x)) @
+          (enums +> List.map (fun x -> A.EnumDef x)) @
+          (typedefs +> List.map (fun x -> A.TypeDef x)) @
           (xs +> List.map (fun x ->
             (* could skip extern declaration? *)
             match x with

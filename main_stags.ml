@@ -81,7 +81,7 @@ let rec defs_of_files_or_dirs lang xs =
   | "web" ->
       let tag1 = defs_of_files_or_dirs "php" xs in
       let tag2 = defs_of_files_or_dirs "js" xs in
-      tag1 ++ tag2
+      tag1 @ tag2
   | ("cmt" | "java" | "php2") ->
       (match xs with
       | [root] -> 
@@ -155,9 +155,9 @@ let options () =
     "-heavy_tagging", Arg.Set heavy_tagging, 
     " generates some extra tags with semantic prefix: F_, C_, M_\n";
 
-  ] ++
-  Common.options_of_actions action (all_actions()) ++
-  Common2.cmdline_flags_devel () ++
+  ] @
+  Common.options_of_actions action (all_actions()) @
+  Common2.cmdline_flags_devel () @
   [
     "-verbose", Arg.Set verbose, 
     " ";

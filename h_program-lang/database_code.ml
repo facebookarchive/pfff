@@ -653,12 +653,12 @@ let merge_databases db1 db2 =
 
   {
     root = db1.root;
-    dirs = (db1.dirs ++ db2.dirs) 
+    dirs = (db1.dirs @ db2.dirs) 
       +> Common.group_assoc_bykey_eff
       +> List.map (fun (file, xs) ->
         file, Common2.sum xs
       );
-    files = db1.files ++ db2.files; (* should ensure exclusive ? *)
+    files = db1.files @ db2.files; (* should ensure exclusive ? *)
     entities = Array.append db1.entities db2_entities_adjusted;
   }
 
@@ -765,7 +765,7 @@ let files_and_dirs_and_sorted_entities_for_completion2
   let multidirs = multi_dirs_entities_of_dirs dirs in
 
   let xs =
-   multidirs ++ dirs ++ files ++
+   multidirs @ dirs @ files @
    (if nb_entities > threshold_too_many_entities
     then begin 
       pr2 "Too many entities. Completion just for filenames";

@@ -26,7 +26,7 @@ let unittest =
    "regression files" >:: (fun () ->
      let dir = Filename.concat Config_pfff.path "/tests/objc/parsing" in
      let files = 
-       Common2.glob (spf "%s/*.m" dir) ++ Common2.glob (spf "%s/*.h" dir) in
+       Common2.glob (spf "%s/*.m" dir) @ Common2.glob (spf "%s/*.h" dir) in
      files +> List.iter (fun file ->
        try
          let _ast = parse file in

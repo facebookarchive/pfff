@@ -298,7 +298,7 @@ let sgrep_extra_actions () = [
 (*****************************************************************************)
 
 let all_actions () = 
- sgrep_extra_actions()++
+ sgrep_extra_actions()@
  []
 
 let options () = 
@@ -331,17 +331,17 @@ let options () =
       Flag_matcher_php.verbose := true;
     ),
     " ";
-  ] ++
+  ] @
   (* old: Flag_parsing_php.cmdline_flags_pp () ++ *)
-  Common.options_of_actions action (all_actions()) ++
-  Common2.cmdline_flags_devel () ++
+  Common.options_of_actions action (all_actions()) @
+  Common2.cmdline_flags_devel () @
   [
   "-version",   Arg.Unit (fun () -> 
     pr2 (spf "sgrep version: %s" Config_pfff.version);
     exit 0;
   ), 
     "  guess what";
-  ] ++
+  ] @
   []
 
 (*****************************************************************************)

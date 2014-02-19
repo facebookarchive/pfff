@@ -55,7 +55,7 @@ let gen_red_green_layer lines_coverage ~output =
       file,
       { Layer_code.
         micro_level = 
-          (covered +> List.map (fun line -> line, "ok")) ++
+          (covered +> List.map (fun line -> line, "ok")) @
           (not_covered +> List.map (fun line -> line, "bad"))
         ;
         macro_level = [
@@ -94,7 +94,7 @@ let gen_heatmap_layer lines_coverage ~output =
       file,
       { Layer_code.
         micro_level = 
-          (covered +> List.map (fun line -> line, "ok")) ++
+          (covered +> List.map (fun line -> line, "ok")) @
           (not_covered +> List.map (fun line -> line, "bad"))
         ;
         macro_level = [

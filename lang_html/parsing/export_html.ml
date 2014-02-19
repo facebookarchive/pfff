@@ -75,7 +75,7 @@ let rec json_of_html_tree doc =
         J.String name; 
         J.Object (args +> List.map (fun (Attr (fld, _t1), Val (value, _t2)) ->
           fld, J.String value
-        ))] ++
+        ))] @
         (subnodes +> List.map json_of_html_tree)
       )
   | H.Data (s, _tok) -> J.Array [J.String "DATA"; J.String s]

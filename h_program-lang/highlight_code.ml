@@ -590,13 +590,13 @@ let info_of_category = function
       
 
   | Class (Def2 _) -> 
-      [`FOREGROUND "coral"] ++ info_of_usedef (Def)
+      [`FOREGROUND "coral"] @ info_of_usedef (Def)
 
   | Class (Use2 _) -> 
-      [`FOREGROUND "coral"] ++ info_of_usedef (Use)
+      [`FOREGROUND "coral"] @ info_of_usedef (Use)
 
-  | Parameter usedef -> [`FOREGROUND "SteelBlue2";] ++ info_of_usedef usedef
-  | Local usedef  ->    [`FOREGROUND "SkyBlue1";] ++ info_of_usedef usedef 
+  | Parameter usedef -> [`FOREGROUND "SteelBlue2";] @ info_of_usedef usedef
+  | Local usedef  ->    [`FOREGROUND "SkyBlue1";] @ info_of_usedef usedef 
 
 
   (* use *)
@@ -615,11 +615,11 @@ let info_of_category = function
           | NoUse -> [`FOREGROUND "IndianRed";]
           )
       | NoInfoPlace -> [`FOREGROUND "LightGoldenrod";]
-      ) ++ info_of_def_arity def_arity
+      ) @ info_of_def_arity def_arity
 
 
   | Global (Use2 (defplace, def_arity, use_arity)) -> 
-      [`SCALE `X_LARGE] ++
+      [`SCALE `X_LARGE] @
       (match defplace with
       | PlaceLocal -> [`FOREGROUND "cyan";]
       | PlaceSameDir -> [`FOREGROUND "turquoise3";]
@@ -633,7 +633,7 @@ let info_of_category = function
           )
       | NoInfoPlace -> [`FOREGROUND "LightCyan";]
 
-      ) ++ info_of_def_arity def_arity
+      ) @ info_of_def_arity def_arity
 
 
   | Constant (Use2 (defplace, def_arity, use_arity)) -> 
@@ -652,7 +652,7 @@ let info_of_category = function
           )
       | NoInfoPlace -> [`FOREGROUND "pink1";]
 
-      ) ++ info_of_def_arity def_arity
+      ) @ info_of_def_arity def_arity
 
 
       
@@ -672,7 +672,7 @@ let info_of_category = function
           )
       | NoInfoPlace -> [`FOREGROUND "pink1";]
 
-      ) ++ info_of_def_arity def_arity
+      ) @ info_of_def_arity def_arity
 
 
   (* | FunCallMultiDef ->[`FOREGROUND "LightGoldenrod";] *)
@@ -714,16 +714,16 @@ let info_of_category = function
 
   | Module (Def) -> [`FOREGROUND "chocolate";]
 
-  | StructName usedef -> [`FOREGROUND "YellowGreen"] ++ info_of_usedef usedef 
+  | StructName usedef -> [`FOREGROUND "YellowGreen"] @ info_of_usedef usedef 
 
   | Field (Def2 _) -> 
-      [`FOREGROUND "MediumPurple1"] ++ info_of_usedef (Def)
+      [`FOREGROUND "MediumPurple1"] @ info_of_usedef (Def)
 
   | Field (Use2 _) -> 
-      [`FOREGROUND "MediumPurple2"] ++ info_of_usedef (Use)
+      [`FOREGROUND "MediumPurple2"] @ info_of_usedef (Use)
 
 
-  | TypeDef usedef -> [`FOREGROUND "YellowGreen"] ++ info_of_usedef usedef 
+  | TypeDef usedef -> [`FOREGROUND "YellowGreen"] @ info_of_usedef usedef 
 
 
 
@@ -763,14 +763,14 @@ let info_of_category = function
 
 
   | CommentWordImportantNotion ->  
-      [`FOREGROUND "red";] ++
+      [`FOREGROUND "red";] @
         [
           `SCALE `LARGE;
           `UNDERLINE `SINGLE;
         ]
 
   | CommentWordImportantModal ->  
-      [`FOREGROUND "green";] ++
+      [`FOREGROUND "green";] @
         [
           `SCALE `LARGE;
           `UNDERLINE `SINGLE;
@@ -789,7 +789,7 @@ let info_of_category = function
       [`FOREGROUND "CornflowerBlue";]
 
   | EnumName usedef
-      -> [`FOREGROUND "YellowGreen"] ++ info_of_usedef usedef 
+      -> [`FOREGROUND "YellowGreen"] @ info_of_usedef usedef 
 
   | EmbededHtml ->
       (* to be consistent with Archi_code.Ui color *)

@@ -251,7 +251,7 @@ let with_full_qualifier env xs =
       (* todo opti: if head match the head of xs, then can accelerate things? *)
       | _ -> List.rev (List.tl rev)
     in
-    prefix ++ (xs +> List.map Ast.unwrap)
+    prefix @ (xs +> List.map Ast.unwrap)
   )
 
 (* Look for entity (package/class/method/field) in list of imported
@@ -282,7 +282,7 @@ let rec import_of_inherited_classes env n =
   parents_inheritance +> Common.map_filter (fun (str, kind) ->
     match kind with
     | E.Class _ ->
-        let xs = (Common.split "\\." str) ++ ["*"] in
+        let xs = (Common.split "\\." str) @ ["*"] in
         let res = import_of_inherited_classes env (str, kind) in
         Some (xs::res)
     | _ -> None
@@ -315,12 +315,12 @@ let rec extract_defs_uses ~phase ~g ~ast ~readable ~lookup_fails =
     imported_namespace = 
       (match ast.package with
       (* we automatically import the current.package.* *)
-      | Some long_ident -> [List.map Ast.unwrap long_ident ++ ["*"]]
+      | Some long_ident -> [List.map Ast.unwrap long_ident @ ["*"]]
       | None -> []
-      ) ++ 
+      ) @ 
      (ast.imports +> List.map (fun (_is_static, qualified_ident) ->
        List.map Ast.unwrap qualified_ident
-     ) ++ [
+     ) @ [
        (* we automatically import java.lang.* *)
        ["java";"lang";"*"];
        (* we automatically import top packages *)
@@ -392,7 +392,7 @@ and decl env = function
   | Enum def, _ -> enum_decl env def
   | Init (_is_static, st), n ->
       let name = spf "__init__%d" n in
-      let full_ident = env.current_qualifier ++ [name, fakeInfo name] in
+      let full_ident = env.current_qualifier @ [name, fakeInfo name] in
       let full_str = str_of_qualified_ident full_ident in
       let node = (full_str, E.TopStmts) in
       if env.phase = Defs then begin
@@ -409,7 +409,7 @@ and decl env = function
 and decls env xs = List.iter (decl env) (Common.index_list_1 xs)
 
 and class_decl env def =
-  let full_ident = env.current_qualifier ++ [def.cl_name] in
+  let full_ident = env.current_qualifier @ [def.cl_name] in
   let full_str = str_of_qualified_ident full_ident in
   let node = (full_str, E.Class E.RegularClass) in
   if env.phase = Defs then begin
@@ -429,7 +429,7 @@ and class_decl env def =
   }
   in
   let parents = 
-    Common2.option_to_list def.cl_extends ++
+    Common2.option_to_list def.cl_extends @
     (def.cl_impls)
   in
   List.iter (typ env) parents;
@@ -443,10 +443,10 @@ and class_decl env def =
      * generate a fake import package.classname.*. This will also
      * allow nested classes to access siblings.
      *)
-     (List.map Ast.unwrap full_ident ++ ["*"]) ::
+     (List.map Ast.unwrap full_ident @ ["*"]) ::
     import_of_inherited_classes env (full_str, E.Class E.RegularClass)
   in
-  decls {env with imported_namespace = imports ++ env.imported_namespace } 
+  decls {env with imported_namespace = imports @ env.imported_namespace } 
     def.cl_body
 
 (* Java allow some forms of overloading, so the same method name can be
@@ -454,7 +454,7 @@ and class_decl env def =
  *)
 and method_decl env def =
 
-  let full_ident = env.current_qualifier ++ [def.m_var.v_name] in
+  let full_ident = env.current_qualifier @ [def.m_var.v_name] in
   let full_str = str_of_qualified_ident full_ident in
   let node = (full_str, E.Method E.RegularMethod) in
   if env.phase = Defs then begin
@@ -476,7 +476,7 @@ and method_decl env def =
     *)
     current_qualifier = full_ident;
     params_or_locals = (def.m_formals +> List.map p_or_l)
-      ++ 
+      @ 
      (* with methods of anon classes we need to lookup enclosing
       * final parameters/locals 
       *) 
@@ -492,7 +492,7 @@ and method_decl env def =
   stmt env def.m_body
 
 and field_decl env def =
-  let full_ident = env.current_qualifier ++ [def.f_var.v_name] in
+  let full_ident = env.current_qualifier @ [def.f_var.v_name] in
   let full_str = str_of_qualified_ident full_ident in
   let kind = 
     if Ast.is_final_static def.f_var.v_mods
@@ -514,7 +514,7 @@ and field_decl env def =
   field env def
 
 and enum_decl env def =
-  let full_ident = env.current_qualifier ++ [def.en_name] in
+  let full_ident = env.current_qualifier @ [def.en_name] in
   let full_str = str_of_qualified_ident full_ident in
     (* less: make it a class? or a Type? *)
   let node = (full_str, E.Class E.RegularClass) in
@@ -542,7 +542,7 @@ and enum_decl env def =
       match enum_constant with
       | EnumSimple id | EnumConstructor (id, _) | EnumWithMethods (id, _) -> id
     in
-    let full_ident = env.current_qualifier ++ [ident] in
+    let full_ident = env.current_qualifier @ [ident] in
     let full_str = str_of_qualified_ident full_ident in
     let node = (full_str, E.Constant) in
     if env.phase = Defs then begin
@@ -601,17 +601,17 @@ and stmt env = function
         | ForClassic (init, es1, es2) ->
             (match init with
             | ForInitExprs es0 ->
-                exprs env (es0 ++ es1 ++ es2);
+                exprs env (es0 @ es1 @ es2);
                 env
             | ForInitVars xs ->
                 List.iter (field env) xs;
                 let env = { env with
                   params_or_locals = 
                     (xs +> List.map (fun fld -> p_or_l fld.f_var)
-                    ) ++ env.params_or_locals;
+                    ) @ env.params_or_locals;
                 } 
                 in
-                exprs env (es1 ++ es2);
+                exprs env (es1 @ es2);
                 env
             )
       in

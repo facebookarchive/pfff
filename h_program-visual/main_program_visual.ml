@@ -42,7 +42,7 @@ let misc_extra_actions () = [
 (*****************************************************************************)
 
 let all_actions () = 
-  misc_extra_actions () ++
+  misc_extra_actions () @
   (* 
   Treemap_pl.actions () ++
   Treemap_ex_pfff.actions () ++
@@ -50,13 +50,13 @@ let all_actions () =
  []
 
 let options () = 
-  Flag.cmdline_flags () ++
+  Flag.cmdline_flags () @
   [
-  ] ++
-  Common.options_of_actions action (all_actions()) ++
-  Common.cmdline_flags_devel () ++
-  Common.cmdline_flags_verbose () ++
-  Common.cmdline_flags_other () ++
+  ] @
+  Common.options_of_actions action (all_actions()) @
+  Common.cmdline_flags_devel () @
+  Common.cmdline_flags_verbose () @
+  Common.cmdline_flags_other () @
   [
   "-version",   Arg.Unit (fun () -> 
     pr2 (spf "visual pl version: %s" version);
@@ -70,7 +70,7 @@ let options () =
     raise (Common.UnixExit 0)
     ), 
   "   guess what";
-  ] ++
+  ] @
   []
 
 (*****************************************************************************)

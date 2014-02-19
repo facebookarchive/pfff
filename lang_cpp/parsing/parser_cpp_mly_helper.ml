@@ -61,34 +61,34 @@ let addInlineD  = function
 
 
 let addTypeD     = function 
-  | ((Left3 Signed,_ii)   ,({typeD = ((Some Signed,  _b,_c),_ii2); _} as v)) -> 
+  | ((Left3 Signed,_ii),({typeD = ((Some Signed,  _b,_c),_ii2); _} as v)) -> 
       warning "duplicate 'signed'"   v
-  | ((Left3 UnSigned,_ii) ,({typeD = ((Some UnSigned,_b,_c),_ii2); _} as v)) -> 
+  | ((Left3 UnSigned,_ii),({typeD = ((Some UnSigned,_b,_c),_ii2); _} as v)) -> 
       warning "duplicate 'unsigned'" v
   | ((Left3 _,_ii),        ({typeD = ((Some _,_b,_c),_ii2); _} as _v)) -> 
       raise (Semantic ("both signed and unsigned specified", fake_pi))
   | ((Left3 x,ii),        ({typeD = ((None,b,c),ii2); _} as v))   -> 
-      {v with typeD = (Some x,b,c),ii ++ ii2}
+      {v with typeD = (Some x,b,c),ii @ ii2}
 
   | ((Middle3 Short,_ii),  ({typeD = ((_a,Some Short,_c),_ii2); _} as v)) -> 
       warning "duplicate 'short'" v
 
       
   (* gccext: long long allowed *)
-  | ((Middle3 Long,ii),   ({typeD = ((a,Some Long ,c),ii2); _} as v)) -> 
-      { v with typeD = (a, Some LongLong, c),ii++ii2 }
-  | ((Middle3 Long,_ii),   ({typeD = ((_a,Some LongLong ,_c),_ii2); _} as v)) -> 
+  | ((Middle3 Long,ii),   ({typeD = ((a,Some Long,c),ii2); _} as v)) -> 
+      { v with typeD = (a, Some LongLong, c),ii@ii2 }
+  | ((Middle3 Long,_ii),   ({typeD = ((_a,Some LongLong,_c),_ii2); _} as v)) -> 
       warning "triplicate 'long'" v
 
   | ((Middle3 _,_ii),      ({typeD = ((_a,Some _,_c),_ii2); _} as _v)) -> 
       raise (Semantic ("both long and short specified", fake_pi))
   | ((Middle3 x,ii),      ({typeD = ((a,None,c),ii2); _} as v))  -> 
-      {v with typeD = (a, Some x,c),ii++ii2}
+      {v with typeD = (a, Some x,c),ii@ii2}
 
   | ((Right3 _t,_ii),       ({typeD = ((_a,_b,Some _),_ii2); _} as _v)) -> 
       raise (Semantic ("two or more data types", fake_pi))
   | ((Right3 t,ii),       ({typeD = ((a,b,None),ii2); _} as v))   -> 
-      {v with typeD = (a,b, Some t),ii++ii2}
+      {v with typeD = (a,b, Some t),ii@ii2}
 
 
 let addQualif = function
@@ -156,7 +156,7 @@ let (fixDeclSpecForDecl: decl -> (fullType * (storage wrap)))  = function
       * as short ident ident => parse error (cos after first short i
       * pass in dt() mode) *)
    ))
-     ,((st, inline),iist++iinl)
+,((st, inline),iist@iinl)
   )
 
 let fixDeclSpecForParam = function ({storageD = (st,iist); _} as r) -> 

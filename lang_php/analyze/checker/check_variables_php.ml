@@ -412,7 +412,7 @@ and func_def env def =
     | _ ->
       (Env_php.globals_builtins +> List.map (fun s ->
        "$" ^ s, (Ast_php.fakeInfo s, S.Global, ref 1)
-      )) ++
+      )) @
       (* $this is now implicitly passed in use() for closures *)
       (try ["$this", Map_poly.find "$this" oldvars]
        with Not_found -> []
@@ -424,7 +424,7 @@ and func_def env def =
       (def.f_params +> List.map (fun p ->
         let (s, tok) = s_tok_of_ident p.p_name in
         s, (tok, S.Param, ref access_cnt)
-      )) ++
+      )) @
       enclosing_vars
       ) +> Map_poly.of_list);
 
@@ -487,7 +487,7 @@ and stmt env = function
       stmtl env xs;
       expr env e
   | For (es1, es2, es3, xs) ->
-      exprl env (es1 ++ es2 ++ es3);
+      exprl env (es1 @ es2 @ es3);
       stmtl env xs
 
   | Foreach (e1, pattern, xs) ->

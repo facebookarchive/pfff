@@ -6,8 +6,6 @@
  *  See LICENSE file for full license text.
  */
 %{
-open Common
-
 open Ast_css
 
 (*************************************************************************)
@@ -266,27 +264,27 @@ pseudo_page_opt: S { }
 
 selector_separated_nonempty_list_COMMA:
  | selector { [$1] }
- | selector_separated_nonempty_list_COMMA COMMA selector { $1 ++ [$3] }
+ | selector_separated_nonempty_list_COMMA COMMA selector { $1 @ [$3] }
 
 sentence_separated_nonempty_list_COMMA:
  | sentence { [$1] }
- | sentence_separated_nonempty_list_COMMA COMMA sentence { $1 ++ [$3] }
+ | sentence_separated_nonempty_list_COMMA COMMA sentence { $1 @ [$3] }
 
 term_separated_nonempty_list_sopt: 
  | term { [$1] }
- | term_separated_nonempty_list_sopt S term { $1 ++ [$3] }
+ | term_separated_nonempty_list_sopt S term { $1 @ [$3] }
 
 
 statement_star:
- | statement_star statement { $1 ++ [$2] }
+ | statement_star statement { $1 @ [$2] }
  | /*(*empty*)*/ { [] }
 
 combination_star:
- | combination_star combination { $1 ++ [$2] }
+ | combination_star combination { $1 @ [$2] }
  | /*(*empty*)*/ { [] }
  
 qualifier_star: 
- | qualifier_star qualifier { $1 ++ [$2] }
+ | qualifier_star qualifier { $1 @ [$2] }
  | /*(*empty*)*/ { [] }
 
 s_star: 
@@ -296,11 +294,11 @@ s_star:
 
 qualifier_plus: 
  | qualifier { [$1] }
- | qualifier_plus qualifier { $1 ++ [$2] }
+ | qualifier_plus qualifier { $1 @ [$2] }
 
 declaration_plus: 
  | declaration { [$1] }
- | declaration_plus declaration { $1 ++ [$2] }
+ | declaration_plus declaration { $1 @ [$2] }
 
 
 boption_IMPORTANT: 

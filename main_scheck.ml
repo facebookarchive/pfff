@@ -439,7 +439,7 @@ let extra_actions () = [
 (*****************************************************************************)
 
 let all_actions () =
- extra_actions()++
+ extra_actions()@
  []
 
 let options () =
@@ -474,9 +474,9 @@ let options () =
     " try to auto fix the error\n";
 
 
-  ] ++
-  Common.options_of_actions action (all_actions()) ++
-  Common2.cmdline_flags_devel () ++
+  ] @
+  Common.options_of_actions action (all_actions()) @
+  Common2.cmdline_flags_devel () @
   [
     "-verbose", Arg.Unit (fun () -> 
       verbose := true;
@@ -487,7 +487,7 @@ let options () =
       pr2 (spf "scheck version: %s" Config_pfff.version);
       exit 0;
     ), " guess what";
-  ] ++
+  ] @
   []
 
 (*****************************************************************************)

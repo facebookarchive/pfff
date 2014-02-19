@@ -430,8 +430,8 @@ let (generate_patch:
            if idx = lineno 
            then 
              (match edition_cmd with
-             | PreAddAt _ -> lines_to_add_fake_indexed ++ [line, idx]
-             | PostAddAt _ -> [line, idx] ++ lines_to_add_fake_indexed
+             | PreAddAt _ -> lines_to_add_fake_indexed @ [line, idx]
+             | PostAddAt _ -> [line, idx] @ lines_to_add_fake_indexed
              | _ -> raise Impossible
              )
            else [line, idx]

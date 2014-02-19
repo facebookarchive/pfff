@@ -262,10 +262,10 @@ let fully_qualified_candidates cur name _kind =
   | (str, _tokopt)::xs  ->
     try
       let qu = List.assoc str cur.import_rules in
-      [ prune_special_root qu ++ xs ]
+      [ prune_special_root qu @ xs ]
     with Not_found ->
       [name;
-       cur.qualifier ++ name;
+       cur.qualifier @ name;
       ]
 
 let (strtok_of_name: env -> Ast.name -> Database_code.entity_kind -> 
@@ -723,7 +723,7 @@ and stmt_bis env x =
       expr env e;
       stmtl env xs
   | For (es1, es2, es3, xs) ->
-      exprl env (es1 ++ es2 ++ es3);
+      exprl env (es1 @ es2 @ es3);
       stmtl env xs
   | Foreach (e1, e2, xs) ->
       exprl env [e1;e2];
