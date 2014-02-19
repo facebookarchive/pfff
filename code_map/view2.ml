@@ -511,36 +511,23 @@ let mk_gui ~screen_size ~legend test_mode (root, model, dw, _dbfile_opt) =
 
     let da = GMisc.drawing_area () in
     da#misc#set_double_buffered false;
-
     hpane#add1 da#coerce;
 
+   
     let vpane = GPack.paned `VERTICAL () in
     hpane#set_position minimap_hpos;
 
-    if legend then hpane#add2 vpane#coerce;
-
-    let da2 = GMisc.drawing_area () in
-    da2#misc#set_double_buffered false;
-    vpane#add1 da2#coerce;
-
-    
     let da3 = GMisc.drawing_area () in
     vpane#set_position minimap_vpos;
     vpane#add2 da3#coerce;
+
+
+    if legend then hpane#add2 vpane#coerce;
 
     da#misc#set_can_focus true ;
     da#event#add [ `KEY_PRESS;
                    `BUTTON_MOTION; `POINTER_MOTION;
                    `BUTTON_PRESS; `BUTTON_RELEASE ];
-
-    da2#misc#set_can_focus true ;
-    da2#event#add [ `KEY_PRESS;
-                 (* weird, but because even if didn't say
-                  * POINTER_MOTION here, the minimap still
-                  * gets an event for mouse over :(
-                  *)
-                    `BUTTON_MOTION; `POINTER_MOTION;
-                    `BUTTON_PRESS; `BUTTON_RELEASE ];
 
 
     da#event#connect#expose ~callback:(expose da dw) +> ignore;
@@ -548,27 +535,13 @@ let mk_gui ~screen_size ~legend test_mode (root, model, dw, _dbfile_opt) =
 
     da3#event#connect#expose ~callback:(expose_legend da3 dw) +> ignore;
 
-(*
-    da2#event#connect#expose ~callback:(expose_minimap da2 dw) +> ignore;
-    da2#event#connect#configure ~callback:(configure_minimap da2 dw) +> ignore;
-*)
-
     da#event#connect#button_press   
       (View_mainmap.button_action da dw) +> ignore;
     da#event#connect#button_release 
       (View_mainmap.button_action da dw) +> ignore;
 
     da#event#connect#motion_notify  
-      (View_overlays.motion_notify (da,da2) dw) +> ignore; 
-
-(*
-    da2#event#connect#button_press  
-      (button_action_minimap (da,da2) dw) +> ignore;
-    da2#event#connect#button_release 
-      (button_action_minimap (da, da2) dw) +> ignore;
-    da2#event#connect#motion_notify 
-      (motion_notify_minimap (da,da2) dw) +> ignore; 
-*)
+      (View_overlays.motion_notify da dw) +> ignore; 
 
     Controller._refresh_da := (fun () ->
       GtkBase.Widget.queue_draw da#as_widget;
@@ -580,10 +553,6 @@ let mk_gui ~screen_size ~legend test_mode (root, model, dw, _dbfile_opt) =
     Controller._go_back := Ui_navigation.go_back;
     Controller._go_dirs_or_file := Ui_navigation.go_dirs_or_file;
       
-(*
-    da#event#connect#key_press ~callback:(key_pressed da dw);
-*)
-
     (*-------------------------------------------------------------------*)
     (* status bar *)
     (*-------------------------------------------------------------------*)

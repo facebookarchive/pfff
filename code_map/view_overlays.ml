@@ -269,7 +269,7 @@ let motion_refresher ev dw =
   false
 
 
-let motion_notify (_da, _da2) dw ev =
+let motion_notify _da dw ev =
   !Controller.current_motion_refresher +> Common.do_option GMain.Idle.remove;
   let dw = !dw in
   let x, y = GdkEvent.Motion.x ev, GdkEvent.Motion.y ev in
