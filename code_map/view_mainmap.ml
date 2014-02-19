@@ -21,14 +21,12 @@ open Common
 open Common2.ArithFloatInfix
 open Common2
 
+open Model2
 module CairoH = Cairo_helpers
 module K = GdkKeysyms
-
 module F = Figures
 module T = Treemap
-
 module Flag = Flag_visual
-open Model2
 module M = Model2
 module Ctl = Controller2
 
@@ -86,30 +84,23 @@ let device_to_user_area dw =
   )
 (*e: device_to_user_area *)
 
-
 (*****************************************************************************)
 (* Painting *)
 (*****************************************************************************)
 
 (*s: paint *)
-
 let paint_content_maybe_rect ~user_rect dw rect =
   let cr = Cairo_lablgtk.create dw.pm#pixmap in
   zoom_pan_scale_map cr dw;
-
   let context = M.context_of_drawing dw in
-
-  let pos_and_line_opt = 
+  let microlevel_opt = 
     Draw_microlevel.draw_treemap_rectangle_content_maybe
-      ~cr  ~clipping:user_rect  ~context rect in
-  pos_and_line_opt +> Common.do_option (fun pos_and_line ->
-    Hashtbl.replace dw.microlevel rect pos_and_line
+      ~cr ~clipping:user_rect ~context rect in
+  microlevel_opt +> Common.do_option (fun microlevel ->
+    Hashtbl.replace dw.microlevel rect microlevel
   );
-
   (* have to redraw the label *)
-  Draw_labels.draw_treemap_rectangle_label_maybe 
-    ~cr ~zoom:1.0 ~color:None rect;
-
+  Draw_labels.draw_treemap_rectangle_label_maybe ~cr ~zoom:1.0 ~color:None rect;
   ()
 
 (* todo: deadlock:  M.locked (fun () ->  ) dw.M.model.M.m *)
@@ -131,6 +122,7 @@ let lazy_paint ~user_rect dw () =
 
 
 let paint2 dw = 
+  pr2 (spf "paint");
 
   !Ctl.paint_content_maybe_refresher +> Common.do_option GMain.Idle.remove;
   Ctl.current_rects_to_draw := [];
@@ -141,7 +133,6 @@ let paint2 dw =
     ~width:dw.width ~height:dw.height 
     ~filled:true () ;
 
-  pr2 (spf "paint");
   let user_rect = device_to_user_area dw in
   pr2 (F.s_of_rectangle user_rect);
 
@@ -187,85 +178,11 @@ let paint dw =
 (*****************************************************************************)
 
 (*s: key_pressed *)
-(*
-let key_pressed (da, da2) dw_ref ev = 
-  let dw = !dw_ref in
-
-  pr2 ("key pressed");
-
-  (* this is in device coordinate, so no need to take into account the zoom *)
-  let _delta_move = float dw.width /. 16. in
-  let delta_move_user = 0.1 in (* TODO *)
-
-  let delta_zoom = 1.3 in
-
-  let b = 
-    (match GdkEvent.Key.keyval ev with
-    | k when k = K._Left ->
-        dw.xtrans <- dw.xtrans +. delta_move_user;
-        (* todo opti: *)
-        paint dw;
-        true
-    | k when k = K._Right ->
-        dw.xtrans <- dw.xtrans -. delta_move_user;
-        (* todo opti: *)
-        paint dw;
-        true
-
-    | k when k = K._Up ->
-        dw.ytrans <- dw.ytrans +. delta_move_user;
-        (* todo opti: *)
-        paint dw;
-        true
-    | k when k = K._Down ->
-        dw.ytrans <- dw.ytrans -. delta_move_user;
-        (* todo opti: *)
-        paint dw;
-        true
-
-    | k when k = K._plus ->
-        dw.zoom <- dw.zoom /. delta_zoom;
-        (* can't optimize here, have to paint *)
-        paint dw;
-        true
-    | k when k = K._minus ->
-        dw.zoom <- dw.zoom *. delta_zoom;
-        (* can't optimize here, have to paint *)
-        paint dw;
-        true
-
-
-
-
-    | k when k = K._z ->
-        dw.in_zoom_incruste <- not (dw.in_zoom_incruste);
-        true
-
-    | k when k = K._b ->
-        !Ctl._go_back dw_ref;
-        true
-
-    | k when k = K._e ->
-        raise Todo
-
-    | k when k = K._q ->
-        GMain.quit () ; false
-
-    | _ -> false
-    )
-  in
-  if b then begin
-    GtkBase.Widget.queue_draw da#as_widget;
-    GtkBase.Widget.queue_draw da2#as_widget;
-  end;
-  b
-*)
 (*e: key_pressed *)
 
 (*s: find_filepos_in_rectangle_at_user_point *)
 (*e: find_filepos_in_rectangle_at_user_point *)
-            
-
+   
 (*s: button_action *)
 let button_action da dw_ref ev =
   let dw = !dw_ref in
@@ -282,13 +199,6 @@ let button_action da dw_ref ev =
       pr2 (spf "button %d pressed" button);
       (match button with
       | 1 -> 
-        (* DISABLED FOR NOW
-         * dw.drag_pt <- { 
-         * Cairo.x = GdkEvent.Button.x ev; 
-         * Cairo.y = GdkEvent.Button.y ev; 
-         * };
-         * dw.in_dragging <- true;
-         *)
         r_opt +> Common.do_option (fun (r, _, _r_englobing) ->
           let file = r.T.tr_label in
           pr2 (spf "clicking on %s" file);
@@ -308,7 +218,6 @@ let button_action da dw_ref ev =
         true
 
       | 3 ->
-
         r_opt +> Common.do_option (fun (r, _, _r_englobing) ->
           let file = r.T.tr_label in
 
@@ -380,10 +289,8 @@ let button_action da dw_ref ev =
       | _ -> false
       )
   | `BUTTON_RELEASE ->
-
       let button = GdkEvent.Button.button ev in
       pr2 (spf "button %d released" button);
-
       (match button with
       | 1 ->
           GtkBase.Widget.queue_draw da#as_widget;
@@ -393,15 +300,12 @@ let button_action da dw_ref ev =
 
   | `TWO_BUTTON_PRESS ->
       pr2 ("double click");
-
       r_opt +> Common.do_option (fun (_r, _, r_englobing) ->
         let path = r_englobing.T.tr_label in
         !Ctl._go_dirs_or_file dw_ref [path];
       );
-
       true
   | _ -> false
 (*e: button_action *)
-
 
 (*e: view_mainmap.ml *)
