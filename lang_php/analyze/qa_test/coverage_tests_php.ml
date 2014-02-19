@@ -99,7 +99,7 @@ let get_all_calls ?(is_directive_to_filter= (fun _ -> false)) =
       match x with
       | New (tok, _class_name_ref, _args_opt) ->
           (* can not use ')' here, so use the token for new *)
-          Common.push2 (None, tok) aref;
+          Common.push (None, tok) aref;
 
           k x;
 
@@ -111,7 +111,7 @@ let get_all_calls ?(is_directive_to_filter= (fun _ -> false)) =
            *)
           if is_directive_to_filter str then ()
           else
-            Common.push2 (Some str, rp) aref;
+            Common.push (Some str, rp) aref;
 
           k x
 
@@ -119,7 +119,7 @@ let get_all_calls ?(is_directive_to_filter= (fun _ -> false)) =
       | Call (ObjGet(_var, _t1, Id methname), (_lp, _args, rp)) 
         ->
           let str = Ast_php.str_of_name methname in
-          Common.push2 (Some str, rp) aref;
+          Common.push (Some str, rp) aref;
           k x
 
 
@@ -346,14 +346,14 @@ let coverage_tests
         );
         incr ok_test_files;
     | Problem (test_file, msg) -> 
-        Common.push2 (test_file, msg) pb_test_files;
+        Common.push (test_file, msg) pb_test_files;
   in
   let _res, not_done = 
     Features.Distribution.map_reduce_lazy 
       ~fmap:mapper ~freduce:reducer () test_files_fn
   in
   not_done +> List.iter (fun test_file ->
-    Common.push2 (test_file, "MPI error, see the full log") pb_test_files;
+    Common.push (test_file, "MPI error, see the full log") pb_test_files;
   );
 
   pr2 "test dependencies";

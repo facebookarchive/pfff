@@ -270,12 +270,12 @@ let iter_nodes f g =
 
 let all_use_edges g =
   let res = ref [] in
-  G.iter_edges (fun n1 n2 -> Common.push2 (n1, n2) res) g.use;
+  G.iter_edges (fun n1 n2 -> Common.push (n1, n2) res) g.use;
   !res
 
 let all_nodes g =
   let res = ref [] in
-  G.iter_nodes (fun n -> Common.push2 n res) g.has;
+  G.iter_nodes (fun n -> Common.push n res) g.has;
   !res
 
 (*****************************************************************************)

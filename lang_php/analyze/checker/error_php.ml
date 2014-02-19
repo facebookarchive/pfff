@@ -276,9 +276,9 @@ let _errors = ref []
 (* todo? let exn_when_error *)
 
 let fatal loc err =
-  Common.push2 { loc = loc; typ = err; sev = Fatal } _errors
+  Common.push { loc = loc; typ = err; sev = Fatal } _errors
 let warning loc err = 
-  Common.push2 { loc = loc; typ = err; sev = Warning } _errors
+  Common.push { loc = loc; typ = err; sev = Warning } _errors
 
 let report_all_errors () = 
   !_errors +> List.rev +> List.iter report_error

@@ -188,7 +188,7 @@ let expose_legend da dw_ref _ev =
 let mk_gui ~screen_size ~legend test_mode (root, model, dw, _dbfile_opt) =
 
   let dw = ref dw in
-  Common.push2 !dw Controller.dw_stack;
+  Common.push !dw Controller.dw_stack;
 
   let width, height, minimap_hpos, minimap_vpos = 
     Style.windows_params screen_size in

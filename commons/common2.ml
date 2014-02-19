@@ -105,7 +105,7 @@ let (lines: string -> string list) = fun s ->
   Str.split_delim (Str.regexp "\n") s +> lines_aux
 
 
-let push2 v l =
+let push v l =
   l := v :: !l
 
 let null xs = match xs with [] -> true | _ -> false
@@ -1043,7 +1043,7 @@ let (add_hook: ('a -> ('a -> 'b) -> 'b) ref  -> ('a -> ('a -> 'b) -> 'b) -> unit
 
 let (add_hook_action: ('a -> unit) ->   ('a -> unit) list ref -> unit) =
  fun f hooks ->
-  push2 f hooks
+  push f hooks
 
 let (run_hooks_action: 'a -> ('a -> unit) list ref -> unit) =
  fun obj hooks ->
@@ -1813,7 +1813,7 @@ let all_match re s =
     let substr = Str.matched_string s in
     assert(substr ==~ regexp); (* @Effect: also use it's side effect *)
     let paren_matched = matched1 substr in
-    push2 paren_matched res;
+    push paren_matched res;
     "" (* @Dummy *)
   ) s in
   List.rev !res
@@ -3437,8 +3437,10 @@ let uncons l = (List.hd l, List.tl l)
 (* pixel *)
 let safe_tl l = try List.tl l with _ -> []
 
+(* in prelude
 let push l v =
   l := v :: !l
+*)
 
 let rec zip xs ys =
   match (xs,ys) with
@@ -4854,7 +4856,7 @@ type 'a stack = 'a list
   (* with sexp *)
 
 let (empty_stack: 'a stack) = []
-let (push: 'a -> 'a stack -> 'a stack) = fun x xs -> x::xs
+(*let (push: 'a -> 'a stack -> 'a stack) = fun x xs -> x::xs *)
 let (top: 'a stack -> 'a) = List.hd
 let (pop: 'a stack -> 'a stack) = List.tl
 
@@ -4983,7 +4985,7 @@ let find_treeref f tree =
 
   tree +> treeref_node_iter (fun (n, xs) ->
     if f (n,xs)
-    then push2 (n, xs) res;
+    then push (n, xs) res;
   );
   match !res with
   | [n,xs] -> NodeRef (n, xs)
@@ -5038,7 +5040,7 @@ let find_treeref2 f tree =
 
   tree +> treeref_node_iter2 (fun (n, xs) ->
     if f (n,xs)
-    then push2 (n, xs) res;
+    then push (n, xs) res;
   );
   match !res with
   | [n,xs] -> NodeRef2 (n, xs)
@@ -5078,7 +5080,7 @@ let find_treeref_with_parents_some f tree =
 
   tree +> treeref_node_iter_with_parents (fun (n, xs) parents ->
     match f (n,xs) parents with
-    | Some v -> push2 v res;
+    | Some v -> push v res;
     | None -> ()
   );
   match !res with
@@ -5091,7 +5093,7 @@ let find_multi_treeref_with_parents_some f tree =
 
   tree +> treeref_node_iter_with_parents (fun (n, xs) parents ->
     match f (n,xs) parents with
-    | Some v -> push2 v res;
+    | Some v -> push v res;
     | None -> ()
   );
   match !res with

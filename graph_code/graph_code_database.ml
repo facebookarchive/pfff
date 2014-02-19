@@ -99,7 +99,7 @@ let db_of_graph_code root g =
                   e_properties = [];
                 }
         in
-        Common.push2 e res
+        Common.push e res
       end
 
     | E.TopStmts 

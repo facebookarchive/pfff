@@ -148,7 +148,7 @@ let draw_cells cr w ~interactive_regions =
   for i = 0 to l.nb_elts -.. 1 do
     for j = 0 to l.nb_elts -.. 1 do
       let rect = rect_of_cell i j l in
-      Common.push2 (Cell (i, j), rect) interactive_regions;
+      Common.push (Cell (i, j), rect) interactive_regions;
       
       (* less: could also display intra dependencies *)
       if i = j then
@@ -209,7 +209,7 @@ let draw_left_tree cr w ~interactive_regions =
         let color = line_color_of_depth depth in
         CairoH.draw_rectangle ~cr ~line_width ~color rect;
 
-        Common.push2 (Row !i, rect) interactive_regions;
+        Common.push (Row !i, rect) interactive_regions;
 
         (* draw horizontal lines around cells *)
         let rect2 = {
@@ -323,7 +323,7 @@ let draw_up_columns cr w ~interactive_regions =
       p = { x = x; y = 0. };
       q = { x = x + l.width_cell; y = l.y_start_matrix_up };
     } in
-    Common.push2 (Column j, rect) interactive_regions;
+    Common.push (Column j, rect) interactive_regions;
 
     CairoH.set_source_color ~cr ~color:"wheat" ();
     Cairo.move_to cr x y;

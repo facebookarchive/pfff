@@ -88,7 +88,7 @@ let print_match mvars mvar_binding ii_of_any tokens_matched_code =
       in
       pr (spf "%s:%d: %s" file line (Common.join ":" strings_metavars));
   );
-  tokens_matched_code +> List.iter (fun x -> Common.push2 x _matching_tokens)
+  tokens_matched_code +> List.iter (fun x -> Common.push x _matching_tokens)
 
 let print_simple_match tokens_matched_code =
   print_match [] [] tokens_matched_code

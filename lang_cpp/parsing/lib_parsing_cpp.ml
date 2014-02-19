@@ -47,7 +47,7 @@ let find_source_files_of_dir_or_files xs =
 let ii_of_any any =
   let globals = ref [] in
   let visitor = V.mk_visitor { V.default_visitor with
-    V.kinfo = (fun (_k,_) i -> Common.push2 i globals)
+    V.kinfo = (fun (_k,_) i -> Common.push i globals)
   }
   in
   visitor any;

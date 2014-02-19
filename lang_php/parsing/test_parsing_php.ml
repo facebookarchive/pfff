@@ -50,7 +50,7 @@ let test_parse_php xs  =
         Parse_php.parse file 
       )
     in
-    Common.push2 stat stat_list;
+    Common.push stat stat_list;
     (*s: add stat for regression testing in hash *)
         let s = spf "bad = %d" stat.Parse_info.bad in
         if stat.Parse_info.bad = 0

@@ -120,9 +120,9 @@ let string_of_any any =
         match info.Parse_info.token with
         | Parse_info.OriginTok p ->
           let s =  p.Parse_info.str in
-          Common.push2 s toks
+          Common.push s toks
         | Parse_info.FakeTokStr (s, _opt) ->
-          Common.push2 s toks
+          Common.push s toks
         | Parse_info.Ab -> ()
         | Parse_info.ExpandedTok _ -> 
           failwith "unparse_php: should not have ExpandedTok"
@@ -140,7 +140,7 @@ let string_of_any any =
         | true, true, _ -> pp x; pp " "
         | _, _, (";" | "{" | "}") -> pp x; pp "\n"
         | false, true, _ when x =~ "^<[a-zA-Z_]" -> pp x; pp " "
-        | _ , _, _ -> pp x
+        | _, _, _ -> pp x
         );
         aux (y::xs)
     in

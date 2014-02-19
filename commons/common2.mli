@@ -1710,13 +1710,13 @@ val hash_with_default: (unit -> 'b) ->
 
 type 'a stack = 'a list
 val empty_stack : 'a stack
-val push : 'a -> 'a stack -> 'a stack
+(*val push : 'a -> 'a stack -> 'a stack*)
 val top : 'a stack -> 'a
 val pop : 'a stack -> 'a stack
 
 val top_option: 'a stack -> 'a option
 
-val push2 : 'a -> 'a stack ref -> unit
+val push : 'a -> 'a stack ref -> unit
 val pop2: 'a stack ref -> 'a
 (*x: common.mli for collection types *)
 (*****************************************************************************)

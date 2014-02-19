@@ -141,7 +141,7 @@ object(o)
                let valu = unv (Common.marshal__from_string (snd a) 0) in
 	       f (key, valu);
             *)
-            Common.push2 key res;
+            Common.push key res;
             true
 	 with Failure "ending" -> false
         ) 

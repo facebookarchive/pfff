@@ -198,7 +198,7 @@ let full_path_local_of_kind env kind =
   | _ -> raise Impossible
 
 let add_full_path_local env (s, name) kind =
-  Common.push2 (s, name) (full_path_local_of_kind env kind)
+  Common.push (s, name) (full_path_local_of_kind env kind)
 
 let add_node_and_edge_if_defs_mode ?(dupe_ok=false) env name_node loc =
   let (name, kind) = name_node in
@@ -622,7 +622,7 @@ and structure_item_desc env loc = function
         | Ttype_abstract, Some ({ctyp_desc=Ttyp_constr (path, _lid, _xs); _}) ->
           if env.phase = Defs then
             let name = name_of_path path in
-            Common.push2 (full_ident, path_resolve_locals env name E.Type)
+            Common.push (full_ident, path_resolve_locals env name E.Type)
               env.type_aliases
         | _ -> ()
         );
@@ -647,7 +647,7 @@ and structure_item_desc env loc = function
           (* do not add nodes for module aliases in the graph, just *)
           if env.phase = Defs then begin
             let name = name_of_path path in
-            Common.push2 (full_ident, path_resolve_locals env name E.Module) 
+            Common.push (full_ident, path_resolve_locals env name E.Module) 
               env.module_aliases
           end;
           add_full_path_local env (Ident.name id, full_ident) E.Module

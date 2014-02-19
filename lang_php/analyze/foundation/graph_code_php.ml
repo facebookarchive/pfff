@@ -156,7 +156,7 @@ let parse env file =
   with
   | Timeout -> raise Timeout
   | exn ->
-     env.stats.G.parse_errors +> Common.push2 file;
+     env.stats.G.parse_errors +> Common.push file;
      env.pr2_and_log (spf "PARSE ERROR with %s, exn = %s" (env.path file)
                         (Common.exn_to_s exn));
      []
@@ -392,7 +392,7 @@ let lookup_fail env tokopt dst =
         | _ -> env.log
         )
   in
-  env.stats.G.lookup_fail +> Common.push2 (info, dst);
+  env.stats.G.lookup_fail +> Common.push (info, dst);
   fprinter (spf "PB: lookup fail on %s (at %s:%d)" (G.string_of_node dst) 
               (env.path file) line)
 
@@ -476,8 +476,8 @@ let add_use_edge_bis a b =
 let add_use_edge ?(phase=Uses) env n =
   match phase with
   | Defs -> raise Impossible
-  | Inheritance -> env.phase_inheritance +> Common.push2 (env.cur, n)
-  | Uses -> env.phase_use +> Common.push2 (env.cur, n)
+  | Inheritance -> env.phase_inheritance +> Common.push (env.cur, n)
+  | Uses -> env.phase_use +> Common.push (env.cur, n)
 
 (* why not call add_use_edge() and benefit from the error reporting
  * there? because instanceOf check are less important so
@@ -485,7 +485,7 @@ let add_use_edge ?(phase=Uses) env n =
  *)
 let add_use_edge_instanceof env (name, kind) =
   let env = { env with phase = Uses } in
-  env.phase_use_other +> Common.push2 (fun () ->
+  env.phase_use_other +> Common.push (fun () ->
     let (R x) = str_of_name env name kind in
     let node = (x, kind) in
     if not (G.has_node node env.g) 
@@ -495,7 +495,7 @@ let add_use_edge_instanceof env (name, kind) =
 (* todo: add unit test for that *)
 let add_use_edge_maybe_class env entity tokopt =
   let env = { env with phase = Uses } in
-  env.phase_use_other +> Common.push2 (fun () ->
+  env.phase_use_other +> Common.push (fun () ->
     (* less: do case insensitive? handle conflicts? *)
     if G.has_node (entity, E.Class E.RegularClass) env.g
     then
@@ -570,9 +570,9 @@ let add_use_edge_lookup2 xhp env (name, ident) kind =
       let tok = Ast.tok_of_ident ident in
       (match kind2 with
       | E.Method _ -> 
-          env.stats.G.method_calls +> Common.push2 (tok, true)
+          env.stats.G.method_calls +> Common.push (tok, true)
       | E.Field -> 
-          env.stats.G.field_access +> Common.push2 (tok, true)
+          env.stats.G.field_access +> Common.push (tok, true)
       | E.ClassConstant -> ()
       | _ -> raise Impossible
       );
@@ -615,7 +615,7 @@ let add_use_edge_lookup2 xhp env (name, ident) kind =
   then add_use_edge_bis env (name, E.Class E.RegularClass)
 
 let add_use_edge_lookup ?(xhp=false) env a b =
-  env.phase_use_lookup +> Common.push2 (env.cur, (xhp, a, b))
+  env.phase_use_lookup +> Common.push (env.cur, (xhp, a, b))
 
 (* todo: add unit test for this 
  * todo: this is buggy, you can't use lookup_inheritance in the
@@ -946,16 +946,16 @@ and expr env x =
         | This ((_x, tokopt)) ->
             expr env 
                 (Call (Class_get (Id[ (env.cur.self, tokopt)], Id name2), es));
-            env.phase_dispatch +> Common.push2 (env.cur, name2);
+            env.phase_dispatch +> Common.push (env.cur, name2);
         (* need class analysis ... *)
         | _ ->
-          env.phase_class_analysis +> Common.push2 (env.cur, name2);
+          env.phase_class_analysis +> Common.push (env.cur, name2);
           expr env e1;
           exprl env es
         )
     | _ ->
       let tok = Meta_ast_php_simple.toks_of_any (Expr2 e) +> List.hd in
-      env.stats.G.unresolved_calls +> Common.push2 tok;
+      env.stats.G.unresolved_calls +> Common.push tok;
       expr env e;
       exprl env es
     )
@@ -986,15 +986,15 @@ and expr env x =
      | Id name1, e2  ->
          add_use_edge env (name1, E.Class E.RegularClass);
          let tok = Ast.tok_of_name name1 in
-         env.stats.G.unresolved_class_access +> Common.push2 tok;
+         env.stats.G.unresolved_class_access +> Common.push tok;
          expr env e2;
      | e1, Id name2  ->
          let tok = Ast.tok_of_name name2 in
-         env.stats.G.unresolved_class_access +> Common.push2 tok;
+         env.stats.G.unresolved_class_access +> Common.push tok;
          expr env e1;
      | _ ->
          let tok = Meta_ast_php_simple.toks_of_any (Expr2 e1) +> List.hd in
-         env.stats.G.unresolved_class_access +> Common.push2 tok;
+         env.stats.G.unresolved_class_access +> Common.push tok;
          exprl env [e1; e2]
       )
 
@@ -1007,11 +1007,11 @@ and expr env x =
           expr env (Class_get (Id[ (env.cur.self, tokopt)], Var("$"^s2, tok2)))
       | _, Id name2  ->
           let tok = Ast.tok_of_name name2 in
-          env.stats.G.field_access +> Common.push2 (tok, false);
+          env.stats.G.field_access +> Common.push (tok, false);
           expr env e1;
       | _ ->
           let tok = Meta_ast_php_simple.toks_of_any (Expr2 e1) +> List.hd in
-          env.stats.G.unresolved_class_access +> Common.push2 tok;
+          env.stats.G.unresolved_class_access +> Common.push tok;
           exprl env [e1; e2]
       )
 
@@ -1027,7 +1027,7 @@ and expr env x =
       | Id name -> add_use_edge_instanceof env (name, E.Class E.RegularClass)
       | _ ->
           let tok = Meta_ast_php_simple.toks_of_any (Expr2 e1) +> List.hd in
-          env.stats.G.unresolved_class_access +> Common.push2 tok;
+          env.stats.G.unresolved_class_access +> Common.push tok;
           expr env e2
       )
 
@@ -1259,9 +1259,9 @@ let build
               xs +> List.iter (fun m ->
                 G.add_edge (cur.node, m) G.Use envold.g;
               );
-              envold.stats.G.method_calls +> Common.push2 (tok, true);
+              envold.stats.G.method_calls +> Common.push (tok, true);
           | _ ->
-              envold.stats.G.method_calls +> Common.push2 (tok, false);
+              envold.stats.G.method_calls +> Common.push (tok, false);
           )
       );
       !(envold.phase_dispatch) +> List.iter (fun (cur, name) ->

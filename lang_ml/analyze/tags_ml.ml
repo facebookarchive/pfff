@@ -93,7 +93,7 @@ let defs_of_files_or_dirs ?(verbose=false) xs =
         categ +> Common.do_option (fun x ->
           entity_of_highlight_category_opt x +> Common.do_option (fun kind ->
 
-              Common.push2 (Tags.tag_of_info filelines info kind) defs;
+              Common.push (Tags.tag_of_info filelines info kind) defs;
 
               let (d,b,e) = Common2.dbe_of_filename file in
               let module_name = String.capitalize b in
@@ -109,7 +109,7 @@ let defs_of_files_or_dirs ?(verbose=false) xs =
                  (e = "mli" && not (Sys.file_exists
                                       (Common2.filename_of_dbe (d,b, "ml"))))
               then
-                Common.push2 (Tags.tag_of_info filelines info' kind) defs;
+                Common.push (Tags.tag_of_info filelines info' kind) defs;
           )
         )
       );

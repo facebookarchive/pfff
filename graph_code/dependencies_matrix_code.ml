@@ -180,7 +180,7 @@ let explain_cell_list_use_edges (i, j) dm gopti =
       let parent_j2 = projected_parent_of_igopti.(j2) in
       if parent_i2 = i && parent_j2 = j
       then 
-       Common.push2 (
+       Common.push (
          gopti.G2.i_to_name.(i2), 
          gopti.G2.i_to_name.(j2)
        ) res;
@@ -263,7 +263,7 @@ let focus_on_node n deps_style tree dm =
     * right order
     *)
     if to_include || i = j
-    then Common.push2 j deps
+    then Common.push j deps
   done;
   (* old: this was not keeping the hierarchy (which can be a feature)
    *  Node (G.root, !deps +> List.rev +> List.map (fun i ->
@@ -422,7 +422,7 @@ let score_upper_triangle_cells dm =
   let res = ref [] in
   for i = 0 to Array.length dm.matrix -1 do
     for j = i + 1 to Array.length dm.matrix -1 do
-      Common.push2 ((i, j), dm.matrix.(i).(j)) res
+      Common.push ((i, j), dm.matrix.(i).(j)) res
     done
   done;
   !res

@@ -973,7 +973,7 @@ let lines_around_error_line ~context (file, line) =
   let res = ref [] in
 
   for i = startl to endl -1 do
-    Common.push2 arr.(i) res
+    Common.push arr.(i) res
   done;
   List.rev !res
 

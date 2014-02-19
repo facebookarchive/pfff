@@ -27,7 +27,7 @@ let reverse_index reorg =
   let res = ref [] in
   reorg +> List.iter (fun (SubSystem s1, dirs) -> 
     dirs +> List.iter (fun (Dir s2) -> 
-      push2 (Dir s2, SubSystem s1) res;
+      push (Dir s2, SubSystem s1) res;
     );
   );
   List.rev !res

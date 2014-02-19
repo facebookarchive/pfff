@@ -467,7 +467,7 @@ let analyze_backward_deps graph_file =
       if n > 0 then begin
         let xs = DM.explain_cell_list_use_edges (i, j) dm gopti in
         pr2 (spf " (%d, %d) = %d" i j (List.length xs));
-        Common.push2 xs res;
+        Common.push xs res;
       end
     done
   done;

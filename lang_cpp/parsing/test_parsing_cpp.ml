@@ -34,7 +34,7 @@ let test_parse_cpp ?lang xs  =
      | None -> Parse_cpp.parse file
      | Some lang -> Parse_cpp.parse_with_lang ~lang file 
     in
-    Common.push2 stat stat_list;
+    Common.push stat stat_list;
 
     let s = spf "bad = %d" stat.Stat.bad in
     if stat.Stat.bad = 0

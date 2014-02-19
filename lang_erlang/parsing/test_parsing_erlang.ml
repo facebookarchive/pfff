@@ -27,7 +27,7 @@ let test_parse_erlang xs =
     pr2 ("PARSING: " ^ file);
 
     let (_xs, stat) = Parse_erlang.parse file in
-    Common.push2 stat stat_list;
+    Common.push stat stat_list;
   );
   Parse_info.print_parsing_stat_list !stat_list;
   ()

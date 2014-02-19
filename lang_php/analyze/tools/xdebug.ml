@@ -450,7 +450,7 @@ let iter_dumpfile2
                     raise exn
                 )
               else 
-                Common.push2 (String.length before_arrow, trace) stack;
+                Common.push (String.length before_arrow, trace) stack;
             )
               
 

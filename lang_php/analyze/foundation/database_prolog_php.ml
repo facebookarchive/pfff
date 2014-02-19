@@ -516,7 +516,7 @@ let build2 ?(show_progress=true) root files =
   ignore(show_progress);
 
   let res = ref [] in
-  let add x = Common.push2 x res in
+  let add x = Common.push x res in
 
    add (P.Misc "% -*- prolog -*-");
    add (P.Misc ":- discontiguous kind/2, at/3");

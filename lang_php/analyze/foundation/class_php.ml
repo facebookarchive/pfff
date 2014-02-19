@@ -290,7 +290,7 @@ let collect_members aclass find_entity =
     let _ = lookup_gen aclass find_entity (function
     | ClassVariables (_, _, class_vars, _) ->
         class_vars +> Ast.uncomma +> List.iter (fun (dname, _affect) ->
-          Common.push2 dname res;
+          Common.push dname res;
         );
         None
     | _ -> None;

@@ -327,7 +327,7 @@ let parse2 file =
             -> raise Impossible
       })
     in
-    Common.push2 tok toks;
+    Common.push tok toks;
     tok
   in
 

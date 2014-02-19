@@ -248,7 +248,7 @@ let all_increq_of_any =
   V.do_visit_with_ref (fun aref -> { V.default_visitor with
     V.kexpr = (fun (k, _) x ->
       match increq_of_include_stmt x with
-      | Some require -> Common.push2 require aref;
+      | Some require -> Common.push require aref;
       | None -> 
           (* do we need to recurse ? *)
           k x

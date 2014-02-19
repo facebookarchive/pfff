@@ -35,7 +35,7 @@ let test_parse xs  =
         Parse_java.parse file 
       )
     in
-    Common.push2 stat stat_list;
+    Common.push stat stat_list;
     let s = spf "bad = %d" stat.PI.bad in
     if stat.PI.bad = 0
     then Hashtbl.add newscore file (Common2.Ok)

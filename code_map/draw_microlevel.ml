@@ -204,7 +204,7 @@ let glyphs_of_file ~context ~font_size ~font_size_real file
       let xs = Common2.lines_with_nl_either s in
       xs +> List.iter (function
       | Common2.Left str ->
-          Common.push2 { M. str; font_size=final_font_size; color; categ } acc;
+          Common.push { M. str; font_size=final_font_size; color; categ } acc;
       | Common2.Right () ->
           arr.(!line) <- List.rev !acc;
           acc := [];
@@ -232,7 +232,7 @@ let defs_of_glyphs glyphs =
       glyph.categ +> Common.do_option (fun categ ->
         Database_code.entity_kind_of_highlight_category_def categ 
         +> Common.do_option (fun kind ->
-              Common.push2 (Line line_0_indexed, (glyph.str, kind)) res
+              Common.push (Line line_0_indexed, (glyph.str, kind)) res
         ))));
   !res
 

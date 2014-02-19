@@ -47,7 +47,7 @@ let get_data_any any =
   V.do_visit_with_ref (fun aref -> { V.default_visitor with
     V.khtml_tree = (fun (k, _) x ->
       match x with
-      | Data (s, _info) -> Common.push2 s aref
+      | Data (s, _info) -> Common.push s aref
       | _ -> k x
     )
   }) any

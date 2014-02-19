@@ -32,13 +32,13 @@ let rparens_of_if toks =
   toks +> Common2.iter_with_previous_opt (fun prev x -> 
     (match x with
     | T.T_LPAREN _ -> 
-        Common.push2 prev stack;
+        Common.push prev stack;
     | T.T_RPAREN info ->
         if !stack <> [] then begin
         let top = Common2.pop2 stack in
         (match top with
         | Some (T.T_IF _) -> 
-            Common.push2 info rparens_if
+            Common.push info rparens_if
         | _ ->
             ()
         )
@@ -59,14 +59,14 @@ let fix_tokens xs =
   | [] -> []
   | y::ys ->
       let res = ref [] in
-      Common.push2 y res;
+      Common.push y res;
       let rec aux prev f xs = 
         match xs with
         | [] -> ()
         | e::l ->
             if TH.is_comment e
             then begin 
-              Common.push2 e res;
+              Common.push e res;
               aux prev f l
             end else begin
               f prev e;
@@ -77,24 +77,24 @@ let fix_tokens xs =
         match prev, x with
         | (T.T_LCURLY _ | T.T_SEMICOLON _ | T.T_VIRTUAL_SEMICOLON _), 
         T.T_RCURLY _ ->
-            Common.push2 x res;
+            Common.push x res;
             (* also one after ? *)
 (*            Common.push2 (T.T_VIRTUAL_SEMICOLON (Ast.fakeInfo ())) res; *)
 
         | _, T.T_RCURLY _ ->
             let fake = Ast.fakeInfoAttach (TH.info_of_tok x) in
-            Common.push2 (T.T_VIRTUAL_SEMICOLON fake) res;
-            Common.push2 x res;
+            Common.push (T.T_VIRTUAL_SEMICOLON fake) res;
+            Common.push x res;
             (* also one after ? *)
 (*            Common.push2 (T.T_VIRTUAL_SEMICOLON (Ast.fakeInfo ())) res; *)
             
         | (T.T_SEMICOLON _ | T.T_VIRTUAL_SEMICOLON _),
             T.EOF _ ->
-            Common.push2 x res;
+            Common.push x res;
         | _, T.EOF _ ->
             let fake = Ast.fakeInfoAttach (TH.info_of_tok x) in
-            Common.push2 (T.T_VIRTUAL_SEMICOLON fake) res;
-            Common.push2 x res;
+            Common.push (T.T_VIRTUAL_SEMICOLON fake) res;
+            Common.push x res;
 
 
         | T.T_RCURLY _, 
@@ -112,9 +112,9 @@ let fix_tokens xs =
             if line2 <> line1
             then begin
               let fake = Ast.fakeInfoAttach (TH.info_of_tok x) in
-              Common.push2 (T.T_VIRTUAL_SEMICOLON fake) res;
+              Common.push (T.T_VIRTUAL_SEMICOLON fake) res;
             end;
-            Common.push2 x res;
+            Common.push x res;
 
         (* this is valid only if the RPAREN is not the closing paren
          * of a if
@@ -129,9 +129,9 @@ let fix_tokens xs =
             if line2 <> line1
             then begin
               let fake = Ast.fakeInfoAttach (TH.info_of_tok x) in
-              Common.push2 (T.T_VIRTUAL_SEMICOLON fake) res;
+              Common.push (T.T_VIRTUAL_SEMICOLON fake) res;
             end;
-            Common.push2 x res;
+            Common.push x res;
 
 
         | T.T_RBRACKET _, 
@@ -142,9 +142,9 @@ let fix_tokens xs =
             if line2 <> line1
             then begin
               let fake = Ast.fakeInfoAttach (TH.info_of_tok x) in
-              Common.push2 (T.T_VIRTUAL_SEMICOLON fake) res;
+              Common.push (T.T_VIRTUAL_SEMICOLON fake) res;
             end;
-            Common.push2 x res;
+            Common.push x res;
 
 
         | (T.T_IDENTIFIER _ | T.T_NULL _ | T.T_STRING _ | T.T_REGEX _
@@ -159,12 +159,12 @@ let fix_tokens xs =
             if line2 <> line1
             then begin
               let fake = Ast.fakeInfoAttach (TH.info_of_tok x) in
-              Common.push2 (T.T_VIRTUAL_SEMICOLON fake) res;
+              Common.push (T.T_VIRTUAL_SEMICOLON fake) res;
             end;
-            Common.push2 x res;
+            Common.push x res;
 
         | _, _ ->        
-            Common.push2 x res;
+            Common.push x res;
       )
       in
       aux y f ys;

@@ -95,7 +95,7 @@ val group_assoc_bykey_eff : ('a * 'b) list -> ('a * 'b list) list
 val group_by_mapped_key: ('a -> 'b) -> 'a list -> ('b * 'a list) list
 
 type 'a stack = 'a list
-val push2 : 'a -> 'a stack ref -> unit
+val push : 'a -> 'a stack ref -> unit
 
 val hash_of_list : ('a * 'b) list -> ('a, 'b) Hashtbl.t
 val hash_to_list : ('a, 'b) Hashtbl.t -> ('a * 'b) list

@@ -106,7 +106,7 @@ let extract_info_visitor recursor =
        *)
       match i.Parse_info.token with
       | Parse_info.OriginTok _ ->
-        Common.push2 i globals
+        Common.push i globals
       | _ ->
         ()
     )
@@ -212,7 +212,7 @@ let get_static_vars_any any =
       match x with
       | StaticVars (_tok, xs, _tok2) ->
           xs +> Ast.uncomma +> List.iter (fun (dname, _affect_opt) -> 
-            Common.push2 dname aref
+            Common.push dname aref
           );
       | _ -> 
           k x
@@ -225,7 +225,7 @@ let get_returns_any any =
     V.kstmt = (fun (k,_vx) x ->
       match x with
       | Return (_tok1, Some e, _tok2) ->
-          Common.push2 e aref
+          Common.push e aref
       | _ -> k x
     )}) any
 
@@ -234,14 +234,14 @@ let get_vars_any any =
     V.kexpr = (fun (k, _vx) x ->
       match x with
       | IdVar (dname, _scope) ->
-          Common.push2 dname aref
+          Common.push dname aref
 
       (* todo? sure ?? *)
       | Lambda (l_use, _def) ->
           l_use +> Common.do_option (fun (_tok, xs) ->
             xs +> Ast.unparen +> Ast.uncomma +> List.iter (function
             | LexicalVar (_is_ref, dname) ->
-                Common.push2 dname aref
+                Common.push dname aref
             )
           );
           k x
@@ -278,14 +278,14 @@ let functions_methods_or_topstms_of_program prog =
   let visitor = V.mk_visitor { V.default_visitor with
     V.kfunc_def = (fun (_k, _) def -> 
       match def.f_type with
-      | FunctionRegular -> Common.push2 def funcs
-      | MethodRegular | MethodAbstract -> Common.push2 def methods
+      | FunctionRegular -> Common.push def funcs
+      | MethodRegular | MethodAbstract -> Common.push def methods
       | FunctionLambda -> ()
     );
     V.ktop = (fun (k, _) top ->
       match top with
       | StmtList xs ->
-          Common.push2 xs toplevels
+          Common.push xs toplevels
       | _ ->
           k top
     );
@@ -311,7 +311,7 @@ let get_vars_assignements_any recursor =
             xs +> Ast.uncomma +> List.iter (fun (dname, affect_opt) -> 
               let s = Ast.str_of_dname dname in
               affect_opt +> Common.do_option (fun (_tok, scalar) ->
-                Common.push2 (s, scalar) aref;
+                Common.push (s, scalar) aref;
               );
             );
         | _ -> 
@@ -330,7 +330,7 @@ let get_vars_assignements_any recursor =
             (match lval with
             | IdVar (dname, _scope) ->
                 let s = Ast.str_of_dname dname in
-                Common.push2 (s, e) aref;
+                Common.push (s, e) aref;
             | _ ->
                 ()
             )

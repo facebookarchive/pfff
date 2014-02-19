@@ -91,7 +91,7 @@ object(o)
          let v' = unv (Common.marshal__from_string data 0) in
          f (k', v')
       *)
-      Common.push2 k' res;
+      Common.push k' res;
     );
     !res
 

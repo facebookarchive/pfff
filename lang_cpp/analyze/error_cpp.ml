@@ -70,9 +70,9 @@ let string_of_error_kind error_kind =
 let _errors = ref []
 
 let fatal loc err =
-  Common.push2 { loc = loc; typ = err; sev = Fatal } _errors
+  Common.push { loc = loc; typ = err; sev = Fatal } _errors
 let warning loc err = 
-  Common.push2 { loc = loc; typ = err; sev = Warning } _errors
+  Common.push { loc = loc; typ = err; sev = Warning } _errors
 
 (*****************************************************************************)
 (* Ranking *)

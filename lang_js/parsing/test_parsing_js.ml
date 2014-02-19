@@ -36,7 +36,7 @@ let test_parse_js xs  =
         Parse_js.parse file
       ))
       in
-      Common.push2 stat stat_list;
+      Common.push stat stat_list;
     end
   ));
   Parse_info.print_parsing_stat_list !stat_list;

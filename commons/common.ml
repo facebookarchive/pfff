@@ -61,7 +61,7 @@ let enum x n =
   in
   List.rev (enum_aux [] x n)
 
-let push2 v l =
+let push v l =
   l := v :: !l
 
 
@@ -956,7 +956,7 @@ let _temp_files_created = ref ([] : filename list)
 let new_temp_file prefix suffix =
   let processid = i_to_s (Unix.getpid ()) in
   let tmp_file = Filename.temp_file (prefix ^ "-" ^ processid ^ "-") suffix in
-  push2 tmp_file _temp_files_created;
+  push tmp_file _temp_files_created;
   tmp_file
 
 let save_tmp_files = ref false

@@ -14,7 +14,7 @@ let test_parse_c xs =
     let (_xs, stat) = 
       Parse_c.parse file 
     in
-    Common.push2 stat stat_list;
+    Common.push stat stat_list;
   ));
   Stat.print_recurring_problematic_tokens !stat_list;
   Stat.print_parsing_stat_list !stat_list;

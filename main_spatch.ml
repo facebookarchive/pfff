@@ -331,7 +331,7 @@ let apply_transfo transfo xs =
       then Common.write_file ~file:file s;
     end
     ) with exn ->
-      Common.push2 (spf "PB with %s, exn = %s" file (Common.exn_to_s exn)) pbs;
+      Common.push (spf "PB with %s, exn = %s" file (Common.exn_to_s exn)) pbs;
   ));
   !pbs +> List.iter Common.pr2
 

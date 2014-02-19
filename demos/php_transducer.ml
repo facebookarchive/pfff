@@ -38,7 +38,7 @@ let visit asts =
       match top with
       | FuncDef (def) -> 
           let name = Ast.str_of_ident def.f_name in
-          Common.push2 ("function:" ^name) props;
+          Common.push ("function:" ^name) props;
       | _ -> 
           ()
     );

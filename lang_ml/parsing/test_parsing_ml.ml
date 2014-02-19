@@ -32,7 +32,7 @@ let test_parse_ml_or_mli xs =
         Parse_ml.parse file 
       )
       in
-    Common.push2 stat stat_list;
+    Common.push stat stat_list;
   ));
   Parse_info.print_parsing_stat_list !stat_list;
   ()

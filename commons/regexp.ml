@@ -13,7 +13,7 @@ let find_offset_all_matches ~regexp str =
     let n = Pcre.num_of_subs substrings in
     for i = 1 to n -1 do
       let (pos1, pos2) = Pcre.get_substring_ofs substrings i in
-      Common.push2 (pos1,pos2) res;
+      Common.push (pos1,pos2) res;
     done;
     (try 
         let subs2 = Pcre.next_match ~rex:regexp substrings in

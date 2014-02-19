@@ -441,7 +441,7 @@ let lines_where_used_node node startl microlevel =
         glyph.str =$= s &&
         Database_code.matching_use_categ_kind categ (snd node)
       )
-      then Common.push2 (Line line) res
+      then Common.push (Line line) res
     done;
     !res
 

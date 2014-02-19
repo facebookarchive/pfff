@@ -401,7 +401,7 @@ let layout row rect =
       q = {  x = q.(0); y = q.(1); }
     }
     in
-    Common.push2 (size_child, info, rect_here) res;
+    Common.push (size_child, info, rect_here) res;
     p.(axis_split) <- q.(axis_split);
   );
   !res
@@ -674,7 +674,7 @@ let balayer_right xs =
   let n = List.length xs in
   let res = ref [] in
   for i = 0 to n do 
-    Common.push2 (take i xs, drop i xs) res;
+    Common.push (take i xs, drop i xs) res;
   done;
   List.rev !res
 let _ = assert (balayer_right [1;2;3;2] = 
@@ -801,7 +801,7 @@ let render_treemap_algo2 = fun ?(algo=Classic) ?(big_borders=false) treemap ->
     | Leaf (tnode, _fileinfo) ->
         let color = color_of_treemap_node root in
 
-        Common.push2 {
+        Common.push {
           tr_rect = rect;
           tr_color = color;
           tr_label = tnode.label;
@@ -813,7 +813,7 @@ let render_treemap_algo2 = fun ?(algo=Classic) ?(big_borders=false) treemap ->
     | Node (mode, children) ->
 
        (* let's draw some borders. Far better to see the structure. *)
-        Common.push2 {
+        Common.push {
           tr_rect = rect;
           tr_color = Color.black;
           tr_label = (fst mode).label;
@@ -982,20 +982,20 @@ let tree_of_dir3
       match stat.Unix.st_kind with
       | Unix.S_REG ->
           if filter_file full
-          then Common.push2 (Leaf (full, file_hook full)) res
+          then Common.push (Leaf (full, file_hook full)) res
       | Unix.S_DIR -> 
           if filter_dir full
-          then Common.push2 (aux full) res
+          then Common.push (aux full) res
       | Unix.S_LNK ->
           if !follow_symlinks then
           (try 
           (match (Unix.stat full).Unix.st_kind with
           | Unix.S_REG ->
               if filter_file full
-              then Common.push2 (Leaf (full, file_hook full)) res
+              then Common.push (Leaf (full, file_hook full)) res
           | Unix.S_DIR ->
               if filter_dir full
-              then Common.push2 (aux full) res
+              then Common.push (aux full) res
           | _ -> ()
           )
           with Unix.Unix_error _ ->

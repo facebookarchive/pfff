@@ -364,7 +364,7 @@ let entry_nodes2 g =
     else begin
       let xs = OG.succ g.og v in
       xs +> List.iter (fun n -> Hashtbl.replace hdone n true);
-      Common.push2 v res;
+      Common.push v res;
     end
   );
   !res +> List.map (fun i -> key_of_vertex i g) +> List.rev

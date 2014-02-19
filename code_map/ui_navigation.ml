@@ -63,7 +63,7 @@ let go_dirs_or_file ?(current_entity=None) ?(current_grep_query=None)
   let dw = !dw_ref in
   !Controller._set_title (Controller.title_of_path root);
 
-  Common.push2 !dw_ref Controller.dw_stack;
+  Common.push !dw_ref Controller.dw_stack;
   let root = (Async.async_get dw.dw_model).root in
 
   dw_ref := 
