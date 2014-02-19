@@ -167,11 +167,15 @@ let grep ~basedir str =
   in
   let (xs, status) = Common2.cmd_to_list_and_status cmd in
   (* According to grep man page, non-zero exit code is expected when
-   * there are no matches
+   * there are no matches.
+   * According to xargs man page, it returns 123 if one of his subcommand
+   * returns something between 1 and 125
    *)
   match xs, status with
   | [], Unix.WEXITED n when n > 0 -> []
-  | xs, Unix.WEXITED 0 -> xs
+  | xs, Unix.WEXITED 0 
+  | xs, Unix.WEXITED 123
+    -> xs
   | _ -> 
     raise (CmdError (status, (spf "CMD = %s, RESULT = %s" cmd
                                 (Common.dump (status, xs)))))
