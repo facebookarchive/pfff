@@ -68,8 +68,7 @@ let with_overlay dw f =
 (* ---------------------------------------------------------------------- *)
 (*s: draw_label_overlay *)
 (* assumes cr_overlay has not been zoom_pan_scale *)
-let draw_label_overlay ~cr_overlay ~dw ~x ~y txt =
-  ignore(dw);
+let draw_label_overlay ~cr_overlay ~x ~y txt =
 
   Cairo.select_font_face cr_overlay "serif" 
     Cairo.FONT_SLANT_NORMAL Cairo.FONT_WEIGHT_NORMAL;
@@ -92,13 +91,6 @@ let draw_label_overlay ~cr_overlay ~dw ~x ~y txt =
   Cairo.move_to cr_overlay refx refy;
   Cairo.set_source_rgba cr_overlay 1. 1. 1.    1.0;
   CairoH.show_text cr_overlay txt;
-  
-  (*
-  Cairo.set_source_rgb cr_overlay 0.3 0.3 0.3;
-  Cairo.move_to cr_overlay x y;
-  Cairo.line_to cr_overlay (x + 10.) (y + 10.);
-  Cairo.stroke cr_overlay;
-  *)
   ()
 (*e: draw_label_overlay *)
 
@@ -247,15 +239,14 @@ let motion_refresher ev dw =
 
     (match line_opt with
     | None ->
-      let label_txt = readable_txt_for_label r.T.tr_label dw.current_root in
-      draw_label_overlay ~cr_overlay ~dw ~x ~y label_txt
+        let label_txt = readable_txt_for_label r.T.tr_label dw.current_root in
+        draw_label_overlay ~cr_overlay ~x ~y label_txt
     | Some line ->
-       let microlevel = Hashtbl.find dw.microlevel r in
-       draw_magnify_line_overlay_maybe ~honor_color:true dw line microlevel
+        let microlevel = Hashtbl.find dw.microlevel r in
+        draw_magnify_line_overlay_maybe ~honor_color:true dw line microlevel
     );
 
     draw_englobing_rectangles_overlay ~dw (r, middle, r_englobing);
-
     draw_uses_users_files ~dw r;
 
     (match line_opt, entity_opt with

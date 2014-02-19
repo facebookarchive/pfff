@@ -155,13 +155,6 @@ let final_font_size_of_categ ~font_size ~font_size_real categ =
     | n when n < 10. -> 0.7 * multiplier
     | _ -> 0.5 * multiplier
   in
-(*
-  Draw_common.final_font_size_when_multiplier 
-    ~multiplier
-    ~size_font_adjuster
-    ~font_size
-    ~font_size_real
-*)
   Common2.borne ~min:font_size ~max:(font_size * 30.) (font_size * multiplier)
 
 (*e: final_font_size_of_categ *)

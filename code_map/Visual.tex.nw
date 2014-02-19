@@ -5539,42 +5539,6 @@ val interface_doc: string
 <<help.ml>>=
 <<interface_doc>>
 @ 
- 
-
-
-\subsection{[[draw_common.mli]]}
-
-<<draw_common.mli>>=
-
-(* current used also by draw_macrolevel *)
-val final_font_size_when_multiplier:
-  multiplier:float ->
-  size_font_multiplier_multiplier:float ->
-  font_size:float -> font_size_real:'a -> float
-
-@ 
-
-\subsection{[[draw_common.ml]]}
-
-<<draw_common.ml>>=
-<<Facebook copyright>>
-open Common2.ArithFloatInfix
-module CairoH = Cairo_helpers
-
-(*****************************************************************************)
-(* Prelude *)
-(*****************************************************************************)
-
-(*****************************************************************************)
-(* Anamorphic entities *)
-(*****************************************************************************)
-
-<<final_font_size_when_multiplier>>
-
-
-@ 
-
- 
 
 
 \subsection{[[draw_macrolevel.mli]]}
