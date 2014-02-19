@@ -133,6 +133,7 @@ let init_world ?(width = 600) ?(height = 600) path model =
  *)
 let xy_ratio = 1.71
 
+(* 0..1.71 x 0..1 internal normalized coords -> width x height external pixels*)
 let scale_coordinate_system cr w =
   Cairo.scale cr
     (float_of_int w.width / xy_ratio)
@@ -147,7 +148,7 @@ let scale_coordinate_system cr w =
  * to reserve more space to certain things?
  *)
 type layout = {
-(* this assumes a xy_ratio of 1.71 *)
+(* this assumes the xy_ratio set above *)
   x_start_matrix_left: float;
   x_end_matrix_right: float;
   y_start_matrix_up: float;
@@ -162,7 +163,7 @@ type layout = {
 
 let layout_of_w w = 
   let x_start_matrix_left = 0.3 in
-  let x_end_matrix_right = 1.71 in
+  let x_end_matrix_right = xy_ratio in
   (* this will be with 45 degrees so it can be less than x_start_matrix_left *)
   let y_start_matrix_up = 0.1 in
   let y_end_matrix_down = 1.0 in
@@ -192,13 +193,11 @@ let layout_of_w w =
 let find_region_at_user_point2 w ~x ~y =
   let regions = w.interactive_regions in
   let pt = { Figures. x = x; y = y } in
-  try 
-    let (kind, _rect) = regions +> List.find (fun (_kind, rect) ->
-      Figures.point_is_in_rectangle pt rect
-    )
-    in
-    Some kind
-  with Not_found -> None
+  regions +> Common.find_some_opt (fun (kind, rect) ->
+      if Figures.point_is_in_rectangle pt rect
+      then Some kind
+      else None
+  )
 
 let find_region_at_user_point w ~x ~y =
   Common.profile_code "model.find_region" (fun () ->
