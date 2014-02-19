@@ -229,13 +229,11 @@ let defs_of_glyphs glyphs =
   let res = ref [] in
   glyphs +> Array.iteri (fun line_0_indexed glyphs ->
     glyphs +> List.iter (fun glyph ->
-      glyph.categ 
-      +> Common.do_option (fun categ ->
+      glyph.categ +> Common.do_option (fun categ ->
         Database_code.entity_kind_of_highlight_category_def categ 
         +> Common.do_option (fun kind ->
-            Common.push2 (Line line_0_indexed, (glyph.str, kind)) res
-        )))
-  );
+              Common.push2 (Line line_0_indexed, (glyph.str, kind)) res
+        ))));
   !res
 
 (*****************************************************************************)
@@ -246,9 +244,7 @@ let defs_of_glyphs glyphs =
 let font_size_when_have_x_columns ~nblines ~chars_per_column ~w ~h ~with_n_columns = 
   let size_x = (w / with_n_columns) / chars_per_column in
   let size_y = (h / (nblines / with_n_columns)) in
-
-  let min_font = min size_x size_y in
-  min_font
+  min size_x size_y
 (*e: font_size_when_have_x_columns *)
    
 (*s: optimal_nb_columns *)
@@ -266,11 +262,10 @@ let optimal_nb_columns ~nblines ~chars_per_column ~w ~h =
     in
     if min_font > current_font_size
     then aux min_font (current_nb_columns + 1.)
-    else 
-      (* regression, then go back on step *)
-      current_nb_columns - 1.
+    (* regression, then go back on step *)
+    else current_nb_columns - 1.
   in
-  aux 0.0   1.
+  aux 0.0 1.0
 (*e: optimal_nb_columns *)
 
 (*s: draw_column_bars *)
@@ -424,7 +419,6 @@ let draw_treemap_rectangle_content_maybe2 ~cr ~clipping ~context tr  =
   if F.intersection_rectangles r clipping = None
   then (* pr2 ("not drawing: " ^ file) *) None
   else begin
-
     let file = tr.T.tr_label in
 
     (* if the file is not textual, or contain weird characters, then
@@ -441,7 +435,6 @@ let draw_treemap_rectangle_content_maybe2 ~cr ~clipping ~context tr  =
         CairoH.user_to_device_font_size cr font_size_estimate in
       if font_size_real_estimate > 0.4
       then begin
-        
        (* Common.nblines_with_wc was really slow. Forking sucks.
         * alt: we could store the nblines of a file in the db.
         *)
@@ -468,20 +461,8 @@ let draw_treemap_rectangle_content_maybe2 ~cr ~clipping ~context tr  =
           nblines_per_column = (nblines / split_nb_columns) +> ceil;
         } 
         in
-        
         draw_column_bars ~cr layout r;
         
-       (* todo: does not work :(
-          let font_option = Cairo.Font_Options.make [`ANTIALIAS_SUBPIXEL] in
-       
-       (try 
-         Cairo.set_font_options cr font_option;
-       with exn ->
-         let status = Cairo.status cr in
-         let s2 = Cairo.string_of_status status in
-         failwith s2;
-       );
-       *)
         Cairo.select_font_face cr Style.font_text
           Cairo.FONT_SLANT_NORMAL Cairo.FONT_WEIGHT_NORMAL;
     
@@ -492,11 +473,7 @@ let draw_treemap_rectangle_content_maybe2 ~cr ~clipping ~context tr  =
             && not (is_big_file_with_few_lines ~nblines file)
             && nblines < !Flag.threshold_draw_content_nblines
         then Some (draw_content ~cr ~layout ~context tr)
-        else 
-          if context.settings.draw_summary 
-            (* draw_summary_content ~cr ~layout ~context tr *)
-          then raise Todo
-          else None
+        else None
       end
       else None
     end
