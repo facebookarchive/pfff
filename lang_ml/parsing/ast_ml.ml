@@ -383,5 +383,3 @@ let module_of_long_name (qu, _) =
 let module_infos_of_long_name (qu, _) = 
   qu +> List.map fst +> List.map info_of_name
 
-let ast_todo = ()
-let ast_todo2 = []
