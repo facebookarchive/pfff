@@ -951,12 +951,12 @@ core_type2:
 
  /*(* ext: olabl *)*/
  | TLowerIdent           TColon core_type2 TArrow core_type2
-     { TyTodo  }
+     { TyFunction ($3, $4, $5) (* TODO $1 $2 *)  }
  | TQuestion TLowerIdent TColon core_type2 TArrow core_type2
-     { TyTodo }
+     { TyFunction ($4, $5, $6) (* TODO $1 $2 *)  }
  /*(* pad: only because of lexer hack around labels *)*/
  | TOptLabelDecl                core_type2 TArrow core_type2
-     { TyTodo }
+     { TyFunction ($2, $3, $4) (* TODO $1 $2 *)  }
 
 
 simple_core_type_or_tuple:
