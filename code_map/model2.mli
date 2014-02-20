@@ -47,6 +47,7 @@ type microlevel = {
     categ: Highlight_code.category option;
     font_size: float;
     color: Simple_color.emacs_color;
+    mutable pos: Cairo.point;
   }
   and layout = {
     lfont_size: float;

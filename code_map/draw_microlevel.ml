@@ -43,7 +43,8 @@ module Parsing = Parsing2
  *  - line number in the file
  *  - column and line in column for the file when rendered in multiple columns
  *  - x,y position relative to the current treemap rectangle
- *  - x,y position on the screen
+ *  - x,y position on the screen in normalized coordinates
+ *  - x,y position on the screen in pixels
  * We have many functions below to go from one to the other.
  * 
  * note: some types below could be 'int' but it's more convenient to have
@@ -177,6 +178,9 @@ let color_of_categ categ =
 let glyphs_of_file ~context ~font_size ~font_size_real file 
   : (glyph list) array option =
 
+  (* real position is set later in draw_content *)
+  let pos = { Cairo.x = 0.; y = 0. } in
+
   match FT.file_type_of_file file with
   | _ when use_fancy_highlighting file ->
 
@@ -204,7 +208,8 @@ let glyphs_of_file ~context ~font_size ~font_size_real file
       let xs = Common2.lines_with_nl_either s in
       xs +> List.iter (function
       | Common2.Left str ->
-          Common.push { M. str; font_size=final_font_size; color; categ } acc;
+          Common.push { M. str; font_size=final_font_size; color; categ;pos } 
+            acc;
       | Common2.Right () ->
           arr.(!line) <- List.rev !acc;
           acc := [];
@@ -220,7 +225,8 @@ let glyphs_of_file ~context ~font_size ~font_size_real file
 
   | FT.PL _ | FT.Text _ ->      
     (Common.cat file)
-    +> List.map (fun str -> [{ M.str; font_size; color = "black"; categ=None }])
+    +> List.map (fun str -> 
+      [{ M.str; font_size; color = "black"; categ=None; pos }])
     +> Array.of_list
     +> (fun x -> Some x)
   | _ -> None
@@ -357,24 +363,11 @@ let draw_content2 ~cr ~layout ~context tr =
       Cairo.move_to cr x y;
       
       glyphs.(line_0_indexed) +> List.iter (fun glyph ->
+        let pos = Cairo.get_current_point cr in
+        glyph.pos <- pos;
         Cairo.set_font_size cr glyph.M.font_size;
         let (r,g,b) = Color.rgbf_of_string glyph.color in
-
-        let alpha = 1. in
-        (*
-         * if CairoH.is_old_cairo () then
-         *   match () with
-         *   | _ when glyph.M.font_size < 1. -> 0.2
-         *   | _ when glyph.M.font_size  < 3. -> 0.4
-         *   | _ when glyph.M.font_size  < 5. -> 0.9
-         *   | _ when glyph.M.font_size  < 8. 
-         *       -> 1. (* TODO - alpha_adjust, do that only when not in
-         *                fully zoomed mode *)
-         *   | _ -> 1.
-         * else 1.
-         *)
-         
-        Cairo.set_source_rgba cr r g b alpha;
+        Cairo.set_source_rgba cr r g b 1.;
         CairoH.show_text cr glyph.M.str;
       );
 
@@ -443,8 +436,7 @@ let draw_treemap_rectangle_content_maybe2 ~cr ~clipping ~context tr  =
         let nblines = Common2.nblines_eff file +> float_of_int in
         
        (* Assume our code follow certain conventions. Could infer from file. 
-        * We should put 80, but a font is higher than large, so I 
-        * manually readjust things.
+        * We should put 80, but a font is higher than large, so I readjusted.
         *)
         let chars_per_column = 41.0 in
     
