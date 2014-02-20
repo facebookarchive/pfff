@@ -211,7 +211,7 @@ and seq_expr = expr semicolon_list
 (* ------------------------------------------------------------------------- *)
 and pattern = 
   | PatVar of name
-  | PatConstant of signed_constant
+  | PatConstant of pattern_signed_constant
   | PatConstr(*Algebric*) of long_name (* constr_longident *) * pattern option
   | PatConsInfix of pattern * tok (* :: *) * pattern
   | PatTuple of pattern comma_list
@@ -228,8 +228,8 @@ and pattern =
   | ParenPat of pattern paren
   | PatTodo
     
- (* todo: merge with expr, no need for too precise AST, remember ast_php.ml *)
- and signed_constant = 
+ (* less? merge with expr, no need for too precise AST, remember ast_php.ml *)
+ and pattern_signed_constant = 
     | C2 of constant
     (* actually only valid for the Int and Float case, not Char and String
      * but don't want to introduce yet another intermediate type just for
@@ -269,7 +269,7 @@ and let_binding =
 (* ------------------------------------------------------------------------- *)
 (* Module *)
 (* ------------------------------------------------------------------------- *)
-and module_type = unit
+and module_type = unit (* todo *)
 
 and module_expr =
   | ModuleName of long_name
