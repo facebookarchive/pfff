@@ -228,7 +228,9 @@ let tokens_with_categ_of_file file hentities =
            Common.save_excursion Flag_parsing_ml.error_recovery true (fun()->
              ML (Parse_ml.parse file +> fst))
          )
-         (function ML (ast, toks) -> [ast, toks] | _ -> raise Impossible));
+         (function 
+         | ML (ast, toks) -> [Common2.some ast, toks] 
+         | _ -> raise Impossible));
         highlight_visit = (fun ~tag_hook prefs (ast, toks) -> 
           Highlight_ml.visit_program ~tag_hook prefs (ast, toks));
         info_of_tok = Token_helpers_ml.info_of_tok;

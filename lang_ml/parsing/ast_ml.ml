@@ -17,6 +17,12 @@ open Common
 (*****************************************************************************)
 (* Prelude *)
 (*****************************************************************************)
+(*
+ * A Concrete Syntax Tree for OCaml.
+ * 
+ * todo: do an Abstract Syntax Tree as in ast_java.ml, need less CST
+ * now that we use the fuzzy approach for sgrep and spatch.
+ *)
 
 (*****************************************************************************)
 (* The AST related types *)

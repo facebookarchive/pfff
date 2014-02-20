@@ -1,7 +1,7 @@
 
 (* the token list contains also the comment-tokens *)
 type program_and_tokens = 
-  Ast_ml.program (* NotParsedCorrectly if parse error *) * Parser_ml.token list
+  Ast_ml.program option * Parser_ml.token list
 
 exception Parse_error of Parse_info.info
 

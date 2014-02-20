@@ -210,7 +210,7 @@ let compute_database ?(verbose=false) files_or_dirs =
           | _ -> ()
         )
         prefs
-        (ast, toks)
+        (Common2.some ast, toks)
     )
   );
 

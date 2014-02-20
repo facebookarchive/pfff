@@ -26,6 +26,7 @@ module Db = Database_code
  * (ab)Using the code highlighter to extract tags.
  * 
  * Alternatives:
+ *  - use graph_code_tags.ml now that .cmt contains more precise information
  *  - otags, but does not work very well cos it stops everything
  *    when it encounters an unparable file.
  *)
@@ -66,7 +67,7 @@ let defs_of_files_or_dirs ?(verbose=false) xs =
          )
        with Parse_ml.Parse_error pos ->
          pr2 (spf "PARSING error in %s" (Parse_info.string_of_info pos));
-         [], []
+         Some [], []
      in
     let filelines = Common2.cat_array file in
     let defs = ref [] in
@@ -79,7 +80,7 @@ let defs_of_files_or_dirs ?(verbose=false) xs =
       ~lexer_based_tagger:true (* !! *)
       ~tag_hook:(fun info categ -> Hashtbl.add h info categ)
       prefs
-      (ast, toks)
+      (Common2.some ast, toks)
     ;
 
     (* processing the tokens in order *)
