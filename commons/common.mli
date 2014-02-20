@@ -196,7 +196,7 @@ val timeout_function :
   ?verbose:bool ->
   int -> (unit -> 'a) -> 'a
 
-type prof = PALL | PNONE | PSOME of string list
+type prof = ProfAll | ProfNone | ProfSome of string list
 val profile : prof ref
 val show_trace_profile : bool ref
 

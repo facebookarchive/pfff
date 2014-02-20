@@ -268,15 +268,15 @@ let pr2_gen x = pr2 (dump x)
 (* Profiling *)
 (*****************************************************************************)
 
-type prof = PALL | PNONE | PSOME of string list
-let profile = ref PNONE
+type prof = ProfAll | ProfNone | ProfSome of string list
+let profile = ref ProfNone
 let show_trace_profile = ref false
 
 let check_profile category =
   match !profile with
-    PALL -> true
-  | PNONE -> false
-  | PSOME l -> List.mem category l
+  | ProfAll -> true
+  | ProfNone -> false
+  | ProfSome l -> List.mem category l
 
 let _profile_table = ref (Hashtbl.create 100)
 
@@ -362,7 +362,7 @@ let (with_open_stringbuf: (((string -> unit) * Buffer.t) -> unit) -> string) =
 
 (* todo: also put  % ? also add % to see if coherent numbers *)
 let profile_diagnostic () =
-  if !profile = PNONE then "" else
+  if !profile = ProfNone then "" else
   let xs =
     Hashtbl.fold (fun k v acc -> (k,v)::acc) !_profile_table []
       +> List.sort (fun (k1, (t1,n1)) (k2, (t2,n2)) -> compare t2 t1)
@@ -388,12 +388,12 @@ let report_if_take_time timethreshold s f =
 
 let profile_code2 category f =
   profile_code category (fun () ->
-    if !profile = PALL
+    if !profile = ProfAll
     then pr2 ("starting: " ^ category);
     let t = Unix.gettimeofday () in
     let res = f () in
     let t' = Unix.gettimeofday () in
-    if !profile = PALL
+    if !profile = ProfAll
     then pr2 (spf "ending: %s, %fs" category (t' -. t));
     res
   )
@@ -1196,7 +1196,7 @@ let main_boilerplate f =
             raise (Unix.Unix_error (e, fm, argm))
         ))
        (fun()->
-         if !profile <> PNONE
+         if !profile <> ProfNone
          then begin 
            pr2 (profile_diagnostic ());
            Gc.print_stat stderr;

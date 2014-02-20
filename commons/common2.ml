@@ -5823,7 +5823,7 @@ let cmdline_flags_devel () =
   [
     "-debugger",         Arg.Set Common.debugger,
     " option to set if launched inside ocamldebug";
-    "-profile",          Arg.Unit (fun () -> Common.profile := Common.PALL),
+    "-profile",          Arg.Unit (fun () -> Common.profile := Common.ProfAll),
     " output profiling information";
   ]
 let cmdline_flags_verbose () =
