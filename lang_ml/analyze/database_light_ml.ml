@@ -142,6 +142,12 @@ let compute_database ?(verbose=false) files_or_dirs =
     let ((ast, toks), _stat) = 
       parse file 
     in
+    let ast = 
+      match ast with
+      (* in database light we do error recovery *)
+      | None -> []
+      | Some xs -> xs
+    in
 
     (* this is quite similar to what we do in tags_ml.ml *)
     let prefs = Highlight_code.default_highlighter_preferences in
@@ -210,7 +216,7 @@ let compute_database ?(verbose=false) files_or_dirs =
           | _ -> ()
         )
         prefs
-        (Common2.some ast, toks)
+        (ast, toks)
     )
   );
 
