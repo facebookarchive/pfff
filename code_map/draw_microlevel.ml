@@ -347,7 +347,9 @@ let draw_content2 ~cr ~layout ~context tr =
     Hashtbl.add hmatching_lines (iline+..1) "purple"
   );
 
+  (* the important function call, getting the decorated content *)
   let glyphs_opt = glyphs_of_file ~context ~font_size ~font_size_real file in
+
   glyphs_opt +> Common.do_option (fun glyphs ->
     glyphs +> Array.iteri (fun line_0_indexed _glyph ->
       let lc = line_to_line_in_column (Line line_0_indexed) layout in
