@@ -262,7 +262,7 @@ package_declaration: PACKAGE name SM  { qualified_ident $2 }
 /* 7.5 */
 import_declaration:
  | IMPORT static_opt name SM            { $2, qualified_ident $3 }
- | IMPORT static_opt name DOT TIMES SM  { $2, (qualified_ident $3 ++["*", $5])}
+ | IMPORT static_opt name DOT TIMES SM  { $2, (qualified_ident $3 @["*", $5])}
 
 /* 7.6 */
 type_declaration:
@@ -281,8 +281,8 @@ identifier: IDENTIFIER { $1 }
 /* 6.5 */
 name:
  | identifier_           { [$1] }
- | name DOT identifier_  { $1 ++ [$3] }
- | name DOT LT2 type_arguments GT identifier_ { $1++[TypeArgs_then_Id($4,$6)] }
+ | name DOT identifier_  { $1 @ [$3] }
+ | name DOT LT2 type_arguments GT identifier_ { $1@[TypeArgs_then_Id($4,$6)] }
 
 identifier_:
  | identifier                       { Id $1 }
@@ -345,7 +345,7 @@ primary_no_new_array:
  | literal             { $1 }
  | class_literal       { $1 }
  | THIS                { Name [this_ident $1] }
- | name DOT THIS       { Name (name $1 ++ [this_ident $3]) }
+ | name DOT THIS       { Name (name $1 @ [this_ident $3]) }
  | LP expression RP    { $2 }
  | class_instance_creation_expression { $1 }
  | field_access                       { $1 }
@@ -399,7 +399,7 @@ dims:
 field_access:
  | primary DOT identifier        { Dot ($1, $3) }
  | SUPER   DOT identifier        { Dot (Name [super_ident $1], $3) }
- | name DOT SUPER DOT identifier { Dot (Name (name $1++[super_ident $3]), $5) }
+ | name DOT SUPER DOT identifier { Dot (Name (name $1@[super_ident $3]), $5) }
 
 /* 15.13 */
 array_access:
@@ -435,7 +435,7 @@ method_invocation:
  | SUPER DOT identifier LP argument_list_opt RP
 	{ Call ((Dot (Name [super_ident $1], $3)), $5) }
  | name DOT SUPER DOT identifier LP argument_list_opt RP
-	{ Call (Dot (Name (name $1 ++ [super_ident $3]), $5), $7)}
+	{ Call (Dot (Name (name $1 @ [super_ident $3]), $5), $7)}
 
 /*(*----------------------------*)*/
 /*(*2 Arithmetic *)*/
@@ -505,7 +505,7 @@ cast_expression:
                 TClass (name +> List.map (fun (xs, id) -> id, xs))
             (* ugly, undo what was done in postfix_expression *)
             | Dot (Name name, id) ->
-                TClass ((name ++ [[], id]) +> List.map (fun (xs, id) -> id, xs))
+                TClass ((name @ [[], id]) +> List.map (fun (xs, id) -> id, xs))
             | _ -> 
                 pr2 "cast_expression pb";
                 pr2_gen $2;
@@ -1029,7 +1029,7 @@ explicit_constructor_invocation:
       { Expr (Call ((Dot ($1, super_identifier $3)), $5)) }
  /*(* not in 2nd edition java language specification. *)*/
  | name DOT SUPER LP argument_list_opt RP SM
-      { constructor_invocation (name $1 ++ [super_ident $3]) $5 }
+      { constructor_invocation (name $1 @ [super_ident $3]) $5 }
 
 /*(*----------------------------*)*/
 /*(*2 Method parameter *)*/
@@ -1065,7 +1065,7 @@ interface_declaration:
 /* 9.1.2 */
 extends_interfaces:
  | EXTENDS reference_type                { [$2] }
- | extends_interfaces CM reference_type  { $1 ++ [$3] }
+ | extends_interfaces CM reference_type  { $1 @ [$3] }
 
 /*(*----------------------------*)*/
 /*(*2 Interface body *)*/
@@ -1166,7 +1166,7 @@ annotation_type_element_declarations:
 
 import_declarations:
  | import_declaration  { [$1] }
- | import_declarations import_declaration  { $1 ++ [$2] }
+ | import_declarations import_declaration  { $1 @ [$2] }
 
 import_declarations_opt:
  | /*(*empty*)*/  { [] }
@@ -1175,7 +1175,7 @@ import_declarations_opt:
 
 type_declarations:
  | type_declaration  { $1 }
- | type_declarations type_declaration  { $1 ++ $2 }
+ | type_declarations type_declaration  { $1 @ $2 }
 
 type_declarations_opt:
  | /*(*empty*)*/  { [] }
@@ -1209,16 +1209,16 @@ interfaces_opt:
 
 ref_type_list:
  | reference_type  { [$1] }
- | ref_type_list CM reference_type  { $1 ++ [$3] }
+ | ref_type_list CM reference_type  { $1 @ [$3] }
 
 ref_type_and_list:
  | reference_type  { [$1] }
- | ref_type_and_list AND reference_type  { $1 ++ [$3] }
+ | ref_type_and_list AND reference_type  { $1 @ [$3] }
 
 
 class_body_declarations:
  | class_body_declaration  { $1 }
- | class_body_declarations class_body_declaration  { $1 ++ $2 }
+ | class_body_declarations class_body_declaration  { $1 @ $2 }
 
 class_body_declarations_opt:
  | /*(*empty*)*/  { [] }
@@ -1245,7 +1245,7 @@ variable_modifiers_opt:
 
 variable_modifiers:
  | variable_modifier { [$1] }
- | variable_modifiers variable_modifier { $1 ++ [$2] }
+ | variable_modifiers variable_modifier { $1 @ [$2] }
 
 static_opt:
  | /*(*empty*)*/  { false }
@@ -1257,7 +1257,7 @@ throws_opt:
 
 qualified_ident_list:
  | name                          { [qualified_ident $1] }
- | qualified_ident_list CM name  { $1 ++ [qualified_ident $3] }
+ | qualified_ident_list CM name  { $1 @ [qualified_ident $3] }
 
 extends_interfaces_opt:
  | /*(*empty*)*/  { [] }
@@ -1266,7 +1266,7 @@ extends_interfaces_opt:
 
 interface_member_declarations:
  | interface_member_declaration  { $1 }
- | interface_member_declarations interface_member_declaration  { $1 ++ $2 }
+ | interface_member_declarations interface_member_declaration  { $1 @ $2 }
 
 interface_member_declarations_opt:
  | /*(*empty*)*/  { [] }
@@ -1284,7 +1284,7 @@ comma_opt:
 
 block_statements:
  | block_statement  { $1 }
- | block_statements block_statement  { $1 ++ $2 }
+ | block_statements block_statement  { $1 @ $2 }
 
 block_statements_opt:
  | /*(*empty*)*/      { [] }
@@ -1313,7 +1313,7 @@ for_update_opt:
 
 statement_expression_list:
  | statement_expression                               { [$1] }
- | statement_expression_list CM statement_expression  { $1 ++ [$3] }
+ | statement_expression_list CM statement_expression  { $1 @ [$3] }
 
 identifier_opt:
  | /*(*empty*)*/  { None }
@@ -1360,7 +1360,7 @@ dims_opt:
 
 enum_constants:
  | enum_constant { [$1] }
- | enum_constants CM enum_constant { $1 ++ [$3] }
+ | enum_constants CM enum_constant { $1 @ [$3] }
 
 enum_body_declarations_opt: 
  | /*(*empty*)*/           { [] }
@@ -1375,15 +1375,15 @@ type_parameters:
 
 type_parameters_bis: 
  | type_parameter                         { [$1] }
- | type_parameters_bis CM type_parameter  { $1 ++ [$3] }
+ | type_parameters_bis CM type_parameter  { $1 @ [$3] }
 
 type_arguments:
  | type_argument                    { [$1] }
- | type_arguments CM type_argument  { $1 ++ [$3] }
+ | type_arguments CM type_argument  { $1 @ [$3] }
 
 element_value_pairs: 
  | element_value_pair { [$1] }
- | element_value_pairs CM element_value_pair { $1 ++ [$3] }
+ | element_value_pairs CM element_value_pair { $1 @ [$3] }
 
 annotation_element_opt:
  | /*(*empty*)*/      { None }
@@ -1392,5 +1392,5 @@ annotation_element_opt:
 
 element_values:
  | element_value { [$1] }
- | element_values CM element_value { $1 ++ [$3] }
+ | element_values CM element_value { $1 @ [$3] }
 

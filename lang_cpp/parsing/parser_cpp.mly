@@ -295,7 +295,7 @@ main:
 
 translation_unit: 
  | external_declaration                      { [$1] }
- | translation_unit external_declaration     { $1 ++ [$2] }
+ | translation_unit external_declaration     { $1 @ [$2] }
 
 external_declaration: 
  | function_definition            { Func (FunctionOrMethod $1) }
@@ -563,7 +563,7 @@ primary_expr:
  | TOPar expr TCPar { mk_e(ParenExpr ($1, $2, $3)) noii }  
 
  /*(* gccext: cppext: *)*/
- | string_elem string_list { mk_e(C (MultiString)) ($1 ++ $2) }
+ | string_elem string_list { mk_e(C (MultiString)) ($1 @ $2) }
  /*(* gccext: allow statement as expressions via ({ statement }) *)*/
  | TOPar compound TCPar    { mk_e(StatementExpr ($1, $2, $3)) noii }
 
@@ -762,7 +762,7 @@ statement:
  | labeled         { Labeled      (fst $1), snd $1 }
  | selection       { Selection    (fst $1), snd $1 }
  | iteration       { Iteration    (fst $1), snd $1 }
- | jump TPtVirg    { Jump         (fst $1), snd $1 ++ [$2] }
+ | jump TPtVirg    { Jump         (fst $1), snd $1 @ [$2] }
 
  /*(* cppext: *)*/
  | TIdent_MacroStmt { MacroStmt, [$1] }
@@ -823,7 +823,7 @@ compound:
 
 statement_list:
  | statement_seq { [$1] }
- | statement_list statement_seq { $1 ++ [$2] }
+ | statement_list statement_seq { $1 @ [$2] }
 
 statement_list_opt:
  | /*(*empty*)*/ { [] }
@@ -1692,7 +1692,7 @@ declaration:
 
 declaration_list: 
  | declaration_seq                  { [$1]   }
- | declaration_list declaration_seq { $1 ++ [$2] }
+ | declaration_list declaration_seq { $1 @ [$2] }
 
 declaration_list_opt: 
  | /*(*empty*)*/ { [] }
@@ -2091,78 +2091,78 @@ visibility_specification:
 
 string_list: 
  | string_elem { $1 }
- | string_list string_elem { $1 ++ $2 } 
+ | string_list string_elem { $1 @ $2 } 
 
 colon_asm_list: 
  | colon_asm { [$1] }
- | colon_asm_list colon_asm  { $1 ++ [$2] }
+ | colon_asm_list colon_asm  { $1 @ [$2] }
 
 colon_option_list: 
  | colon_option { [$1, []] } 
- | colon_option_list TComma colon_option { $1 ++ [$3, [$2]] }
+ | colon_option_list TComma colon_option { $1 @ [$3, [$2]] }
 
 
 argument_list: 
  | argument                           { [$1, []] }
- | argument_list TComma argument { $1 ++ [$3,    [$2]] }
+ | argument_list TComma argument { $1 @ [$3,    [$2]] }
 
 
 enumerator_list: 
  | enumerator                        { [$1,          []]   }
- | enumerator_list TComma enumerator { $1 ++ [$3,    [$2]] }
+ | enumerator_list TComma enumerator { $1 @ [$3,    [$2]] }
 
 
 init_declarator_list: 
  | init_declarator                             { [$1,   []] }
- | init_declarator_list TComma init_declarator { $1 ++ [$3,     [$2]] }
+ | init_declarator_list TComma init_declarator { $1 @ [$3,     [$2]] }
 
 member_declarator_list: 
  | member_declarator                             { [$1,   []] }
- | member_declarator_list TComma member_declarator { $1 ++ [$3,     [$2]] }
+ | member_declarator_list TComma member_declarator { $1 @ [$3,     [$2]] }
 
 
 parameter_list: 
  | parameter_decl                       { [$1, []] }
- | parameter_list TComma parameter_decl { $1 ++ [$3,  [$2]] }
+ | parameter_list TComma parameter_decl { $1 @ [$3,  [$2]] }
 
 taction_list: 
 /*(* c++ext: to remove some conflicts (from 13 to 4)
    * | (* empty *) { [] } 
    *)*/
  | TAny_Action { [$1] }
- | taction_list TAny_Action { $1 ++ [$2] }
+ | taction_list TAny_Action { $1 @ [$2] }
 
 param_define_list_opt: 
  | /*(* empty *)*/ { [] }
  | param_define                           { [$1, []] }
- | param_define_list_opt TComma param_define  { $1 ++ [$3, [$2]] }
+ | param_define_list_opt TComma param_define  { $1 @ [$3, [$2]] }
 
 designator_list: 
  | designator { [$1] }
- | designator_list designator { $1 ++ [$2] }
+ | designator_list designator { $1 @ [$2] }
 
 
 handler_list:
  | handler { [$1] }
- | handler_list handler { $1 ++ [$2] }
+ | handler_list handler { $1 @ [$2] }
 
 
 mem_initializer_list: 
  | mem_initializer                           { [$1, []] }
- | mem_initializer_list TComma mem_initializer  { $1 ++ [$3, [$2]] }
+ | mem_initializer_list TComma mem_initializer  { $1 @ [$3, [$2]] }
 
 template_argument_list:
  | template_argument { [$1, []] }
- | template_argument_list TComma template_argument { $1 ++ [$3, [$2]] }
+ | template_argument_list TComma template_argument { $1 @ [$3, [$2]] }
 
 template_parameter_list: 
  | template_parameter { [$1, []] }
- | template_parameter_list TComma template_parameter { $1 ++ [$3, [$2]] }
+ | template_parameter_list TComma template_parameter { $1 @ [$3, [$2]] }
 
 
 base_specifier_list: 
  | base_specifier                               { [$1,           []] }
- | base_specifier_list TComma base_specifier    { $1 ++ [$3,     [$2]] }
+ | base_specifier_list TComma base_specifier    { $1 @ [$3,     [$2]] }
 
 /*(*-----------------------------------------------------------------------*)*/
 

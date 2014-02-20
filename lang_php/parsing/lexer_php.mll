@@ -315,7 +315,7 @@ let rec current_mode () =
     error("mode_stack is empty, defaulting to INITIAL");
     reset();
     current_mode ()
-let push_mode mode = Common.push2 mode _mode_stack
+let push_mode mode = Common.push mode _mode_stack
 let pop_mode () = ignore(Common2.pop2 _mode_stack)
 
 (* What is the semantic of BEGIN() in flex ? start from scratch with empty

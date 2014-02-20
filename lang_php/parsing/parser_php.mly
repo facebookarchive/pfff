@@ -281,7 +281,7 @@ module PI = Parse_info
 /*(*************************************************************************)*/
 /*(*1 Toplevel *)*/
 /*(*************************************************************************)*/
-main: top_statement_list EOF { H.squash_stmt_list $1 ++ [FinalDef $2] }
+main: top_statement_list EOF { H.squash_stmt_list $1 @ [FinalDef $2] }
 
 top_statement:
  | statement                            { StmtList [$1] }
@@ -343,7 +343,7 @@ statement:
      { let try_block = ($2,$3,$4) in
        let catch_block = ($10, $11, $12) in
        let catch = ($5, ($6, ($7, DName $8), $9), catch_block) in
-       Try($1, try_block, [catch] ++ $13, $14)
+       Try($1, try_block, [catch] @ $13, $14)
      }
  | T_TRY TOBRACE inner_statement_list TCBRACE finally_clause
      { let try_block = ($2,$3,$4) in
@@ -443,12 +443,12 @@ declare_statement:
 
 elseif_list:
  | /*(*empty*)*/ { [] }
- | elseif_list  T_ELSEIF TOPAR expr TCPAR statement { $1 ++ [$2,($3,$4,$5),$6]}
+ | elseif_list  T_ELSEIF TOPAR expr TCPAR statement { $1 @ [$2,($3,$4,$5),$6]}
 
 new_elseif_list:
  | /*(*empty*)*/ { [] }
  | new_elseif_list    T_ELSEIF TOPAR expr TCPAR TCOLON inner_statement_list
-     { $1 ++ [$2,($3,$4,$5),$6,$7] }
+     { $1 @ [$2,($3,$4,$5),$6,$7] }
 
 /*(* classic dangling else ambiguity resolved by a %prec. See conflicts.txt*)*/
 else_single:
@@ -539,7 +539,7 @@ parameter_list:
  | /*(*empty*)*/              { [] }
  | non_empty_parameter_list   { $1 }
  /*(* php-facebook-ext: trailing comma *)*/
- | non_empty_parameter_list TCOMMA  { $1 ++ [Right3 $2] }
+ | non_empty_parameter_list TCOMMA  { $1 @ [Right3 $2] }
 
 parameter_or_dots:
  | parameter { Left3 $1 }
@@ -581,13 +581,13 @@ lexical_vars:
 non_empty_lexical_var_list:
  | non_empty_lexical_var_list_bis { $1 }
  /*(* php-facebook-ext: trailing comma *)*/
- | non_empty_lexical_var_list_bis TCOMMA { $1 ++ [Right $2] }
+ | non_empty_lexical_var_list_bis TCOMMA { $1 @ [Right $2] }
 
 non_empty_lexical_var_list_bis:
  | lexical_var                         
      { [Left $1] }
  | non_empty_lexical_var_list_bis TCOMMA lexical_var  
-     { $1 ++ [Right $2; Left $3] }
+     { $1 @ [Right $2; Left $3] }
 
 lexical_var:
  |      T_VARIABLE  { (None, DName $1) }
@@ -869,7 +869,7 @@ type_params_opt:
 
 type_params_list:
   | type_param                         { [Left $1] }
-  | type_param TCOMMA type_params_list { [Left $1; Right $2] ++ $3 }
+  | type_param TCOMMA type_params_list { [Left $1; Right $2] @ $3 }
 
 type_param:
   | ident                 { TParam (Name $1) }
@@ -897,7 +897,7 @@ type_php_or_dots_list:
  | /*(*empty*)*/                     { [] }
  | non_empty_type_php_or_dots_list   { $1 }
  /*(* php-facebook-ext: trailing comma *)*/
- | non_empty_type_php_or_dots_list TCOMMA { $1 ++ [Right3 $2] }
+ | non_empty_type_php_or_dots_list TCOMMA { $1 @ [Right3 $2] }
 
 type_php_or_dots:
  | type_php { Left3 $1 }
@@ -1431,7 +1431,7 @@ use_declaration:
 
 namespace_name:
  | ident                           { [QI (Name $1)] }
- | namespace_name TANTISLASH ident { $1 ++ [QITok $2; QI (Name $3)] }
+ | namespace_name TANTISLASH ident { $1 @ [QITok $2; QI (Name $3)] }
 
 use_declaration_name:
  | namespace_name { ImportNamespace $1 }
@@ -1479,15 +1479,15 @@ class_name_no_array: qualified_class_name type_arguments
 /*(*1 xxx_list, xxx_opt *)*/
 /*(*************************************************************************)*/
 top_statement_list:
- | top_statement_list  top_statement { $1 ++ [$2] }
+ | top_statement_list  top_statement { $1 @ [$2] }
  | /*(*empty*)*/ { [] }
 
 inner_statement_list:
- | inner_statement_list  inner_statement { $1 ++ [$2] }
+ | inner_statement_list  inner_statement { $1 @ [$2] }
  | /*(*empty*)*/ { [] }
 
 class_statement_list:
- | class_statement_list class_statement { $1 ++ [$2] }
+ | class_statement_list class_statement { $1 @ [$2] }
  | /*(*empty*)*/ { [] }
 
 
@@ -1495,7 +1495,7 @@ class_statement_list:
 
 
 trait_rules:
- | trait_rules trait_rule { $1 ++ [$2] }
+ | trait_rules trait_rule { $1 @ [$2] }
  | /*(*empty*)*/ { [] }
 
 additional_catches:
@@ -1504,7 +1504,7 @@ additional_catches:
 
 non_empty_additional_catches:
  | additional_catch                              { [$1] }
- | non_empty_additional_catches additional_catch { $1 ++ [$2] }
+ | non_empty_additional_catches additional_catch { $1 @ [$2] }
 
 optional_finally_clause:
  | finally_clause { [$1] }
@@ -1516,80 +1516,80 @@ method_modifiers:
 
 non_empty_member_modifiers:
  | member_modifier				{ [$1] }
- | non_empty_member_modifiers member_modifier	{ $1 ++ [$2] }
+ | non_empty_member_modifiers member_modifier	{ $1 @ [$2] }
 
 
 
 unset_variables:
  | unset_variable { [Left $1] }
- | unset_variables TCOMMA unset_variable { $1 ++ [Right $2; Left $3] }
+ | unset_variables TCOMMA unset_variable { $1 @ [Right $2; Left $3] }
 
 global_var_list:
  | global_var				{ [Left $1] }
- | global_var_list TCOMMA global_var	{ $1 ++ [Right $2; Left $3] }
+ | global_var_list TCOMMA global_var	{ $1 @ [Right $2; Left $3] }
 
 echo_expr_list:
  | expr				   { [Left $1] }
- | echo_expr_list TCOMMA expr      { $1 ++ [Right $2; Left $3] }
+ | echo_expr_list TCOMMA expr      { $1 @ [Right $2; Left $3] }
 
 expr_list:
  | expr				   { [Left $1] }
- | expr_list TCOMMA expr      { $1 ++ [Right $2; Left $3] }
+ | expr_list TCOMMA expr      { $1 @ [Right $2; Left $3] }
 
 use_declaration_name_list:
  | use_declaration_name			  
      { [Left $1] }
  | use_declaration_name_list TCOMMA use_declaration_name 
-     { $1++[Right $2;Left $3] }
+     { $1@[Right $2;Left $3] }
 
 declare_list:
  | declare                    	{ [Left $1] }
- | declare_list TCOMMA declare	{ $1 ++ [Right $2; Left $3] }
+ | declare_list TCOMMA declare	{ $1 @ [Right $2; Left $3] }
 
 non_empty_for_expr:
   | expr      			     { [Left $1] }
-  | non_empty_for_expr TCOMMA	expr { $1 ++ [Right $2; Left $3] }
+  | non_empty_for_expr TCOMMA	expr { $1 @ [Right $2; Left $3] }
 
 xhp_attribute_decls:
  | xhp_attribute_decl { [Left $1] }
- | xhp_attribute_decls TCOMMA xhp_attribute_decl { $1 ++ [Right $2; Left $3] }
+ | xhp_attribute_decls TCOMMA xhp_attribute_decl { $1 @ [Right $2; Left $3] }
 
 xhp_enum_list:
  | xhp_enum { [Left $1] }
- | xhp_enum_list TCOMMA xhp_enum { $1 ++ [Right $2; Left $3] }
+ | xhp_enum_list TCOMMA xhp_enum { $1 @ [Right $2; Left $3] }
 
 xhp_category_list:
  | xhp_category { [Left $1] }
- | xhp_category_list TCOMMA xhp_category { $1 ++ [Right $2; Left $3] }
+ | xhp_category_list TCOMMA xhp_category { $1 @ [Right $2; Left $3] }
 
 attribute_list:
  | attribute				   { [Left $1] }
- | attribute_list TCOMMA attribute         { $1 ++ [Right $2; Left $3] }
+ | attribute_list TCOMMA attribute         { $1 @ [Right $2; Left $3] }
 
 attribute_argument_list:
  | /*(*empty*)*/ { [] }
  | attribute_argument { [Left $1] }
- | attribute_argument_list TCOMMA attribute_argument { $1++[Right $2; Left $3]}
+ | attribute_argument_list TCOMMA attribute_argument { $1@[Right $2; Left $3]}
 
 static_var_list:
  | static_var                        { [Left $1] }
- | static_var_list TCOMMA static_var { $1 ++ [Right $2; Left $3] }
+ | static_var_list TCOMMA static_var { $1 @ [Right $2; Left $3] }
 
 class_variable_declaration:
  | class_variable    { [Left $1] }
  /*(*s: repetitive class_variable_declaration with comma *)*/
- | class_variable_declaration TCOMMA class_variable { $1++[Right $2;Left $3] }
+ | class_variable_declaration TCOMMA class_variable { $1@[Right $2;Left $3] }
  /*(*e: repetitive class_variable_declaration with comma *)*/
 
 
 non_empty_parameter_list:
  | parameter_or_dots                                  { [$1] }
- | non_empty_parameter_list TCOMMA parameter_or_dots  { $1 ++ [Right3 $2; $3] }
+ | non_empty_parameter_list TCOMMA parameter_or_dots  { $1 @ [Right3 $2; $3] }
 
 /*(* less: should we allow the DOTS only for the end? *)*/
 non_empty_type_php_or_dots_list:
  | type_php_or_dots                                     { [$1] }
- | non_empty_type_php_or_dots_list TCOMMA type_php_or_dots { $1 ++ [Right3 $2; $3]}
+ | non_empty_type_php_or_dots_list TCOMMA type_php_or_dots { $1 @ [Right3 $2; $3]}
 
 
 non_empty_type_php_list:
@@ -1598,12 +1598,12 @@ non_empty_type_php_list:
 
 class_name_list:
  | class_name_no_array { [Left $1] }
- | class_name_list TCOMMA class_name_no_array { $1 ++ [Right $2; Left $3]}
+ | class_name_list TCOMMA class_name_no_array { $1 @ [Right $2; Left $3]}
 
 class_constants_declaration:
  | class_constant_declaration { [Left $1] }
  | class_constants_declaration TCOMMA class_constant_declaration 
-     { $1 ++ [Right $2; Left $3] }
+     { $1 @ [Right $2; Left $3] }
 
 possible_comma:
  | /*(*empty*)*/ { [] }
@@ -1633,27 +1633,27 @@ function_call_argument_list:
  | /*(*empty*)*/                              { [] }
  | non_empty_function_call_argument_list      { $1 }
  /*(* php-facebook-ext: trailing comma *)*/
- | non_empty_function_call_argument_list TCOMMA  { $1 ++ [Right $2] }
+ | non_empty_function_call_argument_list TCOMMA  { $1 @ [Right $2] }
 
 non_empty_function_call_argument_list:
  | function_call_argument { [Left $1] }
  /*(*s: repetitive non_empty_function_call_parameter_list *)*/
  | non_empty_function_call_argument_list TCOMMA function_call_argument
-      { $1 ++ [Right $2; Left $3] }
+      { $1 @ [Right $2; Left $3] }
  /*(*e: repetitive non_empty_function_call_parameter_list *)*/
 
 assignment_list:
  | assignment_list_element                        { [Left $1] }
- | assignment_list TCOMMA assignment_list_element { $1 ++ [Right $2; Left $3] }
+ | assignment_list TCOMMA assignment_list_element { $1 @ [Right $2; Left $3] }
 
 shape_field_list:
  | /*(*empty*)*/ { [] }
  | non_empty_shape_field_list { $1 }
- | non_empty_shape_field_list TCOMMA { $1 ++ [Right $2] }
+ | non_empty_shape_field_list TCOMMA { $1 @ [Right $2] }
 
 non_empty_shape_field_list:
  | shape_field   { [Left $1] }
- | non_empty_shape_field_list TCOMMA shape_field  { $1 ++ [Right $2; Left $3] }
+ | non_empty_shape_field_list TCOMMA shape_field  { $1 @ [Right $2; Left $3] }
 
 non_empty_array_pair_list_rev:
  | array_pair { [Left $1] }
@@ -1663,16 +1663,16 @@ non_empty_array_pair_list_rev:
 
 array_pair_list_rev:
  | /*(*empty*)*/ { [] }
- | non_empty_array_pair_list_rev possible_comma	{ $2++$1 }
+ | non_empty_array_pair_list_rev possible_comma	{ $2@$1 }
 
 encaps_list:
- | encaps_list encaps                  { $1 ++ [$2] }
+ | encaps_list encaps                  { $1 @ [$2] }
  | /*(*empty*)*/ { [] }
 
 xhp_attributes:
- | xhp_attributes xhp_attribute { $1 ++ [$2] }
+ | xhp_attributes xhp_attribute { $1 @ [$2] }
  | /*(*empty*)*/ { [] }
 
 xhp_children:
- | xhp_children xhp_child { $1 ++ [$2] }
+ | xhp_children xhp_child { $1 @ [$2] }
  | /*(*empty*)*/ { [] }

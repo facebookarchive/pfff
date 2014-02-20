@@ -168,7 +168,7 @@ let reset () =
   _last_non_whitespace_like_token := None;
   ()
 
-let push_mode mode = Common.push2 mode _mode_stack
+let push_mode mode = Common.push mode _mode_stack
 let pop_mode () = ignore(Common2.pop2 _mode_stack)
 
 let rec current_mode () = 

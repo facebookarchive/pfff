@@ -165,7 +165,7 @@ let rec current_mode () =
     reset();
     current_mode ()
 
-let push_mode mode = Common.push2 mode _mode_stack
+let push_mode mode = Common.push mode _mode_stack
 let pop_mode () = ignore(Common2.pop2 _mode_stack)
 let set_mode mode =
   pop_mode();
