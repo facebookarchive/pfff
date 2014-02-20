@@ -229,7 +229,9 @@ let tokens_with_categ_of_file file hentities =
              ML (Parse_ml.parse file +> fst))
          )
          (function 
-         | ML (ast, toks) -> [Common2.some ast, toks] 
+         | ML (astopt, toks) -> 
+             let ast = match astopt with None -> [] | Some xs -> xs in
+             [ast, toks] 
          | _ -> raise Impossible));
         highlight_visit = (fun ~tag_hook prefs (ast, toks) -> 
           Highlight_ml.visit_program ~tag_hook prefs (ast, toks));
