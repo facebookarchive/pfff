@@ -79,7 +79,7 @@ type macrolevel = Treemap.treemap_rendering
  *)
 
 type microlevel = {
-  pos_to_line: Cairo.point -> line;
+  point_to_line: Cairo.point -> line;
   line_to_rectangle: line -> Figures.rectangle;
   layout: layout;
   container: Treemap.treemap_rectangle;
@@ -320,7 +320,7 @@ let find_rectangle_at_user_point a b =
 let find_line_in_rectangle_at_user_point dw user_pt r =
   try 
     let microlevel = Hashtbl.find dw.microlevel r in
-    let line = microlevel.pos_to_line user_pt in
+    let line = microlevel.point_to_line user_pt in
     Some line
   with Not_found -> None
 

@@ -34,7 +34,7 @@ type 'a deps = 'a list (* uses *) * 'a list (* users *)
 type macrolevel = Treemap.treemap_rendering
 
 type microlevel = {
-  pos_to_line: Cairo.point -> line;
+  point_to_line: Cairo.point -> line;
   line_to_rectangle: line -> Figures.rectangle;
   layout: layout;
   container: Treemap.treemap_rectangle;

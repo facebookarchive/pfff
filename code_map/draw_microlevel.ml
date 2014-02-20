@@ -398,7 +398,7 @@ let draw_content2 ~cr ~layout ~context tr =
 
   { line_to_rectangle = 
       (fun line -> line_to_rectangle line r layout);
-    pos_to_line = 
+    point_to_line = 
       (fun pt -> point_to_line pt r layout);
     layout;
     container = tr;
