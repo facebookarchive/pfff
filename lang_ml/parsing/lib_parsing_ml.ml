@@ -14,15 +14,9 @@
  *)
 open Common
 
-open Ast_ml
-
 module Ast = Ast_ml
 module Flag = Flag_parsing_ml
 module V = Visitor_ml
-
-(*****************************************************************************)
-(* Wrappers *)
-(*****************************************************************************)
 
 (*****************************************************************************)
 (* Filemames *)
@@ -95,12 +89,3 @@ let extract_info_visitor recursor =
 
 let ii_of_any any = 
   extract_info_visitor (fun visitor -> visitor any)
-
-(*****************************************************************************)
-(* AST helpers *)
-(*****************************************************************************)
-let is_function_body x = 
-  match Ast.uncomma x with
-  | (Fun _ | Function _)::_xs -> true
-  | _ -> false
-

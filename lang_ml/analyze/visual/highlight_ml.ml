@@ -66,6 +66,18 @@ let fake_no_use2 = (NoInfoPlace, UniqueDef, MultiUse)
 let disable_token_phase2 = false
 
 (*****************************************************************************)
+(* AST helpers *)
+(*****************************************************************************)
+
+
+(* val is_function_body: Ast_ml.seq_expr -> bool *)
+let is_function_body x = 
+  match Ast.uncomma x with
+  | (Ast.Fun _ | Ast.Function _)::_xs -> true
+  | _ -> false
+
+
+(*****************************************************************************)
 (* Code highlighter *)
 (*****************************************************************************)
 
@@ -153,7 +165,7 @@ let visit_program
 
           if not !in_let then begin
             if List.length let_def.l_params > 0 || 
-              Lib_parsing_ml.is_function_body let_def.l_body
+              is_function_body let_def.l_body
             then tag info (Function (Def2 NoUse))
             else tag info (Global (Def2 NoUse))
           end else begin
@@ -168,7 +180,7 @@ let visit_program
               let info = Ast.info_of_name name in
 
               if not !in_let then begin
-                if Lib_parsing_ml.is_function_body body
+                if is_function_body body
                 then tag info (Function (Def2 NoUse))
                 else tag info (Global (Def2 NoUse))
               end else begin
