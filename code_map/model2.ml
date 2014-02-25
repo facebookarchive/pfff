@@ -62,20 +62,23 @@ type 'a deps = 'a list (* uses *) * 'a list (* users *)
 
 type macrolevel = Treemap.treemap_rendering
 
-(* We use different sources to provide fine grained semantic visualization:
- * - the source code itself, lexed and parsed in parsing2.ml by language
- *   specific parsers, with the ASTs stored in a global cache
- * - a language agnostic 'glyph list array' computed from the AST by
- *   the language specific highlighter
- * - a language agnostic defs/uses classifier going through the glyphs
+(* 
+ * We use different sources to provide fine-grained semantic visualization:
+ * - the source code itself, lexed and parsed in parsing2.ml with language
+ *   specific parsers, with the ASTs and tokens stored in a global cache
+ * - a language agnostic 'glyph list array' computed from the AST and tokens
+ *   by the language specific highlighter
+ * - a language agnostic fuzzy defs identification based on the category of 
+ *   the glyphs (but containing only "short nodes")
  * - the graph code computed for the whole project, usually not up to
  *   date with the most recent modifications, but containing useful
- *   global information
+ *   global information such as the precise set of uses and especially users
  * - the light database (but could be replaced by the graph code)
  * 
- * We then try to match specific glyph to the right entity, use
- * the graph code to find users and uses of this entity, and then going
- * back from those entities to their right glyph.
+ * We try to match specific glyphs to the right entity, then use
+ * the graph code to find users (and uses) of this entity, and then going
+ * from those entities to their corresponding glyph in this file or another
+ * in the whole treemap.
  *)
 
 type microlevel = {
@@ -96,6 +99,7 @@ type microlevel = {
     categ: Highlight_code.category option;
     font_size: float;
     color: Simple_color.emacs_color;
+    (* the lower left position, before calling Cairo.show_text str *)
     mutable pos: Cairo.point;
   }
   and layout = {
