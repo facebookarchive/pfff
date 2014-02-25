@@ -54,6 +54,7 @@ module Model = Model2
  *    visualize on top of a treemap the call graph
  * 
  * related work:
+ *  - racket IDE (was called DrScheme before)
  *  - http://peaker.github.io/lamdu/, focused more on AST pretty printing
  *  - light table, nice live programming, and interesting visualization slice
  *  - http://www.kickstarter.com/projects/296054304/zeta-code, relations

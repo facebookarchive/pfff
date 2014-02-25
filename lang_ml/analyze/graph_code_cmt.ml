@@ -1,6 +1,6 @@
 (* Yoann Padioleau
  *
- * Copyright (C) 2012, 2013 Facebook
+ * Copyright (C) 2012-2014 Facebook
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public License
@@ -862,7 +862,6 @@ and expression_desc t env =
 
   | Texp_variant ((v1, v2)) ->
       let _ = label env v1 and _ = v_option (expression env) v2 in ()
-  (* ?? *)
   | Texp_record ((v1, v2)) ->
       List.iter (fun 
 #if OCAML_VERSION >= 4010
@@ -871,6 +870,7 @@ and expression_desc t env =
         (_path, lid, v2, v3) 
 #endif
       ->
+        add_use_edge_lid env lid t E.Field;
         path_t env lid;
         let _ = label_description env v2
         and _ = expression env v3
