@@ -65,7 +65,37 @@ let build_entities_of_file g =
   );
   Common2.hkeys h +> List.map (fun k ->
     let xs = Hashtbl.find_all h k in
-    k, Common.sort_by_key_lowfirst xs
+    k, xs
   )
 
+(* Codegraph does not currently handle very well header files. It's because
+ * an header contain entities that are considered DUPE of their 
+ * corresponding entity in the source file. Right now we skip such 
+ * headers (e.g. .mli) in codegraph. The code below is here to
+ * adjust codegraph deficiencies by artificially associate the
+ * nodes in the source file to also the header file so one can
+ * hover a function signature in a .mli and get its uses, users, etc.
+ * 
+ * ugly: fix that in codegraph instead?
+ *)
+let add_headers_files_entities_of_file root xs =
+  let headers =
+    xs +> Common.map_filter (fun (file, xs) ->
+      let (d,b,e) = Common2.dbe_of_filename file in
+      match e with
+      | "ml" -> 
+        let header_readable = Common2.filename_of_dbe (d,b,"mli") in
+        let header = Filename.concat root header_readable in
+        if Sys.file_exists header 
+        (* todo: we add too many defs here, a mli can actually restrict
+         * the set of exported functions, but because we use such
+         * information mostly when hovering over entities in a .mli,
+         * this should be fine.
+         *)
+        then Some (header_readable, xs)
+        else None
+      | _ -> None
+    )
+  in
+  headers @ xs
 (*e: model_graph_code.ml *)
