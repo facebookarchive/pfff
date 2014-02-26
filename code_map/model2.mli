@@ -105,7 +105,7 @@ type drawing = {
   (*s: fields drawing main view *)
   (* device coordinates *)
   (* first cairo layer, for heavy computation e.g. the treemap and content*)
-  mutable pm: GDraw.pixmap;
+  mutable base: [ `Any ] Cairo.surface;
   (* second cairo layer, when move the mouse *)
   mutable overlay: [ `Any ] Cairo.surface;
   (* todo? third cairo layer? for animations and time related graphics such
@@ -157,8 +157,8 @@ val init_drawing :
 (*e: init_drawing sig *)
 
 (*s: new_pixmap sig *)
-val new_pixmap : 
-  width:int -> height:int -> GDraw.pixmap
+val new_surface: 
+  alpha:bool -> width:int -> height:int -> [ `Any ] Cairo.surface
 (*e: new_pixmap sig *)
 
 (* point -> rectangle -> line -> entity *)

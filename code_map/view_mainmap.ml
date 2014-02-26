@@ -62,7 +62,7 @@ let zoom_pan_scale_map cr dw =
 
 (*s: with_map *)
 let with_map dw f = 
-  let cr = Cairo_lablgtk.create dw.pm#pixmap in
+  let cr = Cairo.create dw.base in
   zoom_pan_scale_map cr dw;
   f cr
 (*e: with_map *)
@@ -90,7 +90,7 @@ let device_to_user_area dw =
 
 (*s: paint *)
 let paint_content_maybe_rect ~user_rect dw rect =
-  let cr = Cairo_lablgtk.create dw.pm#pixmap in
+  let cr = Cairo.create dw.base in
   zoom_pan_scale_map cr dw;
   let context = M.context_of_drawing dw in
   let microlevel_opt = 
@@ -127,11 +127,13 @@ let paint2 dw =
   !Ctl.paint_content_maybe_refresher +> Common.do_option GMain.Idle.remove;
   Ctl.current_rects_to_draw := [];
 
-  let cr = Cairo_lablgtk.create dw.pm#pixmap in
+  let cr = Cairo.create dw.base in
+(* TODO
   dw.pm#rectangle 
     ~x:0 ~y:0 
     ~width:dw.width ~height:dw.height 
     ~filled:true () ;
+*)
 
   let user_rect = device_to_user_area dw in
   pr2 (F.s_of_rectangle user_rect);

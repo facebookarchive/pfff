@@ -80,7 +80,7 @@ let assemble_layers cr_final dw ~width ~height =
   ignore(width);
   ignore(height);
 
-  let surface_src = CairoH.surface_of_pixmap dw.pm in
+  let surface_src = dw.base in
 
   Cairo.set_operator cr_final Cairo.OPERATOR_OVER;
   Cairo.set_source_surface cr_final surface_src 0. 0.;
@@ -132,15 +132,13 @@ let configure2_bis da dw_ref ev =
   ignore(da);
   let dw = !dw_ref in
 
-  let w = GdkEvent.Configure.width ev in
-  let h = GdkEvent.Configure.height ev in
+  let width = GdkEvent.Configure.width ev in
+  let height = GdkEvent.Configure.height ev in
 
-  dw.width <- w;
-  dw.height <- h;
-  dw.pm <- Model2.new_pixmap dw.width dw.height;
-  dw.overlay <- 
-    Cairo.surface_create_similar (CairoH.surface_of_pixmap dw.pm)
-    Cairo.CONTENT_COLOR_ALPHA w h;
+  dw.width <- width;
+  dw.height <- height;
+  dw.base <- Model2.new_surface ~alpha:false ~width ~height;
+  dw.overlay <- Model2.new_surface ~alpha:true ~width ~height;
     
   View_mainmap.paint dw;
   true

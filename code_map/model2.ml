@@ -154,7 +154,7 @@ type drawing = {
   (*s: fields drawing main view *)
   (* device coordinates *)
   (* first cairo layer, for heavy computation e.g. the treemap and content*)
-  mutable pm: GDraw.pixmap;
+  mutable base: [ `Any ] Cairo.surface;
   (* second cairo layer, when move the mouse *)
   mutable overlay: [ `Any ] Cairo.surface;
   (* todo? third cairo layer? for animations and time related graphics such
@@ -180,11 +180,20 @@ type drawing = {
 (*e: type drawing *)
 
 (*s: new_pixmap() *)
-let new_pixmap ~width ~height =
-  let drawable = GDraw.pixmap ~width ~height () in
+let new_surface ~alpha ~width ~height =
+  let drawable = GDraw.pixmap ~width:1 ~height:1 () in
   drawable#set_foreground `WHITE;
-  drawable#rectangle ~x:0 ~y:0 ~width ~height ~filled:true () ;
-  drawable
+  drawable#rectangle ~x:0 ~y:0 ~width:1 ~height:1 ~filled:true ();
+
+  let cr = Cairo_lablgtk.create drawable#pixmap in
+  let surface = Cairo.get_target cr in
+  Cairo.surface_create_similar surface
+    (if alpha 
+    then Cairo.CONTENT_COLOR_ALPHA
+    else Cairo.CONTENT_COLOR
+    ) width height
+
+
 (*e: new_pixmap() *)
 
 (*s: init_drawing() *)
@@ -213,7 +222,6 @@ let init_drawing
       else None
     ) +> Common.hash_of_list
   in
-  let pm = new_pixmap ~width ~height in
 
   {
     treemap;
@@ -231,9 +239,9 @@ let init_drawing
     current_entity = None;
     current_grep_query = Hashtbl.create 0;
 
-    pm;
-    overlay = Cairo.surface_create_similar (CairoH.surface_of_pixmap pm) 
-      Cairo.CONTENT_COLOR_ALPHA width height;
+    base = new_surface ~alpha:false ~width ~height;
+    overlay = new_surface ~alpha:true ~width ~height;
+
     width; height;
 
     settings = {
