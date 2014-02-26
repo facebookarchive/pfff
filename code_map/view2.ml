@@ -76,10 +76,7 @@ let root_orig () =
  * we copy the pixels from the pixmap dw.overlay on the windown
  * getting the final result.
  *)
-let assemble_layers cr_final dw ~width ~height =
-  ignore(width);
-  ignore(height);
-
+let assemble_layers cr_final dw =
   let surface_src = dw.base in
 
   Cairo.set_operator cr_final Cairo.OPERATOR_OVER;
@@ -93,34 +90,14 @@ let assemble_layers cr_final dw ~width ~height =
 (*e: assemble_layers *)
 
 (*s: expose *)
-let expose2 da dw_ref ev = 
+let expose2 da dw_ref _ev = 
   let dw = !dw_ref in
-
   (* opti: don't 'paint dw;' if not needed! painting is the computation
    * heavy function. expose just copy the "canvas" layers  
    *)
-
-  (* todo? equivalent to   
-   *  let allocation = d_area#misc#allocation in
-   * allocation.Gtk.width allocation.Gtk.height
-   * ?
-   *)
-  let area = GdkEvent.Expose.area ev in
-  let width = GR.width area +> float_of_int in
-  let height = GR.height area +> float_of_int in
-  (* todo? use ? it can optimise things ? *)
-  let _x = GR.x area in
-  let _y = GR.y area in
-
   let gwin = da#misc#window in
   let cr = Cairo_lablgtk.create gwin in
-  assemble_layers cr dw ~width ~height;
-  (* old:
-  Common.profile_code "View.put_pixmap" (fun () ->
-    let d = new GDraw.drawable gwin in
-    d#put_pixmap ~x ~y ~xsrc:x ~ysrc:y ~width ~height dw.pm#pixmap;
-  );
-  *)
+  assemble_layers cr dw;
   true
 
 let expose a b c = 
