@@ -19,7 +19,6 @@ open Common
 open Common2.ArithFloatInfix
 
 module CairoH = Cairo_helpers
-
 module L = Layer_code
 
 (*****************************************************************************)
@@ -37,11 +36,9 @@ let draw_legend_of_color_string_pairs ~cr xs =
   let size = 25.  in
 
   Cairo.set_font_size cr (size * 0.6);
-
   Cairo.set_source_rgba cr 0. 0. 0.    1.0;
   
   xs +> Common.index_list_1 +> List.iter (fun ((color,s), i) ->
-    
     let x = 10. in
     let y = float_of_int i * size in
 
@@ -52,8 +49,7 @@ let draw_legend_of_color_string_pairs ~cr xs =
     Cairo.set_source_rgba cr 0. 0. 0.    1.0;
     Cairo.move_to cr (x + size * 2.) (y + size * 0.8);
     Cairo.show_text cr s;
-  );
-  ()
+  )
   
 (*****************************************************************************)
 (* Drawing *)
@@ -65,12 +61,10 @@ let draw_legend ~cr =
 
   let archis = Archi_code.source_archi_list in
   let grouped_archis = archis +> Common.group_by_mapped_key (fun archi ->
-    let color = Treemap_pl.color_of_source_archi archi in
     (* I tend to favor the darker variant of the color in treemap_pl.ml hence
      * the 3 below
      *)
-    let color = color ^ "3" in
-    color
+    Treemap_pl.color_of_source_archi archi ^ "3"
   )
   in
   let grouped_archis = grouped_archis +> List.map (fun (color, kinds) ->
