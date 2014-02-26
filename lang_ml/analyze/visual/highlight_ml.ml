@@ -76,8 +76,21 @@ let kind_of_body x =
   match Ast.uncomma x with
   | (Ast.Fun _ | Ast.Function _)::_xs -> Function def2
   | Ast.FunCallSimple (([], Name("ref", _)), _)::_xs -> Global def2
+  | Ast.FunCallSimple (([Name("Hashtbl",_),_], Name("create", _)), _)::_xs -> 
+      Global def2
   | _ -> Constant def2
 
+(* todo: actually it can be a typedef alias to a function too
+ * but this would require some analysis
+ *)
+let kind_of_ty ty =
+  let def2 = Def2 fake_no_def2 in
+  match ty with
+  | TyFunction _ -> (FunctionDecl NoUse)
+  | TyApp (_, ([], Name("ref", _))) -> Global def2
+  (* todo: should handle module aliases there too *)
+  | TyApp (_, ([Name("Hashtbl",_), _], Name("t", _))) -> Global def2
+  | _ -> Constant def2
 
 (*****************************************************************************)
 (* Code highlighter *)
@@ -115,13 +128,7 @@ let visit_program
       (match x with
       | Val (_tok, name, _tok2, ty) | External (_tok, name, _tok2, ty, _, _)  ->
           let info = Ast.info_of_name name in
-          (match ty with
-          (* todo: actually it can be a typedef alias to a function too
-           * but this would require some analysis
-           *)
-          | TyFunction _ -> tag info (FunctionDecl NoUse)
-          | _ -> tag info (Global (Def2 NoUse))
-          );
+          tag info (kind_of_ty ty)
       | Exception (_tok, name, _args) ->
           let info = Ast.info_of_name name in
           tag info (TypeDef Def);
