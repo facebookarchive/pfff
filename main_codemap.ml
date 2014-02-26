@@ -229,9 +229,8 @@ let build_model2 root dbfile_opt graphfile_opt =
     Common.files_of_dir_or_files_no_vcs_nofilter [root] +> List.filter !filter
   in
 
-  let hentities, hfiles_entities, all_entities =
+  let hentities, all_entities =
     Model_database_code.hentities               root db_opt,
-    Model_database_code.hfiles_and_top_entities root db_opt,
     Model_database_code.all_entities            ~root files db_opt 
   in
 
@@ -252,7 +251,7 @@ let build_model2 root dbfile_opt graphfile_opt =
   let model = { Model.
         root = root;
         db = db_opt;
-        hentities; hfiles_entities; big_grep_idx;
+        hentities; big_grep_idx;
         g =  g_opt;
         huses_of_file; husers_of_file;
         hentities_of_file;

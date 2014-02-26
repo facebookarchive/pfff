@@ -40,7 +40,6 @@ type model = {
   (* fast accessors *)
   hentities : (string, Database_code.entity) Hashtbl.t;
   (*x: model fields hook *)
-  hfiles_entities : (Common.filename, Database_code.entity list) Hashtbl.t;
   (*x: model fields hook *)
   big_grep_idx: Big_grep.index;
   (*e: model fields hook *)
