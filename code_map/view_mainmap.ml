@@ -190,7 +190,7 @@ let button_action da dw_ref ev =
   let x, y = GdkEvent.Button.x ev, GdkEvent.Button.y ev in
   let pt = { Cairo. x = x; y = y } in
   let user = with_map dw (fun cr -> Cairo.device_to_user cr pt) in
-  let r_opt = M.find_rectangle_at_user_point dw user in
+  let r_opt = M.find_rectangle_at_user_point user dw in
 
   match GdkEvent.get_type ev with
   | `BUTTON_PRESS ->

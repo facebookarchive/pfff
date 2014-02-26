@@ -165,7 +165,7 @@ val new_pixmap :
 
 (*s: find_rectangle_at_user_point sig *)
 val find_rectangle_at_user_point :
-  drawing -> Cairo.point ->
+  Cairo.point -> drawing ->
   (Treemap.treemap_rectangle * (* most precise *)
    Treemap.treemap_rectangle list * (* englobbing ones *)
    Treemap.treemap_rectangle (* top one *)
@@ -175,11 +175,13 @@ val find_rectangle_at_user_point :
 val find_line_in_rectangle_at_user_point:
   Cairo.point -> Treemap.treemap_rectangle -> drawing -> line option
 
-val find_def_entity_at_line_opt:
-  line -> Treemap.treemap_rectangle -> drawing -> Graph_code.node option
-
+val find_glyph_in_rectangle_at_user_point:
+  Cairo.point -> Treemap.treemap_rectangle -> drawing -> glyph option
 
 (* graph code integration *)
+
+val find_def_entity_at_line_opt:
+  line -> Treemap.treemap_rectangle -> drawing -> Graph_code.node option
 
 (* macrolevel uses and users *)
 val deps_readable_files_of_file:

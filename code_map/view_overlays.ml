@@ -215,7 +215,7 @@ let motion_refresher ev dw =
   let x, y = GdkEvent.Motion.x ev, GdkEvent.Motion.y ev in
   let pt = { Cairo. x = x; y = y } in
   let user = View_mainmap.with_map dw (fun cr -> Cairo.device_to_user cr pt) in
-  let r_opt = M.find_rectangle_at_user_point dw user in
+  let r_opt = M.find_rectangle_at_user_point user dw in
 
   r_opt +> Common.do_option (fun (r, middle, r_englobing) ->
     let line_opt, entity_opt =

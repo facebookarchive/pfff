@@ -234,13 +234,11 @@ let init_drawing
     pm;
     overlay = Cairo.surface_create_similar (CairoH.surface_of_pixmap pm) 
       Cairo.CONTENT_COLOR_ALPHA width height;
-    width;
-    height;
+    width; height;
 
     settings = {
       (* todo: too fuzzy for now *)
       draw_summary = false;
-
       draw_searched_rectangles = true;
     };
   }
@@ -271,23 +269,21 @@ let context_of_drawing dw = {
 }
 
 (*****************************************************************************)
-(* Point -> (rectangle, line, entity) *)
+(* Point -> (rectangle, line, glyph, entity) *)
 (*****************************************************************************)
 
 (*s: find_rectangle_at_user_point() *)
-(* alt: could use Cairo_bigarray and the pixel trick below if
+(* alt: we could use Cairo_bigarray and the pixel trick below if
  * it takes too long to detect which rectangle is under the cursor.
- * coud also sort the rectangles ... or have some kind of BSP.
- * 
- * going from a point to the enclosing rectangle via pixel color trick. 
- * Kind of ugly. Add this in the model:
+ * We could also sort the rectangles ... or have some kind of BSP.
+ * Add in model:
  *   mutable pm_color_trick: GDraw.pixmap;
  *   mutable pm_color_trick_info: (string) array.
  * 
- * Current solution: just find pixel by iterating over all the rectangles
- * and check if he's inside.
+ * current solution: just find pixel by iterating over all the rectangles
+ * and check if it's inside.
  *)
-let find_rectangle_at_user_point2 dw user =
+let find_rectangle_at_user_point2 user dw =
   let user = CairoH.cairo_point_to_point user in
 
   let rects = dw.treemap in
@@ -327,6 +323,9 @@ let find_line_in_rectangle_at_user_point user_pt r dw =
     let line = microlevel.point_to_line user_pt in
     Some line
   with Not_found -> None
+
+let find_glyph_in_rectangle_at_user_point _user_pt _r _dw =
+  raise Todo
 
 (*****************************************************************************)
 (* Graph code integration *)
