@@ -69,8 +69,8 @@ val null : 'a list -> bool
 val exclude : ('a -> bool) -> 'a list -> 'a list
 val sort : 'a list -> 'a list
 
-val (>>=): 'a option -> ('a -> 'b option) -> 'b option
 val map_filter : ('a -> 'b option) -> 'a list -> 'b list
+val find_opt: ('a -> bool) -> 'a list -> 'a option
 val find_some : ('a -> 'b option) -> 'a list -> 'b
 val find_some_opt : ('a -> 'b option) -> 'a list -> 'b option
 val filter_some: 'a option list -> 'a list
@@ -108,6 +108,7 @@ val hashset_to_list : 'a hashset -> 'a list
 val map_opt: ('a -> 'b) -> 'a option -> 'b option
 val opt: ('a -> unit) -> 'a option -> unit
 val do_option : ('a -> unit) -> 'a option -> unit
+val (>>=): 'a option -> ('a -> 'b option) -> 'b option
 val (|||): 'a option -> 'a -> 'a
 
 

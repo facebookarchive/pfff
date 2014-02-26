@@ -690,19 +690,21 @@ let rec filter_some = function
 
 let map_filter f xs = xs +> List.map f +> filter_some
 
-let rec find_some p = function
-  | [] -> raise Not_found
-  | x :: l ->
-      match p x with
-      |	Some v -> v
-      |	None -> find_some p l
-
 let rec find_some_opt p = function
   | [] -> None
   | x :: l ->
       match p x with
       |	Some v -> Some v
       |	None -> find_some_opt p l
+
+let find_some p xs = 
+  match find_some_opt p xs with
+  | None -> raise Not_found
+  | Some x -> x
+
+let rec find_opt f xs = 
+  find_some_opt (fun x -> if f x then Some x else None) xs
+  
 
 (*****************************************************************************)
 (* Regexp, can also use PCRE *)
