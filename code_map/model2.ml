@@ -296,8 +296,7 @@ let find_rectangle_at_user_point2 user dw =
   else 
    let matching_rects = rects 
     +> List.filter (fun r -> 
-      F.point_is_in_rectangle user r.T.tr_rect
-      && r.T.tr_depth > 1
+        F.point_is_in_rectangle user r.T.tr_rect && r.T.tr_depth > 1
     ) 
     +> List.map (fun r -> r, r.T.tr_depth) 
     (* opti: this should be far faster by using a quad tree to represent
@@ -317,14 +316,14 @@ let find_rectangle_at_user_point a b =
 (*e: find_rectangle_at_user_point() *)
 
 
-let find_line_in_rectangle_at_user_point user_pt r dw =
+let find_line_in_rectangle_at_user_point user r dw =
   try 
     let microlevel = Hashtbl.find dw.microlevel r in
-    let line = microlevel.point_to_line user_pt in
+    let line = microlevel.point_to_line user in
     Some line
   with Not_found -> None
 
-let find_glyph_in_rectangle_at_user_point _user_pt _r _dw =
+let find_glyph_in_rectangle_at_user_point _user _r _dw =
   raise Todo
 
 (*****************************************************************************)
@@ -395,7 +394,7 @@ let uses_or_users_of_node node dw fsucc =
   match model.g with
   | None -> []
   | Some g ->
-    let succ = fsucc node g in
+    let succ = fsucc node Graph_code.Use g in
     succ +> Common.map_filter (fun n ->
       try 
         let file = Graph_code.file_of_node n g in
@@ -412,10 +411,8 @@ let uses_or_users_of_node node dw fsucc =
     )
 
 let deps_of_node_clipped node dw =
-  uses_or_users_of_node node dw (fun node g ->
-    Graph_code.succ node Graph_code.Use g),
-  uses_or_users_of_node node dw (fun node g ->
-    Graph_code.pred node Graph_code.Use g)
+  uses_or_users_of_node node dw Graph_code.succ,
+  uses_or_users_of_node node dw Graph_code.pred
 
 
 let lines_where_used_node node startl microlevel =
