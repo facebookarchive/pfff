@@ -71,10 +71,12 @@ let disable_token_phase2 = false
 
 
 (* val is_function_body: Ast_ml.seq_expr -> bool *)
-let is_function_body x = 
+let kind_of_body x =
+  let def2 = Def2 fake_no_def2 in
   match Ast.uncomma x with
-  | (Ast.Fun _ | Ast.Function _)::_xs -> true
-  | _ -> false
+  | (Ast.Fun _ | Ast.Function _)::_xs -> Function def2
+  | Ast.FunCallSimple (([], Name("ref", _)), _)::_xs -> Global def2
+  | _ -> Constant def2
 
 
 (*****************************************************************************)
@@ -163,14 +165,13 @@ let visit_program
           let name = let_def.l_name in
           let info = Ast.info_of_name name in
 
-          if not !in_let then begin
-            if List.length let_def.l_params > 0 || 
-              is_function_body let_def.l_body
-            then tag info (Function (Def2 NoUse))
-            else tag info (Global (Def2 NoUse))
-          end else begin
-            tag info (Local (Def))
-          end;
+          (if not !in_let 
+           then
+              if List.length let_def.l_params > 0
+              then tag info (Function (Def2 NoUse))
+              else tag info (kind_of_body let_def.l_body)
+           else tag info (Local (Def))
+          );
           Common.save_excursion in_let true (fun () ->
             k x
           )
@@ -178,14 +179,9 @@ let visit_program
           (match pat with
           | PatTyped (_, PatVar name, _, _ty, _) ->
               let info = Ast.info_of_name name in
-
-              if not !in_let then begin
-                if is_function_body body
-                then tag info (Function (Def2 NoUse))
-                else tag info (Global (Def2 NoUse))
-              end else begin
-                tag info (Local (Def))
-          end;
+              if not !in_let 
+              then tag info (kind_of_body body)
+              else tag info (Local (Def))
           | _ -> ()
           );
           Common.save_excursion in_let true (fun () ->
