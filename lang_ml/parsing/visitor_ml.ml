@@ -47,6 +47,7 @@ type visitor_in = {
   kqualifier: qualifier vin;
   kmodule_expr: module_expr vin;
   kparameter: parameter vin;
+  kargument: argument vin;
 
   kinfo: tok vin;
 }
@@ -70,6 +71,7 @@ let default_visitor = {
   kmodule_expr = (fun (k,_) x -> k x);
   ktoplevel = (fun (k,_) x -> k x);
   kparameter = (fun (k,_) x -> k x);
+  kargument = (fun (k,_) x -> k x);
   kfield_pat = (fun (k,_) x -> k x);
 }
 
@@ -367,8 +369,8 @@ and v_field_and_expr v =
   in
   vin.kfield_expr (k, all_functions) v
 
-and v_argument =
-  function
+and v_argument v =
+  let k x = match x with
   | ArgExpr v1 -> let v1 = v_expr v1 in ()
   | ArgLabelTilde ((v1, v2)) -> let v1 = v_name v1 and v2 = v_expr v2 in ()
   | ArgImplicitTildeExpr ((v1, v2)) ->
@@ -376,6 +378,8 @@ and v_argument =
   | ArgImplicitQuestionExpr ((v1, v2)) ->
       let v1 = v_tok v1 and v2 = v_name v2 in ()
   | ArgLabelQuestion ((v1, v2)) -> let v1 = v_name v1 and v2 = v_expr v2 in ()
+  in
+  vin.kargument (k, all_functions) v
 
 and v_match_action =
   function

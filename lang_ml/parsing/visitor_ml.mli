@@ -14,6 +14,7 @@ type visitor_in = {
   kqualifier: Ast_ml.qualifier vin;
   kmodule_expr: Ast_ml.module_expr vin;
   kparameter: Ast_ml.parameter vin;
+  kargument: Ast_ml.argument vin;
   kinfo: Ast_ml.tok vin;
 }
 and visitor_out = Ast_ml.any -> unit

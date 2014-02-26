@@ -70,7 +70,6 @@ let disable_token_phase2 = false
 (*****************************************************************************)
 
 
-(* val is_function_body: Ast_ml.seq_expr -> bool *)
 let kind_of_body x =
   let def2 = Def2 fake_no_def2 in
   match Ast.uncomma x with
@@ -162,6 +161,16 @@ let visit_program
         let info = Ast.info_of_name name in
         tag info (Parameter Def);
       | _ ->()
+      );
+      k x
+    );
+    V.kargument = (fun (k, _) x ->
+      (match x with
+      | ArgImplicitTildeExpr (_, name) -> 
+        let info = Ast.info_of_name name in
+        (* todo: could be a Parameter use, need scope analysis *)
+        tag info (Local Use)
+      | _ -> ()
       );
       k x
     );
@@ -495,11 +504,13 @@ let visit_program
         aux_toks xs;
 
     (* labels *)
+(* can be a def or use, no way to know
     | T.TTilde ii1::T.TLowerIdent (_s, ii2)::xs ->
         (* TODO when parser, can also have Use *)
         tag ii1 (Parameter Def);
         tag ii2 (Parameter Def);
         aux_toks xs
+*)
 
     (* grammar rules in ocamlyacc *)
     | T.TLowerIdent (_s, ii1)::T.TColon _::xs 
