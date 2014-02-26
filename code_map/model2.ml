@@ -330,8 +330,9 @@ let find_glyph_in_rectangle_at_user_point user r dw =
       let (Line line) = line in
       let glyphs = glyphs.(line) in
       (* find the best one *)
-      glyphs +> Common.find_some_opt (fun glyph ->
-        Some glyph
+      glyphs +> List.rev +> Common.find_opt (fun glyph ->
+        let pos = glyph.pos in
+        user.Cairo.x >= pos.Cairo.x
       )
     )
   )

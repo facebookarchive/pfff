@@ -218,22 +218,21 @@ let motion_refresher ev dw =
   let r_opt = M.find_rectangle_at_user_point user dw in
 
   r_opt +> Common.do_option (fun (r, middle, r_englobing) ->
-    let line_opt, entity_opt =
-      if Hashtbl.mem dw.microlevel r
-      then
-        let microlevel = Hashtbl.find dw.microlevel r in
-        let line = microlevel.point_to_line user in
-        let entity_opt = M.find_def_entity_at_line_opt line r dw in
-        Some line, entity_opt
-      else None, None
-    in
+    let line_opt = M.find_line_in_rectangle_at_user_point user r dw in
+
+    let glyph_opt =
+      M.find_glyph_in_rectangle_at_user_point user r dw in
+    let entity_opt = 
+      line_opt >>= (fun line -> M.find_def_entity_at_line_opt line r dw) in
 
     let statusbar_txt = 
       r.T.tr_label ^
-      (match line_opt with None -> "" | Some (Line i) -> spf ":%d" i) ^
+      (match line_opt with None -> "" | Some (Line i) -> 
+        spf ":%d" i) ^
+      (match glyph_opt with None -> "" | Some glyph -> 
+        spf "[%s]" glyph.str) ^
       (match entity_opt with None -> "" | Some n -> 
-        " (" ^ Graph_code.string_of_node n ^ ")"
-      )
+        spf "(%s)" (Graph_code.string_of_node n))
     in
     !Controller._statusbar_addtext statusbar_txt;
 
@@ -276,7 +275,7 @@ let motion_notify _da dw ev =
   pr2 (spf "motion: %f, %f" x y);
 
   Controller.current_motion_refresher := 
-    Some (Gui.gmain_idle_add ~prio:100 (fun () -> motion_refresher ev dw));
+    Some (Gui.gmain_idle_add ~prio:200 (fun () -> motion_refresher ev dw));
   true
 (*e: motion_refresher *)
 
