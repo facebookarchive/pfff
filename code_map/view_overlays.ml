@@ -24,14 +24,14 @@ module F = Figures
 module T = Treemap
 module CairoH = Cairo_helpers
 module M = Model2
-module Flag = Flag_visual
 module Controller = Controller2
 module Style = Style2
 
 (*****************************************************************************)
 (* Prelude *)
 (*****************************************************************************)
-(* This module mainly modifies the dw.overlay cairo surface. It also
+(* 
+ * This module mainly modifies the dw.overlay cairo surface. It also
  * triggers the refresh_da which triggers itself the expose event
  * which triggers the View2.assemble_layers composition of dw.pm with
  * dw.overlay.
@@ -72,7 +72,7 @@ let draw_label_overlay ~cr_overlay ~x ~y txt =
 
   Cairo.select_font_face cr_overlay "serif" 
     Cairo.FONT_SLANT_NORMAL Cairo.FONT_WEIGHT_NORMAL;
-  Cairo.set_font_size cr_overlay Style2.font_size_filename_cursor;
+  Cairo.set_font_size cr_overlay Style.font_size_filename_cursor;
       
   let extent = CairoH.text_extents cr_overlay txt in
   let tw = extent.Cairo.text_width in

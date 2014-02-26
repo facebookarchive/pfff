@@ -323,8 +323,18 @@ let find_line_in_rectangle_at_user_point user r dw =
     Some line
   with Not_found -> None
 
-let find_glyph_in_rectangle_at_user_point _user _r _dw =
-  raise Todo
+let find_glyph_in_rectangle_at_user_point user r dw =
+  find_line_in_rectangle_at_user_point user r dw >>= (fun line ->
+    let microlevel = Hashtbl.find dw.microlevel r in
+    microlevel.content >>= (fun glyphs ->
+      let (Line line) = line in
+      let glyphs = glyphs.(line) in
+      (* find the best one *)
+      glyphs +> Common.find_some_opt (fun glyph ->
+        Some glyph
+      )
+    )
+  )
 
 (*****************************************************************************)
 (* Graph code integration *)
