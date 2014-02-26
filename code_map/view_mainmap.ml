@@ -209,7 +209,7 @@ let button_action da dw_ref ev =
           let file = r.T.tr_label in
           pr2 (spf "opening %s" file);
           let line =
-            match M.find_line_in_rectangle_at_user_point dw user r with
+            match M.find_line_in_rectangle_at_user_point user r dw with
             | None -> Line 0
             | Some l -> l
           in
@@ -227,7 +227,7 @@ let button_action da dw_ref ev =
 
           (* similar to View_overlays.motion.refresher *)
           let entity_opt =
-            M.find_line_in_rectangle_at_user_point dw user r >>= (fun line ->
+            M.find_line_in_rectangle_at_user_point user r dw >>= (fun line ->
               M.find_def_entity_at_line_opt line r dw)
           in
           
