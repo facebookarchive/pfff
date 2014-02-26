@@ -90,11 +90,11 @@ let assemble_layers cr_final dw =
 (*e: assemble_layers *)
 
 (*s: expose *)
+(* opti: don't 'paint dw;' painting is the computation
+ * heavy function. expose() just copy the "canvas" layers.
+ *)
 let expose2 da dw_ref _ev = 
   let dw = !dw_ref in
-  (* opti: don't 'paint dw;' if not needed! painting is the computation
-   * heavy function. expose just copy the "canvas" layers  
-   *)
   let gwin = da#misc#window in
   let cr = Cairo_lablgtk.create gwin in
   assemble_layers cr dw;
@@ -105,13 +105,10 @@ let expose a b c =
 (*e: expose *)
 
 (*s: configure *)
-let configure2_bis da dw_ref ev = 
-  ignore(da);
+let configure2_bis dw_ref ev = 
   let dw = !dw_ref in
-
   let width = GdkEvent.Configure.width ev in
   let height = GdkEvent.Configure.height ev in
-
   dw.width <- width;
   dw.height <- height;
   dw.base <- Model2.new_surface ~alpha:false ~width ~height;
@@ -124,15 +121,15 @@ let configure2_bis da dw_ref ev =
  * the beginning of the program
  *)
 let first_call = ref true
-let configure2 a b c =
+let configure2 a b =
   (* should probably do is_old_gtk() *)
   if !first_call && CairoH.is_old_cairo () 
   then begin first_call := false; true end
   else 
-    configure2_bis a b c
+    configure2_bis a b
 
-let configure a b c =
-  Common.profile_code "View.configure" (fun () -> configure2 a b c)
+let configure a b =
+  Common.profile_code "View.configure" (fun () -> configure2 a b)
 (*e: configure *)
 
 (* ---------------------------------------------------------------------- *)
@@ -168,7 +165,7 @@ let mk_gui ~screen_size ~legend test_mode (root, model, dw, _dbfile_opt) =
   let width, height, minimap_hpos, minimap_vpos = 
     Style.windows_params screen_size in
 
-  let w = GWindow.window 
+  let win = GWindow.window 
     ~title:(Controller.title_of_path root)
     ~width
     ~height
@@ -176,21 +173,21 @@ let mk_gui ~screen_size ~legend test_mode (root, model, dw, _dbfile_opt) =
     ~allow_grow:true
     () 
   in
-  Controller._set_title := (fun s -> w#set_title s);
+  Controller._set_title := (fun s -> win#set_title s);
 
   let statusbar = GMisc.statusbar () in
   let ctx = statusbar#new_context "main" in
   Controller._statusbar_addtext := (fun s -> ctx#push s +> ignore);
 
   let accel_group = GtkData.AccelGroup.create () in
-  w#misc#set_name "main window";
+  win#misc#set_name "main window";
 
   let quit () = 
     (*Controller.before_quit_all model;*)
     GMain.Main.quit ();
   in
 
-  w#add_accel_group accel_group;
+  win#add_accel_group accel_group;
 
   (*-------------------------------------------------------------------*)
   (* Layout *)
@@ -199,7 +196,7 @@ let mk_gui ~screen_size ~legend test_mode (root, model, dw, _dbfile_opt) =
   (* if use my G.mk style for that, then get some pbs when trying
    * to draw stuff :(
    *)
-  let vbox = GPack.vbox ~packing:w#add () in
+  let vbox = GPack.vbox ~packing:win#add () in
   let hbox = GPack.hbox ~packing:(vbox#pack ~expand:false ~fill:false) () in
 
     (*-------------------------------------------------------------------*)
@@ -506,7 +503,7 @@ let mk_gui ~screen_size ~legend test_mode (root, model, dw, _dbfile_opt) =
 
 
     da#event#connect#expose ~callback:(expose da dw) +> ignore;
-    da#event#connect#configure ~callback:(configure da dw) +> ignore;
+    da#event#connect#configure ~callback:(configure dw) +> ignore;
 
     da3#event#connect#expose ~callback:(expose_legend da3 dw) +> ignore;
 
@@ -569,9 +566,9 @@ let mk_gui ~screen_size ~legend test_mode (root, model, dw, _dbfile_opt) =
   );
 *)
 
-  w#event#connect#delete    ~callback:(fun _  -> quit(); true) +> ignore;
-  w#connect#destroy         ~callback:(fun () -> quit(); ) +> ignore;
-  w#show ();
+  win#event#connect#delete    ~callback:(fun _  -> quit(); true) +> ignore;
+  win#connect#destroy         ~callback:(fun () -> quit(); ) +> ignore;
+  win#show ();
 
   (* test *)
   test_mode +> Common.do_option (fun _s -> 
