@@ -262,7 +262,7 @@ let mk_gui ~screen_size ~legend test_mode (root, model, dw, _dbfile_opt) =
         ) +> ignore;
 
         fc#add_item "_Go to example" ~key:K._E ~callback:(fun () -> 
-          let model = !dw.dw_model in
+          let model = !dw.model in
           let model = Async.async_get model in
           match !dw.current_entity, model.db with
           | Some e, Some db ->
@@ -289,7 +289,7 @@ let mk_gui ~screen_size ~legend test_mode (root, model, dw, _dbfile_opt) =
         (* todo? open Db ? *)
         fc#add_item "_Git grep" ~key:K._G ~callback:(fun () -> 
 
-          let res = Ui_search.dialog_search_def !dw.dw_model in
+          let res = Ui_search.dialog_search_def !dw.model in
           res +> Common.do_option (fun s ->
             let root = 
               (* could also support local grep? and use !dw.root instead ?  *)
@@ -306,7 +306,7 @@ let mk_gui ~screen_size ~legend test_mode (root, model, dw, _dbfile_opt) =
 
         fc#add_item "_Tbgs query" ~key:K._T ~callback:(fun () -> 
 
-          let res = Ui_search.dialog_search_def !dw.dw_model in
+          let res = Ui_search.dialog_search_def !dw.model in
           res +> Common.do_option (fun s ->
             let root = !dw.current_root in
             let matching_files = Ui_search.run_tbgs_query ~root s in
@@ -438,7 +438,7 @@ let mk_gui ~screen_size ~legend test_mode (root, model, dw, _dbfile_opt) =
           !dw.current_query <- str;
           !dw.current_searched_rectangles <- [];
 
-          if !dw.dw_settings.draw_searched_rectangles
+          if !dw.settings.draw_searched_rectangles
           then begin
             (* better to compute once the set of matching rectangles
              * cos doing it each time in motify would incur too much

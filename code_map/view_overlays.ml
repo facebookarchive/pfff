@@ -260,7 +260,7 @@ let motion_refresher ev dw =
     | _ -> ()
     );
      
-    if dw.dw_settings.draw_searched_rectangles;
+    if dw.settings.draw_searched_rectangles;
     then draw_searched_rectangles ~dw;
     
     Controller.current_r := Some r;

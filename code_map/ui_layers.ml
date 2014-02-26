@@ -47,7 +47,7 @@ let choose_layer ~root layer_title_opt dw_ref =
       ~width:dw.width
       ~height:dw.height
       dw.treemap_func 
-      dw.dw_model 
+      dw.model 
       layers_idx
       [root]
       root;

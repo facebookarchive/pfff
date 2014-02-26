@@ -64,14 +64,14 @@ let go_dirs_or_file ?(current_entity=None) ?(current_grep_query=None)
   !Controller._set_title (Controller.title_of_path root);
 
   Common.push !dw_ref Controller.dw_stack;
-  let root = (Async.async_get dw.dw_model).root in
+  let root = (Async.async_get dw.model).root in
 
   dw_ref := 
     Model2.init_drawing 
       ~width:dw.width
       ~height:dw.height
       dw.treemap_func 
-      dw.dw_model 
+      dw.model 
       dw.layers
       paths
       root;

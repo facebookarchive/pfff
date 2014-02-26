@@ -65,7 +65,7 @@ type microlevel = {
 type drawing = {
 
   (* computed lazily, semantic information about the code *)
-  dw_model: model Async.t;
+  model: model Async.t;
   (* to compute a new treemap based on user's action *)
   treemap_func: Common.path list -> Treemap.treemap_rendering;
 
@@ -96,7 +96,7 @@ type drawing = {
   mutable current_grep_query: (Common.filename, line) Hashtbl.t;
   (*e: fields drawing query stuff *)
 
-  dw_settings: settings;
+  settings: settings;
 
   (*s: fields drawing main view *)
   (* device coordinates *)
@@ -129,8 +129,8 @@ type drawing = {
 (*s: type context *)
 (* a slice of drawing used in the drawing functions *)
 type context = {
-  model: model Async.t;
-  settings:settings;
+  model2: model Async.t;
+  settings2:settings;
   nb_rects_on_screen: int;
   grep_query: (Common.filename, line) Hashtbl.t;
   layers_microlevel: 

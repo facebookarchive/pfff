@@ -184,7 +184,7 @@ let glyphs_of_file ~context ~font_size ~font_size_real file
   match FT.file_type_of_file file with
   | _ when use_fancy_highlighting file ->
 
-    let model = Async.async_get context.model in
+    let model = Async.async_get context.model2 in
     let entities = model.Model2.hentities in
 
     (* if you have some cache in tokens_with_categ_of_file, then it

@@ -237,7 +237,7 @@ let button_action da dw_ref ev =
             | Some n -> M.deps_readable_files_of_node n dw
           in
 
-          let model = Async.async_get dw.dw_model in
+          let model = Async.async_get dw.model in
           let paths_of_readables xs = 
             xs 
             +> List.sort Pervasives.compare

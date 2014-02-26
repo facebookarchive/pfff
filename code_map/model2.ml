@@ -117,7 +117,7 @@ type microlevel = {
 type drawing = {
 
   (* computed lazily, semantic information about the code *)
-  dw_model: model Async.t;
+  model: model Async.t;
   (* to compute a new treemap based on user's action *)
   treemap_func: Common.path list -> Treemap.treemap_rendering;
 
@@ -148,7 +148,7 @@ type drawing = {
   mutable current_grep_query: (Common.filename, line) Hashtbl.t;
   (*e: fields drawing query stuff *)
 
-  dw_settings: settings;
+  settings: settings;
 
   (*s: fields drawing main view *)
   (* device coordinates *)
@@ -220,8 +220,7 @@ let init_drawing
     current_root;
     treemap_func = func;
 
-    dw_model = model;
-    layers = layers;
+    model; layers;
 
     readable_file_to_rect;
     microlevel = Hashtbl.create 0;
@@ -237,7 +236,7 @@ let init_drawing
     width;
     height;
 
-    dw_settings = {
+    settings = {
       (* todo: too fuzzy for now *)
       draw_summary = false;
 
@@ -253,8 +252,8 @@ let init_drawing
 (*s: type context *)
 (* a slice of drawing used in the drawing functions *)
 type context = {
-  model: model Async.t;
-  settings:settings;
+  model2: model Async.t;
+  settings2:settings;
   nb_rects_on_screen: int;
   grep_query: (Common.filename, line) Hashtbl.t;
   layers_microlevel: 
@@ -264,8 +263,8 @@ type context = {
 
 let context_of_drawing dw = { 
   nb_rects_on_screen = dw.nb_rects;
-  model = dw.dw_model;
-  settings = dw.dw_settings;
+  model2 = dw.model;
+  settings2 = dw.settings;
   grep_query = dw.current_grep_query;
   layers_microlevel = dw.layers.Layer_code.micro_index;
 }
@@ -341,7 +340,7 @@ let match_short_vs_node (str, kind) node =
  * instead to rely on microlevel.defs.
  *)
 let find_def_entity_at_line_opt line r dw =
-  let model = Async.async_get dw.dw_model in
+  let model = Async.async_get dw.model in
   let file = r.T.tr_label in
   let readable = Common.readable ~root:model.root file in
   try 
@@ -358,7 +357,7 @@ let find_def_entity_at_line_opt line r dw =
 
 
 let deps_readable_files_of_file file dw =
-  let model = Async.async_get dw.dw_model in
+  let model = Async.async_get dw.model in
   let readable = Common.readable ~root:model.root file in
 
   let uses = 
@@ -368,7 +367,7 @@ let deps_readable_files_of_file file dw =
   uses, users
 
 let deps_readable_files_of_node node dw =
-  let model = Async.async_get dw.dw_model in
+  let model = Async.async_get dw.model in
   match model.g with
   | None -> [], []
   | Some g ->
@@ -392,7 +391,7 @@ let deps_rect_of_file file dw =
 
 
 let uses_or_users_of_node node dw fsucc =
-  let model = Async.async_get dw.dw_model in
+  let model = Async.async_get dw.model in
   match model.g with
   | None -> []
   | Some g ->
