@@ -19,14 +19,8 @@ open Common
 open Common2.ArithFloatInfix
 
 open Figures (* for the fields *)
-
 module T = Treemap
-module F = Figures
 module Color = Simple_color
-module Db = Database_code
-module HC = Highlight_code
-module CairoH = Cairo_helpers
-module Parsing = Parsing2
 
 (*****************************************************************************)
 (* Prelude *)
@@ -90,8 +84,6 @@ let draw_treemap_rectangle ~cr ?color ?alpha a =
  *)
 
 let draw_trect_using_layers ~cr layers_with_index rect =
-  let _r = rect.T.tr_rect in
-
   (* don't use archi_code color. Just black and white *)
   let is_file = not rect.T.tr_is_node in
   let color = if is_file then "white" else "black" in
@@ -104,8 +96,7 @@ let draw_trect_using_layers ~cr layers_with_index rect =
       try Hashtbl.find layers_with_index.Layer_code.macro_index file
       with Not_found -> []
     in
-    (* What to draw ? TODO a splitted rectangle ? 
-     *)
+    (* What to draw? TODO a splitted rectangle? *)
     let sorted = Common2.sort_by_key_highfirst color_info in
     (match sorted with
     | [] -> ()
