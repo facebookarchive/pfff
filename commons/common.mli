@@ -31,7 +31,7 @@ val s_to_i : string -> int
 
 val null_string : string -> bool
 
-val ( =~ ) : string -> string -> bool
+val (=~) : string -> string -> bool
 val matched1 : string -> string
 val matched2 : string -> string * string
 val matched3 : string -> string * string * string
@@ -69,6 +69,7 @@ val null : 'a list -> bool
 val exclude : ('a -> bool) -> 'a list -> 'a list
 val sort : 'a list -> 'a list
 
+val (>>=): 'a option -> ('a -> 'b option) -> 'b option
 val map_filter : ('a -> 'b option) -> 'a list -> 'b list
 val find_some : ('a -> 'b option) -> 'a list -> 'b
 val find_some_opt : ('a -> 'b option) -> 'a list -> 'b option

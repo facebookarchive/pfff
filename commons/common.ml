@@ -630,6 +630,18 @@ let (=*=) = (=)
 (*****************************************************************************)
 
 (* type 'a maybe  = Just of 'a | None *)
+let (>>=) m1 m2 =
+  match m1 with
+  | None -> None
+  | Some x -> m2 x
+
+(*
+ (*http://roscidus.com/blog/blog/2013/10/13/ocaml-tips/#handling-option-types*)
+  let (|?) maybe default =
+    match maybe with
+    | Some v -> v
+    | None -> Lazy.force default
+*)
 
 let map_opt f = function
   | None -> None
