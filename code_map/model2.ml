@@ -26,11 +26,6 @@ module T = Treemap
 (* The code model *)
 (*****************************************************************************)
 
-(* 0-indexed line number, which is different from most tools, but
- * programs prefer 0-based index
- *)
-type line = Line of int
-
 (*s: type model *)
 type model = {
   root: Common.dirname;
@@ -89,6 +84,10 @@ type microlevel = {
   (* sorted list of entities by line, defs based on highlighter *)
   defs: (line * short_node) list;
 }
+ (* 0-indexed line number, which is different from most tools, but
+  * programs prefer 0-based index
+  *)
+  and line = Line of int
  (* Note that I don't use G.node because the string below is not fully
   * qualified so one must use match_short_vs_node when comparing with nodes.
   *)
@@ -109,6 +108,8 @@ type microlevel = {
     nblines: float; (* int *)
     nblines_per_column: float; (* int *)
   }
+
+
 
 (*s: type drawing *)
 (* All the 'float' below are to be intepreted as user coordinates except when
@@ -380,7 +381,7 @@ let deps_readable_files_of_node node dw =
       try Some (Graph_code.file_of_node n g) with Not_found -> None
     )
 
-let deps_rect_of_file file dw =
+let deps_rects_of_file file dw =
   let uses, users = deps_readable_files_of_file file dw in
   uses +> Common.map_filter (fun file -> 
     Common2.optionise (fun () -> Hashtbl.find dw.readable_file_to_rect file)

@@ -1,10 +1,5 @@
 (*s: model2.mli *)
 
-(* 0-indexed line number, which is different from most tools, but
- * programs prefer 0-based index
- *)
-type line = Line of int
-
 (*s: type model *)
 type model = {
   root: Common.dirname;
@@ -40,8 +35,17 @@ type microlevel = {
   (* the lines of the files, 0-based indexed line, see line type below *)
   content: (glyph list) array option;
   (* defs based on highlighters categories *)
-  defs: (line * (string * Database_code.entity_kind)) list;
+  defs: (line * short_node) list;
 }
+  (* 0-indexed line number, which is different from most tools, but
+   * programs prefer 0-based index
+   *)
+  and line = Line of int
+ (* Note that I don't use G.node because the string below is not fully
+  * qualified so one must use match_short_vs_node when comparing with nodes.
+  *)
+  and short_node = (string * Database_code.entity_kind)
+
   and glyph = {
     str: string;
     categ: Highlight_code.category option;
@@ -181,7 +185,7 @@ val find_def_entity_at_line_opt:
 val deps_readable_files_of_file:
   Common.filename (* abs *) -> drawing -> Common.filename (* readable *) deps
 
-val deps_rect_of_file: 
+val deps_rects_of_file: 
   Common.filename -> drawing -> Treemap.treemap_rectangle deps
 
 (* microlevel uses and users *)
