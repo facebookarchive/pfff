@@ -39,6 +39,7 @@ type microlevel = {
   container: Treemap.treemap_rectangle;
   (* the lines of the files, 0-based indexed line, see line type below *)
   content: (glyph list) array option;
+  (* defs based on highlighters categories *)
   defs: (line * (string * Database_code.entity_kind)) list;
 }
   and glyph = {

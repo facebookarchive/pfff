@@ -71,13 +71,13 @@ type macrolevel = Treemap.treemap_rendering
  *   the glyphs (but containing only "short nodes")
  * - the graph code computed for the whole project, usually not up to
  *   date with the most recent modifications, but containing useful
- *   global information such as the precise set of uses and especially users
+ *   global information such as the precise set of uses and users of an entity
  * - the light database (but could be replaced by the graph code)
  * 
  * We try to match specific glyphs to the right entity, then use
  * the graph code to find users (and uses) of this entity, and then going
  * from those entities to their corresponding glyph in this file or another
- * in the whole treemap.
+ * file in the whole treemap.
  *)
 
 type microlevel = {
@@ -86,7 +86,7 @@ type microlevel = {
   layout: layout;
   container: Treemap.treemap_rectangle;
   content: (glyph list) array option;
-  (* sorted list of entities by line *)
+  (* sorted list of entities by line, defs based on highlighter *)
   defs: (line * short_node) list;
 }
  (* Note that I don't use G.node because the string below is not fully
