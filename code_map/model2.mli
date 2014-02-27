@@ -212,6 +212,10 @@ val deps_of_node_clipped:
   Graph_code.node -> drawing -> model ->
   (Graph_code.node * line * microlevel) deps
 
+val line_and_microlevel_of_node_opt:
+  Graph_code.node -> drawing -> model -> 
+  (Graph_code.node * line * microlevel) option
+
 val lines_where_used_node:
   Graph_code.node -> line -> microlevel -> line list
 

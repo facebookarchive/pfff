@@ -155,7 +155,14 @@ let draw_magnify_line_overlay_maybe ?honor_color dw line microlevel =
 
 let draw_uses_users_entities n dw model =
  with_overlay dw (fun cr_overlay ->
-   let uses, users = deps_of_node_clipped n dw model in
+
+   line_and_microlevel_of_node_opt n dw model 
+   +> Common.do_option (fun (_n2, line, microlevel) ->
+     let rectangle = microlevel.line_to_rectangle line in
+     CairoH.draw_rectangle_figure ~cr:cr_overlay ~color:"white" rectangle
+   );
+
+   let uses, users = M.deps_of_node_clipped n dw model in
    uses +> List.iter (fun (_n2, line, microlevel) ->
      let rectangle = microlevel.line_to_rectangle line in
      CairoH.draw_rectangle_figure ~cr:cr_overlay ~color:"green" rectangle;
@@ -219,16 +226,14 @@ let motion_refresher ev w =
   let r_opt = M.find_rectangle_at_user_point user dw in
 
   r_opt +> Common.do_option (fun (tr, middle, r_englobing) ->
-    let line_opt = M.find_line_in_rectangle_at_user_point user tr dw in
-
-
     let model = Async.async_get w.model in
 
+    let line_opt = 
+      M.find_line_in_rectangle_at_user_point user tr dw in
     let glyph_opt =
       M.find_glyph_in_rectangle_at_user_point user tr dw in
     let entity_def_opt = 
-      line_opt >>= (fun line -> M.find_def_entity_at_line_opt line tr dw model)
-    in
+      line_opt >>= (fun line ->M.find_def_entity_at_line_opt line tr dw model)in
     let entity_use_opt =
       line_opt >>= (fun line -> 
       glyph_opt >>= (fun glyph ->
@@ -260,17 +265,11 @@ let motion_refresher ev w =
     draw_englobing_rectangles_overlay ~dw (tr, middle, r_englobing);
     draw_uses_users_files tr dw model;
 
-    (match line_opt, entity_def_opt with
-    | Some line, Some n ->
-      let microlevel = Hashtbl.find dw.microlevel tr in
-      let rectangle = microlevel.line_to_rectangle line in
-      with_overlay dw (fun cr ->
-        CairoH.draw_rectangle_figure ~cr ~color:"white" rectangle
-      );
-      draw_uses_users_entities n dw model;
-    | _ -> ()
-    );
-     
+    entity_def_opt +> Common.do_option (fun n ->
+      draw_uses_users_entities n dw model);
+    entity_use_opt +> Common.do_option (fun n ->
+      draw_uses_users_entities n dw model);
+  
     if w.settings.draw_searched_rectangles;
     then draw_searched_rectangles ~dw;
     

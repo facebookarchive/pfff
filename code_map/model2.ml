@@ -410,25 +410,29 @@ let deps_rects_of_file file dw model =
     Common2.optionise (fun () ->Hashtbl.find dw.readable_file_to_rect file)
   )
 
+let line_and_microlevel_of_node_opt n dw model =
+  model.g >>= (fun g ->
+    try 
+      let file = Graph_code.file_of_node n g in
+      (* rectangles not on the screen will be automatically "clipped"
+       * as this may raise Not_found 
+       *)
+      let rect = Hashtbl.find dw.readable_file_to_rect file in
+      let microlevel = Hashtbl.find dw.microlevel rect in
+      let line = microlevel.defs +> List.find (fun (_line, snode) ->
+        match_short_vs_node snode n
+      ) +> fst in
+      Some (n, line, microlevel)
+    with Not_found -> None
+  )
 
 let uses_or_users_of_node node dw fsucc model =
   match model.g with
   | None -> []
   | Some g ->
     let succ = fsucc node Graph_code.Use g in
-    succ +> Common.map_filter (fun n ->
-      try 
-        let file = Graph_code.file_of_node n g in
-        (* rectangles not on the screen will be automatically "clipped"
-         * as this may raise Not_found 
-         *)
-        let rect = Hashtbl.find dw.readable_file_to_rect file in
-        let microlevel = Hashtbl.find dw.microlevel rect in
-        let line = microlevel.defs +> List.find (fun (_line, snode) ->
-          match_short_vs_node snode n
-        ) +> fst in
-        Some (n, line, microlevel)
-      with Not_found -> None
+    succ +> Common.map_filter (fun n -> 
+      line_and_microlevel_of_node_opt n dw model
     )
 
 let deps_of_node_clipped node dw model =
