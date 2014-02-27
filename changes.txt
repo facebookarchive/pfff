@@ -8,8 +8,10 @@
 
 ** codemap
 
+*** show entity under cursor (def or use)
+
 *** match defs and uses even when the file has been modified
-(do not use the probaly obsolete line information in graph_code, trust
+(do not use the probably obsolete line information in graph_code, trust
 more the lexer/parser/highlighter)
 
 *** handle skip list
@@ -23,8 +25,8 @@ light db (while still filtering object files and skip list files)
 
 ** php
 
-*** support for short lambda, require traits, and try finally facebook
-extensions
+*** support for short lambda, require traits, and try finally (facebook
+extensions)
 
 ** internal
 

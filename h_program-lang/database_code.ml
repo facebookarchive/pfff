@@ -581,6 +581,7 @@ let matching_use_categ_kind categ kind =
   | Constructor, HC.Global _
     
   | Global,   HC.UseOfRef
+  | Field, HC.UseOfRef
     -> true
     
   | _ -> false
