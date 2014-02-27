@@ -406,7 +406,7 @@ let mk_gui ~screen_size ~legend test_mode (root, model, w) =
           w.dw.current_query <- str;
           w.dw.current_searched_rectangles <- [];
 
-          if w.dw.settings.draw_searched_rectangles
+          if w.settings.draw_searched_rectangles
           then begin
             (* better to compute once the set of matching rectangles
              * cos doing it each time in motify would incur too much

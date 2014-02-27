@@ -147,8 +147,6 @@ type drawing = {
   mutable current_grep_query: (Common.filename, line) Hashtbl.t;
   (*e: fields drawing query stuff *)
 
-  settings: settings;
-
   (*s: fields drawing main view *)
   (* device coordinates *)
   (* first cairo layer, for heavy computation e.g. the treemap and content*)
@@ -170,10 +168,6 @@ type drawing = {
   (*e: fields drawing minimap *)
 }
   (*s: type settings *)
-   and settings = {
-     mutable draw_summary: bool;
-     mutable draw_searched_rectangles: bool;
-   }
   (*e: type settings *)
 (*e: type drawing *)
 
@@ -186,7 +180,13 @@ type world = {
 
   (* to compute a new treemap based on user's action *)
   treemap_func: Common.path list -> Treemap.treemap_rendering;
+
+  settings: settings;
 }
+   and settings = {
+     mutable draw_summary: bool;
+     mutable draw_searched_rectangles: bool;
+   }
 
 (*****************************************************************************)
 (* Builders *)
@@ -255,12 +255,6 @@ let init_drawing
     overlay = new_surface ~alpha:true ~width ~height;
 
     width; height;
-
-    settings = {
-      (* todo: too fuzzy for now *)
-      draw_summary = false;
-      draw_searched_rectangles = true;
-    };
   }
 (*e: init_drawing() *)
 
@@ -272,7 +266,6 @@ let init_drawing
 (* a slice of drawing used in the drawing functions *)
 type context = {
   model2: model Async.t;
-  settings2:settings;
   nb_rects_on_screen: int;
   grep_query: (Common.filename, line) Hashtbl.t;
   layers_microlevel: 
@@ -283,7 +276,6 @@ type context = {
 let context_of_drawing dw = { 
   nb_rects_on_screen = dw.nb_rects;
   model2 = dw.model;
-  settings2 = dw.settings;
   grep_query = dw.current_grep_query;
   layers_microlevel = dw.layers.Layer_code.micro_index;
 }

@@ -97,8 +97,6 @@ type drawing = {
   mutable current_grep_query: (Common.filename, line) Hashtbl.t;
   (*e: fields drawing query stuff *)
 
-  settings: settings;
-
   (*s: fields drawing main view *)
   (* device coordinates *)
   (* first cairo layer, for heavy computation e.g. the treemap and content*)
@@ -120,10 +118,6 @@ type drawing = {
   (*e: fields drawing minimap *)
 }
   (*s: type settings *)
-   and settings = {
-     mutable draw_summary: bool;
-     mutable draw_searched_rectangles: bool;
-   }
   (*e: type settings *)
 (*e: type drawing *)
 
@@ -133,13 +127,18 @@ type world = {
 
   (* to compute a new treemap based on user's action *)
   treemap_func: Common.path list -> Treemap.treemap_rendering;
+
+  settings: settings;
 }
+   and settings = {
+     mutable draw_summary: bool;
+     mutable draw_searched_rectangles: bool;
+   }
 
 (*s: type context *)
 (* a slice of drawing used in the drawing functions *)
 type context = {
   model2: model Async.t;
-  settings2:settings;
   nb_rects_on_screen: int;
   grep_query: (Common.filename, line) Hashtbl.t;
   layers_microlevel: 

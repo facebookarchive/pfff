@@ -386,6 +386,11 @@ let main_action xs =
     dw;
     dw_stack = ref [dw];
     treemap_func;
+    settings = { Model.
+      (* todo: too fuzzy for now *)
+      draw_summary = false;
+      draw_searched_rectangles = true;
+    };
   }
   in
 
