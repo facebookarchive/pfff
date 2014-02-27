@@ -27,6 +27,8 @@ type 'a deps = 'a list (* uses *) * 'a list (* users *)
 
 type macrolevel = Treemap.treemap_rendering
 
+
+
 type microlevel = {
   point_to_line: Cairo.point -> line;
   line_to_rectangle: line -> Figures.rectangle;
@@ -41,18 +43,7 @@ type microlevel = {
    * programs prefer 0-based index
    *)
   and line = Line of int
- (* Note that I don't use G.node because the string below is not fully
-  * qualified so one must use match_short_vs_node when comparing with nodes.
-  *)
-  and short_node = (string * Database_code.entity_kind)
 
-  and glyph = {
-    str: string;
-    categ: Highlight_code.category option;
-    font_size: float;
-    color: Simple_color.emacs_color;
-    mutable pos: Cairo.point;
-  }
   and layout = {
     lfont_size: float;
     split_nb_columns: float; (* int *)
@@ -61,6 +52,19 @@ type microlevel = {
     nblines: float; (* int *)
     nblines_per_column: float; (* int *)
   }
+
+  and glyph = {
+    str: string;
+    categ: Highlight_code.category option;
+    font_size: float;
+    color: Simple_color.emacs_color;
+    mutable pos: Cairo.point;
+  }
+
+ (* Note that I don't use G.node because the string below is not fully
+  * qualified so one must use match_short_vs_node when comparing with nodes.
+  *)
+  and short_node = (string * Database_code.entity_kind)
 
 (*s: type drawing *)
 (* All the 'float' below are to be intepreted as user coordinates except when

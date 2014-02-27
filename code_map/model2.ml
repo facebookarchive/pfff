@@ -209,16 +209,8 @@ let new_surface ~alpha ~width ~height =
 (*e: new_pixmap() *)
 
 (*s: init_drawing() *)
-let init_drawing 
-  (* This is a first guess. The first configure ev will force a resize. *)
-  ?(width = 600)
-  ?(height = 600)
-  func 
-  layers
-  paths
-  root
- =
-
+(* This is a first guess. The first configure ev will force a resize. *)
+let init_drawing   ?(width = 600) ?(height = 600) func layers paths root =
   let paths = List.map Common2.relative_to_absolute paths in
   let current_root = Common2.common_prefix_of_files_or_dirs paths in
   let treemap = 
@@ -233,26 +225,20 @@ let init_drawing
       else None
     ) +> Common.hash_of_list
   in
-
   {
     treemap;
     nb_rects = List.length treemap;
     current_root;
-
-    layers;
-
     readable_file_to_rect;
     microlevel = Hashtbl.create 0;
-
+    layers;
     current_query = "";
     current_searched_rectangles = [];
     current_entity = None;
     current_grep_query = Hashtbl.create 0;
-
-    base = new_surface ~alpha:false ~width ~height;
-    overlay = new_surface ~alpha:true ~width ~height;
-
     width; height;
+    base    = new_surface ~alpha:false ~width ~height;
+    overlay = new_surface ~alpha:true ~width ~height;
   }
 (*e: init_drawing() *)
 
@@ -359,12 +345,12 @@ let match_short_vs_node (str, kind) node =
  * in the graph_code database, but the file may have changed so better
  * instead to rely on microlevel.defs.
  *)
-let find_def_entity_at_line_opt line r dw model =
-  let file = r.T.tr_label in
+let find_def_entity_at_line_opt line tr dw model =
+  let file = tr.T.tr_label in
   let readable = Common.readable ~root:model.root file in
   try 
     let nodes = Hashtbl.find model.hentities_of_file readable in
-    let microlevel = Hashtbl.find dw.microlevel r in
+    let microlevel = Hashtbl.find dw.microlevel tr in
     let short_node = List.assoc line microlevel.defs in
     (* try to match the possible shortname str with a fully qualified node *)
     nodes +> Common.find_some_opt (fun node ->
@@ -446,6 +432,7 @@ let lines_where_used_node node startl microlevel =
   | None -> []
   | Some glypys ->
     let res = ref [] in
+    (* todo: should be from startl to endl (the start of the next entity) *)
     for line = startl to Array.length glypys - 1 do
       let xs = glypys.(line) in
       if xs +> List.exists (fun glyph ->
