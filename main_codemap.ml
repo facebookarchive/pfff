@@ -72,7 +72,7 @@ module Model = Model2
  * features of IDE we do want (e.g. see the list at http://xamarin.com/studio):
  *  - go to definition (=~ TAGS, light db and search bar completion provides it)
  *  - unified search (files, entities, TODO but also content)
- *  - code navigation (directory, files, also TODO "hypertext" go to def/uses)
+ *  - code navigation (directory, files, also "hypertext" go to def/uses)
  *  - find uses (funcs, classes, TODO tricky for methods in dynamic languages)
  *  - smart syntax highlighting
  *  - folding? hmm thumbnails should makes this less important

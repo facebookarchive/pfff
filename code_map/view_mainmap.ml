@@ -277,7 +277,7 @@ let button_action w ev =
                 ));
                  `I ("goto def", (fun () ->
                    let dest = Graph_code.file_of_node n g in
-                   !Ctl._go_dirs_or_file w (paths_of_readables [readable; dest])
+                   !Ctl._go_dirs_or_file w (paths_of_readables [dest])
                  ));                                              
                 ]
             | _ -> raise Impossible
