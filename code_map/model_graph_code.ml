@@ -81,7 +81,7 @@ let build_entities_of_file g =
 let add_headers_files_entities_of_file root xs =
   let headers =
     xs +> Common.map_filter (fun (file, xs) ->
-      let (d,b,e) = Common2.dbe_of_filename file in
+      let (d,b,e) = Common2.dbe_of_filename_noext_ok file in
       match e with
       | "ml" -> 
         let header_readable = Common2.filename_of_dbe (d,b,"mli") in
