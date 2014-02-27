@@ -1,12 +1,18 @@
 -*- org -*-
 
-* 0.27 (Q1 2014) (edge bundle? "hyper" codemap?)
+* 0.27 (Q1 2014) ("hypertext" codemap, edge bundle?)
 
 ** codegraph
 
 *** improve automatic layering by using hill climbing algorithm
+less backward dependencies
 
 ** codemap
+
+*** show uses/defs relations also at use position
+so can hover on some code and see the corresponding definition
+(as well as the other users of this definition and the uses of
+this definition).
 
 *** show entity under cursor (def or use)
 
@@ -15,9 +21,13 @@
 more the lexer/parser/highlighter)
 
 *** handle skip list
+so easy to manually configure which parts to not display when
+the heuristics in archi_code_lexer are not enough.
 
 *** improve completion box by considering not only files mentions in the
 light db (while still filtering object files and skip list files)
+
+*** cleanup the code, introduce world type, less use of refs
 
 ** clang
 
