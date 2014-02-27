@@ -109,7 +109,7 @@ let configure2_bis w ev =
   dw.height <- height;
   dw.base <- Model2.new_surface ~alpha:false ~width ~height;
   dw.overlay <- Model2.new_surface ~alpha:true ~width ~height;
-  View_mainmap.paint dw;
+  View_mainmap.paint dw w.model;
   true
 
 (* ugly: for some unknown reason configure get called twice at
@@ -230,8 +230,7 @@ let mk_gui ~screen_size ~legend test_mode (root, model, w) =
         ) +> ignore;
 
         fc#add_item "_Go to example" ~key:K._E ~callback:(fun () -> 
-          let model = w.dw.model in
-          let model = Async.async_get model in
+          let model = Async.async_get w.model in
           match w.dw.current_entity, model.db with
           | Some e, Some db ->
               (match e.Db.e_good_examples_of_use with
@@ -257,7 +256,7 @@ let mk_gui ~screen_size ~legend test_mode (root, model, w) =
         (* todo? open Db ? *)
         fc#add_item "_Git grep" ~key:K._G ~callback:(fun () -> 
 
-          let res = Ui_search.dialog_search_def w.dw.model in
+          let res = Ui_search.dialog_search_def w.model in
           res +> Common.do_option (fun s ->
             let root = 
               (* could also support local grep? and use !dw.root instead ?  *)
@@ -274,7 +273,7 @@ let mk_gui ~screen_size ~legend test_mode (root, model, w) =
 
         fc#add_item "_Tbgs query" ~key:K._T ~callback:(fun () -> 
 
-          let res = Ui_search.dialog_search_def w.dw.model in
+          let res = Ui_search.dialog_search_def w.model in
           res +> Common.do_option (fun s ->
             let root = w.dw.current_root in
             let matching_files = Ui_search.run_tbgs_query ~root s in

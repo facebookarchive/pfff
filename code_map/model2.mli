@@ -68,9 +68,6 @@ type microlevel = {
  *)
 type drawing = {
 
-  (* computed lazily, semantic information about the code *)
-  model: model Async.t;
-
   (* Macrolevel. In user coordinates from 0 to T.xy_ratio for 'x' and 0 to 1
    * for 'y'. Assumes the treemap contains absolute paths (tr.tr_label).
    *)
@@ -125,9 +122,11 @@ type world = {
   mutable dw: drawing;
   dw_stack: drawing Common.stack ref;
 
+  (* computed lazily, semantic information about the code *)
+  model: model Async.t;
   (* to compute a new treemap based on user's action *)
   treemap_func: Common.path list -> Treemap.treemap_rendering;
-
+  (* misc settings, not really used for now *)
   settings: settings;
 }
    and settings = {
@@ -145,7 +144,7 @@ type context = {
    (Common.filename, (int, Simple_color.emacs_color) Hashtbl.t) Hashtbl.t;
 }
 (*e: type context *)
-val context_of_drawing: drawing -> context
+val context_of_drawing: drawing -> model Async.t -> context
 
 
 (*s: init_drawing sig *)
@@ -153,7 +152,6 @@ val init_drawing :
   ?width:int ->
   ?height:int ->
   (Common.path list -> Treemap.treemap_rendering) ->
-  model Async.t ->
   Layer_code.layers_with_index ->
   Common.filename list -> 
   Common.dirname ->
@@ -185,21 +183,26 @@ val find_glyph_in_rectangle_at_user_point:
 (* graph code integration *)
 
 val find_def_entity_at_line_opt:
-  line -> Treemap.treemap_rectangle -> drawing -> Graph_code.node option
+  line -> Treemap.treemap_rectangle -> drawing -> model -> 
+  Graph_code.node option
 
 (* macrolevel uses and users *)
 val deps_readable_files_of_file:
-  Common.filename (* abs *) -> drawing -> Common.filename (* readable *) deps
+  Common.filename (* abs *) -> model ->
+  Common.filename (* readable *) deps
 
 val deps_rects_of_file: 
-  Common.filename -> drawing -> Treemap.treemap_rectangle deps
+  Common.filename -> drawing -> model -> 
+  Treemap.treemap_rectangle deps
 
 (* microlevel uses and users *)
 val deps_readable_files_of_node:
-  Graph_code.node -> drawing -> Common.filename (* readable *) deps
+  Graph_code.node -> model ->
+  Common.filename (* readable *) deps
 
 val deps_of_node_clipped:
-  Graph_code.node -> drawing -> (Graph_code.node * line * microlevel) deps
+  Graph_code.node -> drawing -> model ->
+  (Graph_code.node * line * microlevel) deps
 
 val lines_where_used_node:
   Graph_code.node -> line -> microlevel -> line list

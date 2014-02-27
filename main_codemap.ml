@@ -359,7 +359,7 @@ let main_action xs =
 
   let treemap_func = treemap_generator ~filter_file in
   let dw = 
-    Model.init_drawing  treemap_func async_model layers_with_index xs root
+    Model.init_drawing  treemap_func layers_with_index xs root
   in
 
   (* This can require lots of stack. Make sure to have ulimit -s 40000.
@@ -385,6 +385,7 @@ let main_action xs =
   let w = { Model.
     dw;
     dw_stack = ref [dw];
+    model = async_model;
     treemap_func;
     settings = { Model.
       (* todo: too fuzzy for now *)

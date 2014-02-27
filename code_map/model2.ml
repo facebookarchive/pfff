@@ -117,9 +117,6 @@ type microlevel = {
  *)
 type drawing = {
 
-  (* computed lazily, semantic information about the code *)
-  model: model Async.t;
-
   (* Macrolevel. In user coordinates from 0 to T.xy_ratio for 'x' and 0 to 1
    * for 'y'. Assumes the treemap contains absolute paths (tr.tr_label).
    *)
@@ -178,9 +175,11 @@ type world = {
   mutable dw: drawing;
   dw_stack: drawing stack ref;
 
+  (* computed lazily, semantic information about the code *)
+  model: model Async.t;
   (* to compute a new treemap based on user's action *)
   treemap_func: Common.path list -> Treemap.treemap_rendering;
-
+  (* misc settings, not really used for now *)
   settings: settings;
 }
    and settings = {
@@ -215,7 +214,6 @@ let init_drawing
   ?(width = 600)
   ?(height = 600)
   func 
-  model
   layers
   paths
   root
@@ -241,7 +239,7 @@ let init_drawing
     nb_rects = List.length treemap;
     current_root;
 
-    model; layers;
+    layers;
 
     readable_file_to_rect;
     microlevel = Hashtbl.create 0;
@@ -273,9 +271,9 @@ type context = {
 }
 (*e: type context *)
 
-let context_of_drawing dw = { 
+let context_of_drawing dw model = { 
   nb_rects_on_screen = dw.nb_rects;
-  model2 = dw.model;
+  model2 = model;
   grep_query = dw.current_grep_query;
   layers_microlevel = dw.layers.Layer_code.micro_index;
 }
@@ -361,8 +359,7 @@ let match_short_vs_node (str, kind) node =
  * in the graph_code database, but the file may have changed so better
  * instead to rely on microlevel.defs.
  *)
-let find_def_entity_at_line_opt line r dw =
-  let model = Async.async_get dw.model in
+let find_def_entity_at_line_opt line r dw model =
   let file = r.T.tr_label in
   let readable = Common.readable ~root:model.root file in
   try 
@@ -378,18 +375,15 @@ let find_def_entity_at_line_opt line r dw =
   with Not_found -> None
 
 
-let deps_readable_files_of_file file dw =
-  let model = Async.async_get dw.model in
+let deps_readable_files_of_file file model =
   let readable = Common.readable ~root:model.root file in
-
   let uses = 
     try Hashtbl.find model.huses_of_file readable with Not_found -> [] in
   let users = 
     try Hashtbl.find model.husers_of_file readable with Not_found -> [] in
   uses, users
 
-let deps_readable_files_of_node node dw =
-  let model = Async.async_get dw.model in
+let deps_readable_files_of_node node model =
   match model.g with
   | None -> [], []
   | Some g ->
@@ -402,8 +396,8 @@ let deps_readable_files_of_node node dw =
       try Some (Graph_code.file_of_node n g) with Not_found -> None
     )
 
-let deps_rects_of_file file dw =
-  let uses, users = deps_readable_files_of_file file dw in
+let deps_rects_of_file file dw model =
+  let uses, users = deps_readable_files_of_file file model in
   uses +> Common.map_filter (fun file -> 
     Common2.optionise (fun () -> Hashtbl.find dw.readable_file_to_rect file)
   ),
@@ -412,8 +406,7 @@ let deps_rects_of_file file dw =
   )
 
 
-let uses_or_users_of_node node dw fsucc =
-  let model = Async.async_get dw.model in
+let uses_or_users_of_node node dw fsucc model =
   match model.g with
   | None -> []
   | Some g ->
@@ -433,9 +426,9 @@ let uses_or_users_of_node node dw fsucc =
       with Not_found -> None
     )
 
-let deps_of_node_clipped node dw =
-  uses_or_users_of_node node dw Graph_code.succ,
-  uses_or_users_of_node node dw Graph_code.pred
+let deps_of_node_clipped node dw model =
+  uses_or_users_of_node node dw Graph_code.succ model,
+  uses_or_users_of_node node dw Graph_code.pred model
 
 
 let lines_where_used_node node startl microlevel =

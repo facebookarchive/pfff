@@ -47,11 +47,10 @@ let choose_layer ~root layer_title_opt w =
       ~width:dw.width
       ~height:dw.height
       w.treemap_func 
-      dw.model 
       layers_idx
       [root]
       root;
-  View_mainmap.paint w.dw;
+  View_mainmap.paint w.dw w.model;
   !Controller._refresh_da ();
   !Controller._refresh_legend ();
   ()

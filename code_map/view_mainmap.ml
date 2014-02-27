@@ -89,10 +89,10 @@ let device_to_user_area dw =
 (*****************************************************************************)
 
 (*s: paint *)
-let paint_content_maybe_rect ~user_rect dw rect =
+let paint_content_maybe_rect ~user_rect dw model rect =
   let cr = Cairo.create dw.base in
   zoom_pan_scale_map cr dw;
-  let context = M.context_of_drawing dw in
+  let context = M.context_of_drawing dw model in
   let microlevel_opt = 
     Draw_microlevel.draw_treemap_rectangle_content_maybe
       ~cr ~clipping:user_rect ~context rect in
@@ -104,7 +104,7 @@ let paint_content_maybe_rect ~user_rect dw rect =
   ()
 
 (* todo: deadlock:  M.locked (fun () ->  ) dw.M.model.M.m *)
-let lazy_paint ~user_rect dw () =
+let lazy_paint ~user_rect dw model () =
   pr2 "Lazy Paint";
   let start = Unix.gettimeofday () in
   while Unix.gettimeofday () - start < 0.3 do
@@ -113,7 +113,7 @@ let lazy_paint ~user_rect dw () =
     | x::xs ->
         Ctl.current_rects_to_draw := xs;
         pr2 (spf "Drawing: %s" (x.T.tr_label));
-        paint_content_maybe_rect ~user_rect dw x;
+        paint_content_maybe_rect ~user_rect dw model x;
   done;
   !Ctl._refresh_da ();
   if !Ctl.current_rects_to_draw = []
@@ -121,7 +121,7 @@ let lazy_paint ~user_rect dw () =
   else true
 
 
-let paint2 dw = 
+let paint2 dw model = 
   pr2 (spf "paint");
 
   !Ctl.paint_content_maybe_refresher +> Common.do_option GMain.Idle.remove;
@@ -162,7 +162,7 @@ let paint2 dw =
   then begin
     Ctl.current_rects_to_draw := rects;
     Ctl.paint_content_maybe_refresher := 
-      Some (Gui.gmain_idle_add ~prio:3000 (lazy_paint ~user_rect dw));
+      Some (Gui.gmain_idle_add ~prio:3000 (lazy_paint ~user_rect dw model));
   end;
 
   (* also clear the overlay *)
@@ -171,8 +171,8 @@ let paint2 dw =
 
   ()
 
-let paint dw = 
-  Common.profile_code "View.paint" (fun () -> paint2 dw)
+let paint a b = 
+  Common.profile_code "View.paint" (fun () -> paint2 a b)
 (*e: paint *)
 
 (*****************************************************************************)
@@ -227,19 +227,20 @@ let button_action da w ev =
           then !Ctl._go_dirs_or_file w [file]
           else begin
 
+          let model = Async.async_get w.model in
+
           (* similar to View_overlays.motion.refresher *)
           let entity_opt =
             M.find_line_in_rectangle_at_user_point user r dw >>= (fun line ->
-              M.find_def_entity_at_line_opt line r dw)
+              M.find_def_entity_at_line_opt line r dw model)
           in
           
           let uses, users = 
             match entity_opt with
-            | None -> M.deps_readable_files_of_file file dw
-            | Some n -> M.deps_readable_files_of_node n dw
+            | None -> M.deps_readable_files_of_file file model
+            | Some n -> M.deps_readable_files_of_node n model
           in
 
-          let model = Async.async_get dw.model in
           let paths_of_readables xs = 
             xs 
             +> List.sort Pervasives.compare

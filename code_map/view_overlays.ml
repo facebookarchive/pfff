@@ -127,10 +127,10 @@ let draw_englobing_rectangles_overlay ~dw (r, middle, r_englobing) =
 (* ---------------------------------------------------------------------- *)
 (* Uses and users macrolevel *)
 (* ---------------------------------------------------------------------- *)
-let draw_uses_users_files ~dw r =
+let draw_uses_users_files r dw model =
  with_overlay dw (fun cr_overlay ->
    let file = r.T.tr_label in
-   let uses_rect, users_rect = M.deps_rects_of_file file dw in
+   let uses_rect, users_rect = M.deps_rects_of_file file dw model in
    uses_rect +> List.iter (fun r ->
      CairoH.draw_rectangle_figure ~cr:cr_overlay ~color:"green" r.T.tr_rect;
    );
@@ -153,9 +153,9 @@ let draw_magnify_line_overlay_maybe ?honor_color dw line microlevel =
       ?honor_color cr_overlay line microlevel
   )
 
-let draw_uses_users_entities ~dw n =
+let draw_uses_users_entities n dw model =
  with_overlay dw (fun cr_overlay ->
-   let uses, users = deps_of_node_clipped n dw  in
+   let uses, users = deps_of_node_clipped n dw model in
    uses +> List.iter (fun (_n2, line, microlevel) ->
      let rectangle = microlevel.line_to_rectangle line in
      CairoH.draw_rectangle_figure ~cr:cr_overlay ~color:"green" rectangle;
@@ -221,10 +221,14 @@ let motion_refresher ev w =
   r_opt +> Common.do_option (fun (r, middle, r_englobing) ->
     let line_opt = M.find_line_in_rectangle_at_user_point user r dw in
 
+
+    let model = Async.async_get w.model in
+
     let glyph_opt =
       M.find_glyph_in_rectangle_at_user_point user r dw in
     let entity_opt = 
-      line_opt >>= (fun line -> M.find_def_entity_at_line_opt line r dw) in
+      line_opt >>= (fun line -> M.find_def_entity_at_line_opt line r dw model)
+    in
 
     let statusbar_txt = 
       r.T.tr_label ^
@@ -247,7 +251,7 @@ let motion_refresher ev w =
     );
 
     draw_englobing_rectangles_overlay ~dw (r, middle, r_englobing);
-    draw_uses_users_files ~dw r;
+    draw_uses_users_files r dw model;
 
     (match line_opt, entity_opt with
     | Some line, Some n ->
@@ -256,7 +260,7 @@ let motion_refresher ev w =
       with_overlay dw (fun cr ->
         CairoH.draw_rectangle_figure ~cr ~color:"white" rectangle
       );
-      draw_uses_users_entities ~dw n;
+      draw_uses_users_entities n dw model;
     | _ -> ()
     );
      

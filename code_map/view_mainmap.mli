@@ -1,6 +1,6 @@
 (*s: view_mainmap.mli *)
 
-val paint: Model2.drawing -> unit
+val paint: Model2.drawing -> Model2.model Async.t -> unit
 
 val zoom_pan_scale_map: Cairo.t -> Model2.drawing -> unit
 
