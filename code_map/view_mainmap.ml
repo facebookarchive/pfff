@@ -186,7 +186,7 @@ let paint a b =
 (*e: find_filepos_in_rectangle_at_user_point *)
    
 (*s: button_action *)
-let button_action da w ev =
+let button_action w ev =
   let dw = w.dw in
 
   let x, y = GdkEvent.Button.x ev, GdkEvent.Button.y ev in
@@ -296,7 +296,7 @@ let button_action da w ev =
       pr2 (spf "button %d released" button);
       (match button with
       | 1 ->
-          GtkBase.Widget.queue_draw da#as_widget;
+          (*GtkBase.Widget.queue_draw da#as_widget; *)
           true
       | _ -> false
       )

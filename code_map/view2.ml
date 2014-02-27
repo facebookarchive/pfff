@@ -505,11 +505,11 @@ let mk_gui ~screen_size ~legend test_mode (root, model, w) =
     da3#event#connect#expose ~callback:(expose_legend da3 w) +> ignore;
 
     da#event#connect#button_press 
-      (View_mainmap.button_action da w) +> ignore;
+      (View_mainmap.button_action w) +> ignore;
     da#event#connect#button_release 
-      (View_mainmap.button_action da w) +> ignore;
+      (View_mainmap.button_action w) +> ignore;
     da#event#connect#motion_notify  
-      (View_overlays.motion_notify da w) +> ignore; 
+      (View_overlays.motion_notify w) +> ignore; 
 
     Controller._refresh_da := (fun () ->
       GtkBase.Widget.queue_draw da#as_widget;
