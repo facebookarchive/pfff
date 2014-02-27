@@ -502,17 +502,19 @@ let mk_gui ~screen_size ~legend test_mode (root, model, dw, _dbfile_opt) =
                    `BUTTON_MOTION; `POINTER_MOTION;
                    `BUTTON_PRESS; `BUTTON_RELEASE ];
 
-
+    (* subtle: do not change those callbacks to get a dw; you need to
+     * pass a w! Indee if you do ~callback:(expose da w.dw)
+     * and an event changes w.dw (e.g. a resize of the window)
+     * then the expose event will still expose the old drawing.
+     *)
     da#event#connect#expose ~callback:(expose da w) +> ignore;
     da#event#connect#configure ~callback:(configure w) +> ignore;
-
     da3#event#connect#expose ~callback:(expose_legend da3 w) +> ignore;
 
-    da#event#connect#button_press   
+    da#event#connect#button_press 
       (View_mainmap.button_action da w) +> ignore;
     da#event#connect#button_release 
       (View_mainmap.button_action da w) +> ignore;
-
     da#event#connect#motion_notify  
       (View_overlays.motion_notify da w) +> ignore; 
 
@@ -522,7 +524,6 @@ let mk_gui ~screen_size ~legend test_mode (root, model, dw, _dbfile_opt) =
     Controller._refresh_legend := (fun () ->
       GtkBase.Widget.queue_draw da3#as_widget;
     );
-
     Controller._go_back := Ui_navigation.go_back;
     Controller._go_dirs_or_file := Ui_navigation.go_dirs_or_file;
       
@@ -530,7 +531,6 @@ let mk_gui ~screen_size ~legend test_mode (root, model, dw, _dbfile_opt) =
     (* status bar *)
     (*-------------------------------------------------------------------*)
     (* the statusbar widget is defined in beginning of this file because *)
-
     vbox#pack (*~from: `END*) statusbar#coerce;
 
   (*  )); *)
@@ -576,9 +576,7 @@ let mk_gui ~screen_size ~legend test_mode (root, model, dw, _dbfile_opt) =
     (* View_test.do_command s model *)
     ()
   );
-
   (* Gui.gmain_idle_add ~prio: 1000 (idle dw) +> ignore; *)
-
   GtkThread.main ();
   ()
 (*e: mk_gui() *)
