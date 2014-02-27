@@ -6,8 +6,7 @@ val mk_gui :
   'b option -> 
   (string (* root *) * 
    Model2.model Async.t * 
-   Model2.drawing * 
-   Common.filename option) -> 
+   Model2.drawing) -> 
   unit
 (*e: mk_gui sig *)
 (*e: view2.mli *)

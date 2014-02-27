@@ -386,7 +386,7 @@ let main_action xs =
     ~screen_size:!screen_size
     ~legend:!legend
     !test_mode
-    (root, async_model, dw, db_file)
+    (root, async_model, dw)
 (*e: main_action() *)
   
 (*****************************************************************************)

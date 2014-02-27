@@ -152,7 +152,7 @@ let expose_legend da w _ev =
 (*****************************************************************************)
 
 (*s: mk_gui() *)
-let mk_gui ~screen_size ~legend test_mode (root, model, dw, _dbfile_opt) =
+let mk_gui ~screen_size ~legend test_mode (root, model, dw) =
 
   let w = {
     dw;
