@@ -52,10 +52,6 @@ let pr2, _pr2_once = Common2.mk_pr2_wrappers Flag.verbose_visual
  * initialized by including gtkInit.cmo earlier in the linking command.
  *)
 
-(* ugly, todo use model.root instead? *)
-let root_orig () = 
-  (Common2.list_last !Controller.dw_stack).M.current_root
-
 (*e: view globals *)
 
 (*****************************************************************************)
@@ -93,8 +89,8 @@ let assemble_layers cr_final dw =
 (* opti: don't 'paint dw;' painting is the computation
  * heavy function. expose() just copy the "canvas" layers.
  *)
-let expose2 da dw_ref _ev = 
-  let dw = !dw_ref in
+let expose2 da w _ev = 
+  let dw = w.dw in
   let gwin = da#misc#window in
   let cr = Cairo_lablgtk.create gwin in
   assemble_layers cr dw;
@@ -105,15 +101,14 @@ let expose a b c =
 (*e: expose *)
 
 (*s: configure *)
-let configure2_bis dw_ref ev = 
-  let dw = !dw_ref in
+let configure2_bis w ev = 
+  let dw = w.dw in
   let width = GdkEvent.Configure.width ev in
   let height = GdkEvent.Configure.height ev in
   dw.width <- width;
   dw.height <- height;
   dw.base <- Model2.new_surface ~alpha:false ~width ~height;
   dw.overlay <- Model2.new_surface ~alpha:true ~width ~height;
-    
   View_mainmap.paint dw;
   true
 
@@ -136,11 +131,11 @@ let configure a b =
 (* The legend *)
 (* ---------------------------------------------------------------------- *)
 (*s: expose_legend *)
-let expose_legend da dw_ref _ev = 
+let expose_legend da w _ev = 
+  let dw = w.dw in
   let cr = Cairo_lablgtk.create da#misc#window in
 
   (* todo: make the architecture a layer so no need for special case *)
-  let dw = !dw_ref in
   (if not (Layer_code.has_active_layers dw.layers)
   then Draw_legend.draw_legend ~cr
   else Draw_legend.draw_legend_layer ~cr dw.layers
@@ -159,16 +154,23 @@ let expose_legend da dw_ref _ev =
 (*s: mk_gui() *)
 let mk_gui ~screen_size ~legend test_mode (root, model, dw, _dbfile_opt) =
 
-  let dw = ref dw in
-  Common.push !dw Controller.dw_stack;
+  let w = {
+    dw;
+    dw_stack = ref [dw];
+  }
+  in
+  (* ugly, todo use model.root instead? *)
+  let root_orig () = 
+    raise Todo
+  (* (Common2.list_last !Controller.dw_stack).M.current_root *)
+  in
 
   let width, height, minimap_hpos, minimap_vpos = 
     Style.windows_params screen_size in
 
   let win = GWindow.window 
     ~title:(Controller.title_of_path root)
-    ~width
-    ~height
+    ~width ~height
     ~allow_shrink: true
     ~allow_grow:true
     () 
@@ -230,13 +232,13 @@ let mk_gui ~screen_size ~legend test_mode (root, model, dw, _dbfile_opt) =
 
         (* todo? open Db ? *)
         fc#add_item "_Go back" ~key:K._B ~callback:(fun () -> 
-          !Controller._go_back dw;
+          !Controller._go_back w;
         ) +> ignore;
 
         fc#add_item "_Go to example" ~key:K._E ~callback:(fun () -> 
-          let model = !dw.model in
+          let model = w.dw.model in
           let model = Async.async_get model in
-          match !dw.current_entity, model.db with
+          match w.dw.current_entity, model.db with
           | Some e, Some db ->
               (match e.Db.e_good_examples_of_use with
               | [] -> failwith "no good examples of use for this entity"
@@ -246,10 +248,10 @@ let mk_gui ~screen_size ~legend test_mode (root, model, dw, _dbfile_opt) =
 
                   let final_file = 
                     Model_database_code.readable_to_absolute_filename_under_root
-                      file ~root:!dw.current_root in
+                      file ~root:w.dw.current_root in
 
                   !Controller._go_dirs_or_file 
-                    ~current_entity:(Some e) dw [final_file];
+                    ~current_entity:(Some e) w [final_file];
               )
           | _ -> failwith "no entity currently selected or no db"
         ) +> ignore ;
@@ -261,7 +263,7 @@ let mk_gui ~screen_size ~legend test_mode (root, model, dw, _dbfile_opt) =
         (* todo? open Db ? *)
         fc#add_item "_Git grep" ~key:K._G ~callback:(fun () -> 
 
-          let res = Ui_search.dialog_search_def !dw.model in
+          let res = Ui_search.dialog_search_def w.dw.model in
           res +> Common.do_option (fun s ->
             let root = 
               (* could also support local grep? and use !dw.root instead ?  *)
@@ -272,39 +274,39 @@ let mk_gui ~screen_size ~legend test_mode (root, model, dw, _dbfile_opt) =
             let current_grep_query = 
               Some (Common.hash_of_list matching_files)
             in
-            !Controller._go_dirs_or_file ~current_grep_query dw files
+            !Controller._go_dirs_or_file ~current_grep_query w files
           );
         ) +> ignore;
 
         fc#add_item "_Tbgs query" ~key:K._T ~callback:(fun () -> 
 
-          let res = Ui_search.dialog_search_def !dw.model in
+          let res = Ui_search.dialog_search_def w.dw.model in
           res +> Common.do_option (fun s ->
-            let root = !dw.current_root in
+            let root = w.dw.current_root in
             let matching_files = Ui_search.run_tbgs_query ~root s in
             let files = matching_files +> List.map fst +> Common2.uniq in
             let current_grep_query = 
               Some (Common.hash_of_list matching_files)
             in
-            !Controller._go_dirs_or_file ~current_grep_query dw files
+            !Controller._go_dirs_or_file ~current_grep_query w files
           );
         ) +> ignore;
 
       );
       factory#add_submenu "_Layers" +> (fun menu -> 
         let layers = 
-          !dw.layers.Layer_code.layers +> List.map (fun (layer, active) ->
+          w.dw.layers.Layer_code.layers +> List.map (fun (layer, active) ->
             (layer.Layer_code.title, active, (fun b -> 
               if b then
                 Ui_layers.choose_layer ~root:(root_orig())
-                  (Some layer.Layer_code.title) dw;
+                  (Some layer.Layer_code.title) w;
             ))
           )
         in
         (* todo: again, make the architecture a layer so less special cases *)
         let entries = [`R (
              ("Architecture", true, (fun _b ->
-               Ui_layers.choose_layer ~root:(root_orig()) None dw;
+               Ui_layers.choose_layer ~root:(root_orig()) None w;
              ))::
              layers)
         ]
@@ -318,9 +320,9 @@ let mk_gui ~screen_size ~legend test_mode (root, model, dw, _dbfile_opt) =
         (* todo? open Db ? *)
 
         fc#add_item "_Refresh" ~key:K._R ~callback:(fun () -> 
-          let current_root = !dw.current_root in
-          let _old_dw = Common2.pop2 Controller.dw_stack in
-          !Controller._go_dirs_or_file dw [current_root];
+          let current_root = w.dw.current_root in
+          let _old_dw = Common2.pop2 w.dw_stack in
+          !Controller._go_dirs_or_file w [current_root];
         ) +> ignore;
 
       );
@@ -399,18 +401,18 @@ let mk_gui ~screen_size ~legend test_mode (root, model, dw, _dbfile_opt) =
           let final_paths = 
             readable_paths +> List.map 
               (Model_database_code.readable_to_absolute_filename_under_root 
-                 ~root:!dw.current_root)
+                 ~root:w.dw.current_root)
           in
 
           pr2 (spf "e= %s, final_paths= %s" str(Common.join "|" final_paths));
-          !Controller._go_dirs_or_file ~current_entity:(Some e) dw final_paths;
+          !Controller._go_dirs_or_file ~current_entity:(Some e) w final_paths;
           true
         )
         ~callback_changed:(fun str ->
-          !dw.current_query <- str;
-          !dw.current_searched_rectangles <- [];
+          w.dw.current_query <- str;
+          w.dw.current_searched_rectangles <- [];
 
-          if !dw.settings.draw_searched_rectangles
+          if w.dw.settings.draw_searched_rectangles
           then begin
             (* better to compute once the set of matching rectangles
              * cos doing it each time in motify would incur too much
@@ -420,7 +422,7 @@ let mk_gui ~screen_size ~legend test_mode (root, model, dw, _dbfile_opt) =
 
             if String.length str > minimum_length then begin
 
-              let rects = !dw.treemap in
+              let rects = w.dw.treemap in
               let re_opt = 
                 try Some (Str.regexp (".*" ^ str))
                (* can raise exn when have bad or not yet complete regexp *)
@@ -435,12 +437,12 @@ let mk_gui ~screen_size ~legend test_mode (root, model, dw, _dbfile_opt) =
                       label ==~ re
                     )
               in
-              !dw.current_searched_rectangles <- res;
+              w.dw.current_searched_rectangles <- res;
               
             end;
-            let cr_overlay = Cairo.create !dw.overlay in
+            let cr_overlay = Cairo.create w.dw.overlay in
             CairoH.clear cr_overlay;
-            View_overlays.draw_searched_rectangles ~dw:!dw;
+            View_overlays.draw_searched_rectangles ~dw:w.dw;
             !Controller._refresh_da();
           end
         )
@@ -451,24 +453,23 @@ let mk_gui ~screen_size ~legend test_mode (root, model, dw, _dbfile_opt) =
 
       tb#insert_widget (G.mk (GButton.button ~stock:`GO_BACK) (fun b -> 
         b#connect#clicked ~callback:(fun () -> 
-          !Controller._go_back dw;
+          !Controller._go_back w;
         )
       ));
 
       tb#insert_widget (G.mk (GButton.button ~stock:`GO_UP) (fun b -> 
         b#connect#clicked ~callback:(fun () -> 
-          let current_root = !dw.current_root in
-          !Controller._go_dirs_or_file dw [Common2.dirname current_root];
+          let current_root = w.dw.current_root in
+          !Controller._go_dirs_or_file w [Common2.dirname current_root];
         )
       ));
 
       tb#insert_widget (G.mk (GButton.button ~stock:`GOTO_TOP) (fun b -> 
         b#connect#clicked ~callback:(fun () -> 
-          let top = Common2.list_last !Controller.dw_stack in
+          let top = Common2.list_last !(w.dw_stack) in
           (* put 2 in the stack because _go_back will popup one *)
-          Controller.dw_stack := [top; top];
-          !Controller._go_back dw;
-
+          w.dw_stack := [top; top];
+          !Controller._go_back w;
         )
       ));
 
@@ -502,18 +503,18 @@ let mk_gui ~screen_size ~legend test_mode (root, model, dw, _dbfile_opt) =
                    `BUTTON_PRESS; `BUTTON_RELEASE ];
 
 
-    da#event#connect#expose ~callback:(expose da dw) +> ignore;
-    da#event#connect#configure ~callback:(configure dw) +> ignore;
+    da#event#connect#expose ~callback:(expose da w) +> ignore;
+    da#event#connect#configure ~callback:(configure w) +> ignore;
 
-    da3#event#connect#expose ~callback:(expose_legend da3 dw) +> ignore;
+    da3#event#connect#expose ~callback:(expose_legend da3 w) +> ignore;
 
     da#event#connect#button_press   
-      (View_mainmap.button_action da dw) +> ignore;
+      (View_mainmap.button_action da w) +> ignore;
     da#event#connect#button_release 
-      (View_mainmap.button_action da dw) +> ignore;
+      (View_mainmap.button_action da w) +> ignore;
 
     da#event#connect#motion_notify  
-      (View_overlays.motion_notify da dw) +> ignore; 
+      (View_overlays.motion_notify da w) +> ignore; 
 
     Controller._refresh_da := (fun () ->
       GtkBase.Widget.queue_draw da#as_widget;

@@ -186,8 +186,8 @@ let paint dw =
 (*e: find_filepos_in_rectangle_at_user_point *)
    
 (*s: button_action *)
-let button_action da dw_ref ev =
-  let dw = !dw_ref in
+let button_action da w ev =
+  let dw = w.dw in
 
   let x, y = GdkEvent.Button.x ev, GdkEvent.Button.y ev in
   let pt = { Cairo. x = x; y = y } in
@@ -224,7 +224,7 @@ let button_action da dw_ref ev =
           let file = r.T.tr_label in
 
           if not (Gdk.Convert.test_modifier `SHIFT state)
-          then !Ctl._go_dirs_or_file dw_ref [file]
+          then !Ctl._go_dirs_or_file w [file]
           else begin
 
           (* similar to View_overlays.motion.refresher *)
@@ -256,15 +256,15 @@ let button_action da dw_ref ev =
           let readable = Common.readable ~root:model.root file in
           let entries = [
             `I ("go to file", (fun () -> 
-              !Ctl._go_dirs_or_file dw_ref (paths_of_readables [readable]);));
+              !Ctl._go_dirs_or_file w (paths_of_readables [readable]);));
             `I ("deps inout", (fun () -> 
-              !Ctl._go_dirs_or_file dw_ref (paths_of_readables 
+              !Ctl._go_dirs_or_file w (paths_of_readables 
                                               (uses @ users @ [readable]))));
             `I ("deps in (users)", (fun () -> 
-              !Ctl._go_dirs_or_file dw_ref (paths_of_readables 
+              !Ctl._go_dirs_or_file w (paths_of_readables 
                                               (users @ [readable]))));
             `I ("deps out (uses)", (fun () -> 
-              !Ctl._go_dirs_or_file dw_ref (paths_of_readables 
+              !Ctl._go_dirs_or_file w (paths_of_readables 
                                             (uses @ [readable]))));
           ] in
           let entries = 
@@ -304,7 +304,7 @@ let button_action da dw_ref ev =
       pr2 ("double click");
       r_opt +> Common.do_option (fun (_r, _, r_englobing) ->
         let path = r_englobing.T.tr_label in
-        !Ctl._go_dirs_or_file dw_ref [path];
+        !Ctl._go_dirs_or_file w [path];
       );
       true
   | _ -> false

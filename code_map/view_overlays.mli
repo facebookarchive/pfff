@@ -5,6 +5,6 @@ val draw_searched_rectangles:
 
 val motion_notify:
   < as_widget : [> `widget ] Gtk.obj; .. > ->
-  Model2.drawing ref -> GdkEvent.Motion.t -> bool
+  Model2.world -> GdkEvent.Motion.t -> bool
 
 (*e: view_overlays.mli *)

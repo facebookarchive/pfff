@@ -31,11 +31,7 @@ let paint_content_maybe_refresher = ref None
 
 let current_motion_refresher = ref None
 
-let dw_stack = ref []
-
-
-
-let _go_back = ref (fun _dw_ref ->
+let _go_back = ref (fun _w ->
   failwith "_go_back not defined"
 )
 

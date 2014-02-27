@@ -179,6 +179,18 @@ type drawing = {
   (*e: type settings *)
 (*e: type drawing *)
 
+(*****************************************************************************)
+(* The world *)
+(*****************************************************************************)
+type world = {
+  mutable dw: drawing;
+  dw_stack: drawing stack ref;
+}
+
+(*****************************************************************************)
+(* Builders *)
+(*****************************************************************************)
+
 (*s: new_pixmap() *)
 let new_surface ~alpha ~width ~height =
   let drawable = GDraw.pixmap ~width:1 ~height:1 () in

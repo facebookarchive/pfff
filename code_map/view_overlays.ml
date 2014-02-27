@@ -207,7 +207,8 @@ let draw_searched_rectangles ~dw =
 (*****************************************************************************)
 
 (*s: motion_refresher *)
-let motion_refresher ev dw =
+let motion_refresher ev w =
+  let dw = w.dw in
   let cr_overlay = Cairo.create dw.overlay in
   CairoH.clear cr_overlay;
 
@@ -268,14 +269,13 @@ let motion_refresher ev dw =
   false
 
 
-let motion_notify _da dw ev =
+let motion_notify _da w ev =
   !Controller.current_motion_refresher +> Common.do_option GMain.Idle.remove;
-  let dw = !dw in
   let x, y = GdkEvent.Motion.x ev, GdkEvent.Motion.y ev in
   pr2 (spf "motion: %f, %f" x y);
 
   Controller.current_motion_refresher := 
-    Some (Gui.gmain_idle_add ~prio:200 (fun () -> motion_refresher ev dw));
+    Some (Gui.gmain_idle_add ~prio:200 (fun () -> motion_refresher ev w));
   true
 (*e: motion_refresher *)
 

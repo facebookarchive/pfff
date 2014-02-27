@@ -27,9 +27,9 @@ module L = Layer_code
 (* Prelude *)
 (*****************************************************************************)
 
-let choose_layer ~root layer_title_opt dw_ref =
+let choose_layer ~root layer_title_opt w =
   pr2 "choose_layer()";
-  let dw = !dw_ref in
+  let dw = w.dw in
 
   let original_layers = dw.M.layers.L.layers +> List.map fst in
   let layers_idx = 
@@ -42,7 +42,7 @@ let choose_layer ~root layer_title_opt dw_ref =
         | Some title -> title =$= layer.L.title
       ))
   in
-  dw_ref := 
+  w.dw <- 
     Model2.init_drawing 
       ~width:dw.width
       ~height:dw.height
@@ -51,7 +51,7 @@ let choose_layer ~root layer_title_opt dw_ref =
       layers_idx
       [root]
       root;
-  View_mainmap.paint !dw_ref;
+  View_mainmap.paint w.dw;
   !Controller._refresh_da ();
   !Controller._refresh_legend ();
   ()

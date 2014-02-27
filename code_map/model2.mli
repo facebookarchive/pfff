@@ -130,6 +130,11 @@ type drawing = {
   (*e: type settings *)
 (*e: type drawing *)
 
+type world = {
+  mutable dw: drawing;
+  dw_stack: drawing Common.stack ref;
+}
+
 (*s: type context *)
 (* a slice of drawing used in the drawing functions *)
 type context = {
