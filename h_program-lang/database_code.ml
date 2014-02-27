@@ -579,6 +579,11 @@ let matching_use_categ_kind categ kind =
   | Global,   HC.Local _
   | Function, HC.Local _
   | Constructor, HC.Global _
+  | Function, HC.Builtin
+  | Function, HC.BuiltinCommentColor
+  | Function, HC.BuiltinBoolean
+  (* because what looks like a constant is actually a partially applied func *)
+  | Function, HC.Constant _
     
   | Global,   HC.UseOfRef
   | Field, HC.UseOfRef
