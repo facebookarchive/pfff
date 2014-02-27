@@ -19,11 +19,9 @@
 open Common
 (* floats are the norm in graphics *)
 open Common2.ArithFloatInfix
-open Common2
 
 open Model2
 module CairoH = Cairo_helpers
-module K = GdkKeysyms
 module F = Figures
 module T = Treemap
 module Flag = Flag_visual
@@ -90,18 +88,18 @@ let device_to_user_area dw =
 
 (*s: paint *)
 let paint_content_maybe_rect ~user_rect dw model rect =
-  let cr = Cairo.create dw.base in
-  zoom_pan_scale_map cr dw;
-  let context = M.context_of_drawing dw model in
-  let microlevel_opt = 
-    Draw_microlevel.draw_treemap_rectangle_content_maybe
-      ~cr ~clipping:user_rect ~context rect in
-  microlevel_opt +> Common.do_option (fun microlevel ->
-    Hashtbl.replace dw.microlevel rect microlevel
-  );
+ with_map dw (fun cr ->
+   let context = M.context_of_drawing dw model in
+   let microlevel_opt = 
+     Draw_microlevel.draw_treemap_rectangle_content_maybe
+       ~cr ~clipping:user_rect ~context rect in
+   microlevel_opt +> Common.do_option (fun microlevel ->
+     Hashtbl.replace dw.microlevel rect microlevel
+   );
   (* have to redraw the label *)
-  Draw_labels.draw_treemap_rectangle_label_maybe ~cr ~zoom:1.0 ~color:None rect;
-  ()
+   Draw_labels.draw_treemap_rectangle_label_maybe 
+     ~cr ~zoom:1.0 ~color:None rect;
+ )
 
 (* todo: deadlock:  M.locked (fun () ->  ) dw.M.model.M.m *)
 let lazy_paint ~user_rect dw model () =
@@ -120,55 +118,44 @@ let lazy_paint ~user_rect dw model () =
   then false
   else true
 
-
 let paint2 dw model = 
   pr2 (spf "paint");
-
+  
   !Ctl.paint_content_maybe_refresher +> Common.do_option GMain.Idle.remove;
   Ctl.current_rects_to_draw := [];
 
-  let cr = Cairo.create dw.base in
-(* TODO
-  dw.pm#rectangle 
-    ~x:0 ~y:0 
-    ~width:dw.width ~height:dw.height 
-    ~filled:true () ;
-*)
-
   let user_rect = device_to_user_area dw in
   pr2 (F.s_of_rectangle user_rect);
-
-  zoom_pan_scale_map cr dw;
-
-  let rects = dw.treemap in
   let nb_rects = dw.nb_rects in
+  let rects = dw.treemap in
 
-  (if not (Layer_code.has_active_layers dw.layers)
-  then
-    (* phase 1, draw the rectangles *)
-    rects +> List.iter (Draw_macrolevel.draw_treemap_rectangle ~cr)
-  else 
-    rects +> List.iter (Draw_macrolevel.draw_trect_using_layers ~cr dw.layers)
+  with_map dw (fun cr ->
+
+    (if not (Layer_code.has_active_layers dw.layers)
+     (* phase 1, draw the rectangles *)
+     then rects +> List.iter (Draw_macrolevel.draw_treemap_rectangle ~cr)
+     else rects +> List.iter (Draw_macrolevel.draw_trect_using_layers 
+                                ~cr dw.layers)
+    );
+
+    (* phase 2, draw the labels, if have enough space *)
+    rects +> List.iter (Draw_labels.draw_treemap_rectangle_label_maybe 
+                          ~cr ~zoom:1.0  ~color:None);
   );
-
-  (* phase 2, draw the labels, if have enough space *)
-  rects +> List.iter (Draw_labels.draw_treemap_rectangle_label_maybe 
-                         ~cr ~zoom:1.0  ~color:None);
 
   (* phase 3, draw the content, if have enough space *)
   if nb_rects < !Flag.threshold_nb_rects_draw_content
-    (* draw_content_maybe calls nblines which is quite expensive so
-     * want to limit it *)
+  (* draw_content_maybe calls nblines which is quite expensive so
+   * want to limit it *)
   then begin
     Ctl.current_rects_to_draw := rects;
     Ctl.paint_content_maybe_refresher := 
-      Some (Gui.gmain_idle_add ~prio:3000 (lazy_paint ~user_rect dw model));
+        Some (Gui.gmain_idle_add ~prio:3000 (lazy_paint ~user_rect dw model));
   end;
 
   (* also clear the overlay *)
   let cr_overlay = Cairo.create dw.overlay in
   CairoH.clear cr_overlay;
-
   ()
 
 let paint a b = 
@@ -181,7 +168,6 @@ let paint a b =
 
 (*s: key_pressed *)
 (*e: key_pressed *)
-
 (*s: find_filepos_in_rectangle_at_user_point *)
 (*e: find_filepos_in_rectangle_at_user_point *)
    
@@ -210,18 +196,16 @@ let button_action w ev =
         r_opt +> Common.do_option (fun (r, _, _r_englobing) ->
           let file = r.T.tr_label in
           pr2 (spf "opening %s" file);
-          let line =
-            match M.find_line_in_rectangle_at_user_point user r dw with
-            | None -> Line 0
-            | Some l -> l
+          let line = 
+            M.find_line_in_rectangle_at_user_point user r dw ||| (Line 0)
           in
           Editor_connection.open_file_in_current_editor ~file ~line;
         );
         true
 
       | 3 ->
-        r_opt +> Common.do_option (fun (r, _, _r_englobing) ->
-          let file = r.T.tr_label in
+        r_opt +> Common.do_option (fun (tr, _, _r_englobing) ->
+          let file = tr.T.tr_label in
 
           if not (Gdk.Convert.test_modifier `SHIFT state)
           then !Ctl._go_dirs_or_file w [file]
@@ -230,15 +214,24 @@ let button_action w ev =
           let model = Async.async_get w.model in
 
           (* similar to View_overlays.motion.refresher *)
-          let entity_opt =
-            M.find_line_in_rectangle_at_user_point user r dw >>= (fun line ->
-              M.find_def_entity_at_line_opt line r dw model)
+          let line_opt = 
+            M.find_line_in_rectangle_at_user_point user tr dw in
+          let glyph_opt =
+            M.find_glyph_in_rectangle_at_user_point user tr dw in
+          let entity_def_opt = 
+            line_opt >>= (fun line ->
+              M.find_def_entity_at_line_opt line tr dw model)in
+          let entity_use_opt =
+            line_opt >>= (fun line -> 
+            glyph_opt >>= (fun glyph ->
+              M.find_use_entity_at_line_and_glyph_opt line glyph tr dw model))
           in
-          
+
+         
           let uses, users = 
-            match entity_opt with
-            | None -> M.deps_readable_files_of_file file model
-            | Some n -> M.deps_readable_files_of_node n model
+            match entity_def_opt, entity_use_opt with
+            | None, None -> M.deps_readable_files_of_file file model
+            | Some n, _ | _, Some n -> M.deps_readable_files_of_node n model
           in
 
           let paths_of_readables xs = 
@@ -270,17 +263,23 @@ let button_action w ev =
           ] in
           let entries = 
             entries @
-            (match entity_opt, model.g with
-            | None, _ -> []
-            | Some e, Some g -> 
+            (match entity_def_opt, entity_use_opt, model.g with
+            | None, None, _ -> []
+            | Some n, _, Some g | _, Some n, Some g -> 
                 [`I ("info entity", (fun () ->
-                  let users = Graph_code.pred e (Graph_code.Use) g in
+                  let users = Graph_code.pred n (Graph_code.Use) g in
                   let str =
-                    users +> List.map Graph_code.string_of_node 
-                    +> Common.join "\n"
+                    ([Graph_code.string_of_node n] @
+                    (users +> List.map Graph_code.string_of_node )
+                    ) +> Common.join "\n"
                   in
                   Gui.dialog_text ~text:str ~title:"Info entity";
-                ))]
+                ));
+                 `I ("goto def", (fun () ->
+                   let dest = Graph_code.file_of_node n g in
+                   !Ctl._go_dirs_or_file w (paths_of_readables [readable; dest])
+                 ));                                              
+                ]
             | _ -> raise Impossible
             )
           in
@@ -295,9 +294,7 @@ let button_action w ev =
       let button = GdkEvent.Button.button ev in
       pr2 (spf "button %d released" button);
       (match button with
-      | 1 ->
-          (*GtkBase.Widget.queue_draw da#as_widget; *)
-          true
+      | 1 -> true
       | _ -> false
       )
 

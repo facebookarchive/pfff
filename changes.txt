@@ -16,6 +16,9 @@ this definition).
 
 *** show entity under cursor (def or use)
 
+*** go to definition when on a use 
+finally ... basic TAGS functionality
+
 *** match defs and uses even when the file has been modified
 (do not use the probably obsolete line information in graph_code, trust
 more the lexer/parser/highlighter)
