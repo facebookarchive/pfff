@@ -119,8 +119,6 @@ type drawing = {
 
   (* computed lazily, semantic information about the code *)
   model: model Async.t;
-  (* to compute a new treemap based on user's action *)
-  treemap_func: Common.path list -> Treemap.treemap_rendering;
 
   (* Macrolevel. In user coordinates from 0 to T.xy_ratio for 'x' and 0 to 1
    * for 'y'. Assumes the treemap contains absolute paths (tr.tr_label).
@@ -185,6 +183,9 @@ type drawing = {
 type world = {
   mutable dw: drawing;
   dw_stack: drawing stack ref;
+
+  (* to compute a new treemap based on user's action *)
+  treemap_func: Common.path list -> Treemap.treemap_rendering;
 }
 
 (*****************************************************************************)
@@ -239,7 +240,6 @@ let init_drawing
     treemap;
     nb_rects = List.length treemap;
     current_root;
-    treemap_func = func;
 
     model; layers;
 

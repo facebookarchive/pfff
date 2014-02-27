@@ -65,7 +65,7 @@ let go_dirs_or_file ?(current_entity=None) ?(current_grep_query=None) w paths =
     Model2.init_drawing 
       ~width:dw.width
       ~height:dw.height
-      dw.treemap_func 
+      w.treemap_func 
       dw.model 
       dw.layers
       paths

@@ -357,9 +357,9 @@ let main_action xs =
     (skip_list = [] || filter_files_skip_list [file] <> []))
   in
 
+  let treemap_func = treemap_generator ~filter_file in
   let dw = 
-    Model.init_drawing (treemap_generator ~filter_file) async_model
-      layers_with_index xs root
+    Model.init_drawing  treemap_func async_model layers_with_index xs root
   in
 
   (* This can require lots of stack. Make sure to have ulimit -s 40000.
@@ -385,6 +385,7 @@ let main_action xs =
   let w = { Model.
     dw;
     dw_stack = ref [dw];
+    treemap_func;
   }
   in
 

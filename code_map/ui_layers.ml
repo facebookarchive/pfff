@@ -46,7 +46,7 @@ let choose_layer ~root layer_title_opt w =
     Model2.init_drawing 
       ~width:dw.width
       ~height:dw.height
-      dw.treemap_func 
+      w.treemap_func 
       dw.model 
       layers_idx
       [root]
