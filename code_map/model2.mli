@@ -190,6 +190,10 @@ val find_def_entity_at_line_opt:
   line -> Treemap.treemap_rectangle -> drawing -> model -> 
   Graph_code.node option
 
+val find_use_entity_at_line_and_glyph_opt:
+  line -> glyph -> Treemap.treemap_rectangle -> drawing -> model -> 
+  Graph_code.node option
+
 (* macrolevel uses and users *)
 val deps_readable_files_of_file:
   Common.filename (* abs *) -> model ->

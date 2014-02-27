@@ -360,6 +360,25 @@ let find_def_entity_at_line_opt line tr dw model =
     )
   with Not_found -> None
 
+let find_use_entity_at_line_and_glyph_opt line glyph tr dw model =
+  model.g >>= (fun g ->
+    (* find enclosing def line *)
+    let microlevel = Hashtbl.find dw.microlevel tr in
+    let (line_def, _shortnode) = 
+      microlevel.defs +> List.rev +> List.find (fun (line2, _shortnode) ->
+        line >= line2
+      )
+    in
+    find_def_entity_at_line_opt line_def tr dw model >>= (fun node ->
+      let uses = Graph_code.succ node Graph_code.Use g in
+      uses +> Common.find_opt (fun node ->
+        let s = Graph_code.shortname_of_node node in
+        let categ =  glyph.categ ||| Highlight_code.Normal in
+        glyph.str =$= s &&
+        Database_code.matching_use_categ_kind categ (snd node)
+      )
+  ))
+
 
 let deps_readable_files_of_file file model =
   let readable = Common.readable ~root:model.root file in
@@ -436,11 +455,7 @@ let lines_where_used_node node startl microlevel =
     for line = startl to Array.length glypys - 1 do
       let xs = glypys.(line) in
       if xs +> List.exists (fun glyph ->
-        let categ =
-          match glyph.categ with
-          | Some x -> x
-          | _ -> Highlight_code.Normal
-        in
+        let categ =  glyph.categ ||| Highlight_code.Normal in
         glyph.str =$= s &&
         Database_code.matching_use_categ_kind categ (snd node)
       )

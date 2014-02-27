@@ -218,44 +218,51 @@ let motion_refresher ev w =
   let user = View_mainmap.with_map dw (fun cr -> Cairo.device_to_user cr pt) in
   let r_opt = M.find_rectangle_at_user_point user dw in
 
-  r_opt +> Common.do_option (fun (r, middle, r_englobing) ->
-    let line_opt = M.find_line_in_rectangle_at_user_point user r dw in
+  r_opt +> Common.do_option (fun (tr, middle, r_englobing) ->
+    let line_opt = M.find_line_in_rectangle_at_user_point user tr dw in
 
 
     let model = Async.async_get w.model in
 
     let glyph_opt =
-      M.find_glyph_in_rectangle_at_user_point user r dw in
-    let entity_opt = 
-      line_opt >>= (fun line -> M.find_def_entity_at_line_opt line r dw model)
+      M.find_glyph_in_rectangle_at_user_point user tr dw in
+    let entity_def_opt = 
+      line_opt >>= (fun line -> M.find_def_entity_at_line_opt line tr dw model)
+    in
+    let entity_use_opt =
+      line_opt >>= (fun line -> 
+      glyph_opt >>= (fun glyph ->
+        M.find_use_entity_at_line_and_glyph_opt line glyph tr dw model))
     in
 
     let statusbar_txt = 
-      r.T.tr_label ^
+      tr.T.tr_label ^
       (match line_opt with None -> "" | Some (Line i) -> 
         spf ":%d" i) ^
       (match glyph_opt with None -> "" | Some glyph -> 
         spf "[%s]" glyph.str) ^
-      (match entity_opt with None -> "" | Some n -> 
-        spf "(%s)" (Graph_code.string_of_node n))
+      (match entity_def_opt with None -> "" | Some n -> 
+        spf "(%s)" (Graph_code.string_of_node n)) ^
+      (match entity_use_opt with None -> "" | Some n -> 
+        spf "{%s}" (Graph_code.string_of_node n))
     in
     !Controller._statusbar_addtext statusbar_txt;
 
     (match line_opt with
     | None ->
-        let label_txt = readable_txt_for_label r.T.tr_label dw.current_root in
+        let label_txt = readable_txt_for_label tr.T.tr_label dw.current_root in
         draw_label_overlay ~cr_overlay ~x ~y label_txt
     | Some line ->
-        let microlevel = Hashtbl.find dw.microlevel r in
+        let microlevel = Hashtbl.find dw.microlevel tr in
         draw_magnify_line_overlay_maybe ~honor_color:true dw line microlevel
     );
 
-    draw_englobing_rectangles_overlay ~dw (r, middle, r_englobing);
-    draw_uses_users_files r dw model;
+    draw_englobing_rectangles_overlay ~dw (tr, middle, r_englobing);
+    draw_uses_users_files tr dw model;
 
-    (match line_opt, entity_opt with
+    (match line_opt, entity_def_opt with
     | Some line, Some n ->
-      let microlevel = Hashtbl.find dw.microlevel r in
+      let microlevel = Hashtbl.find dw.microlevel tr in
       let rectangle = microlevel.line_to_rectangle line in
       with_overlay dw (fun cr ->
         CairoH.draw_rectangle_figure ~cr ~color:"white" rectangle
@@ -267,7 +274,7 @@ let motion_refresher ev w =
     if w.settings.draw_searched_rectangles;
     then draw_searched_rectangles ~dw;
     
-    Controller.current_r := Some r;
+    Controller.current_r := Some tr;
   );
   !Controller._refresh_da ();
   false

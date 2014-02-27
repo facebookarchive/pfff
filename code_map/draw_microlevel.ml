@@ -240,7 +240,7 @@ let defs_of_glyphs glyphs =
         +> Common.do_option (fun kind ->
               Common.push (Line line_0_indexed, (glyph.str, kind)) res
         ))));
-  !res
+  List.rev !res
 
 (*****************************************************************************)
 (* Columns *)
