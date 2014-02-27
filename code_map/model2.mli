@@ -83,8 +83,7 @@ type drawing = {
   microlevel: (Treemap.treemap_rectangle, microlevel) Hashtbl.t;
 
   (* generated from dw.treemap, contains readable path relative to model.root *)
-  readable_file_to_rect: 
-    (Common.filename, Treemap.treemap_rectangle) Hashtbl.t;
+  readable_file_to_rect: (Common.filename, Treemap.treemap_rectangle) Hashtbl.t;
   (* coupling: = List.length treemap *)
   nb_rects: int; 
   (* This is to display readable paths. When fully zoomed it's a filename *)

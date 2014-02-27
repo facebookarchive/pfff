@@ -152,13 +152,7 @@ let expose_legend da w _ev =
 (*****************************************************************************)
 
 (*s: mk_gui() *)
-let mk_gui ~screen_size ~legend test_mode (root, model, dw) =
-
-  let w = {
-    dw;
-    dw_stack = ref [dw];
-  }
-  in
+let mk_gui ~screen_size ~legend test_mode (root, model, w) =
   (* ugly, todo use model.root instead? *)
   let root_orig () = 
     raise Todo

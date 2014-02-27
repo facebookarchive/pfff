@@ -382,11 +382,17 @@ let main_action xs =
    *)
   );
 
+  let w = { Model.
+    dw;
+    dw_stack = ref [dw];
+  }
+  in
+
   View2.mk_gui 
     ~screen_size:!screen_size
     ~legend:!legend
     !test_mode
-    (root, async_model, dw)
+    (root, async_model, w)
 (*e: main_action() *)
   
 (*****************************************************************************)

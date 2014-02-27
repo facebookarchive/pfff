@@ -4,9 +4,7 @@ val mk_gui :
   screen_size:int ->
   legend:bool ->
   'b option -> 
-  (string (* root *) * 
-   Model2.model Async.t * 
-   Model2.drawing) -> 
+  (string (* root *) *  Model2.model Async.t * Model2.world) -> 
   unit
 (*e: mk_gui sig *)
 (*e: view2.mli *)
