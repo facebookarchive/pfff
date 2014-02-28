@@ -355,6 +355,7 @@ let test_parse_phpunit_json file =
   let tr = Phpunit.test_results_of_json json in
   Phpunit.final_report tr
 
+(*
 let test_phpdoc dir =
   let files = Phpmanual_xml.find_functions_reference_of_dir dir in
   files +> List.iter (fun file ->
@@ -366,6 +367,7 @@ let test_phpdoc dir =
     with _exn ->
       pr2 (spf "PB in %s" file);
   )
+*)
 
 let test_php_serialize file =
   let s = Common.read_file file in
@@ -452,8 +454,10 @@ let actions () = [
   Common.mk_action_1_arg test_xdebug_dumpfile;
   "-parse_phpunit_json", " <jsonfile>",
   Common.mk_action_1_arg test_parse_phpunit_json;
+(*
   "-test_phpdoc", " <dir>",
   Common.mk_action_1_arg test_phpdoc;
+*)
   "-test_php_serialize", " <file>",
   Common.mk_action_1_arg test_php_serialize;
 ]

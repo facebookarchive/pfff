@@ -9,7 +9,9 @@ SRC= \
      phpunit.ml \
      php_serialize.ml \
      xhprof.ml \
-     phpmanual_xml.ml
+
+# this require lib-xml/ to be in external/ again
+#     phpmanual_xml.ml
 
 #hphpi_trace.ml is in facebook/qa_test/ for now (more convenient)
 
@@ -22,7 +24,7 @@ LIBS=$(TOP)/commons/lib.cma \
 
 INCLUDEDIRS= $(TOP)/commons \
   $(TOP)/commons/ocollection $(TOP)/commons/ocamlextra \
-   $(TOP)/commons/lib-json $(TOP)/commons/lib-xml \
+   $(TOP)/commons/lib-json \
    $(TOP)/external/ \
    $(TOP)/h_program-lang $(TOP)/h_version-control  \
    ../../parsing \

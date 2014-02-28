@@ -66,31 +66,11 @@ endif
 
 SRC+=logger.ml
 
-ifeq ($(FEATURE_XML_BUILTIN_COMMONS),1)
-SRC+= \
-  lib-xml/xml_types.ml \
-  lib-xml/dtd_types.ml \
-  lib-xml/xml_parser.ml \
-  lib-xml/xml_lexer.ml \
-  lib-xml/xmlParser.ml \
-  lib-xml/dtd.ml \
-  lib-xml/xml_parse.ml \
-  lib-xml/xml_utils.ml \
-
-INCLUDEDIRS+=lib-xml
-SUBDIRS+=lib-xml
-endif
-
-
 ifeq ($(FEATURE_JSON_BUILTIN_COMMONS),1)
 SRC+=
 #NOMORE: json_common.ml
 endif
 
-ifeq ($(FEATURE_SEXP_BUILTIN_COMMONS),1)
-SRC+=sexp_common.ml
-SRC+=
-endif
 
 SRC+=ocaml.ml
 
@@ -142,15 +122,6 @@ MPISYSLIBS=mpi.cma
 MYREGEXPSRC=regexp.ml
 REGEXPINCLUDES=-I ../external/  -I ../../ocamlpcre/lib
 #REGEXPINCLUDES=-I +pcre
-
-#sexplib
-MYSEXPSRC=sexp_common.ml
-SEXPINCLUDES=-I ../ocamlsexp -I ../external/ocamltarzan/lib-sexp -I ../../ocamltarzan/lib-sexp
-
-#binprot
-MYBINSRC=
-#NOMORE: bin_common.ml
-BININCLUDES=-I ../ocamltarzan/lib-binprot -I ../../ocamltarzan/lib-binprot
 
 #ocamlgraph
 MYGRAPHSRC=graph.ml
@@ -246,7 +217,6 @@ commons_bdb.cmxa: $(MYBDBSRC:.ml=.cmx)
 	$(OCAMLOPT) -a -o $@ $^
 
 
-
 #-----------------------------------------------------------------------------
 gui:
 	$(MAKE) INCLUDESEXTRA="$(GUIINCLUDES)" commons_gui.cma
@@ -258,7 +228,6 @@ commons_gui.cma: $(MYGUISRC:.ml=.cmo)
 
 commons_gui.cmxa: $(MYGUISRC:.ml=.cmx)
 	$(OCAMLOPT) -a -o $@ $^
-
 
 
 #-----------------------------------------------------------------------------
@@ -277,8 +246,6 @@ commons_mpi.cmxa: $(MYMPISRC:.ml=.cmx)
 distribution: mpi
 distribution.opt: mpi.opt
 
-
-
 #-----------------------------------------------------------------------------
 python:
 	$(MAKE) INCLUDESEXTRA="$(PYINCLUDES)" commons_python.cma
@@ -292,7 +259,6 @@ commons_python.cma: $(MYPYSRC:.ml=.cmo)
 commons_python.cmxa: $(MYPYSRC:.ml=.cmx)
 	$(OCAMLOPT) -a -o $@ $^
 
-
 #-----------------------------------------------------------------------------
 regexp:
 	$(MAKE) INCLUDESEXTRA="$(REGEXPINCLUDES)" commons_regexp.cma
@@ -305,34 +271,9 @@ commons_regexp.cma: $(MYREGEXPSRC:.ml=.cmo)
 commons_regexp.cmxa: $(MYREGEXPSRC:.ml=.cmx)
 	$(OCAMLOPT) -a -o $@ $^
 
-
 #-----------------------------------------------------------------------------
 realpath.o: ocamlextra/realpath.c
 	$(OCAMLC) -c $^ -o $@
-
-#-----------------------------------------------------------------------------
-sexp:
-	$(MAKE) INCLUDESEXTRA="$(SEXPINCLUDES)" commons_sexp.cma
-sexp.opt:
-	$(MAKE) INCLUDESEXTRA="$(SEXPINCLUDES)" commons_sexp.cmxa
-
-commons_sexp.cma: $(MYSEXPSRC:.ml=.cmo)
-	$(OCAMLC) -a -o $@ $^
-
-commons_sexp.cmxa: $(MYSEXPSRC:.ml=.cmx)
-	$(OCAMLOPT) -a -o $@ $^
-
-binprot:
-	$(MAKE) INCLUDESEXTRA="$(BININCLUDES)" commons_bin.cma
-binprot.opt:
-	$(MAKE) INCLUDESEXTRA="$(BININCLUDES)" commons_bin.cmxa
-
-commons_bin.cma: $(MYBINSRC:.ml=.cmo)
-	$(OCAMLC) -a -o $@ $^
-
-commons_bin.cmxa: $(MYBINSRC:.ml=.cmx)
-	$(OCAMLOPT) -a -o $@ $^
-
 
 #-----------------------------------------------------------------------------
 graph:
@@ -358,7 +299,6 @@ commons_features.cma: features.cmo
 
 commons_features.cmxa: features.cmx
 	$(OCAMLOPT) -a -o $@ $^
-
 
 ##############################################################################
 # install
@@ -396,7 +336,6 @@ SRCNW=Commons.tex.nw Commons_intro.tex.nw \
       ocommon__overview.mli.nw ocollection.mli.nw ocommon__other.mli.nw \
       extra.mli.nw \
       common.ml.nw
-
 
 # user oriented, public API in some sense + ml that share code with mli
 LPSRC1=common.mli \
@@ -462,6 +401,7 @@ clean::
 forprofiling:
 	$(MAKE) OPTFLAGS="-p -inline 0 " opt
 
+# obsolete, use codegraph instead!
 dependencygraph:
 	ocamldep *.mli *.ml > /tmp/dependfull.depend
 	ocamldot -fullgraph /tmp/dependfull.depend > /tmp/dependfull.dot
