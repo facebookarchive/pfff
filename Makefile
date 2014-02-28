@@ -241,7 +241,7 @@ MAKESUBDIRS=commons \
 
 INCLUDEDIRS=$(MAKESUBDIRS) \
  commons/ocamlextra commons/ocollection \
- commons/lib-json commons/lib-xml commons/lib-sexp \
+ commons/lib-json commons/lib-xml \
  $(GTKINCLUDE) $(CAIROINCLUDE) \
  $(EXTLIBDIR) $(PTDIR) $(ZIPDIR) $(JAVALIBDIR) \
  $(OCAMLCOMPILERDIR)
