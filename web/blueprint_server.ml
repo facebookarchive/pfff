@@ -186,7 +186,7 @@ let all_parents_of_class ?(depth_limit=2) node dag =
       (* can have multiple parents with interfaces and traits *)
       let parents = Graph.succ node dag in
       parents +> List.iter (fun parent ->
-        Common.push2 (parent, node) inheritance;
+        Common.push (parent, node) inheritance;
       );
       parents @ (parents +> List.map (aux (depth + 1)) +> List.flatten)
     end
@@ -203,7 +203,7 @@ let all_children_of_class ?(depth_limit=2) node dag =
     else begin
       let children = Graph.succ node dag in
       children +> List.iter (fun child ->
-        Common.push2 (node, child) inheritance;
+        Common.push (node, child) inheritance;
       );
       children @ (children +> List.map (aux (depth + 1)) +> List.flatten)
     end

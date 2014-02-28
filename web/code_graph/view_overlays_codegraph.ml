@@ -71,12 +71,12 @@ let draw_green_yellow_dependent_rows ~(ctx: Canvas_helpers.context) w i =
 
   for j = 0 to l.nb_elts -.. 1 do
     if w.m.DM.matrix.(i).(j) > 0 
-    then Common.push2 j i_uses;
+    then Common.push j i_uses;
   done;
 
   for i2 = 0 to l.nb_elts -.. 1 do
     if w.m.DM.matrix.(i2).(i) > 0
-    then Common.push2 i2 i_used_by;
+    then Common.push i2 i_used_by;
   done;
 
   !i_uses +> List.iter (fun i ->

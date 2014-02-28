@@ -25,6 +25,8 @@ let main_service =
         H.h1 [H.a Codegraph.main_service     [H.pcdata "codegraph"] 
                  (size, ("pfff", ""))];
 
+        H.h1 [H.a Codegraph.main_service     [H.pcdata "fbobjc deps"] 
+                 ("large", ("fbobjc", ""))];
         H.h1 [H.a Codemap.main_service     [H.pcdata "hack dashboard"] 
                  (size, ("hack", ""))];
 

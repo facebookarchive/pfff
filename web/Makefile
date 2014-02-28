@@ -153,7 +153,7 @@ depend::
 	set -e; for i in $(MAKESUBDIRS); do echo $$i; $(MAKE) -C $$i depend; done
 
 clean::
-	rm -rf _client _server
+	rm -rf _client _server *.cm*
 
 depend::
 	eliomdep -client *.ml *.eliom $(INCLUDES)  > .depend

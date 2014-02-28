@@ -97,10 +97,7 @@ let use_arity_of_use_count n =
 
 let rewrite_categ_using_entities s categ file entities =
 
-  let e_kind_opt = 
-    try Some (Db.entity_kind_of_highlight_category_def categ)
-    with _ -> None
-  in
+  let e_kind_opt = Db.entity_kind_of_highlight_category_def categ in
   match e_kind_opt with
   | None -> categ
   | Some e_kind ->
@@ -126,7 +123,7 @@ let rewrite_categ_using_entities s categ file entities =
   | [e] ->
       let use_cnt = e.Db.e_number_external_users in
       let arity = use_arity_of_use_count use_cnt in
-      if HC.is_entity_def_category categ
+      if Db.is_entity_def_category categ
       then HC.rewrap_arity_def2_category arity categ 
       else categ
   | x::y::xs ->
@@ -224,7 +221,11 @@ let tokens_with_categ_of_file file (* hentities *) =
            Common.save_excursion Flag_parsing_ml.error_recovery true (fun()->
              ML (Parse_ml.parse file +> fst))
          )
-         (function ML (ast, toks) -> [ast, toks] | _ -> raise Impossible));
+         (function 
+         | ML (astopt, toks) -> 
+             let ast = match astopt with None -> [] | Some xs -> xs in
+             [ast, toks] 
+         | _ -> raise Impossible));
         highlight_visit = (fun ~tag_hook prefs (ast, toks) -> 
           Highlight_ml.visit_program ~tag_hook prefs (ast, toks));
         info_of_tok = Token_helpers_ml.info_of_tok;

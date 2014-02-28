@@ -55,7 +55,7 @@ let size_font_multiplier_of_categ ~font_size_real categ =
     | Some (SH.StaticMethod (SH.Def2 use)) -> 3.5 *. multiplier_use use
     | Some (SH.Field (SH.Def2 use)) -> 1.7 *. multiplier_use use
 
-    | Some (SH.ConstructorDef (use)) -> 1.2 *. multiplier_use use
+    | Some (SH.Constructor (SH.Def2 (use))) -> 1.2 *. multiplier_use use
 
     | Some (SH.GrammarRule) -> 2.5
         
@@ -101,7 +101,7 @@ let size_font_multiplier_of_categ ~font_size_real categ =
     | _ -> 
         (* the cases above should have covered all the cases *)
         categ +> Common.do_option (fun categ ->
-          if Highlight_code.is_entity_def_category categ
+          if Database_code.is_entity_def_category categ
           then failwith "You should update size_font_multiplier_of_categ";
         );
 
