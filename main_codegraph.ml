@@ -650,8 +650,19 @@ let test_xta graph_file =
       pr2 (spf "%s -> %d (e.g. %s)" 
                k (List.length xs) (Graph_code.string_of_node (List.hd xs)));
   );
-  
   ()
+
+let test_dotfile_of_deps dir =
+  let deps = Common.cmd_to_list (spf "find %s -name \"*.deps\" " dir) in
+  deps +> List.iter (fun file ->
+    let (_d,lib,e) = Common2.dbe_of_filename file in
+    if e = "deps" then begin
+      let deps = Common.cat file in
+      deps +> List.iter (fun lib2 ->
+        pr (spf "\"%s\" -> \"%s\"" lib lib2)
+      )
+    end
+  )
   
 (* ---------------------------------------------------------------------- *)
 let extra_actions () = [
@@ -684,6 +695,8 @@ let extra_actions () = [
   Common.mk_action_n_arg test_transitive_deps;
   "-test_xta", " <graph>",
   Common.mk_action_1_arg test_xta;
+  "-test_dotfile_of_deps", " <dir>",
+  Common.mk_action_1_arg test_dotfile_of_deps;
 (*
   "-test_phylomel", " <geno file>",
   Common.mk_action_1_arg test_phylomel;
