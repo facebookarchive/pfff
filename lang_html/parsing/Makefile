@@ -11,7 +11,6 @@ SRC= flag_parsing_html.ml \
      meta_ast_html.ml \
      visitor_html.ml \
      lib_parsing_html.ml \
-     export_html.ml \
      parser_html.ml lexer_html.ml \
      token_helpers_html.ml \
      dtd_simple.ml \
@@ -27,14 +26,11 @@ SYSLIBS= str.cma unix.cma
 LIBS=$(TOP)/commons/lib.cma
 
 INCLUDEDIRS= $(TOP)/commons $(TOP)/commons/ocamlextra \
- $(TOP)/commons/lib-sexp $(TOP)/commons/lib-json \
  $(TOP)/globals \
  $(TOP)/h_program-lang
 
-
 # $(TOP)/external/ocamlnet/netsys \
 # $(TOP)/external/ocamlnet/netstring \
-
 
 ##############################################################################
 # Generic variables

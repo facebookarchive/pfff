@@ -23,7 +23,6 @@ MAKESUBDIRS=
 
 INCLUDEDIRS= $(TOP)/commons \
    $(TOP)/commons/ocollection $(TOP)/commons/ocamlextra \
-   $(TOP)/commons/lib-json \
    $(TOP)/external/ \
    $(TOP)/h_program-lang $(TOP)/h_version-control  \
    $(TOP)/graph_code \

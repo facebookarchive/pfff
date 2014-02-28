@@ -22,8 +22,7 @@ LIBS=$(TOP)/commons/lib.cma \
 
 INCLUDEDIRS= $(TOP)/commons \
    $(TOP)/commons/ocollection $(TOP)/commons/ocamlextra \
-   $(TOP)/commons/lib-json \
-   $(TOP)/external/ \
+   $(TOP)/external/jsonwheel \
    $(TOP)/h_program-lang $(TOP)/h_version-control  \
    $(TOP)/graph_code \
    $(TOP)/globals \

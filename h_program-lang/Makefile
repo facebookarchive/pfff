@@ -20,22 +20,20 @@ SRC= parse_info.ml \
      overlay_code.ml big_grep.ml pleac.ml info_code.ml \
      pretty_print_code.ml \
      test_program_lang.ml unit_program_lang.ml
-# see also graph_code/graph_code.ml! closely related to h_program-lang/
+
+# See also graph_code/graph_code.ml! closely related to h_program-lang/
 
 SYSLIBS= str.cma unix.cma
 LIBS=../commons/lib.cma
 INCLUDEDIRS= $(TOP)/commons \
- $(TOP)/commons/lib-json \
  $(TOP)/commons/ocamlextra \
+ $(TOP)/external/jsonwheel \
  $(TOP)/h_files-format
-
-#$(TOP)/commons/lib-sexp
 
 # other sources:
 #  database_code.pl, facts.pl, for the prolog-based code query engine
 
-# dead: visitor_code, statistics_code, programming-language,
-#  ast_generic
+# dead: visitor_code, statistics_code, programming-language, ast_generic
 ##############################################################################
 # Generic variables
 ##############################################################################

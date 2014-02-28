@@ -15,8 +15,7 @@ SRC+=subversion.ml
 
 
 LIBS=../commons/lib.cma ../globals/lib.cma
-INCLUDEDIRS= ../commons ../commons/lib-sexp ../commons/ocamlextra \
-	../globals
+INCLUDEDIRS= ../commons ../commons/ocamlextra ../globals
 
 TARGET1=vcs
 

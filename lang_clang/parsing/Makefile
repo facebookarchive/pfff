@@ -18,7 +18,8 @@ SRC= flag_parsing_clang.ml \
 SYSLIBS= str.cma unix.cma 
 LIBS=$(TOP)/commons/lib.cma
 
-INCLUDEDIRS= $(TOP)/commons $(TOP)/commons/ocamlextra $(TOP)/commons/lib-json \
+INCLUDEDIRS= $(TOP)/commons $(TOP)/commons/ocamlextra \
+ $(TOP)/external/jsonwheel \
  $(TOP)/h_program-lang
 
 

@@ -10,10 +10,9 @@ SRC= \
      php_serialize.ml \
      xhprof.ml \
 
-# this require lib-xml/ to be in external/ again
+# this requires lib-xml/ to be in external/ again
 #     phpmanual_xml.ml
-
-#hphpi_trace.ml is in facebook/qa_test/ for now (more convenient)
+# hphpi_trace.ml is in facebook/qa_test/ for now (more convenient)
 
 SYSLIBS= str.cma unix.cma 
 LIBS=$(TOP)/commons/lib.cma \
@@ -24,11 +23,11 @@ LIBS=$(TOP)/commons/lib.cma \
 
 INCLUDEDIRS= $(TOP)/commons \
   $(TOP)/commons/ocollection $(TOP)/commons/ocamlextra \
-   $(TOP)/commons/lib-json \
-   $(TOP)/external/ \
-   $(TOP)/h_program-lang $(TOP)/h_version-control  \
-   ../../parsing \
-   ../foundation \
+  $(TOP)/external/jsonwheel \
+  $(TOP)/h_program-lang \
+  $(TOP)/h_version-control  \
+  ../../parsing \
+  ../foundation \
 
 #   $(PCREINCLUDE) $(JANEINCLUDE)
 #../matcher_php

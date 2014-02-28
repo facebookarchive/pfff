@@ -4,6 +4,7 @@
 
 (*s: json_ast_php flags *)
 (*e: json_ast_php flags *)
+(*
 val json_string_of_program:  Ast_php.program  -> string
 val json_string_of_toplevel: Ast_php.toplevel -> string
 val json_string_of_expr:     Ast_php.expr     -> string
@@ -11,6 +12,7 @@ val json_string_of_expr:     Ast_php.expr     -> string
  * so less readable, but it's faster.
  *)
 val json_string_of_program_fast:  Ast_php.program  -> string
+*)
 (*e: json_ast_php.mli *)
 
 (*s: sexp_ast_php.mli *)

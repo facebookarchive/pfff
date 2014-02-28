@@ -12,17 +12,18 @@ TARGET=lib
 
 SRC= figures.ml simple_color.ml \
      jgraph.ml \
-     treemap.ml treemap_json.ml
+     treemap.ml
 
+#need use json library in external/, or could be guarded by FEATURE_JSON
+# treemap_json.ml
 #need put back xml library in external/
-#graph_gephi.ml \
+#graph_gephi.ml
 
 #todo: empty for now
 SRC+=gnuplot.ml html.ml latex.ml #dot.ml
 
 LIBS=$(TOP)/commons/lib.cma
 INCLUDEDIRS= $(TOP)/commons \
- $(TOP)/commons/lib-json
 
 SYSLIBS= nums.cma bigarray.cma str.cma unix.cma
 
@@ -51,7 +52,6 @@ $(TARGET).cma: $(OBJS) $(LIBS)
 
 $(TARGET).cmxa: $(OPTOBJS) $(LIBS:.cma=.cmxa)
 	$(OCAMLOPT) -a -o $@ $(OPTOBJS)
-
 
 treemap_viewer: $(LIBS) $(EXTRALIBS) $(OBJS) $(SRC2:.ml=.cmo) graphics/main_treemap.cmo 
 	$(OCAMLC) -custom -o $@ $(SYSLIBS) $^ 

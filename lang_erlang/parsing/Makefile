@@ -27,7 +27,6 @@ LIBS=$(TOP)/commons/lib.cma \
  $(TOP)/h_program-lang/lib.cma \
 
 INCLUDEDIRS= $(TOP)/commons $(TOP)/commons/ocamlextra \
-  $(TOP)/commons/lib-sexp $(TOP)/commons/lib-json \
   $(TOP)/globals \
   $(TOP)/h_program-lang \
 

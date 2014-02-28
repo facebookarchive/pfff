@@ -13,14 +13,13 @@ LIBS=$(TOP)/commons/lib.cma \
 
 INCLUDEDIRS= $(TOP)/commons \
   $(TOP)/commons/ocollection $(TOP)/commons/ocamlextra \
-   $(TOP)/commons/lib-json \
-   $(TOP)/external/ \
-   $(TOP)/h_program-lang $(TOP)/h_version-control  \
-   ../../parsing \
-   .. \
-   ../foundation \
-   ../tools \
-   $(TOP)/globals \
+  $(TOP)/external/jsonwheel \
+  $(TOP)/h_program-lang $(TOP)/h_version-control  \
+  ../../parsing \
+  .. \
+  ../foundation \
+  ../tools \
+  $(TOP)/globals \
 
 ##############################################################################
 # Generic variables

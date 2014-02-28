@@ -43,8 +43,7 @@ MAKESUBDIRS=foundation tools checker \
 
 INCLUDEDIRS= $(TOP)/commons \
    $(TOP)/commons/ocollection $(TOP)/commons/ocamlextra \
-   $(TOP)/commons/lib-json \
-   $(TOP)/external/ \
+   $(TOP)/external/jsonwheel \
    $(TOP)/h_program-lang $(TOP)/h_version-control  \
    $(TOP)/globals \
    $(TOP)/matcher \

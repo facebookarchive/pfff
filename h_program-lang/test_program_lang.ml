@@ -26,18 +26,25 @@ let test_big_grep file =
   let top_n = 10 in
 
   let xs = Big_grep.top_n_search ~top_n ~query idx in
+
   xs +> List.iter (fun e ->
+(*
     let json = Db.json_of_entity e in
     let s = Json_io.string_of_json json in
     pr2 s
+*)
+    pr2_gen e;
   );
 
   (* naive search *)
   let xs = Big_grep.naive_top_n_search ~top_n ~query entities in
   xs +> List.iter (fun e ->
+(*
     let json = Db.json_of_entity e in
     let s = Json_io.string_of_json json in
     pr2 s
+*)
+    pr2_gen e
   );
   ()
 

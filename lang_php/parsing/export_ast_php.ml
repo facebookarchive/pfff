@@ -18,7 +18,7 @@
 open Common
 
 (*s: json_ast_php.ml *)
-module J = Json_type
+(* module J = Json_type *)
 
 (*****************************************************************************)
 (* Prelude *)
@@ -35,6 +35,7 @@ module J = Json_type
 (* Entry points *)
 (*****************************************************************************)
 
+(*
 let json_string_of_expr x =
   x +> Meta_ast_php.vof_expr +> Ocaml.json_of_v +> Json_out.string_of_json
 let json_string_of_toplevel x =
@@ -52,6 +53,7 @@ let json_string_of_program_fast x =
       Json_io.string_of_json ~compact:true ~recursive:false json
     )
   )
+*)
 (*e: json_ast_php.ml *)
 (*s: sexp_ast_php.ml *)
 (*e: sexp_ast_php.ml *)

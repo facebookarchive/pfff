@@ -18,7 +18,8 @@
    pad-ocaml-project-path "/home/pad/pfff"
    pad-ocaml-project-subdirs 
    (split-string 
-    "commons globals commons/lib-sexp commons/lib-json commons/ocamlextra
+    "commons globals commons/ocamlextra
+     external/jsonwheel
      h_version-control
      h_visualization
      h_program-lang

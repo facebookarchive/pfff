@@ -673,6 +673,74 @@ let json_of_test_results v = J.json_of_list json_of_test_result v
 (* JSON input *)
 (*****************************************************************************)
 
+module Ocamlx = struct
+open Ocaml
+
+let stag_incorrect_n_args _loc tag _v = 
+  failwith ("stag_incorrect_n_args on: " ^ tag)
+
+let unexpected_stag _loc _v = 
+  failwith ("unexpected_stag:")
+
+let record_duplicate_fields _loc _dup_flds _v = 
+  failwith ("record_duplicate_fields:")
+
+let record_extra_fields _loc _flds _v =
+  failwith ("record_extra_fields:")
+
+let record_undefined_elements _loc _v _xs = 
+  failwith ("record_undefined_elements:")
+
+(*
+let record_list_instead_atom _loc _v = 
+  failwith ("record_list_instead_atom:")
+*)
+
+(*
+let tuple_of_size_n_expected  _loc n v = 
+  failwith (spf "tuple_of_size_n_expected: %d, got %s" n (Common2.dump v))
+*)
+
+(* 
+ * Assumes the json was generated via 'ocamltarzan -choice json_of', which
+ * have certain conventions on how to encode variants for instance.
+ *)
+let rec (v_of_json: Json_type.json_type -> v) = fun j ->
+  match j with
+  | J.String s -> VString s
+  | J.Int i -> VInt i
+  | J.Float f -> VFloat f
+  | J.Bool b -> VBool b
+  | J.Null -> raise Todo
+
+  (* Arrays are used for represent constructors or regular list. Have to 
+   * go sligtly deeper to disambiguate.
+   *)
+  | J.Array xs ->
+      (match xs with
+      (* VERY VERY UGLY. It is legitimate to have for instance tuples
+       * of strings where the first element is a string that happen to
+       * look like a constructor. With this ugly code we currently
+       * not handle that :(
+       * 
+       * update: in the layer json file, one can have a filename
+       * like Makefile and we don't want it to be a constructor ...
+       * so for now I just generate constructors strings like
+       * __Pass so we know it comes from an ocaml constructor.
+       *)
+       | (J.String s)::xs when s =~ "^__\\([A-Z][A-Za-z_]*\\)$" ->
+           let constructor = Common.matched1 s in
+           VSum (constructor, List.map v_of_json  xs)
+      | ys ->
+          VList (ys +> List.map v_of_json)
+      )
+  | J.Object flds ->
+      VDict (flds +> List.map (fun (s, fld) ->
+        s, v_of_json fld
+      ))
+
+end
+
 (* I have not yet an ocamltarzan script for the of_json ... but I have one
  * for of_v, so have to pass through OCaml.v ... ugly
  *)
@@ -688,7 +756,7 @@ let test_status_ofv =
              let v1 = Ocaml.int_ofv v1
              and v2 = Ocaml.int_ofv v2
              in Pass ((v1, v2))
-         | _ -> Ocaml.stag_incorrect_n_args _loc tag sexp)
+         | _ -> Ocamlx.stag_incorrect_n_args _loc tag sexp)
 
     | (Ocaml.VSum (((("Fail" as tag)), sexp_args)) as sexp) ->
         (match sexp_args with
@@ -696,12 +764,12 @@ let test_status_ofv =
              let v1 = Ocaml.int_ofv v1
              and v2 = Ocaml.int_ofv v2
              in Fail ((v1, v2))
-         | _ -> Ocaml.stag_incorrect_n_args _loc tag sexp)
+         | _ -> Ocamlx.stag_incorrect_n_args _loc tag sexp)
     | (Ocaml.VSum (((("Fatal" as tag)), sexp_args)) as sexp) ->
         (match sexp_args with
          | [ v1 ] -> let v1 = Ocaml.string_ofv v1 in Fatal v1
-         | _ -> Ocaml.stag_incorrect_n_args _loc tag sexp)
-    | sexp -> Ocaml.unexpected_stag _loc sexp
+         | _ -> Ocamlx.stag_incorrect_n_args _loc tag sexp)
+    | sexp -> Ocamlx.unexpected_stag _loc sexp
 
 let test_result_ofv =
   let _loc = "Xxx.test_result"
@@ -760,10 +828,10 @@ let test_result_ofv =
         in
           (iter field_sexps;
            if !duplicates <> []
-           then Ocaml.record_duplicate_fields _loc !duplicates sexp
+           then Ocamlx.record_duplicate_fields _loc !duplicates sexp
            else
              if !extra <> []
-             then Ocaml.record_extra_fields _loc !extra sexp
+             then Ocamlx.record_extra_fields _loc !extra sexp
              else
                (match ((!t_file_field), (!t_status_field), (!t_time_field),
                        (!t_memory_field), (!t_trace_nb_lines_field),
@@ -781,7 +849,7 @@ let test_result_ofv =
                       t_shimmed = t_shimmed_value;
                     }
                 | _ ->
-                    Ocaml.record_undefined_elements _loc sexp
+                    Ocamlx.record_undefined_elements _loc sexp
                       [ ((!t_file_field = None), "t_file");
                         ((!t_status_field = None), "t_status");
                         ((!t_time_field = None), "t_time");
@@ -799,7 +867,7 @@ let test_results_ofv =
 
 (* finally can now load test results from a JSON data *)
 let test_results_of_json json =
-  let v = Ocaml.v_of_json json in
+  let v = Ocamlx.v_of_json json in
   let tr = test_results_ofv v in
   tr
 

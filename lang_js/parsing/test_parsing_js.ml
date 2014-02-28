@@ -54,12 +54,13 @@ let test_dump_js file =
   let s = Ocaml.string_of_v v in
   pr s
 
+(*
 let test_json_js file =
   let ast = Parse_js.parse_program file in
   let s = Export_ast_js.string_json_of_program ast in
   pr s;
   ()
-
+*)
 (*
 let test_esprima file = 
   let json = Json_in.load_json file in
@@ -81,9 +82,9 @@ let actions () = [
   "-dump_js", "   <file>",
   Common.mk_action_1_arg test_dump_js;
 
+(*
   "-json_js", "   <file> export the AST of file into JSON",
   Common.mk_action_1_arg test_json_js;
-(*
   "-parse_esprima_json", " <file> ",
   Common.mk_action_1_arg test_esprima;
 *)

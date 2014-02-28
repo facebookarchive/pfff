@@ -2,9 +2,6 @@
 # Variables
 ##############################################################################
 
-# you may have to duplicate this list in ../Makefile under the 
-# ifeq ($(FEATURE_JSON_BUILTIN_COMMONS),1)
-
 SRC= json_type.ml \
      json_out.ml \
      netconversion2.ml \
@@ -13,7 +10,7 @@ SRC= json_type.ml \
      json_in.ml \
      json_io.ml
 
-TARGET=jsonlib
+TARGET=lib
 
 INCLUDES=
 #-I +camlp4
@@ -30,7 +27,6 @@ OCAMLCFLAGS= -g -dtypes # -w A
 # This flag is also used in subdirectories so don't change its name here.
 OPTFLAGS=
 
-
 OCAMLC=ocamlc$(OPTBIN) $(OCAMLCFLAGS)  $(INCLUDES)  $(SYSINCLUDES) -thread
 OCAMLOPT=ocamlopt$(OPTBIN) $(OPTFLAGS) $(INCLUDES) $(SYSINCLUDES) -thread
 OCAMLLEX=ocamllex #-ml # -ml for debugging lexer, but slightly slower
@@ -40,7 +36,6 @@ OCAMLMKTOP=ocamlmktop -g -custom $(INCLUDES) -thread
 
 #-ccopt -static
 STATIC=
-
 
 ##############################################################################
 # Top rules

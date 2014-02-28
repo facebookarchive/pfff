@@ -77,7 +77,7 @@ type entity = {
 }
 
 (* for debugging *)
-val json_of_entity: entity -> Json_type.t
+(* val json_of_entity: entity -> Json_type.t *)
 
 
 (* The dirs and filenames in this database are in readable format

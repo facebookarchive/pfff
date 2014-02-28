@@ -364,6 +364,117 @@ let filename_ofv v = Ocaml.string_ofv v
 
 let record_check_extra_fields = ref true
 
+module Ocamlx = struct
+open Ocaml
+module J = Json_type
+
+(*
+let stag_incorrect_n_args _loc tag _v = 
+  failwith ("stag_incorrect_n_args on: " ^ tag)
+*)
+
+(*
+let unexpected_stag loc v = 
+  failwith ("unexpected_stag:")
+*)
+
+(*
+let record_only_pairs_expected loc v = 
+  failwith ("record_only_pairs_expected:")
+*)
+
+let record_duplicate_fields _loc _dup_flds _v = 
+  failwith ("record_duplicate_fields:")
+
+let record_extra_fields _loc _flds _v =
+  failwith ("record_extra_fields:")
+
+let record_undefined_elements _loc _v _xs = 
+  failwith ("record_undefined_elements:")
+
+let record_list_instead_atom _loc _v = 
+  failwith ("record_list_instead_atom:")
+
+let tuple_of_size_n_expected  _loc n v = 
+  failwith (spf "tuple_of_size_n_expected: %d, got %s" n (Common2.dump v))
+
+let rec json_of_v v = 
+  match v with
+  | VString s -> J.String s
+  | VSum ((s, vs)) ->J.Array ((J.String s)::(List.map json_of_v vs ))
+  | VTuple xs -> J.Array (xs +> List.map json_of_v)
+  | VDict xs -> J.Object (xs +> List.map (fun (s, v) ->
+      s, json_of_v v
+    ))
+  | VList xs -> J.Array (xs +> List.map json_of_v)
+  | VNone -> J.Null
+  | VSome v -> J.Array [ J.String "Some"; json_of_v v]
+  | VRef v -> J.Array [ J.String "Ref"; json_of_v v]
+  | VUnit -> J.Null (* ? *)
+  | VBool b -> J.Bool b
+
+  (* Note that 'Inf' can be used as a constructor but is also recognized
+   * by float_of_string as a float (infinity), so when I was implementing 
+   * this code by reverse engineering the generated sexp, it was important
+   * to guard certain code.
+   *)
+  | VFloat f -> J.Float f
+  | VChar c -> J.String (Common2.string_of_char c)
+  | VInt i -> J.Int i
+  | VTODO _v1 -> J.String "VTODO"
+  | VVar _v1 ->
+      failwith "json_of_v: VVar not handled"
+  | VArrow _v1 ->
+      failwith "json_of_v: VArrow not handled"
+
+(* 
+ * Assumes the json was generated via 'ocamltarzan -choice json_of', which
+ * have certain conventions on how to encode variants for instance.
+ *)
+let rec (v_of_json: Json_type.json_type -> v) = fun j ->
+  match j with
+  | J.String s -> VString s
+  | J.Int i -> VInt i
+  | J.Float f -> VFloat f
+  | J.Bool b -> VBool b
+  | J.Null -> raise Todo
+
+  (* Arrays are used for represent constructors or regular list. Have to 
+   * go sligtly deeper to disambiguate.
+   *)
+  | J.Array xs ->
+      (match xs with
+      (* VERY VERY UGLY. It is legitimate to have for instance tuples
+       * of strings where the first element is a string that happen to
+       * look like a constructor. With this ugly code we currently
+       * not handle that :(
+       * 
+       * update: in the layer json file, one can have a filename
+       * like Makefile and we don't want it to be a constructor ...
+       * so for now I just generate constructors strings like
+       * __Pass so we know it comes from an ocaml constructor.
+       *)
+       | (J.String s)::xs when s =~ "^__\\([A-Z][A-Za-z_]*\\)$" ->
+           let constructor = Common.matched1 s in
+           VSum (constructor, List.map v_of_json  xs)
+      | ys ->
+          VList (ys +> List.map v_of_json)
+      )
+  | J.Object flds ->
+      VDict (flds +> List.map (fun (s, fld) ->
+        s, v_of_json fld
+      ))
+
+let save_json file json = 
+  let s = Json_out.string_of_json json in
+  Common.write_file ~file s
+
+end
+
+(* I have not yet an ocamltarzan script for the of_json ... but I have one
+ * for of_v, so have to pass through OCaml.v ... ugly
+ *)
+
 let rec layer_ofv__ =
   let _loc = "Xxx.layer"
   in
@@ -399,7 +510,7 @@ let rec layer_ofv__ =
                                    and v2 = file_info_ofv v2
                                    in (v1, v2)
                                | sexp ->
-                                   Ocaml.tuple_of_size_n_expected _loc 2 sexp)
+                                   Ocamlx.tuple_of_size_n_expected _loc 2 sexp)
                               field_sexp
                           in files_field := Some fvalue
                       | Some _ -> duplicates := field_name :: !duplicates)
@@ -414,7 +525,7 @@ let rec layer_ofv__ =
                                    and v2 = emacs_color_ofv v2
                                    in (v1, v2)
                                | sexp ->
-                                   Ocaml.tuple_of_size_n_expected _loc 2 sexp)
+                                   Ocamlx.tuple_of_size_n_expected _loc 2 sexp)
                               field_sexp
                           in kinds_field := Some fvalue
                       | Some _ -> duplicates := field_name :: !duplicates)
@@ -427,10 +538,10 @@ let rec layer_ofv__ =
         in
           (iter field_sexps;
            if !duplicates <> []
-           then Ocaml.record_duplicate_fields _loc !duplicates sexp
+           then Ocamlx.record_duplicate_fields _loc !duplicates sexp
            else
              if !extra <> []
-             then Ocaml.record_extra_fields _loc !extra sexp
+             then Ocamlx.record_extra_fields _loc !extra sexp
              else
                (match ((!title_field), (!description_field), (!files_field),
                        (!kinds_field))
@@ -444,12 +555,12 @@ let rec layer_ofv__ =
                       kinds = kinds_value;
                     }
                 | _ ->
-                    Ocaml.record_undefined_elements _loc sexp
+                    Ocamlx.record_undefined_elements _loc sexp
                       [ ((!title_field = None), "title");
                         ((!description_field = None), "description");
                         ((!files_field = None), "files");
                         ((!kinds_field = None), "kinds") ]))
-    | sexp -> Ocaml.record_list_instead_atom _loc sexp
+    | sexp -> Ocamlx.record_list_instead_atom _loc sexp
 
 and layer_ofv sexp = layer_ofv__ sexp
 and file_info_ofv__ =
@@ -474,7 +585,7 @@ and file_info_ofv__ =
                                    and v2 = kind_ofv v2
                                    in (v1, v2)
                                | sexp ->
-                                   Ocaml.tuple_of_size_n_expected _loc 2 sexp)
+                                   Ocamlx.tuple_of_size_n_expected _loc 2 sexp)
                               field_sexp
                           in micro_level_field := Some fvalue
                       | Some _ -> duplicates := field_name :: !duplicates)
@@ -489,7 +600,7 @@ and file_info_ofv__ =
                                    and v2 = Ocaml.float_ofv v2
                                    in (v1, v2)
                                | sexp ->
-                                   Ocaml.tuple_of_size_n_expected _loc 2 sexp)
+                                   Ocamlx.tuple_of_size_n_expected _loc 2 sexp)
                               field_sexp
                           in macro_level_field := Some fvalue
                       | Some _ -> duplicates := field_name :: !duplicates)
@@ -502,10 +613,10 @@ and file_info_ofv__ =
         in
           (iter field_sexps;
            if !duplicates <> []
-           then Ocaml.record_duplicate_fields _loc !duplicates sexp
+           then Ocamlx.record_duplicate_fields _loc !duplicates sexp
            else
              if !extra <> []
-             then Ocaml.record_extra_fields _loc !extra sexp
+             then Ocamlx.record_extra_fields _loc !extra sexp
              else
                (match ((!micro_level_field), (!macro_level_field)) with
                 | (Some micro_level_value, Some macro_level_value) ->
@@ -514,10 +625,10 @@ and file_info_ofv__ =
                       macro_level = macro_level_value;
                     }
                 | _ ->
-                    Ocaml.record_undefined_elements _loc sexp
+                    Ocamlx.record_undefined_elements _loc sexp
                       [ ((!micro_level_field = None), "micro_level");
                         ((!macro_level_field = None), "macro_level") ]))
-    | sexp -> Ocaml.record_list_instead_atom _loc sexp
+    | sexp -> Ocamlx.record_list_instead_atom _loc sexp
 and file_info_ofv sexp = file_info_ofv__ sexp
 and kind_ofv__ = let _loc = "Xxx.kind" in fun sexp -> Ocaml.string_ofv sexp
 and kind_ofv sexp = kind_ofv__ sexp
@@ -527,10 +638,10 @@ and kind_ofv sexp = kind_ofv__ sexp
 (*****************************************************************************)
 
 let json_of_layer layer =
-  layer +> vof_layer +> Ocaml.json_of_v
+  layer +> vof_layer +> Ocamlx.json_of_v
 
 let layer_of_json json =
-  json +> Ocaml.v_of_json +> layer_ofv
+  json +> Ocamlx.v_of_json +> layer_ofv
 
 (*****************************************************************************)
 (* Load/Save *)
@@ -542,13 +653,13 @@ let layer_of_json json =
 let load_layer file =
   (* pr2 (spf "loading layer: %s" file); *)
   if File_type.is_json_filename file
-  then Ocaml.load_json file +> layer_of_json
+  then Json_in.load_json file +> layer_of_json
   else Common2.get_value file
 
 let save_layer layer file =
   if File_type.is_json_filename file
   (* layer +> vof_layer +> Ocaml.string_of_v +> Common.write_file ~file *)
-  then layer +> json_of_layer +> Ocaml.save_json file
+  then layer +> json_of_layer +> Ocamlx.save_json file
   else  Common2.write_value layer file
 
 (*****************************************************************************)

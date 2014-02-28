@@ -37,7 +37,7 @@ LIBS= ../commons/lib.cma \
       ../matcher/lib.cma \
       ../lang_php/parsing/lib.cma
 
-INCLUDEDIRS=../commons ../commons/lib-sexp ../commons/lib-json \
+INCLUDEDIRS=../commons \
             ../h_program-lang ../lang_php/parsing ../h_version-control
 
 SYSLIBS= str.cma unix.cma nums.cma bigarray.cma

@@ -9,7 +9,6 @@ TARGET=lib
 SRC= flag_parsing_js.ml \
      ast_js.ml \
      meta_ast_js.ml \
-     export_ast_js.ml \
      visitor_js.ml lib_parsing_js.ml \
      parser_js.ml lexer_js.ml \
      token_helpers_js.ml \
@@ -24,7 +23,6 @@ LIBS=$(TOP)/commons/lib.cma \
  $(TOP)/h_program-lang/lib.cma \
 
 INCLUDEDIRS= $(TOP)/commons $(TOP)/commons/ocamlextra \
-  $(TOP)/commons/lib-sexp $(TOP)/commons/lib-json \
   $(TOP)/globals \
   $(TOP)/h_program-lang \
   $(TOP)/matcher \

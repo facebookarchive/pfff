@@ -28,7 +28,6 @@ OCAMLCOMPILERDIR=$(shell ocamlc -where)/compiler-libs
 INCLUDEDIRS= $(TOP)/commons \
    $(OCAMLCOMPILERDIR) \
    $(TOP)/commons/ocollection $(TOP)/commons/ocamlextra \
-   $(TOP)/commons/lib-json \
    $(TOP)/globals \
    $(TOP)/external/ \
    $(TOP)/h_program-lang \

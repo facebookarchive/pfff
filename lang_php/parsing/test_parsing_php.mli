@@ -12,7 +12,7 @@ val test_parse_php  : Common.path list -> unit
 val test_tokens_php : Common.filename -> unit
 
 (* Print the AST of a PHP file using a JSON format *)
-val test_json_php   : Common.filename -> unit
+(* val test_json_php   : Common.filename -> unit *)
 
 (* Print any scalar in a PHP file by internally using a visitor *)
 val test_visit_php  : Common.filename -> unit

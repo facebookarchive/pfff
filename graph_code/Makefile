@@ -14,7 +14,6 @@ SRC= graph_code.ml graph_code_opti.ml \
 SYSLIBS= str.cma unix.cma
 LIBS=../commons/lib.cma
 INCLUDEDIRS= $(TOP)/commons \
- $(TOP)/commons/lib-json \
  $(TOP)/commons/ocamlextra \
  $(TOP)/external/ocamlgraph $(TOP)/external/ocamlgraph/src \
  $(TOP)/h_program-lang

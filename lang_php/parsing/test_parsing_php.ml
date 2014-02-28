@@ -84,6 +84,7 @@ let test_parse_php xs  =
 (*x: test_sexp_php *)
 (*e: test_sexp_php *)
 (*s: test_json_php *)
+(*
 let test_json_php file = 
   let ast = Parse_php.parse_program file in
   let s = Export_ast_php.json_string_of_program ast in
@@ -95,6 +96,7 @@ let test_json_fast_php file =
   let s = Export_ast_php.json_string_of_program_fast ast in
   pr s;
   ()
+*)
 (*e: test_json_php *)
 
 let test_dump_php file =
@@ -166,10 +168,12 @@ let actions () = [
       Common.mk_action_1_arg test_visit_php;
   (*x: test_parsing_php actions *)
     (* an alias for -sexp_php *)
+(*
     "-json", "   <file> export the AST of file into JSON", 
       Common.mk_action_1_arg test_json_php;
     "-json_fast", "   <file> export the AST of file into a compact JSON", 
       Common.mk_action_1_arg test_json_fast_php;
+*)
   (*x: test_parsing_php actions *)
     (* an alias for -sexp_php *)
     "-dump_php", "   <file>", 

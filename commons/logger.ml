@@ -1,6 +1,6 @@
 open Common
 
-module J = Json_type
+(* module J = Json_type *)
 
 (* see opa/pfff_logger.opa *)
 let log config cmd extra_args =
@@ -11,12 +11,15 @@ let log config cmd extra_args =
       | Some s -> s
       | None -> ""
     in
+(*
     let json = J.Object [
       ("unixname", J.String unixname);
       ("extra_args", J.String extra_args);
     ]
     in
     let str = Json_out.string_of_json json in
+*)
+    let str = spf "unixname:%s\nextra_args:%s" unixname extra_args in
     let tmpfile = Common.new_temp_file "logger" "json" in
     Common.write_file tmpfile str;
     let cmd = 

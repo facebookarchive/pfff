@@ -8,7 +8,6 @@ TOP=..
 ##############################################################################
 
 INCLUDEDIRS= $(TOP)/commons \
- $(TOP)/commons/lib-json \
  $(TOP)/h_program-lang/ \
  $(TOP)/graph_code/ \
  $(TOP)/h_visualization/ \

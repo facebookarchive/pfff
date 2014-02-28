@@ -2,7 +2,7 @@
 (* 
  * OCaml hacks to support reflection (works with ocamltarzan).
  *
- * See also sexp.ml and json.ml for other "reflective" techniques.
+ * See also sexp.ml, json.ml, and xml.ml for other "reflective" techniques.
  *)
 
 (* OCaml core type definitions (no objects, no modules) *)
@@ -76,23 +76,21 @@ val string_of_v: v -> string
 (*
 val sexp_of_t: t -> Sexp.t
 val t_of_sexp: Sexp.t -> t
-
 val sexp_of_v: v -> Sexp.t
 val v_of_sexp: Sexp.t -> v
-
 val string_sexp_of_t: t -> string
 val t_of_string_sexp: string -> t
-
 val string_sexp_of_v: v -> string
 val v_of_string_sexp: string -> v
 *)
 
 (* json converters *)
+(*
 val v_of_json: Json_type.json_type -> v
 val json_of_v: v -> Json_type.json_type
-
 val save_json: Common.filename -> Json_type.json_type -> unit
 val load_json: Common.filename -> Json_type.json_type
+*)
 
 (* visitor *)
 val map_v: 
@@ -129,14 +127,3 @@ val v_either:
 val v_either3: 
   ('a -> unit) -> ('b -> unit) -> ('c -> unit) ->
   ('a, 'b, 'c) Common.either3 -> unit
-
-(* sexp related stuff *)
-type loc = string
-val stag_incorrect_n_args: loc -> string -> v -> 'a
-val unexpected_stag: loc -> v -> 'a
-val record_only_pairs_expected: loc -> (string * v) -> 'a
-val record_duplicate_fields: loc -> string list -> v -> 'a
-val record_extra_fields: loc -> string list -> v -> 'a
-val record_undefined_elements: loc -> v -> 'b -> 'a
-val record_list_instead_atom: loc -> v -> 'a
-val tuple_of_size_n_expected: loc -> int -> v -> 'a

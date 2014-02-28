@@ -33,8 +33,6 @@ file: lang_ml/analyze/graph_code_cmt.cmt
 # complex cmt
 file: external/stdlib/dynlinkaux.cmt
 
-#had some 'include', but got de-includized
-#dir: commons/lib-sexp
 #todo: have namespace conflict between values and types
 #dir: commons/lib-json
 #todo: have some 'include'

@@ -50,6 +50,9 @@ OPTPROGS= $(PROGS:=.opt)
 #  XXXCMDOPT=
 #  endif
 
+JSONDIR=external/jsonwheel
+JSONCMA=external/jsonwheel/lib.cma
+
 ifeq ($(FEATURE_VISUAL),1)
 GUIDIR=external/ocamlgtk
 GUICMD= $(MAKE) all -C $(GUIDIR) && $(MAKE) gui -C commons 
@@ -92,6 +95,7 @@ SYSLIBS+=$(OCAMLCOMPILERCMA)
 # used for sgrep and other small utilities which I dont want to depend
 # on too much things
 BASICLIBS=commons/lib.cma \
+ $(JSONCMA) \
  globals/lib.cma \
  h_files-format/lib.cma \
  h_program-lang/lib.cma \
@@ -122,8 +126,9 @@ BASICSYSLIBS=nums.cma bigarray.cma str.cma unix.cma
 
 # use for the other programs
 LIBS= commons/lib.cma \
+       $(JSONCMA) \
        $(GRAPHCMA) \
-       $(EXTLIBCMA) $(PTCMA) $(ZIPCMA)   $(JAVALIBCMA) \
+       $(EXTLIBCMA) $(PTCMA) $(ZIPCMA) $(JAVALIBCMA) \
        commons/commons_features.cma \
     globals/lib.cma \
     h_files-format/lib.cma \
@@ -181,6 +186,7 @@ LIBS= commons/lib.cma \
     lang_web/parsing/lib.cma \
 
 MAKESUBDIRS=commons \
+  $(JSONDIR) \
   $(GRAPHDIR) \
   $(GUIDIR) $(CAIRODIR) \
   $(ZIPDIR) $(EXTLIBDIR) $(PTDIR) $(JAVALIBDIR) \
@@ -241,9 +247,7 @@ MAKESUBDIRS=commons \
 
 INCLUDEDIRS=$(MAKESUBDIRS) \
  commons/ocamlextra commons/ocollection \
- commons/lib-json commons/lib-xml \
  $(GTKINCLUDE) $(CAIROINCLUDE) \
- $(EXTLIBDIR) $(PTDIR) $(ZIPDIR) $(JAVALIBDIR) \
  $(OCAMLCOMPILERDIR)
 
 ##############################################################################
@@ -617,8 +621,8 @@ archi:
 # Pad specific rules
 ##############################################################################
 
-DARCSFORESTS=commons commons/lib-sexp \
- ocamltarzan ocamltarzan/lib-sexp \
+DARCSFORESTS=commons \
+ ocamltarzan \
  h_version-control h_program-lang \
  lang_php/parsing \
  lang_php/analyze \
