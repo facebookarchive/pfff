@@ -10,5 +10,5 @@ ocamlgraph/: used by commons/graph.ml and so graph_code, also a bit by
 javalib/: used by lang_bytecode/
 ocamlzip/: used by externals/javalib (used itself by lang_bytecode/)
 extlib/: used by externals/javalib (used itself by lang_bytecode/)
+ptrees/: used by javalib/ (TODO: deps not in codegraph because functor)
 
-ptrees/??
