@@ -584,6 +584,9 @@ let matching_use_categ_kind categ kind =
   | Function, HC.BuiltinBoolean
   (* because what looks like a constant is actually a partially applied func *)
   | Function, HC.Constant _
+
+  (* function pointers in structure initialized (poor's man oo in C) *)
+  | Function, HC.Global _
     
   | Global,   HC.UseOfRef
   | Field, HC.UseOfRef
