@@ -145,6 +145,8 @@ LIBS= commons/lib.cma \
     lang_ml/parsing/lib.cma \
      lang_ml/analyze/visual/lib.cma \
      lang_ml/analyze/lib.cma \
+    lang_cmt/parsing/lib.cma \
+     lang_cmt/analyze/lib.cma \
     lang_nw/parsing/lib.cma \
      lang_nw/analyze/lib.cma \
     lang_lisp/parsing/lib.cma \
@@ -203,6 +205,8 @@ MAKESUBDIRS=commons \
   matcher \
   lang_ml/parsing \
    lang_ml/analyze \
+  lang_cmt/parsing \
+   lang_cmt/analyze \
   lang_nw/parsing \
    lang_nw/analyze \
   lang_lisp/parsing \

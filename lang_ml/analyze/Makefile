@@ -8,8 +8,6 @@ SRC= module_ml.ml \
      graph_code_ml.ml \
      tags_ml.ml \
      database_light_ml.ml \
-     ast_cmt.ml meta_ast_cmt.ml \
-     graph_code_cmt_helpers.ml graph_code_cmt.ml \
      coverage_ml.ml \
      test_analyze_ml.ml unit_analyze_ml.ml
 
@@ -23,10 +21,7 @@ LIBS=$(TOP)/commons/lib.cma \
 
 MAKESUBDIRS=visual
 
-OCAMLCOMPILERDIR=$(shell ocamlc -where)/compiler-libs
-
 INCLUDEDIRS= $(TOP)/commons \
-   $(OCAMLCOMPILERDIR) \
    $(TOP)/commons/ocollection $(TOP)/commons/ocamlextra \
    $(TOP)/globals \
    $(TOP)/external/ \
@@ -89,21 +84,6 @@ $(TARGET).top: $(OBJS) $(LIBS)
 
 clean::
 	rm -f $(TARGET).top
-
-
-PP=-pp "cpp -DOCAML_VERSION=$(OCAMLVERSION)"
-
-meta_ast_cmt.cmo: meta_ast_cmt.ml
-	$(OCAMLC) $(PP)  -c $<
-
-meta_ast_cmt.cmx: meta_ast_cmt.ml
-	$(OCAMLOPT) $(PP) -c $<
-
-graph_code_cmt.cmo: graph_code_cmt.ml
-	$(OCAMLC) $(PP)  -c $<
-
-graph_code_cmt.cmx: graph_code_cmt.ml
-	$(OCAMLOPT) $(PP) -c $<
 
 ##############################################################################
 # Literate Programming rules
