@@ -28,8 +28,8 @@ let current_rects_to_draw = ref []
 let current_r = ref None
 
 let paint_content_maybe_refresher = ref None
-
 let current_motion_refresher = ref None
+let current_tooltip_refresher = ref None
 
 let _go_back = ref (fun _w ->
   failwith "_go_back not defined"

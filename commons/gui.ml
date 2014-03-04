@@ -18,16 +18,11 @@ open Common
 (* Prelude *)
 (*****************************************************************************)
 (*   
- * old: 
- * This file was named gCommon.ml to be coherent with the other lalbgtk files.
+ * A few convenient wrappers around ocamlgtk.
+ * old: was named gCommon.ml to be coherent with the other lalbgtk files.
  * 
- *)
-
-(*****************************************************************************)
-(* Example of overall organisation to follow: *)
-(*****************************************************************************)
-
-(* Overall layout organisation:
+ * Example of overall organisation to follow:
+ * 
  *  - menu (File, Edit, View, X, Help)
  *  - toolbar
  *  - mainview
@@ -64,10 +59,6 @@ open Common
  * you ensure that you separate concern clearly and then add in the gui
  * just the gui specific stuff.
  *)
-
-(*###########################################################################*)
-(*  *)
-(*###########################################################################*)
 
 (*****************************************************************************)
 (* Widgets composition *)
@@ -169,7 +160,6 @@ let mk_menu menu_item f =
   f menu;
   menu_item
 
-(*---------------------------------------------------------------------------*)
 
 (* Functions to have even more concise style. Can then write 
  *  w +> GCommon.add (GMenu.toolbar) (fun tb -> ...
@@ -195,7 +185,6 @@ let add_menu menu_item f w =
   f menu;
   w#add menu_item
 
-(*---------------------------------------------------------------------------*)
 let rec paneds orientation xs = 
   match xs with
   | [] | [_] -> failwith "paneds: need at least 2 elements"
@@ -322,10 +311,6 @@ let entry_with_completion_eff ~text ~model_col ?minimum_key_length () =
   c#set_text_column col;
   entry
 
-(*###########################################################################*)
-(* Special bigger widgets *)
-(*###########################################################################*)
-
 (*****************************************************************************)
 (* CList widget Helpers *)
 (*****************************************************************************)
@@ -419,10 +404,6 @@ let view_expand_level (view: GTree.view) depth_limit =
 (*****************************************************************************)
 
 (* todo? gHTML ? gtk_xmhtml ? but apparently only for gtk1.2 :( *)
-
-(*###########################################################################*)
-(*  *)
-(*###########################################################################*)
 
 (*****************************************************************************)
 (* Menu *)

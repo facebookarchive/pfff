@@ -127,10 +127,11 @@ let draw_englobing_rectangles_overlay ~dw (r, middle, r_englobing) =
 (* ---------------------------------------------------------------------- *)
 (* Uses and users macrolevel *)
 (* ---------------------------------------------------------------------- *)
-let draw_uses_users_files r dw model =
+let draw_deps_files r dw model =
  with_overlay dw (fun cr_overlay ->
    let file = r.T.tr_label in
    let uses_rect, users_rect = M.deps_rects_of_file file dw model in
+   (* todo: glowing layer *)
    uses_rect +> List.iter (fun r ->
      CairoH.draw_rectangle_figure ~cr:cr_overlay ~color:"green" r.T.tr_rect;
    );
@@ -142,6 +143,7 @@ let draw_uses_users_files r dw model =
 (* ---------------------------------------------------------------------- *)
 (* Uses and users microlevel *)
 (* ---------------------------------------------------------------------- *)
+(* todo: better fisheye, with good background color *)
 let draw_magnify_line_overlay_maybe ?honor_color dw line microlevel =
   with_overlay dw (fun cr_overlay ->
     let font_size = microlevel.layout.lfont_size in
@@ -150,10 +152,10 @@ let draw_magnify_line_overlay_maybe ?honor_color dw line microlevel =
     (* todo: put in style *)
     if font_size_real < 5.
     then Draw_microlevel.draw_magnify_line 
-      ?honor_color cr_overlay line microlevel
+          ?honor_color cr_overlay line microlevel
   )
 
-let draw_uses_users_entities n dw model =
+let draw_deps_entities n dw model =
  with_overlay dw (fun cr_overlay ->
 
    line_and_microlevel_of_node_opt n dw model 
@@ -180,6 +182,14 @@ let draw_uses_users_entities n dw model =
      );
    );
  )
+
+(* ---------------------------------------------------------------------- *)
+(* Hovercard/tooltip current entity *)
+(* ---------------------------------------------------------------------- *)
+let draw_hovercard ~cr_overlay ~x ~y n _dw _model =
+  ignore(cr_overlay, x, y);
+  pr2 (spf "Draw_hovercard: %s" (Graph_code.string_of_node n));
+  ()
 
 (* ---------------------------------------------------------------------- *)
 (* The selected rectangles *)
@@ -263,15 +273,28 @@ let motion_refresher ev w =
     );
 
     draw_englobing_rectangles_overlay ~dw (tr, middle, r_englobing);
-    draw_uses_users_files tr dw model;
+    draw_deps_files tr dw model;
 
     entity_def_opt +> Common.do_option (fun n ->
-      draw_uses_users_entities n dw model);
+      draw_deps_entities n dw model);
     entity_use_opt +> Common.do_option (fun n ->
-      draw_uses_users_entities n dw model);
+      draw_deps_entities n dw model);
   
     if w.settings.draw_searched_rectangles;
     then draw_searched_rectangles ~dw;
+
+    !Controller.current_tooltip_refresher
+    +>Common.do_option GMain.Timeout.remove;
+    Controller.current_tooltip_refresher := 
+      Some (Gui.gmain_timeout_add ~ms:2000 ~callback:(fun _ ->
+        (match entity_def_opt, entity_use_opt with
+        | Some node, _ | _, Some node ->
+            draw_hovercard ~cr_overlay ~x ~y node dw model
+        | _ -> ()
+        );
+        true
+      ));
+
     
     Controller.current_r := Some tr;
   );
@@ -280,10 +303,13 @@ let motion_refresher ev w =
 
 
 let motion_notify w ev =
-  !Controller.current_motion_refresher +> Common.do_option GMain.Idle.remove;
   let x, y = GdkEvent.Motion.x ev, GdkEvent.Motion.y ev in
   pr2 (spf "motion: %f, %f" x y);
 
+  (* The motion code now takes time, so it's better do run it when the user
+   * has finished moving his mouse, hence the use of gmain_idle_add below.
+   *)
+  !Controller.current_motion_refresher +> Common.do_option GMain.Idle.remove;
   Controller.current_motion_refresher := 
     Some (Gui.gmain_idle_add ~prio:200 (fun () -> motion_refresher ev w));
   true

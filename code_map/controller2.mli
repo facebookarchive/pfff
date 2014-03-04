@@ -22,6 +22,8 @@ val paint_content_maybe_refresher:
   GMain.Idle.id option ref
 val current_motion_refresher:
   GMain.Idle.id option ref
+val current_tooltip_refresher:
+  GMain.Timeout.id option ref
 
 val title_of_path: string -> string
 
