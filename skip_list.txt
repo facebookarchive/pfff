@@ -25,17 +25,15 @@ dir: tests/ml/cmt
 #less: dupes with external/extlib/, remove them
 #file: commons/ocamlextra/enum.cmt
 #file: commons/ocamlextra/dynArray.cmt
+file: external/extlib/enum.cmt
+file: external/extlib/dynArray.cmt
 
 # depends on compiler libs
-file: lang_ml/analyze/meta_ast_cmt.cmt
-file: lang_ml/analyze/graph_code_cmt.cmt
+file: lang_cmt/parsing/meta_ast_cmt.cmt
+file: lang_cmt/analyze/graph_code_cmt.cmt
 
 # complex cmt
 file: external/stdlib/dynlinkaux.cmt
-
-#todo: have namespace conflict between values and types
-#dir: commons/lib-json
-#todo: have some 'include'
 
 # -------------------------------------------------------------------------
 # ml
@@ -53,19 +51,7 @@ file: facebook/external/archimedes/src/utils.ml
 # -------------------------------------------------------------------------
 # old/
 # -------------------------------------------------------------------------
-
-# todo: factorize in a 'dir_element: old ?
-dir: lang_ml/old
-dir: lang_cpp/parsing/old
-dir: lang_php/old
-dir: h_program-lang/old
-dir: h_program-visual/graphics/old
-dir: facebook/old
-dir: facebook/check_module/old
-dir: facebook/fb_db/old
-dir: facebook/qa_code/old
-dir: facebook/flib_dependencies/old
-dir: old
+# less: have a dir_element: old ?
 
 # -------------------------------------------------------------------------
 # _build
