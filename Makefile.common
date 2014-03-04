@@ -52,8 +52,8 @@ OCAMLCFLAGS=-g -thread -dtypes $(WARNING_FLAGS) $(OCAMLCFLAGS_EXTRA)
 # variable false positive
 OPTFLAGS?=-thread -g -w y
 
-OCAMLC=ocamlc$(OPTBIN) $(OCAMLCFLAGS)  $(INCLUDES)
-OCAMLOPT=ocamlopt$(OPTBIN) $(OPTFLAGS) $(INCLUDES)
+OCAMLC=ocamlc$(OPTBIN) $(OCAMLCFLAGS) $(PP) $(INCLUDES)
+OCAMLOPT=ocamlopt$(OPTBIN) $(OPTFLAGS) $(PP) $(INCLUDES)
 OCAMLLEX=ocamllex #-ml # -ml for debugging lexer, but slightly slower
 OCAMLYACC=ocamlyacc -v
 OCAMLDEP=ocamldep $(PP) $(INCLUDES)

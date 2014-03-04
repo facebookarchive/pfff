@@ -220,7 +220,7 @@ let constraints_of_info_txt info_txt =
 let set_gc () =
   (* only relevant in bytecode, in native the stacklimit is the os stacklimit*)
   Gc.set {(Gc.get ()) with Gc.stack_limit = 1000 * 1024 * 1024};
-  (* see http://www.elehack.net/michael/blog/2010/06/ocaml-memory-tuning *)
+  (* see www.elehack.net/michael/blog/2010/06/ocaml-memory-tuning *)
   Gc.set { (Gc.get()) with Gc.minor_heap_size = 4_000_000 };
   (* goes from 5300s to 3000s for building db for www *)
   Gc.set { (Gc.get()) with Gc.major_heap_increment = 8_000_000 };
@@ -307,6 +307,7 @@ let build_graph_code lang xs =
     | "clang2" -> Graph_code_clang.build ~verbose:!verbose root files, empty
 
     | "java" -> Graph_code_java.build ~verbose:!verbose root files, empty
+#if FEATURE_BYTECODE
     | "bytecode" -> 
       let graph_code_java =  None 
 (*        Some (Graph_code_java.build ~verbose:!verbose ~only_defs:true 
@@ -315,6 +316,7 @@ let build_graph_code lang xs =
       in
       Graph_code_bytecode.build ~verbose:!verbose ~graph_code_java root files,
       empty
+#endif
 
     | "dot" -> 
       Graph_code.graph_of_dotfile (Filename.concat root "graph.dot"), empty

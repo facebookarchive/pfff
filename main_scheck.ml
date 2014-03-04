@@ -172,7 +172,7 @@ let set_gc () =
   if !Flag.debug_gc
   then Gc.set { (Gc.get()) with Gc.verbose = 0x01F };
 *)
-  (* see http://www.elehack.net/michael/blog/2010/06/ocaml-memory-tuning *)
+  (* see www.elehack.net/michael/blog/2010/06/ocaml-memory-tuning *)
   Gc.set { (Gc.get()) with Gc.minor_heap_size = 2_000_000 };
   Gc.set { (Gc.get()) with Gc.space_overhead = 200 };
   ()

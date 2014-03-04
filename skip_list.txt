@@ -6,7 +6,7 @@
 
 # ignore for now
 dir: web
-#dir: facebook
+dir: facebook
 
 # -------------------------------------------------------------------------
 # parse errors
@@ -23,8 +23,8 @@ dir: tests/ml/db/parsing_errors
 dir: tests/ml/cmt
 
 #less: dupes with external/extlib/, remove them
-file: commons/ocamlextra/enum.cmt
-file: commons/ocamlextra/dynArray.cmt
+#file: commons/ocamlextra/enum.cmt
+#file: commons/ocamlextra/dynArray.cmt
 
 # depends on compiler libs
 file: lang_ml/analyze/meta_ast_cmt.cmt

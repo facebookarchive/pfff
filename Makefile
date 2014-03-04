@@ -71,7 +71,7 @@ GRAPHDIR=external/ocamlgraph
 GRAPHCMD= $(MAKE) all -C $(GRAPHDIR) && $(MAKE) graph -C commons
 GRAPHCMDOPT= $(MAKE) all.opt -C $(GRAPHDIR) && $(MAKE) graph.opt -C commons
 
-# should be FEATURE_BYTECODE
+ifeq ($(FEATURE_BYTECODE), 1)
 ZIPDIR=external/ocamlzip
 ZIPCMA=external/ocamlzip/zip.cma
 EXTLIBDIR=external/extlib
@@ -80,6 +80,10 @@ PTDIR=external/ptrees
 PTCMA=external/ptrees/ptrees.cma
 JAVALIBDIR=external/javalib/src
 JAVALIBCMA=external/javalib/src/lib.cma
+
+BYTECODEDIRS=lang_bytecode/parsing lang_bytecode/analyze
+BYTECODECMAS=lang_bytecode/parsing/lib.cma lang_bytecode/analyze/lib.cma
+endif
 
 # should be FEATURE_CMT
 OCAMLCOMPILERDIR=$(shell ocamlc -where)/compiler-libs
@@ -169,8 +173,7 @@ LIBS= commons/lib.cma \
      lang_clang/analyze/lib.cma \
     lang_java/parsing/lib.cma \
      lang_java/analyze/lib.cma \
-    lang_bytecode/parsing/lib.cma \
-     lang_bytecode/analyze/lib.cma \
+    $(BYTECODECMAS) \
     lang_python/parsing/lib.cma \
      lang_python/analyze/lib.cma \
     lang_csharp/parsing/lib.cma \
@@ -222,8 +225,7 @@ MAKESUBDIRS=commons \
    lang_clang/analyze \
   lang_java/parsing \
    lang_java/analyze \
-  lang_bytecode/parsing \
-   lang_bytecode/analyze \
+  $(BYTECODEDIRS) \
   lang_python/parsing \
    lang_python/analyze \
   lang_csharp/parsing \
@@ -250,6 +252,8 @@ INCLUDEDIRS=$(MAKESUBDIRS) \
  $(GTKINCLUDE) $(CAIROINCLUDE) \
  $(OCAMLCOMPILERDIR)
 
+PP=-pp "cpp -DFEATURE_BYTECODE=$(FEATURE_BYTECODE)"
+
 ##############################################################################
 # Generic
 ##############################################################################
@@ -274,7 +278,7 @@ all.opt: opt
 top: $(TARGET).top
 
 rec:
-	$(MAKE) -C commons 
+	$(MAKE) -C commons
 	$(GRAPHCMD)
 	$(GUICMD)
 	$(MAKE) features -C commons 
@@ -522,6 +526,7 @@ srctar:
 # Website rules
 ##############################################################################
 
+# see also ~/github/pfff-wiki/
 WEBSITE=/home/pad/mobile/homepage/software/project-pfff
 
 gen-html:
@@ -529,7 +534,6 @@ gen-html:
 
 website:
 	cp $(TMP)/$(PACKAGE).tgz                $(WEBSITE)
-
 #	make gen-html
 #	cp changes.txt.html $(WEBSITE)/changes-$(VERSION).html
 
@@ -539,19 +543,22 @@ website:
 
 .PHONY:: tags graph prolog  db layers visual   tests test
 
-tags:
-	./stags.opt -lang cmt .
 graph:
 	./codegraph.opt -derived_data -lang cmt -build .
 prolog:
 	./codequery.opt -lang cmt -build .
 	mv facts.pl facts_pl
+
+# superseded by codegraph -derived_data above
+tags:
+	./stags.opt -lang cmt .
 db:
 	./pfff_db.opt -db_of_graph_code graph_code.marshall
 layers:
 	./codegraph.opt -gen_bottomup_layer graph_code.marshall layer_graph_code.json
 #./pfff_db_heavy -gen_age_layer /home/pad/local/pfff-for-layers layer_age.marshall
 #./pfff_db_heavy -gen_age_layer /home/pad/local/pfff-for-layers layer_age.json
+
 
 visual:
 	./codemap -no_legend -profile -ss 2 -filter pfff .
@@ -567,6 +574,45 @@ push:
 pull:
 	git pull
 	cd facebook; git pull
+
+
+##############################################################################
+# Other/Old developer rules
+##############################################################################
+
+visual2:
+	./codemap -no_legend -profile -ss 2 \
+	   -with_info DB_LIGHT.marshall -with_layers . .
+visualhead:
+	./codemap -ss 1 -ft 0.5 -commitid HEAD
+
+graph2:
+	./codegraph.opt -lang ml -build .
+
+#refactoring:
+# git grep -l Source_high | xargs perl -p -i -e 's/Source_highlight/Highlight_code/g'
+
+# TODO: replace all of that with a graphviz plugin for codegraph
+DSRC=$(SRC)
+DIRS= $(filter-out commons external/ocamlgtk/src external/ocamlcairo external/ocamlgraph facebook, $(MAKESUBDIRS))
+#DIRS=lang_php/parsing
+DSRC+=$(DIRS:=/*.ml)
+DSRC+=$(wildcard main_*.ml)
+
+#PP1=-pp camlp4o
+DOTCOLORS=green,darkgoldenrod2,cyan,red,magenta,yellow,burlywood1,aquamarine,purple,lightpink,salmon,mediumturquoise,black,slategray3
+
+archi:
+	ocamldoc $(PP1) -I +threads $(INCLUDES) $(DSRC)  \
+	  -dot -dot-reduce -dot-colors $(DOTCOLORS)
+	dot -Tps ocamldoc.out > dot.ps
+	mv dot.ps Fig_graph_ml.ps
+	ps2pdf Fig_graph_ml.ps
+	rm -f Fig_graph_ml.ps
+
+##############################################################################
+# Facebook specific rules
+##############################################################################
 
 fbpull:
 	proxycmd.sh git pull
@@ -585,37 +631,6 @@ fb.opt:
 fbdepend:
 	$(MAKE) depend
 	$(MAKE) depend -C facebook
-
-
-visual2:
-	./codemap -no_legend -profile -ss 2 \
-	   -with_info DB_LIGHT.marshall -with_layers . .
-visualhead:
-	./codemap -ss 1 -ft 0.5 -commitid HEAD
-
-graph2:
-	./codegraph.opt -lang ml -build .
-
-#refactoring:
-# git grep -l Source_high | xargs perl -p -i -e 's/Source_highlight/Highlight_code/g'
-
-# TODO: replace with graphviz plugin to codegraph
-DSRC=$(SRC)
-DIRS= $(filter-out commons external/ocamlgtk/src external/ocamlcairo external/ocamlgraph facebook, $(MAKESUBDIRS))
-#DIRS=lang_php/parsing
-DSRC+=$(DIRS:=/*.ml)
-DSRC+=$(wildcard main_*.ml)
-
-#PP1=-pp camlp4o
-DOTCOLORS=green,darkgoldenrod2,cyan,red,magenta,yellow,burlywood1,aquamarine,purple,lightpink,salmon,mediumturquoise,black,slategray3
-
-archi:
-	ocamldoc $(PP1) -I +threads $(INCLUDES) $(DSRC)  \
-	  -dot -dot-reduce -dot-colors $(DOTCOLORS)
-	dot -Tps ocamldoc.out > dot.ps
-	mv dot.ps Fig_graph_ml.ps
-	ps2pdf Fig_graph_ml.ps
-	rm -f Fig_graph_ml.ps
 
 ##############################################################################
 # Pad specific rules

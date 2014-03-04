@@ -83,7 +83,9 @@ let test regexp =
       Unit_analyze_ml.unittest;
       Unit_parsing_java.unittest;
       Unit_analyze_java.unittest;
+#if FEATURE_BYTECODE
       Unit_analyze_bytecode.unittest;
+#endif
       Unit_parsing_js.unittest;
       Unit_analyze_js.unittest;
       Unit_parsing_html.unittest;
