@@ -5,7 +5,7 @@ pfff is a set of tools and APIs to perform some static analysis, dynamic
 analysis, code visualizations, code navigations, or style-preserving
 source-to-source transformations such as refactorings on source code.
 For now the effort is focused on PHP but there is preliminary support
-for Javascript, C++, Erlang and other languages. There is also
+for Javascript, C, C++, Java, and other languages. There is also
 preliminary support for OCaml code so that the framework can be used
 on the code of pfff itself.
 
@@ -25,7 +25,7 @@ pfff is also made of few tools:
  - codemap, which is a gtk and cairo based source code
    visualizer/navigator/searcher leveraging
    the information computed previously by pfff_db and codegraph.
- - codegraph, apackage/module/class dependency visualizer
+ - codegraph, a package/module/class dependency visualizer
  - codequery, an interactive tool a la SQL to query information
    about the structure of a codebase using Prolog as the query engine
  - pfff_db, which does some global analysis on a set of source files and
@@ -57,29 +57,24 @@ information (the database) in /tmp/pfff.json
 Usage for codemap:
 ------------------------
 
-  $ ./codemap -with_info /tmp/pfff.json ~/pfff
+  $ ./codemap ~/pfff
 
 This should launch a gtk-based GUI that allows you to visualize
 source code and perform some code search.
 
+Usage for codegraph:
+------------------------
 
+  $ ./codegraph -lang cmt -build ~/pfff
 
-Usage for pfff_db_heavy:
------------------------------
+to generate a graph_code.marshall file in ~/pfff containing
+all dependency information about the pfff codebase using the
+typed bytecode .cmt files generated during the compilation of pfff.
 
-For now only PHP is supported for the heavy analysis. To build
-the heavy database do:
+  $ ./codegraph ~/pfff
 
-   $ ./pfff_db_heavy -metapath /tmp/pfff_db/ ~/www/
-
-to analyze all the .php and .phpt files under ~/www and store metadata
-information (the database) in /tmp/pfff_db/. It may takes some time,
-for instance 20 minutes for a PHP codebase with many million lines of code.
-
-Once this is done you can use some of the flags of pfff_db_heavy to
-do some analysis as in:
-
-  $ ./pfff_db_heavy -deadcode_analysis /tmp/pfff_db/
+This should launch a gtk-based GUI that allows you to visualize
+source code dependencies.
 
 More information
 ----------------------
