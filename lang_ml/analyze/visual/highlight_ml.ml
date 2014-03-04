@@ -554,7 +554,7 @@ let visit_program
           | _ -> tag ii Comment
           )
 
-    | T.TCommentMisc ii -> tag ii Comment
+    | T.TCommentMisc ii -> tag ii CppOther
     | T.TCommentNewline _ii | T.TCommentSpace _ii -> ()
     | T.TUnknown ii -> tag ii Error
     | T.EOF _ii-> ()
