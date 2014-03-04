@@ -85,9 +85,14 @@ BYTECODEDIRS=lang_bytecode/parsing lang_bytecode/analyze
 BYTECODECMAS=lang_bytecode/parsing/lib.cma lang_bytecode/analyze/lib.cma
 endif
 
-# should be FEATURE_CMT
+ifeq ($(FEATURE_CMT), 1)
 OCAMLCOMPILERDIR=$(shell ocamlc -where)/compiler-libs
 OCAMLCOMPILERCMA=ocamlcommon.cma
+
+CMTDIRS=lang_cmt/parsing lang_cmt/analyze
+CMTCMAS=lang_cmt/parsing/lib.cma lang_cmt/analyze/lib.cma
+
+endif
 
 #------------------------------------------------------------------------------
 # Main variables
@@ -145,8 +150,7 @@ LIBS= commons/lib.cma \
     lang_ml/parsing/lib.cma \
      lang_ml/analyze/visual/lib.cma \
      lang_ml/analyze/lib.cma \
-    lang_cmt/parsing/lib.cma \
-     lang_cmt/analyze/lib.cma \
+    $(CMTCMAS) \
     lang_nw/parsing/lib.cma \
      lang_nw/analyze/lib.cma \
     lang_lisp/parsing/lib.cma \
@@ -205,8 +209,7 @@ MAKESUBDIRS=commons \
   matcher \
   lang_ml/parsing \
    lang_ml/analyze \
-  lang_cmt/parsing \
-   lang_cmt/analyze \
+  $(CMTDIRS) \
   lang_nw/parsing \
    lang_nw/analyze \
   lang_lisp/parsing \
@@ -256,7 +259,7 @@ INCLUDEDIRS=$(MAKESUBDIRS) \
  $(GTKINCLUDE) $(CAIROINCLUDE) \
  $(OCAMLCOMPILERDIR)
 
-PP=-pp "cpp -DFEATURE_BYTECODE=$(FEATURE_BYTECODE)"
+PP=-pp "cpp -DFEATURE_BYTECODE=$(FEATURE_BYTECODE) -DFEATURE_CMT=$(FEATURE_CMT)"
 
 ##############################################################################
 # Generic

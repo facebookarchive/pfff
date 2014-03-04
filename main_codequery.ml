@@ -94,12 +94,15 @@ let build_prolog_db lang root =
       
       let g = 
         match lang with
+
+#if FEATURE_CMT
         | "cmt" -> 
           let ml_files = Find_source.files_of_root ~lang:"ml" root in
           let cmt_files = files in
           Graph_code_cmt.build ~verbose:!verbose ~root ~cmt_files ~ml_files
-#if FEATURE_BYTECODE
+#endif
 
+#if FEATURE_BYTECODE
         | "bytecode" -> 
           let graph_code_java =  
 (*           Some (Graph_code_java.build ~verbose:!verbose ~only_defs:true
@@ -110,6 +113,7 @@ let build_prolog_db lang root =
           Graph_code_bytecode.build ~verbose:!verbose ~graph_code_java 
             root files 
 #endif
+
         | "clang2" -> Graph_code_clang.build ~verbose:!verbose root files
         | _ -> raise Impossible
       in
