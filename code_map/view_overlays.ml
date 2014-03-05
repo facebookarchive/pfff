@@ -187,33 +187,56 @@ let draw_deps_entities n dw model =
 (* Tooltip/hovercard current entity *)
 (* ---------------------------------------------------------------------- *)
 (* assumes cr_overlay has not been zoom_pan_scale *)
-let draw_tooltip ~cr_overlay ~x ~y n _dw _model =
+let draw_tooltip ~cr_overlay ~x ~y n g =
 
-  let txt = Graph_code.string_of_node n in
+  let pred = Graph_code.pred n Graph_code.Use g in
+  let succ = Graph_code.succ n Graph_code.Use g in
+  let files = 
+    pred 
+    +> Common.map_filter (fun n ->
+        Common2.optionise (fun () -> (Graph_code.file_of_node n g)))
+    +> Common.sort +> Common2.uniq
+  in
+  let str = spf "
+ Entity: %s
+ #Users: %d (%d different files)
+ #Uses: %d
+" (Graph_code.string_of_node n) 
+    (List.length pred) (List.length files)
+    (List.length succ)
+  in
+  let xs = Common2.lines str in
 
   (* copy paste of draw_label_overlay *)
   Cairo.select_font_face cr_overlay "serif" 
     Cairo.FONT_SLANT_NORMAL Cairo.FONT_WEIGHT_NORMAL;
   Cairo.set_font_size cr_overlay Style.font_size_filename_cursor;
 
-  let extent = CairoH.text_extents cr_overlay txt in
-  let tw = extent.Cairo.text_width in
-  let th = extent.Cairo.text_height in
+  let template = "peh" in
+  let max_length = 
+    xs +> List.map (String.length) +> Common2.maximum +> float_of_int in
 
+  let extent = CairoH.text_extents cr_overlay template in
+  let tw = extent.Cairo.text_width * ((max_length / 3.) +> ceil) in
+  let th = extent.Cairo.text_height * 1.2 in
+
+  let nblines = List.length xs +> float_of_int in
   let refx = x - tw / 2. in
-  let refy = y in
+  let refy = y - (th * nblines) in
 
   CairoH.fill_rectangle ~cr:cr_overlay 
     ~x:(refx + extent.Cairo.x_bearing) ~y:(refy + extent.Cairo.y_bearing)
-    ~w:tw ~h:(th * 1.2)
+    ~w:tw ~h:(th * nblines)
     ~color:"black"
     ~alpha:0.5
     ();
 
-  Cairo.move_to cr_overlay refx refy;
   Cairo.set_source_rgba cr_overlay 1. 1. 1.    1.0;
-  CairoH.show_text cr_overlay txt;
-
+  xs +> Common.index_list_0 +> List.iter (fun (txt, line) ->
+    let line = float_of_int line in
+    Cairo.move_to cr_overlay refx (refy + line * th);
+    CairoH.show_text cr_overlay txt;
+  );
   ()
 
 (* ---------------------------------------------------------------------- *)
@@ -312,9 +335,9 @@ let motion_refresher ev w =
     +>Common.do_option GMain.Timeout.remove;
     Controller.current_tooltip_refresher := 
       Some (Gui.gmain_timeout_add ~ms:1000 ~callback:(fun _ ->
-        (match entity_def_opt, entity_use_opt with
-        | Some node, _ | _, Some node ->
-            draw_tooltip ~cr_overlay ~x ~y node dw model;
+        (match entity_def_opt, entity_use_opt, model.g with
+        | Some node, _, Some g | _, Some node, Some g ->
+            draw_tooltip ~cr_overlay ~x ~y node g;
             !Controller._refresh_da ();
         | _ -> ()
         );
