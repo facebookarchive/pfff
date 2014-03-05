@@ -184,11 +184,36 @@ let draw_deps_entities n dw model =
  )
 
 (* ---------------------------------------------------------------------- *)
-(* Hovercard/tooltip current entity *)
+(* Tooltip/hovercard current entity *)
 (* ---------------------------------------------------------------------- *)
-let draw_hovercard ~cr_overlay ~x ~y n _dw _model =
-  ignore(cr_overlay, x, y);
-  pr2 (spf "Draw_hovercard: %s" (Graph_code.string_of_node n));
+(* assumes cr_overlay has not been zoom_pan_scale *)
+let draw_tooltip ~cr_overlay ~x ~y n _dw _model =
+
+  let txt = Graph_code.string_of_node n in
+
+  (* copy paste of draw_label_overlay *)
+  Cairo.select_font_face cr_overlay "serif" 
+    Cairo.FONT_SLANT_NORMAL Cairo.FONT_WEIGHT_NORMAL;
+  Cairo.set_font_size cr_overlay Style.font_size_filename_cursor;
+
+  let extent = CairoH.text_extents cr_overlay txt in
+  let tw = extent.Cairo.text_width in
+  let th = extent.Cairo.text_height in
+
+  let refx = x - tw / 2. in
+  let refy = y in
+
+  CairoH.fill_rectangle ~cr:cr_overlay 
+    ~x:(refx + extent.Cairo.x_bearing) ~y:(refy + extent.Cairo.y_bearing)
+    ~w:tw ~h:(th * 1.2)
+    ~color:"black"
+    ~alpha:0.5
+    ();
+
+  Cairo.move_to cr_overlay refx refy;
+  Cairo.set_source_rgba cr_overlay 1. 1. 1.    1.0;
+  CairoH.show_text cr_overlay txt;
+
   ()
 
 (* ---------------------------------------------------------------------- *)
@@ -286,13 +311,15 @@ let motion_refresher ev w =
     !Controller.current_tooltip_refresher
     +>Common.do_option GMain.Timeout.remove;
     Controller.current_tooltip_refresher := 
-      Some (Gui.gmain_timeout_add ~ms:2000 ~callback:(fun _ ->
+      Some (Gui.gmain_timeout_add ~ms:1000 ~callback:(fun _ ->
         (match entity_def_opt, entity_use_opt with
         | Some node, _ | _, Some node ->
-            draw_hovercard ~cr_overlay ~x ~y node dw model
+            draw_tooltip ~cr_overlay ~x ~y node dw model;
+            !Controller._refresh_da ();
         | _ -> ()
         );
-        true
+        (* do not run again *)
+        false
       ));
 
     
