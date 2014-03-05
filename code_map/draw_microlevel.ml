@@ -175,7 +175,7 @@ let color_of_categ categ =
     | _ -> None
   )
 
-let glyphs_of_file ~context ~font_size ~font_size_real file 
+let glyphs_of_file ~model ~font_size ~font_size_real file 
   : (glyph list) array option =
 
   (* real position is set later in draw_content *)
@@ -184,7 +184,6 @@ let glyphs_of_file ~context ~font_size ~font_size_real file
   match FT.file_type_of_file file with
   | _ when use_fancy_highlighting file ->
 
-    let model = Async.async_get context.model2 in
     let entities = model.Model2.hentities in
 
     (* if you have some cache in tokens_with_categ_of_file, then it
@@ -353,8 +352,10 @@ let draw_content2 ~cr ~layout ~context tr =
     Hashtbl.add hmatching_lines (iline+..1) "purple"
   );
 
+  let model = Async.async_get context.model2 in
+
   (* the important function call, getting the decorated content *)
-  let glyphs_opt = glyphs_of_file ~context ~font_size ~font_size_real file in
+  let glyphs_opt = glyphs_of_file ~model ~font_size ~font_size_real file in
 
   glyphs_opt +> Common.do_option (fun glyphs ->
     glyphs +> Array.iteri (fun line_0_indexed _glyph ->
