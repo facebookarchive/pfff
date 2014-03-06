@@ -12,20 +12,16 @@
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the file
  * license.txt for more details.
  *)
-
 open Common 
 
-module T = Treemap
-
-module PL = File_type
 open File_type
-
+module T = Treemap
+module PL = File_type
 module Color = Simple_color
 
 (*****************************************************************************)
 (* Prelude *)
 (*****************************************************************************)
-
 (*
  * Treemap for code understanding. This is especially useful on badly
  * organized projects. For instance if one directory has hundreds of
@@ -34,7 +30,7 @@ module Color = Simple_color
  * visually how things should have been organized in the first place.
  * 
  *
- * Should we put some of this code in in archi_code.ml ?
+ * Should we put some of this code in in archi_code.ml?
  * Hmmm no because we dont want h_program-lang/ to be dependent of
  * visualisation. Hence this h_program-visual/ directory!
  * 

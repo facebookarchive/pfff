@@ -27,11 +27,8 @@ INCLUDEDIRS= ../commons \
 #nomore: graphics.cma, create conflict when link with lablgtk
 SYSLIBS=nums.cma bigarray.cma str.cma unix.cma 
 
-
-
 ifeq ($(FEATURE_GRAPHICS),1)
 SRC2+=graphics/treemap_pl_graphics.ml
-PROGS=visual_pl
 endif
 
 ##############################################################################
@@ -50,13 +47,3 @@ $(TARGET).cma: $(OBJS) $(LIBS)
 
 $(TARGET).cmxa: $(OPTOBJS) $(LIBS:.cma=.cmxa)
 	$(OCAMLOPT) -a -o $@ $(OPTOBJS)
-
-
-visual: $(LIBS) $(EXTRALIBS) $(OBJS) main_program_visual.cmo 
-	$(OCAMLC) -custom -o $@ $(SYSLIBS) $^ 
-
-visual.opt: $(LIBS:.cma=.cmxa) $(EXTRALIBS:.cma=.cmxa) $(OBJS:.cmo=.cmx) main_program_visual.cmx
-	$(OCAMLOPT) $(STATIC) -o $@ $(SYSLIBSOPT) $(SYSLIBS:.cma=.cmxa) $^ 
-
-clean::
-	rm -f $(PROGS)
