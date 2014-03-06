@@ -388,11 +388,7 @@ let main_action xs =
   }
   in
 
-  View2.mk_gui 
-    ~screen_size:!screen_size
-    ~legend:!legend
-    !test_mode
-    (root, w)
+  View2.mk_gui  ~screen_size:!screen_size ~legend:!legend !test_mode w
 (*e: main_action() *)
   
 (*****************************************************************************)

@@ -152,7 +152,7 @@ let expose_legend da w _ev =
 (*****************************************************************************)
 
 (*s: mk_gui() *)
-let mk_gui ~screen_size ~legend test_mode (root, w) =
+let mk_gui ~screen_size ~legend test_mode w =
   (* ugly, todo use model.root instead? *)
   let root_orig () = 
     raise Todo
@@ -163,7 +163,7 @@ let mk_gui ~screen_size ~legend test_mode (root, w) =
     Style.windows_params screen_size in
 
   let win = GWindow.window 
-    ~title:(Controller.title_of_path root)
+    ~title:(Controller.title_of_path w.dw.current_root)
     ~width ~height
     ~allow_shrink: true
     ~allow_grow:true
