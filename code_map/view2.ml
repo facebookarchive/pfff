@@ -152,7 +152,7 @@ let expose_legend da w _ev =
 (*****************************************************************************)
 
 (*s: mk_gui() *)
-let mk_gui ~screen_size ~legend test_mode (root, model, w) =
+let mk_gui ~screen_size ~legend test_mode (root, w) =
   (* ugly, todo use model.root instead? *)
   let root_orig () = 
     raise Todo
@@ -367,7 +367,7 @@ let mk_gui ~screen_size ~legend test_mode (root, model, w) =
 
 *)
       let idx = (fun () -> 
-        let model = Async.async_get model in
+        let model = Async.async_get w.model in
         model.Model2.big_grep_idx 
       )
       in

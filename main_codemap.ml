@@ -225,17 +225,14 @@ let build_model2 root dbfile_opt graphfile_opt =
 
   let db_opt = dbfile_opt +> Common.map_opt Database_code.load_database in
   (* todo: and skip_list?
-   * todo: opti by factorizing the 'find' with treemap_generator?
+   * less: opti by factorizing the 'find' with treemap_generator?
   *)
   let files = 
     Common.files_of_dir_or_files_no_vcs_nofilter [root] +> List.filter !filter
   in
 
-  let hentities, all_entities =
-    Model_database_code.hentities               root db_opt,
-    Model_database_code.all_entities            ~root files db_opt 
-  in
-
+  let hentities = Model_database_code.hentities root db_opt in
+  let all_entities = Model_database_code.all_entities ~root files db_opt in
   let big_grep_idx = Completion2.build_completion_defs_index all_entities in
 
   let g_opt = graphfile_opt +> Common.map_opt Graph_code.load in
@@ -255,8 +252,7 @@ let build_model2 root dbfile_opt graphfile_opt =
         db = db_opt;
         hentities; big_grep_idx;
         g =  g_opt;
-        huses_of_file; husers_of_file;
-        hentities_of_file;
+        huses_of_file; husers_of_file; hentities_of_file;
   }
   in
   model
@@ -266,8 +262,7 @@ let build_model a b =
     build_model2 a b)
 (*e: build_model *)
 
-(* could also try to parse all json files and filter the one which do
- * not parse *)
+(* could also to parse all json files and filter the one which do not parse *)
 let layers_in_dir dir =
   Common2.readdir_to_file_list dir +> Common.map_filter (fun file ->
     if file =~ "layer.*json"
@@ -284,7 +279,7 @@ let main_action xs =
   set_gc ();
   Logger.log Config_pfff.logger "codemap" None;
 
-  (* thi used to be done by linking with gtkInit.cmo, but better like this *)
+  (* this used to be done by linking with gtkInit.cmo, but better like this *)
   let _locale = GtkMain.Main.init () in
   pr2 (spf "Using Cairo version: %s" Cairo.compile_time_version_string);
 
@@ -297,16 +292,14 @@ let main_action xs =
     match !layer_file, !layer_dir, xs with
     | Some file, _, _ -> 
         [Layer_code.load_layer file]
-    | None, Some dir, _ 
-    | None, None, [dir] -> 
+    | None, Some dir, _ | None, None, [dir] ->
         layers_in_dir dir +> List.map Layer_code.load_layer
     | _ -> []
   in
   let layers_with_index = 
     Layer_code.build_index_of_layers ~root 
-      (match layers with 
-      (* not active by default ? it causes some problems  *)
-      | [layer] -> [layer, false]
+      (match !layer_file, layers with 
+      | Some _, [layer] -> [layer, true]
       | _ -> layers +> List.map (fun x -> x, false)
       )
   in
@@ -360,9 +353,7 @@ let main_action xs =
   in
 
   let treemap_func = treemap_generator ~filter_file in
-  let dw = 
-    Model.init_drawing  treemap_func layers_with_index xs root
-  in
+  let dw = Model.init_drawing  treemap_func layers_with_index xs root in
 
   (* This can require lots of stack. Make sure to have ulimit -s 40000.
    * This thread also cause some Bus error on MacOS :(
@@ -401,7 +392,7 @@ let main_action xs =
     ~screen_size:!screen_size
     ~legend:!legend
     !test_mode
-    (root, async_model, w)
+    (root, w)
 (*e: main_action() *)
   
 (*****************************************************************************)
