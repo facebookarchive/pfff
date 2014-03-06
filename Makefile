@@ -130,6 +130,7 @@ BASICLIBS=commons/lib.cma \
  lang_css/parsing/lib.cma \
  lang_web/parsing/lib.cma \
  lang_text/lib.cma \
+ lang_sql/parsing/lib.cma \
 
 BASICSYSLIBS=nums.cma bigarray.cma str.cma unix.cma
 
