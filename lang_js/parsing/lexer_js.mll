@@ -7,13 +7,13 @@
  * modify it under the terms of the GNU Lesser General Public License
  * version 2.1 as published by the Free Software Foundation, with the
  * special exception on linking described in file license.txt.
- * 
+ *
  * This library is distributed in the hope that it will be useful, but
  * WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the file
  * license.txt for more details.
  *)
-open Common 
+open Common
 
 open Ast_js
 open Parser_js
@@ -32,7 +32,7 @@ module Flag = Flag_parsing_js
  * because recent Javascripts have different lexing rules depending on some
  * "contexts", especially for JSX/XHP
  * (this is similar to Perl, e.g. the <<<END context).
- * 
+ *
  *)
 
 (*****************************************************************************)
@@ -40,15 +40,15 @@ module Flag = Flag_parsing_js
 (*****************************************************************************)
 exception Lexical of string
 
-let tok     lexbuf  = 
+let tok     lexbuf  =
   Lexing.lexeme lexbuf
-let tokinfo lexbuf  = 
+let tokinfo lexbuf  =
   Parse_info.tokinfo_str_pos (Lexing.lexeme lexbuf) (Lexing.lexeme_start lexbuf)
 
 let error s =
   if !Flag.exn_when_lexical_error
   then raise (Lexical (s))
-  else 
+  else
     if !Flag.verbose_lexing
     then pr2_once ("LEXER: " ^ s)
     else ()
@@ -145,14 +145,14 @@ let default_state = ST_IN_CODE
 let _mode_stack =
   ref [default_state]
 
-(* The logic to modify _last_non_whitespace_like_token is in the 
+(* The logic to modify _last_non_whitespace_like_token is in the
  * caller of the lexer, that is in Parse_js.tokens.
  * Used for ambiguity between / as a divisor and start of regexp.
  *)
-let _last_non_whitespace_like_token = 
+let _last_non_whitespace_like_token =
   ref (None: Parser_js.token option)
 
-let reset () = 
+let reset () =
   _mode_stack := [default_state];
    _last_non_whitespace_like_token := None;
   ()
@@ -191,7 +191,7 @@ let set_mode mode =
  *
  *)
 
-} 
+}
 
 (*****************************************************************************)
 (* Regexp aliases *)
@@ -201,7 +201,7 @@ let NEWLINE = ("\r"|"\n"|"\r\n")
 let HEXA = ['0'-'9''a'-'f''A'-'F']
 
 let XHPLABEL =	['a'-'z''A'-'Z''_']['a'-'z''A'-'Z''0'-'9''_''-']*
-let XHPTAG = XHPLABEL (* (":" XHPLABEL)* *)
+let XHPTAG = XHPLABEL (":" XHPLABEL)*
 let XHPATTR = XHPLABEL
 
 (*****************************************************************************)
@@ -213,8 +213,8 @@ rule initial = parse
   (* ----------------------------------------------------------------------- *)
   (* spacing/comments *)
   (* ----------------------------------------------------------------------- *)
-  | "/*" { 
-      let info = tokinfo lexbuf in 
+  | "/*" {
+      let info = tokinfo lexbuf in
       let buf = Buffer.create 127 in
       Buffer.add_string buf "/*";
       st_comment buf lexbuf;
@@ -233,14 +233,30 @@ rule initial = parse
   | NEWLINE       { TCommentNewline(tokinfo lexbuf) }
 
   (* ----------------------------------------------------------------------- *)
+  (* backquote strings *)
+  (* ----------------------------------------------------------------------- *)
+
+  | "`" as quote {
+      let info = tokinfo lexbuf in
+      let buf = Buffer.create 127 in
+      string_backquote buf lexbuf;
+      let s = Buffer.contents buf in
+      let buf2 = Buffer.create 127 in
+      Buffer.add_char buf2 quote;
+      Buffer.add_string buf2 s;
+      Buffer.add_char buf2 quote;
+      T_STRING (s, info +> PI.rewrap_str (Buffer.contents buf))
+  }
+
+  (* ----------------------------------------------------------------------- *)
   (* symbols *)
   (* ----------------------------------------------------------------------- *)
-  
-  | "{" { 
+
+  | "{" {
     push_mode ST_IN_CODE;
-    T_LCURLY (tokinfo lexbuf); 
+    T_LCURLY (tokinfo lexbuf);
   }
-  | "}" { 
+  | "}" {
     pop_mode ();
     T_RCURLY (tokinfo lexbuf);
   }
@@ -302,7 +318,7 @@ rule initial = parse
   | ['a'-'z''A'-'Z''$''_']['a'-'z''A'-'Z''$''_''0'-'9']* {
       let s = tok lexbuf in
       let info = tokinfo lexbuf in
-      match Common2.optionise (fun () -> 
+      match Common2.optionise (fun () ->
         Hashtbl.find keyword_table s (* need case insensitive ? *))
       with
       | Some f -> f info
@@ -346,8 +362,8 @@ rule initial = parse
       string_quote quote buf lexbuf;
       let s = Buffer.contents buf in
       let buf2 = Buffer.create 127 in
-      Buffer.add_char buf2 quote; 
-      Buffer.add_string buf2 s; 
+      Buffer.add_char buf2 quote;
+      Buffer.add_string buf2 s;
       Buffer.add_char buf2 quote;
       (* s does not contain the enclosing "'" but the info does *)
       T_STRING (s, info +> PI.rewrap_str (Buffer.contents buf2))
@@ -356,24 +372,24 @@ rule initial = parse
   (* ----------------------------------------------------------------------- *)
   (* Regexp *)
   (* ----------------------------------------------------------------------- *)
-  (* take care of ambiguity with start of comment //, and with 
+  (* take care of ambiguity with start of comment //, and with
    * '/' as a divisor operator
    *
    * it can not be '/' [^ '/']* '/' because then
    * comments will not be recognized as lex tries
    * to find the longest match.
-   * 
-   * It can not be 
+   *
+   * It can not be
    * '/' [^'*''/'] ([^'/''\n'])* '/' ['A'-'Z''a'-'z']*
    * because a / (b/c)  will be recognized as a regexp.
-   * 
+   *
    *)
 
   (* todo? marcel was changing of state context condition there *)
   | "/=" { T_DIV_ASSIGN (tokinfo lexbuf); }
 
-  | "/" { 
-      let info = tokinfo lexbuf in 
+  | "/" {
+      let info = tokinfo lexbuf in
 
       match !_last_non_whitespace_like_token with
       | Some (
@@ -382,13 +398,13 @@ rule initial = parse
           | T_STRING _
           | T_REGEX _
           | T_INCR _ | T_DECR _
-          | T_RBRACKET _ 
+          | T_RBRACKET _
           | T_RPAREN _
           | T_FALSE _ | T_TRUE _
           | T_NULL _
           | T_THIS _
-        ) -> 
-          T_DIV (info); 
+        ) ->
+          T_DIV (info);
       | _ ->
           let buf = Buffer.create 127 in
           Buffer.add_char buf '/';
@@ -414,14 +430,14 @@ rule initial = parse
    * in which the quote does not need to be ended.
    *)
   | "<" (XHPTAG as tag) {
-    
+
     match !_last_non_whitespace_like_token with
     | Some (
         T_LPAREN _
       | T_SEMICOLON _ | T_COMMA _
       | T_LCURLY _ | T_RCURLY _
       | T_RETURN _
-      | T_ASSIGN _ 
+      | T_ASSIGN _
 (*      | T_DOUBLE_ARROW _ *)
       | T_PLING _ | T_COLON _
       | T_LBRACKET _ | T_AND _
@@ -440,7 +456,7 @@ rule initial = parse
 
   | eof { EOF (tokinfo lexbuf) }
 
-  | _ { 
+  | _ {
       error ("unrecognised symbol, in token rule:"^tok lexbuf);
       TUnknown (tokinfo lexbuf)
     }
@@ -512,13 +528,13 @@ and regexp_maybe_ident buf = parse
 (* Rule comment *)
 (*****************************************************************************)
 
-and st_comment buf = parse 
+and st_comment buf = parse
   | "*/"    { Buffer.add_string buf (tok lexbuf) }
   (* noteopti: *)
-  | [^'*']+ { Buffer.add_string buf (tok lexbuf); st_comment buf lexbuf } 
+  | [^'*']+ { Buffer.add_string buf (tok lexbuf); st_comment buf lexbuf }
   | "*"     { Buffer.add_string buf (tok lexbuf); st_comment buf lexbuf }
   | eof     { error "end of file in comment" }
-  | _  { 
+  | _  {
       let s = tok lexbuf in
       error ("unrecognised symbol in comment:"^s);
       Buffer.add_string buf s;
@@ -526,13 +542,28 @@ and st_comment buf = parse
     }
 
 and st_one_line_comment buf = parse
-  | [^'\n' '\r']* { 
-      Buffer.add_string buf (tok lexbuf); 
+  | [^'\n' '\r']* {
+      Buffer.add_string buf (tok lexbuf);
       st_one_line_comment buf lexbuf
     }
   | NEWLINE { Buffer.add_string buf (tok lexbuf) }
   | eof { error "end of file in comment" }
   | _   { error ("unrecognised symbol, in st_one_line_comment:"^tok lexbuf) }
+
+(*****************************************************************************)
+(* Rule backquote string *)
+(*****************************************************************************)
+
+and string_backquote buf = parse
+  | "`"    { () }
+  | [^'`']+ { Buffer.add_string buf (tok lexbuf); string_backquote buf lexbuf }
+  | eof     { error "end of file in backquote string" }
+  | _  {
+      let s = tok lexbuf in
+      error ("unrecognised symbol in backquote string:"^s);
+      Buffer.add_string buf s;
+      string_backquote buf lexbuf
+    }
 
 (*****************************************************************************)
 (* Rules for XHP *)
@@ -551,7 +582,7 @@ and st_in_xhp_tag current_tag = parse
   | [' ' '\t']+ { TCommentSpace(tokinfo lexbuf) }
   | ['\n' '\r'] { TCommentNewline(tokinfo lexbuf) }
   | "/*" {
-        let info = tokinfo lexbuf in 
+        let info = tokinfo lexbuf in
         let buf = Buffer.create 127 in
         Buffer.add_string buf "/*";
         st_comment buf lexbuf;
@@ -578,8 +609,8 @@ and st_in_xhp_tag current_tag = parse
       string_quote quote buf lexbuf;
       let s = Buffer.contents buf in
       let buf2 = Buffer.create 127 in
-      Buffer.add_char buf2 quote; 
-      Buffer.add_string buf2 s; 
+      Buffer.add_char buf2 quote;
+      Buffer.add_string buf2 s;
       Buffer.add_char buf2 quote;
       (* s does not contain the enclosing "'" but the info does *)
       T_STRING (s, info +> PI.rewrap_str (Buffer.contents buf2))

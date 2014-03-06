@@ -1,0 +1,1 @@
+x = `<script>"in quotes without escape"</script>`
