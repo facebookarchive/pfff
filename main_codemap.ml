@@ -17,7 +17,7 @@ module Model = Model2
  * This is the main entry point of codemap, a semantic source code visualizer
  * using treemaps and code thumbnails. The focus here is code understanding
  * not editing, so for instance even if features like autocompletion are
- * great for editing, they do not really help for understanding an existing
+ * great for editing, they are not really helpful for understanding an existing
  * codebase. What can help is completion to help navigate and go from one
  * place to another, and this is one of the feature of this tool.
  * 
@@ -70,24 +70,26 @@ module Model = Model2
  *    http://artzub.com/ghv/#repo=d3&climit=100&user=mbostock
  * 
  * features of IDE we do want (e.g. see the list at http://xamarin.com/studio):
+ *  - smart syntax highlighting
  *  - go to definition (=~ TAGS, light db and search bar completion provides it)
- *  - unified search (files, entities, TODO but also content)
  *  - code navigation (directory, files, also "hypertext" go to def/uses)
  *  - find uses (funcs, classes, TODO tricky for methods in dynamic languages)
- *  - smart syntax highlighting
- *  - folding? hmm thumbnails should makes this less important
- *  - TODO code tooltip, hover on use of an entity to display information about
- *    this entity (type, comments, number of uses, age, etc)
+ *  - code tooltip, hover on use of an entity to display information about
+ *    this entity (#uses, TODO: type/args, comments, code, age, etc)
+ *  - unified search (files, entities, TODO but also content)
+ *  - debugger? it helps understand code so a coverage layer or TODO live
+ *    coverage tracing would be nice (as in tracegl)
+ *  - source control? extract age, number of authors, churn information in
+ *    layers
+ * 
+ * features of IDE we care less about:
+ *  - folding/outline? thumbnails make this less important
  *  - auto completion? no. One nice thing of autocomplete though is that
  *    it proposes all the possible methods of an object, the overriden
  *    as well as not overriden parent methods.  We don't want autocomplete
  *    but we want the ability to understand a class by TODO "inlining" parent 
  *    methods that are relevant to understand the local code of the class
  *    (e.g. the short command of Eiffel)
- *  - debugger? it helps understand code so a coverage layer or TODO live
- *    coverage tracing would be nice (as is tracegl)
- *  - source control? extract age, number of authors, churn information in
- *    layers
  *  - refactoring? no
  *  - UI designer? no
  *  - deploy assistant, cloud assistant? no
@@ -406,6 +408,11 @@ let main_action xs =
 (* Extra actions *)
 (*****************************************************************************)
 
+(* update: try to put ocamlgtk related tests in widgets/test_widgets.ml, not
+ * here. Here it's for ... well it's for nothing I think because it's not 
+ * really easy to test a gui.
+ *)
+
 (*s: visual_commitid() action *)
 let test_visual_commitid id =
   let files = Common.cmd_to_list
@@ -497,10 +504,6 @@ let extra_actions () = [
 (* The options *)
 (*****************************************************************************)
 
-(* update: try to put ocamlgtk related tests in widgets/test_widgets.ml, not
- * here. Here it's for ... well it's for nothing I think because it's not 
- * really easy to test a gui.
- *)
 let all_actions () = 
  extra_actions()@
  []
