@@ -395,6 +395,52 @@ let main_action xs =
 (* Extra actions *)
 (*****************************************************************************)
 
+let test_loc root =
+  let root = Common.realpath root in
+  let skip_file = !skip_file ||| Filename.concat root "skip_list.txt" in
+  let skip_list =
+    if Sys.file_exists skip_file
+    then begin
+      pr2 (spf "Using skip file: %s" skip_file);
+      Skip_code.load skip_file
+    end
+    else []
+  in
+  let filter_files_skip_list = Skip_code.filter_files skip_list root in
+  let filter_file = (fun file -> 
+    !filter file && (skip_list = [] || filter_files_skip_list [file] <> []))
+  in
+  let treemap = Treemap_pl.code_treemap ~filter_file [root] in
+
+  let res = ref [] in
+  let rec aux tree =
+    match tree with
+    | Common2.Node (_dir, xs) ->
+        List.iter aux xs
+    | Common2.Leaf (leaf, _) ->
+        let file = leaf.Treemap.label in
+        let size = leaf.Treemap.size in
+        let unix_size = (Common2.unix_stat_eff file).Unix.st_size in
+        if unix_size > 0
+        then begin
+          let multiplier = (float_of_int size /. float_of_int unix_size) in
+          let multiplier = min multiplier 1.0 in
+          let loc = Common2.nblines_with_wc file in
+          Common.push ((Common.readable ~root file), 
+                       (float_of_int loc *. multiplier)) res;
+        end
+  in
+  aux treemap;
+  let total = !res +> List.map snd +> List.map int_of_float  +> Common2.sum in
+  pr2 (spf "LOC = %d (%d files)" total (List.length !res));
+  let topx = 30 in
+  pr2 (spf "Top %d:" topx);
+  !res +> Common.sort_by_val_highfirst +> Common.take_safe topx 
+  +>  List.iter (fun (file, f) ->
+      pr2 (spf "%-40s: %d" file (int_of_float f))
+  )
+  
+
 (* update: try to put ocamlgtk related tests in widgets/test_widgets.ml, not
  * here. Here it's for ... well it's for nothing I think because it's not 
  * really easy to test a gui.
@@ -467,19 +513,15 @@ let test_cairo () =
   test_draw cr;
   (GMisc.pixmap px ~packing:w#add ()) +> ignore;
   w#show ();
-
-
-
-  GMain.main();
-
-
-  ()
+  GMain.main()
   
 (*---------------------------------------------------------------------------*)
 (* the command line flags *)
 (*---------------------------------------------------------------------------*)
 let extra_actions () = [
  (*s: actions *)
+   "-test_loc", " ",
+   Common.mk_action_1_arg (test_loc);
    "-test_cairo", " ",
    Common.mk_action_0_arg (test_cairo);
    "-test_commitid", " <id>",
