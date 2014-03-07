@@ -380,6 +380,7 @@ let main_action xs =
     dw_stack = ref [dw];
     model = async_model;
     treemap_func;
+    current_node = None;
     settings = { Model.
       (* todo: too fuzzy for now *)
       draw_summary = false;

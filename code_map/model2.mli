@@ -133,6 +133,8 @@ type world = {
   treemap_func: Common.path list -> Treemap.treemap_rendering;
   (* misc settings, not really used for now *)
   settings: settings;
+
+  mutable current_node: Graph_code.node option;
 }
    and settings = {
      mutable draw_summary: bool;

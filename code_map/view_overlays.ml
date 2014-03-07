@@ -286,6 +286,7 @@ let motion_refresher ev w =
   r_opt +> Common.do_option (fun (tr, middle, r_englobing) ->
     let model = Async.async_get w.model in
 
+    (* coupling: similar code in right click handler in View_mainmap *)
     let line_opt = 
       M.find_line_in_rectangle_at_user_point user tr dw in
     let glyph_opt =
@@ -296,6 +297,11 @@ let motion_refresher ev w =
       line_opt >>= (fun line -> 
       glyph_opt >>= (fun glyph ->
         M.find_use_entity_at_line_and_glyph_opt line glyph tr dw model))
+    in
+    let entity_opt = 
+      match entity_use_opt, entity_def_opt with
+      | Some e, _ | _, Some e -> Some e
+      | _ -> None
     in
 
     let statusbar_txt = 
@@ -323,10 +329,10 @@ let motion_refresher ev w =
     draw_englobing_rectangles_overlay ~dw (tr, middle, r_englobing);
     draw_deps_files tr dw model;
 
-    entity_def_opt +> Common.do_option (fun n ->
-      draw_deps_entities n dw model);
-    entity_use_opt +> Common.do_option (fun n ->
-      draw_deps_entities n dw model);
+    entity_opt +> Common.do_option (fun _n -> w.current_node <- None);
+    w.current_node +> Common.do_option (fun n -> draw_deps_entities n dw model);
+    entity_def_opt +> Common.do_option (fun n -> draw_deps_entities n dw model);
+    entity_use_opt +> Common.do_option (fun n -> draw_deps_entities n dw model);
   
     if w.settings.draw_searched_rectangles;
     then draw_searched_rectangles ~dw;

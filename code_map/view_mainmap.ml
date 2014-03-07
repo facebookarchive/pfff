@@ -226,12 +226,16 @@ let button_action w ev =
             glyph_opt >>= (fun glyph ->
               M.find_use_entity_at_line_and_glyph_opt line glyph tr dw model))
           in
-
+          let entity_opt = 
+            match entity_use_opt, entity_def_opt with
+            | Some e, _ | _, Some e -> Some e
+            | _ -> None
+          in
          
           let uses, users = 
-            match entity_def_opt, entity_use_opt with
-            | None, None -> M.deps_readable_files_of_file file model
-            | Some n, _ | _, Some n -> M.deps_readable_files_of_node n model
+            match entity_opt with
+            | None -> M.deps_readable_files_of_file file model
+            | Some n -> M.deps_readable_files_of_node n model
           in
 
           let paths_of_readables xs = 
@@ -248,24 +252,36 @@ let button_action w ev =
             +> List.filter Sys.file_exists
           in
           let readable = Common.readable ~root:model.root file in
+          let readable =
+            match entity_opt with
+            | None -> readable
+            | Some n -> 
+                let g = Common2.some model.g in
+                try Graph_code.file_of_node n g
+                with Not_found -> readable
+          in
           let entries = [
             `I ("go to file", (fun () -> 
               !Ctl._go_dirs_or_file w (paths_of_readables [readable]);));
             `I ("deps inout", (fun () -> 
+              w.current_node <- entity_opt;
               !Ctl._go_dirs_or_file w (paths_of_readables 
                                               (uses @ users @ [readable]))));
             `I ("deps in (users)", (fun () -> 
+              w.current_node <- entity_opt;
               !Ctl._go_dirs_or_file w (paths_of_readables 
                                               (users @ [readable]))));
             `I ("deps out (uses)", (fun () -> 
+              w.current_node <- entity_opt;
               !Ctl._go_dirs_or_file w (paths_of_readables 
                                             (uses @ [readable]))));
           ] in
           let entries = 
             entries @
-            (match entity_def_opt, entity_use_opt, model.g with
-            | None, None, _ -> []
-            | Some n, _, Some g | _, Some n, Some g -> 
+            (match entity_opt with
+            | None -> []
+            | Some n ->
+                let g = Common2.some model.g in
                 [`I ("info entity", (fun () ->
                   let users = Graph_code.pred n (Graph_code.Use) g in
                   let str =
@@ -276,11 +292,11 @@ let button_action w ev =
                   Gui.dialog_text ~text:str ~title:"Info entity";
                 ));
                  `I ("goto def", (fun () ->
+                   w.current_node <- entity_opt;
                    let dest = Graph_code.file_of_node n g in
                    !Ctl._go_dirs_or_file w (paths_of_readables [dest])
                  ));                                              
                 ]
-            | _ -> raise Impossible
             )
           in
           GToolbox.popup_menu ~entries ~button:3 
