@@ -271,11 +271,28 @@ let draw_searched_rectangles ~dw =
 (* Assembling overlays *)
 (*****************************************************************************)
 
+let paint_initial dw =
+  let cr_overlay = Cairo.create dw.overlay in
+  CairoH.clear cr_overlay
+  (* can't do draw_deps_entities w.current_node here because
+   * of lazy_paint(), the file content will not be ready yet
+   *)
+
+(* a bit ugly, but have to because of lazy_paint optimization *)
+let hook_finish_paint w =
+  pr2 "Hook_finish_paint";
+  let dw = w.dw in
+  w.current_node +> Common.do_option (fun n -> 
+    let model = Async.async_get w.model in
+    draw_deps_entities n dw model
+  )
+
 (*s: motion_refresher *)
 let motion_refresher ev w =
+  paint_initial w.dw;
+  hook_finish_paint w;
   let dw = w.dw in
   let cr_overlay = Cairo.create dw.overlay in
-  CairoH.clear cr_overlay;
 
   (* some similarity with View_mainmap.button_action handler *)
   let x, y = GdkEvent.Motion.x ev, GdkEvent.Motion.y ev in
@@ -330,7 +347,6 @@ let motion_refresher ev w =
     draw_deps_files tr dw model;
 
     entity_opt +> Common.do_option (fun _n -> w.current_node <- None);
-    w.current_node +> Common.do_option (fun n -> draw_deps_entities n dw model);
     entity_def_opt +> Common.do_option (fun n -> draw_deps_entities n dw model);
     entity_use_opt +> Common.do_option (fun n -> draw_deps_entities n dw model);
   

@@ -102,7 +102,7 @@ let paint_content_maybe_rect ~user_rect dw model rect =
  )
 
 (* todo: deadlock:  M.locked (fun () ->  ) dw.M.model.M.m *)
-let lazy_paint ~user_rect dw model () =
+let lazy_paint user_rect dw model () =
   pr2 "Lazy Paint";
   let start = Unix.gettimeofday () in
   while Unix.gettimeofday () - start < 0.3 do
@@ -115,7 +115,12 @@ let lazy_paint ~user_rect dw model () =
   done;
   !Ctl._refresh_da ();
   if !Ctl.current_rects_to_draw = []
-  then false
+  then begin
+    !Ctl.hook_finish_paint ();
+    !Ctl._refresh_da ();
+    false
+  end
+  (* call me again *)
   else true
 
 let paint2 dw model = 
@@ -150,13 +155,8 @@ let paint2 dw model =
   then begin
     Ctl.current_rects_to_draw := rects;
     Ctl.paint_content_maybe_refresher := 
-        Some (Gui.gmain_idle_add ~prio:3000 (lazy_paint ~user_rect dw model));
-  end;
-
-  (* also clear the overlay *)
-  let cr_overlay = Cairo.create dw.overlay in
-  CairoH.clear cr_overlay;
-  ()
+        Some (Gui.gmain_idle_add ~prio:3000 (lazy_paint user_rect dw model));
+  end
 
 let paint a b = 
   Common.profile_code "View.paint" (fun () -> paint2 a b)

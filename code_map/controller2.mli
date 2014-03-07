@@ -17,6 +17,7 @@ val current_rects_to_draw:
   (Treemap.treemap_rectangle list) ref
 val current_r:
   Treemap.treemap_rectangle option ref
+val hook_finish_paint: (unit -> unit) ref
 
 val paint_content_maybe_refresher:
   GMain.Idle.id option ref

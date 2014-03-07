@@ -25,9 +25,9 @@ module Controller = Controller2
 (* Prelude *)
 (*****************************************************************************)
 
-(* ---------------------------------------------------------------------- *)
+(*****************************************************************************)
 (* Navigation *)
-(* ---------------------------------------------------------------------- *)
+(*****************************************************************************)
 
 (*s: go_back *)
 let go_back w = 
@@ -52,7 +52,7 @@ let go_dirs_or_file ?(current_entity=None) ?(current_grep_query=None) w paths =
   let root = Common2.common_prefix_of_files_or_dirs paths in
   pr2 (spf "zooming in %s" (Common.join "|" paths));
 
-  (* reset the painter ? not needed because will call draw below
+  (* reset the painter? not needed because will call draw below
    * which will reset it
    *)
   let dw = w.dw in
@@ -76,6 +76,7 @@ let go_dirs_or_file ?(current_entity=None) ?(current_grep_query=None) w paths =
    * is still there  *)
   | None -> w.dw.current_grep_query <- dw.current_grep_query;
   );
+  View_overlays.paint_initial w.dw;
   View_mainmap.paint w.dw w.model;
   !Controller._refresh_da ();
   ()

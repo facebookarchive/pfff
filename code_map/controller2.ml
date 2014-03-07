@@ -16,6 +16,7 @@
  *)
 (*e: Facebook copyright *)
 
+(* refresh drawing area *)
 let _refresh_da = ref (fun () ->
   failwith "_refresh_da not defined"
 )
@@ -24,6 +25,9 @@ let _refresh_legend = ref (fun () ->
 )
 
 let current_rects_to_draw = ref []
+let hook_finish_paint = ref (fun () ->
+  ()
+)
 
 let current_r = ref None
 

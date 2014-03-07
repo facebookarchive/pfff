@@ -69,7 +69,7 @@ let pr2, _pr2_once = Common2.mk_pr2_wrappers Flag.verbose_visual
  * 
  * The final target is the actual gtk window which is represented by cr_final.
  * We copy the pixels from the pixmap dw.pm on the window. Then
- * we copy the pixels from the pixmap dw.overlay on the windown
+ * we copy the pixels from the pixmap dw.overlay on the window
  * getting the final result.
  *)
 let assemble_layers cr_final dw =
@@ -519,6 +519,9 @@ let mk_gui ~screen_size ~legend test_mode w =
     );
     Controller._go_back := Ui_navigation.go_back;
     Controller._go_dirs_or_file := Ui_navigation.go_dirs_or_file;
+    Controller.hook_finish_paint := (fun () ->
+      View_overlays.hook_finish_paint w
+    );
       
     (*-------------------------------------------------------------------*)
     (* status bar *)
