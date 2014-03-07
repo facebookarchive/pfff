@@ -17,7 +17,6 @@ open Common
 
 open Ast_js
 open Parser_js
-
 module Ast = Ast_js
 module Flag = Flag_parsing_js
 
@@ -233,22 +232,6 @@ rule initial = parse
   | NEWLINE       { TCommentNewline(tokinfo lexbuf) }
 
   (* ----------------------------------------------------------------------- *)
-  (* backquote strings *)
-  (* ----------------------------------------------------------------------- *)
-
-  | "`" as quote {
-      let info = tokinfo lexbuf in
-      let buf = Buffer.create 127 in
-      string_backquote buf lexbuf;
-      let s = Buffer.contents buf in
-      let buf2 = Buffer.create 127 in
-      Buffer.add_char buf2 quote;
-      Buffer.add_string buf2 s;
-      Buffer.add_char buf2 quote;
-      T_STRING (s, info +> PI.rewrap_str (Buffer.contents buf))
-  }
-
-  (* ----------------------------------------------------------------------- *)
   (* symbols *)
   (* ----------------------------------------------------------------------- *)
 
@@ -368,6 +351,24 @@ rule initial = parse
       (* s does not contain the enclosing "'" but the info does *)
       T_STRING (s, info +> PI.rewrap_str (Buffer.contents buf2))
     }
+
+  (* ----------------------------------------------------------------------- *)
+  (* backquote strings *)
+  (* ----------------------------------------------------------------------- *)
+
+  | "`" as quote {
+      let info = tokinfo lexbuf in
+      let buf = Buffer.create 127 in
+      string_backquote buf lexbuf;
+      let s = Buffer.contents buf in
+      let buf2 = Buffer.create 127 in
+      Buffer.add_char buf2 quote;
+      Buffer.add_string buf2 s;
+      Buffer.add_char buf2 quote;
+      (* s does not contain the enclosing "'" but the info does *)
+      T_STRING (s, info +> PI.rewrap_str (Buffer.contents buf2))
+  }
+
 
   (* ----------------------------------------------------------------------- *)
   (* Regexp *)

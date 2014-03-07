@@ -20,8 +20,10 @@ module PI = Parse_info
 (* Prelude *)
 (*****************************************************************************)
 (* spec: http://www.ecmascript.org/ and the ecma-262 document.
- *
  * See also http://en.wikipedia.org/wiki/ECMAScript
+ * 
+ * See parser_js.mly top comment to see the Javascript extensions currently
+ * supported.
  * 
  * todo: 
  *  - try to imitate a bit:
@@ -90,6 +92,8 @@ type expr =
    | Seq of expr * tok (* , *) * expr
 
    | Function of func_decl
+   (* aka short lambdas *)
+   | Arrow of arrow_func
 
    (* unparser: *)
    | Extra of extra
@@ -145,6 +149,7 @@ type expr =
    and field =
       (property_name * tok (* : *) * expr)
 
+ (* facebook-ext: JSX extension *)
  and xhp_html =
    | Xhp of xhp_tag wrap * xhp_attribute list * tok (* > *) *
        xhp_body list * xhp_tag option wrap
@@ -213,6 +218,7 @@ and st =
 (* ------------------------------------------------------------------------- *)
 (* Type *)
 (* ------------------------------------------------------------------------- *)
+(* facebook-ext: complex type annotation *)
 and type_ =
   (* used for builtin types like 'void', 'number', 'string', 'any/mixed' *)
   | TName of name
@@ -238,6 +244,23 @@ and func_decl = {
    p_name: name;
    p_type: type_opt;
   }
+
+(* todo? could factorize with func_def, but this will require many
+ * elements to be fake token, e.g. the parenthesis for parameters
+ * when have only one parameter, the brace and semicolon when the body
+ * is a simple expression.
+ *)
+and arrow_func = {
+  a_params: arrow_params;
+  a_tok: tok (* => *);
+  a_body: arrow_body;
+ }
+ and arrow_params =
+ | ASingleParam of parameter
+ | AParams of parameter comma_list paren
+ and arrow_body =
+ | AExpr of expr
+ | ABody of toplevel list brace
 
 (* ------------------------------------------------------------------------- *)
 (* Variables definition *)
@@ -290,9 +313,7 @@ type any =
 (*****************************************************************************)
 (* Wrappers *)
 (*****************************************************************************)
-
 let unwrap = fst
-
 let unparen (_,x,_) = x
 let unbrace = unparen
 let unbracket = unparen

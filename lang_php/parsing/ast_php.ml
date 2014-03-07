@@ -548,7 +548,7 @@ and lambda_def = (lexical_vars option * func_def)
  *)
 and short_lambda_def = {
   sl_params: short_lambda_params;
-  sl_tok: tok (* => *);
+  sl_tok: tok (* ==> *);
   sl_body: short_lambda_body;
  }
  and short_lambda_params =

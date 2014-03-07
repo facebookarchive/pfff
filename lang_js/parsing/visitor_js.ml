@@ -195,6 +195,7 @@ and v_expr (x: expr) =
   | Seq ((v1, v2, v3)) ->
       let v1 = v_expr v1 and v2 = v_tok v2 and v3 = v_expr v3 in ()
   | Function v1 -> let v1 = v_func_decl v1 in ()
+  | Arrow v1 -> let v1 = v_arrow_func v1 in ()
   | Extra v1 -> let v1 = v_extra v1 in ()
   | Paren v1 -> let v1 = v_paren2 v_expr v1 in ()
   | XhpHtml v1 -> let v1 = v_xhp_html v1 in ()
@@ -451,6 +452,19 @@ and  v_func_decl {
 
 and v_parameter { p_name = v_p_name; p_type = v_p_type } =
   let arg = v_name v_p_name in let arg = v_type_opt v_p_type in ()
+and
+  v_arrow_func { a_params = v_a_params; a_tok = v_a_tok; a_body = v_a_body }
+               =
+  let arg = v_arrow_params v_a_params in
+  let arg = v_tok v_a_tok in let arg = v_arrow_body v_a_body in ()
+and v_arrow_params =
+  function
+  | ASingleParam v1 -> let v1 = v_parameter v1 in ()
+  | AParams v1 -> let v1 = v_paren (v_comma_list v_parameter) v1 in ()
+and v_arrow_body =
+  function
+  | AExpr v1 -> let v1 = v_expr v1 in ()
+  | ABody v1 -> let v1 = v_brace (v_list v_toplevel) v1 in ()
 and v_variable_declaration {
                            v_name = v_v_name;
                            v_init = v_v_init;

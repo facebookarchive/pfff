@@ -133,6 +133,7 @@ let rec vof_expr =
       in Ocaml.VSum (("Seq", [ v1; v2; v3 ]))
   | Function v1 ->
       let v1 = vof_func_decl v1 in Ocaml.VSum (("Function", [ v1 ]))
+  | Arrow v1 -> let v1 = vof_arrow_func v1 in Ocaml.VSum (("Arrow", [ v1 ]))
   | Extra v1 -> let v1 = vof_extra v1 in Ocaml.VSum (("Extra", [ v1 ]))
   | Paren v1 ->
       let v1 = vof_paren vof_expr v1 in Ocaml.VSum (("Paren", [ v1 ]))
@@ -455,6 +456,31 @@ and vof_parameter { p_name = v_p_name; p_type = v_p_type } =
   let bnds = bnd :: bnds in
   let arg = vof_name v_p_name in
   let bnd = ("p_name", arg) in let bnds = bnd :: bnds in Ocaml.VDict bnds
+and
+  vof_arrow_func { a_params = v_a_params; a_tok = v_a_tok; a_body = v_a_body
+                 } =
+  let bnds = [] in
+  let arg = vof_arrow_body v_a_body in
+  let bnd = ("a_body", arg) in
+  let bnds = bnd :: bnds in
+  let arg = vof_tok v_a_tok in
+  let bnd = ("a_tok", arg) in
+  let bnds = bnd :: bnds in
+  let arg = vof_arrow_params v_a_params in
+  let bnd = ("a_params", arg) in let bnds = bnd :: bnds in Ocaml.VDict bnds
+and vof_arrow_params =
+  function
+  | ASingleParam v1 ->
+      let v1 = vof_parameter v1 in Ocaml.VSum (("ASingleParam", [ v1 ]))
+  | AParams v1 ->
+      let v1 = vof_paren (vof_comma_list vof_parameter) v1
+      in Ocaml.VSum (("AParams", [ v1 ]))
+and vof_arrow_body =
+  function
+  | AExpr v1 -> let v1 = vof_expr v1 in Ocaml.VSum (("AExpr", [ v1 ]))
+  | ABody v1 ->
+      let v1 = vof_brace (Ocaml.vof_list vof_toplevel) v1
+      in Ocaml.VSum (("ABody", [ v1 ]))
 and
   vof_variable_declaration {
                              v_name = v_v_name;

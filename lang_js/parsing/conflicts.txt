@@ -1,0 +1,29 @@
+-*- org -*-
+
+* short lambdas
+(this is mostly similar to lang_php/parsing/conflicts.txt#short_lambdas)
+
+When we parse 'x => x + 1' it could potentially be parsed as
+'( x => x + 1)' or '(x => $x) + 1' but we don't
+want the second one, so we prefer to shift than reduce
+hence the %prec (just like for the dangling else) attached
+to expr in:
+
+arrow_body: 
+ | block { }
+ | expr  %prec LOW_PRIORITY_RULE { }
+
+An additional complexity in Javascript compared to PHP is that
+'{' is also used for object literal, so one has to use
+an 'expr' which does not allow object literal, that is
+'assignment_expression_no_statement'.
+
+The other conflict is that when we see '(x)' in '(x) => ...'
+there is no way to know whether this is an expression (reduce) or
+the parameter specification of a lambda (shift). To solve the conflict
+one has to be more general and do:
+
+ | TOPAR expr TCPAR T_ARROW arrow_body 
+     { ... }
+
+but make sure that expr can only be an identifier.

@@ -33,6 +33,8 @@
  *  - support for type annotation a la TypeScript
  *    http://en.wikipedia.org/wiki/TypeScript, 
  *    see also D911357 for the esprima related extension
+ *  - support arrows (short lambdas)
+ *    https://people.mozilla.org/~jorendorff/es6-draft.html#sec-arrow-function-definitions
  * 
  *)
 
@@ -43,6 +45,8 @@ open Ast_js
 let e x = (x)
 let bop op a b c = e(B(a, (op, b), c))
 let uop op a b = e(U((op,a), b))
+let mk_param x = { p_name = x; p_type = None }
+
 %}
 
 /*(*************************************************************************)*/
@@ -129,12 +133,12 @@ let uop op a b = e(U((op,a), b))
 %token <Ast_js.tok> TUnknown
 %token <Ast_js.tok> EOF
 
-/*(*-----------------------------------------*)*/
-/*(*2 Priorities *)*/
-/*(*-----------------------------------------*)*/
+/*(*************************************************************************)*/
+/*(*1 Priorities *)*/
+/*(*************************************************************************)*/
 
 /*(* must be at the top so that it has the lowest priority *)*/
-%nonassoc SHIFTHERE
+%nonassoc LOW_PRIORITY_RULE
 
 /*(* Special if / else associativity*)*/
 %nonassoc p_IF
@@ -369,8 +373,8 @@ function_expression:
                     f_return_type = None; f_body = ($5, $6, $7)}) }
 
 formal_parameter: 
- | identifier            { {p_name= $1; p_type = None; } }
- | identifier annotation { {p_name = $1; p_type = Some $2; } }
+ | identifier            { mk_param $1 }
+ | identifier annotation { { (mk_param $1) with p_type = Some $2; } }
 
 formal_parameter_list:
  | formal_parameter                                { [Left $1] }
@@ -456,6 +460,7 @@ assignment_expression:
  | conditional_expression { $1 }
  | left_hand_side_expression assignment_operator assignment_expression 
      { e(Assign ($1, $2, $3)) }
+ | arrow_function { Arrow $1 }
 
 assignment_operator:
  | T_ASSIGN         { A_eq , $1 }
@@ -647,6 +652,37 @@ xhp_attribute_value:
  | T_LCURLY expression semicolon T_RCURLY    { XhpAttrExpr ($1, $2, $4)(*TODO$3*) }
 
 /*(*----------------------------*)*/
+/*(*2 arrow (short lambda) *)*/
+/*(*----------------------------*)*/
+
+arrow_function:
+ | identifier T_ARROW arrow_body 
+     { { a_params = ASingleParam (mk_param $1); a_tok = $2; a_body = $3 } }
+ | T_LPAREN T_RPAREN T_ARROW arrow_body 
+     { { a_params = AParams ($1, [], $2); a_tok = $3; a_body = $4 } }
+ /*(* can not factorize with TOPAR parameter_list TCPAR, see conflicts.txt *)*/
+ | T_LPAREN expression T_RPAREN T_ARROW arrow_body 
+     { let param =
+         match $2 with
+         | V name -> mk_param name
+         | _ -> raise (Parsing.Parse_error)
+       in
+       { a_params = AParams ($1, [Left param], $3); a_tok = $4; a_body = $5 }
+     }
+ | T_LPAREN identifier T_COMMA formal_parameter_list T_RPAREN T_ARROW arrow_body
+     { let params = AParams ($1, (Left (mk_param $2))::Right $3::$4, $5) in
+       { a_params = params; a_tok = $6; a_body = $7 }
+     }
+
+
+/*(* was called consise body in spec *)*/
+arrow_body: 
+ | block    
+     { match $1 with Block (a,b,c) -> ABody (a,b,c) | _ -> raise Impossible }
+ /*(* see conflicts.txt for why the %prec *)*/
+ | assignment_expression_no_statement %prec LOW_PRIORITY_RULE { AExpr $1 }
+
+/*(*----------------------------*)*/
 /*(*2 no in *)*/
 /*(*----------------------------*)*/
 expression_no_in:
@@ -685,7 +721,7 @@ post_in_expression_no_in:
                                                                     
 
 /*(*----------------------------*)*/
-/*(*2 (no statement)*)*/
+/*(*2 (no statement, and no object literal like { v: 1 }) *)*/
 /*(*----------------------------*)*/
 expression_no_statement:
  | assignment_expression_no_statement { $1 }

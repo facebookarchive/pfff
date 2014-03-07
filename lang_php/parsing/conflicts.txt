@@ -92,8 +92,7 @@ there is no way to know whether this is an expression (reduce) or
 the parameter specification of a lambda (shift). To solve the conflict
 one has to be more general and do:
 
- | TOPAR expr TCPAR T_DOUBLE_ARROW short_lambda_body 
-     { This $1 }
+ | TOPAR expr TCPAR T_DOUBLE_ARROW short_lambda_body  {  }
 
 but make sure that expr can only be a T_VARIABLE.
 
