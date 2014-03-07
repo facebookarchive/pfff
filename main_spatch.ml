@@ -35,6 +35,7 @@ module R = Refactoring_code
  *    can do: gofmt -w -r 'x[i:len(x)] -> x[i:]' *.go
  *  - clang-format http://llvm.org/devmtg/2013-04/jasper-slides.pdf
  *  - todo: http://www.refactory.com/tools/refactoring-browser/rewrite-tool
+ *  - sed, perl, https://github.com/facebook/codemod
  *)
 
 (*****************************************************************************)

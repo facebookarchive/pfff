@@ -395,6 +395,9 @@ let main_action xs =
 (* Extra actions *)
 (*****************************************************************************)
 
+(* related work: http://cloc.sourceforge.net/ but have skip list
+ * and archi_code_lexer.mll which lower the important of some files?
+ *)
 let test_loc root =
   let root = Common.realpath root in
   let skip_file = !skip_file ||| Filename.concat root "skip_list.txt" in
