@@ -1,11 +1,11 @@
 -*- org -*-
 
-* 0.27 (Q1 2014) ("hypertext" codemap, edge bundle?)
+* 0.27 (Q1 2014) ("hypertext" codemap, edge bundle??)
 
 ** codegraph
 
 *** improve automatic layering by using hill climbing algorithm
-less backward dependencies
+less backward dependencies on plan9 for instance
 
 ** codemap
 
@@ -14,7 +14,7 @@ so can hover on some code and see the corresponding definition
 (as well as the other users of this definition and the uses of
 this definition).
 
-*** show entity under cursor (def or use)
+*** show entity under cursor (def or use) in tooltip
 
 *** go to definition when on a use 
 finally ... basic TAGS functionality
@@ -41,10 +41,18 @@ light db (while still filtering object files and skip list files)
 *** support for short lambda, require traits, and try finally (facebook
 extensions)
 
+** javascript
+
+*** support for arrow (aka short lambda)
+
 ** internal
 
 *** find_source.ml, also many things works now with multiple dirs and
 skip list
+
+*** cleanup commons/, remove lib-xml, lib-sexp, lib-json
+
+*** add configure option for Javalib and cmt
 
 * -----------------------------------------------------------
 
@@ -148,7 +156,7 @@ tested for ocaml
 
 *** web frontend, using ocsigen
 
-*** macro and micro level (separetely for now)
+*** macro and micro level (separately for now)
 (fixed my long standing issue with canvas and flexible text font size)
 
 ** scheck
@@ -197,6 +205,7 @@ make huge refactoring on ASTs easier
 
 *** packing less relevant entities in a fake "..." entity
 making codegraph usable on ugly projects with hundreds of subdirectories
+(but very fragile, lots of new exceptions)
 
 *** deadcode/internal_module highlighting
 
@@ -211,9 +220,9 @@ a thin wrapper around the clang/llvm ast dumps of clang-check -emit-ast.
 
 *** patch to clang AST dumper
 
-*** unincluder/deduper
-
 *** basic compile_database.json generator from make traces
+
+*** unincluder/deduper so can have a simplified global analysis
 
 ** introduce lang_objc/
 basic lexer and grammar
@@ -255,7 +264,7 @@ with support for PHP, C,
 
 ** introduce lang_c/
 a simplified version of lang_cpp/ just focusing on C.
-Also added graph_code_c.ml.
+Also added graph_code_c.ml, mainly for analyzing xv6
 
 ** improve lang_java/, support for generics, annotations, and other recent
 Java features.
@@ -285,7 +294,7 @@ good basis then for graph_code_php.ml, new, check_variables_php.ml, etc.
 ** introduce pfff_logger (in OPA), monitoring the use of pfff tools
 (please rerun ./configure if you have compilation pbs)
 
-** introduce lang_opa
+** introduce lang_opa/
 basic support
 
 ** introduce type inference for PHP (julien)
@@ -435,6 +444,9 @@ on attributes
 so can visualize also Tex/Latex/Noweb source (which includes
 the documentation of pfff!)
 
+** introducing lang_java/
+based on joust
+
 ** introducing lang_lisp/
 
 ** introducing lang_haskell/
@@ -445,10 +457,8 @@ the documentation of pfff!)
 
 ** introducing lang_erlang/
 
-** introducing lang_java/
-
-** lang_ml
-more highlight
+** ocaml
+more highlights
 
 ** php analysis
 
@@ -534,11 +544,11 @@ which was using Graphics. Now also render file content!
 ** new tool, stags, a TAG generator using ASTs not fragle regexp
 support for PHP ocaml
 
-** introduce parsing_ml/
+** introduce lang_ml/
 Allow to use and experiment the treemap code visualizer on the pfff
 source itself; to see if such features are useful.
 
-** introduce parsing_cpp/
+** introduce lang_cpp/
 
 ** introduce analyze_js/, analyze_cpp/, analyze_ml/ 
 very basic support. Just highlighting
@@ -566,11 +576,11 @@ the require_module_xxx and other flib conventions).
 ** introduce php_etags
 a more precise TAGS file generator (bonus: it's xhp-aware).
 
-** introduce javascript support, parsing_js/
+** introduce lang_js/
 parsing/unparsing/dumping.
 preliminary refactoring support.
 
-** introduce builtin XHP support
+** php, introduce builtin XHP support
 
 ** analysis
 
