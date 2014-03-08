@@ -1,12 +1,12 @@
 
 (* the token list contains also the comment-tokens *)
 type program_and_tokens = 
-  Ast_js.program (* NotParsedCorrectly if parse error *) * Parser_js.token list
+  Ast_js.program option * Parser_js.token list
 
 exception Parse_error of Parse_info.info
 
 (* This is the main function *)
-val parse : 
+val parse: 
   Common.filename -> (program_and_tokens * Parse_info.parsing_stat)
 
 val parse_program:

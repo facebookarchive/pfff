@@ -178,7 +178,7 @@ let mk_param x = { p_name = x; p_type = None }
 /*(*1 Toplevel *)*/
 /*(*************************************************************************)*/
 
-main: program EOF { $1 @ [FinalDef $2] }
+main: program EOF { $1 }
 
 program: statement_list { $1 }
 

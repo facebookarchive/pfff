@@ -296,9 +296,6 @@ and toplevel =
   | FunDecl of func_decl
   | ClassDecl of class_decl
 
-  | NotParsedCorrectly of tok list
-  | FinalDef of tok (* EOF *)
-
  and program = toplevel list
  (* with tarzan *)
 
@@ -350,8 +347,6 @@ let al_info x =
 (*****************************************************************************)
 (* Helpers, could also be put in lib_parsing.ml instead *)
 (*****************************************************************************)
-
-let todoAST = NotParsedCorrectly []
 
 let fakeInfoAttach info = 
   let info = PI.rewrap_str "FAKE" info in

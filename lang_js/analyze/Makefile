@@ -9,7 +9,7 @@ SRC= \
   highlight_js.ml \
   database_light_js.ml \
   tags_js.ml \
-  utils_js.ml module_js.ml toplevel_js.ml link_js.ml stats_js.ml \
+  utils_js.ml module_js.ml \
   test_analyze_js.ml unit_analyze_js.ml
 
 -include $(TOP)/Makefile.config

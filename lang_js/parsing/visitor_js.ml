@@ -506,8 +506,6 @@ and v_toplevel =
   | St v1 -> let v1 = v_st v1 in ()
   | FunDecl v1 -> let v1 = v_func_decl v1 in ()
   | ClassDecl v1 -> let v1 = v_class_decl v1 in ()
-  | NotParsedCorrectly v1 -> let v1 = v_list v_info v1 in ()
-  | FinalDef v1 -> let v1 = v_info v1 in ()
 and v_program v = v_list v_toplevel v
 
 and v_any =  function

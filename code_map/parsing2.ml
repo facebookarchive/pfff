@@ -157,12 +157,16 @@ type ('ast, 'token) for_helper = {
 let tokens_with_categ_of_file_helper 
   {parse; highlight_visit; info_of_tok} file prefs hentities =
   
-  let h = Hashtbl.create 101 in
   if !Flag.verbose_visual then pr2 (spf "Parsing: %s" file);
   let ast2 = parse file in
 
   if !Flag.verbose_visual then pr2 (spf "Highlighting: %s" file);
+  (* todo: ast2 should not be a list, should just be (ast, toks)
+   * but right now only a few parsers will satisfy this interface
+   *)
   ast2 +> List.map (fun (ast, toks) ->
+
+    let h = Hashtbl.create 101 in
 
     (* computing the token attributes *)
     highlight_visit ~tag_hook:(fun info categ -> Hashtbl.add h info categ)
@@ -230,7 +234,7 @@ let tokens_with_categ_of_file file hentities =
          )
          (function 
          | ML (astopt, toks) -> 
-             let ast = match astopt with None -> [] | Some xs -> xs in
+             let ast = astopt ||| [] in
              [ast, toks] 
          | _ -> raise Impossible));
         highlight_visit = (fun ~tag_hook prefs (ast, toks) -> 
@@ -350,7 +354,12 @@ let tokens_with_categ_of_file file hentities =
             Common.save_excursion Flag_parsing_js.error_recovery true (fun () ->
               Js (Parse_js.parse file +> fst))
           )
-         (function Js (ast, toks) -> [ast, toks] | _ -> raise Impossible));
+         (function 
+         | Js (astopt, toks) -> 
+             let ast = astopt ||| [] in
+             [ast, toks] 
+         | _ -> raise Impossible
+         ));
         highlight_visit = Highlight_js.visit_program;
 (* TODO?
           let s = Token_helpers_js.str_of_tok tok in

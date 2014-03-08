@@ -33,7 +33,7 @@ module PI = Parse_info
 
 (* the token list contains also the comment-tokens *)
 type program_and_tokens = 
-  Ast_js.program (* NotParsedCorrectly if parse error *) * Parser_js.token list
+  Ast_js.program option * Parser_js.token list
 
 (*****************************************************************************)
 (* Error diagnostic  *)
@@ -125,88 +125,53 @@ exception Parse_error of Parse_info.info
 let parse2 filename =
 
   let stat = PI.default_stat filename in
-  let filelines = Common2.cat_array filename in
-
   let toks = tokens filename in
   let toks = Parsing_hacks_js.fix_tokens toks in
-
   let tr = PI.mk_tokens_state toks in
   let checkpoint = TH.line_of_tok tr.PI.current in
   let lexbuf_fake = Lexing.from_function (fun _buf _n -> raise Impossible) in
 
-  let elems = 
-    try (
+  try
+     (* -------------------------------------------------- *)
+     (* Call parser *)
       (* -------------------------------------------------- *)
-      (* Call parser *)
-      (* -------------------------------------------------- *)
-      Left 
-        (Common.profile_code "Parser_js.main" (fun () ->
-          (Parser_js.main (lexer_function tr) lexbuf_fake)
-        ))
-    ) with e ->
+    let xs =
+      Common.profile_code "Parser_js.main" (fun () ->
+        Parser_js.main (lexer_function tr) lexbuf_fake
+      )
+    in
+    stat.PI.correct <- (Common.cat filename +> List.length);
+    (Some xs, toks), stat
+  with (Lexer_js.Lexical _ | Parsing.Parse_error) as exn ->
+    let cur = tr.PI.current in
+    if not !Flag.error_recovery
+    then raise (Parse_error (TH.info_of_tok cur));
 
-      let line_error = TH.line_of_tok tr.PI.current in
-
-      let _passed_before_error = tr.PI.passed in
-      let current = tr.PI.current in
-
-      (* no error recovery, the whole file is discarded *)
-      tr.PI.passed <- List.rev toks;
-
-      let info_of_bads = Common2.map_eff_rev TH.info_of_tok tr.PI.passed in 
-
-      Right (info_of_bads, line_error, current, e)
-  in
-
-  match elems with
-  | Left xs ->
-      stat.PI.correct <- (Common.cat filename +> List.length);
-
-      (xs, toks),
-      stat
-  | Right (info_of_bads, line_error, cur, exn) ->
-
-      if not !Flag.error_recovery
-      then raise (Parse_error (TH.info_of_tok cur));
-
-      (match exn with
-      | Lexer_js.Lexical _ 
-      | Parsing.Parse_error 
-          (*| Semantic_c.Semantic _  *)
-        -> ()
-      | e -> raise e
-      );
-
-      if !Flag.show_parsing_error
-      then 
+    if !Flag.show_parsing_error
+    then begin
         (match exn with
         (* Lexical is not anymore launched I think *)
         | Lexer_js.Lexical s -> 
             pr2 ("lexical error " ^s^ "\n =" ^ error_msg_tok cur)
         | Parsing.Parse_error -> 
             pr2 ("parse error \n = " ^ error_msg_tok cur)
-              (* | Semantic_java.Semantic (s, i) -> 
-                 pr2 ("semantic error " ^s^ "\n ="^ error_msg_tok tr.current)
-          *)
         | _e -> raise Impossible
         );
+      let filelines = Common2.cat_array filename in
       let checkpoint2 = Common.cat filename +> List.length in
+      let line_error = TH.line_of_tok cur in
+      PI.print_bad line_error (checkpoint, checkpoint2) filelines;
+    end;
 
-      if !Flag.show_parsing_error
-      then PI.print_bad line_error (checkpoint, checkpoint2) filelines;
-
-      stat.PI.bad     <- Common.cat filename +> List.length;
-
-      let info_item = List.rev tr.PI.passed in 
-      ([Ast.NotParsedCorrectly info_of_bads], info_item), 
-      stat
+    stat.PI.bad     <- Common.cat filename +> List.length;
+    (None, toks), stat
 
 let parse a = 
   Common.profile_code "Parse_js.parse" (fun () -> parse2 a)
 
 let parse_program file = 
-  let ((ast, _toks), _stat) = parse file in
-  ast
+  let ((astopt, _toks), _stat) = parse file in
+  Common2.some astopt
 
 (*****************************************************************************)
 (* Sub parsers *)

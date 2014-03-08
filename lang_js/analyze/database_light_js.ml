@@ -118,7 +118,8 @@ let compute_database ?(verbose=false) files_or_dirs =
   files +> List.iter (fun file ->
     if verbose then pr2 (spf "PHASE 1: %s" file);
 
-    let ((ast, toks), _stat) = Parse_js.parse file in
+    let ((astopt, toks), _stat) = Parse_js.parse file in
+    let ast = astopt ||| [] in
 
     let hcomplete_name_of_info = 
       Class_js.extract_complete_name_of_info ast 

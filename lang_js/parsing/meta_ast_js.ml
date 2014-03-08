@@ -508,10 +508,6 @@ and vof_toplevel =
       let v1 = vof_func_decl v1 in Ocaml.VSum (("FunDecl", [ v1 ]))
   | ClassDecl v1 ->
       let v1 = vof_class_decl v1 in Ocaml.VSum (("ClassDecl", [ v1 ]))
-  | NotParsedCorrectly v1 ->
-      let v1 = Ocaml.vof_list vof_info v1
-      in Ocaml.VSum (("NotParsedCorrectly", [ v1 ]))
-  | FinalDef v1 -> let v1 = vof_info v1 in Ocaml.VSum (("FinalDef", [ v1 ]))
 and  vof_class_decl {
                    c_tok = v_c_tok;
                    c_name = v_c_name;
