@@ -68,6 +68,8 @@ module Model = Model2
  *  - code swarm (visualize git history, people focus)
  *    https://code.google.com/p/gource/ 
  *    http://artzub.com/ghv/#repo=d3&climit=100&user=mbostock
+ *  - http://www.codetrails.com/ctrlflow, smarter completion by infering
+ *    importance of method (like I do, by #times this entity is globally used)
  * 
  * features of IDE we do want (e.g. see the list at http://xamarin.com/studio):
  *  - smart syntax highlighting
@@ -75,7 +77,7 @@ module Model = Model2
  *  - code navigation (directory, files, also "hypertext" go to def/uses)
  *  - find uses (funcs, classes, TODO tricky for methods in dynamic languages)
  *  - code tooltip, hover on use of an entity to display information about
- *    this entity (#uses, TODO: type/args, comments, code, age, etc)
+ *    it (#uses, TODO: type/args, comments, code, age, methods, etc)
  *  - unified search (files, entities, TODO but also content)
  *  - debugger? it helps understand code so a coverage layer or TODO live
  *    coverage tracing would be nice (as in tracegl)
