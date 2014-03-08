@@ -329,8 +329,6 @@ and toplevel =
   (* some ml files contain some #! or even #load directives *)
   | TopDirective of tok
 
-  | NotParsedCorrectly of tok list
-
  and program = toplevel list
 
  (* with tarzan *)

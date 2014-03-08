@@ -544,7 +544,6 @@ and v_toplevel x =
   | Item v1 -> let v1 = v_item v1 in ()
   | ScSc v1 -> let v1 = v_info v1 in ()
   | TopSeqExpr v1 -> let v1 = v_seq_expr v1 in ()
-  | NotParsedCorrectly v1 -> let v1 = Ocaml.v_list v_info v1 in ()
   | TopDirective v1 -> let v1 = v_info v1 in ()
   in
   vin.ktoplevel (k, all_functions) x

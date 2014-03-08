@@ -514,9 +514,6 @@ and vof_toplevel =
       let v1 = vof_seq_expr v1 in Ocaml.VSum (("TopSeqExpr", [ v1 ]))
   | TopDirective v1 ->
       let v1 = vof_info v1 in Ocaml.VSum (("TopDirective", [ v1 ]))
-  | NotParsedCorrectly v1 ->
-      let v1 = Ocaml.vof_list vof_info v1
-      in Ocaml.VSum (("NotParsedCorrectly", [ v1 ]))
 and vof_program v = Ocaml.vof_list vof_toplevel v
   
 let vof_any =
