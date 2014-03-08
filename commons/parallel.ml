@@ -4,7 +4,7 @@ open Common
 (* Prelude *)
 (*****************************************************************************)
 (* 
- * Some simple helpers around harrop's invoke to do some
+ * Some simple helpers around harrop's invoke() to do some
  * map-reduce like parallel programming using fork.
  * 
  * related work:  
@@ -15,6 +15,8 @@ open Common
  * 
  *  - distribution.ml which use MPI and so can leverage multiple
  *    machines (but MPI turned out to be quite unstable in my experience)
+ * 
+ *  - julien's MultiWorker but works only in native code
  *  
  * less: could be useful to autodetect a good number based on the
  * number of cores and available memory like we do in our libphutil 'Future'
