@@ -39,26 +39,27 @@ let (==~) = Common2.(==~)
 (* May have to move this in commons/ at some point *)
 
 let re_space = Str.regexp "^[ ]+$"
+let re_tab = Str.regexp "^[\t]+$"
 
 (*s: cairo helpers functions *)
 (* !does side effect on the (mutable) string! *)
 let prepare_string s = 
-  if s ==~ re_space
-  then 
-    s ^ s (* double it *)
-  else begin
+  match s with
+  | _ when s ==~ re_space -> s ^ s (* double it *)
+  | _ when s ==~ re_tab -> 
+      Str.global_replace (Str.regexp "\t") "        " s
+  | _ ->
     for i = 0 to String.length s -.. 1 do
       let c = String.get s i in
       if int_of_char c >= 128
       then String.set s i 'Z'
       else 
+        (* still useful now that have re_tab case above? *)
         if c = '\t'
         then String.set s i ' '
       else ()
     done;
     s
-  end
-
 
 let show_text2 cr s =
   (* this 'if' is only for compatibility with old versions of cairo
