@@ -326,12 +326,15 @@ let find_glyph_in_rectangle_at_user_point user r dw =
     let microlevel = Hashtbl.find dw.microlevel r in
     microlevel.content >>= (fun glyphs ->
       let (Line line) = line in
-      let glyphs = glyphs.(line) in
-      (* find the best one *)
-      glyphs +> List.rev +> Common.find_opt (fun glyph ->
-        let pos = glyph.pos in
-        user.Cairo.x >= pos.Cairo.x
-      )
+      if line >= Array.length glyphs
+      then None
+      else
+        let glyphs = glyphs.(line) in
+        (* find the best one *)
+        glyphs +> List.rev +> Common.find_opt (fun glyph ->
+          let pos = glyph.pos in
+          user.Cairo.x >= pos.Cairo.x
+        )
     )
   )
 
