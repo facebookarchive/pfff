@@ -27,8 +27,7 @@ module G = Graph_code
 (* Main entry point *)
 (*****************************************************************************)
 
-let build_deps_of_file g =
-
+let build_filedeps_of_dir_or_file g =
   (* we use the 'find_all' property of those hashes *)
   let huses = Hashtbl.create 101 in
   let husers = Hashtbl.create 101 in
@@ -46,9 +45,15 @@ let build_deps_of_file g =
       end;
     with Not_found -> ()
   );
-
-  Common2.hkeys huses +> List.map (fun k -> k, Hashtbl.find_all huses k),
-  Common2.hkeys husers +> List.map (fun k -> k, Hashtbl.find_all husers k)
+  let hres = Hashtbl.create 101 in
+  let keys = Common2.union_set (Common2.hkeys huses) (Common2.hkeys husers) in
+  keys +> List.iter (fun k ->
+    let node = k, Database_code.File in
+    let uses = try Hashtbl.find_all huses k with Not_found -> [] in
+    let users = try Hashtbl.find_all husers k with Not_found -> [] in
+    Hashtbl.add hres node (uses, users)
+  );
+  hres
 
 let build_entities_of_file g =
 

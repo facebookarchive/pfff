@@ -15,14 +15,13 @@ type model = {
 
   (* for microlevel use/def information *)
   g: Graph_code.graph option;
-  (* fast accessors, for macrolevel use/def information  *)
-  huses_of_file: (Common.filename, Common.filename list) Hashtbl.t;
-  husers_of_file: (Common.filename, Common.filename list) Hashtbl.t;
+  (* for macrolevel use/def information, only for Dir and File *)
+  hfile_deps_of_node: (Graph_code.node, Common.filename deps) Hashtbl.t;
   (* we used to store line information there, but the file may have changed *)
   hentities_of_file: (Common.filename, Graph_code.node list) Hashtbl.t;
  }
 (*e: type model *)
-type 'a deps = 'a list (* uses *) * 'a list (* users *)
+and 'a deps = 'a list (* uses *) * 'a list (* users *)
 
 
 type macrolevel = Treemap.treemap_rendering
@@ -86,7 +85,7 @@ type drawing = {
     (Common.filename, Treemap.treemap_rectangle) Hashtbl.t;
   (* coupling: = List.length treemap *)
   nb_rects: int; 
-  (* This is to display readable paths. When fully zoomed it's a filename *)
+  (* Used to display readable paths. When fully zoomed it's a filename. *)
   current_root: Common.path;
 
   mutable layers: Layer_code.layers_with_index;
@@ -160,8 +159,8 @@ val init_drawing :
   ?height:int ->
   (Common.path list -> Treemap.treemap_rendering) ->
   Layer_code.layers_with_index ->
-  Common.filename list -> 
-  Common.dirname ->
+  Common.path list -> 
+  Common.dirname (* root *) ->
   drawing
 (*e: init_drawing sig *)
 
@@ -170,7 +169,7 @@ val new_surface:
   alpha:bool -> width:int -> height:int -> [ `Any ] Cairo.surface
 (*e: new_pixmap sig *)
 
-(* point -> rectangle -> line -> entity *)
+(* point -> rectangle -> line -> glyph -> entity *)
 
 (*s: find_rectangle_at_user_point sig *)
 val find_rectangle_at_user_point :
@@ -183,7 +182,6 @@ val find_rectangle_at_user_point :
 
 val find_line_in_rectangle_at_user_point:
   Cairo.point -> Treemap.treemap_rectangle -> drawing -> line option
-
 val find_glyph_in_rectangle_at_user_point:
   Cairo.point -> Treemap.treemap_rectangle -> drawing -> glyph option
 
@@ -192,7 +190,6 @@ val find_glyph_in_rectangle_at_user_point:
 val find_def_entity_at_line_opt:
   line -> Treemap.treemap_rectangle -> drawing -> model -> 
   Graph_code.node option
-
 val find_use_entity_at_line_and_glyph_opt:
   line -> glyph -> Treemap.treemap_rectangle -> drawing -> model -> 
   Graph_code.node option
@@ -211,10 +208,11 @@ val deps_readable_files_of_node:
   Graph_code.node -> model ->
   Common.filename (* readable *) deps
 
-val deps_of_node_clipped:
+val deps_nodes_of_node_clipped:
   Graph_code.node -> drawing -> model ->
   (Graph_code.node * line * microlevel) deps
 
+(* line highlight *)
 val line_and_microlevel_of_node_opt:
   Graph_code.node -> drawing -> model -> 
   (Graph_code.node * line * microlevel) option

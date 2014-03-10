@@ -27,13 +27,14 @@ module T = Treemap
 (*****************************************************************************)
 
 (*s: type model *)
+(* filename below should be in readable path format *)
 type model = {
   root: Common.dirname;
 
   db: Database_code.database option;
   (*s: model fields hook *)
   (* fast accessors *)
-  hentities : (string, Database_code.entity) Hashtbl.t;
+  hentities : (string (* short name *), Database_code.entity) Hashtbl.t;
   (*x: model fields hook *)
   (*x: model fields hook *)
   big_grep_idx: Big_grep.index;
@@ -41,14 +42,13 @@ type model = {
 
   (* for microlevel use/def information *)
   g: Graph_code.graph option;
-  (* fast accessors, for macrolevel use/def information  *)
-  huses_of_file: (Common.filename, Common.filename list) Hashtbl.t;
-  husers_of_file: (Common.filename, Common.filename list) Hashtbl.t;
+  (* for macrolevel use/def information, only for Dir and File *)
+  hfile_deps_of_node: (Graph_code.node, Common.filename deps) Hashtbl.t;
   (* we used to store line information there, but the file may have changed *)
   hentities_of_file: (Common.filename, Graph_code.node list) Hashtbl.t;
  }
 (*e: type model *)
-type 'a deps = 'a list (* uses *) * 'a list (* users *)
+and 'a deps = 'a list (* uses *) * 'a list (* users *)
 
 (*****************************************************************************)
 (* The drawing model *)
@@ -387,11 +387,10 @@ let find_use_entity_at_line_and_glyph_opt line glyph tr dw model =
 
 let deps_readable_files_of_file file model =
   let readable = Common.readable ~root:model.root file in
-  let uses = 
-    try Hashtbl.find model.huses_of_file readable with Not_found -> [] in
-  let users = 
-    try Hashtbl.find model.husers_of_file readable with Not_found -> [] in
-  uses, users
+  let node = readable, Database_code.File in
+  try 
+    Hashtbl.find model.hfile_deps_of_node node
+  with Not_found -> [], []
 
 let deps_readable_files_of_node node model =
   match model.g with
@@ -440,7 +439,7 @@ let uses_or_users_of_node node dw fsucc model =
       line_and_microlevel_of_node_opt n dw model
     )
 
-let deps_of_node_clipped node dw model =
+let deps_nodes_of_node_clipped node dw model =
   uses_or_users_of_node node dw Graph_code.succ model,
   uses_or_users_of_node node dw Graph_code.pred model
 

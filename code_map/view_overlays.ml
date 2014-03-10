@@ -164,7 +164,7 @@ let draw_deps_entities n dw model =
      CairoH.draw_rectangle_figure ~cr:cr_overlay ~color:"white" rectangle
    );
 
-   let uses, users = M.deps_of_node_clipped n dw model in
+   let uses, users = M.deps_nodes_of_node_clipped n dw model in
    uses +> List.iter (fun (_n2, line, microlevel) ->
      let rectangle = microlevel.line_to_rectangle line in
      CairoH.draw_rectangle_figure ~cr:cr_overlay ~color:"green" rectangle;

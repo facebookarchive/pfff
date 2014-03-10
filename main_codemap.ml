@@ -239,14 +239,14 @@ let build_model2 root dbfile_opt graphfile_opt =
 
   let g_opt = graphfile_opt +> Common.map_opt Graph_code.load in
 
-  let huses_of_file, husers_of_file, hentities_of_file =
+  let hfile_deps_of_node, hentities_of_file =
     match g_opt with
-    | None -> Hashtbl.create 0, Hashtbl.create 0, Hashtbl.create 0
+    | None -> Hashtbl.create 0, Hashtbl.create 0
     | Some g ->
-      let a, b = Model_graph_code.build_deps_of_file g in
-      let c = Model_graph_code.build_entities_of_file g in
-      let c = Model_graph_code.add_headers_files_entities_of_file root c in
-      Common.hash_of_list a, Common.hash_of_list b, Common.hash_of_list c
+      let a = Model_graph_code.build_filedeps_of_dir_or_file g in
+      let b = Model_graph_code.build_entities_of_file g in
+      let b = Model_graph_code.add_headers_files_entities_of_file root b in
+      a, Common.hash_of_list b
   in
   
   let model = { Model.
@@ -254,7 +254,7 @@ let build_model2 root dbfile_opt graphfile_opt =
         db = db_opt;
         hentities; big_grep_idx;
         g =  g_opt;
-        huses_of_file; husers_of_file; hentities_of_file;
+        hfile_deps_of_node; hentities_of_file;
   }
   in
   model
