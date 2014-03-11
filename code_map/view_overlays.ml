@@ -127,10 +127,9 @@ let draw_englobing_rectangles_overlay ~dw (r, middle, r_englobing) =
 (* ---------------------------------------------------------------------- *)
 (* Uses and users macrolevel *)
 (* ---------------------------------------------------------------------- *)
-let draw_deps_files r dw model =
+let draw_deps_files tr dw model =
  with_overlay dw (fun cr_overlay ->
-   let file = r.T.tr_label in
-   let uses_rect, users_rect = M.deps_rects_of_file file dw model in
+   let uses_rect, users_rect = M.deps_rects_of_rect tr dw model in
    (* todo: glowing layer *)
    uses_rect +> List.iter (fun r ->
      CairoH.draw_rectangle_figure ~cr:cr_overlay ~color:"green" r.T.tr_rect;

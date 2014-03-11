@@ -18,6 +18,7 @@
 open Common
 
 module G = Graph_code
+module E = Database_code
 
 (*****************************************************************************)
 (* Prelude *)
@@ -38,20 +39,34 @@ let build_filedeps_of_dir_or_file g =
     try 
       let file1 = G.file_of_node n1 g in
       let file2 = G.file_of_node n2 g in
+      (* file to file deps *)
       if file1 <> file2 && not (Hashtbl.mem halready (file1, file2)) then begin
         Hashtbl.replace halready (file1, file2) true;
-        Hashtbl.add huses file1 file2;
-        Hashtbl.add husers file2 file1;
+        Hashtbl.add huses (file1, E.File) file2;
+        Hashtbl.add husers (file2, E.File) file1;
       end;
+      (* dir to file deps *)
+      (* e.g. if a/b/foo.c -> a/c/bar.c then need to add
+       * a/b -> a/c/bar.c, a/ -> a/c/bar.c
+       * a/c <- a/b/foo.c, a/ <- a/b/foo.c
+       *)
+      let dirs_n1 = Common2.inits_of_relative_dir file1 in
+      let dirs_n2 = Common2.inits_of_relative_dir file2 in
+      dirs_n1 +> List.iter (fun dir ->
+        Hashtbl.add huses (dir, E.Dir) file2;
+      );
+      dirs_n2 +> List.iter (fun dir ->
+        Hashtbl.add husers (dir, E.Dir) file1;
+      );
+        
     with Not_found -> ()
   );
   let hres = Hashtbl.create 101 in
   let keys = Common2.union_set (Common2.hkeys huses) (Common2.hkeys husers) in
   keys +> List.iter (fun k ->
-    let node = k, Database_code.File in
     let uses = try Hashtbl.find_all huses k with Not_found -> [] in
     let users = try Hashtbl.find_all husers k with Not_found -> [] in
-    Hashtbl.add hres node (uses, users)
+    Hashtbl.add hres k (uses, users)
   );
   hres
 

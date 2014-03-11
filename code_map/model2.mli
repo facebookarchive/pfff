@@ -194,20 +194,19 @@ val find_use_entity_at_line_and_glyph_opt:
   line -> glyph -> Treemap.treemap_rectangle -> drawing -> model -> 
   Graph_code.node option
 
-(* macrolevel uses and users *)
-val deps_readable_files_of_file:
-  Common.filename (* abs *) -> model ->
+(* macrolevel deps *)
+val node_of_rect: 
+  Treemap.treemap_rectangle -> model -> Graph_code.node
+
+val deps_readable_files_of_node:
+  Graph_code.node -> model -> 
   Common.filename (* readable *) deps
 
-val deps_rects_of_file: 
-  Common.filename -> drawing -> model -> 
+val deps_rects_of_rect: 
+  Treemap.treemap_rectangle -> drawing -> model ->
   Treemap.treemap_rectangle deps
 
-(* microlevel uses and users *)
-val deps_readable_files_of_node:
-  Graph_code.node -> model ->
-  Common.filename (* readable *) deps
-
+(* microlevel deps *)
 val deps_nodes_of_node_clipped:
   Graph_code.node -> drawing -> model ->
   (Graph_code.node * line * microlevel) deps

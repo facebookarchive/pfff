@@ -21,6 +21,7 @@ module Flag = Flag_visual
 module CairoH = Cairo_helpers
 module F = Figures
 module T = Treemap
+module E = Database_code
 
 (*****************************************************************************)
 (* The code model *)
@@ -384,29 +385,32 @@ let find_use_entity_at_line_and_glyph_opt line glyph tr dw model =
       )
   ))
 
-
-let deps_readable_files_of_file file model =
+let node_of_rect tr model =
+  let file = tr.Treemap.tr_label in
   let readable = Common.readable ~root:model.root file in
-  let node = readable, Database_code.File in
-  try 
-    Hashtbl.find model.hfile_deps_of_node node
-  with Not_found -> [], []
+  let kind = if tr.Treemap.tr_is_node then E.Dir else E.File in
+  readable, kind
+
 
 let deps_readable_files_of_node node model =
-  match model.g with
-  | None -> [], []
-  | Some g ->
-    let succ = Graph_code.succ node Graph_code.Use g in
-    let pred = Graph_code.pred node Graph_code.Use g in
-    succ +> Common.map_filter (fun n ->
-      try Some (Graph_code.file_of_node n g) with Not_found -> None
-    ),
-    pred +> Common.map_filter (fun n ->
-      try Some (Graph_code.file_of_node n g) with Not_found -> None
-    )
+  match node, model.g with
+  | (_, (E.Dir | E.File)), _ -> 
+      (* opti: can't use g for that *)
+      (try Hashtbl.find model.hfile_deps_of_node node with Not_found -> [], [])
+  | _, None -> [], []
+  | _, Some g ->
+      let succ = Graph_code.succ node Graph_code.Use g in
+      let pred = Graph_code.pred node Graph_code.Use g in
+      succ +> Common.map_filter (fun n ->
+        try Some (Graph_code.file_of_node n g) with Not_found -> None
+      ),
+      pred +> Common.map_filter (fun n ->
+        try Some (Graph_code.file_of_node n g) with Not_found -> None
+      )
 
-let deps_rects_of_file file dw model =
-  let uses, users = deps_readable_files_of_file file model in
+let deps_rects_of_rect tr dw model =
+  let node = node_of_rect tr model in
+  let uses, users = deps_readable_files_of_node node model in
   uses +> Common.map_filter (fun file -> 
     Common2.optionise (fun () -> Hashtbl.find dw.readable_file_to_rect file)
   ),

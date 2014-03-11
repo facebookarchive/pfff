@@ -220,7 +220,7 @@ let button_action w ev =
             M.find_glyph_in_rectangle_at_user_point user tr dw in
           let entity_def_opt = 
             line_opt >>= (fun line ->
-              M.find_def_entity_at_line_opt line tr dw model)in
+              M.find_def_entity_at_line_opt line tr dw model) in
           let entity_use_opt =
             line_opt >>= (fun line -> 
             glyph_opt >>= (fun glyph ->
@@ -231,12 +231,9 @@ let button_action w ev =
             | Some e, _ | _, Some e -> Some e
             | _ -> None
           in
-         
-          let uses, users = 
-            match entity_opt with
-            | None -> M.deps_readable_files_of_file file model
-            | Some n -> M.deps_readable_files_of_node n model
-          in
+          let n = entity_opt ||| M.node_of_rect tr model in
+        
+          let uses, users = M.deps_readable_files_of_node n model in
 
           let paths_of_readables xs = 
             xs 
