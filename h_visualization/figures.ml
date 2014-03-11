@@ -7,6 +7,10 @@ type point = { x: float; y: float }
 
 type rectangle = { p: point; q: point; }
 
+(*****************************************************************************)
+(* Rectangles *)
+(*****************************************************************************)
+
 let rect_width r = r.q.x -. r.p.x
 
 let rect_height r = r.q.y -. r.p.y
@@ -20,27 +24,6 @@ let valid_rect r =
 let s_of_rectangle r =
    spf "p:%f, %f;  q:%f, %f" r.p.x r.p.y r.q.x r.q.y 
 
-(*****************************************************************************)
-(* pixel coordinates *)
-(*****************************************************************************)
-type point_pixel = { xpix:int; ypix:int }
-
-type rect_pixel = {
-  lower_left:  point_pixel; 
-  upper_right: point_pixel;
-}
-
-let rect_pixel_width  rect = rect.upper_right.xpix - rect.lower_left.xpix
-let rect_pixel_height rect = rect.upper_right.ypix - rect.lower_left.ypix
-
-let random_point_in_rect_pixel rect = 
-  let x = rect.lower_left.xpix + Random.int (rect_pixel_width rect) in
-  let y = rect.lower_left.ypix + Random.int (rect_pixel_height rect) in
-  { xpix = x; ypix = y }
-
-(*****************************************************************************)
-(* Rectangles *)
-(*****************************************************************************)
 
 let point_is_in_rectangle p r =
   p.x >= r.p.x && p.x <= r.q.x &&
@@ -71,3 +54,22 @@ let _ = assert
     Some { p = { x=2.; y=2.}; q = { x=4.; y=4.};}
  )
 *)
+
+(*****************************************************************************)
+(* pixel coordinates *)
+(*****************************************************************************)
+type point_pixel = { xpix:int; ypix:int }
+
+type rect_pixel = {
+  lower_left:  point_pixel; 
+  upper_right: point_pixel;
+}
+
+let rect_pixel_width  rect = rect.upper_right.xpix - rect.lower_left.xpix
+let rect_pixel_height rect = rect.upper_right.ypix - rect.lower_left.ypix
+
+let random_point_in_rect_pixel rect = 
+  let x = rect.lower_left.xpix + Random.int (rect_pixel_width rect) in
+  let y = rect.lower_left.ypix + Random.int (rect_pixel_height rect) in
+  { xpix = x; ypix = y }
+
