@@ -1,6 +1,6 @@
 /* Yoann Padioleau
  *
- * Copyright (C) 2010, 2013 Facebook
+ * Copyright (C) 2010, 2013, 2014 Facebook
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public License
@@ -35,6 +35,7 @@
  *    see also D911357 for the esprima related extension
  *  - support arrows (short lambdas)
  *    https://people.mozilla.org/~jorendorff/es6-draft.html#sec-arrow-function-definitions
+ *  - support trailing commas
  * 
  *)
 
@@ -607,6 +608,9 @@ object_literal:
      { ($1, [], $2) }
  | T_LCURLY property_name_and_value_list T_VIRTUAL_SEMICOLON T_RCURLY 
      { ($1, $2, $4) }
+ /*(* trailing comma 5.1? extension *)*/
+ | T_LCURLY property_name_and_value_list T_COMMA T_VIRTUAL_SEMICOLON T_RCURLY 
+     { ($1, $2 @ [Right $3], $5) }
 
 
 property_name_and_value_list:

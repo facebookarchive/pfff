@@ -50,6 +50,7 @@ and 'a paren   = tok * 'a * tok
 and 'a brace   = tok * 'a * tok
 and 'a bracket = tok * 'a * tok 
 and 'a angle = tok * 'a * tok
+(* with trailing comma extension, can have a Right tok at the very end *)
 and 'a comma_list = ('a, tok (* the comma *)) Common.either list
 
 (* semicolon. Can be None when was implicitely inserted during parsing *)
