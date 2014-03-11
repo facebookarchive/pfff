@@ -97,14 +97,9 @@ type expr =
    | Arrow of arrow_func
 
    (* unparser: *)
-   | Extra of extra
    | Paren of expr paren
 
    | XhpHtml of xhp_html
-
-     and extra = 
-       (* ??? *)
-       | DanglingComma
 
      and litteral =
        | Bool of bool wrap

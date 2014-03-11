@@ -134,13 +134,10 @@ let rec vof_expr =
   | Function v1 ->
       let v1 = vof_func_decl v1 in Ocaml.VSum (("Function", [ v1 ]))
   | Arrow v1 -> let v1 = vof_arrow_func v1 in Ocaml.VSum (("Arrow", [ v1 ]))
-  | Extra v1 -> let v1 = vof_extra v1 in Ocaml.VSum (("Extra", [ v1 ]))
   | Paren v1 ->
       let v1 = vof_paren vof_expr v1 in Ocaml.VSum (("Paren", [ v1 ]))
   | XhpHtml v1 ->
       let v1 = vof_xhp_html v1 in Ocaml.VSum (("XhpHtml", [ v1 ]))
-and vof_extra =
-  function | DanglingComma -> Ocaml.VSum (("DanglingComma", []))
 and vof_litteral =
   function
   | Bool v1 ->

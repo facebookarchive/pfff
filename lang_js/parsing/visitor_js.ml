@@ -196,7 +196,6 @@ and v_expr (x: expr) =
       let v1 = v_expr v1 and v2 = v_tok v2 and v3 = v_expr v3 in ()
   | Function v1 -> let v1 = v_func_decl v1 in ()
   | Arrow v1 -> let v1 = v_arrow_func v1 in ()
-  | Extra v1 -> let v1 = v_extra v1 in ()
   | Paren v1 -> let v1 = v_paren2 v_expr v1 in ()
   | XhpHtml v1 -> let v1 = v_xhp_html v1 in ()
   in
