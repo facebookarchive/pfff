@@ -14,6 +14,10 @@ so can hover on some code and see the corresponding definition
 (as well as the other users of this definition and the uses of
 this definition).
 
+*** show uses/defs macrolevel for directories
+scalable spirit! a visualization should apply from the topmost
+entities to the lowest one!
+
 *** show entity under cursor (def or use) in tooltip
 
 *** go to definition when on a use 
