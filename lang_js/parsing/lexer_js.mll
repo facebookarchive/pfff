@@ -1,7 +1,7 @@
 {
 (* Yoann Padioleau
  *
- * Copyright (C) 2010, 2013 Facebook
+ * Copyright (C) 2010, 2013, 2014 Facebook
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public License
@@ -31,7 +31,6 @@ module Flag = Flag_parsing_js
  * because recent Javascripts have different lexing rules depending on some
  * "contexts", especially for JSX/XHP
  * (this is similar to Perl, e.g. the <<<END context).
- *
  *)
 
 (*****************************************************************************)
@@ -293,6 +292,7 @@ rule initial = parse
   | "~" { T_BIT_NOT (tokinfo lexbuf) }
   | "=" { T_ASSIGN (tokinfo lexbuf) }
 
+  (* arrows (aka short lambdas) *)
   | "=>" { T_ARROW (tokinfo lexbuf) }
 
   (* ----------------------------------------------------------------------- *)
@@ -439,9 +439,10 @@ rule initial = parse
       | T_LCURLY _ | T_RCURLY _
       | T_RETURN _
       | T_ASSIGN _
-(*      | T_DOUBLE_ARROW _ *)
+      | T_ARROW _
       | T_PLING _ | T_COLON _
-      | T_LBRACKET _ | T_AND _
+      | T_LBRACKET _ 
+      | T_AND _ | T_OR _ | T_PLUS _
     )
       ->
       push_mode (ST_IN_XHP_TAG tag);

@@ -646,7 +646,10 @@ xhp_html:
 xhp_child:
  | T_XHP_TEXT           { XhpText $1 }
  | xhp_html             { XhpNested $1 }
- | T_LCURLY expression semicolon T_RCURLY { XhpExpr ($1, $2, $4) (*TODO$3*) }
+ | T_LCURLY expression semicolon T_RCURLY 
+     { XhpExpr ($1, Some $2, $4) (*TODO$3*) }
+ | T_LCURLY T_RCURLY 
+     { XhpExpr ($1, None , $2) (*TODO$3*) }
 
 xhp_attribute:
  | T_XHP_ATTR T_ASSIGN xhp_attribute_value { $1, $2, $3 }
@@ -816,6 +819,7 @@ identifier:
 
 field_name:
  | T_IDENTIFIER { $1 }
+ | T_CLASS { "class", $1 }
 
 method_name:
  | T_IDENTIFIER { $1 }

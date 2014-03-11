@@ -248,7 +248,7 @@ and vof_xhp_body =
       let v1 = vof_wrap Ocaml.vof_string v1
       in Ocaml.VSum (("XhpText", [ v1 ]))
   | XhpExpr v1 ->
-      let v1 = vof_brace vof_expr v1 in Ocaml.VSum (("XhpExpr", [ v1 ]))
+      let v1 = vof_brace (Ocaml.vof_option vof_expr) v1 in Ocaml.VSum (("XhpExpr", [ v1 ]))
   | XhpNested v1 ->
       let v1 = vof_xhp_html v1 in Ocaml.VSum (("XhpNested", [ v1 ]))
 and vof_st =

@@ -158,7 +158,7 @@ type expr =
       | XhpAttrExpr of expr brace
    and xhp_body =
      | XhpText of string wrap
-     | XhpExpr of expr brace
+     | XhpExpr of expr option brace
      | XhpNested of xhp_html
 
 (* ------------------------------------------------------------------------- *)

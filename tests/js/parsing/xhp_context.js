@@ -28,3 +28,8 @@ o = {
 var testCases = [
        [<InputText value="hello" />, 'hello']
                  ];
+
+var x = 1 || <fbt>xxx</fbt>;
+
+// seems dangerous to me to allow this
+var y = 'foo' + <fbt>xxx</fbt>;

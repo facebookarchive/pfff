@@ -212,7 +212,6 @@ and v_field x =
   in
   vin.kfield (k, all_functions) x
 
-and v_extra = function | DanglingComma -> ()
 and v_litteral =
   function
   | Bool v1 -> let v1 = v_wrap5 v_bool v1 in ()
@@ -306,7 +305,7 @@ and v_xhp_attr_value =
 and v_xhp_body =
   function
   | XhpText v1 -> let v1 = v_wrap v_string v1 in ()
-  | XhpExpr v1 -> let v1 = v_brace v_expr v1 in ()
+  | XhpExpr v1 -> let v1 = v_brace (v_option v_expr) v1 in ()
   | XhpNested v1 -> let v1 = v_xhp_html v1 in ()
 and v_xhp_tag x = v_string x
 and v_st x =
