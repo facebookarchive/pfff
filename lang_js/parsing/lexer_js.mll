@@ -15,10 +15,9 @@
  *)
 open Common
 
-open Ast_js
 open Parser_js
-module Ast = Ast_js
 module Flag = Flag_parsing_js
+module PI = Parse_info
 
 (*****************************************************************************)
 (* Prelude *)
@@ -28,9 +27,9 @@ module Flag = Flag_parsing_js
  * src: ocamllexified from Marcel Laverdet 'fbjs2'?
  *
  * There are a few tricks to go around ocamllex restrictions
- * because recent Javascripts have different lexing rules depending on some
- * "contexts", especially for JSX/XHP
- * (this is similar to Perl, e.g. the <<<END context).
+ * because Javascript now have different lexing rules depending on some
+ * "contexts", especially for JSX/XHP (this is similar to Perl, 
+ * e.g. the <<<END context).
  *)
 
 (*****************************************************************************)
@@ -41,7 +40,7 @@ exception Lexical of string
 let tok     lexbuf  =
   Lexing.lexeme lexbuf
 let tokinfo lexbuf  =
-  Parse_info.tokinfo_str_pos (Lexing.lexeme lexbuf) (Lexing.lexeme_start lexbuf)
+  PI.tokinfo_str_pos (Lexing.lexeme lexbuf) (Lexing.lexeme_start lexbuf)
 
 let error s =
   if !Flag.exn_when_lexical_error
@@ -200,7 +199,7 @@ let HEXA = ['0'-'9''a'-'f''A'-'F']
 
 let XHPLABEL =	['a'-'z''A'-'Z''_']['a'-'z''A'-'Z''0'-'9''_''-']*
 let XHPTAG = XHPLABEL (":" XHPLABEL)*
-let XHPATTR = XHPLABEL
+let XHPATTR = XHPLABEL (":" XHPLABEL)*
 
 (*****************************************************************************)
 (* Rule initial *)

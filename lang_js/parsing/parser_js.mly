@@ -27,13 +27,14 @@
  *  - jslint
  * 
  * updates:
- *  - support for ES6 class
+ *  - support for ES6 class, see
  *    http://people.mozilla.org/~jorendorff/es6-draft.html#sec-class-definitions
- *  - support for JSX, mostly imitating what was done for XHP in lang_php/
- *  - support for type annotation a la TypeScript
- *    http://en.wikipedia.org/wiki/TypeScript, 
- *    see also D911357 for the esprima related extension
- *  - support arrows (short lambdas)
+ *  - support for JSX, mostly imitating what was done for XHP in lang_php/,
+ *    but with tags possibly containing ':' in their name
+ *  - support for type annotation a la TypeScript, see
+ *    http://en.wikipedia.org/wiki/TypeScript, see also D911357 for the
+ *    esprima related extension
+ *  - support arrows (short lambdas), see
  *    https://people.mozilla.org/~jorendorff/es6-draft.html#sec-arrow-function-definitions
  *  - support trailing commas
  *  - variable number of parameters, e.g. 'function foo(...args)', es6 ext?
