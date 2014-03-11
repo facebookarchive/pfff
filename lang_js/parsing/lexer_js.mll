@@ -384,35 +384,31 @@ rule initial = parse
    * It can not be
    * '/' [^'*''/'] ([^'/''\n'])* '/' ['A'-'Z''a'-'z']*
    * because a / (b/c)  will be recognized as a regexp.
-   *
    *)
-
-  (* todo? marcel was changing of state context condition there *)
-  | "/=" { T_DIV_ASSIGN (tokinfo lexbuf); }
-
-  | "/" {
+  | "/" | "/=" {
+      let s = tok lexbuf in
       let info = tokinfo lexbuf in
 
       match !_last_non_whitespace_like_token with
       | Some (
-            T_IDENTIFIER _
-          | T_NUMBER _
-          | T_STRING _
-          | T_REGEX _
-          | T_INCR _ | T_DECR _
-          | T_RBRACKET _
-          | T_RPAREN _
-          | T_FALSE _ | T_TRUE _
-          | T_NULL _
+            T_IDENTIFIER _ 
+          | T_NUMBER _ | T_STRING _ | T_REGEX _
+          | T_FALSE _ | T_TRUE _ | T_NULL _
           | T_THIS _
+          | T_INCR _ | T_DECR _
+          | T_RBRACKET _ | T_RPAREN _
         ) ->
-          T_DIV (info);
+          (match s with
+          | "/" -> T_DIV (info)
+          | "/=" -> T_DIV_ASSIGN (tokinfo lexbuf)
+          | _ -> raise Impossible
+          )
       | _ ->
           let buf = Buffer.create 127 in
-          Buffer.add_char buf '/';
+          Buffer.add_string buf s;
           regexp buf lexbuf;
-          let s = Buffer.contents buf in
-          T_REGEX (s, info +> PI.rewrap_str s)
+          let str = Buffer.contents buf in
+          T_REGEX (str, info +> PI.rewrap_str str)
     }
 
   (* ----------------------------------------------------------------------- *)
