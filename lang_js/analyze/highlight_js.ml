@@ -36,12 +36,8 @@ let fake_no_use2 = (NoInfoPlace, UniqueDef, MultiUse)
 (* Code highlighter *)
 (*****************************************************************************)
 
-let visit_program
-    ~tag_hook
-    _prefs 
-    (*db_opt *)
-    (ast, toks)
-  =
+let visit_program ~tag_hook _prefs (*db_opt *) (ast, toks) =
+
   let already_tagged = Hashtbl.create 101 in
   let tag = (fun ii categ ->
     tag_hook ii categ;
@@ -154,6 +150,7 @@ let visit_program
 
   (* -------------------------------------------------------------------- *)
   (* ast phase 1 *) 
+  (* TODO!! *)
 
   (* -------------------------------------------------------------------- *)
   (* toks phase 2 *)
@@ -161,15 +158,12 @@ let visit_program
     match tok with
     | T.TComment ii ->
         if not (Hashtbl.mem already_tagged ii)
-        then
-          tag ii Comment
+        then tag ii Comment
+    | T.TCommentSpace (_ii) | T.TCommentNewline (_ii) -> ()
 
-    | T.TCommentSpace (_ii)
-    | T.TCommentNewline (_ii)
-        -> ()
-
-    | T.T_NUMBER (_, ii) ->
-        tag ii Number
+    | T.T_NULL (ii) -> tag ii Null
+    | T.T_FALSE (ii) | T.T_TRUE (ii) -> tag ii Boolean
+    | T.T_NUMBER (_, ii) -> tag ii Number
 
     (* Both strings and regular identifiers can be used to represent
      * entities such as classes so have to look for both
@@ -200,6 +194,9 @@ let visit_program
           | None ->
               tag ii String
           )
+
+    | T.T_REGEX (_, ii) -> tag ii String
+
     | T.T_IDENTIFIER (_, ii) ->
        if not (Hashtbl.mem already_tagged ii)
        then
@@ -221,50 +218,31 @@ let visit_program
         )
 
 
+    | T.T_FUNCTION (ii) ->  tag ii Keyword
 
+    | T.T_IF (ii)  | T.T_SWITCH (ii) | T.T_ELSE (ii) -> 
+        tag ii KeywordConditional
 
-    | T.T_REGEX (_, ii) ->
-        tag ii String
-
-    | T.T_FUNCTION (ii) ->
-        tag ii Keyword
-
-    | T.T_IF (ii) 
-    | T.T_SWITCH (ii)
-    | T.T_ELSE (ii) 
-      -> tag ii KeywordConditional
-
-    | T.T_IN (ii)
-    | T.T_INSTANCEOF (ii)
-    | T.T_RETURN (ii)
-    | T.T_THIS (ii)
-        -> tag ii Keyword
+    | T.T_IN (ii) | T.T_INSTANCEOF (ii) | T.T_RETURN (ii) | T.T_THIS (ii) ->
+         tag ii Keyword
         
 
-    | T.T_THROW (ii)
-    | T.T_TRY (ii)
-    | T.T_CATCH (ii)
-    | T.T_FINALLY (ii)
-        -> tag ii KeywordExn
+    | T.T_THROW (ii) | T.T_TRY (ii) | T.T_CATCH (ii) | T.T_FINALLY (ii) ->
+        tag ii KeywordExn
 
-    | T.T_CLASS ii
-    | T.T_EXTENDS ii 
-        -> tag ii KeywordObject
+    | T.T_CLASS ii | T.T_EXTENDS ii  -> tag ii KeywordObject
 
-      | T.T_XHP_TEXT (_, ii) -> tag ii String
-      | T.T_XHP_ATTR (_, ii) -> tag ii (Field (Use2 fake_no_use2))
-
-      | T.T_XHP_CLOSE_TAG (_, ii) -> tag ii EmbededHtml
-      | T.T_XHP_SLASH_GT ii -> tag ii EmbededHtml
-      | T.T_XHP_GT ii -> tag ii EmbededHtml
-      | T.T_XHP_OPEN_TAG (_, ii) -> tag ii EmbededHtml
+    | T.T_XHP_TEXT (_, ii) -> tag ii String
+    | T.T_XHP_ATTR (_, ii) -> tag ii (Field (Use2 fake_no_use2))
+      
+    | T.T_XHP_CLOSE_TAG (_, ii) -> tag ii EmbededHtml
+    | T.T_XHP_SLASH_GT ii -> tag ii EmbededHtml
+    | T.T_XHP_GT ii -> tag ii EmbededHtml
+    | T.T_XHP_OPEN_TAG (_, ii) -> tag ii EmbededHtml
 
     | T.T_STATIC ii -> tag ii Keyword
 
-    | T.T_WHILE (ii)
-    | T.T_DO (ii)
-    | T.T_FOR (ii)
-        -> tag ii KeywordLoop
+    | T.T_WHILE (ii) | T.T_DO (ii) | T.T_FOR (ii) -> tag ii KeywordLoop
 
     | T.T_VAR (ii) ->
         tag ii TypeMisc
@@ -274,14 +252,6 @@ let visit_program
 
     | T.T_CONST (ii) ->
         tag ii TypeMisc
-
-    | T.T_NULL (ii)
-        -> tag ii Null
-
-    | T.T_FALSE (ii)
-    | T.T_TRUE (ii)
-        -> tag ii Boolean
-
     | T.T_BREAK (ii)
     | T.T_CASE (ii)
     | T.T_CONTINUE (ii)
@@ -297,6 +267,7 @@ let visit_program
     | T.T_SEMICOLON (ii)
     | T.T_COMMA (ii)
     | T.T_PERIOD (ii)
+    | T.T_DOTS ii
         -> tag ii Punctuation
 
     | T.T_RSHIFT3_ASSIGN (ii)

@@ -445,14 +445,21 @@ and
   let bnd = ("f_name", arg) in
   let bnds = bnd :: bnds in
   let arg = Ocaml.vof_option vof_tok v_f_tok in
-  let bnd = ("f_tok", arg) in let bnds = bnd :: bnds in Ocaml.VDict bnds
-and vof_parameter { p_name = v_p_name; p_type = v_p_type } =
+  let bnd = ("f_tok", arg) in 
+  let bnds = bnd :: bnds in 
+  Ocaml.VDict bnds
+and vof_parameter { p_name = v_p_name; p_type = v_p_type; p_dots = v_dots } =
   let bnds = [] in
   let arg = vof_type_opt v_p_type in
   let bnd = ("p_type", arg) in
   let bnds = bnd :: bnds in
   let arg = vof_name v_p_name in
-  let bnd = ("p_name", arg) in let bnds = bnd :: bnds in Ocaml.VDict bnds
+  let bnd = ("p_name", arg) in 
+  let bnds = bnd :: bnds in 
+  let arg = Ocaml.vof_option vof_tok v_dots in
+  let bnd = ("p_dots", arg) in 
+  let bnds = bnd :: bnds in 
+  Ocaml.VDict bnds
 and
   vof_arrow_func { a_params = v_a_params; a_tok = v_a_tok; a_body = v_a_body
                  } =

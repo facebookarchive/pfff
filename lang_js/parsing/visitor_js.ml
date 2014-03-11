@@ -448,8 +448,11 @@ and  v_func_decl {
   let arg = v_type_opt v_f_return_type in
   let arg = v_brace (v_list v_toplevel) v_f_body in ()
 
-and v_parameter { p_name = v_p_name; p_type = v_p_type } =
-  let arg = v_name v_p_name in let arg = v_type_opt v_p_type in ()
+and v_parameter { p_name = v_p_name; p_type = v_p_type; p_dots } =
+  let arg = v_option v_tok p_dots in
+  let arg = v_name v_p_name in 
+  let arg = v_type_opt v_p_type in
+  ()
 and
   v_arrow_func { a_params = v_a_params; a_tok = v_a_tok; a_body = v_a_body }
                =

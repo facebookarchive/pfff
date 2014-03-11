@@ -294,6 +294,8 @@ rule initial = parse
 
   (* arrows (aka short lambdas) *)
   | "=>" { T_ARROW (tokinfo lexbuf) }
+  (* variable number of parameters, less: enforce directly attached to ident? *)
+  | "..." { T_DOTS (tokinfo lexbuf) }
 
   (* ----------------------------------------------------------------------- *)
   (* Keywords and ident *)

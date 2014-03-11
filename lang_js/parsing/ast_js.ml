@@ -239,6 +239,8 @@ and func_decl = {
   and parameter = {
    p_name: name;
    p_type: type_opt;
+   (* if not None, then should be last parameter in a parameter comma_list *)
+   p_dots: tok (* ... *) option;
   }
 
 (* todo? could factorize with func_def, but this will require many

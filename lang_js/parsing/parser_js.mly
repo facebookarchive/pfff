@@ -36,7 +36,7 @@
  *  - support arrows (short lambdas)
  *    https://people.mozilla.org/~jorendorff/es6-draft.html#sec-arrow-function-definitions
  *  - support trailing commas
- * 
+ *  - variable number of parameters, e.g. 'function foo(...args)', es6 ext?
  *)
 
 open Common
@@ -46,7 +46,7 @@ open Ast_js
 let e x = (x)
 let bop op a b c = e(B(a, (op, b), c))
 let uop op a b = e(U((op,a), b))
-let mk_param x = { p_name = x; p_type = None }
+let mk_param x = { p_name = x; p_type = None; p_dots = None; }
 
 %}
 
@@ -89,7 +89,7 @@ let mk_param x = { p_name = x; p_type = None }
  T_SEMICOLON 
  T_COMMA
  T_PERIOD
- T_ARROW
+ T_ARROW T_DOTS
 
 /*(* operators *)*/
 %token <Ast_js.tok>  
@@ -376,6 +376,8 @@ function_expression:
 formal_parameter: 
  | identifier            { mk_param $1 }
  | identifier annotation { { (mk_param $1) with p_type = Some $2; } }
+ /*(* variable number of parameters, less: enforce must be last parameter *)*/
+ | T_DOTS identifier { { (mk_param $2) with p_dots = Some $1; } }
 
 formal_parameter_list:
  | formal_parameter                                { [Left $1] }
@@ -675,6 +677,10 @@ arrow_function:
          | _ -> raise (Parsing.Parse_error)
        in
        { a_params = AParams ($1, [Left param], $3); a_tok = $4; a_body = $5 }
+     }
+ | T_LPAREN T_DOTS identifier T_RPAREN T_ARROW arrow_body 
+     { let param = { (mk_param $3) with p_dots = Some $2; } in
+       { a_params = AParams ($1, [Left param], $4); a_tok = $5; a_body = $6 }
      }
  | T_LPAREN identifier T_COMMA formal_parameter_list T_RPAREN T_ARROW arrow_body
      { let params = AParams ($1, (Left (mk_param $2))::Right $3::$4, $5) in
