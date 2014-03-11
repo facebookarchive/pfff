@@ -1013,16 +1013,9 @@ let tree_of_dir ?filter_file ?filter_dir ?sort ~file_hook a =
   Common.profile_code "Treemap.tree_of_dir" (fun () ->
     tree_of_dir3 ?filter_file ?filter_dir ?sort ~file_hook a)
 
-let tree_of_dir_or_file
-  ?filter_file
-  ?filter_dir
-  ?sort
-  ~file_hook 
-  path
- =
+let tree_of_dir_or_file ?filter_file ?filter_dir ?sort ~file_hook path =
  if Common2.is_directory path
- then 
-   tree_of_dir ?filter_file ?filter_dir ?sort ~file_hook path
+ then tree_of_dir ?filter_file ?filter_dir ?sort ~file_hook path
  else Leaf (path, file_hook path)
 
 
@@ -1083,22 +1076,12 @@ let add_intermediate_nodes root_path nodes =
     nodes @ leaves
   in
   aux root_path xs
-
-
+ 
   
-  
-
-let tree_of_dirs_or_files2
-  ?filter_file
-  ?filter_dir
-  ?sort
-  ~file_hook 
-  paths
- =
+let tree_of_dirs_or_files2 ?filter_file ?filter_dir ?sort ~file_hook paths =
   match paths with
   | [] -> failwith "tree_of_dirs_or_files: empty list"
-  | [x] ->
-      tree_of_dir_or_file ?filter_file ?filter_dir ?sort ~file_hook x
+  | [x] -> tree_of_dir_or_file ?filter_file ?filter_dir ?sort ~file_hook x
   | xs -> 
       let nodes = 
         xs +> List.map (fun x ->

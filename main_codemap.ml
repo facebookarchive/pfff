@@ -447,6 +447,20 @@ let test_loc root =
   )
   
 
+let test_treemap_dirs () =
+  let paths = 
+    ["commons/common.ml"; "h_visualization"; "code_graph"] 
+    +> List.map Common.realpath in
+  let paths = List.sort String.compare paths in
+  let tree = 
+    paths +> Treemap.tree_of_dirs_or_files
+      ~filter_dir:Lib_vcs.filter_vcs_dir
+      ~filter_file:(fun file -> file =~ ".*\\.ml")
+      ~file_hook:(fun _file -> 10)
+  in
+  pr2_gen tree
+
+
 (* update: try to put ocamlgtk related tests in widgets/test_widgets.ml, not
  * here. Here it's for ... well it's for nothing I think because it's not 
  * really easy to test a gui.
@@ -532,6 +546,8 @@ let extra_actions () = [
    Common.mk_action_0_arg (test_cairo);
    "-test_commitid", " <id>",
    Common.mk_action_1_arg (test_visual_commitid);
+   "-test_treemap_dirs", " <id>",
+   Common.mk_action_0_arg (test_treemap_dirs);
  (*e: actions *)
 ]
  
