@@ -11,7 +11,7 @@ TOP=..
 TARGET=lib
 
 SRC= figures.ml simple_color.ml \
-     jgraph.ml \
+     plot_jgraph.ml \
      treemap.ml
 
 #need use json library in external/, or could be guarded by FEATURE_JSON
