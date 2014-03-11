@@ -25,6 +25,16 @@ module E = Database_code
 (*****************************************************************************)
 
 (*****************************************************************************)
+(* Helpers *)
+(*****************************************************************************)
+let is_prefix prefix str =
+  (* todo: have better than that? *)
+  try 
+    String.sub str 0 (String.length prefix) =$= prefix
+  with Invalid_argument _ -> false
+  
+
+(*****************************************************************************)
 (* Main entry point *)
 (*****************************************************************************)
 
@@ -47,16 +57,18 @@ let build_filedeps_of_dir_or_file g =
       end;
       (* dir to file deps *)
       (* e.g. if a/b/foo.c -> a/c/bar.c then need to add
-       * a/b -> a/c/bar.c, a/ -> a/c/bar.c
-       * a/c <- a/b/foo.c, a/ <- a/b/foo.c
+       * a/b -> a/c/bar.c, but not a/ -> a/c/bar.c cos of is_prefix
+       * a/c <- a/b/foo.c, but not a/ <- a/b/foo.c cos of is_prefix
        *)
       let dirs_n1 = Common2.inits_of_relative_dir file1 in
       let dirs_n2 = Common2.inits_of_relative_dir file2 in
       dirs_n1 +> List.iter (fun dir ->
-        Hashtbl.add huses (dir, E.Dir) file2;
+        if not (is_prefix dir file2)
+        then Hashtbl.add huses (dir, E.Dir) file2;
       );
       dirs_n2 +> List.iter (fun dir ->
-        Hashtbl.add husers (dir, E.Dir) file1;
+        if not (is_prefix dir file1)
+        then Hashtbl.add husers (dir, E.Dir) file1;
       );
         
     with Not_found -> ()
@@ -66,6 +78,9 @@ let build_filedeps_of_dir_or_file g =
   keys +> List.iter (fun k ->
     let uses = try Hashtbl.find_all huses k with Not_found -> [] in
     let users = try Hashtbl.find_all husers k with Not_found -> [] in
+    (* todo: have to do uniq? if add in hash multiple times with same value,
+     * then get multiple bindings?
+     *)
     Hashtbl.add hres k (uses, users)
   );
   hres

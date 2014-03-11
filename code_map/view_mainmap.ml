@@ -205,6 +205,7 @@ let button_action w ev =
 
       | 3 ->
         r_opt +> Common.do_option (fun (tr, _, _r_englobing) ->
+          (* actually file_or_dir *)
           let file = tr.T.tr_label in
 
           if not (Gdk.Convert.test_modifier `SHIFT state)
@@ -263,15 +264,13 @@ let button_action w ev =
             `I ("deps inout", (fun () -> 
               w.current_node <- entity_opt;
               !Ctl._go_dirs_or_file w (paths_of_readables 
-                                              (uses @ users @ [readable]))));
+                                         (uses @ users @ [readable]))));
             `I ("deps in (users)", (fun () -> 
               w.current_node <- entity_opt;
-              !Ctl._go_dirs_or_file w (paths_of_readables 
-                                              (users @ [readable]))));
+              !Ctl._go_dirs_or_file w (paths_of_readables (users@[readable]))));
             `I ("deps out (uses)", (fun () -> 
               w.current_node <- entity_opt;
-              !Ctl._go_dirs_or_file w (paths_of_readables 
-                                            (uses @ [readable]))));
+              !Ctl._go_dirs_or_file w (paths_of_readables (uses@[readable]))));
           ] in
           let entries = 
             entries @
