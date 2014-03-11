@@ -370,20 +370,24 @@ let find_use_entity_at_line_and_glyph_opt line glyph tr dw model =
   model.g >>= (fun g ->
     (* find enclosing def line *)
     let microlevel = Hashtbl.find dw.microlevel tr in
-    let (line_def, _shortnode) = 
-      microlevel.defs +> List.rev +> List.find (fun (line2, _shortnode) ->
-        line >= line2
+    (* try because maybe have no enclosing defs *)
+    try 
+      let (line_def, _shortnode) = 
+        microlevel.defs +> List.rev +> List.find (fun (line2, _shortnode) ->
+          line >= line2
+        )
+      in
+      find_def_entity_at_line_opt line_def tr dw model >>= (fun node ->
+        let uses = Graph_code.succ node Graph_code.Use g in
+        uses +> Common.find_opt (fun node ->
+          let s = Graph_code.shortname_of_node node in
+          let categ =  glyph.categ ||| Highlight_code.Normal in
+          glyph.str =$= s &&
+              Database_code.matching_use_categ_kind categ (snd node)
+        )
       )
-    in
-    find_def_entity_at_line_opt line_def tr dw model >>= (fun node ->
-      let uses = Graph_code.succ node Graph_code.Use g in
-      uses +> Common.find_opt (fun node ->
-        let s = Graph_code.shortname_of_node node in
-        let categ =  glyph.categ ||| Highlight_code.Normal in
-        glyph.str =$= s &&
-        Database_code.matching_use_categ_kind categ (snd node)
-      )
-  ))
+    with Not_found -> None
+  )
 
 let node_of_rect tr model =
   let file = tr.Treemap.tr_label in
