@@ -259,9 +259,9 @@ let build_model2 root dbfile_opt graphfile_opt =
   in
   model
 
-let build_model a b = 
+let build_model a b c = 
   Common.profile_code "View.build_model" (fun () ->
-    build_model2 a b)
+    build_model2 a b c)
 (*e: build_model *)
 
 (* could also to parse all json files and filter the one which do not parse *)
