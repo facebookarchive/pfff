@@ -48,7 +48,6 @@ let go_back w =
 
 (*s: go_dirs_or_file *)
 let go_dirs_or_file ?(current_entity=None) ?(current_grep_query=None) w paths =
-
   let root = Common2.common_prefix_of_files_or_dirs paths in
   pr2 (spf "zooming in %s" (Common.join "|" paths));
 
