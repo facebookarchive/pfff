@@ -533,7 +533,7 @@ call_expression:
  | member_expression arguments                      { e(Apply ($1, $2)) }
  | call_expression arguments                        { e(Apply ($1, $2)) }
  | call_expression T_LBRACKET expression T_RBRACKET { e(Bracket($1, ($2, $3, $4))) }
- | call_expression T_PERIOD identifier              { e(Period ($1, $2, $3)) }
+ | call_expression T_PERIOD method_name              { e(Period ($1, $2, $3)) }
 
 new_expression:
  | member_expression    { $1 }
@@ -542,7 +542,7 @@ new_expression:
 member_expression:
  | primary_expression                                 { $1 }
  | member_expression T_LBRACKET expression T_RBRACKET { e(Bracket($1, ($2, $3, $4))) }
- | member_expression T_PERIOD identifier              { e(Period ($1, $2, $3)) }
+ | member_expression T_PERIOD field_name              { e(Period ($1, $2, $3)) }
  | T_NEW member_expression arguments                  
      { e(Apply(uop U_new $1 $2, $3)) }
 
@@ -799,12 +799,12 @@ call_expression_no_statement:
  | member_expression_no_statement arguments                      { e(Apply ($1, $2)) }
  | call_expression_no_statement arguments                        { e(Apply ($1, $2)) }
  | call_expression_no_statement T_LBRACKET expression T_RBRACKET { e(Bracket($1, ($2, $3, $4))) }
- | call_expression_no_statement T_PERIOD identifier              { e(Period ($1, $2, $3)) }
+ | call_expression_no_statement T_PERIOD method_name              { e(Period ($1, $2, $3)) }
 
 member_expression_no_statement:
  | primary_expression_no_statement                                 { $1 }
  | member_expression_no_statement T_LBRACKET expression T_RBRACKET { e(Bracket($1, ($2, $3, $4))) }
- | member_expression_no_statement T_PERIOD identifier              { e(Period ($1, $2, $3)) }
+ | member_expression_no_statement T_PERIOD field_name              { e(Period ($1, $2, $3)) }
  | T_NEW member_expression arguments                               { e(Apply(uop U_new $1 $2, $3)) }
 
 
@@ -814,8 +814,15 @@ member_expression_no_statement:
 identifier:
  | T_IDENTIFIER { $1 }
 
+field_name:
+ | T_IDENTIFIER { $1 }
+
+method_name:
+ | T_IDENTIFIER { $1 }
+ | T_DEFAULT { "default", $1 }
+
 property_name:
- | identifier      { PN_String $1 }
+ | T_IDENTIFIER    { PN_String $1 }
  | string_literal  { PN_String $1 }
  | numeric_literal { PN_Num $1 }
  | T_CLASS         { PN_String ("class", $1) }
