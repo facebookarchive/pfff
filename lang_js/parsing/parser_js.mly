@@ -575,7 +575,10 @@ primary_expression_no_statement:
     *)*/
  | xhp_html { XhpHtml $1 }
  /*(* templated string (aka interpolated strings) *)*/
- | T_BACKQUOTE encaps_list_opt T_BACKQUOTE { Encaps ($1, $2, $3) }
+ | T_BACKQUOTE encaps_list_opt T_BACKQUOTE 
+     { Encaps (None, $1, $2, $3) }
+ | identifier T_BACKQUOTE encaps_list_opt T_BACKQUOTE 
+     { Encaps (Some $1, $2, $3, $4) }
 
 /*(*----------------------------*)*/
 /*(*2 scalar *)*/

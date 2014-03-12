@@ -198,8 +198,12 @@ and v_expr (x: expr) =
   | Arrow v1 -> let v1 = v_arrow_func v1 in ()
   | Paren v1 -> let v1 = v_paren2 v_expr v1 in ()
   | XhpHtml v1 -> let v1 = v_xhp_html v1 in ()
-  | Encaps ((v1, v2, v3)) ->
-      let v1 = v_tok v1 and v2 = v_list v_encaps v2 and v3 = v_tok v3 in ()
+  | Encaps ((v1, v2, v3, v4)) ->
+      let v1 = v_option v_name v1
+      and v2 = v_tok v2
+      and v3 = v_list v_encaps v3
+      and v4 = v_tok v4
+      in ()
   in
   vin.kexpr (k, all_functions) x 
 

@@ -7,4 +7,4 @@ var name = "Bob", time = "today";
 // perl/ruby/python interpolated strings
 var out = `Hello ${name}, how are you ${time}?`;
 
-//var out = sanitize`Hello ${name}, how are you ${time}?`;
+var out = sanitize`Hello ${name}, how are you ${time}?`;

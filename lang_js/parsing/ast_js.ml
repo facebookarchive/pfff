@@ -85,7 +85,7 @@ type expr =
    (* The comma_list can have successive Left because of "elison" *)
    | Array of expr comma_list bracket
 
-   (* Call *)
+   (* Call, see also Encaps that is a sort of call when 'name' is not None  *)
    | Apply of expr * expr comma_list paren
    | Conditional of expr * tok (* ? *) * expr * tok (* : *) * expr
 
@@ -97,7 +97,7 @@ type expr =
    (* es6-ext: aka short lambdas *)
    | Arrow of arrow_func
 
-   | Encaps of tok (* ` *) * encaps list * tok (* ` *)
+   | Encaps of name option * tok (* ` *) * encaps list * tok (* ` *)
    | XhpHtml of xhp_html
 
    (* unparser: *)
