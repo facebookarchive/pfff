@@ -54,18 +54,21 @@ module Model = Model2
  *    visualize on top of a treemap the call graph
  * 
  * related work:
- *  - racket IDE (was called DrScheme before)
- *  - http://peaker.github.io/lamdu/, focused more on AST pretty printing
- *  - light table, nice live programming, and interesting visualization slice
- *  - http://www.kickstarter.com/projects/296054304/zeta-code, relations
- *  - sublime has thumbnail, but people don't really care about it
- *  - textmate
+ *  - racket IDE (was called DrScheme before), had arrows long time ago
+ *    between occurences of a variable and its definition
+ *  - http://peaker.github.io/lamdu/, but focused more on AST pretty printing
+ *  - light table, interesting visualization slice but now focused more
+ *    on live programming a la Bret Victor
+ *  - http://www.kickstarter.com/projects/296054304/zeta-code, mostly focused
+ *    on code relations, so related more to codegraph
+ *  - textmate, meh
+ *  - sublime, has thumbnails, but people don't really care about it
  *  - http://www.hello2morrow.com/products/sotoarc
  *  - http://scg.unibe.ch/codemap
  *  - http://scg.unibe.ch/wiki/projects/rbcrawler, class blueprint
  *  - moose http://youtu.be/yvXm9LC17vk at 14min
  *  - http://redotheweb.com/CodeFlower/
- *  - code swarm (visualize git history, people focus)
+ *  - code swarm, visualize git history, focused on people more than code
  *    https://code.google.com/p/gource/ 
  *    http://artzub.com/ghv/#repo=d3&climit=100&user=mbostock
  *  - http://www.codetrails.com/ctrlflow, smarter completion by infering
