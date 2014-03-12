@@ -59,6 +59,8 @@ skip list
 
 *** add configure option for Javalib and cmt
 
+*** works again with ocaml 3.12
+
 * -----------------------------------------------------------
 
 * 0.26 (Q4 2013) (basic OPAM package)
