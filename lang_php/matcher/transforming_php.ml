@@ -29,6 +29,7 @@ module PI = Parse_info
  * 
  * To understand the logic behind this code it may help to first read
  * this: http://coccinelle.lip6.fr/papers/eurosys08.pdf
+ * See also https://github.com/facebook/pfff/wiki/Spatch#wiki-spacing-issues
  *)
 
 (*****************************************************************************)

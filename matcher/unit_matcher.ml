@@ -33,14 +33,14 @@ let sgrep_unittest ~ast_fuzzy_of_string =
       (* ------------ *)
 
       (* for identifiers *)
-      "class $X { ... }", "class Foo { int x; }", true;
+      "class $X { int x; }", "class Foo { int x; }", true;
       (* for expressions *)
       "foo($X);",  "foo(1);", true;
       "foo($X);",  "foo(1+1);", true;
       (* for lvalues *)
       "$X->method();",  "this->method();", true;
-(*      "$X->method();"  ,  "this->foo()->method();", true; *)
-(*TODO      "->method();"  ,  "$this->foo()->method();", true; *)
+(*TODO      "$X->method();"  ,  "this->foo()->method();", true; *)
+(* this will work though: "->method();"  ,  "$this->foo()->method();", true; *)
 
       (* "linear" patterns, a la Prolog *)
       "$X && $X;", "(a || b) && (a || b);", true;
