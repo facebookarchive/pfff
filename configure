@@ -1,6 +1,7 @@
 #!/usr/bin/perl
 use strict;
 
+# this is not available in some distro :(
 use Getopt::Long;
 use Pod::Usage;
 
@@ -8,25 +9,19 @@ use Pod::Usage;
 # Prelude
 ######################################################################
 
-# Yes I know about autoconf ... and autoconf sux.
+# Yes I know about autoconf ... and autoconf sucks.
 
 # We do not check for the following programs; we assume they are standard:
-# - binutils, gcc, as, ld, the GNU toolchain
+# - binutils, gcc, as, ld (the GNU toolchain)
 # - make, perl, bash
 # - diffutils, fileutils, findutils, grep, patchutils, sh-utils
-
+#
 #todo:
-# - lang_bytecode/ brings many dependencies (extlib, ptrees, ocamlzip), which
-#   in turns require zlib.h, maybe we could make it a configuration option
-# - lang_ml/ also requires compiler-libs and with the many changes in the
-#   .cmt format, this can easily break compilations, maybe we could also
-#    make it a configuration option. In the same way we should not force
-#    to use -bin-annot
 # - findutils? we need a good GNU find, not the macos find
 #   which adds some extra '//' in paths which bothers pfff
 # - sharutils still?, for obrowser/ocsigen use of uuencode
-
-# If want to run the tests you need also:
+#
+# If you want to run the tests you will also need:
 # - swipl
 # - javac 
 
@@ -41,10 +36,27 @@ my $projectcmdline =
 
 my $prefix="/usr/local";
 
-my $visual=1; # cairo/gtk, for codemap, codegraph
+# cairo/gtk, for codemap and codegraph
+my $visual=1; 
+
+# lang_bytecode/ brings many dependencies (extlib, ptrees, ocamlzip), which
+# in turns require zlib.h, so it's a configuration option
+# (todo: could auto detect)
 my $bytecode=1;
+
+# lang_cmt/ also requires compiler-libs and with the many changes in the
+# .cmt format, this can easily break compilations, so it's also
+#  a configuration option. 
 my $cmt=1;
+
+# todo: still used?
 my $facebook=0; 
+
+# adjusted automatically based on local ocaml configuration
+my $opt= ""; # ocamlc.opt?
+my $ocamlc_flags = ""; #ocamlc -bin-annot?
+my $ocaml_version = 3112;
+
 
 my $man = 0;
 my $help = 0;
@@ -71,10 +83,6 @@ pod2usage(1) if $help;
 pod2usage(-exitstatus => 0, -verbose => 2) if $man;
 
 my $src="$prefix/share/$project";
-
-my $opt= ""; # ocamlc.opt ?
-my $ocamlc_flags = ""; #ocamlc -?
-my $ocaml_version = 3112;
 
 # Implicit dependencies:
 if ($facebook) { }
@@ -161,15 +169,14 @@ my $arch = `uname`;
 #---------------------------------------------------------------------
 # Compilers and runtimes
 #---------------------------------------------------------------------
-# We need 3.12 because I use the forall 'a. new typing feature 
+# We need at least 3.12 because I use the forall 'a. new typing feature 
 # as well as the '_' pattern in records (in my code but also in lib-sexp/)
-# We need 4.00 for codegraph for ocaml code using the .cmt
-# We need 4.01 for changes in the .cmt format
+# We optionaly need 4.00 or 4.01 for codegraph for ocaml code using the .cmt
 $error += 
     check_config("echo \"1;;\\n\" | ocaml |",
                  "(Objective|OCaml)(.*) ([34]\.*.*)",
                  "OCaml (the wonderful language) is present.",
-                 "The program ocaml is missing or is not a good version. We need at least 4.00",
+                 "The program ocaml is missing or is not a good version. We need at least 3.12",
                  );
 show_error_msg_and_exit_if_error($error);
 
@@ -183,6 +190,19 @@ if ($res =~ /(Objective|OCaml)(.*) ([34])\.([0-9]+).([0-9]+)/) {
     $ocaml_version = $major * 1000 + $minor * 10 + $other;
 } else {
     die "wrong version of ocaml";
+}
+
+# allow to use ocamlc.opt instead of ocamlc, which speeds up compilation
+if (`which ocamlc.opt` && `which ocamlopt.opt`) {
+    $opt = ".opt";
+}
+
+# -bin-annot is for codegraph, it needs ocaml 4.00,
+# -absname is for tuareg mode under my mac, it also needs ocaml 4.00
+if($ocaml_version >= 4000) {
+    $ocamlc_flags="-bin-annot -absname";
+} else {
+    $cmt=0;
 }
 
 #---------------------------------------------------------------
@@ -211,17 +231,6 @@ show_error_msg_and_exit_if_error($error);
 #---------------------------------------------------------------------
 # More developers tools
 #---------------------------------------------------------------------
-
-# The OPTBIN variable is here to allow to use ocamlc.opt instead of
-# ocaml, when it is available, which speeds up compilation. So
-# if you want the fast version of the ocaml chain tools, set this var
-# or setenv it to \".opt\" in your startup script.
-# todo: detect if possible?
-$opt = ".opt";
-
-# -bin-annot is for codegraph, it needs ocaml 4.00,
-# -absname is for tuareg mode under my mac, it also needs ocaml 4.00
-$ocamlc_flags="-bin-annot -absname";
 
 #---------------------------------------------------------------------
 # Librairies

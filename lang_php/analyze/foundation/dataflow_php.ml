@@ -566,8 +566,11 @@ let display_reaching_dflow flow mp =
     arr
   in
   let arr = flow_fold_rv flow_rv_fn VarSet.empty arr flow in
-  List.iteri (fun i x ->
-    if (not x) then pr (spf "%s: Dead Asisgnment" (string_of_ni i)))
-    (Array.to_list arr)
+  let i = ref 0 in
+  List.iter (fun x ->
+    if (not x) 
+    then pr (spf "%s: Dead Asisgnment" (string_of_ni !i));
+    incr i
+  ) (Array.to_list arr)
 
 (*e: dataflow_php.ml *)
