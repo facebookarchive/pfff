@@ -283,7 +283,7 @@ commons_features.cmxa: features.cmx
 # install
 ##############################################################################
 LIBNAME=pfff-commons
-EXPORTSRC=common.mli ocaml.mli ocamlextra/oUnit.mli
+EXPORTSRC=common.mli common2.mli ocaml.mli ocamlextra/oUnit.mli
 
 OCAMLSTDLIB=`ocamlc -where`
 install: all all.opt

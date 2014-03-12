@@ -75,8 +75,8 @@ pretty_print_php.cmo: pretty_print_php.ml
 # install
 ##############################################################################
 LIBNAME=pfff-lang_php
-EXPORTSRC=meta_ast_php.mli \
-   parser_php.mli parse_php.mli \
+EXPORTSRC=meta_ast_php.mli unparse_php.mli \
+   parser_php.mli parse_php.mli token_helpers_php.mli \
    lib_parsing_php.mli visitor_php.mli scope_php.mli \
 
 install-findlib:
