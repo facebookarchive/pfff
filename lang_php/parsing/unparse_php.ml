@@ -29,11 +29,11 @@ module PI = Parse_info
 (*
  * There are multiple ways to unparse PHP code:
  *  - one can iterate over the AST, and print its leaves, but 
- *    comments and spaces are not in the AST right now so you need
+ *    comments and spaces are not in the AST so you need
  *    some extra code that also visits the tokens and try to "sync" the
  *    visit of the AST with the tokens
- *  - one can iterate over the tokens, where comments and spaces are normal
- *    citizens, but this can be too low level
+ *  - one can iterate over the tokens which contain comments and spaces
+ *    but this can be too low level
  *  - one can use a real pretty printer with a boxing or backtracking model
  *    working on a AST extended with comments (see julien's ast_pretty_print/)
  * 
