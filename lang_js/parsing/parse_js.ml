@@ -61,6 +61,8 @@ let tokens2 file =
             Lexer_js.st_in_xhp_tag current_tag lexbuf
         | Lexer_js.ST_IN_XHP_TEXT current_tag ->
             Lexer_js.st_in_xhp_text current_tag lexbuf
+        | Lexer_js.ST_IN_BACKQUOTE ->
+            Lexer_js.backquote lexbuf
       in
       let rec tokens_aux acc = 
         let tok = jstoken lexbuf in

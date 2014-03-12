@@ -198,6 +198,8 @@ and v_expr (x: expr) =
   | Arrow v1 -> let v1 = v_arrow_func v1 in ()
   | Paren v1 -> let v1 = v_paren2 v_expr v1 in ()
   | XhpHtml v1 -> let v1 = v_xhp_html v1 in ()
+  | Encaps ((v1, v2, v3)) ->
+      let v1 = v_tok v1 and v2 = v_list v_encaps v2 and v3 = v_tok v3 in ()
   in
   vin.kexpr (k, all_functions) x 
 
@@ -308,6 +310,12 @@ and v_xhp_body =
   | XhpExpr v1 -> let v1 = v_brace (v_option v_expr) v1 in ()
   | XhpNested v1 -> let v1 = v_xhp_html v1 in ()
 and v_xhp_tag x = v_string x
+and v_encaps =
+  function
+  | EncapsString v1 -> let v1 = v_wrap v_string v1 in ()
+  | EncapsExpr ((v1, v2, v3)) ->
+      let v1 = v_tok v1 and v2 = v_expr v2 and v3 = v_tok v3 in ()
+
 and v_st x =
   let k x = match x with
   | Variable ((v1, v2, v3)) ->

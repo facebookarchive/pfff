@@ -38,6 +38,8 @@
  *    https://people.mozilla.org/~jorendorff/es6-draft.html#sec-arrow-function-definitions
  *  - support trailing commas
  *  - variable number of parameters, e.g. 'function foo(...args)', es6 ext?
+ *  - interpolated strings, see
+ *    https://gist.github.com/lukehoban/9303054#template-strings
  *)
 
 open Common
@@ -68,7 +70,7 @@ let mk_param x = { p_name = x; p_type = None; p_dots = None; }
 /*(* tokens with a value *)*/
 %token<string * Ast_js.tok> T_NUMBER
 %token<string * Ast_js.tok> T_IDENTIFIER 
-%token<string * Ast_js.tok> T_STRING
+%token<string * Ast_js.tok> T_STRING T_ENCAPSED_STRING
 %token<string * Ast_js.tok> T_REGEX
 
 /*(* keywords tokens *)*/
@@ -91,6 +93,7 @@ let mk_param x = { p_name = x; p_type = None; p_dots = None; }
  T_COMMA
  T_PERIOD
  T_ARROW T_DOTS
+ T_BACKQUOTE T_DOLLARCURLY
 
 /*(* operators *)*/
 %token <Ast_js.tok>  
@@ -571,6 +574,8 @@ primary_expression_no_statement:
     * in function arguments
     *)*/
  | xhp_html { XhpHtml $1 }
+ /*(* templated string (aka interpolated strings) *)*/
+ | T_BACKQUOTE encaps_list_opt T_BACKQUOTE { Encaps ($1, $2, $3) }
 
 /*(*----------------------------*)*/
 /*(*2 scalar *)*/
@@ -605,6 +610,10 @@ element_list:
  | elison   assignment_expression { $1 @ [Left $2] }
  |          assignment_expression { [Left $1] }
  | element_list   elison   assignment_expression { $1 @ $2 @ [Left $3] }
+
+/*(*----------------------------*)*/
+/*(*2 object *)*/
+/*(*----------------------------*)*/
 
 object_literal:
  | T_LCURLY T_RCURLY 
@@ -660,6 +669,15 @@ xhp_attribute:
 xhp_attribute_value:
  | T_STRING { XhpAttrString ($1) }
  | T_LCURLY expression semicolon T_RCURLY    { XhpAttrExpr ($1, $2, $4)(*TODO$3*) }
+
+/*(*----------------------------*)*/
+/*(*2 interpolated strings *)*/
+/*(*----------------------------*)*/
+encaps:
+ | T_ENCAPSED_STRING { EncapsString $1 }
+ /*(* ugly: fix this T_VIRTUAL_SEMICOLON ugly hack *)*/
+ | T_DOLLARCURLY expression T_VIRTUAL_SEMICOLON T_RCURLY 
+     { EncapsExpr ($1, $2, $4) }
 
 /*(*----------------------------*)*/
 /*(*2 arrow (short lambda) *)*/
@@ -860,6 +878,10 @@ class_element_list:
  | class_element { [$1] }
  | class_element_list class_element { $1 @ [$2] }
 
+encaps_list:
+ | encaps { [$1] }
+ | encaps_list encaps { $1 @ [$2] }
+
 
 case_clauses:
  | case_clause { [$1] }
@@ -910,6 +932,10 @@ formal_parameter_list_opt:
 case_clauses_opt:
  | /*(* empty *)*/ { [] }
  | case_clauses    { $1 }
+
+encaps_list_opt:
+ | /*(* empty *)*/ { [] }
+ | encaps_list    { $1 }
 
 annotation_opt:
  | /*(* empty *)*/ { None }

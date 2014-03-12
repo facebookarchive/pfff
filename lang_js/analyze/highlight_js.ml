@@ -168,7 +168,7 @@ let visit_program ~tag_hook _prefs (*db_opt *) (ast, toks) =
     (* Both strings and regular identifiers can be used to represent
      * entities such as classes so have to look for both
      *)
-    | T.T_STRING (_, ii) ->
+    | T.T_STRING (_, ii) | T.T_ENCAPSED_STRING(_, ii) ->
         if not (Hashtbl.mem already_tagged ii)
         then
           let kind_name_opt =
@@ -194,6 +194,8 @@ let visit_program ~tag_hook _prefs (*db_opt *) (ast, toks) =
           | None ->
               tag ii String
           )
+    | T.T_BACKQUOTE ii -> tag ii String
+    | T.T_DOLLARCURLY ii -> tag ii String
 
     | T.T_REGEX (_, ii) -> tag ii String
 

@@ -136,6 +136,8 @@ type state_mode =
   | ST_IN_XHP_TAG of string (* the current tag, e,g, "x_frag" *)
   (* started with the '>' of an opening tag, finished when '</x>' *)
   | ST_IN_XHP_TEXT of string (* the current tag *)
+  (* started with "`", finished with "`" *)
+  | ST_IN_BACKQUOTE
 
 let default_state = ST_IN_CODE
 
@@ -354,22 +356,13 @@ rule initial = parse
     }
 
   (* ----------------------------------------------------------------------- *)
-  (* backquote strings *)
+  (* Backquote (interpolated) strings  *)
   (* ----------------------------------------------------------------------- *)
 
-  | "`" as quote {
-      let info = tokinfo lexbuf in
-      let buf = Buffer.create 127 in
-      string_backquote buf lexbuf;
-      let s = Buffer.contents buf in
-      let buf2 = Buffer.create 127 in
-      Buffer.add_char buf2 quote;
-      Buffer.add_string buf2 s;
-      Buffer.add_char buf2 quote;
-      (* s does not contain the enclosing "'" but the info does *)
-      T_STRING (s, info +> PI.rewrap_str (Buffer.contents buf2))
+  | "`" {
+      push_mode ST_IN_BACKQUOTE;
+      T_BACKQUOTE(tokinfo lexbuf)
   }
-
 
   (* ----------------------------------------------------------------------- *)
   (* Regexp *)
@@ -485,7 +478,6 @@ and string_escape quote buf = parse
       (* else Buffer.add_char buf c } *)
 
 
-
 and string_quote q buf = parse
   | ("'"|'"') as q' {
     if q = q'
@@ -497,6 +489,31 @@ and string_quote q buf = parse
     }
   | (_ as x) { Buffer.add_char buf x; string_quote q buf lexbuf }
   | eof      { error "WIERD end of file in quoted string" }
+
+
+and backquote = parse
+  | "`" { 
+    pop_mode();
+    T_BACKQUOTE(tokinfo lexbuf)
+  }
+  | "${" {
+    push_mode ST_IN_CODE;
+    T_DOLLARCURLY(tokinfo lexbuf)
+  }
+  (* todo: what about escape \\ chars? can escape `? *)
+  | [^'`' '$']+ {
+      T_ENCAPSED_STRING(tok lexbuf, tokinfo lexbuf)
+    }
+  | "$" {
+      T_ENCAPSED_STRING(tok lexbuf, tokinfo lexbuf)
+    }
+
+  | eof { EOF (tokinfo lexbuf +> PI.rewrap_str "") }
+  | _  {
+      error ("unrecognised symbol, in backquote string:"^tok lexbuf);
+      TUnknown (tokinfo lexbuf)
+    }
+
 
 (*****************************************************************************)
 (* Rule regexp *)
@@ -548,21 +565,6 @@ and st_one_line_comment buf = parse
   | NEWLINE { Buffer.add_string buf (tok lexbuf) }
   | eof { error "end of file in comment" }
   | _   { error ("unrecognised symbol, in st_one_line_comment:"^tok lexbuf) }
-
-(*****************************************************************************)
-(* Rule backquote string *)
-(*****************************************************************************)
-
-and string_backquote buf = parse
-  | "`"    { () }
-  | [^'`']+ { Buffer.add_string buf (tok lexbuf); string_backquote buf lexbuf }
-  | eof     { error "end of file in backquote string" }
-  | _  {
-      let s = tok lexbuf in
-      error ("unrecognised symbol in backquote string:"^s);
-      Buffer.add_string buf s;
-      string_backquote buf lexbuf
-    }
 
 (*****************************************************************************)
 (* Rules for XHP *)
@@ -679,7 +681,6 @@ and st_in_xhp_text current_tag = parse
   (* opti: *)
   | [^'<' '{']+ { T_XHP_TEXT (tok lexbuf, tokinfo lexbuf) }
 
-
   | eof { EOF (tokinfo lexbuf +> PI.rewrap_str "") }
   | _  {
       error ("unrecognised symbol, in XHP text:"^tok lexbuf);
@@ -692,7 +693,7 @@ and st_xhp_comment = parse
   | "-"     { let s = tok lexbuf in s ^ st_xhp_comment lexbuf }
   | eof { error "end of file in xhp comment"; "-->"}
   | _  {
-    let s = tok lexbuf in
-    error("unrecognised symbol in xhp comment:"^s);
-    s ^ st_xhp_comment lexbuf
-  }
+      let s = tok lexbuf in
+      error("unrecognised symbol in xhp comment:"^s);
+      s ^ st_xhp_comment lexbuf
+    }

@@ -50,7 +50,7 @@ and 'a paren   = tok * 'a * tok
 and 'a brace   = tok * 'a * tok
 and 'a bracket = tok * 'a * tok 
 and 'a angle = tok * 'a * tok
-(* with trailing comma extension, can have a Right tok at the very end *)
+(* can now have a Right tok at the very end with trailing comma extension *)
 and 'a comma_list = ('a, tok (* the comma *)) Common.either list
 
 (* semicolon. Can be None when was implicitely inserted during parsing *)
@@ -93,13 +93,14 @@ type expr =
    | Seq of expr * tok (* , *) * expr
 
    | Function of func_decl
-   (* aka short lambdas *)
+   (* es6-ext: aka short lambdas *)
    | Arrow of arrow_func
 
    (* unparser: *)
    | Paren of expr paren
 
    | XhpHtml of xhp_html
+   | Encaps of tok (* ` *) * encaps list * tok (* ` *)
 
      and litteral =
        | Bool of bool wrap
@@ -145,7 +146,7 @@ type expr =
    and field =
       (property_name * tok (* : *) * expr)
 
- (* facebook-ext: JSX extension *)
+ (* facebook-ext: JSX extension, similar to XHP for PHP *)
  and xhp_html =
    | Xhp of xhp_tag wrap * xhp_attribute list * tok (* > *) *
        xhp_body list * xhp_tag option wrap
@@ -160,6 +161,11 @@ type expr =
      | XhpText of string wrap
      | XhpExpr of expr option brace
      | XhpNested of xhp_html
+
+ (* es6-ext: template string, aka interpolated/encapsulated strings *)
+ and encaps = 
+ | EncapsString of string wrap
+ | EncapsExpr of tok (* ${ *) * expr * tok (* } *)
 
 (* ------------------------------------------------------------------------- *)
 (* Statement *)

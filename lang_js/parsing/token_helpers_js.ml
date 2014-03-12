@@ -34,7 +34,7 @@ let is_just_comment = function
 
 let token_kind_of_tok t =
   match t with
-  | T_LCURLY _ -> PI.LBrace
+  | T_LCURLY _ | T_DOLLARCURLY _ -> PI.LBrace
   | T_RCURLY _ -> PI.RBrace
   | T_LPAREN _ -> PI.LPar
   | T_RPAREN _ -> PI.RPar
@@ -149,6 +149,8 @@ let info_of_tok = function
   | T_XHP_SLASH_GT ii | T_XHP_ATTR (_,ii) | T_XHP_TEXT (_,ii)
   | T_ARROW ii
   | T_DOTS ii
+  | T_DOLLARCURLY ii | T_BACKQUOTE ii
+  | T_ENCAPSED_STRING (_, ii)
     -> ii
 
 (* generated via emacs macro from type definition in parse_js.ml *)
@@ -253,6 +255,9 @@ let visitor_info_of_tok f = function
   | T_XHP_TEXT (s,ii) -> T_XHP_TEXT (s, f ii)
   | T_ARROW ii -> T_ARROW (f ii)
   | T_DOTS ii -> T_DOTS (f ii)
+  | T_DOLLARCURLY ii -> T_DOLLARCURLY(f ii)
+  | T_BACKQUOTE ii -> T_BACKQUOTE (f ii)
+  | T_ENCAPSED_STRING (s, ii) -> T_ENCAPSED_STRING(s, f ii)
 
 (*****************************************************************************)
 (* Accessors *)
