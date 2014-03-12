@@ -204,7 +204,6 @@ and vof_property_name =
   | PN_Num v1 ->
       let v1 = vof_wrap Ocaml.vof_string v1
       in Ocaml.VSum (("PN_Num", [ v1 ]))
-  | PN_Empty -> Ocaml.VSum (("PN_Empty", []))
 and vof_assignment_operator =
   function
   | A_eq -> Ocaml.VSum (("A_eq", []))

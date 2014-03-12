@@ -26,8 +26,7 @@ module PI = Parse_info
  * supported.
  * 
  * todo: 
- *  - try to imitate a bit:
- *    https://developer.mozilla.org/en-US/docs/SpiderMonkey/Parser_API
+ *  - imitate https://developer.mozilla.org/en-US/docs/SpiderMonkey/Parser_API ?
  *)
 
 (*****************************************************************************)
@@ -81,10 +80,12 @@ type expr =
    | Bracket of expr * expr bracket
    | Period of expr * tok (* . *) * name
 
+   (* can have some trailing comma *)
    | Object of field comma_list brace
    (* The comma_list can have successive Left because of "elison" *)
    | Array of expr comma_list bracket
 
+   (* Call *)
    | Apply of expr * expr comma_list paren
    | Conditional of expr * tok (* ? *) * expr * tok (* : *) * expr
 
@@ -96,17 +97,18 @@ type expr =
    (* es6-ext: aka short lambdas *)
    | Arrow of arrow_func
 
+   | Encaps of tok (* ` *) * encaps list * tok (* ` *)
+   | XhpHtml of xhp_html
+
    (* unparser: *)
    | Paren of expr paren
-
-   | XhpHtml of xhp_html
-   | Encaps of tok (* ` *) * encaps list * tok (* ` *)
 
      and litteral =
        | Bool of bool wrap
        | Num of string wrap
        (* todo?  | Float of float | Int of int32 *)
 
+       (* see also XhpText, EncapsString and XhpAttrString *)
        | String of string wrap
        | Regexp of string wrap (* todo? should split the flags *)
        | Null of tok
@@ -135,7 +137,6 @@ type expr =
      and property_name =
        | PN_String of name
        | PN_Num of string (* todo? PN_Float of float | PN_Int of int32 *) wrap
-       | PN_Empty (* ?? *)
            
      and assignment_operator =
        | A_eq
@@ -165,6 +166,7 @@ type expr =
  (* es6-ext: template string, aka interpolated/encapsulated strings *)
  and encaps = 
  | EncapsString of string wrap
+ (* could use 'expr brace', but it's not a regular brace for { *)
  | EncapsExpr of tok (* ${ *) * expr * tok (* } *)
 
 (* ------------------------------------------------------------------------- *)
