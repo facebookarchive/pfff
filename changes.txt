@@ -9,23 +9,23 @@ less backward dependencies on plan9 for instance
 
 ** codemap
 
-*** show uses/defs relations also at use position
+*** match defs and uses even when the file has been modified
+(do not use the probably obsolete line information in graph_code, trust
+more the lexer/parser/highlighter)
+
+*** show uses/defs relations also at use site
 so can hover on some code and see the corresponding definition
 (as well as the other users of this definition and the uses of
 this definition).
 
-*** show uses/defs macrolevel for directories
+*** show uses/defs macrolevel dependencies for directories
 scalable spirit! a visualization should apply from the topmost
 entities to the lowest one!
 
-*** show entity under cursor (def or use) in tooltip
+*** show information about entity under cursor (def or use) in tooltip
 
 *** go to definition when on a use 
 finally ... basic TAGS functionality
-
-*** match defs and uses even when the file has been modified
-(do not use the probably obsolete line information in graph_code, trust
-more the lexer/parser/highlighter)
 
 *** handle skip list
 so easy to manually configure which parts to not display when
@@ -47,7 +47,8 @@ extensions)
 
 ** javascript
 
-*** support for arrow (aka short lambda)
+*** support for arrow (aka short lambda), variable number of parameters,
+trailing commas, interpolated strings, and fix bugs in regexp and xhp
 
 ** internal
 
