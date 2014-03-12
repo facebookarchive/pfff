@@ -49,12 +49,6 @@ module PI = Parse_info
  *)
 
 (*****************************************************************************)
-(* Helpers *)
-(*****************************************************************************)
-let is_ident s =
-  s =~ "^[a-zA-Z_]"
-
-(*****************************************************************************)
 (* Unparsing using AST visitor *)
 (*****************************************************************************)
 
@@ -136,10 +130,12 @@ let string_of_any any =
       | [] -> ()
       | [x] -> pp x
       | x::y::xs ->
-        (match is_ident x, is_ident y, x with
+        (match x =~ ".*[a-zA-Z_0-9]$", y =~ "^[a-zA-Z_0-9]", x with
+        (* e.g. when have "$x" and  "instanceof", or when have
+         * "<div>" and "a=", we need to add a space 
+         *)
         | true, true, _ -> pp x; pp " "
         | _, _, (";" | "{" | "}") -> pp x; pp "\n"
-        | false, true, _ when x =~ "^<[a-zA-Z_]" -> pp x; pp " "
         | _, _, _ -> pp x
         );
         aux (y::xs)
