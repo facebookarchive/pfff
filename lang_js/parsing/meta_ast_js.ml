@@ -6,7 +6,7 @@
  * modify it under the terms of the GNU Lesser General Public License
  * version 2.1 as published by the Free Software Foundation, with the
  * special exception on linking described in file license.txt.
- * 
+ *
  * This library is distributed in the hope that it will be useful, but
  * WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the file
@@ -24,11 +24,11 @@ module Ast = Ast_js
 let _current_precision = ref M.default_precision
 
 
-let rec vof_info x = 
+let rec vof_info x =
   if !_current_precision.M.full_info
   then Parse_info.vof_info x
   else if !_current_precision.M.token_info
-       then 
+       then
         Ocaml.VDict [
           "line", Ocaml.VInt (PI.line_of_info x);
           "col", Ocaml.VInt (PI.col_of_info x);
@@ -64,15 +64,15 @@ and vof_angle _of_a (v1, v2, v3) =
   and v2 = _of_a v2
   and v3 = vof_tok v3
   in Ocaml.VTuple [ v1; v2; v3 ]
-and vof_comma_list _of_a xs = 
+and vof_comma_list _of_a xs =
   if !_current_precision.M.token_info
   then Ocaml.vof_list (Ocaml.vof_either _of_a vof_tok) xs
   else Ocaml.vof_list _of_a (Ast.uncomma xs)
 
 and vof_sc v = Ocaml.vof_option vof_tok v
-  
+
 let vof_name v = vof_wrap Ocaml.vof_string v
-  
+
 let rec vof_expr =
   function
   | L v1 -> let v1 = vof_litteral v1 in Ocaml.VSum (("L", [ v1 ]))
@@ -419,19 +419,28 @@ and vof_type_ =
       and v2 = vof_angle vof_type_ v2
       in Ocaml.VSum (("TArray", [ v1; v2 ]))
   | TFun ((v1, v2, v3)) ->
-      let v1 = vof_paren (vof_comma_list vof_type_) v1
-      and v2 = vof_tok v2
-      and v3 = vof_type_ v3
-      in Ocaml.VSum (("TFun", [ v1; v2; v3 ]))
-  | TObj v1 ->
       let v1 =
-        vof_brace
+        vof_paren
           (vof_comma_list
              (fun (v1, v2, v3) ->
                 let v1 = vof_name v1
                 and v2 = vof_tok v2
                 and v3 = vof_type_ v3
                 in Ocaml.VTuple [ v1; v2; v3 ]))
+          v1
+      and v2 = vof_tok v2
+      and v3 = vof_type_ v3
+      in Ocaml.VSum (("TFun", [ v1; v2; v3 ]))
+  | TObj v1 ->
+      let v1 =
+        vof_brace
+          (Ocaml.vof_list
+             (fun (v1, v2, v3, v4) ->
+                let v1 = vof_name v1
+                and v2 = vof_tok v2
+                and v3 = vof_type_ v3
+                and v4 = vof_sc v4
+                in Ocaml.VTuple [ v1; v2; v3; v4 ]))
           v1
       in Ocaml.VSum (("TObj", [ v1 ]))
 and vof_type_opt v =
@@ -461,8 +470,8 @@ and
   let bnd = ("f_name", arg) in
   let bnds = bnd :: bnds in
   let arg = Ocaml.vof_option vof_tok v_f_tok in
-  let bnd = ("f_tok", arg) in 
-  let bnds = bnd :: bnds in 
+  let bnd = ("f_tok", arg) in
+  let bnds = bnd :: bnds in
   Ocaml.VDict bnds
 and vof_parameter { p_name = v_p_name; p_type = v_p_type; p_dots = v_dots } =
   let bnds = [] in
@@ -470,11 +479,11 @@ and vof_parameter { p_name = v_p_name; p_type = v_p_type; p_dots = v_dots } =
   let bnd = ("p_type", arg) in
   let bnds = bnd :: bnds in
   let arg = vof_name v_p_name in
-  let bnd = ("p_name", arg) in 
-  let bnds = bnd :: bnds in 
+  let bnd = ("p_name", arg) in
+  let bnds = bnd :: bnds in
   let arg = Ocaml.vof_option vof_tok v_dots in
-  let bnd = ("p_dots", arg) in 
-  let bnds = bnd :: bnds in 
+  let bnd = ("p_dots", arg) in
+  let bnds = bnd :: bnds in
   Ocaml.VDict bnds
 and
   vof_arrow_func { a_params = v_a_params; a_tok = v_a_tok; a_body = v_a_body
@@ -581,12 +590,12 @@ let vof_any_orig =
 
 (* end auto generation *)
 
-let vof_any ?(precision=M.default_precision) x = 
+let vof_any ?(precision=M.default_precision) x =
   Common.save_excursion _current_precision precision (fun () ->
     vof_any_orig x
   )
 
-let vof_program ?(precision=M.default_precision) x = 
+let vof_program ?(precision=M.default_precision) x =
   Common.save_excursion _current_precision precision (fun () ->
     vof_program_orig x
   )
