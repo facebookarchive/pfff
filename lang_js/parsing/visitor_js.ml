@@ -6,7 +6,7 @@
  * modify it under the terms of the GNU Lesser General Public License
  * version 2.1 as published by the Free Software Foundation, with the
  * special exception on linking described in file license.txt.
- * 
+ *
  * This library is distributed in the hope that it will be useful, but
  * WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the file
@@ -30,7 +30,7 @@ type visitor_in = {
 }
 and visitor_out = any -> unit
 
-let default_visitor = 
+let default_visitor =
   { kexpr   = (fun (k,_) x -> k x);
     kstmt   = (fun (k,_) x -> k x);
     kinfo   = (fun (k,_) x -> k x);
@@ -45,12 +45,12 @@ let (mk_visitor: visitor_in -> visitor_out) = fun vin ->
 
 let rec v_info x =
   let k x = match x with { Parse_info.
-     token = _v_pinfox; transfo = _v_transfo 
+     token = _v_pinfox; transfo = _v_transfo
     } ->
 (*
     let arg = Parse_info.v_pinfo v_pinfox in
-    let arg = v_unit v_comments in 
-    let arg = Parse_info.v_transformation v_transfo in 
+    let arg = v_unit v_comments in
+    let arg = Parse_info.v_transformation v_transfo in
 *)
     ()
   in
@@ -124,39 +124,39 @@ and v_comma_list: 'a. ('a -> unit) -> 'a comma_list -> unit = fun _of_a xs ->
   xs +> List.iter (function | Left x -> _of_a x | Right info -> v_comma info)
 
 
-and v_comma_list2 _of_a xs = 
+and v_comma_list2 _of_a xs =
   xs +> List.iter (function | Left x -> _of_a x | Right info -> v_comma info)
 
-and v_comma_list3 _of_a xs = 
+and v_comma_list3 _of_a xs =
   xs +> List.iter (function | Left x -> _of_a x | Right info -> v_comma info)
 
-and v_comma_list4 _of_a xs = 
+and v_comma_list4 _of_a xs =
   xs +> List.iter (function | Left x -> _of_a x | Right info -> v_comma info)
 
-and v_comma_list5 _of_a xs = 
+and v_comma_list5 _of_a xs =
   xs +> List.iter (function | Left x -> _of_a x | Right info -> v_comma info)
 
-and v_comma_list6 _of_a xs = 
+and v_comma_list6 _of_a xs =
   xs +> List.iter (function | Left x -> _of_a x | Right info -> v_comma info)
 
-and v_comma_list7 _of_a xs = 
+and v_comma_list7 _of_a xs =
   xs +> List.iter (function | Left x -> _of_a x | Right info -> v_comma info)
 
-and v_comma_list8 _of_a xs = 
+and v_comma_list8 _of_a xs =
   xs +> List.iter (function | Left x -> _of_a x | Right info -> v_comma info)
 
-and v_comma_list9 _of_a xs = 
+and v_comma_list9 _of_a xs =
   xs +> List.iter (function | Left x -> _of_a x | Right info -> v_comma info)
 
-and v_comma_list10 _of_a xs = 
+and v_comma_list10 _of_a xs =
   xs +> List.iter (function | Left x -> _of_a x | Right info -> v_comma info)
 
 
 and v_sc v = v_option v_tok v
 
 and v_name v = v_wrap v_string v
-  
-and v_expr (x: expr) = 
+
+and v_expr (x: expr) =
   (* tweak *)
   let k x =  match x with
   | L v1 -> let v1 = v_litteral v1 in ()
@@ -205,10 +205,10 @@ and v_expr (x: expr) =
       and v4 = v_tok v4
       in ()
   in
-  vin.kexpr (k, all_functions) x 
+  vin.kexpr (k, all_functions) x
 
-and v_field x = 
-  let k x = 
+and v_field x =
+  let k x =
     let (v1, v2, v3) = x in
 
     let v1 = v_property_name v1
@@ -429,18 +429,27 @@ and v_type_ =
   | TQuestion ((v1, v2)) -> let v1 = v_tok v1 and v2 = v_type_ v2 in ()
   | TArray ((v1, v2)) -> let v1 = v_tok v1 and v2 = v_angle v_type_ v2 in ()
   | TFun ((v1, v2, v3)) ->
-      let v1 = v_paren (v_comma_list v_type_) v1
+      let v1 =
+        v_paren
+          (v_comma_list
+             (fun (v1, v2, v3) ->
+                let v1 = v_name v1
+                and v2 = v_tok v2
+                and v3 = v_type_ v3
+                in ()))
+          v1
       and v2 = v_tok v2
       and v3 = v_type_ v3
       in ()
   | TObj v1 ->
       let v1 =
         v_brace
-          (v_comma_list
-             (fun (v1, v2, v3) ->
+          (v_list
+             (fun (v1, v2, v3, v4) ->
                 let v1 = v_name v1
                 and v2 = v_tok v2
                 and v3 = v_type_ v3
+                and v4 = v_sc v4
                 in ()))
           v1
       in ()
@@ -461,7 +470,7 @@ and  v_func_decl {
 
 and v_parameter { p_name = v_p_name; p_type = v_p_type; p_dots } =
   let arg = v_option v_tok p_dots in
-  let arg = v_name v_p_name in 
+  let arg = v_name v_p_name in
   let arg = v_type_opt v_p_type in
   ()
 and
@@ -502,7 +511,7 @@ and
     v_option
       (fun (v1, v2) -> let v1 = v_tok v1 and v2 = v_inherit_expr v2 in ())
       v_c_extends in
-  let arg = v_brace (v_list v_class_stmt) v_c_body in 
+  let arg = v_brace (v_list v_class_stmt) v_c_body in
   ()
 and v_class_stmt =
   function

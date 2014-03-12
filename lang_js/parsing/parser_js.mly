@@ -6,26 +6,26 @@
  * modify it under the terms of the GNU Lesser General Public License
  * version 2.1 as published by the Free Software Foundation, with the
  * special exception on linking described in file license.txt.
- * 
+ *
  * This library is distributed in the hope that it will be useful, but
  * WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the file
  * license.txt for more details.
  */
 %{
-(* 
+(*
  * src: ocamlyaccified from Marcel Laverdet 'fbjs2' via emacs macros, itself
  * extracted from the official ECMAscript specification at:
  * http://www.ecma-international.org/publications/standards/ecma-262.htm
- * 
+ *
  * See also http://en.wikipedia.org/wiki/ECMAScript_syntax
- * 
+ *
  * related work:
  *  - http://esprima.org/, js parser in js
  *  - http://marijnhaverbeke.nl/parse-js/, js parser in common lisp
  *    (which has been since ported to javascript by nodejs people)
  *  - jslint
- * 
+ *
  * updates:
  *  - support for ES6 class, see
  *    http://people.mozilla.org/~jorendorff/es6-draft.html#sec-class-definitions
@@ -69,12 +69,12 @@ let mk_param x = { p_name = x; p_type = None; p_dots = None; }
 
 /*(* tokens with a value *)*/
 %token<string * Ast_js.tok> T_NUMBER
-%token<string * Ast_js.tok> T_IDENTIFIER 
+%token<string * Ast_js.tok> T_IDENTIFIER
 %token<string * Ast_js.tok> T_STRING T_ENCAPSED_STRING
 %token<string * Ast_js.tok> T_REGEX
 
 /*(* keywords tokens *)*/
-%token <Ast_js.tok> 
+%token <Ast_js.tok>
  T_FUNCTION T_IF T_IN T_INSTANCEOF T_RETURN T_SWITCH T_THIS T_THROW T_TRY
  T_VAR T_WHILE T_WITH T_CONST T_NULL T_FALSE T_TRUE
  T_BREAK T_CASE T_CATCH T_CONTINUE T_DEFAULT T_DO T_FINALLY T_FOR
@@ -82,22 +82,22 @@ let mk_param x = { p_name = x; p_type = None; p_dots = None; }
 
 %token <Ast_js.tok> T_ELSE
 
-%token <Ast_js.tok> T_NEW 
+%token <Ast_js.tok> T_NEW
 
 /*(* syntax *)*/
-%token <Ast_js.tok>  
+%token <Ast_js.tok>
  T_LCURLY T_RCURLY
  T_LPAREN T_RPAREN
  T_LBRACKET T_RBRACKET
- T_SEMICOLON 
+ T_SEMICOLON
  T_COMMA
  T_PERIOD
  T_ARROW T_DOTS
  T_BACKQUOTE T_DOLLARCURLY
 
 /*(* operators *)*/
-%token <Ast_js.tok>  
- T_RSHIFT3_ASSIGN T_RSHIFT_ASSIGN T_LSHIFT_ASSIGN 
+%token <Ast_js.tok>
+ T_RSHIFT3_ASSIGN T_RSHIFT_ASSIGN T_LSHIFT_ASSIGN
  T_BIT_XOR_ASSIGN T_BIT_OR_ASSIGN T_BIT_AND_ASSIGN T_MOD_ASSIGN T_DIV_ASSIGN
  T_MULT_ASSIGN T_MINUS_ASSIGN T_PLUS_ASSIGN T_ASSIGN
 
@@ -109,7 +109,7 @@ let mk_param x = { p_name = x; p_type = None; p_dots = None; }
  T_BIT_XOR
  T_BIT_AND
  T_EQUAL T_NOT_EQUAL T_STRICT_EQUAL T_STRICT_NOT_EQUAL
- T_LESS_THAN_EQUAL T_GREATER_THAN_EQUAL T_LESS_THAN T_GREATER_THAN 
+ T_LESS_THAN_EQUAL T_GREATER_THAN_EQUAL T_LESS_THAN T_GREATER_THAN
  T_IN T_INSTANCEOF
  T_LSHIFT T_RSHIFT T_RSHIFT3
  T_PLUS T_MINUS
@@ -151,8 +151,8 @@ let mk_param x = { p_name = x; p_type = None; p_dots = None; }
 
 %nonassoc p_POSTFIX
 
-%right 
- T_RSHIFT3_ASSIGN T_RSHIFT_ASSIGN T_LSHIFT_ASSIGN 
+%right
+ T_RSHIFT3_ASSIGN T_RSHIFT_ASSIGN T_LSHIFT_ASSIGN
  T_BIT_XOR_ASSIGN T_BIT_OR_ASSIGN T_BIT_AND_ASSIGN T_MOD_ASSIGN T_DIV_ASSIGN
  T_MULT_ASSIGN T_MINUS_ASSIGN T_PLUS_ASSIGN T_ASSIGN
 
@@ -162,8 +162,8 @@ let mk_param x = { p_name = x; p_type = None; p_dots = None; }
 %left T_BIT_XOR
 %left T_BIT_AND
 %left T_EQUAL T_NOT_EQUAL T_STRICT_EQUAL T_STRICT_NOT_EQUAL
-%left 
- T_LESS_THAN_EQUAL T_GREATER_THAN_EQUAL T_LESS_THAN T_GREATER_THAN 
+%left
+ T_LESS_THAN_EQUAL T_GREATER_THAN_EQUAL T_LESS_THAN T_GREATER_THAN
  T_IN T_INSTANCEOF
 %left T_LSHIFT T_RSHIFT T_RSHIFT3
 %left T_PLUS T_MINUS
@@ -230,13 +230,13 @@ variable_statement:
    * get r/r conflicts on ',', ';'
    *)*/
 variable_declaration:
- | identifier annotation initializeur 
+ | identifier annotation initializeur
      { { v_name = $1; v_type = Some $2; v_init = Some $3 } }
- | identifier annotation              
+ | identifier annotation
      { { v_name = $1; v_type = Some $2; v_init = None } }
- | identifier            initializeur 
+ | identifier            initializeur
      { { v_name = $1; v_type = None; v_init = Some $2 } }
- | identifier                         
+ | identifier
      { { v_name = $1; v_type = None; v_init = None } }
 
 initializeur:
@@ -250,40 +250,40 @@ expression_statement:
 
 
 if_statement:
- | T_IF T_LPAREN expression T_RPAREN statement T_ELSE statement 
+ | T_IF T_LPAREN expression T_RPAREN statement T_ELSE statement
      { If ($1, ($2, $3, $4), $5, Some ($6, $7)) }
- | T_IF T_LPAREN expression T_RPAREN statement %prec p_IF 
+ | T_IF T_LPAREN expression T_RPAREN statement %prec p_IF
      { If ($1, ($2, $3, $4), $5, None) }
 
 
 iteration_statement:
- | T_DO statement T_WHILE T_LPAREN expression T_RPAREN semicolon 
+ | T_DO statement T_WHILE T_LPAREN expression T_RPAREN semicolon
      { Do ($1, $2, $3, ($4, $5, $6), $7) }
- | T_WHILE T_LPAREN expression T_RPAREN statement 
+ | T_WHILE T_LPAREN expression T_RPAREN statement
      { While ($1, ($2, $3, $4), $5) }
- | T_FOR T_LPAREN 
-     expression_no_in_opt T_SEMICOLON 
-     expression_opt T_SEMICOLON 
-     expression_opt 
-     T_RPAREN statement 
+ | T_FOR T_LPAREN
+     expression_no_in_opt T_SEMICOLON
+     expression_opt T_SEMICOLON
+     expression_opt
+     T_RPAREN statement
      { For ($1, $2, $3 +>Common2.fmap (fun x -> LHS x), $4, $5, $6, $7, $8, $9) }
- | T_FOR T_LPAREN 
-     T_VAR variable_declaration_list_no_in T_SEMICOLON 
-     expression_opt T_SEMICOLON 
-     expression_opt 
-     T_RPAREN statement 
+ | T_FOR T_LPAREN
+     T_VAR variable_declaration_list_no_in T_SEMICOLON
+     expression_opt T_SEMICOLON
+     expression_opt
+     T_RPAREN statement
      { For ($1, $2, Some (Vars ($3, $4)), $5, $6, $7, $8, $9, $10) }
  | T_FOR T_LPAREN left_hand_side_expression T_IN expression T_RPAREN statement
      { ForIn ($1, $2, LHS $3, $4, $5, $6, $7) }
- | T_FOR 
-     T_LPAREN T_VAR variable_declaration_list_no_in T_IN expression T_RPAREN 
-     statement 
+ | T_FOR
+     T_LPAREN T_VAR variable_declaration_list_no_in T_IN expression T_RPAREN
+     statement
      { ForIn ($1, $2, Vars ($3, $4), $5, $6, $7, $8) }
 
 variable_declaration_no_in:
- | identifier initializer_no_in 
+ | identifier initializer_no_in
      { { v_name = $1; v_init = Some $2; v_type =None } }
- | identifier                   
+ | identifier
      { { v_name = $1; v_init = None; v_type = None } }
 
 initializer_no_in:
@@ -340,9 +340,9 @@ finally:
 /*(*----------------------------*)*/
 
 case_block:
- | T_LCURLY case_clauses_opt T_RCURLY 
+ | T_LCURLY case_clauses_opt T_RCURLY
      { ($1, $2, $3) }
- | T_LCURLY case_clauses_opt default_clause case_clauses_opt T_RCURLY 
+ | T_LCURLY case_clauses_opt default_clause case_clauses_opt T_RCURLY
      { ($1, $2 @ [$3] @ $4, $5) }
 
 
@@ -360,24 +360,26 @@ default_clause:
 /*(*************************************************************************)*/
 
 function_declaration:
- | T_FUNCTION identifier T_LPAREN formal_parameter_list_opt T_RPAREN 
+ | T_FUNCTION identifier T_LPAREN formal_parameter_list_opt T_RPAREN
      annotation_opt
-     T_LCURLY function_body T_RCURLY 
+     T_LCURLY function_body T_RCURLY
      { { f_tok = Some $1; f_name= Some $2; f_params= ($3, $4, $5);
          f_return_type = $6; f_body = ($7, $8, $9)
      } }
 
 function_expression:
- | T_FUNCTION identifier T_LPAREN formal_parameter_list_opt T_RPAREN 
-     T_LCURLY function_body T_RCURLY 
+ | T_FUNCTION identifier T_LPAREN formal_parameter_list_opt T_RPAREN
+     annotation_opt
+     T_LCURLY function_body T_RCURLY
      { e(Function { f_tok = Some $1; f_name= Some $2; f_params= ($3, $4, $5);
-                    f_return_type = None; f_body = ($6, $7, $8) }) }
- | T_FUNCTION T_LPAREN formal_parameter_list_opt T_RPAREN 
-     T_LCURLY function_body T_RCURLY 
+                    f_return_type = $6; f_body = ($7, $8, $9) }) }
+ | T_FUNCTION T_LPAREN formal_parameter_list_opt T_RPAREN
+     annotation_opt
+     T_LCURLY function_body T_RCURLY
      { e(Function { f_tok = Some $1; f_name= None; f_params = ($2, $3, $4);
-                    f_return_type = None; f_body = ($5, $6, $7)}) }
+                    f_return_type = $5; f_body = ($6, $7, $8)}) }
 
-formal_parameter: 
+formal_parameter:
  | identifier            { mk_param $1 }
  | identifier annotation { { (mk_param $1) with p_type = Some $2; } }
  /*(* variable number of parameters, less: enforce must be last parameter *)*/
@@ -396,8 +398,8 @@ function_body:
 /*(*************************************************************************)*/
 /*(*1 Class declaration *)*/
 /*(*************************************************************************)*/
-class_declaration: T_CLASS binding_identifier class_tail 
-   { 
+class_declaration: T_CLASS binding_identifier class_tail
+   {
      let (extends, body) = $3 in
      { c_tok = $1; c_name = $2; c_extends =extends; c_body = body }
    }
@@ -421,11 +423,11 @@ binding_identifier: identifier { $1 }
 /*(*2 class element *)*/
 /*(*----------------------------*)*/
 
-method_definition: 
+method_definition:
   identifier T_LPAREN formal_parameter_list_opt T_RPAREN annotation_opt
-    T_LCURLY function_body T_RCURLY  
-  { { f_tok = None; f_name = Some $1; f_params = ($2, $3, $4); 
-      f_return_type = $5; f_body =  ($6, $7, $8) 
+    T_LCURLY function_body T_RCURLY
+  { { f_tok = None; f_name = Some $1; f_params = ($2, $3, $4);
+      f_return_type = $5; f_body =  ($6, $7, $8)
   } }
 
 /*(*************************************************************************)*/
@@ -438,22 +440,24 @@ type_:
  | T_VOID        { TName ("void", $1) }
  | T_IDENTIFIER  { TName $1 }
  | T_PLING type_ { TQuestion ($1, $2) }
- | T_IDENTIFIER T_LESS_THAN type_ T_GREATER_THAN  
+ | T_IDENTIFIER T_LESS_THAN type_ T_GREATER_THAN
      { assert(fst($1) = "Array"); TArray (snd $1, ($2, $3, $4)) }
- | T_LPAREN type_list T_RPAREN T_ARROW type_ { TFun (($1, $2, $3), $4, $5) }
- | T_LPAREN T_RPAREN           T_ARROW type_ { TFun (($1, [], $2), $3, $4) }
+ | T_LPAREN type_param_list T_RPAREN T_ARROW type_ { TFun (($1, $2, $3), $4, $5) }
+ | T_LPAREN T_RPAREN                 T_ARROW type_ { TFun (($1, [], $2), $3, $4) }
  | T_LCURLY type_field_list T_RCURLY         { TObj ($1, $2, $3) }
- | T_LCURLY T_RCURLY                         { TObj ($1, [], $2) }
+ | T_LCURLY                 T_RCURLY         { TObj ($1, [], $2) }
 
-type_field: T_IDENTIFIER T_COLON type_ { ($1, $2, $3) }
+type_field: T_IDENTIFIER T_COLON type_ semicolon { ($1, $2, $3, $4) }
 
 type_field_list:
- | type_field { [Left $1] }
- | type_field_list T_SEMICOLON  type_field { $1 @ [Right $2; Left $3] }
+ | type_field { [$1] }
+ | type_field_list type_field { $1 @ [$2] }
 
-type_list:
- | type_                    { [Left $1] }
- | type_list T_COMMA  type_ { $1 @ [Right $2; Left $3] }
+type_param: T_IDENTIFIER T_COLON type_ { ($1, $2, $3) }
+
+type_param_list:
+ | type_param                          { [Left $1] }
+ | type_param_list T_COMMA  type_param { $1 @ [Right $2; Left $3] }
 
 /*(*************************************************************************)*/
 /*(*1 Expression *)*/
@@ -465,7 +469,7 @@ expression:
 
 assignment_expression:
  | conditional_expression { $1 }
- | left_hand_side_expression assignment_operator assignment_expression 
+ | left_hand_side_expression assignment_operator assignment_expression
      { e(Assign ($1, $2, $3)) }
  | arrow_function { Arrow $1 }
 
@@ -489,9 +493,9 @@ left_hand_side_expression:
 
 conditional_expression:
  | post_in_expression { $1 }
- | post_in_expression 
-     T_PLING assignment_expression 
-     T_COLON assignment_expression 
+ | post_in_expression
+     T_PLING assignment_expression
+     T_COLON assignment_expression
      { e(Conditional ($1, $2, $3, $4, $5)) }
 
 post_in_expression:
@@ -510,7 +514,7 @@ post_in_expression:
  | post_in_expression T_BIT_XOR post_in_expression            { bop B_bitxor $1 $2 $3 }
  | post_in_expression T_BIT_OR post_in_expression             { bop B_bitor $1 $2 $3 }
  | post_in_expression T_AND post_in_expression                { bop B_and $1 $2 $3 }
- | post_in_expression T_OR post_in_expression                 { bop B_or $1 $2 $3 }           
+ | post_in_expression T_OR post_in_expression                 { bop B_or $1 $2 $3 }
 
 pre_in_expression:
  | left_hand_side_expression                     { $1 }
@@ -533,7 +537,7 @@ pre_in_expression:
  | pre_in_expression T_MINUS pre_in_expression   { bop B_sub $1 $2 $3 }
  | pre_in_expression T_LSHIFT pre_in_expression  { bop B_lsl $1 $2 $3 }
  | pre_in_expression T_RSHIFT pre_in_expression  { bop B_lsr $1 $2 $3 }
- | pre_in_expression T_RSHIFT3 pre_in_expression { bop B_asr $1 $2 $3 }         
+ | pre_in_expression T_RSHIFT3 pre_in_expression { bop B_asr $1 $2 $3 }
 
 call_expression:
  | member_expression arguments                      { e(Apply ($1, $2)) }
@@ -549,7 +553,7 @@ member_expression:
  | primary_expression                                 { $1 }
  | member_expression T_LBRACKET expression T_RBRACKET { e(Bracket($1, ($2, $3, $4))) }
  | member_expression T_PERIOD field_name              { e(Period ($1, $2, $3)) }
- | T_NEW member_expression arguments                  
+ | T_NEW member_expression arguments
      { e(Apply(uop U_new $1 $2, $3)) }
 
 primary_expression:
@@ -575,9 +579,9 @@ primary_expression_no_statement:
     *)*/
  | xhp_html { XhpHtml $1 }
  /*(* templated string (aka interpolated strings) *)*/
- | T_BACKQUOTE encaps_list_opt T_BACKQUOTE 
+ | T_BACKQUOTE encaps_list_opt T_BACKQUOTE
      { Encaps (None, $1, $2, $3) }
- | identifier T_BACKQUOTE encaps_list_opt T_BACKQUOTE 
+ | identifier T_BACKQUOTE encaps_list_opt T_BACKQUOTE
      { Encaps (Some $1, $2, $3, $4) }
 
 /*(*----------------------------*)*/
@@ -619,19 +623,19 @@ element_list:
 /*(*----------------------------*)*/
 
 object_literal:
- | T_LCURLY T_RCURLY 
+ | T_LCURLY T_RCURLY
      { ($1, [], $2) }
- | T_LCURLY property_name_and_value_list T_VIRTUAL_SEMICOLON T_RCURLY 
+ | T_LCURLY property_name_and_value_list T_VIRTUAL_SEMICOLON T_RCURLY
      { ($1, $2, $4) }
  /*(* trailing comma 5.1? extension *)*/
- | T_LCURLY property_name_and_value_list T_COMMA T_VIRTUAL_SEMICOLON T_RCURLY 
+ | T_LCURLY property_name_and_value_list T_COMMA T_VIRTUAL_SEMICOLON T_RCURLY
      { ($1, $2 @ [Right $3], $5) }
 
 
 property_name_and_value_list:
- | property_name T_COLON assignment_expression 
+ | property_name T_COLON assignment_expression
      { [Left ($1, $2, $3)] }
- | property_name_and_value_list T_COMMA 
+ | property_name_and_value_list T_COMMA
      property_name T_COLON assignment_expression
      { $1 @ [Right $2; Left ($3, $4, $5)] }
 
@@ -644,9 +648,9 @@ arguments:
  | T_LPAREN argument_list T_RPAREN { ($1, $2, $3) }
 
 argument_list:
- | assignment_expression 
+ | assignment_expression
      { [Left $1] }
- | argument_list T_COMMA assignment_expression 
+ | argument_list T_COMMA assignment_expression
      { $1 @ [Right $2; Left $3] }
 
 /*(*----------------------------*)*/
@@ -661,9 +665,9 @@ xhp_html:
 xhp_child:
  | T_XHP_TEXT           { XhpText $1 }
  | xhp_html             { XhpNested $1 }
- | T_LCURLY expression semicolon T_RCURLY 
+ | T_LCURLY expression semicolon T_RCURLY
      { XhpExpr ($1, Some $2, $4) (*TODO$3*) }
- | T_LCURLY T_RCURLY 
+ | T_LCURLY T_RCURLY
      { XhpExpr ($1, None , $2) (*TODO$3*) }
 
 xhp_attribute:
@@ -679,7 +683,7 @@ xhp_attribute_value:
 encaps:
  | T_ENCAPSED_STRING { EncapsString $1 }
  /*(* ugly: fix this T_VIRTUAL_SEMICOLON ugly hack *)*/
- | T_DOLLARCURLY expression T_VIRTUAL_SEMICOLON T_RCURLY 
+ | T_DOLLARCURLY expression T_VIRTUAL_SEMICOLON T_RCURLY
      { EncapsExpr ($1, $2, $4) }
 
 /*(*----------------------------*)*/
@@ -687,12 +691,12 @@ encaps:
 /*(*----------------------------*)*/
 
 arrow_function:
- | identifier T_ARROW arrow_body 
+ | identifier T_ARROW arrow_body
      { { a_params = ASingleParam (mk_param $1); a_tok = $2; a_body = $3 } }
- | T_LPAREN T_RPAREN T_ARROW arrow_body 
+ | T_LPAREN T_RPAREN T_ARROW arrow_body
      { { a_params = AParams ($1, [], $2); a_tok = $3; a_body = $4 } }
  /*(* can not factorize with TOPAR parameter_list TCPAR, see conflicts.txt *)*/
- | T_LPAREN expression T_RPAREN T_ARROW arrow_body 
+ | T_LPAREN expression T_RPAREN T_ARROW arrow_body
      { let param =
          match $2 with
          | V name -> mk_param name
@@ -700,7 +704,7 @@ arrow_function:
        in
        { a_params = AParams ($1, [Left param], $3); a_tok = $4; a_body = $5 }
      }
- | T_LPAREN T_DOTS identifier T_RPAREN T_ARROW arrow_body 
+ | T_LPAREN T_DOTS identifier T_RPAREN T_ARROW arrow_body
      { let param = { (mk_param $3) with p_dots = Some $2; } in
        { a_params = AParams ($1, [Left param], $4); a_tok = $5; a_body = $6 }
      }
@@ -711,8 +715,8 @@ arrow_function:
 
 
 /*(* was called consise body in spec *)*/
-arrow_body: 
- | block    
+arrow_body:
+ | block
      { match $1 with Block (a,b,c) -> ABody (a,b,c) | _ -> raise Impossible }
  /*(* see conflicts.txt for why the %prec *)*/
  | assignment_expression_no_statement %prec LOW_PRIORITY_RULE { AExpr $1 }
@@ -726,34 +730,34 @@ expression_no_in:
 
 assignment_expression_no_in:
  | conditional_expression_no_in { $1 }
- | left_hand_side_expression assignment_operator assignment_expression_no_in 
+ | left_hand_side_expression assignment_operator assignment_expression_no_in
      { e(Assign ($1, $2, $3)) }
 
 conditional_expression_no_in:
  | post_in_expression_no_in { $1 }
- | post_in_expression_no_in 
-     T_PLING assignment_expression_no_in 
-     T_COLON assignment_expression_no_in 
+ | post_in_expression_no_in
+     T_PLING assignment_expression_no_in
+     T_COLON assignment_expression_no_in
      { e(Conditional ($1, $2, $3, $4, $5)) }
 
 post_in_expression_no_in:
  | pre_in_expression { $1 }
- | post_in_expression_no_in T_LESS_THAN post_in_expression          { bop B_lt $1 $2 $3 }           
- | post_in_expression_no_in T_GREATER_THAN post_in_expression       { bop B_gt $1 $2 $3 }           
- | post_in_expression_no_in T_LESS_THAN_EQUAL post_in_expression    { bop B_le $1 $2 $3 }           
- | post_in_expression_no_in T_GREATER_THAN_EQUAL post_in_expression { bop B_ge $1 $2 $3 }           
- | post_in_expression_no_in T_INSTANCEOF post_in_expression         { bop B_instanceof $1 $2 $3 }   
+ | post_in_expression_no_in T_LESS_THAN post_in_expression          { bop B_lt $1 $2 $3 }
+ | post_in_expression_no_in T_GREATER_THAN post_in_expression       { bop B_gt $1 $2 $3 }
+ | post_in_expression_no_in T_LESS_THAN_EQUAL post_in_expression    { bop B_le $1 $2 $3 }
+ | post_in_expression_no_in T_GREATER_THAN_EQUAL post_in_expression { bop B_ge $1 $2 $3 }
+ | post_in_expression_no_in T_INSTANCEOF post_in_expression         { bop B_instanceof $1 $2 $3 }
  /*(* no T_IN case *)*/
- | post_in_expression_no_in T_EQUAL post_in_expression              { bop B_equal $1 $2 $3 }        
- | post_in_expression_no_in T_NOT_EQUAL post_in_expression          { bop B_notequal $1 $2 $3 }     
- | post_in_expression_no_in T_STRICT_EQUAL post_in_expression       { bop B_physequal $1 $2 $3 }    
- | post_in_expression_no_in T_STRICT_NOT_EQUAL post_in_expression   { bop B_physnotequal $1 $2 $3 } 
- | post_in_expression_no_in T_BIT_AND post_in_expression            { bop B_bitand $1 $2 $3 }       
- | post_in_expression_no_in T_BIT_XOR post_in_expression            { bop B_bitxor $1 $2 $3 }       
- | post_in_expression_no_in T_BIT_OR post_in_expression             { bop B_bitor $1 $2 $3 }        
- | post_in_expression_no_in T_AND post_in_expression                { bop B_and $1 $2 $3 }          
- | post_in_expression_no_in T_OR post_in_expression                 { bop B_or $1 $2 $3 }           
-                                                                    
+ | post_in_expression_no_in T_EQUAL post_in_expression              { bop B_equal $1 $2 $3 }
+ | post_in_expression_no_in T_NOT_EQUAL post_in_expression          { bop B_notequal $1 $2 $3 }
+ | post_in_expression_no_in T_STRICT_EQUAL post_in_expression       { bop B_physequal $1 $2 $3 }
+ | post_in_expression_no_in T_STRICT_NOT_EQUAL post_in_expression   { bop B_physnotequal $1 $2 $3 }
+ | post_in_expression_no_in T_BIT_AND post_in_expression            { bop B_bitand $1 $2 $3 }
+ | post_in_expression_no_in T_BIT_XOR post_in_expression            { bop B_bitxor $1 $2 $3 }
+ | post_in_expression_no_in T_BIT_OR post_in_expression             { bop B_bitor $1 $2 $3 }
+ | post_in_expression_no_in T_AND post_in_expression                { bop B_and $1 $2 $3 }
+ | post_in_expression_no_in T_OR post_in_expression                 { bop B_or $1 $2 $3 }
+
 
 /*(*----------------------------*)*/
 /*(*2 (no statement, and no object literal like { v: 1 }) *)*/
@@ -764,59 +768,59 @@ expression_no_statement:
 
 assignment_expression_no_statement:
  | conditional_expression_no_statement { $1 }
- | left_hand_side_expression_no_statement assignment_operator assignment_expression 
+ | left_hand_side_expression_no_statement assignment_operator assignment_expression
      { e(Assign ($1, $2, $3)) }
 
 conditional_expression_no_statement:
  | post_in_expression_no_statement { $1 }
- | post_in_expression_no_statement 
-     T_PLING assignment_expression 
-     T_COLON assignment_expression 
+ | post_in_expression_no_statement
+     T_PLING assignment_expression
+     T_COLON assignment_expression
      { e(Conditional ($1, $2, $3, $4, $5)) }
 
 
 
 post_in_expression_no_statement:
  | pre_in_expression_no_statement { $1 }
- | post_in_expression_no_statement T_LESS_THAN post_in_expression          { bop B_lt $1 $2 $3 }           
- | post_in_expression_no_statement T_GREATER_THAN post_in_expression       { bop B_gt $1 $2 $3 }           
- | post_in_expression_no_statement T_LESS_THAN_EQUAL post_in_expression    { bop B_le $1 $2 $3 }           
- | post_in_expression_no_statement T_GREATER_THAN_EQUAL post_in_expression { bop B_ge $1 $2 $3 }           
- | post_in_expression_no_statement T_INSTANCEOF post_in_expression         { bop B_instanceof $1 $2 $3 }   
- | post_in_expression_no_statement T_IN post_in_expression                 { bop B_in $1 $2 $3 }           
- | post_in_expression_no_statement T_EQUAL post_in_expression              { bop B_equal $1 $2 $3 }        
- | post_in_expression_no_statement T_NOT_EQUAL post_in_expression          { bop B_notequal $1 $2 $3 }     
- | post_in_expression_no_statement T_STRICT_EQUAL post_in_expression       { bop B_physequal $1 $2 $3 }    
- | post_in_expression_no_statement T_STRICT_NOT_EQUAL post_in_expression   { bop B_physnotequal $1 $2 $3 } 
- | post_in_expression_no_statement T_BIT_AND post_in_expression            { bop B_bitand $1 $2 $3 }       
- | post_in_expression_no_statement T_BIT_XOR post_in_expression            { bop B_bitxor $1 $2 $3 }       
- | post_in_expression_no_statement T_BIT_OR post_in_expression             { bop B_bitor $1 $2 $3 }        
- | post_in_expression_no_statement T_AND post_in_expression                { bop B_and $1 $2 $3 }          
- | post_in_expression_no_statement T_OR post_in_expression                 { bop B_or $1 $2 $3 }           
+ | post_in_expression_no_statement T_LESS_THAN post_in_expression          { bop B_lt $1 $2 $3 }
+ | post_in_expression_no_statement T_GREATER_THAN post_in_expression       { bop B_gt $1 $2 $3 }
+ | post_in_expression_no_statement T_LESS_THAN_EQUAL post_in_expression    { bop B_le $1 $2 $3 }
+ | post_in_expression_no_statement T_GREATER_THAN_EQUAL post_in_expression { bop B_ge $1 $2 $3 }
+ | post_in_expression_no_statement T_INSTANCEOF post_in_expression         { bop B_instanceof $1 $2 $3 }
+ | post_in_expression_no_statement T_IN post_in_expression                 { bop B_in $1 $2 $3 }
+ | post_in_expression_no_statement T_EQUAL post_in_expression              { bop B_equal $1 $2 $3 }
+ | post_in_expression_no_statement T_NOT_EQUAL post_in_expression          { bop B_notequal $1 $2 $3 }
+ | post_in_expression_no_statement T_STRICT_EQUAL post_in_expression       { bop B_physequal $1 $2 $3 }
+ | post_in_expression_no_statement T_STRICT_NOT_EQUAL post_in_expression   { bop B_physnotequal $1 $2 $3 }
+ | post_in_expression_no_statement T_BIT_AND post_in_expression            { bop B_bitand $1 $2 $3 }
+ | post_in_expression_no_statement T_BIT_XOR post_in_expression            { bop B_bitxor $1 $2 $3 }
+ | post_in_expression_no_statement T_BIT_OR post_in_expression             { bop B_bitor $1 $2 $3 }
+ | post_in_expression_no_statement T_AND post_in_expression                { bop B_and $1 $2 $3 }
+ | post_in_expression_no_statement T_OR post_in_expression                 { bop B_or $1 $2 $3 }
 
 
 pre_in_expression_no_statement:
  | left_hand_side_expression_no_statement                     { $1 }
- | pre_in_expression_no_statement T_INCR                      { uop U_post_increment $2 $1 } 
- | pre_in_expression_no_statement T_DECR                      { uop U_post_decrement $2 $1 } 
- | T_DELETE pre_in_expression                                 { uop U_delete $1 $2 }         
- | T_VOID pre_in_expression                                   { uop U_void $1 $2 }           
- | T_TYPEOF pre_in_expression                                 { uop U_typeof $1 $2 }         
- | T_INCR pre_in_expression                                   { uop U_pre_increment $1 $2 }  
- | T_DECR pre_in_expression                                   { uop U_pre_decrement $1 $2 }  
- | T_PLUS pre_in_expression                                   { uop U_plus $1 $2 }           
- | T_MINUS pre_in_expression                                  { uop U_minus $1 $2}           
- | T_BIT_NOT pre_in_expression                                { uop U_bitnot $1 $2 }         
- | T_NOT pre_in_expression                                    { uop U_not $1 $2 }            
-                                                                                             
- | pre_in_expression_no_statement T_MULT pre_in_expression    { bop B_mul $1 $2 $3 }         
- | pre_in_expression_no_statement T_DIV pre_in_expression     { bop B_div $1 $2 $3 }         
- | pre_in_expression_no_statement T_MOD pre_in_expression     { bop B_mod $1 $2 $3 }         
- | pre_in_expression_no_statement T_PLUS pre_in_expression    { bop B_add $1 $2 $3 }         
- | pre_in_expression_no_statement T_MINUS pre_in_expression   { bop B_sub $1 $2 $3 }         
- | pre_in_expression_no_statement T_LSHIFT pre_in_expression  { bop B_lsl $1 $2 $3 }         
- | pre_in_expression_no_statement T_RSHIFT pre_in_expression  { bop B_lsr $1 $2 $3 }         
- | pre_in_expression_no_statement T_RSHIFT3 pre_in_expression { bop B_asr $1 $2 $3 }         
+ | pre_in_expression_no_statement T_INCR                      { uop U_post_increment $2 $1 }
+ | pre_in_expression_no_statement T_DECR                      { uop U_post_decrement $2 $1 }
+ | T_DELETE pre_in_expression                                 { uop U_delete $1 $2 }
+ | T_VOID pre_in_expression                                   { uop U_void $1 $2 }
+ | T_TYPEOF pre_in_expression                                 { uop U_typeof $1 $2 }
+ | T_INCR pre_in_expression                                   { uop U_pre_increment $1 $2 }
+ | T_DECR pre_in_expression                                   { uop U_pre_decrement $1 $2 }
+ | T_PLUS pre_in_expression                                   { uop U_plus $1 $2 }
+ | T_MINUS pre_in_expression                                  { uop U_minus $1 $2}
+ | T_BIT_NOT pre_in_expression                                { uop U_bitnot $1 $2 }
+ | T_NOT pre_in_expression                                    { uop U_not $1 $2 }
+
+ | pre_in_expression_no_statement T_MULT pre_in_expression    { bop B_mul $1 $2 $3 }
+ | pre_in_expression_no_statement T_DIV pre_in_expression     { bop B_div $1 $2 $3 }
+ | pre_in_expression_no_statement T_MOD pre_in_expression     { bop B_mod $1 $2 $3 }
+ | pre_in_expression_no_statement T_PLUS pre_in_expression    { bop B_add $1 $2 $3 }
+ | pre_in_expression_no_statement T_MINUS pre_in_expression   { bop B_sub $1 $2 $3 }
+ | pre_in_expression_no_statement T_LSHIFT pre_in_expression  { bop B_lsl $1 $2 $3 }
+ | pre_in_expression_no_statement T_RSHIFT pre_in_expression  { bop B_lsr $1 $2 $3 }
+ | pre_in_expression_no_statement T_RSHIFT3 pre_in_expression { bop B_asr $1 $2 $3 }
 
 left_hand_side_expression_no_statement:
  | new_expression_no_statement { $1 }
@@ -900,15 +904,15 @@ xhp_children:
 
 
 variable_declaration_list:
- | variable_declaration 
+ | variable_declaration
      { [Left $1]  }
- | variable_declaration_list T_COMMA variable_declaration 
+ | variable_declaration_list T_COMMA variable_declaration
      { $1 @ [Right $2; Left $3] }
 
 variable_declaration_list_no_in:
- | variable_declaration_no_in 
+ | variable_declaration_no_in
      { [Left $1] }
- | variable_declaration_list_no_in T_COMMA variable_declaration_no_in 
+ | variable_declaration_list_no_in T_COMMA variable_declaration_no_in
      { $1 @ [Right $2; Left $3] }
 
 
@@ -943,4 +947,3 @@ encaps_list_opt:
 annotation_opt:
  | /*(* empty *)*/ { None }
  | annotation    { Some $1 }
-

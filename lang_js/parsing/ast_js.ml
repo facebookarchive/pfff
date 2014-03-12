@@ -6,7 +6,7 @@
  * modify it under the terms of the GNU Lesser General Public License
  * version 2.1 as published by the Free Software Foundation, with the
  * special exception on linking described in file license.txt.
- * 
+ *
  * This library is distributed in the hope that it will be useful, but
  * WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the file
@@ -21,11 +21,11 @@ module PI = Parse_info
 (*****************************************************************************)
 (* spec: http://www.ecmascript.org/ and the ecma-262 document.
  * See also http://en.wikipedia.org/wiki/ECMAScript
- * 
+ *
  * See parser_js.mly top comment to see the Javascript extensions currently
  * supported.
- * 
- * todo: 
+ *
+ * todo:
  *  - imitate https://developer.mozilla.org/en-US/docs/SpiderMonkey/Parser_API ?
  *)
 
@@ -47,7 +47,7 @@ and 'a wrap = 'a * tok
 
 and 'a paren   = tok * 'a * tok
 and 'a brace   = tok * 'a * tok
-and 'a bracket = tok * 'a * tok 
+and 'a bracket = tok * 'a * tok
 and 'a angle = tok * 'a * tok
 (* can now have a Right tok at the very end with trailing comma extension *)
 and 'a comma_list = ('a, tok (* the comma *)) Common.either list
@@ -122,7 +122,7 @@ type expr =
        | U_pre_increment  | U_pre_decrement
        | U_post_increment | U_post_decrement
        | U_plus | U_minus | U_not
-             
+
      and binop =
        | B_instanceof  | B_in
 
@@ -137,13 +137,13 @@ type expr =
      and property_name =
        | PN_String of name
        | PN_Num of string (* todo? PN_Float of float | PN_Int of int32 *) wrap
-           
+
      and assignment_operator =
        | A_eq
        | A_mul  | A_div  | A_mod  | A_add  | A_sub
        | A_lsl  | A_lsr  | A_asr
        | A_and  | A_xor  | A_or
-             
+
    and field =
       (property_name * tok (* : *) * expr)
 
@@ -164,7 +164,7 @@ type expr =
      | XhpNested of xhp_html
 
  (* es6-ext: template string, aka interpolated/encapsulated strings *)
- and encaps = 
+ and encaps =
  | EncapsString of string wrap
  (* could use 'expr brace', but it's not a regular brace for { *)
  | EncapsExpr of tok (* ${ *) * expr * tok (* } *)
@@ -184,12 +184,12 @@ and st =
   | Do of tok * st * tok (* while *) * expr paren * sc
   | While of tok * expr paren * st
   | For of tok * tok (* ( *) *
-      lhs_or_var option * tok (* ; *) * 
-      expr option * tok (* ; *) * 
-      expr option * 
+      lhs_or_var option * tok (* ; *) *
+      expr option * tok (* ; *) *
+      expr option *
       tok (* ) *) *
       st
-  | ForIn of tok * tok (* ( *) * lhs_or_var * tok (* in *) * 
+  | ForIn of tok * tok (* ( *) * lhs_or_var * tok (* in *) *
       expr * tok (* ) *) * st
   | Switch of tok * expr paren *
       case_clause list brace (* was   (case_clause list * st) list *)
@@ -203,7 +203,7 @@ and st =
   | Labeled of label * tok (*:*) * st
 
   | Throw of tok * expr * sc
-  | Try of tok * st (* always a block *) * 
+  | Try of tok * st (* always a block *) *
       (tok * arg paren * st) option * (* catch *)
       (tok * st) option (* finally *)
 
@@ -213,8 +213,8 @@ and st =
     | LHS of expr
     | Vars of tok * variable_declaration comma_list
 
-  and case_clause = 
-    | Default of tok * tok (*:*) * toplevel list 
+  and case_clause =
+    | Default of tok * tok (*:*) * toplevel list
     | Case of tok * expr * tok (*:*) * toplevel list
 
   and arg = string wrap
@@ -228,9 +228,9 @@ and type_ =
   | TName of name
   | TQuestion of tok * type_
   | TArray of tok * type_ angle
-  | TFun of type_ comma_list paren * tok (* => *) * type_
+  | TFun of (name * tok (* : *) * type_) comma_list paren * tok (* => *) * type_
   (* comma_list or semicolons_list ?*)
-  | TObj of (name * tok (* : *) * type_) comma_list brace
+  | TObj of (name * tok (* : *) * type_ * sc) list brace
 
 and type_opt = (tok (* : *) * type_) option
 
@@ -271,7 +271,7 @@ and arrow_func = {
 (* ------------------------------------------------------------------------- *)
 (* Variables definition *)
 (* ------------------------------------------------------------------------- *)
-and variable_declaration = { 
+and variable_declaration = {
   v_name: name;
   v_init: (tok (*=*) * expr) option;
   v_type: type_opt;
@@ -339,14 +339,14 @@ let info_of_name (_s, info) = info
  * information, to "abstract those line" (al) information.
  *)
 
-let al_info x = 
+let al_info x =
   { x with PI.token = PI.Ab }
 
 (*****************************************************************************)
 (* Views *)
 (*****************************************************************************)
 
-(* examples: 
+(* examples:
  * inline more static funcall in expr type or variable type
  *)
 
@@ -354,7 +354,7 @@ let al_info x =
 (* Helpers, could also be put in lib_parsing.ml instead *)
 (*****************************************************************************)
 
-let fakeInfoAttach info = 
+let fakeInfoAttach info =
   let info = PI.rewrap_str "FAKE" info in
   let pinfo = PI.token_location_of_info info in
   { PI.
