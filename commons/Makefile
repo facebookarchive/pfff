@@ -293,11 +293,13 @@ install: all all.opt
           common.mli ocaml.mli \
           $(OCAMLSTDLIB)/$(LIBNAME)
 
+#todo: $(EXPORTSRC:%.mli=%.cmt) but must be guarded by having bin-annot
+
 # note that the dlllib.so will be added in lib/stublibs/
 install-findlib: all all.opt
 	ocamlfind install $(LIBNAME) META  lib.cma lib.cmxa lib.a \
           dlllib.so liblib.a \
-          $(EXPORTSRC) $(EXPORTSRC:%.mli=%.cmi) $(EXPORTSRC:%.mli=%.cmt)
+          $(EXPORTSRC) $(EXPORTSRC:%.mli=%.cmi) 
 
 uninstall-findlib:
 	ocamlfind remove $(LIBNAME)

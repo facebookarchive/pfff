@@ -85,5 +85,5 @@ EXPORTSRC=meta_ast_html.mli \
 
 install-findlib:
 	ocamlfind install $(LIBNAME) META   lib.cma lib.cmxa lib.a \
-          $(EXPORTSRC) $(EXPORTSRC:%.mli=%.cmi) $(EXPORTSRC:%.mli=%.cmt) \
+          $(EXPORTSRC) $(EXPORTSRC:%.mli=%.cmi) \
           ast_html.ml ast_html.cmi

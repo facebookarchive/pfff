@@ -74,4 +74,4 @@ EXPORTSRC=parse_info.mli scope_code.mli
 install-findlib: all all.opt
 	ocamlfind install $(LIBNAME) META \
           lib.cma lib.cmxa lib.a \
-          $(EXPORTSRC) $(EXPORTSRC:%.mli=%.cmi) $(EXPORTSRC:%.mli=%.cmt)
+          $(EXPORTSRC) $(EXPORTSRC:%.mli=%.cmi)

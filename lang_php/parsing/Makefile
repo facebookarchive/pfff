@@ -81,7 +81,7 @@ EXPORTSRC=meta_ast_php.mli unparse_php.mli \
 
 install-findlib:
 	ocamlfind install $(LIBNAME) META   lib.cma lib.cmxa lib.a \
-          $(EXPORTSRC) $(EXPORTSRC:%.mli=%.cmi) $(EXPORTSRC:%.mli=%.cmt) \
+          $(EXPORTSRC) $(EXPORTSRC:%.mli=%.cmi) \
           ast_php.ml ast_php.cmi ast_php.cmo ast_php.cmx \
           flag_parsing_php.ml flag_parsing_php.cmi flag_parsing_php.cmo flag_parsing_php.cmx \
 

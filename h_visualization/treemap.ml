@@ -98,7 +98,7 @@ type rectangle1 =
  * use the full width.
  * old: was 16/9 = 1.777777
  *)
-let xy_ratio = 1.6
+let xy_ratio = 1.71
 
 (* The dimentions are in a  [0.0-1.0] range for y and [0.0-xyratio] for x,
  * where xyratio is used to cope with most 16/9 screens.
