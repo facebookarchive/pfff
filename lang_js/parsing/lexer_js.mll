@@ -203,6 +203,8 @@ let XHPLABEL =	['a'-'z''A'-'Z''_']['a'-'z''A'-'Z''0'-'9''_''-']*
 let XHPTAG = XHPLABEL (":" XHPLABEL)*
 let XHPATTR = XHPLABEL (":" XHPLABEL)*
 
+let InputCharacter = [^ '\r' '\n']
+
 (*****************************************************************************)
 (* Rule initial *)
 (*****************************************************************************)
@@ -220,16 +222,12 @@ rule initial = parse
       TComment(info +> PI.rewrap_str (Buffer.contents buf))
     }
 
-  | "//" {
-      let info = tokinfo lexbuf in
-      let buf = Buffer.create 127 in
-      Buffer.add_string buf "//";
-      st_one_line_comment buf lexbuf;
-      TComment(info +> PI.rewrap_str (Buffer.contents buf))
-    }
-
-  | [' ' '\t']+   { TCommentSpace(tokinfo lexbuf) }
-  | NEWLINE       { TCommentNewline(tokinfo lexbuf) }
+  (* don't keep the trailing \n; it will be in another token *)
+  | "//" InputCharacter* { TComment (tokinfo lexbuf) }
+  (* should be accepted only at the beginning of the file *)
+  | "#!" InputCharacter* { TComment (tokinfo lexbuf) } 
+  | [' ' '\t']+  { TCommentSpace(tokinfo lexbuf) }
+  | NEWLINE      { TCommentNewline(tokinfo lexbuf) }
 
   (* ----------------------------------------------------------------------- *)
   (* symbols *)
@@ -557,15 +555,6 @@ and st_comment buf = parse
       st_comment buf lexbuf
     }
 
-and st_one_line_comment buf = parse
-  | [^'\n' '\r']* {
-      Buffer.add_string buf (tok lexbuf);
-      st_one_line_comment buf lexbuf
-    }
-  | NEWLINE { Buffer.add_string buf (tok lexbuf) }
-  | eof { error "end of file in comment" }
-  | _   { error ("unrecognised symbol, in st_one_line_comment:"^tok lexbuf) }
-
 (*****************************************************************************)
 (* Rules for XHP *)
 (*****************************************************************************)
@@ -591,14 +580,7 @@ and st_in_xhp_tag current_tag = parse
      }
   | "/**/" { TComment(tokinfo lexbuf) }
 
-  | "//" {
-      let info = tokinfo lexbuf in
-      let buf = Buffer.create 127 in
-      Buffer.add_string buf "//";
-      st_one_line_comment buf lexbuf;
-      TComment(info +> PI.rewrap_str (Buffer.contents buf))
-    }
-
+  | "//" InputCharacter* { TComment(tokinfo lexbuf) }
 
   (* attribute management *)
   | XHPATTR { T_XHP_ATTR(tok lexbuf, tokinfo lexbuf) }
