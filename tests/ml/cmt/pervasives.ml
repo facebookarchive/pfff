@@ -11,3 +11,4 @@ external ( ! ) : 'a ref -> 'a = "%field0"
 
 external incr : int ref -> unit = "%incr"
 
+type builtin = Builtin

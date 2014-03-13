@@ -160,30 +160,58 @@ let readable_path_of_ast ast root readable_cmt source_finder =
       "TODO"
     )
 
+let use_of_undefined_ok name =
+  name +> List.exists (function
+    (* todo: need better n_of_s, or avoid n_of_s and have n_of_path *)
+    | "ArithFloatInfix" | "|" -> true
+    (* todo: need handle functor *)
+    | "Set" | "Map"
+    | "SMap" | "IMap" | "ISet" | "SSet" 
+    | "StringSetOrig" | "IntMap" | "IntIntMap" | "StringSet" | "StrMap"
+    | "SetTestPath" | "Elt_Set"  | "AMap"
+    | "Build" | "PMap"
+    (* in dataflow_php.ml *)
+    | "VarMap" | "VarSet" | "NodeiSet"
+      -> true
+    | s when s =~ ".*Set" -> true
+    | s when s =~ ".*Map" -> true
+    (* todo: need handle argument to functor *)
+    | "MODEL" | "column_list"
+    | "Taint"  | "MATCH" | "X" | "PHP_VS_PHP" | "Interp"
+    (* todo: handle pack *)
+    | "Digraph"
+    (* todo: misc *)
+    | "LIST" | "M_01_01"
+      -> true
+      
+    | _ -> false
+  )
+
+let is_builtin_type s =
+  match s with
+  | "unit" | "bool" | "int" | "float" | "char" | "string" | "int64"
+  | "exn" 
+  | "list" | "ref" | "option" | "array" 
+    -> true
+  | _ -> false
+
 (*****************************************************************************)
 (* Add edges *)
 (*****************************************************************************)
 
 let add_use_edge env dst =
   let src = env.current in
-  match () with
-  | _ when G.has_node dst env.g -> 
-      G.add_edge (src, dst) G.Use env.g
-  | _ -> 
-      let (str, kind) = dst in
-      (match kind with
-      | _ ->
-          let kind_original = kind in
-          let dst = (str, kind_original) in
-          
-          G.add_node dst env.g;
-          let parent_target = G.not_found in
-          pr2 (spf "PB: lookup fail on %s (in %s)" 
-                  (G.string_of_node dst) (G.string_of_node src));
-          
-          env.g +> G.add_edge (parent_target, dst) G.Has;
-          env.g +> G.add_edge (src, dst) G.Use;
-      )
+  if G.has_node dst env.g
+  then G.add_edge (src, dst) G.Use env.g
+  else begin
+    G.add_node dst env.g;
+    let parent_target = G.not_found in
+    pr2 (spf "PB: lookup fail on %s (in %s)" 
+           (G.string_of_node dst) (G.string_of_node src));
+    
+    env.g +> G.add_edge (parent_target, dst) G.Has;
+    env.g +> G.add_edge (src, dst) G.Use;
+  end
 
 let full_path_local_of_kind env kind =
   match kind with
@@ -376,11 +404,17 @@ let typename_of_texpr x =
   let path = aux x in
   name_of_path path
 
+(* For Field, Constructor, subcomponent of a type. We pass
+ * a lid here because the resolved open are handled by looking at texpr.
+ *)
 let add_use_edge_lid env (lid: Longident.t Asttypes.loc) texpr kind =
  if env.phase = Uses then begin
-  (* the typename already contains the qualifier *)
-  let name = name_of_longident_loc lid in
-  let str = Common2.list_last (path_resolve_locals env name kind) in
+  (* get the actual field or constructor name *)
+  let str = 
+    (* the typename already contains the qualifier *)
+    let name = name_of_longident_loc lid in
+    Common2.list_last (path_resolve_locals env name kind) 
+  in
   let tname = path_resolve_locals env (typename_of_texpr texpr) E.Type in
   let tname = path_type_resolve_aliases env tname in
   let full_ident = tname @ [str] in
@@ -392,13 +426,14 @@ let add_use_edge_lid env (lid: Longident.t Asttypes.loc) texpr kind =
     | ("unit" | "bool" | "list" | "option" | "exn")::_ -> ()
       (* todo: pfff specific, tofix *)
     | _ when tname +> List.exists (function 
-      "LIST" | "Array_id" | "dbty" -> true |_->false) -> ()
+      "LIST" | "Array_id" | "dbty" -> true | _-> false) -> ()
     | _ -> pr2 (spf "%s in %s" (Common.dump node) env.cmt_file)
     )
   end
  end
 
-let add_use_edge_name_bis env name texpr =
+(* for identifiers of Function, Constant, etc *)
+let add_use_edge_name env name texpr =
   if env.phase = Uses then begin
     let kind = kind_of_type_expr texpr in
     let name = path_resolve_locals env name kind in
@@ -412,34 +447,26 @@ let add_use_edge_name_bis env name texpr =
       | E.Constant when G.has_node (s_of_n name, E.Function) env.g ->
           add_use_edge env (s_of_n name, E.Function)
       | _ ->
-          (* pfff specific *)
-          if name +> List.exists (function
-          (* todo: need better n_of_s, or avoid n_of_s and have n_of_path *)
-          | "ArithFloatInfix" | "|" -> true
-          (* todo: need handle functor *)
-          | "Set" | "Map"
-          | "SMap" | "IMap" | "ISet" | "SSet" 
-          | "StringSetOrig" | "IntMap" | "IntIntMap" | "StringSet" | "StrMap"
-          | "SetTestPath" | "Elt_Set"  | "AMap"
-          | "Build" | "PMap"
-          (* in dataflow_php.ml *)
-          | "VarMap" | "VarSet" | "NodeiSet"
-              -> true
-          | s when s =~ ".*Set" -> true
-          | s when s =~ ".*Map" -> true
-          (* todo: need handle argument to functor *)
-          | "MODEL" | "column_list"
-          | "Taint"  | "MATCH" | "X" | "PHP_VS_PHP" | "Interp"
-          (* todo: handle pack *)
-          | "Digraph"
-          (* todo: misc *)
-          | "LIST" | "M_01_01"
-              -> true
-
-          | _ -> false
-          ) then ()
+          if use_of_undefined_ok name 
+          then ()
           else pr2 (spf "%s IN %s" (Common.dump node) env.cmt_file)
       )
+  end
+
+(* for Type *)
+let add_use_edge_type env name = 
+  if env.phase = Uses then begin
+    let kind = E.Type in
+
+    let name = path_resolve_locals env name E.Type in
+    let name = path_type_resolve_aliases env name in
+    let node = (s_of_n name, kind) in
+    if G.has_node node env.g
+    then add_use_edge env node
+    else 
+      if use_of_undefined_ok name || is_builtin_type (fst node)
+      then ()
+      else pr2 (spf "%s in %s" (Common.dump node) env.cmt_file)
   end
 
 (*****************************************************************************)
@@ -615,7 +642,14 @@ and structure_item_desc env loc = function
       let env = add_node_and_edge_if_defs_mode env node (unwrap loc) in
       value_description env vd
   | Tstr_type xs ->
-      List.iter (fun (id, loc, td) ->
+
+      (* first pass *)
+      xs +> List.iter (fun (id, _loc, _td) ->
+        let full_ident = env.current_entity @ [Ident.name id] in
+        add_full_path_local env (Ident.name id, full_ident) E.Type
+      );
+      (* second pass *)
+      xs +> List.iter (fun (id, loc, td) ->
         let full_ident = env.current_entity @ [Ident.name id] in
         let node = (full_ident, E.Type) in
         let env = add_node_and_edge_if_defs_mode env node (unwrap loc) in
@@ -629,7 +663,7 @@ and structure_item_desc env loc = function
         | _ -> ()
         );
         type_declaration env td
-      ) xs
+      )
   | Tstr_exception ((id, loc, v3)) ->
       let full_ident = env.current_entity @ ["exn";Ident.name id] in
       let node = (full_ident, E.Exception) in
@@ -795,7 +829,7 @@ and expression_desc t env =
       let str = s_of_n name in
       if List.mem str env.locals
       then ()
-      else add_use_edge_name_bis env name t
+      else add_use_edge_name env name t
   | Texp_constant v1 -> 
       constant env v1
   | Texp_let ((rec_flag, xs, v3)) ->
@@ -1022,9 +1056,10 @@ and core_type_desc env =
       and _ = core_type env v3
       in ()
   | Ttyp_tuple v1 -> let _ = List.iter (core_type env) v1 in ()
-  | Ttyp_constr ((v1, _loc_longident, v3)) ->
-      (* todo: should add type dependencies here *)
-      let _ = path_t env v1
+  | Ttyp_constr ((path, _lid, v3)) ->
+      let name = name_of_path path in
+      add_use_edge_type env name;
+      let _ = path_t env path
       and _ = List.iter (core_type env) v3
       in ()
   | Ttyp_object v1 -> let _ = List.iter (core_field_type env) v1 in ()

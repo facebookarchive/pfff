@@ -35,6 +35,11 @@ so a full path will not be enough, you would also need an arbitrary
 integer or a location to disambiguate, so they just abuse the scope
 to solve such ambiguity by using relative path.
 
+* Path.t vs LongIdent.t
+
+Prefer to use Path.t as at least they Path.t have external open
+resolved. Use LongIdent.t when you just need the last part of the name.
+
 * about entities
 
 Type definitions can only appear at the toplevel of a module.
