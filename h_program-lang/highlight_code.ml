@@ -191,6 +191,8 @@ type category =
   (* variables *)
   | Global of usedef2
 
+  | Type of usedef2
+
   | Class of usedef2 (* also valid for struct ? *)
   | Field of usedef2
   | Method of usedef2
@@ -242,7 +244,6 @@ type category =
 
   | TypeVoid
   | TypeInt
-  | TypeMisc (* e.g. cast expressions *)
 
   (* module/cpp related *)
   | Ifdef
@@ -702,7 +703,8 @@ let info_of_category = function
 
   | TypeVoid -> [`FOREGROUND "LimeGreen";]
   | TypeInt ->  [`FOREGROUND "chartreuse";]
-  | TypeMisc -> [`FOREGROUND "chartreuse";]
+  | Type (Def2 _) -> [`FOREGROUND "chartreuse";]
+  | Type (Use2 _) -> [`FOREGROUND "chartreuse";]
 
   | Constructor(Def2 _ ) -> [`FOREGROUND "tomato1";]
   | Constructor(Use2 _) -> [`FOREGROUND "pink3";]

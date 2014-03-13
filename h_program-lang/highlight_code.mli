@@ -12,6 +12,7 @@ type category =
   | Function of usedef2
   | FunctionDecl of def_info
   | Global of usedef2
+  | Type of usedef2
   | Class of usedef2
   | Field of usedef2
   | Method of usedef2
@@ -40,7 +41,7 @@ type category =
   | Local of usedef
   | Parameter of usedef
 
-  | TypeVoid | TypeInt | TypeMisc
+  | TypeVoid | TypeInt
 
   | Ifdef | Include | IncludeFilePath | Define | CppOther
 

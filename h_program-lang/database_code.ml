@@ -573,6 +573,7 @@ let matching_use_categ_kind categ kind =
   | Class _,     HC.Class _
   | Constant,    HC.Constant _
   | ClassConstant,  HC.Constant _
+  | Type, HC.Type _
     
   (* tofix at some point, wrong tokenizer *)
   | Constant, HC.Local _

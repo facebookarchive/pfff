@@ -229,6 +229,8 @@ let button_action w ev =
           in
           let entity_opt = 
             match entity_use_opt, entity_def_opt with
+            (* priority to use *)
+            | Some e, Some _ -> Some e
             | Some e, _ | _, Some e -> Some e
             | _ -> None
           in

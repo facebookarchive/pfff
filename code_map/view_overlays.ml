@@ -316,6 +316,8 @@ let motion_refresher ev w =
     in
     let entity_opt = 
       match entity_use_opt, entity_def_opt with
+      (* priority to use *)
+      | Some e, Some _ -> Some e
       | Some e, _ | _, Some e -> Some e
       | _ -> None
     in
@@ -356,8 +358,8 @@ let motion_refresher ev w =
     +>Common.do_option GMain.Timeout.remove;
     Controller.current_tooltip_refresher := 
       Some (Gui.gmain_timeout_add ~ms:1000 ~callback:(fun _ ->
-        (match entity_def_opt, entity_use_opt, model.g with
-        | Some node, _, Some g | _, Some node, Some g ->
+        (match entity_opt, model.g with
+        | Some node, Some g ->
             draw_tooltip ~cr_overlay ~x ~y node g;
             !Controller._refresh_da ();
         | _ -> ()
