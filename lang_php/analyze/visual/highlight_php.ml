@@ -349,7 +349,7 @@ let visit_program ~tag _prefs  hentities (ast, toks) =
         | XhpChildrenDecl _ -> k x
         | XhpCategoriesDecl (_, decls, _) ->
           decls +> Ast.uncomma +> List.iter (fun (_tag, ii) ->
-            tag ii TypeMisc
+            tag ii (Type (Use2 fake_no_use2))
           );
         )
       | Ast.ClassConstants (_, vars, _) ->
@@ -522,7 +522,7 @@ let visit_program ~tag _prefs  hentities (ast, toks) =
         )
 
       | Cast (((_cast, v1), _v2)) ->
-        tag v1 TypeMisc;
+        tag v1 (TypeInt);
         k expr;
       | _ ->
         k expr

@@ -12,14 +12,10 @@
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the file
  * license.txt for more details.
  *)
-
 open Common
 
 module Ast = Ast_nw
-(*module V = Visitor_nw *)
-
 open Highlight_code
-
 module T = Parser_nw
 module TH = Token_helpers_nw
 
@@ -39,7 +35,6 @@ let span_newline xs = xs +> Common2.split_when (function
 
 let span_end_bracket xs = xs +> Common2.split_when (function 
   | T.TSymbol("]", _) -> true | _ -> false)
-
 
 let tag_all_tok_with ~tag categ xs = 
   xs +> List.iter (fun tok ->
@@ -69,7 +64,6 @@ let visit_toplevel
     Hashtbl.replace already_tagged ii true
   )
   in
-
 
   (* -------------------------------------------------------------------- *)
   (* toks phase 1 *)
@@ -150,7 +144,7 @@ let visit_toplevel
              let (before, middle, after) =
                span_end_bracket xs
              in
-             tag_all_tok_with ~tag TypeMisc (* TODO *) before;
+             tag_all_tok_with ~tag TypeVoid (* TODO *) before;
              (middle::after)
            with Not_found ->
              pr2 (spf "PB span_end_bracket at %d" 

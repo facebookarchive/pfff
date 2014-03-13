@@ -122,7 +122,7 @@ let visit_toplevel ~tag_hook _prefs (ast, toks) =
           (match List.rev xs with
           | [] -> raise Impossible
           | (id, _targs)::xs -> 
-            tag_ident id TypeMisc;
+            tag_ident id (Type (Use2 fake_no_use2));
             xs +> List.iter (fun (id, _targs) ->
               tag_ident id (Module Use)
             )
@@ -220,8 +220,8 @@ let visit_toplevel ~tag_hook _prefs (ast, toks) =
     | T.PRIMITIVE_TYPE (s, ii) ->
         (match s with
         | "void" -> tag ii TypeVoid
-        | "boolean" -> tag ii TypeMisc
-        | _ -> tag ii TypeMisc
+        | "boolean" -> tag ii TypeInt
+        | _ -> tag ii TypeInt
         )
 
     | T.OPERATOR_EQ (_s, ii) ->
@@ -231,13 +231,13 @@ let visit_toplevel ~tag_hook _prefs (ast, toks) =
         ()
 
     (* keywords  *)
-    | T.BOOLEAN ii -> tag ii TypeMisc
+    | T.BOOLEAN ii -> tag ii TypeInt
 
     | T.BYTE ii | T.CHAR ii | T.INT ii | T.SHORT ii | T.LONG ii
           -> tag ii TypeInt
 
     | T.DOUBLE ii | T.FLOAT ii
-          -> tag ii TypeMisc
+          -> tag ii TypeInt
 
     | T.VOID ii -> tag ii TypeVoid
        

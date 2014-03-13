@@ -137,7 +137,7 @@ let visit_program
       | Ast.Module (_tok, uname, _tok2, _mod_expr) ->
           let ii = Ast.info_of_name uname in
           tag ii (Module Def);
-      | Let _ | Type _ | ItemTodo _ -> ()
+      | Let _ | Ast.Type _ | ItemTodo _ -> ()
       );
       k x
     );
@@ -294,7 +294,7 @@ let visit_program
       (match t with
       | TyName long_name ->
           let info = Ast.info_of_name (Ast.name_of_long_name long_name) in
-          tag info TypeMisc;
+          tag info (Type (Use2 fake_no_use2));
       | TyApp (_ty_args, long_name) ->
           let name = Ast.name_of_long_name long_name in
           let info = Ast.info_of_name name in

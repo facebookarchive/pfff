@@ -121,7 +121,7 @@ let visit_program
         then begin 
           tag ii4 (Field (Def2 fake_no_def2));
 
-          tag ii3 (TypeMisc);
+          tag ii3 (TypeInt);
           if is_module_name s1 then tag ii1 (Module (Use));
         end;
         aux_toks xs
@@ -205,7 +205,7 @@ let visit_program
 
     (* keywords  *)
     | T.Tbool ii
-        -> tag ii TypeMisc
+        -> tag ii TypeInt
 
     | T.Tbyte ii
     | T.Tchar ii
@@ -227,7 +227,7 @@ let visit_program
 
     | T.Tstring ii
     | T.Tsbyte ii
-        -> tag ii TypeMisc
+        -> tag ii TypeInt
 
     | T.Tclass ii
     | T.Tabstract ii

@@ -166,7 +166,7 @@ let visit_toplevel ~tag_hook _prefs  (_toplevel, toks) =
     | TyName (_qu, name) ->
         let info = info_of_name name in
         (* todo: different color for int/bool/list/void etc? *)
-        tag info TypeMisc
+        tag info (Type (Use2 fake_no_use2))
         
     | TyVar _name -> ()
     | TyApp (_long_name, xs) ->
@@ -426,18 +426,18 @@ let visit_toplevel ~tag_hook _prefs  (_toplevel, toks) =
 
     (* keyword types  *)
     | T.TIdent(("int" | "float"), ii) -> tag ii TypeInt
-    | T.TIdent("bool", ii) -> tag ii TypeMisc
+    | T.TIdent("bool", ii) -> tag ii TypeInt
 (* FPs because sometimes used as a function name, as in Random.string 
     | T.TIdent("string", ii) -> tag ii TypeMisc
 *)
     | T.TIdent(("list" | "option" | "either" | "intmap" | "stringmap"), ii) -> 
-        tag ii TypeMisc
+        tag ii TypeInt
     | T.TIdent("void", ii) -> tag ii TypeVoid
 
     | T.Tint ii | T.Tfloat ii -> tag ii TypeInt
-    | T.Tstring ii -> tag ii TypeMisc
+    | T.Tstring ii -> tag ii TypeInt
 
-    | T.TTypeVar(_, ii) -> tag ii TypeMisc
+    | T.TTypeVar(_, ii) -> tag ii TypeInt
 
     (* keywords *)
 

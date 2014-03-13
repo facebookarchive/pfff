@@ -238,7 +238,7 @@ let visit_toplevel ~tag_hook _prefs  (_toplevel, toks) =
     | T.TUpperIdent (_s, ii)
         -> 
         (* could be a type or a constructor *)
-        tag ii TypeMisc
+        tag ii TypeVoid
 
 
   );

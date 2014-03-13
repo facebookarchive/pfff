@@ -129,7 +129,7 @@ let visit_toplevel ~tag_hook _prefs (toplevel, toks) =
 
     | T.Name (ii, _s) ->
         (* todo: different color depending on attr ? *)
-        tag ii TypeMisc
+        tag ii TypeInt
 
     | T.Relement ii ->
         if not (Hashtbl.mem already_tagged ii)

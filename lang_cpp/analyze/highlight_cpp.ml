@@ -572,7 +572,7 @@ let visit_toplevel ~tag_hook _prefs (*db_opt *) (toplevel, toks) =
         tag ii Punctuation
 
     | T.Ttypedef ii | T.Tunion ii | T.Tenum ii ->
-        tag ii TypeMisc (* TODO *)
+        tag ii Keyword
 
     | T.Tif ii | T.Telse ii ->
         tag ii KeywordConditional
@@ -667,7 +667,7 @@ let visit_toplevel ~tag_hook _prefs (*db_opt *) (toplevel, toks) =
     | T.TCCro_new _ | T.TOCro_new _ -> ()
 
     | T.TSup_Template ii | T.TInf_Template ii -> 
-        tag ii TypeMisc
+        tag ii Keyword
 
     | T.TAny_Action _
     | T.TCPar_EOL _

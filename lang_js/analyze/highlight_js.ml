@@ -247,13 +247,13 @@ let visit_program ~tag_hook _prefs (*db_opt *) (ast, toks) =
     | T.T_WHILE (ii) | T.T_DO (ii) | T.T_FOR (ii) -> tag ii KeywordLoop
 
     | T.T_VAR (ii) ->
-        tag ii TypeMisc
+        tag ii Keyword
 
     | T.T_WITH (ii) ->
         tag ii Keyword
 
     | T.T_CONST (ii) ->
-        tag ii TypeMisc
+        tag ii Keyword
     | T.T_BREAK (ii)
     | T.T_CASE (ii)
     | T.T_CONTINUE (ii)
