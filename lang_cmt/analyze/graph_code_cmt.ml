@@ -44,9 +44,9 @@ open Typedtree
  * related:
  *  - typerex
  *  - ocamlspotter
- *  - oug/odb http://odb-serv.forge.ocamlcore.org/
  *  - merlin
  *  - whole program analysis done by ocamlpro recently?
+ *  - oug/odb http://odb-serv.forge.ocamlcore.org/
  * 
  * todo: nested let module X = Y in, ocaml 4.00 feature
  *)
@@ -104,6 +104,8 @@ let s_of_n xs = Common.join "." xs
 (*****************************************************************************)
 (* Parsing *)
 (*****************************************************************************)
+
+(* because we use a 2 pass process, should do like in PHP all in one pass *)
 let _hmemo = Hashtbl.create 101
 let parse file =
   Common.memoized _hmemo file (fun () ->
@@ -1021,6 +1023,7 @@ and core_type_desc env =
       in ()
   | Ttyp_tuple v1 -> let _ = List.iter (core_type env) v1 in ()
   | Ttyp_constr ((v1, _loc_longident, v3)) ->
+      (* todo: should add type dependencies here *)
       let _ = path_t env v1
       and _ = List.iter (core_type env) v3
       in ()

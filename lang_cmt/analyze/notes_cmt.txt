@@ -23,7 +23,7 @@ then you don't have the full path, just the path relative to the
 current module. So you want to prepend also the current module (and
 nested module) to get a complete full path before doing anything.
 
-Why they didn' put the full path? Because there is no unicity inside
+Why they didn't put the full path? Because there is no unicity inside
 a module for an entity or module. You can do
 
 module X = struct ... end
@@ -33,10 +33,9 @@ let f x = ... f x
 
 so a full path will not be enough, you would also need an arbitrary
 integer or a location to disambiguate, so they just abuse the scope
-to solve such ambiguity and by using relative path.
+to solve such ambiguity by using relative path.
 
 * about entities
 
 Type definitions can only appear at the toplevel of a module.
 Values can be referenced only if they appear at the toplevel.
-

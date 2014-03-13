@@ -1572,4 +1572,3 @@ and
   let arg = vof_virtual_flag v_ci_virt in
   let bnd = ("ci_virt", arg) in let bnds = bnd :: bnds in Ocaml.VDict bnds
   
-
