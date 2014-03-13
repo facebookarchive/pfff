@@ -230,6 +230,9 @@ let all_actions () =
  Test_analyze_cpp.actions()@
  Test_analyze_clang.actions()@
  Test_program_lang.actions()@
+#if FEATURE_CMT
+ Test_parsing_cmt.actions()@
+#endif
  Builtins_php.actions()@
   []
 

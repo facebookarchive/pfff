@@ -6,7 +6,8 @@ TARGET=lib
 
 -include $(TOP)/Makefile.config
 
-SRC= ast_cmt.ml meta_ast_cmt.ml
+SRC= ast_cmt.ml meta_ast_cmt.ml \
+  test_parsing_cmt.ml
 
 SYSLIBS= str.cma unix.cma
 
