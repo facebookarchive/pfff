@@ -244,9 +244,11 @@ let build_model root =
   (* todo: find -name "info.txt" *)
   let constraints =
     if Sys.file_exists (Filename.concat root "info.txt")
-    then 
+    then begin
+      pr2 (spf "using %s" (Filename.concat root "info.txt"));
       let info_txt = Info_code.load (Filename.concat root "info.txt") in
       constraints_of_info_txt info_txt
+    end
     else Hashtbl.create 0
   in
   { Model.g_deprecated = g; gopti = gopti; 
