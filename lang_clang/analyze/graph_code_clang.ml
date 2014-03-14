@@ -230,8 +230,11 @@ let add_node_and_edge_if_defs_mode env node =
             )
               -> ()
           | _ when env.clang2_file =~ ".*EXTERNAL" -> ()
-          (* todo: if typedef then maybe ok if have same content *)
+          (* todo: if typedef then maybe ok if have same content!! *)
           | _ when not typedefs_dependencies && str =~ "T__.*" -> 
+              (* todo: add in global typedef equivalence table, because
+               * apparently clang does not always expand typedefs :(
+               *)
               Hashtbl.replace env.dupes node true;
           | _ ->
               env.pr2_and_log (spf "DUPE entity: %s" (G.string_of_node node));
@@ -342,6 +345,7 @@ let add_type_deps env typ =
             (* todo:
               if not typedefs_dependencies
               then env.pr2_and_log ("impossible, typedef not expanded:" ^ s);
+              todo: at least can look at our own typedef table?
               *)
               add_use_edge env ("T__"^s, E.Type)
 
@@ -614,6 +618,7 @@ and expr env (enum, _l, xs) =
   | DeclRefExpr, _ -> error env "DeclRefExpr to handle"
 
 
+  (* note: _address could be useful, but it can't be deduped *)
   | MemberExpr, [_loc;_typ;_(*lval*);T (TDot|TArrow);
                  T (TLowerIdent fld|TUpperIdent fld);
                  _address;(Paren (enum2, l2, xs))]

@@ -23,6 +23,17 @@ void use_field() {
 }
 
 void use_field_via_typedef() {
+  //clang provides 2 type versions in the AST, the original one and 
+  // one where typedefs have been expanded
   aliast x;
+  //TODO: does not record the dependency????
   x.field2++;
+}
+
+void use_field_via_typedef2() {
+  // unfortunately clang does not expand typedefs here, it works only
+  // when the typedef is direct (e.g. not a pointer to a typedef)
+  aliast *x;
+  //TODO: does not record the dependency too?
+  int y = x->field2;
 }
