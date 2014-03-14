@@ -152,7 +152,6 @@ Yoann Padioleau\\
 
 \cite{treemap-market}
 
-DiskStat.
 
 \begin{verbatim}
  * Advantages of my solution compared to using kdirstat on ~/www ?
@@ -235,7 +234,11 @@ More applications:
  * *** list of libs 
  * http://en.wikipedia.org/wiki/List_of_treemapping_software
  * 
+
  *)
+
+ *  - windirstats, kdirstats, etc
+ *    http://lifehacker.com/5915921/the-best-disk-space-analyzer-for-windows
 
 \end{verbatim}
 
