@@ -95,12 +95,12 @@ type env = {
   (* static functions, globals, 'main', and local enums renaming *)
   local_rename: (string, string) Hashtbl.t;
 
-  (* We normally expand references to typedefs, to normalize and simplify,
-   * things but set this variable to true if instead you want to know who is
+  (* We normally expand references to typedefs, to normalize and simplify
+   * things. Set this variable to true if instead you want to know who is
    * using a typedef.
    *)
   typedefs_dependencies: bool;
-
+  (* less: we could also have a local_typedefs field *)
   typedefs: (string, Type_clang.type_clang) Hashtbl.t;
   dupes: (Graph_code.node, bool) Hashtbl.t;
 
@@ -473,7 +473,7 @@ and decl env (enum, _l, xs) =
         in
         let s = if static&&kind=E.Function then new_str_if_defs env s else s in
         let env = add_node_and_edge_if_defs_mode env (s, kind) in
-        add_type_deps env typ;
+        if kind <> E.Prototype then add_type_deps env typ;
         { env with locals = ref [] }
 
     | VarDecl, _loc::(T (TLowerIdent s | TUpperIdent s))::typ::rest ->
@@ -499,7 +499,7 @@ and decl env (enum, _l, xs) =
             env
           end
         in
-        add_type_deps env typ;
+        if kind <> E.GlobalExtern then add_type_deps env typ;
         env
 
     (* I am not sure about the namespaces, so I prepend strings *)
@@ -517,11 +517,12 @@ and decl env (enum, _l, xs) =
             let old = Hashtbl.find env.typedefs s in
             if old =*= t
             then ()
-            else env.pr2_and_log (spf "conflicting typedefs for %s" s)
+            else env.pr2_and_log (spf "conflicting typedefs for %s, %s <> %s" 
+                                    s (Common.dump old) (Common.dump t))
           else Hashtbl.add env.typedefs s t
         end;
         let env = add_node_and_edge_if_defs_mode env ("T__" ^ s, E.Type) in
-        add_type_deps env typ;
+        (* add_type_deps env typ; *)
         env
         
     | EnumDecl, _loc::(T (TLowerIdent s | TUpperIdent s))::_rest ->
@@ -694,6 +695,7 @@ let build ?(verbose=true) root files =
   let chan = open_out (Filename.concat root "pfff.log") in
   (* file -> (string, string) Hashtbl *)
   let local_renames_of_files = Hashtbl.create 101 in
+  (* less: we could also have a local_typedefs_of_files to avoid conflicts *)
 
   let env = {
     g;
