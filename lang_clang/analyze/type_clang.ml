@@ -52,8 +52,8 @@ type type_clang =
 
 let builtin_types = Common.hashset_of_list [
   "char";
-  "int";"short";"long";
-  "float";"double";
+  "int"; "short"; "long";
+  "float"; "double";
   "void";
   (*"unsigned";"signed"; *)
   (* "const";"restrict";"volatile"; *)
@@ -75,10 +75,26 @@ let builtin_types = Common.hashset_of_list [
 (* Helpers *)
 (*****************************************************************************)
 
+let tokens_of_brace_sexp typedefs_dependencies loc typ = 
+  match typ with
+  (* In a codegraph context, do we want to use the original type or the
+   * final type? It depends if we want to create dependencies to typedefs.
+   * In the plan9 context where typedefs are used for forward declaring
+   * it's better to look at the final type.
+   *)
+  | Brace (toks_origin, toks_after_typedef_expansion) ->
+      if typedefs_dependencies
+      then toks_origin
+      else toks_after_typedef_expansion ||| toks_origin
+  | T (TString _s) ->
+      failwith "you're using an old version of the AST dumper, apply patch"
+  | _ ->
+      Errors_clang.error loc "wrong type format"
+
 (* todo? could use parse_cpp.type_of_string? hmm but clang uses some
  * special syntax for anon struct or typeof.
  *)
-let extract_type_of_tokens loc xs =
+let type_of_tokens loc xs =
   let rec aux xs =
     match xs with
     | [] -> Errors_clang.error loc "empty type string?"
@@ -151,16 +167,13 @@ let extract_type_of_tokens loc xs =
   in  
   aux xs
 
-
-let extract_canonical_type_of_sexp loc sexp =
+let type_of_paren_sexp loc sexp =
   match sexp with
   | Paren (_enum, _l, xs) ->
       (match xs with
-      | _loc::Brace (toks_origin, toks_after_typedef_expansion)::_rest ->
-        let toks =  toks_after_typedef_expansion ||| toks_origin in
-        extract_type_of_tokens loc toks
-      | _loc::(T (TString _s))::_rest ->
-          failwith "use old AST dumper format, apply latest patch"
+      | _loc::typ::_rest ->
+        let toks = tokens_of_brace_sexp true loc typ in
+        type_of_tokens loc toks
       | _ -> Errors_clang.error loc "didn't find type"
       )
   | _ -> Errors_clang.error loc "not a paren exp"

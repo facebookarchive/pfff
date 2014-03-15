@@ -43,7 +43,7 @@ module G = Graph_code
  * 
  * procedure to analyze a project:
  *  $ make V=1 > make_trace.txt
- *  $ ~/pfff/pfff_test -analyze_make_trace make_trace.txt > compile_commands.json
+ *  $ ~/pfff/pfff_test -analyze_make_trace make_trace.txt >compile_commands.json
  *  $ ~/pfff/pfff -gen_clang compile_commands.json 
  *  $ ~/pfff/pfff_test -uninclude_clang
  *  $ ~/pfff/codegraph -lang clang2 -build .
@@ -97,6 +97,13 @@ type env = {
   locals: string list ref;
   (* static functions, globals, 'main', and local enums renaming *)
   local_rename: (string, string) Hashtbl.t;
+
+  (* We normally expand references to typedefs, to normalize and simplify,
+   * things but set this variable to true if instead you want to know who is
+   * using a typedef.
+   *)
+  typedefs_dependencies: bool;
+
   typedefs: (string, string) Hashtbl.t;
   dupes: (Graph_code.node, bool) Hashtbl.t;
 
@@ -109,11 +116,6 @@ let unknown_location = "Unknown_Location", E.File
 
 type kind_file = Source | Header
 
-(* We normally expand references to typedefs, to normalize and simplify things,
- * but set this variable to true if instead you want to know who is using
- * a typedef.
- *)
-let typedefs_dependencies = false
 
 (*****************************************************************************)
 (* Parsing *)
@@ -240,7 +242,7 @@ let add_node_and_edge_if_defs_mode env node =
               -> ()
           | _ when env.clang2_file =~ ".*EXTERNAL" -> ()
           (* todo: if typedef then maybe ok if have same content!! *)
-          | _ when not typedefs_dependencies && str =~ "T__.*" -> 
+          | _ when not env.typedefs_dependencies && str =~ "T__.*" -> 
               (* todo: add in global typedef equivalence table, because
                * apparently clang does not always expand typedefs :(
                *)
@@ -328,53 +330,43 @@ let rec add_use_edge env (s, kind) =
     )
       
 let add_type_deps env typ =
-  match typ with
-  (* In a codegraph context, do we want to use the original type or the
-   * final type? It depends if we want to create dependencies to typedefs.
-   * In the plan9 context where typedefs are used for forward declaring
-   * it's better to look at the final type.
-   *)
-  | Brace (toks_origin, toks_after_typedef_expansion) ->
+  if env.phase = Uses then begin
+    let loc = loc_of_env env in
     let toks = 
-      if typedefs_dependencies
-      then toks_origin
-      else toks_after_typedef_expansion ||| toks_origin
-    in
-      if env.phase = Uses then begin
-        let t = Type_clang.extract_type_of_tokens (loc_of_env env) toks in
-        let rec aux t = 
-          match t with
-          | Typ.Builtin _ -> ()
-              
-          | Typ.StructName s ->
-              add_use_edge env ("S__"^s, E.Type)
-          | Typ.UnionName s ->
-              add_use_edge env ("U__"^s, E.Type)
-          | Typ.EnumName s ->
-              add_use_edge env ("E__"^s, E.Type)
-          | Typ.Typename s ->
-            (* todo:
-              if not typedefs_dependencies
-              then env.pr2_and_log ("impossible, typedef not expanded:" ^ s);
-              todo: at least can look at our own typedef table?
-              *)
-              add_use_edge env ("T__"^s, E.Type)
+      Type_clang.tokens_of_brace_sexp env.typedefs_dependencies loc typ in
+    let t = 
+      Type_clang.type_of_tokens loc toks in
+    let rec aux t = 
+      match t with
+      | Typ.Builtin _ -> ()
+          
+      | Typ.StructName s ->
+          add_use_edge env ("S__"^s, E.Type)
+      | Typ.UnionName s ->
+          add_use_edge env ("U__"^s, E.Type)
+      | Typ.EnumName s ->
+          add_use_edge env ("E__"^s, E.Type)
+      | Typ.Typename s ->
+          if env.typedefs_dependencies
+          then add_use_edge env ("T__"^s, E.Type)
+          else begin
+            (* todo: look in typedefs *)
+            env.pr2_and_log ("impossible, typedef not expanded:" ^ s);
+          end
 
-           (* less: use the canonical type in that case? *)
-          | Typ.TypeofStuff -> ()
-               
-          | Typ.AnonStuff -> ()
-          | Typ.Other _ -> ()
-          | Typ.Pointer x -> aux x
-          (* todo: should analyze parameters *)
-          | Typ.Function x -> aux x
-        in
-        aux t
-      end
-  | T (TString _s) ->
-      failwith "you're using an old version of the AST dumper, apply patch"
-  | _ ->
-      error env "wrong type format"
+      (* less: use the canonical type in that case? *)
+      | Typ.TypeofStuff -> ()
+
+      (* todo? *)
+      | Typ.AnonStuff -> ()
+      | Typ.Other _ -> ()
+
+      | Typ.Pointer x -> aux x
+      (* todo: should analyze parameters *)
+      | Typ.Function x -> aux x
+    in
+    aux t
+  end
 
 (*****************************************************************************)
 (* Defs/Uses *)
@@ -508,8 +500,9 @@ and decl env (enum, _l, xs) =
 
     (* I am not sure about the namespaces, so I prepend strings *)
     | TypedefDecl, _loc::(T (TLowerIdent s | TUpperIdent s))::typ::_rest ->
+        (* todo: populate env.typedefs, ensure first have same body *)
         let env = add_node_and_edge_if_defs_mode env ("T__" ^ s, E.Type) in
-        if typedefs_dependencies
+        if env.typedefs_dependencies
         then add_type_deps env typ;
         env
         
@@ -631,8 +624,7 @@ and expr env (enum, _l, xs) =
       then
         let loc = env.clang2_file, l2 in
         let typ_expr = 
-          Type_clang.extract_canonical_type_of_sexp loc (Paren(enum2, l2, xs))
-        in
+          Type_clang.type_of_paren_sexp loc (Paren(enum2, l2, xs))in
         (match typ_expr with
         (* because TDot|TArrow above, need Pointer too *)
         | Typ.StructName s | Typ.Pointer (Typ.StructName s) ->
@@ -705,6 +697,7 @@ let build ?(verbose=true) root files =
     at_toplevel = true;
     local_rename = Hashtbl.create 0;
     dupes = Hashtbl.create 101;
+    typedefs_dependencies = false; (* CONFIG *)
     typedefs = Hashtbl.create 101;
     locals = ref [];
 
