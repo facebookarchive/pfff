@@ -5,3 +5,14 @@ void use_typedef() {
   local++;
   return;
 }
+
+
+typedef int conflict;
+// this is actually forbidden by the compiler
+//typedef float conflict;
+
+
+// this leads to AnEnum being typedefed to ... itself :(
+typedef enum {
+  ANOTHER1
+} AnEnum;

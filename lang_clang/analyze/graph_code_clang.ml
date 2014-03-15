@@ -33,7 +33,7 @@ module G = Graph_code
  *  Root -> Dir -> File (.c|.h) -> Function | Prototype
  *                              -> Global | GlobalExtern
  *                              -> Type (for Typedef)
- *                              -> Type (struct|enum|union) TODO use Class?
+ *                              -> Type (struct|enum|union)
  *                                 -> Field
  *                                 -> Constructor (enum)
  *       -> Dir -> SubDir -> ...
@@ -59,10 +59,7 @@ module G = Graph_code
  *  - http://code.google.com/p/include-what-you-use/wiki/WhyIWYU
  * 
  * todo: 
- *  - Type is a bit overloaded maybe
- *  - The management of typedef_dependencies and dupes is a bit complicated.
- *    Easy to miss some cases where we then add the wrong deps to the 
- *    original entity.
+ *  - Type is a bit overloaded maybe (used for struct, enum, union, typedefs)
  *)
 
 (*****************************************************************************)
@@ -104,7 +101,7 @@ type env = {
    *)
   typedefs_dependencies: bool;
 
-  typedefs: (string, string) Hashtbl.t;
+  typedefs: (string, Type_clang.type_clang) Hashtbl.t;
   dupes: (Graph_code.node, bool) Hashtbl.t;
 
   log: string -> unit;
@@ -349,10 +346,17 @@ let add_type_deps env typ =
       | Typ.Typename s ->
           if env.typedefs_dependencies
           then add_use_edge env ("T__"^s, E.Type)
-          else begin
-            (* todo: look in typedefs *)
-            env.pr2_and_log ("impossible, typedef not expanded:" ^ s);
-          end
+          else 
+            if Hashtbl.mem env.typedefs s
+            then 
+              let t' = (Hashtbl.find env.typedefs s) in
+              (* right now 'typedef enum { ... } X' results in X being
+               * typedefed to ... itself
+               *)
+              if t' = t
+              then ()
+              else aux t'
+            else env.pr2_and_log ("typedef not found:" ^ s)
 
       (* less: use the canonical type in that case? *)
       | Typ.TypeofStuff -> ()
@@ -500,10 +504,24 @@ and decl env (enum, _l, xs) =
 
     (* I am not sure about the namespaces, so I prepend strings *)
     | TypedefDecl, _loc::(T (TLowerIdent s | TUpperIdent s))::typ::_rest ->
-        (* todo: populate env.typedefs, ensure first have same body *)
+        if env.phase = Defs 
+        then begin
+          (* populate env.typedefs, ensure first have same body *)
+          let loc = loc_of_env env in
+          let toks = 
+            Type_clang.tokens_of_brace_sexp env.typedefs_dependencies loc typ in
+          let t = 
+            Type_clang.type_of_tokens loc toks in
+          if Hashtbl.mem env.typedefs s
+          then
+            let old = Hashtbl.find env.typedefs s in
+            if old =*= t
+            then ()
+            else env.pr2_and_log (spf "conflicting typedefs for %s" s)
+          else Hashtbl.add env.typedefs s t
+        end;
         let env = add_node_and_edge_if_defs_mode env ("T__" ^ s, E.Type) in
-        if env.typedefs_dependencies
-        then add_type_deps env typ;
+        add_type_deps env typ;
         env
         
     | EnumDecl, _loc::(T (TLowerIdent s | TUpperIdent s))::_rest ->
@@ -603,7 +621,7 @@ and expr env (enum, _l, xs) =
         
   | DeclRefExpr, _loc::_typ::T (TLowerIdent "lvalue")
       ::T (TUpperIdent "CXXMethod")::_rest
-      -> pr2_once "TODO: CXXMethod"
+      -> pr2_once "CXXMethod not handled"
      
   | DeclRefExpr, _ -> error env "DeclRefExpr to handle"
 
