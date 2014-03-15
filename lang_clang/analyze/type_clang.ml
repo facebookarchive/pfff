@@ -156,8 +156,9 @@ let extract_canonical_type_of_sexp loc sexp =
   match sexp with
   | Paren (_enum, _l, xs) ->
       (match xs with
-      | _loc::Brace (toks, _toks_opt)::_rest ->
-          extract_type_of_tokens loc toks
+      | _loc::Brace (toks_origin, toks_after_typedef_expansion)::_rest ->
+        let toks =  toks_after_typedef_expansion ||| toks_origin in
+        extract_type_of_tokens loc toks
       | _loc::(T (TString _s))::_rest ->
           failwith "use old AST dumper format, apply latest patch"
       | _ -> Errors_clang.error loc "didn't find type"

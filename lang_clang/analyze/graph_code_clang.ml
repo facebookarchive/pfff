@@ -618,7 +618,10 @@ and expr env (enum, _l, xs) =
   | DeclRefExpr, _ -> error env "DeclRefExpr to handle"
 
 
-  (* note: _address could be useful, but it can't be deduped *)
+  (* note: _address could be useful, but it can't be deduped, fortunately
+   * we can look at the type of the subexpression (see enum2 below) to
+   * infer the structure the field refers to.
+  *)
   | MemberExpr, [_loc;_typ;_(*lval*);T (TDot|TArrow);
                  T (TLowerIdent fld|TUpperIdent fld);
                  _address;(Paren (enum2, l2, xs))]
@@ -642,7 +645,7 @@ and expr env (enum, _l, xs) =
 
         (* with some struct anon this can happen apparently, cf umalloc.c *)
         | Typ.Typename _ | Typ.Pointer (Typ.Typename _) ->
-            (* TODO *)
+            (* TODO!!! at least print error message? *)
             ()
 
         | Typ.TypeofStuff | Typ.Pointer (Typ.TypeofStuff) ->
@@ -658,7 +661,6 @@ and expr env (enum, _l, xs) =
           |Typ.Function _
           |Typ.EnumName _
           |Typ.Other _
-
           |Typ.Pointer _
           ) ->
             error env (spf "unhandled typ: %s" (Common.dump typ_expr))
