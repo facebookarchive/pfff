@@ -224,7 +224,7 @@ let add_node_and_edge_if_defs_mode env node =
       (match kind with
       | E.Function | E.Global | E.Constructor
       | E.Type | E.Field
-          ->
+        ->
           (match kind, str with
           | E.Type, (
               (* clang builtins *)
@@ -240,9 +240,6 @@ let add_node_and_edge_if_defs_mode env node =
           | _ when env.clang2_file =~ ".*EXTERNAL" -> ()
           (* todo: if typedef then maybe ok if have same content!! *)
           | _ when not env.typedefs_dependencies && str =~ "T__.*" -> 
-              (* todo: add in global typedef equivalence table, because
-               * apparently clang does not always expand typedefs :(
-               *)
               Hashtbl.replace env.dupes node true;
           | _ ->
               env.pr2_and_log (spf "DUPE entity: %s" (G.string_of_node node));
@@ -261,7 +258,7 @@ let add_node_and_edge_if_defs_mode env node =
          * entity dependencies to this different types so we need to mark
          * the prototype as a dupe too!
          *)
-        Hashtbl.replace env.dupes node true;
+         Hashtbl.replace env.dupes node true;
       | _ ->
           failwith (spf "Unhandled category: %s" (G.string_of_node node))
       )
@@ -298,7 +295,8 @@ let rec add_use_edge env (s, kind) =
       (* todo: stats *)
       ()
   (* plan9, those are special functions in kencc? *)
-  | _ when s =$= "USED" || s =$= "SET" -> ()
+  | _ when s =$= "USED" || s =$= "SET" -> 
+      ()
   | _ when not (G.has_node src env.g) ->
       error env ("SRC FAIL:" ^ G.string_of_node src);
   | _ when G.has_node dst env.g ->
@@ -325,6 +323,7 @@ let rec add_use_edge env (s, kind) =
                             env.clang_line
         )
     )
+
       
 let add_type_deps env typ =
   if env.phase = Uses then begin
@@ -333,6 +332,7 @@ let add_type_deps env typ =
       Type_clang.tokens_of_brace_sexp env.typedefs_dependencies loc typ in
     let t = 
       Type_clang.type_of_tokens loc toks in
+    (* todo1: use expand_type *)
     let rec aux t = 
       match t with
       | Typ.Builtin _ -> ()
@@ -354,7 +354,7 @@ let add_type_deps env typ =
                * typedefed to ... itself
                *)
               if t' = t
-              then ()
+              then add_use_edge env ("T__"^s, E.Type)
               else aux t'
             else env.pr2_and_log ("typedef not found:" ^ s)
 
@@ -641,8 +641,10 @@ and expr env (enum, _l, xs) =
       if env.phase = Uses
       then
         let loc = env.clang2_file, l2 in
+        (* todo1: use expand_type there too *)
         let typ_expr = 
           Type_clang.type_of_paren_sexp loc (Paren(enum2, l2, xs))in
+        (* todo: call expand_typedefs *)
         (match typ_expr with
         (* because TDot|TArrow above, need Pointer too *)
         | Typ.StructName s | Typ.Pointer (Typ.StructName s) ->

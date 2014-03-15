@@ -75,6 +75,15 @@ let builtin_types = Common.hashset_of_list [
 (* Helpers *)
 (*****************************************************************************)
 
+(* todo1: *)
+let expand_typedef typedefs t =
+  raise Todo
+
+(* todo: actually clang does some typedef expansion just at depth 0,
+ * if you have a 'X *', it will not expand 'X' so maybe simpler to
+ * always return toks_origin here (especially since with 
+ * 'typedef enum { ... } X' it returns the wrong thing).
+ *)
 let tokens_of_brace_sexp typedefs_dependencies loc typ = 
   match typ with
   (* In a codegraph context, do we want to use the original type or the
@@ -90,6 +99,19 @@ let tokens_of_brace_sexp typedefs_dependencies loc typ =
       failwith "you're using an old version of the AST dumper, apply patch"
   | _ ->
       Errors_clang.error loc "wrong type format"
+
+let tokens_of_paren_sexp loc sexp =
+  match sexp with
+  | Paren (_enum, _l, xs) ->
+      (match xs with
+      | _loc::typ::_rest ->
+       (* this function is used mostly to get the type of a field access, so
+        * we do the typedef expansion
+        *)
+        tokens_of_brace_sexp true loc typ
+      | _ -> Errors_clang.error loc "didn't find type"
+      )
+  | _ -> Errors_clang.error loc "not a paren exp"
 
 (* todo? could use parse_cpp.type_of_string? hmm but clang uses some
  * special syntax for anon struct or typeof.
@@ -167,13 +189,5 @@ let type_of_tokens loc xs =
   in  
   aux xs
 
-let type_of_paren_sexp loc sexp =
-  match sexp with
-  | Paren (_enum, _l, xs) ->
-      (match xs with
-      | _loc::typ::_rest ->
-        let toks = tokens_of_brace_sexp true loc typ in
-        type_of_tokens loc toks
-      | _ -> Errors_clang.error loc "didn't find type"
-      )
-  | _ -> Errors_clang.error loc "not a paren exp"
+
+
