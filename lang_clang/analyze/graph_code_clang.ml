@@ -330,19 +330,18 @@ let add_type_deps env typ =
     let loc = loc_of_env env in
     let toks = 
       Type_clang.tokens_of_brace_sexp env.typedefs_dependencies loc typ in
+    let t = Type_clang.type_of_tokens loc toks in
     let t = 
-      Type_clang.type_of_tokens loc toks in
-    (* todo1: use expand_type *)
+      if env.typedefs_dependencies
+      then t 
+      else Type_clang.expand_typedefs env.typedefs t
+    in
     let rec aux t = 
       match t with
       | Typ.Builtin _ -> ()
-          
-      | Typ.StructName s ->
-          add_use_edge env ("S__"^s, E.Type)
-      | Typ.UnionName s ->
-          add_use_edge env ("U__"^s, E.Type)
-      | Typ.EnumName s ->
-          add_use_edge env ("E__"^s, E.Type)
+      | Typ.StructName s -> add_use_edge env ("S__"^s, E.Type)
+      | Typ.UnionName s -> add_use_edge env ("U__"^s, E.Type)
+      | Typ.EnumName s -> add_use_edge env ("E__"^s, E.Type)
       | Typ.Typename s ->
           if env.typedefs_dependencies
           then add_use_edge env ("T__"^s, E.Type)
@@ -355,7 +354,8 @@ let add_type_deps env typ =
                *)
               if t' = t
               then add_use_edge env ("T__"^s, E.Type)
-              else aux t'
+              (* should be done in expand_typedefs *)
+              else raise Impossible
             else env.pr2_and_log ("typedef not found:" ^ s)
 
       (* less: use the canonical type in that case? *)
@@ -625,7 +625,8 @@ and expr env (enum, _l, xs) =
      
   | DeclRefExpr, _ -> error env "DeclRefExpr to handle"
 
-  (* note: _address could be useful, but it can't be deduped, fortunately
+  (* note: _address could be useful to know precisely to which field we
+   * access, but such an address can't be deduped in uninclude. Fortunately
    * we can look at the type of the subexpression (see enum2 below) to
    * infer the structure the field refers to.
   *)
@@ -642,37 +643,30 @@ and expr env (enum, _l, xs) =
       then
         let loc = env.clang2_file, l2 in
         (* todo1: use expand_type there too *)
-        let typ_expr = 
-          Type_clang.type_of_paren_sexp loc (Paren(enum2, l2, xs))in
-        (* todo: call expand_typedefs *)
-        (match typ_expr with
+        let toks = Type_clang.tokens_of_paren_sexp loc (Paren(enum2, l2, xs))in
+        let typ_subexpr = Type_clang.type_of_tokens loc toks in
+        let typ_subexpr = Type_clang.expand_typedefs env.typedefs typ_subexpr in
+        (match typ_subexpr with
         (* because TDot|TArrow above, need Pointer too *)
         | Typ.StructName s | Typ.Pointer (Typ.StructName s) ->
-            (* no lookup for now *)
             add_use_edge env (spf "S__%s.%s" s fld, E.Field)
 
         (* with some struct anon this can happen apparently, cf umalloc.c *)
-        | Typ.Typename _ | Typ.Pointer (Typ.Typename _) ->
-            (* TODO!!! at least print error message? *)
-            ()
+        | Typ.Typename s | Typ.Pointer (Typ.Typename s) ->
+            env.pr2_and_log (spf "member access to typedef not expanded: %s" s)
 
         | Typ.TypeofStuff | Typ.Pointer (Typ.TypeofStuff) ->
-            (* use canonical type, should never get there *)
             error env ("impossible")
 
-        | Typ.UnionName _s  | Typ.Pointer (Typ.UnionName _s) ->
-            (* todo? should add deps no? *)
-            ()
-        | Typ.AnonStuff | Typ.Pointer (Typ.AnonStuff) ->
-            ()
+        (* todo? should add deps no? *)
+        | Typ.UnionName _s  | Typ.Pointer (Typ.UnionName _s) -> ()
+        (* todo? *)
+        | Typ.AnonStuff | Typ.Pointer (Typ.AnonStuff) -> ()
 
-        | (Typ.Builtin _
-          |Typ.Function _
-          |Typ.EnumName _
-          |Typ.Other _
+        | (Typ.Builtin _ |Typ.Function _ |Typ.EnumName _ |Typ.Other _ 
           |Typ.Pointer _
           ) ->
-            error env (spf "unhandled typ: %s" (Common.dump typ_expr))
+            error env (spf "unhandled typ: %s" (Common.dump typ_subexpr))
         )
 
   (* anon field *)

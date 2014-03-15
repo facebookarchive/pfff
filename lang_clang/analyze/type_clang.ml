@@ -35,7 +35,7 @@ type type_clang =
 
   (* pointer or array *)
   | Pointer of type_clang
-  | Function of type_clang (* TODO and params? analyze Param *)
+  | Function of type_clang (* todo: and params? analyze Param *)
 
   | StructName of string
   | UnionName of string
@@ -51,10 +51,10 @@ type type_clang =
 (*****************************************************************************)
 
 let builtin_types = Common.hashset_of_list [
+  "void";
   "char";
   "int"; "short"; "long";
   "float"; "double";
-  "void";
   (*"unsigned";"signed"; *)
   (* "const";"restrict";"volatile"; *)
   (*"noreturn";"__attribute__";*)
@@ -72,12 +72,36 @@ let builtin_types = Common.hashset_of_list [
 ]
 
 (*****************************************************************************)
-(* Helpers *)
+(* Typedefs *)
 (*****************************************************************************)
 
-(* todo1: *)
-let expand_typedef typedefs t =
-  raise Todo
+let rec expand_typedefs typedefs t =
+  match t with
+  | Builtin _ 
+  | StructName _ | UnionName _ | EnumName _ 
+  | TypeofStuff | AnonStuff
+  | Other _
+    -> t
+
+  | Typename s ->
+      if Hashtbl.mem typedefs s
+      then 
+        let t' = (Hashtbl.find typedefs s) in
+        (* right now 'typedef enum { ... } X' results in X being
+         * typedefed to ... itself
+         *)
+        if t' = t
+        then t
+        else expand_typedefs typedefs t'
+      else t
+
+  | Pointer x -> Pointer (expand_typedefs typedefs x)
+   (* todo: should analyze parameters *)
+  | Function x -> Function (expand_typedefs typedefs x)
+
+(*****************************************************************************)
+(* Sexp -> tokens *)
+(*****************************************************************************)
 
 (* todo: actually clang does some typedef expansion just at depth 0,
  * if you have a 'X *', it will not expand 'X' so maybe simpler to
@@ -112,6 +136,11 @@ let tokens_of_paren_sexp loc sexp =
       | _ -> Errors_clang.error loc "didn't find type"
       )
   | _ -> Errors_clang.error loc "not a paren exp"
+
+
+(*****************************************************************************)
+(* Tokens -> type *)
+(*****************************************************************************)
 
 (* todo? could use parse_cpp.type_of_string? hmm but clang uses some
  * special syntax for anon struct or typeof.
@@ -188,6 +217,3 @@ let type_of_tokens loc xs =
 
   in  
   aux xs
-
-
-

@@ -26,6 +26,9 @@ val tokens_of_paren_sexp:
   Ast_clang.loc -> Ast_clang.sexp -> 
   Parser_clang.token list
 
+val expand_typedefs: 
+  (string, type_clang) Hashtbl.t -> type_clang -> type_clang
+
 val type_of_tokens: 
   Ast_clang.loc -> Parser_clang.token list -> type_clang
 
