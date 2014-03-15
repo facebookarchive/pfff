@@ -24,4 +24,3 @@ open Common
 
 let error (file, l) s =
   failwith (spf "%s:%d: %s" file l s)
-
