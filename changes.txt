@@ -38,8 +38,8 @@ light db (while still filtering object files and skip list files)
 
 ** clang
 
-*** improve codegraph for clang, less dupes, less false edges due to dupes
-better handle typedefs
+*** less dupes, less false edges due to dupes, better handle typedefs
+in codegraph, more accurate type dependencies for structures
 
 ** php
 

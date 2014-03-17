@@ -519,6 +519,7 @@ and decl env (enum, _l, xs) =
             then ()
             else env.pr2_and_log (spf "conflicting typedefs for %s, %s <> %s" 
                                     s (Common.dump old) (Common.dump t))
+          (* todo: if are in Source, then maybe can add in local_typedefs *)
           else Hashtbl.add env.typedefs s t
         end;
         let env = add_node_and_edge_if_defs_mode env ("T__" ^ s, E.Type) in
