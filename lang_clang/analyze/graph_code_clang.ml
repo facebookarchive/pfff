@@ -121,7 +121,10 @@ type kind_file = Source | Header
 let parse file = 
   Common.profile_code "Parse_clang.parse" (fun () -> 
    (* clang2_old: Parse_clang.parse file *)
-    Common2.get_value file
+    try 
+      Common2.get_value file
+    with exn ->
+      failwith (spf "PB with %s (exn = %s)" file (Common.exn_to_s exn))
   )
 
 (*****************************************************************************)
