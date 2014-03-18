@@ -20,7 +20,7 @@ this definition).
 
 *** show uses/defs macrolevel dependencies for directories
 scalable spirit! a visualization should apply from the topmost
-entities to the lowest one!
+entities to the lowest one! Also factorized more code.
 
 *** show information about entity under cursor (def or use) in tooltip
 
@@ -38,8 +38,10 @@ light db (while still filtering object files and skip list files)
 
 ** clang
 
-*** less dupes, less false edges due to dupes, better handle typedefs
-in codegraph, more accurate type dependencies for structures
+*** codegraph: less dupes, less false edges due to dupes, 
+
+*** codegraph: better handle typedefs, more accurate type dependencies
+for structures
 
 ** php
 

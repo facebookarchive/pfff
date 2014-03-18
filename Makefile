@@ -530,6 +530,15 @@ srctar:
 #todo? automatically build binaries for Linux, Windows, etc?
 #http://stackoverflow.com/questions/2689813/cross-compile-windows-64-bit-exe-from-linux
 
+# making an OPAM package:
+# - git push from pfff to github
+# - make a new release on github: https://github.com/facebook/pfff/releases
+# - get md5sum of new archive
+# - update opam file in opam-repository/pfff-xxx/
+# - test locally?
+# - commit, git push
+# - do pull request on github
+
 ##############################################################################
 # Website rules
 ##############################################################################
