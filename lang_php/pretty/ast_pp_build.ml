@@ -595,7 +595,7 @@ and hint_type env = function
     let args, ret = 
       (fun (_, args, ret) ->
         (List.map (hint_type env) (comma_list_dots (unbrace args)),
-         Common2.fmap (fun (_, t) -> hint_type env t) ret)) 
+         Common2.fmap (fun (_, _, t) -> hint_type env t) ret)) 
         (unbrace v1)
     in
     A.HintCallback (args, ret)
@@ -730,7 +730,7 @@ and method_def env m =
     A.m_ref = (match m.f_ref with None -> false | Some _ -> true);
     A.m_name = ident env m.f_name;
     A.m_params = List.map (parameter env) params ;
-    A.m_return_type = Common2.fmap (fun (_, t) -> hint_type env t) 
+    A.m_return_type = Common2.fmap (fun (_, _, t) -> hint_type env t) 
       m.f_return_type;
     A.m_body = acc;
   }
@@ -758,7 +758,7 @@ and func_def env f =
   { A.f_ref = f.f_ref <> None;
     A.f_name = ident env f.f_name;
     A.f_params = List.map (parameter env) params;
-    A.f_return_type = Common2.fmap (fun (_, t) -> hint_type env t) 
+    A.f_return_type = Common2.fmap (fun (_, _, t) -> hint_type env t) 
       f.f_return_type;
     A.f_body = acc;
   }

@@ -14,3 +14,9 @@ function test2(int $x) {
 
 // This will fatal
 test2("foo");
+
+
+
+function test3(): @int {
+  return 'hi';
+}

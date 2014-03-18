@@ -734,8 +734,11 @@ and
   let v_f_tok = map_tok v_f_tok in
   let v_f_return_type =
     map_of_option
-      (fun (v1, v2) ->
-         let v1 = map_tok v1 and v2 = map_hint_type v2 in (v1, v2))
+      (fun (v1, v2, v3) ->
+         let v1 = map_tok v1 
+         and v2 = map_of_option map_tok v2
+         and v3 = map_hint_type v3 in 
+         (v1, v2, v3))
       v_f_return_type in
   {
     f_tok = v_f_tok;
@@ -803,8 +806,10 @@ and map_hint_type =
              and v2 = map_paren (map_comma_list_dots map_hint_type) v2
              and v3 =
                map_of_option
-                 (fun (v1, v2) ->
-                    let v1 = map_tok v1 and v2 = map_hint_type v2 in (v1, v2))
+                 (fun (v1, v2, v3) ->
+                    let v1 = map_tok v1 
+                    and v2 = map_of_option map_tok v2
+                    and v3 = map_hint_type v3 in (v1, v2, v3))
                  v3
              in (v1, v2, v3))
           v1

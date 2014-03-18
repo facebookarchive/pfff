@@ -919,7 +919,7 @@ type_arg_list:
   | type_php TCOMMA type_arg_list 
       { (Left $1)::(Right $2):: $3 }
 
-return_type: TCOLON type_php                 { $1, $2 }
+return_type: TCOLON at_opt type_php                 { $1, $2, $3 }
 
 /*(*************************************************************************)*/
 /*(*1 Attributes *)*/

@@ -740,10 +740,11 @@ and
   let bnds = bnd :: bnds in
   let arg =
     Ocaml.vof_option
-      (fun (v1, v2) ->
+      (fun (v1, v2, v3) ->
          let v1 = vof_tok v1
-         and v2 = vof_hint_type v2
-         in Ocaml.VTuple [ v1; v2 ])
+         and v2 = vof_option vof_tok v2
+         and v3 = vof_hint_type v3
+         in Ocaml.VTuple [ v1; v2; v3 ])
       v_f_return_type in
   let bnd = ("f_return_type", arg) in
   let bnds = bnd :: bnds in
@@ -833,10 +834,11 @@ and vof_hint_type =
              and v2 = vof_paren (vof_comma_list_dots vof_hint_type) v2
              and v3 =
                Ocaml.vof_option
-                 (fun (v1, v2) ->
+                 (fun (v1, v2, v3) ->
                     let v1 = vof_tok v1
-                    and v2 = vof_hint_type v2
-                    in Ocaml.VTuple [ v1; v2 ])
+                    and v2 = vof_option vof_tok v2
+                    and v3 = vof_hint_type v3
+                    in Ocaml.VTuple [ v1; v2; v3 ])
                  v3
              in Ocaml.VTuple [ v1; v2; v3 ])
           v1

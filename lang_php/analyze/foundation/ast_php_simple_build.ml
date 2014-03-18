@@ -465,7 +465,7 @@ and hint_type env = function
   | HintTuple v1 -> A.HintTuple (List.map (hint_type env) (comma_list (brace v1)))
   | HintCallback (_, (_, args, ret), _) ->
       let args = List.map (hint_type env) (comma_list_dots (brace args)) in
-      let ret  = Common2.fmap (fun (_, t) -> hint_type env t) ret in
+      let ret  = Common2.fmap (fun (_, _, t) -> hint_type env t) ret in
       A.HintCallback (args, ret)
   | HintShape (_tok, xs) ->
     A.HintShape (
@@ -490,7 +490,7 @@ and func_def env f =
     A.f_attrs = attributes env f.f_attrs;
     A.f_params = List.map (parameter env) params;
     A.f_return_type = 
-      Common2.fmap (fun (_, t) -> hint_type env t) f.f_return_type;
+      Common2.fmap (fun (_, _, t) -> hint_type env t) f.f_return_type;
     A.f_body = List.fold_right (stmt_and_def env) body [];
     A.f_kind = A.Function;
     A.m_modifiers = [];
@@ -724,7 +724,7 @@ and method_def env m =
     A.f_attrs = attributes env m.f_attrs;
     A.f_params = List.map (parameter env) params ;
     A.f_return_type = 
-      Common2.fmap (fun (_, t) -> hint_type env t) m.f_return_type;
+      Common2.fmap (fun (_, _, t) -> hint_type env t) m.f_return_type;
     A.f_body = implicit_assigns @ method_body env m.f_body;
     A.f_kind = A.Method;
     A.l_uses = [];

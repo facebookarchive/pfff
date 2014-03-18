@@ -791,7 +791,10 @@ and
   let arg = v_body v_f_body in
   let arg =
     v_option
-      (fun (v1, v2) -> let v1 = v_tok v1 and v2 = v_hint_type v2 in ())
+      (fun (v1, v2, v3) -> 
+        let v1 = v_tok v1 
+        and v2  = v_option v_tok v2
+        and v3 = v_hint_type v3 in ())
       v_f_return_type in
   ()
   in
@@ -844,8 +847,10 @@ and v_hint_type x =
              and v2 = v_paren (v_comma_list_dots v_hint_type) v2
              and v3 =
                v_option
-                 (fun (v1, v2) ->
-                    let v1 = v_tok v1 and v2 = v_hint_type v2 in ())
+                 (fun (v1, v2, v3) ->
+                    let v1 = v_tok v1 
+                    and v2 = v_option v_tok v2
+                    and v3 = v_hint_type v3 in ())
                  v3
              in ())
           v1

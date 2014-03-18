@@ -144,7 +144,7 @@ type hint_type =
  | HintCallback of
      (tok                                 (* "function" *)
       * (hint_type comma_list_dots paren) (* params *)
-      * (tok * hint_type) option          (* return type *)
+      * (tok * tok option * hint_type) option          (* return type *)
      ) paren
  | HintShape of tok (* "shape" *) * 
                 (string wrap * tok (* '=>' *) * hint_type) comma_list paren
@@ -511,7 +511,7 @@ and func_def = {
   (* the dots should be only at the end (unless in sgrep mode) *)
   f_params: parameter comma_list_dots paren;
   (* static-php-ext: *)
-  f_return_type: (tok (* : *) * hint_type) option;
+  f_return_type: (tok (* : *) * tok option (* @ *) * hint_type) option;
   (* the opening/closing brace can be (fakeInfo(), ';') for abstract methods *)
   f_body: stmt_and_def list brace;
 }
