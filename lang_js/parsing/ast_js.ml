@@ -240,6 +240,7 @@ and type_opt = (tok (* : *) * type_) option
 and func_decl = {
   f_tok: tok option; (* None for methods *)
   f_name: name option; (* None for anonymous functions *)
+  f_type_params: name comma_list angle option;
   f_params: parameter comma_list paren;
   f_return_type: type_opt;
   f_body: toplevel list brace;
@@ -258,6 +259,7 @@ and func_decl = {
  *)
 and arrow_func = {
   a_params: arrow_params;
+  a_return_type: type_opt;
   a_tok: tok (* => *);
   a_body: arrow_body;
  }

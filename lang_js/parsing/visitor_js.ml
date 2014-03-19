@@ -61,7 +61,9 @@ and v_tok v = v_info v
 and v_wrap: 'a. ('a -> unit) -> 'a wrap -> unit = fun _of_a (v1, v2) ->
   let v1 = _of_a v1 and v2 = v_info v2 in ()
 
-and v_angle _of_a (v1, v2, v3) =
+and v_angle: 'a. ('a -> unit) -> 'a angle -> unit = fun _of_a (v1, v2, v3) ->
+  let v1 = v_tok v1 and v2 = _of_a v2 and v3 = v_tok v3 in ()
+and v_angle2 _of_a (v1, v2, v3) =
   let v1 = v_tok v1 and v2 = _of_a v2 and v3 = v_tok v3 in ()
 
 and v_wrap2 _of_a (v1, v2) = let v1 = _of_a v1 and v2 = v_info v2 in ()
@@ -459,12 +461,14 @@ and  v_func_decl {
                 f_tok = v_f_tok;
                 f_name = v_f_name;
                 f_params = v_f_params;
+                f_type_params = v_f_type_params;
                 f_return_type = v_f_return_type;
                 f_body = v_f_body
               } =
   let arg = v_option v_tok v_f_tok in
   let arg = v_option v_name v_f_name in
   let arg = v_paren (v_comma_list v_parameter) v_f_params in
+  let arg = v_option (v_angle (v_comma_list v_name)) v_f_type_params in
   let arg = v_type_opt v_f_return_type in
   let arg = v_brace (v_list v_toplevel) v_f_body in ()
 
@@ -474,9 +478,11 @@ and v_parameter { p_name = v_p_name; p_type = v_p_type; p_dots } =
   let arg = v_type_opt v_p_type in
   ()
 and
-  v_arrow_func { a_params = v_a_params; a_tok = v_a_tok; a_body = v_a_body }
+  v_arrow_func { a_params = v_a_params; a_return_type = v_a_return_type;
+                 a_tok = v_a_tok; a_body = v_a_body }
                =
   let arg = v_arrow_params v_a_params in
+  let arg = v_type_opt v_a_return_type in
   let arg = v_tok v_a_tok in let arg = v_arrow_body v_a_body in ()
 and v_arrow_params =
   function

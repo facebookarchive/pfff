@@ -138,6 +138,7 @@ let mk_param x = { p_name = x; p_type = None; p_dots = None; }
 %token <Ast_js.tok> TUnknown
 %token <Ast_js.tok> EOF
 
+
 /*(*************************************************************************)*/
 /*(*1 Priorities *)*/
 /*(*************************************************************************)*/
@@ -226,18 +227,9 @@ variable_statement:
  /*(* pad: not in original grammar *)*/
  | T_CONST variable_declaration_list semicolon { Const ($1, $2, $3) }
 
-/*(* can't factorize rules with annotation_opt and initializeur_opt otherwize
-   * get r/r conflicts on ',', ';'
-   *)*/
 variable_declaration:
- | identifier annotation initializeur
-     { { v_name = $1; v_type = Some $2; v_init = Some $3 } }
- | identifier annotation
-     { { v_name = $1; v_type = Some $2; v_init = None } }
- | identifier            initializeur
-     { { v_name = $1; v_type = None; v_init = Some $2 } }
- | identifier
-     { { v_name = $1; v_type = None; v_init = None } }
+ | identifier annotation_opt initializeur_opt
+     { { v_name = $1; v_type = $2; v_init = $3 } }
 
 initializeur:
  | T_ASSIGN assignment_expression { $1, $2 }
@@ -360,34 +352,36 @@ default_clause:
 /*(*************************************************************************)*/
 
 function_declaration:
- | T_FUNCTION identifier T_LPAREN formal_parameter_list_opt T_RPAREN
+ | T_FUNCTION identifier generics_opt
+     T_LPAREN formal_parameter_list_opt T_RPAREN
      annotation_opt
      T_LCURLY function_body T_RCURLY
-     { { f_tok = Some $1; f_name= Some $2; f_params= ($3, $4, $5);
-         f_return_type = $6; f_body = ($7, $8, $9)
+     { { f_tok = Some $1; f_name= Some $2; f_type_params = $3;
+         f_params= ($4, $5, $6);
+         f_return_type = $7; f_body = ($8, $9, $10)
      } }
 
 function_expression:
- | T_FUNCTION identifier T_LPAREN formal_parameter_list_opt T_RPAREN
+ | T_FUNCTION identifier_opt generics_opt
+     T_LPAREN formal_parameter_list_opt T_RPAREN
      annotation_opt
      T_LCURLY function_body T_RCURLY
-     { e(Function { f_tok = Some $1; f_name= Some $2; f_params= ($3, $4, $5);
-                    f_return_type = $6; f_body = ($7, $8, $9) }) }
- | T_FUNCTION T_LPAREN formal_parameter_list_opt T_RPAREN
-     annotation_opt
-     T_LCURLY function_body T_RCURLY
-     { e(Function { f_tok = Some $1; f_name= None; f_params = ($2, $3, $4);
-                    f_return_type = $5; f_body = ($6, $7, $8)}) }
+     { e(Function { f_tok = Some $1; f_name= $2; f_type_params = $3;
+                    f_params= ($4, $5, $6);
+                    f_return_type = $7; f_body = ($8, $9, $10) }) }
 
 formal_parameter:
  | identifier            { mk_param $1 }
  | identifier annotation { { (mk_param $1) with p_type = Some $2; } }
- /*(* variable number of parameters, less: enforce must be last parameter *)*/
+
+final_formal_parameter:
+ | formal_parameter  { $1 }
+ /*(* variable number of parameters *)*/
  | T_DOTS identifier { { (mk_param $2) with p_dots = Some $1; } }
 
 formal_parameter_list:
- | formal_parameter                                { [Left $1] }
- | formal_parameter_list T_COMMA formal_parameter  { $1 @ [Right $2; Left $3] }
+ | final_formal_parameter                          { [Left $1] }
+ | formal_parameter T_COMMA formal_parameter_list  { (Left $1)::(Right $2)::$3 }
 
 function_body:
  | /*(* empty *)*/ { [] }
@@ -426,7 +420,8 @@ binding_identifier: identifier { $1 }
 method_definition:
   identifier T_LPAREN formal_parameter_list_opt T_RPAREN annotation_opt
     T_LCURLY function_body T_RCURLY
-  { { f_tok = None; f_name = Some $1; f_params = ($2, $3, $4);
+  { { f_tok = None; f_name = Some $1; f_type_params = None;
+      f_params = ($2, $3, $4);
       f_return_type = $5; f_body =  ($6, $7, $8)
   } }
 
@@ -442,22 +437,33 @@ type_:
  | T_PLING type_ { TQuestion ($1, $2) }
  | T_IDENTIFIER T_LESS_THAN type_ T_GREATER_THAN
      { assert(fst($1) = "Array"); TArray (snd $1, ($2, $3, $4)) }
- | T_LPAREN type_param_list T_RPAREN T_ARROW type_ { TFun (($1, $2, $3), $4, $5) }
- | T_LPAREN T_RPAREN                 T_ARROW type_ { TFun (($1, [], $2), $3, $4) }
- | T_LCURLY type_field_list T_RCURLY         { TObj ($1, $2, $3) }
- | T_LCURLY                 T_RCURLY         { TObj ($1, [], $2) }
+ | T_LPAREN type_param_list_opt T_RPAREN T_ARROW type_
+     { TFun (($1, $2, $3), $4, $5) }
+ | T_LCURLY type_field_list_opt T_RCURLY         { TObj ($1, $2, $3) }
 
+/*(* partial type annotations are not supported *)*/
 type_field: T_IDENTIFIER T_COLON type_ semicolon { ($1, $2, $3, $4) }
 
 type_field_list:
  | type_field { [$1] }
  | type_field_list type_field { $1 @ [$2] }
 
+/*(* partial type annotations are not supported *)*/
 type_param: T_IDENTIFIER T_COLON type_ { ($1, $2, $3) }
 
 type_param_list:
  | type_param                          { [Left $1] }
  | type_param_list T_COMMA  type_param { $1 @ [Right $2; Left $3] }
+
+type_variable:
+ | identifier { $1 }
+
+type_variable_list:
+ | type_variable                            { [Left $1] }
+ | type_variable_list T_COMMA type_variable { $1 @ [Right $2; Left $3] }
+
+generics:
+ | T_LESS_THAN type_variable_list T_GREATER_THAN { $1, $2, $3 }
 
 /*(*************************************************************************)*/
 /*(*1 Expression *)*/
@@ -692,27 +698,45 @@ encaps:
 
 arrow_function:
  | identifier T_ARROW arrow_body
-     { { a_params = ASingleParam (mk_param $1); a_tok = $2; a_body = $3 } }
- | T_LPAREN T_RPAREN T_ARROW arrow_body
-     { { a_params = AParams ($1, [], $2); a_tok = $3; a_body = $4 } }
+     { { a_params = ASingleParam (mk_param $1); a_return_type = None;
+         a_tok = $2; a_body = $3 } }
  /*(* can not factorize with TOPAR parameter_list TCPAR, see conflicts.txt *)*/
+ /*(* generics_opt not supported *)*/
+ | T_LPAREN T_RPAREN annotation_opt T_ARROW arrow_body
+     { { a_params = AParams ($1, [], $2); a_return_type = $3;
+         a_tok = $4; a_body = $5 } }
  | T_LPAREN expression T_RPAREN T_ARROW arrow_body
      { let param =
          match $2 with
          | V name -> mk_param name
          | _ -> raise (Parsing.Parse_error)
        in
-       { a_params = AParams ($1, [Left param], $3); a_tok = $4; a_body = $5 }
+       { a_params = AParams ($1, [Left param], $3); a_return_type = None;
+         a_tok = $4; a_body = $5 }
      }
- | T_LPAREN T_DOTS identifier T_RPAREN T_ARROW arrow_body
+ | T_LPAREN identifier annotation T_RPAREN
+     annotation_opt T_ARROW arrow_body
+     { let param = { (mk_param $2) with p_type = Some $3; } in
+       let params = AParams ($1, [Left param], $4) in
+       { a_params = params; a_return_type = $5; a_tok = $6; a_body = $7 }
+     }
+ | T_LPAREN T_DOTS identifier T_RPAREN annotation_opt T_ARROW arrow_body
      { let param = { (mk_param $3) with p_dots = Some $2; } in
-       { a_params = AParams ($1, [Left param], $4); a_tok = $5; a_body = $6 }
+       { a_params = AParams ($1, [Left param], $4); a_return_type = $5;
+         a_tok = $6; a_body = $7 }
      }
- | T_LPAREN identifier T_COMMA formal_parameter_list T_RPAREN T_ARROW arrow_body
-     { let params = AParams ($1, (Left (mk_param $2))::Right $3::$4, $5) in
-       { a_params = params; a_tok = $6; a_body = $7 }
+ | T_LPAREN identifier T_COMMA formal_parameter_list T_RPAREN
+     annotation_opt T_ARROW arrow_body
+     { let param = mk_param $2 in
+       let params = AParams ($1, (Left param)::Right $3::$4, $5) in
+       { a_params = params; a_return_type = $6; a_tok = $7; a_body = $8 }
      }
-
+ | T_LPAREN identifier annotation T_COMMA formal_parameter_list T_RPAREN
+     annotation_opt T_ARROW arrow_body
+     { let param = { (mk_param $2) with p_type = Some $3; } in
+       let params = AParams ($1, (Left param)::Right $4::$5, $6) in
+       { a_params = params; a_return_type = $7; a_tok = $8; a_body = $9 }
+     }
 
 /*(* was called consise body in spec *)*/
 arrow_body:
@@ -947,3 +971,23 @@ encaps_list_opt:
 annotation_opt:
  | /*(* empty *)*/ { None }
  | annotation    { Some $1 }
+
+generics_opt:
+ | /*(* empty *)*/ { None }
+ | generics        { Some $1 }
+
+identifier_opt:
+ | /*(* empty *)*/ { None }
+ | identifier { Some $1 }
+
+initializeur_opt:
+ | /*(* empty *)*/ { None }
+ | initializeur { Some $1 }
+
+type_field_list_opt:
+ | /*(* empty *)*/ { [] }
+ | type_field_list { $1 }
+
+type_param_list_opt:
+ | /*(* empty *)*/ { [] }
+ | type_param_list { $1 }
