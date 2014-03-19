@@ -453,6 +453,7 @@ and
                   f_tok = v_f_tok;
                   f_name = v_f_name;
                   f_params = v_f_params;
+                  f_type_params = v_f_type_params;
                   f_return_type = v_f_return_type;
                   f_body = v_f_body
                 } =
@@ -462,6 +463,12 @@ and
   let bnds = bnd :: bnds in
   let arg = vof_type_opt v_f_return_type in
   let bnd = ("f_return_type", arg) in
+  let bnds = bnd :: bnds in
+  let arg =
+    Ocaml.vof_option
+      (vof_angle (vof_comma_list vof_name)) v_f_type_params
+  in
+  let bnd = ("f_type_params", arg) in
   let bnds = bnd :: bnds in
   let arg = vof_paren (vof_comma_list vof_parameter) v_f_params in
   let bnd = ("f_params", arg) in
@@ -486,7 +493,8 @@ and vof_parameter { p_name = v_p_name; p_type = v_p_type; p_dots = v_dots } =
   let bnds = bnd :: bnds in
   Ocaml.VDict bnds
 and
-  vof_arrow_func { a_params = v_a_params; a_tok = v_a_tok; a_body = v_a_body
+  vof_arrow_func { a_params = v_a_params; a_return_type = v_a_return_type;
+                   a_tok = v_a_tok; a_body = v_a_body
                  } =
   let bnds = [] in
   let arg = vof_arrow_body v_a_body in
@@ -494,6 +502,9 @@ and
   let bnds = bnd :: bnds in
   let arg = vof_tok v_a_tok in
   let bnd = ("a_tok", arg) in
+  let bnds = bnd :: bnds in
+  let arg = vof_type_opt v_a_return_type in
+  let bnd = ("a_return_type", arg) in
   let bnds = bnd :: bnds in
   let arg = vof_arrow_params v_a_params in
   let bnd = ("a_params", arg) in let bnds = bnd :: bnds in Ocaml.VDict bnds
