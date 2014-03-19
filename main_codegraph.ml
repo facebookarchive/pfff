@@ -67,6 +67,9 @@ module View = View3
  * 
  * - http://depfind.sourceforge.net/, a dependency extraction tool for
  *   Java
+ * - https://github.com/sourcegraph/graphkit, a tentative for a generic
+ *   format for code dependencies and language specific "graphers"
+ *   (ruby, js, go, python)
  * 
  * - http://mcis.polymtl.ca/~bram/makao/index.html also use GUESS
  *   and Prolog :)
