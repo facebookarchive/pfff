@@ -70,6 +70,15 @@ let async_set v a =
     a.v := Some v;
     Condition.signal a.c;
   ) a.m
+
+let async_ready a = 
+  (* actually I don't think you need the lock *)
+  with_lock (fun () ->
+    match !(a.v) with
+    | Some _ -> true
+    | None -> false
+  ) a.m
+
 (*e: async functions *)
 
 (*e: async.ml *)
