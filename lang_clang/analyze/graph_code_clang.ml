@@ -95,11 +95,7 @@ type env = {
   (* static functions, globals, 'main', and local enums renaming *)
   local_rename: (string, string) Hashtbl.t;
 
-  (* We normally expand references to typedefs, to normalize and simplify
-   * things. Set this variable to true if instead you want to know who is
-   * using a typedef.
-   *)
-  typedefs_dependencies: bool;
+  conf: config;
   (* less: we could also have a local_typedefs field *)
   typedefs: (string, Type_clang.type_clang) Hashtbl.t;
   dupes: (Graph_code.node, bool) Hashtbl.t;
@@ -108,6 +104,16 @@ type env = {
   pr2_and_log: string -> unit;
 }
  and phase = Defs | Uses
+
+and config = {
+  (* We normally expand references to typedefs, to normalize and simplify
+   * things. Set this variable to true if instead you want to know who is
+   * using a typedef.
+   *)
+  typedefs_dependencies: bool;
+  types_dependencies: bool;
+  fields_dependencies: bool;
+}
 
 let unknown_location = "Unknown_Location", E.File
 
@@ -126,6 +132,41 @@ let parse file =
     with exn ->
       failwith (spf "PB with %s (exn = %s)" file (Common.exn_to_s exn))
   )
+
+(*****************************************************************************)
+(* Adjusters *)
+(*****************************************************************************)
+
+let propagate_users_of_functions_globals_types_to_prototype_extern_typedefs g =
+  let pred = G.mk_eff_use_pred g in
+  g +> G.iter_nodes (fun n ->
+    let n_def_opt =
+      match n with
+      | s, E.Prototype -> Some (s, E.Function)
+      | s, E.GlobalExtern -> Some (s, E.Global)
+      (* todo: actually should look at env.typedefs because it's not
+       * necessaraly T_Xxxx -> S_Xxxx
+       *)
+      | s, E.Type when s =~ "T__\\(.*\\)$" -> 
+        Some ("S__" ^(Common.matched1 s), E.Type)
+      | _ -> None
+    in
+    n_def_opt +> Common.do_option (fun n_def ->
+      let n_decl = n in
+      if G.has_node n_def g 
+      then begin
+        (* let's create a link between the def and the decl *)
+        g +> G.add_edge (n_def, n_decl) G.Use;
+        (* and now the users *)
+        let users = pred n_def in
+        users +> List.iter (fun user ->
+          g +> G.add_edge (user, n_decl) G.Use
+        )
+      end
+    )
+  )
+    
+
 
 (*****************************************************************************)
 (* Helpers *)
@@ -242,7 +283,7 @@ let add_node_and_edge_if_defs_mode env node =
               -> ()
           | _ when env.clang2_file =~ ".*EXTERNAL" -> ()
           (* todo: if typedef then maybe ok if have same content!! *)
-          | _ when not env.typedefs_dependencies && str =~ "T__.*" -> 
+          | _ when not env.conf.typedefs_dependencies && str =~ "T__.*" -> 
               Hashtbl.replace env.dupes node true;
           | _ ->
               env.pr2_and_log (spf "DUPE entity: %s" (G.string_of_node node));
@@ -329,13 +370,13 @@ let rec add_use_edge env (s, kind) =
 
       
 let add_type_deps env typ =
-  if env.phase = Uses then begin
+  if env.phase = Uses && env.conf.types_dependencies then begin
     let loc = loc_of_env env in
     let toks = 
-      Type_clang.tokens_of_brace_sexp env.typedefs_dependencies loc typ in
+      Type_clang.tokens_of_brace_sexp env.conf.typedefs_dependencies loc typ in
     let t = Type_clang.type_of_tokens loc toks in
     let t = 
-      if env.typedefs_dependencies
+      if env.conf.typedefs_dependencies
       then t 
       else Type_clang.expand_typedefs env.typedefs t
     in
@@ -346,7 +387,7 @@ let add_type_deps env typ =
       | Typ.UnionName s -> add_use_edge env ("U__"^s, E.Type)
       | Typ.EnumName s -> add_use_edge env ("E__"^s, E.Type)
       | Typ.Typename s ->
-          if env.typedefs_dependencies
+          if env.conf.typedefs_dependencies
           then add_use_edge env ("T__"^s, E.Type)
           else 
             if Hashtbl.mem env.typedefs s
@@ -512,7 +553,8 @@ and decl env (enum, _l, xs) =
           (* populate env.typedefs, ensure first have same body *)
           let loc = loc_of_env env in
           let toks = 
-            Type_clang.tokens_of_brace_sexp env.typedefs_dependencies loc typ in
+            Type_clang.tokens_of_brace_sexp env.conf.typedefs_dependencies 
+              loc typ in
           let t = 
             Type_clang.type_of_tokens loc toks in
           if Hashtbl.mem env.typedefs s
@@ -644,7 +686,7 @@ and expr env (enum, _l, xs) =
   | MemberExpr, [_loc;_typ;_(*lval*);T (TLowerIdent "bitfield");T(TDot|TArrow);
                  T (TLowerIdent fld | TUpperIdent fld);
                  _address;(Paren (enum2, l2, xs))] ->
-      if env.phase = Uses
+      if env.phase = Uses && env.conf.fields_dependencies
       then
         let loc = env.clang2_file, l2 in
         (* todo1: use expand_type there too *)
@@ -700,6 +742,12 @@ let build ?(verbose=true) root files =
   (* file -> (string, string) Hashtbl *)
   let local_renames_of_files = Hashtbl.create 101 in
   (* less: we could also have a local_typedefs_of_files to avoid conflicts *)
+  
+  let conf = {
+    typedefs_dependencies = false;
+    types_dependencies = true;
+    fields_dependencies = true;
+  } in
 
   let env = {
     g;
@@ -717,7 +765,7 @@ let build ?(verbose=true) root files =
     at_toplevel = true;
     local_rename = Hashtbl.create 0;
     dupes = Hashtbl.create 101;
-    typedefs_dependencies = false; (* CONFIG *)
+    conf;
     typedefs = Hashtbl.create 101;
     locals = ref [];
 
@@ -760,5 +808,8 @@ let build ?(verbose=true) root files =
       } ast
     ));
 
+  env.pr2_and_log "\nstep3: adjusting";
+  propagate_users_of_functions_globals_types_to_prototype_extern_typedefs g;
   G.remove_empty_nodes g [unknown_location; G.not_found; G.dupe; G.pb];
+
   g
