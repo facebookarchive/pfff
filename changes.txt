@@ -36,6 +36,11 @@ light db (while still filtering object files and skip list files)
 
 *** cleanup the code, introduce world type, less use of refs
 
+** scheck
+
+*** support more languages via graph_code_checker
+mainly deadcode detection for now
+
 ** clang
 
 *** codegraph: less dupes, less false edges due to dupes, 
