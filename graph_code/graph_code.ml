@@ -347,6 +347,10 @@ let nb_use_edges g =
 let nodeinfo n g =
   Hashtbl.find g.info n
 
+let nodeinfo_opt n g =
+  try Some (nodeinfo n g)
+  with Not_found -> None
+
 (* todo? assert it's a readable path? graph_code_php.ml is using readable
  * path now but the other might not yet or it can be sometimes convenient
  * also to have absolute path here, so not sure if can assert anything.

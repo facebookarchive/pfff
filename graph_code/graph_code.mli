@@ -82,6 +82,7 @@ val children: node -> graph -> node list
 val all_children: node -> graph -> node list
 (* may raise Not_found *)
 val nodeinfo: node -> graph -> nodeinfo
+val nodeinfo_opt: node -> graph -> nodeinfo option
 (* should be in readable path if you want your codegraph to be "portable" *)
 val file_of_node: node -> graph -> Common.filename
 val privacy_of_node: node -> graph -> Database_code.privacy
