@@ -24,6 +24,7 @@ module Ast = Ast_php
  * Centralize PHP errors report functions (they did the same in c--)
  * 
  * TODO: move more of the code of lint_php.mli here
+ * todo: factorize in errors_code.ml
  *)
 
 (*****************************************************************************)

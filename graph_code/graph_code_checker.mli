@@ -1,3 +1,2 @@
 
-(* modify _errors *)
-val check: Common.dirname -> Graph_code.graph -> unit
+val check: Graph_code.graph -> Errors_code.error list

@@ -256,14 +256,30 @@ let main_action xs =
 
   match lang with
   | "clang2" | "ocaml" | "java" ->
-    let graph_file, root =
+    let graph_file, _root =
       match xs, !graph_code with
       | _, Some file -> file, Filename.dirname file
       | [dir], _ -> Filename.concat dir Graph_code.default_filename, dir
       | _ -> failwith (spf "%s checker needs a graph file" lang)
     in
     let g = Graph_code.load graph_file in
-    Graph_code_checker.check root g
+    let errs = Graph_code_checker.check g in
+    let errs = 
+      errs +> Errors_code.adjust_errors
+      +> List.filter (fun err -> (Errors_code.score_of_error err) >= !filter)
+    in
+    let errs = 
+      if !rank 
+      then
+        errs +> List.map (fun err -> err, Errors_code.rank_of_error err)
+        +> Common.sort_by_val_highfirst
+        +> Common.take_safe 20
+        +> List.map fst
+      else errs
+    in
+    errs +> List.iter (fun err -> 
+      pr2 (Errors_code.string_of_error err)
+    )
 
   | "php" ->
 

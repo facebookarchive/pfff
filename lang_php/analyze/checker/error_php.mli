@@ -3,7 +3,7 @@ val strict: bool ref
 
 type error = {
   typ: error_kind;
-  loc: Ast_php.info;
+  loc: Parse_info.info;
   sev: severity;
 }
  and severity = Fatal | Warning
