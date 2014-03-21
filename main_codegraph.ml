@@ -269,6 +269,9 @@ let package_node xs =
 (* Language specific, building the graph *)
 (*****************************************************************************)
 
+(* less: maybe could be moved in pfff_db.ml? so that the -lang are isolated
+ * to pfff_db, and neither codegraph nor codemap need them!
+ *)
 let build_graph_code lang xs =
   let root, files = 
     match xs with

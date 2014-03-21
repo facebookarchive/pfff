@@ -8,21 +8,31 @@
  *)
 open Common
 
-module Ast = Ast_php
-module V = Visitor_php
-module S = Scope_code
-
 (*****************************************************************************)
 (* Purpose *)
 (*****************************************************************************)
 (* 
- * A lint-like checker for PHP (for now).
- * https://github.com/facebook/pfff/wiki/Scheck
+ * A lint-like checker. https://github.com/facebook/pfff/wiki/Scheck
+ * Right now there is support mainly for PHP, as well as for 
+ * C, Java, and OCaml (via graph_code_checker.ml).
  * 
+ * Note that scheck is mostly for generic bugs (which sometimes
+ * requires global analysis). For API-specific bugs, use 'sgrep'.
+ * todo: implement SgrepLint for scheck (port it from the facebook repo).
+ * 
+ * 'scheck' can leverage expensive global analysis results to find more 
+ * bugs. It can use a light database (see pfff_db) or a graph_code database
+ * (see codegraph).
+ *)
+
+(*---------------------------------------------------------------------------*)
+(* PHP specific doc *)
+(*---------------------------------------------------------------------------*)
+(*
  * By default 'scheck' performs only a local analysis of the file(s) passed
  * on the command line. It is thus quite fast while still detecting a few
  * important bugs like the use of undefined variables. 
- * 'scheck' can also leverage more expensive global analysis to find more 
+ * It can also leverage more expensive global analysis to find more 
  * bugs. Doing so requires a PHP "code database", abstracted below
  * under the 'entity_finder' interface. 
  * 
@@ -35,10 +45,6 @@ module S = Scope_code
  * files on average on facebook code). In a way it is similar
  * to what gcc does when it calls 'cpp' to get the full information for
  * a file. 
- * 
- * 'scheck' can also use a light database (see pfff_db) for its code
- * database. 'scheck' can also leverage the graph_code database
- * (see codegraph).
  * 
  * 'scheck' could also use the heavy database but this requires to have
  * the program linked with Berkeley DB, adding some dependencies to 
@@ -56,13 +62,9 @@ module S = Scope_code
  *  - leverage global analysis computed previously by codegraph
  *  - nomore: global analysis computed by main_scheck_heavy.ml
  * 
- * Note that scheck is mostly for generic bugs (which sometimes
- * requires global analysis). For API-specific bugs, use 'sgrep'.
- * todo: implement SgrepLint for scheck (port it from the Facebook repo).
- * 
  * current checks:
  *   - variable related (use of undeclared variable, unused variable, etc)
- *     with good handling of reference false positives when have a code db
+ *     with good handling of references false positives when have a code db
  *   - use/def of entities (e.g. use of undefined class/function/constant
  *     a la checkModule)
  *   - function call related (wrong number of arguments, bad keyword
@@ -96,22 +98,41 @@ module S = Scope_code
  * for instance.
  * 
  * later: it could later also check javascript, CSS, sql, etc
- * 
  *)
 
 (*****************************************************************************)
 (* Flags *)
 (*****************************************************************************)
 
-(* In strict mode, we are more aggressive regarding scope like in
- * JsLint. This is a copy of the same variable in Error_php.ml
- *)
-let strict_scope = ref false 
+(* todo: infer from basename argv(0) ? *)
+let lang = ref "php"
 
 (* show only bugs with "rank" super to this *)
 let filter = ref 2
 (* rank errors *)
 let rank = ref false
+
+let auto_fix = ref false
+
+(* running heavy analysis using the graph_code as the entity finder *)
+let graph_code = ref (None: Common.filename option)
+
+(* for codemap or layer_stat *)
+let layer_file = ref (None: filename option)
+
+let verbose = ref false
+let show_progress = ref true
+
+(* action mode *)
+let action = ref ""
+
+(*---------------------------------------------------------------------------*)
+(* language specific flags *)
+(*---------------------------------------------------------------------------*)
+
+(* In strict mode, we are more aggressive regarding scope like in JsLint. 
+ * (This is a copy of the same variable in Error_php.ml) *)
+let strict_scope = ref false 
 
 (* running the heavy analysis by processing the included files *)
 let heavy = ref false
@@ -134,28 +155,12 @@ let depth_limit = ref (Some 5: int option)
 let php_stdlib = 
   ref (Filename.concat Config_pfff.path "/data/php_stdlib")
 
-(* running heavy analysis using the graph_code as the entity finder *)
-let graph_code = ref (None: Common.filename option)
-
 (* old: main_scheck_heavy: let metapath = ref "/tmp/pfff_db" *)
-
 
 (* take care, putting this to true can lead to performance regression
  * actually, because of the bigger stress on the GC
  *)
 let cache_parse = ref false
-
-(* for codemap or layer_stat *)
-let layer_file = ref (None: filename option)
-
-
-let verbose = ref false
-let show_progress = ref true
-
-(* action mode *)
-let action = ref ""
-
-let auto_fix = ref false
 
 (*****************************************************************************)
 (* Wrappers *)
@@ -166,7 +171,6 @@ let pr2_dbg s =
 (*****************************************************************************)
 (* Helpers *)
 (*****************************************************************************)
-
 let set_gc () =
 (*
   if !Flag.debug_gc
@@ -178,8 +182,12 @@ let set_gc () =
   ()
 
 (*****************************************************************************)
-(* Entity finders *)
+(* Language specific *)
 (*****************************************************************************)
+
+(*---------------------------------------------------------------------------*)
+(* PHP Entity finders *)
+(*---------------------------------------------------------------------------*)
 
 (* Build the database of information. Take the name of the file
  * we want to check and process all the files that are needed (included)
@@ -243,94 +251,101 @@ let main_action xs =
   Logger.log Config_pfff.logger "scheck" None;
 
   let xs = List.map Common.realpath xs in
-  let files = Find_source.files_of_dir_or_files ~lang:"php" ~verbose:!verbose xs
-  in
+  let lang = !lang in
+  let files = Find_source.files_of_dir_or_files ~lang ~verbose:!verbose xs in
 
-  Flag_parsing_php.show_parsing_error := false;
-  Flag_parsing_php.verbose_lexing := false;
-  Error_php.strict := !strict_scope;
-  (* less: use a VCS.find... that is more general ?
-   * infer PHP_ROOT? or take a --php_root?
-  *)
-  let an_arg = List.hd xs +> Common2.relative_to_absolute in
-  let root = 
-    try 
-      Git.find_root_from_absolute_path an_arg 
-    with Not_found -> "/"
-  in
-  pr (spf "using %s for php_root" root);
-  let env = Env_php.mk_env root in
+  match lang with
+  | "clang2" | "ocaml" | "java" ->
+    raise Todo
 
-  let (find_entity, graph_opt) =
-    match () with
-    | _ when !heavy ->
-      Some (entity_finder_of_db (List.hd files)), None
-    | _ when !graph_code <> None ->
-      let (e, g) = 
-        entity_finder_of_graph_file (Common2.some !graph_code) root in
-      Some e, Some g
+  | "php" ->
+
+    Flag_parsing_php.show_parsing_error := false;
+    Flag_parsing_php.verbose_lexing := false;
+    Error_php.strict := !strict_scope;
+    (* less: use a VCS.find... that is more general ?
+     * infer PHP_ROOT? or take a --php_root?
+     *)
+    let an_arg = List.hd xs +> Common2.relative_to_absolute in
+    let root = 
+      try Git.find_root_from_absolute_path an_arg 
+      with Not_found -> "/"
+    in
+    pr (spf "using %s for php_root" root);
+    let env = Env_php.mk_env root in
+
+    let (find_entity, graph_opt) =
+      match () with
+      | _ when !heavy ->
+        Some (entity_finder_of_db (List.hd files)), None
+      | _ when !graph_code <> None ->
+        let (e, g) = 
+          entity_finder_of_graph_file (Common2.some !graph_code) root in
+        Some e, Some g
         (* old: main_scheck_heavy:
          * Database_php.with_db ~metapath:!metapath (fun db ->
          *  Database_php_build.build_entity_finder db
          *) 
-    | _ -> None, None
-  in
-  
-  Common.save_excursion Flag_parsing_php.caching_parsing !cache_parse (fun ()->
-  files +> Console.progress ~show:!show_progress (fun k -> 
-   List.iter (fun file ->
-    k();
-    try 
-      pr2_dbg (spf "processing: %s" file);
-      Check_all_php.check_file ~find_entity env file;
-      (match graph_opt with
-      | None -> ()
-      | Some graph ->
-        Check_classes_php.check_required_field graph file
-      );
-     let errs = 
-        !Error_php._errors 
-        +> List.rev 
-        +> List.filter (fun x -> 
-          Error_php.score_of_rank
-            (Error_php.rank_of_error_kind x.Error_php.typ) >= 
-            !filter
-        )
-      in
-      if not !rank 
-      then begin 
-        errs +> List.iter (fun err -> pr (Error_php.string_of_error err));
-        if !auto_fix then errs +> List.iter Auto_fix_php.try_auto_fix;
-        Error_php._errors := []
-      end
-    with 
-    | (Timeout | UnixExit _) as exn -> raise exn
-(*  | (Unix.Unix_error(_, "waitpid", "")) as exn -> raise exn *)
-    | exn ->
-        pr2 (spf "PB with %s, exn = %s" file (Common.exn_to_s exn));
-        if !Common.debugger then raise exn
-  )));
-
-  if !rank then begin
-    let errs = 
-      !Error_php._errors 
-      +> List.rev
-      +> Error_php.rank_errors
-      +> Common.take_safe 20 
+      | _ -> None, None
     in
-    errs +> List.iter (fun err -> pr (Error_php.string_of_error err));
-    Error_php.show_10_most_recurring_unused_variable_names ();
-    pr2 (spf "total errors = %d" (List.length !Error_php._errors));
-    pr2 "";
-    pr2 "";
-  end;
+  
+    Common.save_excursion Flag_parsing_php.caching_parsing !cache_parse (fun ()->
+      files +> Console.progress ~show:!show_progress (fun k -> 
+        List.iter (fun file ->
+          k();
+          try 
+            pr2_dbg (spf "processing: %s" file);
+            Check_all_php.check_file ~find_entity env file;
+            (match graph_opt with
+              | None -> ()
+              | Some graph ->
+                Check_classes_php.check_required_field graph file
+            );
+            let errs = 
+              !Error_php._errors 
+              +> List.rev 
+              +> List.filter (fun x -> 
+                Error_php.score_of_rank
+                  (Error_php.rank_of_error_kind x.Error_php.typ) >= 
+                  !filter
+              )
+            in
+            if not !rank 
+            then begin 
+              errs +> List.iter (fun err -> pr (Error_php.string_of_error err));
+              if !auto_fix then errs +> List.iter Auto_fix_php.try_auto_fix;
+              Error_php._errors := []
+            end
+          with 
+            | (Timeout | UnixExit _) as exn -> raise exn
+            (*  | (Unix.Unix_error(_, "waitpid", "")) as exn -> raise exn *)
+            | exn ->
+              pr2 (spf "PB with %s, exn = %s" file (Common.exn_to_s exn));
+              if !Common.debugger then raise exn
+        )));
 
-  !layer_file +> Common.do_option (fun file ->
-    (*  a layer needs readable paths, hence the root *)
-    let root = Common2.common_prefix_of_files_or_dirs xs in
-    Layer_checker_php.gen_layer ~root ~output:file !Error_php._errors
-  );
-  ()
+    if !rank then begin
+      let errs = 
+        !Error_php._errors 
+        +> List.rev
+        +> Error_php.rank_errors
+        +> Common.take_safe 20 
+      in
+      errs +> List.iter (fun err -> pr (Error_php.string_of_error err));
+      Error_php.show_10_most_recurring_unused_variable_names ();
+      pr2 (spf "total errors = %d" (List.length !Error_php._errors));
+      pr2 "";
+      pr2 "";
+    end;
+    
+    !layer_file +> Common.do_option (fun file ->
+      (*  a layer needs readable paths, hence the root *)
+      let root = Common2.common_prefix_of_files_or_dirs xs in
+      Layer_checker_php.gen_layer ~root ~output:file !Error_php._errors
+    );
+
+  | _ -> failwith ("unsupported language: " ^ lang)
+  
 
 (*****************************************************************************)
 (* Extra actions *)
@@ -375,14 +390,6 @@ let type_inference _file =
     raise exn
 *)
 
-(*---------------------------------------------------------------------------*)
-(* Regression testing *)
-(*---------------------------------------------------------------------------*)
-let test () =
-  let suite = Unit_checker_php.unittest in
-  OUnit.run_test_tt suite +> ignore;
-  ()
-
 (* Dataflow analysis *)
 let dflow file_or_dir =
   let file_or_dir = Common.realpath file_or_dir in
@@ -413,13 +420,22 @@ let dflow file_or_dir =
        | _ -> ())
      with _ -> pr2 (spf "fail: %s" file)
     )) files
-      
+
+(*---------------------------------------------------------------------------*)
+(* Regression testing *)
+(*---------------------------------------------------------------------------*)
+let test () =
+  let suite = Unit_checker_php.unittest in
+  OUnit.run_test_tt suite +> ignore;
+  ()
+     
 (*---------------------------------------------------------------------------*)
 (* the command line flags *)
 (*---------------------------------------------------------------------------*)
 let extra_actions () = [
   "-test", " run regression tests",
   Common.mk_action_0_arg test;
+
   "-test_type_inference", " <file>",
   Common.mk_action_1_arg type_inference;
   "-test_dflow", " <file/folder> run dataflow analysis",
@@ -444,35 +460,34 @@ let all_actions () =
 
 let options () =
   [
+    "-lang", Arg.Set_string lang, 
+    (spf " <str> choose language (default = %s)" !lang);
     "-with_graph_code", Arg.String (fun s -> graph_code := Some s), 
     " <file> use graph_code file for heavy analysis";
+    "-filter", Arg.Set_int filter,
+    " <n> show only bugs whose importance > n";
+    "-rank", Arg.Set rank,
+    " rank errors and display the 20 most important";
+    "-emacs", Arg.Unit (fun () -> show_progress := false;), 
+    " emacs friendly output";
+    "-gen_layer", Arg.String (fun s -> layer_file := Some s),
+    " <file> save result in pfff layer file";
+    "-auto_fix", Arg.Set auto_fix,
+    " try to auto fix the error\n";
+
+    (* php specific *)
+    "-php_stdlib", Arg.Set_string php_stdlib, 
+    (spf " <dir> path to builtins (default = %s)" !php_stdlib);
+    "-strict", Arg.Set strict_scope,
+    " emulate block scope instead of function scope";
+    "-no_scrict", Arg.Clear strict_scope, 
+    " use function scope (default)";
     "-heavy", Arg.Set heavy,
     " process included files for heavy analysis";
     "-depth_limit", Arg.Int (fun i -> depth_limit := Some i), 
     " <int> limit the number of includes to process";
     "-caching", Arg.Clear cache_parse, 
     " cache parsed ASTs";
-    "-php_stdlib", Arg.Set_string php_stdlib, 
-    (spf " <dir> path to builtins (default = %s)" !php_stdlib);
-
-    "-strict", Arg.Set strict_scope,
-    " emulate block scope instead of function scope";
-    "-no_scrict", Arg.Clear strict_scope, 
-    " use function scope (default)";
-
-    "-filter", Arg.Set_int filter,
-    " <n> show only bugs whose importance > n";
-    "-rank", Arg.Set rank,
-    " rank errors and display the 20 most important";
-
-    "-emacs", Arg.Unit (fun () -> show_progress := false;), 
-    " emacs friendly output";
-    "-gen_layer", Arg.String (fun s -> layer_file := Some s),
-    " <file> save result in pfff layer file";
-
-    "-auto_fix", Arg.Set auto_fix,
-    " try to auto fix the error\n";
-
 
   ] @
   Common.options_of_actions action (all_actions()) @
