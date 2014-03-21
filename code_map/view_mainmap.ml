@@ -273,6 +273,17 @@ let button_action w ev =
             `I ("deps out (uses)", (fun () -> 
               w.current_node <- entity_opt;
               !Ctl._go_dirs_or_file w (paths_of_readables (uses@[readable]))));
+            `I ("info file", (fun () -> 
+              let microlevel = Hashtbl.find dw.microlevel tr in
+              let defs = microlevel.defs in
+              let buf = Buffer.create 100 in
+              let prx s = Buffer.add_string buf (s ^ "\n") in
+              prx "short defs";
+              defs +> List.iter (fun (_line, short_node) ->
+                  prx (" " ^ Graph_code.string_of_node short_node)
+              );
+              Gui.dialog_text ~text:(Buffer.contents buf) ~title:"Info file";
+            ));
           ] in
           let entries = 
             entries @
