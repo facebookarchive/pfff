@@ -7,7 +7,7 @@ type error = {
  and severity = Fatal | Warning
 
  and error_kind =
- | Deadcode
+ | Deadcode of Database_code.entity_kind
 
 val string_of_error_kind: error_kind -> string
 val string_of_error: error -> string

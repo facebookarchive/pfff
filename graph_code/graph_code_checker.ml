@@ -51,16 +51,12 @@ type error = {
   *  - DupeEntity
   *)
 
- (* as done by ocaml 4.01 when not used locally and not exported,
-  * does not require global analysis 
+ (* As done by my PHP global analysis checker.
+  *  
+  * ocaml 4.01 now do that partially by locally checking if 
+  * unused and not exported (which does not require global analysis)
   *)
- (* UnusedNotExported *)
-
- (* UnusedExported *)
-
- (* as done by my PHP checker *)
- | Deadcode
- 
+ | Deadcode of Database_code.entity_kind
 
 (*****************************************************************************)
 (* Pretty printers *)
@@ -68,7 +64,7 @@ type error = {
 
 let string_of_error_kind error_kind =
   match error_kind with
-  | Deadcode -> "dead code"
+  | Deadcode kind -> spf "dead %s" (Database_code.string_of_entity_kind kind)
 
 let string_of_error _error =
   raise Todo
@@ -101,6 +97,10 @@ let check root g =
 
   g +> G.iter_nodes (fun n ->
     let (s, kind) = n in
+    let file =
+      try G.file_of_node n g
+      with Not_found -> "NotFound"
+    in
 
     let ps = pred n in
     (* todo: filter nodes that are in boilerplate code *)
@@ -110,9 +110,14 @@ let check root g =
       (* FP in graph_code_clang for now *)
       | E.Type when s =~ "E__anon" -> ()
       | E.Type when s =~ "E__" -> ()
+      | E.Type when s =~ "T__" -> ()
         
+      | E.Prototype | E.GlobalExtern -> ()
+
       (* todo: to remove, but too many for now *)
       | E.Constructor | E.Field -> ()
+
+      | _ when file =~ "^include/" -> ()
       | _ ->
         pr2 (spf "%s: %s Dead code?" 
                (loc_of_node root n g)
