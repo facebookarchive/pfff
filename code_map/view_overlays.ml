@@ -279,7 +279,7 @@ let paint_initial dw =
 
 (* a bit ugly, but have to because of lazy_paint optimization *)
 let hook_finish_paint w =
-  pr2 "Hook_finish_paint";
+  (* pr2 "Hook_finish_paint"; *)
   let dw = w.dw in
   w.current_node +> Common.do_option (fun n -> 
     Async.async_get_opt w.model +> Common.do_option (fun model ->
@@ -380,8 +380,8 @@ let motion_refresher ev w =
 
 
 let motion_notify w ev =
-  let x, y = GdkEvent.Motion.x ev, GdkEvent.Motion.y ev in
-  pr2 (spf "motion: %f, %f" x y);
+(*  let x, y = GdkEvent.Motion.x ev, GdkEvent.Motion.y ev in *)
+(*  pr2 (spf "motion: %f, %f" x y); *)
 
   (* The motion code now takes time, so it's better do run it when the user
    * has finished moving his mouse, hence the use of gmain_idle_add below.

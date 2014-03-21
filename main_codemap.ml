@@ -235,13 +235,11 @@ let build_model2 root dbfile_opt graphfile_opt =
   let files = 
     Common.files_of_dir_or_files_no_vcs_nofilter [root] +> List.filter !filter
   in
-
   let hentities = Model_database_code.hentities root db_opt in
   let all_entities = Model_database_code.all_entities ~root files db_opt in
   let big_grep_idx = Completion2.build_completion_defs_index all_entities in
 
   let g_opt = graphfile_opt +> Common.map_opt Graph_code.load in
-
   let hfile_deps_of_node, hentities_of_file =
     match g_opt with
     | None -> Hashtbl.create 0, Hashtbl.create 0
@@ -364,10 +362,16 @@ let main_action xs =
    * This thread also cause some Bus error on MacOS :(
    *)
   Thread.create (fun () ->
-    Async.async_set (build_model root db_file graph_file) async_model;
+    (* heavy computation are not fairly scheduled apparently by the OCaml
+     * runtime, so let's do the heavy computation in another process
+     * and here just have the thread waiting for it to be done
+     *)
+    let job () = build_model root db_file graph_file in
+    let res = Parallel.invoke job () () in
+    Async.async_set res async_model;
   ) ()
   +> ignore;
-
+ 
   let w = { Model.
     dw;
     dw_stack = ref [dw];
