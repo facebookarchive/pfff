@@ -107,41 +107,39 @@ let use_arity_of_use_count n =
   | _               -> NoUse
 
 let rewrite_categ_using_entities s categ file entities =
-
   match Db.entity_kind_of_highlight_category_def categ with
   | None -> categ
   | Some e_kind ->
 
-   let entities = 
-    Hashtbl.find_all entities s +> List.filter (fun e ->
-      (* we could have the full www dbcode but run the treemap on
-       * a subdir in which case the root will not be the same.
-       * It's a good approximation to just look at the basename.
-       * The only false positive we will get if another file,
-       * with the same name happened to also define entities
-       * with the same name, which would be rare.
-       * 
-       * update: TODO use Model2.readable_to_absolute_filename_under_root ?
-       *)
-      Filename.basename e.Db.e_file =$= Filename.basename file &&
-      (* some file have both a function and class with the same name *)
-      e.Db.e_kind =*= e_kind
-    )
-  in
-  match entities with
-  | [] -> categ
-  | [e] ->
-      let use_cnt = e.Db.e_number_external_users in
-      let arity = use_arity_of_use_count use_cnt in
-      if Database_code.is_entity_def_category categ
-      then HC.rewrap_arity_def2_category arity categ 
-      else categ
-  | _x::_y::_xs ->
-      (* TODO: handle __construct directly *)
-      if not (List.mem s ["__construct"])
-      then
-        pr2_once (spf "multi def found for %s in %s" s file);
-      categ
+    let entities = 
+      Hashtbl.find_all entities s +> List.filter (fun e ->
+        (* we could have the full www dbcode but run the treemap on
+         * a subdir in which case the root will not be the same.
+         * It's a good approximation to just look at the basename.
+         * The only false positive we will get if another file,
+         * with the same name happened to also define entities
+         * with the same name, which would be rare.
+         * 
+         * update: TODO use Model2.readable_to_absolute_filename_under_root ?
+         *)
+        Filename.basename e.Db.e_file =$= Filename.basename file &&
+        (* some file have both a function and class with the same name *)
+        Database_code.matching_def_short_kind_kind e_kind e.Db.e_kind 
+      )
+    in
+    match entities with
+      | [] -> categ
+      | [e] ->
+          let use_cnt = e.Db.e_number_external_users in
+          let arity = use_arity_of_use_count use_cnt in
+          if Database_code.is_entity_def_category categ
+          then HC.rewrap_arity_def2_category arity categ 
+          else categ
+      | _x::_y::_xs ->
+        (* TODO: handle __construct directly *)
+        if not (List.mem s ["__construct"])
+        then pr2_once (spf "multi def found for %s in %s" s file);
+        categ
 
 (*****************************************************************************)
 (* Helpers *)

@@ -345,11 +345,7 @@ let find_glyph_in_rectangle_at_user_point user r dw =
 
 let match_short_vs_node (str, short_kind) node =
   Graph_code.shortname_of_node node =$= str &&
-  (match short_kind, snd node with
-  (* Struct/Union are generated as Type for now in graph_code_clang.ml *)
-  | E.Class _, E.Type -> true
-  | a, b -> a =*= b
-  )
+  Database_code.matching_def_short_kind_kind short_kind (snd node)
 
 (* We used to just look in hentities_of_file for the line mentioned
  * in the graph_code database, but the file may have changed so better

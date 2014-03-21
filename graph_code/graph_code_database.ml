@@ -46,7 +46,6 @@ let db_of_graph_code root g =
 
   (* opti: using G.parent and check if G.not_found is slow *)
   let hnot_found = G.all_children G.not_found g +> Common.hashset_of_list in
-
   (* opti: using G.pred is super slow *)
   let use_pred = G.mk_eff_use_pred g in
   
@@ -56,13 +55,13 @@ let db_of_graph_code root g =
     | E.Function | E.Class _ | E.Constant | E.Global | E.Type | E.Exception
     | E.Constructor | E.Field | E.Method _ | E.ClassConstant 
     | E.Macro
+    | E.Prototype | E.GlobalExtern
       ->
       if Hashtbl.mem hnot_found node
       then ()
       else begin
         let nodeinfo = 
-          try 
-            G.nodeinfo node g 
+          try G.nodeinfo node g 
           with Not_found ->
             failwith (spf "No nodeinfo for %s" (G.string_of_node node))
         in
@@ -78,8 +77,7 @@ let db_of_graph_code root g =
           try
             let file2 = G.file_of_node n g in
             file <> file2
-          with
-            Not_found -> false
+          with Not_found -> false
         ) 
         in
         let nb_users = List.length extern in
@@ -94,7 +92,7 @@ let db_of_graph_code root g =
                             c = pos.Parse_info.column;
                           };
                   e_number_external_users = nb_users;
-        (* todo *)
+                  (* todo *)
                   e_good_examples_of_use = [];
                   e_properties = [];
                 }
@@ -104,7 +102,6 @@ let db_of_graph_code root g =
 
     | E.TopStmts 
     | E.Module | E.Package
-    | E.Prototype | E.GlobalExtern
     | E.Other _
     | E.File | E.Dir | E.MultiDirs
       -> ()

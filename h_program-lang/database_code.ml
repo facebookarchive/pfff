@@ -557,6 +557,16 @@ let entity_kind_of_highlight_category_use categ =
   | HC.StructName HC.Use -> Some (Class RegularClass)
   | _ -> None
 
+
+let matching_def_short_kind_kind short_kind kind =
+  (match short_kind, kind with
+  (* Struct/Union are generated as Type for now in graph_code_clang.ml *)
+  | Class _, Type -> true
+  | Global, GlobalExtern -> true
+  | Function, Prototype -> true
+  | a, b -> a =*= b
+  )
+
 (* See the code of the different highlight_code_xxx.ml to
  * know the different possible pairs.
  * todo: merge with other functions too?
