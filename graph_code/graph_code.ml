@@ -373,15 +373,26 @@ let privacy_of_node n g =
   )
 
 (* see also Graph_code_class_analysis.class_method_of_string *)
-let shortname_of_node (s, _kind) =
+let shortname_of_node (s, kind) =
   let xs = Common.split "[.]" s in
   let s = Common2.list_last xs in
-  (* undo what was possibly done below, otherwise codemap for instance will
-   * not recognize the entity as one hovers on its name in a file.
-   *)
-  if s =~ "\\(.*\\)__[0-9]+"
-  then Common.matched1 s
-  else s
+  (* undo what was in gensym, otherwise codemap for instance will not
+   * recognize the entity as one hovers on its name in a file. *)
+  let s = 
+    if s =~ "\\(.*\\)__[0-9]+"
+    then Common.matched1 s
+    else s
+  in
+  let s =
+    (* see graph_code_clang.ml handling of struct/typedef/unions *)
+    if s =~ "^[STU]__\\(.*\\)" 
+    then begin 
+      assert (kind =*= E.Type);
+      Common.matched1 s
+    end
+    else s
+  in
+  s
 
 let cnt = ref 0
 (* when we have static entities, or main(), we rename them locally

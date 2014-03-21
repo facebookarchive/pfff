@@ -343,9 +343,13 @@ let find_glyph_in_rectangle_at_user_point user r dw =
 (* Graph code integration *)
 (*****************************************************************************)
 
-let match_short_vs_node (str, kind) node =
-  snd node =*= kind && 
-  Graph_code.shortname_of_node node =$= str
+let match_short_vs_node (str, short_kind) node =
+  Graph_code.shortname_of_node node =$= str &&
+  (match short_kind, snd node with
+  (* Struct/Union are generated as Type for now in graph_code_clang.ml *)
+  | E.Class _, E.Type -> true
+  | a, b -> a =*= b
+  )
 
 (* We used to just look in hentities_of_file for the line mentioned
  * in the graph_code database, but the file may have changed so better
@@ -383,7 +387,7 @@ let find_use_entity_at_line_and_glyph_opt line glyph tr dw model =
           let s = Graph_code.shortname_of_node node in
           let categ =  glyph.categ ||| Highlight_code.Normal in
           glyph.str =$= s &&
-              Database_code.matching_use_categ_kind categ (snd node)
+          Database_code.matching_use_categ_kind categ (snd node)
         )
       )
     with Not_found -> None
