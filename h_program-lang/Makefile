@@ -15,6 +15,7 @@ SRC= parse_info.ml \
      database_code.ml \
      layer_code.ml \
      tags_file.ml \
+     errors_code.ml \
      layer_parse_errors.ml \
      coverage_code.ml layer_coverage.ml \
      overlay_code.ml big_grep.ml pleac.ml info_code.ml \
