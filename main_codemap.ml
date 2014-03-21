@@ -362,23 +362,11 @@ let main_action xs =
 
   (* This can require lots of stack. Make sure to have ulimit -s 40000.
    * This thread also cause some Bus error on MacOS :(
-   * so have to use Timeout instead when on the Mac
    *)
-  (if Cairo_helpers.is_old_cairo() 
-  then
-    Thread.create (fun () ->
-      Async.async_set (build_model root db_file graph_file) async_model;
-    ) ()
-    +> ignore
-   else 
+  Thread.create (fun () ->
     Async.async_set (build_model root db_file graph_file) async_model;
-   (*
-    GMain.Timeout.add ~ms:2000 ~callback:(fun () ->
-      Model.async_set (build_model root dbfile_opt) model;
-      false
-    ) +> ignore
-   *)
-  );
+  ) ()
+  +> ignore;
 
   let w = { Model.
     dw;
