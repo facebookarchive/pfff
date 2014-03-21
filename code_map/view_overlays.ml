@@ -282,9 +282,9 @@ let hook_finish_paint w =
   pr2 "Hook_finish_paint";
   let dw = w.dw in
   w.current_node +> Common.do_option (fun n -> 
-    let model = Async.async_get w.model in
-    draw_deps_entities n dw model
-  )
+    Async.async_get_opt w.model +> Common.do_option (fun model ->
+      draw_deps_entities n dw model
+    ))
 
 (*s: motion_refresher *)
 let motion_refresher ev w =
@@ -300,19 +300,21 @@ let motion_refresher ev w =
   let r_opt = M.find_rectangle_at_user_point user dw in
 
   r_opt +> Common.do_option (fun (tr, middle, r_englobing) ->
-    let model = Async.async_get w.model in
-
     (* coupling: similar code in right click handler in View_mainmap *)
     let line_opt = 
       M.find_line_in_rectangle_at_user_point user tr dw in
     let glyph_opt =
       M.find_glyph_in_rectangle_at_user_point user tr dw in
+
     let entity_def_opt = 
-      line_opt >>= (fun line ->M.find_def_entity_at_line_opt line tr dw model)in
+      Async.async_get_opt w.model >>= (fun model ->
+      line_opt >>= (fun line ->
+        M.find_def_entity_at_line_opt line tr dw model)) in
     let entity_use_opt =
+      Async.async_get_opt w.model >>= (fun model ->
       line_opt >>= (fun line -> 
       glyph_opt >>= (fun glyph ->
-        M.find_use_entity_at_line_and_glyph_opt line glyph tr dw model))
+        M.find_use_entity_at_line_and_glyph_opt line glyph tr dw model)))
     in
     let entity_opt = 
       match entity_use_opt, entity_def_opt with
@@ -345,11 +347,12 @@ let motion_refresher ev w =
     );
 
     draw_englobing_rectangles_overlay ~dw (tr, middle, r_englobing);
-    draw_deps_files tr dw model;
-
-    entity_opt +> Common.do_option (fun _n -> w.current_node <- None);
-    entity_def_opt +> Common.do_option (fun n -> draw_deps_entities n dw model);
-    entity_use_opt +> Common.do_option (fun n -> draw_deps_entities n dw model);
+    Async.async_get_opt w.model +> Common.do_option (fun model ->
+      draw_deps_files tr dw model;
+      entity_opt +> Common.do_option (fun _n -> w.current_node <- None);
+      entity_def_opt+>Common.do_option (fun n -> draw_deps_entities n dw model);
+      entity_use_opt+>Common.do_option (fun n -> draw_deps_entities n dw model);
+    );
   
     if w.settings.draw_searched_rectangles;
     then draw_searched_rectangles ~dw;
@@ -358,16 +361,17 @@ let motion_refresher ev w =
     +>Common.do_option GMain.Timeout.remove;
     Controller.current_tooltip_refresher := 
       Some (Gui.gmain_timeout_add ~ms:1000 ~callback:(fun _ ->
-        (match entity_opt, model.g with
-        | Some node, Some g ->
+        Async.async_get_opt w.model +> Common.do_option (fun model ->
+          match entity_opt, model.g with
+          | Some node, Some g ->
             draw_tooltip ~cr_overlay ~x ~y node g;
             !Controller._refresh_da ();
-        | _ -> ()
+          | _ -> ()
+          ;
         );
         (* do not run again *)
         false
       ));
-
     
     Controller.current_r := Some tr;
   );

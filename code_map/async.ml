@@ -79,6 +79,11 @@ let async_ready a =
     | None -> false
   ) a.m
 
+let async_get_opt a =
+  if async_ready a
+  then Some (async_get a)
+  else None
+
 (*e: async functions *)
 
 (*e: async.ml *)

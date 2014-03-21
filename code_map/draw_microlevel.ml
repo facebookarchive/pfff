@@ -175,7 +175,7 @@ let color_of_categ categ =
     | _ -> None
   )
 
-let glyphs_of_file ~model ~font_size ~font_size_real file 
+let glyphs_of_file ~font_size ~font_size_real model_async file 
   : (glyph list) array option =
 
   (* real position is set later in draw_content *)
@@ -184,7 +184,11 @@ let glyphs_of_file ~model ~font_size ~font_size_real file
   match FT.file_type_of_file file with
   | _ when use_fancy_highlighting file ->
 
-    let entities = model.Model2.hentities in
+    let entities = 
+      match Async.async_get_opt model_async with
+      | Some model -> model.Model2.hentities 
+      | None -> Hashtbl.create 0
+    in
 
     (* if you have some cache in tokens_with_categ_of_file, then it
      * must be invalidated when a file has changed on the disk, otherwise
@@ -197,7 +201,7 @@ let glyphs_of_file ~model ~font_size ~font_size_real file
 
     let line = ref 0 in
     let acc = ref [] in
-    (try (
+    (try
      tokens_with_categ +> List.iter (fun (s, categ, _filepos) ->
       let final_font_size = 
         final_font_size_of_categ ~font_size ~font_size_real categ in
@@ -218,16 +222,17 @@ let glyphs_of_file ~model ~font_size ~font_size_real file
     if !acc <> []
     then arr.(!line) <- List.rev !acc;
     Some arr
-    ) with Invalid_argument("index out of bounds") ->
+   with Invalid_argument("index out of bounds") ->
       failwith (spf "try on %s, nblines = %d, line = %d" file nblines !line)
     )
 
   | FT.PL _ | FT.Text _ ->      
-    (Common.cat file)
-    +> List.map (fun str -> 
-      [{ M.str; font_size; color = "black"; categ=None; pos }])
-    +> Array.of_list
-    +> (fun x -> Some x)
+      Common.cat file
+      +> List.map (fun str -> 
+        [{ M.str; font_size; color = "black"; categ=None; pos }])
+      +> Array.of_list
+      +> (fun x -> Some x)
+
   | _ -> None
 
 let defs_of_glyphs glyphs =
@@ -274,7 +279,7 @@ let optimal_nb_columns ~nblines ~chars_per_column ~w ~h =
 (*e: optimal_nb_columns *)
 
 (*s: draw_column_bars *)
-let draw_column_bars2 ~cr layout r = 
+let draw_column_bars2 cr layout r = 
   for i = 1 to int_of_float (layout.split_nb_columns - 1.) do
     let i = float_of_int i in
       
@@ -292,9 +297,9 @@ let draw_column_bars2 ~cr layout r =
     Cairo.line_to cr (r.p.x + layout.width_per_column * i) r.q.y;
     Cairo.stroke cr ;
   done
-let draw_column_bars ~cr layout rect =
+let draw_column_bars cr layout rect =
   Common.profile_code "View.draw_bars" (fun () ->
-    draw_column_bars2 ~cr layout rect)
+    draw_column_bars2 cr layout rect)
 (*e: draw_column_bars *)
 
 
@@ -303,7 +308,7 @@ let draw_column_bars ~cr layout rect =
 (*****************************************************************************)
 
 (*s: draw_content *)
-let draw_content2 ~cr ~layout ~context tr =
+let draw_content2 cr layout context tr =
 
   let r = tr.T.tr_rect in
   let file = tr.T.tr_label in
@@ -352,10 +357,9 @@ let draw_content2 ~cr ~layout ~context tr =
     Hashtbl.add hmatching_lines (iline+..1) "purple"
   );
 
-  let model = Async.async_get context.model2 in
-
   (* the important function call, getting the decorated content *)
-  let glyphs_opt = glyphs_of_file ~model ~font_size ~font_size_real file in
+  let glyphs_opt = 
+    glyphs_of_file ~font_size ~font_size_real context.model2 file in
 
   glyphs_opt +> Common.do_option (fun glyphs ->
     glyphs +> Array.iteri (fun line_0_indexed _glyph ->
@@ -402,14 +406,14 @@ let draw_content2 ~cr ~layout ~context tr =
     defs = (match glyphs_opt with None -> [] | Some x -> defs_of_glyphs x);
   }
 
-let draw_content ~cr ~layout ~context tr =
+let draw_content cr layout context tr =
   Common.profile_code "View.draw_content" (fun () ->
-    draw_content2 ~cr ~layout ~context tr)
+    draw_content2 cr layout context tr)
 (*e: draw_content *)
 
 
 (*s: draw_treemap_rectangle_content_maybe *)
-let draw_treemap_rectangle_content_maybe2 ~cr ~clipping ~context tr  =
+let draw_treemap_rectangle_content_maybe2 cr clipping context tr  =
   let r = tr.T.tr_rect in
 
   if F.intersection_rectangles r clipping = None
@@ -456,7 +460,7 @@ let draw_treemap_rectangle_content_maybe2 ~cr ~clipping ~context tr  =
           nblines_per_column = (nblines / split_nb_columns) +> ceil;
         } 
         in
-        draw_column_bars ~cr layout r;
+        draw_column_bars cr layout r;
         
         Cairo.select_font_face cr Style.font_text
           Cairo.FONT_SLANT_NORMAL Cairo.FONT_WEIGHT_NORMAL;
@@ -467,16 +471,16 @@ let draw_treemap_rectangle_content_maybe2 ~cr ~clipping ~context tr  =
         if font_size_real > !Flag.threshold_draw_content_font_size_real 
             && not (is_big_file_with_few_lines ~nblines file)
             && nblines < !Flag.threshold_draw_content_nblines
-        then Some (draw_content ~cr ~layout ~context tr)
+        then Some (draw_content cr layout context tr)
         else None
       end
       else None
     end
     else None
   end
-let draw_treemap_rectangle_content_maybe ~cr ~clipping ~context rect = 
+let draw_treemap_rectangle_content_maybe cr clipping context rect = 
   Common.profile_code "View.draw_content_maybe" (fun () ->
-    draw_treemap_rectangle_content_maybe2 ~cr ~clipping ~context rect)
+    draw_treemap_rectangle_content_maybe2 cr clipping context rect)
 (*e: draw_treemap_rectangle_content_maybe *)
 
 (*****************************************************************************)

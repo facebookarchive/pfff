@@ -90,9 +90,10 @@ let device_to_user_area dw =
 let paint_content_maybe_rect ~user_rect dw model rect =
  with_map dw (fun cr ->
    let context = M.context_of_drawing dw model in
+   let clipping = user_rect in
    let microlevel_opt = 
      Draw_microlevel.draw_treemap_rectangle_content_maybe
-       ~cr ~clipping:user_rect ~context rect in
+       cr clipping context rect in
    microlevel_opt +> Common.do_option (fun microlevel ->
      Hashtbl.replace dw.microlevel rect microlevel
    );
