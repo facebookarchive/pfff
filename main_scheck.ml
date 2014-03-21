@@ -256,7 +256,14 @@ let main_action xs =
 
   match lang with
   | "clang2" | "ocaml" | "java" ->
-    raise Todo
+    let graph_file, root =
+      match xs, !graph_code with
+      | _, Some file -> file, Filename.dirname file
+      | [dir], _ -> Filename.concat dir Graph_code.default_filename, dir
+      | _ -> failwith (spf "%s checker needs a graph file" lang)
+    in
+    let g = Graph_code.load graph_file in
+    Graph_code_checker.check root g
 
   | "php" ->
 

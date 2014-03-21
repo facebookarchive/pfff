@@ -12,7 +12,6 @@
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the file
  * license.txt for more details.
  *)
-
 open Common
 
 module Ast = Ast_cpp
@@ -57,7 +56,6 @@ type error = {
 (*****************************************************************************)
 
 let string_of_error_kind error_kind =
-
   match error_kind with
   | UnusedVariable (name, scope) ->
       spf "Unused variable %s, scope = %s" name 

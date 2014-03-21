@@ -8,6 +8,7 @@ SRC= graph_code.ml graph_code_opti.ml \
      dependencies_matrix_code.ml dependencies_matrix_build.ml \
      graph_code_tags.ml graph_code_database.ml graph_code_prolog.ml \
      graph_code_class_analysis.ml \
+     graph_code_checker.ml \
      layer_graph_code.ml \
      test_graph_code.ml unit_graph_code.ml
 
