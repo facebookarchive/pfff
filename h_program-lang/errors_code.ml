@@ -65,6 +65,8 @@ type error = {
   *)
  | Deadcode of (string * Database_code.entity_kind)
  | UndefinedDefOfDecl of (string * Database_code.entity_kind)
+ (* really a special case of Deadcode decl *)
+ | UnusedExport of (string * Database_code.entity_kind) 
 
   (* call sites *)
    (* should be done by the compiler (ocaml does):
@@ -91,7 +93,6 @@ type error = {
   (* other *)
 
 
-
 type rank =
  (* Too many FPs for now. Not applied even in strict mode. *)
  | Never
@@ -112,6 +113,8 @@ let string_of_error_kind error_kind =
     spf "dead %s, %s" (Database_code.string_of_entity_kind kind) s
   | UndefinedDefOfDecl (s, kind) ->
     spf "no def found for %s (%s)" s (Database_code.string_of_entity_kind kind)
+  | UnusedExport (s, kind) ->
+    spf "useless export of %s (%s)" s (Database_code.string_of_entity_kind kind)
 
 (*
 let loc_of_node root n g =
@@ -158,6 +161,7 @@ let rank_of_error err =
       | _ -> Ok
       )
   | UndefinedDefOfDecl _ -> Important
+  | UnusedExport _ -> ReallyImportant
   
 
 let score_of_error err =
@@ -188,6 +192,8 @@ let adjust_errors xs =
        | _ -> false
        )
     | UndefinedDefOfDecl _ -> file =~ "^include/"
+
+    | _ -> false
   )
 
 

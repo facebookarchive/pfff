@@ -22,10 +22,21 @@ module Error = Errors_code
 (*****************************************************************************)
 (* Prelude *)
 (*****************************************************************************)
+(*
+ * current checks:
+ *  - Deadcode
+ *  - UndefinedDefOfDecl
+ *  - todo: UselessExport
+ *)
 
 (*****************************************************************************)
 (* Helpers *)
 (*****************************************************************************)
+
+(* todo: generalize and mv in file_type.ml? *)
+let is_header_file file =
+  let (_d,_b,e) = Common2.dbe_of_filename file in
+  e = "h"
 
 (*****************************************************************************)
 (* Checker *)
@@ -53,7 +64,32 @@ let check_imperative g =
         let n_decl = n in
         if not (G.has_node n_def g)
         then Error.warning info.G.pos (Error.UndefinedDefOfDecl n_decl)
-      )
+      );
+
+      let n_decl_opt =
+        match n with
+        | s, E.Function -> Some (s, E.Prototype)
+        | s, E.Global -> Some (s, E.GlobalExtern)
+        | _ -> None
+      in
+      n_decl_opt +> Common.do_option (fun n_decl ->
+        let n_def = n in
+        if (G.has_node n_decl g)
+        then begin
+          let file_def = G.file_of_node n_def g in
+          let file_decl = G.file_of_node n_decl g in
+          let info_decl = G.nodeinfo n_decl g in
+          let users_outside = ps +> List.filter (fun n ->
+            try 
+              let file_user = G.file_of_node n g in
+              file_user <> file_def
+            with Not_found -> true
+          )
+          in
+          if users_outside = [] && ps <> [] && is_header_file file_decl
+          then Error.warning info_decl.G.pos (Error.UnusedExport n_decl);
+        end
+      );
   ))
 
 let check g =
