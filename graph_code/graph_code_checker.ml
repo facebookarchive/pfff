@@ -41,6 +41,19 @@ let check_imperative g =
       (* todo: filter nodes that are in boilerplate code *)
       if ps = [] 
       then Error.warning info.G.pos (Error.Deadcode n);
+
+      (* todo: factorize with graph_code_clang, put in database_code? *)
+      let n_def_opt =
+        match n with
+        | s, E.Prototype -> Some (s, E.Function)
+        | s, E.GlobalExtern -> Some (s, E.Global)
+        | _ -> None
+      in
+      n_def_opt +> Common.do_option (fun n_def ->
+        let n_decl = n in
+        if not (G.has_node n_def g)
+        then Error.warning info.G.pos (Error.UndefinedDefOfDecl n_decl)
+      )
   ))
 
 let check g =

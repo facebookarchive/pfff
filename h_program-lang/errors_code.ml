@@ -64,6 +64,7 @@ type error = {
   * global analysis)
   *)
  | Deadcode of (string * Database_code.entity_kind)
+ | UndefinedDefOfDecl of (string * Database_code.entity_kind)
 
   (* call sites *)
    (* should be done by the compiler (ocaml does):
@@ -109,6 +110,8 @@ let string_of_error_kind error_kind =
   match error_kind with
   | Deadcode (s, kind) -> 
     spf "dead %s, %s" (Database_code.string_of_entity_kind kind) s
+  | UndefinedDefOfDecl (s, kind) ->
+    spf "no def found for %s (%s)" s (Database_code.string_of_entity_kind kind)
 
 (*
 let loc_of_node root n g =
@@ -151,9 +154,10 @@ let rank_of_error err =
   match err.typ with
   | Deadcode (_s, kind) ->
       (match kind with
-      | E.Function -> ReallyImportant
-      | _ -> Important
+      | E.Function -> Important
+      | _ -> Ok
       )
+  | UndefinedDefOfDecl _ -> Important
   
 
 let score_of_error err =
@@ -183,6 +187,7 @@ let adjust_errors xs =
        | _ when file =~ "^include/" -> true
        | _ -> false
        )
+    | UndefinedDefOfDecl _ -> file =~ "^include/"
   )
 
 
