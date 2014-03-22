@@ -160,7 +160,8 @@ let rank_of_error err =
       | E.Function -> Important
       | _ -> Ok
       )
-  | UndefinedDefOfDecl _ -> Important
+  (* probably defined in assembly code *)
+  | UndefinedDefOfDecl _ -> Less 
   | UnusedExport _ -> ReallyImportant
   
 
