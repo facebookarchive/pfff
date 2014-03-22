@@ -15,6 +15,7 @@
 open Common
 
 module E = Database_code
+module PI = Parse_info
 
 (*****************************************************************************)
 (* Prelude *)
@@ -55,6 +56,14 @@ type error = {
     *  - UndefinedEntity (UseOfUndefined)
     *  - MultiDefinedEntity (DupeEntity)
     *)
+ (* As done by my PHP global analysis checker.
+  * Never done by compilers, and unusual for linters to do that.
+  *  
+  * note: OCaml 4.01 now does that partially by locally checking if 
+  * an entity is unused and not exported (which does not require
+  * global analysis)
+  *)
+ | Deadcode of (string * Database_code.entity_kind)
 
   (* call sites *)
    (* should be done by the compiler (ocaml does):
@@ -80,14 +89,6 @@ type error = {
 
   (* other *)
 
- (* As done by my PHP global analysis checker.
-  * Never done by compilers, and unusual for linters to do that.
-  *  
-  * note: OCaml 4.01 now does that partially by locally checking if 
-  * an entity is unused and not exported (which does not require
-  * global analysis)
-  *)
- | Deadcode of Database_code.entity_kind
 
 
 type rank =
@@ -106,7 +107,8 @@ type rank =
 
 let string_of_error_kind error_kind =
   match error_kind with
-  | Deadcode kind -> spf "dead %s" (Database_code.string_of_entity_kind kind)
+  | Deadcode (s, kind) -> 
+    spf "dead %s, %s" (Database_code.string_of_entity_kind kind) s
 
 (*
 let loc_of_node root n g =
@@ -118,8 +120,9 @@ let loc_of_node root n g =
   with Not_found -> "NO LOCATION"
 *)
 
-let string_of_error _error =
-  raise Todo
+let string_of_error err =
+  let pos = err.loc in
+  spf "%s:%d: %s" pos.PI.file pos.PI.line (string_of_error_kind err.typ)
 
 (*****************************************************************************)
 (* Helpers *)
@@ -144,8 +147,14 @@ let score_of_rank = function
   | Important -> 4
   | ReallyImportant -> 5
 
-let rank_of_error _err =
-  raise Todo
+let rank_of_error err =
+  match err.typ with
+  | Deadcode (_s, kind) ->
+      (match kind with
+      | E.Function -> ReallyImportant
+      | _ -> Important
+      )
+  
 
 let score_of_error err =
   err +> rank_of_error +> score_of_rank
@@ -154,29 +163,26 @@ let score_of_error err =
 (* False positives *)
 (*****************************************************************************)
 
-let adjust_errors _xs =
-
-(*
-      (match kind with
-      | E.Dir | E.File -> ()
-      (* FP in graph_code_clang for now *)
-      | E.Type when s =~ "E__anon" -> ()
-      | E.Type when s =~ "E__" -> ()
-      | E.Type when s =~ "T__" -> ()
+let adjust_errors xs =
+  xs +> Common.exclude (fun err ->
+    let file = err.loc.PI.file in
+    
+    match err.typ with
+    | Deadcode (s, kind) ->
+       (match kind with
+       | E.Dir | E.File -> true
+       (* FP in graph_code_clang for now *)
+       | E.Type when s =~ "E__anon" -> true
+       | E.Type when s =~ "E__" -> true
+       | E.Type when s =~ "T__" -> true
         
-      | E.Prototype | E.GlobalExtern -> ()
+       | E.Prototype | E.GlobalExtern -> true
 
-      (* todo: to remove, but too many for now *)
-      | E.Constructor | E.Field -> ()
-
-      | _ when file =~ "^include/" -> ()
-      | _ ->
-        pr2 (spf "%s: %s Dead code?" 
-               (loc_of_node root n g)
-               (G.string_of_node n)
-               )
-      )
-*)
-  raise Todo
+       (* todo: to remove, but too many for now *)
+       | E.Constructor | E.Field -> true
+       | _ when file =~ "^include/" -> true
+       | _ -> false
+       )
+  )
 
 

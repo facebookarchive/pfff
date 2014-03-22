@@ -40,7 +40,7 @@ let check_imperative g =
       let ps = pred n in
       (* todo: filter nodes that are in boilerplate code *)
       if ps = [] 
-      then Error.warning info.G.pos (Error.Deadcode (snd n));
+      then Error.warning info.G.pos (Error.Deadcode n);
   ))
 
 let check g =
