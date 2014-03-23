@@ -37,10 +37,10 @@ open Parse_info
 (* Main entry point *)
 (*****************************************************************************)
 
-let gen_red_green_layer ~root ~output stats =
+let gen_red_green_layer ~root stats =
   let root = Common2.relative_to_absolute root in
 
-  let layer = { Layer_code.
+  { Layer_code.
     title = "Parsing errors (red/green)";
     description = "";
     files = stats +> List.map (fun stat ->
@@ -61,13 +61,11 @@ let gen_red_green_layer ~root ~output stats =
     );
     kinds = Layer_code.red_green_properties;
   }
-  in
-  Layer_code.save_layer layer output
 
-let gen_heatmap_layer ~root ~output stats =
+let gen_heatmap_layer ~root stats =
   let root = Common2.relative_to_absolute root in
 
-  let layer = { Layer_code.
+  { Layer_code.
     title = "Parsing errors (heatmap)";
     description = "lower is better";
     files = stats +> List.map (fun stat ->
@@ -99,7 +97,5 @@ let gen_heatmap_layer ~root ~output stats =
     );
     kinds = Layer_code.heat_map_properties;
   }
-  in
-  Layer_code.save_layer layer output
 
 

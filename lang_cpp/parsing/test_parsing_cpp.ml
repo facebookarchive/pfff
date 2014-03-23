@@ -57,13 +57,15 @@ let test_parse_cpp ?lang xs  =
 
       let layer_file = "/tmp/layer_parse_errors_red_green.json" in
       pr2 (spf "generating parse error layer in %s" layer_file);
-      Layer_parse_errors.gen_red_green_layer ~root:dirname ~output:layer_file
-        !stat_list;
+      let layer = 
+        Layer_parse_errors.gen_red_green_layer ~root:dirname !stat_list in
+      Layer_code.save_layer layer layer_file;
 
       let layer_file = "/tmp/layer_parse_errors_heatmap.json" in
       pr2 (spf "generating parse error layer in %s" layer_file);
-      Layer_parse_errors.gen_heatmap_layer ~root:dirname ~output:layer_file
-        !stat_list;
+      let layer = 
+        Layer_parse_errors.gen_heatmap_layer ~root:dirname !stat_list in
+      Layer_code.save_layer layer layer_file;
   | _ -> ()
   );
   Stat.print_parsing_stat_list !stat_list;
