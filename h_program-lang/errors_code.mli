@@ -7,9 +7,11 @@ type error = {
  and severity = Fatal | Warning
 
  and error_kind =
- | Deadcode of (string * Database_code.entity_kind)
- | UndefinedDefOfDecl of (string * Database_code.entity_kind)
- | UnusedExport of (string * Database_code.entity_kind) 
+ | Deadcode of entity
+ | UndefinedDefOfDecl of entity
+ | UnusedExport of entity
+
+ and entity = (string * Database_code.entity_kind)
 
 val string_of_error: error -> string
 val string_of_error_kind: error_kind -> string

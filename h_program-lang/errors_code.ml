@@ -63,10 +63,10 @@ type error = {
   * an entity is unused and not exported (which does not require
   * global analysis)
   *)
- | Deadcode of (string * Database_code.entity_kind)
- | UndefinedDefOfDecl of (string * Database_code.entity_kind)
+ | Deadcode of entity
+ | UndefinedDefOfDecl of entity
  (* really a special case of Deadcode decl *)
- | UnusedExport of (string * Database_code.entity_kind) 
+ | UnusedExport of entity
 
   (* call sites *)
    (* should be done by the compiler (ocaml does):
@@ -91,6 +91,9 @@ type error = {
   (* lint *)
 
   (* other *)
+
+ (* todo: should be merged with Graph_code.entity or put in Database_code?*)
+ and entity = (string * Database_code.entity_kind)
 
 
 type rank =
