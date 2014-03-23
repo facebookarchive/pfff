@@ -26,7 +26,7 @@ module PI = Parse_info
  *  - was generalized for scheck php
  *  - introduced ranking via int (but mess)
  *  - introduced simplified ranking using intermediate rank type
- *  - fully generarlize when introduced graph_code_checker.ml
+ *  - fully generalize when introduced graph_code_checker.ml
  * 
  * todo:
  *  - priority to errors, so dead code func more important than dead field
@@ -105,6 +105,10 @@ type rank =
  | Ok
  | Important
  | ReallyImportant
+
+(* @xxx to acknowledge or explain false positives *)
+type annotation =
+  | AtScheck of string
 
 (*****************************************************************************)
 (* Pretty printers *)
@@ -209,4 +213,30 @@ let adjust_errors xs =
     | _ -> false
   )
 
+(*****************************************************************************)
+(* Annotations *)
+(*****************************************************************************)
 
+let annotation_of_line_opt s =
+  if s =~ "@\\([A-Za-z_]+\\):[ ]?\\([^@]*\\)"
+  then
+    let (kind, explain) = Common.matched2 s in
+    Some (match kind with
+      | "Scheck" -> AtScheck explain
+      | s -> failwith ("Bad annotation: " ^ s)
+    )
+  else None
+
+(* The user can override the checks by adding special annotations
+ * in the code at the same line than the code it related to.
+ *)
+
+let annotation_at2 loc =
+  let file = loc.PI.file in
+  let line = loc.PI.line  in
+  match Common2.cat_excerpts file [line] with
+  | [s] -> annotation_of_line_opt s
+  | _ -> failwith (spf "wrong line number %d in %s" line file)
+
+let annotation_at a =
+  Common.profile_code "Errors_code.annotation" (fun () -> annotation_at2 a)

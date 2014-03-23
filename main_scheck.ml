@@ -277,8 +277,11 @@ let main_action xs =
         +> List.map fst
       else errs
     in
-    errs +> List.iter (fun err -> 
-      pr2 (Errors_code.string_of_error err)
+    errs +> List.iter (fun err ->
+      (* less: confront annotation and error kind *)
+      if Errors_code.annotation_at err.Errors_code.loc <> None
+      then ()
+      else pr2 (Errors_code.string_of_error err)
     )
 
   | "php" ->

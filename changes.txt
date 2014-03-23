@@ -1,6 +1,6 @@
 -*- org -*-
 
-* 0.27 (Q1 2014) ("hypertext" codemap, edge bundle??)
+* 0.27 (Q1 2014) ("hypertext" codemap, generalized scheck)
 
 ** codegraph
 
@@ -25,7 +25,7 @@ entities to the lowest one! Also factorized more code.
 *** show information about entity under cursor (def or use) in tooltip
 
 *** go to definition when on a use 
-finally ... basic TAGS functionality
+finally ... basic TAGS functionality, "hypertext" because can follow "links"
 
 *** handle skip list
 so easy to manually configure which parts to not display when
@@ -42,6 +42,9 @@ light db (while still filtering object files and skip list files)
 
 *** software architecture related checks
 Deadcode, UnusedExport, UndefinedDefOfDecl
+
+*** annotation support to remove false positives
+(port what was in cmf)
 
 ** clang
 
@@ -70,6 +73,8 @@ skip list
 *** add configure option for Javalib and cmt
 
 *** works again with ocaml 3.12
+
+*** new OPAM package, easier to install, more portable, less requirments
 
 * -----------------------------------------------------------
 

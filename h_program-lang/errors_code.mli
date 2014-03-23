@@ -13,6 +13,10 @@ type error = {
 
  and entity = (string * Database_code.entity_kind)
 
+(* @xxx to acknowledge or explain false positives *)
+type annotation =
+  | AtScheck of string
+
 val string_of_error: error -> string
 val string_of_error_kind: error_kind -> string
 
@@ -35,6 +39,9 @@ val rank_of_error:
   error -> rank
 val score_of_error:
   error -> int
+
+val annotation_at:
+  Parse_info.token_location -> annotation option
 
 (* have a few false positives in scheck so filter them *)
 val adjust_errors:
