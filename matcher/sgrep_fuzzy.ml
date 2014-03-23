@@ -56,7 +56,7 @@ let sgrep ~hook pattern ast =
             (* could also recurse to find nested matching inside 
              * the matched code itself
              *)
-            let matched_tokens = Ast_fuzzy.ii_of_trees shorter in
+            let matched_tokens = Ast_fuzzy.toks_of_trees shorter in
             matches_with_env +> List.iter (fun env ->
               hook env matched_tokens
             );

@@ -229,7 +229,7 @@ let (mk_mapper: map_visitor -> (trees -> trees)) = fun hook ->
 (* Extractor *)
 (*****************************************************************************)
 
-let (ii_of_trees: trees -> Parse_info.info list) = fun trees ->
+let (toks_of_trees: trees -> Parse_info.info list) = fun trees ->
   let globals = ref [] in
   let hooks = { default_visitor with
     ktok = (fun (_k, _) i -> Common.push i globals)

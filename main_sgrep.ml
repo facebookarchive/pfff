@@ -172,7 +172,7 @@ let sgrep pattern file =
     in
     Sgrep_fuzzy.sgrep
       ~hook:(fun env matched_tokens ->
-        print_match !mvars env Ast_fuzzy.ii_of_trees matched_tokens
+        print_match !mvars env Ast_fuzzy.toks_of_trees matched_tokens
       )
       pattern ast
   | "ml", Right pattern ->
@@ -185,7 +185,7 @@ let sgrep pattern file =
     in
     Sgrep_fuzzy.sgrep
       ~hook:(fun env matched_tokens ->
-        print_match !mvars env Ast_fuzzy.ii_of_trees matched_tokens
+        print_match !mvars env Ast_fuzzy.toks_of_trees matched_tokens
       )
       pattern ast
   | "phpfuzzy", Right pattern ->
@@ -198,7 +198,7 @@ let sgrep pattern file =
     in
     Sgrep_fuzzy.sgrep
       ~hook:(fun env matched_tokens ->
-        print_match !mvars env Ast_fuzzy.ii_of_trees matched_tokens
+        print_match !mvars env Ast_fuzzy.toks_of_trees matched_tokens
       )
       pattern ast
   | "java", Right pattern ->
@@ -211,7 +211,7 @@ let sgrep pattern file =
     in
     Sgrep_fuzzy.sgrep
       ~hook:(fun env matched_tokens ->
-        print_match !mvars env Ast_fuzzy.ii_of_trees matched_tokens
+        print_match !mvars env Ast_fuzzy.toks_of_trees matched_tokens
       )
       pattern ast
   | "js", Right pattern ->
@@ -224,7 +224,7 @@ let sgrep pattern file =
     in
     Sgrep_fuzzy.sgrep
       ~hook:(fun env matched_tokens ->
-        print_match !mvars env Ast_fuzzy.ii_of_trees matched_tokens
+        print_match !mvars env Ast_fuzzy.toks_of_trees matched_tokens
       )
       pattern ast
   | _ -> failwith ("unsupported language: " ^ !lang)

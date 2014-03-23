@@ -21,7 +21,7 @@ and trees = tree list
 val is_metavar: string -> bool
 
 val abstract_position_trees: trees -> trees
-val ii_of_trees: trees -> tok list
+val toks_of_trees: trees -> tok list
 val vof_trees: trees -> Ocaml.v
 
 type visitor_out = trees -> unit

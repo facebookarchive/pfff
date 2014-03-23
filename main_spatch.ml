@@ -86,7 +86,7 @@ let parse_pattern file =
       in
       Right (Spatch_fuzzy.parse 
                 ~pattern_of_string:parse
-                ~ii_of_pattern:Ast_fuzzy.ii_of_trees
+                ~ii_of_pattern:Ast_fuzzy.toks_of_trees
                 file)
   | _ -> failwith ("unsupported language: " ^ !lang)
 

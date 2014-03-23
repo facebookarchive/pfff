@@ -140,7 +140,7 @@ let spatch_unittest
         let pattern =
           Spatch_fuzzy.parse
             ~pattern_of_string:ast_fuzzy_of_string
-            ~ii_of_pattern:Ast_fuzzy.ii_of_trees
+            ~ii_of_pattern:Ast_fuzzy.toks_of_trees
             spatchfile
         in
         let trees, toks = 

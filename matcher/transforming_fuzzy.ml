@@ -218,7 +218,7 @@ module XMATCH = struct
    *)
 
   let distribute_transfo transfo any _env = 
-    let ii = Ast_fuzzy.ii_of_trees any in
+    let ii = Ast_fuzzy.toks_of_trees any in
 
     (match transfo with
     | PI.NoTransfo -> ()
