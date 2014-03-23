@@ -358,13 +358,13 @@ let main_action xs =
   let treemap_func = treemap_generator ~filter_file in
   let dw = Model.init_drawing  treemap_func layers_with_index xs root in
 
-  (* This can require lots of stack. Make sure to have ulimit -s 40000.
-   * This thread also cause some Bus error on MacOS :(
-   *)
+  (* This can require lots of stack. Make sure to have ulimit -s 40000 *)
   Thread.create (fun () ->
-    (* heavy computation are not fairly scheduled apparently by the OCaml
+    (* heavy computation are not *fairly* scheduled apparently by the OCaml
      * runtime, so let's do the heavy computation in another process
-     * and here just have the thread waiting for it to be done
+     * and here just have the thread waiting for it to be done.
+     * This thread used to cause some Bus error on MacOS but now that
+     * we use invoke and do the job in another process things seems better :)
      *)
     let job () = build_model root db_file graph_file in
     let res = Parallel.invoke job () () in
