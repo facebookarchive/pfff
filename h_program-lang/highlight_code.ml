@@ -105,13 +105,11 @@ type def_arity =
   | UniqueDef
   | DoubleDef
   | MultiDef
-
   | NoDef
 
 (* will be different colors *)
 type use_arity = 
   | NoUse
-
   | UniqueUse
   | SomeUse
   | MultiUse
@@ -155,12 +153,11 @@ type usedef2 =
 
 (* color, foreground or background will be changed *)
 type category =  
-
   | Comment
 
   (* pad addons *)
-  | Number | Boolean 
   | Null
+  | Boolean | Number
 
   | String | Regexp
 
@@ -188,18 +185,16 @@ type category =
   | Function of usedef2
   | FunctionDecl of def_info
 
-  (* variables *)
   | Global of usedef2
-
   | Type of usedef2
-
   | Class of usedef2 (* also valid for struct ? *)
-  | Field of usedef2
-  | Method of usedef2
-  | StaticMethod of usedef2
 
   | Macro of usedef2
   | Constant of usedef2
+
+  | Field of usedef2
+  | Method of usedef2
+  | StaticMethod of usedef2
 
   | StructName of usedef
   (* ClassName of place ... *)
@@ -208,18 +203,25 @@ type category =
 
   (* types *)
   | TypeDef of usedef
+  | TypeVoid
+  | TypeInt
 
   (* ocaml *)
   | Constructor of usedef2
   | ConstructorMatch of use_info
 
   | Module of usedef
-  (* misc *)
-  | Label of usedef
 
   (* haskell *)
   | FunctionEquation
 
+  (* misc *)
+  | Label of usedef
+
+  (* kind of specific case of Global of Local which we know are really 
+   * really local. Don't really need a def_arity and place here. *)
+  | Local     of usedef
+  | Parameter of usedef
 
   (* semantic information *)
   | BadSmell
@@ -236,14 +238,8 @@ type category =
 
   | IdentUnknown
 
-  (* kind of specific case of Global of Local which we know are really 
-   * really local. Don't really need a def_arity and place here. *)
-  | Local     of usedef
-  | Parameter of usedef
 
 
-  | TypeVoid
-  | TypeInt
 
   (* module/cpp related *)
   | Ifdef

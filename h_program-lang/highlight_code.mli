@@ -1,7 +1,7 @@
 
 type category =
   | Comment 
-  | Number | Boolean | Null | String | Regexp
+  | Null | Boolean | Number | String | Regexp
 
   | Keyword 
   | KeywordConditional | KeywordLoop 
@@ -9,39 +9,44 @@ type category =
   | Builtin | BuiltinCommentColor | BuiltinBoolean
   | Operator | Punctuation
 
+  (* todo: factorize with Database_code.entity_kind? do a pair? 
+   * so can get rid of functions in database_code such as highlight_xxx_def.
+   *)
   | Function of usedef2
   | FunctionDecl of def_info
   | Global of usedef2
   | Type of usedef2
   | Class of usedef2
+  | Macro of usedef2
+  | Constant of usedef2
+
   | Field of usedef2
   | Method of usedef2
   | StaticMethod of usedef2
-  | Macro of usedef2
-  | Constant of usedef2
 
   | StructName of usedef
   | EnumName of usedef
   | TypeDef of usedef
+  | TypeVoid | TypeInt
 
   | Constructor of usedef2
   | ConstructorMatch of use_info
 
   | Module of usedef
-  | Label of usedef
   | FunctionEquation
 
+  | Label of usedef
+
+  | Local of usedef
+  | Parameter of usedef
+
+  (* semantic visual feedback! highlight more! *)
   | BadSmell
   | UseOfRef
   | PointerCall
   | CallByRef
   | ParameterRef
   | IdentUnknown
-
-  | Local of usedef
-  | Parameter of usedef
-
-  | TypeVoid | TypeInt
 
   | Ifdef | Include | IncludeFilePath | Define | CppOther
 
@@ -64,6 +69,7 @@ type category =
 
   | BackGround | ForeGround
 
+  (* tools limitations *)
   | NotParsed | Passed | Expanded | Error
   | NoType
 
@@ -73,9 +79,11 @@ and usedef = Use | Def
 
 and usedef2 = Use2 of use_info | Def2 of def_info
 
+ (* semantic visual feedback! *)
  and def_info = use_arity
   and use_arity = NoUse | UniqueUse | SomeUse | MultiUse | LotsOfUse | HugeUse
 
+ (* semantic visual feedback! *)
  and use_info = place * def_arity * use_arity
   and place = PlaceLocal | PlaceSameDir | PlaceExternal | NoInfoPlace
   and def_arity = UniqueDef | DoubleDef | MultiDef | NoDef
