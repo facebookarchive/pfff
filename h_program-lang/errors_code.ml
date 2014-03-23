@@ -185,15 +185,22 @@ let adjust_errors xs =
        | E.Type when s =~ "E__anon" -> true
        | E.Type when s =~ "E__" -> true
        | E.Type when s =~ "T__" -> true
+       | E.Type when s =~ "U__anon" -> true
         
-       | E.Prototype | E.GlobalExtern -> true
 
        (* todo: to remove, but too many for now *)
        | E.Constructor | E.Field -> true
        | _ when file =~ "^include/" -> true
+
+(*       | E.Prototype | E.GlobalExtern -> true *)
+
        | _ -> false
        )
-    | UndefinedDefOfDecl _ -> file =~ "^include/"
+    | UndefinedDefOfDecl _ -> 
+      file =~ "^include/" ||
+      file = "kernel/lib/lib.h" ||
+      file = "kernel/network/ip/ip.h" ||
+      false
 
     | _ -> false
   )

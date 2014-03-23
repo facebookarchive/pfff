@@ -515,8 +515,20 @@ and decl env (enum, _l, xs) =
           | _ when s = "main" -> true
           | _ -> false
         in
-        let s = if static&&kind=E.Function then new_str_if_defs env s else s in
-        let env = add_node_and_edge_if_defs_mode env (s, kind) in
+        let s = 
+          if static && kind = E.Function 
+          then new_str_if_defs env s 
+          else s 
+        in
+        (* todo: when static and prototype, we should create a new_str_if_defs
+         * that will match the one created later for the Function, but
+         * right now we just don't create the node, it's simpler.
+         *)
+        let env = 
+          if static && kind = E.Prototype
+          then env
+          else add_node_and_edge_if_defs_mode env (s, kind) 
+        in
         if kind <> E.Prototype then add_type_deps env typ;
         { env with locals = ref [] }
 
