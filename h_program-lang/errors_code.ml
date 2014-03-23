@@ -157,11 +157,12 @@ let rank_of_error err =
   match err.typ with
   | Deadcode (_s, kind) ->
       (match kind with
-      | E.Function -> Important
+      | E.Function -> Ok
       | _ -> Ok
       )
-  (* probably defined in assembly code *)
-  | UndefinedDefOfDecl _ -> Less 
+  (* probably defined in assembly code? *)
+  | UndefinedDefOfDecl _ -> Important
+  (* we want to simplify interfaces as much as possible! *)
   | UnusedExport _ -> ReallyImportant
   
 

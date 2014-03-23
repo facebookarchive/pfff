@@ -273,7 +273,7 @@ let main_action xs =
       then
         errs +> List.map (fun err -> err, Errors_code.rank_of_error err)
         +> Common.sort_by_val_highfirst
-        +> Common.take_safe 20
+        +> Common.take_safe 40
         +> List.map fst
       else errs
     in
