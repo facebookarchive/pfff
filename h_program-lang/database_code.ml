@@ -529,6 +529,7 @@ let entity_kind_of_highlight_category_def categ =
   | HC.Module HC.Def -> Some Module
   | HC.TypeDef HC.Def -> Some Type
   | HC.Constructor (HC.Def2 _) -> Some Constructor
+  | HC.StructName (HC.Def) -> Some Type
 
   (* todo: what about other Def ? like Label, Parameter, etc ? *)
   | _ -> None
