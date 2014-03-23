@@ -218,13 +218,14 @@ type entity = {
    | CodeCoverage of int list (* e.g. covered lines by unit tests *)
 
    | Privacy of privacy
+   | Abstract
+   | Final
+   | Static
 
    (* used for the xhp @required fields for now *)
    | Required
    | Async
 
-   | Static
-   | Abstract
    (* todo: git info, e.g. Age, Authors, Age_profile (range) *)
   and privacy = Public | Protected | Private
 

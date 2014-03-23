@@ -26,7 +26,7 @@ type entity_kind =
   | MultiDirs (* computed on the fly from many Dir by codemap *)
   | Other of string
 
-  (* todo: could be put as a property? *)
+  (* todo: could be put as a property? (which would simplify some code too) *)
   and class_type = RegularClass (* or Struct *) | Interface | Trait
   (* todo: could be put as a property? *)
   and method_type = RegularMethod | StaticMethod
@@ -36,11 +36,9 @@ val entity_kind_of_string: string -> entity_kind
 
 type property = 
    (* mostly for Function kind *)
-   | ContainDynamicCall
-   | ContainReflectionCall
+   | ContainDynamicCall | ContainReflectionCall
 
    | TakeArgNByRef of int (* the argument position taken by ref *)
-
    | UseGlobal of string
 
    | DeadCode (* the function itself is dead, e.g. never called *)
@@ -49,13 +47,12 @@ type property =
    | CodeCoverage of int list (* e.g. covered lines by unit tests *)
 
    | Privacy of privacy
+   | Abstract | Final
+   | Static 
 
    (* facebook specific: used for the xhp @required fields for now *)
-   | Required
-   | Async
+   | Required | Async
 
-   | Static
-   | Abstract
 
   and privacy = Public | Protected | Private
 
@@ -98,7 +95,6 @@ type database = {
 }
 
 (* builders *)
-
 val empty_database: unit -> database
 val default_db_name: string
 (* save either in a (readable) json format or (fast) marshalled form 
@@ -110,7 +106,6 @@ val save_database: database -> Common.filename -> unit
 val merge_databases: database -> database -> database
 
 (* build database helpers *)
-
 val alldirs_and_parent_dirs_of_relative_dirs: 
   Common.dirname list -> Common.dirname list
 val files_and_dirs_database_from_files:
@@ -118,15 +113,15 @@ val files_and_dirs_database_from_files:
 val adjust_method_or_field_external_users:
   verbose:bool -> entity array -> unit
 
-(* algorithms *)
-
 (* for displaying a summary of the important functions in a file *)
 val build_top_k_sorted_entities_per_file:
   k:int -> entity array -> (Common.filename, entity list) Hashtbl.t
 
+(* for big grep *)
 val files_and_dirs_and_sorted_entities_for_completion:
   threshold_too_many_entities:int -> database -> entity list
 
+(* codemap collaboration, highlighter (lexer/parser) <-> semantic database *)
 val entity_kind_of_highlight_category_def: 
   Highlight_code.category -> entity_kind option
 val entity_kind_of_highlight_category_use: 
@@ -137,7 +132,6 @@ val matching_def_short_kind_kind:
   entity_kind -> entity_kind -> bool
 val matching_use_categ_kind:
   Highlight_code.category -> entity_kind -> bool
-
 (* use vs def *)
 val entity_and_highlight_category_correpondance:
   entity -> Highlight_code.category -> bool
