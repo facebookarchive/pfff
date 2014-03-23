@@ -38,8 +38,8 @@ open Common
 (* Main entry point *)
 (*****************************************************************************)
 
-let gen_red_green_layer lines_coverage ~output =
-  let layer = { Layer_code.
+let gen_red_green_layer lines_coverage =
+  { Layer_code.
     title = "Test coverage (red/green)";
     description = "Use information from xdebug";
     files = lines_coverage +> List.map (fun (file, lines_cover) ->
@@ -70,14 +70,12 @@ let gen_red_green_layer lines_coverage ~output =
     );
     kinds = Layer_code.red_green_properties;
   }
-  in
-  Layer_code.save_layer layer output
 
 
 (* mostly a copy paste of gen_red_green_layer *)
-let gen_heatmap_layer lines_coverage ~output =
+let gen_heatmap_layer lines_coverage =
 
-  let layer = { Layer_code.
+  { Layer_code.
     title = "Test coverage (heatmap)";
     description = "Use information from xdebug";
     files = lines_coverage +> List.map (fun (file, lines_cover) ->
@@ -107,8 +105,6 @@ let gen_heatmap_layer lines_coverage ~output =
     );
     kinds = Layer_code.heat_map_properties;
   }
-  in
-  Layer_code.save_layer layer output
 
 
 (*****************************************************************************)
@@ -119,11 +115,13 @@ let actions () = [
   "-gen_red_green_coverage_layer", " <json> <output>",
   Common.mk_action_2_arg (fun jsonfile output ->
     let cover = Coverage_code.load_lines_coverage jsonfile in
-    gen_red_green_layer cover ~output
+    let layer = gen_red_green_layer cover in
+    Layer_code.save_layer layer output
   );
   "-gen_heatmap_coverage_layer", " <json> <output>",
   Common.mk_action_2_arg (fun jsonfile output ->
     let cover = Coverage_code.load_lines_coverage jsonfile in
-    gen_heatmap_layer cover ~output
+    let layer = gen_heatmap_layer cover in
+    Layer_code.save_layer layer output
   );
 ]
