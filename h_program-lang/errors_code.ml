@@ -183,9 +183,10 @@ let adjust_errors xs =
        | E.Dir | E.File -> true
        (* FP in graph_code_clang for now *)
        | E.Type when s =~ "E__anon" -> true
+       | E.Type when s =~ "U__anon" -> true
+       | E.Type when s =~ "S__anon" -> true
        | E.Type when s =~ "E__" -> true
        | E.Type when s =~ "T__" -> true
-       | E.Type when s =~ "U__anon" -> true
         
 
        (* todo: to remove, but too many for now *)
