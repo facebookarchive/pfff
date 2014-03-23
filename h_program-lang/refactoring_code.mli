@@ -1,4 +1,5 @@
 
+(* many refactorings can be done by spatch! *)
 type refactoring_kind =
   | AddInterface of string option (* specific class *) 
                   * string (* the interface to add *)

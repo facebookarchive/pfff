@@ -29,6 +29,7 @@ type refactoring_kind =
   | RemoveInterface of string option * string
 
   | SplitMembers
+  (* todo: Rename of entity * entity *)
 
   (* type related *)
   | AddReturnType of string
