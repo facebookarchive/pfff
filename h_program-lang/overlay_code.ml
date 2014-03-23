@@ -17,7 +17,6 @@ open Common
 (*****************************************************************************)
 (* Prelude *)
 (*****************************************************************************)
-
 (*
  * Some code organizations are really bad. But because it's harder
  * to convince people to change it, sometimes it's simpler to create
