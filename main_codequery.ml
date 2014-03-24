@@ -17,6 +17,18 @@ open Common
  * (http://en.wikipedia.org/wiki/Datalog).
  * 
  * See h_program-lang/database_code.pl for more information
+ * 
+ * related work:
+ *  - http://jquery.cs.ubc.ca/, the original inspiration for codequery
+ *  - QL by semmle
+ *  - ndepend.com CQL
+ * 
+ * notes: pieter started to implement something similar using neo4j
+ * instead of prolog for the query engine. Example of query:
+ *   MATCH (n {vmname: "com/facebook/inject/AbstractProvider"})<-[:EXTENDS]-(m)
+ *   RETURN m.vmname
+ *   LIMIT 500
+ * 
  *)
 
 (*****************************************************************************)
