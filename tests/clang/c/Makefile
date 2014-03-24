@@ -11,7 +11,7 @@ SRC=foo.c bar.c typedef.c struct.c enum.c define.c global.c add.c \
 OBJS=$(SRC:.c=.clang)
 
 all: $(OBJS)
-	$(PFFF)_test -uninclude_clang
+	$(PFFF)_test -uninclude_clang .
 	$(CG) -lang clang2 -build .
 	cat pfff.log
 

@@ -1,6 +1,6 @@
 (* Yoann Padioleau
  *
- * Copyright (C) 2013 Facebook
+ * Copyright (C) 2013, 2014 Facebook
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public License
@@ -32,11 +32,14 @@ module Loc = Location_clang
 (*****************************************************************************)
 (* Types *)
 (*****************************************************************************)
+
+(* supposed to be unique *)
+type id = (Ast.enum * string * variant)
+ and variant = Proto | Def
+
 type env = {
-  hfile: 
-    (Common.filename, (Ast.enum * string * variant) Common.hashset) Hashtbl.t;
-  hfile_data:
-    (Common.filename, sexp list) Hashtbl.t;
+  hfile: (Common.filename, id Common.hashset) Hashtbl.t;
+  hfile_data: (Common.filename, sexp list) Hashtbl.t;
 
   (* for readable_filename *)
   root: Common.dirname;
@@ -45,7 +48,6 @@ type env = {
   (* for error report *)
   current_clang_file: Common.filename;
 }
- and variant = Proto | Def | Misc
 
 let unknown_loc = "unknown_loc"
 
@@ -139,21 +141,27 @@ and decl env (enum, l, xs) =
       in
       add_if_not_already_there env (FunctionDecl, s, variant) sexp
   | TypedefDecl, _loc::(T (TLowerIdent s | TUpperIdent s))::_typ_char::_rest ->
-      add_if_not_already_there env (TypedefDecl, s, Misc) sexp
+      add_if_not_already_there env (TypedefDecl, s, Def) sexp
   | EnumDecl, _loc::(T (TLowerIdent s | TUpperIdent s))::_rest ->
-      add_if_not_already_there env (EnumDecl, s, Misc) sexp
+      add_if_not_already_there env (EnumDecl, s, Def) sexp
   | RecordDecl, _loc::(T (TLowerIdent "struct"))
       ::(T (TLowerIdent s | TUpperIdent s))::rest ->
-      let kind = if rest = [] then Proto else Misc in
+      let kind = if rest = [] then Proto else Def in
       add_if_not_already_there env (RecordDecl, s, kind) sexp
   | RecordDecl, _loc::(T (TLowerIdent "union"))
       ::(T (TLowerIdent s | TUpperIdent s))::_rest ->
-      add_if_not_already_there env (RecordDecl, s, Misc) sexp
+      add_if_not_already_there env (RecordDecl, s, Def) sexp
 
-  (* todo: what about extern *)
-  | VarDecl, _loc::(T (TLowerIdent s | TUpperIdent s))::_typ_char::_rest ->
-      (* todo: extern? *)
-      let variant = Misc in
+  | VarDecl, _loc::(T (TLowerIdent s | TUpperIdent s))::_typ_char::rest ->
+      let variant = 
+        (* less: actually I think rest is just 'extern' so could use =*= *)
+        if rest +> List.exists (function
+          | T (TLowerIdent "extern") -> true
+          | _ -> false
+        )
+        then Proto
+        else Def
+      in
       add_if_not_already_there env (VarDecl, s, variant) sexp
 
   (* usually there is a typedef just behind those anon decl. We need a
@@ -162,13 +170,13 @@ and decl env (enum, l, xs) =
    *)
   | RecordDecl, loc::(T (TLowerIdent "union"))::_rest ->
       add_if_not_already_there env 
-        (RecordDecl, "union__anon" ^ str_of_angle_loc env l loc, Misc) sexp
+        (RecordDecl, "union__anon" ^ str_of_angle_loc env l loc, Def) sexp
   | EnumDecl, loc::_rest ->
       add_if_not_already_there env 
-        (EnumDecl, "enum__anon" ^ str_of_angle_loc env l loc, Misc) sexp
+        (EnumDecl, "enum__anon" ^ str_of_angle_loc env l loc, Def) sexp
   | RecordDecl, loc::(T (TLowerIdent "struct"))::_rest ->
       add_if_not_already_there env 
-        (RecordDecl, "struct__anon" ^ str_of_angle_loc env l loc, Misc) sexp
+        (RecordDecl, "struct__anon" ^ str_of_angle_loc env l loc, Def) sexp
 
   | LinkageSpecDecl, _loc::(T (TUpperIdent "C"))::xs ->
       List.iter (dispatch_sexp env) xs
