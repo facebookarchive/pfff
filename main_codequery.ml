@@ -23,11 +23,15 @@ open Common
  *  - QL by semmle
  *  - ndepend.com CQL
  * 
- * notes: pieter started to implement something similar using neo4j
+ * notes: pieter started to implement something similar using neo4j/cypher
  * instead of prolog for the query engine. Example of query:
  *   MATCH (n {vmname: "com/facebook/inject/AbstractProvider"})<-[:EXTENDS]-(m)
  *   RETURN m.vmname
  *   LIMIT 500
+ * The main advantage is that if you have your linter already written in
+ * Java, then neo4j APIs are easily accessible from the linter to get
+ * access to global information. The equivalent in pfff would be to use
+ * the graph_code OCaml API from your ocaml linter.
  * 
  *)
 
