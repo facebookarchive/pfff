@@ -54,29 +54,24 @@ module View = View3
  * old: $ pm_depend [-lang X] [-with-extern] [-depth n] -o filename /path/dir
  * 
  * related work: 
- * - Lattix, the startup where the original paper on DSM at OOPSLA'05
- *   comes from.
- * - Ndepend, 
- *   http://www.ndepend.com/Doc_VS_Arch.aspx
+ * - Lattix, the startup of the original paper on DSM at OOPSLA'05
+ * 
+ * - Ndepend, http://www.ndepend.com/Doc_VS_Arch.aspx
  *   http://codebetter.com/patricksmacchia/2009/08/24/identify-code-structure-patterns-at-a-glance/
- * - Structure101
- *   http://www.headwaysoftware.com/products/index.php#page-top
+ * - Structure101, http://www.headwaysoftware.com/products/index.php#page-top
  * - Intellij IDEA dsm tool
  *   http://blogs.jetbrains.com/idea/2008/01/intellij-idea-dependency-analysis-with-dsm/
  *   http://www.jetbrains.com/idea/features/dependency_analysis.html
  * 
- * - http://depfind.sourceforge.net/, a dependency extraction tool for
- *   Java
- * - https://github.com/sourcegraph/graphkit, a tentative for a generic
- *   format for code dependencies and language specific "graphers"
- *   (ruby, js, go, python)
+ * - http://depfind.sourceforge.net/, a dependency extraction tool for Java
+ * - https://github.com/sourcegraph/graphkit, a generic format for code 
+ *   dependencies and language specific "graphers" (ruby, js, go, python)
  * 
- * - http://mcis.polymtl.ca/~bram/makao/index.html also use GUESS
- *   and Prolog :)
+ * - http://mcis.polymtl.ca/~bram/makao/index.html also use GUESS and Prolog :)
  * - http://infotectonica.com/juliet/tour/, seems more oriented on
  *   query, anserwing questions like who uses this field.
  * 
- *  - visual studion dependency graph visualizer:
+ *  - visual studio dependency graph visualizer:
  *    http://msdn.microsoft.com/en-us/library/vstudio/dd409365.aspx
  *    http://channel9.msdn.com/Series/Visual-Studio-2012-Premium-and-Ultimate-Overview/Visual-Studio-Ultimate-2012-Understand-your-code-dependencies-through-visualization
  * 
