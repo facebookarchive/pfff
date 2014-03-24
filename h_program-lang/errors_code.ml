@@ -187,6 +187,9 @@ let adjust_errors xs =
     match err.typ with
     | Deadcode (s, kind) ->
        (match kind with
+       (* kencc *)
+       | E.Prototype when s = "SET" -> true
+
        | E.Dir | E.File -> true
        (* FP in graph_code_clang for now *)
        | E.Type when s =~ "E__anon" -> true
@@ -204,6 +207,7 @@ let adjust_errors xs =
 
        | _ -> false
        )
+    | UndefinedDefOfDecl ("SET", _) -> true
     | UndefinedDefOfDecl _ -> 
       file =~ "^include/" ||
       file = "kernel/lib/lib.h" ||
@@ -218,7 +222,7 @@ let adjust_errors xs =
 (*****************************************************************************)
 
 let annotation_of_line_opt s =
-  if s =~ "@\\([A-Za-z_]+\\):[ ]?\\([^@]*\\)"
+  if s =~ ".*@\\([A-Za-z_]+\\):[ ]?\\([^@]*\\)"
   then
     let (kind, explain) = Common.matched2 s in
     Some (match kind with
