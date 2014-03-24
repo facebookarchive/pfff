@@ -19,11 +19,18 @@ let actions () = [
     let json = Compile_commands_clang.sanitize_compile_commands json in
     pr (Json_out.string_of_json json);
   );
-  "-uninclude_clang", " ",
-  Common.mk_action_0_arg (fun () ->
-    let root = Common.realpath "." in
+  "-uninclude_clang", "<src> ",
+  Common.mk_action_1_arg (fun src ->
+    let root = Common.realpath src  in
     let files = Lib_parsing_clang.find_source_files_of_dir_or_files [root] in
     Uninclude_clang.uninclude ~verbose:true root files root;
+  );
+  "-uninclude_clang_debug", "<src> <file> <dst>",
+  Common.mk_action_3_arg (fun src file dst ->
+    let root = Common.realpath src  in
+    let files = [Common.realpath file]  in
+    let dst = Common.realpath dst in
+    Uninclude_clang.uninclude ~verbose:true root files dst;
   );
   
 ]
