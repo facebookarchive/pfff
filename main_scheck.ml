@@ -280,7 +280,7 @@ let main_action xs =
     errs +> List.iter (fun err ->
       (* less: confront annotation and error kind *)
       if Errors_code.annotation_at err.Errors_code.loc <> None
-      then ()
+      then pr2_dbg (spf "SKIPPING@: %s" (Errors_code.string_of_error err))
       else pr2 (Errors_code.string_of_error err)
     )
 
