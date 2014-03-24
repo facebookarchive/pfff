@@ -46,6 +46,11 @@
 },
 {
   "directory": "/home/pad/pfff/tests/clang/c",
+  "command": "clang -c /home/pad/pfff/tests/clang/c/struct_functions.c",
+  "file": "/home/pad/pfff/tests/clang/c/struct_functions.c"
+},
+{
+  "directory": "/home/pad/pfff/tests/clang/c",
   "command": "clang -c /home/pad/pfff/tests/clang/c/enum.c",
   "file": "/home/pad/pfff/tests/clang/c/enum.c"
 },
