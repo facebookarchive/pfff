@@ -188,7 +188,7 @@ let adjust_errors xs =
     | Deadcode (s, kind) ->
        (match kind with
        (* kencc *)
-       | E.Prototype when s = "SET" -> true
+       | E.Prototype when s = "SET" || s = "USED" -> true
 
        | E.Dir | E.File -> true
        (* FP in graph_code_clang for now *)
@@ -207,7 +207,8 @@ let adjust_errors xs =
 
        | _ -> false
        )
-    | UndefinedDefOfDecl ("SET", _) -> true
+       (* kencc *)
+    | UndefinedDefOfDecl (("SET" | "USED"), _) -> true
     | UndefinedDefOfDecl _ -> 
       file =~ "^include/" ||
       file = "kernel/lib/lib.h" ||
@@ -234,10 +235,9 @@ let annotation_of_line_opt s =
 (* The user can override the checks by adding special annotations
  * in the code at the same line than the code it related to.
  *)
-
 let annotation_at2 loc =
   let file = loc.PI.file in
-  let line = loc.PI.line  in
+  let line = max (loc.PI.line - 1) 1 in
   match Common2.cat_excerpts file [line] with
   | [s] -> annotation_of_line_opt s
   | _ -> failwith (spf "wrong line number %d in %s" line file)
