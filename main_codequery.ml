@@ -21,7 +21,7 @@ open Common
  * related work:
  *  - http://jquery.cs.ubc.ca/, the original inspiration for codequery
  *  - QL by semmle
- *  - ndepend.com CQL
+ *  - http://www.ndepend.com/Features.aspx#CQL
  * 
  * notes: pieter started to implement something similar using neo4j/cypher
  * instead of prolog for the query engine. Example of query:
