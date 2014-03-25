@@ -550,8 +550,9 @@ and decl env (enum, _l, xs) =
           then 
             let s = if static then new_str_if_defs env s else s in
             add_node_and_edge_if_defs_mode env (s, kind)
-          else begin 
-            env.locals := s::!(env.locals);
+          else begin
+            if kind <> E.GlobalExtern
+            then env.locals := s::!(env.locals);
             env
           end
         in
