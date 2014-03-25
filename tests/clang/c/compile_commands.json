@@ -64,4 +64,9 @@
   "command": "clang -c /home/pad/pfff/tests/clang/c/global.c",
   "file": "/home/pad/pfff/tests/clang/c/global.c"
 },
+{
+  "directory": "/home/pad/pfff/tests/clang/c",
+  "command": "clang -c /home/pad/pfff/tests/clang/c/sizeof.c",
+  "file": "/home/pad/pfff/tests/clang/c/sizeof.c"
+},
 ]

@@ -468,7 +468,7 @@ and sexp_toplevel env x =
           | _ -> error env "weird LinkageSpecDecl"
           )
 
-      | CallExpr | DeclRefExpr | MemberExpr ->
+      | CallExpr | DeclRefExpr | MemberExpr | UnaryExprOrTypeTraitExpr ->
           expr env (enum, l, xs)
       | _ -> 
           sexps env xs
@@ -735,7 +735,15 @@ and expr env (enum, _l, xs) =
       then ()
 
   | MemberExpr, _ -> error env "MemberExpr to handle"
-  | _ -> raise Impossible (* see dispatcher *)
+
+  | UnaryExprOrTypeTraitExpr, _loc::_typ::T(TLowerIdent "sizeof")::typ::_rest ->
+      (match typ with
+      | Paren _ -> ()
+      | Brace _ -> add_type_deps env typ
+      | _ -> error env "wrong argument to sizeof"
+      )
+
+  | _ -> error env "Impossible, see dispatcher"
   );
   sexps env xs
 
