@@ -28,14 +28,21 @@ module R = Refactoring_code
  *    place where it matched and then do the transformation using an 
  *    emacs macro leveraging those marks.
  * 
+ * history:
+ *  - coccinelle for C
+ *  - expression restricted spatch for PHP
+ *  - generalized spatch for PHP, C++, and other using ast_fuzzy parsing
+ *    technique, see h_program-lang/ast_fuzzy.ml top comment
+ * 
  * related: 
+ *  - sed, perl, https://github.com/facebook/codemod
  *  - http://www.jetbrains.com/idea/documentation/ssr.html
  *  - go has a replace option in its formating tool http://golang.org/cmd/gofmt/
  *    it has even an automatic API rewriter: http://golang.org/cmd/fix
  *    can do: gofmt -w -r 'x[i:len(x)] -> x[i:]' *.go
+ *    see http://blog.golang.org/go-fmt-your-code
  *  - clang-format http://llvm.org/devmtg/2013-04/jasper-slides.pdf
  *  - todo: http://www.refactory.com/tools/refactoring-browser/rewrite-tool
- *  - sed, perl, https://github.com/facebook/codemod
  *)
 
 (*****************************************************************************)
