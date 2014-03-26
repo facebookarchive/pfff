@@ -69,4 +69,9 @@
   "command": "clang -c /home/pad/pfff/tests/clang/c/sizeof.c",
   "file": "/home/pad/pfff/tests/clang/c/sizeof.c"
 },
+{
+  "directory": "/home/pad/pfff/tests/clang/c",
+  "command": "clang -c /home/pad/pfff/tests/clang/c/extern.c",
+  "file": "/home/pad/pfff/tests/clang/c/extern.c"
+},
 ]

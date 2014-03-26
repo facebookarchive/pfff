@@ -6,7 +6,7 @@ PFFF=../../../pfff
 #coupling: have also to update compile_commands.json!!
 SRC=foo.c bar.c typedef.c struct.c enum.c define.c global.c add.c \
  static1.c static2.c function_pointer.c struct_functions.c \
- bool.c sizeof.c
+ bool.c sizeof.c extern.c
 
 OBJS=$(SRC:.c=.clang)
 
