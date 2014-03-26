@@ -47,7 +47,7 @@ type error = {
   loc: Parse_info.token_location;
   sev: severity;
 }
- (* todo? Advice | Noisy | Meticulous ? *)
+ (* less: Advice | Noisy | Meticulous ? *)
  and severity = Fatal | Warning
 
  and error_kind =
@@ -200,7 +200,9 @@ let adjust_errors xs =
        | E.Type when s =~ "T__" -> true
         
        (* TODO: to remove, but too many for now *)
-       | E.Constructor | E.Field -> true
+       | E.Constructor
+       | E.Field 
+         -> true
 
        (* hmm plan9 specific? *)
        | _ when file =~ "^include/" -> true
