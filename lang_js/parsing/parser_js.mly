@@ -51,6 +51,12 @@ let bop op a b c = e(B(a, (op, b), c))
 let uop op a b = e(U((op,a), b))
 let mk_param x = { p_name = x; p_type = None; p_dots = None; }
 
+let fake_tok s = {
+  Parse_info.
+  token = Parse_info.FakeTokStr (s, None);
+  transfo = Parse_info.NoTransfo;
+}
+
 %}
 
 /*(*************************************************************************)*/
@@ -392,16 +398,24 @@ function_body:
 /*(*************************************************************************)*/
 /*(*1 Class declaration *)*/
 /*(*************************************************************************)*/
-class_declaration: T_CLASS binding_identifier class_tail
+class_declaration: T_CLASS binding_identifier generics_opt class_tail
    {
-     let (extends, body) = $3 in
-     { c_tok = $1; c_name = $2; c_extends =extends; c_body = body }
+     let (extends, body) = $4 in
+     { c_tok = $1;
+       c_name = $2;
+       c_type_params = $3;
+       c_extends =extends;
+       c_body = body
+     }
    }
 
 class_tail: class_heritage_opt T_LCURLY class_body_opt T_RCURLY { $1,($2,$3,$4)}
 
-/*(* extends arguments can be any expression, yep *)*/
-class_heritage: T_EXTENDS assignment_expression { ($1, $2) }
+/*(* extends arguments can be any expression according to ES6 *)*/
+/*(* however, this causes ambiguities with type arguments a la TypeScript *)*/
+/*(* unfortunately, TypeScript enforces severe restrictions here, *)*/
+/*(* which e.g. do not admit mixins, which we want to support *)*/
+class_heritage: T_EXTENDS nominal_type { ($1, $2) }
 
 class_body: class_element_list { $1 }
 
@@ -418,11 +432,11 @@ binding_identifier: identifier { $1 }
 /*(*----------------------------*)*/
 
 method_definition:
-  identifier T_LPAREN formal_parameter_list_opt T_RPAREN annotation_opt
+  identifier generics_opt T_LPAREN formal_parameter_list_opt T_RPAREN annotation_opt
     T_LCURLY function_body T_RCURLY
-  { { f_tok = None; f_name = Some $1; f_type_params = None;
-      f_params = ($2, $3, $4);
-      f_return_type = $5; f_body =  ($6, $7, $8)
+  { { f_tok = None; f_name = Some $1; f_type_params = $2;
+      f_params = ($3, $4, $5);
+      f_return_type = $6; f_body =  ($7, $8, $9)
   } }
 
 /*(*************************************************************************)*/
@@ -432,14 +446,13 @@ method_definition:
 annotation: T_COLON type_ { $1, $2 }
 
 type_:
- | T_VOID        { TName ("void", $1) }
- | T_IDENTIFIER  { TName $1 }
+ | T_VOID        { TName (V("void", $1), None) }
+ | nominal_type { TName($1) }
  | T_PLING type_ { TQuestion ($1, $2) }
- | T_IDENTIFIER T_LESS_THAN type_ T_GREATER_THAN
-     { assert(fst($1) = "Array"); TArray (snd $1, ($2, $3, $4)) }
  | T_LPAREN type_param_list_opt T_RPAREN T_ARROW type_
      { TFun (($1, $2, $3), $4, $5) }
  | T_LCURLY type_field_list_opt T_RCURLY         { TObj ($1, $2, $3) }
+
 
 /*(* partial type annotations are not supported *)*/
 type_field: T_IDENTIFIER T_COLON type_ semicolon { ($1, $2, $3, $4) }
@@ -464,6 +477,50 @@ type_variable_list:
 
 generics:
  | T_LESS_THAN type_variable_list T_GREATER_THAN { $1, $2, $3 }
+
+type_reference:
+ | left_hand_side_expression_no_statement { $1 }
+
+nominal_type:
+ | type_reference { ($1,None) }
+ | type_reference type_arguments { ($1, Some $2) }
+
+type_arguments:
+ | T_LESS_THAN type_argument_list T_GREATER_THAN { $1, $2, $3 }
+ | mismatched_type_arguments { $1 }
+
+type_argument_list:
+ | type_                            { [Left $1] }
+ | type_argument_list T_COMMA type_ { $1 @ [Right $2; Left $3] }
+
+/*(* a sequence of 2 or 3 closing > will be tokenized as >> or >>> *)*/
+/*(* thus, we allow type arguments to omit 1 or 2 closing > to make it up *)*/
+mismatched_type_arguments:
+ | T_LESS_THAN type_argument_list1 T_RSHIFT { $1, $2, $3 }
+ | T_LESS_THAN type_argument_list2 T_RSHIFT3 { $1, $2, $3 }
+
+type_argument_list1:
+ | nominal_type1                            { [Left (TName $1)] }
+ | type_argument_list T_COMMA nominal_type1 { $1 @ [Right $2; Left (TName $3)] }
+
+nominal_type1:
+ | type_reference type_arguments1 { ($1, Some $2) }
+
+/*(* missing 1 closing > *)*/
+type_arguments1:
+ | T_LESS_THAN type_argument_list { $1, $2, fake_tok ">" }
+
+type_argument_list2:
+ | nominal_type2                            { [Left (TName $1)] }
+ | type_argument_list T_COMMA nominal_type2 { $1 @ [Right $2; Left (TName $3)] }
+
+nominal_type2:
+ | type_reference type_arguments2 { ($1, Some $2) }
+
+/*(* missing 2 closing > *)*/
+type_arguments2:
+ | T_LESS_THAN type_argument_list1 { $1, $2, fake_tok ">" }
+
 
 /*(*************************************************************************)*/
 /*(*1 Expression *)*/

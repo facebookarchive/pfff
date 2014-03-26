@@ -206,6 +206,7 @@ and v_expr (x: expr) =
       and v3 = v_list v_encaps v3
       and v4 = v_tok v4
       in ()
+
   in
   vin.kexpr (k, all_functions) x
 
@@ -427,9 +428,8 @@ and v_case_clause =
 and v_arg v = v_wrap v_string v
 and v_type_ =
   function
-  | TName v1 -> let v1 = v_name v1 in ()
+  | TName v1 -> let v1 = v_nominal_type v1 in ()
   | TQuestion ((v1, v2)) -> let v1 = v_tok v1 and v2 = v_type_ v2 in ()
-  | TArray ((v1, v2)) -> let v1 = v_tok v1 and v2 = v_angle v_type_ v2 in ()
   | TFun ((v1, v2, v3)) ->
       let v1 =
         v_paren
@@ -455,6 +455,10 @@ and v_type_ =
                 in ()))
           v1
       in ()
+and v_nominal_type ((v1,v2)) =
+  let v1 = v_expr v1 in
+  let v2 = v_option (v_angle (v_comma_list v_type_)) v2 in
+  ()
 and v_type_opt v =
   v_option (fun (v1, v2) -> let v1 = v_tok v1 and v2 = v_type_ v2 in ()) v
 and  v_func_decl {
@@ -508,14 +512,16 @@ and
   v_class_decl {
                  c_tok = v_c_tok;
                  c_name = v_c_name;
+                 c_type_params = v_c_type_params;
                  c_extends = v_c_extends;
                  c_body = v_c_body
                } =
   let arg = v_tok v_c_tok in
   let arg = v_name v_c_name in
+  let arg = v_option (v_angle (v_comma_list v_name)) v_c_type_params in
   let arg =
     v_option
-      (fun (v1, v2) -> let v1 = v_tok v1 and v2 = v_inherit_expr v2 in ())
+      (fun (v1, v2) -> let v1 = v_tok v1 and v2 = v_nominal_type v2 in ())
       v_c_extends in
   let arg = v_brace (v_list v_class_stmt) v_c_body in
   ()
@@ -526,7 +532,6 @@ and v_class_stmt =
   | Method ((v1, v2)) ->
       let v1 = v_option v_tok v1 and v2 = v_func_decl v2 in ()
   | ClassExtraSemiColon v1 -> let v1 = v_sc v1 in ()
-and v_inherit_expr v = v_expr v
 
 and v_toplevel =
   function

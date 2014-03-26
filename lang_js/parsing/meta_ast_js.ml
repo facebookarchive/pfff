@@ -144,6 +144,7 @@ let rec vof_expr =
       and v3 = Ocaml.vof_list vof_encaps v3
       and v4 = vof_tok v4
       in Ocaml.VSum (("Encaps", [ v1; v2; v3; v4 ]))
+
 and vof_litteral =
   function
   | Bool v1 ->
@@ -409,15 +410,13 @@ and vof_case_clause =
 and vof_arg v = vof_wrap Ocaml.vof_string v
 and vof_type_ =
   function
-  | TName v1 -> let v1 = vof_name v1 in Ocaml.VSum (("TName", [ v1 ]))
+  | TName v1 ->
+      let v1 = vof_nominal_type v1 in
+      Ocaml.VSum (("TName", [ v1 ]))
   | TQuestion ((v1, v2)) ->
       let v1 = vof_tok v1
       and v2 = vof_type_ v2
       in Ocaml.VSum (("TQuestion", [ v1; v2 ]))
-  | TArray ((v1, v2)) ->
-      let v1 = vof_tok v1
-      and v2 = vof_angle vof_type_ v2
-      in Ocaml.VSum (("TArray", [ v1; v2 ]))
   | TFun ((v1, v2, v3)) ->
       let v1 =
         vof_paren
@@ -443,6 +442,10 @@ and vof_type_ =
                 in Ocaml.VTuple [ v1; v2; v3; v4 ]))
           v1
       in Ocaml.VSum (("TObj", [ v1 ]))
+and vof_nominal_type ((v1,v2)) =
+  let v1 = vof_expr v1 in
+  let v2 = Ocaml.vof_option (vof_angle (vof_comma_list vof_type_)) v2 in
+  Ocaml.VTuple [ v1; v2 ]
 and vof_type_opt v =
   Ocaml.vof_option
     (fun (v1, v2) ->
@@ -551,6 +554,7 @@ and vof_toplevel =
 and  vof_class_decl {
                    c_tok = v_c_tok;
                    c_name = v_c_name;
+                   c_type_params = v_c_type_params;
                    c_extends = v_c_extends;
                    c_body = v_c_body
                  } =
@@ -562,10 +566,16 @@ and  vof_class_decl {
     Ocaml.vof_option
       (fun (v1, v2) ->
          let v1 = vof_tok v1
-         and v2 = vof_inherit_expr v2
+         and v2 = vof_nominal_type v2
          in Ocaml.VTuple [ v1; v2 ])
       v_c_extends in
   let bnd = ("c_extends", arg) in
+  let bnds = bnd :: bnds in
+  let arg =
+    Ocaml.vof_option
+      (vof_angle (vof_comma_list vof_name)) v_c_type_params
+  in
+  let bnd = ("c_type_params", arg) in
   let bnds = bnd :: bnds in
   let arg = vof_name v_c_name in
   let bnd = ("c_name", arg) in
@@ -585,7 +595,6 @@ and vof_class_stmt =
       in Ocaml.VSum (("Method", [ v1; v2 ]))
   | ClassExtraSemiColon v1 ->
       let v1 = vof_sc v1 in Ocaml.VSum (("ClassExtraSemiColon", [ v1 ]))
-and vof_inherit_expr v = vof_expr v
 
 and vof_program_orig v = Ocaml.vof_list vof_toplevel v
 
