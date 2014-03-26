@@ -456,7 +456,9 @@ let generate_builtins idlfile pr_hook =
           in
         
           let args_str = Common.join ", " xs in
-          pr_hook (spf "function %s(%s) { %s}"
+          if name =~ "^__SystemLib"
+          then ()
+          else  pr_hook (spf "function %s(%s) { %s}"
                      name args_str body_str)
         end
       | _ -> failwith "wrong json format"
