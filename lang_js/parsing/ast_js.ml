@@ -225,12 +225,22 @@ and st =
 (* facebook-ext: complex type annotation *)
 and type_ =
   (* used for builtin types like 'void', 'number', 'string', 'any/mixed' *)
-  | TName of name
+  | TName of nominal_type
   | TQuestion of tok * type_
-  | TArray of tok * type_ angle
   | TFun of (name * tok (* : *) * type_) comma_list paren * tok (* => *) * type_
   (* comma_list or semicolons_list ?*)
   | TObj of (name * tok (* : *) * type_ * sc) list brace
+
+(* Most of the time expr is a (V name),
+   but Javascript allows qualified names of the form Period(e,tok,name),
+   and other ways of dynamically computing types as well.
+*)
+and nominal_type =
+  expr * type_argument comma_list angle option
+
+and type_argument = type_
+
+and type_parameter = name
 
 and type_opt = (tok (* : *) * type_) option
 
@@ -240,7 +250,7 @@ and type_opt = (tok (* : *) * type_) option
 and func_decl = {
   f_tok: tok option; (* None for methods *)
   f_name: name option; (* None for anonymous functions *)
-  f_type_params: name comma_list angle option;
+  f_type_params: type_parameter comma_list angle option;
   f_params: parameter comma_list paren;
   f_return_type: type_opt;
   f_body: toplevel list brace;
@@ -285,7 +295,8 @@ and variable_declaration = {
 and class_decl = {
   c_tok: tok;
   c_name: name;
-  c_extends: (tok (* extends *) * inherit_expr) option;
+  c_type_params: type_parameter comma_list angle option;
+  c_extends: (tok (* extends *) * nominal_type) option;
   c_body: class_stmt list brace;
 }
 
@@ -293,8 +304,6 @@ and class_decl = {
   | Method of tok option (* static *) * func_decl
   | Field of parameter * sc
   | ClassExtraSemiColon of sc
-
-and inherit_expr = expr
 
 (* ------------------------------------------------------------------------- *)
 (* The toplevels elements *)
