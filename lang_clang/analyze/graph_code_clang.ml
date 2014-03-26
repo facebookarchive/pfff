@@ -301,6 +301,9 @@ let add_node_and_edge_if_defs_mode env node =
          * 'Word' and another 'word'). We don't want to add to the same
          * entity dependencies to this different types so we need to mark
          * the prototype as a dupe too!
+         * Anyway normally we should add the deps to the Function or Global
+         * first so we should hit this code only for really external
+         * entities.
          *)
          Hashtbl.replace env.dupes node true;
       | _ ->
@@ -337,12 +340,13 @@ let rec add_use_edge env (s, kind) =
   match () with
   | _ when Hashtbl.mem env.dupes src || Hashtbl.mem env.dupes dst ->
       (* todo: stats *)
-      ()
+      env.pr2_and_log (spf "skipping edge (%s -> %s), one of it is a dupe"
+                         (G.string_of_node src) (G.string_of_node dst));
   (* plan9, those are special functions in kencc? *)
-  | _ when s =$= "USED" || s =$= "SET" -> 
-      ()
+  | _ when s =$= "USED" || s =$= "SET" ->  ()
   | _ when not (G.has_node src env.g) ->
       error env ("SRC FAIL:" ^ G.string_of_node src);
+  (* the normal case *)
   | _ when G.has_node dst env.g ->
       G.add_edge (src, dst) G.Use env.g
   | _ ->
@@ -351,6 +355,7 @@ let rec add_use_edge env (s, kind) =
     | E.Function -> add_use_edge env (s, E.Prototype)
     (* look for GlobalExtern if no Global *)
     | E.Global -> add_use_edge env (s, E.GlobalExtern)
+
     | _ when env.clang2_file =~ ".*EXTERNAL" -> 
         ()
     (* todo? if we use 'b' in the 'a':'b' type string, still need code below?*)
