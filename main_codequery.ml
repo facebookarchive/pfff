@@ -22,6 +22,7 @@ open Common
  *  - http://jquery.cs.ubc.ca/, the original inspiration for codequery
  *  - QL by semmle
  *  - http://www.ndepend.com/Features.aspx#CQL
+ *  - http://golang.org/s/oracle-design
  * 
  * notes: pieter started to implement something similar using neo4j/cypher
  * instead of prolog for the query engine. Example of query:
