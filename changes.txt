@@ -63,6 +63,8 @@ extensions)
 *** support for arrow (aka short lambda), variable number of parameters,
 trailing commas, interpolated strings, and fix bugs in regexp and xhp
 
+*** (avik) support for generics
+
 ** internal
 
 *** find_source.ml, also many things works now with multiple dirs and
