@@ -187,10 +187,11 @@ let adjust_errors xs =
     match err.typ with
     | Deadcode (s, kind) ->
        (match kind with
+       | E.Dir | E.File -> true
+
        (* kencc *)
        | E.Prototype when s = "SET" || s = "USED" -> true
 
-       | E.Dir | E.File -> true
        (* FP in graph_code_clang for now *)
        | E.Type when s =~ "E__anon" -> true
        | E.Type when s =~ "U__anon" -> true
@@ -198,21 +199,25 @@ let adjust_errors xs =
        | E.Type when s =~ "E__" -> true
        | E.Type when s =~ "T__" -> true
         
-
-       (* todo: to remove, but too many for now *)
+       (* TODO: to remove, but too many for now *)
        | E.Constructor | E.Field -> true
-       | _ when file =~ "^include/" -> true
 
-(*       | E.Prototype | E.GlobalExtern -> true *)
+       (* hmm plan9 specific? *)
+       | _ when file =~ "^include/" -> true
 
        | _ -> false
        )
-       (* kencc *)
+
+    (* kencc *)
     | UndefinedDefOfDecl (("SET" | "USED"), _) -> true
+
     | UndefinedDefOfDecl _ -> 
+
+      (* hmm very plan9 specific *)
       file =~ "^include/" ||
       file = "kernel/lib/lib.h" ||
       file = "kernel/network/ip/ip.h" ||
+      file =~ "kernel/conf/" ||
       false
 
     | _ -> false
