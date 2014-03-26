@@ -281,6 +281,10 @@ let add_node_and_edge_if_defs_mode env node =
               | "T__dev_t" | "T__mode_t"
             )
               -> ()
+          (* dupe typedefs are ok as long as they are equivalent, and this
+           * check is done for TypedefDecl below in decl().
+           *)
+          | E.Type, s when s =~ "T__" -> ()
           | _ when env.clang2_file =~ ".*EXTERNAL" -> ()
           (* todo: if typedef then maybe ok if have same content!! *)
           | _ when not env.conf.typedefs_dependencies && str =~ "T__.*" -> 
