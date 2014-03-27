@@ -291,8 +291,11 @@ let build_cpp_identifier_index xs =
   hcnt, h
 
 
-let false_positive_detector errors hidentifier g =
-  errors +> List.iter (fun err ->
+(* todo: could have more than 2 clients and still be dead
+ * if was recursive function
+ *)
+let false_positive_detector hidentifier g errors =
+  errors +> Common.exclude (fun err ->
     match err.Errors_code.typ with
     | Errors_code.Deadcode ((s, Database_code.Function) as n) ->
         let short = Graph_code.shortname_of_node n in
@@ -302,9 +305,11 @@ let false_positive_detector errors hidentifier g =
           then 2 
           else 1
         in
-        if List.length occurences > expected_minimum
-        then pr2 (spf "FP deadcode detected for %s" (Graph_code.string_of_node n));
-    | _ -> ()
+        let fp = List.length occurences > expected_minimum in
+        if fp
+        then pr2_dbg (spf "%s (FP deadcode?)" (Errors_code.string_of_error err));
+        fp
+    | _ -> false
   )
 
 (*****************************************************************************)
@@ -335,14 +340,16 @@ let main_action xs =
 
     let g = Graph_code.load graph_file in
     let errs = Graph_code_checker.check g in
-    if lang = "clang2"
-    then begin
-      let (_hcnt, hidentifier) = build_cpp_identifier_index xs in
-      false_positive_detector errs hidentifier g
-    end;
+    let hidentifier =
+      if lang = "clang2"
+      then build_cpp_identifier_index xs +> snd
+      else Hashtbl.create 0
+    in
 
     let errs = 
-      errs +> Errors_code.adjust_errors
+      errs 
+      +> false_positive_detector hidentifier g
+      +> Errors_code.adjust_errors
       +> List.filter (fun err -> (Errors_code.score_of_error err) >= !filter)
     in
     let errs = 
@@ -357,7 +364,7 @@ let main_action xs =
     errs +> List.iter (fun err ->
       (* less: confront annotation and error kind *)
       if Errors_code.annotation_at err.Errors_code.loc <> None
-      then pr2_dbg (spf "SKIPPING@: %s" (Errors_code.string_of_error err))
+      then pr2_dbg (spf "%s (Skipping @)" (Errors_code.string_of_error err))
       else pr2 (Errors_code.string_of_error err)
     )
 
@@ -455,7 +462,7 @@ let main_action xs =
 (*****************************************************************************)
 
 (*---------------------------------------------------------------------------*)
-(* type inference playground *)
+(* PHP type inference playground *)
 (*---------------------------------------------------------------------------*)
 
 let type_inference _file =
@@ -525,7 +532,7 @@ let dflow file_or_dir =
     )) files
 
 (*---------------------------------------------------------------------------*)
-(* Poor's man token-based Deadcode detector  *)
+(* Poor's man token-based Deadcode detector for C/C++/...  *)
 (*---------------------------------------------------------------------------*)
 module PI = Parse_info
 module E = Database_code
