@@ -576,10 +576,12 @@ let matching_def_short_kind_kind short_kind kind =
 let matching_use_categ_kind categ kind =
   match kind, categ with
   | Function,    HC.Function _
+  | Prototype,    HC.Function _
   | Field,       HC.Field _
   | Constructor, HC.Constructor _
   | Constructor, HC.ConstructorMatch _
   | Global,      HC.Global _
+  | GlobalExtern,      HC.Global _
   | Method _,    HC.Method _
   | Method _,    HC.StaticMethod _
   | Class _,     HC.Class _
@@ -601,6 +603,8 @@ let matching_use_categ_kind categ kind =
 
   (* function pointers in structure initialized (poor's man oo in C) *)
   | Function, HC.Global _
+  (* function calls to pointer function via direct syntax *)
+  | GlobalExtern, HC.Function _
     
   | Global,   HC.UseOfRef
   | Field, HC.UseOfRef
