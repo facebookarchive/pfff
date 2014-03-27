@@ -517,7 +517,7 @@ let entity_kind_of_highlight_category_def categ =
   | HC.Constant (HC.Def2 _) -> Some Constant
   | HC.Macro (HC.Def2 _) -> Some Macro (* todo? want agglomerate ? *)
   | HC.Function (HC.Def2 _) -> Some Function
-  | HC.FunctionDecl _ -> Some Function
+  | HC.FunctionDecl _ -> Some Prototype
   | HC.Global (HC.Def2 _) -> Some Global
   (* todo? interface? traits?*)
   | HC.Class (HC.Def2 _) -> Some (Class RegularClass)

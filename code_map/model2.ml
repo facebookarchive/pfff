@@ -347,6 +347,14 @@ let match_short_vs_node (str, short_kind) node =
   Graph_code.shortname_of_node node =$= str &&
   Database_code.matching_def_short_kind_kind short_kind (snd node)
 
+(* when in a file we have both the prototype (forward decl) and
+ * the def, we prefer the def.
+ *)
+let rank_entity_kind = function
+  | E.Function | E.Global -> 3
+  | E.Prototype | E.GlobalExtern -> 1
+  | _ -> 2
+
 (* We used to just look in hentities_of_file for the line mentioned
  * in the graph_code database, but the file may have changed so better
  * instead to rely on microlevel.defs.
@@ -358,13 +366,16 @@ let find_def_entity_at_line_opt line tr dw model =
     let nodes = Hashtbl.find model.hentities_of_file readable in
     let microlevel = Hashtbl.find dw.microlevel tr in
     let short_node = List.assoc line microlevel.defs in
-    (* try to match the possible shortname str with a fully qualified node *)
-    nodes +> Common.find_some_opt (fun node ->
+    (* try to match the possible shortname str with a fully qualified node 
+    *)
+    nodes +> Common.map_filter (fun node ->
       if match_short_vs_node short_node node
       then Some node
       else None
-    )
-  with Not_found -> None
+    ) +> List.map (fun (s, kind) -> ((s, kind), rank_entity_kind kind))
+      +> Common.sort_by_val_highfirst
+      +> List.hd +> fst +> (fun x -> Some x)
+  with Not_found | Failure "hd" -> None
 
 let find_use_entity_at_line_and_glyph_opt line glyph tr dw model =
   model.g >>= (fun g ->

@@ -536,6 +536,9 @@ and decl env (enum, _l, xs) =
         let env = 
           if static && kind = E.Prototype
           then env
+          (* todo: when prototype and in .c, then it's probably a forward
+           * decl that we could just skip?
+           *)
           else add_node_and_edge_if_defs_mode env (s, kind) 
         in
         if kind <> E.Prototype then add_type_deps env typ;
