@@ -328,7 +328,7 @@ let tokens_with_categ_of_file file hentities =
         }
         file prefs hentities
 
-  | FT.PL (FT.Cplusplus _ | FT.C _ | FT.Thrift) ->
+  | FT.PL (FT.Cplusplus _ | FT.C _ | FT.Thrift | FT.ObjectiveC _) ->
       tokens_with_categ_of_file_helper 
         { parse = (parse_cache 
          (fun file -> 
