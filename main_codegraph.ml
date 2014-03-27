@@ -676,12 +676,12 @@ let entities_of_ast ast =
   let res = ref [] in
   let visitor = Ast_fuzzy.mk_visitor { Ast_fuzzy.default_visitor with
     Ast_fuzzy.ktrees = (fun (k, _) xs ->
-      match xs with
+      (match xs with
       | Ast.Tok (s, _)::Ast.Parens _::Ast.Braces _::_res ->
           Common.push (s, E.Function) res;
-          k xs
-      | _ -> 
-          k xs
+      | _ ->  ()
+      );
+      k xs
     )
   }
   in
@@ -712,12 +712,14 @@ let test_index xs =
   Flag_parsing_cpp.verbose_lexing := false;
   files +> List.iter (fun file ->
     let toks = Parse_cpp.tokens file in
+(*
     let _fuzzy = 
       try Parse_cpp.parse_fuzzy file
       with exn -> 
         pr2 (spf "PB fuzzy on %s (exn = %s)" file (Common.exn_to_s exn));
         [], []
     in
+*)
         
     toks +> List.iter (fun tok ->
       match tok with
@@ -747,11 +749,16 @@ let test_index xs =
       if file =~ ".*\\.c" 
       then begin
         (* pr2 (spf "found? %s in %s" s file); *)
-        let (ast, _toks) = Parse_cpp.parse_fuzzy file in
+        let (ast, _toks) = 
+      try Parse_cpp.parse_fuzzy file
+      with exn -> 
+        pr2 (spf "PB fuzzy on %s (exn = %s)" file (Common.exn_to_s exn));
+        [], []
+    in
         let entities = entities_of_ast ast in
         (match Common2.assoc_opt s entities with
         | Some E.Function ->
-            pr2 (spf "dead function? %s in %s" s file)
+            pr2 (spf "DEAD FUNCTION? %s in %s" s file)
         | _ -> ()
         )
       end
