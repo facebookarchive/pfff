@@ -22,6 +22,11 @@ open Common
  * often contains special code that can not be parsed, that contains
  * dependencies that should not exist, old code that we don't want
  * to analyze, etc.
+ * 
+ * todo: simplify interface in skip_list.txt file? can infer
+ * dir or file, and maybe sometimes instead of skip we would like
+ * to specify the opposite, what we want to keep, so maybe a simple
+ *  +/- syntax would be better.
  *)
 
 (*****************************************************************************)
