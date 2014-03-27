@@ -13,12 +13,18 @@ type error = {
 
  and entity = (string * Database_code.entity_kind)
 
+
 (* @xxx to acknowledge or explain false positives *)
 type annotation =
   | AtScheck of string
 
+(* to detect false positives (we use the Hashtbl.find_all property) *)
+type identifier_index = (string, Parse_info.token_location) Hashtbl.t
+
+
 val string_of_error: error -> string
 val string_of_error_kind: error_kind -> string
+
 
 val g_errors: error list ref
 (* !modify g_errors! *)
@@ -43,6 +49,6 @@ val score_of_error:
 val annotation_at:
   Parse_info.token_location -> annotation option
 
-(* have a few false positives in scheck so filter them *)
+(* have some approximations and Fps in graph_code_checker so filter them *)
 val adjust_errors:
   error list -> error list

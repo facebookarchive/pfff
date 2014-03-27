@@ -27,6 +27,7 @@ module PI = Parse_info
  *  - introduced ranking via int (but mess)
  *  - introduced simplified ranking using intermediate rank type
  *  - fully generalize when introduced graph_code_checker.ml
+ *  - add some false positive deadcode detection
  * 
  * todo:
  *  - priority to errors, so dead code func more important than dead field
@@ -110,6 +111,9 @@ type rank =
 type annotation =
   | AtScheck of string
 
+(* to detect false positives (we use the Hashtbl.find_all property) *)
+type identifier_index = (string, Parse_info.token_location) Hashtbl.t
+
 (*****************************************************************************)
 (* Pretty printers *)
 (*****************************************************************************)
@@ -137,8 +141,9 @@ let string_of_error err =
   let pos = err.loc in
   spf "%s:%d: %s" pos.PI.file pos.PI.line (string_of_error_kind err.typ)
 
+
 (*****************************************************************************)
-(* Helpers *)
+(* Main entry points *)
 (*****************************************************************************)
 
 let g_errors = ref []
