@@ -184,7 +184,7 @@ let keyword_table = Common.hash_of_list [
   "@finally", (fun ii -> TAt_finally ii);
   "@synchronized", (fun ii -> TAt_synchronized ii);
 
-   (* apple ext? *)
+   (* apple ext? remove in favor of a TAt_Misc? *)
   "@property", (fun ii -> TAt_property ii);
   "@synthesize", (fun ii -> TAt_synthesize ii);
   "@autoreleasepool", (fun ii -> TAt_autoreleasepool ii);
@@ -194,10 +194,6 @@ let keyword_table = Common.hash_of_list [
   "@optional", (fun ii -> TAt_optional ii);
   "@required", (fun ii -> TAt_required ii);
   "@compatibility_alias", (fun ii -> TAt_compatibility_alias ii);
-
-  "@__SB_QUOTE", (fun ii -> TAt_Misc ii);
-  "@FB_TO_STRING", (fun ii -> TAt_Misc ii);
-  "@REGEXKITLITE_VERSION_CSTRING", (fun ii -> TAt_Misc ii);
  ]
 
 let error_radix s = 
@@ -532,7 +528,8 @@ rule token = parse
         let f = Hashtbl.find keyword_table s in
         f info
       with Not_found ->
-        failwith ("LEXER: unknown objective C keyword: " ^ s);
+        TAt_Misc info
+        (* failwith ("LEXER: unknown objective C keyword: " ^ s); *)
   }
   (* @[ *)
   | "@" { TAt (tokinfo lexbuf) }
