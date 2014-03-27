@@ -64,7 +64,7 @@ let gen_rank_heatmap_layer g hentity_to_rank  ~output =
   let max_total = Common2.maximum xs in
 
   let layer = { Layer_code.
-    title = "Graph code rank";
+    title = spf "Graph code rank (%s)" (Filename.basename output);
     description = "Associate a rank to each entity according to its depth
 in the Use graph";
     files = group_by_file +> List.map (fun (file, nodes_and_rank) ->
