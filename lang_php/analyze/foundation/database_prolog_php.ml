@@ -77,7 +77,7 @@ let rec string_of_hint_type h =
           (match c with
           | XName [QI (c)] -> Ast.str_of_ident c
           | XName qu -> 
-            raise (Ast.TodoNamespace (Ast.info_of_qualified_ident qu))
+              raise (Ast.TodoNamespace (Ast.info_of_qualified_ident qu))
           | Self _ -> "self"
           | Parent _ -> "parent"
           | LateStatic _ -> "")
@@ -173,15 +173,9 @@ let visit ~add readable ast =
         let s = Ast.str_of_ident def.c_name in
         current := spf "'%s'" s;
         Hashtbl.clear h;
-        (* todo: use Class_php.class_kind_of_ctype 
-        let kind =
-          match def.c_type with
-          | ClassRegular _ | ClassFinal _ | ClassAbstract _ -> E.RegularClass
-          | Interface _ -> E.Interface
-          | Trait _ -> E.Trait
-        in
-        *)
-        add (P.Kind (P.entity_of_str s, E.Class));
+        let kind_str = Class_php.string_of_class_type def.c_type in
+        (* add (P.Kind (P.entity_of_str s, E.Class)); *)
+        add (P.Misc (spf "kind('%s', %s)" s kind_str)); 
         let tok = Ast.info_of_ident def.c_name in
         add (P.At (P.entity_of_str s, readable, PI.line_of_info tok));
 

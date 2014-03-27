@@ -59,12 +59,10 @@ trait T { }
         ["field"]     (prolog_query ~file "kind(('A','fld'), X), writeln(X)");
       assert_equal 
         ["constant"]  (prolog_query ~file "kind(('A','CST'), X), writeln(X)");
-(* TODO to fix
       assert_equal 
         ["interface"] (prolog_query ~file "kind('I', X), writeln(X)");
       assert_equal 
         ["trait"]     (prolog_query ~file "kind('T', X), writeln(X)");
-*)
     );
 
 (*****************************************************************************)
