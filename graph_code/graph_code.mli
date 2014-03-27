@@ -10,7 +10,6 @@ type edge = Has | Use
 (* !! the main type!! really an hypergraph actually *)
 type graph
 
-
 (* error and statistics *)
 type error =
  | NodeAlreadyPresent of node
@@ -36,6 +35,8 @@ type dependency = (node * node)
 type whitelist = dependency list
 
 
+(* to bump when change of format. load() should detect when loading old graphs *)
+val version: int
 
 (* IO *)
 val load: Common.filename -> graph

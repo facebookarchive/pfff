@@ -243,7 +243,7 @@ let add_nodeinfo n info g =
 (* IO *)
 (*****************************************************************************)
 (* todo: what when have a .opti? cache_computation will shortcut us *)
-let version = 3
+let version = 4
 
 let save g file =
   (* see ocamlgraph FAQ *)
