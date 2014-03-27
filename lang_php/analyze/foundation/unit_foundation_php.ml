@@ -123,9 +123,9 @@ let tags_unittest =
             ) in
             assert_equal ~msg:"it should contain the right entries" [
               "foo", Db.Function;
-              "A", Db.Class Db.RegularClass;
-              "B", Db.Class Db.Interface;
-              "C", Db.Class Db.Trait;
+              "A", Db.Class;
+              "B", Db.Class(* Db.Interface*);
+              "C", Db.Class(* Db.Trait*);
               "CST", Db.Constant;
               "OldCst", Db.Constant;
               "T", Db.Type;
@@ -163,14 +163,14 @@ let tags_unittest =
              * method name.
              *)
             assert_equal ~msg:"The tags should contain the right entries" [
-              "A", Db.Class Db.RegularClass;
-              "A::a_method", Db.Method Db.RegularMethod;
+              "A", Db.Class;
+              "A::a_method", Db.Method;
               (* this tag is safe to generate, no ambiguity *)
-              "a_method", Db.Method Db.RegularMethod;
-              "A::ambiguous_with_function", Db.Method Db.RegularMethod;
-              "A::ambiguous_with_another_class", Db.Method Db.RegularMethod;
-              "B", Db.Class Db.RegularClass;
-              "B::ambiguous_with_another_class", Db.Method Db.RegularMethod;
+              "a_method", Db.Method;
+              "A::ambiguous_with_function", Db.Method;
+              "A::ambiguous_with_another_class", Db.Method;
+              "B", Db.Class;
+              "B::ambiguous_with_another_class", Db.Method;
               "ambiguous_with_function", Db.Function;
             ]
             xs
@@ -197,19 +197,19 @@ let tags_unittest =
               x.Tags_file.tagname, x.Tags_file.kind
             ) in
             let desired = [
-              "A", Db.Class Db.RegularClass;
-              "A::yieldSomething", Db.Method Db.RegularMethod;
-              "yieldSomething", Db.Method Db.RegularMethod;
-              "A::genSomething", Db.Method Db.RegularMethod;
-              "genSomething", Db.Method Db.RegularMethod;
-              "A::prepareSomething", Db.Method Db.RegularMethod;
-              "prepareSomething", Db.Method Db.RegularMethod;
-              "A::getSomething", Db.Method Db.RegularMethod;
-              "getSomething", Db.Method Db.RegularMethod;
-              "A::prepareSomethingElse", Db.Method Db.RegularMethod;
-              "prepareSomethingElse", Db.Method Db.RegularMethod;
-              "A::genSomethingElse", Db.Method Db.RegularMethod;
-              "genSomethingElse", Db.Method Db.RegularMethod;
+              "A", Db.Class;
+              "A::yieldSomething", Db.Method;
+              "yieldSomething", Db.Method;
+              "A::genSomething", Db.Method;
+              "genSomething", Db.Method;
+              "A::prepareSomething", Db.Method;
+              "prepareSomething", Db.Method;
+              "A::getSomething", Db.Method;
+              "getSomething", Db.Method;
+              "A::prepareSomethingElse", Db.Method;
+              "prepareSomethingElse", Db.Method;
+              "A::genSomethingElse", Db.Method;
+              "genSomethingElse", Db.Method;
             ]
             in
             assert_equal ~msg:"Tags should contain entries for the right magic methods"
@@ -265,10 +265,10 @@ function test_useA() {
       let pred = G.pred src G.Use g in
       assert_equal
         ~msg:"it should link the use of a PHP field to its def"
-        ["A.test_field", E.Method E.RegularMethod]
+        ["A.test_field", E.Method]
         pred;
 
-      let src = ("A", E.Class E.RegularClass) in
+      let src = ("A", E.Class) in
       let pred = G.pred src G.Use g in
       assert_equal
         ~msg:"it should link the use of a class to its use"

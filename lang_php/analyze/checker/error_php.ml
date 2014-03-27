@@ -348,7 +348,7 @@ let rank_of_error_kind err_kind =
     (match kind with
     (* todo: too many for now *)
     | Database_code.ClassConstant -> Less
-    | Database_code.Method _ -> Less
+    | Database_code.Method -> Less
     (* some FPs about case sensitivity *)
     | _ -> Important
     )

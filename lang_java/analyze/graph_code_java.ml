@@ -281,7 +281,7 @@ let rec import_of_inherited_classes env n =
   let parents_inheritance = G.succ n G.Use env.g in
   parents_inheritance +> Common.map_filter (fun (str, kind) ->
     match kind with
-    | E.Class _ ->
+    | E.Class ->
         let xs = (Common.split "\\." str) @ ["*"] in
         let res = import_of_inherited_classes env (str, kind) in
         Some (xs::res)
@@ -411,7 +411,7 @@ and decls env xs = List.iter (decl env) (Common.index_list_1 xs)
 and class_decl env def =
   let full_ident = env.current_qualifier @ [def.cl_name] in
   let full_str = str_of_qualified_ident full_ident in
-  let node = (full_str, E.Class E.RegularClass) in
+  let node = (full_str, E.Class) in
   if env.phase = Defs then begin
     (* less: def.c_type? *)
     env.g +> G.add_node node;
@@ -444,7 +444,7 @@ and class_decl env def =
      * allow nested classes to access siblings.
      *)
      (List.map Ast.unwrap full_ident @ ["*"]) ::
-    import_of_inherited_classes env (full_str, E.Class E.RegularClass)
+    import_of_inherited_classes env (full_str, E.Class)
   in
   decls {env with imported_namespace = imports @ env.imported_namespace } 
     def.cl_body
@@ -456,11 +456,11 @@ and method_decl env def =
 
   let full_ident = env.current_qualifier @ [def.m_var.v_name] in
   let full_str = str_of_qualified_ident full_ident in
-  let node = (full_str, E.Method E.RegularMethod) in
+  let node = (full_str, E.Method) in
   if env.phase = Defs then begin
     (* less: static? *)
     (* less: for now we just collapse all methods with same name together *)
-    if G.has_node (full_str, E.Method E.RegularMethod) env.g
+    if G.has_node (full_str, E.Method) env.g
     then ()
     else begin
       env.g +> G.add_node node;
@@ -517,7 +517,7 @@ and enum_decl env def =
   let full_ident = env.current_qualifier @ [def.en_name] in
   let full_str = str_of_qualified_ident full_ident in
     (* less: make it a class? or a Type? *)
-  let node = (full_str, E.Class E.RegularClass) in
+  let node = (full_str, E.Class) in
   if env.phase = Defs then begin
     env.g +> G.add_node node;
     env.g +> G.add_nodeinfo node (nodeinfo def.en_name);

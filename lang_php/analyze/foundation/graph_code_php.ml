@@ -291,7 +291,7 @@ let (strtok_of_name: env -> Ast.name -> Database_code.entity_kind ->
 
 let (strtok_of_class_name: env -> Ast.hint_type -> resolved_name Ast.wrap) =
   fun env x ->
-   strtok_of_name env (name_of_class_name x) (E.Class E.RegularClass)
+   strtok_of_name env (name_of_class_name x) (E.Class)
 
 let str_of_name env x kind =
   fst (strtok_of_name env x kind)
@@ -317,7 +317,7 @@ let add_node_and_has_edge2 ?(props=[]) env (ident, kind) =
   let str =
     add_prefix env.cur.qualifier ^
     (match kind with
-    | E.ClassConstant | E.Field | E.Method _ -> env.cur.self ^ "."
+    | E.ClassConstant | E.Field | E.Method -> env.cur.self ^ "."
     | _ -> ""
     ) ^ 
     Ast.str_of_ident ident
@@ -332,15 +332,15 @@ let add_node_and_has_edge2 ?(props=[]) env (ident, kind) =
      *)
     (match kind with
     (* less: log at least? *)
-    | E.Class _ | E.Function | E.Constant when not env.cur.at_toplevel -> ()
+    | E.Class | E.Function | E.Constant when not env.cur.at_toplevel -> ()
 
     (* If the class was dupe, of course all its members are also duped.
      * But actually we also need to add it to env.dupes, so below,
      * we dont set env.current to this node, otherwise we may
      * pollute the callees of the original node.
      *)
-    | E.ClassConstant | E.Field | E.Method _ ->
-        if Hashtbl.mem env.dupes (env.cur.self, E.Class E.RegularClass)
+    | E.ClassConstant | E.Field | E.Method ->
+        if Hashtbl.mem env.dupes (env.cur.self, E.Class)
         then Hashtbl.add env.dupes node (env.cur.readable, file)
         else env.pr2_and_log (spf "DUPE METHOD: %s" (G.string_of_node node));
     | _ ->
@@ -388,7 +388,7 @@ let lookup_fail env tokopt dst =
       else 
         (match snd dst with
         (* todo: fix those too | E.ClassConstant *)
-        | E.Function | E.Class _ | E.Constant -> env.pr2_and_log
+        | E.Function | E.Class | E.Constant -> env.pr2_and_log
         | _ -> env.log
         )
   in
@@ -400,8 +400,8 @@ let lookup_fail env tokopt dst =
 let _hmemo_class_exits = Hashtbl.create 101
 let class_exists2 env (R aclass) _tokopt =
   assert (env.phase = Uses);
-  let node = (aclass, E.Class E.RegularClass) in
-  let node' = (normalize aclass, E.Class E.RegularClass) in
+  let node = (aclass, E.Class) in
+  let node' = (normalize aclass, E.Class) in
   Common.memoized _hmemo_class_exits aclass (fun () ->
     (* opti: this is super slow: G.parent node env.g <> G.not_found *)
     (G.has_node node env.g && Hashtbl.mem env.not_found node) ||
@@ -455,7 +455,7 @@ let rec add_use_edge2 env (name, kind) =
         (* todo: regular fields, fix those at some point! *)
         | E.Field when not (xhp_field str) -> ()
         | E.Field when xhp_data_field str -> ()
-        | E.Method _ when magic_methods str -> 
+        | E.Method when magic_methods str -> 
            (* less: env.stat.G.method_calls false unresolved *)
            ()
         | _ ->
@@ -497,7 +497,7 @@ let add_use_edge_maybe_class env entity tokopt =
   let env = { env with phase = Uses } in
   env.phase_use_other +> Common.push (fun () ->
     (* less: do case insensitive? handle conflicts? *)
-    if G.has_node (entity, E.Class E.RegularClass) env.g
+    if G.has_node (entity, E.Class) env.g
     then
       (match env.cur.readable with
       (* phabricator/fb specific *)
@@ -505,7 +505,7 @@ let add_use_edge_maybe_class env entity tokopt =
       | s when s =~ ".*autoload_map.php" -> ()
       | _ ->
         (*env.log (spf "DYNCALL_STR:%s (at %s)" s env.readable);*)
-        add_use_edge_bis env ([entity, tokopt], E.Class E.RegularClass)
+        add_use_edge_bis env ([entity, tokopt], E.Class)
       )
   )
 
@@ -549,7 +549,7 @@ let lookup_inheritance2 g (R aclass, amethod_or_field_or_constant) tokopt =
         breath parents_inheritance
   and breath xs = xs +> Common.find_some_opt depth
   in
-  depth (aclass, E.Class E.RegularClass)
+  depth (aclass, E.Class)
 
 let lookup_inheritance g a b =
   Common.profile_code "Graph_php.lookup" (fun () -> lookup_inheritance2 g a b)
@@ -557,7 +557,7 @@ let lookup_inheritance g a b =
 
 let add_use_edge_lookup2 xhp env (name, ident) kind =
 
-  let aclass = str_of_name env name (E.Class E.RegularClass) in
+  let aclass = str_of_name env name E.Class in
   let afld = Ast.str_of_ident ident ^ (if xhp then "=" else "") in
   let tokopt = snd ident in
 
@@ -569,7 +569,7 @@ let add_use_edge_lookup2 xhp env (name, ident) kind =
   | Some ((R str, tokopt), kind2) -> 
       let tok = Ast.tok_of_ident ident in
       (match kind2 with
-      | E.Method _ -> 
+      | E.Method -> 
           env.stats.G.method_calls +> Common.push (tok, true)
       | E.Field -> 
           env.stats.G.field_access +> Common.push (tok, true)
@@ -594,7 +594,7 @@ let add_use_edge_lookup2 xhp env (name, ident) kind =
          *)
         if aclass <> (R "NOPARENT_INTRAIT")
         (* this will create a fake node for this class *)
-        then add_use_edge_bis env (name, E.Class E.RegularClass)
+        then add_use_edge_bis env (name, E.Class)
         else ()
       else 
         let (R str) = aclass in
@@ -612,7 +612,7 @@ let add_use_edge_lookup2 xhp env (name, ident) kind =
    * filter classes.
    *)
   if afld =$= "__construct" 
-  then add_use_edge_bis env (name, E.Class E.RegularClass)
+  then add_use_edge_bis env (name, E.Class)
 
 let add_use_edge_lookup ?(xhp=false) env a b =
   env.phase_use_lookup +> Common.push (env.cur, (xhp, a, b))
@@ -777,25 +777,27 @@ and func_def env def =
   stmtl env def.f_body
 
 and class_def env def =
+  (* old, or use Class_php.class_kind_of_ctype
   let kind =
     match def.c_kind with
     | ClassRegular | ClassFinal | ClassAbstract -> E.RegularClass
     | Interface -> (*E.Interface*) E.RegularClass
     | Trait -> (*E.Trait*) E.RegularClass
   in
-  let env = add_node_and_has_edge env (def.c_name, E.Class kind) in
+  *)
+  let env = add_node_and_has_edge env (def.c_name, E.Class) in
   def.c_extends +> Common.do_option (fun c2 ->
     (* todo: also mark as use the generic arguments *)
-    add_use_edge ~phase:Inheritance env (name_of_class_name c2, E.Class E.RegularClass);
+    add_use_edge ~phase:Inheritance env (name_of_class_name c2, E.Class);
   );
   def.c_implements +> List.iter (fun c2 ->
-    add_use_edge ~phase:Inheritance env (name_of_class_name c2, E.Class E.RegularClass (*E.Interface*));
+    add_use_edge ~phase:Inheritance env (name_of_class_name c2, E.Class (*E.Interface*));
   );
   def.c_uses +> List.iter (fun c2 ->
-    add_use_edge ~phase:Inheritance env (name_of_class_name c2, E.Class E.RegularClass (*E.Trait*));
+    add_use_edge ~phase:Inheritance env (name_of_class_name c2, E.Class (*E.Trait*));
   );
   def.c_xhp_attr_inherit +> List.iter (fun c2 ->
-    add_use_edge ~phase:Inheritance env (name_of_class_name c2, E.Class E.RegularClass);
+    add_use_edge ~phase:Inheritance env (name_of_class_name c2, E.Class);
   );
 
   let self = Ast.str_of_ident def.c_name in
@@ -835,12 +837,11 @@ and class_def env def =
     Common2.opt (expr env) fld.cv_value
   );
   def.c_methods +> List.iter (fun def ->
-    (* less: be more precise at some point *)
-    let kind = E.RegularMethod in
+    (* less: static? be more precise at some point *)
     let props = property_of_modifiers def.m_modifiers @ 
                 [E.Privacy (privacy_of_modifiers def.m_modifiers)]
     in
-    let env = add_node_and_has_edge ~props env (def.f_name, E.Method kind) in
+    let env = add_node_and_has_edge ~props env (def.f_name, E.Method) in
     stmtl env def.f_body
   )
 
@@ -861,8 +862,8 @@ and type_def_kind env = function
 and hint_type env t = 
   match t with 
   | Hint name -> 
-    (* todo: handle basic types? could also add them in php_stdlib/ *)
-    add_use_edge env (name, E.Class E.RegularClass)
+      (* todo: handle basic types? could also add them in php_stdlib/ *)
+      add_use_edge env (name, E.Class)
   | HintArray -> ()
   | HintQuestion t -> hint_type env t
   | HintTuple xs -> List.iter (hint_type env) xs
@@ -936,7 +937,7 @@ and expr env x =
        (* can be static or regular method as transform $this->foo()
         * in env.self::foo() below
         *)
-        add_use_edge_lookup env (name1, name2) (E.Method E.RegularMethod);
+        add_use_edge_lookup env (name1, name2) (E.Method);
         exprl env es
 
     (* object call *)
@@ -984,7 +985,7 @@ and expr env x =
           add_use_edge_lookup env (name1, name2) E.Field
 
      | Id name1, e2  ->
-         add_use_edge env (name1, E.Class E.RegularClass);
+         add_use_edge env (name1, E.Class);
          let tok = Ast.tok_of_name name1 in
          env.stats.G.unresolved_class_access +> Common.push tok;
          expr env e2;
@@ -1024,7 +1025,7 @@ and expr env x =
       expr env e1;
       (match e2 with
       (* less: add deps? *)
-      | Id name -> add_use_edge_instanceof env (name, E.Class E.RegularClass)
+      | Id name -> add_use_edge_instanceof env (name, E.Class)
       | _ ->
           let tok = Meta_ast_php_simple.toks_of_any (Expr2 e1) +> List.hd in
           env.stats.G.unresolved_class_access +> Common.push tok;
@@ -1046,7 +1047,7 @@ and expr env x =
   | Ref e -> expr env e
   | ConsArray (xs) -> array_valuel env xs
   | Collection (name, xs) ->
-      add_use_edge env (name, E.Class E.RegularClass);
+      add_use_edge env (name, E.Class);
       array_valuel env xs
   | Xhp x -> xml env x
   | CondExpr (e1, e2, e3) -> exprl env [e1; e2; e3]
@@ -1058,7 +1059,7 @@ and expr env x =
 and array_value env x = expr env x
 
 and xml env x =
-  add_use_edge env ([x.xml_tag], E.Class E.RegularClass);
+  add_use_edge env ([x.xml_tag], E.Class);
   x.xml_attrs +> List.iter (fun (ident, xhp_attr) ->
     add_use_edge_lookup ~xhp:true env ([x.xml_tag], ident) E.Field;
     expr env xhp_attr
@@ -1154,7 +1155,7 @@ let build
   Common2.hkeys env.dupes
   +> List.filter (fun (_, kind) ->
     match kind with
-    | E.ClassConstant | E.Field | E.Method _ -> false
+    | E.ClassConstant | E.Field | E.Method -> false
     | _ -> true
   )
   +> List.iter (fun node ->
@@ -1236,7 +1237,7 @@ let build
       let dag = Graph_code_class_analysis.class_hierarchy g in
       let htoplevels = Graph_code_class_analysis.toplevel_methods g dag in
       !(envold.phase_class_analysis) +> List.iter (fun (cur, name) ->
-          let kind = E.Method E.RegularMethod in
+          let kind = E.Method in
           let ident = ident_of_name name in
           let method_str = Ast.str_of_ident ident in
           let tok = Ast.tok_of_name name in
@@ -1265,7 +1266,7 @@ let build
           )
       );
       !(envold.phase_dispatch) +> List.iter (fun (cur, name) ->
-        let kind = E.Method E.RegularMethod in
+        let kind = E.Method in
         let ident = ident_of_name name in
         let method_str = Ast.str_of_ident ident in
         let self = add_prefix cur.qualifier ^ cur.self in

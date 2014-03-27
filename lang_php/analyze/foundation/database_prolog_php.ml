@@ -173,13 +173,15 @@ let visit ~add readable ast =
         let s = Ast.str_of_ident def.c_name in
         current := spf "'%s'" s;
         Hashtbl.clear h;
+        (* todo: use Class_php.class_kind_of_ctype 
         let kind =
           match def.c_type with
           | ClassRegular _ | ClassFinal _ | ClassAbstract _ -> E.RegularClass
           | Interface _ -> E.Interface
           | Trait _ -> E.Trait
         in
-        add (P.Kind (P.entity_of_str s, E.Class kind));
+        *)
+        add (P.Kind (P.entity_of_str s, E.Class));
         let tok = Ast.info_of_ident def.c_name in
         add (P.At (P.entity_of_str s, readable, PI.line_of_info tok));
 
@@ -224,8 +226,7 @@ let visit ~add readable ast =
           current := spf "('%s', '%s')" s s2;
           Hashtbl.clear h;
           let sfull = (s ^ "." ^ s2) in
-          let kind = E.RegularMethod in
-          add (P.Kind (P.entity_of_str sfull, E.Method kind));
+          add (P.Kind (P.entity_of_str sfull, E.Method));
           add (P.At (P.entity_of_str sfull, readable, PI.line_of_info def.f_tok));
 
           add (P.Misc (spf "arity(%s, %d)" !current

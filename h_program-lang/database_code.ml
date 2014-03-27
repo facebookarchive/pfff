@@ -110,7 +110,7 @@ type entity_kind =
   | File 
 
   | Function
-  | Class of class_type
+  | Class
   | Type
   | Constant | Global
   | Macro
@@ -118,8 +118,8 @@ type entity_kind =
   | TopStmts
 
   (* nested entities *)
-  | Field (* todo? could also be static or not *)
-  | Method of method_type
+  | Field
+  | Method
   | ClassConstant
   | Constructor (* for ml *)
 
@@ -132,14 +132,6 @@ type entity_kind =
   | MultiDirs
 
   | Other of string
-
-
-  (* todo? could also abuse property below to encode such information *)
-  and class_type = RegularClass | Interface | Trait
-  (* we distinguate regular methods from static methods because it's good
-   * to visually differentiate them in tools like codemap.
-   *)
-  and method_type = RegularMethod | StaticMethod
 
 (* How to store the id of an entity ? A int ? A name and hope few conflicts ?
  * Using names will increase the size of the db which will slow down
@@ -211,10 +203,12 @@ type entity = {
    | TakeArgNByRef of int
 
    | UseGlobal of string
-
-   | DeadCode (* the function itself is dead, e.g. never called *)
    | ContainDeadStatements
 
+   (* for class *)
+   | ClassKind of class_kind
+
+   | DeadCode (* the function itself is dead, e.g. never called *)
    | CodeCoverage of int list (* e.g. covered lines by unit tests *)
 
    | Privacy of privacy
@@ -228,6 +222,9 @@ type entity = {
 
    (* todo: git info, e.g. Age, Authors, Age_profile (range) *)
   and privacy = Public | Protected | Private
+
+  and class_kind = Struct | Class_ | Interface | Trait
+
 
 (* Note that because we now use indexed entities, you can not
  * play with.entities as before. For instance merging databases
@@ -279,9 +276,7 @@ let string_of_entity_kind e =
   | Function -> "Function"
   | Prototype -> "Prototype"
   | GlobalExtern -> "GlobalExtern"
-  | Class RegularClass -> "Class"
-  | Class Interface -> "Interface"
-  | Class Trait -> "Trait"
+  | Class -> "Class"
 
   | Module -> "Module"
   | Package -> "Package"
@@ -290,8 +285,7 @@ let string_of_entity_kind e =
   | Global -> "Global"
   | Macro -> "Macro"
   | TopStmts -> "TopStmts"
-  | Method RegularMethod -> "Method"
-  | Method StaticMethod -> "StaticMethod"
+  | Method -> "Method"
   | Field -> "Field"
   | ClassConstant -> "ClassConstant"
   | Other s -> "Other:" ^ s
@@ -304,17 +298,14 @@ let string_of_entity_kind e =
 let entity_kind_of_string s =
   match s with
   | "Function" -> Function
-  | "Class" -> Class RegularClass
-  | "Interface" -> Class Interface 
-  | "Trait" -> Class Trait 
+  | "Class" -> Class
   | "Module" -> Module
   | "Type" -> Type
   | "Constant" -> Constant
   | "Global" -> Global
   | "Macro" -> Macro
   | "TopStmts" -> TopStmts
-  | "Method" -> Method RegularMethod
-  | "StaticMethod" -> Method StaticMethod
+  | "Method" -> Method
   | "Field" -> Field
   | "ClassConstant" -> ClassConstant
   | "File" -> File
@@ -519,12 +510,11 @@ let entity_kind_of_highlight_category_def categ =
   | HC.Function (HC.Def2 _) -> Some Function
   | HC.FunctionDecl _ -> Some Prototype
   | HC.Global (HC.Def2 _) -> Some Global
-  (* todo? interface? traits?*)
-  | HC.Class (HC.Def2 _) -> Some (Class RegularClass)
+  | HC.Class (HC.Def2 _) -> Some Class
 
-  | HC.Method (HC.Def2 _) -> Some (Method RegularMethod)
-  | HC.StaticMethod (HC.Def2 _) -> Some (Method StaticMethod)
-  | HC.Field (HC.Def2 _) -> (Some Field)
+  | HC.Method (HC.Def2 _) -> Some Method
+  | HC.StaticMethod (HC.Def2 _) -> Some Method
+  | HC.Field (HC.Def2 _) -> Some Field
 
   | HC.Module HC.Def -> Some Module
   | HC.TypeDef HC.Def -> Some Type
@@ -545,25 +535,24 @@ let entity_kind_of_highlight_category_use categ =
   | HC.Function (HC.Use2 _) -> Some Function
   | HC.FunctionDecl _ -> Some Function
   | HC.Global (HC.Use2 _) -> Some Global
-  (* TODO? Interface ? *)
-  | HC.Class (HC.Use2 _) -> Some (Class RegularClass)
+  | HC.Class (HC.Use2 _) -> Some Class
 
-  | HC.Method (HC.Use2 _) -> Some (Method RegularMethod)
-  | HC.StaticMethod (HC.Use2 _) -> Some (Method StaticMethod)
+  | HC.Method (HC.Use2 _) -> Some Method
+  | HC.StaticMethod (HC.Use2 _) -> Some Method
   | HC.Field (HC.Use2 _) -> Some Field
 
   | HC.Module HC.Use -> Some Module
   | HC.TypeDef HC.Use -> Some Type
   | HC.Constructor (HC.Use2 _) -> Some Constructor
 
-  | HC.StructName HC.Use -> Some (Class RegularClass)
+  | HC.StructName HC.Use -> Some Class
   | _ -> None
 
 
 let matching_def_short_kind_kind short_kind kind =
   (match short_kind, kind with
   (* Struct/Union are generated as Type for now in graph_code_clang.ml *)
-  | Class _, Type -> true
+  | Class, Type -> true
   | Global, GlobalExtern -> true
   | Function, Prototype -> true
   | a, b -> a =*= b
@@ -582,9 +571,9 @@ let matching_use_categ_kind categ kind =
   | Constructor, HC.ConstructorMatch _
   | Global,      HC.Global _
   | GlobalExtern,      HC.Global _
-  | Method _,    HC.Method _
-  | Method _,    HC.StaticMethod _
-  | Class _,     HC.Class _
+  | Method,    HC.Method _
+  | Method,    HC.StaticMethod _
+  | Class,     HC.Class _
   | Constant,    HC.Constant _
   | ClassConstant,  HC.Constant _
   | Type, HC.Type _
@@ -845,8 +834,7 @@ let adjust_method_or_field_external_users ~verbose entities =
   
   entities +> Array.iter (fun e ->
     match e.e_kind with
-    (* do also for staticMethods ? hmm should be less needed *)
-    | Method RegularMethod | Field ->
+    | Method | Field ->
         let k = e.e_name in
         h_method_def_count#update k (Common2.add1)
     | _ -> ()
@@ -855,7 +843,7 @@ let adjust_method_or_field_external_users ~verbose entities =
   (* phase2: adjust *)
   entities +> Array.iter (fun e ->
     match e.e_kind with
-    | Method RegularMethod | Field ->
+    | Method | Field ->
         let k = e.e_name in
         let nb_defs = h_method_def_count#assoc k in
         if nb_defs > 1 && verbose

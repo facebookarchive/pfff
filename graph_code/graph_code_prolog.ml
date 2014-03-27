@@ -83,14 +83,8 @@ let string_of_entity (xs, x) =
 let string_of_entity_kind = function
   | E.Function -> "function"
   | E.Constant -> "constant"
-  | E.Class x ->
-      (match x with
-      | E.RegularClass -> "class"
-      | E.Interface -> "interface"
-      | E.Trait -> "trait"
-      )
-  (* the static/1 predicate will say if static method (or class var) *)
-  | E.Method _ -> "method"
+  | E.Class -> "class"
+  | E.Method -> "method"
 
   | E.ClassConstant -> "constant"
   | E.Field -> "field"
@@ -178,12 +172,15 @@ let build g =
      * we generate for the entity a ([X;Y;type], fld) or ([X;Y], "type.fld")
      *)
     | E.Field | E.Constructor
-    | E.Method _ | E.Class _ | E.ClassConstant
+    | E.Method | E.ClassConstant
     | E.Exception
         -> add (Kind (entity_of_str str, kind))
-    | E.File -> ()
-    | E.Dir -> ()
-    | E.Prototype|E.GlobalExtern -> ()
+    (* todo: interface | trait *)
+    | E.Class -> add (Kind (entity_of_str str, kind))
+
+    | E.File | E.Dir
+    | E.Prototype | E.GlobalExtern 
+      -> ()
 
     | (E.Macro|E.TopStmts|E.Other _|E.MultiDirs) ->
         pr2_gen n;
@@ -209,11 +206,11 @@ let build g =
      * depending on the _kind, but for now let's simplify and convert
      * everything in regular class inheritance
      *)
-    | ((s1, E.Class _kind1), (s2, E.Class _kind2)) ->
+    | ((s1, E.Class), (s2, E.Class)) ->
       add (Extends (s1, s2))
-    | ((s1, E.Method _kind1), (s2, E.Method _kind2)) ->
+    | ((s1, E.Method), (s2, E.Method)) ->
       add (Call (entity_of_str s1, entity_of_str s2))
-    | ((s1, E.Method _kind1), (s2, (E.Field | E.ClassConstant) )) ->
+    | ((s1, E.Method), (s2, (E.Field | E.ClassConstant) )) ->
       add (UseData (entity_of_str s1, entity_of_str s2))
 
     | ((s1, E.Function), (s2, E.Function)) ->

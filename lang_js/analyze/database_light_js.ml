@@ -189,7 +189,7 @@ let compute_database ?(verbose=false) files_or_dirs =
                * but class analysis is complicated in Javascript.
                *)
               match entity.Db.e_kind with
-              |  Db.Class _ ->
+              |  Db.Class ->
                 entity.Db.e_number_external_users <-
                   entity.Db.e_number_external_users + 1;
               | _ -> ()
@@ -210,7 +210,7 @@ let compute_database ?(verbose=false) files_or_dirs =
                * calling adjust_method_external_users below.
                *)
               (match entity.Db.e_kind with
-              | Db.Method _ ->
+              | Db.Method ->
                 entity.Db.e_number_external_users <-
                   entity.Db.e_number_external_users + 1;
               | _ -> ()

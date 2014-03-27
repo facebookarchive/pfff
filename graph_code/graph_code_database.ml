@@ -52,8 +52,8 @@ let db_of_graph_code root g =
   g +> G.iter_nodes (fun node ->
     let (s, kind) = node in
     match kind with
-    | E.Function | E.Class _ | E.Constant | E.Global | E.Type | E.Exception
-    | E.Constructor | E.Field | E.Method _ | E.ClassConstant 
+    | E.Function | E.Class | E.Constant | E.Global | E.Type | E.Exception
+    | E.Constructor | E.Field | E.Method | E.ClassConstant 
     | E.Macro
     | E.Prototype | E.GlobalExtern
       ->

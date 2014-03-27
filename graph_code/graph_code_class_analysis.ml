@@ -109,14 +109,14 @@ let class_hierarchy g =
   
   g +> G.iter_nodes (fun n1 ->
     (match snd n1 with
-    | E.Class _ ->
+    | E.Class ->
         dag +> Graph.add_vertex_if_not_present n1;
 
         (* explore if its extends/implements/uses another class/interf/trait *)
         let succ = g +> G.succ n1 G.Use in
         succ +> List.iter (fun n2 ->
           (match snd n2 with
-          | E.Class _ ->
+          | E.Class ->
               dag +> Graph.add_vertex_if_not_present n2;
               (* from parent to children *)
               dag +> Graph.add_edge n2 n1
@@ -143,7 +143,7 @@ let toplevel_methods g dag =
     let methods_here =
       G.children n g +> Common.map_filter (fun n2 ->
           match snd n2 with
-          | E.Method _ -> 
+          | E.Method -> 
               let (_, method_str) = class_method_of_string (fst n2) in
               let privacy = G.privacy_of_node n2 g in
               Some (method_str, privacy, n2)
@@ -178,7 +178,7 @@ let toplevel_methods g dag =
 (* the inverse of lookup, go down in the children instead of up in the parent *)
 let dispatched_methods2 g dag node =
   let (str, kind) = node in
-  assert (kind =*= E.Method E.RegularMethod);
+  assert (kind =*= E.Method);
   
   let (c, m) = class_method_of_string str in
 
@@ -192,12 +192,10 @@ let dispatched_methods2 g dag node =
     let children = Graph.succ (current_class, class_kind) dag in
     children +> List.iter aux
   in
-  (* todo: could be a trait or interface *)
-  let node = (c, E.Class E.RegularClass) in
+  let node = (c, E.Class) in
   (if G.has_node node g 
   then Graph.succ node dag +> List.iter aux
-  else 
-      failwith (spf "could not find class %s" c)
+  else failwith (spf "could not find class %s" c)
   );
 
   !res

@@ -225,7 +225,7 @@ public function foo() { }
         let g = graph_of_string file_content in
         let dag = Graph_code_class_analysis.class_hierarchy g in
         
-        let node = ("A", E.Class E.RegularClass) in
+        let node = ("A", E.Class) in
         let children = Graph.succ node dag in
         assert_equal ~msg:"it should find the direct children of a class"
           ["B"]
@@ -238,7 +238,7 @@ public function foo() { }
             ["C.foo";"A.foo"]
             (xs +> List.map fst);
 
-        let node = ("A.foo", E.Method E.RegularMethod) in
+        let node = ("A.foo", E.Method) in
         let methods = Graph_code_class_analysis.dispatched_methods g dag node in
         assert_equal ~msg:"it should find the dispatched methods"
             ["B.foo"]

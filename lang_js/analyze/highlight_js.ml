@@ -175,7 +175,7 @@ let visit_program ~tag_hook _prefs (*db_opt *) (ast, toks) =
             Common2.hfind_option ii hcomplete_name_of_info 
           in
           (match kind_name_opt with
-          | Some (Db.Class _, _fullname) ->
+          | Some (Db.Class, _fullname) ->
             
               (* rewrite ii to remove the enclosing "" ?
                * but the Parsing2 then use the full info as
@@ -184,7 +184,7 @@ let visit_program ~tag_hook _prefs (*db_opt *) (ast, toks) =
                *)
               (*let ii' = Parse_info.rewrap_str s ii in*)
               tag ii (Class (Def2 fake_no_def2));
-          | Some ((Db.Method _), _) ->
+          | Some (Db.Method, _) ->
               (* jsspec use strings for method names *)
               ()
 
@@ -206,12 +206,14 @@ let visit_program ~tag_hook _prefs (*db_opt *) (ast, toks) =
           Common2.hfind_option ii hcomplete_name_of_info 
         in
         (match kind_name_opt with
-        | Some (Db.Class _, _fullname) ->
+        | Some (Db.Class, _fullname) ->
             tag ii (Class (Def2 fake_no_def2))
-        | Some (Db.Method Db.RegularMethod, _fullname) ->
+        | Some (Db.Method, _fullname) ->
             tag ii (Method (Def2 fake_no_def2))
+(* less:
         | Some (Db.Method Db.StaticMethod, _fullname) ->
             tag ii (StaticMethod (Def2 fake_no_def2))
+*)
         | Some (_) ->
             failwith ("WEIRD: a identfier is not a class or method at " ^ 
                            Parse_info.string_of_info ii)

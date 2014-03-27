@@ -154,9 +154,9 @@ let class_variables_reorder_first def =
     c_body = (lb, body', rb);
   }
 
-let class_type_of_ctype ctype =
+let class_kind_of_ctype ctype =
   match ctype with
-  | ClassRegular _ | ClassFinal _ | ClassAbstract _ -> E.RegularClass
+  | ClassRegular _ | ClassFinal _ | ClassAbstract _ -> E.Class_
   | Interface _ -> E.Interface
   | Trait _ -> E.Trait
 
@@ -195,10 +195,13 @@ let traits c =
 let lookup_gen aclass find_entity hook =
 
   let find_class_or_trait x =
-    let xs = find_entity (E.Class E.RegularClass, x) in
-    if null xs
-    then find_entity (E.Class E.Trait, x)
-    else xs
+    let xs = find_entity (E.Class, x) in
+    (* todo?
+     *  if null xs
+     * then find_entity (E.Class E.Trait, x)
+     * else xs
+     *)
+    xs
   in
   (* all those try are ugly, should maybe use the Option monad *)
   let rec aux aclass =

@@ -34,7 +34,7 @@ let gen_package_file_with_class_defs pr xs g =
   let rec aux depth ((_str, kind) as current) =
     let str = Graph_code.shortname_of_node current in
     match kind with
-    | E.Class _ ->
+    | E.Class ->
         pr (spf "%sclass %s {" (Common2.n_space depth) str);
         List.iter (aux (depth + 2)) (G.children current g);
         pr (spf "%s}" (Common2.n_space depth));
@@ -43,7 +43,7 @@ let gen_package_file_with_class_defs pr xs g =
     | E.Constant
     | E.Field ->
         pr (spf "%sint %s;" (Common2.n_space depth) str);
-    | E.Method _ 
+    | E.Method 
     | E.ClassConstant
         -> ()
         
@@ -65,7 +65,7 @@ let extract_from_sources ~src ~dst files =
     
     let classes_or_files =
       xs +> List.filter (function 
-      | _, E.Class _ -> true
+      | _, E.Class -> true
       | _, E.File -> true
       | _ -> false 
       )

@@ -6,7 +6,7 @@ type entity_kind =
 
   (* toplevel entities *)
   | Function
-  | Class of class_type
+  | Class (* used also for struct, interfaces, traits, see class_kind below *)
   | Type 
   | Constant 
   | Global
@@ -16,7 +16,7 @@ type entity_kind =
 
   (* class member entities *)
   | Field
-  | Method of method_type 
+  | Method
   | ClassConstant
   (* ocaml variants (not oo ctor, see Method for that *)
   | Constructor
@@ -26,24 +26,21 @@ type entity_kind =
   | MultiDirs (* computed on the fly from many Dir by codemap *)
   | Other of string
 
-  (* todo: could be put as a property? (which would simplify some code too) *)
-  and class_type = RegularClass (* or Struct *) | Interface | Trait
-  (* todo: could be put as a property? *)
-  and method_type = RegularMethod | StaticMethod
-
 val string_of_entity_kind: entity_kind -> string
 val entity_kind_of_string: string -> entity_kind
 
 type property = 
-   (* mostly for Function kind *)
+   (* mostly for Function|Method kind *)
    | ContainDynamicCall | ContainReflectionCall
 
    | TakeArgNByRef of int (* the argument position taken by ref *)
    | UseGlobal of string
-
-   | DeadCode (* the function itself is dead, e.g. never called *)
    | ContainDeadStatements
 
+   (* for class *)
+   | ClassKind of class_kind
+
+   | DeadCode (* the function itself is dead, e.g. never called *)
    | CodeCoverage of int list (* e.g. covered lines by unit tests *)
 
    | Privacy of privacy
@@ -53,8 +50,9 @@ type property =
    (* facebook specific: used for the xhp @required fields for now *)
    | Required | Async
 
-
   and privacy = Public | Protected | Private
+  and class_kind = Struct | Class_ | Interface | Trait
+
 
 type entity_id = int
 

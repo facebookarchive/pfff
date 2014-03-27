@@ -287,7 +287,7 @@ let extract_defs2 ~g ~file ~graph_code_java ~hjavabasename_to_fullpath ast =
   let current = 
     create_intermediate_packages_if_not_present g G.root class_.package in
 
-  let node = (name, E.Class E.RegularClass) in
+  let node = (name, E.Class) in
   (try 
       g +> G.add_node node;
   with Graph_code.Error (Graph_code.NodeAlreadyPresent node) ->
@@ -348,7 +348,7 @@ let extract_defs2 ~g ~file ~graph_code_java ~hjavabasename_to_fullpath ast =
     g +> G.add_edge (current, node) G.Has;
   );
   jclass.j_methods +> List.iter (fun def ->
-    let node = (name ^ "." ^ def.m_name, E.Method E.RegularMethod) in
+    let node = (name ^ "." ^ def.m_name, E.Method) in
 
     (* less: for now we just collapse all methods with same name together *)
     if G.has_node node g
@@ -372,7 +372,7 @@ let adjust_parents_nested_anon2 g =
   g +> G.iter_nodes (fun n ->
     let (str, kind) = n in
     (match kind with
-    | E.Class _ ->
+    | E.Class ->
        let class_ = bytecode_class_name_of_string str in
        (match class_.nested_or_anon with
        | [] -> ()
@@ -384,7 +384,7 @@ let adjust_parents_nested_anon2 g =
           * let _old_parent = G.parent n g in
           * G.remove_edge (old_parent, n) G.Has g;
           *)
-         G.add_edge ((new_parent, E.Class E.RegularClass), n) G.Has g;
+         G.add_edge ((new_parent, E.Class), n) G.Has g;
        )
     | _ -> ()
     )
@@ -401,12 +401,12 @@ let adjust_parents_nested_anon a =
 let extract_uses_inheritance2 ~g ast =
   let jclass = ast in
   let name = JBasics.cn_name jclass.j_name in
-  let current = (name, E.Class E.RegularClass) in
+  let current = (name, E.Class) in
   let env = { g; current; consts = jclass.j_consts } in
 
   let parents = Common2.option_to_list jclass.j_super @ jclass.j_interfaces in
   parents +> List.iter (fun cname ->
-    let node = (JBasics.cn_name cname, E.Class E.RegularClass) in
+    let node = (JBasics.cn_name cname, E.Class) in
     add_use_edge env node;
   );
   ()
@@ -422,7 +422,7 @@ let extract_uses_inheritance ~g ast =
 let rec extract_uses2 ~g ast =
   let jclass = ast in
   let name = JBasics.cn_name jclass.j_name in
-  let current = (name, E.Class E.RegularClass) in
+  let current = (name, E.Class) in
   let env = { g; current; consts = jclass.j_consts } in
 
   jclass.j_attributes +> List.iter (function
@@ -441,7 +441,7 @@ let rec extract_uses2 ~g ast =
     );
   );
   jclass.j_methods +> List.iter (fun def ->
-    let node = (name ^ "." ^ def.m_name, E.Method E.RegularMethod) in
+    let node = (name ^ "." ^ def.m_name, E.Method) in
     let env = { env with current = node } in
     (* less: dependencies for parameters? ok cmf spirit? and skip? *)
 
@@ -460,7 +460,7 @@ and value_type env = function
 and object_type env = function
   | TArray x -> value_type env x
   | TClass cname ->
-      let node = (JBasics.cn_name cname, E.Class E.RegularClass) in
+      let node = (JBasics.cn_name cname, E.Class) in
       add_use_edge env node
 
 and code env x = 
@@ -491,14 +491,10 @@ and code env x =
         | ConstField (cname, descr) ->
             let name = JBasics.cn_name cname in
             let fldname = JBasics.fs_name descr in
-
             let node = (name ^ "." ^ fldname, E.Field) in
-
-            (match lookup env.g (name, E.Class E.RegularClass) fldname with
-            | None ->
-                add_use_edge env node
-            | Some n ->
-                add_use_edge env n
+            (match lookup env.g (name, E.Class) fldname with
+            | None -> add_use_edge env node
+            | Some n -> add_use_edge env n
             )
         | x -> 
           pr2 ("Unexpected constant for OpGetField");
@@ -513,9 +509,9 @@ and code env x =
             let name = JBasics.cn_name cname in
             let fldname = JBasics.ms_name descr in
 
-            let node = (name ^ "." ^ fldname, E.Method E.RegularMethod) in
+            let node = (name ^ "." ^ fldname, E.Method) in
 
-            (match lookup env.g (name, E.Class E.RegularClass) fldname with
+            (match lookup env.g (name, E.Class) fldname with
             | None -> add_use_edge env node
             | Some n -> add_use_edge env n
             )

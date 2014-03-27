@@ -224,7 +224,7 @@ let full_path_local_of_kind env kind =
       env.full_path_local_type
   | E.Field | E.Constructor -> ref []
   (* todo? *)
-  | E.Class _ -> ref []
+  | E.Class -> ref []
   | _ -> raise Impossible
 
 let add_full_path_local env (s, name) kind =
@@ -368,7 +368,7 @@ let rec kind_of_type_desc x =
   (* ? *)
   | Types.Tvar _ -> E.Constant
   | Types.Tlink x -> kind_of_type_expr x
-  | Types.Tobject _ -> E.Class E.RegularClass
+  | Types.Tobject _ -> E.Class
   | _ -> 
       pr2 (Ocaml.string_of_v (Meta_ast_cmt.vof_type_desc x));
       raise Todo

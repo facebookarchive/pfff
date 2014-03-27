@@ -82,12 +82,13 @@ let defs_of_any any =
             | Some c -> c
             | None -> failwith "impossible: no current_class in defs_use_php.ml"
           in
-          let kind =
-            if Class_php.is_static_method def
-            then E.StaticMethod
-            else E.RegularMethod
-          in
-          Common.push (def.f_name, Some classname, E.Method kind) aref
+          (* less:
+           * let kind =
+           * if Class_php.is_static_method def
+           * then E.StaticMethod
+           * else E.RegularMethod
+           *)
+          Common.push (def.f_name, Some classname, E.Method) aref
       | FunctionLambda ->
           (* the f_name is meaningless *)
           ()
@@ -98,13 +99,15 @@ let defs_of_any any =
       k def
     );
     V.kclass_def = (fun (k, _) def ->
+      (* less: use class_php.class_kind_of_ctype
       let kind = 
         match def.c_type with
         | ClassRegular _ | ClassFinal _ | ClassAbstract _ -> E.RegularClass
         | Interface _ -> E.Interface
         | Trait _ -> E.Trait
-      in
-      Common.push (def.c_name, None, E.Class kind) aref;
+        in
+      *)
+      Common.push (def.c_name, None, E.Class) aref;
       Common.save_excursion current_class (Some def.c_name) (fun () ->
           k def;
       );
@@ -189,8 +192,7 @@ let uses_of_any ?(verbose=false) any =
       | InstanceOf (_, _, Id name)
       | AssignNew(_, _, _, _, Id name, _)
       | ClassGet (Id name, _, _) ->
-        let kind = E.RegularClass in
-        Common.push (name, E.Class kind) aref;
+          Common.push (name, E.Class) aref;
       | _ -> ()
       );
       k x
@@ -206,10 +208,9 @@ let uses_of_any ?(verbose=false) any =
        * could be the use of a Class or Interface.
        * So right now I just merge Class and Interface
        *)
-      let kind = E.RegularClass in
       (match classname with
       | Hint (classname, _targsTODO) ->
-        Common.push (classname, E.Class kind) aref;
+          Common.push (classname, E.Class) aref;
       | _ -> ()
       );
       k classname
@@ -219,10 +220,10 @@ let uses_of_any ?(verbose=false) any =
     V.kxhp_html = (fun (k, _) x ->
       match x with
       | Xhp (xhp_tag, _attrs, _tok, _body, _end) ->
-          Common.push (XName[QI(XhpName xhp_tag)], E.Class E.RegularClass) aref;
+          Common.push (XName[QI(XhpName xhp_tag)], E.Class) aref;
           k x
       | XhpSingleton (xhp_tag, _attrs, _tok) ->
-          Common.push (XName[QI(XhpName xhp_tag)], E.Class E.RegularClass) aref;
+          Common.push (XName[QI(XhpName xhp_tag)], E.Class) aref;
           k x
       (* todo: do it also for xhp attributes ? kxhp_tag then ?
        * (but take care to not include doublon because have

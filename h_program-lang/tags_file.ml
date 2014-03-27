@@ -102,11 +102,10 @@ let tag_of_info filelines info kind =
 (* C-s for "kind" in http://ctags.sourceforge.net/FORMAT *)
 let vim_tag_kind_str tag_kind =
   match tag_kind with
-  | Db.Class Db.RegularClass -> "c"
+  | Db.Class -> "c"
   | Db.Constant -> "d"
   | Db.Function -> "f"
-  | Db.Method _ -> "f"
-  | Db.Class (Db.Interface | Db.Trait) -> "i"
+  | Db.Method -> "f"
   | Db.Type -> "t"
   | Db.Field -> "m"
 
@@ -136,7 +135,7 @@ let add_method_tags_when_unambiguous files_and_defs =
     files_and_defs +> List.map (fun (_file, tags) ->
       tags +> Common.map_filter (fun t ->
         match t.kind with
-        | Db.Class _ | Db.Function | Db.Constant -> Some t.tagname
+        | Db.Class | Db.Function | Db.Constant -> Some t.tagname
         | _ -> None
       )
     ) +> List.flatten +> Common.hashset_of_list
@@ -145,7 +144,7 @@ let add_method_tags_when_unambiguous files_and_defs =
     files_and_defs +> List.map (fun (_file, tags) ->
       tags +> Common.map_filter (fun t ->
         match t.kind with
-        | Db.Method _ ->
+        | Db.Method ->
             if t.tagname =~ ".*::\\(.*\\)"
             then Some (Common.matched1 t.tagname, t)
             else failwith ("method tag should contain '::[, got: " ^ t.tagname)
@@ -159,7 +158,7 @@ let add_method_tags_when_unambiguous files_and_defs =
     file,
     tags +> List.map (fun t ->
       match t.kind with
-      | Db.Method _ ->
+      | Db.Method ->
           if t.tagname =~ ".*::\\(.*\\)"
           then
             let methodname = Common.matched1 t.tagname in

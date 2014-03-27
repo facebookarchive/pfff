@@ -87,9 +87,9 @@ let check_method_call context (aclass, amethod) (name, args) find_entity =
   | Not_found ->
       (match context with
       | StaticCall ->
-          E.fatal loc (E.UndefinedEntity (Ent.Method Ent.StaticMethod,amethod))
+          E.fatal loc (E.UndefinedEntity (Ent.Method,amethod))
       | MethodCall false ->
-          E.fatal loc (E.UndefinedEntity (Ent.Method Ent.RegularMethod,amethod))
+          E.fatal loc (E.UndefinedEntity (Ent.Method,amethod))
       | MethodCall true ->
           E.fatal loc (E.UndefinedMethodInAbstractClass amethod)
       )
@@ -161,7 +161,7 @@ let visit_f_body f_body current_class graph=
       | XhpHtml(Xhp((xhp_tag, loc), xhp_attr_list, _, _, _))
       | XhpHtml(XhpSingleton((xhp_tag, loc), xhp_attr_list, _)) ->
         let xhp_str = Ast_php_simple.string_of_xhp_tag xhp_tag in
-        let xhp_node = (xhp_str, Ent.Class Ent.RegularClass) in
+        let xhp_node = (xhp_str, Ent.Class) in
         if (G.has_node xhp_node graph)
         then
           let required_fields =
@@ -228,7 +228,7 @@ let visit_and_check  find_entity prog =
 
       def.c_extends +> Common.do_option (fun (_tok, parent) ->
         let parent = name_of_class_name parent in
-        E.find_entity_and_warn find_entity (Ent.Class Ent.RegularClass, parent)
+        E.find_entity_and_warn find_entity (Ent.Class, parent)
           (fun _ ->
           ()
         )
@@ -246,8 +246,7 @@ let visit_and_check  find_entity prog =
       match x with
       | New (_tok, ((Id (class_name))), _args) ->
           (* todo: use lookup_method *)
-          E.find_entity_and_warn find_entity (Ent.Class Ent.RegularClass,
-                                             class_name)
+          E.find_entity_and_warn find_entity (Ent.Class, class_name)
           (function Ast_php.ClassE _def ->
             (*
               Check_functions_php.check_args_vs_params

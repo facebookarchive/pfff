@@ -205,9 +205,7 @@ let ast_php_entity_in_file ~check_dupes (s, kind) g file =
     | Ast.TypeDef def ->
         Some ((Ast.str_of_ident def.Ast.t_name, E.Type), Ast.TypedefE def)
     | Ast.ClassDef def -> 
-        (* do as in graph_code_php.ml *)
-        let kind = E.RegularClass in
-        Some ((Ast.str_of_ident def.Ast.c_name, E.Class kind), Ast.ClassE def)
+        Some ((Ast.str_of_ident def.Ast.c_name, E.Class), Ast.ClassE def)
     | Ast.ConstantDef def ->
         Some ((Ast.str_of_ident def.Ast.cst_name, E.Constant),Ast.ConstantE def)
     | Ast.NamespaceDef (tok, _, _) 
@@ -256,7 +254,7 @@ let entity_finder_of_graph_code ?(check_dupes=false) g root =
     (* pr2_gen (kind, s); *)
     Common.memoized hcache_entities (s, kind) (fun () ->
       match kind with
-      | E.Function | E.Class _ | E.Constant ->
+      | E.Function | E.Class | E.Constant ->
         (* todo: transpose in regular class as graph_code only stores that?*)
         if G.has_node (s, kind) g then
           let parent = G.parent (s, kind) g in

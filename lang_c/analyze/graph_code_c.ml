@@ -102,7 +102,7 @@ let nodes_of_toplevel x =
   | FuncDef def -> 
       [(Ast.str_of_name def.f_name, E.Function)]
   | StructDef def -> 
-      [(Ast.str_of_name def.s_name, E.Class E.RegularClass)]
+      [(Ast.str_of_name def.s_name, E.Class)]
   | TypeDef (name, _t) ->
       [(Ast.str_of_name name, E.Type)]
   | EnumDef def ->
@@ -423,7 +423,7 @@ and type_ env x =
       type_ env tret;
       parameters env xs
   | TStructName (_kind, name) ->
-      add_use_edge env (name, E.Class E.RegularClass)
+      add_use_edge env (name, E.Class)
   | TEnumName (name) | TTypeName name ->
       add_use_edge env (name, E.Type)
 

@@ -52,7 +52,7 @@ let tags_of_ast ast filelines =
 
   defs +> List.map (fun (name, enclosing_name_opt, kind) ->
     match kind with
-    | Db.Class _ ->
+    | Db.Class ->
         (match name with
         | Name _ -> [tag_of_ident filelines name kind]
         | XhpName (xs, tok) ->
@@ -69,7 +69,7 @@ let tags_of_ast ast filelines =
         )
     | Db.Function | Db.Constant | Db.Type ->
         [ tag_of_ident filelines name kind]
-    | Db.Method _ ->
+    | Db.Method ->
         (match enclosing_name_opt with
         | None -> raise Impossible
         | Some class_name ->

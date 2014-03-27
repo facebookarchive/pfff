@@ -84,14 +84,13 @@ let icon_of_kind kind has_test =
    * or add another column in completion popup
    * todo? class vs interface ?
    *)
-  | Db.Class _ -> `CONNECT
+  | Db.Class -> `CONNECT
   | Db.Module -> `DISCONNECT
   | Db.Package -> `DIRECTORY
   | Db.Type -> `PROPERTIES
   | Db.Constant -> `CONNECT
   | Db.Global -> `MEDIA_RECORD
-  | Db.Method Db.RegularMethod -> `CONVERT
-  | Db.Method Db.StaticMethod -> `EXECUTE
+  | Db.Method -> `CONVERT
 
   | Db.File -> `FILE
   | Db.Dir -> `DIRECTORY

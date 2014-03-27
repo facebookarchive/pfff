@@ -44,7 +44,7 @@ let color_of_node (_, kind) =
   | E.Function -> "gold"
   | E.Prototype -> "gold4"
   (* less: different color for interfaces and traits? *)
-  | E.Class _ -> "coral"
+  | E.Class -> "coral"
   | E.Module -> "chocolate"
   | E.Package -> "chocolate"
   | E.Type -> "YellowGreen"
@@ -55,7 +55,7 @@ let color_of_node (_, kind) =
   | E.Exception -> "orchid"
   | E.TopStmts -> "black"
 
-  | E.Method _ -> "gold3"
+  | E.Method -> "gold3"
   | E.Field -> "MediumPurple1"
   | E.ClassConstant -> "pink3"
   | E.Constructor -> "pink3"
@@ -75,8 +75,8 @@ let txt_of_node (s, kind) =
   match kind with
   | E.Dir | E.File | E.MultiDirs -> Common2.basename s
   | E.Package | E.Module
-  | E.Class _ 
-  | E.Field | E.Constructor | E.Method _  | E.ClassConstant
+  | E.Class 
+  | E.Field | E.Constructor | E.Method | E.ClassConstant
   | E.Function | E.Type | E.Constant | E.Global
   | E.Exception 
     -> Graph_code.shortname_of_node (s, kind)

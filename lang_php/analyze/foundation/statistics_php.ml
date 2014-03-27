@@ -147,8 +147,8 @@ let stat_of_program ?(hooks=default_hooks) h file ast =
       | ClassDef def ->
           let s = Ast.str_of_ident def.c_name in
           inc (Class_php.string_of_class_type def.c_type);
-          let kind = Class_php.class_type_of_ctype def.c_type in
-          hooks.entity (E.Class kind, s);
+          (* less: let kind = Class_php.class_type_of_ctype def.c_type in *)
+          hooks.entity (E.Class, s);
           Common.save_excursion current_node (CG.Method (s, fake))(fun()->
             k x
           )
