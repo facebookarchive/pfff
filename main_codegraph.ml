@@ -268,17 +268,16 @@ let package_node xs =
  * to pfff_db, and neither codegraph nor codemap need them!
  *)
 let build_graph_code lang xs =
+  let xs = List.map Common.realpath xs in
   let root, files = 
     match xs with
     | [root] -> 
-      let root = Common.realpath root in
-      let files = Find_source.files_of_root ~lang root in
-      root, files
+        root, Find_source.files_of_root ~lang root
     | _ ->
-      let xs = List.map Common.realpath xs in
-      let root = Common2.common_prefix_of_files_or_dirs xs in
-      let files = Find_source.files_of_dir_or_files ~lang ~verbose:!verbose xs in
-      root, files
+        let root = Common2.common_prefix_of_files_or_dirs xs in
+        let files = 
+          Find_source.files_of_dir_or_files ~lang ~verbose:!verbose xs in
+        root, files
   in
 
   let empty = Graph_code.empty_statistics () in
@@ -669,6 +668,80 @@ let test_dotfile_of_deps dir =
       )
     end
   )
+
+
+(* module E = Database_code *)
+let entities_of_ast _ast =
+  raise Todo
+
+module PI = Parse_info
+module T = Parser_cpp
+let test_index xs =
+  let lang = "c++" in
+  let xs = List.map Common.realpath xs in
+  let _root, files = 
+    match xs with
+    | [root] -> 
+        let files = Find_source.files_of_root ~lang root in
+        root, files
+    | _ ->
+        let root = Common2.common_prefix_of_files_or_dirs xs in
+        let files = 
+          Find_source.files_of_dir_or_files ~lang ~verbose:!verbose xs in
+        root, files
+  in
+
+  (* we use the Hashtbl.find_all property for this h *)
+  let h = Hashtbl.create 101 in
+  (* we don't here *)
+  let hcnt = Hashtbl.create 101 in
+  files +> List.iter (fun file ->
+    let toks = Parse_cpp.tokens file in
+    let _fuzzy = 
+      try Parse_cpp.parse_fuzzy file
+      with exn -> 
+        failwith (spf "PB fuzzy on %s (exn = %s)" file (Common.exn_to_s exn))
+    in
+        
+    toks +> List.iter (fun tok ->
+      match tok with
+      | T.TIdent (s, info) ->
+          if Hashtbl.mem hcnt s
+          then 
+            let cnt = Hashtbl.find hcnt s in
+            if cnt > 10 then ()
+            else begin
+              Hashtbl.replace hcnt s (cnt + 1);
+              Hashtbl.add h s info
+            end
+          else begin
+            Hashtbl.add hcnt s 1;
+            Hashtbl.add h s info
+          end
+      | _ -> ()
+  ));
+(*
+  hcnt +> Common.hash_to_list +> Common.sort_by_val_lowfirst 
+  +> Common.take_safe 50 +> List.iter pr2_gen
+*)
+  hcnt +> Common.hash_to_list +> List.iter (fun (s, cnt) ->
+    if cnt = 1 then
+      let info = Hashtbl.find h s in
+      let file = PI.file_of_info info in
+      if file =~ ".*\\.c" 
+      then begin
+        (* pr2 (spf "found? %s in %s" s file); *)
+        let (ast, _toks) = Parse_cpp.parse_fuzzy file in
+        let entities = entities_of_ast ast in
+        (match Common2.assoc_opt s entities with
+        | Some E.Function ->
+            pr2 (spf "dead function? %s in %s" s file)
+        | _ -> ()
+        )
+      end
+  )
+  
+  
   
 (* ---------------------------------------------------------------------- *)
 let extra_actions () = [
@@ -703,6 +776,8 @@ let extra_actions () = [
   Common.mk_action_1_arg test_xta;
   "-test_dotfile_of_deps", " <dir>",
   Common.mk_action_1_arg test_dotfile_of_deps;
+  "-test_index", " <dirs>",
+  Common.mk_action_n_arg test_index;
 (*
   "-test_phylomel", " <geno file>",
   Common.mk_action_1_arg test_phylomel;
