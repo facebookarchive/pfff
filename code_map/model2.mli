@@ -2,7 +2,7 @@
 
 (*s: type model *)
 type model = {
-  root: Common.dirname;
+  root: Common.dirname; 
 
   db: Database_code.database option;
   (*s: model fields hook *)
@@ -128,6 +128,7 @@ type world = {
 
   (* computed lazily, semantic information about the code *)
   model: model Async.t;
+  root_orig: Common.dirname;
   (* to compute a new treemap based on user's action *)
   treemap_func: Common.path list -> Treemap.treemap_rendering;
   (* misc settings, not really used for now *)

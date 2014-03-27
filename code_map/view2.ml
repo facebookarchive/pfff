@@ -153,12 +153,6 @@ let expose_legend da w _ev =
 
 (*s: mk_gui() *)
 let mk_gui ~screen_size ~legend test_mode w =
-  (* ugly, todo use model.root instead? *)
-  let root_orig () = 
-    raise Todo
-  (* (Common2.list_last !Controller.dw_stack).M.current_root *)
-  in
-
   let width, height, minimap_hpos, minimap_vpos = 
     Style.windows_params screen_size in
 
@@ -258,10 +252,7 @@ let mk_gui ~screen_size ~legend test_mode w =
 
           let res = Ui_search.dialog_search_def w.model in
           res +> Common.do_option (fun s ->
-            let root = 
-              (* could also support local grep? and use !dw.root instead ?  *)
-              root_orig ()
-            in
+            let root = w.root_orig in
             let matching_files = Ui_search.run_grep_query ~root s in
             let files = matching_files +> List.map fst +> Common2.uniq in
             let current_grep_query = 
@@ -291,7 +282,7 @@ let mk_gui ~screen_size ~legend test_mode w =
           w.dw.layers.Layer_code.layers +> List.map (fun (layer, active) ->
             (layer.Layer_code.title, active, (fun b -> 
               if b then
-                Ui_layers.choose_layer ~root:(root_orig())
+                Ui_layers.choose_layer ~root:w.root_orig
                   (Some layer.Layer_code.title) w;
             ))
           )
@@ -299,7 +290,7 @@ let mk_gui ~screen_size ~legend test_mode w =
         (* todo: again, make the architecture a layer so less special cases *)
         let entries = [`R (
              ("Architecture", true, (fun _b ->
-               Ui_layers.choose_layer ~root:(root_orig()) None w;
+               Ui_layers.choose_layer ~root:w.root_orig None w;
              ))::
              layers)
         ]

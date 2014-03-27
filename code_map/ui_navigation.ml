@@ -58,8 +58,6 @@ let go_dirs_or_file ?(current_entity=None) ?(current_grep_query=None) w paths =
   !Controller._set_title (Controller.title_of_path root);
 
   Common.push w.dw w.dw_stack;
-  let root = (Async.async_get w.model).root in
-
   w.dw <- 
     Model2.init_drawing 
       ~width:dw.width
@@ -67,7 +65,7 @@ let go_dirs_or_file ?(current_entity=None) ?(current_grep_query=None) w paths =
       w.treemap_func 
       dw.layers
       paths
-      root;
+      w.root_orig;
   w.dw.current_entity <- current_entity;
   (match current_grep_query with
   | Some h -> w.dw.current_grep_query <- h;

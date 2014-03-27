@@ -30,7 +30,10 @@ module E = Database_code
 (*s: type model *)
 (* filename below should be in readable path format *)
 type model = {
-  root: Common.dirname;
+  (* for translating the absolute filenames in tr_label in readable so
+   * one can access the node in the model for a tr_rectangle 
+   *)
+  root: Common.dirname; 
 
   db: Database_code.database option;
   (*s: model fields hook *)
@@ -178,6 +181,9 @@ type world = {
 
   (* computed lazily, semantic information about the code *)
   model: model Async.t;
+
+  root_orig: Common.dirname;
+
   (* to compute a new treemap based on user's action *)
   treemap_func: Common.path list -> Treemap.treemap_rendering;
   (* misc settings, not really used for now *)

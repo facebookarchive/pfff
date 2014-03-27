@@ -383,6 +383,7 @@ let main_action xs =
       draw_summary = false;
       draw_searched_rectangles = true;
     };
+    root_orig = root;
   }
   in
 
