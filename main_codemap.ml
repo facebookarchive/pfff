@@ -441,7 +441,7 @@ let test_loc root =
   +>  List.iter (fun (file, f) ->
       pr2 (spf "%-40s: %d" file (int_of_float f))
   )
-  
+
 
 let test_treemap_dirs () =
   let paths = 

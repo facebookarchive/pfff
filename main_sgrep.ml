@@ -78,7 +78,7 @@ let print_match mvars mvar_binding ii_of_any tokens_matched_code =
 
       let strings_metavars =
         xs +> List.map (fun x ->
-          match Common2.assoc_option x mvar_binding with
+          match Common2.assoc_opt x mvar_binding with
           | Some any ->
               ii_of_any any
               +> List.map PI.str_of_info 

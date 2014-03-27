@@ -143,7 +143,7 @@ module XMATCH = struct
         false
 
   let check_and_add_metavar_binding((mvar:Metavars_php.mvar), valu) = fun tin ->
-    match Common2.assoc_option mvar tin with
+    match Common2.assoc_opt mvar tin with
     | Some valu' ->
         (* Should we use php_vs_php itself for comparing the binded code ?
          * Hmmm, we can't because it leads to a circular dependencies.

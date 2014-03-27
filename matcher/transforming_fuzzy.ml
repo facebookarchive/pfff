@@ -183,7 +183,7 @@ module XMATCH = struct
    * two times the same metavariable in the pattern.
    *)
   let check_and_add_metavar_binding((mvar:string), valu) = fun tin ->
-    match Common2.assoc_option mvar tin with
+    match Common2.assoc_opt mvar tin with
     | Some valu' ->
         (* Should we use fuzzy_vs_fuzzy itself for comparing the binded code ?
          * Hmmm, we can't because it leads to a circular dependencies.
