@@ -104,7 +104,7 @@ open Common
 (* Flags *)
 (*****************************************************************************)
 
-(* todo: infer from basename argv(0) ? *)
+(* less: infer from basename argv(0) ? *)
 let lang = ref "php"
 
 (* show only bugs with "rank" super to this *)
@@ -166,7 +166,7 @@ let cache_parse = ref false
 (* Wrappers *)
 (*****************************************************************************)
 let pr2_dbg s =
-  if !verbose then Common.pr2 s
+  if !verbose then pr2 s
 
 (*****************************************************************************)
 (* Helpers *)
@@ -242,6 +242,71 @@ let entity_finder_of_graph_file graph_file root =
   (* todo: the graph_code contains absolute path?? *)
   (Entity_php.entity_finder_of_graph_code g root, g)
 
+(*---------------------------------------------------------------------------*)
+(* C++ false positive checker *)
+(*---------------------------------------------------------------------------*)
+
+(* mv types in a generic file in h_program-lang/? generalize this code
+ * to use different lang, and so pass different tokenize and TIdent extractor.
+ *)
+module T = Parser_cpp
+let build_cpp_identifier_index xs =
+  let lang = "c++" in
+  let _root, files = 
+    match xs with
+    | [root] -> 
+        root, Find_source.files_of_root ~lang root
+    | _ ->
+        let root = Common2.common_prefix_of_files_or_dirs xs in
+        let files = 
+          Find_source.files_of_dir_or_files ~lang ~verbose:!verbose xs in
+        root, files
+  in
+
+  (* we use the Hashtbl.find_all property for this h *)
+  let h = Hashtbl.create 101 in
+  (* we don't here *)
+  let hcnt = Hashtbl.create 101 in
+  Flag_parsing_cpp.verbose_lexing := false;
+  files +> List.iter (fun file ->
+    let toks = Parse_cpp.tokens file in
+       
+    toks +> List.iter (fun tok ->
+      match tok with
+      | T.TIdent (s, info) ->
+          if Hashtbl.mem hcnt s
+          then 
+            let cnt = Hashtbl.find hcnt s in
+            if cnt > 10 then ()
+            else begin
+              Hashtbl.replace hcnt s (cnt + 1);
+              Hashtbl.add h s info
+            end
+          else begin
+            Hashtbl.add hcnt s 1;
+            Hashtbl.add h s info
+          end
+      | _ -> ()
+  ));
+  hcnt, h
+
+
+let false_positive_detector errors hidentifier g =
+  errors +> List.iter (fun err ->
+    match err.Errors_code.typ with
+    | Errors_code.Deadcode ((s, Database_code.Function) as n) ->
+        let short = Graph_code.shortname_of_node n in
+        let occurences = Hashtbl.find_all hidentifier short in
+        let expected_minimum =
+          if Graph_code.has_node (s, Database_code.Prototype) g
+          then 2 
+          else 1
+        in
+        if List.length occurences > expected_minimum
+        then pr2 (spf "FP deadcode detected for %s" (Graph_code.string_of_node n));
+    | _ -> ()
+  )
+
 (*****************************************************************************)
 (* Main action *)
 (*****************************************************************************)
@@ -258,12 +323,24 @@ let main_action xs =
   | "clang2" | "ocaml" | "java" ->
     let graph_file, _root =
       match xs, !graph_code with
-      | _, Some file -> file, Filename.dirname file
+      | _,    Some file -> file, Filename.dirname file
       | [dir], _ -> Filename.concat dir Graph_code.default_filename, dir
-      | _ -> failwith (spf "%s checker needs a graph file" lang)
+      | x::xs, _ ->
+          let root = Common2.common_prefix_of_files_or_dirs (x::xs) in
+          Filename.concat root Graph_code.default_filename, root
+      | [], _ -> failwith (spf "%s checker needs a graph file" lang);
     in
+    if not (Sys.file_exists graph_file)
+    then failwith (spf "%s checker needs a graph file" lang);
+
     let g = Graph_code.load graph_file in
     let errs = Graph_code_checker.check g in
+    if lang = "clang2"
+    then begin
+      let (_hcnt, hidentifier) = build_cpp_identifier_index xs in
+      false_positive_detector errs hidentifier g
+    end;
+
     let errs = 
       errs +> Errors_code.adjust_errors
       +> List.filter (fun err -> (Errors_code.score_of_error err) >= !filter)
@@ -448,6 +525,60 @@ let dflow file_or_dir =
     )) files
 
 (*---------------------------------------------------------------------------*)
+(* Poor's man token-based Deadcode detector  *)
+(*---------------------------------------------------------------------------*)
+module PI = Parse_info
+module E = Database_code
+module Ast = Ast_fuzzy
+
+let entities_of_ast ast =
+  let res = ref [] in
+  let visitor = Ast_fuzzy.mk_visitor { Ast_fuzzy.default_visitor with
+    Ast_fuzzy.ktrees = (fun (k, _) xs ->
+      (match xs with
+      | Ast.Tok (s, _)::Ast.Parens _::Ast.Braces _::_res ->
+          Common.push (s, E.Function) res;
+      | _ ->  ()
+      );
+      k xs
+    )
+  }
+  in
+  visitor ast;
+  !res
+
+
+
+let test_index xs =
+  let xs = List.map Common.realpath xs in
+  let hcnt, h = build_cpp_identifier_index xs in
+(*
+  hcnt +> Common.hash_to_list +> Common.sort_by_val_lowfirst 
+  +> Common.take_safe 50 +> List.iter pr2_gen
+*)
+  hcnt +> Common.hash_to_list +> List.iter (fun (s, cnt) ->
+    if cnt = 1 then
+      let info = Hashtbl.find h s in
+      let file = PI.file_of_info info in
+      if file =~ ".*\\.c" 
+      then begin
+        (* pr2 (spf "found? %s in %s" s file); *)
+        let (ast, _toks) = 
+      try Parse_cpp.parse_fuzzy file
+      with exn -> 
+        pr2 (spf "PB fuzzy on %s (exn = %s)" file (Common.exn_to_s exn));
+        [], []
+    in
+        let entities = entities_of_ast ast in
+        (match Common2.assoc_opt s entities with
+        | Some E.Function ->
+            pr2 (spf "DEAD FUNCTION? %s in %s" s file)
+        | _ -> ()
+        )
+      end
+  )
+
+(*---------------------------------------------------------------------------*)
 (* Regression testing *)
 (*---------------------------------------------------------------------------*)
 let test () =
@@ -474,6 +605,9 @@ let extra_actions () = [
       else ()
     );
   );
+
+  "-test_index", " <dirs>",
+  Common.mk_action_n_arg test_index;
 ]
 
 (*****************************************************************************)
