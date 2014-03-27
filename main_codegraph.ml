@@ -671,8 +671,22 @@ let test_dotfile_of_deps dir =
 
 
 (* module E = Database_code *)
-let entities_of_ast _ast =
-  raise Todo
+module Ast = Ast_fuzzy
+let entities_of_ast ast =
+  let res = ref [] in
+  let visitor = Ast_fuzzy.mk_visitor { Ast_fuzzy.default_visitor with
+    Ast_fuzzy.ktrees = (fun (k, _) xs ->
+      match xs with
+      | Ast.Tok (s, _)::Ast.Parens _::Ast.Braces _::_res ->
+          Common.push (s, E.Function) res;
+          k xs
+      | _ -> 
+          k xs
+    )
+  }
+  in
+  visitor ast;
+  !res
 
 module PI = Parse_info
 module T = Parser_cpp
@@ -695,12 +709,14 @@ let test_index xs =
   let h = Hashtbl.create 101 in
   (* we don't here *)
   let hcnt = Hashtbl.create 101 in
+  Flag_parsing_cpp.verbose_lexing := false;
   files +> List.iter (fun file ->
     let toks = Parse_cpp.tokens file in
     let _fuzzy = 
       try Parse_cpp.parse_fuzzy file
       with exn -> 
-        failwith (spf "PB fuzzy on %s (exn = %s)" file (Common.exn_to_s exn))
+        pr2 (spf "PB fuzzy on %s (exn = %s)" file (Common.exn_to_s exn));
+        [], []
     in
         
     toks +> List.iter (fun tok ->
