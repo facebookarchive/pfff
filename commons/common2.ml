@@ -4588,7 +4588,7 @@ let _ = assert
   (lookup_list2 "c" [["a",1;"b",2];["a",1;"b",3];["a",1;"c",7]] =*= (7,2))
 
 
-let assoc_option  k l =
+let assoc_opt  k l =
   optionise (fun () -> List.assoc k l)
 
 let assoc_with_err_msg k l =

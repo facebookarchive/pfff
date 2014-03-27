@@ -1563,7 +1563,7 @@ val assoc_map : ('a * 'b) list -> ('a * 'b) list -> ('a * 'a) list
 val lookup_list : 'a -> ('a, 'b) assoc list -> 'b
 val lookup_list2 : 'a -> ('a, 'b) assoc list -> 'b * int
 
-val assoc_option : 'a -> ('a, 'b) assoc -> 'b option
+val assoc_opt : 'a -> ('a, 'b) assoc -> 'b option
 val assoc_with_err_msg : 'a -> ('a, 'b) assoc -> 'b
 
 type order = HighFirst | LowFirst 
