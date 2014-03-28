@@ -340,6 +340,7 @@ let main_action xs =
 
     let g = Graph_code.load graph_file in
     let errs = Graph_code_checker.check g in
+    (* todo: make this more lazy? it's pretty slow *)
     let hidentifier =
       if lang = "clang2"
       then build_cpp_identifier_index xs +> snd
