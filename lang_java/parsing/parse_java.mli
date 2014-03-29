@@ -1,6 +1,6 @@
 
 (* the token list contains also the comment-tokens *)
-type program_and_tokens = 
+type program_and_tokens =
     Ast_java.program option * Parser_java.token list
 
 exception Parse_error of Parse_info.info
@@ -13,10 +13,11 @@ val parse :
 val parse_program:
   Common.filename -> Ast_java.program
 
+val parse_string : string -> Ast_java.program
+
 (* for generalized sgrep/spatch patterns *)
 val parse_fuzzy:
   Common.filename -> Ast_fuzzy.tree list * Parser_java.token list
 
 (* internal *)
 val tokens: Common.filename -> Parser_java.token list
-

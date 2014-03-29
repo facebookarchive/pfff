@@ -183,6 +183,9 @@ let parse_program file =
   let ((ast, _toks), _stat) = parse file in
   Common2.some ast
 
+let parse_string (w : string) : Ast.program =
+  Common2.with_tmp_file ~str:w ~ext:"java" parse_program
+
 (*****************************************************************************)
 (* Fuzzy parsing *)
 (*****************************************************************************)
