@@ -784,6 +784,7 @@ let build ?(verbose=true) root files =
     typedefs_dependencies = false;
     types_dependencies = true;
     fields_dependencies = true;
+    (* propagate_deps_def_to_decl *)
   } in
 
   let env = {
@@ -846,7 +847,8 @@ let build ?(verbose=true) root files =
     ));
 
   env.pr2_and_log "\nstep3: adjusting";
-  propagate_users_of_functions_globals_types_to_prototype_extern_typedefs g;
+  if false
+  then propagate_users_of_functions_globals_types_to_prototype_extern_typedefs g;
   G.remove_empty_nodes g [unknown_location; G.not_found; G.dupe; G.pb];
 
   g

@@ -181,6 +181,7 @@ let filters = [
     Common2.once x (fun () -> Parse_cpp.init_defs !Flag_parsing_cpp.macros_h);
     match FT.file_type_of_file file with
     | FT.PL (FT.C _ | FT.Cplusplus _) -> true 
+    | FT.PL FT.Asm -> true
     | _ -> false
   ));
 
