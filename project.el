@@ -65,6 +65,7 @@
      external/phylomel/src
      facebook/thrift
      facebook/thrift/gen-ocaml
+     facebook/xhpast
      demos
 /home/pad/packages/Linux/stow/ocaml-4.00.1/lib/ocaml/compiler-libs
 /home/pad/packages/MacOS/stow/ocaml-4.00.1/lib/ocaml/compiler-libs
@@ -510,7 +511,7 @@
    (join-string 
     (list 
      "-debugger"
-     (case 40
+     (case 50
        (0 "-test_treemap_misc")
        (1 "-test_treemap_db /tmp/pfff_db")
        (2 "-lib_dependencies2 /home/pad/www/lib/platform_install.php /tmp/pfff_db")
@@ -526,6 +527,7 @@
        (24 "-overlayize_dry /home/pad/Overlays/www pegasus")
        (30 "-interface_methods_transfo /home/pad/www/flib/intern/puma/read_efficiency/advisor/ReadEffAggregationAdvisor.php")
        (40 "-load_employee /home/pad/pfff/facebook/data/employees_infos.json")
+       (50 "-dump_xhpast2 /home/pad/pfff/tests/php/parsing/hello_world.php")
        )
      ))
    )

@@ -541,6 +541,7 @@ rule st_in_scripting = parse
     | ','  { TCOMMA(tokinfo lexbuf) }
     | '@'  { T__AT(tokinfo lexbuf) }
 
+    (* was called T_DOUBLE_ARROW but we actually now have a real ==> *)
     | "=>" { T_ARROW(tokinfo lexbuf) }
     | "~"  { TTILDE(tokinfo lexbuf) }
     | ";"  { TSEMICOLON(tokinfo lexbuf) }
