@@ -1,4 +1,4 @@
-<?php 
+<?php
 
 //http://www.php.net/manual/en/language.namespaces.rationale.php
 namespace my\name;
