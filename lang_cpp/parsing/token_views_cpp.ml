@@ -73,15 +73,13 @@ type token_extended = {
  (* The strategy to tag is mostly to look at the token(s) before the '{' *)
   and context = 
     | InTopLevel
-    | InClassStruct of string
+    | InClassStruct of string (* can be __anon__ *)
     | InEnum
     | InInitializer
     | InParameter
     | InArgument
 
     | InFunction (* TODO *)
-    (* knowing the name is useful to recognize constructors *)
-    | InStructAnon (* TODO *)
     | InTemplateParam (* TODO *)
 
 (* InCondition ? InParenExpr ? *)
@@ -624,7 +622,6 @@ let vof_context = function
   | InTopLevel -> Ocaml.VSum ("T", [])
   | InFunction -> Ocaml.VSum ("F", [])
   | InClassStruct _s -> Ocaml.VSum ("C", [])
-  | InStructAnon -> Ocaml.VSum ("SA", [])
   | InEnum  -> Ocaml.VSum ("E", [])
   | InInitializer -> Ocaml.VSum ("I", [])
   | InParameter -> Ocaml.VSum ("P", [])

@@ -210,6 +210,13 @@ let set_context_tag_multi groups =
       );
       aux (braces::xs)
 
+  | Tok{t=(Tstruct _ | Tunion _)}::(Braces(_t1, _body, _t2) as braces)::xs
+    ->
+      [braces] +> TV.iter_token_multi (fun tok ->
+        tok.TV.where <- (TV.InClassStruct "__anon__")::tok.TV.where;
+      );
+      aux (braces::xs)
+
 (*
   | BToken ({t=tokstruct; _})::BToken ({t= TIdent (s,_); _})
     ::Braceised(body, tok1, tok2)::xs when TH.is_classkey_keyword tokstruct -> 
