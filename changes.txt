@@ -1,17 +1,14 @@
 -*- org -*-
 
+* 0.28 (Q2 2014) (??)
+
 * 0.27 (Q1 2014) ("hypertext" codemap, generalized scheck)
-
-** codegraph
-
-*** improve automatic layering by using hill climbing algorithm
-less backward dependencies on plan9 for instance
 
 ** codemap
 
 *** match defs and uses even when the file has been modified
 (do not use the probably obsolete line information in graph_code, trust
-more the lexer/parser/highlighter)
+more the lexer/parser/highlighter fuzzy def/use classifier)
 
 *** show uses/defs relations also at use site
 so can hover on some code and see the corresponding definition
@@ -36,6 +33,11 @@ light db (while still filtering object files and skip list files)
 
 *** cleanup the code, introduce world type, less use of refs
 
+** codegraph
+
+*** improve automatic layering by using hill climbing algorithm
+less backward dependencies on plan9 for instance
+
 ** scheck
 
 *** support more languages via graph_code_checker
@@ -43,8 +45,10 @@ light db (while still filtering object files and skip list files)
 *** software architecture related checks
 Deadcode, UnusedExport, UndefinedDefOfDecl
 
-*** annotation support to remove false positives
+*** annotation support to skip false positives
 (port what was in cmf)
+
+*** token-based indexer to detect false positives
 
 ** clang
 
