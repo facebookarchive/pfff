@@ -181,7 +181,7 @@ let keyword_table = Common.hash_of_list [
   "__file__", (fun ii -> T_FILE ii); "__dir__",   (fun ii -> T_DIR ii);
   "__function__", (fun ii ->T_FUNC_C ii); "__method__",(fun ii ->T_METHOD_C ii);
   "__class__",  (fun ii -> T_CLASS_C ii);" __trait__", (fun ii ->T_TRAIT_C ii);
-  "__namespace__", (fun ii -> T_NAMESPACE_C ii);
+  "__namespace__", (fun ii -> T_NAMESPACE_C ii); (* was called T_NS_C *)
 
   (* old: "__halt_compiler", (fun ii -> T_HALT_COMPILER ii); *)
 
