@@ -54,22 +54,21 @@ let swipl =
 let predicates_file = 
   Filename.concat Config_pfff.path "h_program-lang/database_code.pl"
 
-(* todo: should remove that at some point and be able to do everything in RAM *)
-let metapath = ref "/tmp/pfff_db"
-
 (* action mode *)
 let action = ref ""
 
 (*****************************************************************************)
 (* Helpers *)
 (*****************************************************************************)
+let pr2_dbg s = 
+  if !verbose then pr2 s
 
 (*****************************************************************************)
 (* Language specific, building the prolog db *)
 (*****************************************************************************)
 let build_prolog_db lang root =
   let root = Common.realpath root +> Common2.chop_dirsymbol in
-  let files = Find_source.files_of_root ~lang:"lang" root in
+  let files = Find_source.files_of_root ~lang root in
   match lang with
   | "php" ->
       (* 
@@ -85,11 +84,10 @@ let build_prolog_db lang root =
        let facts_pl_file = "facts.pl" in
        let prolog_compiled_db = "prolog_compiled_db" in
 
-       let file = Filename.concat !metapath facts_pl_file in
+       let file = Filename.concat root facts_pl_file in
        pr2 (spf "generating prolog facts in %s" file);
        let facts =
          Database_prolog_php.build ~show_progress:!verbose root files in
-       Common.command2 (spf "mkdir -p %s" !metapath);
        Common.with_open_outfile file (fun (pr_no_nl, _chan) ->
          let pr s = pr_no_nl (s ^ "\n") in
          facts +> List.iter (fun fact ->
@@ -98,14 +96,12 @@ let build_prolog_db lang root =
        );
 
        pr2 (spf "compiling prolog facts with swipl in %s/%s" 
-               !metapath prolog_compiled_db);
+              root prolog_compiled_db);
        Common.command2 (spf "%s -c %s/%s %s" 
-                           swipl !metapath facts_pl_file predicates_file);
-       Common.command2 (spf "mv a.out %s/%s" !metapath prolog_compiled_db);
+                           swipl root facts_pl_file predicates_file);
+       Common.command2 (spf "mv a.out %s/%s" root prolog_compiled_db);
 
-       pr2 "";
-       pr2 (spf "Your compiled prolog DB is ready. Run %s/%s"
-               !metapath prolog_compiled_db);
+       Filename.concat root prolog_compiled_db
 
   | "cmt" | "bytecode" | "clang2" ->
       
@@ -144,7 +140,7 @@ let build_prolog_db lang root =
       Common.command2 (spf "%s -c %s %s" swipl facts_pl_file predicates_file);
       Common.command2 (spf "mv a.out %s" prolog_compiled_db);
       pr2 (spf "Your compiled proog DB is ready. Run %s" prolog_compiled_db);
-      ()
+      prolog_compiled_db
 
   | _ -> failwith ("language not yet supported: " ^ lang)
 
@@ -152,9 +148,10 @@ let build_prolog_db lang root =
 (* Main action *)
 (*****************************************************************************)
 
-let main_action _xs =
+let main_action root =
   Logger.log Config_pfff.logger "codequery" None;
-  raise Todo
+  let compiled = build_prolog_db !lang root in
+  Common.command2 compiled
 
 (*****************************************************************************)
 (* Extra Actions *)
@@ -171,7 +168,12 @@ let test () =
 (* ---------------------------------------------------------------------- *)
 let extra_actions () = [
   "-build", " <dir> source code to analyze",
-  Common.mk_action_1_arg (fun dir -> build_prolog_db !lang dir);
+  Common.mk_action_1_arg (fun dir -> 
+    let file = build_prolog_db !lang dir in
+    pr2 "";
+    pr2 (spf "Your compiled prolog DB is ready. Run %s" file);
+
+  );
   "-test", " run regression tests",
   Common.mk_action_0_arg test;
 ]
@@ -187,9 +189,6 @@ let all_actions () =
 let options () = [
   "-lang", Arg.Set_string lang, 
   (spf " <str> choose language (default = %s)" !lang);
-
-  "-metapath", Arg.Set_string metapath, 
-  (spf " <dir> where to put the data (default = %s)" !metapath);
 
   "-verbose", Arg.Unit (fun () ->
     verbose := true;
@@ -216,7 +215,7 @@ let main () =
 
   let usage_msg = 
     spf "Usage: %s [options] <dir> \nDoc: %s\nOptions:"
-      (Common2.basename Sys.argv.(0))
+      (Filename.basename Sys.argv.(0))
       "https://github.com/facebook/pfff/wiki/Codequery"
   in
   (* does side effect on many global flags *)
@@ -237,15 +236,15 @@ let main () =
     (* --------------------------------------------------------- *)
     (* main entry *)
     (* --------------------------------------------------------- *)
-    | x::xs -> 
-        main_action (x::xs)
+    | [x] -> 
+        main_action x
 
     (* --------------------------------------------------------- *)
     (* empty entry *)
     (* --------------------------------------------------------- *)
-    | [] -> 
+    | _ -> 
         Common.usage usage_msg (options()); 
-        failwith "too few arguments"
+        failwith "too few or too many arguments"
     )
   )
 
