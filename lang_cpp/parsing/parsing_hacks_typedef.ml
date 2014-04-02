@@ -53,7 +53,7 @@ open Parsing_hacks_lib
 (* Helpers *)
 (*****************************************************************************)
 
-let look_like_multiplication tok =
+let look_like_multiplication_context tok =
   match tok with
   | TEq _ | TAssign _
   | TWhy _
@@ -64,7 +64,7 @@ let look_like_multiplication tok =
   | tok when TH.is_binary_operator_except_star tok -> true
   | _ -> false
 
-let look_like_declaration tok =
+let look_like_declaration_context tok =
   match tok with
   | TOBrace _ 
  (* no!! | TCBrace _ *)
@@ -186,12 +186,12 @@ let find_typedefs xxs =
 
   (* xx * yy  with a token before like return (probably a mulitplication) *)
   | {t=tok_before}::{t=TIdent (_s,_)}::{t=TMul _}::{t=TIdent _}::xs
-    when look_like_multiplication tok_before ->
+    when look_like_multiplication_context tok_before ->
       aux xs
 
   (* { xx * yy,  (probably declaration) *)
   | {t=tok_before}::({t=TIdent (s,i1)} as tok1)::{t=TMul _}::{t=TIdent _}::xs
-    when look_like_declaration tok_before ->
+    when look_like_declaration_context tok_before ->
       change_tok tok1 (TIdent_Typedef (s, i1));
       aux xs
 
@@ -264,9 +264,9 @@ let find_typedefs xxs =
 
   (* kencc-ext: [;{] xx ;  where InStruct *)
   | {t=tok_before}::({t=TIdent (s, i1)} as tok1)::({t=TPtVirg _} as tok2)::xs 
-      when look_like_declaration tok_before ->
+      when look_like_declaration_context tok_before ->
       (match tok1.where with
-      | (InClassStruct _ | InStructAnon)::_ ->
+      | (InClassStruct _)::_ ->
         change_tok tok1 (TIdent_Typedef (s, i1));
       | _ -> ()
       );
