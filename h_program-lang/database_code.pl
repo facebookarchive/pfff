@@ -391,3 +391,5 @@ wrong_public_genRender(X) :-
 %todo:
 % check for inconsistent case, e.g. Exception vs exception.
 % just check if 2 classes are different but downcase to the same name
+
+implements('NEED_AT_LEAST_ONE_FACT', 'NEED_AT_LEAST_ONE_FACT_PARENT').
