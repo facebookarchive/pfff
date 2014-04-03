@@ -193,27 +193,22 @@ let mk_gui ~screen_size ~legend test_mode w =
     (* Menu *)
     (*-------------------------------------------------------------------*)
     hbox#pack (G.mk (GMenu.menu_bar) (fun m -> 
-      
       let factory = new GMenu.factory m in
-
+(*
       factory#add_submenu "_File" +> (fun menu -> 
         let fc = new GMenu.factory menu ~accel_group in
-
         (* todo? open Db ? *)
-
         fc#add_item "_Open stuff from db" ~key:K._O ~callback:(fun () -> 
           ();
         ) +> ignore;
         fc#add_separator () +> ignore;
-
-        fc#add_item "_Quit" ~key:K._Q ~callback:quit;
-      ) +> ignore;
 
       factory#add_submenu "_Edit" +> (fun menu -> 
         GToolbox.build_menu menu ~entries:[
           `S;
         ];
       ) +> ignore;
+*)
 
       factory#add_submenu "_Move" +> (fun menu -> 
         let fc = new GMenu.factory menu ~accel_group in
@@ -236,12 +231,12 @@ let mk_gui ~screen_size ~legend test_mode w =
                   let final_file = 
                     Model_database_code.readable_to_absolute_filename_under_root
                       file ~root:w.dw.current_root in
-
                   !Controller._go_dirs_or_file 
                     ~current_entity:(Some e) w [final_file];
               )
           | _ -> failwith "no entity currently selected or no db"
-        ) +> ignore ;
+        ) +> ignore;
+        fc#add_item "_Quit" ~key:K._Q ~callback:quit +> ignore;
       );
 
       factory#add_submenu "_Search" +> (fun menu -> 
@@ -336,8 +331,6 @@ let mk_gui ~screen_size ~legend test_mode w =
             G.dialog_text "Brought to you by pad\nwith love" "About"
         ) +> ignore;
       );
-
-
     ));
 
     (*-------------------------------------------------------------------*)
