@@ -309,6 +309,12 @@ let mk_gui ~screen_size ~legend test_mode w =
           !Controller._go_dirs_or_file w [current_root];
         ) +> ignore;
 
+        fc#add_item "Reset entity" ~callback:(fun () ->
+          w.current_node_selected <- None;
+          let cr_overlay = Cairo.create w.dw.overlay in
+          CairoH.clear cr_overlay;
+          !Controller._refresh_da();
+        ) +> ignore;
       );
 
       factory#add_submenu "_Help" +> (fun menu -> 
@@ -456,7 +462,6 @@ let mk_gui ~screen_size ~legend test_mode w =
           !Controller._go_back w;
         )
       ));
-
     ));
 
     (*-------------------------------------------------------------------*)

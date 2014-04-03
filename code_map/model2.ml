@@ -190,6 +190,7 @@ type world = {
   settings: settings;
 
   mutable current_node: Graph_code.node option;
+  mutable current_node_selected: Graph_code.node option;
 }
    and settings = {
      mutable draw_summary: bool;

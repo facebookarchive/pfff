@@ -265,14 +265,14 @@ let button_action w ev =
             `I ("go to file", (fun () -> 
               !Ctl._go_dirs_or_file w (paths_of_readables [readable]);));
             `I ("deps inout", (fun () -> 
-              w.current_node <- entity_opt;
+              w.current_node_selected <- entity_opt;
               !Ctl._go_dirs_or_file w (paths_of_readables 
                                          (uses @ users @ [readable]))));
             `I ("deps in (users)", (fun () -> 
-              w.current_node <- entity_opt;
+              w.current_node_selected <- entity_opt;
               !Ctl._go_dirs_or_file w (paths_of_readables (users@[readable]))));
             `I ("deps out (uses)", (fun () -> 
-              w.current_node <- entity_opt;
+              w.current_node_selected <- entity_opt;
               !Ctl._go_dirs_or_file w (paths_of_readables (uses@[readable]))));
             `I ("info file", (fun () -> 
               let microlevel = Hashtbl.find dw.microlevel tr in
@@ -302,7 +302,7 @@ let button_action w ev =
                   Gui.dialog_text ~text:str ~title:"Info entity";
                 ));
                  `I ("goto def", (fun () ->
-                   w.current_node <- entity_opt;
+                   w.current_node_selected <- entity_opt;
                    let dest = Graph_code.file_of_node n g in
                    !Ctl._go_dirs_or_file w (paths_of_readables [dest])
                  ));                                              

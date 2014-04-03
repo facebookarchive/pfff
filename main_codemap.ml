@@ -379,6 +379,7 @@ let main_action xs =
     model = async_model;
     treemap_func;
     current_node = None;
+    current_node_selected = None;
     settings = { Model.
       (* todo: too fuzzy for now *)
       draw_summary = false;

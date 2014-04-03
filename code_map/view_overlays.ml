@@ -284,6 +284,10 @@ let hook_finish_paint w =
   w.current_node +> Common.do_option (fun n -> 
     Async.async_get_opt w.model +> Common.do_option (fun model ->
       draw_deps_entities n dw model
+    ));
+  w.current_node_selected +> Common.do_option (fun n -> 
+    Async.async_get_opt w.model +> Common.do_option (fun model ->
+      draw_deps_entities n dw model
     ))
 
 (*s: motion_refresher *)
