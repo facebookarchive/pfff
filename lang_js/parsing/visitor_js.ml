@@ -25,7 +25,7 @@ type visitor_in = {
 
   kexpr: (expr  -> unit) * visitor_out -> expr  -> unit;
   kstmt: (st  -> unit) * visitor_out -> st  -> unit;
-  kfield: (field -> unit) * visitor_out -> field -> unit;
+  kprop: (property -> unit) * visitor_out -> property -> unit;
   kinfo: (tok -> unit)  * visitor_out -> tok  -> unit;
 }
 and visitor_out = any -> unit
@@ -35,7 +35,7 @@ let default_visitor =
     kstmt   = (fun (k,_) x -> k x);
     kinfo   = (fun (k,_) x -> k x);
 
-    kfield = (fun (k,_) x -> k x);
+    kprop = (fun (k,_) x -> k x);
   }
 
 let (mk_visitor: visitor_in -> visitor_out) = fun vin ->
@@ -174,7 +174,7 @@ and v_expr (x: expr) =
   | Object v1 ->
       let v1 =
         v_brace
-          (v_comma_list v_field
+          (v_comma_list v_property
 
              )
           v1
@@ -210,16 +210,18 @@ and v_expr (x: expr) =
   in
   vin.kexpr (k, all_functions) x
 
-and v_field x =
-  let k x =
-    let (v1, v2, v3) = x in
-
-    let v1 = v_property_name v1
-    and v2 = v_tok v2
-    and v3 = v_expr v3
-    in ()
+and v_property x =
+  let k = function
+    | P_field (v1, v2, v3) ->
+        let v1 = v_property_name v1
+        and v2 = v_tok v2
+        and v3 = v_expr v3
+        in ()
+    | P_method v1 ->
+        let v1 = v_func_decl v1
+        in ()
   in
-  vin.kfield (k, all_functions) x
+  vin.kprop (k, all_functions) x
 
 and v_litteral =
   function

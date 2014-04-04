@@ -81,7 +81,7 @@ type expr =
    | Period of expr * tok (* . *) * name
 
    (* can have some trailing comma *)
-   | Object of field comma_list brace
+   | Object of property comma_list brace
    (* The comma_list can have successive Left because of "elison" *)
    | Array of expr comma_list bracket
 
@@ -144,8 +144,9 @@ type expr =
        | A_lsl  | A_lsr  | A_asr
        | A_and  | A_xor  | A_or
 
-   and field =
-      (property_name * tok (* : *) * expr)
+   and property =
+       | P_field of property_name * tok (* : *) * expr
+       | P_method of func_decl
 
  (* facebook-ext: JSX extension, similar to XHP for PHP *)
  and xhp_html =

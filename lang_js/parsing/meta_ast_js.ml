@@ -100,11 +100,15 @@ let rec vof_expr =
       let v1 =
         vof_brace
           (vof_comma_list
-             (fun (v1, v2, v3) ->
-                let v1 = vof_property_name v1
-                and v2 = vof_tok v2
-                and v3 = vof_expr v3
-                in Ocaml.VTuple [ v1; v2; v3 ]))
+             (function
+             | P_field (v1, v2, v3) ->
+                 let v1 = vof_property_name v1
+                 and v2 = vof_tok v2
+                 and v3 = vof_expr v3
+                 in Ocaml.VSum (("P_field", [ v1; v2; v3 ]))
+             | P_method v1 ->
+                 let v1 = vof_func_decl v1
+                 in Ocaml.VSum (("P_method", [v1]))))
           v1
       in Ocaml.VSum (("Object", [ v1 ]))
   | Array v1 ->

@@ -695,12 +695,18 @@ object_literal:
      { ($1, $2 @ [Right $3], $5) }
 
 
-property_name_and_value_list:
+property_name_and_value:
  | property_name T_COLON assignment_expression
-     { [Left ($1, $2, $3)] }
+     { Left (P_field ($1, $2, $3)) }
+ | method_definition
+     { Left (P_method ($1)) }
+
+property_name_and_value_list:
+ | property_name_and_value
+     { [$1] }
  | property_name_and_value_list T_COMMA
-     property_name T_COLON assignment_expression
-     { $1 @ [Right $2; Left ($3, $4, $5)] }
+     property_name_and_value
+     { $1 @ [Right $2; $3] }
 
 /*(*----------------------------*)*/
 /*(*2 function call *)*/
