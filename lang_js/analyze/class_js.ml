@@ -6,7 +6,7 @@
  * modify it under the terms of the GNU Lesser General Public License
  * version 2.1 as published by the Free Software Foundation, with the
  * special exception on linking described in file license.txt.
- * 
+ *
  * This library is distributed in the hope that it will be useful, but
  * WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the file
@@ -25,32 +25,32 @@ module Db = Database_code
 (*****************************************************************************)
 (*
  * Reverse-engineering the class structure of a Javascript file.
- * 
+ *
  * Javascript has no notion of class (or module); it's an object-based
  * language like Self using *prototypes*. Nevertheless people have
  * defined different libraries and conventions to define classes on
- * top of those objects. Prototype and Jquery are probably the 
+ * top of those objects. Prototype and Jquery are probably the
  * most famous ones.
- * 
+ *
  * This module tries to reverse-engineer those conventions.
  * By understanding the class structure we can then
- * provide better completion on entities by knowing for instance that 
+ * provide better completion on entities by knowing for instance that
  * some nested functions are actually static methods of a specific class.
- * 
- * In addition to the Prototype library, this module also handles the 
+ *
+ * In addition to the Prototype library, this module also handles the
  * Javelin conventions and the copy_properties() idiom.
  * Javelin, aka JX, is a javascript framework developed by Facebook.
  * See http://javelin.fbdocs.com/ It adds some functions like
- * JX.install and conventions such as using the 'statics', 'members' 
+ * JX.install and conventions such as using the 'statics', 'members'
  * fields to give a class structure to javascript code.
- * 
+ *
  * Because the highlighter needs also to recognize those idioms,
  * highlight_js.ml now calls this module.
- * 
+ *
  * to test:
  *   $ ./pfff_db_light -batch_mode -readable_db -lang js ~/www/html/intern/js/
  * which right now does not generate any warning.
- * 
+ *
  *)
 
 (*****************************************************************************)
@@ -58,7 +58,7 @@ module Db = Database_code
 (*****************************************************************************)
 
 (* Many of the patterns were written with the help of
- * ./pfff_misc -dump_js_ml tests/facebook/mini_www/html/js/bar.js 
+ * ./pfff_misc -dump_js_ml tests/facebook/mini_www/html/js/bar.js
  *)
 let extract_complete_name_of_info ast =
 
@@ -82,7 +82,7 @@ let extract_complete_name_of_info ast =
           v_init = Some((_i_3, (Object(_body_object))))}], _scopt) ->
        (* could restrict to only toplevel first column var declarations ? *)
 
-          Hashtbl.add h info_class 
+          Hashtbl.add h info_class
             (Db.Class, spf "Misc.%s" class_name);
           Common.save_excursion in_class (Some class_name) (fun () ->
           (* todo? really in_members ? or in_statics ? *)
@@ -93,10 +93,10 @@ let extract_complete_name_of_info ast =
       | Variable(_i_1, [Left{ v_name = (class_name, info_class); v_type = _;
          v_init = Some((_i_3,
                (Apply(
-                  (Paren((_i_4, (Function(_body_func)), _i_11))), 
+                  (Paren((_i_4, (Function(_body_func)), _i_11))),
                  (_i_13, [], _i_14)))))}], _scopt) ->
 
-          Hashtbl.add h info_class 
+          Hashtbl.add h info_class
             (Db.Class, spf "Misc.%s" class_name);
           Common.save_excursion in_class (Some class_name) (fun () ->
           Common.save_excursion in_members true (fun () ->
@@ -110,11 +110,11 @@ let extract_complete_name_of_info ast =
 
       (* Foo.prototype = { ... } *)
       | Assign(
-          (Period((V((class_name, info_class))), _i_3, ("prototype", _i_4))), 
-          (A_eq, _i_6), 
+          (Period((V((class_name, info_class))), _i_3, ("prototype", _i_4))),
+          (A_eq, _i_6),
           (Object(_body_object))) ->
 
-          Hashtbl.add h info_class 
+          Hashtbl.add h info_class
             (Db.Class, spf "Prototype.%s" class_name);
           Common.save_excursion in_class (Some class_name) (fun () ->
           Common.save_excursion in_members true (fun () ->
@@ -123,12 +123,12 @@ let extract_complete_name_of_info ast =
 
       (* Foo = { } *)
       | Assign(
-          (V((class_name, info_class))), 
-          (A_eq, _i_56), 
+          (V((class_name, info_class))),
+          (A_eq, _i_56),
           (Object(_body_object))) ->
        (* could restrict to only toplevel first column var declarations ? *)
 
-          Hashtbl.add h info_class 
+          Hashtbl.add h info_class
             (Db.Class, spf "Misc.%s" class_name);
           Common.save_excursion in_class (Some class_name) (fun () ->
           Common.save_excursion in_members true (fun () ->
@@ -146,7 +146,7 @@ let extract_complete_name_of_info ast =
           (Left((L(String((class_name, info_class)))))::Right(_i_9)::_rest_args),
           _i_13)) ->
 
-          Hashtbl.add h info_class 
+          Hashtbl.add h info_class
             (Db.Class, spf "JX.%s" class_name);
 
           (* was just %s before, but then get conflict between for instance
@@ -160,11 +160,11 @@ let extract_complete_name_of_info ast =
           (Period((V(("JX", _i_1))), _i_3, ("copy", _i_4))),
           (_i_6,
            [Left((Period((V((class_name, info_class))),_i_9,
-                        ("prototype", _i_10)))); 
-            Right(_i_12); 
+                        ("prototype", _i_10))));
+            Right(_i_12);
             Left((Object(_object_body)))], _i_16)) ->
 
-          Hashtbl.add h info_class 
+          Hashtbl.add h info_class
             (Db.Class, spf "JX.%s" class_name);
           Common.save_excursion in_class (Some class_name) (fun () ->
           Common.save_excursion in_statics true (fun () ->
@@ -178,7 +178,7 @@ let extract_complete_name_of_info ast =
           [Left((L(String((mixin_name, _info_mixin))))); Right(_i_9);
            Left((Object(_body_object)))], _i_13)) ->
 
-          Hashtbl.add h info_class 
+          Hashtbl.add h info_class
             (Db.Class, spf "%s<%s" class_name mixin_name);
           Common.save_excursion in_class (Some class_name) (fun () ->
           Common.save_excursion in_statics true (fun () ->
@@ -214,7 +214,7 @@ let extract_complete_name_of_info ast =
           Common.save_excursion in_statics true (fun () ->
             k e
           ))
-         
+
       (*---------------------------------------------------------------------*)
       (* copy_properties *)
       (*---------------------------------------------------------------------*)
@@ -226,7 +226,7 @@ let extract_complete_name_of_info ast =
           [Left((V((class_name, info_class)))); Right(_i_21);
            Left((Object(_body_object)))], _i_25)) ->
 
-          Hashtbl.add h info_class 
+          Hashtbl.add h info_class
             (Db.Class, spf "Copy_properties.%s" class_name);
           Common.save_excursion in_class (Some class_name) (fun () ->
           Common.save_excursion in_statics true (fun () ->
@@ -237,11 +237,11 @@ let extract_complete_name_of_info ast =
       | Apply(
           (V(("copy_properties", info_class))),
           (_i_3,
-          [Left((Period((V((class_name, _i_4))), _i_6, ("prototype", _i_7)))); 
-           Right(_i_9); 
+          [Left((Period((V((class_name, _i_4))), _i_6, ("prototype", _i_7))));
+           Right(_i_9);
            Left((Object(_body_object)))], _i_13)) ->
 
-          Hashtbl.add h info_class 
+          Hashtbl.add h info_class
             (Db.Class, spf "Copy_properties.%s" class_name);
           Common.save_excursion in_class (Some class_name) (fun () ->
           Common.save_excursion in_statics true (fun () ->
@@ -254,19 +254,19 @@ let extract_complete_name_of_info ast =
 
     (* recognize the methods *)
 
-    V.kfield = (fun (k, _) e ->
+    V.kprop = (fun (k, _) e ->
       match e with
 
       (* Javelin specifics ? *)
-      | (PN_String(("statics", _i_20)), _i_21, _body) ->
+      | P_field (PN_String(("statics", _i_20)), _i_21, _body) ->
           Common.save_excursion in_statics true (fun () -> k e)
-      | (PN_String(("members", _i_20)), _i_21, _body) ->
+      | P_field (PN_String(("members", _i_20)), _i_21, _body) ->
           Common.save_excursion in_members true (fun () -> k e)
 
       (* fld: function (...) { ... } *)
-      | (PN_String((method_name, info_method_name)), _i_40, (Function(_))) ->
+      | P_field (PN_String((method_name, info_method_name)), _i_40, (Function(_))) ->
 
-          let fullname = 
+          let fullname =
           (match !in_class, !in_statics, !in_members with
           | Some classname, true, false ->
               spf "%s::%s" classname method_name
@@ -285,8 +285,8 @@ let extract_complete_name_of_info ast =
                           Parse_info.string_of_info info_method_name);
                   ""
               )
-          | None, true, _ 
-          | None, _, true 
+          | None, true, _
+          | None, _, true
               ->
               pr2 ("WEIRD: no class but statics or members at " ^
                       Parse_info.string_of_info info_method_name);
