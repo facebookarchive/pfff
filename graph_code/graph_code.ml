@@ -91,7 +91,13 @@ type edge =
   | Has
   (* A class Use(extends) another class, a method Use(calls) another method,
    * etc.
-   * todo? refine by having different cases? Use of `Call|`Extend|...? *)
+   * todo? refine by having different cases? Use of `Call|`Extend|...? 
+   * I didn't feel the need yet, because it's easy to know if it's
+   * a Call or Extend by looking at the src and dst of the edge.
+   * But it could be useful for instance for field access to know
+   * weather it's a read or write access! Instead of having a variant
+   * here one could also have an edgeinfo.
+   *)
   | Use
 
 type nodeinfo = { 
