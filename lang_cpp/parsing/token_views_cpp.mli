@@ -11,6 +11,7 @@ type token_extended = {
     | InClassStruct of string
     | InEnum
     | InInitializer
+    | InAssign
     | InParameter
     | InArgument
     | InFunction

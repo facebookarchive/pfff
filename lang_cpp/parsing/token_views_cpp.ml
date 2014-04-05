@@ -76,6 +76,7 @@ type token_extended = {
     | InClassStruct of string (* can be __anon__ *)
     | InEnum
     | InInitializer
+    | InAssign
     | InParameter
     | InArgument
 
@@ -624,6 +625,7 @@ let vof_context = function
   | InClassStruct _s -> Ocaml.VSum ("C", [])
   | InEnum  -> Ocaml.VSum ("E", [])
   | InInitializer -> Ocaml.VSum ("I", [])
+  | InAssign -> Ocaml.VSum ("=", [])
   | InParameter -> Ocaml.VSum ("P", [])
   | InArgument -> Ocaml.VSum ("A", [])
   | InTemplateParam -> Ocaml.VSum ("<>", [])

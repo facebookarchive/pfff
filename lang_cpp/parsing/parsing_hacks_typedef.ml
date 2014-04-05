@@ -20,7 +20,6 @@ module Ast = Ast_cpp
 
 open Parser_cpp
 open Token_views_cpp
-
 open Parsing_hacks_lib
 
 (*****************************************************************************)
@@ -29,7 +28,7 @@ open Parsing_hacks_lib
 (* 
  * This file gathers parsing heuristics related to the typedefs.
  * C is not context-free sensitive; it requires to know when
- * an ident corresponds to a typedef or ident. This normally means that
+ * an ident corresponds to a typedef or an ident. This normally means that
  * we must call cpp on the file and have the lexer and parser cooperate
  * to remember what is what. In lang_cpp/ we want to parse as-is,
  * which means we need to infer back whether an identifier is

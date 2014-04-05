@@ -201,7 +201,7 @@ let set_context_tag_multi groups =
     match xs with
     | [] -> ()
 
-  (* struct Foo {, also valid for struct (and union, hmmm) *)
+  (* struct Foo {, also valid for class and union *)
   | Tok{t=(Tstruct _ | Tunion _ | Tclass _)}::Tok{t=TIdent(s,_)}
     ::(Braces(_t1, _body, _t2) as braces)::xs
     ->
@@ -274,6 +274,27 @@ let set_context_tag_multi groups =
       );
       aux (braces::xs)
 
+(* todo: this lead to some regressions :(
+  (* = ... ;  *)
+  | Tok ({t=TEq ii;where = [InTopLevel]})::xs -> 
+
+      let (before, ptvirg, after) =
+        try 
+          xs +> Common2.split_when (function
+          | Tok ({t=TPtVirg _;}) -> true
+          | _ -> false
+          )
+        with Not_found ->
+          raise (UnclosedSymbol (spf "PB with split_when at %s"
+                                    (Parse_info.string_of_info ii)))
+      in
+      before +> TV.iter_token_multi (fun tok ->
+        tok.TV.where <- TV.InAssign::tok.TV.where;
+      );
+      aux before;
+      aux [ptvirg];
+      aux after
+*)
 
   (* enum xxx { InEnum *)
   | Tok{t=Tenum _}::Tok{t=TIdent(_,_)}::(Braces(_t1, _body, _t2) as braces)::xs
@@ -368,12 +389,18 @@ let set_context_tag_multi groups =
 
   (* C++: second tentative on InArgument, if xx(xx, yy, ww) where have only
    * identifiers, it's probably a constructed object!
+   * But FP on C code, so should guard that with Flag_parsing_cpp.lang = C++
    *)
-  | Tok{t=TIdent _}::(Parens(_t1, body, _t2) as parens)::xs 
+  | Tok{t=TIdent _; where = ctx}::(Parens(_t1, body, _t2) as parens)::xs 
     when List.length body > 0 && look_like_only_idents body ->
-      (* msg_context t1.t (TV.InArgument); *)
       [parens] +> TV.iter_token_multi (fun tok ->
-        tok.TV.where <- (TV.InArgument)::tok.TV.where;
+        let where =
+          match ctx with
+          | TV.InTopLevel::_ -> TV.InParameter
+          | TV.InAssign::_ -> TV.InArgument
+          | _ -> TV.InArgument
+        in
+        tok.TV.where <- where::tok.TV.where;
       );
       (* todo? recurse on body? *)
       aux (parens::xs)
@@ -398,6 +425,7 @@ let set_context_tag_multi groups =
       );
       aux xs
   in
+  (* sane initialization *)
   groups +> TV.iter_token_multi (fun tok ->
     tok.TV.where <- [TV.InTopLevel];
   );
