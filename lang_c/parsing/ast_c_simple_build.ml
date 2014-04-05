@@ -113,7 +113,6 @@ and toplevel env = function
       )
 
   | EmptyDef _ -> []
-  | FinalDef _ -> []
 
   | NameSpaceAnon (_, _)|NameSpaceExtend (_, _)|NameSpace (_, _, _) 
   | ExternCList (_, _, _)|ExternC (_, _, _)|TemplateSpecialization (_, _, _)

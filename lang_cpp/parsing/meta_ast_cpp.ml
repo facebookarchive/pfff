@@ -1095,7 +1095,6 @@ and vof_declaration =
   | NotParsedCorrectly v1 ->
       let v1 = Ocaml.vof_list vof_tok v1
       in Ocaml.VSum (("NotParsedCorrectly", [ v1 ]))
-  | FinalDef v1 -> let v1 = vof_info v1 in Ocaml.VSum (("FinalDef", [ v1 ]))
 and vof_template_parameter v = vof_parameter v
 and vof_template_parameters v =
   vof_angle (vof_comma_list vof_template_parameter) v

@@ -332,7 +332,7 @@ let parse_with_lang ?(lang=Flag_parsing_cpp.Cplusplus) file =
   let toks = 
     try Parsing_hacks.fix_tokens ~macro_defs:!_defs toks
     with Token_views_cpp.UnclosedSymbol s ->
-      pr2 (s);
+      pr2 s;
       if !Flag.debug_cplusplus then raise (Token_views_cpp.UnclosedSymbol s)
       else toks
   in
@@ -440,7 +440,7 @@ let parse_with_lang ?(lang=Flag_parsing_cpp.Cplusplus) file =
             let info_of_bads = 
               Common2.map_eff_rev TH.info_of_tok tr.PI.passed in 
 
-            Ast.NotParsedCorrectly info_of_bads
+            Some (Ast.NotParsedCorrectly info_of_bads)
           end
       )
     in
@@ -467,7 +467,7 @@ let parse_with_lang ?(lang=Flag_parsing_cpp.Cplusplus) file =
     stat.Stat.commentized <- 
       stat.Stat.commentized + count_lines_commentized info;
     (match elem with
-    | Ast.NotParsedCorrectly _xs -> 
+    | Some (Ast.NotParsedCorrectly _xs) -> 
         if !was_define && !Flag.filter_define_error
         then stat.Stat.commentized <- stat.Stat.commentized + diffline
         else stat.Stat.bad     <- stat.Stat.bad     + diffline
@@ -476,8 +476,8 @@ let parse_with_lang ?(lang=Flag_parsing_cpp.Cplusplus) file =
     );
 
     (match elem with
-    | Ast.FinalDef x -> [(Ast.FinalDef x, info)]
-    | xs -> (xs, info):: loop () (* recurse *)
+    | None -> []
+    | Some xs -> (xs, info):: loop () (* recurse *)
     )
   in
   let v = loop() in

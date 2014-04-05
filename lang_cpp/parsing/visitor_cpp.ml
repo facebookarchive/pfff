@@ -821,7 +821,6 @@ and v_declaration x =
   | MacroVarTop ((v1, v2)) ->
       let v1 = v_wrap2 v_string v1 and v2 = v_tok v2 in ()
   | NotParsedCorrectly v1 -> let v1 = v_list v_tok v1 in ()
-  | FinalDef v1 -> let v1 = v_info v1 in ()
   in
   vin.ktoplevel (k, all_functions) x
 

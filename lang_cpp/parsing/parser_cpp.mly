@@ -254,7 +254,7 @@ module Ast = Ast_cpp
 %start main celem statement expr type_id
 
 %type <Ast_cpp.program> main
-%type <Ast_cpp.toplevel> celem
+%type <Ast_cpp.toplevel option> celem
 %type <Ast_cpp.statement> statement
 %type <Ast_cpp.expression> expr
 %type <Ast_cpp.fullType> type_id
@@ -1882,6 +1882,10 @@ cpp_other:
 /*(*************************************************************************)*/
 
 celem: 
+ | celem_aux { Some $1 }
+ | EOF { None }
+
+celem_aux:
  | declaration       { $1 }
 
  | cpp_directive       { CppTop $1 }
@@ -1903,8 +1907,6 @@ celem:
   * end
   *)*/
  | TCBrace { EmptyDef $1 }
-
- | EOF        { FinalDef $1 }
 
 /*(*************************************************************************)*/
 /*(*1 Class, Objective C *)*/

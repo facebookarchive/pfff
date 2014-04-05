@@ -696,9 +696,6 @@ and declaration =
          
   | NotParsedCorrectly of tok list
 
-  | FinalDef of tok (* EOF *)
-
-
  and template_parameter = parameter (* todo? more? *)
   and template_parameters = template_parameter comma_list angle
 
