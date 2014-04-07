@@ -425,11 +425,10 @@ and vof_type_ =
       let v1 =
         vof_paren
           (vof_comma_list
-             (fun (v1, v2, v3) ->
-                let v1 = vof_name v1
-                and v2 = vof_tok v2
-                and v3 = vof_type_ v3
-                in Ocaml.VTuple [ v1; v2; v3 ]))
+             (fun (v1, v2) ->
+               let v1 = vof_name v1
+               and v2 = vof_annotation v2
+               in Ocaml.VTuple [ v1; v2 ]))
           v1
       and v2 = vof_tok v2
       and v3 = vof_type_ v3
@@ -438,23 +437,39 @@ and vof_type_ =
       let v1 =
         vof_brace
           (Ocaml.vof_list
-             (fun (v1, v2, v3, v4) ->
+             (fun (v1, v2, v3) ->
                 let v1 = vof_name v1
-                and v2 = vof_tok v2
-                and v3 = vof_type_ v3
-                and v4 = vof_sc v4
-                in Ocaml.VTuple [ v1; v2; v3; v4 ]))
+                and v2 = vof_annotation v2
+                and v3 = vof_sc v3
+                in Ocaml.VTuple [ v1; v2; v3 ]))
           v1
       in Ocaml.VSum (("TObj", [ v1 ]))
+and vof_annotation = function
+  | TAnnot(v1, v2) ->
+      let v1 = vof_tok v1
+      and v2 = vof_type_ v2
+      in Ocaml.VSum (("TAnnot", [v1; v2]))
+  | TFunAnnot(v1,v2,v3,v4) ->
+      let v1 = Ocaml.vof_option
+        (vof_angle (vof_comma_list vof_name)) v1 in
+      let v2 =
+        vof_paren
+          (vof_comma_list
+             (fun (v1, v2) ->
+               let v1 = vof_name v1
+               and v2 = vof_annotation v2
+               in Ocaml.VTuple [ v1; v2 ]))
+          v2
+      and v3 = vof_tok v3
+      and v4 = vof_type_ v4
+      in Ocaml.VSum (("TFunAnnot", [ v1; v2; v3; v4 ]))
+
 and vof_nominal_type ((v1,v2)) =
   let v1 = vof_expr v1 in
   let v2 = Ocaml.vof_option (vof_angle (vof_comma_list vof_type_)) v2 in
   Ocaml.VTuple [ v1; v2 ]
 and vof_type_opt v =
-  Ocaml.vof_option
-    (fun (v1, v2) ->
-       let v1 = vof_tok v1 and v2 = vof_type_ v2 in Ocaml.VTuple [ v1; v2 ])
-    v
+  Ocaml.vof_option vof_annotation v
 and
   vof_func_decl {
                   f_tok = v_f_tok;
@@ -589,10 +604,11 @@ and  vof_class_decl {
 
 and vof_class_stmt =
   function
-  | Field ((v1, v2)) ->
-      let v1 = vof_parameter v1
-      and v2 = vof_sc v2
-      in Ocaml.VSum (("Field", [ v1; v2 ]))
+  | Field ((v1, v2, v3)) ->
+      let v1 = vof_name v1
+      and v2 = vof_annotation v2
+      and v3 = vof_sc v3
+      in Ocaml.VSum (("Field", [ v1; v2; v3 ]))
   | Method ((v1, v2)) ->
       let v1 = Ocaml.vof_option vof_tok v1
       and v2 = vof_func_decl v2

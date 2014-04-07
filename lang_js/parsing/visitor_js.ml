@@ -436,10 +436,9 @@ and v_type_ =
       let v1 =
         v_paren
           (v_comma_list
-             (fun (v1, v2, v3) ->
+             (fun (v1, v2) ->
                 let v1 = v_name v1
-                and v2 = v_tok v2
-                and v3 = v_type_ v3
+                and v2 = v_annotation v2
                 in ()))
           v1
       and v2 = v_tok v2
@@ -449,11 +448,10 @@ and v_type_ =
       let v1 =
         v_brace
           (v_list
-             (fun (v1, v2, v3, v4) ->
+             (fun (v1, v2, v3) ->
                 let v1 = v_name v1
-                and v2 = v_tok v2
-                and v3 = v_type_ v3
-                and v4 = v_sc v4
+                and v2 = v_annotation v2
+                and v3 = v_sc v3
                 in ()))
           v1
       in ()
@@ -462,7 +460,26 @@ and v_nominal_type ((v1,v2)) =
   let v2 = v_option (v_angle (v_comma_list v_type_)) v2 in
   ()
 and v_type_opt v =
-  v_option (fun (v1, v2) -> let v1 = v_tok v1 and v2 = v_type_ v2 in ()) v
+  v_option v_annotation v
+and v_annotation = function
+  | TAnnot (v1,v2) ->
+      let v1 = v_tok v1 in
+      let v2 = v_type_ v2 in
+      ()
+  | TFunAnnot (v1,v2,v3,v4) ->
+      let v1 = v_option (v_angle (v_comma_list v_name)) v1 in
+      let v2 =
+        v_paren
+          (v_comma_list
+             (fun (v1, v2) ->
+                let v1 = v_name v1
+                and v2 = v_annotation v2
+                in ()))
+          v2
+      and v3 = v_tok v3
+      and v4 = v_type_ v4
+      in ()
+
 and  v_func_decl {
                 f_tok = v_f_tok;
                 f_name = v_f_name;
@@ -529,8 +546,8 @@ and
   ()
 and v_class_stmt =
   function
-  | Field ((v1, v2)) ->
-      let v1 = v_parameter v1 and v2 = v_sc v2 in ()
+  | Field ((v1, v2, v3)) ->
+      let v1 = v_name v1 and v2 = v_annotation v2 and v3 = v_sc v3 in ()
   | Method ((v1, v2)) ->
       let v1 = v_option v_tok v1 and v2 = v_func_decl v2 in ()
   | ClassExtraSemiColon v1 -> let v1 = v_sc v1 in ()

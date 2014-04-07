@@ -228,9 +228,9 @@ and type_ =
   (* used for builtin types like 'void', 'number', 'string', 'any/mixed' *)
   | TName of nominal_type
   | TQuestion of tok * type_
-  | TFun of (name * tok (* : *) * type_) comma_list paren * tok (* => *) * type_
+  | TFun of param_types * tok (* => *) * type_
   (* comma_list or semicolons_list ?*)
-  | TObj of (name * tok (* : *) * type_ * sc) list brace
+  | TObj of (name * annotation * sc) list brace
 
 (* Most of the time expr is a (V name),
    but Javascript allows qualified names of the form Period(e,tok,name),
@@ -243,7 +243,15 @@ and type_argument = type_
 
 and type_parameter = name
 
-and type_opt = (tok (* : *) * type_) option
+and type_opt = annotation option
+
+and annotation =
+  | TAnnot of tok (* : *) * type_
+  | TFunAnnot of type_parameters option * param_types * tok (* : *) * type_
+
+and type_parameters = type_parameter comma_list angle
+
+and param_types = (name * annotation) comma_list paren
 
 (* ------------------------------------------------------------------------- *)
 (* Function definition *)
@@ -251,7 +259,7 @@ and type_opt = (tok (* : *) * type_) option
 and func_decl = {
   f_tok: tok option; (* None for methods *)
   f_name: name option; (* None for anonymous functions *)
-  f_type_params: type_parameter comma_list angle option;
+  f_type_params: type_parameters option;
   f_params: parameter comma_list paren;
   f_return_type: type_opt;
   f_body: toplevel list brace;
@@ -303,7 +311,7 @@ and class_decl = {
 
   and class_stmt =
   | Method of tok option (* static *) * func_decl
-  | Field of parameter * sc
+  | Field of name * annotation * sc
   | ClassExtraSemiColon of sc
 
 (* ------------------------------------------------------------------------- *)

@@ -415,12 +415,12 @@ class_tail: class_heritage_opt T_LCURLY class_body_opt T_RCURLY { $1,($2,$3,$4)}
 /*(* however, this causes ambiguities with type arguments a la TypeScript *)*/
 /*(* unfortunately, TypeScript enforces severe restrictions here, *)*/
 /*(* which e.g. do not admit mixins, which we want to support *)*/
-class_heritage: T_EXTENDS nominal_type { ($1, $2) }
+class_heritage: T_EXTENDS type_expression { ($1, $2) }
 
 class_body: class_element_list { $1 }
 
 class_element:
- | formal_parameter semicolon { Field ($1, $2) }
+ | identifier annotation semicolon { Field ($1, $2, $3) }
  | method_definition          { Method (None, $1) }
  | T_STATIC method_definition { Method (Some $1, $2) }
  | semicolon { ClassExtraSemiColon $1 }
@@ -432,7 +432,8 @@ binding_identifier: identifier { $1 }
 /*(*----------------------------*)*/
 
 method_definition:
-  identifier generics_opt T_LPAREN formal_parameter_list_opt T_RPAREN annotation_opt
+  identifier
+    generics_opt T_LPAREN formal_parameter_list_opt T_RPAREN annotation_opt
     T_LCURLY function_body T_RCURLY
   { { f_tok = None; f_name = Some $1; f_type_params = $2;
       f_params = ($3, $4, $5);
@@ -443,7 +444,12 @@ method_definition:
 /*(*1 Type *)*/
 /*(*************************************************************************)*/
 
-annotation: T_COLON type_ { $1, $2 }
+annotation: T_COLON type_ { TAnnot($1, $2) }
+
+complex_annotation:
+ | annotation { $1 }
+ | generics_opt T_LPAREN type_param_list_opt T_RPAREN T_COLON type_
+     { TFunAnnot($1,($2,$3,$4),$5,$6) }
 
 type_:
  | T_VOID        { TName (V("void", $1), None) }
@@ -455,14 +461,14 @@ type_:
 
 
 /*(* partial type annotations are not supported *)*/
-type_field: T_IDENTIFIER T_COLON type_ semicolon { ($1, $2, $3, $4) }
+type_field: T_IDENTIFIER complex_annotation semicolon { ($1, $2, $3) }
 
 type_field_list:
  | type_field { [$1] }
  | type_field_list type_field { $1 @ [$2] }
 
 /*(* partial type annotations are not supported *)*/
-type_param: T_IDENTIFIER T_COLON type_ { ($1, $2, $3) }
+type_param: T_IDENTIFIER complex_annotation { ($1, $2) }
 
 type_param_list:
  | type_param                          { [Left $1] }
@@ -479,7 +485,7 @@ generics:
  | T_LESS_THAN type_variable_list T_GREATER_THAN { $1, $2, $3 }
 
 type_reference:
- | left_hand_side_expression_no_statement { $1 }
+ | identifier { V($1) }
 
 nominal_type:
  | type_reference { ($1,None) }
@@ -521,6 +527,9 @@ nominal_type2:
 type_arguments2:
  | T_LESS_THAN type_argument_list1 { $1, $2, fake_tok ">" }
 
+type_expression:
+ | left_hand_side_expression_no_statement { ($1,None) }
+ | type_reference type_arguments { ($1, Some $2) }
 
 /*(*************************************************************************)*/
 /*(*1 Expression *)*/
