@@ -76,7 +76,7 @@ skip list
 
 *** cleanup commons/, remove lib-xml, lib-sexp, lib-json
 
-*** add configure option for Javalib and cmt
+*** configure option for Javalib and cmt
 
 *** works again with ocaml 3.12
 
@@ -101,7 +101,7 @@ simplified configure output too
 
 *** build light db from graph_code, and make it fast enough
 
-*** new -test_transitive_deps action to extract parts of huge codebase
+*** a -test_transitive_deps action to extract parts of huge codebase
 
 ** php
 
@@ -109,7 +109,7 @@ simplified configure output too
 
 ** javascript
 
-*** support new class syntax, JSX (xhp)
+*** support new class syntax, JSX (xhp), and typescript type syntax
 
 ** doc
 
