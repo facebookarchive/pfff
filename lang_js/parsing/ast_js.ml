@@ -251,7 +251,12 @@ and annotation =
 
 and type_parameters = type_parameter comma_list angle
 
-and param_types = (name * annotation) comma_list paren
+and param_types = (param_name * annotation) comma_list paren
+
+and param_name =
+  | RequiredParam of name
+  | OptionalParam of name * tok (* ? *)
+  | RestParam of tok (* ... *) * name
 
 (* ------------------------------------------------------------------------- *)
 (* Function definition *)
@@ -267,9 +272,16 @@ and func_decl = {
   and parameter = {
    p_name: name;
    p_type: type_opt;
+   (* if not None, then can be followed only by other default parameters or a
+      dots parameter in a parameter comma_list *)
+   p_default: default option;
    (* if not None, then should be last parameter in a parameter comma_list *)
    p_dots: tok (* ... *) option;
   }
+
+  and default =
+  | DNone of tok (* ? *)
+  | DSome of tok (* = *) * expr
 
 (* todo? could factorize with func_def, but this will require many
  * elements to be fake token, e.g. the parenthesis for parameters

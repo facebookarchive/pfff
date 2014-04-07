@@ -49,7 +49,7 @@ open Ast_js
 let e x = (x)
 let bop op a b c = e(B(a, (op, b), c))
 let uop op a b = e(U((op,a), b))
-let mk_param x = { p_name = x; p_type = None; p_dots = None; }
+let mk_param x = { p_name = x; p_type = None; p_default = None; p_dots = None; }
 
 let fake_tok s = {
   Parse_info.
@@ -380,14 +380,33 @@ formal_parameter:
  | identifier            { mk_param $1 }
  | identifier annotation { { (mk_param $1) with p_type = Some $2; } }
 
-final_formal_parameter:
- | formal_parameter  { $1 }
- /*(* variable number of parameters *)*/
+formal_optional_parameter:
+ | identifier T_PLING
+     { { (mk_param $1) with p_default = Some(DNone $2); } }
+ | identifier T_PLING annotation
+     { { (mk_param $1) with p_type = Some $3; p_default = Some(DNone $2); } }
+ | identifier initializeur
+     { let (tok,e) = $2 in { (mk_param $1) with p_default = Some(DSome(tok,e)); } }
+ | identifier annotation initializeur
+     { let (tok,e) = $3 in { (mk_param $1) with p_type = Some $2; p_default = Some(DSome(tok,e)); } }
+
+formal_rest_parameter:
  | T_DOTS identifier { { (mk_param $2) with p_dots = Some $1; } }
+ | T_DOTS identifier annotation
+     { { (mk_param $2) with p_dots = Some $1; p_type = Some $3;
+       } }
 
 formal_parameter_list:
- | final_formal_parameter                          { [Left $1] }
- | formal_parameter T_COMMA formal_parameter_list  { (Left $1)::(Right $2)::$3 }
+ | formal_parameter T_COMMA formal_parameter_list
+     { (Left $1)::(Right $2)::$3 }
+ | formal_parameter  { [Left $1] }
+ | formal_optional_parameter_list { $1 }
+
+formal_optional_parameter_list:
+ | formal_optional_parameter T_COMMA formal_optional_parameter_list
+     { (Left $1)::(Right $2)::$3 }
+ | formal_optional_parameter { [Left $1] }
+ | formal_rest_parameter { [Left $1] }
 
 function_body:
  | /*(* empty *)*/ { [] }
@@ -448,31 +467,45 @@ annotation: T_COLON type_ { TAnnot($1, $2) }
 
 complex_annotation:
  | annotation { $1 }
- | generics_opt T_LPAREN type_param_list_opt T_RPAREN T_COLON type_
+ | generics_opt T_LPAREN param_type_list_opt T_RPAREN T_COLON type_
      { TFunAnnot($1,($2,$3,$4),$5,$6) }
 
 type_:
  | T_VOID        { TName (V("void", $1), None) }
  | nominal_type { TName($1) }
  | T_PLING type_ { TQuestion ($1, $2) }
- | T_LPAREN type_param_list_opt T_RPAREN T_ARROW type_
+ | T_LPAREN param_type_list_opt T_RPAREN T_ARROW type_
      { TFun (($1, $2, $3), $4, $5) }
- | T_LCURLY type_field_list_opt T_RCURLY         { TObj ($1, $2, $3) }
+ | T_LCURLY field_type_list_opt T_RCURLY         { TObj ($1, $2, $3) }
 
 
 /*(* partial type annotations are not supported *)*/
-type_field: T_IDENTIFIER complex_annotation semicolon { ($1, $2, $3) }
+field_type: T_IDENTIFIER complex_annotation semicolon { ($1, $2, $3) }
 
-type_field_list:
- | type_field { [$1] }
- | type_field_list type_field { $1 @ [$2] }
+field_type_list:
+ | field_type { [$1] }
+ | field_type_list field_type { $1 @ [$2] }
 
 /*(* partial type annotations are not supported *)*/
-type_param: T_IDENTIFIER complex_annotation { ($1, $2) }
+param_type: T_IDENTIFIER complex_annotation
+  { (RequiredParam($1), $2) }
 
-type_param_list:
- | type_param                          { [Left $1] }
- | type_param_list T_COMMA  type_param { $1 @ [Right $2; Left $3] }
+optional_param_type: T_IDENTIFIER T_PLING complex_annotation
+  { (OptionalParam($1,$2), $3) }
+
+rest_param_type: T_DOTS T_IDENTIFIER complex_annotation
+  { (RestParam($1,$2), $3) }
+
+param_type_list:
+ | param_type T_COMMA param_type_list { (Left $1)::(Right $2)::$3 }
+ | param_type                         { [Left $1] }
+ | optional_param_type_list           { $1 }
+
+optional_param_type_list:
+ | optional_param_type T_COMMA optional_param_type_list
+     { (Left $1)::(Right $2)::$3 }
+ | optional_param_type       { [Left $1] }
+ | rest_param_type           { [Left $1] }
 
 type_variable:
  | identifier { $1 }
@@ -1056,10 +1089,10 @@ initializeur_opt:
  | /*(* empty *)*/ { None }
  | initializeur { Some $1 }
 
-type_field_list_opt:
+field_type_list_opt:
  | /*(* empty *)*/ { [] }
- | type_field_list { $1 }
+ | field_type_list { $1 }
 
-type_param_list_opt:
+param_type_list_opt:
  | /*(* empty *)*/ { [] }
- | type_param_list { $1 }
+ | param_type_list { $1 }

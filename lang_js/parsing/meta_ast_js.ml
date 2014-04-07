@@ -426,7 +426,7 @@ and vof_type_ =
         vof_paren
           (vof_comma_list
              (fun (v1, v2) ->
-               let v1 = vof_name v1
+               let v1 = vof_param_name v1
                and v2 = vof_annotation v2
                in Ocaml.VTuple [ v1; v2 ]))
           v1
@@ -444,6 +444,19 @@ and vof_type_ =
                 in Ocaml.VTuple [ v1; v2; v3 ]))
           v1
       in Ocaml.VSum (("TObj", [ v1 ]))
+and vof_param_name = function
+  | RequiredParam(v1) ->
+      let v1 = vof_name v1
+      in Ocaml.VSum (("RequiredParam", [v1]))
+  | OptionalParam(v1,v2) ->
+      let v1 = vof_name v1
+      and v2 = vof_tok v2
+      in Ocaml.VSum (("OptionalParam", [v1; v2]))
+  | RestParam(v1,v2) ->
+      let v1 = vof_tok v1
+      and v2 = vof_name v2
+      in Ocaml.VSum (("RestParam", [v1; v2]))
+
 and vof_annotation = function
   | TAnnot(v1, v2) ->
       let v1 = vof_tok v1
@@ -456,7 +469,7 @@ and vof_annotation = function
         vof_paren
           (vof_comma_list
              (fun (v1, v2) ->
-               let v1 = vof_name v1
+               let v1 = vof_param_name v1
                and v2 = vof_annotation v2
                in Ocaml.VTuple [ v1; v2 ]))
           v2
@@ -502,7 +515,8 @@ and
   let bnd = ("f_tok", arg) in
   let bnds = bnd :: bnds in
   Ocaml.VDict bnds
-and vof_parameter { p_name = v_p_name; p_type = v_p_type; p_dots = v_dots } =
+and vof_parameter { p_name = v_p_name; p_type = v_p_type; p_default = v_default;
+  p_dots = v_dots } =
   let bnds = [] in
   let arg = vof_type_opt v_p_type in
   let bnd = ("p_type", arg) in
@@ -510,10 +524,16 @@ and vof_parameter { p_name = v_p_name; p_type = v_p_type; p_dots = v_dots } =
   let arg = vof_name v_p_name in
   let bnd = ("p_name", arg) in
   let bnds = bnd :: bnds in
+  let arg = Ocaml.vof_option vof_default v_default in
+  let bnd = ("p_default", arg) in
+  let bnds = bnd :: bnds in
   let arg = Ocaml.vof_option vof_tok v_dots in
   let bnd = ("p_dots", arg) in
   let bnds = bnd :: bnds in
   Ocaml.VDict bnds
+and vof_default = function
+  | DNone (v1) -> let v1 = vof_tok v1 in Ocaml.VSum (("DNone", [v1]))
+  | DSome (v1,v2) -> let v1 = vof_tok v1 and v2 = vof_expr v2 in Ocaml.VSum (("DSome", [v1; v2]))
 and
   vof_arrow_func { a_params = v_a_params; a_return_type = v_a_return_type;
                    a_tok = v_a_tok; a_body = v_a_body

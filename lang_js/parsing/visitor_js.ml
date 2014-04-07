@@ -437,7 +437,7 @@ and v_type_ =
         v_paren
           (v_comma_list
              (fun (v1, v2) ->
-                let v1 = v_name v1
+                let v1 = v_param_name v1
                 and v2 = v_annotation v2
                 in ()))
           v1
@@ -455,6 +455,19 @@ and v_type_ =
                 in ()))
           v1
       in ()
+and v_param_name = function
+  | RequiredParam(v1) ->
+      let v1 = v_name v1
+      in ()
+  | OptionalParam(v1,v2) ->
+      let v1 = v_name v1
+      and v2 = v_tok v2
+      in ()
+  | RestParam(v1,v2) ->
+      let v1 = v_tok v1
+      and v2 = v_name v2
+      in ()
+
 and v_nominal_type ((v1,v2)) =
   let v1 = v_expr v1 in
   let v2 = v_option (v_angle (v_comma_list v_type_)) v2 in
@@ -472,7 +485,7 @@ and v_annotation = function
         v_paren
           (v_comma_list
              (fun (v1, v2) ->
-                let v1 = v_name v1
+                let v1 = v_param_name v1
                 and v2 = v_annotation v2
                 in ()))
           v2
@@ -495,11 +508,15 @@ and  v_func_decl {
   let arg = v_type_opt v_f_return_type in
   let arg = v_brace (v_list v_toplevel) v_f_body in ()
 
-and v_parameter { p_name = v_p_name; p_type = v_p_type; p_dots } =
+and v_parameter { p_name = v_p_name; p_type = v_p_type; p_default; p_dots } =
+  let arg = v_option v_default p_default in
   let arg = v_option v_tok p_dots in
   let arg = v_name v_p_name in
   let arg = v_type_opt v_p_type in
   ()
+and v_default = function
+  | DNone v1 -> let _ = v_tok v1 in ()
+  | DSome (v1,v2) -> let _ = v_tok v1 and _ = v_expr v2 in ()
 and
   v_arrow_func { a_params = v_a_params; a_return_type = v_a_return_type;
                  a_tok = v_a_tok; a_body = v_a_body }
