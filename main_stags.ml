@@ -71,6 +71,8 @@ let rec defs_of_files_or_dirs lang xs =
   let _heavy_tagging = !heavy_tagging in
 
   match lang with
+  | "hack" ->
+      Tags_php.php_defs_of_files_or_dirs ~verbose ~include_hack:true xs 
   | "php" ->
       Tags_php.php_defs_of_files_or_dirs ~verbose (*~heavy_tagging*) xs 
   | "js" ->

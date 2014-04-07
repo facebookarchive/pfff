@@ -61,6 +61,10 @@ let is_php_filename filename =
    *)
   false
 
+let is_hhi_filename filename =
+  (filename =~ ".*\\.hhi$") ||
+  false
+
 let is_php_file filename =
   is_php_filename filename || is_php_script filename
 
@@ -70,7 +74,7 @@ let is_php_file filename =
  * We want the same with pfff, hence this small helper function that
  * transform such files_or_dirs into a flag set of filenames.
  *)
-let find_source_files_of_dir_or_files ?(verbose=false) xs = 
+let find_source_files_of_dir_or_files ?(verbose=false) ?(include_hack=false) xs = 
   Common.files_of_dir_or_files_no_vcs_nofilter xs 
   +> List.filter (fun filename ->
     (* note: there was a possible race here because between the time we
@@ -82,7 +86,10 @@ let find_source_files_of_dir_or_files ?(verbose=false) xs =
       (* note that there is still a race between the call to file_exists
        * and is_php_file, but this one is far shorter :)
        *)
-      Sys.file_exists filename && is_php_file filename 
+      Sys.file_exists filename && (
+        is_php_file filename ||
+        (include_hack && is_hhi_filename filename)
+      )
     in
     if not valid && verbose
     then pr2 ("not analyzing: " ^ filename);
