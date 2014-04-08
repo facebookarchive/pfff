@@ -107,6 +107,10 @@ let visit_toplevel ~tag_hook _prefs (*db_opt *) (toplevel, toks) =
         );
         aux_toks xs
 
+    |   T.TComment(ii)::xs when (PI.str_of_info ii) =~ "//IMPORTANT:" ->
+        tag ii CommentSection2;
+        aux_toks xs
+
     (* heuristic for class/struct definitions. 
      * 
      * Must be before the heuristic for function definitions
