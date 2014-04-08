@@ -7,6 +7,7 @@ val is_php_script: Common.filename -> bool
 
 val find_source_files_of_dir_or_files: 
   ?verbose:bool ->
+  ?include_hack:bool ->
   Common.path list -> Common.filename list
 
 (*x: lib_parsing_php.mli *)

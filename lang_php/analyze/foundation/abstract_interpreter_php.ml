@@ -664,7 +664,7 @@ and expr_ env heap x =
       if !strict then failwith "todo: handle Lambda";
       heap, Vany
 
-  | Array_get _ | Class_get (_, _) | Obj_get (_, _) 
+  | Array_get _ | Class_get (_, _) | Obj_get (_, _)
   | Var _ | This _ as lv ->
       (* The lvalue will contain the pointer to pointer, e.g. &2{&1{...}}
        * so someone can modify it. See also assign() below.
@@ -1039,56 +1039,54 @@ and call_method env el (heap, v) f =
 (* ---------------------------------------------------------------------- *)
 (* Arrays *)
 (* ---------------------------------------------------------------------- *)
-and array_value _env _id _heap _x =
-  raise Todo
-(*
+and array_value env id heap x =
+  let heap, new_, ar = lvalue env heap id in
+  let heap, a = Ptr.get heap ar in
   match x with
-  | Aval e ->
-      let heap, new_, ar = lvalue env heap id in
-      let heap, a = Ptr.get heap ar in
-      (match a with
-      | _ when new_ ->
-          let l = [] in
-          let heap, v = Ptr.new_ heap in
-          let l = v :: l in
-          let heap = Ptr.set heap ar (Varray l) in
-          let heap, e = expr env heap e in
-          let heap, _ = assign env heap true v e in
-          heap
-      | Varray l ->
-          let heap, v = Ptr.new_ heap in
-          let l = v :: l in
-          let heap = Ptr.set heap ar (Varray l) in
-          let heap, e = expr env heap e in
-          let heap, _ = assign env heap true v e in
-          heap
-      | _ ->
-          let heap, _ = expr env heap (Assign (None, Array_get (id, None), e))
-          in
-          heap
-      )
-  | Akval (e1, e2) ->
-      let heap, new_, ar = lvalue env heap id in
-      let heap, a = Ptr.get heap ar in
-      let heap, k = expr env heap e1 in
-      let heap, k = Ptr.get heap k in
-      (match a, k with
+  | Arrow (e1, e2) ->
+     let heap, k = expr env heap e1 in
+     let heap, k = Ptr.get heap k in
+     (match a, k with
       | _, Vstring k when new_ ->
-          let heap, v = array_new_entry env heap ar a k SMap.empty in
-          let heap, e2 = expr env heap e2 in
-          let heap, _ = assign env heap true v e2 in
-          heap
+         let heap, v = array_new_entry env heap ar a k SMap.empty in
+         let heap, e2 = expr env heap e2 in
+         let heap, _ = assign env heap true v e2 in
+         heap
       | Vrecord m, Vstring k ->
-          let heap, v = array_new_entry env heap ar a k m in
-          let heap, e2 = expr env heap e2 in
-          let heap, _ = assign env heap true v e2 in
-          heap
+         let heap, v = array_new_entry env heap ar a k m in
+         let heap, e2 = expr env heap e2 in
+         let heap, _ = assign env heap true v e2 in
+         heap
       | _ ->
-          let heap, _ =
-            expr env heap (Assign (None, Array_get (id, Some e1), e2)) in
-          heap
-      )
-*)
+         let heap, _ =
+           expr env heap (Assign (None, Array_get (id, Some e1), e2)) in
+         heap
+     )
+  | _ ->
+     (match a with
+      | _ when new_ ->
+         let l = [] in
+         let heap, v = Ptr.new_ heap in
+         let l = v :: l in
+         let heap = Ptr.set heap ar (Varray l) in
+         let heap, e = expr env heap x in
+         let heap, _ = assign env heap true v e in
+         heap
+
+      | Varray l ->
+         let heap, v = Ptr.new_ heap in
+         let l = v :: l in
+         let heap = Ptr.set heap ar (Varray l) in
+         let heap, e = expr env heap x in
+         let heap, _ = assign env heap true v e in
+         heap
+
+      | _ ->
+         let heap, _ = expr env heap (Assign (None, Array_get (id, None), x))
+         in
+         heap
+     )
+
 
 (* could be moved in helper *)
 and array_new_entry _env heap ar _a k m =
