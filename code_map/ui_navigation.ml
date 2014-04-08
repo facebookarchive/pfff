@@ -47,7 +47,7 @@ let go_back w =
 (*e: go_back *)
 
 (*s: go_dirs_or_file *)
-let go_dirs_or_file ?(current_entity=None) ?(current_grep_query=None) w paths =
+let go_dirs_or_file ?(current_grep_query=None) w paths =
   let root = Common2.common_prefix_of_files_or_dirs paths in
   pr2 (spf "zooming in %s" (Common.join "|" paths));
 
@@ -66,7 +66,6 @@ let go_dirs_or_file ?(current_entity=None) ?(current_grep_query=None) w paths =
       dw.layers
       paths
       w.root_orig;
-  w.dw.current_entity <- current_entity;
   (match current_grep_query with
   | Some h -> w.dw.current_grep_query <- h;
   (* wants to propagate the query so when right-click the query

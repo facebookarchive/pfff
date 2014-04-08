@@ -220,7 +220,7 @@ let mk_gui ~screen_size ~legend test_mode w =
 
         fc#add_item "_Go to example" ~key:K._E ~callback:(fun () -> 
           let model = Async.async_get w.model in
-          match w.dw.current_entity, model.db with
+          match w.current_entity, model.db with
           | Some e, Some db ->
               (match e.Db.e_good_examples_of_use with
               | [] -> failwith "no good examples of use for this entity"
@@ -231,8 +231,8 @@ let mk_gui ~screen_size ~legend test_mode w =
                   let final_file = 
                     Model_database_code.readable_to_absolute_filename_under_root
                       file ~root:w.dw.current_root in
-                  !Controller._go_dirs_or_file 
-                    ~current_entity:(Some e) w [final_file];
+                  w.current_entity <- Some e;
+                  !Controller._go_dirs_or_file w [final_file];
               )
           | _ -> failwith "no entity currently selected or no db"
         ) +> ignore;
@@ -388,7 +388,14 @@ let mk_gui ~screen_size ~legend test_mode w =
           in
 
           pr2 (spf "e= %s, final_paths= %s" str(Common.join "|" final_paths));
-          !Controller._go_dirs_or_file ~current_entity:(Some e) w final_paths;
+          w.current_entity <- Some e;
+          Async.async_get_opt w.model +> Common.do_option (fun model ->
+            model.g +> Common.do_option (fun g ->
+              w.current_node_selected <- 
+                Model_graph_code.node_of_entity e g
+            )
+          );
+          !Controller._go_dirs_or_file w final_paths;
           true
         )
         ~callback_changed:(fun str ->

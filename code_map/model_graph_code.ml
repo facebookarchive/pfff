@@ -35,7 +35,7 @@ let is_prefix prefix str =
   
 
 (*****************************************************************************)
-(* Main entry point *)
+(* Helpers *)
 (*****************************************************************************)
 
 let build_filedeps_of_dir_or_file g =
@@ -133,4 +133,15 @@ let add_headers_files_entities_of_file root xs =
     )
   in
   headers @ xs
+
+let node_of_entity e g =
+  let fullname = 
+    match e.E.e_fullname with
+    | "" -> e.E.e_name
+    | s -> s
+  in 
+  let node = (fullname, e.E.e_kind) in
+  if G.has_node node g
+  then Some node
+  else None
 (*e: model_graph_code.ml *)

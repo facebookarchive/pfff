@@ -380,6 +380,7 @@ let main_action xs =
     treemap_func;
     current_node = None;
     current_node_selected = None;
+    current_entity = None;
     settings = { Model.
       (* todo: too fuzzy for now *)
       draw_summary = false;

@@ -12,4 +12,7 @@ val add_headers_files_entities_of_file:
   Common.dirname -> 
   (Common.filename, Graph_code.node list) Common.assoc ->
   (Common.filename, Graph_code.node list) Common.assoc
+
+val node_of_entity: 
+  Database_code.entity -> Graph_code.graph -> Graph_code.node option
 (*e: model_graph_code.mli *)

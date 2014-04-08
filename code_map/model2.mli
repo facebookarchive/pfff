@@ -94,7 +94,6 @@ type drawing = {
   (* queries *)
   mutable current_query: string;
   mutable current_searched_rectangles: Treemap.treemap_rectangle list;
-  mutable current_entity: Database_code.entity option;
   mutable current_grep_query: (Common.filename, line) Hashtbl.t;
   (*e: fields drawing query stuff *)
 
@@ -136,6 +135,7 @@ type world = {
 
   mutable current_node: Graph_code.node option;
   mutable current_node_selected: Graph_code.node option;
+  mutable current_entity: Database_code.entity option;
 }
    and settings = {
      mutable draw_summary: bool;

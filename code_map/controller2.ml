@@ -40,8 +40,7 @@ let _go_back = ref (fun _w ->
 )
 
 let _go_dirs_or_file = ref 
- (fun ?(current_entity=None) ?(current_grep_query=None)  _dw_ref _paths ->
-   ignore current_entity;
+ (fun ?(current_grep_query=None)  _dw_ref _paths ->
    ignore current_grep_query;
   failwith "_go_dirs_or_file not defined"
 )

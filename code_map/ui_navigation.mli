@@ -4,7 +4,6 @@ val go_back:
   Model2.world -> unit
 
 val go_dirs_or_file:
-  ?current_entity:Database_code.entity option ->
   ?current_grep_query:(Common.filename, Model2.line) Hashtbl.t option ->
   Model2.world -> Common.filename list -> unit
 
