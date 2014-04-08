@@ -1,6 +1,19 @@
 -*- org -*-
 
-* 0.28 (Q2 2014) (??)
+* 0.28 (Q2 2014) (?? edge bundle?)
+
+** codemap
+
+*** highlight searched entity
+
+*** have a current entity selection that stays
+so can explore usages of a field for instance via emacs middle click
+
+** C
+
+*** better infer typedefs, for unnamed structures (kencc ext), 
+toplevel prototypes
+
 
 * 0.27 (Q1 2014) ("hypertext" codemap, generalized scheck)
 
