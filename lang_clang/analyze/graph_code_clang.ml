@@ -113,6 +113,7 @@ and config = {
   typedefs_dependencies: bool;
   types_dependencies: bool;
   fields_dependencies: bool;
+  propagate_deps_def_to_decl: bool;
 }
 
 let unknown_location = "Unknown_Location", E.File
@@ -784,7 +785,7 @@ let build ?(verbose=true) root files =
     typedefs_dependencies = false;
     types_dependencies = true;
     fields_dependencies = true;
-    (* propagate_deps_def_to_decl *)
+    propagate_deps_def_to_decl = true;
   } in
 
   let env = {
@@ -847,7 +848,7 @@ let build ?(verbose=true) root files =
     ));
 
   env.pr2_and_log "\nstep3: adjusting";
-  if false
+  if conf.propagate_deps_def_to_decl
   then propagate_users_of_functions_globals_types_to_prototype_extern_typedefs g;
   G.remove_empty_nodes g [unknown_location; G.not_found; G.dupe; G.pb];
 
