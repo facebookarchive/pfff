@@ -24,6 +24,8 @@ module H = Abstract_interpreter_php_helpers
 module CG = Callgraph_php2
 module Trace = Tracing_php
 
+exception ForeachWithList of string
+
 (*****************************************************************************)
 (* Prelude *)
 (*****************************************************************************)
@@ -391,27 +393,28 @@ and stmt env heap x =
       let heap = List.fold_left (case env) heap cl in
       heap
   (* todo: explain *)
-  | Foreach (_a, _k(*, vopt*), _stl) ->
-    raise Todo
-(*
-      let heap, a = expr env heap a in
-      let heap, _, k = lvalue env heap k in
-      let heap, k, v =
-        match vopt with
-        | None ->
-            let heap, kint = Ptr.new_val heap (Vabstr Tint) in
-            heap, kint, k
-        | Some v ->
-            let heap, _, v = lvalue env heap v in
-            heap, k, v
-      in
-      let heap, a' = Ptr.new_val heap (Vmap (k, v)) in
-      let heap, a' = Ptr.get heap a' in
-      let heap, a = Unify.value heap a a' in
-      let heap = stmtl env heap stl in
-      heap
-*)
-  | Continue e | Break e ->
+  | Foreach (a, pattern, stl) ->
+     let heap, a = expr env heap a in
+     (match pattern with
+      | Var _ ->
+          let heap, _, v = lvalue env heap pattern in
+          let heap, kint = Ptr.new_val heap (Vabstr Tint) in
+          let heap, a' = Ptr.new_val heap (Vmap (kint, v)) in
+          let heap, a' = Ptr.get heap a' in
+          let heap, _a = Unify.value heap a a' in
+          let heap = stmtl env heap stl in
+          heap
+      | Arrow (lhs, rhs) ->
+         let heap, _, k = lvalue env heap lhs in
+         let heap, _, v = lvalue env heap rhs in
+         let heap, a' = Ptr.new_val heap (Vmap (k, v)) in
+         let heap, a' = Ptr.get heap a' in
+         let heap, _a = Unify.value heap a a' in
+         let heap = stmtl env heap stl in
+         heap
+
+      | _ -> raise (ForeachWithList !(env.file)))
+     | Continue e | Break e ->
       let heap, _ = Utils.opt (expr env) heap e in
       heap
   | Throw e ->
