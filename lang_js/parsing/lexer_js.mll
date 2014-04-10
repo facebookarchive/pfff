@@ -28,7 +28,7 @@ module PI = Parse_info
  *
  * There are a few tricks to go around ocamllex restrictions
  * because Javascript now have different lexing rules depending on some
- * "contexts", especially for JSX/XHP (this is similar to Perl, 
+ * "contexts", especially for JSX/XHP (this is similar to Perl,
  * e.g. the <<<END context).
  *)
 
@@ -119,6 +119,8 @@ let keyword_table = Common.hash_of_list [
   "class",      (fun ii -> T_CLASS ii);
   "extends",    (fun ii -> T_EXTENDS ii);
   "static",     (fun ii -> T_STATIC ii);
+
+  "interface",      (fun ii -> T_INTERFACE ii);
 ]
 
 (* ---------------------------------------------------------------------- *)
@@ -225,7 +227,7 @@ rule initial = parse
   (* don't keep the trailing \n; it will be in another token *)
   | "//" InputCharacter* { TComment (tokinfo lexbuf) }
   (* should be accepted only at the beginning of the file *)
-  | "#!" InputCharacter* { TComment (tokinfo lexbuf) } 
+  | "#!" InputCharacter* { TComment (tokinfo lexbuf) }
   | [' ' '\t']+  { TCommentSpace(tokinfo lexbuf) }
   | NEWLINE      { TCommentNewline(tokinfo lexbuf) }
 
@@ -382,7 +384,7 @@ rule initial = parse
 
       match !_last_non_whitespace_like_token with
       | Some (
-            T_IDENTIFIER _ 
+            T_IDENTIFIER _
           | T_NUMBER _ | T_STRING _ | T_REGEX _
           | T_FALSE _ | T_TRUE _ | T_NULL _
           | T_THIS _
@@ -429,7 +431,7 @@ rule initial = parse
       | T_ASSIGN _
       | T_ARROW _
       | T_PLING _ | T_COLON _
-      | T_LBRACKET _ 
+      | T_LBRACKET _
       | T_AND _ | T_OR _ | T_PLUS _
     )
       ->
@@ -490,7 +492,7 @@ and string_quote q buf = parse
 
 
 and backquote = parse
-  | "`" { 
+  | "`" {
     pop_mode();
     T_BACKQUOTE(tokinfo lexbuf)
   }

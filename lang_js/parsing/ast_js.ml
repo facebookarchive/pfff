@@ -122,6 +122,7 @@ type expr =
        | U_pre_increment  | U_pre_decrement
        | U_post_increment | U_post_decrement
        | U_plus | U_minus | U_not
+       | U_spread
 
      and binop =
        | B_instanceof  | B_in
@@ -327,12 +328,23 @@ and class_decl = {
   | ClassExtraSemiColon of sc
 
 (* ------------------------------------------------------------------------- *)
+(* Interface definition *)
+(* ------------------------------------------------------------------------- *)
+and interface_decl = {
+  i_tok: tok;
+  i_name: name;
+  i_type_params: type_parameter comma_list angle option;
+  i_type: type_;
+}
+
+(* ------------------------------------------------------------------------- *)
 (* The toplevels elements *)
 (* ------------------------------------------------------------------------- *)
 and toplevel =
   | St of st
   | FunDecl of func_decl
   | ClassDecl of class_decl
+  | InterfaceDecl of interface_decl
 
  and program = toplevel list
  (* with tarzan *)

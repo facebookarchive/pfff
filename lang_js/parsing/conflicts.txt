@@ -9,7 +9,7 @@ want the second one, so we prefer to shift than reduce
 hence the %prec (just like for the dangling else) attached
 to expr in:
 
-arrow_body: 
+arrow_body:
  | block { }
  | expr  %prec LOW_PRIORITY_RULE { }
 
@@ -23,7 +23,29 @@ there is no way to know whether this is an expression (reduce) or
 the parameter specification of a lambda (shift). To solve the conflict
 one has to be more general and do:
 
- | TOPAR expr TCPAR T_ARROW arrow_body 
+ | TOPAR expr TCPAR T_ARROW arrow_body
      { ... }
 
 but make sure that expr can only be an identifier.
+
+A shift-reduce conflict currently exists when we see '(x,' and we prefer to
+shift per the following rule, expecting something like '(x,y) => ...'
+
+arrow_function:
+  | T_LPAREN identifier T_COMMA formal_parameter_list T_RPAREN
+    annotation_opt T_ARROW arrow_body
+
+rather than reduce per the following rule, expecting something like '(x,y) + ...'
+
+expression:
+ | expression T_COMMA assignment_expression
+
+This means that something like '(x,y) + ...' does not currently parse;
+fortunately, it is uncommon.
+
+On the other hand, we do not allow '(x?) => ...' or '(x=1) => ...'
+which cause similar shift-reduce conflicts with '(x?0:1)' or '(x=1)+0'.
+The latter expressions are common, and thus we prefer to parse them.
+
+Finally, we do not allow '<T>(x:T):T => ...' since the leading '<T>' looks like
+a JSX tag.

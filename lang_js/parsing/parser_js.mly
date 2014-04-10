@@ -84,7 +84,7 @@ let fake_tok s = {
  T_FUNCTION T_IF T_IN T_INSTANCEOF T_RETURN T_SWITCH T_THIS T_THROW T_TRY
  T_VAR T_WHILE T_WITH T_CONST T_NULL T_FALSE T_TRUE
  T_BREAK T_CASE T_CATCH T_CONTINUE T_DEFAULT T_DO T_FINALLY T_FOR
- T_CLASS T_EXTENDS T_STATIC
+ T_CLASS T_EXTENDS T_STATIC T_INTERFACE
 
 %token <Ast_js.tok> T_ELSE
 
@@ -201,6 +201,7 @@ source_element:
 declaration:
  | function_declaration { FunDecl $1 }
  | class_declaration { ClassDecl $1 }
+ | interface_declaration { InterfaceDecl $1 }
 
 /*(*************************************************************************)*/
 /*(*1 Statement *)*/
@@ -459,6 +460,17 @@ method_definition:
       f_return_type = $6; f_body =  ($7, $8, $9)
   } }
 
+/*(*************************************************************************)*/
+/*(*1 Interface declaration *)*/
+/*(*************************************************************************)*/
+interface_declaration: T_INTERFACE binding_identifier generics_opt type_
+   {
+     { i_tok = $1;
+       i_name = $2;
+       i_type_params = $3;
+       i_type = $4;
+     }
+   }
 /*(*************************************************************************)*/
 /*(*1 Type *)*/
 /*(*************************************************************************)*/
@@ -759,10 +771,15 @@ arguments:
  | T_LPAREN argument_list T_RPAREN { ($1, $2, $3) }
 
 argument_list:
+/*(* ES6 spread operator:
+     https://people.mozilla.org/~jorendorff/es6-draft.html#sec-argument-lists-runtime-semantics-argumentlistevaluation
+  *)*/
+ | T_DOTS assignment_expression
+     { [Left (uop U_spread $1 $2)] }
  | assignment_expression
      { [Left $1] }
- | argument_list T_COMMA assignment_expression
-     { $1 @ [Right $2; Left $3] }
+ | assignment_expression T_COMMA argument_list
+     { (Left $1)::(Right $2)::$3 }
 
 /*(*----------------------------*)*/
 /*(*2 XHP embeded html *)*/
@@ -806,7 +823,7 @@ arrow_function:
      { { a_params = ASingleParam (mk_param $1); a_return_type = None;
          a_tok = $2; a_body = $3 } }
  /*(* can not factorize with TOPAR parameter_list TCPAR, see conflicts.txt *)*/
- /*(* generics_opt not supported *)*/
+ /*(* generics_opt not supported, see conflicts.txt *)*/
  | T_LPAREN T_RPAREN annotation_opt T_ARROW arrow_body
      { { a_params = AParams ($1, [], $2); a_return_type = $3;
          a_tok = $4; a_body = $5 } }
@@ -825,10 +842,10 @@ arrow_function:
        let params = AParams ($1, [Left param], $4) in
        { a_params = params; a_return_type = $5; a_tok = $6; a_body = $7 }
      }
- | T_LPAREN T_DOTS identifier T_RPAREN annotation_opt T_ARROW arrow_body
-     { let param = { (mk_param $3) with p_dots = Some $2; } in
-       { a_params = AParams ($1, [Left param], $4); a_return_type = $5;
-         a_tok = $6; a_body = $7 }
+ | T_LPAREN formal_rest_parameter T_RPAREN annotation_opt T_ARROW arrow_body
+     { let param = $2 in
+       { a_params = AParams ($1, [Left param], $3); a_return_type = $4;
+         a_tok = $5; a_body = $6 }
      }
  | T_LPAREN identifier T_COMMA formal_parameter_list T_RPAREN
      annotation_opt T_ARROW arrow_body
