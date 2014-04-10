@@ -121,6 +121,13 @@ let vim_tag_kind_str tag_kind =
   | Db.Prototype | Db.GlobalExtern
       -> ""
 
+(* vim uses '/' as a marker for the tag definition text, so if this
+ * test contains '/' they must be escaped.
+ *)
+let vim_escape_slash str =
+  Str.global_replace (Str.regexp "/") "\\/" str
+
+
 (* For methods, in addition to the tag for the precise 'class::method'
  * name, it can be convenient to generate another tag with just the
  * 'method' name so people can quickly jump to some code with just the
@@ -223,7 +230,7 @@ let generate_vi_tags_file tags_file files_and_defs =
       pr_no_nl (spf "%s\t%s\t/%s/;\"\t%s\n"
                    tag.tagname
                    file
-                   tag.tag_definition_text
+                   (vim_escape_slash tag.tag_definition_text)
                    (vim_tag_kind_str tag.kind)
       );
     );
