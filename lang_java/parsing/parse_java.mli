@@ -6,18 +6,20 @@ type program_and_tokens =
 exception Parse_error of Parse_info.info
 
 (* This is the main function *)
-val parse :
+val parse:
   Common.filename (*javafile*) -> (program_and_tokens * Parse_info.parsing_stat)
 
 (* may raise (Failure "just:pb") when parse return None when have parse error *)
 val parse_program:
   Common.filename -> Ast_java.program
 
-val parse_string : string -> Ast_java.program
+val parse_string:
+  string -> Ast_java.program
 
 (* for generalized sgrep/spatch patterns *)
 val parse_fuzzy:
   Common.filename -> Ast_fuzzy.tree list * Parser_java.token list
+
 
 (* internal *)
 val tokens: Common.filename -> Parser_java.token list

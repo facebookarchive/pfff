@@ -175,6 +175,10 @@ let parse_program file =
   let ((astopt, _toks), _stat) = parse file in
   Common2.some astopt
 
+
+let parse_string (w : string) : Ast.program =
+  Common2.with_tmp_file ~str:w ~ext:"js" parse_program
+
 (*****************************************************************************)
 (* Sub parsers *)
 (*****************************************************************************)

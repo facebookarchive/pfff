@@ -12,6 +12,9 @@ val parse:
 val parse_program:
   Common.filename -> Ast_js.program
 
+val parse_string : 
+  string -> Ast_js.program
+
 val parse_fuzzy:
   Common.filename -> Ast_fuzzy.trees * Parser_js.token list
 
