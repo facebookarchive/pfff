@@ -245,6 +245,7 @@ and v_unop =
   | U_plus -> ()
   | U_minus -> ()
   | U_not -> ()
+  | U_spread -> ()
 and v_binop =
   function
   | B_instanceof -> ()

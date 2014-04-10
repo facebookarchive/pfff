@@ -122,6 +122,7 @@ type expr =
        | U_pre_increment  | U_pre_decrement
        | U_post_increment | U_post_decrement
        | U_plus | U_minus | U_not
+       | U_spread
 
      and binop =
        | B_instanceof  | B_in

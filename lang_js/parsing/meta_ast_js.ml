@@ -177,6 +177,7 @@ and vof_unop =
   | U_plus -> Ocaml.VSum (("U_plus", []))
   | U_minus -> Ocaml.VSum (("U_minus", []))
   | U_not -> Ocaml.VSum (("U_not", []))
+  | U_spread -> Ocaml.VSum (("U_spread", []))
 and vof_binop =
   function
   | B_instanceof -> Ocaml.VSum (("B_instanceof", []))
