@@ -6,7 +6,7 @@
  * modify it under the terms of the GNU Lesser General Public License
  * version 2.1 as published by the Free Software Foundation, with the
  * special exception on linking described in file license.txt.
- * 
+ *
  * This library is distributed in the hope that it will be useful, but
  * WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the file
@@ -46,7 +46,7 @@ let visit_program ~tag_hook _prefs (*db_opt *) (ast, toks) =
   in
 
   (* many class idions are recognized in Class_js *)
-  let hcomplete_name_of_info = 
+  let hcomplete_name_of_info =
     Class_js.extract_complete_name_of_info ast
   in
 
@@ -61,11 +61,11 @@ let visit_program ~tag_hook _prefs (*db_opt *) (ast, toks) =
   )
   in
 
-  let rec aux_toks xs = 
+  let rec aux_toks xs =
     match xs with
     | [] -> ()
 
-    (* the class extraction stuff as JX.install('ClassFoo'... ) 
+    (* the class extraction stuff as JX.install('ClassFoo'... )
      * is not handled in class_js.ml
      *)
 
@@ -77,9 +77,9 @@ let visit_program ~tag_hook _prefs (*db_opt *) (ast, toks) =
       ::T.T_IDENTIFIER ("listen", _)
       ::T.T_LPAREN(_)
       ::xs ->
-        let rec find_first_string xs = 
+        let rec find_first_string xs =
           match xs with
-          | [] -> 
+          | [] ->
               pr2 (spf "PB: find_first_string: at %s"
                       (Parse_info.string_of_info info)
               );
@@ -87,7 +87,7 @@ let visit_program ~tag_hook _prefs (*db_opt *) (ast, toks) =
           | T.T_STRING (_, ii)::_ -> ii
           | _x::xs -> find_first_string xs
         in
-        (try 
+        (try
             let ii_string = find_first_string xs in
             tag ii_string (HC.Method (Def2 fake_no_def2));
           with Not_found -> ()
@@ -97,7 +97,7 @@ let visit_program ~tag_hook _prefs (*db_opt *) (ast, toks) =
     | T.T_IDENTIFIER (_, ii2)
       ::T.T_COLON(_ii3)
       ::T.T_FUNCTION _
-      ::xs 
+      ::xs
        (* todo? when Parse_info.col_of_info ii1 = 0 *)
       ->
         tag ii2 (Method (Def2 NoUse));
@@ -106,7 +106,7 @@ let visit_program ~tag_hook _prefs (*db_opt *) (ast, toks) =
     | T.T_FUNCTION(_ii1)
       ::T.T_IDENTIFIER (_, ii2)
       ::T.T_LPAREN(_)
-      ::xs 
+      ::xs
        (* when Parse_info.col_of_info ii1 = 0 ? *)
       ->
         tag ii2 (Function (Def2 NoUse));
@@ -149,12 +149,12 @@ let visit_program ~tag_hook _prefs (*db_opt *) (ast, toks) =
 
 
   (* -------------------------------------------------------------------- *)
-  (* ast phase 1 *) 
+  (* ast phase 1 *)
   (* TODO!! *)
 
   (* -------------------------------------------------------------------- *)
   (* toks phase 2 *)
-  toks +> List.iter (fun tok -> 
+  toks +> List.iter (fun tok ->
     match tok with
     | T.TComment ii ->
         if not (Hashtbl.mem already_tagged ii)
@@ -172,11 +172,11 @@ let visit_program ~tag_hook _prefs (*db_opt *) (ast, toks) =
         if not (Hashtbl.mem already_tagged ii)
         then
           let kind_name_opt =
-            Common2.hfind_option ii hcomplete_name_of_info 
+            Common2.hfind_option ii hcomplete_name_of_info
           in
           (match kind_name_opt with
           | Some (Db.Class, _fullname) ->
-            
+
               (* rewrite ii to remove the enclosing "" ?
                * but the Parsing2 then use the full info as
                * the key of the hash and so may not find
@@ -189,7 +189,7 @@ let visit_program ~tag_hook _prefs (*db_opt *) (ast, toks) =
               ()
 
           | Some (_) ->
-              failwith ("WEIRD: a string is not a class at " ^ 
+              failwith ("WEIRD: a string is not a class at " ^
                            Parse_info.string_of_info ii)
           | None ->
               tag ii String
@@ -203,7 +203,7 @@ let visit_program ~tag_hook _prefs (*db_opt *) (ast, toks) =
        if not (Hashtbl.mem already_tagged ii)
        then
         let kind_name_opt =
-          Common2.hfind_option ii hcomplete_name_of_info 
+          Common2.hfind_option ii hcomplete_name_of_info
         in
         (match kind_name_opt with
         | Some (Db.Class, _fullname) ->
@@ -215,7 +215,7 @@ let visit_program ~tag_hook _prefs (*db_opt *) (ast, toks) =
             tag ii (StaticMethod (Def2 fake_no_def2))
 *)
         | Some (_) ->
-            failwith ("WEIRD: a identfier is not a class or method at " ^ 
+            failwith ("WEIRD: a identfier is not a class or method at " ^
                            Parse_info.string_of_info ii)
         | None ->
             ()
@@ -224,21 +224,23 @@ let visit_program ~tag_hook _prefs (*db_opt *) (ast, toks) =
 
     | T.T_FUNCTION (ii) ->  tag ii Keyword
 
-    | T.T_IF (ii)  | T.T_SWITCH (ii) | T.T_ELSE (ii) -> 
+    | T.T_IF (ii)  | T.T_SWITCH (ii) | T.T_ELSE (ii) ->
         tag ii KeywordConditional
 
     | T.T_IN (ii) | T.T_INSTANCEOF (ii) | T.T_RETURN (ii) | T.T_THIS (ii) ->
          tag ii Keyword
-        
+
 
     | T.T_THROW (ii) | T.T_TRY (ii) | T.T_CATCH (ii) | T.T_FINALLY (ii) ->
         tag ii KeywordExn
 
     | T.T_CLASS ii | T.T_EXTENDS ii  -> tag ii KeywordObject
 
+    | T.T_INTERFACE ii -> tag ii KeywordObject
+
     | T.T_XHP_TEXT (_, ii) -> tag ii String
     | T.T_XHP_ATTR (_, ii) -> tag ii (Field (Use2 fake_no_use2))
-      
+
     | T.T_XHP_CLOSE_TAG (_, ii) -> tag ii EmbededHtml
     | T.T_XHP_SLASH_GT ii -> tag ii EmbededHtml
     | T.T_XHP_GT ii -> tag ii EmbededHtml
@@ -341,6 +343,6 @@ let visit_program ~tag_hook _prefs (*db_opt *) (ast, toks) =
   );
 
   (* -------------------------------------------------------------------- *)
-  (* ast phase 2 *)  
+  (* ast phase 2 *)
 
   ()

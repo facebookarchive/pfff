@@ -6,7 +6,7 @@
  * modify it under the terms of the GNU Lesser General Public License
  * version 2.1 as published by the Free Software Foundation, with the
  * special exception on linking described in file license.txt.
- * 
+ *
  * This library is distributed in the hope that it will be useful, but
  * WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the file
@@ -26,11 +26,11 @@ let is_eof = function
 
 let is_comment = function
   | TComment _ | TCommentSpace _ | TCommentNewline _ -> true
-  | _ -> false 
+  | _ -> false
 
 let is_just_comment = function
   | TComment _ -> true
-  | _ -> false 
+  | _ -> false
 
 let token_kind_of_tok t =
   match t with
@@ -49,7 +49,7 @@ let token_kind_of_tok t =
 (* Visitors *)
 (*****************************************************************************)
 
-(* Ugly repetitive code but ocamlyacc force us to do it that way. 
+(* Ugly repetitive code but ocamlyacc force us to do it that way.
  * Indeed the ocamlyacc token  cant be a pair of a sum type, it must be
  * directly a sum type. Fortunately most of the code was generated via an
  * emacs macro working on the type definition of token in parser_js.mli
@@ -145,6 +145,7 @@ let info_of_tok = function
   | T_VOID ii -> ii
   | T_VIRTUAL_SEMICOLON ii -> ii
   | T_CLASS ii | T_EXTENDS ii | T_STATIC ii -> ii
+  | T_INTERFACE ii -> ii
   | T_XHP_OPEN_TAG (_,ii) | T_XHP_CLOSE_TAG (_,ii) | T_XHP_GT ii
   | T_XHP_SLASH_GT ii | T_XHP_ATTR (_,ii) | T_XHP_TEXT (_,ii)
   | T_ARROW ii
@@ -247,6 +248,7 @@ let visitor_info_of_tok f = function
   | T_CLASS ii  -> T_CLASS (f ii)
   | T_EXTENDS ii -> T_EXTENDS (f ii)
   | T_STATIC ii -> T_STATIC (f ii)
+  | T_INTERFACE ii  -> T_INTERFACE (f ii)
   | T_XHP_OPEN_TAG (s,ii) -> T_XHP_OPEN_TAG (s, f ii)
   | T_XHP_CLOSE_TAG (s,ii) -> T_XHP_CLOSE_TAG(s, f ii)
   | T_XHP_GT ii -> T_XHP_GT (f ii)
@@ -263,6 +265,6 @@ let visitor_info_of_tok f = function
 (* Accessors *)
 (*****************************************************************************)
 
-let line_of_tok tok = 
+let line_of_tok tok =
   let info = info_of_tok tok in
   Parse_info.line_of_info info

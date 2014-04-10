@@ -328,12 +328,23 @@ and class_decl = {
   | ClassExtraSemiColon of sc
 
 (* ------------------------------------------------------------------------- *)
+(* Interface definition *)
+(* ------------------------------------------------------------------------- *)
+and interface_decl = {
+  i_tok: tok;
+  i_name: name;
+  i_type_params: type_parameter comma_list angle option;
+  i_type: type_;
+}
+
+(* ------------------------------------------------------------------------- *)
 (* The toplevels elements *)
 (* ------------------------------------------------------------------------- *)
 and toplevel =
   | St of st
   | FunDecl of func_decl
   | ClassDecl of class_decl
+  | InterfaceDecl of interface_decl
 
  and program = toplevel list
  (* with tarzan *)

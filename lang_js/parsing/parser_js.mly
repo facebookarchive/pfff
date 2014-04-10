@@ -84,7 +84,7 @@ let fake_tok s = {
  T_FUNCTION T_IF T_IN T_INSTANCEOF T_RETURN T_SWITCH T_THIS T_THROW T_TRY
  T_VAR T_WHILE T_WITH T_CONST T_NULL T_FALSE T_TRUE
  T_BREAK T_CASE T_CATCH T_CONTINUE T_DEFAULT T_DO T_FINALLY T_FOR
- T_CLASS T_EXTENDS T_STATIC
+ T_CLASS T_EXTENDS T_STATIC T_INTERFACE
 
 %token <Ast_js.tok> T_ELSE
 
@@ -201,6 +201,7 @@ source_element:
 declaration:
  | function_declaration { FunDecl $1 }
  | class_declaration { ClassDecl $1 }
+ | interface_declaration { InterfaceDecl $1 }
 
 /*(*************************************************************************)*/
 /*(*1 Statement *)*/
@@ -459,6 +460,17 @@ method_definition:
       f_return_type = $6; f_body =  ($7, $8, $9)
   } }
 
+/*(*************************************************************************)*/
+/*(*1 Interface declaration *)*/
+/*(*************************************************************************)*/
+interface_declaration: T_INTERFACE binding_identifier generics_opt type_
+   {
+     { i_tok = $1;
+       i_name = $2;
+       i_type_params = $3;
+       i_type = $4;
+     }
+   }
 /*(*************************************************************************)*/
 /*(*1 Type *)*/
 /*(*************************************************************************)*/

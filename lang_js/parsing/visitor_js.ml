@@ -562,6 +562,18 @@ and
       v_c_extends in
   let arg = v_brace (v_list v_class_stmt) v_c_body in
   ()
+and
+  v_interface_decl {
+                 i_tok = v_i_tok;
+                 i_name = v_i_name;
+                 i_type_params = v_i_type_params;
+                 i_type = v_i_type;
+               } =
+  let arg = v_tok v_i_tok in
+  let arg = v_name v_i_name in
+  let arg = v_option (v_angle (v_comma_list v_name)) v_i_type_params in
+  let arg = v_type_ v_i_type in
+  ()
 and v_class_stmt =
   function
   | Field ((v1, v2, v3)) ->
@@ -575,6 +587,7 @@ and v_toplevel =
   | St v1 -> let v1 = v_st v1 in ()
   | FunDecl v1 -> let v1 = v_func_decl v1 in ()
   | ClassDecl v1 -> let v1 = v_class_decl v1 in ()
+  | InterfaceDecl v1 -> let v1 = v_interface_decl v1 in ()
 and v_program v = v_list v_toplevel v
 
 and v_any =  function

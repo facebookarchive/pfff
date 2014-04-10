@@ -591,6 +591,9 @@ and vof_toplevel =
       let v1 = vof_func_decl v1 in Ocaml.VSum (("FunDecl", [ v1 ]))
   | ClassDecl v1 ->
       let v1 = vof_class_decl v1 in Ocaml.VSum (("ClassDecl", [ v1 ]))
+  | InterfaceDecl v1 ->
+      let v1 = vof_interface_decl v1 in Ocaml.VSum (("InterfaceDecl", [ v1 ]))
+
 and  vof_class_decl {
                    c_tok = v_c_tok;
                    c_name = v_c_name;
@@ -622,6 +625,27 @@ and  vof_class_decl {
   let bnds = bnd :: bnds in
   let arg = vof_tok v_c_tok in
   let bnd = ("c_tok", arg) in let bnds = bnd :: bnds in Ocaml.VDict bnds
+and  vof_interface_decl {
+                   i_tok = v_i_tok;
+                   i_name = v_i_name;
+                   i_type_params = v_i_type_params;
+                   i_type = v_i_type;
+                 } =
+  let bnds = [] in
+  let arg = vof_type_ v_i_type in
+  let bnd = ("i_type", arg) in
+  let bnds = bnd :: bnds in
+  let arg =
+    Ocaml.vof_option
+      (vof_angle (vof_comma_list vof_name)) v_i_type_params
+  in
+  let bnd = ("i_type_params", arg) in
+  let bnds = bnd :: bnds in
+  let arg = vof_name v_i_name in
+  let bnd = ("i_name", arg) in
+  let bnds = bnd :: bnds in
+  let arg = vof_tok v_i_tok in
+  let bnd = ("i_tok", arg) in let bnds = bnd :: bnds in Ocaml.VDict bnds
 
 and vof_class_stmt =
   function
