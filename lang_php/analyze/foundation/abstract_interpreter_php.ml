@@ -612,14 +612,15 @@ and expr_ env heap x =
 
   | ConsArray ([]) ->
       heap, Varray []
-  | ConsArray (avl) ->
+  | ConsArray (avl)
+  | Collection (_, avl) ->
       let id = Id [(w "*array*")] in
       let heap = List.fold_left (array_value env id) heap avl in
       let heap, _, v = Var.get env heap "*array*" in
       let heap, v = Ptr.get heap v in
       Var.unset env "*array*";
       heap, v
-  | Collection _ -> failwith "Collection not implemented - complain to pieter@"
+
   | Arrow _ -> failwith "should be handled in caller, in array_value"
 
   (* hardcoded special case, not sure why we need that *)
@@ -636,6 +637,14 @@ and expr_ env heap x =
           if !strict then failwith "call_user_func unknown function";
           heap, Vany
       )
+
+  | Call (Obj_get (lhs, Id [(s,_)]), _) when List.mem s ["toArray"; "toValuesArray"; "toKeysArray";
+        "toVector"; "toImmVector"; "toMap"; "toImmMap"; "toSet"; "toImmSet"; "values"; "keys";
+        "lazy"] ->
+     let heap, v = expr env heap lhs in
+     let heap, v' = Ptr.get heap v in
+     heap, v'
+
   (* simple function call or $x() call *)
   | Call (Id [(s,_)], el) ->
       (try
@@ -666,7 +675,6 @@ and expr_ env heap x =
       (* todo? could try to process its body? return a Vfun ? *)
       if !strict then failwith "todo: handle Lambda";
       heap, Vany
-
   | Array_get _ | Class_get (_, _) | Obj_get (_, _)
   | Var _ | This _ as lv ->
       (* The lvalue will contain the pointer to pointer, e.g. &2{&1{...}}
