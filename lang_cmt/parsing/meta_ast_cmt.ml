@@ -215,6 +215,9 @@ let vof_type_expr _x = ()
 
 let rec
   vof_pattern {
+#if OCAML_VERSION >= 4020
+                pat_attributes = _v_pat_attributes;
+#endif
                 pat_desc = v_pat_desc;
                 pat_loc = _v_pat_loc;
                 pat_extra = _v_pat_extra;
@@ -272,7 +275,13 @@ and vof_pattern_desc =
   | Tpat_tuple v1 ->
       let v1 = Ocaml.vof_list vof_pattern v1
       in Ocaml.VSum (("Tpat_tuple", [ v1 ]))
-#if OCAML_VERSION >= 4010
+#if OCAML_VERSION >= 4020
+  | Tpat_construct ((v1, v2, v3)) ->
+      let v1 = vof_loc Longident.vof_t v1
+      and v2 = vof_constructor_description v2
+      and v3 = Ocaml.vof_list vof_pattern v3
+      in Ocaml.VSum (("Tpat_construct", [ v1; v2; v3 ]))
+#elif OCAML_VERSION >= 4010
   | Tpat_construct ((v1, v2, v3, v4)) ->
       let v1 = vof_loc Longident.vof_t v1
       and v2 = vof_constructor_description v2
@@ -364,10 +373,16 @@ and
 
 and vof_exp_extra =
   function
+#if OCAML_VERSION >= 4020
+  | Texp_constraint v1 ->
+      let v1 = vof_core_type v1
+      in Ocaml.VSum (("Texp_constraint", [ v1 ]))
+#else
   | Texp_constraint ((v1, v2)) ->
       let v1 = Ocaml.vof_option vof_core_type v1
       and v2 = Ocaml.vof_option vof_core_type v2
       in Ocaml.VSum (("Texp_constraint", [ v1; v2 ]))
+#endif
 #if OCAML_VERSION >= 4010
   | Texp_open ((v1, v2, v3, v4)) ->
       let v1 = vof_override_flag v1
@@ -399,24 +414,12 @@ and vof_expression_desc =
       let v1 = vof_constant v1 in Ocaml.VSum (("Texp_constant", [ v1 ]))
   | Texp_let ((v1, v2, v3)) ->
       let v1 = vof_rec_flag v1
-      and v2 =
-        Ocaml.vof_list
-          (fun (v1, v2) ->
-             let v1 = vof_pattern v1
-             and v2 = vof_expression v2
-             in Ocaml.VTuple [ v1; v2 ])
-          v2
+      and v2 = Ocaml.vof_list vof_value_binding v2
       and v3 = vof_expression v3
       in Ocaml.VSum (("Texp_let", [ v1; v2; v3 ]))
   | Texp_function ((v1, v2, v3)) ->
       let v1 = vof_label v1
-      and v2 =
-        Ocaml.vof_list
-          (fun (v1, v2) ->
-             let v1 = vof_pattern v1
-             and v2 = vof_expression v2
-             in Ocaml.VTuple [ v1; v2 ])
-          v2
+      and v2 = Ocaml.vof_list vof_case v2
       and v3 = vof_partial v3
       in Ocaml.VSum (("Texp_function", [ v1; v2; v3 ]))
   | Texp_apply ((v1, v2)) ->
@@ -432,30 +435,24 @@ and vof_expression_desc =
       in Ocaml.VSum (("Texp_apply", [ v1; v2 ]))
   | Texp_match ((v1, v2, v3)) ->
       let v1 = vof_expression v1
-      and v2 =
-        Ocaml.vof_list
-          (fun (v1, v2) ->
-             let v1 = vof_pattern v1
-             and v2 = vof_expression v2
-             in Ocaml.VTuple [ v1; v2 ])
-          v2
+      and v2 = Ocaml.vof_list vof_case v2
       and v3 = vof_partial v3
       in Ocaml.VSum (("Texp_match", [ v1; v2; v3 ]))
   | Texp_try ((v1, v2)) ->
       let v1 = vof_expression v1
-      and v2 =
-        Ocaml.vof_list
-          (fun (v1, v2) ->
-             let v1 = vof_pattern v1
-             and v2 = vof_expression v2
-             in Ocaml.VTuple [ v1; v2 ])
-          v2
+      and v2 = Ocaml.vof_list vof_case v2
       in Ocaml.VSum (("Texp_try", [ v1; v2 ]))
   | Texp_tuple v1 ->
       let v1 = Ocaml.vof_list vof_expression v1
       in Ocaml.VSum (("Texp_tuple", [ v1 ]))
 
-#if OCAML_VERSION >= 4010
+#if OCAML_VERSION >= 4020
+  | Texp_construct ((v1, v2, v3)) ->
+      let v1 = vof_loc Longident.vof_t v1
+      and v2 = vof_constructor_description v2
+      and v3 = Ocaml.vof_list vof_expression v3
+      in Ocaml.VSum (("Texp_construct", [ v1; v2; v3 ]))
+#elif OCAML_VERSION >= 4010
   | Texp_construct ((v1, v2, v3, v4)) ->
       let v1 = vof_loc Longident.vof_t v1
       and v2 = vof_constructor_description v2
@@ -552,10 +549,13 @@ and vof_expression_desc =
       and v5 = vof_direction_flag v5
       and v6 = vof_expression v6
       in Ocaml.VSum (("Texp_for", [ v1; v2; v3; v4; v5; v6 ]))
+#if OCAML_VERSION < 4020
   | Texp_when ((v1, v2)) ->
       let v1 = vof_expression v1
       and v2 = vof_expression v2
       in Ocaml.VSum (("Texp_when", [ v1; v2 ]))
+  | Texp_assertfalse -> Ocaml.VSum (("Texp_assertfalse", []))
+#endif
   | Texp_send ((v1, v2, v3)) ->
       let v1 = vof_expression v1
       and v2 = vof_meth v2
@@ -596,7 +596,6 @@ and vof_expression_desc =
       in Ocaml.VSum (("Texp_letmodule", [ v1; v2; v3; v4 ]))
   | Texp_assert v1 ->
       let v1 = vof_expression v1 in Ocaml.VSum (("Texp_assert", [ v1 ]))
-  | Texp_assertfalse -> Ocaml.VSum (("Texp_assertfalse", []))
   | Texp_lazy v1 ->
       let v1 = vof_expression v1 in Ocaml.VSum (("Texp_lazy", [ v1 ]))
   | Texp_object ((v1, v2)) ->
@@ -671,13 +670,7 @@ and vof_class_expr_desc =
       in Ocaml.VSum (("Tcl_apply", [ v1; v2 ]))
   | Tcl_let ((v1, v2, v3, v4)) ->
       let v1 = vof_rec_flag v1
-      and v2 =
-        Ocaml.vof_list
-          (fun (v1, v2) ->
-             let v1 = vof_pattern v1
-             and v2 = vof_expression v2
-             in Ocaml.VTuple [ v1; v2 ])
-          v2
+      and v2 = Ocaml.vof_list vof_value_binding v2
       and v3 =
         Ocaml.vof_list
           (fun (v1, v2, v3) ->
@@ -697,7 +690,11 @@ and vof_class_expr_desc =
       in Ocaml.VSum (("Tcl_constraint", [ v1; v2; v3; v4; v5 ]))
 and
   vof_class_structure {
+#if OCAML_VERSION >= 4020
+                        cstr_self = v_cstr_pat;
+#else
                         cstr_pat = v_cstr_pat;
+#endif
                         cstr_fields = v_cstr_fields;
                         cstr_type = v_cstr_type;
                         cstr_meths = v_cstr_meths
@@ -729,11 +726,20 @@ and vof_class_field_kind =
   function
   | Tcfk_virtual v1 ->
       let v1 = vof_core_type v1 in Ocaml.VSum (("Tcfk_virtual", [ v1 ]))
+#if OCAML_VERSION >= 4020
+  | Tcfk_concrete (_, v1) ->
+      let v1 = vof_expression v1 in Ocaml.VSum (("Tcfk_concrete", [ v1 ]))
+#else
   | Tcfk_concrete v1 ->
       let v1 = vof_expression v1 in Ocaml.VSum (("Tcfk_concrete", [ v1 ]))
+#endif
 and vof_class_field_desc =
   function
+#if OCAML_VERSION >= 4020
+  | Tcf_inherit ((v1, v2, v3, v4, v5)) ->
+#else
   | Tcf_inher ((v1, v2, v3, v4, v5)) ->
+#endif
       let v1 = vof_override_flag v1
       and v2 = vof_class_expr v2
       and v3 = Ocaml.vof_option Ocaml.vof_string v3
@@ -752,6 +758,26 @@ and vof_class_field_desc =
              in Ocaml.VTuple [ v1; v2 ])
           v5
       in Ocaml.VSum (("Tcf_inher", [ v1; v2; v3; v4; v5 ]))
+#if OCAML_VERSION >= 4020
+  | Tcf_val ((v1, v2, v3, v4, v5)) ->
+      let v1 = vof_loc Ocaml.vof_string v1
+      and v2 = vof_mutable_flag v2
+      and v3 = Ident.vof_t v3
+      and v4 = vof_class_field_kind v4
+      and v5 = Ocaml.vof_bool v5
+      in Ocaml.VSum (("Tcf_val", [ v1; v2; v3; v4; v5 ]))
+  | Tcf_method ((v1, v2, v3)) ->
+      let v1 = vof_loc Ocaml.vof_string v1
+      and v2 = vof_private_flag v2
+      and v3 = vof_class_field_kind v3
+      in Ocaml.VSum (("Tcf_meth", [ v1; v2; v3 ]))
+  | Tcf_constraint ((v1, v2)) ->
+      let v1 = vof_core_type v1
+      and v2 = vof_core_type v2
+      in Ocaml.VSum (("Tcf_constr", [ v1; v2 ]))
+  | Tcf_initializer v1 ->
+      let v1 = vof_expression v1 in Ocaml.VSum (("Tcf_init", [ v1 ]))
+#else
   | Tcf_val ((v1, v2, v3, v4, v5, v6)) ->
       let v1 = Ocaml.vof_string v1
       and v2 = vof_loc Ocaml.vof_string v2
@@ -773,6 +799,7 @@ and vof_class_field_desc =
       in Ocaml.VSum (("Tcf_constr", [ v1; v2 ]))
   | Tcf_init v1 ->
       let v1 = vof_expression v1 in Ocaml.VSum (("Tcf_init", [ v1 ]))
+#endif
 and
   vof_module_expr {
                     mod_desc = v_mod_desc;
@@ -813,7 +840,11 @@ and vof_module_expr_desc =
   | Tmod_functor ((v1, v2, v3, v4)) ->
       let v1 = Ident.vof_t v1
       and v2 = vof_loc Ocaml.vof_string v2
+#if OCAML_VERSION >= 4020
+      and v3 = Ocaml.vof_option vof_module_type v3
+#else
       and v3 = vof_module_type v3
+#endif
       and v4 = vof_module_expr v4
       in Ocaml.VSum (("Tmod_functor", [ v1; v2; v3; v4 ]))
   | Tmod_apply ((v1, v2, v3)) ->
@@ -870,7 +901,11 @@ and
 
 and vof_structure_item_desc =
   function
+#if OCAML_VERSION >= 4020
+  | Tstr_eval ((_, v1)) ->
+#else
   | Tstr_eval v1 ->
+#endif
       let v1 = vof_expression v1 in Ocaml.VSum (("Tstr_eval", [ v1 ]))
   | Tstr_value ((v1, v2)) ->
       let v1 = vof_rec_flag v1
@@ -882,11 +917,17 @@ and vof_structure_item_desc =
              in Ocaml.VTuple [ v1; v2 ])
           v2
       in Ocaml.VSum (("Tstr_value", [ v1; v2 ]))
+#if OCAML_VERSION >= 4020
+  | Tstr_primitive v1 ->
+      let v1 = vof_value_description v1
+      in Ocaml.VSum (("Tstr_primitive", [ v1 ]))
+#else
   | Tstr_primitive ((v1, v2, v3)) ->
       let v1 = Ident.vof_t v1
       and v2 = vof_loc Ocaml.vof_string v2
       and v3 = vof_value_description v3
       in Ocaml.VSum (("Tstr_primitive", [ v1; v2; v3 ]))
+#endif
   | Tstr_type v1 ->
       let v1 =
         Ocaml.vof_list
@@ -928,6 +969,7 @@ and vof_structure_item_desc =
       let v1 = Ident.vof_t v1
       and v2 = vof_loc Ocaml.vof_string v2
       and v3 = vof_module_type v3
+
       in Ocaml.VSum (("Tstr_modtype", [ v1; v2; v3 ]))
 #if OCAML_VERSION >= 4010
   | Tstr_open ((v1, v2, v3)) ->
@@ -1572,3 +1614,30 @@ and
   let arg = vof_virtual_flag v_ci_virt in
   let bnd = ("ci_virt", arg) in let bnds = bnd :: bnds in Ocaml.VDict bnds
   
+#if OCAML_VERSION >= 4020
+and vof_case {
+               c_lhs = v_lhs;
+               c_guard = _v_guard;
+               c_rhs = v_rhs
+             } =
+  let v1 = vof_pattern v_lhs
+  and v2 = vof_expression v_rhs
+  in Ocaml.VTuple [ v1; v2 ]
+and vof_value_binding {
+                        vb_pat = v_vb_pat;
+                        vb_expr = v_vb_expr;
+                        vb_attributes = _v_vb_attributes
+                      } =
+  let v1 = vof_pattern v_vb_pat
+  and v2 = vof_expression v_vb_expr
+  in Ocaml.VTuple [ v1; v2 ]
+#else
+and vof_case (v1, v2) =
+  let v1 = vof_pattern v1
+  and v2 = vof_expression v2
+  in Ocaml.VTuple [ v1; v2 ]
+and vof_value_binding (v1, v2) =
+  let v1 = vof_pattern v1
+  and v2 = vof_expression v2
+  in Ocaml.VTuple [ v1; v2 ]
+#endif
