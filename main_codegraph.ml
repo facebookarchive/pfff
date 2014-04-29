@@ -168,6 +168,12 @@ module View = View3
 
 let verbose = ref false
 
+(* you can also put this in your ~/gtkrc-2.0
+ * gtk-icon-theme-name = "Tango"
+ * gtk-theme-name = "Murrine-Gray"
+ * gtk-font-name = "DejaVu Sans 16"
+ *)
+
 let lang = ref "ml"
 let deps_style = ref DM.DepsInOut
 

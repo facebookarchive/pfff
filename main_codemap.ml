@@ -111,6 +111,12 @@ module Model = Model2
 let screen_size = ref 1
 let legend = ref true
 
+(* you can also put this in your ~/gtkrc-2.0
+ * gtk-icon-theme-name = "Tango"
+ * gtk-theme-name = "Murrine-Gray"
+ * gtk-font-name = "DejaVu Sans 16"
+ *)
+
 (* if not specified, codemap will try to use files in the current directory *)
 let db_file    = ref (None: Common.filename option)
 let graph_file = ref (None: Common.filename option)
