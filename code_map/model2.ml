@@ -135,7 +135,7 @@ type drawing = {
     (Common.filename, Treemap.treemap_rectangle) Hashtbl.t;
   (* coupling: = List.length treemap *)
   nb_rects: int; 
-  (* This is to display readable paths. When fully zoomed it's a filename *)
+  (* Used to display readable paths. When fully zoomed it's a filename. *)
   current_root: Common.path;
 
   mutable layers: Layer_code.layers_with_index;

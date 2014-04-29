@@ -1,13 +1,17 @@
 (*s: model2.mli *)
 
 (*s: type model *)
+(* filename below should be in readable path format *)
 type model = {
+  (* for translating the absolute filenames in tr_label in readable so
+   * one can access the node in the model for a tr_rectangle 
+   *)
   root: Common.dirname; 
 
   db: Database_code.database option;
   (*s: model fields hook *)
   (* fast accessors *)
-  hentities : (string, Database_code.entity) Hashtbl.t;
+  hentities : (string (* short name *), Database_code.entity) Hashtbl.t;
   (*x: model fields hook *)
   (*x: model fields hook *)
   big_grep_idx: Big_grep.index;
