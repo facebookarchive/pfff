@@ -407,9 +407,11 @@ val display_treemap :
  * A rectangle is represented by 2 variables called P and Q in the seminal 
  * algorithm.
  *)
+(*
 type rectangle1 = 
   float array (* lower left  coord, P *) *
   float array (* upper right coord, Q *)
+*)
 
 @ 
 
@@ -937,7 +939,7 @@ let layout row rect =
       q = {  x = q.(0); y = q.(1); }
     }
     in
-    Common.push2 (size_child, info, rect_here) res;
+    Common.push (size_child, info, rect_here) res;
     p.(axis_split) <- q.(axis_split);
   );
   !res
@@ -980,16 +982,16 @@ let rec (squarify_orig:
   match children with
   | c::cs ->
       if null current_row ||
-         (worst (floats (current_row ++ [c])) size_side_row)
+         (worst (floats (current_row @ [c])) size_side_row)
           <= 
           (worst (floats current_row)         size_side_row)
       then
         (* not yet optimal row, let's recurse *)
-        squarify_orig cs (current_row ++ [c]) rect
+        squarify_orig cs (current_row @ [c]) rect
       else begin
         (* optimal layout for the left row. We can fix it. *)
         let srow = Common2.sum_float (floats current_row) in
-        let stotal = Common2.sum_float (floats (current_row ++ children)) in
+        let stotal = Common2.sum_float (floats (current_row @ children)) in
         let portion_for_row = srow /. stotal in
 
         let row_rect, remaining_rect = 
@@ -1032,7 +1034,7 @@ let rec (squarify_orig:
         
         let rects_row = layout current_row row_rect in
         let rects_remain = squarify_orig children [] remaining_rect in
-        rects_row ++ rects_remain
+        rects_row @ rects_remain
       end
   | [] ->
       if verbose then begin
@@ -1274,6 +1276,7 @@ let compute_rects_pivotized childs_pivotized rect spread =
 
 
 <<function balayer_right_wrong>>=
+(*
 let rec balayer_right_wrong xs = 
   match xs with
   | [] -> []
@@ -1287,12 +1290,13 @@ let rec balayer_right_wrong xs =
       let rest = balayer_right_wrong xs in
       let rest' = rest +> List.map (fun (start, theend) -> x::start, theend) in
       [first] ++ rest' ++ [last]
+*)
 
 let balayer_right xs =
   let n = List.length xs in
   let res = ref [] in
   for i = 0 to n do 
-    Common.push2 (take i xs, drop i xs) res;
+    Common.push (take i xs, drop i xs) res;
   done;
   List.rev !res
 let _ = assert (balayer_right [1;2;3;2] = 
@@ -1307,7 +1311,7 @@ let _ = assert (balayer_right [1;2;3;2] =
 
 
 <<function orderify_children>>=
-let rec orderify_children ?(pivotf=PivotBySize) xs rect =
+let orderify_children ?(pivotf=PivotBySize) xs rect =
 
   let rec aux xs rect = 
     match xs with
@@ -1315,7 +1319,7 @@ let rec orderify_children ?(pivotf=PivotBySize) xs rect =
     | [size, x] -> 
         [size, x, rect]
           
-    | x::y::ys ->
+    | _x::_y::_ys ->
         
         let left, pivot, right = 
           match pivotf with
@@ -1358,10 +1362,10 @@ let rec orderify_children ?(pivotf=PivotBySize) xs rect =
         let (_score, (rects, childs_pivotized)) = best in
         
         (* pr2_gen rects; *)
-        aux childs_pivotized.left rects.left ++ 
-        aux childs_pivotized.pivot rects.pivot ++
-        aux childs_pivotized.above_pivot rects.above_pivot ++
-        aux childs_pivotized.right rects.right ++ 
+        aux childs_pivotized.left rects.left @ 
+        aux childs_pivotized.pivot rects.pivot @
+        aux childs_pivotized.above_pivot rects.above_pivot @
+        aux childs_pivotized.right rects.right @ 
         []
   in
   aux xs rect
@@ -1383,7 +1387,7 @@ let test_orderify () =
 
 <<layout ordered>>=
 let (ordered_layout: ?pivotf:pivot -> ('a, 'b) layout_func) = 
- fun ?pivotf children depth rect ->
+ fun ?pivotf children _depthTODOMAYBE rect ->
   orderify_children ?pivotf children rect
 @ 
 
@@ -1674,7 +1678,7 @@ let rec treemap_of_json j =
         size = size; 
       }
       in
-      Node ((rect, s), children)
+      Common2.Node ((rect, s), children)
 
   | J.Object [
       "kind", J.String "Leaf";
@@ -1688,7 +1692,7 @@ let rec treemap_of_json j =
         size = size;
       }
       in
-      Leaf (rect, (lbl, size))
+      Common2.Leaf (rect, (lbl, size))
 
   | _ -> 
       failwith "wrong format"
@@ -1706,8 +1710,8 @@ let json_of_color c = J.String (Color.string_of_color c)
  *)
 let rec (json_of_treemap: ('a, 'b) Treemap.treemap -> J.json_type) 
  = function
-  | Node (((rect, _a), xs)) ->
-      let { size = v_size; color = v_color; label = v_label } = rect in
+  | Common2.Node (((rect, _a), xs)) ->
+      let { size = _v_sizeTODO; color = _v_colorTODO; label = v_label } = rect in
       
       let bnds = [] in
 
@@ -1727,7 +1731,7 @@ let rec (json_of_treemap: ('a, 'b) Treemap.treemap -> J.json_type)
 
       J.Object bnds
 
-  | Leaf (rect, _b) ->
+  | Common2.Leaf (rect, _b) ->
       let { size = v_size; color = v_color; label = v_label } = rect in
 
       let bnds = [] in
@@ -1751,14 +1755,15 @@ let rec (json_of_treemap: ('a, 'b) Treemap.treemap -> J.json_type)
 <<function test_json_of>>=
 let test_json_of dir = 
   let maxc = 256 in
-  let tree = tree_of_dir ~file_hook:(fun file -> Common2.filesize file) dir in
+  let tree = tree_of_dirs_or_files 
+    ~file_hook:(fun file -> Common2.filesize file) [dir] in
   let treemap = treemap_of_tree
-    ~size_of_leaf:(fun (f, intleaf) -> intleaf) 
-    ~color_of_leaf:(fun (f, intleaf) -> 
+    ~size_of_leaf:(fun (_f, intleaf) -> intleaf) 
+    ~color_of_leaf:(fun (_f, _intleaf) -> 
       Color.rgb (Random.int maxc) (Random.int maxc) (Random.int maxc)
     )
-    ~label_of_dir:(fun dir -> basename dir)
-    ~label_of_file:(fun (f, intleaf) -> f)
+    ~label_of_dir:(fun dir -> Filename.basename dir)
+    ~label_of_file:(fun (f, _intleaf) -> f)
     tree 
   in
   let json = 
@@ -1809,17 +1814,10 @@ type directory_sort =
   | SortDirAndFiles
   | SortDirAndFilesCaseInsensitive
 val follow_symlinks: bool ref
-
-val tree_of_dir:
-  ?filter_file:(Common.filename -> bool) ->
-  ?filter_dir:(Common.dirname -> bool) ->
-  ?sort:directory_sort ->
-  file_hook:(Common.filename -> 'a) -> 
-  Common.dirname -> 
-  (Common.dirname, Common.filename * 'a) tree
 @ 
 
 <<function tree_of_dir>>=
+(*
 let tree_of_dir2 
   ?(filter_file=(fun _ -> true))  
   ?(filter_dir=(fun _ -> true))  
@@ -1868,6 +1866,7 @@ let tree_of_dir2
     Node(dir, children)
   in
   aux dir
+*)
 @ 
 
 
@@ -1937,28 +1936,17 @@ val rect_ortho: rectangle
 
 <<signature algos>>
 
+(* treemap -> treemap_rendering *)
 val render_treemap: 
   ?algo:algorithm -> 
   ?big_borders:bool ->
   ('dir, 'file) treemap -> treemap_rendering
 
-
-
-
-(* treemap maker, see also treemap_json.ml *)
 <<signature treemap_of_tree>>
 
-(* tree maker, see also Common.tree2_of_files *)
 <<signature tree_of_dir>>
 
-val tree_of_dir_or_file:
-  ?filter_file:(Common.filename -> bool) ->
-  ?filter_dir:(Common.dirname -> bool) ->
-  ?sort:directory_sort ->
-  file_hook:(Common.filename -> 'a) -> 
-  Common2.path -> 
-  (Common.dirname, Common.filename * 'a) tree
-
+(* paths -> tree (see also Common.tree2_of_files) *)
 val tree_of_dirs_or_files:
   ?filter_file:(Common.filename -> bool) ->
   ?filter_dir:(Common.dirname -> bool) ->
@@ -1966,6 +1954,8 @@ val tree_of_dirs_or_files:
   file_hook:(Common.filename -> 'a) -> 
   Common2.path list -> 
   (Common.dirname, Common.filename * 'a) tree
+
+
 
 val remove_singleton_subdirs:
   (Common.dirname, Common.filename * 'a) tree ->
@@ -1991,6 +1981,7 @@ val actions : unit -> Common.cmdline_actions
 
 
 <<signature treemap_of_tree>>=
+(* tree -> treemap (see also treemap_json.ml) *)
 val treemap_of_tree :
   size_of_leaf:('file -> int) ->
   color_of_leaf:('file -> Simple_color.color) ->
@@ -2043,7 +2034,6 @@ val test_treemap_dir : string -> algorithm -> unit
 <<treemap.ml>>=
 <<Facebook copyright>>
 open Common2
-open Common
 
 module F = Figures
 open Figures
@@ -2078,7 +2068,7 @@ type ('dir, 'file) tree = ('dir, 'file) Common2.tree
  * use the full width.
  * old: was 16/9 = 1.777777
  *)
-let xy_ratio = 1.6
+let xy_ratio = 1.71
 
 (* The dimentions are in a  [0.0-1.0] range for y and [0.0-xyratio] for x,
  * where xyratio is used to cope with most 16/9 screens.
@@ -2217,10 +2207,10 @@ let render_treemap_algo2 = fun ?(algo=Classic) ?(big_borders=false) treemap ->
     else 
 
     (match root with
-    | Leaf (tnode, fileinfo) ->
+    | Leaf (tnode, _fileinfo) ->
         let color = color_of_treemap_node root in
 
-        Common.push2 {
+        Common.push {
           tr_rect = rect;
           tr_color = color;
           tr_label = tnode.label;
@@ -2232,7 +2222,7 @@ let render_treemap_algo2 = fun ?(algo=Classic) ?(big_borders=false) treemap ->
     | Node (mode, children) ->
 
        (* let's draw some borders. Far better to see the structure. *)
-        Common.push2 {
+        Common.push {
           tr_rect = rect;
           tr_color = Color.black;
           tr_label = (fst mode).label;
@@ -2286,7 +2276,7 @@ let render_treemap_algo2 = fun ?(algo=Classic) ?(big_borders=false) treemap ->
         in
         (* less: assert rects_with_info are inside rect ? *)
 
-        rects_with_info +> List.iter (fun (x, child, rect) ->
+        rects_with_info +> List.iter (fun (_x, child, rect) ->
           aux_treemap child rect ~depth:(depth + 1)
         );
 
@@ -2338,7 +2328,7 @@ let tree_of_dir3
     let children = Sys.readdir dir in
     let children = Array.map (fun x -> Common2.lowercase x, x) children in
 
-    Array.fast_sort (fun (a1, b1) (a2, b2) -> compare a1 a2) children;
+    Array.fast_sort (fun (a1, _b1) (a2, _b2) -> compare a1 a2) children;
 
     let res = ref [] in
     
@@ -2350,20 +2340,20 @@ let tree_of_dir3
       match stat.Unix.st_kind with
       | Unix.S_REG ->
           if filter_file full
-          then Common.push2 (Leaf (full, file_hook full)) res
+          then Common.push (Leaf (full, file_hook full)) res
       | Unix.S_DIR -> 
           if filter_dir full
-          then Common.push2 (aux full) res
+          then Common.push (aux full) res
       | Unix.S_LNK ->
           if !follow_symlinks then
           (try 
           (match (Unix.stat full).Unix.st_kind with
           | Unix.S_REG ->
               if filter_file full
-              then Common.push2 (Leaf (full, file_hook full)) res
+              then Common.push (Leaf (full, file_hook full)) res
           | Unix.S_DIR ->
               if filter_dir full
-              then Common.push2 (aux full) res
+              then Common.push (aux full) res
           | _ -> ()
           )
           with Unix.Unix_error _ ->
@@ -2381,16 +2371,9 @@ let tree_of_dir ?filter_file ?filter_dir ?sort ~file_hook a =
   Common.profile_code "Treemap.tree_of_dir" (fun () ->
     tree_of_dir3 ?filter_file ?filter_dir ?sort ~file_hook a)
 
-let rec tree_of_dir_or_file
-  ?filter_file
-  ?filter_dir
-  ?sort
-  ~file_hook 
-  path
- =
+let tree_of_dir_or_file ?filter_file ?filter_dir ?sort ~file_hook path =
  if Common2.is_directory path
- then 
-   tree_of_dir ?filter_file ?filter_dir ?sort ~file_hook path
+ then tree_of_dir ?filter_file ?filter_dir ?sort ~file_hook path
  else Leaf (path, file_hook path)
 
 
@@ -2426,10 +2409,10 @@ let add_intermediate_nodes root_path nodes =
   (* now ready to build the tree recursively *)
   let rec aux current_root xs = 
     let files_here, rest = 
-      xs +> List.partition (fun ((dirs, base), _) -> null dirs)
+      xs +> List.partition (fun ((dirs, _base), _) -> null dirs)
     in
     let groups = 
-      rest +> group_by_mapped_key (fun ((dirs, base),_) -> 
+      rest +> group_by_mapped_key (fun ((dirs, _base),_) -> 
         (* would be a file if null dirs *)
         assert(not (null dirs));
         List.hd dirs
@@ -2445,28 +2428,18 @@ let add_intermediate_nodes root_path nodes =
         Node (dirname, aux dirname xs')
       )
     in
-    let leaves = files_here +> List.map (fun ((_dir, base), node) -> 
+    let leaves = files_here +> List.map (fun ((_dir, _base), node) -> 
       node
     ) in
-    nodes ++ leaves
+    nodes @ leaves
   in
   aux root_path xs
-
-
+ 
   
-  
-
-let tree_of_dirs_or_files2
-  ?filter_file
-  ?filter_dir
-  ?sort
-  ~file_hook 
-  paths
- =
+let tree_of_dirs_or_files2 ?filter_file ?filter_dir ?sort ~file_hook paths =
   match paths with
   | [] -> failwith "tree_of_dirs_or_files: empty list"
-  | [x] ->
-      tree_of_dir_or_file ?filter_file ?filter_dir ?sort ~file_hook x
+  | [x] -> tree_of_dir_or_file ?filter_file ?filter_dir ?sort ~file_hook x
   | xs -> 
       let nodes = 
         xs +> List.map (fun x ->
@@ -2491,8 +2464,8 @@ let tree_of_dirs_or_files ?filter_file ?filter_dir ?sort ~file_hook x =
  *)
 let rec remove_singleton_subdirs tree = 
   match tree with
-  | Leaf x -> tree
-  | Node (x, [Node (y, ys)]) ->
+  | Leaf _x -> tree
+  | Node (x, [Node (_y, ys)]) ->
       (* todo? merge x and y ? *)
       remove_singleton_subdirs (Node (x, ys))
   | Node (x, ys) ->
@@ -2907,7 +2880,6 @@ val actions : unit -> Common.cmdline_actions
 
 <<treemap_json.ml>>=
 <<Facebook copyright>>
-open Common2
 open Common
 
 module J = Json_type
@@ -3233,18 +3205,18 @@ let init_graph big_screen =
 (*****************************************************************************)
 
 let all_actions () = 
- Treemap.actions () ++
- Treemap_json.actions () ++
+ Treemap.actions () @
+ Treemap_json.actions () @
  []
 
 let options () = 
   [
   <<treemap_viewer cmdline options>>
-  ] ++
-  Common.options_of_actions action (all_actions()) ++
-  Common.cmdline_flags_devel () ++
-  Common.cmdline_flags_verbose () ++
-  Common.cmdline_flags_other () ++
+  ] @
+  Common.options_of_actions action (all_actions()) @
+  Common.cmdline_flags_devel () @
+  Common.cmdline_flags_verbose () @
+  Common.cmdline_flags_other () @
   [
   "-version",   Arg.Unit (fun () -> 
     pr2 (spf "ocamltreemap version: %s" version);
@@ -3258,7 +3230,7 @@ let options () =
     raise (Common.UnixExit 0)
     ), 
   "   guess what";
-  ] ++
+  ] @
   []
 
 (*****************************************************************************)
