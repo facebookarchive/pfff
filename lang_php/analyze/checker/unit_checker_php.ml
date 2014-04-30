@@ -46,6 +46,7 @@ let unittest =
     p "tests/php/scheck/cfg.php";
     p "tests/php/scheck/references.php";
     p "tests/php/scheck/xhp.php";
+    p "tests/php/scheck/typing.php";
 
     p "tests/php/scheck/dynamic_bailout.php";
 

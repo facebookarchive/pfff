@@ -41,6 +41,9 @@ type error = {
   | FileNotFound of Common.filename
   | IncludeUnresolved
 
+  (* types *)
+  | UseOfPlusNotDotForStrings
+
   (* lint *)
   | AssignInBooleanContext
   | UnnecessaryTernaryIf

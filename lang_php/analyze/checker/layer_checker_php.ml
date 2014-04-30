@@ -159,15 +159,13 @@ let info_of_error_and_kind err =
       "eAssignInBooleanContext"
   | Injection (_) ->
       "eInjection"
-  | CaseWithSemiColon | CaseSensitivityKeyword ->
-      "eOther"
-  | InterfaceMethodWithBody ->
-      "eOther"
-  | KeywordArgumentForRef ->
-      "eOther"
-  | IncludeUnresolved ->
-      "eOther"
-  | WrongLvalue ->
+  | CaseWithSemiColon | CaseSensitivityKeyword
+  | InterfaceMethodWithBody
+  | KeywordArgumentForRef
+  | IncludeUnresolved
+  | WrongLvalue
+  | UseOfPlusNotDotForStrings
+      ->
       "eOther"
   in
   err.loc, kind

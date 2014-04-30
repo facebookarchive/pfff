@@ -103,6 +103,9 @@ type error = {
   | FileNotFound of Common.filename
   | IncludeUnresolved
 
+  (* types *)
+  | UseOfPlusNotDotForStrings
+
   (* lint *)
   | AssignInBooleanContext
   | UnnecessaryTernaryIf
@@ -253,6 +256,8 @@ to statically analyze. Please avoid using those features."
       "Use the lowercase version of the keyword"
   | InterfaceMethodWithBody ->
       "The method of an interface should not have a body, use ';' not '{ }'"
+  | UseOfPlusNotDotForStrings ->
+      "Use '.' not '+' to concatenate strings"
 
 (* note that the output is emacs compile-mode compliant *)
 let string_of_error error =
@@ -459,6 +464,8 @@ let rank_of_error_kind err_kind =
   | FileNotFound _ -> ReallyImportant
   (* need a complete env_php *)
   | IncludeUnresolved -> Less
+
+  | UseOfPlusNotDotForStrings -> Important
 
   | AssignInBooleanContext -> Less
   | UnnecessaryTernaryIf -> Ok

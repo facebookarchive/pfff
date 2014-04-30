@@ -27,6 +27,7 @@ module E = Error_php
  *  - use of ';' instead of ':', 
  *  - wrong case sensitivity for 'instanceOf'
  *  - right number of arguments in printf type function
+ *  - adhoc typing such as using + instead of .
  *)
 
 (*****************************************************************************)
@@ -104,6 +105,9 @@ let rec unargs args =
   | Left _x::t -> ""::(unargs t)
   | _h::t -> unargs t
 
+
+(* limited typing *)
+
 let expr_is_T_or_F (expr : Ast.expr) =
   match expr with
   | Id(XName([QI(Name((str, _)))])) ->
@@ -117,6 +121,14 @@ let rec expr_is_bool (expr : Ast.expr) =
   | _ when expr_is_T_or_F expr -> true
   | Binary(_, (Logical(_), _), _) -> true
   | ParenExpr(_, new_expr, _) -> expr_is_bool new_expr
+  | _ -> false
+
+let expr_is_string e =
+  match e with
+  | Sc (C (String _)) -> true
+  | Sc (C (PreProcess _)) -> true
+  | Sc (Guil _ | HereDoc _) -> true
+  | Binary (_, (BinaryConcat, _), _) -> true
   | _ -> false
 
 (*****************************************************************************)
@@ -202,6 +214,10 @@ let check ast =
           when (expr_is_T_or_F expr2) &&
             (expr_is_bool cond) ->
         E.warning tok E.UnnecessaryTernaryIf;
+
+      | Binary (e1, (Arith Plus, tok), e2) 
+          when expr_is_string e1 || expr_is_string e2 ->
+        E.fatal tok E.UseOfPlusNotDotForStrings
       | _ -> ()
       );
       (* recurse, call continuation *)
