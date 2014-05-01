@@ -447,7 +447,14 @@ let visit_toplevel ~tag_hook _prefs (*db_opt *) (toplevel, toks) =
 
     | T.TComment ii ->
         if not (Hashtbl.mem already_tagged ii)
-        then tag ii Comment
+        then 
+          (* a little bit syncweb specific *)
+          let s = PI.str_of_info ii in
+          (match s with
+          (* yep, s e x are the syncweb markers *)
+          | _ when s =~ "/\\*[sex]:"  -> tag ii CommentSyncweb
+          | _ -> tag ii Comment
+          )
 
     | T.TInt (_,ii) | T.TFloat (_,ii) ->
         tag ii Number
