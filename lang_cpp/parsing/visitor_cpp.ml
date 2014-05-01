@@ -28,11 +28,12 @@ open Ast_cpp
 type visitor_in = {
   kexpr: expression vin;
   kstmt: statement vin;
+  kinit: initialiser vin;
+  ktypeC: typeC vin;
 
   kclass_member: class_member vin;
   kfieldkind: fieldkind vin;
 
-  ktypeC: typeC vin;
   kparameter: parameter vin;
   kcompound: compound vin;
 
@@ -40,6 +41,7 @@ type visitor_in = {
   kfunc_def: func_definition vin;
   kcpp: cpp_directive vin;
   kblock_decl: block_declaration vin;
+
   ktoplevel: toplevel vin;
   
   kinfo: tok vin;
@@ -61,6 +63,7 @@ let default_visitor =
     kclass_member = (fun (k,_) x -> k x);
     kcpp = (fun (k,_) x -> k x);
     ktoplevel = (fun (k,_) x -> k x);
+    kinit = (fun (k,_) x -> k x);
   }
 
 
@@ -537,8 +540,9 @@ and v_init =
   function
   | EqInit ((v1, v2)) -> let v1 = v_tok v1 and v2 = v_initialiser v2 in ()
   | ObjInit v1 -> let v1 = v_paren (v_comma_list v_argument) v1 in ()
-and v_initialiser =
-  function
+and v_initialiser x =
+  let k x =
+  match x with
   | InitExpr v1 -> let v1 = v_expression v1 in ()
   | InitList v1 -> let v1 = v_brace (v_comma_list v_initialiser) v1 in ()
   | InitDesignators ((v1, v2, v3)) ->
@@ -553,6 +557,9 @@ and v_initialiser =
       in ()
   | InitIndexOld ((v1, v2)) ->
       let v1 = v_expression v1 and v2 = v_initialiser v2 in ()
+  in
+  vin.kinit (k, all_functions) x
+
 and v_designator =
   function
   | DesignatorField ((v1, v2)) ->

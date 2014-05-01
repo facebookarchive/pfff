@@ -321,6 +321,17 @@ let visit_toplevel ~tag_hook _prefs (*db_opt *) (toplevel, toks) =
           k x
       | _ -> k x
     );
+    V.kinit = (fun (k, _) x ->
+      match x with
+      | InitDesignators (xs, _, _init) ->
+        xs +> List.iter (function
+        | DesignatorField (_tok, (_s, tok2)) ->
+            tag tok2 (Field (Use2 fake_no_use2))
+        | _ -> ()
+        );
+        k x
+      | _ -> k x
+    );
 
     V.kparameter = (fun (k, _) x ->
       (match x.p_name with
