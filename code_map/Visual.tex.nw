@@ -4143,6 +4143,7 @@ writing them for a grammar like OCaml's does not seem an easy task at
 all." - frish
 
 \end{verbatim}
+
 \section{Conclusion}
 
 Hope you like it.
@@ -4824,7 +4825,6 @@ let _ =
 
 \subsection{[[flag_visual.ml]]}
 
-
 \subsection{[[model_graph_code.mli]]}
 
 <<model_graph_code.mli>>=
@@ -5028,9 +5028,7 @@ module Db = Database_code
 
 <<all_entities>>
 
-
 @ 
-
 
 \subsection{[[model2.mli]]}
 
@@ -5158,7 +5156,6 @@ val lines_where_used_node:
 @ 
 
 \subsection{[[model2.ml]]}
-
 
 <<model2.ml>>=
 <<Facebook copyright>>
@@ -5481,9 +5478,6 @@ let lines_where_used_node node startl microlevel =
 
 \subsection{[[view2.ml]]}
 
-
-
-
 <<view2.ml>>=
 <<Facebook copyright>>
 open Common2
@@ -5581,7 +5575,6 @@ val current_tooltip_refresher:
 val title_of_path: string -> string
 
 @ 
-
 
 \subsection{[[controller2.ml]]}
 
@@ -6206,6 +6199,7 @@ module Ctl = Controller2
 \subsection{[[view_minimap.mli]]}
 
 <<view_minimap.mli>>=
+
 @ 
 
 \subsection{[[view_minimap.ml]]}
@@ -6540,7 +6534,6 @@ val go_dirs_or_file:
 
 @ 
 
-
 \subsection{[[ui_navigation.ml]]}
 
 <<ui_navigation.ml>>=
@@ -6646,7 +6639,6 @@ open Common
 
 <<open_file_in_current_editor()>>
 @ 
-
 
 \subsection{[[async.mli]]}
 
