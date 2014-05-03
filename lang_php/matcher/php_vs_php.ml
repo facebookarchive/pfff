@@ -45,11 +45,16 @@ open Common
  * for expression.
  *
  * C-s "pad" or "iso" or any comment
+ * 
+ * 
  *)
 
 (* A is the pattern, and B the concrete source code. For now
  * we both use the same module, Ast_php, but they may differ later
  * as the expressivity of the pattern language grows.
+ * 
+ * subtle: use 'b' for to report errors, 'a' is the sgrep pattern and it
+ * has no file information usually.
  *)
 module A = Ast_php
 module B = Ast_php
@@ -802,16 +807,33 @@ and m_type_args a b =
 
 and m_fully_qualified_class_name a b =
   match a, b with
+  | [], [] -> raise Impossible
   | ([A.QI a], [B.QI b]) ->
     (* iso on class name *)
     m_name_metavar_ok a b >>= (fun (a, b) ->
       return ([A.QI a], [B.QI b])
     )
-  | _qua, qub -> 
-    (* subtle: use qub for the diagnostic, qua is the sgrep pattern and it
-     * has no file information usually.
-     *)
-    raise (Ast_php.TodoNamespace (Ast_php.info_of_qualified_ident qub))
+  | A.QITok a::xs, B.QITok b::ys ->
+    m_info a b >>= (fun (a, b) ->
+      m_fully_qualified_class_name xs ys >>= (fun (xs, ys) ->
+        return (
+          (A.QITok a)::xs, 
+          (A.QITok b)::ys
+        )
+      ))
+
+  | A.QI a::xs, B.QI b::ys ->
+    m_name_metavar_ok a b >>= (fun (a, b) ->
+      m_fully_qualified_class_name xs ys >>= (fun (xs, ys) ->
+        return (
+          A.QI a::xs, 
+          B.QI b::ys
+        )
+      ))
+  | A.QI _::_, _
+  | A.QITok _::_, _
+  | [], _
+    -> fail ()
 
 (*---------------------------------------------------------------------------*)
 (* argument *)

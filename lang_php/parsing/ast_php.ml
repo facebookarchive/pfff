@@ -917,6 +917,8 @@ let info_of_qualified_ident = function
 
 exception TodoNamespace of tok
 
+
+(* todo? copy the one in cmf/uses_module_helpers.ml now? *)
 let info_of_name x =
   match x with
   | XName [QI x] -> info_of_ident x
@@ -928,6 +930,8 @@ let str_of_name x =
   | XName [QI x] -> str_of_ident x
   | Self tok | Parent tok | LateStatic tok -> Parse_info.str_of_info tok
   | XName qu -> raise (TodoNamespace (info_of_qualified_ident qu))
+
+
 
 let name_of_class_name x =
   match x with
