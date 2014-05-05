@@ -915,22 +915,26 @@ let info_of_qualified_ident = function
   | (QI x)::_xs -> info_of_ident x
   | (QITok tok)::_xs -> tok
 
-exception TodoNamespace of tok
-
-
-(* todo? copy the one in cmf/uses_module_helpers.ml now? *)
 let info_of_name x =
   match x with
-  | XName [QI x] -> info_of_ident x
   | Self tok | Parent tok | LateStatic tok -> tok
-  | XName qu -> raise (TodoNamespace (info_of_qualified_ident qu))
+  | XName xs  -> 
+    (match xs with
+    | [] -> raise Impossible
+    | x::_ ->
+      (match x with
+      | QITok tok -> tok
+      | QI id -> info_of_ident id
+      )
+    )
 
+exception TodoNamespace of tok
+(* todo? copy the one in cmf/uses_module_helpers.ml now? *)
 let str_of_name x =
   match x with
   | XName [QI x] -> str_of_ident x
   | Self tok | Parent tok | LateStatic tok -> Parse_info.str_of_info tok
   | XName qu -> raise (TodoNamespace (info_of_qualified_ident qu))
-
 
 
 let name_of_class_name x =
