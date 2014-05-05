@@ -936,6 +936,15 @@ let str_of_name x =
   | Self tok | Parent tok | LateStatic tok -> Parse_info.str_of_info tok
   | XName qu -> raise (TodoNamespace (info_of_qualified_ident qu))
 
+let str_of_name_namespace x =
+  match x with
+  | Self tok | Parent tok | LateStatic tok -> Parse_info.str_of_info tok
+  | XName xs -> 
+    xs +> List.map (function
+    | QITok _ -> "\\"
+    | QI id -> str_of_ident id
+    ) +> Common.join ""
+
 
 let name_of_class_name x =
   match x with
