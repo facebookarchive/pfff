@@ -224,6 +224,7 @@ and expr =
   | Assign    of lvalue * tok (* = *) * expr
   | AssignOp  of lvalue * assignOp wrap * expr
   | Postfix of rw_variable   * fixOp wrap
+  (* todo: should actually be called Prefix :) *)
   | Infix   of fixOp wrap    * rw_variable
   (* PHP 5.3 allows 'expr ?: expr' hence the 'option' type below
    * from www.php.net/manual/en/language.operators.comparison.php#language.operators.comparison.ternary:
