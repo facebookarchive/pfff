@@ -27,12 +27,16 @@ open Common
 (* Building block *)
 (*****************************************************************************)
 
-(* src: harrop article on fork-based parallelism *)
+(* src: harrop article on fork-based parallelism 
+ * returns a futur
+*)
 let invoke2 f x =
   let input, output = Unix.pipe() in
   match Unix.fork() with
-  (* pad: what is this ?? *)
-  | -1 -> (let v = f x in fun () -> v)
+  (* error, could not create process, well compute now then *)
+  | -1 -> 
+    let v = f x in 
+    (fun () -> v)
   (* child *)
   | 0 ->
       Unix.close input;
@@ -50,8 +54,10 @@ let invoke2 f x =
         close_in input;
         match v with
         | `Res x -> x
-        | `Exn e -> raise e;;
-let invoke a b = Common.profile_code "Parallel.invoke" (fun () -> invoke2 a b)
+        | `Exn e -> raise e
+
+let invoke a b = 
+  Common.profile_code "Parallel.invoke" (fun () -> invoke2 a b)
 
 let parallel_map f xs =
   (* create all the fork *)
