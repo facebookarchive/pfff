@@ -19,7 +19,7 @@ type file_type =
   | Erlang | Go | Rust
   | Beta
   | Pascal
-  | Haxe | Opa
+  | Haxe | Opa | Flash
   | Web of webpl_type
   | Bytecode of string
   | Asm
