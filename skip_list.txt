@@ -51,6 +51,7 @@ file: facebook/external/archimedes/src/utils.ml
 
 #huge
 file: facebook/clang/clang_graphcode_j.ml
+dir: facebook/clang
 
 # -------------------------------------------------------------------------
 # old/
