@@ -557,6 +557,9 @@ rule st_in_scripting = parse
     (* semantic grep or var args extension *)
     | "..." { TDOTS(tokinfo lexbuf) }
 
+    (* TODO *)
+    | "...$" ['a'-'z']+ { TDOTS(tokinfo lexbuf) }
+
     (* facebook-ext: short lambdas *)
     | "==>" { T_DOUBLE_ARROW(tokinfo lexbuf) }
 
