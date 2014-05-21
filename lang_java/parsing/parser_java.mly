@@ -8,11 +8,11 @@
  * Attempts to conform to:
  * The Java Language Specification, Second Edition
  * - James Gosling, Bill Joy, Guy Steele, Gilad Bracha
- * 
+ *
  * Many modifications by Yoann Padioleau. Attempts to conform to:
  * The Java Language Specification, Third Edition, with some fixes from
  * http://www.cmis.brighton.ac.uk/staff/rnb/bosware/javaSyntax/syntaxV2.html
- * 
+ *
  * Support for:
  *  - generics
  *  - enums, foreach, ...
@@ -35,19 +35,12 @@ let super_identifier ii = ("super", ii)
 let named_type (str, ii) = TBasic (str,ii)
 let void_type ii = named_type ("void", ii)
 
-type name_or_class_type = identifier_ list
- and identifier_ = 
-   | Id of ident
-   | Id_then_TypeArgs of ident * type_argument list
-   | TypeArgs_then_Id of type_argument list * identifier_
-  
-
 (* we have to use a 'name' to specify reference types in the grammar
  * because of some ambiguity but what we really wanted was an
  * identifier followed by some type arguments.
  *)
 let (class_type: name_or_class_type -> class_type) = fun xs ->
-  xs +> List.map (function 
+  xs +> List.map (function
   | Id x -> x, []
   | Id_then_TypeArgs (x, xs) -> x, xs
   | TypeArgs_then_Id _ -> raise Parsing.Parse_error
@@ -56,14 +49,14 @@ let (class_type: name_or_class_type -> class_type) = fun xs ->
 let (name: name_or_class_type -> name) = fun xs ->
   xs +> List.map (function
   | Id x -> [], x
-  | Id_then_TypeArgs (x, xs) -> 
+  | Id_then_TypeArgs (x, xs) ->
       (* this is ok because of the ugly trick we do for Cast
        * where we transform a Name into a ref_type
        *)
       xs, x
-  | TypeArgs_then_Id (xs, Id x) -> 
+  | TypeArgs_then_Id (xs, Id x) ->
       xs, x
-  | TypeArgs_then_Id (_xs, _) -> 
+  | TypeArgs_then_Id (_xs, _) ->
       raise Parsing.Parse_error
   )
 
@@ -114,7 +107,7 @@ let constructor_invocation name args =
    * because ocamllex may generate them, or some intermediate phases may also
    * generate them (like some functions in parsing_hacks.ml).
    *)*/
-%token <Parse_info.info> TComment TCommentNewline TCommentSpace 
+%token <Parse_info.info> TComment TCommentNewline TCommentSpace
 
 /*(*-----------------------------------------*)*/
 /*(*2 The normal tokens *)*/
@@ -189,13 +182,13 @@ let constructor_invocation name args =
 /*
  * 3.9 Keywords
  */
-%token <Parse_info.info> 
+%token <Parse_info.info>
  ABSTRACT BOOLEAN BREAK BYTE CASE CATCH CHAR CLASS CONST CONTINUE
  DEFAULT DO DOUBLE ELSE EXTENDS FINAL FINALLY FLOAT FOR GOTO
  IF IMPLEMENTS IMPORT INSTANCEOF INT INTERFACE LONG
  NATIVE NEW PACKAGE PRIVATE PROTECTED PUBLIC RETURN
  SHORT STATIC STRICTFP SUPER SWITCH SYNCHRONIZED
- THIS THROW THROWS TRANSIENT TRY VOID VOLATILE WHILE 
+ THIS THROW THROWS TRANSIENT TRY VOID VOLATILE WHILE
  /*(* javaext: *)*/
  ASSERT
  ENUM
@@ -248,7 +241,7 @@ let constructor_invocation name args =
 goal: compilation_unit EOF  { $1 }
 
 /* 7.3 */
-compilation_unit: 
+compilation_unit:
   package_declaration_opt import_declarations_opt type_declarations_opt
   { { package = $1; imports = $2; decls = $3; } }
 
@@ -304,8 +297,8 @@ primitive_type: PRIMITIVE_TYPE  { named_type $1 }
 class_or_interface_type: name { TClass (class_type $1) }
 
 /* 4.3 */
-reference_type: 
- | class_or_interface_type { $1 } 
+reference_type:
+ | class_or_interface_type { $1 }
  | array_type { $1 }
 
 array_type:
@@ -326,7 +319,7 @@ type_argument:
 /*(*----------------------------*)*/
 /*(*2 Generics parameters *)*/
 /*(*----------------------------*)*/
-type_parameter: 
+type_parameter:
  | identifier               { TParam ($1, []) }
  | identifier EXTENDS bound { TParam ($1, $3) }
 
@@ -353,7 +346,7 @@ primary_no_new_array:
  | array_access                       { $1 }
 
 /* 3.10 */
-literal: 
+literal:
  | LITERAL { Literal ($1) }
 
  | TInt    { Literal ($1) }
@@ -412,12 +405,12 @@ array_access:
 
 /* 15.12 */
 method_invocation:
- | name LP argument_list_opt RP  
-        { 
+ | name LP argument_list_opt RP
+        {
           match List.rev $1 with
           (* TODO: lose information of TypeArgs_then_Id *)
           | ((Id x) | (TypeArgs_then_Id (_, Id x)))::xs ->
-              let (xs: identifier_ list) = 
+              let (xs: identifier_ list) =
                 (match xs with
                 (* should be a "this" or "self" *)
                 | [] -> [Id ("this", fakeInfo "this")]
@@ -425,7 +418,7 @@ method_invocation:
                 )
               in
               Call (Dot (Name (name (xs)), x), $3)
-          | _ -> 
+          | _ ->
               pr2 "method_invocation pb";
               pr2_gen $1;
               raise Impossible
@@ -444,8 +437,8 @@ method_invocation:
 /* 15.14 */
 postfix_expression:
  | primary  { $1 }
- | name     { 
-     (* Ambiguity. It could be a field access (Dot) or a qualified 
+ | name     {
+     (* Ambiguity. It could be a field access (Dot) or a qualified
       * name (Name). See ast_java.ml note on the Dot constructor for
       * more information.
       * The last dot has to be a Dot and not a Name at least,
@@ -454,13 +447,13 @@ postfix_expression:
      match List.rev $1 with
      | (Id id)::x::xs ->
          Dot (Name (name (List.rev (x::xs))), id)
-     | _ -> 
+     | _ ->
          Name (name $1)
    }
 
  | post_increment_expression  { $1 }
  | post_decrement_expression  { $1 }
- 
+
 /* 15.14.1 */
 post_increment_expression: postfix_expression INCR  { Postfix ($1, "++") }
 /* 15.14.2 */
@@ -498,15 +491,15 @@ unary_expression_not_plus_minus:
 cast_expression:
  | LP primitive_type RP unary_expression  { Cast ($2, $4) }
  | LP expression RP unary_expression_not_plus_minus
-	{ 
-          let typname = 
+	{
+          let typname =
             match $2 with
             | Name name ->
                 TClass (name +> List.map (fun (xs, id) -> id, xs))
             (* ugly, undo what was done in postfix_expression *)
             | Dot (Name name, id) ->
                 TClass ((name @ [[], id]) +> List.map (fun (xs, id) -> id, xs))
-            | _ -> 
+            | _ ->
                 pr2 "cast_expression pb";
                 pr2_gen $2;
                 raise Todo
@@ -573,7 +566,7 @@ inclusive_or_expression:
 /* 15.23 */
 conditional_and_expression:
  | inclusive_or_expression  { $1 }
- | conditional_and_expression AND_AND inclusive_or_expression 
+ | conditional_and_expression AND_AND inclusive_or_expression
      { Infix($1,"&&",$3) }
 
 
@@ -589,7 +582,7 @@ conditional_or_expression:
 
 /* 15.25 */
 conditional_expression:
- | conditional_or_expression  
+ | conditional_or_expression
      { $1 }
  | conditional_or_expression COND expression COLON conditional_expression
      { Conditional ($1, $3, $5) }
@@ -665,22 +658,22 @@ block_statement:
  | statement          { [$1] }
 
 /* 14.4 */
-local_variable_declaration_statement: local_variable_declaration SM  
+local_variable_declaration_statement: local_variable_declaration SM
  { List.map (fun x -> LocalVar x) $1 }
 
 /*(* cant factorize with variable_modifier_opt, conflicts otherwise *)*/
 local_variable_declaration:
- | type_java variable_declarators  
+ | type_java variable_declarators
      { decls (fun x -> x) [] $1 (List.rev $2) }
  /*(* actually should be variable_modifiers but conflict *)*/
- | modifiers type_java variable_declarators  
+ | modifiers type_java variable_declarators
      { decls (fun x -> x) $1 $2 (List.rev $3) }
 
 /* 14.6 */
 empty_statement: SM { Empty }
 
 /* 14.7 */
-labeled_statement: identifier COLON statement  
+labeled_statement: identifier COLON statement
    { Label ($1, $3) }
 
 /* 14.8 */
@@ -736,33 +729,33 @@ do_statement: DO statement WHILE LP expression RP SM
 /*(*----------------------------*)*/
 
 /* 14.13 */
-for_statement: 
+for_statement:
   FOR LP for_control RP statement
 	{ For ($3, $5) }
 
 for_control:
- | for_init_opt SM expression_opt SM for_update_opt 
-     { ForClassic ($1, Common2.option_to_list $3, $5) } 
- | for_var_control 
+ | for_init_opt SM expression_opt SM for_update_opt
+     { ForClassic ($1, Common2.option_to_list $3, $5) }
+ | for_var_control
      { let (a, b) = $1 in Foreach (a, b) }
 
 for_init_opt:
  | /*(*empty*)*/  { ForInitExprs [] }
  | for_init       { $1 }
 
-for_init: 
+for_init:
 | statement_expression_list   { ForInitExprs $1 }
 | local_variable_declaration  { ForInitVars $1 }
 
 for_update: statement_expression_list  { $1 }
 
 for_var_control:
- |           type_java variable_declarator_id for_var_control_rest 
+ |           type_java variable_declarator_id for_var_control_rest
      {  canon_var [] $1 $2, $3 }
 /*(* actually only FINAL is valid here, but cant because get shift/reduce
    * conflict otherwise because for_init can be a local_variable_decl
    *)*/
- | modifiers type_java variable_declarator_id for_var_control_rest 
+ | modifiers type_java variable_declarator_id for_var_control_rest
      { canon_var $1 $2 $3, $4 }
 
 for_var_control_rest: COLON expression { $2 }
@@ -807,17 +800,17 @@ statement_no_short_if:
  | while_statement_no_short_if  { $1 }
  | for_statement_no_short_if  { $1 }
 
-labeled_statement_no_short_if: identifier COLON statement_no_short_if  
+labeled_statement_no_short_if: identifier COLON statement_no_short_if
    { Label ($1, $3) }
 
-if_then_else_statement_no_short_if: 
+if_then_else_statement_no_short_if:
  IF LP expression RP statement_no_short_if ELSE statement_no_short_if
    { If ($3, $5, $7) }
 
 while_statement_no_short_if: WHILE LP expression RP statement_no_short_if
      { While ($3, $5) }
 
-for_statement_no_short_if: 
+for_statement_no_short_if:
   FOR LP for_control RP statement_no_short_if
 	{ For ($3, $5) }
 
@@ -854,38 +847,39 @@ modifier:
  | SYNCHRONIZED { Synchronized, $1 }
  | NATIVE       { Native, $1 }
 
- | annotation { Annotation, $1  }
+ | annotation { Annotation $1, (info_of_identifier_ (List.hd (List.rev (fst $1)))) }
 
 /*(*************************************************************************)*/
 /*(*1 Annotation *)*/
 /*(*************************************************************************)*/
 
-annotation: 
- | AT name { $1 }
- | AT name LP annotation_element_opt RP { $1 }
+annotation:
+ | AT name { ($2, None) }
+ | AT name LP annotation_element RP { ($2, Some $4) }
 
 annotation_element:
- | element_value { ast_todo }
- | element_value_pairs { ast_todo }
+ | /* nothing */ { EmptyAnnotArg }
+ | element_value { AnnotArgValue $1 }
+ | element_value_pairs { AnnotArgPairInit $1 }
 
 element_value:
- | expr1 { }
- | annotation { }
- | element_value_array_initializer { }
+ | expr1 { AnnotExprInit $1 }
+ | annotation { AnnotNestedAnnot $1 }
+ | element_value_array_initializer { AnnotArrayInit $1 }
 
 element_value_pair:
- | identifier EQ element_value { }
+ | identifier EQ element_value { ($1, $3) }
 
 
 element_value_array_initializer:
- | LC RC { }
- | LC element_values RC { }
- | LC element_values CM RC { }
+ | LC RC { [] }
+ | LC element_values RC { $2 }
+ | LC element_values CM RC { $2 }
 
-expr1: 
- | primary_no_new_array { }
- | primary_no_new_array PLUS primary_no_new_array { }
- | name { } 
+expr1:
+ | primary_no_new_array { $1 }
+ | primary_no_new_array PLUS primary_no_new_array { failwith "+ inside raw annot values"  }
+ | name { NameOrClassType $1 }
 
 /*(*************************************************************************)*/
 /*(*1 Class/Interface *)*/
@@ -895,12 +889,12 @@ expr1:
 /*(*2 Class *)*/
 /*(*----------------------------*)*/
 /* 8.1 */
-class_declaration: 
+class_declaration:
  modifiers_opt CLASS identifier type_parameters_opt super_opt interfaces_opt
  class_body
   { { cl_name = $3; cl_kind = ClassRegular;
       cl_mods = $1; cl_tparams = $4;
-      cl_extends = $5;  cl_impls = $6; 
+      cl_extends = $5;  cl_impls = $6;
       cl_body = $7;
      }
   }
@@ -937,7 +931,7 @@ class_member_declaration:
 
 
 /* 8.3 */
-field_declaration: modifiers_opt type_java variable_declarators SM  
+field_declaration: modifiers_opt type_java variable_declarators SM
    { decls (fun x -> Field x) $1 $2 (List.rev $3) }
 
 
@@ -964,7 +958,7 @@ array_initializer:
 /* 8.4 */
 method_declaration: method_header method_body  { { $1 with m_body = $2 } }
 
-method_header: 
+method_header:
  | modifiers_opt type_java method_declarator throws_opt
      { method_header $1 $2 $3 $4 }
  | modifiers_opt VOID method_declarator throws_opt
@@ -1001,9 +995,9 @@ instance_initializer: block       { Init (false, $1) }
 static_initializer: STATIC block  { Init (true, $2) }
 
 /* 8.8 */
-constructor_declaration:	
+constructor_declaration:
  modifiers_opt constructor_declarator throws_opt constructor_body
-  { 
+  {
     let no_type = TBasic ("void", fakeInfo "void") in
     let (id, formals) = $2 in
     let var = { v_mods = $1; v_type = no_type; v_name = id } in
@@ -1045,21 +1039,21 @@ variable_declarator_id_bis:
 
 variable_modifier:
  | FINAL      { Final, $1 }
- | annotation { Annotation, $1 }
+ | annotation { (Annotation $1), info_of_identifier_ (List.hd (List.rev (fst $1))) }
 
 /*(*----------------------------*)*/
 /*(*2 Interface *)*/
 /*(*----------------------------*)*/
 
 /* 9.1 */
-interface_declaration: 
- modifiers_opt INTERFACE identifier type_parameters_opt  extends_interfaces_opt 
+interface_declaration:
+ modifiers_opt INTERFACE identifier type_parameters_opt  extends_interfaces_opt
  interface_body
   { { cl_name = $3; cl_kind = Interface;
       cl_mods = $1; cl_tparams = $4;
-      cl_extends = None; cl_impls = $5; 
+      cl_extends = None; cl_impls = $5;
       cl_body = $6;
-    } 
+    }
   }
 
 /* 9.1.2 */
@@ -1098,9 +1092,9 @@ abstract_method_declaration:
 	{ method_header $1 (void_type $2) $3 $4 }
 
 interface_generic_method_decl:
- | modifiers_opt type_parameters type_java identifier interface_method_declator_rest 
+ | modifiers_opt type_parameters type_java identifier interface_method_declator_rest
     { ast_todo }
- | modifiers_opt type_parameters VOID identifier interface_method_declator_rest 
+ | modifiers_opt type_parameters VOID identifier interface_method_declator_rest
     { ast_todo }
 
 interface_method_declator_rest:
@@ -1109,11 +1103,11 @@ interface_method_declator_rest:
 /*(*----------------------------*)*/
 /*(*2 Enum *)*/
 /*(*----------------------------*)*/
-enum_declaration: modifiers_opt ENUM identifier interfaces_opt enum_body 
+enum_declaration: modifiers_opt ENUM identifier interfaces_opt enum_body
    { { en_name = $3; en_mods = $1; en_impls = $4; en_body = $5; } }
 
 /*(* cant factorize in enum_constants_opt comma_opt .... *)*/
-enum_body: 
+enum_body:
  | LC                   enum_body_declarations_opt RC { [], $2 }
  | LC enum_constants    enum_body_declarations_opt RC { $2, $3 }
  | LC enum_constants CM enum_body_declarations_opt RC { $2, $4 }
@@ -1130,7 +1124,7 @@ enum_body_declarations: SM class_body_declarations_opt { $2 }
 /*(*----------------------------*)*/
 
 /*(* cant factorize modifiers_opt *)*/
-annotation_type_declaration: 
+annotation_type_declaration:
  | modifiers AT INTERFACE identifier annotation_type_body { ast_todo }
  |           AT INTERFACE identifier annotation_type_body { ast_todo }
 
@@ -1362,7 +1356,7 @@ enum_constants:
  | enum_constant { [$1] }
  | enum_constants CM enum_constant { $1 @ [$3] }
 
-enum_body_declarations_opt: 
+enum_body_declarations_opt:
  | /*(*empty*)*/           { [] }
  | enum_body_declarations  { $1 }
 
@@ -1373,7 +1367,7 @@ type_parameters_opt:
 type_parameters:
  | LT type_parameters_bis GT { $2 }
 
-type_parameters_bis: 
+type_parameters_bis:
  | type_parameter                         { [$1] }
  | type_parameters_bis CM type_parameter  { $1 @ [$3] }
 
@@ -1381,16 +1375,10 @@ type_arguments:
  | type_argument                    { [$1] }
  | type_arguments CM type_argument  { $1 @ [$3] }
 
-element_value_pairs: 
+element_value_pairs:
  | element_value_pair { [$1] }
  | element_value_pairs CM element_value_pair { $1 @ [$3] }
-
-annotation_element_opt:
- | /*(*empty*)*/      { None }
- | annotation_element { Some $1 }
-
 
 element_values:
  | element_value { [$1] }
  | element_values CM element_value { $1 @ [$3] }
-

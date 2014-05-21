@@ -2,25 +2,22 @@
 
 open Ast_java
 
-let vof_info x = Parse_info.vof_info x
-let vof_wrap _of_a (v1, v2) =
-  let v1 = _of_a v1
-  and _v2TODO = vof_info v2
-  in
-  Ocaml.VTuple [ v1 (* ; v2 *) ]
+let rec vof_tok v = Parse_info.vof_info v
+and vof_wrap _of_a (v1, v2) =
+  let v1 = _of_a v1 and v2 = vof_tok v2 in Ocaml.VTuple [ v1; v2 ]
+and vof_list1 _of_a = Ocaml.vof_list _of_a
 
 let vof_ident v = vof_wrap Ocaml.vof_string v
 
 let vof_qualified_ident v = Ocaml.vof_list vof_ident v
-
-let vof_list1 _of_a = Ocaml.vof_list _of_a
 
 let rec vof_typ =
   function
   | TBasic v1 ->
       let v1 = vof_wrap Ocaml.vof_string v1
       in Ocaml.VSum (("TBasic", [ v1 ]))
-  | TClass v1 -> let v1 = vof_class_type v1 in Ocaml.VSum (("TClass", [ v1 ]))
+  | TClass v1 ->
+      let v1 = vof_class_type v1 in Ocaml.VSum (("TClass", [ v1 ]))
   | TArray v1 -> let v1 = vof_typ v1 in Ocaml.VSum (("TArray", [ v1 ]))
 and vof_class_type v =
   vof_list1
@@ -29,7 +26,6 @@ and vof_class_type v =
        and v2 = Ocaml.vof_list vof_type_argument v2
        in Ocaml.VTuple [ v1; v2 ])
     v
-and vof_ref_type x = vof_typ x
 and vof_type_argument =
   function
   | TArgument v1 ->
@@ -43,7 +39,7 @@ and vof_type_argument =
              in Ocaml.VTuple [ v1; v2 ])
           v1
       in Ocaml.VSum (("TQuestion", [ v1 ]))
-
+and vof_ref_type v = vof_typ v
 
 let vof_type_parameter =
   function
@@ -52,17 +48,72 @@ let vof_type_parameter =
       and v2 = Ocaml.vof_list vof_ref_type v2
       in Ocaml.VSum (("TParam", [ v1; v2 ]))
 
-let vof_name v =
+let rec vof_modifier =
+  function
+  | Public -> Ocaml.VSum (("Public", []))
+  | Protected -> Ocaml.VSum (("Protected", []))
+  | Private -> Ocaml.VSum (("Private", []))
+  | Abstract -> Ocaml.VSum (("Abstract", []))
+  | Static -> Ocaml.VSum (("Static", []))
+  | Final -> Ocaml.VSum (("Final", []))
+  | StrictFP -> Ocaml.VSum (("StrictFP", []))
+  | Transient -> Ocaml.VSum (("Transient", []))
+  | Volatile -> Ocaml.VSum (("Volatile", []))
+  | Synchronized -> Ocaml.VSum (("Synchronized", []))
+  | Native -> Ocaml.VSum (("Native", []))
+  | Annotation v1 ->
+      let v1 = vof_annotation v1 in Ocaml.VSum (("Annotation", [ v1 ]))
+and vof_annotation (v1, v2) =
+  let v1 = vof_name_or_class_type v1
+  and v2 = Ocaml.vof_option vof_annotation_element v2
+  in Ocaml.VTuple [ v1; v2 ]
+and vof_modifiers v = Ocaml.vof_list (vof_wrap vof_modifier) v
+and vof_annotation_element =
+  function
+  | AnnotArgValue v1 ->
+      let v1 = vof_element_value v1 in Ocaml.VSum (("AnnotArgValue", [ v1 ]))
+  | AnnotArgPairInit v1 ->
+      let v1 = Ocaml.vof_list vof_annotation_pair v1
+      in Ocaml.VSum (("AnnotArgPairInit", [ v1 ]))
+  | EmptyAnnotArg -> Ocaml.VSum (("EmptyAnnotArg", []))
+and vof_element_value =
+  function
+  | AnnotExprInit v1 ->
+      let v1 = vof_expr v1 in Ocaml.VSum (("AnnotExprInit", [ v1 ]))
+  | AnnotNestedAnnot v1 ->
+      let v1 = vof_annotation v1 in Ocaml.VSum (("AnnotNestedAnnot", [ v1 ]))
+  | AnnotArrayInit v1 ->
+      let v1 = vof_list1 vof_element_value v1
+      in Ocaml.VSum (("AnnotArrayInit", [ v1 ]))
+and vof_annotation_pair (v1, v2) =
+  let v1 = vof_ident v1
+  and v2 = vof_element_value v2
+  in Ocaml.VTuple [ v1; v2 ]
+and vof_name_or_class_type v = Ocaml.vof_list vof_identifier_ v
+and vof_identifier_ =
+  function
+  | Id v1 -> let v1 = vof_ident v1 in Ocaml.VSum (("Id", [ v1 ]))
+  | Id_then_TypeArgs ((v1, v2)) ->
+      let v1 = vof_ident v1
+      and v2 = Ocaml.vof_list vof_type_argument v2
+      in Ocaml.VSum (("Id_then_TypeArgs", [ v1; v2 ]))
+  | TypeArgs_then_Id ((v1, v2)) ->
+      let v1 = Ocaml.vof_list vof_type_argument v1
+      and v2 = vof_identifier_ v2
+      in Ocaml.VSum (("TypeArgs_then_Id", [ v1; v2 ]))
+and vof_name v =
   vof_list1
     (fun (v1, v2) ->
        let v1 = Ocaml.vof_list vof_type_argument v1
        and v2 = vof_ident v2
        in Ocaml.VTuple [ v1; v2 ])
     v
-
-let rec vof_expr =
+and vof_expr =
   function
   | Name v1 -> let v1 = vof_name v1 in Ocaml.VSum (("Name", [ v1 ]))
+  | NameOrClassType v1 ->
+      let v1 = vof_name_or_class_type v1
+      in Ocaml.VSum (("NameOrClassType", [ v1 ]))
   | Literal v1 ->
       let v1 = vof_wrap Ocaml.vof_string v1
       in Ocaml.VSum (("Literal", [ v1 ]))
@@ -70,24 +121,24 @@ let rec vof_expr =
       let v1 = vof_typ v1 in Ocaml.VSum (("ClassLiteral", [ v1 ]))
   | NewClass ((v1, v2, v3)) ->
       let v1 = vof_typ v1
-      and v2 = vof_exprs v2
+      and v2 = vof_arguments v2
       and v3 = Ocaml.vof_option vof_decls v3
       in Ocaml.VSum (("NewClass", [ v1; v2; v3 ]))
-  | NewQualifiedClass ((v1, v2, v3, v4)) ->
-      let v1 = vof_expr v1
-      and v2 = vof_ident v2
-      and v3 = vof_exprs v3
-      and v4 = Ocaml.vof_option vof_decls v4
-      in Ocaml.VSum (("NewQualifiedClass", [ v1; v2; v3; v4 ]))
   | NewArray ((v1, v2, v3, v4)) ->
       let v1 = vof_typ v1
-      and v2 = vof_exprs v2
+      and v2 = vof_arguments v2
       and v3 = Ocaml.vof_int v3
       and v4 = Ocaml.vof_option vof_init v4
       in Ocaml.VSum (("NewArray", [ v1; v2; v3; v4 ]))
+  | NewQualifiedClass ((v1, v2, v3, v4)) ->
+      let v1 = vof_expr v1
+      and v2 = vof_ident v2
+      and v3 = vof_arguments v3
+      and v4 = Ocaml.vof_option vof_decls v4
+      in Ocaml.VSum (("NewQualifiedClass", [ v1; v2; v3; v4 ]))
   | Call ((v1, v2)) ->
       let v1 = vof_expr v1
-      and v2 = vof_exprs v2
+      and v2 = vof_arguments v2
       in Ocaml.VSum (("Call", [ v1; v2 ]))
   | Dot ((v1, v2)) ->
       let v1 = vof_expr v1
@@ -128,7 +179,7 @@ let rec vof_expr =
       and v2 = vof_op v2
       and v3 = vof_expr v3
       in Ocaml.VSum (("Assignment", [ v1; v2; v3 ]))
-and vof_exprs v = Ocaml.vof_list vof_expr v
+and vof_arguments v = Ocaml.vof_list vof_expr v
 and vof_op v = Ocaml.vof_string v
 and vof_stmt =
   function
@@ -185,7 +236,8 @@ and vof_stmt =
       and v3 = Ocaml.vof_option vof_stmt v3
       in Ocaml.VSum (("Try", [ v1; v2; v3 ]))
   | Throw v1 -> let v1 = vof_expr v1 in Ocaml.VSum (("Throw", [ v1 ]))
-  | LocalVar v1 -> let v1 = vof_field v1 in Ocaml.VSum (("LocalVar", [ v1 ]))
+  | LocalVar v1 ->
+      let v1 = vof_var_with_init v1 in Ocaml.VSum (("LocalVar", [ v1 ]))
   | LocalClass v1 ->
       let v1 = vof_class_decl v1 in Ocaml.VSum (("LocalClass", [ v1 ]))
   | Assert ((v1, v2)) ->
@@ -205,14 +257,14 @@ and vof_for_control =
       and v2 = Ocaml.vof_list vof_expr v2
       and v3 = Ocaml.vof_list vof_expr v3
       in Ocaml.VSum (("ForClassic", [ v1; v2; v3 ]))
-  | Foreach (v1, v2) ->
-      let v1 = vof_var v1 in
-      let v2 = vof_expr v2 in
-      Ocaml.VSum (("Foreach", [ v1; v2]))
+  | Foreach ((v1, v2)) ->
+      let v1 = vof_var v1
+      and v2 = vof_expr v2
+      in Ocaml.VSum (("Foreach", [ v1; v2 ]))
 and vof_for_init =
   function
   | ForInitVars v1 ->
-      let v1 = Ocaml.vof_list vof_field v1
+      let v1 = Ocaml.vof_list vof_var_with_init v1
       in Ocaml.VSum (("ForInitVars", [ v1 ]))
   | ForInitExprs v1 ->
       let v1 = Ocaml.vof_list vof_expr v1
@@ -230,22 +282,20 @@ and vof_var { v_name = v_v_name; v_mods = v_v_mods; v_type = v_v_type } =
   let bnds = bnd :: bnds in
   let arg = vof_ident v_v_name in
   let bnd = ("v_name", arg) in let bnds = bnd :: bnds in Ocaml.VDict bnds
-and vof_modifier =
-  function
-  | Public -> Ocaml.VSum (("Public", []))
-  | Protected -> Ocaml.VSum (("Protected", []))
-  | Private -> Ocaml.VSum (("Private", []))
-  | Abstract -> Ocaml.VSum (("Abstract", []))
-  | Static -> Ocaml.VSum (("Static", []))
-  | Final -> Ocaml.VSum (("Final", []))
-  | StrictFP -> Ocaml.VSum (("StrictFP", []))
-  | Transient -> Ocaml.VSum (("Transient", []))
-  | Volatile -> Ocaml.VSum (("Volatile", []))
-  | Synchronized -> Ocaml.VSum (("Synchronized", []))
-  | Native -> Ocaml.VSum (("Native", []))
-  | Annotation -> Ocaml.VSum (("Annotation", []))
-and vof_modifiers v = Ocaml.vof_list (vof_wrap vof_modifier) v
 and vof_vars v = Ocaml.vof_list vof_var v
+and vof_var_with_init { f_var = v_f_var; f_init = v_f_init } =
+  let bnds = [] in
+  let arg = Ocaml.vof_option vof_init v_f_init in
+  let bnd = ("f_init", arg) in
+  let bnds = bnd :: bnds in
+  let arg = vof_var v_f_var in
+  let bnd = ("f_var", arg) in let bnds = bnd :: bnds in Ocaml.VDict bnds
+and vof_init =
+  function
+  | ExprInit v1 -> let v1 = vof_expr v1 in Ocaml.VSum (("ExprInit", [ v1 ]))
+  | ArrayInit v1 ->
+      let v1 = Ocaml.vof_list vof_init v1
+      in Ocaml.VSum (("ArrayInit", [ v1 ]))
 and
   vof_method_decl {
                     m_var = v_m_var;
@@ -265,19 +315,43 @@ and
   let bnds = bnd :: bnds in
   let arg = vof_var v_m_var in
   let bnd = ("m_var", arg) in let bnds = bnd :: bnds in Ocaml.VDict bnds
-and vof_field { f_var = v_f_var; f_init = v_f_init } =
+and vof_field v = vof_var_with_init v
+and
+  vof_enum_decl {
+                  en_name = v_en_name;
+                  en_mods = v_en_mods;
+                  en_impls = v_en_impls;
+                  en_body = v_en_body
+                } =
   let bnds = [] in
-  let arg = Ocaml.vof_option vof_init v_f_init in
-  let bnd = ("f_init", arg) in
+  let arg =
+    match v_en_body with
+    | (v1, v2) ->
+        let v1 = Ocaml.vof_list vof_enum_constant v1
+        and v2 = vof_decls v2
+        in Ocaml.VTuple [ v1; v2 ] in
+  let bnd = ("en_body", arg) in
   let bnds = bnd :: bnds in
-  let arg = vof_var v_f_var in
-  let bnd = ("f_var", arg) in let bnds = bnd :: bnds in Ocaml.VDict bnds
-and vof_init =
+  let arg = Ocaml.vof_list vof_ref_type v_en_impls in
+  let bnd = ("en_impls", arg) in
+  let bnds = bnd :: bnds in
+  let arg = vof_modifiers v_en_mods in
+  let bnd = ("en_mods", arg) in
+  let bnds = bnd :: bnds in
+  let arg = vof_ident v_en_name in
+  let bnd = ("en_name", arg) in let bnds = bnd :: bnds in Ocaml.VDict bnds
+and vof_enum_constant =
   function
-  | ExprInit v1 -> let v1 = vof_expr v1 in Ocaml.VSum (("ExprInit", [ v1 ]))
-  | ArrayInit v1 ->
-      let v1 = Ocaml.vof_list vof_init v1
-      in Ocaml.VSum (("ArrayInit", [ v1 ]))
+  | EnumSimple v1 ->
+      let v1 = vof_ident v1 in Ocaml.VSum (("EnumSimple", [ v1 ]))
+  | EnumConstructor ((v1, v2)) ->
+      let v1 = vof_ident v1
+      and v2 = vof_arguments v2
+      in Ocaml.VSum (("EnumConstructor", [ v1; v2 ]))
+  | EnumWithMethods ((v1, v2)) ->
+      let v1 = vof_ident v1
+      and v2 = Ocaml.vof_list vof_method_decl v2
+      in Ocaml.VSum (("EnumWithMethods", [ v1; v2 ]))
 and
   vof_class_decl {
                    cl_name = v_cl_name;
@@ -319,51 +393,11 @@ and vof_decl =
   | Method v1 ->
       let v1 = vof_method_decl v1 in Ocaml.VSum (("Method", [ v1 ]))
   | Field v1 -> let v1 = vof_field v1 in Ocaml.VSum (("Field", [ v1 ]))
+  | Enum v1 -> let v1 = vof_enum_decl v1 in Ocaml.VSum (("Enum", [ v1 ]))
   | Init ((v1, v2)) ->
       let v1 = Ocaml.vof_bool v1
       and v2 = vof_stmt v2
       in Ocaml.VSum (("Init", [ v1; v2 ]))
-  | Enum v1 -> let v1 = vof_enum_decl v1 in Ocaml.VSum (("Enum", [ v1 ]))
-
-
-and  vof_enum_decl {
-                  en_name = v_en_name;
-                  en_mods = v_en_mods;
-                  en_impls = v_en_impls;
-                  en_body = v_en_body
-                } =
-  let bnds = [] in
-  let arg =
-    match v_en_body with
-    | (v1, v2) ->
-        let v1 = Ocaml.vof_list vof_enum_constant v1
-        and v2 = vof_decls v2
-        in Ocaml.VTuple [ v1; v2 ] in
-  let bnd = ("en_body", arg) in
-  let bnds = bnd :: bnds in
-  let arg = Ocaml.vof_list vof_ref_type v_en_impls in
-  let bnd = ("en_impls", arg) in
-  let bnds = bnd :: bnds in
-  let arg = vof_modifiers v_en_mods in
-  let bnd = ("en_mods", arg) in
-  let bnds = bnd :: bnds in
-  let arg = vof_ident v_en_name in
-  let bnd = ("en_name", arg) in let bnds = bnd :: bnds in Ocaml.VDict bnds
-and vof_enum_constant =
-  function
-  | EnumSimple v1 ->
-      let v1 = vof_ident v1 in Ocaml.VSum (("EnumSimple", [ v1 ]))
-  | EnumConstructor ((v1, v2)) ->
-      let v1 = vof_ident v1
-      and v2 = vof_exprs v2
-      in Ocaml.VSum (("EnumConstructor", [ v1; v2 ]))
-  | EnumWithMethods ((v1, v2)) ->
-      let v1 = vof_ident v1
-      and v2 = vof_method_decls v2
-      in Ocaml.VSum (("EnumWithMethods", [ v1; v2 ]))
-
-and vof_method_decls x = Ocaml.vof_list vof_method_decl x
-
 and vof_decls v = Ocaml.vof_list vof_decl v
 
 let vof_compilation_unit {
@@ -391,7 +425,7 @@ let vof_program v = vof_compilation_unit v
 
 let vof_any =
   function
-  | AIdent i -> let v1 = vof_ident i in Ocaml.VSum (("AIdent", [ v1 ]))
+  | AIdent v1 -> let v1 = vof_ident v1 in Ocaml.VSum (("AIdent", [ v1 ]))
   | AExpr v1 -> let v1 = vof_expr v1 in Ocaml.VSum (("AExpr", [ v1 ]))
   | AStmt v1 -> let v1 = vof_stmt v1 in Ocaml.VSum (("AStmt", [ v1 ]))
   | ATyp v1 -> let v1 = vof_typ v1 in Ocaml.VSum (("ATyp", [ v1 ]))
@@ -403,5 +437,5 @@ let vof_any =
   | AClass v1 ->
       let v1 = vof_class_decl v1 in Ocaml.VSum (("AClass", [ v1 ]))
   | ADecl v1 -> let v1 = vof_decl v1 in Ocaml.VSum (("ADecl", [ v1 ]))
-  | AProgram v1 -> let v1 = vof_program v1 in Ocaml.VSum (("AProgram", [ v1 ]))
-
+  | AProgram v1 ->
+      let v1 = vof_program v1 in Ocaml.VSum (("AProgram", [ v1 ]))

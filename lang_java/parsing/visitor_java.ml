@@ -113,7 +113,14 @@ and v_name v =
     (fun (v1, v2) ->
       let v1 = v_list v_type_argument v1 and v2 = v_ident v2 in ())
     v
-
+and v_name_or_class_type v = v_list v_identifier_ v
+and v_identifier_ =
+  function
+  | Id v1 -> let v1 = v_ident v1 in ()
+  | Id_then_TypeArgs ((v1, v2)) ->
+      let v1 = v_ident v1 and v2 = v_list v_type_argument v2 in ()
+  | TypeArgs_then_Id ((v1, v2)) ->
+      let v1 = v_list v_type_argument v1 and v2 = v_identifier_ v2 in ()
 and v_type_argument =
   function
   | TArgument v1 -> let v1 = v_ref_type v1 in ()
@@ -127,6 +134,7 @@ and v_type_argument =
 and v_expr (x : expr) =
   let k x = match x with
     | Name v1 -> let v1 = v_name v1 in ()
+    | NameOrClassType v1 -> let v1 = v_name_or_class_type v1 in ()
     | Literal v1 -> let v1 = v_wrap v_string v1 in ()
     | ClassLiteral v1 -> let v1 = v_typ v1 in ()
     | NewClass ((v1, v2, v3)) ->
