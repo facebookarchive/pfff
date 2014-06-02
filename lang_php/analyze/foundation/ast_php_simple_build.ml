@@ -599,7 +599,7 @@ and class_traits env x acc =
 
 and class_constants env st acc =
   match st with
-  | ClassConstants (_, cl, _) ->
+  | ClassConstants (_, _, cl, _) ->
       List.fold_right (
       fun (n, ss) acc ->
         ({A.cst_name = ident env n; cst_body= static_scalar_affect env ss})::acc
@@ -683,7 +683,7 @@ and class_body env st (mets, flds) =
     let (met, more_flds) = method_def env md in
     met::mets, more_flds @ flds
 
-  | ClassVariables (_, _, _, _) | ClassConstants (_, _, _) | UseTrait _
+  | ClassVariables _ | ClassConstants _ | UseTrait _
   | XhpDecl _ | TraitConstraint _
     -> (mets, flds)
 

@@ -913,8 +913,9 @@ and v_class_stmt x =
       and v3 = v_hint_type v3
       and v4 = v_tok v4
       in ()
-  | ClassConstants ((v1, v2, v3)) ->
+  | ClassConstants ((v1, opt_ty, v2, v3)) ->
       let v1 = v_tok v1
+      and opt_ty = v_option v_hint_type opt_ty
       and v2 = v_comma_list v_class_constant v2
       and v3 = v_tok v3
       in ()

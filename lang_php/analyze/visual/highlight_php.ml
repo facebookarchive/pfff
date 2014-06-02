@@ -352,7 +352,7 @@ let visit_program ~tag _prefs  hentities (ast, toks) =
             tag ii (Type (Use2 fake_no_use2))
           );
         )
-      | Ast.ClassConstants (_, vars, _) ->
+      | Ast.ClassConstants (_, _, vars, _) ->
         vars +> Ast.uncomma +> List.iter (fun (name, _opt) ->
           let info = Ast.info_of_ident name in
           tag info (Constant (Def2 NoUse));

@@ -654,9 +654,9 @@ implements_list:
 
 class_statement:
  | T_CONST          class_constants_declaration  TSEMICOLON
-     { ClassConstants($1, $2, $3) }
+     { ClassConstants($1, None, $2, $3) }
  | T_CONST type_php class_constants_declaration  TSEMICOLON
-     { ClassConstants($1, $3, $4) }
+     { ClassConstants($1, Some $2, $3, $4) }
 
  | variable_modifiers          class_variable_declaration TSEMICOLON
      { ClassVariables($1, None, $2, $3) }

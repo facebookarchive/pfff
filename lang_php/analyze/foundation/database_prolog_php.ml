@@ -234,7 +234,7 @@ let visit ~add readable ast =
 
           vx (ClassStmt class_stmt);
 
-        | ClassConstants (tok, xs, _sc) ->
+        | ClassConstants (tok, _typopt, xs, _sc) ->
           xs +> Ast.uncomma +> List.iter (fun (id, (_, e)) ->
             let s2 = Ast.str_of_ident id in
             current := spf "('%s', '%s')" s s2;

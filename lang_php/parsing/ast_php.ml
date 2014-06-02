@@ -611,7 +611,10 @@ and class_def = {
     and extend =    tok * class_name
     and interface = tok * class_name comma_list
   and class_stmt =
-    | ClassConstants of tok (* const *) * class_constant comma_list * tok (*;*)
+    | ClassConstants of
+        tok (* const *) *
+        hint_type option *
+        class_constant comma_list * tok (*;*)
     | ClassVariables of
         class_var_modifier *
          (* static-php-ext: *)

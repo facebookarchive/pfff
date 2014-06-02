@@ -2516,15 +2516,16 @@ and m_class_constant a b =
 
 and m_class_stmt a b =
   match a, b with
-  | A.ClassConstants(a1, a2, a3), B.ClassConstants(b1, b2, b3) ->
+  | A.ClassConstants(a1, a2, a3, a4), B.ClassConstants(b1, b2, b3, b4) ->
     m_tok a1 b1 >>= (fun (a1, b1) ->
-    (m_comma_list m_class_constant) a2 b2 >>= (fun (a2, b2) ->
-    m_tok a3 b3 >>= (fun (a3, b3) ->
+    (m_option m_hint_type) a2 b2 >>= (fun (a2, b2) ->
+    (m_comma_list m_class_constant) a3 b3 >>= (fun (a3, b3) ->
+    m_tok a4 b4 >>= (fun (a4, b4) ->
     return (
-       A.ClassConstants(a1, a2, a3),
-       B.ClassConstants(b1, b2, b3)
+       A.ClassConstants(a1, a2, a3, a4),
+       B.ClassConstants(b1, b2, b3, b4)
     )
-    )))
+    ))))
   | A.ClassVariables(a1, a2, a3, a4), B.ClassVariables(b1, b2, b3, b4) ->
     m_class_var_modifier a1 b1 >>= (fun (a1, b1) ->
     (m_option m_hint_type) a2 b2 >>= (fun (a2, b2) ->

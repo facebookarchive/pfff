@@ -995,7 +995,7 @@ implements_list:
 
 class_statement:
  | T_CONST class_constant_declaration            TSEMICOLON 
-     { ClassConstants($1, $2, $3) }
+     { ClassConstants($1, None, $2, $3) }
  | variable_modifiers class_variable_declaration TSEMICOLON 
      { ClassVariables($1, None, $2, $3) }
 

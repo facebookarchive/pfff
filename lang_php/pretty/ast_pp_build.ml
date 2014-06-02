@@ -719,7 +719,7 @@ and class_body env st acc =
       let line = PI.line_of_info (info_of_dname (fst (List.hd cvl))) in
       let acc = add_ce_comments env acc line in
       acc
-  | ClassConstants (_, cl, _) ->
+  | ClassConstants (_, _, cl, _) ->
       let consts =
         List.map (
         fun (n, ss) ->

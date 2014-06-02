@@ -896,11 +896,12 @@ and map_class_stmt =
       and v3 = map_hint_type v3
       and v4 = map_tok v4
       in TraitConstraint ((v1, v2, v3, v4))
-  | ClassConstants ((v1, v2, v3)) ->
+  | ClassConstants ((v1, opt_ty, v2, v3)) ->
       let v1 = map_tok v1
+      and opt_ty = map_option map_hint_type opt_ty
       and v2 = map_comma_list map_class_constant v2
       and v3 = map_tok v3
-      in ClassConstants ((v1, v2, v3))
+      in ClassConstants ((v1, opt_ty, v2, v3))
   | ClassVariables ((v1, opt_ty, v2, v3)) ->
       let v1 = map_class_var_modifier v1
       and opt_ty = map_option map_hint_type opt_ty
