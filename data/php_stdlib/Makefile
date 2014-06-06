@@ -9,7 +9,8 @@ update:
 	./stdlib_from_hni.sh ~/local/fbcode/hphp hni
 	cp -rf ~/local/fbcode/hphp/system/php/* system/
 	cp -rf ~/local/fbcode/hphp/facebook/system/php/* system/facebook/
-	cp ~/local/fbcode/hphp/facebook/extensions/fbid/ext_fbid.php system/facebook/
+	find ~/local/fbcode/hphp/facebook/extensions/ -name "*ext_*\.php" \
+             -exec cp {} system/facebook \;
 	rm -rf system/code_model # too many errors for now
 	php builtin_constants.php > system/constants.php
 
