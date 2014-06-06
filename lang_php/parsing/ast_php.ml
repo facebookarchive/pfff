@@ -701,6 +701,7 @@ and type_def = {
   t_tok: tok; (* type/newtype *)
   t_name: ident;
   t_tparams: type_params option;
+  t_tconstraint: (tok (* as *) * hint_type) option;
   t_tokeq: tok; (* = *)
   t_kind: type_def_kind;
   t_sc: tok; (* ; *)

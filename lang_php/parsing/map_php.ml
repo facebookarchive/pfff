@@ -1128,6 +1128,7 @@ and
                  t_tok = v_t_tok;
                  t_name = v_t_name;
                  t_tparams = v_t_tparams;
+                 t_tconstraint = v_t_tconstraint;
                  t_tokeq = v_t_tokeq;
                  t_kind = v_t_kind;
                  t_sc = v_t_sc
@@ -1135,6 +1136,11 @@ and
   let v_t_sc = map_tok v_t_sc in
   let v_t_kind = map_type_def_kind v_t_kind in
   let v_t_tokeq = map_tok v_t_tokeq in
+  let v_t_tconstraint =
+    map_of_option
+      (fun (v1, v2) ->
+         let v1 = map_tok v1 and v2 = map_hint_type v2 in (v1, v2))
+      v_t_tconstraint in
   let v_t_tparams = map_of_option map_type_params v_t_tparams in
   let v_t_name = map_ident v_t_name in
   let v_t_tok = map_tok v_t_tok in 
@@ -1142,6 +1148,7 @@ and
                  t_tok = v_t_tok;
                  t_name = v_t_name;
                  t_tparams = v_t_tparams;
+                 t_tconstraint = v_t_tconstraint;
                  t_tokeq = v_t_tokeq;
                  t_kind = v_t_kind;
                  t_sc = v_t_sc
