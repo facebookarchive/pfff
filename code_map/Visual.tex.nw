@@ -6199,7 +6199,6 @@ module Ctl = Controller2
 \subsection{[[view_minimap.mli]]}
 
 <<view_minimap.mli>>=
-
 @ 
 
 \subsection{[[view_minimap.ml]]}

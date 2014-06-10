@@ -171,5 +171,4 @@ let all_entities ~root files db_opt =
         db
 (*e: all_entities *)
 
-
 (*e: model_database_code.ml *)
