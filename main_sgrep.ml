@@ -19,11 +19,13 @@ module S = Scope_code
  * Right now there is support for PHP, C/C++/ObjectiveC, OCaml, Java, and 
  * Javascript.
  * 
- * opti: git grep xxx | xargs sgrep -e 'foo(...)'
+ * opti: git grep foo | xargs sgrep -e 'foo(...)'
  * 
  * related: 
  *  - http://www.jetbrains.com/idea/documentation/ssr.html
  *  - http://beyondgrep.com/ (ack)
+ * 
+ * See also codequery for more structural queries.
  *)
 
 (*****************************************************************************)
