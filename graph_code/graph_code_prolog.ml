@@ -36,6 +36,7 @@ module E = Database_code
 type fact =
   | At of entity * Common.filename (* readable path *) * int (* line *)
   | Kind of entity * Database_code.entity_kind
+  | Type of entity * string (* could be more structured ... *)
 
   | Extends of string * string 
   | Implements of string * string
@@ -111,6 +112,10 @@ let string_of_fact fact =
           (string_of_entity_kind kind)
     | At (entity, file, line) ->
         spf "at(%s, '%s', %d)" (string_of_entity entity) file line
+    | Type (entity, str) ->
+        spf "type(%s, '%s')" (string_of_entity entity) 
+          (escape_quote_and_double_quote str)
+
     | Extends (s1, s2) ->
         spf "extends('%s', '%s')" s1 s2
     | Mixins (s1, s2) ->

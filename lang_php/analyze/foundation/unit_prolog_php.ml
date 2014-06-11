@@ -65,6 +65,15 @@ trait T { }
         ["trait"]     (prolog_query ~file "kind('T', X), writeln(X)");
     );
 
+   "types" >:: (fun () ->
+     let file ="
+class A {
+private int $x;
+}" in
+     assert_equal
+       ["int"] (prolog_query ~file "type(('A','x'), X), writeln(X)");
+   );
+
 (*****************************************************************************)
 (* Class/Traits *)
 (*****************************************************************************)

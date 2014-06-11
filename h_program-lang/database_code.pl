@@ -34,7 +34,7 @@
 % of functions/classes/etc.
 % Here are the predicates that should be defined in facts.pl:
 %
-%  - entities: kind/2, with the
+%  - entities: kind/2 with the
 %    function/method, constant, class/interface/trait, field
 %    atoms.
 %      ex: kind('array_map', function).
@@ -78,6 +78,9 @@
 %    indicate in which position the field is used.
 %     ex: use('foo', 'count', field, read).
 %     ex: use(('A','foo'), 'name', array, write).
+%
+%  - types: type/2
+%     ex: type('foobar', 'int').
 %
 %  - function/method arity (number of parameters): arity/2
 %      ex: arity('foobar', 3).

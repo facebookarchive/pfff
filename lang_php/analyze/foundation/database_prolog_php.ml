@@ -68,30 +68,33 @@ let string_of_modifier = function
   | Static -> "static"  | Abstract -> "abstract" | Final -> "final"
   | Async -> "async"
 
-let rec string_of_hint_type h =
+let rec string_of_hint_type x =
+  match x with
+  (* TODO: figure out a reasonable respresentation for type args in prolog *)
+  | Hint (c, _targsTODO) ->
+    (match c with
+    | XName [QI (c)] -> Ast.str_of_ident c
+    | XName qu -> 
+      raise (Ast.TodoNamespace (Ast.info_of_qualified_ident qu))
+    | Self _ -> "self"
+    | Parent _ -> "parent"
+    | LateStatic _ -> "")
+  | HintArray _ -> "array"
+  | HintQuestion (_, t) -> "?" ^ (string_of_hint_type t)
+  | HintTuple v1 ->
+    let elts = List.map
+      (fun x -> string_of_hint_type x)
+      (Ast.uncomma (Ast.unparen v1))
+    in
+    "(" ^ (String.concat ", " elts) ^ ")"
+  | HintCallback _ -> "callback"
+  | HintShape _ -> "shape"
+
+
+
+let string_of_hint_type_opt h =
   match h with
-  | Some x ->
-      (match x with
-     (* TODO: figure out a reasonable respresentation for type args in prolog *)
-      | Hint (c, _targsTODO) ->
-          (match c with
-          | XName [QI (c)] -> Ast.str_of_ident c
-          | XName qu -> 
-              raise (Ast.TodoNamespace (Ast.info_of_qualified_ident qu))
-          | Self _ -> "self"
-          | Parent _ -> "parent"
-          | LateStatic _ -> "")
-      | HintArray _ -> "array"
-      | HintQuestion (_, t) -> "?" ^ (string_of_hint_type (Some t))
-      | HintTuple v1 ->
-          let elts = List.map
-                       (fun x -> string_of_hint_type (Some x))
-                       (Ast.uncomma (Ast.unparen v1))
-          in
-          "(" ^ (String.concat ", " elts) ^ ")"
-      | HintCallback _ -> "callback"
-      | HintShape _ -> "shape"
-      )
+  | Some x -> string_of_hint_type x
   | None -> ""
 
 let read_write in_lvalue =
@@ -107,7 +110,7 @@ let add_function_params current def add =
              current
              i
              (Ast.str_of_dname param.p_name)
-             (string_of_hint_type param.p_type)
+             (string_of_hint_type_opt param.p_type)
       ))
     )
 
@@ -160,13 +163,15 @@ let visit ~add readable ast =
         );
 
         k x
-      | ConstantDef {cst_toks =(tok, _, _); cst_name=id; _} ->
+      | ConstantDef {cst_toks =(tok, _, _); cst_name=id; cst_type=topt; _} ->
         let s = Ast.str_of_ident id in
         current := spf "'%s'" s;
         Hashtbl.clear h;
         add (P.Kind (P.entity_of_str s, E.Constant));
         add (P.At (P.entity_of_str s, readable, PI.line_of_info tok));
-
+        topt +> Common.do_option (fun typ ->
+          add (P.Type (P.entity_of_str s, (string_of_hint_type typ)))
+        );
         k x
 
       | ClassDef def ->
@@ -243,7 +248,7 @@ let visit ~add readable ast =
 
             vx (Expr e);
           )
-        | ClassVariables (ms, _typopt, xs, _sc) ->
+        | ClassVariables (ms, topt, xs, _sc) ->
           
           xs +> Ast.uncomma +> List.iter (fun classvar ->
             let (dname, sc_opt) = classvar in
@@ -265,6 +270,9 @@ let visit ~add readable ast =
               ms +> List.iter (fun (m, _) ->
                 add (P.Misc (spf "%s(%s)" (string_of_modifier m) !current))
               );
+            );
+            topt +> Common.do_option (fun typ ->
+              add (P.Type (P.entity_of_str sfull, (string_of_hint_type typ)))
             );
               
             sc_opt +> Common.do_option (fun (_, e) ->
@@ -514,19 +522,16 @@ let build2 ?(show_progress=true) root files =
   let add x = Common.push x res in
 
    add (P.Misc "% -*- prolog -*-");
-   add (P.Misc ":- discontiguous kind/2, at/3");
+   add (P.Misc ":- discontiguous kind/2, at/3, type/2");
    add (P.Misc ":- discontiguous file/2");
    add (P.Misc ":- discontiguous extends/2, implements/2, mixins/2");
    add (P.Misc ":- discontiguous is_public/1, is_private/1, is_protected/1");
-   add (P.Misc ":- discontiguous docall/3, use/4");
-   add (P.Misc ":- discontiguous docall2/3");
+   add (P.Misc ":- discontiguous docall/3, use/4, docall2/3");
    add (P.Misc ":- discontiguous static/1, abstract/1, final/1");
-   add (P.Misc ":- discontiguous async/1");
-   add (P.Misc ":- discontiguous arity/2");
-   add (P.Misc ":- discontiguous parameter/4");
+   add (P.Misc ":- discontiguous arity/2, parameter/4");
    add (P.Misc ":- discontiguous include/2, require_module/2");
-   add (P.Misc ":- discontiguous yield/1");
    add (P.Misc ":- discontiguous throw/2, catch/2");
+   add (P.Misc ":- discontiguous async/1, yield/1");
    add (P.Misc ":- discontiguous problem/2");
 
    add (P.Misc ":- discontiguous hh/1");
