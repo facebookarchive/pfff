@@ -90,12 +90,11 @@ let rec string_of_hint_type x =
   | HintCallback _ -> "callback"
   | HintShape _ -> "shape"
 
-
-
 let string_of_hint_type_opt h =
   match h with
   | Some x -> string_of_hint_type x
-  | None -> ""
+  (* todo: maybe we could grab information from hh_server *)
+  | None -> "!unknown!"
 
 let read_write in_lvalue =
   if in_lvalue then "write" else "read"
@@ -169,9 +168,7 @@ let visit ~add readable ast =
         Hashtbl.clear h;
         add (P.Kind (P.entity_of_str s, E.Constant));
         add (P.At (P.entity_of_str s, readable, PI.line_of_info tok));
-        topt +> Common.do_option (fun typ ->
-          add (P.Type (P.entity_of_str s, (string_of_hint_type typ)))
-        );
+        add (P.Type (P.entity_of_str s, (string_of_hint_type_opt topt)));
         k x
 
       | ClassDef def ->
@@ -271,10 +268,7 @@ let visit ~add readable ast =
                 add (P.Misc (spf "%s(%s)" (string_of_modifier m) !current))
               );
             );
-            topt +> Common.do_option (fun typ ->
-              add (P.Type (P.entity_of_str sfull, (string_of_hint_type typ)))
-            );
-              
+            add (P.Type (P.entity_of_str sfull, string_of_hint_type_opt topt));
             sc_opt +> Common.do_option (fun (_, e) ->
               vx (Expr e)
             )
