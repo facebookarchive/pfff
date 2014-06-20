@@ -149,7 +149,7 @@ let parse_pattern str =
   (* for now we abuse the fuzzy parser of cpp for ml for the pattern as
    * we should not use comments in patterns
    *)
-  | "c++" | "ml" | "java" | "js" | "phpfuzzy" -> 
+  | "c" | "c++" | "ml" | "java" | "js" | "phpfuzzy" -> 
     Right (ast_fuzzy_of_string str)
   | _ -> failwith ("unsupported language: " ^ !lang)
 
@@ -163,7 +163,7 @@ let sgrep pattern file =
       )
       pattern 
       file 
-  | "c++", Right pattern ->
+  | ("c" | "c++"), Right pattern ->
     let ast = 
       try 
         Common.save_excursion Flag_parsing_cpp.verbose_lexing false (fun () ->
