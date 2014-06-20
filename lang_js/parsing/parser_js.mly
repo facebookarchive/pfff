@@ -730,10 +730,11 @@ array_literal:
  | T_LBRACKET element_list T_RBRACKET        { Array($1, $2, $3) }
  | T_LBRACKET element_list elison T_RBRACKET { Array($1, $2 @ $3, $4) }
 
-element_list:
- | elison   assignment_expression { $1 @ [Left $2] }
+element_list: element_list_rev { List.rev $1 }
+element_list_rev:
+ | elison   assignment_expression { (Left $2)::$1 }
  |          assignment_expression { [Left $1] }
- | element_list   elison   assignment_expression { $1 @ $2 @ [Left $3] }
+ | element_list_rev   elison   assignment_expression { [Left $3] @ $2 @ $1 }
 
 /*(*----------------------------*)*/
 /*(*2 object *)*/

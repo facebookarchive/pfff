@@ -500,6 +500,19 @@
    )
 
 
+  ; --------------------------------------------------------------------------
+  ; xhpast
+  ; --------------------------------------------------------------------------
+  (setq
+   pad-ocaml-project-prog     "facebook/pfff_fb"
+   ;pad-ocaml-project-prog "gui/test"
+   pad-ocaml-project-args 
+   (join-string 
+    (list 
+     "-debugger"
+     (case 0
+       (0 "-dump_xhpast_pfff_symbolic /home/pad/pfff/facebook/tests/xhpast/preg-quote.php"))
+     )))
 
   ; --------------------------------------------------------------------------
   ; facebook/

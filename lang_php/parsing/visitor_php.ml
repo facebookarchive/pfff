@@ -1096,6 +1096,7 @@ and
                t_tok = v_t_tok;
                t_name = v_t_name;
                t_tparams = v_t_tparams;
+               t_tconstraint = v_t_tconstraint;
                t_tokeq = v_t_tokeq;
                t_kind = v_t_kind;
                t_sc = v_t_sc
@@ -1103,6 +1104,10 @@ and
   let arg = v_tok v_t_tok in
   let arg = v_ident v_t_name in
   let arg = v_option v_type_params v_t_tparams in
+  let arg =
+    v_option
+      (fun (v1, v2) -> let v1 = v_tok v1 and v2 = v_hint_type v2 in ())
+      v_t_tconstraint in
   let arg = v_tok v_t_tokeq in
   let arg = v_type_def_kind v_t_kind in let arg = v_tok v_t_sc in ()
 and v_type_def_kind =

@@ -4,8 +4,6 @@
 // Misc
 // ------------------------------------------
 
-define('T_XHP_TEXT', 1);
-
 //from _checkModuleLib.php in $extension_defines
 define('MCC_NZLIB_COMPRESSION', 0);
 define('MCC_ARG_FB_SERIALIZE_PREFIXES', 0);

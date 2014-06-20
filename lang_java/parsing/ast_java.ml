@@ -19,7 +19,6 @@
  * for the identifiers).
  *
  * todo:
- *  - support annotations in the AST (it's parsed, but dropped right now)
  *  - support generic methods (there is support for generic classes though)
  *)
 
@@ -90,10 +89,28 @@ type modifier =
   | Synchronized
   | Native
 
-  (* TODO *)
-  | Annotation
+  | Annotation of annotation
+
+ and annotation = name_or_class_type * (annotation_element option)
 
  and modifiers = modifier wrap list
+
+ and annotation_element =
+   | AnnotArgValue of element_value
+   | AnnotArgPairInit of annotation_pair list
+   | EmptyAnnotArg
+ and element_value =
+   | AnnotExprInit of expr
+   | AnnotNestedAnnot of annotation
+   | AnnotArrayInit of element_value list
+
+ and annotation_pair = (ident * element_value)
+
+ and name_or_class_type = identifier_ list
+ and identifier_ =
+   | Id of ident
+   | Id_then_TypeArgs of ident * type_argument list
+   | TypeArgs_then_Id of type_argument list * identifier_
 
 (* ------------------------------------------------------------------------- *)
 (* Expressions *)
@@ -104,13 +121,12 @@ type modifier =
  * less: do a NameGeneric instead? the type_argument could then be
  *  only at the end?
  *)
-type name = (type_argument list * ident) list1
- (* with tarzan *)
+and name = (type_argument list * ident) list1
 
 (* Can have nested anon class (=~ closures) in expressions hence
  * the use of type ... and ... below
  *)
-type expr =
+and expr =
   (* Name is used for local variable, 'this' and 'super' special names,
    * and statically computable entities such as Package1.subpackage.Class.
    * Field or method accesses should use Dot (see below). Unfortunately
@@ -120,6 +136,9 @@ type expr =
    * in package x. See the note on Dot below.
    *)
   | Name of name
+
+ (* This is used only in the context of annotations *)
+  | NameOrClassType of name_or_class_type
 
   (* less: split in constant type with Int | Float | String | Char | Bool *)
   | Literal of string wrap
@@ -380,3 +399,8 @@ let is_final xs =
 let is_final_static xs =
   let xs = List.map fst xs in
   List.mem Final xs && List.mem Static xs
+
+let rec info_of_identifier_ (id : identifier_) : tok = match id with
+  | Id id
+  | Id_then_TypeArgs (id, _) -> snd id
+  | TypeArgs_then_Id (_, id_) -> info_of_identifier_ id_

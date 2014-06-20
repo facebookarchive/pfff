@@ -14,7 +14,7 @@ val parse_program:
   Common.filename -> Ast_java.program
 
 val parse_string:
-  string -> Ast_java.program
+  string -> (program_and_tokens * Parse_info.parsing_stat)
 
 (* for generalized sgrep/spatch patterns *)
 val parse_fuzzy:

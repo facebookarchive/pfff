@@ -845,13 +845,13 @@ trait_constraint_kind:
 /*(*1 Type definitions *)*/
 /*(*************************************************************************)*/
 type_declaration:
- | T_TYPE    ident type_params_opt TEQ type_php_or_shape TSEMICOLON 
-     { { t_tok = $1; t_name = Name $2; t_tparams = $3; t_tokeq = $4;
-         t_kind = Alias $5; t_sc = $6; } 
+ | T_TYPE   ident type_params_opt type_constr_opt TEQ type_php_or_shape TSEMICOLON 
+     { { t_tok = $1; t_name = Name $2; t_tparams = $3; t_tconstraint = $4;
+         t_tokeq = $5; t_kind = Alias $6; t_sc = $7; } 
      }
- | T_NEWTYPE ident type_params_opt TEQ type_php_or_shape TSEMICOLON 
-     { { t_tok = $1; t_name = Name $2; t_tparams = $3; t_tokeq = $4;
-         t_kind = Newtype $5; t_sc = $6; } 
+ | T_NEWTYPE ident type_params_opt type_constr_opt TEQ type_php_or_shape TSEMICOLON 
+     { { t_tok = $1; t_name = Name $2; t_tparams = $3; t_tconstraint = $4;
+         t_tokeq = $5; t_kind = Newtype $6; t_sc = $7; } 
      }
 
 type_php_or_shape:
@@ -859,6 +859,10 @@ type_php_or_shape:
  | T_SHAPE TOPAR shape_field_list TCPAR { HintShape ($1, ($2, $3, $4)) }
 
 shape_field: T_CONSTANT_ENCAPSED_STRING T_ARROW type_php { $1, $2, $3 }
+
+type_constr_opt: 
+ | T_AS type_php  { Some ($1, $2) }
+ | /*(*empty*) */ { None }
  
 /*(*************************************************************************)*/
 /*(*1 Generics parameters *)*/

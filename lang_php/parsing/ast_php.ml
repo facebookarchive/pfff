@@ -224,6 +224,7 @@ and expr =
   | Assign    of lvalue * tok (* = *) * expr
   | AssignOp  of lvalue * assignOp wrap * expr
   | Postfix of rw_variable   * fixOp wrap
+  (* todo: should actually be called Prefix :) *)
   | Infix   of fixOp wrap    * rw_variable
   (* PHP 5.3 allows 'expr ?: expr' hence the 'option' type below
    * from www.php.net/manual/en/language.operators.comparison.php#language.operators.comparison.ternary:
@@ -700,6 +701,7 @@ and type_def = {
   t_tok: tok; (* type/newtype *)
   t_name: ident;
   t_tparams: type_params option;
+  t_tconstraint: (tok (* as *) * hint_type) option;
   t_tokeq: tok; (* = *)
   t_kind: type_def_kind;
   t_sc: tok; (* ; *)

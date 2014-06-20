@@ -1191,6 +1191,7 @@ and
                  t_tok = v_t_tok;
                  t_name = v_t_name;
                  t_tparams = v_t_tparams;
+                 t_tconstraint = v_t_tconstraint;
                  t_tokeq = v_t_tokeq;
                  t_kind = v_t_kind;
                  t_sc = v_t_sc
@@ -1204,6 +1205,15 @@ and
   let bnds = bnd :: bnds in
   let arg = vof_tok v_t_tokeq in
   let bnd = ("t_tokeq", arg) in
+  let bnds = bnd :: bnds in
+  let arg =
+    Ocaml.vof_option
+      (fun (v1, v2) ->
+         let v1 = vof_tok v1
+         and v2 = vof_hint_type v2
+         in Ocaml.VTuple [ v1; v2 ])
+      v_t_tconstraint in
+  let bnd = ("t_tconstraint", arg) in
   let bnds = bnd :: bnds in
   let arg = Ocaml.vof_option vof_type_params v_t_tparams in
   let bnd = ("t_tparams", arg) in
