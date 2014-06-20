@@ -24,6 +24,7 @@ module S = Scope_code
  * related: 
  *  - http://www.jetbrains.com/idea/documentation/ssr.html
  *  - http://beyondgrep.com/ (ack)
+ *  - http://awgn.github.io/cgrep/
  * 
  * See also codequery for more structural queries.
  *)
