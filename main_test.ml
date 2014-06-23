@@ -130,6 +130,12 @@ let action1 () =
   pr2_gen x;
   let x = 1 in
   pr2_gen x;
+  let round x y = (x + (y - 1)) land (lnot (y - 1)) in
+  let howmany x y = (x + (y - 1)) / y in
+  let roundup x y = howmany x y * y in
+  pr2_gen (round 1 1024);
+  pr2_gen (howmany 1 1024);
+  pr2_gen (roundup 1 1024);
   ()
 
 

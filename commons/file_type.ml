@@ -46,7 +46,7 @@ type file_type =
   | Erlang | Go | Rust
   | Beta
   | Pascal
-  | Haxe | Opa
+  | Haxe | Opa | Flash
   | Web of webpl_type
   | Bytecode of string
   | Asm
@@ -100,6 +100,8 @@ let file_type_of_file2 file =
 
   | "hx" | "hxp" | "hxml" -> PL Haxe
   | "opa" -> PL Opa
+
+  | "as" -> PL Flash
 
   | "bet" -> PL Beta
 

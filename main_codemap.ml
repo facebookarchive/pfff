@@ -600,6 +600,8 @@ let options () = [
 
     "-ft", Arg.Set_float Flag.threshold_draw_content_font_size_real,
     " <float> threshold to draw content";
+    "-nblines_file", Arg.Set_float Flag.threshold_draw_content_nblines,
+    " <float>";
     "-boost_lbl", Arg.Set Flag.boost_label_size,
     " boost size of labels";
     "-no_boost_lbl", Arg.Clear Flag.boost_label_size,

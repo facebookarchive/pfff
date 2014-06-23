@@ -3,7 +3,7 @@
 This document is a literate program~\cite{wp-literate-programming}. It
 is generated from a set of files that can be processed by tools
 (Noweb~\cite{noweb} and syncweb~\cite{syncweb}) to generate either
-this manual or the actual source code of the program. So, the code and
+this manual or the actual source code of the program. Thus the code and
 its documentation are strongly connected.
 
 \l speak about FACEBOOK: special marks ?

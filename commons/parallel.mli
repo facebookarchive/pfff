@@ -1,5 +1,8 @@
 
-val invoke : ('a -> 'b) -> 'a -> unit -> 'b
+(* returns a futur *)
+val invoke : 
+  ('a -> 'b) -> 'a ->
+  (unit -> 'b)
 
 val parallel_map : ('a -> 'b) -> 'a list -> 'b list
 

@@ -19,11 +19,14 @@ module S = Scope_code
  * Right now there is support for PHP, C/C++/ObjectiveC, OCaml, Java, and 
  * Javascript.
  * 
- * opti: git grep xxx | xargs sgrep -e 'foo(...)'
+ * opti: git grep foo | xargs sgrep -e 'foo(...)'
  * 
  * related: 
  *  - http://www.jetbrains.com/idea/documentation/ssr.html
  *  - http://beyondgrep.com/ (ack)
+ *  - http://awgn.github.io/cgrep/
+ * 
+ * See also codequery for more structural queries.
  *)
 
 (*****************************************************************************)
@@ -146,7 +149,7 @@ let parse_pattern str =
   (* for now we abuse the fuzzy parser of cpp for ml for the pattern as
    * we should not use comments in patterns
    *)
-  | "c++" | "ml" | "java" | "js" | "phpfuzzy" -> 
+  | "c" | "c++" | "ml" | "java" | "js" | "phpfuzzy" -> 
     Right (ast_fuzzy_of_string str)
   | _ -> failwith ("unsupported language: " ^ !lang)
 
@@ -160,7 +163,7 @@ let sgrep pattern file =
       )
       pattern 
       file 
-  | "c++", Right pattern ->
+  | ("c" | "c++"), Right pattern ->
     let ast = 
       try 
         Common.save_excursion Flag_parsing_cpp.verbose_lexing false (fun () ->
