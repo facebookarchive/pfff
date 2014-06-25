@@ -235,12 +235,22 @@ let spatch ?(case_sensitive=false) pattern file =
 
   let hook = 
     match pattern with
-    (* bugfix: if we have an ExprVar, then a pattern such as 
-     * $foo->method() will not match expressions such as 
-     * $foo->method()->method because the full ExprVar will not
-     * match. The pb is that we need not only a match_e_e but also
-     * a match_v_v with the same visitor
-     *)
+    | Expr (XhpHtml xhp) ->
+        { V.default_visitor with
+          V.kxhp_html = (fun (k, _) x ->
+            let matches_with_env =  
+              Matching_php.match_xhp_xhp xhp x
+            in 
+            if matches_with_env = []
+            then k x
+            else begin
+            was_modifed := true;
+            Transforming_php.transform_xhp_xhp xhp x
+              (* TODO, maybe could get multiple matching env *)
+              (List.hd matches_with_env) 
+            end
+          );
+        }
 
     | Expr pattern_expr ->
       { V.default_visitor with

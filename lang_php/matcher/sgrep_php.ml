@@ -83,14 +83,6 @@ let sgrep ?(case_sensitive=false) ~hook pattern file =
    *)
   let hook = 
     match pattern with
-    (* bugfix: if we have an ExprVar, then a pattern such as 
-     * $foo->method() will not match expressions such as 
-     * $foo->method()->method because the full ExprVar will not
-     * match. The pb is that we need not only a match_e_e but also
-     * a match_v_v with the same visitor. For each recursive
-     * types inside a recursive types, we need to do that
-     * (for now lvalue and xhp_html).
-     *)
     | Expr (XhpHtml xhp) ->
         { V.default_visitor with
           V.kxhp_html = (fun (k, _) x ->

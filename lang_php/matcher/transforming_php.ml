@@ -299,3 +299,6 @@ let transform_e_e pattern e   env =
 
 let transform_st_st pattern e   env = 
   ignore (MATCH.m_stmt pattern e   env)
+
+let transform_xhp_xhp pattern e   env = 
+  ignore (MATCH.m_xhp_html pattern e   env)

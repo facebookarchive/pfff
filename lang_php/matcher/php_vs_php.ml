@@ -280,6 +280,19 @@ let m_string_case a b =
   then m_string a b
   else m_string (String.lowercase a) (String.lowercase b)
 
+(* iso on different indentation *)
+let m_string_xhp_text (sa, ta) (sb, tb) =
+  let does_match =
+    sa =$= sb ||
+    (sa =~ "^[\n ]+$" && sb =~ "^[\n ]+$")
+  in
+  if does_match
+  then
+    X.tokenf ta tb >>= (fun (ta, tb) ->
+      return ((sa, ta), (sb, tb))
+    )
+  else fail ()
+
 (* ---------------------------------------------------------------------- *)
 (* scope, type (don't care for now) *)
 (* ---------------------------------------------------------------------- *)
@@ -1571,7 +1584,7 @@ and m_xhp_attr_value a b =
 and m_xhp_body a b =
   match a, b with
   | A.XhpText(a1), B.XhpText(b1) ->
-    (m_wrap m_string) a1 b1 >>= (fun (a1, b1) ->
+    m_string_xhp_text a1 b1 >>= (fun (a1, b1) ->
     return (
        A.XhpText(a1),
        B.XhpText(b1)
