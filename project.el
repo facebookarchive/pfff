@@ -253,12 +253,12 @@
    (join-string 
     (list 
      "-debugger"
-     (case 50
+     (case 3
 
        (0 "-send_mail_transfo /home/pad/pfff/tests/spatch/send_mail.php")
        (1 "-fbt_xhp_izer /home/pad/pfff/tests/php/spatch/fbt.php ")
        (2 "-f /home/pad/pfff/tests/php/spatch/foo.spatch /home/pad/pfff/tests/php/spatch/foo.php")
-       (3 "-f /home/pad/pfff/tests/php/spatch/border.spatch /home/pad/pfff/tests/php/spatch/border.php")
+       (3 "-f /home/pad/pfff/tests/php/spatch/xhp_nested.spatch /home/pad/pfff/tests/php/spatch/xhp_nested.php")
        (4 "-test")
        (5 "-f /home/pad/redirect.spatch /home/pad/redirect.php")
 
