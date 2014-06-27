@@ -91,7 +91,7 @@ let filter_files skip_list root xs =
     (skip_dirs +> List.exists 
        (fun dir -> readable =~ (dir ^ ".*"))) ||
     (skip_dir_elements +> List.exists 
-       (fun dir -> readable =~ (".*/" ^ dir ^ ".*")))
+       (fun dir -> readable =~ (".*/" ^ dir ^ "/.*")))
   )
 
 
