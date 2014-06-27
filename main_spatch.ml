@@ -755,6 +755,41 @@ let read_log_undefined_xhp_field pfff_log =
       } in      
       apply_transfo transfo [filename]
     )
+
+(*---------------------------------------------------------------------------*)
+(* array refactoring *)
+(*---------------------------------------------------------------------------*)
+
+let array_to_int_array_transfo line_closing_paren_array replacment = {
+  grep_keywords = None;
+  trans_func = (fun ast ->
+    let visitor = V.mk_visitor { V.default_visitor with
+      V.kexpr = (fun (k, _) e ->
+        match e with
+        | ArrayLong (tok, (_lp, _body, rp)) ->
+          let line_rp = PI.line_of_info rp in
+          if line_rp = line_closing_paren_array
+          then begin
+            tok.transfo <- Replace (AddStr replacment);
+          end
+        | _ -> k e
+      );
+    }
+    in
+    visitor (Program ast);
+    true (* was_modified *)
+  )
+}
+
+let array_to_int_array_ptc logfile =
+  logfile +> Common.cat +> List.iter (fun s ->
+    if s =~ "^\\(.*\\):\\([0-9]+\\):\\(.*\\)$"
+    then
+      let (file, linestr, replacment) = Common.matched3 s in
+      let line = int_of_string linestr in
+      apply_transfo (array_to_int_array_transfo line replacment) [file]
+    else failwith (spf "wrong format, expect a string * int: %s" s)
+  )
     
 (*---------------------------------------------------------------------------*)
 (* regression testing *)
@@ -824,6 +859,10 @@ let spatch_extra_actions () = [
       let refactoring = R.RemoveInterface (Some classname, interface), None in
       apply_refactoring refactoring file;
     else failwith "use the CLASS:INTERFACE format for -remove_interface"
+  );
+  "-array_to_int_array", " <specfile>",
+  Common.mk_action_1_arg (fun specfile ->
+    array_to_int_array_ptc specfile
   );
 
   "-test", " run regression tests",

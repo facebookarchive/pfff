@@ -32,7 +32,6 @@ MODULES=ptmap.ml ptset.ml
 MODULE_INTERFACES=ptmap.mli ptset.mli
 
 .PHONY : all clean cleanall cleandoc doc install remove
-.DELETE_ON_ERROR:.depend
 
 all:ptrees.cma
 all.opt: ptrees.cmxa
@@ -58,19 +57,9 @@ ptrees.cmxa:$(MODULES:.ml=.cmx)
 
 # Clean up
 clean:
-	$(RM) *.o *.a *.cm[iox] *~ *.annot .depend
-cleanall:clean
-	$(RM) *.cma *.cmxa
+	$(RM) *.o *.a *.cm[iox] *~ *.annot .depend *.cma *.cmxa
 
 depend:
 	$(OCAMLDEP) $(MODULE_INTERFACES) $(MODULES) > .depend
 
-# Dependencies
-.depend: $(MODULE_INTERFACES) $(MODULES)
-	$(OCAMLDEP) $(MODULE_INTERFACES) $(MODULES) > $@
-
-ifneq ($(MAKECMDGOALS),clean)
-ifneq ($(MAKECMDGOALS),cleanall)
 -include .depend
-endif
-endif

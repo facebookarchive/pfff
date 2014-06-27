@@ -9,10 +9,9 @@ fi
 echo setting OPAM
 #eval `~pad/packages/Linux/bin/opam config env` does not work, it expands
 # to /home/pieter/.opam/... when done by another user => inlined here
-#There are issues with 4.01 with ocsigen, js_of_ocaml, and ocamlnet
-# so let's go back to 4.00.1 for now
-export PATH=/home/pad/.opam/system/bin:/home/pad/packages/sbin:/home/pad/packages/bin:/home/pad/bin:/usr/kerberos/bin:/opt/local/bin:/usr/local/bin:/bin:/usr/bin:/usr/facebook/ops/scripts:/usr/facebook/scripts:/usr/facebook/scripts:/usr/facebook/scripts/db:/usr/local/sbin:/usr/sbin:/sbin:/mnt/vol/engshare/svnroot/tfb/trunk/www/scripts/bin:/mnt/vol/engshare/admin/scripts/hg:/mnt/vol/engshare/admin/scripts/git:/mnt/vol/engshare/admin/scripts:/home/pad/www/scripts/bin:/home/pad/packages/Linux/bin
-export CAML_LD_LIBRARY_PATH=/home/pad/.opam/system/lib/stublibs
+OPAM=4.01
+export PATH=/home/pad/.opam/$OPAM/bin:/home/pad/packages/sbin:/home/pad/packages/bin:/home/pad/bin:/usr/kerberos/bin:/opt/local/bin:/usr/local/bin:/bin:/usr/bin:/usr/facebook/ops/scripts:/usr/facebook/scripts:/usr/facebook/scripts:/usr/facebook/scripts/db:/usr/local/sbin:/usr/sbin:/sbin:/mnt/vol/engshare/svnroot/tfb/trunk/www/scripts/bin:/mnt/vol/engshare/admin/scripts/hg:/mnt/vol/engshare/admin/scripts/git:/mnt/vol/engshare/admin/scripts:/home/pad/www/scripts/bin:/home/pad/packages/Linux/bin
+export CAML_LD_LIBRARY_PATH=/home/pad/.opam/$OPAM/lib/stublibs
 
 # for exception stack traces
 echo setting OCAMLRUNPARAM
