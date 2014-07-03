@@ -374,8 +374,24 @@ and stmt_ env st acc =
       A.ClassDef (class_def env cd) :: acc
 
 
-and foreach_pattern _env _pat =
-  raise Common.Todo
+and foreach_pattern env pat =
+  match pat with
+  | ForeachVar (None, IdVar (dv, _)) ->
+      A.Id (dname dv), None
+  | ForeachArrow (ForeachVar (None, IdVar (dk, _)), _,
+                  ForeachVar (None, IdVar (dv, _))) ->
+      A.Id (dname dk), Some (A.Id (dname dv))
+  | ForeachList (_, (_, vl, _)) ->
+      let vl = comma_list vl in
+      let vl = List.fold_right (list_assign env) vl [] in
+      A.List vl, None
+  | ForeachArrow (ForeachVar (None, IdVar (dk, _)), _,
+                  ForeachList (_, (_, vl, _))) ->
+      let vl = List.fold_right (list_assign env) (comma_list vl) [] in
+      A.Id (dname dk), Some (A.List vl)
+  | _ ->
+      raise Common.Todo
+
 
 and use_filename _env = function
   | UseDirect (s, _) -> s
