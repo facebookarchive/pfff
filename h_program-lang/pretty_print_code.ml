@@ -130,9 +130,11 @@ let space_or_nl env =
 (* Margins *)
 (*****************************************************************************)
 
+let margin_offset = ref 2
+
 let push env =
   env.pushed <- true;
-  env.margin <- List.hd env.margin + 2 :: env.margin
+  env.margin <- List.hd env.margin + !margin_offset :: env.margin
 
 let pop env =
   env.margin <- List.tl env.margin

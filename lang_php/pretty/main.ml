@@ -1,14 +1,31 @@
+(*
+ * The author disclaims copyright to this source code.  In place of
+ * a legal notice, here is a blessing:
+ *
+ *    May you do good and not evil.
+ *    May you find forgiveness for yourself and forgive others.
+ *    May you share freely, never taking more than you give.
+ *)
 
 (*****************************************************************************)
-(* Pretty-printer Main *)
+(* Purpose *)
 (*****************************************************************************)
 
 (* Main entry point for the pretty printer *)
 (* Takes in php files, spits out their pretty printed version on stdout *)
 
-let usage _s =
-  Printf.fprintf stderr "Usage: %s files\n" Sys.argv.(0);
-  exit 2
+(*****************************************************************************)
+(* Flags *)
+(*****************************************************************************)
+
+let verbose = ref false
+
+(* action mode *)
+let action = ref ""
+
+(*****************************************************************************)
+(* Helpers *)
+(*****************************************************************************)
 
 let make_tmp() =
   let fn = Filename.temp_file "" ".php" in
@@ -29,8 +46,11 @@ let print_token tok =
   let line = Parse_info.line_of_info inf in
   Printf.printf "/BEGIN[%d]:%s:END/\n" line tok
 
-let () =
-  let files = List.tl (Array.to_list Sys.argv) in
+(*****************************************************************************)
+(* Main action *)
+(*****************************************************************************)
+
+let main_action files = 
   let files = if files = [] then [make_tmp()] else files in
   List.iter (
   fun file ->
@@ -40,3 +60,71 @@ let () =
     let ast    = Ast_pp_build.program_with_comments tokens ast in
     Pretty_print.program print_string ast
  ) files
+
+
+(*****************************************************************************)
+(* The options *)
+(*****************************************************************************)
+
+let all_actions () = 
+ []
+
+let options () = 
+  [
+    "-verbose", Arg.Set verbose, 
+    " ";
+    "-indent", Arg.Set_int Pretty_print_code.margin_offset, 
+    " <int>";
+  ] @
+  Common.options_of_actions action (all_actions())
+
+
+
+(*****************************************************************************)
+(* Main entry point *)
+(*****************************************************************************)
+
+let main () = 
+  let usage_msg = 
+    "Usage: " ^ Filename.basename Sys.argv.(0) ^ 
+      " [options] <files> " ^ "\n" ^ "Options are:"
+  in
+  (* does side effect on many global flags *)
+  let args = Common.parse_options (options()) usage_msg Sys.argv in
+
+  (* must be done after Arg.parse, because Common.profile is set by it *)
+  Common.profile_code "Main total" (fun () -> 
+
+    (match args with
+   
+    (* --------------------------------------------------------- *)
+    (* actions, useful to debug subpart *)
+    (* --------------------------------------------------------- *)
+    | xs when List.mem !action (Common.action_list (all_actions())) -> 
+        Common.do_action !action xs (all_actions())
+
+    | _ when not (Common.null_string !action) -> 
+        failwith ("unrecognized action or wrong params: " ^ !action)
+
+    (* --------------------------------------------------------- *)
+    (* main entry *)
+    (* --------------------------------------------------------- *)
+    | x::xs -> 
+        main_action (x::xs)
+
+    (* --------------------------------------------------------- *)
+    (* empty entry *)
+    (* --------------------------------------------------------- *)
+    | [] -> 
+        Common.usage usage_msg (options()); 
+        failwith "too few arguments"
+    )
+  )
+
+
+
+(*****************************************************************************)
+let _ =
+  Common.main_boilerplate (fun () -> 
+      main ();
+  )
