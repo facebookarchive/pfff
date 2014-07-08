@@ -1,11 +1,14 @@
+ifndef PFFF_HOME
+	PFFF_HOME=$(CURDIR)/../..
+endif
 
 # the perl below is because ocaml INT_MAX is smaller than PHP_INT_MAX
 # and this causes the json parsing of the file to fail.
 update:
 	rm -rf hni/ idl/ system/
 	mkdir -p hni idl system system/facebook
-	~/pfff/pfff_test -generate_php_stdlib ~/local/fbcode/hphp/system/idl idl/
-	~/pfff/pfff_test -generate_php_stdlib ~/local/fbcode/hphp/facebook/extensions idl/facebook/
+	$(PFFF_HOME)/pfff_test -generate_php_stdlib ~/local/fbcode/hphp/system/idl idl/
+	$(PFFF_HOME)/pfff_test -generate_php_stdlib ~/local/fbcode/hphp/facebook/extensions idl/facebook/
 	./stdlib_from_hni.sh ~/local/fbcode/hphp hni
 	cp -rf ~/local/fbcode/hphp/system/php/* system/
 	cp -rf ~/local/fbcode/hphp/facebook/system/php/* system/facebook/
@@ -28,7 +31,7 @@ stdlib: update
 	rm stdlib/idl/facebook/builtins_string_buffer.idl.hhi
 
 check:
-	~/pfff/codegraph -lang php -build .
+	$(PFFF_HOME)/codegraph -lang php -build .
 	cat pfff.log
 
 for_pad:
