@@ -27,7 +27,8 @@ module PI = Parse_info
  *  - introduced ranking via int (but mess)
  *  - introduced simplified ranking using intermediate rank type
  *  - fully generalize when introduced graph_code_checker.ml
- *  - add some false positive deadcode detection
+ *  - added @Scheck annotation
+ *  - added some false positive deadcode detection
  * 
  * todo:
  *  - priority to errors, so dead code func more important than dead field
@@ -170,6 +171,8 @@ let rank_of_error err =
   | Deadcode (_s, kind) ->
       (match kind with
       | E.Function -> Ok
+      (* or enable when use propagate_uses_of_defs_to_decl in graph_code *)
+      | E.GlobalExtern | E.Prototype -> Less
       | _ -> Ok
       )
   (* probably defined in assembly code? *)
