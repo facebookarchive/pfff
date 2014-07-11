@@ -91,7 +91,7 @@ rec:
 
 # server-side
 var/app.cma: $(LIBS_SERVER2) $(OBJS_SERVER) 
-	eliomc -a -o $@ $(SYSLIBS_SERVER) $^
+	eliomc -g -a -o $@ $(SYSLIBS_SERVER) $^
 
 _server/home.cmo: home.eliom
 	$(ELIOMC)  -c $(INCLUDES) $^
@@ -104,8 +104,8 @@ _server/test.cmo: test.eliom
 
 
 # client-side
-var/static/app.js: $(OBJS_CLIENT) $(LIBS_CLIENT2) runtime1.js
-	$(JS_OF_ELIOM) -I ../commons $(JSOPT) -o $@ $(SYSLIBS_CLIENT) $(LIBS_CLIENT2)  $(OBJS_CLIENT) -jsopt runtime1.js
+var/static/app.js: $(OBJS_CLIENT) $(LIBS_CLIENT2) runtime2.js
+	$(JS_OF_ELIOM) -I ../commons $(JSOPT) -o $@ $(SYSLIBS_CLIENT) $(LIBS_CLIENT2)  $(OBJS_CLIENT) -jsopt runtime2.js
 
 
 _client/home.cmo: home.eliom

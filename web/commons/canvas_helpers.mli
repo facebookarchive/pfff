@@ -23,8 +23,10 @@ object
   method device_to_user: x:int -> y:int -> float * float
   method device_to_user_size: int -> float
 
+(*
   method draw_line: (css_color * float * (float * float) * (float * float)) 
     -> unit
+*)
 
   method draw_rectangle:
     ?alpha:float -> color:Simple_color.emacs_color ->

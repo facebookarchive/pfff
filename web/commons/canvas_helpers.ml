@@ -105,6 +105,7 @@ method strokeStyle ?alpha color =
 (* Figures *)
 (*****************************************************************************)
 
+(*
 method draw_line (color, size, (x1, y1), (x2, y2)) =
   ctx##strokeStyle <- (Js.string color);
   ctx##lineWidth <- size;
@@ -112,6 +113,7 @@ method draw_line (color, size, (x1, y1), (x2, y2)) =
   ctx##moveTo(x1, y1);
   ctx##lineTo(x2, y2);
   ctx##stroke()
+*)
 
 method draw_rectangle ?alpha ~color ~line_width r =
 

@@ -26,7 +26,7 @@ let rpc_log =
 (*****************************************************************************)
 
 let main_service =
-  Eliom_service.service 
+  Eliom_service.Http.service 
     ~path:["codegraph"]
     ~get_params:Eliom_parameter.
       (string "size" ** string "project" ** string "path") ()
