@@ -633,7 +633,7 @@ let options () =
     "-with_graph_code", Arg.String (fun s -> graph_code := Some s), 
     " <file> use graph_code file for heavy analysis";
     "-filter", Arg.Set_int filter,
-    " <n> show only bugs whose importance > n";
+    " <n> show only bugs whose importance >= n";
     "-rank", Arg.Set rank,
     " rank errors and display the 20 most important";
     "-emacs", Arg.Unit (fun () -> show_progress := false;), 

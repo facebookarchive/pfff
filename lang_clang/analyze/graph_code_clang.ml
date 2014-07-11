@@ -785,7 +785,7 @@ let build ?(verbose=true) root files =
     typedefs_dependencies = false;
     types_dependencies = true;
     fields_dependencies = true;
-    propagate_deps_def_to_decl = true;
+    propagate_deps_def_to_decl = false;
   } in
 
   let env = {

@@ -55,7 +55,8 @@ type fact =
    *  name: string
    *)
   and entity = 
-   string list (* package/module/namespace/class qualifier*) * string (* name *)
+   string list (* package/module/namespace/class/struct/type qualifier*) * 
+   string (* name *)
 
 (*****************************************************************************)
 (* IO *)
@@ -122,6 +123,7 @@ let string_of_fact fact =
         spf "mixins('%s', '%s')" s1 s2
     | Implements (s1, s2) ->
         spf "implements('%s', '%s')" s1 s2
+
     | Privacy (entity, p) ->
       let predicate = 
         match p with
@@ -130,13 +132,15 @@ let string_of_fact fact =
         | E.Protected -> "is_protected"
       in
       spf "%s(%s)" predicate (string_of_entity entity)
-    (* todo: method?? *)
+
+    (* less: depending on kind of e1 we could have 'method' or 'constructor'*)
     | Call (e1, e2) ->
-        spf "docall(%s, %s, method)" 
+        spf "docall(%s, %s, function)" 
           (string_of_entity e1) (string_of_entity e2)
     | UseData (e1, e2) ->
         spf "use(%s, %s, field)" 
           (string_of_entity e1) (string_of_entity e2)
+
     | Misc s -> s
   in
   s ^ "."
@@ -181,7 +185,8 @@ let build g =
     | E.Exception
         -> add (Kind (entity_of_str str, kind))
     (* todo: interface | trait *)
-    | E.Class -> add (Kind (entity_of_str str, kind))
+    | E.Class -> 
+        add (Kind (entity_of_str str, kind))
 
     | E.File | E.Dir
     | E.Prototype | E.GlobalExtern 
@@ -196,7 +201,7 @@ let build g =
       add (At (entity_of_str str, 
                nodeinfo.G.pos.Parse_info.file,
                nodeinfo.G.pos.Parse_info.line))
-    with Not_found -> ()
+     with Not_found -> ()
     );
   );
 
@@ -215,13 +220,13 @@ let build g =
       add (Extends (s1, s2))
     | ((s1, E.Method), (s2, E.Method)) ->
       add (Call (entity_of_str s1, entity_of_str s2))
-    | ((s1, E.Method), (s2, (E.Field | E.ClassConstant) )) ->
-      add (UseData (entity_of_str s1, entity_of_str s2))
 
-    | ((s1, E.Function), (s2, E.Function)) ->
-      add (Call (entity_of_str s1, entity_of_str s2))
-    | ((s1, E.Function), (s2, E.Prototype)) ->
-      add (Call (entity_of_str s1, entity_of_str s2))
+    | ((s1, E.Function), (s2, (E.Function | E.Prototype))) ->
+        add (Call (entity_of_str s1, entity_of_str s2))
+
+    | ((s1, (E.Function | E.Method | E.Global | E.Constant)), 
+       (s2, (E.Field | E.ClassConstant) )) ->
+        add (UseData (entity_of_str s1, entity_of_str s2))
 
     | _ -> ()
   );

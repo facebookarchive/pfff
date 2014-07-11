@@ -66,9 +66,9 @@ let pr2_dbg s =
 (*****************************************************************************)
 (* Language specific, building the prolog db *)
 (*****************************************************************************)
-let build_prolog_db lang root =
+let build_prolog_db lang root xs =
   let root = Common.realpath root +> Common2.chop_dirsymbol in
-  let files = Find_source.files_of_root ~lang root in
+  let files = Find_source.files_of_dir_or_files ~lang ~verbose:!verbose xs in
   match lang with
   | "php" ->
       (* 
@@ -148,9 +148,10 @@ let build_prolog_db lang root =
 (* Main action *)
 (*****************************************************************************)
 
-let main_action root =
+let main_action xs =
   Logger.log Config_pfff.logger "codequery" None;
-  let compiled = build_prolog_db !lang root in
+  let root = Common2.common_prefix_of_files_or_dirs xs in
+  let compiled = build_prolog_db !lang root xs in
   Common.command2 compiled
 
 (*****************************************************************************)
@@ -167,9 +168,10 @@ let test () =
 
 (* ---------------------------------------------------------------------- *)
 let extra_actions () = [
-  "-build", " <dir> source code to analyze",
-  Common.mk_action_1_arg (fun dir -> 
-    let file = build_prolog_db !lang dir in
+  "-build", " <dirs> source code to analyze",
+  Common.mk_action_n_arg (fun xs -> 
+    let root = Common2.common_prefix_of_files_or_dirs xs in
+    let file = build_prolog_db !lang root xs in
     pr2 "";
     pr2 (spf "Your compiled prolog DB is ready. Run %s" file);
 
@@ -236,8 +238,8 @@ let main () =
     (* --------------------------------------------------------- *)
     (* main entry *)
     (* --------------------------------------------------------- *)
-    | [x] -> 
-        main_action x
+    | (x::xs) -> 
+        main_action (x::xs)
 
     (* --------------------------------------------------------- *)
     (* empty entry *)
