@@ -123,7 +123,7 @@
 %  - file information: file/2
 %       ex: file('wap/index.php', ['wap','index.php']).
 %    By having a list one then use member/3 to select subparts of the codebase
-%    easily.
+%    easily (or use explode_file/2)
 %
 % related work:
 %  - jquery, tyruba
@@ -277,6 +277,13 @@ overrides_trait(ChildClass, Method) :-
 
 % todo: could try to find uncaught exception by using docall, throw, and
 % catch predicates? would require a precise callgraph though.
+
+%---------------------------------------------------------------------------
+% Files
+%---------------------------------------------------------------------------
+
+explode_file(F, XS) :-
+        atomic_list_concat(XS, '/', F).
 
 %---------------------------------------------------------------------------
 % Operators for erling
