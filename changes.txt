@@ -1,6 +1,8 @@
 -*- org -*-
 
-* 0.28 (Q2 2014) (?? edge bundle?)
+* 0.29 (Q3 2014) (??)
+
+* 0.28 (Q2 2014) ((kernel.tex.nw parenthesis))
 
 ** codemap
 
@@ -9,11 +11,56 @@
 *** have a current entity selection that stays
 so can explore usages of a field for instance via emacs middle click
 
-** C
+** codegraph
 
-*** better infer typedefs, for unnamed structures (kencc ext), 
-toplevel prototypes
+*** can be applied to a list of dirs, not just one dir, allow to
+run for instance on include/ kernel/ while still using information
+from the skip_list
 
+*** new backend for js using avik's data and objC using mathieu's data
+
+** a better LOC counter 'codemap -test_loc' which modulate the size of files
+with archi_code classification
+
+** c
+
+*** better infer typedefs, for unnamed structures (kencc ext)
+and toplevel prototypes
+
+** clang
+
+*** handle local extern decl (they are not locals!),
+
+*** fix unincluder when have extern (forward) decl and decl in same .c
+
+** php
+
+*** support for $x::class (facebook extension), newtype x as x, ...$args (lexer only)
+
+*** fixed bugs in pretty printer and add -index_php <int> so can be configured to
+4 spaces
+
+*** codequery: type/2 predicate
+
+*** sgrep/spatch: trailing commas, xhp, nested patterns
+
+** javascript
+
+*** improve speed of parser on patholigical element_list case
+
+*** stags: better support 
+
+** ocaml
+
+*** better handling of labels, const vs globals in codegraph, dependencies
+for implicit fields
+
+** internal
+
+*** fixed all new ocaml 4.02 warnings, e.g. unused parameters
+
+*** less common specific code, ++ -> @, push2 -> push, 
+use of spatch for ocaml :)
 
 * 0.27 (Q1 2014) ("hypertext" codemap, generalized scheck)
 
@@ -57,6 +104,8 @@ less backward dependencies on plan9 for instance
 
 *** software architecture related checks
 Deadcode, UnusedExport, UndefinedDefOfDecl
+
+!!deadcode false positives help finding bugs in other parts of the analysis!!
 
 *** annotation support to skip false positives
 (port what was in cmf)
