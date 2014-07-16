@@ -33,6 +33,6 @@ void use_field_via_typedef2() {
   // unfortunately clang does not expand typedefs here, it works only
   // when the typedef is direct (e.g. not a pointer to a typedef)
   aliast *x;
-  //TODO: does not record the dependency too?
+  // but we record the dependency now also by better managing typedefs ourselves
   x->field2++;
 }

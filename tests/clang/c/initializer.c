@@ -5,6 +5,7 @@ int y;
 };
 
 
+// TODO: this is not currently handled :(
 struct FooInitializer globalInitializer = {
  .x = 1,
  .y = 2,
