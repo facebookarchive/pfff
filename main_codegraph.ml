@@ -356,6 +356,7 @@ let build_graph_code lang xs =
     Tags_file.generate_TAGS_file (p "TAGS") defs;
     let db = Graph_code_database.db_of_graph_code root g in
     Database_code.save_database db (p "PFFF_DB.marshall");
+    Database_code.save_database db (p "PFFF_DB.json");
   end;
   ()
 
