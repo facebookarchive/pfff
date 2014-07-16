@@ -105,6 +105,12 @@ type nodeinfo = {
   props: E.property list;
 }
 
+(* could also have a pos: and props: here *)
+type edgeinfo = {
+  write: bool; 
+  read: bool;
+}
+
 (* 
  * We use an imperative, directed, without intermediate node-index, graph.
  * 
@@ -128,7 +134,8 @@ type graph = {
    *)
   use: node G.graph;
 
-  info: (node, nodeinfo) Hashtbl.t;
+  nodeinfo: (node, nodeinfo) Hashtbl.t;
+  edgeinfo: ((node * node * edge), edgeinfo) Hashtbl.t;
 }
 
 type error =
@@ -208,7 +215,8 @@ let display_with_gv g =
 let create () =
   { has = G.create ();
     use = G.create ();
-    info = Hashtbl.create 101;
+    nodeinfo = Hashtbl.create 101;
+    edgeinfo = Hashtbl.create 101;
   }
 
 let add_node n g =
@@ -239,17 +247,21 @@ let remove_edge (n1, n2) e g =
   match e with
   | Has -> G.remove_edge n1 n2 g.has
   | Use -> G.remove_edge n1 n2 g.use
+
 let add_nodeinfo n info g =
   if not (G.has_node n g.has)
   then failwith "unknown node";
 
-  Hashtbl.replace g.info n info
+  Hashtbl.replace g.nodeinfo n info
+
+let add_edgeinfo (n1, n2) e info g =
+  Hashtbl.replace g.edgeinfo (n1, n2, e) info
 
 (*****************************************************************************)
 (* IO *)
 (*****************************************************************************)
 (* todo: what when have a .opti? cache_computation will shortcut us *)
-let version = 4
+let version = 5
 
 let save g file =
   (* see ocamlgraph FAQ *)
@@ -351,10 +363,14 @@ let nb_use_edges g =
   G.nb_edges g.use
 
 let nodeinfo n g =
-  Hashtbl.find g.info n
+  Hashtbl.find g.nodeinfo n
 
 let nodeinfo_opt n g =
   try Some (nodeinfo n g)
+  with Not_found -> None
+
+let edgeinfo_opt (n1, n2) e g =
+  try Some (Hashtbl.find g.edgeinfo (n1, n2, e))
   with Not_found -> None
 
 (* todo? assert it's a readable path? graph_code_php.ml is using readable

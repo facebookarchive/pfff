@@ -88,6 +88,8 @@ type env = {
   clang_line: int;
 
   at_toplevel: bool;
+  (* for prolog use/4 *)
+  in_assign: bool;
   (* we don't need to store also the 'params' as they are marked specially
    * as ParamVar in the AST.
    *)
@@ -353,7 +355,23 @@ let rec add_use_edge env (s, kind) =
       error env ("SRC FAIL:" ^ G.string_of_node src);
   (* the normal case *)
   | _ when G.has_node dst env.g ->
-      G.add_edge (src, dst) G.Use env.g
+      G.add_edge (src, dst) G.Use env.g;
+      (match kind with
+      | E.Global | E.Field ->
+        let oldinfoopt = G.edgeinfo_opt (src, dst) G.Use env.g in
+        let info = 
+          match oldinfoopt with
+          | Some info -> info
+          | None -> { G.read = false; G.write = false }
+        in
+        let newinfo =
+          if env.in_assign
+          then { info with G.write = true }
+          else { info with G.read = true }
+        in
+        G.add_edgeinfo (src, dst) G.Use newinfo env.g
+      | _ -> ()
+      );
   | _ ->
     (match kind with
     (* look for Prototype if no Function *)
@@ -478,7 +496,9 @@ and sexp_toplevel env x =
           | _ -> error env "weird LinkageSpecDecl"
           )
 
-      | CallExpr | DeclRefExpr | MemberExpr | UnaryExprOrTypeTraitExpr ->
+      | CallExpr | DeclRefExpr | MemberExpr | UnaryExprOrTypeTraitExpr
+      | BinaryOperator | CompoundAssignOperator | UnaryOperator
+        ->
           expr env (enum, l, xs)
       | _ -> 
           sexps env xs
@@ -760,10 +780,28 @@ and expr env (enum, _l, xs) =
       | Brace _ -> add_type_deps env typ
       | _ -> error env "wrong argument to sizeof"
       )
+  | (BinaryOperator | CompoundAssignOperator | UnaryOperator
+    ), _ -> ()
 
   | _ -> error env "Impossible, see dispatcher"
   );
-  sexps env xs
+  
+  (* mostly for generating use/read or use/write in prolog *)
+  (match enum, xs with
+  | BinaryOperator, _loc::_typ::T(TString "=")::e1::e2::[] 
+  | CompoundAssignOperator, _loc::_typ::_::  _::_::_::_::_::_::e1::e2::[]
+    ->
+     sexps { env with in_assign = true } [e1];
+     sexps env [e2];
+  (* potentially here we would like to treat as both a write and read
+   * of the variable, so maybe a trivalue would be better than a boolean
+   *)
+  | UnaryOperator, _loc::_typ::_inf_or_post::T(TString ("++"|"--"))::e::[] ->
+     sexps { env with in_assign = true } [e];
+
+  | _ -> 
+    sexps env xs
+  )
 
 (*****************************************************************************)
 (* Main entry point *)
@@ -802,6 +840,7 @@ let build ?(verbose=true) root files =
 
     root = root;
     at_toplevel = true;
+    in_assign = false;
     local_rename = Hashtbl.create 0;
     dupes = Hashtbl.create 101;
     conf;
