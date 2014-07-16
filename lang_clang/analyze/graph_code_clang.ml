@@ -798,6 +798,9 @@ and expr env (enum, _l, xs) =
    *)
   | UnaryOperator, _loc::_typ::_inf_or_post::T(TString ("++"|"--"))::e::[] ->
      sexps { env with in_assign = true } [e];
+  | UnaryOperator, _loc::_typ::_inf_or_post::T(TString ("&"))::e::[] ->
+     sexps { env with in_assign = true } [e];
+
 
   | _ -> 
     sexps env xs

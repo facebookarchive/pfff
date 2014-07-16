@@ -20,3 +20,12 @@ int rvalue_global() {
 void lvalue_global() {
   my_global = 1;
 }
+
+void modify_via_ref(int *ref) {
+  *ref = 1;
+}
+
+void via_pointer() {
+  modify_via_ref(&my_global);
+}
+
