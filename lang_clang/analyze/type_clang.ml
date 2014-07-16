@@ -90,7 +90,7 @@ let rec expand_typedefs typedefs t =
         (* right now 'typedef enum { ... } X' results in X being
          * typedefed to ... itself
          *)
-        if t' = t
+        if t' =*= t
         then t
         else expand_typedefs typedefs t'
       else t
@@ -183,10 +183,7 @@ let type_of_tokens loc xs =
         TypeofStuff
           
     | (TLowerIdent s | TUpperIdent s)::rest ->
-        aux2 (if Hashtbl.mem builtin_types s
-        then Builtin s
-        else Typename s
-        ) rest
+        aux2 (if Hashtbl.mem builtin_types s then Builtin s else Typename s) rest
     | x::_xs ->
         Errors_clang.error loc (spf "unhandled type prefix: %s" (Common.dump x))
 
