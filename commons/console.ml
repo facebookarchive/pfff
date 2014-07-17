@@ -7,6 +7,8 @@
  *     k ();
  *     ...
  *  ));
+ * 
+ * todo: Unix.isatty, and the spinner trick of jason \ | / -
  *)
 
 let execute_and_show_progress ~show len f = 

@@ -10,7 +10,7 @@ type fact =
   | Privacy of entity * Database_code.privacy
 
   | Call of entity * entity
-  | UseData of entity * entity
+  | UseData of entity * entity * bool option (* read/write *)
 
   | Misc of string
 

@@ -45,7 +45,7 @@ type fact =
   | Privacy of entity * Database_code.privacy
 
   | Call of entity * entity
-  | UseData of entity * entity
+  | UseData of entity * entity * bool option (* read/write *)
 
   | Misc of string
 
@@ -135,11 +135,16 @@ let string_of_fact fact =
 
     (* less: depending on kind of e1 we could have 'method' or 'constructor'*)
     | Call (e1, e2) ->
-        spf "docall(%s, %s, function)" 
+        spf "docall(%s, %s)" 
           (string_of_entity e1) (string_of_entity e2)
-    | UseData (e1, e2) ->
-        spf "use(%s, %s, field)" 
+    | UseData (e1, e2, b) ->
+        spf "use(%s, %s, %s)" 
           (string_of_entity e1) (string_of_entity e2)
+          (match b with
+          | None -> "na"
+          | Some true -> "write"
+          | Some false -> "read"
+          )
 
     | Misc s -> s
   in
@@ -166,10 +171,9 @@ let build g =
   let add x = Common.push x res in
 
   add (Misc "% -*- prolog -*-");
-  add (Misc ":- discontiguous kind/2, at/3");
+  add (Misc ":- discontiguous kind/2, at/3, type/2");
+  add (Misc ":- discontiguous docall/2, use/3");
   add (Misc ":- discontiguous extends/2, implements/2");
-  add (Misc ":- discontiguous docall/3");
-  add (Misc ":- discontiguous use/3");
 
   (* defs *)
   g +> G.iter_nodes (fun n ->
@@ -200,7 +204,13 @@ let build g =
       let nodeinfo = G.nodeinfo n g in
       add (At (entity_of_str str, 
                nodeinfo.G.pos.Parse_info.file,
-               nodeinfo.G.pos.Parse_info.line))
+               nodeinfo.G.pos.Parse_info.line));
+      let t =
+        match nodeinfo.G.typ with
+        | None -> "unknown"
+        | Some s -> s
+      in
+      add (Type (entity_of_str str, t))
      with Not_found -> ()
     );
   );
@@ -218,15 +228,25 @@ let build g =
      *)
     | ((s1, E.Class), (s2, E.Class)) ->
       add (Extends (s1, s2))
-    | ((s1, E.Method), (s2, E.Method)) ->
-      add (Call (entity_of_str s1, entity_of_str s2))
 
-    | ((s1, E.Function), (s2, (E.Function | E.Prototype))) ->
+    | ((s1, (E.Function | E.Method)), (s2, (E.Function | E.Prototype | E.Method))) ->
         add (Call (entity_of_str s1, entity_of_str s2))
 
     | ((s1, (E.Function | E.Method | E.Global | E.Constant)), 
-       (s2, (E.Field | E.ClassConstant) )) ->
-        add (UseData (entity_of_str s1, entity_of_str s2))
+       (s2, (E.Field | E.ClassConstant | E.Global) )) ->
+        let info = G.edgeinfo_opt (n1, n2) G.Use g in
+        (match info with
+        | None ->
+          add (UseData (entity_of_str s1, entity_of_str s2, None))
+        | Some { G.read = false; G.write = false } ->
+          failwith (spf "use access with neither read or write: %s -> %s"
+                      s1 s2)
+        | Some info ->
+          if info.G.read
+          then add (UseData (entity_of_str s1, entity_of_str s2, Some false));
+          if info.G.write
+          then add (UseData (entity_of_str s1, entity_of_str s2, Some true));
+        )
 
     | _ -> ()
   );

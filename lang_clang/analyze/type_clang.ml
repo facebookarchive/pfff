@@ -47,6 +47,22 @@ type type_clang =
   | Other of Parser_clang.token list
 
 (*****************************************************************************)
+(* Type -> string *)
+(*****************************************************************************)
+
+(* used for prolog type/2 *)
+let rec string_of_type_clang t =
+  match t with
+  | Builtin s | Typename s -> s
+  | Pointer t -> spf "pointer(%s)" (string_of_type_clang t)
+  | Function t -> spf "function(%s)" (string_of_type_clang t)
+  | StructName s | UnionName s | EnumName s -> s
+
+  | AnonStuff -> "_anon_"
+  | TypeofStuff -> "_typeof_"
+  | Other _ -> "_other_"
+
+(*****************************************************************************)
 (* Constants *)
 (*****************************************************************************)
 
@@ -90,7 +106,7 @@ let rec expand_typedefs typedefs t =
         (* right now 'typedef enum { ... } X' results in X being
          * typedefed to ... itself
          *)
-        if t' = t
+        if t' =*= t
         then t
         else expand_typedefs typedefs t'
       else t
@@ -183,10 +199,7 @@ let type_of_tokens loc xs =
         TypeofStuff
           
     | (TLowerIdent s | TUpperIdent s)::rest ->
-        aux2 (if Hashtbl.mem builtin_types s
-        then Builtin s
-        else Typename s
-        ) rest
+        aux2 (if Hashtbl.mem builtin_types s then Builtin s else Typename s) rest
     | x::_xs ->
         Errors_clang.error loc (spf "unhandled type prefix: %s" (Common.dump x))
 

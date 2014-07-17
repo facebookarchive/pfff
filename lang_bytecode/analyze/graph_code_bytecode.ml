@@ -306,6 +306,7 @@ let extract_defs2 ~g ~file ~graph_code_java ~hjavabasename_to_fullpath ast =
       file = file;
     };
     props = [];
+    typ = None;
   } in
   g +> G.add_nodeinfo node nodeinfo;
   (match class_.nested_or_anon with

@@ -395,6 +395,10 @@ let visit_program
         );
         aux_toks (T.TComment ii3::T.TCommentNewline ii4::T.TComment ii5::xs)
 
+    |   T.TComment(ii)::xs when (PI.str_of_info ii) =~ "(\\*[ ]*coupling:" ->
+        tag ii CommentSection2;
+        aux_toks xs
+
 
     (* If had a parse error, then the AST will not contain the definitions, but
      * we can still try to tag certain things. Here is a

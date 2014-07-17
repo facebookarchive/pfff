@@ -74,4 +74,14 @@
   "command": "clang -c /home/pad/pfff/tests/clang/c/extern.c",
   "file": "/home/pad/pfff/tests/clang/c/extern.c"
 },
+{
+  "directory": "/home/pad/pfff/tests/clang/c",
+  "command": "clang -c /home/pad/pfff/tests/clang/c/initializer.c",
+  "file": "/home/pad/pfff/tests/clang/c/initializer.c"
+},
+{
+  "directory": "/home/pad/pfff/tests/clang/c",
+  "command": "clang -c /home/pad/pfff/tests/clang/c/assign.c",
+  "file": "/home/pad/pfff/tests/clang/c/assign.c"
+},
 ]

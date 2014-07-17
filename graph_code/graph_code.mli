@@ -5,8 +5,13 @@ type node = string * Database_code.entity_kind
     (* the filename embedded inside token_location can be a readable path *)
     pos: Parse_info.token_location;
     props: Database_code.property list;
+    typ: string option; 
   }
 type edge = Has | Use
+  type edgeinfo = {
+    write: bool; 
+    read: bool;
+  }
 (* !! the main type!! really an hypergraph actually *)
 type graph
 
@@ -58,6 +63,7 @@ val create: unit -> graph
 val add_node: node -> graph -> unit
 val add_nodeinfo: node -> nodeinfo -> graph -> unit
 val add_edge: (node * node) -> edge -> graph -> unit
+val add_edgeinfo: (node * node) -> edge -> edgeinfo -> graph -> unit
 val remove_edge: (node * node) -> edge -> graph -> unit
 
 (* graph construction helpers *)
@@ -84,6 +90,7 @@ val all_children: node -> graph -> node list
 (* may raise Not_found *)
 val nodeinfo: node -> graph -> nodeinfo
 val nodeinfo_opt: node -> graph -> nodeinfo option
+val edgeinfo_opt: (node * node) -> edge -> graph -> edgeinfo option
 (* should be in readable path if you want your codegraph to be "portable" *)
 val file_of_node: node -> graph -> Common.filename
 val privacy_of_node: node -> graph -> Database_code.privacy

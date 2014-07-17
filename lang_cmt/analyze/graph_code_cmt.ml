@@ -251,6 +251,7 @@ let add_node_and_edge_if_defs_mode ?(dupe_ok=false) env name_node loc =
             file;
          };
          props = [];
+         typ = None; (* TODO *)
       } in
       env.g +> G.add_nodeinfo node nodeinfo
     end

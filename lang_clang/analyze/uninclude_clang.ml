@@ -26,7 +26,7 @@ module Loc = Location_clang
 (* Prelude *)
 (*****************************************************************************)
 (*
- * This assumes 'clang-check --ast-dump' generate realpath path.
+ * This assumes 'clang-check --ast-dump' generate realpath paths.
  *)
 
 (*****************************************************************************)

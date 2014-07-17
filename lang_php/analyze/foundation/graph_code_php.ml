@@ -355,7 +355,8 @@ let add_node_and_has_edge2 ?(props=[]) env (ident, kind) =
     env.g +> G.add_edge (env.cur.node, node) G.Has;
     let pos = Parse_info.token_location_of_info (Ast.tok_of_ident ident) in
     let pos = { pos with Parse_info.file = env.cur.readable } in
-    let nodeinfo = { Graph_code. pos; props } in
+    let typ = None in (* todo *)
+    let nodeinfo = { Graph_code. pos; props; typ } in
     env.g +> G.add_nodeinfo node nodeinfo;
    end
   end;
