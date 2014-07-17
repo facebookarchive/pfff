@@ -5,6 +5,7 @@ type node = string * Database_code.entity_kind
     (* the filename embedded inside token_location can be a readable path *)
     pos: Parse_info.token_location;
     props: Database_code.property list;
+    typ: string option; 
   }
 type edge = Has | Use
   type edgeinfo = {

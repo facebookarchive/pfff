@@ -16,6 +16,8 @@ type type_clang =
 
   | Other of Parser_clang.token list
 
+val string_of_type_clang: type_clang -> string
+
 val builtin_types: string Common.hashset
 
 val tokens_of_brace_sexp: 

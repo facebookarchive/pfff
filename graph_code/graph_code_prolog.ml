@@ -171,7 +171,7 @@ let build g =
   let add x = Common.push x res in
 
   add (Misc "% -*- prolog -*-");
-  add (Misc ":- discontiguous kind/2, at/3");
+  add (Misc ":- discontiguous kind/2, at/3, type/2");
   add (Misc ":- discontiguous docall/2, use/3");
   add (Misc ":- discontiguous extends/2, implements/2");
 
@@ -204,7 +204,13 @@ let build g =
       let nodeinfo = G.nodeinfo n g in
       add (At (entity_of_str str, 
                nodeinfo.G.pos.Parse_info.file,
-               nodeinfo.G.pos.Parse_info.line))
+               nodeinfo.G.pos.Parse_info.line));
+      let t =
+        match nodeinfo.G.typ with
+        | None -> "unknown"
+        | Some s -> s
+      in
+      add (Type (entity_of_str str, t))
      with Not_found -> ()
     );
   );

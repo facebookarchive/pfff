@@ -47,6 +47,22 @@ type type_clang =
   | Other of Parser_clang.token list
 
 (*****************************************************************************)
+(* Type -> string *)
+(*****************************************************************************)
+
+(* used for prolog type/2 *)
+let rec string_of_type_clang t =
+  match t with
+  | Builtin s | Typename s -> s
+  | Pointer t -> spf "pointer(%s)" (string_of_type_clang t)
+  | Function t -> spf "function(%s)" (string_of_type_clang t)
+  | StructName s | UnionName s | EnumName s -> s
+
+  | AnonStuff -> "_anon_"
+  | TypeofStuff -> "_typeof_"
+  | Other _ -> "_other_"
+
+(*****************************************************************************)
 (* Constants *)
 (*****************************************************************************)
 

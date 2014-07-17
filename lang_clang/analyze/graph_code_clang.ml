@@ -122,7 +122,6 @@ let unknown_location = "Unknown_Location", E.File
 
 type kind_file = Source | Header
 
-
 (*****************************************************************************)
 (* Parsing *)
 (*****************************************************************************)
@@ -245,11 +244,27 @@ let kind_file env =
    (* failwith ("unknown kind of file: " ^ s) *)
     Source
 
+let type_clang_of_sexptype env typ =
+  let loc = loc_of_env env in
+  let toks = 
+    Type_clang.tokens_of_brace_sexp env.conf.typedefs_dependencies loc typ in
+  let t = Type_clang.type_of_tokens loc toks in
+  if env.conf.typedefs_dependencies
+  then t 
+  else 
+    (* can we do that anytime? like in Defs phase? 
+     * no because even if the .clang have the headers included and so
+     * typedef declarations, our .clang2 after deduping don't, so
+     * we need to wait for the first pass to have all the typedefs
+     * before we can expand them!
+     *)
+    Type_clang.expand_typedefs env.typedefs t
+
 (*****************************************************************************)
 (* Add Node *)
 (*****************************************************************************)
 
-let add_node_and_edge_if_defs_mode env node =
+let add_node_and_edge_if_defs_mode env node typopt =
   let (str, kind) = node in
   let str' =
     match kind, env.current with
@@ -316,8 +331,17 @@ let add_node_and_edge_if_defs_mode env node =
       | _ ->
           failwith (spf "Unhandled category: %s" (G.string_of_node node))
       )
+
     (* ok not a dupe, let's add it then *)
     | _ ->
+      let typ = 
+        match typopt with
+        | None -> None
+        | Some sexptyp ->
+            let t = type_clang_of_sexptype env sexptyp in
+            let s = Type_clang.string_of_type_clang t in
+            Some s
+      in
       (* less: still needed to have a try? *)
       try
         let nodeinfo = { Graph_code.
@@ -328,6 +352,7 @@ let add_node_and_edge_if_defs_mode env node =
             file = env.c_file_readable;
           };
           props = [];
+          typ;
         } in
         env.g +> G.add_node node;
         env.g +> G.add_edge (env.current, node) G.Has;
@@ -399,15 +424,7 @@ let rec add_use_edge env (s, kind) =
       
 let add_type_deps env typ =
   if env.phase = Uses && env.conf.types_dependencies then begin
-    let loc = loc_of_env env in
-    let toks = 
-      Type_clang.tokens_of_brace_sexp env.conf.typedefs_dependencies loc typ in
-    let t = Type_clang.type_of_tokens loc toks in
-    let t = 
-      if env.conf.typedefs_dependencies
-      then t 
-      else Type_clang.expand_typedefs env.typedefs t
-    in
+    let t = type_clang_of_sexptype env typ in
     let rec aux t = 
       match t with
       | Typ.Builtin _ -> ()
@@ -560,7 +577,7 @@ and decl env (enum, _l, xs) =
           (* todo: when prototype and in .c, then it's probably a forward
            * decl that we could just skip?
            *)
-          else add_node_and_edge_if_defs_mode env (s, kind) 
+          else add_node_and_edge_if_defs_mode env (s, kind) (Some typ)
         in
         if kind <> E.Prototype then add_type_deps env typ;
         { env with locals = ref [] }
@@ -586,7 +603,7 @@ and decl env (enum, _l, xs) =
           if env.at_toplevel 
           then 
             let s = if static then new_str_if_defs env s else s in
-            add_node_and_edge_if_defs_mode env (s, kind)
+            add_node_and_edge_if_defs_mode env (s, kind) (Some typ)
           else begin
             if kind <> E.GlobalExtern
             then env.locals := s::!(env.locals);
@@ -617,12 +634,12 @@ and decl env (enum, _l, xs) =
           (* todo: if are in Source, then maybe can add in local_typedefs *)
           else Hashtbl.add env.typedefs s t
         end;
-        let env = add_node_and_edge_if_defs_mode env ("T__" ^ s, E.Type) in
+        let env = add_node_and_edge_if_defs_mode env ("T__" ^ s, E.Type) (Some typ) in
         (* add_type_deps env typ; *)
         env
         
     | EnumDecl, _loc::(T (TLowerIdent s | TUpperIdent s))::_rest ->
-        add_node_and_edge_if_defs_mode env ("E__" ^ s, E.Type) 
+        add_node_and_edge_if_defs_mode env ("E__" ^ s, E.Type) None
 
     (* ignore forward decl, to avoid duped entities *)
     | RecordDecl, _loc::(T (TLowerIdent ("struct" | "union")))
@@ -631,34 +648,34 @@ and decl env (enum, _l, xs) =
     (* regular defs *)
     | RecordDecl, _loc::(T (TLowerIdent "struct"))
         ::(T (TLowerIdent s | TUpperIdent s))::_rest ->
-        add_node_and_edge_if_defs_mode env ("S__" ^ s, E.Type)
+        add_node_and_edge_if_defs_mode env ("S__" ^ s, E.Type) None
     | RecordDecl, _loc::(T (TLowerIdent "union"))
         ::(T (TLowerIdent s | TUpperIdent s))::_rest ->
-        add_node_and_edge_if_defs_mode env ("U__" ^ s, E.Type)
+        add_node_and_edge_if_defs_mode env ("U__" ^ s, E.Type) None
     (* usually embedded struct *)
     | RecordDecl, loc::(T (TLowerIdent "struct"))::_rest ->
         add_node_and_edge_if_defs_mode env 
-          (spf "S__anon__%s" (str_of_angle_loc env loc), E.Type)
+          (spf "S__anon__%s" (str_of_angle_loc env loc), E.Type) None
           
     (* todo: usually there is a typedef just behind *)
     | EnumDecl, loc::_rest ->
         add_node_and_edge_if_defs_mode env 
-          (spf "E__anon__%s" (str_of_angle_loc env loc), E.Type)
+          (spf "E__anon__%s" (str_of_angle_loc env loc), E.Type) None
     | RecordDecl, loc::(T (TLowerIdent "union"))::_rest ->
         add_node_and_edge_if_defs_mode env 
-          (spf "U__anon__%s" (str_of_angle_loc env loc), E.Type)
+          (spf "U__anon__%s" (str_of_angle_loc env loc), E.Type) None
 
     | FieldDecl, _loc::(T (TLowerIdent s | TUpperIdent s))::typ::_rest ->
-        let env = add_node_and_edge_if_defs_mode env (s, E.Field) in 
+        let env = add_node_and_edge_if_defs_mode env (s, E.Field) (Some typ) in 
         add_type_deps env typ;
         env
     | FieldDecl, loc::_rest ->
         add_node_and_edge_if_defs_mode env 
-          (spf "F__anon__%s" (str_of_angle_loc env loc), E.Field)
+          (spf "F__anon__%s" (str_of_angle_loc env loc), E.Field) None
 
     | EnumConstantDecl, _loc::(T (TLowerIdent s | TUpperIdent s))::_rest ->
         let s = if kind_file env =*= Source then new_str_if_defs env s else s in
-        add_node_and_edge_if_defs_mode env (s, E.Constructor)
+        add_node_and_edge_if_defs_mode env (s, E.Constructor) None
         
     | _ -> error env "wrong Decl line" 
   in

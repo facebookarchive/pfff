@@ -103,6 +103,8 @@ type edge =
 type nodeinfo = { 
   pos: Parse_info.token_location;
   props: E.property list;
+  (* would be better to have a more structured form than string at some point *)
+  typ: string option; 
 }
 
 (* could also have a pos: and props: here *)

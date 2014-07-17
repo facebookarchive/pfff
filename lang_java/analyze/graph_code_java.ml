@@ -135,7 +135,8 @@ let long_ident_of_class_type xs = List.map fst xs
 
 let nodeinfo ident =
   { G.pos = Parse_info.token_location_of_info (Ast.info_of_ident ident);
-    G.props = []
+    props = [];
+    typ = None;
   }
 
 
