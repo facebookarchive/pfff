@@ -803,7 +803,10 @@ and expr env (enum, _l, xs) =
   | _ -> error env "Impossible, see dispatcher"
   );
   
-  (* mostly for generating use/read or use/write in prolog *)
+  (* mostly for generating use/read or use/write in prolog.
+   * todo: handle also int x = ...; then it's not a assign, it's a VarDecl
+   * with a body.
+   *)
   (match enum, xs with
   | BinaryOperator, _loc::_typ::T(TString "=")::e1::e2::[] 
   | CompoundAssignOperator, _loc::_typ::_::  _::_::_::_::_::_::e1::e2::[]
