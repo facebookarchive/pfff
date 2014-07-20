@@ -101,6 +101,10 @@ type env = {
   (* less: we could also have a local_typedefs field *)
   typedefs: (string, Type_clang.type_clang) Hashtbl.t;
   dupes: (Graph_code.node, bool) Hashtbl.t;
+  (* mostly for InitListExpr to work on structs because of the way clang
+   * unsugar designators and reorder to straight array assignments.
+   *)
+  fields: (string, string list) Hashtbl.t;
 
   log: string -> unit;
   pr2_and_log: string -> unit;
@@ -108,13 +112,14 @@ type env = {
  and phase = Defs | Uses
 
 and config = {
+  types_dependencies: bool;
+  fields_dependencies: bool;
+
   (* We normally expand references to typedefs, to normalize and simplify
    * things. Set this variable to true if instead you want to know who is
    * using a typedef.
    *)
   typedefs_dependencies: bool;
-  types_dependencies: bool;
-  fields_dependencies: bool;
   propagate_deps_def_to_decl: bool;
 }
 
@@ -517,6 +522,7 @@ and sexp_toplevel env x =
 
       | CallExpr | DeclRefExpr | MemberExpr | UnaryExprOrTypeTraitExpr
       | BinaryOperator | CompoundAssignOperator | UnaryOperator
+      | InitListExpr
         ->
           expr env (enum, l, xs)
       | _ -> 
@@ -647,10 +653,25 @@ and decl env (enum, _l, xs) =
     | RecordDecl, _loc::(T (TLowerIdent ("struct" | "union")))
         ::(T (TLowerIdent _s | TUpperIdent _s))::[] ->
         env
+
     (* regular defs *)
     | RecordDecl, _loc::(T (TLowerIdent "struct"))
-        ::(T (TLowerIdent s | TUpperIdent s))::_rest ->
-        add_node_and_edge_if_defs_mode env ("S__" ^ s, E.Type) None
+        ::(T (TLowerIdent s | TUpperIdent s))::rest ->
+        let env = add_node_and_edge_if_defs_mode env ("S__" ^ s, E.Type) None in
+        if env.phase = Defs then begin
+          (* this is used for InitListExpr *)
+          let fields = 
+            rest +> Common.map_filter (function
+            | Paren (FieldDecl, _, _::(T (TLowerIdent s | TUpperIdent s))::_)->
+                Some s
+            (* could print a warning?*)
+            | _ -> None
+            )
+          in
+          Hashtbl.replace env.fields ("S__"^s) fields
+        end;
+        env
+
     | RecordDecl, _loc::(T (TLowerIdent "union"))
         ::(T (TLowerIdent s | TUpperIdent s))::_rest ->
         add_node_and_edge_if_defs_mode env ("U__" ^ s, E.Type) None
@@ -793,6 +814,23 @@ and expr env (enum, _l, xs) =
         )
       end;
       sexps env xs
+  | InitListExpr, _loc::typ::inits ->
+      if env.phase = Uses && env.conf.fields_dependencies
+      then begin
+        let t = type_clang_of_sexptype env typ in
+        (match t with
+        | Typ.StructName s ->
+          (match Common2.hfind_option (spf "S__%s" s) env.fields with
+          | Some fields ->
+              init_list_expr_fields env s inits fields
+          | None ->
+              error env (spf "structure unknown: %s" s)
+            (* sexps env xs *)
+          )
+        | _ -> sexps env xs
+        )
+      end
+      else sexps env xs
 
   (* anon field *)
   | MemberExpr, _loc::_typ::_lval::T (TDot|TArrow)::
@@ -833,7 +871,21 @@ and expr env (enum, _l, xs) =
       sexps env xs
   | _ -> 
     error env "Impossible, see dispatcher"
-  
+
+and init_list_expr_fields env s inits fields =
+  match inits, fields with
+  | [], [] -> ()
+  | [], _x::_xs ->
+    (* less value than field, C semantic? *)
+    ()
+  | _x::_xs, [] ->
+    error env "more values than fields"
+  | x::xs, fld::ys ->
+    (* similar to what I do for MemberExpr *)
+    add_use_edge env (spf "S__%s.%s" s fld, E.Field);
+    sexp env x;
+    init_list_expr_fields env s xs ys
+      
 
 (*****************************************************************************)
 (* Main entry point *)
@@ -852,9 +904,10 @@ let build ?(verbose=true) root files =
   (* less: we could also have a local_typedefs_of_files to avoid conflicts *)
   
   let conf = {
-    typedefs_dependencies = false;
     types_dependencies = true;
     fields_dependencies = true;
+
+    typedefs_dependencies = false;
     propagate_deps_def_to_decl = false;
   } in
 
@@ -877,6 +930,7 @@ let build ?(verbose=true) root files =
     dupes = Hashtbl.create 101;
     conf;
     typedefs = Hashtbl.create 101;
+    fields = Hashtbl.create 101;
     locals = ref [];
 
     log = (fun s -> output_string chan (s ^ "\n"); flush chan;);
