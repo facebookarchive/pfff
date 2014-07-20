@@ -248,7 +248,8 @@ let type_clang_of_sexptype env typ =
   let loc = loc_of_env env in
   let toks = 
     Type_clang.tokens_of_brace_sexp env.conf.typedefs_dependencies loc typ in
-  let t = Type_clang.type_of_tokens loc toks in
+  let t = 
+    Type_clang.type_of_tokens loc toks in
   if env.conf.typedefs_dependencies
   then t 
   else 
@@ -396,7 +397,8 @@ let rec add_use_edge env (s, kind) =
         in
         G.add_edgeinfo (src, dst) G.Use newinfo env.g
       | _ -> ()
-      );
+      )
+  (* try to 'rekind' *)
   | _ ->
     (match kind with
     (* look for Prototype if no Function *)
@@ -694,7 +696,7 @@ and decl env (enum, _l, xs) =
 
 (* coupling: must add constructor in dispatcher above if add one case here *)
 and expr env (enum, _l, xs) =
-  (match enum, xs with
+  match enum, xs with
   | CallExpr, _loc::_typ
       ::(Paren (ImplicitCastExpr, _l2, 
              _loc2::_typ2::Angle _::
@@ -703,26 +705,31 @@ and expr env (enum, _l, xs) =
                         ::T (TString s)::_typ4::[]))::[]))
       ::_args ->
       if env.phase = Uses
-      then add_use_edge env (str env s, E.Function)
+      then add_use_edge env (str env s, E.Function);
+      sexps env xs
 
   (* todo: unexpected form of call? function pointer call? add to stats *)
-  | CallExpr, _ -> ()
+  | CallExpr, _ -> sexps env xs
+
 
   | DeclRefExpr, _loc::_typ::T (TUpperIdent "EnumConstant")::_address
       ::T (TString s)::_rest ->
       if env.phase = Uses
-      then  add_use_edge env (str env s, E.Constructor)
+      then add_use_edge env (str env s, E.Constructor);
+      sexps env xs
 
   | DeclRefExpr, _loc::_typ::_lval::T (TUpperIdent "Var")::_address
       ::T (TString s)::_rest ->
       if env.phase = Uses
-      then
+      then begin
         if List.mem s !(env.locals)
         then ()
         else add_use_edge env (str env s, E.Global)
+      end;
+      sexps env xs
 
   | DeclRefExpr, _loc::_typ::_lval::T (TUpperIdent "ParmVar")::_rest -> 
-      ()
+      sexps env xs
 
   | DeclRefExpr, _loc::_typ::T (TUpperIdent "Function")::_address
       ::T (TString s)::_rest 
@@ -731,11 +738,14 @@ and expr env (enum, _l, xs) =
       ::T (TString s)::_rest 
       ->
       if env.phase = Uses
-      then add_use_edge env (str env s, E.Function)
+      then add_use_edge env (str env s, E.Function);
+      sexps env xs
         
   | DeclRefExpr, _loc::_typ::T (TLowerIdent "lvalue")
       ::T (TUpperIdent "CXXMethod")::_rest
-      -> pr2_once "CXXMethod not handled"
+      -> 
+      pr2_once "CXXMethod not handled";
+      sexps env xs
      
   | DeclRefExpr, _ -> error env "DeclRefExpr to handle"
 
@@ -754,9 +764,8 @@ and expr env (enum, _l, xs) =
                  T (TLowerIdent fld | TUpperIdent fld);
                  _address;(Paren (enum2, l2, xs))] ->
       if env.phase = Uses && env.conf.fields_dependencies
-      then
+      then begin
         let loc = env.clang2_file, l2 in
-        (* todo1: use expand_type there too *)
         let toks = Type_clang.tokens_of_paren_sexp loc (Paren(enum2, l2, xs))in
         let typ_subexpr = Type_clang.type_of_tokens loc toks in
         let typ_subexpr = Type_clang.expand_typedefs env.typedefs typ_subexpr in
@@ -782,37 +791,28 @@ and expr env (enum, _l, xs) =
           ) ->
             error env (spf "unhandled typ: %s" (Common.dump typ_subexpr))
         )
+      end;
+      sexps env xs
 
   (* anon field *)
   | MemberExpr, _loc::_typ::_lval::T (TDot|TArrow)::
       _address::(Paren (_enum2, _l2, _xs))::[] ->
       if env.phase = Uses
-      then ()
+      then ();
+      sexps env xs
 
   | MemberExpr, _ -> error env "MemberExpr to handle"
 
-  | UnaryExprOrTypeTraitExpr, _loc::_typ::T(TLowerIdent "sizeof")::typ::_rest ->
-      (match typ with
-      | Paren _ -> ()
-      | Brace _ -> add_type_deps env typ
-      | _ -> error env "wrong argument to sizeof"
-      )
-  | (BinaryOperator | CompoundAssignOperator | UnaryOperator
-    ), _ -> ()
-
-  | _ -> error env "Impossible, see dispatcher"
-  );
-  
   (* mostly for generating use/read or use/write in prolog.
    * todo: handle also int x = ...; then it's not a assign, it's a VarDecl
    * with a body.
    *)
-  (match enum, xs with
   | BinaryOperator, _loc::_typ::T(TString "=")::e1::e2::[] 
   | CompoundAssignOperator, _loc::_typ::_::  _::_::_::_::_::_::e1::e2::[]
     ->
      sexps { env with in_assign = true } [e1];
      sexps env [e2];
+
   (* potentially here we would like to treat as both a write and read
    * of the variable, so maybe a trivalue would be better than a boolean
    *)
@@ -821,10 +821,19 @@ and expr env (enum, _l, xs) =
   | UnaryOperator, _loc::_typ::_inf_or_post::T(TString ("&"))::e::[] ->
      sexps { env with in_assign = true } [e];
 
+  | UnaryExprOrTypeTraitExpr, _loc::_typ::T(TLowerIdent "sizeof")::typ::_rest ->
+      (match typ with
+      | Paren _ -> ()
+      | Brace _ -> add_type_deps env typ
+      | _ -> error env "wrong argument to sizeof"
+      );
+      sexps env xs
 
+  | (BinaryOperator | UnaryOperator | CompoundAssignOperator), _ ->
+      sexps env xs
   | _ -> 
-    sexps env xs
-  )
+    error env "Impossible, see dispatcher"
+  
 
 (*****************************************************************************)
 (* Main entry point *)
