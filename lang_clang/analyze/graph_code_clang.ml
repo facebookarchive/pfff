@@ -16,11 +16,11 @@ open Common
 
 open Parser_clang
 open Ast_clang
-module Ast = Ast_clang
 module Loc = Location_clang
 module Typ = Type_clang
 module E = Database_code
 module G = Graph_code
+module P = Graph_code_prolog
 
 (*****************************************************************************)
 (* Prelude *)
@@ -39,7 +39,8 @@ module G = Graph_code
  *       -> Dir -> SubDir -> ...
  * 
  * Note that there is no Constant here as #define are not in clang ASTs
- * as the preprocessor has been called already on the file.
+ * as the preprocessor has been called already on the file (which is
+ * why it's better to (ab)use enum for constants so at least they are here).
  * 
  * procedure to analyze a project:
  *  $ make V=1 > make_trace.txt
@@ -72,6 +73,7 @@ type env = {
   (* now in Graph_code.gensym:  cnt: int ref; *)
 
   current: Graph_code.node;
+  ctx: Graph_code_prolog.context;
 
   root: Common.dirname;
   c_file_readable: Common.filename;
@@ -88,7 +90,7 @@ type env = {
   clang_line: int;
 
   at_toplevel: bool;
-  (* for prolog use/4 *)
+  (* for prolog use/4, todo: merge in_assign with context? *)
   in_assign: bool;
   (* we don't need to store also the 'params' as they are marked specially
    * as ParamVar in the AST.
@@ -123,9 +125,12 @@ and config = {
   propagate_deps_def_to_decl: bool;
 }
 
+
 let unknown_location = "Unknown_Location", E.File
 
 type kind_file = Source | Header
+
+let hook_use_edge = ref (fun _ctx _in_assign (_src, _dst) _g -> ())
 
 (*****************************************************************************)
 (* Parsing *)
@@ -387,22 +392,7 @@ let rec add_use_edge env (s, kind) =
   (* the normal case *)
   | _ when G.has_node dst env.g ->
       G.add_edge (src, dst) G.Use env.g;
-      (match kind with
-      | E.Global | E.Field ->
-        let oldinfoopt = G.edgeinfo_opt (src, dst) G.Use env.g in
-        let info = 
-          match oldinfoopt with
-          | Some info -> info
-          | None -> { G.read = false; G.write = false }
-        in
-        let newinfo =
-          if env.in_assign
-          then { info with G.write = true }
-          else { info with G.read = true }
-        in
-        G.add_edgeinfo (src, dst) G.Use newinfo env.g
-      | _ -> ()
-      )
+      !hook_use_edge env.ctx env.in_assign (src, dst) env.g
   (* try to 'rekind' *)
   | _ ->
     (match kind with
@@ -728,10 +718,10 @@ and expr env (enum, _l, xs) =
                (Paren (DeclRefExpr, _l3,
                       _loc3::_typ3::T (TUpperIdent "Function")::T (THexInt _)
                         ::T (TString s)::_typ4::[]))::[]))
-      ::_args ->
+      ::args ->
       if env.phase = Uses
       then add_use_edge env (str env s, E.Function);
-      sexps env xs
+      sexps { env with ctx = (P.CallCtx ((str env s, E.Function))) } args
 
   (* todo: unexpected form of call? function pointer call? add to stats *)
   | CallExpr, _ -> sexps env xs
@@ -818,6 +808,7 @@ and expr env (enum, _l, xs) =
         )
       end;
       sexps env xs
+
   | InitListExpr, _loc::typ::inits ->
       if env.phase = Uses && env.conf.fields_dependencies
       then begin
@@ -827,9 +818,7 @@ and expr env (enum, _l, xs) =
           (match Common2.hfind_option (spf "S__%s" s) env.fields with
           | Some fields ->
               init_list_expr_fields { env with in_assign = true } s inits fields
-          | None ->
-              error env (spf "structure unknown: %s" s)
-            (* sexps env xs *)
+          | None -> error env (spf "structure unknown: %s" s)
           )
         | _ -> sexps env xs
         )
@@ -887,6 +876,8 @@ and init_list_expr_fields env s inits fields =
   | x::xs, fld::ys ->
     (* similar to what I do for MemberExpr *)
     add_use_edge env (spf "S__%s.%s" s fld, E.Field);
+    let env = { env with ctx = P.AssignCtx ((spf "S__%s.%s" s fld, E.Field)) }
+    in
     sexp env x;
     init_list_expr_fields env s xs ys
       
@@ -919,6 +910,7 @@ let build ?(verbose=true) root files =
     g;
     phase = Defs;
     current = unknown_location;
+    ctx = P.NoCtx;
 
     c_file_readable = "__filled_later__";
     c_file_absolute = "__filled_later__";
