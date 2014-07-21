@@ -619,6 +619,9 @@ and decl env (enum, _l, xs) =
           end
         in
         if kind <> E.GlobalExtern then add_type_deps env typ;
+        (* todo: actually there is a potential in_assign here
+         * if set a value for the variable in rest
+         *)
         env
 
     (* I am not sure about the namespaces, so I prepend strings *)
@@ -642,7 +645,8 @@ and decl env (enum, _l, xs) =
           (* todo: if are in Source, then maybe can add in local_typedefs *)
           else Hashtbl.add env.typedefs s t
         end;
-        let env = add_node_and_edge_if_defs_mode env ("T__" ^ s, E.Type) (Some typ) in
+        let env = 
+          add_node_and_edge_if_defs_mode env ("T__" ^ s, E.Type) (Some typ) in
         (* add_type_deps env typ; *)
         env
         
