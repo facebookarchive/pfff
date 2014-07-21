@@ -49,13 +49,6 @@ module P = Graph_code_prolog
  *  $ ~/pfff/pfff_test -uninclude_clang
  *  $ ~/pfff/codegraph -lang clang2 -build .
  * 
- * alternative when project uses cmake:
- *  $ cmake -DCMAKE_EXPORT_COMPILE_COMMANDS=ON 
- *  $ mv compile_commands.json old.json
- *  $ ~/pfff/pfff -sanitize_compile_commands old.json > compile_commands.json
- *  $ ~/pfff/pfff -gen_clang ...
- *  $ ...
- * 
  * related:
  *  - http://code.google.com/p/include-what-you-use/wiki/WhyIWYU
  * 
