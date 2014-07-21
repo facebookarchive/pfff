@@ -822,7 +822,7 @@ and expr env (enum, _l, xs) =
         | Typ.StructName s ->
           (match Common2.hfind_option (spf "S__%s" s) env.fields with
           | Some fields ->
-              init_list_expr_fields env s inits fields
+              init_list_expr_fields { env with in_assign = true } s inits fields
           | None ->
               error env (spf "structure unknown: %s" s)
             (* sexps env xs *)
