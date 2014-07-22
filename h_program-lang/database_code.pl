@@ -191,6 +191,9 @@ children(Child, Parent) :-
 children(GrandChild, Parent) :-
         extends_or_implements(GrandChild, Child),
         children(Child, Parent).
+children(GrandChild, Parent) :-
+        mixins(GrandChild, Trait),
+        children(Trait, Parent).
 
 %aran: only extends
 inherits(Child, Parent) :-
@@ -402,4 +405,6 @@ wrong_public_genRender(X) :-
 % check for inconsistent case, e.g. Exception vs exception.
 % just check if 2 classes are different but downcase to the same name
 
-implements('NEED_AT_LEAST_ONE_FACT', 'NEED_AT_LEAST_ONE_FACT_PARENT').
+
+:- discontiguous mixins/2.
+:- discontiguous implements/2.

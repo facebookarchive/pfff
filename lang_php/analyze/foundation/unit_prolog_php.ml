@@ -96,6 +96,20 @@ class C extends B { }
         (sort ["B";"C"])
         (sort xs)
     );
+
+
+    "inheritance and traits" >:: (fun () ->
+      let file = "
+interface I { }
+trait T implements I { }
+class A { use T; }
+"
+      in
+      let xs = prolog_query ~file "children(X, 'I'), writeln(X)" in
+      assert_equal ~msg:"it should find all children of an interface"
+        (sort ["A";"T"])
+        (sort xs)
+    );
     (*-----------------------------------------------------------------------*)
     (* Traits *)
     (*-----------------------------------------------------------------------*)
