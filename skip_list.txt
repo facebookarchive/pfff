@@ -20,6 +20,8 @@ dir: tests/ml/db/parsing_errors
 # cmt
 # -------------------------------------------------------------------------
 
+dir: external/stdlib/4.00.1
+
 #dupes with external/stdlib and ok to skip because they are test files
 dir: tests/ml/cmt
 
