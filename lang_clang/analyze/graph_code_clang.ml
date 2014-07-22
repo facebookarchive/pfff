@@ -16,11 +16,11 @@ open Common
 
 open Parser_clang
 open Ast_clang
-module Ast = Ast_clang
 module Loc = Location_clang
 module Typ = Type_clang
 module E = Database_code
 module G = Graph_code
+module P = Graph_code_prolog
 
 (*****************************************************************************)
 (* Prelude *)
@@ -39,7 +39,8 @@ module G = Graph_code
  *       -> Dir -> SubDir -> ...
  * 
  * Note that there is no Constant here as #define are not in clang ASTs
- * as the preprocessor has been called already on the file.
+ * as the preprocessor has been called already on the file (which is
+ * why it's better to (ab)use enum for constants so at least they are here).
  * 
  * procedure to analyze a project:
  *  $ make V=1 > make_trace.txt
@@ -47,13 +48,6 @@ module G = Graph_code
  *  $ ~/pfff/pfff -gen_clang compile_commands.json 
  *  $ ~/pfff/pfff_test -uninclude_clang
  *  $ ~/pfff/codegraph -lang clang2 -build .
- * 
- * alternative when project uses cmake:
- *  $ cmake -DCMAKE_EXPORT_COMPILE_COMMANDS=ON 
- *  $ mv compile_commands.json old.json
- *  $ ~/pfff/pfff -sanitize_compile_commands old.json > compile_commands.json
- *  $ ~/pfff/pfff -gen_clang ...
- *  $ ...
  * 
  * related:
  *  - http://code.google.com/p/include-what-you-use/wiki/WhyIWYU
@@ -72,6 +66,7 @@ type env = {
   (* now in Graph_code.gensym:  cnt: int ref; *)
 
   current: Graph_code.node;
+  ctx: Graph_code_prolog.context;
 
   root: Common.dirname;
   c_file_readable: Common.filename;
@@ -88,7 +83,7 @@ type env = {
   clang_line: int;
 
   at_toplevel: bool;
-  (* for prolog use/4 *)
+  (* for prolog use/4, todo: merge in_assign with context? *)
   in_assign: bool;
   (* we don't need to store also the 'params' as they are marked specially
    * as ParamVar in the AST.
@@ -101,6 +96,10 @@ type env = {
   (* less: we could also have a local_typedefs field *)
   typedefs: (string, Type_clang.type_clang) Hashtbl.t;
   dupes: (Graph_code.node, bool) Hashtbl.t;
+  (* mostly for InitListExpr to work on structs because of the way clang
+   * unsugar designators and reorder to straight array assignments.
+   *)
+  fields: (string, string list) Hashtbl.t;
 
   log: string -> unit;
   pr2_and_log: string -> unit;
@@ -108,19 +107,23 @@ type env = {
  and phase = Defs | Uses
 
 and config = {
+  types_dependencies: bool;
+  fields_dependencies: bool;
+
   (* We normally expand references to typedefs, to normalize and simplify
    * things. Set this variable to true if instead you want to know who is
    * using a typedef.
    *)
   typedefs_dependencies: bool;
-  types_dependencies: bool;
-  fields_dependencies: bool;
   propagate_deps_def_to_decl: bool;
 }
+
 
 let unknown_location = "Unknown_Location", E.File
 
 type kind_file = Source | Header
+
+let hook_use_edge = ref (fun _ctx _in_assign (_src, _dst) _g -> ())
 
 (*****************************************************************************)
 (* Parsing *)
@@ -248,7 +251,8 @@ let type_clang_of_sexptype env typ =
   let loc = loc_of_env env in
   let toks = 
     Type_clang.tokens_of_brace_sexp env.conf.typedefs_dependencies loc typ in
-  let t = Type_clang.type_of_tokens loc toks in
+  let t = 
+    Type_clang.type_of_tokens loc toks in
   if env.conf.typedefs_dependencies
   then t 
   else 
@@ -381,22 +385,8 @@ let rec add_use_edge env (s, kind) =
   (* the normal case *)
   | _ when G.has_node dst env.g ->
       G.add_edge (src, dst) G.Use env.g;
-      (match kind with
-      | E.Global | E.Field ->
-        let oldinfoopt = G.edgeinfo_opt (src, dst) G.Use env.g in
-        let info = 
-          match oldinfoopt with
-          | Some info -> info
-          | None -> { G.read = false; G.write = false }
-        in
-        let newinfo =
-          if env.in_assign
-          then { info with G.write = true }
-          else { info with G.read = true }
-        in
-        G.add_edgeinfo (src, dst) G.Use newinfo env.g
-      | _ -> ()
-      );
+      !hook_use_edge env.ctx env.in_assign (src, dst) env.g
+  (* try to 'rekind' *)
   | _ ->
     (match kind with
     (* look for Prototype if no Function *)
@@ -515,6 +505,7 @@ and sexp_toplevel env x =
 
       | CallExpr | DeclRefExpr | MemberExpr | UnaryExprOrTypeTraitExpr
       | BinaryOperator | CompoundAssignOperator | UnaryOperator
+      | InitListExpr
         ->
           expr env (enum, l, xs)
       | _ -> 
@@ -611,6 +602,9 @@ and decl env (enum, _l, xs) =
           end
         in
         if kind <> E.GlobalExtern then add_type_deps env typ;
+        (* todo: actually there is a potential in_assign here
+         * if set a value for the variable in rest
+         *)
         env
 
     (* I am not sure about the namespaces, so I prepend strings *)
@@ -634,7 +628,8 @@ and decl env (enum, _l, xs) =
           (* todo: if are in Source, then maybe can add in local_typedefs *)
           else Hashtbl.add env.typedefs s t
         end;
-        let env = add_node_and_edge_if_defs_mode env ("T__" ^ s, E.Type) (Some typ) in
+        let env = 
+          add_node_and_edge_if_defs_mode env ("T__" ^ s, E.Type) (Some typ) in
         (* add_type_deps env typ; *)
         env
         
@@ -645,10 +640,25 @@ and decl env (enum, _l, xs) =
     | RecordDecl, _loc::(T (TLowerIdent ("struct" | "union")))
         ::(T (TLowerIdent _s | TUpperIdent _s))::[] ->
         env
+
     (* regular defs *)
     | RecordDecl, _loc::(T (TLowerIdent "struct"))
-        ::(T (TLowerIdent s | TUpperIdent s))::_rest ->
-        add_node_and_edge_if_defs_mode env ("S__" ^ s, E.Type) None
+        ::(T (TLowerIdent s | TUpperIdent s))::rest ->
+        let env = add_node_and_edge_if_defs_mode env ("S__" ^ s, E.Type) None in
+        if env.phase = Defs then begin
+          (* this is used for InitListExpr *)
+          let fields = 
+            rest +> Common.map_filter (function
+            | Paren (FieldDecl, _, _::(T (TLowerIdent s | TUpperIdent s))::_)->
+                Some s
+            (* could print a warning?*)
+            | _ -> None
+            )
+          in
+          Hashtbl.replace env.fields ("S__"^s) fields
+        end;
+        env
+
     | RecordDecl, _loc::(T (TLowerIdent "union"))
         ::(T (TLowerIdent s | TUpperIdent s))::_rest ->
         add_node_and_edge_if_defs_mode env ("U__" ^ s, E.Type) None
@@ -694,35 +704,40 @@ and decl env (enum, _l, xs) =
 
 (* coupling: must add constructor in dispatcher above if add one case here *)
 and expr env (enum, _l, xs) =
-  (match enum, xs with
+  match enum, xs with
   | CallExpr, _loc::_typ
       ::(Paren (ImplicitCastExpr, _l2, 
              _loc2::_typ2::Angle _::
                (Paren (DeclRefExpr, _l3,
                       _loc3::_typ3::T (TUpperIdent "Function")::T (THexInt _)
                         ::T (TString s)::_typ4::[]))::[]))
-      ::_args ->
+      ::args ->
       if env.phase = Uses
-      then add_use_edge env (str env s, E.Function)
+      then add_use_edge env (str env s, E.Function);
+      sexps { env with ctx = (P.CallCtx ((str env s, E.Function))) } args
 
   (* todo: unexpected form of call? function pointer call? add to stats *)
-  | CallExpr, _ -> ()
+  | CallExpr, _ -> sexps env xs
+
 
   | DeclRefExpr, _loc::_typ::T (TUpperIdent "EnumConstant")::_address
       ::T (TString s)::_rest ->
       if env.phase = Uses
-      then  add_use_edge env (str env s, E.Constructor)
+      then add_use_edge env (str env s, E.Constructor);
+      sexps env xs
 
   | DeclRefExpr, _loc::_typ::_lval::T (TUpperIdent "Var")::_address
       ::T (TString s)::_rest ->
       if env.phase = Uses
-      then
+      then begin
         if List.mem s !(env.locals)
         then ()
         else add_use_edge env (str env s, E.Global)
+      end;
+      sexps env xs
 
   | DeclRefExpr, _loc::_typ::_lval::T (TUpperIdent "ParmVar")::_rest -> 
-      ()
+      sexps env xs
 
   | DeclRefExpr, _loc::_typ::T (TUpperIdent "Function")::_address
       ::T (TString s)::_rest 
@@ -731,11 +746,14 @@ and expr env (enum, _l, xs) =
       ::T (TString s)::_rest 
       ->
       if env.phase = Uses
-      then add_use_edge env (str env s, E.Function)
+      then add_use_edge env (str env s, E.Function);
+      sexps env xs
         
   | DeclRefExpr, _loc::_typ::T (TLowerIdent "lvalue")
       ::T (TUpperIdent "CXXMethod")::_rest
-      -> pr2_once "CXXMethod not handled"
+      -> 
+      pr2_once "CXXMethod not handled";
+      sexps env xs
      
   | DeclRefExpr, _ -> error env "DeclRefExpr to handle"
 
@@ -754,9 +772,8 @@ and expr env (enum, _l, xs) =
                  T (TLowerIdent fld | TUpperIdent fld);
                  _address;(Paren (enum2, l2, xs))] ->
       if env.phase = Uses && env.conf.fields_dependencies
-      then
+      then begin
         let loc = env.clang2_file, l2 in
-        (* todo1: use expand_type there too *)
         let toks = Type_clang.tokens_of_paren_sexp loc (Paren(enum2, l2, xs))in
         let typ_subexpr = Type_clang.type_of_tokens loc toks in
         let typ_subexpr = Type_clang.expand_typedefs env.typedefs typ_subexpr in
@@ -782,34 +799,44 @@ and expr env (enum, _l, xs) =
           ) ->
             error env (spf "unhandled typ: %s" (Common.dump typ_subexpr))
         )
+      end;
+      sexps env xs
+
+  | InitListExpr, _loc::typ::inits ->
+      if env.phase = Uses && env.conf.fields_dependencies
+      then begin
+        let t = type_clang_of_sexptype env typ in
+        (match t with
+        | Typ.StructName s ->
+          (match Common2.hfind_option (spf "S__%s" s) env.fields with
+          | Some fields ->
+              init_list_expr_fields { env with in_assign = true } s inits fields
+          | None -> error env (spf "structure unknown: %s" s)
+          )
+        | _ -> sexps env xs
+        )
+      end
+      else sexps env xs
 
   (* anon field *)
   | MemberExpr, _loc::_typ::_lval::T (TDot|TArrow)::
       _address::(Paren (_enum2, _l2, _xs))::[] ->
       if env.phase = Uses
-      then ()
+      then ();
+      sexps env xs
 
   | MemberExpr, _ -> error env "MemberExpr to handle"
 
-  | UnaryExprOrTypeTraitExpr, _loc::_typ::T(TLowerIdent "sizeof")::typ::_rest ->
-      (match typ with
-      | Paren _ -> ()
-      | Brace _ -> add_type_deps env typ
-      | _ -> error env "wrong argument to sizeof"
-      )
-  | (BinaryOperator | CompoundAssignOperator | UnaryOperator
-    ), _ -> ()
-
-  | _ -> error env "Impossible, see dispatcher"
-  );
-  
-  (* mostly for generating use/read or use/write in prolog *)
-  (match enum, xs with
+  (* mostly for generating use/read or use/write in prolog.
+   * todo: handle also int x = ...; then it's not a assign, it's a VarDecl
+   * with a body.
+   *)
   | BinaryOperator, _loc::_typ::T(TString "=")::e1::e2::[] 
   | CompoundAssignOperator, _loc::_typ::_::  _::_::_::_::_::_::e1::e2::[]
     ->
      sexps { env with in_assign = true } [e1];
      sexps env [e2];
+
   (* potentially here we would like to treat as both a write and read
    * of the variable, so maybe a trivalue would be better than a boolean
    *)
@@ -818,10 +845,35 @@ and expr env (enum, _l, xs) =
   | UnaryOperator, _loc::_typ::_inf_or_post::T(TString ("&"))::e::[] ->
      sexps { env with in_assign = true } [e];
 
+  | UnaryExprOrTypeTraitExpr, _loc::_typ::T(TLowerIdent "sizeof")::typ::_rest ->
+      (match typ with
+      | Paren _ -> ()
+      | Brace _ -> add_type_deps env typ
+      | _ -> error env "wrong argument to sizeof"
+      );
+      sexps env xs
 
+  | (BinaryOperator | UnaryOperator | CompoundAssignOperator), _ ->
+      sexps env xs
   | _ -> 
-    sexps env xs
-  )
+    error env "Impossible, see dispatcher"
+
+and init_list_expr_fields env s inits fields =
+  match inits, fields with
+  | [], [] -> ()
+  | [], _x::_xs ->
+    (* less value than field, C semantic? *)
+    ()
+  | _x::_xs, [] ->
+    error env "more values than fields"
+  | x::xs, fld::ys ->
+    (* similar to what I do for MemberExpr *)
+    add_use_edge env (spf "S__%s.%s" s fld, E.Field);
+    let env = { env with ctx = P.AssignCtx ((spf "S__%s.%s" s fld, E.Field)) }
+    in
+    sexp env x;
+    init_list_expr_fields env s xs ys
+      
 
 (*****************************************************************************)
 (* Main entry point *)
@@ -840,9 +892,10 @@ let build ?(verbose=true) root files =
   (* less: we could also have a local_typedefs_of_files to avoid conflicts *)
   
   let conf = {
-    typedefs_dependencies = false;
     types_dependencies = true;
     fields_dependencies = true;
+
+    typedefs_dependencies = false;
     propagate_deps_def_to_decl = false;
   } in
 
@@ -850,6 +903,7 @@ let build ?(verbose=true) root files =
     g;
     phase = Defs;
     current = unknown_location;
+    ctx = P.NoCtx;
 
     c_file_readable = "__filled_later__";
     c_file_absolute = "__filled_later__";
@@ -865,6 +919,7 @@ let build ?(verbose=true) root files =
     dupes = Hashtbl.create 101;
     conf;
     typedefs = Hashtbl.create 101;
+    fields = Hashtbl.create 101;
     locals = ref [];
 
     log = (fun s -> output_string chan (s ^ "\n"); flush chan;);

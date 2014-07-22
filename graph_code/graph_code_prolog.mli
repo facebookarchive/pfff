@@ -11,6 +11,7 @@ type fact =
 
   | Call of entity * entity
   | UseData of entity * entity * bool option (* read/write *)
+  | Special of entity * entity * entity * string (* field/function *)
 
   | Misc of string
 
@@ -22,5 +23,15 @@ val entity_of_str: string -> entity
 
 (* reused in other modules which generate prolog facts *)
 val string_of_entity_kind: Database_code.entity_kind -> string
+
+type context =
+  | NoCtx
+  | CallCtx of Graph_code.node
+  | AssignCtx of Graph_code.node
+
+val hook_use_edge_for_prolog: 
+  context -> bool -> 
+  (Graph_code.node * Graph_code.node) -> Graph_code.graph -> 
+  unit
 
 val build: Graph_code.graph -> fact list

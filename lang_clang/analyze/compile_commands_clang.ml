@@ -37,6 +37,20 @@ module J = Json_type
  *    * https://github.com/pgbovine/CDE/
  *    * ??
  * 
+ * procedure to analyze a project:
+ *  $ make V=1 > make_trace.txt
+ *  $ ~/pfff/pfff_test -analyze_make_trace make_trace.txt >compile_commands.json
+ *  $ ~/pfff/pfff -gen_clang compile_commands.json 
+ *  ...
+ * 
+ * alternative when project uses cmake:
+ *  $ cmake -DCMAKE_EXPORT_COMPILE_COMMANDS=ON 
+ *  $ mv compile_commands.json old.json
+ *  $ ~/pfff/pfff -sanitize_compile_commands old.json > compile_commands.json
+ *  $ ~/pfff/pfff -gen_clang ...
+ *  $ ...
+ * 
+
  * todo: analyze the -I and use realpath on its argument => easier
  * to merge trace from subdirectories.
  *)

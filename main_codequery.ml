@@ -127,7 +127,10 @@ let build_prolog_db lang root xs =
             root files 
 #endif
 
-        | "clang2" -> Graph_code_clang.build ~verbose:!verbose root files
+        | "clang2" -> 
+          Graph_code_clang.hook_use_edge :=
+            Graph_code_prolog.hook_use_edge_for_prolog;
+          Graph_code_clang.build ~verbose:!verbose root files
         | _ -> raise Impossible
       in
       let facts = Graph_code_prolog.build g in
