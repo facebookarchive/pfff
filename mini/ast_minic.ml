@@ -27,6 +27,7 @@
  *   todo? no array?
  * - exprs: no infix, postfix, and introduce intermediate instr type
  *   so have already put in some kind of A-Normal form.
+ * - ...
  * 
  *)
 
@@ -68,8 +69,7 @@ type type_ =
 type expr =
   | Int of string wrap
   | String of string wrap
-
-  | Var of var
+  | Name of var
 
 (* ------------------------------------------------------------------------- *)
 (* Stmt *)
@@ -78,11 +78,12 @@ type expr =
 (* todo: pointers??? *)
 type instr =
   | Alloc of var * type_ (* var = malloc(sizeof(type)) *)
+  | Assign of var * expr (* var = cst; or var = &func or global *)
   | Move of var * var    (* to = from *)
   | LoadField of var *  var * name (* to = base.fld *)
   | StoreField of var * name   * var (* base.fld = from *)
-  | StaticCall of var * name * expr list (* to = foo(...) *)
-  | DynamicCall of var * var * expr list (* to = ( *var)(...) *)
+  | StaticCall of var * name * var list (* to = foo(...) *)
+  | DynamicCall of var * var * var list (* to = ( *var)(...) *)
 
 type stmt =
   | Instr of instr
