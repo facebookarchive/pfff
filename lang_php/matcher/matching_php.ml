@@ -207,3 +207,6 @@ let match_xhp_xhp pattern e =
   let env = MVGen.empty_environment () in
   MATCH.m_xhp_html pattern e env +> extract_bindings
 
+let match_hint_hint pattern e =
+  let env = MVGen.empty_environment () in
+  MATCH.m_hint_type pattern e env +> extract_bindings

@@ -56,6 +56,7 @@ module PHP_VS_PHP :
       val m_expr :     (Ast_php.expr,   Ast_php.expr)   matcher
       val m_stmt : (Ast_php.stmt, Ast_php.stmt) matcher
       val m_xhp_html : (Ast_php.xhp_html, Ast_php.xhp_html) matcher
+      val m_hint_type : (Ast_php.hint_type, Ast_php.hint_type) matcher
 
       (* there are far more functions in this functor but they 
        * do not have to be exported 
