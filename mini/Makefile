@@ -6,9 +6,10 @@ TARGET=lib
 
 -include $(TOP)/Makefile.config
 
-SRC= ast_minic.ml meta_minic.ml \
-     parse_minic.ml \
-     datalog_minic.ml \
+SRC= ast_minic.ml ast_minijava.ml \
+     meta_minic.ml \
+     parse_minic.ml parse_minijava.ml \
+     datalog_minic.ml datalog_minijava.ml \
      test_mini.ml unit_mini.ml \
 
 SYSLIBS= str.cma unix.cma 

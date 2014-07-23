@@ -131,6 +131,7 @@ BASICLIBS=commons/lib.cma \
  lang_web/parsing/lib.cma \
  lang_text/lib.cma \
  lang_sql/parsing/lib.cma \
+ mini/lib.cma
 
 BASICSYSLIBS=nums.cma bigarray.cma str.cma unix.cma
 
@@ -194,6 +195,7 @@ LIBS= commons/lib.cma \
      lang_html/analyze/lib.cma \
     lang_css/parsing/lib.cma \
     lang_web/parsing/lib.cma \
+    mini/lib.cma
 
 MAKESUBDIRS=commons \
   $(JSONDIR) \
@@ -252,6 +254,7 @@ MAKESUBDIRS=commons \
   lang_css/parsing \
   lang_web/parsing \
   lang_text \
+  mini \
   $(VISUALDIRS) \
   demos
 
