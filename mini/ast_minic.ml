@@ -42,10 +42,10 @@ type 'a wrap = 'a * Parse_info.info
 (* Name *)
 (* ------------------------------------------------------------------------- *)
 
-(* for functions, fields, builtins *)
+(* for functions, constants, fields, builtins *)
 type name = string wrap
 
-(* for local variables, globals, parameters *)
+(* for local globals, locals, parameters *)
 type var = name
 
 (* ------------------------------------------------------------------------- *)
@@ -60,19 +60,16 @@ type type_ =
   | TStructName of name
 
  and function_type = (type_ * parameter list)
-  and parameter = {
-    p_type: type_;
-    p_name: var;
-  }
+  and parameter = var_decl
 
 (* ------------------------------------------------------------------------- *)
 (* Expression *)
 (* ------------------------------------------------------------------------- *)
-type expr =
+and expr =
   | Int of string wrap
   | String of string wrap
+  | Id of name (* can be a global, local, parameter, constant, functions *)
 
-  | Var of var (* can be a global, local, parameter *)
   | Alloc of type_ (* malloc(sizeof(type)) *)
   | AllocArray of type_ (* malloc(n*sizeof(type)) *)
   | ObjField of var * name (* x->fld *)
@@ -86,18 +83,18 @@ type expr =
 (* Stmt *)
 (* ------------------------------------------------------------------------- *)
 
-type instr =
+and instr =
   | Assign of var * expr (* x = e *)
   | AssignField of var * name * var (* x->f = v *)
-  | AssignArray of var * var * var (* x[i] = v *)
+  | AssignArray of var * var * var (* x[y] = v *)
 
   | AssignAddress of var * var (* x = &v *)
   | AssignFieldAddress of var * var * name (* x = &v->field *)
-  | AssignIndexAddress of var * var * name (* x = &v[y] *)
+  | AssignIndexAddress of var * var * var (* x = &v[y] *)
   | AssignDeref of var * var (* *x = v *)
 
 
-type stmt =
+and stmt =
   | Local of var_decl
   | Instr of instr
   | If of var * stmt list * stmt list
@@ -134,6 +131,7 @@ type toplevel =
   | StructDef of struct_def
   | FuncDef of func_def
   | Global of var_decl
+  | Constant of name
 
 type program = toplevel list
 

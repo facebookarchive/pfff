@@ -8,8 +8,10 @@ struct Foo {
 };
 
 // enum1 should flow in Foo.state1
-int enum1;
-int enum2;
+enum {
+  ENUM1 = 42,
+  ENUM2 = 43,
+};
 
 struct Foo *global;
 
@@ -23,10 +25,8 @@ void foo(int param) {
 }
 
 int main() {
-  enum1 = 42;
-  enum2 = 43;
   global = malloc(sizeof(struct Foo));
-  foo(enum1);
+  foo(ENUM1);
   int v = global->state1;
   printf("%d\n", v);
 }
