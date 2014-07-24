@@ -25,7 +25,7 @@
  * Here is a list of the simplications compared to ast_c.ml:
  * - types: no unions, no typedefs, no enum,
  *   todo? no array?
- * - exprs: no infix, postfix, no -> vs ., just .
+ * - exprs: no infix, postfix, no -> vs ., just ->
  * - stmt: introduce intermediate instr type so have already put in some kind
  *   of A-Normal form.
  * - ...
@@ -73,7 +73,7 @@ type expr =
 
   | Var of var (* can be a global, local, parameter *)
   | Alloc of type_ (* malloc(sizeof(type)) *)
-  | ObjField of var * name (* x.fld *)
+  | ObjField of var * name (* x->fld *)
   | StaticCall of name * var list (* foo(...) *)
   | DynamicCall of var * var list (* ( *f)(...) *)
   | BuiltinCall of name * var list (* e.g. v + 1 *)
@@ -85,11 +85,11 @@ type expr =
 
 type instr =
   | Assign of var * expr (* x = e *)
-  | AssignField of var * name * var (* x.f = v *)
+  | AssignField of var * name * var (* x->f = v *)
 
   | AssignAddress of var * var (* x = &v *)
-  | AssignFieldAddress of var * var (* x = &v.field *)
-  | AssignValueOf of var * var (* *x = v *)
+  | AssignFieldAddress of var * var * name (* x = &v->field *)
+  | AssignDeref of var * var (* *x = v *)
 
 
 type stmt =
