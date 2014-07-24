@@ -7,7 +7,9 @@ struct Foo {
  int state2;
 };
 
-// enum1 should flow in Foo.state1
+// Where ENUM1 can flow? ENUM1 can flow in Foo.state1
+// because it's passed in foo(), then assigned in local, then
+// passed in bar() and finally assigned in global->state1
 enum {
   ENUM1 = 42,
   ENUM2 = 43,
@@ -30,4 +32,3 @@ int main() {
   int v = global->state1;
   printf("%d\n", v);
 }
-

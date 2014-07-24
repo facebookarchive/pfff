@@ -3,6 +3,7 @@
 #include <stdio.h>
 
 struct Foo {
+  // Where field can be assigned?
   int field;
   int field2;
 };
@@ -10,6 +11,8 @@ struct Foo {
 struct Foo *foo;
 
 void set_int(int *dst, int value) {
+  // Foo.field can be assigned here, because dst can be alias for it
+  // because it's aliased in main()
   *dst = value;
 }
 
@@ -22,6 +25,4 @@ int main() {
   int v3 = 1;
   return v3;
 }
-
-
 
