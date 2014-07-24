@@ -42,10 +42,10 @@ type 'a wrap = 'a * Parse_info.info
 (* Name *)
 (* ------------------------------------------------------------------------- *)
 
-(* for methods, fields, classnames *)
+(* for classes, methods, fields *)
 type name = string wrap
 
-(* for local variables, globals, parameters *)
+(* for local variables, parameters *)
 type var = name
 
 (* ------------------------------------------------------------------------- *)
@@ -64,7 +64,7 @@ type expr =
   | Int of string wrap
   | String of string wrap
 
-  | Var of name
+  | Var of var
   | New of name (* args? *)
   | ObjField of var * name
   | ClassField of name * name
@@ -80,8 +80,8 @@ type instr =
 type stmt =
   | Local of var_decl
   | Instr of instr
-  | If of expr * stmt list * stmt list
-  | While of expr * stmt list
+  | If of var * stmt list * stmt list
+  | While of var * stmt list
   | Return of var
 
 (* ------------------------------------------------------------------------- *)
@@ -93,16 +93,12 @@ and var_decl = {
   v_type: typ;
 }
 
-type vars = var list
-
 type method_decl = {
-  (* could be gathered in a m_var *)
+  (* name and ret type could be gathered in a m_var: var_decl *)
   m_name: name;
   m_ret: typ;
   m_static: bool;
-
-  m_formals: vars;
-
+  m_formals: var list;
   m_body: stmt list;
 }
 

@@ -25,8 +25,9 @@
  * Here is a list of the simplications compared to ast_c.ml:
  * - types: no unions, no typedefs, no enum,
  *   todo? no array?
- * - exprs: no infix, postfix, and introduce intermediate instr type
- *   so have already put in some kind of A-Normal form.
+ * - exprs: no infix, postfix, no -> vs ., just .
+ * - stmt: introduce intermediate instr type so have already put in some kind
+ *   of A-Normal form.
  * - ...
  * 
  *)
@@ -41,7 +42,7 @@ type 'a wrap = 'a * Parse_info.info
 (* Name *)
 (* ------------------------------------------------------------------------- *)
 
-(* for functions, fields *)
+(* for functions, fields, builtins *)
 type name = string wrap
 
 (* for local variables, globals, parameters *)
@@ -69,40 +70,43 @@ type type_ =
 type expr =
   | Int of string wrap
   | String of string wrap
-  | Name of var
+
+  | Var of var (* can be a global, local, parameter *)
+  | Alloc of type_ (* malloc(sizeof(type)) *)
+  | ObjField of var * name (* x.fld *)
+  | StaticCall of name * var list (* foo(...) *)
+  | DynamicCall of var * var list (* ( *f)(...) *)
+  | BuiltinCall of name * var list (* e.g. v + 1 *)
+  | DeRef of var (*  *x *)
 
 (* ------------------------------------------------------------------------- *)
 (* Stmt *)
 (* ------------------------------------------------------------------------- *)
 
-(* todo: pointers??? *)
 type instr =
-  | Alloc of var * type_ (* var = malloc(sizeof(type)) *)
-  | Assign of var * expr (* var = cst; or var = &func or global *)
-  | Move of var * var    (* to = from *)
-  | LoadField of var *  var * name (* to = base.fld *)
-  | StoreField of var * name   * var (* base.fld = from *)
-  | StaticCall of var * name * var list (* to = foo(...) *)
-  | DynamicCall of var * var * var list (* to = ( *var)(...) *)
+  | Assign of var * expr (* x = e *)
+  | AssignField of var * name * var (* x.f = v *)
+
+  | AssignAddress of var * var (* x = &v *)
+  | AssignFieldAddress of var * var (* x = &v.field *)
+  | AssignValueOf of var * var (* *x = v *)
+
 
 type stmt =
+  | Local of var_decl
   | Instr of instr
-  | If of expr * stmt list * stmt list
-  | While of expr * stmt list
-  | Return of expr
-
-(* ------------------------------------------------------------------------- *)
-(* Variables *)
-(* ------------------------------------------------------------------------- *)
-
-type var_decl = {
-  v_name: name;
-  v_type: type_;
-}
+  | If of var * stmt list * stmt list
+  | While of var * stmt list
+  | Return of var
 
 (* ------------------------------------------------------------------------- *)
 (* Definitions *)
 (* ------------------------------------------------------------------------- *)
+
+and var_decl = {
+  v_name: name;
+  v_type: type_;
+}
 
 type func_def = {
   f_name: name;
@@ -115,11 +119,7 @@ type struct_def = {
   s_name: name;
   s_flds: field_def list;
 }
-
-  and field_def = { 
-    fld_name: name option;
-    fld_type: type_;
-  }
+  and field_def = var_decl
 
 (* ------------------------------------------------------------------------- *)
 (* Program *)
