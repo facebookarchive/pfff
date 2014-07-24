@@ -55,6 +55,7 @@ type var = name
 type type_ =
   | TBase of name (* int, string *)
   | TPointer of type_
+  | TArray of type_
   | TFunction of function_type
   | TStructName of name
 
@@ -73,11 +74,13 @@ type expr =
 
   | Var of var (* can be a global, local, parameter *)
   | Alloc of type_ (* malloc(sizeof(type)) *)
+  | AllocArray of type_ (* malloc(n*sizeof(type)) *)
   | ObjField of var * name (* x->fld *)
+  | ArrayAccess of var * var (* x[y] *)
+  | DeRef of var (*  *x *)
   | StaticCall of name * var list (* foo(...) *)
   | DynamicCall of var * var list (* ( *f)(...) *)
   | BuiltinCall of name * var list (* e.g. v + 1 *)
-  | DeRef of var (*  *x *)
 
 (* ------------------------------------------------------------------------- *)
 (* Stmt *)
@@ -86,9 +89,11 @@ type expr =
 type instr =
   | Assign of var * expr (* x = e *)
   | AssignField of var * name * var (* x->f = v *)
+  | AssignArray of var * var * var (* x[i] = v *)
 
   | AssignAddress of var * var (* x = &v *)
   | AssignFieldAddress of var * var * name (* x = &v->field *)
+  | AssignIndexAddress of var * var * name (* x = &v[y] *)
   | AssignDeref of var * var (* *x = v *)
 
 
