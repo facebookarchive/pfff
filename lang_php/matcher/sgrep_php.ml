@@ -122,6 +122,7 @@ let sgrep ?(case_sensitive=false) ~hook pattern file =
             end
           );
         }
+
     | Stmt2 pattern ->
         { V.default_visitor with
           V.kstmt = (fun (k, _) x ->
@@ -135,6 +136,26 @@ let sgrep ?(case_sensitive=false) ~hook pattern file =
                * the matched code itself.
                *)
               let matched_tokens = Lib_parsing_php.ii_of_any (Stmt2 x) in
+              matches_with_env +> List.iter (fun env ->
+                hook env matched_tokens
+              )
+            end
+          );
+        }
+
+    | Hint2 pattern ->
+        { V.default_visitor with
+          V.khint_type = (fun (k, _) x ->
+            let matches_with_env =
+              Matching_php.match_hint_hint pattern x
+            in
+            if matches_with_env = []
+            then k x
+            else begin
+              (* could also recurse to find nested matching inside
+               * the matched code itself.
+               *)
+              let matched_tokens = Lib_parsing_php.ii_of_any (Hint2 x) in
               matches_with_env +> List.iter (fun env ->
                 hook env matched_tokens
               )

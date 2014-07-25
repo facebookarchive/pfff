@@ -297,7 +297,7 @@ sgrep_spatch_pattern:
  /*(* less: a bit obsolete, use generalized sgrep instead for that *)*/
  | statement EOF { Stmt2 $1 }
  | function_declaration_statement { Toplevel (FuncDef $1) }
-/* (* | TCOLON type_php EOF { raise Todo } *) */
+ | TCOLON type_php { Hint2 $2 }
 
 /*(*************************************************************************)*/
 /*(*1 Statements *)*/

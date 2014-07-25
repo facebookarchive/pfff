@@ -14,3 +14,4 @@ type ('a, 'b) matcher =
 val match_e_e : (Ast_php.expr, Ast_php.expr) matcher
 val match_st_st : (Ast_php.stmt, Ast_php.stmt) matcher
 val match_xhp_xhp : (Ast_php.xhp_html, Ast_php.xhp_html) matcher
+val match_hint_hint : (Ast_php.hint_type, Ast_php.hint_type) matcher

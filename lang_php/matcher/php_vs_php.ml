@@ -2426,6 +2426,17 @@ and m_xhp_children_decl _a _b =
 
 and m_hint_type a b =
   match a, b with
+  | A.Hint(A.XName [A.QI (A.Name (name, info_name))], None), B.Hint(_, _)
+      when MV.is_metavar_name name ->
+
+      X.envf (name, info_name) (B.Hint2 b) >>= (function
+      | ((name, info_name), B.Hint2 (b)) ->
+        return (
+          A.Hint(A.XName [A.QI (A.Name (name, info_name))], None),
+          b
+        )
+      | _ -> raise Impossible
+      )
   | A.Hint(a1, a2), B.Hint(b1, b2) ->
     m_name a1 b1 >>= (fun (a1, b1) ->
     m_option m_type_args a2 b2 >>= (fun (a2, b2) ->

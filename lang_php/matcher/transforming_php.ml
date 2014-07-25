@@ -120,6 +120,7 @@ module XMATCH = struct
     | A.XhpAttrValue _, A.XhpAttrValue _
     | A.Ident2 _, B.Ident2 _
     | A.Argument _, B.Argument _
+    | A.Hint2 _, B.Hint2 _
      ->
 
         (* Note that because we want to retain the position information
@@ -302,3 +303,6 @@ let transform_st_st pattern e   env =
 
 let transform_xhp_xhp pattern e   env = 
   ignore (MATCH.m_xhp_html pattern e   env)
+
+let transform_hint_hint pattern e   env =
+  ignore (MATCH.m_hint_type pattern e   env)
