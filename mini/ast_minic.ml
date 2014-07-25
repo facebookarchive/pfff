@@ -75,6 +75,7 @@ and expr =
   | ObjField of var * name (* x->fld *)
   | ArrayAccess of var * var (* x[y] *)
   | DeRef of var (*  *x *)
+
   | StaticCall of name * var list (* foo(...) *)
   | DynamicCall of var * var list (* ( *f)(...) *)
   | BuiltinCall of name * var list (* e.g. v + 1 *)
@@ -88,7 +89,7 @@ and instr =
   | AssignField of var * name * var (* x->f = v *)
   | AssignArray of var * var * var (* x[y] = v *)
 
-  | AssignAddress of var * var (* x = &v *)
+  | AssignAddress of var * name (* x = &v *) (* of global, local, param, func *)
   | AssignFieldAddress of var * var * name (* x = &v->field *)
   | AssignIndexAddress of var * var * var (* x = &v[y] *)
   | AssignDeref of var * var (* *x = v *)

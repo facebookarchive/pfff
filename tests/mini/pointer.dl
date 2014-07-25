@@ -1,0 +1,37 @@
+% code:
+% int x; int y;
+% int *p;
+% int *w;
+% int **q;
+% p = &x;
+% q = &p;
+% w = &y;
+% *q = w;
+
+% abstract locations: AL
+
+% variables: V, which are also AL
+
+point_to('x', '_1').
+point_to('y', '_2').
+
+% facts
+
+assign_address('p', 'x').
+assign_address('q', 'p').
+assign_address('w', 'y').
+assign_deref('q', 'w').
+
+% rules
+
+% p = &x
+point_to(P, X) :-
+  assign_address(P, X).
+
+% *q = w, given: q -> p, and w -> v => p now points to v
+point_to(P, V) :-
+  assign_deref(Q, W),
+  point_to(W, V),
+  point_to(Q, P).
+  
+point_to(A,B)?
