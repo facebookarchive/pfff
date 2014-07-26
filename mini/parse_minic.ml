@@ -77,6 +77,7 @@ and toplevel t =
        )
 
   | Global v -> 
+      (* this can be useful for gcc to compile, but our linking phase skip it *)
       if v.v_storage = Extern
       then []
       else [M.Global (var_decl_global v)]
@@ -86,7 +87,7 @@ and toplevel t =
 and var_decl_global v =
   match v.v_storage with
   | Extern -> error "extern not supported, use one file" (snd v.v_name)
-  | Static -> error "static not supported, use globals" (snd v.v_name)
+  | Static -> error "static not supported, use regular globals" (snd v.v_name)
   | DefaultStorage ->
     (match v.v_init with
     | Some _ -> 

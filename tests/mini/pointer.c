@@ -11,3 +11,4 @@ void main () {
   *q = w; // big effect
   w = p;
 }
+
