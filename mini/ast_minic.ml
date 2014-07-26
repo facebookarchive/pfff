@@ -24,11 +24,12 @@
  * 
  * Here is a list of the simplications compared to ast_c.ml:
  * - types: no unions, no typedefs, no enum,
- *   todo? no array?
  * - exprs: no infix, postfix, no -> vs ., just ->
- * - stmt: introduce intermediate instr type so have already put in some kind
- *   of A-Normal form.
+ * - stmt: introduce intermediate instr type so have restricted forms of
+ *   assigments
  * - ...
+ * 
+ * Essentially a restricted set of C programs in A-normal form.
  * 
  *)
 
@@ -42,10 +43,10 @@ type 'a wrap = 'a * Parse_info.info
 (* Name *)
 (* ------------------------------------------------------------------------- *)
 
-(* for functions, constants, fields, builtins *)
+(* for functions, constants, fields, builtins, types *)
 type name = string wrap
 
-(* for local globals, locals, parameters *)
+(* for globals, locals, parameters *)
 type var = name
 
 (* ------------------------------------------------------------------------- *)
@@ -71,7 +72,7 @@ and expr =
   | Id of name (* can be a global, local, parameter, constant, functions *)
 
   | Alloc of type_ (* malloc(sizeof(type)) *)
-  | AllocArray of type_ (* malloc(n*sizeof(type)) *)
+  | AllocArray of var * type_ (* malloc(n*sizeof(type)) *)
   | ObjField of var * name (* x->fld *)
   | ArrayAccess of var * var (* x[y] *)
   | DeRef of var (*  *x *)
@@ -92,6 +93,7 @@ and instr =
   | AssignAddress of var * name (* x = &v *) (* of global, local, param, func *)
   | AssignFieldAddress of var * var * name (* x = &v->field *)
   | AssignIndexAddress of var * var * var (* x = &v[y] *)
+
   | AssignDeref of var * var (* *x = v *)
 
 

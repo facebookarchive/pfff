@@ -5,16 +5,18 @@
 int global;
 
 // Where this function can be called?
-void proc_error() {
+int proc_error() {
   global = 42;
+  int v = 1;
+  return v;
 }
 
-void (*error)();
+int (*error)();
 
 
 void foo() {
   // proc_error can be called here, because of main() assignment
-  (*error)();
+  int x = (*error)();
 }
 
 int main() {
