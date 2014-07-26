@@ -19,10 +19,11 @@ void set_int(int *dst, int value) {
 int main() {
   int v = 42;
   foo = malloc(sizeof(struct Foo));
-  set_int(&foo->field, v);
-  int v2 = foo->field;
-  printf("%d\n", v2);
-  int v3 = 1;
-  return v3;
+  int *v2 = &foo->field;
+  set_int(v2, v);
+  int v3 = foo->field;
+  printf("%d\n", v3);
+  int v4 = 1;
+  return v4;
 }
 

@@ -7,6 +7,7 @@
 % q = &p;
 % w = &y;
 % *q = w;
+% w = p;
 
 % abstract locations: AL
 
@@ -21,6 +22,7 @@ assign_address('p', 'x').
 assign_address('q', 'p').
 assign_address('w', 'y').
 assign_deref('q', 'w').
+assign('w', 'p').
 
 % rules
 
@@ -33,5 +35,10 @@ point_to(P, V) :-
   assign_deref(Q, W),
   point_to(W, V),
   point_to(Q, P).
+
+% q = p
+point_to(P,L) :-
+        assign(P, Q),
+        point_to(Q, L).
   
 point_to(A,B)?

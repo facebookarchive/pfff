@@ -28,7 +28,8 @@ void foo(int param) {
 
 int main() {
   global = malloc(sizeof(struct Foo));
-  foo(ENUM1);
-  int v = global->state1;
-  printf("%d\n", v);
+  int v1 = ENUM1;
+  foo(v1);
+  int v2 = global->state1;
+  printf("%d\n", v2);
 }
