@@ -269,4 +269,3 @@ let parse file =
   match ast_opt with
   | None -> failwith (spf "parsing error on %s" file)
   | Some ast -> program ast
-

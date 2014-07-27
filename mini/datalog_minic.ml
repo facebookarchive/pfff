@@ -16,11 +16,11 @@
 (* Prelude *)
 (*****************************************************************************)
 (* 
- * Generating dataflow datalog facts for mini C.
+ * Generating dataflow-related datalog facts for mini C.
  * 
- * Not that easy to translate DOOP for Java to C. Could do a C -> Java
- * translator, or think about how certain C features could be emulated in
- * Java. This can give ideas.
+ * It's not that easy to translate the Java rules in DOOP to C. We could 
+ * do a C -> Java translator, or think about how certain C features 
+ * could be emulated in Java. This can give ideas.
  *
  * related work:
  * - DOOP, bddbddb
