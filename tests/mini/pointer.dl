@@ -36,7 +36,7 @@ point_to(P, V) :-
   point_to(W, V),
   point_to(Q, P).
 
-% q = p
+% p = q
 point_to(P,L) :-
         assign(P, Q),
         point_to(Q, L).
