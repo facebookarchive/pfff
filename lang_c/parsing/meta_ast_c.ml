@@ -320,7 +320,6 @@ let vof_toplevel =
   
 let vof_program v = Ocaml.vof_list vof_toplevel v
   
-(*
 let vof_any =
   function
   | Expr2 v1 -> let v1 = vof_expr v1 in Ocaml.VSum (("Expr2", [ v1 ]))
@@ -329,4 +328,4 @@ let vof_any =
   | Toplevel v1 ->
       let v1 = vof_toplevel v1 in Ocaml.VSum (("Toplevel", [ v1 ]))
   | Program v1 -> let v1 = vof_program v1 in Ocaml.VSum (("Program", [ v1 ]))
-*)  
+  

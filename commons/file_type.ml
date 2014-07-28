@@ -42,7 +42,7 @@ type file_type =
   | Script of string (* sh, csh, awk, sed, etc *)
   | C of string | Cplusplus of string | ObjectiveC of string 
   | Java | Csharp
-  | Perl | Python | Ruby
+  | Perl | Python | Ruby | Lua
   | Erlang | Go | Rust
   | Beta
   | Pascal
@@ -255,6 +255,7 @@ let file_type_of_file2 file =
 
   | "rs" -> PL Rust
   | "go" -> PL Go
+  | "lua" -> PL Lua
 
   | _ when Common2.is_executable file -> Binary e
 

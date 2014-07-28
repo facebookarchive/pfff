@@ -10,4 +10,5 @@ val transform_st_st :
   Ast_php.stmt -> Ast_php.stmt  -> Metavars_php.metavars_binding -> unit
 val transform_xhp_xhp : 
   Ast_php.xhp_html -> Ast_php.xhp_html  -> Metavars_php.metavars_binding -> unit
-
+val transform_hint_hint :
+  Ast_php.hint_type -> Ast_php.hint_type  -> Metavars_php.metavars_binding -> unit

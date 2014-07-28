@@ -286,6 +286,23 @@ let spatch ?(case_sensitive=false) pattern file =
         );
       }
 
+    | Hint2 pattern ->
+      { V.default_visitor with
+        V.khint_type = (fun (k, _) x ->
+          let matches_with_env =
+            Matching_php.match_hint_hint pattern x
+          in
+          if matches_with_env = []
+          then k x
+          else begin
+            was_modifed := true;
+            Transforming_php.transform_hint_hint pattern x
+              (* TODO, maybe could get multiple matching env *)
+              (List.hd matches_with_env)
+          end
+        );
+      }
+
     | _ -> failwith (spf "pattern not yet supported:" ^ 
                        Export_ast_php.ml_pattern_string_of_any pattern)
   in

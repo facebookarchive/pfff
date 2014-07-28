@@ -15,7 +15,7 @@ type file_type =
   | Makefile
   | Script of string
   | C of string | Cplusplus of string | ObjectiveC of string | Java | Csharp
-  | Perl | Python | Ruby
+  | Perl | Python | Ruby | Lua
   | Erlang | Go | Rust
   | Beta
   | Pascal
