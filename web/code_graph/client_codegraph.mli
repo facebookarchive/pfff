@@ -8,6 +8,6 @@ val paint:
 
   (string * (string * string), unit, [< Eliom_service.service_kind ],
             [< Eliom_service.suff ], 'c, 'd, [< Eliom_service.registrable ],
-            [< Eliom_registration.non_caml_service ]) Eliom_service.service->
+            [< Eliom_registration.non_ocaml_service ]) Eliom_service.service->
 
   unit Lwt.t

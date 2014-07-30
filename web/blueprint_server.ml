@@ -111,11 +111,11 @@ let look_like_accessor node g =
 let layer_of_node shortname node g =
   match shortname, snd node with
   | "__construct", _   -> Init
-  | s, E.Method _ when (s =~ "set.*" || s =~ "get.*") && 
+  | s, E.Method when (s =~ "set.*" || s =~ "get.*") && 
                        look_like_accessor node g -> Accessor
   | _, E.Field         -> Property
   | _, E.ClassConstant -> Property (* todo: skip them *)
-  | _, E.Method _      ->
+  | _, E.Method      ->
       let privacy = G.privacy_of_node node g in
       (match privacy with
       | E.Public                -> Interface
@@ -228,7 +228,7 @@ let main_service = Eliom_registration.String.register_service
 
     let {g; pred; hrank; children; parents } = db () in
 
-    let node = classname, E.Class E.RegularClass in
+    let node = classname, E.Class in
     if not (g +> G.has_node node)
     then failwith (spf "classname %s not found in code database" classname);
 

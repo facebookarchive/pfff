@@ -5932,6 +5932,10 @@ let with_pr2_to_string f =
 (* julia: convert something printed using format to print into a string *)
 let format_to_string f =
   let (nm,o) = Filename.open_temp_file "format_to_s" ".out" in
+  (* to avoid interference with other code using Format.printf, e.g.
+   * Ounit.run_tt
+   *)
+  Format.print_flush();
   Format.set_formatter_out_channel o;
   let _ = f () in
   Format.print_newline();

@@ -60,7 +60,7 @@ let color_of_node (_, kind) =
   | E.ClassConstant -> "pink3"
   | E.Constructor -> "pink3"
 
-  | E.Other _s -> raise Todo
+  | E.Other _s -> "white"
 
   | E.Dir -> "SteelBlue2"
   | E.MultiDirs -> "SteelBlue3"

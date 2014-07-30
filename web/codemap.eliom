@@ -23,7 +23,7 @@ let size_data x =
 (* Main entry point *)
 (*****************************************************************************)
 let main_service =
-  Eliom_service.service 
+  Eliom_service.Http.service 
     ~path:["codemap"] 
     ~get_params:Eliom_parameter.
       (string "size" ** string "project" ** string "path") ()

@@ -135,6 +135,7 @@ let file_type_of_file2 file =
 
   (* Perl or Prolog ... *)
   | "pl" -> PL (Prolog "pl")
+  | "logic" -> PL (Prolog "logic") (* datalog of logicblox *)
   | "perl" -> PL Perl 
   | "py" -> PL Python
   | "rb" -> PL Ruby
@@ -217,30 +218,18 @@ let file_type_of_file2 file =
   | "toc" | "brf"  
   | "out" | "output"
   | "hi"
-      -> Obj e
-  (* pad: I use it to store marshalled data *)
-  | "db"
-      -> Obj e
-
   | "msi" 
       -> Obj e
-
-  | "po"  | "pot"
-  | "gmo"
-      -> Obj e
-
+  (* pad: I use it to store marshalled data *)
+  | "db" -> Obj e
+  | "po"  | "pot"  | "gmo" -> Obj e
   (* facebook fbcode stuff *)
-  | "apcarc"  | "serialized" | "wsdl" | "dat"  | "train"
-     ->
-      Obj e
-
-
+  | "apcarc"  | "serialized" | "wsdl" | "dat"  | "train" ->  Obj e
+  | "facts" -> Obj e (* logicblox *)
   (* pad specific, cached git blame info *)
-  | "git_annot" ->
-      Obj e 
+  | "git_annot" -> Obj e 
   (* pad specific, codegraph cached data *)
-  | "marshall" | "matrix" ->
-      Obj e 
+  | "marshall" | "matrix" -> Obj e 
 
   | "byte" | "top" -> Binary e
 
