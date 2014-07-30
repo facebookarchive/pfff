@@ -13,12 +13,16 @@ let test_parse_minic file =
 let test_dataflow_minic file =
   let ast = Parse_minic.parse file in
   let facts = Datalog_minic.generate_facts ast in
+
+  (* debug *)
+  facts +> List.iter pr2_gen;
   
   let facts_file = "/tmp/facts.dl" in
   Common.with_open_outfile facts_file (fun (pr_no_nl, _chan) ->
     let pr s = pr_no_nl (s ^ "\n") in
     facts +> List.iter pr;
   );
+  
   let logic_file = Filename.concat Config_pfff.path "logic.dl" in
   
   let final_file = "/tmp/datalog.dl" in

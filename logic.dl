@@ -1,30 +1,42 @@
-% code:
-% int x; int y;
-% int *p;
-% int *w;
-% int **q;
-% p = &x;
-% q = &p;
-% w = &y;
-% *q = w;
-% w = p;
+%-------------------------------------------------------------------------------
+% Prelude
+%-------------------------------------------------------------------------------
 
-% abstract locations: AL
+% This file implements a basic context-insensitive pointer analysis.
+% Its outputs are the following relations:
+%
+%   point_to(V, M)           - variable 'V' may point to abstract memory loc 'M'
+%   field_point_to(FIELD, M) - qualified field  may point to abstract memory loc 'M'
+%   dyncall(INVOKE, TARGET)  - invocation site 'invoke' calls function 'target'
 
-% variables: V, which are also AL
+% Based upon: Java context-insensitive inclusion-based pointer analysis
+% by John Whaley
 
-point_to('x', '_1').
-point_to('y', '_2').
+%-------------------------------------------------------------------------------
+% Relations
+%-------------------------------------------------------------------------------
 
-% facts
+% Abstract memory location (also called heap objects):
+% - each globals, functions, constants
+% - each malloc (context insensitively). will do sensitively later for 
+%   malloc wrappers or maybe each malloc with certain type. (e.g. any Proc).
+% - each locals (context insensitively first), when their address is taken
+% - each fields (field-based, see sep08.pdf)
+% - array aggregation
 
-assign_address('p', 'x').
-assign_address('q', 'p').
-assign_address('w', 'y').
-assign_deref('q', 'w').
-assign('w', 'p').
+% Invocation: line in the file
 
-% rules
+%assign(dest:V, source:V) input
+%assign_address (v:V, h:H) input
+%assign_deref(dest:V, source:V) input
+%
+%... assign_field(field:F, source:V) input
+%...
+
+
+%-------------------------------------------------------------------------------
+% Rules
+%-------------------------------------------------------------------------------
 
 % p = &x
 point_to(P, X) :-
@@ -42,5 +54,3 @@ point_to(P,L) :-
         point_to(Q, L).
   
 point_to(A,B)?
-
-

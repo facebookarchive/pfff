@@ -41,19 +41,77 @@
  * - http://blog.jetbrains.com/idea/2009/08/analyzing-dataflow-with-intellij-idea/
  * - http://pag-www.gtisc.gatech.edu/chord/user_guide/datalog.html
  *)
+open Common
+
+open Ast_minic
 
 (*****************************************************************************)
 (* Types *)
 (*****************************************************************************)
 type fact = string
 
+type env = {
+  scope: string; (* qualifier, usually the current function *)
+
+  (* for constant and globals *)
+  globals: string list;
+  structs: (string * struct_def) list;
+
+  locals: string list;
+
+  facts: fact list ref;
+}
+
+let add fact env =
+  Common.push fact env.facts
+
 (*****************************************************************************)
 (* Helpers *)
 (*****************************************************************************)
+
+let variable_of_name _env name =
+  spf "'%s'" (fst name)
+
+let abstract_memory_location_of_constant _env name =
+  spf "'_%d_'" (Parse_info.line_of_info (snd name))
+
+(*****************************************************************************)
+(* Visitor *)
+(*****************************************************************************)
+let rec program env xs = 
+  match xs with
+  | [] -> ()
+  | x::xs ->
+    toplevel env x;
+    program env xs
+
+and toplevel env = function
+  | StructDef _def -> ()
+  | Global var ->
+      add (spf "point_to(%s, %s)"
+             (variable_of_name env var.v_name)
+             (abstract_memory_location_of_constant env var.v_name)) env
+  | Constant name ->
+      add (spf "point_to(%s, %s)"
+             (variable_of_name env name)
+             (abstract_memory_location_of_constant env name)) env
+  | FuncDef def -> func_def env def
+
+and func_def _env _def =
+  ()
 
 (*****************************************************************************)
 (* Main entry point *)
 (*****************************************************************************)
 
-let generate_facts _ast =
-  []
+let generate_facts ast =
+  let env = {
+    scope = "_toplevel_";
+    globals = [];
+    structs = [];
+    locals = [];
+    facts = ref [];
+  }
+  in
+  program env ast;
+  !(env.facts)
