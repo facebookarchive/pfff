@@ -1,4 +1,5 @@
 void main () {
-  int* x = malloc(y * sizeof(struct foo));
-  int y = x[y];
+  int y = 10;
+  int* x = malloc(y * sizeof(int));
+  int w = x[y];
 }
