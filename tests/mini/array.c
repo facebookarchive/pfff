@@ -8,4 +8,6 @@ void main () {
 
   int *elt;
   elt = &x[y];
+  int z2 = 4;
+  *elt = z2;
 }

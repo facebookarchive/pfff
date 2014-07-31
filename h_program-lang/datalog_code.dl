@@ -29,17 +29,16 @@
 % Invocations: line in the file (e.g. '_in_main_line_14_')
 
 %assign(dest:V, source:V) input
-%assign_address (v:V, h:H) input
+%assign_address (dest:V, source:V) input
 %assign_deref(dest:V, source:V) input
 %assign_content(dest:V, source:V) input
 
 %parameter(f:F, z:Z, v:V)
 %return(f:F, v:V)
 %argument(i:I, z:Z, v:V)
-%call_edge(i:I, f:F)
-%call_ret(i:I, v:V)
 %call_direct(i:I, f:F)
 %call_indirect(i:I, v:V)
+%call_ret(i:I, v:V)
 
 %assign_array_elt(dest:V, source:V) input
 %assign_array_element_address(dest:V, source:V) input
@@ -71,7 +70,8 @@ point_to(W, L) :-
 % p = *q
 point_to(P, L) :-
         assign_content(P, Q),
-        point_to(Q, L).
+        point_to(Q, X),
+        point_to(X, L).
 
 %-------------------------------------------------------------------------------
 % Arrays
