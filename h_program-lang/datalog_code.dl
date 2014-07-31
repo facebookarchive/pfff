@@ -1,3 +1,4 @@
+% -*- prolog -*-
 %-------------------------------------------------------------------------------
 % Prelude
 %-------------------------------------------------------------------------------
@@ -7,7 +8,7 @@
 %
 %   point_to(V, M)           - variable 'V' may point to abstract memory loc 'M'
 %   field_point_to(FIELD, M) - qualified field may point to abstract memory loc 'M'
-%   call_edge(INVOKE, TARGET)  - invocation site 'invoke' calls function 'target'
+%   call_edge(INVOKE, TARGET) - invocation site 'invoke' calls function 'target'
 
 % Based upon: Java context-insensitive inclusion-based pointer analysis
 % by John Whaley
@@ -23,7 +24,7 @@
 %   malloc wrappers or maybe each malloc with certain type. (e.g. any Proc).
 % - each locals (context insensitively first), when their addresses are taken
 % - each fields (field-based, see sep08.pdf)
-% - array element via array aggregation
+% - array element (array insensitive, aggregation)
 
 % Invocations: line in the file (e.g. '_in_main_line_14_')
 
@@ -36,6 +37,7 @@
 %argument(i:I, z:Z, v:V)
 %call_edge(i:I, f:F)
 %call_ret(i:I, v:V)
+%call_direct(i:I, f:F)
 %call_indirect(i:I, v:V)
 
 %-------------------------------------------------------------------------------
@@ -57,6 +59,7 @@ point_to(P,L) :-
         assign(P, Q),
         point_to(Q, L).
 
+
 % ret = foo(v1, v2, ...)
 assign(PARAM, ARG) :-
         parameter(F, IDX, PARAM),
@@ -67,6 +70,8 @@ assign(RET, V) :-
         call_edge(I, F),
         call_ret(I, RET).
 
+call_edge(I, F) :- 
+        call_direct(I, F).
 call_edge(I, F) :-
         call_indirect(I, V),
         point_to(V, F).

@@ -208,7 +208,7 @@ and instr env = function
       add (spf "call_ret(%s, %s)" invoke (var_of_name env var)) env;
       (match e with
       | StaticCall _ | BuiltinCall _ ->
-        add (spf "call_edge(%s, %s)" invoke (var_of_global env name)) env;
+        add (spf "call_direct(%s, %s)" invoke (var_of_global env name)) env;
       | DynamicCall _ ->
         add (spf "call_indirect(%s, %s)" invoke (var_of_name env name)) env;
       | _ -> raise Impossible
