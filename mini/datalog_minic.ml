@@ -61,10 +61,9 @@ type fact = string
 type env = {
   scope: string; (* qualifier, usually the current function *)
 
-  (* for constant and globals and functions *)
-  globals: string list;
+  (* actually for constant, globals and functions *)
+  globals: (string * type_) list;
   structs: (string * struct_def) list;
-
   locals: (string * type_) list;
 
   facts: fact list ref;
@@ -73,9 +72,6 @@ type env = {
 let add fact env =
   Common.push fact env.facts
 
-let _qualify _env _s = 
-  raise Todo
-
 (*****************************************************************************)
 (* Helpers *)
 (*****************************************************************************)
@@ -83,27 +79,21 @@ let _qualify _env _s =
 let error s name =
   failwith (spf "ERROR: %s, at %s" s (Parse_info.string_of_info (snd name)))
 
+
 let var_of_global env name =
   let s = fst name in
-  if not (List.mem s env.globals)
+  if Common.find_opt (fun (x,_) -> x =$= s) env.globals = None
   then error (spf "unknown global: %s" s) name;
   spf "'%s'" s
 
 let var_of_local env name =
   spf "'%s__%s'" env.scope (fst name)
 
-(* heap location, abstract memory location, heap abstraction, etc *)
-let heap_of_cst _env name =
-  spf "'_line%d_'" (Parse_info.line_of_info (snd name))
-
-let invoke_loc_of_name env name =
-  spf "'_in_%s_line_%d_'" env.scope (Parse_info.line_of_info (snd name))
-
 let var_of_name env var_or_name =
   let s = fst var_or_name in
   match Common.find_opt (fun (x, _) -> x =$= s) env.locals with
   | None ->
-    if not (List.mem s env.globals)
+    if Common.find_opt (fun (x,_) -> x =$= s) env.globals = None
     then error (spf "unknown entity: %s" s) var_or_name;
     var_of_global env var_or_name
   | Some _t ->
@@ -114,6 +104,13 @@ let var_of_name env var_or_name =
  *)
 let heap_of_name env var_or_name =
   var_of_name env var_or_name
+
+(* heap location, abstract memory location, heap abstraction, etc *)
+let heap_of_cst _env name =
+  spf "'_line%d_'" (Parse_info.line_of_info (snd name))
+
+let invoke_loc_of_name env name =
+  spf "'_in_%s_line_%d_'" env.scope (Parse_info.line_of_info (snd name))
 
 (*****************************************************************************)
 (* Visitor *)
@@ -127,11 +124,12 @@ let rec program env xs =
       let env = { env with structs = (fst def.s_name, def)::env.structs } in
       program env xs
     | FuncDef def -> 
-      let env = { env with globals = (fst def.f_name)::env.globals } in
+      let env = 
+        { env with globals = (fst def.f_name, TFunction def.f_type)::env.globals } in
       func_def env def;
       program env xs
     | Global var ->
-      let env = { env with globals = (fst var.v_name)::env.globals } in
+      let env = { env with globals = (fst var.v_name, var.v_type)::env.globals } in
       let name = var.v_name in
       (match var.v_type with
       | TBase _ -> 
@@ -142,7 +140,8 @@ let rec program env xs =
       program env xs
         
     | Constant name ->
-      let env = { env with globals = (fst name)::env.globals } in
+      let env = 
+        { env with globals = (fst name, TBase ("int", snd name))::env.globals } in
       add (spf "point_to(%s, %s)" (var_of_global env name) (heap_of_cst env name)) env;
       program env xs
     )
@@ -198,6 +197,11 @@ and instr env = function
     add (spf "assign_deref(%s, %s)" (var_of_name env var) (var_of_name env var2)) env
   | Assign (var, e) ->
     (match e with
+    | Int x ->
+      add (spf "point_to(%s, 'cst__%s')" (var_of_name env var) (fst x)) env
+    | String x ->
+      add (spf "point_to(%s, str__line%d')" (var_of_name env var) 
+             (Parse_info.line_of_info (snd x))) env
     | Id name -> 
       add (spf "assign(%s, %s)" (var_of_name env var) (var_of_name env name)) env
     | StaticCall (name, args) | DynamicCall (name, args) | BuiltinCall(name, args)  ->
@@ -213,9 +217,11 @@ and instr env = function
         add (spf "call_indirect(%s, %s)" invoke (var_of_name env name)) env;
       | _ -> raise Impossible
       )
+    (* TODO *)
     | _ -> ()
     )
       
+  (* TODO *)
   | _ -> ()
 
 (*****************************************************************************)
