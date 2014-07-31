@@ -116,10 +116,6 @@ let rec tok_of_type = function
   | TStructName name -> snd name
   | TFunction (ret, _) -> tok_of_type ret
 
-let heap_of_malloc_type env t =
-  let tok = tok_of_type t in
-  spf "'_malloc_in_%s_line_%d_'" env.scope (Parse_info.line_of_info tok)
-
 let invoke_loc_of_name env name =
   spf "'_in_%s_line_%d_'" env.scope (Parse_info.line_of_info (snd name))
 
@@ -207,22 +203,22 @@ and instr env = function
   | AssignDeref (var, var2) ->
     add (spf "assign_deref(%s, %s)" (var_of_name env var) (var_of_name env var2)) env
   | Assign (var, e) ->
+    let dest = var_of_name env var in
     (match e with
     | Int x ->
-      add (spf "point_to(%s, '_cst__%s')" (var_of_name env var) (fst x)) env
+      add (spf "point_to(%s, '_cst__%s')" dest (fst x)) env
     | String x ->
-      add (spf "point_to(%s, '_str__line%d')" (var_of_name env var) 
-             (Parse_info.line_of_info (snd x))) env
+      add(spf "point_to(%s, '_str__line%d')" dest (Parse_info.line_of_info (snd x))) env
 
     | Id name -> 
-      add (spf "assign(%s, %s)" (var_of_name env var) (var_of_name env name)) env
+      add (spf "assign(%s, %s)" dest (var_of_name env name)) env
 
     | StaticCall (name, args) | DynamicCall (name, args) | BuiltinCall(name, args)  ->
       let invoke = invoke_loc_of_name env name in
       args +> Common.index_list_1 +> List.iter (fun (v, i) ->
         add (spf "argument(%s, %d, %s)" invoke i (var_of_name env v)) env
       );
-      add (spf "call_ret(%s, %s)" invoke (var_of_name env var)) env;
+      add (spf "call_ret(%s, %s)" invoke dest) env;
       (match e with
       | StaticCall _ | BuiltinCall _ ->
         add (spf "call_direct(%s, %s)" invoke (var_of_global env name)) env;
@@ -232,17 +228,25 @@ and instr env = function
       )
 
     | DeRef var2 ->
-      add (spf "assign_content(%s, %s)" (var_of_name env var)(var_of_name env var2)) env
+      add (spf "assign_content(%s, %s)" dest (var_of_name env var2)) env
 
     | Alloc t -> 
-      add (spf "point_to(%s, %s)" (var_of_name env var)
-             (heap_of_malloc_type env t)) env
+      let tok = tok_of_type t in
+      let pt = spf "'_malloc_in_%s_line_%d_'" env.scope (Parse_info.line_of_info tok) in
+      add (spf "point_to(%s, %s)" dest pt) env
     | AllocArray (_v, t) ->
-      add (spf "point_to(%s, %s)" (var_of_name env var)
-             (heap_of_malloc_type env t)) env
+      let tok = tok_of_type t in
+      let pt = 
+        spf "'_array_in_%s_line_%d_'" env.scope (Parse_info.line_of_info tok) in
+      let pt2 = 
+        spf "'_array_elt_in_%s_line_%d_'" env.scope (Parse_info.line_of_info tok) in
+      add (spf "point_to(%s, %s)" dest pt) env;
+      add (spf "point_to(%s, %s)" pt pt2) env;
 
     | ObjField (_v, _fld) -> raise Todo
-    | ArrayAccess (_v, _vidx) -> raise Todo
+    | ArrayAccess (var2, _vidx) -> 
+      (* less: could also add info that vidx must be an int *)
+      add (spf "assign_array_elt(%s, %s)" dest (var_of_name env var2)) env
     )
       
   | AssignField (_v, _fld, _v2) -> raise Todo
