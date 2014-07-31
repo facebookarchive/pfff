@@ -21,27 +21,29 @@
  * (todo: have a datalog_fact.ml that can then be translated to luadatalog,
  * bddbddb, logicblox, etc)
  * 
- * It's not that easy to translate the Java rules in DOOP to C. We could 
- * do a C -> Java translator, or think about how certain C features 
- * could be emulated in Java. This can give ideas. But right now
+ * It's not that easy to translate the DOOP code for Java to C. We could 
+ * do a C -> Java translator and think about how certain C features 
+ * could be emulated in Java; this can give ideas. But right now
  * reading the seminal paper on pointer analysis for C (Andersen thesis)
  * is the best approach.
  * 
  * history:
- *  - LFS and code navigation
+ *  - LFS and code navigation, PofFS
  *  - read Jquery paper, Prolog language for code query (and later Semmle)
- *  - cmf --prolog for PHP
+ *  - cmf --prolog for PHP for class hiearchy and then for call and data 
+ *    (partial) graph
  *  - codequery, generalization for Ocaml
- *  - realization of how Prolog interactive bdd is so much better than using
- *    Ocaml and Berkeley DB to answer simple questions
+ *  - saw how Prolog interactive bdd was so much better than using
+ *    Ocaml and Berkeley DB to answer simple questions, to perform simple 
+ *    analysis
  *  - idea of using Prolog for more analysis, read bddbddb paper, DOOP, etc
- *  - need of "flowing" while reading plan9 kernel code:
+ *  - saw need for "flowing" while reading plan9 kernel code:
  *    Where this indirect interrupt function is actually called? What
  *    can be the value in this field? etc
  * 
  *
  * related work:
- * - Andersen, steengaard, manuvir das, etc
+ * - Andersen, Steengaard, Manuvir Das, etc
  * - DOOP, bddbddb
  * - http://pag-www.gtisc.gatech.edu/chord/user_guide/datalog.html
  * - http://blog.jetbrains.com/idea/2009/08/analyzing-dataflow-with-intellij-idea/
@@ -54,6 +56,7 @@ open Ast_minic
 (* Types *)
 (*****************************************************************************)
 type fact = string
+(* todo: Datalog_code.fact *)
 
 type env = {
   scope: string; (* qualifier, usually the current function *)

@@ -16,6 +16,7 @@ let test_dataflow_minic file =
 
   (* debug *)
   facts +> List.iter pr2_gen;
+  Common2.pr2_xxxxxxxxxxxxxxxxx();
   
   let facts_file = "/tmp/facts.dl" in
   Common.with_open_outfile facts_file (fun (pr_no_nl, _chan) ->
@@ -23,7 +24,8 @@ let test_dataflow_minic file =
     facts +> List.iter pr;
   );
   
-  let logic_file = Filename.concat Config_pfff.path "logic.dl" in
+  let logic_file = 
+    Filename.concat Config_pfff.path "h_program-lang/datalog_code.dl" in
   
   let final_file = "/tmp/datalog.dl" in
   let cmd = spf "cat %s %s > %s" facts_file logic_file final_file in
