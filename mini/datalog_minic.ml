@@ -241,7 +241,7 @@ and instr env = function
       let pt2 = 
         spf "'_array_elt_in_%s_line_%d_'" env.scope (Parse_info.line_of_info tok) in
       add (spf "point_to(%s, %s)" dest pt) env;
-      add (spf "point_to(%s, %s)" pt pt2) env;
+      add (spf "array_point_to(%s, %s)" pt pt2) env;
 
     | ObjField (_v, _fld) -> raise Todo
     | ArrayAccess (var2, _vidx) -> 

@@ -42,6 +42,7 @@
 %call_indirect(i:I, v:V)
 
 %assign_array_elt(dest:V, source:V) input
+%array_point_to(h:H, h2:H) input/output
 
 %-------------------------------------------------------------------------------
 % Rules
@@ -71,7 +72,7 @@ point_to(P, L) :-
 point_to(P, AELT) :-
         assign_array_elt(P, A),
         point_to(A, ARRAY),
-        point_to(ARRAY, AELT).
+        array_point_to(ARRAY, AELT).
 
 
 % ret = foo(v1, v2, ...)
