@@ -107,7 +107,18 @@ let heap_of_name env var_or_name =
 
 (* heap location, abstract memory location, heap abstraction, etc *)
 let heap_of_cst _env name =
-  spf "'_line%d_'" (Parse_info.line_of_info (snd name))
+  spf "'_val_of_%s_line%d_'" 
+    (fst name) (Parse_info.line_of_info (snd name))
+
+let rec tok_of_type = function
+  | TBase name -> snd name
+  | TPointer t | TArray t -> tok_of_type t
+  | TStructName name -> snd name
+  | TFunction (ret, _) -> tok_of_type ret
+
+let heap_of_malloc_type env t =
+  let tok = tok_of_type t in
+  spf "'_malloc_in_%s_line_%d_'" env.scope (Parse_info.line_of_info tok)
 
 let invoke_loc_of_name env name =
   spf "'_in_%s_line_%d_'" env.scope (Parse_info.line_of_info (snd name))
@@ -198,9 +209,9 @@ and instr env = function
   | Assign (var, e) ->
     (match e with
     | Int x ->
-      add (spf "point_to(%s, 'cst__%s')" (var_of_name env var) (fst x)) env
+      add (spf "point_to(%s, '_cst__%s')" (var_of_name env var) (fst x)) env
     | String x ->
-      add (spf "point_to(%s, str__line%d')" (var_of_name env var) 
+      add (spf "point_to(%s, '_str__line%d')" (var_of_name env var) 
              (Parse_info.line_of_info (snd x))) env
 
     | Id name -> 
@@ -223,8 +234,12 @@ and instr env = function
     | DeRef var2 ->
       add (spf "assign_content(%s, %s)" (var_of_name env var)(var_of_name env var2)) env
 
-    | Alloc _t -> raise Todo
-    | AllocArray (_v, _t) -> raise Todo
+    | Alloc t -> 
+      add (spf "point_to(%s, %s)" (var_of_name env var)
+             (heap_of_malloc_type env t)) env
+    | AllocArray (_v, t) ->
+      add (spf "point_to(%s, %s)" (var_of_name env var)
+             (heap_of_malloc_type env t)) env
 
     | ObjField (_v, _fld) -> raise Todo
     | ArrayAccess (_v, _vidx) -> raise Todo
