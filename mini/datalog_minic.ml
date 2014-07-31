@@ -202,8 +202,10 @@ and instr env = function
     | String x ->
       add (spf "point_to(%s, str__line%d')" (var_of_name env var) 
              (Parse_info.line_of_info (snd x))) env
+
     | Id name -> 
       add (spf "assign(%s, %s)" (var_of_name env var) (var_of_name env name)) env
+
     | StaticCall (name, args) | DynamicCall (name, args) | BuiltinCall(name, args)  ->
       let invoke = invoke_loc_of_name env name in
       args +> Common.index_list_1 +> List.iter (fun (v, i) ->
@@ -217,15 +219,20 @@ and instr env = function
         add (spf "call_indirect(%s, %s)" invoke (var_of_name env name)) env;
       | _ -> raise Impossible
       )
-    | DeRef _var -> raise Todo
+
+    | DeRef var2 ->
+      add (spf "assign_content(%s, %s)" (var_of_name env var)(var_of_name env var2)) env
+
     | Alloc _t -> raise Todo
     | AllocArray (_v, _t) -> raise Todo
+
     | ObjField (_v, _fld) -> raise Todo
     | ArrayAccess (_v, _vidx) -> raise Todo
     )
       
   | AssignField (_v, _fld, _v2) -> raise Todo
   | AssignArray (_varr, _vidx, _vval) -> raise Todo
+
   | AssignFieldAddress (_v, _varray, _vfld) -> raise Todo
   | AssignIndexAddress (_v, _varray, _vidx) -> raise Todo
 

@@ -31,6 +31,7 @@
 %assign(dest:V, source:V) input
 %assign_address (v:V, h:H) input
 %assign_deref(dest:V, source:V) input
+%assign_content(dest:V, source:V) input
 
 %parameter(f:F, z:Z, v:V)
 %return(f:F, v:V)
@@ -44,19 +45,24 @@
 % Rules
 %-------------------------------------------------------------------------------
 
-% p = &x
-point_to(PT, X) :-
-  assign_address(PT, X).
+% p = &q
+point_to(P, Q) :-
+  assign_address(P, Q).
 
-% *q = w, given: q -> p, and w -> v => p now points to v
-point_to(PT, V) :-
-  assign_deref(Q, W),
-  point_to(W, V),
-  point_to(Q, PT).
-
-% q = p
-point_to(P,L) :-
+% p = q
+point_to(P, L) :-
         assign(P, Q),
+        point_to(Q, L).
+
+% *p = q, given: q -> l, and p -> w => w now points to l
+point_to(W, L) :-
+  assign_deref(P, Q),
+  point_to(Q, L),
+  point_to(P, W).
+
+% p = *q
+point_to(P, L) :-
+        assign_content(P, Q),
         point_to(Q, L).
 
 
