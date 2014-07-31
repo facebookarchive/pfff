@@ -217,12 +217,17 @@ and instr env = function
         add (spf "call_indirect(%s, %s)" invoke (var_of_name env name)) env;
       | _ -> raise Impossible
       )
-    (* TODO *)
-    | _ -> ()
+    | DeRef _var -> raise Todo
+    | Alloc _t -> raise Todo
+    | AllocArray (_v, _t) -> raise Todo
+    | ObjField (_v, _fld) -> raise Todo
+    | ArrayAccess (_v, _vidx) -> raise Todo
     )
       
-  (* TODO *)
-  | _ -> ()
+  | AssignField (_v, _fld, _v2) -> raise Todo
+  | AssignArray (_varr, _vidx, _vval) -> raise Todo
+  | AssignFieldAddress (_v, _varray, _vfld) -> raise Todo
+  | AssignIndexAddress (_v, _varray, _vidx) -> raise Todo
 
 (*****************************************************************************)
 (* Main entry point *)
