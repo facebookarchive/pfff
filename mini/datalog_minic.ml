@@ -47,6 +47,12 @@
  * - DOOP, bddbddb
  * - http://pag-www.gtisc.gatech.edu/chord/user_guide/datalog.html
  * - http://blog.jetbrains.com/idea/2009/08/analyzing-dataflow-with-intellij-idea/
+ * 
+ * notes:
+ *  - heap modeling? shape types? with this different point_to, array_point_to,
+ *    field_point_to it's clear we want different classifications, a better
+ *    organization of the heap and the relation between memory. This is
+ *    probably what shape types are all about.
  *)
 open Common
 
@@ -248,12 +254,24 @@ and instr env = function
       (* less: could also add info that vidx must be an int *)
       add (spf "assign_array_elt(%s, %s)" dest (var_of_name env var2)) env
     )
+
+  | AssignArray (varr, _vidx, vval) ->
+      (* less: could also add info that vidx must be an int *)
+      add (spf "assign_array_deref(%s, %s)" 
+             (var_of_name env varr) 
+             (var_of_name env vval)
+      ) env
+  | AssignIndexAddress (var, varray, _vidx) ->
+      (* less: could also add info that vidx must be an int *)
+      add (spf "assign_array_element_address(%s, %s)" 
+             (var_of_name env var) 
+             (var_of_name env varray)
+      ) env
+
       
   | AssignField (_v, _fld, _v2) -> raise Todo
-  | AssignArray (_varr, _vidx, _vval) -> raise Todo
 
   | AssignFieldAddress (_v, _varray, _vfld) -> raise Todo
-  | AssignIndexAddress (_v, _varray, _vidx) -> raise Todo
 
 (*****************************************************************************)
 (* Main entry point *)
