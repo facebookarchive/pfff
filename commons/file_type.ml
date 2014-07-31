@@ -133,9 +133,11 @@ let file_type_of_file2 file =
   | "lisp" -> PL (Lisp CommonLisp)
   | "el" -> PL (Lisp Elisp)
 
-  (* Perl or Prolog ... *)
+  (* Perl or Prolog ... I made my choice *)
   | "pl" -> PL (Prolog "pl")
   | "logic" -> PL (Prolog "logic") (* datalog of logicblox *)
+  | "dtl" -> PL (Prolog "dtl") (* bddbddb *)
+  | "dl" -> PL (Prolog "dl") (* datalog *)
   | "perl" -> PL Perl 
   | "py" -> PL Python
   | "rb" -> PL Ruby
