@@ -14,7 +14,7 @@ int (*pt)(int *x);
 
 
 void main() {
-//  global = malloc(sizeof(int));
+  global = malloc(sizeof(int));
   pt = &indirect;
   int* local = global;
   int v = (*pt)(local);
