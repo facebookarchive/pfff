@@ -2,18 +2,20 @@
 // do function pointer that when called is passed the address of a certain
 // global and so add info in point-to-set of this global pointer.
 
-int global*;
+int* global;
 
-void indirect(int* x) {
-  *x = 42;
+int indirect(int* x) {
+  int v = 8;
+  *x = v;
+  return v;
 }
 
-void (*pt)(int *x);
+int (*pt)(int *x);
 
 
 void main() {
-  global = malloc(sizeof(int));
+//  global = malloc(sizeof(int));
   pt = &indirect;
   int* local = global;
-  (*pt)(local);
+  int v = (*pt)(local);
 }

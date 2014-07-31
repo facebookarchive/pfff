@@ -36,6 +36,7 @@
 %argument(i:I, z:Z, v:V)
 %call_edge(i:I, f:F)
 %call_ret(i:I, v:V)
+%call_indirect(i:I, v:V)
 
 %-------------------------------------------------------------------------------
 % Rules
@@ -65,5 +66,10 @@ assign(RET, V) :-
         return(F, V),
         call_edge(I, F),
         call_ret(I, RET).
+
+call_edge(I, F) :-
+        call_indirect(I, V),
+        point_to(V, F).
   
 point_to(A,B)?
+%call_edge(A,B)?

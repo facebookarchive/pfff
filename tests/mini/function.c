@@ -7,7 +7,6 @@ int* foo(int *param) {
 }
 
 int main() {
-
   int *pt;
   pt = &global;
   int *pt2;

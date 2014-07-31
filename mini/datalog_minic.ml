@@ -130,7 +130,12 @@ let rec program env xs =
     | Global var ->
       let env = { env with globals = (fst var.v_name)::env.globals } in
       let name = var.v_name in
-      add (spf "point_to(%s, %s)" (var_of_global env name) (heap_of_cst env name)) env;
+      (match var.v_type with
+      | TBase _ -> 
+        add (spf "point_to(%s, %s)" (var_of_global env name) (heap_of_cst env name))env;
+      (* could add a point_to(%s, '_null_') for pointers *)
+      | _ -> ()
+      );
       program env xs
         
     | Constant name ->
@@ -192,14 +197,19 @@ and instr env = function
     (match e with
     | Id name -> 
       add (spf "assign(%s, %s)" (var_of_name env var) (var_of_name env name)) env
-    | StaticCall (name, args) ->
+    | StaticCall (name, args) | DynamicCall (name, args) | BuiltinCall(name, args)  ->
       let invoke = invoke_loc_of_name env name in
       args +> Common.index_list_1 +> List.iter (fun (v, i) ->
         add (spf "argument(%s, %d, %s)" invoke i (var_of_name env v)) env
       );
-      add (spf "call_edge(%s, %s)" invoke (var_of_global env name)) env;
       add (spf "call_ret(%s, %s)" invoke (var_of_name env var)) env;
-      
+      (match e with
+      | StaticCall _ | BuiltinCall _ ->
+        add (spf "call_edge(%s, %s)" invoke (var_of_global env name)) env;
+      | DynamicCall _ ->
+        add (spf "call_indirect(%s, %s)" invoke (var_of_name env name)) env;
+      | _ -> raise Impossible
+      )
     | _ -> ()
     )
       
