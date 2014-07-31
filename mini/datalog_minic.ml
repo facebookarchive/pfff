@@ -17,6 +17,9 @@
 (*****************************************************************************)
 (* 
  * Generating dataflow-related datalog facts for mini C.
+ * See logic.dl for the types of the facts generated here.
+ * (todo: have a datalog_fact.ml that can then be translated to luadatalog,
+ * bddbddb, logicblox, etc)
  * 
  * It's not that easy to translate the Java rules in DOOP to C. We could 
  * do a C -> Java translator, or think about how certain C features 
@@ -77,8 +80,11 @@ let _qualify _env _s =
 let error s name =
   failwith (spf "ERROR: %s, at %s" s (Parse_info.string_of_info (snd name)))
 
-let var_of_global name =
-  spf "'%s'" (fst name)
+let var_of_global env name =
+  let s = fst name in
+  if not (List.mem s env.globals)
+  then error (spf "unknown global: %s" s) name;
+  spf "'%s'" s
 
 let var_of_local env name =
   spf "'%s__%s'" env.scope (fst name)
@@ -87,13 +93,16 @@ let var_of_local env name =
 let heap_of_cst _env name =
   spf "'_line%d_'" (Parse_info.line_of_info (snd name))
 
+let invoke_loc_of_name env name =
+  spf "'_in_%s_line_%d_'" env.scope (Parse_info.line_of_info (snd name))
+
 let var_of_name env var_or_name =
   let s = fst var_or_name in
   match Common.find_opt (fun (x, _) -> x =$= s) env.locals with
   | None ->
     if not (List.mem s env.globals)
     then error (spf "unknown entity: %s" s) var_or_name;
-    var_of_global var_or_name
+    var_of_global env var_or_name
   | Some _t ->
     var_of_local env var_or_name
 
@@ -121,21 +130,27 @@ let rec program env xs =
     | Global var ->
       let env = { env with globals = (fst var.v_name)::env.globals } in
       let name = var.v_name in
-      add (spf "point_to(%s, %s)" (var_of_global name) (heap_of_cst env name)) env;
+      add (spf "point_to(%s, %s)" (var_of_global env name) (heap_of_cst env name)) env;
       program env xs
         
     | Constant name ->
       let env = { env with globals = (fst name)::env.globals } in
-      add (spf "point_to(%s, %s)" (var_of_global name) (heap_of_cst env name)) env;
+      add (spf "point_to(%s, %s)" (var_of_global env name) (heap_of_cst env name)) env;
       program env xs
     )
 
 and func_def env def =
+  let (_ret, params) = def.f_type in
   let env = { env with 
-    scope = spf "%s" (fst def.f_name);
-    locals = [];
+    scope = fst def.f_name;
+    locals = params +> List.map (fun p -> fst p.v_name, p.v_type);
   } in
-  (* todo: parameters *)
+  params +> Common.index_list_1 +> List.iter (fun (p, i) ->
+    add (spf "parameter(%s, %d, %s)" 
+           (var_of_global env def.f_name) i (var_of_local env p.v_name)) env;
+  );
+  (* less: could skip when return void *)
+  add (spf "return(%s, 'ret_%s')" (var_of_global env def.f_name) (fst def.f_name)) env;
   stmts env def.f_body
 
 and stmts env xs =
@@ -165,9 +180,8 @@ and stmt env = function
       stmts env stelse;
   | While (_var, st) ->
       stmts env st
-  | Return _var ->
-    (* TODO *)
-    ()
+  | Return var ->
+      add (spf "assign('ret_%s', %s)" env.scope (var_of_name env var)) env
 
 and instr env = function
   | AssignAddress (var, name) ->
@@ -178,6 +192,14 @@ and instr env = function
     (match e with
     | Id name -> 
       add (spf "assign(%s, %s)" (var_of_name env var) (var_of_name env name)) env
+    | StaticCall (name, args) ->
+      let invoke = invoke_loc_of_name env name in
+      args +> Common.index_list_1 +> List.iter (fun (v, i) ->
+        add (spf "argument(%s, %d, %s)" invoke i (var_of_name env v)) env
+      );
+      add (spf "call_edge(%s, %s)" invoke (var_of_global env name)) env;
+      add (spf "call_ret(%s, %s)" invoke (var_of_name env var)) env;
+      
     | _ -> ()
     )
       

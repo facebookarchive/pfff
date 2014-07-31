@@ -6,8 +6,8 @@
 % Its outputs are the following relations:
 %
 %   point_to(V, M)           - variable 'V' may point to abstract memory loc 'M'
-%   field_point_to(FIELD, M) - qualified field  may point to abstract memory loc 'M'
-%   dyncall(INVOKE, TARGET)  - invocation site 'invoke' calls function 'target'
+%   field_point_to(FIELD, M) - qualified field may point to abstract memory loc 'M'
+%   call_edge(INVOKE, TARGET)  - invocation site 'invoke' calls function 'target'
 
 % Based upon: Java context-insensitive inclusion-based pointer analysis
 % by John Whaley
@@ -16,41 +16,54 @@
 % Relations
 %-------------------------------------------------------------------------------
 
-% Abstract memory location (also called heap objects):
+% Abstract memory locations (also called heap objects), mostly qualified symbols
+% (e.g 'main__foo', 'ret_main', '_cst_line2_'):
 % - each globals, functions, constants
 % - each malloc (context insensitively). will do sensitively later for 
 %   malloc wrappers or maybe each malloc with certain type. (e.g. any Proc).
-% - each locals (context insensitively first), when their address is taken
+% - each locals (context insensitively first), when their addresses are taken
 % - each fields (field-based, see sep08.pdf)
-% - array aggregation
+% - array element via array aggregation
 
-% Invocation: line in the file
+% Invocations: line in the file (e.g. '_in_main_line_14_')
 
 %assign(dest:V, source:V) input
 %assign_address (v:V, h:H) input
 %assign_deref(dest:V, source:V) input
-%
-%... assign_field(field:F, source:V) input
-%...
 
+%parameter(f:F, z:Z, v:V)
+%return(f:F, v:V)
+%argument(i:I, z:Z, v:V)
+%call_edge(i:I, f:F)
+%call_ret(i:I, v:V)
 
 %-------------------------------------------------------------------------------
 % Rules
 %-------------------------------------------------------------------------------
 
 % p = &x
-point_to(P, X) :-
-  assign_address(P, X).
+point_to(PT, X) :-
+  assign_address(PT, X).
 
 % *q = w, given: q -> p, and w -> v => p now points to v
-point_to(P, V) :-
+point_to(PT, V) :-
   assign_deref(Q, W),
   point_to(W, V),
-  point_to(Q, P).
+  point_to(Q, PT).
 
 % q = p
 point_to(P,L) :-
         assign(P, Q),
         point_to(Q, L).
+
+% ret = foo(v1, v2, ...)
+assign(PARAM, ARG) :-
+        parameter(F, IDX, PARAM),
+        call_edge(I, F),
+        argument(I, IDX, ARG).
+assign(RET, V) :-
+        return(F, V),
+        call_edge(I, F),
+        call_ret(I, RET).
   
 point_to(A,B)?

@@ -1,7 +1,7 @@
 
 CC=gcc -Wmain-return-type
 
-all: fields.exe constants.exe function_pointer.exe
+all: fields.exe constants.exe function_pointer.exe function.exe
 
 %.exe: %.c
 	$(CC) $^ -o $@
