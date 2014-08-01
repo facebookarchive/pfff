@@ -42,12 +42,6 @@
  *    can be the value in this field? etc
  * 
  *
- * related work:
- * - Andersen, Steengaard, Manuvir Das, etc
- * - DOOP, bddbddb
- * - http://pag-www.gtisc.gatech.edu/chord/user_guide/datalog.html
- * - http://blog.jetbrains.com/idea/2009/08/analyzing-dataflow-with-intellij-idea/
- * 
  * notes:
  *  - heap modeling? shape types? with this different point_to, array_point_to,
  *    field_point_to it's clear we want different classifications, a better

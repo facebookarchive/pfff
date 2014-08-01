@@ -13,6 +13,14 @@
 % Based upon: Java context-insensitive inclusion-based pointer analysis
 % by John Whaley
 
+% Related work:
+% - Andersen, Steengaard, Manuvir Das, etc
+% - DOOP, bddbddb, chord
+% - http://pag-www.gtisc.gatech.edu/chord/user_guide/datalog.html
+% - http://blog.jetbrains.com/idea/2009/08/analyzing-dataflow-with-intellij-idea/
+% - Frama C, CodeSonar, Coverity, ...
+% 
+
 %*******************************************************************************
 % Relations
 %*******************************************************************************
