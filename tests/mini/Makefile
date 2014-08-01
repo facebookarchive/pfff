@@ -1,7 +1,22 @@
 
 CC=gcc -Wmain-return-type
 
-all: fields.exe constants.exe function_pointer.exe function.exe
+SRC= \
+  pointer.c \
+  array.c \
+  constants.c \
+  deref.c \
+  fields.c \
+  function.c \
+  function_pointer.c \
+  on_the_fly.c \
+  combination.c \
+
+#  grammar.c \
+
+EXE=
+
+all: $(SRC:.c=.exe)
 
 %.exe: %.c
 	$(CC) $^ -o $@

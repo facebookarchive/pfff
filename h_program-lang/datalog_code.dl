@@ -80,9 +80,12 @@ point_to(P, L) :-
         assign_content(P, Q),
         point_to(Q, X),
         point_to(X, L).
+% see here that X is used both as first and second argument of point_to
+% because the domain of the variable is included in the domain of abstract
+% memory locations.
 
 %-------------------------------------------------------------------------------
-% Arrays
+% Arrays insensitive
 %-------------------------------------------------------------------------------
 
 % p = a[...]
@@ -103,9 +106,32 @@ point_to(P, AELT) :-
         assign_array_element_address(P, A),
         point_to(A, ARRAY),
         array_point_to(ARRAY, AELT).
+
+%-------------------------------------------------------------------------------
+% Field-base sensitive (*.f, not x.* nor x.f)
+%-------------------------------------------------------------------------------
+
+% p = x->fld
+point_to(P, L) :-
+        assign_load_field(P, X, F),
+        point_to(F, L).
+
+
+% p->fld = x
+point_to(F, L) :-
+        assign_store_field(P, F, X),
+        point_to(X, L).
+
+% p = &x->fld
+point_to(P, F) :-
+        assign_field_address(P, X, F).
+
+%point_to(F, L) :-
+%        field_point_to(F, L).
+
         
 %-------------------------------------------------------------------------------
-% Calls
+% Calls context-insensitive
 %-------------------------------------------------------------------------------
 
 % ret = foo(v1, v2, ...)
@@ -132,5 +158,5 @@ call_edge(I, F) :-
 % Postlude
 %*******************************************************************************
   
-point_to(A,B)?
-%call_edge(A,B)?
+%point_to(A,B)?
+call_edge(A,B)?
