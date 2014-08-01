@@ -30,7 +30,7 @@ let test_dataflow_minic file =
   let final_file = "/tmp/datalog.dl" in
   let cmd = spf "cat %s %s > %s" facts_file logic_file final_file in
   Common.command2 cmd;
-  let cmd = spf "datalog %s" final_file in
+  let cmd = spf "datalog %s | sort" final_file in
   Common.command2 cmd;
   ()
 
