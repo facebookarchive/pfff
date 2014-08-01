@@ -193,7 +193,7 @@ let rec (cfg_stmt: state -> nodei option -> stmt -> nodei option) =
              F.WhileHeader (Ast.unparen e), colon_stmt
          | For (_, _, _, _, _, _, _, _, colon_stmt) ->
              F.ForHeader, colon_stmt
-         | Foreach (_, _, _, _, _, _, colon_stmt) ->
+         | Foreach (_, _, _, _, _, _, _, colon_stmt) ->
              F.ForeachHeader, colon_stmt
          | _ -> raise Impossible
          )

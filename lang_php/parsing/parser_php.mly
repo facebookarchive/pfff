@@ -327,7 +327,9 @@ statement:
      { Switch($1,($2,$3,$4),$5) }
 
  | T_FOREACH TOPAR expr T_AS foreach_pattern TCPAR foreach_statement
-     { Foreach($1,$2,$3,$4,$5,$6,$7) }
+     { Foreach($1,$2,$3,None, $4,$5,$6,$7) }
+ | T_FOREACH TOPAR expr T_AWAIT T_AS foreach_pattern TCPAR foreach_statement
+     { Foreach($1,$2,$3, Some $4, $5,$6,$7, $8) }
 
  | T_BREAK      TSEMICOLON     	{ Break($1,None,$2) }
  | T_BREAK expr TSEMICOLON	{ Break($1,Some $2, $3) }

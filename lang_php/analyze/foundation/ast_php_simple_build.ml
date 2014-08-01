@@ -195,7 +195,7 @@ and stmt env st acc =
       let e = expr env e in
       let scl = switch_case_list env scl in
       A.Switch (e, scl) :: acc
-  | Foreach (_, _, e, _, pat, _, cst) ->
+  | Foreach (_, _, e, _awaitTodo, _, pat, _, cst) ->
       let e = expr env e in
       let pat = foreach_pattern env pat in
       let cst = colon_stmt env cst in

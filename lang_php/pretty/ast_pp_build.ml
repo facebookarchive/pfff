@@ -118,7 +118,7 @@ let rec last_info_of_stmt = function
       last_info_of_stmt (last l)
   | While (_, _, (SingleStmt st)) -> last_info_of_stmt st
   | For (_, _, _, _, _, _, _, _, (SingleStmt st)) -> last_info_of_stmt st
-  | Foreach (_, _, _, _, _, _, (SingleStmt st)) -> last_info_of_stmt st
+  | Foreach (_, _, _, _, _, _, _, (SingleStmt st)) -> last_info_of_stmt st
   | Declare (_, _, (SingleStmt st)) -> last_info_of_stmt st
   | Try (_, _, [], fl) ->
       let (_, (_, _, x)) = last fl in
@@ -128,7 +128,7 @@ let rec last_info_of_stmt = function
       x
   | While (_, _, (ColonStmt (_, _, _, x)))
   | For (_, _, _, _, _, _, _, _, (ColonStmt (_, _, _, x)))
-  | Foreach (_, _, _, _, _, _, (ColonStmt (_, _, _, x)))
+  | Foreach (_, _, _, _, _, _, _, (ColonStmt (_, _, _, x)))
   | Declare (_, _, ColonStmt (_, _, _, x)) -> x
   | ExprStmt (_, x)
   | EmptyStmt x
@@ -338,7 +338,7 @@ and stmt_ env st acc =
       let line = PI.line_of_info x in
       let scl = add_case_comments env scl line in
       A.Switch (e, scl) :: acc
-  | Foreach (_, _, e, _, fve_fao, _, cst) ->
+  | Foreach (_, _, e, _awaitTodo, _, fve_fao, _, cst) ->
       let e = expr env e in
       let fve, fao = foreach_pattern env fve_fao in
       let cst = colon_stmt env cst in
