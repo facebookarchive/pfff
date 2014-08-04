@@ -229,7 +229,7 @@ module Ast = Ast_cpp
 /*(*1 Priorities *)*/
 /*(*************************************************************************)*/
 /*(* must be at the top so that it has the lowest priority *)*/
-%nonassoc SHIFTHERE
+%nonassoc LOW_PRIORITY_RULE
 
 %nonassoc Telse
 
@@ -738,7 +738,7 @@ statement:
  | Tswitch TOPar decl_spec init_declarator_list TCPar statement
      { StmtTodo, noii }
 
- | Tif TOPar decl_spec init_declarator_list TCPar statement   %prec SHIFTHERE
+ | Tif TOPar decl_spec init_declarator_list TCPar statement   %prec LOW_PRIORITY_RULE
      { StmtTodo, noii }
  | Tif TOPar decl_spec init_declarator_list TCPar statement Telse statement 
      { StmtTodo, noii }
@@ -802,7 +802,7 @@ labeled:
 
 /*(* classic else ambiguity resolved by a %prec *)*/
 selection: 
- | Tif TOPar expr TCPar statement              %prec SHIFTHERE
+ | Tif TOPar expr TCPar statement              %prec LOW_PRIORITY_RULE
      { If ($1, ($2, $3, $4), $5, None, (ExprStatement None, [])), noii }
  | Tif TOPar expr TCPar statement Telse statement 
      { If ($1, ($2, $3, $4), $5, Some $6, $7), noii }
@@ -1141,7 +1141,7 @@ type_id:
  * in new_declarator and its leading ptr_operator
  *)*/
 new_type_id: 
- | spec_qualif_list %prec SHIFTHERE   
+ | spec_qualif_list %prec LOW_PRIORITY_RULE   
      { let (t_ret, _) = fixDeclSpecForDecl $1 in  t_ret }
  | spec_qualif_list new_declarator 
      { let (t_ret, _) = fixDeclSpecForDecl $1 in (* TODOAST *) t_ret }
@@ -1149,7 +1149,7 @@ new_type_id:
 new_declarator: 
  | ptr_operator new_declarator 
      { () }
- | ptr_operator %prec SHIFTHERE
+ | ptr_operator %prec LOW_PRIORITY_RULE
      { () }
  | direct_new_declarator 
      { () }
@@ -1176,7 +1176,7 @@ conversion_type_id:
      { let tx = addTypeD ($1, nullDecl) in
        let (t_ret, _) = fixDeclSpecForDecl tx in t_ret 
      }
- | simple_type_specifier %prec SHIFTHERE 
+ | simple_type_specifier %prec LOW_PRIORITY_RULE 
      { let tx = addTypeD ($1, nullDecl) in
        let (t_ret, _) = fixDeclSpecForDecl tx in t_ret 
      }
@@ -1184,7 +1184,7 @@ conversion_type_id:
 conversion_declarator: 
  | ptr_operator conversion_declarator 
      { () }
- | ptr_operator %prec SHIFTHERE
+ | ptr_operator %prec LOW_PRIORITY_RULE
      { () }
 
 /*(*************************************************************************)*/
@@ -1537,7 +1537,7 @@ initialize2:
 designator: 
  | TDot ident 
      { DesignatorField ($1, $2) } 
- | TOCro const_expr TCCro     %prec SHIFTHERE
+ | TOCro const_expr TCCro     %prec LOW_PRIORITY_RULE
      { DesignatorIndex ($1, $2, $3) }
  | TOCro const_expr TEllipsis const_expr TCCro 
      { DesignatorRange ($1, ($2, $3, $4), $5) }
