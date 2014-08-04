@@ -1,6 +1,6 @@
 (* Yoann Padioleau
  * 
- * Copyright (C) 2010, 2011, 2014 Facebook
+ * Copyright (C) 2010-2014 Facebook
  * Copyright (C) 2008-2009 University of Urbana Champaign
  * Copyright (C) 2006-2007 Ecole des Mines de Nantes
  * Copyright (C) 2002 Yoann Padioleau
@@ -19,11 +19,14 @@
 (* Prelude *)
 (*****************************************************************************)
 (* 
- * This is a big file ... C++ is a quite complicated language ... 
+ * This is a big file ... C++ is a big and complicated language ... 
  *
  * Like most other ASTs in pfff, it's actually more a Concrete Syntax Tree.
  * Some stuff are tagged 'semantic:' which means that they are computed
  * after parsing. 
+ * 
+ * See also lang_c/parsing/ast_c.ml and lang_clang/parsing/ast_clang.ml
+ * (as well as mini/ast_minic.ml).
  * 
  * todo: 
  *  - migrate everything to wrap2, e.g. no more expressionbis, statementbis
@@ -39,7 +42,7 @@
 type tok = Parse_info.info
 
 (* a shortcut to annotate some information with token/position information *)
-and 'a wrap  = 'a * tok list (* TODO CHANGE to 'a * info *)
+and 'a wrap  = 'a * tok list (* TODO CHANGE to 'a * tok *)
 and 'a wrap2  = 'a * tok
 
 and 'a paren   = tok * 'a * tok
@@ -49,7 +52,6 @@ and 'a angle   = tok * 'a * tok
 
 and 'a comma_list = 'a wrap list
 and 'a comma_list2 = ('a, tok (* the comma *)) Common.either list
-
  (* with tarzan *)
 
 (* ------------------------------------------------------------------------- *)
@@ -72,6 +74,7 @@ type name = tok (*::*) option  * (qualifier * tok (*::*)) list * ident
  and ident =
    (* function name, macro name, variable, classname, enumname, namespace *)
    | IdIdent of simple_ident
+   (* c++ext: *)  
    | IdTemplateId of simple_ident * template_arguments
    | IdDestructor of tok(*~*) * simple_ident
    | IdOperator of tok * (operator * tok list)
@@ -111,9 +114,9 @@ type name = tok (*::*) option  * (qualifier * tok (*::*)) list * ident
 (* Types *)
 (* ------------------------------------------------------------------------- *)
 (* We could have a more precise type in fullType, in expression, etc, but
- * it would require too much things at parsing time such as checking there
- * is no conflicting structname, computing value, etc. It's better to separate
- * concerns, so I put '=>' to mean what we would really like. In fact
+ * it would require too much things at parsing time such as checking whether
+ * there is no conflicts structname, computing value, etc. It's better to
+ * separate concerns, so I put '=>' to mean what we would really like. In fact
  * what we really like is defining another fullType, expression, etc
  * from scratch, because many stuff are just sugar.
  * 
@@ -123,21 +126,23 @@ type name = tok (*::*) option  * (qualifier * tok (*::*)) list * ident
  * himself (but we can do it for pointer).
  *)
 and fullType = typeQualifier * typeC
-and  typeC = typeCbis wrap
+ and typeC = typeCbis wrap
 
-(* less: rename to TBase, TPointer, etc *)
-and typeCbis =
+ (* less: rename to TBase, TPointer, etc *)
+ and typeCbis =
   | BaseType        of baseType
 
   | Pointer         of (* '*' *) fullType
-  | Reference       of (* '&' *) fullType (* c++ext: *)
+  (* c++ext: *)
+  | Reference       of (* '&' *) fullType 
 
   | Array           of constExpression option bracket * fullType
   | FunctionType    of functionType
 
-  | Enum of tok (*enum*) * simple_ident option * 
-            enum_elem comma_list brace  (* => string * int list *)
-  | StructUnion     of class_definition (* c++ext: bigger type now *)
+  | Enum of tok (*enum*) * simple_ident option * enum_elem comma_list brace  
+            (* => string * int list *)
+  (* c++ext: bigger type now *)
+  | StructUnion     of class_definition 
 
   | EnumName        of tok * simple_ident (*enum_name*)
   | StructUnionName of structUnion wrap2 * simple_ident (*ident_name*)
@@ -223,10 +228,9 @@ and expression = expressionbis wrap
 
   (* specialized version of Call that makes it easier to write
    * certain analysis. Note that because 'name' can be qualified,
-   * FunCallSimple is also a StaticMethodCallSimple
+   * FunCallSimple is also a StaticMethodCallSimple.
    *)
   | FunCallSimple  of name * argument comma_list paren
-  (* less: MethodCallSimple, MethodCallExpr *)
   | Call of expression * argument comma_list paren
 
   (* gccext: x ? /* empty */ : y <=> x ? x : y; *)
@@ -263,6 +267,7 @@ and expression = expressionbis wrap
   (* c++ext: *)
   | This of tok
   | ConstructedObject of fullType * argument comma_list paren
+  (* less: merge and use either *)
   | TypeIdOfExpr     of tok * expression paren
   | TypeIdOfType     of tok * fullType paren
   | CplusplusCast of cast_operator wrap2 * fullType angle * expression paren
@@ -312,10 +317,11 @@ and expression = expressionbis wrap
     and isWchar = IsWchar | IsChar
 
   and unaryOp  = 
+    (* less: could be lift up, those are really important operators *)
     | GetRef | DeRef 
-    | UnPlus |  UnMinus | Tilde | Not 
     (* gccext: via &&label notation *)
     | GetRefLabel
+    | UnPlus |  UnMinus | Tilde | Not 
   and assignOp = SimpleAssign | OpAssign of arithOp
   and fixOp    = Dec | Inc
 
@@ -434,34 +440,28 @@ and statement = statementbis wrap
 (* ------------------------------------------------------------------------- *)
 (* a.k.a declaration_statement *)
 and block_declaration = 
- (* (name * ...) option cos can have empty declaration or struct tag 
-  * declaration.
-  *   
-  * Before I had a Typedef constructor, but why make this special case and not
-  * have StructDef, EnumDef, so that 'struct t {...} v' will generate 2 
-  * declarations? So I try to generalise and not have Typedef. This
-  * requires more work in parsing. But it's better to separate concerns.
+ (* Before I had a Typedef constructor, but why make this special case and not
+  * have also StructDef, EnumDef, so that 'struct t {...} v' which would
+  * then generate two declarations. If you want a cleaner C AST use
+  * ast_c.ml.
   * note: before the need for unparser, I didn't have a DeclList but just 
   * a Decl.
-  *
-  * I am not sure what it means to declare a prototype inline, but gcc
-  * accepts it. 
   * 
-  * note: var_declaration include prototype declaration, and class_declaration.
+  * note: onedecl includes prototype declarations and class_declarations!
   *)
   | DeclList of onedecl comma_list * tok (*;*)
+
   (* cppext: todo? now factorize with MacroTop ?  *)
   | MacroDecl of tok list * simple_ident * argument comma_list paren * tok
-
   (* c++ext: using namespace *)
   | UsingDecl of (tok * name * tok (*;*))
   | UsingDirective of tok * tok (*'namespace'*) *  namespace_name * tok(*;*)
   | NameSpaceAlias of tok * simple_ident * tok (*=*) * namespace_name * tok(*;*)
-
   (* gccext: *)
   | Asm of tok * tok option (*volatile*) * asmbody paren * tok(*;*)
 
   and onedecl = {
+    (* option cos can have empty declaration or struct tag declaration *)
     v_namei: (name * init option) option;
     v_type: fullType;
     v_storage: storage wrap;
@@ -474,6 +474,8 @@ and block_declaration =
    (* Friend ???? *)
 
    (*c++ext: TODO *)
+   (* I am not sure what it means to declare a prototype inline, but gcc
+    * accepts it. *)
    and func_specifier = Inline | Virtual
 
    and init = 
