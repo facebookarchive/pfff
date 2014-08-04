@@ -29,7 +29,7 @@ module Model = Model2
  *    a constant)
  *  - important code should be bigger. Just like in google maps
  *    the important roads are more visible. So need some sort of
- *    global analysis.
+ *    global semantic analysis.
  *  - show the data (the source code), but also show the relations
  *    (hence codegraph integration)
  *  - look at the code through different views (hence layers)
@@ -42,7 +42,7 @@ module Model = Model2
  *    highlighting with a certain color different architecture aspects
  *    of the Linux kernel (influenced by work on aspect browser)
  *  - talked about fancy code visualizer while at cleanmake with YY,
- *    spiros, etc.
+ *    Spiros, etc.
  *  - saw SeeSoft code visualizer while doing some bibliographic work
  *  - saw code thumbnails by MSR, and Rob Deline
  *  - saw treemap of Linux kernel by fekete => idea of mixing
@@ -73,6 +73,8 @@ module Model = Model2
  *    http://artzub.com/ghv/#repo=d3&climit=100&user=mbostock
  *  - http://www.codetrails.com/ctrlflow, smarter completion by infering
  *    importance of method (like I do, by #times this entity is globally used)
+ *  - codesonar interactive zoomable call graph visualizer
+ *    https://www.youtube.com/watch?v=EqDhtRoorGU
  * 
  * features of IDE we do want (e.g. see the list at http://xamarin.com/studio):
  *  - smart syntax highlighting
