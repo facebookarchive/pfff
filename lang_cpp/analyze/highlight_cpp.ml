@@ -237,7 +237,7 @@ let visit_toplevel ~tag_hook _prefs (*db_opt *) (toplevel, toks) =
       let ebis, _ = x in
       match ebis with
 
-      | Ident (name, idinfo) ->
+      | Id (name, idinfo) ->
           (match name with
           | (_, _, IdIdent (s, ii)) ->
             if s ==~ Parsing_hacks_lib.regexp_macro &&
@@ -282,7 +282,7 @@ let visit_toplevel ~tag_hook _prefs (*db_opt *) (toplevel, toks) =
           );
           k x
 
-      | FunCallExpr (e, _args) ->
+      | Call (e, _args) ->
           (match e with
           | RecordAccess (_e, name), _
           | RecordPtAccess (_e, name), _

@@ -207,11 +207,11 @@ and v_expression v =
 
 and v_expressionbis =
   function
-  | Ident ((v1, v2)) -> let v1 = v_name v1 and v2 = v_ident_info v2 in ()
+  | Id ((v1, v2)) -> let v1 = v_name v1 and v2 = v_ident_info v2 in ()
   | C v1 -> let v1 = v_constant v1 in ()
   | FunCallSimple ((v1, v2)) ->
       let v1 = v_name v1 and v2 = v_paren (v_comma_list v_argument) v2 in ()
-  | FunCallExpr ((v1, v2)) ->
+  | Call ((v1, v2)) ->
       let v1 = v_expression v1
       and v2 = v_paren (v_comma_list v_argument) v2
       in ()
@@ -776,7 +776,7 @@ and v_inc_file =
   function
   | Local v1 -> let v1 = v_list v_inc_elem v1 in ()
   | Standard v1 -> let v1 = v_list v_inc_elem v1 in ()
-  | Wierd v1 -> let v1 = v_string v1 in ()
+  | Weird v1 -> let v1 = v_string v1 in ()
 and v_inc_elem v = v_string v
 and v_ifdef_directive =
   function | IfdefDirective v1 -> let v1 = v_list v_tok v1 in ()
@@ -784,15 +784,11 @@ and v_declaration x =
   let k = function
   | BlockDecl v1 -> let v1 = v_block_declaration v1 in ()
   | Func v1 -> let v1 = v_func_or_else v1 in ()
-  | TemplateDecl v1 ->
-      let v1 =
-        (match v1 with
-         | (v1, v2, v3) ->
-             let v1 = v_tok v1
-             and v2 = v_template_parameters v2
-             and v3 = v_declaration v3
-             in ())
-      in ()
+  | TemplateDecl (v1, v2, v3) ->
+    let v1 = v_tok v1
+    and v2 = v_template_parameters v2
+    and v3 = v_declaration v3
+    in ()
   | TemplateSpecialization ((v1, v2, v3)) ->
       let v1 = v_tok v1
       and v2 = v_angle v_unit v2

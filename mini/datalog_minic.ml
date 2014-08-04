@@ -17,7 +17,7 @@
 (*****************************************************************************)
 (* 
  * Generating dataflow-related datalog facts for mini C.
- * See logic.dl for the types of the facts generated here.
+ * See h_program-lang/datalog_code.dl for the types of the facts generated here.
  * (todo: have a datalog_fact.ml that can then be translated to luadatalog,
  * bddbddb, logicblox, etc)
  * 
@@ -38,10 +38,9 @@
  *    analysis
  *  - idea of using Prolog for more analysis, read bddbddb paper, DOOP, etc
  *  - saw need for "flowing" while reading plan9 kernel code:
- *    Where this indirect interrupt function is actually called? What
- *    can be the value in this field? etc
+ *    'where this indirect interrupt function is actually called?' 'what
+ *    can be the value in this field?' etc
  * 
- *
  * notes:
  *  - heap modeling? shape types? with this different point_to, array_point_to,
  *    field_point_to it's clear we want different classifications, a better
@@ -119,6 +118,13 @@ let rec tok_of_type = function
 let invoke_loc_of_name env name =
   spf "'_in_%s_line_%d_'" env.scope (Parse_info.line_of_info (snd name))
 
+let fully_qualified_field _env _v fldname =
+  let fld = fst fldname in
+  spf "'_fld__%s'" fld
+
+let fully_qualified_field_of_struct _struc fld =
+  spf "'_fld__%s'" fld
+
 (*****************************************************************************)
 (* Visitor *)
 (*****************************************************************************)
@@ -129,27 +135,42 @@ let rec program env xs =
     (match x with
     | StructDef def -> 
       let env = { env with structs = (fst def.s_name, def)::env.structs } in
+
+      def.s_flds +> List.iter (fun var ->
+        let name = var.v_name in
+        (match var.v_type with
+          | TBase _ -> 
+            add (spf "point_to(%s, %s)" 
+                   (fully_qualified_field_of_struct (fst def.s_name) (fst name))
+                   (heap_of_cst env name) )env;
+          (* could add a point_to(%s, '_null_') for pointers *)
+          | _ -> ()
+        );
+      );
       program env xs
     | FuncDef def -> 
-      let env = 
-        { env with globals = (fst def.f_name, TFunction def.f_type)::env.globals } in
+      let newglob = (fst def.f_name, TFunction def.f_type) in
+      let env = { env with globals = newglob::env.globals } in
       func_def env def;
       program env xs
     | Global var ->
-      let env = { env with globals = (fst var.v_name, var.v_type)::env.globals } in
+      let newglob = (fst var.v_name, var.v_type) in
+      let env = { env with globals = newglob::env.globals } in
       let name = var.v_name in
       (match var.v_type with
       | TBase _ -> 
-        add (spf "point_to(%s, %s)" (var_of_global env name) (heap_of_cst env name))env;
+        add (spf "point_to(%s, %s)" 
+               (var_of_global env name) (heap_of_cst env name))env;
       (* could add a point_to(%s, '_null_') for pointers *)
       | _ -> ()
       );
       program env xs
         
     | Constant name ->
-      let env = 
-        { env with globals = (fst name, TBase ("int", snd name))::env.globals } in
-      add (spf "point_to(%s, %s)" (var_of_global env name) (heap_of_cst env name)) env;
+      let newglob = (fst name, TBase ("int", snd name)) in
+      let env = { env with globals = newglob::env.globals } in
+      add (spf "point_to(%s, %s)" 
+             (var_of_global env name) (heap_of_cst env name)) env;
       program env xs
     )
 
@@ -164,7 +185,8 @@ and func_def env def =
            (var_of_global env def.f_name) i (var_of_local env p.v_name)) env;
   );
   (* less: could skip when return void *)
-  add (spf "return(%s, 'ret_%s')" (var_of_global env def.f_name) (fst def.f_name)) env;
+  add (spf "return(%s, 'ret_%s')" 
+         (var_of_global env def.f_name) (fst def.f_name)) env;
   stmts env def.f_body
 
 and stmts env xs =
@@ -175,12 +197,19 @@ and stmts env xs =
     | Local var -> 
       let name = var.v_name in
       let env = { env with locals = (fst name, var.v_type)::env.locals } in
+      (* hmm not sure it adds value to add this point_to. If what you want
+       * is the dependency chain, it should be inferred back from the
+       * datalog fact as Whaley did in his thesis in chapter 5.
+       *)
+      (*
       (match var.v_type with
       | TBase _ -> 
-        add (spf "point_to(%s, %s)" (var_of_local env name) (heap_of_cst env name)) env
+        add (spf "point_to(%s, %s)" 
+               (var_of_local env name) (heap_of_cst env name)) env
       (* could add a point_to(%s, '_null_') for pointers *)
       | _ -> ()
       );
+      *)
       stmts env xs
     | _ -> stmt env x; stmts env xs
     )
@@ -195,20 +224,24 @@ and stmt env = function
   | While (_var, st) ->
       stmts env st
   | Return var ->
-      add (spf "assign('ret_%s', %s)" env.scope (var_of_name env var)) env
+      add (spf "assign('ret_%s', %s)" 
+             env.scope (var_of_name env var)) env
 
 and instr env = function
   | AssignAddress (var, name) ->
-    add (spf "assign_address(%s, %s)" (var_of_name env var) (heap_of_name env name)) env
+    add (spf "assign_address(%s, %s)" 
+           (var_of_name env var) (heap_of_name env name)) env
   | AssignDeref (var, var2) ->
-    add (spf "assign_deref(%s, %s)" (var_of_name env var) (var_of_name env var2)) env
+    add (spf "assign_deref(%s, %s)" 
+           (var_of_name env var) (var_of_name env var2)) env
   | Assign (var, e) ->
     let dest = var_of_name env var in
     (match e with
     | Int x ->
       add (spf "point_to(%s, '_cst__%s')" dest (fst x)) env
     | String x ->
-      add(spf "point_to(%s, '_str__line%d')" dest (Parse_info.line_of_info (snd x))) env
+      add(spf "point_to(%s, '_str__line%d')" 
+            dest (Parse_info.line_of_info (snd x))) env
 
     | Id name -> 
       add (spf "assign(%s, %s)" dest (var_of_name env name)) env
@@ -237,13 +270,18 @@ and instr env = function
     | AllocArray (_v, t) ->
       let tok = tok_of_type t in
       let pt = 
-        spf "'_array_in_%s_line_%d_'" env.scope (Parse_info.line_of_info tok) in
+        spf "'_array_in_%s_line_%d_'" 
+          env.scope (Parse_info.line_of_info tok) in
       let pt2 = 
-        spf "'_array_elt_in_%s_line_%d_'" env.scope (Parse_info.line_of_info tok) in
+        spf "'_array_elt_in_%s_line_%d_'" 
+          env.scope (Parse_info.line_of_info tok) in
       add (spf "point_to(%s, %s)" dest pt) env;
       add (spf "array_point_to(%s, %s)" pt pt2) env;
 
-    | ObjField (_v, _fld) -> raise Todo
+    | ObjField (var2, fld) ->
+      add (spf "assign_load_field(%s, %s, %s)" 
+             dest (var_of_name env var2) (fully_qualified_field env var2 fld))
+        env
     | ArrayAccess (var2, _vidx) -> 
       (* less: could also add info that vidx must be an int *)
       add (spf "assign_array_elt(%s, %s)" dest (var_of_name env var2)) env
@@ -263,9 +301,17 @@ and instr env = function
       ) env
 
       
-  | AssignField (_v, _fld, _v2) -> raise Todo
+  | AssignField (var, fld, var2) -> 
+      add (spf "assign_store_field(%s, %s, %s)" 
+             (var_of_name env var)
+             (fully_qualified_field env var2 fld)
+             (var_of_name env var2)) env
 
-  | AssignFieldAddress (_v, _varray, _vfld) -> raise Todo
+  | AssignFieldAddress (v, vobj, fld) ->
+    add (spf "assign_field_address(%s, %s, %s)"
+           (var_of_name env v)
+           (var_of_name env vobj)
+           (fully_qualified_field env vobj fld)) env
 
 (*****************************************************************************)
 (* Main entry point *)

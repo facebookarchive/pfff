@@ -1,10 +1,10 @@
 %{
 (* Yoann Padioleau
  * 
- * Copyright (C) 2002 Yoann Padioleau
- * Copyright (C) 2006-2007 Ecole des Mines de Nantes
- * Copyright (C) 2008-2009 University of Urbana Champaign
  * Copyright (C) 2010 Facebook
+ * Copyright (C) 2008-2009 University of Urbana Champaign
+ * Copyright (C) 2006-2007 Ecole des Mines de Nantes
+ * Copyright (C) 2002 Yoann Padioleau
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License (GPL)
@@ -229,7 +229,7 @@ module Ast = Ast_cpp
 /*(*1 Priorities *)*/
 /*(*************************************************************************)*/
 /*(* must be at the top so that it has the lowest priority *)*/
-%nonassoc SHIFTHERE
+%nonassoc LOW_PRIORITY_RULE
 
 %nonassoc Telse
 
@@ -572,58 +572,6 @@ primary_expr:
  /*(* contains identifier rule *)*/
  | primary_cplusplus_id { $1 }
 
- /*(* objcext: *)*/
- | message_expression  { mk_e(ExprTodo) noii }
- | protocol_expression { mk_e(ExprTodo) noii }
- | selector_expression { mk_e(ExprTodo) noii }
- | encode_expression   { mk_e(ExprTodo) noii }
-
-/*(*----------------------------*)*/
-/*(*2 objcext: *)*/
-/*(*----------------------------*)*/
-
-message_expression: TOCro receiver message_selector TCCro { }
-
-receiver: 
- | expr { }
- | enum_name_or_typedef_name_or_simple_class_name { }
- /*TODO super */
-
-message_selector:
- | selector { }
- | keyword_argument_list { }
-
-keyword_argument_list:
- | keyword_argument { }
- | keyword_argument_list keyword_argument { }
-
-keyword_argument:
- | selector TCol expr { }
- /*(* TODO added cos wrong typedef detection *)*/
- | selector TCol type_id { }
- | TCol expr { } 
-
-protocol_expression: TAt_protocol TOPar protocol_name TCPar { }
-
-selector_expression: TAt_selector TOPar selector_name TCPar { }
-
-selector_name:
- | selector { }
- | keyword_name_list { }
-
-keyword_name_list:
- | keyword_name { }
- | keyword_name_list keyword_name { }
-
-keyword_name:
- | selector TCol { }
- | TCol { }
-
-encode_expression: TAt_encode TOPar encode_name TCPar { }
-
-/*(* TODO: should be just type_name *)*/
-encode_name: ident { }
-
 /*(*----------------------------*)*/
 /*(*2 c++ext: *)*/
 /*(*----------------------------*)*/
@@ -634,17 +582,17 @@ encode_name: ident { }
 primary_cplusplus_id:
  | id_expression 
      { let name = (None, fst $1, snd $1) in 
-       mk_e (Ident (name, noIdInfo())) []  }
+       mk_e (Id (name, noIdInfo())) []  }
  | TColCol TIdent  
      { let name = Some $1, noQscope, IdIdent $2 in 
-       mk_e (Ident (name, noIdInfo())) [] }
+       mk_e (Id (name, noIdInfo())) [] }
  | TColCol operator_function_id 
      { let qop = $2 in
        let name = (Some $1, noQscope, qop) in 
-       mk_e (Ident (name, noIdInfo())) [] }
+       mk_e (Id (name, noIdInfo())) [] }
  | TColCol qualified_id 
      { let name = (Some $1, fst $2, snd $2) in 
-       mk_e (Ident (name, noIdInfo())) [] }
+       mk_e (Id (name, noIdInfo())) [] }
 
 /*(*could use TInf here *)*/
 cast_operator_expr: 
@@ -790,7 +738,7 @@ statement:
  | Tswitch TOPar decl_spec init_declarator_list TCPar statement
      { StmtTodo, noii }
 
- | Tif TOPar decl_spec init_declarator_list TCPar statement   %prec SHIFTHERE
+ | Tif TOPar decl_spec init_declarator_list TCPar statement   %prec LOW_PRIORITY_RULE
      { StmtTodo, noii }
  | Tif TOPar decl_spec init_declarator_list TCPar statement Telse statement 
      { StmtTodo, noii }
@@ -854,7 +802,7 @@ labeled:
 
 /*(* classic else ambiguity resolved by a %prec *)*/
 selection: 
- | Tif TOPar expr TCPar statement              %prec SHIFTHERE
+ | Tif TOPar expr TCPar statement              %prec LOW_PRIORITY_RULE
      { If ($1, ($2, $3, $4), $5, None, (ExprStatement None, [])), noii }
  | Tif TOPar expr TCPar statement Telse statement 
      { If ($1, ($2, $3, $4), $5, Some $6, $7), noii }
@@ -1193,7 +1141,7 @@ type_id:
  * in new_declarator and its leading ptr_operator
  *)*/
 new_type_id: 
- | spec_qualif_list %prec SHIFTHERE   
+ | spec_qualif_list %prec LOW_PRIORITY_RULE   
      { let (t_ret, _) = fixDeclSpecForDecl $1 in  t_ret }
  | spec_qualif_list new_declarator 
      { let (t_ret, _) = fixDeclSpecForDecl $1 in (* TODOAST *) t_ret }
@@ -1201,7 +1149,7 @@ new_type_id:
 new_declarator: 
  | ptr_operator new_declarator 
      { () }
- | ptr_operator %prec SHIFTHERE
+ | ptr_operator %prec LOW_PRIORITY_RULE
      { () }
  | direct_new_declarator 
      { () }
@@ -1228,7 +1176,7 @@ conversion_type_id:
      { let tx = addTypeD ($1, nullDecl) in
        let (t_ret, _) = fixDeclSpecForDecl tx in t_ret 
      }
- | simple_type_specifier %prec SHIFTHERE 
+ | simple_type_specifier %prec LOW_PRIORITY_RULE 
      { let tx = addTypeD ($1, nullDecl) in
        let (t_ret, _) = fixDeclSpecForDecl tx in t_ret 
      }
@@ -1236,7 +1184,7 @@ conversion_type_id:
 conversion_declarator: 
  | ptr_operator conversion_declarator 
      { () }
- | ptr_operator %prec SHIFTHERE
+ | ptr_operator %prec LOW_PRIORITY_RULE
      { () }
 
 /*(*************************************************************************)*/
@@ -1589,7 +1537,7 @@ initialize2:
 designator: 
  | TDot ident 
      { DesignatorField ($1, $2) } 
- | TOCro const_expr TCCro     %prec SHIFTHERE
+ | TOCro const_expr TCCro     %prec LOW_PRIORITY_RULE
      { DesignatorIndex ($1, $2, $3) }
  | TOCro const_expr TEllipsis const_expr TCCro 
      { DesignatorRange ($1, ($2, $3, $4), $5) }
@@ -1680,7 +1628,7 @@ declaration:
  /*(* not in c++ grammar as merged with function_definition, but I can't *)*/
  | ctor_dtor { $1 }
 
- | template_declaration              { TemplateDecl ($1) }
+ | template_declaration              { let (a,b,c) = $1 in TemplateDecl (a,b,c) }
  | explicit_specialization           { $1 }
  | linkage_specification             { $1 }
 
@@ -1803,7 +1751,7 @@ cpp_directive:
          | _ when filename =~ "^\\<\\(.*\\)\\>$" ->
              Standard (Common.split "/" (matched1 filename))
          | _ ->
-             Wierd filename
+             Weird filename
        in
        Include (tok, inc_file)
      }
@@ -1892,200 +1840,12 @@ celem_aux:
  | cpp_ifdef_directive /*(*external_declaration_list ...*)*/ { IfdefTop $1 }
  | cpp_other           { $1 }
 
- /*(* objcext: *)*/
- | class_interface      { DeclTodo }
- | class_implementation { DeclTodo }
- | category_interface   { DeclTodo }
- | category_implementation { DeclTodo }
- | protocol_declaration { DeclTodo }
- | class_declaration_list { DeclTodo }
- | protocol_small_declaration { DeclTodo }
-
  /*
  (* when have error recovery, we can end up skipping the
   * beginning of the file, and so get trailing unclose } at
   * end
   *)*/
  | TCBrace { EmptyDef $1 }
-
-/*(*************************************************************************)*/
-/*(*1 Class, Objective C *)*/
-/*(*************************************************************************)*/
-
-class_interface:
- TAt_interface TIdent super_opt  protocol_reference_list_opt 
- instance_variables_opt
- interface_declaration_list_opt
- TAt_end 
-  { }
-
-class_implementation:
- TAt_implementation TIdent super_opt
- instance_variables_opt
- implementation_definition_list_opt
- TAt_end
-  { }
-
-category_interface:
- TAt_interface TIdent TOPar TIdent TCPar protocol_reference_list_opt 
- interface_declaration_list_opt
- TAt_end
-  { }
-
-category_implementation:
- TAt_implementation TIdent TOPar TIdent TCPar
- implementation_definition_list_opt
- TAt_end
- { }
-
-protocol_declaration:
- TAt_protocol TIdent protocol_reference_list_opt 
- interface_declaration_list_opt
- TAt_end
- { }
-
-/*(* not in official grammar *)*/
-protocol_small_declaration:
- TAt_protocol ident TPtVirg { }
-
-class_declaration_list:
- TAt_class class_list TPtVirg { }
-
-class_list:
- | ident { }
- | class_list TComma ident { }
-
-super_opt:
- | TCol TIdent { }
- | /*(*empty*)*/ { }
-
-protocol_reference: TInf protocol_list TSup { }
-
-protocol_list:
- | protocol_name { }
- | protocol_list TComma protocol_name { }
-
-protocol_name: ident { }
-                     
-
-interface_declaration: 
- | declaration { }
- | method_declaration { }
- | property_declaration { }
-
-method_declaration:
- | class_method_declaration { }
- | instance_method_declaration { }
-
-property_declaration: 
- TAt_property TOPar property_list TCPar 
-  decl_spec declarator TPtVirg { }
-
-property_list:
- | property_name { }
- | property_list TComma property_name { }
-
-property_name: ident { }
-
-class_method_declaration: TPlus method_type_opt method_selector TPtVirg 
-  { }
-
-instance_method_declaration: TMinus method_type_opt method_selector TPtVirg
-  { }
-
-method_type: TOPar type_id TCPar { }
-
-method_selector: 
- | unary_selector { }
- | keyword_selector { }
-
-unary_selector: selector { }
-
-keyword_selector: 
- | keyword_declarator { }
- | keyword_selector keyword_declarator { }
-
-/*(* we put ident here, not TIdent, because the typedef heuristic
-   * will flag many idents as typedefs
-   * TODO: fix the heuristic to not be applied on objective C region?
-   *)*/
-keyword_declarator:
- | TCol method_type_opt ident { }
- | selector TCol method_type_opt ident { }
-
-selector: TIdent { }
-
-method_type_opt:
- | method_type { }
- | /*(*empty*)*/ { }
-
-
-protocol_reference_list_opt:
- | protocol_reference_list { }
- | /*(*empty*)*/ { }
-
-protocol_reference_list:
- | protocol_reference                         { }
- | protocol_reference_list protocol_reference { }
-
-
-
-interface_declaration_list_opt:
- | interface_declaration_list { }
- | /*(*empty*)*/ { }
-
-interface_declaration_list:
- | interface_declaration                         { }
- | interface_declaration_list interface_declaration { }
-
-implementation_definition_list_opt:
- | implementation_definition_list { }
- | /*(*empty*)*/ { }
-
-implementation_definition_list:
- | implementation_definition                         { }
- | implementation_definition_list implementation_definition { }
-
-implementation_definition:
- /*(* covers also function_definition in C++ *)*/
- | declaration { }
- | method_definition { }
-
-method_definition:
- | class_method_definition { }
- | instance_method_definition { }
-
-class_method_definition: 
- TPlus method_type_opt method_selector declaration_list_opt 
- compound { }
-
-instance_method_definition: 
- TMinus method_type_opt method_selector declaration_list_opt 
- compound { }
-
-instance_variables_opt:
- | instance_variables { }
- | /*(*empty*)*/ { }
-
-instance_variables: TOBrace instance_variable_declaration_list TCBrace { }
-
-instance_variable_declaration_list:
- | instance_variable_declaration                         { }
- | instance_variable_declaration_list instance_variable_declaration { }
-
-instance_variable_declaration:
- visibility_specification_opt struct_declaration { }
-
-struct_declaration: decl_spec declarator TPtVirg { }
-
-visibility_specification_opt:
- | visibility_specification { }
- | /*(*empty*)*/ { }
-
-visibility_specification:
- | TAt_public { }
- | TAt_private { }
- | TAt_protected { }
 
 /*(*************************************************************************)*/
 /*(*1 xxx_list, xxx_opt *)*/
