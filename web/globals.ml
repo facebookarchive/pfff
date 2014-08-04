@@ -17,9 +17,7 @@ let use_facebook = ref true
 let filters = [
   "ocaml", (fun file ->
     match File_type.file_type_of_file file with
-    | FT.PL (FT.ML _) | FT.PL (FT.Makefile)  -> 
-      (* todo: should be done in file_type_of_file *)
-      not (File_type.is_syncweb_obj_file file)
+    | FT.PL (FT.ML _) | FT.PL (FT.Makefile)  -> true
     | _ -> false
   );
   "php", (fun file ->

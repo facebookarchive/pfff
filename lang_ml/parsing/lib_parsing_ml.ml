@@ -26,9 +26,7 @@ let find_source_files_of_dir_or_files xs =
   Common.files_of_dir_or_files_no_vcs_nofilter xs 
   +> List.filter (fun filename ->
     match File_type.file_type_of_file filename with
-    | File_type.PL (File_type.ML ("ml" | "mli")) -> 
-        (* a little bit pad specfic, syncweb metadata *)
-        not (filename =~ ".*\\.md5sum")
+    | File_type.PL (File_type.ML ("ml" | "mli")) -> true
     | _ -> false
   ) +> Common.sort
 
@@ -36,9 +34,7 @@ let find_ml_files_of_dir_or_files xs =
   Common.files_of_dir_or_files_no_vcs_nofilter xs 
   +> List.filter (fun filename ->
     match File_type.file_type_of_file filename with
-    | File_type.PL (File_type.ML ("ml")) -> 
-        (* a little bit pad specfic, syncweb metadata *)
-        not (filename =~ ".*\\.md5sum")
+    | File_type.PL (File_type.ML ("ml")) -> true
     | _ -> false
   ) +> Common.sort
 

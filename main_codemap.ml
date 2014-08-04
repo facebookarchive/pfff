@@ -147,9 +147,7 @@ let filters = [
     match FT.file_type_of_file file with
     | FT.PL (
        (FT.ML _) | FT.Makefile | FT.Opa | FT.Prolog _ | FT.Web (FT.Php _)) -> 
-        (* todo: should be done in file_type_of_file *)
-        not (File_type.is_syncweb_obj_file file)
-        && not ( 
+        not ( 
                 (* file =~ ".*commons/" || *)
                 (* file =~ ".*external/" || *)
                 file =~ ".*_build/")
@@ -157,16 +155,12 @@ let filters = [
   );
   "ocaml", (fun file ->
     match File_type.file_type_of_file file with
-    | FT.PL (FT.ML _) | FT.PL (FT.Makefile)  -> 
-      (* todo: should be done in file_type_of_file *)
-      not (File_type.is_syncweb_obj_file file)
+    | FT.PL (FT.ML _) | FT.PL (FT.Makefile)  -> true
     | _ -> false
   );
   "mli", (fun file ->
     match File_type.file_type_of_file file with
     | FT.PL (FT.ML "mli") | FT.PL (FT.Makefile)   -> 
-    (* todo: should be done in file_type_of_file *)
-      not (File_type.is_syncweb_obj_file file) &&
       not (file =~ ".*/commons/")
     | _ -> false
   );

@@ -327,7 +327,7 @@ let parse_with_lang ?(lang=Flag_parsing_cpp.Cplusplus) file =
   let toks = fix_tokens_for_language lang toks in
   (* todo: _defs_builtins *)
   let toks = 
-    try Parsing_hacks.fix_tokens ~macro_defs:!_defs toks
+    try Parsing_hacks.fix_tokens ~macro_defs:!_defs lang toks
     with Token_views_cpp.UnclosedSymbol s ->
       pr2 s;
       if !Flag.debug_cplusplus then raise (Token_views_cpp.UnclosedSymbol s)

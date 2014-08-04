@@ -88,7 +88,7 @@ let compute_database ?(verbose=false) files_or_dirs =
 
   let (hdefs: (string, Db.entity) Hashtbl.t) = Hashtbl.create 1001 in
 
-  let (hdefs_pos: (Ast.info, bool) Hashtbl.t) = Hashtbl.create 1001 in
+  let (hdefs_pos: (Parse_info.info, bool) Hashtbl.t) = Hashtbl.create 1001 in
 
   files +> Console.progress ~show:verbose (fun k -> 
    List.iter (fun file ->

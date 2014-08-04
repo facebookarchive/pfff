@@ -126,7 +126,35 @@ let insert_virtual_positions l =
  * can have be changed and so we may have more comments
  * in the token original list.
  *)
-let fix_tokens2 ~macro_defs tokens = 
+
+let fix_tokens_c ~macro_defs tokens =
+  let tokens2 = ref (tokens +> Common2.acc_map TV.mk_token_extended) in
+
+  (* macro part 1 *)
+  let cleaner = !tokens2 +> Parsing_hacks_pp.filter_pp_or_comment_stuff in
+
+  let paren_grouped = TV.mk_parenthised  cleaner in
+  Pp_token.apply_macro_defs macro_defs paren_grouped;
+
+  (* because the before field is used by apply_macro_defs *)
+  tokens2 := TV.rebuild_tokens_extented !tokens2; 
+
+  (* could filter also #define/#include *)
+  let cleaner = !tokens2 +> filter_comment_stuff in
+
+  (* tagging contextual info (InFunc, InStruct, etc). Better to do
+   * that after the "ifdef-simplification" phase.
+   *)
+  let multi_grouped = TV.mk_multi cleaner in
+  Token_views_context.set_context_tag_multi multi_grouped;
+
+  let xxs = Parsing_hacks_typedef.filter_for_typedef multi_grouped in
+  Parsing_hacks_typedef.find_typedefs xxs;
+
+  insert_virtual_positions (!tokens2 +> Common2.acc_map (fun x -> x.TV.t))
+
+
+let fix_tokens_cpp ~macro_defs tokens = 
   let tokens2 = ref (tokens +> Common2.acc_map TV.mk_token_extended) in
   
   (* ifdef *)
@@ -203,6 +231,9 @@ let fix_tokens2 ~macro_defs tokens =
   insert_virtual_positions (!tokens2 +> Common2.acc_map (fun x -> x.TV.t))
 
 
-let fix_tokens ~macro_defs a = 
+let fix_tokens ~macro_defs lang a = 
   Common.profile_code "C++ parsing.fix_tokens" (fun () -> 
-    fix_tokens2 ~macro_defs a)
+    match lang with
+    | Flag_parsing_cpp.C -> fix_tokens_c ~macro_defs a
+    | Flag_parsing_cpp.Cplusplus -> fix_tokens_cpp ~macro_defs a
+  )

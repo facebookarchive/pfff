@@ -34,7 +34,7 @@ module Ast = Ast_cpp
 
 type error = {
   typ: error_kind;
-  loc: Ast_cpp.info;
+  loc: Parse_info.info;
   sev: severity;
 }
  (* todo? Advice | Noisy | Meticulous ? *)

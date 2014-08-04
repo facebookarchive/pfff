@@ -34,9 +34,9 @@ let cnt = ref 0
 (* Types *)
 (*****************************************************************************)
 
-exception ObsoleteConstruct of string * Ast_cpp.info
+exception ObsoleteConstruct of string * Parse_info.info
 exception CplusplusConstruct
-exception TodoConstruct of string * Ast_cpp.info
+exception TodoConstruct of string * Parse_info.info
 
 (* not used for now *)
 type env = { 

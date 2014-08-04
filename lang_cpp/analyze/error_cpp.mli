@@ -1,6 +1,6 @@
 type error = {
   typ: error_kind;
-  loc: Ast_cpp.info;
+  loc: Parse_info.info;
   sev: severity;
 }
  and severity = Fatal | Warning
@@ -13,5 +13,5 @@ val string_of_error_kind: error_kind -> string
 (* ugly global, but sometimes they are practical *)
 val _errors: error list ref
 
-val fatal: Ast_cpp.info -> error_kind -> unit
-val warning: Ast_cpp.info -> error_kind -> unit
+val fatal: Parse_info.info -> error_kind -> unit
+val warning: Parse_info.info -> error_kind -> unit

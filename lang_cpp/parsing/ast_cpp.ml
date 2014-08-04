@@ -37,7 +37,6 @@
 (* Token/info *)
 (* ------------------------------------------------------------------------- *)
 type tok = Parse_info.info
-and info = tok
 
 (* a shortcut to annotate some information with token/position information *)
 and 'a wrap  = 'a * tok list (* TODO CHANGE to 'a * info *)
