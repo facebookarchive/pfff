@@ -1680,7 +1680,7 @@ declaration:
  /*(* not in c++ grammar as merged with function_definition, but I can't *)*/
  | ctor_dtor { $1 }
 
- | template_declaration              { TemplateDecl ($1) }
+ | template_declaration              { let (a,b,c) = $1 in TemplateDecl (a,b,c) }
  | explicit_specialization           { $1 }
  | linkage_specification             { $1 }
 

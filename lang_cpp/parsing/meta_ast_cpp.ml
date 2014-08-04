@@ -1040,15 +1040,11 @@ and vof_declaration =
   | BlockDecl v1 ->
       let v1 = vof_block_declaration v1 in Ocaml.VSum (("BlockDecl", [ v1 ]))
   | Func v1 -> let v1 = vof_func_or_else v1 in Ocaml.VSum (("Func", [ v1 ]))
-  | TemplateDecl v1 ->
-      let v1 =
-        (match v1 with
-         | (v1, v2, v3) ->
-             let v1 = vof_tok v1
-             and v2 = vof_template_parameters v2
-             and v3 = vof_declaration v3
-             in Ocaml.VTuple [ v1; v2; v3 ])
-      in Ocaml.VSum (("TemplateDecl", [ v1 ]))
+  | TemplateDecl (v1, v2, v3) ->
+    let v1 = vof_tok v1
+    and v2 = vof_template_parameters v2
+    and v3 = vof_declaration v3
+    in Ocaml.VSum (("TemplateDecl", [ v1; v2; v3 ]))
   | TemplateSpecialization ((v1, v2, v3)) ->
       let v1 = vof_tok v1
       and v2 = vof_angle Ocaml.vof_unit v2

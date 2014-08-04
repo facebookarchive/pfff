@@ -1,9 +1,9 @@
 (* Yoann Padioleau
  * 
- * Copyright (C) 2002 Yoann Padioleau
- * Copyright (C) 2006-2007 Ecole des Mines de Nantes
- * Copyright (C) 2008-2009 University of Urbana Champaign
  * Copyright (C) 2010-2011 Facebook
+ * Copyright (C) 2008-2009 University of Urbana Champaign
+ * Copyright (C) 2006-2007 Ecole des Mines de Nantes
+ * Copyright (C) 2002 Yoann Padioleau
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License (GPL)
@@ -73,10 +73,10 @@ type name = tok (*::*) option  * (qualifier * tok (*::*)) list * ident
  and ident =
    (* function name, macro name, variable, classname, enumname, namespace *)
    | IdIdent of simple_ident
+   | IdTemplateId of simple_ident * template_arguments
+   | IdDestructor of tok(*~*) * simple_ident
    | IdOperator of tok * (operator * tok list)
    | IdConverter of tok * fullType
-   | IdDestructor of tok(*~*) * simple_ident
-   | IdTemplateId of simple_ident * template_arguments
 
    and simple_ident = string wrap2
  
@@ -86,7 +86,6 @@ type name = tok (*::*) option  * (qualifier * tok (*::*)) list * ident
  and qualifier = 
    | QClassname of simple_ident (* classname or namespacename *)
    | QTemplateId of simple_ident * template_arguments
-
 
  (* special cases *)
  and class_name     = name (* only IdIdent or IdTemplateId *)
@@ -127,6 +126,7 @@ type name = tok (*::*) option  * (qualifier * tok (*::*)) list * ident
 and fullType = typeQualifier * typeC
 and  typeC = typeCbis wrap
 
+(* less: rename to TBase, TPointer, etc *)
 and typeCbis =
   | BaseType        of baseType
 
@@ -188,8 +188,9 @@ and typeCbis =
       e_val: (tok (*=*) * constExpression) option;
     }
 
-  (* for functionType, see the function definition section now *)
-  (* for class_definition (was structType) see below *)
+  (* for functionType: see the function definition section now *)
+
+  (* for class_definition (was structType): see below *)
 
 and typeQualifier = 
   { const: tok option; volatile: tok option; }
@@ -212,16 +213,16 @@ and typeQualifier =
  *)
 and expression = expressionbis wrap
  and expressionbis = 
-  (* Ident can be an enumeration constant, variable, function name.
-   * cppext: Ident can also be the name of a macro. Sparse says
+  (* Id can be an enumeration constant, variable, function name.
+   * cppext: Id can also be the name of a macro. sparse says
    *  "an identifier with a meaning is a symbol". 
-   * c++ext: Ident is now a 'name' instead of a 'string' and can be
-   *  also an operator name for example.
+   * c++ext: Id is now a 'name' instead of a 'string' and can be
+   * also an operator name for example.
    *)
   | Id of name * ident_info (* semantic: *) 
   | C of constant
 
-  (* specialized version of FunCallExpr that makes it easier to write
+  (* specialized version of Call that makes it easier to write
    * certain analysis. Note that because 'name' can be qualified,
    * FunCallSimple is also a StaticMethodCallSimple
    *)
@@ -302,11 +303,11 @@ and expression = expressionbis wrap
    * integer only. 
    *)
   and constant = 
-    | String of (string * isWchar) 
-    | MultiString  (* can contain MacroString *)
-    | Char   of (string * isWchar) (* normally it is equivalent to Int *)
     | Int    of (string  (* * intType*)) 
     | Float  of (string * floatType)
+    | Char   of (string * isWchar) (* normally it is equivalent to Int *)
+    | String of (string * isWchar) 
+    | MultiString  (* can contain MacroString *)
     (* c++ext: *)
     | Bool of bool
     and isWchar = IsWchar | IsChar
@@ -351,7 +352,7 @@ and expression = expressionbis wrap
 (* ------------------------------------------------------------------------- *)
 (* Statements *)
 (* ------------------------------------------------------------------------- *)
-(* note: assignement is not a statement, it's an expression
+(* note: assignement is not a statement, it's an expression :(
  * (wonderful C language).
  * note: I use 'and' for type definition because gccext allows statements as
  * expressions, so we need mutual recursive type definition now.
@@ -467,6 +468,7 @@ and block_declaration =
     v_storage: storage wrap;
     (* v_attr: attribute list; *) (* gccext: *)
   }
+  (* todo: simplify, use record instead of pair here? inline in onedecl? *)
    and storage       = storagebis * bool (* gccext: inline or not: *)
     and storagebis    = NoSto | StoTypedef | Sto of storageClass
      and storageClass  = Auto  | Static | Register | Extern (* Mutable? *)
@@ -534,6 +536,9 @@ and func_definition = {
       }
     and exn_spec = (tok * name comma_list2 paren)
 
+ (* less: simplify? need differentiate at this level? could have
+  * is_ctor, is_dtor helper instead.
+  *)
  and func_or_else =
   | FunctionOrMethod of func_definition
   (* c++ext: special member function *)
@@ -555,7 +560,7 @@ and class_definition = {
   (* the ident can be a template_id when do template specialization. *)
   c_name: ident_name(*class_name??*) option;
   (* c++ext: *)
-  c_inherit: (tok (*:*) * base_clause comma_list) option;
+  c_inherit: (tok (* ':' *) * base_clause comma_list) option;
   c_members: class_member_sequencable list brace (* new scope *);
   }
   and structUnion =
@@ -677,7 +682,7 @@ and declaration =
 
   | Func of func_or_else
 
-  | TemplateDecl of (tok * template_parameters * declaration)
+  | TemplateDecl of tok * template_parameters * declaration
   | TemplateSpecialization of tok * unit angle * declaration
 
   (* the list can be empty *)
@@ -706,7 +711,6 @@ and declaration =
  and template_parameter = parameter (* todo? more? *)
   and template_parameters = template_parameter comma_list angle
 
-  (* TODO *)
   (* cppext: easier to put at statement_list level than statement level *)
   and declaration_sequencable = 
     | DeclElem of declaration

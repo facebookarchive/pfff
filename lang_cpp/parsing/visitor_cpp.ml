@@ -784,15 +784,11 @@ and v_declaration x =
   let k = function
   | BlockDecl v1 -> let v1 = v_block_declaration v1 in ()
   | Func v1 -> let v1 = v_func_or_else v1 in ()
-  | TemplateDecl v1 ->
-      let v1 =
-        (match v1 with
-         | (v1, v2, v3) ->
-             let v1 = v_tok v1
-             and v2 = v_template_parameters v2
-             and v3 = v_declaration v3
-             in ())
-      in ()
+  | TemplateDecl (v1, v2, v3) ->
+    let v1 = v_tok v1
+    and v2 = v_template_parameters v2
+    and v3 = v_declaration v3
+    in ()
   | TemplateSpecialization ((v1, v2, v3)) ->
       let v1 = v_tok v1
       and v2 = v_angle v_unit v2
