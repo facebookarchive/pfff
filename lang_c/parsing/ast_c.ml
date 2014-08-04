@@ -256,7 +256,7 @@ type program = toplevel list
 (* Any *)
 (* ------------------------------------------------------------------------- *)
 type any =
-  | Expr2 of expr
+  | Expr of expr
   | Stmt of stmt
   | Type of type_
   | Toplevel of toplevel

@@ -157,9 +157,9 @@ and stmt st =
   | ExprSt e -> [M.Instr (expr_for_instr e)]
   | Block xs -> stmts xs
   | If (e, st1, st2) -> [M.If (expr_for_var e, stmt st1, stmt st2)]
-  | Switch (e, _xs) -> error_any "switch not supported, use if" (Expr2 e)
+  | Switch (e, _xs) -> error_any "switch not supported, use if" (Expr e)
   | While (e, st) -> [M.While (expr_for_var e, stmt st)]
-  | DoWhile (_, e) -> error_any "dowhile not supported, use while" (Expr2 e)
+  | DoWhile (_, e) -> error_any "dowhile not supported, use while" (Expr e)
   | For (_, _, _, st) -> error_any "for not supported, use while" (Stmt st)
   | Continue | Break -> error "continue or break not supported"
                           (failwith "noTok")
@@ -167,7 +167,7 @@ and stmt st =
   | Return None -> error "empty return not supported" (failwith "noTok")
   | Label (name, _) | Goto name -> error "label not supported" (snd name)
   | Vars xs -> xs +> List.map var_decl +> List.flatten
-  | Asm xs -> error_any "asm not supported" (Expr2 (List.hd xs))
+  | Asm xs -> error_any "asm not supported" (Expr (List.hd xs))
 
 
 and var_decl v =
@@ -209,12 +209,12 @@ and expr_for_instr e =
      M.AssignDeref (name, name2)
   | Assign (SimpleAssign, Id name, e) -> 
       M.Assign (name, expr e)
-  | _ -> error_any "expected a simple instr, not a C expr" (Expr2 e)
+  | _ -> error_any "expected a simple instr, not a C expr" (Expr e)
 
 and expr_for_var e =
   match e with
   | Id name -> name
-  | _ -> error_any "expected a var, not a regular expr" (Expr2 e)
+  | _ -> error_any "expected a var, not a regular expr" (Expr e)
 
 and expr e =
   match e with
@@ -229,7 +229,7 @@ and expr e =
         M.Alloc (type_ t)
     | [Binary(Id(var), Arith(Mul), SizeOf(Right(t)))] ->
         M.AllocArray(var, type_ t)
-    | _ -> error_any "malloc form not supported" (Expr2 e)
+    | _ -> error_any "malloc form not supported" (Expr e)
     )
   | RecordAccess(Unary(Id name, DeRef), name2) ->
       M.ObjField (name, name2)
@@ -258,7 +258,7 @@ and expr e =
   (* handled only in malloc call context *)
   | SizeOf _
   | InitList _ | GccConstructor _
-    -> error_any "expected an expr, not a C expr" (Expr2 e)
+    -> error_any "expected an expr, not a C expr" (Expr e)
 
 (*****************************************************************************)
 (* Main entry point *)
