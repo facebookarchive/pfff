@@ -37,7 +37,7 @@ module PI = Parse_info
  * has to be done to feed it to a parser. Note that C and C++ are not
  * context free languages and so some idents must be disambiguated
  * in some ways. TIdent below must thus be post-processed too (as well
- * as other tokens like '<' for C++). See parsing_hack.ml for example.
+ * as other tokens like '<' for C++). See parsing_hack.ml for examples.
  * 
  * note: We can't use Lexer_parser._lexer_hint here to do different
  * things because we now call the lexer to get all the tokens
