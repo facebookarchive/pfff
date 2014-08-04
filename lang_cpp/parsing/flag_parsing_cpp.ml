@@ -8,20 +8,11 @@ type language =
   | Cplusplus
 
 (*****************************************************************************)
-(* convenient globals *)
-(*****************************************************************************)
-
-(* todo? use Config.path? but then need to link with globals ... *)
-let path = ref
-  (try (Sys.getenv "PFFF_HOME")
-    with Not_found-> "/home/pad/pfff"
-  )
-
-(*****************************************************************************)
 (* macros *)
 (*****************************************************************************)
 
-let macros_h = ref (Filename.concat !path "/data/cpp_stdlib/macros.h")
+let macros_h = 
+  ref (Filename.concat Config_pfff.path "/data/cpp_stdlib/macros.h")
 
 let cmdline_flags_macrofile () = [
   "-macros", Arg.Set_string macros_h,
