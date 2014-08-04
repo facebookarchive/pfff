@@ -142,8 +142,8 @@ type enum =
  | EnumConstantDecl
  | RecordDecl
  | FieldDecl
- | IndirectFieldDecl
- | Field
+ | IndirectFieldDecl (* ?? *)
+ | Field (* ?? *)
  | TypedefDecl
  | VarDecl
  | BlockDecl
