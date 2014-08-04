@@ -2494,7 +2494,7 @@ and m_hint_type_ret (a1, a2, a3) (b1, b2, b3) =
   )))
 
 and m_shape_field (a1, a2, a3) (b1, b2, b3) =
-  m_wrap m_string a1 b1 >>= (fun (a1, b1) ->
+  m_expr a1 b1 >>= (fun (a1, b1) ->
   m_tok a2 b2 >>= (fun (a2, b2) ->
   m_hint_type a3 b3 >>= (fun (a3, b3) ->
     return ((a1, a2, a3), (b1, b2, b3))

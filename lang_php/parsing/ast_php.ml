@@ -146,8 +146,9 @@ type hint_type =
       * (hint_type comma_list_dots paren) (* params *)
       * (tok * tok option * hint_type) option          (* return type *)
      ) paren
- | HintShape of tok (* "shape" *) * 
-                (string wrap * tok (* '=>' *) * hint_type) comma_list paren
+ | HintShape of
+     tok (* "shape" *) *
+     (string_const_expr * tok (* '=>' *) * hint_type) comma_list paren
 
  and type_args = hint_type comma_list single_angle
 
@@ -397,6 +398,9 @@ and w_variable = lvalue
  * and plus/minus which are only in expr.
  *)
  and static_scalar = expr
+ (* string_const_expr is for shape field names which are permitted to be either
+  * literal strings or class constants. *)
+ and string_const_expr = expr
 
 (* ------------------------------------------------------------------------- *)
 (* Statement *)

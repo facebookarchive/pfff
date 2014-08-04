@@ -850,7 +850,7 @@ and vof_hint_type =
         vof_paren
           (vof_comma_list
              (fun (v1, v2, v3) ->
-                let v1 = vof_wrap vof_string v1
+                let v1 = vof_expr v1
                 and v2 = vof_tok v2
                 and v3 = vof_hint_type v3
                 in Ocaml.VTuple [ v1; v2; v3 ]))
