@@ -1,7 +1,7 @@
 (* Yoann Padioleau
  *
+ * Copyright (C) 2011,2014 Facebook
  * Copyright (C) 2002-2008 Yoann Padioleau
- * Copyright (C) 2011 Facebook
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License (GPL)
@@ -24,7 +24,7 @@ module TV = Token_views_cpp
  * This module tries to detect some cpp, C, or C++ idioms so that we can
  * parse as-is files by adjusting or commenting some tokens.
  * 
- * Sometime we use some name conventions, sometimes indentation information, 
+ * Sometimes we use some name conventions, sometimes indentation information, 
  * sometimes we do some kind of lalr(k) by finding patterns. We often try to
  * work on a better token representation, like ifdef-paren-ized, brace-ized,
  * paren-ized, so that we can pattern-match more easily
@@ -132,19 +132,15 @@ let fix_tokens_c ~macro_defs tokens =
 
   (* macro part 1 *)
   let cleaner = !tokens2 +> Parsing_hacks_pp.filter_pp_or_comment_stuff in
-
   let paren_grouped = TV.mk_parenthised  cleaner in
   Pp_token.apply_macro_defs macro_defs paren_grouped;
-
   (* because the before field is used by apply_macro_defs *)
   tokens2 := TV.rebuild_tokens_extented !tokens2; 
 
   (* could filter also #define/#include *)
   let cleaner = !tokens2 +> filter_comment_stuff in
 
-  (* tagging contextual info (InFunc, InStruct, etc). Better to do
-   * that after the "ifdef-simplification" phase.
-   *)
+  (* tagging contextual info (InFunc, InStruct, etc) *)
   let multi_grouped = TV.mk_multi cleaner in
   Token_views_context.set_context_tag_multi multi_grouped;
 
