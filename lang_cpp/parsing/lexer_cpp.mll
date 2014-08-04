@@ -28,10 +28,10 @@ module PI = Parse_info
 (* Prelude *)
 (*****************************************************************************)
 
-(* The C/cpp/C++/Objective-C lexer.
+(* The C/cpp/C++ lexer.
  *
  * This lexer generates tokens for C (int, while, ...), C++ (new, delete, ...),
- * CPP (#define, #ifdef, ...) and objective C (@interface, @end, ...).
+ * CPP (#define, #ifdef, ...).
  * It also generate tokens for comments and spaces. This means that
  * it can not be used as-is. Some post-filtering
  * has to be done to feed it to a parser. Note that C and C++ are not
@@ -161,39 +161,6 @@ let keyword_table = Common.hash_of_list [
   "mutable", (fun ii -> Tmutable ii);
 
   "export", (fun ii -> Texport ii);
-
-  (* objcext: see also TH.is_objectivec_keyword *)
-  "@interface", (fun ii -> TAt_interface ii);
-  "@implementation", (fun ii -> TAt_implementation ii);
-  "@protocol", (fun ii -> TAt_protocol ii);
-  "@class", (fun ii -> TAt_class ii);
-  "@selector", (fun ii -> TAt_selector ii);
-  "@encode", (fun ii -> TAt_encode ii);
-  "@defs", (fun ii -> TAt_defs ii);
-
-  "@end", (fun ii -> TAt_end ii);
-
-  "@public", (fun ii -> TAt_public ii);
-  "@private", (fun ii -> TAt_private ii);
-  "@protected", (fun ii -> TAt_protected ii);
-
-   (* objc 2.0? apple extensions? not in original grammar *)
-  "@throw", (fun ii -> TAt_throw ii);
-  "@try", (fun ii -> TAt_try ii);
-  "@catch", (fun ii -> TAt_catch ii);
-  "@finally", (fun ii -> TAt_finally ii);
-  "@synchronized", (fun ii -> TAt_synchronized ii);
-
-   (* apple ext? remove in favor of a TAt_Misc? *)
-  "@property", (fun ii -> TAt_property ii);
-  "@synthesize", (fun ii -> TAt_synthesize ii);
-  "@autoreleasepool", (fun ii -> TAt_autoreleasepool ii);
-  "@dynamic", (fun ii -> TAt_dynamic ii);
-  "@YES", (fun ii -> TAt_YES ii);
-  "@NO", (fun ii -> TAt_NO ii);
-  "@optional", (fun ii -> TAt_optional ii);
-  "@required", (fun ii -> TAt_required ii);
-  "@compatibility_alias", (fun ii -> TAt_compatibility_alias ii);
  ]
 
 let error_radix s = 
@@ -520,19 +487,6 @@ rule token = parse
         TIdent (s, tokinfo lexbuf)
       }
 
-  (* objcext: *)
-  | "@" letter+ { 
-      let info = tokinfo lexbuf in
-      let s = tok lexbuf in
-      try 
-        let f = Hashtbl.find keyword_table s in
-        f info
-      with Not_found ->
-        TAt_Misc info
-        (* failwith ("LEXER: unknown objective C keyword: " ^ s); *)
-  }
-  (* @[ *)
-  | "@" { TAt (tokinfo lexbuf) }
 
   (* ----------------------------------------------------------------------- *)
   (* C constant *)
@@ -555,12 +509,6 @@ rule token = parse
         TChar     ((s,   IsWchar),  (info +> tok_add_s (s ^ "'"))) 
       } 
   | 'L' '"' 
-      { let info = tokinfo lexbuf in 
-        let s = string lexbuf in 
-        TString   ((s,   IsWchar),  (info +> tok_add_s (s ^ "\""))) 
-      }
-  (* objcext: *)
-  | '@' '"' 
       { let info = tokinfo lexbuf in 
         let s = string lexbuf in 
         TString   ((s,   IsWchar),  (info +> tok_add_s (s ^ "\""))) 

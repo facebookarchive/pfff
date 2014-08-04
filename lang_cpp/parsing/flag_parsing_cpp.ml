@@ -6,7 +6,6 @@
 type language = 
   | C
   | Cplusplus
-  | ObjectiveC
 
 (*****************************************************************************)
 (* convenient globals *)

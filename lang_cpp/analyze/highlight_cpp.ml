@@ -616,42 +616,6 @@ let visit_toplevel ~tag_hook _prefs (*db_opt *) (toplevel, toks) =
     | T.Tclass ii | T.Tstruct ii ->
         tag ii KeywordObject
 
-    | T.TAt_interface ii
-    | T.TAt_implementation ii
-    | T.TAt_protocol ii
-    | T.TAt_class ii
-    | T.TAt_selector ii
-    | T.TAt_encode ii
-    | T.TAt_defs ii
-    | T.TAt_end ii
-    | T.TAt_public ii
-    | T.TAt_private ii
-    | T.TAt_protected ii
-        -> tag ii KeywordObject
-
-    | T.TAt_throw ii
-    | T.TAt_catch ii
-    | T.TAt_try ii
-    | T.TAt_finally ii
-      -> tag ii KeywordExn
-    | T.TAt_synchronized ii -> tag ii Keyword
-
-    | T.TAt_property ii -> tag ii Keyword
-
-    | T.TAt_synthesize ii
-    | T.TAt_autoreleasepool ii
-    | T.TAt_dynamic ii
-    | T.TAt_YES ii
-    | T.TAt_NO ii
-    | T.TAt_optional ii
-    | T.TAt_required ii
-    | T.TAt_compatibility_alias ii
-
-    | T.TAt_Misc ii
-      -> tag ii Keyword
-    | T.TAt ii
-      -> tag ii Keyword
-
 
     (* thrift *)
     | T.TIdent (("service" | "include" | "extends"), ii) ->

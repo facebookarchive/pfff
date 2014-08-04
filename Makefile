@@ -116,7 +116,6 @@ BASICLIBS=commons/lib.cma \
   lang_php/pretty/lib.cma \
  lang_cpp/parsing/lib.cma \
  lang_c/parsing/lib.cma \
- lang_objc/parsing/lib.cma \
  lang_clang/parsing/lib.cma \
  lang_java/parsing/lib.cma \
  lang_python/parsing/lib.cma \
@@ -175,8 +174,6 @@ LIBS= commons/lib.cma \
      lang_cpp/analyze/lib.cma \
     lang_c/parsing/lib.cma \
      lang_c/analyze/lib.cma \
-    lang_objc/parsing/lib.cma \
-     lang_objc/analyze/lib.cma \
     lang_clang/parsing/lib.cma \
      lang_clang/analyze/lib.cma \
     lang_java/parsing/lib.cma \
@@ -229,8 +226,6 @@ MAKESUBDIRS=commons \
    lang_cpp/analyze \
   lang_c/parsing \
    lang_c/analyze \
-  lang_objc/parsing \
-   lang_objc/analyze \
   lang_clang/parsing \
    lang_clang/analyze \
   lang_java/parsing \

@@ -200,31 +200,6 @@ module Ast = Ast_cpp
 /*(* fresh_token: appears after solved if next token is a typedef *)*/
 %token <Ast_cpp.info> TColCol_BeforeTypedef
 
-/*(*-----------------------------------------*)*/
-/*(*2 objcext: extra tokens *)*/
-/*(*-----------------------------------------*)*/
-%token <Ast_cpp.info>
-  TAt_interface TAt_implementation TAt_protocol TAt_class
-  TAt_selector TAt_encode TAt_defs
-  TAt_end
-  TAt_public TAt_private TAt_protected
-
-  TAt_throw TAt_try TAt_catch TAt_finally
-  TAt_synchronized
-
-  TAt_property
-  TAt_synthesize
-  TAt_autoreleasepool
-  TAt_dynamic
-  TAt_YES
-  TAt_NO
-  TAt_optional
-  TAt_required
-  TAt_compatibility_alias
-  TAt_Misc
-  
-  TAt
-
 /*(*************************************************************************)*/
 /*(*1 Priorities *)*/
 /*(*************************************************************************)*/
@@ -747,23 +722,7 @@ statement:
  | Tfor TOPar simple_declaration expr_statement expr_opt TCPar statement
      { StmtTodo, noii }
 
- /*(* objcext: *)*/
- | TAt_throw TIdent TPtVirg  { StmtTodo, noii }
- | TAt_try compound at_catch_list at_finally_opt { StmtTodo, noii }
 
-at_catch_list: 
- | at_catch { }
- | at_catch_list at_catch { }
-
-at_catch:
- | TAt_catch TOPar exception_decl TCPar compound { ($1, ($2, $3, $4), $5) }
-
-at_finally_opt:
- | at_finally { }
- | /*(*empty*)*/ { }
-
-at_finally:
- | TAt_finally compound { }
 
 compound: 
  | TOBrace statement_list_opt TCBrace { ($1, $2, $3) }

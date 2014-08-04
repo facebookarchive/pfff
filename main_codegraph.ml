@@ -312,7 +312,6 @@ let build_graph_code lang xs =
     | "web" -> raise Todo
 
     | "c" -> Graph_code_c.build ~verbose:!verbose root files, empty
-    | "objc" -> Graph_code_objc.build ~verbose:!verbose root files, empty
     | "clang2" -> Graph_code_clang.build ~verbose:!verbose root files, empty
 
     | "java" -> Graph_code_java.build ~verbose:!verbose root files, empty

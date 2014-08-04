@@ -70,7 +70,6 @@ let all_actions () =
 
   Test_parsing_c.actions()@
   Test_parsing_cpp.actions()@
-  Test_parsing_objc.actions()@
   Test_parsing_clang.actions()@
   Test_mini.actions()@
 (*

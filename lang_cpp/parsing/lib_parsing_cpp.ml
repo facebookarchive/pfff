@@ -34,7 +34,7 @@ let find_source_files_of_dir_or_files xs =
   +> List.filter (fun filename ->
     match File_type.file_type_of_file filename with
     | FT.PL (FT.C ("l" | "y")) -> false
-    | FT.PL (FT.C _ | FT.Cplusplus _ | FT.ObjectiveC _) ->
+    | FT.PL (FT.C _ | FT.Cplusplus _ ) ->
         true
     | _ -> false
 

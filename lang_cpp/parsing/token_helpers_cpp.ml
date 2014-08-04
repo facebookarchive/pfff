@@ -225,9 +225,6 @@ let is_maybenot_cpp_keyword = function
   | _ -> false
 
 
-let is_objectivec_keyword = function
-  | _ -> false
-
 (* used in the algorithm for "10 most problematic tokens". C-s for TIdent
  * in parser_cpp.mly
  *)
@@ -494,37 +491,6 @@ let info_of_tok = function
   | Tunsigned_Constr i -> i
   | Tsigned_Constr i -> i
 
-  | TAt_interface i -> i
-  | TAt_implementation i -> i
-  | TAt_protocol i  -> i
-  | TAt_class i -> i
-  | TAt_selector i -> i
-  | TAt_encode i -> i
-  | TAt_defs i -> i
-  | TAt_end i -> i
-  | TAt_public i -> i
-  | TAt_private i -> i
-  | TAt_protected i -> i
-
-  | TAt_throw i -> i
-  | TAt_catch i -> i
-  | TAt_try i -> i
-  | TAt_finally i -> i
-  | TAt_synchronized i -> i
-
-  | TAt_property i -> i
-
-  | TAt_synthesize i -> i
-  | TAt_autoreleasepool i -> i
-  | TAt_dynamic i -> i
-  | TAt_YES i -> i
-  | TAt_NO i -> i
-  | TAt_optional i -> i
-  | TAt_required i -> i
-  | TAt_compatibility_alias i -> i
-  | TAt_Misc i -> i
-
-  | TAt i -> i      
   | EOF                  (i) -> i
   
 
@@ -753,36 +719,6 @@ let visitor_info_of_tok f = function
   | Tsigned_Constr  (i) -> Tsigned_Constr (f i)
   | Tunsigned_Constr  (i) -> Tunsigned_Constr (f i)
 
-  | TAt_interface i -> TAt_interface (f i)
-  | TAt_implementation i -> TAt_implementation (f i)
-  | TAt_protocol i  -> TAt_protocol (f i)
-  | TAt_class i -> TAt_class (f i)
-  | TAt_selector i -> TAt_selector (f i)
-  | TAt_encode i -> TAt_encode (f i)
-  | TAt_defs i -> TAt_defs (f i)
-  | TAt_end i -> TAt_end (f i)
-  | TAt_public i -> TAt_public (f i)
-  | TAt_private i -> TAt_private (f i)
-  | TAt_protected i -> TAt_protected (f i)
-
-  | TAt_throw i -> TAt_throw (f i)
-  | TAt_catch i -> TAt_catch (f i)
-  | TAt_try i -> TAt_try (f i)
-  | TAt_finally i -> TAt_finally (f i)
-  | TAt_synchronized i -> TAt_synchronized (f i)
-
-  | TAt_property i -> TAt_property (f i)
-
-  | TAt_synthesize i -> TAt_synthesize (f i)
-  | TAt_autoreleasepool i -> TAt_autoreleasepool (f i)
-  | TAt_dynamic i -> TAt_dynamic (f i)
-  | TAt_YES i -> TAt_YES (f i)
-  | TAt_NO i -> TAt_NO (f i)
-  | TAt_optional i -> TAt_optional (f i)
-  | TAt_required i -> TAt_required (f i)
-  | TAt_compatibility_alias i -> TAt_compatibility_alias (f i)
-  | TAt_Misc i -> TAt_Misc (f i)
-  | TAt i -> TAt (f i)
   | EOF                  (i) -> EOF                  (f i) 
 
 

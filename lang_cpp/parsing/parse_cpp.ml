@@ -113,15 +113,12 @@ let is_same_line_or_close line tok =
   TH.line_of_tok tok =|= line - 2
 
 (*****************************************************************************)
-(* C vs C++ vs ObjectiveC *)
+(* C vs C++ *)
 (*****************************************************************************)
 let fix_tokens_for_language lang xs =
   xs +> List.map (fun tok ->
     match tok, lang with
-    | x, Flag.C when TH.is_cpp_keyword x || TH.is_objectivec_keyword x ->
-      let ii = TH.info_of_tok x in
-      T.TIdent (PI.str_of_info ii, ii)
-    | x, Flag.ObjectiveC when TH.is_cpp_keyword x ->
+    | x, Flag.C when TH.is_cpp_keyword x ->
       let ii = TH.info_of_tok x in
       T.TIdent (PI.str_of_info ii, ii)
     | x, _ -> x
@@ -493,8 +490,6 @@ let parse2 file =
     )
   | FT.PL (FT.Cplusplus _) ->
     parse_with_lang ~lang:Flag.Cplusplus file
-  | FT.PL (FT.ObjectiveC _) ->
-    parse_with_lang ~lang:Flag.ObjectiveC file
   | _ -> failwith (spf "not a C/C++ file: %s" file)
     
 

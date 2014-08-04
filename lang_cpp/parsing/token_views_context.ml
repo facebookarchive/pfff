@@ -136,7 +136,6 @@ let look_like_parameter tok_before xs =
       | Tok{t=(
             TIdent _ 
           | Tcatch _ 
-          | TAt_catch _
           (* ugly: TIdent_Constructor interaction between past heuristics *)
           | TIdent_Constructor _
           | Toperator _
