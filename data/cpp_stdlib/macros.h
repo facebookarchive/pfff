@@ -96,7 +96,6 @@
 
 #define CONST const
 
-
 // for xv6
 #define __asm asm
 #define __volatile volatile

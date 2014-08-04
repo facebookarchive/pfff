@@ -599,7 +599,7 @@ and class_definition = {
       * But it seems that gcc allow char i:4. C rule must say that you
       * can cast into int so enum too, ... 
       * c++ext: FieldDecl was before Simple of string option * fullType
-      * but in c++ field can also have storage so now reuse ondecl.
+      * but in c++ fields can also have storage (e.g. static) so now reuse ondecl.
       *)
       and fieldkind = 
         | FieldDecl of onedecl
@@ -682,13 +682,12 @@ and declaration =
 
   | Func of func_or_else
 
+  (* c++ext: *)
   | TemplateDecl of tok * template_parameters * declaration
   | TemplateSpecialization of tok * unit angle * declaration
-
   (* the list can be empty *)
   | ExternC     of tok * tok * declaration
   | ExternCList of tok * tok * declaration_sequencable list brace
-
   (* the list can be empty *)
   | NameSpace of tok * simple_ident * declaration_sequencable list brace
   (* after have some semantic info *)
@@ -708,6 +707,7 @@ and declaration =
 
   | DeclTodo
 
+ (* c++ext: *)
  and template_parameter = parameter (* todo? more? *)
   and template_parameters = template_parameter comma_list angle
 

@@ -28,7 +28,7 @@ module FT = File_type
 (* Prelude *)
 (*****************************************************************************)
 (* 
- * A heuristic based C/cpp/C++/Objective-C/Objective-C++ parser.
+ * A heuristic based C/cpp/C++ parser.
  * 
  * See "Parsing C/C++ Code without Pre-Preprocessing - Yoann Padioleau, CC'09"
  * avalaible at http://padator.org/papers/yacfe-cc09.pdf
