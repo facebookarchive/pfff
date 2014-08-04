@@ -428,7 +428,7 @@ and expr env e =
   match e' with
   | C cst -> constant env toks cst
 
-  | Ident (n, _) -> A.Id (name env n)
+  | Id (n, _) -> A.Id (name env n)
 
   | RecordAccess (e, n) ->
       A.RecordAccess (expr env e, name env n)
@@ -459,7 +459,7 @@ and expr env e =
   | FunCallSimple (n, args) ->
       A.Call (A.Id (name env n),
               Common.map_filter (argument env) (args +> unparen +> uncomma))
-  | FunCallExpr (e, args) ->
+  | Call (e, args) ->
       A.Call (expr env e,
              Common.map_filter (argument env) (args +> unparen +> uncomma))
 

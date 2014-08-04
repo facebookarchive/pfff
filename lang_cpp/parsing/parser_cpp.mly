@@ -634,17 +634,17 @@ encode_name: ident { }
 primary_cplusplus_id:
  | id_expression 
      { let name = (None, fst $1, snd $1) in 
-       mk_e (Ident (name, noIdInfo())) []  }
+       mk_e (Id (name, noIdInfo())) []  }
  | TColCol TIdent  
      { let name = Some $1, noQscope, IdIdent $2 in 
-       mk_e (Ident (name, noIdInfo())) [] }
+       mk_e (Id (name, noIdInfo())) [] }
  | TColCol operator_function_id 
      { let qop = $2 in
        let name = (Some $1, noQscope, qop) in 
-       mk_e (Ident (name, noIdInfo())) [] }
+       mk_e (Id (name, noIdInfo())) [] }
  | TColCol qualified_id 
      { let name = (Some $1, fst $2, snd $2) in 
-       mk_e (Ident (name, noIdInfo())) [] }
+       mk_e (Id (name, noIdInfo())) [] }
 
 /*(*could use TInf here *)*/
 cast_operator_expr: 

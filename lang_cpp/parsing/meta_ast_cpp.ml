@@ -244,19 +244,19 @@ and vof_typeQualifier { const = v_const; volatile = v_volatile } =
 and vof_expression v = vof_wrap vof_expressionbis v
 and vof_expressionbis =
   function
-  | Ident ((v1, v2)) ->
+  | Id ((v1, v2)) ->
       let v1 = vof_name v1
       and v2 = vof_ident_info v2
-      in Ocaml.VSum (("Ident", [ v1; v2 ]))
+      in Ocaml.VSum (("Id", [ v1; v2 ]))
   | C v1 -> let v1 = vof_constant v1 in Ocaml.VSum (("C", [ v1 ]))
   | FunCallSimple ((v1, v2)) ->
       let v1 = vof_name v1
       and v2 = vof_paren (vof_comma_list vof_argument) v2
       in Ocaml.VSum (("FunCallSimple", [ v1; v2 ]))
-  | FunCallExpr ((v1, v2)) ->
+  | Call ((v1, v2)) ->
       let v1 = vof_expression v1
       and v2 = vof_paren (vof_comma_list vof_argument) v2
-      in Ocaml.VSum (("FunCallExpr", [ v1; v2 ]))
+      in Ocaml.VSum (("Call", [ v1; v2 ]))
   | CondExpr ((v1, v2, v3)) ->
       let v1 = vof_expression v1
       and v2 = Ocaml.vof_option vof_expression v2

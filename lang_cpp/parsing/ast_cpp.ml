@@ -72,18 +72,21 @@ type name = tok (*::*) option  * (qualifier * tok (*::*)) list * ident
 
  and ident =
    (* function name, macro name, variable, classname, enumname, namespace *)
-   | IdIdent of string wrap2
+   | IdIdent of simple_ident
    | IdOperator of tok * (operator * tok list)
    | IdConverter of tok * fullType
-   | IdDestructor of tok(*~*) * string wrap2 
-   | IdTemplateId of string wrap2 * template_arguments
+   | IdDestructor of tok(*~*) * simple_ident
+   | IdTemplateId of simple_ident * template_arguments
 
+   and simple_ident = string wrap2
+ 
    and template_arguments = template_argument comma_list angle
     and template_argument = (fullType, expression) Common.either
 
  and qualifier = 
-   | QClassname of string wrap2 (* classname or namespacename *)
-   | QTemplateId of string wrap2 * template_arguments
+   | QClassname of simple_ident (* classname or namespacename *)
+   | QTemplateId of simple_ident * template_arguments
+
 
  (* special cases *)
  and class_name     = name (* only IdIdent or IdTemplateId *)
@@ -133,12 +136,12 @@ and typeCbis =
   | Array           of constExpression option bracket * fullType
   | FunctionType    of functionType
 
-  | Enum of tok (*enum*) * string wrap2 option * 
+  | Enum of tok (*enum*) * simple_ident option * 
             enum_elem comma_list brace  (* => string * int list *)
   | StructUnion     of class_definition (* c++ext: bigger type now *)
 
-  | EnumName        of tok * string wrap2 (*enum_name*)
-  | StructUnionName of structUnion wrap2 * string wrap2 (*ident_name*)
+  | EnumName        of tok * simple_ident (*enum_name*)
+  | StructUnionName of structUnion wrap2 * simple_ident (*ident_name*)
   (* c++ext: TypeName can now correspond also to a classname or enumname
    * and is a name so can have some IdTemplateId in it.
    *)
@@ -181,7 +184,7 @@ and typeCbis =
       and floatType = CFloat | CDouble | CLongDouble
 
     and enum_elem = {
-      e_name: string wrap2;
+      e_name: simple_ident;
       e_val: (tok (*=*) * constExpression) option;
     }
 
@@ -215,7 +218,7 @@ and expression = expressionbis wrap
    * c++ext: Ident is now a 'name' instead of a 'string' and can be
    *  also an operator name for example.
    *)
-  | Ident of name * ident_info (* semantic: *) 
+  | Id of name * ident_info (* semantic: *) 
   | C of constant
 
   (* specialized version of FunCallExpr that makes it easier to write
@@ -224,7 +227,7 @@ and expression = expressionbis wrap
    *)
   | FunCallSimple  of name * argument comma_list paren
   (* less: MethodCallSimple, MethodCallExpr *)
-  | FunCallExpr    of expression * argument comma_list paren
+  | Call of expression * argument comma_list paren
 
   (* gccext: x ? /* empty */ : y <=> x ? x : y; *)
   | CondExpr       of expression * expression option * expression
@@ -411,7 +414,7 @@ and statement = statementbis wrap
         (exprStatement wrap * exprStatement wrap * exprStatement wrap) paren *
         statement
     (* cppext: *)
-    | MacroIteration of string wrap2 * argument comma_list paren * statement
+    | MacroIteration of simple_ident * argument comma_list paren * statement
 
   and jump  = 
     | Goto of string
@@ -448,12 +451,12 @@ and block_declaration =
   *)
   | DeclList of onedecl comma_list * tok (*;*)
   (* cppext: todo? now factorize with MacroTop ?  *)
-  | MacroDecl of tok list * string wrap2 * argument comma_list paren * tok
+  | MacroDecl of tok list * simple_ident * argument comma_list paren * tok
 
   (* c++ext: using namespace *)
   | UsingDecl of (tok * name * tok (*;*))
   | UsingDirective of tok * tok (*'namespace'*) *  namespace_name * tok(*;*)
-  | NameSpaceAlias of tok * string wrap2 * tok (*=*) * namespace_name * tok(*;*)
+  | NameSpaceAlias of tok * simple_ident * tok (*=*) * namespace_name * tok(*;*)
 
   (* gccext: *)
   | Asm of tok * tok option (*volatile*) * asmbody paren * tok(*;*)
@@ -482,12 +485,12 @@ and block_declaration =
       | InitList of initialiser comma_list brace
       (* gccext: *)
       | InitDesignators of designator list * tok (*=*) * initialiser
-      | InitFieldOld  of string wrap2 * tok (*:*) * initialiser
+      | InitFieldOld  of simple_ident * tok (*:*) * initialiser
       | InitIndexOld  of expression * initialiser
 
       (* ex: [2].y = x,  or .y[2]  or .y.x. They can be nested *)
       and designator =
-        | DesignatorField of tok(*:*) * string wrap2
+        | DesignatorField of tok(*:*) * simple_ident
         | DesignatorIndex of expression bracket
         | DesignatorRange of (expression * tok (*...*) * expression) bracket
               
@@ -523,7 +526,7 @@ and func_definition = {
      ft_throw: exn_spec option;
    }
      and parameter = {
-        p_name: string wrap2 option;
+        p_name: simple_ident option;
         p_type: fullType;
         p_register: tok option;
         (* c++ext: *)
@@ -540,9 +543,9 @@ and func_definition = {
  and method_decl =
    | MethodDecl of onedecl * (tok * tok) option (* '=' '0' *) * tok(*;*)
    | ConstructorDecl of 
-       string wrap2 * parameter comma_list paren * tok(*;*)
+       simple_ident * parameter comma_list paren * tok(*;*)
    | DestructorDecl of 
-       tok(*~*) * string wrap2 * tok option paren * exn_spec option * tok(*;*)
+       tok(*~*) * simple_ident * tok option paren * exn_spec option * tok(*;*)
 
 (* ------------------------------------------------------------------------- *)
 (* Class definition *)
@@ -595,7 +598,7 @@ and class_definition = {
       *)
       and fieldkind = 
         | FieldDecl of onedecl
-        | BitField of string wrap2 option * tok(*:*) *
+        | BitField of simple_ident option * tok(*:*) *
             fullType * constExpression
             (* fullType => BitFieldInt | BitFieldUnsigned *) 
    
@@ -609,9 +612,9 @@ and class_definition = {
 (* cppext: cpp directives, #ifdef, #define and #include body *)
 (* ------------------------------------------------------------------------- *)
 and cpp_directive =
-  | Define of tok (* #define*) * string wrap2 * define_kind * define_val
+  | Define of tok (* #define*) * simple_ident * define_kind * define_val
   | Include of tok (* #include s *) * inc_file
-  | Undef of string wrap2 (* #undef xxx *)
+  | Undef of simple_ident (* #undef xxx *)
   | PragmaAndCo of tok
 
   and define_kind =
@@ -682,7 +685,7 @@ and declaration =
   | ExternCList of tok * tok * declaration_sequencable list brace
 
   (* the list can be empty *)
-  | NameSpace of tok * string wrap2 * declaration_sequencable list brace
+  | NameSpace of tok * simple_ident * declaration_sequencable list brace
   (* after have some semantic info *)
   | NameSpaceExtend of string * declaration_sequencable list 
   | NameSpaceAnon   of tok * declaration_sequencable list brace
@@ -690,15 +693,15 @@ and declaration =
   (* gccext: allow redundant ';' *)
   | EmptyDef of tok
 
-  | DeclTodo
-
   (* cppext: *)
   | CppTop of cpp_directive
   | IfdefTop of ifdef_directive (* * toplevel list *)
-  | MacroTop of string wrap2 * argument comma_list paren * tok option
-  | MacroVarTop of string wrap2 * tok (* ; *)
+  | MacroTop of simple_ident * argument comma_list paren * tok option
+  | MacroVarTop of simple_ident * tok (* ; *)
          
   | NotParsedCorrectly of tok list
+
+  | DeclTodo
 
  and template_parameter = parameter (* todo? more? *)
   and template_parameters = template_parameter comma_list angle
@@ -763,16 +766,16 @@ let fakeInfo _pi  = { Parse_info.
 (*****************************************************************************)
 (* Wrappers *)
 (*****************************************************************************)
-let unwrap = fst
+let unwrap x = fst x
 let uncomma xs = List.map fst xs
 let unparen (_, x, _) = x
 let unbrace (_, x, _) = x
 
 let unwrap_typeC (_qu, (typeC, _ii)) = typeC
 
-(* When want add some info in ast that does not correspond to 
+(* When want add some info in AST that does not correspond to 
  * an existing C element.
- * old: or when don't want 'synchronize' on it in unparse_c.ml
+ * old: when don't want 'synchronize' on it in unparse_c.ml
  * (now have other mark for tha matter).
  * used by parsing hacks
  *)
@@ -795,7 +798,6 @@ let (string_of_name_tmp: name -> string) = fun name ->
   | _ ->
       "TODO_string_of_name_tmp"
       (* raise Todo *)
-
 
 let (ii_of_id_name: name -> tok list) = fun name ->
   let (_opt, _qu, id) = name in
