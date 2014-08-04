@@ -139,7 +139,7 @@ type expr =
 (* Statement *)
 (* ------------------------------------------------------------------------- *)
 type stmt = 
-  | Expr of expr
+  | ExprSt of expr
   | Block of stmt list
 
   | If of expr * stmt * stmt
@@ -231,6 +231,9 @@ type define_body =
 (* ------------------------------------------------------------------------- *)
 (* Program *)
 (* ------------------------------------------------------------------------- *)
+(* less: ForwardStructDecl for mutually recursive structures? probably can 
+ * deal with it by using typedefs as intermediates.
+ *)
 type toplevel =
   | Define of name * define_body 
   | Undef of name
@@ -244,7 +247,6 @@ type toplevel =
   | FuncDef of func_def
   | Global of var_decl
   | Prototype of func_def (* empty body *)
-  (* todo: ForwardStructDecl of name ? *)
  (* with tarzan *)
 
 type program = toplevel list

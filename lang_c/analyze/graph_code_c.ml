@@ -306,7 +306,7 @@ and define_body env v =
 (* Stmt *)
 (* ---------------------------------------------------------------------- *)
 and stmt env = function
-  | Expr e -> expr env e
+  | ExprSt e -> expr env e
   | Block xs -> stmts env xs
   | Asm e -> exprs env e
   | If (e, st1, st2) ->

@@ -146,15 +146,15 @@ and stmts xs = xs +> List.map stmt +> List.flatten
 
 and stmt st =
   match st with
-  | Expr (Call (Id ("printf", _tok), _xs)) -> []
+  | ExprSt (Call (Id ("printf", _tok), _xs)) -> []
   (* foo(...) => void local_void_1 = foo(...); *)
-  | Expr (Call (Id fname, es)) ->
+  | ExprSt (Call (Id fname, es)) ->
     let name = gensym "local_void", snd fname in
     let typ = M.TBase ("void", snd fname) in
     (M.Local { M.v_name = name; v_type = typ })::
-    stmt (Expr (Assign (SimpleAssign, Id name, (Call (Id fname, es)))))
+    stmt (ExprSt (Assign (SimpleAssign, Id name, (Call (Id fname, es)))))
 
-  | Expr e -> [M.Instr (expr_for_instr e)]
+  | ExprSt e -> [M.Instr (expr_for_instr e)]
   | Block xs -> stmts xs
   | If (e, st1, st2) -> [M.If (expr_for_var e, stmt st1, stmt st2)]
   | Switch (e, _xs) -> error_any "switch not supported, use if" (Expr2 e)

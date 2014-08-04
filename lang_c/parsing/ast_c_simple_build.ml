@@ -327,7 +327,7 @@ and stmt env x =
   | ExprStatement eopt ->
       (match eopt with
       | None -> A.Block []
-      | Some e -> A.Expr (expr env e)
+      | Some e -> A.ExprSt (expr env e)
       )
   | DeclStmt block_decl ->
       block_declaration env block_decl

@@ -162,7 +162,7 @@ let rec vof_expr =
   
 let rec vof_stmt =
   function
-  | Expr v1 -> let v1 = vof_expr v1 in Ocaml.VSum (("Expr", [ v1 ]))
+  | ExprSt v1 -> let v1 = vof_expr v1 in Ocaml.VSum (("ExprSt", [ v1 ]))
   | Block v1 ->
       let v1 = Ocaml.vof_list vof_stmt v1 in Ocaml.VSum (("Block", [ v1 ]))
   | If ((v1, v2, v3)) ->
