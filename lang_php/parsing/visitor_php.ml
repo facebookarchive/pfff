@@ -616,14 +616,15 @@ and v_stmt xxx =
       and v2 = v_paren v_expr v2
       and v3 = v_switch_case_list v3
       in ()
-  | Foreach ((v1, v2, v3, v4, v5, v6, v7)) ->
+  | Foreach ((v1, v2, v3, v4, v5, v6, v7, v8)) ->
       let v1 = v_tok v1
       and v2 = v_tok v2
       and v3 = v_expr v3
-      and v4 = v_tok v4
-      and v5 = v_foreach_pattern v5
-      and v6 = v_tok v6
-      and v7 = v_colon_stmt v7
+      and v4 = v_option v_tok v4
+      and v5 = v_tok v5
+      and v6 = v_foreach_pattern v6
+      and v7 = v_tok v7
+      and v8 = v_colon_stmt v8
       in ()
   | Break ((v1, v2, v3)) ->
       let v1 = v_tok v1 and v2 = v_option v_expr v2 and v3 = v_tok v3 in ()

@@ -431,7 +431,8 @@ and stmt =
     (* if it's a expr_without_variable, the second arg must be a Right variable,
      * otherwise if it's a variable then it must be a foreach_variable
      *)
-    | Foreach of tok * tok (*'('*) * expr * tok (* as *) * foreach_pattern *
+    | Foreach of tok * tok (*'('*) * expr * tok option (* await *) *
+        tok (* as *) * foreach_pattern *
         tok (*')'*) * colon_stmt
       (* example: foreach(expr as $lvalue) { ... }
        *          foreach(expr as $foreach_varialbe => $lvalue) { ... }
