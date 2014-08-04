@@ -19,7 +19,10 @@
 (* Prelude *)
 (*****************************************************************************)
 (* 
- * This is a big file ... C++ is a big and complicated language ... 
+ * This is a big file ... C++ is a big and complicated language ...
+ * This file started with a simple AST for C, but then was extended
+ * to deal with cpp idioms (see cppext: tag), gcc extensions (see gccext:),
+ * and finally C++ constructs (see c++ext:).
  *
  * Like most other ASTs in pfff, it's actually more a Concrete Syntax Tree.
  * Some stuff are tagged 'semantic:' which means that they are computed
@@ -390,7 +393,7 @@ and statement = statementbis wrap
    *)
   and compound = statement_sequencable list brace
 
-  (* cppext: easier to put at statement_list level than statement level *)
+  (* easier to put at statement_list level than statement level *)
   and statement_sequencable = 
     | StmtElem of statement
     (* cppext: *) 
@@ -712,7 +715,7 @@ and declaration =
  and template_parameter = parameter (* todo? more? *)
   and template_parameters = template_parameter comma_list angle
 
-  (* cppext: easier to put at statement_list level than statement level *)
+  (* easier to put at statement_list level than statement level *)
   and declaration_sequencable = 
     | DeclElem of declaration
     (* cppext: *) 
