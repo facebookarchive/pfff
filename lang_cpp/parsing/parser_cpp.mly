@@ -1803,7 +1803,7 @@ cpp_directive:
          | _ when filename =~ "^\\<\\(.*\\)\\>$" ->
              Standard (Common.split "/" (matched1 filename))
          | _ ->
-             Wierd filename
+             Weird filename
        in
        Include (tok, inc_file)
      }

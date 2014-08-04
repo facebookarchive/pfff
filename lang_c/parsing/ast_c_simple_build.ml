@@ -270,7 +270,7 @@ and cpp_directive env = function
         (match inc_file with
         | Local xs -> "\"" ^ Common.join "/" xs ^ "\""
         | Standard xs -> "<" ^ Common.join "/" xs ^ ">"
-        | Wierd _s -> 
+        | Weird _s -> 
             debug (Cpp x); raise Todo
         )
       in

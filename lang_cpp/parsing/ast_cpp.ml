@@ -58,7 +58,7 @@ and 'a comma_list2 = ('a, tok (* the comma *)) Common.either list
 (* ------------------------------------------------------------------------- *)
 
 (* c++ext: in C 'name' and 'ident' are equivalent and are just strings.
- * In C++ 'ident' can have a complex form like 'A::B::list<int>::size'.
+ * In C++ 'name' can have a complex form like 'A::B::list<int>::size'.
  * I use Q for qualified. I also have a special type to make the difference
  * between intermediate idents (the classname or template_id) and final idents.
  * Note that sometimes final idents are also classnames and can have final
@@ -66,7 +66,7 @@ and 'a comma_list2 = ('a, tok (* the comma *)) Common.either list
  * 
  * Sometimes some elements are not allowed at certain places, for instance
  * converters can not have an associated Qtop. But I prefered to simplify
- * and have a unique type for all those different kinds of ident.
+ * and have a unique type for all those different kinds of names.
  *)
 type name = tok (*::*) option  * (qualifier * tok (*::*)) list * ident  
 
@@ -94,7 +94,7 @@ type name = tok (*::*) option  * (qualifier * tok (*::*)) list * ident
  and ident_name = name (* only IdIdent *)
 
 (* TODO: do like in parsing_c/
- * and ??? ident_string ??? = 
+ * and ident_string = 
  *  | RegularName of string wrap
  *
  *  (* cppext: *)
@@ -127,8 +127,8 @@ and  typeC = typeCbis wrap
 and typeCbis =
   | BaseType        of baseType
 
-  | Pointer         of fullType
-  | Reference       of fullType (* c++ext: *)
+  | Pointer         of (* '*' *) fullType
+  | Reference       of (* '&' *) fullType (* c++ext: *)
 
   | Array           of constExpression option bracket * fullType
   | FunctionType    of functionType
@@ -209,13 +209,13 @@ and typeQualifier =
  *)
 and expression = expressionbis wrap
  and expressionbis = 
-  (* Ident can be a enumeration constant, a simple variable, a name of a func.
+  (* Ident can be an enumeration constant, variable, function name.
    * cppext: Ident can also be the name of a macro. Sparse says
    *  "an identifier with a meaning is a symbol". 
    * c++ext: Ident is now a 'name' instead of a 'string' and can be
    *  also an operator name for example.
    *)
-  | Ident of name * (* semantic: *) ident_info
+  | Ident of name * ident_info (* semantic: *) 
   | C of constant
 
   (* specialized version of FunCallExpr that makes it easier to write
@@ -223,7 +223,7 @@ and expression = expressionbis wrap
    * FunCallSimple is also a StaticMethodCallSimple
    *)
   | FunCallSimple  of name * argument comma_list paren
-  (* todo? MethodCallSimple, MethodCallExpr *)
+  (* less: MethodCallSimple, MethodCallExpr *)
   | FunCallExpr    of expression * argument comma_list paren
 
   (* gccext: x ? /* empty */ : y <=> x ? x : y; *)
@@ -277,6 +277,7 @@ and expression = expressionbis wrap
 
   | ExprTodo
 
+  (* see check_variables_cpp.ml *)
   and ident_info = {
     mutable i_scope: Scope_code.scope;
   }
@@ -308,7 +309,8 @@ and expression = expressionbis wrap
     and isWchar = IsWchar | IsChar
 
   and unaryOp  = 
-    | GetRef | DeRef | UnPlus |  UnMinus | Tilde | Not 
+    | GetRef | DeRef 
+    | UnPlus |  UnMinus | Tilde | Not 
     (* gccext: via &&label notation *)
     | GetRefLabel
   and assignOp = SimpleAssign | OpAssign of arithOp
@@ -624,12 +626,14 @@ and cpp_directive =
      | DefineInit of initialiser (* in practice only { } with possible ',' *)
      | DefineText of string wrap
      | DefineEmpty
+
      | DefineTodo
 
   and inc_file = 
     | Local    of inc_elem list
     | Standard of inc_elem list
-    | Wierd of string (* ex: #include SYSTEM_H *)
+
+    | Weird of string (* ex: #include SYSTEM_H *)
    and inc_elem = string
 
   (* to specialize if someone need more info *)

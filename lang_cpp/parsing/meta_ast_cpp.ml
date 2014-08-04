@@ -1027,8 +1027,8 @@ and vof_inc_file =
   | Standard v1 ->
       let v1 = Ocaml.vof_list vof_inc_elem v1
       in Ocaml.VSum (("Standard", [ v1 ]))
-  | Wierd v1 ->
-      let v1 = Ocaml.vof_string v1 in Ocaml.VSum (("Wierd", [ v1 ]))
+  | Weird v1 ->
+      let v1 = Ocaml.vof_string v1 in Ocaml.VSum (("Weird", [ v1 ]))
 and vof_inc_elem v = Ocaml.vof_string v
 and vof_ifdef_directive =
   function
