@@ -1,6 +1,6 @@
 (* Yoann Padioleau
  * 
- * Copyright (C) 2010-2011 Facebook
+ * Copyright (C) 2010, 2011, 2014 Facebook
  * Copyright (C) 2008-2009 University of Urbana Champaign
  * Copyright (C) 2006-2007 Ecole des Mines de Nantes
  * Copyright (C) 2002 Yoann Padioleau
