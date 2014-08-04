@@ -71,14 +71,12 @@ type file_type =
 (* Main entry point *)
 (*****************************************************************************)
 
+(* this function is used by codemap and archi_parse and called for each
+ * filenames, so it has to be fast!
+ *)
 let file_type_of_file2 file = 
   let (d,b,e) = Common2.dbe_of_filename_noext_ok file in
   match e with
-(* expensive ? *)
-(* todo:
-  | _ when b =~ ".md5sum_.*" -> Obj ("syncweb")
-  | _ when b =~ "Makefile.*" -> PL Makefile
-*)
 
   | "ml" | "mli" 
   | "mly" | "mll"    
@@ -112,6 +110,8 @@ let file_type_of_file2 file =
   | "h" -> PL (C e)
   (* todo? have a PL of xxx_kind * pl_kind ?  *)
   | "y" | "l" -> PL (C e)
+  (* plan9 *)
+  | "out.h" -> PL (C "h")
 
   | "hpp" -> PL (Cplusplus e) | "hxx" -> PL (Cplusplus e) 
   | "hh" -> PL (Cplusplus e)

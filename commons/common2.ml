@@ -2115,11 +2115,6 @@ let filename_of_dbe (dir, base, ext) =
   else Filename.concat dir (base ^ "." ^ ext)
 
 
-let dbe_of_filename_noext_ok file =
-  Filename.dirname file,
-  Filename.basename file +> fileprefix,
-  Filename.basename file +> filesuffix
-
 let dbe_of_filename_safe file =
   try Left (dbe_of_filename file)
   with Invalid_argument _ ->
@@ -2133,6 +2128,17 @@ let dbe_of_filename_nodot file =
 
 
 
+
+let re_be = Str.regexp "\\([^.]*\\)\\.\\(.*\\)"
+
+let dbe_of_filename_noext_ok file =
+  let dir = Filename.dirname file in
+  let base = Filename.basename file in
+  if Str.string_match re_be base 0
+  then 
+    let (b, e) = matched2 base in
+    (dir, b, e)
+  else (dir, base, "NOEXT")
 
 
 let replace_ext file oldext newext =
