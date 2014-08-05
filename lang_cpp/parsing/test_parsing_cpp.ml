@@ -118,14 +118,12 @@ let test_dump_cpp_view file =
   pr s
 
 
-let test_parse_cpp_fuzzy dir_or_file =
-  let fullxs = 
-    Lib_parsing_cpp.find_source_files_of_dir_or_files [dir_or_file]
+let test_parse_cpp_fuzzy xs =
+  let fullxs = Lib_parsing_cpp.find_source_files_of_dir_or_files xs
     +> Skip_code.filter_files_if_skip_list
   in
-
   fullxs +> Console.progress (fun k -> List.iter (fun file -> 
-     k ();
+    k ();
     Common.save_excursion Flag_parsing_cpp.strict_lexer true (fun () ->
       try 
         let _fuzzy = Parse_cpp.parse_fuzzy file in
@@ -141,22 +139,19 @@ let test_dump_cpp_fuzzy file =
   let s = Ocaml.string_of_v v in
   pr2 s
   
-
-(*****************************************************************************)
-(* Unit tests *)
-(*****************************************************************************)
-
 (*****************************************************************************)
 (* Main entry for Arg *)
 (*****************************************************************************)
 
 let actions () = [
+    "-tokens_cpp", "   <file>", 
+    Common.mk_action_1_arg test_tokens_cpp;
+
     "-parse_cpp", "   <file or dir>", 
     Common.mk_action_n_arg test_parse_cpp;
     "-parse_cpp_c", "   <file or dir>", 
     Common.mk_action_n_arg (test_parse_cpp ~lang:Flag.C);
-    "-tokens_cpp", "   <file>", 
-    Common.mk_action_1_arg test_tokens_cpp;
+
     "-dump_cpp", "   <file>", 
     Common.mk_action_1_arg test_dump_cpp;
     "-dump_cpp_full", "   <file>", 
@@ -164,8 +159,8 @@ let actions () = [
     "-dump_cpp_view", "   <file>", 
     Common.mk_action_1_arg test_dump_cpp_view;
 
-    "-parse_cpp_fuzzy", "   <file or dir>", 
-    Common.mk_action_1_arg test_parse_cpp_fuzzy;
+    "-parse_cpp_fuzzy", "   <files or dirs>", 
+    Common.mk_action_n_arg test_parse_cpp_fuzzy;
     "-dump_cpp_fuzzy", "   <file>", 
     Common.mk_action_1_arg test_dump_cpp_fuzzy;
 

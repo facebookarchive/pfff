@@ -44,6 +44,8 @@ type program2 = toplevel2 list
 let program_of_program2 xs = 
   xs +> List.map fst
 
+exception Parse_error of Parse_info.info
+
 (*****************************************************************************)
 (* Wrappers *)
 (*****************************************************************************)
@@ -117,11 +119,11 @@ let is_same_line_or_close line tok =
 (*****************************************************************************)
 let fix_tokens_for_language lang xs =
   xs +> List.map (fun tok ->
-    match tok, lang with
-    | x, Flag.C when TH.is_cpp_keyword x ->
-      let ii = TH.info_of_tok x in
+    if lang = Flag.C && TH.is_cpp_keyword tok
+    then 
+      let ii = TH.info_of_tok tok in
       T.TIdent (PI.str_of_info ii, ii)
-    | x, _ -> x
+    else tok
   )
 
 (*****************************************************************************)
@@ -217,23 +219,19 @@ and multi_grouped_list_comma xs =
  * to what I do for parsing hacks, but this fuzzy AST can be useful
  * on its own, e.g. for a not too bad sgrep/spatch.
  * 
- * note: this is similar to what 'cpplint' of andrei does? 
+ * note: this is similar to what cpplint/fblint of andrei does? 
  *)
 let parse_fuzzy file =
   Common.save_excursion Flag.sgrep_mode true (fun () ->
   let toks_orig = tokens file in
   let toks = 
     toks_orig +> Common.exclude (fun x ->
-      Token_helpers_cpp.is_comment x ||
-      Token_helpers_cpp.is_eof x
+      Token_helpers_cpp.is_comment x || Token_helpers_cpp.is_eof x
     )
   in
-  let extended = 
-    toks +> List.map Token_views_cpp.mk_token_extended in
+  let extended = toks +> List.map Token_views_cpp.mk_token_extended in
   Parsing_hacks_cpp.find_template_inf_sup extended;
-
   let groups = Token_views_cpp.mk_multi extended in
-
   multi_grouped_list groups, toks_orig
   )
 
@@ -253,6 +251,15 @@ let extract_macros2 file =
 let extract_macros a = 
   Common.profile_code_exclusif "Parse_cpp.extract_macros" (fun () -> 
     extract_macros2 a)
+
+(* less: pass it as a parameter to parse_program instead ? *) 
+let (_defs : (string, Pp_token.define_body) Hashtbl.t ref)  = 
+  ref (Hashtbl.create 101)
+
+let init_defs file =     
+  pr2 (spf "Using %s macro file" file);
+  _defs := Common.hash_of_list (extract_macros file)
+
 
 (*****************************************************************************)
 (* Error recovery *)
@@ -294,17 +301,6 @@ let rec lexer_function tr = fun lexbuf ->
 (*****************************************************************************)
 (* Main entry point *)
 (*****************************************************************************)
-
-(* todo?: pass it as a parameter to parse_program instead ? *) 
-let (_defs : (string, Pp_token.define_body) Hashtbl.t ref)  = 
-  ref (Hashtbl.create 101)
-
-let init_defs file =     
-  pr2 (spf "Using %s macro file" file);
-  _defs := Common.hash_of_list (extract_macros file)
-
-exception Parse_error of Parse_info.info
-
 (* 
  * note: as now we go in two passes, there is first all the error message of
  * the lexer, and then the error of the parser. It is not anymore
@@ -365,80 +361,74 @@ let parse_with_lang ?(lang=Flag_parsing_cpp.Cplusplus) file =
           (* -------------------------------------------------- *)
           Parser_cpp.celem (lexer_function tr) lexbuf_fake
         with e -> 
-
           if not !Flag.error_recovery 
           then raise (Parse_error (TH.info_of_tok tr.PI.current));
 
-          begin
-            if !Flag.show_parsing_error then
-              (match e with
-              (* Lexical is not anymore launched I think *)
-              | Lexer.Lexical s -> 
-                pr2 ("lexical error " ^s^ "\n =" ^ error_msg_tok tr.PI.current)
-              | Parsing.Parse_error -> 
-                pr2 ("parse error \n = " ^ error_msg_tok tr.PI.current)
-              | Semantic.Semantic (s, _i) -> 
-                pr2 ("semantic error " ^s^ "\n ="^ error_msg_tok tr.PI.current)
-              | e -> raise e
-              );
+          if !Flag.show_parsing_error then
+            (match e with
+            (* Lexical is not anymore launched I think *)
+            | Lexer.Lexical s -> 
+              pr2 ("lexical error " ^s^ "\n =" ^ error_msg_tok tr.PI.current)
+            | Parsing.Parse_error -> 
+              pr2 ("parse error \n = " ^ error_msg_tok tr.PI.current)
+            | Semantic.Semantic (s, _i) -> 
+              pr2 ("semantic error " ^s^ "\n ="^ error_msg_tok tr.PI.current)
+            | e -> raise e
+            );
 
-            let line_error = TH.line_of_tok tr.PI.current in
+          let line_error = TH.line_of_tok tr.PI.current in
 
-            let pbline =
-              tr.PI.passed
-              +> List.filter (is_same_line_or_close line_error)
-              +> List.filter TH.is_ident_like
-            in
-            let error_info =
-              (pbline +> List.map (fun tok -> 
-                let info = TH.info_of_tok tok in
-                PI.str_of_info info)), 
-              line_error 
-            in
-            stat.Stat.problematic_lines <-
-              error_info::stat.Stat.problematic_lines;
+          let pbline =
+            tr.PI.passed
+            +> List.filter (is_same_line_or_close line_error)
+            +> List.filter TH.is_ident_like
+          in
+          let error_info =
+            (pbline +> List.map (fun tok->PI.str_of_info (TH.info_of_tok tok))),
+            line_error 
+          in
+          stat.Stat.problematic_lines <-
+            error_info::stat.Stat.problematic_lines;
 
-            (*  error recovery, go to next synchro point *)
-            let (passed', rest') = 
-              Parsing_recovery_cpp.find_next_synchro tr.PI.rest tr.PI.passed in
-            tr.PI.rest <- rest';
-            tr.PI.passed <- passed';
+          (*  error recovery, go to next synchro point *)
+          let (passed', rest') = 
+            Parsing_recovery_cpp.find_next_synchro tr.PI.rest tr.PI.passed in
+          tr.PI.rest <- rest';
+          tr.PI.passed <- passed';
 
-            tr.PI.current <- List.hd passed';
+          tr.PI.current <- List.hd passed';
 
-            (* <> line_error *)
-            let info = TH.info_of_tok tr.PI.current in
-            let checkpoint2 = PI.line_of_info info in 
-            let checkpoint2_file = PI.file_of_info info in
+          (* <> line_error *)
+          let info = TH.info_of_tok tr.PI.current in
+          let checkpoint2 = PI.line_of_info info in 
+          let checkpoint2_file = PI.file_of_info info in
 
-            (* was a define ? *)
-            let xs = tr.PI.passed +> List.rev +> Common.exclude TH.is_comment in
-            (if List.length xs >= 2 
-            then 
+          (* was a define ? *)
+          let xs = tr.PI.passed +> List.rev +> Common.exclude TH.is_comment in
+          (if List.length xs >= 2 
+           then 
               (match Common2.head_middle_tail xs with
-              | T.TDefine _, _, T.TCommentNewline_DefineEndOfMacro _ 
-                  -> 
+              | T.TDefine _, _, T.TCommentNewline_DefineEndOfMacro _ -> 
                   was_define := true
               | _ -> ()
               )
-            else pr2 "WIERD: length list of error recovery tokens < 2 "
-            );
+           else pr2 "WIERD: length list of error recovery tokens < 2 "
+          );
             
-            (if !was_define && !Flag.filter_define_error
-            then ()
-            else 
+          (if !was_define && !Flag.filter_define_error
+           then ()
+           else 
               (* bugfix: *)
               (if (checkpoint_file = checkpoint2_file) && checkpoint_file = file
               then PI.print_bad line_error (checkpoint, checkpoint2) filelines
               else pr2 "PB: bad: but on tokens not from original file"
               )
-            );
+          );
 
-            let info_of_bads = 
-              Common2.map_eff_rev TH.info_of_tok tr.PI.passed in 
-
-            Some (Ast.NotParsedCorrectly info_of_bads)
-          end
+          let info_of_bads = 
+            Common2.map_eff_rev TH.info_of_tok tr.PI.passed in 
+          
+          Some (Ast.NotParsedCorrectly info_of_bads)
       )
     in
 
