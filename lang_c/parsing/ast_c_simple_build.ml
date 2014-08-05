@@ -217,7 +217,7 @@ and onedecl env d =
         (* it's ok to not have any var decl as long as a type
          * was defined. struct_defs_toadd should not be empty then.
          *)
-        | StructUnion _ | Enum _ -> 
+        | StructDef _ | EnumDef _ -> 
             let _ = full_type env ft in
             None
         (* forward declaration *)
@@ -551,11 +551,11 @@ and full_type env x =
 
   | FunctionType ft -> A.TFunction (function_type env ft)
   | Array (_less_e, ft) -> A.TArray (full_type env ft)
-  | TypeName (n, _) -> A.TTypeName (name env n)
+  | TypeName (n) -> A.TTypeName (name env n)
 
   | StructUnionName ((kind, _), name) ->
       A.TStructName (struct_kind env kind, name)
-  | StructUnion def ->
+  | StructDef def ->
       (match def with
       { c_kind = (kind, tok);
         c_name = name_opt;
@@ -581,7 +581,7 @@ and full_type env x =
       )
 
   | EnumName (_tok, name) -> A.TEnumName (name)
-  | Enum (tok, name_opt, xs) ->
+  | EnumDef (tok, name_opt, xs) ->
       let name =
         match name_opt with
         | None ->

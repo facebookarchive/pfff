@@ -596,7 +596,7 @@ cpp_cast_operator:
 cast_constructor_expr:
  | TIdent_TypedefConstr TOPar argument_list_opt TCPar 
      { let name = None, noQscope, IdIdent $1 in
-       let ft = nQ, (TypeName (name, Ast.noTypedefDef()), noii) in
+       let ft = nQ, (TypeName name, noii) in
        mk_e(ConstructedObject (ft, ($2, $3, $4))) noii  
      }
  | basic_type_2 TOPar argument_list_opt TCPar 
@@ -822,7 +822,7 @@ type_spec:
  | simple_type_specifier { $1 }
  | elaborated_type_specifier { $1 }
  | enum_specifier  { Right3 $1, noii }
- | class_specifier { Right3 (StructUnion $1), noii }
+ | class_specifier { Right3 (StructDef $1), noii }
 
 
 simple_type_specifier:
@@ -853,7 +853,7 @@ simple_type_specifier:
   * this was ugly too so now we use a typedef "inference" mechanism
   * in parsing_hacks_typedef.ml.
   *)*/
- | type_cplusplus_id { Right3 (TypeName ($1, noTypedefDef())), noii }
+ | type_cplusplus_id { Right3 (TypeName $1), noii }
 
 
 /*(*todo: can have a ::opt nested_name_specifier_opt before ident*)*/
@@ -1342,9 +1342,9 @@ mem_initializer_id:
 
 enum_specifier: 
  | Tenum        TOBrace enumerator_list gcc_comma_opt TCBrace
-     { Enum ($1, None, ($2, $3, $5)) (*$4*) }
+     { EnumDef ($1, None, ($2, $3, $5)) (*$4*) }
  | Tenum ident  TOBrace enumerator_list gcc_comma_opt TCBrace
-     { Enum ($1, Some $2, ($3, $4, $6)) (*$5*) }
+     { EnumDef ($1, Some $2, ($3, $4, $6)) (*$5*) }
 
 enumerator: 
  | ident                { { e_name = $1; e_val = None; } }

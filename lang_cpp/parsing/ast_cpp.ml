@@ -21,7 +21,7 @@
 (* 
  * This is a big file ... C++ is a big and complicated language ...
  * This file started with a simple AST for C, but then was extended
- * to deal with cpp idioms (see cppext: tag), gcc extensions (see gccext:),
+ * to deal with cpp idioms (see 'cppext:' tag), gcc extensions (see gccext),
  * and finally C++ constructs (see c++ext:).
  *
  * Like most other ASTs in pfff, it's actually more a Concrete Syntax Tree.
@@ -45,7 +45,7 @@
 type tok = Parse_info.info
 
 (* a shortcut to annotate some information with token/position information *)
-and 'a wrap  = 'a * tok list (* TODO CHANGE to 'a * tok *)
+and 'a wrap  = 'a * tok list (* TODO: change to 'a * tok *)
 and 'a wrap2  = 'a * tok
 
 and 'a paren   = tok * 'a * tok
@@ -142,19 +142,14 @@ and fullType = typeQualifier * typeC
   | Array           of constExpression option bracket * fullType
   | FunctionType    of functionType
 
-  | Enum of tok (*enum*) * simple_ident option * enum_elem comma_list brace  
-            (* => string * int list *)
-  (* c++ext: bigger type now *)
-  | StructUnion     of class_definition 
-
-  | EnumName        of tok * simple_ident (*enum_name*)
+  | EnumName        of tok (* 'enum' *) * simple_ident (*enum_name*)
   | StructUnionName of structUnion wrap2 * simple_ident (*ident_name*)
   (* c++ext: TypeName can now correspond also to a classname or enumname
    * and is a name so can have some IdTemplateId in it.
    *)
-  | TypeName of name(*typedef_name*) * fullType option (* semantic: *)
+  | TypeName of name(*typedef_name*)
   (* only to disambiguate I think *)
-  | TypenameKwd of tok * name(*typedef_name*)
+  | TypenameKwd of tok (* 'typename' *) * name(*typedef_name*)
 
   | TypeOfExpr of tok * expression paren
   (* gccext: TypeOfType may seems useless, why declare a __typeof__(int)
@@ -165,6 +160,12 @@ and fullType = typeQualifier * typeC
    * x), then it will generate invalid code, but with a '#define
    * macro(type, ident) __typeof(type) ident;' it will work. *)
   | TypeOfType of tok * fullType paren
+
+  (* should be really just at toplevel *)
+  | EnumDef of tok (*enum*) * simple_ident option * enum_elem comma_list brace  
+            (* => string * int list *)
+  (* c++ext: bigger type now *)
+  | StructDef of class_definition 
 
   (* forunparser: *)
   | ParenType of fullType paren
@@ -764,7 +765,6 @@ let defaultInt = (BaseType (IntType (Si (Signed, CInt))))
 let noIdInfo () = { i_scope = Scope_code.NoScope; }
 let noii = []
 let noQscope = []
-let noTypedefDef () = None
 
 let fakeInfo _pi  = { Parse_info.
     token = Parse_info.FakeTokStr ("",None); 

@@ -311,7 +311,7 @@ let visit_toplevel ~tag_hook _prefs (*db_opt *) (toplevel, toks) =
 
       | New (_colon, _tok, _placement, ft, _args) ->
           (match ft with
-          | _nq, ((TypeName (name, _opt)), _) ->
+          | _nq, ((TypeName (name)), _) ->
               Ast.ii_of_id_name name +> List.iter (fun ii -> 
                 tag ii (Class (Use2 fake_no_use2));
               )
@@ -345,7 +345,7 @@ let visit_toplevel ~tag_hook _prefs (*db_opt *) (toplevel, toks) =
     V.ktypeC = (fun (k, _) x ->
       let (typeCbis, _)  = x in
       match typeCbis with
-      | TypeName (name, _opt) ->
+      | TypeName (name) ->
           Ast.ii_of_id_name name +> List.iter (fun ii -> 
             (* new Xxx and other places have priority *)
             if not (Hashtbl.mem already_tagged ii)
@@ -364,7 +364,7 @@ let visit_toplevel ~tag_hook _prefs (*db_opt *) (toplevel, toks) =
           Ast.ii_of_id_name name +> List.iter (fun ii -> tag ii (TypeDef Use));
           k x
 
-      | Enum (_tok, _sopt, xs) ->
+      | EnumDef (_tok, _sopt, xs) ->
           xs +> unbrace +> uncomma +> List.iter (fun enum_elem ->
             let (_, ii) = enum_elem.e_name in
             tag ii (Constructor(Def2 fake_no_def2))

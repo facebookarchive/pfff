@@ -108,6 +108,9 @@ let look_like_parameter tok_before xs =
     | [] -> false
 
     | [Tok {t=TIdent (s, _)}] when s =~ ".*_t$" -> true
+    (* plan9 *)
+    | [Tok {t=TIdent (s, _)}] when s =~ "u.*$" -> true
+    | [Tok {t=TIdent (s, _)}] when s =~ "[A-Z][a-z].*$" -> true
     (* with DECLARE_BOOST_TYPE, but have some false positives
      * when people do xx* indexPtr = const_cast<>(indexPtr);
      * | [Tok {t=TIdent (s, _)}] when s =~ ".*Ptr$" -> true

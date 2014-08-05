@@ -152,18 +152,18 @@ and v_typeCbis =
       and v2 = v_fullType v2
       in ()
   | FunctionType v1 -> let v1 = v_functionType v1 in ()
-  | Enum ((v1, v2, v3)) ->
+  | EnumDef ((v1, v2, v3)) ->
       let v1 = v_tok v1
       and v2 = v_option (v_wrap2 v_string) v2
       and v3 = v_brace (v_comma_list v_enum_elem) v3
       in ()
-  | StructUnion v1 -> let v1 = v_class_definition v1 in ()
+  | StructDef v1 -> let v1 = v_class_definition v1 in ()
   | EnumName ((v1, v2)) ->
       let v1 = v_tok v1 and v2 = v_wrap2 v_string v2 in ()
   | StructUnionName ((v1, v2)) ->
       let v1 = v_wrap2 v_structUnion v1 and v2 = v_wrap2 v_string v2 in ()
-  | TypeName ((v1, v2)) ->
-      let v1 = v_name v1 and v2 = v_option v_fullType v2 in ()
+  | TypeName ((v1)) ->
+      let v1 = v_name v1 in ()
   | TypenameKwd ((v1, v2)) -> let v1 = v_tok v1 and v2 = v_name v2 in ()
   | TypeOfExpr ((v1, v2)) ->
       let v1 = v_tok v1 and v2 = v_paren v_expression v2 in ()

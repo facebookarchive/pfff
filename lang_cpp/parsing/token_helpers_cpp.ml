@@ -158,10 +158,9 @@ let is_static_cast_like = function
 let is_basic_type = function
   | Tchar _  | Tshort _ | Tint _ | Tdouble _ |  Tfloat _ | Tlong _ 
   | Tbool _ | Twchar_t _
-
   | Tunsigned _ | Tsigned _
+  | Tvoid _
         -> true
-  (*| Tvoid _  *)
   | _ -> false
 
 
