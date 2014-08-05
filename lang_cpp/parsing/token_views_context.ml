@@ -165,7 +165,7 @@ let look_like_parameter tok_before xs =
 
   xxs +> List.exists aux1 || aux xs
 
-
+(*
 let look_like_only_idents xs =
   xs +> List.for_all (function
   | Tok {t=(TComma _ | TIdent _)} -> true
@@ -173,6 +173,7 @@ let look_like_only_idents xs =
   | Parens _ -> true
   | _ -> false
   )
+*)
 
 (*****************************************************************************)
 (* Main heuristics *)
@@ -215,6 +216,24 @@ let set_context_tag_multi groups =
         tok.TV.where <- (TV.InClassStruct "__anon__")::tok.TV.where;
       );
       aux (braces::xs)
+
+  (* = { } *)
+  | Tok ({t=TEq _; _})::(Braces(_t1, _body, _t2) as braces)::xs -> 
+      [braces] +> TV.iter_token_multi (fun tok -> 
+        tok.TV.where <- InInitializer::tok.TV.where;
+      );
+      aux (braces::xs)
+
+  (* enum xxx { InEnum *)
+  | Tok{t=Tenum _}::Tok{t=TIdent(_,_)}::(Braces(_t1, _body, _t2) as braces)::xs
+  | Tok{t=Tenum _}::(Braces(_t1, _body, _t2) as braces)::xs
+    ->
+      [braces] +> TV.iter_token_multi (fun tok ->
+        tok.TV.where <- TV.InEnum::tok.TV.where;
+      );
+      aux (braces::xs)
+
+
 
 (*
   | BToken ({t=tokstruct; _})::BToken ({t= TIdent (s,_); _})
@@ -266,12 +285,6 @@ let set_context_tag_multi groups =
       aux after
 
 
-  (* = { } *)
-  | Tok ({t=TEq _; _})::(Braces(_t1, _body, _t2) as braces)::xs -> 
-      [braces] +> TV.iter_token_multi (fun tok -> 
-        tok.TV.where <- InInitializer::tok.TV.where;
-      );
-      aux (braces::xs)
 
 (* todo: this lead to some regressions :(
   (* = ... ;  *)
@@ -294,15 +307,6 @@ let set_context_tag_multi groups =
       aux [ptvirg];
       aux after
 *)
-
-  (* enum xxx { InEnum *)
-  | Tok{t=Tenum _}::Tok{t=TIdent(_,_)}::(Braces(_t1, _body, _t2) as braces)::xs
-  | Tok{t=Tenum _}::(Braces(_t1, _body, _t2) as braces)::xs
-    ->
-      [braces] +> TV.iter_token_multi (fun tok ->
-        tok.TV.where <- TV.InEnum::tok.TV.where;
-      );
-      aux (braces::xs)
 
   (* TODO xx(...) {  InFunction (can have some try or const or throw after 
    * the paren *)
@@ -343,8 +347,13 @@ let set_context_tag_multi groups =
 
 
   (* TODO <...> InTemplateParam *)
-
   *)
+
+
+
+
+
+
   (* need to look what was before to help the look_like_xxx heuristics 
    *
    * The order of the 3 rules below is important. We must first try
@@ -390,6 +399,7 @@ let set_context_tag_multi groups =
    * identifiers, it's probably a constructed object!
    * But FP on C code, so should guard that with Flag_parsing_cpp.lang = C++
    *)
+(*
   | Tok{t=TIdent _; where = ctx}::(Parens(_t1, body, _t2) as parens)::xs 
     when List.length body > 0 && look_like_only_idents body ->
       [parens] +> TV.iter_token_multi (fun tok ->
@@ -411,6 +421,7 @@ let set_context_tag_multi groups =
        *)
       aux [x];
       aux (parens::xs)
+*)
 
 
   | x::xs ->
