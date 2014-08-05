@@ -223,7 +223,7 @@ type entity = {
    (* todo: git info, e.g. Age, Authors, Age_profile (range) *)
   and privacy = Public | Protected | Private
 
-  and class_kind = Struct | Class_ | Interface | Trait
+  and class_kind = Struct | Class_ | Interface | Trait | Enum
 
 
 (* Note that because we now use indexed entities, you can not

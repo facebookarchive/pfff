@@ -842,6 +842,25 @@ and map_lexical_var =
   function
   | LexicalVar ((v1, v2)) ->
       let v1 = map_is_ref v1 and v2 = map_dname v2 in LexicalVar ((v1, v2))
+
+and map_constraint (v1, v2) =
+  let v1 = map_tok v1 in
+  let v2 = map_hint_type v2 in
+  (v1, v2)
+and map_enum_type {
+                    e_tok = v_e_tok;
+                    e_base = v_e_base;
+                    e_constraint = v_e_constraint;
+                   } =
+  let v_e_tok = map_tok v_e_tok in
+  let v_e_base = map_hint_type v_e_base in
+  let v_e_constraint = map_option map_constraint v_e_constraint in
+  {
+    e_tok = v_e_tok;
+    e_base = v_e_base;
+    e_constraint = v_e_constraint;
+  }
+
 and
   map_class_def x =
   let k {
@@ -852,6 +871,7 @@ and
                   c_implements = v_c_implements;
                   c_body = v_c_body;
                   c_attrs = v_c_attrs;
+                  c_enum_type = v_c_enum_type;
                 } =
   let v_c_body = map_brace (map_of_list map_class_stmt) v_c_body in
   let v_c_implements = map_of_option map_interface v_c_implements in
@@ -860,6 +880,7 @@ and
   let v_c_attrs = map_of_option map_attributes v_c_attrs in
   let v_c_name = map_ident v_c_name in
   let v_c_type = map_class_type v_c_type in
+  let v_c_enum_type = map_of_option map_enum_type v_c_enum_type in
   {
     c_type = v_c_type;
     c_name = v_c_name;
@@ -868,6 +889,7 @@ and
     c_implements = v_c_implements;
     c_body = v_c_body;
     c_attrs = v_c_attrs;
+    c_enum_type = v_c_enum_type;
   }
  in
   vin.kclass_def (k, all_functions) x
@@ -882,6 +904,7 @@ and map_class_type =
       let v1 = map_tok v1 and v2 = map_tok v2 in ClassAbstract ((v1, v2))
   | Interface v1 -> let v1 = map_tok v1 in Interface ((v1))
   | Trait v1 -> let v1 = map_tok v1 in Trait ((v1))
+  | Enum v1 -> let v1 = map_tok v1 in Enum ((v1))
 and map_extend (v1, v2) =
   let v1 = map_tok v1 and v2 = map_fully_qualified_class_name v2 in (v1, v2)
 and map_interface (v1, v2) =
@@ -1138,11 +1161,7 @@ and
   let v_t_sc = map_tok v_t_sc in
   let v_t_kind = map_type_def_kind v_t_kind in
   let v_t_tokeq = map_tok v_t_tokeq in
-  let v_t_tconstraint =
-    map_of_option
-      (fun (v1, v2) ->
-         let v1 = map_tok v1 and v2 = map_hint_type v2 in (v1, v2))
-      v_t_tconstraint in
+  let v_t_tconstraint = map_of_option map_constraint v_t_tconstraint in
   let v_t_tparams = map_of_option map_type_params v_t_tparams in
   let v_t_name = map_ident v_t_name in
   let v_t_tok = map_tok v_t_tok in 

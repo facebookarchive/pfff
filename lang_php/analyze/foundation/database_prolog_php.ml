@@ -185,6 +185,7 @@ let visit ~add readable ast =
         | ClassAbstract _ -> add (P.Misc (spf "abstract(%s)" !current))
         | ClassFinal _ -> add (P.Misc (spf "final(%s)" !current))
         | ClassRegular _ -> ()
+        | Enum _ -> ()
         (* the kind/2 will cover those different cases *)
         | Interface _
         | Trait _ -> ()

@@ -159,11 +159,13 @@ let class_kind_of_ctype ctype =
   | ClassRegular _ | ClassFinal _ | ClassAbstract _ -> E.Class_
   | Interface _ -> E.Interface
   | Trait _ -> E.Trait
+  | Enum _ -> E.Enum
 
 let string_of_class_type = function
   | ClassRegular _ | ClassFinal _ | ClassAbstract _ -> "class"
   | Interface _ -> "interface"
   | Trait _ -> "trait"
+  | Enum _ -> "enum"
 
 let interfaces c =
   match c.c_implements with

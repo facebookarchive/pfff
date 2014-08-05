@@ -711,7 +711,7 @@ let visit_program ~tag _prefs  hentities (ast, toks) =
     | T.T_OBJECT_OPERATOR ii -> tag ii Punctuation
     | T.T_DOUBLE_ARROW ii -> tag ii Punctuation
 
-    | T.T_CLASS ii | T.T_TRAIT ii -> tag ii KeywordObject
+    | T.T_CLASS ii | T.T_TRAIT ii | T.T_ENUM ii -> tag ii KeywordObject
 
     | T.T_IMPLEMENTS ii | T.T_EXTENDS ii | T.T_INTERFACE ii -> 
       tag ii KeywordObject
@@ -782,7 +782,7 @@ let visit_program ~tag _prefs  hentities (ast, toks) =
     | T.T_DNUMBER _ii | T.T_LNUMBER _ii -> ()
 
     | T.T_XHP_PCDATA ii | T.T_XHP_ANY ii
-    | T.T_XHP_REQUIRED ii | T.T_XHP_ENUM ii
+    | T.T_XHP_REQUIRED ii
     | T.T_XHP_CATEGORY ii | T.T_XHP_CHILDREN ii
     | T.T_XHP_ATTRIBUTE ii
       -> tag ii KeywordObject

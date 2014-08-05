@@ -208,8 +208,8 @@ let keyword_table = Common.hash_of_list [
   "children",  (fun ii -> xhp_or_t_ident ii (fun x -> T_XHP_CHILDREN x));
   "category",  (fun ii -> xhp_or_t_ident ii (fun x -> T_XHP_CATEGORY x));
 
-  (* for attribute declarations *)
-  "enum", (fun ii -> xhp_or_t_ident ii (fun x -> T_XHP_ENUM x));
+  (* for attribute declarations and Hack first class enums *)
+  "enum", (fun ii -> xhp_or_t_ident ii (fun x -> T_ENUM x));
 
   (* for children declarations *)
   "any", (fun ii -> xhp_or_t_ident ii (fun x -> T_XHP_ANY x));
@@ -1418,4 +1418,3 @@ and st_one_line_comment = parse
         error ("unrecognised symbol, in st_one_line_comment rule:"^tok lexbuf);
         tok lexbuf
       }
-

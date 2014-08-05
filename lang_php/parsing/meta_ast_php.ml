@@ -874,6 +874,26 @@ and vof_lambda_def (v1, v2) =
   let v1 = Ocaml.vof_option vof_lexical_vars v1
   and v2 = vof_func_def v2
   in Ocaml.VTuple [ v1; v2 ]
+and vof_constraint (v1, v2) =
+  let v1 = vof_tok v1 in
+  let v2 = vof_hint_type v2 in
+  Ocaml.VTuple [ v1; v2 ]
+and vof_enum_type {
+                    e_tok = v_e_tok;
+                    e_base = v_e_base;
+                    e_constraint = v_e_constraint;
+                  } =
+  let bnds = [] in
+  let arg = vof_option vof_constraint v_e_constraint in
+  let bnd = ("e_constraint", arg) in
+  let bnds = bnd :: bnds in
+  let arg = vof_hint_type v_e_base in
+  let bnd = ("e_base", arg) in
+  let bnds = bnd :: bnds in
+  let arg = vof_tok v_e_tok in
+  let bnd = ("e_tok", arg) in
+  let bnds = bnd :: bnds in
+  Ocaml.VDict bnds
 
 and
   vof_class_def {
@@ -884,8 +904,12 @@ and
                   c_implements = v_c_implements;
                   c_body = v_c_body;
                   c_attrs = v_c_attrs;
+                  c_enum_type = v_c_enum_type;
                 } =
   let bnds = [] in
+  let arg = vof_option vof_enum_type v_c_enum_type in
+  let bnd = ("c_enum_type", arg) in
+  let bnds = bnd :: bnds in
   let arg = vof_brace (vof_list vof_class_stmt) v_c_body in
   let bnd = ("c_body", arg) in
   let bnds = bnd :: bnds in
@@ -922,6 +946,8 @@ and vof_class_type =
       let v1 = vof_tok v1 in Ocaml.VSum (("Interface", [ v1 ]))
   | Trait v1 ->
       let v1 = vof_tok v1 in Ocaml.VSum (("Trait", [ v1 ]))
+  | Enum v1 ->
+      let v1 = vof_tok v1 in Ocaml.VSum (("Enum", [ v1 ]))
 
 and vof_extend (v1, v2) =
   let v1 = vof_tok v1
@@ -1208,13 +1234,7 @@ and
   let arg = vof_tok v_t_tokeq in
   let bnd = ("t_tokeq", arg) in
   let bnds = bnd :: bnds in
-  let arg =
-    Ocaml.vof_option
-      (fun (v1, v2) ->
-         let v1 = vof_tok v1
-         and v2 = vof_hint_type v2
-         in Ocaml.VTuple [ v1; v2 ])
-      v_t_tconstraint in
+  let arg = Ocaml.vof_option vof_constraint v_t_tconstraint in
   let bnd = ("t_tconstraint", arg) in
   let bnds = bnd :: bnds in
   let arg = Ocaml.vof_option vof_type_params v_t_tparams in

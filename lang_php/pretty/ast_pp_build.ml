@@ -651,6 +651,8 @@ and class_type _env = function
   | ClassAbstract _ -> A.ClassAbstract
   | Interface _ -> A.Interface
   | Trait _ -> A.Trait
+  | Enum _ ->
+    failwith "enum not supported"
 
 and interfaces env (_, intfs) =
   let intfs = comma_list intfs in
@@ -918,4 +920,3 @@ let class_stmts tokens xs =
   let acc = List.fold_right (class_body env) xs acc in
   let acc = add_ce_comments env acc 0 in
   acc
-
