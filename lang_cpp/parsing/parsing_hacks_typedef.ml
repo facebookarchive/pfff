@@ -1,7 +1,7 @@
 (* Yoann Padioleau
  *
+ * Copyright (C) 2011,2014 Facebook
  * Copyright (C) 2002-2008 Yoann Padioleau
- * Copyright (C) 2011, 2014 Facebook
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License (GPL)
@@ -27,7 +27,7 @@ open Parsing_hacks_lib
 (*****************************************************************************)
 (* 
  * This file gathers parsing heuristics related to the typedefs.
- * C is not context-free sensitive; it requires to know when
+ * C is not a context-free grammar; it requires to know when
  * an ident corresponds to a typedef or an ident. This normally means that
  * we must call cpp on the file and have the lexer and parser cooperate
  * to remember what is what. In lang_cpp/ we want to parse as-is,
@@ -69,6 +69,7 @@ let look_like_declaration_context tok =
  (* no!! | TCBrace _ *)
   | TPtVirg _
       -> true
+  | priv when TH.is_privacy_keyword priv -> true
   | _ -> false
 
 (*****************************************************************************)
@@ -87,9 +88,9 @@ let  filter_for_typedef multi_groups =
   let _template_args = ref [] in
 
   (* remove template and other things
-   * TODO: right now this is less useful because we actually
-   *  comment template args in a previous pass, but at some point this
-   *  will be useful.
+   * less: right now this is less useful because we actually
+   * comment template args in a previous pass, but at some point this
+   * will be useful.
    *)
   let rec aux xs =
     xs +> Common.map_filter (function
@@ -156,7 +157,6 @@ let  filter_for_typedef multi_groups =
  *  - template stuff and qualifiers (but not TIdent_ClassnameAsQualifier)
  *  - const/volatile/restrict
  *  - & => *
- *  - etc, see Prelude
  * 
  * With such a view we can write less patterns.
  * 
@@ -183,21 +183,14 @@ let find_typedefs xxs =
       change_tok tok1 (TIdent_Typedef (s, i1));
       aux xs
 
-  (* xx * yy  with a token before like return (probably a mulitplication) *)
+  (* return xx * yy *)
   | {t=tok_before}::{t=TIdent (_s,_)}::{t=TMul _}::{t=TIdent _}::xs
     when look_like_multiplication_context tok_before ->
       aux xs
 
-  (* { xx * yy,  (probably declaration) *)
+  (* { xx * yy *)
   | {t=tok_before}::({t=TIdent (s,i1)} as tok1)::{t=TMul _}::{t=TIdent _}::xs
     when look_like_declaration_context tok_before ->
-      change_tok tok1 (TIdent_Typedef (s, i1));
-      aux xs
-
-  (* public: x * y *)
-  | {t=privacy}::{t=TCol _}::
-      ({t=TIdent (s,i1)} as tok1)::{t=TMul _}::{t=TIdent _}::xs 
-    when TH.is_privacy_keyword privacy ->
       change_tok tok1 (TIdent_Typedef (s, i1));
       aux xs
 
@@ -211,7 +204,7 @@ let find_typedefs xxs =
       aux xs
 
   (* xx ** yy
-   * TODO? could be a multiplication too, but with less probability
+   * less could be a multiplication too, but with less probability
   *)
   | ({t=TIdent (s,i1)} as tok1)::{t=TMul _}::{t=TMul _}::{t=TIdent _}::xs ->
       change_tok tok1 (TIdent_Typedef (s, i1));
@@ -255,13 +248,12 @@ let find_typedefs xxs =
       aux (x::xs)
 
 
-(* hmmm: todo: some false positives on InParameter, see mini/constants.c
+(* hmmm: todo: some false positives on InParameter, see mini/constants.c *)
   (* [(,] xx [),] where InParameter *)
   | {t=(TOPar _ | TComma _)}::({t=TIdent (s, i1); where=InParameter::_} as tok1)
     ::({t=(TCPar _ | TComma _)} as tok2)::xs ->
       change_tok tok1 (TIdent_Typedef (s, i1));
       aux (tok2::xs)
-*)
 
   (* kencc-ext: [;{] xx ;  where InStruct *)
   | {t=tok_before}::({t=TIdent (s, i1)} as tok1)::({t=TPtVirg _} as tok2)::xs 

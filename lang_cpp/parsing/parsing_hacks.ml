@@ -137,8 +137,7 @@ let fix_tokens_c ~macro_defs tokens =
   (* because the before field is used by apply_macro_defs *)
   tokens2 := TV.rebuild_tokens_extented !tokens2; 
 
-  (* could filter also #define/#include *)
-  let cleaner = !tokens2 +> filter_comment_stuff in
+  let cleaner = !tokens2 +> Parsing_hacks_pp.filter_pp_or_comment_stuff in
 
   (* tagging contextual info (InFunc, InStruct, etc) *)
   let multi_grouped = TV.mk_multi cleaner in
