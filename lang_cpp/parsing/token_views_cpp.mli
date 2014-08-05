@@ -15,7 +15,9 @@ type token_extended = {
     | InParameter
     | InArgument
     | InFunction
+(*
     | InTemplateParam
+*)
 
 val mk_token_extended : Parser_cpp.token -> token_extended
 val mk_token_fake : Parser_cpp.token -> token_extended

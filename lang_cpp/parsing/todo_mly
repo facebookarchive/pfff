@@ -41,7 +41,7 @@ action_higherordermacro:
 */
 
 
-/* toreput
+/* toreput, was especially used for the Linux kernel
 taction_list: 
    (* c++ext: to remove some conflicts (from 13 to 4)
    * | (* empty *) { [] } 

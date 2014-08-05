@@ -1,20 +1,9 @@
 
-
-
 let noInstr = (ExprStatement (None), [])
-
-
-
-
-
-
-
-
 
 (*****************************************************************************)
 (* Wrappers *)
 (*****************************************************************************)
-
 
 let unwrap_expr ((unwrap_e, typ), iie) = unwrap_e
 let rewrap_expr ((_old_unwrap_e, typ), iie)  newe = ((newe, typ), iie)
@@ -24,18 +13,14 @@ let set_type_expr ((unwrap_e, oldtyp), iie) newtyp =
   oldtyp := newtyp
   (* old: (unwrap_e, newtyp), iie *)
 
-
 let unwrap_typeC (qu, (typeC, ii)) = typeC
 let rewrap_typeC (qu, (typeC, ii)) newtypeC  = (qu, (newtypeC, ii))
-
-
 
 
 let is_fake ii =
   match ii.pinfo with
     FakeTok (_,_) -> true
   | _ -> false
-
 
 
 
@@ -168,8 +153,6 @@ let rec (unsplit_comma: ('a, il) either list -> 'a wrap2 list) =
       (e, empty_ii)::unsplit_comma xs
   | Right ii::_ -> 
       raise Impossible
-
-
 
 
 let split_register_param = fun (hasreg, idb, ii_b_s) -> 

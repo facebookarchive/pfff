@@ -1,7 +1,7 @@
 (* Yoann Padioleau
  * 
- * Copyright (C) 2007, 2008 Ecole des Mines de Nantes
  * Copyright (C) 2011, 2014 Facebook
+ * Copyright (C) 2007, 2008 Ecole des Mines de Nantes
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License (GPL)
@@ -73,15 +73,15 @@ type token_extended = {
  (* The strategy to tag is mostly to look at the token(s) before the '{' *)
   and context = 
     | InTopLevel
-    | InClassStruct of string (* can be __anon__ *)
-    | InEnum
+    | InClassStruct of string (* can be __anon__ *) | InEnum
     | InInitializer
     | InAssign
-    | InParameter
-    | InArgument
-
-    | InFunction (* TODO *)
+    | InParameter | InArgument
+   (* TODO actually commented in token_view_context because of c++ *)
+    | InFunction 
+(*
     | InTemplateParam (* TODO *)
+*)
 
 (* InCondition ? InParenExpr ? *)
 
@@ -433,11 +433,13 @@ let rec mk_body_function_grouped xs =
 (* Multi ('{', '(', '<')  (could also do '[' ?) *)
 (* ------------------------------------------------------------------------- *)
 
-(* todo: check that it's consistent with the indentation? 
+(* Assumes work on a list of tokens without comments, without ifdefs
+ * (todo? and without #define?).
+ * Used for typedef inference. Now also used for fuzzy parsing!
+ *
  * todo? more fault tolerance, if col == 0 and { the reset!
+ * less: could check that it's consistent with the indentation
  * 
- * Assumes work on a list of tokens without comments, without ifdefs
- * (todo? and without #define?)
  *)
 let mk_multi xs =
 
@@ -621,15 +623,16 @@ let tokens_of_multi_grouped xs =
 
 let vof_context = function
   | InTopLevel -> Ocaml.VSum ("T", [])
-  | InFunction -> Ocaml.VSum ("F", [])
   | InClassStruct _s -> Ocaml.VSum ("C", [])
   | InEnum  -> Ocaml.VSum ("E", [])
   | InInitializer -> Ocaml.VSum ("I", [])
   | InAssign -> Ocaml.VSum ("=", [])
   | InParameter -> Ocaml.VSum ("P", [])
   | InArgument -> Ocaml.VSum ("A", [])
+  | InFunction -> Ocaml.VSum ("F", [])
+(*
   | InTemplateParam -> Ocaml.VSum ("<>", [])
-
+*)
 
 let vof_token_extended t =
   let info = TH.info_of_tok t.t in

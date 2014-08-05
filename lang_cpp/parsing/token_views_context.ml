@@ -18,7 +18,6 @@ open Parser_cpp
 open Token_views_cpp
 
 module TH = Token_helpers_cpp
-module PI = Parse_info
 module TV = Token_views_cpp
 
 (*****************************************************************************)
@@ -60,14 +59,12 @@ let look_like_argument _tok_before xs =
     | Tok{t=TIdent _}::Parens _::_xs -> 
         (* todo? look_like_argument recursively in Parens || aux xs ? *)
         true
-    (* if have = ... then must stop, could be default parameter
-     * of a method
-     *)
-    | Tok{t=TEq _}::_xs ->
-        false
+    (* if have = ... then must stop, could be default parameter of a method *)
+    | Tok{t=TEq _}::_xs ->   false
 
     (* could be part of a type declaration *)
-    | Tok {t=TOCro _}::Tok {t=TCCro _}::_xs -> false
+    | Tok {t=TOCro _}::Tok {t=TCCro _}::_xs ->   false
+    | Tok {t=TOCro _}::Tok {t=(TInt _)}::Tok {t=TCCro _}::_xs -> false
 
     | x::xs ->
         (match x with
@@ -88,6 +85,16 @@ let look_like_argument _tok_before xs =
    *)
   xxs +> List.exists aux1 || aux xs
 
+let look_like_typedef s =
+  s =~ ".*_t$"
+  (* plan9, but actually some fp such as Paddr which is actually a macro *)
+  (* s =~ "u.*$"  || s =~ "[A-Z][a-z].*$" *)
+  (* with DECLARE_BOOST_TYPE, but have some false positives
+   * when people do xx* indexPtr = const_cast<>(indexPtr);
+   *)
+   (* s =~ ".*Ptr$" *)
+  (* || s = "StringPiece" *)
+
 (* todo: pass1, look for const, etc
  * todo: pass2, look xx_t, xx&, xx*, xx**, see heuristics in typedef
  * 
@@ -106,30 +113,17 @@ let look_like_parameter tok_before xs =
   let aux1 xs =
     match xs with
     | [] -> false
-
-    | [Tok {t=TIdent (s, _)}] when s =~ ".*_t$" -> true
-    (* plan9 *)
-    | [Tok {t=TIdent (s, _)}] when s =~ "u.*$" -> true
-    | [Tok {t=TIdent (s, _)}] when s =~ "[A-Z][a-z].*$" -> true
-    (* with DECLARE_BOOST_TYPE, but have some false positives
-     * when people do xx* indexPtr = const_cast<>(indexPtr);
-     * | [Tok {t=TIdent (s, _)}] when s =~ ".*Ptr$" -> true
-     *)
-    (* ugly!! *)
-    | [Tok {t=TIdent (s, _)}] when s = "StringPiece" -> true
-
+    (* xx_t *)
+    | [Tok {t=TIdent (s, _)}] when look_like_typedef s -> true
     (* xx* *)
     | [Tok {t=TIdent _}; Tok {t=TMul _}] -> true
-
     (* xx** *)
     | [Tok {t=TIdent _}; Tok {t=TMul _}; Tok {t=TMul _}] -> true
-
-    (* xx * y   
-     * TODO could be multiplication (or xx & yy)
-     * TODO? could look if space around :) but because of the
+    (* xx * y      could be multiplication (or xx & yy) ..
+     * todo: could look if space around :) but because of the
      *  filtering of template and qualifier the no_space_between
-     *  may not work here. May need lower level access to the list
-     *  of TCommentSpace and their position.
+     *  may not be completely accurate here. May need lower level access
+     *  to the list of TCommentSpace and their position.
      * 
      * C-s for parameter_decl in grammar to see that catch() is
      * a InParameter.
@@ -152,31 +146,18 @@ let look_like_parameter tok_before xs =
   let rec aux xs =
     match xs with
     | [] -> false
-
     (* xx yy *)
     | Tok {t=TIdent _}::Tok{t=TIdent _}::_xs -> true
-
     | x::xs ->
         (match x with
         | Tok {t= tok} when TH.is_basic_type tok -> true
         | Tok {t = (Tconst _ | Tvolatile _)} -> true
         | Tok {t = (Tstruct _ | Tunion _ | Tenum _ | Tclass _)} -> true
-        | _ -> 
-            aux xs
+        | _ -> aux xs
         )
   in
-
   xxs +> List.exists aux1 || aux xs
 
-(*
-let look_like_only_idents xs =
-  xs +> List.for_all (function
-  | Tok {t=(TComma _ | TIdent _)} -> true
-  (* when have cast *)
-  | Parens _ -> true
-  | _ -> false
-  )
-*)
 
 (*****************************************************************************)
 (* Main heuristics *)
@@ -237,35 +218,6 @@ let set_context_tag_multi groups =
       aux (braces::xs)
 
 
-
-(*
-  | BToken ({t=tokstruct; _})::BToken ({t= TIdent (s,_); _})
-    ::Braceised(body, tok1, tok2)::xs when TH.is_classkey_keyword tokstruct -> 
-      body +> List.iter (iter_token_brace (fun tok -> 
-        tok.where <- (InClassStruct s)::tok.where;
-      ));
-      set_in_other xs
-
-  (* struct/union/class x : ... { } *)
-  | BToken ({t= tokstruct; _})::BToken ({t=TIdent _; _})
-    ::BToken ({t=TCol _})::xs when TH.is_classkey_keyword tokstruct -> 
-
-      (try 
-        let (before, elem, after) = Common2.split_when is_braceised xs in
-        (match elem with 
-        | Braceised(body, tok1, tok2) -> 
-            body +> List.iter (iter_token_brace (fun tok -> 
-              tok.where <- InInitializer::tok.where;
-            ));
-            set_in_other after
-        | _ -> raise Impossible
-        )
-      with Not_found ->
-        pr2 ("PB: could not find braces after struct/union/class x : ...");
-      )
-
-    *)
-
   (* C++: class Foo : ... { *)
   | Tok{t=Tclass _ | Tstruct _}::Tok{t=TIdent(s,_)}
     ::Tok{t= TCol ii}::xs
@@ -286,74 +238,6 @@ let set_context_tag_multi groups =
       );
       aux [braces];
       aux after
-
-
-
-(* todo: this lead to some regressions :(
-  (* = ... ;  *)
-  | Tok ({t=TEq ii;where = [InTopLevel]})::xs -> 
-
-      let (before, ptvirg, after) =
-        try 
-          xs +> Common2.split_when (function
-          | Tok ({t=TPtVirg _;}) -> true
-          | _ -> false
-          )
-        with Not_found ->
-          raise (UnclosedSymbol (spf "PB with split_when at %s"
-                                    (Parse_info.string_of_info ii)))
-      in
-      before +> TV.iter_token_multi (fun tok ->
-        tok.TV.where <- TV.InAssign::tok.TV.where;
-      );
-      aux before;
-      aux [ptvirg];
-      aux after
-*)
-
-  (* TODO xx(...) {  InFunction (can have some try or const or throw after 
-   * the paren *)
-
- (* could try: ) { } but it can be the ) of a if or while, so 
-  * better to base the heuristic on the position in column zero.
-  * Note that some struct or enum or init put also their { in first column
-  * but set_in_other will overwrite the previous InFunction tag.
-  *)
-
-(*TODOC++ext: now can have some const or throw between 
-  => do a view that filter them first ?
-*)
-
-(*
-
-  (* ) { and the closing } is in column zero, then certainly a function *)
-(*TODO1 col 0 not valid anymore with c++ nestedness of method *)
-  | BToken ({t=TCPar _})::(Braceised (body, tok1, Some tok2))::xs 
-      when tok1.col <> 0 && tok2.col = 0 -> 
-      body +> List.iter (iter_token_brace (fun tok -> 
-        tok.where <- InFunction::tok.where;
-      ));
-      aux xs
-
-  | (BToken x)::xs -> aux xs
-
-(*TODO1 not valid anymore with c++ nestedness of method *)
-  | (Braceised (body, tok1, Some tok2))::xs 
-      when tok1.col = 0 && tok2.col = 0 -> 
-      body +> List.iter (iter_token_brace (fun tok -> 
-        tok.where <- InFunction::tok.where;
-      ));
-      aux xs
-  | Braceised (body, tok1, tok2)::xs -> 
-      aux xs
- in
-
-
-  (* TODO <...> InTemplateParam *)
-  *)
-
-
-
 
 
 
@@ -397,34 +281,6 @@ let set_context_tag_multi groups =
        *)
       aux [x];
       aux (parens::xs)
-
-  (* C++: second tentative on InArgument, if xx(xx, yy, ww) where have only
-   * identifiers, it's probably a constructed object!
-   * But FP on C code, so should guard that with Flag_parsing_cpp.lang = C++
-   *)
-(*
-  | Tok{t=TIdent _; where = ctx}::(Parens(_t1, body, _t2) as parens)::xs 
-    when List.length body > 0 && look_like_only_idents body ->
-      [parens] +> TV.iter_token_multi (fun tok ->
-        let where =
-          match ctx with
-          | TV.InTopLevel::_ -> TV.InParameter
-          | TV.InAssign::_ -> TV.InArgument
-          | _ -> TV.InArgument
-        in
-        tok.TV.where <- where::tok.TV.where;
-      );
-      (* todo? recurse on body? *)
-      aux (parens::xs)
-
-  (* could be a cast too ... or what else? *)
-  | x::(Parens(_t1, _body, _t2) as parens)::xs ->
-      (* let's default to something? hmm, no, got lots of regressions then 
-       *  old: msg_context t1.t (TV.InArgument); ...
-       *)
-      aux [x];
-      aux (parens::xs)
-*)
 
 
   | x::xs ->
