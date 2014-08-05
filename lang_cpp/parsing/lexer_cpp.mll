@@ -249,7 +249,7 @@ rule token = parse
      '<' [^ '>']+ '>' | 
       ['A'-'Z''_']+ 
     ) as filename)
-      { (* todo? generate 2 info so highlight_cpp.ml can colorize the
+      { (* less: generate 2 info so highlight_cpp.ml can colorize the
          * directive and the filename differently
          *)
         TInclude (includes, filename, tokinfo lexbuf)
@@ -327,7 +327,7 @@ rule token = parse
    * ast_cpp.ml. So it's better to generate just one token, just one info,
    * even if have later to reanalyse those tokens and unsplit.
    * 
-   * TODO: do as in yacfe, generate multiple tokens for those constructs?
+   * less: do as in yacfe, generate multiple tokens for those constructs?
    *)
 
   | ((id as s)  "...")
@@ -462,7 +462,7 @@ rule token = parse
           | Some f -> f info
 
            (* typedef_hack. note: now this is no more useful, cos
-            * as we use tokens_all, we first parse all as an ident and
+            * as we use tokens_all, we first parse then all as idents and
             * later transform some idents into typedefs. So this job is
             * now done in parse_cpp.ml.
             * 
@@ -618,7 +618,7 @@ and char = parse
 (*****************************************************************************)
 (* Rule string *)
 (*****************************************************************************)
-(* todo? factorise code with char ? but not same ending token so hard. *)
+(* less? factorise code with char ? but not same ending token so hard. *)
 and string  = parse
   | '"'                                       { "" }
   | (_ as x)                                  

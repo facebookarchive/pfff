@@ -480,7 +480,7 @@ and block_declaration =
    (*c++ext: TODO *)
    (* I am not sure what it means to declare a prototype inline, but gcc
     * accepts it. *)
-   and func_specifier = Inline | Virtual
+   and _func_specifier = Inline | Virtual
 
    and init = 
      | EqInit of tok (*=*) * initialiser
@@ -798,20 +798,18 @@ let rewrap_pinfo pi ii =
   {ii with Parse_info.token = pi}
 
 
-(* used while migrating the use of 'string' to 'name' *)
+(* used while migrating the use of 'string' to 'name' in check_variables *)
 let (string_of_name_tmp: name -> string) = fun name ->
   let (_opt, _qu, id) = name in
   match id with
   | IdIdent (s,_) -> s
-  | _ ->
-      "TODO_string_of_name_tmp"
-      (* raise Todo *)
+  | _ -> failwith "TODO:string_of_name_tmp"
 
 let (ii_of_id_name: name -> tok list) = fun name ->
   let (_opt, _qu, id) = name in
   match id with
   | IdIdent (_s,ii) -> [ii]
   | IdOperator (_, (_op, ii)) -> ii
-  | IdConverter (_tok, _ft) -> [] (* TODO *)
+  | IdConverter (_tok, _ft) -> failwith "ii_of_id_name: IdConverter"
   | IdDestructor (tok, (_s, ii)) -> [tok;ii]
   | IdTemplateId ((_s, ii), _args) -> [ii]
