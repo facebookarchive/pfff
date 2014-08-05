@@ -6,17 +6,29 @@ http://eli.thegreenplace.net/2007/11/24/the-context-sensitivity-of-cs-grammar/
 
 from "yacc is dead" on ltu at http://lambda-the-ultimate.org/node/4148#comment
 
-"
-x*y;
-
-In C++ this could be a multiplication, pointer declaration, or
+" 'x*y;' in C++ this could be a multiplication, pointer declaration, or
 arbitrary overloaded meaning of "*". You have to hit name and type
-resolution before you can distinguish them.
-"
+resolution before you can distinguish them."
+
+
+simple_type_specifier:
+ ...
+ | type_cplusplus_id { Right3 (TypeName $1), noii }
+
+ (* history: cant put TIdent {} cos it makes the grammar ambiguous and 
+  * generates lots of conflicts => we must use some tricks. 
+  * We used make the lexer and parser cooperate (in a lexerParser.ml file).
+  * But this was not enough because of declarations such as 'acpi acpi;'
+  * and so we had to enable/disable the ident->typedef mechanism 
+  * (which requires even more lexer/parser cooperation). But
+  * this was ugly too so now we use a typedef "inference" mechanism.
+
 
 * If then else
 
 see dangling-else section in lang_php/parsing/conflicts.txt
+
+* Template < >
 
 * Old notes
 

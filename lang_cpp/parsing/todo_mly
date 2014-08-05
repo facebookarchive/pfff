@@ -1,0 +1,51 @@
+
+%token
+/*(* TTilde2? *)*/
+/*(*  Tunsigned Tsigned Tvoid *)*/
+
+
+
+
+statement:
+
+ /*(* c++ext: TODO put at good place later *)*/
+ | Tswitch TOPar decl_spec init_declarator_list TCPar statement
+     { StmtTodo, noii }
+
+ | Tif TOPar decl_spec init_declarator_list TCPar statement   %prec LOW_PRIORITY_RULE
+     { StmtTodo, noii }
+ | Tif TOPar decl_spec init_declarator_list TCPar statement Telse statement 
+     { StmtTodo, noii }
+
+ /*(* c++ext: for(int i = 0; i < n; i++)*)*/
+ | Tfor TOPar simple_declaration expr_statement expr_opt TCPar statement
+     { StmtTodo, noii }
+
+
+
+
+argument:
+
+/*(* cppext: *)*/
+/* TODO: reenable, put in comment while trying to parse plan9
+(* actually this can happen also when have a wrong typedef inference ...*)
+ | parameter_decl { Right (ArgType $1)  }
+ | action_higherordermacro { Right (ArgAction $1) }
+
+action_higherordermacro: 
+ | taction_list 
+    { if null $1
+      then ActMisc [Ast_cpp.fakeInfo()]
+      else ActMisc $1
+    }
+*/
+
+
+/* toreput
+taction_list: 
+   (* c++ext: to remove some conflicts (from 13 to 4)
+   * | (* empty *) { [] } 
+   *)
+ | TAny_Action { [$1] }
+ | taction_list TAny_Action { $1 @ [$2] }
+*/

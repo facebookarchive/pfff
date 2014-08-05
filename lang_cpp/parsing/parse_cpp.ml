@@ -359,7 +359,7 @@ let parse_with_lang ?(lang=Flag_parsing_cpp.Cplusplus) file =
           (* -------------------------------------------------- *)
           (* Call parser *)
           (* -------------------------------------------------- *)
-          Parser_cpp.celem (lexer_function tr) lexbuf_fake
+          Parser_cpp.toplevel (lexer_function tr) lexbuf_fake
         with e -> 
           if not !Flag.error_recovery 
           then raise (Parse_error (TH.info_of_tok tr.PI.current));
