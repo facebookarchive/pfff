@@ -643,10 +643,13 @@ string_elem:
 /*(*2 cppext: *)*/
 /*(*----------------------------*)*/
 
-/*(* cppext: *)*/
 argument: 
  | assign_expr { Left $1 }
+ /*(* actually this can happen also when have a wrong typedef inference ...*)*/
  | parameter_decl { Right (ArgType $1)  }
+
+/*(* cppext: *)*/
+/* TODO: reenable, put in comment while trying to parse plan9
  | action_higherordermacro { Right (ArgAction $1) }
 
 action_higherordermacro: 
@@ -655,6 +658,7 @@ action_higherordermacro:
       then ActMisc [Ast.fakeInfo()]
       else ActMisc $1
     }
+*/
 
 /*(*----------------------------*)*/
 /*(*2 workarounds *)*/
@@ -1012,7 +1016,6 @@ direct_abstract_declarator:
 parameter_type_list: 
  | parameter_list                  { $1, None }
  | parameter_list TComma TEllipsis { $1, Some ($2,$3) }
-
 
 parameter_decl: 
  | decl_spec declarator

@@ -250,10 +250,12 @@ let find_typedefs xxs =
 
 (* hmmm: todo: some false positives on InParameter, see mini/constants.c *)
   (* [(,] xx [),] where InParameter *)
+(*
   | {t=(TOPar _ | TComma _)}::({t=TIdent (s, i1); where=InParameter::_} as tok1)
     ::({t=(TCPar _ | TComma _)} as tok2)::xs ->
       change_tok tok1 (TIdent_Typedef (s, i1));
       aux (tok2::xs)
+*)
 
   (* kencc-ext: [;{] xx ;  where InStruct *)
   | {t=tok_before}::({t=TIdent (s, i1)} as tok1)::({t=TPtVirg _} as tok2)::xs 
