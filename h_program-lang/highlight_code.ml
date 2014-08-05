@@ -249,10 +249,10 @@ type category =
   | CppOther
 
   (* web related *)
+  | EmbededCode (* e.g. javascript *)
+  | EmbededUrl (* e.g. xhp *)
   | EmbededHtml (* e.g. xhp *)
   | EmbededHtmlAttr
-  | EmbededUrl (* e.g. xhp *)
-  | EmbededCode (* e.g. javascript *)
   | EmbededStyle (* e.g. css *)
   | Verbatim (* for latex, noweb, html pre *)
 

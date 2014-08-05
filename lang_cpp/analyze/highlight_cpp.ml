@@ -565,8 +565,7 @@ let visit_toplevel ~tag_hook _prefs (*db_opt *) (toplevel, toks) =
     | T.TIfdefBool (_, ii) | T.TIfdefMisc (_, ii) | T.TIfdefVersion (_, ii) ->
         tag ii Ifdef
 
-    | T.TCppDirectiveOther _ -> 
-        ()
+    | T.TCppDirectiveOther ii -> tag ii CppOther
     | T.Tnamespace ii -> tag ii KeywordModule
 
     | T.Tthis ii -> tag ii (Class (Use2 fake_no_use2))
