@@ -20,6 +20,6 @@ void main()
 
 void main()
 {
-      for (int j = 0; j < Polynomial<DEG>::size(); j++) {
+      for (j = 0; j < Polynomial<DEG>::size(); j++) {
       }
 }

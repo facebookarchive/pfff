@@ -3,6 +3,7 @@ struct Lock {
 };
 
 struct Bar {
+  // kencc extension
   Lock;
   int v;
 

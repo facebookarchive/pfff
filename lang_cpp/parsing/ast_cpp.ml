@@ -465,7 +465,9 @@ and block_declaration =
   | Asm of tok * tok option (*volatile*) * asmbody paren * tok(*;*)
 
   and onedecl = {
-    (* option cos can have empty declaration or struct tag declaration *)
+    (* option cos can have empty declaration or struct tag declaration.
+     * kenccext: name can be empty for anonymous fields.
+    *)
     v_namei: (name * init option) option;
     v_type: fullType;
     v_storage: storage wrap;
@@ -604,7 +606,8 @@ and class_definition = {
       * But it seems that gcc allow char i:4. C rule must say that you
       * can cast into int so enum too, ... 
       * c++ext: FieldDecl was before Simple of string option * fullType
-      * but in c++ fields can also have storage (e.g. static) so now reuse ondecl.
+      * but in c++ fields can also have storage (e.g. static) so now reuse
+      * ondecl.
       *)
       and fieldkind = 
         | FieldDecl of onedecl
