@@ -65,6 +65,7 @@ let look_like_argument _tok_before xs =
     (* could be part of a type declaration *)
     | Tok {t=TOCro _}::Tok {t=TCCro _}::_xs ->   false
     | Tok {t=TOCro _}::Tok {t=(TInt _)}::Tok {t=TCCro _}::_xs -> false
+    | Tok {t=TOCro _}::Tok {t=(TIdent _)}::Tok {t=TCCro _}::_xs -> false
 
     | x::xs ->
         (match x with
