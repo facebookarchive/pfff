@@ -638,6 +638,9 @@ string_elem:
 
 argument:
  | assign_expr { Left $1 }
+/*(* cppext: *)*/
+/*(* actually this can happen also when have a wrong typedef inference ...*)*/
+ | parameter_decl { Right (ArgType $1)  }
 /* see todo_mly */
 
 /*(*----------------------------*)*/

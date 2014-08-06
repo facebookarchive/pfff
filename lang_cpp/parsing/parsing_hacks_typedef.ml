@@ -68,6 +68,7 @@ let look_like_declaration_context tok =
   | TOBrace _ 
  (* no!! | TCBrace _ *)
   | TPtVirg _
+  | TCommentNewline_DefineEndOfMacro _
       -> true
   | priv when TH.is_privacy_keyword priv -> true
   | _ -> false

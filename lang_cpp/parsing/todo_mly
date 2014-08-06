@@ -26,10 +26,7 @@ statement:
 
 argument:
 
-/*(* cppext: *)*/
 /* TODO: reenable, put in comment while trying to parse plan9
-(* actually this can happen also when have a wrong typedef inference ...*)
- | parameter_decl { Right (ArgType $1)  }
  | action_higherordermacro { Right (ArgAction $1) }
 
 action_higherordermacro: 
