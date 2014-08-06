@@ -3,7 +3,9 @@
 
 void main() {
 
-  foo1 x(foo2, foo3[i]);
+// actually it could be a declaration ... not necessaraly an argument
+// because i could be a constant and foo2 and foo3 typedefs
+//  foo1 x(foo2, foo3[i]);
   string& x("foo");
 
   foo2 x(*y);
