@@ -22,7 +22,8 @@
  * This is a big file ... C++ is a big and complicated language ...
  * This file started with a simple AST for C, but then was extended
  * to deal with cpp idioms (see 'cppext:' tag), gcc extensions (see gccext),
- * and finally C++ constructs (see c++ext:).
+ * and finally C++ constructs (see c++ext:). A few kencc extensions
+ * were also added (see kenccext)
  * 
  * gcc introduced StatementExpr which made expr and statement mutually
  * recursive. It also added NestedFunc so even more mutual recursiveity.
@@ -475,13 +476,16 @@ and block_declaration =
           and colon_optionbis = ColonMisc | ColonExpr of expression paren
 
 (* ------------------------------------------------------------------------- *)
-(* Variable definition *)
+(* Variable definition (and also field definition) *)
 (* ------------------------------------------------------------------------- *)
 
-  (* note: onedecl includes prototype declarations and class_declarations! *)
+  (* note: onedecl includes prototype declarations and class_declarations! 
+   * c++ext: onedecl now covers also field definitions as fields can have
+   * storage in C++.
+   *)
   and onedecl = {
     (* option cos can have empty declaration or struct tag declaration.
-     * kenccext: name can be empty for anonymous fields.
+     * kenccext: name can also be empty because of anonymous fields.
     *)
     v_namei: (name * init option) option;
     v_type: fullType;

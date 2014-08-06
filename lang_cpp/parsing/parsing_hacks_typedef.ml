@@ -27,7 +27,7 @@ open Parsing_hacks_lib
 (*****************************************************************************)
 (* 
  * This file gathers parsing heuristics related to the typedefs.
- * C is not a context-free grammar; it requires to know when
+ * C does not have a context-free grammar; C requires the parser to know when
  * an ident corresponds to a typedef or an ident. This normally means that
  * we must call cpp on the file and have the lexer and parser cooperate
  * to remember what is what. In lang_cpp/ we want to parse as-is,
@@ -46,14 +46,23 @@ open Parsing_hacks_lib
  * todo? at the same time certain tokens like const are strong
  * signals towards a typedef ident, so maybe could do a first
  * pass first which use those tokens?
+ *
+ * history:
+ *  - We used make the lexer and parser cooperate in a lexerParser.ml file
+ *  - but this was not enough because of declarations such as 'acpi acpi;'
+ *    and so we had to enable/disable the ident->typedef mechanism 
+ *    which requires even more lexer/parser cooperation
+ *  - this was ugly too so now we use a typedef "inference" mechanism
+ *  - we refined the typedef inference to sometimes use InParameter hint
+ *    and more contextual information from token_views_context.ml
  *)
 
 (*****************************************************************************)
 (* Helpers *)
 (*****************************************************************************)
 
-let look_like_multiplication_context tok =
-  match tok with
+let look_like_multiplication_context tok_before =
+  match tok_before with
   | TEq _ | TAssign _
   | TWhy _
   | Treturn _
@@ -63,8 +72,8 @@ let look_like_multiplication_context tok =
   | tok when TH.is_binary_operator_except_star tok -> true
   | _ -> false
 
-let look_like_declaration_context tok =
-  match tok with
+let look_like_declaration_context tok_before =
+  match tok_before with
   | TOBrace _ 
  (* no!! | TCBrace _ *)
   | TPtVirg _
@@ -207,12 +216,15 @@ let find_typedefs xxs =
       aux xs
 
   (* } xx * yy *)
+  (* because TCBrace is not anymore in look_like_declaration_context *)
   | {t=TCBrace _}::({t=TIdent (s,i1)} as tok1)::{t=TMul _}::{t=TIdent _}::xs ->
       change_tok tok1 (TIdent_Typedef (s, i1));
       aux xs
 
   (* xx * yy
    * could be a multiplication too, so need InParameter guard/
+   * less: the InParameter has some FPs, so maybe better to
+   * rely on the spacing hint, see the rule below.
    *)
   | ({t=TIdent (s,i1);where=InParameter::_} as tok1)::{t=TMul _}
     ::{t=TIdent _}::xs 
@@ -229,12 +241,12 @@ let find_typedefs xxs =
 
   (* xx ** yy
    * less could be a multiplication too, but with less probability
-  *)
+   *)
   | ({t=TIdent (s,i1)} as tok1)::{t=TMul _}::{t=TMul _}::{t=TIdent _}::xs ->
       change_tok tok1 (TIdent_Typedef (s, i1));
       aux xs
 
-  (* (xx) yy   and not a if/while before (, and yy can also be a constant *)
+  (* (xx) yy   and not a if/while before '('  (and yy can also be a constant) *)
   | {t=tok1}::{t=TOPar _}::({t=TIdent(s, i1)} as tok3)::{t=TCPar _}
     ::{t = TIdent (_,_) | TInt _ | TString _ | TFloat _ }::xs 
     when not (TH.is_stuff_taking_parenthized tok1) (*  && line are the same ? *)
@@ -271,16 +283,23 @@ let find_typedefs xxs =
       change_tok tok1 (TIdent_Typedef (s, i1));
       aux (x::xs)
 
+  (* xx*** [,)] *)
+  | ({t=TIdent(s, i1)} as tok1)::{t=TMul _}::{t=TMul _}::{t=TMul _}
+    ::({t=(TComma _| TCPar _)} as x)::xs ->
+      change_tok tok1 (TIdent_Typedef (s, i1));
+      aux (x::xs)
 
-  (* hmmm: todo: some false positives on InParameter, see mini/constants.c *)
+
   (* [(,] xx [),] where InParameter *)
-
+  (* hmmm: todo: some false positives on InParameter, see mini/constants.c,
+   * so now simpler to add a TIdent in the parameter_decl rule
+   *)
   | {t=(TOPar _ | TComma _)}::({t=TIdent (s, i1); where=InParameter::_} as tok1)
     ::({t=(TCPar _ | TComma _)} as tok2)::xs ->
       change_tok tok1 (TIdent_Typedef (s, i1));
       aux (tok2::xs)
 
-  (* kencc-ext: [;{] xx ;  where InStruct *)
+  (* kencc-ext: xx;  where InStruct *)
   | {t=tok_before}::({t=TIdent (s, i1)} as tok1)::({t=TPtVirg _} as tok2)::xs 
       when look_like_declaration_context tok_before ->
       (match tok1.where with
@@ -291,7 +310,7 @@ let find_typedefs xxs =
       aux (tok2::xs)
 
 
-  (* new Xxx (c++ specific, grammar expect a typedef here) *)
+  (* new Xxx *)
   | {t=Tnew _}::({t=TIdent (s, i1)} as tok1)::xs ->
       change_tok tok1 (TIdent_Typedef (s, i1));
       aux xs
