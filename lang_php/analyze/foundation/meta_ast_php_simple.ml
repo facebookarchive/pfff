@@ -360,9 +360,13 @@ and
                   c_implements = v_c_implements;
                   c_constants = v_c_constants;
                   c_variables = v_c_variables;
-                  c_methods = v_c_body
+                  c_methods = v_c_body;
+                  c_enum_type = v_c_enum_type;
                 } =
   let bnds = [] in
+  let arg = Ocaml.vof_option vof_enum_type v_c_enum_type in
+  let bnd = ("c_enum", arg) in
+  let bnds = bnd :: bnds in
   let arg = Ocaml.vof_list vof_method_def v_c_body in
   let bnd = ("c_body", arg) in
   let bnds = bnd :: bnds in
@@ -394,6 +398,19 @@ and
   let bnd = ("c_name", arg) in
   let bnds = bnd :: bnds in
   Ocaml.VDict bnds
+and
+  vof_enum_type {
+                 e_base = v_e_base;
+                 e_constraint = v_e_constraint;
+                } =
+  let bnds = [] in
+  let arg = vof_hint_type v_e_base in
+  let bnd = ("e_base", arg) in
+  let bnds = bnd :: bnds in
+  let arg = Ocaml.vof_option vof_hint_type v_e_constraint in
+  let bnd = ("e_constraint", arg) in
+  let bnds = bnd :: bnds in
+  Ocaml.VDict bnds
 and vof_class_name x = vof_hint_type x
 and vof_class_type =
   function
@@ -402,6 +419,7 @@ and vof_class_type =
   | ClassAbstract -> Ocaml.VSum (("ClassAbstract", []))
   | Interface -> Ocaml.VSum (("Interface", []))
   | Trait -> Ocaml.VSum (("Trait", []))
+  | Enum -> Ocaml.VSum (("Enum", []))
 and vof_xhp_field (v1, v2) =
   let v1 = vof_class_var v1 in
   let v2 = Ocaml.VBool v2 in

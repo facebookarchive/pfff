@@ -582,6 +582,7 @@ and constant_def = {
  * with the introduction of traits, it does not make that much sense
  * to be so specific, so I factorized things. Classes/interfaces/traits
  * are not that different; interfaces are really just abstract traits.
+ * We also now include enums, which share a bunch of machinery with classes.
  *)
 and class_def = {
   c_attrs: attributes option;
@@ -596,6 +597,9 @@ and class_def = {
    * interfaces it extends. Traits can also now implement interfaces.
    *)
   c_implements: interface option;
+  (* If this class is an enum, what is the underlying type (and
+   * constraint) of the enum? *)
+  c_enum_type: enum_type option;
   (* The class_stmt for interfaces are restricted to only abstract methods.
    * The class_stmt seems to be unrestricted for traits (it can even
    * contain some 'use') *)
@@ -613,9 +617,12 @@ and class_def = {
        * note: traits are allowed only at toplevel.
        *)
       | Trait of tok (* trait *)
+      | Enum of tok (* enum *)
     and extend =    tok * class_name
     and interface = tok * class_name comma_list
   and class_stmt =
+    (* This is abused to represent class constants in enums, so sometimes
+     * tok is actually fakeInfo. *)
     | ClassConstants of
         tok (* const *) *
         hint_type option *
@@ -700,6 +707,12 @@ and trait_rule =
 and trait_constraint_kind =
   | MustExtend
   | MustImplement
+
+and enum_type = {
+  e_tok: tok; (* : *)
+  e_base: hint_type;
+  e_constraint: (tok (* as *) * hint_type) option;
+}
 
 (* ------------------------------------------------------------------------- *)
 (* Type definition *)

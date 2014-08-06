@@ -872,6 +872,21 @@ and v_hint_type x =
   vin.khint_type (k, all_functions) x
 
 and v_is_ref v = v_option v_tok v
+
+and v_constraint (v1, v2) =
+  let v1 = v_tok v1 in
+  let v2 = v_hint_type v2 in
+  ()
+and v_enum_type {
+                  e_tok = v_e_tok;
+                  e_base = v_e_base;
+                  e_constraint = v_e_constraint;
+                 } =
+  let v1 = v_tok v_e_tok in
+  let v2 = v_hint_type v_e_base in
+  let v3 = v_option v_constraint v_e_constraint in
+  ()
+
 and
   v_class_def x =
   let k {
@@ -882,6 +897,7 @@ and
                 c_implements = v_c_implements;
                 c_body = v_c_body;
                 c_attrs = v_c_attrs;
+                c_enum_type = v_c_enum_type;
               } =
   let arg = v_class_type v_c_type in
   let arg = v_ident v_c_name in
@@ -890,6 +906,7 @@ and
   let arg = v_option v_interface v_c_implements in
   let arg = v_brace (v_list v_class_stmt) v_c_body in
   let arg = v_option v_attributes v_c_attrs in
+  let arg = v_option v_enum_type v_c_enum_type in
   ()
   in
   vin.kclass_def (k, all_functions) x
@@ -900,6 +917,7 @@ and v_class_type =
   | ClassAbstract ((v1, v2)) -> let v1 = v_tok v1 and v2 = v_tok v2 in ()
   | Interface v1 -> let v1 = v_tok v1 in ()
   | Trait v1 -> let v1 = v_tok v1 in ()
+  | Enum v1 -> let v1 = v_tok v1 in ()
 
 and v_extend (v1, v2) =
   let v1 = v_tok v1 and v2 = v_fully_qualified_class_name v2 in ()
@@ -1106,10 +1124,7 @@ and
   let arg = v_tok v_t_tok in
   let arg = v_ident v_t_name in
   let arg = v_option v_type_params v_t_tparams in
-  let arg =
-    v_option
-      (fun (v1, v2) -> let v1 = v_tok v1 and v2 = v_hint_type v2 in ())
-      v_t_tconstraint in
+  let arg = v_option v_constraint v_t_tconstraint in
   let arg = v_tok v_t_tokeq in
   let arg = v_type_def_kind v_t_kind in let arg = v_tok v_t_sc in ()
 and v_type_def_kind =

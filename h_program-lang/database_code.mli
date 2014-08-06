@@ -52,7 +52,7 @@ type property =
    | Required | Async
 
   and privacy = Public | Protected | Private
-  and class_kind = Struct | Class_ | Interface | Trait
+  and class_kind = Struct | Class_ | Interface | Trait | Enum
 
 
 type entity_id = int
@@ -134,5 +134,3 @@ val matching_use_categ_kind:
 (* use vs def *)
 val entity_and_highlight_category_correpondance:
   entity -> Highlight_code.category -> bool
-
-

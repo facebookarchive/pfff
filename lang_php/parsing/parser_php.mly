@@ -205,7 +205,7 @@ module PI = Parse_info
 /*(* xhp keywords. If you add one don't forget to update the 'ident' rule. *)*/
 %token <Ast_php.info>
  T_XHP_ATTRIBUTE T_XHP_CHILDREN T_XHP_CATEGORY
- T_XHP_ENUM T_XHP_REQUIRED
+ T_ENUM T_XHP_REQUIRED
  T_XHP_ANY /*(* T_XHP_EMPTY is T_EMPTY *)*/
  T_XHP_PCDATA
 
@@ -612,6 +612,7 @@ unticked_class_declaration_statement:
      { { c_type = $1; c_name = $2; c_extends = $4; c_tparams = $3;
          c_implements = $5; c_body = $6, $7, $8;
          c_attrs = None;
+         c_enum_type = None;
        }
      }
  | T_INTERFACE ident_class_name type_params_opt
@@ -623,6 +624,7 @@ unticked_class_declaration_statement:
           *)
          c_implements = $4; c_body = $5, $6, $7;
          c_attrs = None;
+         c_enum_type = None;
      } }
  | T_TRAIT ident_class_name type_params_opt
    implements_list
@@ -630,6 +632,15 @@ unticked_class_declaration_statement:
      { { c_type = Trait $1; c_name = $2; c_extends = None; c_tparams = $3;
          c_implements = $4; c_body = ($5, $6, $7);
          c_attrs = None;
+         c_enum_type = None;
+       }
+     }
+ | T_ENUM ident_class_name TCOLON type_php type_constr_opt
+    TOBRACE enum_statement_list TCBRACE
+     { { c_type = Enum $1; c_name = $2; c_extends = None; c_tparams = None;
+         c_implements = None; c_body = ($6, $7, $8);
+         c_attrs = None;
+         c_enum_type = Some { e_tok = $3; e_base = $4; e_constraint = $5; }
        }
      }
 
@@ -685,6 +696,10 @@ class_statement:
  | T_REQUIRE trait_constraint_kind type_php TSEMICOLON
      { TraitConstraint ($1, $2, $3, $4) }
 
+enum_statement:
+   class_constant_declaration TSEMICOLON
+     { ClassConstants(Ast.fakeInfo "", None, [Left $1], $2) }
+
 method_declaration:
      method_modifiers T_FUNCTION is_reference ident_method_name type_params_opt
      TOPAR parameter_list TCPAR
@@ -733,7 +748,7 @@ xhp_attribute_decl:
      { XhpAttrDecl ($1, ((PI.str_of_info $2, $2)), $3, $4) }
 
 xhp_attribute_decl_type:
- | T_XHP_ENUM TOBRACE xhp_enum_list TCBRACE
+ | T_ENUM TOBRACE xhp_enum_list TCBRACE
      { XhpAttrEnum ($1, ($2, $3, $4)) }
  | T_VAR        { XhpAttrVar $1 }
  | type_php { XhpAttrType $1 } 
@@ -1369,7 +1384,7 @@ ident:
  | T_XHP_ATTRIBUTE { PI.str_of_info $1, $1 }
  | T_XHP_CATEGORY  { PI.str_of_info $1, $1 }
  | T_XHP_CHILDREN  { PI.str_of_info $1, $1 }
- | T_XHP_ENUM   { PI.str_of_info $1, $1 }
+ | T_ENUM   { PI.str_of_info $1, $1 }
  | T_XHP_ANY    { PI.str_of_info $1, $1 }
  | T_XHP_PCDATA { PI.str_of_info $1, $1 }
 
@@ -1502,6 +1517,9 @@ class_statement_list:
  | class_statement_list class_statement { $1 @ [$2] }
  | /*(*empty*)*/ { [] }
 
+enum_statement_list:
+ | enum_statement_list enum_statement { $1 @ [$2] }
+ | /*(*empty*)*/ { [] }
 
 
 

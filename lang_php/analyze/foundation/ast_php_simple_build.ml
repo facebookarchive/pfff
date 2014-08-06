@@ -578,6 +578,16 @@ and class_def env c =
     A.c_variables =
       implicit_fields @ List.fold_right (class_variables env) body [];
     A.c_methods = methods;
+    A.c_enum_type =
+      (match c.c_enum_type with
+        | None -> None
+        | Some enum -> Some
+          { A.e_base = hint_type env enum.e_base;
+            A.e_constraint =
+              (match enum.e_constraint with
+                | None -> None
+                | Some (_, cnstr_ty) -> Some (hint_type env cnstr_ty))
+          });
   }
 
 and class_type _env = function
@@ -586,6 +596,7 @@ and class_type _env = function
   | ClassAbstract _ -> A.ClassAbstract
   | Interface _ -> A.Interface
   | Trait _ -> A.Trait
+  | Enum _ -> A.Enum
 
 and interfaces env (_, intfs) =
   let intfs = comma_list intfs in

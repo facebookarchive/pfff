@@ -359,6 +359,11 @@ and constant_def = {
   cst_body: expr;
 }
 
+and enum_type = {
+  e_base : hint_type;
+  e_constraint : hint_type option;
+}
+
 and class_def = {
   c_name: ident;
   c_kind: class_kind;
@@ -366,6 +371,10 @@ and class_def = {
   c_extends: class_name option;
   c_implements: class_name list;
   c_uses: class_name list; (* traits *)
+
+  (* If this class is an enum, what is the underlying type (and
+   * constraint) of the enum? *)
+  c_enum_type: enum_type option;
 
   c_attrs: attribute list;
   (* xhp attributes. less: other xhp decl, e.g. children, @required, etc *)
@@ -381,6 +390,7 @@ and class_def = {
     | ClassRegular | ClassFinal | ClassAbstract
     | Interface
     | Trait
+    | Enum
   and xhp_field = class_var * bool 
   and class_var = {
     (* note that the name will contain a $ *)

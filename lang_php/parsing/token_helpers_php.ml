@@ -113,6 +113,7 @@ let info_of_tok = function
   | T_ISSET ii -> ii
   | T_EMPTY ii -> ii
   | T_CLASS ii -> ii
+  | T_ENUM ii -> ii
   | T_INTERFACE ii -> ii
   | T_EXTENDS ii -> ii
   | T_IMPLEMENTS ii -> ii
@@ -234,7 +235,6 @@ let info_of_tok = function
   | T_XHP_CATEGORY (ii) -> ii
 
 
-  | T_XHP_ENUM (ii) -> ii
   | T_XHP_REQUIRED (ii) -> ii
 
   | T_XHP_ANY (ii) -> ii
@@ -313,6 +313,7 @@ let visitor_info_of_tok f = function
   | T_ISSET ii -> T_ISSET(f ii)
   | T_EMPTY ii -> T_EMPTY(f ii)
   | T_CLASS ii -> T_CLASS(f ii)
+  | T_ENUM ii -> T_ENUM(f ii)
   | T_INTERFACE ii -> T_INTERFACE(f ii)
   | T_EXTENDS ii -> T_EXTENDS(f ii)
   | T_IMPLEMENTS ii -> T_IMPLEMENTS(f ii)
@@ -433,7 +434,6 @@ let visitor_info_of_tok f = function
   | T_XHP_CHILDREN (ii) -> T_XHP_CHILDREN (f ii)
   | T_XHP_CATEGORY (ii) -> T_XHP_CATEGORY (f ii)
 
-  | T_XHP_ENUM (ii) -> T_XHP_ENUM (f ii)
   | T_XHP_REQUIRED (ii) -> T_XHP_REQUIRED (f ii)
 
   | T_XHP_ANY (ii) -> T_XHP_ANY (f ii)
