@@ -541,7 +541,7 @@ and v_rec_opt v = Ocaml.v_option v_tok v
 
 and v_toplevel x =
   let k = function
-  | Item v1 -> let v1 = v_item v1 in ()
+  | TopItem v1 -> let v1 = v_item v1 in ()
   | ScSc v1 -> let v1 = v_info v1 in ()
   | TopSeqExpr v1 -> let v1 = v_seq_expr v1 in ()
   | TopDirective v1 -> let v1 = v_info v1 in ()

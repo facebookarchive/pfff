@@ -20,8 +20,8 @@ open Common
 (*
  * A Concrete Syntax Tree for OCaml.
  * 
- * todo: do an Abstract Syntax Tree as in ast_java.ml, need less CST
- * now that we use the fuzzy approach for sgrep and spatch.
+ * less: do an Abstract Syntax Tree as in ast_java.ml; need less CST
+ * now that we use the fuzzy approach for sgrep and spatch?
  *)
 
 (*****************************************************************************)
@@ -81,45 +81,10 @@ type ty =
 
   | TyTodo
 
-
-and type_declaration =
-  | TyAbstract of ty_params * name
-  | TyDef of ty_params * name * tok (* = *) * type_def_kind
-
- and type_def_kind =
-   | TyCore of ty
-   (* or type *)
-   | TyAlgebric of constructor_declaration pipe_list
-   (* and type *)
-   | TyRecord   of field_declaration semicolon_list brace
-
- (* OR type: algebric data type *)
- and constructor_declaration = name (* constr_ident *) * constructor_arguments
-  and constructor_arguments =
-    | NoConstrArg
-    | Of of tok * ty star_list
-
- (* AND type: record *)
- and field_declaration = {
-   fld_mutable: tok option;
-   fld_name: name;
-   fld_tok: tok; (* : *)
-   fld_type: ty; (* poly_type ?? *)
- }
-
-
-
  and ty_args = 
     | TyArg1 of ty
     | TyArgMulti of ty comma_list paren
     (* todo? | TyNoArg and merge TyName and TyApp ? *)
-
- and ty_params =
-   | TyNoParam
-   | TyParam1 of ty_parameter
-   | TyParamMulti of ty_parameter comma_list paren
- and ty_parameter = tok (* ' *) * name (* a TyVar *)
-
 
 (* ------------------------------------------------------------------------- *)
 (* Expressions *)
@@ -250,7 +215,7 @@ and pattern =
   | PatImplicitField of long_name
 
 (* ------------------------------------------------------------------------- *)
-(* Let binding *)
+(* Let binding (global/local/function definition) *)
 (* ------------------------------------------------------------------------- *)
 
 and let_binding =
@@ -273,18 +238,56 @@ and let_binding =
  and labeled_simple_pattern = unit
 
 (* ------------------------------------------------------------------------- *)
-(* Module *)
+(* Type declaration *)
 (* ------------------------------------------------------------------------- *)
-and module_type = unit (* todo *)
 
-and module_expr =
-  | ModuleName of long_name
-  | ModuleStruct of tok (* struct *) * item list * tok (* end *)
-  | ModuleTodo
+type type_declaration =
+  | TyAbstract of ty_params * name
+  | TyDef of ty_params * name * tok (* = *) * type_def_kind
+
+ and ty_params =
+   | TyNoParam
+   | TyParam1 of ty_parameter
+   | TyParamMulti of ty_parameter comma_list paren
+ and ty_parameter = tok (* ' *) * name (* a TyVar *)
+
+ and type_def_kind =
+   | TyCore of ty
+   (* or type *)
+   | TyAlgebric of constructor_declaration pipe_list
+   (* and type *)
+   | TyRecord   of field_declaration semicolon_list brace
+
+ (* OR type: algebric data type *)
+ and constructor_declaration = name (* constr_ident *) * constructor_arguments
+  and constructor_arguments =
+    | NoConstrArg
+    | Of of tok * ty star_list
+
+ (* AND type: record *)
+ and field_declaration = {
+   fld_mutable: tok option;
+   fld_name: name;
+   fld_tok: tok; (* : *)
+   fld_type: ty; (* poly_type ?? *)
+ }
+
 
 (* ------------------------------------------------------------------------- *)
 (* Class *)
 (* ------------------------------------------------------------------------- *)
+
+(* ------------------------------------------------------------------------- *)
+(* Module *)
+(* ------------------------------------------------------------------------- *)
+type module_type = unit (* todo *)
+
+(* mutually recursive with item *)
+type module_expr =
+  | ModuleName of long_name
+  | ModuleStruct of tok (* struct *) * item list * tok (* end *)
+  | ModuleTodo
+
 
 (* ------------------------------------------------------------------------- *)
 (* Signature/Structure items *)
@@ -312,15 +315,15 @@ and item =
       
   | ItemTodo of tok
 
-and sig_item = item
-and struct_item = item
+type sig_item = item
+type struct_item = item
 
 (* ------------------------------------------------------------------------- *)
 (* Toplevel phrases *)
 (* ------------------------------------------------------------------------- *)
 
-and toplevel =
-  | Item of item
+type toplevel =
+  | TopItem of item
 
   (* should both be removed *)
   | TopSeqExpr of seq_expr
@@ -329,7 +332,7 @@ and toplevel =
   (* some ml files contain some #! or even #load directives *)
   | TopDirective of tok
 
- and program = toplevel list
+type program = toplevel list
 
  (* with tarzan *)
 

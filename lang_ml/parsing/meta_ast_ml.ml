@@ -508,7 +508,7 @@ and _vof_struct_item v = vof_item v
 and vof_rec_opt v = Ocaml.vof_option vof_tok v
 and vof_toplevel =
   function
-  | Item v1 -> let v1 = vof_item v1 in Ocaml.VSum (("Item", [ v1 ]))
+  | TopItem v1 -> let v1 = vof_item v1 in Ocaml.VSum (("TopItem", [ v1 ]))
   | ScSc v1 -> let v1 = vof_info v1 in Ocaml.VSum (("ScSc", [ v1 ]))
   | TopSeqExpr v1 ->
       let v1 = vof_seq_expr v1 in Ocaml.VSum (("TopSeqExpr", [ v1 ]))

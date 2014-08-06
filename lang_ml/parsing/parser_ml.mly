@@ -46,7 +46,7 @@ let (qufix: long_name -> tok -> (string wrap) -> long_name) =
 
 let to_item xs =
   xs +> Common.map_filter (function
-  | Item x -> Some x
+  | TopItem x -> Some x
   | _ -> None
   )
 %}
@@ -235,8 +235,8 @@ implementation: structure EOF                        { $1 }
 
 signature:
  | /* empty */                                  { [] }
- | signature signature_item                     { $1 @ [Item $2] }
- | signature signature_item TSemiColonSemiColon { $1 @ [Item $2; ScSc $3] }
+ | signature signature_item                     { $1 @ [TopItem $2] }
+ | signature signature_item TSemiColonSemiColon { $1 @ [TopItem $2; ScSc $3] }
 
 signature_item:
  | Ttype type_declarations
@@ -286,12 +286,12 @@ structure_tail:
  | TSemiColonSemiColon seq_expr structure_tail  
      { ScSc $1::TopSeqExpr $2::$3 }
  | TSemiColonSemiColon structure_item structure_tail  
-     { ScSc $1::Item $2::$3 }
+     { ScSc $1::TopItem $2::$3 }
  | TSemiColonSemiColon TSharpDirective  structure_tail  
      { ScSc $1::TopDirective $2::$3 }
 
  | structure_item structure_tail                      
-     { Item $1::$2 }
+     { TopItem $1::$2 }
  | TSharpDirective structure_tail 
      { TopDirective $1::$2 }
 
