@@ -521,7 +521,7 @@ let vof_any =
   | Ty v1 -> let v1 = vof_ty v1 in Ocaml.VSum (("Ty", [ v1 ]))
   | Expr v1 -> let v1 = vof_expr v1 in Ocaml.VSum (("Expr", [ v1 ]))
   | Pattern v1 -> let v1 = vof_pattern v1 in Ocaml.VSum (("Pattern", [ v1 ]))
-  | Item2 v1 -> let v1 = vof_item v1 in Ocaml.VSum (("Item2", [ v1 ]))
+  | Item v1 -> let v1 = vof_item v1 in Ocaml.VSum (("Item", [ v1 ]))
   | Toplevel v1 ->
       let v1 = vof_toplevel v1 in Ocaml.VSum (("Toplevel", [ v1 ]))
   | Program v1 -> let v1 = vof_program v1 in Ocaml.VSum (("Program", [ v1 ]))

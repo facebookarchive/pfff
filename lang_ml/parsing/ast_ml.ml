@@ -345,7 +345,7 @@ type any =
   | Expr of expr
   | Pattern of pattern
 
-  | Item2 of item
+  | Item of item
   | Toplevel of toplevel
   | Program of program
 
