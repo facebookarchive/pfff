@@ -556,7 +556,7 @@ and v_initialiser x =
       and v3 = v_initialiser v3
       in ()
   | InitIndexOld ((v1, v2)) ->
-      let v1 = v_expression v1 and v2 = v_initialiser v2 in ()
+      let v1 = v_bracket v_expression v1 and v2 = v_initialiser v2 in ()
   in
   vin.kinit (k, all_functions) x
 

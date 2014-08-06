@@ -1453,20 +1453,20 @@ initialize2:
  /*(* gccext: old format, in old kernel for instance *)*/
  | ident TCol initialize2
      { InitFieldOld ($1, $2, $3) }
-/*(*c++ext: remove conflict, but I think could be remove anyway
- | TOCro const_expr TCCro initialize2 
-     { InitIndexOld ($2, $4),    [$1;$3] }
-  *)*/
+/*(* kenccext: c++ext:, but conflcit with array designators *)*/
+ | TOCro const_expr TCCro initialize2
+     { InitIndexOld (($1, $2, $3), $4) }
 
 /*(* they can be nested, can have a .x.[3].y *)*/
 designator: 
  | TDot ident 
      { DesignatorField ($1, $2) } 
+/* conflict with kenccext
  | TOCro const_expr TCCro     %prec LOW_PRIORITY_RULE
      { DesignatorIndex ($1, $2, $3) }
  | TOCro const_expr TEllipsis const_expr TCCro 
      { DesignatorRange ($1, ($2, $3, $4), $5) }
-
+*/
 /*(*----------------------------*)*/
 /*(*2 workarounds *)*/
 /*(*----------------------------*)*/

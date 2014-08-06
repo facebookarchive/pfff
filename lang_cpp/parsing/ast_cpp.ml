@@ -495,7 +495,7 @@ and block_declaration =
       (* gccext: *)
       | InitDesignators of designator list * tok (*=*) * initialiser
       | InitFieldOld  of simple_ident * tok (*:*) * initialiser
-      | InitIndexOld  of expression * initialiser
+      | InitIndexOld  of expression bracket * initialiser
 
       (* ex: [2].y = x,  or .y[2]  or .y.x. They can be nested *)
       and designator =

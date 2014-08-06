@@ -45,6 +45,7 @@ let test_parse_cpp ?lang xs  =
   Stat.print_recurring_problematic_tokens !stat_list;
   (match xs with 
   | [dirname] when Common2.is_directory dirname ->
+      let dirname = Common.realpath dirname in
       pr2 "--------------------------------";
       pr2 "regression testing  information";
       pr2 "--------------------------------";

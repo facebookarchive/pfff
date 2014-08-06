@@ -715,7 +715,7 @@ and vof_initialiser =
       and v3 = vof_initialiser v3
       in Ocaml.VSum (("InitFieldOld", [ v1; v2; v3 ]))
   | InitIndexOld ((v1, v2)) ->
-      let v1 = vof_expression v1
+      let v1 = vof_bracket vof_expression v1
       and v2 = vof_initialiser v2
       in Ocaml.VSum (("InitIndexOld", [ v1; v2 ]))
 and vof_designator =
