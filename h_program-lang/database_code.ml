@@ -205,11 +205,11 @@ type entity = {
    | UseGlobal of string
    | ContainDeadStatements
 
-   (* for class *)
-   | ClassKind of class_kind
-
    | DeadCode (* the function itself is dead, e.g. never called *)
    | CodeCoverage of int list (* e.g. covered lines by unit tests *)
+
+   (* for class *)
+   | ClassKind of class_kind
 
    | Privacy of privacy
    | Abstract
