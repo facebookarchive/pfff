@@ -19,7 +19,7 @@ module TH = Token_helpers_cpp
 module PI = Parse_info
 module T = Parser_cpp
 module Lexer = Lexer_cpp
-module Semantic = Semantic_cpp
+module Semantic = Parser_cpp_mly_helper
 module Stat = Parse_info
 module Hack = Parsing_hacks_lib
 module FT = File_type
@@ -45,6 +45,7 @@ let program_of_program2 xs =
   xs +> List.map fst
 
 exception Parse_error of Parse_info.info
+
 
 (*****************************************************************************)
 (* Wrappers *)

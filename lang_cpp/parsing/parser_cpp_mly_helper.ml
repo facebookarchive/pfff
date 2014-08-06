@@ -5,8 +5,6 @@ open Ast_cpp
 module Ast = Ast_cpp
 module Flag = Flag_parsing_cpp
 
-open Semantic_cpp
-
 (*****************************************************************************)
 (* Wrappers *)
 (*****************************************************************************)
@@ -16,6 +14,8 @@ let warning s v =
   if !Flag.verbose_parsing 
   then Common2.warning ("PARSING: " ^ s) v
   else v
+
+exception Semantic of string * Parse_info.token_location
 
 (*****************************************************************************)
 (* Parse helpers functions *)

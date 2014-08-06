@@ -8,7 +8,7 @@ TARGET=lib
 
 SRC= flag_parsing_cpp.ml \
      token_cpp.ml ast_cpp.ml \
-     type_cpp.ml semantic_cpp.ml \
+     type_cpp.ml \
      meta_ast_cpp.ml \
      visitor_cpp.ml lib_parsing_cpp.ml \
      parser_cpp_mly_helper.ml parser_cpp.ml lexer_cpp.ml \

@@ -26,6 +26,7 @@ let cmdline_flags_macrofile () = [
 let verbose_lexing = ref true
 let verbose_parsing = ref true
 
+(* do not raise Parse_error in parse_cpp.ml, try to recover! *)
 let error_recovery = ref true
 let show_parsing_error = ref true
 
