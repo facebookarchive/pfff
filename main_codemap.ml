@@ -83,7 +83,8 @@ module Model = Model2
  *  - find uses (funcs, classes, TODO tricky for methods in dynamic languages)
  *  - code tooltip, hover on use of an entity to display information about
  *    it (#uses, TODO: type/args, comments, code, age, methods, etc)
- *  - unified search (files, entities, TODO but also content)
+ *  - unified search (files, entities, TODO but also content),
+ *    TODO project-wide search is really useful
  *  - debugger? it helps understand code so a coverage layer or TODO live
  *    coverage tracing would be nice (as in tracegl)
  *  - source control? extract age, number of authors, churn information in
