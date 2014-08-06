@@ -14,8 +14,11 @@
  *)
 open Common
 
+module Flag = Flag_parsing_cpp
 module TH = Token_helpers_cpp
 module TV = Token_views_cpp
+module T = Parser_cpp
+module PI = Parse_info
 
 (*****************************************************************************)
 (* Prelude *)
@@ -106,6 +109,18 @@ let insert_virtual_positions l =
   skip_fake l
 
 (*****************************************************************************)
+(* C vs C++ *)
+(*****************************************************************************)
+let fix_tokens_for_language lang xs =
+  xs +> List.map (fun tok ->
+    if lang = Flag_parsing_cpp.C && TH.is_cpp_keyword tok
+    then 
+      let ii = TH.info_of_tok tok in
+      T.TIdent (PI.str_of_info ii, ii)
+    else tok
+  )
+
+(*****************************************************************************)
 (* Fix tokens *)
 (*****************************************************************************)
 (* 
@@ -128,9 +143,10 @@ let insert_virtual_positions l =
  *)
 
 let fix_tokens_c ~macro_defs tokens =
-  (* note that fix_token_define has been done by caller 
-   * todo: actually it could be done here no?
-  *)
+
+  let tokens = Parsing_hacks_define.fix_tokens_define tokens in
+  let tokens = fix_tokens_for_language Flag.C tokens in
+
   let tokens2 = ref (tokens +> Common2.acc_map TV.mk_token_extended) in
 
   (* macro part 1 *)
@@ -158,6 +174,9 @@ let fix_tokens_c ~macro_defs tokens =
 
 
 let fix_tokens_cpp ~macro_defs tokens = 
+  let tokens = Parsing_hacks_define.fix_tokens_define tokens in
+  (* let tokens = fix_tokens_for_language Flag.Cplusplus tokens in *)
+
   let tokens2 = ref (tokens +> Common2.acc_map TV.mk_token_extended) in
   
   (* ifdef *)

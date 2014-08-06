@@ -38,14 +38,12 @@ module FT = File_type
 (* Types *)
 (*****************************************************************************)
 
-type program2 = toplevel2 list
-     and toplevel2 = Ast.toplevel * Parser_cpp.token list
+type program2 = (Ast.toplevel * Parser_cpp.token list) list
 
 let program_of_program2 xs = 
   xs +> List.map fst
 
 exception Parse_error of Parse_info.info
-
 
 (*****************************************************************************)
 (* Wrappers *)
@@ -78,7 +76,10 @@ let commentized xs = xs +> Common.map_filter (function
              
         | Token_cpp.CppDirective | Token_cpp.CppAttr | Token_cpp.CppMacro
             -> None
-        | _ -> raise Todo
+        | Token_cpp.CppMacroExpanded
+        | Token_cpp.CppPassingNormal
+        | Token_cpp.CppPassingCosWouldGetError 
+          -> raise Todo
         )
       else Some (ii.PI.token)
       
@@ -93,17 +94,16 @@ let count_lines_commentized xs =
   let count = ref 0 in
   begin
     commentized xs +>
-    List.iter
-      (function
-      | PI.OriginTok pinfo 
-      | PI.ExpandedTok (_,pinfo,_) -> 
+    List.iter (function
+      | PI.OriginTok pinfo | PI.ExpandedTok (_,pinfo,_) -> 
           let newline = pinfo.PI.line in
           if newline <> !line
           then begin
             line := newline;
             incr count
           end
-      | _ -> ());
+      | _ -> ()
+    );
     !count
   end
 
@@ -114,18 +114,6 @@ let is_same_line_or_close line tok =
   TH.line_of_tok tok =|= line ||
   TH.line_of_tok tok =|= line - 1 ||
   TH.line_of_tok tok =|= line - 2
-
-(*****************************************************************************)
-(* C vs C++ *)
-(*****************************************************************************)
-let fix_tokens_for_language lang xs =
-  xs +> List.map (fun tok ->
-    if lang = Flag.C && TH.is_cpp_keyword tok
-    then 
-      let ii = TH.info_of_tok tok in
-      T.TIdent (PI.str_of_info ii, ii)
-    else tok
-  )
 
 (*****************************************************************************)
 (* Lexing only *)
@@ -275,7 +263,7 @@ let init_defs file =
 (* Consistency checking *)
 (*****************************************************************************)
 
-(* see parsing_consistency_cpp.ml *)
+(* todo: a parsing_consistency_cpp.ml *)
       
 (*****************************************************************************)
 (* Helper for main entry point *)
@@ -302,6 +290,20 @@ let rec lexer_function tr = fun lexbuf ->
       then lexer_function (*~pass*) tr lexbuf
       else v
 
+(* was a define ? *)
+let passed_a_define tr =
+  let xs = tr.PI.passed +> List.rev +> Common.exclude TH.is_comment in
+  if List.length xs >= 2 
+   then 
+      (match Common2.head_middle_tail xs with
+      | T.TDefine _, _, T.TCommentNewline_DefineEndOfMacro _ -> true
+      | _ -> false
+      )
+   else begin
+     pr2 "WIERD: length list of error recovery tokens < 2 ";
+     false
+   end
+
 (*****************************************************************************)
 (* Main entry point *)
 (*****************************************************************************)
@@ -323,15 +325,13 @@ let parse_with_lang ?(lang=Flag_parsing_cpp.Cplusplus) file =
   (* -------------------------------------------------- *)
   let toks_orig = tokens file in
 
-  let toks = Parsing_hacks_define.fix_tokens_define toks_orig in
-  let toks = fix_tokens_for_language lang toks in
-  (* todo: _defs_builtins *)
   let toks = 
-    try Parsing_hacks.fix_tokens ~macro_defs:!_defs lang toks
+    try Parsing_hacks.fix_tokens ~macro_defs:!_defs lang toks_orig
     with Token_views_cpp.UnclosedSymbol s ->
       pr2 s;
-      if !Flag.debug_cplusplus then raise (Token_views_cpp.UnclosedSymbol s)
-      else toks
+      if !Flag.debug_cplusplus 
+      then raise (Token_views_cpp.UnclosedSymbol s)
+      else toks_orig
   in
 
   let tr = Parse_info.mk_tokens_state toks in
@@ -347,7 +347,6 @@ let parse_with_lang ?(lang=Flag_parsing_cpp.Cplusplus) file =
      *  cos we know that they are the last symbols of external_declaration2.
      *)
     let checkpoint = PI.line_of_info info in
-
     (* bugfix: may not be equal to 'file' as after macro expansions we can
      * start to parse a new entity from the body of a macro, for instance
      * when parsing a define_machine() body, cf standard.h
@@ -407,18 +406,7 @@ let parse_with_lang ?(lang=Flag_parsing_cpp.Cplusplus) file =
           let checkpoint2 = PI.line_of_info info in 
           let checkpoint2_file = PI.file_of_info info in
 
-          (* was a define ? *)
-          let xs = tr.PI.passed +> List.rev +> Common.exclude TH.is_comment in
-          (if List.length xs >= 2 
-           then 
-              (match Common2.head_middle_tail xs with
-              | T.TDefine _, _, T.TCommentNewline_DefineEndOfMacro _ -> 
-                  was_define := true
-              | _ -> ()
-              )
-           else pr2 "WIERD: length list of error recovery tokens < 2 "
-          );
-            
+          was_define := passed_a_define tr;
           (if !was_define && !Flag.filter_define_error
            then ()
            else 
