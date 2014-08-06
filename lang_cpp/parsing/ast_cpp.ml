@@ -158,7 +158,6 @@ and fullType = typeQualifier * typeC
   (* only to disambiguate I think *)
   | TypenameKwd of tok (* 'typename' *) * name(*typedef_name*)
 
-  | TypeOfExpr of tok * expression paren
   (* gccext: TypeOfType may seems useless, why declare a __typeof__(int)
    * x; ? But when used with macro, it allows to fix a problem of C which
    * is that type declaration can be spread around the ident. Indeed it
@@ -166,7 +165,7 @@ and fullType = typeQualifier * typeC
    * ident) type ident;' because when you want to do a macro(char[256],
    * x), then it will generate invalid code, but with a '#define
    * macro(type, ident) __typeof(type) ident;' it will work. *)
-  | TypeOfType of tok * fullType paren
+  | TypeOf of tok * (fullType, expression) Common.either paren
 
   (* should be really just at toplevel *)
   | EnumDef of enum_definition (* => string * int list *)
@@ -268,9 +267,7 @@ and expression = expressionbis wrap
   (* c++ext: *)
   | This of tok
   | ConstructedObject of fullType * argument comma_list paren
-  (* less: merge and use either *)
-  | TypeIdOfExpr     of tok * expression paren
-  | TypeIdOfType     of tok * fullType paren
+  | TypeId     of tok * (fullType, expression) Common.either paren
   | CplusplusCast of cast_operator wrap2 * fullType angle * expression paren
   | New of tok (*::*) option * tok * 
       argument comma_list paren option (* placement *) *

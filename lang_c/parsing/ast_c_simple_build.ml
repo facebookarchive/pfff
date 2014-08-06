@@ -476,7 +476,7 @@ and expr env e =
     debug (Expr e); 
     raise CplusplusConstruct
 
-  | (TypeIdOfType (_, _)|TypeIdOfExpr (_, _)
+  | (TypeId (_, _)
   | StatementExpr _
   | ExprTodo
   ) ->
@@ -603,11 +603,10 @@ and full_type env x =
       env.enum_defs_toadd <- def :: env.enum_defs_toadd;
       A.TEnumName (name)
 
-  | (TypeOfType (_, _) | TypeOfExpr (_, _))
-    -> debug (Type x); raise Todo
-
+  | TypeOf (_, _) -> 
+    debug (Type x); raise Todo
   | TypenameKwd (_, _) | Reference _ ->
-      debug (Type x); raise CplusplusConstruct
+    debug (Type x); raise CplusplusConstruct
 
   | ParenType (_, t, _) -> full_type env t
 

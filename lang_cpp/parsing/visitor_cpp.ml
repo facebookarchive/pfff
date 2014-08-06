@@ -126,6 +126,7 @@ and v_ident =
       let v1 = v_wrap2 v_string v1 and v2 = v_template_arguments v2 in ()
 and v_template_arguments v = v_angle (v_comma_list v_template_argument) v
 and v_template_argument v = Ocaml.v_either v_fullType v_expression v
+and v_either_ft_or_expr v = Ocaml.v_either v_fullType v_expression v
 and v_qualifier =
   function
   | QClassname v1 -> let v1 = v_wrap2 v_string v1 in ()
@@ -165,10 +166,8 @@ and v_typeCbis =
   | TypeName ((v1)) ->
       let v1 = v_name v1 in ()
   | TypenameKwd ((v1, v2)) -> let v1 = v_tok v1 and v2 = v_name v2 in ()
-  | TypeOfExpr ((v1, v2)) ->
-      let v1 = v_tok v1 and v2 = v_paren v_expression v2 in ()
-  | TypeOfType ((v1, v2)) ->
-      let v1 = v_tok v1 and v2 = v_paren v_fullType v2 in ()
+  | TypeOf ((v1, v2)) ->
+      let v1 = v_tok v1 and v2 = v_paren v_either_ft_or_expr v2 in ()
   | ParenType v1 -> let v1 = v_paren v_fullType v1 in ()
 and v_baseType =
   function
@@ -260,10 +259,8 @@ and v_expressionbis =
       let v1 = v_fullType v1
       and v2 = v_paren (v_comma_list v_argument) v2
       in ()
-  | TypeIdOfExpr ((v1, v2)) ->
-      let v1 = v_tok v1 and v2 = v_paren v_expression v2 in ()
-  | TypeIdOfType ((v1, v2)) ->
-      let v1 = v_tok v1 and v2 = v_paren v_fullType v2 in ()
+  | TypeId ((v1, v2)) ->
+      let v1 = v_tok v1 and v2 = v_paren v_either_ft_or_expr v2 in ()
   | CplusplusCast ((v1, v2, v3)) ->
       let v1 = v_wrap2 v_cast_operator v1
       and v2 = v_angle v_fullType v2

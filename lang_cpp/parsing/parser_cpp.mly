@@ -510,8 +510,8 @@ postfix_expr:
 
  /*(* c++ext: *)*/
  | cast_operator_expr { $1 }
- | Ttypeid TOPar unary_expr TCPar { mk_e(TypeIdOfExpr ($1, ($2, $3, $4))) noii }
- | Ttypeid TOPar type_id    TCPar { mk_e(TypeIdOfType ($1, ($2, $3, $4))) noii }
+ | Ttypeid TOPar unary_expr TCPar { mk_e(TypeId ($1, ($2, Right $3, $4))) noii }
+ | Ttypeid TOPar type_id    TCPar { mk_e(TypeId ($1, ($2, Left $3, $4))) noii }
  | cast_constructor_expr { $1 }
 
 
@@ -812,8 +812,8 @@ simple_type_specifier:
  | Twchar_t             { Right3 (BaseType (IntType WChar_t)),         [$1] }
 
  /*(* gccext: *)*/
- | Ttypeof TOPar assign_expr TCPar { Right3 (TypeOfExpr ($1, ($2,$3,$4))),noii }
- | Ttypeof TOPar type_id     TCPar { Right3 (TypeOfType ($1, ($2,$3,$4))),noii }
+ | Ttypeof TOPar assign_expr TCPar { Right3 (TypeOf ($1,($2,Right $3,$4))),noii}
+ | Ttypeof TOPar type_id     TCPar { Right3 (TypeOf ($1,($2,Left $3,$4))),noii}
 
  /*
  (* history: cant put TIdent {} cos it makes the grammar ambiguous and 

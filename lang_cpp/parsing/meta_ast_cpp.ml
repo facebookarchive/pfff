@@ -129,6 +129,7 @@ and vof_class_name v = vof_name v
 and vof_namespace_name v = vof_name v
 and vof_ident_name v = vof_name v
 
+and vof_either_ft_or_expr v = Ocaml.vof_either vof_fullType vof_expression v
 
 
 and vof_fullType (v1, v2) =
@@ -173,14 +174,10 @@ and vof_typeCbis =
       let v1 = vof_tok v1
       and v2 = vof_name v2
       in Ocaml.VSum (("TypenameKwd", [ v1; v2 ]))
-  | TypeOfExpr ((v1, v2)) ->
+  | TypeOf ((v1, v2)) ->
       let v1 = vof_tok v1
-      and v2 = vof_paren vof_expression v2
-      in Ocaml.VSum (("TypeOfExpr", [ v1; v2 ]))
-  | TypeOfType ((v1, v2)) ->
-      let v1 = vof_tok v1
-      and v2 = vof_paren vof_fullType v2
-      in Ocaml.VSum (("TypeOfType", [ v1; v2 ]))
+      and v2 = vof_paren vof_either_ft_or_expr v2
+      in Ocaml.VSum (("TypeOf", [ v1; v2 ]))
   | ParenType v1 ->
       let v1 = vof_paren vof_fullType v1
       in Ocaml.VSum (("ParenType", [ v1 ]))
@@ -331,14 +328,10 @@ and vof_expressionbis =
       let v1 = vof_fullType v1
       and v2 = vof_paren (vof_comma_list vof_argument) v2
       in Ocaml.VSum (("ConstructedObject", [ v1; v2 ]))
-  | TypeIdOfExpr ((v1, v2)) ->
+  | TypeId ((v1, v2)) ->
       let v1 = vof_tok v1
-      and v2 = vof_paren vof_expression v2
-      in Ocaml.VSum (("TypeIdOfExpr", [ v1; v2 ]))
-  | TypeIdOfType ((v1, v2)) ->
-      let v1 = vof_tok v1
-      and v2 = vof_paren vof_fullType v2
-      in Ocaml.VSum (("TypeIdOfType", [ v1; v2 ]))
+      and v2 = vof_paren vof_either_ft_or_expr v2
+      in Ocaml.VSum (("TypeId", [ v1; v2 ]))
   | CplusplusCast ((v1, v2, v3)) ->
       let v1 = vof_wrap2 vof_cast_operator v1
       and v2 = vof_angle vof_fullType v2
