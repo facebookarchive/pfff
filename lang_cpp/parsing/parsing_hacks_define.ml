@@ -47,7 +47,7 @@ module PI = Parse_info
  * the stringication heuristics can believe the TIdent is a string-macro.
  * So simpler to change the kind of the TIdent in a macro too.
  *
- * ugly hack, a better solution perhaps would be to erase
+ * ugly: maybe a better solution perhaps would be to erase
  * TCommentNewline_DefineEndOfMacro from the Ast and list of tokens in parse_c.
  * 
  * note: I do a +1 somewhere, it's for the unparsing to correctly sync.
@@ -91,13 +91,19 @@ let pos ii = Parse_info.string_of_info ii
 (* Parsing hacks for #define *)
 (*****************************************************************************)
 
-(* put the TCommentNewline_DefineEndOfMacro at the good place *)
+(* simple automata:
+ * state1 --'#define'--> state2 --change_of_line--> state1
+ *)
+
+(* put the TCommentNewline_DefineEndOfMacro at the good place
+ * and replace \ with TCommentSpace
+ *)
 let rec define_line_1 xs = 
   match xs with
   | [] -> []
-  | TDefine ii::xs -> 
+  | (TDefine ii as x)::xs -> 
       let line = PI.line_of_info ii in
-      TDefine ii::define_line_2 line ii xs
+      x::define_line_2 line ii xs
   | TCppEscapedNewline ii::xs -> 
       pr2 (spf "WEIRD: a \\ outside a #define at %s" (pos ii));
       (* fresh_tok*) TCommentSpace ii::define_line_1 xs
@@ -128,24 +134,25 @@ and define_line_2 line lastinfo xs =
             mark_end_define lastinfo::define_line_1 (x::xs)
       )
 
+(* put the TIdent_Define and TOPar_Define *)
 let rec define_ident xs = 
   match xs with
   | [] -> []
-  | TDefine ii::xs -> 
-      TDefine ii::
+  | (TDefine ii as x)::xs -> 
+      x::
       (match xs with
-      | TCommentSpace i1::TIdent (s,i2)::(* no space *)TOPar (i3)::xs -> 
+      | (TCommentSpace _ as x)::TIdent (s,i2)::(* no space *)TOPar (i3)::xs -> 
           (* if TOPar_Define is just next to the ident (no space), then
            * it's a macro-function. We change the token to avoid
            * ambiguity between '#define foo(x)'  and   '#define foo   (x)'
            *)
-            TCommentSpace i1
+          x
           ::Hack.fresh_tok (TIdent_Define (s,i2))
           ::Hack.fresh_tok (TOPar_Define i3)
           ::define_ident xs
 
-      | TCommentSpace i1::TIdent (s,i2)::xs -> 
-            TCommentSpace i1
+      | (TCommentSpace _ as x)::TIdent (s,i2)::xs -> 
+          x
           ::Hack.fresh_tok (TIdent_Define (s,i2))
           ::define_ident xs
       | _ -> 
@@ -154,6 +161,10 @@ let rec define_ident xs =
       )
   | x::xs -> 
       x::define_ident xs
+
+(*****************************************************************************)
+(* Entry point *)
+(*****************************************************************************)
 
 let fix_tokens_define2 xs = 
   define_ident (define_line_1 xs)

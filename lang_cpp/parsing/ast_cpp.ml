@@ -23,6 +23,12 @@
  * This file started with a simple AST for C, but then was extended
  * to deal with cpp idioms (see 'cppext:' tag), gcc extensions (see gccext),
  * and finally C++ constructs (see c++ext:).
+ * 
+ * gcc introduced StatementExpr which made expr and statement mutually
+ * recursive. It also added NestedFunc so even more mutual recursiveity.
+ * With C++ templates, because arguments can be types or expressions
+ * and because templates are also qualifiers, almost all types 
+ * are now mutually recursive.
  *
  * Like most other ASTs in pfff, it's actually more a Concrete Syntax Tree.
  * Some stuff are tagged 'semantic:' which means that they are computed
@@ -450,8 +456,6 @@ and block_declaration =
   * ast_c.ml.
   * note: before the need for unparser, I didn't have a DeclList but just 
   * a Decl.
-  * 
-  * note: onedecl includes prototype declarations and class_declarations!
   *)
   | DeclList of onedecl comma_list * tok (*;*)
 
@@ -464,6 +468,17 @@ and block_declaration =
   (* gccext: *)
   | Asm of tok * tok option (*volatile*) * asmbody paren * tok(*;*)
 
+  (* gccext: *)
+  and asmbody = tok list (* string list *) * colon wrap (* : *) list
+      and colon = Colon of colon_option comma_list
+      and colon_option = colon_optionbis wrap
+          and colon_optionbis = ColonMisc | ColonExpr of expression paren
+
+(* ------------------------------------------------------------------------- *)
+(* Variable definition *)
+(* ------------------------------------------------------------------------- *)
+
+  (* note: onedecl includes prototype declarations and class_declarations! *)
   and onedecl = {
     (* option cos can have empty declaration or struct tag declaration.
      * kenccext: name can be empty for anonymous fields.
@@ -503,11 +518,6 @@ and block_declaration =
         | DesignatorIndex of expression bracket
         | DesignatorRange of (expression * tok (*...*) * expression) bracket
               
-  (* gccext: *)
-  and asmbody = tok list (* string list *) * colon wrap (* : *) list
-      and colon = Colon of colon_option comma_list
-      and colon_option = colon_optionbis wrap
-          and colon_optionbis = ColonMisc | ColonExpr of expression paren
         
 (* ------------------------------------------------------------------------- *)
 (* Function definition *)

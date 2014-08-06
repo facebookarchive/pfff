@@ -128,6 +128,9 @@ let insert_virtual_positions l =
  *)
 
 let fix_tokens_c ~macro_defs tokens =
+  (* note that fix_token_define has been done by caller 
+   * todo: actually it could be done here no?
+  *)
   let tokens2 = ref (tokens +> Common2.acc_map TV.mk_token_extended) in
 
   (* macro part 1 *)
