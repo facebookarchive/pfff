@@ -122,7 +122,6 @@ let  filter_for_typedef multi_groups =
 
         | Tregister _ | Tstatic _ | Tauto _ | Textern _
         | Ttypedef _
-        | Tunion _
           -> None
 
         | Tvirtual _ | Tfriend _ | Tinline _ | Tmutable _
@@ -191,6 +190,11 @@ let find_typedefs xxs =
   (* { xx * yy *)
   | {t=tok_before}::({t=TIdent (s,i1)} as tok1)::{t=TMul _}::{t=TIdent _}::xs
     when look_like_declaration_context tok_before ->
+      change_tok tok1 (TIdent_Typedef (s, i1));
+      aux xs
+
+  (* } xx * yy *)
+  | {t=TCBrace _}::({t=TIdent (s,i1)} as tok1)::{t=TMul _}::{t=TIdent _}::xs ->
       change_tok tok1 (TIdent_Typedef (s, i1));
       aux xs
 
