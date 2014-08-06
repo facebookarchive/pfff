@@ -421,13 +421,13 @@ assign_expr:
  /*(*c++ext: *)*/
  | Tthrow assign_expr_opt        { mk_e (Throw $2) [$1] }
 
-/*(* gccext: allow optional then part hence gcc_opt_expr 
+/*(* gccext: allow optional then part hence opt_expr 
    * bugfix: in C grammar they put 'TCol cond_expr', but in fact it must be
    * 'assign_expr', otherwise   pnp ? x : x = 0x388  is not allowed
    *)*/
 cond_expr: 
  | arith_expr   { $1 }
- | arith_expr TWhy gcc_opt_expr TCol assign_expr 
+ | arith_expr TWhy expr_opt TCol assign_expr 
      { mk_e (CondExpr ($1,$3,$5)) [$2;$4] } 
 
 
@@ -1867,10 +1867,6 @@ comma_opt:
  | TComma { [$1] }
  | { [] }
 
-
-gcc_opt_expr: 
- | expr        { Some $1 }
- | /*(* empty *)*/ { None  }
 
 assign_expr_opt: 
  | assign_expr     { Some $1 }
