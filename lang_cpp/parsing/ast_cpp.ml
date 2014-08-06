@@ -169,8 +169,7 @@ and fullType = typeQualifier * typeC
   | TypeOfType of tok * fullType paren
 
   (* should be really just at toplevel *)
-  | EnumDef of tok (*enum*) * simple_ident option * enum_elem comma_list brace  
-            (* => string * int list *)
+  | EnumDef of enum_definition (* => string * int list *)
   (* c++ext: bigger type now *)
   | StructDef of class_definition 
 
@@ -197,15 +196,6 @@ and fullType = typeQualifier * typeC
          and sign = Signed | UnSigned
 
       and floatType = CFloat | CDouble | CLongDouble
-
-    and enum_elem = {
-      e_name: simple_ident;
-      e_val: (tok (*=*) * constExpression) option;
-    }
-
-  (* for functionType: see the function definition section now *)
-
-  (* for class_definition (was structType): see below *)
 
 and typeQualifier = 
   { const: tok option; volatile: tok option; }
@@ -572,6 +562,18 @@ and func_definition = {
        simple_ident * parameter comma_list paren * tok(*;*)
    | DestructorDecl of 
        tok(*~*) * simple_ident * tok option paren * exn_spec option * tok(*;*)
+
+(* ------------------------------------------------------------------------- *)
+(* enum definition *)
+(* ------------------------------------------------------------------------- *)
+(* less: use a record *)
+and enum_definition =
+    tok (*enum*) * simple_ident option * enum_elem comma_list brace  
+
+    and enum_elem = {
+      e_name: simple_ident;
+      e_val: (tok (*=*) * constExpression) option;
+    }
 
 (* ------------------------------------------------------------------------- *)
 (* Class definition *)
