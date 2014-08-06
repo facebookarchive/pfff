@@ -183,6 +183,18 @@ let find_typedefs xxs =
       change_tok tok1 (TIdent_Typedef (s, i1));
       aux xs
 
+  (* xx ( *yy )( *)
+  | ({t=TIdent (s,i1)} as tok1)::{t=TOPar _}::{t=TMul _}
+      ::{t=TIdent _}::{t=TCPar _}::({t=TOPar _} as tok2)::xs ->
+      change_tok tok1 (TIdent_Typedef (s, i1));
+      aux (tok2::xs)
+
+  (* xx* ( *yy )( *)
+  | ({t=TIdent (s,i1)} as tok1)::{t=TMul _}::{t=TOPar _}::{t=TMul _}
+    ::{t=TIdent _}::{t=TCPar _}::({t=TOPar _} as tok2)::xs ->
+      change_tok tok1 (TIdent_Typedef (s, i1));
+      aux (tok2::xs)
+
   (* return xx * yy *)
   | {t=tok_before}::{t=TIdent (_s,_)}::{t=TMul _}::{t=TIdent _}::xs
     when look_like_multiplication_context tok_before ->
@@ -204,6 +216,13 @@ let find_typedefs xxs =
    *)
   | ({t=TIdent (s,i1);where=InParameter::_} as tok1)::{t=TMul _}
     ::{t=TIdent _}::xs 
+    ->
+      change_tok tok1 (TIdent_Typedef (s, i1));
+      aux xs
+
+  (* xx *yy *)
+  | ({t=TIdent (s,i1);col=c0} as tok1)::{t=TMul _;col=c1}::{t=TIdent _;col=c2}::xs 
+    when c2 = c1 + 1 && c1 = c0 + String.length s + 1
     ->
       change_tok tok1 (TIdent_Typedef (s, i1));
       aux xs
@@ -253,14 +272,13 @@ let find_typedefs xxs =
       aux (x::xs)
 
 
-(* hmmm: todo: some false positives on InParameter, see mini/constants.c *)
+  (* hmmm: todo: some false positives on InParameter, see mini/constants.c *)
   (* [(,] xx [),] where InParameter *)
 
   | {t=(TOPar _ | TComma _)}::({t=TIdent (s, i1); where=InParameter::_} as tok1)
     ::({t=(TCPar _ | TComma _)} as tok2)::xs ->
       change_tok tok1 (TIdent_Typedef (s, i1));
       aux (tok2::xs)
-
 
   (* kencc-ext: [;{] xx ;  where InStruct *)
   | {t=tok_before}::({t=TIdent (s, i1)} as tok1)::({t=TPtVirg _} as tok2)::xs 

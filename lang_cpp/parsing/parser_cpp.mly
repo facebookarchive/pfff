@@ -640,7 +640,7 @@ argument:
  | assign_expr { Left $1 }
 /*(* cppext: *)*/
 /*(* actually this can happen also when have a wrong typedef inference ...*)*/
- | parameter_decl { Right (ArgType $1)  }
+ | type_id { Right (ArgType $1)  }
 /* see todo_mly */
 
 /*(*----------------------------*)*/
@@ -1012,6 +1012,23 @@ parameter_decl:
      { let (t_ret, reg) = fixDeclSpecForParam $1 in
        { p_name = None; p_type = t_ret; 
          p_register = reg; p_val = Some($2,$3) } }
+
+/*(*----------------------------*)*/
+/*(*2 workarounds *)*/
+/*(*----------------------------*)*/
+
+parameter_list: 
+ | parameter_decl2                       { [$1, []] }
+ | parameter_list TComma parameter_decl2 { $1 @ [$3,  [$2]] }
+
+parameter_decl2:
+ | parameter_decl { $1 }
+ /*(* when the typedef inference didn't work *)*/
+ | TIdent
+     { 
+       let t = nQ, (TypeName (None, [], IdIdent $1), noii) in
+       { p_name = None; p_type = t; p_val = None; p_register = None; }
+     }
 
 /*(*----------------------------*)*/
 /*(*2 c++ext: *)*/
@@ -1822,9 +1839,6 @@ member_declarator_list:
  | member_declarator_list TComma member_declarator { $1 @ [$3,     [$2]] }
 
 
-parameter_list: 
- | parameter_decl                       { [$1, []] }
- | parameter_list TComma parameter_decl { $1 @ [$3,  [$2]] }
 
 
 param_define_list_opt: 

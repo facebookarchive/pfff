@@ -289,7 +289,7 @@ and v_ident_info { i_scope = _v_i_scope } =
 and v_argument v = Ocaml.v_either v_expression v_weird_argument v
 and v_weird_argument =
   function
-  | ArgType v1 -> let v1 = v_parameter v1 in ()
+  | ArgType v1 -> let v1 = v_fullType v1 in ()
   | ArgAction v1 -> let v1 = v_action_macro v1 in ()
 and v_action_macro = function | ActMisc v1 -> let v1 = v_list v_tok v1 in ()
 and v_constant =

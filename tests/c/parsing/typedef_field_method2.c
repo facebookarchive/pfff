@@ -1,8 +1,3 @@
-struct Tree {
-	File *root;
- 	void	(*destroy)(File *file);
-};
-
 
 struct	Machdata {		/* Machine-dependent debugger support */
 	uchar	bpinst[4];			/* break point instr. */
@@ -23,7 +18,7 @@ struct	Machdata {		/* Machine-dependent debugger support */
 
   Chan* (*open)(Chan*, int);
 
-  void  (*addmulti)(Ipifc *ifc, uchar *a, uchar *ia);
+//  void  (*addmulti)(Ipifc *ifc, uchar *a, uchar *ia);
   
 };
 

@@ -374,7 +374,7 @@ and vof_argument v = Ocaml.vof_either vof_expression vof_weird_argument v
 and vof_weird_argument =
   function
   | ArgType v1 ->
-      let v1 = vof_parameter v1 in Ocaml.VSum (("ArgType", [ v1 ]))
+      let v1 = vof_fullType v1 in Ocaml.VSum (("ArgType", [ v1 ]))
   | ArgAction v1 ->
       let v1 = vof_action_macro v1 in Ocaml.VSum (("ArgAction", [ v1 ]))
 and vof_action_macro =

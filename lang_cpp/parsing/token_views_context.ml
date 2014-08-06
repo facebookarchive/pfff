@@ -44,7 +44,7 @@ let look_like_argument _tok_before xs =
   let aux1 xs =
     match xs with
     | [] -> false
-    (* *xx *)
+    (* *xx    (less: actually can also be a function pointer decl) *)
     | [Tok{t=TMul _}; Tok{t=TIdent _}] -> true
     (* *(xx) *)
     | [Tok{t=TMul _}; Parens _] -> true

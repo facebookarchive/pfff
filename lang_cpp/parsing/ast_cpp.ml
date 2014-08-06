@@ -297,7 +297,7 @@ and expression = expressionbis wrap
   (* cppext: normmally just expression *)
   and argument = (expression, weird_argument) Common.either
    and weird_argument = 
-       | ArgType of parameter
+       | ArgType of fullType
        | ArgAction of action_macro
       and action_macro = 
          | ActMisc of tok list
