@@ -245,7 +245,7 @@ type toplevel =
   | EnumDef of enum_def
 
   | FuncDef of func_def
-  | Global of var_decl
+  | Global of var_decl (* also contain extern decl *)
   | Prototype of func_def (* empty body *)
  (* with tarzan *)
 
