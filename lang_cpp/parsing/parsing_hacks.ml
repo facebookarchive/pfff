@@ -142,6 +142,11 @@ let fix_tokens_c ~macro_defs tokens =
 
   let cleaner = !tokens2 +> Parsing_hacks_pp.filter_pp_or_comment_stuff in
 
+  (* todo: put stuff for ifdef too here! right now I didn't
+   * because I use -parse_cpp_c on plan9 C code which does not
+   * use ifdefs, but other oss do use ifdefs
+   *)
+
   (* tagging contextual info (InFunc, InStruct, etc) *)
   let multi_grouped = TV.mk_multi cleaner in
   Token_views_context.set_context_tag_multi multi_grouped;
