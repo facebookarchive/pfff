@@ -4,7 +4,7 @@ http://eli.thegreenplace.net/2007/11/24/the-context-sensitivity-of-cs-grammar/
 
 * Typedefs 
 
-from "yacc is dead" on ltu at http://lambda-the-ultimate.org/node/4148#comment
+from "Yacc Is Dead" at http://lambda-the-ultimate.org/node/4148#comment
 
 " 'x*y;' in C++ this could be a multiplication, pointer declaration, or
 arbitrary overloaded meaning of "*". You have to hit name and type
@@ -24,11 +24,20 @@ simple_type_specifier:
   * this was ugly too so now we use a typedef "inference" mechanism.
 
 
-* If then else
+* If-then-else
 
 see dangling-else section in lang_php/parsing/conflicts.txt
 
 * Template < >
+
+* ':'
+
+When have 'class X :' we don't know if it's the start of possibly a
+class with inheritance spec, or a bitfield as 'class X :3'.
+
+TODO why have conflict on TCol ???
+
+
 
 * Old notes
 
