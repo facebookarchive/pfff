@@ -202,8 +202,9 @@ open Parser_cpp_mly_helper
 /*(*************************************************************************)*/
 /*(* must be at the top so that it has the lowest priority *)*/
 %nonassoc LOW_PRIORITY_RULE
-
+/*(* see conflicts.txt *)*/
 %nonassoc Telse
+
 
 %left TOrLog
 %left TAndLog
@@ -710,7 +711,7 @@ labeled:
      { CaseRange ($2, $4, $6), [$1;$3;$5] } /*(* gccext: allow range *)*/
  | Tdefault         TCol statement   { Default $3,             [$1; $2] } 
 
-/*(* classic else ambiguity resolved by a %prec *)*/
+/*(* classic else ambiguity resolved by a %prec, see conflicts.txt *)*/
 selection: 
  | Tif TOPar expr TCPar statement              %prec LOW_PRIORITY_RULE
      { If ($1, ($2, $3, $4), $5, None, (ExprStatement None, [])), noii }
