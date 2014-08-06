@@ -861,7 +861,7 @@ type_php_or_shape:
  | type_php { $1 }
  | T_SHAPE TOPAR shape_field_list TCPAR { HintShape ($1, ($2, $3, $4)) }
 
-shape_field: T_CONSTANT_ENCAPSED_STRING T_ARROW type_php { $1, $2, $3 }
+shape_field: expr T_ARROW type_php { $1, $2, $3 }
 
 type_constr_opt: 
  | T_AS type_php  { Some ($1, $2) }

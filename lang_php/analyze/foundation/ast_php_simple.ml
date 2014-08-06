@@ -289,6 +289,9 @@ and expr =
 and foreach_pattern = expr
 (* often an Arrow *)
 and array_value = expr
+(* string_const_expr is for shape field names which are permitted to be either
+* literal strings or class constants. *)
+and string_const_expr = expr
 (* ------------------------------------------------------------------------- *)
 (* Types *)
 (* ------------------------------------------------------------------------- *)
@@ -299,7 +302,7 @@ and hint_type =
  | HintQuestion of hint_type
  | HintTuple of hint_type list
  | HintCallback of hint_type list * (hint_type option)
- | HintShape of (string wrap * hint_type) list
+ | HintShape of (string_const_expr * hint_type) list
 
 and class_name = hint_type
 

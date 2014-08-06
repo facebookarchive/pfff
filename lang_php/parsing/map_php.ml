@@ -821,7 +821,7 @@ and map_hint_type =
         map_paren
           (map_comma_list
              (fun (v1, v2, v3) ->
-                let v1 = map_wrap map_of_string v1
+                let v1 = map_expr v1
                 and v2 = map_tok v2
                 and v3 = map_hint_type v3
                 in (v1, v2, v3)))

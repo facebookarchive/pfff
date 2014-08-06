@@ -469,8 +469,8 @@ and hint_type env = function
       A.HintCallback (args, ret)
   | HintShape (_tok, xs) ->
     A.HintShape (
-      xs +> brace +> comma_list +> List.map (fun ((key,tok), _tok, t) ->
-        (key, wrap tok), hint_type env t
+      xs +> brace +> comma_list +> List.map (fun (e, _tok, t) ->
+        expr env e, hint_type env t
       ))
 
 (* ------------------------------------------------------------------------- *)
