@@ -142,6 +142,11 @@ let fix_tokens_for_language lang xs =
  * in the token original list.
  *)
 
+(* we could factorize with fix_tokens_cpp, but for debugging purpose it
+ * might be good to have two different functions and do far less in
+ * fix_tokens_c (even though the extra steps in fix_tokens_cpp should
+ * have no effect on regular C code).
+ *)
 let fix_tokens_c ~macro_defs tokens =
 
   let tokens = Parsing_hacks_define.fix_tokens_define tokens in
