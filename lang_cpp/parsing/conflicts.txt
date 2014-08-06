@@ -23,6 +23,13 @@ simple_type_specifier:
   * (which requires even more lexer/parser cooperation). But
   * this was ugly too so now we use a typedef "inference" mechanism.
 
+We do many things to handle typedefs ambiguities:
+ - parsing_hack_typedef heuristics
+ - token_view_context in Parameter heuristics
+ - dealing with template before the actual typedef
+ - a few rules added for parameter and arguments to allow
+   both TIdent and TIdent_typedef in both contexts
+ - ...
 
 * If-then-else
 
@@ -30,13 +37,14 @@ see dangling-else section in lang_php/parsing/conflicts.txt
 
 * Template < >
 
-* ':'
+We do many things ...
+
+* TODO ':'
 
 When have 'class X :' we don't know if it's the start of possibly a
 class with inheritance spec, or a bitfield as 'class X :3'.
 
 TODO why have conflict on TCol ???
-
 
 
 * Old notes
@@ -66,4 +74,3 @@ TODO why have conflict on TCol ???
  * convention: I often use 'ii' for the name of a list of info. 
  * 
  *)
-
