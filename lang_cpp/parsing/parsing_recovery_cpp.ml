@@ -1,7 +1,7 @@
 (* Yoann Padioleau
  * 
- * Copyright (C) 2006, 2007, 2008 Ecole des Mines de Nantes
  * Copyright (C) 2011 Facebook
+ * Copyright (C) 2006, 2007, 2008 Ecole des Mines de Nantes
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License (GPL)
@@ -12,18 +12,18 @@
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * file license.txt for more details.
  *)
-
 open Common
 
+module T = Parser_cpp
 module TH = Token_helpers_cpp
 module PI = Parse_info
-
-module Parser = Parser_cpp
 
 (*****************************************************************************)
 (* Wrappers *)
 (*****************************************************************************)
 let pr2_err, _pr2_once = Common2.mk_pr2_wrappers Flag_parsing_cpp.verbose_parsing 
+
+let pr2_err s = pr2_err ("ERROR_RECOV: " ^s)
 
 (*****************************************************************************)
 (* Helpers *)
@@ -33,7 +33,7 @@ let pr2_err, _pr2_once = Common2.mk_pr2_wrappers Flag_parsing_cpp.verbose_parsin
 (* Skipping stuff, find next "synchronisation" point *)
 (*****************************************************************************)
 
-(* todo: do something if find Parser.Eof ? *)
+(* todo: do something if find T.Eof ? *)
 let rec find_next_synchro ~next ~already_passed =
 
   (* Maybe because not enough }, because for example an ifdef contains
@@ -57,7 +57,7 @@ let rec find_next_synchro ~next ~already_passed =
   let is_define = 
     let xs = last_round +> List.filter TH.is_not_comment in
     match xs with
-    | Parser.TDefine _::_ -> true
+    | T.TDefine _::_ -> true
     | _ -> false
   in
   if is_define 
@@ -70,8 +70,8 @@ let rec find_next_synchro ~next ~already_passed =
       (* by looking at TOBrace we are sure that the "start of something"
        * will not arrive too early 
        *)
-      | Parser.TOBrace _ -> false
-      | Parser.TDefine _ -> false
+      | T.TOBrace _ -> false
+      | T.TDefine _ -> false
       | _ -> true
     ) 
   in
@@ -82,10 +82,10 @@ let rec find_next_synchro ~next ~already_passed =
 and find_next_synchro_define next already_passed =
   match next with
   | [] ->  
-      pr2_err "ERROR-RECOV: end of file while in recovery mode"; 
+      pr2_err "end of file while in recovery mode";
       already_passed, []
-  | (Parser.TCommentNewline_DefineEndOfMacro _ as v)::xs  -> 
-      pr2_err ("ERROR-RECOV: found sync end of #define "^i_to_s(TH.line_of_tok v));
+  | (T.TCommentNewline_DefineEndOfMacro _ as v)::xs  -> 
+      pr2_err (spf "found sync end of #define  at line %d" (TH.line_of_tok v));
       v::already_passed, xs
   | v::xs -> 
       find_next_synchro_define xs (v::already_passed)
@@ -96,32 +96,31 @@ and find_next_synchro_define next already_passed =
 and find_next_synchro_orig next already_passed =
   match next with
   | [] ->  
-      pr2_err "ERROR-RECOV: end of file while in recovery mode"; 
+      pr2_err "end of file while in recovery mode"; 
       already_passed, []
 
-  | (Parser.TCBrace i as v)::xs when PI.col_of_info i = 0 -> 
-      pr2_err ("ERROR-RECOV: found sync '}' at line "^
-                  i_to_s (PI.line_of_info i));
+  | (T.TCBrace i as v)::xs when PI.col_of_info i = 0 -> 
+      pr2_err (spf "found sync '}' at line %d" (PI.line_of_info i));
 
       (match xs with
       | [] -> raise Impossible (* there is a EOF token normally *)
 
       (* still useful: now parser.mly allow empty ';' so normally no pb *)
-      | Parser.TPtVirg iptvirg::xs -> 
-          pr2_err "ERROR-RECOV: found sync bis, eating } and ;";
-          (Parser.TPtVirg iptvirg)::v::already_passed, xs
+      | T.TPtVirg iptvirg::xs -> 
+          pr2_err "found sync bis, eating } and ;";
+          (T.TPtVirg iptvirg)::v::already_passed, xs
 
-      | Parser.TIdent x::Parser.TPtVirg iptvirg::xs -> 
-          pr2_err "ERROR-RECOV: found sync bis, eating ident, }, and ;";
-          (Parser.TPtVirg iptvirg)::(Parser.TIdent x)::v::already_passed, 
+      | T.TIdent x::T.TPtVirg iptvirg::xs -> 
+          pr2_err "found sync bis, eating ident, }, and ;";
+          (T.TPtVirg iptvirg)::(T.TIdent x)::v::already_passed, 
           xs
             
-      | Parser.TCommentSpace sp::Parser.TIdent x::Parser.TPtVirg iptvirg
+      | T.TCommentSpace sp::T.TIdent x::T.TPtVirg iptvirg
         ::xs -> 
-          pr2_err "ERROR-RECOV: found sync bis, eating ident, }, and ;";
-          (Parser.TCommentSpace sp)::
-            (Parser.TPtVirg iptvirg)::
-            (Parser.TIdent x)::
+          pr2_err "found sync bis, eating ident, }, and ;";
+          (T.TCommentSpace sp)::
+            (T.TPtVirg iptvirg)::
+            (T.TIdent x)::
             v::
             already_passed, 
           xs
@@ -133,8 +132,7 @@ and find_next_synchro_orig next already_passed =
       let info = TH.info_of_tok v in
       if PI.col_of_info info = 0 && TH.is_start_of_something v 
       then begin
-        pr2_err ("ERROR-RECOV: found sync col 0 at line "^ 
-                    i_to_s(PI.line_of_info info));
+        pr2_err (spf "found sync col 0 at line %d " (PI.line_of_info info));
         already_passed, v::xs
       end
       else find_next_synchro_orig xs (v::already_passed)

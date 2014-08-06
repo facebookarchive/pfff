@@ -82,6 +82,11 @@ let look_like_declaration_context tok_before =
   | priv when TH.is_privacy_keyword priv -> true
   | _ -> false
 
+let fakeInfo = { Parse_info.
+    token = Parse_info.FakeTokStr ("",None); 
+    transfo = Parse_info.NoTransfo;
+  }
+
 (*****************************************************************************)
 (* Better View *)
 (*****************************************************************************)
@@ -93,7 +98,7 @@ let  filter_for_typedef multi_groups =
    * declaration.
    *)
   let multi_groups = 
-    Tok(mk_token_fake (TPtVirg (Ast.fakeInfo())))::multi_groups in
+    Tok(mk_token_fake (TPtVirg (fakeInfo)))::multi_groups in
 
   let _template_args = ref [] in
 

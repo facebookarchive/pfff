@@ -782,11 +782,6 @@ let noIdInfo () = { i_scope = Scope_code.NoScope; }
 let noii = []
 let noQscope = []
 
-let fakeInfo _pi  = { Parse_info.
-    token = Parse_info.FakeTokStr ("",None); 
-    transfo = Parse_info.NoTransfo;
-  }
-
 (*****************************************************************************)
 (* Wrappers *)
 (*****************************************************************************)

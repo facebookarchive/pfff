@@ -31,7 +31,7 @@ type decl = {
   storageD: storagebis wrap;
   typeD: ((sign option) * (shortLong option) * (typeCbis option)) wrap;
   qualifD: typeQualifier;
-  inlineD: bool             wrap;
+  inlineD: bool wrap;
   (* note: have a full_info: parse_info list; to remember ordering
    * between storage, qualifier, type ? well this info is already in
    * the Ast_c.info, just have to sort them to get good order *)
@@ -176,7 +176,7 @@ let fixNameForParam (name, ftyp) =
       raise (Semantic ("parameter have qualifier", fake_pi))
 
 let fixDeclSpecForFuncDef x =
-  let (returnType,storage) = fixDeclSpecForDecl x in
+  let (returnType, storage) = fixDeclSpecForDecl x in
   (match fst (unwrap storage) with
   | StoTypedef -> 
       raise (Semantic ("function definition declared 'typedef'", fake_pi))
@@ -205,10 +205,9 @@ let (fixOldCDecl: fullType -> fullType) = fun ty ->
       (match Ast.unparen params with
       | [{p_name = None; p_type = ty2;_},_] -> 
           (match Ast.unwrap_typeC ty2 with
-          | BaseType Void ->
-              ty
+          | BaseType Void ->ty
           | _ -> 
-              pr2 ("SEMANTIC:parameter name omitted, but I continue");
+              pr2 ("SEMANTIC: parameter name omitted, but I continue");
               ty
           )
 
@@ -217,7 +216,7 @@ let (fixOldCDecl: fullType -> fullType) = fun ty ->
             match param with
             | {p_name = None;_} -> 
               (* if majuscule, then certainly macro-parameter *)
-              pr2 ("SEMANTIC:parameter name omitted, but I continue"); 
+              pr2 ("SEMANTIC: parameter name omitted, but I continue"); 
 	  | _ -> ()
           ));
           ty
@@ -225,7 +224,7 @@ let (fixOldCDecl: fullType -> fullType) = fun ty ->
         (* todo? can we declare prototype in the decl or structdef,
            ... => length <> but good kan meme *)
   | _ -> 
-      (* gcc say parse error but dont see why *)
+      (* gcc says parse error but I dont see why *)
       raise (Semantic ("seems this is not a function", fake_pi)) 
 
 (* TODO: this is ugly ... use record! *)
@@ -245,7 +244,7 @@ let fixFunc = function
       | params -> 
           params +> List.iter (function 
           | ({p_name = Some _s;_}, _) -> ()
-	  | _ -> ()
+          | _ -> ()
                 (* failwith "internal errror: fixOldCDecl not good" *)
           )
       ); 
@@ -287,10 +286,8 @@ let mk_e e ii = (e, ii)
 
 let mk_funcall e1 args = 
   match e1 with
-  | (Id (name, _idinfo)), _ii_empty ->
-      FunCallSimple (name, args)
-  | _ -> 
-      Call (e1, args)
+  | (Id (name, _idinfo)), _ii_empty ->  FunCallSimple (name, args)
+  | _ -> Call (e1, args)
 
 let mk_constructor id (lp, params, rp) cp =
   let params, _hasdots = 
