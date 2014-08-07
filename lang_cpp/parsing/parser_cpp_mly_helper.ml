@@ -123,7 +123,9 @@ let type_and_storage_from_decl
   } = 
  (qu,
    (match ty with 
- | (None, None, None)     -> warning "type defaults to 'int'" (defaultInt, noii)
+ | (None, None, None)     -> 
+   (* mine (originally default to int, but this looks like bad style) *)
+   raise (Semantic ("no type (could default to 'int')", List.hd iist))
  | (None, None, Some t)   -> (t, iit)
 	 
  | (Some sign,   None, (None| Some (BaseType (IntType (Si (_,CInt))))))  -> 
