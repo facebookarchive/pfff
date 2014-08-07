@@ -1,5 +1,7 @@
 Analyze php/javascript/css/sql as well as their interactions, holistically.
 Analyze ocaml code so can apply the ideas to my own code :)
+Analyze deeply, lexing, parsing, typing, linking, and flowing!
+(even though there is dimininushing return at each step for the developer)
 
 Analyze statically and dynamically.
 Mine all code artifacts: code, git, org, mailing lists, documentation
@@ -7,7 +9,7 @@ Mine all code artifacts: code, git, org, mailing lists, documentation
 
 Visualize/Search/Navigate/Analyze.
 
-Big todo:
+Big TODOs:
  - dataflow
  - interprocedural analysis
  - context sensitive analysis

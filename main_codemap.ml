@@ -33,6 +33,8 @@ module Model = Model2
  *  - show the data (the source code), but also show the relations
  *    (hence codegraph integration)
  *  - look at the code through different views (hence layers)
+ *  - TODO deep semantic analysis, control flow + data flow so can answer
+ *    flow questions such as where a callback is called (hence datalog)
  * 
  * history:
  *  - saw Aspect Browser while working on aspects as an intern at IRISA
@@ -89,16 +91,17 @@ module Model = Model2
  *    coverage tracing would be nice (as in tracegl)
  *  - source control? extract age, number of authors, churn information in
  *    layers
+ *  - TODO dataflow from here, dataflow to here (intellij)
  * 
  * features of IDE we care less about:
  *  - folding/outline? thumbnails make this less important
- *  - auto completion? no. One nice thing of autocomplete though is that
+ *  - auto completion? One nice thing of autocomplete is that
  *    it proposes all the possible methods of an object, the overriden
- *    as well as not overriden parent methods.  We don't want autocomplete
+ *    as well as not overriden parent methods. We don't need autocomplete
  *    but we want the ability to understand a class by TODO "inlining" parent 
  *    methods that are relevant to understand the local code of the class
  *    (e.g. the short command of Eiffel)
- *  - refactoring? no
+ *  - refactoring? no (but some spatch integration could be nice)
  *  - UI designer? no
  *  - deploy assistant, cloud assistant? no
  *)
