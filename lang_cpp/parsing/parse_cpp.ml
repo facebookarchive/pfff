@@ -15,12 +15,12 @@ open Common
 
 module Ast = Ast_cpp
 module Flag = Flag_parsing_cpp
-module TH = Token_helpers_cpp
 module PI = Parse_info
+module Stat = Parse_info
 module T = Parser_cpp
+module TH = Token_helpers_cpp
 module Lexer = Lexer_cpp
 module Semantic = Parser_cpp_mly_helper
-module Stat = Parse_info
 module Hack = Parsing_hacks_lib
 module FT = File_type
 
@@ -92,20 +92,19 @@ let commentized xs = xs +> Common.map_filter (function
 let count_lines_commentized xs = 
   let line = ref (-1) in
   let count = ref 0 in
-  begin
-    commentized xs +>
-    List.iter (function
-      | PI.OriginTok pinfo | PI.ExpandedTok (_,pinfo,_) -> 
-          let newline = pinfo.PI.line in
-          if newline <> !line
-          then begin
-            line := newline;
-            incr count
-          end
-      | _ -> ()
-    );
-    !count
-  end
+  commentized xs +> List.iter (function
+    | PI.OriginTok pinfo 
+    | PI.ExpandedTok (_,pinfo,_) -> 
+        let newline = pinfo.PI.line in
+        if newline <> !line
+        then begin
+          line := newline;
+          incr count
+        end
+    | _ -> ()
+  );
+  !count
+
 
 (* See also problematic_lines and parsing_stat.ml *)
 
@@ -151,12 +150,12 @@ let tokens2 file =
     in
     tokens_aux ()
   with
-    | Lexer.Lexical s -> 
-        failwith ("lexical error " ^ s ^ "\n =" ^ 
-                  (PI.error_message file (PI.lexbuf_to_strpos lexbuf)))
-    | e -> raise e
+  | Lexer.Lexical s -> 
+    failwith (spf "lexical error %s \n = %s"
+                s (PI.error_message file (PI.lexbuf_to_strpos lexbuf)))
+  | e -> raise e
  )
-
+   
 let tokens a = 
   Common.profile_code "Parse_cpp.tokens" (fun () -> tokens2 a)
 
@@ -252,17 +251,20 @@ let init_defs file =
   pr2 (spf "Using %s macro file" file);
   _defs := Common.hash_of_list (extract_macros file)
 
+(* We used to have also a init_defs_builtins() so that we could use a
+ * standard.h containing macros that were always useful, and a macros.h
+ * that the user could customize for his own project.
+ * But this was adding complexity so now we just have macros.h.
+ *)
 
 (*****************************************************************************)
 (* Error recovery *)
 (*****************************************************************************)
-
 (* see parsing_recovery_cpp.ml *)
 
 (*****************************************************************************)
 (* Consistency checking *)
 (*****************************************************************************)
-
 (* todo: a parsing_consistency_cpp.ml *)
       
 (*****************************************************************************)

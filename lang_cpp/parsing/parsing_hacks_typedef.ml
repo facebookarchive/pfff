@@ -333,6 +333,11 @@ let find_typedefs xxs =
       );
       aux (tok2::xs)
 
+  (* sizeof(xx)    sizeof expr does not require extra parenthesis *)
+  | {t=Tsizeof _}::{t=TOPar _}::({t=TIdent (s, i1)} as tok1)::{t=TCPar _}::xs ->
+      change_tok tok1 (TIdent_Typedef (s, i1));
+      aux xs
+
   (* new Xxx *)
   | {t=Tnew _}::({t=TIdent (s, i1)} as tok1)::xs ->
       change_tok tok1 (TIdent_Typedef (s, i1));
