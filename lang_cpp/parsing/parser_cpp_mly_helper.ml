@@ -15,7 +15,7 @@ let warning s v =
   then Common2.warning ("PARSING: " ^ s) v
   else v
 
-exception Semantic of string * Parse_info.token_location
+exception Semantic of string * Ast_cpp.tok
 
 (*****************************************************************************)
 (* Parse helpers functions *)
@@ -26,24 +26,24 @@ exception Semantic of string * Parse_info.token_location
 (*-------------------------------------------------------------------------- *)
 
 type shortLong = Short | Long | LongLong
-
+    
+(* note: have a full_info: parse_info list; to remember ordering
+ * between storage, qualifier, type? well this info is already in
+ * the Ast_c.info, just have to sort them to get good order 
+ *)
 type decl = { 
   storageD: storagebis wrap;
-  typeD: ((sign option) * (shortLong option) * (typeCbis option)) wrap;
+  typeD: (sign option * shortLong option * typeCbis option) wrap;
   qualifD: typeQualifier;
   inlineD: bool wrap;
-  (* note: have a full_info: parse_info list; to remember ordering
-   * between storage, qualifier, type ? well this info is already in
-   * the Ast_c.info, just have to sort them to get good order *)
 } 
 
 let nullDecl = {
-  storageD = NoSto, [];
-  typeD = (None, None, None), [];
+  storageD = NoSto, noii;
+  typeD = (None, None, None), noii;
   qualifD = Ast.nQ;
-  inlineD = false, [];
+  inlineD = false, noii;
 }
-let fake_pi = Parse_info.fake_token_location
 
 let addStorageD (x, ii) decl  =
   match decl with
@@ -51,7 +51,7 @@ let addStorageD (x, ii) decl  =
   | {storageD = (y, _ii2); _} -> 
       if x = y 
       then decl +> warning "duplicate storage classes"
-      else raise (Semantic ("multiple storage classes", fake_pi))
+      else raise (Semantic ("multiple storage classes", ii))
 
 let addInlineD ii decl =
   match decl with
@@ -66,8 +66,8 @@ let addTypeD ty decl =
       decl +> warning "duplicate 'signed'"
   | (Left3 UnSigned,_ii), {typeD = ((Some UnSigned,_b,_c),_ii2); _} -> 
       decl +> warning "duplicate 'unsigned'"
-  | (Left3 _,_ii),        {typeD = ((Some _,_b,_c),_ii2); _} -> 
-      raise (Semantic ("both signed and unsigned specified", fake_pi))
+  | (Left3 _,ii),        {typeD = ((Some _,_b,_c),_ii2); _} -> 
+      raise (Semantic ("both signed and unsigned specified", List.hd ii))
   | (Left3 x,ii),        {typeD = ((None,b,c),ii2); _} -> 
       { decl with typeD = (Some x,b,c),ii @ ii2}
   | (Middle3 Short,_ii),  {typeD = ((_a,Some Short,_c),_ii2); _} -> 
@@ -80,13 +80,13 @@ let addTypeD ty decl =
   | (Middle3 Long,_ii),  {typeD = ((_a,Some LongLong,_c),_ii2); _} -> 
       decl +> warning "triplicate 'long'"
 
-  | (Middle3 _,_ii),     {typeD = ((_a,Some _,_c),_ii2); _} -> 
-      raise (Semantic ("both long and short specified", fake_pi))
+  | (Middle3 _,ii),     {typeD = ((_a,Some _,_c),_ii2); _} -> 
+      raise (Semantic ("both long and short specified", List.hd ii))
   | (Middle3 x,ii),      {typeD = ((a,None,c),ii2); _} -> 
       { decl with typeD = (a, Some x,c),ii@ii2}
 
-  | (Right3 _t,_ii),     {typeD = ((_a,_b,Some _),_ii2); _} -> 
-      raise (Semantic ("two or more data types", fake_pi))
+  | (Right3 _t,ii),     {typeD = ((_a,_b,Some _),_ii2); _} -> 
+      raise (Semantic ("two or more data types", List.hd ii))
   | (Right3 t,ii),       {typeD = ((a,b,None),ii2); _}   -> 
       { decl with typeD = (a,b, Some t),ii@ii2}
 
@@ -115,16 +115,15 @@ let addQualifD qu qu2 =
  * To understand the code, just look at the result (right part of the PM) 
  * and go back.
  *)
-let (fixDeclSpecForDecl: decl -> (fullType * (storage wrap)))  = function
- {storageD = (st,iist); 
+let type_and_storage_from_decl  
+  {storageD = (st,iist); 
   qualifD = qu; 
   typeD = (ty,iit); 
   inlineD = (inline,iinl);
-  } -> 
-  (
-   (qu,
+  } = 
+ (qu,
    (match ty with 
- | (None,None,None)       -> warning "type defaults to 'int'" (defaultInt, [])
+ | (None, None, None)     -> warning "type defaults to 'int'" (defaultInt, noii)
  | (None, None, Some t)   -> (t, iit)
 	 
  | (Some sign,   None, (None| Some (BaseType (IntType (Si (_,CInt))))))  -> 
@@ -137,16 +136,15 @@ let (fixDeclSpecForDecl: decl -> (fullType * (storage wrap)))  = function
  | (None, Some Long,(Some(BaseType(FloatType CDouble))))    -> BaseType (FloatType (CLongDouble)), iit
 
  | (Some _,_, Some _) ->  
-     (*mine*)
-     raise (Semantic ("signed, unsigned valid only for char and int", fake_pi))
+   raise (Semantic("signed, unsigned valid only for char and int", List.hd iit))
  | (_,Some _,(Some(BaseType(FloatType (CFloat|CLongDouble))))) -> 
-     raise (Semantic ("long or short specified with floatint type", fake_pi))
+   raise (Semantic ("long or short specified with floatint type", List.hd iit))
  | (_,Some Short,(Some(BaseType(FloatType CDouble)))) ->
-     raise (Semantic ("the only valid combination is long double", fake_pi))
+     raise (Semantic ("the only valid combination is long double", List.hd iit))
        
  | (_, Some _, Some _) -> 
      (* mine *)
-     raise (Semantic ("long, short valid only for int or float", fake_pi)) 
+     raise (Semantic ("long, short valid only for int or float", List.hd iit)) 
 
      (* if do short uint i, then gcc say parse error, strange ? it is
       * not a parse error, it is just that we dont allow with typedef
@@ -157,29 +155,31 @@ let (fixDeclSpecForDecl: decl -> (fullType * (storage wrap)))  = function
       * as short ident ident => parse error (cos after first short i
       * pass in dt() mode) *)
    ))
-,((st, inline),iist@iinl)
-  )
+   ,((st, inline),iist@iinl)
+  
 
-let fixDeclSpecForParam decl = 
+let type_and_register_from_decl decl = 
   let {storageD = (st,iist); _} = decl in 
-  let ((_qu,_ty) as v,_st) = fixDeclSpecForDecl decl in
+  let (v,_storage) = type_and_storage_from_decl decl in
   match st with
   | (Sto Register) -> v, Some (List.hd iist)
   | NoSto -> v, None
   | _ -> 
       raise (Semantic ("storage class specified for parameter of function", 
-                       fake_pi))
+                       List.hd iist))
 
 let fixNameForParam (name, ftyp) =
   match name with
   | None, [], IdIdent id -> id, ftyp
-  | _ -> raise (Semantic ("parameter have qualifier", fake_pi))
+  | _ -> 
+    let ii =  Lib_parsing_cpp.ii_of_any (Name name) +> List.hd in
+    raise (Semantic ("parameter have qualifier", ii))
 
-let fixDeclSpecForFuncDef decl =
-  let (returnType, storage) = fixDeclSpecForDecl decl in
-  (match fst (unwrap storage) with
-  | StoTypedef -> 
-      raise (Semantic ("function definition declared 'typedef'", fake_pi))
+let type_and_storage_for_funcdef_from_decl decl =
+  let (returnType, storage) = type_and_storage_from_decl decl in
+  (match storage with
+  | (StoTypedef, _), iist -> 
+      raise (Semantic ("function definition declared 'typedef'", List.hd iist))
   | _x -> (returnType, storage)
   )
 
@@ -197,7 +197,6 @@ let fixDeclSpecForFuncDef decl =
 let (fixOldCDecl: fullType -> fullType) = fun ty ->
   match snd ty with
   | FunctionType ({ft_params=params;_}),_iifunc -> 
-
       (* stdC: If the prototype declaration declares a parameter for a
        * function that you are defining (it is part of a function
        * definition), then you must write a name within the declarator.
@@ -205,31 +204,33 @@ let (fixOldCDecl: fullType -> fullType) = fun ty ->
       (match Ast.unparen params with
       | [{p_name = None; p_type = ty2;_},_] -> 
           (match Ast.unwrap_typeC ty2 with
-          | BaseType Void ->ty
+          | BaseType Void -> ty
           | _ -> 
               pr2 ("SEMANTIC: parameter name omitted, but I continue");
               ty
           )
-
-      | params -> 
+      | params ->
           (params +> List.iter (fun (param,_) ->
             match param with
             | {p_name = None;_} -> 
               (* if majuscule, then certainly macro-parameter *)
               pr2 ("SEMANTIC: parameter name omitted, but I continue"); 
-	  | _ -> ()
-          ));
+	    | _ -> ()
+           ));
           ty
       )
-        (* todo? can we declare prototype in the decl or structdef,
-           ... => length <> but good kan meme *)
+     (* todo? can we declare prototype in the decl or structdef,
+      *  ... => length <> but good kan meme 
+      *)
   | _ -> 
       (* gcc says parse error but I dont see why *)
-      raise (Semantic ("seems this is not a function", fake_pi)) 
+      let ii = Lib_parsing_cpp.ii_of_any (Type ty) +> List.hd in
+      raise (Semantic ("seems this is not a function", ii))
 
 (* TODO: this is ugly ... use record! *)
-let fixFunc = function
-  | (name, (aQ,(FunctionType ({ft_params=params; _} as ftyp),_iifunc)),sto),cp->
+let fixFunc ((name, ty, sto), cp) =
+  match ty with
+  | (aQ,(FunctionType ({ft_params=params; _} as ftyp),_iifunc)) ->
       (* it must be nullQualif, cos parser construct only this *)
       assert (aQ =*= nQ);
 
@@ -249,7 +250,8 @@ let fixFunc = function
       ); 
       { f_name = name; f_type = ftyp; f_storage = sto; f_body = cp; }
   | _ -> 
-      raise (Semantic ("function definition without parameters", fake_pi))
+      let ii = Lib_parsing_cpp.ii_of_any (Type ty) +> List.hd in
+      raise (Semantic ("function definition without parameters", ii))
 
 let fixFieldOrMethodDecl (xs, semicolon) =
   match xs with
@@ -269,7 +271,7 @@ let fixFieldOrMethodDecl (xs, semicolon) =
       | Some (EqInit(tokeq, InitExpr(C(Int "0"), iizero))) ->
           Some (tokeq, List.hd iizero)
       | _ ->
-          raise (Semantic ("can't assign expression to method decl", fake_pi))
+          raise (Semantic ("can't assign expression to method decl", semicolon))
       ), semicolon
       ))
 
