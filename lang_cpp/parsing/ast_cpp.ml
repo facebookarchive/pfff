@@ -262,6 +262,7 @@ and expression = expressionbis wrap
 
   (* gccext: *)        
   | StatementExpr of compound paren (* ( {  } ) new scope*)
+  (* gccext: kenccext: *)
   | GccConstructor  of fullType paren * initialiser comma_list brace
 
   (* c++ext: *)
