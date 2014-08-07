@@ -45,65 +45,66 @@ let nullDecl = {
 }
 let fake_pi = Parse_info.fake_token_location
 
-let addStorageD  = function 
-  | ((x,ii), ({storageD = (NoSto,[]); _} as v)) -> 
-      { v with storageD = (x, [ii]) }
-  | ((x,_ii), ({storageD = (y, _ii2); _} as v)) ->  
-      if x = y then warning "duplicate storage classes" v
+let addStorageD (x, ii) decl  =
+  match decl with
+  | {storageD = (NoSto,[]); _} -> { decl with storageD = (x, [ii]) }
+  | {storageD = (y, _ii2); _} -> 
+      if x = y 
+      then decl +> warning "duplicate storage classes"
       else raise (Semantic ("multiple storage classes", fake_pi))
 
-let addInlineD  = function 
-  | ((true,ii), ({inlineD = (false,[]); _} as v)) -> 
-      { v with inlineD=(true,[ii])}
-  | ((true,_ii), ({inlineD = (true, _ii2); _} as v)) -> 
-      warning "duplicate inline" v
+let addInlineD ii decl =
+  match decl with
+  | {inlineD = (false,[]); _} -> { decl with inlineD=(true,[ii])}
+  | {inlineD = (true, _ii2); _} -> decl +> warning "duplicate inline"
   | _ -> raise Impossible
 
 
-let addTypeD     = function 
-  | ((Left3 Signed,_ii),({typeD = ((Some Signed,  _b,_c),_ii2); _} as v)) -> 
-      warning "duplicate 'signed'"   v
-  | ((Left3 UnSigned,_ii),({typeD = ((Some UnSigned,_b,_c),_ii2); _} as v)) -> 
-      warning "duplicate 'unsigned'" v
-  | ((Left3 _,_ii),        ({typeD = ((Some _,_b,_c),_ii2); _} as _v)) -> 
+let addTypeD ty decl =
+  match ty, decl with
+  | (Left3 Signed,_ii), {typeD = ((Some Signed,  _b,_c),_ii2); _} -> 
+      decl +> warning "duplicate 'signed'"
+  | (Left3 UnSigned,_ii), {typeD = ((Some UnSigned,_b,_c),_ii2); _} -> 
+      decl +> warning "duplicate 'unsigned'"
+  | (Left3 _,_ii),        {typeD = ((Some _,_b,_c),_ii2); _} -> 
       raise (Semantic ("both signed and unsigned specified", fake_pi))
-  | ((Left3 x,ii),        ({typeD = ((None,b,c),ii2); _} as v))   -> 
-      {v with typeD = (Some x,b,c),ii @ ii2}
-
-  | ((Middle3 Short,_ii),  ({typeD = ((_a,Some Short,_c),_ii2); _} as v)) -> 
-      warning "duplicate 'short'" v
+  | (Left3 x,ii),        {typeD = ((None,b,c),ii2); _} -> 
+      { decl with typeD = (Some x,b,c),ii @ ii2}
+  | (Middle3 Short,_ii),  {typeD = ((_a,Some Short,_c),_ii2); _} -> 
+      decl +> warning "duplicate 'short'"
 
       
   (* gccext: long long allowed *)
-  | ((Middle3 Long,ii),   ({typeD = ((a,Some Long,c),ii2); _} as v)) -> 
-      { v with typeD = (a, Some LongLong, c),ii@ii2 }
-  | ((Middle3 Long,_ii),   ({typeD = ((_a,Some LongLong,_c),_ii2); _} as v)) -> 
-      warning "triplicate 'long'" v
+  | (Middle3 Long,ii),   {typeD = ((a,Some Long,c),ii2); _}-> 
+      { decl with typeD = (a, Some LongLong, c),ii@ii2 }
+  | (Middle3 Long,_ii),  {typeD = ((_a,Some LongLong,_c),_ii2); _} -> 
+      decl +> warning "triplicate 'long'"
 
-  | ((Middle3 _,_ii),      ({typeD = ((_a,Some _,_c),_ii2); _} as _v)) -> 
+  | (Middle3 _,_ii),     {typeD = ((_a,Some _,_c),_ii2); _} -> 
       raise (Semantic ("both long and short specified", fake_pi))
-  | ((Middle3 x,ii),      ({typeD = ((a,None,c),ii2); _} as v))  -> 
-      {v with typeD = (a, Some x,c),ii@ii2}
+  | (Middle3 x,ii),      {typeD = ((a,None,c),ii2); _} -> 
+      { decl with typeD = (a, Some x,c),ii@ii2}
 
-  | ((Right3 _t,_ii),       ({typeD = ((_a,_b,Some _),_ii2); _} as _v)) -> 
+  | (Right3 _t,_ii),     {typeD = ((_a,_b,Some _),_ii2); _} -> 
       raise (Semantic ("two or more data types", fake_pi))
-  | ((Right3 t,ii),       ({typeD = ((a,b,None),ii2); _} as v))   -> 
-      {v with typeD = (a,b, Some t),ii@ii2}
+  | (Right3 t,ii),       {typeD = ((a,b,None),ii2); _}   -> 
+      { decl with typeD = (a,b, Some t),ii@ii2}
 
 
-let addQualif = function
-  | ({const=Some _; _},   ({const=Some _; _} as x)) -> 
-      warning "duplicate 'const'" x
-  | ({volatile=Some _; _},({volatile=Some _; _} as x))-> 
-      warning "duplicate 'volatile'" x
-  | ({const=Some x; _},    v) -> 
-      {v with const=Some x}
-  | ({volatile=Some x; _}, v) -> 
-      {v with volatile=Some x}
+let addQualif tq1 tq2 =
+  match tq1, tq2 with
+  | {const=Some _; _},   {const=Some _; _} -> 
+      tq2 +> warning "duplicate 'const'"
+  | {volatile=Some _; _}, {volatile=Some _; _} -> 
+      tq2 +> warning "duplicate 'volatile'"
+  | {const=Some x; _},   _ -> 
+      { tq2 with const = Some x}
+  | {volatile=Some x; _}, _ -> 
+      { tq2 with volatile = Some x}
   | _ -> Common2.internal_error "there is no noconst or novolatile keyword"
 
-let addQualifD (qu, ({qualifD = v; _} as x)) =
-  { x with qualifD = addQualif (qu, v) }
+let addQualifD qu qu2 = 
+  { qu2 with qualifD = addQualif qu qu2.qualifD }
 
 
 (*-------------------------------------------------------------------------- *)
@@ -159,24 +160,23 @@ let (fixDeclSpecForDecl: decl -> (fullType * (storage wrap)))  = function
 ,((st, inline),iist@iinl)
   )
 
-let fixDeclSpecForParam = function ({storageD = (st,iist); _} as r) -> 
-  let ((_qu,_ty) as v,_st) = fixDeclSpecForDecl r in
+let fixDeclSpecForParam decl = 
+  let {storageD = (st,iist); _} = decl in 
+  let ((_qu,_ty) as v,_st) = fixDeclSpecForDecl decl in
   match st with
   | (Sto Register) -> v, Some (List.hd iist)
   | NoSto -> v, None
   | _ -> 
-      raise 
-        (Semantic ("storage class specified for parameter of function", 
-                  fake_pi))
+      raise (Semantic ("storage class specified for parameter of function", 
+                       fake_pi))
 
 let fixNameForParam (name, ftyp) =
   match name with
   | None, [], IdIdent id -> id, ftyp
-  | _ -> 
-      raise (Semantic ("parameter have qualifier", fake_pi))
+  | _ -> raise (Semantic ("parameter have qualifier", fake_pi))
 
-let fixDeclSpecForFuncDef x =
-  let (returnType, storage) = fixDeclSpecForDecl x in
+let fixDeclSpecForFuncDef decl =
+  let (returnType, storage) = fixDeclSpecForDecl decl in
   (match fst (unwrap storage) with
   | StoTypedef -> 
       raise (Semantic ("function definition declared 'typedef'", fake_pi))
@@ -229,7 +229,7 @@ let (fixOldCDecl: fullType -> fullType) = fun ty ->
 
 (* TODO: this is ugly ... use record! *)
 let fixFunc = function
-  | (name, (aQ, (FunctionType ({ft_params=params; _} as ftyp),_iifunc)),sto),cp->
+  | (name, (aQ,(FunctionType ({ft_params=params; _} as ftyp),_iifunc)),sto),cp->
       (* it must be nullQualif, cos parser construct only this *)
       assert (aQ =*= nQ);
 
@@ -237,23 +237,19 @@ let fixFunc = function
       [{p_name= None; p_type = ty2;_}, _] ->
           (match Ast.unwrap_typeC ty2 with
           | BaseType Void -> ()
-          | _ ->
-                (* failwith "internal errror: fixOldCDecl not good" *)
-              ()
+          (* failwith "internal errror: fixOldCDecl not good" *)
+          | _ -> ()
           )
       | params -> 
           params +> List.iter (function 
           | ({p_name = Some _s;_}, _) -> ()
+          (* failwith "internal errror: fixOldCDecl not good" *)
           | _ -> ()
-                (* failwith "internal errror: fixOldCDecl not good" *)
           )
       ); 
       { f_name = name; f_type = ftyp; f_storage = sto; f_body = cp; }
   | _ -> 
-      raise 
-        (Semantic 
-            ("you are trying to do a function definition but you dont give " ^
-             "any parameter", fake_pi))
+      raise (Semantic ("function definition without parameters", fake_pi))
 
 let fixFieldOrMethodDecl (xs, semicolon) =
   match xs with
@@ -270,7 +266,7 @@ let fixFieldOrMethodDecl (xs, semicolon) =
       }, 
       (match ini_opt with
       | None -> None
-      | Some (EqInit(tokeq, InitExpr( ((C(Int("0"))), iizero)) )) ->
+      | Some (EqInit(tokeq, InitExpr(C(Int "0"), iizero))) ->
           Some (tokeq, List.hd iizero)
       | _ ->
           raise (Semantic ("can't assign expression to method decl", fake_pi))

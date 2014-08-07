@@ -1058,15 +1058,15 @@ const_opt:
 /*(* For type_id. No storage here. Was used before for field but 
    * now structure fields can have storage so fields now use decl_spec. *)*/
 spec_qualif_list: 
- | type_spec                    { addTypeD ($1, nullDecl) }
+ | type_spec                    { addTypeD $1 nullDecl }
  | cv_qualif                    { {nullDecl with qualifD = $1} }
- | type_spec   spec_qualif_list { addTypeD ($1,$2)   }
- | cv_qualif   spec_qualif_list { addQualifD ($1,$2) }
+ | type_spec   spec_qualif_list { addTypeD $1 $2   }
+ | cv_qualif   spec_qualif_list { addQualifD $1 $2 }
 
 /*(* for pointers in direct_declarator and abstract_declarator *)*/
 cv_qualif_list: 
  | cv_qualif                  { {nullDecl with qualifD = $1 } }
- | cv_qualif_list cv_qualif   { addQualifD ($2,$1) }
+ | cv_qualif_list cv_qualif   { addQualifD $2 $1 }
 
 /*(*-----------------------------------------------------------------------*)*/
 /*(*2 xxx_type_id *)*/
@@ -1119,11 +1119,11 @@ direct_new_declarator:
  *)*/
 conversion_type_id: 
  | simple_type_specifier conversion_declarator 
-     { let tx = addTypeD ($1, nullDecl) in
+     { let tx = addTypeD $1 nullDecl in
        let (t_ret, _) = fixDeclSpecForDecl tx in t_ret 
      }
  | simple_type_specifier %prec LOW_PRIORITY_RULE 
-     { let tx = addTypeD ($1, nullDecl) in
+     { let tx = addTypeD $1 nullDecl in
        let (t_ret, _) = fixDeclSpecForDecl tx in t_ret 
      }
 
@@ -1382,18 +1382,18 @@ simple_declaration:
  *)*/
 decl_spec: 
  | storage_class_spec      { {nullDecl with storageD = (fst $1, [snd $1]) } }
- | type_spec               { addTypeD ($1,nullDecl) }
+ | type_spec               { addTypeD $1 nullDecl }
  | cv_qualif               { {nullDecl with qualifD  = $1 } }
  | function_spec           { {nullDecl with inlineD = (true, [snd $1]) } (*TODO*) }
  | Ttypedef     { {nullDecl with storageD = (StoTypedef,  [$1]) } }
  | Tfriend      { {nullDecl with inlineD = (true, [$1]) } (*TODO*) }
 
- | storage_class_spec decl_spec { addStorageD ($1, $2) }
- | type_spec          decl_spec { addTypeD    ($1, $2) }
- | cv_qualif          decl_spec { addQualifD  ($1, $2) }
- | function_spec      decl_spec { addInlineD ((true, snd $1), $2) (*TODO*) }
- | Ttypedef           decl_spec { addStorageD ((StoTypedef,$1),$2) }
- | Tfriend            decl_spec { addInlineD ((true, $1),$2) (*TODO*)}
+ | storage_class_spec decl_spec { addStorageD $1 $2 }
+ | type_spec          decl_spec { addTypeD  $1 $2 }
+ | cv_qualif          decl_spec { addQualifD $1 $2 }
+ | function_spec      decl_spec { addInlineD (snd $1) $2 (*TODO*) }
+ | Ttypedef           decl_spec { addStorageD (StoTypedef, $1) $2 }
+ | Tfriend            decl_spec { addInlineD $1 $2 (*TODO*)}
 
 function_spec:
  /*(*gccext: and c++ext: *)*/

@@ -749,24 +749,25 @@ and program = toplevel list
 and any = 
   | Program of program
   | Toplevel of toplevel
-  | BlockDecl2 of block_declaration
+  | Cpp of cpp_directive
   | Stmt of statement
   | Expr of expression
   | Type of fullType
   | Name of name
-  | Cpp of cpp_directive
 
+  | BlockDecl2 of block_declaration
   | ClassDef of class_definition
   | FuncDef of func_definition
   | FuncOrElse of func_or_else
+  | ClassMember of class_member
+  | OneDecl of onedecl
 
   | Constant of constant
+
   | Argument of argument
   | Parameter of parameter
 
-  | ClassMember of class_member
   | Body of compound
-  | OneDecl of onedecl
 
   | Info of tok
   | InfoList of tok list
