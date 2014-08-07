@@ -183,8 +183,9 @@ let type_and_storage_for_funcdef_from_decl decl =
   | _x -> (returnType, storage)
   )
 
-(* parameter: this function is used where we give parameters only when
- * in func DEFINITION not in func DECLARATION. We must have a name.
+(* 
+ * this function is used for func definitions (not declarations).
+ * In that case we must have a name for the parameter.
  * This function ensures that we give only parameterTypeDecl with well
  * formed Classic constructor.
  * 
@@ -205,16 +206,30 @@ let (fixOldCDecl: fullType -> fullType) = fun ty ->
       | [{p_name = None; p_type = ty2;_},_] -> 
           (match Ast.unwrap_typeC ty2 with
           | BaseType Void -> ty
-          | _ -> 
-              pr2 ("SEMANTIC: parameter name omitted, but I continue");
+          | _ ->
+            (* less: there is some valid case actually, when use interfaces
+             * and generic callbacks where specific instances do not
+             * need the extra parameter (happens a lot in plan9).
+             * Maybe this check is better done in a scheck for C.
+              let info = Lib_parsing_cpp.ii_of_any (Type ty2) +> List.hd in
+              pr2 (spf "SEMANTIC: parameter name omitted (but I continue) at %s"
+                     (Parse_info.string_of_info info)
+              );
+            *)
               ty
           )
       | params ->
           (params +> List.iter (fun (param,_) ->
             match param with
-            | {p_name = None;_} -> 
+            | {p_name = None; p_type = _ty2; _} -> 
+              (* see above
+              let info = Lib_parsing_cpp.ii_of_any (Type ty2) +> List.hd in
               (* if majuscule, then certainly macro-parameter *)
-              pr2 ("SEMANTIC: parameter name omitted, but I continue"); 
+              pr2 (spf "SEMANTIC: parameter name omitted (but I continue) at %s"
+                     (Parse_info.string_of_info info)
+              );
+              *)
+              ()
 	    | _ -> ()
            ));
           ty
