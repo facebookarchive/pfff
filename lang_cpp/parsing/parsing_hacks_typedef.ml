@@ -207,7 +207,7 @@ let find_typedefs xxs =
       change_tok tok1 (TIdent_Typedef (s, i1));
       aux (tok2::xs)
 
-  (* return xx * yy *)
+  (* + xx * yy *)
   | {t=tok_before}::{t=TIdent (_s,_)}::{t=TMul _}::{t=TIdent _}::xs
     when look_like_multiplication_context tok_before ->
       aux xs
@@ -315,6 +315,13 @@ let find_typedefs xxs =
     ::({t=(TCPar _ | TComma _)} as tok2)::xs ->
       change_tok tok1 (TIdent_Typedef (s, i1));
       aux (tok2::xs)
+
+  (* [(,] xx[...]  could be a array access, so need InParameter guard *)
+  | {t=(TOPar _ | TComma _)}::({t=TIdent (s,i1);where=InParameter::_} as tok1)
+    ::{t=TOCro _}::_tok::{t=TCCro _}::xs 
+    ->
+      change_tok tok1 (TIdent_Typedef (s, i1));
+      aux xs
 
   (* kencc-ext: xx;  where InStruct *)
   | {t=tok_before}::({t=TIdent (s, i1)} as tok1)::({t=TPtVirg _} as tok2)::xs 

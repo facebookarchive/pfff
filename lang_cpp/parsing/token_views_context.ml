@@ -87,9 +87,10 @@ let look_like_argument _tok_before xs =
   xxs +> List.exists aux1 || aux xs
 
 let look_like_typedef s =
-  s =~ ".*_t$"
+  s =~ ".*_t$" ||
+  s = "ulong" || s = "uchar"
   (* plan9, but actually some fp such as Paddr which is actually a macro *)
-  (* s =~ "u.*$"  || s =~ "[A-Z][a-z].*$" *)
+  (*  || s =~ "[A-Z][a-z].*$" *)
   (* with DECLARE_BOOST_TYPE, but have some false positives
    * when people do xx* indexPtr = const_cast<>(indexPtr);
    *)
