@@ -43,13 +43,9 @@ open Parsing_hacks_lib
  *  - const, volatile, restrict keywords
  *  - TODO merge multiple ** or *& or whatever
  * 
- * todo? at the same time certain tokens like const are strong
- * signals towards a typedef ident, so maybe could do a first
- * pass first which use those tokens?
- *
  * history:
- *  - We used make the lexer and parser cooperate in a lexerParser.ml file
- *  - but this was not enough because of declarations such as 'acpi acpi;'
+ *  - We used to make the lexer and parser cooperate in a lexerParser.ml file
+ *  - this was not enough because of declarations such as 'acpi acpi;'
  *    and so we had to enable/disable the ident->typedef mechanism 
  *    which requires even more lexer/parser cooperation
  *  - this was ugly too so now we use a typedef "inference" mechanism
@@ -75,11 +71,13 @@ let look_like_multiplication_context tok_before =
 let look_like_declaration_context tok_before =
   match tok_before with
   | TOBrace _ 
- (* no!! | TCBrace _ *)
   | TPtVirg _
   | TCommentNewline_DefineEndOfMacro _
-      -> true
-  | priv when TH.is_privacy_keyword priv -> true
+  (* no!! | TCBrace _, I think because of nested struct so can have
+   * struct { ... } v;
+  *)
+    -> true
+  | _ when TH.is_privacy_keyword tok_before -> true
   | _ -> false
 
 let fakeInfo = { Parse_info.
@@ -244,6 +242,13 @@ let find_typedefs xxs =
       change_tok tok1 (TIdent_Typedef (s, i1));
       aux xs
 
+  (* xx* yy *)
+  | ({t=TIdent(s,i1);col=c0} as tok1)::{t=TMul _;col=c1}::{t=TIdent _;col=c2}::xs 
+    when c1 = c0 + String.length s && c2 >= c1 + 2
+    ->
+      change_tok tok1 (TIdent_Typedef (s, i1));
+      aux xs
+
   (* xx ** yy
    * less could be a multiplication too, but with less probability
    *)
@@ -267,7 +272,7 @@ let find_typedefs xxs =
       aux (tok5::xs)
 
 
-   (* (xx * )
+   (* (xx * ),    not that pointer function are ( *xx ), so star before.
     * TODO: does not really need the closing paren?
     * TODO: check that not InParameter or InArgument?
     *)
@@ -320,7 +325,6 @@ let find_typedefs xxs =
       | _ -> ()
       );
       aux (tok2::xs)
-
 
   (* new Xxx *)
   | {t=Tnew _}::({t=TIdent (s, i1)} as tok1)::xs ->

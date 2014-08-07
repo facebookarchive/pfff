@@ -44,7 +44,7 @@ let look_like_argument _tok_before xs =
   let aux1 xs =
     match xs with
     | [] -> false
-    (* *xx    (less: actually can also be a function pointer decl) *)
+    (* *xx    (note: actually can also be a function pointer decl) *)
     | [Tok{t=TMul _}; Tok{t=TIdent _}] -> true
     (* *(xx) *)
     | [Tok{t=TMul _}; Parens _] -> true
@@ -96,6 +96,8 @@ let look_like_typedef s =
    (* s =~ ".*Ptr$" *)
   (* || s = "StringPiece" *)
 
+
+
 (* todo: pass1, look for const, etc
  * todo: pass2, look xx_t, xx&, xx*, xx**, see heuristics in typedef
  * 
@@ -125,6 +127,7 @@ let look_like_parameter tok_before xs =
      *  filtering of template and qualifier the no_space_between
      *  may not be completely accurate here. May need lower level access
      *  to the list of TCommentSpace and their position.
+     *  hmm but can look at col?
      * 
      * C-s for parameter_decl in grammar to see that catch() is
      * a InParameter.
@@ -132,11 +135,11 @@ let look_like_parameter tok_before xs =
     | [Tok {t=TIdent _}; Tok {t=TMul _};Tok {t=TIdent _};] ->
       (match tok_before with 
       | Tok{t=(
-            TIdent _ 
-          | Tcatch _ 
+            Tcatch _ 
           (* ugly: TIdent_Constructor interaction between past heuristics *)
           | TIdent_Constructor _
           | Toperator _
+          (* no! | TIdent _ *)
         )} -> true 
       | _ -> false
       )
