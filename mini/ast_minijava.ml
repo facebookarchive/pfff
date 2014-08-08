@@ -27,7 +27,7 @@
  * Here is a list of the simplications compared to ast_java.ml:
  *  - no packages
  *  - no generics, no annotations, no enum
- *  - no arrays
+ *  - no arrays (a special case of generic collections anyway)
  *  - no modifiers
  *  - ...
  *)
@@ -45,7 +45,7 @@ type 'a wrap = 'a * Parse_info.info
 (* for classes, methods, fields *)
 type name = string wrap
 
-(* for local variables, parameters *)
+(* for local variables, parameters (for globals use class static constants) *)
 type var = name
 
 (* ------------------------------------------------------------------------- *)
@@ -109,6 +109,7 @@ type class_decl = {
   cl_fields: field_decl list;
   cl_methods: method_decl list;
 }
+
 
 (* ------------------------------------------------------------------------- *)
 (* Program *)
