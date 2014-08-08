@@ -700,8 +700,7 @@ and cpp_directive =
  * note that we use 'block_declaration' below, not 'statement'.
  *)
 and declaration = 
-  | BlockDecl of block_declaration (* include class definition *)
-
+  | BlockDecl of block_declaration (* include struct/globals/... definitions *)
   | Func of func_or_else
 
   (* c++ext: *)
