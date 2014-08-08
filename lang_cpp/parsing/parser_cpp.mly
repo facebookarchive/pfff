@@ -1470,13 +1470,15 @@ initialize2:
  /*(* gccext: labeled elements, a.k.a designators *)*/
  | designator_list TEq initialize2 
      { InitDesignators ($1, $2, $3) }
-
  /*(* gccext: old format, in old kernel for instance *)*/
  | ident TCol initialize2
      { InitFieldOld ($1, $2, $3) }
+
 /*(* kenccext: c++ext:, but conflcit with array designators *)*/
  | TOCro const_expr TCCro initialize2
      { InitIndexOld (($1, $2, $3), $4) }
+ | TOCro const_expr TCCro  TEq initialize2
+     { InitDesignators ([DesignatorIndex($1, $2, $3)], $4, $5) }
 
 /*(* they can be nested, can have a .x.[3].y *)*/
 designator: 
