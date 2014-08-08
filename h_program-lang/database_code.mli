@@ -52,7 +52,13 @@ type property =
    | Required | Async
 
   and privacy = Public | Protected | Private
-  and class_kind = Struct | Class_ | Interface | Trait | Enum
+  and class_kind = 
+  | Struct | Class_ | Interface 
+  | Trait 
+  (* in Scala, Java, and now PHP enums are actually closer to class
+   * than C enums.
+   *)
+  | Enum
 
 
 type entity_id = int
