@@ -73,6 +73,7 @@ let look_like_declaration_context tok_before =
   | TOBrace _ 
   | TPtVirg _
   | TCommentNewline_DefineEndOfMacro _
+  | TInclude _
   (* no!! | TCBrace _, I think because of nested struct so can have
    * struct { ... } v;
   *)
@@ -258,11 +259,13 @@ let find_typedefs xxs =
 
   (* (xx) yy   and not a if/while before '('  (and yy can also be a constant) *)
   | {t=tok1}::{t=TOPar _}::({t=TIdent(s, i1)} as tok3)::{t=TCPar _}
-    ::{t = TIdent (_,_) | TInt _ | TString _ | TFloat _ }::xs 
+    ::{t = TIdent (_,_) | TInt _ | TString _ | TFloat _ | TTilde _ }::xs 
     when not (TH.is_stuff_taking_parenthized tok1) (*  && line are the same?*)->
       change_tok tok3 (TIdent_Typedef (s, i1));
       (* todo? recurse on bigger ? *)
       aux xs
+
+  (* todo:  = (xx) ..., |= (xx) ...,   (xx)~, ... *)
 
   (* (xx){  gccext: kenccext:  *)
   | {t=tok1}::{t=TOPar _}::({t=TIdent(s, i1)} as tok3)::{t=TCPar _}
