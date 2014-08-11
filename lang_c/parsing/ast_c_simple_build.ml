@@ -230,8 +230,25 @@ and onedecl env d =
 and initialiser env x =
   match x with
   | InitExpr e -> expr env e
-  | InitList xs -> 
-      A.InitList (List.map (initialiser env) (xs +> unbrace +> uncomma))
+  | InitList xs ->
+     (match xs +> unbrace +> uncomma with
+     | [] -> debug (Init x); raise Impossible
+     | (InitDesignators ([DesignatorField (_, _)], _, _init))::_ ->
+       A.RecordInit (
+         xs +> unbrace +> uncomma +> List.map (function
+           | InitDesignators ([DesignatorField (_, ident)], _, init) ->
+             ident, initialiser env init
+           | _ -> debug (Init x); raise Todo
+         ))
+     | _ ->
+       A.ArrayInit ((xs +> unbrace +> uncomma) +> List.map (function
+         (* less: todo? *)
+         | InitIndexOld (_idxTODO, ini) -> initialiser env ini
+         | x -> initialiser env x
+       ))
+     )
+
+  (* should be covered by caller *)
   | InitDesignators _ -> debug (Init x); raise Todo
   | InitIndexOld _ | InitFieldOld _ -> debug (Init x); raise Todo
 

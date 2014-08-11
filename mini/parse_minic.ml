@@ -257,7 +257,7 @@ and expr e =
   | CondExpr _ | Sequence _
   (* handled only in malloc call context *)
   | SizeOf _
-  | InitList _ | GccConstructor _
+  | ArrayInit _ | RecordInit _ | GccConstructor _
     -> error_any "expected an expr, not a C expr" (Expr e)
 
 (*****************************************************************************)

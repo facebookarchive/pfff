@@ -48,7 +48,7 @@ open Common2.Infix
  * projects.
  * 
  * related: 
- *  - CIL
+ *  - CIL, but it works after preprocessing.
  * 
  * See lang_cpp/parsing/ast_cpp.ml.
  *
@@ -129,13 +129,15 @@ type expr =
 
   | SizeOf of (expr, type_) Common.either
 
-  (* should appear only as part of a variable initializer *)
-  | InitList of expr list
+  (* should appear only in a variable initializer, or after GccConstructor *)
+  | ArrayInit of expr list
+  | RecordInit of (name * expr) list
   (* gccext: *)
-  | GccConstructor  of type_ * expr (* always an InitList *)
- (* with tarzan *)
+  | GccConstructor  of type_ * expr (* always an ArrayInit *)
 
 and argument = expr
+
+ (* with tarzan *)
 
 (* ------------------------------------------------------------------------- *)
 (* Statement *)

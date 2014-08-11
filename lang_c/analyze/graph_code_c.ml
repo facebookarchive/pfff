@@ -398,7 +398,9 @@ and expr env = function
   | CondExpr (e1, e2, e3) -> exprs env [e1;e2;e3]
   | Sequence (e1, e2) -> exprs env [e1;e2]
 
-  | InitList xs -> exprs env xs
+  | ArrayInit xs -> exprs env xs
+  (* todo: add deps on field *)
+  | RecordInit xs -> xs +> List.map snd +> exprs env
 
   | SizeOf x ->
       (match x with
