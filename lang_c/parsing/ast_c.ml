@@ -107,7 +107,7 @@ type expr =
    *)
   | Id of name
 
-  | Call of expr * expr list
+  | Call of expr * argument list
 
   | Assign of Ast_cpp.assignOp * expr * expr
 
@@ -134,6 +134,8 @@ type expr =
   (* gccext: *)
   | GccConstructor  of type_ * expr (* always an InitList *)
  (* with tarzan *)
+
+and argument = expr
 
 (* ------------------------------------------------------------------------- *)
 (* Statement *)

@@ -75,7 +75,7 @@ let rec program xs =
 (* ---------------------------------------------------------------------- *)
 
 and toplevel env = function
-  | CppTop x -> [cpp_directive env x]
+  | CppTop x -> cpp_directive env x
 
   | Func (func_or_else) as x ->
       (match func_or_else with
@@ -124,10 +124,8 @@ and toplevel env = function
     pr2_once "SKIPPING ifdefs";
     []
 
-  | (MacroVarTop (_, _)|MacroTop (_, _, _)|DeclTodo) 
-      as x ->
-      debug (Toplevel x);
-      raise Todo
+  | (MacroVarTop (_, _)|MacroTop (_, _, _)|DeclTodo) as x ->
+      debug (Toplevel x); raise Todo
 
   (* not much we can do here, at least the parsing statistics should warn the
    * user that some code was not processed
@@ -234,8 +232,8 @@ and initialiser env x =
   | InitExpr e -> expr env e
   | InitList xs -> 
       A.InitList (List.map (initialiser env) (xs +> unbrace +> uncomma))
-  | InitDesignators _ -> raise Todo
-  | InitIndexOld _ | InitFieldOld _ -> raise Todo
+  | InitDesignators _ -> debug (Init x); raise Todo
+  | InitIndexOld _ | InitFieldOld _ -> debug (Init x); raise Todo
 
 and storage _env x =
   match x with
@@ -252,20 +250,21 @@ and storage _env x =
 (* Cpp *)
 (* ---------------------------------------------------------------------- *)
   
-and cpp_directive env = function
-  | Define (_tok, name, def_kind, def_val) as x ->
+and cpp_directive env x =
+  match x with
+  | Define (_tok, name, def_kind, def_val) ->
       let v = cpp_def_val x env def_val in
       (match def_kind with
       | DefineVar ->
-          A.Define (name, v)
+          [A.Define (name, v)]
       | DefineFunc(args) ->
-          A.Macro(name, 
+          [A.Macro(name, 
                  args +> unparen +> uncomma +> List.map (fun (s, ii) ->
                    (s, List.hd ii)
                  ),
-                 v)
+                 v)]
       )
-  | Include (tok, inc_file) as x ->
+  | Include (tok, inc_file) ->
       let s =
         (match inc_file with
         | Local xs -> "\"" ^ Common.join "/" xs ^ "\""
@@ -274,11 +273,9 @@ and cpp_directive env = function
             debug (Cpp x); raise Todo
         )
       in
-      A.Include (s, tok)
-  | Undef (_s, _tok) as x -> (* A.Undef (s, tok) *) debug (Cpp x); raise Todo 
-
-  | PragmaAndCo _ as x ->
-      debug (Cpp x); raise Todo
+      [A.Include (s, tok)]
+  | Undef _ -> debug (Cpp x); raise Todo
+  | PragmaAndCo _ -> []
 
 and cpp_def_val for_debug env x = 
   match x with
@@ -289,8 +286,7 @@ and cpp_def_val for_debug env x =
     | DefineDoWhileZero _|DefineType _
     | DefineTodo
     ) -> 
-      debug (Cpp for_debug);
-      raise Todo
+      debug (Cpp for_debug); raise Todo
 
 (* ---------------------------------------------------------------------- *)
 (* Stmt *)
@@ -346,7 +342,7 @@ and stmt env x =
       | ReturnExpr e -> A.Return (Some (expr env e))
       | Continue -> A.Continue
       | Break -> A.Break
-      | GotoComputed _ -> raise Todo
+      | GotoComputed _ -> debug (Stmt x); raise Todo
       )
 
   | Try (_, _, _) ->
@@ -387,7 +383,7 @@ and cases env x =
                 in
                 let stmts = List.map (function
                   | StmtElem st -> stmt env st
-                  | _ -> raise Todo
+                  | _x -> raise Todo (* TODOOOOO improve error msg *)
                 ) xs' in
                 (match x with
                 | StmtElem ((Labeled (Case (e, _))), _) ->
@@ -413,7 +409,7 @@ and block_declaration env block_decl =
   | Asm (_tok1, _volatile_opt, _asmbody, _tok2) -> 
       A.Asm []
 
-  | MacroDecl _ -> raise Todo
+  | MacroDecl _ -> debug (BlockDecl2 block_decl); raise Todo
       
   | UsingDecl _ | UsingDirective _ | NameSpaceAlias _ -> 
       raise CplusplusConstruct

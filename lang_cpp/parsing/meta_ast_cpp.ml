@@ -1107,6 +1107,7 @@ and vof_any =
       in Ocaml.VSum (("BlockDecl2", [ v1 ]))
   | Stmt v1 -> let v1 = vof_statement v1 in Ocaml.VSum (("Stmt", [ v1 ]))
   | Expr v1 -> let v1 = vof_expression v1 in Ocaml.VSum (("Expr", [ v1 ]))
+  | Init v1 -> let v1 = vof_initialiser v1 in Ocaml.VSum (("Init", [ v1 ]))
   | Type v1 -> let v1 = vof_fullType v1 in Ocaml.VSum (("Type", [ v1 ]))
   | Name v1 -> let v1 = vof_name v1 in Ocaml.VSum (("Name", [ v1 ]))
   | Cpp v1 -> let v1 = vof_cpp_directive v1 in Ocaml.VSum (("Cpp", [ v1 ]))

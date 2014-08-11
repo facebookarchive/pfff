@@ -761,6 +761,7 @@ and any =
   | FuncOrElse of func_or_else
   | ClassMember of class_member
   | OneDecl of onedecl
+  | Init of initialiser
 
   | Constant of constant
 

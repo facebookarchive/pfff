@@ -9,8 +9,9 @@ let test_parse_c xs =
   let fullxs = Lib_parsing_c.find_source_files_of_dir_or_files xs in
   let stat_list = ref [] in
 
-  fullxs +> Console.progress (fun k -> List.iter (fun file -> 
-    k();
+  fullxs +> (*Console.progress (fun k -> *) List.iter ((fun file -> 
+    (*k(); *)
+    pr (spf "PARSING: %s" file);
     let (_xs, stat) = 
       Parse_c.parse file 
     in

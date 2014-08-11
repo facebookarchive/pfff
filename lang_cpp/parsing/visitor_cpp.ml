@@ -840,6 +840,7 @@ and v_any =
   | BlockDecl2 v1 -> let v1 = v_block_declaration v1 in ()
   | Stmt v1 -> let v1 = v_statement v1 in ()
   | Expr v1 -> let v1 = v_expression v1 in ()
+  | Init v1 -> let v1 = v_initialiser v1 in ()
   | Type v1 -> let v1 = v_fullType v1 in ()
   | Name v1 -> let v1 = v_name v1 in ()
   | Cpp v1 -> let v1 = v_cpp_directive v1 in ()
