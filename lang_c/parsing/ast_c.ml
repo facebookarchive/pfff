@@ -224,8 +224,6 @@ type type_def = name * type_
 type define_body = 
   | CppExpr of expr
   | CppStmt of stmt
-  (* usually used only for ifdefs *)
-  | CppEmpty
  (* with tarzan *)
 
 (* ------------------------------------------------------------------------- *)
@@ -235,9 +233,8 @@ type define_body =
  * deal with it by using typedefs as intermediates.
  *)
 type toplevel =
-  | Define of name * define_body 
-  | Undef of name
   | Include of string wrap (* path *)
+  | Define of name * define_body 
   | Macro of name * (name list) * define_body
 
   | StructDef of struct_def

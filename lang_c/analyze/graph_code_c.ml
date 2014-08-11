@@ -126,7 +126,7 @@ let nodes_of_toplevel x =
     * corresponding to the string, so may need some -I
     *)
   | Include _ -> []
-  | Undef _ -> []
+(*  | Undef _ -> [] *)
   (* do we want them? *)
   | Prototype _ -> []
 
@@ -289,7 +289,7 @@ and toplevel env x =
    * build appropriate link?
    *)
   | Include _ -> ()
-  | Undef _ -> ()
+(*  | Undef _ -> () *)
  
   (* less: do we want them? *)
   | Prototype _def -> ()
@@ -300,7 +300,7 @@ and define_body env v =
   match v with
   | CppExpr e -> expr env e
   | CppStmt st -> stmt env st
-  | CppEmpty -> ()
+(*  | CppEmpty -> () *)
 
 (* ---------------------------------------------------------------------- *)
 (* Stmt *)

@@ -56,7 +56,7 @@ let rec program xs =
 and toplevel t = 
   match t with
   | Define (name, _body)       -> error "use enum not define" (snd name)
-  | Undef name                 -> error "use enum not define" (snd name)
+(*  | Undef name                 -> error "use enum not define" (snd name) *)
   | Macro (name, _args, _body) -> error "use function not macros" (snd name)
   (* this is ok, so that gcc can compile the file, but our linking phase
    * do not require it

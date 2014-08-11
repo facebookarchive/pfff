@@ -275,7 +275,7 @@ let vof_define_body =
   function
   | CppExpr v1 -> let v1 = vof_expr v1 in Ocaml.VSum (("CppExpr", [ v1 ]))
   | CppStmt v1 -> let v1 = vof_stmt v1 in Ocaml.VSum (("CppStmt", [ v1 ]))
-  | CppEmpty -> Ocaml.VSum (("CppEmpty", []))
+(*  | CppEmpty -> Ocaml.VSum (("CppEmpty", [])) *)
 
 let
   vof_struct_def { s_name = v_s_name; s_kind = v_s_kind; s_flds = v_s_flds }
@@ -297,7 +297,7 @@ let vof_toplevel =
       let v1 = vof_name v1
       and v2 = vof_define_body v2
       in Ocaml.VSum (("Define", [ v1; v2 ]))
-  | Undef v1 -> let v1 = vof_name v1 in Ocaml.VSum (("Undef", [ v1 ]))
+(*  | Undef v1 -> let v1 = vof_name v1 in Ocaml.VSum (("Undef", [ v1 ])) *)
   | Include v1 ->
       let v1 = vof_wrap Ocaml.vof_string v1
       in Ocaml.VSum (("Include", [ v1 ]))

@@ -275,7 +275,7 @@ and cpp_directive env = function
         )
       in
       A.Include (s, tok)
-  | Undef (s, tok) -> A.Undef (s, tok)
+  | Undef (_s, _tok) as x -> (* A.Undef (s, tok) *) debug (Cpp x); raise Todo 
 
   | PragmaAndCo _ as x ->
       debug (Cpp x); raise Todo
@@ -284,7 +284,7 @@ and cpp_def_val for_debug env x =
   match x with
   | DefineExpr e -> A.CppExpr (expr env e)
   | DefineStmt st -> A.CppStmt (stmt env st)
-  | DefineEmpty -> A.CppEmpty
+  | DefineEmpty (* A.CppEmpty*) 
   | ( DefineText _|DefineInit _|DefineFunction _
     | DefineDoWhileZero _|DefineType _
     | DefineTodo

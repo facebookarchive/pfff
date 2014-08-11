@@ -201,30 +201,43 @@ let find_typedefs xxs =
       ::{t=TIdent _}::{t=TCPar _}::({t=TOPar _} as tok2)::xs ->
       change_tok tok1 (TIdent_Typedef (s, i1));
       aux (tok2::xs)
-
   (* xx* ( *yy )( *)
   | ({t=TIdent (s,i1)} as tok1)::{t=TMul _}::{t=TOPar _}::{t=TMul _}
     ::{t=TIdent _}::{t=TCPar _}::({t=TOPar _} as tok2)::xs ->
       change_tok tok1 (TIdent_Typedef (s, i1));
       aux (tok2::xs)
 
+  (* xx ( *yy[x] )( *)
+  | ({t=TIdent (s,i1)} as tok1)::{t=TOPar _}::{t=TMul _}
+    ::{t=TIdent _}::{t=TOCro _}::_::{t=TCCro _}::{t=TCPar _}::({t=TOPar _} as tok2)::xs ->
+      change_tok tok1 (TIdent_Typedef (s, i1));
+      aux (tok2::xs)
+  (* xx* ( *yy[x] )( *)
+  | ({t=TIdent (s,i1)} as tok1)::{t=TMul _}::{t=TOPar _}::{t=TMul _}
+    ::{t=TIdent _}::{t=TOCro _}::_::{t=TCCro _}::{t=TCPar _}::({t=TOPar _} as tok2)::xs ->
+      change_tok tok1 (TIdent_Typedef (s, i1));
+      aux (tok2::xs)
+
+  (* xx ( *yy[]) *)
+  | ({t=TIdent (s,i1)} as tok1)::{t=TOPar _}::{t=TMul _}
+    ::{t=TIdent _}::{t=TOCro _}::{t=TCCro _}::{t=TCPar _}::xs ->
+      change_tok tok1 (TIdent_Typedef (s, i1));
+      aux xs
+
   (* + xx * yy *)
   | {t=tok_before}::{t=TIdent (_s,_)}::{t=TMul _}::{t=TIdent _}::xs
     when look_like_multiplication_context tok_before ->
       aux xs
-
   (* { xx * yy *)
   | {t=tok_before}::({t=TIdent (s,i1)} as tok1)::{t=TMul _}::{t=TIdent _}::xs
     when look_like_declaration_context tok_before ->
       change_tok tok1 (TIdent_Typedef (s, i1));
       aux xs
-
   (* } xx * yy *)
   (* because TCBrace is not anymore in look_like_declaration_context *)
   | {t=TCBrace _}::({t=TIdent (s,i1)} as tok1)::{t=TMul _}::{t=TIdent _}::xs ->
       change_tok tok1 (TIdent_Typedef (s, i1));
       aux xs
-
   (* xx * yy
    * could be a multiplication too, so need InParameter guard/
    * less: the InParameter has some FPs, so maybe better to
@@ -238,13 +251,12 @@ let find_typedefs xxs =
 
   (* xx *yy *)
   | ({t=TIdent (s,i1);col=c0} as tok1)::{t=TMul _;col=c1}::{t=TIdent _;col=c2}::xs 
-    when c2 = c1 + 1 && c1 = c0 + String.length s + 1
+    when c2 = c1 + 1 && c1 >= c0 + String.length s + 1
     ->
       change_tok tok1 (TIdent_Typedef (s, i1));
       aux xs
-
   (* xx* yy *)
-  | ({t=TIdent(s,i1);col=c0} as tok1)::{t=TMul _;col=c1}::{t=TIdent _;col=c2}::xs 
+  | ({t=TIdent(s,i1);col=c0}as tok1)::{t=TMul _;col=c1}::{t=TIdent _;col=c2}::xs
     when c1 = c0 + String.length s && c2 >= c1 + 2
     ->
       change_tok tok1 (TIdent_Typedef (s, i1));
@@ -264,9 +276,7 @@ let find_typedefs xxs =
       change_tok tok3 (TIdent_Typedef (s, i1));
       (* todo? recurse on bigger ? *)
       aux xs
-
   (* todo:  = (xx) ..., |= (xx) ...,   (xx)~, ... *)
-
   (* (xx){  gccext: kenccext:  *)
   | {t=tok1}::{t=TOPar _}::({t=TIdent(s, i1)} as tok3)::{t=TCPar _}
     ::({t=TOBrace _} as tok5)::xs 
@@ -282,7 +292,6 @@ let find_typedefs xxs =
   | {t=TOPar _}::({t=TIdent(s, i1)} as tok3)::{t=TMul _}::{t=TCPar _}::xs ->
       change_tok tok3 (TIdent_Typedef (s, i1));
       aux xs
-
    (* (xx ** ) *)
   | {t=TOPar _}::({t=TIdent(s, i1)} as tok3)
     ::{t=TMul _}::{t=TMul _}::{t=TCPar _}::xs ->
@@ -296,15 +305,18 @@ let find_typedefs xxs =
     ::({t=(TComma _| TCPar _)} as x)::xs ->
       change_tok tok1 (TIdent_Typedef (s, i1));
       aux (x::xs)
-
   (* xx** [,)] *)
   | ({t=TIdent(s, i1)} as tok1)::{t=TMul _}::{t=TMul _}
     ::({t=(TComma _| TCPar _)} as x)::xs ->
       change_tok tok1 (TIdent_Typedef (s, i1));
       aux (x::xs)
-
   (* xx*** [,)] *)
   | ({t=TIdent(s, i1)} as tok1)::{t=TMul _}::{t=TMul _}::{t=TMul _}
+    ::({t=(TComma _| TCPar _)} as x)::xs ->
+      change_tok tok1 (TIdent_Typedef (s, i1));
+      aux (x::xs)
+  (* xx*[] [,)] *)
+  | ({t=TIdent(s, i1)} as tok1)::{t=TMul _}::{t=TOCro _}::{t=TCCro _}
     ::({t=(TComma _| TCPar _)} as x)::xs ->
       change_tok tok1 (TIdent_Typedef (s, i1));
       aux (x::xs)
