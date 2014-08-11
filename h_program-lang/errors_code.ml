@@ -21,6 +21,9 @@ module PI = Parse_info
 (* Prelude *)
 (*****************************************************************************)
 (*
+ * Centralize errors report functions (they did the same in c--).
+ * Mostly a copy paste of error_php.ml
+ * 
  * history:
  *  - was in check_module.ml
  *  - was generalized for scheck php
@@ -82,6 +85,7 @@ type error = {
     * - UseOfUndefinedVariable
     * - UnusedVariable
     *)
+  | UnusedVariable of string * Scope_code.scope
 
   (* classes *)
 
@@ -127,6 +131,10 @@ let string_of_error_kind error_kind =
     spf "no def found for %s (%s)" s (Database_code.string_of_entity_kind kind)
   | UnusedExport (s, kind) ->
     spf "useless export of %s (%s)" s (Database_code.string_of_entity_kind kind)
+
+  | UnusedVariable (name, scope) ->
+      spf "Unused variable %s, scope = %s" name 
+        (Scope_code.string_of_scope scope)
 
 (*
 let loc_of_node root n g =
@@ -179,6 +187,7 @@ let rank_of_error err =
   | UndefinedDefOfDecl _ -> Important
   (* we want to simplify interfaces as much as possible! *)
   | UnusedExport _ -> ReallyImportant
+  | UnusedVariable _ -> Less
   
 
 let score_of_error err =

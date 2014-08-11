@@ -10,6 +10,7 @@ type error = {
  | Deadcode of entity
  | UndefinedDefOfDecl of entity
  | UnusedExport of entity
+ | UnusedVariable of string * Scope_code.scope
 
  and entity = (string * Database_code.entity_kind)
 
