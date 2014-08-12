@@ -331,6 +331,14 @@ let find_typedefs xxs =
       change_tok tok1 (TIdent_Typedef (s, i1));
       aux (tok2::xs)
 
+  (* [(,] xx[X] [),] where InParameter *)
+  | {t=(TOPar _ | TComma _)}
+    ::({t=TIdent (s, i1); where=InParameter::_} as tok1)
+    ::{t=TOCro _}::_::{t=TCCro _}
+    ::({t=(TCPar _ | TComma _)} as tok2)::xs ->
+      change_tok tok1 (TIdent_Typedef (s, i1));
+      aux (tok2::xs)
+
   (* [(,] xx[...]  could be a array access, so need InParameter guard *)
   | {t=(TOPar _ | TComma _)}::({t=TIdent (s,i1);where=InParameter::_} as tok1)
     ::{t=TOCro _}::_tok::{t=TCCro _}::xs 

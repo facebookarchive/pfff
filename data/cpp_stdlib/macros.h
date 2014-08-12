@@ -7,7 +7,7 @@
 // MacroString
 // ****************************************************************************
 
-/* String macros are normally handled quite well by the lalr(k) technique,
+/* String macros are normally handled quite well by the LALR(k) technique,
  * but sometimes it's not enough. For instance with 'XX YY', it could
  * be considered as a declaration with XX being a typedef, so we would
  * have an ambiguity. So by adding a few special cases (e.g. KERN_WARNING
@@ -209,3 +209,18 @@
 #define ARGEND 
 #define EXTERN extern
 #define Extern extern
+
+#define va_start(list, start) list =\
+	(sizeof(start) < 4?\
+		(char*)((int*)&(start)+1):\
+		(char*)(&(start)+1))
+
+#define va_end(list)\
+	USED(list)
+
+#define va_arg(list, mode)\
+	((sizeof(mode) == 1)?\
+		((list += 4), (mode*)list)[-4]:\
+	(sizeof(mode) == 2)?\
+		((list += 4), (mode*)list)[-2]:\
+		((list += sizeof(mode)), (mode*)list)[-1])

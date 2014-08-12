@@ -287,6 +287,15 @@ let set_context_tag_multi groups =
       aux [x];
       aux (parens::xs)
 
+  (* void xx() *)
+  | Tok{t=typ}::Tok{t=TIdent _}::(Parens(_t1, _body, _t2) as parens)::xs 
+    when TH.is_basic_type typ ->
+      (* msg_context t1.t (TV.InParameter); *)
+      [parens] +> TV.iter_token_multi (fun tok ->
+        tok.TV.where <- (TV.InParameter)::tok.TV.where;
+      );
+      aux (parens::xs)
+
 
   | x::xs ->
       (match x with
