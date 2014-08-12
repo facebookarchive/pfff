@@ -654,11 +654,14 @@ and cpp_directive =
      | DefineExpr of expression
      | DefineStmt of statement
      | DefineType of fullType
-     | DefineDoWhileZero of statement wrap (* do { } while(0) *)
      | DefineFunction of func_definition
      | DefineInit of initialiser (* in practice only { } with possible ',' *)
+     (* ?? *)
      | DefineText of string wrap
      | DefineEmpty
+
+     | DefineDoWhileZero of statement wrap (* do { } while(0) *)
+     | DefinePrintWrapper of tok (* if *) * expression paren * name
 
      | DefineTodo
 

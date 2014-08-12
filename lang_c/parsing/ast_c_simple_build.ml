@@ -37,6 +37,7 @@ let cnt = ref 0
 exception ObsoleteConstruct of string * Parse_info.info
 exception CplusplusConstruct
 exception TodoConstruct of string * Parse_info.info
+exception CaseOutsideSwitch
 
 (* not used for now *)
 type env = { 
@@ -302,6 +303,10 @@ and cpp_def_val for_debug env x =
   | DefineExpr e -> A.CppExpr (expr env e)
   | DefineStmt st -> A.CppStmt (stmt env st)
   | DefineDoWhileZero (st, _) -> A.CppStmt (stmt env st)
+  (* todo: add dependency to eTODO too *)
+  | DefinePrintWrapper (_, _eTODO, id) -> 
+    A.CppExpr (A.Id (name env id))
+    
 
 
   | DefineEmpty (* A.CppEmpty*) 
@@ -356,7 +361,7 @@ and stmt env x =
       | Label (s, st) ->
           A.Label ((s, List.hd ii), stmt env st)
       | Case _ | CaseRange _ | Default _ ->
-          failwith "should be present only in Switch"
+          debug (Stmt x); raise CaseOutsideSwitch
       )
   | Jump j ->
       (match j with

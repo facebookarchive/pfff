@@ -760,6 +760,11 @@ and v_define_kind =
       let v1 = v_paren (v_comma_list (v_wrap v_string)) v1 in ()
 and v_define_val =
   function
+  | DefinePrintWrapper ((v1, v2, v3)) ->
+      let v1 = v_tok v1
+      and v2 = v_paren v_expression v2
+      and v3 = v_name v3
+      in ()
   | DefineExpr v1 -> let v1 = v_expression v1 in ()
   | DefineStmt v1 -> let v1 = v_statement v1 in ()
   | DefineType v1 -> let v1 = v_fullType v1 in ()

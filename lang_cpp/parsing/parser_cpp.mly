@@ -1745,7 +1745,9 @@ define_val:
      }
  /*(* for statement-like macro with varargs *)*/
  | Tif TOPar expr TCPar id_expression
-     { DefineEmpty }
+     { let name = (None, fst $5, snd $5) in 
+       DefinePrintWrapper ($1, ($2, $3, $4), name) 
+     }
  | TOBrace_DefineInit initialize_list TCBrace comma_opt 
     { DefineInit (InitList ($1, List.rev $2, $3) (*$4*))  }
  | /*(* empty *)*/ { DefineEmpty }

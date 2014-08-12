@@ -992,6 +992,11 @@ and vof_define_kind =
       in Ocaml.VSum (("DefineFunc", [ v1 ]))
 and vof_define_val =
   function
+  | DefinePrintWrapper ((v1, v2, v3)) ->
+      let v1 = vof_tok v1
+      and v2 = vof_paren vof_expression v2
+      and v3 = vof_name v3
+      in Ocaml.VSum (("DefinePrintWrapper", [ v1; v2; v3 ]))
   | DefineExpr v1 ->
       let v1 = vof_expression v1 in Ocaml.VSum (("DefineExpr", [ v1 ]))
   | DefineStmt v1 ->
