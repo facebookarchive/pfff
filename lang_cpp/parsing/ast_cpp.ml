@@ -783,7 +783,6 @@ and any =
 (* Some constructors *)
 (*****************************************************************************)
 let nQ = {const=None; volatile= None}
-let defaultInt = (BaseType (IntType (Si (Signed, CInt))))
 let noIdInfo () = { i_scope = Scope_code.NoScope; }
 let noii = []
 let noQscope = []
