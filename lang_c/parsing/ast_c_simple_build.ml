@@ -75,7 +75,7 @@ let rec program xs =
 (* ---------------------------------------------------------------------- *)
 
 and toplevel env = function
-  | CppTop x -> cpp_directive env x
+  | CppDirectiveTop x -> cpp_directive env x
 
   | Func (func_or_else) as x ->
       (match func_or_else with
@@ -301,9 +301,12 @@ and cpp_def_val for_debug env x =
   match x with
   | DefineExpr e -> A.CppExpr (expr env e)
   | DefineStmt st -> A.CppStmt (stmt env st)
+  | DefineDoWhileZero (st, _) -> A.CppStmt (stmt env st)
+
+
   | DefineEmpty (* A.CppEmpty*) 
   | ( DefineText _|DefineInit _|DefineFunction _
-    | DefineDoWhileZero _|DefineType _
+    | DefineType _
     | DefineTodo
     ) -> 
       debug (Cpp for_debug); raise Todo

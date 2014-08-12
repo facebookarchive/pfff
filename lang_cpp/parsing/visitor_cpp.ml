@@ -811,7 +811,7 @@ and v_declaration x =
       in ()
   | EmptyDef v1 -> let v1 = v_tok v1 in ()
   | DeclTodo -> ()
-  | CppTop v1 -> let v1 = v_cpp_directive v1 in ()
+  | CppDirectiveTop v1 -> let v1 = v_cpp_directive v1 in ()
   | IfdefTop v1 -> let v1 = v_ifdef_directive v1 in ()
   | MacroTop ((v1, v2, v3)) ->
       let v1 = v_wrap2 v_string v1

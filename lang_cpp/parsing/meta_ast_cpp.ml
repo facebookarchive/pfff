@@ -1067,8 +1067,8 @@ and vof_declaration =
       in Ocaml.VSum (("NameSpaceAnon", [ v1; v2 ]))
   | EmptyDef v1 -> let v1 = vof_tok v1 in Ocaml.VSum (("EmptyDef", [ v1 ]))
   | DeclTodo -> Ocaml.VSum (("DeclTodo", []))
-  | CppTop v1 ->
-      let v1 = vof_cpp_directive v1 in Ocaml.VSum (("CppTop", [ v1 ]))
+  | CppDirectiveTop v1 ->
+      let v1 = vof_cpp_directive v1 in Ocaml.VSum (("CppDirectiveTop", [ v1 ]))
   | IfdefTop v1 ->
       let v1 = vof_ifdef_directive v1 in Ocaml.VSum (("IfdefTop", [ v1 ]))
   | MacroTop ((v1, v2, v3)) ->

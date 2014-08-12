@@ -20,16 +20,16 @@
 (*****************************************************************************)
 (* 
  * This is a big file ... C++ is a big and complicated language ...
- * This file started with a simple AST for C, but then was extended
+ * This file started with a simple AST for C. It was then extended
  * to deal with cpp idioms (see 'cppext:' tag), gcc extensions (see gccext),
  * and finally C++ constructs (see c++ext:). A few kencc extensions
- * were also added (see kenccext)
+ * were also recently added (see kenccext).
  * 
  * gcc introduced StatementExpr which made expr and statement mutually
  * recursive. It also added NestedFunc so even more mutual recursiveity.
- * With C++ templates, because arguments can be types or expressions
- * and because templates are also qualifiers, almost all types 
- * are now mutually recursive.
+ * With C++ templates, because template arguments can be types or expressions
+ * and because templates are also qualifiers, almost all types
+ * are now mutually recursive ...
  *
  * Like most other ASTs in pfff, it's actually more a Concrete Syntax Tree.
  * Some stuff are tagged 'semantic:' which means that they are computed
@@ -293,6 +293,7 @@ and expression = expressionbis wrap
   and argument = (expression, weird_argument) Common.either
    and weird_argument = 
        | ArgType of fullType
+       (* for really unparsable stuff ... we just bailout *)
        | ArgAction of action_macro
       and action_macro = 
          | ActMisc of tok list
@@ -375,6 +376,7 @@ and statement = statementbis wrap
    * normally. But in C++ we can freely mix declarations and statements.
    *)
   | DeclStmt  of block_declaration 
+  (* c++ext: *)
   | Try of tok * compound * handler list
   (* gccext: *)
   | NestedFunc of func_definition
@@ -388,13 +390,6 @@ and statement = statementbis wrap
    * old: (declaration, statement) either list 
    *)
   and compound = statement_sequencable list brace
-
-  (* easier to put at statement_list level than statement level *)
-  and statement_sequencable = 
-    | StmtElem of statement
-    (* cppext: *) 
-    | CppDirectiveStmt of cpp_directive
-    | IfdefStmt of ifdef_directive (* * statement list *)
 
   and exprStatement = expression option
 
@@ -433,6 +428,14 @@ and statement = statementbis wrap
    and exception_declaration = 
      | ExnDeclEllipsis of tok
      | ExnDecl of parameter
+
+  (* easier to put at statement_list level than statement level *)
+  and statement_sequencable = 
+    | StmtElem of statement
+    (* cppext: *) 
+    | CppDirectiveStmt of cpp_directive
+    | IfdefStmt of ifdef_directive (* * statement list *)
+
 
 (* ------------------------------------------------------------------------- *)
 (* Block Declaration *)
@@ -719,8 +722,9 @@ and declaration =
   | EmptyDef of tok
 
   (* cppext: *)
-  | CppTop of cpp_directive
+  | CppDirectiveTop of cpp_directive
   | IfdefTop of ifdef_directive (* * toplevel list *)
+  (* cppext: *)
   | MacroTop of simple_ident * argument comma_list paren * tok option
   | MacroVarTop of simple_ident * tok (* ; *)
          

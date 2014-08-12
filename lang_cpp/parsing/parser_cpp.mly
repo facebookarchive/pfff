@@ -1728,24 +1728,24 @@ cpp_directive:
  | TUndef             { Undef $1 }
  | TCppDirectiveOther { PragmaAndCo $1 }
 
-/*
-(* perhaps better to use assign_expr? but in that case need 
- * do a assign_expr_of_string'in parse_c.
- * c++ext: update, now statement include simple declarations
- * so maybe can parse $1 and generate the previous DefineDecl
- * and DefineFunction? cos nested_func is also now inside statement.
- *)*/
 define_val: 
+ /*(* perhaps better to use assign_expr? but in that case need 
+    * do a assign_expr_of_string'in parse_c.
+    * c++ext: update, now statement include simple declarations
+    * so maybe can parse $1 and generate the previous DefineDecl
+    * and DefineFunction? cos nested_func is also now inside statement.
+    *)*/
  | expr      { DefineExpr $1 }
  | statement { DefineStmt $1 }
- /*(*c++ext: remove a conflict on TCPar
- | Tdo statement Twhile TOPar TInt TCPar 
-     {
-       if fst $5 <> "0" 
-       then pr2 "WEIRD: in macro and have not a while(0)";
-       DefineDoWhileZero ($2,  [$1;$3;$4;snd $5;$6])
+ /*(* for statement-like macro with fixed number of arguments *)*/
+ | Tdo statement Twhile TOPar expr TCPar 
+     { match $5 with
+       | (C (Int ("0"))), [tok] -> DefineDoWhileZero ($2,  [$1;$3;$4;tok;$6])
+       | _ -> raise Parsing.Parse_error
      }
-  *)*/
+ /*(* for statement-like macro with varargs *)*/
+ | Tif TOPar expr TCPar id_expression
+     { DefineEmpty }
  | TOBrace_DefineInit initialize_list TCBrace comma_opt 
     { DefineInit (InitList ($1, List.rev $2, $3) (*$4*))  }
  | /*(* empty *)*/ { DefineEmpty }
@@ -1794,7 +1794,7 @@ toplevel:
 toplevel_aux:
  | declaration         { $1 }
 
- | cpp_directive       { CppTop $1 }
+ | cpp_directive       { CppDirectiveTop $1 }
  | cpp_ifdef_directive /*(*external_declaration_list ...*)*/ { IfdefTop $1 }
  | cpp_other           { $1 }
 
