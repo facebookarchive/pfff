@@ -22,11 +22,11 @@
  * This is a big file ... C++ is a big and complicated language ...
  * This file started with a simple AST for C. It was then extended
  * to deal with cpp idioms (see 'cppext:' tag), gcc extensions (see gccext),
- * and finally C++ constructs (see c++ext:). A few kencc extensions
+ * and finally C++ constructs (see c++ext). A few kencc extensions
  * were also recently added (see kenccext).
  * 
  * gcc introduced StatementExpr which made expr and statement mutually
- * recursive. It also added NestedFunc so even more mutual recursiveity.
+ * recursive. It also added NestedFunc for even more mutual recursivity ...
  * With C++ templates, because template arguments can be types or expressions
  * and because templates are also qualifiers, almost all types
  * are now mutually recursive ...

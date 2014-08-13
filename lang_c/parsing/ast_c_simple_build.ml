@@ -39,7 +39,6 @@ exception CplusplusConstruct
 exception TodoConstruct of string * Parse_info.info
 exception CaseOutsideSwitch
 
-(* not used for now *)
 type env = { 
   mutable struct_defs_toadd: A.struct_def list;
   mutable enum_defs_toadd: A.enum_def list;
@@ -67,8 +66,6 @@ let debug any =
 
 let rec program xs =
   let env = empty_env () in
-
-  
   List.map (toplevel env) xs +> List.flatten
 
 (* ---------------------------------------------------------------------- *)
@@ -148,7 +145,7 @@ and function_type env x =
   match x with
   { ft_ret = ret;
     ft_params = params;
-    ft_dots = _dots; (* todo *)
+    ft_dots = _dotsTODO;
     ft_const = const;
     ft_throw = throw;
   } ->
@@ -165,7 +162,7 @@ and parameter env x =
   match x with
   { p_name = n;
     p_type = t;
-    p_register = _reg;
+    p_register = _regTODO;
     p_val = v;
   } ->
     (match v with
@@ -189,7 +186,7 @@ and onedecl env d =
   match d with
   { v_namei = ni;
     v_type = ft;
-    v_storage = ((sto, _inline_or_not), _);
+    v_storage = ((sto, _inline_or_notTODO), _);
   } ->
     (match ni, sto with
     | Some (n, iopt), ((NoSto | Sto _) as sto)  ->
@@ -496,19 +493,19 @@ and expr env e =
                        initialiser env (InitList xs))
 
   | ConstructedObject (_, _) ->
-    pr2_once "BUG PARSING LOCAL DECL";
+    pr2_once "BUG PARSING LOCAL DECL PROBABLY";
     debug (Expr e); 
     raise CplusplusConstruct
 
-  | (TypeId (_, _)
   | StatementExpr _
   | ExprTodo
-  ) ->
+    ->
       debug (Expr e); raise Todo
   | Throw _|DeleteArray (_, _)|Delete (_, _)|New (_, _, _, _, _)
   | CplusplusCast (_, _, _)
   | This _
   | RecordPtStarAccess (_, _)|RecordStarAccess (_, _)
+  | TypeId (_, _)
       ->
       debug (Expr e); raise CplusplusConstruct
 
@@ -527,6 +524,7 @@ and constant _env toks x =
 and argument env x =
   match x with
   | Left e -> Some (expr env e)
+  (* TODO! can't just skip it ... *)
   | Right _w -> 
       pr2 ("type argument, maybe wrong typedef inference!");
       debug (Argument x); 
@@ -574,7 +572,7 @@ and full_type env x =
       A.TBase (s, List.hd ii)
 
   | FunctionType ft -> A.TFunction (function_type env ft)
-  | Array (_less_e, ft) -> A.TArray (full_type env ft)
+  | Array (_less_eTODO, ft) -> A.TArray (full_type env ft)
   | TypeName (n) -> A.TTypeName (name env n)
 
   | StructUnionName ((kind, _), name) ->
@@ -653,7 +651,9 @@ and class_member_sequencable env x =
   | ClassElem x -> class_member env x
   | CppDirectiveStruct dir ->
       debug (Cpp dir); raise Todo
-  | IfdefStruct _ -> raise Todo
+  | IfdefStruct _ -> 
+      pr2_once "SKIPPING ifdefs";
+      []
 
 and fieldkind env x =
   match x with
@@ -697,4 +697,4 @@ and name _env x =
 and struct_kind _env = function
   | Struct -> A.Struct
   | Union -> A.Union
-  | Class -> raise Todo
+  | Class -> raise CplusplusConstruct

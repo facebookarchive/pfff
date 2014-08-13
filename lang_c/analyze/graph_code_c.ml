@@ -298,7 +298,6 @@ and define_body env v =
   match v with
   | CppExpr e -> expr env e
   | CppStmt st -> stmt env st
-(*  | CppEmpty -> () *)
 
 (* ---------------------------------------------------------------------- *)
 (* Stmt *)
