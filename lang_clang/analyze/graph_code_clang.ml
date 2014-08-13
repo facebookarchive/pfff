@@ -242,7 +242,7 @@ let update_current_c_file_line env (enum, l, xs) =
 let kind_file env =
   match env.clang2_file with
   | s when s =~ ".*\\.[h]\\.clang2" -> Header
-  | s when s =~ ".*\\.[cm]\\.clang2" -> Source
+  | s when s =~ ".*\\.[c]\\.clang2" -> Source
   | _s  ->
    (* failwith ("unknown kind of file: " ^ s) *)
     Source
@@ -379,7 +379,8 @@ let rec add_use_edge env (s, kind) =
       env.pr2_and_log (spf "skipping edge (%s -> %s), one of it is a dupe"
                          (G.string_of_node src) (G.string_of_node dst));
   (* plan9, those are special functions in kencc? *)
-  | _ when s =$= "USED" || s =$= "SET" ->  ()
+  | _ when s =$= "USED" || s =$= "SET" ->
+      ()
   | _ when not (G.has_node src env.g) ->
       error env ("SRC FAIL:" ^ G.string_of_node src);
   (* the normal case *)

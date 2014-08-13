@@ -1,6 +1,6 @@
 (* Yoann Padioleau
  *
- * Copyright (C) 2012 Facebook
+ * Copyright (C) 2012, 2014 Facebook
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public License
@@ -14,70 +14,108 @@
  *)
 open Common
 
-module E = Database_code
-module G = Graph_code
-
 open Ast_c
 module Ast = Ast_c
-
 module Flag = Flag_parsing_cpp
+module E = Database_code
+module G = Graph_code
+module P = Graph_code_prolog
 
 (*****************************************************************************)
 (* Prelude *)
 (*****************************************************************************)
 (*
- * Graph of dependencies for C. See graph_code.ml and main_codegraph.ml
- * for more information.
- * See also lang_clang/analyze/graph_code_clang.ml to get a more
- * precise and correct graphcode (if you can afford yourself to 
- * use clang).
+ * Graph of dependencies for C (and partially cpp). See graph_code.ml and 
+ * main_codegraph.ml for more information.
  * 
- * todo: there is different namespace in C: 
- *  - functions/locals,
- *  - tags (struct name, enum name)
- *  - ???
- *  - internals: remove lookup_fails, like in graph_code_php.ml
- * todo: fields? enum constants? 
- * todo: see ast_c.ml notes in coccinelle?
- * less: reuse code with the other graph_code_xxx ?
- * 
- * What about nested structures? they are lifted up in ast_c_build.
- *  
+ * See also lang_clang/analyze/graph_code_clang.ml to get arguably a more
+ * precise and correct graph (if you can afford yourself to use clang).
+ * update: actually a lots of code of graph_code_clang.ml have been ported
+ * to this file now.
  * 
  * schema:
- *  Root -> Dir -> File (.c|.h) -> Struct 
- *                                 #TODO fields, etc
- *                              -> Function
- *                              -> Constant
- *                              -> Macro
+ *  Root -> Dir -> File (.c|.h) -> Function | Prototype
+ *                              -> Global | GlobalExtern
  *                              -> Type (for Typedef)
+ *                              -> Type (struct|enum|union)
+ *                                 -> Field
+ *                                 -> Constructor (enum)
+ *                              -> Constant | Macro
  *       -> Dir -> SubDir -> ...
+ * 
+ * Note that here as opposed to graph_code_clang.ml constant and macros
+ * are present. 
+ * What about nested structures? they are lifted up in ast_c_build!
+ * 
+ * todo: 
+ *  - Type is a bit overloaded maybe (used for struct/enum/union/typedefs)
+ *  - there is different "namespaces" in C: 
+ *    - functions/locals,
+ *    - tags (struct name, enum name)
+ *    - ???
  *)
 
 (*****************************************************************************)
 (* Types *)
 (*****************************************************************************)
+
 (* for the extract_uses visitor *)
 type env = {
   g: Graph_code.graph;
+  (* now in Graph_code.gensym:  cnt: int ref; *)
+
+  phase: phase;
 
   current: Graph_code.node;
-  mutable params_locals: string list;
+  ctx: Graph_code_prolog.context;
+
+  c_file_readable: Common.filename;
+
+  (* for prolog use/4, todo: merge in_assign with context? *)
+  in_assign: bool;
+
+  (* covers also the parameters *)
+  locals: string list ref;
+  (* for static functions, globals, 'main', and local enums/constants/macros *)
+  local_rename: (string, string) Hashtbl.t;
+
+  conf: config;
+
+  (* less: we could also have a local_typedefs field *)
+  typedefs: (string, Ast.type_) Hashtbl.t;
 
   (* error reporting *)
-  dupes: (Graph_code.node) Common.hashset;
-  (* less: less useful now with G.not_found *)
-  lookup_fails: (Graph_code.node, int) Common2.hash_with_default;
-  (* todo: dynamic_fails stats *)
+  dupes: (Graph_code.node, bool) Hashtbl.t;
+  (* for ArrayInit when actually used for structs *)
+  fields: (string, string list) Hashtbl.t;
+
+  log: string -> unit;
+  pr2_and_log: string -> unit;
 }
+
+ and phase = Defs | Uses
+
+ and config = {
+  types_dependencies: bool;
+  fields_dependencies: bool;
+  (* We normally expand references to typedefs, to normalize and simplify
+   * things. Set this variable to true if instead you want to know who is
+   * using a typedef.
+   *)
+  typedefs_dependencies: bool;
+  propagate_deps_def_to_decl: bool;
+}
+
+type kind_file = Source | Header
+
+(* for prolog *)
+let hook_use_edge = ref (fun _ctx _in_assign (_src, _dst) _g -> ())
+
 (*****************************************************************************)
-(* Helpers *)
+(* Parsing *)
 (*****************************************************************************)
 
-(* less: could maybe call Parse_c.parse to get the parsing
- * statistics
- *)
-
+(* less: could maybe call Parse_c.parse to get the parsing statistics *)
 let parse ~show_parse_error file =
   try 
     (* less: make this parameters of parse_program? *) 
@@ -92,8 +130,298 @@ let parse ~show_parse_error file =
     pr2_once (spf "PARSE ERROR with %s, exn = %s" file (Common.exn_to_s exn));
     raise exn
 
+(*****************************************************************************)
+(* Adjusters *)
+(*****************************************************************************)
 
-let nodes_of_toplevel x =
+(*let propagate_users_of_functions_globals_types_to_prototype_extern_typedefs g =*)
+
+(*****************************************************************************)
+(* Helpers *)
+(*****************************************************************************)
+
+(* we can have different .c files using the same function name, so to avoid
+ * dupes we locally rename those entities, e.g. main -> main__234.
+ *)
+let _new_str_if_defs env s =
+  if env.phase = Defs
+  then begin
+    let s2 = Graph_code.gensym s in
+    Hashtbl.add env.local_rename s s2;
+    s2
+  end
+  else Hashtbl.find env.local_rename s
+
+(* anywhere you get a string from the AST you must use this function to
+ * get the final "value" *)
+let _str env s =
+  if Hashtbl.mem env.local_rename s
+  then Hashtbl.find env.local_rename s
+  else s
+
+
+let _kind_file env =
+  match env.c_file_readable with
+  | s when s =~ ".*\\.[h]" -> Header
+  | s when s =~ ".*\\.[c]" -> Source
+  | _s  ->
+   (* failwith ("unknown kind of file: " ^ s) *)
+    Source
+
+let expand_typedefs _typedefs _t =
+  raise Todo
+
+let final_type env t =
+  if env.conf.typedefs_dependencies
+  then t 
+  else 
+    (* Can we do that anytime? like in Defs phase? 
+     * No we need to wait for the first pass to have all the typedefs
+     * before we can expand them!
+     *)
+    expand_typedefs env.typedefs t
+
+let error env s =
+  failwith (spf "%s: %s" env.c_file_readable s)
+
+let add_prefix _s _name = 
+  raise Todo
+   
+(*****************************************************************************)
+(* Add Node *)
+(*****************************************************************************)
+
+let _add_node_and_edge_if_defs_mode env (name, kind) typopt =
+  let str = Ast.str_of_name name in
+  let str' =
+    match kind, env.current with
+    | E.Field, (s, E.Type) -> s ^ "." ^ str
+    | _ -> str
+  in
+  let node = (str', kind) in
+
+  if env.phase = Defs then
+    (match () with
+    (* if parent is a dupe, then don't want to attach yourself to the
+     * original parent, mark this child as a dupe too.
+     *)
+    | _ when Hashtbl.mem env.dupes env.current ->
+        Hashtbl.replace env.dupes node true
+
+    (* already there? a dupe? *)
+    | _ when G.has_node node env.g ->
+      (match kind with
+      | E.Function | E.Global | E.Constructor
+      | E.Type | E.Field
+        ->
+          (match kind, str with
+          (* dupe typedefs are ok as long as they are equivalent, and this
+           * check is done for TypedefDecl below in decl().
+           *)
+          | E.Type, s when s =~ "T__" -> ()
+          | _ when env.c_file_readable =~ ".*EXTERNAL" -> ()
+          (* todo: if typedef then maybe ok if have same content!! *)
+          | _ when not env.conf.typedefs_dependencies && str =~ "T__.*" -> 
+              Hashtbl.replace env.dupes node true;
+          | _ ->
+              env.pr2_and_log (spf "DUPE entity: %s" (G.string_of_node node));
+              let nodeinfo = G.nodeinfo node env.g in
+              let orig_file = nodeinfo.G.pos.Parse_info.file in
+              env.log (spf " orig = %s" orig_file);
+              env.log (spf " dupe = %s" env.c_file_readable);
+              Hashtbl.replace env.dupes node true;
+          )
+      (* todo: have no Use for now for those so skip errors *) 
+      | E.Prototype | E.GlobalExtern -> 
+        (* It's common to have multiple times the same prototype declared.
+         * It can also happen that the same prototype have
+         * different types (e.g. in plan9 newword() had an argument with type
+         * 'Word' and another 'word'). We don't want to add to the same
+         * entity dependencies to this different types so we need to mark
+         * the prototype as a dupe too!
+         * Anyway normally we should add the deps to the Function or Global
+         * first so we should hit this code only for really external
+         * entities.
+         *)
+         Hashtbl.replace env.dupes node true;
+      | _ ->
+          failwith (spf "Unhandled category: %s" (G.string_of_node node))
+      )
+
+    (* ok not a dupe, let's add it then *)
+    | _ ->
+      let typ = 
+        match typopt with
+        | None -> None
+        | Some t ->
+            let t = final_type env t in
+            let v = Meta_ast_c.vof_any (Type t) in
+            let s = Ocaml.string_of_v v in
+            Some s
+      in
+      (* less: still needed to have a try? *)
+      try
+        (* todo: use tok! *)
+        let nodeinfo = { Graph_code.
+          pos = { Parse_info.
+            str = "";
+            charpos = -1; column = -1;
+            line = 1;
+            file = env.c_file_readable;
+          };
+          props = [];
+          typ;
+        } in
+        env.g +> G.add_node node;
+        env.g +> G.add_edge (env.current, node) G.Has;
+        env.g +> G.add_nodeinfo node nodeinfo;
+      with Not_found ->
+        error env ("Not_found:" ^ str)
+    );
+  { env with current = node }
+
+(*****************************************************************************)
+(* Add edge *)
+(*****************************************************************************)
+
+let rec add_use_edge env (name, kind) =
+  let s = Ast.str_of_name name in
+  let src = env.current in
+  let dst = (s, kind) in
+  match () with
+  | _ when Hashtbl.mem env.dupes src || Hashtbl.mem env.dupes dst ->
+      (* todo: stats *)
+      env.pr2_and_log (spf "skipping edge (%s -> %s), one of it is a dupe"
+                         (G.string_of_node src) (G.string_of_node dst));
+  (* plan9, those are special functions in kencc? *)
+  | _ when s =$= "USED" || s =$= "SET" ->  
+      ()
+  | _ when not (G.has_node src env.g) ->
+      error env ("SRC FAIL:" ^ G.string_of_node src);
+  (* the normal case *)
+  | _ when G.has_node dst env.g ->
+      G.add_edge (src, dst) G.Use env.g;
+      !hook_use_edge env.ctx env.in_assign (src, dst) env.g
+  (* try to 'rekind' *)
+  | _ ->
+    (match kind with
+    (* look for Prototype if no Function *)
+    | E.Function -> add_use_edge env (name, E.Prototype)
+    (* look for GlobalExtern if no Global *)
+    | E.Global -> add_use_edge env (name, E.GlobalExtern)
+(* TODO
+      (* sometimes people don't use uppercase for macros *)
+      | E.Global ->
+          add_use_edge env (name, E.Constant)
+      | E.Function ->
+          add_use_edge env (name, E.Macro)
+
+          let kind_original =
+            match kind with
+            | E.Constant when not (looks_like_macro name) -> E.Global
+            | E.Macro when not (looks_like_macro name) -> E.Function
+            | _ -> kind
+          in
+*)
+
+    | _ when env.c_file_readable =~ ".*EXTERNAL" -> 
+        ()
+    (* todo? still need code below?*)
+(*
+    | E.Type when s =~ "S__\\(.*\\)" ->
+        add_use_edge env ("T__" ^ Common.matched1 s, E.Type)
+    | E.Type when s =~ "U__\\(.*\\)" ->
+        add_use_edge env ("T__" ^ Common.matched1 s, E.Type)
+    | E.Type when s =~ "E__\\(.*\\)" ->
+        add_use_edge env ("T__" ^ Common.matched1 s, E.Type)
+*)
+    | _ ->
+        env.pr2_and_log (spf "Lookup failure on %s (%s:??)"
+                            (G.string_of_node dst)
+                            env.c_file_readable
+        )
+    )
+
+
+let _add_type_deps env typ =
+  if env.phase = Uses && env.conf.types_dependencies 
+  then begin
+    let t = final_type env typ in
+    let rec aux t = 
+      match t with
+      | TBase _ -> ()
+      | TStructName (Struct, name) -> 
+          add_use_edge env (add_prefix "S__" name, E.Type)
+      | TStructName (Union, name) -> 
+          add_use_edge env (add_prefix "U__" name, E.Type)
+      | TEnumName name -> 
+          add_use_edge env (add_prefix "E__" name, E.Type)
+      | TTypeName name ->
+          if env.conf.typedefs_dependencies
+          then add_use_edge env (add_prefix "T__" name, E.Type)
+          else
+            let s = Ast.str_of_name name in
+            if Hashtbl.mem env.typedefs s
+            then 
+              let t' = (Hashtbl.find env.typedefs s) in
+              (* right now 'typedef enum { ... } X' results in X being
+               * typedefed to ... itself
+               *)
+              if t' = t
+              then add_use_edge env (add_prefix "T__" name, E.Type)
+              (* should be done in expand_typedefs *)
+              else raise Impossible
+            else env.pr2_and_log ("typedef not found:" ^ s)
+
+      | TPointer x | TArray x -> aux x
+      | TFunction (t, xs) ->
+        aux t;
+        xs +> List.iter (fun p -> aux p.p_type)
+    in
+    aux t
+  end
+
+(*****************************************************************************)
+(* Defs/Uses *)
+(*****************************************************************************)
+
+let rec extract_defs_uses env ast =
+
+  if env.phase = Defs then begin
+    let dir = Common2.dirname env.c_file_readable in
+    G.create_intermediate_directories_if_not_present env.g dir;
+    let node = (env.c_file_readable, E.File) in
+    env.g +> G.add_node node;
+    env.g +> G.add_edge ((dir, E.Dir), node) G.Has;
+  end;
+  let env = { env with 
+    current = (env.c_file_readable, E.File);
+  } in
+  toplevels env ast
+
+(* ---------------------------------------------------------------------- *)
+(* Toplevels *)
+(* ---------------------------------------------------------------------- *)
+
+(*
+let extract_defs ~g ~dupes ~ast ~readable =
+  ast +> List.iter (fun e ->
+    let nodes = nodes_of_toplevel e in
+    nodes +> List.iter (fun node ->
+      (* todo: if StructDef or EnumDef then
+       * can have nested Has links to add
+       *)
+      if G.has_node node g 
+      then Hashtbl.replace dupes node true
+      else begin
+        g +> G.add_node node;
+        g +> G.add_edge ((readable, E.File), node) G.Has;
+      end
+    )
+  )
+*)
+
+and nodes_of_toplevel x =
   match x with
   | Define (name, _val) ->
       [(Ast.str_of_name name, E.Constant)]
@@ -129,106 +457,6 @@ let nodes_of_toplevel x =
   (* do we want them? *)
   | Prototype _ -> []
 
-let rec add_use_edge env (name, kind) =
-  let src = env.current in
-  let dst = (Ast.str_of_name name, kind) in
-
-  (match () with
-  | _ when not (G.has_node src env.g) ->
-      pr2 (spf "LOOKUP SRC FAIL %s --> %s, src does not exist???"
-              (G.string_of_node src) (G.string_of_node dst));
-      env.lookup_fails#update src Common2.add1
-
-  (* now handled via G.dupe nodes
-   * we skip reference to dupes
-   * | _ when Hashtbl.mem env.dupes src ->
-   *      env.lookup_fails#update src Common.add1
-   * 
-   * | _ when Hashtbl.mem env.dupes dst -> 
-   * env.lookup_fails#update dst Common.add1
-   *)
-
-  | _ when G.has_node dst env.g -> 
-      G.add_edge (src, dst) G.Use env.g
-
-  | _ -> 
-      (match kind with
-      (* sometimes people don't use uppercase for macros *)
-      | E.Global ->
-          add_use_edge env (name, E.Constant)
-      | E.Function ->
-          add_use_edge env (name, E.Macro)
-
-      | _ ->
-          (* recorrect dst, put back Global and Function *)
-          let kind_original =
-            match kind with
-            | E.Constant when not (looks_like_macro name) -> E.Global
-            | E.Macro when not (looks_like_macro name) -> E.Function
-            | _ -> kind
-          in
-          let dst = (Ast.str_of_name name, kind_original) in
-            
-          G.add_node dst env.g;
-          let parent_target = 
-            if Hashtbl.mem env.dupes dst
-            then raise Impossible
-            else G.not_found
-          in
-          pr2 (spf "PB: lookup fail on %s (in %s)" 
-                       (G.string_of_node dst) (G.string_of_node src));
-
-          env.g +> G.add_edge (parent_target, dst) G.Has;
-          env.g +> G.add_edge (src, dst) G.Use;
-          env.lookup_fails#update dst Common2.add1
-      )
-  )
-
-(*****************************************************************************)
-(* Defs *)
-(*****************************************************************************)
-
-let extract_defs ~g ~dupes ~ast ~readable =
-  let dir = Common2.dirname readable in
-  G.create_intermediate_directories_if_not_present g dir;
-  g +> G.add_node (readable, E.File);
-  g +> G.add_edge ((dir, E.Dir), (readable, E.File))  G.Has;
-
-  ast +> List.iter (fun e ->
-    let nodes = nodes_of_toplevel e in
-
-    nodes +> List.iter (fun node ->
-
-      (* todo: if StructDef or EnumDef then
-       * can have nested Has links to add
-       *)
-      if G.has_node node g 
-      then Hashtbl.replace dupes node true
-      else begin
-        g +> G.add_node node;
-        g +> G.add_edge ((readable, E.File), node) G.Has;
-      end
-    )
-  )
-
-(*****************************************************************************)
-(* Uses *)
-(*****************************************************************************)
-
-let rec extract_uses ~g ~ast ~dupes ~readable ~lookup_fails =
-  let env = {
-    current = (readable, E.File);
-    g;
-    dupes; lookup_fails;
-    params_locals = [];
-  }
-  in
-  toplevels env ast
-
-(* ---------------------------------------------------------------------- *)
-(* Toplevels *)
-(* ---------------------------------------------------------------------- *)
-
 and toplevel env x =
   let xs = nodes_of_toplevel x in
   let env = 
@@ -252,7 +480,7 @@ and toplevel env x =
       define_body env v
   | Macro (_name, params, body) -> 
       let xs =  params +> List.map Ast.str_of_name in
-      let env = { env with params_locals = xs } in
+      let env = { env with locals = ref xs } in
       define_body env body
   | FuncDef def -> 
       let (ret, params) = def.f_type in
@@ -261,7 +489,7 @@ and toplevel env x =
       let xs = params +> Common.map_filter (fun x -> 
         (match x.p_name with None -> None  | Some x -> Some (Ast.str_of_name x))
       ) in
-      let env = { env with params_locals = xs } in
+      let env = { env with locals = ref xs } in
       stmts env def.f_body
 
   | StructDef { s_name = _n; s_kind = _kind; s_flds = flds } -> 
@@ -302,6 +530,10 @@ and define_body env v =
 (* ---------------------------------------------------------------------- *)
 (* Stmt *)
 (* ---------------------------------------------------------------------- *)
+
+(* Mostly go through without doing anything; stmts do not use
+ * any entities (expressions do).
+ *)
 and stmt env = function
   | ExprSt e -> expr env e
   | Block xs -> stmts env xs
@@ -329,11 +561,11 @@ and stmt env = function
       ()
 
   | Vars xs ->
-      xs +> List.iter (fun 
-        { v_name = n; v_type = t; v_storage = _; v_init = eopt } ->
-          env.params_locals <- (Ast.str_of_name n)::env.params_locals;
-          type_ env t;
-          Common2.opt (expr env) eopt
+      xs +> List.iter (fun x ->
+        let { v_name = n; v_type = t; v_storage = _; v_init = eopt } = x in
+        env.locals :=  (Ast.str_of_name n)::!(env.locals);
+        type_ env t;
+        Common2.opt (expr env) eopt
       )
 
  and case env = function
@@ -363,7 +595,7 @@ and expr env = function
   | Id name ->
       let s = Ast.str_of_name name in
       (match () with
-      | _ when List.mem s env.params_locals -> ()
+      | _ when List.mem s !(env.locals) -> ()
       | _ when looks_like_macro name ->
           add_use_edge env (name, E.Constant)
       | _ ->
@@ -443,37 +675,77 @@ let build ?(verbose=true) root files =
   let g = G.create () in
   G.create_initial_hierarchy g;
 
+  let chan = open_out (Filename.concat root "pfff.log") in
+
+  (* file -> (string, string) Hashtbl *)
+  let local_renames_of_files = Hashtbl.create 101 in
+  (* less: we could also have a local_typedefs_of_files to avoid conflicts *)
+
+  let conf = {
+    types_dependencies = true;
+    fields_dependencies = true;
+
+    typedefs_dependencies = false;
+    propagate_deps_def_to_decl = false;
+  } in
+
+  let env = {
+    g;
+    phase = Defs;
+    current = G.pb;
+    ctx = P.NoCtx;
+    c_file_readable = "__filled_later__";
+    conf;
+    in_assign = false;
+    local_rename = Hashtbl.create 0; (* will come from local_renames_of_files*)
+    dupes = Hashtbl.create 101;
+    typedefs = Hashtbl.create 101;
+    fields = Hashtbl.create 101;
+    locals = ref [];
+    log = (fun s -> output_string chan (s ^ "\n"); flush chan;);
+    pr2_and_log = (fun s ->
+      (*if verbose then *)
+      pr2 s;
+      output_string chan (s ^ "\n"); flush chan;
+    );
+  } in
+
+
   (* step1: creating the nodes and 'Has' edges, the defs *)
-  if verbose then pr2 "\nstep1: extract defs";
-  let dupes = Hashtbl.create 101 in
-  files +> Console.progress ~show:verbose (fun k -> 
+  env.pr2_and_log "\nstep1: extract defs";
+  files +> Console.progress ~show:verbose (fun k ->
     List.iter (fun file ->
       k();
-      let readable = Common.readable ~root file in
       let ast = parse ~show_parse_error:true file in
-      extract_defs ~g ~dupes ~ast ~readable;
-    ));
-  dupes +> Common.hashset_to_list +> List.iter (fun n ->
-    pr2 (spf "DUPE: %s" (G.string_of_node n));
-    g +> G.remove_edge (G.parent n g, n) G.Has;
-    g +> G.add_edge (G.dupe, n) G.Has;
-  );
-
-  (* step2: creating the 'Use' edges, the uses *)
-  if verbose then pr2 "\nstep2: extract uses";
-  let lookup_fails = Common2.hash_with_default (fun () -> 0) in
-  files +> Console.progress ~show:verbose (fun k -> 
-   List.iter (fun file ->
-     k();
-     let readable = Common.readable ~root file in
-     let ast = parse ~show_parse_error:false file in
-     extract_uses ~g ~dupes ~ast ~readable ~lookup_fails;
+      let readable = Common.readable ~root file in
+      let local_rename = Hashtbl.create 101 in
+      Hashtbl.add local_renames_of_files file local_rename;
+      extract_defs_uses { env with 
+        phase = Defs; 
+        c_file_readable = readable;
+        local_rename = local_rename;
+      } ast
    ));
-(* make less sense now that have G.not_found
-  lookup_fails#to_list +> Common.sort_by_val_highfirst +> Common.take_safe 20
-  +> List.iter (fun (n, cnt) ->
-    pr2 (spf "LOOKUP FAIL: %s (%d)%s" (G.string_of_node n) cnt
-            (if Hashtbl.mem dupes n then "(DUPE)" else ""))
-  );
-*)
+
+  (* step2: creating the 'Use' edges *)
+  env.pr2_and_log "\nstep2: extract Uses";
+  files +> Console.progress ~show:verbose (fun k ->
+    List.iter (fun file ->
+      k();
+      let ast = parse ~show_parse_error:false file in
+      let readable = Common.readable ~root file in
+      extract_defs_uses { env with 
+        phase = Uses; 
+        c_file_readable = readable;
+        local_rename = Hashtbl.find local_renames_of_files file;
+      } ast
+    ));
+
+(*
+  env.pr2_and_log "\nstep3: adjusting";
+  if conf.propagate_deps_def_to_decl
+  then propagate_users_of_functions_globals_types_to_prototype_extern_typedefs g;
+  *)
+  G.remove_empty_nodes g [G.not_found; G.dupe; G.pb];
+
   g
