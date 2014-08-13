@@ -170,7 +170,7 @@ let propagate_users_of_functions_globals_types_to_prototype_extern_typedefs g =
 (* we can have different .c files using the same function name, so to avoid
  * dupes we locally rename those entities, e.g. main -> main__234.
  *)
-let _new_str_if_defs env s =
+let new_str_if_defs env s =
   if env.phase = Defs
   then begin
     let s2 = Graph_code.gensym s in
@@ -187,7 +187,7 @@ let _str env s =
   else s
 
 
-let _kind_file env =
+let kind_file env =
   match env.c_file_readable with
   | s when s =~ ".*\\.[h]" -> Header
   | s when s =~ ".*\\.[c]" -> Source
@@ -212,8 +212,10 @@ let final_type env t =
 let error env s =
   failwith (spf "%s: %s" env.c_file_readable s)
 
-let add_prefix _s _name = 
-  raise Todo
+let add_prefix prefix (s, tok) = 
+  prefix ^ s, tok
+let replace s (_,tok) = 
+  s, tok
    
 (*****************************************************************************)
 (* Add Node *)
@@ -289,16 +291,11 @@ let add_node_and_edge_if_defs_mode env (name, kind) typopt =
       in
       (* less: still needed to have a try? *)
       try
-        (* todo: use tok! *)
+        let pos = Parse_info.token_location_of_info (snd name) in
+        let pos = { pos with Parse_info.file = env.c_file_readable } in
         let nodeinfo = { Graph_code.
-          pos = { Parse_info.
-            str = "";
-            charpos = -1; column = -1;
-            line = 1;
-            file = env.c_file_readable;
-          };
+          pos; typ;
           props = [];
-          typ;
         } in
         env.g +> G.add_node node;
         env.g +> G.add_edge (env.current, node) G.Has;
@@ -371,44 +368,6 @@ let rec add_use_edge env (name, kind) =
     )
 
 
-let _add_type_deps env typ =
-  if env.phase = Uses && env.conf.types_dependencies 
-  then begin
-    let t = final_type env typ in
-    let rec aux t = 
-      match t with
-      | TBase _ -> ()
-      | TStructName (Struct, name) -> 
-          add_use_edge env (add_prefix "S__" name, E.Type)
-      | TStructName (Union, name) -> 
-          add_use_edge env (add_prefix "U__" name, E.Type)
-      | TEnumName name -> 
-          add_use_edge env (add_prefix "E__" name, E.Type)
-      | TTypeName name ->
-          if env.conf.typedefs_dependencies
-          then add_use_edge env (add_prefix "T__" name, E.Type)
-          else
-            let s = Ast.str_of_name name in
-            if Hashtbl.mem env.typedefs s
-            then 
-              let t' = (Hashtbl.find env.typedefs s) in
-              (* right now 'typedef enum { ... } X' results in X being
-               * typedefed to ... itself
-               *)
-              if t' = t
-              then add_use_edge env (add_prefix "T__" name, E.Type)
-              (* should be done in expand_typedefs *)
-              else raise Impossible
-            else env.pr2_and_log ("typedef not found:" ^ s)
-
-      | TPointer x | TArray x -> aux x
-      | TFunction (t, xs) ->
-        aux t;
-        xs +> List.iter (fun p -> aux p.p_type)
-    in
-    aux t
-  end
-
 (*****************************************************************************)
 (* Defs/Uses *)
 (*****************************************************************************)
@@ -433,26 +392,79 @@ let rec extract_defs_uses env ast =
 
 and toplevel env x =
   match x with
-  | Define (name, v) ->
+  | Define (name, body) ->
       let env = add_node_and_edge_if_defs_mode env (name, E.Constant) None in
-      define_body env v
+      define_body env body
   | Macro (name, params, body) -> 
       let env = add_node_and_edge_if_defs_mode env (name, E.Macro) None in
-      let xs =  params +> List.map Ast.str_of_name in
-      let env = { env with locals = ref xs } in
+      let env = { env with locals = ref (params+>List.map Ast.str_of_name) } in
       define_body env body
-  | FuncDef def -> 
+
+  | FuncDef def | Prototype def -> 
       let name = def.f_name in
+      let s = Ast.str_of_name name in
+      let kind = 
+        match x with 
+        | Prototype _ -> E.Prototype
+        | FuncDef _ -> E.Function
+        | _ -> raise Impossible
+      in
+      let static = 
+        (* if we are in an header file, then we don't want to rename
+         * the inline static function because would have a different
+         * local_rename hash. Renaming in the header file would lead to
+         * some unresolved lookup in the c files.
+         *)
+        (def.f_static && kind_file env =*= Source) ||
+        s = "main"
+      in
+      let s = if static && kind=E.Function then new_str_if_defs env s else s in
       let typ = Some (TFunction def.f_type) in
-      let env = add_node_and_edge_if_defs_mode env (name, E.Function) typ in
-      let (ret, params) = def.f_type in
-      type_ env ret;
-      parameters env params;
-      let xs = params +> Common.map_filter (fun x -> 
+
+      (* todo: when static and prototype, we should create a new_str_if_defs
+       * that will match the one created later for the Function, but
+       * right now we just don't create the node, it's simpler.
+       *)
+      let env = 
+        if static && kind = E.Prototype
+        then env
+          (* todo: when prototype and in .c, then it's probably a forward
+           * decl that we could just skip?
+           *)
+        else add_node_and_edge_if_defs_mode env (replace s name, kind) typ
+      in
+      if kind <> E.Prototype 
+      then type_ env (TFunction def.f_type);
+
+      let xs = snd def.f_type +> Common.map_filter (fun x -> 
         (match x.p_name with None -> None  | Some x -> Some (Ast.str_of_name x))
       ) in
       let env = { env with locals = ref xs } in
       stmts env def.f_body
+
+  | Global v -> 
+      let { v_name = name; v_type = t; v_storage = sto; v_init = eopt } = v in
+      let s = Ast.str_of_name name in
+      let kind = 
+        match sto with
+        | Extern -> E.GlobalExtern 
+        (* when have 'int x = 1;' in a header, it's actually the def.
+         * less: print a warning asking to mv in a .c
+         *)
+        | _ when eopt <> None && kind_file env = Header -> E.Global
+        (* less: print a warning; they should put extern decl *)
+        | _ when kind_file env = Header -> E.GlobalExtern
+        | DefaultStorage | Static -> E.Global
+      in
+      let static = sto =*= Static && kind_file env =*= Source in
+
+      let s = if static then new_str_if_defs env s else s in
+      let typ = Some v.v_type in
+      let env = add_node_and_edge_if_defs_mode env (replace s name, kind) typ in
+     
+      if kind <> E.GlobalExtern 
+      then type_ env t;
+      Common2.opt (expr env) eopt
 
   | StructDef { s_name = name; s_kind = _kind; s_flds = flds } -> 
       let env = add_node_and_edge_if_defs_mode env (name, E.Class) None in
@@ -469,9 +481,15 @@ and toplevel env x =
       )
         
   | EnumDef (name, xs) ->
-      let env = add_node_and_edge_if_defs_mode env (name, E.Type) None in
+      let env = 
+        add_node_and_edge_if_defs_mode env (add_prefix "E__" name, E.Type) None
+      in
       xs +> List.iter (fun (name, eopt) ->
-        let env = add_node_and_edge_if_defs_mode env (name, E.Constant) None in
+        let s = Ast.str_of_name name in
+        let s = if kind_file env =*= Source then new_str_if_defs env s else s in
+        let env = 
+          add_node_and_edge_if_defs_mode env (replace s name, E.Constant) None
+        in
         Common2.opt (expr env) eopt
       )
 
@@ -479,19 +497,6 @@ and toplevel env x =
       let env = add_node_and_edge_if_defs_mode env (name, E.Type) None in
       type_ env t
 
-  | Global v -> 
-(*
-      (* skip extern decl *)
-      (match v.v_storage with
-      | Extern -> ()
-      | Static | DefaultStorage ->
-          [(Ast.str_of_name v.v_name, E.Global)]
-      )
-*)
-     let { v_name = _n; v_type = t; v_storage = _; v_init = eopt } = v in
-     (* env.params_locals <- (Ast.str_of_name n)::env.params_locals; *)
-     type_ env t;
-     Common2.opt (expr env) eopt
 
   (* less: should analyze if s has the form "..." and not <> and
    * build appropriate link? but need to find the real File
@@ -499,8 +504,6 @@ and toplevel env x =
    *)
   | Include _ -> ()
  
-  (* less: do we want them? *)
-  | Prototype _def -> ()
 
 and toplevels env xs = List.iter (toplevel env) xs
 
@@ -544,9 +547,15 @@ and stmt env = function
 
   | Vars xs ->
       xs +> List.iter (fun x ->
-        let { v_name = n; v_type = t; v_storage = _; v_init = eopt } = x in
-        env.locals :=  (Ast.str_of_name n)::!(env.locals);
-        type_ env t;
+        let { v_name = n; v_type = t; v_storage = sto; v_init = eopt } = x in
+        if sto <> Extern
+        then begin
+          env.locals :=  (Ast.str_of_name n)::!(env.locals);
+          type_ env t;
+        end;
+        (* todo: actually there is a potential in_assign here
+         * if set a value for the variable in rest
+         *)
         Common2.opt (expr env) eopt
       )
 
@@ -628,26 +637,44 @@ and exprs env xs = List.iter (expr env) xs
 (* ---------------------------------------------------------------------- *)
 (* Types *)
 (* ---------------------------------------------------------------------- *)
-and type_ env x =
-  match x with
-  | TBase _ -> ()
-  | TPointer t | TArray t -> type_ env t
-  | TFunction (tret, xs) ->
-      type_ env tret;
-      parameters env xs
-  | TStructName (_kind, name) ->
-      add_use_edge env (name, E.Class)
-  | TEnumName (name) | TTypeName name ->
-      add_use_edge env (name, E.Type)
 
-(* ---------------------------------------------------------------------- *)
-(* Misc *)
-(* ---------------------------------------------------------------------- *)
+and type_ env typ =
+  if env.phase = Uses && env.conf.types_dependencies 
+  then begin
+    let t = final_type env typ in
+    let rec aux t = 
+      match t with
+      | TBase _ -> ()
+      | TStructName (Struct, name) -> 
+          add_use_edge env (add_prefix "S__" name, E.Type)
+      | TStructName (Union, name) -> 
+          add_use_edge env (add_prefix "U__" name, E.Type)
+      | TEnumName name -> 
+          add_use_edge env (add_prefix "E__" name, E.Type)
+      | TTypeName name ->
+          if env.conf.typedefs_dependencies
+          then add_use_edge env (add_prefix "T__" name, E.Type)
+          else
+            let s = Ast.str_of_name name in
+            if Hashtbl.mem env.typedefs s
+            then 
+              let t' = (Hashtbl.find env.typedefs s) in
+              (* right now 'typedef enum { ... } X' results in X being
+               * typedefed to ... itself
+               *)
+              if t' = t
+              then add_use_edge env (add_prefix "T__" name, E.Type)
+              (* should be done in expand_typedefs *)
+              else raise Impossible
+            else env.pr2_and_log ("typedef not found:" ^ s)
 
-and parameter env { p_type = t; p_name = _} =
-  type_ env t
-and parameters env xs = 
-  List.iter (parameter env) xs
+      | TPointer x | TArray x -> aux x
+      | TFunction (t, xs) ->
+        aux t;
+        xs +> List.iter (fun p -> aux p.p_type)
+    in
+    aux t
+  end
 
 (*****************************************************************************)
 (* Main entry point *)

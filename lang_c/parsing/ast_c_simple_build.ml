@@ -102,7 +102,7 @@ and toplevel env = function
                 A.Prototype { A.
                   f_name = x.A.v_name;
                   f_type = ft;
-
+                  f_static = false;
                   f_body = [];
                 }
             | _ -> A.Global x
@@ -137,7 +137,11 @@ and func_def env def =
   { A.
     f_name = name env def.f_name;
     f_type = function_type env def.f_type;
-    (* f_storage *)
+    f_static = 
+      (match fst (fst def.f_storage) with
+      | Sto Static -> true
+      | _ -> false
+      );
     f_body = compound env def.f_body;
   }
 

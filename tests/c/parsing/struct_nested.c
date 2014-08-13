@@ -1,5 +1,5 @@
 
-typedef struct Pcidev {
+struct Pcidev {
   int tbdf;     /* type+bus+device+function */
   ushort  vid;      /* vendor ID */
   ushort  did;      /* device ID */

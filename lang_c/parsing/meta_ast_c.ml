@@ -246,7 +246,9 @@ and vof_storage =
   | Static -> Ocaml.VSum (("Static", []))
   | DefaultStorage -> Ocaml.VSum (("DefaultStorage", []))
   
-let vof_func_def { f_name = v_f_name; f_type = v_f_type; f_body = v_f_body }
+let vof_func_def 
+    { f_name = v_f_name; f_type = v_f_type; f_body = v_f_body; 
+      f_static = v_f_static }
                  =
   let bnds = [] in
   let arg = Ocaml.vof_list vof_stmt v_f_body in
@@ -256,7 +258,12 @@ let vof_func_def { f_name = v_f_name; f_type = v_f_type; f_body = v_f_body }
   let bnd = ("f_type", arg) in
   let bnds = bnd :: bnds in
   let arg = vof_name v_f_name in
-  let bnd = ("f_name", arg) in let bnds = bnd :: bnds in Ocaml.VDict bnds
+  let bnd = ("f_name", arg) in 
+  let bnds = bnd :: bnds in 
+  let arg = Ocaml.vof_bool v_f_static in
+  let bnd = ("f_static", arg) in 
+  let bnds = bnd :: bnds in 
+  Ocaml.VDict bnds
   
 and vof_field_def { fld_name = v_fld_name; fld_type = v_fld_type } =
   let bnds = [] in

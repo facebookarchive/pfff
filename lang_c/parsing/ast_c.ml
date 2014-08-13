@@ -207,6 +207,7 @@ type func_def = {
   f_name: name;
   f_type: function_type;
   f_body: stmt list;
+  f_static: bool;
 }
  (* with tarzan *)
 
