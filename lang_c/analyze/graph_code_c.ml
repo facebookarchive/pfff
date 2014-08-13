@@ -133,8 +133,35 @@ let parse ~show_parse_error file =
 (*****************************************************************************)
 (* Adjusters *)
 (*****************************************************************************)
-
-(*let propagate_users_of_functions_globals_types_to_prototype_extern_typedefs g =*)
+(* todo: copy paste of the one in graph_code_clang.ml, could factorize *)
+let propagate_users_of_functions_globals_types_to_prototype_extern_typedefs g =
+  let pred = G.mk_eff_use_pred g in
+  g +> G.iter_nodes (fun n ->
+    let n_def_opt =
+      match n with
+      | s, E.Prototype -> Some (s, E.Function)
+      | s, E.GlobalExtern -> Some (s, E.Global)
+      (* todo: actually should look at env.typedefs because it's not
+       * necessaraly T_Xxxx -> S_Xxxx
+       *)
+      | s, E.Type when s =~ "T__\\(.*\\)$" -> 
+        Some ("S__" ^(Common.matched1 s), E.Type)
+      | _ -> None
+    in
+    n_def_opt +> Common.do_option (fun n_def ->
+      let n_decl = n in
+      if G.has_node n_def g 
+      then begin
+        (* let's create a link between the def and the decl *)
+        g +> G.add_edge (n_def, n_decl) G.Use;
+        (* and now the users *)
+        let users = pred n_def in
+        users +> List.iter (fun user ->
+          g +> G.add_edge (user, n_decl) G.Use
+        )
+      end
+    )
+  )
 
 (*****************************************************************************)
 (* Helpers *)
@@ -168,8 +195,9 @@ let _kind_file env =
    (* failwith ("unknown kind of file: " ^ s) *)
     Source
 
-let expand_typedefs _typedefs _t =
-  raise Todo
+let expand_typedefs _typedefs t =
+  pr2_once "expand_typedefs:Todo";
+  t
 
 let final_type env t =
   if env.conf.typedefs_dependencies
@@ -191,7 +219,7 @@ let add_prefix _s _name =
 (* Add Node *)
 (*****************************************************************************)
 
-let _add_node_and_edge_if_defs_mode env (name, kind) typopt =
+let add_node_and_edge_if_defs_mode env (name, kind) typopt =
   let str = Ast.str_of_name name in
   let str' =
     match kind, env.current with
@@ -403,86 +431,20 @@ let rec extract_defs_uses env ast =
 (* Toplevels *)
 (* ---------------------------------------------------------------------- *)
 
-(*
-let extract_defs ~g ~dupes ~ast ~readable =
-  ast +> List.iter (fun e ->
-    let nodes = nodes_of_toplevel e in
-    nodes +> List.iter (fun node ->
-      (* todo: if StructDef or EnumDef then
-       * can have nested Has links to add
-       *)
-      if G.has_node node g 
-      then Hashtbl.replace dupes node true
-      else begin
-        g +> G.add_node node;
-        g +> G.add_edge ((readable, E.File), node) G.Has;
-      end
-    )
-  )
-*)
-
-and nodes_of_toplevel x =
-  match x with
-  | Define (name, _val) ->
-      [(Ast.str_of_name name, E.Constant)]
-  | Macro (name, _args, _body) -> 
-      [(Ast.str_of_name name, E.Macro)]
-  | FuncDef def -> 
-      [(Ast.str_of_name def.f_name, E.Function)]
-  | StructDef def -> 
-      [(Ast.str_of_name def.s_name, E.Class)]
-  | TypeDef (name, _t) ->
-      [(Ast.str_of_name name, E.Type)]
-  | EnumDef def ->
-
-      let (name, xs) = def in
-      (* todo? add a __enum prefix? *)
-      [(Ast.str_of_name name, E.Type)] @
-      (xs +> List.map (fun (name, _eopt) ->
-        (Ast.str_of_name name, E.Constant)
-      ))
-
-  | Global v ->
-      (* skip extern decl *)
-      (match v.v_storage with
-      | Extern -> []
-      | Static | DefaultStorage ->
-          [(Ast.str_of_name v.v_name, E.Global)]
-      )
-
-   (* todo: maybe letter, but need to find the real File
-    * corresponding to the string, so may need some -I
-    *)
-  | Include _ -> []
-  (* do we want them? *)
-  | Prototype _ -> []
-
 and toplevel env x =
-  let xs = nodes_of_toplevel x in
-  let env = 
-    match xs with
-    | [] -> env
-    | [x]  
-    (* can happen for EnumDef *)
-    | x::_
-      -> 
-        (* can happen for main() which will be dupes in which case
-         * it's better to keep current as the current File so
-         * at least we will avoid some fail lookup.
-         *)
-        if Hashtbl.mem env.dupes x
-        then env
-        else { env with current = x }
-        
-  in
   match x with
-  | Define (_name, v) ->
+  | Define (name, v) ->
+      let env = add_node_and_edge_if_defs_mode env (name, E.Constant) None in
       define_body env v
-  | Macro (_name, params, body) -> 
+  | Macro (name, params, body) -> 
+      let env = add_node_and_edge_if_defs_mode env (name, E.Macro) None in
       let xs =  params +> List.map Ast.str_of_name in
       let env = { env with locals = ref xs } in
       define_body env body
   | FuncDef def -> 
+      let name = def.f_name in
+      let typ = Some (TFunction def.f_type) in
+      let env = add_node_and_edge_if_defs_mode env (name, E.Function) typ in
       let (ret, params) = def.f_type in
       type_ env ret;
       parameters env params;
@@ -492,28 +454,48 @@ and toplevel env x =
       let env = { env with locals = ref xs } in
       stmts env def.f_body
 
-  | StructDef { s_name = _n; s_kind = _kind; s_flds = flds } -> 
-      flds +> List.iter (fun { fld_name = _n; fld_type = t; } ->
-        type_ env t
+  | StructDef { s_name = name; s_kind = _kind; s_flds = flds } -> 
+      let env = add_node_and_edge_if_defs_mode env (name, E.Class) None in
+
+      flds +> List.iter (fun { fld_name = nameopt; fld_type = t; } ->
+        (match nameopt with
+        | Some name -> 
+          let env = add_node_and_edge_if_defs_mode env (name, E.Field) None in
+          type_ env t
+        | None ->
+          (* TODO: kencc: anon substruct, invent anon? *)
+          type_ env t
+        )
       )
         
-  | EnumDef (_name, xs) ->
-      xs +> List.iter (fun (_name, eopt) ->
+  | EnumDef (name, xs) ->
+      let env = add_node_and_edge_if_defs_mode env (name, E.Type) None in
+      xs +> List.iter (fun (name, eopt) ->
+        let env = add_node_and_edge_if_defs_mode env (name, E.Constant) None in
         Common2.opt (expr env) eopt
       )
 
-  | TypeDef (_name, t) -> type_ env t
+  | TypeDef (name, t) -> 
+      let env = add_node_and_edge_if_defs_mode env (name, E.Type) None in
+      type_ env t
 
-  | Global x -> 
-      (match x with
-        { v_name = _n; v_type = t; v_storage = _; v_init = eopt } ->
-          (* env.params_locals <- (Ast.str_of_name n)::env.params_locals; *)
-          type_ env t;
-          Common2.opt (expr env) eopt
+  | Global v -> 
+(*
+      (* skip extern decl *)
+      (match v.v_storage with
+      | Extern -> ()
+      | Static | DefaultStorage ->
+          [(Ast.str_of_name v.v_name, E.Global)]
       )
+*)
+     let { v_name = _n; v_type = t; v_storage = _; v_init = eopt } = v in
+     (* env.params_locals <- (Ast.str_of_name n)::env.params_locals; *)
+     type_ env t;
+     Common2.opt (expr env) eopt
 
   (* less: should analyze if s has the form "..." and not <> and
-   * build appropriate link?
+   * build appropriate link? but need to find the real File
+   * corresponding to the string, so may need some -I
    *)
   | Include _ -> ()
  
@@ -741,11 +723,9 @@ let build ?(verbose=true) root files =
       } ast
     ));
 
-(*
   env.pr2_and_log "\nstep3: adjusting";
   if conf.propagate_deps_def_to_decl
   then propagate_users_of_functions_globals_types_to_prototype_extern_typedefs g;
-  *)
   G.remove_empty_nodes g [G.not_found; G.dupe; G.pb];
 
   g
