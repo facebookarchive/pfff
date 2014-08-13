@@ -168,10 +168,11 @@ let fix_tokens_c ~macro_defs tokens =
    * use ifdefs, but other oss do use ifdefs
    *)
 
+(*
   let paren_grouped      = TV.mk_parenthised  cleaner in
   Parsing_hacks_pp.find_define_init_brace_paren paren_grouped;
   Parsing_hacks_pp.find_string_macro_paren paren_grouped;
-
+*)
   (* tagging contextual info (InFunc, InStruct, etc) *)
   let multi_grouped = TV.mk_multi cleaner in
   Token_views_context.set_context_tag_multi multi_grouped;
