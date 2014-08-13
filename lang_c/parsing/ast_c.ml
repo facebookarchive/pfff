@@ -47,8 +47,23 @@ open Common2.Infix
  * good enough for codegraph purposes on xv6, plan9 and other small C
  * projects.
  * 
- * related: 
- *  - CIL, but it works after preprocessing.
+ * related work: 
+ *  - CIL, but it works after preprocessing; it makes it harder to connect
+ *    analysis results to tools like codemap. It also does not handle some of
+ *    the kencc extensions.
+ *    CIL has two pointer analysis but they were written with bug finding
+ *    in mind I think, not code comprehension which we really care about in pfff.
+ *    In the end I thought generating datalog facts for plan9 using lang_c/ 
+ *    was simpler that modifying CIL (moreover fixing lang_cpp/ and lang_c/
+ *    to handle plan9 code was anyway needed for codemap).
+ *  - SIL's monoidics. SIL looks a bit complicated, but it might be a good
+ *    candidate, unforunately their API are not easily accessible in
+ *    a findlib library form.
+ *  - could also use the AST used by cc in plan9 :)
+ *  - Clang, but like CIL it works after preprocessing, does not handle kencc,
+ *    and does not provide by default a convenient ocaml AST. I could use
+ *    clang-ocaml though but it's currently not easily accessible in a findlib
+ *    library form.
  * 
  * See lang_cpp/parsing/ast_cpp.ml.
  *
@@ -224,7 +239,6 @@ type type_def = name * type_
 (* Cpp *)
 (* ------------------------------------------------------------------------- *)
 
-(* should be a statically computable expr *)
 type define_body = 
   | CppExpr of expr
   | CppStmt of stmt
@@ -233,14 +247,14 @@ type define_body =
 (* ------------------------------------------------------------------------- *)
 (* Program *)
 (* ------------------------------------------------------------------------- *)
-(* less: ForwardStructDecl for mutually recursive structures? probably can 
- * deal with it by using typedefs as intermediates.
- *)
 type toplevel =
   | Include of string wrap (* path *)
   | Define of name * define_body 
   | Macro of name * (name list) * define_body
 
+  (* less: what about ForwardStructDecl? for mutually recursive structures? 
+   * probably can deal with it by using typedefs as intermediates.
+   *)
   | StructDef of struct_def
   | TypeDef of type_def
   | EnumDef of enum_def
