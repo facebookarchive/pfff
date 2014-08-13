@@ -3,6 +3,7 @@ struct a_struct {
   int field1;
   int field2;
   int dead_field;
+
   struct anon {
     int subfield1;
     int subfield2;

@@ -1,6 +1,6 @@
 
 typedef struct {
-  ...
+  int x;
 } Foo;
 
 // and then using fields, I get some "member access to typedef not expanded

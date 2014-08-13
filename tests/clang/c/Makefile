@@ -17,6 +17,9 @@ all: $(OBJS)
 	$(CG) -lang clang2 -build .
 	cat pfff.log
 
+all2: $(SRC)
+	$(CG) -lang c -build .
+	cat pfff.log
 
 prolog: $(OBJS)
 	$(CQ) -lang clang2 -build .

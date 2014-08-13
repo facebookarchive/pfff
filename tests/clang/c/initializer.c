@@ -1,7 +1,7 @@
 
 struct FooInitializer {
-int x;
-int y;
+  int x;
+  int y;
 };
 
 
