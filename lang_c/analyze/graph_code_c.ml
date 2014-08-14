@@ -181,10 +181,17 @@ let new_str_if_defs env s =
 
 (* anywhere you get a string from the AST you must use this function to
  * get the final "value" *)
-let _str env s =
+let str env (s, tok) =
   if Hashtbl.mem env.local_rename s
-  then Hashtbl.find env.local_rename s
-  else s
+  then Hashtbl.find env.local_rename s, tok
+  else s, tok
+
+let add_prefix prefix (s, tok) = 
+  prefix ^ s, tok
+
+(* todo: get rid, use instead new_name_if_defs *)
+let replace s (_,tok) = 
+  s, tok
 
 
 let kind_file env =
@@ -233,10 +240,6 @@ let final_type env t =
 let error env s =
   failwith (spf "%s: %s" env.c_file_readable s)
 
-let add_prefix prefix (s, tok) = 
-  prefix ^ s, tok
-let replace s (_,tok) = 
-  s, tok
    
 (*****************************************************************************)
 (* Add Node *)
@@ -644,20 +647,21 @@ and expr env = function
    *)
   | Id name ->
       let s = Ast.str_of_name name in
+
       (match () with
       | _ when List.mem s !(env.locals) -> ()
       | _ when looks_like_macro name ->
-          add_use_edge env (name, E.Constant)
+          add_use_edge env (str env name, E.Constant)
       | _ ->
-          add_use_edge env (name, E.Global)  
+          add_use_edge env (str env name, E.Global)  
       )
 
   | Call (e, es) -> 
       (match e with
       | Id name ->
           if looks_like_macro name
-          then add_use_edge env (name, E.Macro)
-          else add_use_edge env (name, E.Function)
+          then add_use_edge env (str env name, E.Macro)
+          else add_use_edge env (str env name, E.Function)
       | _ -> expr env e
       );
       exprs env es
