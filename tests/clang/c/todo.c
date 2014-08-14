@@ -1,7 +1,7 @@
 
 typedef struct {
-  int x;
-} Foo;
+  int xxxxxx;
+} Fooxxxx;
 
 // and then using fields, I get some "member access to typedef not expanded
 // errors :(

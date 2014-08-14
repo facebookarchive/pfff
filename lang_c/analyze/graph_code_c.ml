@@ -195,9 +195,30 @@ let kind_file env =
    (* failwith ("unknown kind of file: " ^ s) *)
     Source
 
-let expand_typedefs _typedefs t =
-  pr2_once "expand_typedefs:Todo";
-  t
+let rec expand_typedefs typedefs t =
+  match t with
+  | TBase _ | TStructName _ | TEnumName _  -> t
+  | TTypeName name ->
+      let s = Ast.str_of_name name in
+      if Hashtbl.mem typedefs s
+      then 
+        let t' = (Hashtbl.find typedefs s) in
+        (* right now 'typedef enum { ... } X' results in X being
+         * typedefed to ... itself
+         *)
+        if t' =*= t
+        then t
+        else expand_typedefs typedefs t'
+      else t
+  | TPointer x -> 
+      TPointer (expand_typedefs typedefs x)
+  | TArray x -> 
+      TArray (expand_typedefs typedefs x)
+  | TFunction (ret, params) -> 
+      TFunction (expand_typedefs typedefs ret,
+                params +> List.map (fun p ->
+                  { p with p_type = expand_typedefs typedefs p.p_type }
+                ))
 
 let final_type env t =
   if env.conf.typedefs_dependencies
