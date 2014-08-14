@@ -284,7 +284,9 @@ let add_node_and_edge_if_defs_mode env (name, kind) typopt =
         match typopt with
         | None -> None
         | Some t ->
-            let t = final_type env t in
+            (* hmmm can't call final_type here, no typedef pass yet
+               let t = final_type env t in 
+            *)
             let v = Meta_ast_c.vof_any (Type t) in
             let s = Ocaml.string_of_v v in
             Some s
@@ -381,9 +383,7 @@ let rec extract_defs_uses env ast =
     env.g +> G.add_node node;
     env.g +> G.add_edge ((dir, E.Dir), node) G.Has;
   end;
-  let env = { env with 
-    current = (env.c_file_readable, E.File);
-  } in
+  let env = { env with current = (env.c_file_readable, E.File); } in
   toplevels env ast
 
 (* ---------------------------------------------------------------------- *)
@@ -394,11 +394,13 @@ and toplevel env x =
   match x with
   | Define (name, body) ->
       let env = add_node_and_edge_if_defs_mode env (name, E.Constant) None in
-      define_body env body
+      if env.phase = Uses 
+      then define_body env body
   | Macro (name, params, body) -> 
       let env = add_node_and_edge_if_defs_mode env (name, E.Macro) None in
       let env = { env with locals = ref (params+>List.map Ast.str_of_name) } in
-      define_body env body
+      if env.phase = Uses
+      then define_body env body
 
   | FuncDef def | Prototype def -> 
       let name = def.f_name in
@@ -440,7 +442,8 @@ and toplevel env x =
         (match x.p_name with None -> None  | Some x -> Some (Ast.str_of_name x))
       ) in
       let env = { env with locals = ref xs } in
-      stmts env def.f_body
+      if env.phase = Uses
+      then stmts env def.f_body
 
   | Global v -> 
       let { v_name = name; v_type = t; v_storage = sto; v_init = eopt } = v in
@@ -464,7 +467,8 @@ and toplevel env x =
      
       if kind <> E.GlobalExtern 
       then type_ env t;
-      Common2.opt (expr env) eopt
+      if env.phase = Uses
+      then Common2.opt (expr env) eopt
 
   | StructDef { s_name = name; s_kind = kind; s_flds = flds } -> 
       let s = Ast.str_of_name name in
@@ -506,7 +510,8 @@ and toplevel env x =
         let env = 
           add_node_and_edge_if_defs_mode env (replace s name, E.Constant) None
         in
-        Common2.opt (expr env) eopt
+        if env.phase = Uses
+        then Common2.opt (expr env) eopt
       )
 
     (* I am not sure about the namespaces, so I prepend strings *)
@@ -605,6 +610,7 @@ and cases env xs = List.iter (case env) xs
 (* ---------------------------------------------------------------------- *)
 (* Expr *)
 (* ---------------------------------------------------------------------- *)
+(* can assume we are in Uses phase *)
 and expr env = function
   | Int _ | Float _ | Char _ -> ()
   | String _  -> ()
