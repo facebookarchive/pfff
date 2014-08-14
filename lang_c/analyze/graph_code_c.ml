@@ -170,14 +170,14 @@ let propagate_users_of_functions_globals_types_to_prototype_extern_typedefs g =
 (* we can have different .c files using the same function name, so to avoid
  * dupes we locally rename those entities, e.g. main -> main__234.
  *)
-let new_str_if_defs env s =
+let new_name_if_defs env (s, tok) =
   if env.phase = Defs
   then begin
     let s2 = Graph_code.gensym s in
     Hashtbl.add env.local_rename s s2;
-    s2
+    s2, tok
   end
-  else Hashtbl.find env.local_rename s
+  else Hashtbl.find env.local_rename s, tok
 
 (* anywhere you get a string from the AST you must use this function to
  * get the final "value" *)
@@ -188,10 +188,6 @@ let str env (s, tok) =
 
 let add_prefix prefix (s, tok) = 
   prefix ^ s, tok
-
-(* todo: get rid, use instead new_name_if_defs *)
-let replace s (_,tok) = 
-  s, tok
 
 
 let kind_file env =
@@ -428,7 +424,6 @@ and toplevel env x =
 
   | FuncDef def | Prototype def -> 
       let name = def.f_name in
-      let s = Ast.str_of_name name in
       let kind = 
         match x with 
         | Prototype _ -> E.Prototype
@@ -442,9 +437,10 @@ and toplevel env x =
          * some unresolved lookup in the c files.
          *)
         (def.f_static && kind_file env =*= Source) ||
-        s = "main"
+        Ast.str_of_name name = "main"
       in
-      let s = if static && kind=E.Function then new_str_if_defs env s else s in
+      let name = 
+        if static && kind=E.Function then new_name_if_defs env name else name in
       let typ = Some (TFunction def.f_type) in
 
       (* todo: when static and prototype, we should create a new_str_if_defs
@@ -457,7 +453,7 @@ and toplevel env x =
           (* todo: when prototype and in .c, then it's probably a forward
            * decl that we could just skip?
            *)
-        else add_node_and_edge_if_defs_mode env (replace s name, kind) typ
+        else add_node_and_edge_if_defs_mode env (name, kind) typ
       in
       if kind <> E.Prototype 
       then type_ env (TFunction def.f_type);
@@ -471,7 +467,6 @@ and toplevel env x =
 
   | Global v -> 
       let { v_name = name; v_type = t; v_storage = sto; v_init = eopt } = v in
-      let s = Ast.str_of_name name in
       let kind = 
         match sto with
         | Extern -> E.GlobalExtern 
@@ -485,9 +480,9 @@ and toplevel env x =
       in
       let static = sto =*= Static && kind_file env =*= Source in
 
-      let s = if static then new_str_if_defs env s else s in
+      let name = if static then new_name_if_defs env name else name in
       let typ = Some v.v_type in
-      let env = add_node_and_edge_if_defs_mode env (replace s name, kind) typ in
+      let env = add_node_and_edge_if_defs_mode env (name, kind) typ in
      
       if kind <> E.GlobalExtern 
       then type_ env t;
@@ -529,11 +524,9 @@ and toplevel env x =
         add_node_and_edge_if_defs_mode env (add_prefix "E__" name, E.Type) None
       in
       xs +> List.iter (fun (name, eopt) ->
-        let s = Ast.str_of_name name in
-        let s = if kind_file env =*= Source then new_str_if_defs env s else s in
-        let env = 
-          add_node_and_edge_if_defs_mode env (replace s name, E.Constant) None
-        in
+        let name = 
+          if kind_file env=*=Source then new_name_if_defs env name else name in
+        let env = add_node_and_edge_if_defs_mode env (name, E.Constant) None in
         if env.phase = Uses
         then Common2.opt (expr env) eopt
       )
