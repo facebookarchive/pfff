@@ -37,7 +37,7 @@ module P = Graph_code_prolog
  *  Root -> Dir -> File (.c|.h) -> Function | Prototype
  *                              -> Global | GlobalExtern
  *                              -> Type (for Typedef)
- *                              -> Type (struct|enum|union)
+ *                              -> Type (struct|union|enum)
  *                                 -> Field
  *                                 -> Constructor (enum)
  *                              -> Constant | Macro
@@ -48,7 +48,7 @@ module P = Graph_code_prolog
  * What about nested structures? they are lifted up in ast_c_build!
  * 
  * todo: 
- *  - Type is a bit overloaded maybe (used for struct/enum/union/typedefs)
+ *  - Type is a bit overloaded maybe (used for struct/union/enum/typedefs)
  *  - there is different "namespaces" in C: 
  *    - functions/locals,
  *    - tags (struct name, enum name)
@@ -466,17 +466,33 @@ and toplevel env x =
       then type_ env t;
       Common2.opt (expr env) eopt
 
-  | StructDef { s_name = name; s_kind = _kind; s_flds = flds } -> 
-      let env = add_node_and_edge_if_defs_mode env (name, E.Class) None in
+  | StructDef { s_name = name; s_kind = kind; s_flds = flds } -> 
+      let s = Ast.str_of_name name in
+      let prefix = match kind with Struct -> "S__" | Union -> "U__" in
+      let env = 
+        add_node_and_edge_if_defs_mode env (add_prefix prefix name, E.Type)None
+      in
+      
+      if env.phase = Defs then begin
+          (* this is used for InitListExpr *)
+        let fields = flds +> Common.map_filter (function
+          | { fld_name = Some name; _ } -> Some (Ast.str_of_name name)
+          | _ -> None
+        )
+        in
+        Hashtbl.replace env.fields (prefix ^ s) fields
+      end;
 
       flds +> List.iter (fun { fld_name = nameopt; fld_type = t; } ->
         (match nameopt with
         | Some name -> 
-          let env = add_node_and_edge_if_defs_mode env (name, E.Field) None in
-          type_ env t
+            let typ = Some t in
+            let env = add_node_and_edge_if_defs_mode env (name, E.Field) typ in
+            type_ env t
         | None ->
-          (* TODO: kencc: anon substruct, invent anon? *)
-          type_ env t
+            (* TODO: kencc: anon substruct, invent anon? *)
+            (* (spf "F__anon__%s" (str_of_angle_loc env loc), E.Field) None *)
+            type_ env t
         )
       )
         
@@ -493,10 +509,26 @@ and toplevel env x =
         Common2.opt (expr env) eopt
       )
 
+    (* I am not sure about the namespaces, so I prepend strings *)
   | TypeDef (name, t) -> 
-      let env = add_node_and_edge_if_defs_mode env (name, E.Type) None in
-      type_ env t
-
+      let s = Ast.str_of_name name in
+      if env.phase = Defs 
+      then begin
+        if Hashtbl.mem env.typedefs s
+        then
+          let old = Hashtbl.find env.typedefs s in
+          if (Meta_ast_c.vof_any (Type old) =*= (Meta_ast_c.vof_any (Type t)))
+          then ()
+          else env.pr2_and_log (spf "conflicting typedefs for %s, %s <> %s" 
+                                  s (Common.dump old) (Common.dump t))
+          (* todo: if are in Source, then maybe can add in local_typedefs *)
+          else Hashtbl.add env.typedefs s t
+      end;
+      let typ = Some t in
+      let _env = 
+        add_node_and_edge_if_defs_mode env (add_prefix "T__" name,E.Type) typ in
+      (* type_ env typ; *)
+      ()
 
   (* less: should analyze if s has the form "..." and not <> and
    * build appropriate link? but need to find the real File
