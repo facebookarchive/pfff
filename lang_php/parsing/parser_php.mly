@@ -1621,10 +1621,13 @@ non_empty_type_php_or_dots_list:
  | type_php_or_dots                                     { [$1] }
  | non_empty_type_php_or_dots_list TCOMMA type_php_or_dots { $1 @ [Right3 $2; $3]}
 
-
 non_empty_type_php_list:
+ | non_empty_type_php_list_bis { $1 }
+ | non_empty_type_php_list_bis TCOMMA { $1 @ [Right $2] }
+
+non_empty_type_php_list_bis:
  | type_php                                { [Left $1] }
- | type_php TCOMMA non_empty_type_php_list { (Left $1)::(Right $2)::$3 }
+ | non_empty_type_php_list_bis TCOMMA type_php  { $1 @ [Right $2; Left $3] }
 
 class_name_list:
  | class_name_no_array { [Left $1] }
