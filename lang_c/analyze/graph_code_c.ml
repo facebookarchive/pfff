@@ -262,7 +262,7 @@ let add_node_and_edge_if_defs_mode env (name, kind) typopt =
     | _ when G.has_node node env.g ->
       (match kind with
       | E.Function | E.Global | E.Constructor
-      | E.Type | E.Field
+      | E.Type | E.Field | E.Constant | E.Macro
         ->
           (match kind, str with
           (* dupe typedefs are ok as long as they are equivalent, and this
