@@ -228,11 +228,11 @@ type struct_def = {
   }
  (* with tarzan *)
 
-(* todo: use a record *)
+(* less: use a record *)
 type enum_def = name * (name * expr option) list
  (* with tarzan *)
 
-(* todo: use a record *)
+(* less: use a record *)
 type type_def = name * type_
  (* with tarzan *)
 
