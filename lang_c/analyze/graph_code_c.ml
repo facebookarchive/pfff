@@ -52,6 +52,7 @@ module P = Graph_code_prolog
  *  - there is different "namespaces" in C: 
  *    - functions/locals,
  *    - tags (struct name, enum name)
+ *    - cpp ...
  *    - ???
  *)
 
@@ -235,6 +236,11 @@ let final_type env t =
 
 let error s tok =
   failwith (spf "%s: %s" (Parse_info.string_of_info tok) s)
+
+let find_existing_node env name candidates last_resort =
+  candidates +> Common.find_opt (fun kind ->
+    G.has_node (Ast.str_of_name name, kind) env.g
+  ) ||| last_resort
    
 (*****************************************************************************)
 (* Add Node *)
@@ -412,12 +418,19 @@ let rec extract_defs_uses env ast =
 and toplevel env x =
   match x with
   | Define (name, body) ->
-      let env = add_node_and_edge_if_defs_mode env (name, E.Constant) None in
+      let name = 
+        if kind_file env =*= Source then new_name_if_defs env name else name in
+      let env = 
+        add_node_and_edge_if_defs_mode env (name, E.Constant) None in
       if env.phase = Uses 
       then define_body env body
   | Macro (name, params, body) -> 
-      let env = add_node_and_edge_if_defs_mode env (name, E.Macro) None in
-      let env = { env with locals = ref (params+>List.map Ast.str_of_name) } in
+      let name = 
+        if kind_file env =*= Source then new_name_if_defs env name else name in
+      let env = 
+        add_node_and_edge_if_defs_mode env (name, E.Macro) None in
+      let env = 
+        { env with locals = ref (params+>List.map Ast.str_of_name) } in
       if env.phase = Uses
       then define_body env body
 
@@ -633,27 +646,37 @@ and expr env = function
  
   (* Note that you should go here only when it's a constant. You should
    * catch the use of Id in other contexts before. For instance you
-   * should match on Id in Call, etc so that this code
+   * should match on Id in Call, so that this code
    * is executed really as a last resort, which usually means when
-   * there is the use of a constant.
+   * there is the use of a constant or global.
    *)
   | Id name ->
       let s = Ast.str_of_name name in
-
-      (match () with
-      | _ when List.mem s !(env.locals) -> ()
-      | _ when looks_like_macro name ->
-          add_use_edge env (str env name, E.Constant)
-      | _ ->
-          add_use_edge env (str env name, E.Global)  
-      )
+      if List.mem s !(env.locals)
+      then ()
+      else
+        let name = str env name in
+        let kind = find_existing_node env name 
+          [E.Constant; E.Global; E.Function (* can pass address of func *)]
+          (if looks_like_macro name then E.Constant else E.Global)
+        in
+        add_use_edge env (name, kind)
 
   | Call (e, es) -> 
       (match e with
       | Id name ->
-          if looks_like_macro name
-          then add_use_edge env (str env name, E.Macro)
-          else add_use_edge env (str env name, E.Function)
+          let name = str env name in
+          let kind = find_existing_node env name 
+            [E.Macro; 
+             (* for DBG like macro *)
+             E.Constant;
+             E.Function; 
+             (* can do foo() even when foo is actually a function pointer *)
+             E.Global
+            ]
+            (if looks_like_macro name then E.Macro else E.Function)
+          in
+          add_use_edge env (name, kind)
       | _ -> expr env e
       );
       exprs env es
