@@ -672,28 +672,23 @@ and cpp_directive =
     | Weird of string (* ex: #include SYSTEM_H *)
    and inc_elem = string
 
-  (* to specialize if someone need more info *)
-  and ifdef_directive = 
-    | IfdefDirective of tok list
-  (* or and 'a ifdefed = 'a list wrap (* ifdef elsif else endif *) *)
-
-(* TODO: like in parsing_c/
- * (* todo? to specialize if someone need more info *)
- * and ifdef_directive = (* or and 'a ifdefed = 'a list wrap *)
- *   | IfdefDirective of (ifdefkind * matching_tag) wrap
- *   and ifdefkind = 
- *     | Ifdef (* todo? of string ? of formula_cpp ? *)
- *     | IfdefElseif (* same *)
- *     | IfdefElse (* same *)
- *     | IfdefEndif 
- *   (* set in Parsing_hacks.set_ifdef_parenthize_info. It internally use 
- *    * a global so it means if you parse the same file twice you may get
- *    * different id. I try now to avoid this pb by resetting it each 
- *    * time I parse a file.
- *    *)
- *   and matching_tag = 
- *     IfdefTag of (int (* tag *) * int (* total with this tag *))
- *)
+  (* less: 'a ifdefed = 'a list wrap (* ifdef elsif else endif *) *)
+  and ifdef_directive = ifdefkind wrap2
+     and ifdefkind = 
+       | Ifdef (* todo? of string? *)
+       (* less: IfIf of formula_cpp ? *)
+       | IfdefElse
+       | IfdefElseif
+       | IfdefEndif 
+  (* less:
+   * set in Parsing_hacks.set_ifdef_parenthize_info. It internally use 
+   * a global so it means if you parse the same file twice you may get
+   * different id. I try now to avoid this pb by resetting it each 
+   * time I parse a file.
+   *
+   *   and matching_tag = 
+   *     IfdefTag of (int (* tag *) * int (* total with this tag *))
+   *)
 
 (* ------------------------------------------------------------------------- *)
 (* The toplevel elements *)

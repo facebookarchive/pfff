@@ -1764,14 +1764,14 @@ param_define:
 
 
 cpp_ifdef_directive: 
- | TIfdef     { IfdefDirective [$1] }
- | TIfdefelse { IfdefDirective [$1] }
- | TIfdefelif { IfdefDirective [$1] }
- | TEndif     { IfdefDirective [$1] }
+ | TIfdef     { Ifdef, $1 }
+ | TIfdefelse { IfdefElse, $1 }
+ | TIfdefelif { IfdefElseif, $1 }
+ | TEndif     { IfdefEndif, $1 }
 
- | TIfdefBool  { IfdefDirective [snd $1] }
- | TIfdefMisc  { IfdefDirective [snd $1] }
- | TIfdefVersion { IfdefDirective [snd $1] }
+ | TIfdefBool  { Ifdef, snd $1 }
+ | TIfdefMisc  { Ifdef, snd $1 }
+ | TIfdefVersion { Ifdef, snd $1 }
 
 cpp_other:
 /*(* cppext: *)*/

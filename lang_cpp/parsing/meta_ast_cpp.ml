@@ -1027,11 +1027,15 @@ and vof_inc_file =
   | Weird v1 ->
       let v1 = Ocaml.vof_string v1 in Ocaml.VSum (("Weird", [ v1 ]))
 and vof_inc_elem v = Ocaml.vof_string v
-and vof_ifdef_directive =
+
+and vof_ifdef_directive v = vof_wrap2 vof_ifdefkind v
+and vof_ifdefkind =
   function
-  | IfdefDirective v1 ->
-      let v1 = Ocaml.vof_list vof_tok v1
-      in Ocaml.VSum (("IfdefDirective", [ v1 ]))
+  | Ifdef -> Ocaml.VSum (("Ifdef", []))
+  | IfdefElse -> Ocaml.VSum (("IfdefElse", []))
+  | IfdefElseif -> Ocaml.VSum (("IfdefElseif", []))
+  | IfdefEndif -> Ocaml.VSum (("IfdefEndif", []))
+
 and vof_declaration =
   function
   | BlockDecl v1 ->

@@ -780,8 +780,13 @@ and v_inc_file =
   | Standard v1 -> let v1 = v_list v_inc_elem v1 in ()
   | Weird v1 -> let v1 = v_string v1 in ()
 and v_inc_elem v = v_string v
-and v_ifdef_directive =
-  function | IfdefDirective v1 -> let v1 = v_list v_tok v1 in ()
+and v_ifdef_directive v = v_wrap2 v_ifdefkind v
+and v_ifdefkind =
+  function
+  | Ifdef -> ()
+  | IfdefElse -> ()
+  | IfdefElseif -> ()
+  | IfdefEndif -> ()
 and v_declaration x =
   let k = function
   | BlockDecl v1 -> let v1 = v_block_declaration v1 in ()
