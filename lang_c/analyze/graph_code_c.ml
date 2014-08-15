@@ -99,6 +99,7 @@ type env = {
  and config = {
   types_dependencies: bool;
   fields_dependencies: bool;
+  macro_dependencies: bool;
   (* We normally expand references to typedefs, to normalize and simplify
    * things. Set this variable to true if instead you want to know who is
    * using a typedef.
@@ -422,7 +423,7 @@ and toplevel env x =
         if kind_file env =*= Source then new_name_if_defs env name else name in
       let env = 
         add_node_and_edge_if_defs_mode env (name, E.Constant) None in
-      if env.phase = Uses 
+      if env.phase = Uses && env.conf.macro_dependencies
       then define_body env body
   | Macro (name, params, body) -> 
       let name = 
@@ -431,7 +432,7 @@ and toplevel env x =
         add_node_and_edge_if_defs_mode env (name, E.Macro) None in
       let env = 
         { env with locals = ref (params+>List.map Ast.str_of_name) } in
-      if env.phase = Uses
+      if env.phase = Uses && env.conf.macro_dependencies
       then define_body env body
 
   | FuncDef def | Prototype def -> 
@@ -765,14 +766,14 @@ let build ?(verbose=true) root files =
 
   let chan = open_out (Filename.concat root "pfff.log") in
 
-  (* file -> (string, string) Hashtbl *)
-  let local_renames_of_files = Hashtbl.create 101 in
   (* less: we could also have a local_typedefs_of_files to avoid conflicts *)
 
   let conf = {
     types_dependencies = true;
     fields_dependencies = true;
 
+    (* can lead to some not_found for instance on typedefs *)
+    macro_dependencies = false;
     typedefs_dependencies = false;
     propagate_deps_def_to_decl = false;
   } in
@@ -798,34 +799,43 @@ let build ?(verbose=true) root files =
     );
   } in
 
+  (* step0: parsing *)
+  env.pr2_and_log "\nstep0: parsing";
+
+  (* we could run the parser in the different steps
+   * but we need to make sure to reset some counters because
+   * the __anon_struct_xxx build in ast_c_simple_build 
+   * must be stable when called another time with the same file!
+   *)
+  let elems = 
+    files +> Console.progress ~show:verbose (fun k ->
+      List.map (fun file ->
+        k();
+        let ast = parse ~show_parse_error:true file in
+        let readable = Common.readable ~root file in
+        let local_rename = Hashtbl.create 101 in
+        ast, readable, local_rename
+      )
+    )
+  in
 
   (* step1: creating the nodes and 'Has' edges, the defs *)
   env.pr2_and_log "\nstep1: extract defs";
-  files +> Console.progress ~show:verbose (fun k ->
-    List.iter (fun file ->
+  elems +> Console.progress ~show:verbose (fun k ->
+    List.iter (fun (ast, c_file_readable, local_rename) ->
       k();
-      let ast = parse ~show_parse_error:true file in
-      let readable = Common.readable ~root file in
-      let local_rename = Hashtbl.create 101 in
-      Hashtbl.add local_renames_of_files file local_rename;
       extract_defs_uses { env with 
-        phase = Defs; 
-        c_file_readable = readable;
-        local_rename = local_rename;
+        phase = Defs; c_file_readable; local_rename;
       } ast
    ));
 
   (* step2: creating the 'Use' edges *)
   env.pr2_and_log "\nstep2: extract Uses";
-  files +> Console.progress ~show:verbose (fun k ->
-    List.iter (fun file ->
+  elems +> Console.progress ~show:verbose (fun k ->
+    List.iter (fun (ast, c_file_readable, local_rename) ->
       k();
-      let ast = parse ~show_parse_error:false file in
-      let readable = Common.readable ~root file in
       extract_defs_uses { env with 
-        phase = Uses; 
-        c_file_readable = readable;
-        local_rename = Hashtbl.find local_renames_of_files file;
+        phase = Uses; c_file_readable; local_rename;
       } ast
     ));
 
