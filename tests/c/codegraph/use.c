@@ -1,4 +1,9 @@
 
+#define FOO 1
+
+#define FOOBAR(a,b) a + b
+
+
 void bar() {
   foo(1, FOO);
   foo(1, FOOBAR(1,2));
