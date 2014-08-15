@@ -271,7 +271,7 @@ let find_typedefs xxs =
 
   (* (xx) yy   and not a if/while before '('  (and yy can also be a constant) *)
   | {t=tok1}::{t=TOPar _}::({t=TIdent(s, i1)} as tok3)::{t=TCPar _}
-    ::{t = TIdent (_,_) | TInt _ | TString _ | TFloat _ | TTilde _ }::xs 
+    ::{t = (TIdent _|TInt _|TString _|TFloat _|TTilde _|TOPar _) }::xs 
     when not (TH.is_stuff_taking_parenthized tok1) (*  && line are the same?*)->
       change_tok tok3 (TIdent_Typedef (s, i1));
       (* todo? recurse on bigger ? *)

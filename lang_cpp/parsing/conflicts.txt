@@ -4,13 +4,6 @@ http://eli.thegreenplace.net/2007/11/24/the-context-sensitivity-of-cs-grammar/
 
 * Typedefs 
 
-from "Yacc Is Dead" at http://lambda-the-ultimate.org/node/4148#comment
-
-" 'x*y;' in C++ this could be a multiplication, pointer declaration, or
-arbitrary overloaded meaning of "*". You have to hit name and type
-resolution before you can distinguish them."
-
-
 simple_type_specifier:
  ...
  | type_cplusplus_id { Right3 (TypeName $1), noii }
@@ -31,6 +24,25 @@ We do many things to handle typedefs ambiguities:
    both TIdent and TIdent_typedef in both contexts
  - ...
 
+
+** pointer decl, multiplication and ambiguity
+
+from "Yacc Is Dead" at http://lambda-the-ultimate.org/node/4148#comment
+
+" 'x*y;' in C++ this could be a multiplication, pointer declaration, or
+arbitrary overloaded meaning of "*". You have to hit name and type
+resolution before you can distinguish them."
+
+** cast and ambiguity
+
+can be cast or binary minus
+  (u32int)-pa
+
+can be cast or funcall
+  (u32int)(-pa));
+
+same with (uintptr)&x.
+
 * If-then-else
 
 see dangling-else section in lang_php/parsing/conflicts.txt
@@ -38,6 +50,8 @@ see dangling-else section in lang_php/parsing/conflicts.txt
 * Template < >
 
 We do many things ...
+
+* C++
 
 * TODO ':'
 
