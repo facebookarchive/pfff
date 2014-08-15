@@ -710,9 +710,20 @@ and expr env = function
 
   | SizeOf x ->
       (match x with
-      (* todo: hmm maybe because of bad typedef inference what we
-       * think is an Id is actually a TTypename. So add a hack here?
+      (* ugly: because of bad typedef inference what we think is an Id 
+       * could actually be a TTypename. So add a hack here.
        *)
+      | Left (Id (origname)) ->
+          let s = Ast.str_of_name origname in
+          if List.mem s !(env.locals)
+          then ()
+          else
+            let name = str env origname in
+            if not (G.has_node (Ast.str_of_name name, E.Global) env.g) &&
+               not (G.has_node (Ast.str_of_name name, E.GlobalExtern) env.g)
+            then
+              type_ env (TTypeName origname)
+            else expr env (Id origname)
       | Left e -> expr env e
       | Right t -> type_ env t
       )
