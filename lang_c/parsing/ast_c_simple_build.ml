@@ -1,6 +1,6 @@
 (* Yoann Padioleau
  *
- * Copyright (C) 2012 Facebook
+ * Copyright (C) 2012, 2014 Facebook
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public License
@@ -33,7 +33,10 @@ module A = Ast_c
 (*****************************************************************************)
 (* Globals *)
 (*****************************************************************************)
-(* for anon struct *)
+(* for anon struct, which is dangerous! because the main function
+ * will return different results given the same input when called
+ * two times in a row
+ *)
 let cnt = ref 0
 
 (*****************************************************************************)
@@ -66,29 +69,73 @@ let debug any =
   let s = Ocaml.string_of_v v in
   pr2 s
 
+let rec ifdef_skipper xs f =
+
+  match xs with
+  | [] -> []
+  | x::xs ->
+    (match f x with
+    | None -> x::ifdef_skipper xs f
+    | Some ifdef ->
+      (match ifdef with
+      | Ifdef, tok ->
+        pr2 (spf "skipping: %s" (Parse_info.str_of_info tok));
+        (try 
+          let (_, x, rest) = 
+            xs +> Common2.split_when (fun x -> 
+              match f x with
+              | Some (IfdefElse, _) -> true
+              | Some (IfdefEndif, _) -> true
+              | _ -> false
+            )
+          in
+          (match f x with
+          | Some (IfdefEndif, _) ->
+              ifdef_skipper rest f
+          | Some (IfdefElse, _) ->
+            let (before, _x, rest) = 
+              rest +> Common2.split_when (fun x -> 
+                match f x with
+                | Some (IfdefEndif, _) -> true
+              | _ -> false
+              )
+            in
+            ifdef_skipper before f @ ifdef_skipper rest f
+          | _ -> raise Impossible
+          )
+        with Not_found ->
+          failwith (spf "%s: unclosed ifdef" (Parse_info.string_of_info tok))
+        )
+      | _, tok ->
+          failwith (spf "%s: no ifdef" (Parse_info.string_of_info tok))
+      )
+    )
+
 (*****************************************************************************)
 (* Main entry point *)
 (*****************************************************************************)
 
 let rec program xs =
   let env = empty_env () in
-  List.map (toplevel env) xs +> List.flatten
+  toplevels env xs +> List.flatten
 
 (* ---------------------------------------------------------------------- *)
 (* Toplevels *)
 (* ---------------------------------------------------------------------- *)
 
+and toplevels env xs =
+  ifdef_skipper xs (function IfdefDecl x -> Some x | _ -> None)
+    +> List.map (toplevel env)
+
 and toplevel env x =
   match x with
   | DeclElem decl -> declaration env decl
-  | IfdefDecl _ -> 
-    pr2_once "SKIPPING ifdefs";
-    []
   | CppDirectiveDecl x -> cpp_directive env x
 
   | (MacroVarTop (_, _)|MacroTop (_, _, _)) ->
       debug (Toplevel x); raise Todo
 
+  | IfdefDecl _ -> raise Impossible (* see ifdef_skipper *)
   (* not much we can do here, at least the parsing statistics should warn the
    * user that some code was not processed
    *)
@@ -392,16 +439,19 @@ and stmt env x =
   | (NestedFunc _ | StmtTodo | MacroStmt ) ->
       debug (Stmt x); raise Todo
 
-and compound env (_, x, _) =
-  List.map (statement_sequencable env) x +> List.flatten
+and compound env (_, xs, _) =
+  statements_sequencable env xs +> List.flatten
+
+and statements_sequencable env xs =
+  ifdef_skipper xs (function IfdefStmt x -> Some x | _ -> None)
+    +> List.map (statement_sequencable env)
+
 
 and statement_sequencable env x =
   match x with
   | StmtElem st -> [stmt env st]
   | CppDirectiveStmt x -> debug (Cpp x); raise Todo
-  | IfdefStmt _ -> 
-    pr2_once "SKIPPING ifdefs";
-    []
+  | IfdefStmt _ -> raise Impossible
 
 and cases env x =
   let (st, _ii) = x in
@@ -611,7 +661,7 @@ and full_type env x =
         let def' = { A.
           s_name = name;
           s_kind = struct_kind env kind;
-          s_flds = Common2.map (class_member_sequencable env) xs +> List.flatten;
+          s_flds = class_members_sequencable env xs +> List.flatten;
         }
         in
         env.struct_defs_toadd <- def' :: env.struct_defs_toadd;
@@ -662,14 +712,17 @@ and class_member env x =
       debug (ClassMember x); raise Todo
   | EmptyField _ -> []
 
+
+and class_members_sequencable env xs =
+  ifdef_skipper xs (function IfdefStruct x -> Some x | _ -> None)
+    +> List.map (class_member_sequencable env)
+
 and class_member_sequencable env x =
   match x with
   | ClassElem x -> class_member env x
   | CppDirectiveStruct dir ->
       debug (Cpp dir); raise Todo
-  | IfdefStruct _ -> 
-      pr2_once "SKIPPING ifdefs";
-      []
+  | IfdefStruct _ -> raise Impossible
 
 and fieldkind env x =
   match x with
