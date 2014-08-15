@@ -42,6 +42,7 @@ type visitor_in = {
   kcpp: cpp_directive vin;
   kblock_decl: block_declaration vin;
 
+  kdeclaration: declaration vin;
   ktoplevel: toplevel vin;
   
   kinfo: tok vin;
@@ -62,6 +63,7 @@ let default_visitor =
     kfunc_def = (fun (k,_) x -> k x);
     kclass_member = (fun (k,_) x -> k x);
     kcpp = (fun (k,_) x -> k x);
+    kdeclaration = (fun (k,_) x -> k x);
     ktoplevel = (fun (k,_) x -> k x);
     kinit = (fun (k,_) x -> k x);
   }
@@ -821,8 +823,17 @@ and v_declaration x =
       in ()
   | EmptyDef v1 -> let v1 = v_tok v1 in ()
   | DeclTodo -> ()
-  | CppDirectiveTop v1 -> let v1 = v_cpp_directive v1 in ()
-  | IfdefTop v1 -> let v1 = v_ifdef_directive v1 in ()
+  in
+  vin.kdeclaration (k, all_functions) x
+
+and v_template_parameter v = v_parameter v
+and v_template_parameters v = v_angle (v_comma_list v_template_parameter) v
+and v_declaration_sequencable x =
+  let k = function
+  | NotParsedCorrectly v1 -> let v1 = v_list v_tok v1 in ()
+  | DeclElem v1 -> let v1 = v_declaration v1 in ()
+  | CppDirectiveDecl v1 -> let v1 = v_cpp_directive v1 in ()
+  | IfdefDecl v1 -> let v1 = v_ifdef_directive v1 in ()
   | MacroTop ((v1, v2, v3)) ->
       let v1 = v_wrap2 v_string v1
       and v2 = v_paren (v_comma_list v_argument) v2
@@ -830,18 +841,9 @@ and v_declaration x =
       in ()
   | MacroVarTop ((v1, v2)) ->
       let v1 = v_wrap2 v_string v1 and v2 = v_tok v2 in ()
-  | NotParsedCorrectly v1 -> let v1 = v_list v_tok v1 in ()
   in
   vin.ktoplevel (k, all_functions) x
-
-and v_template_parameter v = v_parameter v
-and v_template_parameters v = v_angle (v_comma_list v_template_parameter) v
-and v_declaration_sequencable =
-  function
-  | DeclElem v1 -> let v1 = v_declaration v1 in ()
-  | CppDirectiveDecl v1 -> let v1 = v_cpp_directive v1 in ()
-  | IfdefDecl v1 -> let v1 = v_ifdef_directive v1 in ()
-and v_toplevel v = v_declaration v
+and v_toplevel v = v_declaration_sequencable v
 and v_program v = v_list v_toplevel v
 and v_any =
   function

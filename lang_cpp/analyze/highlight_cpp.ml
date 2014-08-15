@@ -438,6 +438,9 @@ let visit_toplevel ~tag_hook _prefs (*db_opt *) (toplevel, toks) =
     V.kcpp = (fun (k,_) def ->
       k def
     );
+    V.kdeclaration = (fun (k,_) def ->
+      k def
+    );
     V.ktoplevel = (fun (k,_) def ->
       (match def with
       | NotParsedCorrectly ii ->

@@ -263,8 +263,8 @@ main:
  | translation_unit EOF     { $1 }
 
 translation_unit: 
- | external_declaration                      { [$1] }
- | translation_unit external_declaration     { $1 @ [$2] }
+ | external_declaration                      { [DeclElem $1] }
+ | translation_unit external_declaration     { $1 @ [DeclElem $2] }
 
 external_declaration: 
  | function_definition            { Func (FunctionOrMethod $1) }
@@ -1794,10 +1794,10 @@ toplevel:
  | EOF          { None }
 
 toplevel_aux:
- | declaration         { $1 }
+ | declaration         { DeclElem $1 }
 
- | cpp_directive       { CppDirectiveTop $1 }
- | cpp_ifdef_directive /*(*external_declaration_list ...*)*/ { IfdefTop $1 }
+ | cpp_directive       { CppDirectiveDecl $1 }
+ | cpp_ifdef_directive /*(*external_declaration_list ...*)*/ { IfdefDecl $1 }
  | cpp_other           { $1 }
 
  /*
@@ -1805,7 +1805,7 @@ toplevel_aux:
   * beginning of the file, and so get trailing unclose } at
   * end
   *)*/
- | TCBrace { EmptyDef $1 }
+ | TCBrace { DeclElem (EmptyDef $1) }
 
 /*(*************************************************************************)*/
 /*(*1 xxx_list, xxx_opt *)*/

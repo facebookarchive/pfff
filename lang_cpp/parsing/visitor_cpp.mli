@@ -19,6 +19,7 @@ type visitor_in = {
   kcpp: cpp_directive vin;
   kblock_decl: block_declaration vin;
 
+  kdeclaration: declaration vin;
   ktoplevel: toplevel vin;
   
   kinfo: tok vin;

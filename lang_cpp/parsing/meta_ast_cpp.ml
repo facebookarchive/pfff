@@ -1076,10 +1076,21 @@ and vof_declaration =
       in Ocaml.VSum (("NameSpaceAnon", [ v1; v2 ]))
   | EmptyDef v1 -> let v1 = vof_tok v1 in Ocaml.VSum (("EmptyDef", [ v1 ]))
   | DeclTodo -> Ocaml.VSum (("DeclTodo", []))
-  | CppDirectiveTop v1 ->
-      let v1 = vof_cpp_directive v1 in Ocaml.VSum (("CppDirectiveTop", [ v1 ]))
-  | IfdefTop v1 ->
-      let v1 = vof_ifdef_directive v1 in Ocaml.VSum (("IfdefTop", [ v1 ]))
+and vof_template_parameter v = vof_parameter v
+and vof_template_parameters v =
+  vof_angle (vof_comma_list vof_template_parameter) v
+and vof_declaration_sequencable =
+  function
+  | NotParsedCorrectly v1 ->
+      let v1 = Ocaml.vof_list vof_tok v1
+      in Ocaml.VSum (("NotParsedCorrectly", [ v1 ]))
+  | DeclElem v1 ->
+      let v1 = vof_declaration v1 in Ocaml.VSum (("DeclElem", [ v1 ]))
+  | CppDirectiveDecl v1 ->
+      let v1 = vof_cpp_directive v1
+      in Ocaml.VSum (("CppDirectiveDecl", [ v1 ]))
+  | IfdefDecl v1 ->
+      let v1 = vof_ifdef_directive v1 in Ocaml.VSum (("IfdefDecl", [ v1 ]))
   | MacroTop ((v1, v2, v3)) ->
       let v1 = vof_wrap2 Ocaml.vof_string v1
       and v2 = vof_paren (vof_comma_list vof_argument) v2
@@ -1089,22 +1100,8 @@ and vof_declaration =
       let v1 = vof_wrap2 Ocaml.vof_string v1
       and v2 = vof_tok v2
       in Ocaml.VSum (("MacroVarTop", [ v1; v2 ]))
-  | NotParsedCorrectly v1 ->
-      let v1 = Ocaml.vof_list vof_tok v1
-      in Ocaml.VSum (("NotParsedCorrectly", [ v1 ]))
-and vof_template_parameter v = vof_parameter v
-and vof_template_parameters v =
-  vof_angle (vof_comma_list vof_template_parameter) v
-and vof_declaration_sequencable =
-  function
-  | DeclElem v1 ->
-      let v1 = vof_declaration v1 in Ocaml.VSum (("DeclElem", [ v1 ]))
-  | CppDirectiveDecl v1 ->
-      let v1 = vof_cpp_directive v1
-      in Ocaml.VSum (("CppDirectiveDecl", [ v1 ]))
-  | IfdefDecl v1 ->
-      let v1 = vof_ifdef_directive v1 in Ocaml.VSum (("IfdefDecl", [ v1 ]))
-and vof_toplevel v = vof_declaration v
+
+and vof_toplevel v = vof_declaration_sequencable v
 and vof_program v = Ocaml.vof_list vof_toplevel v
 and vof_any =
   function

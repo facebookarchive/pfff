@@ -22,6 +22,12 @@ module A = Ast_c
 (*****************************************************************************)
 (*
  * Ast_cpp to Ast_c_simple.
+ * 
+ * We skip the then part of ifdefs.
+ * 
+ * todo: 
+ *  - lift up local union and struct defined in functions?
+ *    (hmm but better to rewrite the code I think)
  *)
 
 (*****************************************************************************)
@@ -72,15 +78,31 @@ let rec program xs =
 (* Toplevels *)
 (* ---------------------------------------------------------------------- *)
 
-and toplevel env = function
-  | CppDirectiveTop x -> cpp_directive env x
+and toplevel env x =
+  match x with
+  | DeclElem decl -> declaration env decl
+  | IfdefDecl _ -> 
+    pr2_once "SKIPPING ifdefs";
+    []
+  | CppDirectiveDecl x -> cpp_directive env x
 
-  | Func (func_or_else) as x ->
+  | (MacroVarTop (_, _)|MacroTop (_, _, _)) ->
+      debug (Toplevel x); raise Todo
+
+  (* not much we can do here, at least the parsing statistics should warn the
+   * user that some code was not processed
+   *)
+  | NotParsedCorrectly _ -> []
+
+
+and declaration env x =
+  match x with
+  | Func (func_or_else) ->
       (match func_or_else with
       | FunctionOrMethod def ->
           [A.FuncDef (func_def env def)]
       | Constructor _ | Destructor _ ->
-          debug (Toplevel x); raise CplusplusConstruct
+          debug (Toplevel (DeclElem x)); raise CplusplusConstruct
       )
 
   | BlockDecl bd ->
@@ -114,21 +136,11 @@ and toplevel env = function
 
   | NameSpaceAnon (_, _)|NameSpaceExtend (_, _)|NameSpace (_, _, _) 
   | ExternCList (_, _, _)|ExternC (_, _, _)|TemplateSpecialization (_, _, _)
-  | TemplateDecl _
-      as x ->
-      debug (Toplevel x); raise CplusplusConstruct
+  | TemplateDecl _ ->    
+      debug (Toplevel (DeclElem x)); raise CplusplusConstruct
+  | DeclTodo ->
+      debug (Toplevel (DeclElem x)); raise Todo
 
-  | IfdefTop _ -> 
-    pr2_once "SKIPPING ifdefs";
-    []
-
-  | (MacroVarTop (_, _)|MacroTop (_, _, _)|DeclTodo) as x ->
-      debug (Toplevel x); raise Todo
-
-  (* not much we can do here, at least the parsing statistics should warn the
-   * user that some code was not processed
-   *)
-  | NotParsedCorrectly _ -> []
 
 (* ---------------------------------------------------------------------- *)
 (* Functions *)

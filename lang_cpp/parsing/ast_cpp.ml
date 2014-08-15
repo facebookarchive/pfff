@@ -719,15 +719,6 @@ and declaration =
   (* gccext: allow redundant ';' *)
   | EmptyDef of tok
 
-  (* cppext: *)
-  | CppDirectiveTop of cpp_directive
-  | IfdefTop of ifdef_directive (* * toplevel list *)
-  (* cppext: *)
-  | MacroTop of simple_ident * argument comma_list paren * tok option
-  | MacroVarTop of simple_ident * tok (* ; *)
-         
-  | NotParsedCorrectly of tok list
-
   | DeclTodo
 
  (* c++ext: *)
@@ -739,9 +730,14 @@ and declaration =
     | DeclElem of declaration
     (* cppext: *) 
     | CppDirectiveDecl of cpp_directive
-    | IfdefDecl of ifdef_directive (* * statement list *)
+    | IfdefDecl of ifdef_directive (* * toplevel list *)
+    (* cppext: *)
+    | MacroTop of simple_ident * argument comma_list paren * tok option
+    | MacroVarTop of simple_ident * tok (* ; *)
+    (* could also be in decl *)
+    | NotParsedCorrectly of tok list
 
-and toplevel = declaration
+and toplevel = declaration_sequencable
 
 and program = toplevel list
 
