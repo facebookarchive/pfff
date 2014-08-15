@@ -291,4 +291,4 @@ let str_of_name (s, _) = s
 
 let looks_like_macro name =
   let s = str_of_name name in
-  s =~ "[A-Z][A-Z_0-9]*"
+  s =~ "^[A-Z][A-Z_0-9]*$"

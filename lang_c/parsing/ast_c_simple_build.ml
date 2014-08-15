@@ -98,7 +98,7 @@ and toplevel env = function
           (xs +> List.map (fun x ->
             (* could skip extern declaration? *)
             match x with
-            | { A.v_type = A.TFunction ft; v_storage = A.DefaultStorage; _ } ->
+            | { A.v_type = A.TFunction ft; _ } ->
                 A.Prototype { A.
                   f_name = x.A.v_name;
                   f_type = ft;

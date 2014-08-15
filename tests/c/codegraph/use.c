@@ -17,3 +17,8 @@ struct y {
 void use_struct_x(struct x o) {
   printf("%d", o.a);
 }
+
+
+void use_libc() {
+  sprint("%d");
+}
