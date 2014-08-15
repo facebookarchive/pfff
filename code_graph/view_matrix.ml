@@ -73,11 +73,12 @@ let color_of_node (_, kind) =
  *)
 let txt_of_node (s, kind) = 
   match kind with
-  | E.Dir | E.File | E.MultiDirs -> Common2.basename s
+  | E.Dir | E.File | E.MultiDirs -> 
+      Common2.basename s
   | E.Package | E.Module
   | E.Class 
   | E.Field | E.Constructor | E.Method | E.ClassConstant
-  | E.Function | E.Type | E.Constant | E.Global
+  | E.Function | E.Type | E.Constant | E.Global | E.Macro
   | E.Exception 
     -> Graph_code.shortname_of_node (s, kind)
   | _ -> s
