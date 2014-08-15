@@ -658,7 +658,11 @@ and expr env = function
       else
         let name = str env name in
         let kind = find_existing_node env name 
-          [E.Constant; E.Global; E.Function (* can pass address of func *)]
+          [E.Constant; 
+           E.Global; 
+           E.Function; (* can pass address of func *)
+           E.Prototype; (* can be asm function *)
+          ]
           (if looks_like_macro name then E.Constant else E.Global)
         in
         add_use_edge env (name, kind)
@@ -666,18 +670,21 @@ and expr env = function
   | Call (e, es) -> 
       (match e with
       | Id name ->
-          let name = str env name in
-          let kind = find_existing_node env name 
-            [E.Macro; 
-             (* for DBG like macro *)
-             E.Constant;
-             E.Function; 
-             (* can do foo() even when foo is actually a function pointer *)
-             E.Global
-            ]
-            (if looks_like_macro name then E.Macro else E.Function)
-          in
-          add_use_edge env (name, kind)
+          let s = Ast.str_of_name name in
+          if List.mem s !(env.locals)
+          then ()
+          else 
+            let name = str env name in
+            let kind = find_existing_node env name 
+              [E.Macro; 
+               E.Constant;(* for DBG like macro *)
+               E.Function; 
+               E.Global;(* can do foo() even with a function pointer *)
+               E.Prototype;
+              ]
+              (if looks_like_macro name then E.Macro else E.Function)
+            in
+            add_use_edge env (name, kind)
       | _ -> expr env e
       );
       exprs env es
@@ -703,6 +710,9 @@ and expr env = function
 
   | SizeOf x ->
       (match x with
+      (* todo: hmm maybe because of bad typedef inference what we
+       * think is an Id is actually a TTypename. So add a hack here?
+       *)
       | Left e -> expr env e
       | Right t -> type_ env t
       )

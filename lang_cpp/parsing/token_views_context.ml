@@ -88,7 +88,7 @@ let look_like_argument _tok_before xs =
 
 let look_like_typedef s =
   s =~ ".*_t$" ||
-  s = "ulong" || s = "uchar"
+  s = "ulong" || s = "uchar" || s = "uvlong" || s = "vlong" || s = "uintptr"
   (* plan9, but actually some fp such as Paddr which is actually a macro *)
   (*  || s =~ "[A-Z][a-z].*$" *)
   (* with DECLARE_BOOST_TYPE, but have some false positives
