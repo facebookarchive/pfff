@@ -31,7 +31,8 @@ module P = Graph_code_prolog
  * See also lang_clang/analyze/graph_code_clang.ml to get arguably a more
  * precise and correct graph (if you can afford yourself to use clang).
  * update: actually a lots of code of graph_code_clang.ml have been ported
- * to this file now.
+ * to this file now. And the advantage of graph_code_c is that it tracks
+ * dependencies for cpp constants which is useful in codemap!
  * 
  * schema:
  *  Root -> Dir -> File (.c|.h) -> Function | Prototype
@@ -662,6 +663,7 @@ and expr env = function
            E.Global; 
            E.Function; (* can pass address of func *)
            E.Prototype; (* can be asm function *)
+           E.GlobalExtern;
           ]
           (if looks_like_macro name then E.Constant else E.Global)
         in
