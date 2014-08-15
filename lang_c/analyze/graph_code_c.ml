@@ -233,9 +233,8 @@ let final_type env t =
      *)
     expand_typedefs env.typedefs t
 
-let error env s =
-  failwith (spf "%s: %s" env.c_file_readable s)
-
+let error s tok =
+  failwith (spf "%s: %s" (Parse_info.string_of_info tok) s)
    
 (*****************************************************************************)
 (* Add Node *)
@@ -322,8 +321,9 @@ let add_node_and_edge_if_defs_mode env (name, kind) typopt =
         env.g +> G.add_node node;
         env.g +> G.add_edge (env.current, node) G.Has;
         env.g +> G.add_nodeinfo node nodeinfo;
+      (* this should never happen, but it's better to give a good err msg *)
       with Not_found ->
-        error env ("Not_found:" ^ str)
+        error ("Not_found:" ^ str) (snd name)
     );
   { env with current = node }
 
@@ -344,7 +344,7 @@ let rec add_use_edge env (name, kind) =
   | _ when s =$= "USED" || s =$= "SET" ->  
       ()
   | _ when not (G.has_node src env.g) ->
-      error env ("SRC FAIL:" ^ G.string_of_node src);
+      error ("SRC FAIL:" ^ G.string_of_node src) (snd name)
   (* the normal case *)
   | _ when G.has_node dst env.g ->
       G.add_edge (src, dst) G.Use env.g;
@@ -383,12 +383,11 @@ let rec add_use_edge env (name, kind) =
         add_use_edge env ("T__" ^ Common.matched1 s, E.Type)
 *)
     | _ ->
-        env.pr2_and_log (spf "Lookup failure on %s (%s:??)"
-                            (G.string_of_node dst)
-                            env.c_file_readable
+        env.pr2_and_log (spf "Lookup failure on %s (%s)"
+                           (G.string_of_node dst)
+                           (Parse_info.string_of_info (snd name))
         )
     )
-
 
 (*****************************************************************************)
 (* Defs/Uses *)
@@ -722,7 +721,8 @@ and type_ env typ =
               then add_use_edge env (add_prefix "T__" name, E.Type)
               (* should be done in expand_typedefs *)
               else raise Impossible
-            else env.pr2_and_log ("typedef not found:" ^ s)
+            else env.pr2_and_log (spf "typedef not found: %s (%s)" s
+                                    (Parse_info.string_of_info (snd name)))
 
       | TPointer x | TArray x -> aux x
       | TFunction (t, xs) ->
