@@ -975,10 +975,11 @@ and vof_cpp_directive =
       and v3 = vof_define_kind v3
       and v4 = vof_define_val v4
       in Ocaml.VSum (("Define", [ v1; v2; v3; v4 ]))
-  | Include ((v1, v2)) ->
+  | Include ((v1, v2, v3)) ->
       let v1 = vof_tok v1
-      and v2 = vof_inc_file v2
-      in Ocaml.VSum (("Include", [ v1; v2 ]))
+      and v2 = vof_inc_kind v2
+      and v3 = Ocaml.vof_string v3
+      in Ocaml.VSum (("Include", [ v1; v2; v3 ]))
   | Undef v1 ->
       let v1 = vof_wrap2 Ocaml.vof_string v1
       in Ocaml.VSum (("Undef", [ v1 ]))
@@ -1016,17 +1017,11 @@ and vof_define_val =
       in Ocaml.VSum (("DefineText", [ v1 ]))
   | DefineEmpty -> Ocaml.VSum (("DefineEmpty", []))
   | DefineTodo -> Ocaml.VSum (("DefineTodo", []))
-and vof_inc_file =
+and vof_inc_kind =
   function
-  | Local v1 ->
-      let v1 = Ocaml.vof_list vof_inc_elem v1
-      in Ocaml.VSum (("Local", [ v1 ]))
-  | Standard v1 ->
-      let v1 = Ocaml.vof_list vof_inc_elem v1
-      in Ocaml.VSum (("Standard", [ v1 ]))
-  | Weird v1 ->
-      let v1 = Ocaml.vof_string v1 in Ocaml.VSum (("Weird", [ v1 ]))
-and vof_inc_elem v = Ocaml.vof_string v
+  | Local -> Ocaml.VSum (("Local", [ ]))
+  | Standard -> Ocaml.VSum (("Standard", [ ]))
+  | Weird -> Ocaml.VSum (("Weird", [ ]))
 
 and vof_ifdef_directive v = vof_wrap2 vof_ifdefkind v
 and vof_ifdefkind =

@@ -643,7 +643,7 @@ and class_definition = {
 (* ------------------------------------------------------------------------- *)
 and cpp_directive =
   | Define of tok (* #define*) * simple_ident * define_kind * define_val
-  | Include of tok (* #include s *) * inc_file
+  | Include of tok (* #include s *) * inc_kind * string (* path *)
   | Undef of simple_ident (* #undef xxx *)
   | PragmaAndCo of tok
 
@@ -665,11 +665,11 @@ and cpp_directive =
 
      | DefineTodo
 
-  and inc_file = 
-    | Local    of inc_elem list
-    | Standard of inc_elem list
+  and inc_kind = 
+    | Local (* "" *)
+    | Standard (* <> *)
+    | Weird (* ex: #include SYSTEM_H *)
 
-    | Weird of string (* ex: #include SYSTEM_H *)
    and inc_elem = string
 
   (* less: 'a ifdefed = 'a list wrap (* ifdef elsif else endif *) *)

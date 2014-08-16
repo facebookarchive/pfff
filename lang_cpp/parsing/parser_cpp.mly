@@ -1702,16 +1702,13 @@ cpp_directive:
  | TInclude 
      { let (_include_str, filename, tok) = $1 in
        (* redo some lexing work :( *)
-       let inc_file = 
+       let inc_kind, path = 
          match () with
-         | _ when filename =~ "^\"\\(.*\\)\"$" ->
-             Local (Common.split "/" (matched1 filename))
-         | _ when filename =~ "^\\<\\(.*\\)\\>$" ->
-             Standard (Common.split "/" (matched1 filename))
-         | _ ->
-             Weird filename
+         | _ when filename =~ "^\"\\(.*\\)\"$" ->  Local, matched1 filename
+         | _ when filename =~ "^\\<\\(.*\\)\\>$" -> Standard, matched1 filename
+         | _ -> Weird, filename
        in
-       Include (tok, inc_file)
+       Include (tok, inc_kind, path)
      }
 
  | TDefine TIdent_Define define_val TCommentNewline_DefineEndOfMacro

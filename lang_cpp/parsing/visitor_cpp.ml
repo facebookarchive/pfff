@@ -750,7 +750,11 @@ and v_cpp_directive x =
       and v3 = v_define_kind v3
       and v4 = v_define_val v4
       in ()
-  | Include ((v1, v2)) -> let v1 = v_tok v1 and v2 = v_inc_file v2 in ()
+  | Include ((v1, v2, v3)) -> 
+    let v1 = v_tok v1 
+    and v2 = v_inc_kind v2 
+    and v3 = v_string v3
+    in ()
   | Undef v1 -> let v1 = v_wrap2 v_string v1 in ()
   | PragmaAndCo v1 -> let v1 = v_tok v1 in ()
   in
@@ -776,11 +780,11 @@ and v_define_val =
   | DefineText v1 -> let v1 = v_wrap v_string v1 in ()
   | DefineEmpty -> ()
   | DefineTodo -> ()
-and v_inc_file =
+and v_inc_kind =
   function
-  | Local v1 -> let v1 = v_list v_inc_elem v1 in ()
-  | Standard v1 -> let v1 = v_list v_inc_elem v1 in ()
-  | Weird v1 -> let v1 = v_string v1 in ()
+  | Local -> ()
+  | Standard -> ()
+  | Weird -> ()
 and v_inc_elem v = v_string v
 and v_ifdef_directive v = v_wrap2 v_ifdefkind v
 and v_ifdefkind =

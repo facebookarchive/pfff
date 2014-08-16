@@ -345,14 +345,12 @@ and cpp_directive env x =
                  ),
                  v)]
       )
-  | Include (tok, inc_file) ->
+  | Include (tok, inc_kind, path) ->
       let s =
-        (match inc_file with
-        | Local xs -> "\"" ^ Common.join "/" xs ^ "\""
-        | Standard xs -> "<" ^ Common.join "/" xs ^ ">"
-        | Weird _s -> 
-            debug (Cpp x); raise Todo
-        )
+        match inc_kind with
+        | Local -> "\"" ^ path ^ "\""
+        | Standard -> "<" ^ path ^ ">"
+        | Weird -> debug (Cpp x); raise Todo
       in
       [A.Include (s, tok)]
   | Undef _ -> debug (Cpp x); raise Todo
