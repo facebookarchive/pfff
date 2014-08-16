@@ -525,13 +525,13 @@ and
       (fun (v1, v2) -> let v1 = v_name v1 and v2 = v_option v_init v2 in ())
       v_v_namei in
   let arg = v_fullType v_v_type in
-  let arg = v_wrap v_storage v_v_storage in ()
-and v_storage (v1, v2) = let v1 = v_storagebis v1 and v2 = v_bool v2 in ()
+  let arg = v_storage v_v_storage in ()
+and v_storage v = v_storagebis v
 and v_storagebis =
   function
   | NoSto -> ()
-  | StoTypedef -> ()
-  | Sto v1 -> let v1 = v_storageClass v1 in ()
+  | StoTypedef v1 -> v_tok v1
+  | Sto v1 -> let v1 = v_wrap2 v_storageClass v1 in ()
 and v_storageClass =
   function | Auto -> () | Static -> () | Register -> () | Extern -> ()
 and v_func_specifier = function | Inline -> () | Virtual -> ()
@@ -593,7 +593,7 @@ and
                     } ->
   let arg = v_name v_f_name in
   let arg = v_functionType v_f_type in
-  let arg = v_wrap v_storage v_f_storage in
+  let arg = v_storage v_f_storage in
   let arg = v_compound v_f_body in ()
   in
   vin.kfunc_def (k, all_functions) x

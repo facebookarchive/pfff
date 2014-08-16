@@ -1075,9 +1075,9 @@ cv_qualif_list:
 /*(* For cast, sizeof, throw. Was called type_name in old C grammar. *)*/
 type_id: 
  | spec_qualif_list
-     { let (t_ret, _) = type_and_storage_from_decl $1 in  t_ret }
+     { let (t_ret, _, _) = type_and_storage_from_decl $1 in  t_ret }
  | spec_qualif_list abstract_declarator
-     { let (t_ret, _) = type_and_storage_from_decl $1 in $2 t_ret }
+     { let (t_ret, _, _) = type_and_storage_from_decl $1 in $2 t_ret }
 /*
 (* used for the type passed to new(). 
  * There is ambiguity with '*' and '&' cos when have new int *2, it can
@@ -1088,9 +1088,9 @@ type_id:
  *)*/
 new_type_id: 
  | spec_qualif_list %prec LOW_PRIORITY_RULE   
-     { let (t_ret, _) = type_and_storage_from_decl $1 in  t_ret }
+     { let (t_ret, _, _) = type_and_storage_from_decl $1 in  t_ret }
  | spec_qualif_list new_declarator 
-     { let (t_ret, _) = type_and_storage_from_decl $1 in (* TODOAST *) t_ret }
+     { let (t_ret, _, _) = type_and_storage_from_decl $1 in (* TODOAST *) t_ret }
 
 new_declarator: 
  | ptr_operator new_declarator 
@@ -1120,11 +1120,11 @@ direct_new_declarator:
 conversion_type_id: 
  | simple_type_specifier conversion_declarator 
      { let tx = addTypeD $1 nullDecl in
-       let (t_ret, _) = type_and_storage_from_decl tx in t_ret 
+       let (t_ret, _, _) = type_and_storage_from_decl tx in t_ret 
      }
  | simple_type_specifier %prec LOW_PRIORITY_RULE 
      { let tx = addTypeD $1 nullDecl in
-       let (t_ret, _) = type_and_storage_from_decl tx in t_ret 
+       let (t_ret, _, _) = type_and_storage_from_decl tx in t_ret 
      }
 
 conversion_declarator: 
@@ -1242,12 +1242,12 @@ member_declaration:
 field_declaration:
  | decl_spec TPtVirg 
      { (* gccext: allow empty elements if it is a structdef or enumdef *)
-       let (t_ret, sto) = type_and_storage_from_decl $1 in
+       let (t_ret, sto, _inline) = type_and_storage_from_decl $1 in
        let onedecl = { v_namei = None; v_type = t_ret; v_storage = sto } in
        ([(FieldDecl onedecl),noii], $2)
      }
  | decl_spec member_declarator_list TPtVirg 
-     { let (t_ret, sto) = type_and_storage_from_decl $1 in
+     { let (t_ret, sto, _inline) = type_and_storage_from_decl $1 in
        ($2 +> (List.map (fun (f, iivirg) -> f t_ret sto, iivirg)), $3)
      }
 
@@ -1340,11 +1340,11 @@ enumerator:
 
 simple_declaration:
  | decl_spec TPtVirg
-     { let (t_ret, sto) = type_and_storage_from_decl $1 in 
+     { let (t_ret, sto, _inline) = type_and_storage_from_decl $1 in 
        DeclList ([{v_namei = None; v_type = t_ret; v_storage = sto},noii],$2)
      }
  | decl_spec init_declarator_list TPtVirg 
-     { let (t_ret, sto) = type_and_storage_from_decl $1 in
+     { let (t_ret, sto, _inline) = type_and_storage_from_decl $1 in
        DeclList (
          ($2 +> List.map (fun (((name, f), iniopt), iivirg) ->
            (* old: if fst (unwrap storage)=StoTypedef then LP.add_typedef s; *)
@@ -1381,18 +1381,18 @@ simple_declaration:
  * decl_list is ambiguous ? (no cos have ';' between decl) 
  *)*/
 decl_spec: 
- | storage_class_spec      { {nullDecl with storageD = (fst $1, [snd $1]) } }
+ | storage_class_spec      { {nullDecl with storageD = $1 } }
  | type_spec               { addTypeD $1 nullDecl }
  | cv_qualif               { {nullDecl with qualifD  = $1 } }
  | function_spec           { {nullDecl with inlineD = (true, [snd $1]) } (*TODO*) }
- | Ttypedef     { {nullDecl with storageD = (StoTypedef,  [$1]) } }
+ | Ttypedef     { {nullDecl with storageD = StoTypedef $1 } }
  | Tfriend      { {nullDecl with inlineD = (true, [$1]) } (*TODO*) }
 
  | storage_class_spec decl_spec { addStorageD $1 $2 }
  | type_spec          decl_spec { addTypeD  $1 $2 }
  | cv_qualif          decl_spec { addQualifD $1 $2 }
  | function_spec      decl_spec { addInlineD (snd $1) $2 (*TODO*) }
- | Ttypedef           decl_spec { addStorageD (StoTypedef, $1) $2 }
+ | Ttypedef           decl_spec { addStorageD (StoTypedef $1) $2 }
  | Tfriend            decl_spec { addInlineD $1 $2 (*TODO*)}
 
 function_spec:
@@ -1402,12 +1402,12 @@ function_spec:
  | Tvirtual { Virtual, $1 }
 
 storage_class_spec: 
- | Tstatic      { Sto Static,  $1 }
- | Textern      { Sto Extern,  $1 }
- | Tauto        { Sto Auto,    $1 }
- | Tregister    { Sto Register,$1 }
+ | Tstatic      { Sto (Static,  $1) }
+ | Textern      { Sto (Extern,  $1) }
+ | Tauto        { Sto (Auto,    $1) }
+ | Tregister    { Sto (Register,$1) }
  /*(* c++ext: *)*/
- | Tmutable     { Sto Register,$1 (*TODO*) }
+ | Tmutable     { Sto (Register,$1) (*TODO*) }
 
 /*(*-----------------------------------------------------------------------*)*/
 /*(*2 declarators (right part of type and variable) *)*/

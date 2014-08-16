@@ -480,14 +480,12 @@ and block_declaration =
     *)
     v_namei: (name * init option) option;
     v_type: fullType;
-    v_storage: storage wrap;
+    v_storage: storage;
     (* v_attr: attribute list; *) (* gccext: *)
   }
-  (* todo: simplify, use record instead of pair here? inline in onedecl? *)
-   and storage       = storagebis * bool (* gccext: inline or not: *)
-    and storagebis    = NoSto | StoTypedef | Sto of storageClass
-     and storageClass  = Auto  | Static | Register | Extern (* Mutable? *)
-   (* Friend ???? *)
+    and storage = NoSto | StoTypedef of tok | Sto of storageClass wrap2
+      and storageClass  = Auto | Static | Register | Extern
+   (* Friend ???? Mutable? *)
 
    (*c++ext: TODO *)
    (* I am not sure what it means to declare a prototype inline, but gcc
@@ -527,7 +525,8 @@ and block_declaration =
 and func_definition = {
    f_name: name;
    f_type: functionType;
-   f_storage: storage wrap;
+   f_storage: storage;
+   (* todo: gccext: inline or not:, f_inline: tok option *)
    f_body: compound;
    (*f_attr: attribute list;*) (* gccext: *)
   }

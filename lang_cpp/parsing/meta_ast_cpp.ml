@@ -652,7 +652,7 @@ and
                 v_storage = v_v_storage
               } =
   let bnds = [] in
-  let arg = vof_wrap vof_storage v_v_storage in
+  let arg = vof_storage v_v_storage in
   let bnd = ("v_storage", arg) in
   let bnds = bnd :: bnds in
   let arg = vof_fullType v_v_type in
@@ -666,15 +666,14 @@ and
          in Ocaml.VTuple [ v1; v2 ])
       v_v_namei in
   let bnd = ("v_namei", arg) in let bnds = bnd :: bnds in Ocaml.VDict bnds
-and vof_storage (v1, v2) =
-  let v1 = vof_storagebis v1
-  and v2 = Ocaml.vof_bool v2
-  in Ocaml.VTuple [ v1; v2 ]
+and vof_storage v = vof_storagebis v
 and vof_storagebis =
   function
   | NoSto -> Ocaml.VSum (("NoSto", []))
-  | StoTypedef -> Ocaml.VSum (("StoTypedef", []))
-  | Sto v1 -> let v1 = vof_storageClass v1 in Ocaml.VSum (("Sto", [ v1 ]))
+  | StoTypedef v1 -> 
+    let v1 = vof_tok v1 in
+    Ocaml.VSum (("StoTypedef", [v1]))
+  | Sto v1 -> let v1 = vof_wrap2 vof_storageClass v1 in Ocaml.VSum (("Sto", [ v1 ]))
 and vof_storageClass =
   function
   | Auto -> Ocaml.VSum (("Auto", []))
@@ -757,7 +756,7 @@ and
   let arg = vof_compound v_f_body in
   let bnd = ("f_body", arg) in
   let bnds = bnd :: bnds in
-  let arg = vof_wrap vof_storage v_f_storage in
+  let arg = vof_storage v_f_storage in
   let bnd = ("f_storage", arg) in
   let bnds = bnd :: bnds in
   let arg = vof_functionType v_f_type in

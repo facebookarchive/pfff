@@ -197,8 +197,8 @@ and func_def env def =
     f_name = name env def.f_name;
     f_type = function_type env def.f_type;
     f_static = 
-      (match fst (fst def.f_storage) with
-      | Sto Static -> true
+      (match def.f_storage with
+      | Sto (Static, _) -> true
       | _ -> false
       );
     f_body = compound env def.f_body;
@@ -249,10 +249,10 @@ and onedecl env d =
   match d with
   { v_namei = ni;
     v_type = ft;
-    v_storage = ((sto, _inline_or_notTODO), _);
+    v_storage = sto;
   } ->
     (match ni, sto with
-    | Some (n, iopt), ((NoSto | Sto _) as sto)  ->
+    | Some (n, iopt), (NoSto | Sto _)  ->
         let init_opt =
           match iopt with
           | None -> None
@@ -267,7 +267,7 @@ and onedecl env d =
           v_storage = storage env sto;
           v_init = init_opt;
         }
-    | Some (n, None), StoTypedef ->
+    | Some (n, None), (StoTypedef _) ->
         let def = (name env n, full_type env ft) in
         env.typedefs_toadd <- def :: env.typedefs_toadd;
         None
@@ -319,8 +319,8 @@ and initialiser env x =
 and storage _env x =
   match x with
   | NoSto -> A.DefaultStorage
-  | StoTypedef -> raise Impossible
-  | Sto y ->
+  | StoTypedef _ -> raise Impossible
+  | Sto (y, _) ->
       (match y with
       | Static -> A.Static
       | Extern -> A.Extern
@@ -728,7 +728,7 @@ and fieldkind env x =
       (match decl with
       { v_namei = ni;
         v_type = ft;
-        v_storage = ((sto, _inline_or_not), _);
+        v_storage = sto;
       } ->
         (match ni, sto with
         | Some (n, None), NoSto ->

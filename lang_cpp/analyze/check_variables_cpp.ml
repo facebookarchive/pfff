@@ -176,7 +176,7 @@ let visit_prog prog =
 
               let scope = 
                 if is_top_env !_scoped_env || 
-                   fst (unwrap onedecl.v_storage) = (Sto Extern)
+                   (match onedecl.v_storage with | Sto (Extern,_) -> true | _ -> false)
                 then S.Global
                 else S.Local
               in
