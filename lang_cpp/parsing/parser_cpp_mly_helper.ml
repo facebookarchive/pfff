@@ -125,7 +125,10 @@ let type_and_storage_from_decl
    (match ty with 
  | (None, None, None)     -> 
    (* mine (originally default to int, but this looks like bad style) *)
-   raise (Semantic ("no type (could default to 'int')", List.hd iit))
+   let decl = 
+     { v_namei = None; v_type = qu, (BaseType Void, iit); v_storage = st } in
+   raise (Semantic ("no type (could default to 'int')", 
+                    List.hd (Lib_parsing_cpp.ii_of_any (OneDecl decl))))
  | (None, None, Some t)   -> (t, iit)
 	 
  | (Some sign,   None, (None| Some (BaseType (IntType (Si (_,CInt))))))  -> 
