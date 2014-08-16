@@ -669,8 +669,6 @@ and cpp_directive =
     | Standard (* <> *)
     | Weird (* ex: #include SYSTEM_H *)
 
-   and inc_elem = string
-
   (* less: 'a ifdefed = 'a list wrap (* ifdef elsif else endif *) *)
   and ifdef_directive = ifdefkind wrap2
      and ifdefkind = 
