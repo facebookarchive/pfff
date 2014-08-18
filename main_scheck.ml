@@ -325,7 +325,7 @@ let main_action xs =
   let files = Find_source.files_of_dir_or_files ~lang ~verbose:!verbose xs in
 
   match lang with
-  | "clang2" | "ocaml" | "java" ->
+  | "clang2" | "ocaml" | "java" | "c" ->
     let graph_file, _root =
       match xs, !graph_code with
       | _,    Some file -> file, Filename.dirname file
@@ -342,7 +342,7 @@ let main_action xs =
     let errs = Graph_code_checker.check g in
     (* todo: make this more lazy? it's pretty slow *)
     let hidentifier =
-      if lang = "clang2"
+      if lang = "clang2" || lang = "c"
       then build_cpp_identifier_index xs +> snd
       else Hashtbl.create 0
     in
