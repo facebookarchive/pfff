@@ -14,11 +14,14 @@
 % by John Whaley
 
 % Related work:
-% - Andersen, Steengaard, Manuvir Das, etc
-% - DOOP, bddbddb, chord
+% - Andersen, Steengaard, Manuvir Das, Lin, etc
+% - bddbddb, DOOP
 % - http://pag-www.gtisc.gatech.edu/chord/user_guide/datalog.html
 % - http://blog.jetbrains.com/idea/2009/08/analyzing-dataflow-with-intellij-idea/
 % - Frama C, CodeSonar, Coverity, ...
+% 
+% note: I always wanted, but was never able to write an interprocedural
+% (dataflow) analysis. With Datalog I did it in one day ... it's so easy.
 % 
 
 %*******************************************************************************
@@ -152,7 +155,7 @@ call_edge(I, F) :-
         point_to(V, F).
 
 %note: heartbleed detection strongly relies on accurate calls though
-%  function pointers tracking
+% function pointers tracking
 
 %*******************************************************************************
 % Postlude
