@@ -36,9 +36,9 @@ module TH = Parser_lisp
 (* Types *)
 (*****************************************************************************)
 
-type program2 = toplevel2 list
-     (* the token list contains also the comment-tokens *)
- and toplevel2 = Ast_lisp.toplevel * Parser_lisp.token list
+(* the token list contains also the comment-tokens *)
+type program_and_tokens = 
+  Ast_lisp.toplevel option * Parser_lisp.token list
 
 (*****************************************************************************)
 (* Helpers *)
@@ -103,8 +103,8 @@ let parse2 filename =
   let stat = Parse_info.default_stat filename in
   let toks_orig = tokens filename in
 
-  (* TODO *)
-  [(), toks_orig], stat
+  let ast = None in
+  (ast, toks_orig), stat
 
 let parse a = 
   Common.profile_code "Parse_lisp.parse" (fun () -> parse2 a)

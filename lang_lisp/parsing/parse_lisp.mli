@@ -1,11 +1,11 @@
 
-type program2 = toplevel2 list
-     (* the token list contains also the comment-tokens *)
- and toplevel2 = Ast_lisp.toplevel * Parser_lisp.token list
+(* the token list contains also the comment-tokens *)
+type program_and_tokens = 
+  Ast_lisp.toplevel option * Parser_lisp.token list
 
 (* This is the main function *)
 val parse:
-  Common.filename -> (program2 * Parse_info.parsing_stat)
+  Common.filename -> (program_and_tokens * Parse_info.parsing_stat)
 
 
 (* internal *)
