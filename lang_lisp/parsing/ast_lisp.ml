@@ -46,9 +46,11 @@ and special =
   | At
 
 and atom = 
-  | Int of string wrap
+  | Number of string wrap
   | String of string wrap
   | Id of string wrap
 
-type toplevel = sexp
+(* with tarzan *)
+
+type toplevel = sexp list
 
