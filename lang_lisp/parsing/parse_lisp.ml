@@ -156,8 +156,12 @@ and sexp toks =
       let (s, rest) = sexp xs in
       Special ((Comma, t), s), rest
 
-    | TUnknown t | EOF t ->
-      raise (Parse_error ("unexpected token", t))
+    (* hmmm probably unicode *)
+    | TUnknown t ->
+      Atom (String (PI.str_of_info t, t)), xs
+
+    | EOF t ->
+      raise (Parse_error ("unexpected eof", t))
     )
       
 
@@ -184,7 +188,10 @@ let parse2 filename =
       )
     with
     | Parse_error (s, info) ->
-      pr2 (spf "Parse error: %s, at %s" s (PI.string_of_info info));
+      pr2 (spf "Parse error: %s, {%s} at %s" 
+             s 
+             (PI.str_of_info info)
+             (PI.string_of_info info));
       stat.PI.bad <- nblines;
       None
     | exn -> 
