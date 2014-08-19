@@ -2129,16 +2129,26 @@ let dbe_of_filename_nodot file =
 
 
 
-let re_be = Str.regexp "\\([^.]*\\)\\.\\(.*\\)"
+(* old:
+ * let re_be = Str.regexp "\\([^.]*\\)\\.\\(.*\\)"
+ * let dbe_of_filename_noext_ok file =
+ *   ...
+ *   if Str.string_match re_be base 0
+ *   then 
+ *     let (b, e) = matched2 base in
+ *     (dir, b, e)
+ * 
+ *  That way files like foo.md5sum.c would not be considered .c
+ *  but .md5sum.c, but then it has too many disadvantages because
+ *  then regular files like qemu.root.c would not be considered
+ *  .c files, so it's better instead to fix syncweb to not generate
+ *  .md5sum.c but .md5sum_c files!
+ *)
 
 let dbe_of_filename_noext_ok file =
   let dir = Filename.dirname file in
   let base = Filename.basename file in
-  if Str.string_match re_be base 0
-  then 
-    let (b, e) = matched2 base in
-    (dir, b, e)
-  else (dir, base, "NOEXT")
+  dir, fileprefix base, filesuffix base
 
 
 let replace_ext file oldext newext =
