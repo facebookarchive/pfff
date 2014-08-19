@@ -4,15 +4,19 @@
 
 ** c
 
-*** far better typedef inference
+*** far better typedef inference, better heuristics (xx *yy), more cases handled
+(e.g. function pointers)
 
-*** graph_code_c port of graph_code_clang, but handle dependencies of cpp constructs!
+*** handle kencc extensions
+
+*** graph_code_c port of graph_code_clang
+handle dependencies of cpp constructs!
 
 ** lisp
 
 *** basic parser (had just lexer before)
 
-*** basic graph_code, file level
+*** basic graph_code, modules, functions, macros granularity
 
 ** codegraph
 
