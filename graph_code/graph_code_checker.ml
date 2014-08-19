@@ -26,7 +26,7 @@ module Error = Errors_code
  * current checks:
  *  - Deadcode
  *  - UndefinedDefOfDecl
- *  - todo: UselessExport
+ *  - UnusedExport
  *)
 
 (*****************************************************************************)
@@ -63,7 +63,15 @@ let check_imperative g =
       n_def_opt +> Common.do_option (fun n_def ->
         let n_decl = n in
         if not (G.has_node n_def g)
-        then Error.warning info.G.pos (Error.UndefinedDefOfDecl n_decl)
+        then 
+          (* actually in C we can have things that looks like GlobalExtern
+           * e.g. Syscall sysnop; but are actually Prototype, so we must look
+           * for E.Function in that case
+           *)
+          if (G.has_node (fst n_def, E.Function) g)
+          then ()
+          else
+            Error.warning info.G.pos (Error.UndefinedDefOfDecl n_decl)
       );
 
       let n_decl_opt =
