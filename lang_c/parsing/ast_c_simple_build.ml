@@ -361,10 +361,11 @@ and cpp_def_val for_debug env x =
   | DefineExpr e -> A.CppExpr (expr env e)
   | DefineStmt st -> A.CppStmt (stmt env st)
   | DefineDoWhileZero (st, _) -> A.CppStmt (stmt env st)
-  (* todo: add dependency to eTODO too *)
-  | DefinePrintWrapper (_, _eTODO, id) -> 
-    A.CppExpr (A.Id (name env id))
-    
+  | DefinePrintWrapper (_, (_, e, _), id) -> 
+    A.CppExpr (
+      A.CondExpr (expr env e,
+                  A.Id (name env id),
+                  A.Id (name env id)))
 
 
   | DefineEmpty (* A.CppEmpty*) 
