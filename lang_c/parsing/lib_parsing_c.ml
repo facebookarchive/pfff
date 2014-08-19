@@ -25,7 +25,9 @@ let find_source_files_of_dir_or_files xs =
   +> List.filter (fun filename ->
     match File_type.file_type_of_file filename with
     | FT.PL (FT.C ("l" | "y")) -> false
-    | FT.PL (FT.C _) -> true
+    | FT.PL (FT.C _) -> 
+      (* todo: fix syncweb so don't need this! *)
+      not (FT.is_syncweb_obj_file filename)
     | _ -> false
   ) +> Common.sort
 
