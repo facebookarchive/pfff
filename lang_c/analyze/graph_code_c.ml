@@ -236,13 +236,13 @@ let final_type env t =
      *)
     expand_typedefs env.typedefs t
 
-let error s tok =
-  failwith (spf "%s: %s" (Parse_info.string_of_info tok) s)
-
 let find_existing_node env name candidates last_resort =
   candidates +> Common.find_opt (fun kind ->
     G.has_node (Ast.str_of_name name, kind) env.g
   ) ||| last_resort
+
+let error s tok =
+  failwith (spf "%s: %s" (Parse_info.string_of_info tok) s)
    
 (*****************************************************************************)
 (* Add Node *)

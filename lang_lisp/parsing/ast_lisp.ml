@@ -52,5 +52,5 @@ and atom =
 
 (* with tarzan *)
 
-type toplevel = sexp list
+type program = sexp list
 

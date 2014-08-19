@@ -6,6 +6,7 @@ TARGET=lib
 
 SRC= \
      highlight_lisp.ml \
+     graph_code_lisp.ml \
      test_analyze_lisp.ml
 
 -include $(TOP)/Makefile.config
@@ -22,6 +23,7 @@ INCLUDEDIRS= $(TOP)/commons \
    $(TOP)/commons/ocollection $(TOP)/commons/ocamlextra \
    $(TOP)/external/ \
    $(TOP)/h_program-lang $(TOP)/h_version-control  \
+   $(TOP)/graph_code \
    $(TOP)/globals \
    ../parsing \
 

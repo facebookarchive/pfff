@@ -40,7 +40,7 @@ module TH = Parser_lisp
 
 (* the token list contains also the comment-tokens *)
 type program_and_tokens = 
-  Ast_lisp.toplevel option * Parser_lisp.token list
+  Ast_lisp.program option * Parser_lisp.token list
 
 exception Parse_error of string * Parse_info.info
 
@@ -201,3 +201,7 @@ let parse2 filename =
 
 let parse a = 
   Common.profile_code "Parse_lisp.parse" (fun () -> parse2 a)
+
+let parse_program file =
+  let (ast, _toks), _stat =  parse file in
+  Common2.some ast
