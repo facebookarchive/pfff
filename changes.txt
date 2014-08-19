@@ -2,6 +2,24 @@
 
 * 0.29 (Q3 2014) (??)
 
+** c
+
+*** far better typedef inference
+
+*** graph_code_c port of graph_code_clang, but handle dependencies of cpp constructs!
+
+** lisp
+
+*** basic parser (had just lexer before)
+
+*** basic graph_code, file level
+
+** codegraph
+
+*** backend for C
+
+*** backend for lisp
+
 * 0.28 (Q2 2014) ((kernel.tex.nw parenthesis))
 
 ** codemap
