@@ -167,11 +167,11 @@ and declaration env x =
           (xs +> List.map (fun x ->
             (* could skip extern declaration? *)
             match x with
-            | { A.v_type = A.TFunction ft; _ } ->
+            | { A.v_type = A.TFunction ft; v_storage = storage; _ } ->
                 A.Prototype { A.
                   f_name = x.A.v_name;
                   f_type = ft;
-                  f_static = false;
+                  f_static = (storage =*= A.Static);
                   f_body = [];
                 }
             | _ -> A.Global x
