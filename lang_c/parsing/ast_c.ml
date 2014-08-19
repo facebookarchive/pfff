@@ -244,6 +244,10 @@ type type_def = name * type_
 
 type define_body = 
   | CppExpr of expr
+  (* todo: we want that? even dowhile0 are actually transformed in CppExpr.
+   * We have no way to reference a CppStmt in stmt since MacroStmt
+   * is not here? So we can probably remove this constructor no?
+   *)
   | CppStmt of stmt
  (* with tarzan *)
 
