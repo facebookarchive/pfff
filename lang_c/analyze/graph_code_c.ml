@@ -688,8 +688,10 @@ and expr env = function
               (if looks_like_macro name then E.Macro else E.Function)
             in
             add_use_edge env (name, kind)
+      (* todo: unexpected form of call? function pointer call? add to stats *)
       | _ -> expr env e
       );
+      (* less:sexps { env with ctx = (P.CallCtx ((str env s, E.Function))) } args*)
       exprs env es
   | Assign (_, e1, e2) -> exprs env [e1; e2]
   | ArrayAccess (e1, e2) -> exprs env [e1; e2]
@@ -798,6 +800,7 @@ let build ?(verbose=true) root files =
 
     (* can lead to some not_found for instance on typedefs *)
     macro_dependencies = false;
+
     typedefs_dependencies = false;
     propagate_deps_def_to_decl = false;
   } in
