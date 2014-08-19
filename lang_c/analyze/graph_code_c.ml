@@ -540,7 +540,7 @@ and toplevel env x =
       xs +> List.iter (fun (name, eopt) ->
         let name = 
           if kind_file env=*=Source then new_name_if_defs env name else name in
-        let env = add_node_and_edge_if_defs_mode env (name, E.Constant) None in
+        let env = add_node_and_edge_if_defs_mode env (name, E.Constructor) None in
         if env.phase = Uses
         then Common2.opt (expr env) eopt
       )
@@ -659,7 +659,8 @@ and expr env = function
       else
         let name = str env name in
         let kind = find_existing_node env name 
-          [E.Constant; 
+          [E.Constant;
+           E.Constructor;
            E.Global; 
            E.Function; (* can pass address of func *)
            E.Prototype; (* can be asm function *)
@@ -679,7 +680,7 @@ and expr env = function
             let name = str env name in
             let kind = find_existing_node env name 
               [E.Macro; 
-               E.Constant;(* for DBG like macro *)
+               E.Constant;(* for DBG-like macro *)
                E.Function; 
                E.Global;(* can do foo() even with a function pointer *)
                E.Prototype;
