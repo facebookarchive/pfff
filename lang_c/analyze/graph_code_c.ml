@@ -218,8 +218,11 @@ let rec expand_typedefs typedefs t =
       else t
   | TPointer x -> 
       TPointer (expand_typedefs typedefs x)
-  | TArray x -> 
-      TArray (expand_typedefs typedefs x)
+  | TArray (eopt, x) ->
+      (* less: eopt could contain some sizeof(typedefs) that we should expand
+       * but does not matter probably
+       *)
+      TArray (eopt, expand_typedefs typedefs x)
   | TFunction (ret, params) -> 
       TFunction (expand_typedefs typedefs ret,
                 params +> List.map (fun p ->
@@ -774,7 +777,10 @@ and type_ env typ =
             else env.pr2_and_log (spf "typedef not found: %s (%s)" s
                                     (Parse_info.string_of_info (snd name)))
 
-      | TPointer x | TArray x -> aux x
+      | TPointer x -> aux x
+      | TArray (eopt, x) -> 
+          Common2.opt (expr env) eopt;
+          aux x
       | TFunction (t, xs) ->
         aux t;
         xs +> List.iter (fun p -> aux p.p_type)

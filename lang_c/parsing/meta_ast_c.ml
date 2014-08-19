@@ -63,7 +63,10 @@ let rec vof_type_ =
   function
   | TBase v1 -> let v1 = vof_name v1 in Ocaml.VSum (("TBase", [ v1 ]))
   | TPointer v1 -> let v1 = vof_type_ v1 in Ocaml.VSum (("TPointer", [ v1 ]))
-  | TArray v1 -> let v1 = vof_type_ v1 in Ocaml.VSum (("TArray", [ v1 ]))
+  | TArray ((v1, v2)) ->
+      let v1 = Ocaml.vof_option vof_const_expr v1
+      and v2 = vof_type_ v2
+      in Ocaml.VSum (("TArray", [ v1; v2 ]))
   | TFunction v1 ->
       let v1 = vof_function_type v1 in Ocaml.VSum (("TFunction", [ v1 ]))
   | TStructName ((v1, v2)) ->
@@ -89,8 +92,9 @@ and vof_struct_kind =
   function
   | Struct -> Ocaml.VSum (("Struct", []))
   | Union -> Ocaml.VSum (("Union", []))
+and vof_const_expr v = vof_expr v
   
-let rec vof_expr =
+and vof_expr =
   function
   | Int v1 ->
       let v1 = vof_wrap Ocaml.vof_string v1 in Ocaml.VSum (("Int", [ v1 ]))

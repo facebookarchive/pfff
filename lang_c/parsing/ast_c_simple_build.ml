@@ -636,7 +636,8 @@ and full_type env x =
       A.TBase (s, List.hd ii)
 
   | FunctionType ft -> A.TFunction (function_type env ft)
-  | Array (_less_eTODO, ft) -> A.TArray (full_type env ft)
+  | Array ((_, eopt, _), ft) -> 
+    A.TArray (Common.map_opt (expr env) eopt, full_type env ft)
   | TypeName (n) -> A.TTypeName (name env n)
 
   | StructUnionName ((kind, _), name) ->

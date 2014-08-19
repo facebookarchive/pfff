@@ -102,7 +102,7 @@ and type_ x =
   match x with
   | TBase name -> M.TBase name
   | TPointer t -> M.TPointer (type_ t)
-  | TArray t -> M.TArray (type_ t)
+  | TArray (_, t) -> M.TArray (type_ t)
   | TFunction (t, params) -> M.TFunction (function_type (t, params))
   | TStructName (kind, name) ->
     (match kind with

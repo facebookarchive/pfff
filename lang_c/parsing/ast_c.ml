@@ -90,7 +90,7 @@ type name = string wrap
 type type_ =
   | TBase of name (* int, float, etc *)
   | TPointer of type_
-  | TArray of type_
+  | TArray of const_expr option * type_
   | TFunction of function_type
   | TStructName of struct_kind * name
   (* hmmm but in C it's really like an int no? *)
@@ -106,12 +106,14 @@ type type_ =
   }
 
  and struct_kind = Struct | Union
- (* with tarzan *)
+
+(* really just for Id that are #define and Int *)
+and const_expr = expr
 
 (* ------------------------------------------------------------------------- *)
 (* Expression *)
 (* ------------------------------------------------------------------------- *)
-type expr =
+and expr =
   | Int of string wrap
   | Float of string wrap
   | String of string wrap
