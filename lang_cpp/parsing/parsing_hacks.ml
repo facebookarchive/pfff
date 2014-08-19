@@ -164,9 +164,7 @@ let fix_tokens_c ~macro_defs tokens =
   let cleaner = !tokens2 +> Parsing_hacks_pp.filter_pp_or_comment_stuff in
 
   let paren_grouped      = TV.mk_parenthised  cleaner in
-(*todo:  Parsing_hacks_pp.find_define_init_brace_paren paren_grouped; 
- * but then ast_c_build fails because of unhandled DefineInit
-*)
+  Parsing_hacks_pp.find_define_init_brace_paren paren_grouped;
   Parsing_hacks_pp.find_string_macro_paren paren_grouped;
   Parsing_hacks_pp.find_macro_paren        paren_grouped;
   let cleaner = !tokens2 +> Parsing_hacks_pp.filter_pp_or_comment_stuff in
