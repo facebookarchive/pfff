@@ -720,12 +720,12 @@ let find_define_init_brace_paren xs =
 
   (* mainly for linux, especially in sound/ *)
   |   (PToken {t=TDefine _})
-    ::(PToken {t=TIdent_Define (_s,_)})
-    ::(Parenthised(_xxx, _))
+    ::(PToken {t=TIdent_Define (s,_); col=c})
+    ::(Parenthised(_, {col=c2; _}::_))
     ::(PToken ({t=TOBrace i1} as tokbrace))
     ::(PToken tok2)
     ::(PToken tok3)
-    ::xs -> 
+    ::xs when c2 = c + String.length s -> 
       if is_init tok2 tok3
       then change_tok tokbrace (TOBrace_DefineInit i1);
 
@@ -736,8 +736,9 @@ let find_define_init_brace_paren xs =
     ::(PToken {t=TIdent_Define (_s,_)})
     ::(Parenthised(_xxx, _))
     ::(PToken ({t=TOBrace i1} as tokbrace))
-    ::(Parenthised(_, _))
-    ::(PToken _tok2)
+    (* can be more complex expression than just an int, like (b)&... *)
+    ::(Parenthised(_, _)) 
+    ::(PToken {t=(TAnd _|TOr _);_})
     ::xs -> 
       change_tok tokbrace (TOBrace_DefineInit i1);
       aux xs
