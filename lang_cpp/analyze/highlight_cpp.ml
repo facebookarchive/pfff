@@ -436,6 +436,16 @@ let visit_toplevel ~tag_hook _prefs (*db_opt *) (toplevel, toks) =
       k def
     );
     V.kcpp = (fun (k,_) def ->
+      (match def with
+      | Ast.Define (_, _id, DefineFunc params, _body) ->
+            params +> Ast.unparen +> Ast.uncomma +> List.iter (fun (name) ->
+              (match name with
+              | (_s, [ii]) -> tag ii (Parameter Def)
+              | _ -> ()
+              )
+            )
+        | _ -> ()
+      );
       k def
     );
     V.kdeclaration = (fun (k,_) def ->
@@ -516,8 +526,9 @@ let visit_toplevel ~tag_hook _prefs (*db_opt *) (toplevel, toks) =
     (* needed only when have FP in the typedef inference *)
     | T.TIdent (
         ("string" | "i32" | "i64" | "i8" | "i16" | "byte"
-          | "list" | "map" | "set" 
+          (* | "list" | "map" | "set"  
           | "binary"
+          *)
         ), ii) ->
         tag ii TypeInt
 
