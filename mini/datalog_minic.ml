@@ -30,8 +30,8 @@
  * history:
  *  - LFS and code navigation, PofFS
  *  - read Jquery paper, Prolog language for code query (and later Semmle)
- *  - cmf --prolog for PHP for class hiearchy and then for call and data 
- *    (partial) graph
+ *  - cmf --prolog for PHP for class hiearchy and then for call graph and 
+ *    data graph (partial)
  *  - codequery, generalization for Ocaml
  *  - saw how Prolog interactive bdd was so much better than using
  *    Ocaml and Berkeley DB to answer simple questions, to perform simple 
@@ -118,10 +118,12 @@ let rec tok_of_type = function
 let invoke_loc_of_name env name =
   spf "'_in_%s_line_%d_'" env.scope (Parse_info.line_of_info (snd name))
 
+(* TODO: need to look for type of v in env to actually qualify ... *)
 let fully_qualified_field _env _v fldname =
   let fld = fst fldname in
   spf "'_fld__%s'" fld
 
+(* TODO: need to use _struct at some point *)
 let fully_qualified_field_of_struct _struc fld =
   spf "'_fld__%s'" fld
 
@@ -129,6 +131,10 @@ let fully_qualified_field_of_struct _struc fld =
 (* Visitor *)
 (*****************************************************************************)
 let rec program env xs = 
+
+(* ---------------------------------------------------------------------- *)
+(* Toplevel *)
+(* ---------------------------------------------------------------------- *)
   match xs with
   | [] -> ()
   | x::xs ->
@@ -189,6 +195,10 @@ and func_def env def =
          (var_of_global env def.f_name) (fst def.f_name)) env;
   stmts env def.f_body
 
+(* ---------------------------------------------------------------------- *)
+(* Stmts *)
+(* ---------------------------------------------------------------------- *)
+
 and stmts env xs =
   match xs with
   | [] -> ()
@@ -226,6 +236,10 @@ and stmt env = function
   | Return var ->
       add (spf "assign('ret_%s', %s)" 
              env.scope (var_of_name env var)) env
+
+(* ---------------------------------------------------------------------- *)
+(* Instr/Expr *)
+(* ---------------------------------------------------------------------- *)
 
 and instr env = function
   | AssignAddress (var, name) ->
