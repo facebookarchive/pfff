@@ -92,24 +92,27 @@ let string_of_entity (xs, x) =
 let string_of_entity_kind = function
   | E.Function -> "function"
   | E.Constant -> "constant"
+  | E.Global -> "global"
+  | E.Macro -> "macro"
   | E.Class -> "class"
-  | E.Method -> "method"
+  | E.Type -> "type"
 
+  | E.Method -> "method"
   | E.ClassConstant -> "constant"
   | E.Field -> "field"
+  | E.Constructor -> "constructor"
 
   | E.TopStmts  -> "stmtlist"
   | E.Other _ -> "idmisc"
   | E.Exception -> "exception"
-  | E.Constructor -> "constructor"
-  | E.Global -> "global"
-  | E.Type -> "type"
+
   | E.Module -> "module"
   | E.Package -> "package"
+
   | E.Prototype -> "prototype"
   | E.GlobalExtern -> "global_extern"
 
-  | (E.MultiDirs|E.Dir|E.File|E.Macro) ->
+  | (E.MultiDirs|E.Dir|E.File) ->
       raise Impossible
 
 let string_of_fact fact =
@@ -201,7 +204,7 @@ let build g =
   g +> G.iter_nodes (fun n ->
     let (str, kind) = n in
     (match kind with
-    | E.Function | E.Global | E.Constant | E.Type
+    | E.Function | E.Global | E.Constant | E.Type | E.Macro
     | E.Package | E.Module
     (* todo? field and constructor have a X.Y.type.fld so should
      * we generate for the entity a ([X;Y;type], fld) or ([X;Y], "type.fld")
@@ -221,7 +224,7 @@ let build g =
     | E.File | E.Dir
       -> ()
 
-    | (E.Macro|E.TopStmts|E.Other _|E.MultiDirs) ->
+    | (E.TopStmts|E.Other _|E.MultiDirs) ->
         pr2_gen n;
         raise Todo
     );

@@ -326,8 +326,11 @@ let add_node_and_edge_if_defs_mode env (name, kind) typopt =
                let t = final_type env t in 
             *)
             let v = Meta_ast_c.vof_any (Type t) in
-            let s = Ocaml.string_of_v v in
-            Some s
+            let _s = Ocaml.string_of_v v in
+            (* hmmm this is fed to prolog so need to be a simple string
+             * without special quote in it, so for now let's skip
+             *)
+            Some "_TODO_type"
       in
       (* less: still needed to have a try? *)
       try
@@ -633,10 +636,13 @@ and stmt env = function
           env.locals :=  (Ast.str_of_name n)::!(env.locals);
           type_ env t;
         end;
-        (* todo: actually there is a potential in_assign here
-         * if set a value for the variable in rest
-         *)
-        Common2.opt (expr env) eopt
+        (match eopt with
+        | None -> ()
+        | Some e ->
+          expr { env with in_assign = true } (Id n);
+          expr env e
+        )
+
       )
 
  and case env = function
@@ -699,13 +705,18 @@ and expr env = function
               ]
               (if looks_like_macro name then E.Macro else E.Function)
             in
-            add_use_edge env (name, kind)
+            add_use_edge env (name, kind);
+            exprs { env with ctx = (P.CallCtx (fst name, kind)) } es
+           
       (* todo: unexpected form of call? function pointer call? add to stats *)
-      | _ -> expr env e
-      );
-      (* less:sexps { env with ctx = (P.CallCtx ((str env s, E.Function))) } args*)
-      exprs env es
-  | Assign (_, e1, e2) -> exprs env [e1; e2]
+      | _ -> 
+        expr env e;
+        exprs env es
+      )
+  | Assign (_, e1, e2) -> 
+    (* mostly for generating use/read or use/write in prolog *)
+    expr { env with in_assign = true } e1;
+    expr env e2;
   | ArrayAccess (e1, e2) -> exprs env [e1; e2]
   (* todo: determine type of e and make appropriate use link *)
   | RecordAccess (e, _name) -> expr env e
@@ -714,8 +725,18 @@ and expr env = function
       type_ env t;
       expr env e
 
-  | Postfix (e, _op) | Infix (e, _op) -> expr env e
-  | Unary (e, _op) -> expr env e
+  (* potentially here we would like to treat as both a write and read
+   * of the variable, so maybe a trivalue would be better than a boolean
+   *)
+  | Postfix (e, _op) | Infix (e, _op) -> 
+      expr { env with in_assign = true } e
+
+  | Unary (e, op) -> 
+    (match op with
+    (* if get the address probably one wants to modify it *)
+    | Ast_cpp.GetRef -> expr { env with in_assign = true } e 
+    | _ -> expr env e
+    )
   | Binary (e1, _op, e2) -> exprs env [e1;e2]
 
   | CondExpr (e1, e2, e3) -> exprs env [e1;e2;e3]
