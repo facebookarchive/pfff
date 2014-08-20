@@ -705,7 +705,10 @@ and expr env = function
               ]
               (if looks_like_macro name then E.Macro else E.Function)
             in
-            add_use_edge env (name, kind);
+            (* we don't call call like foo(bar(x)) to be counted
+             * as special calls in prolog, hence the NoCtx here.
+             *)
+            add_use_edge { env with ctx = P.NoCtx } (name, kind);
             exprs { env with ctx = (P.CallCtx (fst name, kind)) } es
            
       (* todo: unexpected form of call? function pointer call? add to stats *)
