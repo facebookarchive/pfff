@@ -91,12 +91,8 @@ let var_of_local env name =
 let var_of_name env var_or_name =
   let s = fst var_or_name in
   match Common.find_opt (fun (x, _) -> x =$= s) env.locals with
-  | None ->
-    if Common.find_opt (fun (x,_) -> x =$= s) env.globals = None
-    then error (spf "unknown entity: %s" s) var_or_name;
-    var_of_global env var_or_name
-  | Some _t ->
-    var_of_local env var_or_name
+  | None -> var_of_global env var_or_name
+  | Some _t -> var_of_local env var_or_name
 
 (* the variable name is also its heap abstract location as in C
  * you can get the address of any local variables.

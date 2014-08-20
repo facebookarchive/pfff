@@ -639,8 +639,7 @@ and stmt env = function
         (match eopt with
         | None -> ()
         | Some e ->
-          expr { env with in_assign = true } (Id n);
-          expr env e
+          expr env (Assign (Ast_cpp.SimpleAssign, Id n, e))
         )
 
       )

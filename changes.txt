@@ -501,7 +501,8 @@ complete refactoring of the parser. Far less heuristics techniques.
 Closer to what was described in the CC'09 paper.
 
 * 0.15 (Q1 2011) (html/css parsers, ocsigen try)
-extra: mmm and meh (and zamcov part1)
+extra: mmm and meh (related to html/css parser)
+extra: zamcov part1 (I was working on php coverage for fb using hphp)
 
 ** introduce web-based source code navigator a la LXR using ocsigen
 first play with ocsigen.
