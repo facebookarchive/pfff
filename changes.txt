@@ -1,7 +1,13 @@
 -*- org -*-
 
-* 0.29 (Q3 2014) (??)
+* 0.29 (Q3 2014) (datalog for "flowing")
 
+** miniC and datalog
+
+*** simple miniC AST and parser
+
+*** first datalog-based interprocedural context insensitive dataflow analysis!
+ 
 ** c
 
 *** far better typedef inference, better heuristics (xx *yy), more cases handled
@@ -25,6 +31,7 @@ handle dependencies of cpp constructs!
 *** backend for lisp
 
 * 0.28 (Q2 2014) ((kernel.tex.nw parenthesis))
+extra: kernel.tex.nw
 
 ** codemap
 
@@ -85,6 +92,7 @@ for implicit fields
 use of spatch for ocaml :)
 
 * 0.27 (Q1 2014) ("hypertext" codemap, generalized scheck)
+extra: plan9, kencc
 
 ** codemap
 
@@ -169,6 +177,7 @@ skip list
 * -----------------------------------------------------------
 
 * 0.26 (Q4 2013) (basic OPAM package)
+extra: zamcov part2
 
 ** internal:
 
@@ -492,6 +501,7 @@ complete refactoring of the parser. Far less heuristics techniques.
 Closer to what was described in the CC'09 paper.
 
 * 0.15 (Q1 2011) (html/css parsers, ocsigen try)
+extra: mmm and meh (and zamcov part1)
 
 ** introduce web-based source code navigator a la LXR using ocsigen
 first play with ocsigen.
@@ -509,6 +519,7 @@ update: not used
 * -----------------------------------------------------------
 
 * 0.14 (Q4 2010) (layers, spatch php, more language highlighters)
+extra: c-- (and first use of ocamldoc -dotall to visualize soft archi)
 
 ** codemap
 
