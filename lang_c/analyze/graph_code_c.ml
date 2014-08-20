@@ -30,9 +30,16 @@ module P = Graph_code_prolog
  * 
  * See also lang_clang/analyze/graph_code_clang.ml to get arguably a more
  * precise and correct graph (if you can afford yourself to use clang).
- * update: actually a lots of code of graph_code_clang.ml have been ported
- * to this file now. And the advantage of graph_code_c is that it tracks
- * dependencies for cpp constants which is useful in codemap!
+ * update: actually lots of code of graph_code_clang.ml have been ported
+ * to this file now and being cpp-aware has actually many advantages:
+ *  - we can tracks dependencies of cpp constants which is useful in codemap!
+ *    and when dataflow will work, we will be able to track the flow of
+ *    specific constants to fields! (but people could use enum instead)
+ *  - we can find dead macros, dupe macros
+ *  - we can find wrong code in ifdef not compiled
+ *  - we can detect ugly macros that use locals insteaf of globals or parameters,
+ *    again graphcode is a perfect clowncode detector
+ *  - ...
  * 
  * schema:
  *  Root -> Dir -> File (.c|.h) -> Function | Prototype
@@ -75,6 +82,7 @@ type env = {
 
   (* for prolog use/4, todo: merge in_assign with context? *)
   in_assign: bool;
+  in_define: bool;
 
   (* covers also the parameters *)
   locals: string list ref;
@@ -579,6 +587,7 @@ and toplevel env x =
 and toplevels env xs = List.iter (toplevel env) xs
 
 and define_body env v =
+  let env = { env with in_define = true } in
   match v with
   | CppExpr e -> expr env e
   | CppStmt st -> stmt env st
@@ -764,10 +773,14 @@ and type_ env typ =
       | TEnumName name -> 
           add_use_edge env (add_prefix "E__" name, E.Type)
       | TTypeName name ->
-          if env.conf.typedefs_dependencies
-          then add_use_edge env (add_prefix "T__" name, E.Type)
+          let s = Ast.str_of_name name in
+          (* could be a type parameter *)
+          if List.mem s !(env.locals) && env.in_define
+          then ()
           else
-            let s = Ast.str_of_name name in
+           if env.conf.typedefs_dependencies
+           then add_use_edge env (add_prefix "T__" name, E.Type)
+           else
             if Hashtbl.mem env.typedefs s
             then 
               let t' = (Hashtbl.find env.typedefs s) in
@@ -809,7 +822,7 @@ let build ?(verbose=true) root files =
     fields_dependencies = true;
 
     (* can lead to some not_found for instance on typedefs *)
-    macro_dependencies = false;
+    macro_dependencies = true;
 
     typedefs_dependencies = false;
     propagate_deps_def_to_decl = false;
@@ -823,6 +836,7 @@ let build ?(verbose=true) root files =
     c_file_readable = "__filled_later__";
     conf;
     in_assign = false;
+    in_define = false;
     local_rename = Hashtbl.create 0; (* will come from local_renames_of_files*)
     dupes = Hashtbl.create 101;
     typedefs = Hashtbl.create 101;
