@@ -26,8 +26,8 @@ module G = Graph_code
  * main_codegraph.ml for more information.
  * 
  * schema:
- *  Root -> Dir -> File -> TODO Function 
- *                      -> TODO Macro
+ *  Root -> Dir -> File -> Function 
+ *                      -> Macro
  *                      -> TODO Global
  * 
  *       -> Dir -> Subdir -> ...
