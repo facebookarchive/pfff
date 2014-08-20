@@ -712,7 +712,11 @@ and expr env = function
   | CondExpr (e1, e2, e3) -> exprs env [e1;e2;e3]
   | Sequence (e1, e2) -> exprs env [e1;e2]
 
-  | ArrayInit xs -> exprs env xs
+  | ArrayInit xs -> 
+      xs +> List.iter (fun (eopt, init) ->
+        Common2.opt (expr env) eopt;
+        expr env init
+      )
   (* todo: add deps on field *)
   | RecordInit xs -> xs +> List.map snd +> exprs env
 

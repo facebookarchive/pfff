@@ -304,11 +304,11 @@ and initialiser env x =
      | _ ->
        A.ArrayInit ((xs +> unbrace +> uncomma) +> List.map (function
          (* less: todo? *)
-         | InitIndexOld (_idxTODO, ini) -> 
-             initialiser env ini
-         | InitDesignators([DesignatorIndex(_idxTodo)], _, ini) -> 
-             initialiser env ini
-         | x -> initialiser env x
+         | InitIndexOld ((_, idx, _), ini) ->
+             Some (expr env idx), initialiser env ini
+         | InitDesignators([DesignatorIndex((_, idx, _))], _, ini) -> 
+             Some (expr env idx), initialiser env ini
+         | x -> None, initialiser env x
        ))
      )
 

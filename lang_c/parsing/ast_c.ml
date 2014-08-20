@@ -58,12 +58,12 @@ open Common2.Infix
  *    to handle plan9 code was anyway needed for codemap).
  *  - SIL's monoidics. SIL looks a bit complicated, but it might be a good
  *    candidate, unforunately their API are not easily accessible in
- *    a findlib library form.
- *  - could also use the AST used by cc in plan9 :)
+ *    a findlib library form yet.
  *  - Clang, but like CIL it works after preprocessing, does not handle kencc,
  *    and does not provide by default a convenient ocaml AST. I could use
- *    clang-ocaml though but it's currently not easily accessible in a findlib
- *    library form.
+ *    clang-ocaml though but it's not easily accessible in a findlib
+ *    library form yet.
+ *  - we could also use the AST used by cc in plan9 :)
  * 
  * See lang_cpp/parsing/ast_cpp.ml.
  *
@@ -147,7 +147,7 @@ and expr =
   | SizeOf of (expr, type_) Common.either
 
   (* should appear only in a variable initializer, or after GccConstructor *)
-  | ArrayInit of expr list
+  | ArrayInit of (expr option * expr) list
   | RecordInit of (name * expr) list
   (* gccext: *)
   | GccConstructor  of type_ * expr (* always an ArrayInit *)

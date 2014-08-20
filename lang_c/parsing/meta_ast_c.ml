@@ -157,7 +157,13 @@ and vof_expr =
       let v1 = Ocaml.vof_either vof_expr vof_type_ v1
       in Ocaml.VSum (("SizeOf", [ v1 ]))
   | ArrayInit v1 ->
-      let v1 = Ocaml.vof_list vof_expr v1
+      let v1 =
+        Ocaml.vof_list
+          (fun (v1, v2) ->
+             let v1 = Ocaml.vof_option vof_expr v1
+             and v2 = vof_expr v2
+             in Ocaml.VTuple [ v1; v2 ])
+          v1
       in Ocaml.VSum (("ArrayInit", [ v1 ]))
   | RecordInit v1 ->
       let v1 =
