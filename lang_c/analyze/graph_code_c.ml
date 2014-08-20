@@ -820,8 +820,6 @@ let build ?(verbose=true) root files =
   let conf = {
     types_dependencies = true;
     fields_dependencies = true;
-
-    (* can lead to some not_found for instance on typedefs *)
     macro_dependencies = true;
 
     typedefs_dependencies = false;
