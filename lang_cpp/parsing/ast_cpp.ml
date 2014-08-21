@@ -241,7 +241,8 @@ and expression = expressionbis wrap
   | Assignment     of expression * assignOp * expression        
 
   | Postfix        of expression * fixOp                        
-  | Infix          of expression * fixOp                        
+  | Infix          of expression * fixOp
+  (* contains GetRef and Deref!! todo: lift up? *)
   | Unary          of expression * unaryOp                      
   | Binary         of expression * binaryOp * expression        
 
