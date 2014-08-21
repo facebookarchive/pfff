@@ -41,11 +41,12 @@ module PI = Parse_info
  *  - include/require (and possibly desugared wrappers like require_module())
  *  - precise callgraph, using julien's abstract interpreter (was called
  *    previously pathup/pathdown)
+ *  - types (when the code is annotated)
  *
  * todo:
  *  - get rid of P.Misc, generate precise facts, see graph_code_prolog.ml
  *  - precise datagraph
- *  - types, refs
+ *  - refs
  *
  * For more information look at h_program-lang/database_code.pl
  * and its many predicates.
@@ -70,7 +71,10 @@ let string_of_modifier = function
 
 let rec string_of_hint_type x =
   match x with
-  (* TODO: figure out a reasonable respresentation for type args in prolog *)
+  (* todo: figure out a reasonable respresentation for type args in prolog 
+   * could just represent them as a term, so people could actually use
+   * unification over it too, e.g. 'Ent'('Foo'), array(int), etc.
+   *)
   | Hint (c, _targsTODO) ->
     (match c with
     | XName [QI (c)] -> Ast.str_of_ident c
@@ -111,7 +115,15 @@ let add_function_params current def add =
              (Ast.str_of_dname param.p_name)
              (string_of_hint_type_opt param.p_type)
       ))
-    )
+    );
+  add (P.Misc (spf "return(%s, '%s')" current
+        (string_of_hint_type_opt
+           (match def.f_return_type with
+           | None -> None
+           | Some (_colon, _atopt, t) -> Some t
+           ))))
+                  
+    
 
 (* todo: also extract if decl/strict/regular? *)
 let is_hack_file toks =
@@ -520,10 +532,10 @@ let build2 ?(show_progress=true) root files =
    add (P.Misc ":- discontiguous kind/2, at/3, type/2");
    add (P.Misc ":- discontiguous file/2");
    add (P.Misc ":- discontiguous extends/2, implements/2, mixins/2");
-   add (P.Misc ":- discontiguous is_public/1, is_private/1, is_protected/1");
    add (P.Misc ":- discontiguous docall/3, use/4, docall2/3");
+   add (P.Misc ":- discontiguous is_public/1, is_private/1, is_protected/1");
    add (P.Misc ":- discontiguous static/1, abstract/1, final/1");
-   add (P.Misc ":- discontiguous arity/2, parameter/4");
+   add (P.Misc ":- discontiguous arity/2, parameter/4, return/2");
    add (P.Misc ":- discontiguous include/2, require_module/2");
    add (P.Misc ":- discontiguous throw/2, catch/2");
    add (P.Misc ":- discontiguous async/1, yield/1");

@@ -79,23 +79,19 @@
 %     ex: use('foo', 'count', field, read).
 %     ex: use(('A','foo'), 'name', array, write).
 %
-%  - types: type/2
+%  - types: type/2, parameter/4, return/2, arity/2
 %     ex: type('foobar', 'int').
+%     ex: parameter('foo', 0, '$first_param_name', 'int')
+%     ex: return('foo', 'int')
+%     ex: arity('foobar', 3).
+%     ex: arity(('Preparable', 'gen'), 0).
 %
-%  - function/method arity (number of parameters): arity/2
-%      ex: arity('foobar', 3).
-%      ex: arity(('Preparable', 'gen'), 0).
-%
-%  - function/method parameters: parameter/4
-%      ex: parameter('halpclass', 0, '$first_param_name', 'int')
-%
-%  - class/method properties: static/1, abstract/1, final/1
+%  - properties: static/1, abstract/1, final/1, is_public/1, is_private/1, 
+%     is_protected/1,  async/1
 %      ex: static(('Filesystem', 'readFile')).
 %      ex: abstract('AbstractTestCase').
-%
-%  - class members visibility: is_public/1, is_private/1, is_protected/1,
 %      ex: is_public(('Preparable', 'gen')).
-%    We use 'is_public' and not 'public' because public is a reserved name
+%    We use 'is_public' and not 'public' because public is a reserved keyword
 %    in Prolog.
 %
 %  - inheritance: extends/2, implements/2, mixins/2
