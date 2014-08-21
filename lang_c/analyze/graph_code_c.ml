@@ -275,7 +275,10 @@ let hook_expr_toplevel env x =
      let env2 = { Datalog_c.
        scope = fst env.current;
        globals = env.g;
-       locals = !(env.locals);
+       (* need to pass the ref because instrs_of_expr will add new
+        * local variables
+        *)
+       locals = env.locals;
        facts = aref;
      }
      in

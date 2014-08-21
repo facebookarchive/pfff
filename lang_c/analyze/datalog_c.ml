@@ -40,8 +40,10 @@ type env = {
   scope: string; (* qualifier, usually the current function *)
 
   globals: Graph_code.graph;
-  (* have option type for macro parameters ... could have a TAny also *)
-  locals: (string * type_ option) list;
+  (* have option type for macro parameters ... could have a TAny also.
+   * need a ref because instrs_of_expr will add new local variables.
+   *)
+  locals: (string * type_ option) list ref;
 
   facts: fact list ref;
 }
@@ -124,7 +126,7 @@ let var_of_local env name =
 
 let var_of_name env var_or_name =
   let s = fst var_or_name in
-  match Common.find_opt (fun (x, _) -> x =$= s) env.locals with
+  match Common.find_opt (fun (x, _) -> x =$= s) !(env.locals) with
   | None -> var_of_global env var_or_name
   | Some _t -> var_of_local env var_or_name
 
@@ -152,11 +154,11 @@ let fully_qualified_field_of_struct _struc fld =
   spf "'_fld__%s'" fld
 
 
-let tok_of_type _t =
-  raise Todo
+let tok_of_type t =
+  List.hd (Lib_parsing_c.ii_of_any (A.Type t))
 
-let tokwrap_of_expr _e =
-  raise Todo
+let tokwrap_of_expr e =
+  (), List.hd (Lib_parsing_c.ii_of_any (A.Expr e))
 
 let var_of_instr instr =
   match instr with
@@ -183,9 +185,12 @@ let counter = ref 0
 (* note that we still use var_lof_name to generate the extra scope info
  * so no need to add it there
  *)
-let fresh_var _env (_, tok) = 
+let fresh_var env (_, tok) = 
   incr counter;
-  spf "v_%d" (* env.scope *) !counter, tok
+  let s = spf "_v_%d" (* env.scope *) !counter in
+  (* todo type! *)
+  env.locals := (s, None)::!(env.locals);
+  s, tok
 
 let instrs_of_expr env e =
 
@@ -200,6 +205,7 @@ let instrs_of_expr env e =
   | A.Call _ | A.ArrayAccess _ | A.RecordAccess _
   | A.Binary _ 
   | A.Unary (_, ((A2.UnPlus|A2.UnMinus|A2.Tilde|A2.Not), _))
+  | A.SizeOf _
     ->
       Assign (fresh_var env (tokwrap_of_expr e), expr_of_simple_expr e)
 
@@ -269,8 +275,9 @@ let instrs_of_expr env e =
   | A.Postfix (e, _op) | A.Infix (e, _op) ->
       instr_of_expr e
 
+     
+
   | A.CondExpr (_, _, _)
-  | A.SizeOf _
   | A.ArrayInit _ | A.RecordInit _
   | A.GccConstructor (_, _)
       -> 
@@ -307,6 +314,14 @@ let instrs_of_expr env e =
   | A.RecordAccess (e, name) ->
       let v = var_of_expr e in
       ObjField (v, name)
+
+  | A.SizeOf (Left e) ->
+      let instr = instr_of_expr e in
+      Common.push instr instrs;
+      Int ("0_sizeof", tokwrap_of_expr e +> snd)
+  | A.SizeOf (Right t) ->
+      Int ("0_sizeof", tok_of_type t)
+
   | _ -> 
     raise NotSimpleExpr
 
