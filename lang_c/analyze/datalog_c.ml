@@ -33,12 +33,22 @@ module PI = Parse_info
 (* Types *)
 (*****************************************************************************)
 
-(* ------------------------------------------------------------------------- *)
-(* Facts *)
-(* ------------------------------------------------------------------------- *)
-
 type fact = string
 (* todo: Datalog_code.fact *)
+
+type env = {
+  scope: string; (* qualifier, usually the current function *)
+
+  globals: Graph_code.graph;
+  (* have option type for macro parameters ... could have a TAny also *)
+  locals: (string * type_ option) list;
+
+  facts: fact list ref;
+}
+
+(*****************************************************************************)
+(* CIL-expr *)
+(*****************************************************************************)
 
 (* ------------------------------------------------------------------------- *)
 (* Names *)
@@ -89,20 +99,6 @@ type instr =
 
   | AssignDeref of var * var (* *x = v *)
 
-
-(* ------------------------------------------------------------------------- *)
-(* Env *)
-(* ------------------------------------------------------------------------- *)
-
-type env = {
-  scope: string; (* qualifier, usually the current function *)
-
-  globals: Graph_code.graph;
-  (* have option type for macro parameters ... could have a TAny also *)
-  locals: (string * type_ option) list;
-
-  facts: fact list ref;
-}
 
 (*****************************************************************************)
 (* Helpers *)
