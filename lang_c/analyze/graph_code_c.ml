@@ -624,7 +624,7 @@ and stmt env = function
         (match eopt with
         | None -> ()
         | Some e ->
-          expr env (Assign (Ast_cpp.SimpleAssign, Id n, e))
+          expr env (Assign ((Ast_cpp.SimpleAssign, snd n), Id n, e))
         )
 
       )
@@ -719,7 +719,7 @@ and expr env = function
       expr { env with in_assign = true } e
 
   | Unary (e, op) -> 
-    (match op with
+    (match Ast.unwrap op with
     (* if get the address probably one wants to modify it *)
     | Ast_cpp.GetRef -> expr { env with in_assign = true } e 
     | _ -> expr env e

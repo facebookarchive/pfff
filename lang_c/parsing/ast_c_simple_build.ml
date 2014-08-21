@@ -520,20 +520,20 @@ and expr env e =
   | RecordAccess (e, n) ->
       A.RecordAccess (expr env e, name env n)
   | RecordPtAccess (e, n) ->
-      A.RecordAccess (A.Unary (expr env e, DeRef), name env n)
+      A.RecordAccess (A.Unary (expr env e, (DeRef,List.hd toks)), name env n)
 
   | Cast ((_, ft, _), e) -> 
       A.Cast (full_type env ft, expr env e)
 
   | ArrayAccess (e1, (_, e2, _)) ->
       A.ArrayAccess (expr env e1, expr env e2)
-  | Binary (e1, op, e2) -> A.Binary (expr env e1, op, expr env e2)
-  | Unary (e, op) -> A.Unary (expr env e, op)
-  | Infix  (e, op) -> A.Infix (expr env e, op)
-  | Postfix (e, op) -> A.Postfix (expr env e, op) 
+  | Binary (e1, op, e2) -> A.Binary (expr env e1, (op, List.hd toks), expr env e2)
+  | Unary (e, op) -> A.Unary (expr env e, (op, List.hd toks))
+  | Infix  (e, op) -> A.Infix (expr env e, (op, List.hd toks))
+  | Postfix (e, op) -> A.Postfix (expr env e, (op, List.hd toks))
 
   | Assignment (e1, op, e2) -> 
-      A.Assign (op, expr env e1, expr env e2)
+      A.Assign ((op, List.hd toks), expr env e1, expr env e2)
   | Sequence (e1, e2) -> 
       A.Sequence (expr env e1, expr env e2)
   | CondExpr (e1, e2opt, e3) ->

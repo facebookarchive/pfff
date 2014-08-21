@@ -126,7 +126,7 @@ and expr =
 
   | Call of expr * argument list
 
-  | Assign of Ast_cpp.assignOp * expr * expr
+  | Assign of Ast_cpp.assignOp wrap * expr * expr
 
   | ArrayAccess of expr * expr
   | RecordAccess of expr * name
@@ -134,11 +134,11 @@ and expr =
   | Cast of type_ * expr
 
   (* todo? transform into Call (builtin ...) ? *)
-  | Postfix of expr * Ast_cpp.fixOp
-  | Infix of expr * Ast_cpp.fixOp
+  | Postfix of expr * Ast_cpp.fixOp wrap
+  | Infix of expr * Ast_cpp.fixOp wrap
   (* contains GetRef and Deref!! todo: lift up? *)
-  | Unary of expr * Ast_cpp.unaryOp
-  | Binary of expr * Ast_cpp.binaryOp * expr
+  | Unary of expr * Ast_cpp.unaryOp wrap
+  | Binary of expr * Ast_cpp.binaryOp wrap * expr
 
   | CondExpr of expr * expr * expr
   (* should be a statement *)
@@ -298,3 +298,5 @@ let str_of_name (s, _) = s
 let looks_like_macro name =
   let s = str_of_name name in
   s =~ "^[A-Z][A-Z_0-9]*$"
+
+let unwrap x = fst x
