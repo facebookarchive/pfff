@@ -112,6 +112,11 @@ let add fact env =
 let error s name =
   failwith (spf "ERROR: %s, at %s" s (Parse_info.string_of_info (snd name)))
 
+let debug any =
+  let v = Meta_ast_c.vof_any any in
+  let s = Ocaml.string_of_v v in
+  pr2 s
+
 let line_of tok = 
   Parse_info.line_of_info tok
 
@@ -161,6 +166,14 @@ let tok_of_type _t =
 
 let tokwrap_of_expr _e =
   raise Todo
+
+let var_of_instr instr =
+  match instr with
+  | Assign (v, _) | AssignAddress (v, _) | AssignDeref (_, v) 
+  | AssignField (_, _, v) | AssignArray (_, _, v)
+  | AssignFieldAddress (v, _, _) | AssignIndexAddress (v, _, _)
+    -> v
+
 (*****************************************************************************)
 (* Normalize *)
 (*****************************************************************************)
@@ -194,11 +207,14 @@ let instrs_of_expr e =
 
   (* ok, an actual instr! *)
   | A.Assign (_op, _e1, _e2) ->
+      debug (A.Expr e);
       raise Todo
   | A.Unary (_, (A2.GetRef, _)) ->
+      debug (A.Expr e);
       raise Todo
   | A.Unary (_, ((A2.GetRefLabel, _))) ->
       (* ast_c_build should forbid that gccext *)
+      debug (A.Expr e);
       raise Impossible
 
 
@@ -218,7 +234,9 @@ let instrs_of_expr e =
   | A.SizeOf _
   | A.ArrayInit _ | A.RecordInit _
   | A.GccConstructor (_, _)
-      -> raise Todo
+      -> 
+    debug (A.Expr e);
+    raise Todo
 
 
   and expr_of_simple_expr e =
@@ -250,7 +268,9 @@ let instrs_of_expr e =
   | A.RecordAccess (e, name) ->
       let v = var_of_expr e in
       ObjField (v, name)
-  | _ -> raise Todo
+  | _ -> 
+    (* dispatched correctly in instr_of_expr?? *)
+    raise Impossible
 
   and var_of_expr e =
   match e with
@@ -261,12 +281,6 @@ let instrs_of_expr e =
     var_of_instr instr
       
 
-  and var_of_instr instr =
-    match instr with
-    | Assign (v, _) | AssignAddress (v, _) | AssignDeref (_, v) 
-    | AssignField (_, _, v) | AssignArray (_, _, v)
-    | AssignFieldAddress (v, _, _) | AssignIndexAddress (v, _, _)
-      -> v
   in
   let i = instr_of_expr e in
   List.rev (i::!instrs)
