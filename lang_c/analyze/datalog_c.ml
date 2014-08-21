@@ -113,6 +113,7 @@ let debug any =
 let line_of tok = 
   Parse_info.line_of_info tok
 
+
 let var_of_global _env name =
   let s = fst name in
 (*
@@ -142,7 +143,10 @@ let heap_of_cst _env name =
     (fst name) (line_of (snd name))
 
 let invoke_loc_of_name env name =
-  spf "'_in_%s_line_%d_'" env.scope (line_of (snd name))
+  spf "'_in_%s_line_%d_col_%d'" 
+    env.scope 
+    (line_of (snd name))
+    (Parse_info.col_of_info (snd name))
 
 (* TODO: need to look for type of v in env to actually qualify ... *)
 let fully_qualified_field _env _v fldname =
@@ -302,7 +306,7 @@ let instrs_of_expr env e =
       )
   | A.Binary (e1, (_op, tok), e2) ->
       let vs = List.map var_of_expr [e1; e2] in
-      BuiltinCall ((PI.str_of_info tok, tok), vs)
+      BuiltinCall (("_builtin_" ^ PI.str_of_info tok, tok), vs)
   | A.Unary (e, ((A2.UnPlus|A2.UnMinus|A2.Tilde|A2.Not), tok)) ->
       let vs = [var_of_expr e] in
       BuiltinCall ((PI.str_of_info tok, tok), vs)
