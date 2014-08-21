@@ -6,7 +6,7 @@ TARGET=lib
 
 -include $(TOP)/Makefile.config
 
-SRC= ast_c.ml meta_ast_c.ml \
+SRC= ast_c.ml meta_ast_c.ml visitor_c.ml \
      ast_c_simple_build.ml \
      lib_parsing_c.ml \
      parse_c.ml \
@@ -47,6 +47,9 @@ $(TARGET).top: $(OBJS) $(LIBS)
 
 clean::
 	rm -f $(TARGET).top
+
+visitor_c.cmo: visitor_c.ml
+	$(OCAMLC) -w y -c $<
 
 ##############################################################################
 # Generic rules

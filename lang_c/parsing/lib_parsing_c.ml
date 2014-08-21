@@ -15,6 +15,7 @@
 open Common
 
 module FT = File_type
+module V = Visitor_c
 
 (*****************************************************************************)
 (* Filenames *)
@@ -30,4 +31,19 @@ let find_source_files_of_dir_or_files xs =
       not (FT.is_syncweb_obj_file filename)
     | _ -> false
   ) +> Common.sort
+
+
+(*****************************************************************************)
+(* ii_of_any *)
+(*****************************************************************************)
+
+let ii_of_any any =
+  let globals = ref [] in
+  let visitor = V.mk_visitor { 
+    V.kinfo = (fun (_k,_) i -> Common.push i globals)
+  }
+  in
+  visitor any;
+  List.rev !globals
+
 
