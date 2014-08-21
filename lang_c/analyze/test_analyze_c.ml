@@ -7,9 +7,12 @@ open Common
 
 let test_dataflow_c file =
 
-  let _g = Graph_code_c.build ~verbose:true "/" [file] in
-  let facts = [] in
-
+  let file = Common.realpath file in
+  let root = Sys.getcwd () +> Common.realpath in
+  Graph_code_c.facts := Some (ref []);
+  let _g = Graph_code_c.build ~verbose:false root [file] in
+  let facts = !(Common2.some (!Graph_code_c.facts)) in
+  Common2.pr2_xxxxxxxxxxxxxxxxx();
   (* debug *)
   facts +> List.iter pr2_gen;
   Common2.pr2_xxxxxxxxxxxxxxxxx();

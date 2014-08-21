@@ -79,7 +79,7 @@ let rec ifdef_skipper xs f =
     | Some ifdef ->
       (match ifdef with
       | Ifdef, tok ->
-        pr2 (spf "skipping: %s" (Parse_info.str_of_info tok));
+        pr2_once (spf "skipping: %s" (Parse_info.str_of_info tok));
         (try 
           let (_, x, rest) = 
             xs +> Common2.split_when (fun x -> 

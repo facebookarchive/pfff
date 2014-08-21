@@ -122,6 +122,9 @@ type kind_file = Source | Header
 (* for prolog *)
 let hook_use_edge = ref (fun _ctx _in_assign (_src, _dst) _g -> ())
 
+(* for datalog *)
+let facts = ref None
+
 (*****************************************************************************)
 (* Parsing *)
 (*****************************************************************************)
@@ -254,6 +257,13 @@ let find_existing_node env name candidates last_resort =
 
 let error s tok =
   failwith (spf "%s: %s" (Parse_info.string_of_info tok) s)
+
+(*****************************************************************************)
+(* For datalog *)
+(*****************************************************************************)
+
+(* let with_datalog_env env (fun env2 -> ...)
+ *)
    
 (*****************************************************************************)
 (* Add Node *)
@@ -353,7 +363,7 @@ let add_node_and_edge_if_defs_mode env (name, kind) typopt =
 (* Add edge *)
 (*****************************************************************************)
 
-let rec add_use_edge env (name, kind) =
+let add_use_edge env (name, kind) =
   let s = Ast.str_of_name name in
   let src = env.current in
   let dst = (s, kind) in
@@ -363,7 +373,7 @@ let rec add_use_edge env (name, kind) =
       env.pr2_and_log (spf "skipping edge (%s -> %s), one of it is a dupe"
                          (G.string_of_node src) (G.string_of_node dst));
   (* plan9, those are special functions in kencc? *)
-  | _ when s =$= "USED" || s =$= "SET" ->  
+  | _ when s =$= "USED" || s =$= "SET" -> 
       ()
   | _ when not (G.has_node src env.g) ->
       error ("SRC FAIL:" ^ G.string_of_node src) (snd name)
@@ -371,30 +381,11 @@ let rec add_use_edge env (name, kind) =
   | _ when G.has_node dst env.g ->
       G.add_edge (src, dst) G.Use env.g;
       !hook_use_edge env.ctx env.in_assign (src, dst) env.g
-  (* try to 'rekind' *)
+  (* try to 'rekind'? we use find_existing_node now so no need to rekind *)
   | _ ->
-    (match kind with
-    (* look for Prototype if no Function *)
-    | E.Function -> add_use_edge env (name, E.Prototype)
-    (* look for GlobalExtern if no Global *)
-    | E.Global -> add_use_edge env (name, E.GlobalExtern)
-(* TODO
-      (* sometimes people don't use uppercase for macros *)
-      | E.Global ->
-          add_use_edge env (name, E.Constant)
-      | E.Function ->
-          add_use_edge env (name, E.Macro)
-
-          let kind_original =
-            match kind with
-            | E.Constant when not (looks_like_macro name) -> E.Global
-            | E.Macro when not (looks_like_macro name) -> E.Function
-            | _ -> kind
-          in
-*)
-
-    | _ when env.c_file_readable =~ ".*EXTERNAL" -> 
-        ()
+    env.pr2_and_log (spf "Lookup failure on %s (%s)"
+                       (G.string_of_node dst)
+                       (Parse_info.string_of_info (snd name)))
     (* todo? still need code below?*)
 (*
     | E.Type when s =~ "S__\\(.*\\)" ->
@@ -404,12 +395,6 @@ let rec add_use_edge env (name, kind) =
     | E.Type when s =~ "E__\\(.*\\)" ->
         add_use_edge env ("T__" ^ Common.matched1 s, E.Type)
 *)
-    | _ ->
-        env.pr2_and_log (spf "Lookup failure on %s (%s)"
-                           (G.string_of_node dst)
-                           (Parse_info.string_of_info (snd name))
-        )
-    )
 
 (*****************************************************************************)
 (* Defs/Uses *)
