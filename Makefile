@@ -490,17 +490,15 @@ uninstall:
 
 INSTALL_SUBDIRS= \
   commons \
-  h_program-lang matcher \
+  h_program-lang    matcher \
   lang_ml/parsing \
   lang_php/parsing \
   lang_cpp/parsing lang_java/parsing \
   lang_js/parsing lang_css/parsing lang_html/parsing \
 
 LIBNAME=pfff
-install-findlib::
-	ocamlfind install $(LIBNAME) META    \
-
 install-findlib:: all all.opt
+	ocamlfind install $(LIBNAME) META    \
 	set -e; for i in $(INSTALL_SUBDIRS); do echo $$i; $(MAKE) -C $$i install-findlib; done
 
 uninstall-findlib::

@@ -1,3 +1,4 @@
+#define NULL 0
 
 #define cp 1
 

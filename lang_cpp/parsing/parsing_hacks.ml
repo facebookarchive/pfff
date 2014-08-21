@@ -163,24 +163,22 @@ let fix_tokens_c ~macro_defs tokens =
 
   let cleaner = !tokens2 +> Parsing_hacks_pp.filter_pp_or_comment_stuff in
 
-  (* todo: put stuff for ifdef too here! right now I didn't
-   * because I use -parse_cpp_c on plan9 C code which does not
-   * use ifdefs, but other oss do use ifdefs
-   *)
-
-(*
   let paren_grouped      = TV.mk_parenthised  cleaner in
   Parsing_hacks_pp.find_define_init_brace_paren paren_grouped;
   Parsing_hacks_pp.find_string_macro_paren paren_grouped;
-*)
+  Parsing_hacks_pp.find_macro_paren        paren_grouped;
+  let cleaner = !tokens2 +> Parsing_hacks_pp.filter_pp_or_comment_stuff in
+
+
   (* tagging contextual info (InFunc, InStruct, etc) *)
   let multi_grouped = TV.mk_multi cleaner in
   Token_views_context.set_context_tag_multi multi_grouped;
-
   let xxs = Parsing_hacks_typedef.filter_for_typedef multi_grouped in
   Parsing_hacks_typedef.find_typedefs xxs;
 
   insert_virtual_positions (!tokens2 +> Common2.acc_map (fun x -> x.TV.t))
+
+
 
 
 let fix_tokens_cpp ~macro_defs tokens = 

@@ -1,5 +1,3 @@
-//todo: examples taken from Andersen thesis
-
 int global;
 
 void main () {

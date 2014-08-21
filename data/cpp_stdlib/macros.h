@@ -224,3 +224,5 @@
 	(sizeof(mode) == 2)?\
 		((list += 4), (mode*)list)[-2]:\
 		((list += sizeof(mode)), (mode*)list)[-1])
+
+#define offsetof(s, m)  (ulong)(&(((s*)0)->m))

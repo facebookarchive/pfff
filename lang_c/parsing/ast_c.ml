@@ -58,12 +58,12 @@ open Common2.Infix
  *    to handle plan9 code was anyway needed for codemap).
  *  - SIL's monoidics. SIL looks a bit complicated, but it might be a good
  *    candidate, unforunately their API are not easily accessible in
- *    a findlib library form.
- *  - could also use the AST used by cc in plan9 :)
+ *    a findlib library form yet.
  *  - Clang, but like CIL it works after preprocessing, does not handle kencc,
  *    and does not provide by default a convenient ocaml AST. I could use
- *    clang-ocaml though but it's currently not easily accessible in a findlib
- *    library form.
+ *    clang-ocaml though but it's not easily accessible in a findlib
+ *    library form yet.
+ *  - we could also use the AST used by cc in plan9 :)
  * 
  * See lang_cpp/parsing/ast_cpp.ml.
  *
@@ -90,7 +90,7 @@ type name = string wrap
 type type_ =
   | TBase of name (* int, float, etc *)
   | TPointer of type_
-  | TArray of type_
+  | TArray of const_expr option * type_
   | TFunction of function_type
   | TStructName of struct_kind * name
   (* hmmm but in C it's really like an int no? *)
@@ -106,12 +106,14 @@ type type_ =
   }
 
  and struct_kind = Struct | Union
- (* with tarzan *)
+
+(* really just for Id that are #define and Int *)
+and const_expr = expr
 
 (* ------------------------------------------------------------------------- *)
 (* Expression *)
 (* ------------------------------------------------------------------------- *)
-type expr =
+and expr =
   | Int of string wrap
   | Float of string wrap
   | String of string wrap
@@ -124,7 +126,7 @@ type expr =
 
   | Call of expr * argument list
 
-  | Assign of Ast_cpp.assignOp * expr * expr
+  | Assign of Ast_cpp.assignOp wrap * expr * expr
 
   | ArrayAccess of expr * expr
   | RecordAccess of expr * name
@@ -132,11 +134,11 @@ type expr =
   | Cast of type_ * expr
 
   (* todo? transform into Call (builtin ...) ? *)
-  | Postfix of expr * Ast_cpp.fixOp
-  | Infix of expr * Ast_cpp.fixOp
+  | Postfix of expr * Ast_cpp.fixOp wrap
+  | Infix of expr * Ast_cpp.fixOp wrap
   (* contains GetRef and Deref!! todo: lift up? *)
-  | Unary of expr * Ast_cpp.unaryOp
-  | Binary of expr * Ast_cpp.binaryOp * expr
+  | Unary of expr * Ast_cpp.unaryOp wrap
+  | Binary of expr * Ast_cpp.binaryOp wrap * expr
 
   | CondExpr of expr * expr * expr
   (* should be a statement *)
@@ -145,7 +147,7 @@ type expr =
   | SizeOf of (expr, type_) Common.either
 
   (* should appear only in a variable initializer, or after GccConstructor *)
-  | ArrayInit of expr list
+  | ArrayInit of (expr option * expr) list
   | RecordInit of (name * expr) list
   (* gccext: *)
   | GccConstructor  of type_ * expr (* always an ArrayInit *)
@@ -228,11 +230,11 @@ type struct_def = {
   }
  (* with tarzan *)
 
-(* todo: use a record *)
+(* less: use a record *)
 type enum_def = name * (name * expr option) list
  (* with tarzan *)
 
-(* todo: use a record *)
+(* less: use a record *)
 type type_def = name * type_
  (* with tarzan *)
 
@@ -242,6 +244,10 @@ type type_def = name * type_
 
 type define_body = 
   | CppExpr of expr
+  (* todo: we want that? even dowhile0 are actually transformed in CppExpr.
+   * We have no way to reference a CppStmt in stmt since MacroStmt
+   * is not here? So we can probably remove this constructor no?
+   *)
   | CppStmt of stmt
  (* with tarzan *)
 
@@ -291,4 +297,6 @@ let str_of_name (s, _) = s
 
 let looks_like_macro name =
   let s = str_of_name name in
-  s =~ "[A-Z][A-Z_0-9]*"
+  s =~ "^[A-Z][A-Z_0-9]*$"
+
+let unwrap x = fst x

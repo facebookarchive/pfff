@@ -31,6 +31,10 @@
  * 
  * Essentially a restricted set of C programs in A-normal form.
  * 
+ * related work:
+ *   - CIL, C Intermediate Language, Necula et al, CC'00
+ *   - The Ruby Intermediate Language, Furr et al, DSL'09
+ *   - my own PIL for PHP
  *)
 
 (*****************************************************************************)

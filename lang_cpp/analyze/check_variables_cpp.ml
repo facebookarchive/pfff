@@ -157,6 +157,23 @@ let visit_prog prog =
       do_in_new_scope_and_check (fun () -> k x)
     );
 
+    V.kcpp = (fun (k, _) x ->
+      do_in_new_scope_and_check (fun () -> 
+        (match x with
+        | Define (_, _id, DefineFunc params, _body) ->
+            params +> Ast.unparen +> Ast.uncomma +> List.iter (fun (name) ->
+              (match name with
+              | (s, [ii]) ->
+                add_binding (None, noQscope, IdIdent (s,ii)) (S.Param, ref 0);
+              | _ -> ()
+              );
+            );
+        | _ -> ()
+        );
+        k x
+      )
+    );
+
     (* 2: adding defs of name in environment *)
     V.kparameter = (fun (k, _) param ->
 
@@ -176,7 +193,7 @@ let visit_prog prog =
 
               let scope = 
                 if is_top_env !_scoped_env || 
-                   fst (unwrap onedecl.v_storage) = (Sto Extern)
+                   (match onedecl.v_storage with | Sto (Extern,_) -> true | _ -> false)
                 then S.Global
                 else S.Local
               in

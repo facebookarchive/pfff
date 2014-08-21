@@ -33,7 +33,7 @@ module Model = Model2
  *  - show the data (the source code), but also show the relations
  *    (hence codegraph integration)
  *  - look at the code through different views (hence layers)
- *  - TODO deep semantic analysis, control flow + data flow so can answer
+ *  - SEMI deep semantic analysis, control flow + data flow so can answer
  *    flow questions such as where a callback is called (hence datalog)
  * 
  * history:
@@ -47,9 +47,9 @@ module Model = Model2
  *    Spiros, etc.
  *  - saw SeeSoft code visualizer while doing some bibliographic work
  *  - saw code thumbnails by MSR, and Rob Deline
- *  - saw treemap of Linux kernel by fekete => idea of mixing
+ *  - saw treemap of Linux kernel by Fekete => idea of mixing
  *    tree-map+code-thumbnails+seesoft = codemap
- *  - saw talk at CC about improving javadoc by putting in bigger fonts
+ *  - saw talk at CC'09 about improving javadoc by putting in bigger fonts
  *    really often used API functions => idea of light db and semantic
  *    visual feedback
  *  - read hierarchical edge bundling paper and its d3 implementation to 
@@ -63,35 +63,37 @@ module Model = Model2
  *    on live programming a la Bret Victor
  *  - http://www.kickstarter.com/projects/296054304/zeta-code, mostly focused
  *    on code relations, so related more to codegraph
- *  - textmate, meh
+ *  - textmate, nice fuzzy file find, very quick to go to a place
  *  - sublime, has thumbnails, but people don't really care about it
- *  - http://www.hello2morrow.com/products/sotoarc
- *  - http://scg.unibe.ch/codemap
- *  - http://scg.unibe.ch/wiki/projects/rbcrawler, class blueprint
+ *  - http://www.hello2morrow.com/products/sotoarc ?
+ *  - http://scg.unibe.ch/codemap ?
+ *  - http://scg.unibe.ch/wiki/projects/rbcrawler, class blueprint, very nice
+ *    when exploring tangled object code abusing inheritance
  *  - moose http://youtu.be/yvXm9LC17vk at 14min
- *  - http://redotheweb.com/CodeFlower/
+ *  - http://redotheweb.com/CodeFlower/ ?
  *  - code swarm, visualize git history, focused on people more than code
  *    https://code.google.com/p/gource/ 
  *    http://artzub.com/ghv/#repo=d3&climit=100&user=mbostock
  *  - http://www.codetrails.com/ctrlflow, smarter completion by infering
  *    importance of method (like I do, by #times this entity is globally used)
- *  - codesonar interactive zoomable call graph visualizer
- *    https://www.youtube.com/watch?v=EqDhtRoorGU
+ *  - codesonar, very nice interactive zoomable call graph visualizer
+ *    https://www.youtube.com/watch?v=EqDhtRoorGU also very deep semantic analysis
+ *    with control flow and data flow
  * 
  * features of IDE we do want (e.g. see the list at http://xamarin.com/studio):
- *  - smart syntax highlighting
+ *  - smart syntax highlighting (we do even more: semantic highlighting!)
  *  - go to definition (=~ TAGS, light db and search bar completion provides it)
  *  - code navigation (directory, files, also "hypertext" go to def/uses)
  *  - find uses (funcs, classes, TODO tricky for methods in dynamic languages)
  *  - code tooltip, hover on use of an entity to display information about
  *    it (#uses, TODO: type/args, comments, code, age, methods, etc)
- *  - unified search (files, entities, TODO but also content),
- *    TODO project-wide search is really useful
+ *  - unified "fuzzy" search (files, entities, TODO but also content),
+ *    SEMI project-wide fuzzy search is really useful for filenames but also content!
  *  - debugger? it helps understand code so a coverage layer or TODO live
  *    coverage tracing would be nice (as in tracegl)
- *  - source control? extract age, number of authors, churn information in
+ *  - source control? can extract age, number of authors, churn information in
  *    layers
- *  - TODO dataflow from here, dataflow to here (intellij)
+ *  - SEMI dataflow from here, dataflow to here (intellij)
  * 
  * features of IDE we care less about:
  *  - folding/outline? thumbnails make this less important

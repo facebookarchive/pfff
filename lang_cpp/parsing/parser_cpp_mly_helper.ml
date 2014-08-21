@@ -32,23 +32,23 @@ type shortLong = Short | Long | LongLong
  * the Ast_c.info, just have to sort them to get good order 
  *)
 type decl = { 
-  storageD: storagebis wrap;
+  storageD: storage;
   typeD: (sign option * shortLong option * typeCbis option) wrap;
   qualifD: typeQualifier;
   inlineD: bool wrap;
 } 
 
 let nullDecl = {
-  storageD = NoSto, noii;
+  storageD = NoSto;
   typeD = (None, None, None), noii;
   qualifD = Ast.nQ;
   inlineD = false, noii;
 }
 
-let addStorageD (x, ii) decl  =
+let addStorageD x decl  =
   match decl with
-  | {storageD = (NoSto,[]); _} -> { decl with storageD = (x, [ii]) }
-  | {storageD = (y, _ii2); _} -> 
+  | {storageD = NoSto; _} -> { decl with storageD = x }
+  | {storageD = (StoTypedef ii | Sto (_, ii)) as y; _} -> 
       if x = y 
       then decl +> warning "duplicate storage classes"
       else raise (Semantic ("multiple storage classes", ii))
@@ -116,16 +116,19 @@ let addQualifD qu qu2 =
  * and go back.
  *)
 let type_and_storage_from_decl  
-  {storageD = (st,iist); 
-  qualifD = qu; 
-  typeD = (ty,iit); 
-  inlineD = (inline,iinl);
-  } = 
+  {storageD = st; 
+   qualifD = qu; 
+   typeD = (ty,iit); 
+   inlineD = (inline,iinl);
+  }  = 
  (qu,
    (match ty with 
  | (None, None, None)     -> 
    (* mine (originally default to int, but this looks like bad style) *)
-   raise (Semantic ("no type (could default to 'int')", List.hd iist))
+   let decl = 
+     { v_namei = None; v_type = qu, (BaseType Void, iit); v_storage = st } in
+   raise (Semantic ("no type (could default to 'int')", 
+                    List.hd (Lib_parsing_cpp.ii_of_any (OneDecl decl))))
  | (None, None, Some t)   -> (t, iit)
 	 
  | (Some sign,   None, (None| Some (BaseType (IntType (Si (_,CInt))))))  -> 
@@ -156,19 +159,17 @@ let type_and_storage_from_decl
       * {....} and never with a typedef cos now we parse short uint i
       * as short ident ident => parse error (cos after first short i
       * pass in dt() mode) *)
-   ))
-   ,((st, inline),iist@iinl)
+   )), st, (inline, iinl)
   
 
 let type_and_register_from_decl decl = 
-  let {storageD = (st,iist); _} = decl in 
-  let (v,_storage) = type_and_storage_from_decl decl in
+  let {storageD = st; _} = decl in 
+  let (t,_storage, _inline) = type_and_storage_from_decl decl in
   match st with
-  | (Sto Register) -> v, Some (List.hd iist)
-  | NoSto -> v, None
-  | _ -> 
-      raise (Semantic ("storage class specified for parameter of function", 
-                       List.hd iist))
+  | NoSto -> t, None
+  | Sto (Register, ii) -> t, Some ii
+  | StoTypedef ii | Sto (_, ii) -> 
+      raise (Semantic ("storage class specified for parameter of function", ii))
 
 let fixNameForParam (name, ftyp) =
   match name with
@@ -178,10 +179,10 @@ let fixNameForParam (name, ftyp) =
     raise (Semantic ("parameter have qualifier", ii))
 
 let type_and_storage_for_funcdef_from_decl decl =
-  let (returnType, storage) = type_and_storage_from_decl decl in
+  let (returnType, storage, _inline) = type_and_storage_from_decl decl in
   (match storage with
-  | (StoTypedef, _), iist -> 
-      raise (Semantic ("function definition declared 'typedef'", List.hd iist))
+  | StoTypedef tok -> 
+      raise (Semantic ("function definition declared 'typedef'", tok))
   | _x -> (returnType, storage)
   )
 
@@ -321,7 +322,7 @@ let mk_constructor id (lp, params, rp) cp =
   }
   in
   { f_name = (None, noQscope, IdIdent id); f_type = ftyp; 
-    f_storage = (NoSto, false), noii; f_body = cp
+    f_storage = NoSto; f_body = cp
   }
 
 let mk_destructor tilde id (lp, _voidopt, rp) exnopt cp =
@@ -334,7 +335,7 @@ let mk_destructor tilde id (lp, _voidopt, rp) exnopt cp =
   }
   in
   { f_name = (None, noQscope, IdDestructor (tilde, id)); f_type = ftyp;
-    f_storage = (NoSto, false), noii; f_body = cp;
+    f_storage = NoSto; f_body = cp;
   }
 
 let opt_to_list_params params =

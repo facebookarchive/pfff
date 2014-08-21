@@ -271,7 +271,7 @@ let find_typedefs xxs =
 
   (* (xx) yy   and not a if/while before '('  (and yy can also be a constant) *)
   | {t=tok1}::{t=TOPar _}::({t=TIdent(s, i1)} as tok3)::{t=TCPar _}
-    ::{t = TIdent (_,_) | TInt _ | TString _ | TFloat _ | TTilde _ }::xs 
+    ::{t = (TIdent _|TInt _|TString _|TFloat _|TTilde _|TOPar _) }::xs 
     when not (TH.is_stuff_taking_parenthized tok1) (*  && line are the same?*)->
       change_tok tok3 (TIdent_Typedef (s, i1));
       (* todo? recurse on bigger ? *)
@@ -356,8 +356,11 @@ let find_typedefs xxs =
       );
       aux (tok2::xs)
 
-  (* sizeof(xx)    sizeof expr does not require extra parenthesis *)
-  | {t=Tsizeof _}::{t=TOPar _}::({t=TIdent (s, i1)} as tok1)::{t=TCPar _}::xs ->
+  (* sizeof(xx)    sizeof expr does not require extra parenthesis, but
+   * in practice people do, so guard it with what looks_like_typedef
+   *)
+  | {t=Tsizeof _}::{t=TOPar _}::({t=TIdent (s, i1)} as tok1)::{t=TCPar _}::xs
+    when Token_views_context.look_like_typedef s || s =~ "^[A-Z].*" ->
       change_tok tok1 (TIdent_Typedef (s, i1));
       aux xs
 

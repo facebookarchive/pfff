@@ -1,6 +1,6 @@
 (* Yoann Padioleau
  *
- * Copyright (C) 2012 Facebook
+ * Copyright (C) 2012, 2014 Facebook
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public License
@@ -22,12 +22,21 @@ module A = Ast_c
 (*****************************************************************************)
 (*
  * Ast_cpp to Ast_c_simple.
+ * 
+ * We skip the then part of ifdefs.
+ * 
+ * todo: 
+ *  - lift up local union and struct defined in functions?
+ *    (hmm but better to rewrite the code I think)
  *)
 
 (*****************************************************************************)
 (* Globals *)
 (*****************************************************************************)
-(* for anon struct *)
+(* for anon struct, which is dangerous! because the main function
+ * will return different results given the same input when called
+ * two times in a row
+ *)
 let cnt = ref 0
 
 (*****************************************************************************)
@@ -60,27 +69,87 @@ let debug any =
   let s = Ocaml.string_of_v v in
   pr2 s
 
+let rec ifdef_skipper xs f =
+
+  match xs with
+  | [] -> []
+  | x::xs ->
+    (match f x with
+    | None -> x::ifdef_skipper xs f
+    | Some ifdef ->
+      (match ifdef with
+      | Ifdef, tok ->
+        pr2_once (spf "skipping: %s" (Parse_info.str_of_info tok));
+        (try 
+          let (_, x, rest) = 
+            xs +> Common2.split_when (fun x -> 
+              match f x with
+              | Some (IfdefElse, _) -> true
+              | Some (IfdefEndif, _) -> true
+              | _ -> false
+            )
+          in
+          (match f x with
+          | Some (IfdefEndif, _) ->
+              ifdef_skipper rest f
+          | Some (IfdefElse, _) ->
+            let (before, _x, rest) = 
+              rest +> Common2.split_when (fun x -> 
+                match f x with
+                | Some (IfdefEndif, _) -> true
+              | _ -> false
+              )
+            in
+            ifdef_skipper before f @ ifdef_skipper rest f
+          | _ -> raise Impossible
+          )
+        with Not_found ->
+          failwith (spf "%s: unclosed ifdef" (Parse_info.string_of_info tok))
+        )
+      | _, tok ->
+          failwith (spf "%s: no ifdef" (Parse_info.string_of_info tok))
+      )
+    )
+
 (*****************************************************************************)
 (* Main entry point *)
 (*****************************************************************************)
 
 let rec program xs =
   let env = empty_env () in
-  List.map (toplevel env) xs +> List.flatten
+  toplevels env xs +> List.flatten
 
 (* ---------------------------------------------------------------------- *)
 (* Toplevels *)
 (* ---------------------------------------------------------------------- *)
 
-and toplevel env = function
-  | CppDirectiveTop x -> cpp_directive env x
+and toplevels env xs =
+  ifdef_skipper xs (function IfdefDecl x -> Some x | _ -> None)
+    +> List.map (toplevel env)
 
-  | Func (func_or_else) as x ->
+and toplevel env x =
+  match x with
+  | DeclElem decl -> declaration env decl
+  | CppDirectiveDecl x -> cpp_directive env x
+
+  | (MacroVarTop (_, _)|MacroTop (_, _, _)) ->
+      debug (Toplevel x); raise Todo
+
+  | IfdefDecl _ -> raise Impossible (* see ifdef_skipper *)
+  (* not much we can do here, at least the parsing statistics should warn the
+   * user that some code was not processed
+   *)
+  | NotParsedCorrectly _ -> []
+
+
+and declaration env x =
+  match x with
+  | Func (func_or_else) ->
       (match func_or_else with
       | FunctionOrMethod def ->
           [A.FuncDef (func_def env def)]
       | Constructor _ | Destructor _ ->
-          debug (Toplevel x); raise CplusplusConstruct
+          debug (Toplevel (DeclElem x)); raise CplusplusConstruct
       )
 
   | BlockDecl bd ->
@@ -98,11 +167,11 @@ and toplevel env = function
           (xs +> List.map (fun x ->
             (* could skip extern declaration? *)
             match x with
-            | { A.v_type = A.TFunction ft; v_storage = A.DefaultStorage; _ } ->
+            | { A.v_type = A.TFunction ft; v_storage = storage; _ } ->
                 A.Prototype { A.
                   f_name = x.A.v_name;
                   f_type = ft;
-                  f_static = false;
+                  f_static = (storage =*= A.Static);
                   f_body = [];
                 }
             | _ -> A.Global x
@@ -114,21 +183,11 @@ and toplevel env = function
 
   | NameSpaceAnon (_, _)|NameSpaceExtend (_, _)|NameSpace (_, _, _) 
   | ExternCList (_, _, _)|ExternC (_, _, _)|TemplateSpecialization (_, _, _)
-  | TemplateDecl _
-      as x ->
-      debug (Toplevel x); raise CplusplusConstruct
+  | TemplateDecl _ ->    
+      debug (Toplevel (DeclElem x)); raise CplusplusConstruct
+  | DeclTodo ->
+      debug (Toplevel (DeclElem x)); raise Todo
 
-  | IfdefTop _ -> 
-    pr2_once "SKIPPING ifdefs";
-    []
-
-  | (MacroVarTop (_, _)|MacroTop (_, _, _)|DeclTodo) as x ->
-      debug (Toplevel x); raise Todo
-
-  (* not much we can do here, at least the parsing statistics should warn the
-   * user that some code was not processed
-   *)
-  | NotParsedCorrectly _ -> []
 
 (* ---------------------------------------------------------------------- *)
 (* Functions *)
@@ -138,8 +197,8 @@ and func_def env def =
     f_name = name env def.f_name;
     f_type = function_type env def.f_type;
     f_static = 
-      (match fst (fst def.f_storage) with
-      | Sto Static -> true
+      (match def.f_storage with
+      | Sto (Static, _) -> true
       | _ -> false
       );
     f_body = compound env def.f_body;
@@ -190,10 +249,10 @@ and onedecl env d =
   match d with
   { v_namei = ni;
     v_type = ft;
-    v_storage = ((sto, _inline_or_notTODO), _);
+    v_storage = sto;
   } ->
     (match ni, sto with
-    | Some (n, iopt), ((NoSto | Sto _) as sto)  ->
+    | Some (n, iopt), (NoSto | Sto _)  ->
         let init_opt =
           match iopt with
           | None -> None
@@ -208,7 +267,7 @@ and onedecl env d =
           v_storage = storage env sto;
           v_init = init_opt;
         }
-    | Some (n, None), StoTypedef ->
+    | Some (n, None), (StoTypedef _) ->
         let def = (name env n, full_type env ft) in
         env.typedefs_toadd <- def :: env.typedefs_toadd;
         None
@@ -245,11 +304,11 @@ and initialiser env x =
      | _ ->
        A.ArrayInit ((xs +> unbrace +> uncomma) +> List.map (function
          (* less: todo? *)
-         | InitIndexOld (_idxTODO, ini) -> 
-             initialiser env ini
-         | InitDesignators([DesignatorIndex(_idxTodo)], _, ini) -> 
-             initialiser env ini
-         | x -> initialiser env x
+         | InitIndexOld ((_, idx, _), ini) ->
+             Some (expr env idx), initialiser env ini
+         | InitDesignators([DesignatorIndex((_, idx, _))], _, ini) -> 
+             Some (expr env idx), initialiser env ini
+         | x -> None, initialiser env x
        ))
      )
 
@@ -260,8 +319,8 @@ and initialiser env x =
 and storage _env x =
   match x with
   | NoSto -> A.DefaultStorage
-  | StoTypedef -> raise Impossible
-  | Sto y ->
+  | StoTypedef _ -> raise Impossible
+  | Sto (y, _) ->
       (match y with
       | Static -> A.Static
       | Extern -> A.Extern
@@ -286,14 +345,12 @@ and cpp_directive env x =
                  ),
                  v)]
       )
-  | Include (tok, inc_file) ->
+  | Include (tok, inc_kind, path) ->
       let s =
-        (match inc_file with
-        | Local xs -> "\"" ^ Common.join "/" xs ^ "\""
-        | Standard xs -> "<" ^ Common.join "/" xs ^ ">"
-        | Weird _s -> 
-            debug (Cpp x); raise Todo
-        )
+        match inc_kind with
+        | Local -> "\"" ^ path ^ "\""
+        | Standard -> "<" ^ path ^ ">"
+        | Weird -> debug (Cpp x); raise Todo
       in
       [A.Include (s, tok)]
   | Undef _ -> debug (Cpp x); raise Todo
@@ -304,14 +361,16 @@ and cpp_def_val for_debug env x =
   | DefineExpr e -> A.CppExpr (expr env e)
   | DefineStmt st -> A.CppStmt (stmt env st)
   | DefineDoWhileZero (st, _) -> A.CppStmt (stmt env st)
-  (* todo: add dependency to eTODO too *)
-  | DefinePrintWrapper (_, _eTODO, id) -> 
-    A.CppExpr (A.Id (name env id))
-    
+  | DefinePrintWrapper (_, (_, e, _), id) -> 
+    A.CppExpr (
+      A.CondExpr (expr env e,
+                  A.Id (name env id),
+                  A.Id (name env id)))
 
+  | DefineInit init -> A.CppExpr (initialiser env init)
 
   | DefineEmpty (* A.CppEmpty*) 
-  | ( DefineText _|DefineInit _|DefineFunction _
+  | ( DefineText _| DefineFunction _
     | DefineType _
     | DefineTodo
     ) -> 
@@ -380,16 +439,19 @@ and stmt env x =
   | (NestedFunc _ | StmtTodo | MacroStmt ) ->
       debug (Stmt x); raise Todo
 
-and compound env (_, x, _) =
-  List.map (statement_sequencable env) x +> List.flatten
+and compound env (_, xs, _) =
+  statements_sequencable env xs +> List.flatten
+
+and statements_sequencable env xs =
+  ifdef_skipper xs (function IfdefStmt x -> Some x | _ -> None)
+    +> List.map (statement_sequencable env)
+
 
 and statement_sequencable env x =
   match x with
   | StmtElem st -> [stmt env st]
   | CppDirectiveStmt x -> debug (Cpp x); raise Todo
-  | IfdefStmt _ -> 
-    pr2_once "SKIPPING ifdefs";
-    []
+  | IfdefStmt _ -> raise Impossible
 
 and cases env x =
   let (st, _ii) = x in
@@ -458,20 +520,20 @@ and expr env e =
   | RecordAccess (e, n) ->
       A.RecordAccess (expr env e, name env n)
   | RecordPtAccess (e, n) ->
-      A.RecordAccess (A.Unary (expr env e, DeRef), name env n)
+      A.RecordAccess (A.Unary (expr env e, (DeRef,List.hd toks)), name env n)
 
   | Cast ((_, ft, _), e) -> 
       A.Cast (full_type env ft, expr env e)
 
   | ArrayAccess (e1, (_, e2, _)) ->
       A.ArrayAccess (expr env e1, expr env e2)
-  | Binary (e1, op, e2) -> A.Binary (expr env e1, op, expr env e2)
-  | Unary (e, op) -> A.Unary (expr env e, op)
-  | Infix  (e, op) -> A.Infix (expr env e, op)
-  | Postfix (e, op) -> A.Postfix (expr env e, op) 
+  | Binary (e1, op, e2) -> A.Binary (expr env e1, (op, List.hd toks), expr env e2)
+  | Unary (e, op) -> A.Unary (expr env e, (op, List.hd toks))
+  | Infix  (e, op) -> A.Infix (expr env e, (op, List.hd toks))
+  | Postfix (e, op) -> A.Postfix (expr env e, (op, List.hd toks))
 
   | Assignment (e1, op, e2) -> 
-      A.Assign (op, expr env e1, expr env e2)
+      A.Assign ((op, List.hd toks), expr env e1, expr env e2)
   | Sequence (e1, e2) -> 
       A.Sequence (expr env e1, expr env e2)
   | CondExpr (e1, e2opt, e3) ->
@@ -576,7 +638,8 @@ and full_type env x =
       A.TBase (s, List.hd ii)
 
   | FunctionType ft -> A.TFunction (function_type env ft)
-  | Array (_less_eTODO, ft) -> A.TArray (full_type env ft)
+  | Array ((_, eopt, _), ft) -> 
+    A.TArray (Common.map_opt (expr env) eopt, full_type env ft)
   | TypeName (n) -> A.TTypeName (name env n)
 
   | StructUnionName ((kind, _), name) ->
@@ -599,7 +662,7 @@ and full_type env x =
         let def' = { A.
           s_name = name;
           s_kind = struct_kind env kind;
-          s_flds = Common2.map (class_member_sequencable env) xs +> List.flatten;
+          s_flds = class_members_sequencable env xs +> List.flatten;
         }
         in
         env.struct_defs_toadd <- def' :: env.struct_defs_toadd;
@@ -650,14 +713,17 @@ and class_member env x =
       debug (ClassMember x); raise Todo
   | EmptyField _ -> []
 
+
+and class_members_sequencable env xs =
+  ifdef_skipper xs (function IfdefStruct x -> Some x | _ -> None)
+    +> List.map (class_member_sequencable env)
+
 and class_member_sequencable env x =
   match x with
   | ClassElem x -> class_member env x
   | CppDirectiveStruct dir ->
       debug (Cpp dir); raise Todo
-  | IfdefStruct _ -> 
-      pr2_once "SKIPPING ifdefs";
-      []
+  | IfdefStruct _ -> raise Impossible
 
 and fieldkind env x =
   match x with
@@ -665,7 +731,7 @@ and fieldkind env x =
       (match decl with
       { v_namei = ni;
         v_type = ft;
-        v_storage = ((sto, _inline_or_not), _);
+        v_storage = sto;
       } ->
         (match ni, sto with
         | Some (n, None), NoSto ->

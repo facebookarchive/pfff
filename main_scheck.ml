@@ -250,8 +250,7 @@ let entity_finder_of_graph_file graph_file root =
  * to use different lang, and so pass different tokenize and TIdent extractor.
  *)
 module T = Parser_cpp
-let build_cpp_identifier_index xs =
-  let lang = "c++" in
+let build_identifier_index lang xs =
   let _root, files = 
     match xs with
     | [root] -> 
@@ -325,7 +324,7 @@ let main_action xs =
   let files = Find_source.files_of_dir_or_files ~lang ~verbose:!verbose xs in
 
   match lang with
-  | "clang2" | "ocaml" | "java" ->
+  | "clang2" | "ocaml" | "java" | "c" ->
     let graph_file, _root =
       match xs, !graph_code with
       | _,    Some file -> file, Filename.dirname file
@@ -342,8 +341,8 @@ let main_action xs =
     let errs = Graph_code_checker.check g in
     (* todo: make this more lazy? it's pretty slow *)
     let hidentifier =
-      if lang = "clang2"
-      then build_cpp_identifier_index xs +> snd
+      if lang = "clang2" (* not for "c"! graph_code_c is robust enough :) *)
+      then build_identifier_index (if lang = "clang2" then "c++" else lang) xs +> snd
       else Hashtbl.create 0
     in
 
@@ -559,7 +558,7 @@ let entities_of_ast ast =
 
 let test_index xs =
   let xs = List.map Common.realpath xs in
-  let hcnt, h = build_cpp_identifier_index xs in
+  let hcnt, h = build_identifier_index "c++" xs in
 (*
   hcnt +> Common.hash_to_list +> Common.sort_by_val_lowfirst 
   +> Common.take_safe 50 +> List.iter pr2_gen

@@ -196,14 +196,14 @@ let visit_toplevel ~tag_hook _prefs (*db_opt *) (toplevel, toks) =
           let xs = Ast.uncomma xs_comma in
           xs +> List.iter (fun onedecl ->
             onedecl.v_namei +> Common.do_option (fun (name, _ini_opt) ->
-              let storage = fst (unwrap onedecl.v_storage) in
+              let storage = onedecl.v_storage in
               let categ = 
                 match storage with
-                | StoTypedef -> TypeDef Def
+                | StoTypedef _ -> TypeDef Def
                 | _ when Type.is_function_type onedecl.v_type-> 
                     FunctionDecl NoUse
                  (* could be a global too when the decl is at the top *)
-                | Sto Extern -> Global (Def2 fake_no_def2)
+                | Sto (Extern, _) -> Global (Def2 fake_no_def2)
                 | _ when !is_at_toplevel -> Global (Def2 fake_no_def2)
                 | _ -> Local Def
               in
@@ -436,6 +436,19 @@ let visit_toplevel ~tag_hook _prefs (*db_opt *) (toplevel, toks) =
       k def
     );
     V.kcpp = (fun (k,_) def ->
+      (match def with
+      | Ast.Define (_, _id, DefineFunc params, _body) ->
+            params +> Ast.unparen +> Ast.uncomma +> List.iter (fun (name) ->
+              (match name with
+              | (_s, [ii]) -> tag ii (Parameter Def)
+              | _ -> ()
+              )
+            )
+        | _ -> ()
+      );
+      k def
+    );
+    V.kdeclaration = (fun (k,_) def ->
       k def
     );
     V.ktoplevel = (fun (k,_) def ->
@@ -513,8 +526,9 @@ let visit_toplevel ~tag_hook _prefs (*db_opt *) (toplevel, toks) =
     (* needed only when have FP in the typedef inference *)
     | T.TIdent (
         ("string" | "i32" | "i64" | "i8" | "i16" | "byte"
-          | "list" | "map" | "set" 
+          (* | "list" | "map" | "set"  
           | "binary"
+          *)
         ), ii) ->
         tag ii TypeInt
 

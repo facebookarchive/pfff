@@ -4,7 +4,8 @@ TOP=../..
 ##############################################################################
 TARGET=lib
 
-SRC= graph_code_c.ml \
+SRC= datalog_c.ml \
+     graph_code_c.ml \
      test_analyze_c.ml
 
 -include $(TOP)/Makefile.config
@@ -22,6 +23,7 @@ INCLUDEDIRS= $(TOP)/commons \
    $(TOP)/graph_code \
    $(TOP)/globals \
    $(TOP)/lang_cpp/parsing \
+   $(TOP)/lang_c/parsing \
    ../parsing \
 
 ##############################################################################

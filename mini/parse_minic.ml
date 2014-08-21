@@ -102,7 +102,7 @@ and type_ x =
   match x with
   | TBase name -> M.TBase name
   | TPointer t -> M.TPointer (type_ t)
-  | TArray t -> M.TArray (type_ t)
+  | TArray (_, t) -> M.TArray (type_ t)
   | TFunction (t, params) -> M.TFunction (function_type (t, params))
   | TStructName (kind, name) ->
     (match kind with
@@ -152,7 +152,8 @@ and stmt st =
     let name = gensym "local_void", snd fname in
     let typ = M.TBase ("void", snd fname) in
     (M.Local { M.v_name = name; v_type = typ })::
-    stmt (ExprSt (Assign (SimpleAssign, Id name, (Call (Id fname, es)))))
+    stmt (ExprSt (Assign ((SimpleAssign, snd name), 
+                          Id name, (Call (Id fname, es)))))
 
   | ExprSt e -> [M.Instr (expr_for_instr e)]
   | Block xs -> stmts xs
@@ -184,30 +185,32 @@ and var_decl v =
       (match v.v_init with
       (* this is ok here *)
       | Some e -> [M.Instr (expr_for_instr 
-                              (Assign (SimpleAssign, Id v.v_name, e)))]
+                              (Assign ((SimpleAssign, snd v.v_name), 
+                                       Id v.v_name, e)))]
       | None -> []
       )
 
 and expr_for_instr e = 
   match e with
-  | Assign(SimpleAssign,
-           RecordAccess(Unary(Id name, DeRef), fld), Id name2) ->
+  | Assign((SimpleAssign, _),
+           RecordAccess(Unary(Id name, (DeRef, _)), fld), Id name2) ->
       M.AssignField (name, fld, name2)
-  | Assign(SimpleAssign, ArrayAccess(Id name, Id idx), Id name2) ->
+  | Assign((SimpleAssign, _), ArrayAccess(Id name, Id idx), Id name2) ->
       M.AssignArray (name, idx, name2)
 
-  | Assign(SimpleAssign, Id name, Unary(Id name2, GetRef)) ->
+  | Assign((SimpleAssign, _), Id name, Unary(Id name2, (GetRef, _))) ->
       M.AssignAddress (name, name2)
-  | Assign(SimpleAssign, Id name,
-           Unary(RecordAccess(Unary(Id name2, DeRef), fld), GetRef)) ->
+  | Assign((SimpleAssign, _), Id name,
+           Unary(RecordAccess(Unary(Id name2, (DeRef, _)), fld), (GetRef, _))) ->
       M.AssignFieldAddress (name, name2, fld)
 
-  | Assign(SimpleAssign, Id name, Unary(ArrayAccess(Id name2, Id idx),GetRef))->
+  | Assign((SimpleAssign, _), Id name, 
+           Unary(ArrayAccess(Id name2, Id idx), (GetRef, _)))->
       M.AssignIndexAddress (name, name2, idx)
 
-  | Assign(SimpleAssign, Unary(Id name, DeRef), Id name2) ->
+  | Assign((SimpleAssign, _), Unary(Id name, (DeRef, _)), Id name2) ->
      M.AssignDeref (name, name2)
-  | Assign (SimpleAssign, Id name, e) -> 
+  | Assign ((SimpleAssign,_), Id name, e) -> 
       M.Assign (name, expr e)
   | _ -> error_any "expected a simple instr, not a C expr" (Expr e)
 
@@ -227,15 +230,15 @@ and expr e =
     (match xs with
     | [SizeOf(Right(t))] -> 
         M.Alloc (type_ t)
-    | [Binary(Id(var), Arith(Mul), SizeOf(Right(t)))] ->
+    | [Binary(Id(var), (Arith(Mul), _), SizeOf(Right(t)))] ->
         M.AllocArray(var, type_ t)
     | _ -> error_any "malloc form not supported" (Expr e)
     )
-  | RecordAccess(Unary(Id name, DeRef), name2) ->
+  | RecordAccess(Unary(Id name, (DeRef, _)), name2) ->
       M.ObjField (name, name2)
   | ArrayAccess(Id(name1), Id(name2)) ->
       M.ArrayAccess (name1, name2)
-  | Unary(Id(name), DeRef) ->
+  | Unary(Id(name), (DeRef, _)) ->
       M.DeRef name
 
   | Call (Id ("builtin", tok), xs) -> 
@@ -244,7 +247,7 @@ and expr e =
 
   | Call (Id name, xs) -> 
       M.StaticCall (name, xs +> List.map expr_for_var)
-  | Call(Unary(Id(name), DeRef), xs) ->
+  | Call(Unary(Id(name), (DeRef, _)), xs) ->
       M.DynamicCall (name, xs +> List.map expr_for_var)
 
   (* should be handled in caller in expr_for_instr *)

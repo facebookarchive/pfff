@@ -695,49 +695,52 @@ let rec find_macro_lineparen xs =
 (* #Define tobrace init *)
 (*****************************************************************************)
 
+let is_init tok2 tok3 =
+  match tok2.t, tok3.t with
+  | TInt _, TComma _ -> true
+  | TString _, TComma _ -> true
+  | TIdent _, TComma _ -> true
+  | _ -> false
+
 let find_define_init_brace_paren xs = 
  let rec aux xs = 
   match xs with
   | [] -> ()
 
   (* mainly for firefox *)
-  | (PToken {t=TDefine _})
+  |   (PToken {t=TDefine _})
     ::(PToken {t=TIdent_Define (_s,_)})
     ::(PToken ({t=TOBrace i1} as tokbrace))
     ::(PToken tok2)
     ::(PToken tok3)
     ::xs -> 
-      let is_init =
-        match tok2.t, tok3.t with
-        | TInt _, TComma _ -> true
-        | TString _, TComma _ -> true
-        | TIdent _, TComma _ -> true
-        | _ -> false
-            
-      in
-      if is_init
+      if is_init tok2 tok3
       then change_tok tokbrace (TOBrace_DefineInit i1);
       aux xs
 
   (* mainly for linux, especially in sound/ *)
-  | (PToken {t=TDefine _})
-    ::(PToken {t=TIdent_Define (_s,_)})
-    ::(Parenthised(_xxx, _))
+  |   (PToken {t=TDefine _})
+    ::(PToken {t=TIdent_Define (s,_); col=c})
+    ::(Parenthised(_, {col=c2; _}::_))
     ::(PToken ({t=TOBrace i1} as tokbrace))
     ::(PToken tok2)
     ::(PToken tok3)
-    ::xs -> 
-      let is_init =
-        match tok2.t, tok3.t with
-        | TInt _, TComma _ -> true
-        | TDot _, TIdent _ -> true
-        | TIdent _, TComma _ -> true
-        | _ -> false
-            
-      in
-      if is_init
-      then tokbrace.t <- TOBrace_DefineInit i1;
+    ::xs when c2 = c + String.length s -> 
+      if is_init tok2 tok3
+      then change_tok tokbrace (TOBrace_DefineInit i1);
 
+      aux xs
+
+  (* ugly: for plan9, too general? *)
+  |   (PToken {t=TDefine _})
+    ::(PToken {t=TIdent_Define (_s,_)})
+    ::(Parenthised(_xxx, _))
+    ::(PToken ({t=TOBrace i1} as tokbrace))
+    (* can be more complex expression than just an int, like (b)&... *)
+    ::(Parenthised(_, _)) 
+    ::(PToken {t=(TAnd _|TOr _);_})
+    ::xs -> 
+      change_tok tokbrace (TOBrace_DefineInit i1);
       aux xs
 
   (* recurse *)

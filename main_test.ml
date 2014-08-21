@@ -166,7 +166,6 @@ let pfff_extra_actions () = [
   Common.mk_action_3_arg (fun dir_orig dir_overlay output ->
     Overlay_code.gen_overlay ~dir_orig ~dir_overlay ~output;
   );
-
   "-adapt_layers_overlay", " <overlay> <dir_layers> <dir_ayers_overlay>",
   Common.mk_action_3_arg 
     (fun overlay dir_layers_orig dir_layers_overlay ->
@@ -228,16 +227,17 @@ let pfff_extra_actions () = [
 
 let all_actions () = 
   pfff_extra_actions() @
- Test_parsing_php.actions()@
  Test_analyze_php.actions()@
  Test_analyze_js.actions()@
  Test_analyze_ml.actions()@
  Test_analyze_cpp.actions()@
  Test_analyze_clang.actions()@
- Test_program_lang.actions()@
+ Test_analyze_c.actions()@
 #if FEATURE_CMT
  Test_parsing_cmt.actions()@
 #endif
+ Test_program_lang.actions()@
+ Test_mini.actions()@
  Builtins_php.actions()@
   []
 

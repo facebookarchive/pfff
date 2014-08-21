@@ -63,7 +63,10 @@ let rec vof_type_ =
   function
   | TBase v1 -> let v1 = vof_name v1 in Ocaml.VSum (("TBase", [ v1 ]))
   | TPointer v1 -> let v1 = vof_type_ v1 in Ocaml.VSum (("TPointer", [ v1 ]))
-  | TArray v1 -> let v1 = vof_type_ v1 in Ocaml.VSum (("TArray", [ v1 ]))
+  | TArray ((v1, v2)) ->
+      let v1 = Ocaml.vof_option vof_const_expr v1
+      and v2 = vof_type_ v2
+      in Ocaml.VSum (("TArray", [ v1; v2 ]))
   | TFunction v1 ->
       let v1 = vof_function_type v1 in Ocaml.VSum (("TFunction", [ v1 ]))
   | TStructName ((v1, v2)) ->
@@ -89,8 +92,9 @@ and vof_struct_kind =
   function
   | Struct -> Ocaml.VSum (("Struct", []))
   | Union -> Ocaml.VSum (("Union", []))
+and vof_const_expr v = vof_expr v
   
-let rec vof_expr =
+and vof_expr =
   function
   | Int v1 ->
       let v1 = vof_wrap Ocaml.vof_string v1 in Ocaml.VSum (("Int", [ v1 ]))
@@ -107,7 +111,7 @@ let rec vof_expr =
       and v2 = Ocaml.vof_list vof_expr v2
       in Ocaml.VSum (("Call", [ v1; v2 ]))
   | Assign ((v1, v2, v3)) ->
-      let v1 = vof_assignOp v1
+      let v1 = vof_wrap vof_assignOp v1
       and v2 = vof_expr v2
       and v3 = vof_expr v3
       in Ocaml.VSum (("Assign", [ v1; v2; v3 ]))
@@ -125,19 +129,19 @@ let rec vof_expr =
       in Ocaml.VSum (("Cast", [ v1; v2 ]))
   | Postfix ((v1, v2)) ->
       let v1 = vof_expr v1
-      and v2 = vof_fixOp v2
+      and v2 = vof_wrap vof_fixOp v2
       in Ocaml.VSum (("Postfix", [ v1; v2 ]))
   | Infix ((v1, v2)) ->
       let v1 = vof_expr v1
-      and v2 = vof_fixOp v2
+      and v2 = vof_wrap vof_fixOp v2
       in Ocaml.VSum (("Infix", [ v1; v2 ]))
   | Unary ((v1, v2)) ->
       let v1 = vof_expr v1
-      and v2 = vof_unaryOp v2
+      and v2 = vof_wrap vof_unaryOp v2
       in Ocaml.VSum (("Unary", [ v1; v2 ]))
   | Binary ((v1, v2, v3)) ->
       let v1 = vof_expr v1
-      and v2 = vof_binaryOp v2
+      and v2 = vof_wrap vof_binaryOp v2
       and v3 = vof_expr v3
       in Ocaml.VSum (("Binary", [ v1; v2; v3 ]))
   | CondExpr ((v1, v2, v3)) ->
@@ -153,7 +157,13 @@ let rec vof_expr =
       let v1 = Ocaml.vof_either vof_expr vof_type_ v1
       in Ocaml.VSum (("SizeOf", [ v1 ]))
   | ArrayInit v1 ->
-      let v1 = Ocaml.vof_list vof_expr v1
+      let v1 =
+        Ocaml.vof_list
+          (fun (v1, v2) ->
+             let v1 = Ocaml.vof_option vof_expr v1
+             and v2 = vof_expr v2
+             in Ocaml.VTuple [ v1; v2 ])
+          v1
       in Ocaml.VSum (("ArrayInit", [ v1 ]))
   | RecordInit v1 ->
       let v1 =

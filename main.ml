@@ -98,6 +98,7 @@ let all_actions () =
   Test_analyze_php.actions () ++
   Test_analyze_ml.actions () ++
   Test_analyze_clang.actions () ++
+  Test_analyze_c.actions() ++
 *)
   []
 

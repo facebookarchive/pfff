@@ -103,7 +103,7 @@ let build_prolog_db lang root xs =
 
        Filename.concat root prolog_compiled_db
 
-  | "cmt" | "bytecode" | "clang2" ->
+  | "cmt" | "bytecode" | "clang2" | "c" ->
       
       let g = 
         match lang with
@@ -131,6 +131,10 @@ let build_prolog_db lang root xs =
           Graph_code_clang.hook_use_edge :=
             Graph_code_prolog.hook_use_edge_for_prolog;
           Graph_code_clang.build ~verbose:!verbose root files
+        | "c" ->
+          Graph_code_c.hook_use_edge :=
+            Graph_code_prolog.hook_use_edge_for_prolog;
+          Graph_code_c.build ~verbose:!verbose root files
         | _ -> raise Impossible
       in
       let facts = Graph_code_prolog.build g in

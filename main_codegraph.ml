@@ -326,6 +326,8 @@ let build_graph_code lang xs =
       empty
 #endif
 
+    | "lisp" -> Graph_code_lisp.build ~verbose:!verbose root files, empty
+
     | "dot" -> 
       Graph_code.graph_of_dotfile (Filename.concat root "graph.dot"), empty
 

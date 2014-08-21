@@ -14,6 +14,8 @@
 
 open Common 
 
+open Parser_lisp
+open Ast_lisp
 module Ast = Ast_lisp
 module Flag = Flag_parsing_lisp
 module PI = Parse_info
@@ -36,9 +38,11 @@ module TH = Parser_lisp
 (* Types *)
 (*****************************************************************************)
 
-type program2 = toplevel2 list
-     (* the token list contains also the comment-tokens *)
- and toplevel2 = Ast_lisp.toplevel * Parser_lisp.token list
+(* the token list contains also the comment-tokens *)
+type program_and_tokens = 
+  Ast_lisp.program option * Parser_lisp.token list
+
+exception Parse_error of string * Parse_info.info
 
 (*****************************************************************************)
 (* Helpers *)
@@ -95,6 +99,73 @@ let tokens a =
   Common.profile_code "Parse_lisp.tokens" (fun () -> tokens2 a)
 
 (*****************************************************************************)
+(* Parser *)
+(*****************************************************************************)
+
+(* simple recursive descent parser *)
+let rec sexps toks =
+  match toks with
+  | [] -> [], []
+  | [EOF _] -> [], []
+  | (TCParen _ | TCBracket _)::_ -> [], toks
+  | xs ->
+    let s, rest = sexp xs in
+    let xs, rest = sexps rest in
+    s::xs, rest
+
+and sexp toks =
+  match toks with
+  | [] -> raise Todo
+  | x::xs ->
+    (match x with
+    | TComment _ | TCommentSpace _ | TCommentNewline _ -> raise Impossible
+
+    | TNumber x -> Atom (Number x), xs
+    | TString x -> Atom (String x), xs
+    | TIdent x -> Atom (Id x), xs
+
+    | TOParen t1 -> 
+      let (xs, rest) = sexps xs in
+      (match rest with
+      | TCParen t2::rest ->
+          Sexp ((t1, xs, t2)), rest
+      | _ -> raise (Parse_error ("unclosed parenthesis", t1))
+      )
+
+    | TOBracket t1 -> 
+      let (xs, rest) = sexps xs in
+      (match rest with
+      | TCBracket t2::rest ->
+          Sexp ((t1, xs, t2)), rest
+      | _ -> raise (Parse_error ("unclosed bracket", t1))
+      )
+
+    | TCParen t | TCBracket t ->
+      raise (Parse_error ("closing bracket/paren without opening one", t))
+
+    | TQuote t ->
+      let (s, rest) = sexp xs in
+      Special ((Quote, t), s), rest
+    | TBackQuote t ->
+      let (s, rest) = sexp xs in
+      Special ((BackQuote, t), s), rest
+    | TAt t ->
+      let (s, rest) = sexp xs in
+      Special ((At, t), s), rest
+    | TComma t ->
+      let (s, rest) = sexp xs in
+      Special ((Comma, t), s), rest
+
+    (* hmmm probably unicode *)
+    | TUnknown t ->
+      Atom (String (PI.str_of_info t, t)), xs
+
+    | EOF t ->
+      raise (Parse_error ("unexpected eof", t))
+    )
+      
+
+(*****************************************************************************)
 (* Main entry point *)
 (*****************************************************************************)
 
@@ -103,8 +174,34 @@ let parse2 filename =
   let stat = Parse_info.default_stat filename in
   let toks_orig = tokens filename in
 
-  (* TODO *)
-  [(), toks_orig], stat
+  let toks = toks_orig +> Common.exclude TH.is_comment in
+  let nblines = Common2.nblines filename in
+
+  let ast = 
+    try
+      (match sexps toks with
+      | xs, [] ->
+        stat.PI.correct <- nblines;
+        Some xs
+      | _, x::_xs ->
+        raise (Parse_error ("trailing constructs", (TH.info_of_tok x)))
+      )
+    with
+    | Parse_error (s, info) ->
+      pr2 (spf "Parse error: %s, {%s} at %s" 
+             s 
+             (PI.str_of_info info)
+             (PI.string_of_info info));
+      stat.PI.bad <- nblines;
+      None
+    | exn -> 
+      raise exn
+  in
+  (ast, toks_orig), stat
 
 let parse a = 
   Common.profile_code "Parse_lisp.parse" (fun () -> parse2 a)
+
+let parse_program file =
+  let (ast, _toks), _stat =  parse file in
+  Common2.some ast

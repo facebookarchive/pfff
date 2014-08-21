@@ -42,6 +42,7 @@ type visitor_in = {
   kcpp: cpp_directive vin;
   kblock_decl: block_declaration vin;
 
+  kdeclaration: declaration vin;
   ktoplevel: toplevel vin;
   
   kinfo: tok vin;
@@ -62,6 +63,7 @@ let default_visitor =
     kfunc_def = (fun (k,_) x -> k x);
     kclass_member = (fun (k,_) x -> k x);
     kcpp = (fun (k,_) x -> k x);
+    kdeclaration = (fun (k,_) x -> k x);
     ktoplevel = (fun (k,_) x -> k x);
     kinit = (fun (k,_) x -> k x);
   }
@@ -523,13 +525,13 @@ and
       (fun (v1, v2) -> let v1 = v_name v1 and v2 = v_option v_init v2 in ())
       v_v_namei in
   let arg = v_fullType v_v_type in
-  let arg = v_wrap v_storage v_v_storage in ()
-and v_storage (v1, v2) = let v1 = v_storagebis v1 and v2 = v_bool v2 in ()
+  let arg = v_storage v_v_storage in ()
+and v_storage v = v_storagebis v
 and v_storagebis =
   function
   | NoSto -> ()
-  | StoTypedef -> ()
-  | Sto v1 -> let v1 = v_storageClass v1 in ()
+  | StoTypedef v1 -> v_tok v1
+  | Sto v1 -> let v1 = v_wrap2 v_storageClass v1 in ()
 and v_storageClass =
   function | Auto -> () | Static -> () | Register -> () | Extern -> ()
 and v_func_specifier = function | Inline -> () | Virtual -> ()
@@ -591,7 +593,7 @@ and
                     } ->
   let arg = v_name v_f_name in
   let arg = v_functionType v_f_type in
-  let arg = v_wrap v_storage v_f_storage in
+  let arg = v_storage v_f_storage in
   let arg = v_compound v_f_body in ()
   in
   vin.kfunc_def (k, all_functions) x
@@ -748,7 +750,11 @@ and v_cpp_directive x =
       and v3 = v_define_kind v3
       and v4 = v_define_val v4
       in ()
-  | Include ((v1, v2)) -> let v1 = v_tok v1 and v2 = v_inc_file v2 in ()
+  | Include ((v1, v2, v3)) -> 
+    let v1 = v_tok v1 
+    and v2 = v_inc_kind v2 
+    and v3 = v_string v3
+    in ()
   | Undef v1 -> let v1 = v_wrap2 v_string v1 in ()
   | PragmaAndCo v1 -> let v1 = v_tok v1 in ()
   in
@@ -774,14 +780,19 @@ and v_define_val =
   | DefineText v1 -> let v1 = v_wrap v_string v1 in ()
   | DefineEmpty -> ()
   | DefineTodo -> ()
-and v_inc_file =
+and v_inc_kind =
   function
-  | Local v1 -> let v1 = v_list v_inc_elem v1 in ()
-  | Standard v1 -> let v1 = v_list v_inc_elem v1 in ()
-  | Weird v1 -> let v1 = v_string v1 in ()
+  | Local -> ()
+  | Standard -> ()
+  | Weird -> ()
 and v_inc_elem v = v_string v
-and v_ifdef_directive =
-  function | IfdefDirective v1 -> let v1 = v_list v_tok v1 in ()
+and v_ifdef_directive v = v_wrap2 v_ifdefkind v
+and v_ifdefkind =
+  function
+  | Ifdef -> ()
+  | IfdefElse -> ()
+  | IfdefElseif -> ()
+  | IfdefEndif -> ()
 and v_declaration x =
   let k = function
   | BlockDecl v1 -> let v1 = v_block_declaration v1 in ()
@@ -816,8 +827,17 @@ and v_declaration x =
       in ()
   | EmptyDef v1 -> let v1 = v_tok v1 in ()
   | DeclTodo -> ()
-  | CppDirectiveTop v1 -> let v1 = v_cpp_directive v1 in ()
-  | IfdefTop v1 -> let v1 = v_ifdef_directive v1 in ()
+  in
+  vin.kdeclaration (k, all_functions) x
+
+and v_template_parameter v = v_parameter v
+and v_template_parameters v = v_angle (v_comma_list v_template_parameter) v
+and v_declaration_sequencable x =
+  let k = function
+  | NotParsedCorrectly v1 -> let v1 = v_list v_tok v1 in ()
+  | DeclElem v1 -> let v1 = v_declaration v1 in ()
+  | CppDirectiveDecl v1 -> let v1 = v_cpp_directive v1 in ()
+  | IfdefDecl v1 -> let v1 = v_ifdef_directive v1 in ()
   | MacroTop ((v1, v2, v3)) ->
       let v1 = v_wrap2 v_string v1
       and v2 = v_paren (v_comma_list v_argument) v2
@@ -825,18 +845,9 @@ and v_declaration x =
       in ()
   | MacroVarTop ((v1, v2)) ->
       let v1 = v_wrap2 v_string v1 and v2 = v_tok v2 in ()
-  | NotParsedCorrectly v1 -> let v1 = v_list v_tok v1 in ()
   in
   vin.ktoplevel (k, all_functions) x
-
-and v_template_parameter v = v_parameter v
-and v_template_parameters v = v_angle (v_comma_list v_template_parameter) v
-and v_declaration_sequencable =
-  function
-  | DeclElem v1 -> let v1 = v_declaration v1 in ()
-  | CppDirectiveDecl v1 -> let v1 = v_cpp_directive v1 in ()
-  | IfdefDecl v1 -> let v1 = v_ifdef_directive v1 in ()
-and v_toplevel v = v_declaration v
+and v_toplevel v = v_declaration_sequencable v
 and v_program v = v_list v_toplevel v
 and v_any =
   function

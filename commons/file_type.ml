@@ -110,8 +110,6 @@ let file_type_of_file2 file =
   | "h" -> PL (C e)
   (* todo? have a PL of xxx_kind * pl_kind ?  *)
   | "y" | "l" -> PL (C e)
-  (* plan9 *)
-  | "out.h" -> PL (C "h")
 
   | "hpp" -> PL (Cplusplus e) | "hxx" -> PL (Cplusplus e) 
   | "hh" -> PL (Cplusplus e)
@@ -269,8 +267,7 @@ let file_type_of_file2 file =
   | _ when b = ".depend" -> Obj "depend"
   | _ when b = ".emacs" -> PL (Lisp (Elisp))
 
-  | _ when Common2.filesize file > 300_000 ->
-      Obj e
+  | _ when Common2.filesize file > 300_000 -> Obj e
   | _ -> Other e
 
 let file_type_of_file a = 

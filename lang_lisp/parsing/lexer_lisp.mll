@@ -13,11 +13,9 @@
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the file
  * license.txt for more details.
  *)
-
 open Common 
 
 module Flag = Flag_parsing_lisp
-
 open Parser_lisp
 
 (*****************************************************************************)
@@ -47,7 +45,9 @@ let digit = ['0'-'9']
 
 let symbol =
   ['-' '+' '=' '~'  '.'  ',' '/' ':' '<' '>' '*' ';' '#' 
-     '_'  '?' '^' '|' '!' '&' ] 
+   '_'  '?' '^' '|' '!' '&' 
+   '%' '@' '{' '}' '$'
+  ] 
 (*
 '\\'
 '@'
@@ -66,6 +66,7 @@ rule token = parse
     }
   | [' ''\t']+ { TCommentSpace (tokinfo lexbuf) }
   | "\n" { TCommentNewline (tokinfo lexbuf) }
+  | "" { TCommentNewline (tokinfo lexbuf) }
 
   (* ----------------------------------------------------------------------- *)
   (* Symbols *)
@@ -81,7 +82,7 @@ rule token = parse
    *)
   | '`'  { TBackQuote (tokinfo lexbuf) }
   | ','  { TComma (tokinfo lexbuf) }
-  | '@'  { TAt (tokinfo lexbuf) }
+  | ",@"  { TAt (tokinfo lexbuf) }
 
   (* ----------------------------------------------------------------------- *)
   (* Strings *)
@@ -98,16 +99,28 @@ rule token = parse
     }
 
    (* maybe elisp specific *)
+  | '\\' _ {
+      TString (tok lexbuf, tokinfo lexbuf)
+  }
   | "?\\" _ {
       TString (tok lexbuf, tokinfo lexbuf)
-    }
+  }
+  | '?' _ {
+      TString (tok lexbuf, tokinfo lexbuf)
+  }
 
+  (* unicode ... *)
+  | "?━" {
+      TString (tok lexbuf, tokinfo lexbuf)
+  }
   (* ----------------------------------------------------------------------- *)
   (* Keywords and ident *)
   (* ----------------------------------------------------------------------- *)
   | (letter | symbol) (letter | digit | symbol)* {
       TIdent (tok lexbuf, tokinfo lexbuf)
     }
+
+
   (* ----------------------------------------------------------------------- *)
   (* Constant *)
   (* ----------------------------------------------------------------------- *)

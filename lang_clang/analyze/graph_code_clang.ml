@@ -714,7 +714,7 @@ and expr env (enum, _l, xs) =
                         ::T (TString s)::_typ4::[]))::[]))
       ::args ->
       if env.phase = Uses
-      then add_use_edge env (str env s, E.Function);
+      then add_use_edge { env with ctx = P.NoCtx } (str env s, E.Function);
       sexps { env with ctx = (P.CallCtx ((str env s, E.Function))) } args
 
   (* todo: unexpected form of call? function pointer call? add to stats *)

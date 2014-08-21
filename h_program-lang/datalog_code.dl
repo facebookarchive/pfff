@@ -7,31 +7,34 @@
 % Its outputs are the following relations:
 %
 %   point_to(V, M)           - variable 'V' may point to abstract memory loc 'M'
-%   field_point_to(FIELD, M) - qualified field may point to abstract memory loc 'M'
-%   call_edge(INVOKE, TARGET) - invocation site 'invoke' calls function 'target'
+%   field_point_to(FIELD, M) - qualified field may point to loc 'M'
+%   call_edge(INVOKE, TARGET) - invocation site 'INVOKE' calls function 'TARGET'
 
 % Based upon: Java context-insensitive inclusion-based pointer analysis
 % by John Whaley
 
 % Related work:
-% - Andersen, Steengaard, Manuvir Das, etc
-% - DOOP, bddbddb, chord
-% - http://pag-www.gtisc.gatech.edu/chord/user_guide/datalog.html
+% - Andersen, Steengaard, Manuvir Das, Lin, etc
+% - bddbddb, DOOP, http://pag-www.gtisc.gatech.edu/chord/user_guide/datalog.html
 % - http://blog.jetbrains.com/idea/2009/08/analyzing-dataflow-with-intellij-idea/
 % - Frama C, CodeSonar, Coverity, ...
+% 
+% note: I always wanted (but was never able to write ...) an interprocedural
+% (dataflow) analysis. With Datalog I did it in one day! It's so easy.
 % 
 
 %*******************************************************************************
 % Relations
 %*******************************************************************************
 
-% Abstract memory locations (also called heap objects), mostly qualified symbols
-% (e.g 'main__foo', 'ret_main', '_cst_line2_'):
+% Abstract memory locations (also called heap objects), are mostly qualified
+% symbols (e.g 'main__foo', 'ret_main', '_cst_line2_'):
 % - each globals, functions, constants
 % - each malloc (context insensitively). will do sensitively later for 
-%   malloc wrappers or maybe each malloc with certain type. (e.g. any Proc).
+%   malloc wrappers or maybe each malloc with certain type. (e.g. any Proc)
+%   so have some form of type sensitivty at least
 % - each locals (context insensitively first), when their addresses are taken
-% - each fields (field-based, see sep08.pdf)
+% - each fields (field-based, see sep08.pdf lecture, so *.f, not x.*)
 % - array element (array insensitive, aggregation)
 
 % Invocations: line in the file (e.g. '_in_main_line_14_')
@@ -51,6 +54,12 @@
 %assign_array_elt(dest:V, source:V) input
 %assign_array_element_address(dest:V, source:V) input
 %array_point_to(h:H, h2:H) input/output
+
+%assign_load_field
+%assign_field_address
+%assign_store_field
+%field_point_to?? hmm maybe once we differentiate objects heap
+% and not do just *.f
 
 %*******************************************************************************
 % Rules
@@ -152,11 +161,11 @@ call_edge(I, F) :-
         point_to(V, F).
 
 %note: heartbleed detection strongly relies on accurate calls though
-%  function pointers tracking
+% function pointers tracking
 
 %*******************************************************************************
 % Postlude
 %*******************************************************************************
   
-%point_to(A,B)?
-call_edge(A,B)?
+point_to(A,B)?
+%call_edge(A,B)?

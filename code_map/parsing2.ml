@@ -55,7 +55,7 @@ type ast =
   | Csharp of Parse_csharp.program_and_tokens
   | Java of Parse_java.program_and_tokens
 
-  | Lisp of Parse_lisp.program2
+  | Lisp of Parse_lisp.program_and_tokens
   | Erlang of Parse_erlang.program2
 
   | Python of Parse_python.program2
@@ -312,7 +312,9 @@ let tokens_with_categ_of_file file hentities =
       tokens_with_categ_of_file_helper 
         { parse = (parse_cache 
          (fun file -> Lisp (Parse_lisp.parse file +> fst))
-         (function Lisp x -> x | _ -> raise Impossible));
+         (function
+         |  Lisp (ast, toks) -> [Common2.some ast, toks]
+         | _ -> raise Impossible));
         highlight_visit = Highlight_lisp.visit_toplevel;
         info_of_tok = Parser_lisp.info_of_tok;
         }

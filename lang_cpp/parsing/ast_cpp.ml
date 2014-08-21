@@ -241,7 +241,8 @@ and expression = expressionbis wrap
   | Assignment     of expression * assignOp * expression        
 
   | Postfix        of expression * fixOp                        
-  | Infix          of expression * fixOp                        
+  | Infix          of expression * fixOp
+  (* contains GetRef and Deref!! todo: lift up? *)
   | Unary          of expression * unaryOp                      
   | Binary         of expression * binaryOp * expression        
 
@@ -480,14 +481,12 @@ and block_declaration =
     *)
     v_namei: (name * init option) option;
     v_type: fullType;
-    v_storage: storage wrap;
+    v_storage: storage;
     (* v_attr: attribute list; *) (* gccext: *)
   }
-  (* todo: simplify, use record instead of pair here? inline in onedecl? *)
-   and storage       = storagebis * bool (* gccext: inline or not: *)
-    and storagebis    = NoSto | StoTypedef | Sto of storageClass
-     and storageClass  = Auto  | Static | Register | Extern (* Mutable? *)
-   (* Friend ???? *)
+    and storage = NoSto | StoTypedef of tok | Sto of storageClass wrap2
+      and storageClass  = Auto | Static | Register | Extern
+   (* Friend ???? Mutable? *)
 
    (*c++ext: TODO *)
    (* I am not sure what it means to declare a prototype inline, but gcc
@@ -527,7 +526,8 @@ and block_declaration =
 and func_definition = {
    f_name: name;
    f_type: functionType;
-   f_storage: storage wrap;
+   f_storage: storage;
+   (* todo: gccext: inline or not:, f_inline: tok option *)
    f_body: compound;
    (*f_attr: attribute list;*) (* gccext: *)
   }
@@ -643,7 +643,7 @@ and class_definition = {
 (* ------------------------------------------------------------------------- *)
 and cpp_directive =
   | Define of tok (* #define*) * simple_ident * define_kind * define_val
-  | Include of tok (* #include s *) * inc_file
+  | Include of tok (* #include s *) * inc_kind * string (* path *)
   | Undef of simple_ident (* #undef xxx *)
   | PragmaAndCo of tok
 
@@ -665,35 +665,28 @@ and cpp_directive =
 
      | DefineTodo
 
-  and inc_file = 
-    | Local    of inc_elem list
-    | Standard of inc_elem list
+  and inc_kind = 
+    | Local (* "" *)
+    | Standard (* <> *)
+    | Weird (* ex: #include SYSTEM_H *)
 
-    | Weird of string (* ex: #include SYSTEM_H *)
-   and inc_elem = string
-
-  (* to specialize if someone need more info *)
-  and ifdef_directive = 
-    | IfdefDirective of tok list
-  (* or and 'a ifdefed = 'a list wrap (* ifdef elsif else endif *) *)
-
-(* TODO: like in parsing_c/
- * (* todo? to specialize if someone need more info *)
- * and ifdef_directive = (* or and 'a ifdefed = 'a list wrap *)
- *   | IfdefDirective of (ifdefkind * matching_tag) wrap
- *   and ifdefkind = 
- *     | Ifdef (* todo? of string ? of formula_cpp ? *)
- *     | IfdefElseif (* same *)
- *     | IfdefElse (* same *)
- *     | IfdefEndif 
- *   (* set in Parsing_hacks.set_ifdef_parenthize_info. It internally use 
- *    * a global so it means if you parse the same file twice you may get
- *    * different id. I try now to avoid this pb by resetting it each 
- *    * time I parse a file.
- *    *)
- *   and matching_tag = 
- *     IfdefTag of (int (* tag *) * int (* total with this tag *))
- *)
+  (* less: 'a ifdefed = 'a list wrap (* ifdef elsif else endif *) *)
+  and ifdef_directive = ifdefkind wrap2
+     and ifdefkind = 
+       | Ifdef (* todo? of string? *)
+       (* less: IfIf of formula_cpp ? *)
+       | IfdefElse
+       | IfdefElseif
+       | IfdefEndif 
+  (* less:
+   * set in Parsing_hacks.set_ifdef_parenthize_info. It internally use 
+   * a global so it means if you parse the same file twice you may get
+   * different id. I try now to avoid this pb by resetting it each 
+   * time I parse a file.
+   *
+   *   and matching_tag = 
+   *     IfdefTag of (int (* tag *) * int (* total with this tag *))
+   *)
 
 (* ------------------------------------------------------------------------- *)
 (* The toplevel elements *)
@@ -724,15 +717,6 @@ and declaration =
   (* gccext: allow redundant ';' *)
   | EmptyDef of tok
 
-  (* cppext: *)
-  | CppDirectiveTop of cpp_directive
-  | IfdefTop of ifdef_directive (* * toplevel list *)
-  (* cppext: *)
-  | MacroTop of simple_ident * argument comma_list paren * tok option
-  | MacroVarTop of simple_ident * tok (* ; *)
-         
-  | NotParsedCorrectly of tok list
-
   | DeclTodo
 
  (* c++ext: *)
@@ -744,9 +728,14 @@ and declaration =
     | DeclElem of declaration
     (* cppext: *) 
     | CppDirectiveDecl of cpp_directive
-    | IfdefDecl of ifdef_directive (* * statement list *)
+    | IfdefDecl of ifdef_directive (* * toplevel list *)
+    (* cppext: *)
+    | MacroTop of simple_ident * argument comma_list paren * tok option
+    | MacroVarTop of simple_ident * tok (* ; *)
+    (* could also be in decl *)
+    | NotParsedCorrectly of tok list
 
-and toplevel = declaration
+and toplevel = declaration_sequencable
 
 and program = toplevel list
 

@@ -47,22 +47,12 @@ module Ast = Ast_php
  * two variables at different positions in the code will be agglomerated
  * correctly in the Set or Map.
  *)
-module StrOrd = struct
-  type t = string
-  let compare = compare
-end
 
-module VarMap = Map.Make(StrOrd)
-module VarSet = Set.Make(StrOrd)
+module VarMap = Map.Make(String)
+module VarSet = Set.Make(String)
 
 type nodei = Ograph_extended.nodei
-
-module NiOrd = struct
-  type t = nodei
-  let compare = compare
-end
-
-module NodeiSet = Set.Make(NiOrd)
+module NodeiSet = Set.Make(Int)
 
 (* The final dataflow result; a map from each program point to a map containing
  * information from each variables.
