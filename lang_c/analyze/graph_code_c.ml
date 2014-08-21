@@ -279,7 +279,7 @@ let hook_expr_toplevel env x =
        facts = aref;
      }
      in
-     let instrs = Datalog_c.instrs_of_expr x in
+     let instrs = Datalog_c.instrs_of_expr env2 x in
      instrs +> List.iter (fun instr ->
        let facts = Datalog_c.facts_of_instr env2 instr in
        facts +> List.iter (fun fact -> Common.push fact aref);
@@ -475,8 +475,8 @@ and toplevel env x =
          * local_rename hash. Renaming in the header file would lead to
          * some unresolved lookup in the c files.
          *)
-        (def.f_static && kind_file env =*= Source) ||
-        Ast.str_of_name name = "main"
+        (def.f_static && kind_file env =*= Source)
+        (*|| Ast.str_of_name name = "main" *)
       in
       let name = 
         if static && kind=E.Function then new_name_if_defs env name else name in

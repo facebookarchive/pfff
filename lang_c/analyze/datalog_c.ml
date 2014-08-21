@@ -165,6 +165,8 @@ let var_of_instr instr =
   | AssignFieldAddress (v, _, _) | AssignIndexAddress (v, _, _)
     -> v
 
+exception NotSimpleExpr
+
 (*****************************************************************************)
 (* Normalize *)
 (*****************************************************************************)
@@ -176,11 +178,16 @@ let var_of_instr instr =
  * - ???
  *)
 
-(* use gensym? *)
-let fresh_var _xwrap = 
-  raise Todo
+(* could also use gensym *)
+let counter = ref 0
+(* note that we still use var_lof_name to generate the extra scope info
+ * so no need to add it there
+ *)
+let fresh_var _env (_, tok) = 
+  incr counter;
+  spf "v_%d" (* env.scope *) !counter, tok
 
-let instrs_of_expr e =
+let instrs_of_expr env e =
 
   let instrs = ref [] in
   (* let _new_locals = ref [] with their types? ... *)
@@ -194,15 +201,56 @@ let instrs_of_expr e =
   | A.Binary _ 
   | A.Unary (_, ((A2.UnPlus|A2.UnMinus|A2.Tilde|A2.Not), _))
     ->
-      Assign (fresh_var (tokwrap_of_expr e), expr_of_simple_expr e)
+      Assign (fresh_var env (tokwrap_of_expr e), expr_of_simple_expr e)
 
-  (* ok, an actual instr! *)
-  | A.Assign (_op, _e1, _e2) ->
-      debug (A.Expr e);
-      raise Todo
-  | A.Unary (_, (A2.GetRef, _)) ->
-      debug (A.Expr e);
-      raise Todo
+  (* ok, an actual instr! For our analysis we don't care about op (we are
+   * not even control flow sensitive anyway)
+   *)
+  | A.Assign (_op, e1, e2) ->
+      let lv = lvalue_of_expr e1 in
+
+      (match lv, e2 with
+      | Id v, A.Unary (e, (A2.GetRef, _)) ->
+          (match lvalue_of_expr e with
+          | Id name -> AssignAddress (v, name)
+          | ObjField (v2, n) -> AssignFieldAddress (v, v2, n)
+          | ArrayAccess (v2, v3) -> AssignIndexAddress (v, v2, v3)
+          (* todo: could have Deref here, but what &( *x ) means? *)
+          | _ ->
+             (* wrong lvalue_of_expr *)
+            debug (A.Expr e);
+            raise Impossible
+          )
+      | _ ->      
+          (match lv with
+          | Id name -> 
+              Assign (name, 
+                      try expr_of_simple_expr e2
+                      with NotSimpleExpr -> Id (var_of_expr e2)
+              )
+          | ObjField (v, n) -> AssignField (v, n, var_of_expr e2)
+          | ArrayAccess (v1, v2) -> AssignArray (v1, v2, var_of_expr e2)
+          | DeRef (v) -> AssignDeref (v, var_of_expr e2)
+          | _ -> 
+            (* wrong lvalue_of_expr *)
+            debug (A.Expr e);
+            raise Impossible
+          )
+      )
+
+  | A.Unary (e, (A2.GetRef, tok)) ->
+      let v = fresh_var env ((), tok) in
+      let lv = lvalue_of_expr e in
+      (match lv with
+      | Id name -> AssignAddress (v, name)
+      | ObjField (v2, n) -> AssignFieldAddress (v, v2, n)
+      | ArrayAccess (v2, v3) -> AssignIndexAddress (v, v2, v3)
+      (* todo: could have Deref here, but what &( *x ) means? *)
+      | _ ->
+        (* wrong lvalue_of_expr *)
+        debug (A.Expr e);
+        raise Impossible
+      )
   | A.Unary (_, ((A2.GetRefLabel, _))) ->
       (* ast_c_build should forbid that gccext *)
       debug (A.Expr e);
@@ -260,8 +308,7 @@ let instrs_of_expr e =
       let v = var_of_expr e in
       ObjField (v, name)
   | _ -> 
-    (* dispatched correctly in instr_of_expr?? *)
-    raise Impossible
+    raise NotSimpleExpr
 
   and var_of_expr e =
   match e with
@@ -269,8 +316,18 @@ let instrs_of_expr e =
   | A.Id name -> name
   | _ -> 
     let instr = instr_of_expr e in
+    Common.push instr instrs;
     var_of_instr instr
-      
+
+  and lvalue_of_expr e =
+    try 
+      let esimple = expr_of_simple_expr e in
+      (match esimple  with
+      | Id _ | ObjField _ | ArrayAccess _ | DeRef _ -> esimple
+      | _ -> Id (var_of_expr e)
+      )
+    with Impossible -> 
+      Id (var_of_expr e)
 
   in
   let i = instr_of_expr e in

@@ -11,3 +11,6 @@ void main () {
   int z2 = 4;
   *elt = z2;
 }
+
+void* malloc(int x) {
+}

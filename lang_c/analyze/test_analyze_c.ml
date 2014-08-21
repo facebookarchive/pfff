@@ -11,7 +11,7 @@ let test_dataflow_c file =
   let root = Sys.getcwd () +> Common.realpath in
   Graph_code_c.facts := Some (ref []);
   let _g = Graph_code_c.build ~verbose:false root [file] in
-  let facts = !(Common2.some (!Graph_code_c.facts)) in
+  let facts = List.rev !(Common2.some (!Graph_code_c.facts)) in
   Common2.pr2_xxxxxxxxxxxxxxxxx();
   (* debug *)
   facts +> List.iter pr2_gen;
