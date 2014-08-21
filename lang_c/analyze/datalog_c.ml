@@ -63,8 +63,10 @@ type expr =
 
   | Alloc of type_ (* malloc(sizeof(type)) *)
   | AllocArray of var * type_ (* malloc(n*sizeof(type)) *)
+
   | ObjField of var * name (* x->fld *)
   | ArrayAccess of var * var (* x[y] *)
+
   | StaticCall of name * var list (* foo(...) *)
   | DynamicCall of var * var list (* ( *f)(...) *)
   | BuiltinCall of name * var list (* e.g. v + 1 *)
@@ -73,15 +75,20 @@ type expr =
 (* Stmt *)
 (* ------------------------------------------------------------------------- *)
 
+(* todo? have a lvalue type? so ObjField, ArrayAccess, Id, DeRef
+ * are lvalues, which then generate different form of instr below
+ *)
 type instr =
   | Assign of var * expr (* x = e *)
-  | AssignAddress of var * name (* x = &v *) (* of global, local, param, func *)
-  | AssignDeref of var * var (* *x = v *)
-
   | AssignField of var * name * var (* x->f = v *)
   | AssignArray of var * var * var (* x[y] = v *)
+
+  | AssignAddress of var * name (* x = &v *) (* of global, local, param, func *)
   | AssignFieldAddress of var * var * name (* x = &v->field *)
   | AssignIndexAddress of var * var * var (* x = &v[y] *)
+
+  | AssignDeref of var * var (* *x = v *)
+
 
 (* ------------------------------------------------------------------------- *)
 (* Env *)
@@ -172,18 +179,29 @@ let fresh_var _xwrap =
 let instrs_of_expr e =
 
   let instrs = ref [] in
+  (* let _new_locals = ref [] with their types? ... *)
 
   let rec instr_of_expr e =
   match e with
-  | A.Int _ | A.Float _ | A.String _ | A.Char _ | A.Id _
-  | A.Unary (_, (A2.DeRef, _)) | A.Call _ | A.ArrayAccess _ | A.RecordAccess _
+  | A.Int _ | A.Float _ | A.String _ | A.Char _ 
+  | A.Id _
+  | A.Unary (_, (A2.DeRef, _)) 
+  | A.Call _ | A.ArrayAccess _ | A.RecordAccess _
   | A.Binary _ 
+  | A.Unary (_, ((A2.UnPlus|A2.UnMinus|A2.Tilde|A2.Not), _))
     ->
       Assign (fresh_var (tokwrap_of_expr e), expr_of_simple_expr e)
 
   (* ok, an actual instr! *)
   | A.Assign (_op, _e1, _e2) ->
       raise Todo
+  | A.Unary (_, (A2.GetRef, _)) ->
+      raise Todo
+  | A.Unary (_, ((A2.GetRefLabel, _))) ->
+      (* ast_c_build should forbid that gccext *)
+      raise Impossible
+
+
   | A.Sequence (e1, e2) ->
       let i1 = instr_of_expr e1 in
       Common.push i1 instrs;
@@ -196,7 +214,12 @@ let instrs_of_expr e =
   | A.Postfix (e, _op) | A.Infix (e, _op) ->
       instr_of_expr e
 
-  | _ -> raise Todo
+  | A.CondExpr (_, _, _)
+  | A.SizeOf _
+  | A.ArrayInit _ | A.RecordInit _
+  | A.GccConstructor (_, _)
+      -> raise Todo
+
 
   and expr_of_simple_expr e =
   match e with
@@ -215,6 +238,9 @@ let instrs_of_expr e =
       )
   | A.Binary (e1, (_op, tok), e2) ->
       let vs = List.map var_of_expr [e1; e2] in
+      BuiltinCall ((PI.str_of_info tok, tok), vs)
+  | A.Unary (e, ((A2.UnPlus|A2.UnMinus|A2.Tilde|A2.Not), tok)) ->
+      let vs = [var_of_expr e] in
       BuiltinCall ((PI.str_of_info tok, tok), vs)
 
   | A.ArrayAccess (e1, e2) ->
