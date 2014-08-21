@@ -15,7 +15,9 @@
 open Common
 
 open Ast_c
-module Ast = Ast_c
+module A = Ast_c
+module A2 = Ast_cpp
+module PI = Parse_info
 
 (*****************************************************************************)
 (* Prelude *)
@@ -150,6 +152,8 @@ let fully_qualified_field_of_struct _struc fld =
 let tok_of_type _t =
   raise Todo
 
+let tokwrap_of_expr _e =
+  raise Todo
 (*****************************************************************************)
 (* Normalize *)
 (*****************************************************************************)
@@ -162,12 +166,84 @@ let tok_of_type _t =
  *)
 
 (* use gensym? *)
-let fresh_var () = 
+let fresh_var _xwrap = 
   raise Todo
 
-let instr_of_expr _e =
-  raise Todo
+let instrs_of_expr e =
 
+  let instrs = ref [] in
+
+  let rec instr_of_expr e =
+  match e with
+  | A.Int _ | A.Float _ | A.String _ | A.Char _ | A.Id _
+  | A.Unary (_, (A2.DeRef, _)) | A.Call _ | A.ArrayAccess _ | A.RecordAccess _
+  | A.Binary _ 
+    ->
+      Assign (fresh_var (tokwrap_of_expr e), expr_of_simple_expr e)
+
+  (* ok, an actual instr! *)
+  | A.Assign (_op, _e1, _e2) ->
+      raise Todo
+  | A.Sequence (e1, e2) ->
+      let i1 = instr_of_expr e1 in
+      Common.push i1 instrs;
+      instr_of_expr e2
+  | A.Cast (_tTODO, e) ->
+      instr_of_expr e
+  (* for pointer analysis we don't care to respect the exact semantic, we
+   * are not even control flow sensitive
+   *)
+  | A.Postfix (e, _op) | A.Infix (e, _op) ->
+      instr_of_expr e
+
+  | _ -> raise Todo
+
+  and expr_of_simple_expr e =
+  match e with
+  | A.Int x -> Int x
+  | A.Float x -> Float x
+  | A.String x -> String x
+  | A.Char x -> String x
+  (* could be lots of things, global, local, param, constant, function! *)
+  | A.Id name -> Id name
+  | A.Unary (e, (A2.DeRef, _)) -> DeRef (var_of_expr e)
+  | A.Call (e, es) ->
+      let vs = List.map var_of_expr es in
+      (match e with
+      | A.Id name -> StaticCall (name, vs)
+      | _ -> DynamicCall (var_of_expr e, vs)
+      )
+  | A.Binary (e1, (_op, tok), e2) ->
+      let vs = List.map var_of_expr [e1; e2] in
+      BuiltinCall ((PI.str_of_info tok, tok), vs)
+
+  | A.ArrayAccess (e1, e2) ->
+      let v1 = var_of_expr e1 in
+      let v2 = var_of_expr e2 in
+      ArrayAccess (v1, v2)
+  | A.RecordAccess (e, name) ->
+      let v = var_of_expr e in
+      ObjField (v, name)
+  | _ -> raise Todo
+
+  and var_of_expr e =
+  match e with
+  (* todo? make sure it's actually a local/param? *)
+  | A.Id name -> name
+  | _ -> 
+    let instr = instr_of_expr e in
+    var_of_instr instr
+      
+
+  and var_of_instr instr =
+    match instr with
+    | Assign (v, _) | AssignAddress (v, _) | AssignDeref (_, v) 
+    | AssignField (_, _, v) | AssignArray (_, _, v)
+    | AssignFieldAddress (v, _, _) | AssignIndexAddress (v, _, _)
+      -> v
+  in
+  let i = instr_of_expr e in
+  List.rev (i::!instrs)
 
 (*****************************************************************************)
 (* Fact generation *)
