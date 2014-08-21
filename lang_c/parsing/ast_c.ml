@@ -93,7 +93,9 @@ type type_ =
   | TArray of const_expr option * type_
   | TFunction of function_type
   | TStructName of struct_kind * name
-  (* hmmm but in C it's really like an int no? *)
+  (* hmmm but in C it's really like an int no? but scheck could be
+   * extended at some point to do more strict type checking! 
+   *)
   | TEnumName of name
   | TTypeName of name
 
@@ -101,7 +103,7 @@ type type_ =
 
   and parameter = {
     p_type: type_;
-    (* when part of a prototype, the name is not mentionned *)
+    (* when part of a prototype, the name is not always mentionned *)
     p_name: name option;
   }
 
@@ -150,7 +152,7 @@ and expr =
   | ArrayInit of (expr option * expr) list
   | RecordInit of (name * expr) list
   (* gccext: *)
-  | GccConstructor  of type_ * expr (* always an ArrayInit *)
+  | GccConstructor  of type_ * expr (* always an ArrayInit (or RecordInit?) *)
 
 and argument = expr
 

@@ -84,8 +84,8 @@ type env = {
   in_assign: bool;
   in_define: bool;
 
-  (* covers also the parameters *)
-  locals: string list ref;
+  (* covers also the parameters; the type_ is really only for datalog_c *)
+  locals: (string * type_ option) list ref;
   (* for static functions, globals, 'main', and local enums/constants/macros *)
   local_rename: (string, string) Hashtbl.t;
 
@@ -123,6 +123,7 @@ type kind_file = Source | Header
 let hook_use_edge = ref (fun _ctx _in_assign (_src, _dst) _g -> ())
 
 (* for datalog *)
+(*todo: let hook_expr_toplevel =  ?*)
 let facts = ref None
 
 (*****************************************************************************)
@@ -258,12 +259,34 @@ let find_existing_node env name candidates last_resort =
 let error s tok =
   failwith (spf "%s: %s" (Parse_info.string_of_info tok) s)
 
+let is_local env s =
+  (Common.find_opt (fun (x, _) -> x =$= s) !(env.locals)) <> None
+
 (*****************************************************************************)
 (* For datalog *)
 (*****************************************************************************)
 
 (* let with_datalog_env env (fun env2 -> ...)
  *)
+
+let hook_expr_toplevel env x =
+  match !facts with
+  | None -> ()
+  | Some aref ->
+     let env2 = { Datalog_c.
+       scope = fst env.current;
+       globals = env.g;
+       locals = !(env.locals);
+       facts = aref;
+     }
+     in
+     let instrs = Datalog_c.instrs_of_expr x in
+     instrs +> List.iter (fun instr ->
+       let facts = Datalog_c.facts_of_instr env2 instr in
+       facts +> List.iter (fun fact -> Common.push fact aref);
+     )
+     
+  
    
 (*****************************************************************************)
 (* Add Node *)
@@ -431,7 +454,8 @@ and toplevel env x =
       let env = 
         add_node_and_edge_if_defs_mode env (name, E.Macro) None in
       let env = 
-        { env with locals = ref (params+>List.map Ast.str_of_name) } in
+        { env with locals = ref 
+            (params +> List.map (fun p -> Ast.str_of_name p, None)) } in
       if env.phase = Uses && env.conf.macro_dependencies
       then define_body env body
 
@@ -472,8 +496,10 @@ and toplevel env x =
       then type_ env (TFunction def.f_type);
 
       let xs = snd def.f_type +> Common.map_filter (fun x -> 
-        (match x.p_name with None -> None  | Some x -> Some (Ast.str_of_name x))
-      ) in
+        (match x.p_name with 
+        | None -> None 
+        | Some n -> Some (Ast.str_of_name n, Some x.p_type)
+        )) in
       let env = { env with locals = ref xs } in
       if env.phase = Uses
       then stmts env def.f_body
@@ -500,7 +526,7 @@ and toplevel env x =
       if kind <> E.GlobalExtern 
       then type_ env t;
       if env.phase = Uses
-      then Common2.opt (expr env) eopt
+      then Common2.opt (expr_toplevel env) eopt
 
   | StructDef { s_name = name; s_kind = kind; s_flds = flds } -> 
       let s = Ast.str_of_name name in
@@ -541,7 +567,7 @@ and toplevel env x =
           if kind_file env=*=Source then new_name_if_defs env name else name in
         let env = add_node_and_edge_if_defs_mode env (name, E.Constructor) None in
         if env.phase = Uses
-        then Common2.opt (expr env) eopt
+        then Common2.opt (expr_toplevel env) eopt
       )
 
     (* I am not sure about the namespaces, so I prepend strings *)
@@ -577,7 +603,7 @@ and toplevels env xs = List.iter (toplevel env) xs
 and define_body env v =
   let env = { env with in_define = true } in
   match v with
-  | CppExpr e -> expr env e
+  | CppExpr e -> expr_toplevel env e
   | CppStmt st -> stmt env st
 
 (* ---------------------------------------------------------------------- *)
@@ -588,25 +614,25 @@ and define_body env v =
  * any entities (expressions do).
  *)
 and stmt env = function
-  | ExprSt e -> expr env e
+  | ExprSt e -> expr_toplevel env e
   | Block xs -> stmts env xs
-  | Asm e -> exprs env e
+  | Asm xs -> List.iter (expr_toplevel env) xs
   | If (e, st1, st2) ->
-      expr env e;
+      expr_toplevel env e;
       stmts env [st1; st2]
   | Switch (e, xs) ->
-      expr env e;
+      expr_toplevel env e;
       cases env xs
   | While (e, st) | DoWhile (st, e) -> 
-      expr env e;
+      expr_toplevel env e;
       stmt env st
   | For (e1, e2, e3, st) ->
-      Common2.opt (expr env) e1;
-      Common2.opt (expr env) e2;
-      Common2.opt (expr env) e3;
+      Common2.opt (expr_toplevel env) e1;
+      Common2.opt (expr_toplevel env) e2;
+      Common2.opt (expr_toplevel env) e3;
       stmt env st
   | Return eopt ->
-      Common2.opt (expr env) eopt;
+      Common2.opt (expr_toplevel env) eopt;
   | Continue | Break -> ()
   | Label (_name, st) ->
       stmt env st
@@ -618,20 +644,20 @@ and stmt env = function
         let { v_name = n; v_type = t; v_storage = sto; v_init = eopt } = x in
         if sto <> Extern
         then begin
-          env.locals :=  (Ast.str_of_name n)::!(env.locals);
+          env.locals :=  (Ast.str_of_name n, Some t)::!(env.locals);
           type_ env t;
         end;
         (match eopt with
         | None -> ()
         | Some e ->
-          expr env (Assign ((Ast_cpp.SimpleAssign, snd n), Id n, e))
+          expr_toplevel env (Assign ((Ast_cpp.SimpleAssign, snd n), Id n, e))
         )
 
       )
 
  and case env = function
    | Case (e, xs) -> 
-       expr env e;
+       expr_toplevel env e;
        stmts env xs
    | Default xs ->
        stmts env xs
@@ -643,6 +669,10 @@ and cases env xs = List.iter (case env) xs
 (* ---------------------------------------------------------------------- *)
 (* Expr *)
 (* ---------------------------------------------------------------------- *)
+and expr_toplevel env x =
+  expr env x;
+  hook_expr_toplevel env x
+
 (* can assume we are in Uses phase *)
 and expr env = function
   | Int _ | Float _ | Char _ -> ()
@@ -656,7 +686,7 @@ and expr env = function
    *)
   | Id name ->
       let s = Ast.str_of_name name in
-      if List.mem s !(env.locals)
+      if is_local env s
       then ()
       else
         let name = str env name in
@@ -676,7 +706,7 @@ and expr env = function
       (match e with
       | Id name ->
           let s = Ast.str_of_name name in
-          if List.mem s !(env.locals)
+          if is_local env s
           then ()
           else 
             let name = str env name in
@@ -701,9 +731,9 @@ and expr env = function
         exprs env es
       )
   | Assign (_, e1, e2) -> 
-    (* mostly for generating use/read or use/write in prolog *)
-    expr { env with in_assign = true } e1;
-    expr env e2;
+      (* mostly for generating use/read or use/write in prolog *)
+      expr { env with in_assign = true } e1;
+      expr env e2;
   | ArrayAccess (e1, e2) -> exprs env [e1; e2]
   (* todo: determine type of e and make appropriate use link *)
   | RecordAccess (e, _name) -> expr env e
@@ -744,7 +774,7 @@ and expr env = function
        *)
       | Left (Id (origname)) ->
           let s = Ast.str_of_name origname in
-          if List.mem s !(env.locals)
+          if is_local env s
           then ()
           else
             let name = str env origname in
@@ -783,7 +813,7 @@ and type_ env typ =
       | TTypeName name ->
           let s = Ast.str_of_name name in
           (* could be a type parameter *)
-          if List.mem s !(env.locals) && env.in_define
+          if is_local env s && env.in_define
           then ()
           else
            if env.conf.typedefs_dependencies

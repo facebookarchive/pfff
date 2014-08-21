@@ -98,20 +98,15 @@ type env = {
   scope: string; (* qualifier, usually the current function *)
 
   globals: Graph_code.graph;
-  locals: (string * type_) list;
+  (* have option type for macro parameters ... could have a TAny also *)
+  locals: (string * type_ option) list;
 
   facts: fact list ref;
 }
 
-let add fact env =
-  Common.push fact env.facts
-
 (*****************************************************************************)
 (* Helpers *)
 (*****************************************************************************)
-let error s name =
-  failwith (spf "ERROR: %s, at %s" s (Parse_info.string_of_info (snd name)))
-
 let debug any =
   let v = Meta_ast_c.vof_any any in
   let s = Ocaml.string_of_v v in
