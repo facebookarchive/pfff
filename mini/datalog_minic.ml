@@ -237,6 +237,7 @@ and stmt env = function
 (* Instr/Expr *)
 (* ---------------------------------------------------------------------- *)
 
+(* todo: rewrite to return list of facts instead like in datalog_c.ml *)
 and instr env = function
   | AssignAddress (var, name) ->
     add (spf "assign_address(%s, %s)" 
