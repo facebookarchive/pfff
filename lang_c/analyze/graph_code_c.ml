@@ -83,6 +83,8 @@ type env = {
   (* for prolog use/4, todo: merge in_assign with context? *)
   in_assign: bool;
   in_define: bool;
+  (* for datalog *)
+  in_return: bool;
 
   (* covers also the parameters; the type_ is really only for datalog_c *)
   locals: (string * type_ option) list ref;
@@ -266,9 +268,6 @@ let is_local env s =
 (* For datalog *)
 (*****************************************************************************)
 
-(* let with_datalog_env env (fun env2 -> ...)
- *)
-
 let hook_expr_toplevel env x =
   match !facts with
   | None -> ()
@@ -284,7 +283,10 @@ let hook_expr_toplevel env x =
      instrs +> List.iter (fun instr ->
        let facts = Datalog_c.facts_of_instr env2 instr in
        facts +> List.iter (fun fact -> Common.push fact aref);
-     )
+     );
+     (* todo if env.return! need generate ret_main special thing
+     *)
+     ()
      
   
    
@@ -632,7 +634,7 @@ and stmt env = function
       Common2.opt (expr_toplevel env) e3;
       stmt env st
   | Return eopt ->
-      Common2.opt (expr_toplevel env) eopt;
+      Common2.opt (expr_toplevel { env with in_return = true }) eopt;
   | Continue | Break -> ()
   | Label (_name, st) ->
       stmt env st
@@ -873,6 +875,7 @@ let build ?(verbose=true) root files =
     conf;
     in_assign = false;
     in_define = false;
+    in_return = false;
     local_rename = Hashtbl.create 0; (* will come from local_renames_of_files*)
     dupes = Hashtbl.create 101;
     typedefs = Hashtbl.create 101;
