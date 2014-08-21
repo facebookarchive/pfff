@@ -50,6 +50,7 @@ type var = name
 (* ------------------------------------------------------------------------- *)
 (* Expression *)
 (* ------------------------------------------------------------------------- *)
+(* see ast_minic.ml for more comments about this CIL-like AST *)
 type expr =
   | Int of string wrap
   | String of string wrap
@@ -149,6 +150,17 @@ let tok_of_type _t =
 (*****************************************************************************)
 (* Normalize *)
 (*****************************************************************************)
+
+(* The goal is to transform constructs from Ast_c to simpler constructs .
+ * Here are the simplifications done:
+ * - linearization of expression
+ * - sugar removal for postfix/infix increments
+ * - ???
+ *)
+
+(* use gensym? *)
+let fresh_var () = 
+  raise Todo
 
 
 (*****************************************************************************)
