@@ -268,7 +268,8 @@ let is_local env s =
 (* For datalog *)
 (*****************************************************************************)
 
-let hook_expr_toplevel env x =
+(* less: could mv this conrete hooks in datalog_c at some point *)
+let with_datalog_env env f =
   match !facts with
   | None -> ()
   | Some aref ->
@@ -280,18 +281,29 @@ let hook_expr_toplevel env x =
         *)
        locals = env.locals;
        facts = aref;
+       globals_renames = (fun n -> str env n)
      }
      in
-     let instrs = Datalog_c.instrs_of_expr env2 x in
+     f env2
+
+let hook_expr_toplevel env x =
+  with_datalog_env env (fun env ->
+     let instrs = Datalog_c.instrs_of_expr env x in
      instrs +> List.iter (fun instr ->
-       let facts = Datalog_c.facts_of_instr env2 instr in
-       facts +> List.iter (fun fact -> Common.push fact aref);
+       let facts = Datalog_c.facts_of_instr env instr in
+       facts +> List.iter (fun fact -> Common.push fact env.Datalog_c.facts);
      );
      (* todo if env.return! need generate ret_main special thing
      *)
      ()
-     
-  
+  )
+
+let _hook_def env def =
+  with_datalog_env env (fun env ->
+    let facts = Datalog_c.facts_of_def env def in
+       facts +> List.iter (fun fact -> Common.push fact env.Datalog_c.facts);
+  )
+ 
    
 (*****************************************************************************)
 (* Add Node *)
@@ -449,15 +461,13 @@ and toplevel env x =
   | Define (name, body) ->
       let name = 
         if kind_file env =*= Source then new_name_if_defs env name else name in
-      let env = 
-        add_node_and_edge_if_defs_mode env (name, E.Constant) None in
+      let env = add_node_and_edge_if_defs_mode env (name, E.Constant) None in
       if env.phase = Uses && env.conf.macro_dependencies
       then define_body env body
   | Macro (name, params, body) -> 
       let name = 
         if kind_file env =*= Source then new_name_if_defs env name else name in
-      let env = 
-        add_node_and_edge_if_defs_mode env (name, E.Macro) None in
+      let env = add_node_and_edge_if_defs_mode env (name, E.Macro) None in
       let env = 
         { env with locals = ref 
             (params +> List.map (fun p -> Ast.str_of_name p, None)) } in
@@ -534,12 +544,11 @@ and toplevel env x =
       then Common2.opt (expr_toplevel env) eopt
 
   | StructDef { s_name = name; s_kind = kind; s_flds = flds } -> 
-      let s = Ast.str_of_name name in
       let prefix = match kind with Struct -> "S__" | Union -> "U__" in
-      let env = 
-        add_node_and_edge_if_defs_mode env (add_prefix prefix name, E.Type)None
-      in
-      
+      let name = add_prefix prefix name in
+      let s = Ast.str_of_name name in
+      let env = add_node_and_edge_if_defs_mode env (name, E.Type) None in
+     
       if env.phase = Defs then begin
           (* this is used for InitListExpr *)
         let fields = flds +> Common.map_filter (function
@@ -564,9 +573,8 @@ and toplevel env x =
       )
         
   | EnumDef (name, xs) ->
-      let env = 
-        add_node_and_edge_if_defs_mode env (add_prefix "E__" name, E.Type) None
-      in
+      let name = add_prefix "E__" name in
+      let env =  add_node_and_edge_if_defs_mode env (name, E.Type) None in
       xs +> List.iter (fun (name, eopt) ->
         let name = 
           if kind_file env=*=Source then new_name_if_defs env name else name in
@@ -591,8 +599,8 @@ and toplevel env x =
           else Hashtbl.add env.typedefs s t
       end;
       let typ = Some t in
-      let _env = 
-        add_node_and_edge_if_defs_mode env (add_prefix "T__" name,E.Type) typ in
+      let name = add_prefix "T__" name in
+      let _env = add_node_and_edge_if_defs_mode env (name ,E.Type) typ in
       (* type_ env typ; *)
       ()
 

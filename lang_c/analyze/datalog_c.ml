@@ -40,6 +40,12 @@ type env = {
   scope: string; (* qualifier, usually the current function *)
 
   globals: Graph_code.graph;
+  (* because of the trick we use in graph_code_c for e.g. renaming
+   * static functions to avoid name collisions.
+   * You need to use this function each time you think
+   * a name refers to a global entity.
+   *)
+  globals_renames: Ast_c.name -> Ast_c.name;
   (* have option type for macro parameters ... could have a TAny also.
    * need a ref because instrs_of_expr will add new local variables.
    *)
@@ -114,7 +120,8 @@ let line_of tok =
   Parse_info.line_of_info tok
 
 
-let var_of_global _env name =
+let var_of_global env name =
+  let name = env.globals_renames name in
   let s = fst name in
 (*
   if Common.find_opt (fun (x,_) -> x =$= s) env.globals = None
@@ -355,6 +362,16 @@ let instrs_of_expr env e =
 (*****************************************************************************)
 (* Fact generation *)
 (*****************************************************************************)
+
+(* ------------------------------------------------------------------------- *)
+(* Defs *)
+(* ------------------------------------------------------------------------- *)
+let facts_of_def _env _def =
+  raise Todo
+
+(* ------------------------------------------------------------------------- *)
+(* Instr *)
+(* ------------------------------------------------------------------------- *)
 
 let facts_of_instr env = function
   | AssignAddress (var, name) ->
