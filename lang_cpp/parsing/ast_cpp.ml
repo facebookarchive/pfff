@@ -41,6 +41,16 @@
  * todo: 
  *  - migrate everything to wrap2, e.g. no more expressionbis, statementbis
  *  - support C++0x11, e.g. lambdas
+ * 
+ * related work:
+ *  - https://github.com/facebook/facebook-clang-plugins
+ *    or https://github.com/Antique-team/clangml
+ *    but by both using clang they work after preprocessing. This is
+ *    fine for bug finding, but for codemap we need to parse as is,
+ *    and we need to do it fast (calling clang is super expensive because
+ *    calling cpp and parsing the end result is expensive)
+ *  - EDG
+ *  - see the CC'09 paper
  *)
 
 (*****************************************************************************)

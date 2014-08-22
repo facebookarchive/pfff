@@ -16,6 +16,13 @@
 (*****************************************************************************)
 (* Prelude *)
 (*****************************************************************************)
+(*
+ * Poor's man clang AST (actually just for the C subset of clang).
+ * 
+ * related work:
+ *  - https://github.com/facebook/facebook-clang-plugins
+ *  - https://github.com/Antique-team/clangml
+ *)
 
 (*****************************************************************************)
 (* The AST related types *)
