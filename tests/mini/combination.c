@@ -59,3 +59,7 @@ int main() {
   return v2;
 }
 
+void printf(char* fmt) {
+}
+void* malloc(int x) {
+}

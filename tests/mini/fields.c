@@ -27,3 +27,8 @@ int main() {
   return v4;
 }
 
+
+void printf(char* fmt) {
+}
+void* malloc(int x) {
+}

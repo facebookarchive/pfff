@@ -19,3 +19,6 @@ void main() {
   int* local = global;
   int v = (*pt)(local);
 }
+
+void* malloc(int x) {
+}

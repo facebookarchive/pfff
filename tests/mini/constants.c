@@ -33,3 +33,8 @@ int main() {
   int v2 = global->state1;
   printf("%d\n", v2);
 }
+
+void printf(char* fmt) {
+}
+void* malloc(int x) {
+}
