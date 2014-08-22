@@ -336,3 +336,7 @@ web/var/logs/warnings.log
 /demos/pfff_linking
 /demos/pfff_linking
 /tests/php/codegraph/pfff_test.log
+/lang_rust/parsing/lexer_rust.ml
+/lang_rust/parsing/parser_rust.ml
+/lang_rust/parsing/parser_rust.mli
+/lang_rust/parsing/parser_rust.output

@@ -93,6 +93,7 @@ let use_fancy_highlighting file =
     (*    | FT.PL (FT.Prolog _) *)
     | FT.PL (FT.Erlang)
     | FT.PL (FT.Opa)
+    | FT.PL (FT.Rust)
     ) -> true
   | (FT.Text "txt") when Common2.basename file =$= "info.txt" -> true
   | _ -> false

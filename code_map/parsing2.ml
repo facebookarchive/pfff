@@ -43,20 +43,18 @@ open Highlight_code
 type ast = 
   | ML  of Parse_ml.program_and_tokens
   | Hs  of Parse_hs.program2
+  | Lisp of Parse_lisp.program_and_tokens
+  | Erlang of Parse_erlang.program2
 
   | Html of Parse_html.program2
   | Js  of Parse_js.program_and_tokens
   | Php of Parse_php.program_with_comments
-
   | Opa of Parse_opa.program_with_tokens
 
   | Cpp of Parse_cpp.program2
-
   | Csharp of Parse_csharp.program_and_tokens
   | Java of Parse_java.program_and_tokens
-
-  | Lisp of Parse_lisp.program_and_tokens
-  | Erlang of Parse_erlang.program2
+  | Rust of Parse_rust.program_and_tokens
 
   | Python of Parse_python.program2
 
@@ -271,6 +269,17 @@ let tokens_with_categ_of_file file hentities =
         highlight_visit = (fun ~tag_hook prefs (ast, toks) -> 
           Highlight_csharp.visit_program ~tag_hook prefs (ast, toks));
         info_of_tok = Token_helpers_csharp.info_of_tok;
+        }
+        file prefs hentities
+
+  | FT.PL (FT.Rust) ->
+      tokens_with_categ_of_file_helper 
+        { parse = (parse_cache 
+         (fun file -> Rust (Parse_rust.parse file +> fst))
+         (function Rust (ast, toks) -> [ast, toks] | _ -> raise Impossible));
+        highlight_visit = (fun ~tag_hook prefs (ast, toks) -> 
+          Highlight_rust.visit_program ~tag_hook prefs (ast, toks));
+        info_of_tok = Token_helpers_rust.info_of_tok;
         }
         file prefs hentities
 

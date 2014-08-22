@@ -53,6 +53,8 @@ INCLUDEDIRS=$(TOP)/commons $(TOP)/globals \
          $(TOP)/lang_python/analyze \
         $(TOP)/lang_csharp/parsing \
          $(TOP)/lang_csharp/analyze \
+        $(TOP)/lang_rust/parsing \
+         $(TOP)/lang_rust/analyze \
         $(TOP)/lang_opa/parsing \
          $(TOP)/lang_opa/analyze \
         $(TOP)/lang_java/parsing \
