@@ -41,6 +41,7 @@ module R = Refactoring_code
  *    it has even an automatic API rewriter: http://golang.org/cmd/fix
  *    can do: gofmt -w -r 'x[i:len(x)] -> x[i:]' *.go
  *    see http://blog.golang.org/go-fmt-your-code
+ *  - rust format https://github.com/pcwalton/rustfmt
  *  - clang-format http://llvm.org/devmtg/2013-04/jasper-slides.pdf
  *  - todo: http://www.refactory.com/tools/refactoring-browser/rewrite-tool
  *)
