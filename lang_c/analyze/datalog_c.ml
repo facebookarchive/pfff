@@ -366,8 +366,57 @@ let instrs_of_expr env e =
 (* ------------------------------------------------------------------------- *)
 (* Defs *)
 (* ------------------------------------------------------------------------- *)
-let facts_of_def _env _def =
-  raise Todo
+let facts_of_def env def =
+  match def with
+  | StructDef def -> 
+      def.s_flds +> Common.map_filter (fun fld ->
+        match fld.fld_name with
+        (* todo: kencc ext field! *)
+        | None -> None
+        | Some name ->
+          (match fld.fld_type with
+          | TBase _ -> 
+             Some (spf "point_to(%s, %s)" 
+                       (fully_qualified_field_of_struct 
+                          (fst def.s_name) (fst name))
+                       (heap_of_cst env name))
+          (* could add a point_to(%s, '_null_') for pointers *)
+          | _ -> None
+          )
+      )
+  | Define (name, _body) ->
+      [(spf "point_to(%s, %s)" (var_of_global env name) (heap_of_cst env name))]
+  | EnumDef def ->
+      let (_name, xs) = def in
+      xs +> List.map (fun (name, _eopt) ->
+        spf "point_to(%s, %s)" (var_of_global env name) (heap_of_cst env name)
+      )
+  | Macro _ ->
+      (* todo? *)
+      []
+  | FuncDef def ->
+      let (_ret, params) = def.f_type in
+      params +> Common.index_list_1 +> Common.map_filter (fun (p, i) ->
+        match p.p_name with
+        | None -> None
+        | Some name ->
+            Some (spf "parameter(%s, %d, %s)" 
+                  (var_of_global env def.f_name) i (var_of_local env name))
+      ) @
+     (* less: could skip when return void *)
+       [spf "return(%s, 'ret_%s')" 
+           (var_of_global env def.f_name) (fst def.f_name)]
+  | Global var ->      
+      let name = var.v_name in
+      (match var.v_type with
+      | TBase _ -> 
+        [spf "point_to(%s, %s)" (var_of_global env name) (heap_of_cst env name)]
+      (* could add a point_to(%s, '_null_') for pointers *)
+      | _ -> []
+      )
+
+  | Include _ | TypeDef _ | Prototype _ -> raise Impossible
+
 
 (* ------------------------------------------------------------------------- *)
 (* Instr *)

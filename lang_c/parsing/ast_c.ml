@@ -221,19 +221,18 @@ type struct_def = {
   s_kind: struct_kind;
   s_flds: field_def list;
 }
-  (* less: could merge with var_decl, but field have no storage normally.
-   * todo: bitfield annotation
-   * kencc-ext: the option on fld_name can be a kencc extension
-   * or a bitfield.
-   *)
+  (* less: could merge with var_decl, but field have no storage normally *)
   and field_def = { 
+   (* todo: bitfield annotation
+    * kencc-ext: the option on fld_name can be a kencc extension a bitfield.
+    *)
     fld_name: name option;
     fld_type: type_;
   }
  (* with tarzan *)
 
 (* less: use a record *)
-type enum_def = name * (name * expr option) list
+type enum_def = name * (name * const_expr option) list
  (* with tarzan *)
 
 (* less: use a record *)
@@ -245,7 +244,7 @@ type type_def = name * type_
 (* ------------------------------------------------------------------------- *)
 
 type define_body = 
-  | CppExpr of expr
+  | CppExpr of expr (* actually const_expr when in Define context *)
   (* todo: we want that? even dowhile0 are actually transformed in CppExpr.
    * We have no way to reference a CppStmt in stmt since MacroStmt
    * is not here? So we can probably remove this constructor no?

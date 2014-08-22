@@ -34,11 +34,11 @@ module P = Graph_code_prolog
  * to this file now and being cpp-aware has actually many advantages:
  *  - we can tracks dependencies of cpp constants which is useful in codemap!
  *    and when dataflow will work, we will be able to track the flow of
- *    specific constants to fields! (but people could use enum instead)
+ *    specific constants to fields! (but people could use enum for clang)
  *  - we can find dead macros, dupe macros
  *  - we can find wrong code in ifdef not compiled
- *  - we can detect ugly macros that use locals insteaf of globals or parameters,
- *    again graphcode is a perfect clowncode detector
+ *  - we can detect ugly macros that use locals insteaf of globals or
+ *    parameters; again graphcode is a perfect clowncode detector!
  *  - ...
  * 
  * schema:
@@ -46,7 +46,7 @@ module P = Graph_code_prolog
  *                              -> Global | GlobalExtern
  *                              -> Type (for Typedef)
  *                              -> Type (struct|union|enum)
- *                                 -> Field
+ *                                 -> Field TODO track use! but need type
  *                                 -> Constructor (enum)
  *                              -> Constant | Macro
  *       -> Dir -> SubDir -> ...
@@ -287,7 +287,10 @@ let with_datalog_env env f =
      f env2
 
 let hook_expr_toplevel env x =
-  with_datalog_env env (fun env ->
+  (* actually always called from a Uses phase, but does not hurt to x2 check*)
+  if env.phase = Uses
+  then
+   with_datalog_env env (fun env ->
      let instrs = Datalog_c.instrs_of_expr env x in
      instrs +> List.iter (fun instr ->
        let facts = Datalog_c.facts_of_instr env instr in
@@ -298,12 +301,14 @@ let hook_expr_toplevel env x =
      ()
   )
 
-let _hook_def env def =
-  with_datalog_env env (fun env ->
+(* to be called normally close to each add_node_and_edge_if_defs_mode *)
+let hook_def env def =
+  if env.phase = Defs
+  then
+   with_datalog_env env (fun env ->
     let facts = Datalog_c.facts_of_def env def in
        facts +> List.iter (fun fact -> Common.push fact env.Datalog_c.facts);
   )
- 
    
 (*****************************************************************************)
 (* Add Node *)
@@ -462,15 +467,17 @@ and toplevel env x =
       let name = 
         if kind_file env =*= Source then new_name_if_defs env name else name in
       let env = add_node_and_edge_if_defs_mode env (name, E.Constant) None in
+      hook_def env x;
       if env.phase = Uses && env.conf.macro_dependencies
       then define_body env body
   | Macro (name, params, body) -> 
       let name = 
         if kind_file env =*= Source then new_name_if_defs env name else name in
       let env = add_node_and_edge_if_defs_mode env (name, E.Macro) None in
-      let env = 
-        { env with locals = ref 
-            (params +> List.map (fun p -> Ast.str_of_name p, None)) } in
+      hook_def env x;
+      let env = { env with locals = ref 
+            (params +> List.map (fun p -> Ast.str_of_name p, None)) 
+      } in
       if env.phase = Uses && env.conf.macro_dependencies
       then define_body env body
 
@@ -509,6 +516,10 @@ and toplevel env x =
       in
       if kind <> E.Prototype 
       then type_ env (TFunction def.f_type);
+      (match x with
+      | FuncDef _ -> hook_def env x
+      | _ -> ()
+      );
 
       let xs = snd def.f_type +> Common.map_filter (fun x -> 
         (match x.p_name with 
@@ -537,18 +548,29 @@ and toplevel env x =
       let name = if static then new_name_if_defs env name else name in
       let typ = Some v.v_type in
       let env = add_node_and_edge_if_defs_mode env (name, kind) typ in
+      (match kind with
+      | E.Global -> hook_def env x
+      | _ -> ()
+      );
      
       if kind <> E.GlobalExtern 
       then type_ env t;
       if env.phase = Uses
-      then Common2.opt (expr_toplevel env) eopt
+      then 
+        (match eopt with
+        | None -> ()
+        | Some e ->
+          let n = name in
+          expr_toplevel env (Assign ((Ast_cpp.SimpleAssign, snd n), Id n, e))
+        )
 
   | StructDef { s_name = name; s_kind = kind; s_flds = flds } -> 
       let prefix = match kind with Struct -> "S__" | Union -> "U__" in
       let name = add_prefix prefix name in
       let s = Ast.str_of_name name in
       let env = add_node_and_edge_if_defs_mode env (name, E.Type) None in
-     
+      hook_def env x;
+    
       if env.phase = Defs then begin
           (* this is used for InitListExpr *)
         let fields = flds +> Common.map_filter (function
@@ -575,6 +597,7 @@ and toplevel env x =
   | EnumDef (name, xs) ->
       let name = add_prefix "E__" name in
       let env =  add_node_and_edge_if_defs_mode env (name, E.Type) None in
+      hook_def env x;
       xs +> List.iter (fun (name, eopt) ->
         let name = 
           if kind_file env=*=Source then new_name_if_defs env name else name in
@@ -583,7 +606,7 @@ and toplevel env x =
         then Common2.opt (expr_toplevel env) eopt
       )
 
-    (* I am not sure about the namespaces, so I prepend strings *)
+  (* I am not sure about the namespaces, so I prepend strings *)
   | TypeDef (name, t) -> 
       let s = Ast.str_of_name name in
       if env.phase = Defs 
@@ -601,6 +624,7 @@ and toplevel env x =
       let typ = Some t in
       let name = add_prefix "T__" name in
       let _env = add_node_and_edge_if_defs_mode env (name ,E.Type) typ in
+      (* no hook_def here *)
       (* type_ env typ; *)
       ()
 
@@ -682,6 +706,7 @@ and cases env xs = List.iter (case env) xs
 (* ---------------------------------------------------------------------- *)
 (* Expr *)
 (* ---------------------------------------------------------------------- *)
+(* can assume we are in Uses phase *)
 and expr_toplevel env x =
   expr env x;
   hook_expr_toplevel env x
