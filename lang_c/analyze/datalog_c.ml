@@ -71,8 +71,9 @@ type var = name
 (* ------------------------------------------------------------------------- *)
 (* Lvalue *)
 (* ------------------------------------------------------------------------- *)
-(* used to be inlined in rvalue which was then called expr, but cleaner
- * to separate rvalue and lvalue
+(* Used to be inlined in rvalue which was then called expr, but cleaner
+ * to separate rvalue and lvalue. Note that 'Call' is not there, it's
+ * not an lvalue (you can not do 'foo() = x' in C).
  *)
 type lvalue = 
   | Id of name (* actually a var or name *)
@@ -89,11 +90,12 @@ type rvalue =
   | Int of string wrap
   | Float of string wrap 
   | String of string wrap (* string or char *)
+
   | StaticCall of name * var list (* foo(...) *)
   | DynamicCall of var * var list (* ( *f)(...) *)
   | BuiltinCall of name * var list (* e.g. v + 1 *)
 
-  (* could be a lvalue, but weird to do (malloc(...)[x]) *)
+  (* could be a lvalue, but weird to do (malloc(...)[x] = ...) *)
   | Alloc of type_ (* malloc(sizeof(type)) *)
   | AllocArray of var * type_ (* malloc(n*sizeof(type)) *)
 
@@ -105,7 +107,7 @@ type rvalue =
 
 type instr =
   | Assign of var * rvalue (* x = e *)
-  | AssignAddress of var * lvalue (* except Deref *)
+  | AssignAddress of var * lvalue (* except Deref (no sense to do &*x) *)
   | AssignLvalue of lvalue * var (* Except Id, done by Assign *)
 
 (*****************************************************************************)
