@@ -112,7 +112,11 @@ let rec tok_of_type = function
   | TFunction (ret, _) -> tok_of_type ret
 
 let invoke_loc_of_name env name =
-  spf "'_in_%s_line_%d_'" env.scope (Parse_info.line_of_info (snd name))
+  spf "'_in_%s_line_%d_col_%d'" 
+    env.scope 
+    (Parse_info.line_of_info (snd name))
+    (Parse_info.col_of_info (snd name))
+
 
 (* TODO: need to look for type of v in env to actually qualify ... *)
 let fully_qualified_field _env _v fldname =

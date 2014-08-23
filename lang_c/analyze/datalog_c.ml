@@ -92,7 +92,7 @@ type rvalue =
   | String of string wrap (* string or char *)
 
   | StaticCall of name * var list (* foo(...) *)
-  | DynamicCall of var * var list (* ( *f)(...) *)
+  | DynamicCall of (*Deref*) var * var list (* ( *f)(...) *)
   | BuiltinCall of name * var list (* e.g. v + 1 *)
 
   (* could be a lvalue, but weird to do (malloc(...)[x] = ...) *)
@@ -304,8 +304,13 @@ let instrs_of_expr env e =
   | A.Call (e, es) ->
       let vs = List.map var_of_expr es in
       (match e with
-      | A.Id name -> StaticCall (name, vs)
-      | _ -> DynamicCall (var_of_expr e, vs)
+      | A.Id name -> 
+          StaticCall (name, vs)
+      | A.Unary (e, (A2.DeRef, _)) ->
+          DynamicCall (var_of_expr e, vs)
+      | _ -> 
+          debug (Expr e);
+          raise Todo
       )
   | A.Binary (e1, (_op, tok), e2) ->
       let vs = List.map var_of_expr [e1; e2] in

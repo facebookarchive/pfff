@@ -165,6 +165,34 @@ let main_action xs =
 (* Extra Actions *)
 (*****************************************************************************)
 
+let test_compare_datalog file =
+  let file = Common.realpath file in
+
+  (* miniC *)
+  let ast = Parse_minic.parse file in
+  let facts_minic = Datalog_minic.generate_facts ast in
+
+  (* C *)
+  let root = Sys.getcwd () +> Common.realpath in
+  Graph_code_c.facts := Some (ref []);
+  let _g = Graph_code_c.build ~verbose:false root [file] in
+  let facts_c = List.rev !(Common2.some (!Graph_code_c.facts)) in
+
+  let a = Common.sort facts_minic in
+  let b = Common.sort facts_c in
+  
+  let (_common, only_in_a, only_in_b) = 
+    Common2.diff_set_eff a b in
+  
+  only_in_a +> List.iter (fun src ->
+    pr2 (spf "this fact is missing: %s" src);
+  );
+  only_in_b +> List.iter (fun src ->
+    pr2 (spf "this fact was not expected: %s" src);
+  );
+  ()
+
+
 (*---------------------------------------------------------------------------*)
 (* regression testing *)
 (*---------------------------------------------------------------------------*)
@@ -174,6 +202,8 @@ let test () =
   ()
 
 (* ---------------------------------------------------------------------- *)
+(* the command line flags *)
+(*---------------------------------------------------------------------------*)
 let extra_actions () = [
   "-build", " <dirs> source code to analyze",
   Common.mk_action_n_arg (fun xs -> 
@@ -185,6 +215,9 @@ let extra_actions () = [
   );
   "-test", " run regression tests",
   Common.mk_action_0_arg test;
+
+  "-test_compare_datalog", " compare mini c with c",
+  Common.mk_action_1_arg test_compare_datalog;
 ]
 
 (*****************************************************************************)
