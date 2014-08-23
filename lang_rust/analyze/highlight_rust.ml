@@ -15,7 +15,6 @@
 open Common
 
 module Ast = Ast_rust
-(*module V = Visitor_rust *)
 open Highlight_code
 module T = Parser_rust
 module TH = Token_helpers_rust
@@ -101,11 +100,12 @@ let visit_program
     (* poor's man identifier tagger *)
 
     (* defs *)
-    | T.Tclass _ii1::T.TIdent (_s, ii2)::xs ->
+    | T.Tstruct _ii1::T.TIdent (_s, ii2)::xs ->
         if not (Hashtbl.mem already_tagged ii2) && lexer_based_tagger
         then tag ii2 (Class (Def2 fake_no_def2));
         aux_toks xs
 
+(*
     | (T.Tvoid _ii | T.Tint _ii)
       ::T.TIdent (_s, ii2)
       ::T.TOParen _
@@ -113,8 +113,9 @@ let visit_program
         if not (Hashtbl.mem already_tagged ii2) && lexer_based_tagger
         then tag ii2 (Method (Def2 fake_no_def2));
         aux_toks xs
+*)
 
-    |   T.TIdent (s1, ii1)::T.TDot _
+    |   T.TIdent (s1, ii1)::T.TColonColon _
       ::T.TIdent (_s3, ii3)::T.TIdent (_s4,ii4)::xs 
        ->
         if not (Hashtbl.mem already_tagged ii4) && lexer_based_tagger
@@ -129,7 +130,7 @@ let visit_program
 
     (* uses *)
 
-    |   T.TIdent (s1, ii1)::T.TDot _
+    |   T.TIdent (s1, ii1)::T.TColonColon _
       ::T.TIdent (_s3, ii3)::T.TOParen _::xs ->
         if not (Hashtbl.mem already_tagged ii3) && lexer_based_tagger
         then begin 
@@ -142,7 +143,7 @@ let visit_program
         end;
         aux_toks xs
 
-    |   T.TIdent (s1, ii1)::T.TDot _
+    |   T.TIdent (s1, ii1)::T.TArrow _
       ::T.TIdent (_s3, ii3)::T.TEq _::xs ->
         if not (Hashtbl.mem already_tagged ii3) && lexer_based_tagger
         then begin 
@@ -152,13 +153,13 @@ let visit_program
         aux_toks xs
 
 
-    |  T.TIdent (s1, ii1)::T.TDot _
-     ::T.TIdent (s3, ii3)::T.TDot ii4::xs ->
+    |  T.TIdent (s1, ii1)::T.TColonColon _
+     ::T.TIdent (s3, ii3)::T.TArrow ii4::xs ->
         if not (Hashtbl.mem already_tagged ii1) && lexer_based_tagger
         then begin 
           if is_module_name s1 then tag ii1 (Module Use)
         end;
-        aux_toks (T.TIdent (s3, ii3)::T.TDot ii4::xs)
+        aux_toks (T.TIdent (s3, ii3)::T.TArrow ii4::xs)
         
 
     | _x::xs ->
@@ -183,14 +184,11 @@ let visit_program
         if not (Hashtbl.mem already_tagged ii)
         then
           tag ii Comment
-
     | T.TCommentSpace ii ->
         if not (Hashtbl.mem already_tagged ii)
         then ()
         else ()
-
     | T.TCommentNewline _ii | T.TCommentMisc _ii -> ()
-
     | T.TUnknown ii -> tag ii Error
     | T.EOF _ii -> ()
 
@@ -204,44 +202,16 @@ let visit_program
         tag ii Number
 
     (* keywords  *)
-    | T.Tbool ii
-        -> tag ii TypeInt
 
-    | T.Tbyte ii
-    | T.Tchar ii
-        -> tag ii TypeInt (* TODO *)
-
-    | T.Tvoid ii
-        -> tag ii TypeVoid
-
-    | T.Tdouble ii
-    | T.Tfloat ii
-
-    | T.Tshort ii
-    | T.Tint ii
-    | T.Tlong ii
-    | T.Tushort ii
-    | T.Tuint ii
-    | T.Tulong ii
-       -> tag ii TypeInt
-
-    | T.Tstring ii
-    | T.Tsbyte ii
-        -> tag ii TypeInt
-
-    | T.Tclass ii
-    | T.Tabstract ii
-    | T.Tvirtual ii
-    | T.Tdelegate ii
-    | T.Tthis ii
-    | T.Tinterface ii
-    | T.Tnew ii
-    | T.Tobject ii
+    | T.Tstruct ii
+    | T.Ttrait ii
+    | T.Timpl ii
+    | T.Tself ii
+    | T.Tsuper ii
         -> tag ii KeywordObject
 
-    | T.Tprivate ii
-    | T.Tprotected ii
-    | T.Tpublic ii
+    | T.Tpub ii
+    | T.Tpriv ii
         -> tag ii Keyword
 
     | T.Treturn ii
@@ -249,82 +219,50 @@ let visit_program
     | T.Tcontinue ii
         -> tag ii Keyword
 
-    | T.Tswitch ii
-    | T.Tcase ii
+    | T.Tmatch ii
         -> tag ii KeywordConditional
 
-    | T.Tstruct ii
-
-    | T.Tdefault ii
-    | T.Tenum ii
-    | T.Tconst ii
-    | T.Tunsafe ii
-        -> tag ii Keyword
-
-    | T.Tnamespace ii
-    | T.Tusing ii
+    | T.Tcrate ii
+    | T.Tuse ii
+    | T.Tmod ii
         -> tag ii KeywordModule
 
     | T.Tstatic ii
-    | T.Tvolatile ii
     | T.Textern ii
 
     | T.Tif ii  | T.Telse ii -> tag ii KeywordConditional
-    | T.Tdo ii  | T.Twhile ii | T.Tfor ii | T.Tforeach ii
+    | T.Twhile ii | T.Tfor ii | T.Tloop ii
           -> tag ii KeywordLoop
-
-    | T.Tgoto ii
-        -> tag ii Keyword
-
-    | T.Tthrow ii | T.Ttry ii | T.Tcatch ii
-    | T.Tfinally ii
-    | T.Tchecked ii | T.Tunchecked ii
-        -> tag ii KeywordExn
-
-    | T.Tnull ii
-        -> tag ii Null
 
     | T.Ttrue ii | T.Tfalse ii
       ->  tag ii Boolean
 
-    | T.Tref ii
-    | T.Tout ii
-    | T.Tas ii
-    | T.Tbase ii
-    | T.Tdecimal ii
-    | T.Tevent ii
-    | T.Texplicit ii
-    | T.Tfixed ii
-    | T.Timplicit ii
-    | T.Tin ii
-    | T.Tinternal ii
-    | T.Tis ii
-    | T.Tlock ii
-    | T.Toperator ii
-    | T.Toverride ii
-    | T.Tparams ii
-    | T.Treadonly ii
-    | T.Tsealed ii
-    | T.Tsizeof ii
-    | T.Tstackalloc ii
-    | T.Ttypeof ii
+    | T.Tenum ii
+    | T.Ttype ii
         -> tag ii Keyword
 
+    | T.Tlet ii
+    | T.Tfn ii
+    | T.Tas ii
+    | T.Tin ii
+        -> tag ii Keyword
+
+    | T.Tproc ii
+        -> tag ii Keyword
+
+    | T.Tmut ii
+        -> tag ii UseOfRef
+
+    | T.Tref ii
+    | T.Tbox ii
+        -> tag ii Keyword
+
+    | T.Tunsafe ii
+        -> tag ii BadSmell
+
+
     | T.TCppLine ii
-    | T.TCppError ii
-    | T.TCppWarning ii
-    | T.TCppRegion ii
-    | T.TCppEndRegion ii
         -> tag ii CppOther
-
-    | T.TDefine ii -> tag ii Define
-    | T.TUndef ii -> tag ii Define
-
-    | T.TIfdefIf ii
-    | T.TIfdefElif ii
-    | T.TIfdefElse ii
-    | T.TIfdefEndif ii
-        -> tag ii Ifdef
 
     (* symbols *)
     | T.TEq ii ->
@@ -341,8 +279,9 @@ let visit_program
     | T.TLess ii | T.TMore ii
         -> tag ii Operator
 
-    | T.TDot (ii)
-    | T.TColon (ii)
+    | T.TArrow (ii)
+    | T.TColonColon (ii)
+    | T.TPound (ii)
         ->
         tag ii Punctuation
 
@@ -371,15 +310,10 @@ let visit_program
         -> tag ii Punctuation
 
     | T.TDiv ii
-    | T.TDec ii
-    | T.TInc ii
     | T.TOrOr ii 
     | T.TAndAnd ii 
-    | T.TBang ii 
         -> tag ii Operator
 
-    | T.TArrow ii
-    | T.TQuestion ii
     | T.TSemiColon ii
         -> tag ii Punctuation
 

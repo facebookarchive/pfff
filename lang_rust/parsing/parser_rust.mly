@@ -46,39 +46,30 @@
 
 /*(* keywords tokens *)*/
 %token <Parse_info.info>
-  Tbool Tbyte Tchar Tvoid Tdouble Tfloat Tshort Tint Tlong Tstring Tsbyte
-  Tushort Tuint Tulong
-  Tclass Tabstract Tvirtual Tdelegate Tthis   Tinterface Tnew Tobject
-  Tprivate Tprotected Tpublic
-  Treturn
-  Tbreak Tcontinue
-  Tswitch Tcase Tdefault
-  Tenum   Tstruct
-  Tconst
-  Tunsafe
-  Tnamespace Tusing
-  Tstatic Tvolatile Textern
-  Tif Telse
-  Tdo  Twhile
-  Tfor Tforeach
-  Tgoto
-  Tthrow  Ttry  Tcatch  Tfinally
-  Tchecked Tunchecked 
-  Tnull
-  Ttrue Tfalse
-  Tref Tout
+ Tif Telse
+ Twhile Tfor Tloop
+ Tbreak  Tcontinue
+ Treturn
+ Tlet Tin Tmatch
+ Ttrue Tfalse
+ Tfn Ttype Tenum
+ Tstruct Ttrait Timpl
+ Tself Tsuper
+ Tcrate Tuse
+ Tstatic  Textern
+ Tpub Tpriv
 
-  Tas Tbase  Tdecimal Tevent Texplicit Tfixed Timplicit
-  Tin Tinternal Tis Tlock
-  Toperator  Toverride Tparams Treadonly 
-  Tsealed Tsizeof Tstackalloc  Ttypeof
+ Tmut
+ Tas
+ Tbox
+ Tref
+ Tmod
+ Tproc
+ Tunsafe
 
 /*(* cpp *)*/
 %token <Parse_info.info>
-  TCppLine TCppError TCppWarning 
-  TCppRegion TCppEndRegion
-  TDefine TUndef
-  TIfdefIf TIfdefElif TIfdefElse TIfdefEndif
+  TCppLine
 
 /*(* syntax *)*/
 %token <Parse_info.info> TOParen TCParen 
@@ -88,18 +79,16 @@
 
 
 %token <Parse_info.info>
- TComma TColon TDot TSemiColon
+ TComma TColonColon TSemiColon
  TStar TDiv TPercent
  TEq TEqEq TNotEq
  TPlus TMinus 
  TTilde
  TAnd TOr TXor
  TLess TMore TMoreEq TLessEq
- TQuestion
- TInc TDec
- TBang TTilde
  TAndAnd TOrOr
  TArrow
+ TPound
 
 %token <string * Parse_info.info> TAssignOp
 

@@ -4,9 +4,9 @@
 
 ** miniC and datalog
 
-*** simple miniC AST and parser
+*** simple miniC AST and parser (abuse lang_cpp/ and lang_c/)
 
-*** first datalog-based interprocedural context insensitive dataflow analysis!
+*** first datalog-based interprocedural context insensitive dataflow analysis!!!
  
 ** c
 
@@ -18,17 +18,24 @@
 *** graph_code_c port of graph_code_clang
 handle dependencies of cpp constructs!
 
+*** basic datalog-based interprocedural context insensitive dataflow analysis!
+mostly port of miniC, but doing the linearization of expression and handle more
+than just one file by hooking into graph_code_c!
+
 ** lisp
 
 *** basic parser (had just lexer before)
 
 *** basic graph_code, modules, functions, macros granularity
+can explore dependencies in emacs source :)
 
 ** codegraph
 
 *** backend for C
 
 *** backend for lisp
+
+** introduce lang_rust/
 
 * 0.28 (Q2 2014) ((kernel.tex.nw parenthesis))
 extra: kernel.tex.nw
