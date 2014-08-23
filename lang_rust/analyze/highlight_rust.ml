@@ -97,6 +97,11 @@ let visit_program
     (* poor's man identifier tagger *)
 
     (* defs *)
+    | (T.Tmod _ )::T.TIdent (_s, ii2)::xs ->
+        if not (Hashtbl.mem already_tagged ii2) && lexer_based_tagger
+        then tag ii2 (Module (Def));
+        aux_toks xs
+
     | (T.Tstruct _ | T.Ttrait _ | T.Timpl _)::T.TIdent (_s, ii2)::xs ->
         if not (Hashtbl.mem already_tagged ii2) && lexer_based_tagger
         then tag ii2 (Class (Def2 fake_no_def2));
@@ -148,7 +153,7 @@ let visit_program
         then tag ii3 (Field (Use2 fake_no_use2));
         aux_toks xs
 
-    | (T.TArrow _ | T.TColon _) ::T.TIdent (_s3, ii3)::xs ->
+    | (T.TArrow _) ::T.TIdent (_s3, ii3)::xs ->
         if not (Hashtbl.mem already_tagged ii3) && lexer_based_tagger
         then tag ii3 (Type (Use2 fake_no_use2));
         aux_toks xs
@@ -230,7 +235,7 @@ let visit_program
 
     | T.Tref ii
     | T.Tbox ii
-        -> tag ii Keyword
+        -> tag ii UseOfRef
 
     | T.Tunsafe ii
         -> tag ii BadSmell
