@@ -27,6 +27,7 @@ module PI = Parse_info
  * 
  * See pfff/mini/datalog_minic.ml for more comments, history, and notes.
  * Lots of code in this file is copy pasted from datalog_minic.ml
+ * (but now actually improved, e.g. with the notion of lvalue/rvalue).
  *)
 
 (*****************************************************************************)
@@ -88,21 +89,20 @@ type rvalue =
   | Int of string wrap
   | Float of string wrap 
   | String of string wrap (* string or char *)
-  | Lv of lvalue
-  (* could be a lvalue, but weird to do (malloc(...)[x]) *)
-  | Alloc of type_ (* malloc(sizeof(type)) *)
-  | AllocArray of var * type_ (* malloc(n*sizeof(type)) *)
   | StaticCall of name * var list (* foo(...) *)
   | DynamicCall of var * var list (* ( *f)(...) *)
   | BuiltinCall of name * var list (* e.g. v + 1 *)
+
+  (* could be a lvalue, but weird to do (malloc(...)[x]) *)
+  | Alloc of type_ (* malloc(sizeof(type)) *)
+  | AllocArray of var * type_ (* malloc(n*sizeof(type)) *)
+
+  | Lv of lvalue
 
 (* ------------------------------------------------------------------------- *)
 (* Stmt *)
 (* ------------------------------------------------------------------------- *)
 
-(* todo? have a lvalue type? so ObjField, ArrayAccess, Id, DeRef
- * are lvalues, which then generate different form of instr below
- *)
 type instr =
   | Assign of var * rvalue (* x = e *)
   | AssignAddress of var * lvalue (* except Deref *)
@@ -226,7 +226,7 @@ let instrs_of_expr env e =
       (match lv, e2 with
       | Id v, A.Unary (e, (A2.GetRef, _)) ->
           (match lvalue_of_expr e with
-          (* todo: could have Deref here, but what &( *x ) means? *)
+          (* less: what &( *x ) means? *)
           | DeRef _ ->
               debug (A.Expr e);
               raise Impossible
@@ -332,12 +332,11 @@ let instrs_of_expr env e =
 
   and var_of_expr e =
   match e with
-  (* todo? make sure it's actually a local/param? *)
   | A.Id name -> name
   | _ -> 
-    let instr = instr_of_expr e in
-    Common.push instr instrs;
-    var_of_instr instr
+      let instr = instr_of_expr e in
+      Common.push instr instrs;
+      var_of_instr instr
 
   and lvalue_of_expr e =
     try 

@@ -89,6 +89,7 @@ and expr =
 (* Stmt *)
 (* ------------------------------------------------------------------------- *)
 
+(* less: actually datalog_c.ml introduce lvalue/rvalue which is cleaner *)
 and instr =
   | Assign of var * expr (* x = e *)
   | AssignAddress of var * name (* x = &v *) (* of global, local, param, func *)
