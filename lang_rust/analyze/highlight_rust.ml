@@ -107,12 +107,16 @@ let visit_program
         then tag ii2 (TypeDef Def);
         aux_toks xs
 
-    | (T.Tfn _ | T.Tproc _)::T.TIdent (_s, ii2)::xs ->
+    | (T.Tfn _)::T.TIdent (_s, ii2)::xs ->
         if not (Hashtbl.mem already_tagged ii2) && lexer_based_tagger
         then tag ii2 (Function (Def2 fake_no_def2));
         aux_toks xs
 
     | (T.Tlet _)::T.TIdent (_s, ii2)::xs ->
+        if not (Hashtbl.mem already_tagged ii2) && lexer_based_tagger
+        then tag ii2 (Local (Def));
+        aux_toks xs
+    | (T.Tlet _)::T.Tmut _::T.TIdent (_s, ii2)::xs ->
         if not (Hashtbl.mem already_tagged ii2) && lexer_based_tagger
         then tag ii2 (Local (Def));
         aux_toks xs
@@ -144,7 +148,7 @@ let visit_program
         then tag ii3 (Field (Use2 fake_no_use2));
         aux_toks xs
 
-    | (T.TArrow _ | T.Tmut _ | T.TColon _) ::T.TIdent (_s3, ii3)::xs ->
+    | (T.TArrow _ | T.TColon _) ::T.TIdent (_s3, ii3)::xs ->
         if not (Hashtbl.mem already_tagged ii3) && lexer_based_tagger
         then tag ii3 (Type (Use2 fake_no_use2));
         aux_toks xs
@@ -169,42 +173,27 @@ let visit_program
 
     | T.TComment ii ->
         if not (Hashtbl.mem already_tagged ii)
-        then
-          tag ii Comment
-    | T.TCommentSpace ii ->
-        if not (Hashtbl.mem already_tagged ii)
-        then ()
-        else ()
+        then tag ii Comment
+    | T.TCommentSpace _ii -> ()
     | T.TCommentNewline _ii | T.TCommentMisc _ii -> ()
     | T.TUnknown ii -> tag ii Error
     | T.EOF _ii -> ()
 
     (* values  *)
 
-    | T.TString (_s,ii) ->
-        tag ii String
-    | T.TChar (_s, ii) ->
-        tag ii String
-    | T.TFloat (_s,ii) | T.TInt (_s,ii) ->
-        tag ii Number
+    | T.TString (_s,ii) -> tag ii String
+    | T.TChar (_s, ii) -> tag ii String
+    | T.TFloat (_s,ii) | T.TInt (_s,ii) -> tag ii Number
 
     (* keywords  *)
 
-    | T.Tstruct ii
-    | T.Ttrait ii
-    | T.Timpl ii
-    | T.Tself ii
-    | T.Tsuper ii
+    | T.Tstruct ii | T.Ttrait ii | T.Timpl ii
+    | T.Tself ii | T.Tsuper ii
         -> tag ii KeywordObject
 
-    | T.Tpub ii
-    | T.Tpriv ii
-        -> tag ii Keyword
+    | T.Tpub ii| T.Tpriv ii -> tag ii Keyword
 
-    | T.Treturn ii
-    | T.Tbreak ii
-    | T.Tcontinue ii
-        -> tag ii Keyword
+    | T.Treturn ii | T.Tbreak ii | T.Tcontinue ii -> tag ii Keyword
 
     | T.Tmatch ii
         -> tag ii KeywordConditional
@@ -216,13 +205,12 @@ let visit_program
 
     | T.Tstatic ii
     | T.Textern ii
+        -> tag ii Keyword
 
     | T.Tif ii  | T.Telse ii -> tag ii KeywordConditional
-    | T.Twhile ii | T.Tfor ii | T.Tloop ii
-          -> tag ii KeywordLoop
+    | T.Twhile ii | T.Tfor ii | T.Tloop ii -> tag ii KeywordLoop
 
-    | T.Ttrue ii | T.Tfalse ii
-      ->  tag ii Boolean
+    | T.Ttrue ii | T.Tfalse ii ->  tag ii Boolean
 
     | T.Tenum ii
     | T.Ttype ii
@@ -260,51 +248,37 @@ let visit_program
     | T.TOBracket ii | T.TCBracket ii
     | T.TOBrace ii | T.TCBrace ii
     | T.TOParen ii | T.TCParen ii
-          -> tag ii Punctuation
 
-    | T.TPlus ii | T.TMinus ii
-    | T.TLess ii | T.TMore ii
-        -> tag ii Operator
+    | T.TOAngle ii | T.TCAngle ii 
 
     | T.TArrow (ii)
     | T.TDot (ii)
     | T.TColonColon (ii)
     | T.TPound (ii)
     | T.TColon (ii)
-        ->
-        tag ii Punctuation
+    | T.TComma ii
+    | T.TSemiColon ii
+
+          -> tag ii Punctuation
+
+    | T.TPlus ii | T.TMinus ii
+    | T.TStar ii | T.TDiv ii
+    | T.TPercent ii
+
+    | T.TLess ii | T.TMore ii
 
     | T.TTilde ii
-    | T.TStar ii
-      -> tag ii Operator
 
-    | T.TAnd ii
-        -> tag ii Operator
+    | T.TAnd ii | T.TOr ii | T.TXor ii
+    | T.TAndAnd ii | T.TOrOr ii 
 
-    | T.TAssignOp (_, ii) -> tag ii Punctuation
+    | T.TAssignOp (_, ii) 
 
     | T.TNotEq ii
     | T.TLessEq ii
     | T.TMoreEq ii
     | T.TEqEq ii
-
-    | T.TXor ii
-    | T.TOr ii
-    | T.TPercent ii
         -> tag ii Operator
-
-    | T.TComma ii
-    | T.TCAngle ii
-    | T.TOAngle ii
-        -> tag ii Punctuation
-
-    | T.TDiv ii
-    | T.TOrOr ii 
-    | T.TAndAnd ii 
-        -> tag ii Operator
-
-    | T.TSemiColon ii
-        -> tag ii Punctuation
 
     | T.TIdent (s, ii) ->
        if not (Hashtbl.mem already_tagged ii)
