@@ -30,7 +30,7 @@
  * history:
  *  - LFS and code navigation, PofFS
  *  - read Jquery paper, Prolog language for code query (and later Semmle)
- *  - cmf --prolog for PHP for class hiearchy and then for call graph and 
+ *  - cmf --prolog for PHP for class hiearchy and then for call graph and
  *    data graph (partial)
  *  - codequery, generalization for Ocaml
  *  - saw how Prolog interactive bdd was so much better than using

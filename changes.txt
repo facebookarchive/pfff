@@ -26,16 +26,22 @@ than just one file by hooking into graph_code_c!
 
 *** basic parser (had just lexer before)
 
-*** basic graph_code, modules, functions, macros granularity
+*** basic graph_code for files, modules, functions, macros
 can explore dependencies in emacs source :)
+
+** php
+
+*** codequery add return/2 predicate, complementer parameter/4
+
+** introduce lang_rust/
+
+*** basic lexer and highlighter
 
 ** codegraph
 
 *** backend for C
 
 *** backend for lisp
-
-** introduce lang_rust/
 
 * 0.28 (Q2 2014) ((kernel.tex.nw parenthesis))
 extra: kernel.tex.nw
@@ -55,7 +61,7 @@ from the skip_list
 
 *** new backend for js using avik's data and objC using mathieu's data
 
-** a better LOC counter 'codemap -test_loc' which modulate the size of files
+** a LOC counter 'codemap -test_loc' which modulate the size of files
 with archi_code classification
 
 ** c
@@ -142,7 +148,8 @@ less backward dependencies on plan9 for instance
 *** software architecture related checks
 Deadcode, UnusedExport, UndefinedDefOfDecl
 
-!!deadcode false positives help finding bugs in other parts of the analysis!!
+!!deadcode false positives really help to find bugs in other
+parts of the analysis!!
 
 *** annotation support to skip false positives
 (port what was in cmf)
