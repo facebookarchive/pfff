@@ -97,6 +97,7 @@ let visitor_info_of_tok f = function
   | TOAngle ii -> TOAngle (f ii)
   | TCAngle ii -> TCAngle (f ii)
   | TComma ii -> TComma (f ii)
+  | TColon ii -> TColon (f ii)
   | TColonColon ii -> TColonColon (f ii)
   | TSemiColon ii -> TSemiColon (f ii)
   | TStar ii -> TStar (f ii)
@@ -118,6 +119,7 @@ let visitor_info_of_tok f = function
   | TAndAnd ii -> TAndAnd (f ii)
   | TOrOr ii -> TOrOr (f ii)
   | TArrow ii -> TArrow (f ii)
+  | TDot ii -> TDot (f ii)
   | TPound ii -> TPound (f ii)
 
   | TAssignOp (s, ii) -> TAssignOp (s, f ii)

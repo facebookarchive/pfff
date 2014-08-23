@@ -252,7 +252,7 @@ let visit_program
             )
           )
 
-      | FieldAccess (_e, _tok,long_name) | FieldAssign (_e, _tok,long_name,_,_) ->
+      | FieldAccess (_e, _tok,long_name) | FieldAssign (_e,_tok,long_name,_,_)->
           let info = Ast.info_of_name (Ast.name_of_long_name long_name) in
           tag info (Field (Use2 fake_no_use2));
           k x

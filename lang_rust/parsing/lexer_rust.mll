@@ -96,7 +96,7 @@ let octdigit = ['0'-'7']
 let hexdigit = digit | ['a'-'f'] | ['A'-'F']
 
 
-let ident = (letter | '_') (letter | digit)*
+let ident = (letter | '_') (letter | digit | '_')*
 
 let escapeseq = 
    ( '\\' 'x' hexdigit hexdigit? hexdigit? hexdigit?
@@ -150,13 +150,11 @@ rule token = parse
   | "*" { TStar(tokinfo lexbuf) }  | "/" { TDiv(tokinfo lexbuf) }
   | "%" { TPercent(tokinfo lexbuf) }
 
-  | "&" { TAnd(tokinfo lexbuf) }
-  | "|" { TOr(tokinfo lexbuf) }
+  | "&" { TAnd(tokinfo lexbuf) } | "|" { TOr(tokinfo lexbuf) }
   | "^" { TXor(tokinfo lexbuf) }
   | "<<" { TOAngle(tokinfo lexbuf) }  | ">>" { TCAngle(tokinfo lexbuf) }
 
-  | "&&" { TAndAnd(tokinfo lexbuf) }
-  | "||" { TOrOr(tokinfo lexbuf) }
+  | "&&" { TAndAnd(tokinfo lexbuf) } | "||" { TOrOr(tokinfo lexbuf) }
 
   | "=="  { TEqEq (tokinfo lexbuf) }
   | "!="  { TNotEq (tokinfo lexbuf) }
@@ -168,7 +166,9 @@ rule token = parse
 
   | "#" { TPound(tokinfo lexbuf) }
   | "->" { TArrow(tokinfo lexbuf) }
+  | "." { TDot(tokinfo lexbuf) }
   | "::" { TColonColon(tokinfo lexbuf) }
+  | ":" { TColon(tokinfo lexbuf) }
   | "," { TComma(tokinfo lexbuf) }
   | ";" { TSemiColon(tokinfo lexbuf) }
 

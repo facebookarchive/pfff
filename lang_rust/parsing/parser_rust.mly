@@ -52,7 +52,8 @@
  Treturn
  Tlet Tin Tmatch
  Ttrue Tfalse
- Tfn Ttype Tenum
+ Tfn 
+ Ttype Tenum
  Tstruct Ttrait Timpl
  Tself Tsuper
  Tcrate Tuse
@@ -79,7 +80,7 @@
 
 
 %token <Parse_info.info>
- TComma TColonColon TSemiColon
+ TComma TColon TColonColon TSemiColon
  TStar TDiv TPercent
  TEq TEqEq TNotEq
  TPlus TMinus 
@@ -87,7 +88,7 @@
  TAnd TOr TXor
  TLess TMore TMoreEq TLessEq
  TAndAnd TOrOr
- TArrow
+ TArrow TDot
  TPound
 
 %token <string * Parse_info.info> TAssignOp

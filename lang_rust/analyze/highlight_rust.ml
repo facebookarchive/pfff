@@ -35,9 +35,6 @@ let fake_no_use2 = (NoInfoPlace, UniqueDef, MultiUse)
 
 let lexer_based_tagger = true
 
-let is_module_name s = 
-  s =~ "[A-Z].*"
-
 (*****************************************************************************)
 (* Code highlighter *)
 (*****************************************************************************)
@@ -100,67 +97,57 @@ let visit_program
     (* poor's man identifier tagger *)
 
     (* defs *)
-    | T.Tstruct _ii1::T.TIdent (_s, ii2)::xs ->
+    | (T.Tstruct _ | T.Ttrait _ | T.Timpl _)::T.TIdent (_s, ii2)::xs ->
         if not (Hashtbl.mem already_tagged ii2) && lexer_based_tagger
         then tag ii2 (Class (Def2 fake_no_def2));
         aux_toks xs
 
-(*
-    | (T.Tvoid _ii | T.Tint _ii)
-      ::T.TIdent (_s, ii2)
-      ::T.TOParen _
-      ::xs ->
+    | (T.Ttype _ | T.Tenum _)::T.TIdent (_s, ii2)::xs ->
         if not (Hashtbl.mem already_tagged ii2) && lexer_based_tagger
-        then tag ii2 (Method (Def2 fake_no_def2));
+        then tag ii2 (TypeDef Def);
         aux_toks xs
-*)
 
-    |   T.TIdent (s1, ii1)::T.TColonColon _
-      ::T.TIdent (_s3, ii3)::T.TIdent (_s4,ii4)::xs 
-       ->
-        if not (Hashtbl.mem already_tagged ii4) && lexer_based_tagger
-        then begin 
-          tag ii4 (Field (Def2 fake_no_def2));
+    | (T.Tfn _ | T.Tproc _)::T.TIdent (_s, ii2)::xs ->
+        if not (Hashtbl.mem already_tagged ii2) && lexer_based_tagger
+        then tag ii2 (Function (Def2 fake_no_def2));
+        aux_toks xs
 
-          tag ii3 (TypeInt);
-          if is_module_name s1 then tag ii1 (Module (Use));
-        end;
+    | (T.Tlet _)::T.TIdent (_s, ii2)::xs ->
+        if not (Hashtbl.mem already_tagged ii2) && lexer_based_tagger
+        then tag ii2 (Local (Def));
         aux_toks xs
 
 
     (* uses *)
 
-    |   T.TIdent (s1, ii1)::T.TColonColon _
-      ::T.TIdent (_s3, ii3)::T.TOParen _::xs ->
+    | T.TIdent (_, ii0)::T.TColonColon ii1::T.TIdent (s2, ii2)::xs ->
+        tag ii0 (Module (Use));
+        aux_toks (T.TColonColon ii1::T.TIdent (s2, ii2)::xs)
+
+    | T.TColonColon _::T.TIdent (_s3, ii3)::T.TOParen _::xs ->
         if not (Hashtbl.mem already_tagged ii3) && lexer_based_tagger
-        then begin 
-          tag ii3 (Method (Use2 fake_no_use2));
-          (*
-          if not (Hashtbl.mem already_tagged ii1)
-          then tag ii1 (Local Use);
-          *)
-          if is_module_name s1 then tag ii1 (Module (Use))
-        end;
+        then tag ii3 (Function (Use2 fake_no_use2));
         aux_toks xs
 
-    |   T.TIdent (s1, ii1)::T.TArrow _
-      ::T.TIdent (_s3, ii3)::T.TEq _::xs ->
+    | T.TDot _::T.TIdent (_s3, ii3)::T.TOParen _::xs ->
         if not (Hashtbl.mem already_tagged ii3) && lexer_based_tagger
-        then begin 
-          tag ii3 (Field (Use2 fake_no_use2));
-          if is_module_name s1 then tag ii1 (Module (Use))
-        end;
+        then tag ii3 (Method (Use2 fake_no_use2));
         aux_toks xs
 
+    | T.TIdent (_s3, ii3)::T.TOParen _::xs ->
+        if not (Hashtbl.mem already_tagged ii3) && lexer_based_tagger
+        then tag ii3 (Function (Use2 fake_no_use2));
+        aux_toks xs
 
-    |  T.TIdent (s1, ii1)::T.TColonColon _
-     ::T.TIdent (s3, ii3)::T.TArrow ii4::xs ->
-        if not (Hashtbl.mem already_tagged ii1) && lexer_based_tagger
-        then begin 
-          if is_module_name s1 then tag ii1 (Module Use)
-        end;
-        aux_toks (T.TIdent (s3, ii3)::T.TArrow ii4::xs)
-        
+    | T.TDot _::T.TIdent (_s3, ii3)::xs ->
+        if not (Hashtbl.mem already_tagged ii3) && lexer_based_tagger
+        then tag ii3 (Field (Use2 fake_no_use2));
+        aux_toks xs
+
+    | (T.TArrow _ | T.Tmut _ | T.TColon _) ::T.TIdent (_s3, ii3)::xs ->
+        if not (Hashtbl.mem already_tagged ii3) && lexer_based_tagger
+        then tag ii3 (Type (Use2 fake_no_use2));
+        aux_toks xs
 
     | _x::xs ->
         aux_toks xs
@@ -280,8 +267,10 @@ let visit_program
         -> tag ii Operator
 
     | T.TArrow (ii)
+    | T.TDot (ii)
     | T.TColonColon (ii)
     | T.TPound (ii)
+    | T.TColon (ii)
         ->
         tag ii Punctuation
 
@@ -317,8 +306,12 @@ let visit_program
     | T.TSemiColon ii
         -> tag ii Punctuation
 
-    | T.TIdent (_s, _ii) -> 
-        ()
+    | T.TIdent (s, ii) ->
+       if not (Hashtbl.mem already_tagged ii)
+       then 
+        if s =~ "^[A-Z].*" && false (* some false positive with types *)
+        then tag ii (Constructor(Use2 fake_no_use2))
+        else ()
   );
   (* -------------------------------------------------------------------- *)
   (* ast phase 2 *)  
