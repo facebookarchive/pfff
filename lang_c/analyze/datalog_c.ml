@@ -68,23 +68,30 @@ type name = string wrap
 type var = name
 
 (* ------------------------------------------------------------------------- *)
-(* Expression *)
+(* Lvalue *)
+(* ------------------------------------------------------------------------- *)
+(* used to be inlined in rvalue which was then called expr, but cleaner
+ * to separate rvalue and lvalue
+ *)
+type lvalue = 
+  | Id of name (* actually a var or name *)
+  | ObjField of var * name (* x->fld *)
+  | ArrayAccess of var * var (* x[y] *)
+  (* hmm mv? *)
+  | DeRef of var (* *x *)
+
+(* ------------------------------------------------------------------------- *)
+(* Rvalue *)
 (* ------------------------------------------------------------------------- *)
 (* see ast_minic.ml for more comments about this CIL-like AST *)
-type expr =
+type rvalue =
   | Int of string wrap
   | Float of string wrap 
   | String of string wrap (* string or char *)
-  | Id of name (* can be a global, local, parameter, constant, functions *)
-
-  | DeRef of var (*  *x *)
-
+  | Lv of lvalue
+  (* could be a lvalue, but weird to do (malloc(...)[x]) *)
   | Alloc of type_ (* malloc(sizeof(type)) *)
   | AllocArray of var * type_ (* malloc(n*sizeof(type)) *)
-
-  | ObjField of var * name (* x->fld *)
-  | ArrayAccess of var * var (* x[y] *)
-
   | StaticCall of name * var list (* foo(...) *)
   | DynamicCall of var * var list (* ( *f)(...) *)
   | BuiltinCall of name * var list (* e.g. v + 1 *)
@@ -97,7 +104,7 @@ type expr =
  * are lvalues, which then generate different form of instr below
  *)
 type instr =
-  | Assign of var * expr (* x = e *)
+  | Assign of var * rvalue (* x = e *)
   | AssignField of var * name * var (* x->f = v *)
   | AssignArray of var * var * var (* x[y] = v *)
 
@@ -218,7 +225,7 @@ let instrs_of_expr env e =
   | A.Unary (_, ((A2.UnPlus|A2.UnMinus|A2.Tilde|A2.Not), _))
   | A.SizeOf _
     ->
-      Assign (fresh_var env (tokwrap_of_expr e), expr_of_simple_expr e)
+      Assign (fresh_var env (tokwrap_of_expr e), rvalue_of_simple_expr e)
 
   (* ok, an actual instr! For our analysis we don't care about op (we are
    * not even control flow sensitive anyway)
@@ -242,16 +249,12 @@ let instrs_of_expr env e =
           (match lv with
           | Id name -> 
               Assign (name, 
-                      try expr_of_simple_expr e2
-                      with NotSimpleExpr -> Id (var_of_expr e2)
+                      try rvalue_of_simple_expr e2
+                      with NotSimpleExpr -> Lv (Id (var_of_expr e2))
               )
           | ObjField (v, n) -> AssignField (v, n, var_of_expr e2)
           | ArrayAccess (v1, v2) -> AssignArray (v1, v2, var_of_expr e2)
           | DeRef (v) -> AssignDeref (v, var_of_expr e2)
-          | _ -> 
-            (* wrong lvalue_of_expr *)
-            debug (A.Expr e);
-            raise Impossible
           )
       )
 
@@ -296,15 +299,15 @@ let instrs_of_expr env e =
     raise Todo
 
 
-  and expr_of_simple_expr e =
+  and rvalue_of_simple_expr e =
   match e with
   | A.Int x -> Int x
   | A.Float x -> Float x
   | A.String x -> String x
   | A.Char x -> String x
   (* could be lots of things, global, local, param, constant, function! *)
-  | A.Id name -> Id name
-  | A.Unary (e, (A2.DeRef, _)) -> DeRef (var_of_expr e)
+  | A.Id name -> Lv (Id name)
+  | A.Unary (e, (A2.DeRef, _)) -> Lv (DeRef (var_of_expr e))
   | A.Call (A.Id ("malloc", _tok), es) ->
       (match es with
       | [SizeOf(Right(t))] -> Alloc (t)
@@ -331,10 +334,10 @@ let instrs_of_expr env e =
   | A.ArrayAccess (e1, e2) ->
       let v1 = var_of_expr e1 in
       let v2 = var_of_expr e2 in
-      ArrayAccess (v1, v2)
+      Lv (ArrayAccess (v1, v2))
   | A.RecordAccess (e, name) ->
       let v = var_of_expr e in
-      ObjField (v, name)
+      Lv (ObjField (v, name))
 
   | A.SizeOf (Left e) ->
       let instr = instr_of_expr e in
@@ -357,12 +360,11 @@ let instrs_of_expr env e =
 
   and lvalue_of_expr e =
     try 
-      let esimple = expr_of_simple_expr e in
-      (match esimple  with
-      | Id _ | ObjField _ | ArrayAccess _ | DeRef _ -> esimple
+      (match rvalue_of_simple_expr e with
+      | Lv x -> x
       | _ -> Id (var_of_expr e)
       )
-    with Impossible -> 
+    with NotSimpleExpr -> 
       Id (var_of_expr e)
 
   in
@@ -446,7 +448,7 @@ let facts_of_instr env = function
       | Float x -> [spf "point_to(%s, '_float__line%d')" dest (line_of(snd x))]
       | String x -> [spf "point_to(%s, '_str__line%d')" dest (line_of (snd x))]
       (* TODO: could be enum or constant! lookup g *)
-      | Id name -> 
+      | Lv (Id name) -> 
           [spf "assign(%s, %s)" dest (var_of_name env name)]
 
       | StaticCall (name, args) 
@@ -465,7 +467,7 @@ let facts_of_instr env = function
           | _ -> raise Impossible
           )
 
-      | DeRef var2 ->
+      | Lv (DeRef var2) ->
           [spf "assign_content(%s, %s)" dest (var_of_name env var2)]
 
       | Alloc t -> 
@@ -480,10 +482,10 @@ let facts_of_instr env = function
            spf "array_point_to(%s, %s)" pt pt2;
           ]
 
-      | ObjField (var2, fld) ->
+      | Lv (ObjField (var2, fld)) ->
           [spf "assign_load_field(%s, %s, %s)" 
               dest (var_of_name env var2) (fully_qualified_field env var2 fld)]
-      | ArrayAccess (var2, _vidx) -> 
+      | Lv (ArrayAccess (var2, _vidx)) -> 
          (* less: could also add info that vidx must be an int *)
          [spf "assign_array_elt(%s, %s)" dest (var_of_name env var2)]
       )
