@@ -305,6 +305,16 @@ let instrs_of_expr env e =
   (* could be lots of things, global, local, param, constant, function! *)
   | A.Id name -> Id name
   | A.Unary (e, (A2.DeRef, _)) -> DeRef (var_of_expr e)
+  | A.Call (A.Id ("malloc", _tok), es) ->
+      (match es with
+      | [SizeOf(Right(t))] -> Alloc (t)
+      | [Binary(e, (Ast_cpp.Arith(Ast_cpp.Mul), _), SizeOf(Right(t)))] ->
+          let v = var_of_expr e in
+          AllocArray(v,t)
+      | _ -> 
+          debug (Expr e);
+          raise Todo
+      )
   | A.Call (e, es) ->
       let vs = List.map var_of_expr es in
       (match e with
@@ -404,8 +414,10 @@ let facts_of_def env def =
                   (var_of_global env def.f_name) i (var_of_local env name))
       ) @
      (* less: could skip when return void *)
+       (let name = env.globals_renames def.f_name in
        [spf "return(%s, 'ret_%s')" 
-           (var_of_global env def.f_name) (fst def.f_name)]
+           (var_of_global env def.f_name) (fst name)]
+       )
   | Global var ->      
       let name = var.v_name in
       (match var.v_type with
@@ -497,3 +509,9 @@ let facts_of_instr env = function
              (var_of_name env v)
              (var_of_name env vobj)
              (fully_qualified_field env vobj fld)]
+
+
+let return_fact env instr =
+  let var = var_of_instr instr in
+  spf "assign('ret_%s', %s)"  env.scope (var_of_name env var)
+

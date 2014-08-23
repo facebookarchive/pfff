@@ -286,19 +286,20 @@ let with_datalog_env env f =
      in
      f env2
 
-let hook_expr_toplevel env x =
+let hook_expr_toplevel env_orig x =
   (* actually always called from a Uses phase, but does not hurt to x2 check*)
-  if env.phase = Uses
+  if env_orig.phase = Uses
   then
-   with_datalog_env env (fun env ->
+   with_datalog_env env_orig (fun env ->
      let instrs = Datalog_c.instrs_of_expr env x in
      instrs +> List.iter (fun instr ->
        let facts = Datalog_c.facts_of_instr env instr in
        facts +> List.iter (fun fact -> Common.push fact env.Datalog_c.facts);
      );
-     (* todo if env.return! need generate ret_main special thing
-     *)
-     ()
+     if env_orig.in_return
+     then
+       let fact = Datalog_c.return_fact env (Common2.list_last instrs) in
+       Common.push fact env.Datalog_c.facts
   )
 
 (* to be called normally close to each add_node_and_edge_if_defs_mode *)
