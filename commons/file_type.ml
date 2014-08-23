@@ -179,6 +179,8 @@ let file_type_of_file2 file =
 
   (* apple stuff ? *)
   | "xib" -> PL (Web Xml)
+  (* xml i18n stuff for apple *)
+  | "nib" -> Obj e
 
   (* facebook: sqlshim files *)
   | "sql3" -> PL (Web Sql)
