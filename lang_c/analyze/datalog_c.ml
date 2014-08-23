@@ -105,15 +105,8 @@ type rvalue =
  *)
 type instr =
   | Assign of var * rvalue (* x = e *)
-  | AssignField of var * name * var (* x->f = v *)
-  | AssignArray of var * var * var (* x[y] = v *)
-
-  | AssignAddress of var * name (* x = &v *) (* of global, local, param, func *)
-  | AssignFieldAddress of var * var * name (* x = &v->field *)
-  | AssignIndexAddress of var * var * var (* x = &v[y] *)
-
-  | AssignDeref of var * var (* *x = v *)
-
+  | AssignAddress of var * lvalue (* except Deref *)
+  | AssignLvalue of lvalue * var (* Except Id, done by Assign *)
 
 (*****************************************************************************)
 (* Helpers *)
@@ -180,10 +173,7 @@ let tokwrap_of_expr e =
 
 let var_of_instr instr =
   match instr with
-  | Assign (v, _) | AssignAddress (v, _) | AssignDeref (_, v) 
-  | AssignField (_, _, v) | AssignArray (_, _, v)
-  | AssignFieldAddress (v, _, _) | AssignIndexAddress (v, _, _)
-    -> v
+  | Assign (v, _) | AssignAddress (v, _) | AssignLvalue (_, v) -> v
 
 exception NotSimpleExpr
 
@@ -236,14 +226,11 @@ let instrs_of_expr env e =
       (match lv, e2 with
       | Id v, A.Unary (e, (A2.GetRef, _)) ->
           (match lvalue_of_expr e with
-          | Id name -> AssignAddress (v, name)
-          | ObjField (v2, n) -> AssignFieldAddress (v, v2, n)
-          | ArrayAccess (v2, v3) -> AssignIndexAddress (v, v2, v3)
           (* todo: could have Deref here, but what &( *x ) means? *)
-          | _ ->
-             (* wrong lvalue_of_expr *)
-            debug (A.Expr e);
-            raise Impossible
+          | DeRef _ ->
+              debug (A.Expr e);
+              raise Impossible
+          | lv -> AssignAddress (v, lv)
           )
       | _ ->      
           (match lv with
@@ -252,9 +239,7 @@ let instrs_of_expr env e =
                       try rvalue_of_simple_expr e2
                       with NotSimpleExpr -> Lv (Id (var_of_expr e2))
               )
-          | ObjField (v, n) -> AssignField (v, n, var_of_expr e2)
-          | ArrayAccess (v1, v2) -> AssignArray (v1, v2, var_of_expr e2)
-          | DeRef (v) -> AssignDeref (v, var_of_expr e2)
+          | lv -> AssignLvalue (lv, var_of_expr e2)
           )
       )
 
@@ -262,14 +247,10 @@ let instrs_of_expr env e =
       let v = fresh_var env ((), tok) in
       let lv = lvalue_of_expr e in
       (match lv with
-      | Id name -> AssignAddress (v, name)
-      | ObjField (v2, n) -> AssignFieldAddress (v, v2, n)
-      | ArrayAccess (v2, v3) -> AssignIndexAddress (v, v2, v3)
-      (* todo: could have Deref here, but what &( *x ) means? *)
-      | _ ->
-        (* wrong lvalue_of_expr *)
-        debug (A.Expr e);
-        raise Impossible
+      | DeRef _ -> 
+          debug (A.Expr e);
+          raise Impossible
+      | lv -> AssignAddress (v, lv)
       )
   | A.Unary (_, ((A2.GetRefLabel, _))) ->
       (* ast_c_build should forbid that gccext *)
@@ -437,19 +418,12 @@ let facts_of_def env def =
 (* ------------------------------------------------------------------------- *)
 
 let facts_of_instr env = function
-  | AssignAddress (var, name) ->
-      [spf "assign_address(%s, %s)"(var_of_name env var)(heap_of_name env name)]
-  | AssignDeref (var, var2) ->
-      [(spf "assign_deref(%s, %s)" (var_of_name env var)(var_of_name env var2))]
   | Assign (var, e) ->
       let dest = var_of_name env var in
       (match e with
       | Int x -> [spf "point_to(%s, '_cst__%s')" dest (fst x)]
       | Float x -> [spf "point_to(%s, '_float__line%d')" dest (line_of(snd x))]
       | String x -> [spf "point_to(%s, '_str__line%d')" dest (line_of (snd x))]
-      (* TODO: could be enum or constant! lookup g *)
-      | Lv (Id name) -> 
-          [spf "assign(%s, %s)" dest (var_of_name env name)]
 
       | StaticCall (name, args) 
       | DynamicCall (name, args) 
@@ -467,8 +441,17 @@ let facts_of_instr env = function
           | _ -> raise Impossible
           )
 
+      (* TODO: could be enum or constant! lookup g *)
+      | Lv (Id name) -> 
+          [spf "assign(%s, %s)" dest (var_of_name env name)]
       | Lv (DeRef var2) ->
           [spf "assign_content(%s, %s)" dest (var_of_name env var2)]
+      | Lv (ObjField (var2, fld)) ->
+          [spf "assign_load_field(%s, %s, %s)" 
+              dest (var_of_name env var2) (fully_qualified_field env var2 fld)]
+      | Lv (ArrayAccess (var2, _vidx)) -> 
+         (* less: could also add info that vidx must be an int *)
+         [spf "assign_array_elt(%s, %s)" dest (var_of_name env var2)]
 
       | Alloc t -> 
           let tok = tok_of_type t in
@@ -482,35 +465,38 @@ let facts_of_instr env = function
            spf "array_point_to(%s, %s)" pt pt2;
           ]
 
-      | Lv (ObjField (var2, fld)) ->
-          [spf "assign_load_field(%s, %s, %s)" 
-              dest (var_of_name env var2) (fully_qualified_field env var2 fld)]
-      | Lv (ArrayAccess (var2, _vidx)) -> 
-         (* less: could also add info that vidx must be an int *)
-         [spf "assign_array_elt(%s, %s)" dest (var_of_name env var2)]
       )
 
-  | AssignArray (varr, _vidx, vval) ->
+  | AssignLvalue (ArrayAccess (varr, _vidx), vval) ->
       (* less: could also add info that vidx must be an int *)
       [spf "assign_array_deref(%s, %s)" 
           (var_of_name env varr) (var_of_name env vval)]
-  | AssignIndexAddress (var, varray, _vidx) ->
-      (* less: could also add info that vidx must be an int *)
-      [spf "assign_array_element_address(%s, %s)" 
-             (var_of_name env var) 
-             (var_of_name env varray)]
-      
-  | AssignField (var, fld, var2) -> 
+  | AssignLvalue (ObjField (var, fld), var2) -> 
       [spf "assign_store_field(%s, %s, %s)" 
              (var_of_name env var)
              (fully_qualified_field env var2 fld)
              (var_of_name env var2)]
+  | AssignLvalue (DeRef var, var2) ->
+      [(spf "assign_deref(%s, %s)" (var_of_name env var)(var_of_name env var2))]
 
-  | AssignFieldAddress (v, vobj, fld) ->
+  | AssignAddress (var, Id name) ->
+      [spf "assign_address(%s, %s)"(var_of_name env var)(heap_of_name env name)]
+  | AssignAddress (var, ArrayAccess(varray, _vidx)) ->
+      (* less: could also add info that vidx must be an int *)
+      [spf "assign_array_element_address(%s, %s)" 
+             (var_of_name env var) 
+             (var_of_name env varray)]
+  | AssignAddress (v, ObjField (vobj, fld)) ->
       [spf "assign_field_address(%s, %s, %s)"
              (var_of_name env v)
              (var_of_name env vobj)
              (fully_qualified_field env vobj fld)]
+
+
+  | AssignAddress (_var, DeRef _) ->
+      raise Impossible
+  | AssignLvalue (Id _name, _var) ->
+      raise Impossible
 
 
 let return_fact env instr =
