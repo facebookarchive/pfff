@@ -500,7 +500,7 @@ and toplevel env x =
          * some unresolved lookup in the c files.
          *)
         (def.f_static && kind_file env =*= Source)
-        (*|| Ast.str_of_name name = "main" *)
+        || Ast.str_of_name name = "main"
       in
       let name = 
         if static && kind=E.Function then new_name_if_defs env name else name in
