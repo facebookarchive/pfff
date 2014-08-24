@@ -116,6 +116,8 @@ type instr =
 let debug any =
   let v = Meta_ast_c.vof_any any in
   let s = Ocaml.string_of_v v in
+  let ii = Lib_parsing_c.ii_of_any any in
+  pr2 (spf "PB: %s" (Parse_info.string_of_info (List.hd ii)));
   pr2 s
 
 let line_of tok = 
@@ -178,6 +180,9 @@ let var_of_instr instr =
   | Assign (v, _) | AssignAddress (v, _) | AssignLvalue (_, v) -> v
 
 exception NotSimpleExpr
+
+let string_of_op _str =
+  "_op_todo"
 
 (*****************************************************************************)
 (* Normalize *)
@@ -272,8 +277,22 @@ let instrs_of_expr env e =
   | A.Postfix (e, _op) | A.Infix (e, _op) ->
       instr_of_expr e
 
-     
-  | A.CondExpr (_, _, _)
+  (* Could try to expand to a '_builtin_cond(e1, e2, e3)' but 
+   * what would be the type of this function? bool -> T -> T -> T ...
+   * need polymorphic type. So for now just expand to
+   * 'v1 = e1; v2 = e2; v2 = e3;'
+   *)
+  | A.CondExpr (e1, e2, e3) ->
+    let i1 = instr_of_expr e1 in
+    Common.push i1 instrs;
+    let tokwrap = tokwrap_of_expr e2 in
+    let v = fresh_var env tokwrap in
+    let tok = snd tokwrap in
+    let i2 = 
+      instr_of_expr (A.Assign ((Ast_cpp.SimpleAssign, tok), A.Id v, e2)) in
+    Common.push i2 instrs;
+    instr_of_expr (A.Assign ((Ast_cpp.SimpleAssign, tok), A.Id v, e3));
+
   | A.ArrayInit _ | A.RecordInit _
   | A.GccConstructor (_, _)
       -> 
@@ -313,7 +332,7 @@ let instrs_of_expr env e =
       )
   | A.Binary (e1, (_op, tok), e2) ->
       let vs = List.map var_of_expr [e1; e2] in
-      BuiltinCall (("_builtin_" ^ PI.str_of_info tok, tok), vs)
+      BuiltinCall (("_builtin_" ^ (string_of_op tok), tok), vs)
   | A.Unary (e, ((A2.UnPlus|A2.UnMinus|A2.Tilde|A2.Not), tok)) ->
       let vs = [var_of_expr e] in
       BuiltinCall ((PI.str_of_info tok, tok), vs)
