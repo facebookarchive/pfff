@@ -322,10 +322,17 @@ let instrs_of_expr env e =
   | A.Call (e, es) ->
       let vs = List.map var_of_expr es in
       (match e with
+      (* todo: there is actually sugar when name is actually a global
+       * and not a function
+       *)
       | A.Id name -> 
           StaticCall (name, vs)
+      (* ( *f)(...) *)
       | A.Unary (e, (A2.DeRef, _)) ->
           DynamicCall (var_of_expr e, vs)
+      (* x->f(...) is actually sugar  for    ( *  x->f)(...) *)
+      | A.RecordPtAccess (e, name) ->
+          DynamicCall (var_of_expr (A.RecordPtAccess (e, name)), vs)
       | _ -> 
           debug (Expr e);
           raise Todo
