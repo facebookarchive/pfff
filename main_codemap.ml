@@ -174,6 +174,10 @@ let filters = [
     match FT.file_type_of_file file with
     | FT.Text "nw" -> true | _ -> false
   );
+  "doc", (fun file -> 
+    match FT.file_type_of_file file with
+    | FT.Text _ -> true | _ -> false
+  );
 
   (* other languages *)
   "php", (fun file ->
