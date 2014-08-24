@@ -56,6 +56,8 @@ let swipl =
 
 let predicates_file = 
   Filename.concat Config_pfff.path "h_program-lang/database_code.pl"
+let logicrules_file = 
+  Filename.concat Config_pfff.path "h_program-lang/datalog_code.dl"
 
 (* action mode *)
 let action = ref ""
@@ -138,6 +140,7 @@ let build_prolog_db lang root xs =
         | "c" ->
           Graph_code_c.hook_use_edge :=
             Graph_code_prolog.hook_use_edge_for_prolog;
+
           if !datalog
           then Graph_code_c.facts := Some (ref []);
 
@@ -146,7 +149,21 @@ let build_prolog_db lang root xs =
           if !datalog
           then begin
             let facts = List.rev !(Common2.some (!Graph_code_c.facts)) in
-            facts +> List.iter pr2;
+            (* facts +> List.iter pr2; *)
+            let datalog_file = Filename.concat root "facts.dl" in
+            Common.with_open_outfile datalog_file (fun (pr_no_nl, _chan) ->
+              let pr s = pr_no_nl (s ^ ".\n") in
+              facts +> List.iter (fun x -> pr x)
+            );
+            pr2 (spf "Your datalog facts are in %s" datalog_file);
+            let final_file = "/tmp/datalog.dl" in
+            let cmd = spf "cat %s %s > %s" 
+              datalog_file logicrules_file final_file in
+            Common.command2 cmd;
+            let cmd = spf "datalog %s | sort" final_file in
+            (* Common.command2 cmd; *)
+            pr2 (spf "RUN %s" cmd);
+
           end;
           g
         | _ -> raise Impossible
@@ -161,7 +178,7 @@ let build_prolog_db lang root xs =
       let prolog_compiled_db = Filename.concat root "prolog_compiled_db" in
       Common.command2 (spf "%s -c %s %s" swipl facts_pl_file predicates_file);
       Common.command2 (spf "mv a.out %s" prolog_compiled_db);
-      pr2 (spf "Your compiled proog DB is ready. Run %s" prolog_compiled_db);
+      pr2 (spf "Your compiled prolog DB is ready. Run %s" prolog_compiled_db);
       prolog_compiled_db
 
   | _ -> failwith ("language not yet supported: " ^ lang)
