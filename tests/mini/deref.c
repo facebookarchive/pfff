@@ -1,4 +1,5 @@
-void main() {
+
+int main() {
   int x;
   int* y;
   int **w;
@@ -7,4 +8,5 @@ void main() {
   y = &x;
   w = &y;
   z = *w;
+  return x;
 }

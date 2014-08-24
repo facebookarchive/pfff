@@ -1,6 +1,6 @@
 int global;
 
-void main () {
+int main () {
   int x; 
   int y;
 
@@ -16,5 +16,7 @@ void main () {
   w = p;
   y = global;
   z = *q;
+  int r = 0;
+  return r;
 }
 

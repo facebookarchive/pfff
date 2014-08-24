@@ -1,3 +1,5 @@
+#include <stdlib.h>
+#include <stdio.h>
 
 // do function pointer that when called is passed the address of a certain
 // global and so add info in point-to-set of this global pointer.
@@ -13,12 +15,16 @@ int indirect(int* x) {
 int (*pt)(int *x);
 
 
-void main() {
+int main() {
   global = malloc(sizeof(int));
   pt = &indirect;
   int* local = global;
   int v = (*pt)(local);
+  return 1;
 }
 
+#ifdef __STDC__
+#else
 void* malloc(int x) {
 }
+#endif
