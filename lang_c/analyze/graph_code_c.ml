@@ -302,7 +302,10 @@ let hook_expr_toplevel env_orig x =
        Common.push fact env.Datalog_c.facts
   )
 
-(* to be called normally close to each add_node_and_edge_if_defs_mode *)
+(* to be called normally close to each add_node_and_edge_if_defs_mode,
+ * but take care of code that use new_name_if_defs, you must call hook_def
+ * after those local renames have been added
+ *)
 let hook_def env def =
   if env.phase = Defs
   then
@@ -598,14 +601,16 @@ and toplevel env x =
   | EnumDef (name, xs) ->
       let name = add_prefix "E__" name in
       let env =  add_node_and_edge_if_defs_mode env (name, E.Type) None in
-      hook_def env x;
       xs +> List.iter (fun (name, eopt) ->
         let name = 
           if kind_file env=*=Source then new_name_if_defs env name else name in
         let env = add_node_and_edge_if_defs_mode env (name, E.Constructor) None in
         if env.phase = Uses
         then Common2.opt (expr_toplevel env) eopt
-      )
+      );
+      (* must do that after have created all the possibly local renames *)
+      hook_def env x;
+
 
   (* I am not sure about the namespaces, so I prepend strings *)
   | TypeDef (name, t) -> 
