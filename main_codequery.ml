@@ -42,6 +42,9 @@ open Common
 
 let verbose = ref false
 
+(* exciting! *)
+let datalog = ref false
+
 let lang = ref "php"
 
 (* todo: swipl (SWI-Prolog) is not in PATH by default on our machines *)
@@ -131,12 +134,24 @@ let build_prolog_db lang root xs =
           Graph_code_clang.hook_use_edge :=
             Graph_code_prolog.hook_use_edge_for_prolog;
           Graph_code_clang.build ~verbose:!verbose root files
+
         | "c" ->
           Graph_code_c.hook_use_edge :=
             Graph_code_prolog.hook_use_edge_for_prolog;
-          Graph_code_c.build ~verbose:!verbose root files
+          if !datalog
+          then Graph_code_c.facts := Some (ref []);
+
+          let g = Graph_code_c.build ~verbose:!verbose root files in
+
+          if !datalog
+          then begin
+            let facts = List.rev !(Common2.some (!Graph_code_c.facts)) in
+            facts +> List.iter pr2;
+          end;
+          g
         | _ -> raise Impossible
       in
+
       let facts = Graph_code_prolog.build g in
       let facts_pl_file = Filename.concat root "facts.pl" in
       Common.with_open_outfile facts_pl_file (fun (pr_no_nl, _chan) ->
@@ -231,7 +246,8 @@ let all_actions () =
 let options () = [
   "-lang", Arg.Set_string lang, 
   (spf " <str> choose language (default = %s)" !lang);
-
+  "-datalog", Arg.Set datalog,
+  " experimental datalog generation";
   "-verbose", Arg.Unit (fun () ->
     verbose := true;
     Flag_analyze_php.verbose_database := true;
