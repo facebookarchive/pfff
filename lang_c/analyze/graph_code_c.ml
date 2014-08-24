@@ -775,7 +775,7 @@ and expr env = function
       expr env e2;
   | ArrayAccess (e1, e2) -> exprs env [e1; e2]
   (* todo: determine type of e and make appropriate use link *)
-  | RecordAccess (e, _name) -> expr env e
+  | RecordPtAccess (e, _name) -> expr env e
 
   | Cast (t, e) -> 
       type_ env t;

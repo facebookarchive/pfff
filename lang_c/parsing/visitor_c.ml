@@ -85,7 +85,7 @@ and v_expr =
       and v3 = v_expr v3
       in ()
   | ArrayAccess ((v1, v2)) -> let v1 = v_expr v1 and v2 = v_expr v2 in ()
-  | RecordAccess ((v1, v2)) -> let v1 = v_expr v1 and v2 = v_name v2 in ()
+  | RecordPtAccess ((v1, v2)) -> let v1 = v_expr v1 and v2 = v_name v2 in ()
   | Cast ((v1, v2)) -> let v1 = v_type_ v1 and v2 = v_expr v2 in ()
   | Postfix ((v1, v2)) ->
       let v1 = v_expr v1 and v2 = v_wrap Ast_cpp.v_fixOp v2 in ()

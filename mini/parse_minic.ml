@@ -193,7 +193,7 @@ and var_decl v =
 and expr_for_instr e = 
   match e with
   | Assign((SimpleAssign, _),
-           RecordAccess(Unary(Id name, (DeRef, _)), fld), Id name2) ->
+           RecordPtAccess(Id name, fld), Id name2) ->
       M.AssignField (name, fld, name2)
   | Assign((SimpleAssign, _), ArrayAccess(Id name, Id idx), Id name2) ->
       M.AssignArray (name, idx, name2)
@@ -201,7 +201,7 @@ and expr_for_instr e =
   | Assign((SimpleAssign, _), Id name, Unary(Id name2, (GetRef, _))) ->
       M.AssignAddress (name, name2)
   | Assign((SimpleAssign, _), Id name,
-           Unary(RecordAccess(Unary(Id name2, (DeRef, _)), fld), (GetRef, _))) ->
+           Unary(RecordPtAccess(Id name2, fld), (GetRef, _))) ->
       M.AssignFieldAddress (name, name2, fld)
 
   | Assign((SimpleAssign, _), Id name, 
@@ -234,7 +234,7 @@ and expr e =
         M.AllocArray(var, type_ t)
     | _ -> error_any "malloc form not supported" (Expr e)
     )
-  | RecordAccess(Unary(Id name, (DeRef, _)), name2) ->
+  | RecordPtAccess(Id name, name2) ->
       M.ObjField (name, name2)
   | ArrayAccess(Id(name1), Id(name2)) ->
       M.ArrayAccess (name1, name2)
@@ -253,7 +253,7 @@ and expr e =
   (* should be handled in caller in expr_for_instr *)
   | Assign _
   (* more general case, not handled *)
-  | Call _ | ArrayAccess _ | RecordAccess _
+  | Call _ | ArrayAccess _ | RecordPtAccess _
   (* advanced features not supported *)
   | Cast _
   | Postfix _ | Infix _ | Unary _ | Binary _ 

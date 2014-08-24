@@ -130,8 +130,12 @@ and expr =
 
   | Assign of Ast_cpp.assignOp wrap * expr * expr
 
-  | ArrayAccess of expr * expr
-  | RecordAccess of expr * name
+  (* Why x->y instead of x.y choice? it's easier then with datalog
+   * and it's more consistent with ArrayAccess where expr has to be
+   * a kind of pointer too.
+   *)
+  | ArrayAccess of expr * expr (* x[y] *)
+  | RecordPtAccess of expr * name (* x->y,  and not x.y!! *)
 
   | Cast of type_ * expr
 

@@ -518,9 +518,9 @@ and expr env e =
   | Id (n, _) -> A.Id (name env n)
 
   | RecordAccess (e, n) ->
-      A.RecordAccess (expr env e, name env n)
+      A.RecordPtAccess (A.Unary (expr env e, (GetRef,List.hd toks)), name env n)
   | RecordPtAccess (e, n) ->
-      A.RecordAccess (A.Unary (expr env e, (DeRef,List.hd toks)), name env n)
+      A.RecordPtAccess (expr env e, name env n)
 
   | Cast ((_, ft, _), e) -> 
       A.Cast (full_type env ft, expr env e)

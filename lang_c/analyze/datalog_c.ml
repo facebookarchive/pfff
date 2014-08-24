@@ -212,7 +212,7 @@ let instrs_of_expr env e =
   | A.Int _ | A.Float _ | A.String _ | A.Char _ 
   | A.Id _
   | A.Unary (_, (A2.DeRef, _)) 
-  | A.Call _ | A.ArrayAccess _ | A.RecordAccess _
+  | A.Call _ | A.ArrayAccess _ | A.RecordPtAccess _
   | A.Binary _ 
   | A.Unary (_, ((A2.UnPlus|A2.UnMinus|A2.Tilde|A2.Not), _))
   | A.SizeOf _
@@ -323,7 +323,7 @@ let instrs_of_expr env e =
       let v1 = var_of_expr e1 in
       let v2 = var_of_expr e2 in
       Lv (ArrayAccess (v1, v2))
-  | A.RecordAccess (e, name) ->
+  | A.RecordPtAccess (e, name) ->
       let v = var_of_expr e in
       Lv (ObjField (v, name))
 
@@ -430,6 +430,9 @@ let facts_of_instr env = function
       | Int x -> [spf "point_to(%s, '_cst__%s')" dest (fst x)]
       | Float x -> [spf "point_to(%s, '_float__line%d')" dest (line_of(snd x))]
       | String x -> [spf "point_to(%s, '_str__line%d')" dest (line_of (snd x))]
+
+      (* like in miniC *)
+      | StaticCall (("printf", _), _args) -> []
 
       | StaticCall (name, args) 
       | DynamicCall (name, args) 
