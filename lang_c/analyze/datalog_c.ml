@@ -238,6 +238,20 @@ let instrs_of_expr env e =
     in
     let seq = Common2.foldl1 (fun e rest -> Sequence(e, rest)) ys in
     instr_of_expr seq
+
+  | A.Assign (op, e1, A.RecordInit xs) ->
+    let ys = xs +> List.map (fun (name, value) ->
+      (* less? recompute e1 each time? should store in intermediate val? *)
+      let access = 
+        A.RecordPtAccess
+          (A.Unary (e1, (A2.GetRef, snd op)),
+           name)
+      in
+      A.Assign(op, access, value)
+    )
+    in
+    let seq = Common2.foldl1 (fun e rest -> Sequence(e, rest)) ys in
+    instr_of_expr seq
       
 
   (* ok, an actual instr! For our analysis we don't care about op (we are
@@ -309,15 +323,13 @@ let instrs_of_expr env e =
     Common.push i2 instrs;
     instr_of_expr (A.Assign ((Ast_cpp.SimpleAssign, tok), A.Id v, e3));
 
-  | A.ArrayInit _ -> 
+  (* like GccConstructor can be outside Assign context when in macro *)
+  | A.ArrayInit _ | A.RecordInit _ ->
       debug (A.Expr e);
-      (* should always be in an Assign context *)
-      raise Impossible
-
-  | A.RecordInit _ ->
-    debug (A.Expr e);
-    raise Todo
-
+      let tokwrap = tokwrap_of_expr e in
+      let v = fresh_var env tokwrap in
+      let tok = snd tokwrap in
+      instr_of_expr (A.Assign ((Ast_cpp.SimpleAssign, tok), A.Id v, e))
 
   and rvalue_of_simple_expr e =
   match e with
@@ -341,7 +353,7 @@ let instrs_of_expr env e =
 
       | _ -> 
           debug (Expr e);
-          raise Todo
+          Alloc (A.TBase ("_unknown_", tok))
       )
 
   | A.Call (e, es) ->
@@ -370,7 +382,7 @@ let instrs_of_expr env e =
       BuiltinCall (("_builtin_" ^ (string_of_op tok), tok), vs)
   | A.Unary (e, ((A2.UnPlus|A2.UnMinus|A2.Tilde|A2.Not), tok)) ->
       let vs = [var_of_expr e] in
-      BuiltinCall ((PI.str_of_info tok, tok), vs)
+      BuiltinCall (("_builtin_" ^ (string_of_op tok), tok), vs)
 
   | A.ArrayAccess (e1, e2) ->
       let v1 = var_of_expr e1 in
