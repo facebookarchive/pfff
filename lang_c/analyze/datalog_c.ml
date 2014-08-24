@@ -221,8 +221,24 @@ let instrs_of_expr env e =
   | A.Binary _ 
   | A.Unary (_, ((A2.UnPlus|A2.UnMinus|A2.Tilde|A2.Not), _))
   | A.SizeOf _
+  | A.GccConstructor _
     ->
       Assign (fresh_var env (tokwrap_of_expr e), rvalue_of_simple_expr e)
+
+  | A.Assign (op, e1, A.ArrayInit xs) ->
+    let ys = xs +> List.map (fun (idxopt, value) ->
+      (* less? recompute e1 each time? should store in intermediate val? *)
+      let access =
+        match idxopt with
+        | Some e -> A.ArrayAccess(e1, e)
+        | None -> A.ArrayAccess(e1, A.Int ("0", snd op))
+      in
+      A.Assign(op, access, value)
+    )
+    in
+    let seq = Common2.foldl1 (fun e rest -> Sequence(e, rest)) ys in
+    instr_of_expr seq
+      
 
   (* ok, an actual instr! For our analysis we don't care about op (we are
    * not even control flow sensitive anyway)
@@ -293,9 +309,12 @@ let instrs_of_expr env e =
     Common.push i2 instrs;
     instr_of_expr (A.Assign ((Ast_cpp.SimpleAssign, tok), A.Id v, e3));
 
-  | A.ArrayInit _ | A.RecordInit _
-  | A.GccConstructor (_, _)
-      -> 
+  | A.ArrayInit _ -> 
+      debug (A.Expr e);
+      (* should always be in an Assign context *)
+      raise Impossible
+
+  | A.RecordInit _ ->
     debug (A.Expr e);
     raise Todo
 
@@ -309,16 +328,22 @@ let instrs_of_expr env e =
   (* could be lots of things, global, local, param, constant, function! *)
   | A.Id name -> Lv (Id name)
   | A.Unary (e, (A2.DeRef, _)) -> Lv (DeRef (var_of_expr e))
-  | A.Call (A.Id ("malloc", _tok), es) ->
+  | A.Call (A.Id ("malloc", tok), es) ->
       (match es with
       | [SizeOf(Right(t))] -> Alloc (t)
       | [Binary(e, (Ast_cpp.Arith(Ast_cpp.Mul), _), SizeOf(Right(t)))] ->
           let v = var_of_expr e in
           AllocArray(v,t)
+      | [SizeOf(Left(_e))] ->
+          (* todo: need potentially to resolve the type of e *)
+          (* debug (Expr e); *)
+          Alloc (A.TBase ("_unknown_", tok))
+
       | _ -> 
           debug (Expr e);
           raise Todo
       )
+
   | A.Call (e, es) ->
       let vs = List.map var_of_expr es in
       (match e with
@@ -330,9 +355,12 @@ let instrs_of_expr env e =
       (* ( *f)(...) *)
       | A.Unary (e, (A2.DeRef, _)) ->
           DynamicCall (var_of_expr e, vs)
-      (* x->f(...) is actually sugar  for    ( *  x->f)(...) *)
-      | A.RecordPtAccess (e, name) ->
-          DynamicCall (var_of_expr (A.RecordPtAccess (e, name)), vs)
+      (* x->f(...) is actually sugar for ( *  x->f)(...) *)
+      | A.RecordPtAccess (_, _) 
+      (* x[y](...) is also sugar for ( * x[y](...) *)
+      | A.ArrayAccess (_, _) 
+        ->
+          DynamicCall (var_of_expr e, vs)
       | _ -> 
           debug (Expr e);
           raise Todo
@@ -358,6 +386,9 @@ let instrs_of_expr env e =
       Int ("0_sizeof", tokwrap_of_expr e +> snd)
   | A.SizeOf (Right t) ->
       Int ("0_sizeof", tok_of_type t)
+
+  (* can be in macro context, e.g. #define SEG (struct x) { ... } *)
+  | A.GccConstructor (t, _eTODO) -> Alloc t
 
   | _ -> 
     raise NotSimpleExpr
