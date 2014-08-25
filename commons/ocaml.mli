@@ -92,7 +92,7 @@ val save_json: Common.filename -> Json_type.json_type -> unit
 val load_json: Common.filename -> Json_type.json_type
 *)
 
-(* visitor *)
+(* mapper/visitor *)
 val map_v: 
   f:( k:(v -> v) -> v -> v) -> 
   v -> 
@@ -114,6 +114,7 @@ val map_of_either3:
   ('a -> 'b) -> ('c -> 'd) -> ('e -> 'f) -> 
   ('a, 'c, 'e) Common.either3 -> ('b, 'd, 'f) Common.either3
 
+(* pure visitor building blocks, used by code generated using ocamltarzan *)
 val v_unit: unit -> unit
 val v_bool: bool -> unit
 val v_int: int -> unit

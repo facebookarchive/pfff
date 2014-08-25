@@ -25,7 +25,8 @@ val build_with_tree:
  config -> Graph_code_opti.graph -> dm
 val partition_matrix:
   Graph_code.node list -> dm -> Graph_code.node list
-(* heuristics *)
+
+(* heuristics for ordering the nodes *)
 val sort_by_count_rows_low_columns_high_first:
   Graph_code.node list -> int array array -> dm -> Graph_code.node list
 val hill_climbing:

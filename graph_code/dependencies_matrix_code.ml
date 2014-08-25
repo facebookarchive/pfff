@@ -52,8 +52,8 @@ module G2 = Graph_code_opti
  *)
 type dm = {
   matrix: int array array;
-  name_to_i: (Graph_code.node, int) Hashtbl.t;
   i_to_name: Graph_code.node array;
+  name_to_i: (Graph_code.node, int) Hashtbl.t;
   (* which nodes are currently expanded *)
   config: config;
 }

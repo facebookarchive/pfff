@@ -48,9 +48,6 @@ open Common2.BasicType
  *   let to_string = string_of_bool
  * 
  * 
- * No this file is not about (graphical) user interface. See gui.ml for that.
- * 
- * 
  * todo? but as in type class, or object, can not have default method 
  * with this scheme ?
  *)

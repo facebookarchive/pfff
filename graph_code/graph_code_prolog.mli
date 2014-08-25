@@ -1,3 +1,4 @@
+(* move this in prolog_code.ml *)
 type fact =
   | At of entity * Common.filename (* readable path *) * int (* line *)
   | Kind of entity * Database_code.entity_kind

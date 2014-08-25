@@ -47,6 +47,7 @@ val mirror:
   'a graph -> 'a graph
 val strongly_connected_components:
   'a graph -> ('a list array * ('a, int) Hashtbl.t)
+(* result will be a DAG *)
 val strongly_connected_components_condensation:
   'a graph -> ('a list array * ('a, int) Hashtbl.t) -> int graph
 (* assumes a DAG *)
@@ -59,7 +60,7 @@ val print_graph_generic :
   ?launch_gv:bool ->
   ?extra_string:string ->
   str_of_key:('a -> string) -> 
-  Common.filename -> 
+  Common.filename (* dot file *) -> 
   'a graph -> unit
 
 val display_with_gv:

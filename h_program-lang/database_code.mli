@@ -30,13 +30,12 @@ val string_of_entity_kind: entity_kind -> string
 val entity_kind_of_string: string -> entity_kind
 
 type property = 
-   (* mostly for Function|Method kind *)
+   (* mostly for Function|Method kind, for codemap to highlight! *)
    | ContainDynamicCall | ContainReflectionCall
 
    | TakeArgNByRef of int (* the argument position taken by ref *)
    | UseGlobal of string
    | ContainDeadStatements
-
 
    | DeadCode (* the function itself is dead, e.g. never called *)
    | CodeCoverage of int list (* e.g. covered lines by unit tests *)
