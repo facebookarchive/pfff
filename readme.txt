@@ -1,13 +1,14 @@
 
                               pfff
 
-pfff is a set of tools and APIs to perform some static analysis, dynamic
-analysis, code visualizations, code navigations, or style-preserving
-source-to-source transformations such as refactorings on source code.
-For now the effort is focused on PHP but there is preliminary support
-for Javascript, C, C++, Java, and other languages. There is also
-preliminary support for OCaml code so that the framework can be used
-on the code of pfff itself.
+pfff is a set of tools and APIs to perform static analysis, code
+visualizations, code navigations, or style-preserving source-to-source
+transformations such as refactorings on source code. There is good
+support for C, Java, Javascript and PHP. There is also preliminary
+support for other languages such as C++, Rust, C#, Html, CSS, Erlang,
+Lisp, Haskell, Python, OPA and SQL. There is also very good support for
+OCaml code so that the framework can be used on the code of pfff
+itself.
 
 For each languages there are mainly 2 libraries, for instance
 parsing_php.cma and analysis_php.cma, that you can
