@@ -15,7 +15,7 @@
 open Common
 
 module E = Error_php
-module Ent = Database_code
+module Ent = Entity_code
 open Error_php
 
 (*****************************************************************************)

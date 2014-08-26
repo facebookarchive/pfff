@@ -1,10 +1,10 @@
 
 (* the main types *)
-type node = string * Database_code.entity_kind
+type node = string * Entity_code.entity_kind
   type nodeinfo = {
     (* the filename embedded inside token_location can be a readable path *)
     pos: Parse_info.token_location;
-    props: Database_code.property list;
+    props: Entity_code.property list;
     typ: string option; 
   }
 type edge = Has | Use
@@ -93,7 +93,7 @@ val nodeinfo_opt: node -> graph -> nodeinfo option
 val edgeinfo_opt: (node * node) -> edge -> graph -> edgeinfo option
 (* should be in readable path if you want your codegraph to be "portable" *)
 val file_of_node: node -> graph -> Common.filename
-val privacy_of_node: node -> graph -> Database_code.privacy
+val privacy_of_node: node -> graph -> Entity_code.privacy
 val shortname_of_node: node -> string
 val gensym: string -> string
 

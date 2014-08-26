@@ -15,7 +15,8 @@
 open Common
 
 module G = Graph_code
-module E = Database_code
+module E = Entity_code
+module D = Database_code
 
 (*****************************************************************************)
 (* Prelude *)
@@ -40,7 +41,7 @@ let db_of_graph_code root g =
    * do something a bit different here and map
    * nodes to indices first.
    *)
-  let (res: E.entity list ref) = ref [] in
+  let (res: D.entity list ref) = ref [] in
   let hfiles = Hashtbl.create 101 in
   let hdirs = Hashtbl.create 101 in
 

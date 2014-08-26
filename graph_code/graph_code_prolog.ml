@@ -15,7 +15,7 @@
 open Common
 
 module G = Graph_code
-module E = Database_code
+module E = Entity_code
 
 (*****************************************************************************)
 (* Prelude *)
@@ -35,7 +35,7 @@ module E = Database_code
 (* mimics database_code.pl top comment *)
 type fact =
   | At of entity * Common.filename (* readable path *) * int (* line *)
-  | Kind of entity * Database_code.entity_kind
+  | Kind of entity * Entity_code.entity_kind
 
   | Type of entity * string (* could be more structured ... *)
 
@@ -43,7 +43,7 @@ type fact =
   | Implements of string * string
   | Mixins of string * string
 
-  | Privacy of entity * Database_code.privacy
+  | Privacy of entity * Entity_code.privacy
 
   (* direct use of entities, e.g. foo() *)
   | Call of entity * entity

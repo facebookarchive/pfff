@@ -16,6 +16,7 @@ open Common
 
 module Ast = Ast_js
 module PI = Parse_info
+module E = Entity_code
 module Db = Database_code
 module Tags = Tags_file
 module Annot = Annotation_js
@@ -87,7 +88,7 @@ let tags_of_files_or_dirs ?(verbose=false) xs =
       annots +> Common.map_filter (function
       | (Annot.ProvidesModule m | Annot.ProvidesLegacy m), info ->
           let info' = Parse_info.rewrap_str m info in
-          Some (Tags.tag_of_info filelines info' (Db.Module))
+          Some (Tags.tag_of_info filelines info' (E.Module))
       | _ -> None
       )
     in

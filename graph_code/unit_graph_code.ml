@@ -3,7 +3,7 @@ open Common
 open OUnit
 
 open Dependencies_matrix_code
-module E = Database_code
+module E = Entity_code
 module G = Graph_code
 module DM = Dependencies_matrix_code
 module DMBuild = Dependencies_matrix_build

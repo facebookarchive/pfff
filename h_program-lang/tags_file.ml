@@ -15,7 +15,7 @@
 open Common
 
 module PI = Parse_info
-module Db = Database_code (* for entity_kind *)
+module E = Entity_code
 
 (*****************************************************************************)
 (* Prelude *)
@@ -59,7 +59,7 @@ type tag = {
   (* offset of beginning of tag_definition_text, when have 0-indexed filepos *)
   byte_offset: int;
   (* only used by vim *)
-  kind: Database_code.entity_kind;
+  kind: Entity_code.entity_kind;
 }
 
 let mk_tag s1 s2 i1 i2 k = {
@@ -102,23 +102,23 @@ let tag_of_info filelines info kind =
 (* C-s for "kind" in http://ctags.sourceforge.net/FORMAT *)
 let vim_tag_kind_str tag_kind =
   match tag_kind with
-  | Db.Class -> "c"
-  | Db.Constant -> "d"
-  | Db.Function -> "f"
-  | Db.Method -> "f"
-  | Db.Type -> "t"
-  | Db.Field -> "m"
+  | E.Class -> "c"
+  | E.Constant -> "d"
+  | E.Function -> "f"
+  | E.Method -> "f"
+  | E.Type -> "t"
+  | E.Field -> "m"
 
-  | Db.Module | Db.Package
-  | Db.Global | Db.Macro
-  | Db.TopStmts
-  | Db.Other _
-  | Db.ClassConstant
-  | Db.Constructor
+  | E.Module | E.Package
+  | E.Global | E.Macro
+  | E.TopStmts
+  | E.Other _
+  | E.ClassConstant
+  | E.Constructor
 
-  | Db.File | Db.Dir | Db.MultiDirs
-  | Db.Exception
-  | Db.Prototype | Db.GlobalExtern
+  | E.File | E.Dir | E.MultiDirs
+  | E.Exception
+  | E.Prototype | E.GlobalExtern
       -> ""
 
 (* vim uses '/' as a marker for the tag definition text, so if this
@@ -142,7 +142,7 @@ let add_method_tags_when_unambiguous files_and_defs =
     files_and_defs +> List.map (fun (_file, tags) ->
       tags +> Common.map_filter (fun t ->
         match t.kind with
-        | Db.Class | Db.Function | Db.Constant -> Some t.tagname
+        | E.Class | E.Function | E.Constant -> Some t.tagname
         | _ -> None
       )
     ) +> List.flatten +> Common.hashset_of_list
@@ -151,7 +151,7 @@ let add_method_tags_when_unambiguous files_and_defs =
     files_and_defs +> List.map (fun (_file, tags) ->
       tags +> Common.map_filter (fun t ->
         match t.kind with
-        | Db.Method ->
+        | E.Method ->
             if t.tagname =~ ".*::\\(.*\\)"
             then Some (Common.matched1 t.tagname, t)
             else failwith ("method tag should contain '::[, got: " ^ t.tagname)
@@ -165,7 +165,7 @@ let add_method_tags_when_unambiguous files_and_defs =
     file,
     tags +> List.map (fun t ->
       match t.kind with
-      | Db.Method ->
+      | E.Method ->
           if t.tagname =~ ".*::\\(.*\\)"
           then
             let methodname = Common.matched1 t.tagname in

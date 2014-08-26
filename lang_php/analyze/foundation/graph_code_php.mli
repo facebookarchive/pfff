@@ -17,4 +17,4 @@ val lookup_inheritance:
   Graph_code.graph ->
   (resolved_name * string) ->
   'a ->
-  ((resolved_name * 'a) * Database_code.entity_kind) option
+  ((resolved_name * 'a) * Entity_code.entity_kind) option

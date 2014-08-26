@@ -19,7 +19,7 @@ open Ast_php
 module Ast = Ast_php
 module V = Visitor_php
 module E = Error_php
-module Ent = Database_code
+module Ent = Entity_code
 
 (*****************************************************************************)
 (* Prelude *)

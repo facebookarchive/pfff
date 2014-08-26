@@ -1,7 +1,7 @@
 open Common
 
 module Db = Database_code
-module E = Database_code
+module E = Entity_code
 
 (*****************************************************************************)
 (* Helpers *)

@@ -18,12 +18,10 @@
 open Common
 
 module G = Gui
-
+module E = Entity_code
 module Db = Database_code
 module BG = Big_grep
-
 module Flag = Flag_visual
-
 (* to optimize the completion by using a specialized fast ocaml-based model *)
 open Custom_list_generic
 
@@ -77,35 +75,35 @@ let build_completion_defs_index all_entities =
 
 let icon_of_kind kind has_test =
   match kind with
-  | Db.Function -> 
+  | E.Function -> 
       if has_test then `YES else `NO
   
   (* todo: do different symbols for unit tested class and methods ? 
    * or add another column in completion popup
    * todo? class vs interface ?
    *)
-  | Db.Class -> `CONNECT
-  | Db.Module -> `DISCONNECT
-  | Db.Package -> `DIRECTORY
-  | Db.Type -> `PROPERTIES
-  | Db.Constant -> `CONNECT
-  | Db.Global -> `MEDIA_RECORD
-  | Db.Method -> `CONVERT
+  | E.Class -> `CONNECT
+  | E.Module -> `DISCONNECT
+  | E.Package -> `DIRECTORY
+  | E.Type -> `PROPERTIES
+  | E.Constant -> `CONNECT
+  | E.Global -> `MEDIA_RECORD
+  | E.Method -> `CONVERT
 
-  | Db.File -> `FILE
-  | Db.Dir -> `DIRECTORY
-  | Db.MultiDirs -> `QUIT
+  | E.File -> `FILE
+  | E.Dir -> `DIRECTORY
+  | E.MultiDirs -> `QUIT
 
   (* todo *)
-  | Db.ClassConstant -> `CONNECT
-  | Db.Field -> `CONNECT
-  | Db.Macro -> `CONNECT
-  | Db.Exception -> `CONNECT
-  | Db.Constructor -> `CONNECT
-  | Db.Prototype -> `CONNECT
-  | Db.GlobalExtern -> `CONNECT
+  | E.ClassConstant -> `CONNECT
+  | E.Field -> `CONNECT
+  | E.Macro -> `CONNECT
+  | E.Exception -> `CONNECT
+  | E.Constructor -> `CONNECT
+  | E.Prototype -> `CONNECT
+  | E.GlobalExtern -> `CONNECT
 
-  | (Db.TopStmts | Db.Other _ ) -> raise Todo
+  | (E.TopStmts | E.Other _ ) -> raise Todo
 
 
 module L=struct
@@ -181,7 +179,7 @@ let model_of_list_pair_string_with_icon2 _query xs =
 
       file = e.Db.e_file;
       count = i_to_s (e.Db.e_number_external_users);
-      kind = Db.string_of_entity_kind kind;
+      kind = E.string_of_entity_kind kind;
       icon = icon_of_kind kind has_unit_test;
     };
   );
@@ -240,7 +238,7 @@ let fake_entity = {Database_code.
      e_name = "foobar";
      e_fullname = "";
      e_file = "foo.php";
-     e_kind = Db.Function;
+     e_kind = E.Function;
      e_pos = { Common2.l = -1; c = -1 };
      e_number_external_users = 0;
      e_good_examples_of_use = [];

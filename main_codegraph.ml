@@ -4,7 +4,7 @@
  *)
 open Common
 
-module E = Database_code
+module E = Entity_code
 module GC = Graph_code
 module GC2 = Graph_code_opti
 module DM = Dependencies_matrix_code
@@ -261,9 +261,9 @@ let build_model root =
   }
 
 let dir_node xs =     
-  (Common.join "/" xs, Database_code.Dir)
+  (Common.join "/" xs, Entity_code.Dir)
 let package_node xs = 
-  (Common.join "." xs, Database_code.Package)
+  (Common.join "." xs, Entity_code.Package)
 
 
 (*****************************************************************************)
@@ -438,7 +438,7 @@ let main_action xs =
       in
       let (str, kind) = dir_or_package start in
       pr2 (spf "focusing on %s %s" 
-              (Database_code.string_of_entity_kind kind) str);
+              (Entity_code.string_of_entity_kind kind) str);
       let rec aux before xs =
         match xs with
         | [] -> raise Impossible

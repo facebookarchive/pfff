@@ -1,6 +1,6 @@
 open OUnit
 
-module E = Database_code
+module E = Entity_code
 
 (*****************************************************************************)
 (* Helpers *)

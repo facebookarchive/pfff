@@ -16,7 +16,7 @@ open Common
 
 open Ast_php
 module Ast = Ast_php
-module E = Database_code
+module E = Entity_code
 module V = Visitor_php
 module CG = Callgraph_php2
 
@@ -109,7 +109,7 @@ spf "
 (*****************************************************************************)
 
 type stat_hooks = {
-  entity: (Database_code.entity_kind * string) -> unit;
+  entity: (Entity_code.entity_kind * string) -> unit;
   call: (Callgraph_php2.node * Callgraph_php2.node) -> unit;
 }
 let default_hooks = {

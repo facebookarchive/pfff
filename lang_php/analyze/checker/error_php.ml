@@ -16,6 +16,7 @@ open Common
 
 open Ast_php
 module Ast = Ast_php
+module E = Entity_code
 
 (*****************************************************************************)
 (* Prelude *)
@@ -352,8 +353,8 @@ let rank_of_error_kind err_kind =
   | UndefinedEntity (kind, _s) -> 
     (match kind with
     (* todo: too many for now *)
-    | Database_code.ClassConstant -> Less
-    | Database_code.Method -> Less
+    | E.ClassConstant -> Less
+    | E.Method -> Less
     (* some FPs about case sensitivity *)
     | _ -> Important
     )

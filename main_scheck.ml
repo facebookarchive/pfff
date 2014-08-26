@@ -296,11 +296,11 @@ let build_identifier_index lang xs =
 let false_positive_detector hidentifier g errors =
   errors +> Common.exclude (fun err ->
     match err.Errors_code.typ with
-    | Errors_code.Deadcode ((s, Database_code.Function) as n) ->
+    | Errors_code.Deadcode ((s, Entity_code.Function) as n) ->
         let short = Graph_code.shortname_of_node n in
         let occurences = Hashtbl.find_all hidentifier short in
         let expected_minimum =
-          if Graph_code.has_node (s, Database_code.Prototype) g
+          if Graph_code.has_node (s, Entity_code.Prototype) g
           then 2 
           else 1
         in
@@ -535,7 +535,7 @@ let dflow file_or_dir =
 (* Poor's man token-based Deadcode detector for C/C++/...  *)
 (*---------------------------------------------------------------------------*)
 module PI = Parse_info
-module E = Database_code
+module E = Entity_code
 module Ast = Ast_fuzzy
 
 let entities_of_ast ast =

@@ -19,7 +19,7 @@ module Ast = Ast_php
 module V = Visitor_php
 
 module Tags = Tags_file
-module Db = Database_code
+module E = Entity_code
 
 (*****************************************************************************)
 (* Prelude *)
@@ -52,7 +52,7 @@ let tags_of_ast ast filelines =
 
   defs +> List.map (fun (name, enclosing_name_opt, kind) ->
     match kind with
-    | Db.Class ->
+    | E.Class ->
         (match name with
         | Name _ -> [tag_of_ident filelines name kind]
         | XhpName (xs, tok) ->
@@ -67,9 +67,9 @@ let tags_of_ast ast filelines =
              Tags.tag_of_info filelines (Parse_info.rewrap_str s2 tok) kind;
             ]
         )
-    | Db.Function | Db.Constant | Db.Type ->
+    | E.Function | E.Constant | E.Type ->
         [ tag_of_ident filelines name kind]
-    | Db.Method ->
+    | E.Method ->
         (match enclosing_name_opt with
         | None -> raise Impossible
         | Some class_name ->

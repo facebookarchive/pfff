@@ -18,7 +18,7 @@ open Ast_php
 
 module Ast = Ast_php
 module V = Visitor_php
-module E = Database_code
+module E = Entity_code
 
 (*****************************************************************************)
 (* Prelude *)
@@ -49,10 +49,10 @@ module E = Database_code
  *)
 
 type def = 
-  Ast_php.ident * Ast_php.ident option * Database_code.entity_kind
+  Ast_php.ident * Ast_php.ident option * Entity_code.entity_kind
 
 type use = 
-  Ast_php.name * Database_code.entity_kind
+  Ast_php.name * Entity_code.entity_kind
 
 (*****************************************************************************)
 (* Helpers *)

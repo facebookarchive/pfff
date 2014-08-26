@@ -12,7 +12,7 @@ type error = {
  | UnusedExport of entity
  | UnusedVariable of string * Scope_code.scope
 
- and entity = (string * Database_code.entity_kind)
+ and entity = (string * Entity_code.entity_kind)
 
 
 (* @xxx to acknowledge or explain false positives *)

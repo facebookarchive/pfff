@@ -21,7 +21,7 @@ module Flag = Flag_visual
 module CairoH = Cairo_helpers
 module F = Figures
 module T = Treemap
-module E = Database_code
+module E = Entity_code
 
 (*****************************************************************************)
 (* The code model *)
@@ -95,7 +95,7 @@ type microlevel = {
  (* Note that I don't use G.node because the string below is not fully
   * qualified so one must use match_short_vs_node when comparing with nodes.
   *)
-  and short_node = (string * Database_code.entity_kind)
+  and short_node = (string * Entity_code.entity_kind)
   and glyph = {
     str: string;
     categ: Highlight_code.category option;

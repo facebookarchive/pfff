@@ -67,7 +67,7 @@ type microlevel = {
  (* Note that I don't use G.node because the string below is not fully
   * qualified so one must use match_short_vs_node when comparing with nodes.
   *)
-  and short_node = (string * Database_code.entity_kind)
+  and short_node = (string * Entity_code.entity_kind)
 
 (*s: type drawing *)
 (* All the 'float' below are to be intepreted as user coordinates except when

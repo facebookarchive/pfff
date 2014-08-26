@@ -16,7 +16,7 @@ open Common
 
 open Ast_php_simple
 module Ast = Ast_php_simple
-module E = Database_code
+module E = Entity_code
 module G = Graph_code
 
 (*****************************************************************************)
@@ -268,7 +268,7 @@ let fully_qualified_candidates cur name _kind =
        cur.qualifier @ name;
       ]
 
-let (strtok_of_name: env -> Ast.name -> Database_code.entity_kind -> 
+let (strtok_of_name: env -> Ast.name -> Entity_code.entity_kind -> 
      resolved_name Ast.wrap) = 
  fun env name kind ->
    let tokopt =

@@ -23,7 +23,7 @@ open Model3
 module M = Model3
 module Ctl = Controller3
 
-module E = Database_code
+module E = Entity_code
 module DM = Dependencies_matrix_code
 
 module CairoH = Cairo_helpers3

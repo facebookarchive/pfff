@@ -17,7 +17,7 @@ open Common
 open Ast_c
 module Ast = Ast_c
 module Flag = Flag_parsing_cpp
-module E = Database_code
+module E = Entity_code
 module G = Graph_code
 module P = Graph_code_prolog
 
@@ -629,7 +629,7 @@ and toplevel env x =
       end;
       let typ = Some t in
       let name = add_prefix "T__" name in
-      let _env = add_node_and_edge_if_defs_mode env (name ,E.Type) typ in
+      let _env = add_node_and_edge_if_defs_mode env (name,E.Type) typ in
       (* no hook_def here *)
       (* type_ env typ; *)
       ()

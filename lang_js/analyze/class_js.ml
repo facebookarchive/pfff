@@ -18,7 +18,7 @@ open Ast_js
 
 module Ast = Ast_js
 module V = Visitor_js
-module Db = Database_code
+module E = Entity_code
 
 (*****************************************************************************)
 (* Prelude *)
@@ -68,7 +68,7 @@ let extract_complete_name_of_info ast =
   let in_statics = ref false in
   let in_members = ref false in
 
-  let (h: (Ast_js.tok, Database_code.entity_kind * string) Hashtbl.t) =
+  let (h: (Ast_js.tok, Entity_code.entity_kind * string) Hashtbl.t) =
     Hashtbl.create 101 in
 
   let v = V.mk_visitor { V.default_visitor with
@@ -83,7 +83,7 @@ let extract_complete_name_of_info ast =
        (* could restrict to only toplevel first column var declarations ? *)
 
           Hashtbl.add h info_class
-            (Db.Class, spf "Misc.%s" class_name);
+            (E.Class, spf "Misc.%s" class_name);
           Common.save_excursion in_class (Some class_name) (fun () ->
           (* todo? really in_members ? or in_statics ? *)
           Common.save_excursion in_members true (fun () ->
@@ -97,7 +97,7 @@ let extract_complete_name_of_info ast =
                  (_i_13, [], _i_14)))))}], _scopt) ->
 
           Hashtbl.add h info_class
-            (Db.Class, spf "Misc.%s" class_name);
+            (E.Class, spf "Misc.%s" class_name);
           Common.save_excursion in_class (Some class_name) (fun () ->
           Common.save_excursion in_members true (fun () ->
             k st
@@ -115,7 +115,7 @@ let extract_complete_name_of_info ast =
           (Object(_body_object))) ->
 
           Hashtbl.add h info_class
-            (Db.Class, spf "Prototype.%s" class_name);
+            (E.Class, spf "Prototype.%s" class_name);
           Common.save_excursion in_class (Some class_name) (fun () ->
           Common.save_excursion in_members true (fun () ->
             k e
@@ -129,7 +129,7 @@ let extract_complete_name_of_info ast =
        (* could restrict to only toplevel first column var declarations ? *)
 
           Hashtbl.add h info_class
-            (Db.Class, spf "Misc.%s" class_name);
+            (E.Class, spf "Misc.%s" class_name);
           Common.save_excursion in_class (Some class_name) (fun () ->
           Common.save_excursion in_members true (fun () ->
             k e
@@ -147,7 +147,7 @@ let extract_complete_name_of_info ast =
           _i_13)) ->
 
           Hashtbl.add h info_class
-            (Db.Class, spf "JX.%s" class_name);
+            (E.Class, spf "JX.%s" class_name);
 
           (* was just %s before, but then get conflict between for instance
            * DOM.setContent and JX.DOM.setContent
@@ -165,7 +165,7 @@ let extract_complete_name_of_info ast =
             Left((Object(_object_body)))], _i_16)) ->
 
           Hashtbl.add h info_class
-            (Db.Class, spf "JX.%s" class_name);
+            (E.Class, spf "JX.%s" class_name);
           Common.save_excursion in_class (Some class_name) (fun () ->
           Common.save_excursion in_statics true (fun () ->
               k e
@@ -179,7 +179,7 @@ let extract_complete_name_of_info ast =
            Left((Object(_body_object)))], _i_13)) ->
 
           Hashtbl.add h info_class
-            (Db.Class, spf "%s<%s" class_name mixin_name);
+            (E.Class, spf "%s<%s" class_name mixin_name);
           Common.save_excursion in_class (Some class_name) (fun () ->
           Common.save_excursion in_statics true (fun () ->
               k e
@@ -194,7 +194,7 @@ let extract_complete_name_of_info ast =
            Left((Object(_body_object)))], _i_16)) ->
 
           Hashtbl.add h info_class
-            (Db.Class, spf "%s" class_name);
+            (E.Class, spf "%s" class_name);
           Common.save_excursion in_class (Some class_name) (fun () ->
           Common.save_excursion in_statics true (fun () ->
             k e
@@ -208,7 +208,7 @@ let extract_complete_name_of_info ast =
            Left((Object(_body_object)))], _i_31)) ->
 
           Hashtbl.add h info_class
-            (Db.Class, spf "%s" class_name);
+            (E.Class, spf "%s" class_name);
 
           Common.save_excursion in_class (Some class_name) (fun () ->
           Common.save_excursion in_statics true (fun () ->
@@ -227,7 +227,7 @@ let extract_complete_name_of_info ast =
            Left((Object(_body_object)))], _i_25)) ->
 
           Hashtbl.add h info_class
-            (Db.Class, spf "Copy_properties.%s" class_name);
+            (E.Class, spf "Copy_properties.%s" class_name);
           Common.save_excursion in_class (Some class_name) (fun () ->
           Common.save_excursion in_statics true (fun () ->
             k e
@@ -242,7 +242,7 @@ let extract_complete_name_of_info ast =
            Left((Object(_body_object)))], _i_13)) ->
 
           Hashtbl.add h info_class
-            (Db.Class, spf "Copy_properties.%s" class_name);
+            (E.Class, spf "Copy_properties.%s" class_name);
           Common.save_excursion in_class (Some class_name) (fun () ->
           Common.save_excursion in_statics true (fun () ->
             k e
@@ -305,8 +305,8 @@ let extract_complete_name_of_info ast =
               ""
           )
           in
-          (* less: if !in_statics then Db.StaticMethod else Db.RegularMethod *)
-          Hashtbl.add h info_method_name (Db.Method, fullname)
+          (* less: if !in_statics then E.StaticMethod else E.RegularMethod *)
+          Hashtbl.add h info_method_name (E.Method, fullname)
       | _ -> k e
     );
   }

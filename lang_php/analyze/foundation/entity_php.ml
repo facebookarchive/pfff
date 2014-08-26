@@ -17,7 +17,7 @@ open Common
 module Ast = Ast_php
 module G = Graph_code
 module Flag = Flag_analyze_php
-module E = Database_code
+module E = Entity_code
 
 (*****************************************************************************)
 (* Prelude *)
@@ -88,7 +88,7 @@ type fullid = filepos
  * 
  * Xhp declarations are considered Fields.
  *)
-type id_kind = Database_code.entity_kind
+type id_kind = Entity_code.entity_kind
 
 (* See comment in the .mli for more information about entity_finder.
  * 
@@ -134,7 +134,7 @@ let fullid_of_string s =
   else failwith ("not a full_id:" ^ s)
 
 let string_of_id_kind x = 
-  Database_code.string_of_entity_kind x
+  Entity_code.string_of_entity_kind x
 
 (*****************************************************************************)
 (* Method identifier helpers *)

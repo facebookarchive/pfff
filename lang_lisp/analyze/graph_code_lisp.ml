@@ -15,7 +15,7 @@
 open Common
 
 open Ast_lisp
-module E = Database_code
+module E = Entity_code
 module G = Graph_code
 
 (*****************************************************************************)

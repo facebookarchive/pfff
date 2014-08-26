@@ -13,7 +13,7 @@
  * For methods the string below will also contain the class as
  * in "Foo::method".
  *)
-type id_kind = Database_code.entity_kind
+type id_kind = Entity_code.entity_kind
 type entity_finder = (id_kind * string) -> Ast_php.entity list
 
 (* note: use global hcache_entities, so may need to reset it *)

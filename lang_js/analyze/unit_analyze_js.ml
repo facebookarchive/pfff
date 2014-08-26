@@ -1,7 +1,7 @@
 open Common
 
 module Ast = Ast_js
-module Db = Database_code
+module E = Entity_code
 
 open OUnit
 
@@ -62,7 +62,7 @@ function foo() {}
      Common2.with_tmp_file ~str:file_content ~ext:"js" (fun tmpfile ->
        let tags = Tags_js.tags_of_files_or_dirs ~verbose:false [tmpfile] in
        (match tags +> List.map snd +> List.flatten with
-       | [{ Tags_file.tagname = "my-module"; kind = Db.Module; _}] -> ()
+       | [{ Tags_file.tagname = "my-module"; kind = E.Module; _}] -> ()
        | _ -> assert_failure "it should extract module names from comments"
        );
 

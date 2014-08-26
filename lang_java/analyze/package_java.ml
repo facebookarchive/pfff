@@ -15,7 +15,7 @@
 open Common
 
 module G = Graph_code
-module E = Database_code
+module E = Entity_code
 
 (*****************************************************************************)
 (* Prelude *)

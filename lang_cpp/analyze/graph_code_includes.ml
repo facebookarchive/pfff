@@ -14,7 +14,7 @@
  *)
 open Common
 
-module E = Database_code
+module E = Entity_code
 module G = Graph_code
 
 module Flag = Flag_parsing_cpp

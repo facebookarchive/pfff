@@ -18,7 +18,8 @@
 open Common
 
 module G = Graph_code
-module E = Database_code
+module E = Entity_code
+module Db = Database_code
 
 (*****************************************************************************)
 (* Prelude *)
@@ -136,11 +137,11 @@ let add_headers_files_entities_of_file root xs =
 
 let node_of_entity e g =
   let fullname = 
-    match e.E.e_fullname with
-    | "" -> e.E.e_name
+    match e.Db.e_fullname with
+    | "" -> e.Db.e_name
     | s -> s
   in 
-  let node = (fullname, e.E.e_kind) in
+  let node = (fullname, e.Db.e_kind) in
   if G.has_node node g
   then Some node
   else None

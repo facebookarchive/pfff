@@ -6,7 +6,7 @@ type tag = {
   (* offset of beginning of tag_definition_text, when have 0-indexed filepos *)
   byte_offset: int; 
   (* only used by vim *)
-  kind: Database_code.entity_kind;
+  kind: Entity_code.entity_kind;
 }
 
 (* will generate a TAGS file in the current directory *)
@@ -20,7 +20,7 @@ val add_method_tags_when_unambiguous:
   (Common.filename * tag list) list -> (Common.filename * tag list) list
 
 (* internals *)
-val mk_tag: string -> string -> int -> int -> Database_code.entity_kind -> tag
+val mk_tag: string -> string -> int -> int -> Entity_code.entity_kind -> tag
 
 val string_of_tag: tag -> string
 val header: string
@@ -28,4 +28,4 @@ val footer: string
 
 (* helpers used by language taggers *)
 val tag_of_info: 
-  string array -> Parse_info.info -> Database_code.entity_kind -> tag
+  string array -> Parse_info.info -> Entity_code.entity_kind -> tag

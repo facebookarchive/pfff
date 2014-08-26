@@ -50,7 +50,7 @@ val class_variables_reorder_first:
   Ast_php.class_def -> Ast_php.class_def
 
 val class_kind_of_ctype:
-  Ast_php.class_type -> Database_code.class_kind
+  Ast_php.class_type -> Entity_code.class_kind
 val string_of_class_type:
   Ast_php.class_type -> string
 

@@ -21,6 +21,7 @@ module T = Parser_php
 
 open Highlight_code
 module S = Scope_code
+module E = Entity_code
 module Db = Database_code
 
 (*****************************************************************************)
@@ -123,7 +124,7 @@ let highlight_funcall_simple ~tag ~hentities f args info =
       | [e] ->
           let ps = e.Db.e_properties in
           (* dynamic call *)
-          (if List.mem Db.ContainDynamicCall ps
+          (if List.mem E.ContainDynamicCall ps
             (* todo: should try to find instead which arguments
              * is called dynamically using dataflow analysis
              *)
@@ -133,7 +134,7 @@ let highlight_funcall_simple ~tag ~hentities f args info =
 
           (* args by ref *)
           ps +> List.iter (function
-          | Db.TakeArgNByRef i ->
+          | E.TakeArgNByRef i ->
               (try
                 let a = List.nth args i in
                 let ii = Lib_parsing_php.ii_of_any (Argument a) in
@@ -141,7 +142,7 @@ let highlight_funcall_simple ~tag ~hentities f args info =
               with _exn ->
                 pr2_once ("highlight_php: pb with TakeArgNByRef for " ^ f);
               )
-          | Db.ContainDynamicCall -> ()
+          | E.ContainDynamicCall -> ()
           | _ -> raise Todo
           );
           ()

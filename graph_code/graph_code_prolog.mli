@@ -1,14 +1,14 @@
 (* move this in prolog_code.ml *)
 type fact =
   | At of entity * Common.filename (* readable path *) * int (* line *)
-  | Kind of entity * Database_code.entity_kind
+  | Kind of entity * Entity_code.entity_kind
   | Type of entity * string
 
   | Extends of string * string 
   | Implements of string * string
   | Mixins of string * string
 
-  | Privacy of entity * Database_code.privacy
+  | Privacy of entity * Entity_code.privacy
 
   | Call of entity * entity
   | UseData of entity * entity * bool option (* read/write *)
@@ -23,7 +23,7 @@ val string_of_fact: fact -> string
 val entity_of_str: string -> entity
 
 (* reused in other modules which generate prolog facts *)
-val string_of_entity_kind: Database_code.entity_kind -> string
+val string_of_entity_kind: Entity_code.entity_kind -> string
 
 type context =
   | NoCtx

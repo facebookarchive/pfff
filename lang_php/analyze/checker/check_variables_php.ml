@@ -18,7 +18,7 @@ open Ast_php_simple
 module A = Ast_php_simple
 module E = Error_php
 module S = Scope_code
-module Ent = Database_code
+module Ent = Entity_code
 
 (*****************************************************************************)
 (* Prelude *)

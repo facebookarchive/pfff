@@ -7,11 +7,11 @@
  * tags_php.ml for instance)
  *)
 type def = 
-  Ast_php.ident * Ast_php.ident option * Database_code.entity_kind
+  Ast_php.ident * Ast_php.ident option * Entity_code.entity_kind
 
 (* only for Function, Class uses for now *)
 type use = 
-  Ast_php.name * Database_code.entity_kind
+  Ast_php.name * Entity_code.entity_kind
 
 val defs_of_any: Ast_php.any -> def list
 

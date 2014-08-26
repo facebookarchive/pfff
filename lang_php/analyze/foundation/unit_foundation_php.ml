@@ -3,8 +3,7 @@ open OUnit
 
 module Ast = Ast_php
 module A = Annotation_php
-module Db = Database_code
-module E = Database_code
+module E = Entity_code
 module G = Graph_code
 
 (*****************************************************************************)
@@ -122,13 +121,13 @@ let tags_unittest =
               x.Tags_file.tagname, x.Tags_file.kind
             ) in
             assert_equal ~msg:"it should contain the right entries" [
-              "foo", Db.Function;
-              "A", Db.Class;
-              "B", Db.Class(* Db.Interface*);
-              "C", Db.Class(* Db.Trait*);
-              "CST", Db.Constant;
-              "OldCst", Db.Constant;
-              "T", Db.Type;
+              "foo", E.Function;
+              "A", E.Class;
+              "B", E.Class(* E.Interface*);
+              "C", E.Class(* E.Trait*);
+              "CST", E.Constant;
+              "OldCst", E.Constant;
+              "T", E.Type;
             ]
             xs
         | _ ->
@@ -163,15 +162,15 @@ let tags_unittest =
              * method name.
              *)
             assert_equal ~msg:"The tags should contain the right entries" [
-              "A", Db.Class;
-              "A::a_method", Db.Method;
+              "A", E.Class;
+              "A::a_method", E.Method;
               (* this tag is safe to generate, no ambiguity *)
-              "a_method", Db.Method;
-              "A::ambiguous_with_function", Db.Method;
-              "A::ambiguous_with_another_class", Db.Method;
-              "B", Db.Class;
-              "B::ambiguous_with_another_class", Db.Method;
-              "ambiguous_with_function", Db.Function;
+              "a_method", E.Method;
+              "A::ambiguous_with_function", E.Method;
+              "A::ambiguous_with_another_class", E.Method;
+              "B", E.Class;
+              "B::ambiguous_with_another_class", E.Method;
+              "ambiguous_with_function", E.Function;
             ]
             xs
 
@@ -197,19 +196,19 @@ let tags_unittest =
               x.Tags_file.tagname, x.Tags_file.kind
             ) in
             let desired = [
-              "A", Db.Class;
-              "A::yieldSomething", Db.Method;
-              "yieldSomething", Db.Method;
-              "A::genSomething", Db.Method;
-              "genSomething", Db.Method;
-              "A::prepareSomething", Db.Method;
-              "prepareSomething", Db.Method;
-              "A::getSomething", Db.Method;
-              "getSomething", Db.Method;
-              "A::prepareSomethingElse", Db.Method;
-              "prepareSomethingElse", Db.Method;
-              "A::genSomethingElse", Db.Method;
-              "genSomethingElse", Db.Method;
+              "A", E.Class;
+              "A::yieldSomething", E.Method;
+              "yieldSomething", E.Method;
+              "A::genSomething", E.Method;
+              "genSomething", E.Method;
+              "A::prepareSomething", E.Method;
+              "prepareSomething", E.Method;
+              "A::getSomething", E.Method;
+              "getSomething", E.Method;
+              "A::prepareSomethingElse", E.Method;
+              "prepareSomethingElse", E.Method;
+              "A::genSomethingElse", E.Method;
+              "genSomethingElse", E.Method;
             ]
             in
             assert_equal ~msg:"Tags should contain entries for the right magic methods"
@@ -293,7 +292,7 @@ function test_useA() {
       assert_equal
         ~msg:"it should annotate xhp required field"
         props
-        [Db.Required]
+        [E.Required]
     );
 
     "regression files" >:: (fun () ->

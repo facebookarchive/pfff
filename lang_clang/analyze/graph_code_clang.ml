@@ -18,7 +18,7 @@ open Parser_clang
 open Ast_clang
 module Loc = Location_clang
 module Typ = Type_clang
-module E = Database_code
+module E = Entity_code
 module G = Graph_code
 module P = Graph_code_prolog
 

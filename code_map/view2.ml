@@ -374,7 +374,7 @@ let mk_gui ~screen_size ~legend test_mode w =
           let readable_paths = 
             (* hack to handle multidirs *)
             match e.Db.e_kind with
-            | Database_code.MultiDirs ->
+            | Entity_code.MultiDirs ->
                 (* hack: coupling: with mk_multi_dirs_entity *)
                 Common.split "|" e.Db.e_file
             | _ ->

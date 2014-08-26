@@ -14,7 +14,7 @@
  *)
 open Common
 
-module E = Database_code
+module E = Entity_code
 module PI = Parse_info
 
 (*****************************************************************************)
@@ -99,7 +99,7 @@ type error = {
   (* other *)
 
  (* todo: should be merged with Graph_code.entity or put in Database_code?*)
- and entity = (string * Database_code.entity_kind)
+ and entity = (string * Entity_code.entity_kind)
 
 
 type rank =
@@ -126,11 +126,11 @@ type identifier_index = (string, Parse_info.token_location) Hashtbl.t
 let string_of_error_kind error_kind =
   match error_kind with
   | Deadcode (s, kind) -> 
-    spf "dead %s, %s" (Database_code.string_of_entity_kind kind) s
+    spf "dead %s, %s" (Entity_code.string_of_entity_kind kind) s
   | UndefinedDefOfDecl (s, kind) ->
-    spf "no def found for %s (%s)" s (Database_code.string_of_entity_kind kind)
+    spf "no def found for %s (%s)" s (Entity_code.string_of_entity_kind kind)
   | UnusedExport (s, kind) ->
-    spf "useless export of %s (%s)" s (Database_code.string_of_entity_kind kind)
+    spf "useless export of %s (%s)" s (Entity_code.string_of_entity_kind kind)
 
   | UnusedVariable (name, scope) ->
       spf "Unused variable %s, scope = %s" name 

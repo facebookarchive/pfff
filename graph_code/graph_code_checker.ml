@@ -14,7 +14,7 @@
  *)
 open Common
 
-module E = Database_code
+module E = Entity_code
 module G = Graph_code
 module PI = Parse_info
 module Error = Errors_code

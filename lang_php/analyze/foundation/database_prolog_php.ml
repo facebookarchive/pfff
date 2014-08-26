@@ -19,7 +19,7 @@ open Ast_php
 module Ast = Ast_php
 module EC = Entity_php
 module V = Visitor_php
-module E = Database_code
+module E = Entity_code
 module CG = Callgraph_php2
 module P = Graph_code_prolog
 module PI = Parse_info

@@ -16,10 +16,11 @@
 open Common
 
 module Ast = Ast_js
-module Db = Database_code
+module E = Entity_code
 module HC = Highlight_code
 module T = Parser_js
 module PI = Parse_info
+module Db = Database_code
 
 (*****************************************************************************)
 (* Prelude *)
@@ -189,7 +190,7 @@ let compute_database ?(verbose=false) files_or_dirs =
                * but class analysis is complicated in Javascript.
                *)
               match entity.Db.e_kind with
-              |  Db.Class ->
+              |  E.Class ->
                 entity.Db.e_number_external_users <-
                   entity.Db.e_number_external_users + 1;
               | _ -> ()
@@ -210,7 +211,7 @@ let compute_database ?(verbose=false) files_or_dirs =
                * calling adjust_method_external_users below.
                *)
               (match entity.Db.e_kind with
-              | Db.Method ->
+              | E.Method ->
                 entity.Db.e_number_external_users <-
                   entity.Db.e_number_external_users + 1;
               | _ -> ()
@@ -229,7 +230,7 @@ let compute_database ?(verbose=false) files_or_dirs =
               (* todo: should check that method of appropriate class
                * but class analysis is complicated in Javascript
                *)
-               if entity.Db.e_kind = Db.Function
+               if entity.Db.e_kind = E.Function
                then
                  entity.Db.e_number_external_users <-
                    entity.Db.e_number_external_users + 1;
