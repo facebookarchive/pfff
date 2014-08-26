@@ -21,7 +21,7 @@ module EC = Entity_php
 module V = Visitor_php
 module E = Entity_code
 module CG = Callgraph_php2
-module P = Graph_code_prolog
+module P = Prolog_code
 module PI = Parse_info
 
 (*****************************************************************************)

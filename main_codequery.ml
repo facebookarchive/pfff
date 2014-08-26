@@ -96,7 +96,7 @@ let build_prolog_db lang root xs =
        Common.with_open_outfile file (fun (pr_no_nl, _chan) ->
          let pr s = pr_no_nl (s ^ "\n") in
          facts +> List.iter (fun fact ->
-           pr (Graph_code_prolog.string_of_fact fact);
+           pr (Prolog_code.string_of_fact fact);
          )
        );
 
@@ -173,7 +173,7 @@ let build_prolog_db lang root xs =
       let facts_pl_file = Filename.concat root "facts.pl" in
       Common.with_open_outfile facts_pl_file (fun (pr_no_nl, _chan) ->
         let pr s = pr_no_nl (s ^ "\n") in
-        facts +> List.iter (fun x -> pr (Graph_code_prolog.string_of_fact x))
+        facts +> List.iter (fun x -> pr (Prolog_code.string_of_fact x))
       );
       let prolog_compiled_db = Filename.concat root "prolog_compiled_db" in
       Common.command2 (spf "%s -c %s %s" swipl facts_pl_file predicates_file);

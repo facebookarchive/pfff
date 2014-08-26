@@ -43,7 +43,7 @@ let prolog_query ~files query =
     let facts_pl_file = Filename.concat tmp_dir "facts.pl" in
     Common.with_open_outfile facts_pl_file (fun (pr_no_nl, _chan) ->
       let pr s = pr_no_nl (s ^ "\n") in
-      facts +> List.iter (fun x -> pr (Graph_code_prolog.string_of_fact x))
+      facts +> List.iter (fun x -> pr (Prolog_code.string_of_fact x))
       );
     let predicates_file = 
       Filename.concat Config_pfff.path "h_program-lang/database_code.pl" in

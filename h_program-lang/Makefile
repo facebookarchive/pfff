@@ -4,16 +4,15 @@ TOP=..
 ##############################################################################
 TARGET=lib
 
-SRC= entity_code.ml \
+SRC= entity_code.ml scope_code.ml \
      parse_info.ml \
-     ast_fuzzy.ml \
-     meta_ast_generic.ml \
-     scope_code.ml \
+     ast_fuzzy.ml meta_ast_generic.ml \
      highlight_code.ml \
      archi_code.ml archi_code_lexer.ml archi_code_parse.ml \
      skip_code.ml \
      refactoring_code.ml \
      database_code.ml \
+     prolog_code.ml \
      layer_code.ml \
      tags_file.ml \
      errors_code.ml \

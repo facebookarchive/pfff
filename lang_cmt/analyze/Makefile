@@ -19,7 +19,8 @@ INCLUDEDIRS= $(TOP)/commons $(TOP)/commons/ocamlextra \
  $(TOP)/lang_ml/parsing \
 
 
-PP=-pp "cpp -DOCAML_VERSION=$(OCAMLVERSION)"
+CLANG_HACK=-Wno-invalid-pp-token
+PP=-pp "cpp $(CLANG_HACK)  -DOCAML_VERSION=$(OCAMLVERSION)"
 
 ##############################################################################
 # Generic variables
