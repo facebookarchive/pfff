@@ -12,7 +12,7 @@ SRC= entity_code.ml scope_code.ml \
      skip_code.ml \
      refactoring_code.ml \
      database_code.ml \
-     prolog_code.ml \
+     prolog_code.ml datalog_code.ml \
      layer_code.ml \
      tags_file.ml \
      errors_code.ml \

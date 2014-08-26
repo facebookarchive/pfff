@@ -34,8 +34,7 @@ module PI = Parse_info
 (* Types *)
 (*****************************************************************************)
 
-type fact = string
-(* todo: Datalog_code.fact *)
+type fact = Datalog_code.fact
 
 type env = {
   scope: string; (* qualifier, usually the current function *)
