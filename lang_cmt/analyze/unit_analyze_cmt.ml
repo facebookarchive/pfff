@@ -46,7 +46,7 @@ let prolog_query ~files query =
       facts +> List.iter (fun x -> pr (Graph_code_prolog.string_of_fact x))
       );
     let predicates_file = 
-      Filename.concat Config_pfff.path "h_program-lang/database_code.pl" in
+      Filename.concat Config_pfff.path "h_program-lang/prolog_code.pl" in
     if verbose 
     then Common.cat facts_pl_file +> List.iter pr2;
     let cmd =
