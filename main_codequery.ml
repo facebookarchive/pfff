@@ -16,7 +16,7 @@ open Common
  * programming language used mainly in AI but also popular in database
  * (http://en.wikipedia.org/wiki/Datalog).
  * 
- * See h_program-lang/database_code.pl for more information
+ * See h_program-lang/prolog_code.pl for more information
  * 
  * related work:
  *  - http://jquery.cs.ubc.ca/, the original inspiration for codequery
@@ -55,7 +55,7 @@ let swipl =
   else "swipl"
 
 let predicates_file = 
-  Filename.concat Config_pfff.path "h_program-lang/database_code.pl"
+  Filename.concat Config_pfff.path "h_program-lang/prolog_code.pl"
 let logicrules_file = 
   Filename.concat Config_pfff.path "h_program-lang/datalog_code.dl"
 

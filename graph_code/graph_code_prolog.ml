@@ -24,7 +24,7 @@ module E = Entity_code
  * 
  * less: could move stuff in a prolog_code.ml file.
  * 
- * For more information look at h_program-lang/database_code.pl
+ * For more information look at h_program-lang/prolog_code.pl
  * and its many predicates.
  *)
 
@@ -32,7 +32,7 @@ module E = Entity_code
 (* Types *)
 (*****************************************************************************)
 
-(* mimics database_code.pl top comment *)
+(* mimics prolog_code.pl top comment *)
 type fact =
   | At of entity * Common.filename (* readable path *) * int (* line *)
   | Kind of entity * Entity_code.entity_kind
@@ -86,7 +86,7 @@ let string_of_entity (xs, x) =
     (escape_quote_and_double_quote x)
   
 (* Quite similar to database_code.string_of_id_kind, but with lowercase
- * because of prolog atom convention. See also database_code.pl comment
+ * because of prolog atom convention. See also prolog_code.pl comment
  * about kind/2.
  *)
 let string_of_entity_kind = function

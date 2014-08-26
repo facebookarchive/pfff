@@ -143,15 +143,15 @@
 % (e.g. with pfff_db_heavy -gen_prolog_db /tmp/pfff_db /tmp/facts.pl)
 % and then:
 %
-%   $ swipl -s /tmp/facts.pl -f database_code.pl
+%   $ swipl -s /tmp/facts.pl -f prolog_code.pl
 %
 % If you want to test a new predicate you can do for instance:
 %
-%  $ swipl -s /tmp/facts.pl -f database_code.pl -t halt --quiet -g "children(X,'Foo'), writeln(X), fail"
+%  $ swipl -s /tmp/facts.pl -f prolog_code.pl -t halt --quiet -g "children(X,'Foo'), writeln(X), fail"
 %
 % If you want to compile a database do:
 %
-%   $ swipl -c /tmp/facts.pl database_code.pl #this will generate a 'a.out'
+%   $ swipl -c /tmp/facts.pl prolog_code.pl #this will generate a 'a.out'
 %
 % Finally you can also use a precompiled database with:
 %

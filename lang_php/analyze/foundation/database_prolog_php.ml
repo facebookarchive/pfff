@@ -48,7 +48,7 @@ module PI = Parse_info
  *  - precise datagraph
  *  - refs
  *
- * For more information look at h_program-lang/database_code.pl
+ * For more information look at h_program-lang/prolog_code.pl
  * and its many predicates.
  *)
 
@@ -652,7 +652,7 @@ let append_callgraph_to_prolog_db ?show_progress a b =
 let prolog_query ?(verbose=false) ~source_file ~query =
   let facts_pl_file = Common.new_temp_file "prolog_php_db" ".pl" in
   let helpers_pl_file =
-    Config_pfff.path ^ "/h_program-lang/database_code.pl" in
+    Config_pfff.path ^ "/h_program-lang/prolog_code.pl" in
 
   let show_progress = false in
 

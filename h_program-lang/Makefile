@@ -33,7 +33,7 @@ INCLUDEDIRS= $(TOP)/commons \
  $(TOP)/h_files-format
 
 # other sources:
-#  database_code.pl, facts.pl, for the prolog-based code query engine
+#  prolog_code.pl, facts.pl, for the prolog-based code query engine
 
 # dead: visitor_code, statistics_code, programming-language, ast_generic
 ##############################################################################

@@ -30,7 +30,7 @@ module HC = Highlight_code
  * to give semantic visual feedback on the code. See also layer_code.ml
  * for complementary semantic information about a codebase.
  * 
- * update: database_code.pl and Prolog may now be the prefered way to
+ * update: prolog_code.pl and Prolog may now be the prefered way to
  * represent a code database, but for codemap it's still good to use
  * this database.
  * 

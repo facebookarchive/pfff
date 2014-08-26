@@ -3,7 +3,7 @@
 //procedure:
 // $ ~/pfff/pfff_db_heavy -metapath /tmp/test_db/ .
 // $ ~/pfff/pfff_db_heavy -gen_prolog_db /tmp/test_db/ /tmp/facts.pl
-// $ swipl -s /tmp/facts.pl -f database_code.pl -t halt --quiet -g "..."
+// $ swipl -s /tmp/facts.pl -f prolog_code.pl -t halt --quiet -g "..."
 
 function foo($o) {
   $o['name'] = "foo";
