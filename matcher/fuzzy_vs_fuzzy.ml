@@ -266,7 +266,9 @@ and m_tree a b =
       match b with
       | B.Parens _ -> true
       (* we don't want metavars to match symbols *)
-      | B.Tok (s,_) -> s =~ "^[a-zA-Z]" 
+      | B.Tok (s,_) -> s =~ "^[a-zA-Z]"
+      (* in some languages $xx is actually an ident *)
+      | B.Metavar _ -> true
       | _ -> false
     in
     if ok then
