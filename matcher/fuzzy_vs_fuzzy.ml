@@ -262,14 +262,23 @@ and m_tree a b =
   match a, b with
 
   | A.Metavar (s, tok), b ->
-    X.envf (s, tok) [b] >>= (function 
-    | ((s, _a), [b]) ->
+    let ok = 
+      match b with
+      | B.Parens _ -> false (* temporary hack !! *)
+      (* we don't want metavars to match symbols *)
+      | B.Tok (s,_) -> s =~ "^[a-zA-Z]" 
+      | _ -> false
+    in
+    if ok then
+     X.envf (s, tok) [b] >>= (function 
+     | ((s, _a), [b]) ->
       return (
         A.Metavar (s, tok),
         b
       )
     | _ -> raise Impossible
     )
+    else fail ()
 
   | A.Braces (a1, a2, a3), B.Braces (b1, b2, b3) ->
     m_tok a1 b1 >>= (fun (a1, b1) ->
