@@ -9,36 +9,24 @@ type category =
   | Builtin | BuiltinCommentColor | BuiltinBoolean
   | Operator | Punctuation
 
-  (* todo: factorize with Database_code.entity_kind? do a pair? 
-   * so can get rid of functions in database_code such as highlight_xxx_def.
-   *)
-  | Function of usedef2
-  | FunctionDecl of def_info
-  | Global of usedef2
-  | Type of usedef2
-  | Class of usedef2
-  | Macro of usedef2
-  | Constant of usedef2
+  | Entity of Entity_code.entity_kind * usedef2
 
-  | Field of usedef2
-  | Method of usedef2
+  | Local of usedef
+  | Parameter of usedef
+
+  | FunctionDecl of def_info
+  | ConstructorMatch of use_info
+
   | StaticMethod of usedef2
 
   | StructName of usedef
   | EnumName of usedef
   | TypeDef of usedef
+
   | TypeVoid | TypeInt
 
-  | Constructor of usedef2
-  | ConstructorMatch of use_info
-
-  | Module of usedef
   | FunctionEquation
-
   | Label of usedef
-
-  | Local of usedef
-  | Parameter of usedef
 
   (* semantic visual feedback! highlight more! *)
   | BadSmell

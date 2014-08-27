@@ -6,7 +6,7 @@
 
 # ignore for now
 dir: web
-dir: facebook
+#dir: facebook
 #dir: external
 #dir: commons
 

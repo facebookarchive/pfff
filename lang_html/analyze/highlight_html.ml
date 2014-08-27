@@ -20,7 +20,7 @@ open Ast_html
 module Ast = Ast_html
 module V = Visitor_html
 
-open Highlight_code
+open Entity_code open Highlight_code
 
 module T = Parser_html
 

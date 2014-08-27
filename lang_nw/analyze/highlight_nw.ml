@@ -15,7 +15,7 @@
 open Common
 
 module Ast = Ast_nw
-open Highlight_code
+open Entity_code open Highlight_code
 module T = Parser_nw
 module TH = Token_helpers_nw
 
@@ -99,7 +99,7 @@ let visit_toplevel
         );
         aux_toks xs
 
-    |    T.TCommand(("chapter" | "chapter*") ,_)
+    |    T.TCommand(("chapter" | "chapter*"),_)
       :: T.TOBrace _
       :: xs 
       ->

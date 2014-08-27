@@ -15,7 +15,8 @@
 open Common
 
 open Ast_ml
-open Highlight_code
+open Entity_code
+open Entity_code open Highlight_code
 module Ast = Ast_ml
 module V = Visitor_ml
 module PI = Parse_info
@@ -73,11 +74,11 @@ let disable_token_phase2 = false
 let kind_of_body x =
   let def2 = Def2 fake_no_def2 in
   match Ast.uncomma x with
-  | (Ast.Fun _ | Ast.Function _)::_xs -> Function def2
-  | Ast.FunCallSimple (([], Name("ref", _)), _)::_xs -> Global def2
+  | (Ast.Fun _ | Ast.Function _)::_xs -> Entity (Function, def2)
+  | Ast.FunCallSimple (([], Name("ref", _)), _)::_xs -> Entity (Global, def2)
   | Ast.FunCallSimple (([Name("Hashtbl",_),_], Name("create", _)), _)::_xs -> 
-      Global def2
-  | _ -> Constant def2
+      Entity (Global, def2)
+  | _ -> Entity (Constant, def2)
 
 (* todo: actually it can be a typedef alias to a function too
  * but this would require some analysis
@@ -86,7 +87,7 @@ let kind_of_ty ty =
   let def2 = Def2 fake_no_def2 in
   match ty with
   | TyFunction _ -> (FunctionDecl NoUse)
-  | TyApp (_, ([], Name("ref", _))) -> Global def2
+  | TyApp (_, ([], Name("ref", _))) -> Entity (Global, def2)
   (* todo: should handle module aliases there too *)
   | TyApp (_, ([Name("Hashtbl",_), _], Name("t", _))) -> Global def2
   | _ -> Constant def2

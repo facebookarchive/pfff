@@ -15,7 +15,7 @@
 open Common
 
 module Ast = Ast_rust
-open Highlight_code
+open Entity_code open Highlight_code
 module T = Parser_rust
 module TH = Token_helpers_rust
 

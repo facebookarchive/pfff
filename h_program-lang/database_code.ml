@@ -376,20 +376,10 @@ let save_database database file =
  *)
 let entity_kind_of_highlight_category_def categ = 
   match categ with
-  | HC.Constant (HC.Def2 _) -> Some Constant
-  | HC.Macro (HC.Def2 _) -> Some Macro (* todo? want agglomerate ? *)
-  | HC.Function (HC.Def2 _) -> Some Function
+  | HC.Entity (kind, HC.Def2 _) -> Some kind
   | HC.FunctionDecl _ -> Some Prototype
-  | HC.Global (HC.Def2 _) -> Some Global
-  | HC.Class (HC.Def2 _) -> Some Class
-
-  | HC.Method (HC.Def2 _) -> Some Method
   | HC.StaticMethod (HC.Def2 _) -> Some Method
-  | HC.Field (HC.Def2 _) -> Some Field
-
-  | HC.Module HC.Def -> Some Module
   | HC.TypeDef HC.Def -> Some Type
-  | HC.Constructor (HC.Def2 _) -> Some Constructor
   | HC.StructName (HC.Def) -> Some Type
 
   (* todo: what about other Def ? like Label, Parameter, etc ? *)
@@ -401,21 +391,10 @@ let is_entity_def_category categ =
 (* less: merge with other function? *)
 let entity_kind_of_highlight_category_use categ = 
   match categ with
-  | HC.Constant (HC.Use2 _) -> Some Constant
-  | HC.Macro (HC.Use2 _) -> Some Macro
-  | HC.Function (HC.Use2 _) -> Some Function
+  | HC.Entity (kind, HC.Use2 _) -> Some kind
   | HC.FunctionDecl _ -> Some Function
-  | HC.Global (HC.Use2 _) -> Some Global
-  | HC.Class (HC.Use2 _) -> Some Class
-
-  | HC.Method (HC.Use2 _) -> Some Method
   | HC.StaticMethod (HC.Use2 _) -> Some Method
-  | HC.Field (HC.Use2 _) -> Some Field
-
-  | HC.Module HC.Use -> Some Module
   | HC.TypeDef HC.Use -> Some Type
-  | HC.Constructor (HC.Use2 _) -> Some Constructor
-
   | HC.StructName HC.Use -> Some Class
   | _ -> None
 
@@ -435,36 +414,30 @@ let matching_def_short_kind_kind short_kind kind =
  *)
 let matching_use_categ_kind categ kind =
   match kind, categ with
-  | Function,    HC.Function _
-  | Prototype,    HC.Function _
-  | Field,       HC.Field _
-  | Constructor, HC.Constructor _
+  | kind1, HC.Entity (kind2, _) when kind1 =*= kind2 -> true
+
+  | Prototype,    HC.Entity (Function, _)
   | Constructor, HC.ConstructorMatch _
-  | Global,      HC.Global _
-  | GlobalExtern,      HC.Global _
-  | Method,    HC.Method _
+  | GlobalExtern,      HC.Entity (Global, _)
   | Method,    HC.StaticMethod _
-  | Class,     HC.Class _
-  | Constant,    HC.Constant _
-  | ClassConstant,  HC.Constant _
-  | Type, HC.Type _
+  | ClassConstant,  HC.Entity (Constant, _)
   | Type, HC.TypeDef _
     
   (* tofix at some point, wrong tokenizer *)
   | Constant, HC.Local _
   | Global,   HC.Local _
   | Function, HC.Local _
-  | Constructor, HC.Global _
+  | Constructor, HC.Entity (Global, _)
   | Function, HC.Builtin
   | Function, HC.BuiltinCommentColor
   | Function, HC.BuiltinBoolean
   (* because what looks like a constant is actually a partially applied func *)
-  | Function, HC.Constant _
+  | Function, HC.Entity (Constant, _)
 
   (* function pointers in structure initialized (poor's man oo in C) *)
-  | Function, HC.Global _
+  | Function, HC.Entity (Global, _)
   (* function calls to pointer function via direct syntax *)
-  | GlobalExtern, HC.Function _
+  | GlobalExtern, HC.Entity (Function, _)
     
   | Global,   HC.UseOfRef
   | Field, HC.UseOfRef

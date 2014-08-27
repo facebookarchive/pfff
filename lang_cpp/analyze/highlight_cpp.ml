@@ -15,7 +15,7 @@
 open Common
 
 open Ast_cpp
-open Highlight_code
+open Entity_code open Highlight_code
 
 module S = Scope_code
 module PI = Parse_info

@@ -14,7 +14,7 @@
  *)
 open Common
 
-open Highlight_code
+open Entity_code open Highlight_code
 module Ast = Ast_ml
 module Tags = Tags_file
 module E = Entity_code

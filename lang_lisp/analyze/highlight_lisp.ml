@@ -14,7 +14,7 @@
  *)
 open Common
 
-open Highlight_code
+open Entity_code open Highlight_code
 module Ast = Ast_lisp
 module PI = Parse_info
 module T = Parser_lisp

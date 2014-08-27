@@ -15,7 +15,7 @@
 open Common
 
 open Ast_fuzzy_opa
-open Highlight_code
+open Entity_code open Highlight_code
 
 module Ast = Ast_fuzzy_opa
 module HC = Highlight_code

@@ -23,7 +23,7 @@ module HC = Highlight_code
 module Db = Database_code
 module Flag = Flag_visual
 
-open Highlight_code
+open Entity_code open Highlight_code
 
 (*****************************************************************************)
 (* Prelude *)

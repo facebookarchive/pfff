@@ -15,7 +15,7 @@
 open Common
 
 open Ast_java
-open Highlight_code
+open Entity_code open Highlight_code
 module Ast = Ast_java
 module V = Visitor_java
 module T = Parser_java

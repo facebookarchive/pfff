@@ -19,7 +19,7 @@ module Ast = Ast_php
 module V = Visitor_php
 module T = Parser_php
 
-open Highlight_code
+open Entity_code open Highlight_code
 module S = Scope_code
 module E = Entity_code
 module Db = Database_code

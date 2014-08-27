@@ -17,7 +17,7 @@ open Common
 module Ast = Ast_hs
 module PI = Parse_info
 
-open Highlight_code
+open Entity_code open Highlight_code
 
 module T = Parser_hs
 
