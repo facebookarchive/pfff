@@ -20,7 +20,7 @@ let test_dataflow_c file =
   let facts_file = "/tmp/facts.dl" in
   Common.with_open_outfile facts_file (fun (pr_no_nl, _chan) ->
     let pr s = pr_no_nl (s ^ ".\n") in
-    facts +> List.iter pr;
+    facts +> List.iter (fun fact -> pr (Datalog_code.string_of_fact fact));
   );
   
   let logic_file = 

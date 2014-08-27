@@ -153,7 +153,8 @@ let build_prolog_db lang root xs =
             let datalog_file = Filename.concat root "facts.dl" in
             Common.with_open_outfile datalog_file (fun (pr_no_nl, _chan) ->
               let pr s = pr_no_nl (s ^ ".\n") in
-              facts +> List.iter (fun x -> pr x)
+              facts +> List.iter (fun fact -> 
+                pr (Datalog_code.string_of_fact fact));
             );
             pr2 (spf "Your datalog facts are in %s" datalog_file);
             let final_file = "/tmp/datalog.dl" in
@@ -211,7 +212,7 @@ let test_compare_datalog file =
   let facts_c = List.rev !(Common2.some (!Graph_code_c.facts)) in
 
   let a = Common.sort facts_minic in
-  let b = Common.sort facts_c in
+  let b = Common.sort (facts_c +> List.map Datalog_code.string_of_fact) in
   
   let (_common, only_in_a, only_in_b) = 
     Common2.diff_set_eff a b in

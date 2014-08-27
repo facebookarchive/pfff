@@ -18,6 +18,7 @@ open Ast_c
 module A = Ast_c
 module A2 = Ast_cpp
 module PI = Parse_info
+module D = Datalog_code
 
 (*****************************************************************************)
 (* Prelude *)
@@ -442,20 +443,19 @@ let facts_of_def env def =
         | Some name ->
           (match fld.fld_type with
           | TBase _ -> 
-             Some (spf "point_to(%s, %s)" 
-                       (fully_qualified_field_of_struct 
-                          (fst def.s_name) (fst name))
-                       (heap_of_cst env name))
+             Some (D.PointTo ((fully_qualified_field_of_struct 
+                               (fst def.s_name) (fst name)),
+                            (heap_of_cst env name)))
           (* could add a point_to(%s, '_null_') for pointers *)
           | _ -> None
           )
       )
   | Define (name, _body) ->
-      [(spf "point_to(%s, %s)" (var_of_global env name) (heap_of_cst env name))]
+      [D.PointTo (var_of_global env name, heap_of_cst env name)]
   | EnumDef def ->
       let (_name, xs) = def in
       xs +> List.map (fun (name, _eopt) ->
-        spf "point_to(%s, %s)" (var_of_global env name) (heap_of_cst env name)
+        D.PointTo (var_of_global env name, heap_of_cst env name)
       )
   | Macro _ ->
       (* todo? *)
@@ -466,19 +466,19 @@ let facts_of_def env def =
         match p.p_name with
         | None -> None
         | Some name ->
-            Some (spf "parameter(%s, %d, %s)" 
-                  (var_of_global env def.f_name) i (var_of_local env name))
+            Some (D.Parameter (var_of_global env def.f_name,
+                               i, 
+                               var_of_local env name))
       ) @
      (* less: could skip when return void *)
        (let name = env.globals_renames def.f_name in
-       [spf "return(%s, 'ret_%s')" 
-           (var_of_global env def.f_name) (fst name)]
+       [D.Return (var_of_global env def.f_name, spf "'ret_%s'" (fst name))]
        )
   | Global var ->      
       let name = var.v_name in
       (match var.v_type with
       | TBase _ -> 
-        [spf "point_to(%s, %s)" (var_of_global env name) (heap_of_cst env name)]
+        [D.PointTo (var_of_global env name, heap_of_cst env name)]
       (* could add a point_to(%s, '_null_') for pointers *)
       | _ -> []
       )
@@ -494,9 +494,9 @@ let facts_of_instr env = function
   | Assign (var, e) ->
       let dest = var_of_name env var in
       (match e with
-      | Int x -> [spf "point_to(%s, '_cst__%s')" dest (fst x)]
-      | Float x -> [spf "point_to(%s, '_float__line%d')" dest (line_of(snd x))]
-      | String x -> [spf "point_to(%s, '_str__line%d')" dest (line_of (snd x))]
+      | Int x -> [D.PointTo(dest, spf "'_cst__%s'" (fst x))]
+      | Float x -> [D.PointTo(dest, spf "'_float__line%d'" (line_of(snd x)))]
+      | String x -> [D.PointTo(dest, spf "'_str__line%d'" (line_of (snd x)))]
 
       (* like in miniC *)
       | StaticCall (("printf", _), _args) -> []
@@ -506,67 +506,61 @@ let facts_of_instr env = function
       | BuiltinCall(name, args)  ->
           let invoke = invoke_loc_of_name env name in
           args +> Common.index_list_1 +> List.map (fun (v, i) ->
-            spf "argument(%s, %d, %s)" invoke i (var_of_name env v)
+            D.Argument(invoke, i, var_of_name env v)
           ) @
-          [spf "call_ret(%s, %s)" invoke dest] @
+          [D.ReturnValue (invoke, dest)] @
           (match e with
           | StaticCall _ | BuiltinCall _ ->
-              [spf "call_direct(%s, %s)"  invoke (var_of_global env name)]
+              [D.CallDirect(invoke, var_of_global env name)]
           | DynamicCall _ ->
-              [spf "call_indirect(%s, %s)" invoke (var_of_name env name)]
+              [D.CallIndirect(invoke, var_of_name env name)]
           | _ -> raise Impossible
           )
 
       (* TODO: could be enum or constant! lookup g *)
       | Lv (Id name) -> 
-          [spf "assign(%s, %s)" dest (var_of_name env name)]
+          [D.Assign (dest, var_of_name env name)]
       | Lv (DeRef var2) ->
-          [spf "assign_content(%s, %s)" dest (var_of_name env var2)]
+          [D.AssignContent(dest, var_of_name env var2)]
       | Lv (ObjField (var2, fld)) ->
-          [spf "assign_load_field(%s, %s, %s)" 
-              dest (var_of_name env var2) (fully_qualified_field env var2 fld)]
+          [D.AssignLoadField (dest, var_of_name env var2, 
+                            fully_qualified_field env var2 fld)]
       | Lv (ArrayAccess (var2, _vidx)) -> 
          (* less: could also add info that vidx must be an int *)
-         [spf "assign_array_elt(%s, %s)" dest (var_of_name env var2)]
+         [D.AssignArrayElt(dest, var_of_name env var2)]
 
       | Alloc t -> 
           let tok = tok_of_type t in
           let pt = spf "'_malloc_in_%s_line_%d_'" env.scope  (line_of tok) in
-          [spf "point_to(%s, %s)" dest pt]
+          [D.PointTo(dest, pt)]
       | AllocArray (_v, t) ->
           let tok = tok_of_type t in
           let pt =  spf "'_array_in_%s_line_%d_'" env.scope (line_of tok) in
           let pt2 = spf "'_array_elt_in_%s_line_%d_'" env.scope (line_of tok) in
-          [spf "point_to(%s, %s)" dest pt;
-           spf "array_point_to(%s, %s)" pt pt2;
+          [D.PointTo(dest, pt);
+           D.ArrayPointTo(pt, pt2);
           ]
 
       )
 
   | AssignLvalue (ArrayAccess (varr, _vidx), vval) ->
       (* less: could also add info that vidx must be an int *)
-      [spf "assign_array_deref(%s, %s)" 
-          (var_of_name env varr) (var_of_name env vval)]
+      [D.AssignArrayDeref( var_of_name env varr, var_of_name env vval)]
   | AssignLvalue (ObjField (var, fld), var2) -> 
-      [spf "assign_store_field(%s, %s, %s)" 
-             (var_of_name env var)
-             (fully_qualified_field env var2 fld)
-             (var_of_name env var2)]
+      [D.AssignStoreField (var_of_name env var,
+                           fully_qualified_field env var2 fld,
+                           var_of_name env var2)]
   | AssignLvalue (DeRef var, var2) ->
-      [(spf "assign_deref(%s, %s)" (var_of_name env var)(var_of_name env var2))]
+      [D.AssignDeref( var_of_name env var, var_of_name env var2)]
 
   | AssignAddress (var, Id name) ->
-      [spf "assign_address(%s, %s)"(var_of_name env var)(heap_of_name env name)]
+      [D.AssignAddress (var_of_name env var, heap_of_name env name)]
   | AssignAddress (var, ArrayAccess(varray, _vidx)) ->
       (* less: could also add info that vidx must be an int *)
-      [spf "assign_array_element_address(%s, %s)" 
-             (var_of_name env var) 
-             (var_of_name env varray)]
+      [D.AssignArrayElementAddress(var_of_name env var, var_of_name env varray)]
   | AssignAddress (v, ObjField (vobj, fld)) ->
-      [spf "assign_field_address(%s, %s, %s)"
-             (var_of_name env v)
-             (var_of_name env vobj)
-             (fully_qualified_field env vobj fld)]
+      [D.AssignFieldAddress (var_of_name env v, var_of_name env vobj,
+                             fully_qualified_field env vobj fld)]
 
 
   | AssignAddress (_var, DeRef _) ->
@@ -577,5 +571,5 @@ let facts_of_instr env = function
 
 let return_fact env instr =
   let var = var_of_instr instr in
-  spf "assign('ret_%s', %s)"  env.scope (var_of_name env var)
+  D.Assign(spf "'ret_%s'" env.scope, var_of_name env var)
 
