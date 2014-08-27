@@ -19,7 +19,7 @@ module Ast = Ast_php
 module V = Visitor_php
 module T = Parser_php
 
-open Highlight_code
+open Entity_code open Highlight_code
 module S = Scope_code
 module E = Entity_code
 module Db = Database_code
@@ -129,7 +129,7 @@ let highlight_funcall_simple ~tag ~hentities f args info =
              * is called dynamically using dataflow analysis
              *)
            then tag info PointerCall
-           else tag info (Function (Use2 fake_no_use2))
+           else tag info (Entity (Function, (Use2 fake_no_use2)))
           );
 
           (* args by ref *)
@@ -149,10 +149,10 @@ let highlight_funcall_simple ~tag ~hentities f args info =
       | _x::_y::_xs ->
           pr2_once ("highlight_php: multiple entities for: " ^ f);
           (* todo: place of id *)
-          tag info (Function (Use2 fake_no_use2));
+          tag info (Entity (Function, (Use2 fake_no_use2)));
       | [] ->
           (* todo: place of id *)
-          tag info (Function (Use2 fake_no_use2));
+          tag info (Entity (Function, (Use2 fake_no_use2)));
       );
   );
   ()
@@ -174,7 +174,7 @@ let tag_name ~tag name =
   match name with
   | XName qu ->
       let info = Ast.info_of_qualified_ident qu in
-      tag info (Class (Use2 fake_no_use2));
+      tag info (Entity (Class, (Use2 fake_no_use2)));
   (* will be highlighted by the 'toks phase 2' *)
   | Self _tok | Parent _tok -> ()
   | LateStatic tok ->
@@ -285,7 +285,7 @@ let visit_program ~tag _prefs  hentities (ast, toks) =
       match top with
       | ConstantDef def ->
         let info = Ast.info_of_ident def.cst_name in
-        tag info (Constant (Def2 fake_no_def2));
+        tag info (Entity (Constant, (Def2 fake_no_def2)));
         k top
       | _ -> k top
     );
@@ -295,13 +295,13 @@ let visit_program ~tag _prefs  hentities (ast, toks) =
         match def.f_type with
         | FunctionRegular | FunctionLambda ->
           tag def.f_tok Keyword;
-          (Function (Def2 NoUse))
+          (Entity (Function, (Def2 NoUse)))
 
         | MethodRegular | MethodAbstract ->
           tag def.f_tok KeywordObject;
           if Class_php.is_static_method def
           then StaticMethod (Def2 fake_no_def2)
-          else Method (Def2 fake_no_def2)
+          else Entity (Method, (Def2 fake_no_def2))
       in
       tag info kind;
       k def
@@ -309,17 +309,17 @@ let visit_program ~tag _prefs  hentities (ast, toks) =
 
     V.kclass_def = (fun (k, _) def ->
       let info = Ast.info_of_ident def.c_name in
-      tag info (Class (Def2 fake_no_def2));
+      tag info (Entity (Class, (Def2 fake_no_def2)));
       def.c_extends +> Common.do_option (fun (_, name) ->
         let name = name_of_class_name name in
         let info = Ast.info_of_name name in
-        tag info (Class (Use2 fake_no_use2));
+        tag info (Entity (Class, (Use2 fake_no_use2)));
       );
       def.c_implements +> Common.do_option (fun (_, xs) ->
         xs +> Ast.uncomma +> List.iter (fun name ->
           let name = name_of_class_name name in
           let info = Ast.info_of_name name in
-          tag info (Class (Use2 fake_no_use2));
+          tag info (Entity (Class, (Use2 fake_no_use2)));
         );
       );
       k def
@@ -350,26 +350,26 @@ let visit_program ~tag _prefs  hentities (ast, toks) =
         | XhpChildrenDecl _ -> k x
         | XhpCategoriesDecl (_, decls, _) ->
           decls +> Ast.uncomma +> List.iter (fun (_tag, ii) ->
-            tag ii (Type (Use2 fake_no_use2))
+            tag ii (Entity (Type, (Use2 fake_no_use2)))
           );
         )
       | Ast.ClassConstants (_, _, vars, _) ->
         vars +> Ast.uncomma +> List.iter (fun (name, _opt) ->
           let info = Ast.info_of_ident name in
-          tag info (Constant (Def2 NoUse));
+          tag info (Entity (Constant, (Def2 NoUse)));
         );
         k x;
       | Ast.ClassVariables (_modifiers, _opt_ty, vars, _) ->
         vars +> Ast.uncomma +> List.iter (fun (dname, _opt) ->
           let info = Ast.info_of_dname dname in
-          tag info (Field (Def2 fake_no_def2));
+          tag info (Entity (Field, (Def2 fake_no_def2)));
         );
         k x
       | Ast.UseTrait (_, names, _rules_or_tok) ->
          names +> Ast.uncomma +> List.iter (fun name ->
           let name = name_of_class_name name in
           let info = Ast.info_of_name name in
-          tag info (Class (Use2 fake_no_use2));
+          tag info (Entity (Class, (Use2 fake_no_use2)));
          );
         k x
       | Ast.TraitConstraint (_, _kind, _ty, _) ->
@@ -385,7 +385,7 @@ let visit_program ~tag _prefs  hentities (ast, toks) =
           match x  with
           | GlobalVar dname ->
             let info = Ast.info_of_dname dname in
-            tag info (Global (Def2 NoUse))
+            tag info (Entity (Global, (Def2 NoUse)))
 
             (* TODO ?? *)
           | GlobalDollar _ -> ()
@@ -405,7 +405,7 @@ let visit_program ~tag _prefs  hentities (ast, toks) =
       let (_, (_, (cname, dname), _), _stmts) = c in
       let name = name_of_class_name cname in
       let info_class = Ast.info_of_name name in
-      tag info_class (Class (Use2 fake_no_use2));
+      tag info_class (Entity (Class, (Use2 fake_no_use2)));
 
       let info_dname = Ast.info_of_dname dname in
       tag info_dname (Local Use);
@@ -422,7 +422,7 @@ let visit_program ~tag _prefs  hentities (ast, toks) =
        *)
       (match expr with
       | This tok ->
-        tag tok (Class (Use2 fake_no_use2))
+        tag tok (Entity (Class, (Use2 fake_no_use2)))
 
       | ArrayGet (var, exprbracket) ->
         (match Ast.unbracket exprbracket with
@@ -431,7 +431,7 @@ let visit_program ~tag _prefs  hentities (ast, toks) =
         | Some (exprbis) ->
           (match exprbis with
           | Sc (C (Ast.String (_s, info))) ->
-            tag info (Field (Use2 fake_no_use2));
+            tag info (Entity (Field, (Use2 fake_no_use2)));
             vx (Expr var);
 
           | Sc (C (Int (_s, _info))) ->
@@ -456,7 +456,7 @@ let visit_program ~tag _prefs  hentities (ast, toks) =
           ii +> List.iter (fun info -> tag info PointerCall);
         | ObjGet(_lval, _tok, Id name) ->
           let info = Ast.info_of_name name in
-          tag info (Method (Use2 fake_no_use2));
+          tag info (Entity (Method, (Use2 fake_no_use2)));
         | e ->
           (* function pointer call !!! put in big font *)
           let ii = Lib_parsing_php.ii_of_any (Expr e) in
@@ -467,7 +467,7 @@ let visit_program ~tag _prefs  hentities (ast, toks) =
       (* ObjGet *)
       | ObjGet (_lval, _tok, Id name) ->
         let info = Ast.info_of_name name in
-        tag info (Field (Use2 fake_no_use2));
+        tag info (Entity (Field, (Use2 fake_no_use2)));
         k expr
 
       (* ClassGet *)
@@ -476,11 +476,11 @@ let visit_program ~tag _prefs  hentities (ast, toks) =
         (match b with
         | Id name ->
             let info = Ast.info_of_name name in
-            tag info (Constant (Use2 fake_no_use2))
+            tag info (Entity (Constant, (Use2 fake_no_use2)))
         | IdVar (dname, _) ->
             let info = Ast.info_of_dname dname in
             (* todo? special category for class variables ? *)
-            tag info (Global (Use2 fake_no_use2));
+            tag info (Entity (Global, (Use2 fake_no_use2)));
         | _v2 ->
           (* todo? colorize qualif? bad to use dynamic variable ...
              let info = Ast.info_of_dname dname in
@@ -504,7 +504,7 @@ let visit_program ~tag _prefs  hentities (ast, toks) =
         | "null" -> tag info Null
         | _ ->
           if not (Hashtbl.mem already_tagged info)
-          then tag info (Constant (Use2 fake_no_use2))
+          then tag info (Entity (Constant, (Use2 fake_no_use2)))
         )
 
       | IdVar (dname, aref) ->
@@ -513,11 +513,11 @@ let visit_program ~tag _prefs  hentities (ast, toks) =
         (match !aref with
         | S.Local -> tag info (Local Use)
         | S.Param -> tag info (Parameter Use)
-        | S.Class -> tag info (Field (Use2 fake_no_use2))
+        | S.Class -> tag info (Entity (Field, (Use2 fake_no_use2)))
         (* TODO, need global_used table *)
-        | S.Global | S.Closed -> tag info (Global (Use2 fake_no_use2));
+        | S.Global | S.Closed -> tag info (Entity (Global, (Use2 fake_no_use2)));
         (* less: could invent a Static in highlight_code ? *)
-        | S.Static -> tag info (Global (Use2 fake_no_use2))
+        | S.Static -> tag info (Entity (Global, (Use2 fake_no_use2)))
         | S.ListBinded | S.LocalIterator | S.LocalExn -> tag info (Local Use)
         | S.NoScope -> tag info (NoType)
         )
@@ -556,9 +556,9 @@ let visit_program ~tag _prefs  hentities (ast, toks) =
     V.kxhp_attr_decl = (fun (k, _) x ->
       match x with
       | XhpAttrInherit (_xhp_tag, ii) ->
-          tag ii (Class (Use2 (fake_no_use2)));
+          tag ii (Entity (Class, (Use2 fake_no_use2)));
       | XhpAttrDecl ((_attr_type, (_attr_name, iiname), _affect_opt, _tok_opt))->
-          tag iiname (Field (Use2 fake_no_use2));
+          tag iiname (Entity (Field, (Use2 fake_no_use2)));
           k x
     );
 
@@ -731,7 +731,7 @@ let visit_program ~tag _prefs  hentities (ast, toks) =
     | T.T_CONST ii -> tag ii Keyword
 
     | T.T_SELF ii | T.T_PARENT ii ->
-      tag ii (Class (Use2 fake_no_use2));
+      tag ii (Entity (Class, (Use2 fake_no_use2)));
 
       (* could be for func or method or lambda so tagged via ast *)
     | T.T_FUNCTION ii ->
@@ -789,7 +789,7 @@ let visit_program ~tag _prefs  hentities (ast, toks) =
       -> tag ii KeywordObject
 
     | T.T_XHP_TEXT (_, ii) -> tag ii String
-    | T.T_XHP_ATTR (_, ii) -> tag ii (Field (Use2 fake_no_use2))
+    | T.T_XHP_ATTR (_, ii) -> tag ii (Entity (Field, (Use2 fake_no_use2)))
 
     | T.T_XHP_OPEN_TAG (_, ii) | T.T_XHP_CLOSE_TAG (_, ii) 
     | T.T_XHP_SLASH_GT ii | T.T_XHP_GT ii 

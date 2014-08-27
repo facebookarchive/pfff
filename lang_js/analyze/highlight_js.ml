@@ -14,7 +14,7 @@
  *)
 open Common
 
-open Highlight_code
+open Entity_code open Highlight_code
 module Ast = Ast_js
 module T = Parser_js
 module TH = Token_helpers_js
@@ -89,7 +89,7 @@ let visit_program ~tag_hook _prefs (*db_opt *) (ast, toks) =
         in
         (try
             let ii_string = find_first_string xs in
-            tag ii_string (HC.Method (Def2 fake_no_def2));
+            tag ii_string (HC.Entity (Method, (Def2 fake_no_def2)));
           with Not_found -> ()
         );
         aux_toks xs
@@ -100,7 +100,7 @@ let visit_program ~tag_hook _prefs (*db_opt *) (ast, toks) =
       ::xs
        (* todo? when Parse_info.col_of_info ii1 = 0 *)
       ->
-        tag ii2 (Method (Def2 NoUse));
+        tag ii2 (Entity (Method, (Def2 NoUse)));
         aux_toks xs
 
     | T.T_FUNCTION(_ii1)
@@ -109,7 +109,7 @@ let visit_program ~tag_hook _prefs (*db_opt *) (ast, toks) =
       ::xs
        (* when Parse_info.col_of_info ii1 = 0 ? *)
       ->
-        tag ii2 (Function (Def2 NoUse));
+        tag ii2 (Entity (Function, (Def2 NoUse)));
         aux_toks xs
 
 
@@ -119,7 +119,7 @@ let visit_program ~tag_hook _prefs (*db_opt *) (ast, toks) =
       ::T.T_LPAREN(_)
       ::xs when Parse_info.col_of_info ii1 = 0 ->
 
-        tag ii_last (Global (Def2 NoUse));
+        tag ii_last (Entity (Global, (Def2 NoUse)));
         aux_toks xs
 
     | T.T_IDENTIFIER ("JX", ii1)
@@ -128,7 +128,7 @@ let visit_program ~tag_hook _prefs (*db_opt *) (ast, toks) =
       ::T.T_LPAREN(_)
       ::xs when Parse_info.col_of_info ii1 <> 0 ->
 
-        tag ii_last (Class (Use2 fake_no_use2));
+        tag ii_last (Entity (Class, (Use2 fake_no_use2)));
         aux_toks xs
 
     | T.T_IDENTIFIER ("JX", ii1)
@@ -139,7 +139,7 @@ let visit_program ~tag_hook _prefs (*db_opt *) (ast, toks) =
       ::T.T_LPAREN(_)
       ::xs when Parse_info.col_of_info ii1 = 0 ->
 
-        tag ii_last (Global (Def2 NoUse));
+        tag ii_last (Entity (Global, (Def2 NoUse)));
         aux_toks xs
 
     | _x::xs ->
@@ -183,7 +183,7 @@ let visit_program ~tag_hook _prefs (*db_opt *) (ast, toks) =
                * back the category for a token.
                *)
               (*let ii' = Parse_info.rewrap_str s ii in*)
-              tag ii (Class (Def2 fake_no_def2));
+              tag ii (Entity (Class, (Def2 fake_no_def2)));
           | Some (E.Method, _) ->
               (* jsspec use strings for method names *)
               ()
@@ -207,9 +207,9 @@ let visit_program ~tag_hook _prefs (*db_opt *) (ast, toks) =
         in
         (match kind_name_opt with
         | Some (E.Class, _fullname) ->
-            tag ii (Class (Def2 fake_no_def2))
+            tag ii (Entity (Class, (Def2 fake_no_def2)))
         | Some (E.Method, _fullname) ->
-            tag ii (Method (Def2 fake_no_def2))
+            tag ii (Entity (Method, (Def2 fake_no_def2)))
 (* less:
         | Some (E.Method E.StaticMethod, _fullname) ->
             tag ii (StaticMethod (Def2 fake_no_def2))
@@ -239,7 +239,7 @@ let visit_program ~tag_hook _prefs (*db_opt *) (ast, toks) =
     | T.T_INTERFACE ii -> tag ii KeywordObject
 
     | T.T_XHP_TEXT (_, ii) -> tag ii String
-    | T.T_XHP_ATTR (_, ii) -> tag ii (Field (Use2 fake_no_use2))
+    | T.T_XHP_ATTR (_, ii) -> tag ii (Entity (Field, (Use2 fake_no_use2)))
 
     | T.T_XHP_CLOSE_TAG (_, ii) -> tag ii EmbededHtml
     | T.T_XHP_SLASH_GT ii -> tag ii EmbededHtml

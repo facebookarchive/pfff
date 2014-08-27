@@ -99,7 +99,7 @@ let visit_toplevel
         );
         aux_toks xs
 
-    |    T.TCommand(("chapter" | "chapter*") ,_)
+    |    T.TCommand(("chapter" | "chapter*"),_)
       :: T.TOBrace _
       :: xs 
       ->

@@ -15,7 +15,7 @@
 open Common
 
 module Ast = Ast_rust
-open Highlight_code
+open Entity_code open Highlight_code
 module T = Parser_rust
 module TH = Token_helpers_rust
 
@@ -99,12 +99,12 @@ let visit_program
     (* defs *)
     | (T.Tmod _ )::T.TIdent (_s, ii2)::xs ->
         if not (Hashtbl.mem already_tagged ii2) && lexer_based_tagger
-        then tag ii2 (Module (Def));
+        then tag ii2 (Entity (Module, (Def2 fake_no_def2)));
         aux_toks xs
 
     | (T.Tstruct _ | T.Ttrait _ | T.Timpl _)::T.TIdent (_s, ii2)::xs ->
         if not (Hashtbl.mem already_tagged ii2) && lexer_based_tagger
-        then tag ii2 (Class (Def2 fake_no_def2));
+        then tag ii2 (Entity (Class, (Def2 fake_no_def2)));
         aux_toks xs
 
     | (T.Ttype _ | T.Tenum _)::T.TIdent (_s, ii2)::xs ->
@@ -114,7 +114,7 @@ let visit_program
 
     | (T.Tfn _)::T.TIdent (_s, ii2)::xs ->
         if not (Hashtbl.mem already_tagged ii2) && lexer_based_tagger
-        then tag ii2 (Function (Def2 fake_no_def2));
+        then tag ii2 (Entity (Function, (Def2 fake_no_def2)));
         aux_toks xs
 
     | (T.Tlet _)::T.TIdent (_s, ii2)::xs ->
@@ -130,32 +130,32 @@ let visit_program
     (* uses *)
 
     | T.TIdent (_, ii0)::T.TColonColon ii1::T.TIdent (s2, ii2)::xs ->
-        tag ii0 (Module (Use));
+        tag ii0 (Entity (Module, (Use2 fake_no_use2)));
         aux_toks (T.TColonColon ii1::T.TIdent (s2, ii2)::xs)
 
     | T.TColonColon _::T.TIdent (_s3, ii3)::T.TOParen _::xs ->
         if not (Hashtbl.mem already_tagged ii3) && lexer_based_tagger
-        then tag ii3 (Function (Use2 fake_no_use2));
+        then tag ii3 (Entity (Function, (Use2 fake_no_use2)));
         aux_toks xs
 
     | T.TDot _::T.TIdent (_s3, ii3)::T.TOParen _::xs ->
         if not (Hashtbl.mem already_tagged ii3) && lexer_based_tagger
-        then tag ii3 (Method (Use2 fake_no_use2));
+        then tag ii3 (Entity (Method, (Use2 fake_no_use2)));
         aux_toks xs
 
     | T.TIdent (_s3, ii3)::T.TOParen _::xs ->
         if not (Hashtbl.mem already_tagged ii3) && lexer_based_tagger
-        then tag ii3 (Function (Use2 fake_no_use2));
+        then tag ii3 (Entity (Function, (Use2 fake_no_use2)));
         aux_toks xs
 
     | T.TDot _::T.TIdent (_s3, ii3)::xs ->
         if not (Hashtbl.mem already_tagged ii3) && lexer_based_tagger
-        then tag ii3 (Field (Use2 fake_no_use2));
+        then tag ii3 (Entity (Field, (Use2 fake_no_use2)));
         aux_toks xs
 
     | (T.TArrow _) ::T.TIdent (_s3, ii3)::xs ->
         if not (Hashtbl.mem already_tagged ii3) && lexer_based_tagger
-        then tag ii3 (Type (Use2 fake_no_use2));
+        then tag ii3 (Entity (Type, (Use2 fake_no_use2)));
         aux_toks xs
 
     | _x::xs ->
@@ -289,7 +289,7 @@ let visit_program
        if not (Hashtbl.mem already_tagged ii)
        then 
         if s =~ "^[A-Z].*" && false (* some false positive with types *)
-        then tag ii (Constructor(Use2 fake_no_use2))
+        then tag ii (Entity (Constructor,(Use2 fake_no_use2)))
         else ()
   );
   (* -------------------------------------------------------------------- *)

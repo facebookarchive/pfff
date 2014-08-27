@@ -17,7 +17,7 @@ open Common
 module Ast = Ast_hs
 module PI = Parse_info
 
-open Highlight_code
+open Entity_code open Highlight_code
 
 module T = Parser_hs
 
@@ -87,7 +87,7 @@ let visit_toplevel ~tag_hook _prefs  (_toplevel, toks) =
     | T.TIdent (_s, ii1)::T.TSymbol ("::", _ii3)::xs 
         when PI.col_of_info ii1 = 0 ->
 
-        tag ii1 (Function (Def2 NoUse));
+        tag ii1 (Entity (Function, (Def2 NoUse)));
         aux_toks xs
 
     | (T.Ttype _ | T.Tdata _ | T.Tnewtype _)::T.TIdent (_s, ii1)::xs ->
@@ -102,7 +102,7 @@ let visit_toplevel ~tag_hook _prefs  (_toplevel, toks) =
     | T.TIdent (_s, ii1)::T.TSymbol ("::", _ii3)::xs 
         when PI.col_of_info ii1 > 0 ->
 
-        tag ii1 (Field (Def2 NoUse));
+        tag ii1 (Entity (Field, (Def2 NoUse)));
         aux_toks xs
 
     | T.TIdent (_s, ii1)::xs 

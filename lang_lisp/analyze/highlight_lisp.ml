@@ -14,7 +14,7 @@
  *)
 open Common
 
-open Highlight_code
+open Entity_code open Highlight_code
 module Ast = Ast_lisp
 module PI = Parse_info
 module T = Parser_lisp
@@ -86,11 +86,11 @@ let visit_toplevel ~tag_hook _prefs  (_toplevel, toks) =
         when PI.col_of_info ii1 = 0 ->
         (match s2 with
         | "setq" | "defvar" ->
-            tag ii3 (Global (Def2 NoUse))
+            tag ii3 (Entity (Global, (Def2 NoUse)))
         | "defun" -> 
-            tag ii3 (Function (Def2 NoUse))
+            tag ii3 (Entity (Function, (Def2 NoUse)))
         | "defconst" ->
-            tag ii3 (Constant (Def2 NoUse))
+            tag ii3 (Entity (Constant, (Def2 NoUse)))
         | _ -> ()
         );
         aux_toks xs
@@ -101,7 +101,7 @@ let visit_toplevel ~tag_hook _prefs  (_toplevel, toks) =
         when PI.col_of_info ii1 = 0 ->
         (match s2 with
         | "define" -> 
-            tag ii3 (Function (Def2 NoUse))
+            tag ii3 (Entity (Function, (Def2 NoUse)))
         | _ -> ()
         );
         aux_toks xs

@@ -16,7 +16,7 @@ open Common
 
 module Ast = Ast_csharp
 (*module V = Visitor_csharp *)
-open Highlight_code
+open Entity_code open Highlight_code
 module T = Parser_csharp
 module TH = Token_helpers_csharp
 
@@ -103,7 +103,7 @@ let visit_program
     (* defs *)
     | T.Tclass _ii1::T.TIdent (_s, ii2)::xs ->
         if not (Hashtbl.mem already_tagged ii2) && lexer_based_tagger
-        then tag ii2 (Class (Def2 fake_no_def2));
+        then tag ii2 (Entity (Class, (Def2 fake_no_def2)));
         aux_toks xs
 
     | (T.Tvoid _ii | T.Tint _ii)
@@ -111,7 +111,7 @@ let visit_program
       ::T.TOParen _
       ::xs ->
         if not (Hashtbl.mem already_tagged ii2) && lexer_based_tagger
-        then tag ii2 (Method (Def2 fake_no_def2));
+        then tag ii2 (Entity (Method, (Def2 fake_no_def2)));
         aux_toks xs
 
     |   T.TIdent (s1, ii1)::T.TDot _
@@ -119,10 +119,10 @@ let visit_program
        ->
         if not (Hashtbl.mem already_tagged ii4) && lexer_based_tagger
         then begin 
-          tag ii4 (Field (Def2 fake_no_def2));
+          tag ii4 (Entity (Field, (Def2 fake_no_def2)));
 
           tag ii3 (TypeInt);
-          if is_module_name s1 then tag ii1 (Module (Use));
+          if is_module_name s1 then tag ii1 (Entity (Module, (Use2 fake_no_use2)));
         end;
         aux_toks xs
 
@@ -133,12 +133,12 @@ let visit_program
       ::T.TIdent (_s3, ii3)::T.TOParen _::xs ->
         if not (Hashtbl.mem already_tagged ii3) && lexer_based_tagger
         then begin 
-          tag ii3 (Method (Use2 fake_no_use2));
+          tag ii3 (Entity (Method, (Use2 fake_no_use2)));
           (*
           if not (Hashtbl.mem already_tagged ii1)
           then tag ii1 (Local Use);
           *)
-          if is_module_name s1 then tag ii1 (Module (Use))
+          if is_module_name s1 then tag ii1 (Entity (Module, (Use2 fake_no_use2)))
         end;
         aux_toks xs
 
@@ -146,8 +146,8 @@ let visit_program
       ::T.TIdent (_s3, ii3)::T.TEq _::xs ->
         if not (Hashtbl.mem already_tagged ii3) && lexer_based_tagger
         then begin 
-          tag ii3 (Field (Use2 fake_no_use2));
-          if is_module_name s1 then tag ii1 (Module (Use))
+          tag ii3 (Entity (Field, (Use2 fake_no_use2)));
+          if is_module_name s1 then tag ii1 (Entity (Module, (Use2 fake_no_use2)))
         end;
         aux_toks xs
 
@@ -156,7 +156,7 @@ let visit_program
      ::T.TIdent (s3, ii3)::T.TDot ii4::xs ->
         if not (Hashtbl.mem already_tagged ii1) && lexer_based_tagger
         then begin 
-          if is_module_name s1 then tag ii1 (Module Use)
+          if is_module_name s1 then tag ii1 (Entity (Module, (Use2 fake_no_use2)))
         end;
         aux_toks (T.TIdent (s3, ii3)::T.TDot ii4::xs)
         

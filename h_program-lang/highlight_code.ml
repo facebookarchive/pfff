@@ -14,22 +14,23 @@
  *)
 open Common
 
+module E = Entity_code
+
 (*****************************************************************************)
 (* Prelude *)
 (*****************************************************************************)
-
 (* 
- * Emacs-like font-lock mode, or Source-insight like display.
+ * Emacs-like font-lock mode, or SourceInsight-like display.
  * 
  * This file contains the generic part that is programming language
  * independent. See highlight_xxx.ml for the code specific to the xxx
  * programming language.
  * 
  * This source code viewer is based on good semantic information, 
- * not fragile regexps (as in emacs) or partial parsing 
- * (as in source-insight, probably because they call cpp).
+ * not fragile regexps (as in Emacs) or partial parsing 
+ * (as in SourceInsight, probably because they call cpp).
  *  
- * Augmented visual, augmented intellect, see what can not see, like in
+ * Augmented visual! Augmented intellect! See what can not see, like in
  * movies where HUD show invisible things.
  * 
  * history: 
@@ -130,11 +131,6 @@ type usedef2 =
 (* coupling: if add constructor, don't forget to add its handling in 2 places
  * below, for its color and associated string representation.
  * 
- * Also if it's a new kind of entity, you'll probably have to
- * extend is_entity_def_category below (which in turn is
- * used for instance in visual/parsing.ml and its
- * rewrite_categ_using_entities function.
- * 
  * If you look at usedef below, you should get all the way C programmer
  * can name things: 
  *   - macro, macrovar
@@ -176,41 +172,31 @@ type category =
 
   | Operator (* TODO multi *)
   | Punctuation
-     
+
   (* functions, macros. By default global scope (macro can have local
    * but not that used), so no need to like for variables and have a
    * global/local dichotomy of scope. (But even if functions are globals,
    * still can have some global/local dichotomy but at the module level.
    *)
-  | Function of usedef2
+  | Entity of Entity_code.entity_kind * usedef2
+     
+  (* kind of specific case of Global of Local which we know are really 
+   * really local. Don't really need a def_arity and place here. *)
+  | Local of usedef
+  | Parameter of usedef
+
   | FunctionDecl of def_info
+  | ConstructorMatch of use_info
 
-  | Global of usedef2
-  | Type of usedef2
-  | Class of usedef2 (* also valid for struct ? *)
-
-  | Macro of usedef2
-  | Constant of usedef2
-
-  | Field of usedef2
-  | Method of usedef2
   | StaticMethod of usedef2
 
   | StructName of usedef
-  (* ClassName of place ... *)
-
   | EnumName of usedef
+  (* ClassName of place ... *)
 
   (* types *)
   | TypeDef of usedef
-  | TypeVoid
-  | TypeInt
-
-  (* ocaml *)
-  | Constructor of usedef2
-  | ConstructorMatch of use_info
-
-  | Module of usedef
+  | TypeVoid | TypeInt
 
   (* haskell *)
   | FunctionEquation
@@ -218,10 +204,6 @@ type category =
   (* misc *)
   | Label of usedef
 
-  (* kind of specific case of Global of Local which we know are really 
-   * really local. Don't really need a def_arity and place here. *)
-  | Local     of usedef
-  | Parameter of usedef
 
   (* semantic information *)
   | BadSmell
@@ -502,8 +484,7 @@ let info_of_category = function
   | Expanded ->  [`BACKGROUND "red"]
   | Error ->     [`BACKGROUND "red2"]
 
-
- (* a flashy one that hurts the eye :) *) 
+  (* a flashy one that hurts the eye :) *) 
   | BadSmell -> [`FOREGROUND "magenta"] 
 
   | UseOfRef -> [`FOREGROUND "magenta"]
@@ -522,8 +503,6 @@ let info_of_category = function
       ]
   | IdentUnknown ->   [`FOREGROUND "red";]
 
-
-
   (* searches, background *)
   | MatchGlimpse -> [`BACKGROUND "grey46"]
   | MatchSmPL ->    [`BACKGROUND "ForestGreen"]
@@ -532,8 +511,6 @@ let info_of_category = function
 
   | MatchSmPLPositif -> [`BACKGROUND "ForestGreen"]
   | MatchSmPLNegatif -> [`BACKGROUND "red"]
-
-
 
 
   (* foreground *)
@@ -550,55 +527,42 @@ let info_of_category = function
   | CommentSyncweb -> [`FOREGROUND "DimGray";]
 
 
+  (* entities *)
+  | Entity (kind, defkind) ->
+    (match kind, defkind with
 
-  (* defs *)
-  | Function (Def2 _) -> [`FOREGROUND "gold"; 
-                          `WEIGHT `BOLD;
-                          `STYLE `ITALIC; 
-                          `SCALE `MEDIUM;
-                         ]
+    | E.Type, (Def2 _) -> [`FOREGROUND "chartreuse";]
+    | E.Type, (Use2 _) -> [`FOREGROUND "chartreuse";]
 
-  | FunctionDecl (_) -> [`FOREGROUND "gold2"; 
-                         `WEIGHT `BOLD;
-                         `STYLE `ITALIC; 
-                         `SCALE `MEDIUM;
-    ]
-  | Macro (Def2 _) -> [`FOREGROUND "gold"; 
-                       `WEIGHT `BOLD;
-                       `STYLE `ITALIC; 
-                       `SCALE `MEDIUM;
-    ]
+    | E.Constructor, (Def2 _ ) -> [`FOREGROUND "tomato1";]
+    | E.Constructor, (Use2 _) -> [`FOREGROUND "pink3";]
 
-  | Global (Def2 _) ->   
-      [`FOREGROUND "cyan"; 
-       `WEIGHT `BOLD; 
-       `STYLE `ITALIC;
-       `SCALE `MEDIUM;
-      ]
+    | E.Module, (Def2 _) -> [`FOREGROUND "chocolate";]
+    | E.Module, (Use2 _) -> [`FOREGROUND "DarkSlateGray4";]
 
+    | E.Field, (Def2 _) -> [`FOREGROUND "MediumPurple1"] @ info_of_usedef (Def)
+    | E.Field, (Use2 _) -> [`FOREGROUND "MediumPurple2"] @ info_of_usedef (Use)
 
-  | Constant (Def2 _) ->   
-      [`FOREGROUND "pink"; 
-       `WEIGHT `BOLD; 
-       `STYLE `ITALIC;
-       `SCALE `MEDIUM;
-      ]
+    (* defs *)
+    | E.Function, (Def2 _) -> [`FOREGROUND "gold"; 
+                               `WEIGHT `BOLD;`STYLE `ITALIC; `SCALE `MEDIUM;
+                              ]
+    | E.Macro, (Def2 _) -> [`FOREGROUND "gold"; 
+                            `WEIGHT `BOLD;`STYLE `ITALIC; `SCALE `MEDIUM;
+                           ]
+    | E.Global, (Def2 _) -> [`FOREGROUND "cyan"; 
+                             `WEIGHT `BOLD; `STYLE `ITALIC; `SCALE `MEDIUM;
+                            ]
+    | E.Constant, (Def2 _) -> [`FOREGROUND "pink"; 
+                               `WEIGHT `BOLD; `STYLE `ITALIC; `SCALE `MEDIUM;
+                              ]
+    | E.Method, (Def2 _) -> [`FOREGROUND "gold3";
+                             `WEIGHT `BOLD; `SCALE `MEDIUM;
+                            ]
+    | E.Class, (Def2 _) ->  [`FOREGROUND "coral"] @ info_of_usedef (Def)
 
-      
-
-  | Class (Def2 _) -> 
-      [`FOREGROUND "coral"] @ info_of_usedef (Def)
-
-  | Class (Use2 _) -> 
-      [`FOREGROUND "coral"] @ info_of_usedef (Use)
-
-  | Parameter usedef -> [`FOREGROUND "SteelBlue2";] @ info_of_usedef usedef
-  | Local usedef  ->    [`FOREGROUND "SkyBlue1";] @ info_of_usedef usedef 
-
-
-  (* use *)
-
-  | Function (Use2 (defplace,def_arity,use_arity)) -> 
+    (* uses *)
+    | E.Function, (Use2 (defplace,def_arity,use_arity)) -> 
       (match defplace with
       | PlaceLocal -> [`FOREGROUND "gold";]
       | PlaceSameDir -> [`FOREGROUND "goldenrod";]
@@ -614,8 +578,7 @@ let info_of_category = function
       | NoInfoPlace -> [`FOREGROUND "LightGoldenrod";]
       ) @ info_of_def_arity def_arity
 
-
-  | Global (Use2 (defplace, def_arity, use_arity)) -> 
+    | E.Global, (Use2 (defplace, def_arity, use_arity)) -> 
       [`SCALE `X_LARGE] @
       (match defplace with
       | PlaceLocal -> [`FOREGROUND "cyan";]
@@ -632,8 +595,7 @@ let info_of_category = function
 
       ) @ info_of_def_arity def_arity
 
-
-  | Constant (Use2 (defplace, def_arity, use_arity)) -> 
+    | E.Constant, (Use2 (defplace, def_arity, use_arity)) -> 
       (match defplace with
       | PlaceLocal -> [`FOREGROUND "pink";]
       | PlaceSameDir -> [`FOREGROUND "LightPink";]
@@ -651,10 +613,8 @@ let info_of_category = function
 
       ) @ info_of_def_arity def_arity
 
-
-      
-  (* copy paste of MacroVarUse for now *)
-  | Macro (Use2 (defplace, def_arity, use_arity)) -> 
+    (* copy paste of MacroVarUse for now *)
+    | E.Macro, (Use2 (defplace, def_arity, use_arity)) -> 
       (match defplace with
       | PlaceLocal -> [`FOREGROUND "pink";]
       | PlaceSameDir -> [`FOREGROUND "LightPink";]
@@ -671,70 +631,49 @@ let info_of_category = function
 
       ) @ info_of_def_arity def_arity
 
+    | E.Method, (Use2 _) -> [`FOREGROUND "gold3";]
+
+    | E.Class, (Use2 _) -> [`FOREGROUND "coral"] @ info_of_usedef (Use)
+        
+    | _ -> 
+      failwith (spf "not handled: %s"
+                  (Entity_code.string_of_entity_kind kind))
+    )
+
+  | FunctionDecl (_) -> [`FOREGROUND "gold2"; 
+                         `WEIGHT `BOLD;`STYLE `ITALIC; `SCALE `MEDIUM;
+                        ]
+
+  | Parameter usedef -> [`FOREGROUND "SteelBlue2";] @ info_of_usedef usedef
+  | Local usedef  ->    [`FOREGROUND "SkyBlue1";] @ info_of_usedef usedef 
 
   (* | FunCallMultiDef ->[`FOREGROUND "LightGoldenrod";] *)
 
-  | Method (Use2 _) -> 
-      [`FOREGROUND "gold3";]
-
-  | Method (Def2 _) -> 
-      [`FOREGROUND "gold3";
-       `WEIGHT `BOLD; 
-       `SCALE `MEDIUM;
-      ]
-
-  | StaticMethod (Def2 _) -> 
-      [`FOREGROUND "gold3";
-       `WEIGHT `BOLD; 
-       `SCALE `MEDIUM;
-      ]
-  | StaticMethod (Use2 _) -> 
-      [`FOREGROUND "gold3";
-       `WEIGHT `BOLD; 
-       `SCALE `MEDIUM;
-      ]
-
-
+  | StaticMethod (Def2 _) -> [`FOREGROUND "gold3";
+                              `WEIGHT `BOLD; `SCALE `MEDIUM;
+                             ]
+  | StaticMethod (Use2 _) -> [`FOREGROUND "gold3";
+                              `WEIGHT `BOLD; `SCALE `MEDIUM;
+                             ]
 
 
   | TypeVoid -> [`FOREGROUND "LimeGreen";]
   | TypeInt ->  [`FOREGROUND "chartreuse";]
-  | Type (Def2 _) -> [`FOREGROUND "chartreuse";]
-  | Type (Use2 _) -> [`FOREGROUND "chartreuse";]
 
-  | Constructor(Def2 _ ) -> [`FOREGROUND "tomato1";]
-  | Constructor(Use2 _) -> [`FOREGROUND "pink3";]
   | ConstructorMatch _ -> [`FOREGROUND "pink1";]
-
   | FunctionEquation -> [`FOREGROUND "LightSkyBlue";]
 
-  | Module (Use) -> [`FOREGROUND "DarkSlateGray4";]
-
-  | Module (Def) -> [`FOREGROUND "chocolate";]
-
   | StructName usedef -> [`FOREGROUND "YellowGreen"] @ info_of_usedef usedef 
-
-  | Field (Def2 _) -> 
-      [`FOREGROUND "MediumPurple1"] @ info_of_usedef (Def)
-
-  | Field (Use2 _) -> 
-      [`FOREGROUND "MediumPurple2"] @ info_of_usedef (Use)
-
-
+  | EnumName usedef -> [`FOREGROUND "YellowGreen"] @ info_of_usedef usedef 
   | TypeDef usedef -> [`FOREGROUND "YellowGreen"] @ info_of_usedef usedef 
 
 
 
   | Ifdef -> [`FOREGROUND "chocolate";]
-
   | Include -> [`FOREGROUND "DarkOrange2";]
   | IncludeFilePath -> [`FOREGROUND "SpringGreen3";]
-
   | Define -> [`FOREGROUND "DarkOrange2";]
-
   | CppOther -> [`FOREGROUND "DarkOrange2";]
-
-
 
 
   | Keyword -> [`FOREGROUND "orange";]
@@ -750,7 +689,6 @@ let info_of_category = function
   | KeywordObject -> [`FOREGROUND "aquamarine3";]
   | KeywordModule -> [`FOREGROUND "chocolate";]
 
-
   | Number -> [`FOREGROUND "yellow3";]
   | Boolean -> [`FOREGROUND "pink3";]
   | String -> [`FOREGROUND "MediumSeaGreen";]
@@ -758,22 +696,10 @@ let info_of_category = function
   | Null -> [`FOREGROUND "cyan3";]
 
 
-
-
   | CommentWordImportantNotion ->  
-      [`FOREGROUND "red";] @
-        [
-          `SCALE `LARGE;
-          `UNDERLINE `SINGLE;
-        ]
-
+      [`FOREGROUND "red"; `SCALE `LARGE;`UNDERLINE `SINGLE; ]
   | CommentWordImportantModal ->  
-      [`FOREGROUND "green";] @
-        [
-          `SCALE `LARGE;
-          `UNDERLINE `SINGLE;
-        ]
-
+      [`FOREGROUND "green"; `SCALE `LARGE; `UNDERLINE `SINGLE;]
 
   | Punctuation ->
       [`FOREGROUND "cyan";]
@@ -786,8 +712,6 @@ let info_of_category = function
   | (Label Use) ->
       [`FOREGROUND "CornflowerBlue";]
 
-  | EnumName usedef
-      -> [`FOREGROUND "YellowGreen"] @ info_of_usedef usedef 
 
   | EmbededHtml ->
       (* to be consistent with Archi_code.Ui color *)
@@ -813,7 +737,6 @@ let info_of_category = function
   | GrammarRule ->
       [`FOREGROUND "plum"] 
 
-
   | Normal -> [`FOREGROUND "wheat";]
 
 (*****************************************************************************)
@@ -830,24 +753,10 @@ let arity_ids ids  =
 let rewrap_arity_def2_category arity categ = 
 
   match categ with
-  | Function (Def2 _) -> Function (Def2 arity)
+  | Entity (kind, (Def2 _)) -> Entity (kind, (Def2 arity))
   | FunctionDecl _ ->  FunctionDecl (arity)
-  | Global (Def2 _) ->  Global (Def2 arity)
-  | Constant (Def2 _) -> Constant (Def2 arity)
-  | Macro (Def2 _) -> Macro (Def2 arity)
-  | Class (Def2 _) ->  Class (Def2 arity)
-
-  | Method (Def2 _) ->  Method (Def2 arity)
   | StaticMethod (Def2 _) -> StaticMethod (Def2 arity)
-  | Field (Def2 _) -> Field (Def2 arity)
-        
-  (* todo? *)
-  | Module Def ->
-      pr2_once "No arity for Module Def yet";
-      Module Def
   | TypeDef Def  ->  
       pr2_once "No arity for Typedef Def yet";
       TypeDef Def
-  | Constructor (Def2 _) -> Constructor (Def2 arity)
-
   | _ -> failwith "not a Def2-kind categoriy"

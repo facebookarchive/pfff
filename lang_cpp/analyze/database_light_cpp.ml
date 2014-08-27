@@ -110,14 +110,7 @@ let compute_database ?(verbose=false) files_or_dirs =
         else 
           (* todo: use is_entity_def_category ? *)
           match categ with
-          | HC.Function (HC.Def2 _) 
-          | HC.Global (HC.Def2 _)
-          | HC.Class (HC.Def2 _) 
-          | HC.Method (HC.Def2 _) 
-          | HC.Field (HC.Def2 _) 
-          | HC.Constant (HC.Def2 _) 
-          | HC.Macro (HC.Def2 _) 
-            ->
+          | HC.Entity (_, (HC.Def2 _)) ->
               Hashtbl.add hdefs_pos info true;
               let e = mk_entity ~root ~hcomplete_name_of_info 
                 info categ 
@@ -151,14 +144,9 @@ let compute_database ?(verbose=false) files_or_dirs =
         if not (PI.is_origintok info) then ()
         else 
           match categ with
-          | HC.Function (HC.Use2 _) 
-          | HC.Global (HC.Use2 _)
-          | HC.Class (HC.Use2 _) 
+          | HC.Entity (_, (HC.Use2 _))
           | HC.StructName (HC.Use)
           (*| HC.Method (HC.Use2 _) *)
-          | HC.Field (HC.Use2 _)
-          | HC.Macro (HC.Use2 _)
-          | HC.Constant (HC.Use2 _)
             ->
               let s = PI.str_of_info info in
               Hashtbl.find_all hdefs s +> List.iter (fun entity ->

@@ -264,7 +264,7 @@ and m_tree a b =
   | A.Metavar (s, tok), b ->
     let ok = 
       match b with
-      | B.Parens _ -> false (* temporary hack !! *)
+      | B.Parens _ -> true
       (* we don't want metavars to match symbols *)
       | B.Tok (s,_) -> s =~ "^[a-zA-Z]" 
       | _ -> false

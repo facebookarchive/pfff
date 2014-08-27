@@ -17,13 +17,12 @@
 (*e: Facebook copyright *)
 open Common
 
+open Highlight_code
 module FT = File_type
 module PI = Parse_info
 module HC = Highlight_code
 module Db = Database_code
 module Flag = Flag_visual
-
-open Highlight_code
 
 (*****************************************************************************)
 (* Prelude *)
