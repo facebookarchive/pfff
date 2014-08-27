@@ -91,5 +91,78 @@ let string_of_fact = function
 (* Bddbddb *)
 (*****************************************************************************)
 
-let bddbddb_of_facts _facts _dir =
+(* see datalog_code.dl domain *)
+type value = 
+  | V of var
+  | F of fld
+  | N of func
+  | I of callsite
+  | Z of int
+
+(* "V", "F", ... *)
+type _domain = string
+
+let domain_of_value = function
+  | V _ -> "V"
+  | F _ -> "F"
+  | N _ -> "N"
+  | I _ -> "I"
+  | Z _ -> "Z"
+
+type _rule = string
+
+type _meta_fact = 
+    string * value list
+
+type _idx = (string (* metadomain*), value Common.hashset) Hashtbl.t
+
+let meta_fact = function
+  | PointTo (a, b) -> "point_to", [ V a; V b; ]
+  | ArrayPointTo (a, b) -> "array_point_to", [ V a; V b; ]
+  | Assign (a, b) -> "assign", [ V a; V b; ]
+  | AssignContent (a, b) -> "assign_content", [ V a; V b; ]
+  | AssignAddress (a, b) -> "assign_address", [ V a; V b; ]
+  | AssignDeref (a, b) -> "assign_deref", [ V a; V b; ]
+  | AssignLoadField (a, b, c) -> "assign_load_field", [ V a; V b; F c ]
+  | AssignStoreField (a, b, c) -> "assign_store_field", [ V a; F b; V c ]
+  | AssignFieldAddress (a, b, c) -> "assign_field_address", [ V a; V b; F c ]
+  | AssignArrayElt (a, b) -> "assign_array_elt", [ V a; V b; ]
+  | AssignArrayDeref (a, b) -> "assign_array_deref", [ V a; V b; ]
+  | AssignArrayElementAddress (a, b) -> "assign_array_element_address", [ V a; V b; ]
+  | Parameter (a, b, c) -> "parameter", [ N a; Z b; V c ]
+  | Return (a, b) -> "return", [ N a; V b; ]
+  | Argument (a, b, c) -> "argument", [ I a; Z b; V c ]
+  | ReturnValue (a, b) -> "call_ret", [ I a; V b; ]
+  | CallDirect (a, b) -> "call_direct", [ I a; N b; ]
+  | CallIndirect (a, b) -> "call_indirect", [ I a; V b; ]
+
+
+let bddbddb_of_facts facts _dir =
+  let metas = facts +> List.map meta_fact in
+
+  let hvalues = Hashtbl.create 6 in
+  let hrules = Hashtbl.create 30 in
+
+  (* build sets *)
+  metas +> List.iter (fun (arule, xs) ->
+    let listref =
+      try Hashtbl.find hrules arule
+      with Not_found -> 
+        let aref = ref [] in
+        Hashtbl.add hrules arule aref;
+        aref
+    in
+    listref := xs :: !listref;
+
+    xs +> List.iter (fun v ->
+      let domain = domain_of_value v in
+      let hdomain =
+        try Hashtbl.find hvalues domain
+        with Not_found -> Hashtbl.create 10001
+      in
+      Hashtbl.replace hdomain v true
+    )
+  );
+
+  (* now build integer indexes *)
   raise Todo
