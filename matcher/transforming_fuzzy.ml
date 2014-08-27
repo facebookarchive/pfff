@@ -217,7 +217,7 @@ module XMATCH = struct
    * part only to the very last matched token by X (here '2').
    *)
 
-  let distribute_transfo transfo any _env = 
+  let distribute_transfo transfo any env = 
     let ii = Ast_fuzzy.toks_of_trees any in
 
     (match transfo with
@@ -226,11 +226,17 @@ module XMATCH = struct
       ii +> List.iter (fun tok -> tok.PI.transfo <- PI.Remove)
     | PI.Replace _add ->
         ii +> List.iter (fun tok -> tok.PI.transfo <- PI.Remove);
-        let _any_ii = List.hd ii in
-        raise Todo
-        (* any_ii.PI.transfo <- adjust_transfo_with_env env transfo; *)
+        (match ii with
+        | [ii] -> ii.PI.transfo <- adjust_transfo_with_env env transfo;
+        | _ -> failwith "metavar matching multi tokens not supported yet"
+        )
     | PI.AddBefore _add -> raise Todo
-    | PI.AddAfter _add -> raise Todo
+    | PI.AddAfter _add ->
+        (match ii with
+        | [ii] -> ii.PI.transfo <- adjust_transfo_with_env env transfo;
+        | _ -> failwith "metavar matching multi tokens not supported yet"
+        )
+
     | PI.AddArgsBefore _ -> raise Todo
     )
 
