@@ -157,6 +157,8 @@ let build_prolog_db lang root xs =
                 pr (Datalog_code.string_of_fact fact));
             );
             pr2 (spf "Your datalog facts are in %s" datalog_file);
+          (*
+
             let final_file = "/tmp/datalog.dl" in
             let cmd = spf "cat %s %s > %s" 
               datalog_file logicrules_file final_file in
@@ -164,12 +166,18 @@ let build_prolog_db lang root xs =
             let cmd = spf "datalog %s | sort" final_file in
             (* Common.command2 cmd; *)
             pr2 (spf "RUN %s" cmd);
+            *)
+            (* bddbddb special stuff *)
+            let dir = "/home/pad/local/datalog/bddbddb/examples/pfff/data" in
+            Datalog_code.bddbddb_of_facts facts dir;
+            pr2 (spf "run bddbddb in %s" dir)
 
           end;
           g
         | _ -> raise Impossible
       in
 
+      if !datalog then "echo datalog done" else begin
       let facts = Graph_code_prolog.build g in
       let facts_pl_file = Filename.concat root "facts.pl" in
       Common.with_open_outfile facts_pl_file (fun (pr_no_nl, _chan) ->
@@ -181,6 +189,7 @@ let build_prolog_db lang root xs =
       Common.command2 (spf "mv a.out %s" prolog_compiled_db);
       pr2 (spf "Your compiled prolog DB is ready. Run %s" prolog_compiled_db);
       prolog_compiled_db
+      end
 
   | _ -> failwith ("language not yet supported: " ^ lang)
 

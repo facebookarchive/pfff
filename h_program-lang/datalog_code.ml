@@ -109,6 +109,10 @@ let domain_of_value = function
   | I _ -> "I"
   | Z _ -> "Z"
 
+let string_of_value = function
+  | V x | F x | N x | I x -> x
+  | Z _ -> raise Impossible
+
 type _rule = string
 
 type _meta_fact = 
@@ -137,7 +141,7 @@ let meta_fact = function
   | CallIndirect (a, b) -> "call_indirect", [ I a; V b; ]
 
 
-let bddbddb_of_facts facts _dir =
+let bddbddb_of_facts facts dir =
   let metas = facts +> List.map meta_fact in
 
   let hvalues = Hashtbl.create 6 in
@@ -158,11 +162,74 @@ let bddbddb_of_facts facts _dir =
       let domain = domain_of_value v in
       let hdomain =
         try Hashtbl.find hvalues domain
-        with Not_found -> Hashtbl.create 10001
+        with Not_found -> 
+          let h = Hashtbl.create 10001 in
+          Hashtbl.add hvalues domain h;
+          h
       in
       Hashtbl.replace hdomain v true
     )
   );
 
   (* now build integer indexes *)
-  raise Todo
+  let domains_idx = 
+    hvalues +> Common.hash_to_list +> List.map (fun (domain, hdomain) ->
+      let conv = hdomain +> Common.hashset_to_list +> Common.index_list_0 in
+      domain, (
+        conv, conv +> Common.hash_of_list
+      )
+    )
+  in
+
+  Common.command2 (spf "rm -f %s/*" dir);
+  (* generate .map *)
+  domains_idx +> List.iter (fun (domain, (map, _idx)) ->
+    if domain <> "Z"
+    then begin
+      let file = Filename.concat dir (domain ^ ".map") in
+      Common.with_open_outfile file (fun (pr_no_nl, _chan) ->
+        let pr s = pr_no_nl (s ^ "\n") in
+
+        map +> List.iter (fun (v, _int) ->
+          pr (string_of_value v)
+        )
+      )
+    end
+  );
+
+  (* generate .tuples *)
+  hrules +> Common.hash_to_list +> List.iter (fun (arule, xxs) ->
+      let arule =
+        match arule with
+        | "point_to" -> "point_to0"
+        | "assign" -> "assign0"
+        | s -> s
+      in
+
+      let file = Filename.concat dir (arule ^ ".tuples") in
+      Common.with_open_outfile file (fun (pr_no_nl, _chan) ->
+        let pr s = pr_no_nl (s ^ "\n") in
+        
+        (* todo: header?? *)
+
+        !xxs +> List.iter (fun xs ->
+          let ints =
+            xs +> List.map (fun v ->
+              let i =
+                match v with
+                | Z i -> i
+                | _ ->
+                    let domain = domain_of_value v in
+                    let (_, hdomainconv) = List.assoc domain domains_idx in
+                    Hashtbl.find hdomainconv v
+              in
+              i
+            )
+          in
+          pr (ints +> List.map i_to_s +> Common.join " ")
+        );
+      )
+  );
+
+  ()
+
