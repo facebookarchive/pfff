@@ -159,15 +159,24 @@ let bddbddb_of_facts facts dir =
     listref := xs :: !listref;
 
     xs +> List.iter (fun v ->
-      let domain = domain_of_value v in
-      let hdomain =
-        try Hashtbl.find hvalues domain
-        with Not_found -> 
-          let h = Hashtbl.create 10001 in
-          Hashtbl.add hvalues domain h;
-          h
+      let add_v v = 
+        let domain = domain_of_value v in
+        let hdomain =
+          try Hashtbl.find hvalues domain
+          with Not_found -> 
+            let h = Hashtbl.create 10001 in
+            Hashtbl.add hvalues domain h;
+            h
+        in
+        Hashtbl.replace hdomain v true;
       in
-      Hashtbl.replace hdomain v true
+      add_v v;
+      (* for field_to_var and var_to_func *)
+      (match v with
+      | F s -> add_v (V s)
+      | N s -> add_v (V s)
+      | _ -> ()
+      )        
     )
   );
 
@@ -230,6 +239,48 @@ let bddbddb_of_facts facts dir =
         );
       )
   );
+
+  (* generate extra .tuples *)
+  let fvals = try List.assoc "F" domains_idx +> fst with Not_found -> [] in
+  let nvals = try List.assoc "N" domains_idx +> fst with Not_found -> [] in
+  let (_vvals, vconv) = List.assoc "V" domains_idx in
+  let arule = "field_to_var" in
+
+      let file = Filename.concat dir (arule ^ ".tuples") in
+      Common.with_open_outfile file (fun (pr_no_nl, _chan) ->
+        let pr s = pr_no_nl (s ^ "\n") in
+  
+        fvals +> List.iter (fun (fld, idx) ->
+          match fld with
+          | F s ->
+            let v = V s in
+            let idx2 = Hashtbl.find vconv v in
+            pr (spf "%d %d" idx idx2)
+          | _ -> 
+            pr2_gen (fld, idx);
+            raise Impossible
+        )
+      ); 
+
+  let arule = "var_to_func" in
+
+      let file = Filename.concat dir (arule ^ ".tuples") in
+      Common.with_open_outfile file (fun (pr_no_nl, _chan) ->
+        let pr s = pr_no_nl (s ^ "\n") in
+  
+        nvals +> List.iter (fun (n, idx) ->
+          match n with
+          | N s ->
+            let v = V s in
+            let idx2 = Hashtbl.find vconv v in
+            (* subtle, different order than for field_to_var, idx2 before *)
+            pr (spf "%d %d" idx2 idx)
+          | _ -> 
+            pr2_gen (n, idx);
+            raise Impossible
+        )
+      ); 
+
 
   ()
 
