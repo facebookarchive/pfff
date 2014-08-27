@@ -15,7 +15,7 @@
 open Common
 
 module Ast = Ast_nw
-open Entity_code open Highlight_code
+open Highlight_code
 module T = Parser_nw
 module TH = Token_helpers_nw
 

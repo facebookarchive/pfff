@@ -109,13 +109,13 @@ let visit_toplevel
     (* defs *)
     | T.Tclass _ii1::T.TIdent (_s, ii2)::xs ->
         if not (Hashtbl.mem already_tagged ii2) && lexer_based_tagger
-        then tag ii2 (Class (Def2 fake_no_def2));
+        then tag ii2 (Entity (Class, (Def2 fake_no_def2)));
         aux_toks xs
 
     | T.Tdef _ii1::T.TIdent (_s, ii2)::xs ->
         (* todo: actually could be a method if in class scope *)
         if not (Hashtbl.mem already_tagged ii2) && lexer_based_tagger
-        then tag ii2 (Function (Def2 fake_no_def2));
+        then tag ii2 (Entity (Function, (Def2 fake_no_def2)));
         aux_toks xs
 
 
@@ -124,7 +124,7 @@ let visit_toplevel
     | T.TIdent (_s, ii1)::T.TDot _::T.TIdent (_s3, ii3)::T.TOParen _::xs ->
         if not (Hashtbl.mem already_tagged ii3) && lexer_based_tagger
         then begin 
-          tag ii3 (Method (Use2 fake_no_use2));
+          tag ii3 (Entity (Method, (Use2 fake_no_use2)));
           if not (Hashtbl.mem already_tagged ii1)
           then tag ii1 (Local Use);
         end;
@@ -135,7 +135,7 @@ let visit_toplevel
         then 
           (if Hashtbl.mem builtin_functions s
           then tag ii1 Builtin
-          else tag ii1 (Function (Use2 fake_no_use2))
+          else tag ii1 (Entity (Function, (Use2 fake_no_use2)))
           );
         aux_toks xs
 
@@ -144,7 +144,7 @@ let visit_toplevel
         | (T.TDot _)::_ ->
 
             if not (Hashtbl.mem already_tagged ii3) && lexer_based_tagger
-            then tag ii3 (Field (Use2 fake_no_use2));
+            then tag ii3 (Entity (Field, (Use2 fake_no_use2)));
 
             if not (Hashtbl.mem already_tagged ii1)
             then tag ii1 (Local Use);
@@ -154,7 +154,7 @@ let visit_toplevel
         | _ ->
           if not (Hashtbl.mem already_tagged ii3) && lexer_based_tagger
           then begin 
-            tag ii3 (Field (Use2 fake_no_use2));
+            tag ii3 (Entity (Field, (Use2 fake_no_use2)));
             (* TODO *)
             if not (Hashtbl.mem already_tagged ii1)
             then tag ii1 (Local Use);

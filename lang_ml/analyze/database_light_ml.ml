@@ -157,11 +157,8 @@ let compute_database ?(verbose=false) files_or_dirs =
         ~tag_hook:(fun info categ -> 
           (* todo: use is_entity_def_category ? *)
           match categ with
-          | HC.Function (HC.Def2 _) 
-          | HC.Global (HC.Def2 _)
-          | HC.Module HC.Def
+          | HC.Entity (_, HC.Def2 _)
           | HC.TypeDef HC.Def 
-
           | HC.FunctionDecl _ 
             ->
 

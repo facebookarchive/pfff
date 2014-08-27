@@ -29,6 +29,12 @@ module T = Parser_html
 (*****************************************************************************)
 
 (*****************************************************************************)
+(* Helpers *)
+(*****************************************************************************)
+
+let fake_no_use2 = (NoInfoPlace, UniqueDef, MultiUse)
+
+(*****************************************************************************)
 (* Code highlighter *)
 (*****************************************************************************)
 
@@ -125,7 +131,7 @@ let visit_toplevel ~tag_hook _prefs (toplevel, toks) =
 
     | T.Lelementend (ii, _s) ->
         (* todo: better category *)
-        tag ii (Module Use);
+        tag ii (Entity (Module, (Use2 fake_no_use2)));
 
     | T.Name (ii, _s) ->
         (* todo: different color depending on attr ? *)

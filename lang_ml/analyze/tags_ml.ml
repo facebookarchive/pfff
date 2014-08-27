@@ -14,7 +14,7 @@
  *)
 open Common
 
-open Entity_code open Highlight_code
+open Highlight_code
 module Ast = Ast_ml
 module Tags = Tags_file
 module E = Entity_code
@@ -43,9 +43,7 @@ let tag_of_name filelines name =
 
 let entity_of_highlight_category_opt x =
   match x with
-  | Highlight_code.Function (Def2 _) -> Some E.Function
-  | Global (Def2 _) -> Some E.Global
-  | Module Def -> Some E.Module
+  | Highlight_code.Entity (kind, (Def2 _)) -> Some kind
   | TypeDef Def -> Some E.Type
   | FunctionDecl _ -> Some E.Function
   | _ -> None

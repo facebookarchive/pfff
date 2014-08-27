@@ -145,7 +145,7 @@ let visit_toplevel ~tag_hook _prefs (*db_opt *) (toplevel, toks) =
       ::xs
         when PI.col_of_info ii = 0 ->
 
-        tag ii3 (Class (Def2 fake_no_def2));
+        tag ii3 (Entity (Class, (Def2 fake_no_def2)));
         aux_toks xs;
 
 
@@ -156,9 +156,9 @@ let visit_toplevel ~tag_hook _prefs (*db_opt *) (toplevel, toks) =
         let rec find_ident_paren xs =
           match xs with
           | T.TIdent(_s, ii1)::T.TOPar _::_ ->
-              tag ii1 (Function (Def2 NoUse));
+              tag ii1 (Entity (Function, (Def2 NoUse)));
           | T.TIdent(_s, ii1)::T.TCommentSpace _::T.TOPar _::_ ->
-              tag ii1 (Function (Def2 NoUse));
+              tag ii1 (Entity (Function, (Def2 NoUse)));
           | _::xs ->
               find_ident_paren xs
           | [] -> ()
@@ -203,8 +203,8 @@ let visit_toplevel ~tag_hook _prefs (*db_opt *) (toplevel, toks) =
                 | _ when Type.is_function_type onedecl.v_type-> 
                     FunctionDecl NoUse
                  (* could be a global too when the decl is at the top *)
-                | Sto (Extern, _) -> Global (Def2 fake_no_def2)
-                | _ when !is_at_toplevel -> Global (Def2 fake_no_def2)
+                | Sto (Extern, _) -> Entity (Global, (Def2 fake_no_def2))
+                | _ when !is_at_toplevel -> Entity (Global, (Def2 fake_no_def2))
                 | _ -> Local Def
               in
               Ast.ii_of_id_name name +>List.iter (fun ii -> tag ii categ)
@@ -244,7 +244,7 @@ let visit_toplevel ~tag_hook _prefs (*db_opt *) (toplevel, toks) =
              (* the FunCall case might have already tagged it with something *)
               not (Hashtbl.mem already_tagged ii)
             then 
-              tag ii (Constant (Use2 fake_no_use2))
+              tag ii (Entity (Constant, (Use2 fake_no_use2)))
             else 
               (match idinfo.Ast.i_scope with
               | S.Local -> 
@@ -252,12 +252,12 @@ let visit_toplevel ~tag_hook _prefs (*db_opt *) (toplevel, toks) =
               | S.Param ->
                   tag ii (Parameter Use)
               | S.Global ->
-                  tag ii (Global (Use2 fake_no_use2));
+                  tag ii (Entity (Global, (Use2 fake_no_use2)));
               | S.NoScope ->
                   ()
               | S.Static ->
                   (* todo? could invent a Static in highlight_code ? *)
-                  tag ii (Global (Use2 fake_no_use2));
+                  tag ii (Entity (Global, (Use2 fake_no_use2)));
                 
               | S.Class ->
                   (* TODO *)
@@ -276,7 +276,7 @@ let visit_toplevel ~tag_hook _prefs (*db_opt *) (toplevel, toks) =
               then
                 tag ii BuiltinCommentColor
                 else
-                  tag ii (Function (Use2 fake_no_use2))
+                  tag ii (Entity (Function, (Use2 fake_no_use2)))
               );
           | _ -> ()
           );
@@ -288,7 +288,7 @@ let visit_toplevel ~tag_hook _prefs (*db_opt *) (toplevel, toks) =
           | RecordPtAccess (_e, name), _
             ->
               Ast.ii_of_id_name name +> List.iter (fun ii ->
-                tag ii (Method (Use2 fake_no_use2))
+                tag ii (Entity (Method, (Use2 fake_no_use2)))
               )
 
           | _ -> 
@@ -304,7 +304,7 @@ let visit_toplevel ~tag_hook _prefs (*db_opt *) (toplevel, toks) =
           (match name with
           | _, _, IdIdent (_s, ii) ->
               if not (Hashtbl.mem already_tagged ii)
-              then tag ii (Field (Use2 fake_no_use2));
+              then tag ii (Entity (Field, (Use2 fake_no_use2)));
           | _ -> ()
           );
           k x
@@ -313,7 +313,7 @@ let visit_toplevel ~tag_hook _prefs (*db_opt *) (toplevel, toks) =
           (match ft with
           | _nq, ((TypeName (name)), _) ->
               Ast.ii_of_id_name name +> List.iter (fun ii -> 
-                tag ii (Class (Use2 fake_no_use2));
+                tag ii (Entity (Class, (Use2 fake_no_use2)));
               )
           | _ ->
               ()
@@ -326,7 +326,7 @@ let visit_toplevel ~tag_hook _prefs (*db_opt *) (toplevel, toks) =
       | InitDesignators (xs, _, _init) ->
         xs +> List.iter (function
         | DesignatorField (_tok, (_s, tok2)) ->
-            tag tok2 (Field (Use2 fake_no_use2))
+            tag tok2 (Entity (Field, (Use2 fake_no_use2)))
         | _ -> ()
         );
         k x
@@ -367,7 +367,7 @@ let visit_toplevel ~tag_hook _prefs (*db_opt *) (toplevel, toks) =
       | EnumDef (_tok, _sopt, xs) ->
           xs +> unbrace +> uncomma +> List.iter (fun enum_elem ->
             let (_, ii) = enum_elem.e_name in
-            tag ii (Constructor(Def2 fake_no_def2))
+            tag ii (Entity (Constructor,(Def2 fake_no_def2)))
           );
           k x
 
@@ -381,8 +381,8 @@ let visit_toplevel ~tag_hook _prefs (*db_opt *) (toplevel, toks) =
             let kind = 
               (* poor's man object using function pointer; classic C idiom *)
               if Type.is_method_type onedecl.v_type
-              then Method (Def2 fake_no_def2)
-              else Field (Def2 NoUse)
+              then Entity (Method, (Def2 fake_no_def2))
+              else Entity (Field, (Def2 NoUse))
             in
             Ast.ii_of_id_name name +> List.iter (fun ii -> tag ii kind)
           );
@@ -391,7 +391,7 @@ let visit_toplevel ~tag_hook _prefs (*db_opt *) (toplevel, toks) =
       | BitField (sopt, _tok, _ft, _e) ->
           (match sopt with
           | Some (_s, iiname) ->
-              tag iiname (Field (Def2 NoUse))
+              tag iiname (Entity (Field, (Def2 NoUse)))
           | None -> ()
           )
     );
@@ -400,7 +400,7 @@ let visit_toplevel ~tag_hook _prefs (*db_opt *) (toplevel, toks) =
       let name = def.c_name in
       name +> Common.do_option (fun name ->
         Ast.ii_of_id_name name +> List.iter (fun ii -> 
-          tag ii (Class (Def2 fake_no_def2));
+          tag ii (Entity (Class, (Def2 fake_no_def2)));
         )
       );
       k def
@@ -409,7 +409,7 @@ let visit_toplevel ~tag_hook _prefs (*db_opt *) (toplevel, toks) =
       let name = def.f_name in
       Ast.ii_of_id_name name +> List.iter (fun ii -> 
         if not (Hashtbl.mem already_tagged ii)
-        then tag ii (Class (Def2 fake_no_def2));
+        then tag ii (Entity (Class, (Def2 fake_no_def2)));
       );
       k def
     );
@@ -425,7 +425,7 @@ let visit_toplevel ~tag_hook _prefs (*db_opt *) (toplevel, toks) =
           in
           let name = def.f_name in
           Ast.ii_of_id_name name +> List.iter (fun ii -> 
-            tag ii (Method (Def2 fake_no_def2))
+            tag ii (Entity (Method, (Def2 fake_no_def2)))
           );
       | (EmptyField _|UsingDeclInClass _|TemplateDeclInClass _
         |QualifiedIdInClass (_, _)
@@ -562,7 +562,7 @@ let visit_toplevel ~tag_hook _prefs (*db_opt *) (toplevel, toks) =
 
     (* todo: could be also a MacroFunc *)
     | T.TIdent_Define (_, ii) ->
-        tag ii (Constant (Def2 NoUse))
+        tag ii (Entity (Constant, (Def2 NoUse)))
 
     (* TODO: have 2 tokens? 
     | T.TInclude_Filename (_, ii) ->
@@ -582,7 +582,7 @@ let visit_toplevel ~tag_hook _prefs (*db_opt *) (toplevel, toks) =
     | T.TCppDirectiveOther ii -> tag ii CppOther
     | T.Tnamespace ii -> tag ii KeywordModule
 
-    | T.Tthis ii -> tag ii (Class (Use2 fake_no_use2))
+    | T.Tthis ii -> tag ii (Entity (Class, (Use2 fake_no_use2)))
 
     | T.Tnew ii | T.Tdelete ii ->
         tag ii KeywordObject

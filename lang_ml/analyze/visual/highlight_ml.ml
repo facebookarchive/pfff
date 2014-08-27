@@ -15,8 +15,8 @@
 open Common
 
 open Ast_ml
-open Entity_code
-open Entity_code open Highlight_code
+open Entity_code 
+open Highlight_code
 module Ast = Ast_ml
 module V = Visitor_ml
 module PI = Parse_info
@@ -89,8 +89,8 @@ let kind_of_ty ty =
   | TyFunction _ -> (FunctionDecl NoUse)
   | TyApp (_, ([], Name("ref", _))) -> Entity (Global, def2)
   (* todo: should handle module aliases there too *)
-  | TyApp (_, ([Name("Hashtbl",_), _], Name("t", _))) -> Global def2
-  | _ -> Constant def2
+  | TyApp (_, ([Name("Hashtbl",_), _], Name("t", _))) -> Entity (Global, def2)
+  | _ -> Entity (Constant, def2)
 
 (*****************************************************************************)
 (* Code highlighter *)
@@ -129,15 +129,15 @@ let visit_program
       | Val (_tok, name, _tok2, ty) | External (_tok, name, _tok2, ty, _, _)  ->
           let info = Ast.info_of_name name in
           tag info (kind_of_ty ty)
-      | Exception (_tok, name, _args) ->
+      | Ast.Exception (_tok, name, _args) ->
           let info = Ast.info_of_name name in
           tag info (TypeDef Def);
       | Open (_tok, lname) ->
           let info = Ast.info_of_name (Ast.name_of_long_name lname) in
-          tag info (Module Use);
+          tag info (Entity (Module, Use2 fake_no_use2));
       | Ast.Module (_tok, uname, _tok2, _mod_expr) ->
           let ii = Ast.info_of_name uname in
-          tag ii (Module Def);
+          tag ii (Entity (Module, Def2 fake_no_def2));
       | Let _ | Ast.Type _ | ItemTodo _ -> ()
       );
       k x
@@ -145,13 +145,13 @@ let visit_program
 
     V.kqualifier = (fun (_k, _bigf) qu ->
       let module_infos = Ast.module_infos_of_long_name (qu, ()) in
-      module_infos +> List.iter (fun ii -> tag ii (Module Use))
+      module_infos +> List.iter (fun ii -> tag ii (Entity (Module, Use2 fake_no_use2)))
     );
     V.kmodule_expr = (fun (k, _bigf) mod_expr ->
       (match mod_expr with
       | ModuleName lname -> 
           let info = Ast.info_of_name (Ast.name_of_long_name lname) in
-          tag info (Module Use);
+          tag info (Entity (Module, Use2 fake_no_use2));
       | _ -> ()
       );
       k mod_expr
@@ -185,7 +185,7 @@ let visit_program
           (if not !in_let 
            then
               if List.length let_def.l_params > 0
-              then tag info (Function (Def2 NoUse))
+              then tag info (Entity (Function, (Def2 NoUse)))
               else tag info (kind_of_body let_def.l_body)
            else tag info (Local (Def))
           );
@@ -235,7 +235,7 @@ let visit_program
               module_infos +> List.iter (fun ii -> tag ii BuiltinCommentColor);
               tag info Builtin;
           | _ ->
-              tag info (Function (Use2 fake_no_use2));
+              tag info (Entity (Function, (Use2 fake_no_use2)));
           );
           k x
 
@@ -255,17 +255,17 @@ let visit_program
 
       | FieldAccess (_e, _tok,long_name) | FieldAssign (_e,_tok,long_name,_,_)->
           let info = Ast.info_of_name (Ast.name_of_long_name long_name) in
-          tag info (Field (Use2 fake_no_use2));
+          tag info (Entity (Field, (Use2 fake_no_use2)));
           k x
 
       | ObjAccess (_e, _tok, name) ->
           let info = Ast.info_of_name name in
-          tag info (Method (Use2 fake_no_use2));
+          tag info (Entity (Method, (Use2 fake_no_use2)));
           k x
 
       | Constr (long_name, _eopt) ->
           let info = Ast.info_of_name (Ast.name_of_long_name long_name) in
-          tag info (Constructor(Use2 fake_no_use2));
+          tag info (Entity (Constructor,(Use2 fake_no_use2)));
           k x
 
       (* very pad specific ... *)
@@ -295,7 +295,7 @@ let visit_program
       (match t with
       | TyName long_name ->
           let info = Ast.info_of_name (Ast.name_of_long_name long_name) in
-          tag info (Type (Use2 fake_no_use2));
+          tag info (Entity (Type, (Use2 fake_no_use2)));
       | TyApp (_ty_args, long_name) ->
           let name = Ast.name_of_long_name long_name in
           let info = Ast.info_of_name name in
@@ -321,7 +321,7 @@ let visit_program
           | TyAlgebric xs ->
               xs +> Ast.unpipe +> List.iter (fun (name, _args) ->
                 let info = Ast.info_of_name name in
-                tag info (Constructor(Def2 fake_no_def2))
+                tag info (Entity (Constructor,(Def2 fake_no_def2)))
               );
           | TyCore _ | TyRecord _ -> ()
           );
@@ -333,7 +333,7 @@ let visit_program
 
     V.kfield_decl = (fun (k, _) fld ->
       let info = Ast.info_of_name fld.fld_name in
-      tag info (Field (Def2 fake_no_def2));
+      tag info (Entity (Field, (Def2 fake_no_def2)));
       k fld
     );
 
@@ -342,7 +342,7 @@ let visit_program
       | FieldExpr (long_name, _, _) | FieldImplicitExpr long_name ->
           let name = Ast.name_of_long_name long_name in
           let info = Ast.info_of_name name in
-          tag info (Field (Use2 fake_no_use2));
+          tag info (Entity (Field, (Use2 fake_no_use2)));
           k x
     );
     V.kfield_pat = (fun (k, _) x ->
@@ -350,7 +350,7 @@ let visit_program
       | PatField (long_name, _, _) | PatImplicitField long_name ->
           let name = Ast.name_of_long_name long_name in
           let info = Ast.info_of_name name in
-          tag info (Field (Use2 fake_no_use2));
+          tag info (Entity (Field, (Use2 fake_no_use2)));
           k x
     );
   }
@@ -415,14 +415,14 @@ let visit_program
         when PI.col_of_info ii = 0 ->
 
         if not (Hashtbl.mem already_tagged ii3) && lexer_based_tagger
-        then tag ii3 (Global (Def2 NoUse));
+        then tag ii3 (Entity (Global, (Def2 NoUse)));
         aux_toks xs;
 
     | T.Tlet(ii)::T.TLowerIdent(_s, ii3)::xs
         when PI.col_of_info ii = 0 ->
 
         if not (Hashtbl.mem already_tagged ii3) && lexer_based_tagger
-        then tag ii3 (Function (Def2 NoUse));
+        then tag ii3 (Entity (Function, (Def2 NoUse)));
         aux_toks xs;
 
     | (T.Tval(ii)|T.Texternal(ii))::T.TLowerIdent(_s, ii3)::xs
@@ -438,14 +438,14 @@ let visit_program
         when PI.col_of_info ii = 0 ->
 
         if not (Hashtbl.mem already_tagged ii3) && lexer_based_tagger
-        then tag ii3 (Function (Def2 NoUse));
+        then tag ii3 (Entity (Function, (Def2 NoUse)));
         aux_toks xs;
 
     | T.Tand(ii)::T.TLowerIdent(_s, ii3)::xs
         when PI.col_of_info ii = 0 ->
 
         if not (Hashtbl.mem already_tagged ii3) && lexer_based_tagger
-        then tag ii3 (Function (Def2 NoUse));
+        then tag ii3 (Entity (Function, (Def2 NoUse)));
         aux_toks xs;
 
     | T.Ttype(ii)::T.TLowerIdent(_s, ii3)::xs
@@ -461,14 +461,14 @@ let visit_program
       ::T.TUpperIdent(_,ii_mod)
       ::T.TEq (_)
       ::T.Tstruct (_)::xs ->
-        tag ii_mod (Module Def);
+        tag ii_mod (Entity (Module, Def2 fake_no_def2));
         aux_toks xs
 
     | T.Tmodule(_)
       ::T.TUpperIdent(_,ii_mod)
       ::T.TColon (_)
       ::T.Tsig (_)::xs ->
-        tag ii_mod (Module Def);
+        tag ii_mod (Entity (Module, Def2 fake_no_def2));
         aux_toks xs
 
     (* bad smell, use of ref *)
@@ -478,7 +478,7 @@ let visit_program
         aux_toks xs
 
     | T.TBang _ii1::T.TUpperIdent(_s, ii)::T.TDot _::T.TLowerIdent(_s2, ii2)::xs ->
-        tag ii (Module Use);
+        tag ii (Entity (Module, Use2 fake_no_use2));
         tag ii2 (UseOfRef);
         aux_toks xs
 
@@ -492,7 +492,7 @@ let visit_program
     (* module use, and function call! *)
 
     | T.TUpperIdent(_s, ii)::T.TDot _ii2::T.TUpperIdent(_s2, _ii3)::xs ->
-        tag ii (Module Use);
+        tag ii (Entity (Module, Use2 fake_no_use2));
         aux_toks xs;
 
     | T.TUpperIdent(s, ii)::T.TDot _ii2::T.TLowerIdent(_s2, ii3)::xs ->
@@ -503,7 +503,7 @@ let visit_program
           if not (Hashtbl.mem already_tagged ii3) && lexer_based_tagger
           then tag ii3 Builtin;
         end else begin
-          tag ii (Module Use);
+          tag ii (Entity (Module, Use2 fake_no_use2));
           (* tag ii3 (Function Use); *)
         end;
         aux_toks xs;

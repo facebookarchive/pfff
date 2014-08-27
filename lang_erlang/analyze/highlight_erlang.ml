@@ -104,17 +104,17 @@ let visit_toplevel
     | T.TIdent (s, ii1)::xs when Ast.col_of_info ii1 = 0 ->
         if not (Hashtbl.mem atom_already_tagged s) then begin
           Hashtbl.add atom_already_tagged s true;
-          tag ii1 (Function (Def2 fake_no_def2));
+          tag ii1 (Entity (Function, (Def2 fake_no_def2)));
         end;
         aux_toks xs
 
     (* uses *)
     | T.TIdent(_s, ii1)::T.TColon _::xs ->
-        tag ii1 (Module Use);
+        tag ii1 (Entity (Module, (Use2 fake_no_use2)));
         aux_toks xs
 
     | T.TIdent(_s, ii1)::T.TOParen _::xs ->
-        tag ii1 (Function (Use2 fake_no_use2));
+        tag ii1 (Entity (Function, (Use2 fake_no_use2)));
         aux_toks xs
 
 (*

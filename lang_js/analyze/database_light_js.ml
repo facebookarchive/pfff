@@ -133,11 +133,7 @@ let compute_database ?(verbose=false) files_or_dirs =
 
           (* todo: use is_entity_def_category ? *)
           match categ with
-          | HC.Function (HC.Def2 _) 
-          | HC.Global (HC.Def2 _)
-          | HC.Class (HC.Def2 _) 
-          | HC.Method (HC.Def2 _) 
-            ->
+          | HC.Entity (_kind, (HC.Def2 _) ) ->
               Hashtbl.add hdefs_pos info true;
               let e = mk_entity ~root ~hcomplete_name_of_info 
                 info categ 

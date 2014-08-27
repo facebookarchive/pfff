@@ -121,7 +121,7 @@ let visit_toplevel ~tag_hook _prefs  (_toplevel, toks) =
     | Ast.Function def ->
         def.f_name +> Common.do_option (fun name ->
           let info = info_of_name name in
-          tag info (HC.Function (Def2 fake_no_def2));
+          tag info (HC.Entity (Function, (Def2 fake_no_def2)));
         );
         Common.do_option (type_ ctx) def.f_ret_type;
         List.iter (parameter ctx) def.f_params;
@@ -141,7 +141,7 @@ let visit_toplevel ~tag_hook _prefs  (_toplevel, toks) =
 
     | Ast.Module (name, xs) ->
         let info = info_of_name name in
-        tag info (Module Def);
+        tag info (Entity (Module, (Def2 fake_no_def2)));
         tree_list ctx xs
 
     | Ast.VarDef (typ, name) ->
@@ -149,7 +149,7 @@ let visit_toplevel ~tag_hook _prefs  (_toplevel, toks) =
         Common.do_option (type_ ctx) typ;
 
         if ctx.ctx =*= InTop
-        then tag info (Global (Def2 fake_no_def2))
+        then tag info (Entity (Global, (Def2 fake_no_def2)))
         else tag info (Local Def)
 
     | TreeTodo -> ()
@@ -166,7 +166,7 @@ let visit_toplevel ~tag_hook _prefs  (_toplevel, toks) =
     | TyName (_qu, name) ->
         let info = info_of_name name in
         (* todo: different color for int/bool/list/void etc? *)
-        tag info (Type (Use2 fake_no_use2))
+        tag info (Entity (Type, (Use2 fake_no_use2)))
         
     | TyVar _name -> ()
     | TyApp (_long_name, xs) ->
@@ -181,7 +181,7 @@ let visit_toplevel ~tag_hook _prefs  (_toplevel, toks) =
   and field ctx = function
     | Ast.Field (typ, name) ->
         let info = info_of_name name in
-        tag info (Field (Def2 fake_no_def2));
+        tag info (Entity (Field, (Def2 fake_no_def2)));
         Common.do_option (type_ ctx) typ
     | FieldOther xs -> 
         tree_list ctx xs
@@ -205,7 +205,7 @@ let visit_toplevel ~tag_hook _prefs  (_toplevel, toks) =
     | [] -> ()
 
     | (T (T.TIdent (_s, info)))::(Paren parens)::xs ->
-        tag info (Function (Use2 fake_no_use2));
+        tag info (Entity (Function, (Use2 fake_no_use2)));
         tree_list ctx ((Paren parens)::xs)
 
     | (T (T.TIdent (s, info)))::xs ->
@@ -215,7 +215,7 @@ let visit_toplevel ~tag_hook _prefs  (_toplevel, toks) =
         | _ when List.mem s (ctx.locals) ->
             tag info (Local Use)
         | _ when List.mem s (ctx.globals) ->
-            tag info (Global (Use2 fake_no_use2))
+            tag info (Entity (Global, (Use2 fake_no_use2)))
 (*
         | _ when List.mem s (ctx.functions) ->
             tag info (PointerCall)
@@ -325,11 +325,11 @@ let visit_toplevel ~tag_hook _prefs  (_toplevel, toks) =
       * can also be followed by the return type.
       *)
     | T.TIdent (_s, ii1)::T.TEq _::T.Tparser _::xs ->
-        tag ii1 (Function (Def2 fake_no_def2));
+        tag ii1 (Entity (Function, (Def2 fake_no_def2)));
         aux_toks xs
 
     | T.T_XML_ATTR("id", _)::T.TEq(_)::T.TSharpIdent(_s, ii)::xs ->
-        tag ii (Global (Def2 fake_no_def2));
+        tag ii (Entity (Global, (Def2 fake_no_def2)));
         aux_toks xs
 
     | T.T_XML_ATTR("id", _)::T.TEq(_)
@@ -348,30 +348,30 @@ let visit_toplevel ~tag_hook _prefs  (_toplevel, toks) =
         aux_toks xs
 
     | T.T_XML_ATTR(s, ii)::T.TEq(_)::xs when s =~ "on.*" ->
-        tag ii (Method (Def2 fake_no_def2));
+        tag ii (Entity (Method, (Def2 fake_no_def2)));
         aux_toks xs
 
     (* uses *)
     | T.TIdent(_s, ii1)::T.TColon _::xs ->
-        tag ii1 (Field (Use2 fake_no_use2));
+        tag ii1 (Entity (Field, (Use2 fake_no_use2)));
         aux_toks xs
 
     | T.TTilde _::T.TIdent (_,ii2)::xs ->
-        tag ii2 (Field (Use2 fake_no_use2));
+        tag ii2 (Entity (Field, (Use2 fake_no_use2)));
         aux_toks xs
 
     |   T.TIdent (s1, ii1)::T.TDot _::xs ->
         if is_module_name s1 
-        then tag ii1 (Module (Use));
+        then tag ii1 (Entity (Module, (Use2 fake_no_use2)));
         aux_toks xs
 
     | T.TSharp _::T.TIdent(_s1, ii1)::xs ->
-        tag ii1 (Global (Use2 fake_no_use2));
+        tag ii1 (Entity (Global, (Use2 fake_no_use2)));
         aux_toks xs
 
     | _x::T.TDiv _::T.TIdent(_s1, ii1)::xs ->
         if not (Hashtbl.mem already_tagged ii1)
-        then tag ii1 (Global (Use2 fake_no_use2));
+        then tag ii1 (Entity (Global, (Use2 fake_no_use2)));
         aux_toks xs
 
     | T.TAt _::T.TIdent(_s1, ii1)::xs ->

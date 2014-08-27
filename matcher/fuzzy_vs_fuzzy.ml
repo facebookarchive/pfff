@@ -267,6 +267,7 @@ and m_tree a b =
       | B.Parens _ -> true
       (* we don't want metavars to match symbols *)
       | B.Tok (s,_) -> s =~ "^[a-zA-Z]" 
+      | _ -> false
     in
     if ok then
      X.envf (s, tok) [b] >>= (function 

@@ -68,22 +68,22 @@ let visit_toplevel ~tag_hook _prefs (ast, toks) =
       (match d with
       | Ast.Class x ->
           let ident = x.cl_name in
-          tag_ident ident (Class (Def2 fake_no_def2))
+          tag_ident ident (Entity (Class, (Def2 fake_no_def2)))
       | Ast.Field x ->
           let var = x.f_var in
           let ident = var.v_name in
-          tag_ident ident (Field (Def2 fake_no_def2))
+          tag_ident ident (Entity (Field, (Def2 fake_no_def2)))
       | Ast.Method x ->
           let var = x.m_var in
           let ident = var.v_name in
-          tag_ident ident (Method (Def2 fake_no_def2));
+          tag_ident ident (Entity (Method, (Def2 fake_no_def2)));
           x.m_formals +> List.iter (fun v ->
             let ident = v.v_name in
             tag_ident ident (Parameter Def)
           )
       | Ast.Enum x ->
           let ident = x.en_name in
-          tag_ident ident (Class (Def2 fake_no_def2))
+          tag_ident ident (Entity (Class, (Def2 fake_no_def2)))
       | Ast.Init (_bool, _stmt) ->
           ()
       );
@@ -103,12 +103,12 @@ let visit_toplevel ~tag_hook _prefs (ast, toks) =
     V.kexpr = (fun (k, _) e ->
       (match e with
       | Call (Dot (e, ident), args) ->
-          tag_ident ident (HC.Method (Use2 fake_no_use2));
+          tag_ident ident (HC.Entity (Method, (Use2 fake_no_use2)));
           k e;
           List.iter k args
         
       | Dot (e, ident) ->
-          tag_ident ident (Field (Use2 fake_no_use2));
+          tag_ident ident (Entity (Field, (Use2 fake_no_use2)));
           k e
       | _ -> k e
       );
@@ -122,9 +122,9 @@ let visit_toplevel ~tag_hook _prefs (ast, toks) =
           (match List.rev xs with
           | [] -> raise Impossible
           | (id, _targs)::xs -> 
-            tag_ident id (Type (Use2 fake_no_use2));
+            tag_ident id (Entity (Type, (Use2 fake_no_use2)));
             xs +> List.iter (fun (id, _targs) ->
-              tag_ident id (Module Use)
+              tag_ident id (Entity (Module, (Use2 fake_no_use2)))
             )
           )
       | TArray _ -> ()
