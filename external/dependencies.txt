@@ -12,3 +12,5 @@ ocamlzip/: used by externals/javalib (used itself by lang_bytecode/)
 extlib/: used by externals/javalib (used itself by lang_bytecode/)
 ptrees/: used by javalib/ (TODO: deps not in codegraph because functor)
 
+bddbddb/: used by codequery -datalog (actually not ocaml code!)
+swiprolog/: used by codequery (also not ocaml code)
