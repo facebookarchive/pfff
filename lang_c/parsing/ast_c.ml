@@ -51,7 +51,7 @@ open Common2.Infix
  * related work: 
  *  - CIL, but it works after preprocessing; it makes it harder to connect
  *    analysis results to tools like codemap. It also does not handle some of
- *    the kencc extensions.
+ *    the kencc extensions and does allow to analyze cpp constructs.
  *    CIL has two pointer analysis but they were written with bug finding
  *    in mind I think, not code comprehension which we really care about in pfff.
  *    In the end I thought generating datalog facts for plan9 using lang_c/ 
@@ -100,6 +100,7 @@ type type_ =
   | TEnumName of name
   | TTypeName of name
 
+ (* less:  '...' varargs support *)
  and function_type = (type_ * parameter list)
 
   and parameter = {
@@ -110,9 +111,6 @@ type type_ =
 
  and struct_kind = Struct | Union
 
-(* really just for Id that are #define and Int *)
-and const_expr = expr
-
 (* ------------------------------------------------------------------------- *)
 (* Expression *)
 (* ------------------------------------------------------------------------- *)
@@ -122,25 +120,26 @@ and expr =
   | String of string wrap
   | Char of string wrap
 
-  (* can be a cpp or enum constant (e.g. FOO), or a local/global variable, 
-   * or a function.
+  (* can be a cpp or enum constant (e.g. FOO), or a local/global/parameter
+   * variable, or a function name.
    *)
   | Id of name
 
   | Call of expr * argument list
 
+  (* should be a statement ... but see Datalog_c.instr *)
   | Assign of Ast_cpp.assignOp wrap * expr * expr
 
+  | ArrayAccess of expr * expr (* x[y] *)
   (* Why x->y instead of x.y choice? it's easier then with datalog
    * and it's more consistent with ArrayAccess where expr has to be
-   * a kind of pointer too.
+   * a kind of pointer too. That means x.y is actually unsugared in (&x)->y
    *)
-  | ArrayAccess of expr * expr (* x[y] *)
   | RecordPtAccess of expr * name (* x->y,  and not x.y!! *)
 
   | Cast of type_ * expr
 
-  (* todo? transform into Call (builtin ...) ? *)
+  (* less: transform into Call (builtin ...) ? *)
   | Postfix of expr * Ast_cpp.fixOp wrap
   | Infix of expr * Ast_cpp.fixOp wrap
   (* contains GetRef and Deref!! todo: lift up? *)
@@ -148,7 +147,7 @@ and expr =
   | Binary of expr * Ast_cpp.binaryOp wrap * expr
 
   | CondExpr of expr * expr * expr
-  (* should be a statement *)
+  (* should be a statement ... *)
   | Sequence of expr * expr
 
   | SizeOf of (expr, type_) Common.either
@@ -156,10 +155,13 @@ and expr =
   (* should appear only in a variable initializer, or after GccConstructor *)
   | ArrayInit of (expr option * expr) list
   | RecordInit of (name * expr) list
-  (* gccext: *)
+  (* gccext: kenccext: *)
   | GccConstructor  of type_ * expr (* always an ArrayInit (or RecordInit?) *)
 
 and argument = expr
+
+(* really should just contain constants and Id that are #define *)
+and const_expr = expr
 
  (* with tarzan *)
 
@@ -198,11 +200,10 @@ type stmt =
 and var_decl = {
   v_name: name;
   v_type: type_;
-  (* todo *)
   v_storage: storage;
   v_init: initialiser option;
 }
-
+ (* can have ArrayInit and RecordInit here in addition to other expr *)
  and initialiser = expr
  and storage = Extern | Static | DefaultStorage
 
@@ -228,8 +229,8 @@ type struct_def = {
 }
   (* less: could merge with var_decl, but field have no storage normally *)
   and field_def = { 
-   (* todo: bitfield annotation
-    * kencc-ext: the option on fld_name can be a kencc extension a bitfield.
+   (* less: bitfield annotation
+    * kenccext: the option on fld_name is for inlined anonymous structure.
     *)
     fld_name: name option;
     fld_type: type_;
@@ -251,7 +252,7 @@ type type_def = name * type_
 type define_body = 
   | CppExpr of expr (* actually const_expr when in Define context *)
   (* todo: we want that? even dowhile0 are actually transformed in CppExpr.
-   * We have no way to reference a CppStmt in stmt since MacroStmt
+   * We have no way to reference a CppStmt in 'stmt' since MacroStmt
    * is not here? So we can probably remove this constructor no?
    *)
   | CppStmt of stmt
@@ -271,7 +272,6 @@ type toplevel =
   | StructDef of struct_def
   | TypeDef of type_def
   | EnumDef of enum_def
-
   | FuncDef of func_def
   | Global of var_decl (* also contain extern decl *)
   | Prototype of func_def (* empty body *)
@@ -294,10 +294,6 @@ type any =
 (*****************************************************************************)
 (* Helpers *)
 (*****************************************************************************)
-
-(* builtin() is used for:
- *)
-let builtin x = "__builtin__" ^ x
 
 let str_of_name (s, _) = s
 

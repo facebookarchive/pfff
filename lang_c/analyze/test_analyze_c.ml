@@ -14,7 +14,7 @@ let test_dataflow_c file =
   let facts = List.rev !(Common2.some (!Graph_code_c.facts)) in
   Common2.pr2_xxxxxxxxxxxxxxxxx();
   (* debug *)
-  facts +> List.iter pr2_gen;
+  facts +> List.iter (fun fact -> pr2 (Datalog_code.string_of_fact fact));
   Common2.pr2_xxxxxxxxxxxxxxxxx();
   
   let facts_file = "/tmp/facts.dl" in
@@ -29,6 +29,7 @@ let test_dataflow_c file =
   let final_file = "/tmp/datalog.dl" in
   let cmd = spf "cat %s %s > %s" facts_file logic_file final_file in
   Common.command2 cmd;
+  (* using http://www.ccs.neu.edu/home/ramsdell/tools/datalog/datalog.html *)
   let cmd = spf "datalog %s | sort" final_file in
   Common.command2 cmd;
   ()
@@ -39,6 +40,5 @@ let test_dataflow_c file =
 
 let actions () = [
     "-dataflow_c", "   <file>", 
-
     Common.mk_action_1_arg test_dataflow_c;
 ]

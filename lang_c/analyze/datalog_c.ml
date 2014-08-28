@@ -29,6 +29,10 @@ module D = Datalog_code
  * See pfff/mini/datalog_minic.ml for more comments, history, and notes.
  * Lots of code in this file is copy pasted from datalog_minic.ml
  * (but now actually improved, e.g. with the notion of lvalue/rvalue).
+ * 
+ * todo:
+ *  - could also add the AST of macros in the environment to
+ *    expand sometimes
  *)
 
 (*****************************************************************************)

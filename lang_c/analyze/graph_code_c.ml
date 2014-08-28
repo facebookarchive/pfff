@@ -51,17 +51,21 @@ module P = Graph_code_prolog
  *                              -> Constant | Macro
  *       -> Dir -> SubDir -> ...
  * 
- * Note that here as opposed to graph_code_clang.ml constant and macros
+ * Note that here as opposed to graph_code_clang.ml constants and macros
  * are present. 
  * What about nested structures? they are lifted up in ast_c_build!
  * 
  * todo: 
+ *  - fields!!!!!!! but need type information for expressions
  *  - Type is a bit overloaded maybe (used for struct/union/enum/typedefs)
- *  - there is different "namespaces" in C: 
+ *  - there is different "namespaces" in C?
  *    - functions/locals,
  *    - tags (struct name, enum name)
  *    - cpp ...
  *    - ???
+ *    => maybe we don't need those add_prefix, S__, E__ hacks.
+ *  - and of course improve lang_cpp/ parser, lang_c/ ast builder to cover
+ *    more cases, better infer typedef, better handle cpp, etc.
  *)
 
 (*****************************************************************************)
@@ -125,8 +129,8 @@ type kind_file = Source | Header
 let hook_use_edge = ref (fun _ctx _in_assign (_src, _dst) _g -> ())
 
 (* for datalog *)
-(*todo: let hook_expr_toplevel =  ?*)
 let facts = ref None
+(*todo: let hook_expr_toplevel =  ?*)
 
 (*****************************************************************************)
 (* Parsing *)
@@ -302,9 +306,9 @@ let hook_expr_toplevel env_orig x =
        Common.push fact env.Datalog_c.facts
   )
 
-(* to be called normally close to each add_node_and_edge_if_defs_mode,
- * but take care of code that use new_name_if_defs, you must call hook_def
- * after those local renames have been added
+(* To be called normally after each add_node_and_edge_if_defs_mode.
+ * subtle: but take care of code that use new_name_if_defs, you must
+ * call hook_def after those local renames have been added!
  *)
 let hook_def env def =
   if env.phase = Defs
@@ -608,7 +612,7 @@ and toplevel env x =
         if env.phase = Uses
         then Common2.opt (expr_toplevel env) eopt
       );
-      (* must do that after have created all the possibly local renames *)
+      (* subtle: called here after all the local renames have been created! *)
       hook_def env x;
 
 
@@ -848,6 +852,11 @@ and type_ env typ =
     let rec aux t = 
       match t with
       | TBase _ -> ()
+      (* The use of prefix below is consistent with what is done for the defs.
+       * We do that right now because we are not clear on the namespaces ...
+       * whether we can have both struct x and enum x in a file
+       * (I think no, but right now easier to just prefix)
+       *)
       | TStructName (Struct, name) -> 
           add_use_edge env (add_prefix "S__" name, E.Type)
       | TStructName (Union, name) -> 
@@ -905,6 +914,7 @@ let build ?(verbose=true) root files =
     macro_dependencies = true;
 
     propagate_deps_def_to_decl = true;
+    (* let's expand typedefs, it's simpler, hence false *)
     typedefs_dependencies = false;
   } in
 
@@ -918,7 +928,8 @@ let build ?(verbose=true) root files =
     in_assign = false;
     in_define = false;
     in_return = false;
-    local_rename = Hashtbl.create 0; (* will come from local_renames_of_files*)
+    (* will be overriden by file specific hashtbl *)
+    local_rename = Hashtbl.create 0; 
     dupes = Hashtbl.create 101;
     typedefs = Hashtbl.create 101;
     fields = Hashtbl.create 101;
@@ -938,6 +949,8 @@ let build ?(verbose=true) root files =
    * but we need to make sure to reset some counters because
    * the __anon_struct_xxx build in ast_c_simple_build 
    * must be stable when called another time with the same file!
+   * alt: fix ast_c_simple_build to not use gensym and generate stable
+   * names.
    *)
   let elems = 
     files +> Console.progress ~show:verbose (fun k ->
