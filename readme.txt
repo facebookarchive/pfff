@@ -26,7 +26,8 @@ pfff is also made of few tools:
  - codemap, which is a gtk and cairo based source code
    visualizer/navigator/searcher leveraging
    the information computed previously by pfff_db and codegraph.
- - codegraph, a package/module/class dependency visualizer
+ - codegraph, a source code indexer and package/module/class 
+   dependency visualizer
  - codequery, an interactive tool a la SQL to query information
    about the structure of a codebase using Prolog as the query engine
  - pfff_db, which does some global analysis on a set of source files and
