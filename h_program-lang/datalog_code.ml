@@ -220,6 +220,26 @@ let bddbddb_of_facts facts dir =
         let pr s = pr_no_nl (s ^ "\n") in
         
         (* todo: header?? *)
+        (match !xxs with
+        | [] -> ()
+        | xs::_xxs ->
+          let hcnt = Hashtbl.create 6 in
+          pr (spf "# %s"
+                (xs +> List.map (fun v -> 
+                  let domain = domain_of_value v in
+                  let cnt =
+                    try Hashtbl.find hcnt domain
+                    with Not_found ->
+                      let cnt = ref 0 in
+                      Hashtbl.add hcnt domain cnt;
+                      cnt
+                  in
+                  let i = !cnt in
+                  incr cnt;
+                  (* less: size? *)
+                  spf "%s%d:18" domain i
+                 ) +> Common.join " "))
+        );
 
         !xxs +> List.iter (fun xs ->
           let ints =
@@ -249,7 +269,9 @@ let bddbddb_of_facts facts dir =
       let file = Filename.concat dir (arule ^ ".tuples") in
       Common.with_open_outfile file (fun (pr_no_nl, _chan) ->
         let pr s = pr_no_nl (s ^ "\n") in
-  
+
+        pr "# F0:18 V0:18";
+
         fvals +> List.iter (fun (fld, idx) ->
           match fld with
           | F s ->
@@ -267,6 +289,8 @@ let bddbddb_of_facts facts dir =
       let file = Filename.concat dir (arule ^ ".tuples") in
       Common.with_open_outfile file (fun (pr_no_nl, _chan) ->
         let pr s = pr_no_nl (s ^ "\n") in
+
+        pr "# V0:18 N0:18";
   
         nvals +> List.iter (fun (n, idx) ->
           match n with
