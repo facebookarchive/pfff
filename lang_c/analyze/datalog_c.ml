@@ -45,17 +45,21 @@ type env = {
   scope: string; (* qualifier, usually the current function *)
 
   globals: Graph_code.graph;
-  (* because of the trick we use in graph_code_c for e.g. renaming
-   * static functions to avoid name collisions.
-   * You need to use this function each time you think
+  (* we may also want the AST of macros *)
+
+  (* Because of the trick we use in graph_code_c for e.g. renaming
+   * static functions to avoid name collisions,
+   * you need to use this function each time you think
    * a name refers to a global entity.
    *)
   globals_renames: Ast_c.name -> Ast_c.name;
-  (* have option type for macro parameters ... could have a TAny also.
-   * need a ref because instrs_of_expr will add new local variables.
+
+  (* Have option type because of macro parameters ... could have a TAny also.
+   * Need a ref because instrs_of_expr will add new local variables.
    *)
   locals: (string * type_ option) list ref;
 
+  (* the output *)
   facts: fact list ref;
 }
 
@@ -75,7 +79,7 @@ type var = name
 (* ------------------------------------------------------------------------- *)
 (* Lvalue *)
 (* ------------------------------------------------------------------------- *)
-(* Used to be inlined in rvalue which was then called expr, but cleaner
+(* Used to be inlined in expr (now called rvalue), but it is cleaner
  * to separate rvalue and lvalue. Note that 'Call' is not there, it's
  * not an lvalue (you can not do 'foo() = x' in C).
  *)
@@ -110,7 +114,7 @@ type rvalue =
 (* ------------------------------------------------------------------------- *)
 
 type instr =
-  | Assign of var * rvalue (* x = e *)
+  | Assign of var (* or name *) * rvalue (* x = e *)
   | AssignAddress of var * lvalue (* except Deref (no sense to do &*x) *)
   | AssignLvalue of lvalue * var (* Except Id, done by Assign *)
 
@@ -127,6 +131,24 @@ let debug any =
 let line_of tok = 
   Parse_info.line_of_info tok
 
+let tok_of_type t =
+  List.hd (Lib_parsing_c.ii_of_any (A.Type t))
+
+let tokwrap_of_expr e =
+  (), List.hd (Lib_parsing_c.ii_of_any (A.Expr e))
+
+let var_of_instr instr =
+  match instr with
+  | Assign (v, _) | AssignAddress (v, _) | AssignLvalue (_, v) -> v
+
+exception NotSimpleExpr
+
+let string_of_op _str =
+  "_op_todo"
+
+(*****************************************************************************)
+(* Abstract memory locations *)
+(*****************************************************************************)
 
 let var_of_global env name =
   let name = env.globals_renames name in
@@ -173,21 +195,6 @@ let fully_qualified_field_of_struct _struc fld =
   spf "'_fld__%s'" fld
 
 
-let tok_of_type t =
-  List.hd (Lib_parsing_c.ii_of_any (A.Type t))
-
-let tokwrap_of_expr e =
-  (), List.hd (Lib_parsing_c.ii_of_any (A.Expr e))
-
-let var_of_instr instr =
-  match instr with
-  | Assign (v, _) | AssignAddress (v, _) | AssignLvalue (_, v) -> v
-
-exception NotSimpleExpr
-
-let string_of_op _str =
-  "_op_todo"
-
 (*****************************************************************************)
 (* Normalize *)
 (*****************************************************************************)
@@ -206,7 +213,7 @@ let counter = ref 0
  *)
 let fresh_var env (_, tok) = 
   incr counter;
-  let s = spf "_v_%d" (* env.scope *) !counter in
+  let s = spf "_v_%d" (* env.scope? no! *) !counter in
   (* todo type! *)
   env.locals := (s, None)::!(env.locals);
   s, tok
@@ -227,8 +234,13 @@ let instrs_of_expr env e =
   | A.SizeOf _
   | A.GccConstructor _
     ->
+      (* less: we could generate a special fresh_var that datalog would not
+       * have to track? hmm but maybe the var is actually used
+       * by code using var_of_instr().
+       *)
       Assign (fresh_var env (tokwrap_of_expr e), rvalue_of_simple_expr e)
 
+  (* todo: actually an alloc is hidden there! *)
   | A.Assign (op, e1, A.ArrayInit xs) ->
     let ys = xs +> List.map (fun (idxopt, value) ->
       (* less? recompute e1 each time? should store in intermediate val? *)
@@ -243,6 +255,7 @@ let instrs_of_expr env e =
     let seq = Common2.foldl1 (fun e rest -> Sequence(e, rest)) ys in
     instr_of_expr seq
 
+  (* todo: actually an alloc is hidden there! *)
   | A.Assign (op, e1, A.RecordInit xs) ->
     let ys = xs +> List.map (fun (name, value) ->
       (* less? recompute e1 each time? should store in intermediate val? *)
@@ -328,6 +341,7 @@ let instrs_of_expr env e =
     instr_of_expr (A.Assign ((Ast_cpp.SimpleAssign, tok), A.Id v, e3));
 
   (* like GccConstructor can be outside Assign context when in macro *)
+  (* todo: an alloc is hidden here?? *)
   | A.ArrayInit _ | A.RecordInit _ ->
       debug (A.Expr e);
       let tokwrap = tokwrap_of_expr e in
@@ -344,6 +358,7 @@ let instrs_of_expr env e =
   (* could be lots of things, global, local, param, constant, function! *)
   | A.Id name -> Lv (Id name)
   | A.Unary (e, (A2.DeRef, _)) -> Lv (DeRef (var_of_expr e))
+  (* todo: xalloc, smalloc, and other wrappers? *)
   | A.Call (A.Id ("malloc", tok), es) ->
       (match es with
       | [SizeOf(Right(t))] -> Alloc (t)
