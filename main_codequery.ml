@@ -170,7 +170,18 @@ let build_prolog_db lang root xs =
             (* bddbddb special stuff *)
             let dir = "/home/pad/local/datalog/bddbddb/examples/pfff/data" in
             Datalog_code.bddbddb_of_facts facts dir;
-            pr2 (spf "run bddbddb in %s" dir)
+            pr2 (spf "run bddbddb in %s" dir);
+            let cmd = spf "cd %s/..; make > %s/X.log" dir dir in
+            Common.command2 cmd;
+            let cmd = spf "cd %s/..; make dump > %s/X2.log" dir dir in
+            Common.command2 cmd;
+            Datalog_code.bddbddb_explain_tuples
+              (Filename.concat dir "/PointingData.tuples");
+            Datalog_code.bddbddb_explain_tuples
+              (Filename.concat dir "/CallingData.tuples");
+
+            (Filename.concat dir "/CallingData.explain") +> Common.cat +>
+              List.iter pr
 
           end;
           g
@@ -234,6 +245,8 @@ let test_compare_datalog file =
   );
   ()
 
+let test_explain_bddbddb_tuples file =
+  Datalog_code.bddbddb_explain_tuples file
 
 (*---------------------------------------------------------------------------*)
 (* regression testing *)
@@ -260,6 +273,8 @@ let extra_actions () = [
 
   "-test_compare_datalog", " compare mini c with c",
   Common.mk_action_1_arg test_compare_datalog;
+  "-explain_tuples", " ",
+  Common.mk_action_1_arg test_explain_bddbddb_tuples;
 ]
 
 (*****************************************************************************)

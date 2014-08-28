@@ -37,3 +37,6 @@ val string_of_fact:
 
 val bddbddb_of_facts:
   fact list -> Common.dirname -> unit
+
+val bddbddb_explain_tuples:
+  Common.filename -> unit

@@ -308,3 +308,48 @@ let bddbddb_of_facts facts dir =
 
   ()
 
+
+
+let bddbddb_explain_tuples file =
+  let (d,b,_e) = Common2.dbe_of_filename file in
+  Common.with_open_outfile (Common2.filename_of_dbe (d,b,"explain")) 
+  (fun (pr_no_nl, _chan) ->
+    let pr s = pr_no_nl (s ^ "\n") in
+
+  let xs = Common.cat file in
+  (match xs with
+  | header::xs ->
+    if header =~ "# \\(.*\\)"
+    then 
+      let s = Common.matched1 header in
+      let flds = Common.split "[ \t]" s in
+      let fld_domains =
+        flds +> List.map (fun s -> 
+          if s =~ "\\([A-Z]\\)[0-9]?:"
+          then Common.matched1 s
+          else failwith (spf "could not find header in %s" file)
+        )
+      in
+      let fld_translates =
+        fld_domains +> List.map (fun s ->
+          let mapfile = Common2.filename_of_dbe (d,s,"map") in
+          Common.cat mapfile +> Array.of_list
+        )
+      in
+
+      xs +> List.iter (fun s ->
+        let vs = Common.split "[ \t]" s +> List.map s_to_i in
+        
+        let args = 
+          Common2.zip vs fld_translates +> List.map (fun (i, arr) ->
+            arr.(i)
+          )
+        in
+        pr (spf "%s(%s)" b (Common.join ", " args))
+      )
+
+    else failwith (spf "could not find header in %s" file)
+
+  | [] -> pr2 (spf "empty file %s" file)
+  )
+  )
