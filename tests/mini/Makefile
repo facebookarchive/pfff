@@ -21,5 +21,15 @@ all: $(SRC:.c=.exe)
 %.exe: %.c
 	$(CC) $^ -o $@
 
-clean:
+clean::
 	rm -f *.exe
+
+
+
+datalog:
+	../../codequery -lang c -datalog -build .
+
+clean::
+	rm -f facts.*
+	rm prolog_compiled_db pfff.log
+

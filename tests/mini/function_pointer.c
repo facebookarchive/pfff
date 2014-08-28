@@ -2,7 +2,7 @@
 #include <stdlib.h>
 #include <stdio.h>
 
-int global;
+static int global;
 
 // Where this function can be called?
 int proc_error() {
@@ -14,12 +14,12 @@ int proc_error() {
 int (*error)();
 
 
-void foo() {
+static void foo() {
   // proc_error can be called here, because of main() assignment
   int x = (*error)();
 }
 
-int main() {
+int main_function_pointer() {
   error = &proc_error;
   foo();
   int v = global;

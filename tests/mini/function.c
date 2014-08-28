@@ -6,7 +6,7 @@ int* foo(int *param) {
   return local;
 }
 
-int main() {
+int main_function() {
   int *pt;
   pt = &global;
   int *pt2;

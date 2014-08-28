@@ -15,29 +15,21 @@ enum {
   ENUM2 = 43,
 };
 
-struct Foo *global;
+static struct Foo *global;
 
 void bar(int param) {
   global->state1 = param;
 }
 
-void foo(int param) {
+static void foo(int param) {
   int local = param;
   bar(local);
 }
 
-int main() {
+int main_constants() {
   global = malloc(sizeof(struct Foo));
   int v1 = ENUM1;
   foo(v1);
   int v2 = global->state1;
   printf("%d\n", v2);
 }
-
-#ifdef __STDC__
-#else
-void printf(char* fmt) {
-}
-void* malloc(int x) {
-}
-#endif

@@ -1,6 +1,6 @@
-int global;
+static int global;
 
-int main () {
+int main_pointer() {
   int x; 
   int y;
 

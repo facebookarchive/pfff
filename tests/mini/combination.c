@@ -2,11 +2,11 @@
 #include <stdlib.h>
 #include <stdio.h>
 
-struct Foo {
+struct FooCombination {
   int (*fld)();
 };
 
-struct Foo* vctls;
+struct FooCombination* vctls;
 
 // Where this interrupt function can be called?
 int i850intr() {
@@ -16,7 +16,7 @@ int i850intr() {
 }
 
 int intrenable(int idx, int (*f)()) {
-  struct Foo* v;
+  struct FooCombination* v;
   v = &vctls[idx];
   v->fld = f;
   int v2 = 1;
@@ -28,7 +28,7 @@ int intrenable(int idx, int (*f)()) {
 int trap() {
   int i = 1;
   while(i) {
-    struct Foo* v;
+    struct FooCombination* v;
     int i2 = 0;
     v = &vctls[i2];
     while (i) {
@@ -46,11 +46,11 @@ int trap() {
 }
 
 
-int main() {
+int main_combination() {
   int (*f)();
   f = &i850intr;
   int size = 10;
-  vctls = malloc(size * sizeof(struct Foo));
+  vctls = malloc(size * sizeof(struct FooCombination));
   int v0 = 0;
   int v1 = intrenable(v0, f);
   int v2 = 1;
@@ -58,10 +58,3 @@ int main() {
   trap();
   return v2;
 }
-#ifdef __STDC__
-#else
-void printf(char* fmt) {
-}
-void* malloc(int x) {
-}
-#endif

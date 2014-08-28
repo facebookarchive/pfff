@@ -2,13 +2,13 @@
 #include <stdlib.h>
 #include <stdio.h>
 
-struct Foo {
+struct FooFields {
   // Where field can be assigned?
   int field;
   int field2;
 };
 
-struct Foo *foo;
+struct FooFields *foo;
 
 void set_int(int *dst, int value) {
   // Foo.field can be assigned here, because dst can be alias for it
@@ -16,9 +16,9 @@ void set_int(int *dst, int value) {
   *dst = value;
 }
 
-int main() {
+int main_fields() {
   int v = 42;
-  foo = malloc(sizeof(struct Foo));
+  foo = malloc(sizeof(struct FooFields));
   int *v2 = &foo->field;
   set_int(v2, v);
   int v3 = foo->field;
@@ -27,10 +27,3 @@ int main() {
   return v4;
 }
 
-#ifdef __STDC__
-#else
-void printf(char* fmt) {
-}
-void* malloc(int x) {
-}
-#endif

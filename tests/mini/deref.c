@@ -1,5 +1,5 @@
 
-int main() {
+int main_deref() {
   int x;
   int* y;
   int **w;

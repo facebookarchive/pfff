@@ -1,7 +1,7 @@
 #include <stdlib.h>
 #include <stdio.h>
 
-int main () {
+int main_array () {
   int y = 10;
   int* x = malloc(y * sizeof(int));
   int w = x[y];
@@ -16,9 +16,3 @@ int main () {
   return z;
 // => array_elt_in_main_line3 should point to 2 or 4
 }
-
-#ifdef __STDC__
-#else
-void* malloc(int x) {
-}
-#endif
