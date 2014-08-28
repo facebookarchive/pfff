@@ -175,13 +175,13 @@ let build_prolog_db lang root xs =
             Common.command2 cmd;
             let cmd = spf "cd %s/..; make dump > %s/X2.log" dir dir in
             Common.command2 cmd;
-            Datalog_code.bddbddb_explain_tuples
-              (Filename.concat dir "/PointingData.tuples");
-            Datalog_code.bddbddb_explain_tuples
-              (Filename.concat dir "/CallingData.tuples");
-
-            (Filename.concat dir "/CallingData.explain") +> Common.cat +>
-              List.iter pr
+            let _pointing_file = 
+              Datalog_code.bddbddb_explain_tuples
+                (Filename.concat dir "/PointingData.tuples") in
+            let calling_file = 
+              Datalog_code.bddbddb_explain_tuples
+                (Filename.concat dir "/CallingData.tuples") in
+            calling_file +> Common.cat +> List.iter pr
 
           end;
           g
