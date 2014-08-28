@@ -23,7 +23,7 @@ open Common2.Infix
  * 
  * This file contains a simplified C abstract syntax tree. The original
  * C/C++ syntax tree (ast_cpp.ml) is good for code refactoring or
- * code visualization; the type used matches exactly the source. However,
+ * code visualization; the types used match exactly the source. However,
  * for other algorithms, the nature of the AST makes the code a bit
  * redundant. Moreover many analysis are far simpler to write on
  * C than C++. Hence the idea of a SimpleAST which is the
@@ -38,13 +38,14 @@ open Common2.Infix
  *    for error reporting. See name below.
  *  - ...
  *  - no nested struct, they are lifted to the toplevel
+ *  - no anonymous structure (an artificial name is gensym'ed)
  *  - no mix of typedef with decl
  *  - sugar is removed, no RecordAccess vs RecordPtAccess, ...
  *  - no init vs expr
  *  - no Case/Default in statement but instead a focused 'case' type
  * 
- * todo: ast_c_simple_build.ml is probably very incomplete, but for now
- * good enough for codegraph purposes on xv6, plan9 and other small C
+ * less: ast_c_simple_build.ml is probably incomplete, but for now
+ * is good enough for codegraph purposes on xv6, plan9 and other small C
  * projects.
  * 
  * related work: 
