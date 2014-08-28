@@ -104,8 +104,11 @@ let run_datalog root facts =
     exec (spf "mkdir %s" datadir);
     exec (spf "cp %s %s" logicrules_file dir);
     Datalog_code.bddbddb_of_facts facts datadir;
-    let cmd = spf "cd %s; java -jar %s %s > %s/X.log" 
-      dir bddbddb_jar_file (Filename.basename logicrules_file) dir in
+    (* todo: see hw6/run_bddbddb.py for more options *)
+    let java_options = "-mx900m" in
+    let cmd = spf "cd %s; java %s -jar %s %s > %s/X.log" 
+      dir java_options bddbddb_jar_file 
+      (Filename.basename logicrules_file) dir in
     exec cmd;
     let pointing_file = 
       Datalog_code.bddbddb_explain_tuples
