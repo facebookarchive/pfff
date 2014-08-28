@@ -312,8 +312,8 @@ let bddbddb_of_facts facts dir =
 
 let bddbddb_explain_tuples file =
   let (d,b,_e) = Common2.dbe_of_filename file in
-  Common.with_open_outfile (Common2.filename_of_dbe (d,b,"explain")) 
-  (fun (pr_no_nl, _chan) ->
+  let dst = Common2.filename_of_dbe (d,b,"explain") in
+  Common.with_open_outfile dst (fun (pr_no_nl, _chan) ->
     let pr s = pr_no_nl (s ^ "\n") in
 
   let xs = Common.cat file in
@@ -352,4 +352,5 @@ let bddbddb_explain_tuples file =
 
   | [] -> pr2 (spf "empty file %s" file)
   )
-  )
+  );
+  dst

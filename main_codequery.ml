@@ -246,9 +246,7 @@ let test_compare_datalog file =
   ()
 
 let test_explain_bddbddb_tuples file =
-  Datalog_code.bddbddb_explain_tuples file;
-  let (d,b,_e) = Common2.dbe_of_filename file in
-  let dst = Common2.filename_of_dbe (d,b,"explain") in
+  let dst = Datalog_code.bddbddb_explain_tuples file in
   dst +> Common.cat +> List.iter pr
 
 (*---------------------------------------------------------------------------*)
