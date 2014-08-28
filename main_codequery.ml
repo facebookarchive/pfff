@@ -57,7 +57,9 @@ let swipl =
 let predicates_file = 
   Filename.concat Config_pfff.path "h_program-lang/prolog_code.pl"
 let logicrules_file = 
-  Filename.concat Config_pfff.path "h_program-lang/datalog_code.dl"
+  Filename.concat Config_pfff.path "h_program-lang/datalog_code.dtl"
+let bddbddb_jar_file = 
+  Filename.concat Config_pfff.path "external/bddbddb/bddbddb-full.jar"
 
 (* action mode *)
 let action = ref ""
@@ -67,6 +69,59 @@ let action = ref ""
 (*****************************************************************************)
 let pr2_dbg s = 
   if !verbose then pr2 s
+
+(*****************************************************************************)
+(* Datalog *)
+(*****************************************************************************)
+
+let exec cmd =
+  pr2_dbg cmd;
+  Common.command2 cmd
+
+let run_datalog root facts =
+  (* facts +> List.iter pr2; *)
+  let datalog_file = Filename.concat root "facts.dl" in
+  Common.with_open_outfile datalog_file (fun (pr_no_nl, _chan) ->
+    let pr s = pr_no_nl (s ^ ".\n") in
+    facts +> List.iter (fun fact -> 
+      pr (Datalog_code.string_of_fact fact));
+  );
+  pr2 (spf "Your datalog facts are in %s" datalog_file);
+  (*
+    when using lua-datalog
+    let final_file = "/tmp/datalog.dl" in
+  let cmd = spf "cat %s %s > %s" 
+    datalog_file logicrules_file final_file in
+  Common.command2 cmd;
+  let cmd = spf "datalog %s | sort" final_file in
+  (* Common.command2 cmd; *)
+  pr2 (spf "RUN %s" cmd);
+  *)
+  (* bddbddb special stuff *)
+  (* old: let dir = "/home/pad/local/datalog/bddbddb/examples/pfff/data" in *)
+  Common2.with_tmp_dir (fun dir ->
+    let datadir = Filename.concat dir "/data" in
+    exec (spf "mkdir %s" datadir);
+    exec (spf "cp %s %s" logicrules_file dir);
+    Datalog_code.bddbddb_of_facts facts datadir;
+    let cmd = spf "cd %s; java -jar %s %s > %s/X.log" 
+      dir bddbddb_jar_file (Filename.basename logicrules_file) dir in
+    exec cmd;
+    let pointing_file = 
+      Datalog_code.bddbddb_explain_tuples
+        (Filename.concat datadir "/PointingData.tuples") in
+    let calling_file = 
+      Datalog_code.bddbddb_explain_tuples
+        (Filename.concat datadir "/CallingData.tuples") in
+    calling_file +> Common.cat +> List.iter pr;
+    exec (spf "cp %s %s" pointing_file root);
+    exec (spf "cp %s %s" calling_file root);
+    exec (spf "rm %s/*" datadir);
+    exec (spf "rmdir %s" datadir);
+  );
+  (* don't care about the remaining prolog stuff so exit earlier *)
+  raise (UnixExit 0)
+
 
 (*****************************************************************************)
 (* Language specific, building the prolog db *)
@@ -149,46 +204,11 @@ let build_prolog_db lang root xs =
           if !datalog
           then begin
             let facts = List.rev !(Common2.some (!Graph_code_c.facts)) in
-            (* facts +> List.iter pr2; *)
-            let datalog_file = Filename.concat root "facts.dl" in
-            Common.with_open_outfile datalog_file (fun (pr_no_nl, _chan) ->
-              let pr s = pr_no_nl (s ^ ".\n") in
-              facts +> List.iter (fun fact -> 
-                pr (Datalog_code.string_of_fact fact));
-            );
-            pr2 (spf "Your datalog facts are in %s" datalog_file);
-          (*
-
-            let final_file = "/tmp/datalog.dl" in
-            let cmd = spf "cat %s %s > %s" 
-              datalog_file logicrules_file final_file in
-            Common.command2 cmd;
-            let cmd = spf "datalog %s | sort" final_file in
-            (* Common.command2 cmd; *)
-            pr2 (spf "RUN %s" cmd);
-            *)
-            (* bddbddb special stuff *)
-            let dir = "/home/pad/local/datalog/bddbddb/examples/pfff/data" in
-            Datalog_code.bddbddb_of_facts facts dir;
-            pr2 (spf "run bddbddb in %s" dir);
-            let cmd = spf "cd %s/..; make > %s/X.log" dir dir in
-            Common.command2 cmd;
-            let cmd = spf "cd %s/..; make dump > %s/X2.log" dir dir in
-            Common.command2 cmd;
-            let _pointing_file = 
-              Datalog_code.bddbddb_explain_tuples
-                (Filename.concat dir "/PointingData.tuples") in
-            let calling_file = 
-              Datalog_code.bddbddb_explain_tuples
-                (Filename.concat dir "/CallingData.tuples") in
-            calling_file +> Common.cat +> List.iter pr
-
+            run_datalog root facts
           end;
           g
         | _ -> raise Impossible
       in
-
-      if !datalog then "echo datalog done" else begin
       let facts = Graph_code_prolog.build g in
       let facts_pl_file = Filename.concat root "facts.pl" in
       Common.with_open_outfile facts_pl_file (fun (pr_no_nl, _chan) ->
@@ -200,7 +220,6 @@ let build_prolog_db lang root xs =
       Common.command2 (spf "mv a.out %s" prolog_compiled_db);
       pr2 (spf "Your compiled prolog DB is ready. Run %s" prolog_compiled_db);
       prolog_compiled_db
-      end
 
   | _ -> failwith ("language not yet supported: " ^ lang)
 

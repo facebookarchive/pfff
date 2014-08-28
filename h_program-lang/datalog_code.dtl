@@ -90,6 +90,9 @@ point_to(v:V, h:V) outputtuples
 call_edge(i:I, f:N) outputtuples
 assign(dest:V, source:V)
 
+# the data we really care to export
+PointingData (v:V, h:V) outputtuples
+CallingData (i:I, f:N) outputtuples
 
 
 #*******************************************************************************
@@ -206,6 +209,7 @@ call_edge(i, f) :- \
 #*******************************************************************************
 # Postlude
 #*******************************************************************************
-  
-#point_to(A,B)?
-#call_edge(A,B)?
+
+# the data we care to export
+PointingData (v,h) :- point_to (v,h).
+CallingData (i,f) :- call_indirect(i, v), point_to(v, vf), var_to_func(vf, f).
