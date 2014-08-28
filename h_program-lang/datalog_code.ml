@@ -61,6 +61,47 @@ type fact =
   | CallDirect of callsite * func
   | CallIndirect of callsite * var
 
+(*****************************************************************************)
+(* Meta *)
+(*****************************************************************************)
+
+(* see datalog_code.dl domain *)
+type value = 
+  | V of var
+  | F of fld
+  | N of func
+  | I of callsite
+  | Z of int
+
+let string_of_value = function
+  | V x | F x | N x | I x -> x
+  | Z _ -> raise Impossible
+
+type _rule = string
+
+type _meta_fact = 
+    string * value list
+
+let meta_fact = function
+  | PointTo (a, b) -> "point_to", [ V a; V b; ]
+  | ArrayPointTo (a, b) -> "array_point_to", [ V a; V b; ]
+  | Assign (a, b) -> "assign", [ V a; V b; ]
+  | AssignContent (a, b) -> "assign_content", [ V a; V b; ]
+  | AssignAddress (a, b) -> "assign_address", [ V a; V b; ]
+  | AssignDeref (a, b) -> "assign_deref", [ V a; V b; ]
+  | AssignLoadField (a, b, c) -> "assign_load_field", [ V a; V b; F c ]
+  | AssignStoreField (a, b, c) -> "assign_store_field", [ V a; F b; V c ]
+  | AssignFieldAddress (a, b, c) -> "assign_field_address", [ V a; V b; F c ]
+  | AssignArrayElt (a, b) -> "assign_array_elt", [ V a; V b; ]
+  | AssignArrayDeref (a, b) -> "assign_array_deref", [ V a; V b; ]
+  | AssignArrayElementAddress (a, b) -> "assign_array_element_address", [ V a; V b; ]
+  | Parameter (a, b, c) -> "parameter", [ N a; Z b; V c ]
+  | Return (a, b) -> "return", [ N a; V b; ]
+  | Argument (a, b, c) -> "argument", [ I a; Z b; V c ]
+  | ReturnValue (a, b) -> "call_ret", [ I a; V b; ]
+  | CallDirect (a, b) -> "call_direct", [ I a; N b; ]
+  | CallIndirect (a, b) -> "call_indirect", [ I a; V b; ]
+
       
 (*****************************************************************************)
 (* Toy datalog *)
@@ -91,14 +132,6 @@ let string_of_fact = function
 (* Bddbddb *)
 (*****************************************************************************)
 
-(* see datalog_code.dl domain *)
-type value = 
-  | V of var
-  | F of fld
-  | N of func
-  | I of callsite
-  | Z of int
-
 (* "V", "F", ... *)
 type _domain = string
 
@@ -109,36 +142,8 @@ let domain_of_value = function
   | I _ -> "I"
   | Z _ -> "Z"
 
-let string_of_value = function
-  | V x | F x | N x | I x -> x
-  | Z _ -> raise Impossible
-
-type _rule = string
-
-type _meta_fact = 
-    string * value list
-
 type _idx = (string (* metadomain*), value Common.hashset) Hashtbl.t
 
-let meta_fact = function
-  | PointTo (a, b) -> "point_to", [ V a; V b; ]
-  | ArrayPointTo (a, b) -> "array_point_to", [ V a; V b; ]
-  | Assign (a, b) -> "assign", [ V a; V b; ]
-  | AssignContent (a, b) -> "assign_content", [ V a; V b; ]
-  | AssignAddress (a, b) -> "assign_address", [ V a; V b; ]
-  | AssignDeref (a, b) -> "assign_deref", [ V a; V b; ]
-  | AssignLoadField (a, b, c) -> "assign_load_field", [ V a; V b; F c ]
-  | AssignStoreField (a, b, c) -> "assign_store_field", [ V a; F b; V c ]
-  | AssignFieldAddress (a, b, c) -> "assign_field_address", [ V a; V b; F c ]
-  | AssignArrayElt (a, b) -> "assign_array_elt", [ V a; V b; ]
-  | AssignArrayDeref (a, b) -> "assign_array_deref", [ V a; V b; ]
-  | AssignArrayElementAddress (a, b) -> "assign_array_element_address", [ V a; V b; ]
-  | Parameter (a, b, c) -> "parameter", [ N a; Z b; V c ]
-  | Return (a, b) -> "return", [ N a; V b; ]
-  | Argument (a, b, c) -> "argument", [ I a; Z b; V c ]
-  | ReturnValue (a, b) -> "call_ret", [ I a; V b; ]
-  | CallDirect (a, b) -> "call_direct", [ I a; N b; ]
-  | CallIndirect (a, b) -> "call_indirect", [ I a; V b; ]
 
 
 let bddbddb_of_facts facts dir =
