@@ -107,6 +107,7 @@ let meta_fact = function
 (* Toy datalog *)
 (*****************************************************************************)
 
+(* less: use meta_fact instead and add the enclosing '' *)
 let string_of_fact = function
   | PointTo (a, b) -> spf "point_to(%s, %s)" a b
   | ArrayPointTo (a, b) -> spf "array_point_to(%s, %s)" a b
