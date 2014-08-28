@@ -43,6 +43,8 @@ type fact = Datalog_code.fact
 
 type env = {
   scope: string; (* qualifier, usually the current function *)
+  c_file_readable: Common.filename;
+  long_format: bool;
 
   globals: Graph_code.graph;
   (* we may also want the AST of macros *)
@@ -62,6 +64,9 @@ type env = {
   (* the output *)
   facts: fact list ref;
 }
+
+(* less: type format = Classic | Bddbddb | BddbddbLong ? *)
+
 
 (*****************************************************************************)
 (* CIL-expr *)
@@ -157,10 +162,14 @@ let var_of_global env name =
   if Common.find_opt (fun (x,_) -> x =$= s) env.globals = None
   then error (spf "unknown global: %s" s) name;
 *)
-  spf "'%s'" s
+  if env.long_format
+  then spf "%s#%s" env.c_file_readable s
+  else s
 
 let var_of_local env name =
-  spf "'%s__%s'" env.scope (fst name)
+  if env.long_format
+  then spf "%s#%s:%s" env.c_file_readable env.scope (fst name)
+  else spf "%s__%s" env.scope (fst name)
 
 let var_of_name env var_or_name =
   let s = fst var_or_name in
@@ -180,10 +189,11 @@ let heap_of_cst _env name =
     (fst name) (line_of (snd name))
 
 let invoke_loc_of_name env name =
-  spf "'_in_%s_line_%d_col_%d'" 
-    env.scope 
-    (line_of (snd name))
-    (Parse_info.col_of_info (snd name))
+  let line = line_of (snd name) in
+  let col = Parse_info.col_of_info (snd name) in
+  if env.long_format
+  then spf "%s#%d:%d" env.c_file_readable line col
+  else spf "_in_%s_line_%d_col_%d" env.scope line col
 
 (* TODO: need to look for type of v in env to actually qualify ... *)
 let fully_qualified_field _env _v fldname =

@@ -3,6 +3,8 @@ type fact = Datalog_code.fact
 
 type env = {
   scope: string;
+  c_file_readable: Common.filename;
+  long_format: bool;
   globals: Graph_code.graph;
   globals_renames: Ast_c.name -> Ast_c.name;
   locals: (string * Ast_c.type_ option) list ref;
