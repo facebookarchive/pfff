@@ -25,6 +25,7 @@ clean::
 	rm -f *.exe
 
 
+.PHONY: datalog
 
 datalog:
 	../../codequery -lang c -datalog -build .
