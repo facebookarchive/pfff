@@ -89,7 +89,7 @@ module PI = Parse_info
    * Note that with XHP if you want to add a rule using T_IDENT, you should
    * probably use 'ident' instead.
    *)*/
- T_IDENT T_VARIABLE
+ T_IDENT T_VARIABLE T_VARIABLE_VARIADIC
  T_CONSTANT_ENCAPSED_STRING   T_ENCAPSED_AND_WHITESPACE  T_INLINE_HTML
  /*(* used only for offset of array access inside strings *)*/
  T_NUM_STRING
@@ -548,6 +548,9 @@ parameter_or_dots:
  | parameter { Left3 $1 }
  /*(* varargs extension *)*/
  | TDOTS { Middle3 $1 }
+ /*(* php-facebook-ext: variadic extension, ...$xs *)*/
+ | T_VARIABLE_VARIADIC 
+     { Left3 (H.mk_param $1) (* todo: with is_variadic = true *) }
 
 parameter: attributes_opt ctor_modifier_opt at_opt type_php_opt  parameter_bis  
       { { $5 with p_modifier = $2; p_attrs = $1; p_type = $4; p_soft_type= $3;}}

@@ -622,7 +622,7 @@ let visit_program ~tag _prefs  hentities (ast, toks) =
       if not (Hashtbl.mem already_tagged ii)
       then tag ii Error
     (* they should have been covered before *)
-    | T.T_VARIABLE (_, ii) ->
+    | T.T_VARIABLE (_, ii) | T.T_VARIABLE_VARIADIC(_, ii) ->
       if not (Hashtbl.mem already_tagged ii)
       then tag ii Error
 
