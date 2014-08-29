@@ -98,7 +98,11 @@ let run_datalog root facts =
   pr2 (spf "RUN %s" cmd);
   *)
   (* bddbddb special stuff *)
-  (* old: let dir = "/home/pad/local/datalog/bddbddb/examples/pfff/data" in *)
+  (* old: *)
+  let datadir = "/home/pad/local/datalog/bddbddb/examples/pfff/data" in 
+  Datalog_code.bddbddb_of_facts facts datadir;
+  
+
   Common2.with_tmp_dir (fun dir ->
     let datadir = Filename.concat dir "/data" in
     exec (spf "mkdir %s" datadir);
