@@ -107,27 +107,14 @@ let meta_fact = function
 (* Toy datalog *)
 (*****************************************************************************)
 
-(* less: use meta_fact instead and add the enclosing '' *)
-let string_of_fact = function
-  | PointTo (a, b) -> spf "point_to(%s, %s)" a b
-  | ArrayPointTo (a, b) -> spf "array_point_to(%s, %s)" a b
-  | Assign (a, b) -> spf "assign(%s, %s)" a b
-  | AssignContent (a, b) -> spf "assign_content(%s, %s)" a b
-  | AssignAddress (a, b) -> spf "assign_address(%s, %s)" a b
-  | AssignDeref (a, b) -> spf "assign_deref(%s, %s)" a b
-  | AssignLoadField (a, b, c) -> spf "assign_load_field(%s, %s, %s)" a b c
-  | AssignStoreField (a, b, c) -> spf "assign_store_field(%s, %s, %s)" a b c
-  | AssignFieldAddress (a, b, c) -> spf "assign_field_address(%s, %s, %s)" a b c
-  | AssignArrayElt (a, b) -> spf "assign_array_elt(%s, %s)" a b
-  | AssignArrayDeref (a, b) -> spf "assign_array_deref(%s, %s)" a b
-  | AssignArrayElementAddress (a, b) -> spf "assign_array_element_address(%s, %s)" a b
-  | Parameter (a, b, c) -> spf "parameter(%s, %d, %s)" a b c
-  | Return (a, b) -> spf "return(%s, %s)" a b
-  | Argument (a, b, c) -> spf "argument(%s, %d, %s)" a b c
-  | ReturnValue (a, b) -> spf "call_ret(%s, %s)" a b
-  | CallDirect (a, b) -> spf "call_direct(%s, %s)" a b
-  | CallIndirect (a, b) -> spf "call_indirect(%s, %s)" a b
-
+let string_of_fact fact = 
+  let str, xs = meta_fact fact in
+  spf "%s(%s)" str
+    (xs +> List.map (function
+      | V x | F x | N x | I x -> spf "'%s'" x
+      | Z i -> spf "%d" i
+     ) +> Common.join ", "
+    )
 
 (*****************************************************************************)
 (* Bddbddb *)
