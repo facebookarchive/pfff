@@ -74,6 +74,7 @@ Fig_graph_ml.pdf
 *.opti
 *facts.pl
 *facts.dl
+*.explain
 *prolog_compiled_db
 
 web/var/dbs
