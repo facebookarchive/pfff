@@ -580,6 +580,8 @@ layers:
 
 visual:
 	./codemap -no_legend -profile -ss 2 -filter pfff .
+loc:
+	./codemap -no_legend -profile -ss 2 -filter pfff -test_loc .
 
 tests:
 	$(MAKE) rec && $(MAKE) pfff_test
