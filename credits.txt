@@ -16,5 +16,7 @@ Thanks to
  - Dario Teixeira for the CSS parser (GPL)
  - Gert Stolpmann for the HTML parser (LGPL)
 
+ - John Whaley for bddbddb (LGPL)
+
 Thanks of course also to Stallman, Torvalds, Leroy, Knuth and their
 acolytes for respectively Emacs, Linux, OCaml, and (La)TeX.

@@ -6,7 +6,7 @@ You must first install a recent version of
    if you want codemap and codegraph, the fancy graphics code visualizers
  - SWI-prolog
    if you want the interactive code query tool
- - Java
+ - Java (for bddbddb)
    if you want the datalog pointer analysis
 
 If you want most of the good things just type:
