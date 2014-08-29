@@ -114,15 +114,17 @@ let run_datalog root facts =
       dir java_options bddbddb_jar_file 
       (Filename.basename logicrules_file) dir in
     exec cmd;
+    pr2 ("Done with bddbddb, generating .explain files now");
     let pointing_file = 
       Datalog_code.bddbddb_explain_tuples
         (Filename.concat datadir "/PointingData.tuples") in
     let calling_file = 
       Datalog_code.bddbddb_explain_tuples
         (Filename.concat datadir "/CallingData.tuples") in
-    calling_file +> Common.cat +> List.iter pr;
     exec (spf "cp %s %s" pointing_file root);
     exec (spf "cp %s %s" calling_file root);
+
+    calling_file +> Common.cat +> Common.take_safe 10 +> List.iter pr;
     exec (spf "rm %s/*" datadir);
     exec (spf "rmdir %s" datadir);
   );

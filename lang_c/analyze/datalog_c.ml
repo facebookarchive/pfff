@@ -197,7 +197,7 @@ let var_of_global env name =
     | [] ->
       (match () with
       | _ when s =~ "_builtin_.*" -> ()
-      | _ -> pr2 (spf "Could not find any definition for %s" s);
+      | _ -> pr2_once (spf "Could not find any definition for %s" s);
       );
       s
     )
