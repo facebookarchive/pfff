@@ -2,12 +2,19 @@
 
 * 0.29 (Q3 2014) (datalog for "flowing")
 
-** miniC and datalog
-
-*** simple miniC AST and parser (abuse lang_cpp/ and lang_c/)
+** datalog
 
 *** first datalog-based interprocedural context insensitive dataflow analysis!!!
- 
+using toy datalog (written in Lua)
+
+*** switch to bddbddb for backend, scales to xv6 and plan9!
+7000 and 100000 LOC respectively
+
+** mini c
+
+*** simple miniC AST and parser (abuse lang_cpp/ and lang_c/)
+so can experiment with datalog fact generation and datalog logic
+
 ** c
 
 *** far better typedef inference, better heuristics (xx *yy), more cases handled
@@ -31,7 +38,7 @@ can explore dependencies in emacs source :)
 
 ** php
 
-*** codequery add return/2 predicate, complementer parameter/4
+*** codequery add return/2 predicate, complement parameter/4
 
 ** introduce lang_rust/
 
@@ -39,9 +46,9 @@ can explore dependencies in emacs source :)
 
 ** codegraph
 
-*** backend for C
-
 *** backend for lisp
+
+*** backend for C
 
 * 0.28 (Q2 2014) ((kernel.tex.nw parenthesis))
 extra: kernel.tex.nw
