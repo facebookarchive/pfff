@@ -246,16 +246,16 @@ let fully_qualified_field_of_struct _struc fld =
 (* Normalize *)
 (*****************************************************************************)
 
-(* The goal is to transform constructs from Ast_c to simpler constructs .
+(* The goal is to transform constructs from Ast_c to simpler constructs.
  * Here are the simplifications done:
  * - linearization of expression
  * - sugar removal for postfix/infix increments
  * - ???
  *)
 
-(* could also use gensym *)
+(* could also use gensym() *)
 let counter = ref 0
-(* note that we still use var_lof_name to generate the extra scope info
+(* note that we still use var_of_name to generate the extra scope info
  * so no need to add it there
  *)
 let fresh_var env (_, tok) = 
@@ -469,6 +469,7 @@ let instrs_of_expr env e =
   | A.GccConstructor (t, _eTODO) -> Alloc t
 
   | _ -> 
+    (* hmmm maybe better to have this function return a rvalue option *)
     raise NotSimpleExpr
 
   and var_of_expr e =
