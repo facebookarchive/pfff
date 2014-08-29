@@ -19,6 +19,8 @@ module A = Ast_c
 module A2 = Ast_cpp
 module PI = Parse_info
 module D = Datalog_code
+module G = Graph_code
+module E = Entity_code
 
 (*****************************************************************************)
 (* Prelude *)
@@ -163,7 +165,42 @@ let var_of_global env name =
   then error (spf "unknown global: %s" s) name;
 *)
   if env.long_format
-  then spf "%s#%s" env.c_file_readable s
+  then 
+    (* bug: no!! spf "%s#%s" env.c_file_readable
+     * we must actually get the file at definition time, not use time
+    *)
+    let candidates = [
+      E.Macro;
+      E.Constant;
+      E.Function;
+      E.Constructor;
+      E.Global;
+    ]
+    in
+    let res = candidates +> Common.map_filter (fun kind ->
+      if G.has_node (s, kind) env.globals
+      then Some (s, kind)
+      else None
+    )
+    in
+    (match res with
+    | [node] ->
+        let file = G.file_of_node node env.globals in
+        spf "%s#%s" file s
+    | x::y::xs ->
+        pr2 (spf "Conflicting entities for %s [%s]"
+                    s ((x::y::xs) +> List.map G.string_of_node +>
+                          Common.join ","));
+        let file = G.file_of_node x env.globals in
+        spf "%s#%s" file s
+    (* maybe a prototype or extern *)
+    | [] ->
+      (match () with
+      | _ when s =~ "_builtin_.*" -> ()
+      | _ -> pr2 (spf "Could not find any definition for %s" s);
+      );
+      s
+    )
   else s
 
 let var_of_local env name =
@@ -185,7 +222,7 @@ let heap_of_name env var_or_name =
 
 (* heap location, abstract memory location, heap abstraction, etc *)
 let heap_of_cst _env name =
-  spf "'_val_of_%s_line%d_'" 
+  spf "_val_of_%s_line%d_" 
     (fst name) (line_of (snd name))
 
 let invoke_loc_of_name env name =
@@ -198,11 +235,11 @@ let invoke_loc_of_name env name =
 (* TODO: need to look for type of v in env to actually qualify ... *)
 let fully_qualified_field _env _v fldname =
   let fld = fst fldname in
-  spf "'_fld__%s'" fld
+  spf "_fld__%s" fld
 
 (* TODO: need to use _struct at some point *)
 let fully_qualified_field_of_struct _struc fld =
-  spf "'_fld__%s'" fld
+  spf "_fld__%s" fld
 
 
 (*****************************************************************************)
@@ -501,7 +538,7 @@ let facts_of_def env def =
       ) @
      (* less: could skip when return void *)
        (let name = env.globals_renames def.f_name in
-       [D.Return (var_of_global env def.f_name, spf "'ret_%s'" (fst name))]
+       [D.Return (var_of_global env def.f_name, spf "ret_%s" (fst name))]
        )
   | Global var ->      
       let name = var.v_name in
@@ -523,9 +560,9 @@ let facts_of_instr env = function
   | Assign (var, e) ->
       let dest = var_of_name env var in
       (match e with
-      | Int x -> [D.PointTo(dest, spf "'_cst__%s'" (fst x))]
-      | Float x -> [D.PointTo(dest, spf "'_float__line%d'" (line_of(snd x)))]
-      | String x -> [D.PointTo(dest, spf "'_str__line%d'" (line_of (snd x)))]
+      | Int x -> [D.PointTo(dest, spf "_cst__%s" (fst x))]
+      | Float x -> [D.PointTo(dest, spf "_float__line%d" (line_of(snd x)))]
+      | String x -> [D.PointTo(dest, spf "_str__line%d" (line_of (snd x)))]
 
       (* like in miniC *)
       | StaticCall (("printf", _), _args) -> []
@@ -560,12 +597,12 @@ let facts_of_instr env = function
 
       | Alloc t -> 
           let tok = tok_of_type t in
-          let pt = spf "'_malloc_in_%s_line_%d_'" env.scope  (line_of tok) in
+          let pt = spf "_malloc_in_%s_line_%d_" env.scope  (line_of tok) in
           [D.PointTo(dest, pt)]
       | AllocArray (_v, t) ->
           let tok = tok_of_type t in
-          let pt =  spf "'_array_in_%s_line_%d_'" env.scope (line_of tok) in
-          let pt2 = spf "'_array_elt_in_%s_line_%d_'" env.scope (line_of tok) in
+          let pt =  spf "_array_in_%s_line_%d_" env.scope (line_of tok) in
+          let pt2 = spf "_array_elt_in_%s_line_%d_" env.scope (line_of tok) in
           [D.PointTo(dest, pt);
            D.ArrayPointTo(pt, pt2);
           ]
@@ -600,5 +637,5 @@ let facts_of_instr env = function
 
 let return_fact env instr =
   let var = var_of_instr instr in
-  D.Assign(spf "'ret_%s'" env.scope, var_of_name env var)
+  D.Assign(spf "ret_%s" env.scope, var_of_name env var)
 

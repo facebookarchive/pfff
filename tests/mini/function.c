@@ -1,7 +1,7 @@
 
 int global;
 
-int* foo(int *param) {
+static int* foo(int *param) {
   int *local = param;
   return local;
 }

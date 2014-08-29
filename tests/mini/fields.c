@@ -8,7 +8,7 @@ struct FooFields {
   int field2;
 };
 
-struct FooFields *foo;
+static struct FooFields *foo;
 
 void set_int(int *dst, int value) {
   // Foo.field can be assigned here, because dst can be alias for it
