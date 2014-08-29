@@ -538,7 +538,14 @@ let facts_of_def env def =
       ) @
      (* less: could skip when return void *)
        (let name = env.globals_renames def.f_name in
-       [D.Return (var_of_global env def.f_name, spf "ret_%s" (fst name))]
+       [D.Return (var_of_global env def.f_name, spf "ret_%s" (fst name));
+        (* This is because in C there is some sugar on assign on functions.
+         * One can do trapenable(myfunc) instead of trapenable(&myfunc),
+         * so in such case it's simpler to consider every funcname as
+         * a pointer to itself.
+         *)
+        D.PointTo (var_of_global env def.f_name, var_of_global env def.f_name);
+       ]
        )
   | Global var ->      
       let name = var.v_name in
