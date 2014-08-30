@@ -3,8 +3,8 @@
 # Prelude
 #*******************************************************************************
 
-# This file implements a basic context-insensitive pointer analysis.
-# Its outputs are the following relations:
+# This file implements a basic context-insensitive inclusion-based 
+# pointer analysis for C. Its outputs are the following relations:
 #
 #   point_to(V, M)           - variable 'V' may point to abstract memory loc 'M'
 #   field_point_to(FIELD, M) - qualified field may point to loc 'M'
