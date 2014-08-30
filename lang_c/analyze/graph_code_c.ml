@@ -33,8 +33,8 @@ module P = Graph_code_prolog
  * update: actually lots of code of graph_code_clang.ml have been ported
  * to this file now and being cpp-aware has actually many advantages:
  *  - we can tracks dependencies of cpp constants which is useful in codemap!
- *    and when dataflow will work, we will be able to track the flow of
- *    specific constants to fields! (but people could use enum for clang)
+ *    and with bddbddb we can also track the flow of specific constants to
+ *    fields! (but people could use enum in clang to solve this problem)
  *  - we can find dead macros, dupe macros
  *  - we can find wrong code in ifdef not compiled
  *  - we can detect ugly macros that use locals insteaf of globals or
