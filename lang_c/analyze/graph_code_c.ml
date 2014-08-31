@@ -317,7 +317,7 @@ let hook_def env def =
   then
    with_datalog_env env (fun env ->
     let facts = Datalog_c.facts_of_def env def in
-       facts +> List.iter (fun fact -> Common.push fact env.Datalog_c.facts);
+    facts +> List.iter (fun fact -> Common.push fact env.Datalog_c.facts);
   )
    
 (*****************************************************************************)

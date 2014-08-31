@@ -35,6 +35,8 @@ module E = Entity_code
  * todo:
  *  - could also add the AST of macros in the environment to
  *    expand sometimes
+ *  - less: could split in different files, ast_cil.ml, ast_cil_build.ml,
+ *    datalog_c.ml, datalog_c_hooks.ml
  *)
 
 (*****************************************************************************)
