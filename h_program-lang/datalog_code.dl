@@ -7,7 +7,6 @@
 % Its outputs are the following relations:
 %
 %   point_to(V, M)           - variable 'V' may point to abstract memory loc 'M'
-%   field_point_to(FIELD, M) - qualified field may point to loc 'M'
 %   call_edge(INVOKE, TARGET) - invocation site 'INVOKE' calls function 'TARGET'
 
 % Based upon: Java context-insensitive inclusion-based pointer analysis
@@ -16,12 +15,16 @@
 % Related work:
 % - Andersen, Steengaard, Manuvir Das, Lin, etc
 % - bddbddb, DOOP, http://pag-www.gtisc.gatech.edu/chord/user_guide/datalog.html
-% - http://blog.jetbrains.com/idea/2009/08/analyzing-dataflow-with-intellij-idea/
+% - http://blog.jetbrains.com/idea/2009/08/analyzing-dataflow-with-intellij-idea
 % - Frama C, CodeSonar, Coverity, ...
 % 
 % note: I always wanted (but was never able to write ...) an interprocedural
 % (dataflow) analysis. With Datalog I did it in one day! It's so easy.
 % 
+
+% history:
+%  - I used to have an array_point_to/2 but it can not work, we have to
+%    unify array and pointers and so point_to and array_point_to
 
 %*******************************************************************************
 % Relations
@@ -53,7 +56,6 @@
 
 %assign_array_elt(dest:V, source:V) input
 %assign_array_element_address(dest:V, source:V) input
-%array_point_to(h:H, h2:H) input/output
 
 %assign_load_field
 %assign_field_address
@@ -97,24 +99,22 @@ point_to(P, L) :-
 % Arrays insensitive
 %-------------------------------------------------------------------------------
 
-% p = a[...]
-point_to(P, AELT) :-
+% p = a[...],  which is really just equivalent to p = *a for array insensitivty
+point_to(P, Q) :-
         assign_array_elt(P, A),
-        point_to(A, ARRAY),
-        array_point_to(ARRAY, AELT).
+        point_to(A, AELT),
+        point_to(AELT, Q).
 
-% a[...] = p
+% a[...] = q,   again similar to *a = q
 point_to(AELT, L) :-
-        assign_array_deref(A, P),
-        point_to(A, ARRAY),
-        array_point_to(ARRAY, AELT),
-        point_to(P, L).
+        assign_array_deref(A, Q),
+        point_to(Q, L),
+        point_to(A, AELT).
 
-% p = &a[...]
+% p = &a[...],  equivalent to p = a for array insensitivty
 point_to(P, AELT) :-
         assign_array_element_address(P, A),
-        point_to(A, ARRAY),
-        array_point_to(ARRAY, AELT).
+        point_to(A, AELT).
 
 %-------------------------------------------------------------------------------
 % Field-base sensitive (*.f, not x.* nor x.f)

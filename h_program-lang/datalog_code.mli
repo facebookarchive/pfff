@@ -8,7 +8,6 @@ type callsite = string
 
 type fact =
   | PointTo of var * heap
-  | ArrayPointTo of var * heap
 
   | Assign of var * var
   | AssignContent of var * var

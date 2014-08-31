@@ -247,11 +247,14 @@ let heap_of_malloc env t =
   let tok = tok_of_type t in
   spf "_malloc_in_%s_%s" env.scope  (loc_of env tok)
 
-let heaps_of_malloc_array env t =
+let heap_of_malloc_array env t =
   let tok = tok_of_type t in
-  let pt =  spf "_array_in_%s_%s" env.scope (loc_of env tok) in
-  let pt2 = spf "_array_elt_in_%s_%s" env.scope (loc_of env tok) in
-  pt, pt2
+  (* old: used to have
+   * let pt =  spf "_array_in_%s_%s" env.scope (loc_of env tok) in
+   * let pt2 = spf "_array_elt_in_%s_%s" env.scope (loc_of env tok) in
+   * and an array_point_to/2 but it does not work
+   *)
+  spf "_array_elt_in_%s_%s" env.scope (loc_of env tok)
 
 let invoke_loc_of_name env name =
   if env.long_format
@@ -570,10 +573,8 @@ let facts_of_instr env = function
           let pt = heap_of_malloc env t in
           [D.PointTo(dest, pt)]
       | AllocArray (_v, t) ->
-          let pt1, pt2 = heaps_of_malloc_array env t in
-          [D.PointTo(dest, pt1);
-           D.ArrayPointTo(pt1, pt2);
-          ]
+          let pt = heap_of_malloc_array env t in
+          [D.PointTo(dest, pt)]
 
       )
 
