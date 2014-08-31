@@ -280,7 +280,7 @@ let with_datalog_env env f =
      let env2 = { Datalog_c.
        scope = fst env.current;
        c_file_readable = env.c_file_readable;
-       long_format = true;
+       long_format = !Datalog_c.long_format;
        globals = env.g;
        (* need to pass the ref because instrs_of_expr will add new
         * local variables

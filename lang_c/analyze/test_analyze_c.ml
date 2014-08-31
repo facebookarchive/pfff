@@ -10,6 +10,7 @@ let test_dataflow_c file =
   let file = Common.realpath file in
   let root = Sys.getcwd () +> Common.realpath in
   Graph_code_c.facts := Some (ref []);
+  Datalog_c.long_format := false; 
   let _g = Graph_code_c.build ~verbose:false root [file] in
   let facts = List.rev !(Common2.some (!Graph_code_c.facts)) in
   Common2.pr2_xxxxxxxxxxxxxxxxx();

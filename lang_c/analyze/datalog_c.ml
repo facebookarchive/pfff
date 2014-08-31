@@ -69,6 +69,7 @@ type env = {
 
 (* less: type format = Classic | Bddbddb | BddbddbLong ? *)
 
+let long_format = ref true
 
 (*****************************************************************************)
 (* CIL-expr *)
