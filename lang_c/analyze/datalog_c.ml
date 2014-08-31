@@ -629,7 +629,9 @@ let facts_of_def env def =
              Some (D.PointTo ((fully_qualified_field_of_struct 
                                (fst def.s_name) (fst name)),
                             (heap_of_cst env name)))
-          (* could add a point_to(%s, '_null_') for pointers *)
+          (* TODO: like for Global, if fields is an array, we should
+           * do an hidden alloc! see mini/struct_array.c
+           *)
           | _ -> None
           )
       )

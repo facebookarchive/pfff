@@ -83,10 +83,12 @@ let exec cmd =
 *)
 let java_options = [
   "-mx2000m";
+(*
   "-Dlearnbestorder=n";
   "-Dsingleignore=yes";
   "-Dbddcache=1500000";
   "-Dbddnodes=40000000";
+*)
   ] +> Common.join " "
 
 let run_datalog root facts =
