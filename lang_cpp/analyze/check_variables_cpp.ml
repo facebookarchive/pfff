@@ -40,9 +40,6 @@ module PI = Parse_info
 type environment = 
   (Ast.name * (Scope_code.scope * int ref)) list list 
 
-let is_top_env env =
-  List.length env = 1
-
 (*****************************************************************************)
 (* Environment *)
 (*****************************************************************************)
@@ -64,22 +61,20 @@ let lookup_env a b =
 let lookup_env_opt a b = 
   Common2.optionise (fun () -> lookup_env a b)
 
-(*****************************************************************************)
-(* Helpers *)
-(*****************************************************************************)
+let is_top_env env =
+  List.length env = 1
 
 (*****************************************************************************)
 (* (Semi) Globals, Julia's style *)
 (*****************************************************************************)
 
 (* use a ref because we may want to modify it *)
-let (initial_env: environment ref) = ref [
-(*  Env_php.globals_builtins +> List.map (fun s ->
-    fake_dname s, (S.Global, ref 1)
-  )
-*)
-  []
-]
+let (initial_env: environment ref) = 
+(* less:  Env_php.globals_builtins +> List.map (fun s ->
+ * fake_dname s, (S.Global, ref 1)
+ * )
+ *)
+  ref [[]]
 
 (* opti: cache ? use hash ? *)
 let _scoped_env = ref !initial_env
@@ -104,17 +99,13 @@ let add_in_scope namedef =
   _scoped_env := (namedef::current)::older
 
 
-
-(* ------------------------------------------------------------ *)
 let add_binding2 k v  = 
-
 (*
   let info = Ast.info_of_name_tmp k in
   if !Flag.debug_checker 
   then pr2 (spf "adding binding %s" 
                (Ast.string_of_info info));
 *)
-
   add_in_scope (k, v) 
 
 let add_binding k v = 
@@ -176,24 +167,23 @@ let visit_prog prog =
 
     (* 2: adding defs of name in environment *)
     V.kparameter = (fun (k, _) param ->
-
       param.p_name  +> Common.do_option (fun ident ->
         add_binding (None, noQscope, IdIdent ident) (S.Param, ref 0);
       );
       k param
     );
-    (* -------------------------------------------------------------------- *)
+
     V.kblock_decl = (fun (k, _) x ->
       match x with
       | DeclList (xs_comma, _) ->
-          let xs = Ast.uncomma xs_comma in
-          xs +> List.iter (fun onedecl ->
-
+          xs_comma +> Ast.uncomma +> List.iter (fun onedecl ->
             onedecl.v_namei +> Common.do_option (fun (name, _ini_opt) ->
-
               let scope = 
                 if is_top_env !_scoped_env || 
-                   (match onedecl.v_storage with | Sto (Extern,_) -> true | _ -> false)
+                   (match onedecl.v_storage with 
+                   | Sto (Extern,_) -> true 
+                   | _ -> false
+                   )
                 then S.Global
                 else S.Local
               in
@@ -215,9 +205,7 @@ let visit_prog prog =
       match (Ast.unwrap x) with
       | Id (name, idinfo) ->
           (* assert scope_ref = S.Unknown ? *)
-
           let s = Ast.string_of_name_tmp name in
-
           (match lookup_env_opt s !_scoped_env with
           | None -> 
               idinfo.i_scope <- S.Global;
