@@ -239,41 +239,52 @@ let visit_toplevel ~tag_hook _prefs (*db_opt *) (toplevel, toks) =
       | Id (name, idinfo) ->
           (match name with
           | (_, _, IdIdent (s, ii)) ->
-            if s ==~ Parsing_hacks_lib.regexp_macro &&
-             (* the FunCall case might have already tagged it with something *)
-              not (Hashtbl.mem already_tagged ii)
-            then tag ii (Entity (Constant, (Use2 fake_no_use2)))
-            else 
-              (match idinfo.Ast.i_scope with
-              | S.NoScope -> ()
-              | S.Local -> tag ii (Local Use)
-              | S.Param -> tag ii (Parameter Use)
-              | S.Global -> tag ii (Entity (Global, (Use2 fake_no_use2)));
-              (* todo? could invent a Static in highlight_code ? *)
-              | S.Static -> tag ii (Entity (Global, (Use2 fake_no_use2)));
-              (* TODO *)
-              | S.Class -> ()
-              (* todo? valid only for PHP? *)
-              | (S.ListBinded|S.LocalIterator|S.LocalExn|S.Closed)
+            (* the Call case might have already tagged it with something *)
+            if not (Hashtbl.mem already_tagged ii) 
+            then
+              if s ==~ Parsing_hacks_lib.regexp_macro
+              then tag ii (Entity (Constant, (Use2 fake_no_use2)))
+              else 
+                (match idinfo.Ast.i_scope with
+                | S.NoScope -> ()
+                | S.Local -> tag ii (Local Use)
+                | S.Param -> tag ii (Parameter Use)
+                | S.Global -> tag ii (Entity (Global, (Use2 fake_no_use2)));
+                (* todo? could invent a Static in highlight_code ? *)
+                | S.Static -> tag ii (Entity (Global, (Use2 fake_no_use2)));
+                (* TODO *)
+                | S.Class -> ()
+                (* todo? valid only for PHP? *)
+                | (S.ListBinded|S.LocalIterator|S.LocalExn|S.Closed)
                 -> failwith "scope not handled"
-              )
+                )
           | _ -> ()
           )
           
       | Call (e, _args) ->
           (match unwrap e with
-          | Id (name, _scopeTODO) -> 
+          | Id (name, scope) -> 
             (match name with
             | _, _, IdIdent (s, ii) ->
                 if Hashtbl.mem h_debug_functions s
                 then tag ii BuiltinCommentColor
-                else tag ii (Entity (Function, (Use2 fake_no_use2)))
+                else 
+                  (match scope.i_scope with
+                  | S.Local | S.Param ->
+                    tag ii PointerCall
+                  | _ ->
+                    tag ii (Entity (Function, (Use2 fake_no_use2)))
+                  )
             | _ -> ()
             );
 
           | RecordAccess (_e, name) | RecordPtAccess (_e, name) ->
               Ast.ii_of_id_name name +> List.iter (fun ii ->
-                tag ii (Entity (Method, (Use2 fake_no_use2)))
+                let file = PI.file_of_info ii in
+                if File_type.file_type_of_file file =*= 
+                   File_type.PL (File_type.C "c")
+                then tag ii PointerCall
+                else tag ii (Entity (Method, (Use2 fake_no_use2)))
               )
           | _ -> 
               (* dynamic stuff, should highlight! *)
