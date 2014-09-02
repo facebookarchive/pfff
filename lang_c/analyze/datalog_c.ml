@@ -470,17 +470,19 @@ let instrs_of_expr env e =
           (* fn(...) when fn is a local is really a  ( *fn)(...) *)
           then DynamicCall (var_of_expr e, vs)
           else
-            (* fn(...) is actually sugar when fn is actually a global *)
+            (* fn(...) is actually sugar when fn is a global *)
             let name = env.globals_renames name in
             let str = fst name in
             if not (G.has_node (str, E.Function) env.globals) &&
                not (G.has_node (str, E.Macro) env.globals) &&
                G.has_node (str, E.Global) env.globals
             then DynamicCall (var_of_expr e, vs)
+            (* could assert there is E.Function or E.Macro or E.Prototype *)
             else StaticCall (name, vs)
       (* ( *f)(...) *)
       | A.Unary (e, (A2.DeRef, _)) ->
           DynamicCall (var_of_expr e, vs)
+
       (* x->f(...) is actually sugar for ( *  x->f)(...) *)
       | A.RecordPtAccess (_, _) 
       (* x[y](...) is also sugar for ( * x[y](...) *)
