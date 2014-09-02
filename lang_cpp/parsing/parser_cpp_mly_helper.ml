@@ -301,9 +301,7 @@ let fixFieldOrMethodDecl (xs, semicolon) =
 let mk_e e ii = (e, ii)
 
 let mk_funcall e1 args = 
-  match e1 with
-  | (Id (name, _idinfo)), _ii_empty ->  FunCallSimple (name, args)
-  | _ -> Call (e1, args)
+  Call (e1, args)
 
 let mk_constructor id (lp, params, rp) cp =
   let params, _hasdots = 
