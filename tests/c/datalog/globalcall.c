@@ -17,7 +17,7 @@ int (*error)();
 void foo() {
   // proc_error can be called here, because of main() assignment
   //int x = (*error)();
-  //TODO actually there is sugar here, one can do
+  //actually there is sugar here, one can do too:
   int x = error();
 }
 
