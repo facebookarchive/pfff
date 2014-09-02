@@ -168,6 +168,9 @@ exception NotSimpleExpr
 let string_of_op _str =
   "_op_todo"
 
+let is_local env s =
+  (Common.find_opt (fun (x, _) -> x =$= s) !(env.locals)) <> None
+
 (*****************************************************************************)
 (* Abstract memory locations *)
 (*****************************************************************************)
@@ -454,11 +457,19 @@ let instrs_of_expr env e =
   | A.Call (e, es) ->
       let vs = List.map var_of_expr es in
       (match e with
-      (* todo: there is actually sugar when name is actually a global
-       * and not a function
-       *)
-      | A.Id name -> 
-          StaticCall (name, vs)
+      | A.Id name ->
+          if is_local env (fst name)
+          (* fn(...) when fn is a local is really a  ( *fn)(...) *)
+          then DynamicCall (var_of_expr e, vs)
+          else
+            (* fn(...) is actually sugar when fn is actually a global *)
+            let name = env.globals_renames name in
+            let str = fst name in
+            if not (G.has_node (str, E.Function) env.globals) &&
+               not (G.has_node (str, E.Macro) env.globals) &&
+               G.has_node (str, E.Global) env.globals
+            then DynamicCall (var_of_expr e, vs)
+            else StaticCall (name, vs)
       (* ( *f)(...) *)
       | A.Unary (e, (A2.DeRef, _)) ->
           DynamicCall (var_of_expr e, vs)
@@ -695,5 +706,3 @@ let facts_of_def env def =
       aux name var.v_type
 
   | Include _ | TypeDef _ | Prototype _ -> raise Impossible
-
-
