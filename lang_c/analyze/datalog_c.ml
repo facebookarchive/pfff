@@ -215,7 +215,14 @@ let var_of_global env name =
     | [] ->
       (match () with
       | _ when s =~ "_builtin_.*" -> ()
-      | _ -> pr2_once (spf "Could not find any definition for %s" s);
+      | _ -> 
+        if G.has_node (s, E.Prototype) env.globals ||
+           G.has_node (s, E.GlobalExtern) env.globals
+        (* todo: could print a warning to force people to give
+         * a "model" for the external or asm function
+         *)
+        then ()
+        else pr2 (spf "Could not find any definition nor prototype for %s" s);
       );
       s
     )
