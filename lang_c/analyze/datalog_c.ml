@@ -222,7 +222,8 @@ let var_of_global env name =
          * a "model" for the external or asm function
          *)
         then ()
-        else pr2 (spf "Could not find any definition nor prototype for %s" s);
+        else pr2_once 
+          (spf "Could not find any definition nor prototype for %s" s);
       );
       s
     )
