@@ -3,8 +3,9 @@
 # Prelude
 #*******************************************************************************
 
-# This file implements a basic context-insensitive pointer analysis.
-# Its outputs are the following relations:
+# This file implements a basic interprocedural context-insensitive
+# inclusion-based pointer analysis for C. Its outputs are the following
+# relations:
 #
 #   point_to(V, M)           - variable 'V' may point to abstract memory loc 'M'
 #   field_point_to(FIELD, M) - qualified field may point to loc 'M'
@@ -72,7 +73,6 @@ var_to_func(v:V, f:N) inputtuples
 assign_array_elt(dest:V, source:V) inputtuples
 assign_array_element_address(dest:V, source:V) inputtuples
 assign_array_deref(a:V, v:V) inputtuples
-array_point_to(v:V, e:V) inputtuples
 
 assign_load_field(dest:V, source:V, fld:F) inputtuples
 assign_store_field(dest:V, fld:F, source:V) inputtuples
@@ -133,24 +133,23 @@ point_to(p, l) :- \
 # Arrays insensitive
 #-------------------------------------------------------------------------------
 
-# p = a[...]
-point_to(p, aelt) :- \
+# p = a[...],  which is really just equivalent to p = *a for array insensitivty
+point_to(p, q) :- \
         assign_array_elt(p, a),\
-        point_to(a, array),\
-        array_point_to(array, aelt).
+        point_to(a, aelt),\
+        point_to(aelt, q).
 
-# a[...] = p
+# a[...] = q,   again similar to *a = q
 point_to(aelt, l) :- \
-        assign_array_deref(a, p),\
-        point_to(a, array),\
-        array_point_to(array, aelt),\
-        point_to(p, l).
+        assign_array_deref(a, q),\
+        point_to(q, l),\
+        point_to(a, aelt).
 
-# p = &a[...]
+# p = &a[...],  equivalent to p = a for array insensitivty
 point_to(p, aelt) :- \
         assign_array_element_address(p, a),\
-        point_to(a, array),\
-        array_point_to(array, aelt).
+        point_to(a, aelt).
+
 
 #-------------------------------------------------------------------------------
 # Field-based sensitivity (*.f, not x.* nor x.f)

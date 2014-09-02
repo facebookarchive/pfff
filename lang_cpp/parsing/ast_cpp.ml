@@ -231,16 +231,14 @@ and expression = expressionbis wrap
    * cppext: Id can also be the name of a macro. sparse says
    *  "an identifier with a meaning is a symbol". 
    * c++ext: Id is now a 'name' instead of a 'string' and can be
-   * also an operator name for example.
+   *  also an operator name.
    *)
-  | Id of name * ident_info (* semantic: *) 
+  | Id of name * ident_info (* semantic: see check_variables_cpp.ml *) 
   | C of constant
 
-  (* specialized version of Call that makes it easier to write
-   * certain analysis. Note that because 'name' can be qualified,
-   * FunCallSimple is also a StaticMethodCallSimple.
-   *)
-  | FunCallSimple  of name * argument comma_list paren
+  (* I used to have FunCallSimple but not that useful, and we want scope info
+   * for FunCallSimple too because can have fn(...) where fn is actually
+   * a local *)
   | Call of expression * argument comma_list paren
 
   (* gccext: x ? /* empty */ : y <=> x ? x : y; *)

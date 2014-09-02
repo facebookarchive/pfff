@@ -543,9 +543,6 @@ and expr env e =
                  | None -> raise Todo
                  ), 
                  expr env e3)
-  | FunCallSimple (n, args) ->
-      A.Call (A.Id (name env n),
-              Common.map_filter (argument env) (args +> unparen +> uncomma))
   | Call (e, args) ->
       A.Call (expr env e,
              Common.map_filter (argument env) (args +> unparen +> uncomma))

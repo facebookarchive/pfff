@@ -38,7 +38,6 @@ type callsite = string
 (* mimics datalog_code.dl top comment *)
 type fact =
   | PointTo of var * heap
-  | ArrayPointTo of var * heap
 
   | Assign of var * var
   | AssignContent of var * var
@@ -84,7 +83,6 @@ type _meta_fact =
 
 let meta_fact = function
   | PointTo (a, b) -> "point_to", [ V a; V b; ]
-  | ArrayPointTo (a, b) -> "array_point_to", [ V a; V b; ]
   | Assign (a, b) -> "assign", [ V a; V b; ]
   | AssignContent (a, b) -> "assign_content", [ V a; V b; ]
   | AssignAddress (a, b) -> "assign_address", [ V a; V b; ]

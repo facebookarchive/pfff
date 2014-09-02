@@ -15,11 +15,11 @@
 open Common
 
 open Ast_cpp
-open Entity_code open Highlight_code
+open Entity_code
+open Highlight_code
 
 module S = Scope_code
 module PI = Parse_info
-
 module Ast = Ast_cpp
 module V = Visitor_cpp
 module Lib = Lib_parsing_cpp
@@ -36,12 +36,14 @@ module Type = Type_cpp
  *  - take inheritance as a class use
  *)
 
+(*****************************************************************************)
+(* Helpers *)
+(*****************************************************************************)
 let (==~) = Common2.(==~)
 
 (*****************************************************************************)
 (* Helpers when have global analysis information *)
 (*****************************************************************************)
-
 let h_debug_functions = Common.hashset_of_list [
   "DEBUG"
 ]
@@ -193,14 +195,13 @@ let visit_toplevel ~tag_hook _prefs (*db_opt *) (toplevel, toks) =
     V.kblock_decl = (fun (k, _) x ->
       match x with
       | DeclList (xs_comma, _) ->
-          let xs = Ast.uncomma xs_comma in
-          xs +> List.iter (fun onedecl ->
+          xs_comma +> Ast.uncomma +> List.iter (fun onedecl ->
             onedecl.v_namei +> Common.do_option (fun (name, _ini_opt) ->
               let storage = onedecl.v_storage in
               let categ = 
                 match storage with
                 | StoTypedef _ -> TypeDef Def
-                | _ when Type.is_function_type onedecl.v_type-> 
+                | _ when Type.is_function_type onedecl.v_type -> 
                     FunctionDecl NoUse
                  (* could be a global too when the decl is at the top *)
                 | Sto (Extern, _) -> Entity (Global, (Def2 fake_no_def2))
@@ -225,7 +226,6 @@ let visit_toplevel ~tag_hook _prefs (*db_opt *) (toplevel, toks) =
       | Labeled (Ast.Label (_s, _st)), ii ->
           ii +> List.iter (fun ii -> tag ii KeywordExn);
           k x
-
       | Jump (Goto _s), ii ->
           let (_iigoto, lblii, _iiptvirg) = Common2.tuple_of_list3 ii in
           tag lblii KeywordExn;
@@ -236,61 +236,56 @@ let visit_toplevel ~tag_hook _prefs (*db_opt *) (toplevel, toks) =
     V.kexpr = (fun (k, _) x ->
       let ebis, _ = x in
       match ebis with
-
       | Id (name, idinfo) ->
           (match name with
           | (_, _, IdIdent (s, ii)) ->
-            if s ==~ Parsing_hacks_lib.regexp_macro &&
-             (* the FunCall case might have already tagged it with something *)
-              not (Hashtbl.mem already_tagged ii)
-            then 
-              tag ii (Entity (Constant, (Use2 fake_no_use2)))
-            else 
-              (match idinfo.Ast.i_scope with
-              | S.Local -> 
-                  tag ii (Local Use)
-              | S.Param ->
-                  tag ii (Parameter Use)
-              | S.Global ->
-                  tag ii (Entity (Global, (Use2 fake_no_use2)));
-              | S.NoScope ->
-                  ()
-              | S.Static ->
-                  (* todo? could invent a Static in highlight_code ? *)
-                  tag ii (Entity (Global, (Use2 fake_no_use2)));
-                
-              | S.Class ->
-                  (* TODO *)
-                  ()
-              (* todo? valid only for PHP? *)
-              | (S.ListBinded|S.LocalIterator|S.LocalExn|S.Closed)
+            (* the Call case might have already tagged it with something *)
+            if not (Hashtbl.mem already_tagged ii) 
+            then
+              if s ==~ Parsing_hacks_lib.regexp_macro
+              then tag ii (Entity (Constant, (Use2 fake_no_use2)))
+              else 
+                (match idinfo.Ast.i_scope with
+                | S.NoScope -> ()
+                | S.Local -> tag ii (Local Use)
+                | S.Param -> tag ii (Parameter Use)
+                | S.Global -> tag ii (Entity (Global, (Use2 fake_no_use2)));
+                (* todo? could invent a Static in highlight_code ? *)
+                | S.Static -> tag ii (Entity (Global, (Use2 fake_no_use2)));
+                (* TODO *)
+                | S.Class -> ()
+                (* todo? valid only for PHP? *)
+                | (S.ListBinded|S.LocalIterator|S.LocalExn|S.Closed)
                 -> failwith "scope not handled"
-              )
+                )
           | _ -> ()
           )
           
-      | FunCallSimple (name, _args) ->
-          (match name with
-          | _, _, IdIdent (s, ii) ->
-              (if Hashtbl.mem h_debug_functions s
-              then
-                tag ii BuiltinCommentColor
-                else
-                  tag ii (Entity (Function, (Use2 fake_no_use2)))
-              );
-          | _ -> ()
-          );
-          k x
-
       | Call (e, _args) ->
-          (match e with
-          | RecordAccess (_e, name), _
-          | RecordPtAccess (_e, name), _
-            ->
-              Ast.ii_of_id_name name +> List.iter (fun ii ->
-                tag ii (Entity (Method, (Use2 fake_no_use2)))
-              )
+          (match unwrap e with
+          | Id (name, scope) -> 
+            (match name with
+            | _, _, IdIdent (s, ii) ->
+                if Hashtbl.mem h_debug_functions s
+                then tag ii BuiltinCommentColor
+                else 
+                  (match scope.i_scope with
+                  | S.Local | S.Param ->
+                    tag ii PointerCall
+                  | _ ->
+                    tag ii (Entity (Function, (Use2 fake_no_use2)))
+                  )
+            | _ -> ()
+            );
 
+          | RecordAccess (_e, name) | RecordPtAccess (_e, name) ->
+              Ast.ii_of_id_name name +> List.iter (fun ii ->
+                let file = PI.file_of_info ii in
+                if File_type.file_type_of_file file =*= 
+                   File_type.PL (File_type.C "c")
+                then tag ii PointerCall
+                else tag ii (Entity (Method, (Use2 fake_no_use2)))
+              )
           | _ -> 
               (* dynamic stuff, should highlight! *)
               let ii = Lib.ii_of_any (Expr e) in
@@ -298,9 +293,7 @@ let visit_toplevel ~tag_hook _prefs (*db_opt *) (toplevel, toks) =
           );
           k x
 
-      | RecordAccess (_e, name)
-      | RecordPtAccess (_e, name) 
-          ->
+      | RecordAccess (_e, name) | RecordPtAccess (_e, name) ->
           (match name with
           | _, _, IdIdent (_s, ii) ->
               if not (Hashtbl.mem already_tagged ii)
@@ -315,8 +308,7 @@ let visit_toplevel ~tag_hook _prefs (*db_opt *) (toplevel, toks) =
               Ast.ii_of_id_name name +> List.iter (fun ii -> 
                 tag ii (Entity (Class, (Use2 fake_no_use2)));
               )
-          | _ ->
-              ()
+          | _ -> ()
           );
           k x
       | _ -> k x
@@ -324,19 +316,18 @@ let visit_toplevel ~tag_hook _prefs (*db_opt *) (toplevel, toks) =
     V.kinit = (fun (k, _) x ->
       match x with
       | InitDesignators (xs, _, _init) ->
-        xs +> List.iter (function
-        | DesignatorField (_tok, (_s, tok2)) ->
-            tag tok2 (Entity (Field, (Use2 fake_no_use2)))
-        | _ -> ()
-        );
-        k x
+          xs +> List.iter (function
+            | DesignatorField (_tok, (_s, tok2)) ->
+                tag tok2 (Entity (Field, (Use2 fake_no_use2)))
+            | _ -> ()
+          );
+          k x
       | _ -> k x
     );
 
     V.kparameter = (fun (k, _) x ->
       (match x.p_name with
-      | Some (_s, ii) ->
-          tag ii (Parameter Def)
+      | Some (_s, ii) -> tag ii (Parameter Def)
       | None -> ()
       );
       k x
@@ -418,10 +409,7 @@ let visit_toplevel ~tag_hook _prefs (*db_opt *) (toplevel, toks) =
       | MemberFunc x ->
           let def =
             match x with
-            | FunctionOrMethod def
-            | Ast.Constructor (def)
-            | Destructor def
-              -> def
+            | FunctionOrMethod def | Ast.Constructor def | Destructor def -> def
           in
           let name = def.f_name in
           Ast.ii_of_id_name name +> List.iter (fun ii -> 
@@ -438,13 +426,12 @@ let visit_toplevel ~tag_hook _prefs (*db_opt *) (toplevel, toks) =
     V.kcpp = (fun (k,_) def ->
       (match def with
       | Ast.Define (_, _id, DefineFunc params, _body) ->
-            params +> Ast.unparen +> Ast.uncomma +> List.iter (fun (name) ->
-              (match name with
-              | (_s, [ii]) -> tag ii (Parameter Def)
-              | _ -> ()
-              )
-            )
-        | _ -> ()
+          params +> Ast.unparen +> Ast.uncomma +> List.iter (fun (name) ->
+            match name with
+            | (_s, [ii]) -> tag ii (Parameter Def)
+            | _ -> ()
+          )
+      | _ -> ()
       );
       k def
     );
@@ -482,9 +469,7 @@ let visit_toplevel ~tag_hook _prefs (*db_opt *) (toplevel, toks) =
 
     | T.TInt (_,ii) | T.TFloat (_,ii) ->
         tag ii Number
-    | T.TString (_s,ii) ->
-        tag ii String
-    | T.TChar (_s,ii) ->
+    | T.TString (_s,ii) | T.TChar (_s,ii) ->
         tag ii String
     | T.Tfalse ii | T.Ttrue ii  ->
         tag ii Boolean
@@ -506,8 +491,7 @@ let visit_toplevel ~tag_hook _prefs (*db_opt *) (toplevel, toks) =
     | T.TXor ii | T.TAnd ii | T.TEqEq ii | T.TNotEq ii
     | T.TInf ii | T.TSup ii | T.TInfEq ii | T.TSupEq ii
     | T.TShl ii | T.TShr ii  
-    | T.TPlus ii | T.TMinus ii | T.TMul ii | T.TDiv ii | T.TMod ii  
-        ->
+    | T.TPlus ii | T.TMinus ii | T.TMul ii | T.TDiv ii | T.TMod ii  ->
         tag ii Operator
 
     | T.Tshort ii | T.Tint ii ->
@@ -520,7 +504,7 @@ let visit_toplevel ~tag_hook _prefs (*db_opt *) (toplevel, toks) =
         -> tag ii TypeVoid
     | T.Tbool ii 
     | T.Twchar_t ii
-      -> tag ii TypeInt
+        -> tag ii TypeInt
     (* thrift stuff *)
 
     (* needed only when have FP in the typedef inference *)
@@ -531,7 +515,6 @@ let visit_toplevel ~tag_hook _prefs (*db_opt *) (toplevel, toks) =
           *)
         ), ii) ->
         tag ii TypeInt
-
 
     | T.Tauto ii | T.Tregister ii | T.Textern ii | T.Tstatic ii  
     | T.Tconst ii | T.Tconst_MacroDeclConst ii | T.Tvolatile ii 
@@ -570,7 +553,6 @@ let visit_toplevel ~tag_hook _prefs (*db_opt *) (toplevel, toks) =
     | T.TInclude_Start (ii, _aref) ->
         tag ii Include
      *)
-
     | T.TInclude (_, _, ii) -> 
         tag ii Include
 
@@ -622,13 +604,11 @@ let visit_toplevel ~tag_hook _prefs (*db_opt *) (toplevel, toks) =
     | T.TIdent (("throws" | "exception"), ii) ->
         tag ii KeywordExn
 
-
     | T.Tfor ii | T.Tdo ii | T.Twhile ii ->
         tag ii KeywordLoop
 
     | T.Tclass ii | T.Tstruct ii ->
         tag ii KeywordObject
-
 
     (* thrift *)
     | T.TIdent (("service" | "include" | "extends"), ii) ->
@@ -654,7 +634,6 @@ let visit_toplevel ~tag_hook _prefs (*db_opt *) (toplevel, toks) =
     | T.TIdent_MacroStmt _
         -> ()
 
-
     | T.Tbool_Constr ii | T.Tlong_Constr ii | T.Tshort_Constr ii
     | T.Twchar_t_Constr ii | T.Tdouble_Constr ii | T.Tfloat_Constr ii
     | T.Tint_Constr ii | T.Tchar_Constr ii | T.Tunsigned_Constr ii
@@ -662,7 +641,6 @@ let visit_toplevel ~tag_hook _prefs (*db_opt *) (toplevel, toks) =
         -> tag ii TypeInt
 
     | T.TInt_ZeroVirtual _
-
     | T.TCCro_new _ | T.TOCro_new _ -> ()
 
     | T.TSup_Template ii | T.TInf_Template ii -> 
@@ -675,9 +653,8 @@ let visit_toplevel ~tag_hook _prefs (*db_opt *) (toplevel, toks) =
     (* TODO *)
     | T.TComment_Pp (kind, ii) -> 
         (match kind with
-        | Token_cpp.CppMacroExpanded
-        | Token_cpp.CppPassingNormal
-          -> tag ii Expanded
+        | Token_cpp.CppMacroExpanded | Token_cpp.CppPassingNormal -> 
+            tag ii Expanded
         | _ -> tag ii Passed
         )
     | T.TComment_Cpp (_kind, ii) -> 
@@ -692,6 +669,5 @@ let visit_toplevel ~tag_hook _prefs (*db_opt *) (toplevel, toks) =
     | T.EOF _ 
         -> ()
     | T.TUnknown ii -> tag ii Error
-
   );
   ()

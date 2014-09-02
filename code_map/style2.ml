@@ -87,6 +87,7 @@ let size_font_multiplier_of_categ ~font_size_real categ =
     (* entities uses *)
     | Some (HC.Entity (E.Global, (HC.Use2 _))) when font_size_real > 7.
           -> 1.5
+
 (*
     | Some (HC.Method (HC.Use2 _)) when font_size_real > 7.
           -> 1.2

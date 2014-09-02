@@ -185,11 +185,13 @@ type category =
   | Local of usedef
   | Parameter of usedef
 
+  (* less: could be Entity Prototype, but there is just def for Prototype *)
   | FunctionDecl of def_info
+  (* hmm does not fit Constructor use_def, because special kind of use *)
   | ConstructorMatch of use_info
 
+  (* less: use Entity instead? *)
   | StaticMethod of usedef2
-
   | StructName of usedef
   | EnumName of usedef
   (* ClassName of place ... *)
@@ -203,7 +205,6 @@ type category =
 
   (* misc *)
   | Label of usedef
-
 
   (* semantic information *)
   | BadSmell

@@ -78,6 +78,19 @@ let exec cmd =
   pr2_dbg cmd;
   Common.command2 cmd
 
+(* from hw6/run_bddbddb.py
+  -mx600m -Dlearnbestorder=n -Dsingleignore=yes -Dbasedir=./results/ -Dbddcache=1500000 -Dbddnodes=40000000 -Dnumberingtype=%s -Dpa.clinit=no -Dpa.filternull=yes -Dpa.unknowntypes=no net.sf.bddbddb.Solver %s' % (java_cmd, cla
+*)
+let java_options = [
+  "-mx2000m";
+(*
+  "-Dlearnbestorder=n";
+  "-Dsingleignore=yes";
+  "-Dbddcache=1500000";
+  "-Dbddnodes=40000000";
+*)
+  ] +> Common.join " "
+
 let run_datalog root facts =
   (* facts +> List.iter pr2; *)
   let datalog_file = Filename.concat root "facts.dl" in
@@ -108,8 +121,6 @@ let run_datalog root facts =
     exec (spf "mkdir %s" datadir);
     exec (spf "cp %s %s" logicrules_file dir);
     Datalog_code.bddbddb_of_facts facts datadir;
-    (* todo: see hw6/run_bddbddb.py for more options *)
-    let java_options = "-mx900m" in
     let cmd = spf "cd %s; java %s -jar %s %s > %s/X.log" 
       dir java_options bddbddb_jar_file 
       (Filename.basename logicrules_file) dir in

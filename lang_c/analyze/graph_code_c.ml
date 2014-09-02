@@ -33,8 +33,8 @@ module P = Graph_code_prolog
  * update: actually lots of code of graph_code_clang.ml have been ported
  * to this file now and being cpp-aware has actually many advantages:
  *  - we can tracks dependencies of cpp constants which is useful in codemap!
- *    and when dataflow will work, we will be able to track the flow of
- *    specific constants to fields! (but people could use enum for clang)
+ *    and with bddbddb we can also track the flow of specific constants to
+ *    fields! (but people could use enum in clang to solve this problem)
  *  - we can find dead macros, dupe macros
  *  - we can find wrong code in ifdef not compiled
  *  - we can detect ugly macros that use locals insteaf of globals or
@@ -280,7 +280,7 @@ let with_datalog_env env f =
      let env2 = { Datalog_c.
        scope = fst env.current;
        c_file_readable = env.c_file_readable;
-       long_format = true;
+       long_format = !Datalog_c.long_format;
        globals = env.g;
        (* need to pass the ref because instrs_of_expr will add new
         * local variables
@@ -317,7 +317,7 @@ let hook_def env def =
   then
    with_datalog_env env (fun env ->
     let facts = Datalog_c.facts_of_def env def in
-       facts +> List.iter (fun fact -> Common.push fact env.Datalog_c.facts);
+    facts +> List.iter (fun fact -> Common.push fact env.Datalog_c.facts);
   )
    
 (*****************************************************************************)
