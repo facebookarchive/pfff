@@ -7,7 +7,7 @@
 *** first datalog-based interprocedural context insensitive dataflow analysis!!!
 using toy datalog (written in Lua)
 
-*** switch to bddbddb for backend, scales to xv6 and plan9!
+*** switch to bddbddb for backend, scales to xv6 and even plan9 kernel!
 7000 and 100000 LOC respectively
 
 ** mini c
@@ -46,9 +46,15 @@ can explore dependencies in emacs source :)
 
 ** codegraph
 
-*** backend for lisp
+*** far better backend for C
 
-*** backend for C
+*** toy backend for lisp
+
+** codequery
+
+*** read/write fields for C, type info for C, hooks in graph_code
+for graph_code_clang and also graph_code_c
+
 
 * 0.28 (Q2 2014) ((kernel.tex.nw parenthesis))
 extra: kernel.tex.nw
