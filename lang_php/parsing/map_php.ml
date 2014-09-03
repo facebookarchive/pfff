@@ -736,9 +736,9 @@ and
   let v_f_return_type =
     map_of_option
       (fun (v1, v2, v3) ->
-         let v1 = map_tok v1 
+         let v1 = map_tok v1
          and v2 = map_of_option map_tok v2
-         and v3 = map_hint_type v3 in 
+         and v3 = map_hint_type v3 in
          (v1, v2, v3))
       v_f_return_type in
   {
@@ -788,7 +788,7 @@ and
 
 and map_hint_type =
   function
-  | Hint (v1, v2) -> 
+  | Hint (v1, v2) ->
     let v1 = map_class_name_or_selfparent v1 in
     let v2 = map_option map_type_args v2 in
     Hint ((v1, v2))
@@ -808,7 +808,7 @@ and map_hint_type =
              and v3 =
                map_of_option
                  (fun (v1, v2, v3) ->
-                    let v1 = map_tok v1 
+                    let v1 = map_tok v1
                     and v2 = map_of_option map_tok v2
                     and v3 = map_hint_type v3 in (v1, v2, v3))
                  v3
@@ -1089,16 +1089,18 @@ and map_stmt_and_def def =
   let k x = map_stmt x in
   vin.kstmt_and_def (k, all_functions) def
 
-and
-  map_short_lambda_def {
-                         sl_params = v_sl_params;
-                         sl_tok = v_sl_tok;
-                         sl_body = v_sl_body
-                       } =
+and map_short_lambda_def { sl_modifiers = v_sl_modifiers;
+                           sl_params = v_sl_params;
+                           sl_tok = v_sl_tok;
+                           sl_body = v_sl_body
+                         } =
+  let v_sl_modifiers = map_of_list (map_wrap map_modifier) v_sl_modifiers in
   let v_sl_body = map_short_lambda_body v_sl_body in
   let v_sl_tok = map_tok v_sl_tok in
-  let v_sl_params = map_short_lambda_params v_sl_params in 
-  { sl_body = v_sl_body;
+  let v_sl_params = map_short_lambda_params v_sl_params in
+  {
+    sl_modifiers = v_sl_modifiers;
+    sl_body = v_sl_body;
     sl_tok = v_sl_tok;
     sl_params = v_sl_params;
   }
@@ -1130,7 +1132,7 @@ and  map_constant_def {
         and v2 = map_tok v2
         and v3 = map_tok v3
         in (v1, v2, v3)
-  in 
+  in
   {
     cst_toks = v_cst_toks;
     cst_name = v_cst_name;
@@ -1164,7 +1166,7 @@ and
   let v_t_tconstraint = map_of_option map_constraint v_t_tconstraint in
   let v_t_tparams = map_of_option map_type_params v_t_tparams in
   let v_t_name = map_ident v_t_name in
-  let v_t_tok = map_tok v_t_tok in 
+  let v_t_tok = map_tok v_t_tok in
   {
                  t_tok = v_t_tok;
                  t_name = v_t_name;

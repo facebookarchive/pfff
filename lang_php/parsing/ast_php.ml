@@ -508,7 +508,7 @@ and func_def = {
   f_attrs: attributes option;
   f_tok: tok; (* function *)
   f_type: function_type;
-  (* only valid for methods *)
+  (* "async" always valid ; others only valid for methods *)
   f_modifiers: modifier wrap list;
   f_ref: is_ref;
   (* can be a Name("__lambda", f_tok) when used for lambdas *)
@@ -553,10 +553,12 @@ and lambda_def = (lexical_vars option * func_def)
  * is a simple expression
  *)
 and short_lambda_def = {
+  (* "async" is the only valid modifier *)
+  sl_modifiers: modifier wrap list;
   sl_params: short_lambda_params;
   sl_tok: tok (* ==> *);
   sl_body: short_lambda_body;
- }
+}
  and short_lambda_params =
  | SLSingleParam of parameter
  | SLParams of parameter comma_list_dots paren

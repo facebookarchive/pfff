@@ -222,6 +222,8 @@ module PI = Parse_info
 
 /*(* http://www.php.net/manual/en/language.operators.precedence.php *)*/
 %left      T_INCLUDE T_INCLUDE_ONCE T_EVAL T_REQUIRE T_REQUIRE_ONCE
+/*(* php-facebook-ext: lambda (short closure) syntax *)*/
+%right     T_DOUBLE_ARROW
 %left      TCOMMA
 %left      T_LOGICAL_OR
 %left      T_LOGICAL_XOR
@@ -1068,11 +1070,11 @@ expr:
 
  | T_CLONE expr { Clone($1,$2) }
 
- /*(* PHP 5.3 *)*/
+ /*(* PHP 5.3 Closures *)*/
  | async_opt T_FUNCTION is_reference TOPAR parameter_list TCPAR return_type_opt
    lexical_vars
    TOBRACE inner_statement_list TCBRACE
-     { let params = ($4, $5, $6) in
+   { let params = ($4, $5, $6) in
        let body = ($9, $10, $11) in
        Lambda ($8, { f_tok = $2;f_ref = $3;f_params = params; f_body = body;
                      f_tparams = None;
@@ -1081,9 +1083,9 @@ expr:
                      f_modifiers = $1;
                      f_attrs = None;
        })
-     }
-
- | short_lambda_expr { $1 }
+   }
+ /*(* php-facebook-ext: lambda (short closure)s *)*/
+ | lambda_expr { $1 }
 
  /*(* php-facebook-ext: in hphp.y yield are at the statement level
     * and are restricted to a few forms *)*/
@@ -1288,7 +1290,7 @@ encaps_var_offset:
    }
 
 /*(*----------------------------*)*/
-/*(*2 XHP embeded html *)*/
+/*(*2 XHP embedded html *)*/
 /*(*----------------------------*)*/
 xhp_html:
  | T_XHP_OPEN_TAG xhp_attributes T_XHP_GT xhp_children T_XHP_CLOSE_TAG
@@ -1315,44 +1317,89 @@ xhp_attribute_value:
  | T_XHP_ATTR { H.sgrep_guard (SgrepXhpAttrValueMvar ($1)) }
 
 /*(*----------------------------*)*/
-/*(*2 Short lambda *)*/
+/*(*2 Lambda: succinct closure syntax *)*/
 /*(*----------------------------*)*/
 
-short_lambda_expr:
- /*(* facebook-ext: short lambdas, as in ($x ==> $x + 1) *)*/
- | T_VARIABLE T_DOUBLE_ARROW short_lambda_body
-     { let sl_params = SLSingleParam (H.mk_param $1) in
-       ShortLambda { sl_params; sl_tok = $2; sl_body = $3 }
+lambda_expr:
+ /*(* facebook-ext: lambdas (short closures), as in ($x ==> $x + 1) *)*/
+ | T_VARIABLE lambda_body
+     {
+       let sl_tok, sl_body = $2 in
+       let sl_params = SLSingleParam (H.mk_param $1) in
+       ShortLambda { sl_params; sl_tok = sl_tok; sl_body = sl_body; sl_modifiers = [] }
      }
- | TOPAR TCPAR T_DOUBLE_ARROW short_lambda_body
-     { let sl_params = SLParams ($1, [], $2) in
-       ShortLambda { sl_params; sl_tok = $3; sl_body = $4 }
+ | T_ASYNC T_VARIABLE lambda_body
+     {
+       let sl_tok, sl_body = $3 in
+       let sl_params = SLSingleParam (H.mk_param $2) in
+       ShortLambda { sl_params; sl_tok = sl_tok; sl_body = sl_body;
+                     sl_modifiers = [Async,($1)] }
      }
- /*(* can not factorize with TOPAR parameter_list TCPAR, see conflicts.txt *)*/
- | TOPAR expr TCPAR T_DOUBLE_ARROW short_lambda_body
-     { let sl_params =
+ | TOPAR TCPAR lambda_body
+     { let sl_tok, sl_body = $3 in
+       let sl_params = SLParams ($1, [], sl_tok) in
+       ShortLambda { sl_params; sl_tok = sl_tok; sl_body = sl_body; sl_modifiers = [] }
+     }
+ | T_ASYNC TOPAR TCPAR lambda_body
+     { let sl_tok, sl_body = $4 in
+       let sl_params = SLParams ($2, [], sl_tok) in
+       ShortLambda { sl_params; sl_tok = sl_tok; sl_body = sl_body;
+                     sl_modifiers = [Async,($1)] }
+     }
+ /*(* can not factorize with TOPAR parameter_list TCPAR, see conflicts.txt
+    * this is unfortunate, since it means typehints are not correctly parsed
+    *)*/
+ | TOPAR expr TCPAR lambda_body
+     {
+       let sl_tok, sl_body = $4 in
+       let sl_params =
          match $2 with
          | IdVar (DName swrap, _scope) ->
            let param = H.mk_param swrap in
-           SLParams ($1, [Left3 param], $3)
+           SLParams ($1, [Left3 param], sl_tok)
          | _ -> raise (Parsing.Parse_error)
        in
-       ShortLambda { sl_params; sl_tok = $4; sl_body = $5 }
+       ShortLambda { sl_params; sl_tok = sl_tok; sl_body = sl_body; sl_modifiers = [] }
      }
- | TOPAR T_VARIABLE TCOMMA non_empty_parameter_list TCPAR T_DOUBLE_ARROW
-     short_lambda_body
-     { let sl_params =
+ | T_ASYNC TOPAR expr TCPAR lambda_body
+     {
+       let sl_tok, sl_body = $5 in
+       let sl_params =
+         match $3 with
+         | IdVar (DName swrap, _scope) ->
+           let param = H.mk_param swrap in
+           SLParams ($1, [Left3 param], sl_tok)
+         | _ -> raise (Parsing.Parse_error)
+       in
+       ShortLambda { sl_params; sl_tok = sl_tok; sl_body = sl_body;
+                     sl_modifiers = [Async,($1)] }
+     }
+ | TOPAR T_VARIABLE TCOMMA non_empty_parameter_list TCPAR lambda_body
+     {
+       let sl_tok, sl_body = $6 in
+       let sl_params =
          let param1 = H.mk_param $2 in
          SLParams ($1, Left3 param1::Right3 $3::$4, $5)
        in
-       ShortLambda { sl_params; sl_tok = $6; sl_body = $7 }
+       ShortLambda { sl_params; sl_tok = sl_tok; sl_body = sl_body; sl_modifiers = [] }
+     }
+ | T_ASYNC TOPAR T_VARIABLE TCOMMA non_empty_parameter_list TCPAR lambda_body
+     {
+       let sl_tok, sl_body = $7 in
+       let sl_params =
+         let param1 = H.mk_param $3 in
+         SLParams ($1, Left3 param1::Right3 $4::$5, $6)
+       in
+       ShortLambda { sl_params; sl_tok = sl_tok; sl_body = sl_body;
+                     sl_modifiers = [Async,($1)] }
      }
 
-
-short_lambda_body:
- | TOBRACE inner_statement_list TCBRACE { SLBody ($1, $2, $3) }
+lambda_body:
+ | T_DOUBLE_ARROW TOBRACE inner_statement_list TCBRACE { ($1, SLBody ($2, $3, $4)) }
+ /*(* An explicit case required for when/if awaits become statements, not expr *)
+   (* | T_DOUBLE_ARROW T_AWAIT expr { ($1, SLExpr (Await ($2, $3))) } *)*/
  /*(* see conflicts.txt for why the %prec *)*/
- | expr  %prec LOW_PRIORITY_RULE { SLExpr $1 }
+ | T_DOUBLE_ARROW expr { ($1, SLExpr $2) }
 
 /*(*----------------------------*)*/
 /*(*2 auxillary bis *)*/

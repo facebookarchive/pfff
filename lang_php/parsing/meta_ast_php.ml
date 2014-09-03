@@ -817,7 +817,7 @@ and
   Ocaml.VDict bnds
 and vof_hint_type =
   function
-  | Hint (v1, v2) -> 
+  | Hint (v1, v2) ->
     let v1 = vof_class_name_or_selfparent v1 in
     let v2 = vof_option vof_type_args v2 in
     Ocaml.VSum (("Hint", [ v1; v2 ]))
@@ -1147,6 +1147,7 @@ and vof_static_scalar_affect (v1, v2) =
 and vof_stmt_and_def x = vof_stmt x
 
 and  vof_short_lambda_def {
+                         sl_modifiers = v_sl_modifiers;
                          sl_params = v_sl_params;
                          sl_tok = v_sl_tok;
                          sl_body = v_sl_body
@@ -1159,7 +1160,11 @@ and  vof_short_lambda_def {
   let bnd = ("sl_tok", arg) in
   let bnds = bnd :: bnds in
   let arg = vof_short_lambda_params v_sl_params in
-  let bnd = ("sl_params", arg) in let bnds = bnd :: bnds in Ocaml.VDict bnds
+  let bnd = ("sl_params", arg) in
+  let bnds = bnd :: bnds in
+  let arg = Ocaml.vof_list (vof_wrap vof_modifier) v_sl_modifiers in
+  let bnd = ("sl_modifiers", arg) in
+  let bnds = bnd :: bnds in Ocaml.VDict bnds
 and vof_short_lambda_params =
   function
   | SLSingleParam v1 ->
@@ -1198,8 +1203,8 @@ and
         and v2 = vof_tok v2
         and v3 = vof_tok v3
         in Ocaml.VTuple [ v1; v2; v3 ] in
-  let bnd = ("cst_toks", arg) in 
-  let bnds = bnd :: bnds in 
+  let bnd = ("cst_toks", arg) in
+  let bnds = bnd :: bnds in
   Ocaml.VDict bnds
 
 

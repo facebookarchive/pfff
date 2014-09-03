@@ -363,10 +363,12 @@ and v_lambda_def (v1, v2) =
   let v1 = v_option v_lexical_vars v1 and v2 = v_func_def v2 in ()
 and
   v_short_lambda_def {
+                       sl_modifiers = v_sl_modifiers;
                        sl_params = v_sl_params;
                        sl_tok = v_sl_tok;
                        sl_body = v_sl_body
                      } =
+  let arg = v_list (v_wrap v_modifier) v_sl_modifiers in
   let arg = v_short_lambda_params v_sl_params in
   let arg = v_tok v_sl_tok in let arg = v_short_lambda_body v_sl_body in ()
 and v_short_lambda_params =
@@ -792,8 +794,8 @@ and
   let arg = v_body v_f_body in
   let arg =
     v_option
-      (fun (v1, v2, v3) -> 
-        let v1 = v_tok v1 
+      (fun (v1, v2, v3) ->
+        let v1 = v_tok v1
         and v2  = v_option v_tok v2
         and v3 = v_hint_type v3 in ())
       v_f_return_type in
@@ -831,7 +833,7 @@ and v_parameter x =
   vin.kparameter (k, all_functions) x
 and v_hint_type x =
   let k x = match x with
-  | Hint (v1, v2) -> 
+  | Hint (v1, v2) ->
     let v1 = v_class_name_or_selfparent v1 in
     let v2 = v_option v_type_args v2 in
     ()
@@ -849,7 +851,7 @@ and v_hint_type x =
              and v3 =
                v_option
                  (fun (v1, v2, v3) ->
-                    let v1 = v_tok v1 
+                    let v1 = v_tok v1
                     and v2 = v_option v_tok v2
                     and v3 = v_hint_type v3 in ())
                  v3
@@ -1099,7 +1101,7 @@ and  v_constant_def {
         let v1 = v_tok v1 and v2 = v_tok v2 and v3 = v_tok v3 in () in
   let arg = v_ident v_cst_name in
   let arg = v_option v_hint_type v_cst_type in
-  let arg = v_static_scalar v_cst_val in 
+  let arg = v_static_scalar v_cst_val in
   ()
 
 and v_attribute =
