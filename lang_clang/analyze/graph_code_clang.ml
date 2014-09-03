@@ -128,7 +128,6 @@ let hook_use_edge = ref (fun _ctx _in_assign (_src, _dst) _g -> ())
 (*****************************************************************************)
 (* Parsing *)
 (*****************************************************************************)
-
 let parse file = 
   Common.profile_code "Parse_clang.parse" (fun () -> 
    (* clang2_old: Parse_clang.parse file *)
@@ -137,40 +136,6 @@ let parse file =
     with exn ->
       failwith (spf "PB with %s (exn = %s)" file (Common.exn_to_s exn))
   )
-
-(*****************************************************************************)
-(* Adjusters *)
-(*****************************************************************************)
-
-let propagate_users_of_functions_globals_types_to_prototype_extern_typedefs g =
-  let pred = G.mk_eff_use_pred g in
-  g +> G.iter_nodes (fun n ->
-    let n_def_opt =
-      match n with
-      | s, E.Prototype -> Some (s, E.Function)
-      | s, E.GlobalExtern -> Some (s, E.Global)
-      (* todo: actually should look at env.typedefs because it's not
-       * necessaraly T_Xxxx -> S_Xxxx
-       *)
-      | s, E.Type when s =~ "T__\\(.*\\)$" -> 
-        Some ("S__" ^(Common.matched1 s), E.Type)
-      | _ -> None
-    in
-    n_def_opt +> Common.do_option (fun n_def ->
-      let n_decl = n in
-      if G.has_node n_def g 
-      then begin
-        (* let's create a link between the def and the decl *)
-        g +> G.add_edge (n_def, n_decl) G.Use;
-        (* and now the users *)
-        let users = pred n_def in
-        users +> List.iter (fun user ->
-          g +> G.add_edge (user, n_decl) G.Use
-        )
-      end
-    )
-  )
-    
 
 
 (*****************************************************************************)
@@ -964,7 +929,7 @@ let build ?(verbose=true) root files =
 
   env.pr2_and_log "\nstep3: adjusting";
   if conf.propagate_deps_def_to_decl
-  then propagate_users_of_functions_globals_types_to_prototype_extern_typedefs g;
+  then Graph_code_helpers.propagate_users_of_functions_globals_types_to_prototype_extern_typedefs g;
   G.remove_empty_nodes g [unknown_location; G.not_found; G.dupe; G.pb];
 
   g

@@ -28,14 +28,13 @@ module P = Graph_code_prolog
  * Graph of dependencies for C (and partially cpp). See graph_code.ml and 
  * main_codegraph.ml for more information.
  * 
- * See also lang_clang/analyze/graph_code_clang.ml to get arguably a more
- * precise and correct graph (if you can afford yourself to use clang).
- * update: actually lots of code of graph_code_clang.ml have been ported
- * to this file now and being cpp-aware has actually many advantages:
- *  - we can tracks dependencies of cpp constants which is useful in codemap!
- *    and with bddbddb we can also track the flow of specific constants to
+ * See also lang_clang/analyze/graph_code_clang.ml if you can afford yourself
+ * to use clang. Lots of code of graph_code_clang.ml have been ported
+ * to this file now. Being cpp-aware has many advantages:
+ *  - we can track dependencies of cpp constants which is useful in codemap!
+ *    With bddbddb we can also track the flow of specific constants to
  *    fields! (but people could use enum in clang to solve this problem)
- *  - we can find dead macros, dupe macros
+ *  - we can find dead macros, duplicated macros
  *  - we can find wrong code in ifdef not compiled
  *  - we can detect ugly macros that use locals insteaf of globals or
  *    parameters; again graphcode is a perfect clowncode detector!
@@ -130,7 +129,6 @@ let hook_use_edge = ref (fun _ctx _in_assign (_src, _dst) _g -> ())
 
 (* for datalog *)
 let facts = ref None
-(*todo: let hook_expr_toplevel =  ?*)
 
 (*****************************************************************************)
 (* Parsing *)
@@ -150,39 +148,6 @@ let parse ~show_parse_error file =
   | exn ->
     pr2_once (spf "PARSE ERROR with %s, exn = %s" file (Common.exn_to_s exn));
     raise exn
-
-(*****************************************************************************)
-(* Adjusters *)
-(*****************************************************************************)
-(* todo: copy paste of the one in graph_code_clang.ml, could factorize *)
-let propagate_users_of_functions_globals_types_to_prototype_extern_typedefs g =
-  let pred = G.mk_eff_use_pred g in
-  g +> G.iter_nodes (fun n ->
-    let n_def_opt =
-      match n with
-      | s, E.Prototype -> Some (s, E.Function)
-      | s, E.GlobalExtern -> Some (s, E.Global)
-      (* todo: actually should look at env.typedefs because it's not
-       * necessaraly T_Xxxx -> S_Xxxx
-       *)
-      | s, E.Type when s =~ "T__\\(.*\\)$" -> 
-        Some ("S__" ^(Common.matched1 s), E.Type)
-      | _ -> None
-    in
-    n_def_opt +> Common.do_option (fun n_def ->
-      let n_decl = n in
-      if G.has_node n_def g 
-      then begin
-        (* let's create a link between the def and the decl *)
-        g +> G.add_edge (n_def, n_decl) G.Use;
-        (* and now the users *)
-        let users = pred n_def in
-        users +> List.iter (fun user ->
-          g +> G.add_edge (user, n_decl) G.Use
-        )
-      end
-    )
-  )
 
 (*****************************************************************************)
 (* Helpers *)
@@ -262,6 +227,7 @@ let final_type env t =
      * before we can expand them!
      *)
     expand_typedefs env.typedefs t
+
 
 let find_existing_node env name candidates last_resort =
   candidates +> Common.find_opt (fun kind ->
@@ -992,7 +958,7 @@ let build ?(verbose=true) root files =
 
   env.pr2_and_log "\nstep3: adjusting";
   if conf.propagate_deps_def_to_decl
-  then propagate_users_of_functions_globals_types_to_prototype_extern_typedefs g;
+  then Graph_code_helpers.propagate_users_of_functions_globals_types_to_prototype_extern_typedefs g;
   G.remove_empty_nodes g [G.not_found; G.dupe; G.pb];
 
   g
