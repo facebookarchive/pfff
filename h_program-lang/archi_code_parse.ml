@@ -96,7 +96,7 @@ let _hmemo_categ_dir = Hashtbl.create 101
 (* Why taking the root ? Because if the data are in /tmp/data/soft/... then
  * you would get the rule for tmp and data :( should not consider
  * directories too far away.
- * Why not passing a readable path then ? Because most of the functions
+ * Why not passing a readable path then? Because most of the functions
  * in common expect full path, and also because I use file operations
  * like Sys.file_exists in is_auto_generated() which is used by this
  * function.
@@ -138,8 +138,7 @@ let source_archi_of_filename3 ~root file =
         let str = "/" ^ Common.join "/" xs ^ "/" in
         
         let lexbuf = Lexing.from_string str in
-        let categ = Archi_code_lexer.category lexbuf in
-        categ
+        Archi_code_lexer.category lexbuf
       )
     in
     (match categ1, categ2 with
