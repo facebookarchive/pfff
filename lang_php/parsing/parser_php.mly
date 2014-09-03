@@ -111,7 +111,7 @@ module PI = Parse_info
    *)*/
  T_ECHO  T_PRINT
  /*(* pad: was declared via right ... ??? mean token ? *)*/
- T_ASYNC T_STATIC  T_ABSTRACT  T_FINAL  T_PRIVATE T_PROTECTED T_PUBLIC 
+ T_ASYNC T_STATIC  T_ABSTRACT  T_FINAL  T_PRIVATE T_PROTECTED T_PUBLIC
  T_UNSET T_ISSET T_EMPTY
  T_CLASS   T_INTERFACE  T_EXTENDS T_IMPLEMENTS
  T_TRAIT T_INSTEADOF
@@ -229,7 +229,7 @@ module PI = Parse_info
 %right     T_PRINT
 
 /*(* now that we've unified expr with lvalue, this should really be a %right
-   * and have higher priority than '&&' otherwise '1 && $x = 2'  would be 
+   * and have higher priority than '&&' otherwise '1 && $x = 2'  would be
    * parsed as (1 && $x) = 2. We achieve the correct behavior not by
    * using %right but by rewriting the rule regarding TEQ to be
    * 'simple_expr TEQ expr' and not 'expr TEQ expr' (like in parser_cpp.mly).
@@ -388,14 +388,14 @@ for_expr:
  | non_empty_for_expr	{ $1 }
 
 /*(* can not factorize with a is_reference otherwise s/r conflict on LIST *)*/
-foreach_variable: 
+foreach_variable:
  |  expr      { None, $1 }
  | TAND expr  { Some $1, $2 }
 
-foreach_pattern: 
-  | foreach_variable                                 
+foreach_pattern:
+  | foreach_variable
       { ForeachVar $1 }
-  | foreach_variable T_ARROW foreach_pattern 
+  | foreach_variable T_ARROW foreach_pattern
       { ForeachArrow(ForeachVar $1,$2,$3) }
   | T_LIST TOPAR assignment_list TCPAR
      { ForeachList($1,($2,$3,$4)) }
@@ -503,11 +503,11 @@ use_filename:
 /*(* PHP 5.3 *)*/
 constant_declaration_statement:
  | T_CONST           ident TEQ static_scalar TSEMICOLON
-   { { cst_toks = ($1, $3, $5); cst_name = Name $2; cst_val = $4; 
+   { { cst_toks = ($1, $3, $5); cst_name = Name $2; cst_val = $4;
        cst_type = None} }
  /*(* can not factorize with a 'type_opt', see conflict.txt *)*/
  | T_CONST type_php  ident TEQ static_scalar TSEMICOLON
-   { { cst_toks = ($1, $4, $6); cst_name = Name $3; cst_val = $5; 
+   { { cst_toks = ($1, $4, $6); cst_name = Name $3; cst_val = $5;
        cst_type = Some $2 } }
 
 /*(*************************************************************************)*/
@@ -548,11 +548,11 @@ parameter_or_dots:
  | parameter { Left3 $1 }
  /*(* varargs extension *)*/
  | TDOTS { Middle3 $1 }
- /*(* php-facebook-ext: variadic extension, ...$xs *)*/
- | T_VARIABLE_VARIADIC 
+ /*(* PHP 5.6 variadic arguments ...$xs *)*/
+ | T_VARIABLE_VARIADIC
      { Left3 (H.mk_param $1) (* todo: with is_variadic = true *) }
 
-parameter: attributes_opt ctor_modifier_opt at_opt type_php_opt  parameter_bis  
+parameter: attributes_opt ctor_modifier_opt at_opt type_php_opt  parameter_bis
       { { $5 with p_modifier = $2; p_attrs = $1; p_type = $4; p_soft_type= $3;}}
 
 parameter_bis:
@@ -581,7 +581,7 @@ lexical_vars:
  | T_USE TOPAR non_empty_lexical_var_list TCPAR {
      Some ($1, ($2, ($3 +> List.map (function
      | Right info -> Right info
-     | Left (a,b) -> Left (LexicalVar (a,b)))), $4)) 
+     | Left (a,b) -> Left (LexicalVar (a,b)))), $4))
    }
 
 non_empty_lexical_var_list:
@@ -590,9 +590,9 @@ non_empty_lexical_var_list:
  | non_empty_lexical_var_list_bis TCOMMA { $1 @ [Right $2] }
 
 non_empty_lexical_var_list_bis:
- | lexical_var                         
+ | lexical_var
      { [Left $1] }
- | non_empty_lexical_var_list_bis TCOMMA lexical_var  
+ | non_empty_lexical_var_list_bis TCOMMA lexical_var
      { $1 @ [Right $2; Left $3] }
 
 lexical_var:
@@ -603,7 +603,7 @@ lexical_var:
 /*(*1 Class declaration *)*/
 /*(*************************************************************************)*/
 class_declaration_statement:
- |            unticked_class_declaration_statement 
+ |            unticked_class_declaration_statement
      { $1 }
  | attributes unticked_class_declaration_statement
      { { $2 with c_attrs = Some $1 } }
@@ -754,7 +754,7 @@ xhp_attribute_decl_type:
  | T_ENUM TOBRACE xhp_enum_list TCBRACE
      { XhpAttrEnum ($1, ($2, $3, $4)) }
  | T_VAR        { XhpAttrVar $1 }
- | type_php { XhpAttrType $1 } 
+ | type_php { XhpAttrType $1 }
 
 xhp_attribute_default:
  | /*(*empty*)*/     { None }
@@ -866,13 +866,13 @@ trait_constraint_kind:
 /*(*1 Type definitions *)*/
 /*(*************************************************************************)*/
 type_declaration:
- | T_TYPE   ident type_params_opt type_constr_opt TEQ type_php_or_shape TSEMICOLON 
+ | T_TYPE   ident type_params_opt type_constr_opt TEQ type_php_or_shape TSEMICOLON
      { { t_tok = $1; t_name = Name $2; t_tparams = $3; t_tconstraint = $4;
-         t_tokeq = $5; t_kind = Alias $6; t_sc = $7; } 
+         t_tokeq = $5; t_kind = Alias $6; t_sc = $7; }
      }
- | T_NEWTYPE ident type_params_opt type_constr_opt TEQ type_php_or_shape TSEMICOLON 
+ | T_NEWTYPE ident type_params_opt type_constr_opt TEQ type_php_or_shape TSEMICOLON
      { { t_tok = $1; t_name = Name $2; t_tparams = $3; t_tconstraint = $4;
-         t_tokeq = $5; t_kind = Newtype $6; t_sc = $7; } 
+         t_tokeq = $5; t_kind = Newtype $6; t_sc = $7; }
      }
 
 type_php_or_shape:
@@ -881,10 +881,10 @@ type_php_or_shape:
 
 shape_field: expr T_ARROW type_php { $1, $2, $3 }
 
-type_constr_opt: 
+type_constr_opt:
  | T_AS type_php  { Some ($1, $2) }
  | /*(*empty*) */ { None }
- 
+
 /*(*************************************************************************)*/
 /*(*1 Generics parameters *)*/
 /*(*************************************************************************)*/
@@ -905,7 +905,7 @@ type_param:
 /*(*1 Types *)*/
 /*(*************************************************************************)*/
 
-type_php: 
+type_php:
  | class_name { $1 }
  | T_SELF     { Hint (Self $1, None) }
  | T_PARENT   { Hint (Parent $1, None) }
@@ -939,9 +939,9 @@ type_arguments:
   | TSMALLER type_arg_list TGREATER { Some ($1, $2, $3) }
 
 type_arg_list:
-  | type_php 
+  | type_php
       { [Left $1]}
-  | type_php TCOMMA type_arg_list 
+  | type_php TCOMMA type_arg_list
       { (Left $1)::(Right $2):: $3 }
 
 return_type: TCOLON at_opt type_php                 { $1, $2, $3 }
@@ -964,7 +964,7 @@ attribute_argument: static_scalar { $1 }
 /*(*1 Expressions *)*/
 /*(*************************************************************************)*/
 
-expr: 
+expr:
  | simple_expr { $1 }
 
  /*(* the left part of TEQ used to be 'lvalue'. After the lvalue/expr
@@ -985,7 +985,7 @@ expr:
  | simple_expr T_XOR_EQUAL    expr { AssignOp($1,(AssignOpArith Xor,$2),$3) }
  | simple_expr T_SL_EQUAL     expr { AssignOp($1,(AssignOpArith DecLeft,$2),$3) }
  | simple_expr T_SR_EQUAL     expr { AssignOp($1,(AssignOpArith DecRight,$2),$3) }
-                            
+
  | simple_expr T_CONCAT_EQUAL expr { AssignOp($1,(AssignConcat,$2),$3) }
 
  | expr T_INC { Postfix($1, (Inc, $2)) }
@@ -1110,7 +1110,7 @@ expr:
      { AssignList($1,($2,$3,$4),$5,$6) }
 
 /*(* inspired by parser_js.mly *)*/
-simple_expr: 
+simple_expr:
  | new_expr { $1 }
  | call_expr { $1 }
  /* TODO: 1 s/r conflict, can not be in primary_expr otherwise
@@ -1129,7 +1129,7 @@ call_expr:
  | call_expr TOBRA dim_offset TCBRA { ArrayGet($1, ($2, $3, $4)) }
  | call_expr TOBRACE expr TCBRACE   { HashGet($1, ($2, $3, $4)) }
  | call_expr T_OBJECT_OPERATOR primary_expr { ObjGet($1, $2, $3) }
- | call_expr T_OBJECT_OPERATOR TOBRACE expr TCBRACE 
+ | call_expr T_OBJECT_OPERATOR TOBRACE expr TCBRACE
      { ObjGet($1,$2, (BraceIdent ($3, $4, $5))) }
 
 member_expr:
@@ -1137,11 +1137,11 @@ member_expr:
  | member_expr TOBRA dim_offset TCBRA { ArrayGet($1, ($2, $3, $4)) }
  | member_expr TOBRACE expr TCBRACE   { HashGet($1, ($2, $3, $4)) }
  | member_expr T_OBJECT_OPERATOR primary_expr {  ObjGet($1, $2, $3) }
- | member_expr T_OBJECT_OPERATOR TOBRACE expr TCBRACE 
+ | member_expr T_OBJECT_OPERATOR TOBRACE expr TCBRACE
      { ObjGet($1,$2, (BraceIdent ($3, $4, $5))) }
  | member_expr TCOLCOL primary_expr { ClassGet($1, $2, $3) }
  /*(* php 5.5 extension *)*/
- | member_expr TCOLCOL T_CLASS 
+ | member_expr TCOLCOL T_CLASS
      { ClassGet($1, $2, Id (XName [QI (Name("class", $3))])) }
 
 
@@ -1169,7 +1169,7 @@ primary_expr:
 
  | TGUIL encaps_list TGUIL
      { Sc (Guil ($1, $2, $3)) }
- | TBACKQUOTE encaps_list TBACKQUOTE   
+ | TBACKQUOTE encaps_list TBACKQUOTE
      { BackQuote($1,$2,$3) }
  | T_START_HEREDOC encaps_list T_END_HEREDOC
      { Sc (HereDoc ($1, $2, $3)) }
@@ -1232,7 +1232,7 @@ function_call_argument:
 encaps:
  | T_ENCAPSED_AND_WHITESPACE
      { EncapsString $1 }
- | T_VARIABLE 
+ | T_VARIABLE
      { EncapsVar (H.mk_var $1)  }
  | T_VARIABLE TOBRA encaps_var_offset TCBRA
      { EncapsVar (ArrayGet (H.mk_var $1,($2,Some $3,$4)))}
@@ -1247,16 +1247,16 @@ encaps:
     * defined this rule. maybe it's too restrictive, we'll see.
     *)*/
  | T_DOLLAR_OPEN_CURLY_BRACES T_STRING_VARNAME TCBRACE
-     { 
+     {
        (* this is not really a T_VARIABLE, bit it's still conceptually
         * a variable so we build it almost like above
         *)
        let var = H.mk_var $2 in
-       EncapsDollarCurly ($1, var, $3) 
+       EncapsDollarCurly ($1, var, $3)
      }
 
  | T_DOLLAR_OPEN_CURLY_BRACES T_STRING_VARNAME  TOBRA expr TCBRA  TCBRACE
-     { 
+     {
        let lval = ArrayGet(H.mk_var $2, ($3, Some $4, $5))
        in
        EncapsDollarCurly ($1,  lval, $6)
@@ -1320,36 +1320,36 @@ xhp_attribute_value:
 
 short_lambda_expr:
  /*(* facebook-ext: short lambdas, as in ($x ==> $x + 1) *)*/
- | T_VARIABLE T_DOUBLE_ARROW short_lambda_body 
+ | T_VARIABLE T_DOUBLE_ARROW short_lambda_body
      { let sl_params = SLSingleParam (H.mk_param $1) in
-       ShortLambda { sl_params; sl_tok = $2; sl_body = $3 } 
+       ShortLambda { sl_params; sl_tok = $2; sl_body = $3 }
      }
- | TOPAR TCPAR T_DOUBLE_ARROW short_lambda_body 
-     { let sl_params = SLParams ($1, [], $2) in 
-       ShortLambda { sl_params; sl_tok = $3; sl_body = $4 } 
+ | TOPAR TCPAR T_DOUBLE_ARROW short_lambda_body
+     { let sl_params = SLParams ($1, [], $2) in
+       ShortLambda { sl_params; sl_tok = $3; sl_body = $4 }
      }
  /*(* can not factorize with TOPAR parameter_list TCPAR, see conflicts.txt *)*/
- | TOPAR expr TCPAR T_DOUBLE_ARROW short_lambda_body 
-     { let sl_params = 
+ | TOPAR expr TCPAR T_DOUBLE_ARROW short_lambda_body
+     { let sl_params =
          match $2 with
-         | IdVar (DName swrap, _scope) -> 
+         | IdVar (DName swrap, _scope) ->
            let param = H.mk_param swrap in
            SLParams ($1, [Left3 param], $3)
          | _ -> raise (Parsing.Parse_error)
        in
-       ShortLambda { sl_params; sl_tok = $4; sl_body = $5 } 
+       ShortLambda { sl_params; sl_tok = $4; sl_body = $5 }
      }
  | TOPAR T_VARIABLE TCOMMA non_empty_parameter_list TCPAR T_DOUBLE_ARROW
-     short_lambda_body 
+     short_lambda_body
      { let sl_params =
          let param1 = H.mk_param $2 in
          SLParams ($1, Left3 param1::Right3 $3::$4, $5)
        in
-       ShortLambda { sl_params; sl_tok = $6; sl_body = $7 } 
+       ShortLambda { sl_params; sl_tok = $6; sl_body = $7 }
      }
 
 
-short_lambda_body: 
+short_lambda_body:
  | TOBRACE inner_statement_list TCBRACE { SLBody ($1, $2, $3) }
  /*(* see conflicts.txt for why the %prec *)*/
  | expr  %prec LOW_PRIORITY_RULE { SLExpr $1 }
@@ -1441,7 +1441,7 @@ ident_xhp_attr_name_atom:
  | T_INCLUDE { $1 } | T_INCLUDE_ONCE { $1 } | T_REQUIRE { $1 }
  | T_REQUIRE_ONCE { $1 } | T_EVAL { $1 } | T_SELF { $1 } | T_PARENT { $1 }
  | T_TRAIT { $1 } | T_INSTEADOF { $1 } | T_TRAIT_C { $1 }
- | T_NAMESPACE { $1 } | T_NAMESPACE_C { $1 } 
+ | T_NAMESPACE { $1 } | T_NAMESPACE_C { $1 }
  | T_ASYNC { $1 } | T_AWAIT { $1 }
 
 /*(*************************************************************************)*/
@@ -1449,11 +1449,11 @@ ident_xhp_attr_name_atom:
 /*(*************************************************************************)*/
 
 namespace_declaration:
- | T_NAMESPACE namespace_name TSEMICOLON 
+ | T_NAMESPACE namespace_name TSEMICOLON
      { NamespaceDef ($1, $2, $3) }
- | T_NAMESPACE namespace_name TOBRACE top_statement_list TCBRACE 
+ | T_NAMESPACE namespace_name TOBRACE top_statement_list TCBRACE
      { NamespaceBracketDef ($1, Some $2, ($3, H.squash_stmt_list $4, $5)) }
- | T_NAMESPACE                TOBRACE top_statement_list TCBRACE 
+ | T_NAMESPACE                TOBRACE top_statement_list TCBRACE
      { NamespaceBracketDef ($1, None, ($2, H.squash_stmt_list $3, $4)) }
 
 use_declaration:
@@ -1467,14 +1467,14 @@ use_declaration_name:
  | namespace_name { ImportNamespace $1 }
  | namespace_name T_AS ident { AliasNamespace ($1, $2, Name $3) }
  | TANTISLASH namespace_name { ImportNamespace (QITok $1::$2) }
- | TANTISLASH namespace_name T_AS ident 
+ | TANTISLASH namespace_name T_AS ident
      { AliasNamespace (QITok $1::$2, $3, Name $4) }
 
 
 qualified_name:
  | namespace_name                        { XName $1 }
- | TANTISLASH namespace_name             { XName (QITok $1::$2) } 
- | T_NAMESPACE TANTISLASH namespace_name 
+ | TANTISLASH namespace_name             { XName (QITok $1::$2) }
+ | T_NAMESPACE TANTISLASH namespace_name
      { XName (QI (Name ("namespace", $1))::QITok $2::$3) }
 
 /*(* Should we have 'ident type_arguments' below? No because
@@ -1499,10 +1499,10 @@ qualified_name_for_traits: qualified_class_name { $1 }
 /*(*1 Name *)*/
 /*(*************************************************************************)*/
 
-class_name: qualified_class_name_or_array type_arguments 
+class_name: qualified_class_name_or_array type_arguments
   { Hint ($1, $2) }
 
-class_name_no_array: qualified_class_name type_arguments 
+class_name_no_array: qualified_class_name type_arguments
   { Hint ($1, $2) }
 
 /*(*************************************************************************)*/
@@ -1570,9 +1570,9 @@ expr_list:
  | expr_list TCOMMA expr      { $1 @ [Right $2; Left $3] }
 
 use_declaration_name_list:
- | use_declaration_name			  
+ | use_declaration_name
      { [Left $1] }
- | use_declaration_name_list TCOMMA use_declaration_name 
+ | use_declaration_name_list TCOMMA use_declaration_name
      { $1@[Right $2;Left $3] }
 
 declare_list:
@@ -1638,7 +1638,7 @@ class_name_list:
 
 class_constants_declaration:
  | class_constant_declaration { [Left $1] }
- | class_constants_declaration TCOMMA class_constant_declaration 
+ | class_constants_declaration TCOMMA class_constant_declaration
      { $1 @ [Right $2; Left $3] }
 
 possible_comma:

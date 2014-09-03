@@ -19,8 +19,8 @@ open Common
 (*****************************************************************************)
 (*
  * This module defines an Abstract Syntax Tree for PHP 5.2 with
- * a few extensions from PHP 5.3 (e.g. closures, namespace, const) and 
- * PHP 5.4 (e.g. traits) as well as support for many Facebook 
+ * a few extensions from PHP 5.3 (e.g. closures, namespace, const) and
+ * PHP 5.4 (e.g. traits) as well as support for many Facebook
  * extensions (XHP, generators, annotations, generics, collections,
  * type definitions, implicit fields via constructor parameters).
  *
@@ -136,7 +136,7 @@ type name =
 (* ------------------------------------------------------------------------- *)
 
 type hint_type =
- | Hint of name (* only self/parent, no static *) * 
+ | Hint of name (* only self/parent, no static *) *
            type_args option
  | HintArray of tok
  | HintQuestion of (tok * hint_type)
@@ -181,21 +181,21 @@ and ptype =
  *)
 and expr =
   (* constant/function/class/method/field/class_cst name.
-   *  
+   *
    * Now that we've unified lvalue and expr, the use of Id is more
    * ambiguous; it can refer to a classname, a function name,
    * a constant, etc. You need to match the context of use of Id
    * to know in which situation you are (and take care if you use a visitor
    * to not always call recursively the visitor/continuation):
-   * 
+   *
    * - function: Call (Id, _)
    * - method: Call (ObjGet (_, Id), _),   Call (ClassGet (_, Id), _)
    * - class: ClassGet (Id, _), New (Id, _), AssignNew(Id,_, InstanceOf(_, Id)
    *   and also extends, implements, catch, type
    * - class_constant: ClassGet (_, Id) (including the special C::class)
    * - field: ObjGet(_, Id)
-   * - constant: Id 
-   * 
+   * - constant: Id
+   *
    * todo: just like we annotate IdVar with scope info, we could annotate
    * Id with a kind info.
    *)
@@ -299,7 +299,7 @@ and expr =
           tok  (* EOF; *)
 
        and constant =
-        | Int of string wrap
+        | Int of string wrap (* decimal, hex, or binary int format *)
         | Double of string wrap
         (* see also Guil for interpolated strings
          * The string does not contain the enclosing '"' or "'".
@@ -638,7 +638,7 @@ and class_def = {
     | UseTrait of tok (*use*) * class_name comma_list *
         (tok (* ; *), trait_rule list brace) Common.either
     (* facebook-ext: 'require' can appear only in traits *)
-    | TraitConstraint of 
+    | TraitConstraint of
         tok (* require *) * trait_constraint_kind wrap * hint_type * tok (* ; *)
 
         and class_constant = ident * static_scalar_affect
@@ -698,8 +698,8 @@ and class_def = {
  and xhp_category_decl = xhp_tag wrap (* %x:frag *)
 
 (* those are bad features ... noone should use them. *)
-and trait_rule = 
-  | InsteadOf of name * tok * ident * tok (* insteadof *) * 
+and trait_rule =
+  | InsteadOf of name * tok * ident * tok (* insteadof *) *
                 class_name comma_list * tok (* ; *)
   | As of (ident, name * tok * ident) Common.either * tok (* as *) *
           modifier wrap list * ident option * tok (* ; *)
@@ -760,7 +760,7 @@ and attributes = attribute comma_list angle
 (* The toplevels elements *)
 (* ------------------------------------------------------------------------- *)
 (* For parsing reasons and estet I think it's better to differentiate
- * nested functions and toplevel functions. 
+ * nested functions and toplevel functions.
  * update: sure? ast_php_simple simplify things.
  * Also it's better to group the toplevel statements together (StmtList below),
  * so that in the database later they share the same id.
@@ -941,7 +941,7 @@ let info_of_qualified_ident = function
 let info_of_name x =
   match x with
   | Self tok | Parent tok | LateStatic tok -> tok
-  | XName xs  -> 
+  | XName xs  ->
     (match xs with
     | [] -> raise Impossible
     | x::_ ->
@@ -962,7 +962,7 @@ let str_of_name x =
 let str_of_name_namespace x =
   match x with
   | Self tok | Parent tok | LateStatic tok -> Parse_info.str_of_info tok
-  | XName xs -> 
+  | XName xs ->
     xs +> List.map (function
     | QITok _ -> "\\"
     | QI id -> str_of_ident id
