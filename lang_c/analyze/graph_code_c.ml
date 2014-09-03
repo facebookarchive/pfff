@@ -188,12 +188,18 @@ let propagate_users_of_functions_globals_types_to_prototype_extern_typedefs g =
 (* Helpers *)
 (*****************************************************************************)
 
+let error s tok =
+  failwith (spf "%s: %s" (Parse_info.string_of_info tok) s)
+
+
 (* we can have different .c files using the same function name, so to avoid
  * dupes we locally rename those entities, e.g. main -> main__234.
  *)
 let new_name_if_defs env (s, tok) =
   if env.phase = Defs
   then begin
+    if Hashtbl.mem env.local_rename s
+    then error (spf "Duped new name: %s" s) tok;
     let s2 = Graph_code.gensym s in
     Hashtbl.add env.local_rename s s2;
     s2, tok
@@ -261,9 +267,6 @@ let find_existing_node env name candidates last_resort =
   candidates +> Common.find_opt (fun kind ->
     G.has_node (Ast.str_of_name name, kind) env.g
   ) ||| last_resort
-
-let error s tok =
-  failwith (spf "%s: %s" (Parse_info.string_of_info tok) s)
 
 let is_local env s =
   (Common.find_opt (fun (x, _) -> x =$= s) !(env.locals)) <> None
@@ -431,7 +434,8 @@ let add_use_edge env (name, kind) =
   | _ when s =$= "USED" || s =$= "SET" -> 
       ()
   | _ when not (G.has_node src env.g) ->
-      error ("SRC FAIL:" ^ G.string_of_node src) (snd name)
+      error (spf "SRC FAIL: %s (-> %s)" 
+               (G.string_of_node src) (G.string_of_node dst)) (snd name)
   (* the normal case *)
   | _ when G.has_node dst env.g ->
       G.add_edge (src, dst) G.Use env.g;
