@@ -96,8 +96,15 @@ type env = {
 
   conf: config;
 
-  (* less: we could also have a local_typedefs field *)
+  (* to accept duplicated typedefs if they are the same and of course to
+   * expand typedefs for better dependencies
+   * less: we could also have a local_typedefs field
+   *)
   typedefs: (string, Ast.type_) Hashtbl.t;
+  (* to accept duplicated structs if they are the same, and at some point
+   * maybe also for ArrayInit which should be RecordInit
+   *)
+  structs: (string, Ast.struct_def) Hashtbl.t;
 
   (* error reporting *)
   dupes: (Graph_code.node, bool) Hashtbl.t;
@@ -313,10 +320,10 @@ let add_node_and_edge_if_defs_mode env (name, kind) typopt =
       | E.Type | E.Field | E.Constant | E.Macro
         ->
           (match kind, str with
-          (* dupe typedefs are ok as long as they are equivalent, and this
-           * check is done for TypedefDecl below in decl().
+          (* dupe typedefs/structs are ok as long as they are equivalent, 
+           * and this check is done below in toplevel().
            *)
-          | E.Type, s when s =~ "T__" -> ()
+          | E.Type, s when s =~ "[ST]__" -> ()
           | _ when env.c_file_readable =~ ".*EXTERNAL" -> ()
           (* todo: if typedef then maybe ok if have same content!! *)
           | _ when not env.conf.typedefs_dependencies && str =~ "T__.*" -> 
@@ -552,35 +559,58 @@ and toplevel env x =
       | _ -> raise Impossible
       )
 
-  | StructDef { s_name = name; s_kind = kind; s_flds = flds } -> 
+  | StructDef def -> 
+      let { s_name = name; s_kind = kind; s_flds = flds } = def in
       let prefix = match kind with Struct -> "S__" | Union -> "U__" in
       let name = add_prefix prefix name in
       let s = Ast.str_of_name name in
-      let env = add_node_and_edge_if_defs_mode env (name, E.Type) None in
-      hook_def env x;
-    
-      if env.phase = Defs then begin
-          (* this is used for InitListExpr *)
-        let fields = flds +> Common.map_filter (function
-          | { fld_name = Some name; _ } -> Some (Ast.str_of_name name)
-          | _ -> None
-        )
-        in
-        Hashtbl.replace env.fields (prefix ^ s) fields
-      end;
 
-      flds +> List.iter (fun { fld_name = nameopt; fld_type = t; } ->
-        (match nameopt with
-        | Some name -> 
+      if env.phase = Defs 
+      then begin
+        if Hashtbl.mem env.structs s
+        then
+          let old = Hashtbl.find env.structs s in
+          if (Meta_ast_c.vof_any (Toplevel (StructDef old))) =*= 
+             (Meta_ast_c.vof_any (Toplevel (StructDef def)))
+          (* Why they don't factorize? because they don't like recursive
+           * #include in plan I think
+           *)
+          then env.log (spf "you should factorize struct %s definitions" s)
+          else env.pr2_and_log (spf "conflicting structs for %s, %s <> %s" 
+                                  s (Common.dump old) (Common.dump def))
+        else begin
+          Hashtbl.add env.structs s def;
+          let env = add_node_and_edge_if_defs_mode env (name, E.Type) None in
+          hook_def env x;
+          (* this is used for InitListExpr *)
+          let fields = flds +> Common.map_filter (function
+            | { fld_name = Some name; _ } -> Some (Ast.str_of_name name)
+            | _ -> None
+          )
+          in
+          Hashtbl.replace env.fields (prefix ^ s) fields;
+
+          flds +> List.iter (fun { fld_name = nameopt; fld_type = t; } ->
+            nameopt +> Common.do_option (fun name ->
+              add_node_and_edge_if_defs_mode env (name, E.Field) (Some t)
+              +>ignore;
+            )
+          );
+        end
+      end else begin
+        let env = add_node_and_edge_if_defs_mode env (name, E.Type) None in
+        flds +> List.iter (fun { fld_name = nameopt; fld_type = t; } ->
+          match nameopt with
+          | Some name -> 
             let typ = Some t in
             let env = add_node_and_edge_if_defs_mode env (name, E.Field) typ in
             type_ env t
-        | None ->
+          | None ->
             (* TODO: kencc: anon substruct, invent anon? *)
             (* (spf "F__anon__%s" (str_of_angle_loc env loc), E.Field) None *)
             type_ env t
         )
-      )
+      end
         
   | EnumDef (name, xs) ->
       let name = add_prefix "E__" name in
@@ -608,8 +638,8 @@ and toplevel env x =
           then ()
           else env.pr2_and_log (spf "conflicting typedefs for %s, %s <> %s" 
                                   s (Common.dump old) (Common.dump t))
-          (* todo: if are in Source, then maybe can add in local_typedefs *)
-          else Hashtbl.add env.typedefs s t
+        (* todo: if are in Source, then maybe can add in local_typedefs *)
+        else Hashtbl.add env.typedefs s t
       end;
       let typ = Some t in
       let name = add_prefix "T__" name in
@@ -913,6 +943,7 @@ let build ?(verbose=true) root files =
     local_rename = Hashtbl.create 0; 
     dupes = Hashtbl.create 101;
     typedefs = Hashtbl.create 101;
+    structs = Hashtbl.create 101;
     fields = Hashtbl.create 101;
     locals = ref [];
     log = (fun s -> output_string chan (s ^ "\n"); flush chan;);
