@@ -394,8 +394,7 @@ let add_use_edge env (name, kind) =
       env.pr2_and_log (spf "skipping edge (%s -> %s), one of it is a dupe"
                          (G.string_of_node src) (G.string_of_node dst));
   (* plan9, those are special functions in kencc? *)
-  | _ when s =$= "USED" || s =$= "SET" -> 
-      ()
+  | _ when s =$= "USED" || s =$= "SET" -> ()
   | _ when not (G.has_node src env.g) ->
       error (spf "SRC FAIL: %s (-> %s)" 
                (G.string_of_node src) (G.string_of_node dst)) (snd name)
@@ -405,7 +404,12 @@ let add_use_edge env (name, kind) =
       !hook_use_edge env.ctx env.in_assign (src, dst) env.g
   (* try to 'rekind'? we use find_existing_node now so no need to rekind *)
   | _ ->
-    env.pr2_and_log (spf "Lookup failure on %s (%s)"
+    let prfn = 
+      if env.in_define
+      then env.log
+      else env.pr2_and_log
+    in
+    prfn (spf "Lookup failure on %s (%s)"
                        (G.string_of_node dst)
                        (Parse_info.string_of_info (snd name)))
     (* todo? still need code below?*)
