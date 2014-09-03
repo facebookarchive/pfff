@@ -205,13 +205,11 @@ let rec expand_typedefs typedefs t =
         then t
         else expand_typedefs typedefs t'
       else t
-  | TPointer x -> 
-      TPointer (expand_typedefs typedefs x)
-  | TArray (eopt, x) ->
-      (* less: eopt could contain some sizeof(typedefs) that we should expand
-       * but does not matter probably
-       *)
-      TArray (eopt, expand_typedefs typedefs x)
+  | TPointer x -> TPointer (expand_typedefs typedefs x)
+  (* less: eopt could contain some sizeof(typedefs) that we should expand
+   * but does not matter probably
+   *)
+  | TArray (eopt, x) -> TArray (eopt, expand_typedefs typedefs x)
   | TFunction (ret, params) -> 
       TFunction (expand_typedefs typedefs ret,
                 params +> List.map (fun p ->
@@ -243,9 +241,7 @@ let is_local env s =
 
 (* less: could mv this conrete hooks in datalog_c at some point *)
 let with_datalog_env env f =
-  match !facts with
-  | None -> ()
-  | Some aref ->
+  !facts +> Common.do_option (fun aref ->
      let env2 = { Datalog_c.
        scope = fst env.current;
        c_file_readable = env.c_file_readable;
@@ -260,6 +256,7 @@ let with_datalog_env env f =
      }
      in
      f env2
+  )
 
 let hook_expr_toplevel env_orig x =
   (* actually always called from a Uses phase, but does not hurt to x2 check*)
@@ -283,11 +280,10 @@ let hook_expr_toplevel env_orig x =
  *)
 let hook_def env def =
   if env.phase = Defs
-  then
-   with_datalog_env env (fun env ->
-    let facts = Datalog_c.facts_of_def env def in
-    facts +> List.iter (fun fact -> Common.push fact env.Datalog_c.facts);
-  )
+  then with_datalog_env env (fun env ->
+        let facts = Datalog_c.facts_of_def env def in
+        facts +> List.iter (fun fact -> Common.push fact env.Datalog_c.facts);
+       )
    
 (*****************************************************************************)
 (* Add Node *)
@@ -343,7 +339,8 @@ let add_node_and_edge_if_defs_mode env (name, kind) typopt =
          * the prototype as a dupe too!
          * Anyway normally we should add the deps to the Function or Global
          * first so we should hit this code only for really external
-         * entities.
+         * entities (and when don't find the Function or Global we will
+         * get some "skipping edge because of dupe" errors).
          *)
          Hashtbl.replace env.dupes node true;
       | _ ->
@@ -456,13 +453,14 @@ and toplevel env x =
       let env = add_node_and_edge_if_defs_mode env (name, E.Macro) None in
       hook_def env x;
       let env = { env with locals = ref 
-            (params +> List.map (fun p -> Ast.str_of_name p, None)) 
+            (params +> List.map (fun p -> Ast.str_of_name p, None(*TAny*)))
       } in
       if env.phase = Uses && env.conf.macro_dependencies
       then define_body env body
 
   | FuncDef def | Prototype def -> 
       let name = def.f_name in
+      let typ = Some (TFunction def.f_type) in
       let kind = 
         match x with 
         | Prototype _ -> E.Prototype
@@ -478,37 +476,33 @@ and toplevel env x =
         (def.f_static && kind_file env =*= Source)
         || Ast.str_of_name name = "main"
       in
-      let name = 
-        if static && kind=E.Function then new_name_if_defs env name else name in
-      let typ = Some (TFunction def.f_type) in
-
+      (match kind with
       (* todo: when static and prototype, we should create a new_str_if_defs
        * that will match the one created later for the Function, but
        * right now we just don't create the node, it's simpler.
        *)
-      let env = 
-        if static && kind = E.Prototype
-        then env
+      | E.Prototype when static -> ()
+      | E.Prototype -> 
           (* todo: when prototype and in .c, then it's probably a forward
            * decl that we could just skip?
            *)
-        else add_node_and_edge_if_defs_mode env (name, kind) typ
-      in
-      if kind <> E.Prototype 
-      then type_ env (TFunction def.f_type);
-      (match x with
-      | FuncDef _ -> hook_def env x
-      | _ -> ()
-      );
-
-      let xs = snd def.f_type +> Common.map_filter (fun x -> 
-        (match x.p_name with 
-        | None -> None 
-        | Some n -> Some (Ast.str_of_name n, Some x.p_type)
-        )) in
-      let env = { env with locals = ref xs } in
-      if env.phase = Uses
-      then stmts env def.f_body
+          add_node_and_edge_if_defs_mode env (name, kind) typ +> ignore
+      | E.Function -> 
+          let name = if static then new_name_if_defs env name else name in
+          let env = add_node_and_edge_if_defs_mode env (name, kind) typ in
+          type_ env (TFunction def.f_type);
+          hook_def env x;
+          let xs = snd def.f_type +> Common.map_filter (fun x -> 
+            match x.p_name with 
+            | None -> None 
+            | Some n -> Some (Ast.str_of_name n, Some x.p_type)
+            )
+          in
+          let env = { env with locals = ref xs } in
+          if env.phase = Uses
+          then stmts env def.f_body
+      | _ -> raise Impossible
+      )
 
   | Global v -> 
       let { v_name = name; v_type = t; v_storage = sto; v_init = eopt } = v in
