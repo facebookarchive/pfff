@@ -506,37 +506,47 @@ and toplevel env x =
 
   | Global v -> 
       let { v_name = name; v_type = t; v_storage = sto; v_init = eopt } = v in
+      (* can have code like 'Readfn chardraw;' that looks like a global but
+       * is actually a Prototype. 
+       * todo: we rely on the typedef decl being in the same file and before
+       *  because normally typedefs are computed in Defs phase but we
+       *  need also in this phase to know if this global is actually a proto
+       *)
+      let finalt = expand_typedefs env.typedefs t in
+      let typ = Some t (* or finalt? *) in
       let kind = 
-        match sto with
-        | Extern -> E.GlobalExtern 
+        match sto, finalt, eopt with
+        | _, TFunction _, _ -> E.Prototype
+        | Extern, _, _ -> E.GlobalExtern 
         (* when have 'int x = 1;' in a header, it's actually the def.
          * less: print a warning asking to mv in a .c
          *)
-        | _ when eopt <> None && kind_file env = Header -> E.Global
+        | _, _, Some _ when kind_file env = Header -> E.Global
         (* less: print a warning; they should put extern decl *)
-        | _ when kind_file env = Header -> E.GlobalExtern
-        | DefaultStorage | Static -> E.Global
+        | _, _, _ when kind_file env = Header -> E.GlobalExtern
+        | DefaultStorage, _, _ | Static, _, _ -> E.Global
       in
       let static = sto =*= Static && kind_file env =*= Source in
-
-      let name = if static then new_name_if_defs env name else name in
-      let typ = Some v.v_type in
-      let env = add_node_and_edge_if_defs_mode env (name, kind) typ in
       (match kind with
-      | E.Global -> hook_def env x
-      | _ -> ()
-      );
-     
-      if kind <> E.GlobalExtern 
-      then type_ env t;
-      if env.phase = Uses
-      then 
-        (match eopt with
-        | None -> ()
-        | Some e ->
-          let n = name in
-          expr_toplevel env (Assign ((Ast_cpp.SimpleAssign, snd n), Id n, e))
-        )
+      (* see comment above in the FuncDef case *)
+      | E.Prototype when static -> ()
+      (* note that no need | E.GlobalExtern when static, it can't happen *)
+      | E.Prototype | E.GlobalExtern -> 
+          add_node_and_edge_if_defs_mode env (name, kind) typ +> ignore
+      | E.Global ->
+          let name = if static then new_name_if_defs env name else name in
+          let env = add_node_and_edge_if_defs_mode env (name, kind) typ in
+          hook_def env x;
+          type_ env t;
+          if env.phase = Uses
+          then 
+            eopt +> Common.do_option (fun e ->
+              let n = name in
+              expr_toplevel env 
+                (Assign ((Ast_cpp.SimpleAssign, snd n), Id n, e))
+            )
+      | _ -> raise Impossible
+      )
 
   | StructDef { s_name = name; s_kind = kind; s_flds = flds } -> 
       let prefix = match kind with Struct -> "S__" | Union -> "U__" in
