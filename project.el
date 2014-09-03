@@ -23,6 +23,7 @@
      h_version-control
      h_visualization
      h_program-lang
+     graph_code
      matcher
      lang_ml/parsing
       lang_ml/analyze
@@ -42,6 +43,8 @@
      lang_sql/parsing
      lang_html/parsing
      lang_cpp/parsing
+     lang_c/parsing
+      lang_c/analyze
      lang_java/parsing
       lang_java/analyze
      lang_clang/parsing
@@ -328,12 +331,13 @@
    (join-string 
     (list 
      "-debugger"
-     (case 3
+     (case 4
 
        (0 "-lang java -build /home/pad/pfff/tests/java/codegraph")
        (1 "-lang cmt -build /home/pad/pfff/tests/ml/cmt")
        (2 ".")
        (3 "-lang php -build /home/pad/pfff/tests/php/codegraph")
+       (4 "-lang c -build /home/pad/plan9/include /home/pad/plan9/lib_graphics")
        )
      )
     )
