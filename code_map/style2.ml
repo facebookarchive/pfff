@@ -117,7 +117,7 @@ let size_font_multiplier_of_categ ~font_size_real categ =
     | Some (HC.UseOfRef) -> 2.
 
     (* php, C, etc *)
-    | Some (HC.PointerCall) -> 3.
+    | Some (HC.PointerCall) -> 5.
     | Some (HC.ParameterRef) -> 2.
     | Some (HC.CallByRef) -> 3.
 
