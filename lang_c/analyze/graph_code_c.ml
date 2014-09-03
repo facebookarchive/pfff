@@ -744,6 +744,7 @@ and expr env = function
                E.Function; 
                E.Global;(* can do foo() even with a function pointer *)
                E.Prototype;
+               E.GlobalExtern;
               ]
               (if looks_like_macro name then E.Macro else E.Function)
             in
