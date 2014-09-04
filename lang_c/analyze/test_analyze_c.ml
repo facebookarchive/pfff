@@ -23,6 +23,10 @@ let test_dump_cil file =
   }
   in
 
+  (* todo: actually need to build a correct set of locals! 
+   * also when do int v = ...; we just see the ... in kexpr,
+   * and so there will be a _v_xx = ... but not the  = _v_xx;
+   *)
   let visitor = V.mk_visitor { V.default_visitor with
     V.kexpr = (fun _k e ->
       let instrs = Datalog_c.instrs_of_expr env e in
