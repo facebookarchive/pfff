@@ -118,117 +118,6 @@ let is_local env s =
   (Common.find_opt (fun (x, _) -> x =$= s) !(env.locals)) <> None
 
 (*****************************************************************************)
-(* Abstract memory locations *)
-(*****************************************************************************)
-
-let var_of_global env name =
-  let name = env.globals_renames name in
-  let s = fst name in
-(*
-  if Common.find_opt (fun (x,_) -> x =$= s) env.globals = None
-  then error (spf "unknown global: %s" s) name;
-*)
-  if env.long_format
-  then 
-    (* bug: no!! spf "%s#%s" env.c_file_readable
-     * we must actually get the file at definition time, not use time
-    *)
-    let candidates = [
-      E.Macro;
-      E.Constant;
-      E.Function;
-      E.Constructor;
-      E.Global;
-    ]
-    in
-    let res = candidates +> Common.map_filter (fun kind ->
-      if G.has_node (s, kind) env.globals
-      then Some (s, kind)
-      else None
-    )
-    in
-    (match res with
-    | [node] ->
-        let file = G.file_of_node node env.globals in
-        spf "%s#%s" file s
-    | x::y::xs ->
-        pr2 (spf "Conflicting entities for %s [%s]"
-                    s ((x::y::xs) +> List.map G.string_of_node +>
-                          Common.join ","));
-        let file = G.file_of_node x env.globals in
-        spf "%s#%s" file s
-    (* maybe a prototype or extern *)
-    | [] ->
-      (match () with
-      | _ when s =~ "_builtin_.*" -> ()
-      | _ -> 
-        if G.has_node (s, E.Prototype) env.globals ||
-           G.has_node (s, E.GlobalExtern) env.globals
-        (* todo: could print a warning to force people to give
-         * a "model" for the external or asm function
-         *)
-        then ()
-        else pr2_once 
-          (spf "Could not find any definition nor prototype for %s" s);
-      );
-      s
-    )
-  else s
-
-let var_of_local env name =
-  if env.long_format
-  then spf "%s#%s:%s" env.c_file_readable env.scope (fst name)
-  else spf "%s__%s" env.scope (fst name)
-
-let var_of_name env var_or_name =
-  let s = fst var_or_name in
-  match Common.find_opt (fun (x, _) -> x =$= s) !(env.locals) with
-  | None -> var_of_global env var_or_name
-  | Some _t -> var_of_local env var_or_name
-
-
-
-
-
-(* the variable name is also its heap abstract location as in C
- * you can get the address of any local variables.
- *)
-let heap_of_name env var_or_name =
-  var_of_name env var_or_name
-
-(* heap location, abstract memory location, heap abstraction, etc *)
-let heap_of_cst env name =
-  spf "_val_of_%s_%s" (fst name) (loc_of env (snd name))
-
-let heap_of_malloc env t =
-  let tok = tok_of_type t in
-  spf "_malloc_in_%s_%s" env.scope  (loc_of env tok)
-
-let heap_of_malloc_array env t =
-  let tok = tok_of_type t in
-  (* old: used to have
-   * let pt =  spf "_array_in_%s_%s" env.scope (loc_of env tok) in
-   * let pt2 = spf "_array_elt_in_%s_%s" env.scope (loc_of env tok) in
-   * and an array_point_to/2 but it does not work
-   *)
-  spf "_array_elt_in_%s_%s" env.scope (loc_of env tok)
-
-let invoke_loc_of_name env name =
-  if env.long_format
-  then spf "%s#%s" env.c_file_readable (loc_of env (snd name))
-  else spf "_in_%s_%s" env.scope (loc_of env (snd name))
-
-(* TODO: need to look for type of v in env to actually qualify ... *)
-let fully_qualified_field _env _v fldname =
-  let fld = fst fldname in
-  spf "_fld__%s" fld
-
-(* TODO: need to use _struct at some point *)
-let fully_qualified_field_of_struct _struc fld =
-  spf "_fld__%s" fld
-
-
-(*****************************************************************************)
 (* Normalize *)
 (*****************************************************************************)
 
@@ -488,6 +377,119 @@ let instrs_of_expr env e =
   in
   let i = instr_of_expr e in
   List.rev (i::!instrs)
+
+
+(*****************************************************************************)
+(* Abstract memory locations *)
+(*****************************************************************************)
+
+let var_of_global env name =
+  let name = env.globals_renames name in
+  let s = fst name in
+(*
+  if Common.find_opt (fun (x,_) -> x =$= s) env.globals = None
+  then error (spf "unknown global: %s" s) name;
+*)
+  if env.long_format
+  then 
+    (* bug: no!! spf "%s#%s" env.c_file_readable
+     * we must actually get the file at definition time, not use time
+    *)
+    let candidates = [
+      E.Macro;
+      E.Constant;
+      E.Function;
+      E.Constructor;
+      E.Global;
+    ]
+    in
+    let res = candidates +> Common.map_filter (fun kind ->
+      if G.has_node (s, kind) env.globals
+      then Some (s, kind)
+      else None
+    )
+    in
+    (match res with
+    | [node] ->
+        let file = G.file_of_node node env.globals in
+        spf "%s#%s" file s
+    | x::y::xs ->
+        pr2 (spf "Conflicting entities for %s [%s]"
+                    s ((x::y::xs) +> List.map G.string_of_node +>
+                          Common.join ","));
+        let file = G.file_of_node x env.globals in
+        spf "%s#%s" file s
+    (* maybe a prototype or extern *)
+    | [] ->
+      (match () with
+      | _ when s =~ "_builtin_.*" -> ()
+      | _ -> 
+        if G.has_node (s, E.Prototype) env.globals ||
+           G.has_node (s, E.GlobalExtern) env.globals
+        (* todo: could print a warning to force people to give
+         * a "model" for the external or asm function
+         *)
+        then ()
+        else pr2_once 
+          (spf "Could not find any definition nor prototype for %s" s);
+      );
+      s
+    )
+  else s
+
+let var_of_local env name =
+  if env.long_format
+  then spf "%s#%s:%s" env.c_file_readable env.scope (fst name)
+  else spf "%s__%s" env.scope (fst name)
+
+let var_of_name env var_or_name =
+  let s = fst var_or_name in
+  match Common.find_opt (fun (x, _) -> x =$= s) !(env.locals) with
+  | None -> var_of_global env var_or_name
+  | Some _t -> var_of_local env var_or_name
+
+
+
+
+
+(* the variable name is also its heap abstract location as in C
+ * you can get the address of any local variables.
+ *)
+let heap_of_name env var_or_name =
+  var_of_name env var_or_name
+
+(* heap location, abstract memory location, heap abstraction, etc *)
+let heap_of_cst env name =
+  spf "_val_of_%s_%s" (fst name) (loc_of env (snd name))
+
+let heap_of_malloc env t =
+  let tok = tok_of_type t in
+  spf "_malloc_in_%s_%s" env.scope  (loc_of env tok)
+
+let heap_of_malloc_array env t =
+  let tok = tok_of_type t in
+  (* old: used to have
+   * let pt =  spf "_array_in_%s_%s" env.scope (loc_of env tok) in
+   * let pt2 = spf "_array_elt_in_%s_%s" env.scope (loc_of env tok) in
+   * and an array_point_to/2 but it does not work
+   *)
+  spf "_array_elt_in_%s_%s" env.scope (loc_of env tok)
+
+let invoke_loc_of_name env name =
+  if env.long_format
+  then spf "%s#%s" env.c_file_readable (loc_of env (snd name))
+  else spf "_in_%s_%s" env.scope (loc_of env (snd name))
+
+(* TODO: need to look for type of v in env to actually qualify ... *)
+let fully_qualified_field _env _v fldname =
+  let fld = fst fldname in
+  spf "_fld__%s" fld
+
+(* TODO: need to use _struct at some point *)
+let fully_qualified_field_of_struct _struc fld =
+  spf "_fld__%s" fld
+
+
 
 (*****************************************************************************)
 (* Fact generation *)

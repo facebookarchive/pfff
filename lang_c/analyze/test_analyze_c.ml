@@ -1,9 +1,42 @@
 open Common
 
+module V = Visitor_c
+
 (*****************************************************************************)
 (* Subsystem testing *)
 (*****************************************************************************)
 
+let test_dump_cil file =
+  let ast = Parse_c.parse_program file in
+
+  let env = { Datalog_c.
+     (* only thing that actually matters *)
+     locals = ref [];
+     globals = Graph_code.create ();
+     globals_renames = (fun _ -> raise Impossible);
+
+     (* not actually used by instrs_of_expr *)
+     scope = "";
+     c_file_readable = "";
+     long_format = false;
+     facts = ref [];
+  }
+  in
+
+  let visitor = V.mk_visitor { V.default_visitor with
+    V.kexpr = (fun _k e ->
+      let instrs = Datalog_c.instrs_of_expr env e in
+      instrs +> List.iter (fun instr ->
+        let v = Meta_ast_cil.vof_instr instr in
+        let s = Ocaml.string_of_v v in
+        pr s
+      )
+    );
+  }
+  in
+  visitor (Ast_c.Program ast);
+  ()
+  
 
 let test_dataflow_c file =
 
@@ -35,11 +68,15 @@ let test_dataflow_c file =
   Common.command2 cmd;
   ()
 
+
 (*****************************************************************************)
 (* Main entry for Arg *)
 (*****************************************************************************)
 
 let actions () = [
-    "-dataflow_c", "   <file>", 
-    Common.mk_action_1_arg test_dataflow_c;
+  "-dump_cil", " <file>",
+  Common.mk_action_1_arg test_dump_cil;
+
+  "-dataflow_c", "   <file>", 
+  Common.mk_action_1_arg test_dataflow_c;
 ]

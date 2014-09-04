@@ -25,6 +25,7 @@ open Ast_c
 
 (* hooks *)
 type visitor_in = {
+  kexpr: Ast_c.expr vin;
   kinfo: Ast_cpp.tok vin;
 }
 and visitor_out = any -> unit
@@ -38,7 +39,8 @@ module Ast_cpp = struct
 end
 
 let default_visitor = {
-    kinfo = (fun (k,_) x -> k x);
+  kinfo = (fun (k,_) x -> k x);
+  kexpr = (fun (k,_) x -> k x);
 }
 
 let (mk_visitor: visitor_in -> visitor_out) = fun vin ->
@@ -71,8 +73,8 @@ and v_parameter { p_type = v_p_type; p_name = v_p_name } =
   let arg = v_type_ v_p_type in let arg = v_option v_name v_p_name in ()
 and v_struct_kind = function | Struct -> () | Union -> ()
 and v_const_expr v = v_expr v
-and v_expr =
-  function
+and v_expr x =
+  let k x = match x with
   | Int v1 -> let v1 = v_wrap v_string v1 in ()
   | Float v1 -> let v1 = v_wrap v_string v1 in ()
   | String v1 -> let v1 = v_wrap v_string v1 in ()
@@ -115,6 +117,8 @@ and v_expr =
           v1
       in ()
   | GccConstructor ((v1, v2)) -> let v1 = v_type_ v1 and v2 = v_expr v2 in ()
+  in
+  vin.kexpr (k, all_functions) x
 and v_argument v = v_expr v
   
 and v_stmt =
