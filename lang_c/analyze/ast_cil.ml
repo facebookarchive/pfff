@@ -19,11 +19,19 @@ open Ast_c
 (* Prelude *)
 (*****************************************************************************)
 (*
- * Ast_cpp -> Ast_c -> Ast_cil ... hmmm
+ * Normalized expressions (converted into instructions and lvalues/rvalues).
+ * 
+ * Ast_cpp -> Ast_c -> Ast_cil ...
+ * 
+ * We are doing flow-insensitive analysis so the goal here is just
+ * to convert Ast_c.expr into something that is easier to work on
+ * to generate datalog facts. 
  *
  * related work:
  *  - CIL :)
  *  - SIL
+ * 
+ * See also pfff/mini/ast_minic.ml
  *)
 
 (*****************************************************************************)
