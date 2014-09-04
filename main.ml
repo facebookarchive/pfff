@@ -89,17 +89,60 @@ let range_of_any_with_comment any toks =
   | None -> min, max
   | Some ii -> ii, max
   
+type env = {
+  current_file: Common.filename;
+  cnt: int ref;
+  hentities: (Graph_code.node, bool) Hashtbl.t;
+}
+
+let uniquify env kind s =
+  let sfinal =
+    if Hashtbl.mem env.hentities (s, kind) 
+    then
+      let s2 = spf "%s (%s)" s env.current_file in
+      if Hashtbl.mem env.hentities (s2, kind)
+      then begin
+        incr env.cnt;
+        let s3 = spf "%s (%s)%d" s env.current_file !(env.cnt) in
+        if Hashtbl.mem env.hentities (s3, kind)
+        then failwith "impossible"
+        else s3
+      end
+      else s2
+    else s
+  in
+  Hashtbl.replace env.hentities (sfinal, kind) true;
+  sfinal
+
+  
 
 (* todo: could do that in graph_code_c, with a range *)
-let extract_entities xs =
+let extract_entities env xs =
   xs +> Common.map_filter (fun (top, toks) ->
     match top with
+    | CppDirectiveDecl decl ->
+      (match decl with
+      | Define (_, ident, kind_define, _val) ->
+        let kind =
+          match kind_define with
+            | DefineVar -> E.Constant
+            | DefineFunc _ -> E.Macro
+        in
+        let (min, max) = range_of_any_with_comment (Toplevel top) toks in
+        Some {
+          name = fst ident +> uniquify env kind;
+          kind = kind;
+          range = (PI.line_of_info min, PI.line_of_info max);
+        }
+      | _ -> None
+      )
+
     | DeclElem decl ->
       (match decl with
       | Func (FunctionOrMethod def) ->
         let (min, max) = range_of_any_with_comment (Toplevel top) toks in
         Some { 
-          name = Ast.string_of_name_tmp def.f_name;
+          name = Ast.string_of_name_tmp def.f_name +> uniquify env E.Function;
           kind = E.Function;
           range = (PI.line_of_info min, PI.line_of_info max);
         }
@@ -123,11 +166,11 @@ let extract_entities xs =
 
 
               (* global def *)
-              | { v_namei = Some (name, None);
+              | { v_namei = Some (name, _);
                   v_storage = _; _
                 } -> 
                 Some { 
-                  name = Ast.string_of_name_tmp name;
+                  name = Ast.string_of_name_tmp name +> uniquify env E.Global;
                   kind = E.Global;
                   range = (PI.line_of_info min, PI.line_of_info max);
                 }
@@ -136,7 +179,7 @@ let extract_entities xs =
                   v_type = (_, (StructDef { c_name = Some name; _}, _)); _
                 } -> 
                 Some { 
-                  name = Ast.string_of_name_tmp name;
+                  name = Ast.string_of_name_tmp name +> uniquify env E.Class;
                   kind = E.Class;
                   range = (PI.line_of_info min, PI.line_of_info max);
                 }
@@ -146,7 +189,20 @@ let extract_entities xs =
                   _
                 } -> 
                 Some { 
-                  name = Ast.string_of_name_tmp (None, [], IdIdent ident);
+                  name = 
+                    Ast.string_of_name_tmp (None, [], IdIdent ident) 
+                      +> uniquify env E.Type;
+                  kind = E.Type;
+                  range = (PI.line_of_info min, PI.line_of_info max);
+                }
+
+              (* enum anon *)
+              | { v_namei = _;
+                  v_type = (_, (EnumDef (_, None, _), _));
+                  _
+                } -> 
+                Some { 
+                  name = "_anon_"  +> uniquify env E.Type;
                   kind = E.Type;
                   range = (PI.line_of_info min, PI.line_of_info max);
                 }
@@ -181,6 +237,8 @@ let string_of_entity_kind kind =
   | E.Global -> "global"
   | E.Type -> "enum"
   | E.Class -> "struct"
+  | E.Constant -> "constant"
+  | E.Macro -> "function"
 
   | _ -> failwith (spf "not handled kind: %s" (E.string_of_entity_kind kind))
 
@@ -190,6 +248,9 @@ let lpize xs =
 
   sanity_check xs;
   let current_dir = ref "" in
+
+  (* to avoid duped entities *)
+  let hentities = Hashtbl.create 101 in
 
   xs +> List.iter (fun file ->
     let dir = Filename.dirname file in
@@ -204,7 +265,16 @@ let lpize xs =
     pr "";
 
     let (xs, _stat) = Parse_cpp.parse file in
-    let entities = extract_entities xs in
+    let env = {
+      current_file = file;
+      hentities = hentities;
+      (* starts at 1 so that first have no int, just the filename
+       * e.g.  function foo (foo.h), and then the second one have
+       * function foo (foo.h)2
+       *)
+      cnt = ref 1;
+    } in
+    let entities = extract_entities env xs in
 
     let hstart = 
       entities +> List.map (fun e -> fst e.range, e) +> Common.hash_of_list
@@ -233,6 +303,10 @@ let lpize xs =
         pr "@";
         pr "";
     );
+
+    pr "";
+    pr "%-------------------------------------------------------------";
+    pr "";
 
     (* we don't use the basename (even though 'make sync' ' used to make
      * this assumption because) because we would have too many dupes.
