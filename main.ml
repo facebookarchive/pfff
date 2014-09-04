@@ -90,6 +90,7 @@ let range_of_any_with_comment any toks =
   | Some ii -> ii, max
   
 
+(* todo: could do that in graph_code_c, with a range *)
 let extract_entities xs =
   xs +> Common.map_filter (fun (top, toks) ->
     match top with
@@ -102,6 +103,59 @@ let extract_entities xs =
           kind = E.Function;
           range = (PI.line_of_info min, PI.line_of_info max);
         }
+      | BlockDecl decl ->
+        let (min, max) = range_of_any_with_comment (Toplevel top) toks in
+          (match decl with
+          | DeclList ([x, _], _) ->
+              (match x with
+              (* prototype, don't care *)
+              | { v_namei = Some (_name, None);
+                  v_type = (_, (FunctionType _, _)); _
+                } -> None
+              (* typedef, don't care *)
+              | { v_namei = Some (_name, None);
+                  v_storage = StoTypedef _; _
+                } -> None
+              (* global decl, don't care *)
+              | { v_namei = Some (_name, None);
+                  v_storage = (Sto (Extern, _)); _
+                } -> None
+
+
+              (* global def *)
+              | { v_namei = Some (name, None);
+                  v_storage = _; _
+                } -> 
+                Some { 
+                  name = Ast.string_of_name_tmp name;
+                  kind = E.Global;
+                  range = (PI.line_of_info min, PI.line_of_info max);
+                }
+              (* struct def *)
+              | { v_namei = _;
+                  v_type = (_, (StructDef { c_name = Some name; _}, _)); _
+                } -> 
+                Some { 
+                  name = Ast.string_of_name_tmp name;
+                  kind = E.Class;
+                  range = (PI.line_of_info min, PI.line_of_info max);
+                }
+              (* enum def *)
+              | { v_namei = _;
+                  v_type = (_, (EnumDef (_, Some ident, _), _));
+                  _
+                } -> 
+                Some { 
+                  name = Ast.string_of_name_tmp (None, [], IdIdent ident);
+                  kind = E.Type;
+                  range = (PI.line_of_info min, PI.line_of_info max);
+                }
+                
+
+              | _ -> None
+              )
+          | _ -> None
+          )
       | _ -> None
       )
     | _ -> None
@@ -124,6 +178,10 @@ let sanity_check _xs =
 let string_of_entity_kind kind =
   match kind with
   | E.Function -> "function"
+  | E.Global -> "global"
+  | E.Type -> "enum"
+  | E.Class -> "struct"
+
   | _ -> failwith (spf "not handled kind: %s" (E.string_of_entity_kind kind))
 
 (* main entry point *)

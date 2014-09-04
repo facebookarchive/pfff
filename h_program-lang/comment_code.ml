@@ -57,8 +57,12 @@ let comment_before hooks tok all_toks =
   in
   match first_non_space with
   | x::_xs when hooks.kind x =*= PI.Esthet (PI.Comment) ->
-      Some (hooks.tokf x)
+      let info = hooks.tokf x in
+      if PI.col_of_info info = 0
+      then Some info
+      else None
   | _ -> None
+
 
 (*
 let comment_after tok all_toks =
