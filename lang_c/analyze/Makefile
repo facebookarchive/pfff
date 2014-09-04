@@ -4,7 +4,8 @@ TOP=../..
 ##############################################################################
 TARGET=lib
 
-SRC= datalog_c.ml \
+SRC= ast_cil.ml meta_ast_cil.ml \
+     datalog_c.ml \
      graph_code_c.ml \
      test_analyze_c.ml
 

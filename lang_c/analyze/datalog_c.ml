@@ -15,6 +15,7 @@
 open Common
 
 open Ast_c
+open Ast_cil
 module A = Ast_c
 module A2 = Ast_cpp
 module PI = Parse_info
@@ -72,61 +73,6 @@ type env = {
 (* less: type format = Classic | Bddbddb | BddbddbLong ? *)
 
 let long_format = ref true
-
-(*****************************************************************************)
-(* CIL-expr *)
-(*****************************************************************************)
-
-(* ------------------------------------------------------------------------- *)
-(* Names *)
-(* ------------------------------------------------------------------------- *)
-
-(* for functions, constants, fields, builtins, types *)
-type name = string wrap
-(* for globals, locals, parameters *)
-type var = name
-
-(* ------------------------------------------------------------------------- *)
-(* Lvalue *)
-(* ------------------------------------------------------------------------- *)
-(* Used to be inlined in expr (now called rvalue), but it is cleaner
- * to separate rvalue and lvalue. Note that 'Call' is not there, it's
- * not an lvalue (you can not do 'foo() = x' in C).
- *)
-type lvalue = 
-  | Id of name (* actually a var or name *)
-  | ObjField of var * name (* x->fld *)
-  | ArrayAccess of var * var (* x[y] *)
-  (* hmm mv? *)
-  | DeRef of var (* *x *)
-
-(* ------------------------------------------------------------------------- *)
-(* Rvalue *)
-(* ------------------------------------------------------------------------- *)
-(* see ast_minic.ml for more comments about this CIL-like AST *)
-type rvalue =
-  | Int of string wrap
-  | Float of string wrap 
-  | String of string wrap (* string or char *)
-
-  | StaticCall of name * var list (* foo(...) *)
-  | DynamicCall of (*Deref*) var * var list (* ( *f)(...) *)
-  | BuiltinCall of name * var list (* e.g. v + 1 *)
-
-  (* could be a lvalue, but weird to do (malloc(...)[x] = ...) *)
-  | Alloc of type_ (* malloc(sizeof(type)) *)
-  | AllocArray of var * type_ (* malloc(n*sizeof(type)) *)
-
-  | Lv of lvalue
-
-(* ------------------------------------------------------------------------- *)
-(* Stmt *)
-(* ------------------------------------------------------------------------- *)
-
-type instr =
-  | Assign of var (* or name *) * rvalue (* x = e *)
-  | AssignAddress of var * lvalue (* except Deref (no sense to do &*x) *)
-  | AssignLvalue of lvalue * var (* Except Id, done by Assign *)
 
 (*****************************************************************************)
 (* Helpers *)
