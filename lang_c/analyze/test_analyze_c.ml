@@ -13,7 +13,7 @@ let test_dump_cil file =
      (* only thing that actually matters *)
      locals = ref [];
      globals = Graph_code.create ();
-     globals_renames = (fun _ -> raise Impossible);
+     globals_renames = (fun x -> x);
 
      (* not actually used by instrs_of_expr *)
      scope = "";

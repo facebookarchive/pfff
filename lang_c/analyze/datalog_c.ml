@@ -140,6 +140,11 @@ let fresh_var env (_, tok) =
   env.locals := (s, None)::!(env.locals);
   s, tok
 
+(* Need env.globals to unsugar certain calls like error(xxx) when error
+ * is actually a global it's really a  ( *error)(xxx).
+ * Need also to know the current set of locals, so need both local
+ * and global analysis results.
+ *)
 let instrs_of_expr env e =
 
   let instrs = ref [] in
