@@ -155,7 +155,19 @@ let extract_entities env xs =
               | { v_namei = Some (_name, None);
                   v_type = (_, (FunctionType _, _)); _
                 } -> None
-              (* typedef, don't care *)
+
+              (* typedef struct X { } X *)
+              | { v_namei = _;
+                  v_type = (_, (StructDef { c_name = Some name; _}, _)); 
+                  v_storage = StoTypedef _; _
+                } -> 
+                Some { 
+                  name = Ast.string_of_name_tmp name +> uniquify env E.Class;
+                  kind = E.Class;
+                  range = (PI.line_of_info min, PI.line_of_info max);
+                }
+
+              (* other typedefs, don't care *)
               | { v_namei = Some (_name, None);
                   v_storage = StoTypedef _; _
                 } -> None
@@ -326,7 +338,7 @@ let lpize xs =
     pr "";
 
     (* for the initial 'make sync' to work *)
-    (* Sys.command (spf "rm -f %s" file) +> ignore; *)
+    Sys.command (spf "rm -f %s" file) +> ignore; 
   );
   ()
 
