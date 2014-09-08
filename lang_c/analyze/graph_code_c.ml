@@ -197,30 +197,31 @@ let kind_file env =
    (* failwith ("unknown kind of file: " ^ s) *)
     Source
 
-let rec expand_typedefs typedefs t =
+let rec expand_typedefs env t =
   match t with
   | TBase _ | TStructName _ | TEnumName _  -> t
   | TTypeName name ->
       let s = Ast.str_of_name name in
-      if Hashtbl.mem typedefs s
+      if Hashtbl.mem env.typedefs s && 
+         not (Hashtbl.mem env.dupes ("T__" ^ s, E.Type))
       then 
-        let t' = (Hashtbl.find typedefs s) in
+        let t' = (Hashtbl.find env.typedefs s) in
         (* right now 'typedef enum { ... } X' results in X being
          * typedefed to ... itself
          *)
         if t' =*= t
         then t
-        else expand_typedefs typedefs t'
+        else expand_typedefs env t'
       else t
-  | TPointer x -> TPointer (expand_typedefs typedefs x)
+  | TPointer x -> TPointer (expand_typedefs env x)
   (* less: eopt could contain some sizeof(typedefs) that we should expand
    * but does not matter probably
    *)
-  | TArray (eopt, x) -> TArray (eopt, expand_typedefs typedefs x)
+  | TArray (eopt, x) -> TArray (eopt, expand_typedefs env x)
   | TFunction (ret, params) -> 
-      TFunction (expand_typedefs typedefs ret,
+      TFunction (expand_typedefs env ret,
                 params +> List.map (fun p ->
-                  { p with p_type = expand_typedefs typedefs p.p_type }
+                  { p with p_type = expand_typedefs env p.p_type }
                 ))
 
 let final_type env t =
@@ -231,7 +232,7 @@ let final_type env t =
      * No we need to wait for the first pass to have all the typedefs
      * before we can expand them!
      *)
-    expand_typedefs env.typedefs t
+    expand_typedefs env t
 
 
 let find_existing_node env name candidates last_resort =
@@ -305,12 +306,17 @@ let add_node_and_edge_if_defs_mode env (name, kind) typopt =
   in
   let node = (str', kind) in
 
-  if env.phase = Defs then
-    (match () with
+  if env.phase = Defs then begin
+    match () with
     (* if parent is a dupe, then don't want to attach yourself to the
      * original parent, mark this child as a dupe too.
      *)
     | _ when Hashtbl.mem env.dupes env.current ->
+        (* todo: hmm but for a struct, might not detect at first that this
+         * will become a dupe later because of another struct with the same
+         * name, which means the first set of fields will be added to this
+         * soon-to-be dupe struct. Is this why I get some SRC fail later?
+         *)
         Hashtbl.replace env.dupes node true
 
     (* already there? a dupe? *)
@@ -384,8 +390,11 @@ let add_node_and_edge_if_defs_mode env (name, kind) typopt =
       (* this should never happen, but it's better to give a good err msg *)
       with Not_found ->
         error ("Not_found:" ^ str) (snd name)
-    );
-  { env with current = node }
+    
+  end;
+  if Hashtbl.mem env.dupes node
+  then env
+  else { env with current = node }
 
 (*****************************************************************************)
 (* Add edge *)
@@ -523,7 +532,7 @@ and toplevel env x =
        *  because normally typedefs are computed in Defs phase but we
        *  need also in this phase to know if this global is actually a proto
        *)
-      let finalt = expand_typedefs env.typedefs t in
+      let finalt = expand_typedefs env t in
       let typ = Some t (* or finalt? *) in
       let kind = 
         match sto, finalt, eopt with
@@ -629,6 +638,7 @@ and toplevel env x =
   (* I am not sure about the namespaces, so I prepend strings *)
   | TypeDef (name, t) -> 
       let s = Ast.str_of_name name in
+      let name = add_prefix "T__" name in
       if env.phase = Defs 
       then begin
         if Hashtbl.mem env.typedefs s
@@ -636,13 +646,15 @@ and toplevel env x =
           let old = Hashtbl.find env.typedefs s in
           if (Meta_ast_c.vof_any (Type old) =*= (Meta_ast_c.vof_any (Type t)))
           then ()
-          else env.pr2_and_log (spf "conflicting typedefs for %s, %s <> %s" 
-                                  s (Common.dump old) (Common.dump t))
+          else begin 
+            env.pr2_and_log (spf "conflicting typedefs for %s, %s <> %s" 
+                                  s (Common.dump old) (Common.dump t));
+            Hashtbl.replace env.dupes (fst name, E.Type) true
+          end
         (* todo: if are in Source, then maybe can add in local_typedefs *)
         else Hashtbl.add env.typedefs s t
       end;
       let typ = Some t in
-      let name = add_prefix "T__" name in
       let _env = add_node_and_edge_if_defs_mode env (name,E.Type) typ in
       (* no hook_def here *)
       (* type_ env typ; *)
@@ -891,8 +903,10 @@ and type_ env typ =
                *)
               if t' = t
               then add_use_edge env (add_prefix "T__" name, E.Type)
-              (* should be done in expand_typedefs *)
-              else raise Impossible
+              (* should be done in expand_typedefs? unless we had a dupe *)
+              else 
+                env.pr2_and_log (spf "skipping edge, probably dupe typedef %s (%s)"
+                                   s (Parse_info.string_of_info (snd name)))
             else env.pr2_and_log (spf "typedef not found: %s (%s)" s
                                     (Parse_info.string_of_info (snd name)))
 
