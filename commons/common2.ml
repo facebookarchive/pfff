@@ -2414,7 +2414,7 @@ let string_of_unix_time ?(langage=English) tm =
 
   let wday = wday_str_of_int ~langage tm.Unix.tm_wday in
 
-  spf "%02d/%03s/%04d (%s) %02d:%02d:%02d" d mon y wday h min s
+  spf "%02d/%3s/%04d (%s) %02d:%02d:%02d" d mon y wday h min s
 
 (* ex: 21/Jul/2008 (Lun) 21:25:12 *)
 let unix_time_of_string s =
@@ -2452,7 +2452,7 @@ let short_string_of_unix_time ?(langage=English) tm =
 
   let wday = wday_str_of_int ~langage tm.Unix.tm_wday in
 
-  spf "%02d/%03s/%04d (%s)" d mon y wday
+  spf "%02d/%3s/%04d (%s)" d mon y wday
 
 
 let string_of_unix_time_lfs time =
@@ -5603,7 +5603,7 @@ let print_total_score score =
 
 let print_score score =
   score +> hash_to_list +> List.iter (fun (k, v) ->
-    pr2 (Printf.sprintf "% s --> %s" k (string_of_score_result v))
+    pr2 (Printf.sprintf "%s --> %s" k (string_of_score_result v))
   );
   print_total_score score;
   ()
