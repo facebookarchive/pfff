@@ -585,8 +585,11 @@ and toplevel env x =
            * #include in plan I think
            *)
           then env.log (spf "you should factorize struct %s definitions" s)
-          else env.pr2_and_log (spf "conflicting structs for %s, %s <> %s" 
-                                  s (Common.dump old) (Common.dump def))
+          else begin 
+            env.pr2_and_log (spf "conflicting structs for %s, %s <> %s" 
+                               s (Common.dump old) (Common.dump def));
+            Hashtbl.replace env.dupes (fst name, E.Type) true
+          end
         else begin
           Hashtbl.add env.structs s def;
           let env = add_node_and_edge_if_defs_mode env (name, E.Type) None in
