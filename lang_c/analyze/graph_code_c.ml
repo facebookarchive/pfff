@@ -331,9 +331,6 @@ let add_node_and_edge_if_defs_mode env (name, kind) typopt =
            *)
           | E.Type, s when s =~ "[ST]__" -> ()
           | _ when env.c_file_readable =~ ".*EXTERNAL" -> ()
-          (* todo: if typedef then maybe ok if have same content!! *)
-          | _ when not env.conf.typedefs_dependencies && str =~ "T__.*" -> 
-              Hashtbl.replace env.dupes node true;
           | _ ->
               env.pr2_and_log (spf "DUPE entity: %s" (G.string_of_node node));
               let nodeinfo = G.nodeinfo node env.g in
@@ -366,7 +363,7 @@ let add_node_and_edge_if_defs_mode env (name, kind) typopt =
         match typopt with
         | None -> None
         | Some t ->
-            (* hmmm can't call final_type here, no typedef pass yet
+            (* hmmm can't call final_type here, no typedef PASS yet
                let t = final_type env t in 
             *)
             let v = Meta_ast_c.vof_any (Type t) in
@@ -376,7 +373,7 @@ let add_node_and_edge_if_defs_mode env (name, kind) typopt =
              *)
             Some "_TODO_type"
       in
-      (* less: still needed to have a try? *)
+      (* try but should never happen, see comment below *)
       try
         let pos = Parse_info.token_location_of_info (snd name) in
         let pos = { pos with Parse_info.file = env.c_file_readable } in
