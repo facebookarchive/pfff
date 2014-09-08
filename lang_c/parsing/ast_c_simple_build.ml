@@ -47,6 +47,7 @@ exception ObsoleteConstruct of string * Parse_info.info
 exception CplusplusConstruct
 exception TodoConstruct of string * Parse_info.info
 exception CaseOutsideSwitch
+exception MacroInCase
 
 type env = { 
   mutable struct_defs_toadd: A.struct_def list;
@@ -176,7 +177,8 @@ and declaration env x =
                 }
             | _ -> A.Global x
           ))
-      | _ -> raise Todo
+      | _ -> 
+        debug (Toplevel (DeclElem x)); raise Todo
       )
 
   | EmptyDef _ -> []
@@ -454,7 +456,7 @@ and statement_sequencable env x =
   | IfdefStmt _ -> raise Impossible
 
 and cases env x =
-  let (st, _ii) = x in
+  let (st, ii) = x in
   match st with
   | Compound (l, xs, r) ->
       let rec aux xs =
@@ -474,7 +476,9 @@ and cases env x =
                 in
                 let stmts = List.map (function
                   | StmtElem st -> stmt env st
-                  | _x -> raise Todo (* TODOOOOO improve error msg *)
+                  | x -> 
+                    debug (Stmt (Compound (l, [x], r), ii));
+                    raise MacroInCase
                 ) xs' in
                 (match x with
                 | StmtElem ((Labeled (Case (e, _))), _) ->
@@ -540,7 +544,8 @@ and expr env e =
       A.CondExpr (expr env e1, 
                  (match e2opt with
                  | Some e2 -> expr env e2
-                 | None -> raise Todo
+                 | None -> 
+                     debug (Expr e); raise Todo
                  ), 
                  expr env e3)
   | Call (e, args) ->

@@ -924,7 +924,7 @@ let build ?(verbose=true) root files =
     fields_dependencies = true;
     macro_dependencies = true;
 
-    propagate_deps_def_to_decl = true;
+    propagate_deps_def_to_decl = false;
     (* let's expand typedefs, it's simpler, hence false *)
     typedefs_dependencies = false;
   } in
