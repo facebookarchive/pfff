@@ -39,7 +39,7 @@ exception Lexical of string
 let error s =
   if !Flag.strict_lexer
   then raise (Lexical s)
-  else 
+  else
     if !Flag.verbose_lexing
     then pr2 ("LEXER: " ^ s)
 
@@ -137,7 +137,7 @@ let keyword_table = Common.hash_of_list [
   "include",(fun ii ->T_INCLUDE ii);"include_once",(fun ii ->T_INCLUDE_ONCE ii);
   "require",(fun ii ->T_REQUIRE ii);"require_once",(fun ii ->T_REQUIRE_ONCE ii);
 
-  "class",           (fun ii -> T_CLASS ii); 
+  "class",           (fun ii -> T_CLASS ii);
   "interface", (fun ii -> T_INTERFACE ii);
   "extends",         (fun ii -> T_EXTENDS ii);
   "implements",      (fun ii -> T_IMPLEMENTS ii);
@@ -386,7 +386,7 @@ let is_in_binary_operator_position last_tok =
 *)
 let lang_ext_or_cast t lexbuf =
   if !Flag.facebook_lang_extensions
-  then 
+  then
     (match !_last_non_whitespace_like_token with
     | Some (T_FUNCTION _) ->
       let s = tok lexbuf in
@@ -414,7 +414,8 @@ let LNUM =	['0'-'9']+
 let DNUM =	(['0'-'9']*['.']['0'-'9']+) | (['0'-'9']+['.']['0'-'9']* )
 
 let EXPONENT_DNUM =	((LNUM|DNUM)['e''E']['+''-']?LNUM)
-let HNUM =	"0x"['0'-'9''a'-'f''A'-'F']+
+let HEXNUM =	("0x" | "0X")['0'-'9''a'-'f''A'-'F']+
+let BINNUM =	"0b"['0'-'1']+
 (*/*
  * LITERAL_DOLLAR matches unescaped $ that aren't followed by a label character
  * or a { and therefore will be taken literally. The case of literal $ before
@@ -752,7 +753,7 @@ rule st_in_scripting = parse
   (* ----------------------------------------------------------------------- *)
   (* Constant *)
   (* ----------------------------------------------------------------------- *)
-    | LNUM
+    | LNUM | BINNUM | HEXNUM
         {
           (* more? cf original lexer *)
           let s = tok lexbuf in
@@ -762,15 +763,7 @@ rule st_in_scripting = parse
             T_LNUMBER(s, ii)
           with Failure _ ->
             T_DNUMBER(s, (*float_of_string s,*) ii)
-
         }
-    | HNUM
-        {
-          (* more? cf orginal lexer *)
-          T_DNUMBER(tok lexbuf, tokinfo lexbuf)
-
-        }
-
     | DNUM|EXPONENT_DNUM { T_DNUMBER(tok lexbuf, tokinfo lexbuf) }
 
 
@@ -839,7 +832,7 @@ rule st_in_scripting = parse
      * unless like in C typenames have a special token type and you can
      * have a rule like 'expr: TOPAR TTypename TCPAR.
      * This could have been done in PHP if those typenames were reserved
-     * tokens, but PHP allows to have functions or methods called e.g. 
+     * tokens, but PHP allows to have functions or methods called e.g.
      * string(). So what they have done if this ugly lexing hack.
      *)
     | "(" TABS_AND_SPACES ("int"|"integer") TABS_AND_SPACES ")"
@@ -1001,9 +994,9 @@ and st_looking_for_varname = parse
 (*****************************************************************************)
 and st_var_offset = parse
 
-  | LNUM | HNUM { (* /* Offset must be treated as a string */ *)
-      T_NUM_STRING (tok lexbuf, tokinfo lexbuf)
-    }
+  | LNUM | HEXNUM | BINNUM { (* /* Offset must be treated as a string */ *)
+    T_NUM_STRING (tok lexbuf, tokinfo lexbuf)
+  }
 
   | "$" (LABEL as s) { T_VARIABLE(case_str s, tokinfo lexbuf) }
   | LABEL            { T_IDENT(case_str (tok lexbuf), tokinfo lexbuf)  }
