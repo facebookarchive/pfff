@@ -48,7 +48,8 @@ let parse file =
     try Some (Ast_c_simple_build.program ast), stat
     with exn ->
       pr2 (spf "PB: Ast_c_build, on %s (exn = %s)" file (Common.exn_to_s exn));
-      None, { stat with Stat.bad = stat.Stat.bad + stat.Stat.correct }
+      (*None, { stat with Stat.bad = stat.Stat.bad + stat.Stat.correct } *)
+      raise exn
   in
   (ast_opt, toks), stat
 

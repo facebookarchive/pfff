@@ -154,6 +154,14 @@ let fix_tokens_c ~macro_defs tokens =
 
   let tokens2 = ref (tokens +> Common2.acc_map TV.mk_token_extended) in
 
+  (* ifdef *)
+  let cleaner = !tokens2 +> filter_comment_stuff in
+  
+  let ifdef_grouped = TV.mk_ifdef cleaner in
+  Parsing_hacks_pp.find_ifdef_funheaders ifdef_grouped;
+  Parsing_hacks_pp.find_ifdef_bool       ifdef_grouped;
+  Parsing_hacks_pp.find_ifdef_mid        ifdef_grouped;
+
   (* macro part 1 *)
   let cleaner = !tokens2 +> Parsing_hacks_pp.filter_pp_or_comment_stuff in
   let paren_grouped = TV.mk_parenthised  cleaner in
