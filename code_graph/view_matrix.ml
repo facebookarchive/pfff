@@ -558,7 +558,7 @@ let button_action _da w ev =
                   DM.explain_cell_list_use_edges  (i, j) w.m w.model.gopti in
                 let ncount =
                   if List.length deps > 100
-                  then 2
+                  then 10
                   else 50
                 in
                 let xs = Common.take_safe 1000 deps in
@@ -579,7 +579,8 @@ let button_action _da w ev =
                       (Graph_code.string_of_node n1)  
                       (Graph_code.string_of_node n2)
                      ) +> Common.join "\n"
-                    )
+                    ) ^
+                    (if List.length deps >= ncount then "\n   ...  \n" else "")
                   ) +> Common.join "\n"
                 in
                 pr2 str;
