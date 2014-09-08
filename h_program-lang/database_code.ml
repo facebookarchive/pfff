@@ -360,7 +360,7 @@ let save_database database file =
   if File_type.is_json_filename file
   then
     database +> json_of_database 
-    +> Json_io.string_of_json ~compact:false ~recursive:false
+    +> Json_io.string_of_json ~compact:false ~recursive:false ~allow_nan:true
     +> Common.write_file ~file
   else Common2.write_value database file
 
