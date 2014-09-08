@@ -50,7 +50,7 @@ struct
   let hauteur = V.create 997
   let flot = E.create 997
 
-  let fold_booleen f = List.fold_left (fun r x->(f x) or r) false
+  let fold_booleen f = List.fold_left (fun r x->(f x) || r) false
 
   let capacite_restante g e = 
     F.sub (F.max_capacity (G.E.label e)) (E.find flot (G.E.src e, G.E.dst e))
@@ -133,12 +133,12 @@ struct
       
   let maxflow g s p = 
     let push_and_pull l x = 
-      G.fold_succ_e (fun e r->pousser g e l or r) g x false
-      or G.fold_pred_e (fun e r->pousser g e l or r) g x false
+      G.fold_succ_e (fun e r->pousser g e l || r) g x false
+      || G.fold_pred_e (fun e r->pousser g e l || r) g x false
     in
     let todo = ref (init_preflot g s p) in
     while 
-      (fold_booleen (elever g p) !todo) or 
+      (fold_booleen (elever g p) !todo) || 
       (let l = ref Sv.empty in 
        let r = fold_booleen (push_and_pull l) !todo in
        todo:=Sv.elements !l; r)
