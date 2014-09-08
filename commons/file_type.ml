@@ -150,7 +150,7 @@ let file_type_of_file2 file =
 
   | "scala" -> PL (MiscPL e)
 
-  | "sh" -> PL (Script e)
+  | "sh" | "rc" | "csh" | "bash" -> PL (Script e)
   | "m4" -> PL (MiscPL e)
   | "conf" -> PL (MiscPL e)
 
