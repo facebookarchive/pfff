@@ -1085,6 +1085,7 @@ let build
     ?(readable_file_format=false)
     ?(only_defs=false)
     ?(is_skip_error_file=(fun _ -> false))
+    ?(class_analysis=false)
     root
     files
   =
@@ -1233,6 +1234,7 @@ let build
       (envold.phase_use_other) := [];
       xs +> List.rev +> List.iter (fun f -> f());
     );
+    if class_analysis then begin
     envold.pr2_and_log "\nstep4: class analysis";
     Common.profile_code "Graph_php.step4" (fun () ->
       let dag = Graph_code_class_analysis.class_hierarchy g in
@@ -1278,6 +1280,7 @@ let build
         )
       )
     )
+    end;
   end;
   close_out chan;
   g, env.stats

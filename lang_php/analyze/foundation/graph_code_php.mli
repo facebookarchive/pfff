@@ -7,6 +7,7 @@ val build:
   ?readable_file_format:bool ->
   ?only_defs:bool -> 
   ?is_skip_error_file: (Common.filename -> bool) ->
+  ?class_analysis: bool ->
   Common.dirname -> Common.filename list ->
   Graph_code.graph * Graph_code.statistics
 
