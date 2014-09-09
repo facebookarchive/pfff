@@ -224,6 +224,11 @@ let adjust_errors xs =
        (* hmm plan9 specific? *)
        | _ when file =~ "^include/" -> true
 
+       | _ when file =~ "^EXTERNAL/" -> true
+
+       (* too many FP on dynamic lang like PHP *)
+       | E.Method -> true
+
        | _ -> false
        )
 
