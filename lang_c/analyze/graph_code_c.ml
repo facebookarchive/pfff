@@ -245,6 +245,7 @@ let find_existing_node env name candidates last_resort =
    *)
   candidates +> Common.find_opt (fun kind ->
     Hashtbl.mem env.dupes (Ast.str_of_name name, kind)
+     && kind <> E.Prototype && kind  <> E.GlobalExtern
   ) |||
   (candidates +> Common.find_opt (fun kind ->
     G.has_node (Ast.str_of_name name, kind) env.g
@@ -359,9 +360,9 @@ let add_node_and_edge_if_defs_mode env (name, kind) typopt =
          * 'Word' and another 'word'). We don't want to add to the same
          * entity dependencies to this different types so we need to mark
          * the prototype as a dupe too!
-         * Anyway normally we should add the deps to the Function or Global
-         * first so we should hit this code only for really external
-         * entities (and when don't find the Function or Global we will
+         * Anyway normally we should add the dependency to the Function or
+         * Global first so we should hit this code only for really external
+         * entities (and when we don't find the Function or Global we will
          * get some "skipping edge because of dupe" errors).
          *)
          Hashtbl.replace env.dupes node true;
