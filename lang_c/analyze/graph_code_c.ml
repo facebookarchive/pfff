@@ -236,9 +236,21 @@ let final_type env t =
 
 
 let find_existing_node env name candidates last_resort =
+  (* If there is a dupe, then we don't want to create an edge to an
+   * unrelated entity that happens to be unique and listed first
+   * in the list of candidates. This is especially useful
+   * when processing large codebase globally such as plan9. 
+   * So in that case we return the kind of the dupe, add_edge will
+   * then do its job and skip the edge.
+   *)
   candidates +> Common.find_opt (fun kind ->
+    Hashtbl.mem env.dupes (Ast.str_of_name name, kind)
+  ) |||
+  (candidates +> Common.find_opt (fun kind ->
     G.has_node (Ast.str_of_name name, kind) env.g
-  ) ||| last_resort
+  ) ||| 
+  last_resort
+  )
 
 let is_local env s =
   (Common.find_opt (fun (x, _) -> x =$= s) !(env.locals)) <> None
