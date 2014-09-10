@@ -56,13 +56,16 @@ module P = Graph_code_prolog
  * 
  * todo: 
  *  - fields!!!!!!! but need type information for expressions
- *  - Type is a bit overloaded maybe (used for struct/union/enum/typedefs)
+ *  - the managment of dupes has become a bit complicated, easy to miss cases,
+ *    maybe should actually work at namespace level and consider dupes
+ *    constant and functions as they are kind of in the same namespace
  *  - there is different "namespaces" in C?
- *    - functions/locals,
+ *    - functions/locals
  *    - tags (struct name, enum name)
- *    - cpp ...
+ *    - cpp?
  *    - ???
  *    => maybe we don't need those add_prefix, S__, E__ hacks.
+ *  - Type is a bit overloaded maybe (used for struct/union/enum/typedefs)
  *  - and of course improve lang_cpp/ parser, lang_c/ ast builder to cover
  *    more cases, better infer typedef, better handle cpp, etc.
  *)
@@ -79,12 +82,12 @@ type env = {
   phase: phase;
 
   current: Graph_code.node;
-  ctx: Graph_code_prolog.context;
-
   c_file_readable: Common.filename;
 
+  ctx: Graph_code_prolog.context;
   (* for prolog use/4, todo: merge in_assign with context? *)
   in_assign: bool;
+  (* mostly to remove some warnings on lookup failures *)
   in_define: bool;
   (* for datalog *)
   in_return: bool;
@@ -96,13 +99,13 @@ type env = {
 
   conf: config;
 
-  (* to accept duplicated typedefs if they are the same and of course to
+  (* to accept duplicated typedefs if they are the same, and of course to
    * expand typedefs for better dependencies
    * less: we could also have a local_typedefs field
    *)
   typedefs: (string, Ast.type_) Hashtbl.t;
   (* to accept duplicated structs if they are the same, and at some point
-   * maybe also for ArrayInit which should be RecordInit
+   * maybe also for ArrayInit which should be transformed in a RecordInit.
    *)
   structs: (string, Ast.struct_def) Hashtbl.t;
 
