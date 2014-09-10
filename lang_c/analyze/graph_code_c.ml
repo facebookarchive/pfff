@@ -556,7 +556,7 @@ and toplevel env x =
         | _, _, _ when kind_file env = Header -> E.GlobalExtern
         | DefaultStorage, _, _ | Static, _, _ -> E.Global
       in
-      let static = sto =*= Static && kind_file env =*= Source in
+      let static = sto =*= Static (* && kind_file env =*= Source? need that? *) in
       (match kind with
       (* see comment above in the FuncDef case *)
       | E.Prototype when static -> ()
@@ -948,8 +948,9 @@ let build ?(verbose=true) root files =
 
   let conf = {
     types_dependencies = true;
-    fields_dependencies = true;
-    macro_dependencies = true;
+   (* TODO currently unused, we do not process felds :( *)
+    fields_dependencies = true; 
+    macro_dependencies = false;
 
     propagate_deps_def_to_decl = false;
     (* let's expand typedefs, it's simpler, hence false *)
