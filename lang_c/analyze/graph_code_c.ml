@@ -238,22 +238,53 @@ let final_type env t =
     expand_typedefs env t
 
 
-let find_existing_node env name candidates last_resort =
+let find_existing_node_opt env name candidates last_resort =
+  let s = Ast.str_of_name name in
+  let kind_with_a_dupe =
+    candidates +> Common.find_opt (fun kind ->
+      Hashtbl.mem env.dupes (s, kind)
+      && kind <> E.Prototype && kind  <> E.GlobalExtern
+    )
+  in
+  let existing_nodes =
+    candidates +> List.filter (fun kind -> G.has_node (s, kind) env.g)
+  in
+  let non_proto_existing_nodes =
+    existing_nodes +> Common.exclude (fun kind ->
+      kind =*= E.Prototype || kind  =*= E.GlobalExtern
+    )
+  in
+  (match kind_with_a_dupe with
   (* If there is a dupe, then we don't want to create an edge to an
    * unrelated entity that happens to be unique and listed first
    * in the list of candidates. This is especially useful
    * when processing large codebase globally such as plan9. 
-   * So in that case we return the kind of the dupe, add_edge will
+   * So in that case we return the kind of the dupe; add_edge() will
    * then do its job and skip the edge.
    *)
-  candidates +> Common.find_opt (fun kind ->
-    Hashtbl.mem env.dupes (Ast.str_of_name name, kind)
-     && kind <> E.Prototype && kind  <> E.GlobalExtern
-  ) |||
-  (candidates +> Common.find_opt (fun kind ->
-    G.has_node (Ast.str_of_name name, kind) env.g
-  ) ||| 
-  last_resort
+  | Some kind_dupe -> Some kind_dupe
+  | None ->
+    (match existing_nodes with
+    (* could not find anything, use last_resort to get a "lookup failure" *)
+    | [] -> Some last_resort
+    | [x] -> Some x
+    (* ambiguity, maybe be proto vs def, give priority to kind listed first *)
+    | x::_::_ -> 
+      (match non_proto_existing_nodes with
+      | [] -> Some x
+      | [y] -> Some y
+      (* real ambiguity, real dupe across different kind of entity *)
+      | x::y::_ ->
+        env.pr2_and_log
+          (spf "skipping edge, multiple def kinds for entity %s (%s<>%s)"
+             s (E.string_of_entity_kind x) (E.string_of_entity_kind y));
+        let xfile = G.file_of_node (s, x) env.g in
+        let yfile = G.file_of_node (s, y) env.g in
+        env.log (spf " orig = %s" xfile);
+        env.log (spf " dupe = %s" yfile);
+        None
+      )
+    )
   )
 
 let is_local env s =
@@ -779,7 +810,7 @@ and expr env = function
       then ()
       else
         let name = str env name in
-        let kind = find_existing_node env name 
+        let kind_opt = find_existing_node_opt env name 
           [E.Constant;
            E.Constructor;
            E.Global; 
@@ -789,7 +820,7 @@ and expr env = function
           ]
           (if looks_like_macro name then E.Constant else E.Global)
         in
-        add_use_edge env (name, kind)
+        kind_opt +> Common.do_option (fun kind -> add_use_edge env (name, kind))
 
   | Call (e, es) -> 
       (match e with
@@ -799,7 +830,7 @@ and expr env = function
           then ()
           else 
             let name = str env name in
-            let kind = find_existing_node env name 
+            let kind_opt = find_existing_node_opt env name 
               [E.Macro; 
                E.Constant;(* for DBG-like macro *)
                E.Function; 
@@ -812,8 +843,10 @@ and expr env = function
             (* we don't call call like foo(bar(x)) to be counted
              * as special calls in prolog, hence the NoCtx here.
              *)
-            add_use_edge { env with ctx = P.NoCtx } (name, kind);
-            exprs { env with ctx = (P.CallCtx (fst name, kind)) } es
+            kind_opt +> Common.do_option (fun kind ->
+              add_use_edge { env with ctx = P.NoCtx } (name, kind);
+              exprs { env with ctx = (P.CallCtx (fst name, kind)) } es
+            )
            
       (* todo: unexpected form of call? function pointer call? add to stats *)
       | _ -> 
