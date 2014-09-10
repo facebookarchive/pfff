@@ -1,7 +1,8 @@
 // ****************************************************************************
 // Prelude
 // ****************************************************************************
-// This file must be passed to the -macros option of the C/C++ parsers in pfff
+// This file must be passed to the -macros option of the C/C++ parsers in pfff.
+// It should be stored as a default in Flag_parsing_cpp.macros_h
 
 // ****************************************************************************
 // MacroString
@@ -15,7 +16,7 @@
  * that we need to have at least one witness, a string to recognize
  * a sequence of strings.
  */
-//#define KERN_WARNING "WARNING"
+//ex: #define KERN_WARNING "WARNING"
 
 /* EX_TABLE & co. 
  *
@@ -30,7 +31,7 @@
  * it well yet.
  */
 
-//#define EX_TABLE(x)  "TOTO"
+//ex: #define EX_TABLE(x)  "TOTO"
 
 // ****************************************************************************
 // MacroIterator
@@ -43,10 +44,9 @@
 // MacroDeclarator
 // ****************************************************************************
 
-// also static DECLARATOR(x);
-
-// also LIST_HEAD stuff 
-// used in qemu, freebsd
+// static DECLARATOR(x);
+// LIST_HEAD stuff 
+// (used in qemu, freebsd)
 
 // ****************************************************************************
 // MacroStmt
@@ -68,8 +68,7 @@
 // MacroAttributes
 // ****************************************************************************
 
-//#define __init YACFE_ATTRIBUTE
-
+//ex: #define __init YACFE_ATTRIBUTE
 // TODO: could perhaps generalize via "__.*"
 
 // linkage
@@ -125,104 +124,14 @@
 // ****************************************************************************
 
 // LIST_HEAD
-
 // GENTEST, GENHEADER
-
 // structure
 // MACHINE_START 
-
 // higher order, ASSERTCMP
-
 // parts of stuff, start of stuff
-
 // begin end wierd, as in C++ firefox and NS_DECLARE_BEGIN/END with code in
 // the middle
-
 // testcase, reflexivity on name
-
 // IDENT in sparse, wierd case
-
 // if-like macros
-
 //#define G_BEGIN_DECLS
-
-// ****************************************************************************
-// git stuff
-// ****************************************************************************
-
-#define internal_function
-#define NOINLINE
-#define FORCEINLINE
-#define THROWSPEC
-#define NORETURN
-#define NORETURN_PTR
-#define MAYBE_UNUSED
-
-#define __MINGW_NOTHROW
-#define WSAAPI
-
-#define for_each_string_list_item(a,b) for(;;)
-
-// ****************************************************************************
-// sparse stuff
-// ****************************************************************************
-
-//YACFE_MACROITERATOR
-#define FOR_EACH_PTR(a,b) for(;;)
-#define FOR_EACH_PTR_NOTAG(a,b) for(;;)
-#define FOR_EACH_PTR_REVERSE(a,b) for(;;)
-#define RECURSE_PTR_REVERSE(a,b) for(;;)
-//#define DO_END_FOR_EACH_REVERSE(a,b,c,d)
-
-#define __percpu
-#define __user
-
-#define SENTINEL_ATTR
-#define FORMAT_ATTR(a)
-#define NORETURN_ATTR
-
-// ****************************************************************************
-// Boost
-// ****************************************************************************
-#define BOOST_AUTO_TEST_CASE(a) void a()
-#define BOOST_STATIC_ASSERT(a) static int x
-#define BOOST_FOR_EACH(a,b) for(;;)
-#define BOOST_FOREACH(a,b) for(;;)
-
-// ****************************************************************************
-// KDE
-// ****************************************************************************
-#define Q_OBJECT
-#define Q_CLASSINFO(a,b)
-
-// ****************************************************************************
-// Jansson
-// ****************************************************************************
-
-#define JSON_INLINE
-#define json_object_foreach(a,b,c) for(;;)
-
-// ****************************************************************************
-// Plan9
-// ****************************************************************************
-#define ARGBEGIN switch(1) 
-#define ARGEND 
-#define EXTERN extern
-#define Extern extern
-
-#define va_start(list, start) list =\
-	(sizeof(start) < 4?\
-		(char*)((int*)&(start)+1):\
-		(char*)(&(start)+1))
-
-#define va_end(list)\
-	USED(list)
-
-#define va_arg(list, mode)\
-	((sizeof(mode) == 1)?\
-		((list += 4), (mode*)list)[-4]:\
-	(sizeof(mode) == 2)?\
-		((list += 4), (mode*)list)[-2]:\
-		((list += sizeof(mode)), (mode*)list)[-1])
-
-#define offsetof(s, m)  (ulong)(&(((s*)0)->m))

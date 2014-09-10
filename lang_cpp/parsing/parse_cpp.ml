@@ -240,22 +240,30 @@ let extract_macros a =
   Common.profile_code_exclusif "Parse_cpp.extract_macros" (fun () -> 
     extract_macros2 a)
 
-(* less: pass it as a parameter to parse_program instead ? *) 
-let (_defs : (string, Pp_token.define_body) Hashtbl.t ref)  = 
-  ref (Hashtbl.create 101)
+(* less: pass it as a parameter to parse_program instead ? 
+ * old: was a ref, but a hashtbl.t is actually already a kind of ref
+ *) 
+let (_defs : (string, Pp_token.define_body) Hashtbl.t)  = 
+  Hashtbl.create 101
 
-let init_defs file =     
-  if not (Sys.file_exists file)
-  then failwith (spf "Could not find %s, have you set PFFF_HOME correctly?"
-                   file);
-  pr2 (spf "Using %s macro file" file);
-  _defs := Common.hash_of_list (extract_macros file)
 
 (* We used to have also a init_defs_builtins() so that we could use a
  * standard.h containing macros that were always useful, and a macros.h
  * that the user could customize for his own project.
- * But this was adding complexity so now we just have macros.h.
+ * But this was adding complexity so now we just have _defs and people
+ * can call add_defs to add local macro definitions.
  *)
+let add_defs file =
+  if not (Sys.file_exists file)
+  then failwith (spf "Could not find %s, have you set PFFF_HOME correctly?"
+                   file);
+  pr2 (spf "Using %s macro file" file);
+  let xs = extract_macros file in
+  xs +> List.iter (fun (k, v) -> Hashtbl.add _defs k v)
+
+let init_defs file =     
+  Hashtbl.clear _defs;
+  add_defs file
 
 (*****************************************************************************)
 (* Error recovery *)
@@ -328,7 +336,7 @@ let parse_with_lang ?(lang=Flag_parsing_cpp.Cplusplus) file =
   let toks_orig = tokens file in
 
   let toks = 
-    try Parsing_hacks.fix_tokens ~macro_defs:!_defs lang toks_orig
+    try Parsing_hacks.fix_tokens ~macro_defs:_defs lang toks_orig
     with Token_views_cpp.UnclosedSymbol s ->
       pr2 s;
       if !Flag.debug_cplusplus 

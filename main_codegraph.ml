@@ -311,7 +311,12 @@ let build_graph_code lang xs =
       Graph_code_php.build ~verbose:!verbose ~is_skip_error_file root files
     | "web" -> raise Todo
 
-    | "c" -> Graph_code_c.build ~verbose:!verbose root files, empty
+    | "c" -> 
+        Parse_cpp.init_defs !Flag_parsing_cpp.macros_h;
+        let local = Filename.concat root "pfff_macros.h" in
+        if Sys.file_exists local
+        then Parse_cpp.add_defs local;
+        Graph_code_c.build ~verbose:!verbose root files, empty
     | "clang2" -> Graph_code_clang.build ~verbose:!verbose root files, empty
 
     | "java" -> Graph_code_java.build ~verbose:!verbose root files, empty

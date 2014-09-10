@@ -257,6 +257,10 @@ let string_of_entity_kind kind =
 (* main entry point *)
 let lpize xs = 
   Parse_cpp.init_defs !Flag_parsing_cpp.macros_h;
+  let root = Sys.getcwd () in
+  let local = Filename.concat root "pfff_macros.h" in
+  if Sys.file_exists local
+  then Parse_cpp.add_defs local;
 
   sanity_check xs;
   let current_dir = ref "" in
