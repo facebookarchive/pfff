@@ -349,8 +349,7 @@ let add_node_and_edge_if_defs_mode env (name, kind) typopt =
           | _ when env.c_file_readable =~ ".*EXTERNAL" -> ()
           | _ ->
               env.pr2_and_log (spf "DUPE entity: %s" (G.string_of_node node));
-              let nodeinfo = G.nodeinfo node env.g in
-              let orig_file = nodeinfo.G.pos.Parse_info.file in
+              let orig_file = G.file_of_node node env.g in
               env.log (spf " orig = %s" orig_file);
               env.log (spf " dupe = %s" env.c_file_readable);
               Hashtbl.replace env.dupes node true;
@@ -397,6 +396,10 @@ let add_node_and_edge_if_defs_mode env (name, kind) typopt =
           pos; typ;
           props = [];
         } in
+        (* less: hmmm actually it could be a dupe it there is another node
+         * with a different def kind and same name. But we should at
+         * least warn about in find_existing_node_opt().
+         *)
         env.g +> G.add_node node;
         env.g +> G.add_edge (env.current, node) G.Has;
         env.g +> G.add_nodeinfo node nodeinfo;
