@@ -342,7 +342,7 @@ let lpize xs =
     pr "";
 
     (* for the initial 'make sync' to work *)
-    Sys.command (spf "rm -f %s" file) +> ignore;  
+    (* Sys.command (spf "rm -f %s" file) +> ignore;   *)
   );
   ()
 
