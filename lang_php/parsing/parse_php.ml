@@ -417,9 +417,9 @@ let (program_of_string: string -> Ast_php.program) = fun s ->
   ast
 
 (* use program_of_string when you can *)
-let tmp_php_file_from_string s =
+let tmp_php_file_from_string ?(header="<?php\n") s =
   let tmp_file = Common.new_temp_file "test" ".php" in
-  Common.write_file ~file:tmp_file ("<?php\n" ^ s);
+  Common.write_file ~file:tmp_file (header ^ s);
   tmp_file
 
 
