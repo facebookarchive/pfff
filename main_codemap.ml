@@ -190,7 +190,10 @@ let filters = [
   );
 
   "cpp", (let x = ref false in (fun file ->
-    Common2.once x (fun () -> Parse_cpp.init_defs !Flag_parsing_cpp.macros_h);
+    Common2.once x (fun () -> 
+      (* TODO: also add possible pfff_macros.h when there *)
+      Parse_cpp.init_defs !Flag_parsing_cpp.macros_h
+    );
     match FT.file_type_of_file file with
     | FT.PL (FT.C _ | FT.Cplusplus _) -> true 
     | FT.PL FT.Asm -> true
