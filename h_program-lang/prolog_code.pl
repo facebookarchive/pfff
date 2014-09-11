@@ -116,10 +116,11 @@
 %  - position: at/3
 %      ex: at(('Preparable', 'gen'), 'flib/core/preparable.php', 10).
 %
-%  - file information: file/2
+%  - file information: file/2, hh/1
 %       ex: file('wap/index.php', ['wap','index.php']).
+%       ex: hh('flib/x/foo.php').
 %    By having a list one then use member/3 to select subparts of the codebase
-%    easily (or use explode_file/2)
+%    easily (or use explode_file/2).
 %
 % related work:
 %  - jquery, tyruba
