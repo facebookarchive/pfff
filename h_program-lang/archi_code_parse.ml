@@ -67,8 +67,8 @@ let is_auto_generated file =
       b =$= "y.tab" ||
       Sys.file_exists (Common2.filename_of_dbe (d,b, "y")) ||
       Sys.file_exists (Common2.filename_of_dbe (d,b, "l")) ||
-      (* bigloo *)
-      Sys.file_exists (Common2.filename_of_dbe (d,b, "scm")) ||
+      (* bigloo (hmm but then conflict with s9 that have s9.c and s9.scm *)
+      (* Sys.file_exists (Common2.filename_of_dbe (d,b, "scm")) || *)
       (if  b ==~ re_c_yaccfile
       then 
         let b' = Common.matched1 b in
