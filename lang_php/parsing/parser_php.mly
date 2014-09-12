@@ -219,6 +219,7 @@ module PI = Parse_info
 %nonassoc  T_YIELD
 %nonassoc  T_AWAIT
 
+%left T_ARROW
 
 /*(* http://www.php.net/manual/en/language.operators.precedence.php *)*/
 %left      T_INCLUDE T_INCLUDE_ONCE T_EVAL T_REQUIRE T_REQUIRE_ONCE
@@ -1089,7 +1090,8 @@ expr:
 
  /*(* php-facebook-ext: in hphp.y yield are at the statement level
     * and are restricted to a few forms *)*/
- | T_YIELD expr { Yield ($1, $2) }
+ | T_YIELD expr              { Yield ($1, ArrayExpr $2) }
+ | T_YIELD expr T_ARROW expr { Yield ($1, ArrayArrowExpr ($2, $3, $4)) }
  | T_YIELD T_BREAK { YieldBreak ($1, $2) }
  /*(* php-facebook-ext: Just like yield, await is at the statement level *) */
  | T_AWAIT expr { Await ($1, $2) }

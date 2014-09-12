@@ -274,13 +274,13 @@ and expr =
   (* php-facebook-ext:
    *
    * todo: this should be at the statement level as there are only a few
-   * forms of yield that hphp support (e.g. yield <expr>; and
+   * forms of yield that HPHP supports (e.g. yield <expr>; and
    * <lval> = yield <expr>). One could then have a YieldReturn and YieldAssign
    * but this may change and none of the analysis in pfff need to
    * understand yield so for now just make it simple and add yield
    * at the expression level.
    *)
-  | Yield of tok * expr
+  | Yield of tok * array_pair (* should have no ref inside *)
   | YieldBreak of tok * tok
   (* php-facebook-ext: Just like yield, this should be at the statement level *)
   | Await of tok * expr
@@ -346,6 +346,7 @@ and expr =
 
    and castOp = ptype
 
+   (* less: merge with foreach_pattern, list($k => $v) = ... is allowed no? *)
    and list_assign =
      | ListVar of lvalue
      | ListList of tok * list_assign comma_list paren

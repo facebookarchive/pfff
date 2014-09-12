@@ -274,7 +274,7 @@ and vof_expr = function
       in Ocaml.VSum (("RequireOnce", [ v1; v2 ]))
   | Yield ((v1, v2)) ->
       let v1 = vof_tok v1
-      and v2 = vof_expr v2
+      and v2 = vof_array_pair v2
       in Ocaml.VSum (("Yield", [ v1; v2 ]))
   | YieldBreak ((v1, v2)) ->
       let v1 = vof_tok v1

@@ -242,7 +242,9 @@ and expr =
    * in foreach_pattern.
    *)
   | List of expr list
-  (* used only inside array_value or foreach_pattern *)
+  (* used only inside array_value or foreach_pattern, or for yield
+   * (which is translated as a builtin and so a Call)
+   *)
   | Arrow of expr * expr
 
   (* $y =& $x is transformed into an Assign(Var "$y", Ref (Var "$x")). In

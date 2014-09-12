@@ -447,7 +447,7 @@ let rank_of_error_kind err_kind =
               ) -> Never
 
           | (Yield(_,
-               (Call(Id (XName[QI (Name(("result", _)))]),
+               ArrayExpr(Call(Id (XName[QI (Name(("result", _)))]),
                  (_, [Left(Arg((Id(XName[QI (Name(("null", _)))]))))],
                 _))
                ))) -> Never

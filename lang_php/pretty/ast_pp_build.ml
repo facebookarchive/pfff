@@ -507,7 +507,8 @@ and expr env = function
   | Isset (_, (_, lvl, _)) ->
       A.Call (A.Id "isset", List.map (lvalue env) (comma_list lvl))
   | XhpHtml xhp -> A.Xhp (xhp_html env xhp)
-  | Yield (_, e) -> A.Call (A.Id "yield", [expr env e])
+  | Yield (_, ArrayExpr e) -> A.Call (A.Id "yield", [expr env e])
+  | Yield (_, _) -> failwith "yield $k => $v not supported"
   | YieldBreak _ -> A.Call (A.Id "yield", [A.Id "break"])
   | Await (_, e) -> A.Call (A.Id "await", [expr env e])
   (* only appear in sgrep pattern *)
