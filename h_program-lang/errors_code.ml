@@ -215,13 +215,18 @@ let adjust_errors xs =
        | E.Type when s =~ "S__anon" -> true
        | E.Type when s =~ "E__" -> true
        | E.Type when s =~ "T__" -> true
+
+       (* FP in graph_code_c for now *)
+       | E.Type when s =~ "U____anon" -> true
         
        (* TODO: to remove, but too many for now *)
        | E.Constructor
        | E.Field 
          -> true
 
-       (* hmm plan9 specific? *)
+       (* hmm plan9 specific? being unused for one project does not mean
+        * it's not used by another one.
+        *)
        | _ when file =~ "^include/" -> true
 
        | _ when file =~ "^EXTERNAL/" -> true

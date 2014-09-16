@@ -29,6 +29,9 @@ module P = Graph_code_prolog
  * Graph of dependencies for Clang ASTs. See graph_code.ml and
  * main_codegraph.ml for more information.
  * 
+ * update: graph_code_c.ml is now the way to build dependencies
+ * for C projects. It has more features now.
+ * 
  * schema:
  *  Root -> Dir -> File (.c|.h) -> Function | Prototype
  *                              -> Global | GlobalExtern
@@ -54,6 +57,10 @@ module P = Graph_code_prolog
  * 
  * todo: 
  *  - Type is a bit overloaded maybe (used for struct, enum, union, typedefs)
+ *  -  type deps on params, otherwise FP on deadcode for structures
+ *     (it's fixed in graph_code_c :) )
+ *  -  handle conflicts in graph_code for globals, like for static,
+ *     disambiguate based on directory at least.
  *)
 
 (*****************************************************************************)
