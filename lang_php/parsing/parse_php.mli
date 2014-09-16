@@ -38,7 +38,7 @@ val expr_of_string: string -> Ast_php.expr
 val program_of_string: string -> Ast_php.program
 val tokens_of_string: string -> Parser_php.token list
 val any_of_string:  string -> Ast_php.any
-val tmp_php_file_from_string: string -> Common.filename
+val tmp_php_file_from_string: ?header:string -> string -> Common.filename
 val tokens: 
   ?init_state:Lexer_php.state_mode ->
   Common.filename -> Parser_php.token list

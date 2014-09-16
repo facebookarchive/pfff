@@ -20,8 +20,8 @@ open OUnit
 (* Helpers *)
 (*****************************************************************************)
 
-let prolog_query ~file query =
-  let source_file = Parse_php.tmp_php_file_from_string file in
+let prolog_query ?header ~file query =
+  let source_file = Parse_php.tmp_php_file_from_string ?header file in
   Database_prolog_php.prolog_query ~verbose:false ~source_file ~query
 
 (*****************************************************************************)
@@ -425,6 +425,48 @@ class :x:frag {
     );
     (* todo: handle also children, inherit, etc *)
 
+(*****************************************************************************)
+(* Hack *)
+(*****************************************************************************)
+    "hack" >:: (fun () ->
+      let file = "
+function foo(): int {
+  return 1;
+}
+"in
+      let xs = prolog_query ~header:"<?hh\n" ~file "hh(X,_), writeln(X)" in
+      assert_bool ~msg:"it should recognize hh files"
+        (match xs with
+        | [f] -> f =~ "tmp/.*"
+        | _ -> false
+        );
+
+      let xs = prolog_query ~header:"<?php\n" ~file "hh(X,_), writeln(X)" in
+      assert_equal ~msg:"it should not recognize php files"
+        [] xs;
+
+      let xs = 
+        prolog_query ~header:"<?hh //decl\n" ~file "hh(_,X), writeln(X)"
+      in
+      assert_equal ~msg:"it should recognize hh modes"  ["decl"] xs;
+
+      let xs = 
+        prolog_query ~header:"<?hh //     strict\n" ~file "hh(_,X), writeln(X)"
+      in
+      assert_equal ~msg:"it should recognize hh modes"  ["strict"] xs;
+
+
+      let xs = 
+        prolog_query ~header:"<?hh // partial\n" ~file "hh(_,X), writeln(X)"
+      in
+      assert_equal ~msg:"it should recognize hh modes"  ["default"] xs;
+
+      let xs = 
+        prolog_query ~header:"<?hh // not a mode\n" ~file "hh(_,X), writeln(X)"
+      in
+      assert_equal ~msg:"it should recognize hh modes"  ["default"] xs;
+
+    );
 
 
 (*****************************************************************************)

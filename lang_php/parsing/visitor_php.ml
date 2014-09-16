@@ -343,7 +343,7 @@ and v_expr (x: expr) =
   | IncludeOnce ((v1, v2)) -> let v1 = v_tok v1 and v2 = v_expr v2 in ()
   | Require ((v1, v2)) -> let v1 = v_tok v1 and v2 = v_expr v2 in ()
   | RequireOnce ((v1, v2)) -> let v1 = v_tok v1 and v2 = v_expr v2 in ()
-  | Yield ((v1, v2)) -> let v1 = v_tok v1 and v2 = v_expr v2 in ()
+  | Yield ((v1, v2)) -> let v1 = v_tok v1 and v2 = v_array_pair v2 in ()
   | YieldBreak ((v1, v2)) -> let v1 = v_tok v1 and v2 = v_tok v2 in ()
   | Await ((v1, v2)) -> let v1 = v_tok v1 and v2 = v_expr v2 in ()
   | Empty ((v1, v2)) ->

@@ -1309,7 +1309,7 @@ and m_expr a b =
     ))
   | A.Yield(a1, a2), B.Yield(b1, b2) ->
     m_tok a1 b1 >>= (fun (a1, b1) ->
-    m_expr a2 b2 >>= (fun (a2, b2) ->
+    m_array_pair a2 b2 >>= (fun (a2, b2) ->
     return (
        A.Yield(a1, a2),
        B.Yield(b1, b2)

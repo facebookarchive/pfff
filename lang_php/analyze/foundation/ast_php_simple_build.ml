@@ -409,7 +409,7 @@ and expr env = function
   | XhpHtml xhp -> A.Xhp (xhp_html env xhp)
 
   | Yield (tok, e) ->
-      A.Call (A.Id [A.builtin "yield", wrap tok], [expr env e])
+      A.Call (A.Id [A.builtin "yield", wrap tok], [array_pair env e])
   (* todo? merge in one yield_break? *)
   | YieldBreak (tok, tok2) ->
       A.Call (A.Id [A.builtin "yield", wrap tok],

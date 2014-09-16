@@ -23,6 +23,7 @@ module E = Entity_code
 module CG = Callgraph_php2
 module P = Prolog_code
 module PI = Parse_info
+module T = Parser_php
 
 (*****************************************************************************)
 (* Prelude *)
@@ -123,15 +124,6 @@ let add_function_params current def add =
            | Some (_colon, _atopt, t) -> Some t
            ))))
                   
-    
-
-(* todo: also extract if decl/strict/regular? *)
-let is_hack_file toks =
-  match toks with
-  | Parser_php.T_OPEN_TAG info::_rest ->
-    Parse_info.str_of_info info =$= "<?hh"
-  | _ -> false
-
 (*****************************************************************************)
 (* Defs/uses *)
 (*****************************************************************************)
@@ -541,7 +533,7 @@ let build2 ?(show_progress=true) root files =
    add (P.Misc ":- discontiguous async/1, yield/1");
    add (P.Misc ":- discontiguous problem/2");
 
-   add (P.Misc ":- discontiguous hh/1");
+   add (P.Misc ":- discontiguous hh/2");
    (* see the comment on newv in add_uses() above *)
    add (P.Misc ":- discontiguous special/1");
    add (P.Misc "special('newv')");
@@ -556,9 +548,31 @@ let build2 ?(show_progress=true) root files =
 
      try 
        let (ast, toks) = Parse_php.ast_and_tokens file in
-       let is_hh = is_hack_file toks in
-       if is_hh 
-       then add (P.Misc (spf "hh('%s')" readable));
+
+       (match toks with
+       (* <?hh //xxx *)
+       | T.T_OPEN_TAG ii1::T.TSpaces _::T.T_COMMENT ii2::_rest 
+         when PI.str_of_info ii1 =$= "<?hh" ->
+           let s = PI.str_of_info ii2 in
+           let mode =
+             if s =~ "//[ \t]*\\([a-z]+\\)"
+             then 
+               match Common.matched1 s with
+               | ("strict" | "decl") as s -> s
+               | "partial" -> "default"
+               | _ -> "default"
+             else "default"
+           in
+           add (P.Misc (spf "hh('%s', '%s')" readable mode))
+
+       (* <?hh *)
+       | Parser_php.T_OPEN_TAG info::_rest 
+         when PI.str_of_info info =$= "<?hh" ->
+           add (P.Misc (spf "hh('%s', default)" readable));
+         
+       | _ -> ()
+       );
+
        let ast = Unsugar_php.unsugar_self_parent_program ast in
        visit ~add readable ast;
      with Parse_php.Parse_error _ | Ast_php.TodoNamespace _ ->
