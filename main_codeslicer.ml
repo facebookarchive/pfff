@@ -7,8 +7,50 @@ open Common
 (*****************************************************************************)
 (* Purpose *)
 (*****************************************************************************)
-(*  
- * Extract a meaningful subset of a codebase.
+(* Extract the "core", the essential parts of a codebase, the signal versus
+ * the noise!
+ * 
+ * Using codemap is great to navigate a large codebase and codegraph is
+ * great to get a first high level view of its software architecture,
+ * but on very very large codebase, it is still very hard to find and
+ * understand the "core" of a software. For instance on the Linux kernel,
+ * the drivers take more than 50% of the codebase, but none of those
+ * drivers are actually essential to understand the architecture of Linux.
+ * Once you've seen one driver you got the main ideas and seeing
+ * another driver will not improve significantly your comprehension
+ * of the whole codebase. In some cases such as www, the whole code is so
+ * messy that codegraph has also a hard time to find a meaningful
+ * layering of the code because of too many backward dependencies.
+ * 
+ * Fortunately in most codebase a lots of things are actual plugins
+ * or extensions of a core (for Linux it is the many device drivers,
+ * file systems, internet protocols, etc). The goal of codeslicer is
+ * to detect those less important extensions and to offer a view of
+ * a codebase where only the essential things have been kept.
+ * The resulting codebase will hopefully be far smaller and have
+ * better layering properties. One can then use codegraph and codemap
+ * on this subset.
+ * 
+ * Note that the codemap/codegraph slicing feature offers in part
+ * the "get a subset of a codebase" functionality described here. But codemap
+ * requires the programmer to know where to start slicing from (usually 
+ * the main()) and the slice can actually contain many extensions.
+ * 
+ * A nice side effect of the codeslicer is that because the resulting codebase
+ * is far smaller it's also faster to run expensive analysis that are 
+ * currently hard to scale to millions LOC (e.g. datalog, but even codegraph
+ * and codemap which have troubles to scale to www).
+ * 
+ * history:
+ *  - I had a simple code slicer using graph_code that I used to get
+ *    all the code relevant to arc build (on which I could run
+ *    codegraph with class analysis on)
+ *  - I was doing lots of manual codeslicing when working on Kernel.tex.nw
+ *    by removing many device drivers, internet protocols, file systems
+ *  - I was doing even more manual codeslicing when working on the whole plan9
+ *    by removing support for many architectures, hosts, less important
+ *    programs, compatability with other operating systems, less important
+ *    or obsolete features.
  *)
 
 (*****************************************************************************)
