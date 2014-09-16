@@ -264,7 +264,8 @@ INCLUDEDIRS=$(MAKESUBDIRS) \
  $(GTKINCLUDE) $(CAIROINCLUDE) \
  $(OCAMLCOMPILERDIR)
 
-PP=-pp "cpp -DFEATURE_BYTECODE=$(FEATURE_BYTECODE) -DFEATURE_CMT=$(FEATURE_CMT)"
+CLANG_HACK=-Wno-invalid-pp-token
+PP=-pp "cpp $(CLANG_HACK) -DFEATURE_BYTECODE=$(FEATURE_BYTECODE) -DFEATURE_CMT=$(FEATURE_CMT)"
 
 ##############################################################################
 # Generic

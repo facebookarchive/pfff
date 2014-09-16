@@ -66,6 +66,8 @@ let verbose = ref false
 
 let lang = ref "c"
 
+let output_dir = ref "CODESLICER"
+
 (* action mode *)
 let action = ref ""
 
@@ -391,14 +393,77 @@ let lpize xs =
 (*****************************************************************************)
 (* Extra Actions *)
 (*****************************************************************************)
+module GC = Graph_code
+
+let dep_file_of_dir dir = 
+  Filename.concat dir Graph_code.default_filename
+
+let test_transitive_deps xs =
+  let pwd = Sys.getcwd () in
+  let file = dep_file_of_dir pwd in
+  let g = Graph_code.load file in
+
+  let hdone = Hashtbl.create 101 in
+  
+  let start_nodes = 
+    xs +> List.map (fun path ->
+      let node =
+        if Sys.is_directory path
+        then path, E.Dir
+        else path, E.File
+      in
+      if not (GC.has_node node g)
+      then failwith (spf "could not find %s" path);
+      node
+    )
+  in
+  let rec dfs depth xs =
+    match xs with
+    | [] -> ()
+    (* www specific *)
+    | ("flib_init", E.Function)::xs -> dfs depth xs
+    | n::xs ->
+        (if Hashtbl.mem hdone n || depth > 4
+        then ()
+        else begin
+          Hashtbl.add hdone n true;
+          let uses = GC.succ n GC.Use g in
+          dfs (depth + 1) uses;
+          let children = GC.children n g in
+          (* we want all children, especially subdirectories *)
+          dfs (depth + 0) children
+        end);
+        dfs depth xs
+      
+  in
+  dfs 0 start_nodes;
+  let files = hdone +> Common.hashset_to_list +> Common.map_filter (fun n ->
+    try 
+      let file = GC.file_of_node n g in
+      Some file
+    with Not_found -> None
+  ) +> Common.hashset_of_list +> Common.hashset_to_list in
+  (*pr2 (spf "%d" (List.length files));*)
+  files +> List.iter pr;
+  let dir = !output_dir in
+  Common.command2 (spf "mkdir -p %s" dir);
+  files +> List.iter (fun file ->
+    let subdir = Filename.dirname file in
+    Common.command2 (spf "mkdir -p %s/%s" dir subdir);
+    Common.command2 (spf "cp %s %s/%s" file dir subdir);
+  )
+
 
 (* ---------------------------------------------------------------------- *)
 let pfff_extra_actions () = [
+  "-test_transitive_deps", " <dirs or files> (works with -o)",
+  Common.mk_action_n_arg test_transitive_deps;
+
   "-find_source", " <dirs>",
   Common.mk_action_n_arg find_source;
   "-lpize", " <files>",
   Common.mk_action_n_arg lpize;
-  
+
 ]
 
 (*****************************************************************************)
@@ -413,6 +478,9 @@ let all_actions () =
 let options () = [
   "-verbose", Arg.Set verbose, 
   " ";
+  "-o", Arg.Set_string output_dir, 
+  " <dir> generate codeslice in dir";
+  
   "-lang", Arg.Set_string lang, 
   (spf " <str> choose language (default = %s)" !lang);
   ] @

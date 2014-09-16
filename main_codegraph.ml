@@ -598,61 +598,6 @@ let test_layering graph_file =
   Layer_graph_code.gen_rank_heatmap_layer g htopdown output;
   ()
 
-let test_transitive_deps xs =
-  let pwd = Sys.getcwd () in
-  let file = dep_file_of_dir pwd in
-  let g = Graph_code.load file in
-
-  let hdone = Hashtbl.create 101 in
-  
-  let start_nodes = 
-    xs +> List.map (fun path ->
-      let node =
-        if Sys.is_directory path
-        then path, E.Dir
-        else path, E.File
-      in
-      if not (GC.has_node node g)
-      then failwith (spf "could not find %s" path);
-      node
-    )
-  in
-  let rec dfs depth xs =
-    match xs with
-    | [] -> ()
-    | ("flib_init", E.Function)::xs -> dfs depth xs
-    | n::xs ->
-        (if Hashtbl.mem hdone n || depth > 4
-        then ()
-        else begin
-          Hashtbl.add hdone n true;
-          let uses = GC.succ n GC.Use g in
-          dfs (depth + 1) uses;
-          let children = GC.children n g in
-          (* we want all children, especially subdirectories *)
-          dfs (depth + 0) children
-        end);
-        dfs depth xs
-      
-  in
-  dfs 0 start_nodes;
-  let files = hdone +> Common.hashset_to_list +> Common.map_filter (fun n ->
-    try 
-      let file = GC.file_of_node n g in
-      Some file
-    with Not_found -> None
-  ) +> Common.hashset_of_list +> Common.hashset_to_list in
-  (*pr2 (spf "%d" (List.length files));*)
-  files +> List.iter pr;
-  !output_dir +> Common.do_option (fun dir ->
-    Common.command2 (spf "mkdir -p %s" dir);
-    files +> List.iter (fun file ->
-      let subdir = Filename.dirname file in
-      Common.command2 (spf "mkdir -p %s/%s" dir subdir);
-      Common.command2 (spf "cp %s %s/%s" file dir subdir);
-    )
-  );
-  ()
 
 let test_xta graph_file = 
   let g = Graph_code.load graph_file in
@@ -709,8 +654,6 @@ let extra_actions () = [
   Common.mk_action_1_arg test_adhoc_deps;
   "-test_layering", " <graph>",
   Common.mk_action_1_arg test_layering;
-  "-test_transitive_deps", " <dirs or files> (works with -o)",
-  Common.mk_action_n_arg test_transitive_deps;
   "-test_xta", " <graph>",
   Common.mk_action_1_arg test_xta;
   "-test_dotfile_of_deps", " <dir>",
