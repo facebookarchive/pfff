@@ -15,18 +15,19 @@ open Common
  * but on very very large codebase, it is still very hard to find and
  * understand the "core" of a software. For instance on the Linux kernel,
  * the drivers take more than 50% of the codebase, but none of those
- * drivers are actually essential to understand the architecture of Linux.
+ * drivers are actually essential to understand the "core" of Linux.
  * Once you've seen one driver you got the main ideas and seeing
  * another driver will not improve significantly your comprehension
- * of the whole codebase. In some cases such as www, the whole code is so
- * messy that codegraph has also a hard time to find a meaningful
- * layering of the code because of too many backward dependencies.
+ * of the whole codebase. In some cases such as www, the whole codebase is so
+ * messy that even codegraph has a hard time to convey the software
+ * architecture as it's difficult to find a meaningful layering of the code
+ * because of the too many backward dependencies.
  * 
  * Fortunately in most codebase a lots of things are actual plugins
  * or extensions of a core (for Linux it is the many device drivers,
  * file systems, internet protocols, etc). The goal of codeslicer is
  * to detect those less important extensions and to offer a view of
- * a codebase where only the essential things have been kept.
+ * the codebase where only the essential things have been kept.
  * The resulting codebase will hopefully be far smaller and have
  * better layering properties. One can then use codegraph and codemap
  * on this subset.
@@ -44,13 +45,14 @@ open Common
  * history:
  *  - I had a simple code slicer using graph_code that I used to get
  *    all the code relevant to arc build (on which I could run
- *    codegraph with class analysis on)
+ *    codegraph with class analysis ON)
  *  - I was doing lots of manual codeslicing when working on Kernel.tex.nw
  *    by removing many device drivers, internet protocols, file systems
- *  - I was doing even more manual codeslicing when working on the whole plan9
+ *  - I was doing even more manual codeslicing when LPizing the whole plan9
  *    by removing support for many architectures, hosts, less important
  *    programs, compatability with other operating systems, less important
- *    or obsolete features.
+ *    or obsolete features. Then came the idea of trying to automate this
+ *    codeslicing, especially for www.
  *)
 
 (*****************************************************************************)
@@ -88,6 +90,9 @@ let main_action _xs =
 (*****************************************************************************)
 (* LPizer *)
 (*****************************************************************************)
+(* In this file because it can't be put in syncweb/ (it uses graph_code_c),
+ * and it's a form of code slicing ...
+ *)
 
 (* for lpification, to get a list of files and handling the skip list *)
 let find_source xs =
@@ -395,15 +400,17 @@ let lpize xs =
 (*****************************************************************************)
 module GC = Graph_code
 
-let dep_file_of_dir dir = 
-  Filename.concat dir Graph_code.default_filename
-
-let test_transitive_deps xs =
+(* xs are the set of dirs or files we are interested in; the starting points
+ * for the DFS.
+ *)
+let extract_transitive_deps xs =
   let pwd = Sys.getcwd () in
-  let file = dep_file_of_dir pwd in
-  let g = Graph_code.load file in
+  let graph_file = Filename.concat pwd Graph_code.default_filename in
+  let g = Graph_code.load graph_file in
 
   let hdone = Hashtbl.create 101 in
+
+  let max_depth = 4 in
   
   let start_nodes = 
     xs +> List.map (fun path ->
@@ -420,10 +427,10 @@ let test_transitive_deps xs =
   let rec dfs depth xs =
     match xs with
     | [] -> ()
-    (* www specific *)
+    (* www specific, do not include the transitive deps of flib_init() *)
     | ("flib_init", E.Function)::xs -> dfs depth xs
     | n::xs ->
-        (if Hashtbl.mem hdone n || depth > 4
+        (if Hashtbl.mem hdone n || depth > max_depth
         then ()
         else begin
           Hashtbl.add hdone n true;
@@ -456,8 +463,8 @@ let test_transitive_deps xs =
 
 (* ---------------------------------------------------------------------- *)
 let pfff_extra_actions () = [
-  "-test_transitive_deps", " <dirs or files> (works with -o)",
-  Common.mk_action_n_arg test_transitive_deps;
+  "-extract_transitive_deps", " <files or dirs> (works with -o)",
+  Common.mk_action_n_arg extract_transitive_deps;
 
   "-find_source", " <dirs>",
   Common.mk_action_n_arg find_source;
