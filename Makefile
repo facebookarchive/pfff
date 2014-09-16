@@ -22,6 +22,7 @@ PROGS=pfff \
  stags \
  scheck \
  codequery \
+ codeslicer \
  pfff_db
 
 PROGS+=pfff_test
@@ -403,6 +404,17 @@ codequery.opt: $(LIBS:.cma=.cmxa) $(LIBS2:.cma=.cmxa) $(OBJS2:.cmo=.cmx) $(OPTOB
 	$(OCAMLOPT) $(STATIC) -o $@ $(SYSLIBS:.cma=.cmxa)   $^ 
 clean:: 
 	rm -f codequery
+
+#------------------------------------------------------------------------------
+# codeslicer targets
+#------------------------------------------------------------------------------
+
+codeslicer: $(LIBS) $(OBJS) main_codeslicer.cmo 
+	$(OCAMLC) $(CUSTOM) -o $@ $(SYSLIBS) $^
+codeslicer.opt: $(LIBS:.cma=.cmxa) $(OPTOBJS) main_codeslicer.cmx
+	$(OCAMLOPT) $(STATIC) -o $@ $(SYSLIBS:.cma=.cmxa) $^
+clean::
+	rm -f codeslicer
 
 #------------------------------------------------------------------------------
 # pfff_db targets
