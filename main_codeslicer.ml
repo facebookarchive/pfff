@@ -420,7 +420,7 @@ let find_big_branching_factor graph_file =
   in
 
   (* initial set *)
-  let hdead_candidates = 
+  let dead_candidates () = 
     big_parents 
     (* todo: could keep 1? the biggest one in terms of use? *)
     +> List.map (fun parent -> Graph.succ parent hierarchy)
@@ -428,99 +428,125 @@ let find_big_branching_factor graph_file =
     (* transitive closure to also remove the fields, methods of a class *)
     +> List.map (fun node -> Graph_code.node_and_all_children node g)
     +> List.flatten
-    +> Common.hashset_of_list
   in
+
+  let hdead_candidates = Common.hashset_of_list (dead_candidates ()) in
 
   pr2 (spf "step1: big parents = %d, initial candidates for removal = %d"
          (List.length big_parents)
          (Hashtbl.length hdead_candidates));
 
-  (* step2: make sure none of the candidate are used by live entities *)
-  let live = ref (Graph_code.all_nodes g +> Common.exclude (fun node ->
-    Hashtbl.mem hdead_candidates node
-  ))
-  in
 
-  let make_live node =
-    let xs = Graph_code.node_and_all_children node g in
-    xs +> List.iter (fun node ->
-      Hashtbl.remove hdead_candidates node;
-      Common.push node live
-    )
-  in
+  let progress = ref true in
+  let pass = ref 0 in
+  let last_cnt = ref 0 in
 
-  while !live <> [] do
-    let this_round = !live in
-    live := [];
+  while !progress do
 
-    this_round +> List.iter (fun live_node ->
-      let uses = Graph_code.succ live_node Graph_code.Use g in
-      uses +> List.iter (fun use_of_live_node ->
-        if Hashtbl.mem hdead_candidates use_of_live_node then begin
-          make_live use_of_live_node
-        end
-      )
-    )
-  done;
+    (* ok the previous phase may have discovered newly dead code, that
+     * may have rendered live children of big parents originally,
+     * but that should not anymore, so let's reconsider all children!
+     *)
+    dead_candidates () +> List.iter (fun node ->
+      Hashtbl.replace hdead_candidates node true
+    );
 
-  pr2 (spf "step2: candidates for removal = %d"
-         (Hashtbl.length hdead_candidates));
+    (* step2: make sure none of the candidate are used by live entities *)
 
-  (* step3: mark as live parent (in the Has sense) of live entities *)
-
-  (* step4: remove newly dead code (helpers of removed classes) *)
-
-  let users_of_node = Graph_code.mk_eff_use_pred g in
-
-  let dead = ref (Common.hashset_to_list hdead_candidates) in
-
-  let make_dead node =
-    let xs = Graph_code.node_and_all_children node g in
-    xs +> List.iter (fun node ->
-      Hashtbl.replace hdead_candidates node true;
-      Common.push node dead
-    )
-  in
-
-  while !dead <> [] do
-    let this_round = !dead in
-    dead := [];
-
-    this_round +> List.iter (fun dead_node ->
-      let uses = Graph_code.succ dead_node Graph_code.Use g in
-      let live_uses_of_dead_code =
-        uses +> Common.exclude (fun node -> Hashtbl.mem hdead_candidates node)
-      in
-
-      live_uses_of_dead_code +> List.iter (fun live_use_of_dead_node ->
-        let xs = 
-          let node = live_use_of_dead_node in
-          Graph_code.node_and_all_children node g 
-        in
-        let hxs = Common.hashset_of_list xs in
-
-        let users =
-          xs +> List.map (fun node -> users_of_node node) +> List.flatten in
-        
-        (* maybe a newly dead! *)
-        if users +> List.for_all (fun node ->
-          Hashtbl.mem hdead_candidates node ||
-          Hashtbl.mem hxs node
-        ) 
-        then make_dead live_use_of_dead_node
-      )
-    )
-  done;
+    let live = ref (Graph_code.all_nodes g +> Common.exclude (fun node ->
+      Hashtbl.mem hdead_candidates node
+    ))
+    in
   
-  pr2 (spf "step4: candidates for removal = %d"
-         (Hashtbl.length hdead_candidates));
-
-(* debug
-  hdead_candidates +> Common.hashset_to_list +> List.iter (fun node ->
-    pr (spf "DEAD: %s" (Graph_code.string_of_node node))
-  );
-*)
-
+    let make_live node =
+      let xs = Graph_code.node_and_all_children node g in
+      xs +> List.iter (fun node ->
+        Hashtbl.remove hdead_candidates node;
+        Common.push node live
+      )
+    in
+  
+    while !live <> [] do
+      let this_round = !live in
+      live := [];
+  
+      this_round +> List.iter (fun live_node ->
+        let uses = Graph_code.succ live_node Graph_code.Use g in
+        uses +> List.iter (fun use_of_live_node ->
+          if Hashtbl.mem hdead_candidates use_of_live_node then begin
+            make_live use_of_live_node
+          end
+        )
+      )
+    done;
+  
+    pr2 (spf "step2(%d): candidates for removal = %d" !pass
+           (Hashtbl.length hdead_candidates));
+  
+    (* step3: mark as live parent (in the Has sense) of live entities *)
+    (* TODO *)
+  
+    (* step4: remove newly dead code (helpers of removed classes) *)
+  
+    let users_of_node = Graph_code.mk_eff_use_pred g in
+    let dead = ref (Common.hashset_to_list hdead_candidates) in
+    progress := false;
+  
+    let make_dead node =
+      let xs = Graph_code.node_and_all_children node g in
+      xs +> List.iter (fun node ->
+        Hashtbl.replace hdead_candidates node true;
+        Common.push node dead;
+        (* a newly dead, should reconsider children of original
+         * big parents! 
+         *)
+        progress := true;
+      )
+    in
+  
+    while !dead <> [] do
+      let this_round = !dead in
+      dead := [];
+  
+      this_round +> List.iter (fun dead_node ->
+        let uses = Graph_code.succ dead_node Graph_code.Use g in
+        let live_uses_of_dead_code =
+          uses +> Common.exclude (fun node -> Hashtbl.mem hdead_candidates node)
+        in
+  
+        live_uses_of_dead_code +> List.iter (fun live_use_of_dead_node ->
+          let xs = 
+            let node = live_use_of_dead_node in
+            Graph_code.node_and_all_children node g 
+          in
+          let hxs = Common.hashset_of_list xs in
+  
+          let users =
+            xs +> List.map (fun node -> users_of_node node) +> List.flatten in
+          
+          (* maybe a newly dead! *)
+          if users +> List.for_all (fun node ->
+            Hashtbl.mem hdead_candidates node ||
+            Hashtbl.mem hxs node
+          ) 
+          then make_dead live_use_of_dead_node
+        )
+      )
+    done;
+    
+    pr2 (spf "step4(%d): candidates for removal = %d" !pass
+           (Hashtbl.length hdead_candidates));
+  
+  (* debug
+    hdead_candidates +> Common.hashset_to_list +> List.iter (fun node ->
+      pr (spf "DEAD: %s" (Graph_code.string_of_node node))
+    );
+  *)
+    incr pass;
+    if Hashtbl.length hdead_candidates = !last_cnt 
+    then progress := false
+    else last_cnt := Hashtbl.length hdead_candidates
+  done;
   (* step5: slice the code! *)
 
   (* first approximation *)
