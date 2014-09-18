@@ -86,7 +86,7 @@ val mk_eff_use_pred: graph -> (node -> node list)
 val parent: node -> graph -> node
 val parents: node -> graph -> node list
 val children: node -> graph -> node list
-val all_children: node -> graph -> node list
+val node_and_all_children: node -> graph -> node list
 (* may raise Not_found *)
 val nodeinfo: node -> graph -> nodeinfo
 val nodeinfo_opt: node -> graph -> nodeinfo option

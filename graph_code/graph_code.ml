@@ -350,12 +350,12 @@ let parents n g =
 let children n g =
   G.succ n g.has
 
-let rec all_children n g =
+let rec node_and_all_children n g =
   let xs = G.succ n g.has in
   if null xs 
   then [n]
   else 
-    n::(xs +> List.map (fun n -> all_children n g) +> List.flatten)
+    n::(xs +> List.map (fun n -> node_and_all_children n g) +> List.flatten)
 
 
 
