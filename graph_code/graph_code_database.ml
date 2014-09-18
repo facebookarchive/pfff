@@ -46,7 +46,8 @@ let db_of_graph_code root g =
   let hdirs = Hashtbl.create 101 in
 
   (* opti: using G.parent and check if G.not_found is slow *)
-  let hnot_found = G.all_children G.not_found g +> Common.hashset_of_list in
+  let hnot_found = 
+    G.node_and_all_children G.not_found g +> Common.hashset_of_list in
   (* opti: using G.pred is super slow *)
   let use_pred = G.mk_eff_use_pred g in
   

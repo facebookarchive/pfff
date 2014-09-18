@@ -426,7 +426,7 @@ let find_big_branching_factor graph_file =
     +> List.map (fun parent -> Graph.succ parent hierarchy)
     +> List.flatten 
     (* transitive closure to also remove the fields, methods of a class *)
-    +> List.map (fun node -> node::Graph_code.all_children node g)
+    +> List.map (fun node -> Graph_code.node_and_all_children node g)
     +> List.flatten
     +> Common.hashset_of_list
   in
@@ -442,7 +442,7 @@ let find_big_branching_factor graph_file =
   in
 
   let make_live node =
-    let xs = node::Graph_code.all_children node g in
+    let xs = Graph_code.node_and_all_children node g in
     xs +> List.iter (fun node ->
       Hashtbl.remove hdead_candidates node;
       Common.push node live
@@ -475,7 +475,7 @@ let find_big_branching_factor graph_file =
   let dead = ref (Common.hashset_to_list hdead_candidates) in
 
   let make_dead node =
-    let xs = node::Graph_code.all_children node g in
+    let xs = Graph_code.node_and_all_children node g in
     xs +> List.iter (fun node ->
       Hashtbl.replace hdead_candidates node true;
       Common.push node dead
@@ -495,7 +495,7 @@ let find_big_branching_factor graph_file =
       live_uses_of_dead_code +> List.iter (fun live_use_of_dead_node ->
         let xs = 
           let node = live_use_of_dead_node in
-          node::Graph_code.all_children node g 
+          Graph_code.node_and_all_children node g 
         in
         let hxs = Common.hashset_of_list xs in
 
@@ -514,6 +514,40 @@ let find_big_branching_factor graph_file =
   
   pr2 (spf "step4: candidates for removal = %d"
          (Hashtbl.length hdead_candidates));
+
+(* debug
+  hdead_candidates +> Common.hashset_to_list +> List.iter (fun node ->
+    pr (spf "DEAD: %s" (Graph_code.string_of_node node))
+  );
+*)
+
+  (* step5: slice the code! *)
+
+  (* first approximation *)
+  let files_to_remove =
+    Graph_code.all_nodes g +> Common.map_filter (fun node ->
+      match node with
+      | filename, Entity_code.File ->
+        (* ? should look for all children recursively? *)
+        let children = Graph_code.children node g in
+
+(* debug        
+        if filename =~ ".*AbstractDirectedGraphTestCase" then begin
+          children +> List.iter (fun child ->
+            if not (Hashtbl.mem hdead_candidates child)
+            then pr2_gen child
+          )
+        end;
+*)
+        if children +> List.for_all (fun node -> 
+          Hashtbl.mem hdead_candidates node
+        ) 
+        then Some filename
+        else None
+      | _ -> None
+    )
+  in
+  files_to_remove +> List.iter pr;
 
   ()
 

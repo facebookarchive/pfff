@@ -108,6 +108,7 @@ let children n g =
       g.i_to_name.(i)
   )
 
+(* todo? does it include n? *)
 let all_children n g =
 
   let rec aux i =
