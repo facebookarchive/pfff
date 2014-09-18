@@ -19,6 +19,12 @@ open Common
 (*****************************************************************************)
 (*
  * See also prolog_code.ml!
+ * 
+ * datalog engines:
+ *  - toy datalog using lua
+ *  - bddbddb, a scalabe engine!
+ *  - TODO: pydatalog, embedded DSL in python that can import data from
+ *    SQL
  *)
 
 (*****************************************************************************)
