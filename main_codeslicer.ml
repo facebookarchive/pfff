@@ -402,6 +402,7 @@ module GC = Graph_code
 
 let big_parent_branching_factor = 5
 
+
 let find_big_branching_factor graph_file =
   let g = Graph_code.load graph_file in
   let hierarchy = Graph_code_class_analysis.class_hierarchy g in
@@ -411,10 +412,10 @@ let find_big_branching_factor graph_file =
   (* step1: find the big parents and the children candidates to remove *)
   
   let big_parents = 
-    hierarchy +> Graph.nodes +> List.filter (fun node ->
-    let children = Graph.succ node hierarchy in
-    (* should modulate by the branching factor of the parent? *)
-    List.length children > big_parent_branching_factor
+    hierarchy +> Graph.nodes +> List.filter (fun parent ->
+      let children = Graph.succ parent hierarchy in
+      (* should modulate by the branching factor of the parent? *)
+      List.length children > big_parent_branching_factor
     )
   in
 
@@ -422,7 +423,7 @@ let find_big_branching_factor graph_file =
   let hdead_candidates = 
     big_parents 
     (* todo: could keep 1? the biggest one in terms of use? *)
-    +> List.map (fun node -> Graph.succ node hierarchy)
+    +> List.map (fun parent -> Graph.succ parent hierarchy)
     +> List.flatten 
     (* transitive closure to also remove the fields, methods of a class *)
     +> List.map (fun node -> node::Graph_code.all_children node g)
@@ -452,11 +453,11 @@ let find_big_branching_factor graph_file =
     let this_round = !live in
     live := [];
 
-    this_round +> List.iter (fun node ->
-      let uses = Graph_code.succ node Graph_code.Use g in
-      uses +> List.iter (fun node2 ->
-        if Hashtbl.mem hdead_candidates node2 then begin
-          make_live node2
+    this_round +> List.iter (fun live_node ->
+      let uses = Graph_code.succ live_node Graph_code.Use g in
+      uses +> List.iter (fun use_of_live_node ->
+        if Hashtbl.mem hdead_candidates use_of_live_node then begin
+          make_live use_of_live_node
         end
       )
     )
@@ -469,7 +470,7 @@ let find_big_branching_factor graph_file =
 
   (* step4: remove newly dead code (helpers of removed classes) *)
 
-  let fpred_use = Graph_code.mk_eff_use_pred g in
+  let users_of_node = Graph_code.mk_eff_use_pred g in
 
   let dead = ref (Common.hashset_to_list hdead_candidates) in
 
@@ -485,21 +486,28 @@ let find_big_branching_factor graph_file =
     let this_round = !dead in
     dead := [];
 
-    this_round +> List.iter (fun node ->
-      let users = fpred_use node in
-      let live_users_of_now_dead_code =
-        users +> Common.exclude (fun node -> Hashtbl.mem hdead_candidates node)
+    this_round +> List.iter (fun dead_node ->
+      let uses = Graph_code.succ dead_node Graph_code.Use g in
+      let live_uses_of_dead_code =
+        uses +> Common.exclude (fun node -> Hashtbl.mem hdead_candidates node)
       in
 
-      live_users_of_now_dead_code +> List.iter (fun node ->
-        let xs = node::Graph_code.all_children node g in
+      live_uses_of_dead_code +> List.iter (fun live_use_of_dead_node ->
+        let xs = 
+          let node = live_use_of_dead_node in
+          node::Graph_code.all_children node g 
+        in
+        let hxs = Common.hashset_of_list xs in
+
+        let users =
+          xs +> List.map (fun node -> users_of_node node) +> List.flatten in
+        
         (* maybe a newly dead! *)
-        if xs +> List.for_all (fun node ->
-          let uses = Graph_code.succ node Graph_code.Use g in
-          uses +> List.for_all (fun node -> Hashtbl.mem hdead_candidates node)
-        ) then begin
-          make_dead node
-        end
+        if users +> List.for_all (fun node ->
+          Hashtbl.mem hdead_candidates node ||
+          Hashtbl.mem hxs node
+        ) 
+        then make_dead live_use_of_dead_node
       )
     )
   done;
