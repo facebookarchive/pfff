@@ -400,6 +400,116 @@ let lpize xs =
 (*****************************************************************************)
 module GC = Graph_code
 
+let big_parent_branching_factor = 5
+
+let find_big_branching_factor graph_file =
+  let g = Graph_code.load graph_file in
+  let hierarchy = Graph_code_class_analysis.class_hierarchy g in
+
+  pr2 (spf "step0: number of nodes = %d" (Graph_code.nb_nodes g));
+
+  (* step1: find the big parents and the children candidates to remove *)
+  
+  let big_parents = 
+    hierarchy +> Graph.nodes +> List.filter (fun node ->
+    let children = Graph.succ node hierarchy in
+    (* should modulate by the branching factor of the parent? *)
+    List.length children > big_parent_branching_factor
+    )
+  in
+
+  (* initial set *)
+  let hdead_candidates = 
+    big_parents 
+    (* todo: could keep 1? the biggest one in terms of use? *)
+    +> List.map (fun node -> Graph.succ node hierarchy)
+    +> List.flatten 
+    (* transitive closure to also remove the fields, methods of a class *)
+    +> List.map (fun node -> node::Graph_code.all_children node g)
+    +> List.flatten
+    +> Common.hashset_of_list
+  in
+
+  pr2 (spf "step1: big parents = %d, initial candidates for removal = %d"
+         (List.length big_parents)
+         (Hashtbl.length hdead_candidates));
+
+  (* step2: make sure none of the candidate are used by live entities *)
+  let live = ref (Graph_code.all_nodes g +> Common.exclude (fun node ->
+    Hashtbl.mem hdead_candidates node
+  ))
+  in
+
+  let make_live node =
+    let xs = node::Graph_code.all_children node g in
+    xs +> List.iter (fun node ->
+      Hashtbl.remove hdead_candidates node;
+      Common.push node live
+    )
+  in
+
+  while !live <> [] do
+    let this_round = !live in
+    live := [];
+
+    this_round +> List.iter (fun node ->
+      let uses = Graph_code.succ node Graph_code.Use g in
+      uses +> List.iter (fun node2 ->
+        if Hashtbl.mem hdead_candidates node2 then begin
+          make_live node2
+        end
+      )
+    )
+  done;
+
+  pr2 (spf "step2: candidates for removal = %d"
+         (Hashtbl.length hdead_candidates));
+
+  (* step3: mark as live parent (in the Has sense) of live entities *)
+
+  (* step4: remove newly dead code (helpers of removed classes) *)
+
+  let fpred_use = Graph_code.mk_eff_use_pred g in
+
+  let dead = ref (Common.hashset_to_list hdead_candidates) in
+
+  let make_dead node =
+    let xs = node::Graph_code.all_children node g in
+    xs +> List.iter (fun node ->
+      Hashtbl.replace hdead_candidates node true;
+      Common.push node dead
+    )
+  in
+
+  while !dead <> [] do
+    let this_round = !dead in
+    dead := [];
+
+    this_round +> List.iter (fun node ->
+      let users = fpred_use node in
+      let live_users_of_now_dead_code =
+        users +> Common.exclude (fun node -> Hashtbl.mem hdead_candidates node)
+      in
+
+      live_users_of_now_dead_code +> List.iter (fun node ->
+        let xs = node::Graph_code.all_children node g in
+        (* maybe a newly dead! *)
+        if xs +> List.for_all (fun node ->
+          let uses = Graph_code.succ node Graph_code.Use g in
+          uses +> List.for_all (fun node -> Hashtbl.mem hdead_candidates node)
+        ) then begin
+          make_dead node
+        end
+      )
+    )
+  done;
+  
+  pr2 (spf "step4: candidates for removal = %d"
+         (Hashtbl.length hdead_candidates));
+
+  ()
+
+
 (* xs are the set of dirs or files we are interested in; the starting points
  * for the DFS.
  *)
@@ -465,6 +575,9 @@ let extract_transitive_deps xs =
 let pfff_extra_actions () = [
   "-extract_transitive_deps", " <files or dirs> (works with -o)",
   Common.mk_action_n_arg extract_transitive_deps;
+  "-find_big_branching_factor", " <file>",
+  Common.mk_action_1_arg find_big_branching_factor;
+
 
   "-find_source", " <dirs>",
   Common.mk_action_n_arg find_source;
