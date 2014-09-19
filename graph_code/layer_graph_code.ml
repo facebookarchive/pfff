@@ -20,9 +20,13 @@ module G = Graph_code
 (* Prelude *)
 (*****************************************************************************)
 (*
- * Module to help visualize dependencies: is an entity an entry
- * point of the program or one of its leaves. It also help visualize
- * all the errors in codegraph (lookup failures, unresolved method calls, etc)
+ * Module to help visualize dependencies: is an entity an entry-point 
+ * of the program or one of its leaves. It also help visualize
+ * all the errors in codegraph (lookup failures, unresolved method calls, etc).
+ * 
+ * For the bottom up layer note that a file can be red and be shown
+ * as used by a green. It's because This green file maybe use a green
+ * entity of this red file, but not the very red entity of this red file.
  *)
 
 (*****************************************************************************)
