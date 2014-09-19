@@ -666,12 +666,27 @@ let extract_transitive_deps xs =
   )
 
 
+let slice_dir_with_file file =
+  let file = Common.realpath file in
+  let dir = Filename.dirname file in
+  let dotdir = Filename.dirname dir in
+  let dst = Filename.concat dotdir "CODESLICER" in
+  Common2.command2_y_or_no_exit_if_no (spf "rm -rf %s" dst);
+  Common.command2 (spf "cp -a %s %s" dir dst);
+  Common.cat file +> List.iter (fun file ->
+    Common.command2 (spf "rm -f %s/%s" dst file)
+  )
+  
+  
+
 (* ---------------------------------------------------------------------- *)
 let pfff_extra_actions () = [
   "-extract_transitive_deps", " <files or dirs> (works with -o)",
   Common.mk_action_n_arg extract_transitive_deps;
   "-find_big_branching_factor", " <file>",
   Common.mk_action_1_arg find_big_branching_factor;
+  "-slice_dir_with_file", " <list_slicer_file>",
+  Common.mk_action_1_arg slice_dir_with_file;
 
 
   "-find_source", " <dirs>",
