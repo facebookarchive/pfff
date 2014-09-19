@@ -19,6 +19,7 @@ module A = Ast_php_simple
 module E = Error_php
 module S = Scope_code
 module Ent = Entity_code
+module PI = Parse_info
 
 (*****************************************************************************)
 (* Prelude *)
@@ -594,7 +595,8 @@ and foreach_pattern env pattern =
 (* ---------------------------------------------------------------------- *)
 (* Expr *)
 (* ---------------------------------------------------------------------- *)
-and expr env = function
+and expr env e =
+  match e with
   | Int _ | Double _ | String _ -> ()
 
   | Var name ->
@@ -666,10 +668,16 @@ and expr env = function
 
   | Assign (Some _, e1, e2) ->
       exprl env [e1;e2]
+
   | List _xs ->
-      failwith "list(...) should be used only in an Assign context"
-  | Arrow (_e1, _e2) ->
-      failwith "... => ... should be used only in ConsArray or Foreach context"
+      let tok = Meta_ast_php_simple.toks_of_any (Expr2 e) +> List.hd in
+      failwith (spf "list(...) should be used only in an Assign context at %s"
+                  (PI.string_of_info tok))
+  (* Arrow used to be allowed only in Array and Foreach context, but now 
+   * can we also have code like yield $k => $v, so this is really a pair.
+   *)
+  | Arrow (e1, e2) ->
+      exprl env [e1; e2]
 
   (* A mention of a variable in a unset() should not be really
    * considered as a use of variable. There should be another
