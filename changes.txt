@@ -1,6 +1,6 @@
 -*- org -*-
 
-* 0.29 (Q3 2014) (datalog for "flowing")
+* 0.29 (Q3 2014) (datalog for "flowing", codeslicer)
 
 ** datalog
 
@@ -9,6 +9,12 @@ using toy datalog (written in Lua)
 
 *** switch to bddbddb for backend, scales to xv6 and even plan9 kernel!
 7000 and 100000 LOC respectively
+
+** introduce codeslicer
+it tries to detect automatically less relevant
+code, that is the yet-another-extension-plugins that are not important
+to understand the software architecture (e.g. for Linux it would
+be the thousands of device drivers, the many fs, internen protocols, etc).
 
 ** mini c
 

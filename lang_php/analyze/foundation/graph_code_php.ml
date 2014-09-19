@@ -1234,6 +1234,7 @@ let build
       (envold.phase_use_other) := [];
       xs +> List.rev +> List.iter (fun f -> f());
     );
+
     if class_analysis then begin
     envold.pr2_and_log "\nstep4: class analysis";
     Common.profile_code "Graph_php.step4" (fun () ->

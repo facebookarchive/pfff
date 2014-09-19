@@ -677,7 +677,9 @@ let slice_dir_with_file file =
   let dotdir = Filename.dirname dir in
   let dst = Filename.concat dotdir "CODESLICER" in
   Common2.command2_y_or_no_exit_if_no (spf "rm -rf %s" dst);
-  Common.command2 (spf "cp -a %s %s" dir dst);
+  let cmd = spf "cp -a %s %s" dir dst in
+  pr2 cmd;
+  Common.command2 cmd;
   Common.cat file +> List.iter (fun file ->
     Common.command2 (spf "rm -f %s/%s" dst file)
   )
