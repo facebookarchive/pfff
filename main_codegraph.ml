@@ -180,6 +180,8 @@ let deps_style = ref DM.DepsInOut
 let output_dir = ref None
 (* generate also tags, light db, layers, etc *)
 let gen_derived_data = ref false
+(* not perfect ... *)
+let class_analysis = ref false
 
 (* action mode *)
 let action = ref ""
@@ -308,7 +310,10 @@ let build_graph_code lang xs =
         else []
       in
       let is_skip_error_file = Skip_code.build_filter_errors_file skip_list in
-      Graph_code_php.build ~verbose:!verbose ~is_skip_error_file root files
+      Graph_code_php.build 
+        ~verbose:!verbose ~is_skip_error_file 
+        ~class_analysis:!class_analysis
+        root files
     | "web" -> raise Todo
 
     | "c" -> 
@@ -695,6 +700,9 @@ let options () = [
   " <dir> save graph_code.marshall in another dir (for -build)";
   "-derived_data", Arg.Set gen_derived_data, 
   " generate also TAGS, layers, light db, etc (for -build)";
+
+  "-class_analysis", Arg.Set class_analysis, 
+  " resolve some method calls";
 
   "-symlinks", Arg.Unit (fun () -> Common.follow_symlinks := true;), 
   " follow symlinks (for -build) ";
