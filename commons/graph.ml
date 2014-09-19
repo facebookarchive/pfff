@@ -454,12 +454,41 @@ let shortest_path k1 k2 g =
   vertexes +> List.map (fun v -> key_of_vertex v g)
 
 
+(* todo? this works? I get some 
+ * Fatal error: exception Invalid_argument("[ocamlgraph] fold_succ")
+ * when doing:
+ *   let g = ...
+ *   let node = whatever g in
+ *   let g2 = transitive_closure g in
+ *   let succ = succ node g2
+ *  is it because node references something from g? Is is the same
+ *  issue that for copy?
+ *  
+ *)
 let transitive_closure g = 
-  let og' = OG.transitive_closure ~reflexive:false g.og in
-  { g with og = og' }
+
+  let label_to_vertex = Hashtbl.create 101 in
+  g.og +> OG.iter_vertex (fun v ->
+    let lbl = OG.V.label v in
+    Hashtbl.replace label_to_vertex lbl v
+  );
+
+  let og' = OG.transitive_closure ~reflexive:true g.og in
+  let g' = create () in
+
+  og' +> OG.iter_vertex (fun v ->
+    let lbl = OG.V.label v in
+    let vertex_in_g = Hashtbl.find label_to_vertex lbl in
+    let key_in_g = Hashtbl.find g.key_of_vertex vertex_in_g in
+    Hashtbl.replace g'.key_of_vertex v key_in_g;
+    Hashtbl.replace g'.vertex_of_key key_in_g v;
+  );
+  { g' with og = og'  }
+
 
 let mirror g = 
   let og' = OG.mirror g.og in
+  (* todo: have probably to do the same gymnastic than for transitive_closure*)
   { g with og = og';  }
 
 
