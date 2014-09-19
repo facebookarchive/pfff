@@ -162,7 +162,7 @@ let build_prolog_db lang root xs =
        Flag_analyze_php.show_errors := false;
 
        let facts_pl_file = "facts.pl" in
-       let prolog_compiled_db = "prolog_compiled_db" in
+       let prolog_compiled_db = "facts.db" in
 
        let file = Filename.concat root facts_pl_file in
        pr2 (spf "generating prolog facts in %s" file);
@@ -235,7 +235,7 @@ let build_prolog_db lang root xs =
         let pr s = pr_no_nl (s ^ "\n") in
         facts +> List.iter (fun x -> pr (Prolog_code.string_of_fact x))
       );
-      let prolog_compiled_db = Filename.concat root "prolog_compiled_db" in
+      let prolog_compiled_db = Filename.concat root "facts.db" in
       Common.command2 (spf "%s -c %s %s" swipl facts_pl_file predicates_file);
       Common.command2 (spf "mv a.out %s" prolog_compiled_db);
       pr2 (spf "Your compiled prolog DB is ready. Run %s" prolog_compiled_db);
