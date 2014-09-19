@@ -570,6 +570,11 @@ let find_big_branching_factor graph_file =
     );
 
   (* First approximation *)
+
+  (* later: do the actual slice of the code given a list of dead nodes
+   * but will probably  need range info
+   *)
+
   let files_to_remove =
     Graph_code.all_nodes g +> Common.map_filter (fun node ->
       match node with
