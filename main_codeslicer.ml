@@ -419,13 +419,17 @@ let find_big_branching_factor graph_file =
     )
   in
 
+  let hierarchy_transitive = Graph.transitive_closure hierarchy in
+
   (* initial set *)
   let dead_candidates () = 
     big_parents 
-    (* todo: could keep 1? the biggest one in terms of use? *)
-    +> List.map (fun parent -> Graph.succ parent hierarchy)
+    (* Inheritance transtive closure,
+     * todo: could keep 1? the biggest one in terms of use? 
+     *)
+    +> List.map (fun parent -> Graph.succ parent hierarchy_transitive)
     +> List.flatten 
-    (* transitive closure to also remove the fields, methods of a class *)
+    (* Has transitive closure, to also remove the fields, methods of a class *)
     +> List.map (fun node -> Graph_code.node_and_all_children node g)
     +> List.flatten
   in
@@ -440,6 +444,9 @@ let find_big_branching_factor graph_file =
   let progress = ref true in
   let pass = ref 0 in
   let last_cnt = ref 0 in
+
+  let hlive_done = Hashtbl.create 101 in
+  let hlivermakes_stats = Hashtbl.create 101 in
 
   while !progress do
 
@@ -458,7 +465,13 @@ let find_big_branching_factor graph_file =
     ))
     in
   
-    let make_live node =
+    let make_live ~from node =
+      if not (Hashtbl.mem hlive_done (from, node)) 
+      then begin
+        Hashtbl.add hlive_done (from, node) true;
+        Hashtbl.replace hlivermakes_stats from
+          (1+(try Hashtbl.find hlivermakes_stats from with Not_found -> 0));
+      end;
       let xs = Graph_code.node_and_all_children node g in
       xs +> List.iter (fun node ->
         Hashtbl.remove hdead_candidates node;
@@ -474,7 +487,7 @@ let find_big_branching_factor graph_file =
         let uses = Graph_code.succ live_node Graph_code.Use g in
         uses +> List.iter (fun use_of_live_node ->
           if Hashtbl.mem hdead_candidates use_of_live_node then begin
-            make_live use_of_live_node
+            make_live use_of_live_node ~from:live_node
           end
         )
       )
@@ -547,9 +560,16 @@ let find_big_branching_factor graph_file =
     then progress := false
     else last_cnt := Hashtbl.length hdead_candidates
   done;
+
   (* step5: slice the code! *)
 
-  (* first approximation *)
+  hlivermakes_stats +> Common.hash_to_list +> Common.sort_by_val_highfirst
+    +> Common.take_safe 10 +> List.iter (fun (k, v) ->
+      pr2 (spf "livemaker: %s (%d)"
+             (Graph_code.string_of_node k) v)
+    );
+
+  (* First approximation *)
   let files_to_remove =
     Graph_code.all_nodes g +> Common.map_filter (fun node ->
       match node with
@@ -565,15 +585,22 @@ let find_big_branching_factor graph_file =
           )
         end;
 *)
-        if children +> List.for_all (fun node -> 
-          Hashtbl.mem hdead_candidates node
-        ) 
+        if children +> List.for_all 
+          (fun node -> Hashtbl.mem hdead_candidates node) && 
+          (* for files like webroot/index.php with no entities *)
+          List.length children >= 1 
         then Some filename
         else None
       | _ -> None
-    )
+    ) +> Common.sort
   in
-  files_to_remove +> List.iter pr;
+  let dir = Filename.dirname graph_file in
+  let file = Filename.concat dir "list_slicer" in
+  pr2 (spf "generating data in %s" file);
+  Common.with_open_outfile file (fun (pr_no_nl, _chan) ->
+    let pr s = pr_no_nl (s ^ "\n") in
+    files_to_remove +> List.iter pr
+  );
 
   ()
 
