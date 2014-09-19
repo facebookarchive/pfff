@@ -25,6 +25,7 @@ open Common
  *  - bddbddb, a scalabe engine!
  *  - TODO: pydatalog, embedded DSL in python that can import data from
  *    SQL
+ *  - ciao? xsb?
  *)
 
 (*****************************************************************************)
