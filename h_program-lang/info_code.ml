@@ -19,6 +19,9 @@
 (*
  * history:
  *  - was in main_codestat.ml
+ * 
+ * Example of project information:
+ *  - http://www.gnu.org/manual/blurbs.html
  *)
 
 
