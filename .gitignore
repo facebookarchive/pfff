@@ -342,3 +342,4 @@ web/var/logs/warnings.log
 /lang_rust/parsing/parser_rust.ml
 /lang_rust/parsing/parser_rust.mli
 /lang_rust/parsing/parser_rust.output
+/codeslicer
