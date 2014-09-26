@@ -90,8 +90,8 @@ let build_with_tree2 tree gopti =
   let n_nodes = G2.nb_nodes gopti in
 
   let name_to_idm = Hashtbl.create (n / 2) in
-  let idm_to_name = Array.create n ("", E.Dir) in
-  let igopti_to_idm = Array.create n_nodes (-1) in
+  let idm_to_name = Array.make n ("", E.Dir) in
+  let igopti_to_idm = Array.make n_nodes (-1) in
 
   let (i: idm idx ref) = ref 0 in
   nodes +> List.iter (fun node ->
@@ -108,7 +108,7 @@ let build_with_tree2 tree gopti =
     config = tree;
   }
   in
-  let (projected_parent_of_igopti: idm idx array) = Array.create n_nodes (-1) in
+  let (projected_parent_of_igopti: idm idx array) = Array.make n_nodes (-1) in
   let (iroot: igopti idx) = hashtbl_find_node gopti.G2.name_to_i G.root in
   let rec depth parent igopti =
     let children = gopti.G2.has_children.(igopti) in

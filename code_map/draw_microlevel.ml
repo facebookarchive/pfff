@@ -197,7 +197,7 @@ let glyphs_of_file ~font_size ~font_size_real model_async file
      * returned by nblines_eff may be different
      *)
     let nblines = Common2.nblines_eff file in
-    let arr = Array.create nblines [] in
+    let arr = Array.make nblines [] in
     let tokens_with_categ = Parsing.tokens_with_categ_of_file file entities in
 
     let line = ref 0 in

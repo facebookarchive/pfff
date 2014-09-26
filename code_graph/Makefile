@@ -48,6 +48,13 @@ $(TARGET).cmxa: $(OPTOBJS) $(LIBS:.cma=.cmxa)
 clean::
 	rm -f $(TARGET).top
 
+EXTRA_FLAGS=-w -3
+cairo_helpers3.cmo: cairo_helpers3.ml
+	$(OCAMLC) $(EXTRA_FLAGS) -c $<
+
+cairo_helpers3.cmx: cairo_helpers3.ml
+	$(OCAMLOPT) $(PP) $(EXTRA_FLAGS) -c $<
+
 ##############################################################################
 # Generic rules
 ##############################################################################

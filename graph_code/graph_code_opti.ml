@@ -66,9 +66,9 @@ let (convert2: Graph_code.graph -> graph) = fun g ->
 
   let h = {
     name_to_i = Hashtbl.create (n / 2);
-    i_to_name = Array.create n ("",E.Dir);
-    has_children = Array.create n [];
-    use = Array.create n [];
+    i_to_name = Array.make n ("",E.Dir);
+    has_children = Array.make n [];
+    use = Array.make n [];
   }
   in
   let i = ref 0 in

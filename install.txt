@@ -1,6 +1,6 @@
 
 You must first install a recent version of 
- - OCaml (at least 4.00.1), 
+ - OCaml (at least 4.00.1), and camlp4 (not part of OCaml since 4.02)
    see http://caml.inria.fr/download.en.html
  - GTK (at least gtk 2.10) and Cairo
    if you want codemap and codegraph, the fancy graphics code visualizers

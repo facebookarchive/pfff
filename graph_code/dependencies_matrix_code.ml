@@ -155,11 +155,11 @@ let explain_cell_list_use_edges (i, j) dm gopti =
   let res = ref [] in
 
   let n_nodes = G2.nb_nodes gopti in
-  let igopti_to_idm = Array.create n_nodes (-1) in
+  let igopti_to_idm = Array.make n_nodes (-1) in
   dm.i_to_name +> Array.iteri (fun idm node ->
     igopti_to_idm.(hashtbl_find_node gopti.G2.name_to_i node) <- idm;
   );
-  let (projected_parent_of_igopti: idm idx array) = Array.create n_nodes (-1) in
+  let (projected_parent_of_igopti: idm idx array) = Array.make n_nodes (-1) in
   let (iroot: igopti idx) = hashtbl_find_node gopti.G2.name_to_i G.root in
   let rec depth parent igopti =
     let children = gopti.G2.has_children.(igopti) in
@@ -326,7 +326,7 @@ let is_dead_line i dm =
 
 
 let parents_of_indexes dm =
-  let arr = Array.create (Array.length dm.matrix) [] in
+  let arr = Array.make (Array.length dm.matrix) [] in
   let i = ref 0 in
   let rec aux acc tree =
     match tree with
@@ -408,7 +408,7 @@ let score_downer_triangle dm exclude_nodes =
   !score
 
 let score_upper_triangle_nodes dm =
-  let score = Array.create (Array.length dm.matrix) 0 in
+  let score = Array.make (Array.length dm.matrix) 0 in
   for i = 0 to Array.length dm.matrix -1 do
     for j = i + 1 to Array.length dm.matrix -1 do
       let v = dm.matrix.(i).(j) in

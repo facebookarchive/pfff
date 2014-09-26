@@ -201,6 +201,11 @@ if (`which ocamlc.opt` && `which ocamlopt.opt`) {
 # -absname is for tuareg mode under my mac, it also needs ocaml 4.00
 if($ocaml_version >= 4000) {
     $ocamlc_flags="-bin-annot -absname";
+}
+
+#TODO: not yet ported to 4.02
+if($ocaml_version >= 4000 && $ocaml_version < 4020) {
+    $cmt=1;
 } else {
     $cmt=0;
 }

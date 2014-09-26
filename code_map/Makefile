@@ -91,6 +91,15 @@ $(TARGET).cmxa: $(OPTOBJS) $(LIBS:.cma=.cmxa)
 	$(OCAMLOPT) -a -o $(TARGET).cmxa $(OPTOBJS)
 
 
+
+EXTRA_FLAGS=-w -3
+cairo_helpers.cmo: cairo_helpers.ml
+	$(OCAMLC) $(EXTRA_FLAGS) -c $<
+
+cairo_helpers.cmx: cairo_helpers.ml
+	$(OCAMLOPT) $(PP) $(EXTRA_FLAGS) -c $<
+
+
 clean::
 	rm -f $(TARGET).top
 

@@ -60,9 +60,11 @@ clean::
 
 PP=-pp camlp4o
 
+EXTRA_FLAGS=-w -3
+
 php_serialize.cmo: php_serialize.ml
-	$(OCAMLC) $(PP) -c $<
+	$(OCAMLC) $(PP) $(EXTRA_FLAGS) -c $<
 
 php_serialize.cmx: php_serialize.ml
-	$(OCAMLOPT) $(PP) -c $<
+	$(OCAMLOPT) $(PP) $(EXTRA_FLAGS) -c $<
 
