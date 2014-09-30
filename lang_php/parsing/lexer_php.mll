@@ -575,7 +575,7 @@ rule st_in_scripting = parse
         push_mode ST_IN_SCRIPTING;
         TOBRACE(tokinfo lexbuf)
       }
-    | ("->" as sym) (WHITESPACEOPT as white) (LABEL as label) {
+    | (("->" | "?->") as sym) (WHITESPACEOPT as white) (LABEL as label) {
      (* todo: use yyback() instead of using pending_token with push_token.
       * buggy: push_mode ST_LOOKING_FOR_PROPERTY;
       *)
@@ -597,7 +597,7 @@ rule st_in_scripting = parse
 
         T_OBJECT_OPERATOR(syminfo)
       }
-    | "->" {
+    | "->" | "?->" {
         T_OBJECT_OPERATOR(tokinfo lexbuf)
       }
     (* see also T_VARIABLE below. lex use longest matching strings so this
@@ -966,7 +966,9 @@ and initial = parse
 
 (* TODO not used for now *)
 and st_looking_for_property = parse
-  | "->" { T_OBJECT_OPERATOR(tokinfo lexbuf) }
+  | "->" | "?->" {
+      T_OBJECT_OPERATOR(tokinfo lexbuf)
+    }
   | LABEL {
       pop_mode();
       T_IDENT(case_str (tok lexbuf), tokinfo lexbuf)
