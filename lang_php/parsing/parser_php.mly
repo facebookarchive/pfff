@@ -704,7 +704,7 @@ class_statement:
 
 enum_statement:
    class_constant_declaration TSEMICOLON
-     { ClassConstants(Ast.fakeInfo "", None, [Left $1], $2) }
+     { ClassConstants($2, None, [Left $1], $2) }
 
 method_declaration:
      method_modifiers T_FUNCTION is_reference ident_method_name type_params_opt
