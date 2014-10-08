@@ -19,7 +19,6 @@ INCLUDEDIRS= $(TOP)/commons $(TOP)/commons/ocamlextra \
  $(TOP)/lang_ml/parsing \
 
 
-CLANG_HACK=-Wno-invalid-pp-token
 PP=-pp "cpp $(CLANG_HACK)  -DOCAML_VERSION=$(OCAMLVERSION)"
 
 ##############################################################################
