@@ -71,7 +71,7 @@ type error = {
  | Deadcode of entity
  | UndefinedDefOfDecl of entity
  (* really a special case of Deadcode decl *)
- | UnusedExport of entity
+ | UnusedExport of entity (* tge decl*) * Common.filename (* file of def *)
 
   (* call sites *)
    (* should be done by the compiler (ocaml does):
@@ -129,8 +129,9 @@ let string_of_error_kind error_kind =
     spf "dead %s, %s" (Entity_code.string_of_entity_kind kind) s
   | UndefinedDefOfDecl (s, kind) ->
     spf "no def found for %s (%s)" s (Entity_code.string_of_entity_kind kind)
-  | UnusedExport (s, kind) ->
-    spf "useless export of %s (%s)" s (Entity_code.string_of_entity_kind kind)
+  | UnusedExport ((s, kind), file_def) ->
+    spf "useless export of %s (%s) (consider forward decl in %s)" 
+      s (Entity_code.string_of_entity_kind kind) file_def
 
   | UnusedVariable (name, scope) ->
       spf "Unused variable %s, scope = %s" name 

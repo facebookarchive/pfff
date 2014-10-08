@@ -9,7 +9,7 @@ type error = {
  and error_kind =
  | Deadcode of entity
  | UndefinedDefOfDecl of entity
- | UnusedExport of entity
+ | UnusedExport of entity * Common.filename
  | UnusedVariable of string * Scope_code.scope
 
  and entity = (string * Entity_code.entity_kind)

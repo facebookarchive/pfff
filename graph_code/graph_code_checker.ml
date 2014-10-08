@@ -95,7 +95,8 @@ let check_imperative g =
           )
           in
           if users_outside = [] && ps <> [] && is_header_file file_decl
-          then Error.warning info_decl.G.pos (Error.UnusedExport n_decl);
+          then Error.warning info_decl.G.pos 
+            (Error.UnusedExport (n_decl, file_def));
 
           (* for clang I usually add a Use edge between the def and the decl
            * so the decl would not have been marked as dead without this:
