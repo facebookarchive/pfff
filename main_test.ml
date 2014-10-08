@@ -219,6 +219,22 @@ let pfff_extra_actions () = [
     | _ -> failwith "too many candidates"
   );
 
+  "-relativize", "<dir>", Common.mk_action_1_arg (fun dir ->
+    let dir = Common.realpath dir in
+    let candidates = Common.cmd_to_list (spf "find %s -type l" dir) in
+    let root = "/Users/yoann.padioleau/github/xix/xix-plan9/" in
+    candidates +> List.iter (fun link ->
+      let dst = Unix.readlink link in
+      if not (Filename.is_relative dst)
+      then begin
+        let readable = Common.readable ~root dst in
+        pr2 (spf "%s -> %s" link readable);
+        let newdst = "../../../../" ^ readable in
+        let cmd = spf "rm %s; ln -s %s %s" link newdst link in
+        Common.command2 cmd;
+      end;
+    );
+  );
 ]
 
 (*****************************************************************************)
