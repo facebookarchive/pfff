@@ -376,11 +376,15 @@ and stmt_ env st acc =
 
 and foreach_pattern env pat =
   match pat with
-  | ForeachVar (None, IdVar (dv, _)) ->
-      A.Id (dname dv), None
+  | ForeachVar (is_ref, IdVar (dv, _)) ->
+      let v = A.Id (dname dv) in
+      let v = if is_ref <> None then A.Ref v else v in
+      v, None
   | ForeachArrow (ForeachVar (None, IdVar (dk, _)), _,
-                  ForeachVar (None, IdVar (dv, _))) ->
-      A.Id (dname dk), Some (A.Id (dname dv))
+                  ForeachVar (is_ref, IdVar (dv, _))) ->
+      let v = A.Id (dname dv) in
+      let v = if is_ref <> None then A.Ref v else v in
+      A.Id (dname dk), Some v
   | ForeachList (_, (_, vl, _)) ->
       let vl = comma_list vl in
       let vl = List.fold_right (list_assign env) vl [] in
