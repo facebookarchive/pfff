@@ -901,6 +901,8 @@ type_params_list:
 
 type_param:
   | ident                 { TParam (Name $1) }
+  | TMINUS ident { TParam (Name $2) }
+  | TPLUS ident { TParam (Name $2) }
   | ident T_AS TQUESTION class_name { TParamConstraint (Name $1, $2, HintQuestion ($3, $4)) }
   | ident T_AS class_name { TParamConstraint (Name $1, $2, $3) }
 
