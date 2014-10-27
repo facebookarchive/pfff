@@ -23,6 +23,8 @@
 # note: I always wanted (but was never able to write ...) an interprocedural
 # (dataflow) analysis. With Datalog I did it in one day! It's so easy.
 # 
+# TODO: abuse cpp to express context-sensitivity in a generic way
+# (like they do in DOOP with logiblox)
 
 .basedir "data"
 
