@@ -1232,7 +1232,7 @@ arguments: TOPAR function_call_argument_list TCPAR { ($1, $2, $3) }
 function_call_argument:
  | expr	{ (Arg ($1)) }
  | TAND expr 		{ (ArgRef($1, $2)) }
- | T_ELLIPSIS simple_expr { (ArgUnpack($1, $2)) }
+ | T_ELLIPSIS expr      { (ArgUnpack($1, $2)) }
  | T_VARIABLE_VARIADIC { let _, tok = $1 in (ArgUnpack(tok, H.mk_var $1)) }
 
 /*(*----------------------------*)*/

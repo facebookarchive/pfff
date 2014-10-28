@@ -449,7 +449,7 @@ and lvalue env a = expr env a
 and argument env = function
   | Arg e -> expr env e
   | ArgRef (_, e) -> A.Ref (lvalue env e)
-  | ArgUnpack (_, e) -> A.Unpack (lvalue env e)
+  | ArgUnpack (_, e) -> A.Unpack (expr env e)
 
 and class_name_reference env a = expr env a
 

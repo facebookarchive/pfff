@@ -377,7 +377,7 @@ and expr =
     and argument =
       | Arg    of expr
       | ArgRef of tok * w_variable
-      | ArgUnpack of tok * w_variable
+      | ArgUnpack of tok * expr
 
 (* now unified with expr *)
 and lvalue = expr
@@ -887,8 +887,8 @@ let unarg arg =
 let unargs xs =
   uncomma xs +> Common.partition_either (function
   | Arg e -> Left e
-  | ArgRef (_t, e) -> Right (e)
-  | ArgUnpack (_t, e) -> Right (e)
+  | ArgRef (_tok, e) -> Right (e)
+  | ArgUnpack (_tok, e) -> Right (e)
   )
 let unmodifiers class_vars =
   match class_vars with

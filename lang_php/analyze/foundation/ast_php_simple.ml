@@ -61,7 +61,7 @@
  *    (update: now static_scalar = expr = lvalue also in ast_php.ml).
  *    Also no scalar. No Sc, no C. No Lv. Pattern matching constants
  *    is simpler:  | Sc (C (String ...)) -> ... becomes just | String -> ....
- *    Also no arg type. No Arg, ArgRef. Also no xhp_attr_value type.
+ *    Also no arg type. No Arg, ArgRef, ArgUnpack. Also no xhp_attr_value type.
  *    No XhpAttrString, XhpAttrExpr.
  *  - no EmptyStmt, it is transformed in an empty Block
  *  - a simpler If. 'elseif' are transformed in nested If, and empty 'else'
@@ -71,7 +71,7 @@
 
  *  - some special constructs like AssignRef were transformed into
  *    composite calls to Assign and Ref. Same for AssignList, AssignNew.
- *    Same for arguments passed by reference, no Arg, ArgRef.
+ *    Same for arguments passed by reference, no Arg, ArgRef, ArgUnpack.
  *    Same for refs in arrays, no ArrayRef, ArrayArrowRef. Also no ListVar,
  *    ListList, ListEmpty. No ForeachVar, ForeachList.
  *    Array value are also decomposed in regular expr or Arrow, no

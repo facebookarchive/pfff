@@ -487,7 +487,7 @@ and vof_argument =
       in Ocaml.VSum (("ArgRef", [ v1; v2 ]))
   | ArgUnpack ((v1, v2)) ->
       let v1 = vof_tok v1
-      and v2 = vof_w_variable v2
+      and v2 = vof_expr v2
       in Ocaml.VSum (("ArgUnpack", [ v1; v2 ]))
 and vof_rw_variable v = vof_lvalue v
 and vof_r_variable v = vof_lvalue v

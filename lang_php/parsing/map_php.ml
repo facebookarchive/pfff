@@ -487,7 +487,7 @@ and map_argument =
   | ArgRef ((v1, v2)) ->
       let v1 = map_tok v1 and v2 = map_w_variable v2 in ArgRef ((v1, v2))
   | ArgUnpack ((v1, v2)) ->
-      let v1 = map_tok v1 and v2 = map_w_variable v2 in ArgUnpack ((v1, v2))
+      let v1 = map_tok v1 and v2 = map_expr v2 in ArgUnpack ((v1, v2))
 and map_rw_variable v = map_lvalue v
 and map_r_variable v = map_lvalue v
 and map_w_variable v = map_lvalue v

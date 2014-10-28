@@ -247,8 +247,7 @@ let rec expr_fold fold_env lhs expr acc =
     let args = Ast.uncomma(Ast.unparen args) +> List.map
       (function
       | Arg e -> e
-      | ArgRef _ -> raise Todo
-      | ArgUnpack _ -> raise Todo) in
+      | ArgRef _ | ArgUnpack _ -> raise Todo) in
     (match args with
     | x::y::vars ->
       let acc = recr x (recr y acc) in
@@ -262,9 +261,9 @@ let rec expr_fold fold_env lhs expr acc =
     recr e
     (List.fold_left
        (fun acc' -> function
-       | Arg e1 -> recr e1 acc'
+       | Arg e1 | ArgUnpack (_, e1) -> recr e1 acc'
        | ArgRef (_, e1) -> handle_lhs e1 acc'
-       | ArgUnpack (_, e1) -> recr e1 acc')
+       )
        acc args)
   | ObjGet(e, _ ,e1) ->
     recl e (recr e1 acc)
@@ -317,9 +316,8 @@ let rec expr_fold fold_env lhs expr acc =
    let args = Ast.uncomma(Ast.unparen args) in
     (List.fold_left
        (fun acc' -> function
-       | Arg e1 -> recr e1 acc'
-       | ArgRef (_, e1) -> handle_lhs e1 acc'
-       | ArgUnpack (_, e1) -> recr e1 acc')
+       | Arg e1 | ArgUnpack (_, e1) -> recr e1 acc'
+       | ArgRef (_, e1) -> handle_lhs e1 acc')
        (recr e acc) args)
   | Clone _ -> raise Todo
   | AssignRef _ -> raise Todo

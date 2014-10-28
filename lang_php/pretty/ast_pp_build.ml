@@ -631,7 +631,7 @@ and lvalue env x = expr env x
 and argument env = function
   | Arg e -> expr env e
   | ArgRef (_, e) -> A.Ref (lvalue env e)
-  | ArgUnpack (_, e) -> A.Unpack (lvalue env e)
+  | ArgUnpack (_, e) -> A.Unpack (expr env e)
 
 and class_def env c =
   let _, body, _ = c.c_body in
