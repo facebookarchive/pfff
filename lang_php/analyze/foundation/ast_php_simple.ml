@@ -391,7 +391,7 @@ and class_def = {
 
   and class_kind =
     (* todo: put Final, Abstract as modifier list in class_def *)
-    | ClassRegular | ClassFinal | ClassAbstract
+    | ClassRegular | ClassFinal | ClassAbstract | ClassAbstractFinal
     | Interface
     | Trait
     | Enum

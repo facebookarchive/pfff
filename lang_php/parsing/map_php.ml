@@ -904,6 +904,11 @@ and map_class_type =
       let v1 = map_tok v1 and v2 = map_tok v2 in ClassFinal ((v1, v2))
   | ClassAbstract ((v1, v2)) ->
       let v1 = map_tok v1 and v2 = map_tok v2 in ClassAbstract ((v1, v2))
+  | ClassAbstractFinal ((v1, v2, v3)) ->
+      let v1 = map_tok v1
+      and v2 = map_tok v2
+      and v3 = map_tok v3
+      in ClassAbstractFinal ((v1, v2, v3))
   | Interface v1 -> let v1 = map_tok v1 in Interface ((v1))
   | Trait v1 -> let v1 = map_tok v1 in Trait ((v1))
   | Enum v1 -> let v1 = map_tok v1 in Enum ((v1))

@@ -727,6 +727,7 @@ and class_def env c =
   | ClassRegular -> Pp.print env "class "
   | ClassFinal -> Pp.print env "final class"
   | ClassAbstract -> Pp.print env "abstract class"
+  | ClassAbstractFinal -> Pp.print env "abstract final class"
   | Interface -> Pp.print env "interface "
   | Trait -> Pp.print env "trait "
   );
@@ -1109,6 +1110,7 @@ and class_header env xs =
         | ClassRegular -> Pp.print env "class "
         | ClassFinal -> Pp.print env "final "
         | ClassAbstract -> Pp.print env "abstract "
+        | ClassAbstractFinal -> Pp.print env "abstract final "
         | Interface -> Pp.print env "interface "
         | Trait -> Pp.print env "trait "
         );
@@ -1144,4 +1146,3 @@ and class_header env xs =
 
     | _ -> stmt env x
   ) xs
-

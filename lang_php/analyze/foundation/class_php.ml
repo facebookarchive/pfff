@@ -6,7 +6,7 @@
  * modify it under the terms of the GNU Lesser General Public License
  * version 2.1 as published by the Free Software Foundation, with the
  * special exception on linking described in file license.txt.
- * 
+ *
  * This library is distributed in the hope that it will be useful, but
  * WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the file
@@ -23,7 +23,7 @@ module E = Entity_code
 (*****************************************************************************)
 (* Prelude *)
 (*****************************************************************************)
-(* 
+(*
  * todo: differentiate Interface/Trait in lookup?
  *)
 
@@ -36,7 +36,7 @@ exception Use__Call
 exception UndefinedClassWhileLookup of string
 
 (* Actually sometimes it can also be the name of the class (especially in
- * third party code). 
+ * third party code).
 *)
 let constructor_name = "__construct"
 
@@ -44,13 +44,13 @@ let constructor_name = "__construct"
 (* Helpers *)
 (*****************************************************************************)
 
-let equal ~case_insensitive a b = 
-  if case_insensitive 
+let equal ~case_insensitive a b =
+  if case_insensitive
   then String.lowercase a =$= String.lowercase b
   else a =$= b
 
 (* This is ugly. Some of the code requires to have a 'name' type
- * for every "entities" we are defining and checking. For a class 
+ * for every "entities" we are defining and checking. For a class
  * constant we should really have a pair of name, one for the class
  * and one for the constant itself. Instead we abuse 'name' and
  * pack into it also the classname.
@@ -58,7 +58,7 @@ let equal ~case_insensitive a b =
 
 (*
 let rewrap_name_with_class_name classname name =
-  match name with 
+  match name with
   | Name (s, info) ->
       let new_str = spf "%s::%s" classname s in
       Name (new_str, Ast.rewrap_str new_str info)
@@ -68,13 +68,13 @@ let rewrap_name_with_class_name classname name =
   | XhpName _ ->
       failwith "Impossible: only classes can be XhpName"
 
-let mk_class_name s info = 
+let mk_class_name s info =
   Name (s, info)
 
 let resolve_class_name qu =
   match fst qu with
   | ClassName (name) -> Some name
-  | Self _ | Parent _ -> 
+  | Self _ | Parent _ ->
       pr2_once "check_functions_php: call unsugar_self_parent";
       None
   | LateStatic _ ->
@@ -118,13 +118,13 @@ let get_public_or_protected_vars_of_class def =
 
   def.c_body +> Ast.unbrace +> Common.map_filter (function
   |  ClassVariables (modifiers, _opt_ty, class_vars, _tok) ->
-       
+
        let modifiers = Ast.unmodifiers modifiers in
-       
+
        if List.mem Public modifiers ||
           List.mem Protected modifiers
        then
-         let dnames = 
+         let dnames =
            class_vars +> Ast.uncomma +> List.map fst
          in
          Some dnames
@@ -139,10 +139,10 @@ let get_public_or_protected_vars_of_class def =
  * one pass on the ast, just simple to reorder the variables so that
  * they are first. See Check_variables_php.
  *)
-let class_variables_reorder_first def = 
+let class_variables_reorder_first def =
   let (lb, body, rb) = def.c_body in
   let body' =
-    let (vars, rest) = 
+    let (vars, rest) =
       body +> List.partition (function
       | ClassVariables _ -> true
       | _ -> false
@@ -156,13 +156,13 @@ let class_variables_reorder_first def =
 
 let class_kind_of_ctype ctype =
   match ctype with
-  | ClassRegular _ | ClassFinal _ | ClassAbstract _ -> E.Class_
+  | ClassRegular _ | ClassFinal _ | ClassAbstract _ | ClassAbstractFinal _ -> E.Class_
   | Interface _ -> E.Interface
   | Trait _ -> E.Trait
   | Enum _ -> E.Enum
 
 let string_of_class_type = function
-  | ClassRegular _ | ClassFinal _ | ClassAbstract _ -> "class"
+  | ClassRegular _ | ClassFinal _ | ClassAbstract _ | ClassAbstractFinal _ -> "class"
   | Interface _ -> "interface"
   | Trait _ -> "trait"
   | Enum _ -> "enum"
@@ -190,7 +190,7 @@ let traits c =
 
 (* todo: for privacy aware lookup we will need more context
  * about where is coming from the lookup (from the class itself?).
- * 
+ *
  * PHP is case insensitive, but we also want our PHP checkers to be
  * case sensitive (in strict mode for instance) hence the parameter below.
  *)
@@ -213,7 +213,7 @@ let lookup_gen aclass find_entity hook =
         with Not_found ->
           (* traits have priority over inheritance *)
           let xs = traits def in
-          (try 
+          (try
             xs +> Common2.return_when (fun trait ->
               let str = Ast.str_of_class_name trait in
               (* recurse *)
@@ -236,11 +236,11 @@ let lookup_gen aclass find_entity hook =
     | [_] -> raise Impossible
   in
   aux aclass
-  
+
 
 let lookup_method ?(case_insensitive=false) (aclass, amethod) find_entity =
   let eq = equal ~case_insensitive in
-  lookup_gen aclass find_entity 
+  lookup_gen aclass find_entity
     (function
     | Method def when eq (Ast.str_of_ident def.f_name) amethod -> Some def
     | Method def when (Ast.str_of_ident def.f_name) =$= "__call" ->
@@ -252,11 +252,11 @@ let lookup_method ?(case_insensitive=false) (aclass, amethod) find_entity =
 
 let lookup_member ?(case_insensitive=false) (aclass, afield) find_entity =
   let eq = equal ~case_insensitive in
-  lookup_gen aclass find_entity 
+  lookup_gen aclass find_entity
     (function
     | ClassVariables (modifier, _opt_ty, class_vars, _tok) ->
-        (try 
-          Some (class_vars +> Ast.uncomma +> Common.find_some 
+        (try
+          Some (class_vars +> Ast.uncomma +> Common.find_some
             (fun (dname, affect_opt) ->
               if eq (Ast.str_of_dname dname) afield
               then Some ((dname, affect_opt), modifier)
@@ -268,11 +268,11 @@ let lookup_member ?(case_insensitive=false) (aclass, afield) find_entity =
     )
 
 let lookup_constant (aclass, aconstant) find_entity =
-  lookup_gen aclass find_entity 
+  lookup_gen aclass find_entity
     (function
     | ClassConstants (_, _, xs, _) ->
-        (try 
-          Some (xs +> Ast.uncomma +> Common.find_some 
+        (try
+          Some (xs +> Ast.uncomma +> Common.find_some
             (fun (name, affect) ->
               if Ast.str_of_ident name =$= aconstant
               then Some (name, affect)
@@ -291,7 +291,7 @@ let lookup_constant (aclass, aconstant) find_entity =
 let collect_members aclass find_entity =
 
   let res = ref [] in
-  (try 
+  (try
     let _ = lookup_gen aclass find_entity (function
     | ClassVariables (_, _, class_vars, _) ->
         class_vars +> Ast.uncomma +> List.iter (fun (dname, _affect) ->
@@ -302,7 +302,7 @@ let collect_members aclass find_entity =
     )
     in
     ()
-   with Not_found | UndefinedClassWhileLookup _ | Multi_found -> 
+   with Not_found | UndefinedClassWhileLookup _ | Multi_found ->
     ()
   );
   !res

@@ -228,6 +228,7 @@ and class_def = {
     | ClassRegular
     | ClassFinal
     | ClassAbstract
+    | ClassAbstractFinal
     | Interface
     | Trait
 

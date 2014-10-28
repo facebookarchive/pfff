@@ -946,6 +946,11 @@ and vof_class_type =
       let v1 = vof_tok v1
       and v2 = vof_tok v2
       in Ocaml.VSum (("ClassAbstract", [ v1; v2 ]))
+  | ClassAbstractFinal ((v1, v2, v3)) ->
+      let v1 = vof_tok v1
+      and v2 = vof_tok v2
+      and v3 = vof_tok v3
+      in Ocaml.VSum (("ClassAbstractFinal", [ v1; v2; v3 ]))
   | Interface v1 ->
       let v1 = vof_tok v1 in Ocaml.VSum (("Interface", [ v1 ]))
   | Trait v1 ->

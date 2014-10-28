@@ -610,9 +610,10 @@ and class_def = {
   c_body: class_stmt list brace;
 }
     and class_type =
-      | ClassRegular  of tok (* class *)
-      | ClassFinal    of tok * tok (* final class *)
-      | ClassAbstract of tok * tok (* abstract class *)
+      | ClassRegular       of tok (* class *)
+      | ClassAbstractFinal of tok * tok * tok (* abstract final class *)
+      | ClassFinal         of tok * tok (* final class *)
+      | ClassAbstract      of tok * tok (* abstract class *)
 
       | Interface of tok (* interface *)
       (* PHP 5.4 traits: http://php.net/manual/en/language.oop5.traits.php

@@ -418,6 +418,7 @@ and vof_class_type =
   | ClassRegular -> Ocaml.VSum (("ClassRegular", []))
   | ClassFinal -> Ocaml.VSum (("ClassFinal", []))
   | ClassAbstract -> Ocaml.VSum (("ClassAbstract", []))
+  | ClassAbstractFinal -> Ocaml.VSum (("ClassAbstractFinal", []))
   | Interface -> Ocaml.VSum (("Interface", []))
   | Trait -> Ocaml.VSum (("Trait", []))
   | Enum -> Ocaml.VSum (("Enum", []))

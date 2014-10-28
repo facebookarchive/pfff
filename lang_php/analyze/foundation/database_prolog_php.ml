@@ -72,14 +72,14 @@ let string_of_modifier = function
 
 let rec string_of_hint_type x =
   match x with
-  (* todo: figure out a reasonable respresentation for type args in prolog 
+  (* todo: figure out a reasonable respresentation for type args in prolog
    * could just represent them as a term, so people could actually use
    * unification over it too, e.g. 'Ent'('Foo'), array(int), etc.
    *)
   | Hint (c, _targsTODO) ->
     (match c with
     | XName [QI (c)] -> Ast.str_of_ident c
-    | XName qu -> 
+    | XName qu ->
       raise (Ast.TodoNamespace (Ast.info_of_qualified_ident qu))
     | Self _ -> "self"
     | Parent _ -> "parent"
@@ -123,20 +123,20 @@ let add_function_params current def add =
            | None -> None
            | Some (_colon, _atopt, t) -> Some t
            ))))
-                  
+
 (*****************************************************************************)
 (* Defs/uses *)
 (*****************************************************************************)
 
-(* Yet another use/def ... 
+(* Yet another use/def ...
  *
  * Factorize code with defs_uses_php.ml?
  * But for defs we want more than just defs, we also want the arity
  * of parameters for instance. And for uses we also want sometimes to
  * process the arguments for instance with require_module, so it's hard
  * to factorize I think. Copy paste is fine sometimes ...
- *  
- * Factorize code with graph_code_php.ml? 
+ *
+ * Factorize code with graph_code_php.ml?
  * But many things like approximate callgraphs with docall(_, 'bar', method)
  * are not in the graph_code, or parameters, so we need anyway to
  * visit the AST to add those speific predicates.
@@ -157,7 +157,7 @@ let visit ~add readable ast =
         Hashtbl.clear h;
         add (P.Kind (P.entity_of_str s, E.Function));
         add (P.At (P.entity_of_str s, readable, PI.line_of_info def.f_tok));
-        
+
         add (P.Misc (spf "arity(%s, %d)" !current
              (List.length (def.f_params +> Ast.unparen +> Ast.uncomma_dots))));
         add_function_params !current def add;
@@ -181,13 +181,16 @@ let visit ~add readable ast =
         Hashtbl.clear h;
         let kind_str = Class_php.string_of_class_type def.c_type in
         (* add (P.Kind (P.entity_of_str s, E.Class)); *)
-        add (P.Misc (spf "kind('%s', %s)" s kind_str)); 
+        add (P.Misc (spf "kind('%s', %s)" s kind_str));
         let tok = Ast.info_of_ident def.c_name in
         add (P.At (P.entity_of_str s, readable, PI.line_of_info tok));
 
         (match def.c_type with
         | ClassAbstract _ -> add (P.Misc (spf "abstract(%s)" !current))
         | ClassFinal _ -> add (P.Misc (spf "final(%s)" !current))
+        | ClassAbstractFinal _ ->
+          add (P.Misc (spf "final(%s)" !current));
+          add (P.Misc (spf "abstract(%s)" !current))
         | ClassRegular _ -> ()
         | Enum _ -> ()
         (* the kind/2 will cover those different cases *)
@@ -251,11 +254,11 @@ let visit ~add readable ast =
             vx (Expr e);
           )
         | ClassVariables (ms, topt, xs, _sc) ->
-          
+
           xs +> Ast.uncomma +> List.iter (fun classvar ->
             let (dname, sc_opt) = classvar in
             let s2 = Ast.str_of_dname dname in
-            
+
             (* old: I used to do something different for Field amd remove
              * the $ because in use-mode but we don't use the $ anymore.
              * now def don't have a $ too, and can be xhp attribute too.
@@ -291,7 +294,7 @@ let visit ~add readable ast =
               let kind = E.Field in
               add (P.Kind (P.entity_of_str sfull, kind));
               add (P.At (P.entity_of_str sfull, readable, PI.line_of_info tok));
-              
+
             | XhpAttrInherit _ -> ()
             )
 
@@ -408,7 +411,7 @@ let visit ~add readable ast =
              (* this should have been desugared while building the
               * code database, except for traits code ...
               *)
-          | XName qu -> 
+          | XName qu ->
             raise (Ast.TodoNamespace (Ast.info_of_qualified_ident qu))
            | Self _| Parent _
            (* can't do much ... *)
@@ -456,9 +459,9 @@ let visit ~add readable ast =
               add (P.Misc (spf "docall(%s, '%s', class)"
                     !current str))
             end;
-          | XName qu -> 
+          | XName qu ->
             raise (Ast.TodoNamespace (Ast.info_of_qualified_ident qu))
-           
+
          (* todo: do something here *)
           | Self _
           | Parent _
@@ -542,21 +545,21 @@ let build2 ?(show_progress=true) root files =
    files +> List.iter (fun file ->
 
      let readable = Common.readable root file in
-     let parts = Common.split "/" readable in 
+     let parts = Common.split "/" readable in
      add (P.Misc (spf "file('%s', [%s])" readable
            (parts +> List.map (fun s -> spf "'%s'" s) +> Common.join ",")));
 
-     try 
+     try
        let (ast, toks) = Parse_php.ast_and_tokens file in
 
        (match toks with
        (* <?hh //xxx *)
-       | T.T_OPEN_TAG ii1::T.TSpaces _::T.T_COMMENT ii2::_rest 
+       | T.T_OPEN_TAG ii1::T.TSpaces _::T.T_COMMENT ii2::_rest
          when PI.str_of_info ii1 =$= "<?hh" ->
            let s = PI.str_of_info ii2 in
            let mode =
              if s =~ "//[ \t]*\\([a-z]+\\)"
-             then 
+             then
                match Common.matched1 s with
                | ("strict" | "decl") as s -> s
                | "partial" -> "default"
@@ -566,10 +569,10 @@ let build2 ?(show_progress=true) root files =
            add (P.Misc (spf "hh('%s', '%s')" readable mode))
 
        (* <?hh *)
-       | Parser_php.T_OPEN_TAG info::_rest 
+       | Parser_php.T_OPEN_TAG info::_rest
          when PI.str_of_info info =$= "<?hh" ->
            add (P.Misc (spf "hh('%s', default)" readable));
-         
+
        | _ -> ()
        );
 
@@ -578,7 +581,7 @@ let build2 ?(show_progress=true) root files =
      with Parse_php.Parse_error _ | Ast_php.TodoNamespace _ ->
        add (P.Misc (spf "problem('%s', parse_error)" file))
    );
-       
+
 
 (*
    ));
@@ -673,7 +676,7 @@ let prolog_query ?(verbose=false) ~source_file ~query =
   (* make sure it's a valid PHP file *)
   let _ast = Parse_php.parse_program source_file in
 
-(* 
+(*
   let g =
     Graph_code_php.build ~verbose (Right [source_file]) []
   in

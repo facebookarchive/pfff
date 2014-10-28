@@ -655,6 +655,8 @@ unticked_class_declaration_statement:
 
 class_entry_type:
  | T_CLASS  	      { ClassRegular $1 }
+ | T_ABSTRACT T_FINAL T_CLASS { ClassAbstractFinal ($1, $2, $3) }
+ | T_FINAL T_ABSTRACT T_CLASS { ClassAbstractFinal ($1, $2, $3) }
  | T_ABSTRACT T_CLASS { ClassAbstract ($1, $2) }
  | T_FINAL    T_CLASS { ClassFinal ($1, $2) }
 

@@ -918,6 +918,8 @@ and v_class_type =
   | ClassRegular v1 -> let v1 = v_tok v1 in ()
   | ClassFinal ((v1, v2)) -> let v1 = v_tok v1 and v2 = v_tok v2 in ()
   | ClassAbstract ((v1, v2)) -> let v1 = v_tok v1 and v2 = v_tok v2 in ()
+  | ClassAbstractFinal ((v1, v2, v3)) ->
+    let v1 = v_tok v1 and v2 = v_tok v2 and v3 = v_tok v3 in ()
   | Interface v1 -> let v1 = v_tok v1 in ()
   | Trait v1 -> let v1 = v_tok v1 in ()
   | Enum v1 -> let v1 = v_tok v1 in ()

@@ -655,6 +655,7 @@ and class_type _env = function
   | ClassRegular _  -> A.ClassRegular
   | ClassFinal _    -> A.ClassFinal
   | ClassAbstract _ -> A.ClassAbstract
+  | ClassAbstractFinal _ -> A.ClassAbstractFinal
   | Interface _ -> A.Interface
   | Trait _ -> A.Trait
   | Enum _ ->
