@@ -539,14 +539,14 @@ module IsLvalue = struct
     | Array_get _
     | Obj_get _
     | Class_get _
-    | List _ 
+    | List _
       -> true
 
     | Lambda _
     | (Cast (_, _)|CondExpr (_, _, _)|InstanceOf (_, _)|New (_, _)|ConsArray _
       | Collection _ |Arrow _
       | Xhp _|Ref _|Call (_, _)|Unop (_, _)|Binop (_, _, _)|Assign (_, _, _)
-      | Guil _|String _|Double _|Int _
+      | Guil _|String _|Double _|Int _|Unpack _
       ) ->
         false
 end

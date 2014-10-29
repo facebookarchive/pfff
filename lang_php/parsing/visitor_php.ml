@@ -558,6 +558,7 @@ and v_argument x =
   let k = function
   | Arg v1 -> let v1 = v_expr v1 in ()
   | ArgRef ((v1, v2)) -> let v1 = v_tok v1 and v2 = v_w_variable v2 in ()
+  | ArgUnpack ((v1, v2)) -> let v1 = v_tok v1 and v2 = v_w_variable v2 in ()
   in
   vin.kargument (k, all_functions) x
 

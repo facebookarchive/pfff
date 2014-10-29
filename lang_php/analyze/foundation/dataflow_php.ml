@@ -212,7 +212,7 @@ let rec expr_fold fold_env lhs expr acc =
   (* Used for known left hand value, e.g. reference *)
   let reclvl = expr_fold fold_env true in
   let recl = expr_fold fold_env lhs in
-  let recr = expr_fold fold_env false in 
+  let recr = expr_fold fold_env false in
   let handle_lhs e acc =
     match e with
     | IdVar _
@@ -233,7 +233,7 @@ let rec expr_fold fold_env lhs expr acc =
   | AssignList(_, list_assign, _, expr) ->
     let rec reclist _acc' list_assign' =
       let list_assign' = Ast.uncomma(Ast.unparen list_assign') in
-      List.fold_left 
+      List.fold_left
         (fun acc' -> function
         | ListVar(e) -> handle_lhs e acc'
         | ListList(_, list_assign'') ->
@@ -247,7 +247,8 @@ let rec expr_fold fold_env lhs expr acc =
     let args = Ast.uncomma(Ast.unparen args) +> List.map
       (function
       | Arg e -> e
-      | ArgRef _ -> raise Todo) in
+      | ArgRef _ -> raise Todo
+      | ArgUnpack _ -> raise Todo) in
     (match args with
     | x::y::vars ->
       let acc = recr x (recr y acc) in
@@ -262,7 +263,8 @@ let rec expr_fold fold_env lhs expr acc =
     (List.fold_left
        (fun acc' -> function
        | Arg e1 -> recr e1 acc'
-       | ArgRef (_, e1) -> handle_lhs e1 acc')
+       | ArgRef (_, e1) -> handle_lhs e1 acc'
+       | ArgUnpack (_, e1) -> recr e1 acc')
        acc args)
   | ObjGet(e, _ ,e1) ->
     recl e (recr e1 acc)
@@ -310,13 +312,14 @@ let rec expr_fold fold_env lhs expr acc =
   | ArrayShort _
   | Collection _
     -> raise Todo
-  | New(_, e, None) -> recr e acc  
+  | New(_, e, None) -> recr e acc
   | New(_, e, Some(args)) ->
    let args = Ast.uncomma(Ast.unparen args) in
     (List.fold_left
        (fun acc' -> function
        | Arg e1 -> recr e1 acc'
-       | ArgRef (_, e1) -> handle_lhs e1 acc')
+       | ArgRef (_, e1) -> handle_lhs e1 acc'
+       | ArgUnpack (_, e1) -> recr e1 acc')
        (recr e acc) args)
   | Clone _ -> raise Todo
   | AssignRef _ -> raise Todo
@@ -359,7 +362,7 @@ let (node_fold: 'a fold_env -> F.node_kind -> 'a -> 'a) =
 fun fold_env node acc -> match node with
   (* Nothing is needed if the node has no expr information*)
       | F.Enter
-      | F.Exit 
+      | F.Exit
       | F.TrueNode
       | F.FalseNode
       | F.DoHeader
@@ -398,7 +401,7 @@ fun fold_env node acc -> match node with
             fold_env.fold_fn s true acc'
           | _ -> acc') acc var_list
 *)
-          
+
 let (flow_fold: 'a fold_fn -> VarSet.t -> 'a -> F.flow -> 'a) =
 fun fold_fn vars acc flow -> flow#nodes#fold
   (fun acc' (ni, nd) -> node_fold {fold_fn = fold_fn ni; fold_vars = vars}
@@ -529,7 +532,7 @@ let display_reaching_dflow flow mp =
     | None -> "Unknown location"
     | Some(info) ->
       let info = Parse_info.token_location_of_info info in
-      spf "%s:%d:%d: " 
+      spf "%s:%d:%d: "
         info.Parse_info.file info.Parse_info.line info.Parse_info.column
   in
   let arr = Array.make flow#nb_nodes true in
@@ -548,7 +551,7 @@ let display_reaching_dflow flow mp =
   (* Node id -> var name -> acc -> acc' *)
   let flow_rv_fn = fun ni name arr ->
     let in_env = mp.(ni).in_env in
-    (try 
+    (try
        let ns = VarMap.find name in_env in
        NodeiSet.fold (fun n _ -> arr.(n) <- true) ns ()
      with
@@ -558,7 +561,7 @@ let display_reaching_dflow flow mp =
   let arr = flow_fold_rv flow_rv_fn VarSet.empty arr flow in
   let i = ref 0 in
   List.iter (fun x ->
-    if (not x) 
+    if (not x)
     then pr (spf "%s: Dead Asisgnment" (string_of_ni !i));
     incr i
   ) (Array.to_list arr)

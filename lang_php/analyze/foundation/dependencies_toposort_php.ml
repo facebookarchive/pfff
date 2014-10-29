@@ -41,7 +41,7 @@ module Deps = struct
     List.fold_left stmt acc stl
 
   and stmt acc = function
-    | NamespaceDef (qu,_) | NamespaceUse (qu, _) -> 
+    | NamespaceDef (qu,_) | NamespaceUse (qu, _) ->
       raise (Ast_php.TodoNamespace (tok_of_name qu))
     (* adding names of entities *)
     | ClassDef c -> SSet.add (unwrap c.c_name) acc
@@ -108,7 +108,7 @@ module Deps = struct
     | Infix (_, e)
     | Postfix (_, e)
     | Cast (_, e)
-    | Ref e
+    | Ref e | Unpack e
     | Unop (_, e) -> expr acc e
     | Call (e, el) -> exprl (expr acc e) el
     | Xhp x ->
@@ -116,10 +116,10 @@ module Deps = struct
         let name = Ast.unwrap x.xml_tag in
         SSet.add name acc
     | ConsArray (avl) -> array_valuel acc avl
-    | Collection ([(n,_)], mel) -> 
+    | Collection ([(n,_)], mel) ->
       let acc = SSet.add n acc in
       array_valuel acc mel
-    | Collection (name, _mel) -> 
+    | Collection (name, _mel) ->
       raise (Ast_php.TodoNamespace (tok_of_name name))
     | List el -> exprl acc el
     | New (e, el) -> exprl (expr acc e) el
@@ -183,9 +183,9 @@ module Deps = struct
         in
         List.fold_left (fun accp x -> SSet.union accp (hint_type_ accp x)) acc_u_ret args
     | HintShape xs ->
-      List.fold_left (fun accp (_s,x) -> 
+      List.fold_left (fun accp (_s,x) ->
         SSet.union accp (hint_type_ accp x)) acc xs
-      
+
 
   and class_def acc c =
     (* todo? implements? traits? *)

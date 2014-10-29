@@ -452,7 +452,7 @@ and func_def env def =
   end;
 
   List.iter (stmt env) def.f_body;
-  let newvars = 
+  let newvars =
     enclosing_vars +> List.fold_left (fun acc (x, _) -> Map_poly.remove x acc)
       !(env.vars)
   in
@@ -586,11 +586,11 @@ and foreach_pattern env pattern =
       eopt +> Common.do_option (expr env)
     (* todo: E.warning tok E.WeirdForeachNoIteratorVar *)
     | _ ->
-      failwith ("Warning: unexpected `foreach` value " ^ 
+      failwith ("Warning: unexpected `foreach` value " ^
                    (str_of_any (Expr2 pattern)))
   in
   aux pattern
-  
+
 
 (* ---------------------------------------------------------------------- *)
 (* Expr *)
@@ -673,7 +673,7 @@ and expr env e =
       let tok = Meta_ast_php_simple.toks_of_any (Expr2 e) +> List.hd in
       failwith (spf "list(...) should be used only in an Assign context at %s"
                   (PI.string_of_info tok))
-  (* Arrow used to be allowed only in Array and Foreach context, but now 
+  (* Arrow used to be allowed only in Array and Foreach context, but now
    * can we also have code like yield $k => $v, so this is really a pair.
    *)
   | Arrow (e1, e2) ->
@@ -855,7 +855,7 @@ and expr env e =
   | Binop (_, e1, e2) -> exprl env [e1; e2]
   | Guil xs -> exprl env xs
 
-  | Ref e -> expr env e
+  | Ref e | Unpack e -> expr env e
 
   | ConsArray (xs) -> array_valuel env xs
   | Collection (_n, xs) ->
@@ -866,7 +866,7 @@ and expr env e =
   | Cast (_, e) -> expr env e
 
   | Lambda def ->
-      let in_long_lambda = 
+      let in_long_lambda =
         match def.f_kind with ShortLambda -> false | _ -> true
       in
       func_def { env with in_long_lambda } def

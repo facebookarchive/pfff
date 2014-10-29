@@ -129,6 +129,7 @@ let expr_priority = function
   | A.Binop (bop, _, _) -> binaryOp bop
   | A.Unop (uop, _)     -> unaryOp uop
   | A.Ref _             -> 13, Left
+  | A.Unpack _          -> 13, Left
   | A.New _             -> 24, NonAssoc
   | A.InstanceOf _      -> 20, NonAssoc
   | A.CondExpr _        -> 8, Left
@@ -586,6 +587,9 @@ and expr_ env = function
   | Ref e ->
       Pp.print env "&";
       expr env e
+  | Unpack e ->
+      Pp.print env "...";
+      expr env e
   | Xhp x ->
       Pp.nestc env (fun env ->
           xml env x;
@@ -732,7 +736,7 @@ and class_def env c =
   | [] -> ()
   | _ ->
       Pp.print env " extends ";
-      Pp.list env (fun env x -> Pp.print env (hint_type env x)) 
+      Pp.list env (fun env x -> Pp.print env (hint_type env x))
         "" c.c_extends " " "";
   );
   (match c.c_implements with
@@ -777,9 +781,9 @@ and class_const env l =
 and interfaces env = function
   | [] -> ()
   | [x] -> Pp.print env (hint_type env x)
-  | x :: rl -> 
-    Pp.print env (hint_type env x); 
-    Pp.print env ", "; 
+  | x :: rl ->
+    Pp.print env (hint_type env x);
+    Pp.print env ", ";
     interfaces env rl
 
 and class_constants env = function
@@ -1114,7 +1118,7 @@ and class_header env xs =
         | [] -> ()
         | _ ->
             Pp.print env " extends ";
-            Pp.list env (fun env s -> 
+            Pp.list env (fun env s ->
               Pp.print env (hint_type env s))
               "" c.c_extends " " "";
         );

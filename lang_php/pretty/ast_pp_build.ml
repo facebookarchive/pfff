@@ -522,7 +522,7 @@ and expr env = function
   | Id n -> A.Id (name env n)
 
   | IdVar (dn, _scope) -> A.Id (dname dn)
-  | This _tok -> A.This 
+  | This _tok -> A.This
 
 
   | Call (e, (_lp, args, _rp)) ->
@@ -547,7 +547,7 @@ and expr env = function
       let e1 = expr env e1 in
       let e2opt = opt expr env e2opt in
       A.Array_get (e1, e2opt)
-  | BraceIdent (_l, e, _r) -> 
+  | BraceIdent (_l, e, _r) ->
       expr env e
   | Deref (_tok, e) ->
       A.Call (A.Id ("eval_var"), [expr env e])
@@ -613,10 +613,10 @@ and hint_type env = function
   | HintQuestion (_i, t) -> A.HintQuestion (hint_type env t)
   | HintTuple (v1)      -> A.HintTuple (List.map (hint_type env) (comma_list (unbrace v1)))
   | HintCallback v1 ->
-    let args, ret = 
+    let args, ret =
       (fun (_, args, ret) ->
         (List.map (hint_type env) (comma_list_dots (unbrace args)),
-         Common2.fmap (fun (_, _, t) -> hint_type env t) ret)) 
+         Common2.fmap (fun (_, _, t) -> hint_type env t) ret))
         (unbrace v1)
     in
     A.HintCallback (args, ret)
@@ -631,6 +631,7 @@ and lvalue env x = expr env x
 and argument env = function
   | Arg e -> expr env e
   | ArgRef (_, e) -> A.Ref (lvalue env e)
+  | ArgUnpack (_, e) -> A.Unpack (lvalue env e)
 
 and class_def env c =
   let _, body, _ = c.c_body in
@@ -753,7 +754,7 @@ and method_def env m =
     A.m_ref = (match m.f_ref with None -> false | Some _ -> true);
     A.m_name = ident env m.f_name;
     A.m_params = List.map (parameter env) params ;
-    A.m_return_type = Common2.fmap (fun (_, _, t) -> hint_type env t) 
+    A.m_return_type = Common2.fmap (fun (_, _, t) -> hint_type env t)
       m.f_return_type;
     A.m_body = acc;
   }
@@ -781,7 +782,7 @@ and func_def env f =
   { A.f_ref = f.f_ref <> None;
     A.f_name = ident env f.f_name;
     A.f_params = List.map (parameter env) params;
-    A.f_return_type = Common2.fmap (fun (_, _, t) -> hint_type env t) 
+    A.f_return_type = Common2.fmap (fun (_, _, t) -> hint_type env t)
       f.f_return_type;
     A.f_body = acc;
   }
@@ -846,22 +847,22 @@ and case env x acc =
   match x with
   | Case (_, e, _, []) -> A.Case (expr env e, []) :: acc
   | Case (_, e, _, stl) ->
-      let acc = 
+      let acc =
         match stl with
         | [] -> acc
-        | _ -> 
+        | _ ->
           let line = last_line_of_stmt_and_defl stl in
-          add_case_comments env acc line 
+          add_case_comments env acc line
       in
       let stl = List.fold_right (stmt_and_def env) stl [] in
       A.Case (expr env e, stl) :: acc
   | Default (_, _, stl) ->
-      let acc = 
+      let acc =
         match stl with
         | [] -> acc
-        | _ -> 
+        | _ ->
           let line = last_line_of_stmt_and_defl stl in
-          add_case_comments env acc line 
+          add_case_comments env acc line
       in
       let stl = List.fold_right (stmt_and_def env) stl [] in
       A.Default stl :: acc

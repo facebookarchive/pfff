@@ -35,7 +35,7 @@ open Common
  * a string, we may want to do special things so maybe it is better to work
  * on the full AST? Working on a term language would be like working
  * in an untyped language? But I have to constantly update sgrep to
- * handle more patterns e.g. X::foo() should match AClass::foo(), 
+ * handle more patterns e.g. X::foo() should match AClass::foo(),
  * which would not happenif I just went with the simpler term language
  * from the beginning.
  * See pfff/matcher/fuzzy_vs_fuzzy.ml for another approach.
@@ -45,14 +45,14 @@ open Common
  * for expression.
  *
  * C-s "pad" or "iso" or any comment
- * 
- * 
+ *
+ *
  *)
 
 (* A is the pattern, and B the concrete source code. For now
  * we both use the same module, Ast_php, but they may differ later
  * as the expressivity of the pattern language grows.
- * 
+ *
  * subtle: use 'b' for to report errors, 'a' is the sgrep pattern and it
  * has no file information usually.
  *)
@@ -830,7 +830,7 @@ and m_fully_qualified_class_name a b =
     m_info a b >>= (fun (a, b) ->
       m_fully_qualified_class_name xs ys >>= (fun (xs, ys) ->
         return (
-          (A.QITok a)::xs, 
+          (A.QITok a)::xs,
           (A.QITok b)::ys
         )
       ))
@@ -839,7 +839,7 @@ and m_fully_qualified_class_name a b =
     m_name_metavar_ok a b >>= (fun (a, b) ->
       m_fully_qualified_class_name xs ys >>= (fun (xs, ys) ->
         return (
-          A.QI a::xs, 
+          A.QI a::xs,
           B.QI b::ys
         )
       ))
@@ -901,8 +901,17 @@ and m_argument a b =
        B.ArgRef(b1, b2)
     )
     ))
+  | A.ArgUnpack(a1, a2), B.ArgUnpack(b1, b2) ->
+    m_tok a1 b1 >>= (fun (a1, b1) ->
+    m_w_variable a2 b2 >>= (fun (a2, b2) ->
+    return (
+       A.ArgUnpack(a1, a2),
+       B.ArgUnpack(b1, b2)
+    )
+    ))
   | A.Arg _, _
   | A.ArgRef _, _
+  | A.ArgUnpack _, _
    -> fail ()
 
 (* ---------------------------------------------------------------------- *)
@@ -1902,7 +1911,7 @@ and m_list__m_argument (xsa: A.argument A.comma_list) (xsb: B.argument B.comma_l
         xsa,
         xsb
       )
-    else failwith 
+    else failwith
       ("transformation (- or +) on '...' not allowed, rewrite your spatch")
 
   | [Left (A.Arg ((A.Id (A.XName [A.QI (A.Name (name,info_name))]))))], bbs
@@ -1941,10 +1950,10 @@ and m_list__m_argument (xsa: A.argument A.comma_list) (xsb: B.argument B.comma_l
         xsa,
         xsb
       )
-    else failwith 
+    else failwith
       ("transformation (- or +) on ',' not allowed when used with " ^
        "'...'. Rewrite your spatch: put your trailing comma on the line " ^
-       "with the '...'. See also " ^ 
+       "with the '...'. See also " ^
        "https://github.com/facebook/pfff/wiki/Spatch#wiki-spacing-issues")
   | [Right _;Left (A.Arg ((A.Id (A.XName [A.QI (A.Name (name,info_name))]))))],[]
     when MV.is_metavar_manyargs_name name ->
@@ -1961,7 +1970,7 @@ and m_list__m_argument (xsa: A.argument A.comma_list) (xsb: B.argument B.comma_l
       raise Impossible
 
   | Left (A.Arg (A.SgrepExprDots _))::_, _ ->
-      failwith 
+      failwith
         "... is allowed only at the end. Give money to pad to get this feature"
 
   (* the general case *)
@@ -2018,7 +2027,7 @@ and m_list__m_array_pair (xsa: A.array_pair A.comma_list) (xsb: B.array_pair B.c
       )
 
   | Left (A.ArrayExpr (A.SgrepExprDots _))::_xs, _bbs ->
-      failwith 
+      failwith
         "... is allowed only at the end. Give money to pad to get this feature"
 
   | xa::aas, xb::bbs ->
@@ -2578,7 +2587,7 @@ and m_class_stmt a b =
     m_hint_type a3 b3 >>= (fun (a3, b3) ->
     m_tok a4 b4 >>= (fun (a4, b4) ->
       return (
-        A.TraitConstraint(a1, a2, a3, a4), 
+        A.TraitConstraint(a1, a2, a3, a4),
         B.TraitConstraint(b1, b2, b3, b4)
       )
     ))))

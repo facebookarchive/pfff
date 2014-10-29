@@ -90,7 +90,7 @@ and toplevels env xs =
       let body = toplevels env xs in
       let rest = toplevels env rest in
       A.NamespaceDef (qualified_ident env qi, body)::rest
-                      
+
     | _ ->
       (toplevel env x) @ toplevels env xs
     )
@@ -114,11 +114,11 @@ and toplevel env st =
         | None -> [A.special "ROOT", wrap tok]
       in
       [A.NamespaceDef (qi, toplevels env (unbrace xs))]
-  | NamespaceUse (_tok, xs, _) -> 
+  | NamespaceUse (_tok, xs, _) ->
       xs +> uncomma +> List.map (function
-      | ImportNamespace qu -> 
+      | ImportNamespace qu ->
           A.NamespaceUse (qualified_ident env qu, None)
-      | AliasNamespace (qu, _tok, id) -> 
+      | AliasNamespace (qu, _tok, id) ->
           A.NamespaceUse (qualified_ident env qu, Some (ident env id))
       )
 
@@ -305,7 +305,7 @@ and expr env = function
       let e1 = expr env e1 in
       let e2opt = opt expr env e2opt in
       A.Array_get (e1, e2opt)
-  | BraceIdent (_l, e, _r) -> 
+  | BraceIdent (_l, e, _r) ->
       expr env e
   | Deref (tok, e) ->
       A.Call (A.Id [A.builtin "eval_var", wrap tok], [expr env e])
@@ -444,11 +444,12 @@ and cpp_directive _env tok = function
   | TraitC    -> A.Id [A.builtin "__TRAIT__", wrap tok]
   | NamespaceC -> A.Id [A.builtin "__NAMESPACE__", wrap tok]
 
-and lvalue env a = expr env a 
+and lvalue env a = expr env a
 
 and argument env = function
   | Arg e -> expr env e
   | ArgRef (_, e) -> A.Ref (lvalue env e)
+  | ArgUnpack (_, e) -> A.Unpack (lvalue env e)
 
 and class_name_reference env a = expr env a
 
@@ -489,7 +490,7 @@ and func_def env f =
     A.f_name = ident env f.f_name;
     A.f_attrs = attributes env f.f_attrs;
     A.f_params = List.map (parameter env) params;
-    A.f_return_type = 
+    A.f_return_type =
       Common2.fmap (fun (_, _, t) -> hint_type env t) f.f_return_type;
     A.f_body = List.fold_right (stmt_and_def env) body [];
     A.f_kind = A.Function;
@@ -523,15 +524,15 @@ and short_lambda_def env def =
   { A.
     f_ref = false;
     f_name = (A.special "_lambda", wrap def.sl_tok);
-    f_params = 
+    f_params =
       (match def.sl_params with
       | SLSingleParam p -> [parameter env p]
-      | SLParams (_, xs, _) -> 
+      | SLParams (_, xs, _) ->
         let xs = comma_list_dots xs in
         List.map (parameter env) xs
       );
     f_return_type = None;
-    f_body = 
+    f_body =
       (match def.sl_body with
       | SLExpr e -> [A.Expr (expr env e)]
       | SLBody (_, body, _) -> List.fold_right (stmt_and_def env) body []
@@ -553,7 +554,7 @@ and type_def_kind env = function
 
 and class_def env c =
   let _, body, _ = c.c_body in
-  let (methods, implicit_fields) = 
+  let (methods, implicit_fields) =
     List.fold_right (class_body env) body ([], []) in
   {
     A.c_kind = class_type env c.c_type ;
@@ -639,7 +640,7 @@ and class_variables env st acc =
        ) cvl @ acc
   | _ -> acc
 
-and xhp_fields env st acc = 
+and xhp_fields env st acc =
   match st with
   | XhpDecl (XhpAttributesDecl (_, xal, _)) ->
     (comma_list xal) +> List.fold_left (fun acc xhp_attr ->
@@ -674,8 +675,8 @@ and xhp_fields env st acc =
       | XhpAttrInherit _ -> acc
      ) acc
   | _ -> acc
-    
-and xhp_attr_inherit env st acc = 
+
+and xhp_attr_inherit env st acc =
   match st with
   | XhpDecl (XhpAttributesDecl(_, xal, _)) ->
     (comma_list xal) +> List.fold_left (fun acc xhp_attr ->
@@ -690,7 +691,7 @@ and xhp_attr_inherit env st acc =
 
 and class_body env st (mets, flds) =
   match st with
-  | Method md -> 
+  | Method md ->
     let (met, more_flds) = method_def env md in
     met::mets, more_flds @ flds
 
@@ -712,7 +713,7 @@ and method_def env m =
   let implicit_flds = implicits +> List.map (fun (var, modifier, topt) ->
     { A.cv_name = dname var;
       (* less: should use default val of parameter?*)
-      A.cv_value = None; 
+      A.cv_value = None;
       A.cv_modifiers = [modifier];
       A.cv_type = opt hint_type env topt;
     }
@@ -723,7 +724,7 @@ and method_def env m =
       let (str_with_dollar, tok) = dname var in
       let str_without_dollar = Ast_php.str_of_dname var in
       A.Expr (
-        A.Assign (None, A.Obj_get(A.This ("$this", tok), 
+        A.Assign (None, A.Obj_get(A.This ("$this", tok),
                                   A.Id [str_without_dollar, tok]),
                         A.Var (str_with_dollar, tok)))
     )
@@ -734,7 +735,7 @@ and method_def env m =
     A.f_name = ident env m.f_name;
     A.f_attrs = attributes env m.f_attrs;
     A.f_params = List.map (parameter env) params ;
-    A.f_return_type = 
+    A.f_return_type =
       Common2.fmap (fun (_, _, t) -> hint_type env t) m.f_return_type;
     A.f_body = implicit_assigns @ method_body env m.f_body;
     A.f_kind = A.Method;

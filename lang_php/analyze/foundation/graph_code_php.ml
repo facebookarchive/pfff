@@ -85,7 +85,7 @@ type env = {
   (* phase_defs: ... list ref; *)
   phase_inheritance: (current * (Ast.name * E.entity_kind)) list ref;
   phase_use:         (current * (Ast.name * E.entity_kind)) list ref;
-  phase_use_lookup:  
+  phase_use_lookup:
     (current * (bool(*xhp*) * (Ast.name * Ast.ident) * E.entity_kind)) list ref;
   phase_use_other:  (unit -> unit) list ref;
   (* post processing phase, try to resolve $o->foo() method calls *)
@@ -160,13 +160,13 @@ let parse env file =
      env.pr2_and_log (spf "PARSE ERROR with %s, exn = %s" (env.path file)
                         (Common.exn_to_s exn));
      []
-      
-  
-let xhp_field str = 
+
+
+let xhp_field str =
   (str =~ ".*=")
 (* Ignore certain xhp fields, custom data attribute:
  * http://www.w3.org/TR/2011/WD-html5-20110525/elements.html,
- * #embedding-custom-non-visible-data-with-the-data-attributes ARIA: 
+ * #embedding-custom-non-visible-data-with-the-data-attributes ARIA:
  * http://dev.w3.org/html5/markup/aria/aria.html,
  * server side attribute: flib/markup/xhp/html.php:52 *)
 let xhp_data_field str =
@@ -220,7 +220,7 @@ let property_of_modifiers modifiers =
   | Ast_php.Final -> None
   )
 
-let normalize str = 
+let normalize str =
   str
   +> String.lowercase                         (* php is case insensitive *)
   +> Str.global_replace (Str.regexp "-") "_"  (* xhp is "dash" insensitive *)
@@ -255,7 +255,7 @@ let prune_special_root xs =
 let fully_qualified_candidates cur name _kind =
   match name with
   | [] -> raise Impossible
-  | ("__special__ROOT",_)::xs -> 
+  | ("__special__ROOT",_)::xs ->
       [xs]
   | ("__special__namespace",_)::_xs ->
       failwith "namespace keyword not handled in qualifier"
@@ -268,8 +268,8 @@ let fully_qualified_candidates cur name _kind =
        cur.qualifier @ name;
       ]
 
-let (strtok_of_name: env -> Ast.name -> Entity_code.entity_kind -> 
-     resolved_name Ast.wrap) = 
+let (strtok_of_name: env -> Ast.name -> Entity_code.entity_kind ->
+     resolved_name Ast.wrap) =
  fun env name kind ->
    let tokopt =
      match name with
@@ -277,7 +277,7 @@ let (strtok_of_name: env -> Ast.name -> Entity_code.entity_kind ->
      | [] -> raise Impossible
    in
    let candidates = fully_qualified_candidates env.cur name kind in
-   try 
+   try
     candidates +> Common.find_some (fun fullname ->
      let str = fullname +> List.map Ast.str_of_ident +> Common.join "\\" in
      if G.has_node (str, kind) env.g
@@ -287,7 +287,7 @@ let (strtok_of_name: env -> Ast.name -> Entity_code.entity_kind ->
    with Not_found ->
      let str = name +> List.map Ast.str_of_ident +> Common.join "\\" in
      R str, tokopt
-     
+
 
 let (strtok_of_class_name: env -> Ast.hint_type -> resolved_name Ast.wrap) =
   fun env x ->
@@ -306,7 +306,7 @@ let name_of_parent env tokopt =
 (* Add node *)
 (*****************************************************************************)
 (* The flag below is useful to minimize the lookup failure errors.
- * 
+ *
  * It has some bad side effects though; in certain contexts,
  * such as scheck, you want to get all the errors and not just
  * the first lookup failure.
@@ -319,7 +319,7 @@ let add_node_and_has_edge2 ?(props=[]) env (ident, kind) =
     (match kind with
     | E.ClassConstant | E.Field | E.Method -> env.cur.self ^ "."
     | _ -> ""
-    ) ^ 
+    ) ^
     Ast.str_of_ident ident
   in
   let node = (str, kind) in
@@ -386,7 +386,7 @@ let lookup_fail env tokopt dst =
     else
       if file =~ ".*third-party" || file =~ ".*third_party"
       then (fun _s -> ())
-      else 
+      else
         (match snd dst with
         (* todo: fix those too | E.ClassConstant *)
         | E.Function | E.Class | E.Constant -> env.pr2_and_log
@@ -394,7 +394,7 @@ let lookup_fail env tokopt dst =
         )
   in
   env.stats.G.lookup_fail +> Common.push (info, dst);
-  fprinter (spf "PB: lookup fail on %s (at %s:%d)" (G.string_of_node dst) 
+  fprinter (spf "PB: lookup fail on %s (at %s:%d)" (G.string_of_node dst)
               (env.path file) line)
 
 (* G.parent is extremely slow in ocamlgraph so need memoize *)
@@ -422,7 +422,7 @@ let rec add_use_edge2 env (name, kind) =
   match () with
   (* maybe nested function, in which case we dont have the def *)
   | _ when not (G.has_node src env.g) ->
-      env.pr2_and_log 
+      env.pr2_and_log
         (spf "LOOKUP SRC FAIL %s --> %s, src doesn't exist (nested func?)"
            (G.string_of_node src) (G.string_of_node dst));
 
@@ -431,10 +431,10 @@ let rec add_use_edge2 env (name, kind) =
       G.add_edge (src, dst) G.Use env.g
 
   | _ when Hashtbl.mem env.case_insensitive (normalize str, kind) ->
-      let (final_str, _) = 
+      let (final_str, _) =
         Hashtbl.find env.case_insensitive (normalize str, kind) in
       (*env.pr2_and_log (spf "CASE SENSITIVITY: %s instead of %s at %s"
-                         str final_str 
+                         str final_str
                          (Parse_info.string_of_info (Ast.tok_of_ident name)));
       *)
       add_use_edge2 env ([final_str, tokopt], kind)
@@ -456,7 +456,7 @@ let rec add_use_edge2 env (name, kind) =
         (* todo: regular fields, fix those at some point! *)
         | E.Field when not (xhp_field str) -> ()
         | E.Field when xhp_data_field str -> ()
-        | E.Method when magic_methods str -> 
+        | E.Method when magic_methods str ->
            (* less: env.stat.G.method_calls false unresolved *)
            ()
         | _ ->
@@ -489,7 +489,7 @@ let add_use_edge_instanceof env (name, kind) =
   env.phase_use_other +> Common.push (fun () ->
     let (R x) = str_of_name env name kind in
     let node = (x, kind) in
-    if not (G.has_node node env.g) 
+    if not (G.has_node node env.g)
     then env.log (spf "PB: instanceof unknown class: %s"(G.string_of_node node))
   )
 
@@ -515,7 +515,7 @@ let add_use_edge_maybe_class env entity tokopt =
 (*****************************************************************************)
 
 (* assume namespace has been resolved so aclass is fully resolved
- * less: handle privacy? 
+ * less: handle privacy?
  *)
 let lookup_inheritance2 g (R aclass, amethod_or_field_or_constant) tokopt =
   let rec depth current =
@@ -527,11 +527,11 @@ let lookup_inheritance2 g (R aclass, amethod_or_field_or_constant) tokopt =
       let full_name = (fst current ^ "." ^ amethod_or_field_or_constant) in
       let res =
         children +> Common.find_some_opt (fun (s2, kind) ->
-          if full_name =$= s2 || 
-             (* todo? pass a is_static extra param to lookup? 
+          if full_name =$= s2 ||
+             (* todo? pass a is_static extra param to lookup?
               * also should intercept __get for fields?
               *)
-             s2 =$= (fst current ^ ".__call") || 
+             s2 =$= (fst current ^ ".__call") ||
              s2 =$= (fst current ^ ".__callStatic")
           then Some ((R s2, tokopt), kind)
           else None
@@ -563,16 +563,16 @@ let add_use_edge_lookup2 xhp env (name, ident) kind =
   let tokopt = snd ident in
 
   (match lookup_inheritance env.g (aclass, afld) tokopt with
-  (* less: assert kind = kind2? 
+  (* less: assert kind = kind2?
    * actually because we convert some Obj_get into Class_get,
    * this could also be a kind = Field even when asked for a StaticVar
    *)
-  | Some ((R str, tokopt), kind2) -> 
+  | Some ((R str, tokopt), kind2) ->
       let tok = Ast.tok_of_ident ident in
       (match kind2 with
-      | E.Method -> 
+      | E.Method ->
           env.stats.G.method_calls +> Common.push (tok, true)
-      | E.Field -> 
+      | E.Field ->
           env.stats.G.field_access +> Common.push (tok, true)
       | E.ClassConstant -> ()
       | _ -> raise Impossible
@@ -582,14 +582,14 @@ let add_use_edge_lookup2 xhp env (name, ident) kind =
     (match afld with
     (* todo? create a fake default constructor node? *)
     | "__construct" -> ()
-    | _ -> 
+    | _ ->
      (* If someone uses an undefined class constant of an undefined class,
       * we want really to report only the use of undefined class, so don't
       * forget to guard some calls to add_use_edge() with this function.
       *)
       if not (class_exists env aclass tokopt)
       (* should have been reported when we visit the Class_get *)
-      then 
+      then
         (* todo: we should do check at 'use' time, lazy check or hook checks
          * to be added in env.
          *)
@@ -597,7 +597,7 @@ let add_use_edge_lookup2 xhp env (name, ident) kind =
         (* this will create a fake node for this class *)
         then add_use_edge_bis env (name, E.Class)
         else ()
-      else 
+      else
         let (R str) = aclass in
         let node = ([str ^ "." ^ afld, tokopt], kind) in
         add_use_edge_bis env node
@@ -612,13 +612,13 @@ let add_use_edge_lookup2 xhp env (name, ident) kind =
    * an inheritance? People using G.pred or G.succ must take care to
    * filter classes.
    *)
-  if afld =$= "__construct" 
+  if afld =$= "__construct"
   then add_use_edge_bis env (name, E.Class)
 
 let add_use_edge_lookup ?(xhp=false) env a b =
   env.phase_use_lookup +> Common.push (env.cur, (xhp, a, b))
 
-(* todo: add unit test for this 
+(* todo: add unit test for this
  * todo: this is buggy, you can't use lookup_inheritance in the
  * inheritance phase! have a phase_inheristance2!
 *)
@@ -632,7 +632,7 @@ let _adjust_edge_protected _env _fld _parent =
     | None -> ()
     | Some c ->
        (* todo: factorize with add_use_edge_inheritance ? *)
-      let aclass, afld = 
+      let aclass, afld =
         (str_of_class_name env c, Ast.str_of_ident fld.cv_name) in
       let fake_tok = () in
       (match lookup_inheritance env.g (aclass, afld) fake_tok with
@@ -657,8 +657,8 @@ let _adjust_edge_protected _env _fld _parent =
 (*****************************************************************************)
 let rec extract_defs_uses env ast readable =
   let env = { env with cur = { env.cur with
-    node = (readable, E.File); 
-    readable 
+    node = (readable, E.File);
+    readable
   }} in
   begin
     let dir = Common2.dirname env.cur.readable in
@@ -701,8 +701,8 @@ and stmt_bis env x =
   | ClassDef def -> class_def env def
   | ConstantDef def -> constant_def env def
   | TypeDef def -> type_def env def
-  | NamespaceDef (qu, xs) -> 
-    stmt_toplevel_list 
+  | NamespaceDef (qu, xs) ->
+    stmt_toplevel_list
       {env with cur = { env.cur with qualifier = prune_special_root qu; }} xs
   (* handled in stmt_toplevel_list *)
   | NamespaceUse _ -> raise Impossible
@@ -839,7 +839,7 @@ and class_def env def =
   );
   def.c_methods +> List.iter (fun def ->
     (* less: static? be more precise at some point *)
-    let props = property_of_modifiers def.m_modifiers @ 
+    let props = property_of_modifiers def.m_modifiers @
                 [E.Privacy (privacy_of_modifiers def.m_modifiers)]
     in
     let env = add_node_and_has_edge ~props env (def.f_name, E.Method) in
@@ -860,9 +860,9 @@ and type_def_kind env = function
 (* ---------------------------------------------------------------------- *)
 (* Types *)
 (* ---------------------------------------------------------------------- *)
-and hint_type env t = 
-  match t with 
-  | Hint name -> 
+and hint_type env t =
+  match t with
+  | Hint name ->
       (* todo: handle basic types? could also add them in php_stdlib/ *)
       add_use_edge env (name, E.Class)
   | HintArray -> ()
@@ -946,7 +946,7 @@ and expr env x =
         (match e1 with
         (* handle easy case *)
         | This ((_x, tokopt)) ->
-            expr env 
+            expr env
                 (Call (Class_get (Id[ (env.cur.self, tokopt)], Id name2), es));
             env.phase_dispatch +> Common.push (env.cur, name2);
         (* need class analysis ... *)
@@ -1045,7 +1045,7 @@ and expr env x =
   | Infix (_, e) | Postfix (_, e) | Unop (_, e) -> expr env e
   | Binop (_, e1, e2) -> exprl env [e1; e2]
   | Guil xs -> exprl env xs
-  | Ref e -> expr env e
+  | Ref e | Unpack e -> expr env e
   | ConsArray (xs) -> array_valuel env xs
   | Collection (name, xs) ->
       add_use_edge env (name, E.Class);
@@ -1055,7 +1055,7 @@ and expr env x =
   (* less: again, add deps for type? *)
   | Cast (_, e) -> expr env e
   | Lambda def -> func_def env def
-  
+
 
 and array_value env x = expr env x
 
@@ -1079,7 +1079,7 @@ and array_valuel  env xs = List.iter (array_value env) xs
 (* Main entry point *)
 (*****************************************************************************)
 
-let build 
+let build
     ?(verbose=true)
     ?(logfile=(Filename.concat (Sys.getcwd()) "pfff.log"))
     ?(readable_file_format=false)
@@ -1089,7 +1089,7 @@ let build
     root
     files
   =
-      
+
   let g = G.create () in
   G.create_initial_hierarchy g;
 
@@ -1110,7 +1110,7 @@ let build
       readable = "filled_later";
       qualifier = [];
       import_rules = [];
-      self = "NOSELF"; 
+      self = "NOSELF";
       parent = (fun () -> R "NOPARENT");
       at_toplevel = true;
     };
@@ -1121,7 +1121,7 @@ let build
     not_found = Hashtbl.create 101;
 
     stats = Graph_code.empty_statistics ();
-    log = (fun s ->  
+    log = (fun s ->
         output_string chan (s ^ "\n"); flush chan;
     );
     pr2_and_log = (fun s ->
@@ -1133,7 +1133,7 @@ let build
      * tests/php/codegraoph/pfff_test.exp use readable path, so that
      * 'make test' can work from any machine.
      *)
-    path = (fun file -> 
+    path = (fun file ->
       if readable_file_format
       then Common.readable root file
       else file
@@ -1163,8 +1163,8 @@ let build
   +> List.iter (fun node ->
     let files = Hashtbl.find_all env.dupes node in
     let (ex_file, _) = List.hd files in
-    let orig_file = 
-      try G.file_of_node node g 
+    let orig_file =
+      try G.file_of_node node g
       with Not_found ->
         failwith (spf "PB with %s, no file found, dupes = %s"
                     (G.string_of_node node) (Common.dump files))
@@ -1247,7 +1247,7 @@ let build
           let tok = Ast.tok_of_name name in
           let candidates = Hashtbl.find_all htoplevels method_str in
           (match candidates with
-          | [] -> 
+          | [] ->
               (match method_str with
               | _ when method_str =~ "get.*" -> ()
               | _ when method_str =~ "set.*" -> ()
@@ -1285,4 +1285,4 @@ let build
   end;
   close_out chan;
   g, env.stats
-      
+

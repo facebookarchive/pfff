@@ -10,9 +10,9 @@ let visited_toks = ref []
 let rec vof_program v = Ocaml.vof_list vof_stmt v
 and vof_wrapped_string (s, tok) =
   if !visit_mode
-  then 
+  then
     (match tok with
-    | None -> 
+    | None ->
       (* todo? failwith "no info, use Ast_php_simple_build.store_position" *)
       (* maybe fake tok? *)
       ()
@@ -185,6 +185,7 @@ and vof_expr =
       and v2 = Ocaml.vof_list vof_expr v2
       in Ocaml.VSum (("Call", [ v1; v2 ]))
   | Ref v1 -> let v1 = vof_expr v1 in Ocaml.VSum (("Ref", [ v1 ]))
+  | Unpack v1 -> let v1 = vof_expr v1 in Ocaml.VSum (("Unpack", [ v1 ]))
   | Xhp v1 -> let v1 = vof_xml v1 in Ocaml.VSum (("Xhp", [ v1 ]))
   | ConsArray (v1) ->
       let v1 = Ocaml.vof_list vof_array_value v1

@@ -554,6 +554,8 @@ parameter_or_dots:
  /*(* PHP 5.6 variadic arguments ...$xs *)*/
  | T_VARIABLE_VARIADIC
      { Left3 (H.mk_param $1) (* todo: with is_variadic = true *) }
+ | TDOTS T_VARIABLE
+     { Left3 (H.mk_param $2) (* todo: with is_variadic = true *) }
 
 parameter: attributes_opt ctor_modifier_opt at_opt type_php_opt  parameter_bis
       { { $5 with p_modifier = $2; p_attrs = $1; p_type = $4; p_soft_type= $3;}}
@@ -1230,6 +1232,8 @@ arguments: TOPAR function_call_argument_list TCPAR { ($1, $2, $3) }
 function_call_argument:
  | expr	{ (Arg ($1)) }
  | TAND expr 		{ (ArgRef($1, $2)) }
+ | TDOTS simple_expr { (ArgUnpack($1, $2)) }
+ | T_VARIABLE_VARIADIC { let _, tok = $1 in (ArgUnpack(tok, H.mk_var $1)) }
 
 /*(*----------------------------*)*/
 /*(*2 encaps *)*/

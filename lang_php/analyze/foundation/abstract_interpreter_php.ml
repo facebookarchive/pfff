@@ -604,6 +604,8 @@ and expr_ env heap x =
       let heap, _, x = lvalue env heap e in
       heap, x
 
+  | Unpack _ -> raise Todo
+
   | InstanceOf (e1, e2) ->
       let heap, _ = expr env heap e1 in
       let heap, _ = expr env heap e2 in

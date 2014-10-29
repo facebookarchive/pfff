@@ -29,8 +29,8 @@
  *
  * Here is a list of the simplications/factorizations:
  *  - no purely syntactical tokens in the AST like parenthesis, brackets,
- *    braces, angles, commas, semicolons, antislash, etc. No ParenExpr. 
- *    No FinalDef. No NotParsedCorrectly. The only token information kept 
+ *    braces, angles, commas, semicolons, antislash, etc. No ParenExpr.
+ *    No FinalDef. No NotParsedCorrectly. The only token information kept
  *    is for identifiers for error reporting. See wrap() below.
  *
  *  - support for old syntax is removed. No IfColon, ColonStmt,
@@ -202,8 +202,8 @@ and expr =
   | String of string wrap
 
   (* Id is valid for "entities" (functions, classes, constants). Id is also
-   * used for class methods/fields/constants. It can also contain 
-   * "self/parent" or "static", "class". It can be "true", "false", "null" 
+   * used for class methods/fields/constants. It can also contain
+   * "self/parent" or "static", "class". It can be "true", "false", "null"
    * and many other builtin constants. See builtin() and special() below.
    *
    * todo: For field name, if in the code they are referenced like $this->fld,
@@ -252,6 +252,8 @@ and expr =
    *)
   | Ref of expr
 
+  (* e.g. f(...$x) *)
+  | Unpack of expr
 
   | Call of expr * expr list
 
@@ -380,7 +382,7 @@ and class_def = {
 
   c_attrs: attribute list;
   (* xhp attributes. less: other xhp decl, e.g. children, @required, etc *)
-  c_xhp_fields: xhp_field list; 
+  c_xhp_fields: xhp_field list;
   c_xhp_attr_inherit: class_name list;
   c_constants: constant_def list;
   c_variables: class_var list;
@@ -393,7 +395,7 @@ and class_def = {
     | Interface
     | Trait
     | Enum
-  and xhp_field = class_var * bool 
+  and xhp_field = class_var * bool
   and class_var = {
     (* note that the name will contain a $ *)
     cv_name: var;

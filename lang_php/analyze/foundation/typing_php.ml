@@ -385,6 +385,8 @@ and expr_ env _lv = function
 
   | Ref e -> expr env e
 
+  | Unpack _ -> raise Todo
+
   | (Id [(s, tok)] | Var (s, tok)) as elt ->
       let is_marked = has_marker env s in
       (match elt with
@@ -496,7 +498,7 @@ and expr_ env _lv = function
   (* ?? why this special case? the code handling Id() should do the
    * GEnv.get_class so no need this special case.
    *)
-  | Class_get (Id [(c,_)], Id [(x,_)]) 
+  | Class_get (Id [(c,_)], Id [(x,_)])
       when c <> special "self" && c <> special "parent" ->
       let marked = env.auto_complete && has_marker env x in
       let t1 = GEnv.get_class env c in
@@ -571,7 +573,7 @@ and expr_ env _lv = function
 	  let ti = (pi, Env_typing_php.Declaration(tl)) in
           let _ = AEnv.set env id ti in
           t
-	| None -> t 
+	| None -> t
       )
 
 (* old code of julien's intern? still needed?
@@ -847,7 +849,7 @@ and class_def env c =
 
   (* Adding traits *)
   let traits =
-    List.map (fun ht -> 
+    List.map (fun ht ->
       let  (x, _) = name_of_class_name ht in
       get_object (get_class env x)
     ) c.c_uses in

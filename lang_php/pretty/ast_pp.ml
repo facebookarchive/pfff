@@ -118,6 +118,7 @@ and expr =
   | Call of expr * expr list
 
   | Ref of expr
+  | Unpack of expr
 
   | Xhp of xml
   | ConsArray of array_value list
