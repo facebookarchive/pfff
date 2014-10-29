@@ -878,9 +878,9 @@ non_empty_parameter_list:
        [Left3 {p with p_ref = Some $2; p_default = Some ($4, $5)}]
      }
  /*(* sgrep_ext: *)*/
- | TDOTS                                 
+ | T_ELLIPSIS                                 
      { sgrep_guard ([Middle3 $1]) }
- | non_empty_parameter_list TCOMMA TDOTS 
+ | non_empty_parameter_list TCOMMA T_ELLIPSIS 
      { sgrep_guard ($1 ++ [Right3 $2; Middle3 $3]) }
 
  <<repetitive non_empty_parameter_list>>
@@ -1442,12 +1442,12 @@ encaps_var_offset:
 \section{Pattern extensions}
 
 <<GRAMMAR tokens hook>>=
-%token <Ast_php.info> TDOTS
+%token <Ast_php.info> T_ELLIPSIS
 @
 
 <<exprbis grammar rule hook>>=
 /*(* sgrep_ext: *)*/
-| TDOTS { sgrep_guard (SgrepExprDots $1) }
+| T_ELLIPSIS { sgrep_guard (SgrepExprDots $1) }
 
 /*(* xhp: do not put in 'expr', otherwise can't have xhp 
    * in function arguments
@@ -1489,17 +1489,17 @@ encaps_var_offset:
 
 <<static_scalar grammar rule hook>>=
  /* xdebug TODO AST  */
- | TDOTS { sgrep_guard (SgrepExprDots $1)  }
+ | T_ELLIPSIS { sgrep_guard (SgrepExprDots $1)  }
 @
 
 <<common_scalar grammar rule hook>>=
  | T_CLASS_XDEBUG class_name TOBRACE class_statement_list TCBRACE { 
      XdebugClass ($2, $4)
    }
- | T_CLASS_XDEBUG class_name TOBRACE TDOTS TCBRACE { 
+ | T_CLASS_XDEBUG class_name TOBRACE T_ELLIPSIS TCBRACE { 
      XdebugClass ($2, [])
    }
- | T_CLASS_XDEBUG class_name TOBRACE TDOTS TSEMICOLON TCBRACE { 
+ | T_CLASS_XDEBUG class_name TOBRACE T_ELLIPSIS TSEMICOLON TCBRACE { 
      XdebugClass ($2, [])
    }
  | T_RESOURCE_XDEBUG  { XdebugResource }

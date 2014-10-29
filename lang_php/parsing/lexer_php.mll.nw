@@ -954,7 +954,7 @@ and st_one_line_comment = parse
   | ":" { TCOLON(tokinfo lexbuf) }
   | "?" { TQUESTION(tokinfo lexbuf) }
   (* semantic grep *)
-  | "..." { TDOTS(tokinfo lexbuf) }
+  | "..." { T_ELLIPSIS(tokinfo lexbuf) }
 
 @
 

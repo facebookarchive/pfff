@@ -556,7 +556,7 @@ rule st_in_scripting = parse
     | ":" { TCOLON(tokinfo lexbuf) }
     | "?" { TQUESTION(tokinfo lexbuf) }
     (* semantic grep or var args extension *)
-    | "..." { TDOTS(tokinfo lexbuf) }
+    | "..." { T_ELLIPSIS(tokinfo lexbuf) }
 
     | "...$" (LABEL as s) { T_VARIABLE_VARIADIC(case_str s, tokinfo lexbuf) }
 

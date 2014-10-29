@@ -215,7 +215,7 @@ let info_of_tok = function
   | TDOLLAR ii -> ii
   | TGUIL ii -> ii
 
-  | TDOTS (ii) -> ii
+  | T_ELLIPSIS (ii) -> ii
   | T_CLASS_XDEBUG (ii) -> ii
   | T_RESOURCE_XDEBUG (ii) -> ii
 
@@ -416,7 +416,7 @@ let visitor_info_of_tok f = function
   | TDOLLAR ii -> TDOLLAR(f ii)
   | TGUIL ii -> TGUIL(f ii)
 
-  | TDOTS (ii) -> TDOTS (f ii)
+  | T_ELLIPSIS (ii) -> T_ELLIPSIS (f ii)
   | T_CLASS_XDEBUG (ii) -> T_CLASS_XDEBUG (f ii)
   | T_RESOURCE_XDEBUG (ii) -> T_RESOURCE_XDEBUG (f ii)
 

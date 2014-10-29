@@ -178,7 +178,7 @@ module PI = Parse_info
 %token <Ast_php.info> T_AWAIT
 
 /*(* phpext: for hack and also for sgrep *)*/
-%token <Ast_php.info> TDOTS
+%token <Ast_php.info> T_ELLIPSIS
 
 /*(*-----------------------------------------*)*/
 /*(*2 XHP tokens *)*/
@@ -550,11 +550,11 @@ parameter_list:
 parameter_or_dots:
  | parameter { Left3 $1 }
  /*(* varargs extension *)*/
- | TDOTS { Middle3 $1 }
+ | T_ELLIPSIS { Middle3 $1 }
  /*(* PHP 5.6 variadic arguments ...$xs *)*/
  | T_VARIABLE_VARIADIC
      { Left3 (H.mk_param $1) (* todo: with is_variadic = true *) }
- | TDOTS T_VARIABLE
+ | T_ELLIPSIS T_VARIABLE
      { Left3 (H.mk_param $2) (* todo: with is_variadic = true *) }
 
 parameter: attributes_opt ctor_modifier_opt at_opt type_php_opt  parameter_bis
@@ -933,7 +933,7 @@ type_php_or_dots_list:
 
 type_php_or_dots:
  | type_php { Left3 $1 }
- | TDOTS    { Middle3 $1 }
+ | T_ELLIPSIS    { Middle3 $1 }
 
 /*(* Do not confuse type_parameters and type_arguments. Type parameters
    * can only be simple identifiers, as in class Foo<T1, T2> { ... },
@@ -1101,7 +1101,7 @@ expr:
  | T_AWAIT expr { Await ($1, $2) }
 
  /*(* sgrep_ext: *)*/
- | TDOTS { H.sgrep_guard (SgrepExprDots $1) }
+ | T_ELLIPSIS { H.sgrep_guard (SgrepExprDots $1) }
 
  | T_INCLUDE      expr 		       { Include($1,$2) }
  | T_INCLUDE_ONCE expr 	               { IncludeOnce($1,$2) }
@@ -1232,7 +1232,7 @@ arguments: TOPAR function_call_argument_list TCPAR { ($1, $2, $3) }
 function_call_argument:
  | expr	{ (Arg ($1)) }
  | TAND expr 		{ (ArgRef($1, $2)) }
- | TDOTS simple_expr { (ArgUnpack($1, $2)) }
+ | T_ELLIPSIS simple_expr { (ArgUnpack($1, $2)) }
  | T_VARIABLE_VARIADIC { let _, tok = $1 in (ArgUnpack(tok, H.mk_var $1)) }
 
 /*(*----------------------------*)*/
