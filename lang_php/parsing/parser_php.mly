@@ -904,11 +904,15 @@ type_params_list:
   | type_param TCOMMA type_params_list { [Left $1; Right $2] @ $3 }
 
 type_param:
-  | ident                 { TParam (Name $1) }
-  | TMINUS ident { TParam (Name $2) }
-  | TPLUS ident { TParam (Name $2) }
-  | ident T_AS TQUESTION class_name { TParamConstraint (Name $1, $2, HintQuestion ($3, $4)) }
-  | ident T_AS class_name { TParamConstraint (Name $1, $2, $3) }
+  | variance_opt ident                 { TParam (Name $2) }
+  | variance_opt ident T_AS TQUESTION class_name { TParamConstraint (Name $2, $3, HintQuestion ($4, $5)) }
+  | variance_opt ident T_AS class_name { TParamConstraint (Name $2, $3, $4) }
+
+variance_opt:
+  | /*(*nothing*)*/ {None}
+  | TMINUS{ Some $1 }
+  | TPLUS { Some $1 }
+
 
 /*(*************************************************************************)*/
 /*(*1 Types *)*/
