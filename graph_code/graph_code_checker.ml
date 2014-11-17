@@ -51,7 +51,12 @@ let check_imperative g =
       let ps = pred n in
       (* todo: filter nodes that are in boilerplate code *)
       if ps = [] 
-      then Error.warning info.G.pos (Error.Deadcode n);
+      then 
+        (match n with
+        | s, E.Function when s =$= "main" || s =~ "^main__.*" -> ()
+        | _ ->
+          Error.warning info.G.pos (Error.Deadcode n);
+        );
 
       (* todo: factorize with graph_code_clang, put in database_code? *)
       let n_def_opt =
