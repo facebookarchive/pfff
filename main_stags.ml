@@ -30,6 +30,7 @@ open Common
  * 
  * related work:
  *  - for ocaml: ocp-index, merlin, ocamlspot
+ *  - https://www.gnu.org/software/global/
  *)
 
 (*****************************************************************************)
