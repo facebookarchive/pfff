@@ -90,7 +90,9 @@ module Model = Model2
  *  - unified "fuzzy" search (files, entities, TODO but also content),
  *    SEMI project-wide fuzzy search is really useful for filenames but also content!
  *  - debugger? it helps understand code so a coverage layer or TODO live
- *    coverage tracing would be nice (as in tracegl)
+ *    coverage tracing would be nice (as in tracegl),
+ *    also a way to see the actual concrete values of variables/parameters
+ *    inline would be nice too (as in intellij 14) (always-on visualization!)
  *  - source control? can extract age, number of authors, churn information in
  *    layers
  *  - SEMI dataflow from here, dataflow to here (intellij)
@@ -103,6 +105,8 @@ module Model = Model2
  *    but we want the ability to understand a class by TODO "inlining" parent 
  *    methods that are relevant to understand the local code of the class
  *    (e.g. the short command of Eiffel)
+ *  - code snippet? This is similar to auto completion, it's good for writing
+ *    new code, but not that useful to understand existing code.
  *  - refactoring? no (but some spatch integration could be nice)
  *  - UI designer? no
  *  - deploy assistant, cloud assistant? no
