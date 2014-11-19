@@ -15,6 +15,7 @@ open Common
 
 open Parser_php
 module PI = Parse_info
+module TH = Token_helpers_php
 
 (*****************************************************************************)
 (* Prelude *)
@@ -81,6 +82,94 @@ let split_two_char_info i =
             } in
   (lhs, rhs)
 
+(*
+ * Utilities for lambda parsing
+ *)
+
+(*
+ * Checks if the given tokens are compatible with a set of lambda params.
+ * It must either be empty, as in () ==> ... or contain one variable/variadic.
+ *
+ * Both of these cases are not compatible with typehints, so we can safely
+ * determine if a (...) expression is part of lambda's params or its typehint.
+ *)
+let is_params toks =
+  List.for_all (function
+    | T_LAMBDA_OPAR _ | T_LAMBDA_CPAR _ | TOPAR _ | TCPAR _ -> true
+    | x -> TH.is_comment x) toks ||
+  List.exists (function
+    | T_VARIABLE _ | T_ELLIPSIS _ | T_VARIABLE_VARIADIC _ -> true
+    | _ -> false) toks
+
+(* Looks to see if the next token is a variable (ignoring comments) *)
+let rec is_variable toks =
+  match toks with
+  | [] -> false
+  | T_VARIABLE _::_ -> true
+  | x::xs ->
+      if TH.is_comment x then
+        is_variable xs
+      else
+        false
+
+(*
+ * Find the next group of parenthesized tokens, being sure to balance parens.
+ * Returns an empty list if the parens were imbalanced or the first non-comment
+ * token was anything except a close paren.
+ *
+ * Replaces the opening/closing parens with lambda parens if `replace` is true.
+ *)
+let find_paren_tokens toks replace =
+  let rec aux toks acc depth =
+    (match toks with
+    | [] -> ([], []) (* failure *)
+    | x::xs -> (match x with
+      | TCPAR t ->
+          let x' =
+            if depth == 0 && replace then
+              T_LAMBDA_CPAR t
+            else x in
+          aux xs (x'::acc) (depth + 1)
+      | TOPAR t ->
+          if depth == 1 then
+            let x' = if replace then T_LAMBDA_OPAR t else x in
+            (List.rev (x'::acc), xs)
+          else
+            aux xs (x::acc) (depth - 1)
+      | _ ->
+        if (TH.is_comment x) || depth > 0 then
+          aux xs (x::acc) depth
+        else (* couldn't find the first closing paren *)
+          ([], []))) in
+  aux toks [] 0
+
+(*
+ * Try to (roughly) match a lambda typehint - may have false positives.
+ * On the other hand, it's guaranteed that any valid typehint will be matched.
+ * False positives will most likely lead to an invalid set of lambda
+ * parens, though.
+ *)
+let find_typehint toks =
+  let rec aux toks acc depth =
+    (match toks with
+    | [] -> ([], []) (* failure *)
+    (* assume parens/brackets are balanced correctly *)
+    | x::xs -> (match x with
+      | T_LAMBDA_CPAR _ | TCPAR _ | TGREATER _ ->
+          aux xs (x::acc) (depth + 1)
+      | T_LAMBDA_OPAR _ | TOPAR _ | TSMALLER _ ->
+          aux xs (x::acc) (depth - 1)
+      | T_DOUBLE_ARROW _ | TOBRACE _ | TCBRACE _  ->
+          ([], []) (* absolutely will not be in a typehint *)
+      | TCOLON _ ->
+          if depth == 0 then
+            (List.rev (x::acc), xs)
+          else
+            aux xs (x::acc) depth
+      | _ ->
+          aux xs (x::acc) depth)) in
+  aux toks [] 0
+
 (*****************************************************************************)
 (* Fix tokens *)
 (*****************************************************************************)
@@ -110,6 +199,61 @@ let fix_tokens2 xs =
       | _ ->
         aux env (T_SR ii::acc) xs
       )
+
+    (* This must be part of a lambda expression.
+     * The parameters of a lambda expression are extremely difficult to parse
+     * due to their similarity to standard expressions.
+     * To get around this, we'll try to mark the opening and closing parens
+     * of the lambda's parameters with special lambda paren tokens.
+     *)
+    | T_DOUBLE_ARROW arrow::xs ->
+      let check_lambda_params params =
+        if List.length params = 0 || not (is_params params) then
+          failwith (spf "expected lambda params at %s"
+                        (PI.string_of_info arrow)) in
+      let (replaced, rest) =
+        (* Nothing needs to be done for $x ==> ... *)
+        if is_variable acc then
+          ([], acc)
+        else
+          (* The majority of the time, lambdas aren't typehinted so let's just
+           * eagerly replace the parens assuming these are the params. *)
+          let (toks, rest) = find_paren_tokens acc true in
+          (match toks with
+          (* Not a set of parens - this is probably a typehint. *)
+          | [] ->
+            let (typehint, rest) = find_typehint acc in
+            (match typehint with
+            | [] ->
+              failwith (spf "expected lambda typehint at %s"
+                             (PI.string_of_info arrow))
+            | _ ->
+              let (params, rest2) = find_paren_tokens rest true in
+              check_lambda_params params;
+              (typehint @ params, rest2))
+          (* There are two possibilities now:
+           *
+           * 1) The typehint is a tuple or function, in which case this
+           *    closing paren is part of a typehint.
+           * 2) The closing paren is part of the parameters.
+           *
+           * is_params will be able to distinguish between the two cases.
+           *)
+          | _ ->
+            if is_params toks then
+              (toks, rest)
+            else
+              (* try finding a typehint *)
+              let (typehint, rest) = find_typehint acc in
+              (match typehint with
+              | [] ->
+                failwith (spf "expected lambda params at %s"
+                               (PI.string_of_info arrow))
+              | _ ->
+                let (params, rest2) = find_paren_tokens rest true in
+                check_lambda_params params;
+                (typehint @ params, rest2))) in
+      aux env (T_DOUBLE_ARROW arrow::(replaced @ rest)) xs
 
     | x::xs -> 
       let stack =
@@ -149,7 +293,7 @@ let fix_tokens2 xs =
         | TCBRACE _ii, _x::xs ->
             xs
         | TCBRACE ii, [] ->
-            failwith (spf "unmaching closing brace at %s" 
+            failwith (spf "unmatching closing brace at %s"
                         (PI.string_of_info ii))
 
         | TSEMICOLON _ii, (FunctionHeader|TypeHeader)::rest ->

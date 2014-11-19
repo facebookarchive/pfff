@@ -627,6 +627,7 @@ let visit_program ~tag _prefs  hentities (ast, toks) =
       then tag ii Error
 
     | T.TOPAR ii   | T.TCPAR ii
+    | T.T_LAMBDA_OPAR ii | T.T_LAMBDA_CPAR ii
     | T.TOBRACE ii | T.TCBRACE ii
     | T.TOBRA ii   | T.TCBRA ii
       ->tag ii Punctuation

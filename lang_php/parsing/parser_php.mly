@@ -180,6 +180,9 @@ module PI = Parse_info
 /*(* phpext: for hack and also for sgrep *)*/
 %token <Ast_php.info> T_ELLIPSIS
 
+/*(* lexing hack to parse lambda params properly *)*/
+%token <Ast_php.info> T_LAMBDA_OPAR T_LAMBDA_CPAR
+
 /*(*-----------------------------------------*)*/
 /*(*2 XHP tokens *)*/
 /*(*-----------------------------------------*)*/
@@ -1349,63 +1352,19 @@ lambda_expr:
        ShortLambda { sl_params; sl_tok = sl_tok; sl_body = sl_body;
                      sl_modifiers = [Async,($1)] }
      }
- | TOPAR TCPAR lambda_body
-     { let sl_tok, sl_body = $3 in
-       let sl_params = SLParams ($1, [], sl_tok) in
-       ShortLambda { sl_params; sl_tok = sl_tok; sl_body = sl_body; sl_modifiers = [] }
-     }
- | T_ASYNC TOPAR TCPAR lambda_body
-     { let sl_tok, sl_body = $4 in
-       let sl_params = SLParams ($2, [], sl_tok) in
-       ShortLambda { sl_params; sl_tok = sl_tok; sl_body = sl_body;
-                     sl_modifiers = [Async,($1)] }
-     }
- /*(* can not factorize with TOPAR parameter_list TCPAR, see conflicts.txt
-    * this is unfortunate, since it means typehints are not correctly parsed
-    *)*/
- | TOPAR expr TCPAR lambda_body
-     {
-       let sl_tok, sl_body = $4 in
-       let sl_params =
-         match $2 with
-         | IdVar (DName swrap, _scope) ->
-           let param = H.mk_param swrap in
-           SLParams ($1, [Left3 param], sl_tok)
-         | _ -> raise (Parsing.Parse_error)
-       in
-       ShortLambda { sl_params; sl_tok = sl_tok; sl_body = sl_body; sl_modifiers = [] }
-     }
- | T_ASYNC TOPAR expr TCPAR lambda_body
+ | T_LAMBDA_OPAR parameter_list T_LAMBDA_CPAR return_type_opt lambda_body
      {
        let sl_tok, sl_body = $5 in
-       let sl_params =
-         match $3 with
-         | IdVar (DName swrap, _scope) ->
-           let param = H.mk_param swrap in
-           SLParams ($1, [Left3 param], sl_tok)
-         | _ -> raise (Parsing.Parse_error)
-       in
+       let sl_params = SLParams ($1, $2, $3) in
        ShortLambda { sl_params; sl_tok = sl_tok; sl_body = sl_body;
-                     sl_modifiers = [Async,($1)] }
+                     sl_modifiers = []; }
      }
- | TOPAR T_VARIABLE TCOMMA non_empty_parameter_list TCPAR lambda_body
+ | T_ASYNC T_LAMBDA_OPAR parameter_list T_LAMBDA_CPAR return_type_opt lambda_body
      {
        let sl_tok, sl_body = $6 in
-       let sl_params =
-         let param1 = H.mk_param $2 in
-         SLParams ($1, Left3 param1::Right3 $3::$4, $5)
-       in
-       ShortLambda { sl_params; sl_tok = sl_tok; sl_body = sl_body; sl_modifiers = [] }
-     }
- | T_ASYNC TOPAR T_VARIABLE TCOMMA non_empty_parameter_list TCPAR lambda_body
-     {
-       let sl_tok, sl_body = $7 in
-       let sl_params =
-         let param1 = H.mk_param $3 in
-         SLParams ($1, Left3 param1::Right3 $4::$5, $6)
-       in
+       let sl_params = SLParams ($2, $3, $4) in
        ShortLambda { sl_params; sl_tok = sl_tok; sl_body = sl_body;
-                     sl_modifiers = [Async,($1)] }
+                     sl_modifiers = [Async,($1)]; }
      }
 
 lambda_body:

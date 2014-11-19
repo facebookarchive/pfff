@@ -38,8 +38,8 @@ let token_kind_of_tok t =
   match t with
   | TOBRACE _ -> PI.LBrace
   | TCBRACE _ -> PI.RBrace
-  | TOPAR _ -> PI.LPar
-  | TCPAR _ -> PI.RPar
+  | TOPAR _ | T_LAMBDA_OPAR _ -> PI.LPar
+  | TCPAR _ | T_LAMBDA_CPAR _ -> PI.RPar
 
   | T_COMMENT _ | T_DOC_COMMENT _ | TCommentPP _ -> PI.Esthet PI.Comment
   | TSpaces _ -> PI.Esthet PI.Space
@@ -207,6 +207,8 @@ let info_of_tok = function
   | T_ENDIF ii -> ii
   | TOPAR ii -> ii
   | TCPAR ii -> ii
+  | T_LAMBDA_OPAR ii -> ii
+  | T_LAMBDA_CPAR ii -> ii
   | TOBRACE ii -> ii
   | TCBRACE ii -> ii
   | TCBRA ii -> ii
@@ -408,6 +410,8 @@ let visitor_info_of_tok f = function
   | T_ENDIF ii -> T_ENDIF(f ii)
   | TOPAR ii -> TOPAR(f ii)
   | TCPAR ii -> TCPAR(f ii)
+  | T_LAMBDA_OPAR ii -> T_LAMBDA_OPAR(f ii)
+  | T_LAMBDA_CPAR ii -> T_LAMBDA_CPAR(f ii)
   | TOBRACE ii -> TOBRACE(f ii)
   | TCBRACE ii -> TCBRACE(f ii)
   | TCBRA ii -> TCBRA(f ii)
