@@ -43,6 +43,9 @@ let error s =
     if !Flag.verbose_lexing
     then pr2 ("LEXER: " ^ s)
 
+let warning s =
+  pr2 ("LEXER: " ^ s)
+
 (* pad: hack around ocamllex to emulate the yyless() of flex. The semantic
  * is not exactly the same than yyless(), so I use yyback() instead.
  * http://my.safaribooksonline.com/book/programming/flex/9780596805418/a-reference-for-flex-specifications/yyless
@@ -359,6 +362,8 @@ let push_token tok =
  * XHPAST use a whitelist approach for detecting ':' as the
  * start of an XHP identifier.
  *
+ * https://github.com/facebook/hhvm/blob/master/hphp/parser/hphp.ll#L515
+ *
  * How to know the following lists of tokens is correct ?
  * We should compute FOLLOW(tok) for  all tokens and check
  * if "%" or ":" can be in it ?
@@ -375,6 +380,94 @@ let is_in_binary_operator_position last_tok =
 
       | T_IDENT _ | T_VARIABLE _
     )
+      -> true
+  | _ -> false
+
+let is_in_xhp_class_name_position last_tok =
+  match last_tok with
+  | None -> true
+  | Some (
+        TEQ _
+      | TDOT _
+      | TPLUS _
+      | TMINUS _
+      | TMUL _
+      | TDIV _
+      | TMOD _
+      | TBANG _
+      | TTILDE _
+      | TAND _
+      | TXOR _
+      | TSMALLER _
+      | TGREATER _
+      | TQUESTION _
+      | TCOLON _
+      | TOBRA _
+      | TOBRACE _
+      | TSEMICOLON _
+      | T__AT _
+
+      | T_LOGICAL_OR _
+      | T_LOGICAL_XOR _
+      | T_LOGICAL_AND _
+      | T_SL _
+      | T_SR _
+      | T_BOOLEAN_OR _
+      | T_BOOLEAN_AND _
+      | T_IS_EQUAL _
+      | T_IS_NOT_EQUAL _
+      | T_IS_IDENTICAL _
+      | T_IS_NOT_IDENTICAL _
+      | T_IS_SMALLER_OR_EQUAL _
+      | T_IS_GREATER_OR_EQUAL _
+      | T_PLUS_EQUAL _
+      | T_MINUS_EQUAL _
+      | T_MUL_EQUAL _
+      | T_DIV_EQUAL _
+      | T_CONCAT_EQUAL _
+      | T_MOD_EQUAL _
+      | T_AND_EQUAL _
+      | T_OR_EQUAL _
+      | T_XOR_EQUAL _
+      | T_SL_EQUAL _
+      | T_SR_EQUAL _
+      | T_ECHO _
+      | T_PRINT _
+      | T_CLONE _
+      | T_EXIT _
+      | T_RETURN _
+      | T_YIELD _
+      | T_AWAIT _
+      | T_ASYNC _
+      | T_NEW _
+      | T_INSTANCEOF _
+      | T_DOUBLE_ARROW _ (* Same as T_LAMBDA_ARROW *)
+      | TANTISLASH _ (* Same as T_NS_SEPARATOR *)
+      | T_INLINE_HTML _
+      | T_INT_CAST _
+      | T_DOUBLE_CAST _
+      | T_STRING_CAST _
+      | T_ARRAY_CAST _
+      | T_OBJECT_CAST _
+      | T_BOOL_CAST _
+      | T_UNSET_CAST _
+      (* | T_UNRESOLVED_LT _ *)
+      | T_AS _
+
+      | TCOMMA _
+      | TOPAR _
+      | TOR _
+      (* | T_UNRESOLVED_OP _ *)
+
+      | T_EXTENDS _
+      | T_CLASS _
+      | T_PRIVATE _
+      | T_PROTECTED _
+      | T_PUBLIC _
+      | T_STATIC _
+      | T_XHP_ATTRIBUTE _
+
+   )
       -> true
   | _ -> false
 
@@ -409,13 +502,13 @@ let WHITESPACE = [' ' '\n' '\r' '\t']+
 let TABS_AND_SPACES = [' ''\t']*
 let NEWLINE = ("\r"|"\n"|"\r\n")
 let WHITESPACEOPT = [' ' '\n' '\r' '\t']*
-let LABEL =	['a'-'z''A'-'Z''_']['a'-'z''A'-'Z''0'-'9''_']*
-let LNUM =	['0'-'9']+
-let DNUM =	(['0'-'9']*['.']['0'-'9']+) | (['0'-'9']+['.']['0'-'9']* )
+let LABEL = ['a'-'z''A'-'Z''_']['a'-'z''A'-'Z''0'-'9''_']*
+let LNUM =  ['0'-'9']+
+let DNUM =  (['0'-'9']*['.']['0'-'9']+) | (['0'-'9']+['.']['0'-'9']* )
 
-let EXPONENT_DNUM =	((LNUM|DNUM)['e''E']['+''-']?LNUM)
-let HEXNUM =	("0x" | "0X")['0'-'9''a'-'f''A'-'F']+
-let BINNUM =	"0b"['0'-'1']+
+let EXPONENT_DNUM = ((LNUM|DNUM)['e''E']['+''-']?LNUM)
+let HEXNUM =  ("0x" | "0X")['0'-'9''a'-'f''A'-'F']+
+let BINNUM =  "0b"['0'-'1']+
 (*/*
  * LITERAL_DOLLAR matches unescaped $ that aren't followed by a label character
  * or a { and therefore will be taken literally. The case of literal $ before
@@ -442,7 +535,7 @@ let DOUBLE_QUOTES_CHARS =
     ("\\" ANY_CHAR))| DOUBLE_QUOTES_LITERAL_DOLLAR)
 let BACKQUOTE_CHARS =
   ("{"*([^'$' '`' '\\' '{']|('\\' ANY_CHAR))| BACKQUOTE_LITERAL_DOLLAR)
-let XHPLABEL =	['a'-'z''A'-'Z''_']['a'-'z''A'-'Z''0'-'9''_''-']*
+let XHPLABEL =  ['a'-'z''A'-'Z''_']['a'-'z''A'-'Z''0'-'9''_''-']*
 let XHPTAG = XHPLABEL (":" XHPLABEL)*
 (* is there some special restrictions for xhp attributes ? *)
 let XHPATTR = XHPLABEL
@@ -624,13 +717,30 @@ rule st_in_scripting = parse
     * extra rules for things that really should be more handled at a
     * lexical level.
     *)
+    | "?:" (XHPTAG as tag) {
+        if !Flag.xhp_builtin &&
+          (is_in_xhp_class_name_position !_last_non_whitespace_like_token)
+        then begin
+          warning (spf "TQUESTION_COLON_DEF, %s" tag);
+          yyback ((String.length tag) + 1) lexbuf;
+          TQUESTION(tokinfo lexbuf)
+        end else begin
+          warning (spf "TQUESTION_TERNARY, %s" tag);
+          yyback (String.length tag) lexbuf;
+          push_token (TCOLON(tokinfo lexbuf));
+          TQUESTION(tokinfo lexbuf)
+        end
+      }
+
     | ":" (XHPTAG as tag) {
         if !Flag.xhp_builtin &&
           not (is_in_binary_operator_position !_last_non_whitespace_like_token)
-        then
+        then begin
+          warning (spf "T_XHP_COLON_ID_REF_____, %s" tag);
           let xs = Common.split ":" tag in
           T_XHP_COLONID_DEF (xs, tokinfo lexbuf)
-        else begin
+        end else begin
+          warning (spf "TCOLON, %s" tag);
           yyback (String.length tag) lexbuf;
           TCOLON(tokinfo lexbuf)
         end
