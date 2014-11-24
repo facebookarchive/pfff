@@ -721,11 +721,9 @@ rule st_in_scripting = parse
         if !Flag.xhp_builtin &&
           (is_in_xhp_class_name_position !_last_non_whitespace_like_token)
         then begin
-          warning (spf "TQUESTION_COLON_DEF, %s" tag);
           yyback ((String.length tag) + 1) lexbuf;
           TQUESTION(tokinfo lexbuf)
         end else begin
-          warning (spf "TQUESTION_TERNARY, %s" tag);
           yyback (String.length tag) lexbuf;
           push_token (TCOLON(tokinfo lexbuf));
           TQUESTION(tokinfo lexbuf)
@@ -735,12 +733,10 @@ rule st_in_scripting = parse
     | ":" (XHPTAG as tag) {
         if !Flag.xhp_builtin &&
           not (is_in_binary_operator_position !_last_non_whitespace_like_token)
-        then begin
-          warning (spf "T_XHP_COLON_ID_REF_____, %s" tag);
+        then
           let xs = Common.split ":" tag in
           T_XHP_COLONID_DEF (xs, tokinfo lexbuf)
-        end else begin
-          warning (spf "TCOLON, %s" tag);
+        else begin
           yyback (String.length tag) lexbuf;
           TCOLON(tokinfo lexbuf)
         end
