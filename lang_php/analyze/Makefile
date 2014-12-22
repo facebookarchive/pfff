@@ -19,7 +19,7 @@ SRC= test_analyze_php.ml \
 -include $(TOP)/Makefile.config
 
 #old:
-# emacs_mode.ml 
+# emacs_mode.ml
 # relation.ml
 
 #ifeq ($(FEATURE_PCRE), 1)
@@ -72,15 +72,15 @@ all:: rec $(TARGET).cma
 all.opt:: rec.opt $(TARGET).cmxa
 
 rec:
-	set -e; for i in $(MAKESUBDIRS); do $(MAKE) -C $$i all || exit 1; done 
+	set -e; for i in $(MAKESUBDIRS); do $(MAKE) -C $$i all || exit 1; done
 
 rec.opt:
-	set -e; for i in $(MAKESUBDIRS); do $(MAKE) -C $$i all.opt || exit 1; done 
+	set -e; for i in $(MAKESUBDIRS); do $(MAKE) -C $$i all.opt || exit 1; done
 
 clean::
-	set -e; for i in $(MAKESUBDIRS); do $(MAKE) -C $$i clean; done 
+	set -e; for i in $(MAKESUBDIRS); do $(MAKE) -C $$i clean; done
 depend::
-	set -e; for i in $(MAKESUBDIRS); do $(MAKE) -C $$i depend; done 
+	set -e; for i in $(MAKESUBDIRS); do $(MAKE) -C $$i depend; done
 
 
 $(TARGET).cma: $(OBJS)
@@ -95,6 +95,15 @@ $(TARGET).top: $(OBJS) $(LIBS)
 clean::
 	rm -f $(TARGET).top
 
+##############################################################################
+# install
+##############################################################################
+LIBNAME=pfff-lang_php-analyze
+INSTALL_SUBDIRS=foundation
+
+install-findlib:: all all.opt
+	ocamlfind install $(LIBNAME) META \
+	set -e; for i in $(INSTALL_SUBDIRS); do echo $$i; $(MAKE) -C $$i install-findlib; done
 
 ##############################################################################
 # Literate Programming rules
@@ -155,7 +164,7 @@ SRC_ML= \
 
 SRC_MLI=$(SRC_ML:ml=mli)
 
-SRC_NO_MLI=flag_analyze_php.ml 
+SRC_NO_MLI=flag_analyze_php.ml
 #TODO, mli files without their .ml counterpart included in the document
 SRC_MLI_NO_ML_NW= \
  foundation/entity_php.mli \
@@ -189,7 +198,7 @@ SRC_VIEWS=$(SRC_MLI) $(SRC_ML)
 
 #------------------------------------------------------------------------------
 sync:
-	for i in $(SRC_VIEWS); do $(SYNCWEB) $(SRC_ORIG) $$i || exit 1; done 
+	for i in $(SRC_VIEWS); do $(SYNCWEB) $(SRC_ORIG) $$i || exit 1; done
 
 sync2:
 
@@ -225,7 +234,7 @@ DSRC+=$(DIRS:=/*.ml)
 DSRC+=$(wildcard *.ml)
 
 dotall:
-	ocamldoc -I +threads $(INCLUDES) $(DSRC)  -dot -dot-reduce 
+	ocamldoc -I +threads $(INCLUDES) $(DSRC)  -dot -dot-reduce
 	dot -Tps ocamldoc.out > dot.ps
 	mv dot.ps Fig_graph_ml.ps
 	ps2pdf Fig_graph_ml.ps
