@@ -283,7 +283,7 @@ commons_features.cmxa: features.cmx
 # install
 ##############################################################################
 LIBNAME=pfff-commons
-EXPORTSRC=common.mli common2.mli ocaml.mli ocamlextra/oUnit.mli
+EXPORTSRC=common.mli common2.mli ocaml.mli ocamlextra/oUnit.mli parallel.mli
 
 OCAMLSTDLIB=`ocamlc -where`
 install: all all.opt
@@ -299,7 +299,7 @@ install: all all.opt
 install-findlib: all all.opt
 	ocamlfind install $(LIBNAME) META  lib.cma lib.cmxa lib.a \
           dlllib.so liblib.a \
-          $(EXPORTSRC) $(EXPORTSRC:%.mli=%.cmi) 
+          $(EXPORTSRC) $(EXPORTSRC:%.mli=%.cmi)
 
 uninstall-findlib:
 	ocamlfind remove $(LIBNAME)
