@@ -513,7 +513,9 @@ INSTALL_SUBDIRS= \
   lang_php/analyze \
   lang_cpp/parsing lang_java/parsing \
   lang_js/parsing lang_css/parsing lang_html/parsing \
-  external/jsonwheel
+  external/jsonwheel \
+  external/ocamlgraph \
+  graph_code
 
 LIBNAME=pfff
 install-findlib:: all all.opt
