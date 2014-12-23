@@ -99,11 +99,16 @@ clean::
 # install
 ##############################################################################
 LIBNAME=pfff-lang_php-analyze
-INSTALL_SUBDIRS=foundation
+INSTALL_SUBDIRS=foundation checker
 
 install-findlib:: all all.opt
-	ocamlfind install $(LIBNAME) META \
+	ocamlfind install $(LIBNAME) META; \
 	set -e; for i in $(INSTALL_SUBDIRS); do echo $$i; $(MAKE) -C $$i install-findlib; done
+
+uninstall-findlib::
+	ocamlfind remove $(LIBNAME) ; \
+	set -e; for i in $(INSTALL_SUBDIRS); do echo $$i; $(MAKE) -C $$i uninstall-findlib; done
+
 
 ##############################################################################
 # Literate Programming rules
