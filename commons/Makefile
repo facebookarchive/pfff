@@ -102,11 +102,6 @@ MYREGEXPSRC=regexp.ml
 REGEXPINCLUDES=-I ../external/  -I ../../ocamlpcre/lib
 #REGEXPINCLUDES=-I +pcre
 
-#ocamlgraph
-MYGRAPHSRC=graph.ml
-GRAPHINCLUDES=-I ../external/ocamlgraph
-GRAPHSYSLIBS=graph.cma
-
 ##############################################################################
 # Generic variables
 ##############################################################################
@@ -254,18 +249,6 @@ commons_regexp.cmxa: $(MYREGEXPSRC:.ml=.cmx)
 realpath.o: ocamlextra/realpath.c
 	$(OCAMLC) -c $^ -o $@
 
-#-----------------------------------------------------------------------------
-graph:
-	$(MAKE) INCLUDESEXTRA="$(GRAPHINCLUDES)" commons_graph.cma
-graph.opt:
-	$(MAKE) INCLUDESEXTRA="$(GRAPHINCLUDES)" commons_graph.cmxa
-
-commons_graph.cma: $(MYGRAPHSRC:.ml=.cmo)
-	$(OCAMLC) -a -o $@ $^
-
-commons_graph.cmxa: $(MYGRAPHSRC:.ml=.cmx)
-	$(OCAMLOPT) -a -o $@ $^
-
 ##############################################################################
 # The global "features" lib wrapper
 ##############################################################################
@@ -290,7 +273,6 @@ EXPORTSRC=\
   ocamlextra/oUnit.mli \
   parallel.mli \
   console.mli \
-  graph.mli \
   file_type.mli \
   file_format.mli
 

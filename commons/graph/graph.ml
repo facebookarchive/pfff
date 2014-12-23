@@ -310,17 +310,6 @@ let add_edge k1 k2 g =
   OG.add_edge g.og vx vy;
   ()
 
-(* graphviz allows to specify graph easily where one can just
- * put the edges without even declararing the nodes, so here
- * we can provide a similar convenient API.
- *)
-let add_edge_and_nodes_if_not_present k1 k2 g = 
-  add_vertex_if_not_present k1 g;
-  add_vertex_if_not_present k2 g;
-  add_edge k1 k2 g
-
-(* less: could have a let (-->) k1 k2 ? but needs 'g' too *)
-
 (*****************************************************************************)
 (* Graph access *)
 (*****************************************************************************)
@@ -447,7 +436,7 @@ let shortest_path k1 k2 g =
   let vx = g +> vertex_of_key k1 in
   let vy = g +> vertex_of_key k2 in
 
-  let (edges, len) = OG.shortest_path g.og vx vy in
+  let (edges, _len) = OG.shortest_path g.og vx vy in
   let vertexes = 
     vx::(edges +> List.map (fun edge -> OG.E.dst edge))
   in

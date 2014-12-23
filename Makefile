@@ -67,10 +67,10 @@ VISUALDIRS=code_map code_graph
 endif
 
 # should be FEATURE_OCAMLGRAPH, or should give dependencies between features
-GRAPHCMA=external/ocamlgraph/ocamlgraph.cma commons/commons_graph.cma
+GRAPHCMA=external/ocamlgraph/ocamlgraph.cma commons/graph/lib.cma
 GRAPHDIR=external/ocamlgraph
-GRAPHCMD= $(MAKE) all -C $(GRAPHDIR) && $(MAKE) graph -C commons
-GRAPHCMDOPT= $(MAKE) all.opt -C $(GRAPHDIR) && $(MAKE) graph.opt -C commons
+GRAPHCMD= $(MAKE) all -C $(GRAPHDIR) && $(MAKE) -C commons/graph
+GRAPHCMDOPT= $(MAKE) all.opt -C $(GRAPHDIR) && $(MAKE) all.opt -C commons/graph
 
 ifeq ($(FEATURE_BYTECODE), 1)
 ZIPDIR=external/ocamlzip
@@ -199,6 +199,7 @@ LIBS= commons/lib.cma \
     mini/lib.cma
 
 MAKESUBDIRS=commons \
+  commons/graph \
   $(JSONDIR) \
   $(GRAPHDIR) \
   $(GUIDIR) $(CAIRODIR) \
@@ -507,6 +508,7 @@ uninstall:
 
 INSTALL_SUBDIRS= \
   commons \
+  commons/graph \
   h_program-lang    matcher \
   h_version-control \
   lang_ml/parsing \
