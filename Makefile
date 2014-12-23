@@ -508,6 +508,7 @@ uninstall:
 INSTALL_SUBDIRS= \
   commons \
   h_program-lang    matcher \
+  h_version-control \
   lang_ml/parsing \
   lang_php/parsing \
   lang_php/analyze \
