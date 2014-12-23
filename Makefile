@@ -510,8 +510,9 @@ INSTALL_SUBDIRS= \
   h_program-lang    matcher \
   h_version-control \
   lang_ml/parsing \
-  lang_php/parsing \
   lang_php/analyze \
+  lang_php/matcher \
+  lang_php/parsing \
   lang_cpp/parsing lang_java/parsing \
   lang_js/parsing lang_css/parsing lang_html/parsing \
   external/jsonwheel \
