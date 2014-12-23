@@ -81,7 +81,7 @@ EXPORTSRC=json_io.mli json_parser.mli json_type.mli
 install-findlib:
 	ocamlfind install $(LIBNAME) META   lib.cma lib.cmxa lib.a \
           $(EXPORTSRC) $(EXPORTSRC:%.mli=%.cmi) \
-	  $(SRC) json_in.cmi
+	  $(SRC) json_in.cmi json_out.cmi
 
 uninstall-findlib::
 	ocamlfind remove $(LIBNAME)
