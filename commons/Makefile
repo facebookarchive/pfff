@@ -289,7 +289,10 @@ EXPORTSRC=\
   ocaml.mli \
   ocamlextra/oUnit.mli \
   parallel.mli \
-  console.mli
+  console.mli \
+  graph.mli \
+  file_type.mli \
+  file_format.mli
 
 OCAMLSTDLIB=`ocamlc -where`
 install: all all.opt
