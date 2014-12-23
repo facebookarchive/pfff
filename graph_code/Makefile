@@ -41,7 +41,21 @@ $(TARGET).cmxa: $(OPTOBJS) $(LIBS:.cma=.cmxa)
 # install
 ##############################################################################
 LIBNAME=pfff-graph_code
-EXPORTSRC=
+EXPORTSRC=\
+  dependencies_matrix_build.mli \
+  dependencies_matrix_code.mli \
+  graph_code_checker.mli \
+  graph_code_class_analysis.mli \
+  graph_code_database.mli \
+  graph_code_helpers.mli \
+  graph_code.mli \
+  graph_code_opti.mli \
+  graph_code_prolog.mli \
+  graph_code_tags.mli \
+  layer_graph_code.mli \
+  test_graph_code.mli \
+  unit_graph_code.mli \
+
 
 install-findlib: all all.opt
 	ocamlfind install $(LIBNAME) META \
