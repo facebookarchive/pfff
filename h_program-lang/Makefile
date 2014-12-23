@@ -70,7 +70,33 @@ beforedepend:: archi_code_lexer.ml
 # install
 ##############################################################################
 LIBNAME=pfff-h_program-lang
-EXPORTSRC=parse_info.mli scope_code.mli entity_code.mli
+EXPORTSRC=\
+  archi_code.mli \
+  archi_code_parse.mli \
+  ast_fuzzy.mli \
+  big_grep.mli \
+  comment_code.mli \
+  coverage_code.mli \
+  database_code.mli \
+  datalog_code.mli \
+  entity_code.mli \
+  errors_code.mli \
+  highlight_code.mli \
+  info_code.mli \
+  layer_code.mli \
+  layer_coverage.mli \
+  layer_parse_errors.mli \
+  meta_ast_generic.mli \
+  overlay_code.mli \
+  parse_info.mli \
+  pleac.mli \
+  prolog_code.mli \
+  refactoring_code.mli \
+  scope_code.mli \
+  skip_code.mli \
+  tags_file.mli \
+  test_program_lang.mli \
+  unit_program_lang.mli \
 
 install-findlib: all all.opt
 	ocamlfind install $(LIBNAME) META \
