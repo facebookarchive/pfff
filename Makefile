@@ -513,6 +513,7 @@ INSTALL_SUBDIRS= \
   lang_php/analyze \
   lang_php/matcher \
   lang_php/parsing \
+  lang_php/pretty \
   lang_cpp/parsing lang_java/parsing \
   lang_js/parsing lang_css/parsing lang_html/parsing \
   external/jsonwheel \

@@ -54,3 +54,19 @@ $(TARGET).cmxa: $(OPTOBJS) $(LIBS:.cma=.cmxa)
 
 clean::
 	rm -f $(BIN) $(BIN).opt
+
+##############################################################################
+# install
+##############################################################################
+LIBNAME=pfff-lang_php-pretty
+
+EXPORTSRC=\
+  ast_pp_build.mli \
+  pretty_print.mli \
+  unit_pretty_print_php.mli \
+  unparse_pretty_print_mix.mli \
+
+install-findlib:
+	ocamlfind install $(LIBNAME) META   lib.cma lib.cmxa lib.a \
+          $(EXPORTSRC) $(EXPORTSRC:%.mli=%.cmi) \
+	  $(SRC) ast_pp.cmi
