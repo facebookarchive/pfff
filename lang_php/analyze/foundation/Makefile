@@ -133,5 +133,5 @@ EXPORTSRC=\
 
 install-findlib:
 	ocamlfind install $(LIBNAME) META   lib.cma lib.cmxa lib.a \
-          $(EXPORTSRC) $(EXPORTSRC:%.mli=%.cmi) \
+          $(EXPORTSRC) $(EXPORTSRC:%.mli=%.cmi) ast_php_simple.cmi \
 	  $(SRC)
