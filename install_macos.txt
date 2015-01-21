@@ -2,7 +2,7 @@ Install brew, see http://brew.sh
 (or install macports http://www.macports.org/)
 
 Then
- $ brew install ocaml
+ $ brew install objective-caml camlp4
 
 For codemap and codegraph:
  install xquartz at http://xquartz.macosforge.org/landing/
