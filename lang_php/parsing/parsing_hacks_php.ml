@@ -94,12 +94,13 @@ let split_two_char_info i =
  * determine if a (...) expression is part of lambda's params or its typehint.
  *)
 let is_params toks =
-  List.for_all (function
-    | T_LAMBDA_OPAR _ | T_LAMBDA_CPAR _ | TOPAR _ | TCPAR _ -> true
-    | x -> TH.is_comment x) toks ||
-  List.exists (function
-    | T_VARIABLE _ | T_ELLIPSIS _ | T_VARIABLE_VARIADIC _ -> true
-    | _ -> false) toks
+  List.length toks > 0 &&
+    (List.for_all (function
+      | T_LAMBDA_OPAR _ | T_LAMBDA_CPAR _ | TOPAR _ | TCPAR _ -> true
+      | x -> TH.is_comment x) toks ||
+    List.exists (function
+      | T_VARIABLE _ | T_ELLIPSIS _ | T_VARIABLE_VARIADIC _ -> true
+      | _ -> false) toks)
 
 (* Looks to see if the next token is a variable (ignoring comments) *)
 let rec is_variable toks =
@@ -136,6 +137,17 @@ let find_paren_tokens toks replace =
             (List.rev (x'::acc), xs)
           else
             aux xs (x::acc) (depth - 1)
+      | T_SR t ->
+          if depth > 0 then
+            if replace then
+              (* In the context of lambda parens, >> only makes sense
+               * if we split it into two > tokens *)
+              let (lhs, rhs) = split_two_char_info t in
+              aux xs (TGREATER rhs::TGREATER lhs::acc) depth
+            else
+              aux xs (x::acc) depth
+          else
+            ([], [])
       | _ ->
         if (TH.is_comment x) || depth > 0 then
           aux xs (x::acc) depth
@@ -159,6 +171,11 @@ let find_typehint toks =
           aux xs (x::acc) (depth + 1)
       | T_LAMBDA_OPAR _ | TOPAR _ | TSMALLER _ ->
           aux xs (x::acc) (depth - 1)
+      | T_SR t ->
+          (* >> when we're looking for a typehint is only valid in the context
+           * of closing a template, so split it up.  *)
+          let (lhs, rhs) = split_two_char_info t in
+          aux xs (TGREATER rhs::TGREATER lhs::acc) (depth + 2)
       | T_DOUBLE_ARROW _ | TOBRACE _ | TCBRACE _  ->
           ([], []) (* absolutely will not be in a typehint *)
       | TCOLON _ ->
@@ -207,10 +224,6 @@ let fix_tokens2 xs =
      * of the lambda's parameters with special lambda paren tokens.
      *)
     | T_DOUBLE_ARROW arrow::xs ->
-      let check_lambda_params params =
-        if List.length params = 0 || not (is_params params) then
-          failwith (spf "expected lambda params at %s"
-                        (PI.string_of_info arrow)) in
       let (replaced, rest) =
         (* Nothing needs to be done for $x ==> ... *)
         if is_variable acc then
@@ -225,12 +238,13 @@ let fix_tokens2 xs =
             let (typehint, rest) = find_typehint acc in
             (match typehint with
             | [] ->
-              failwith (spf "expected lambda typehint at %s"
-                             (PI.string_of_info arrow))
+              ([], acc) (* ignore; let the parser deal with it *)
             | _ ->
               let (params, rest2) = find_paren_tokens rest true in
-              check_lambda_params params;
-              (typehint @ params, rest2))
+              if is_params params then
+                (typehint @ params, rest2)
+              else
+                ([], acc)) (* ignore *)
           (* There are two possibilities now:
            *
            * 1) The typehint is a tuple or function, in which case this
@@ -247,12 +261,14 @@ let fix_tokens2 xs =
               let (typehint, rest) = find_typehint acc in
               (match typehint with
               | [] ->
-                failwith (spf "expected lambda params at %s"
-                               (PI.string_of_info arrow))
+                ([], acc) (* no match *)
               | _ ->
                 let (params, rest2) = find_paren_tokens rest true in
-                check_lambda_params params;
-                (typehint @ params, rest2))) in
+                  if is_params params then
+                    (typehint @ params, rest2)
+                  else
+                    ([], acc))) (* ignore *)
+      in
       aux env (T_DOUBLE_ARROW arrow::(replaced @ rest)) xs
 
     | x::xs -> 
