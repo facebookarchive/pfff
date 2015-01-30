@@ -11,7 +11,7 @@ open OUnit
  * No, no need to duplicate! Just copy here the basic versions
  * of some tests, e.g. for the callgraph just the basic function and
  * method calls for instance.
- * 
+ *
  * todo: port most of unit_analyze_db_php.ml here using also the abstract
  * interpreter for more "demanding" callgraph/datagraph unit tests.
  *)
@@ -38,30 +38,30 @@ let unittest =
       let file = "
 function foo() { }
 const BAR = 1;
-class A { 
+class A {
   public $fld = 0;
   public function bar() { }
   const CST = 1;
 }
 interface I { }
 trait T { }
-" in 
+" in
       (* quite similar to the unit test for tags in unit_foundation_php.ml *)
-      assert_equal 
+      assert_equal
         ["function"]  (prolog_query ~file "kind('foo', X), writeln(X)");
-      assert_equal 
+      assert_equal
         ["constant"]  (prolog_query ~file "kind('BAR', X), writeln(X)");
-      assert_equal 
+      assert_equal
         ["class"]     (prolog_query ~file "kind('A', X), writeln(X)");
-      assert_equal 
+      assert_equal
         ["method"]     (prolog_query ~file "kind(('A','bar'), X), writeln(X)");
-      assert_equal 
+      assert_equal
         ["field"]     (prolog_query ~file "kind(('A','fld'), X), writeln(X)");
-      assert_equal 
+      assert_equal
         ["constant"]  (prolog_query ~file "kind(('A','CST'), X), writeln(X)");
-      assert_equal 
+      assert_equal
         ["interface"] (prolog_query ~file "kind('I', X), writeln(X)");
-      assert_equal 
+      assert_equal
         ["trait"]     (prolog_query ~file "kind('T', X), writeln(X)");
     );
 
@@ -116,12 +116,12 @@ class A { use T; }
 
     "traits" >:: (fun () ->
       let file = "
-trait T { 
-  public function trait1() { } 
+trait T {
+  public function trait1() { }
 }
-class A { 
-  use T; 
-  public function a() { } 
+class A {
+  use T;
+  public function a() { }
 }
 "
       in
@@ -135,12 +135,12 @@ class A {
 trait T1 { public function foo() { } }
 trait T2 { public function bar() { } }
 trait TComp { use T1, T2; }
-class A { use TComp; } 
+class A { use TComp; }
 "
     in
     let xs = prolog_query ~file "method('A', (_Class, X)), writeln(X), fail"
     in
-    assert_equal 
+    assert_equal
       ~msg:"it should find all methods of a class using multiple traits"
         (sort ["foo";"bar"])
         (sort xs)
@@ -157,14 +157,14 @@ class A { use TComp; }
 
     "overrides" >:: (fun () ->
       let file = "
-class A { 
-   public function foo() { } 
-   public function bar() { } 
+class A {
+   public function foo() { }
+   public function bar() { }
 }
 class B extends A { public function foo() { } }
 "
       in
-      let xs = prolog_query ~file 
+      let xs = prolog_query ~file
         "overrides(Class, Method), writeln(Method), fail" in
       assert_equal ~msg:"it should detect overriden methods"
         (sort ["foo"])
@@ -183,7 +183,7 @@ class B extends A { public function foo() { } }
 function foo() { }
 function bar() { foo(); }
 " in
-      let xs = prolog_query ~file 
+      let xs = prolog_query ~file
         "docall(X, 'foo', function), writeln(X), fail" in
       assert_equal ~msg:"it should find basic callers to a function"
         ["bar"]
@@ -195,7 +195,7 @@ function bar() { foo(); }
   (*-------------------------------------------------------------------------*)
     "basic (imprecise) callgraph for methods" >:: (fun () ->
       (* cannot resolve the class of a method calls, but at least can index
-       * that there was a method call with a specific name 
+       * that there was a method call with a specific name
        *)
       let file ="
 class A { }
@@ -203,13 +203,13 @@ function bar() {
   $o = new A();
   $y = $o->foo();
 } " in
-      let xs = prolog_query ~file 
+      let xs = prolog_query ~file
         "docall('bar', X, method), writeln(X), fail" in
       assert_equal ~msg:"it should find basic callers to a method name"
         ["foo"]
         (sort xs);
 
-      let xs = prolog_query ~file 
+      let xs = prolog_query ~file
         "docall('bar', X, class), writeln(X), fail" in
       assert_equal ~msg:"it should find basic use of new"
         ["A"]
@@ -228,12 +228,12 @@ function bar2() {
   $o = new B;
   $o = (new A);
 } " in
-      let xs = prolog_query ~file 
+      let xs = prolog_query ~file
         "docall('bar1', X, class), writeln(X), fail" in
       assert_equal ~msg:"it should find nested use of new"
         ["A"]
         (sort xs);
-      let xs = prolog_query ~file 
+      let xs = prolog_query ~file
         "docall('bar2', X, class), writeln(X), fail" in
       assert_equal ~msg:"it should find nested use of new"
         ["A";"B"]
@@ -242,9 +242,9 @@ function bar2() {
 
     "callgraph for static methods" >:: (fun () ->
       let file ="
-class A { 
-  static function foo() { } 
-  static function foobar() { } 
+class A {
+  static function foo() { }
+  static function foobar() { }
   static public function a() {
     self::foobar();
   }
@@ -253,16 +253,16 @@ function bar() {
   $y = A::foo();
 }
 " in
-      let xs = prolog_query ~file 
+      let xs = prolog_query ~file
         "docall('bar', X, method), writeln(X), fail" in
       assert_equal ~msg:"it should find basic callers to a static method"
-        ["A,foo"; "foo"]
+        ["A, foo"; "foo"]
         (sort xs);
 
-      let xs = prolog_query ~file 
+      let xs = prolog_query ~file
         "docall(('A','a'), X, method), writeln(X), fail" in
       assert_equal ~msg:"it should unsugar self"
-        ["A,foobar"; "foobar"]
+        ["A, foobar"; "foobar"]
         (sort xs);
     );
 
@@ -274,16 +274,16 @@ function bar() {
   $o = newv('A');
 }
 " in
-      let xs = prolog_query ~file 
+      let xs = prolog_query ~file
         "docall('bar', X, special), writeln(X), fail" in
       assert_equal ~msg:"it should index classnames passed as strings"
-        ["newv,A"]
+        ["newv, A"]
         (sort xs);
     );
 
     "advanced callgraph analysis for methods" >:: (fun () ->
       (* this one requires more sophisticated analysis, with
-       * append_callgraph_to_prolog_db 
+       * append_callgraph_to_prolog_db
        *)
       let file ="
 class A { function foo() { } }
@@ -292,10 +292,10 @@ function bar() {
   $o = new B();
   $y = $o->foo();
 } " in
-      let xs = prolog_query ~file 
+      let xs = prolog_query ~file
         "docall2('bar', (X,Y), method), writeln((X,Y)), fail" in
       assert_equal ~msg:"it should find basic callers to a function"
-        ["A,foo"]
+        ["A, foo"]
         (sort xs);
     );
 
@@ -309,17 +309,17 @@ class ViolationException extends Exception { }
 class ForgotExtendsException { }
 class UnrelatedClass { }
 
-function foo() { 
-  throw new Exception(); 
+function foo() {
+  throw new Exception();
 }
-function bar() { 
-  try { 
+function bar() {
+  try {
     throw new ViolationException();
   } catch (ViolationException $e) {
   }
 }
-function bad() { 
-  throw new ForgotExtendsException(); 
+function bad() {
+  throw new ForgotExtendsException();
 }
 " in
       let xs = prolog_query ~file "throw('foo', X), writeln(X)" in
@@ -330,8 +330,8 @@ function bad() {
       assert_equal ~msg:"it should find basic catch"
         ["ViolationException"]
         xs;
-      let xs = prolog_query ~file 
-        ("throw(_, X), not(children(X, 'Exception')), X \\= 'Exception', " ^ 
+      let xs = prolog_query ~file
+        ("throw(_, X), not(children(X, 'Exception')), X \\= 'Exception', " ^
         "writeln(X)") in
       assert_equal ~msg:"it should find exceptions not deriving from Exception"
         ["ForgotExtendsException"]
@@ -393,7 +393,7 @@ function foo() {
 " in
     let xs = prolog_query ~file "use('foo', X , constant, read), writeln(X)" in
     assert_equal ~msg:"it should find basic access to a class constant"
-      ["A,CST"] (xs);
+      ["A, CST"] (xs);
     );
 
 (*****************************************************************************)
@@ -445,23 +445,23 @@ function foo(): int {
       assert_equal ~msg:"it should not recognize php files"
         [] xs;
 
-      let xs = 
+      let xs =
         prolog_query ~header:"<?hh //decl\n" ~file "hh(_,X), writeln(X)"
       in
       assert_equal ~msg:"it should recognize hh modes"  ["decl"] xs;
 
-      let xs = 
+      let xs =
         prolog_query ~header:"<?hh //     strict\n" ~file "hh(_,X), writeln(X)"
       in
       assert_equal ~msg:"it should recognize hh modes"  ["strict"] xs;
 
 
-      let xs = 
+      let xs =
         prolog_query ~header:"<?hh // partial\n" ~file "hh(_,X), writeln(X)"
       in
       assert_equal ~msg:"it should recognize hh modes"  ["default"] xs;
 
-      let xs = 
+      let xs =
         prolog_query ~header:"<?hh // not a mode\n" ~file "hh(_,X), writeln(X)"
       in
       assert_equal ~msg:"it should recognize hh modes"  ["default"] xs;
@@ -482,11 +482,10 @@ function not_async() { }
 "in
       let xs = prolog_query ~file "async(X), writeln(X), fail" in
       assert_equal ~msg:"it should understand async functions/methods"
-        (["foo"; "A,bar"])
+        (["foo"; "A, bar"])
         xs
     );
 
 (*****************************************************************************)
   ]
   )
-
