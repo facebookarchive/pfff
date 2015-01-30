@@ -370,11 +370,13 @@ and
                      } =
   let arg = v_list (v_wrap v_modifier) v_sl_modifiers in
   let arg = v_short_lambda_params v_sl_params in
-  let arg = v_tok v_sl_tok in let arg = v_short_lambda_body v_sl_body in ()
+  let arg = v_option v_tok v_sl_tok in
+  let arg = v_short_lambda_body v_sl_body in ()
 and v_short_lambda_params =
   function
   | SLSingleParam v1 -> let v1 = v_parameter v1 in ()
   | SLParams v1 -> let v1 = v_paren (v_comma_list_dots v_parameter) v1 in ()
+  | SLParamsOmitted -> ()
 and v_short_lambda_body =
   function
   | SLExpr v1 -> let v1 = v_expr v1 in ()

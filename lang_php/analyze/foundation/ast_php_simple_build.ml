@@ -523,10 +523,16 @@ and lambda_def env (l_use, ld) =
 and short_lambda_def env def =
   { A.
     f_ref = false;
-    f_name = (A.special "_lambda", wrap def.sl_tok);
+    f_name = (
+      A.special "_lambda",
+      match def.sl_tok with
+      | Some tok -> wrap tok
+      | None -> None
+    );
     f_params =
       (match def.sl_params with
       | SLSingleParam p -> [parameter env p]
+      | SLParamsOmitted -> []
       | SLParams (_, xs, _) ->
         let xs = comma_list_dots xs in
         List.map (parameter env) xs

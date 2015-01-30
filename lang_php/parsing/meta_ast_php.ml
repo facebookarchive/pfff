@@ -1165,7 +1165,7 @@ and  vof_short_lambda_def {
   let arg = vof_short_lambda_body v_sl_body in
   let bnd = ("sl_body", arg) in
   let bnds = bnd :: bnds in
-  let arg = vof_tok v_sl_tok in
+  let arg = vof_option vof_tok v_sl_tok in
   let bnd = ("sl_tok", arg) in
   let bnds = bnd :: bnds in
   let arg = vof_short_lambda_params v_sl_params in
@@ -1181,6 +1181,8 @@ and vof_short_lambda_params =
   | SLParams v1 ->
       let v1 = vof_paren (vof_comma_list_dots vof_parameter) v1
       in Ocaml.VSum (("SLParams", [ v1 ]))
+  | SLParamsOmitted ->
+      Ocaml.VSum (("SLParamsOmitted", []))
 and vof_short_lambda_body =
   function
   | SLExpr v1 -> let v1 = vof_expr v1 in Ocaml.VSum (("SLExpr", [ v1 ]))

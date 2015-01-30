@@ -1343,36 +1343,42 @@ lambda_expr:
      {
        let sl_tok, sl_body = $2 in
        let sl_params = SLSingleParam (H.mk_param $1) in
-       ShortLambda { sl_params; sl_tok = sl_tok; sl_body = sl_body; sl_modifiers = [] }
+       ShortLambda { sl_params; sl_tok; sl_body; sl_modifiers = [] }
      }
  | T_ASYNC T_VARIABLE lambda_body
      {
        let sl_tok, sl_body = $3 in
        let sl_params = SLSingleParam (H.mk_param $2) in
-       ShortLambda { sl_params; sl_tok = sl_tok; sl_body = sl_body;
-                     sl_modifiers = [Async,($1)] }
+       ShortLambda { sl_params; sl_tok; sl_body; sl_modifiers = [Async,($1)] }
      }
  | T_LAMBDA_OPAR parameter_list T_LAMBDA_CPAR return_type_opt lambda_body
      {
        let sl_tok, sl_body = $5 in
        let sl_params = SLParams ($1, $2, $3) in
-       ShortLambda { sl_params; sl_tok = sl_tok; sl_body = sl_body;
-                     sl_modifiers = []; }
+       ShortLambda { sl_params; sl_tok; sl_body; sl_modifiers = []; }
      }
  | T_ASYNC T_LAMBDA_OPAR parameter_list T_LAMBDA_CPAR return_type_opt lambda_body
      {
        let sl_tok, sl_body = $6 in
        let sl_params = SLParams ($2, $3, $4) in
-       ShortLambda { sl_params; sl_tok = sl_tok; sl_body = sl_body;
-                     sl_modifiers = [Async,($1)]; }
+       ShortLambda { sl_params; sl_tok; sl_body; sl_modifiers = [Async,($1)]; }
+     }
+ | T_ASYNC TOBRACE inner_statement_list TCBRACE
+     {
+       let sl_body = SLBody ($2, $3, $4) in
+       ShortLambda { sl_params = SLParamsOmitted;
+                     sl_tok = None;
+                     sl_body;
+                     sl_modifiers = [Async,($1)];
+                   }
      }
 
 lambda_body:
- | T_DOUBLE_ARROW TOBRACE inner_statement_list TCBRACE { ($1, SLBody ($2, $3, $4)) }
+ | T_DOUBLE_ARROW TOBRACE inner_statement_list TCBRACE { (Some $1, SLBody ($2, $3, $4)) }
  /*(* An explicit case required for when/if awaits become statements, not expr *)
    (* | T_DOUBLE_ARROW T_AWAIT expr { ($1, SLExpr (Await ($2, $3))) } *)*/
  /*(* see conflicts.txt for why the %prec *)*/
- | T_DOUBLE_ARROW expr { ($1, SLExpr $2) }
+ | T_DOUBLE_ARROW expr { (Some $1, SLExpr $2) }
 
 /*(*----------------------------*)*/
 /*(*2 auxillary bis *)*/

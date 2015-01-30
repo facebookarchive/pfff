@@ -1103,7 +1103,7 @@ and map_short_lambda_def { sl_modifiers = v_sl_modifiers;
                          } =
   let v_sl_modifiers = map_of_list (map_wrap map_modifier) v_sl_modifiers in
   let v_sl_body = map_short_lambda_body v_sl_body in
-  let v_sl_tok = map_tok v_sl_tok in
+  let v_sl_tok = map_of_option map_tok v_sl_tok in
   let v_sl_params = map_short_lambda_params v_sl_params in
   {
     sl_modifiers = v_sl_modifiers;
@@ -1117,6 +1117,7 @@ and map_short_lambda_params =
   | SLParams v1 ->
       let v1 = map_paren (map_comma_list_dots map_parameter) v1
       in SLParams ((v1))
+  | SLParamsOmitted -> SLParamsOmitted
 and map_short_lambda_body =
   function
   | SLExpr v1 -> let v1 = map_expr v1 in SLExpr ((v1))

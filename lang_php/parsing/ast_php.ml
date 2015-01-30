@@ -558,12 +558,13 @@ and short_lambda_def = {
   (* "async" is the only valid modifier *)
   sl_modifiers: modifier wrap list;
   sl_params: short_lambda_params;
-  sl_tok: tok (* ==> *);
+  sl_tok: tok (* ==> *) option; (* async { } doesn't use a ==> *)
   sl_body: short_lambda_body;
 }
  and short_lambda_params =
  | SLSingleParam of parameter
  | SLParams of parameter comma_list_dots paren
+ | SLParamsOmitted (* for async { } lambdas *)
  and short_lambda_body =
  | SLExpr of expr
  | SLBody of stmt_and_def list brace
