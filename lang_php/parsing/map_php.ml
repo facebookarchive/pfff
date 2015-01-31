@@ -927,12 +927,13 @@ and map_class_stmt =
       and v3 = map_hint_type v3
       and v4 = map_tok v4
       in TraitConstraint ((v1, v2, v3, v4))
-  | ClassConstants ((v1, opt_ty, v2, v3)) ->
-      let v1 = map_tok v1
+  | ClassConstants ((v1, v2, opt_ty, v3, v4)) ->
+      let v1 = map_option map_tok v1
+      and v2 = map_tok v2
       and opt_ty = map_option map_hint_type opt_ty
-      and v2 = map_comma_list map_class_constant v2
-      and v3 = map_tok v3
-      in ClassConstants ((v1, opt_ty, v2, v3))
+      and v3 = map_comma_list map_class_constant v3
+      and v4 = map_tok v4
+      in ClassConstants ((v1, v2, opt_ty, v3, v4))
   | ClassVariables ((v1, opt_ty, v2, v3)) ->
       let v1 = map_class_var_modifier v1
       and opt_ty = map_option map_hint_type opt_ty
@@ -1052,7 +1053,9 @@ and map_xhp_category_decl v = map_wrap map_xhp_tag v
 
 
 and map_class_constant (v1, v2) =
-  let v1 = map_ident v1 and v2 = map_static_scalar_affect v2 in (v1, v2)
+  let v1 = map_ident v1
+  and v2 = map_of_option map_static_scalar_affect v2
+  in (v1, v2)
 and map_class_variable (v1, v2) =
   let v1 = map_dname v1
   and v2 = map_of_option map_static_scalar_affect v2

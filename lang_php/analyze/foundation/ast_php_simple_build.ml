@@ -478,9 +478,9 @@ and hint_type env = function
 (* Definitions *)
 (* ------------------------------------------------------------------------- *)
 and constant_def env {cst_name; cst_val; cst_type=_TODO; cst_toks = _} =
-  { A.cst_name = ident env cst_name;
-    A.cst_body = expr env cst_val;
-  }
+  let name = ident env cst_name in
+  let value = Some (expr env cst_val) in
+  { A.cst_name = name; A.cst_body = value }
 
 and func_def env f =
   let _, params, _ = f.f_params in
@@ -618,10 +618,12 @@ and class_traits env x acc =
 
 and class_constants env st acc =
   match st with
-  | ClassConstants (_, _, cl, _) ->
+  | ClassConstants (_, _, _, cl, _) ->
       List.fold_right (
       fun (n, ss) acc ->
-        ({A.cst_name = ident env n; cst_body= static_scalar_affect env ss})::acc
+        let body = opt static_scalar_affect env ss in
+        let cst = {A.cst_name = ident env n; cst_body = body} in
+        cst::acc
      ) (comma_list cl) acc
   | _ -> acc
 

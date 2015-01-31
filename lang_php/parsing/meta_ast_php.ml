@@ -975,12 +975,13 @@ and vof_class_stmt =
       and v3 = vof_hint_type v3
       and v4 = vof_tok v4
       in Ocaml.VSum (("TraitConstraint", [ v1; v2; v3; v4 ]))
-  | ClassConstants ((v1, opt_ty, v2, v3)) ->
-      let v1 = vof_tok v1
-      and v2 = vof_comma_list vof_class_constant v2
-      and v3 = vof_tok v3
+  | ClassConstants ((v1, v2, opt_ty, v3, v4)) ->
+      let v1 = vof_option vof_tok v1
+      and v2 = vof_tok v2
+      and v3 = vof_comma_list vof_class_constant v3
+      and v4 = vof_tok v4
       and opt_ty = vof_option vof_hint_type opt_ty
-      in Ocaml.VSum (("ClassConstants", [ v1; opt_ty; v2; v3 ]))
+      in Ocaml.VSum (("ClassConstants", [ v1; v2; opt_ty; v3; v4 ]))
   | ClassVariables ((v1, opt_ty, v2, v3)) ->
       let v1 = vof_class_var_modifier v1
       and v2 = vof_comma_list vof_class_variable v2
@@ -1030,7 +1031,7 @@ and vof_trait_rule =
 
 and vof_class_constant (v1, v2) =
   let v1 = vof_ident v1
-  and v2 = vof_static_scalar_affect v2
+  and v2 = vof_option vof_static_scalar_affect v2
   in Ocaml.VTuple [ v1; v2 ]
 and vof_class_variable (v1, v2) =
   let v1 = vof_dname v1

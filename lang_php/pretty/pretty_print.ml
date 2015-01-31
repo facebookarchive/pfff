@@ -281,8 +281,9 @@ and stmt_ env = function
       (* todo? what if we reach 80 col after the =?
        * we will cut but then we will have a trailing space :(
        *)
-      Pp.print env " = ";
-      expr env c.cst_body;
+      (match c.cst_body with
+      | None -> ()
+      | Some b -> Pp.print env " = "; expr env b);
       Pp.print env ";";
       Pp.newline env
 
@@ -762,14 +763,15 @@ and class_element env = function
       Pp.spaces env;
       Pp.print env s;
       Pp.newline env
-  | CEconst l -> class_const env l
+  | CEconst (is_abs, l) -> class_const env is_abs l
   | CEdef cvd -> class_variables env cvd
   | CEmethod md -> method_def env md
 
-and class_const env l =
+and class_const env is_abs l =
   match l with [] -> () | _ ->
     Pp.spaces env;
-    Pp.print env "const";
+    if is_abs then Pp.print env "abstract const"
+    else Pp.print env "const";
     Pp.newline env;
     Pp.nest env (
     fun env ->
@@ -789,16 +791,18 @@ and interfaces env = function
 
 and class_constants env = function
   | [] -> ()
-  | [x, v] ->
+  | [ {cst_name = x; cst_body = v_opt}] ->
       Pp.spaces env;
       Pp.print env x;
-      Pp.print env " = ";
-      expr env v
-  | (x, v) :: rl ->
+      (match v_opt with
+        | Some v -> (Pp.print env " = "; expr env v)
+        | None -> (* abstract const has no value *) ())
+  | {cst_name = x; cst_body = v_opt} :: rl ->
       Pp.spaces env;
       Pp.print env x;
-      Pp.print env " = ";
-      expr env v;
+      (match v_opt with
+        | Some v -> (Pp.print env " = "; expr env v)
+        | None -> (* abstract const has no value *) ());
       Pp.print env ",";
       Pp.newline env;
       class_constants env rl

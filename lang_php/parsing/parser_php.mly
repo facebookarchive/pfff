@@ -680,19 +680,33 @@ implements_list:
 /*(*----------------------------*)*/
 
 class_statement:
- | T_CONST          class_constants_declaration  TSEMICOLON
-     { ClassConstants($1, None, $2, $3) }
- | T_CONST type_php class_constants_declaration  TSEMICOLON
-     { ClassConstants($1, Some $2, $3, $4) }
+/*(* facebook-ext: abstract constants *)*/
+ | T_ABSTRACT T_CONST          ident  TSEMICOLON
+     { let const = (Name $3, None) in
+       let const_list = [Left const] in
+       ClassConstants(Some $1, $2, None, const_list, $4) }
+ | T_ABSTRACT T_CONST type_php ident  TSEMICOLON
+     { let const = (Name $4, None) in
+       let const_list = [Left const] in
+       ClassConstants(Some $1, $2, Some $3, const_list, $5) }
 
+/*(* class constants *)*/
+ | T_CONST          class_constants_declaration  TSEMICOLON
+     { ClassConstants(None, $1, None, $2, $3) }
+ | T_CONST type_php class_constants_declaration  TSEMICOLON
+     { ClassConstants(None, $1, Some $2, $3, $4) }
+
+/*(* class variables (aka properties) *)*/
  | variable_modifiers          class_variable_declaration TSEMICOLON
      { ClassVariables($1, None, $2, $3) }
  | variable_modifiers type_php class_variable_declaration TSEMICOLON
      { ClassVariables($1, Some $2, $3, $4)  }
 
+/*(* class methods *)*/
  |            method_declaration { Method $1 }
  | attributes method_declaration { Method { $2 with f_attrs = Some $1 } }
 
+/*(* XHP *)*/
  | T_XHP_ATTRIBUTE xhp_attribute_decls TSEMICOLON
      { XhpDecl (XhpAttributesDecl ($1, $2, $3)) }
  | T_XHP_CHILDREN  xhp_children_decl  TSEMICOLON
@@ -711,7 +725,7 @@ class_statement:
 
 enum_statement:
    class_constant_declaration TSEMICOLON
-     { ClassConstants($2, None, [Left $1], $2) }
+     { ClassConstants(None, $2, None, [Left $1], $2) }
 
 method_declaration:
      method_modifiers T_FUNCTION is_reference ident_method_name type_params_opt
@@ -726,7 +740,7 @@ method_declaration:
         })
      }
 
-class_constant_declaration: ident TEQ static_scalar { ((Name $1), ($2, $3)) }
+class_constant_declaration: ident TEQ static_scalar { ((Name $1), Some ($2, $3)) }
 
 variable_modifiers:
  | T_VAR				{ NoModifiers $1 }

@@ -359,8 +359,8 @@ and func_def = {
 
 and constant_def = {
   cst_name: ident;
-  (* normally a static scalar *)
-  cst_body: expr;
+  (* normally a static scalar; None for abstract const *)
+  cst_body: expr option;
 }
 
 and enum_type = {
@@ -389,21 +389,21 @@ and class_def = {
   c_methods: method_def list;
 }
 
-  and class_kind =
+and class_kind =
     (* todo: put Final, Abstract as modifier list in class_def *)
-    | ClassRegular | ClassFinal | ClassAbstract | ClassAbstractFinal
-    | Interface
-    | Trait
-    | Enum
-  and xhp_field = class_var * bool
-  and class_var = {
+  | ClassRegular | ClassFinal | ClassAbstract | ClassAbstractFinal
+  | Interface
+  | Trait
+  | Enum
+and xhp_field = class_var * bool
+and class_var = {
     (* note that the name will contain a $ *)
-    cv_name: var;
-    cv_type: hint_type option;
-    cv_value: expr option;
-    cv_modifiers: modifier list;
-  }
-  and method_def = func_def
+  cv_name: var;
+  cv_type: hint_type option;
+  cv_value: expr option;
+  cv_modifiers: modifier list;
+}
+and method_def = func_def
 
 and type_def = {
   t_name: ident;

@@ -250,7 +250,7 @@ and vof_xhp_attr x = vof_expr x
 
 and vof_constant_def { cst_name = v_cst_name; cst_body = v_cst_body } =
   let bnds = [] in
-  let arg = vof_expr v_cst_body in
+  let arg =  Ocaml.vof_option vof_expr v_cst_body in
   let bnd = ("cst_body", arg) in
   let bnds = bnd :: bnds in
   let arg = vof_wrapped_string v_cst_name in

@@ -630,6 +630,7 @@ and class_def = {
     (* This is abused to represent class constants in enums, so sometimes
      * tok is actually fakeInfo. *)
     | ClassConstants of
+        tok option (* abstract *) *
         tok (* const *) *
         hint_type option *
         class_constant comma_list * tok (*;*)
@@ -647,20 +648,21 @@ and class_def = {
     | TraitConstraint of
         tok (* require *) * trait_constraint_kind wrap * hint_type * tok (* ; *)
 
-        and class_constant = ident * static_scalar_affect
-        and class_variable = dname * static_scalar_affect option
-        and class_var_modifier =
-          | NoModifiers of tok (* 'var' *)
-          | VModifiers of modifier wrap list
-        (* a few special names: __construct, __call, __callStatic
-         * ugly: f_body is an empty stmt_and_def for abstract method
-         * and the ';' is put for the info of the closing brace
-         * (and the opening brace is a fakeInfo).
-         *)
-        and method_def = func_def
-          and modifier =
-            | Public  | Private | Protected
-            | Static  | Abstract | Final | Async
+ and class_constant = ident * static_scalar_affect option
+ and class_variable = dname * static_scalar_affect option
+ and class_var_modifier =
+   | NoModifiers of tok (* 'var' *)
+   | VModifiers of modifier wrap list
+         (* a few special names: __construct, __call, __callStatic
+          * ugly: f_body is an empty stmt_and_def for abstract method
+          * and the ';' is put for the info of the closing brace
+          * (and the opening brace is a fakeInfo).
+          *)
+ and method_def = func_def
+ and modifier =
+   | Public  | Private | Protected
+   | Static  | Abstract | Final | Async
+
  and xhp_decl =
     | XhpAttributesDecl of
         tok (* attribute *) * xhp_attribute_decl comma_list * tok (*;*)

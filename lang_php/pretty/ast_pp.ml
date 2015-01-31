@@ -187,27 +187,26 @@ and func_def = {
   f_body: stmt list;
 }
 
-   and parameter = {
-     (* todo: modifiers *)
-     p_type: hint_type option;
-     p_ref: bool;
-     p_name: string;
-     p_default: expr option;
-   }
+and parameter = {
+  (* todo: modifiers *)
+  p_type: hint_type option;
+  p_ref: bool;
+  p_name: string;
+  p_default: expr option;
+}
 
-  and lambda_def = {
-    l_ref: bool;
-    l_params: parameter list;
-    (* actually use parameter can't have a default value nor a type hint
-     * so maybe we should use a more specific type
-     *)
-    l_use: parameter list;
-    l_body: stmt list;
-  }
+and lambda_def = {
+  l_ref: bool;
+  l_params: parameter list;
+  (* actually use parameter can't have a default value nor a type hint
+   * so maybe we should use a more specific type *)
+  l_use: parameter list;
+  l_body: stmt list;
+}
 
 and constant_def = {
   cst_name: string;
-  cst_body: expr;
+  cst_body: expr option;
 }
 and class_def = {
   c_type: class_type;
@@ -217,50 +216,49 @@ and class_def = {
   c_body: class_element list;
 }
 
-  and class_element =
-    | CEEsthet of esthetic
+and class_element =
+  | CEEsthet of esthetic
+  | CEconst of bool (* is_abstract *) * constant_def list
+  | CEdef of class_vars_def
+  | CEmethod of method_def
 
-    | CEconst of (string * expr) list
-    | CEdef of class_vars_def
-    | CEmethod of method_def
+and class_type =
+  | ClassRegular
+  | ClassFinal
+  | ClassAbstract
+  | ClassAbstractFinal
+  | Interface
+  | Trait
 
-  and class_type =
-    | ClassRegular
-    | ClassFinal
-    | ClassAbstract
-    | ClassAbstractFinal
-    | Interface
-    | Trait
+and class_vars_def = {
+  cv_final: bool;
+  cv_static: bool;
+  cv_abstract: bool;
+  cv_visibility: visibility;
+  cv_type: hint_type option;
+  cv_vars: cvar list;
+}
 
-  and class_vars_def = {
-    cv_final: bool;
-    cv_static: bool;
-    cv_abstract: bool;
-    cv_visibility: visibility;
-    cv_type: hint_type option;
-    cv_vars: cvar list;
-  }
+and cvar = string * expr option
 
-  and cvar = string * expr option
+and method_def = {
+  m_visibility: visibility;
+  m_static: bool;
+  m_final: bool;
+  m_abstract: bool;
+  m_ref: bool;
+  m_name: string;
+  m_params: parameter list;
+  m_return_type: hint_type option;
+  m_body: stmt list;
+}
 
-  and method_def = {
-    m_visibility: visibility;
-    m_static: bool;
-    m_final: bool;
-    m_abstract: bool;
-    m_ref: bool;
-    m_name: string;
-    m_params: parameter list;
-    m_return_type: hint_type option;
-    m_body: stmt list;
-  }
+and visibility =
+  | Novis
+  | Public  | Private
+  | Protected | Abstract
 
-   and visibility =
-     | Novis
-     | Public  | Private
-     | Protected | Abstract
-
- (* with tarzan *)
+(* with tarzan *)
 
 (*****************************************************************************)
 (* Helpers *)
