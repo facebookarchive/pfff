@@ -23,6 +23,7 @@ open Common
  *  - QL by semmle
  *  - http://www.ndepend.com/Features.aspx#CQL
  *  - http://golang.org/s/oracle-design
+ *  - http://llvm.org/devmtg/2014-10/Slides/Hawes-Frappe.pdf
  * 
  * notes: pieter started to implement something similar using neo4j/cypher
  * instead of prolog for the query engine. Example of query:
