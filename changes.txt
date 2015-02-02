@@ -1,5 +1,18 @@
 -*- org -*-
 
+* 0.31 (Q1 2015) (??)
+
+** lpizer
+
+*** support for ocaml
+
+* 0.30 (Q4 2014) ((principia parenthesis), lpizer)
+
+** introduce lpizer
+
+*** fine grained lpizer with support for C (to automatically
+generate chunks of a literate programs)
+
 * 0.29 (Q3 2014) (datalog for "flowing", codeslicer)
 
 ** datalog
