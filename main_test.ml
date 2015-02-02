@@ -2,7 +2,8 @@
  * Please imagine a long and boring gnu-style copyright notice 
  * appearing just here.
  *)
-open Common
+(*open Common*)
+open Common2
 
 open OUnit 
 
@@ -179,9 +180,9 @@ let pfff_extra_actions () = [
   Common.mk_action_3_arg (fun overlay orig output ->
     let db = 
       Database_code.load_database orig in
-    let db' = 
+    let db2 = 
       Overlay_code.adapt_database db (Overlay_code.load_overlay overlay) in
-    Database_code.save_database db' output
+    Database_code.save_database db2 output
   );
   "-action1", "", Common.mk_action_0_arg action1;
 
@@ -234,6 +235,34 @@ let pfff_extra_actions () = [
         Common.command2 cmd;
       end;
     );
+  );
+
+  "-luisa", "<files>", Common.mk_action_4_arg (fun t1 t2 t3 s6 ->
+    let f file = 
+      Common.cat file
+
+      +> List.map (fun s ->
+        if s =~ "^\\([A-Za-z_0-9][A-Za-z_0-9][A-Za-z_0-9][A-Za-z_0-9]\\)"
+        then Common.matched1 s
+        else s
+      )
+
+      +> Common2.set 
+    in
+    let s1 = f t1 in
+    let s2 = f t2 in
+    let s3 = f t3 in
+
+    let s6 = f s6 in
+
+    pr2 "------- s6 * t1 * t2 * t3 -------";
+    (s6 $*$  s1 $*$ s2 $*$ s3) +> List.iter pr;
+    pr2 "------- s6 * t1 -------";
+    (s6 $*$ s1) +> List.iter pr;
+    pr2 "------- s6 * t2 -------";
+    (s6 $*$ s2) +> List.iter pr;
+    pr2 "------- s6 * t3 -------";
+    (s6 $*$ s3) +> List.iter pr;
   );
 ]
 
