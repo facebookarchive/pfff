@@ -75,6 +75,9 @@ module View = View3
  *    http://msdn.microsoft.com/en-us/library/vstudio/dd409365.aspx
  *    http://channel9.msdn.com/Series/Visual-Studio-2012-Premium-and-Ultimate-Overview/Visual-Studio-Ultimate-2012-Understand-your-code-dependencies-through-visualization
  * 
+ *  - a few visualizations applied on go dependencies (including chords)
+ *    http://dave.cheney.net/2014/11/21/visualising-dependencies
+ * 
  * - google search images: dependency+graph+visualization, get many
  *   links from there 
  * 
