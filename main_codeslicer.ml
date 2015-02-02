@@ -354,10 +354,13 @@ let lpize xs =
     let lines = Common.cat file in
     let arr = Array.of_list lines in
 
+    (* CONFIG *)
+    let suffix = "(arm)" in
+
     (* the chunks *)
     entities +> List.iter (fun e ->
         let (lstart, lend) = e.range in
-        pr (spf "<<%s %s>>=" (string_of_entity_kind e.kind) e.name);
+        pr (spf "<<%s %s%s>>=" (string_of_entity_kind e.kind) e.name suffix);
 
         Common2.enum_safe lstart lend +> List.iter (fun line ->
           let idx = line - 1 in
@@ -384,14 +387,15 @@ let lpize xs =
           then ()
           else pr (untabify s)
       | Some e -> 
-        pr (spf "<<%s %s>>" (string_of_entity_kind e.kind) e.name);
+        pr (spf "<<%s %s%s>>" (string_of_entity_kind e.kind) e.name suffix);
     );
     pr "@";
     pr "";
     pr "";
 
+    (* CONFIG *)
     (* for the initial 'make sync' to work *)
-    Sys.command (spf "rm -f %s" file) +> ignore;   
+    Sys.command (spf "rm -f %s" file) +> ignore;
   );
   ()
 
