@@ -121,23 +121,6 @@ type entity = {
   range: int * int;
 }
 
-open Ast_cpp
-module Ast = Ast_cpp
-module E = Entity_code
-module PI = Parse_info
-
-let hooks_for_comment = { Comment_code.
-    kind = Token_helpers_cpp.token_kind_of_tok;
-    tokf = Token_helpers_cpp.info_of_tok;
-                        }
-
-let range_of_any_with_comment any toks =
-  let ii = Lib_parsing_cpp.ii_of_any any in
-  let (min, max) = PI.min_max_ii_by_pos ii in
-  match Comment_code.comment_before hooks_for_comment min toks with
-  | None -> min, max
-  | Some ii -> ii, max
-  
 type env = {
   current_file: Common.filename;
   cnt: int ref;
@@ -163,10 +146,37 @@ let uniquify env kind s =
   Hashtbl.replace env.hentities (sfinal, kind) true;
   sfinal
 
-  
+let count_dollar s =
+  let cnt = ref 0 in
+  for i = 0 to String.length s - 1 do
+    if String.get s i = '$'
+    then incr cnt
+  done;
+  !cnt
+
+(*--------------------------------------------------*)
+(* C *)
+(*--------------------------------------------------*)
+open Ast_cpp
+module Ast = Ast_cpp
+module E = Entity_code
+module PI = Parse_info
+
+let hooks_for_comment_cpp = { Comment_code.
+    kind = Token_helpers_cpp.token_kind_of_tok;
+    tokf = Token_helpers_cpp.info_of_tok;
+    }
+
+let range_of_any_with_comment_cpp any toks =
+  let ii = Lib_parsing_cpp.ii_of_any any in
+  let (min, max) = PI.min_max_ii_by_pos ii in
+  match Comment_code.comment_before hooks_for_comment_cpp min toks with
+  | None -> min, max
+  | Some ii -> ii, max
+ 
 
 (* todo: could do that in graph_code_c, with a range *)
-let extract_entities env xs =
+let extract_entities_cpp env xs =
   xs +> Common.map_filter (fun (top, toks) ->
     match top with
     | CppDirectiveDecl decl ->
@@ -177,7 +187,7 @@ let extract_entities env xs =
             | DefineVar -> E.Constant
             | DefineFunc _ -> E.Macro
         in
-        let (min, max) = range_of_any_with_comment (Toplevel top) toks in
+        let (min, max) = range_of_any_with_comment_cpp (Toplevel top) toks in
         Some {
           name = fst ident +> uniquify env kind;
           kind = kind;
@@ -189,14 +199,14 @@ let extract_entities env xs =
     | DeclElem decl ->
       (match decl with
       | Func (FunctionOrMethod def) ->
-        let (min, max) = range_of_any_with_comment (Toplevel top) toks in
+        let (min, max) = range_of_any_with_comment_cpp (Toplevel top) toks in
         Some { 
           name = Ast.string_of_name_tmp def.f_name +> uniquify env E.Function;
           kind = E.Function;
           range = (PI.line_of_info min, PI.line_of_info max);
         }
       | BlockDecl decl ->
-        let (min, max) = range_of_any_with_comment (Toplevel top) toks in
+        let (min, max) = range_of_any_with_comment_cpp (Toplevel top) toks in
           (match decl with
           | DeclList ([x, _], _) ->
               (match x with
@@ -278,6 +288,95 @@ let extract_entities env xs =
     | _ -> None
   )
 
+(*--------------------------------------------------*)
+(* OCaml *)
+(*--------------------------------------------------*)
+
+let hooks_for_comment_ml = { Comment_code.
+    kind = Token_helpers_ml.token_kind_of_tok;
+    tokf = Token_helpers_ml.info_of_tok;
+    }
+
+let range_of_any_with_comment_ml any toks =
+  let ii = Lib_parsing_ml.ii_of_any any in
+  let (min, max) = PI.min_max_ii_by_pos ii in
+  match Comment_code.comment_before hooks_for_comment_ml min toks with
+  | None -> min, max
+  | Some ii -> ii, max
+
+open Ast_ml
+
+let (extract_entities_ml: env -> Parse_ml.program_and_tokens -> entity list) =
+ fun env (top_opt, toks) ->
+  let qualify x = 
+    Module_ml.module_name_of_filename env.current_file ^ "." ^ x 
+  in
+  let range any = 
+    let (min, max) = range_of_any_with_comment_ml any toks in
+    (PI.line_of_info min, PI.line_of_info max)
+  in
+  let cnt = ref 0 in
+  match top_opt with
+  | None -> []
+  | Some xs -> xs +> List.map (fun top ->
+      match top with
+      | TopItem Let(_i1, _,[Left(LetClassic(
+                              {l_name=Name (name, _); l_params=[]; _}))]) ->
+
+        [{
+          name = qualify name;
+          kind = E.Constant;
+          range = range (Toplevel top);
+        }]
+
+      | TopItem Let(_i1, _, [Left(LetClassic(
+                              {l_name=Name (name, _); l_params=_::_; _}))]) ->
+        [{
+          name = qualify name;
+          kind = E.Function;
+          range = range (Toplevel top);
+        }]
+      | TopItem(Exception(_, Name((name, _)), _)) ->
+        [{
+          name = qualify name;
+          kind = E.Exception;
+          range = range (Toplevel top);
+        }]
+
+      | TopItem Let(_i1, _, [Left(LetPattern(PatUnderscore _, _, _))]) ->
+        incr cnt;
+        [{
+          name = qualify (spf "_%d" !cnt);
+          kind = E.TopStmts;
+          range = range (Toplevel top);
+        }]
+
+      | TopItem(Type(_, [Left(TyDef(_, Name((name, _)), _, _ ))])) ->
+        [{
+          name = qualify name;
+          kind = E.Type;
+          range = range (Toplevel top);
+        }]
+        
+      | TopItem(Type(t1, xs)) ->
+        let (xs, ys) = Common.partition_either (fun x -> x) xs in
+        let zipped = Common2.zip xs (t1::ys) in
+        zipped +> Common.map_filter (fun (x, _tok1) ->
+          match x with
+          | (TyDef(_, Name((name, _)), _, _)) -> 
+            Some {
+              name = qualify name;
+              kind = E.Type;
+              range = range (TypeDeclaration x);
+            }
+
+          | _ -> None
+        ) 
+      | _ -> []
+  ) +> List.flatten
+
+(*--------------------------------------------------*)
+
 let sanity_check _xs =
 (*
   let group_by_basename =
@@ -294,13 +393,14 @@ let sanity_check _xs =
 
 let string_of_entity_kind kind =
   match kind with
-  | E.Function -> "function"
-  | E.Global -> "global"
-  | E.Type -> "enum"
-  | E.Class -> "struct"
-  | E.Constant -> "constant"
-  | E.Macro -> "function"
-
+  | E.Function  -> "function"
+  | E.Global    -> "global"
+  | E.Type      ->  if !lang = "c" then "enum"   else "type"
+  | E.Class     -> if !lang = "c" then "struct" else "class"
+  | E.Constant  -> "constant"
+  | E.Macro     -> "function"
+  | E.Exception -> "exception"
+  | E.TopStmts  -> "toplevel"
   | _ -> failwith (spf "not handled kind: %s" (E.string_of_entity_kind kind))
 
 (* main entry point *)
@@ -329,7 +429,10 @@ let lpize xs =
     pr (spf "\\subsection*{[[%s]]}" file);
     pr "";
 
-    let (xs, _stat) = Parse_cpp.parse file in
+    let (xs, _stat) = 
+      Parse_ml.parse file
+      (* Parse_cpp.parse file  *)
+    in
     let env = {
       current_file = file;
       hentities = hentities;
@@ -339,7 +442,10 @@ let lpize xs =
        *)
       cnt = ref 1;
     } in
-    let entities = extract_entities env xs in
+    let entities = 
+      extract_entities_ml env xs
+      (* extract_entities_cpp env xs  *)
+    in
 
     let hstart = 
       entities +> List.map (fun e -> fst e.range, e) +> Common.hash_of_list
@@ -355,20 +461,24 @@ let lpize xs =
     let arr = Array.of_list lines in
 
     (* CONFIG *)
-    let suffix = "(arm)" in
+    let suffix = "" in (* "arm" *)
 
     (* the chunks *)
     entities +> List.iter (fun e ->
         let (lstart, lend) = e.range in
         pr (spf "<<%s %s%s>>=" (string_of_entity_kind e.kind) e.name suffix);
 
+        let nbdollars = ref 0 in
         Common2.enum_safe lstart lend +> List.iter (fun line ->
           let idx = line - 1 in
           if idx >= Array.length arr || idx < 0
           then failwith (spf "out of range for %s, line %d" file line);
-          pr (untabify (arr.(line - 1)))
+          pr (untabify (arr.(line - 1)));
+          nbdollars := !nbdollars + (count_dollar arr.(line - 1));
         );
         pr "@";
+        if !nbdollars mod 2 = 1
+        then pr "%$";
         pr "";
     );
 
@@ -395,7 +505,9 @@ let lpize xs =
 
     (* CONFIG *)
     (* for the initial 'make sync' to work *)
+(*
     Sys.command (spf "rm -f %s" file) +> ignore;
+*)
   );
   ()
 
@@ -704,7 +816,6 @@ let pfff_extra_actions () = [
   Common.mk_action_n_arg find_source;
   "-lpize", " <files>",
   Common.mk_action_n_arg lpize;
-
 ]
 
 (*****************************************************************************)
@@ -714,7 +825,6 @@ let pfff_extra_actions () = [
 let all_actions () = 
   pfff_extra_actions() @
   []
-
 
 let options () = [
   "-verbose", Arg.Set verbose, 
@@ -738,7 +848,6 @@ let options () = [
       exit 0;
     ), "  guess what";
   ]
-
 
 (*****************************************************************************)
 (* Main entry point *)
