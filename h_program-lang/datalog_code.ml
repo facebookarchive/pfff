@@ -26,6 +26,7 @@ open Common
  *  - TODO: pydatalog, embedded DSL in python that can import data from
  *    SQL
  *  - ciao? xsb?
+ *  - http://www.learndatalogtoday.org/ and datomic.com
  *)
 
 (*****************************************************************************)
