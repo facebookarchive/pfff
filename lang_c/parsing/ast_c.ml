@@ -51,9 +51,10 @@ open Common2.Infix
  * related work: 
  *  - CIL, but it works after preprocessing; it makes it harder to connect
  *    analysis results to tools like codemap. It also does not handle some of
- *    the kencc extensions and does allow to analyze cpp constructs.
+ *    the kencc extensions and does now allow to analyze cpp constructs.
  *    CIL has two pointer analysis but they were written with bug finding
- *    in mind I think, not code comprehension which we really care about in pfff.
+ *    in mind I think, not code comprehension which we really care about 
+ *    in pfff.
  *    In the end I thought generating datalog facts for plan9 using lang_c/ 
  *    was simpler that modifying CIL (moreover fixing lang_cpp/ and lang_c/
  *    to handle plan9 code was anyway needed for codemap).
