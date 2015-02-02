@@ -89,6 +89,8 @@ module Unify = Typing_unify_php
  *  - algo unification and managing subsitution a la ?? coq?
  *
  * todo: each time we use 'any' below, it's probably a todo
+ * 
+ * todo: https://github.com/tomprimozic/type-systems
  *)
 
 (*****************************************************************************)
