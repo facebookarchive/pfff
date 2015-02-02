@@ -22,9 +22,10 @@ module S = Scope_code
  * opti: git grep foo | xargs sgrep -e 'foo(...)'
  * 
  * related: 
- *  - http://www.jetbrains.com/idea/documentation/ssr.html
- *  - http://beyondgrep.com/ (ack)
- *  - http://awgn.github.io/cgrep/
+ *  - SSR http://www.jetbrains.com/idea/documentation/ssr.html
+ *  - ack http://beyondgrep.com/
+ *  - cgrep http://awgn.github.io/cgrep/
+ *  - hound https://codeascraft.com/2015/01/27/announcing-hound-a-lightning-fast-code-search-tool/
  * 
  * See also codequery for more structural queries.
  *)
