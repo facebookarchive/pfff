@@ -57,7 +57,7 @@ type file_type =
 
    and webpl_type = 
      | Php of string (* php or phpt or script *)
-     | Js
+     | Js | Coffee
      | Css
      | Html | Xml | Json
      | Sql
@@ -171,6 +171,7 @@ let file_type_of_file2 file =
   | "css" -> PL (Web Css)
   (* "javascript" | "es" | ? *)
   | "js" -> PL (Web Js)
+  | "coffee" -> PL (Web Coffee)
   | "html" | "htm" -> PL (Web Html)
   | "xml" -> PL (Web Xml)
   | "json" -> PL (Web Json)

@@ -30,7 +30,7 @@ type file_type =
 
    and webpl_type = 
      | Php of string
-     | Js
+     | Js | Coffee
      | Css
      | Html | Xml | Json
      | Sql
