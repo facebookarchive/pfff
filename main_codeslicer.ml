@@ -322,24 +322,27 @@ let (extract_entities_ml: env -> Parse_ml.program_and_tokens -> entity list) =
       match top with
       | TopItem Let(_i1, _,[Left(LetClassic(
                               {l_name=Name (name, _); l_params=[]; _}))]) ->
+        let kind = E.Constant in 
 
         [{
-          name = qualify name;
-          kind = E.Constant;
+          name = qualify name +> uniquify env kind;
+          kind;
           range = range (Toplevel top);
         }]
 
       | TopItem Let(_i1, _, [Left(LetClassic(
                               {l_name=Name (name, _); l_params=_::_; _}))]) ->
+        let kind = E.Function in
         [{
-          name = qualify name;
-          kind = E.Function;
+          name = qualify name +> uniquify env kind;
+          kind;
           range = range (Toplevel top);
         }]
       | TopItem(Exception(_, Name((name, _)), _)) ->
+        let kind = E.Exception in
         [{
-          name = qualify name;
-          kind = E.Exception;
+          name = qualify name +> uniquify env kind;
+          kind;
           range = range (Toplevel top);
         }]
 
@@ -352,9 +355,10 @@ let (extract_entities_ml: env -> Parse_ml.program_and_tokens -> entity list) =
         }]
 
       | TopItem(Type(_, [Left(TyDef(_, Name((name, _)), _, _ ))])) ->
+        let kind = E.Type in
         [{
-          name = qualify name;
-          kind = E.Type;
+          name = qualify name +> uniquify env kind;
+          kind;
           range = range (Toplevel top);
         }]
         
@@ -364,8 +368,9 @@ let (extract_entities_ml: env -> Parse_ml.program_and_tokens -> entity list) =
         zipped +> Common.map_filter (fun (x, _tok1) ->
           match x with
           | (TyDef(_, Name((name, _)), _, _)) -> 
+            let kind = E.Type in
             Some {
-              name = qualify name;
+              name = qualify name +> uniquify env kind;
               kind = E.Type;
               range = range (TypeDeclaration x);
             }
@@ -505,9 +510,7 @@ let lpize xs =
 
     (* CONFIG *)
     (* for the initial 'make sync' to work *)
-(*
     Sys.command (spf "rm -f %s" file) +> ignore;
-*)
   );
   ()
 
