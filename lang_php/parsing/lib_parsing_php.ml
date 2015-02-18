@@ -65,8 +65,12 @@ let is_hhi_filename filename =
   (filename =~ ".*\\.hhi$") ||
   false
 
+let is_php_filename_phar filename =
+  (filename =~ ".*\\.phar$") ||
+  false
+
 let is_php_file filename =
-  is_php_filename filename || is_php_script filename
+  not (is_php_filename_phar filename) && (is_php_filename filename || is_php_script filename)
 
 (* 
  * In command line tools like git or mercurial, many operations works 
