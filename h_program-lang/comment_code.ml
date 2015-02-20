@@ -64,25 +64,32 @@ let comment_before hooks tok all_toks =
   | _ -> None
 
 
-(*
-let comment_after tok all_toks =
+let comment_after hooks tok all_toks =
   let pos = PI.pos_of_info tok in
+  let line = PI.line_of_info tok in
   let after = 
     all_toks +> Common2.drop_while (fun tok2 ->
-      let info = TH.info_of_tok tok2 in
+      let info = hooks.tokf tok2 in
       let pos2 = PI.pos_of_info info in
       pos2 <= pos
     )
   in
   let first_non_space =
-    after +> Common2.drop_while (function
-    | Parser_php.TNewline _ | Parser_php.TSpaces _ -> true
+    after +> Common2.drop_while (fun t ->
+      let kind = hooks.kind t in
+      match kind with
+      | PI.Esthet PI.Newline | PI.Esthet PI.Space -> true
     | _ -> false
     )
   in
   match first_non_space with
-  | (Parser_php.T_COMMENT ii | Parser_php.T_DOC_COMMENT ii)::_xs ->
-      Some ii
+  | x::_xs when hooks.kind x =*= PI.Esthet (PI.Comment) ->
+      let info = hooks.tokf x in
+      (* for ocaml comments they are not necessarily in
+       * column 0, but they must be just after
+       *)
+      if PI.line_of_info info = line || PI.line_of_info info = line + 1
+         (* && PI.col_of_info info > 0 *)
+      then Some info
+      else None
   | _ -> None
-
-*)

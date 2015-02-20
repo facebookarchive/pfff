@@ -6,3 +6,6 @@ type 'tok hooks = {
 
 val comment_before:
  'a hooks -> Parse_info.info -> 'a list -> Parse_info.info option
+
+val comment_after:
+ 'a hooks -> Parse_info.info -> 'a list -> Parse_info.info option
