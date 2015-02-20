@@ -300,11 +300,21 @@ let hooks_for_comment_ml = { Comment_code.
 let range_of_any_with_comment_ml any toks =
   let ii = Lib_parsing_ml.ii_of_any any in
   let (min, max) = PI.min_max_ii_by_pos ii in
-  match Comment_code.comment_before hooks_for_comment_ml min toks with
-  | None -> min, max
-  | Some ii -> ii, max
+  match Comment_code.comment_before hooks_for_comment_ml min toks,
+        Comment_code.comment_after hooks_for_comment_ml max toks
+  with
+  | None, None -> min, max
+  | Some ii, None -> ii, max
+  | None, Some ii -> min, ii
+  | Some i1, Some i2 -> i1, i2
 
 open Ast_ml
+
+let nb_newlines info =
+  let str = PI.str_of_info info in
+  if str =~ ".*\n"
+  then Str.split_delim (Str.regexp "\n") str +> List.length - 1
+  else 0
 
 let (extract_entities_ml: env -> Parse_ml.program_and_tokens -> entity list) =
  fun env (top_opt, toks) ->
@@ -313,7 +323,8 @@ let (extract_entities_ml: env -> Parse_ml.program_and_tokens -> entity list) =
   in
   let range any = 
     let (min, max) = range_of_any_with_comment_ml any toks in
-    (PI.line_of_info min, PI.line_of_info max)
+    let nblines = nb_newlines max in
+    (PI.line_of_info min, PI.line_of_info max + nblines)
   in
   let cnt = ref 0 in
   match top_opt with
@@ -356,6 +367,14 @@ let (extract_entities_ml: env -> Parse_ml.program_and_tokens -> entity list) =
 
       | TopItem(Type(_, [Left(TyDef(_, Name((name, _)), _, _ ))])) ->
         let kind = E.Type in
+        [{
+          name = qualify name +> uniquify env kind;
+          kind;
+          range = range (Toplevel top);
+        }]
+
+      | TopItem(Val(_, Name((name, _)), _, _)) ->
+        let kind = E.Prototype in
         [{
           name = qualify name +> uniquify env kind;
           kind;
@@ -406,6 +425,7 @@ let string_of_entity_kind kind =
   | E.Macro     -> "function"
   | E.Exception -> "exception"
   | E.TopStmts  -> "toplevel"
+  | E.Prototype -> "signature"
   | _ -> failwith (spf "not handled kind: %s" (E.string_of_entity_kind kind))
 
 (* main entry point *)
