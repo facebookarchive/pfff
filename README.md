@@ -1,6 +1,8 @@
 
                               pfff
 
+[![Build Status](https://travis-ci.org/facebook/pfff.svg?branch=master)](https://travis-ci.org/facebook/pfff)
+
 pfff is a set of tools and APIs to perform static analysis, code
 visualizations, code navigations, or style-preserving source-to-source
 transformations such as refactorings on source code. There is good
@@ -14,7 +16,7 @@ For each languages there are mainly 2 libraries, for instance
 parsing_php.cma and analysis_php.cma, that you can
 embed in your own application if you need to process PHP code. See the
 demos/ directory for example of use of the pfff API. See also
-docs/manual/Parsing_xxx.pdf and docs/manual/Analyzis_xxx.pdf for 
+docs/manual/Parsing_xxx.pdf and docs/manual/Analyzis_xxx.pdf for
 more documentation on how to use or extend pfff.
 
 pfff is also made of few tools:
@@ -26,7 +28,7 @@ pfff is also made of few tools:
  - codemap, which is a gtk and cairo based source code
    visualizer/navigator/searcher leveraging
    the information computed previously by pfff_db and codegraph.
- - codegraph, a source code indexer and package/module/class 
+ - codegraph, a source code indexer and package/module/class
    dependency visualizer
  - codequery, an interactive tool a la SQL to query information
    about the structure of a codebase using Prolog as the query engine
@@ -40,11 +42,11 @@ as well as the docs/manual/ directory.
 Usage for pfff:
 -----------------
 
-   $ ./pfff -parse_php demos/foo.php 
+   $ ./pfff -parse_php demos/foo.php
 
 or
 
-   $ ./pfff -dump_php demos/foo.php 
+   $ ./pfff -dump_php demos/foo.php
 
 You can also look at ./pfff --help
 
