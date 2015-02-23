@@ -556,9 +556,6 @@ rule st_in_scripting = parse
     | "?" { TQUESTION(tokinfo lexbuf) }
     (* semantic grep or var args extension *)
     | "..." { T_ELLIPSIS(tokinfo lexbuf) }
-
-    | "...$" (LABEL as s) { T_VARIABLE_VARIADIC(case_str s, tokinfo lexbuf) }
-
     (* facebook-ext: short lambdas *)
     | "==>" { T_DOUBLE_ARROW(tokinfo lexbuf) }
 

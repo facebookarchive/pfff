@@ -89,7 +89,7 @@ module PI = Parse_info
    * Note that with XHP if you want to add a rule using T_IDENT, you should
    * probably use 'ident' instead.
    *)*/
- T_IDENT T_VARIABLE T_VARIABLE_VARIADIC
+ T_IDENT T_VARIABLE
  T_CONSTANT_ENCAPSED_STRING   T_ENCAPSED_AND_WHITESPACE  T_INLINE_HTML
  /*(* used only for offset of array access inside strings *)*/
  T_NUM_STRING
@@ -555,8 +555,6 @@ parameter_or_dots:
  /*(* varargs extension *)*/
  | T_ELLIPSIS { Middle3 $1 }
  /*(* PHP 5.6 variadic arguments ...$xs *)*/
- | T_VARIABLE_VARIADIC
-     { Left3 (H.mk_param $1) (* todo: with is_variadic = true *) }
  | T_ELLIPSIS T_VARIABLE
      { Left3 (H.mk_param $2) (* todo: with is_variadic = true *) }
 
@@ -1256,7 +1254,6 @@ function_call_argument:
  | expr	{ (Arg ($1)) }
  | TAND expr 		{ (ArgRef($1, $2)) }
  | T_ELLIPSIS expr      { (ArgUnpack($1, $2)) }
- | T_VARIABLE_VARIADIC { let _, tok = $1 in (ArgUnpack(tok, H.mk_var $1)) }
 
 /*(*----------------------------*)*/
 /*(*2 encaps *)*/

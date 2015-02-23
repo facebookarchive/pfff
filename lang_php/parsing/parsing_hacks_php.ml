@@ -99,7 +99,7 @@ let is_params toks =
       | T_LAMBDA_OPAR _ | T_LAMBDA_CPAR _ | TOPAR _ | TCPAR _ -> true
       | x -> TH.is_comment x) toks ||
     List.exists (function
-      | T_VARIABLE _ | T_ELLIPSIS _ | T_VARIABLE_VARIADIC _ -> true
+      | T_VARIABLE _ | T_ELLIPSIS _ -> true
       | _ -> false) toks)
 
 (* Looks to see if the next token is a variable (ignoring comments) *)

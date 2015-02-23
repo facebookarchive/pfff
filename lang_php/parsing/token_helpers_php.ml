@@ -70,7 +70,6 @@ let info_of_tok = function
   | T_IDENT (_s, ii) -> ii
   | T_STRING_VARNAME (_s, ii) -> ii
   | T_VARIABLE (_s, ii) -> ii
-  | T_VARIABLE_VARIADIC (_s, ii) -> ii
   | T_NUM_STRING (_s, ii) -> ii
   | T_INLINE_HTML (_s, ii) -> ii
   | T_ENCAPSED_AND_WHITESPACE (_s, ii) -> ii
@@ -273,7 +272,6 @@ let visitor_info_of_tok f = function
   | T_IDENT (s, ii) -> T_IDENT(s, f ii)
   | T_STRING_VARNAME (s, ii) -> T_STRING_VARNAME(s, f ii)
   | T_VARIABLE (s, ii) -> T_VARIABLE(s, f ii)
-  | T_VARIABLE_VARIADIC (s, ii) -> T_VARIABLE_VARIADIC(s, f ii)
   | T_NUM_STRING (s, ii) -> T_NUM_STRING(s, f ii)
   | T_INLINE_HTML (s, ii) -> T_INLINE_HTML(s, f ii)
   | T_ENCAPSED_AND_WHITESPACE (s, ii) -> T_ENCAPSED_AND_WHITESPACE(s, f ii)
