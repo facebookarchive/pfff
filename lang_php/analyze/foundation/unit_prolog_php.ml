@@ -20,9 +20,13 @@ open OUnit
 (* Helpers *)
 (*****************************************************************************)
 
+let normalize_whitespace (w: string) : string =
+  Str.global_replace (Str.regexp ",\\s") "," w
+
 let prolog_query ?header ~file query =
   let source_file = Parse_php.tmp_php_file_from_string ?header file in
   Database_prolog_php.prolog_query ~verbose:false ~source_file ~query
+  |> List.map normalize_whitespace
 
 (*****************************************************************************)
 (* Unit tests *)
@@ -256,13 +260,13 @@ function bar() {
       let xs = prolog_query ~file
         "docall('bar', X, method), writeln(X), fail" in
       assert_equal ~msg:"it should find basic callers to a static method"
-        ["A, foo"; "foo"]
+        ["A,foo"; "foo"]
         (sort xs);
 
       let xs = prolog_query ~file
         "docall(('A','a'), X, method), writeln(X), fail" in
       assert_equal ~msg:"it should unsugar self"
-        ["A, foobar"; "foobar"]
+        ["A,foobar"; "foobar"]
         (sort xs);
     );
 
@@ -277,7 +281,7 @@ function bar() {
       let xs = prolog_query ~file
         "docall('bar', X, special), writeln(X), fail" in
       assert_equal ~msg:"it should index classnames passed as strings"
-        ["newv, A"]
+        ["newv,A"]
         (sort xs);
     );
 
@@ -295,7 +299,7 @@ function bar() {
       let xs = prolog_query ~file
         "docall2('bar', (X,Y), method), writeln((X,Y)), fail" in
       assert_equal ~msg:"it should find basic callers to a function"
-        ["A, foo"]
+        ["A,foo"]
         (sort xs);
     );
 
@@ -393,7 +397,7 @@ function foo() {
 " in
     let xs = prolog_query ~file "use('foo', X , constant, read), writeln(X)" in
     assert_equal ~msg:"it should find basic access to a class constant"
-      ["A, CST"] (xs);
+      ["A,CST"] (xs);
     );
 
 (*****************************************************************************)
@@ -482,7 +486,7 @@ function not_async() { }
 "in
       let xs = prolog_query ~file "async(X), writeln(X), fail" in
       assert_equal ~msg:"it should understand async functions/methods"
-        (["foo"; "A, bar"])
+        (["foo"; "A,bar"])
         xs
     );
 
