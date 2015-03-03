@@ -348,6 +348,10 @@ and vof_hint_type =
              in Ocaml.VTuple [ v1; v2 ])
           v1
       in Ocaml.VSum (("HintShape", [ v1 ]))
+  | HintTypeConst (v1, v2) ->
+    let v1 = vof_hint_type v1
+    and v2 = vof_hint_type v2
+    in Ocaml.VSum (("HintTypeConst", [ v1; v2]))
 
 and
   vof_class_def {

@@ -473,6 +473,8 @@ and hint_type env = function
       xs +> brace +> comma_list +> List.map (fun (e, _tok, t) ->
         expr env e, hint_type env t
       ))
+  | HintTypeConst (lhs, _tok, rhs) ->
+    A.HintTypeConst (hint_type env lhs, hint_type env rhs)
 
 (* ------------------------------------------------------------------------- *)
 (* Definitions *)

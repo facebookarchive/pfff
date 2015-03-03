@@ -873,8 +873,15 @@ and v_hint_type x =
                 in ()))
           v2
       in ()
+  | HintTypeConst ((v1, v2, v3)) ->
+      let v1 = v_hint_type v1
+      and v2 = v_tok v2
+      and v3 = v_hint_type v3
+      in ()
   in
   vin.khint_type (k, all_functions) x
+
+
 
 and v_is_ref v = v_option v_tok v
 

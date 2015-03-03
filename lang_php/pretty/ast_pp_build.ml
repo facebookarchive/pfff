@@ -620,8 +620,9 @@ and hint_type env = function
     in
     A.HintCallback (args, ret)
   | HintShape _ ->
-    failwith "no support shape"
-
+    failwith "no support for shape"
+  | HintTypeConst _ ->
+    failwith "no support for type consts"
 
 and class_name_reference env a = expr env a
 

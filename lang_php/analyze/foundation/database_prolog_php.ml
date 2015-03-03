@@ -94,6 +94,7 @@ let rec string_of_hint_type x =
     "(" ^ (String.concat ", " elts) ^ ")"
   | HintCallback _ -> "callback"
   | HintShape _ -> "shape"
+  | HintTypeConst _ -> "typeconst"
 
 let string_of_hint_type_opt h =
   match h with

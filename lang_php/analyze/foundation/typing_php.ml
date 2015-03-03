@@ -785,6 +785,7 @@ and parameter env p =
     | Some (HintTuple _)
     | Some (HintCallback _) -> Tvar (fresh())
     | Some (HintShape _) -> failwith "no support for shape yet"
+    | Some (HintTypeConst _) -> failwith "no support for type consts"
   in
   (match p.p_default with
   | None -> ()

@@ -934,6 +934,11 @@ variance_opt:
 /*(*************************************************************************)*/
 
 type_php:
+ | primary_type_php { $1 }
+/*(*facebook-ext: classes can define type constants referenced using `::`*)*/
+ | type_php TCOLCOL primary_type_php { HintTypeConst ($1, $2, $3) }
+
+primary_type_php:
  | class_name { $1 }
  | T_SELF     { Hint (Self $1, None) }
  | T_PARENT   { Hint (Parent $1, None) }
@@ -944,6 +949,7 @@ type_php:
      { HintTuple ($1, $2, $3) }
  | TOPAR T_FUNCTION TOPAR type_php_or_dots_list TCPAR return_type TCPAR
      { HintCallback ($1, ($2, ($3, $4, $5), Some $6), $7)}
+
 
 /*(* similar to parameter_list, but without names for the parameters *)*/
 type_php_or_dots_list:

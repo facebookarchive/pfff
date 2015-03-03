@@ -144,11 +144,15 @@ type hint_type =
  | HintCallback of
      (tok                                 (* "function" *)
       * (hint_type comma_list_dots paren) (* params *)
-      * (tok * tok option * hint_type) option          (* return type *)
+      * (tok * tok option * hint_type) option (* return type *)
      ) paren
  | HintShape of
      tok (* "shape" *) *
      (string_const_expr * tok (* '=>' *) * hint_type) comma_list paren
+ | HintTypeConst of
+     hint_type   (* lhs *)
+     * tok       (* '::' *)
+     * hint_type (* rhs *)
 
  and type_args = hint_type comma_list single_angle
 

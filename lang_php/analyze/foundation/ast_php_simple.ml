@@ -307,6 +307,7 @@ and hint_type =
  | HintTuple of hint_type list
  | HintCallback of hint_type list * (hint_type option)
  | HintShape of (string_const_expr * hint_type) list
+ | HintTypeConst of (hint_type * hint_type)
 
 and class_name = hint_type
 

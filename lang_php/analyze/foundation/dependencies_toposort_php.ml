@@ -185,6 +185,10 @@ module Deps = struct
     | HintShape xs ->
       List.fold_left (fun accp (_s,x) ->
         SSet.union accp (hint_type_ accp x)) acc xs
+    | HintTypeConst (x1, x2) ->
+      List.fold_left (fun accp x ->
+        SSet.union accp (hint_type_ accp x)) acc [x1; x2]
+      
 
 
   and class_def acc c =
