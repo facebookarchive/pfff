@@ -981,6 +981,9 @@ and vof_class_stmt =
       and v3 = vof_hint_type v3
       and v4 = vof_tok v4
       in Ocaml.VSum (("TraitConstraint", [ v1; v2; v3; v4 ]))
+  | ClassType ((v1)) ->
+      let v1 = vof_type_def v1
+      in Ocaml.VSum (("ClassType", [v1]))
   | ClassConstants ((v1, v2, opt_ty, v3, v4)) ->
       let v1 = vof_option vof_tok v1
       and v2 = vof_tok v2
@@ -1273,6 +1276,8 @@ and vof_type_def_kind =
   | Alias v1 -> let v1 = vof_hint_type v1 in Ocaml.VSum (("Alias", [ v1 ]))
   | Newtype v1 ->
       let v1 = vof_hint_type v1 in Ocaml.VSum (("Newtype", [ v1 ]))
+  | ClassConstType v1 ->
+    let v1 = vof_option vof_hint_type v1 in Ocaml.VSum (("ClassConstType", [v1]))
 
 and vof_namespace_use_rule =
   function

@@ -946,6 +946,9 @@ and v_class_stmt x =
       and v3 = v_hint_type v3
       and v4 = v_tok v4
       in ()
+  | ClassType ((v1))->
+      let v1 = v_type_def v1
+      in ()
   | ClassConstants ((v1, v2, opt_ty, v3, v4)) ->
       let v1 = v_option v_tok v1
       and v2 = v_tok v2
@@ -1146,6 +1149,7 @@ and v_type_def_kind =
   function
   | Alias v1 -> let v1 = v_hint_type v1 in ()
   | Newtype v1 -> let v1 = v_hint_type v1 in ()
+  | ClassConstType v1 -> let v1 = v_option v_hint_type v1 in ()
 and v_namespace_use_rule =
   function
   | ImportNamespace v1 -> let v1 = v_qualified_ident v1 in ()

@@ -126,7 +126,9 @@ module PI = Parse_info
  T_SELF T_PARENT
  /*(* facebook extension *)*/
  T_TYPE T_NEWTYPE T_SHAPE
-
+%left T_TYPE
+%left T_IDENT
+%right T_ELLIPSIS
 /*(*-----------------------------------------*)*/
 /*(*2 Symbol tokens *)*/
 /*(*-----------------------------------------*)*/
@@ -687,6 +689,38 @@ class_statement:
      { let const = (Name $4, None) in
        let const_list = [Left const] in
        ClassConstants(Some $1, $2, Some $3, const_list, $5) }
+
+/*(* facebook-ext: type constants *)*/
+ | T_ABSTRACT T_CONST T_TYPE T_IDENT T_AS type_php TSEMICOLON
+     { ClassType (* TODO (t6384084) add some fields here *) {
+         t_tok = $3;
+         t_name = Name $4;
+         t_tparams = None;
+         t_tconstraint = Some($5, $6);
+         t_tokeq = $5; (* doesn't exist here *)
+         t_kind = ClassConstType None;
+         t_sc = $7; }
+     }
+ | T_ABSTRACT T_CONST T_TYPE T_IDENT TSEMICOLON
+     { ClassType (* TODO (t6384084) add some fields here *) {
+         t_tok = $3;
+         t_name = Name $4;
+         t_tparams = None;
+         t_tconstraint = None;
+         t_tokeq = $5; (* doesn't exist here *)
+         t_kind = ClassConstType None;
+         t_sc = $5; }
+     }
+ | T_CONST T_TYPE T_IDENT type_constr_opt TEQ type_php_or_shape TSEMICOLON
+     { ClassType (* TODO (t6384084) add some fields here *) {
+         t_tok = $2;
+         t_name = Name $3;
+         t_tparams = None;
+         t_tconstraint = $4;
+         t_tokeq = $5;
+         t_kind = ClassConstType (Some $6);
+         t_sc = $7; }
+     }
 
 /*(* class constants *)*/
  | T_CONST          class_constants_declaration  TSEMICOLON

@@ -372,7 +372,8 @@ let visit_program ~tag _prefs  hentities (ast, toks) =
           tag info (Entity (Class, (Use2 fake_no_use2)));
          );
         k x
-      | Ast.TraitConstraint (_, _kind, _ty, _) ->
+      | Ast.TraitConstraint (_, _, _, _) 
+      | Ast.ClassType _ ->
           k x
     );
 

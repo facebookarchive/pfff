@@ -2599,7 +2599,7 @@ and m_class_stmt a b =
         B.TraitConstraint(b1, b2, b3, b4)
       )
     ))))
-
+  | A.ClassType _, _
   | A.ClassConstants _, _
   | A.ClassVariables _, _
   | A.Method _, _

@@ -303,6 +303,7 @@ let visit ~add readable ast =
           )
 
         | UseTrait _ -> ()
+        | ClassType _ -> ()
         | TraitConstraint _ -> ()
         )
       | _ -> k x

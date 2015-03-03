@@ -651,7 +651,7 @@ and class_def = {
     (* facebook-ext: 'require' can appear only in traits *)
     | TraitConstraint of
         tok (* require *) * trait_constraint_kind wrap * hint_type * tok (* ; *)
-
+    | ClassType of type_def
  and class_constant = ident * static_scalar_affect option
  and class_variable = dname * static_scalar_affect option
  and class_var_modifier =
@@ -742,6 +742,7 @@ and type_def = {
   and type_def_kind =
   | Alias   of hint_type
   | Newtype of hint_type
+  | ClassConstType of hint_type option
 
 (* ------------------------------------------------------------------------- *)
 (* Other declarations *)

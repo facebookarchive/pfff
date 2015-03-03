@@ -413,6 +413,7 @@ and type_def = {
   and type_def_kind =
   | Alias of hint_type
   | Newtype of hint_type
+  | ClassConstType of hint_type option
  (* with tarzan *)
 
 (* ------------------------------------------------------------------------- *)

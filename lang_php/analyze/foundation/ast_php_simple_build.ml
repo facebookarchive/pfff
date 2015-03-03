@@ -558,6 +558,10 @@ and type_def env def =
 and type_def_kind env = function
   | Alias t -> A.Alias (hint_type env t)
   | Newtype t -> A.Newtype (hint_type env t)
+  | ClassConstType v1 -> A.ClassConstType
+    (match v1 with
+    | Some x -> Some (hint_type env x)
+    | None -> None)
 
 
 and class_def env c =
@@ -707,7 +711,7 @@ and class_body env st (mets, flds) =
     met::mets, more_flds @ flds
 
   | ClassVariables _ | ClassConstants _ | UseTrait _
-  | XhpDecl _ | TraitConstraint _
+  | XhpDecl _ | TraitConstraint _ | ClassType _
     -> (mets, flds)
 
 and method_def env m =

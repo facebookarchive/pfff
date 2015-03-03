@@ -932,6 +932,9 @@ and map_class_stmt =
       and v3 = map_hint_type v3
       and v4 = map_tok v4
       in TraitConstraint ((v1, v2, v3, v4))
+  | ClassType ((v1)) ->
+      let v1 = map_type_def v1
+      in ClassType ((v1))
   | ClassConstants ((v1, v2, opt_ty, v3, v4)) ->
       let v1 = map_option map_tok v1
       and v2 = map_tok v2
@@ -1198,6 +1201,8 @@ and map_type_def_kind =
   function
   | Alias v1 -> let v1 = map_hint_type v1 in Alias ((v1))
   | Newtype v1 -> let v1 = map_hint_type v1 in Newtype ((v1))
+  | ClassConstType v1 ->
+    let v1 = map_option map_hint_type v1 in ClassConstType ((v1))
 
 and map_namespace_use_rule =
   function

@@ -113,6 +113,9 @@ and vof_type_def_kind =
   | Alias v1 -> let v1 = vof_hint_type v1 in Ocaml.VSum (("Alias", [ v1 ]))
   | Newtype v1 ->
       let v1 = vof_hint_type v1 in Ocaml.VSum (("Newtype", [ v1 ]))
+  | ClassConstType v1 ->
+      let v1 = Ocaml.vof_option vof_hint_type v1 in
+        Ocaml.VSum (("ClassConstType", [v1]))
 
 and vof_case =
   function

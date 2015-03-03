@@ -856,6 +856,7 @@ and type_def env def =
 
 and type_def_kind env = function
   | Alias t | Newtype t -> hint_type env t
+  | ClassConstType _t -> ()
 
 (* ---------------------------------------------------------------------- *)
 (* Types *)

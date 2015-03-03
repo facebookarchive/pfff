@@ -740,6 +740,7 @@ and class_body env st acc =
   | XhpDecl _ -> acc (* TODO xhp decl *)
   | UseTrait _ -> raise (TodoConstruct "UseTrait")
   | TraitConstraint _ -> raise (TodoConstruct "TraitConstraint")
+  | ClassType _ -> raise (TodoConstruct "ConstType")
 
 and method_def env m =
   let acc = [] in
