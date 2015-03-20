@@ -25,9 +25,6 @@ stdlib: update
 	# For one reason or another, we hand-roll these.
 	rm stdlib/idl/builtins_asio.idl.hhi
 	rm stdlib/idl/builtins_collections.idl.hhi
-	rm stdlib/idl/builtins_continuation.idl.hhi
-	rm stdlib/idl/builtins_domdocument.idl.hhi
-	rm stdlib/idl/builtins_xmlreader.idl.hhi
 	rm stdlib/idl/facebook/builtins_string_buffer.idl.hhi
 
 check:

@@ -1,24 +1,15 @@
-TOP=..
+TOP=../..
 ##############################################################################
 # Variables
 ##############################################################################
 TARGET=lib
 
-SRC= graph_code.ml graph_code_opti.ml \
-     dependencies_matrix_code.ml dependencies_matrix_build.ml \
-     graph_code_tags.ml graph_code_database.ml graph_code_prolog.ml \
-     graph_code_class_analysis.ml graph_code_helpers.ml \
-     graph_code_checker.ml \
-     layer_graph_code.ml \
-     test_graph_code.ml unit_graph_code.ml
-
+SRC= graph.ml
 SYSLIBS= str.cma unix.cma
-LIBS=../commons/lib.cma
+LIBS=../../external/ocamlgraph/ocamlgraph.cma
 INCLUDEDIRS= $(TOP)/commons \
- $(TOP)/commons/graph \
- $(TOP)/commons/ocamlextra \
- $(TOP)/external/ocamlgraph $(TOP)/external/ocamlgraph/src \
- $(TOP)/h_program-lang
+ $(TOP)/external/ocamlgraph/ \
+ $(TOP)/external/ocamlgraph/src \
 
 ##############################################################################
 # Generic variables
@@ -41,22 +32,9 @@ $(TARGET).cmxa: $(OPTOBJS) $(LIBS:.cma=.cmxa)
 ##############################################################################
 # install
 ##############################################################################
-LIBNAME=pfff-graph_code
+LIBNAME=pfff-commons-graph
 EXPORTSRC=\
-  dependencies_matrix_build.mli \
-  dependencies_matrix_code.mli \
-  graph_code_checker.mli \
-  graph_code_class_analysis.mli \
-  graph_code_database.mli \
-  graph_code_helpers.mli \
-  graph_code.mli \
-  graph_code_opti.mli \
-  graph_code_prolog.mli \
-  graph_code_tags.mli \
-  layer_graph_code.mli \
-  test_graph_code.mli \
-  unit_graph_code.mli \
-
+  graph.mli
 
 install-findlib: all all.opt
 	ocamlfind install $(LIBNAME) META \

@@ -829,6 +829,11 @@ and map_hint_type =
                 in (v1, v2, v3)))
           v2
       in HintShape ((v1, v2))
+  | HintTypeConst ((v1, v2, v3)) ->
+      let v1 = map_hint_type v1
+      and v2 = map_tok v2
+      and v3 = map_hint_type v3
+      in HintTypeConst ((v1, v2, v3))
 
 and map_is_ref v = map_of_option map_tok v
 and map_lambda_def (v1, v2) =
@@ -927,12 +932,16 @@ and map_class_stmt =
       and v3 = map_hint_type v3
       and v4 = map_tok v4
       in TraitConstraint ((v1, v2, v3, v4))
-  | ClassConstants ((v1, opt_ty, v2, v3)) ->
-      let v1 = map_tok v1
+  | ClassType ((v1)) ->
+      let v1 = map_type_def v1
+      in ClassType ((v1))
+  | ClassConstants ((v1, v2, opt_ty, v3, v4)) ->
+      let v1 = map_option map_tok v1
+      and v2 = map_tok v2
       and opt_ty = map_option map_hint_type opt_ty
-      and v2 = map_comma_list map_class_constant v2
-      and v3 = map_tok v3
-      in ClassConstants ((v1, opt_ty, v2, v3))
+      and v3 = map_comma_list map_class_constant v3
+      and v4 = map_tok v4
+      in ClassConstants ((v1, v2, opt_ty, v3, v4))
   | ClassVariables ((v1, opt_ty, v2, v3)) ->
       let v1 = map_class_var_modifier v1
       and opt_ty = map_option map_hint_type opt_ty
@@ -1052,7 +1061,9 @@ and map_xhp_category_decl v = map_wrap map_xhp_tag v
 
 
 and map_class_constant (v1, v2) =
-  let v1 = map_ident v1 and v2 = map_static_scalar_affect v2 in (v1, v2)
+  let v1 = map_ident v1
+  and v2 = map_of_option map_static_scalar_affect v2
+  in (v1, v2)
 and map_class_variable (v1, v2) =
   let v1 = map_dname v1
   and v2 = map_of_option map_static_scalar_affect v2
@@ -1103,7 +1114,7 @@ and map_short_lambda_def { sl_modifiers = v_sl_modifiers;
                          } =
   let v_sl_modifiers = map_of_list (map_wrap map_modifier) v_sl_modifiers in
   let v_sl_body = map_short_lambda_body v_sl_body in
-  let v_sl_tok = map_tok v_sl_tok in
+  let v_sl_tok = map_of_option map_tok v_sl_tok in
   let v_sl_params = map_short_lambda_params v_sl_params in
   {
     sl_modifiers = v_sl_modifiers;
@@ -1117,6 +1128,7 @@ and map_short_lambda_params =
   | SLParams v1 ->
       let v1 = map_paren (map_comma_list_dots map_parameter) v1
       in SLParams ((v1))
+  | SLParamsOmitted -> SLParamsOmitted
 and map_short_lambda_body =
   function
   | SLExpr v1 -> let v1 = map_expr v1 in SLExpr ((v1))
@@ -1189,6 +1201,8 @@ and map_type_def_kind =
   function
   | Alias v1 -> let v1 = map_hint_type v1 in Alias ((v1))
   | Newtype v1 -> let v1 = map_hint_type v1 in Newtype ((v1))
+  | ClassConstType v1 ->
+    let v1 = map_option map_hint_type v1 in ClassConstType ((v1))
 
 and map_namespace_use_rule =
   function

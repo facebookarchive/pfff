@@ -102,11 +102,6 @@ MYREGEXPSRC=regexp.ml
 REGEXPINCLUDES=-I ../external/  -I ../../ocamlpcre/lib
 #REGEXPINCLUDES=-I +pcre
 
-#ocamlgraph
-MYGRAPHSRC=graph.ml
-GRAPHINCLUDES=-I ../external/ocamlgraph
-GRAPHSYSLIBS=graph.cma
-
 ##############################################################################
 # Generic variables
 ##############################################################################
@@ -254,18 +249,6 @@ commons_regexp.cmxa: $(MYREGEXPSRC:.ml=.cmx)
 realpath.o: ocamlextra/realpath.c
 	$(OCAMLC) -c $^ -o $@
 
-#-----------------------------------------------------------------------------
-graph:
-	$(MAKE) INCLUDESEXTRA="$(GRAPHINCLUDES)" commons_graph.cma
-graph.opt:
-	$(MAKE) INCLUDESEXTRA="$(GRAPHINCLUDES)" commons_graph.cmxa
-
-commons_graph.cma: $(MYGRAPHSRC:.ml=.cmo)
-	$(OCAMLC) -a -o $@ $^
-
-commons_graph.cmxa: $(MYGRAPHSRC:.ml=.cmx)
-	$(OCAMLOPT) -a -o $@ $^
-
 ##############################################################################
 # The global "features" lib wrapper
 ##############################################################################
@@ -283,7 +266,15 @@ commons_features.cmxa: features.cmx
 # install
 ##############################################################################
 LIBNAME=pfff-commons
-EXPORTSRC=common.mli common2.mli ocaml.mli ocamlextra/oUnit.mli
+EXPORTSRC=\
+  common.mli \
+  common2.mli \
+  ocaml.mli \
+  ocamlextra/oUnit.mli \
+  parallel.mli \
+  console.mli \
+  file_type.mli \
+  file_format.mli
 
 OCAMLSTDLIB=`ocamlc -where`
 install: all all.opt
@@ -299,7 +290,7 @@ install: all all.opt
 install-findlib: all all.opt
 	ocamlfind install $(LIBNAME) META  lib.cma lib.cmxa lib.a \
           dlllib.so liblib.a \
-          $(EXPORTSRC) $(EXPORTSRC:%.mli=%.cmi) 
+          $(EXPORTSRC) $(EXPORTSRC:%.mli=%.cmi)
 
 uninstall-findlib:
 	ocamlfind remove $(LIBNAME)

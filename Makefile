@@ -38,7 +38,7 @@ OPTPROGS= $(PROGS:=.opt)
 #------------------------------------------------------------------------------
 
 #format: XXXDIR, XXXCMD, XXXCMDOPT, XXXINCLUDE (if different XXXDIR), XXXCMA
-#template: 
+#template:
 #  ifeq ($(FEATURE_XXX), 1)
 #  XXXDIR=xxx
 #  XXXCMD= $(MAKE) -C xxx &&  $(MAKE) xxx -C commons
@@ -56,7 +56,7 @@ JSONCMA=external/jsonwheel/lib.cma
 
 ifeq ($(FEATURE_VISUAL),1)
 GUIDIR=external/ocamlgtk
-GUICMD= $(MAKE) all -C $(GUIDIR) && $(MAKE) gui -C commons 
+GUICMD= $(MAKE) all -C $(GUIDIR) && $(MAKE) gui -C commons
 GUICMDOPT= $(MAKE) opt -C $(GUIDIR) && $(MAKE) gui.opt -C commons;
 GTKINCLUDE=external/ocamlgtk/src
 
@@ -67,10 +67,10 @@ VISUALDIRS=code_map code_graph
 endif
 
 # should be FEATURE_OCAMLGRAPH, or should give dependencies between features
-GRAPHCMA=external/ocamlgraph/ocamlgraph.cma commons/commons_graph.cma
+GRAPHCMA=external/ocamlgraph/ocamlgraph.cma commons/graph/lib.cma
 GRAPHDIR=external/ocamlgraph
-GRAPHCMD= $(MAKE) all -C $(GRAPHDIR) && $(MAKE) graph -C commons
-GRAPHCMDOPT= $(MAKE) all.opt -C $(GRAPHDIR) && $(MAKE) graph.opt -C commons
+GRAPHCMD= $(MAKE) all -C $(GRAPHDIR) && $(MAKE) -C commons/graph
+GRAPHCMDOPT= $(MAKE) all.opt -C $(GRAPHDIR) && $(MAKE) all.opt -C commons/graph
 
 ifeq ($(FEATURE_BYTECODE), 1)
 ZIPDIR=external/ocamlzip
@@ -199,6 +199,7 @@ LIBS= commons/lib.cma \
     mini/lib.cma
 
 MAKESUBDIRS=commons \
+  commons/graph \
   $(JSONDIR) \
   $(GRAPHDIR) \
   $(GUIDIR) $(CAIRODIR) \
@@ -281,11 +282,11 @@ PP=-pp "cpp $(CLANG_HACK) -DFEATURE_BYTECODE=$(FEATURE_BYTECODE) -DFEATURE_CMT=$
 #could try to compile $(EXEC) before rec. So here force sequentiality.
 
 all:: Makefile.config
-	$(MAKE) rec 
+	$(MAKE) rec
 	$(MAKE) $(PROGS)
 opt:
-	$(MAKE) rec.opt 
-	$(MAKE) $(OPTPROGS) 
+	$(MAKE) rec.opt
+	$(MAKE) $(OPTPROGS)
 all.opt: opt
 top: $(TARGET).top
 
@@ -293,15 +294,15 @@ rec:
 	$(MAKE) -C commons
 	$(GRAPHCMD)
 	$(GUICMD)
-	$(MAKE) features -C commons 
-	set -e; for i in $(MAKESUBDIRS); do $(MAKE) -C $$i all || exit 1; done 
+	$(MAKE) features -C commons
+	set -e; for i in $(MAKESUBDIRS); do $(MAKE) -C $$i all || exit 1; done
 
 rec.opt:
-	$(MAKE) all.opt -C commons 
+	$(MAKE) all.opt -C commons
 	$(GRAPHCMDOPT)
 	$(GUICMDOPT)
-	$(MAKE) features.opt -C commons 
-	set -e; for i in $(MAKESUBDIRS); do $(MAKE) -C $$i all.opt || exit 1; done 
+	$(MAKE) features.opt -C commons
+	set -e; for i in $(MAKESUBDIRS); do $(MAKE) -C $$i all.opt || exit 1; done
 
 
 $(TARGET): $(BASICLIBS) $(OBJS) main.cmo
@@ -311,7 +312,7 @@ $(TARGET).opt: $(BASICLIBS:.cma=.cmxa) $(OPTOBJS) main.cmx
 	$(OCAMLOPT) $(STATIC) -o $@ $(SYSLIBS:.cma=.cmxa)  $^
 
 
-$(TARGET).top: $(LIBS) $(OBJS) 
+$(TARGET).top: $(LIBS) $(OBJS)
 	$(OCAMLMKTOP) -o $@ $(SYSLIBS) threads.cma $^
 
 
@@ -319,17 +320,17 @@ $(TARGET).top: $(LIBS) $(OBJS)
 
 clean::
 	rm -f $(TARGET)
-clean:: 
+clean::
 	rm -f $(TARGET).top
 clean::
-	set -e; for i in $(MAKESUBDIRS); do $(MAKE) -C $$i clean; done 
+	set -e; for i in $(MAKESUBDIRS); do $(MAKE) -C $$i clean; done
 clean::
 	rm -f *.opt
 
 depend::
 	set -e; for i in $(MAKESUBDIRS); do echo $$i; $(MAKE) -C $$i depend; done
 
-Makefile.config:    
+Makefile.config:
 	@echo "Makefile.config is missing. Have you run ./configure?"
 	@exit 1
 
@@ -358,7 +359,7 @@ purebytecode:
 # stags targets (was pfff_tags)
 #------------------------------------------------------------------------------
 
-stags: $(LIBS) $(OBJS) main_stags.cmo 
+stags: $(LIBS) $(OBJS) main_stags.cmo
 	$(OCAMLC) $(CUSTOM) -o $@ $(SYSLIBS) $^
 stags.opt: $(LIBS:.cma=.cmxa) $(OPTOBJS) main_stags.cmx
 	$(OCAMLOPT) $(STATIC) -o $@ $(SYSLIBS:.cma=.cmxa) $^
@@ -369,14 +370,14 @@ clean::
 # sgrep/spatch targets
 #------------------------------------------------------------------------------
 
-sgrep: $(BASICLIBS) $(OBJS) main_sgrep.cmo 
+sgrep: $(BASICLIBS) $(OBJS) main_sgrep.cmo
 	$(OCAMLC) $(CUSTOM) -o $@ $(BASICSYSLIBS) $^
 sgrep.opt: $(BASICLIBS:.cma=.cmxa) $(OPTOBJS) main_sgrep.cmx
 	$(OCAMLOPT) $(STATIC) -o $@ $(BASICSYSLIBS:.cma=.cmxa) $^
 clean::
 	rm -f sgrep
 
-spatch: $(BASICLIBS) $(OBJS) main_spatch.cmo 
+spatch: $(BASICLIBS) $(OBJS) main_spatch.cmo
 	$(OCAMLC) $(CUSTOM) -o $@ $(BASICSYSLIBS) $^
 spatch.opt: $(BASICLIBS:.cma=.cmxa) $(OPTOBJS) main_spatch.cmx
 	$(OCAMLOPT) $(STATIC) -o $@ $(BASICSYSLIBS:.cma=.cmxa) $^
@@ -387,7 +388,7 @@ clean::
 # scheck targets
 #------------------------------------------------------------------------------
 
-scheck: $(LIBS) $(OBJS) main_scheck.cmo 
+scheck: $(LIBS) $(OBJS) main_scheck.cmo
 	$(OCAMLC) $(CUSTOM) -o $@ $(SYSLIBS) $^
 scheck.opt: $(LIBS:.cma=.cmxa) $(OPTOBJS) main_scheck.cmx
 	$(OCAMLOPT) $(STATIC) -o $@ $(SYSLIBS:.cma=.cmxa) $^
@@ -398,18 +399,18 @@ clean::
 # codequery targets
 #------------------------------------------------------------------------------
 
-codequery: $(LIBS) $(OBJS) main_codequery.cmo 
+codequery: $(LIBS) $(OBJS) main_codequery.cmo
 	$(OCAMLC) $(CUSTOM) -o $@ $(SYSLIBS) $^
 codequery.opt: $(LIBS:.cma=.cmxa) $(LIBS2:.cma=.cmxa) $(OBJS2:.cmo=.cmx) $(OPTOBJS) main_codequery.cmx
-	$(OCAMLOPT) $(STATIC) -o $@ $(SYSLIBS:.cma=.cmxa)   $^ 
-clean:: 
+	$(OCAMLOPT) $(STATIC) -o $@ $(SYSLIBS:.cma=.cmxa)   $^
+clean::
 	rm -f codequery
 
 #------------------------------------------------------------------------------
 # codeslicer targets
 #------------------------------------------------------------------------------
 
-codeslicer: $(LIBS) $(OBJS) main_codeslicer.cmo 
+codeslicer: $(LIBS) $(OBJS) main_codeslicer.cmo
 	$(OCAMLC) $(CUSTOM) -o $@ $(SYSLIBS) $^
 codeslicer.opt: $(LIBS:.cma=.cmxa) $(OPTOBJS) main_codeslicer.cmx
 	$(OCAMLOPT) $(STATIC) -o $@ $(SYSLIBS:.cma=.cmxa) $^
@@ -420,11 +421,11 @@ clean::
 # pfff_db targets
 #------------------------------------------------------------------------------
 
-pfff_db: $(LIBS) $(OBJS) main_db.cmo 
+pfff_db: $(LIBS) $(OBJS) main_db.cmo
 	$(OCAMLC) $(CUSTOM) -o $@ $(SYSLIBS) $^
 pfff_db.opt: $(LIBS:.cma=.cmxa) $(LIBS2:.cma=.cmxa) $(OBJS2:.cmo=.cmx) $(OPTOBJS) main_db.cmx
-	$(OCAMLOPT) $(STATIC) -o $@ $(SYSLIBS:.cma=.cmxa)   $^ 
-clean:: 
+	$(OCAMLOPT) $(STATIC) -o $@ $(SYSLIBS:.cma=.cmxa)   $^
+clean::
 	rm -f pfff_db
 
 #------------------------------------------------------------------------------
@@ -471,7 +472,7 @@ clean::
 # pfff_test targets
 #------------------------------------------------------------------------------
 
-pfff_test: $(LIBS) $(OBJS) main_test.cmo 
+pfff_test: $(LIBS) $(OBJS) main_test.cmo
 	$(OCAMLC) $(CUSTOM) -o $@ $(SYSLIBS) $^
 pfff_test.opt: $(LIBS:.cma=.cmxa) $(OPTOBJS) main_test.cmx
 	$(OCAMLOPT) $(STATIC) -o $@ $(SYSLIBS:.cma=.cmxa) $^
@@ -507,11 +508,19 @@ uninstall:
 
 INSTALL_SUBDIRS= \
   commons \
+  commons/graph \
   h_program-lang    matcher \
+  h_version-control \
   lang_ml/parsing \
+  lang_php/analyze \
+  lang_php/matcher \
   lang_php/parsing \
+  lang_php/pretty \
   lang_cpp/parsing lang_java/parsing \
   lang_js/parsing lang_css/parsing lang_html/parsing \
+  external/jsonwheel \
+  external/ocamlgraph \
+  graph_code
 
 LIBNAME=pfff
 install-findlib:: all all.opt
@@ -531,8 +540,8 @@ version:
 PACKAGE=$(TARGET)-$(VERSION)
 TMP=/tmp
 
-package: 
-	make srctar 
+package:
+	make srctar
 
 srctar:
 	make clean
@@ -598,7 +607,7 @@ loc:
 tests:
 	$(MAKE) rec && $(MAKE) pfff_test
 	./pfff_test -verbose all
-test: 
+test:
 	make tests
 
 push:
@@ -678,9 +687,9 @@ DARCSFORESTS=commons \
 
 update_darcs:
 	darcs pull
-	set -e; for i in $(DARCSFORESTS); do cd $$i; darcs pull; cd ..; done 
+	set -e; for i in $(DARCSFORESTS); do cd $$i; darcs pull; cd ..; done
 
 diff_darcs:
 	@echo "----- REPO:" top "----------------------"
 	darcs diff -u
-	set -e; for i in $(DARCSFORESTS); do cd $$i; echo "----- REPO:" $$i "-----------------"; darcs diff -u; cd $(TOP); done 
+	set -e; for i in $(DARCSFORESTS); do cd $$i; echo "----- REPO:" $$i "-----------------"; darcs diff -u; cd $(TOP); done

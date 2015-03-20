@@ -21,7 +21,7 @@ TARGET1=vcs
 
 PROGS=$(TARGET1)
 
-SYSLIBS1=nums.cma bigarray.cma str.cma unix.cma 
+SYSLIBS1=nums.cma bigarray.cma str.cma unix.cma
 SYSLIBS= $(SYSLIBS1)
 
 ##############################################################################
@@ -42,11 +42,32 @@ $(TARGET).cmxa: $(OPTOBJS) $(LIBS:.cma=.cmxa)
 	$(OCAMLOPT) -a -o $@ $(OPTOBJS)
 
 
-$(TARGET1): $(LIBS) $(EXTRALIBS) $(OBJS) main_vcs.cmo 
-	$(OCAMLC) -custom -o $@ $(SYSLIBS) $^ 
+$(TARGET1): $(LIBS) $(EXTRALIBS) $(OBJS) main_vcs.cmo
+	$(OCAMLC) -custom -o $@ $(SYSLIBS) $^
 
 $(TARGET1).opt: $(LIBS:.cma=.cmxa) $(EXTRALIBS:.cma=.cmxa) $(OBJS:.cmo=.cmx) main_vcs.cmx
-	$(OCAMLOPT) $(STATIC) -o $@ $(SYSLIBS:.cma=.cmxa) $^ 
+	$(OCAMLOPT) $(STATIC) -o $@ $(SYSLIBS:.cma=.cmxa) $^
 
 clean::
 	rm -f $(PROGS)
+
+##############################################################################
+# install
+##############################################################################
+LIBNAME=pfff-h_version-control
+EXPORTSRC=\
+  cvs.mli \
+  generic_vcs.mli \
+  git.mli \
+  lib_vcs.mli \
+  mercurial.mli \
+  patch.mli \
+  subversion.mli \
+  test_version_control.mli \
+  unit_version_control.mli \
+  version_control.mli \
+
+install-findlib: all all.opt
+	ocamlfind install $(LIBNAME) META \
+          lib.cma lib.cmxa lib.a \
+          $(EXPORTSRC) $(EXPORTSRC:%.mli=%.cmi)

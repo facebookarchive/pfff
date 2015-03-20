@@ -55,7 +55,7 @@ let place_ids current_file ids db =
         else PlaceExternal
   | x::y::xs ->
       let other_files =
-        List.map (fun id -> "TODO" (* DbPHP.filename_of_id id db *)) ids 
+        List.map (fun id -> "TODO" (* DbPHP.filename_of_id id db *)) ids
         +> Common2.uniq
       in
       if List.mem current_file other_files
@@ -63,7 +63,7 @@ let place_ids current_file ids db =
       else
         if other_files +> List.exists (fun other_file ->
           Common2.dirname current_file = Common2.dirname other_file
-        ) 
+        )
         then PlaceSameDir
         else PlaceExternal
 *)
@@ -183,7 +183,7 @@ let tag_name ~tag name =
 let tag_class_name_reference ~tag qualif =
   match qualif with
   | Id name -> tag_name ~tag name
-  | _ -> 
+  | _ ->
     let ii = Lib_parsing_php.ii_of_any (Expr qualif) in
     ii +> List.iter (fun info -> tag info PointerCall)
 
@@ -206,7 +206,7 @@ let tag_class_name_reference ~tag qualif =
  * AST or its list of tokens. The tokens are easier for tagging keywords,
  * number and basic entities. The Ast is better for tagging idents
  * to figure out what kind of ident it is (a function, a class, a constant)
- * 
+ *
  * history:
  *  - I was using emacs_mode_xxx before but now have inlined the code
  *    and extended it.
@@ -353,7 +353,7 @@ let visit_program ~tag _prefs  hentities (ast, toks) =
             tag ii (Entity (Type, (Use2 fake_no_use2)))
           );
         )
-      | Ast.ClassConstants (_, _, vars, _) ->
+      | Ast.ClassConstants (_, _, _, vars, _) ->
         vars +> Ast.uncomma +> List.iter (fun (name, _opt) ->
           let info = Ast.info_of_ident name in
           tag info (Entity (Constant, (Def2 NoUse)));
@@ -372,7 +372,8 @@ let visit_program ~tag _prefs  hentities (ast, toks) =
           tag info (Entity (Class, (Use2 fake_no_use2)));
          );
         k x
-      | Ast.TraitConstraint (_, _kind, _ty, _) ->
+      | Ast.TraitConstraint (_, _, _, _) 
+      | Ast.ClassType _ ->
           k x
     );
 
@@ -489,7 +490,7 @@ let visit_program ~tag _prefs  hentities (ast, toks) =
           tag tok BadSmell;
         );
         k expr
-      | New (_, qualif, _) | AssignNew (_, _, _, _, qualif, _) 
+      | New (_, qualif, _) | AssignNew (_, _, _, _, qualif, _)
       | InstanceOf (_, _, qualif)
         ->
         tag_class_name_reference ~tag qualif;
@@ -542,7 +543,7 @@ let visit_program ~tag _prefs  hentities (ast, toks) =
           | EncapsString (_s, ii) ->
             tag ii EmbededUrl
           | EncapsExpr (_, _, _) | EncapsDollarCurly (_, _, _)
-          | EncapsCurly (_, _, _) | EncapsVar _ 
+          | EncapsCurly (_, _, _) | EncapsVar _
             -> ()
           );
         | XhpAttrExpr _e -> ()
@@ -587,12 +588,13 @@ let visit_program ~tag _prefs  hentities (ast, toks) =
     V.khint_type = (fun (k, _) x ->
       (match x with
       (* TODO: emit info for type args *)
-      | Hint (name, _targsTODO) -> 
+      | Hint (name, _targsTODO) ->
         tag_name ~tag name
-      | HintArray _ | HintQuestion _ | HintTuple _ 
+      | HintArray _ | HintQuestion _ | HintTuple _
       | HintCallback _
         (* todo: colorize as record the keys? *)
-      | HintShape _ 
+      | HintShape _
+      | HintTypeConst _
         ->
         ()
       );
@@ -601,7 +603,7 @@ let visit_program ~tag _prefs  hentities (ast, toks) =
   }
   in
   let visitor = V.mk_visitor hooks in
-  (try 
+  (try
     visitor (Program ast)
   with Ast_php.TodoNamespace _ -> ()
   );
@@ -622,11 +624,12 @@ let visit_program ~tag _prefs  hentities (ast, toks) =
       if not (Hashtbl.mem already_tagged ii)
       then tag ii Error
     (* they should have been covered before *)
-    | T.T_VARIABLE (_, ii) | T.T_VARIABLE_VARIADIC(_, ii) ->
+    | T.T_VARIABLE (_, ii) ->
       if not (Hashtbl.mem already_tagged ii)
       then tag ii Error
 
     | T.TOPAR ii   | T.TCPAR ii
+    | T.T_LAMBDA_OPAR ii | T.T_LAMBDA_CPAR ii
     | T.TOBRACE ii | T.TCBRACE ii
     | T.TOBRA ii   | T.TCBRA ii
       ->tag ii Punctuation
@@ -714,7 +717,7 @@ let visit_program ~tag _prefs  hentities (ast, toks) =
 
     | T.T_CLASS ii | T.T_TRAIT ii | T.T_ENUM ii -> tag ii KeywordObject
 
-    | T.T_IMPLEMENTS ii | T.T_EXTENDS ii | T.T_INTERFACE ii -> 
+    | T.T_IMPLEMENTS ii | T.T_EXTENDS ii | T.T_INTERFACE ii ->
       tag ii KeywordObject
 
     | T.T_INSTEADOF ii -> tag ii KeywordObject
@@ -791,8 +794,8 @@ let visit_program ~tag _prefs  hentities (ast, toks) =
     | T.T_XHP_TEXT (_, ii) -> tag ii String
     | T.T_XHP_ATTR (_, ii) -> tag ii (Entity (Field, (Use2 fake_no_use2)))
 
-    | T.T_XHP_OPEN_TAG (_, ii) | T.T_XHP_CLOSE_TAG (_, ii) 
-    | T.T_XHP_SLASH_GT ii | T.T_XHP_GT ii 
+    | T.T_XHP_OPEN_TAG (_, ii) | T.T_XHP_CLOSE_TAG (_, ii)
+    | T.T_XHP_SLASH_GT ii | T.T_XHP_GT ii
       -> tag ii EmbededHtml
 
     (* should have been transformed into a XhpName or XhpInherit in Ast *)

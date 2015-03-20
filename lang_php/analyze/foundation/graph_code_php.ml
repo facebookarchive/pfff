@@ -814,7 +814,7 @@ and class_def env def =
 
   def.c_constants +> List.iter (fun def ->
     let env = add_node_and_has_edge env (def.cst_name, E.ClassConstant) in
-    expr env def.cst_body;
+    Common2.opt (expr env) def.cst_body;
   );
   (* See URL: https://github.com/facebook/xhp/wiki "Defining Attributes" *)
   def.c_xhp_fields +> List.iter (fun (def, req) ->
@@ -848,7 +848,7 @@ and class_def env def =
 
 and constant_def env def =
   let env = add_node_and_has_edge env (def.cst_name, E.Constant) in
-  expr env def.cst_body
+  Common2.opt (expr env) def.cst_body
 
 and type_def env def =
  let env = add_node_and_has_edge env (def.t_name, E.Type) in
@@ -856,6 +856,7 @@ and type_def env def =
 
 and type_def_kind env = function
   | Alias t | Newtype t -> hint_type env t
+  | ClassConstType _t -> ()
 
 (* ---------------------------------------------------------------------- *)
 (* Types *)
@@ -875,6 +876,9 @@ and hint_type env t =
     xs +> List.iter (fun (_ket, t) ->
       hint_type env t
     )
+  | HintTypeConst (x1, x2) ->
+    hint_type env x1;
+    hint_type env x2
 
 (* ---------------------------------------------------------------------- *)
 (* Expr *)
@@ -1285,4 +1289,3 @@ let build
   end;
   close_out chan;
   g, env.stats
-

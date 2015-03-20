@@ -101,7 +101,7 @@ let refactor refactorings (ast, tokens) =
               (match p.p_type with
               | None -> ()
               | Some x ->
-                  let tok =
+                let rec leftmost_tok x =
                     match x with
                     | HintArray tok -> tok
                     | Hint (name, _typeargs) -> Ast.info_of_name name
@@ -109,7 +109,9 @@ let refactor refactorings (ast, tokens) =
                     | HintTuple (t, _, _) -> t
                     | HintCallback (lparen,_,_) -> lparen
                     | HintShape (tok, _) -> tok
-                  in
+                    | HintTypeConst (hint, _, _) -> leftmost_tok hint
+                in
+                let tok = leftmost_tok x in
                   if tok_pos_equal_refactor_pos tok pos_opt then begin
                     tok.PI.transfo <-
                       PI.AddBefore (PI.AddStr ("?"));

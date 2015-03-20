@@ -531,14 +531,16 @@ and expr_ env heap x =
        *)
        (try
            let def = env.db.constants s in
-           expr env heap def.cst_body
-       with Not_found ->
-         (* todo: when used in an instanceof context, as in
-          * $x instanceof A, then Id will contain actually
-          * the name of a class.
-          *)
-         if !strict then raise (UnknownConstant s);
-         heap, Vany
+           (match def.cst_body with
+             | Some b -> expr env heap b
+             | None -> heap, Vany (* abstract constant? *)
+           )
+        with Not_found ->
+          (* todo: when used in an instanceof context, as in
+           * $x instanceof A, then Id will contain actually
+           * the name of a class. *)
+          if !strict then raise (UnknownConstant s);
+          heap, Vany
        )
 
   | Id ((_s,tok)::_) -> raise (Ast_php.TodoNamespace (Common2.some tok))
@@ -1363,8 +1365,12 @@ and build_new_ _env _heap _pname parent self c m =
 
 
 and cconstants env (heap, m) cst =
-  let heap, v = expr env heap cst.cst_body in
-  heap, SMap.add (A.unwrap cst.cst_name) v m
+  let name = A.unwrap cst.cst_name in
+  let heap, v = (match cst.cst_body with
+    | None -> Ptr.new_ heap
+    | Some b -> expr env heap b
+  ) in
+  heap, SMap.add name v m
 
 (* static is to indicate if we want create members for static variables. *)
 and class_vars env static (heap, m) cv =

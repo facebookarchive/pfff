@@ -94,6 +94,7 @@ let rec string_of_hint_type x =
     "(" ^ (String.concat ", " elts) ^ ")"
   | HintCallback _ -> "callback"
   | HintShape _ -> "shape"
+  | HintTypeConst _ -> "typeconst"
 
 let string_of_hint_type_opt h =
   match h with
@@ -242,8 +243,8 @@ let visit ~add readable ast =
 
           vx (ClassStmt class_stmt);
 
-        | ClassConstants (tok, _typopt, xs, _sc) ->
-          xs +> Ast.uncomma +> List.iter (fun (id, (_, e)) ->
+        | ClassConstants (_abstok, tok, _typopt, xs, _sc) ->
+          xs +> Ast.uncomma +> List.iter (fun (id, sc_opt) ->
             let s2 = Ast.str_of_ident id in
             current := spf "('%s', '%s')" s s2;
             Hashtbl.clear h;
@@ -251,7 +252,7 @@ let visit ~add readable ast =
             add (P.Kind (P.entity_of_str sfull, E.ClassConstant));
             add (P.At (P.entity_of_str sfull, readable, PI.line_of_info tok));
 
-            vx (Expr e);
+            sc_opt +> Common.do_option (fun (_, e) -> vx (Expr e))
           )
         | ClassVariables (ms, topt, xs, _sc) ->
 
@@ -277,9 +278,7 @@ let visit ~add readable ast =
               );
             );
             add (P.Type (P.entity_of_str sfull, string_of_hint_type_opt topt));
-            sc_opt +> Common.do_option (fun (_, e) ->
-              vx (Expr e)
-            )
+            sc_opt +> Common.do_option (fun (_, e) -> vx (Expr e))
           )
 
         | XhpDecl decl ->
@@ -304,6 +303,7 @@ let visit ~add readable ast =
           )
 
         | UseTrait _ -> ()
+        | ClassType _ -> ()
         | TraitConstraint _ -> ()
         )
       | _ -> k x

@@ -7,7 +7,7 @@ val program_with_comments:
   Parser_php.token list -> Ast_php.program -> Ast_pp.program
 
 (* used by spatch *)
-val toplevels: 
+val toplevels:
   Parser_php.token list -> Ast_php.toplevel list -> Ast_pp.stmt list
 
 val class_stmts:

@@ -442,10 +442,9 @@ let DOUBLE_QUOTES_CHARS =
     ("\\" ANY_CHAR))| DOUBLE_QUOTES_LITERAL_DOLLAR)
 let BACKQUOTE_CHARS =
   ("{"*([^'$' '`' '\\' '{']|('\\' ANY_CHAR))| BACKQUOTE_LITERAL_DOLLAR)
-let XHPLABEL =	['a'-'z''A'-'Z''_']['a'-'z''A'-'Z''0'-'9''_''-']*
-let XHPTAG = XHPLABEL (":" XHPLABEL)*
-(* is there some special restrictions for xhp attributes ? *)
-let XHPATTR = XHPLABEL
+let XHPLABEL = LABEL
+let XHPTAG = XHPLABEL ([':''-'] XHPLABEL)*
+let XHPATTR = XHPTAG
 
 (*****************************************************************************)
 (* Rule in script *)
@@ -557,9 +556,6 @@ rule st_in_scripting = parse
     | "?" { TQUESTION(tokinfo lexbuf) }
     (* semantic grep or var args extension *)
     | "..." { T_ELLIPSIS(tokinfo lexbuf) }
-
-    | "...$" (LABEL as s) { T_VARIABLE_VARIADIC(case_str s, tokinfo lexbuf) }
-
     (* facebook-ext: short lambdas *)
     | "==>" { T_DOUBLE_ARROW(tokinfo lexbuf) }
 

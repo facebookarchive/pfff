@@ -473,14 +473,16 @@ and hint_type env = function
       xs +> brace +> comma_list +> List.map (fun (e, _tok, t) ->
         expr env e, hint_type env t
       ))
+  | HintTypeConst (lhs, _tok, rhs) ->
+    A.HintTypeConst (hint_type env lhs, hint_type env rhs)
 
 (* ------------------------------------------------------------------------- *)
 (* Definitions *)
 (* ------------------------------------------------------------------------- *)
 and constant_def env {cst_name; cst_val; cst_type=_TODO; cst_toks = _} =
-  { A.cst_name = ident env cst_name;
-    A.cst_body = expr env cst_val;
-  }
+  let name = ident env cst_name in
+  let value = Some (expr env cst_val) in
+  { A.cst_name = name; A.cst_body = value }
 
 and func_def env f =
   let _, params, _ = f.f_params in
@@ -523,10 +525,16 @@ and lambda_def env (l_use, ld) =
 and short_lambda_def env def =
   { A.
     f_ref = false;
-    f_name = (A.special "_lambda", wrap def.sl_tok);
+    f_name = (
+      A.special "_lambda",
+      match def.sl_tok with
+      | Some tok -> wrap tok
+      | None -> None
+    );
     f_params =
       (match def.sl_params with
       | SLSingleParam p -> [parameter env p]
+      | SLParamsOmitted -> []
       | SLParams (_, xs, _) ->
         let xs = comma_list_dots xs in
         List.map (parameter env) xs
@@ -550,6 +558,10 @@ and type_def env def =
 and type_def_kind env = function
   | Alias t -> A.Alias (hint_type env t)
   | Newtype t -> A.Newtype (hint_type env t)
+  | ClassConstType v1 -> A.ClassConstType
+    (match v1 with
+    | Some x -> Some (hint_type env x)
+    | None -> None)
 
 
 and class_def env c =
@@ -612,10 +624,12 @@ and class_traits env x acc =
 
 and class_constants env st acc =
   match st with
-  | ClassConstants (_, _, cl, _) ->
+  | ClassConstants (_, _, _, cl, _) ->
       List.fold_right (
       fun (n, ss) acc ->
-        ({A.cst_name = ident env n; cst_body= static_scalar_affect env ss})::acc
+        let body = opt static_scalar_affect env ss in
+        let cst = {A.cst_name = ident env n; cst_body = body} in
+        cst::acc
      ) (comma_list cl) acc
   | _ -> acc
 
@@ -697,7 +711,7 @@ and class_body env st (mets, flds) =
     met::mets, more_flds @ flds
 
   | ClassVariables _ | ClassConstants _ | UseTrait _
-  | XhpDecl _ | TraitConstraint _
+  | XhpDecl _ | TraitConstraint _ | ClassType _
     -> (mets, flds)
 
 and method_def env m =

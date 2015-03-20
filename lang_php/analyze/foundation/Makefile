@@ -68,6 +68,7 @@ INCLUDEDIRS= $(TOP)/commons \
 ##############################################################################
 # Generic variables
 ##############################################################################
+
 -include $(TOP)/Makefile.common
 
 ##############################################################################
@@ -90,3 +91,48 @@ clean::
 
 visitor_pil.cmo: visitor_pil.ml
 	$(OCAMLC) -w y -c $<
+
+##############################################################################
+# install
+##############################################################################
+LIBNAME=pfff-lang_php-analyze-foundation
+
+EXPORTSRC=\
+  abstract_interpreter_php.mli \
+  annotation_php.mli \
+  ast_php_simple_build.mli \
+  builtins_php.mli \
+  callgraph_php2.mli \
+  callgraph_php_build.mli \
+  class_php.mli \
+  comment_php.mli \
+  controlflow_build_php.mli \
+  controlflow_php.mli \
+  database_juju_php.mli \
+  database_light_php.mli \
+  database_prolog_php.mli \
+  defs_uses_php.mli \
+  entity_php.mli \
+  env_php.mli \
+  graph_code_php.mli \
+  include_require_php.mli \
+  meta_ast_php_simple.mli \
+  namespace_php.mli \
+  pretty_print_php_simple.mli \
+  scoping_php.mli \
+  statistics_php.mli \
+  tags_php.mli \
+  tracing_php.mli \
+  typing_php.mli \
+  typing_unify_php.mli \
+  unit_foundation_php.mli \
+  unit_prolog_php.mli \
+  unit_static_analysis_php.mli \
+  unit_typeinfer_php.mli \
+  unsugar_php.mli \
+
+install-findlib:
+	ocamlfind install $(LIBNAME) META   lib.cma lib.cmxa lib.a \
+          $(EXPORTSRC) $(EXPORTSRC:%.mli=%.cmi) ast_php_simple.cmi \
+          env_interpreter_php.cmi \
+	  $(SRC)

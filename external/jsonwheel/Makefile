@@ -44,7 +44,7 @@ STATIC=
 OBJS = $(SRC:.ml=.cmo)
 OPTOBJS = $(SRC:.ml=.cmx)
 
-all: $(TARGET).cma 
+all: $(TARGET).cma
 all.opt: $(TARGET).cmxa
 
 $(TARGET).cma: $(OBJS)
@@ -73,6 +73,21 @@ clean::
 #beforedepend:: json_parser.ml json_parser.mli
 
 ##############################################################################
+# install
+##############################################################################
+LIBNAME=pfff-external-jsonwheel
+EXPORTSRC=json_io.mli json_parser.mli json_type.mli
+
+install-findlib:
+	ocamlfind install $(LIBNAME) META   lib.cma lib.cmxa lib.a \
+          $(EXPORTSRC) $(EXPORTSRC:%.mli=%.cmi) \
+	  $(SRC) json_in.cmi json_out.cmi
+
+uninstall-findlib::
+	ocamlfind remove $(LIBNAME)
+
+
+##############################################################################
 # Generic rules
 ##############################################################################
 
@@ -85,7 +100,7 @@ clean::
 .ml.cmx:
 	$(OCAMLOPT) -c $<
 
-.ml.mldepend: 
+.ml.mldepend:
 	$(OCAMLC) -i $<
 
 clean::

@@ -89,10 +89,6 @@ short_lambda_body:
 
 The other conflict is that when we see '($x)' in '($x) ==> ...'
 there is no way to know whether this is an expression (reduce) or
-the parameter specification of a lambda (shift). To solve the conflict
-one has to be more general and do:
-
- | TOPAR expr TCPAR T_DOUBLE_ARROW short_lambda_body  {  }
-
-but make sure that expr can only be a T_VARIABLE.
-
+the parameter specification of a lambda (shift). To resolve the conflict,
+parsing_hacks_php replaces the parens in lambda tokens with special lambda
+paren tokens based on context.

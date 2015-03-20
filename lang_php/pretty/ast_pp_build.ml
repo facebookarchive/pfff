@@ -277,7 +277,7 @@ let rec toplevel env st acc =
       let acc = add_stmt_comments env acc (PI.line_of_info end_) in
       let e = expr env cst_val in
       let s = ident env cst_name in
-      A.ConstantDef { Ast_pp.cst_name = s; cst_body = e } :: acc
+      A.ConstantDef { Ast_pp.cst_name = s; cst_body = Some e } :: acc
   | TypeDef _-> failwith "pretty printing not supported for typedefs"
   | NotParsedCorrectly _ -> raise Common.Impossible
 
@@ -298,7 +298,6 @@ and dname = function
       if s.[0] = '$' then s
       else "$"^s
 
-
 and stmt env st acc =
   let line = last_line_of_stmt st in
   let acc  = add_stmt_comments env acc line in
@@ -308,7 +307,7 @@ and stmt env st acc =
 and stmt_ env st acc =
   match st with
   | ExprStmt (e, _) ->
-      let e = expr env e in
+      let e:(Ast_pp.expr) = expr env e in
       A.Expr e :: acc
   | EmptyStmt _ -> A.Noop :: acc
   | Block (start, stdl, _end_) ->
@@ -621,8 +620,9 @@ and hint_type env = function
     in
     A.HintCallback (args, ret)
   | HintShape _ ->
-    failwith "no support shape"
-
+    failwith "no support for shape"
+  | HintTypeConst _ ->
+    failwith "no support for type consts"
 
 and class_name_reference env a = expr env a
 
@@ -728,16 +728,19 @@ and class_body env st acc =
       let line = PI.line_of_info (info_of_dname (fst (List.hd cvl))) in
       let acc = add_ce_comments env acc line in
       acc
-  | ClassConstants (_, _, cl, _) ->
-      let consts =
-        List.map (
-        fun (n, ss) ->
-          (ident env n, static_scalar_affect env ss)
-       ) (comma_list cl) in
-      A.CEconst consts :: acc
+  | ClassConstants (abs_tok, _, _, cl, _) ->
+      let consts = List.map (
+        fun (n, ss) -> begin
+          let name = ident env n in
+          let value = opt static_scalar_affect env ss in
+          {A.cst_name = name; cst_body = value}
+        end
+      ) (comma_list cl) in
+      A.CEconst (abs_tok <> None, consts) :: acc
   | XhpDecl _ -> acc (* TODO xhp decl *)
   | UseTrait _ -> raise (TodoConstruct "UseTrait")
   | TraitConstraint _ -> raise (TodoConstruct "TraitConstraint")
+  | ClassType _ -> raise (TodoConstruct "ConstType")
 
 and method_def env m =
   let acc = [] in

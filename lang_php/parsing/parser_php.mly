@@ -89,7 +89,7 @@ module PI = Parse_info
    * Note that with XHP if you want to add a rule using T_IDENT, you should
    * probably use 'ident' instead.
    *)*/
- T_IDENT T_VARIABLE T_VARIABLE_VARIADIC
+ T_IDENT T_VARIABLE
  T_CONSTANT_ENCAPSED_STRING   T_ENCAPSED_AND_WHITESPACE  T_INLINE_HTML
  /*(* used only for offset of array access inside strings *)*/
  T_NUM_STRING
@@ -126,7 +126,9 @@ module PI = Parse_info
  T_SELF T_PARENT
  /*(* facebook extension *)*/
  T_TYPE T_NEWTYPE T_SHAPE
-
+%left T_TYPE
+%left T_IDENT
+%right T_ELLIPSIS
 /*(*-----------------------------------------*)*/
 /*(*2 Symbol tokens *)*/
 /*(*-----------------------------------------*)*/
@@ -179,6 +181,9 @@ module PI = Parse_info
 
 /*(* phpext: for hack and also for sgrep *)*/
 %token <Ast_php.info> T_ELLIPSIS
+
+/*(* lexing hack to parse lambda params properly *)*/
+%token <Ast_php.info> T_LAMBDA_OPAR T_LAMBDA_CPAR
 
 /*(*-----------------------------------------*)*/
 /*(*2 XHP tokens *)*/
@@ -552,8 +557,6 @@ parameter_or_dots:
  /*(* varargs extension *)*/
  | T_ELLIPSIS { Middle3 $1 }
  /*(* PHP 5.6 variadic arguments ...$xs *)*/
- | T_VARIABLE_VARIADIC
-     { Left3 (H.mk_param $1) (* todo: with is_variadic = true *) }
  | T_ELLIPSIS T_VARIABLE
      { Left3 (H.mk_param $2) (* todo: with is_variadic = true *) }
 
@@ -677,19 +680,65 @@ implements_list:
 /*(*----------------------------*)*/
 
 class_statement:
- | T_CONST          class_constants_declaration  TSEMICOLON
-     { ClassConstants($1, None, $2, $3) }
- | T_CONST type_php class_constants_declaration  TSEMICOLON
-     { ClassConstants($1, Some $2, $3, $4) }
+/*(* facebook-ext: abstract constants *)*/
+ | T_ABSTRACT T_CONST          ident  TSEMICOLON
+     { let const = (Name $3, None) in
+       let const_list = [Left const] in
+       ClassConstants(Some $1, $2, None, const_list, $4) }
+ | T_ABSTRACT T_CONST type_php ident  TSEMICOLON
+     { let const = (Name $4, None) in
+       let const_list = [Left const] in
+       ClassConstants(Some $1, $2, Some $3, const_list, $5) }
 
+/*(* facebook-ext: type constants *)*/
+ | T_ABSTRACT T_CONST T_TYPE T_IDENT T_AS type_php TSEMICOLON
+     { ClassType (* TODO (t6384084) add some fields here *) {
+         t_tok = $3;
+         t_name = Name $4;
+         t_tparams = None;
+         t_tconstraint = Some($5, $6);
+         t_tokeq = $5; (* doesn't exist here *)
+         t_kind = ClassConstType None;
+         t_sc = $7; }
+     }
+ | T_ABSTRACT T_CONST T_TYPE T_IDENT TSEMICOLON
+     { ClassType (* TODO (t6384084) add some fields here *) {
+         t_tok = $3;
+         t_name = Name $4;
+         t_tparams = None;
+         t_tconstraint = None;
+         t_tokeq = $5; (* doesn't exist here *)
+         t_kind = ClassConstType None;
+         t_sc = $5; }
+     }
+ | T_CONST T_TYPE T_IDENT type_constr_opt TEQ type_php_or_shape TSEMICOLON
+     { ClassType (* TODO (t6384084) add some fields here *) {
+         t_tok = $2;
+         t_name = Name $3;
+         t_tparams = None;
+         t_tconstraint = $4;
+         t_tokeq = $5;
+         t_kind = ClassConstType (Some $6);
+         t_sc = $7; }
+     }
+
+/*(* class constants *)*/
+ | T_CONST          class_constants_declaration  TSEMICOLON
+     { ClassConstants(None, $1, None, $2, $3) }
+ | T_CONST type_php class_constants_declaration  TSEMICOLON
+     { ClassConstants(None, $1, Some $2, $3, $4) }
+
+/*(* class variables (aka properties) *)*/
  | variable_modifiers          class_variable_declaration TSEMICOLON
      { ClassVariables($1, None, $2, $3) }
  | variable_modifiers type_php class_variable_declaration TSEMICOLON
      { ClassVariables($1, Some $2, $3, $4)  }
 
+/*(* class methods *)*/
  |            method_declaration { Method $1 }
  | attributes method_declaration { Method { $2 with f_attrs = Some $1 } }
 
+/*(* XHP *)*/
  | T_XHP_ATTRIBUTE xhp_attribute_decls TSEMICOLON
      { XhpDecl (XhpAttributesDecl ($1, $2, $3)) }
  | T_XHP_CHILDREN  xhp_children_decl  TSEMICOLON
@@ -708,7 +757,7 @@ class_statement:
 
 enum_statement:
    class_constant_declaration TSEMICOLON
-     { ClassConstants($2, None, [Left $1], $2) }
+     { ClassConstants(None, $2, None, [Left $1], $2) }
 
 method_declaration:
      method_modifiers T_FUNCTION is_reference ident_method_name type_params_opt
@@ -723,7 +772,7 @@ method_declaration:
         })
      }
 
-class_constant_declaration: ident TEQ static_scalar { ((Name $1), ($2, $3)) }
+class_constant_declaration: ident TEQ static_scalar { ((Name $1), Some ($2, $3)) }
 
 variable_modifiers:
  | T_VAR				{ NoModifiers $1 }
@@ -904,17 +953,26 @@ type_params_list:
   | type_param TCOMMA type_params_list { [Left $1; Right $2] @ $3 }
 
 type_param:
-  | ident                 { TParam (Name $1) }
-  | TMINUS ident { TParam (Name $2) }
-  | TPLUS ident { TParam (Name $2) }
-  | ident T_AS TQUESTION class_name { TParamConstraint (Name $1, $2, HintQuestion ($3, $4)) }
-  | ident T_AS class_name { TParamConstraint (Name $1, $2, $3) }
+  | variance_opt ident                 { TParam (Name $2) }
+  | variance_opt ident T_AS TQUESTION class_name { TParamConstraint (Name $2, $3, HintQuestion ($4, $5)) }
+  | variance_opt ident T_AS class_name { TParamConstraint (Name $2, $3, $4) }
+
+variance_opt:
+  | /*(*nothing*)*/ {None}
+  | TMINUS{ Some $1 }
+  | TPLUS { Some $1 }
+
 
 /*(*************************************************************************)*/
 /*(*1 Types *)*/
 /*(*************************************************************************)*/
 
 type_php:
+ | primary_type_php { $1 }
+/*(*facebook-ext: classes can define type constants referenced using `::`*)*/
+ | type_php TCOLCOL primary_type_php { HintTypeConst ($1, $2, $3) }
+
+primary_type_php:
  | class_name { $1 }
  | T_SELF     { Hint (Self $1, None) }
  | T_PARENT   { Hint (Parent $1, None) }
@@ -925,6 +983,7 @@ type_php:
      { HintTuple ($1, $2, $3) }
  | TOPAR T_FUNCTION TOPAR type_php_or_dots_list TCPAR return_type TCPAR
      { HintCallback ($1, ($2, ($3, $4, $5), Some $6), $7)}
+
 
 /*(* similar to parameter_list, but without names for the parameters *)*/
 type_php_or_dots_list:
@@ -1235,7 +1294,6 @@ function_call_argument:
  | expr	{ (Arg ($1)) }
  | TAND expr 		{ (ArgRef($1, $2)) }
  | T_ELLIPSIS expr      { (ArgUnpack($1, $2)) }
- | T_VARIABLE_VARIADIC { let _, tok = $1 in (ArgUnpack(tok, H.mk_var $1)) }
 
 /*(*----------------------------*)*/
 /*(*2 encaps *)*/
@@ -1336,80 +1394,42 @@ lambda_expr:
      {
        let sl_tok, sl_body = $2 in
        let sl_params = SLSingleParam (H.mk_param $1) in
-       ShortLambda { sl_params; sl_tok = sl_tok; sl_body = sl_body; sl_modifiers = [] }
+       ShortLambda { sl_params; sl_tok; sl_body; sl_modifiers = [] }
      }
  | T_ASYNC T_VARIABLE lambda_body
      {
        let sl_tok, sl_body = $3 in
        let sl_params = SLSingleParam (H.mk_param $2) in
-       ShortLambda { sl_params; sl_tok = sl_tok; sl_body = sl_body;
-                     sl_modifiers = [Async,($1)] }
+       ShortLambda { sl_params; sl_tok; sl_body; sl_modifiers = [Async,($1)] }
      }
- | TOPAR TCPAR lambda_body
-     { let sl_tok, sl_body = $3 in
-       let sl_params = SLParams ($1, [], sl_tok) in
-       ShortLambda { sl_params; sl_tok = sl_tok; sl_body = sl_body; sl_modifiers = [] }
-     }
- | T_ASYNC TOPAR TCPAR lambda_body
-     { let sl_tok, sl_body = $4 in
-       let sl_params = SLParams ($2, [], sl_tok) in
-       ShortLambda { sl_params; sl_tok = sl_tok; sl_body = sl_body;
-                     sl_modifiers = [Async,($1)] }
-     }
- /*(* can not factorize with TOPAR parameter_list TCPAR, see conflicts.txt
-    * this is unfortunate, since it means typehints are not correctly parsed
-    *)*/
- | TOPAR expr TCPAR lambda_body
-     {
-       let sl_tok, sl_body = $4 in
-       let sl_params =
-         match $2 with
-         | IdVar (DName swrap, _scope) ->
-           let param = H.mk_param swrap in
-           SLParams ($1, [Left3 param], sl_tok)
-         | _ -> raise (Parsing.Parse_error)
-       in
-       ShortLambda { sl_params; sl_tok = sl_tok; sl_body = sl_body; sl_modifiers = [] }
-     }
- | T_ASYNC TOPAR expr TCPAR lambda_body
+ | T_LAMBDA_OPAR parameter_list T_LAMBDA_CPAR return_type_opt lambda_body
      {
        let sl_tok, sl_body = $5 in
-       let sl_params =
-         match $3 with
-         | IdVar (DName swrap, _scope) ->
-           let param = H.mk_param swrap in
-           SLParams ($1, [Left3 param], sl_tok)
-         | _ -> raise (Parsing.Parse_error)
-       in
-       ShortLambda { sl_params; sl_tok = sl_tok; sl_body = sl_body;
-                     sl_modifiers = [Async,($1)] }
+       let sl_params = SLParams ($1, $2, $3) in
+       ShortLambda { sl_params; sl_tok; sl_body; sl_modifiers = []; }
      }
- | TOPAR T_VARIABLE TCOMMA non_empty_parameter_list TCPAR lambda_body
+ | T_ASYNC T_LAMBDA_OPAR parameter_list T_LAMBDA_CPAR return_type_opt lambda_body
      {
        let sl_tok, sl_body = $6 in
-       let sl_params =
-         let param1 = H.mk_param $2 in
-         SLParams ($1, Left3 param1::Right3 $3::$4, $5)
-       in
-       ShortLambda { sl_params; sl_tok = sl_tok; sl_body = sl_body; sl_modifiers = [] }
+       let sl_params = SLParams ($2, $3, $4) in
+       ShortLambda { sl_params; sl_tok; sl_body; sl_modifiers = [Async,($1)]; }
      }
- | T_ASYNC TOPAR T_VARIABLE TCOMMA non_empty_parameter_list TCPAR lambda_body
+ | T_ASYNC TOBRACE inner_statement_list TCBRACE
      {
-       let sl_tok, sl_body = $7 in
-       let sl_params =
-         let param1 = H.mk_param $3 in
-         SLParams ($1, Left3 param1::Right3 $4::$5, $6)
-       in
-       ShortLambda { sl_params; sl_tok = sl_tok; sl_body = sl_body;
-                     sl_modifiers = [Async,($1)] }
+       let sl_body = SLBody ($2, $3, $4) in
+       ShortLambda { sl_params = SLParamsOmitted;
+                     sl_tok = None;
+                     sl_body;
+                     sl_modifiers = [Async,($1)];
+                   }
      }
 
 lambda_body:
- | T_DOUBLE_ARROW TOBRACE inner_statement_list TCBRACE { ($1, SLBody ($2, $3, $4)) }
+ | T_DOUBLE_ARROW TOBRACE inner_statement_list TCBRACE { (Some $1, SLBody ($2, $3, $4)) }
  /*(* An explicit case required for when/if awaits become statements, not expr *)
    (* | T_DOUBLE_ARROW T_AWAIT expr { ($1, SLExpr (Await ($2, $3))) } *)*/
  /*(* see conflicts.txt for why the %prec *)*/
- | T_DOUBLE_ARROW expr { ($1, SLExpr $2) }
+ | T_DOUBLE_ARROW expr { (Some $1, SLExpr $2) }
 
 /*(*----------------------------*)*/
 /*(*2 auxillary bis *)*/

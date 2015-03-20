@@ -52,7 +52,22 @@ $(TARGET).top: $(OBJS) $(LIBS)
 clean::
 	rm -f $(TARGET).top
 
+##############################################################################
+# install
+##############################################################################
+LIBNAME=pfff-lang_php-matcher
 
-##############################################################################
-# Literate Programming rules
-##############################################################################
+EXPORTSRC=\
+  matching_php.mli \
+  metavars_php.mli \
+  php_vs_php.mli \
+  refactoring_code_php.mli \
+  sgrep_php.mli \
+  spatch_php.mli \
+  transforming_php.mli \
+  unit_matcher_php.mli \
+
+install-findlib:
+	ocamlfind install $(LIBNAME) META   lib.cma lib.cmxa lib.a \
+          $(EXPORTSRC) $(EXPORTSRC:%.mli=%.cmi) \
+	  $(SRC)

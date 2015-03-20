@@ -38,8 +38,8 @@ let token_kind_of_tok t =
   match t with
   | TOBRACE _ -> PI.LBrace
   | TCBRACE _ -> PI.RBrace
-  | TOPAR _ -> PI.LPar
-  | TCPAR _ -> PI.RPar
+  | TOPAR _ | T_LAMBDA_OPAR _ -> PI.LPar
+  | TCPAR _ | T_LAMBDA_CPAR _ -> PI.RPar
 
   | T_COMMENT _ | T_DOC_COMMENT _ | TCommentPP _ -> PI.Esthet PI.Comment
   | TSpaces _ -> PI.Esthet PI.Space
@@ -70,7 +70,6 @@ let info_of_tok = function
   | T_IDENT (_s, ii) -> ii
   | T_STRING_VARNAME (_s, ii) -> ii
   | T_VARIABLE (_s, ii) -> ii
-  | T_VARIABLE_VARIADIC (_s, ii) -> ii
   | T_NUM_STRING (_s, ii) -> ii
   | T_INLINE_HTML (_s, ii) -> ii
   | T_ENCAPSED_AND_WHITESPACE (_s, ii) -> ii
@@ -207,6 +206,8 @@ let info_of_tok = function
   | T_ENDIF ii -> ii
   | TOPAR ii -> ii
   | TCPAR ii -> ii
+  | T_LAMBDA_OPAR ii -> ii
+  | T_LAMBDA_CPAR ii -> ii
   | TOBRACE ii -> ii
   | TCBRACE ii -> ii
   | TCBRA ii -> ii
@@ -271,7 +272,6 @@ let visitor_info_of_tok f = function
   | T_IDENT (s, ii) -> T_IDENT(s, f ii)
   | T_STRING_VARNAME (s, ii) -> T_STRING_VARNAME(s, f ii)
   | T_VARIABLE (s, ii) -> T_VARIABLE(s, f ii)
-  | T_VARIABLE_VARIADIC (s, ii) -> T_VARIABLE_VARIADIC(s, f ii)
   | T_NUM_STRING (s, ii) -> T_NUM_STRING(s, f ii)
   | T_INLINE_HTML (s, ii) -> T_INLINE_HTML(s, f ii)
   | T_ENCAPSED_AND_WHITESPACE (s, ii) -> T_ENCAPSED_AND_WHITESPACE(s, f ii)
@@ -408,6 +408,8 @@ let visitor_info_of_tok f = function
   | T_ENDIF ii -> T_ENDIF(f ii)
   | TOPAR ii -> TOPAR(f ii)
   | TCPAR ii -> TCPAR(f ii)
+  | T_LAMBDA_OPAR ii -> T_LAMBDA_OPAR(f ii)
+  | T_LAMBDA_CPAR ii -> T_LAMBDA_CPAR(f ii)
   | TOBRACE ii -> TOBRACE(f ii)
   | TCBRACE ii -> TCBRACE(f ii)
   | TCBRA ii -> TCBRA(f ii)

@@ -54,7 +54,7 @@ OBJS_CLIENT= \
 LIBS_CLIENT2= $(TOP)/commons/lib.cma \
   $(TOP)/external/jsonwheel/lib.cma \
   $(TOP)/external/ocamlgraph/ocamlgraph.cma \
-  $(TOP)/commons/commons_graph.cma \
+  $(TOP)/commons/graph/lib.cma \
   $(TOP)/h_program-lang/lib.cma \
   $(TOP)/graph_code/lib.cma \
   $(TOP)/h_visualization/lib.cma \
@@ -82,15 +82,15 @@ JS_OF_ELIOM=js_of_eliom -g -annot
 # done when compile client side modules, which is needed anyway for
 # compiling the server side
 all: rec var/static/app.js var/app.cma
-#	$(MAKE) rec 
-#	$(MAKE) var/static/app.js 
-#	$(MAKE) var/app.cma 
+#	$(MAKE) rec
+#	$(MAKE) var/static/app.js
+#	$(MAKE) var/app.cma
 
 rec:
-	set -e; for i in $(MAKESUBDIRS); do $(MAKE) -C $$i all || exit 1; done 
+	set -e; for i in $(MAKESUBDIRS); do $(MAKE) -C $$i all || exit 1; done
 
 # server-side
-var/app.cma: $(LIBS_SERVER2) $(OBJS_SERVER) 
+var/app.cma: $(LIBS_SERVER2) $(OBJS_SERVER)
 	eliomc -g -a -o $@ $(SYSLIBS_SERVER) $^
 
 _server/home.cmo: home.eliom
@@ -127,7 +127,7 @@ OCFLAGS=
 run: all
 	LD_LIBRARY_PATH=../commons ocsigenserver $(OCFLAGS) -c ocsigen.conf
 
-rerun: 
+rerun:
 	pkill ocsigenserver
 	sleep 1
 	make run
@@ -148,7 +148,7 @@ annot:
 	rm -f *.cm*
 
 clean::
-	set -e; for i in $(MAKESUBDIRS); do $(MAKE) -C $$i clean; done 
+	set -e; for i in $(MAKESUBDIRS); do $(MAKE) -C $$i clean; done
 
 depend::
 	set -e; for i in $(MAKESUBDIRS); do echo $$i; $(MAKE) -C $$i depend; done

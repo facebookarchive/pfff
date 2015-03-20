@@ -270,7 +270,7 @@ let lookup_member ?(case_insensitive=false) (aclass, afield) find_entity =
 let lookup_constant (aclass, aconstant) find_entity =
   lookup_gen aclass find_entity
     (function
-    | ClassConstants (_, _, xs, _) ->
+    | ClassConstants (_, _, _, xs, _) ->
         (try
           Some (xs +> Ast.uncomma +> Common.find_some
             (fun (name, affect) ->

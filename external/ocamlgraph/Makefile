@@ -38,7 +38,7 @@ OCAMLVERSION = 4.00.1
 OCAMLWEB = true
 OCAMLWIN32 = no
 OCAMLFIND = ocamlfind
-EXE = 
+EXE =
 LIBEXT = .a
 OBJEXT = .o
 
@@ -378,13 +378,17 @@ ifeq (no,yes)
 else
 	$(OCAMLFIND) install ocamlgraph META \
 		$(SRCDIR)/*.mli $(VIEWER_DIR)/*.mli $(DGRAPH_DIR)/*.mli \
-		graph$(LIBEXT) graph.cmx graph.cmo graph.cmi $(CMA) $(CMXA)
+		ocamlgraph$(LIBEXT) ocamlgraph.cmx ocamlgraph.cmo ocamlgraph.cmi $(CMA) $(CMXA)
 endif
 endif
 
 META: META.in Makefile
 	sed -e s/VERSION/$(VERSION)/ -e s/CMA/$(CMA)/ -e s/CMXA/$(CMXA)/ \
 		$@.in > $@
+
+uninstall-findlib:
+	$(OCAMLFIND) remove ocamlgraph
+
 
 # documentation
 ###############
@@ -540,7 +544,7 @@ tags:
 
 #pad:
 #Makefile: Makefile.in config.status
-#	if test -e $@; then chmod a+w $@; fi		
+#	if test -e $@; then chmod a+w $@; fi
 #	./config.status
 #	chmod a-w $@
 all.opt: all
@@ -562,7 +566,7 @@ clean:
 	  rm -f $$d/*.cm[iox] $$d/*$(OBJEXT) $$d/*~ $$d/*.annot; \
 	done
 	rm -f $(GENERATED) $(SRCDIR)/dot_parser.output
-	rm -f ocamlgraph.*a ocamlgraph.cm* ocamlgraph.o ocamlgraph$(LIBEXT) 
+	rm -f ocamlgraph.*a ocamlgraph.cm* ocamlgraph.o ocamlgraph$(LIBEXT)
 	rm -f $(ED_DIR)/editor.byte $(ED_DIR)/editor.opt
 	rm -f $(VIEWER_DIR)/viewgraph.byte $(VIEWER_DIR)/viewgraph.opt
 	rm -f $(DGRAPH_DIR)/dgraph.byte $(DGRAPH_DIR)/dgraph.opt

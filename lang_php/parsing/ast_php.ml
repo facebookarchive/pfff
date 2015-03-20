@@ -144,11 +144,15 @@ type hint_type =
  | HintCallback of
      (tok                                 (* "function" *)
       * (hint_type comma_list_dots paren) (* params *)
-      * (tok * tok option * hint_type) option          (* return type *)
+      * (tok * tok option * hint_type) option (* return type *)
      ) paren
  | HintShape of
      tok (* "shape" *) *
      (string_const_expr * tok (* '=>' *) * hint_type) comma_list paren
+ | HintTypeConst of
+     hint_type   (* lhs *)
+     * tok       (* '::' *)
+     * hint_type (* rhs *)
 
  and type_args = hint_type comma_list single_angle
 
@@ -558,12 +562,13 @@ and short_lambda_def = {
   (* "async" is the only valid modifier *)
   sl_modifiers: modifier wrap list;
   sl_params: short_lambda_params;
-  sl_tok: tok (* ==> *);
+  sl_tok: tok (* ==> *) option; (* async { } doesn't use a ==> *)
   sl_body: short_lambda_body;
 }
  and short_lambda_params =
  | SLSingleParam of parameter
  | SLParams of parameter comma_list_dots paren
+ | SLParamsOmitted (* for async { } lambdas *)
  and short_lambda_body =
  | SLExpr of expr
  | SLBody of stmt_and_def list brace
@@ -629,6 +634,7 @@ and class_def = {
     (* This is abused to represent class constants in enums, so sometimes
      * tok is actually fakeInfo. *)
     | ClassConstants of
+        tok option (* abstract *) *
         tok (* const *) *
         hint_type option *
         class_constant comma_list * tok (*;*)
@@ -645,21 +651,22 @@ and class_def = {
     (* facebook-ext: 'require' can appear only in traits *)
     | TraitConstraint of
         tok (* require *) * trait_constraint_kind wrap * hint_type * tok (* ; *)
+    | ClassType of type_def
+ and class_constant = ident * static_scalar_affect option
+ and class_variable = dname * static_scalar_affect option
+ and class_var_modifier =
+   | NoModifiers of tok (* 'var' *)
+   | VModifiers of modifier wrap list
+         (* a few special names: __construct, __call, __callStatic
+          * ugly: f_body is an empty stmt_and_def for abstract method
+          * and the ';' is put for the info of the closing brace
+          * (and the opening brace is a fakeInfo).
+          *)
+ and method_def = func_def
+ and modifier =
+   | Public  | Private | Protected
+   | Static  | Abstract | Final | Async
 
-        and class_constant = ident * static_scalar_affect
-        and class_variable = dname * static_scalar_affect option
-        and class_var_modifier =
-          | NoModifiers of tok (* 'var' *)
-          | VModifiers of modifier wrap list
-        (* a few special names: __construct, __call, __callStatic
-         * ugly: f_body is an empty stmt_and_def for abstract method
-         * and the ';' is put for the info of the closing brace
-         * (and the opening brace is a fakeInfo).
-         *)
-        and method_def = func_def
-          and modifier =
-            | Public  | Private | Protected
-            | Static  | Abstract | Final | Async
  and xhp_decl =
     | XhpAttributesDecl of
         tok (* attribute *) * xhp_attribute_decl comma_list * tok (*;*)
@@ -735,6 +742,7 @@ and type_def = {
   and type_def_kind =
   | Alias   of hint_type
   | Newtype of hint_type
+  | ClassConstType of hint_type option
 
 (* ------------------------------------------------------------------------- *)
 (* Other declarations *)

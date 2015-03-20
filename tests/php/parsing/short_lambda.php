@@ -18,6 +18,7 @@ function foo(): void {
   $func = async $y ==> { return $y + 2; };
   $func = $y ==> { return $y - 2; };
   $func = async $y ==> { return $y - 2; };
+  $func = async { return 0; };
   $x = Vector { 1,2,3 };
   mapp($x, $func);
 }

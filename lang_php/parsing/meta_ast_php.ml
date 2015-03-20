@@ -860,6 +860,12 @@ and vof_hint_type =
                 in Ocaml.VTuple [ v1; v2; v3 ]))
           v2
       in Ocaml.VSum (("HintShape", [ v1; v2 ]))
+  | HintTypeConst ((v1, v2, v3)) ->
+      let v1 = vof_hint_type v1
+      and v2 = vof_tok v2
+      and v3 = vof_hint_type v3
+      in Ocaml.VSum (("HintTypeConst", [ v1; v2; v3]))
+    
 
 and vof_is_ref v = vof_option vof_tok v
 
@@ -975,12 +981,16 @@ and vof_class_stmt =
       and v3 = vof_hint_type v3
       and v4 = vof_tok v4
       in Ocaml.VSum (("TraitConstraint", [ v1; v2; v3; v4 ]))
-  | ClassConstants ((v1, opt_ty, v2, v3)) ->
-      let v1 = vof_tok v1
-      and v2 = vof_comma_list vof_class_constant v2
-      and v3 = vof_tok v3
+  | ClassType ((v1)) ->
+      let v1 = vof_type_def v1
+      in Ocaml.VSum (("ClassType", [v1]))
+  | ClassConstants ((v1, v2, opt_ty, v3, v4)) ->
+      let v1 = vof_option vof_tok v1
+      and v2 = vof_tok v2
+      and v3 = vof_comma_list vof_class_constant v3
+      and v4 = vof_tok v4
       and opt_ty = vof_option vof_hint_type opt_ty
-      in Ocaml.VSum (("ClassConstants", [ v1; opt_ty; v2; v3 ]))
+      in Ocaml.VSum (("ClassConstants", [ v1; v2; opt_ty; v3; v4 ]))
   | ClassVariables ((v1, opt_ty, v2, v3)) ->
       let v1 = vof_class_var_modifier v1
       and v2 = vof_comma_list vof_class_variable v2
@@ -1030,7 +1040,7 @@ and vof_trait_rule =
 
 and vof_class_constant (v1, v2) =
   let v1 = vof_ident v1
-  and v2 = vof_static_scalar_affect v2
+  and v2 = vof_option vof_static_scalar_affect v2
   in Ocaml.VTuple [ v1; v2 ]
 and vof_class_variable (v1, v2) =
   let v1 = vof_dname v1
@@ -1165,7 +1175,7 @@ and  vof_short_lambda_def {
   let arg = vof_short_lambda_body v_sl_body in
   let bnd = ("sl_body", arg) in
   let bnds = bnd :: bnds in
-  let arg = vof_tok v_sl_tok in
+  let arg = vof_option vof_tok v_sl_tok in
   let bnd = ("sl_tok", arg) in
   let bnds = bnd :: bnds in
   let arg = vof_short_lambda_params v_sl_params in
@@ -1181,6 +1191,8 @@ and vof_short_lambda_params =
   | SLParams v1 ->
       let v1 = vof_paren (vof_comma_list_dots vof_parameter) v1
       in Ocaml.VSum (("SLParams", [ v1 ]))
+  | SLParamsOmitted ->
+      Ocaml.VSum (("SLParamsOmitted", []))
 and vof_short_lambda_body =
   function
   | SLExpr v1 -> let v1 = vof_expr v1 in Ocaml.VSum (("SLExpr", [ v1 ]))
@@ -1264,6 +1276,8 @@ and vof_type_def_kind =
   | Alias v1 -> let v1 = vof_hint_type v1 in Ocaml.VSum (("Alias", [ v1 ]))
   | Newtype v1 ->
       let v1 = vof_hint_type v1 in Ocaml.VSum (("Newtype", [ v1 ]))
+  | ClassConstType v1 ->
+    let v1 = vof_option vof_hint_type v1 in Ocaml.VSum (("ClassConstType", [v1]))
 
 and vof_namespace_use_rule =
   function

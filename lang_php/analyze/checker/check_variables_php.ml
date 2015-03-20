@@ -908,7 +908,7 @@ and class_def env def =
  * hurt though, one day maybe this will change.
  *)
 and constant_def env def =
-  expr env def.cst_body
+  Common.opt (expr env) def.cst_body
 
 (* type definitions do not contain any variables *)
 and typedef_def _env _def =
