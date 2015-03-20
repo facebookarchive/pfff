@@ -316,6 +316,7 @@ let nb_newlines info =
   then Str.split_delim (Str.regexp "\n") str +> List.length - 1
   else 0
 
+(* TODO: let f = function ... leads to constant!! should be function! *)
 let (extract_entities_ml: env -> Parse_ml.program_and_tokens -> entity list) =
  fun env (top_opt, toks) ->
   let qualify x = 
@@ -331,6 +332,21 @@ let (extract_entities_ml: env -> Parse_ml.program_and_tokens -> entity list) =
   | None -> []
   | Some xs -> xs +> List.map (fun top ->
       match top with
+
+      | TopItem Let(_i1, _,[Left(LetClassic(
+                              {l_name=Name (name, _); l_params=[];
+                               l_body=[Left(Function(_, _))];
+                               _
+                              }))]) ->
+        let kind = E.Function in 
+
+        [{
+          name = qualify name +> uniquify env kind;
+          kind;
+          range = range (Toplevel top);
+        }]
+
+
       | TopItem Let(_i1, _,[Left(LetClassic(
                               {l_name=Name (name, _); l_params=[]; _}))]) ->
         let kind = E.Constant in 
@@ -530,7 +546,7 @@ let lpize xs =
 
     (* CONFIG *)
     (* for the initial 'make sync' to work *)
-    Sys.command (spf "rm -f %s" file) +> ignore;
+    Sys.command (spf "rm -f %s" file) +> ignore; 
   );
   ()
 
