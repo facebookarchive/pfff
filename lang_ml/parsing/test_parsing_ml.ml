@@ -20,8 +20,12 @@ let test_tokens_ml file =
   ()
 
 let test_parse_ml_or_mli xs =
+  let xs = List.map Common.realpath xs in
 
-  let fullxs = Lib_parsing_ml.find_source_files_of_dir_or_files xs in
+  let fullxs = 
+    Lib_parsing_ml.find_source_files_of_dir_or_files xs
+    +> Skip_code.filter_files_if_skip_list ~verbose:true
+  in
   let stat_list = ref [] in
 
   fullxs +> Console.progress (fun k -> List.iter (fun file -> 
