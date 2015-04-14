@@ -23,6 +23,16 @@ open Common
  * 'scheck' can leverage expensive global analysis results to find more 
  * bugs. It can use a light database (see pfff_db) or a graph_code database
  * (see codegraph).
+ * 
+ * todo:
+ *  - more soft quality bugs, e.g. deadcode, dead parameter,
+ *    passing whole structure when could just pass a subfield,
+ *    wrong cohesion where a function should be in another file
+ *    (e.g. when use 5 functions from another file and none of your file)
+ *    etc
+ * 
+ * related:
+ *  - https://atom.io/packages/linter
  *)
 
 (*---------------------------------------------------------------------------*)
