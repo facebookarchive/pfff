@@ -36,3 +36,14 @@ config_pfff.ml:
 
 distclean::
 	rm -f config_pfff.ml
+
+##############################################################################
+# install
+##############################################################################
+LIBNAME=pfff-config
+EXPORTSRC=\
+
+install-findlib: all all.opt
+	ocamlfind install $(LIBNAME) META \
+          lib.cma lib.cmxa lib.a \
+          $(EXPORTSRC) $(EXPORTSRC:%.mli=%.cmi) \
