@@ -79,4 +79,4 @@ EXPORTSRC=meta_ast_ml.mli \
 install-findlib:
 	ocamlfind install $(LIBNAME) META   lib.cma lib.cmxa lib.a \
           $(EXPORTSRC) $(EXPORTSRC:%.mli=%.cmi) \
-          ast_ml.ml ast_ml.cmi
+          ast_ml.ml ast_ml.cmi flag_parsing_ml.ml flag_parsing_ml.cmi

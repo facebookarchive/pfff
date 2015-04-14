@@ -11,9 +11,7 @@ SYSLIBS= str.cma unix.cma
 LIBS=$(TOP)/commons/lib.cma \
 
 INCLUDEDIRS= $(TOP)/commons \
-  $(TOP)/commons/ocollection $(TOP)/commons/ocamlextra \
-   $(TOP)/h_program-lang $(TOP)/h_version-control  \
-   $(TOP)/globals \
+   $(TOP)/h_program-lang  \
    $(TOP)/lang_ml/parsing \
 
 
@@ -39,3 +37,15 @@ $(TARGET).top: $(OBJS) $(LIBS)
 
 clean::
 	rm -f $(TARGET).top
+
+##############################################################################
+# install
+##############################################################################
+LIBNAME=pfff-lang_ml-visual
+EXPORTSRC=\
+  highlight_ml.mli
+
+install-findlib: all all.opt
+	ocamlfind install $(LIBNAME) META \
+          lib.cma lib.cmxa lib.a \
+          $(EXPORTSRC) $(EXPORTSRC:%.mli=%.cmi) \
