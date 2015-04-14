@@ -742,6 +742,7 @@ let visit_program ~tag _prefs  hentities (ast, toks) =
       then tag ii Keyword
 
     | T.T_AS ii -> tag ii Keyword
+    | T.T_SUPER ii -> tag ii Keyword
     | T.T_GLOBAL ii -> tag ii Keyword
     | T.T_USE ii -> tag ii Keyword
     | T.T_ENDDECLARE ii -> tag ii Keyword

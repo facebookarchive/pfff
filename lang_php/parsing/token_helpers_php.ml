@@ -99,6 +99,7 @@ let info_of_tok = function
   | T_USE ii -> ii
   | T_GLOBAL ii -> ii
   | T_AS ii -> ii
+  | T_SUPER ii -> ii
   | T_FUNCTION ii -> ii
   | T_CONST ii -> ii
   | T_STATIC ii -> ii
@@ -301,6 +302,7 @@ let visitor_info_of_tok f = function
   | T_USE ii -> T_USE(f ii)
   | T_GLOBAL ii -> T_GLOBAL(f ii)
   | T_AS ii -> T_AS(f ii)
+  | T_SUPER ii -> T_SUPER(f ii)
   | T_FUNCTION ii -> T_FUNCTION(f ii)
   | T_CONST ii -> T_CONST(f ii)
   | T_STATIC ii -> T_STATIC(f ii)
