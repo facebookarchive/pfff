@@ -90,8 +90,16 @@ $(TARGET).top: $(OBJS) $(LIBS)
 clean::
 	rm -f $(TARGET).top
 
+##############################################################################
+# install
+##############################################################################
+LIBNAME=pfff-lang_cpp-analyze
+EXPORTSRC=\
+  check_variables_cpp.mli \
+  highlight_cpp.mli
 
-##############################################################################
-# Literate Programming rules
-##############################################################################
+install-findlib: all all.opt
+	ocamlfind install $(LIBNAME) META \
+          lib.cma lib.cmxa lib.a \
+          $(EXPORTSRC) $(EXPORTSRC:%.mli=%.cmi) \
 
