@@ -16,7 +16,7 @@ open Common
 
 module Ast = Ast_nw
 open Highlight_code
-module T = Parser_nw
+module T = Lexer_nw
 module TH = Token_helpers_nw
 
 (*****************************************************************************)
@@ -122,6 +122,13 @@ let visit_toplevel
        (* repass on tokens, in case there are nested tex commands *)
        aux_toks xs
 
+    |    T.TCommand("subsubsection",_):: T.TOBrace _:: xs 
+      ->
+       let (before, _, _) = span_close_brace xs in
+       tag_all_tok_with ~tag CommentSection3 before;
+       (* repass on tokens, in case there are nested tex commands *)
+       aux_toks xs
+
     |    T.TCommand("label",_):: T.TOBrace _:: xs 
       ->
        let (before, _, _) = span_close_brace xs in
@@ -167,6 +174,7 @@ let visit_toplevel
              | "chapter" -> Some CommentSection0
              | "section" -> Some CommentSection1
              | "subsection" -> Some CommentSection2
+             | "subsubsection" -> Some CommentSection3
              | "c" -> Some Comment
              (* don't want to polluate my view with indexing "aspect" *)
              | "cindex" -> 
@@ -236,7 +244,7 @@ let visit_toplevel
         let categ = 
           (match s with
           | s when s =~ "^if" -> KeywordConditional
-          | s when s =~ ".*true" -> Boolean
+          | s when s =~ ".*true$" -> Boolean
           | s when s =~ ".*false$" -> Boolean
           | "fi" -> KeywordConditional
           | "input" -> Include
@@ -257,8 +265,16 @@ let visit_toplevel
       ->
         tag ii KeywordExn (* TODO *)
 
-    | T.TNowebChunkLine (_, ii) ->
+    | T.TNowebChunkLine (_, ii) | T.TNowebAngle ii ->
         tag ii EmbededCode
+
+    | T.TBeginNowebChunkName ii
+    | T.TEndNowebChunkName ii
+      ->
+        tag ii KeywordObject (* TODO *)
+
+    | T.TNowebChunkName (ii)  ->
+        tag ii KeywordObject (* TODO *)
 
 
     | T.TBeginVerbatim ii

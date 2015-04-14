@@ -15,7 +15,7 @@
 
 open Common
 
-open Parser_nw
+open Lexer_nw
 
 module Ast = Ast_nw
 module PI = Parse_info
@@ -56,6 +56,11 @@ let visitor_info_of_tok f = function
   | TBeginNowebChunk ii -> TBeginNowebChunk (f ii)
   | TEndNowebChunk ii -> TEndNowebChunk (f ii)
   | TNowebChunkLine (s, ii) -> TNowebChunkLine (s, f ii)
+
+  | TBeginNowebChunkName ii -> TBeginNowebChunkName (f ii)
+  | TEndNowebChunkName ii -> TEndNowebChunkName (f ii)
+  | TNowebChunkName ii -> TNowebChunkName (f ii)
+  | TNowebAngle ii -> TNowebAngle (f ii)
 
 
   | TUnknown ii -> TUnknown (f ii)

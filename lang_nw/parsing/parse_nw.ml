@@ -15,7 +15,7 @@ open Common
 
 module Ast = Ast_nw
 module Flag = Flag_parsing_nw
-module T = Parser_nw
+module T = Lexer_nw
 module TH   = Token_helpers_nw
 module PI = Parse_info
 
@@ -33,7 +33,7 @@ module PI = Parse_info
 type program2 = toplevel2 list
      (* the token list contains also the comment-tokens *)
   and toplevel2 = 
-    Ast.toplevel (* NotParsedCorrectly if parse error *) * Parser_nw.token list
+    Ast.toplevel (* NotParsedCorrectly if parse error *) * Lexer_nw.token list
 
 (*****************************************************************************)
 (* Helpers *)
@@ -65,6 +65,8 @@ let tokens2 file =
             Lexer_nw.verbatim s lexbuf
         | Lexer_nw.IN_NOWEB_CHUNK ->
             Lexer_nw.noweb lexbuf
+        | Lexer_nw.IN_NOWEB_CHUNKNAME ->
+            Lexer_nw.noweb_chunkname lexbuf
         )
       in
       

@@ -8,7 +8,7 @@ TARGET=lib
 
 SRC= flag_parsing_nw.ml \
      ast_nw.ml \
-     parser_nw.ml lexer_nw.ml \
+     lexer_nw.ml \
      token_helpers_nw.ml \
      parse_nw.ml \
      test_parsing_nw.ml
@@ -61,12 +61,6 @@ clean::
 beforedepend:: lexer_nw.ml
 
 
-parser_nw.ml parser_nw.mli: parser_nw.mly
-	$(OCAMLYACC) $<
-clean::
-	rm -f parser_nw.ml parser_nw.mli parser_nw.output
-beforedepend:: parser_nw.ml parser_nw.mli
-
 
 visitor_nw.cmo: visitor_nw.ml
 	$(OCAMLC) -w y -c $<
@@ -78,3 +72,16 @@ visitor_nw.cmo: visitor_nw.ml
 ##############################################################################
 # Literate Programming rules
 ##############################################################################
+
+##############################################################################
+# install
+##############################################################################
+LIBNAME=pfff-lang_nw
+EXPORTSRC=\
+  parse_nw.mli
+
+install-findlib: all all.opt
+	ocamlfind install $(LIBNAME) META \
+          lib.cma lib.cmxa lib.a \
+          $(EXPORTSRC) $(EXPORTSRC:%.mli=%.cmi) \
+          ast_nw.ml ast_nw.cmi

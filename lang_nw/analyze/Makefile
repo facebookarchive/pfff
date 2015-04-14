@@ -66,3 +66,14 @@ clean::
 # Literate Programming rules
 ##############################################################################
 
+##############################################################################
+# install
+##############################################################################
+LIBNAME=pfff-lang_nw-analyze
+EXPORTSRC=\
+  highlight_nw.mli
+
+install-findlib: all all.opt
+	ocamlfind install $(LIBNAME) META \
+          lib.cma lib.cmxa lib.a \
+          $(EXPORTSRC) $(EXPORTSRC:%.mli=%.cmi) \

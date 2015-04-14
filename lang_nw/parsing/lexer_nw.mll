@@ -1,7 +1,7 @@
 {
 (* Yoann Padioleau
  *
- * Copyright (C) 2010 Facebook
+ * Copyright (C) 2010, 2015 Facebook
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public License
@@ -17,7 +17,6 @@
 open Common 
 
 module Flag = Flag_parsing_nw
-open Parser_nw
 
 (*****************************************************************************)
 (* Prelude *)
@@ -31,6 +30,36 @@ open Parser_nw
  *)
 
 (*****************************************************************************)
+(* Type *)
+(*****************************************************************************)
+(* was in parser_nw.mly but we don't really need an extra file *)
+
+type info = Ast_nw.info
+
+type token =
+  | TComment of info
+  | TCommentSpace of info
+  | TCommentNewline of info
+
+  | TCommand of (string * info)
+  | TWord of (string * info)
+  | TSymbol of (string * info)
+  | TNumber of (string * info)
+
+  | TBeginVerbatim of info | TEndVerbatim of info
+  | TVerbatimLine of (string * info)
+
+  | TBeginNowebChunk of info | TEndNowebChunk of info
+  | TNowebChunkLine of (string * info)
+  | TBeginNowebChunkName of info | TEndNowebChunkName of info
+  | TNowebChunkName of info | TNowebAngle of info
+
+  | TOBrace of info
+  | TCBrace of info
+  | TUnknown of info
+  | EOF of info
+
+(*****************************************************************************)
 (* Wrappers *)
 (*****************************************************************************)
 let pr2, pr2_once = Common2.mk_pr2_wrappers Flag.verbose_lexing 
@@ -39,6 +68,10 @@ let pr2, pr2_once = Common2.mk_pr2_wrappers Flag.verbose_lexing
 (* Helpers *)
 (*****************************************************************************)
 exception Lexical of string
+
+let error s =
+  if !Flag.verbose_lexing
+  then pr2_once ("LEXER: " ^ s)
 
 (* ---------------------------------------------------------------------- *)
 let tok     lexbuf  = 
@@ -65,6 +98,8 @@ type state_mode =
   | IN_VERBATIM of string
   (* started with <<xxx>>= *)
   | IN_NOWEB_CHUNK
+  (* started with << *)
+  | IN_NOWEB_CHUNKNAME
 
 let default_state = INITIAL
 
@@ -84,7 +119,7 @@ let rec current_mode () =
     current_mode ()
 
 let push_mode mode = Common.push mode _mode_stack
-let pop_mode () = ignore(Common2.pop2 _mode_stack)
+let pop_mode () = Common2.pop2 _mode_stack |> ignore
 
 }
 
@@ -132,24 +167,22 @@ rule tex = parse
   (* ----------------------------------------------------------------------- *)
   (* Keywords and ident *)
   (* ----------------------------------------------------------------------- *)
-  | "\\" ((letter+) as cmd) { 
-      TCommand (cmd, tokinfo lexbuf)
-    }
-
-  | letter+ {
-      TWord(tok lexbuf, tokinfo lexbuf)
-    }
+  | "\\" ((letter+) as cmd) { TCommand (cmd, tokinfo lexbuf)}
+  | letter+ { TWord(tok lexbuf, tokinfo lexbuf) }
 
   (* ----------------------------------------------------------------------- *)
   (* Constant *)
   (* ----------------------------------------------------------------------- *)
+  | digit+ { TNumber(tok lexbuf, tokinfo lexbuf) }
 
-  | digit+ {
-      TNumber(tok lexbuf, tokinfo lexbuf)
-    }
   (* ----------------------------------------------------------------------- *)
   (* Noweb *)
   (* ----------------------------------------------------------------------- *)
+
+  | "<<" ([^'>']+ as _tagname) ">>=" {
+      push_mode IN_NOWEB_CHUNK;
+      TBeginNowebChunk (tokinfo lexbuf)
+    }
 
   (* ----------------------------------------------------------------------- *)
   (* Special modes *)
@@ -160,16 +193,11 @@ rule tex = parse
         TBeginVerbatim (tokinfo lexbuf)
       }
 
-  | "<<" ([^'>']+ as _tagname) ">>=" {
-      push_mode IN_NOWEB_CHUNK;
-      TBeginNowebChunk (tokinfo lexbuf)
-    }
 
   (* ----------------------------------------------------------------------- *)
   | eof { EOF (tokinfo lexbuf +> Parse_info.rewrap_str "") }
   | _ { 
-        if !Flag.verbose_lexing 
-        then pr2_once ("LEXER:unrecognised symbol, in token rule:"^tok lexbuf);
+        error ("unrecognised symbol, in token rule:"^tok lexbuf);
         TUnknown (tokinfo lexbuf)
     }
 
@@ -181,14 +209,36 @@ and noweb = parse
       pop_mode ();
       TEndNowebChunk (tokinfo lexbuf)
     }
-  | ([^'\n']+ as line) { TNowebChunkLine (line, tokinfo lexbuf) }
+  | "<<" {
+      push_mode IN_NOWEB_CHUNKNAME;
+      TBeginNowebChunkName (tokinfo lexbuf);
+    }
+  | ([^'\n''<']+ as line) { TNowebChunkLine (line, tokinfo lexbuf) }
   | '\n' { TCommentNewline (tokinfo lexbuf) }
+  | '<'  { TNowebAngle (tokinfo lexbuf) }
 
   (* ----------------------------------------------------------------------- *)
   | eof { EOF (tokinfo lexbuf +> Parse_info.rewrap_str "") }
   | _ { 
-      if !Flag.verbose_lexing 
-      then pr2_once ("LEXER:unrecognised symbol, in noweb rule:"^tok lexbuf);
+      error ("unrecognised symbol, in noweb chunkname rule:"^tok lexbuf);
+      TUnknown (tokinfo lexbuf)
+    }
+
+(*****************************************************************************)
+(* Rule in noweb chunkname *)
+(*****************************************************************************)
+and noweb_chunkname = parse
+  | ">>" { 
+      pop_mode ();
+      TEndNowebChunkName (tokinfo lexbuf)
+    }
+  | ([^'\n''>']+) { TNowebChunkName (tokinfo lexbuf) }
+  | '>' { TNowebChunkName (tokinfo lexbuf) }
+
+  (* ----------------------------------------------------------------------- *)
+  | eof { EOF (tokinfo lexbuf +> Parse_info.rewrap_str "") }
+  | _ { 
+      error ("unrecognised symbol, in noweb rule:"^tok lexbuf);
       TUnknown (tokinfo lexbuf)
     }
 
@@ -211,7 +261,6 @@ and verbatim endname = parse
   (* ----------------------------------------------------------------------- *)
   | eof { EOF (tokinfo lexbuf +> Parse_info.rewrap_str "") }
   | _ { 
-      if !Flag.verbose_lexing 
-      then pr2_once ("LEXER:unrecognised symbol, in verbatim rule:"^tok lexbuf);
+      error ("unrecognised symbol, in verbatim rule:"^tok lexbuf);
       TUnknown (tokinfo lexbuf)
     }

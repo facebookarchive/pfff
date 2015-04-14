@@ -2,7 +2,7 @@
 type program2 = toplevel2 list
   (* the token list contains also the comment-tokens *)
   and toplevel2 = Ast_nw.toplevel (* NotParsedCorrectly if parse error *) *
-     Parser_nw.token list
+     Lexer_nw.token list
 
 (* This is the main function *)
 val parse:
@@ -10,4 +10,4 @@ val parse:
 
 
 (* internal *)
-val tokens: Common.filename -> Parser_nw.token list
+val tokens: Common.filename -> Lexer_nw.token list
