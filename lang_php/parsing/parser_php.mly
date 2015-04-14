@@ -178,6 +178,7 @@ module PI = Parse_info
 /*(*-----------------------------------------*)*/
 %token <Ast_php.info> T_YIELD
 %token <Ast_php.info> T_AWAIT
+%token <Ast_php.info> T_SUPER
 
 /*(* phpext: for hack and also for sgrep *)*/
 %token <Ast_php.info> T_ELLIPSIS
@@ -956,6 +957,8 @@ type_param:
   | variance_opt ident                 { TParam (Name $2) }
   | variance_opt ident T_AS TQUESTION class_name { TParamConstraint (Name $2, $3, HintQuestion ($4, $5)) }
   | variance_opt ident T_AS class_name { TParamConstraint (Name $2, $3, $4) }
+  | variance_opt ident T_SUPER TQUESTION class_name { TParamConstraint (Name $2, $3, HintQuestion ($4, $5)) }
+  | variance_opt ident T_SUPER class_name { TParamConstraint (Name $2, $3, $4) }
 
 variance_opt:
   | /*(*nothing*)*/ {None}
@@ -1470,6 +1473,7 @@ ident:
 
  | T_TYPE      { PI.str_of_info $1, $1 }
  | T_NEWTYPE   { PI.str_of_info $1, $1 }
+ | T_SUPER     { PI.str_of_info $1, $1 }
 
 ident_class_name:
   | ident             { Name $1 }

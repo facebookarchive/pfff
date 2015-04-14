@@ -134,6 +134,8 @@ let keyword_table = Common.hash_of_list [
   (* used for traits too *)
   "as",         (fun ii -> T_AS ii);
 
+  "super",         (fun ii -> T_SUPER ii);
+
   "include",(fun ii ->T_INCLUDE ii);"include_once",(fun ii ->T_INCLUDE_ONCE ii);
   "require",(fun ii ->T_REQUIRE ii);"require_once",(fun ii ->T_REQUIRE_ONCE ii);
 
