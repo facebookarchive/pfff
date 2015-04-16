@@ -226,6 +226,7 @@ let visit_toplevel
 
   (* -------------------------------------------------------------------- *)
   (* toks phase 2 *)
+  (* -------------------------------------------------------------------- *)
 
   toks +> List.iter (fun tok -> 
     match tok with
@@ -248,6 +249,7 @@ let visit_toplevel
           | s when s =~ ".*false$" -> Boolean
           | "fi" -> KeywordConditional
           | "input" -> Include
+          | "appendix" -> CommentSection0
           | _ -> Keyword
           )
         in
@@ -288,8 +290,7 @@ let visit_toplevel
 
     | T.TNumber (_, ii) -> 
         if not (Hashtbl.mem already_tagged ii)
-        then
-          tag ii Number
+        then tag ii Number
     | T.TSymbol (_, ii) -> tag ii Punctuation
 
     | T.TOBrace ii | T.TCBrace ii ->  tag ii Punctuation
