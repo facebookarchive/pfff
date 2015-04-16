@@ -28,7 +28,8 @@ open Common
  *  - more soft quality bugs, e.g. deadcode, dead parameter,
  *    passing whole structure when could just pass a subfield,
  *    wrong cohesion where a function should be in another file
- *    (e.g. when use 5 functions from another file and none of your file)
+ *    (e.g. when use 5 functions from another file and none of your file),
+ *    or when a constant is used only in another file,
  *    etc
  * 
  * related:
