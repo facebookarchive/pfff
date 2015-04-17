@@ -343,3 +343,11 @@ web/var/logs/warnings.log
 /lang_rust/parsing/parser_rust.mli
 /lang_rust/parsing/parser_rust.output
 /codeslicer
+/PFFF_DB.json
+/layer_bottomup.json
+/layer_graph_code.json
+/layer_graphcode_stats.json
+/layer_topdown.json
+/data/php_stdlib/TAGS
+/data/php_stdlib/layer_bottomup.json
+/data/php_stdlib/layer_graphcode_stats.json
