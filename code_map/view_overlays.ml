@@ -362,7 +362,7 @@ let motion_refresher ev w =
     then draw_searched_rectangles ~dw;
 
     !Controller.current_tooltip_refresher
-    +>Common.do_option GMain.Timeout.remove;
+      |> Common.do_option GMain.Timeout.remove;
     Controller.current_tooltip_refresher := 
       Some (Gui.gmain_timeout_add ~ms:1000 ~callback:(fun _ ->
         Async.async_get_opt w.model +> Common.do_option (fun model ->
@@ -373,6 +373,7 @@ let motion_refresher ev w =
           | _ -> ()
           ;
         );
+        Controller.current_tooltip_refresher := None;
         (* do not run again *)
         false
       ));
@@ -392,7 +393,11 @@ let motion_notify w ev =
    *)
   !Controller.current_motion_refresher +> Common.do_option GMain.Idle.remove;
   Controller.current_motion_refresher := 
-    Some (Gui.gmain_idle_add ~prio:200 (fun () -> motion_refresher ev w));
+    Some (Gui.gmain_idle_add ~prio:200 (fun () -> 
+      let res = motion_refresher ev w in
+      Controller.current_motion_refresher := None;
+      res
+    ));
   true
 (*e: motion_refresher *)
 

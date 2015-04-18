@@ -156,7 +156,11 @@ let paint2 dw model =
   then begin
     Ctl.current_rects_to_draw := rects;
     Ctl.paint_content_maybe_refresher := 
-        Some (Gui.gmain_idle_add ~prio:3000 (lazy_paint user_rect dw model));
+        Some (Gui.gmain_idle_add ~prio:3000 (fun () ->
+          let res = lazy_paint user_rect dw model () in
+          Ctl.paint_content_maybe_refresher := None;
+          res
+        ));
   end
 
 let paint a b = 

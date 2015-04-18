@@ -166,10 +166,12 @@ let motion_notify_refresher _da w ev () =
   false
 
 let motion_notify da w ev =
-  !Ctl.current_motion_refresher +> Common.do_option (fun x ->
-    GMain.Idle.remove x;
-  );
+  !Ctl.current_motion_refresher +> Common.do_option GMain.Idle.remove;
   Ctl.current_motion_refresher := 
-    Some (Gui.gmain_idle_add ~prio:100 (motion_notify_refresher da w ev));
+    Some (Gui.gmain_idle_add ~prio:100 (fun () -> 
+      let res = motion_notify_refresher da w ev () in
+      Ctl.current_motion_refresher := None;
+      res
+    ));
   true
 
