@@ -510,7 +510,7 @@ INSTALL_SUBDIRS= \
   commons \
   commons/graph \
   h_program-lang    matcher \
-  h_version-control h_files-format \
+  h_version-control h_files-format h_visualization \
   lang_ml/parsing \
   lang_php/analyze lang_php/matcher lang_php/parsing  lang_php/pretty \
   lang_cpp/parsing \

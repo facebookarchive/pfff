@@ -274,7 +274,7 @@ EXPORTSRC=\
   parallel.mli \
   console.mli \
   file_type.mli \
-  file_format.mli
+  file_format.mli \
 
 OCAMLSTDLIB=`ocamlc -where`
 install: all all.opt

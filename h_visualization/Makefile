@@ -63,6 +63,17 @@ clean::
 	rm -f $(PROGS) $(PROGS:=.opt)
 
 ##############################################################################
+# install
+##############################################################################
+LIBNAME=pfff-h_visualization
+EXPORTSRC= figures.mli simple_color.mli treemap.mli
+
+install-findlib: all all.opt
+	ocamlfind install $(LIBNAME) META \
+          lib.cma lib.cmxa lib.a \
+          $(EXPORTSRC) $(EXPORTSRC:%.mli=%.cmi) \
+
+##############################################################################
 # Literate Programming rules
 ##############################################################################
 

@@ -910,25 +910,26 @@ let emacs_gray_colors = [
 ]
 
 let emacs_colors = 
-  emacs_basic_colors @ emacs_degrade_colors @ emacs_gray_colors
+  (emacs_basic_colors @ emacs_degrade_colors @ emacs_gray_colors)
+   |> List.map (fun (s, a) -> String.lowercase s, a)
 
 let random_emacs_color xs =
   let len = List.length xs in
   let n = Random.int len in
-  List.nth xs n +> fst
+  List.nth xs n |> fst
 
 let rgbf_of_string s = 
   try
-    List.assoc s emacs_colors
+    List.assoc (String.lowercase s) emacs_colors
   with
   Not_found -> failwith ("color name not found: " ^ s)
 
 let rgb_of_string s = 
-  s +> rgbf_of_string +> rgb_of_rgbf
+  s |> rgbf_of_string |> rgb_of_rgbf
 
 
 let color_of_string s = 
-  s +> rgbf_of_string +> rgb_of_rgbf +> color_of_rgb
+  s |> rgbf_of_string |> rgb_of_rgbf |> color_of_rgb
 
 let c x = color_of_string x
 
@@ -945,11 +946,11 @@ let string_of_color color =
     abs_float (c1 -. c2) +. 
     0.0
   in
-  let dists = emacs_colors +> List.map (fun (s, rgbf2) -> 
+  let dists = emacs_colors |> List.map (fun (s, rgbf2) -> 
     (s, dist rgbf rgbf2)
   ) 
   in
-  Common.sort_by_val_lowfirst dists +> List.hd +> fst
+  Common.sort_by_val_lowfirst dists |> List.hd |> fst
 
 
 (*
@@ -1017,7 +1018,7 @@ let _degrade_random_bis color =
   rgb r g b
 
 let rgbf_of_color c = 
-  c +> rgb_of_color +> rgbf_of_rgb
+  c |> rgb_of_color |> rgbf_of_rgb
 
 
 (*
