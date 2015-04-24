@@ -126,6 +126,10 @@ doti:
 uninstall-findlib::
 	ocamlfind remove $(LIBNAME)
 
+reinstall-findlib:
+	$(MAKE) uninstall-findlib
+	$(MAKE) install-findlib
+
 ##############################################################################
 # Generic ocaml rules
 ##############################################################################
