@@ -175,7 +175,16 @@ let range_of_any_with_comment_cpp any toks =
   | Some ii -> ii, max
  
 
-(* todo: could do that in graph_code_c, with a range *)
+(* todo: 
+%  - could do that in graph_code_c, with a range 
+ * - if have functions like this
+ *     asize_t fl_cur_size = 0;         /* How many free words were added since
+ *                                      the latest fl_init_merge. */
+ *    then the comment is splitted in two which leads to parse error
+ *    in the generated file
+ * - do not create chunk entity for #define XXx when just after a ifndef XXx
+ *   at the top of the file.
+ *)
 let extract_entities_cpp env xs =
   xs +> Common.map_filter (fun (top, toks) ->
     match top with
@@ -316,7 +325,9 @@ let nb_newlines info =
   then Str.split_delim (Str.regexp "\n") str +> List.length - 1
   else 0
 
-(* TODO: let f = function ... leads to constant!! should be function! *)
+(* TODO: 
+ * - let f = function ... leads to constant!! should be function! 
+ *)
 let (extract_entities_ml: env -> Parse_ml.program_and_tokens -> entity list) =
  fun env (top_opt, toks) ->
   let qualify x = 
@@ -416,6 +427,8 @@ let (extract_entities_ml: env -> Parse_ml.program_and_tokens -> entity list) =
   ) +> List.flatten
 
 (*--------------------------------------------------*)
+(* Generic part *)
+(*--------------------------------------------------*)
 
 let sanity_check _xs =
 (*
@@ -438,7 +451,16 @@ let string_of_entity_kind kind =
   | E.Type      ->  if !lang = "c" then "enum"   else "type"
   | E.Class     -> if !lang = "c" then "struct" else "class"
   | E.Constant  -> "constant"
-  | E.Macro     -> "function"
+  (* old: was "function", because in C people sometimes use macro
+   * where it could be a function (if C supported inline keywords),
+   * so this is a low-level detail I wanted to hide.
+   * But if you put "function" here then you destroy the work done
+   * by uniquify and you can get a macro and function with the same
+   * chunkname. So either put macro here, or change the call
+   * to uniquify.
+   *)
+  | E.Macro     -> "macro" 
+
   | E.Exception -> "exception"
   | E.TopStmts  -> "toplevel"
   | E.Prototype -> "signature"
@@ -471,8 +493,9 @@ let lpize xs =
     pr "";
 
     let (xs, _stat) = 
-      Parse_ml.parse file
-      (* Parse_cpp.parse file  *)
+      (* CONFIG *)
+      (* Parse_ml.parse file *)
+      Parse_cpp.parse file  
     in
     let env = {
       current_file = file;
@@ -484,8 +507,9 @@ let lpize xs =
       cnt = ref 1;
     } in
     let entities = 
-      extract_entities_ml env xs
-      (* extract_entities_cpp env xs  *)
+      (* CONFIG *)
+      (* extract_entities_ml env xs *)
+      extract_entities_cpp env xs  
     in
 
     let hstart = 
@@ -546,7 +570,7 @@ let lpize xs =
 
     (* CONFIG *)
     (* for the initial 'make sync' to work *)
-    Sys.command (spf "rm -f %s" file) +> ignore; 
+    Sys.command (spf "rm -f %s" file) +> ignore;
   );
   ()
 
