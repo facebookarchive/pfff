@@ -13,7 +13,6 @@
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the file
  * license.txt for more details.
  *)
-
 open Common 
 
 module Flag = Flag_parsing_nw
@@ -21,7 +20,8 @@ module Flag = Flag_parsing_nw
 (*****************************************************************************)
 (* Prelude *)
 (*****************************************************************************)
-(* 
+(* A basic Tex/LaTeX/Noweb lexer. 
+ *
  * Alternatives:
  *  - hevea, but the code is quite complicated. I don't need all the
  *    features of TeX
@@ -32,7 +32,10 @@ module Flag = Flag_parsing_nw
 (*****************************************************************************)
 (* Type *)
 (*****************************************************************************)
-(* was in parser_nw.mly but we don't really need an extra file *)
+(* Was in parser_nw.mly but we don't really need an extra file. The
+ * only "parsing" we could do is just to make a fuzzy AST by parentizing
+ * braces.
+ *)
 
 type info = Ast_nw.info
 
@@ -41,7 +44,9 @@ type token =
   | TCommentSpace of info
   | TCommentNewline of info
 
+  (* \xxx *)
   | TCommand of (string * info)
+
   | TWord of (string * info)
   | TSymbol of (string * info)
   | TNumber of (string * info)
@@ -49,13 +54,18 @@ type token =
   | TBeginVerbatim of info | TEndVerbatim of info
   | TVerbatimLine of (string * info)
 
+  (* <<...>>= and @ *)
   | TBeginNowebChunk of info | TEndNowebChunk of info
   | TNowebChunkLine of (string * info)
+  (* << and >> when on the same line and inside a noweb chunk *)
   | TBeginNowebChunkName of info | TEndNowebChunkName of info
   | TNowebChunkName of info | TNowebAngle of info
 
-  | TOBrace of info
-  | TCBrace of info
+  | TOBrace of info | TCBrace of info
+  (* no TOParen and TCParen, they are not forced to be matching in TeX 
+   * I think 
+   *)
+
   | TUnknown of info
   | EOF of info
 
@@ -73,20 +83,26 @@ let error s =
   if !Flag.verbose_lexing
   then pr2_once ("LEXER: " ^ s)
 
+(* pad: hack around ocamllex to emulate the yyless() of flex. The semantic
+ * is not exactly the same than yyless(), so I use yyback() instead.
+ * http://my.safaribooksonline.com/book/programming/flex/9780596805418/a-reference-for-flex-specifications/yyless
+ *)
+let yyback n lexbuf =
+  lexbuf.Lexing.lex_curr_pos <- lexbuf.Lexing.lex_curr_pos - n;
+  let currp = lexbuf.Lexing.lex_curr_p in
+  lexbuf.Lexing.lex_curr_p <- { currp with
+    Lexing.pos_cnum = currp.Lexing.pos_cnum - n;
+  }
+
 (* ---------------------------------------------------------------------- *)
 let tok     lexbuf  = 
   Lexing.lexeme lexbuf
 let tokinfo lexbuf  = 
   Parse_info.tokinfo_str_pos (Lexing.lexeme lexbuf) (Lexing.lexeme_start lexbuf)
 
-(* ---------------------------------------------------------------------- *)
-(* Keywords part 1 *)
-(* ---------------------------------------------------------------------- *)
-
-(*
-let keyword_table = Common.hash_of_list [
-]
-*)
+(* let keyword_table = Common.hash_of_list [] ? not needed. No keyword
+ * in Tex, just commands.
+ *)
 
 (* ---------------------------------------------------------------------- *)
 (* Lexer State *)
@@ -94,11 +110,11 @@ let keyword_table = Common.hash_of_list [
 type state_mode = 
   (* aka TeX mode *)
   | INITIAL
-  (* started with begin{verbatim} (or variant), finished end{verbatim} *)
+  (* started with begin{verbatim} (or variant), finished by end{verbatim} *)
   | IN_VERBATIM of string
-  (* started with <<xxx>>= *)
+  (* started with <<xxx>>=, finished by @ *)
   | IN_NOWEB_CHUNK
-  (* started with << *)
+  (* started with <<, finished by >> when they are on the same line *)
   | IN_NOWEB_CHUNKNAME
 
 let default_state = INITIAL
@@ -139,8 +155,8 @@ rule tex = parse
   | "%" [^'\n' '\r']* { 
       TComment(tokinfo lexbuf)
     }
-  (* actually in lex space and newlines have meaning so should perhaps
-   * rename those tokens
+  (* Actually in Tex the space and newlines have a meaning so I should perhaps
+   * rename those tokens.
    *)
   | [' ''\t'] { TCommentSpace (tokinfo lexbuf) }
   | "\n" { TCommentNewline (tokinfo lexbuf) }
@@ -151,21 +167,23 @@ rule tex = parse
   | "{" { TOBrace (tokinfo lexbuf); }
   | "}" { TCBrace (tokinfo lexbuf); }
 
+  (* they don't have to be matching in TeX, so no need for special tokens *)
   | '[' { TSymbol (tok lexbuf, tokinfo lexbuf) }
   | ']' { TSymbol (tok lexbuf, tokinfo lexbuf) }
   | '(' { TSymbol (tok lexbuf, tokinfo lexbuf) }
   | ')' { TSymbol (tok lexbuf, tokinfo lexbuf) }
 
+  (* don't want ~\foo to be tokenized as ~\ *)
+  | "~" { TSymbol (tok lexbuf, tokinfo lexbuf) }
+
   | ['-' '+' '=' '\'' '\\' '.' '@' ',' '/' ':' '<' '>' '*' ';' '#' '"'
      '_' '`' '?' '^' '|' '!' '&' ]+ {
       TSymbol (tok lexbuf, tokinfo lexbuf) 
     }
-  (* don't want ~\foo to be tokenized as ~\ *)
-  | "~" { TSymbol (tok lexbuf, tokinfo lexbuf) }
 
 
   (* ----------------------------------------------------------------------- *)
-  (* Keywords and ident *)
+  (* Commands and words (=~ Keywords and indent in other PL) *)
   (* ----------------------------------------------------------------------- *)
   | "\\" ((letter+) as cmd) { TCommand (cmd, tokinfo lexbuf)}
   | letter+ { TWord(tok lexbuf, tokinfo lexbuf) }
@@ -209,7 +227,11 @@ and noweb = parse
       pop_mode ();
       TEndNowebChunk (tokinfo lexbuf)
     }
-  | "<<" {
+  (* bugfix: they have to be on the same line! otherwise C code using
+   * << will screw the parsing
+   *)
+  | "<<" ([^'\n' '\r']+ as name) ">>" {
+      yyback (String.length name + 2) lexbuf;
       push_mode IN_NOWEB_CHUNKNAME;
       TBeginNowebChunkName (tokinfo lexbuf);
     }
@@ -232,8 +254,12 @@ and noweb_chunkname = parse
       pop_mode ();
       TEndNowebChunkName (tokinfo lexbuf)
     }
-  | ([^'\n''>']+) { TNowebChunkName (tokinfo lexbuf) }
+  | ([^'>']+) { TNowebChunkName (tokinfo lexbuf) }
   | '>' { TNowebChunkName (tokinfo lexbuf) }
+  | '\n' { 
+         error ("impossible, should not get newline in chunkname");
+         TUnknown (tokinfo lexbuf)
+    }
 
   (* ----------------------------------------------------------------------- *)
   | eof { EOF (tokinfo lexbuf +> Parse_info.rewrap_str "") }
