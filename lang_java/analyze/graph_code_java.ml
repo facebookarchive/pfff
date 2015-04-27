@@ -106,6 +106,39 @@ type env = {
 (*****************************************************************************)
 (* Helpers *)
 (*****************************************************************************)
+let rec iter_until_true ~f list_ =
+  match list_ with
+  | [] -> None
+  | hd::tl -> 
+      match f hd with 
+      | false -> iter_until_true ~f tl
+      | true -> Some hd
+
+let rec fold_inner ~acc ~f ~x =
+  (match x with
+  | [] -> acc
+  | hd::tl -> fold_inner ~acc:(f acc hd) ~f:f ~x:tl
+  )
+
+let fold x_list ~init ~f =
+  fold_inner ~acc:init ~x:x_list ~f:f
+
+let last = function
+  | hd::tl -> List.fold_left (fun _ y -> y) hd tl
+  | [] -> failwith "no element"
+
+ let join_list ~sep a=
+  let a =
+     (match a with
+     | "this"::tl -> tl
+     | _ -> a)
+   in
+   let aux = fold ~init:"" ~f:(fun a b -> (Common.join sep [a;b])) in
+    (match a with
+    | [] -> ""
+    | [a] -> a 
+    | hd::tl -> hd ^ (aux tl)
+    )
 
 let parse ~show_parse_error file =
   try
@@ -248,14 +281,57 @@ let add_use_edge env (name, kind) =
  *Depth first search, checks which class path has the method called in the current
  *node's successors
  *)
-let dfs ~env  ~node ~node_str ~get_edges ~f =
+let dfs ?(verbose=false) ~env  ~node ~node_str ~get_edges ~f =
+  let printer = ref [""] in
   let full_str = (str_of_qualified_ident env.top_level_qualifer) ^"." ^
         node_str in
-  (match (f full_str, f node_str) with
-  | (true,_) -> pr "Fully qualified "; Some full_str
-  | (_,true) -> pr "Method name as is"; Some node_str
-  | (false, false) ->
-          let rec aux ~node_str ~d ~list_ ~get_edges ~f =
+  if verbose = true then
+    begin
+    pr (spf "dfs on str: %s, %s" full_str node_str);
+    pr (spf "Current method/class/fied: %s" (str_of_qualified_ident env.current_qualifier ^"."^node_str));
+    end; 
+    let f_imported_namespace_check =
+    iter_until_true ~f:(fun a-> f ((join_list ~sep:"." a) ^ "." ^ node_str)) 
+    env.imported_namespace
+    in
+    let f_imported_qualifier_check =
+      iter_until_true ~f:(fun (a,(_,b))-> f (a ^ "."^(str_of_qualified_ident b)
+      ^"." ^ node_str)) 
+      env.imported_qualified 
+    in
+(*
+    pr "Imported qualified";
+    pr (match f_imported_qualifier_check with
+    | Some (str,_) -> str
+    | None -> "None"
+    );
+*)
+    (*
+     *let _str = 
+     *  match env.imported_qualified with
+     *  | [] -> ""
+     *  | (hd,(_,b))::_ -> hd ^"."^ (str_of_qualified_ident b)^"."^node_str
+     *in
+     *pr _str;
+     *)
+let op =
+  (match (f full_str, f node_str, f_imported_namespace_check , f_imported_qualifier_check) with
+  | (false,false,Some str, _) -> 
+      if verbose = true then
+        printer.contents <- printer.contents @ ["Imported namespace edge drawn"];
+      Some (join_list ~sep:"." str ^"."^node_str)
+  | (false, false, _ , Some (str,_)) ->
+      if verbose = true then
+        printer.contents <- printer.contents @[ "Imported qualifier edge drawn"];
+      Some ( str ^"." ^ node_str) 
+  | (true,_,_,_) -> 
+      if verbose = true then  
+        printer.contents <- printer.contents @ ["Fully qualified "]; Some full_str
+  | (_,true,_,_) -> 
+      if verbose = true then
+        printer.contents <- printer.contents @ ["Method name as is"]; Some node_str
+  | (false, false,None, None) ->
+          let rec aux  ~verbose ~node_str ~d ~list_ ~get_edges ~f =
 (*             Maximum depth that the funtion searched uptil *)
             if (d < 10) then 
               begin
@@ -263,13 +339,15 @@ let dfs ~env  ~node ~node_str ~get_edges ~f =
                 | [] -> None
                 | hd::tl -> 
                     let node_str_hd = (fst hd) ^ "." ^ node_str in
+                    if verbose = true then
+                      printer.contents <- printer.contents @ [node_str_hd];
               (match f node_str_hd with 
               | true -> 
                   Some node_str_hd 
               | false ->       
                   let node_list = get_edges ~n:hd in
-                  (match aux ~node_str:node_str_hd ~d:(d+1) ~list_:node_list ~get_edges:get_edges ~f:f with
-                  | None -> aux ~d:d ~node_str:node_str ~list_:tl ~get_edges:get_edges ~f:f 
+                  (match aux ~verbose ~node_str:node_str_hd ~d:(d+1) ~list_:node_list ~get_edges:get_edges ~f:f with
+                  | None -> aux ~verbose ~d:d ~node_str:node_str ~list_:tl ~get_edges:get_edges ~f:f 
                   | Some x -> Some x
                   )
               )
@@ -278,12 +356,14 @@ let dfs ~env  ~node ~node_str ~get_edges ~f =
         else
                 None
                   in
-                  (match aux ~d:0 ~node_str:node_str ~list_:(get_edges
+                  (match aux ~verbose ~d:0 ~node_str:node_str ~list_:(get_edges
                   ~n:node) ~get_edges:get_edges ~f with
-                  | Some x -> pr "dfs, node existing"; Some x
+                  | Some x -> printer.contents <- printer.contents @ ["dfs, node existing"]; Some x
                   | None -> None
                   )
   )
+in
+ (op, printer)
 
 (*****************************************************************************)
 (* Class/Package Lookup *)
@@ -364,7 +444,7 @@ let rec extract_defs_uses ~phase ~g ~ast ~readable ~lookup_fails =
   ignore(lookup_fails);
 
   let env = {
-    g; phase;
+    g; phase; 
 
     current =
      (match ast.package with
@@ -458,24 +538,24 @@ let rec extract_defs_uses ~phase ~g ~ast ~readable ~lookup_fails =
    * to visit the AST and lookup classnames (possibly using information
    * from the import to know where to look for first).
    *)
-  decls ast env ast.decls
+  decls env ast.decls
 
 (* ---------------------------------------------------------------------- *)
 (* Declarations (classes, fields, etc) *)
 (* ---------------------------------------------------------------------- *)
-and decl ast env = function
+and decl env = function
   | Class def, _ ->
 (*                   pr "Class def \n";  *)
-                  class_decl ast env def
+                  class_decl env def
   | Method def, _ ->
 (*                   pr "method def\n";  *)
-                  method_decl ast env def
+                  method_decl env def
   | Field def, _ -> 
 (*                   pr "Def\n";  *)
-                  field_decl ast env def
+                  field_decl env def
   | Enum def, _ -> 
 (*                   pr "Enum\n"; *)
-                  enum_decl ast env def
+                  enum_decl env def
   | Init (_is_static, st), n ->
 (*                   pr "Init\n"; *)
       let name = spf "__init__%d" n in
@@ -491,14 +571,14 @@ and decl ast env = function
         current_qualifier = full_ident;
       }
       in
-      stmt ast env st
+      stmt env st
 
-and decls ast env xs = 
+and decls env xs = 
 (*         pr "Decls env xs \n"; *)
-        List.iter (decl ast env) (Common.index_list_1 xs);
+        List.iter (decl env) (Common.index_list_1 xs);
 (*         pr "Done with decls env xs" *)
 
-and class_decl ast env def =
+and class_decl env def =
 (*         pr "Class decl env def\n"; *)
   let full_ident = env.current_qualifier @ [def.cl_name] in
   let full_str = str_of_qualified_ident full_ident in
@@ -537,7 +617,7 @@ and class_decl ast env def =
     (def.cl_impls)
   in
 (*   pr "List iter \n"; *)
-  List.iter (typ ast env) parents;
+  List.iter (typ env) parents;
 (*   pr "imports \n"; *)
   let imports =
     if env.phase = Defs then []
@@ -551,13 +631,13 @@ and class_decl ast env def =
      (List.map Ast.unwrap full_ident @ ["*"]) ::
     import_of_inherited_classes env (full_str, E.Class)
   in
-  decls ast {env with imported_namespace = imports @ env.imported_namespace }
+  decls {env with imported_namespace = imports @ env.imported_namespace }
     def.cl_body
 
 (* Java allow some forms of overloading, so the same method name can be
  * used multiple times.
  *)
-and method_decl ast env def =
+and method_decl env def =
 
   let full_ident = env.current_qualifier @ [def.m_var.v_name] in
   let full_str = str_of_qualified_ident full_ident in
@@ -594,12 +674,12 @@ and method_decl ast env def =
     type_parameters = [];
   }
   in
-  var ast env def.m_var;
-  List.iter (var ast env) def.m_formals;
+  var env def.m_var;
+  List.iter (var env) def.m_formals;
   (* todo: m_throws *)
-  stmt ast env def.m_body
+  stmt env def.m_body
 
-and field_decl ast env def =
+and field_decl env def =
   let full_ident = env.current_qualifier @ [def.f_var.v_name] in
   let full_str = str_of_qualified_ident full_ident in
   let kind =
@@ -624,9 +704,9 @@ and field_decl ast env def =
     current_qualifier = env.current_qualifier
   }
   in
-  field ast env def
+  field env def
 
-and enum_decl ast env def =
+and enum_decl env def =
   let full_ident = env.current_qualifier @ [def.en_name] in
   let full_str = str_of_qualified_ident full_ident in
     (* less: make it a class? or a Type? *)
@@ -653,9 +733,9 @@ and enum_decl ast env def =
   }
   in
   let parents = (def.en_impls) in
-  List.iter (typ ast env) parents;
+  List.iter (typ env) parents;
   let (csts, xs) = def.en_body in
-  decls ast env xs;
+  decls env xs;
 
   csts +> List.iter (fun enum_constant ->
 
@@ -684,9 +764,9 @@ and enum_decl ast env def =
     (match enum_constant with
     | EnumSimple _ident -> ()
     | EnumConstructor (_ident, args) ->
-        exprs ast env args
+        exprs env args
     | EnumWithMethods (_ident, xs) ->
-        decls ast env (xs +> List.map (fun x -> Method x))
+        decls env (xs +> List.map (fun x -> Method x))
     )
   )
 
@@ -694,32 +774,32 @@ and enum_decl ast env def =
 (* Stmt *)
 (* ---------------------------------------------------------------------- *)
 (* mostly boilerplate, control constructs don't introduce entities *)
-and stmt ast env = function
+and stmt env = function
   | Empty -> ()
-  | Block xs -> stmts ast env xs
-  | Expr e -> expr ast env e
+  | Block xs -> stmts env xs
+  | Expr e -> expr env e
   | If (e, st1, st2) ->
-      expr ast env e;
-      stmt ast env st1;
-      stmt ast env st2;
+      expr env e;
+      stmt env st1;
+      stmt env st2;
   | Switch (e, xs) ->
-      expr ast env e;
+      expr env e;
       xs +> List.iter (fun (cs, sts) ->
-        cases ast env cs;
-        stmts ast env sts
+        cases env cs;
+        stmts env sts
       )
   | While (e, st) ->
-      expr ast env e;
-      stmt ast env st;
+      expr env e;
+      stmt env st;
   | Do (st, e) ->
-      expr ast env e;
-      stmt ast env st;
+      expr env e;
+      stmt env st;
   | For (x, st) ->
       let env =
         match x with
         | Foreach (v, e) ->
-            var ast env v;
-            expr ast env e;
+            var env v;
+            expr env e;
             { env with
               params_or_locals = p_or_l v :: env.params_or_locals;
             }
@@ -727,47 +807,47 @@ and stmt ast env = function
         | ForClassic (init, es1, es2) ->
             (match init with
             | ForInitExprs es0 ->
-                exprs ast env (es0 @ es1 @ es2);
+                exprs env (es0 @ es1 @ es2);
                 env
             | ForInitVars xs ->
-                List.iter (field ast env) xs;
+                List.iter (field env) xs;
                 let env = { env with
                   params_or_locals =
                     (xs +> List.map (fun fld -> p_or_l fld.f_var)
                     ) @ env.params_or_locals;
                 }
                 in
-                exprs ast env (es1 @ es2);
+                exprs env (es1 @ es2);
                 env
             )
       in
-      stmt ast env st;
+      stmt env st;
 
   (* could have an entity and dependency ... but it's intra procedural
    * so not that useful
    *)
-  | Label (_id, st) -> stmt ast env st
+  | Label (_id, st) -> stmt env st
   | Break _idopt | Continue _idopt -> ()
-  | Return eopt -> exprs ast env (Common2.option_to_list eopt)
+  | Return eopt -> exprs env (Common2.option_to_list eopt)
   | Sync (e, st) ->
-      expr ast env e;
-      stmt ast env st;
+      expr env e;
+      stmt env st;
   | Try (st, xs, stopt) ->
-      stmt ast env st;
-      catches ast env xs;
-      stmts ast env (Common2.option_to_list stopt);
-  | Throw e -> expr ast env e
+      stmt env st;
+      catches env xs;
+      stmts env (Common2.option_to_list stopt);
+  | Throw e -> expr env e
   | Assert (e, eopt) ->
-      exprs ast env (e::Common2.option_to_list eopt)
+      exprs env (e::Common2.option_to_list eopt)
   (* The modification of env.params_locals is done in decls() *)
-  | LocalVar f -> field ast env f
-  | LocalClass def -> class_decl ast env def
+  | LocalVar f -> field env f
+  | LocalClass def -> class_decl env def
 
-and stmts ast env xs =
+and stmts env xs =
   let rec aux env = function
     | [] -> ()
     | x::xs ->
-        stmt ast env x;
+        stmt env x;
         let env =
           match x with
           | LocalVar fld ->
@@ -780,21 +860,21 @@ and stmts ast env xs =
   in
   aux env xs
 
-and cases ast env xs = List.iter (case ast env) xs
-and case ast env = function
-  | Case e -> expr ast env e
+and cases env xs = List.iter (case env) xs
+and case env = function
+  | Case e -> expr env e
   | Default -> ()
 
-and catches ast env xs = List.iter (catch ast env) xs
-and catch ast env (v, st) =
-  var ast env v;
+and catches env xs = List.iter (catch env) xs
+and catch env (v, st) =
+  var env v;
   let env = { env with params_or_locals = p_or_l v :: env.params_or_locals } in
-  stmt ast env st
+  stmt env st
 
 (* ---------------------------------------------------------------------- *)
 (* Expr *)
 (* ---------------------------------------------------------------------- *)
-and expr ast env = function
+and expr env = function
   (* main dependency source! *)
   | Name n ->
       if env.phase = Uses then begin
@@ -838,10 +918,10 @@ and expr ast env = function
   | NameOrClassType _ -> ()
   | Literal _ -> ()
 
-  | ClassLiteral t -> typ ast env t
+  | ClassLiteral t -> typ env t
   | NewClass (t, args, decls_opt) ->
-      typ ast env t;
-      exprs ast env args;
+      typ env t;
+      exprs env args;
       (match decls_opt with
       | None -> ()
       | Some xs ->
@@ -860,7 +940,7 @@ and expr ast env = function
             cl_mods = [];
           }
           in
-          class_decl ast env cdecl
+          class_decl env cdecl
       )
   | NewQualifiedClass (_e, id, args, decls_opt) ->
       (*
@@ -868,18 +948,18 @@ and expr ast env = function
       pr2_gen (NewQualifiedClass (e, id, args, decls_opt));
       *)
       (* todo: need to resolve the type of 'e' *)
-      expr ast env (NewClass (TClass ([id, []]), args, decls_opt))
+      expr env (NewClass (TClass ([id, []]), args, decls_opt))
 
   | NewArray (t, args, _i, ini_opt) ->
-      typ ast env t;
-      exprs ast env args;
-      init_opt ast env ini_opt
+      typ env t;
+      exprs env args;
+      init_opt env ini_opt
 
   | Call (e, es) ->
                   (if env.phase = MethodToMethod then
-                    resolve_call ast env (e,es));
-      expr ast env e;
-      exprs ast env es;
+                    resolve_call env (e,es));
+      expr env e;
+      exprs env es;
 (* TODO: resolve call    *)
   | Dot (e, _idTODO) ->
       (* todo: match e, and try lookup method/field
@@ -887,37 +967,39 @@ and expr ast env = function
        * lookup children. If local ... then need get its type
        * lookup its node, and then lookup children.
        *)
-      expr ast env e;
+      expr env e;
 
-  | ArrayAccess (e1, e2) -> exprs ast env [e1;e2]
-  | Postfix (e, _op) | Prefix (_op, e) -> expr ast env e
-  | Infix (e1, _op, e2) -> exprs ast env [e1;e2]
-  | Conditional (e1, e2, e3) -> exprs ast env [e1;e2;e3]
-  | Assignment (e1, _op, e2) -> exprs ast env [e1;e2]
+  | ArrayAccess (e1, e2) -> exprs env [e1;e2]
+  | Postfix (e, _op) | Prefix (_op, e) -> expr env e
+  | Infix (e1, _op, e2) -> exprs env [e1;e2]
+  | Conditional (e1, e2, e3) -> exprs env [e1;e2;e3]
+  | Assignment (e1, _op, e2) -> exprs env [e1;e2]
 
   | Cast (t, e) ->
-      typ ast env t;
-      expr ast env e
+      typ env t;
+      expr env e
   | InstanceOf (e, tref) ->
-      expr ast env e;
-      typ ast env (tref);
+      expr env e;
+      typ env (tref);
 
 (* TODO: Remove ast, if it is not used *)
-and resolve_call ast env (expr_,_) =
-       let rec aux _ast expr_ =
+and resolve_call env (expr_,_) =
+       let rec aux expr_ =
         (match expr_ with 
-        | Name name_ -> resolve_name ast name_ 
+        | Name name_ -> resolve_name name_
         | NameOrClassType _ 
         | Literal _ 
         | ClassLiteral _  
         | NewClass _ 
         | NewArray _ 
-        | NewQualifiedClass _ -> "NewQualifiedClassNone"
-        | Call(expr_,_) ->     aux _ast expr_
-        | Dot (expr_, ident) -> let qualifier = (aux _ast expr_) in
-                                (match qualifier with 
-                                | "" -> Ast.unwrap ident 
-                                | q -> q ^ "." ^ Ast.unwrap ident)
+        | NewQualifiedClass _ -> ["Not supported"]
+        | Call(expr_,_) ->     aux expr_
+        | Dot (expr_, ident) -> 
+            let qualifier = (aux expr_) in
+            (match qualifier with 
+            | [] -> [Ast.unwrap ident]
+            | q -> q @ [Ast.unwrap ident]
+            )
         | ArrayAccess _
         | Postfix _
         | Prefix _
@@ -925,20 +1007,66 @@ and resolve_call ast env (expr_,_) =
         | Cast _
         | InstanceOf _
         | Conditional _
-        | Assignment _ -> "AssignmentNone"
+        | Assignment _ -> ["Not supported"]
         )
-        in 
-        let node_str =  aux ast expr_ in
-        let node_str_o = dfs ~env  ~node:env.current ~node_str:node_str  ~get_edges:(fun
-                ~n -> G.succ n G.Use env.g) ~f:(fun node -> G.has_node (node,
-                E.Method) env.g) 
+        in
+        let node_str_array =  aux expr_ in
+        let node_str =  (last node_str_array) in
+        let f a = join_list ~sep:"." a
+               in
+        let dfs_f = ref (dfs ~verbose:true ~env  ~node:env.current  ~get_edges:(fun
+                ~n -> G.succ n G.Use env.g) ~f:(fun node -> G.has_node
+                (node,E.Method) env.g) )
+        in
+        (*
+         *if node_str = "addAccessibilityInteractionConnection" then
+         *  dfs_f.contents <- (dfs ~verbose:true ~env  ~node:env.current  ~get_edges:(fun
+         *        ~n -> G.succ n G.Use env.g) ~f:(fun node -> G.has_node
+         *        (node,E.Method) env.g) );
+         *)
+        let node_str_o =
+          (match node_str_array with
+          | [] -> None
+          | _::node_str_array_tl -> 
+              (match dfs_f.contents ~node_str:(f node_str_array_tl) with
+              | (None, printer) -> 
+                  printer.contents <- printer.contents @ 
+                  ["MTM: lookup without first qualifier failed"];
+                  (match dfs_f.contents ~node_str:(f node_str_array) with
+                  | (None, printer2) -> 
+                      let string_ = join_list ~sep:"\n"  (printer.contents @
+                      printer2.contents) in
+                      pr "Print dfs";
+                      pr string_;
+                      None
+                  | (Some a,_) -> Some a
+                  )
+              | (Some a, _) -> Some a 
+            )
+          )
+        (*
+         *let node_str_o =
+         *  (match dfs_f.contents ~node_str:(node_str) with
+         *  | None -> 
+         *       (match node_str_array with
+         *       | [] -> None
+         *       | _::node_str_array_tl -> 
+         *           pr "MTM: lookup with first qualifier failed";
+         *           pr (f node_str_array_tl);
+         *           pr (f node_str_array);
+         *           dfs_f.contents ~node_str:(f node_str_array_tl)
+         *       )
+         *  | str_o -> str_o
+         *  )
+         *)
         in      
         (match node_str_o with
-        | None -> pr2 (spf "MTM: (resolve_call) lookup fail on %s" node_str)
+        | None -> 
+            pr (spf "MTM: (resolve_call) lookup fail on %s" node_str)
         | Some str -> 
             add_use_edge env (str, E.Method);
             pr (spf "MTM: (resolve_call) Edge drawn to method %s, %s" str
-            node_str)
+           node_str)
         );
         ()
 
@@ -946,11 +1074,16 @@ and resolve_call ast env (expr_,_) =
  * relies on the fact that most method calls are of the form A.x(), where A is
  * an object. Also, it assumes that in type name, first element of the list can
  * be removed*)
-and resolve_name _ast name_ =
-        match name_ with
-(*         | hd::[] -> str_of_name [hd] *)
-        | _::tl -> str_of_name tl
-        | [] -> "" 
+and resolve_name name_ =
+  List.map (fun (_tyarg_todo, ident) -> Ast.unwrap ident) name_
+  
+        (*
+         * and resolve_namr _ast name_ =
+         *match name_ with
+         *| hd::[] -> str_of_name [hd] 
+         *| _::tl -> str_of_name tl
+         *| [] -> "" 
+         *)
 
 (* Finds the type of object, and prepends it to qualifying path
 and resolve_name ast name_ =
@@ -1010,21 +1143,21 @@ and resolve_typ = function
         | TArray typ_ -> resolve_typ typ_ 
 
 *)
-and exprs ast env xs = List.iter (expr ast env) xs
-and init ast env = function
-  | ExprInit e -> expr ast env e
-  | ArrayInit xs -> List.iter (init ast env) xs
-and init_opt ast env opt =
+and exprs env xs = List.iter (expr env) xs
+and init env = function
+  | ExprInit e -> expr env e
+  | ArrayInit xs -> List.iter (init env) xs
+and init_opt env opt =
   match opt with
   | None -> ()
-  | Some ini -> init ast env ini
+  | Some ini -> init env ini
 
 (* ---------------------------------------------------------------------- *)
 (* Types *)
 (* ---------------------------------------------------------------------- *)
-and typ _ast env = function
+and typ env = function
   | TBasic _ -> ()
-  | TArray t -> typ _ast env t
+  | TArray t -> typ env t
   (* other big dependency source! *)
   | TClass reft ->
       (* todo: let's forget generic arguments for now *)
@@ -1065,20 +1198,20 @@ and typ _ast env = function
 (* ---------------------------------------------------------------------- *)
 (* Misc *)
 (* ---------------------------------------------------------------------- *)
-and var ast env v =
-  typ ast env v.v_type;
+and var env v =
+  typ env v.v_type;
   ()
 
-and field ast env f =
-  var ast env f.f_var;
-  init_opt ast env f.f_init;
+and field env f =
+  var env f.f_var;
+  init_opt env f.f_init;
   ()
 
 (*****************************************************************************)
 (* Main entry point *)
 (*****************************************************************************)
 
-let build ?(verbose=true) ?(only_defs=false) root files =
+let build ?(verbose=true) ?(only_defs=false) ?(method_to_method=false) root files =
   let g = G.create () in
   G.create_initial_hierarchy g;
 
@@ -1117,6 +1250,8 @@ let build ?(verbose=true) ?(only_defs=false) root files =
      extract_defs_uses ~phase:Uses ~g ~ast ~readable ~lookup_fails;
    ));
   end;
+  if method_to_method then 
+    begin
   if verbose then pr2 "\nstep4: methodtomethod";
 (*    pr "Step 4\n";  *)
   files +> Console.progress ~show:verbose (fun k ->
@@ -1125,5 +1260,6 @@ let build ?(verbose=true) ?(only_defs=false) root files =
       let readable = Common.readable ~root file in
       let ast = parse ~show_parse_error:true file in
      extract_defs_uses ~phase:MethodToMethod ~g ~ast ~readable ~lookup_fails;
-    ));
+  ));
+    end;
   g
