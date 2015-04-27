@@ -299,6 +299,29 @@ let dfs ?(verbose=false) ~env  ~node ~node_str ~get_edges ~f =
       ^"." ^ node_str)) 
       env.imported_qualified 
     in
+    let check_current_class =
+      if not (f full_str) then
+          let base_class_o =
+            (match List.rev env.top_level_qualifer with 
+             | [] -> None
+             | _::[] -> None
+             | _::a -> Some (List.rev a)
+            )
+          in
+          (match base_class_o with
+          | Some base_class_list -> 
+              (match f( (str_of_qualified_ident base_class_list) ^ "."^
+              node_str)
+              with
+              | true -> Some (str_of_qualified_ident base_class_list
+              ^"."^node_str )
+              | false -> None
+              )
+          | None -> None
+          )
+      else
+        Some full_str
+    in
 (*
     pr "Imported qualified";
     pr (match f_imported_qualifier_check with
@@ -315,22 +338,22 @@ let dfs ?(verbose=false) ~env  ~node ~node_str ~get_edges ~f =
      *pr _str;
      *)
 let op =
-  (match (f full_str, f node_str, f_imported_namespace_check , f_imported_qualifier_check) with
-  | (false,false,Some str, _) -> 
+  (match (check_current_class, f node_str, f_imported_namespace_check , f_imported_qualifier_check) with
+  | (None,false,Some str, _) -> 
       if verbose = true then
         printer.contents <- printer.contents @ ["Imported namespace edge drawn"];
       Some (join_list ~sep:"." str ^"."^node_str)
-  | (false, false, _ , Some (str,_)) ->
+  | (None, false, _ , Some (str,_)) ->
       if verbose = true then
         printer.contents <- printer.contents @[ "Imported qualifier edge drawn"];
       Some ( str ^"." ^ node_str) 
-  | (true,_,_,_) -> 
+  | (Some str,_,_,_) -> 
       if verbose = true then  
-        printer.contents <- printer.contents @ ["Fully qualified "]; Some full_str
+        printer.contents <- printer.contents @ ["Fully qualified "]; Some str
   | (_,true,_,_) -> 
       if verbose = true then
         printer.contents <- printer.contents @ ["Method name as is"]; Some node_str
-  | (false, false,None, None) ->
+  | (None, false,None, None) ->
           let rec aux  ~verbose ~node_str ~d ~list_ ~get_edges ~f =
 (*             Maximum depth that the funtion searched uptil *)
             if (d < 10) then 
