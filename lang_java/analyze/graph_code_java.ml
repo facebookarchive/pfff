@@ -13,11 +13,10 @@
  * license.txt for more details.
  *)
 open Common
+open Ast_java
 
 module E = Entity_code
 module G = Graph_code
-
-open Ast_java
 module Ast = Ast_java
 module PI = Parse_info
 module V = Visitor_java
@@ -106,6 +105,11 @@ type env = {
 (*****************************************************************************)
 (* Helpers *)
 (*****************************************************************************)
+
+(*
+ *Iterates  over list [a1; a2; ... ] with f until f ai returns true. Return Some f ai,
+ *or None if f returns false for all ai's 
+ *)
 let rec iter_until_true ~f list_ =
   match list_ with
   | [] -> None
@@ -114,31 +118,53 @@ let rec iter_until_true ~f list_ =
       | false -> iter_until_true ~f tl
       | true -> Some hd
 
-let rec fold_inner ~acc ~f ~x =
-  (match x with
-  | [] -> acc
-  | hd::tl -> fold_inner ~acc:(f acc hd) ~f:f ~x:tl
-  )
-
-let fold x_list ~init ~f =
-  fold_inner ~acc:init ~x:x_list ~f:f
-
-let last = function
-  | hd::tl -> List.fold_left (fun _ y -> y) hd tl
-  | [] -> failwith "no element"
-
- let join_list ~sep a=
-  let a =
-     (match a with
-     | "this"::tl -> tl
-     | _ -> a)
-   in
-   let aux = fold ~init:"" ~f:(fun a b -> (Common.join sep [a;b])) in
-    (match a with
-    | [] -> ""
-    | [a] -> a 
-    | hd::tl -> hd ^ (aux tl)
+(*
+ *Fold function, already defined in commons/common.ml in git_diff parser version
+ *of pfff. Should use that when integrating 
+ *)
+let fold x_list ~init ~f = 
+  let rec aux ~acc ~x ~f=
+    (match x with
+    | [] -> acc
+    | hd::tl -> aux ~acc:(f acc hd) ~f:f ~x:tl
     )
+  in
+  aux ~acc:init ~x:x_list ~f:f
+  
+(*
+ *Returns last element of list and the beginning of the list too, think of it as
+ *of let a::b = list_, in reverse
+ *)
+let last_and_beginning_of_list list_ =
+  match List.rev list_ with
+  | [] -> None 
+  | last::[] -> Some (last,[])
+  | last::rest -> Some (last, List.rev rest)
+
+(*Returns string list, without string x as an element *)
+let remove_char_from_string_list x x_list =
+  List.flatten (List.map 
+  (fun y -> 
+    if y = x then []
+    else
+      [y]
+  ) 
+  x_list)
+
+(*Joins string list, into a string with a separator *)
+let join_list ~sep a=
+  let a =
+    (match a with
+    | "this"::tl -> tl
+    | _ -> a
+    )
+  in
+ let aux = fold ~init:"" ~f:(fun a b -> (Common.join sep [a;b])) in
+  (match a with
+  | [] -> ""
+  | [a] -> a 
+  | hd::tl -> hd ^ (aux tl)
+  )
 
 let parse ~show_parse_error file =
   try
@@ -158,23 +184,6 @@ let str_of_qualified_ident xs =
 let str_of_name xs =
   xs +> List.map (fun (_tyarg_todo, ident) -> Ast.unwrap ident) +>
     Common.join "."
-
-(*let str_of_class_type xs =*)
-  (*xs +> List.map (fun (ident, _tyarg_todo) -> Ast.unwrap ident) +>*)
-    (*Common.join "."*)
-
-(* Same as str_of_qualified_ident except neglects super and this     *)
-(*
- *let str_of_name_this_super xs=
- *        (match xs with
- *        | (_,hd)::tl ->  (match Ast.unwrap hd with
- *                     | "super"
- *                     | "this" -> str_of_name tl
- *                     | _ -> str_of_name xs
- *                     )
- *        | [] -> "")
- *
- *)
 
 (* helper to build entries in env.params_or_locals *)
 let p_or_l v =
@@ -289,16 +298,36 @@ let dfs ?(verbose=false) ~env  ~node ~node_str ~get_edges ~f =
     begin
     pr (spf "dfs on str: %s, %s" full_str node_str);
     pr (spf "Current method/class/fied: %s" (str_of_qualified_ident env.current_qualifier ^"."^node_str));
-    end; 
+    end;
+    (*Checks if method exists in imported namespaces *)
+    (*if verbose = true then*)
+    (*pr "imported_namespace_check";*)
     let f_imported_namespace_check =
-    iter_until_true ~f:(fun a-> f ((join_list ~sep:"." a) ^ "." ^ node_str)) 
+    iter_until_true ~f:(fun a-> let str = (( a +> remove_char_from_string_list
+    "*" +>  (join_list ~sep:".") ) ^ "." ^ node_str) in 
+    let is_node_present = f str in
+    (*if verbose = true then*)
+      (*begin*)
+        (*pr str; *)
+      (*end;*)
+    is_node_present ) 
     env.imported_namespace
     in
+    (*Checks if method exists in imported qualifiers *)
+    (*if verbose = true then*)
+    (*pr "imported_qualifier_check"; *)
     let f_imported_qualifier_check =
-      iter_until_true ~f:(fun (a,(_,b))-> f (a ^ "."^(str_of_qualified_ident b)
-      ^"." ^ node_str)) 
+      iter_until_true ~f:(fun (a,(_,b))-> let str = (a ^ "."^(str_of_qualified_ident b)
+      ^"." ^ node_str) in
+      let is_node_present = f str in
+      (*if verbose = true then*)
+        (*begin*)
+          (*pr str;*)
+        (*end;*)
+      is_node_present) 
       env.imported_qualified 
     in
+    (*Checks if method exists in current class, or main class - for nested classes*)
     let check_current_class =
       if not (f full_str) then
           let base_class_o =
@@ -322,71 +351,59 @@ let dfs ?(verbose=false) ~env  ~node ~node_str ~get_edges ~f =
       else
         Some full_str
     in
-(*
-    pr "Imported qualified";
-    pr (match f_imported_qualifier_check with
-    | Some (str,_) -> str
-    | None -> "None"
-    );
-*)
-    (*
-     *let _str = 
-     *  match env.imported_qualified with
-     *  | [] -> ""
-     *  | (hd,(_,b))::_ -> hd ^"."^ (str_of_qualified_ident b)^"."^node_str
-     *in
-     *pr _str;
-     *)
-let op =
-  (match (check_current_class, f node_str, f_imported_namespace_check , f_imported_qualifier_check) with
-  | (None,false,Some str, _) -> 
-      if verbose = true then
-        printer.contents <- printer.contents @ ["Imported namespace edge drawn"];
-      Some (join_list ~sep:"." str ^"."^node_str)
-  | (None, false, _ , Some (str,_)) ->
-      if verbose = true then
-        printer.contents <- printer.contents @[ "Imported qualifier edge drawn"];
-      Some ( str ^"." ^ node_str) 
-  | (Some str,_,_,_) -> 
-      if verbose = true then  
-        printer.contents <- printer.contents @ ["Fully qualified "]; Some str
-  | (_,true,_,_) -> 
-      if verbose = true then
-        printer.contents <- printer.contents @ ["Method name as is"]; Some node_str
-  | (None, false,None, None) ->
-          let rec aux  ~verbose ~node_str ~d ~list_ ~get_edges ~f =
-(*             Maximum depth that the funtion searched uptil *)
-            if (d < 10) then 
-              begin
-                (match list_ with
-                | [] -> None
-                | hd::tl -> 
-                    let node_str_hd = (fst hd) ^ "." ^ node_str in
-                    if verbose = true then
-                      printer.contents <- printer.contents @ [node_str_hd];
-              (match f node_str_hd with 
-              | true -> 
-                  Some node_str_hd 
-              | false ->       
-                  let node_list = get_edges ~n:hd in
-                  (match aux ~verbose ~node_str:node_str ~d:(d+1) ~list_:node_list ~get_edges:get_edges ~f:f with
-                  | None -> aux ~verbose ~d:d ~node_str:node_str ~list_:tl ~get_edges:get_edges ~f:f 
-                  | Some x -> Some x
-                  )
-              )
-              )
-                              end
-        else
-                None
-                  in
-                  (match aux ~verbose ~d:0 ~node_str:node_str ~list_:(get_edges
-                  ~n:node) ~get_edges:get_edges ~f with
-                  | Some x -> printer.contents <- printer.contents @ ["dfs, node existing"]; Some x
-                  | None -> None
-                  )
-  )
-in
- (op, printer)
+
+    let op =
+    (match (check_current_class, f node_str, f_imported_namespace_check , f_imported_qualifier_check) with
+    | (None,false,Some str, _) -> 
+        if verbose = true then
+          printer.contents <- printer.contents @ ["Imported namespace edge drawn"];
+        
+       Some  ( (str +> remove_char_from_string_list "*" +> join_list ~sep:".")  ^ "." ^ node_str) 
+        (*Some (join_list ~sep:"." str ^"."^node_str)*)
+    | (None, false, _ , Some (str,_)) ->
+        if verbose = true then
+          printer.contents <- printer.contents @[ "Imported qualifier edge drawn"];
+        Some ( str ^ "." ^ node_str ) 
+    | (Some str,_,_,_) -> 
+        if verbose = true then  
+          printer.contents <- printer.contents @ ["Fully qualified "]; Some str
+    | (_,true,_,_) -> 
+        if verbose = true then
+          printer.contents <- printer.contents @ ["Method name as is"]; Some node_str
+    | (None, false,None, None) ->
+            let rec aux  ~verbose ~node_str ~d ~list_ ~get_edges ~f =
+  (*             Maximum depth that the funtion searched uptil *)
+              if (d < 10) then 
+                begin
+                  (match list_ with
+                  | [] -> None
+                  | hd::tl -> 
+                      let node_str_hd = (fst hd) ^ "." ^ node_str in
+                      if verbose = true then
+                        printer.contents <- printer.contents @ [node_str_hd];
+                (match f node_str_hd with 
+                | true -> 
+                    Some node_str_hd 
+                | false ->       
+                    let node_list = get_edges ~n:hd in
+                    (match aux ~verbose ~node_str:node_str ~d:(d+1) ~list_:node_list ~get_edges:get_edges ~f:f with
+                    | None -> aux ~verbose ~d:d ~node_str:node_str ~list_:tl ~get_edges:get_edges ~f:f 
+                    | Some x -> Some x
+                    )
+                )
+                )
+                                end
+          else
+                  None
+                    in
+                    (match aux ~verbose ~d:0 ~node_str:node_str ~list_:(get_edges
+                    ~n:node) ~get_edges:get_edges ~f with
+                    | Some x -> printer.contents <- printer.contents @ ["dfs, node existing"]; Some x
+                    | None -> None
+                    )
+    )
+  in
+   (op, printer)
 
 (*****************************************************************************)
 (* Class/Package Lookup *)
@@ -1007,91 +1024,77 @@ and expr env = function
 
 (* TODO: Remove ast, if it is not used *)
 and resolve_call env (expr_,_) =
-       let rec aux expr_ =
-        (match expr_ with 
-        | Name name_ -> resolve_name name_
-        | NameOrClassType _ 
-        | Literal _ 
-        | ClassLiteral _  
-        | NewClass _ 
-        | NewArray _ 
-        | NewQualifiedClass _ -> ["Not supported"]
-        | Call(expr_,_) ->     aux expr_
-        | Dot (expr_, ident) -> 
-            let qualifier = (aux expr_) in
-            (match qualifier with 
-            | [] -> [Ast.unwrap ident]
-            | q -> q @ [Ast.unwrap ident]
-            )
-        | ArrayAccess _
-        | Postfix _
-        | Prefix _
-        | Infix _
-        | Cast _
-        | InstanceOf _
-        | Conditional _
-        | Assignment _ -> ["Not supported"]
+  let rec aux expr_ =
+    (match expr_ with 
+    | Name name_ -> resolve_name name_
+    | NameOrClassType _ 
+    | Literal _ 
+    | ClassLiteral _  
+    | NewClass _ 
+    | NewArray _ 
+    | NewQualifiedClass _ -> ["Not supported"]
+    | Call(expr_,_) ->     aux expr_
+    | Dot (expr_, ident) -> 
+        let qualifier = (aux expr_) in
+        (match qualifier with 
+        | [] -> [Ast.unwrap ident]
+        | q -> q @ [Ast.unwrap ident]
         )
-        in
-        let node_str_array =  aux expr_ in
-        let node_str =  (last node_str_array) in
-        let f a = join_list ~sep:"." a
-               in
-        let dfs_f = ref (dfs ~verbose:false ~env  ~node:env.current  ~get_edges:(fun
-                ~n -> G.succ n G.Use env.g) ~f:(fun node -> G.has_node
+    | ArrayAccess _
+    | Postfix _
+    | Prefix _
+    | Infix _
+    | Cast _
+    | InstanceOf _
+    | Conditional _
+    | Assignment _ -> ["Not supported"]
+    )
+    in
+    let node_str_array =  aux expr_ in
+    (*let node_str =  (Common2.list_last node_str_array) in*)
+    (*
+     *Verbose flag can be set to false/true here. Stack overflow error
+     *results when imported namespaces & qualifiers is printed, so commented out.
+     *)
+  let dfs_f = ref (dfs ~verbose:false ~env  ~node:env.current  ~get_edges:(fun
+  ~n -> G.succ n G.Use env.g) ~f:(fun node -> G.has_node
                 (node,E.Method) env.g) )
-        in
-        (*
-         *if node_str = "addAccessibilityInteractionConnection" then
-         *  dfs_f.contents <- (dfs ~verbose:true ~env  ~node:env.current  ~get_edges:(fun
-         *        ~n -> G.succ n G.Use env.g) ~f:(fun node -> G.has_node
-         *        (node,E.Method) env.g) );
-         *)
-        let node_str_o =
-          (match node_str_array with
-          | [] -> None
-          | _::node_str_array_tl -> 
-              (match dfs_f.contents ~node_str:(f node_str_array_tl) with
-              | (None, printer) -> 
-                  printer.contents <- printer.contents @ 
-                  ["MTM: lookup without first qualifier failed"];
-                  (match dfs_f.contents ~node_str:(f node_str_array) with
-                  | (None, printer2) -> 
-                      let string_ = join_list ~sep:"\n"  (printer.contents @
-                      printer2.contents) in
-                      pr "Print dfs";
-                      pr string_;
-                      None
-                  | (Some a,_) -> Some a
-                  )
-              | (Some a, _) -> Some a 
+  in
+    let read_from_last ~node_str_list ~f =
+      let printer = ref [""] in 
+      let rec aux ~acc ~node_str_list ~f =
+        (match last_and_beginning_of_list node_str_list with
+        | Some (last_node, rest) -> 
+            (match f (last_node ^ acc ) with
+            | (Some a,_) -> Some a
+            | (None, printer2) ->
+                printer.contents <- printer.contents @ printer2.contents;
+                let acc2 = "."^last_node ^ acc
+                in
+                aux ~acc:acc2 ~node_str_list:rest ~f
             )
-          )
-        (*
-         *let node_str_o =
-         *  (match dfs_f.contents ~node_str:(node_str) with
-         *  | None -> 
-         *       (match node_str_array with
-         *       | [] -> None
-         *       | _::node_str_array_tl -> 
-         *           pr "MTM: lookup with first qualifier failed";
-         *           pr (f node_str_array_tl);
-         *           pr (f node_str_array);
-         *           dfs_f.contents ~node_str:(f node_str_array_tl)
-         *       )
-         *  | str_o -> str_o
-         *  )
-         *)
-        in      
-        (match node_str_o with
         | None -> 
-            pr (spf "MTM: (resolve_call) lookup fail on %s" node_str)
-        | Some str -> 
-            add_use_edge env (str, E.Method);
-            pr (spf "MTM: (resolve_call) Edge drawn to method %s, %s" str
-           node_str)
-        );
-        ()
+            pr "Print dfs";
+            pr (join_list ~sep:"\n" printer.contents);
+            None
+        )
+      in 
+      aux ~acc:"" ~node_str_list ~f
+    in
+    let node_str_o =
+      read_from_last  ~node_str_list:node_str_array ~f:(fun x -> dfs_f.contents
+      ~node_str: x )
+       in      
+    (match node_str_o with
+    | None -> 
+        pr (spf "MTM: (resolve_call) lookup fail on method %s, source: %s " (node_str_array +>
+        join_list ~sep:".") (env.current_qualifier +> str_of_qualified_ident) )
+    | Some str -> 
+        add_use_edge env (str, E.Method);
+        pr (spf "MTM: (resolve_call) Edge drawn to method %s, resolved qualifier: %s, source: %s" (node_str_array +> join_list ~sep:".") str
+        (env.current_qualifier +> str_of_qualified_ident))
+    );
+    ()
 
 (* Removes the object's name in method calls, NOTE: this is a heuristic which
  * relies on the fact that most method calls are of the form A.x(), where A is
@@ -1099,73 +1102,7 @@ and resolve_call env (expr_,_) =
  * be removed*)
 and resolve_name name_ =
   List.map (fun (_tyarg_todo, ident) -> Ast.unwrap ident) name_
-  
-        (*
-         * and resolve_namr _ast name_ =
-         *match name_ with
-         *| hd::[] -> str_of_name [hd] 
-         *| _::tl -> str_of_name tl
-         *| [] -> "" 
-         *)
 
-(* Finds the type of object, and prepends it to qualifying path
-and resolve_name ast name_ =
-        let flag = ref true in
-        let field_name_ = match name_ with
-        | hd::_ -> Ast.unwrap (snd hd)
-        | [] -> flag.contents <- false;
-                pr " field_name_ []";
-                        "None"
-        in 
-        let str = ref (str_of_name_this_super name_) in
-        let traverse_ast = V.mk_visitor { V.default_visitor with 
-        (* Only handling fields, as visitor functions are written only for it*)
-        V.kfield= ( fun(k,_) d->
-                (match d with
-                | field  -> 
-                                let field_name = fst (field.f_var.v_name) in
-                                if field_name = field_name_ then
-                                        begin
-                                        pr "field_name equal \n";
-                                        pr "field_name_ ";
-                                        pr field_name_;
-(*                                         flag.contents <- true; *)
-                                        let object_name = resolve_typ field.f_var.v_type in
-                                        let str_name_td = match name_ with
-                                        | [] -> flag.contents <- false;
- (*                                                 pr "str_name_td []";  *)
-                                                        "None"
-                                        | _::name_td -> str_of_name_this_super name_td
-                                        in
-                                        (*
-                                         *pr "str_name_td";
-                                         *pr str_name_td;
-                                         *pr "--------";
-                                         *)
-                                        str.contents <- 
-                                        (match str_name_td with
-                                        | "" -> object_name 
-                                        | q -> object_name ^ "."^q
-                                        )
-                                        end;
-
-        );
-        k d
-        )
-        
-        }
-        in traverse_ast(Ast.AProgram ast);
-        if flag.contents = true then
-        str.contents
-        else
-                str_of_name_this_super name_
-
-and resolve_typ = function 
-        | TBasic ident_ -> Ast.unwrap ident_
-        | TClass class_type_ -> str_of_class_type class_type_
-        | TArray typ_ -> resolve_typ typ_ 
-
-*)
 and exprs env xs = List.iter (expr env) xs
 and init env = function
   | ExprInit e -> expr env e
