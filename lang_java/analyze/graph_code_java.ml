@@ -346,7 +346,7 @@ let op =
                   Some node_str_hd 
               | false ->       
                   let node_list = get_edges ~n:hd in
-                  (match aux ~verbose ~node_str:node_str_hd ~d:(d+1) ~list_:node_list ~get_edges:get_edges ~f:f with
+                  (match aux ~verbose ~node_str:node_str ~d:(d+1) ~list_:node_list ~get_edges:get_edges ~f:f with
                   | None -> aux ~verbose ~d:d ~node_str:node_str ~list_:tl ~get_edges:get_edges ~f:f 
                   | Some x -> Some x
                   )
@@ -1014,7 +1014,7 @@ and resolve_call env (expr_,_) =
         let node_str =  (last node_str_array) in
         let f a = join_list ~sep:"." a
                in
-        let dfs_f = ref (dfs ~verbose:true ~env  ~node:env.current  ~get_edges:(fun
+        let dfs_f = ref (dfs ~verbose:false ~env  ~node:env.current  ~get_edges:(fun
                 ~n -> G.succ n G.Use env.g) ~f:(fun node -> G.has_node
                 (node,E.Method) env.g) )
         in
