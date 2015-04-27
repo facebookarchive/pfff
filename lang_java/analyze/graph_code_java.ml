@@ -20,6 +20,7 @@ module G = Graph_code
 open Ast_java
 module Ast = Ast_java
 module PI = Parse_info
+module V = Visitor_java
 
 (*****************************************************************************)
 (* Prelude *)
@@ -74,7 +75,8 @@ type env = {
   phase: phase;
   current: Graph_code.node;
   current_qualifier: Ast_java.qualified_ident;
-
+  (*Track class classifiers, for mapping nodes *)
+  top_level_qualifer: Ast_java.qualified_ident;
   (* import x.y.* => [["x";"y"]; ...] *)
   imported_namespace: (string list) list;
   (* import x.y.z => [("z", (false, ["x";"y";"z"])); ...] *)
@@ -99,7 +101,7 @@ type env = {
    * a field needs the full inheritance tree to already be computed
    * as we may need to lookup entities up in the parents.
    *)
-  and phase = Defs | Inheritance | Uses
+  and phase = Defs | Inheritance | Uses | MethodToMethod
 
 (*****************************************************************************)
 (* Helpers *)
@@ -123,6 +125,23 @@ let str_of_qualified_ident xs =
 let str_of_name xs =
   xs +> List.map (fun (_tyarg_todo, ident) -> Ast.unwrap ident) +>
     Common.join "."
+
+(*let str_of_class_type xs =*)
+  (*xs +> List.map (fun (ident, _tyarg_todo) -> Ast.unwrap ident) +>*)
+    (*Common.join "."*)
+
+(* Same as str_of_qualified_ident except neglects super and this     *)
+(*
+ *let str_of_name_this_super xs=
+ *        (match xs with
+ *        | (_,hd)::tl ->  (match Ast.unwrap hd with
+ *                     | "super"
+ *                     | "this" -> str_of_name tl
+ *                     | _ -> str_of_name xs
+ *                     )
+ *        | [] -> "")
+ *
+ *)
 
 (* helper to build entries in env.params_or_locals *)
 let p_or_l v =
@@ -183,12 +202,12 @@ let add_use_edge env (name, kind) =
   let dst = (name, kind) in
   (match () with
   | _ when not (G.has_node src env.g) ->
-      pr2 (spf "LOOKUP SRC FAIL %s --> %s, src does not exist???"
-              (G.string_of_node src) (G.string_of_node dst));
-
+                  if env.phase = MethodToMethod then 
+                    pr2 (spf "MTM: (add_use_edge) lookup fail on %s" name)  
+                  else
+                    pr2 (spf "LOOKUP SRC FAIL %s --> %s, src does not exist???" (G.string_of_node src) (G.string_of_node dst));
   | _ when G.has_node dst env.g ->
-      G.add_edge (src, dst) G.Use env.g
-
+        G.add_edge (src, dst) G.Use env.g
   | _ ->
       (match kind with
       | _ ->
@@ -211,13 +230,59 @@ let add_use_edge env (name, kind) =
               env.g +> G.add_edge (src, dst) G.Use;
               ()
           | _ ->
-              pr2 (spf "PB: lookup fail on %s (in %s)"
-                      (G.string_of_node dst) (G.string_of_node src));
-              G.add_node dst env.g;
-              env.g +> G.add_edge (parent_target, dst) G.Has;
-              env.g +> G.add_edge (src, dst) G.Use;
+              match env.phase with
+              | MethodToMethod -> 
+                  pr2 (spf "MTM: (add_use_edge) lookup fail on %s (in %s)" 
+                  (G.string_of_node dst) (G.string_of_node src))
+              | _ ->
+                  pr2 (spf "PB: lookup fail on %s (in %s)" (G.string_of_node dst) (G.string_of_node src));
+                  G.add_node dst env.g; 
+                  env.g +> G.add_edge (parent_target, dst) G.Has;
+                  env.g +> G.add_edge (src, dst) G.Use;
           )
       )
+  )
+
+
+(*
+ *Depth first search, checks which class path has the method called in the current
+ *node's successors
+ *)
+let dfs ~env  ~node ~node_str ~get_edges ~f =
+  let full_str = (str_of_qualified_ident env.top_level_qualifer) ^"." ^
+        node_str in
+  (match (f full_str, f node_str) with
+  | (true,_) -> pr "Fully qualified "; Some full_str
+  | (_,true) -> pr "Method name as is"; Some node_str
+  | (false, false) ->
+          let rec aux ~node_str ~d ~list_ ~get_edges ~f =
+(*             Maximum depth that the funtion searched uptil *)
+            if (d < 10) then 
+              begin
+                (match list_ with
+                | [] -> None
+                | hd::tl -> 
+                    let node_str_hd = (fst hd) ^ "." ^ node_str in
+              (match f node_str_hd with 
+              | true -> 
+                  Some node_str_hd 
+              | false ->       
+                  let node_list = get_edges ~n:hd in
+                  (match aux ~node_str:node_str_hd ~d:(d+1) ~list_:node_list ~get_edges:get_edges ~f:f with
+                  | None -> aux ~d:d ~node_str:node_str ~list_:tl ~get_edges:get_edges ~f:f 
+                  | Some x -> Some x
+                  )
+              )
+              )
+                              end
+        else
+                None
+                  in
+                  (match aux ~d:0 ~node_str:node_str ~list_:(get_edges
+                  ~n:node) ~get_edges:get_edges ~f with
+                  | Some x -> pr "dfs, node existing"; Some x
+                  | None -> None
+                  )
   )
 
 (*****************************************************************************)
@@ -311,6 +376,11 @@ let rec extract_defs_uses ~phase ~g ~ast ~readable ~lookup_fails =
       | None -> []
       | Some long_ident -> long_ident
       );
+      top_level_qualifer =
+      (match ast.package with
+      | None -> []
+      | Some long_ident -> long_ident
+      );
     params_or_locals = [];
     type_parameters = [];
     imported_namespace =
@@ -341,24 +411,31 @@ let rec extract_defs_uses ~phase ~g ~ast ~readable ~lookup_fails =
     match ast.package with
     (* have None usually for scripts, tests, or entry points *)
     | None ->
+(*                     pr "None --\n"; *)
         let dir = Common2.dirname readable in
         G.create_intermediate_directories_if_not_present g dir;
+        pr "Create defs";
+        pr readable;
         g +> G.add_node (readable, E.File);
         g +> G.add_edge ((dir, E.Dir), (readable, E.File))  G.Has;
     | Some long_ident ->
-        create_intermediate_packages_if_not_present g G.root long_ident;
+(*                     pr "Some long_indent\n"; *)
+                    create_intermediate_packages_if_not_present g G.root long_ident;
+(*                     pr "End Some long indent\n"; *)
   end;
   (* double check if we can find some of the imports
    * (especially useful when have a better java_stdlib/ to report
    * third-party packages not-yet handled).
    *)
   if phase = Inheritance then begin
-    ast.imports +> List.iter (fun (is_static, qualified_ident) ->
+(*           pr "Phase inheritance \n"; *)
+    ast.imports +> List.iter (fun (_is_static, qualified_ident) (* Replaced
+    is_static with _is_static *)->
       let qualified_ident_bis =
         match List.rev qualified_ident with
         | ("*",_)::rest -> List.rev rest
         (* less: just lookup the class for now *)
-        | _x::xs when is_static -> List.rev xs
+        | _x::xs when true-> List.rev xs (* Replaced is_static with true *)
         | _ -> qualified_ident
       in
       let entity = List.map Ast.unwrap qualified_ident_bis in
@@ -381,17 +458,26 @@ let rec extract_defs_uses ~phase ~g ~ast ~readable ~lookup_fails =
    * to visit the AST and lookup classnames (possibly using information
    * from the import to know where to look for first).
    *)
-  decls env ast.decls
+  decls ast env ast.decls
 
 (* ---------------------------------------------------------------------- *)
 (* Declarations (classes, fields, etc) *)
 (* ---------------------------------------------------------------------- *)
-and decl env = function
-  | Class def, _ -> class_decl env def
-  | Method def, _ -> method_decl env def
-  | Field def, _ -> field_decl env def
-  | Enum def, _ -> enum_decl env def
+and decl ast env = function
+  | Class def, _ ->
+(*                   pr "Class def \n";  *)
+                  class_decl ast env def
+  | Method def, _ ->
+(*                   pr "method def\n";  *)
+                  method_decl ast env def
+  | Field def, _ -> 
+(*                   pr "Def\n";  *)
+                  field_decl ast env def
+  | Enum def, _ -> 
+(*                   pr "Enum\n"; *)
+                  enum_decl ast env def
   | Init (_is_static, st), n ->
+(*                   pr "Init\n"; *)
       let name = spf "__init__%d" n in
       let full_ident = env.current_qualifier @ [name, fakeInfo name] in
       let full_str = str_of_qualified_ident full_ident in
@@ -405,23 +491,39 @@ and decl env = function
         current_qualifier = full_ident;
       }
       in
-      stmt env st
+      stmt ast env st
 
-and decls env xs = List.iter (decl env) (Common.index_list_1 xs)
+and decls ast env xs = 
+(*         pr "Decls env xs \n"; *)
+        List.iter (decl ast env) (Common.index_list_1 xs);
+(*         pr "Done with decls env xs" *)
 
-and class_decl env def =
+and class_decl ast env def =
+(*         pr "Class decl env def\n"; *)
   let full_ident = env.current_qualifier @ [def.cl_name] in
   let full_str = str_of_qualified_ident full_ident in
   let node = (full_str, E.Class) in
+(*   pr "env.phase = Defs\n "; *)
   if env.phase = Defs then begin
     (* less: def.c_type? *)
-    env.g +> G.add_node node;
-    env.g +> G.add_nodeinfo node (nodeinfo def.cl_name);
-    env.g +> G.add_edge (env.current, node) G.Has;
+       begin  
+(*                pr "Inside begin block\n"; *)
+               if not (G.has_node node env.g) then
+                       begin
+(*                   pr "Not existing"; *)
+(*                   pr "This is not in the if block"; *)
+          env.g +> G.add_node node;
+          env.g +> G.add_nodeinfo node (nodeinfo def.cl_name);
+          env.g +> G.add_edge (env.current, node) G.Has;
+(*           pr "This is not the error" *)
+                       end;
+       end;
   end;
+(*   pr "End adding nodes\n"; *)
   let env = { env with
     current = node;
     current_qualifier = full_ident;
+    top_level_qualifer = full_ident;
     (* with anon classes we need to lookup enclosing final parameters/locals *)
     params_or_locals = env.params_or_locals +> List.filter (fun (_x,b) -> b);
     type_parameters = def.cl_tparams +> List.map (function
@@ -429,12 +531,14 @@ and class_decl env def =
     );
   }
   in
+(*   pr "parents operation \n"; *)
   let parents =
     Common2.option_to_list def.cl_extends @
     (def.cl_impls)
   in
-  List.iter (typ env) parents;
-
+(*   pr "List iter \n"; *)
+  List.iter (typ ast env) parents;
+(*   pr "imports \n"; *)
   let imports =
     if env.phase = Defs then []
     else
@@ -447,13 +551,13 @@ and class_decl env def =
      (List.map Ast.unwrap full_ident @ ["*"]) ::
     import_of_inherited_classes env (full_str, E.Class)
   in
-  decls {env with imported_namespace = imports @ env.imported_namespace }
+  decls ast {env with imported_namespace = imports @ env.imported_namespace }
     def.cl_body
 
 (* Java allow some forms of overloading, so the same method name can be
  * used multiple times.
  *)
-and method_decl env def =
+and method_decl ast env def =
 
   let full_ident = env.current_qualifier @ [def.m_var.v_name] in
   let full_str = str_of_qualified_ident full_ident in
@@ -464,6 +568,9 @@ and method_decl env def =
     if G.has_node (full_str, E.Method) env.g
     then ()
     else begin
+            (*pr "Print Method";*)
+            (*pr full_str;*)
+            (*pr "----";*)
       env.g +> G.add_node node;
       env.g +> G.add_nodeinfo node (nodeinfo def.m_var.v_name);
       env.g +> G.add_edge (env.current, node) G.Has;
@@ -487,12 +594,12 @@ and method_decl env def =
     type_parameters = [];
   }
   in
-  var env def.m_var;
-  List.iter (var env) def.m_formals;
+  var ast env def.m_var;
+  List.iter (var ast env) def.m_formals;
   (* todo: m_throws *)
-  stmt env def.m_body
+  stmt ast env def.m_body
 
-and field_decl env def =
+and field_decl ast env def =
   let full_ident = env.current_qualifier @ [def.f_var.v_name] in
   let full_str = str_of_qualified_ident full_ident in
   let kind =
@@ -503,27 +610,40 @@ and field_decl env def =
   let node = (full_str, kind) in
   if env.phase = Defs then begin
     (* less: static? *)
+          if not (G.has_node node env.g)
+          then
+                  begin
     env.g +> G.add_node node;
     env.g +> G.add_nodeinfo node (nodeinfo def.f_var.v_name);
     env.g +> G.add_edge (env.current, node) G.Has;
+                  end
+            else pr2 (spf "Package: %s already existing" (G.string_of_node node)) 
   end;
   let env = { env with
     current = node;
     current_qualifier = env.current_qualifier
   }
   in
-  field env def
+  field ast env def
 
-and enum_decl env def =
+and enum_decl ast env def =
   let full_ident = env.current_qualifier @ [def.en_name] in
   let full_str = str_of_qualified_ident full_ident in
     (* less: make it a class? or a Type? *)
   let node = (full_str, E.Class) in
-  if env.phase = Defs then begin
+  if env.phase = Defs then 
+          begin
+(*           pr "Enum decl env.phases = Def"; *)
+          if not (G.has_node node env.g) 
+          then
+                  begin
     env.g +> G.add_node node;
     env.g +> G.add_nodeinfo node (nodeinfo def.en_name);
     env.g +> G.add_edge (env.current, node) G.Has;
-  end;
+                  end
+          else begin pr2 (spf "Package: %s already existing" (G.string_of_node
+          node)) end
+                  end;
   let env = { env with
     current = node;
     current_qualifier = full_ident;
@@ -533,9 +653,9 @@ and enum_decl env def =
   }
   in
   let parents = (def.en_impls) in
-  List.iter (typ env) parents;
+  List.iter (typ ast env) parents;
   let (csts, xs) = def.en_body in
-  decls env xs;
+  decls ast env xs;
 
   csts +> List.iter (fun enum_constant ->
 
@@ -547,9 +667,14 @@ and enum_decl env def =
     let full_str = str_of_qualified_ident full_ident in
     let node = (full_str, E.Constant) in
     if env.phase = Defs then begin
+            if not (G.has_node node env.g) then
+                    begin
       env.g +> G.add_node node;
       env.g +> G.add_nodeinfo node (nodeinfo ident);
       env.g +> G.add_edge (env.current, node) G.Has;
+                    end
+            else  begin pr2 (spf ": %s already existing"
+            (G.string_of_node node)) end
     end;
     let env = { env with
       current = node;
@@ -559,9 +684,9 @@ and enum_decl env def =
     (match enum_constant with
     | EnumSimple _ident -> ()
     | EnumConstructor (_ident, args) ->
-        exprs env args
+        exprs ast env args
     | EnumWithMethods (_ident, xs) ->
-        decls env (xs +> List.map (fun x -> Method x))
+        decls ast env (xs +> List.map (fun x -> Method x))
     )
   )
 
@@ -569,32 +694,32 @@ and enum_decl env def =
 (* Stmt *)
 (* ---------------------------------------------------------------------- *)
 (* mostly boilerplate, control constructs don't introduce entities *)
-and stmt env = function
+and stmt ast env = function
   | Empty -> ()
-  | Block xs -> stmts env xs
-  | Expr e -> expr env e
+  | Block xs -> stmts ast env xs
+  | Expr e -> expr ast env e
   | If (e, st1, st2) ->
-      expr env e;
-      stmt env st1;
-      stmt env st2;
+      expr ast env e;
+      stmt ast env st1;
+      stmt ast env st2;
   | Switch (e, xs) ->
-      expr env e;
+      expr ast env e;
       xs +> List.iter (fun (cs, sts) ->
-        cases env cs;
-        stmts env sts
+        cases ast env cs;
+        stmts ast env sts
       )
   | While (e, st) ->
-      expr env e;
-      stmt env st;
+      expr ast env e;
+      stmt ast env st;
   | Do (st, e) ->
-      expr env e;
-      stmt env st;
+      expr ast env e;
+      stmt ast env st;
   | For (x, st) ->
       let env =
         match x with
         | Foreach (v, e) ->
-            var env v;
-            expr env e;
+            var ast env v;
+            expr ast env e;
             { env with
               params_or_locals = p_or_l v :: env.params_or_locals;
             }
@@ -602,47 +727,47 @@ and stmt env = function
         | ForClassic (init, es1, es2) ->
             (match init with
             | ForInitExprs es0 ->
-                exprs env (es0 @ es1 @ es2);
+                exprs ast env (es0 @ es1 @ es2);
                 env
             | ForInitVars xs ->
-                List.iter (field env) xs;
+                List.iter (field ast env) xs;
                 let env = { env with
                   params_or_locals =
                     (xs +> List.map (fun fld -> p_or_l fld.f_var)
                     ) @ env.params_or_locals;
                 }
                 in
-                exprs env (es1 @ es2);
+                exprs ast env (es1 @ es2);
                 env
             )
       in
-      stmt env st;
+      stmt ast env st;
 
   (* could have an entity and dependency ... but it's intra procedural
    * so not that useful
    *)
-  | Label (_id, st) -> stmt env st
+  | Label (_id, st) -> stmt ast env st
   | Break _idopt | Continue _idopt -> ()
-  | Return eopt -> exprs env (Common2.option_to_list eopt)
+  | Return eopt -> exprs ast env (Common2.option_to_list eopt)
   | Sync (e, st) ->
-      expr env e;
-      stmt env st;
+      expr ast env e;
+      stmt ast env st;
   | Try (st, xs, stopt) ->
-      stmt env st;
-      catches env xs;
-      stmts env (Common2.option_to_list stopt);
-  | Throw e -> expr env e
+      stmt ast env st;
+      catches ast env xs;
+      stmts ast env (Common2.option_to_list stopt);
+  | Throw e -> expr ast env e
   | Assert (e, eopt) ->
-      exprs env (e::Common2.option_to_list eopt)
+      exprs ast env (e::Common2.option_to_list eopt)
   (* The modification of env.params_locals is done in decls() *)
-  | LocalVar f -> field env f
-  | LocalClass def -> class_decl env def
+  | LocalVar f -> field ast env f
+  | LocalClass def -> class_decl ast env def
 
-and stmts env xs =
+and stmts ast env xs =
   let rec aux env = function
     | [] -> ()
     | x::xs ->
-        stmt env x;
+        stmt ast env x;
         let env =
           match x with
           | LocalVar fld ->
@@ -655,21 +780,21 @@ and stmts env xs =
   in
   aux env xs
 
-and cases env xs = List.iter (case env) xs
-and case env = function
-  | Case e -> expr env e
+and cases ast env xs = List.iter (case ast env) xs
+and case ast env = function
+  | Case e -> expr ast env e
   | Default -> ()
 
-and catches env xs = List.iter (catch env) xs
-and catch env (v, st) =
-  var env v;
+and catches ast env xs = List.iter (catch ast env) xs
+and catch ast env (v, st) =
+  var ast env v;
   let env = { env with params_or_locals = p_or_l v :: env.params_or_locals } in
-  stmt env st
+  stmt ast env st
 
 (* ---------------------------------------------------------------------- *)
 (* Expr *)
 (* ---------------------------------------------------------------------- *)
-and expr env = function
+and expr ast env = function
   (* main dependency source! *)
   | Name n ->
       if env.phase = Uses then begin
@@ -713,10 +838,10 @@ and expr env = function
   | NameOrClassType _ -> ()
   | Literal _ -> ()
 
-  | ClassLiteral t -> typ env t
+  | ClassLiteral t -> typ ast env t
   | NewClass (t, args, decls_opt) ->
-      typ env t;
-      exprs env args;
+      typ ast env t;
+      exprs ast env args;
       (match decls_opt with
       | None -> ()
       | Some xs ->
@@ -735,7 +860,7 @@ and expr env = function
             cl_mods = [];
           }
           in
-          class_decl env cdecl
+          class_decl ast env cdecl
       )
   | NewQualifiedClass (_e, id, args, decls_opt) ->
       (*
@@ -743,53 +868,163 @@ and expr env = function
       pr2_gen (NewQualifiedClass (e, id, args, decls_opt));
       *)
       (* todo: need to resolve the type of 'e' *)
-      expr env (NewClass (TClass ([id, []]), args, decls_opt))
+      expr ast env (NewClass (TClass ([id, []]), args, decls_opt))
 
   | NewArray (t, args, _i, ini_opt) ->
-      typ env t;
-      exprs env args;
-      init_opt env ini_opt
+      typ ast env t;
+      exprs ast env args;
+      init_opt ast env ini_opt
 
   | Call (e, es) ->
-      expr env e;
-      exprs env es
+                  (if env.phase = MethodToMethod then
+                    resolve_call ast env (e,es));
+      expr ast env e;
+      exprs ast env es;
+(* TODO: resolve call    *)
   | Dot (e, _idTODO) ->
       (* todo: match e, and try lookup method/field
        * if e is a Name, lookup it, and if a class then
        * lookup children. If local ... then need get its type
        * lookup its node, and then lookup children.
        *)
-      expr env e;
+      expr ast env e;
 
-  | ArrayAccess (e1, e2) -> exprs env [e1;e2]
-  | Postfix (e, _op) | Prefix (_op, e) -> expr env e
-  | Infix (e1, _op, e2) -> exprs env [e1;e2]
-  | Conditional (e1, e2, e3) -> exprs env [e1;e2;e3]
-  | Assignment (e1, _op, e2) -> exprs env [e1;e2]
+  | ArrayAccess (e1, e2) -> exprs ast env [e1;e2]
+  | Postfix (e, _op) | Prefix (_op, e) -> expr ast env e
+  | Infix (e1, _op, e2) -> exprs ast env [e1;e2]
+  | Conditional (e1, e2, e3) -> exprs ast env [e1;e2;e3]
+  | Assignment (e1, _op, e2) -> exprs ast env [e1;e2]
 
   | Cast (t, e) ->
-      typ env t;
-      expr env e
+      typ ast env t;
+      expr ast env e
   | InstanceOf (e, tref) ->
-      expr env e;
-      typ env (tref);
+      expr ast env e;
+      typ ast env (tref);
 
+(* TODO: Remove ast, if it is not used *)
+and resolve_call ast env (expr_,_) =
+       let rec aux _ast expr_ =
+        (match expr_ with 
+        | Name name_ -> resolve_name ast name_ 
+        | NameOrClassType _ 
+        | Literal _ 
+        | ClassLiteral _  
+        | NewClass _ 
+        | NewArray _ 
+        | NewQualifiedClass _ -> "NewQualifiedClassNone"
+        | Call(expr_,_) ->     aux _ast expr_
+        | Dot (expr_, ident) -> let qualifier = (aux _ast expr_) in
+                                (match qualifier with 
+                                | "" -> Ast.unwrap ident 
+                                | q -> q ^ "." ^ Ast.unwrap ident)
+        | ArrayAccess _
+        | Postfix _
+        | Prefix _
+        | Infix _
+        | Cast _
+        | InstanceOf _
+        | Conditional _
+        | Assignment _ -> "AssignmentNone"
+        )
+        in 
+        let node_str =  aux ast expr_ in
+        let node_str_o = dfs ~env  ~node:env.current ~node_str:node_str  ~get_edges:(fun
+                ~n -> G.succ n G.Use env.g) ~f:(fun node -> G.has_node (node,
+                E.Method) env.g) 
+        in      
+        (match node_str_o with
+        | None -> pr2 (spf "MTM: (resolve_call) lookup fail on %s" node_str)
+        | Some str -> 
+            add_use_edge env (str, E.Method);
+            pr (spf "MTM: (resolve_call) Edge drawn to method %s, %s" str
+            node_str)
+        );
+        ()
 
-and exprs env xs = List.iter (expr env) xs
-and init env = function
-  | ExprInit e -> expr env e
-  | ArrayInit xs -> List.iter (init env) xs
-and init_opt env opt =
+(* Removes the object's name in method calls, NOTE: this is a heuristic which
+ * relies on the fact that most method calls are of the form A.x(), where A is
+ * an object. Also, it assumes that in type name, first element of the list can
+ * be removed*)
+and resolve_name _ast name_ =
+        match name_ with
+(*         | hd::[] -> str_of_name [hd] *)
+        | _::tl -> str_of_name tl
+        | [] -> "" 
+
+(* Finds the type of object, and prepends it to qualifying path
+and resolve_name ast name_ =
+        let flag = ref true in
+        let field_name_ = match name_ with
+        | hd::_ -> Ast.unwrap (snd hd)
+        | [] -> flag.contents <- false;
+                pr " field_name_ []";
+                        "None"
+        in 
+        let str = ref (str_of_name_this_super name_) in
+        let traverse_ast = V.mk_visitor { V.default_visitor with 
+        (* Only handling fields, as visitor functions are written only for it*)
+        V.kfield= ( fun(k,_) d->
+                (match d with
+                | field  -> 
+                                let field_name = fst (field.f_var.v_name) in
+                                if field_name = field_name_ then
+                                        begin
+                                        pr "field_name equal \n";
+                                        pr "field_name_ ";
+                                        pr field_name_;
+(*                                         flag.contents <- true; *)
+                                        let object_name = resolve_typ field.f_var.v_type in
+                                        let str_name_td = match name_ with
+                                        | [] -> flag.contents <- false;
+ (*                                                 pr "str_name_td []";  *)
+                                                        "None"
+                                        | _::name_td -> str_of_name_this_super name_td
+                                        in
+                                        (*
+                                         *pr "str_name_td";
+                                         *pr str_name_td;
+                                         *pr "--------";
+                                         *)
+                                        str.contents <- 
+                                        (match str_name_td with
+                                        | "" -> object_name 
+                                        | q -> object_name ^ "."^q
+                                        )
+                                        end;
+
+        );
+        k d
+        )
+        
+        }
+        in traverse_ast(Ast.AProgram ast);
+        if flag.contents = true then
+        str.contents
+        else
+                str_of_name_this_super name_
+
+and resolve_typ = function 
+        | TBasic ident_ -> Ast.unwrap ident_
+        | TClass class_type_ -> str_of_class_type class_type_
+        | TArray typ_ -> resolve_typ typ_ 
+
+*)
+and exprs ast env xs = List.iter (expr ast env) xs
+and init ast env = function
+  | ExprInit e -> expr ast env e
+  | ArrayInit xs -> List.iter (init ast env) xs
+and init_opt ast env opt =
   match opt with
   | None -> ()
-  | Some ini -> init env ini
+  | Some ini -> init ast env ini
 
 (* ---------------------------------------------------------------------- *)
 (* Types *)
 (* ---------------------------------------------------------------------- *)
-and typ env = function
+and typ _ast env = function
   | TBasic _ -> ()
-  | TArray t -> typ env t
+  | TArray t -> typ _ast env t
   (* other big dependency source! *)
   | TClass reft ->
       (* todo: let's forget generic arguments for now *)
@@ -830,13 +1065,13 @@ and typ env = function
 (* ---------------------------------------------------------------------- *)
 (* Misc *)
 (* ---------------------------------------------------------------------- *)
-and var env v =
-  typ env v.v_type;
+and var ast env v =
+  typ ast env v.v_type;
   ()
 
-and field env f =
-  var env f.f_var;
-  init_opt env f.f_init;
+and field ast env f =
+  var ast env f.f_var;
+  init_opt ast env f.f_init;
   ()
 
 (*****************************************************************************)
@@ -851,6 +1086,7 @@ let build ?(verbose=true) ?(only_defs=false) root files =
 
   (* step1: creating the nodes and 'Has' edges, the defs *)
   if verbose then pr2 "\nstep1: extract defs";
+(*    pr "Step 1\n";  *)
   files +> Console.progress ~show:verbose (fun k ->
     List.iter (fun file ->
       k();
@@ -862,6 +1098,7 @@ let build ?(verbose=true) ?(only_defs=false) root files =
 
   (* step2: creating the 'Use' edges just for inheritance *)
   if verbose then pr2 "\nstep2: extract inheritance information";
+(*   pr "Step 2 \n"; *)
   files +> Console.progress ~show:verbose (fun k ->
    List.iter (fun file ->
      k();
@@ -880,4 +1117,13 @@ let build ?(verbose=true) ?(only_defs=false) root files =
      extract_defs_uses ~phase:Uses ~g ~ast ~readable ~lookup_fails;
    ));
   end;
+  if verbose then pr2 "\nstep4: methodtomethod";
+(*    pr "Step 4\n";  *)
+  files +> Console.progress ~show:verbose (fun k ->
+    List.iter (fun file ->
+      k();
+      let readable = Common.readable ~root file in
+      let ast = parse ~show_parse_error:true file in
+     extract_defs_uses ~phase:MethodToMethod ~g ~ast ~readable ~lookup_fails;
+    ));
   g
