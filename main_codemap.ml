@@ -163,6 +163,12 @@ let filters = [
                 file =~ ".*_build/")
     | _ -> false
   );
+  "xix", (fun file ->
+    match FT.file_type_of_file file with
+    | FT.PL ((FT.ML _) | FT.Makefile | (FT.C _ | FT.Asm)) -> true
+    | _ -> false
+  );
+
   "ocaml", (fun file ->
     match File_type.file_type_of_file file with
     | FT.PL (FT.ML _) | FT.PL (FT.Makefile)  -> true
