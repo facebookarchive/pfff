@@ -957,6 +957,13 @@ and m_expr a b =
        e
      )
 
+  (* MPS: iso when argument *isn't* a hard-coded string. *)
+  | A.Sc(A.C(A.String("!...", info_string))), e when not (is_concat_of_strings e)->
+     return (
+       A.Sc(A.C(A.String("!...", info_string))),
+       e
+     )
+
 
   | A.Id(a1), B.Id(b1) ->
     m_name a1 b1 >>= (fun (a1, b1) ->
