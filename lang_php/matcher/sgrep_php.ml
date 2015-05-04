@@ -65,30 +65,18 @@ let parse str =
 (* Main entry point *)
 (*****************************************************************************)
 
-let sgrep ?(case_sensitive=false) ~hook pattern file =
-  let ast = 
-    try 
-      Parse_php.parse_program file
-    with Parse_php.Parse_error _err ->
-      (* we usually do sgrep on a set of files or directories,
-       * so we don't want on error in one file to stop the
-       * whole process.
-       *)
-      Common.pr2 (spf "warning: parsing problem in %s" file);
-      []
-  in
-
+let sgrep_ast ?(case_sensitive=false) ~hook pattern ast =
   (* coupling: copy paste with lang_php/matcher/spatch_php.ml 
    * coupling: copy paste with sgrep_lint
    *)
-  let hook = 
+  let hook =
     match pattern with
     | Expr (XhpHtml xhp) ->
         { V.default_visitor with
           V.kxhp_html = (fun (k, _) x ->
-            let matches_with_env =  
+            let matches_with_env =
               Matching_php.match_xhp_xhp xhp x
-            in 
+            in
             if matches_with_env = []
             then k x
             else begin
@@ -96,7 +84,7 @@ let sgrep ?(case_sensitive=false) ~hook pattern file =
                * the matched code itself.
                *)
               let matched_tokens = Lib_parsing_php.ii_of_any (XhpHtml2 x) in
-              matches_with_env +> List.iter (fun env -> 
+              matches_with_env +> List.iter (fun env ->
                 hook env matched_tokens
               )
             end
@@ -106,7 +94,7 @@ let sgrep ?(case_sensitive=false) ~hook pattern file =
     | Expr pattern_expr ->
         { V.default_visitor with
           V.kexpr = (fun (k, _) x ->
-            let matches_with_env =  
+            let matches_with_env =
               Matching_php.match_e_e pattern_expr  x
             in
             if matches_with_env = []
@@ -126,7 +114,7 @@ let sgrep ?(case_sensitive=false) ~hook pattern file =
     | Stmt2 pattern ->
         { V.default_visitor with
           V.kstmt = (fun (k, _) x ->
-            let matches_with_env =  
+            let matches_with_env =
               Matching_php.match_st_st pattern x
             in
             if matches_with_env = []
@@ -163,11 +151,25 @@ let sgrep ?(case_sensitive=false) ~hook pattern file =
           );
         }
 
-    | _ -> failwith (spf "pattern not yet supported:" ^ 
+    | _ -> failwith (spf "pattern not yet supported:" ^
                         Export_ast_php.ml_pattern_string_of_any pattern)
   in
   (* opti ? dont analyze func if no constant in it ?*)
   Common.save_excursion Php_vs_php.case_sensitive case_sensitive (fun() ->
     (V.mk_visitor hook) (Program ast)
   )
+
+let sgrep ?(case_sensitive=false) ~hook pattern file =
+  let ast = 
+    try 
+      Parse_php.parse_program file
+    with Parse_php.Parse_error _err ->
+      (* we usually do sgrep on a set of files or directories,
+       * so we don't want on error in one file to stop the
+       * whole process.
+       *)
+      Common.pr2 (spf "warning: parsing problem in %s" file);
+      []
+  in
+  sgrep_ast ~case_sensitive ~hook pattern ast
 
