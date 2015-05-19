@@ -189,6 +189,8 @@ let class_analysis = ref false
 (* action mode *)
 let action = ref ""
 
+let method_to_method = ref false
+
 (*****************************************************************************)
 (* Helpers *)
 (*****************************************************************************)
@@ -327,12 +329,9 @@ let build_graph_code lang xs =
         Graph_code_c.build ~verbose:!verbose root files, empty
     | "clang2" -> Graph_code_clang.build ~verbose:!verbose root files, empty
 
-    | "java" -> Graph_code_java.build ~verbose:!verbose root files, empty
+    | "java" -> Graph_code_java.build ~verbose:!verbose
+          ~method_to_method:!method_to_method root files, empty
 
-    | "javam" -> Graph_code_java.build  ~verbose:!verbose ~method_to_method:true
-    root files, empty  (*TODO: move method_to_method option to build, and not
-    language - this takes more time to complete than the previous case so
-    setting a flag to activate it*)
 #if FEATURE_BYTECODE
     | "bytecode" -> 
       let graph_code_java =  None 
@@ -385,7 +384,6 @@ let build_graph_code lang xs =
 let build_stdlib lang root dst =
   let files = Find_source.files_of_root ~lang root in
   match lang with
-  | "javam"
   | "java" ->
       Builtins_java.extract_from_sources ~src:root ~dst files
   | "clang" ->
@@ -705,6 +703,9 @@ let options () = [
 
   "-lang", Arg.Set_string lang, 
   (spf " <str> choose language (default = %s) (for -build)" !lang);
+  
+  "-method_to_method", Arg.Set method_to_method,
+  "<true|false>";
   "-o", Arg.String (fun s -> output_dir := Some s), 
   " <dir> save graph_code.marshall in another dir (for -build)";
   "-derived_data", Arg.Set gen_derived_data, 

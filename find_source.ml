@@ -17,8 +17,6 @@ let finder lang =
     Lib_parsing_ml.find_cmt_files_of_dir_or_files
   | "java" -> 
     Lib_parsing_java.find_source_files_of_dir_or_files 
-  | "javam" -> 
-    Lib_parsing_java.find_source_files_of_dir_or_files
   | "js"  -> 
     Lib_parsing_js.find_source_files_of_dir_or_files ~include_scripts:false
   | "clang2" ->
