@@ -23,7 +23,8 @@ PROGS=pfff \
  scheck \
  codequery \
  codeslicer \
- pfff_db
+ pfff_db \
+ codegraph_light
 
 PROGS+=pfff_test
 
@@ -456,6 +457,10 @@ clean::
 
 SYSLIBS_CG=$(SYSLIBS_CM)
 OBJS_CG=code_graph/lib.cma
+
+codegraph_light: $(LIBS) $(OBJS) main_codegraph_light.cmo
+	$(OCAMLC) -thread $(CUSTOM) -o $@ $(SYSLIBS) threads.cma \
+           $^
 
 codegraph: $(LIBS) commons/commons_gui.cma $(OBJS_CG) $(OBJS) main_codegraph.cmo
 	$(OCAMLC) -thread $(CUSTOM) -o $@ $(SYSLIBS) threads.cma \
