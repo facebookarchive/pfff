@@ -704,7 +704,13 @@ let find_some p xs =
 
 let rec find_opt f xs = 
   find_some_opt (fun x -> if f x then Some x else None) xs
-  
+
+let rec find_bool f = function
+  | [] -> false
+  | x :: l ->
+      match f x with
+      | false -> find_bool f l
+      | _ -> true
 
 (*****************************************************************************)
 (* Regexp, can also use PCRE *)
@@ -846,6 +852,14 @@ let read_file file =
 let write_file ~file s =
   let chan = open_out file in
   (output_string chan s; close_out chan)
+
+let append_file ~file s =
+  let out = open_out_gen [Open_wronly; Open_append; Open_creat; 
+      Open_text] 0o666 file in
+  (* Opens file and returns corresponding object *)
+  output_string out (s^"\n");
+  close_out out
+
 
 (* could be in control section too *)
 

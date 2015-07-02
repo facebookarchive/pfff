@@ -52,6 +52,7 @@ type path = string
 val cat :      filename -> string list
 
 val write_file : file:filename -> string -> unit
+val append_file : file:filename -> string -> unit
 val read_file : filename -> string
 
 val with_open_outfile : 
@@ -74,6 +75,8 @@ val find_opt: ('a -> bool) -> 'a list -> 'a option
 val find_some : ('a -> 'b option) -> 'a list -> 'b
 val find_some_opt : ('a -> 'b option) -> 'a list -> 'b option
 val filter_some: 'a option list -> 'a list
+
+val find_bool: ('a -> bool) -> 'a list -> bool 
 
 val take : int -> 'a list -> 'a list
 val take_safe : int -> 'a list -> 'a list

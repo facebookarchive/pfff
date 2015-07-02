@@ -4,21 +4,26 @@ TOP=..
 ##############################################################################
 TARGET=lib
 
-SRC= graph_code.ml graph_code_opti.ml \
+SRC= graph_code.ml \
+     graph_to_graphson.ml graph_code_gsoninterface.ml \
+     graph_code_opti.ml \
      dependencies_matrix_code.ml dependencies_matrix_build.ml \
      graph_code_tags.ml graph_code_database.ml graph_code_prolog.ml \
      graph_code_class_analysis.ml graph_code_helpers.ml \
      graph_code_checker.ml \
      layer_graph_code.ml \
-     test_graph_code.ml unit_graph_code.ml
+     test_graph_code.ml unit_graph_code.ml \
 
 SYSLIBS= str.cma unix.cma
-LIBS=../commons/lib.cma
+LIBS=../commons/lib.cma \
+     $(TOP)/piqi_ddl_files/lib.cma
 INCLUDEDIRS= $(TOP)/commons \
  $(TOP)/commons/graph \
  $(TOP)/commons/ocamlextra \
  $(TOP)/external/ocamlgraph $(TOP)/external/ocamlgraph/src \
- $(TOP)/h_program-lang
+ $(TOP)/h_program-lang \
+ $(TOP)/piqi_ddl_files \
+ $(TOP)/piqi_ddl_files 
 
 ##############################################################################
 # Generic variables
@@ -50,12 +55,14 @@ EXPORTSRC=\
   graph_code_database.mli \
   graph_code_helpers.mli \
   graph_code.mli \
+  graph_code_gsoninterface.mli \
   graph_code_opti.mli \
   graph_code_prolog.mli \
   graph_code_tags.mli \
   layer_graph_code.mli \
   test_graph_code.mli \
   unit_graph_code.mli \
+  graph_to_graphson.mli
 
 
 install-findlib: all all.opt

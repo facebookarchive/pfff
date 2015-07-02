@@ -149,6 +149,7 @@ LIBS= commons/lib.cma \
       external/easy-format-1.0.2/easy_format.cma \
       external/piqi-0.6.10/piqilib/piqilib.cma \
       external/piqi-ocaml/piqirun/piqirun.cma \
+    $(TOP)/piqi_ddl_files/lib.cma \
     globals/lib.cma \
     h_files-format/lib.cma \
     h_version-control/lib.cma \
@@ -214,6 +215,7 @@ MAKESUBDIRS=commons \
   external/easy-format-1.0.2 \
   external/piqi-ocaml \
   external/piqi-0.6.10/piqilib \
+  $(TOP)/piqi_ddl_files \
   $(JSONDIR) \
   $(GRAPHDIR) \
   $(GUIDIR) $(CAIRODIR) \
@@ -301,7 +303,6 @@ PP=-pp "cpp $(CLANG_HACK) -DFEATURE_BYTECODE=$(FEATURE_BYTECODE) -DFEATURE_CMT=$
 #could try to compile $(EXEC) before rec. So here force sequentiality.
 
 all:: Makefile.config
-	#cd piqi_ddl_files && $(MAKE)
 	$(MAKE) rec
 	$(MAKE) $(PROGS)
 opt:

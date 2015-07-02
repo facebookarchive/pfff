@@ -1,0 +1,108 @@
+.include [
+    .module graph_code
+]
+
+% Cannot have type as graph, module conflicts. Todo maybe to come up with a better name...
+.record [
+    .name graph-graphson
+    .field [
+	.name mode
+	.type string
+    ]
+    .field [
+	.name vertices
+	.type vertex-list
+    ]
+    .field [
+	.name edges
+	.type edge-list
+    ]
+]
+
+.record [
+    .name vertex
+    .field [
+	.name id
+	.ocaml-name "_id"
+	.json-name "_id"
+	.type int 
+    ]
+    .field [
+	.name type
+	.ocaml-name "_type"
+	.json-name "_type"
+	.type string
+    ]
+    .field [
+	.name name
+	.type string
+    ]
+    .field [
+	.name entity-kind
+	.type entity-kind
+    ]
+    .field [
+	.name pos
+	.type token-location
+    ]
+    .field [
+	.name props
+	.type property-list
+    ]
+    .field [
+	.name typ
+	.type string
+	.optional
+    ]
+]
+
+.list [
+    .name vertex-list
+    .type vertex
+]
+
+.list [
+    .name edge-list
+    .type edge-graphson
+]
+
+.record [
+    .name edge-graphson
+    .field [
+	.name id
+	.ocaml-name "_id"
+	.json-name "_id"
+	.type int
+    ]
+    .field [
+	.name type
+	.ocaml-name "_type"
+	.json-name "_type"
+	.type string
+    ]
+    .field [
+	.name outv
+	.ocaml-name "_outV"
+	.json-name "_outV"
+	.type int
+    ]
+    .field [
+	.name inv
+	.ocaml-name "_inV"
+	.json-name "_inV"
+	.type int
+    ]
+    .field [
+	.name label
+	.ocaml-name "_label"
+	.json-name "_label"
+	.type string
+    ]
+    .field [
+	.name edgeinfo
+	.type edgeinfo
+    ]
+]
+
+.custom-field ocaml-name
+.custom-field json-name

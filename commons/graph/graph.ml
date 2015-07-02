@@ -314,6 +314,18 @@ let add_edge k1 k2 g =
 (* Graph access *)
 (*****************************************************************************)
 
+let graph_og g =
+  g.og
+
+let graph_key_of_vertex g =
+  g.key_of_vertex
+
+let graph_vertex_of_key g =
+  g.vertex_of_key
+
+let graph_cnt g =
+  g.cnt
+
 let nodes g = 
   Common2.hkeys g.vertex_of_key
 

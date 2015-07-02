@@ -64,6 +64,10 @@ _darcs
 
 Fig_graph_ml.pdf
 
+# piqi_ddl_files
+piqi_ddl_files/graph_graphson_piqi_ext.ml
+piqi_ddl_files/graph_graphson_piqi.ml
+
 # data
 /TAGS
 /DB_LIGHT

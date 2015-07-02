@@ -77,6 +77,11 @@ val basename_to_readable_disambiguator:
   (string (* basename *) -> Common.filename list)
 
 (* graph access *)
+val graph_code_graph_has: graph -> node Graph.graph
+val graph_code_graph_use: graph ->  node Graph.graph
+val graph_code_graph_nodeinfo: graph ->  (node, nodeinfo) Hashtbl.t
+val graph_code_graph_edgeinfo: graph ->  ((node * node * edge), edgeinfo) Hashtbl.t
+
 val has_node: node -> graph -> bool
 val succ: node -> edge -> graph -> node list
 (* this is slow, take care, or use mk_eff_use_pred below *)
