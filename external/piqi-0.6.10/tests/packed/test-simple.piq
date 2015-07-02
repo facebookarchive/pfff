@@ -1,0 +1,25 @@
+
+% record with one packed repeated int field
+:packed/r-int [ -100_000_000 -1 0 2 100_000_000 1 2 3 4 5 -1000 ]
+
+% record with one packed repeated enum field
+:packed/r-enum [ .a .b .c .d .d .c .b .a .d .d .c .c .b .b .a .a ]
+
+% record with one packed repeated enum field
+:packed/r-bool [ true false true true false false true ]
+
+
+% list of packed ints
+:packed/int-list [ -100_000_000 -1 0 2 100_000_000 1 2 3 4 5 -1000 ]
+
+% list of packed bools
+:packed/bool-list [ true false true true false false true ]
+
+% list of packed enum values
+:packed/e-list [ .a .b .c .d .d .c .b .a .d .d .c .c .b .b .a .a ]
+
+
+% lists of aliases (same as the above lists)
+:packed/i-list [ -100_000_000 -1 0 2 100_000_000 1 2 3 4 5 -1000 ]
+:packed/b-list [ true false true true false false true ]
+

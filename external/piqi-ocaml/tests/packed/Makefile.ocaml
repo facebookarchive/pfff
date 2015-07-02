@@ -1,0 +1,40 @@
+OCAMLMAKEFILE := ../../make/OCamlMakefile
+
+
+RESULT = test
+
+
+SOURCES = $(PIQI_ML_FILES) test_packed.ml test_packed_array.ml
+
+
+PIQI_FILES = packed-nocompat.piqi packed.piqi packed-array.piqi
+
+PIQI_ML_FILES = \
+	packed_nocompat_piqi.ml \
+	packed_piqi.ml \
+	packed_array_piqi.ml \
+
+
+PRE_TARGETS = $(PIQI_ML_FILES)
+
+
+PIQIC = ../../piqic-ocaml/piqic-ocaml
+#PIQIC_FLAGS =
+
+
+export OCAMLPATH = ../..
+PACKS = piqirun.pb
+
+
+all: nc #top
+
+
+$(PIQI_ML_FILES): $(PIQI_FILES)
+	set -e; \
+	for i in $^; do \
+		$(PIQIC) $(PIQIC_FLAGS) $$i ; \
+	done
+
+
+
+include $(OCAMLMAKEFILE)

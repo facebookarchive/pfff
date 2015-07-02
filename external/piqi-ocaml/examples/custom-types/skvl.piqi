@@ -1,0 +1,20 @@
+
+.record [
+    .name string-key-value
+
+    .field [
+        .name key
+        .type string
+    ]
+    .field [
+        .name value
+        .type string
+    ]
+]
+
+
+.list [
+    .name string-key-value-list
+    .type string-key-value
+]
+

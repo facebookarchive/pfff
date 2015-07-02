@@ -1,0 +1,132 @@
+% Internal representation of Piq data
+%
+% Copyright 2009, 2010, 2011, 2012 Anton Lavrik
+
+
+.import [ .module piqi ]
+
+
+.variant [
+    .name typedef
+
+    .option [ .type record ]
+    .option [ .type variant ]
+    .option [ .type enum ]
+    .option [ .type list ]
+    .option [ .type alias ]
+]
+
+
+.variant [
+    .name obj
+
+    .option [ .type typedef ]
+
+    % built-in objects
+    .option [
+        .name int
+        .type int64
+    ]
+
+    .option [
+        .name uint
+        .type uint64
+    ]
+
+    .option [ .type float ]
+    .option [ .type bool ]
+    .option [ .type string ]
+    .option [ .type binary ]
+    .option [ .type any ]
+]
+
+
+.record [
+    .name record
+    .field [
+        .name t
+        .type piqi/record
+    ]
+    .field [
+        .type field
+        .repeated
+    ]
+]
+
+
+.record [
+    .name field 
+    .field [
+        .name t
+        .type piqi/field
+    ]
+    .field [
+        .type obj
+        .optional
+    ]
+]
+
+
+.record [
+    .name variant
+    .field [
+        .name t
+        .type piqi/variant
+    ]
+    .field [ .type option ]
+]
+
+
+.record [
+    .name option 
+    .field [
+        .name t
+        .type piqi/option
+    ]
+    .field [
+        .type obj
+        .optional
+    ]
+]
+
+
+.record [
+    .name list 
+    .field [
+        .name t
+        .type piqi/list
+    ]
+    .field [
+        .type obj
+        .repeated
+    ]
+]
+
+
+.record [
+    .name alias 
+    .field [
+        .name t
+        .type piqi/alias
+    ]
+    .field [ .type obj ]
+]
+
+
+.record [
+    .name any 
+    .field [
+        .name t
+        .type piqi/alias
+    ]
+    .field [ .type obj .optional ]
+]
+
+
+.alias [
+    .name enum
+    .type variant
+]
+
+
+.custom-field ocaml-name

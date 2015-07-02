@@ -1,0 +1,90 @@
+% Copyright 2009, 2010, 2011, 2012, 2013, 2014 Anton Lavrik
+%
+% Licensed under the Apache License, Version 2.0 (the "License");
+% you may not use this file except in compliance with the License.
+% You may obtain a copy of the License at
+%
+%     http://www.apache.org/licenses/LICENSE-2.0
+%
+% Unless required by applicable law or agreed to in writing, software
+% distributed under the License is distributed on an "AS IS" BASIS,
+% WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+% See the License for the specific language governing permissions and
+% limitations under the License.
+
+
+% Piq-specific extensions for Piqi self-spec
+%
+% This file defines some extensions to the base Piqi specification enabling
+% properties specific to the Piq data representation format
+
+
+.include [ .module piqi ]
+
+
+.extend [
+    (.typedef alias list field option)
+
+    .with.field [
+        .type piq-format
+        .optional
+    ]
+]
+
+
+.extend [
+    (.typedef field record)
+
+    .with.field [
+        % allows to control explicitly whether to accept a field if it is specified
+        % without a label (arguments without a label are called "positional")
+        %
+        % the default behavior is to allow fields of primitive types to be
+        % positional but require labels for records and lists
+        %
+        % fields inherit record-level setting when present, unless overridden by
+        % per-field settings
+
+        .name piq-positional
+        .type bool
+        .optional
+    ]
+]
+
+
+.extend [
+    (.typedef field option)
+
+    .with.field [
+        % this allows to specify an alternative name a field or an option; used
+        % only when parsing Piq; Field names specified via .name or derived from
+        % .type take precedence over names defined using .piq-alias
+        %
+        % the ability to use an alternative name is useful when Piq is used as
+        % as a syntax notation for DSLs
+
+        .name piq-alias
+        .type name
+        .optional
+    ]
+]
+
+
+% Piq-specific alternative representation format of Piqi types
+.variant [
+    .name piq-format
+
+    % representation of string values
+
+    .option [
+        % NOTE: if a string value can not be represented as single unquoted
+        % word, it will be pepresented as string liternal
+
+        .name word
+    ]
+
+    .option [
+        .name text
+    ]
+]
+

@@ -1,0 +1,11 @@
+% This is an empty .piq file with a bunch of comments
+
+% comments start with '%' character and continue until the end of the line
+
+% one
+% two
+% three
+
+% Note that '%%' is not a valid literal sequence.
+%
+

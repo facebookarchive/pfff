@@ -1,0 +1,28 @@
+
+:string "this is a string\n"
+
+% "hi" in Russian (utf-8 encoded cyrillic characters)
+:string "привет"
+
+% these are supported string escape sequences
+:string "\" \t\n\r  \x20 \u0020 \U00000020"
+
+:string "\x74\x79\x70\x65"
+
+% NOTE: octal escape codes are unsupported (e.g. "\000\123")
+
+
+% binary values must not contain Unicode characters with codes > 127, any ASCII
+% string literal containing ascii-characters represents a valid binary value
+
+:binary "this is a binary literal"
+
+:binary "binary literals may contain bytes encoded like this: \xfe"
+
+:binary "non-unicode escapes are also allowed in binary literals: \" \t\r\n"
+
+%
+% see also ./piq-text.piq
+%
+
+

@@ -1,0 +1,26 @@
+(:bool)
+
+true false
+
+
+:def/r [
+    .i 0
+
+    .bool true
+]
+
+
+:def/r [
+    .i 0
+
+    .bool false
+]
+
+
+:def/r [
+    .i 0
+
+    % same as .bool true
+    .bool
+]
+

@@ -1,0 +1,43 @@
+:piqi [
+    .module m
+    .alias [
+        .name word
+        .type string
+        .piq-format.word
+    ]
+]
+
+(:string)
+
+"foo"
+
+"foo"
+
+"1"
+
+"2.14"
+
+"true"
+
+"false"
+
+"1hour"
+
+"1.2.3-rc1"
+
+(:m/word)
+
+foo
+
+1
+
+2.14
+
+true
+
+false
+
+1hour
+
+1.2.3-rc1
+

@@ -1,0 +1,155 @@
+% Copyright 2009, 2010, 2011, 2012, 2013, 2014 Anton Lavrik
+%
+% Licensed under the Apache License, Version 2.0 (the "License");
+% you may not use this file except in compliance with the License.
+% You may obtain a copy of the License at
+%
+%     http://www.apache.org/licenses/LICENSE-2.0
+%
+% Unless required by applicable law or agreed to in writing, software
+% distributed under the License is distributed on an "AS IS" BASIS,
+% WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+% See the License for the specific language governing permissions and
+% limitations under the License.
+
+
+% Piqi Tools
+%
+% This file contains definitions for Piqi-RPC server that exposes Piqi Tools
+% functionality.
+
+
+.function [
+    .name add-piqi  % add Piqi module
+
+    .input [
+        .field [
+            .type format  % how Piqi module is encoded (typically, pb)
+        ]
+
+        .field [
+            .name data
+            .type binary
+            .repeated
+        ]
+    ]
+
+    .error string
+]
+
+
+.function [
+    .name convert
+
+    .input [
+        .field [
+            .name type-name
+            .type string
+        ]
+
+        .field [
+            .name data
+            % can be utf8 string for JSON, XML or Piq, binary for Wire and Proto
+            .type binary
+        ]
+
+        .field [
+            .name input-format
+            .type format
+        ]
+
+        .field [
+            .name output-format
+            .type format
+        ]
+
+        % this option is relevant only for JSON or XML output formats; Piq is
+        % always pretty-printed
+        .field [
+            .name pretty-print
+            .type bool
+            .optional
+            .default true
+        ]
+
+        .field [
+            % omit missing fields in JSON output; if false, they will be present in the
+            % output with their values set to "null" for optional fields and "[]" for
+            % repeated fields
+
+            .name json-omit-missing-fields
+            .type bool
+            .optional
+            .default true
+        ]
+
+        % Strict parsing for JSON, XML, Piq. When this option is set to "true",
+        % Piqi will treat duplicate and unknown record fields as errors (in the
+        % same way as "piqi convert --strict").
+        %
+        % When set to "false", Piqi generates warnings, but they get silently
+        % ignored, because warnings can not be transmitted via Piqi-RPC and
+        % Piqi-RPC over HTTP protocols.
+        %
+        % XXX: something to think about in the future.
+
+        .field [
+            .name use-strict-parsing
+            .type bool
+            .optional
+            .default false
+        ]
+
+        .field [
+            % whether to print a frame around a single output Piq object
+
+            .name piq-frameless-output
+            .type bool
+            .optional
+            .default false
+        ]
+
+        .field [
+            % whether to expect a frame around a single input Piq object
+
+            .name piq-frameless-input
+            .type bool
+            .optional
+            .default false
+        ]
+
+        .field [
+            % whether to parse Piq format using "relaxed" mode; for instance,
+            % single-word string literals don't have to be quoted
+
+            .name piq-relaxed-parsing
+            .type bool
+            .optional
+            .default false
+        ]
+    ]
+
+    .output [
+        .field [
+            .name data
+            .type binary
+        ]
+    ]
+
+    .error string
+]
+
+
+% not really useful for anything but testing
+.function [ .name ping ]
+
+
+.enum [
+    .name format
+
+    .option [ piq ]
+    .option [ json ]
+    .option [ pb ]
+    .option [ xml ]
+]
+

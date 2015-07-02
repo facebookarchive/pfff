@@ -1,0 +1,9 @@
+You need to have a Protobuf source distribution for this test. It can be
+downloaded from here:
+http://code.google.com/p/protobuf/downloads/detail?name=protobuf-2.3.0.tar.gz
+
+After downloading and unpacking, create the following symlink before running the
+test script:
+
+ln -s <protobuf source directory>/src/google .
+

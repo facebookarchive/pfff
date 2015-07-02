@@ -1,0 +1,4 @@
+language: c
+script: "./travis-ci"
+before_install:
+    - sudo apt-get install protobuf-compiler

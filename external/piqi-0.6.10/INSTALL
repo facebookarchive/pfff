@@ -1,0 +1,141 @@
+This file contains instructions for building "piqi" command-line executable from
+source code.
+
+Pre-built binaries can be downloaded from http://piqi.org/downloads/
+
+
+SUPPORTED PLATFORMS
+===================
+
+Piqi has been tested on Linux (i386 and amd64 architectures), Mac OS X and
+FreeBSD. It is also known to work on Windows and Solaris.
+
+Piqi is written in OCaml so, in theory, it should work on platforms and hardware
+architectures supported by OCaml. See the list of supported platforms at
+
+        http://caml.inria.fr/ocaml/portability.en.html
+
+
+PREREQUISITES
+=============
+
+On Debian and Ubuntu:
+
+        apt-get install ocaml camlp4-extra ocaml-findlib gcc make sed
+
+
+On Mac OS X (using Homebrew):
+
+        brew install objective-caml opam
+        opam init
+        eval `opam config env`
+        opam install ocamlfind camlp4
+
+        (Here, we used [OPAM](http://opam.ocaml.org/) to build and install
+        ocamlfind).
+
+
+On Windows:
+
+        For building native Windows binaries, download and install OCaml for
+        Windows from here:
+
+                http://protz.github.io/ocaml-installer/
+
+        For building under Cygwin, follow the steps from the next section.
+
+        See the "CROSS-COMPILATION" section below for instructions on building a
+        Windows executable on Linux.
+
+
+On other Unix systems:
+
+        * OCaml (>= 3.12)
+
+                OCaml is available in most Linux distributions. It can also be
+                downloaded from here:
+
+                        http://caml.inria.fr/download.en.html
+
+        * CamlP4 -- Caml Preprocessor and Pretty Printer
+
+                It comes as a part of OCaml source distribution. It should be
+                prepackaged in major Linux distributions as well.
+
+        * Ocamlfind/Findlib -- library manager for OCaml
+
+                If installed separately form prepackaged OCaml distribution, it
+                is recommended to build it from sources after you build/install
+                OCaml. It can be downloaded from here:
+
+                        http://projects.camlcity.org/projects/findlib.html
+        * C compiler
+
+                GCC works. Other compilers should work if they are able to build
+                OCaml.
+
+        * GNU make, sed and probably some other tools.
+
+
+INSTALLATION INSTRUCTIONS
+=========================
+
+1. Run ./configure
+
+        Run "./configure --help" for the list of available options.
+
+2. Build third-party dependencies
+
+        make deps
+
+3. Build Piqi
+
+        make
+
+4. Install the "piqi" binary along with the "piqi.1" man page
+
+        make install
+
+5. (Optional) build HTML documentation -- see doc/README.md for more details
+
+        make doc
+
+
+RUNNING TESTS
+=============
+
+        make -C tests
+
+
+See tests/README for further information.
+
+
+CROSS-COMPILATION
+=================
+
+To build a Windows (win32) executable on Linux:
+
+
+1. Install mingw-w64 cross-compiler
+
+        For example, on Debian:
+
+                apt-get install gcc-mingw-w64-i686
+
+        Homepage: http://sourceforge.net/projects/mingw-w64/
+
+2. Install OCaml cross-compiler
+
+        opam switch 4.00.1
+        opam repo add win https://github.com/vouillon/opam-windows-repository.git
+        opam install win32-ocaml win32-ocamlfind
+
+        See up-to-date instructions at https://github.com/vouillon/opam-windows-repository
+
+3. Build
+
+        ./configure --host=i686-w64-mingw32
+        make deps
+        make
+        make strip  # optional
+

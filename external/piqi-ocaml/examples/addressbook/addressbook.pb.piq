@@ -1,0 +1,45 @@
+:addressbook/address-book [
+    .person [
+        .name "J. Random Hacker"
+        .id 0
+        .email "j.r.hacker@example.com"
+        .phone [
+            .number "(111) 123 45 67"
+            .type.home
+        ]
+        .phone [
+            .number "(222) 123 45 67"
+            .type.mobile
+        ]
+        .phone [
+            .number "(333) 123 45 67"
+            .type.work
+        ]
+        .phone [
+            .number "(444) 123 45 67"
+            .type.mobile
+        ]
+    ]
+    .person [
+        .name "Joe User"
+        .id 1
+    ]
+    .person [
+        .name "Joe User Jr"
+        .id 2
+    ]
+    .person [
+        .name "Joe User II"
+        .id 3
+        .email "joe.user@example.com"
+        .phone [
+            .number "(444) 123 45 67"
+            .type.home
+        ]
+        .phone [
+            .number "(555) 123 45 67"
+            .type.work
+        ]
+    ]
+]
+

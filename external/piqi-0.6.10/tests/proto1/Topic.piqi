@@ -1,0 +1,15 @@
+.ocaml-module "Topic" .protobuf-package "Topic"
+.custom-field ocaml-module
+
+.alias [ .name probability .type float ]
+
+.list [
+     .name topic-probability-list
+     .type probability
+]
+
+.alias [
+     .name vector
+     .type topic-probability-list
+]
+

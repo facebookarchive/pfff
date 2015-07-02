@@ -1,0 +1,19 @@
+#!/bin/sh
+
+set -e
+
+
+if which curl >/dev/null 2>/dev/null
+then
+    curl -O -L "$1"
+elif which wget >/dev/null 2>/dev/null
+then
+    wget "$1"
+elif which fetch >/dev/null 2>/dev/null
+then
+    fetch "$1"
+else
+    echo "can't find curl nor wget nor fetch" 1>&2
+    exit 1
+fi
+

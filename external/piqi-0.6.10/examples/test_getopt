@@ -1,0 +1,163 @@
+#!/bin/sh
+
+set -ex
+
+#
+# pretty-printing args as Piq AST
+#
+
+$PIQI getopt     # empty input
+$PIQI getopt --  # empty input
+
+$PIQI getopt -- foo
+$PIQI getopt -- 10 -20 30.0 -0.inf 0.nan '"foo\r"' '"\xff"' --fum [ --foo bar [] ] --baz
+
+
+#
+# converting args to Piq objects
+#
+# NOTE: converting to encodings other than Piq (controlled by -t parameter) is
+# tested as a part of "piqi convert" testing as they share the same
+# functionality
+#
+
+# built-in types
+
+$PIQI getopt --type bool -- true
+$PIQI getopt --type int -- -10
+$PIQI getopt --type float -- -0.inf
+
+$PIQI getopt --type string -- foo     # parsing words as strings
+$PIQI getopt --type string -- foo\ bar
+$PIQI getopt --type string -- '"\tfoo\x20\u0045"'
+$PIQI getopt --type string -- "привет"
+$PIQI getopt --type binary -- '"\x00ab\tcd\xff\xfe"'
+
+$PIQI getopt --type piqi-any -- 10 -20 30.0 -0.inf 0.nan '"foo\r"' '"\xff"' --fum [ --foo bar [] ] --baz
+
+# complex types
+
+$PIQI getopt --type complex/t -- .re 0 .im 0
+$PIQI getopt --type complex/t -- --re 0 --im 0
+$PIQI getopt --type complex/t -- 0 0
+$PIQI getopt --type complex/foo
+$PIQI getopt --type complex/foo --
+$PIQI getopt --type complex/foo --add-defaults --
+
+$PIQI getopt --type def/r -- -i 0 --flag
+$PIQI getopt --type def/r -- -i 0 --flag
+$PIQI getopt --type def/r -- -i 0 --flag
+
+$PIQI getopt --type def/int-list
+$PIQI getopt --type def/int-list --
+$PIQI getopt --type def/int-list -- 1 2 3 4 5
+$PIQI getopt --type def/int-list-list
+$PIQI getopt --type def/int-list-list --
+$PIQI getopt --type def/int-list-list -- [] [ 1 2 3 ]
+
+$PIQI getopt --type record-variant-list/r -- -a 0 -b 1
+$PIQI getopt --type record-variant-list/l -- -a 0 -b 1
+$PIQI getopt --type record-variant-list/v -- -a 0
+$PIQI getopt --type record-variant-list/v -- -b 1
+
+# test for a top-level enum value
+$PIQI getopt --type def/e -t pb -- -a | $PIQI convert -f pb --type def/e
+$PIQI getopt --type def/e -t json -- -a | $PIQI convert -f json --type def/e
+
+
+$PIQI getopt --add-defaults -t json --type person/person -- \
+    --name "J. Random Hacker" \
+    --id 0 \
+    --email "j.r.hacker@example.com" \
+    --phone [ --number "(111) 123 45 67" ] \
+    --phone [ \
+        --number "(222) 123 45 67" \
+        --mobile \
+    ] \
+    --phone [ \
+        --number "(333) 123 45 67" \
+        --work \
+    ]
+
+$PIQI getopt --type person/person -- \
+    .name "Joe User" \
+    .id 1 \
+    .phone [ "(444) 123 45 67" ] \
+    .phone [ "(555) 123 45 67" .work ]
+
+
+$PIQI getopt --type function/bar-input -- 10
+$PIQI getopt --type function/bar-output -- 1
+$PIQI getopt --type function/bar-error -- 100.0
+
+$PIQI getopt --type function/baz-input --
+$PIQI getopt --type function/baz-input --add-defaults --
+
+# treat an argument starting with '@' as a name of the file that neads to be
+# read into a string
+$PIQI getopt --type string -- @string.piq
+
+# parsing file's contents as a binary
+$PIQI getopt --type binary -- @string.piq
+
+
+#
+# parsing long and short options
+#
+
+# record fields
+$PIQI getopt --type getopt/r -- --long-option 1
+$PIQI getopt --type getopt/r -- -o 1
+
+
+$PIQI getopt --type getopt/r -- --long-flag
+$PIQI getopt --type getopt/r -- -f
+
+
+$PIQI getopt --type getopt/r -- --long-flag -o 1 --long-g
+$PIQI getopt --type getopt/r -- -f --long-option 1 -g
+
+# short options combined
+$PIQI getopt --type getopt/r -- -fo 1 -g
+$PIQI getopt --type getopt/r -- -gfo 1
+$PIQI getopt --type getopt/r -- -fgo 1
+
+
+# variant options
+$PIQI getopt --type getopt/v -- --long-option 1
+$PIQI getopt --type getopt/v -- -o 1
+
+
+$PIQI getopt --type getopt/v -- --long-flag
+$PIQI getopt --type getopt/v -- -f
+
+
+# enum flags
+$PIQI getopt --type getopt/e -- --long-flag
+$PIQI getopt --type getopt/e -- -f
+
+$PIQI getopt --type getopt/e -- --long-g
+$PIQI getopt --type getopt/e -- -g
+
+
+# list of variants
+# each option mentioned only once
+$PIQI getopt --type getopt/l -- --long-option 1
+$PIQI getopt --type getopt/l -- -o 1
+
+$PIQI getopt --type getopt/l -- --long-flag
+$PIQI getopt --type getopt/l -- -f
+
+# both options are present in the list
+$PIQI getopt --type getopt/l -- -f --long-option 1
+$PIQI getopt --type getopt/l -- -o 1 --long-flag
+
+# each option mentioned two times using different notations:
+$PIQI getopt --type getopt/l -- -f --long-option 1 -o 1 --long-flag
+
+# short options combined
+$PIQI getopt --type getopt/l -- -fo 1 -g
+$PIQI getopt --type getopt/l -- -gfo 1
+$PIQI getopt --type getopt/l -- -fgo 1
+$PIQI getopt --type getopt/l -- -fgo 1 -fgo 1 -gf
+

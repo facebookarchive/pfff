@@ -1,0 +1,51 @@
+% Copyright 2009, 2010, 2011, 2012, 2013, 2014 Anton Lavrik
+%
+% Licensed under the Apache License, Version 2.0 (the "License");
+% you may not use this file except in compliance with the License.
+% You may obtain a copy of the License at
+%
+%     http://www.apache.org/licenses/LICENSE-2.0
+%
+% Unless required by applicable law or agreed to in writing, software
+% distributed under the License is distributed on an "AS IS" BASIS,
+% WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+% See the License for the specific language governing permissions and
+% limitations under the License.
+
+
+% JSON-specific extensions for Piqi self-spec
+%
+% This file defines some extensions to base Piqi specification enabling fields
+% specific to JSON
+
+
+.include [ .module piqi ]
+
+
+.extend [
+    (.typedef record field variant option enum alias list)
+
+    .with.field [
+        .name json-name
+        .type string
+        .optional
+    ]
+]
+
+
+.extend [
+    .typedef field
+
+    .with.field [
+        % whether to omit missing fields from JSON output that would otherwise
+        % be represented as JSON NULL for missing optional and [] for missing
+        % repeated fields; if not specified, the default behavior is determined
+        % by the json_omit_missing_fields run-time setting which is, in turn,
+        % set to true by default
+
+        .name json-omit-missing
+        .type bool
+        .optional
+    ]
+]
+

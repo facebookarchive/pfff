@@ -1,0 +1,25 @@
+#!/bin/sh
+set -ex
+
+f=$1
+
+
+# convert .piqi to .piqi.proto
+$PIQI to-proto $f.piqi
+
+
+# don't continue the test if there's no procol (Protocol Buffers compiler)
+which protoc || exit 0
+
+
+# check .piqi.proto
+protoc -o/dev/null --include_imports $f.piqi.proto
+
+
+# convert .piqi.proto to .piqi.proto.piqi
+$PIQI of-proto $f.piqi.proto
+
+
+# check .piqi.proto.piqi
+$PIQI check $f.piqi.proto.piqi
+

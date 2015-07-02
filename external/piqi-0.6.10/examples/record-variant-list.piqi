@@ -1,0 +1,16 @@
+
+.record [
+    .name r
+    .field [ .name a .type int ]
+    .field [ .name b .type int ]
+]
+
+.variant [
+    .name v
+    .option [ .name a .type int ]
+    .option [ .name b .type int ]
+]
+
+
+.list [ .name l .type v ]
+

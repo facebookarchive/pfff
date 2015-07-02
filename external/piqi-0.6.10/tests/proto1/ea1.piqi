@@ -1,0 +1,94 @@
+% testing enums and aliases imports and functino paraemters -- also see ea.piqi
+
+%.protobuf-package "tt"
+
+.import [ .module ea .name t ]
+
+
+.record [
+    .name r
+    .field [
+        .name s
+        .type t/s
+    ]
+    .field [
+        .name e
+        .type t/e
+    ]
+    .field [
+        .name ea
+        .type t/ea
+    ]
+    .field [
+        .name lea
+        .type ea
+    ]
+
+    .field [
+        .name eaa
+        .type eaa
+    ]
+
+    .field [
+        .name r
+        .type t/r
+    ]
+
+    .field [
+        .name ra
+        .type t/ra
+    ]
+
+    .field [
+        .name lra
+        .type ra
+    ]
+
+    .field [
+        .name raa
+        .type raa
+    ]
+]
+
+
+.alias [
+    .name ea
+    .type t/e
+]
+
+
+.alias [
+    .name eaa
+    .type t/ea
+]
+
+
+.alias [
+    .name ra
+    .type t/r
+]
+
+
+.alias [
+    .name raa
+    .type t/ra
+]
+
+
+.function [
+    .name f
+
+    .input t/ra
+    .output t/e
+    .error t/s
+]
+
+
+.function [
+    .name g
+
+    .error ea
+    .output t/ea
+    .input eaa
+]
+

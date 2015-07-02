@@ -1,0 +1,20 @@
+% This is an extension for addressbook.proto.piqi module.
+%
+% This file will be automatically included by "piqic-ocaml" when it loads
+% addressbook.proto.piqi
+%
+% After converting addressbook.proto to addressbook.proto.piqi, we need to add
+% "ocaml-name" property for field "type" in "person-phone-name" record. This is
+% necessary because "type" is a keyword in OCaml.
+
+.include [ .module addressbook ]
+
+
+.extend [
+    .field person-phone-number.type
+
+    .with.ocaml-name "phone_type"
+]
+
+
+.custom-field ocaml-name

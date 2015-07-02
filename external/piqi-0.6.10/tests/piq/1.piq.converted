@@ -1,0 +1,37 @@
+:piqi [
+    .module m
+    .variant [
+        .name v
+        .option [ .type bool ]
+        .option [ .type int ]
+        .option [ .type float ]
+        .option [ .type word ]
+        .option [ .type string ]
+        .option [
+            .name id
+            .type word
+        ]
+    ]
+    .alias [
+        .name word
+        .type string
+        .piq-format.word
+    ]
+]
+
+(:m/v)
+
+.float 3.14
+
+.bool true
+
+.int 10
+
+.word word
+
+.string "string"
+
+.word 1day
+
+.id foo
+

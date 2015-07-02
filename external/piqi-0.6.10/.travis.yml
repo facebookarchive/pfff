@@ -1,0 +1,8 @@
+language: c
+script: ./.travis-ci.sh
+os:
+  - linux
+  - osx
+branches:
+  only:
+    - master

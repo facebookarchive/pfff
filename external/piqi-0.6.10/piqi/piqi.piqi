@@ -1,0 +1,397 @@
+% Copyright 2009, 2010, 2011, 2012, 2013, 2014 Anton Lavrik
+%
+% Licensed under the Apache License, Version 2.0 (the "License");
+% you may not use this file except in compliance with the License.
+% You may obtain a copy of the License at
+%
+%     http://www.apache.org/licenses/LICENSE-2.0
+%
+% Unless required by applicable law or agreed to in writing, software
+% distributed under the License is distributed on an "AS IS" BASIS,
+% WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+% See the License for the specific language governing permissions and
+% limitations under the License.
+
+
+% The current Piqi self-specification
+%
+% This file contains defintion of the Piqi self-specification
+
+
+% aliases for built-in types; these definitions are automatically included in
+% each Piqi module except modules named "piqi"
+
+.alias [ .name bool       .piqi-type.bool ]
+.alias [ .name string     .piqi-type.string ]
+.alias [ .name binary     .piqi-type.binary ]
+
+.alias [ .name piqi-any   .piqi-type.any ]
+
+.alias [ .name int        .piqi-type.int ]
+.alias [ .name uint       .piqi-type.int ]
+.alias [ .name int32      .piqi-type.int ]
+.alias [ .name uint32     .piqi-type.int ]
+.alias [ .name int64      .piqi-type.int ]
+.alias [ .name uint64     .piqi-type.int ]
+
+.alias [ .name float64    .piqi-type.float ]
+.alias [ .name float32    .piqi-type.float ]
+
+% Fixed versions of int32/64 and uint32/64. "Fixed" here means that they are
+% represented on the wire using exactly 4 and 8 bytes respectively.
+.alias [
+    .name int32-fixed
+    .type int32
+    .piqi-type.int
+]
+
+.alias [
+    .name uint32-fixed
+    .type uint32
+    .piqi-type.int
+]
+
+.alias [
+    .name int64-fixed
+    .type int64
+    .piqi-type.int
+]
+
+.alias [
+    .name uint64-fixed
+    .type uint64
+    .piqi-type.int
+]
+
+.alias [
+    .name float
+    .type float64
+    .piqi-type.float
+]
+
+%
+% end of built-in types
+%
+
+
+.alias [
+    .name word
+    .type string
+
+    .piq-format.word  % print it as word instead of a quoted string literal
+]
+
+
+.alias [
+    .name name
+    .type word
+]
+
+
+.variant [
+    % user-defined types
+
+    .name typedef
+
+    .option [ .type record ]
+    .option [ .type variant ]
+    .option [ .type enum ]
+    .option [ .type alias ]
+    .option [
+        .type list
+    ]
+
+    .protobuf-name "piqi_typedef"
+]
+
+
+.enum [
+    % built-in Piqi types
+
+    .name piqi-type
+
+    % prefix all options in order to prevent clash with keywords of the Protobuf
+    % target languages
+    .protobuf-prefix "piqi_type_"
+
+    .option [ .name int ]
+    .option [ .name float ]
+    .option [ .name bool ]
+    .option [ .name string ]
+    .option [ .name binary ]
+    .option [ .name any ]
+]
+
+
+.alias [
+    .name type
+    .type name
+]
+
+
+.record [
+    .name record 
+
+    .field [ .type name ]
+    .field [
+        .type field
+        .repeated
+    ]
+]
+
+
+.record [
+    .name field
+
+    .field [
+        .type name
+        .optional
+    ]
+    .field [
+        .type type
+        .optional
+    ]
+    .field [
+        .name mode
+        .type field-mode
+        .optional
+        .default.required
+    ]
+
+    .field [
+        .name default
+        .type piqi-any
+        .optional
+    ]
+
+    .field [
+        % experimental: indication that the field has been deprecated; which
+        % means that it may not be supported any more and use of such field is
+        % discouraged
+
+        .name deprecated
+        .optional
+    ]
+]
+
+
+.enum [
+    .name field-mode
+
+    .option [ .name required ]
+    .option [ .name optional ]
+    .option [ .name repeated ]
+]
+
+
+.record [
+    .name variant
+    .field [ .type name ]
+    .field [
+        .type option
+        .repeated % > 1
+    ]
+]
+
+
+.record [
+    .name option
+
+    % NOTE: either name or type have to be present
+    .field [
+        .type name
+        .optional
+    ]
+    .field [
+        .type type
+        .optional
+    ]
+    .field [
+        % experimental: indication that the option has been deprecated; which
+        % means that it may not be supported any more and use of such field is
+        % discouraged
+
+        .name deprecated
+        .optional
+    ]
+]
+
+
+.record [
+    .name enum
+
+    .field [ .type name ]
+
+    % note that enum options shouldn't specify type and must specify name
+    .field [
+        .type option
+        .repeated % > 1
+    ]
+
+    .protobuf-name "piqi_enum"
+]
+
+
+.record [
+    .name alias
+
+    .field [ .type name ]
+
+    % either type or piqi-type fields must be present; we don't use variant here
+    % in order to simplify external representation which is going to be flat in
+    % such case, as opposed to nested if we used variant
+    .field [
+        .type type
+        .optional
+    ]
+
+    .field [
+        .type piqi-type
+        .optional
+    ]
+]
+
+
+.record [
+    .name list
+
+    .field [ .type name ]
+    .field [ .type type ]
+]
+
+
+.record [
+    .name piqi
+
+    .field [
+        .name module
+        .type word
+        .optional
+    ]
+
+    .field [ .type typedef .repeated ]
+    .field [ .type import .repeated ]
+    .field [ .type function .repeated ]
+
+    .field [
+        .name custom-field
+        .type word
+        .repeated
+    ]
+]
+
+
+.record [
+    % import <module> as <name>
+    .name import
+
+    .field [
+        .name module
+        .type word
+    ]
+
+    .field [
+        .type name
+        .optional
+    ]
+]
+
+
+% representation of the built-in "piqi-any" type
+.record [
+    .name any
+
+    .field [
+        % type could be optional or not fully resolved at all times
+        .name type
+        .type string
+        .optional
+    ]
+
+    .field [
+        % arbitrary values corresponding to the type serialized in Protocol
+        % Buffers format; when one of "type" or "protobuf" field is present, the
+        % other must be present as well
+
+        .name protobuf
+        .type binary
+        .optional
+    ]
+
+    .field [
+        % arbitrary JSON value serialized in as utf-8 string; when "type" field
+        % is present, the JSON value must correspond to this type
+
+        .name json
+        .type string
+        .optional
+    ]
+
+    .field [
+        % arbitrary XML value serialized in as utf-8 string; when "type" field
+        % is present, the JSON value must correspond to this type
+
+        .name xml
+        .type string
+        .optional
+    ]
+]
+
+
+.record [
+    .name function
+
+    .field [ .type name ]
+
+    .field [
+        .name input
+        .type type
+        .optional
+    ]
+
+    .field [
+        .name output
+        .type type
+        .optional
+    ]
+
+    .field [
+        .name error
+        .type type
+        .optional
+    ]
+]
+
+
+.record [
+    % Standard portable representation of several piqi modules bundeled
+    % together. This data structure is used by "piqi compile", "piqi server" and
+    % other parts.
+    %
+    % The fact it is called piqi-list while being a record could be somewhat
+    % confusing. However, doing it this way allows to get nicer JSON and XML
+    % "visual" representation. It is still Protobuf-binary-compatible with
+    % .list [ .type piqi ] definition.
+
+    .name piqi-list
+
+    .field [
+        % imported modules come before the module they were imported from
+
+        .type piqi
+        .repeated
+        .code 1
+    ]
+]
+
+
+%
+% standard extensions natively supported by Piqi
+%
+
+.include [ .module piqi.piq ]
+.include [ .module piqi.protobuf ]
+.include [ .module piqi.json ]
+.include [ .module piqi.getopt ]
+.include [ .module piqi.piqic ]
+

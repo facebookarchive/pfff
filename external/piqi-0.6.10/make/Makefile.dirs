@@ -1,0 +1,20 @@
+.PHONY: all dirs clean pre_target post_target
+
+all: pre_target dirs post_target
+
+
+dirs: $(DIRS)
+	set -e; \
+	for dir in $(DIRS); do \
+		$(MAKE) -C $$dir $(MAKECMDGOALS); \
+	done
+
+
+clean:: dirs
+
+
+pre_target::
+post_target::
+
+
+# vim:ft=make

@@ -1,0 +1,84 @@
+#!/bin/sh
+
+
+# TODO: using "tee -a":
+#
+#   - test adding several Piqi modules, including a case where recent additions
+#   depend on older ones
+#
+#   - test data conversion that rely on added Piqi modules
+
+
+set -ex
+
+#flags="--trace"
+
+
+#
+# testing handshake and "ping" function
+#
+
+$PIQI call $flags "$PIQI server" --piqi
+$PIQI call $flags "$PIQI server" --piqi-all
+$PIQI call $flags "$PIQI server" --piqi-light
+$PIQI call $flags "$PIQI server" -p
+$PIQI call $flags "$PIQI server" -h
+
+$PIQI call $flags "$PIQI server/ping"
+
+
+#
+# testing "add-piqi" function
+#
+
+f=../../piqi/piqi.piqi
+
+
+$PIQI expand --add-module-name $f > t.piqi
+$PIQI convert -t pb t.piqi
+
+$PIQI call $flags "$PIQI server/add-piqi" -- --format pb --data @t.piqi.pb
+
+
+#
+# testing "convert" function
+#
+
+out="-o /dev/null"
+
+
+# testing conversion of Piqi modules
+
+$PIQI call $flags $out "$PIQI server/convert" -- --type-name piqi --data @t.piqi.pb --input-format pb --output-format piq
+$PIQI call $flags $out "$PIQI server/convert" -- --type-name piqi --data @t.piqi.pb --input-format pb --output-format json 
+
+$PIQI convert -t json t.piqi
+$PIQI call $flags $out "$PIQI server/convert" -- --type-name piqi --data @t.piqi.json --input-format json --output-format piq
+$PIQI call $flags $out "$PIQI server/convert" -- --type-name piqi --data @t.piqi.json --input-format json --output-format pb 
+
+
+# testing conversion of primitive values
+
+out=
+
+echo ':int 10' | $PIQI convert -f piq -t pb > t.pb
+echo ':int 10' | $PIQI convert -f piq -t json > t.json
+
+$PIQI call $flags $out "$PIQI server/convert" -- --type-name int --data @t.pb --pb --json
+$PIQI call $flags $out "$PIQI server/convert" -- --type-name int --data @t.json --json --pb
+
+
+echo ':string "foo bar"' | $PIQI convert -f piq -t pb > t.pb
+echo ':string "foo bar"' | $PIQI convert -f piq -t json > t.json
+
+$PIQI call $flags $out "$PIQI server/convert" -- --type-name string --data @t.pb --pb --json
+$PIQI call $flags $out "$PIQI server/convert" -- --type-name string --data @t.json --json --pb
+$PIQI call -t json $flags $out "$PIQI server/convert" -- --type-name string --data @t.json --json --pb
+$PIQI call -t xml $flags $out "$PIQI server/convert" -- --type-name string --data @t.json --json --pb
+
+
+# TODO: test conversion of values with user-defined types
+
+
+rm t.*
+

@@ -1,0 +1,47 @@
+% definition of a record type
+.record [
+    .name person      % record name
+    .field [
+        .name name    % field name
+        .type string  % field type
+    ]
+    .field [
+        .name id
+        .type int
+    ]
+    .field [
+        .name email
+        .type string
+        .optional     % field is optional
+    ]
+    .field [
+        .name phone
+        .type phone-number
+        .repeated     % field can be repeated 0 or more times
+    ]
+]
+
+.record [
+    .name phone-number
+    .field [
+        .name number
+        .type string
+    ]
+    .field [
+        .name type
+        .type phone-type
+        .optional
+        .default.home  % default value for an optional field
+
+        % ".default.home" is a shorthand for ".default (.home)", where
+        % ".home" is a value of the enum type defined below
+    ]
+]
+
+% definition of an enum type
+.enum [
+    .name phone-type
+    .option [ .name mobile ]
+    .option [ .name home ]
+    .option [ .name work ]
+]

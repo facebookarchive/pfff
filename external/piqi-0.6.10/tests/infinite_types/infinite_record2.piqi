@@ -1,0 +1,13 @@
+.record [
+    .name r
+    .field [
+        .type a
+        .required
+    ]
+]
+
+.alias [
+    .name a
+    .type r
+]
+

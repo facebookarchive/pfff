@@ -1,0 +1,26 @@
+.module config
+
+.enum [
+    .name generator
+    .option [ .name make ]
+    .option [ .name latexmk ]
+    .option [ .name org ]
+    .option [ .name tensile ]
+]
+
+.record [
+    .name entry
+    .field [
+        .name path
+        .type string
+    ]
+    .field [
+        .type generator
+    ]
+]
+
+.list [
+    .name config
+    .type entry
+]
+

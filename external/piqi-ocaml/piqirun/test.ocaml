@@ -1,0 +1,19 @@
+open Test
+(*
+#trace test_int;;
+#trace test_int32;;
+#trace test_int64;;
+#trace Piqirun.int64_of_varint;;
+#trace test_parse_varint;;
+#trace Piqirun.next_varint_byte;;
+*)
+#trace Piqirun.int_to_zigzag_varint;;
+#trace Piqirun.parse_varint;;
+#trace Piqirun.int_of_varint;;
+#trace test_zigzag_int;;
+#trace test_zigzag_int32;;
+#trace test_zigzag_int64;;
+#trace test_parse_zigzag_varint;;
+#trace Piqirun.int_of_zigzag_varint;;
+#trace Piqirun.zigzag_varint_of_varint;;
+test ();;

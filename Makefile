@@ -142,6 +142,13 @@ LIBS= commons/lib.cma \
        $(GRAPHCMA) \
        $(EXTLIBCMA) $(PTCMA) $(ZIPCMA) $(JAVALIBCMA) \
        commons/commons_features.cma \
+      external/optcomp-1.6/optcomp.cma \
+      external/xmlm-1.2.0/xmlm.cma \
+      external/ocaml-base64-1.1.0/base64.cma \
+      external/ulex-1.1/ulexing.cma \
+      external/easy-format-1.0.2/easy_format.cma \
+      external/piqi-0.6.10/piqilib/piqilib.cma \
+      external/piqi-ocaml/piqirun/piqirun.cma \
     globals/lib.cma \
     h_files-format/lib.cma \
     h_version-control/lib.cma \
@@ -200,6 +207,13 @@ LIBS= commons/lib.cma \
 
 MAKESUBDIRS=commons \
   commons/graph \
+  external/optcomp-1.6 \
+  external/xmlm-1.2.0 \
+  external/ocaml-base64-1.1.0 \
+  external/ulex-1.1 \
+  external/easy-format-1.0.2 \
+  external/piqi-ocaml \
+  external/piqi-0.6.10/piqilib \
   $(JSONDIR) \
   $(GRAPHDIR) \
   $(GUIDIR) $(CAIRODIR) \
@@ -262,6 +276,11 @@ MAKESUBDIRS=commons \
 
 INCLUDEDIRS=$(MAKESUBDIRS) \
  commons/ocamlextra commons/ocollection \
+ external/piqi-0.6.10/piqilib \
+ external/piqi-0.6.10/deps/base64 \
+ external/piqi-0.6.10/deps/ulex \
+ external/piqi-ocaml \
+ external/piqi-0.6.10 \
  $(GTKINCLUDE) $(CAIROINCLUDE) \
  $(OCAMLCOMPILERDIR)
 
@@ -282,6 +301,7 @@ PP=-pp "cpp $(CLANG_HACK) -DFEATURE_BYTECODE=$(FEATURE_BYTECODE) -DFEATURE_CMT=$
 #could try to compile $(EXEC) before rec. So here force sequentiality.
 
 all:: Makefile.config
+	#cd piqi_ddl_files && $(MAKE)
 	$(MAKE) rec
 	$(MAKE) $(PROGS)
 opt:

@@ -1,0 +1,189 @@
+% Copyright 2009, 2010, 2011, 2012, 2013, 2014 Anton Lavrik
+%
+% Licensed under the Apache License, Version 2.0 (the "License");
+% you may not use this file except in compliance with the License.
+% You may obtain a copy of the License at
+%
+%     http://www.apache.org/licenses/LICENSE-2.0
+%
+% Unless required by applicable law or agreed to in writing, software
+% distributed under the License is distributed on an "AS IS" BASIS,
+% WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+% See the License for the specific language governing permissions and
+% limitations under the License.
+
+
+% Piqi RPC
+%
+% This file contains definitions for Piqi RPC request and response types.
+
+
+%
+% RPC-request
+%
+
+.record [
+    .name request
+
+    .field [ 
+        .name name
+        .type string
+    ]
+
+    .field [
+        .name data
+        .type binary
+        .optional % some request can contain no input data
+    ]
+]
+
+
+%
+% For RPC-response type we have three options. Option I is the one that is
+% actually defined below.
+%
+
+
+% Option I "Erlang Style"
+%
+% Erlang type:
+%
+% -type response() ::
+%      ok
+%    | {ok, Data :: binary()} |
+%    | {error, Data :: binary()} |
+%    | {piqi_error, string()}.
+
+
+% Option II "OCaml style"
+%
+% Ocaml type:
+%
+% type response =
+%   | `ok of data option
+%   | `error of data
+%   | `piqi_error of data
+%
+% The same type in Erlang:
+%
+% -type response() ::
+%      {ok, Data :: undefined | binary()} |
+%    | {error, Data :: binary()} |
+%    | {piqi_error, string()}.
+
+
+% Option III "Traditional/Imperative/Protocol Buffers style"
+%
+% Protobuf-like syntax:
+% 
+% enum status { ok, error, piqi_error };
+% message response {
+%     required status status;
+%     optional bytes data;
+% }
+%
+% The same type in Erlang:
+%
+% -type status() :: ok | error | piqi_error
+% -type response() :: { Status :: status(), Data :: undefined | binary() }.
+
+
+.variant [
+    .name response
+
+    .option [
+        .name ok-empty
+        .erlang-name "ok"
+        % maps to HTTP 204 "No Content"
+    ]
+
+    .option [
+        .name ok
+        .type binary
+        % maps to HTTP 200 "OK"
+    ]
+
+    .option [
+        .name error
+        .type binary
+        % maps to HTTP 500 "Internal Server Error" with Content-Type != text/plain
+    ]
+
+    .option [
+        .type rpc-error
+
+        % make it contravariant to the "response" type
+        .name rpc-error
+    ]
+]
+
+
+% NOTE: using HTTP error codes for Piqi option codes for errors when possible.
+% This allows us to add more errors and still assign meaningful codes that
+% potentially match HTTP codes.
+
+
+% errors related to client's request (HTTP Client Error 4xx)
+.variant [
+    .name client-error
+
+    .option [
+        .name unknown-function
+        .code 404  % HTTP 404 "Not Found"
+    ]
+
+    .option [
+        .name invalid-input
+        .type string  % details
+        .code 400  % HTTP 400 "Bad Request"
+    ]
+
+    .option [
+        .name missing-input
+        .code 411  % HTTP 411 "Length Required"
+    ]
+
+    .option [
+        .name protocol-error
+        .type string  % details
+        .code 1  % no HTTP mapping: Piqi-RPC over HTTP doesn't return this error
+    ]
+]
+
+
+% server-side errors (HTTP Server Error 5xx)
+.variant [
+    .name server-error
+
+    % function produces invalid output; note that it can't happen in OCaml due
+    % to the static type checking
+    .option [
+        .name invalid-output
+        .type string  % details
+        .code 502  % HTTP 502 "Bad Gateway"
+    ]
+
+    .option [
+        .name internal-error
+        .type string  % details
+        .code 500  % HTTP 500 "Internal Server Error" with Content-Type == "text/plain"
+    ]
+
+    .option [
+        .name service-unavailable
+        .type string  % details
+        .code 503  % HTTP 503 "Service Unavailable"
+    ]
+]
+
+
+.variant [
+    .name rpc-error
+
+    .option [ .type client-error ] % HTTP Client Error 4xx
+    .option [ .type server-error ] % HTTP Server Error 5xx
+]
+
+
+.custom-field erlang-name
+

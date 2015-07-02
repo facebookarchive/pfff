@@ -1,0 +1,14 @@
+#!/bin/sh -xe
+# Check if internal documentation linking is correct
+
+python -m SimpleHTTPServer &
+SERVER=$!
+sleep 1s
+
+RET=0
+wget -q --spider -rl3 http://127.0.0.1:8000 || RET=1
+kill $SERVER
+
+rm -rf 127.0.0.1:8000
+
+exit $RET

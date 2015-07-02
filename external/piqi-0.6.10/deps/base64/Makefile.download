@@ -1,0 +1,33 @@
+TARBALL := v1.0.0.tar.gz
+URL := https://github.com/mirage/ocaml-base64/archive/$(TARBALL)
+MD5 := 9a64caa88a8464f4567a5a96f9cf7e0c
+
+
+UPSTREAM_FILES := \
+	base64.ml base64.mli \
+	META
+
+
+UPSTREAM_DIR := upstream
+
+
+all: $(TARBALL) $(UPSTREAM_DIR) $(UPSTREAM_FILES)
+
+
+$(UPSTREAM_FILES): %: $(UPSTREAM_DIR)/lib/%
+	cp $< $@
+
+
+$(UPSTREAM_DIR): $(TARBALL)
+	mkdir -p $(UPSTREAM_DIR)
+	tar -xzf $< -C $(UPSTREAM_DIR) --strip-components=1
+
+
+$(TARBALL):
+	../../make/http-download $(URL)
+	test $(MD5) = `../../make/md5sum $(TARBALL)`
+
+
+clean:
+	rm -rf $(TARBALL) $(UPSTREAM_DIR) $(UPSTREAM_FILES)
+

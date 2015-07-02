@@ -1,0 +1,160 @@
+
+
+% this is a record definition
+.record [
+    .name r
+
+    % required integer field
+    .field [
+        .name i
+        .type int
+
+        % NOTE: fields are "required" by default; one can specify it explicitly:
+        %.required
+    ]
+
+
+    % optional string field
+    .field [
+        .name s
+        .type string
+        .optional
+    ]
+
+
+    % optional binary field with default value (NOTE: default values may only be
+    % specified for optional fields)
+    .field [
+        .name b
+        .type binary
+        .optional
+        .default "abc \xff\x00"
+    ]
+
+
+    % repeated floating point field
+    .field [
+        .name f
+        .type float
+        .repeated
+    ]
+
+    % this is a flag, its presence in the record is meaningful by itself, it
+    % doesn't carry any additional value; in fact, the value can be omitted or
+    % specified as true or false -- see flag.piq for examples and explanations
+    .field [
+        .name flag
+
+        % NOTE: flags must be defined as .optional; obviously, .default value
+        % doesn't make any sense for flags and thus not allowed
+        .optional 
+    ]
+
+    % a boolean field
+    .field [
+        % in this case, the name of the field will be taken as the name of type
+        % which is "bool"
+
+        .type bool
+        .optional
+    ]
+    
+    % optional "self"
+    .field [
+        .name self 
+        .type r     % here referencing the record we're defining now
+        .optional
+    ]
+
+
+    % another optional filed which references type defined below
+    .field [
+        % NOTE: if field name and type name are the same, field name may
+        % be omitted
+        .type v
+        .optional
+    ]
+]
+
+
+.enum [
+    .name e
+    .option [ .name a .protobuf-name "e_a" ]
+    .option [ .name b ]
+    .option [ .name c ]
+]
+
+
+% definition of a variant
+.variant [
+    .name v
+
+    .option [
+        .name i
+        .type int
+    ]
+
+    .option [
+        % NOTE: if option name and option type are the same, field name may
+        % be omitted
+        .type r
+    ]
+
+    .option [
+        .type e
+    ]
+
+    % options may not be associated with any types, such options are similar to
+    % those used in enums
+    .option [
+        .name flag
+    ]
+
+    % those used in enums
+    .option [
+        .name l
+        .type v-list    % see below
+    ]
+]
+
+
+% an alias
+.alias [
+    .name a
+    .type v
+]
+
+
+% just to give an idea of how it can be used 
+.alias [
+    .name uuid
+    .type binary
+]
+
+
+.alias [
+    .name epoch-seconds
+    .type uint64
+]
+
+
+% list of v
+.list [
+    % NOTE: "-list" suffix is not mandatory, however it is a style convention
+    .name v-list
+    .type v
+]
+
+
+% list of built-in type
+.list [
+    .name int-list
+    .type int
+]
+
+
+.list [
+    .name int-list-list
+    .type int-list
+]
+

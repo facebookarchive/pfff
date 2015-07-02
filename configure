@@ -316,6 +316,9 @@ if($error || $error2) {
     pr2 "!!Problems during ./configure!!";
 }
 
+system("echo \" piqi \"");
+system("`pwd`/external/piqi-0.6.10/configure");
+
 ######################################################################
 # Diagnostic 
 ######################################################################

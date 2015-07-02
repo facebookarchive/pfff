@@ -1,0 +1,8 @@
+.record [
+    .name r
+    .field [
+        .type r
+        .required
+    ]
+]
+

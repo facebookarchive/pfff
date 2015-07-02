@@ -1,0 +1,69 @@
+
+% Examples of getopt short name (getopt-letter) usage in Piqi feilds and
+% options. These definitions are also used by ./test_getopt
+
+.record [
+    .name r
+
+    .field [
+        .name long-option
+        .getopt-letter o
+        .type int
+        .optional
+    ]
+
+    .field [
+        .name long-flag
+        .getopt-letter f
+        .optional
+    ]
+
+    .field [
+        .name long-g
+        .getopt-letter g
+        .optional
+    ]
+]
+
+
+.variant [
+    .name v
+
+    .option [
+        .name long-option
+        .getopt-letter o
+        .type int
+    ]
+
+    .option [
+        .name long-flag
+        .getopt-letter f
+    ]
+
+    .option [
+        .name long-g
+        .getopt-letter g
+    ]
+]
+
+
+.list [
+    .name l
+    .type v
+]
+
+
+.enum [
+    .name e
+
+    .option [
+        .name long-flag
+        .getopt-letter f
+    ]
+
+    .option [
+        .name long-g
+        .getopt-letter g
+    ]
+]
+

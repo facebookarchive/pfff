@@ -1,0 +1,10 @@
+.list [
+    .name l
+    .type a
+]
+
+.alias [
+    .name a
+    .type l
+]
+

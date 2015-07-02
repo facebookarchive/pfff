@@ -1,0 +1,45 @@
+% floating point values examples
+%
+% NOTE: "float" and "float64" are the same types with different names (IEEE 754
+% double precision).
+%
+(:float)  % all subsequent values have type "float"
+
+0.0 -10.0
+
+3.14159
+
+-2e15
+5.6e-10
+
+
+% integer values are converted to floats implicitly
+0
+
+-100000000000
+
+0xffff_ffff_ffff_ffff 
+
+
+% not a number, positive and negative infinity
+
+0.nan 0.inf -0.inf
+
+
+%
+% IEEE 754 single precision
+%
+(:float32)
+
+0.0 3.14159 
+
+2e15
+0.56e-10
+
+-100000000000
+
+0xffff_ffff_ffff_ffff
+
+0.nan 0.inf -0.inf
+
+

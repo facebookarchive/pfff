@@ -1,0 +1,96 @@
+% The minimal self-describing Piqi type specification
+%
+% NOTE: this piqi file is an example. It is not used in piqi implementation.
+%
+% Copyright 2009, 2010, 2011, 2012 Anton Lavrik
+
+.module piqtype-core
+
+
+.variant [
+    .name typedef
+
+    .option [ .type record ]
+    .option [ .type variant ]
+]
+
+
+.record [
+    .name record 
+    .field [
+        .name name
+        .type string
+        .required
+        .piq-format.word
+    ]
+    .field [
+        .type field
+        .repeated
+    ]
+]
+
+
+.record [
+    .name field
+
+    .field [
+        .name name
+        .type string
+        .optional
+        .piq-format.word
+    ]
+    .field [
+        .name type
+        .type string
+        .optional
+        .piq-format.word
+    ]
+    .field [
+        .name mode
+        .type field-mode
+        .optional
+    ]
+]
+
+
+.variant [
+    .name field-mode
+    .option [ required ]
+    .option [ optional ]
+    .option [ repeated ]
+]
+
+
+.record [
+    .name variant
+
+    .field [
+        .name name
+        .type string
+        .required
+        .piq-format.word
+    ]
+    .field [
+        .type option
+        .repeated
+    ]
+]
+
+
+.record [
+    .name option
+
+    .field [
+        .name name
+        .type string
+        .optional
+        .piq-format.word
+    ]
+    .field [
+        .name type
+        .type string
+        .optional
+        .piq-format.word
+    ]
+]
+

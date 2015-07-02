@@ -1,0 +1,14 @@
+Performance tests for serialization and de-serialization of OCaml data
+structures to/from Protocol Buffers, JSON, XML and Piq data formats.
+
+The tests are performed on two different objects. The first one is a relatively
+small and not very complicated "addressbook.piq". The second one is the expanded
+Piqi self-specification which is 10 times as large as the first one and has more
+complex structure.
+
+To run the tests:
+
+        make
+
+        ./test
+

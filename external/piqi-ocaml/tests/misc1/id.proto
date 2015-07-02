@@ -1,0 +1,5 @@
+package test;
+message Id
+{
+  required int64 id = 1; // Unique ID
+}

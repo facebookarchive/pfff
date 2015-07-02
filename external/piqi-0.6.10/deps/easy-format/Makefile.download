@@ -1,0 +1,38 @@
+VERSION = 1.0.2
+TARBALL := v1.0.2.tar.gz
+URL := https://github.com/mjambon/easy-format/archive/$(TARBALL)
+MD5 := 82f6db85477831cab11e4cfe80321225
+
+
+UPSTREAM_FILES := \
+	easy_format.ml easy_format.mli
+
+
+UPSTREAM_DIR := upstream
+
+
+all: $(TARBALL) $(UPSTREAM_DIR) $(UPSTREAM_FILES) META
+
+
+$(UPSTREAM_FILES): %: $(UPSTREAM_DIR)/%
+	cp $< $@
+
+
+META: $(UPSTREAM_DIR)/META.tpl
+	echo 'version = "$(VERSION)"' > $@
+	cat $< >> $@
+
+
+$(UPSTREAM_DIR): $(TARBALL)
+	mkdir -p $(UPSTREAM_DIR)
+	tar -xzf $< -C $(UPSTREAM_DIR) --strip-components=1
+
+
+$(TARBALL):
+	../../make/http-download $(URL)
+	test $(MD5) = `../../make/md5sum $(TARBALL)`
+
+
+clean:
+	rm -rf $(TARBALL) $(UPSTREAM_DIR) $(UPSTREAM_FILES) META
+

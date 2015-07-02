@@ -1,0 +1,41 @@
+OCAMLMAKEFILE := ../../make/OCamlMakefile
+
+
+RESULT = io_json_xml_pb
+
+
+SOURCES = \
+	$(PIQI_ML_FILES) \
+	io_json_xml_pb.ml
+
+
+export OCAMLPATH = ../..
+PACKS = piqirun.ext
+
+
+PIQI_FILES = addressbook.proto.piqi
+PIQI_ML_FILES = addressbook_piqi.ml addressbook_piqi_ext.ml
+
+
+PRE_TARGETS = $(PIQI_ML_FILES)
+
+
+PIQIC = ../../piqic-ocaml/piqic-ocaml
+PIQIC_FLAGS = --multi-format
+
+
+all: native-code #byte-code debug-code
+
+
+$(PIQI_ML_FILES): $(PIQI_FILES)
+	set -e; \
+	for i in $^; do \
+		$(PIQIC) $(PIQIC_FLAGS) $$i ; \
+	done
+
+
+clean::
+	rm -f *.tmp.ml
+
+
+include $(OCAMLMAKEFILE)

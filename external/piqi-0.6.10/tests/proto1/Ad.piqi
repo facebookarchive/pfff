@@ -1,0 +1,17 @@
+.ocaml-module "Ad" .protobuf-package "Ad"
+.custom-field ocaml-module
+
+% testing recursive imported alias generation/ unrolling
+.import [ .module T .name Topic ]
+
+% a test for .proto import deduplication
+.import [ .module T ]
+
+.record [ 
+    .name datastore-entry
+    .field [
+        .name topic-vector
+        .type Topic/vector
+    ]
+]
+

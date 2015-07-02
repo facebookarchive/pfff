@@ -1,0 +1,30 @@
+OCAMLMAKEFILE := ../../make/OCamlMakefile
+
+
+RESULT = otest
+
+
+SOURCES = $(PIQI_ML_SOURCES) test.ml
+PIQI_ML_SOURCES = piqi_piqi.ml piqobj_piqi.ml
+
+
+PRE_TARGETS = $(PIQI_ML_SOURCES)
+
+
+PIQIC = ../../piqic-ocaml/piqic-ocaml
+#PIQIC_FLAGS =
+
+
+export OCAMLPATH = ../..
+PACKS = piqirun.pb
+
+
+all: bc #top
+
+
+$(PIQI_ML_SOURCES): *.piqi
+	$(PIQIC) $(PIQIC_FLAGS) piqi.piqi
+	$(PIQIC) $(PIQIC_FLAGS) piqobj.piqi
+
+
+include $(OCAMLMAKEFILE)

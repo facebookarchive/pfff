@@ -1,0 +1,107 @@
+% Piq abstract syntax tree
+% 
+% Copyright 2009, 2010, 2011, 2012 Anton Lavrik
+
+
+.custom-field ocaml-name
+
+
+.alias [
+    .name word
+    .type string
+
+    .piq-format.word
+]
+
+
+.alias [
+    .name name
+    .type word
+]
+
+
+.variant [
+    .name ast
+
+    .option [
+        .name int  % negative integers
+        .type int64
+    ]
+    .option [
+        .name uint % non-negative integers
+        .type uint64
+    ]
+    .option [ .type float ]
+    .option [ .type bool ]
+    .option [ .type word ]
+    .option [
+        .name ascii-string
+        .type string
+    ]
+    .option [
+        .name utf8-string
+        .type string
+    ]
+    .option [ .type binary ]
+    .option [
+        .name text
+        .type string
+    ]
+    .option [
+        .type name
+    ]
+    .option [
+        .type named
+    ]
+    .option [
+        .name type
+        .type name
+
+        .ocaml-name "typename"
+    ]
+    .option [
+        .type typed
+    ]
+    .option [
+        .name list
+        .type ast-list
+    ]
+    .option [
+        .name control
+        .type ast-list
+    ]
+]
+
+
+.list [
+    .name ast-list
+    .type ast
+]
+
+
+.record [
+    .name named
+
+    .field [ .type name ]
+    .field [
+        .name value
+        .type ast
+    ]
+]
+
+
+.record [
+    .name typed
+
+    .field [
+        .name type
+        .type name
+
+        .ocaml-name "typename"
+    ]
+    .field [
+        .name value
+        .type ast
+    ]
+]
+

@@ -1,0 +1,70 @@
+%
+% defining custom OCaml types to be serialized as some Piqi types
+%
+
+% mapping OCaml char to Piqi int
+.alias [
+    .name char
+    .type int
+    .ocaml-type "Piqirun_custom.char"
+]
+
+
+% mapping OCaml nativeint to Piqi int
+.alias [
+    .name ocaml-nativeint
+    .type int
+    .ocaml-type "Piqirun_custom.nativeint"
+]
+
+
+% mapping OCaml big_int to Piqi string (by representing number as a decimal
+% string)
+.alias [
+    .name ocaml-bigint
+    .type string
+    .ocaml-type "Piqirun_custom.bigint"
+]
+
+
+%
+% mapping OCaml string key-value map (string Map.Make(String)
+% to the list of {key, value} records
+%
+
+.import [ .module skvl ]
+
+.alias [
+    .name ocaml-string-key-value-list
+    .type skvl/string-key-value-list
+    .ocaml-type "Piqirun_custom.skvl"
+]
+
+
+% a record that uses the above definitions
+.record [
+    .name r
+
+    .field [
+        .name c
+        .type char
+    ]
+
+    .field [
+        .name ni
+        .type ocaml-nativeint
+    ]
+
+    .field [
+        .name bi
+        .type ocaml-bigint
+    ]
+
+    .field [
+        .name kvl
+        .type ocaml-string-key-value-list
+    ]
+]
+
+
+.custom-field ocaml-type
