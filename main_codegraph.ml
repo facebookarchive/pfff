@@ -28,6 +28,11 @@ module View = View3
  * A great introduction on the use of DSM for improving a codebase is
  * http://codebetter.com/patricksmacchia/2009/08/24/identify-code-structure-patterns-at-a-glance/
  * 
+ * IMHO spending time to have clean dependencies is one of the most
+ * important thing to do in a software project.
+ * "Organizing complexity is the most important skill"
+ * http://www.johndcook.com/blog/2015/06/18/most-important-skill-in-software/
+ * 
  * 
  * It seems there are a few commercial projects using DSM (Ndepend,
  * Structure101, Intellij), so this looks like a viable direction to pursue
