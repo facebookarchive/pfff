@@ -639,6 +639,42 @@ let test_dotfile_of_deps dir =
       )
     end
   )  
+
+(* This is actually not great because the .depend contains the dependencies
+ * for the .o and so it does not contain inter .h dependencies.
+ * Use http://www.flourish.org/cinclude2dot/ instead.
+ *)
+let test_dotfile_of_dotdepend file =
+  let rec remove_antislash xs =
+    match xs with
+    | [] -> []
+    | x::y::xs ->
+      if x =~ "\\(.*\\)\\\\$"
+      then remove_antislash ((Common.matched1 x ^ y)::xs)
+      else x::(remove_antislash (y::xs))
+    | [x] -> [x]
+  in
+  let lines = Common.cat file in
+  let lines = remove_antislash lines in
+  (* lines |> List.iter pr2_gen *)
+  lines |> List.iter (fun line ->
+    match () with
+    | _ when line =~ ".*\\.o: \\([^ ]+\\)\\.cpp\\(.*\\)$" ->
+      let (src, deps_str) = Common.matched2 line in
+      let deps = Common.split "[ \t]+" deps_str in
+      deps |> List.iter (fun dep ->
+        pr (spf "\"%s.cpp\" -> \"%s\""  src dep)
+      )
+    | _ when line =~ ".*\\.o: \\([^ ]+\\)\\.h\\(.*\\)$" ->
+      let (src, deps_str) = Common.matched2 line in
+      let deps = Common.split "[ \t]+" deps_str in
+      deps |> List.iter (fun dep ->
+        pr (spf "\"%s.cpp\" -> \"%s\""  src dep)
+      )
+
+    | _ -> failwith (spf "wront line format in .depend: %s" line)
+  )
+
   
 (* ---------------------------------------------------------------------- *)
 let extra_actions () = [
@@ -671,6 +707,8 @@ let extra_actions () = [
   Common.mk_action_1_arg test_xta;
   "-test_dotfile_of_deps", " <dir>",
   Common.mk_action_1_arg test_dotfile_of_deps;
+  "-test_dotfile_of_dotdepend", " <file>",
+  Common.mk_action_1_arg test_dotfile_of_dotdepend;
 (*
   "-test_phylomel", " <geno file>",
   Common.mk_action_1_arg test_phylomel;
