@@ -80,6 +80,15 @@ let case_sensitive = ref false
 (* Helpers *)
 (*****************************************************************************)
 
+(* Relaxed matching of PHP's Boolean and Int types. Only integer 0 converts
+ * to false, all other integers evaluate to true.
+*)
+let is_bool_vs_int b i =
+  match b, i with
+  | "false", "0" -> true
+  | "true", n when n <> "0" -> true
+  | _ -> false
+
 let rec is_concat_of_strings e =
   match e with
   | A.Sc (A.C (A.String _)) -> true
@@ -945,6 +954,13 @@ and m_expr a b =
      (* todo: propagate the transformation of info_string to e for spatch *)
      return (
        A.Sc(A.C(A.String("...", info_string))),
+       e
+     )
+
+  (* MPS: iso when argument *isn't* a hard-coded string. *)
+  | A.Sc(A.C(A.String("!...", info_string))), e when not (is_concat_of_strings e)->
+     return (
+       A.Sc(A.C(A.String("!...", info_string))),
        e
      )
 
@@ -1913,6 +1929,12 @@ and m_list__m_argument (xsa: A.argument A.comma_list) (xsb: B.argument B.comma_l
       )
     else failwith
       ("transformation (- or +) on '...' not allowed, rewrite your spatch")
+
+  (* iso on Boolean vs. Int *)
+  | [Left (A.Arg ((A.Id (A.XName [A.QI (A.Name (name_a, info_name))]))))],
+    [Left (B.Arg (B.Sc (B.C (B.Int ((name_b, _))))))]
+    when is_bool_vs_int name_a name_b ->
+      return ([Left (B.Arg (B.Sc (B.C (B.Int ((name_b, info_name))))))], xsb)
 
   | [Left (A.Arg ((A.Id (A.XName [A.QI (A.Name (name,info_name))]))))], bbs
     when MV.is_metavar_manyargs_name name ->

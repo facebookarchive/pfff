@@ -34,6 +34,7 @@ module S = Scope_code
 (* Flags *)
 (*****************************************************************************)
 
+let use_multiple_patterns = ref false
 let verbose = ref false
 
 let pattern_file = ref ""
@@ -144,6 +145,41 @@ let ast_fuzzy_of_string str =
 (* Language specific *)
 (*****************************************************************************)
 
+type ast_t =
+  | Fuzzy of Ast_fuzzy.tree list
+  | Php of Ast_php.program
+
+let create_ast file =
+  match !lang with
+  | "php" ->
+    Php
+    (try
+      (Parse_php.parse_program file)
+    with Parse_php.Parse_error _err ->
+      Common.pr2 (spf "warning: parsing problem in %s" file);
+      [])
+  | _ ->
+    Fuzzy
+    (try
+      (match !lang with
+      | ("c" | "c++") ->
+        Common.save_excursion Flag_parsing_cpp.verbose_lexing false (fun () ->
+          Parse_cpp.parse_fuzzy file +> fst
+        )
+      | "java" ->
+        Parse_java.parse_fuzzy file +> fst
+      | "js" ->
+        Parse_js.parse_fuzzy file +> fst
+      | "ml" ->
+        Parse_ml.parse_fuzzy file +> fst
+      | "phpfuzzy" ->
+        Parse_php.parse_fuzzy file +> fst
+      | _ ->
+        failwith ("unsupported language: " ^ !lang))
+    with exn ->
+      pr2 (spf "PB with %s, exn = %s"  file (Common.exn_to_s exn));
+      [])
+
 let parse_pattern str =
   match !lang with
   | "php" -> Left (Sgrep_php.parse str)
@@ -154,98 +190,74 @@ let parse_pattern str =
     Right (ast_fuzzy_of_string str)
   | _ -> failwith ("unsupported language: " ^ !lang)
 
-let sgrep pattern file =
-  match !lang, pattern with
-  | "php", Left pattern -> 
-    Sgrep_php.sgrep 
-      ~case_sensitive:!case_sensitive 
-      ~hook:(fun env matched_tokens -> 
+let read_patterns name =
+  let ic = open_in name in
+  let try_read () =
+    try Some (input_line ic) with End_of_file -> None in
+  let rec loop acc = match try_read () with
+    | Some s -> loop ((parse_pattern s) :: acc)
+    | None -> close_in ic; List.rev acc in
+  loop []
+
+let sgrep_ast pattern any_ast =
+  match !lang, pattern, any_ast with
+  | ("c" | "c++"), Right pattern, Fuzzy ast ->
+    Sgrep_fuzzy.sgrep
+      ~hook:(fun env matched_tokens ->
+        print_match !mvars env Ast_fuzzy.toks_of_trees matched_tokens
+      )
+      pattern ast
+  | "java", Right pattern, Fuzzy ast ->
+    Sgrep_fuzzy.sgrep
+      ~hook:(fun env matched_tokens ->
+        print_match !mvars env Ast_fuzzy.toks_of_trees matched_tokens
+      )
+      pattern ast
+  | "js", Right pattern, Fuzzy ast ->
+    Sgrep_fuzzy.sgrep
+      ~hook:(fun env matched_tokens ->
+        print_match !mvars env Ast_fuzzy.toks_of_trees matched_tokens
+      )
+      pattern ast
+  | "ml", Right pattern, Fuzzy ast ->
+    Sgrep_fuzzy.sgrep
+      ~hook:(fun env matched_tokens ->
+        print_match !mvars env Ast_fuzzy.toks_of_trees matched_tokens
+      )
+      pattern ast
+  | "php", Left pattern, Php ast ->
+    Sgrep_php.sgrep_ast
+      ~case_sensitive:!case_sensitive
+      ~hook:(fun env matched_tokens ->
         print_match !mvars env Lib_parsing_php.ii_of_any matched_tokens
       )
-      pattern 
-      file 
-  | ("c" | "c++"), Right pattern ->
-    let ast = 
-      try 
-        Common.save_excursion Flag_parsing_cpp.verbose_lexing false (fun () ->
-          Parse_cpp.parse_fuzzy file +> fst
-        )
-      with exn ->
-        pr2 (spf "PB with %s, exn = %s"  file (Common.exn_to_s exn));
-        []
-    in
+      pattern ast
+  | "phpfuzzy", Right pattern, Fuzzy ast ->
     Sgrep_fuzzy.sgrep
       ~hook:(fun env matched_tokens ->
         print_match !mvars env Ast_fuzzy.toks_of_trees matched_tokens
       )
       pattern ast
-  | "ml", Right pattern ->
-    let ast = 
-      try 
-          Parse_ml.parse_fuzzy file +> fst
-      with exn ->
-        pr2 (spf "PB with %s, exn = %s"  file (Common.exn_to_s exn));
-        []
-    in
-    Sgrep_fuzzy.sgrep
-      ~hook:(fun env matched_tokens ->
-        print_match !mvars env Ast_fuzzy.toks_of_trees matched_tokens
-      )
-      pattern ast
-  | "phpfuzzy", Right pattern ->
-    let ast = 
-      try 
-          Parse_php.parse_fuzzy file +> fst
-      with exn ->
-        pr2 (spf "PB with %s, exn = %s"  file (Common.exn_to_s exn));
-        []
-    in
-    Sgrep_fuzzy.sgrep
-      ~hook:(fun env matched_tokens ->
-        print_match !mvars env Ast_fuzzy.toks_of_trees matched_tokens
-      )
-      pattern ast
-  | "java", Right pattern ->
-    let ast = 
-      try 
-          Parse_java.parse_fuzzy file +> fst
-      with exn ->
-        pr2 (spf "PB with %s, exn = %s"  file (Common.exn_to_s exn));
-        []
-    in
-    Sgrep_fuzzy.sgrep
-      ~hook:(fun env matched_tokens ->
-        print_match !mvars env Ast_fuzzy.toks_of_trees matched_tokens
-      )
-      pattern ast
-  | "js", Right pattern ->
-    let ast = 
-      try 
-          Parse_js.parse_fuzzy file +> fst
-      with exn ->
-        pr2 (spf "PB with %s, exn = %s"  file (Common.exn_to_s exn));
-        []
-    in
-    Sgrep_fuzzy.sgrep
-      ~hook:(fun env matched_tokens ->
-        print_match !mvars env Ast_fuzzy.toks_of_trees matched_tokens
-      )
-      pattern ast
-  | _ -> failwith ("unsupported language: " ^ !lang)
+  | _ ->
+    failwith ("unsupported language: " ^ !lang)
 
 (*****************************************************************************)
 (* Main action *)
 (*****************************************************************************)
 let main_action xs =
-  let pattern, query_string = 
-    match !pattern_file, !pattern_string with
-    | "", "" -> 
-        failwith "I need a pattern; use -f or -e";
-    | file, _ when file <> "" ->
+  let patterns, query_string =
+    match !pattern_file, !pattern_string, !use_multiple_patterns with
+    | "", "", _ ->
+        failwith "I need a pattern; use -f or -e"
+    | file, _, true when file <> "" ->
+        read_patterns file, "multi"
+    | file, _, _ when file <> "" ->
         let s = Common.read_file file in
-        parse_pattern s, s
-    | _, s when s <> ""->
-        parse_pattern s, s
+        [parse_pattern s], s
+    | _, s, true when s <> ""->
+        failwith "cannot combine -multi with -e"
+    | _, s, _ when s <> ""->
+        [parse_pattern s], s
     | _ -> raise Impossible
   in
   Logger.log Config_pfff.logger "sgrep" (Some query_string);
@@ -255,7 +267,9 @@ let main_action xs =
 
   files +> List.iter (fun file ->
     if !verbose then pr2 (spf "processing: %s" file);
-    sgrep pattern file
+    let ast = create_ast file in
+    let sgrep pattern = sgrep_ast pattern ast in
+    List.iter sgrep patterns
   );
 
   !layer_file +> Common.do_option (fun file ->
@@ -315,6 +329,8 @@ let options () =
     " <pattern> expression pattern";
     "-f", Arg.Set_string pattern_file, 
     " <file> obtain pattern from file";
+    "-multi", Arg.Set use_multiple_patterns,
+    " combine with -f <file> to obtain multiple patterns from file, one per line";
 
     "-case_sensitive", Arg.Set case_sensitive, 
     " match code in a case sensitive manner";
