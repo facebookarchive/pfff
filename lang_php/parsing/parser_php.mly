@@ -712,7 +712,7 @@ class_statement:
          t_kind = ClassConstType None;
          t_sc = $5; }
      }
- | T_CONST T_TYPE T_IDENT type_constr_opt TEQ type_php_or_shape TSEMICOLON
+ | T_CONST T_TYPE T_IDENT type_constr_opt TEQ type_php TSEMICOLON
      { ClassType (* TODO (t6384084) add some fields here *) {
          t_tok = $2;
          t_name = Name $3;
@@ -923,20 +923,14 @@ trait_constraint_kind:
 /*(*1 Type definitions *)*/
 /*(*************************************************************************)*/
 type_declaration:
- | T_TYPE   ident type_params_opt type_constr_opt TEQ type_php_or_shape TSEMICOLON
+ | T_TYPE   ident type_params_opt type_constr_opt TEQ type_php TSEMICOLON
      { { t_tok = $1; t_name = Name $2; t_tparams = $3; t_tconstraint = $4;
          t_tokeq = $5; t_kind = Alias $6; t_sc = $7; }
      }
- | T_NEWTYPE ident type_params_opt type_constr_opt TEQ type_php_or_shape TSEMICOLON
+ | T_NEWTYPE ident type_params_opt type_constr_opt TEQ type_php TSEMICOLON
      { { t_tok = $1; t_name = Name $2; t_tparams = $3; t_tconstraint = $4;
          t_tokeq = $5; t_kind = Newtype $6; t_sc = $7; }
      }
-
-type_php_or_shape:
- | type_php { $1 }
- | T_SHAPE TOPAR shape_field_list TCPAR { HintShape ($1, ($2, $3, $4)) }
-
-shape_field: expr T_ARROW type_php { $1, $2, $3 }
 
 type_constr_opt:
  | T_AS type_php  { Some ($1, $2) }
@@ -974,6 +968,7 @@ type_php:
  | primary_type_php { $1 }
 /*(*facebook-ext: classes can define type constants referenced using `::`*)*/
  | type_php TCOLCOL primary_type_php { HintTypeConst ($1, $2, $3) }
+ | T_SHAPE TOPAR shape_field_list TCPAR { HintShape ($1, ($2, $3, $4)) }
 
 primary_type_php:
  | class_name { $1 }
@@ -1771,6 +1766,8 @@ shape_field_list:
 non_empty_shape_field_list:
  | shape_field   { [Left $1] }
  | non_empty_shape_field_list TCOMMA shape_field  { $1 @ [Right $2; Left $3] }
+
+shape_field: expr T_ARROW type_php { $1, $2, $3 }
 
 non_empty_array_pair_list_rev:
  | array_pair { [Left $1] }
