@@ -156,6 +156,16 @@ let create_intermediate_directories_if_not_present g dir =
   in
   aux root dirs
 
+let has_node =
+  Graph_code.has_node
+
+let succ =
+  Graph_code.succ
+
+let create =
+  Graph_code.create
+
+
 (* NOTE: Please remember to call this function once all graph operations are
  * done *)
 let merge_graphson () =

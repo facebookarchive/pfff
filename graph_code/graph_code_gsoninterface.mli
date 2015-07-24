@@ -11,6 +11,12 @@ val create_intermediate_directories_if_not_present:
 
 val graph_of_dotfile: Common.filename -> graph
 
+val has_node: node -> graph -> bool
+val succ: node -> edge -> graph -> node list
+
+val create: unit -> Graph_code.graph
+
 (* Links to Graph_print_options.merge_graphson *)
 val merge_graphson: unit -> unit
+
 
