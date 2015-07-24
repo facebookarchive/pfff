@@ -243,6 +243,13 @@ let edgeinfo_edge_piqi x =
   )
   x []
 
+let is_valid_edge (n1, n2, _) =
+  if ((Hashtbl.mem vertex_id (node_hash n1)) && (Hashtbl.mem vertex_id
+      (node_hash n2)) = true) then
+    true
+  else
+    false
+
 (*****************************************************************************)
 (* Main entry point *)
 (*****************************************************************************)
@@ -277,8 +284,10 @@ let add_graphson_vertex n info =
     ()
 
 let add_graphson_edge e_key info =
-  (* Checks if edge with same hash id hash already been parsed *)
-  if not (Hashtbl.mem edge_id (edge_hash e_key)) then
+  (* Checks if edge with same hash id hash already been parsed, and if node
+   * defined in edgeinfo has been defined before edge is writte.
+   *)
+  if not (Hashtbl.mem edge_id (edge_hash e_key)) && (is_valid_edge e_key) then
        begin
         let edge = edgeinfo_hash_element_piqi e_key info in
         if !graphson_edge = true then 
