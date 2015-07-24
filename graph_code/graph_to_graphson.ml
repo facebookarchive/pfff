@@ -228,8 +228,8 @@ let edgeinfo_hash_element_piqi key value =
     {
       Edge_graphson._id = edge_hash key; 
       Edge_graphson._type = "edge";
-      Edge_graphson._inV = node_hash u; 
-      Edge_graphson._outV = node_hash v; 
+      Edge_graphson._inV = node_hash v; 
+      Edge_graphson._outV = node_hash u; 
       Edge_graphson._label = edge_string edge;
       Edge_graphson.edgeinfo = edgeinfo_piqi value;
     }
