@@ -33,7 +33,7 @@ module PI = Parse_info
 (*****************************************************************************)
 
 (* the token list contains also the comment-tokens *)
-type program_with_tokens = 
+type program_and_tokens = 
   Ast_opa.program * Parser_opa.token list
 
 (*****************************************************************************)
