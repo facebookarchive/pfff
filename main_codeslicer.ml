@@ -494,8 +494,8 @@ let lpize xs =
 
     let (xs, _stat) = 
       (* CONFIG *)
-      (* Parse_ml.parse file *)
-      Parse_cpp.parse file  
+      (* Parse_ml.parse file*)
+      Parse_cpp.parse file   
     in
     let env = {
       current_file = file;
@@ -508,8 +508,8 @@ let lpize xs =
     } in
     let entities = 
       (* CONFIG *)
-      (* extract_entities_ml env xs *)
-      extract_entities_cpp env xs  
+      (* extract_entities_ml env xs  *)
+      extract_entities_cpp env xs   
     in
 
     let hstart = 
@@ -570,7 +570,7 @@ let lpize xs =
 
     (* CONFIG *)
     (* for the initial 'make sync' to work *)
-    Sys.command (spf "rm -f %s" file) +> ignore;
+    Sys.command (spf "rm -f %s" file) +> ignore; 
   );
   ()
 
