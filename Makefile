@@ -265,7 +265,7 @@ INCLUDEDIRS=$(MAKESUBDIRS) \
  $(GTKINCLUDE) $(CAIROINCLUDE) \
  $(OCAMLCOMPILERDIR)
 
-PP=-pp "cpp $(CLANG_HACK) -DFEATURE_BYTECODE=$(FEATURE_BYTECODE) -DFEATURE_CMT=$(FEATURE_CMT)"
+PP=-pp "cpp $(CLANG_HACK) -DFEATURE_BYTECODE=$(FEATURE_BYTECODE) -DFEATURE_CMT=$(FEATURE_CMT) -Wno-invalid-pp-token"
 
 ##############################################################################
 # Generic
@@ -603,9 +603,9 @@ layers:
 
 
 visual:
-	./codemap -no_legend -profile -ss 2 -filter pfff .
+	./codemap -no_legend -profile -screen_size 2 -filter pfff .
 loc:
-	./codemap -no_legend -profile -ss 2 -filter pfff -test_loc .
+	./codemap -no_legend -profile -screen_size 2 -filter pfff -test_loc .
 
 tests:
 	$(MAKE) rec && $(MAKE) pfff_test
