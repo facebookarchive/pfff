@@ -30,20 +30,8 @@ module PI = Parse_info
 (* Types *)
 (*****************************************************************************)
 
-type program2 = toplevel2 list
-     (* the token list contains also the comment-tokens *)
-  and toplevel2 = 
-    Ast_erlang.toplevel (* NotParsedCorrectly if parse error *) * 
-      Parser_erlang.token list
-
-
-(*****************************************************************************)
-(* Tokens/Ast association  *)
-(*****************************************************************************)
-
-(*****************************************************************************)
-(* Error diagnostic  *)
-(*****************************************************************************)
+(* the token list contains also the comment-tokens *)
+type program_and_tokens = Ast_erlang.program * Parser_erlang.token list
 
 (*****************************************************************************)
 (* Lexing only *)
@@ -96,12 +84,10 @@ let tokens a =
 (*****************************************************************************)
 
 let parse2 filename = 
-
   let stat = Parse_info.default_stat filename in
   let toks_orig = tokens filename in
-
   (* TODO *)
-  [(), toks_orig], stat
+  ((), toks_orig), stat
 
 
 let parse a = 

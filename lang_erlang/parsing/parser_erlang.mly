@@ -30,24 +30,24 @@
 /*(*-----------------------------------------*)*/
 
 /*(* coupling: Token_helpers.is_real_comment *)*/
-%token <Ast_erlang.info> TCommentSpace TCommentNewline   TComment
-%token <Ast_erlang.info> TCommentMisc
+%token <Parse_info.info> TCommentSpace TCommentNewline   TComment
+%token <Parse_info.info> TCommentMisc
 
 /*(*-----------------------------------------*)*/
 /*(* the normal tokens *)*/
 /*(*-----------------------------------------*)*/
 
 /*(* tokens with "values" *)*/
-%token <string * Ast_erlang.info> TInt
-%token <string * Ast_erlang.info> TFloat
-%token <string * Ast_erlang.info> TChar
-%token <string * Ast_erlang.info> TString
+%token <string * Parse_info.info> TInt
+%token <string * Parse_info.info> TFloat
+%token <string * Parse_info.info> TChar
+%token <string * Parse_info.info> TString
 
 /*(* they call atom TIdent, but I prefer TIdent for consistency *)*/
-%token <string * Ast_erlang.info> TIdent TVariable
+%token <string * Parse_info.info> TIdent TVariable
 
 /*(* keywords tokens *)*/
-%token <Ast_erlang.info> 
+%token <Parse_info.info> 
  Tif Tcond Twhen Tcase
  Tbegin Tend
  Tlet Tof  
@@ -56,17 +56,17 @@
  Tquery Tcatch Treceive
 
 /*(* syntax *)*/
-%token <Ast_erlang.info> TOParen TCParen 
-%token <Ast_erlang.info> TOBracket TCBracket
-%token <Ast_erlang.info> TOBrace TCBrace
+%token <Parse_info.info> TOParen TCParen 
+%token <Parse_info.info> TOBracket TCBracket
+%token <Parse_info.info> TOBrace TCBrace
 
-%token <Ast_erlang.info>
+%token <Parse_info.info>
  TDot TColon TSemiColon TComma TQuestion
  TPipe TPipePipe TArrow TSharp
  TUnderscore
 
 /*(* operators *)*/
-%token <Ast_erlang.info>
+%token <Parse_info.info>
  TPlus TMinus TStar TDiv 
  Tdiv Trem Tor Txor Tbor Tbxor Tbsl Tbsr Tand Tband Tnot Tbnot
  TEqEq TSlashEq 
@@ -81,8 +81,8 @@
 /*(*-----------------------------------------*)*/
 
 /*(* classic *)*/
-%token <Ast_erlang.info> TUnknown
-%token <Ast_erlang.info> EOF
+%token <Parse_info.info> TUnknown
+%token <Parse_info.info> EOF
 
 /*(*-----------------------------------------*)*/
 /*(* priorities *)*/

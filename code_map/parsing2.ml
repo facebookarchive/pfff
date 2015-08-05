@@ -43,7 +43,7 @@ type ast =
   | ML  of Parse_ml.program_and_tokens
   | Hs  of Parse_hs.program_and_tokens
   | Lisp of Parse_lisp.program_and_tokens
-  | Erlang of Parse_erlang.program2
+  | Erlang of Parse_erlang.program_and_tokens
 
   | Html of Parse_html.program2
   | Js  of Parse_js.program_and_tokens
@@ -298,8 +298,8 @@ let tokens_with_categ_of_file file hentities =
       tokens_with_categ_of_file_helper 
         { parse = (parse_cache 
          (fun file -> Erlang (Parse_erlang.parse file +> fst))
-         (function Erlang x -> x | _ -> raise Impossible));
-        highlight_visit = Highlight_erlang.visit_toplevel;
+         (function Erlang x -> [x] | _ -> raise Impossible));
+        highlight_visit = Highlight_erlang.visit_program;
         info_of_tok = Token_helpers_erlang.info_of_tok;
         }
         file prefs hentities

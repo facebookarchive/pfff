@@ -18,6 +18,7 @@ open Entity_code open Highlight_code
 module Ast = Ast_erlang
 module T = Parser_erlang
 module TH = Token_helpers_erlang
+module PI = Parse_info
 
 (*****************************************************************************)
 (* Prelude *)
@@ -43,11 +44,11 @@ let fake_no_use2 = (NoInfoPlace, UniqueDef, MultiUse)
  * to figure out what kind of ident it is.
  *)
 
-let visit_toplevel 
+let visit_program
     ~tag_hook
     _prefs 
     (*db_opt *)
-    (_toplevel, toks)
+    (_program, toks)
   =
   let already_tagged = Hashtbl.create 101 in
   let atom_already_tagged = Hashtbl.create 101 in
@@ -101,7 +102,7 @@ let visit_toplevel
     (* poor's man identifier tagger *)
 
     (* defs *)
-    | T.TIdent (s, ii1)::xs when Ast.col_of_info ii1 = 0 ->
+    | T.TIdent (s, ii1)::xs when PI.col_of_info ii1 = 0 ->
         if not (Hashtbl.mem atom_already_tagged s) then begin
           Hashtbl.add atom_already_tagged s true;
           tag ii1 (Entity (Function, (Def2 fake_no_def2)));
