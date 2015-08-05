@@ -54,15 +54,17 @@ type ast =
 
   (* system *)
   | Cpp of Parse_cpp.toplevels_and_tokens
-  | Csharp of Parse_csharp.program_and_tokens
-  | Java of Parse_java.program_and_tokens
   | Rust of Parse_rust.program_and_tokens
 
+  (* mainstream *)
+  | Java of Parse_java.program_and_tokens
+  | Csharp of Parse_csharp.program_and_tokens
+
   (* scripting *)
-  | Python of Parse_python.program2
+  | Python of Parse_python.program_and_tokens
 
+  (* documentation *)
   | Noweb of Parse_nw.program2
-
   (* less? | Org of Org_mode.org ? *)
 
 let _hmemo_file = Hashtbl.create 101
@@ -257,7 +259,7 @@ let tokens_with_categ_of_file file hentities =
       tokens_with_categ_of_file_helper 
         { parse = (parse_cache 
          (fun file -> Python (Parse_python.parse file +> fst))
-         (function Python x -> x | _ -> raise Impossible));
+         (function Python x -> [x] | _ -> raise Impossible));
         highlight_visit = (fun ~tag_hook prefs (ast, toks) -> 
           Highlight_python.visit_toplevel ~tag_hook prefs (ast, toks));
         info_of_tok = Token_helpers_python.info_of_tok;

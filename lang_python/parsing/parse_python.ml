@@ -30,19 +30,7 @@ module PI = Parse_info
 (* Types *)
 (*****************************************************************************)
 
-type program2 = toplevel2 list
-  (* the token list contains also the comment-tokens *)
-  and toplevel2 = 
-  Ast_python.toplevel (* NotParsedCorrectly if parse error *) * 
-    Parser_python.token list
-
-(*****************************************************************************)
-(* Tokens/Ast association  *)
-(*****************************************************************************)
-
-(*****************************************************************************)
-(* Error diagnostic  *)
-(*****************************************************************************)
+type program_and_tokens = Ast_python.program * Parser_python.token list
 
 (*****************************************************************************)
 (* Lexing only *)
@@ -95,13 +83,10 @@ let tokens a =
 (*****************************************************************************)
 
 let parse2 filename = 
-
   let stat = Parse_info.default_stat filename in
   let toks_orig = tokens filename in
-
   (* TODO *)
-  [(), toks_orig], stat
-
+  ((), toks_orig), stat
 
 let parse a = 
   Common.profile_code "Parse_python.parse" (fun () -> parse2 a)

@@ -31,25 +31,25 @@
 /*(*-----------------------------------------*)*/
 
 /*(* coupling: Token_helpers.is_real_comment *)*/
-%token <Ast_python.info> TCommentSpace TCommentNewline   TComment
-%token <Ast_python.info> TCommentMisc
+%token <Parse_info.info> TCommentSpace TCommentNewline   TComment
+%token <Parse_info.info> TCommentMisc
 
 /*(*-----------------------------------------*)*/
 /*(* the normal tokens *)*/
 /*(*-----------------------------------------*)*/
 
 /*(* tokens with "values" *)*/
-%token <string * Ast_python.info> TInt
-%token <string * Ast_python.info> TFloat
-%token <string * Ast_python.info> TComplex
-%token <string * Ast_python.info> TChar
-%token <string * Ast_python.info> TString
-%token <string * Ast_python.info> TLongString
+%token <string * Parse_info.info> TInt
+%token <string * Parse_info.info> TFloat
+%token <string * Parse_info.info> TComplex
+%token <string * Parse_info.info> TChar
+%token <string * Parse_info.info> TString
+%token <string * Parse_info.info> TLongString
 
-%token <string * Ast_python.info> TIdent
+%token <string * Parse_info.info> TIdent
 
 /*(* keywords tokens *)*/
-%token <Ast_python.info>
+%token <Parse_info.info>
   Tdef Tlambda Tclass
   Tif Telse Telif
   Twhile Tfor
@@ -61,12 +61,12 @@
   Tdel Tfrom Tas Twith Tassert Tpass Texcept Timport Tprint Texec Tin Tis
 
 /*(* syntax *)*/
-%token <Ast_python.info> TOParen TCParen 
-%token <Ast_python.info> TOBracket TCBracket
-%token <Ast_python.info> TOBrace TCBrace
-%token <Ast_python.info> TOAngle TCAngle
+%token <Parse_info.info> TOParen TCParen 
+%token <Parse_info.info> TOBracket TCBracket
+%token <Parse_info.info> TOBrace TCBrace
+%token <Parse_info.info> TOAngle TCAngle
 
-%token <Ast_python.info>
+%token <Parse_info.info>
  TComma
  TColon
  TBackQuote
@@ -82,7 +82,7 @@
  TLess TMore TEqEq TMoreEq TLessEq TDiff TNotEq
  TAt
 
-%token <string * Ast_python.info>
+%token <string * Parse_info.info>
  TAugOp
  
 
@@ -94,8 +94,8 @@
 
 
 /*(* classic *)*/
-%token <Ast_python.info> TUnknown
-%token <Ast_python.info> EOF
+%token <Parse_info.info> TUnknown
+%token <Parse_info.info> EOF
 
 
 /*(*-----------------------------------------*)*/
