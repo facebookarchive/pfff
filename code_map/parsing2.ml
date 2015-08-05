@@ -40,21 +40,25 @@ module Flag = Flag_visual
  * all the parsed file.
  *)
 type ast = 
+  (* functional *)
   | ML  of Parse_ml.program_and_tokens
   | Hs  of Parse_hs.program_and_tokens
   | Lisp of Parse_lisp.program_and_tokens
   | Erlang of Parse_erlang.program_and_tokens
 
-  | Html of Parse_html.program2
+  (* web *)
+  | Html of Parse_html.program_and_tokens
   | Js  of Parse_js.program_and_tokens
   | Php of Parse_php.program_with_comments
   | Opa of Parse_opa.program_and_tokens
 
+  (* system *)
   | Cpp of Parse_cpp.program2
   | Csharp of Parse_csharp.program_and_tokens
   | Java of Parse_java.program_and_tokens
   | Rust of Parse_rust.program_and_tokens
 
+  (* scripting *)
   | Python of Parse_python.program2
 
   | Noweb of Parse_nw.program2

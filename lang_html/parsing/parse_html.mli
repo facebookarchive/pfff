@@ -1,11 +1,11 @@
 
-type program2 = Ast_html.html_tree * Parser_html.token list
+type program_and_tokens = Ast_html.html_tree * Parser_html.token list
 
 exception Parse_error of Parse_info.info
 
 (* This is the main function *)
 val parse:
-  Common.filename -> Ast_html.html_tree * Parser_html.token list
+  Common.filename -> program_and_tokens
 
 
 val html_tree_of_string: string -> Ast_html.html_tree
