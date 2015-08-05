@@ -48,7 +48,7 @@ type ast =
   | Html of Parse_html.program2
   | Js  of Parse_js.program_and_tokens
   | Php of Parse_php.program_with_comments
-  | Opa of Parse_opa.program_with_tokens
+  | Opa of Parse_opa.program_and_tokens
 
   | Cpp of Parse_cpp.program2
   | Csharp of Parse_csharp.program_and_tokens

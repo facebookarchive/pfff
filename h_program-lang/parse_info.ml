@@ -464,7 +464,7 @@ I wanted to get some information about an entity (a function, a class)
 I wanted to get the list also of tokens associated with that entity.
 
 Now I just have
- type program_with_comments = Ast_php.program * Parser_php.token list
+ type program_and_tokens = Ast_php.program * Parser_php.token list
 because I don't use berkeley DB. I use codegraph and an entity_finder
 we just focus on use/def and does not store huge asts on disk.
 
