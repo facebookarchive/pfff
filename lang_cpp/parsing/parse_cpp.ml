@@ -38,7 +38,7 @@ module FT = File_type
 (* Types *)
 (*****************************************************************************)
 
-type program2 = (Ast.toplevel * Parser_cpp.token list) list
+type toplevels_and_tokens = (Ast.toplevel * Parser_cpp.token list) list
 
 let program_of_program2 xs = 
   xs +> List.map fst

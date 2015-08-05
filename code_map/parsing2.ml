@@ -53,7 +53,7 @@ type ast =
   | Opa of Parse_opa.program_and_tokens
 
   (* system *)
-  | Cpp of Parse_cpp.program2
+  | Cpp of Parse_cpp.toplevels_and_tokens
   | Csharp of Parse_csharp.program_and_tokens
   | Java of Parse_java.program_and_tokens
   | Rust of Parse_rust.program_and_tokens
