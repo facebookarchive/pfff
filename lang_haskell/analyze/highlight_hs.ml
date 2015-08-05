@@ -29,7 +29,7 @@ module T = Parser_hs
 (* Code highlighter *)
 (*****************************************************************************)
 
-let visit_toplevel ~tag_hook _prefs  (_toplevel, toks) =
+let visit_program ~tag_hook _prefs  (_prog, toks) =
 
   let already_tagged = Hashtbl.create 101 in
   let tag = (fun ii categ ->

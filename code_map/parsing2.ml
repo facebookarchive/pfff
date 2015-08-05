@@ -41,7 +41,7 @@ module Flag = Flag_visual
  *)
 type ast = 
   | ML  of Parse_ml.program_and_tokens
-  | Hs  of Parse_hs.program2
+  | Hs  of Parse_hs.program_and_tokens
   | Lisp of Parse_lisp.program_and_tokens
   | Erlang of Parse_erlang.program2
 
@@ -242,9 +242,9 @@ let tokens_with_categ_of_file file hentities =
       tokens_with_categ_of_file_helper 
         { parse = (parse_cache 
          (fun file -> Hs (Parse_hs.parse file +> fst))
-         (function Hs x -> x | _ -> raise Impossible));
+         (function Hs (ast, toks) -> [ast, toks] | _ -> raise Impossible));
         highlight_visit = (fun ~tag_hook prefs (ast, toks) -> 
-          Highlight_hs.visit_toplevel ~tag_hook prefs (ast, toks));
+          Highlight_hs.visit_program ~tag_hook prefs (ast, toks));
         info_of_tok = Parser_hs.info_of_tok;
         }
         file prefs hentities

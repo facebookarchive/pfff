@@ -16,28 +16,20 @@ open Common
 module Ast = Ast_hs
 module Flag = Flag_parsing_hs
 module PI = Parse_info
-(* we don't need a full grammar for lisp code, so we put everything,
- * the token type, the helper in parser_hs. No token_helpers_hs.ml
- *)
 module TH = Parser_hs
 
 (*****************************************************************************)
 (* Prelude *)
 (*****************************************************************************)
 (* 
- * alt: 
- *  - Could reuse the parser in ocamlsexp ? but they just have Atom | Sexp
- *    and I need to differentiate numbers in the highlighter, and
- *    also handling quoted, anti-quoted and other lisp special things.
  *)
 
 (*****************************************************************************)
 (* Types *)
 (*****************************************************************************)
 
-type program2 = toplevel2 list
  (* the token list contains also the comment-tokens *)
- and toplevel2 = Ast_hs.toplevel * Parser_hs.token list
+type program_and_tokens = Ast_hs.program * Parser_hs.token list
 
 (*****************************************************************************)
 (* Lexing only *)
@@ -93,12 +85,10 @@ let tokens a =
 (*****************************************************************************)
 
 let parse2 filename =
-
   let stat = Parse_info.default_stat filename in
   let toks_orig = tokens filename in
-
   (* TODO *)
-  [(), toks_orig], stat
+  ((), toks_orig), stat
 
 let parse a = 
   Common.profile_code "Parse_hs.parse" (fun () -> parse2 a)
