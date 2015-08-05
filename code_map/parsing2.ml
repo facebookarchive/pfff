@@ -64,7 +64,7 @@ type ast =
   | Python of Parse_python.program_and_tokens
 
   (* documentation *)
-  | Noweb of Parse_nw.program2
+  | Noweb of Parse_nw.program_and_tokens
   (* less? | Org of Org_mode.org ? *)
 
 let _hmemo_file = Hashtbl.create 101
@@ -338,8 +338,8 @@ let tokens_with_categ_of_file file hentities =
       tokens_with_categ_of_file_helper 
         { parse = (parse_cache 
          (fun file -> Noweb (Parse_nw.parse file +> fst))
-         (function Noweb x -> x | _ -> raise Impossible));
-        highlight_visit = Highlight_nw.visit_toplevel;
+         (function Noweb x -> [x] | _ -> raise Impossible));
+        highlight_visit = Highlight_nw.visit_program;
         info_of_tok = Token_helpers_nw.info_of_tok;
         }
         file prefs hentities

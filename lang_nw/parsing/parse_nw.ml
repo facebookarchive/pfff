@@ -30,14 +30,8 @@ module PI = Parse_info
 (* Types *)
 (*****************************************************************************)
 
-type program2 = toplevel2 list
-     (* the token list contains also the comment-tokens *)
-  and toplevel2 = 
-    Ast.toplevel (* NotParsedCorrectly if parse error *) * Lexer_nw.token list
-
-(*****************************************************************************)
-(* Error diagnostic  *)
-(*****************************************************************************)
+(* the token list contains also the comment-tokens *)
+type program_and_tokens = Ast_nw.program * Lexer_nw.token list
 
 (*****************************************************************************)
 (* Lexing only *)
@@ -94,29 +88,6 @@ let tokens a =
   Common.profile_code "Parse_nw.tokens" (fun () -> tokens2 a)
 
 (*****************************************************************************)
-(* Lexer tricks *)
-(*****************************************************************************)
-
-(*****************************************************************************)
-(* Helper for main entry point *)
-(*****************************************************************************)
-
-(*****************************************************************************)
-(* Main entry point *)
-(*****************************************************************************)
-
-let parse2 filename =
-
-  let stat = Parse_info.default_stat filename in
-  let toks_orig = tokens filename in
-
-  (* TODO *)
-  [(), toks_orig], stat
-
-let parse a = 
-  Common.profile_code "Parse_nw.parse" (fun () -> parse2 a)
-
-(*****************************************************************************)
 (* Fuzzy parsing *)
 (*****************************************************************************)
 
@@ -128,3 +99,16 @@ let parse_fuzzy file =
   } toks
   in
   trees, toks
+
+(*****************************************************************************)
+(* Main entry point *)
+(*****************************************************************************)
+
+let parse2 filename =
+  let stat = Parse_info.default_stat filename in
+  let (ast, toks) = parse_fuzzy filename in
+  (ast, toks), stat
+
+let parse a = 
+  Common.profile_code "Parse_nw.parse" (fun () -> parse2 a)
+

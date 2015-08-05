@@ -1,6 +1,7 @@
 (* Yoann Padioleau
  *
  * Copyright (C) 2010 Facebook
+ * Copyright (C) 2015 Yoann Padioleau
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public License
@@ -27,6 +28,9 @@ module TH = Token_helpers_nw
 (* Helpers *)
 (*****************************************************************************)
 
+(* todo: now that have a fuzzy ast for noweb, could use that
+ * instead of those span_brace functions
+ *)
 let span_close_brace xs = xs +> Common2.split_when (function 
   | T.TCBrace _ -> true | _ -> false)
 
@@ -52,11 +56,11 @@ let tag_all_tok_with ~tag categ xs =
  * to figure out what kind of ident it is.
  *)
 
-let visit_toplevel 
+let visit_program
     ~tag_hook
     _prefs 
     (*db_opt *)
-    (_toplevel, toks)
+    (_program, toks)
   =
   let already_tagged = Hashtbl.create 101 in
   let tag = (fun ii categ ->
@@ -151,7 +155,12 @@ let visit_toplevel
              let (before, middle, after) =
                span_end_bracket xs
              in
-             tag_all_tok_with ~tag TypeVoid (* TODO *) before;
+             tag_all_tok_with 
+               ~tag:(fun ii categ -> 
+                 if not (Hashtbl.mem already_tagged ii)
+                 then tag ii categ
+               )
+               TypeVoid (* TODO *) before;
              (middle::after)
            with Not_found ->
              pr2 (spf "PB span_end_bracket at %d" 
@@ -223,6 +232,7 @@ let visit_toplevel
 
   (* -------------------------------------------------------------------- *)
   (* ast phase 1 *) 
+  (* -------------------------------------------------------------------- *)
 
   (* -------------------------------------------------------------------- *)
   (* toks phase 2 *)
@@ -232,15 +242,10 @@ let visit_toplevel
     match tok with
     | T.TComment ii ->
         if not (Hashtbl.mem already_tagged ii)
-        then
-          tag ii Comment
-
-    | T.TCommentSpace ii ->
-        if not (Hashtbl.mem already_tagged ii)
-        then ()
-        else ()
-
+        then tag ii Comment
+    | T.TCommentSpace _ii -> ()
     | T.TCommentNewline _ii -> ()
+
     | T.TCommand (s, ii) -> 
         let categ = 
           (match s with

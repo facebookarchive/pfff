@@ -37,37 +37,41 @@ module Flag = Flag_parsing_nw
  * braces.
  *)
 
-type info = Ast_nw.info
-
 type token =
-  | TComment of info
-  | TCommentSpace of info
-  | TCommentNewline of info
+  | TComment of Parse_info.info
+  | TCommentSpace of Parse_info.info
+  | TCommentNewline of Parse_info.info
 
   (* \xxx *)
-  | TCommand of (string * info)
+  | TCommand of (string * Parse_info.info)
 
-  | TWord of (string * info)
-  | TSymbol of (string * info)
-  | TNumber of (string * info)
+  | TWord of (string * Parse_info.info)
+  | TSymbol of (string * Parse_info.info)
+  | TNumber of (string * Parse_info.info)
 
-  | TBeginVerbatim of info | TEndVerbatim of info
-  | TVerbatimLine of (string * info)
+  | TBeginVerbatim of Parse_info.info 
+  | TEndVerbatim of Parse_info.info
+  | TVerbatimLine of (string * Parse_info.info)
 
   (* <<...>>= and @ *)
-  | TBeginNowebChunk of info | TEndNowebChunk of info
-  | TNowebChunkLine of (string * info)
-  (* << and >> when on the same line and inside a noweb chunk *)
-  | TBeginNowebChunkName of info | TEndNowebChunkName of info
-  | TNowebChunkName of info | TNowebAngle of info
+  | TBeginNowebChunk of Parse_info.info 
+  | TEndNowebChunk of Parse_info.info
+  | TNowebChunkLine of (string * Parse_info.info)
 
-  | TOBrace of info | TCBrace of info
+  (* << and >> when on the same line and inside a noweb chunk *)
+  | TBeginNowebChunkName of Parse_info.info 
+  | TEndNowebChunkName of Parse_info.info
+
+  | TNowebChunkName of Parse_info.info 
+  | TNowebAngle of Parse_info.info
+
+  | TOBrace of Parse_info.info | TCBrace of Parse_info.info
   (* no TOParen and TCParen, they are not forced to be matching in TeX 
    * I think 
    *)
 
-  | TUnknown of info
-  | EOF of info
+  | TUnknown of Parse_info.info
+  | EOF of Parse_info.info
 
 (*****************************************************************************)
 (* Wrappers *)

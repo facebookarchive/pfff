@@ -1,8 +1,7 @@
 
-val visit_toplevel :
-  tag_hook:
-    (Ast_nw.info -> Highlight_code.category -> unit) ->
+val visit_program :
+  tag_hook: (Parse_info.info -> Highlight_code.category -> unit) ->
   Highlight_code.highlighter_preferences ->
   (*(Database_php.id * Common.filename * Database_php.database) option -> *)
-  Ast_nw.toplevel * Lexer_nw.token list ->
+  Ast_nw.program * Lexer_nw.token list ->
   unit

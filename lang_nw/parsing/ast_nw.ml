@@ -1,4 +1,3 @@
 
-type info = Parse_info.info
+type program = Ast_fuzzy.trees
 
-type toplevel = unit
