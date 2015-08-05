@@ -583,7 +583,7 @@ let all_actions () =
  extra_actions()@
  []
 
-let options () = [ 
+let options () = ([ 
   (*s: options *)
     "-screen_size", Arg.Set_int screen_size,
     " <int> (1 = small, 2 = big)";
@@ -603,7 +603,6 @@ let options () = [
     " <layer_file>";
     "-with_layers", Arg.String (fun s -> layer_dir := Some s),
     " <dir_with_layers>";
-
     "-filter", Arg.String (fun s -> filter := List.assoc s filters;), 
      spf " filter certain files (available = %s)" 
       (filters +> List.map fst +> Common.join ", ");
@@ -647,7 +646,7 @@ let options () = [
     exit 0;
   ), 
     " guess what";
-  ]
+  ]) |> Arg.align
 
 (*****************************************************************************)
 (* The main entry point *)
@@ -683,7 +682,7 @@ let main () =
     (* --------------------------------------------------------- *)
     (* empty entry *)
     (* --------------------------------------------------------- *)
-    | [] -> Arg.usage (Arg.align (options())) usage_msg; 
+    | [] -> Arg.usage (options()) usage_msg; 
     );
   )
 
