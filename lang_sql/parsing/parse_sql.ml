@@ -12,15 +12,13 @@
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the file
  * license.txt for more details.
  *)
-
 open Common
+
+module PI = Parse_info
 
 (*****************************************************************************)
 (* Helpers *)
 (*****************************************************************************)
-
-let lexbuf_to_strpos lexbuf     = 
-  (Lexing.lexeme lexbuf, Lexing.lexeme_start lexbuf)    
 
 let is_eof = function
   | Parser_sql.EOF _ -> true
@@ -58,7 +56,7 @@ let parse2 file =
       ()
     with
     | Parsing.Parse_error -> 
-        pr2 (Parse_info.error_message file (lexbuf_to_strpos lexbuf))
+        pr2 (Parse_info.error_message file (PI.lexbuf_to_strpos lexbuf))
   )
 
 let parse a = 

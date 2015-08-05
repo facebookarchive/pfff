@@ -37,12 +37,6 @@ type program2 = toplevel2 list
     Parser_python.token list
 
 (*****************************************************************************)
-(* Helpers *)
-(*****************************************************************************)
-let lexbuf_to_strpos lexbuf     = 
-  (Lexing.lexeme lexbuf, Lexing.lexeme_start lexbuf)    
-
-(*****************************************************************************)
 (* Tokens/Ast association  *)
 (*****************************************************************************)
 
@@ -88,7 +82,7 @@ let tokens2 file =
   with
   | Lexer_python.Lexical s -> 
       failwith ("lexical error " ^ s ^ "\n =" ^ 
-                 (PI.error_message file (lexbuf_to_strpos lexbuf)))
+                 (PI.error_message file (PI.lexbuf_to_strpos lexbuf)))
   | e -> raise e
  )
           

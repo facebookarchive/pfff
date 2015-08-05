@@ -19,6 +19,9 @@ open Common
 (*****************************************************************************)
 (*
  * Some helpers for the different lexers and parsers in pfff.
+ * The main types are:
+ * ('token_location' < 'token_origin' < 'token_mutable') * token_kind
+ * 
  *)
 
 (*****************************************************************************)
@@ -153,19 +156,6 @@ type token_kind =
 (* shortcut *)
 type info = token_mutable
 
-(*
-let info_start_file file = {
-  token = OriginTok {
-      str = "";
-      charpos = 1;
-      line = 1;
-      column = 1;
-      file = file;
-  };
-  comments = ();
-  transfo = NoTransfo;
-}
-*)
 
 type parsing_stat = {
   filename: Common.filename;
@@ -245,7 +235,6 @@ let tokinfo_str_pos str pos =
 
 (*
 val rewrap_token_location : token_location.token_location -> info -> info
-
 let rewrap_token_location pi ii =
   {ii with pinfo =
     (match ii.pinfo with

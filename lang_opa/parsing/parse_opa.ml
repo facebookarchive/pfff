@@ -37,12 +37,6 @@ type program_and_tokens =
   Ast_opa.program * Parser_opa.token list
 
 (*****************************************************************************)
-(* Helpers *)
-(*****************************************************************************)
-let lexbuf_to_strpos lexbuf     = 
-  (Lexing.lexeme lexbuf, Lexing.lexeme_start lexbuf)    
-
-(*****************************************************************************)
 (* Tokens/Ast association  *)
 (*****************************************************************************)
 
@@ -102,7 +96,7 @@ let tokens2 file =
   with
   | Lexer_opa.Lexical s -> 
       failwith ("lexical error " ^ s ^ "\n =" ^ 
-                 (PI.error_message file (lexbuf_to_strpos lexbuf)))
+                 (PI.error_message file (PI.lexbuf_to_strpos lexbuf)))
   | e -> raise e
  )
 let tokens a = 
