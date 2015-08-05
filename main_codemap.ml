@@ -587,8 +587,6 @@ let options () = [
   (*s: options *)
     "-screen_size", Arg.Set_int screen_size,
     " <int> (1 = small, 2 = big)";
-    "-ss", Arg.Set_int screen_size,
-    " <int> alias for -screen_size";
     "-no_legend", Arg.Clear legend,
     " do not display the legend";
 
@@ -614,17 +612,14 @@ let options () = [
     "-skip_list", Arg.String (fun s -> skip_file := Some s), 
     " <file> skip files or directories";
 
-    "-with_info", Arg.String (fun _s -> ()),
-    " obsolete\n"; (* for codemap_www in engshare/admin/scripts *)
-
     "-ft", Arg.Set_float Flag.threshold_draw_content_font_size_real,
     " <float> threshold to draw content";
     "-nblines_file", Arg.Set_float Flag.threshold_draw_content_nblines,
     " <float>";
     "-boost_lbl", Arg.Set Flag.boost_label_size,
     " boost size of labels";
-    "-no_boost_lbl", Arg.Clear Flag.boost_label_size,
-    " do not boost labels\n";
+    "-emacs_client", Arg.Set_string Editor_connection.emacsclient_path,
+    " <path>";
 
   (*-------------------------------------------------------------------------*)
   (* debugging helpers *)
