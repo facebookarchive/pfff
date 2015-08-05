@@ -101,7 +101,7 @@ open Common
  *  - want powerful queries like 
  *      'class X { ... function(...) { ... foo() ... } ... }
  *    so sgrep powerful for microlevel queries, and prolog for macrolevel
- *    queries
+ *    queries. Xpath? Css selector?
  *)
 
 (*****************************************************************************)
@@ -116,6 +116,7 @@ type tree =
   (* todo: comma *)
   | Parens of tok * (trees, tok (* comma*)) Common.either list * tok
   | Angle  of tok * trees * tok
+
   (* note that gcc allows $ in identifiers, so using $ for metavariables
    * means we will not be able to match such identifiers. No big deal.
    *)
@@ -125,6 +126,7 @@ type tree =
    * match specifically "...".
    *)
   | Dots of tok
+
   | Tok of string wrap
 and trees = tree list
  (* with tarzan *)

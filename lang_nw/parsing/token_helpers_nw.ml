@@ -12,7 +12,6 @@
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the file
  * license.txt for more details.
  *)
-
 open Common
 
 open Lexer_nw
@@ -31,6 +30,16 @@ let is_eof = function
 let is_comment = function
   | TComment _ | TCommentSpace _ | TCommentNewline _ -> true
   | _ -> false 
+
+
+let token_kind_of_tok t =
+  match t with
+  | TOBrace _ -> PI.LBrace
+  | TCBrace _ -> PI.RBrace
+  | TComment _ -> PI.Esthet PI.Comment
+  | TCommentSpace _ -> PI.Esthet PI.Space
+  | TCommentNewline _ -> PI.Esthet PI.Newline
+  | _ -> PI.Other
 
 (*****************************************************************************)
 (* Visitors *)
@@ -72,15 +81,3 @@ let info_of_tok tok =
   Common2.some !res
 
 
-(*****************************************************************************)
-(* Accessors *)
-(*****************************************************************************)
-
-let linecol_of_tok tok =
-  let info = info_of_tok tok in
-  PI.line_of_info info, PI.col_of_info info
-
-let line_of_tok x = fst (linecol_of_tok x)
-
-let str_of_tok  x = PI.str_of_info  (info_of_tok x)
-let file_of_tok x = PI.file_of_info (info_of_tok x)
