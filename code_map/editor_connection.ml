@@ -31,14 +31,14 @@ let emacsclient_path_mac =
   "/home/pad/Dropbox/apps/Emacs.app/Contents/MacOS/bin/emacsclient"
 *)
 
-let emacsclient_path = "emacsclient"
+let emacsclient_path = ref "emacsclient"
 
 (* you need to have done a M-x server-start first *)
 let run_emacsclient ~file ~line =
-  Common.command2 (spf "%s -n %s" emacsclient_path file);
+  Common.command2 (spf "%s -n %s" !emacsclient_path file);
   Common.command2 (spf 
     "%s -e '(with-current-buffer (window-buffer (selected-window)) (goto-line %d))'"
-    emacsclient_path line);
+    !emacsclient_path line);
   ()
 (*e: emacs configuration *)
 
