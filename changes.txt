@@ -1,12 +1,20 @@
 -*- org -*-
 
-* 0.31 (Q1 2015) (??)
+* 0.32 (Q2 2015) ((principia parenthesis))
+extra: a lot
+
+** better coloring for noweb files, give priority to
+sections over chunks
+
+* 0.31 (Q1 2015) ((principia parenthesis))
+extra: a lot
 
 ** lpizer
 
 *** support for ocaml
 
 * 0.30 (Q4 2014) ((principia parenthesis), lpizer)
+extra: a lot
 
 ** introduce lpizer
 
