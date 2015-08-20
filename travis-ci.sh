@@ -37,7 +37,7 @@ eval `opam config env`
 # install packages from opam:
 #  pfff is battery included so no need for external packages
 # camlp4 is now outside the ocaml distribution
-yes | opam install camlp4
+opam install -y camlp4
 
 #------------------------------
 # Compile Pfff
