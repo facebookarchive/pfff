@@ -26,7 +26,7 @@
 #------------------------------
 
 # install opam, does take quite some time (=~ 10min)
-wget http://www.ocamlpro.com/pub/opam_installer.sh
+wget https://raw.githubusercontent.com/ocaml/opam/master/shell/opam_installer.sh
 # redirecting to >/dev/null is not always good because travis
 # has a 10min timeout on any program that don't output
 # something on the console
