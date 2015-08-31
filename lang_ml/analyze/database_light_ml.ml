@@ -158,10 +158,8 @@ let compute_database ?(verbose=false) files_or_dirs =
           (* todo: use is_entity_def_category ? *)
           match categ with
           | HC.Entity (_, HC.Def2 _)
-          | HC.TypeDef HC.Def 
           | HC.FunctionDecl _ 
             ->
-
               let s = PI.str_of_info info in
               let l = PI.line_of_info info in
               let c = PI.col_of_info info in
@@ -181,7 +179,6 @@ let compute_database ?(verbose=false) files_or_dirs =
                  (e = "mli" && not (Sys.file_exists
                                       (Common2.filename_of_dbe (d,b, "ml"))))
               then begin
-
               
               let entity = { Database_code.
                 e_name = s;

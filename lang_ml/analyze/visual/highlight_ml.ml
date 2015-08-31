@@ -15,12 +15,13 @@
 open Common
 
 open Ast_ml
-open Entity_code 
-open Highlight_code
 module Ast = Ast_ml
+open Highlight_code
 module V = Visitor_ml
 module PI = Parse_info
 module T = Parser_ml
+open Entity_code 
+module E = Entity_code
 
 (*****************************************************************************)
 (* Prelude *)
@@ -131,7 +132,7 @@ let visit_program
           tag info (kind_of_ty ty)
       | Ast.Exception (_tok, name, _args) ->
           let info = Ast.info_of_name name in
-          tag info (TypeDef Def);
+          tag info (Entity (E.Exception, Def2 fake_no_def2));
       | Open (_tok, lname) ->
           let info = Ast.info_of_name (Ast.name_of_long_name lname) in
           tag info (Entity (Module, Use2 fake_no_use2));
@@ -315,13 +316,13 @@ let visit_program
       match x with
       | TyDef (_ty_params, name, _tok, type_kind) ->
           let info = Ast.info_of_name name in
-          tag info (TypeDef Def);
+          tag info (Entity (E.Type, Def2 fake_no_def2));
           (* todo: ty_params *)
           (match type_kind with
           | TyAlgebric xs ->
               xs +> Ast.unpipe +> List.iter (fun (name, _args) ->
                 let info = Ast.info_of_name name in
-                tag info (Entity (Constructor,(Def2 fake_no_def2)))
+                tag info (Entity (Constructor, Def2 fake_no_def2))
               );
           | TyCore _ | TyRecord _ -> ()
           );
@@ -452,7 +453,7 @@ let visit_program
         when PI.col_of_info ii = 0 ->
 
         if not (Hashtbl.mem already_tagged ii3) && lexer_based_tagger
-        then tag ii3 (TypeDef Def);
+        then tag ii3 (Entity (Type, Def2 NoUse));
         aux_toks xs;
 
     (* module defs *)

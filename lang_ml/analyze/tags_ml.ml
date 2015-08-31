@@ -44,7 +44,6 @@ let tag_of_name filelines name =
 let entity_of_highlight_category_opt x =
   match x with
   | Highlight_code.Entity (kind, (Def2 _)) -> Some kind
-  | TypeDef Def -> Some E.Type
   | FunctionDecl _ -> Some E.Function
   | _ -> None
 
