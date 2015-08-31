@@ -21,7 +21,6 @@ type category =
 
   | StructName of usedef
   | EnumName of usedef
-  | TypeDef of usedef
 
   | TypeVoid | TypeInt
 

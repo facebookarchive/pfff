@@ -377,9 +377,9 @@ let save_database database file =
 let entity_kind_of_highlight_category_def categ = 
   match categ with
   | HC.Entity (kind, HC.Def2 _) -> Some kind
+
   | HC.FunctionDecl _ -> Some Prototype
   | HC.StaticMethod (HC.Def2 _) -> Some Method
-  | HC.TypeDef HC.Def -> Some Type
   | HC.StructName (HC.Def) -> Some Type
 
   (* todo: what about other Def ? like Label, Parameter, etc ? *)
@@ -394,7 +394,6 @@ let entity_kind_of_highlight_category_use categ =
   | HC.Entity (kind, HC.Use2 _) -> Some kind
   | HC.FunctionDecl _ -> Some Function
   | HC.StaticMethod (HC.Use2 _) -> Some Method
-  | HC.TypeDef HC.Use -> Some Type
   | HC.StructName HC.Use -> Some Class
   | _ -> None
 
@@ -421,7 +420,6 @@ let matching_use_categ_kind categ kind =
   | GlobalExtern,      HC.Entity (Global, _)
   | Method,    HC.StaticMethod _
   | ClassConstant,  HC.Entity (Constant, _)
-  | Type, HC.TypeDef _
     
   (* tofix at some point, wrong tokenizer *)
   | Constant, HC.Local _

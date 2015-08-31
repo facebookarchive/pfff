@@ -173,7 +173,8 @@ type category =
   | Operator (* TODO multi *)
   | Punctuation
 
-  (* functions, macros. By default global scope (macro can have local
+  (* Functions, macros, globals, types, ... see Entity_code.entity_kind.
+   * By default global scope (macro can have local
    * but not that used), so no need to like for variables and have a
    * global/local dichotomy of scope. (But even if functions are globals,
    * still can have some global/local dichotomy but at the module level.
@@ -196,8 +197,7 @@ type category =
   | EnumName of usedef
   (* ClassName of place ... *)
 
-  (* types *)
-  | TypeDef of usedef
+  (* special types *)
   | TypeVoid | TypeInt
 
   (* haskell *)
@@ -207,6 +207,7 @@ type category =
   | Label of usedef
 
   (* semantic information *)
+
   | BadSmell
 
   (* could reuse Global (Use2 ...) but the use of refs is not always
@@ -220,8 +221,6 @@ type category =
   | ParameterRef
 
   | IdentUnknown
-
-
 
 
   (* module/cpp related *)
@@ -666,8 +665,6 @@ let info_of_category = function
 
   | StructName usedef -> [`FOREGROUND "YellowGreen"] @ info_of_usedef usedef 
   | EnumName usedef -> [`FOREGROUND "YellowGreen"] @ info_of_usedef usedef 
-  | TypeDef usedef -> [`FOREGROUND "YellowGreen"] @ info_of_usedef usedef 
-
 
 
   | Ifdef -> [`FOREGROUND "chocolate";]
@@ -752,12 +749,8 @@ let arity_ids ids  =
   | _::_::_::_ -> MultiDef
 
 let rewrap_arity_def2_category arity categ = 
-
   match categ with
   | Entity (kind, (Def2 _)) -> Entity (kind, (Def2 arity))
   | FunctionDecl _ ->  FunctionDecl (arity)
   | StaticMethod (Def2 _) -> StaticMethod (Def2 arity)
-  | TypeDef Def  ->  
-      pr2_once "No arity for Typedef Def yet";
-      TypeDef Def
   | _ -> failwith "not a Def2-kind categoriy"
