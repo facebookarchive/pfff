@@ -136,7 +136,7 @@ let visit_toplevel ~tag_hook _prefs  (_toplevel, toks) =
 
     | Ast.TypeDef (name, tdef) ->
         let info = info_of_name name in
-        tag info (TypeDef Def);
+        tag info (Entity (Type, Def2 fake_no_def2));
         type_def ctx tdef
 
     | Ast.Module (name, xs) ->
@@ -318,7 +318,7 @@ let visit_toplevel ~tag_hook _prefs  (_toplevel, toks) =
     *)
 
     | (T.Ttype _ii1 | T.Tand _ii1)::T.TIdent (_s, ii2)::xs ->
-        tag ii2 (TypeDef Def);
+        tag ii2 (Entity (Type, Def2 fake_no_def2));
         aux_toks xs
 
      (* can't put (Function Def) here because the function keyword

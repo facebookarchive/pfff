@@ -68,17 +68,17 @@ let size_font_multiplier_of_categ ~font_size_real categ =
 
     (* entities defs *)
 
-    | Some (HC.Entity (E.Class, (HC.Def2 use))) -> 5. *. multiplier_use use
-    | Some (HC.Entity (E.Module, (HC.Def2 use))) -> 5. *. multiplier_use use
+    | Some (HC.Entity (E.Class, (HC.Def2 use)))    -> 5. *. multiplier_use use
+    | Some (HC.Entity (E.Module, (HC.Def2 use)))   -> 5. *. multiplier_use use
+    | Some (HC.Entity (E.Type, (HC.Def2 use)))     -> 5. *. multiplier_use use
     | Some (HC.Entity (E.Function, (HC.Def2 use))) -> 3.5 *. multiplier_use use
-    | Some (HC.Entity (E.Global, (HC.Def2 use))) -> 3. *. multiplier_use use
-    | Some (HC.Entity (E.Macro, (HC.Def2 use))) -> 2. *. multiplier_use use
+    | Some (HC.Entity (E.Global, (HC.Def2 use)))   -> 3. *. multiplier_use use
+    | Some (HC.Entity (E.Macro, (HC.Def2 use)))    -> 2. *. multiplier_use use
     | Some (HC.Entity (E.Constant, (HC.Def2 use))) -> 2. *. multiplier_use use
-    | Some (HC.Entity (E.Method, (HC.Def2 use))) -> 3.5 *. multiplier_use use
-    | Some (HC.Entity (E.Field, (HC.Def2 use))) -> 1.7 *. multiplier_use use
-    | Some (HC.Entity (E.Constructor, (HC.Def2 use))) -> 1.2 *. multiplier_use use
+    | Some (HC.Entity (E.Method, (HC.Def2 use)))   -> 3.5 *. multiplier_use use
+    | Some (HC.Entity (E.Field, (HC.Def2 use)))    -> 1.7 *. multiplier_use use
 
-    | Some (HC.TypeDef HC.Def) -> 5.
+    | Some (HC.Entity (E.Constructor, (HC.Def2 use))) -> 1.2 *. multiplier_use use
     | Some (HC.FunctionDecl use) -> 2.5 *. multiplier_use use
     | Some (HC.StaticMethod (HC.Def2 use)) -> 3.5 *. multiplier_use use
 

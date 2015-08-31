@@ -109,7 +109,7 @@ let visit_program
 
     | (T.Ttype _ | T.Tenum _)::T.TIdent (_s, ii2)::xs ->
         if not (Hashtbl.mem already_tagged ii2) && lexer_based_tagger
-        then tag ii2 (TypeDef Def);
+        then tag ii2 (Entity (Type, Def2 fake_no_def2));
         aux_toks xs
 
     | (T.Tfn _)::T.TIdent (_s, ii2)::xs ->

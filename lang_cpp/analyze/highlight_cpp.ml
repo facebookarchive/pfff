@@ -200,7 +200,7 @@ let visit_toplevel ~tag_hook _prefs (*db_opt *) (toplevel, toks) =
               let storage = onedecl.v_storage in
               let categ = 
                 match storage with
-                | StoTypedef _ -> TypeDef Def
+                | StoTypedef _ -> Entity (Type, Def2 fake_no_def2)
                 | _ when Type.is_function_type onedecl.v_type -> 
                     FunctionDecl NoUse
                  (* could be a global too when the decl is at the top *)
@@ -340,19 +340,20 @@ let visit_toplevel ~tag_hook _prefs (*db_opt *) (toplevel, toks) =
           Ast.ii_of_id_name name +> List.iter (fun ii -> 
             (* new Xxx and other places have priority *)
             if not (Hashtbl.mem already_tagged ii)
-            then tag ii (TypeDef Use)
+            then tag ii (Entity (Type, Use2 fake_no_use2))
           );
           k x
 
       | Ast_cpp.EnumName (_tok, (_s, ii)) ->
-          tag ii (TypeDef Use)
+          tag ii (Entity (Type, Use2 fake_no_use2))
 
       | StructUnionName (_su, (_s, ii)) ->
           tag ii (StructName Use);
           k x
 
       | TypenameKwd (_tok, name) ->
-          Ast.ii_of_id_name name +> List.iter (fun ii -> tag ii (TypeDef Use));
+          Ast.ii_of_id_name name +> List.iter (fun ii -> 
+            tag ii (Entity (Type, Use2 fake_no_use2)));
           k x
 
       | EnumDef (_tok, _sopt, xs) ->

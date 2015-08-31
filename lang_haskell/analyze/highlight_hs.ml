@@ -91,7 +91,7 @@ let visit_program ~tag_hook _prefs  (_prog, toks) =
         aux_toks xs
 
     | (T.Ttype _ | T.Tdata _ | T.Tnewtype _)::T.TIdent (_s, ii1)::xs ->
-        tag ii1 (TypeDef Def);
+        tag ii1 (Entity (Type, Def2 NoUse));
         aux_toks xs
         
 
