@@ -144,10 +144,6 @@ let expose_legend da w _ev =
 (*e: expose_legend *)
 
 (*****************************************************************************)
-(* Events *)
-(*****************************************************************************)
-
-(*****************************************************************************)
 (* The main UI *)
 (*****************************************************************************)
 
@@ -167,7 +163,7 @@ let mk_gui ~screen_size ~legend test_mode w =
 
   let statusbar = GMisc.statusbar () in
   let ctx = statusbar#new_context "main" in
-  Controller._statusbar_addtext := (fun s -> ctx#push s +> ignore);
+  Controller._statusbar_addtext := (fun s -> ctx#push s |> ignore);
 
   let accel_group = GtkData.AccelGroup.create () in
   win#misc#set_name "main window";
@@ -195,28 +191,28 @@ let mk_gui ~screen_size ~legend test_mode w =
     hbox#pack (G.mk (GMenu.menu_bar) (fun m -> 
       let factory = new GMenu.factory m in
 (*
-      factory#add_submenu "_File" +> (fun menu -> 
+      factory#add_submenu "_File" |> (fun menu -> 
         let fc = new GMenu.factory menu ~accel_group in
         (* todo? open Db ? *)
         fc#add_item "_Open stuff from db" ~key:K._O ~callback:(fun () -> 
           ();
-        ) +> ignore;
-        fc#add_separator () +> ignore;
+        ) |> ignore;
+        fc#add_separator () |> ignore;
 
-      factory#add_submenu "_Edit" +> (fun menu -> 
+      factory#add_submenu "_Edit" |> (fun menu -> 
         GToolbox.build_menu menu ~entries:[
           `S;
         ];
-      ) +> ignore;
+      ) |> ignore;
 *)
 
-      factory#add_submenu "_Move" +> (fun menu -> 
+      factory#add_submenu "_Move" |> (fun menu -> 
         let fc = new GMenu.factory menu ~accel_group in
 
         (* todo? open Db ? *)
         fc#add_item "_Go back" ~key:K._B ~callback:(fun () -> 
           !Controller._go_back w;
-        ) +> ignore;
+        ) |> ignore;
 
         fc#add_item "_Go to example" ~key:K._E ~callback:(fun () -> 
           let model = Async.async_get w.model in
@@ -235,46 +231,46 @@ let mk_gui ~screen_size ~legend test_mode w =
                   !Controller._go_dirs_or_file w [final_file];
               )
           | _ -> failwith "no entity currently selected or no db"
-        ) +> ignore;
-        fc#add_item "_Quit" ~key:K._Q ~callback:quit +> ignore;
+        ) |> ignore;
+        fc#add_item "_Quit" ~key:K._Q ~callback:quit |> ignore;
       );
 
-      factory#add_submenu "_Search" +> (fun menu -> 
+      factory#add_submenu "_Search" |> (fun menu -> 
         let fc = new GMenu.factory menu ~accel_group in
 
         (* todo? open Db ? *)
         fc#add_item "_Git grep" ~key:K._G ~callback:(fun () -> 
 
           let res = Ui_search.dialog_search_def w.model in
-          res +> Common.do_option (fun s ->
+          res |> Common.do_option (fun s ->
             let root = w.root_orig in
             let matching_files = Ui_search.run_grep_query ~root s in
-            let files = matching_files +> List.map fst +> Common2.uniq in
+            let files = matching_files |> List.map fst |> Common2.uniq in
             let current_grep_query = 
               Some (Common.hash_of_list matching_files)
             in
             !Controller._go_dirs_or_file ~current_grep_query w files
           );
-        ) +> ignore;
+        ) |> ignore;
 
         fc#add_item "_Tbgs query" ~key:K._T ~callback:(fun () -> 
 
           let res = Ui_search.dialog_search_def w.model in
-          res +> Common.do_option (fun s ->
+          res |> Common.do_option (fun s ->
             let root = w.dw.current_root in
             let matching_files = Ui_search.run_tbgs_query ~root s in
-            let files = matching_files +> List.map fst +> Common2.uniq in
+            let files = matching_files |> List.map fst |> Common2.uniq in
             let current_grep_query = 
               Some (Common.hash_of_list matching_files)
             in
             !Controller._go_dirs_or_file ~current_grep_query w files
           );
-        ) +> ignore;
+        ) |> ignore;
 
       );
-      factory#add_submenu "_Layers" +> (fun menu -> 
+      factory#add_submenu "_Layers" |> (fun menu -> 
         let layers = 
-          w.dw.layers.Layer_code.layers +> List.map (fun (layer, active) ->
+          w.dw.layers.Layer_code.layers |> List.map (fun (layer, active) ->
             (layer.Layer_code.title, active, (fun b -> 
               if b then
                 Ui_layers.choose_layer ~root:w.root_orig
@@ -293,7 +289,7 @@ let mk_gui ~screen_size ~legend test_mode w =
         GToolbox.build_menu menu ~entries
       );
 
-      factory#add_submenu "_Misc" +> (fun menu -> 
+      factory#add_submenu "_Misc" |> (fun menu -> 
         let fc = new GMenu.factory menu ~accel_group in
 
         (* todo? open Db ? *)
@@ -302,34 +298,34 @@ let mk_gui ~screen_size ~legend test_mode w =
           let current_root = w.dw.current_root in
           let _old_dw = Common2.pop2 w.dw_stack in
           !Controller._go_dirs_or_file w [current_root];
-        ) +> ignore;
+        ) |> ignore;
 
         fc#add_item "Reset entity" ~callback:(fun () ->
           w.current_node_selected <- None;
           let cr_overlay = Cairo.create w.dw.overlay in
           CairoH.clear cr_overlay;
           !Controller._refresh_da();
-        ) +> ignore;
+        ) |> ignore;
       );
 
-      factory#add_submenu "_Help" +> (fun menu -> 
+      factory#add_submenu "_Help" |> (fun menu -> 
         let fc = new GMenu.factory menu ~accel_group in
 
         fc#add_item "_Interface" ~key:K._H ~callback:(fun () -> 
             G.dialog_text Help.interface_doc "Help"
-        ) +> ignore;
+        ) |> ignore;
 
         fc#add_item "_Legend" ~key:K._L ~callback:(fun () -> 
           raise Todo
-        ) +> ignore;
+        ) |> ignore;
 
         fc#add_item "_Help on Pfff" ~callback:(fun () -> 
             G.dialog_text "Read\nthe\nsource\n\ndude" "Help"
-        ) +> ignore;
-        fc#add_separator () +> ignore;
+        ) |> ignore;
+        fc#add_separator () |> ignore;
         fc#add_item "About" ~callback:(fun () -> 
             G.dialog_text "Brought to you by pad\nwith love" "About"
-        ) +> ignore;
+        ) |> ignore;
       );
     ));
 
@@ -352,7 +348,7 @@ let mk_gui ~screen_size ~legend test_mode w =
       tb#insert_space ();
       tb#insert_button ~text:"SAVE THIS" ~callback:(fun () -> 
         pr2 "SAVE THIS";
-      ) () +> ignore;
+      ) () |> ignore;
       tb#insert_space ();
 
 *)
@@ -382,15 +378,15 @@ let mk_gui ~screen_size ~legend test_mode w =
           in
 
           let final_paths = 
-            readable_paths +> List.map 
+            readable_paths |> List.map 
               (Model_database_code.readable_to_absolute_filename_under_root 
                  ~root:w.dw.current_root)
           in
 
           pr2 (spf "e= %s, final_paths= %s" str(Common.join "|" final_paths));
           w.current_entity <- Some e;
-          Async.async_get_opt w.model +> Common.do_option (fun model ->
-            model.g +> Common.do_option (fun g ->
+          Async.async_get_opt w.model |> Common.do_option (fun model ->
+            model.g |> Common.do_option (fun g ->
               w.current_node_selected <- 
                 Model_graph_code.node_of_entity e g
             )
@@ -422,8 +418,8 @@ let mk_gui ~screen_size ~legend test_mode w =
                 match re_opt with
                 | None -> []
                 | Some re ->
-                    rects +> List.filter (fun r -> 
-                      let label = r.T.tr_label +> String.lowercase in
+                    rects |> List.filter (fun r -> 
+                      let label = r.T.tr_label |> String.lowercase in
                       label ==~ re
                     )
               in
@@ -496,16 +492,16 @@ let mk_gui ~screen_size ~legend test_mode w =
      * and an event changes w.dw (e.g. a resize of the window)
      * then the expose event will still expose the old drawing.
      *)
-    da#event#connect#expose ~callback:(expose da w) +> ignore;
-    da#event#connect#configure ~callback:(configure w) +> ignore;
-    da3#event#connect#expose ~callback:(expose_legend da3 w) +> ignore;
+    da#event#connect#expose ~callback:(expose da w) |> ignore;
+    da#event#connect#configure ~callback:(configure w) |> ignore;
+    da3#event#connect#expose ~callback:(expose_legend da3 w) |> ignore;
 
     da#event#connect#button_press 
-      (View_mainmap.button_action w) +> ignore;
+      (View_mainmap.button_action w) |> ignore;
     da#event#connect#button_release 
-      (View_mainmap.button_action w) +> ignore;
+      (View_mainmap.button_action w) |> ignore;
     da#event#connect#motion_notify  
-      (View_overlays.motion_notify w) +> ignore; 
+      (View_overlays.motion_notify w) |> ignore; 
 
     Controller._refresh_da := (fun () ->
       GtkBase.Widget.queue_draw da#as_widget;
@@ -531,7 +527,7 @@ let mk_gui ~screen_size ~legend test_mode w =
   (* End *)
   (*-------------------------------------------------------------------*)
 
-  (* Controller._before_quit_all_func +> Common.push2 Model.close_model; *)
+  (* Controller._before_quit_all_func |> Common.push2 Model.close_model; *)
 
   GtkSignal.user_handler := (fun exn -> 
     pr2 "fucking callback";
@@ -544,7 +540,7 @@ let mk_gui ~screen_size ~legend test_mode w =
   );
 
   (* TODO: should do that on 'da', not 'w' 
-  w#event#connect#key_press ~callback:(key_pressed (da,da2) dw) +> ignore;
+  w#event#connect#key_press ~callback:(key_pressed (da,da2) dw) |> ignore;
   *)
 
 (*
@@ -559,16 +555,16 @@ let mk_gui ~screen_size ~legend test_mode w =
   );
 *)
 
-  win#event#connect#delete    ~callback:(fun _  -> quit(); true) +> ignore;
-  win#connect#destroy         ~callback:(fun () -> quit(); ) +> ignore;
+  win#event#connect#delete    ~callback:(fun _  -> quit(); true) |> ignore;
+  win#connect#destroy         ~callback:(fun () -> quit(); ) |> ignore;
   win#show ();
 
   (* test *)
-  test_mode +> Common.do_option (fun _s -> 
+  test_mode |> Common.do_option (fun _s -> 
     (* View_test.do_command s model *)
     ()
   );
-  (* Gui.gmain_idle_add ~prio: 1000 (idle dw) +> ignore; *)
+  (* Gui.gmain_idle_add ~prio: 1000 (idle dw) |> ignore; *)
   GtkThread.main ();
   ()
 (*e: mk_gui() *)
