@@ -137,6 +137,7 @@ Yoann Padioleau\\
 \section{Introduction}
 
 \subsection{Motivations}
+
 \begin{verbatim}
 (*
  * This file is the basis for a new kind of code visualizer, 
@@ -191,7 +192,7 @@ as it was a giant tiling plane.
 So poffs is a kind of a precursor to codemap :)
 \end{verbatim}
 
-Note that this is not a replacement for Emacs or Vi, but more a
+Note that Codemap is not a replacement for Emacs or Vi, but more a
 companion that works with Emacs or Vi, a little bit
 like the Speedbar Emacs project, except it is using a treemap
 instead of a classic hiearchy browser.

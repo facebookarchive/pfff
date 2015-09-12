@@ -224,7 +224,10 @@ let init_drawing   ?(width = 600) ?(height = 600) func layers paths root =
   let paths = List.map Common2.relative_to_absolute paths in
   let current_root = Common2.common_prefix_of_files_or_dirs paths in
   let treemap = 
-    Common.profile_code "Visual.building the treemap" (fun () -> func paths) in
+    Common.profile_code "Visual.building the treemap" (fun () -> 
+      func paths
+    ) 
+  in
   let readable_file_to_rect =
     treemap +> Common.map_filter (fun rect ->
       if not rect.T.tr_is_node
