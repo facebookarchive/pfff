@@ -425,8 +425,9 @@ let main_action xs =
 (* related work: http://cloc.sourceforge.net/ but have skip list
  * and archi_code_lexer.mll which lower the important of some files?
  *)
-let test_loc root =
-  let root = Common.realpath root in
+let test_loc xs =
+  let xs = xs |> List.map Common.realpath in
+  let root = Common2.common_prefix_of_files_or_dirs xs in
   let skip_file = !skip_file ||| Filename.concat root "skip_list.txt" in
   let skip_list =
     if Sys.file_exists skip_file
@@ -440,7 +441,7 @@ let test_loc root =
   let filter_file = (fun file -> 
     !filter file && (skip_list = [] || filter_files_skip_list [file] <> []))
   in
-  let treemap = Treemap_pl.code_treemap ~filter_file [root] in
+  let treemap = Treemap_pl.code_treemap ~filter_file xs in
 
   let res = ref [] in
   let rec aux tree =
@@ -565,7 +566,7 @@ let test_cairo () =
 let extra_actions () = [
  (*s: actions *)
    "-test_loc", " ",
-   Common.mk_action_1_arg (test_loc);
+   Common.mk_action_n_arg (test_loc);
    "-test_cairo", " ",
    Common.mk_action_0_arg (test_cairo);
    "-test_commitid", " <id>",
