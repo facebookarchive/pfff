@@ -50,6 +50,7 @@ let visitor_info_of_tok f = function
   | TCommentNewline ii -> TCommentNewline (f ii)
 
   | TCommand (s, ii) -> TCommand (s, f ii)
+  | TFootnote (c, ii) -> TFootnote (c, f ii)
 
   | TOBrace ii -> TOBrace (f ii)
   | TCBrace ii -> TCBrace (f ii)

@@ -209,6 +209,7 @@ type category =
   (* semantic information *)
 
   | BadSmell
+  (* less: TodoComment? *)
 
   (* could reuse Global (Use2 ...) but the use of refs is not always
    * the use of a global. Moreover using a ref in OCaml is really bad

@@ -42,16 +42,24 @@ type token =
   | TCommentSpace of Parse_info.info
   | TCommentNewline of Parse_info.info
 
+  | TWord of (string * Parse_info.info)
+  | TNumber of (string * Parse_info.info)
+  | TSymbol of (string * Parse_info.info)
+
   (* \xxx *)
   | TCommand of (string * Parse_info.info)
+  | TOBrace of Parse_info.info | TCBrace of Parse_info.info
+  (* no TOParen/TCParen, they are not forced to be matching in TeX *)
+  (* pad-specific: \t \f \l, see noweblatexpad  *)
+  | TFootnote of char * Parse_info.info
 
-  | TWord of (string * Parse_info.info)
-  | TSymbol of (string * Parse_info.info)
-  | TNumber of (string * Parse_info.info)
+  (* verbatim (different lexing rules) *)
 
   | TBeginVerbatim of Parse_info.info 
   | TEndVerbatim of Parse_info.info
   | TVerbatimLine of (string * Parse_info.info)
+
+  (* start of noweb stuff (different lexing rules too) *)
 
   (* <<...>>= and @ *)
   | TBeginNowebChunk of Parse_info.info 
@@ -65,10 +73,6 @@ type token =
   | TNowebChunkName of Parse_info.info 
   | TNowebAngle of Parse_info.info
 
-  | TOBrace of Parse_info.info | TCBrace of Parse_info.info
-  (* no TOParen and TCParen, they are not forced to be matching in TeX 
-   * I think 
-   *)
 
   | TUnknown of Parse_info.info
   | EOF of Parse_info.info
@@ -189,6 +193,10 @@ rule tex = parse
   (* ----------------------------------------------------------------------- *)
   (* Commands and words (=~ Keywords and indent in other PL) *)
   (* ----------------------------------------------------------------------- *)
+  (* very pad-specific, for noweblatexpad, todo, less, note shortcuts *)
+  | "\\" (['t''l''n'] as kind) [' ''\t'] [^'\n' '\r']*
+      { TFootnote (kind, tokinfo lexbuf) }
+
   | "\\" ((letter+) as cmd) { TCommand (cmd, tokinfo lexbuf)}
   | letter+ { TWord(tok lexbuf, tokinfo lexbuf) }
 

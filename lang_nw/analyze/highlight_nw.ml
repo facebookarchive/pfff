@@ -28,7 +28,7 @@ module TH = Token_helpers_nw
 (* Helpers *)
 (*****************************************************************************)
 
-(* todo: now that have a fuzzy ast for noweb, could use that
+(* todo: now that have a fuzzy AST for noweb, could use that
  * instead of those span_brace functions
  *)
 let span_close_brace xs = xs +> Common2.split_when (function 
@@ -242,7 +242,12 @@ let visit_program
     match tok with
     | T.TComment ii ->
         if not (Hashtbl.mem already_tagged ii)
-        then tag ii Comment
+        then 
+         let s = Parse_info.str_of_info ii in
+         (match s with
+         | _ when s =~ "^%todo:" -> tag ii BadSmell
+         | _ -> tag ii Comment
+         )
     | T.TCommentSpace _ii -> ()
     | T.TCommentNewline _ii -> ()
 
@@ -264,7 +269,6 @@ let visit_program
         if not (Hashtbl.mem already_tagged ii)
         then
           ()
-
 
     (* noweb specific obviously *)
     | T.TBeginNowebChunk ii
@@ -291,7 +295,12 @@ let visit_program
 
     | T.TVerbatimLine (_, ii) ->
         tag ii Verbatim
-
+    (* very pad specific *)
+    | T.TFootnote (c, ii) ->
+        (match c with
+        | 't' -> tag ii BadSmell
+        | _ -> tag ii Comment
+        )
 
     | T.TNumber (_, ii) -> 
         if not (Hashtbl.mem already_tagged ii)
