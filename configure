@@ -215,7 +215,7 @@ if($ocaml_version >= 4000 && $ocaml_version < 4020) {
 #---------------------------------------------------------------
 
 my $MAKE_PROGRAM = "make";
-if($arch =~ /FreeBSD/) {
+if( ($arch =~ /FreeBSD/) || ($arch =~ /OpenBSD/) ) {
   $MAKE_PROGRAM = "gmake";
 }
 
@@ -224,21 +224,12 @@ if($arch =~ /Darwin/) {
   $BREW_PROGRAM = `which brew`;
 }
 
-$error += check_config(
-  "$MAKE_PROGRAM -v 2>&1 |grep --colour=never Make|",
-  "GNU Make [3|4]\.[0-9]+", #version 3.81
-  "make (gnu version) is present.",
-  "The program gnu make is missing or is not a good version.
-We need at least 3.XX",
-);
-show_error_msg_and_exit_if_error($error);
-
 #---------------------------------------------------------------------
 # More developers tools
 #---------------------------------------------------------------------
 
 #---------------------------------------------------------------------
-# Librairies
+# Libraries
 #---------------------------------------------------------------------
 
 # if darwin or cygwin then could just modify this variable ? enough ?
