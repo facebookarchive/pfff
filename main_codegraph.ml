@@ -417,8 +417,11 @@ let main_action xs =
         if x = "." 
         (* getcwd() display a realpath *)
         then List.hd (Common.cmd_to_list "pwd")
-        else failwith "go the directory you want"
-    | _ -> failwith "give just one directory" 
+        else
+          if Sys.is_directory(x)
+          then x
+          else failwith "not a valid directory: codegraph <dir/to/graph_code.marshall>"
+    | _ -> failwith "unable to parse directory: codegraph <dir/to/graph_code.marshall>"
   in
   let inits = Common2.inits_of_absolute_dir dir in
   let root =
