@@ -35,6 +35,7 @@ module J = Json_type
  *  - intercept system calls while compiling a project, a la coverity
  *    * https://github.com/rizsotto/Bear (just started)
  *    * https://github.com/pgbovine/CDE/
+ *    * https://github.com/rprichard/sourceweb/tree/master/btrace
  *    * ??
  * 
  * procedure to analyze a project:
