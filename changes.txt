@@ -1,5 +1,7 @@
 -*- org -*-
 
+* -----------------------------------------------------------
+
 * 0.32 (Q2 2015) ((principia parenthesis))
 extra: a lot
 
@@ -12,6 +14,8 @@ extra: a lot
 ** lpizer
 
 *** support for ocaml
+
+* -----------------------------------------------------------
 
 * 0.30 (Q4 2014) ((principia parenthesis), lpizer)
 extra: a lot
