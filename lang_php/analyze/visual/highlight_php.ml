@@ -641,6 +641,7 @@ let visit_program ~tag _prefs  hentities (ast, toks) =
     | T.TGUIL ii -> tag ii String
 
     | T.TDOLLAR ii -> tag ii Punctuation
+    | T.TDOLLARDOLLAR ii -> tag ii Punctuation
     | T.TSEMICOLON ii -> tag ii Punctuation
     | T.TBACKQUOTE ii -> tag ii Punctuation
 

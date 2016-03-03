@@ -216,6 +216,7 @@ let info_of_tok = function
   | TBACKQUOTE ii -> ii
   | TSEMICOLON ii -> ii
   | TDOLLAR ii -> ii
+  | TDOLLARDOLLAR ii -> ii
   | TGUIL ii -> ii
 
   | T_ELLIPSIS (ii) -> ii
@@ -420,6 +421,7 @@ let visitor_info_of_tok f = function
   | TBACKQUOTE ii -> TBACKQUOTE(f ii)
   | TSEMICOLON ii -> TSEMICOLON(f ii)
   | TDOLLAR ii -> TDOLLAR(f ii)
+  | TDOLLARDOLLAR ii -> TDOLLARDOLLAR(f ii)
   | TGUIL ii -> TGUIL(f ii)
 
   | T_ELLIPSIS (ii) -> T_ELLIPSIS (f ii)

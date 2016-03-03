@@ -166,6 +166,7 @@ module PI = Parse_info
    *)*/
  TSEMICOLON
  TDOLLAR /*(* see also T_VARIABLE *)*/
+ TDOLLARDOLLAR
  TGUIL
 
 /*(*-----------------------------------------*)*/
@@ -1224,6 +1225,7 @@ primary_expr:
  | T_STATIC             { Id (LateStatic $1) }
 
  | T_VARIABLE { H.mk_var $1 }
+ | TDOLLARDOLLAR { H.mk_var ("$$", $1) }
 
  | TDOLLAR primary_expr         { Deref($1, $2) }
  | TDOLLAR TOBRACE expr TCBRACE { Deref($1, BraceIdent($2, $3, $4)) }

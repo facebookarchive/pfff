@@ -604,6 +604,7 @@ rule st_in_scripting = parse
      * rule is used only in a last resort, for code such as $$x, ${, etc
      *)
     | "$" { TDOLLAR(tokinfo lexbuf) }
+    | "$$" { TDOLLARDOLLAR(tokinfo lexbuf) }
 
    (* XHP "elements".
     *
@@ -748,7 +749,6 @@ rule st_in_scripting = parse
     | "$" (LABEL as s) {
         T_VARIABLE(case_str s, tokinfo lexbuf)
       }
-
 
   (* ----------------------------------------------------------------------- *)
   (* Constant *)
