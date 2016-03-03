@@ -151,7 +151,7 @@ module PI = Parse_info
  T_CONCAT_EQUAL  T_MOD_EQUAL
  T_AND_EQUAL T_OR_EQUAL T_XOR_EQUAL T_SL_EQUAL T_SR_EQUAL
  T_INC    T_DEC
- T_BOOLEAN_OR   T_BOOLEAN_AND
+ T_BOOLEAN_OR   T_BOOLEAN_AND T_BOOLEAN_PIPE
  T_SL    T_SR
  T_IS_SMALLER_OR_EQUAL    T_IS_GREATER_OR_EQUAL
  T_BOOL_CAST T_INT_CAST T_DOUBLE_CAST T_STRING_CAST T_ARRAY_CAST T_OBJECT_CAST
@@ -1061,6 +1061,7 @@ expr:
 
  | expr T_BOOLEAN_OR   expr { Binary($1,(Logical OrBool ,$2),$3) }
  | expr T_BOOLEAN_AND  expr { Binary($1,(Logical AndBool,$2),$3) }
+ | expr T_BOOLEAN_PIPE expr { Binary($1,(Pipe,$2), $3) }
  | expr T_LOGICAL_OR   expr { Binary($1,(Logical OrLog,  $2),$3) }
  | expr T_LOGICAL_AND  expr { Binary($1,(Logical AndLog, $2),$3) }
  | expr T_LOGICAL_XOR  expr { Binary($1,(Logical XorLog, $2),$3) }

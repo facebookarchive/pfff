@@ -704,6 +704,8 @@ and binaryOp env heap bop v1 v2 =
   | Ast_php.BinaryConcat ->
       (* Vabstr Tstring by default *)
       Taint.binary_concat env heap v1 v2 !(env.path)
+  | Ast_php.Pipe ->
+     failwith "Not supported"
 
 and unaryOp uop v =
   match uop, v with

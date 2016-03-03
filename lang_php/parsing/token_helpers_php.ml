@@ -174,6 +174,7 @@ let info_of_tok = function
   | T_DEC ii -> ii
   | T_BOOLEAN_OR ii -> ii
   | T_BOOLEAN_AND ii -> ii
+  | T_BOOLEAN_PIPE ii -> ii
   | T_LOGICAL_OR ii -> ii
   | T_LOGICAL_AND ii -> ii
   | T_LOGICAL_XOR ii -> ii
@@ -377,6 +378,7 @@ let visitor_info_of_tok f = function
   | T_DEC ii -> T_DEC(f ii)
   | T_BOOLEAN_OR ii -> T_BOOLEAN_OR(f ii)
   | T_BOOLEAN_AND ii -> T_BOOLEAN_AND(f ii)
+  | T_BOOLEAN_PIPE ii -> T_BOOLEAN_PIPE(f ii)
   | T_LOGICAL_OR ii -> T_LOGICAL_OR(f ii)
   | T_LOGICAL_AND ii -> T_LOGICAL_AND(f ii)
   | T_LOGICAL_XOR ii -> T_LOGICAL_XOR(f ii)
@@ -468,6 +470,6 @@ let visitor_info_of_tok f = function
 (* Accessors *)
 (*****************************************************************************)
 
-let line_of_tok tok = 
+let line_of_tok tok =
   let info = info_of_tok tok in
   PI.line_of_info info

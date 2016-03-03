@@ -369,6 +369,7 @@ and vof_binaryOp =
   | Logical v1 ->
       let v1 = vof_logicalOp v1 in Ocaml.VSum (("Logical", [ v1 ]))
   | BinaryConcat -> Ocaml.VSum (("BinaryConcat", []))
+  | Pipe -> Ocaml.VSum (("Pipe", []))
 and vof_arithOp =
   function
   | Plus -> Ocaml.VSum (("Plus", []))
@@ -865,7 +866,7 @@ and vof_hint_type =
       and v2 = vof_tok v2
       and v3 = vof_hint_type v3
       in Ocaml.VSum (("HintTypeConst", [ v1; v2; v3]))
-    
+
 
 and vof_is_ref v = vof_option vof_tok v
 

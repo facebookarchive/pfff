@@ -638,10 +638,15 @@ let m_binaryOp a b =
        A.BinaryConcat,
        B.BinaryConcat
     )
-
+  | A.Pipe, B.Pipe ->
+    return (
+       A.Pipe,
+       B.Pipe
+    )
   | A.Arith _, _
   | A.Logical _, _
   | A.BinaryConcat, _
+  | A.Pipe, _
    -> fail ()
 
 let m_assignOp a b =
@@ -2522,7 +2527,7 @@ and m_hint_type a b =
   | A.HintTuple _, _
   | A.HintCallback _, _
   | A.HintShape _, _
-  | A.HintTypeConst _, _ 
+  | A.HintTypeConst _, _
    -> fail ()
 and m_hint_type_ret (a1, a2, a3) (b1, b2, b3) =
   m_tok a1 b1 >>= (fun (a1, b1) ->

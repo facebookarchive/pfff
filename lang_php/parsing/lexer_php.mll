@@ -517,6 +517,8 @@ rule st_in_scripting = parse
       | "&&" { T_BOOLEAN_AND(tokinfo lexbuf) }
       | "||" { T_BOOLEAN_OR(tokinfo lexbuf) }
 
+      | "|>" { T_BOOLEAN_PIPE(tokinfo lexbuf) }
+
       | "<<" { T_SL(tokinfo lexbuf) }
       | ">>" { T_SR(tokinfo lexbuf) }
       | "&"  { TAND(tokinfo lexbuf) }

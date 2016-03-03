@@ -451,6 +451,7 @@ and v_binaryOp =
   | Arith v1 -> let v1 = v_arithOp v1 in ()
   | Logical v1 -> let v1 = v_logicalOp v1 in ()
   | BinaryConcat -> ()
+  | Pipe -> ()
 and v_arithOp =
   function
   | Plus -> ()

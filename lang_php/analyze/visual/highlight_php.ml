@@ -372,7 +372,7 @@ let visit_program ~tag _prefs  hentities (ast, toks) =
           tag info (Entity (Class, (Use2 fake_no_use2)));
          );
         k x
-      | Ast.TraitConstraint (_, _, _, _) 
+      | Ast.TraitConstraint (_, _, _, _)
       | Ast.ClassType _ ->
           k x
     );
@@ -675,6 +675,7 @@ let visit_program ~tag _prefs  hentities (ast, toks) =
     | T.T_LOGICAL_XOR ii  | T.T_LOGICAL_AND ii
     | T.T_LOGICAL_OR ii   | T.T_BOOLEAN_AND ii
     | T.T_BOOLEAN_OR ii
+    | T.T_BOOLEAN_PIPE ii
     | T.T_DEC ii  | T.T_INC ii
     | T.T_SR_EQUAL ii   | T.T_SL_EQUAL ii
     | T.T_XOR_EQUAL ii  | T.T_OR_EQUAL ii  | T.T_AND_EQUAL ii

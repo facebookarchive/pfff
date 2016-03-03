@@ -330,7 +330,7 @@ and expr =
           | EncapsExpr of tok * expr * tok
 
    and fixOp    = Dec | Inc
-   and binaryOp = Arith of arithOp | Logical of logicalOp | BinaryConcat (* . *)
+   and binaryOp = Arith of arithOp | Logical of logicalOp | BinaryConcat (* . *) | Pipe
          and arithOp   =
            | Plus | Minus | Mul | Div | Mod
            | DecLeft | DecRight

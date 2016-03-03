@@ -377,6 +377,7 @@ and map_binaryOp =
   | Arith v1 -> let v1 = map_arithOp v1 in Arith ((v1))
   | Logical v1 -> let v1 = map_logicalOp v1 in Logical ((v1))
   | BinaryConcat -> BinaryConcat
+  | Pipe -> Pipe
 and map_arithOp =
   function
   | Plus -> Plus

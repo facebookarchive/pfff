@@ -89,7 +89,7 @@ module Unify = Typing_unify_php
  *  - algo unification and managing subsitution a la ?? coq?
  *
  * todo: each time we use 'any' below, it's probably a todo
- * 
+ *
  * todo: https://github.com/tomprimozic/type-systems
  *)
 
@@ -692,6 +692,8 @@ and binaryOp env t1 t2 = function
       bool
   | Ast_php.BinaryConcat ->
       Unify.unify env t1 t2
+  | Ast_php.Pipe ->
+     failwith "Not supported"
 
 and logicalOp env t1 t2 = function
   | Ast_php.Inf | Ast_php.Sup | Ast_php.InfEq | Ast_php.SupEq
