@@ -748,7 +748,17 @@ rule st_in_scripting = parse
      *)
     | "$" (LABEL as s) {
         T_VARIABLE(case_str s, tokinfo lexbuf)
-      }
+          }
+    | ("$" as dollar) "$" (LABEL as s) {
+        let info = tokinfo lexbuf in
+        let dollarinfo = PI.rewrap_str (String.make 1 dollar) info in
+        let parse_info = PI.token_location_of_info info in
+        let pos_after_sym = parse_info.PI.charpos + 2 in
+        let lblinfo = PI.tokinfo_str_pos s pos_after_sym in
+
+        push_token (T_VARIABLE(case_str s, lblinfo));
+        TDOLLAR dollarinfo
+                  }
 
   (* ----------------------------------------------------------------------- *)
   (* Constant *)
