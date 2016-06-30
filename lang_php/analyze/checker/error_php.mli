@@ -48,6 +48,9 @@ type error = {
   | AssignInBooleanContext
   | UnnecessaryTernaryIf
 
+  (* micro clones *)
+  | MicroCloneCondExp of string (*operator *) * string (* expression *)
+
   (* bail-out constructs *)
   | UglyGlobalDynamic
   | WeirdForeachNoIteratorVar

@@ -130,6 +130,8 @@ let info_of_error_and_kind err =
       "eOther"
   | UnnecessaryTernaryIf ->
       "eOther"
+  | MicroCloneCondExp _ ->
+      "eMicroCloneCondExp"
   | UndefinedRequiredField _ ->
       "eOther"
   | UseOfUndefinedVariable _ 

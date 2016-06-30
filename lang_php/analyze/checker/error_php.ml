@@ -111,6 +111,9 @@ type error = {
   | AssignInBooleanContext
   | UnnecessaryTernaryIf
 
+  (* micro clones *)
+  | MicroCloneCondExp of string (* operator *) * string (* expression *)
+
   (* bail-out constructs *)
   | UglyGlobalDynamic
   | WeirdForeachNoIteratorVar
@@ -242,6 +245,9 @@ to statically analyze. Please avoid using those features."
       "use == or add another set of parens around the assignment"
   | UnnecessaryTernaryIf ->
       "ternary if (\"?:\") is not necessary here, use the condition or its negation."
+
+  | MicroCloneCondExp (op,exp) ->
+      spf "Boolean operator %s contains duplicate expression %s." op exp
 
   | Injection kind ->
       let s =
@@ -470,6 +476,8 @@ let rank_of_error_kind err_kind =
 
   | AssignInBooleanContext -> Less
   | UnnecessaryTernaryIf -> Ok
+
+  | MicroCloneCondExp _ -> Important
 
   | Injection _ -> ReallyImportant
 

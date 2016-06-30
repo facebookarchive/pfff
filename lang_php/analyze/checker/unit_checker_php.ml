@@ -55,6 +55,7 @@ let unittest =
     p "tests/php/scheck/misc.php";
 
     p "tests/php/scheck/lint.php";
+    p "tests/php/scheck/micro_clones.php";
   ] 
   in
 
