@@ -16,6 +16,7 @@
 /* Stub code to interface with Zlib */
 
 #include <zlib.h>
+#include <stdint.h>
 
 #include <caml/mlvalues.h>
 #include <caml/alloc.h>
@@ -168,7 +169,7 @@ value camlzip_inflateEnd(value vzs)
 
 value camlzip_update_crc32(value crc, value buf, value pos, value len)
 {
-  return caml_copy_int32(crc32((uint32) Int32_val(crc), 
+  return caml_copy_int32(crc32((uint32_t) Int32_val(crc), 
                           &Byte_u(buf, Long_val(pos)),
                           Long_val(len)));
 }
