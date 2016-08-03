@@ -351,3 +351,4 @@ web/var/logs/warnings.log
 /data/php_stdlib/TAGS
 /data/php_stdlib/layer_bottomup.json
 /data/php_stdlib/layer_graphcode_stats.json
+/Makefile.user

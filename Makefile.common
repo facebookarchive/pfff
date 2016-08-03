@@ -4,22 +4,24 @@
 # Prelude 
 ##############################################################################
 
-# This file assumes the "includer" will have set a few variables and then do a
+# This file assumes the "includer" has set a few variables and then has done a
 # include Makefile.common. Here are those variables:
 #  - TOP
 #  - SRC
 #  - INCLUDEDIRS
 
-# For literate programming, also assumes a few variables:
+# For literate programming, it also assumes a few variables:
 #  - SRCNW
 #  - TEXMAIN
 #  - TEX
 
-# For (un)installation, we assume:
+# For (un)installation, it assumes:
 #  - LIBNAME
 
 # this can set extra flags like -bin-annot that we want to be everywhere
 -include $(TOP)/Makefile.config
+# this can set extra flags like -warn-error
+-include $(TOP)/Makefile.user
 
 ##############################################################################
 # Generic variables
@@ -48,7 +50,7 @@ OPTOBJS?= $(SRC:.ml=.cmx)
 ifeq "$(wildcard $(TOP)/.git)" ""
 WARNING_FLAGS?=-w +A-4-29-6-45-41-44-48
 else
-WARNING_FLAGS?=-w +A-4-29-6-45-41-44-48 -warn-error +a
+WARNING_FLAGS?=-w +A-4-29-6-45-41-44-48
 endif
 
 OCAMLCFLAGS=-g -thread -dtypes $(WARNING_FLAGS) $(OCAMLCFLAGS_EXTRA) 
