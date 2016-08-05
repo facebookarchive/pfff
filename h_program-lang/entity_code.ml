@@ -28,9 +28,13 @@ open Common
 (*****************************************************************************)
 (* 
  * Code entities.
+ * 
  * See also http://ctags.sourceforge.net/FORMAT and the doc on 'kind'
- * note: if you change this, you may have to bump graph_code.version.
+ * note: if you change this, you may want to bump graph_code.version.
+ * 
  * coupling: If you add a constructor modify also entity_kind_of_string()!
+ * coupling: if you add a new kind of entity, then don't forget to modify
+ *  also size_font_multiplier_of_categ in code_map/.
  * 
  * less: could perhaps factorize code with highlight_code.ml? see 
  *  entity_kind_of_highlight_category_def|use

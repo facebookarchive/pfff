@@ -64,75 +64,73 @@ let multiplier_use x =
   | HC.NoUse -> 0.9
 
 let size_font_multiplier_of_categ ~font_size_real categ =
-    match categ with
-
+  match categ with
+  | None -> 1.
+  | Some x ->
+    (match x with
     (* entities defs *)
 
-    | Some (HC.Entity (E.Class, (HC.Def2 use)))    -> 5. *. multiplier_use use
-    | Some (HC.Entity (E.Module, (HC.Def2 use)))   -> 5. *. multiplier_use use
-    | Some (HC.Entity (E.Type, (HC.Def2 use)))     -> 5. *. multiplier_use use
-    | Some (HC.Entity (E.Function, (HC.Def2 use))) -> 3.5 *. multiplier_use use
-    | Some (HC.Entity (E.Global, (HC.Def2 use)))   -> 3. *. multiplier_use use
-    | Some (HC.Entity (E.Macro, (HC.Def2 use)))    -> 2. *. multiplier_use use
-    | Some (HC.Entity (E.Constant, (HC.Def2 use))) -> 2. *. multiplier_use use
-    | Some (HC.Entity (E.Method, (HC.Def2 use)))   -> 3.5 *. multiplier_use use
-    | Some (HC.Entity (E.Field, (HC.Def2 use)))    -> 1.7 *. multiplier_use use
+    | HC.Entity (E.Module, (HC.Def2 use))   -> 5. *. multiplier_use use
+    | HC.Entity (E.Type, (HC.Def2 use))     -> 5. *. multiplier_use use
+    | HC.Entity (E.Class, (HC.Def2 use))    -> 5. *. multiplier_use use
 
-    | Some (HC.Entity (E.Constructor, (HC.Def2 use))) -> 1.2 *. multiplier_use use
-    | Some (HC.FunctionDecl use) -> 2.5 *. multiplier_use use
-    | Some (HC.StaticMethod (HC.Def2 use)) -> 3.5 *. multiplier_use use
+    | HC.Entity (E.Function, (HC.Def2 use)) -> 3.5 *. multiplier_use use
+    | HC.Entity (E.Method, (HC.Def2 use))   -> 3.5 *. multiplier_use use
+    | HC.Entity (E.Global, (HC.Def2 use))   -> 3. *. multiplier_use use
 
-    | Some (HC.GrammarRule) -> 2.5
+    | HC.Entity (E.Constant, (HC.Def2 use)) -> 2. *. multiplier_use use
+    | HC.Entity (E.Exception, (HC.Def2 use))    -> 2. *. multiplier_use use
+    | HC.Entity (E.Macro, (HC.Def2 use))    -> 2. *. multiplier_use use
+    | HC.Entity (E.Field, (HC.Def2 use))    -> 1.7 *. multiplier_use use
+    | HC.Entity (E.Constructor, (HC.Def2 use)) -> 1.2 *. multiplier_use use
+
+    | HC.FunctionDecl use -> 2.5 *. multiplier_use use
+    | HC.StaticMethod (HC.Def2 use) -> 3.5 *. multiplier_use use
+    | HC.StructName (HC.Def) -> 3.
+
+    | HC.GrammarRule -> 2.5
         
     (* entities uses *)
-    | Some (HC.Entity (E.Global, (HC.Use2 _))) when font_size_real > 7.
+    | HC.Entity (E.Global, (HC.Use2 _)) when font_size_real > 7.
           -> 1.5
 
-(*
-    | Some (HC.Method (HC.Use2 _)) when font_size_real > 7.
-          -> 1.2
-*)
+    (* | HC.Method (HC.Use2 _) when font_size_real > 7.  -> 1.2 *)
         
     (* "literate programming" *)
-    | Some (HC.CommentSection0) -> 5.
-    | Some (HC.CommentSection1) -> 3.
-    | Some (HC.CommentSection2) -> 2.0
-    | Some (HC.CommentSection3) -> 1.2
-    | Some (HC.CommentSection4) -> 1.1
-    | Some (HC.CommentEstet) -> 1.0
-    | Some (HC.CommentCopyright) -> 0.5
+    | HC.CommentSection0 -> 5.
+    | HC.CommentSection1 -> 3.
+    | HC.CommentSection2 -> 2.0
+    | HC.CommentSection3 -> 1.2
+    | HC.CommentSection4 -> 1.1
+    | HC.CommentEstet -> 1.0
+    | HC.CommentCopyright -> 0.5
 
-    | Some (HC.CommentSyncweb) -> 1.
+    | HC.CommentSyncweb -> 1.
 
-(*
-    | Some (HC.Comment) when font_size_real > 7.
-          -> 1.5
-*)
+ (* | HC.Comment when font_size_real > 7. -> 1.5 *)
 
     (* semantic visual feedback *)
 
-    | Some (HC.BadSmell) -> 2.5
+    | HC.BadSmell -> 2.5
 
     (* ocaml *)
-    | Some (HC.UseOfRef) -> 2.
+    | HC.UseOfRef -> 2.
 
     (* php, C, etc *)
-    | Some (HC.PointerCall) -> 5.
-    | Some (HC.ParameterRef) -> 2.
-    | Some (HC.CallByRef) -> 3.
+    | HC.PointerCall -> 5.
+    | HC.ParameterRef -> 2.
+    | HC.CallByRef -> 3.
 
     (* misc *)
-    | Some (HC.Local (HC.Def)) -> 1.2
+    | HC.Local (HC.Def) -> 1.2
         
     | _ -> 
         (* the cases above should have covered all the cases *)
-        categ +> Common.do_option (fun categ ->
-          if Database_code.is_entity_def_category categ
-          then failwith "You should update size_font_multiplier_of_categ";
-        );
-
+        if Database_code.is_entity_def_category x
+        then failwith "You should update size_font_multiplier_of_categ";
 
         1. 
+    )
 (*e: size_font_multiplier_of_categ() *)
 
 (*s: windows_params() *)

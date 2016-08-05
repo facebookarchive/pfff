@@ -217,6 +217,12 @@ let filters = [
 (*    | FT.PL (FT.Web (_)) -> true *)
     | _ -> false
   );
+
+  (* general categories *)
+  "pl", (fun file ->
+    match File_type.file_type_of_file file with
+    | FT.PL _ -> true  | _ -> false
+  );
 ]
 
 (*****************************************************************************)
@@ -425,7 +431,7 @@ let main_action xs =
 (* related work: http://cloc.sourceforge.net/ but have skip list
  * and archi_code_lexer.mll which lower the important of some files?
  *)
-let test_loc xs =
+let test_loc print_top30 xs =
   let xs = xs |> List.map Common.realpath in
   let root = Common2.common_prefix_of_files_or_dirs xs in
   let skip_file = !skip_file ||| Filename.concat root "skip_list.txt" in
@@ -464,12 +470,14 @@ let test_loc xs =
   aux treemap;
   let total = !res +> List.map snd +> List.map int_of_float  +> Common2.sum in
   pr2 (spf "LOC = %d (%d files)" total (List.length !res));
-  let topx = 30 in
-  pr2 (spf "Top %d:" topx);
-  !res +> Common.sort_by_val_highfirst +> Common.take_safe topx 
-  +>  List.iter (fun (file, f) ->
+  if print_top30 then begin
+    let topx = 30 in
+    pr2 (spf "Top %d:" topx);
+    !res +> Common.sort_by_val_highfirst +> Common.take_safe topx 
+    +>  List.iter (fun (file, f) ->
       pr2 (spf "%-40s: %d" file (int_of_float f))
-  )
+    )
+  end
 
 
 let test_treemap_dirs () =
@@ -566,7 +574,9 @@ let test_cairo () =
 let extra_actions () = [
  (*s: actions *)
    "-test_loc", " ",
-   Common.mk_action_n_arg (test_loc);
+   Common.mk_action_n_arg (test_loc true);
+   "-test_loc2", " ",
+   Common.mk_action_n_arg (test_loc false);
    "-test_cairo", " ",
    Common.mk_action_0_arg (test_cairo);
    "-test_commitid", " <id>",

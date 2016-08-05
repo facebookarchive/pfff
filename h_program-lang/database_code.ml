@@ -370,7 +370,7 @@ let save_database database file =
 (*****************************************************************************)
 
 (* coupling: if you add a new kind of entity, then 
- * don't forget to modify size_font_multiplier_of_categ
+ * don't forget to modify size_font_multiplier_of_categ in code_map/
  * 
  * How sure this list is exhaustive ? C-c for usedef2
  *)

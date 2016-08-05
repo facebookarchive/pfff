@@ -20,14 +20,15 @@ module E = Entity_code
 (* Prelude *)
 (*****************************************************************************)
 (* 
- * Emacs-like font-lock mode, or SourceInsight-like display.
+ * Emacs-like font-lock-mode, or SourceInsight-like display.
  * 
- * This file contains the generic part that is programming language
- * independent. See highlight_xxx.ml for the code specific to the xxx
+ * This file contains the generic part of a code highlighter
+ * that is programming language independent. 
+ * See highlight_xxx.ml for the code specific to the 'xxx'
  * programming language.
  * 
  * This source code viewer is based on good semantic information, 
- * not fragile regexps (as in Emacs) or partial parsing 
+ * not fragile regexps (as in Emacs), or partial parsing 
  * (as in SourceInsight, probably because they call cpp).
  *  
  * Augmented visual! Augmented intellect! See what can not see, like in
@@ -308,16 +309,13 @@ let default_highlighter_preferences = {
  *  - casse, smallcaps ? (but can confondre avec macro ?)
  *  - stretch? (condenset)
  * 
- * 
- * 
  * Recurrent conventions, which would be counter productive to change maybe:
  *  - string: green
  *  - keywords: red/orange
  * 
  * Emacs C-mode conventions:
- * 
  *  - entities declarations: light/dark blue 
- *   (dark for param and local, light for func)
+ *    (dark for param and local, light for func)
  *  - types: green
  *  - keywords: orange/dark-orange, this include:
  *    - control keywords
@@ -369,10 +367,6 @@ let default_highlighter_preferences = {
  * 
  * 
  * 
- * 
- * 
- * 
- * 
  * final:
  *  (total colors)
  *  - blanc
@@ -392,14 +386,12 @@ let default_highlighter_preferences = {
  *      - vert-dark: string, chars
  * 
  * 
- * 
  *  (secondary colors) 
  *  - jaune (rouge-vert): 
  *      numbers, value
  *  - magenta (rouge-bleu): 
  *  
  *  - cyan (vert-bleu): 
- * 
  * 
  * 
  *  (tertiary colors)
@@ -544,6 +536,9 @@ let info_of_category = function
     | E.Field, (Def2 _) -> [`FOREGROUND "MediumPurple1"] @ info_of_usedef (Def)
     | E.Field, (Use2 _) -> [`FOREGROUND "MediumPurple2"] @ info_of_usedef (Use)
 
+    | E.Exception, (Def2 _) -> [`FOREGROUND "Orchid1"] @ info_of_usedef (Def)
+    | E.Exception, (Use2 _) -> [`FOREGROUND "Orchid2"] @ info_of_usedef (Use)
+
     (* defs *)
     | E.Function, (Def2 _) -> [`FOREGROUND "gold"; 
                                `WEIGHT `BOLD;`STYLE `ITALIC; `SCALE `MEDIUM;
@@ -637,7 +632,7 @@ let info_of_category = function
     | E.Class, (Use2 _) -> [`FOREGROUND "coral"] @ info_of_usedef (Use)
         
     | _ -> 
-      failwith (spf "not handled: %s"
+      failwith (spf "info_of_category: missing case for '%s'"
                   (Entity_code.string_of_entity_kind kind))
     )
 
@@ -700,25 +695,17 @@ let info_of_category = function
   | CommentWordImportantModal ->  
       [`FOREGROUND "green"; `SCALE `LARGE; `UNDERLINE `SINGLE;]
 
-  | Punctuation ->
-      [`FOREGROUND "cyan";]
+  | Punctuation -> [`FOREGROUND "cyan";]
 
-  | Operator ->
-      [`FOREGROUND "DeepSkyBlue3";] (* could do better ? *)
+  | Operator -> [`FOREGROUND "DeepSkyBlue3";] (* could do better ? *)
 
-  | (Label Def) ->
-      [`FOREGROUND "cyan";]
-  | (Label Use) ->
-      [`FOREGROUND "CornflowerBlue";]
+  | (Label Def) -> [`FOREGROUND "cyan";]
+  | (Label Use) -> [`FOREGROUND "CornflowerBlue";]
 
 
-  | EmbededHtml ->
-      (* to be consistent with Archi_code.Ui color *)
-      [`FOREGROUND "RosyBrown"] 
-
-  | EmbededHtmlAttr ->
-      (* to be consistent with Archi_code.Ui color *)
-      [`FOREGROUND "burlywood3"] 
+  (* to be consistent with Archi_code.Ui color *)
+  | EmbededHtml -> [`FOREGROUND "RosyBrown"] 
+  | EmbededHtmlAttr ->[`FOREGROUND "burlywood3"] 
 
   | EmbededUrl ->
       (* yellow-like color, like function, because it's often
@@ -726,15 +713,11 @@ let info_of_category = function
        *)
       [`FOREGROUND "DarkGoldenrod2"] 
 
-  | EmbededCode ->
-      [`FOREGROUND "yellow3"] 
-  | EmbededStyle ->
-      [`FOREGROUND "peru"] 
-  | Verbatim ->
-      [`FOREGROUND "plum"] 
+  | EmbededCode ->   [`FOREGROUND "yellow3"] 
+  | EmbededStyle ->  [`FOREGROUND "peru"] 
+  | Verbatim ->      [`FOREGROUND "plum"] 
 
-  | GrammarRule ->
-      [`FOREGROUND "plum"] 
+  | GrammarRule ->   [`FOREGROUND "plum"] 
 
   | Normal -> [`FOREGROUND "wheat";]
 
