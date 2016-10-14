@@ -1016,6 +1016,37 @@ let rec take_safe n xs =
   | (_,[]) -> []
   | (n,x::xs) -> x::take_safe (n-1) xs
 
+let group_by f xs =
+  (* use Hashtbl.find_all property *)
+  let h = Hashtbl.create 101 in
+
+  (* could use Set *)
+  let hkeys = Hashtbl.create 101 in
+  
+  xs |> List.iter (fun x ->
+    let k = f x in
+    Hashtbl.replace hkeys k true;
+    Hashtbl.add h k x
+  );
+  Hashtbl.fold (fun k _ acc -> (k, Hashtbl.find_all h k)::acc) hkeys []
+
+let group_by_multi fkeys xs =
+  (* use Hashtbl.find_all property *)
+  let h = Hashtbl.create 101 in
+
+  (* could use Set *)
+  let hkeys = Hashtbl.create 101 in
+  
+  xs |> List.iter (fun x ->
+    let ks = fkeys x in
+    ks |> List.iter (fun k ->
+      Hashtbl.replace hkeys k true;
+      Hashtbl.add h k x;
+    )
+  );
+  Hashtbl.fold (fun k _ acc -> (k, Hashtbl.find_all h k)::acc) hkeys []
+
+
 (* you should really use group_assoc_bykey_eff *)
 let rec group_by_mapped_key fkey l =
   match l with

@@ -92,8 +92,10 @@ val sort_by_val_highfirst: ('a,'b) assoc -> ('a * 'b) list
 val sort_by_key_lowfirst: ('a,'b) assoc -> ('a * 'b) list
 val sort_by_key_highfirst: ('a,'b) assoc -> ('a * 'b) list
 
+val group_by: ('a -> 'b) -> 'a list -> ('b * 'a list) list
 val group_assoc_bykey_eff : ('a * 'b) list -> ('a * 'b list) list
 val group_by_mapped_key: ('a -> 'b) -> 'a list -> ('b * 'a list) list
+val group_by_multi: ('a -> 'b list) -> 'a list -> ('b * 'a list) list
 
 type 'a stack = 'a list
 val push : 'a -> 'a stack ref -> unit
