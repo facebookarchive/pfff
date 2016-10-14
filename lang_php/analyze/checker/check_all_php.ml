@@ -34,6 +34,9 @@ open Common
  *  - ...
  * Look at ast_php.ml (or ast_php_simple.ml) and find bugs/checker
  * opportunities.
+ * 
+ * related work:
+ *  - https://github.com/etsy/phan
  *)
 
 (*****************************************************************************)
