@@ -127,7 +127,7 @@ let file_type_of_file2 file =
 
   | "thrift" -> PL Thrift
 
-  | "scm" | "rkt" | "ss" -> PL (Lisp Scheme)
+  | "scm" | "rkt" | "ss" | "lsp" -> PL (Lisp Scheme)
   | "lisp" -> PL (Lisp CommonLisp)
   | "el" -> PL (Lisp Elisp)
 
@@ -149,6 +149,7 @@ let file_type_of_file2 file =
   | "R" | "Rd" -> PL (MiscPL e)
 
   | "scala" -> PL (MiscPL e)
+  | "groovy" -> PL (MiscPL e)
 
   | "sh" | "rc" | "csh" | "bash" -> PL (Script e)
   | "m4" -> PL (MiscPL e)
