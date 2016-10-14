@@ -27,6 +27,8 @@ open Common
  *    SQL
  *  - ciao? xsb?
  *  - http://www.learndatalogtoday.org/ and datomic.com
+ * 
+ * TODO: https://yanniss.github.io/points-to-tutorial15.pdf
  *)
 
 (*****************************************************************************)
