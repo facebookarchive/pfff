@@ -694,6 +694,9 @@ and binaryOp env t1 t2 = function
       Unify.unify env t1 t2
   | Ast_php.Pipe ->
      failwith "Not supported"
+  | Ast_php.CombinedComparison ->
+      Unify.unify env t1 t2;
+      int
 
 and logicalOp env t1 t2 = function
   | Ast_php.Inf | Ast_php.Sup | Ast_php.InfEq | Ast_php.SupEq

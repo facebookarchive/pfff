@@ -378,6 +378,7 @@ and map_binaryOp =
   | Logical v1 -> let v1 = map_logicalOp v1 in Logical ((v1))
   | BinaryConcat -> BinaryConcat
   | Pipe -> Pipe
+  | CombinedComparison -> CombinedComparison
 and map_arithOp =
   function
   | Plus -> Plus

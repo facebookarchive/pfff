@@ -263,7 +263,7 @@ let info_of_tok = function
   | T_NAMESPACE_C(ii) -> ii
 
   | EOF ii -> ii
-
+  | T_ROCKET ii -> ii
 
 let visitor_info_of_tok f = function
   | TUnknown ii -> TUnknown(f ii)
@@ -467,6 +467,7 @@ let visitor_info_of_tok f = function
   | T_NAMESPACE_C(ii) -> T_NAMESPACE_C(f ii)
 
   | EOF ii -> EOF(f ii)
+  | T_ROCKET ii -> T_ROCKET(f ii)
 
 (*****************************************************************************)
 (* Accessors *)

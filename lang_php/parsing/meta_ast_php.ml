@@ -370,6 +370,7 @@ and vof_binaryOp =
       let v1 = vof_logicalOp v1 in Ocaml.VSum (("Logical", [ v1 ]))
   | BinaryConcat -> Ocaml.VSum (("BinaryConcat", []))
   | Pipe -> Ocaml.VSum (("Pipe", []))
+  | CombinedComparison -> Ocaml.VSum(("CombinedComparison", []))
 and vof_arithOp =
   function
   | Plus -> Ocaml.VSum (("Plus", []))
