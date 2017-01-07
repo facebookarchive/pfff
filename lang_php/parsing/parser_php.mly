@@ -168,6 +168,7 @@ module PI = Parse_info
  TDOLLAR /*(* see also T_VARIABLE *)*/
  TDOLLARDOLLAR
  TGUIL
+ T_ROCKET
 
 /*(*-----------------------------------------*)*/
 /*(*2 Extra tokens: *)*/
@@ -252,7 +253,7 @@ module PI = Parse_info
 %left      TOR
 %left      TXOR
 %left      TAND
-%nonassoc  T_IS_EQUAL T_IS_NOT_EQUAL T_IS_IDENTICAL T_IS_NOT_IDENTICAL
+%nonassoc  T_IS_EQUAL T_IS_NOT_EQUAL T_IS_IDENTICAL T_IS_NOT_IDENTICAL T_ROCKET
 %nonassoc  TSMALLER T_IS_SMALLER_OR_EQUAL TGREATER T_IS_GREATER_OR_EQUAL
 %left      T_SL T_SR
 %left      TPLUS TMINUS TDOT
@@ -1091,6 +1092,7 @@ expr:
  | expr T_IS_SMALLER_OR_EQUAL expr { Binary($1,(Logical InfEq,$2),$3) }
  | expr TGREATER              expr { Binary($1,(Logical Sup,$2),$3) }
  | expr T_IS_GREATER_OR_EQUAL expr { Binary($1,(Logical SupEq,$2),$3) }
+ | expr T_ROCKET              expr { Binary($1,(CombinedComparison,$2),$3) }
 
  | TPLUS  expr    %prec T_INC           { Unary((UnPlus,$1),$2) }
  | TMINUS expr    %prec T_INC           { Unary((UnMinus,$1),$2) }

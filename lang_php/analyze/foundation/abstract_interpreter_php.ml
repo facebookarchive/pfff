@@ -706,6 +706,7 @@ and binaryOp env heap bop v1 v2 =
       Taint.binary_concat env heap v1 v2 !(env.path)
   | Ast_php.Pipe ->
      failwith "Not supported"
+  | Ast_php.CombinedComparison -> Vabstr Tint
 
 and unaryOp uop v =
   match uop, v with

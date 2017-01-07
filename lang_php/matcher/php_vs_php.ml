@@ -643,10 +643,16 @@ let m_binaryOp a b =
        A.Pipe,
        B.Pipe
     )
+  | A.CombinedComparison, B.CombinedComparison ->
+    return (
+      A.CombinedComparison,
+      B.CombinedComparison
+    )
   | A.Arith _, _
   | A.Logical _, _
   | A.BinaryConcat, _
   | A.Pipe, _
+  | A.CombinedComparison, _
    -> fail ()
 
 let m_assignOp a b =

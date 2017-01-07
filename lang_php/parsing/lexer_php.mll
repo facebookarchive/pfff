@@ -507,6 +507,7 @@ rule st_in_scripting = parse
       | "===" { T_IS_IDENTICAL(tokinfo lexbuf) }
       | "!==" { T_IS_NOT_IDENTICAL(tokinfo lexbuf) }
       | "<>"  { T_IS_NOT_EQUAL(tokinfo lexbuf) }
+      | "<=>" { T_ROCKET(tokinfo lexbuf) }
 
       | "<=" { T_IS_SMALLER_OR_EQUAL(tokinfo lexbuf) }
       | ">=" { T_IS_GREATER_OR_EQUAL(tokinfo lexbuf) }
