@@ -577,6 +577,8 @@ parameter_bis:
  /*(* todo: with is_variadic = true *)*/
  | T_ELLIPSIS T_VARIABLE
      { Left3 (H.mk_param $2) }
+ | TAND T_ELLIPSIS T_VARIABLE
+     { let p = H.mk_param $3 in Left3 {p with p_ref=Some $1} }
  /*(* varargs extension *)*/
  | T_ELLIPSIS
      { Middle3 $1 }
