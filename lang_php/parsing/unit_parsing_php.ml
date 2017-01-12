@@ -84,6 +84,36 @@ let unittest =
        *)
     );
 
+    "rejecting variadic param with default" >:: (fun () ->
+      Flag_parsing_php.show_parsing_error := false;
+      try
+        let _ = Parse_php.program_of_string "function foo($x, ...$rest=123) {}" in
+        assert_failure "it should have thrown a Parse_error exception"
+      with
+       Parse_php.Parse_error _ ->
+         ()
+    );
+
+    "rejecting non-tail variadic param without variable name" >:: (fun () ->
+      Flag_parsing_php.show_parsing_error := false;
+      try
+        let _ = Parse_php.program_of_string "function foo($x, ..., ...$rest) {}" in
+        assert_failure "it should have thrown a Parse_error exception"
+      with
+       Parse_php.Parse_error _ ->
+         ()
+    );
+
+    "rejecting ellipsis with optional constructs" >:: (fun () ->
+      Flag_parsing_php.show_parsing_error := false;
+      try
+        let _ = Parse_php.program_of_string "function foo(int ...) {}" in
+        assert_failure "it should have thrown a Parse_error exception"
+      with
+       Parse_php.Parse_error _ ->
+         ()
+    );
+
     "regression files" >:: (fun () ->
       let dir = Filename.concat Config_pfff.path "/tests/php/parsing" in
       let files = Common2.glob (spf "%s/*.php" dir) in
