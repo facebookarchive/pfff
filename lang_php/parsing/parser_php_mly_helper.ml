@@ -173,7 +173,11 @@ let mk_var (s, tok) =
 let rec validate_parameter_list = function
   | [] -> ()
   | Middle3 _ :: params  -> validate_parameter_list_empty params
-  | Left3 _ :: params -> validate_parameter_list params
+  | Left3 param :: params ->
+      if param.p_variadic <> None then
+        validate_parameter_list_empty params
+      else
+        validate_parameter_list params
   | Right3 _ :: params -> validate_parameter_list params
 
 and validate_parameter_list_empty = function

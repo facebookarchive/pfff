@@ -94,6 +94,15 @@ let unittest =
          ()
     );
 
+    "rejecting multiple variadic params" >:: (fun () ->
+      Flag_parsing_php.show_parsing_error := false;
+      try
+        let _ = Parse_php.program_of_string "function foo($x, ...$rest, ...$another) {}" in
+        assert_failure "it should have thrown a Parse_error exception"
+      with
+       Parse_php.Parse_error _ ->
+         ()
+    );
     "rejecting non-tail variadic param without variable name" >:: (fun () ->
       Flag_parsing_php.show_parsing_error := false;
       try

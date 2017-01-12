@@ -574,11 +574,10 @@ parameter_bis:
      { let p = H.mk_param $1 in Left3 {p with p_default=Some($2,$3)} }
  | TAND T_VARIABLE TEQ static_scalar
      { let p = H.mk_param $2 in Left3 {p with p_ref=Some $1; p_default=Some($3,$4)} }
- /*(* todo: with is_variadic = true *)*/
  | T_ELLIPSIS T_VARIABLE
-     { Left3 (H.mk_param $2) }
+     { let p = H.mk_param $2 in Left3 {p with p_variadic=Some $1} }
  | TAND T_ELLIPSIS T_VARIABLE
-     { let p = H.mk_param $3 in Left3 {p with p_ref=Some $1} }
+     { let p = H.mk_param $3 in Left3 {p with p_ref=Some $1; p_variadic=Some $2} }
  /*(* varargs extension *)*/
  | T_ELLIPSIS
      { Middle3 $1 }
