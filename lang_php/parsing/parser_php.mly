@@ -559,7 +559,12 @@ parameter_list:
 parameter: attributes_opt ctor_modifier_opt at_opt type_php_opt parameter_bis
       {
         match $5 with
-          Left3 param -> Left3 { param with p_modifier = $2; p_attrs = $1; p_type = $4; p_soft_type= $3; }
+          Left3 param ->
+            let hint = match param.p_type with
+              | Some(HintVariadic (tok, _)) -> Some(HintVariadic (tok, $4))
+              | _ -> $4
+            in
+            Left3 { param with p_modifier = $2; p_attrs = $1; p_type = hint; p_soft_type= $3; }
         | _ -> match ($1, $2, $3, $4) with
                  (None, None, None, None) -> $5
                | _ -> raise Parsing.Parse_error
@@ -575,9 +580,9 @@ parameter_bis:
  | TAND T_VARIABLE TEQ static_scalar
      { let p = H.mk_param $2 in Left3 {p with p_ref=Some $1; p_default=Some($3,$4)} }
  | T_ELLIPSIS T_VARIABLE
-     { let p = H.mk_param $2 in Left3 {p with p_variadic=Some $1} }
+     { let p = H.mk_param $2 in Left3 {p with p_variadic=Some $1; p_type=Some(HintVariadic ($1, None))} }
  | TAND T_ELLIPSIS T_VARIABLE
-     { let p = H.mk_param $3 in Left3 {p with p_ref=Some $1; p_variadic=Some $2} }
+     { let p = H.mk_param $3 in Left3 {p with p_ref=Some $1; p_variadic=Some $2; p_type=Some(HintVariadic ($2, None))} }
  /*(* varargs extension *)*/
  | T_ELLIPSIS
      { Middle3 $1 }

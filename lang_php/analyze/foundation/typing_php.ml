@@ -776,8 +776,7 @@ and make_return env r =
   | _ -> ()
 
 and parameter env p =
-  let pval =
-    match p.p_type with
+  let rec hint = function
     | None -> Tvar (fresh())
     | Some (Hint [(x, tok)]) ->
         (try get_hard_object env x
@@ -793,6 +792,9 @@ and parameter env p =
     | Some (HintCallback _) -> Tvar (fresh())
     | Some (HintShape _) -> failwith "no support for shape yet"
     | Some (HintTypeConst _) -> failwith "no support for type consts"
+    | Some (HintVariadic x) -> array (int, hint x)
+  in
+  let pval = hint p.p_type
   in
   (match p.p_default with
   | None -> ()

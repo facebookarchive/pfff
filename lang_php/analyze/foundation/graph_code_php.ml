@@ -879,6 +879,7 @@ and hint_type env t =
   | HintTypeConst (x1, x2) ->
     hint_type env x1;
     hint_type env x2
+  | HintVariadic t -> do_option (hint_type env) t
 
 (* ---------------------------------------------------------------------- *)
 (* Expr *)

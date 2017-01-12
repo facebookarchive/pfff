@@ -839,6 +839,10 @@ and map_hint_type =
       and v2 = map_tok v2
       and v3 = map_hint_type v3
       in HintTypeConst ((v1, v2, v3))
+  | HintVariadic (v1, v2) ->
+      let v1 = map_tok v1
+      and v2 = map_option map_hint_type v2
+      in HintVariadic (v1, v2)
 
 and map_is_ref v = map_of_option map_tok v
 and map_lambda_def (v1, v2) =

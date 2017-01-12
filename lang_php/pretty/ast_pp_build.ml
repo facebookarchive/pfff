@@ -624,6 +624,7 @@ and hint_type env = function
     failwith "no support for shape"
   | HintTypeConst _ ->
     failwith "no support for type consts"
+  | HintVariadic (_, hint) -> A.HintVariadic (Common.map_opt (hint_type env) hint)
 
 and class_name_reference env a = expr env a
 

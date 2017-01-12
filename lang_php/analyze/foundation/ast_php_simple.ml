@@ -308,6 +308,7 @@ and hint_type =
  | HintCallback of hint_type list * (hint_type option)
  | HintShape of (string_const_expr * hint_type) list
  | HintTypeConst of (hint_type * hint_type)
+ | HintVariadic of hint_type option
 
 and class_name = hint_type
 

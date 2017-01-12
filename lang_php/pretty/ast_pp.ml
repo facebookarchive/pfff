@@ -175,6 +175,7 @@ and hint_type =
      | HintQuestion of hint_type
      | HintTuple of hint_type list
      | HintCallback of hint_type list * (hint_type option)
+     | HintVariadic of hint_type option
 
 (* ------------------------------------------------------------------------- *)
 (* Definitions *)

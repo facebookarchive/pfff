@@ -153,6 +153,7 @@ type hint_type =
      hint_type   (* lhs *)
      * tok       (* '::' *)
      * hint_type (* rhs *)
+ | HintVariadic of (tok * hint_type option)
 
  and type_args = hint_type comma_list single_angle
 

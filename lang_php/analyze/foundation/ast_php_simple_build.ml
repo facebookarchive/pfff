@@ -475,6 +475,9 @@ and hint_type env = function
       ))
   | HintTypeConst (lhs, _tok, rhs) ->
     A.HintTypeConst (hint_type env lhs, hint_type env rhs)
+  | HintVariadic (_, hint) ->
+    let hint = map_opt (hint_type env) hint in
+    A.HintVariadic hint
 
 (* ------------------------------------------------------------------------- *)
 (* Definitions *)

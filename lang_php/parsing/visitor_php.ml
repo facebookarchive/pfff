@@ -882,6 +882,10 @@ and v_hint_type x =
       and v2 = v_tok v2
       and v3 = v_hint_type v3
       in ()
+  | HintVariadic (v1, v2) ->
+      let v1 = v_tok v1
+      and v2 = v_option v_hint_type v2
+      in ()
   in
   vin.khint_type (k, all_functions) x
 

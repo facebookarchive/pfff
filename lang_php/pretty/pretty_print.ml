@@ -193,6 +193,8 @@ let rec hint_type env = function
                   | Some t -> ": " ^ (hint_type env t)
                   | None -> "" in
       Printf.sprintf "(function%s%s)" args ret
+  | A.HintVariadic None -> ""
+  | A.HintVariadic (Some hint) -> Printf.sprintf "%s" (hint_type env hint)
 
 let ptype = function
   | Ast_php.BoolTy   -> "bool"

@@ -359,6 +359,8 @@ and vof_hint_type =
     let v1 = vof_hint_type v1
     and v2 = vof_hint_type v2
     in Ocaml.VSum (("HintTypeConst", [ v1; v2]))
+  | HintVariadic None -> Ocaml.VSum (("HintVariadic", []))
+  | HintVariadic (Some v1) -> Ocaml.VSum (("HintVariadic", [vof_hint_type v1]))
 
 and
   vof_class_def {

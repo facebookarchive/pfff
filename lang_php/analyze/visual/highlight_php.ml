@@ -595,6 +595,7 @@ let visit_program ~tag _prefs  hentities (ast, toks) =
         (* todo: colorize as record the keys? *)
       | HintShape _
       | HintTypeConst _
+      | HintVariadic _
         ->
         ()
       );
