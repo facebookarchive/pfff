@@ -534,7 +534,8 @@ unticked_function_declaration_statement:
  async_opt T_FUNCTION is_reference ident type_params_opt
    TOPAR parameter_list TCPAR
    return_type_opt function_body
-   { { f_tok = $2; f_ref = $3; f_name = Name $4; f_params = ($6, $7, $8);
+   {  H.validate_parameter_list $7;
+      { f_tok = $2; f_ref = $3; f_name = Name $4; f_params = ($6, $7, $8);
        f_tparams = $5;
        f_return_type = $9; f_body = $10;
        f_attrs = None;
@@ -550,31 +551,37 @@ async_opt:
  | T_ASYNC { [Async,($1)] }
 
 parameter_list:
- | /*(*empty*)*/              { [] }
- | non_empty_parameter_list   { $1 }
+ | /*(*empty*)*/                     { [] }
+ | parameter                         { [$1] }
  /*(* php-facebook-ext: trailing comma *)*/
- | non_empty_parameter_list TCOMMA  { $1 @ [Right3 $2] }
+ | parameter TCOMMA parameter_list   { $1 :: (Right3 $2) :: $3 }
 
-parameter_or_dots:
- | parameter { Left3 $1 }
- /*(* varargs extension *)*/
- | T_ELLIPSIS { Middle3 $1 }
- /*(* PHP 5.6 variadic arguments ...$xs *)*/
- | T_ELLIPSIS T_VARIABLE
-     { Left3 (H.mk_param $2) (* todo: with is_variadic = true *) }
-
-parameter: attributes_opt ctor_modifier_opt at_opt type_php_opt  parameter_bis
-      { { $5 with p_modifier = $2; p_attrs = $1; p_type = $4; p_soft_type= $3;}}
+parameter: attributes_opt ctor_modifier_opt at_opt type_php_opt parameter_bis
+      {
+        match $5 with
+          Left3 param -> Left3 { param with p_modifier = $2; p_attrs = $1; p_type = $4; p_soft_type= $3; }
+        | _ -> match ($1, $2, $3, $4) with
+                 (None, None, None, None) -> $5
+               | _ -> raise Parsing.Parse_error
+      }
 
 parameter_bis:
  | T_VARIABLE
-     { H.mk_param $1 }
+     { Left3 (H.mk_param $1) }
  | TAND T_VARIABLE
-     { let p = H.mk_param $2 in {p with p_ref=Some $1} }
+     { let p = H.mk_param $2 in Left3 {p with p_ref=Some $1} }
  | T_VARIABLE TEQ static_scalar
-     { let p = H.mk_param $1 in {p with p_default=Some($2,$3)} }
+     { let p = H.mk_param $1 in Left3 {p with p_default=Some($2,$3)} }
  | TAND T_VARIABLE TEQ static_scalar
-     { let p = H.mk_param $2 in {p with p_ref=Some $1; p_default=Some($3,$4)}}
+     { let p = H.mk_param $2 in Left3 {p with p_ref=Some $1; p_default=Some($3,$4)} }
+ /*(* todo: with is_variadic = true *)*/
+ | T_ELLIPSIS T_VARIABLE
+     { Left3 (H.mk_param $2) }
+ | TAND T_ELLIPSIS T_VARIABLE
+     { let p = H.mk_param $3 in Left3 {p with p_ref=Some $1} }
+ /*(* varargs extension *)*/
+ | T_ELLIPSIS
+     { Middle3 $1 }
 
 /*(* php-facebook-ext: implicit field via constructor parameter *)*/
 ctor_modifier:
@@ -767,7 +774,8 @@ method_declaration:
      TOPAR parameter_list TCPAR
      return_type_opt
      method_body
-     { let body, function_type = $10 in
+     { H.validate_parameter_list $7;
+       let body, function_type = $10 in
        ({ f_tok = $2; f_ref = $3; f_name = Name $4; f_tparams = $5;
           f_params = ($6, $7, $8); f_return_type = $9;
           f_body = body; f_type = function_type; f_modifiers = $1;
@@ -1143,7 +1151,8 @@ expr:
  | async_opt T_FUNCTION is_reference TOPAR parameter_list TCPAR return_type_opt
    lexical_vars
    TOBRACE inner_statement_list TCBRACE
-   { let params = ($4, $5, $6) in
+   { H.validate_parameter_list $5;
+     let params = ($4, $5, $6) in
        let body = ($9, $10, $11) in
        Lambda ($8, { f_tok = $2;f_ref = $3;f_params = params; f_body = body;
                      f_tparams = None;
@@ -1408,12 +1417,14 @@ lambda_expr:
      }
  | T_LAMBDA_OPAR parameter_list T_LAMBDA_CPAR return_type_opt lambda_body
      {
+       H.validate_parameter_list $2;
        let sl_tok, sl_body = $5 in
        let sl_params = SLParams ($1, $2, $3) in
        ShortLambda { sl_params; sl_tok; sl_body; sl_modifiers = []; }
      }
  | T_ASYNC T_LAMBDA_OPAR parameter_list T_LAMBDA_CPAR return_type_opt lambda_body
      {
+       H.validate_parameter_list $3;
        let sl_tok, sl_body = $6 in
        let sl_params = SLParams ($2, $3, $4) in
        ShortLambda { sl_params; sl_tok; sl_body; sl_modifiers = [Async,($1)]; }
@@ -1695,11 +1706,6 @@ class_variable_declaration:
  /*(*s: repetitive class_variable_declaration with comma *)*/
  | class_variable_declaration TCOMMA class_variable { $1@[Right $2;Left $3] }
  /*(*e: repetitive class_variable_declaration with comma *)*/
-
-
-non_empty_parameter_list:
- | parameter_or_dots                                  { [$1] }
- | non_empty_parameter_list TCOMMA parameter_or_dots  { $1 @ [Right3 $2; $3] }
 
 /*(* less: should we allow the DOTS only for the end? *)*/
 non_empty_type_php_or_dots_list:

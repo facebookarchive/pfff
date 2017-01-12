@@ -169,5 +169,16 @@ let mk_var (s, tok) =
   | "this" -> This tok
   | _ -> IdVar (DName(s, tok), Ast_php.noScope())
 
+let rec validate_parameter_list = function
+  | [] -> ()
+  | Middle3 _ :: params  -> validate_parameter_list_empty params
+  | Left3 _ :: params -> validate_parameter_list params
+  | Right3 _ :: params -> validate_parameter_list params
+
+and validate_parameter_list_empty = function
+  | [] -> ()
+  | Right3 _ :: params -> validate_parameter_list_empty params
+  | _ -> raise Parsing.Parse_error
+
 (*e: AST builder *)
 (*e: parser_php_mly_helper.ml *)
