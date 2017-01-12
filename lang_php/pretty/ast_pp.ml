@@ -193,6 +193,7 @@ and parameter = {
   p_ref: bool;
   p_name: string;
   p_default: expr option;
+  p_variadic: bool;
 }
 
 and lambda_def = {

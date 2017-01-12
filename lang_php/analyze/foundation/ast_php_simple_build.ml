@@ -766,12 +766,14 @@ and parameter env
    p_modifier = _mTODO;
    (* don't care about the soft type annot, it's useful only for the runtime *)
    p_soft_type = _;
+   p_variadic = variadic;
  } =
   { A.p_type = opt hint_type env t;
     A.p_ref = r <> None;
     A.p_name = dname name;
     A.p_default = opt static_scalar_affect env d;
     A.p_attrs = attributes env a;
+    A.p_variadic = variadic <> None;
   }
 
 (*****************************************************************************)

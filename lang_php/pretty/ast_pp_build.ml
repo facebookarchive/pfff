@@ -575,6 +575,7 @@ and lexical_var _env = function
         A.p_ref = is_ref <> None;
         A.p_name = dname name;
         A.p_default = None;
+        A.p_variadic = false;
       }
 
 and scalar env = function
@@ -772,6 +773,7 @@ and parameter env p =
     A.p_ref = p.p_ref <> None;
     A.p_name = dname p.p_name;
     A.p_default = opt static_scalar_affect env p.p_default;
+    A.p_variadic = p.p_variadic <> None;
   }
 
 and func_def env f =

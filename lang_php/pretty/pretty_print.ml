@@ -948,6 +948,8 @@ and parameter env p =
   );
   if p.p_ref
   then Pp.print env "&";
+  if p.p_variadic
+  then Pp.print env "...";
   Pp.print env p.p_name;
   (match p.p_default with
   | None -> ()

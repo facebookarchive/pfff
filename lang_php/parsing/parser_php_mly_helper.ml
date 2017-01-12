@@ -152,7 +152,7 @@ let sgrep_guard v =
 (* shortcuts *)
 (*****************************************************************************)
 (*s: AST builder *)
-let mk_param s = 
+let mk_param s =
   { p_type = None;
     p_attrs = None;
     p_ref = None;
@@ -160,6 +160,7 @@ let mk_param s =
     p_default = None;
     p_modifier = None;
     p_soft_type = None;
+    p_variadic = None;
   }
 (* old:  e, Ast_php.noType() *)
 let mk_e e = e

@@ -546,6 +546,7 @@ and func_def = {
       p_ref: is_ref;
       p_name: dname;
       p_default: static_scalar_affect option;
+      p_variadic: tok (* ... *) option;
     }
     and is_ref = tok (* bool wrap ? *) option
 (* the f_name in func_def should be a fake name *)

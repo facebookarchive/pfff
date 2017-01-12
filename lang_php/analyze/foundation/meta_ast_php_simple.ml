@@ -313,7 +313,8 @@ and
                   p_type = v_p_type;
                   p_ref = v_p_ref;
                   p_name = v_p_name;
-                  p_default = v_p_default
+                  p_default = v_p_default;
+                  p_variadic = v_p_variadic
                 } =
   let bnds = [] in
   let arg = Ocaml.vof_option vof_expr v_p_default in
@@ -330,6 +331,9 @@ and
   let bnds = bnd :: bnds in
   let arg = vof_wrapped_string v_p_name in
   let bnd = ("p_name", arg) in
+  let bnds = bnd :: bnds in
+  let arg = Ocaml.vof_bool v_p_variadic in
+  let bnd = ("p_variadic", arg) in
   let bnds = bnd :: bnds in
   Ocaml.VDict bnds
 and vof_hint_type =

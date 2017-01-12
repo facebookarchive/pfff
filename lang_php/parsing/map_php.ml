@@ -771,7 +771,8 @@ and
                   p_type = v_p_type;
                   p_ref = v_p_ref;
                   p_name = v_p_name;
-                  p_default = v_p_default
+                  p_default = v_p_default;
+                  p_variadic = v_p_variadic
                 } =
   let v_p_default = map_of_option map_static_scalar_affect v_p_default in
   let v_p_name = map_dname v_p_name in
@@ -780,6 +781,7 @@ and
   let v_p_type = map_of_option map_hint_type v_p_type in
   let v_p_soft_type = map_of_option map_tok v_p_soft_type in
   let v_p_attrs = map_of_option map_attributes v_p_attrs in
+  let v_p_variadic = map_of_option map_tok v_p_variadic in
   {
     p_attrs = v_p_attrs;
     p_modifier = v_p_modifier;
@@ -787,7 +789,8 @@ and
     p_type = v_p_type;
     p_ref = v_p_ref;
     p_name = v_p_name;
-    p_default = v_p_default
+    p_default = v_p_default;
+    p_variadic = v_p_variadic
   }
 
 and map_hint_type =

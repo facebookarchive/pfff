@@ -350,6 +350,7 @@ and func_def = {
      p_name: var;
      p_default: expr option;
      p_attrs: attribute list;
+     p_variadic: bool
    }
 
   (* for methods, and below for fields too *)
