@@ -110,6 +110,7 @@ let refactor refactorings (ast, tokens) =
                     | HintCallback (lparen,_,_) -> lparen
                     | HintShape (tok, _) -> tok
                     | HintTypeConst (hint, _, _) -> leftmost_tok hint
+                    | HintVariadic (tok, _) -> tok
                 in
                 let tok = leftmost_tok x in
                   if tok_pos_equal_refactor_pos tok pos_opt then begin

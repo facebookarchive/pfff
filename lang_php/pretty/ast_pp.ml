@@ -175,6 +175,7 @@ and hint_type =
      | HintQuestion of hint_type
      | HintTuple of hint_type list
      | HintCallback of hint_type list * (hint_type option)
+     | HintVariadic of hint_type option
 
 (* ------------------------------------------------------------------------- *)
 (* Definitions *)
@@ -193,6 +194,7 @@ and parameter = {
   p_ref: bool;
   p_name: string;
   p_default: expr option;
+  p_variadic: bool;
 }
 
 and lambda_def = {

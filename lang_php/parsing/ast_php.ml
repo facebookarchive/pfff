@@ -153,6 +153,7 @@ type hint_type =
      hint_type   (* lhs *)
      * tok       (* '::' *)
      * hint_type (* rhs *)
+ | HintVariadic of (tok * hint_type option)
 
  and type_args = hint_type comma_list single_angle
 
@@ -546,6 +547,7 @@ and func_def = {
       p_ref: is_ref;
       p_name: dname;
       p_default: static_scalar_affect option;
+      p_variadic: tok (* ... *) option;
     }
     and is_ref = tok (* bool wrap ? *) option
 (* the f_name in func_def should be a fake name *)

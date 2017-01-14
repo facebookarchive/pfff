@@ -796,7 +796,8 @@ and
                   p_type = v_p_type;
                   p_ref = v_p_ref;
                   p_name = v_p_name;
-                  p_default = v_p_default
+                  p_default = v_p_default;
+                  p_variadic = v_p_variadic
                 } =
   let bnds = [] in
   let arg = vof_option vof_static_scalar_affect v_p_default in
@@ -819,6 +820,9 @@ and
   let bnds = bnd :: bnds in
   let arg = vof_option vof_attributes v_p_attrs in
   let bnd = ("p_attrs", arg) in
+  let bnds = bnd :: bnds in
+  let arg = vof_option vof_tok v_p_variadic in
+  let bnd = ("p_variadic", arg) in
   let bnds = bnd :: bnds in
   Ocaml.VDict bnds
 and vof_hint_type =
@@ -867,6 +871,10 @@ and vof_hint_type =
       and v2 = vof_tok v2
       and v3 = vof_hint_type v3
       in Ocaml.VSum (("HintTypeConst", [ v1; v2; v3]))
+  | HintVariadic (v1, v2) ->
+      let v1 = vof_tok v1 in
+      let v2 = vof_option vof_hint_type v2 in
+      Ocaml.VSum (("HintVariadic", [v1; v2]))
 
 
 and vof_is_ref v = vof_option vof_tok v

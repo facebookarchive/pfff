@@ -824,7 +824,8 @@ and v_parameter x =
       p_type = v_p_type;
       p_ref = v_p_ref;
       p_name = v_p_name;
-      p_default = v_p_default
+      p_default = v_p_default;
+      p_variadic = v_p_variadic
     } ->
       let arg = v_option v_attributes v_p_attrs in
       let arg = v_option (v_wrap v_modifier) v_p_modifier in
@@ -832,7 +833,8 @@ and v_parameter x =
       let arg = v_option v_tok v_p_soft_type in
       let arg = v_is_ref v_p_ref in
       let arg = v_dname v_p_name in
-      let arg = v_option v_static_scalar_affect v_p_default
+      let arg = v_option v_static_scalar_affect v_p_default in
+      let arg = v_option v_tok v_p_variadic
       in ()
   in
   vin.kparameter (k, all_functions) x
@@ -879,6 +881,10 @@ and v_hint_type x =
       let v1 = v_hint_type v1
       and v2 = v_tok v2
       and v3 = v_hint_type v3
+      in ()
+  | HintVariadic (v1, v2) ->
+      let v1 = v_tok v1
+      and v2 = v_option v_hint_type v2
       in ()
   in
   vin.khint_type (k, all_functions) x

@@ -95,6 +95,7 @@ let rec string_of_hint_type x =
   | HintCallback _ -> "callback"
   | HintShape _ -> "shape"
   | HintTypeConst _ -> "typeconst"
+  | HintVariadic _ -> "..."
 
 let string_of_hint_type_opt h =
   match h with

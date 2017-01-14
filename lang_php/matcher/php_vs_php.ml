@@ -2526,7 +2526,14 @@ and m_hint_type a b =
       return (A.HintTypeConst(a1, a2, a3),
               B.HintTypeConst(b1, b2, b3)
       ))))
-
+  | A.HintVariadic (a1, a2), B.HintVariadic (b1, b2) -> 
+    m_tok a1 b1 >>= (fun (a1, b1) ->
+    m_option m_hint_type a2 b2 >>= (fun (a2, b2) ->
+      return (
+        A.HintVariadic (a1, a2),
+        B.HintVariadic (b1, b2)
+      )
+    ))
   | A.Hint _, _
   | A.HintArray _, _
   | A.HintQuestion _, _
@@ -2534,6 +2541,7 @@ and m_hint_type a b =
   | A.HintCallback _, _
   | A.HintShape _, _
   | A.HintTypeConst _, _
+  | A.HintVariadic _, _
    -> fail ()
 and m_hint_type_ret (a1, a2, a3) (b1, b2, b3) =
   m_tok a1 b1 >>= (fun (a1, b1) ->

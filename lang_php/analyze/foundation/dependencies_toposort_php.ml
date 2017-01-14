@@ -188,7 +188,7 @@ module Deps = struct
     | HintTypeConst (x1, x2) ->
       List.fold_left (fun accp x ->
         SSet.union accp (hint_type_ accp x)) acc [x1; x2]
-      
+    | HintVariadic x -> hint_type acc x
 
 
   and class_def acc c =

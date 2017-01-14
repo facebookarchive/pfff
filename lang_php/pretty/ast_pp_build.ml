@@ -575,6 +575,7 @@ and lexical_var _env = function
         A.p_ref = is_ref <> None;
         A.p_name = dname name;
         A.p_default = None;
+        A.p_variadic = false;
       }
 
 and scalar env = function
@@ -623,6 +624,7 @@ and hint_type env = function
     failwith "no support for shape"
   | HintTypeConst _ ->
     failwith "no support for type consts"
+  | HintVariadic (_, hint) -> A.HintVariadic (Common.map_opt (hint_type env) hint)
 
 and class_name_reference env a = expr env a
 
@@ -772,6 +774,7 @@ and parameter env p =
     A.p_ref = p.p_ref <> None;
     A.p_name = dname p.p_name;
     A.p_default = opt static_scalar_affect env p.p_default;
+    A.p_variadic = p.p_variadic <> None;
   }
 
 and func_def env f =

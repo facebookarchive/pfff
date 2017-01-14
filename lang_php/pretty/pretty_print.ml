@@ -193,6 +193,8 @@ let rec hint_type env = function
                   | Some t -> ": " ^ (hint_type env t)
                   | None -> "" in
       Printf.sprintf "(function%s%s)" args ret
+  | A.HintVariadic None -> ""
+  | A.HintVariadic (Some hint) -> Printf.sprintf "%s" (hint_type env hint)
 
 let ptype = function
   | Ast_php.BoolTy   -> "bool"
@@ -948,6 +950,8 @@ and parameter env p =
   );
   if p.p_ref
   then Pp.print env "&";
+  if p.p_variadic
+  then Pp.print env "...";
   Pp.print env p.p_name;
   (match p.p_default with
   | None -> ()
