@@ -23,12 +23,13 @@ PROGS=pfff \
  scheck \
  codequery \
  codeslicer \
- pfff_db
+ pfff_db \
+ codegraph
 
 PROGS+=pfff_test
 
 ifeq ($(FEATURE_VISUAL), 1)
-PROGS+=codemap codegraph
+PROGS+=codemap
 endif
 
 OPTPROGS= $(PROGS:=.opt)
@@ -457,13 +458,23 @@ clean::
 SYSLIBS_CG=$(SYSLIBS_CM)
 OBJS_CG=code_graph/lib.cma
 
-codegraph: $(LIBS) commons/commons_gui.cma $(OBJS_CG) $(OBJS) main_codegraph.cmo
-	$(OCAMLC) -thread $(CUSTOM) -o $@ $(SYSLIBS) threads.cma \
-           $(SYSLIBS_CG) $(GTKLOOP) $^
+# Adds the cg and gui libraries (ocamlgtk, ocamlcairo etc.,) needed if 
+# feature_visual is set. Compiles without them if feature_visual is unset.
+ifeq ($(FEATURE_VISUAL), 1)
+VISUAL_OPTIONS=commons/commons_gui.cma $(OBJS_CG)
+VISUAL_LIB=$(SYSLIBS_CG) $(GTKLOOP)
 
-codegraph.opt: $(LIBS:.cma=.cmxa) commons/commons_gui.cmxa $(OBJS_CG:.cma=.cmxa) $(OPTOBJS) main_codegraph.cmx
+VISUAL_OPTIONS_OPT=commons/commons_gui.cmxa $(OBJS_CG:.cma=.cmxa)
+VISUAL_LIB_OPT=$(SYSLIBS_CG:.cma=.cmxa) $(GTKLOOP:.cmo=.cmx)
+endif
+
+codegraph: $(LIBS) $(VISUAL_OPTIONS) $(OBJS) main_codegraph.cmo
+	$(OCAMLC) -thread $(CUSTOM) -o $@ $(SYSLIBS) threads.cma \
+           $(VISUAL_LIB) $^
+
+codegraph.opt: $(LIBS:.cma=.cmxa) $(VISUAL_OPTIONS_OPT) $(OPTOBJS) main_codegraph.cmx
 	$(OCAMLOPT) -thread $(STATIC) -o $@ $(SYSLIBS:.cma=.cmxa) threads.cmxa\
-          $(SYSLIBS_CG:.cma=.cmxa) $(GTKLOOP:.cmo=.cmx)  $^
+          $(VISUAL_LIB_OPT) $^
 
 clean::
 	rm -f codegraph

@@ -10,8 +10,10 @@ module GC2 = Graph_code_opti
 module DM = Dependencies_matrix_code
 module DMBuild = Dependencies_matrix_build
 
+#if FEATURE_VISUAL
 module Model = Model3
 module View = View3
+#endif
 
 (*****************************************************************************)
 (* Purpose *)
@@ -231,6 +233,7 @@ let constraints_of_info_txt info_txt =
   aux "" info_txt;
   h
 
+#if FEATURE_VISUAL
 let set_gc () =
   (* only relevant in bytecode, in native the stacklimit is the os stacklimit*)
   Gc.set {(Gc.get ()) with Gc.stack_limit = 1000 * 1024 * 1024};
@@ -240,6 +243,7 @@ let set_gc () =
   Gc.set { (Gc.get()) with Gc.major_heap_increment = 8_000_000 };
   Gc.set { (Gc.get()) with Gc.space_overhead = 300 };
   ()
+#endif
   
 (*****************************************************************************)
 (* Model Helpers *)
@@ -248,6 +252,7 @@ let set_gc () =
 let dep_file_of_dir dir = 
   Filename.concat dir Graph_code.default_filename
 
+#if FEATURE_VISUAL
 let build_model root =
   let file = dep_file_of_dir root in
   let g = Graph_code.load file in
@@ -274,8 +279,7 @@ let dir_node xs =
   (Common.join "/" xs, Entity_code.Dir)
 let package_node xs = 
   (Common.join "." xs, Entity_code.Package)
-
-
+#endif
 (*****************************************************************************)
 (* Language specific, building the graph *)
 (*****************************************************************************)
@@ -406,6 +410,8 @@ let build_stdlib lang root dst =
  * maybe can just cache and look if we need to recompute the code graph?
  * same for the dependency matrix that we can cache too.
  *)
+
+#if FEATURE_VISUAL
 let main_action xs =
   set_gc ();
   Logger.log Config_pfff.logger "codegraph" None;
@@ -476,6 +482,8 @@ let main_action xs =
 
   let w = Model.init_world path model in
   View.mk_gui w
+
+  #endif
 
 (*****************************************************************************)
 (* Extra Actions *)
@@ -805,8 +813,12 @@ let main () =
     (* --------------------------------------------------------- *)
     (* main entry *)
     (* --------------------------------------------------------- *)
+    #if FEATURE_VISUAL
     | x::xs -> 
         main_action (x::xs)
+    #else
+    | _::_ -> failwith ("Unsupported in non-visual mode")
+    #endif
 
     (* --------------------------------------------------------- *)
     (* empty entry *)
