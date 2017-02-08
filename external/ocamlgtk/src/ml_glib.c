@@ -162,7 +162,7 @@ static value *lookup_exn_map (GQuark domain)
 static void ml_raise_gerror_exn(GError *, value *) Noreturn;
 static void ml_raise_gerror_exn(GError *err, value *exn)
 {
-  CAMLlocal2(b, msg);
+  value b, msg;
   g_assert (err && exn);
   msg = copy_string(err->message);
   b = alloc_small (3, 0);
