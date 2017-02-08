@@ -13,13 +13,13 @@
  * license.txt for more details.
  *)
 open Common
+open Ast_java
 
 module E = Entity_code
 module G = Graph_code
-
-open Ast_java
 module Ast = Ast_java
 module PI = Parse_info
+module V = Visitor_java
 
 (*****************************************************************************)
 (* Prelude *)
@@ -66,6 +66,16 @@ module PI = Parse_info
  *)
 
 (*****************************************************************************)
+(* Constants *)
+(*****************************************************************************)
+let depth_of_dfs = 10
+
+(*****************************************************************************)
+(* Global variables *)
+(*****************************************************************************)
+let printer = ref [""]
+
+(*****************************************************************************)
 (* Types *)
 (*****************************************************************************)
 type env = {
@@ -74,7 +84,11 @@ type env = {
   phase: phase;
   current: Graph_code.node;
   current_qualifier: Ast_java.qualified_ident;
-
+  (* top_level_qualifier class qualifiers, for method calls. current_qualifier 
+   * tracks field/method in ast. This is not needed, adds extra qualifiers 
+   * which might get in the way. 
+   * *)
+  top_level_qualifer: Ast_java.qualified_ident;
   (* import x.y.* => [["x";"y"]; ...] *)
   imported_namespace: (string list) list;
   (* import x.y.z => [("z", (false, ["x";"y";"z"])); ...] *)
@@ -98,12 +112,59 @@ type env = {
    * The inheritance is a kind of use, but certain uses like using
    * a field needs the full inheritance tree to already be computed
    * as we may need to lookup entities up in the parents.
+   *
+   * Note: 4th phase MethodToMethod added for adding edges during method
+   * call.
    *)
-  and phase = Defs | Inheritance | Uses
+  and phase = Defs | Inheritance | Uses | MethodToMethod
 
 (*****************************************************************************)
 (* Helpers *)
 (*****************************************************************************)
+
+(* Iterates  over list [a1; a2; ... ] with f until f ai returns true. Returns 
+ * Some f ai, or None if f returns false for all ai's 
+ *)
+let rec iter_until_true ~f list_ =
+  match list_ with
+  | [] -> None
+  | hd::tl -> 
+      match f hd with 
+      | false -> iter_until_true ~f tl
+      | true -> Some hd
+ 
+(* Returns last element of list and the beginning of the list too, think of it 
+ * as of let a::b = list_, in reverse
+ *)
+let last_and_beginning_of_list list_ =
+  match List.rev list_ with
+  | [] -> None 
+  | last::[] -> Some (last,[])
+  | last::rest -> Some (last, List.rev rest)
+
+(* Removes element x from x_list, returns (x_list \ x).
+ * eg. remove_element_from_list "*" ["A";"B";"*"] => ["A";"B"]
+ *)
+let remove_element_from_list x x_list =
+  x_list +> List.filter (fun s -> 
+      match s with
+      | _ when s = x -> false
+      | _ -> true)
+
+(* Joins string list, into a string with a separator. Similar function
+ * commons/join, joins string list with separator. But want to check for 
+ * "this" operator (occurs at the beginning) and neglect []
+ * sep is the separator, when joining elements of string list.
+ * eg. join_list ~sep:"." ["a1";...;"an"] => "a1.a2...an"
+ *)
+let join_list ~sep a=
+  let a =
+    (match a with
+    | "this"::tl -> tl
+    | _ -> a
+    )
+  in
+  String.concat sep a
 
 let parse ~show_parse_error file =
   try
@@ -183,12 +244,13 @@ let add_use_edge env (name, kind) =
   let dst = (name, kind) in
   (match () with
   | _ when not (G.has_node src env.g) ->
-      pr2 (spf "LOOKUP SRC FAIL %s --> %s, src does not exist???"
-              (G.string_of_node src) (G.string_of_node dst));
-
+      if env.phase = MethodToMethod then
+        pr2 (spf "MTM: (add_use_edge) lookup fail on %s" name)  
+      else
+        pr2 (spf "LOOKUP SRC FAIL %s --> %s, src does not exist???" 
+            (G.string_of_node src) (G.string_of_node dst));
   | _ when G.has_node dst env.g ->
-      G.add_edge (src, dst) G.Use env.g
-
+        G.add_edge (src, dst) G.Use env.g
   | _ ->
       (match kind with
       | _ ->
@@ -211,14 +273,165 @@ let add_use_edge env (name, kind) =
               env.g +> G.add_edge (src, dst) G.Use;
               ()
           | _ ->
-              pr2 (spf "PB: lookup fail on %s (in %s)"
-                      (G.string_of_node dst) (G.string_of_node src));
-              G.add_node dst env.g;
-              env.g +> G.add_edge (parent_target, dst) G.Has;
-              env.g +> G.add_edge (src, dst) G.Use;
+              match env.phase with
+              | MethodToMethod -> 
+                  pr2 (spf "MTM: (add_use_edge) lookup fail on %s (in %s)" 
+                  (G.string_of_node dst) (G.string_of_node src))
+              | _ ->
+                  pr2 (spf "PB: lookup fail on %s (in %s)" (G.string_of_node dst)
+                      (G.string_of_node src));
+                  G.add_node dst env.g; 
+                  env.g +> G.add_edge (parent_target, dst) G.Has;
+                  env.g +> G.add_edge (src, dst) G.Use;
           )
       )
   )
+
+(* Auxiliary function for dfs, does depth first search on node, with name:node_str
+ * Params: 
+ *  - verbose: If set to true, prints log for debugging
+ *  - node_str: string of method name (eg. calledFn(), string is "calledFn")
+ *  - d: height upto which dfs searchs to
+ *  - list_: Successors of node with name:node_str
+ *  - get_succ: Successor nodes of passed node is returned
+ *  - f: checks if graph contains node with passed string as name
+ *)
+let rec dfs_aux  ~verbose ~node_str ~d ~list_ ~get_succ ~f =
+(* Maximum depth that the funtion searched uptil *)
+  if (d < depth_of_dfs) then 
+    begin 
+      (match list_ with
+      (* No successor *)
+      | [] -> None
+      (* More than one element in list *)
+      | hd::tl -> 
+          let node_str_hd = (fst hd) ^ "." ^ node_str in
+          if verbose = true then
+            printer.contents <- printer.contents @ [node_str_hd];
+          (match f node_str_hd with 
+          (* Node with name:node_str_hd exists *)
+          | true -> 
+              Some node_str_hd 
+          (* No node with name:node_str_hd exists, search child of node_str_hd *)
+          | false ->       
+              let node_list = get_succ ~n:hd in
+              (match dfs_aux ~verbose ~node_str:node_str ~d:(d+1) ~list_:node_list 
+                  ~get_succ:get_succ ~f:f with
+              (* Search in siblings of node_str_hd *)
+              | None -> dfs_aux ~verbose ~d:d ~node_str:node_str ~list_:tl 
+                                        ~get_succ:get_succ ~f:f 
+              | Some x -> Some x
+              )
+          )
+      )
+    end
+  else
+    None
+
+(* Method calls: method needs to be identified in the graph, so that edge can
+ * be drawn to it, from the node called. Method call is generally not in the
+ * fully qualified form, so to search for method in the graph, method name with
+ * fully qualified name is required. To guess fully qualified name, the
+ * successors of the source node is searched. The class paths of the successors
+ * are prepended to the method name and checked. If unsuccessful, go further up
+ * (successor of successor etc.), i.e dfs.
+ * Params: 
+ *  - verbose: If set to true, prints log for debugging
+ *  - env: type env defined above
+ *  - node: graph node called from 
+ *  - node_str: string of method name (eg. calledFn(), string is "calledFn")
+ *  - get_succ: Successor nodes of passed node is returned
+ *  - f: checks if graph contains node with passed string as name
+ *  Returns string option of fully qualified method, if not resolved it returns
+ *  None.
+ *)
+let dfs ?(verbose=false) ~env ~node ~node_str ~get_succ ~f =
+  let full_str = (str_of_qualified_ident env.top_level_qualifer) ^ "." ^
+        node_str in
+  if verbose = true then
+    begin
+      printer.contents <- printer.contents @ [(spf "dfs on str: %s, %s" full_str
+          node_str)];
+      printer.contents <- printer.contents @ [(spf "Current method/class/fied: %s" 
+          (str_of_qualified_ident env.current_qualifier ^ "." ^ node_str))];
+    end;
+    (* Checks if method exists in imported namespaces *)
+    let f_imported_namespace_check = iter_until_true ~f:(fun a ->
+        let str = (( a +> remove_element_from_list
+            "*" +>  (join_list ~sep:".") ) ^ "." ^ node_str) in 
+        let is_node_present = f str in
+        is_node_present) env.imported_namespace
+    in
+    (* Checks if method exists in imported qualifiers *)
+    let f_imported_qualifier_check = iter_until_true ~f:(fun (a,(_,b)) ->
+        let str = (a ^ "."^ (str_of_qualified_ident b) ^ "." ^ node_str) in
+        let is_node_present = f str in
+        is_node_present) env.imported_qualified 
+    in
+    (* Checks if method exists in current class, or main class - for nested classes *)
+    let check_current_class =
+      if not (f full_str) then
+          let base_class_o =
+            (match List.rev env.top_level_qualifer with 
+             | [] -> None
+             | _::[] -> None
+             | _::a -> Some (List.rev a)
+            )
+          in
+          (match base_class_o with
+          | Some base_class_list -> 
+              (match f((str_of_qualified_ident base_class_list) ^ "." ^
+                  node_str)
+              with
+              | true -> Some (str_of_qualified_ident base_class_list
+                            ^ "." ^ node_str )
+              | false -> None
+              )
+          | None -> None
+          )
+      else
+        Some full_str
+    in
+    (* Four tuple checks for:
+     * check_current_class
+     *  - Returns Some string, if method gets resolved in current class, or base
+     *    class (if nested clasas)
+     * f node_str: 
+     *  - Returns true if node_str is a fully qualified name of the method.
+     * f_imported_namespace_check:
+     *  - Returns Some string list of namespace, for which method gets resolved.
+     *    None if method isn't resolved in any of the namespaces
+     * f_imported_qualifier_check:
+     *  - Similar to f_imported_namespace_check, but checks imported qualifiers.
+     *)
+      (match (check_current_class, f node_str, f_imported_namespace_check , 
+          f_imported_qualifier_check) with
+      | (None, false, Some str_list, _) -> 
+          if verbose = true then
+            printer.contents <- printer.contents @ ["Imported namespace edge drawn"];
+          Some ((str_list +> remove_element_from_list "*" +> join_list ~sep:".")
+              ^ "." ^ node_str) 
+      | (None, false, _, Some (str_list, _)) ->
+          if verbose = true then
+            printer.contents <- printer.contents @ ["Imported qualifier edge drawn"];
+          Some (str_list ^ "." ^ node_str) 
+      | (Some str, _, _, _) -> 
+          if verbose = true then  
+            printer.contents <- printer.contents @ ["Fully qualified"]; 
+          Some str
+      | (_, true, _, _) -> 
+          if verbose = true then
+            printer.contents <- printer.contents @ ["Method name as is"];
+          Some node_str
+      | (None, false, None, None) ->
+          (match dfs_aux ~verbose ~d:0 ~node_str:node_str ~list_:(get_succ
+                  ~n:node) ~get_succ:get_succ ~f with
+          | Some str ->
+              printer.contents <- printer.contents @ ["dfs, node existing"]; 
+              Some str
+          | None -> None
+          )
+      )
 
 (*****************************************************************************)
 (* Class/Package Lookup *)
@@ -299,14 +512,19 @@ let rec extract_defs_uses ~phase ~g ~ast ~readable ~lookup_fails =
   ignore(lookup_fails);
 
   let env = {
-    g; phase;
+    g; phase; 
 
     current =
      (match ast.package with
      | Some long_ident -> (str_of_qualified_ident long_ident, E.Package)
-     | None ->            (readable, E.File)
+     | None -> (readable, E.File)
      );
     current_qualifier =
+      (match ast.package with
+      | None -> []
+      | Some long_ident -> long_ident
+      );
+      top_level_qualifer =
       (match ast.package with
       | None -> []
       | Some long_ident -> long_ident
@@ -346,19 +564,20 @@ let rec extract_defs_uses ~phase ~g ~ast ~readable ~lookup_fails =
         g +> G.add_node (readable, E.File);
         g +> G.add_edge ((dir, E.Dir), (readable, E.File))  G.Has;
     | Some long_ident ->
-        create_intermediate_packages_if_not_present g G.root long_ident;
+                    create_intermediate_packages_if_not_present g G.root long_ident;
   end;
   (* double check if we can find some of the imports
    * (especially useful when have a better java_stdlib/ to report
    * third-party packages not-yet handled).
    *)
   if phase = Inheritance then begin
-    ast.imports +> List.iter (fun (is_static, qualified_ident) ->
+    ast.imports +> List.iter (fun (_is_static, qualified_ident) (* Replaced
+    is_static with _is_static *)->
       let qualified_ident_bis =
         match List.rev qualified_ident with
         | ("*",_)::rest -> List.rev rest
         (* less: just lookup the class for now *)
-        | _x::xs when is_static -> List.rev xs
+        | _x::xs when true-> List.rev xs (* Replaced is_static with true *)
         | _ -> qualified_ident
       in
       let entity = List.map Ast.unwrap qualified_ident_bis in
@@ -407,7 +626,8 @@ and decl env = function
       in
       stmt env st
 
-and decls env xs = List.iter (decl env) (Common.index_list_1 xs)
+and decls env xs = 
+        List.iter (decl env) (Common.index_list_1 xs);
 
 and class_decl env def =
   let full_ident = env.current_qualifier @ [def.cl_name] in
@@ -415,13 +635,19 @@ and class_decl env def =
   let node = (full_str, E.Class) in
   if env.phase = Defs then begin
     (* less: def.c_type? *)
-    env.g +> G.add_node node;
-    env.g +> G.add_nodeinfo node (nodeinfo def.cl_name);
-    env.g +> G.add_edge (env.current, node) G.Has;
+       begin
+         if not (G.has_node node env.g) then 
+           begin
+             env.g +> G.add_node node;
+             env.g +> G.add_nodeinfo node (nodeinfo def.cl_name);
+           end;
+           env.g +> G.add_edge (env.current, node) G.Has;
+       end;
   end;
   let env = { env with
     current = node;
     current_qualifier = full_ident;
+    top_level_qualifer = full_ident;
     (* with anon classes we need to lookup enclosing final parameters/locals *)
     params_or_locals = env.params_or_locals +> List.filter (fun (_x,b) -> b);
     type_parameters = def.cl_tparams +> List.map (function
@@ -434,7 +660,6 @@ and class_decl env def =
     (def.cl_impls)
   in
   List.iter (typ env) parents;
-
   let imports =
     if env.phase = Defs then []
     else
@@ -466,8 +691,8 @@ and method_decl env def =
     else begin
       env.g +> G.add_node node;
       env.g +> G.add_nodeinfo node (nodeinfo def.m_var.v_name);
-      env.g +> G.add_edge (env.current, node) G.Has;
-    end
+    end;
+    env.g +> G.add_edge (env.current, node) G.Has;
   end;
   let env = { env with
     current = node;
@@ -503,8 +728,14 @@ and field_decl env def =
   let node = (full_str, kind) in
   if env.phase = Defs then begin
     (* less: static? *)
-    env.g +> G.add_node node;
-    env.g +> G.add_nodeinfo node (nodeinfo def.f_var.v_name);
+    (* Error thrown when run on FOS, for duplicate nodes. *)
+    if not (G.has_node node env.g) then
+      begin
+        env.g +> G.add_node node;
+        env.g +> G.add_nodeinfo node (nodeinfo def.f_var.v_name);
+      end
+    else pr2 (spf "Package: %s already existing" (G.string_of_node node));
+    (* Edge drawn even if node already exists previously *)
     env.g +> G.add_edge (env.current, node) G.Has;
   end;
   let env = { env with
@@ -519,11 +750,18 @@ and enum_decl env def =
   let full_str = str_of_qualified_ident full_ident in
     (* less: make it a class? or a Type? *)
   let node = (full_str, E.Class) in
-  if env.phase = Defs then begin
-    env.g +> G.add_node node;
-    env.g +> G.add_nodeinfo node (nodeinfo def.en_name);
-    env.g +> G.add_edge (env.current, node) G.Has;
-  end;
+  if env.phase = Defs then 
+          begin
+          if not (G.has_node node env.g) then
+            begin
+              env.g +> G.add_node node;
+              env.g +> G.add_nodeinfo node (nodeinfo def.en_name);
+            end
+          else 
+            pr2 (spf "Package: %s already existing" (G.string_of_node
+          node)); 
+          env.g +> G.add_edge (env.current, node) G.Has;
+          end;
   let env = { env with
     current = node;
     current_qualifier = full_ident;
@@ -547,10 +785,19 @@ and enum_decl env def =
     let full_str = str_of_qualified_ident full_ident in
     let node = (full_str, E.Constant) in
     if env.phase = Defs then begin
-      env.g +> G.add_node node;
-      env.g +> G.add_nodeinfo node (nodeinfo ident);
-      env.g +> G.add_edge (env.current, node) G.Has;
-    end;
+      (* Check for duplicate node *)
+      if not (G.has_node node env.g) then
+        begin
+          env.g +> G.add_node node;
+          env.g +> G.add_nodeinfo node (nodeinfo ident);
+        end
+      else  
+        begin pr2 (spf ": %s already existing"
+            (G.string_of_node node)) 
+        end;
+        (* Edge drawn even if node already existed. *)
+        env.g +> G.add_edge (env.current, node) G.Has;
+      end;
     let env = { env with
       current = node;
       current_qualifier = full_ident;
@@ -751,8 +998,11 @@ and expr env = function
       init_opt env ini_opt
 
   | Call (e, es) ->
+                  (if env.phase = MethodToMethod then
+                    resolve_call env (e,es));
       expr env e;
-      exprs env es
+      exprs env es;
+(* TODO: resolve call    *)
   | Dot (e, _idTODO) ->
       (* todo: match e, and try lookup method/field
        * if e is a Name, lookup it, and if a class then
@@ -774,6 +1024,90 @@ and expr env = function
       expr env e;
       typ env (tref);
 
+and resolve_call env (expr_,_) =
+  let rec aux expr_ =
+    (match expr_ with 
+    | Name name_ -> resolve_name name_
+    | NameOrClassType _ 
+    | Literal _ 
+    | ClassLiteral _  
+    | NewClass _ 
+    | NewArray _ 
+    | NewQualifiedClass _ -> ["Not supported"]
+    | Call(expr_,_) ->     aux expr_
+    | Dot (expr_, ident) -> 
+        let qualifier = (aux expr_) in
+        (match qualifier with 
+        | [] -> [Ast.unwrap ident]
+        | q -> q @ [Ast.unwrap ident]
+        )
+    | ArrayAccess _
+    | Postfix _
+    | Prefix _
+    | Infix _
+    | Cast _
+    | InstanceOf _
+    | Conditional _
+    | Assignment _ -> ["Not supported"]
+    )
+    in
+    let node_str_array =  aux expr_ in
+    (* Verbose flag can be set to false/true here. *)
+    let verbose = false in 
+    let dfs = dfs ~verbose:verbose ~env  ~node:env.current  ~get_succ:(fun
+        ~n -> G.succ n G.Use env.g) ~f:(fun node -> G.has_node
+        (node,E.Method) env.g)
+    in
+    (* For calls of type a.b.c.d, checks if d() then c.d(), then b.c.d() and so
+     * on. 
+     *)
+    let read_from_last ~node_str_list ~f =
+      let rec aux ~acc ~node_str_list ~f =
+        (match last_and_beginning_of_list node_str_list with
+        | Some (last_node, rest) -> 
+            (match f (last_node ^ acc ) with
+            | Some a -> Some a
+            | None ->
+                let acc2 = "." ^ last_node ^ acc
+                in
+                aux ~acc:acc2 ~node_str_list:rest ~f
+            )
+        | None -> 
+            if verbose = true then 
+              begin
+                pr "Print dfs";
+                pr (join_list ~sep:"\n" printer.contents);
+                printer.contents <- []; (* Resetting print variable after
+                    printing *)
+              end;
+            None
+        )
+      in 
+      aux ~acc:"" ~node_str_list ~f
+    in
+    let node_str_o =
+      read_from_last  ~node_str_list:node_str_array ~f:(fun x -> dfs
+      ~node_str: x )
+       in      
+    (match node_str_o with
+    | None -> 
+        pr (spf "MTM: (resolve_call) lookup fail on method %s, source: %s " (node_str_array +>
+            join_list ~sep:".") (env.current_qualifier +> str_of_qualified_ident) )
+    | Some str -> 
+        add_use_edge env (str, E.Method);
+        pr (spf "MTM: (resolve_call) Edge drawn to method %s, resolved qualifier: %s, source: %s" 
+            (node_str_array +> join_list ~sep:".") str
+            (env.current_qualifier +> str_of_qualified_ident))
+    );
+    ()
+
+(* Removes the object's name in method calls, NOTE: this is a heuristic which
+ * relies on the fact that most method calls are of the form A.x(), where A is
+ * an object. Also, it assumes that in type name, first element of the list can
+ * be removed
+ *)
+and resolve_name name_ =
+  List.map (fun (_tyarg_todo, ident) -> Ast.unwrap ident) name_
 
 and exprs env xs = List.iter (expr env) xs
 and init env = function
@@ -843,7 +1177,7 @@ and field env f =
 (* Main entry point *)
 (*****************************************************************************)
 
-let build ?(verbose=true) ?(only_defs=false) root files =
+let build ?(verbose=true) ?(only_defs=false) ?(method_to_method=false) root files =
   let g = G.create () in
   G.create_initial_hierarchy g;
 
@@ -851,6 +1185,7 @@ let build ?(verbose=true) ?(only_defs=false) root files =
 
   (* step1: creating the nodes and 'Has' edges, the defs *)
   if verbose then pr2 "\nstep1: extract defs";
+(*    pr "Step 1\n";  *)
   files +> Console.progress ~show:verbose (fun k ->
     List.iter (fun file ->
       k();
@@ -862,6 +1197,7 @@ let build ?(verbose=true) ?(only_defs=false) root files =
 
   (* step2: creating the 'Use' edges just for inheritance *)
   if verbose then pr2 "\nstep2: extract inheritance information";
+(*   pr "Step 2 \n"; *)
   files +> Console.progress ~show:verbose (fun k ->
    List.iter (fun file ->
      k();
@@ -880,4 +1216,16 @@ let build ?(verbose=true) ?(only_defs=false) root files =
      extract_defs_uses ~phase:Uses ~g ~ast ~readable ~lookup_fails;
    ));
   end;
+  if method_to_method then 
+    begin
+  if verbose then pr2 "\nstep4: methodtomethod";
+  (* step4: drawing 'Use' edges between methods during method call *)
+  files +> Console.progress ~show:verbose (fun k ->
+    List.iter (fun file ->
+      k();
+      let readable = Common.readable ~root file in
+      let ast = parse ~show_parse_error:true file in
+     extract_defs_uses ~phase:MethodToMethod ~g ~ast ~readable ~lookup_fails;
+  ));
+    end;
   g
