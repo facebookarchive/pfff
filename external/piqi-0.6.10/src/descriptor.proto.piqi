@@ -1,0 +1,633 @@
+.protobuf-package "google.protobuf"
+
+.record [
+    .name file-descriptor-set
+    .field [
+        .name file
+        .type file-descriptor-proto
+        .repeated
+        .code 1
+    ]
+]
+
+.record [
+    .name file-descriptor-proto
+    .field [
+        .name name
+        .type string
+        .optional
+        .code 1
+    ]
+    .field [
+        .name package
+        .type string
+        .optional
+        .code 2
+    ]
+    .field [
+        .name dependency
+        .type string
+        .repeated
+        .code 3
+    ]
+    .field [
+        .name message-type
+        .type descriptor-proto
+        .repeated
+        .code 4
+    ]
+    .field [
+        .name enum-type
+        .type enum-descriptor-proto
+        .repeated
+        .code 5
+    ]
+    .field [
+        .name service
+        .type service-descriptor-proto
+        .repeated
+        .code 6
+    ]
+    .field [
+        .name extension
+        .type field-descriptor-proto
+        .repeated
+        .code 7
+    ]
+    .field [
+        .name options
+        .type file-options
+        .optional
+        .code 8
+    ]
+]
+
+.record [
+    .name descriptor-proto
+    .field [
+        .name name
+        .type string
+        .optional
+        .code 1
+    ]
+    .field [
+        .name field
+        .type field-descriptor-proto
+        .repeated
+        .code 2
+    ]
+    .field [
+        .name extension
+        .type field-descriptor-proto
+        .repeated
+        .code 6
+    ]
+    .field [
+        .name nested-type
+        .type descriptor-proto
+        .repeated
+        .code 3
+    ]
+    .field [
+        .name enum-type
+        .type enum-descriptor-proto
+        .repeated
+        .code 4
+    ]
+    .field [
+        .name extension-range
+        .type descriptor-proto-extension-range
+        .repeated
+        .code 5
+    ]
+    .field [
+        .name options
+        .type message-options
+        .optional
+        .code 7
+    ]
+]
+
+.record [
+    .name descriptor-proto-extension-range
+    .field [
+        .name start
+        .type protobuf-int32
+        .optional
+        .code 1
+    ]
+    .field [
+        .name end
+        .type protobuf-int32
+        .optional
+        .code 2
+    ]
+]
+
+.record [
+    .name field-descriptor-proto
+    .field [
+        .name name
+        .type string
+        .optional
+        .code 1
+    ]
+    .field [
+        .name number
+        .type protobuf-int32
+        .optional
+        .code 3
+    ]
+    .field [
+        .name label
+        .type field-descriptor-proto-label
+        .optional
+        .code 4
+    ]
+    .field [
+        .name type
+        .type field-descriptor-proto-type
+        .optional
+        .code 5
+    ]
+    .field [
+        .name type-name
+        .type string
+        .optional
+        .code 6
+    ]
+    .field [
+        .name extendee
+        .type string
+        .optional
+        .code 2
+    ]
+    .field [
+        .name default-value
+        .type string
+        .optional
+        .code 7
+    ]
+    .field [
+        .name options
+        .type field-options
+        .optional
+        .code 8
+    ]
+]
+
+.enum [
+    .name field-descriptor-proto-type
+    .option [
+        .name type-double
+        .code 1
+        .protobuf-name "field_descriptor_proto_type_double"
+    ]
+    .option [
+        .name type-float
+        .code 2
+        .protobuf-name "field_descriptor_proto_type_float"
+    ]
+    .option [
+        .name type-int64
+        .code 3
+        .protobuf-name "field_descriptor_proto_type_int64"
+    ]
+    .option [
+        .name type-uint64
+        .code 4
+        .protobuf-name "field_descriptor_proto_type_uint64"
+    ]
+    .option [
+        .name type-int32
+        .code 5
+        .protobuf-name "field_descriptor_proto_type_int32"
+    ]
+    .option [
+        .name type-fixed64
+        .code 6
+        .protobuf-name "field_descriptor_proto_type_fixed64"
+    ]
+    .option [
+        .name type-fixed32
+        .code 7
+        .protobuf-name "field_descriptor_proto_type_fixed32"
+    ]
+    .option [
+        .name type-bool
+        .code 8
+        .protobuf-name "field_descriptor_proto_type_bool"
+    ]
+    .option [
+        .name type-string
+        .code 9
+        .protobuf-name "field_descriptor_proto_type_string"
+    ]
+    .option [
+        .name type-group
+        .code 10
+        .protobuf-name "field_descriptor_proto_type_group"
+    ]
+    .option [
+        .name type-message
+        .code 11
+        .protobuf-name "field_descriptor_proto_type_message"
+    ]
+    .option [
+        .name type-bytes
+        .code 12
+        .protobuf-name "field_descriptor_proto_type_bytes"
+    ]
+    .option [
+        .name type-uint32
+        .code 13
+        .protobuf-name "field_descriptor_proto_type_uint32"
+    ]
+    .option [
+        .name type-enum
+        .code 14
+        .protobuf-name "field_descriptor_proto_type_enum"
+    ]
+    .option [
+        .name type-sfixed32
+        .code 15
+        .protobuf-name "field_descriptor_proto_type_sfixed32"
+    ]
+    .option [
+        .name type-sfixed64
+        .code 16
+        .protobuf-name "field_descriptor_proto_type_sfixed64"
+    ]
+    .option [
+        .name type-sint32
+        .code 17
+        .protobuf-name "field_descriptor_proto_type_sint32"
+    ]
+    .option [
+        .name type-sint64
+        .code 18
+        .protobuf-name "field_descriptor_proto_type_sint64"
+    ]
+]
+
+.enum [
+    .name field-descriptor-proto-label
+    .option [
+        .name label-optional
+        .code 1
+        .protobuf-name "field_descriptor_proto_label_optional"
+    ]
+    .option [
+        .name label-required
+        .code 2
+        .protobuf-name "field_descriptor_proto_label_required"
+    ]
+    .option [
+        .name label-repeated
+        .code 3
+        .protobuf-name "field_descriptor_proto_label_repeated"
+    ]
+]
+
+.record [
+    .name enum-descriptor-proto
+    .field [
+        .name name
+        .type string
+        .optional
+        .code 1
+    ]
+    .field [
+        .name value
+        .type enum-value-descriptor-proto
+        .repeated
+        .code 2
+    ]
+    .field [
+        .name options
+        .type enum-options
+        .optional
+        .code 3
+    ]
+]
+
+.record [
+    .name enum-value-descriptor-proto
+    .field [
+        .name name
+        .type string
+        .optional
+        .code 1
+    ]
+    .field [
+        .name number
+        .type protobuf-int32
+        .optional
+        .code 2
+    ]
+    .field [
+        .name options
+        .type enum-value-options
+        .optional
+        .code 3
+    ]
+]
+
+.record [
+    .name service-descriptor-proto
+    .field [
+        .name name
+        .type string
+        .optional
+        .code 1
+    ]
+    .field [
+        .name method
+        .type method-descriptor-proto
+        .repeated
+        .code 2
+    ]
+    .field [
+        .name options
+        .type service-options
+        .optional
+        .code 3
+    ]
+]
+
+.record [
+    .name method-descriptor-proto
+    .field [
+        .name name
+        .type string
+        .optional
+        .code 1
+    ]
+    .field [
+        .name input-type
+        .type string
+        .optional
+        .code 2
+    ]
+    .field [
+        .name output-type
+        .type string
+        .optional
+        .code 3
+    ]
+    .field [
+        .name options
+        .type method-options
+        .optional
+        .code 4
+    ]
+]
+
+.record [
+    .name file-options
+    .field [
+        .name java-package
+        .type string
+        .optional
+        .code 1
+    ]
+    .field [
+        .name java-outer-classname
+        .type string
+        .optional
+        .code 8
+    ]
+    .field [
+        .name java-multiple-files
+        .type bool
+        .optional
+        .default false
+        .code 10
+    ]
+    .field [
+        .name optimize-for
+        .type file-options-optimize-mode
+        .optional
+        .default.speed
+        .code 9
+    ]
+    .field [
+        .name cc-generic-services
+        .type bool
+        .optional
+        .default true
+        .code 16
+    ]
+    .field [
+        .name java-generic-services
+        .type bool
+        .optional
+        .default true
+        .code 17
+    ]
+    .field [
+        .name py-generic-services
+        .type bool
+        .optional
+        .default true
+        .code 18
+    ]
+    .field [
+        .name uninterpreted-option
+        .type uninterpreted-option
+        .repeated
+        .code 999
+    ]
+]
+
+.enum [
+    .name file-options-optimize-mode
+    .option [
+        .name speed
+        .code 1
+        .protobuf-name "file_options_speed"
+    ]
+    .option [
+        .name code-size
+        .code 2
+        .protobuf-name "file_options_code_size"
+    ]
+    .option [
+        .name lite-runtime
+        .code 3
+        .protobuf-name "file_options_lite_runtime"
+    ]
+]
+
+.record [
+    .name message-options
+    .field [
+        .name message-set-wire-format
+        .type bool
+        .optional
+        .default false
+        .code 1
+    ]
+    .field [
+        .name no-standard-descriptor-accessor
+        .type bool
+        .optional
+        .default false
+        .code 2
+    ]
+    .field [
+        .name uninterpreted-option
+        .type uninterpreted-option
+        .repeated
+        .code 999
+    ]
+]
+
+.record [
+    .name field-options
+    .field [
+        .name ctype
+        .type field-options-ctype
+        .optional
+        .default.string
+        .code 1
+    ]
+    .field [
+        .name packed
+        .type bool
+        .optional
+        .code 2
+    ]
+    .field [
+        .name deprecated
+        .type bool
+        .optional
+        .default false
+        .code 3
+    ]
+    .field [
+        .name experimental-map-key
+        .type string
+        .optional
+        .code 9
+    ]
+    .field [
+        .name uninterpreted-option
+        .type uninterpreted-option
+        .repeated
+        .code 999
+    ]
+]
+
+.enum [
+    .name field-options-ctype
+    .option [
+        .name string
+        .code 0
+        .protobuf-name "field_options_string"
+    ]
+    .option [
+        .name cord
+        .code 1
+        .protobuf-name "field_options_cord"
+    ]
+    .option [
+        .name string-piece
+        .code 2
+        .protobuf-name "field_options_string_piece"
+    ]
+]
+
+.record [
+    .name enum-options
+    .field [
+        .name uninterpreted-option
+        .type uninterpreted-option
+        .repeated
+        .code 999
+    ]
+]
+
+.record [
+    .name enum-value-options
+    .field [
+        .name uninterpreted-option
+        .type uninterpreted-option
+        .repeated
+        .code 999
+    ]
+]
+
+.record [
+    .name service-options
+    .field [
+        .name uninterpreted-option
+        .type uninterpreted-option
+        .repeated
+        .code 999
+    ]
+]
+
+.record [
+    .name method-options
+    .field [
+        .name uninterpreted-option
+        .type uninterpreted-option
+        .repeated
+        .code 999
+    ]
+]
+
+.record [
+    .name uninterpreted-option
+    .field [
+        .name name
+        .type uninterpreted-option-name-part
+        .repeated
+        .code 2
+    ]
+    .field [
+        .name identifier-value
+        .type string
+        .optional
+        .code 3
+    ]
+    .field [
+        .name positive-int-value
+        .type uint64
+        .optional
+        .code 4
+    ]
+    .field [
+        .name negative-int-value
+        .type protobuf-int64
+        .optional
+        .code 5
+    ]
+    .field [
+        .name double-value
+        .type float64
+        .optional
+        .code 6
+    ]
+    .field [
+        .name string-value
+        .type binary
+        .optional
+        .code 7
+    ]
+]
+
+.record [
+    .name uninterpreted-option-name-part
+    .field [
+        .name name-part
+        .type string
+        .code 1
+    ]
+    .field [
+        .name is-extension
+        .type bool
+        .code 2
+    ]
+]

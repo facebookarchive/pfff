@@ -1,0 +1,16 @@
+#!/bin/sh
+
+set -e
+
+
+if which md5 >/dev/null 2>/dev/null
+then
+    md5 -q "$1"
+elif which md5sum >/dev/null 2>/dev/null
+then
+    md5sum "$1" | awk '{print $1}'
+else
+    echo "can't find md5 nor md5sum" 1>&2
+    exit 1
+fi
+

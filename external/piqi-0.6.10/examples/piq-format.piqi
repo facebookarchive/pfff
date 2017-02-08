@@ -1,0 +1,18 @@
+% formatted Piq value representations
+
+.alias [
+    .name word
+    .type string
+
+    % if possible, format as word instead of quoted string literal
+    .piq-format.word
+]
+
+.alias [
+    .name text
+    .type string
+
+    % if possible, format as verbatim text instead of quoted string literal
+    .piq-format.text
+]
+

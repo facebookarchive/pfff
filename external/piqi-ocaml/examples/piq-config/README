@@ -1,0 +1,14 @@
+This is an example of how to use configuration file in Piq format from OCaml
+program.
+
+To build the example, run "make".
+
+The resulting "./config" executable will read the config data structure from
+"config.piq" and print it on stdout.
+
+
+Files:
+        config.piqi - the definition of the config file format
+        config.piq  - an example config file
+        config.ml   - an OCaml program that reads the "config.piq" file
+

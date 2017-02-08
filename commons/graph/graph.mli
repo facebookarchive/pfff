@@ -20,6 +20,12 @@ val copy:
 
 
 (* graph access *)
+(*module Ocamlgraph.Pack.Digraph = Ocamlgraph.Pack.Digraph*)
+
+val graph_og: 'a graph -> Ocamlgraph.Pack.Digraph.t
+val graph_key_of_vertex: 'a graph -> (Ocamlgraph.Pack.Digraph.V.t, 'a) Hashtbl.t
+val graph_vertex_of_key: 'a graph -> ('a, Ocamlgraph.Pack.Digraph.V.t) Hashtbl.t
+val graph_cnt: 'a graph -> int ref
 val nodes: 'a graph -> 'a list
 val succ: 'a -> 'a graph -> 'a list
 val pred: 'a -> 'a graph -> 'a list (* slow! *)

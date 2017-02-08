@@ -1,0 +1,22 @@
+% input/ouput/error of functions defined in function.piqi
+
+:function/bar-input [ 10 ]
+:function/bar-output 1
+:function/bar-error 100.0
+
+
+:function/baz-input []
+
+
+:function/v-output.i 0
+:function/v-output.f 100.0
+
+
+:function/e-error.a
+:function/e-error.b
+
+
+:function/l-input [1 2 3]
+
+
+:function/a-input # foo

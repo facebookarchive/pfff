@@ -1,0 +1,6 @@
+This is an example of how to serialize arbitrary monomorphic OCaml types by
+mapping them to built-in or previously defined Piqi types.
+
+This mechanism can be used, for example, for serializing OCaml chars as
+integers, bigints as decimal strings, or even "string Map.Make(String).t" as
+list of {key, value} records.

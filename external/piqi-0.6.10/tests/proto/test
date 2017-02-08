@@ -1,0 +1,91 @@
+#!/bin/sh
+
+
+# quit if there's no google/protobuf directoru
+test -d google/protobuf || exit 0
+
+
+#export PIQI_TRACE=1
+set -ex
+
+
+$PIQI of-proto --normalize google/protobuf/descriptor.proto
+$PIQI of-proto --normalize google/protobuf/compiler/plugin.proto
+$PIQI to-proto google/protobuf/descriptor.proto.piqi
+$PIQI to-proto google/protobuf/compiler/plugin.proto.piqi
+protoc --include_imports -o/dev/null google/protobuf/compiler/plugin.piqi.proto
+
+
+cd google/protobuf
+
+	#protoc --include_imports -odescriptor.proto.pb descriptor.proto
+	protoc --include_imports -odescriptor.proto.pb descriptor.piqi.proto
+	$PIQI convert --type descriptor/file-descriptor-set -t piq descriptor.proto.pb
+	$PIQI convert -t pb descriptor.proto.pb.piq
+	cmp descriptor.proto.pb descriptor.proto.pb.piq.pb
+	$PIQI convert --type descriptor/file-descriptor-set -t piq descriptor.proto.pb.piq.pb
+	cmp descriptor.proto.pb.piq descriptor.proto.pb.piq.pb.piq
+	#protoc --decode=google.protobuf.FileDescriptorSet descriptor.proto < descriptor.proto.pb.piq.pb >/dev/null
+	protoc --decode=google.protobuf.file_descriptor_set descriptor.piqi.proto < descriptor.proto.pb.piq.pb >/dev/null
+
+cd -
+
+
+(cat <<!
+google/protobuf/descriptor.proto
+google/protobuf/compiler/plugin.proto
+google/protobuf/unittest_embed_optimize_for.proto
+google/protobuf/unittest_enormous_descriptor.proto
+google/protobuf/unittest_import_lite.proto
+google/protobuf/unittest_import.proto
+google/protobuf/unittest_lite_imports_nonlite.proto
+google/protobuf/unittest_lite.proto
+google/protobuf/unittest_mset.proto
+google/protobuf/unittest_no_generic_services.proto
+google/protobuf/unittest_optimize_for.proto
+google/protobuf/unittest.proto
+!
+) > l
+
+
+test_all() {
+	PIQI_OF_PROTO_FLAGS=$1
+	for i in `cat l`
+	do
+		$PIQI of-proto $PIQI_OF_PROTO_FLAGS --convert-groups $i || exit 1
+	done
+
+
+	#PIQI_TO_PROTO_FLAGS=--no-warnings
+	for i in `cat l`
+	do
+		$PIQI to-proto $PIQI_TO_PROTO_FLAGS $i.piqi || exit 1
+	done
+
+
+	for i in `cat l`
+	do
+		i=`dirname $i`/`basename $i .proto`
+		protoc --include_imports -o/dev/null $i.piqi.proto || exit 1
+	done
+
+	for i in `cat l`
+	do
+		i=`dirname $i`/`basename $i .proto`
+		$PIQI of-proto $PIQI_OF_PROTO_FLAGS --convert-groups $i.piqi.proto || exit 1
+	done
+}
+
+
+test_all
+test_all --normalize
+
+
+rm l
+
+
+$PIQI of-proto --keep-tmp-files google/protobuf/unittest_enormous_descriptor.proto 
+$PIQI convert --type google/protobuf/descriptor/file-descriptor-set -f pb -t pb google/protobuf/unittest_enormous_descriptor.proto.pb 
+cmp google/protobuf/unittest_enormous_descriptor.proto.pb*
+
+

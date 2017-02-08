@@ -1,0 +1,673 @@
+Piqi 0.6.10 (December 28, 2014)
+===============================
+
+Bug fixes:
+
+  - Fix assert failure when checking for infinite types
+  - Fix "piqi server" start on Win32 (#47)
+  - Fix several Piq & getopt parsing regressions introduced in v0.6.7
+
+
+Piqi tools:
+
+  - Add --piq-relaxed-parsing option to "piqi pp" and "piqi check"
+
+
+Piqi 0.6.9 (November 17, 2014)
+==============================
+
+OCaml:
+
+  - Fix #46: build bytecode version of piqilib
+
+
+Miscellaneous:
+
+  - Remove third-party convenience dependencies from the repo (downloading them
+    during 'make deps' instead)
+  - Use ocaml-base64 instead of old ocamlnet's base64 implementation
+  - Add missing copyright headers and license information
+  - Bring NOTICE and copyright information up-to-date
+
+
+Piqi 0.6.8 (September 3, 2014)
+==============================
+
+Restore compatibility with OCaml 4.00.1
+
+
+Piqi 0.6.7 (September 2, 2014)
+==============================
+
+Deprecations:
+
+  - Remove deprecated pa_labelscope camlp4 syntax extension
+
+
+Piq language:
+
+  - Fix handling of embedded modules
+  - Rework parsing of Piq options and sub-variants
+
+
+Miscellaneous:
+
+  - Compatiblity with OCaml 4.02.0
+  - Various code layout and build improvements
+
+
+Piqi 0.6.6 (March 30, 2014)
+===========================
+
+Backward-incompatible changes:
+
+  - Deprecate "piqi version" subcommand; use "piqi --version" instead
+  - Drop support for OCaml 3.11
+
+OCaml:
+
+  - Piqi for OCaml was removed from the source code tree, because its
+    development moved to https://github.com/alavrik/piqi-ocaml
+
+Piqi language:
+
+  - More robust scheme for locating imported and included .piqi modules (#43)
+  - Move .custom-field property from piqi-lang to piqi-spec
+
+Piq language:
+
+  - Improve compatibility between optional boolean fields and flags
+  - New .piq-alias property for field and options
+  - New .piq-positional property for fields and records
+
+Piqi tools:
+
+  - Deprecate "piqi version"; use "piqi --version" instead
+  - Check for infinite types (#39)
+  - Rename --json-omit-null-fields to --json_omit_missing_fields
+  - Rename --leave-tmp-files to --keep-tmp-files
+  - (piqi to-proto) fix incorrectly handling aliases in some cases
+  - (piqi convert) New options for converting from/to Piq format:
+    --piq-frameless-output --piq-frameless-input --piq-relaxed-input
+  - (piqi compile) add new experimental -f and -t piqi command-line options
+
+Miscellaneous:
+
+  - Remove dependency on custom CamlP4 extensions
+  - Drop support for OCaml 3.11
+  - Drop support for MinGW/Msys build
+  - Add proper support for MinGW/Cygwin build
+  - Add support for cross-compiling win32 executable on Linux
+  - Massive improvements in bootstrap and build; simpler and faster builds
+  - "make install" now installs the piqi.1 manpage
+
+
+Piqi 0.6.5 (October 27, 2013)
+=============================
+
+Piqi language:
+
+  - add a new 'json-omit-missing' field property
+  - add a new 'piqi' filename as a field in the compiled spec
+
+Piqi tools:
+
+  - (piqi call, getopt, to-proto) add --strict flag (treat warnings as errors)
+  - (piqi compile) include .piqi filename as a field in the compiled spec
+
+Encodings:
+
+  - (piq, json, xml) Fix: incorrect parsing of large (> 2^63 - 1) unsigned
+    decimal literals
+  - (json) preserve the original int, float and string literals in embedded JSON
+
+Miscellaneous:
+
+  - automatic checking for broken links in the generated documentation during CI
+    build (thanks to Motiejus Jakštys)
+
+
+Piqi 0.6.4 (April 17, 2013)
+===========================
+
+Preparation for OS packaging (thanks to Motiejus Jakštys and Spilgames):
+
+- scripts for building piqi(1) man page and offline HTML documentation
+- improvements in build scripts
+- fixed tests compilation on recent Ubuntu versions
+
+Miscellaneous:
+
+- travis-ci integration (thanks to Motiejus Jakštys and Spilgames)
+
+
+Piqi 0.6.3 (April 3, 2013)
+==========================
+
+Erlang:
+
+- Piqi for Erlang was removed from the source code tree, because its development
+  moved to https://github.com/alavrik/piqi-erlang
+
+Piqi-RPC
+
+- piqi-rpc was removed from the source code tree, because its development moved
+  to https://github.com/alavrik/piqi-rpc
+
+Piqi tools:
+
+- Fix inconsistencies in Piq syntax
+
+
+Piqi 0.6.2 (March 17, 2013)
+===========================
+
+Piqi tools:
+
+- Fix: assertiton failure in "piqi compile --normalize-names ..."
+
+
+Piqi 0.6.1 (March 11, 2013)
+===========================
+
+Piqi tools:
+
+- Fix: assertion failure in "piqi compile"
+- Fix: handling of unknown fields included from other modules by "piqi compile"
+
+
+Piqi 0.6.0 (February 3, 2013)
+=============================
+
+Backward incompatible changes:
+
+  - (piqi) Remove support for "piq-word" and "piq-text" built-in types and
+    provide an alternative way to control Piq representation of string values
+    using a new "piq-format" property
+  - (piqi) Rename "piq-any" built-in type to "piqi-any"
+  - (xml) always use <value> as a top-level XML element instead of tag derived
+    from specific typename
+  - (json) top-level values of primitive types and enum constants encoded in
+    JSON as {"value": ...} instead of {"_": ...}
+  - (tools) use $PIQI_PATH environment variable for Piqi module search paths
+    instead of $PIQI_DIR
+
+Encodings:
+
+  - Fix parsing of enum options with dashes from JSON
+  - Support for untyped JSON and XML values in Piq, Protobuf, JSON and XML
+    formats (JSON and XML formats support only untyped JSON and XML
+    respectively) as values of "piqi-any" type
+  - (json) "json-omit-null-fields" option now works for non-existent repeated
+    fields as well: JSON fields with "[]" values are omitted from the output
+  - (json) top-level values of primitive types and enum constants encoded in
+    JSON as {"value": ...} instead of {"_": ...}
+  - (xml) always use <value> as a top-level XML element instead of tag derived
+    from specific typename
+  - (piq) change ":piqtype <typename>" syntax to "(:<typename>)"
+  - (pib) rename experimental "wire" encoding to "pib"
+  - remove support for experimental "piq-json" encoding (similar functionality,
+    including optional type hints and reversibility is provided as a part of the
+    standard "json" encoding)
+
+Erlang:
+
+  - Fix #22: incorrect generation of -type for imported variants
+
+OCaml:
+
+  - New .ocaml-optional field property for more precise control of how .optional
+    fields with default values are represented in OCaml records
+  - Fix #23: compilation under OCaml-4.00+
+  - OPAM package
+
+Piqi language:
+
+  - Split self-specification into two parts: portable self-spec (piqi.piqi) and
+    the Piqi language superset of it (piqi-lang.piqi)
+  - Ability to define untyped JSON and XML values
+  - Remove support for "piq-word" and "piq-text" built-in types, and provide an
+    alternative way to control Piq representation of string values using a new
+    "piq-format" property
+  - Allow interchangeable use of '_' and '-' in imported module paths and names
+  - Rename "piq-any" built-in type to "piqi-any"
+  - New experimental .deprecated flag for fields and options
+  - Allow referencing automatically-generated from nested function parameters
+    *-input|-output|-error definitions
+  - Allow nested alias definitions in function parameters
+  - (protobuf) new .protobuf-prefix property for enum definitions
+  - (protobuf) rename .proto-name, .proto-custom, .proto-package properties to
+    .protobuf-name, .protobuf-custom, .protobuf-package
+  - (protobuf) rename .wire-type alias property to .protobuf-wire-type
+  - (protobuf) rename .wire-packed repeated field/list property to
+    .protobuf-packed
+
+Piqi tools
+
+  - Use $PIQI_PATH environment variable for Piqi module search paths instead of
+    $PIQI_DIR
+  - Initial implementation of "piqi compile" and "piqi cc"
+  - Rename "piqi convert|check|getopt --piqtype" command-line parameter to
+    "--type"
+  - Modules included and imported from modules with scoped names are searched
+    in the importing/including module's directory first
+  - New "piqi expand --add-module-name" that adds .module <name> property if it
+    was missing
+  - New "piqi expand --functions" and "--all" flags
+  - New "piqi convert --gen-extended-piqi-any" flag for generating extended
+    representation of piqi-any values in JSON and XML formats
+  - Rename "--noboot" flag to "--no-builtin-types"
+
+Miscellaneous:
+
+  - Remove dependency on custom changes in "xmlm" third-party library and bring
+    up-to-date with latest upstream version (1.1.1)
+  - Add conventional "./configure" script (fixes #20)
+  - Don't build ulex, xmlm and easy-format third-party dependencies if they are
+    already installed in the system
+  - Improved Piq pretty-printing, especially of verbatim text literals
+  - Piqi documentation is now distributed with the source code
+
+
+Piqi 0.5.7 (April 29, 2012)
+===========================
+
+Backward incompatible changes:
+
+  - The way Piqi flags are represented in JSON format changes
+    from "<name>": null to "<name>": true
+
+Piqi language:
+
+  - "extend" statement can be applied to all kinds of Piqi entries: type
+    definitions, fields, options, functions, function parameters, imports
+  - Change Piqi includes to be syntax-based
+
+Piq language:
+
+  - Make ":piqtype" directive optional -- which makes Piq format usable for
+    storing configuration files and keep them independent of Piqi type
+    definitions
+
+Erlang:
+
+  - Check for missing piqi binary (thanks to Bart van Deenen)
+  - Make edoc work without errors
+  - Optimize Protobuf record parsing from O(N^2) to O(N)
+  - Improve Protobuf compatibility -- take last value instead of first when
+    reading Protobuf optional or required fields
+  - "piqic erlang" automatically loads and includes <f>.erlang.piqi extension
+    module into each input module <f>.piqi
+  - New serialization options:
+    - json_omit_null_fields (default = true) -- add JSON "null" fields for
+      missing optional Piqi fields
+    - pretty_print (default = true) -- pretty-print JSON and XML output
+    - use_strict_parsing (default = false) -- treat unknown and duplicate fields
+      as errors when parsing JSON, XML and Piq formats
+
+OCaml:
+
+  - Fix #14: incorrect "piqic ocaml-ext" output when used w/o --pp flag
+  - Optimize Protobuf record parsing from O(N^2) to O(N)
+  - Improve Protobuf compatibility -- take last value instead of first when
+    reading Protobuf optional or required fields
+  - New examples for using custom types and using Piq as a config file format
+  - "piqic ocaml" automatically loads and includes <f>.ocaml.piqi extension
+    module into each input module <f>.piqi
+  - New serialization options:
+    - json_omit_null_fields (default = true) -- add JSON "null" fields for
+      missing optional Piqi fields
+    - pretty_print (default = true) -- pretty-print JSON and XML output
+    - use_strict_parsing (default = false) -- treat unknown and duplicate fields
+      as errors when parsing JSON, XML and Piq formats
+
+Piqi tools:
+
+  - (piqi json-pp) New --indent flag for indenting instead of pretty-printing
+  - (piqi convert, check) --piqtype command-line parameter defines default type
+    when reading Piq input
+  - (piqi convert) Improve Protobuf compatibility -- take last value instead of
+    first when reading Protobuf optional or required fields
+  - (piqi convert) New --json-omit-null-fields option for including JSON "null"
+    fields for missing optional Piqi fields (omitted from JSON output by
+    default)
+  - (piqi convert, check) New --strict flag for piqi check & convert -- treat
+    unknown and duplicate fields as errors when parsing JSON, XML and Piq
+    formats
+  - (piqi convert, check, expand) New -e <extension-name> option to
+    automatically including Piqi extension for each loaded Piqi module
+
+"piqi to-proto" improvements and fixes:
+
+  - Fix a problem in "piqi to-proto" with aliasing imported defs
+  - Fix "piqi to-proto" for function parameters (not generating Protobuf defs
+    for function parameters of primitive types)
+  - Improve handling of Piqi enums by "piqi to-proto"
+
+Piqi-RPC:
+
+  - Fix HTTP GET returning internal error when Piqi imports are used
+  - Add configuration options for services:
+    - pretty-print JSON and XML output (default = true)
+    - omit fields with 'null' values from JSON output (default = true)
+    - treat unknown and duplicate fields as errors when parsing JSON or XML
+      input (default = false)
+    - do not include Erlang stracktraces in HTTP 500 responses when request
+      handler crashes (default = true) (thanks to Thijs Terlouw)
+  - Ignore content-type header part after ';' (thanks to Bart van Deenen)
+  - Allow callbacks to modify Webmachine Request (thanks to Thijs Terlouw)
+  - Improve "addressbook" example
+
+Internal improvements:
+
+  - Improve and simplify Piqi bootstrap procedure
+  - Get rid of m4 as a build dependency
+  - Split Piqi self-definition into two parts: piqi-spec and piqi-lang
+  - Represent .piqi as piqi-spec instead of piqi-lang in Protobuf, XML and JSON
+    formats
+  - Symbolic representation of Piqi defaults in JSON and XML (i.e. when .piqi is
+    converted to JSON and XML)
+
+
+Piqi 0.5.6 (August 7, 2011)
+===========================
+
+Highlights:
+
+  - Support for Protocol Buffer's "packed" encoding for primitive numeric fields
+  - Windows support using MinGW
+
+  Specific to OCaml:
+
+    - Multi-format Protobuf/JSON/XML/Piq serialization
+    - Serialization of custom types, e.g chars, bigints
+    - Option for representing repeated fields and lists as OCaml arrays
+
+  Specific to Erlang:
+
+    - Rebar packages for Piqi and Piqi-RPC
+    - Multi-core scalability and improved performance for JSON and XML
+      serialization
+    - 30% faster Erlang binary de-serialization and other optimizations of
+      piqirun.erl (thanks to Hunter Morris)
+    - Serialization of custom types, e.g. bigints, arbitrary Erlang terms
+
+OCaml:
+
+  - Multi-format Protobuf/JSON/XML/Piq serialization
+  - Serialization of custom OCaml types
+  - Support for Protocol Buffer's "packed" encoding for primitive numeric fields
+  - Support for empty records
+  - Option for representing repeated fields and lists as OCaml arrays
+  - Automatic topological sorting of sub-variant definitions
+  - Fix: reading uint32-fixed values > 0x7fffffff from Protobuf encoding
+
+Erlang:
+
+  - Rebar package
+  - Multi-core scalability and improved performance for JSON and XML
+    serialization
+  - Optimizations of serialization runtime library (thanks to Hunter Morris)
+  - Support for protocol Buffer's "packed" encoding for primitive numeric fields
+  - Serialization of custom Erlang types
+  - New top-level ".erlang-string-type" option for decoding strings as lists (by
+    default strings are decoded as binaries)
+  - The ability to turn off pretty-printing for JSON and XML output
+  - Clear erlc & dialyzer warnings on R14B02
+
+Piqi-RPC:
+
+  - Rebar package
+  - Make HTTP request data accessible to the application callbacks
+  - Report internal errors using standard Erlang Error Logger interface
+  - Limit the size and depth of error messages
+  - Less strict validation of HTTP request for easier request construction by
+    clients
+
+Piqi language:
+
+  - Allow to nest any type definition as a function parameter
+  - New ".proto-custom" property for better Protocol Buffers interoperation;
+    example usage:
+            .proto-custom # option java_package = "com.example.foo";
+
+Piqi tools:
+
+  - Fix: add missing exception handling when parsing XML
+  - Fix: handle malformed UTF-8 exception
+  - Fix: incorrect Protobuf to X conversion in case of imported definitions
+  - Fix: parsing empty strings represented in XML
+  - Fix #7: (piqi to-proto) invalid .proto generated in case of imported aliases
+  - Better warnings on unknown fields when parsing .piqi/.piq
+
+
+Piqi 0.5.5 (April 12, 2011)
+===========================
+
+Highlights:
+
+  - Multi-format data serialization for Erlang (JSON, XML, Protocol Buffers)
+  - Piqi-RPC -- an RPC-over-HTTP system for Erlang
+  - Support for XML encoding
+  - Function definitions in the Piqi language
+  - Piqi getopt -- type-based command-line arguments parsing
+
+Backward-incompatible changes:
+
+  - "piqirun" Erlang application is renamed to "piqi" (contains the old
+    "piqirun.erl" and some new functionality). The new application runs a
+    supervisor and some servers which are used by Piqi-RPC and multi-format data
+    serialization (see below).
+
+  - (piqic ocaml, piqic erlang) Both Piqi compilers now generate
+    "<Mod>_piqi.ml|.erl|.hrl" instead of "<Mod>.ml|.erl|.hrl". For OCaml it is
+    still possible to specify the name of the output file explicitly using "-o"
+    parameter. OCaml and Erlang module names can be also set using
+    "ocaml-module" and "erlang-module" directly in the .piqi file.
+
+  - (ocaml) Generated OCaml serialization functions (i.e. gen_<typename>) now
+    accept 1 arguments instead of 2. Old functions accepting 2 arguments are
+    renamed to gen__<typename>. The removed argument is an integer tag for a
+    Protobuf field -- there's rarely a need to specify it explicitly.
+
+Important changes in Erlang serialization:
+
+  - Generated Erlang serialization functions (i.e. gen_<type>/2) can also accept
+    only 1 argument. It is now possible to use gen_<type>(X) instead of
+    gen_<type>('undefined', X).
+
+  - Calling piqirun:init_from_binary/1 is no longer necessary as all
+    parse_<typename>/1 functions will accept Erlang binaries.
+
+Other changes:
+
+  - (piqirun-erlang) Improved error reporting when deserializing incomplete
+    data: a special 'not_enough_data' exception will be thrown in such case.
+  - (json) Wrapping top-level primitive values into {"_": <value>} object to
+    conform with JSON RFC4627 specification.
+  - Piqi-light syntax improvements for better readability.
+  - Don't generate {<field>: null} for optional fields missing in JSON records.
+  - Tests will now work even if Protocol Buffers is not installed.
+  - (piqirun-ocaml) Remove "Stream" layer and use channels directly in the input
+    buffer.
+
+Bug fixes:
+
+  - (erlang) Fixed incorrect Erlang mapping for some built-in types (problem was
+    introduced in 0.5.4 release).
+  - (erlang) A proper support for records with no fields.
+  - (piqic ocaml) crash on imports of built-in aliases (Issue #2).
+  - (make ocaml-install) Fixed installation of OCaml libraries which conflicted
+    with installation of OCaml dependencies (Issue #1).
+
+New functionality (XML support):
+  - "piqi convert" can now convert data between Protobuf, XML, JSON and Piq
+    formats. Other Piqi commands that rely on conversion functionality, such as
+    "piqi getopt", can work with XML as well.
+
+New functionality (XML, JSON and Piq serialization for Erlang):
+
+  - "piqic-erlang-ext" -- a command-line Piqi compiler (an extended version of
+    "piqic erlang" command). It generates Erlang code for
+    serializing/deserializing data XML, JSON, Piq, Protobuf formats.
+  - piqi_tools.erl -- Erlang bindings for Piqi tools implemented as Erlang
+    port running "piqi server".
+
+New functionality (miscellaneous):
+
+  - Support for serializing top-level values of primitive types (ocaml, erlang,
+    piqi tools, all formats).
+  - (piqirun-erlang, piqirun-ocaml) New functions for encoding/decoding
+    length-delimited blocks (gen_block/parse_block). Compatible with similar
+    functionality in Protocol Buffers.
+  - (piqic-ocaml, piqic-erlang) Support for generating default values for types:
+    'piqic ocaml|erlang --gen-defaults ...'.
+  - A new "piqi getopt" command interprets idiomatic command-line arguments as
+    Piq data object (according to a Piqi type spec) and converts it to JSON,
+    XML, Piq and Protobuf formats.
+  - Piqi-RPC -- an PRC-over-HTTP system for Erlang (see below).
+  - Performance tests for Erlang serialization to/from Protobuf, JSON, XML, Piq.
+
+New functionality (Piqi-RPC):
+
+  - Support for function definitions in the Piqi language, all the Piqi tools,
+    compilers, OCaml, Erlang and Protocol Buffer mappings.
+  - A new "piqi server" command that talks Piqi-RPC over Unix pipe and exposes
+    data conversion functionality.
+  - A new "piqi call" -- Piqi-RPC command-line client that interprets
+    command-line arguments as input parameters for remote functions and
+    communicates with Piqi-RPC servers via HTTP or Unix pipe.
+  - piqi-rpc -- an Erlang application containing runtime support libraries and
+    HTTP interface for Piqi-RPC.
+  - "piqic-erlang-rpc" -- a command-line Piqi compiler and server stubs
+    generator for Piqi-RPC/Erlang.
+  - A new "piqic expand" command. It is similar to "piqi expand" but also sets
+    piqic-specific fields, such as OCaml and Erlang names.
+
+
+Piqi 0.5.4 (December 19, 2010)
+==============================
+
+Now it is possible to embed Piqi type definitions into Piq streams to produce
+self-describing data bundles. Piq streams with embedded type definitions can be
+represented in Piq, Piq-JSON and Wire formats.
+
+Piqi tools:
+
+  - New "piqi convert --embed-piqi" flag for embedding type information into
+    serialized Piq streams.
+  - Use hash-based wire codes for Piqi self-specification instead of
+    automatically-assigned ordinals to ensure forward and backward compatibility
+    of serialized .piqi specs with regard to future Piqi language extensions.
+  - Many internal improvements in Piqi compiler compiler, Piqi library
+    initialization and serialization of .piqi specs.
+
+piqic:
+
+  - (ocaml, erlang) Generating more optimal code for variant parsing.
+
+Bug fixes:
+
+  - Fixed an integer overflow bug in piqirun-ocaml library on 32-bit platform.
+  - Fixed missing location information in errors or warnings while converting
+    from JSON.
+  - Fixed incorrect field ordering during Piq input/output when Piqi
+    specification explicitly defines non-ordinal wire codes.
+
+
+Piqi 0.5.3 (October 19, 2010)
+=============================
+
+Added initial support for Piqi-light -- lightweight EBNF-like syntax for Piqi
+data definition language.
+
+Piqi tools:
+
+  - New "piqi light" command for printing .piqi in Piqi-light syntax.
+  - Improved pretty-printing of .piqi by transforming output Piq AST. Mainly
+    affects "piqi expand".
+  - Added support for "-o" option to "piqi to-proto", "piqi of-proto" commands.
+  - Improved floats reversibility in Piq (unified this part with JSON
+    generator). Affects "proto convert -t piq".
+
+piqic:
+
+  - (ocaml) Simplified generated OCaml type definitions.
+
+Bug fixes:
+
+  - Timely reset location DB to allow garbage collection of objects. Affects
+    "piqi convert" and "piqi pp".
+  - Fixed several problems with "piqi expand".
+  - Fixed printing order for "unknown field" warnings.
+
+
+Piqi 0.5.2 (September 13, 2010)
+===============================
+
+Added Erlang support:
+
+  - "piqic erlang" -- a new piqic backend for for generating Erlang type
+    specifications and encoding/decoding functions.
+  - "piqirun-erlang" -- runtime support library.
+
+piqic:
+
+  - (ocaml, erlang) Normalize Piqi identifiers by default, i.e. convert
+    "CamlCase" identifiers to "caml-case".
+  - (ocaml, erlang) Don't generate codecs and types for unused defintions from
+    the boot module.
+
+piqirun-ocaml:
+
+  Backward incompatible changes:
+
+  - Combined piqirun-ocaml library into one "piqirun" OCaml module (previously
+    there were two: "piqirun_gen" and "piqirun_parse").
+  - Improved piqirun-ocaml buffer initialization interface (unified it with
+    piqirun-erlang).
+
+  Other changes:
+
+  - Ignore duplicate fields instead of producing an error.
+
+Piqi tools:
+
+  - Generate warnings instead of errors on duplicate fields when reading from
+    Piq format.
+  - Ignore duplicate fields when reading from wire format.
+
+Platform support:
+
+  - Now builds and runs on Mac OS X (fixed some build portability problems).
+
+
+Piqi 0.5.1 (August 17, 2010)
+============================
+
+Major changes include support for JSON encoding and providing compatibility
+with OCaml 3.12.0.
+
+Piqi tools:
+
+  - "piqi convert" command now supports two new encodings: "json" (plain JSON)
+    and "piq-json" (JSON with Piq type annotation for top-level objects).
+  - A new command: "piqi json-pp" for pretty-printing JSON files.
+
+Piqi language:
+
+  - Added support for "json-name" property for type definitions, fields and
+    options. When specified, it will be used as a name for correspondent JSON
+    field names instead of "name".
+  - Renamed "ignore-field" top-level directive to "custom-field".
+
+Other changes:
+
+  - Provided compatibility with the latest OCaml release (3.12.0). Improved
+    support for older OCaml versions >= 3.10.
+
+
+Piqi 0.5.0 (July 9, 2010)
+=========================
+
+First public release.

@@ -1,0 +1,31 @@
+% This module contains "ee" alias which is not compatible with Protocol Buffers.
+%
+% When mapped to Protobuf, another "ee" enum definition is generated with the
+% same enum elements, which is not allowed in Protobuf.
+
+.include [ .module packed ]
+
+.alias [
+    .name ee
+    .type e
+]
+
+
+.extend [
+    .typedef r-all
+
+    .with.field [
+        .name ee
+        .type ee
+        .repeated
+        .protobuf-packed
+    ]
+]
+
+
+.list [
+    .name ee-list
+    .type ee
+    .protobuf-packed
+]
+

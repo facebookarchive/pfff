@@ -1,0 +1,37 @@
+OCAMLMAKEFILE := ../../make/OCamlMakefile
+
+
+SOURCES = addressbook_piqi.ml
+
+
+ifeq ($(GOAL),add_person)
+RESULT = add_person
+SOURCES += add_person.ml
+else
+RESULT = list_people
+SOURCES += list_people.ml
+endif
+
+
+PRE_TARGETS = addressbook_piqi.ml
+
+export OCAMLPATH = ../..
+PACKS = piqirun.pb
+
+
+PIQIC = ../../piqic-ocaml/piqic-ocaml
+#PIQIC_FLAGS =
+
+
+all: native-code #byte-code
+
+
+addressbook_piqi.ml: addressbook.proto.piqi
+	$(PIQIC) $(PIQIC_FLAGS) $<
+
+
+clean::
+	rm -f *.tmp.ml
+
+
+include $(OCAMLMAKEFILE)

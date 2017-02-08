@@ -1,0 +1,10 @@
+
+Compile complex piqi specification "piqi/piqi.piqi" to produce OCaml
+parsers and generators.
+
+Then build a program which reads and writes back a serialized binary object
+which happens to be a serialized "piqi.piqi" specification.
+
+Also testing piqi imports in OCaml by compiling and linking "piqobj.piqi" which
+imports "piqi.piqi".
+

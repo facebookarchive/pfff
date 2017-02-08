@@ -1,0 +1,33 @@
+% this is an object of type "person" which is defined in module "person"
+:person/person [
+    .name "J. Random Hacker"
+    .id 0
+
+    .email "j.r.hacker@example.com"
+
+    .phone [
+        .number "(111) 123 45 67"
+        % NOTE: phone is "home" by default
+    ]
+
+    .phone [
+        .number "(222) 123 45 67"
+        .mobile
+    ]
+
+    .phone [
+        .number "(333) 123 45 67"
+        .work
+    ]
+]
+
+% another object of the same type
+:person/person [
+    .name "Joe User"
+    .id 1
+
+    % Joe User doesn't have an email
+
+    .phone [ "(444) 123 45 67" ]
+    .phone [ "(555) 123 45 67" .work ]
+]

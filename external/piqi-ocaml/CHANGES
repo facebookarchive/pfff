@@ -1,0 +1,70 @@
+Piqi-ocaml 0.7.1 (April 17, 2014)
+=================================
+
+Fixes:
+
+  - 'piqic-ocaml --normalize-names' should be true by default
+
+Other changes:
+
+  - piqic-ocaml: indent generated .ml code instead of relying on camlp4o
+
+
+Piqi-ocaml 0.7.0 (April 7, 2014)
+================================
+
+The main change of this release is the rewrite of the "piqic-ocaml" code
+generator on top of "piqi compile" interfaces. As a result, we were able to move
+the piqi-ocaml code from the main Piqi project repository into its own
+piqi-ocaml repo.
+
+Other important changes:
+
+  - "piqic ocaml" becomes "piqic-ocaml"
+  - "piqic ocaml-ext" turns into "piqic-ocaml --ext"
+  - "piqirun" becomes a package with two subpackages: piqirun.pb -- for Protobuf
+    serialization and piqirun.ext -- for multi-format serialization; piqirun.pb
+    should be now used instead of piqirun package and piqirun.ext -- instead of
+    piqi.lib
+  - "--gen-defaults" compiler option is deprecated. "piqic-ocaml" now generates
+    _piqi.default_X automatically
+  - Much more cleaner and stable interfaces in the piqilib dependency (those
+    that piqi-ocaml depends on); this allows us to release piqilib and
+    piqi-ocaml independently
+  - Drop support for OCaml <= 3.11
+  - Deprecate and remove "pa_openin" camlp4 extension; "pa_labelscope"
+    extensions is kept for now as a part of the piqilib package so that existing
+    programs can still use it
+  - Deprecate and remove "piqic-ocaml -o <ofile>" command-line option
+
+Fixes:
+
+  - Fix generation of incorrect code for custom OCaml types
+
+New features:
+
+  - Preserve unknown Protobuf fields through deserialization-serialization cycle
+    (new piqic-ocaml --gen-preserve-unknown-fields flag)
+  - New conversion options: piq_frameless_output, piq_frameless_input,
+    piq_relaxed_parsing
+  - Add the ability to specify conversion options for generated
+    _piqi_ext.print_/prerr_ functions
+  - Add piqic-ocaml --piqi-version flag for printing piqilib version
+  - Add piqic-ocaml --runtime <module> option for specifying the name of the
+    Protobuf serialization runtime module (default = Piqirun)
+
+Miscellaneous:
+
+  - Rename conversion option: json_omit_null_fields -> json_omit_missing_fields
+  - Improved piqi-ocaml documentation (available at doc/piqi-ocaml.md)
+  - Continuous builds via Travis-CI
+
+
+Piqi 0.6.5 (October 27, 2013)
+=============================
+
+  Changelog for v0.6.5 and earlier releases is available here (the piqi-ocaml
+  project used to be a subtree in the piqi repository):
+
+      https://github.com/alavrik/piqi/blob/master/CHANGES
+

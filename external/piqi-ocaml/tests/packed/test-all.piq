@@ -1,0 +1,100 @@
+:packed/r-all [
+
+    (.bool true false true true false false true)
+
+
+    (.u32 0 1 100 0xffff_ffff)
+
+    (.u64 0 1 100 0xffff_ffff 0xffff_ffff_ffff_ffff 18446744073709551615)
+
+
+    (.s32 -1 0 1 100 0x7fff_ffff -0x8000_0000)
+
+    (.s64 -1 0 1 100 0x7fff_ffff -0x8000_0000
+        0x7fff_ffff_ffff_ffff -0x8000_0000_0000_0000
+    )
+
+
+    (.i32 -1 0 1 100 0x7fff_ffff -0x8000_0000)
+
+    (.i64 -1 0 1 100 0x7fff_ffff -0x8000_0000
+        0x7fff_ffff_ffff_ffff -0x8000_0000_0000_0000
+    )
+
+
+    (.uf32 0 1 100 0xffff_ffff)
+
+    (.uf64 0 1 100 0xffff_ffff 0xffff_ffff_ffff_ffff 18446744073709551615)
+
+
+    (.if32 -1 0 1 100 0x7fff_ffff -0x8000_0000)
+
+    (.if64 -1 0 1 100 0x7fff_ffff -0x8000_0000
+        0x7fff_ffff_ffff_ffff -0x8000_0000_0000_0000
+    )
+
+
+    % TODO: uncomment infinities and NaN when Piqi/Erlang support is added
+    (.f32 -1.999999999 0.0 1.001 4.44444 123456.123456 -123456.123456) % -0.inf 0.inf 0.nan)
+
+    (.f64 -1.999999999 0.0 1.001 4.44444 123456.123456 -123456.123456) % -0.inf 0.inf 0.nan)
+
+
+    (.e .a .b .c .d .d .c .b .a .d .d .c .c .b .b .a .a)
+
+    (.b true false true true false false true)
+
+    (.i -100_000_000 -1 0 2 100_000_000 1 2 3 4 5 -1000
+         -1 0 1 100 0x3fff_ffff -0x4000_0000
+    )
+
+    .lists [
+        .bool [true false true true false false true]
+
+
+        .u32 [0 1 100 0xffff_ffff]
+
+        .u64 [0 1 100 0xffff_ffff 0xffff_ffff_ffff_ffff]
+
+
+        .s32 [-1 0 1 100 0x7fff_ffff -0x8000_0000]
+
+        .s64 [-1 0 1 100 0x7fff_ffff -0x8000_0000
+            0x7fff_ffff_ffff_ffff -0x8000_0000_0000_0000
+        ]
+
+
+        .i32 [-1 0 1 100 0x7fff_ffff -0x8000_0000]
+
+        .i64 [-1 0 1 100 0x7fff_ffff -0x8000_0000
+            0x7fff_ffff_ffff_ffff -0x8000_0000_0000_0000
+        ]
+
+
+        .uf32 [0 1 100 0xffff_ffff]
+
+        .uf64 [0 1 100 0xffff_ffff 0xffff_ffff_ffff_ffff]
+
+
+        .if32 [-1 0 1 100 0x7fff_ffff -0x8000_0000]
+
+        .if64 [-1 0 1 100 0x7fff_ffff -0x8000_0000
+            0x7fff_ffff_ffff_ffff -0x8000_0000_0000_0000
+        ]
+
+
+        % TODO: uncomment infinities and NaN when Piqi/Erlang support is added
+        .f32 [-1.999999999 0.0 1.001 4.44444 123456.123456 -123456.123456] % -0.inf 0.inf 0.nan]
+
+        .f64 [-1.999999999 0.0 1.001 4.44444 123456.123456 -123456.123456] % -0.inf 0.inf 0.nan]
+
+
+        .e [.a .b .c .d .d .c .b .a .d .d .c .c .b .b .a .a]
+
+        .b [true false true true false false true]
+
+        .i [-100_000_000 -1 0 2 100_000_000 1 2 3 4 5 -1000
+             -1 0 1 100 0x3fff_ffff -0x4000_0000
+        ]
+    ]
+]

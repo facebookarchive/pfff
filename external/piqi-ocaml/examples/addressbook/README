@@ -1,0 +1,35 @@
+This directory contains an example of an addressbook data structure definition
+and two OCaml programs that rely on it to manipulate addressbook data:
+        
+        addressbook.proto.piqi -- definition of the addressbook data structure
+
+        add_person.ml -- adds a person to the addressbook
+
+        list_people.ml -- lists the contents of the addressbook
+
+
+The "./test" shell script contains tests for the OCaml programs.
+
+
+This example is based on the Google Protocol Buffers examples:
+
+        http://protobuf.googlecode.com/svn/trunk/examples/
+        (See their README.txt file for details)
+
+The data definition file "addressbook.proto.piqi" is converted from the original
+"../addressbook.proto" using the "piqi of-proto" command.
+
+OCaml-specific extensions to the converted ".proto" specificaion are defined in
+"addressbook.ocaml.piqi".
+
+The OCaml programs implement exactly the same functionality as Python, Java and
+C++ programs from the Protobuf examples. The data structure and the binary
+encoding of the addressbook data structure is fully compatible as well. As a
+result, the OCaml programs can read an addressbook structure created by
+Python/C++/Java programs and vice versa.
+
+This example also contains the "addressbook.piq" file which is a sample
+addressbook data structure represented as a Piq file. It can be converted to the
+binary Protocol Buffers format (using "piqi convert") and then can be
+manipulated by the OCaml programs.
+

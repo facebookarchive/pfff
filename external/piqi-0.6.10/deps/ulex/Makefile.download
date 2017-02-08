@@ -1,0 +1,39 @@
+TARBALL := ulex-1.1.tar.gz
+URL := http://www.cduce.org/download/$(TARBALL)
+MD5 := ce49a013bc4a0e085977a9fe157017bf
+
+
+UPSTREAM_FILES := \
+	cset.ml ulexing.ml ulexing.mli ulex.ml ulex.mli utf8.ml utf8.mli utf16.ml utf16.mli \
+        pa_ulex.ml \
+	META
+
+
+UPSTREAM_DIR := upstream
+
+
+all: $(TARBALL) $(UPSTREAM_DIR) $(UPSTREAM_FILES)
+
+
+$(UPSTREAM_FILES): %: $(UPSTREAM_DIR)/%
+	cp $< $@
+
+
+pa_ulex.ml: %: $(UPSTREAM_DIR)/%
+	echo "(*pp camlp4orf *)" > $@
+	cat $< >> $@
+
+
+$(UPSTREAM_DIR): $(TARBALL)
+	mkdir -p $(UPSTREAM_DIR)
+	tar -xzf $< -C $(UPSTREAM_DIR) --strip-components=1
+
+
+$(TARBALL):
+	../../make/http-download $(URL)
+	test $(MD5) = `../../make/md5sum $(TARBALL)`
+
+
+clean:
+	rm -rf $(TARBALL) $(UPSTREAM_DIR) $(UPSTREAM_FILES)
+

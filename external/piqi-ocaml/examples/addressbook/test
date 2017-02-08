@@ -1,0 +1,63 @@
+#!/bin/sh
+
+: ${PIQI:=piqi}
+
+
+set -ex
+
+# create a binary representation of the addressbook by converting it from piq
+$PIQI convert -t pb addressbook.piq
+
+# create another copy of addressbook records using ocaml program
+./add_person addressbook.pb <<!
+0
+J. Random Hacker
+j.r.hacker@example.com
+(111) 123 45 67
+home
+(222) 123 45 67
+mobile
+(333) 123 45 67
+work
+(444) 123 45 67
+mobile
+
+!
+
+./add_person addressbook.pb <<!
+1
+Joe User
+
+
+!
+
+./add_person addressbook.pb <<!
+2
+Joe User Jr
+
+
+!
+
+./add_person addressbook.pb <<!
+3
+Joe User II
+joe.user@example.com
+(444) 123 45 67
+home
+(555) 123 45 67
+work
+
+!
+
+
+./list_people addressbook.piq.pb > l1
+./list_people addressbook.pb > l2
+cmp l1 l2
+
+
+# check that the addressbook binary file created by "add_person" is readable by
+# "piqi convert"
+$PIQI convert --type addressbook/address-book addressbook.pb > addressbook.pb.piq
+
+rm addressbook.pb
+

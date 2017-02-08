@@ -1,0 +1,30 @@
+
+% a handy type abbreviation
+.alias [
+    .name t
+    .type complex
+]
+
+
+% complex number
+.record [
+    .name complex
+
+    .field [ .name re .type float ]
+    .field [ .name im .type float ]
+]
+
+
+% some record which uses "complex" type
+.record [
+    .name foo
+    .field [
+        .name bar
+        .type t
+        .optional
+
+        % piqi supports structured defaults for optional fields:
+        .default [.re 1 .im 0] % NOTE: it is possible to skip names and use [1 0]
+    ]
+]
+

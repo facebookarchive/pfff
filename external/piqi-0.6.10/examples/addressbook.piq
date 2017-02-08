@@ -1,0 +1,54 @@
+
+:addressbook/address-book [
+
+    .person [
+        .name "J. Random Hacker"
+        .id 0
+
+        .email "j.r.hacker@example.com"
+
+        .phone [
+            .number "(111) 123 45 67" % phone is "home" by default
+        ]
+
+        .phone [
+            .number "(222) 123 45 67"
+            .mobile % NOTE: this is a "shorthand" for .type.mobile
+        ]
+
+        .phone [
+            .number "(333) 123 45 67"
+            .work
+        ]
+
+        % this is also valid (but not recormmended)
+        .phone [ "(444) 123 45 67" .mobile ]
+    ]
+
+
+    % it is possible to omit optional "email" field
+    % and repeated "phone" field
+    .person [
+        .name "Joe User"
+        .id 1
+
+        % it is possible to omit optional "email" field
+        % and repeated "phone" field
+    ]
+
+
+    % ... or even omit labels for the required fields (not recommended style
+    % though)
+    .person [ "Joe User Jr" 2 ]
+
+
+    % or even like that
+    .person [
+        "Joe User II"
+        3
+        "joe.user@example.com"
+        .phone [ "(444) 123 45 67" ]
+        .phone [ "(555) 123 45 67" .work ]
+    ]
+]
+

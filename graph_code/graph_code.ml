@@ -302,6 +302,18 @@ let all_nodes g =
 (* Graph access *)
 (*****************************************************************************)
 
+let graph_code_graph_has g =
+  g.has
+
+let graph_code_graph_use g =
+  g.use
+
+let graph_code_graph_nodeinfo g =
+  g.nodeinfo
+
+let graph_code_graph_edgeinfo g =
+  g.edgeinfo
+
 let has_node n g =
   G.has_node n g.has
 
@@ -433,7 +445,6 @@ let gensym s =
 (*****************************************************************************)
 (* Helpers *)
 (*****************************************************************************)
-
 let create_intermediate_directories_if_not_present g dir =
   let dirs = Common2.inits_of_relative_dir dir in
 

@@ -1,0 +1,430 @@
+
+%******************************************************************************
+% Entity_code
+%******************************************************************************
+
+.variant [
+    .name entity-kind
+    .option [
+	.name Package
+	.ocaml-name "Package"
+    ]
+    .option [
+	.name Dir
+	.ocaml-name "Dir"
+    ]
+    .option [
+	.name Module
+	.ocaml-name "Module"
+    ]
+    .option [
+	.name File
+	.ocaml-name "File"
+    ]
+    .option [
+	.name Function
+	.ocaml-name "Function"
+    ]
+    .option [
+	.name Class
+	.ocaml-name "Class"
+    ]
+    .option [
+	.name Type
+	.ocaml-name "Type"
+    ]
+    .option [
+	.name Constant
+	.ocaml-name "Constant"
+    ]
+    .option [
+	.name Global
+	.ocaml-name "Global"
+    ]
+    .option [
+	.name Macro
+	.ocaml-name "Macro"
+    ]
+    .option [
+	.name Exception
+	.ocaml-name "Exception"
+    ]
+    .option [
+	.name TopStmts
+	.ocaml-name "TopStmts"
+    ]
+    .option [
+	.name Field
+	.ocaml-name "Field"
+    ]
+    .option [
+	.name Method
+	.ocaml-name "Method"
+    ]
+    .option [
+	.name ClassConstant
+	.ocaml-name "ClassConstant"
+    ]
+    .option [
+	.name Constructor
+	.ocaml-name "Constructor"
+    ]
+    .option [
+	.name Prototype
+	.ocaml-name "Prototype"
+    ]
+    .option [
+	.name GlobalExtern
+	.ocaml-name "GlobalExtern"
+    ]
+    .option [
+	.name MultiDirs
+	.ocaml-name "MultiDirs"
+    ]
+    .option [
+	.name Other
+	.ocaml-name "Other"
+	.type string
+    ]
+]
+
+.variant [
+    .name privacy
+    .option [
+	.name Public
+	.ocaml-name "Public"
+    ]
+    .option [
+	.name Protected
+	.ocaml-name "Protected"
+    ]
+    .option [
+	.name Private
+	.ocaml-name "Private"
+    ]
+]
+
+.variant [
+    .name class-kind
+    .option [
+	.name Struct
+	.ocaml-name "Struct"
+    ]
+    .option [
+	.name Class
+	%piqi does not support names of type Class_
+	.ocaml-name "Class"
+    ]
+    .option [
+	.name Interface
+	.ocaml-name "Interface"
+    ]
+    .option [
+	.name Trait
+	.ocaml-name "Trait"
+    ]
+    .option [
+	.name Enum
+	.ocaml-name "Enum"
+    ]
+]
+
+.variant [
+    .name property
+    .option [
+	.name ContainDynamicCall
+	.ocaml-name "ContainDynamicCall"
+    ]
+    .option [
+	.name ContainReflectionCall
+	.ocaml-name "ContainReflectionCall"
+    ]
+    .option [
+	.name TakeArgNByRef
+	.ocaml-name "TakeArgNByRef"
+	.type int
+    ]
+    .option [
+	.name UseGlobal
+	.ocaml-name "UseGlobal"
+	.type string
+    ]
+    .option [
+	.name ContainDeadStatements
+	.ocaml-name "ContainDeadStatements"
+    ]
+    .option [
+	.name DeadCode
+	.ocaml-name "DeadCode"
+    ]
+    .option [
+	.name CodeCoverage
+	.ocaml-name "CodeCoverage"
+	.type int-list
+    ]
+    .option [
+	.name ClassKind
+	.ocaml-name "ClassKind"
+	.type class-kind
+    ]
+    .option [
+	.name Privacy
+	.ocaml-name "Privacy"
+	.type privacy
+    ]
+    .option [
+	.name Abstract
+	.ocaml-name "Abstract"
+    ]
+    .option [
+	.name Final
+	.ocaml-name "Final"
+    ]
+    .option [
+	.name Static
+	.ocaml-name "Static"
+    ]
+    .option [
+	.name Required
+	.ocaml-name "Required"
+    ]
+    .option [
+	.name Async
+	.ocaml-name "Async"
+    ]
+]
+
+%******************************************************************************
+% Parse_info
+%******************************************************************************
+
+.record [
+    .name token-location
+    .field [
+	.name str
+	.type string
+    ]
+    .field [
+	.name charpos
+	.type int
+    ]
+    .field [
+	.name line
+	.type int
+    ]
+    .field [
+	.name column
+	.type int
+    ]
+    .field [
+	.name file
+	.type string
+    ]
+]
+
+%******************************************************************************
+% Helpers
+%******************************************************************************
+.list [
+    .name int-list
+    .type int
+]
+
+.list [
+    .name property-list
+    .type property
+]
+
+%******************************************************************************
+% Graph_code
+%******************************************************************************
+
+.record [
+    .name node
+    .field [
+	.name name
+	.type string
+    ]
+    .field [
+	.name entity-kind
+	.type entity-kind
+    ]
+]
+
+.variant [
+    .name edge
+    .option [
+	.name Has
+	.ocaml-name "Has"
+    ]
+    .option [
+	.name Use
+	.ocaml-name "Use"
+    ]
+]
+
+.record [
+    .name nodeinfo
+    .field [
+	.name pos
+	.type token-location
+    ]
+    .field [
+	.name props
+	.type property-list
+    ]
+    .field [
+	.name typ
+	.type string
+	.optional
+    ]
+]
+
+.record [
+    .name edgeinfo
+    .field [
+	.name write
+	.type bool
+    ]
+    .field [
+	.name read
+	.type bool
+    ]
+]
+
+% Cannot have type as graph, module conflicts with commons/graph/graph.ml
+.record [
+    .name graph-code-graph
+    .field [
+	.name has
+	.type commons-graph
+    ]
+    .field [
+	.name use
+	.type commons-graph
+    ]
+    .field [
+	.name nodeinfo-hash-instance
+	.type nodeinfo-hash
+    ]
+    .field [
+	.name edgeinfo-hash-instance
+	.type edgeinfo-hash
+    ]
+]
+
+%******************************************************************************
+% commons/graph/graph.ml
+%******************************************************************************
+
+.record [
+    .name commons-graph
+    .field [
+	.name og
+	.type int
+    ]
+    .field [
+	.name key-of-vertex
+	.type key-of-vertex-hash
+    ]
+    .field [
+	.name vertex-of-key
+	.type vertex-of-key-hash
+    ]
+    .field [
+	.name cnt
+	.type int
+    ]
+]
+
+%******************************************************************************
+% Hashtables
+%******************************************************************************
+
+.record [
+    .name nodeinfo-hash-element
+    .field [
+	.name key
+	.type node
+    ]
+    .field [
+	.name value
+	.type nodeinfo
+    ]
+]
+
+.list [
+    .name nodeinfo-hash
+    .type nodeinfo-hash-element
+]
+.record [
+    .name edgeinfo-hash-helper
+    .field [
+	.name tuple-1
+	.type node
+    ]
+    .field [
+	.name tuple-2
+	.type node
+    ]
+    .field [
+	.name tuple-3
+	.type edge
+    ]
+]
+
+.record [
+    .name edgeinfo-hash-element
+    .field [
+	.name key
+	.type edgeinfo-hash-helper
+    ]
+    .field [
+	.name value
+	.type edgeinfo
+    ]
+]
+
+.list [
+    .name edgeinfo-hash
+    .type edgeinfo-hash-element 
+]
+
+.record [
+    .name key-of-vertex-hash-element
+    .field [
+	.name key
+	% Placeholder int for OG.V.t
+	.type int
+    ]
+    .field [
+	.name value
+	.type node
+    ]
+]
+
+.list [
+    .name key-of-vertex-hash
+    .type key-of-vertex-hash-element
+]
+
+.record [
+    .name vertex-of-key-hash-element
+    .field [
+	.name key
+	.type node
+    ]
+    .field [
+	.name value
+	% Again, placeholder for OG.V.t
+	.type int
+    ]
+]
+
+.list [
+    .name vertex-of-key-hash
+    .type vertex-of-key-hash-element
+]
+
+
+.custom-field ocaml-name

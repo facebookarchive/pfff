@@ -1,0 +1,43 @@
+% testing enums and aliases imports and functino paraemters -- also see ea1.piqi
+
+.protobuf-package "t"
+
+.alias [
+    .name s
+    .type string
+]
+
+
+.enum [
+    .name e
+    .option [ a ]
+]
+
+.alias [
+    .name ea
+    .type e
+]
+
+.record [
+    .name r
+    .field [ .name e .type e ]
+]
+
+
+.alias [
+    .name ra
+    .type r
+]
+
+
+.function [
+    .name f
+    .input e
+]
+
+
+.function [
+    .name g
+    .input ea
+]
+

@@ -1,0 +1,44 @@
+/* -------------------------------------------------------------------
+**
+** riak.proto: Protocol buffers for Riak
+**
+** Copyright (c) 2007-2010 Basho Technologies, Inc.  All Rights Reserved.
+**
+** This file is provided to you under the Apache License,
+** Version 2.0 (the "License"); you may not use this file
+** except in compliance with the License.  You may obtain
+** a copy of the License at
+**
+**   http://www.apache.org/licenses/LICENSE-2.0
+**
+** Unless required by applicable law or agreed to in writing,
+** software distributed under the License is distributed on an
+** "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+** KIND, either express or implied.  See the License for the
+** specific language governing permissions and limitations
+** under the License.
+**
+** -------------------------------------------------------------------
+*/
+
+/*
+** Revision: 1.2
+*/
+
+// Error response - may be generated for any Req
+message RpbErrorResp {
+    required bytes errmsg = 1;
+    required uint32 errcode = 2;
+}
+
+// Get server info request - no message defined, just send RpbGetServerInfoReq message code
+message RpbGetServerInfoResp {
+    optional bytes node = 1;
+    optional bytes server_version = 2;
+}
+
+// Key/value pair - used for user metadata, indexes, search doc fields
+message RpbPair {
+    required bytes key = 1;
+    optional bytes value = 2;
+}

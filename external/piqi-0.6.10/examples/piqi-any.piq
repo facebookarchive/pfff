@@ -1,0 +1,71 @@
+% this file contains examples of values of the "piqi-any" type; "piqi-any" type
+% represents some typed (piq) or untyped data (piq, json or xml)
+
+(:piqi-any)  % type hint
+
+
+% untyped Piq data
+
+(.foo)
+
+1
+
+"string"
+
+word
+
+3.14159
+
+false
+
+# verbatim text spanning
+# two lines
+
+[]
+
+[.foo .bar]
+
+.foo [ .bar 1 ]
+
+
+% typed Piq data
+
+:int 10
+
+:float 1.2345
+
+:string "s"
+
+:person/person [
+    .name "Joe User"
+    .id 1
+    .phone [ "(555) 123 45 67" .work ]
+]
+
+:string # verbatim text
+
+
+% untyped JSON (via built-in "json" form)
+
+(json
+    # [{"i": 1}, "foo"]
+)
+
+(json
+    # 1
+)
+
+(json
+    # []
+)
+
+
+% untyped XML (via built-in "xml" form)
+
+(xml
+    # <value>
+    #   <i>1</i>
+    #   <foo/>
+    # </value>
+)
+

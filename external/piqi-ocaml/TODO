@@ -1,0 +1,31 @@
+This is a list of ideas of how to improve piqi-ocaml.
+
+Current issues and feature requests: https://github.com/alavrik/piqi-ocaml/issues
+
+
+New features
+------------
+
+- optionally, treat Piqi enums as OCaml integers and generate enum constants as
+  constants instead of polymorphic variants
+
+
+Optimizations
+-------------
+
+- profile and optimize piqirun.ml, e.g. varint encoding, record parsing, GC
+  behavior, etc.
+
+
+Miscellaneous
+-------------
+
+- add piqi-any example that demonstrates use of embedded JSON/XML (now that we
+  have piqi_piqi.ml as a part of piqilib); see piqi-erlang/examples/piqi-any for
+  details
+
+- more tests
+
+
+
+# ex: et sw=4 ts=4

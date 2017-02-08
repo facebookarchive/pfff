@@ -1,0 +1,12 @@
+
+:complex/t [ .re 0 .im 0 ]
+
+
+% field names are optional:
+:complex/t [ 0 0 ]
+
+
+% an object without any fields
+:complex/foo []
+
+

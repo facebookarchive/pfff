@@ -1,0 +1,33 @@
+(:piq-format/text)
+
+% text literal are separated between subsequent text literals either by some
+% other lexical element or by empty vertical space
+
+# single-line verbatim text
+
+# multi-line verbatim test
+# here's another line
+#
+# and another one
+#
+
+%
+% whitespace before '#' character is discarded
+%
+
+        # one more line of text
+
+    #
+    # that's it
+
+
+%
+% verbatim text literals can also be used for representing string values
+%
+
+:string # text line
+
+:string
+    # text multi
+    # line
+

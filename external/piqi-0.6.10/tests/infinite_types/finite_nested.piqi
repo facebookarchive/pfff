@@ -1,0 +1,61 @@
+% this set of definitions used to trigger an assert in
+% Piqi.check_no_infinite_types
+
+.variant [
+    .name v
+
+    .option [
+        .type r1
+    ]
+    .option [
+        .type r2
+    ]
+    .option [
+        .type r3
+    ]
+    .option [
+        .type v2
+    ]
+]
+
+
+.variant [
+    .name v2
+    .option [a]
+]
+
+
+.record [
+    .name r1
+    .field [
+        .name f
+        .type v
+    ]
+]
+
+
+.record [
+    .name r2
+    .field [
+        .name f
+        .type v
+    ]
+]
+
+
+.record [
+    .name r3
+    .field [
+        .type v3
+    ]
+    .field [
+        .name f
+        .type v
+    ]
+]
+
+
+.variant [
+    .name v3
+    .option [a]
+]

@@ -1,0 +1,15 @@
+OCAMLMAKEFILE := ../../make/OCamlMakefile
+
+
+RESULT = pa_ulex
+
+SOURCES = cset.ml utf8.ml ulexing.ml utf16.ml ulex.ml pa_ulex.ml
+
+
+INCDIRS = +camlp4
+
+
+all: bcl
+
+
+include $(OCAMLMAKEFILE)

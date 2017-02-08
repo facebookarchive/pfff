@@ -1,0 +1,16 @@
+.variant [
+    .name v
+    .option [
+        .type v
+    ]
+    .option [
+        .name o
+        .type a
+    ]
+]
+
+.alias [
+    .name a
+    .type v
+]
+

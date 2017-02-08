@@ -1,0 +1,7 @@
+.variant [
+    .name where
+    .option [ .name rec .type where-list ]
+    .option [ .type uint ]
+]
+.list [ .name where-list .type where ]
+

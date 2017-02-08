@@ -1,0 +1,44 @@
+OCAMLMAKEFILE := $(PIQI_ROOT)/make/OCamlMakefile
+
+
+OCAMLPATH := $(PIQI_BUILD)/lib/ocaml
+ifeq ($(SYSTEM),$(filter $(SYSTEM),mingw mingw64))
+OCAMLPATH := $(shell cygpath -w $(OCAMLPATH))
+endif
+export OCAMLPATH
+
+
+# make sure camlp4o produces pretty-printed text instead of AST
+export CAMLP4_O = $(CAMLP4)o -printer o
+
+
+.PHONY: piqi-all pre_target post_target
+
+
+piqi-all: pre_target all post_target
+
+
+pre_target::
+post_target::
+
+
+.ml.mli: $(EXTRADEPS)
+			$(QUIET)pp=`sed -n -e '/^#/d' -e 's/(\*pp \([^*]*\) \*)/\1/p;q' $<`; \
+			if [ -z "$$pp" ]; then \
+			  $(ECHO) $(REAL_OCAMLFIND) $(INTF_OCAMLC) $(OCAML_FIND_PACKAGES) \
+				-i $(THREAD_FLAG) $(ANNOT_FLAG) \
+				$(OCAMLFLAGS) $(INCFLAGS) $<; \
+			  $(REAL_OCAMLFIND) $(INTF_OCAMLC) $(OCAML_FIND_PACKAGES) \
+				-i $(THREAD_FLAG) $(ANNOT_FLAG) \
+				$(OCAMLFLAGS) $(INCFLAGS) $<; \
+			else \
+			    $(ECHO) $(REAL_OCAMLFIND) $(INTF_OCAMLC) $(OCAML_FIND_PACKAGES) \
+				-i -pp \"$$pp $(PPFLAGS)\" $(THREAD_FLAG) $(ANNOT_FLAG) \
+				$(OCAMLFLAGS) $(INCFLAGS) $<; \
+			    $(REAL_OCAMLFIND) $(INTF_OCAMLC) $(OCAML_FIND_PACKAGES) \
+				-i -pp "$$pp $(PPFLAGS)" $(THREAD_FLAG) $(ANNOT_FLAG) \
+				$(OCAMLFLAGS) $(INCFLAGS) $<; \
+			fi
+
+
+# vim:ft=make

@@ -1,0 +1,55 @@
+% examples of integer values
+(:int)
+
+0 -1 100 1_000_000_000 
+
+
+% NOTE: unsigned integers use different binary encoding
+:uint 100
+
+
+% conventional base 16 integers
+
+0xffff -0xffff_0000
+
+
+% base 2 integer literal
+
+0b1111_1111_1111_1111
+
+
+% min and max values for various integer types/encodings
+
+:uint32 0
+:uint32 0xffff_ffff
+
+:uint32-fixed 0
+:uint32-fixed 0xffff_ffff
+
+
+:int32 -0x8000_0000
+:int32 0x7fff_ffff
+
+:int32-fixed -0x8000_0000
+:int32-fixed 0x7fff_ffff
+
+:protobuf-int32 -0x8000_0000
+:protobuf-int32 0x7fff_ffff
+
+
+:uint64 0
+:uint64 0xffff_ffff_ffff_ffff
+
+:uint64-fixed 0
+:uint64-fixed 0xffff_ffff_ffff_ffff
+
+
+:int64 -0x8000_0000_0000_0000
+:int64 0x7fff_ffff_ffff_ffff
+
+:int64-fixed -0x8000_0000_0000_0000
+:int64-fixed 0x7fff_ffff_ffff_ffff
+
+:protobuf-int64 -0x8000_0000_0000_0000
+:protobuf-int64 0x7fff_ffff_ffff_ffff
+

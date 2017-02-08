@@ -1,0 +1,53 @@
+
+.import [ variant-1 ]
+
+
+.variant [
+    .name v
+
+    % testing automatic implicit reordering of variants when generating OCaml
+    % types (type "e" is defined below, but in OCaml types it must appear above)
+    .option [
+        .type v1
+    ]
+
+    % testing correct OCaml representation of imported sub-variant
+    .option [
+        .type variant-1/e
+    ]
+]
+
+
+.variant [
+    .name v1
+    .option [
+        .type ee
+    ]
+]
+
+
+.enum [
+    .name ee
+    .option [ b ]
+]
+
+
+% NOTE: without specifying ".ocaml_name l", these two mutually cyclic
+% definitions should trigger a piqic error (because OCaml won't compile code
+% containing cycles like that, even if types are finite)
+.variant [
+    .name loop1
+    .option [ 
+        .ocaml-name "l"
+        .type loop2
+    ]
+]
+
+.variant [
+    .name loop2
+    .option [ .type loop1 ]
+    .option [ .name foo ]
+]
+
+
+.custom-field ocaml-name

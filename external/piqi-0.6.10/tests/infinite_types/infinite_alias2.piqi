@@ -1,0 +1,11 @@
+.alias [
+    .name a
+    .type b
+]
+
+
+.alias [
+    .name b
+    .type a
+]
+

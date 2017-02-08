@@ -1,0 +1,77 @@
+% This file was generated from "addressbook.proto" using the following command:
+%
+%     piqi of-proto --normalize addressbook.proto
+
+
+.protobuf-package "tutorial"
+
+.record [
+    .name person
+    .field [
+        .name name
+        .type string
+        .code 1
+    ]
+    .field [
+        .name id
+        .type protobuf-int32
+        .code 2
+    ]
+    .field [
+        .name email
+        .type string
+        .optional
+        .code 3
+    ]
+    .field [
+        .name phone
+        .type person-phone-number
+        .repeated
+        .code 4
+    ]
+]
+
+.record [
+    .name person-phone-number
+    .field [
+        .name number
+        .type string
+        .code 1
+    ]
+    .field [
+        .name type
+        .type person-phone-type
+        .optional
+        .default.home
+        .code 2
+    ]
+]
+
+.enum [
+    .name person-phone-type
+    .option [
+        .name mobile
+        .code 0
+        .protobuf-name "person_mobile"
+    ]
+    .option [
+        .name home
+        .code 1
+        .protobuf-name "person_home"
+    ]
+    .option [
+        .name work
+        .code 2
+        .protobuf-name "person_work"
+    ]
+]
+
+.record [
+    .name address-book
+    .field [
+        .name person
+        .type person
+        .repeated
+        .code 1
+    ]
+]

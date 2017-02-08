@@ -1,0 +1,9 @@
+.include [ .module riak_kv ]
+
+.extend [
+    (.field RpbListKeysResp.done RpbMapRedResp.done)
+
+    .with.ocaml-name "isdone"
+]
+
+.custom-field ocaml-name

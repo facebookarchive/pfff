@@ -1,0 +1,99 @@
+#!/bin/sh
+
+
+set -ex
+
+f=$1
+
+
+# When piqi sees this variable, it prints some extra information on stderr. The
+# same effect can be achieved by specifying "--trace" command-line parameter.
+#
+#export PIQI_TRACE=1
+
+# pretty print to standard output
+$PIQI pp $f.piq
+
+
+# check piq validity: syntax, then structured validity i.e. type check
+$PIQI check $f.piq
+
+
+# convert to "piq" encoding and print to stdout. "piq" encoding is used as
+# default ouput encoding. Input encoding is determined by file's extension
+# unless specified explicitly.
+$PIQI convert $f.piq
+
+
+# the same as previous command, also add default values to all optional fields
+# which are missing in source objects
+$PIQI convert --add-defaults $f.piq
+
+# convert to pib encoding, writing output to "<source file>.pib" file
+$PIQI convert -t pib $f.piq
+
+# convert back to .piq
+$PIQI convert $f.piq.pib
+
+# convert back to .piq and add defaults
+$PIQI convert --add-defaults $f.piq.pib
+
+# convert to json encoding, writing output to "<source file>.json" file
+$PIQI convert -t json $f.piq
+
+# convert back to .piq
+$PIQI convert $f.piq.json
+
+# convert .json to .pib
+$PIQI convert -t pib $f.piq.json
+
+# convert .pib to .json
+$PIQI convert -t json $f.piq.pib
+
+# convert .pib to .xml
+$PIQI convert -t xml $f.piq.pib
+
+# convert .pib to .json; generate "null" for missing optional fields
+$PIQI convert -t json --json-omit-missing-fields false $f.piq.pib
+
+#
+# Similar to the above but this time, embedding Piqi type specs while
+# converting.
+#
+
+# the same as previous command, also add default values to all optional fields
+# which are missing in source objects
+$PIQI convert --embed-piqi --add-defaults $f.piq
+
+
+# convert to pib encoding, writing output to "<source file>.pib" file
+$PIQI convert -t pib $f.piq
+
+# convert back to .piq
+$PIQI convert --embed-piqi $f.piq.pib
+
+# convert to pib encoding, writing output to "<source file>.pib" file
+$PIQI convert --embed-piqi -t pib $f.piq
+
+# convert back to .piq
+$PIQI convert $f.piq.pib
+
+
+# convert to json encoding, writing output to "<source file>.json" file
+$PIQI convert -t json $f.piq
+
+# convert back to .piq
+$PIQI convert --embed-piqi $f.piq.json
+
+# convert to json encoding, writing output to "<source file>.json" file
+$PIQI convert --embed-piqi -t json $f.piq
+
+# convert back to .piq
+$PIQI convert $f.piq.json
+
+
+# convert .json to .pib
+$PIQI convert -t pib $f.piq.json
+
+# convert .pib back to .json
+$PIQI convert -t json $f.piq.json.pib

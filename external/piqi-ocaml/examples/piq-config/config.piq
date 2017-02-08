@@ -1,0 +1,24 @@
+
+% the shortest form
+[ "foo" .make ]
+
+% explicit field name
+[ .path "foo" .make ]
+
+% more explicit field names
+[ .path "foo" .generator.make ]
+
+% alternative notation for representing enums (variants)
+[ .path "foo" .generator (.make) ]
+
+% the longest form
+[
+    .path "foo"
+    .generator.make
+]
+
+% testing other enum values
+[ "bar" .latexmk ]
+[ "fum" .org ]
+[ "baz" .tensile ]
+

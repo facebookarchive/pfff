@@ -1,0 +1,46 @@
+% testing --piq-relaxed-parsing mode
+
+
+:piqi [
+    .module m
+
+    .variant [
+        .name v
+
+        .option [ .type bool ]
+        .option [ .type int ]
+        .option [ .type float ]
+
+        .option [ .type word ]
+        .option [ .type string ]
+
+        .option [ .name id .type word ]
+    ]
+
+
+    .alias [
+        .name word
+        .type string
+
+        .piq-format.word
+    ]
+]
+
+
+(:m/v)
+
+
+3.14
+
+true
+
+10
+
+word
+
+"string"
+
+1day
+
+.id foo
+

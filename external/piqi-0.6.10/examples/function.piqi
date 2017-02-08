@@ -1,0 +1,84 @@
+
+% function with no input and output parameters
+.function [
+    .name foo
+]
+
+
+% function with a record input parameter and primitive output and error
+.function [
+    .name bar
+
+    .input [
+        .field [
+            .type int
+            .optional
+        ]
+    ]
+    .output int
+    .error float
+]
+
+
+% function with a record input that has a default value
+.function [
+    .name baz
+
+    .input.record [
+        .field [
+            .type int
+            .optional
+            .default 10
+        ]
+    ]
+]
+
+
+% function with a variant input parameter
+.function [
+    .name v
+
+    .output.variant [
+        .option [
+            .name i
+            .type int
+        ]
+        .option [
+            .name f
+            .type float
+        ]
+    ]
+]
+
+
+% function with an enum error parameter
+.function [
+    .name e
+
+    .error.enum [
+        .option [ .name a ]
+        .option [ .name b ]
+    ]
+]
+
+
+% function with a list input parameter
+.function [
+    .name l
+
+    .input.list [
+        .type int
+    ]
+]
+
+
+% function with an alias input parameter
+.function [
+    .name a
+
+    .input.alias [
+        .type string
+        .piq-format.text
+    ]
+]
+

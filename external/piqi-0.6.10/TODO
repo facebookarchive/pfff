@@ -1,0 +1,80 @@
+This is a list of ideas of how to improve Piqi.
+
+
+The list of *big* things to work on can be found here: http://piqi.org/roadmap/
+
+Current issues and feature requests: https://github.com/alavrik/piqi/issues
+
+
+Packaging and dependencies
+--------------------------
+
+- Homebrew and FreeBSD packages anyone? We've got Debian, RPM and Arch already:
+  https://github.com/piqi/
+
+- --version based on git commit (for development builds)
+
+
+Miscellaneous improvements
+--------------------------
+
+- change the JSON AST representation so that we could preserve int, float,
+  string literals everywhere -- see comments in Piqobj.json_of_any
+
+- optionally, don't parse/validate/pretty-print embedded dynamically typed
+  json/xml (aka piqi-any values) as this creates extra overhead especially if
+  the embedded objects are large
+
+
+Piqi tools
+----------
+
+piqi compile -M/--print-deps:
+
+  - print .piqi dependencies in Makefile format similar to gcc -M
+
+piqi convert --no-pp/--pp false:
+
+  - don't pretty-print XML/JSON output
+
+pp:
+
+  - preserve Piq/Piqi comments by default, optionally strip them
+
+piqi convert --extract-piqi:
+
+  - extract embedded Piqi modules and lay them in a directory hierarchy
+
+
+Documentation
+-------------
+
+- document `piqi compile` and `piqi cc`. Some relevant mailing lists threads:
+
+    https://groups.google.com/d/msg/piqi/V9AUEVl5Ti0/7pHyUrhyZskJ
+    https://groups.google.com/d/msg/piqi/V9AUEVl5Ti0/neF4IWIc22wJ
+    https://groups.google.com/d/msg/piqi/ysdLfbXtmf0/QbUyLcPXLAwJ
+
+- document piqi bootstrap process, i.e. the process of building Piqi from its
+  self-spec or making changes to the self-spec. Here's a starting point:
+  https://groups.google.com/d/msg/piqi/Y74PFJjf7EM/YBom97z5s6AJ
+
+- existing project documentation. It cries for improvements! e.g. doc/piqi.md
+
+
+Protocol Buffers
+----------------
+
+- add support for new Protocol Buffers features introduced in Protobuf-2.5.0 and
+  2.6.0, including "import public", "allow_alias", "oneof"; see
+  http://protobuf.googlecode.com/svn/trunk/CHANGES.txt
+
+
+Tests
+-----
+
+- essentially, need more tests for everything. More details to follow after
+  command-line interface refactoring.
+
+
+# ex: et sw=4 ts=4

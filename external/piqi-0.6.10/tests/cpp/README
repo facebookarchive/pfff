@@ -1,0 +1,7 @@
+
+Convert complex piqi specification "piqi/piqi.piqi" to .proto.
+
+Then build a C++ program which reads and dumps a serialized binary object using
+Protocol Buffers library. The binary object used as the test input is a
+serialized "piqi.piqi" specification itself.
+

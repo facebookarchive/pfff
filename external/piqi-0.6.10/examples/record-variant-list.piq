@@ -1,0 +1,14 @@
+
+% record
+:record-variant-list/r [ .a 0 .b 1 ]
+
+% variant list
+:record-variant-list/l [ .a 0 .b 1 ]
+
+% abbreviated representation of variant values
+:record-variant-list/v.a 0
+:record-variant-list/v.b 1
+
+% un-abbreviated representation of variant values
+:record-variant-list/v (.a 0)
+:record-variant-list/v (.b 1)

@@ -1,0 +1,24 @@
+#!/bin/sh
+
+set -ex
+
+# .piqi -> .piqi.proto
+for i in *.piqi
+do
+        $PIQI to-proto $i
+done
+
+
+# test .piqi.proto validity using Protobuf compiler
+for i in *.piqi.proto
+do
+        protoc -ot $i
+done
+
+
+# .piqi.proto -> .piqi.proto.piqi
+for i in *.piqi.proto
+do
+        $PIQI of-proto $i
+done
+

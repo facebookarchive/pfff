@@ -1,0 +1,14 @@
+*.[oa]
+
+# OCaml:
+*.cm[ioxa]
+*.cmxa
+
+# OCamlMakefile:
+*.top
+._d
+._bcdi
+._ncdi
+
+# vim:
+*.swp
